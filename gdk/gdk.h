@@ -2496,7 +2496,7 @@ gdk_export gdk_return gdk_remove_callback(const char *, gdk_callback_func *f);
 gdk_export void GDKusr1triggerCB(void (*func)(void));
 
 #define SQLSTATE(sqlstate)	#sqlstate "!"
-#define MAL_MALLOC_FAIL	"Could not allocate space"
+#define MAL_MALLOC_FAIL	"Could not allocate memory"
 
 #include <setjmp.h>
 

@@ -14,6 +14,7 @@
 #include "rel_select.h"
 #include "rel_rel.h"
 #include "rel_sequence.h"
+#include "rel_psm.h"
 #include "rel_exp.h"
 #include "sql_privileges.h"
 #include "store_sequence.h"
@@ -87,7 +88,8 @@ rel_create_seq(
 	symbol* s_max,
 	lng cache,
 	bit cycle,
-	bit bedropped)
+	bit bedropped,
+	bit if_not_exists)
 {
 	bit nomin = s_min && s_min ->type == type_int ? 1: 0;
 	bit nomax = s_max && s_max ->type == type_int ? 1: 0;
@@ -104,8 +106,11 @@ rel_create_seq(
 	if (!mvc_schema_privs(sql, s))
 		return sql_error(sql, 02, SQLSTATE(42000) "CREATE SEQUENCE: access denied for %s to schema '%s'", get_string_global_var(sql, "current_user"), s->base.name);
 	(void) tpe;
-	if (find_sql_sequence(sql->session->tr, s, name))
+	if (find_sql_sequence(sql->session->tr, s, name)) {
+		if (if_not_exists)
+			return rel_psm_block(sql->sa, new_exp_list(sql->sa));
 		return sql_error(sql, 02, SQLSTATE(42000) "CREATE SEQUENCE: name '%s' already in use", name);
+	}
 	if (!mvc_schema_privs(sql, s))
 		return sql_error(sql, 02, SQLSTATE(42000) "CREATE SEQUENCE: insufficient privileges "
 				"for '%s' in schema '%s'", get_string_global_var(sql, "current_user"), s->base.name);
@@ -159,7 +164,8 @@ list_create_seq(
 	mvc *sql,
 	dlist *qname,
 	dlist *options,
-	bit bedropped)
+	bit bedropped,
+	bit if_not_exists)
 {
 	dnode *n;
 	sql_subtype *t = NULL;
@@ -180,7 +186,7 @@ list_create_seq(
 				size_t number_valid_types = sizeof(valid_types) / sizeof(valid_types[0]);
 
 				if ((used&(1<<SEQ_TYPE)))
-					return sql_error(sql, 02, SQLSTATE(3F000) "CREATE SEQUENCE: AS type found should be used as most once");
+					return sql_error(sql, 02, SQLSTATE(3F000) "CREATE SEQUENCE: AS type should be specified at most once");
 				used |= (1<<SEQ_TYPE);
 				t = &s->data.lval->h->data.typeval;
 				for (size_t i = 0; i < number_valid_types; i++) {
@@ -190,31 +196,31 @@ list_create_seq(
 					}
 				}
 				if (!found)
-					return sql_error(sql, 02, SQLSTATE(42000) "CREATE SEQUENCE: The type of the sequence must be either tinyint, smallint, int or bigint");
+					return sql_error(sql, 02, SQLSTATE(42000) "CREATE SEQUENCE: Invalid data type. Must be: int or bigint or smallint or tinyint");
 			} break;
 			case SQL_START:
 				if ((used&(1<<SEQ_START)))
-					return sql_error(sql, 02, SQLSTATE(3F000) "CREATE SEQUENCE: START value should be passed as most once");
+					return sql_error(sql, 02, SQLSTATE(3F000) "CREATE SEQUENCE: START value should be specified at most once");
 				used |= (1<<SEQ_START);
 				if (is_lng_nil(s->data.l_val))
-					return sql_error(sql, 02, SQLSTATE(42000) "CREATE SEQUENCE: START must not be null");
+					return sql_error(sql, 02, SQLSTATE(42000) "CREATE SEQUENCE: START value may not be NULL");
 				start = s->data.l_val;
 				break;
 			case SQL_INC:
 				if ((used&(1<<SEQ_INC)))
-					return sql_error(sql, 02, SQLSTATE(3F000) "CREATE SEQUENCE: INCREMENT value should be passed as most once");
+					return sql_error(sql, 02, SQLSTATE(3F000) "CREATE SEQUENCE: INCREMENT value should be specified at most once");
 				used |= (1<<SEQ_INC);
 				if (is_lng_nil(s->data.l_val))
-					return sql_error(sql, 02, SQLSTATE(42000) "CREATE SEQUENCE: INCREMENT must not be null");
+					return sql_error(sql, 02, SQLSTATE(42000) "CREATE SEQUENCE: INCREMENT value may not be NULL");
 				inc = s->data.l_val;
 				break;
 			case SQL_MINVALUE:
 				if ((used&(1<<SEQ_MIN)))
-					return sql_error(sql, 02, SQLSTATE(3F000) "CREATE SEQUENCE: MINVALUE or NO MINVALUE should be passed as most once");
+					return sql_error(sql, 02, SQLSTATE(3F000) "CREATE SEQUENCE: MINVALUE or NO MINVALUE should be specified at most once");
 				used |= (1<<SEQ_MIN);
 				if (s->type == type_lng) {
 					 if (is_lng_nil(s->data.l_val))
-					 	return sql_error(sql, 02, SQLSTATE(42000) "CREATE SEQUENCE: MINVALUE must not be null");
+					 	return sql_error(sql, 02, SQLSTATE(42000) "CREATE SEQUENCE: MINVALUE may not be NULL");
 				}
 				assert(s->type == type_lng || (s->type == type_int && is_int_nil(s->data.i_val)));
 				// int_nil signals NO MINVALUE
@@ -222,11 +228,11 @@ list_create_seq(
 				break;
 			case SQL_MAXVALUE:
 				if ((used&(1<<SEQ_MAX)))
-					return sql_error(sql, 02, SQLSTATE(3F000) "CREATE SEQUENCE: MAXVALUE or NO MAXVALUE should be passed as most once");
+					return sql_error(sql, 02, SQLSTATE(3F000) "CREATE SEQUENCE: MAXVALUE or NO MAXVALUE should be specified at most once");
 				used |= (1<<SEQ_MAX);
 				if (s->type == type_lng) {
 					 if (is_lng_nil(s->data.l_val))
-					 	return sql_error(sql, 02, SQLSTATE(42000) "CREATE SEQUENCE: MAXVALUE must not be null");
+					 	return sql_error(sql, 02, SQLSTATE(42000) "CREATE SEQUENCE: MAXVALUE may not be NULL");
 				}
 				assert(s->type == type_lng || (s->type == type_int && is_int_nil(s->data.i_val)));
 				// int_nil signals NO MAXVALUE
@@ -234,16 +240,16 @@ list_create_seq(
 				break;
 			case SQL_CYCLE:
 				if ((used&(1<<SEQ_CYCLE)))
-					return sql_error(sql, 02, SQLSTATE(3F000) "CREATE SEQUENCE: CYCLE or NO CYCLE should be passed as most once");
+					return sql_error(sql, 02, SQLSTATE(3F000) "CREATE SEQUENCE: CYCLE or NO CYCLE should be specified at most once");
 				used |= (1<<SEQ_CYCLE);
 				cycle = s->data.i_val != 0;
 				break;
 			case SQL_CACHE:
 				if ((used&(1<<SEQ_CACHE)))
-					return sql_error(sql, 02, SQLSTATE(3F000) "CREATE SEQUENCE: CACHE value should be passed as most once");
+					return sql_error(sql, 02, SQLSTATE(3F000) "CREATE SEQUENCE: CACHE value should be specified at most once");
 				used |= (1<<SEQ_CACHE);
 				if (is_lng_nil(s->data.l_val))
-					return sql_error(sql, 02, SQLSTATE(42000) "CREATE SEQUENCE: CACHE must be non-NULL");
+					return sql_error(sql, 02, SQLSTATE(42000) "CREATE SEQUENCE: CACHE value may not be NULL");
 				cache = s->data.l_val;
 				break;
 			default:
@@ -251,7 +257,7 @@ list_create_seq(
 			}
 		}
 	}
-	return rel_create_seq(sql, qname, t, start, inc, min, max, cache, cycle, bedropped);
+	return rel_create_seq(sql, qname, t, start, inc, min, max, cache, cycle, bedropped, if_not_exists);
 }
 
 static sql_rel *
@@ -264,7 +270,8 @@ rel_alter_seq(
 		symbol* s_min,
 		symbol* s_max,
 		lng cache,
-		bit cycle)
+		bit cycle,
+		bit if_exists)
 {
 	bit nomin = s_min && s_min ->type == type_int ? 1: 0;
 	bit nomax = s_max && s_max ->type == type_int ? 1: 0;
@@ -280,8 +287,14 @@ rel_alter_seq(
 
 	assert(!start_list || start_list->h->type == type_int);
 	(void) tpe;
-	if (!(seq = find_sequence_on_scope(sql, sname, name, "ALTER SEQUENCE")))
+	if (!(seq = find_sequence_on_scope(sql, sname, name, "ALTER SEQUENCE"))) {
+		if (if_exists) {
+			sql->errstr[0] = '\0'; /* reset sequence not found error */
+			sql->session->status = 0;
+			return rel_psm_block(sql->sa, new_exp_list(sql->sa));
+		}
 		return NULL;
+	}
 	if (!mvc_schema_privs(sql, seq->s))
 		return sql_error(sql, 02, SQLSTATE(42000) "ALTER SEQUENCE: insufficient privileges "
 				"for '%s' in schema '%s'", get_string_global_var(sql, "current_user"), seq->s->base.name);
@@ -338,7 +351,8 @@ static sql_rel *
 list_alter_seq(
 	sql_query *query,
 	dlist *qname,
-	dlist *options)
+	dlist *options,
+	bit if_exists)
 {
 	mvc *sql = query->sql;
 	dnode *n;
@@ -356,33 +370,33 @@ list_alter_seq(
 		switch(s->token) {
 		case SQL_TYPE:
 			if ((used&(1<<SEQ_TYPE)))
-				return sql_error(sql, 02, SQLSTATE(3F000) "ALTER SEQUENCE: AS type found should be used as most once");
+				return sql_error(sql, 02, SQLSTATE(3F000) "ALTER SEQUENCE: AS type should be specified at most once");
 			used |= (1<<SEQ_TYPE);
 			t = &s->data.lval->h->data.typeval;
 			break;
 		case SQL_START:
 			if ((used&(1<<SEQ_START)))
-				return sql_error(sql, 02, SQLSTATE(3F000) "ALTER SEQUENCE: START value should be passed as most once");
+				return sql_error(sql, 02, SQLSTATE(3F000) "ALTER SEQUENCE: START value should be specified at most once");
 			used |= (1<<SEQ_START);
 			if (is_lng_nil(s->data.l_val))
-				return sql_error(sql, 02, SQLSTATE(42000) "ALTER SEQUENCE: START must be non-NULL");
+				return sql_error(sql, 02, SQLSTATE(42000) "ALTER SEQUENCE: START value may not be NULL");
 			start = s->data.lval;
 			break;
 		case SQL_INC:
 			if ((used&(1<<SEQ_INC)))
-				return sql_error(sql, 02, SQLSTATE(3F000) "ALTER SEQUENCE: INCREMENT value should be passed as most once");
+				return sql_error(sql, 02, SQLSTATE(3F000) "ALTER SEQUENCE: INCREMENT value should be specified at most once");
 			used |= (1<<SEQ_INC);
 			if (is_lng_nil(s->data.l_val))
-				return sql_error(sql, 02, SQLSTATE(42000) "ALTER SEQUENCE: INCREMENT must be non-NULL");
+				return sql_error(sql, 02, SQLSTATE(42000) "ALTER SEQUENCE: INCREMENT value may not be NULL");
 			inc = s->data.l_val;
 			break;
 		case SQL_MINVALUE:
 			if ((used&(1<<SEQ_MIN)))
-				return sql_error(sql, 02, SQLSTATE(3F000) "ALTER SEQUENCE: MINVALUE or NO MINVALUE should be passed as most once");
+				return sql_error(sql, 02, SQLSTATE(3F000) "ALTER SEQUENCE: MINVALUE or NO MINVALUE should be specified at most once");
 			used |= (1<<SEQ_MIN);
 			if (s->type == type_lng) {
 				if (is_lng_nil(s->data.l_val))
-					return sql_error(sql, 02, SQLSTATE(42000) "ALTER SEQUENCE: MINVALUE must not be null");
+					return sql_error(sql, 02, SQLSTATE(42000) "ALTER SEQUENCE: MINVALUE may not be NULL");
 			}
 			assert(s->type == type_lng || (s->type == type_int && is_int_nil(s->data.i_val)));
 			min = s;
@@ -390,11 +404,11 @@ list_alter_seq(
 			break;
 		case SQL_MAXVALUE:
 			if ((used&(1<<SEQ_MAX)))
-				return sql_error(sql, 02, SQLSTATE(3F000) "ALTER SEQUENCE: MAXVALUE or NO MAXVALUE should be passed as most once");
+				return sql_error(sql, 02, SQLSTATE(3F000) "ALTER SEQUENCE: MAXVALUE or NO MAXVALUE should be specified at most once");
 			used |= (1<<SEQ_MAX);
 			if (s->type == type_lng) {
 				if (is_lng_nil(s->data.l_val))
-					return sql_error(sql, 02, SQLSTATE(42000) "ALTER SEQUENCE: MAXVALUE must not be null");
+					return sql_error(sql, 02, SQLSTATE(42000) "ALTER SEQUENCE: MAXVALUE may not be NULL");
 			}
 			assert(s->type == type_lng || (s->type == type_int && is_int_nil(s->data.i_val)));
 			// int_nil signals NO MAXVALUE
@@ -402,23 +416,23 @@ list_alter_seq(
 			break;
 		case SQL_CYCLE:
 			if ((used&(1<<SEQ_CYCLE)))
-				return sql_error(sql, 02, SQLSTATE(3F000) "ALTER SEQUENCE: CYCLE or NO CYCLE should be passed as most once");
+				return sql_error(sql, 02, SQLSTATE(3F000) "ALTER SEQUENCE: CYCLE or NO CYCLE should be specified at most once");
 			used |= (1<<SEQ_CYCLE);
 			cycle = s->data.i_val != 0;
 			break;
 		case SQL_CACHE:
 			if ((used&(1<<SEQ_CACHE)))
-				return sql_error(sql, 02, SQLSTATE(3F000) "ALTER SEQUENCE: CACHE value should be passed as most once");
+				return sql_error(sql, 02, SQLSTATE(3F000) "ALTER SEQUENCE: CACHE value should be specified at most once");
 			used |= (1<<SEQ_CACHE);
 			if (is_lng_nil(s->data.l_val))
-				return sql_error(sql, 02, SQLSTATE(42000) "ALTER SEQUENCE: CACHE must be non-NULL");
+				return sql_error(sql, 02, SQLSTATE(42000) "ALTER SEQUENCE: CACHE value may not be NULL");
 			cache = s->data.l_val;
 			break;
 		default:
 			assert(0);
 		}
 	}
-	return rel_alter_seq(query, qname, t, start, inc, min, max, cache, cycle);
+	return rel_alter_seq(query, qname, t, start, inc, min, max, cache, cycle, if_exists);
 }
 
 sql_rel *
@@ -436,7 +450,8 @@ rel_sequences(sql_query *query, symbol *s)
 /* mvc* sql */		sql,
 /* dlist* qname */	l->h->data.lval,
 /* dlist* options */	l->h->next->data.lval,
-/* bit bedropped */	(bit) (l->h->next->next->data.i_val != 0));
+/* bit bedropped */	(bit) (l->h->next->next->data.i_val != 0),
+/* if_not_exists */	(bit) (l->h->next->next->next->data.i_val != 0));
 		}
 		break;
 		case SQL_ALTER_SEQ:
@@ -446,7 +461,8 @@ rel_sequences(sql_query *query, symbol *s)
 			res = list_alter_seq(
 /* mvc* sql */		query,
 /* dlist* qname */	l->h->data.lval,
-/* dlist* options */	l->h->next->data.lval);
+/* dlist* options */	l->h->next->data.lval,
+/* bit if_exists */	(bit) (l->h->next->next->data.i_val != 0));
 		}
 		break;
 		case SQL_DROP_SEQ:
@@ -456,8 +472,15 @@ rel_sequences(sql_query *query, symbol *s)
 			char *seqname = qname_schema_object(l->h->data.lval);
 			sql_sequence *seq = NULL;
 
-			if (!(seq = find_sequence_on_scope(sql, sname, seqname, "DROP SEQUENCE")))
+			if (!(seq = find_sequence_on_scope(sql, sname, seqname, "DROP SEQUENCE"))) {
+				int if_exists = l->h->next->data.i_val;
+				if (if_exists) {
+					sql->errstr[0] = '\0'; /* reset sequence not found error */
+					sql->session->status = 0;
+					return rel_psm_block(sql->sa, new_exp_list(sql->sa));
+				}
 				return NULL;
+			}
 			res = rel_drop_seq(sql->sa, seq->s->base.name, seqname);
 		}
 		break;

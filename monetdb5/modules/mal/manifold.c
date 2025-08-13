@@ -57,71 +57,58 @@ typedef struct {
 
 // Loop through the first BAT
 // keep the last error message received
-#define MALfcn1(Type) (str (*) (Client, Type *, void *))
-#define MALfcn2(Type) (str (*) (Client, Type *, void *, void *))
-#define MALfcn3(Type) (str (*) (Client, Type *, void *, void *, void *))
-#define MALfcn4(Type) (str (*) (Client, Type *, void *, void *, void *, void *))
-#define MALfcn5(Type) (str (*) (Client, Type *, void *, void *, void *, void *, void *))
-#define ManifoldLoop(N, Type, ...)										\
-	do {																\
-		Type *v = (Type *) mut->args[0].first;							\
-		for (;;) {														\
-			msg = (*(MALfcn##N(Type) mut->pci->fcn))(mut->cntxt, v, __VA_ARGS__); \
-			if (msg)													\
-				break;													\
-			if (++oo == olimit)											\
-				break;													\
-			for (i = mut->fvar; i <= mut->lvar; i++) {					\
-				if (ATOMstorage(mut->args[i].type) == TYPE_void) {		\
-					args[i] = (void *) &mut->args[i].o;					\
-					mut->args[i].o++;									\
-				} else if (mut->args[i].size == 0) {					\
-					;													\
-				} else if (ATOMstorage(mut->args[i].type) < TYPE_str) {	\
-					args[i] += mut->args[i].size;						\
-				} else if (ATOMvarsized(mut->args[i].type)) {			\
-					mut->args[i].o++;									\
-					mut->args[i].s = (str *) BUNtvar(mut->args[i].bi, mut->args[i].o); \
-					args[i] = (void *) &mut->args[i].s;					\
-				} else {												\
-					mut->args[i].o++;									\
-					mut->args[i].s = (str *) BUNtloc(mut->args[i].bi, mut->args[i].o); \
-					args[i] = (void *) &mut->args[i].s;					\
-				}														\
-			}															\
-			v++;														\
-		}																\
-	} while (0)
+#define MALfcn1 (str (*) (Client, void *, void *))
+#define MALfcn2 (str (*) (Client, void *, void *, void *))
+#define MALfcn3 (str (*) (Client, void *, void *, void *, void *))
+#define MALfcn4 (str (*) (Client, void *, void *, void *, void *, void *))
+#define MALfcn5 (str (*) (Client, void *, void *, void *, void *, void *, void *))
+#define MALfcn1ptr (str (*) (Client, void **, void *))
+#define MALfcn2ptr (str (*) (Client, void **, void *, void *))
+#define MALfcn3ptr (str (*) (Client, void **, void *, void *, void *))
+#define MALfcn4ptr (str (*) (Client, void **, void *, void *, void *, void *))
+#define MALfcn5ptr (str (*) (Client, void **, void *, void *, void *, void *, void *))
 
-// The target BAT tail type determines the result variable
-#ifdef HAVE_HGE
-#define Manifoldbody_hge(N,...)								\
-	case TYPE_hge: ManifoldLoop(N,hge,__VA_ARGS__); break
-#else
-#define Manifoldbody_hge(N,...)
-#endif
 #define Manifoldbody(N,...)												\
 	do {																\
-		switch (ATOMstorage(mut->args[0].b->ttype)) {					\
-		case TYPE_bte: ManifoldLoop(N,bte,__VA_ARGS__); break;			\
-		case TYPE_sht: ManifoldLoop(N,sht,__VA_ARGS__); break;			\
-		case TYPE_int: ManifoldLoop(N,int,__VA_ARGS__); break;			\
-		case TYPE_lng: ManifoldLoop(N,lng,__VA_ARGS__); break;			\
-		Manifoldbody_hge(N,__VA_ARGS__);								\
-		case TYPE_oid: ManifoldLoop(N,oid,__VA_ARGS__); break;			\
-		case TYPE_flt: ManifoldLoop(N,flt,__VA_ARGS__); break;			\
-		case TYPE_dbl: ManifoldLoop(N,dbl,__VA_ARGS__); break;			\
-		case TYPE_uuid: ManifoldLoop(N,uuid,__VA_ARGS__); break;		\
-		case TYPE_str:													\
-		default: {														\
+		if (ATOMextern(mut->args[0].b->ttype)) {						\
 			for (;;) {													\
-			    msg = (*(MALfcn##N(str) mut->pci->fcn))(mut->cntxt, &y, __VA_ARGS__); \
+				void *v = NULL;											\
+				msg = (*(MALfcn##N##ptr mut->pci->fcn))(mut->cntxt, &v, __VA_ARGS__); \
 				if (msg)												\
-					break;												\
-				if (bunfastapp(mut->args[0].b, (void*) y) != GDK_SUCCEED) \
 					goto bunins_failed;									\
-				/*GDKfree(y);*/												\
-				y = NULL;												\
+				if (bunfastapp(mut->args[0].b, v) != GDK_SUCCEED) {		\
+					/*GDKfree(v);*/											\
+					goto bunins_failed;									\
+				}														\
+				/*GDKfree(v);*/											\
+				if (++oo == olimit)										\
+					break;												\
+				for (i = mut->fvar; i <= mut->lvar; i++) {				\
+					if (ATOMstorage(mut->args[i].type) == TYPE_void) {	\
+						args[i] = (void *) &mut->args[i].o;				\
+						mut->args[i].o++;								\
+					} else if(mut->args[i].size == 0) {					\
+						;												\
+					} else if (ATOMstorage(mut->args[i].type) < TYPE_str) {	\
+						args[i] += mut->args[i].size;					\
+					} else if (ATOMvarsized(mut->args[i].type)) {		\
+						mut->args[i].o++;								\
+						mut->args[i].s = (str *) BUNtvar(mut->args[i].bi, mut->args[i].o); \
+						args[i] = (void *) &mut->args[i].s;				\
+					} else {											\
+						mut->args[i].o++;								\
+						mut->args[i].s = (str *) BUNtloc(mut->args[i].bi, mut->args[i].o); \
+						args[i] = (void*) &mut->args[i].s;				\
+					}													\
+				}														\
+			}															\
+		} else {														\
+			void *v = mut->args[0].first;								\
+			size_t w = mut->args[0].b->twidth;							\
+			for (;;) {													\
+				msg = (*(MALfcn##N mut->pci->fcn))(mut->cntxt, v, __VA_ARGS__);		\
+				if (msg)												\
+					goto bunins_failed;									\
 				if (++oo == olimit)										\
 					break;												\
 				for (i = mut->fvar; i <= mut->lvar; i++) {				\
@@ -142,12 +129,10 @@ typedef struct {
 						args[i] = (void*) &mut->args[i].s;				\
 					}													\
 				}														\
+				v = (void *) ((char *) v + w); /* v += w if v were char * */ \
 			}															\
-			break;														\
 		}																\
-		}																\
-		mut->args[0].b->theap->dirty = true;							\
-	} while (0)
+	 } while (0)
 
 // single argument is preparatory step for GDK_mapreduce
 // Only the last error message is returned, the value of
@@ -157,7 +142,8 @@ MANIFOLDjob(allocator *ma, MULTItask *mut)
 {
 	int i;
 	char **args;
-	str y = NULL, msg = MAL_SUCCEED;
+	//str y = NULL;
+	str msg = MAL_SUCCEED;
 	oid oo = 0, olimit = mut->args[mut->fvar].cnt;
 
 	if (olimit == 0)

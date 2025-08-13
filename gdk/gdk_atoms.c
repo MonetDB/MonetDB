@@ -1245,10 +1245,6 @@ static int
 UUIDcompare(const void *L, const void *R)
 {
 	const uuid *l = L, *r = R;
-	if (is_uuid_nil(*r))
-		return !is_uuid_nil(*l);
-	if (is_uuid_nil(*l))
-		return -1;
 	return memcmp(l->u, r->u, UUID_SIZE);
 }
 

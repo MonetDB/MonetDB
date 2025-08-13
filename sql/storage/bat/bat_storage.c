@@ -884,44 +884,7 @@ bind_ubat(sql_trans *tr, sql_delta *d, int access, int type, size_t cnt)
 }
 
 static BAT *
-bind_ucol(sql_trans *tr, sql_column *c, int access, size_t cnt)
-{
-	lock_column(tr->store, c->base.id);
-	sql_delta *d = col_timestamp_delta(tr, c);
-	int type = c->type.type->localtype;
-
-	if (!d) {
-		unlock_column(tr->store, c->base.id);
-		return NULL;
-	}
-	if (d->cs.st == ST_DICT) {
-		BAT *b = quick_descriptor(d->cs.bid);
-
-		type = b->ttype;
-	}
-	BAT *bn = bind_ubat(tr, d, access, type, cnt);
-	unlock_column(tr->store, c->base.id);
-	return bn;
-}
-
-static BAT *
-bind_uidx(sql_trans *tr, sql_idx * i, int access, size_t cnt)
-{
-	lock_column(tr->store, i->base.id);
-	int type = oid_index(i->type)?TYPE_oid:TYPE_lng;
-	sql_delta *d = idx_timestamp_delta(tr, i);
-
-	if (!d) {
-		unlock_column(tr->store, i->base.id);
-		return NULL;
-	}
-	BAT *bn = bind_ubat(tr, d, access, type, cnt);
-	unlock_column(tr->store, i->base.id);
-	return bn;
-}
-
-static BAT *
-cs_bind_bat( column_storage *cs, int access, size_t cnt, bool view)
+cs_bind_bat(column_storage *cs, int access, size_t cnt, bool view)
 {
 	BAT *b;
 
@@ -1012,8 +975,7 @@ bind_col(sql_trans *tr, sql_column *c, int access)
 	if (!d)
 		return NULL;
 	size_t cnt = count_col(tr, c, 0);
-	if (access == RD_UPD_ID || access == RD_UPD_VAL)
-		return bind_ucol(tr, c, access, cnt);
+	assert (access != RD_UPD_ID && access != RD_UPD_VAL);
 	BAT *b = cs_bind_bat( &d->cs, access, cnt, true);
 	assert(!b || ((c->storage_type && access != RD_EXT) || b->ttype == c->type.type->localtype) || (access == QUICK && b->ttype < 0));
 	return b;
@@ -1033,7 +995,7 @@ bind_col_no_view(sql_trans *tr, sql_column *c, int access)
 	if (access == RD_UPD_VAL) {
 		size_t cnt = count_col(tr, c, 0);
 		/* TODO: needs work for using non view u-bats! */
-		return bind_ucol(tr, c, access, cnt);
+		return cs_bind_bat(&d->cs, access, cnt, false);
 	}
 	BAT *b = cs_bind_bat( &d->cs, access, cnt, false);
 	assert(!b || ((c->storage_type && access != RD_EXT) || b->ttype == c->type.type->localtype) || (access == QUICK && b->ttype < 0));
@@ -1051,8 +1013,7 @@ bind_idx(sql_trans *tr, sql_idx * i, int access)
 	if (!d)
 		return NULL;
 	size_t cnt = count_idx(tr, i, 0);
-	if (access == RD_UPD_ID || access == RD_UPD_VAL)
-		return bind_uidx(tr, i, access, cnt);
+	assert (access != RD_UPD_ID && access != RD_UPD_VAL);
 	return cs_bind_bat( &d->cs, access, cnt, true);
 }
 
@@ -2922,7 +2883,7 @@ static int
 col_stats(sql_trans *tr, sql_column *c, bool *nonil, bool *unique, double *unique_est, ValPtr min, ValPtr max)
 {
 	int ok = 0;
-	BAT *b = NULL, *off = NULL, *upv = NULL;
+	BAT *b = NULL, *off = NULL;
 	sql_delta *d = NULL;
 
 	(void) tr;
@@ -2971,17 +2932,8 @@ col_stats(sql_trans *tr, sql_column *c, bool *nonil, bool *unique, double *uniqu
 			}
 			bat_iterator_end(&bi);
 			bat_destroy(b);
-			if (*nonil && d->cs.ucnt > 0) {
-				/* This could use a quick descriptor */
-				if (!(upv = bind_col_no_view(tr, c, RD_UPD_VAL))) {
-					*nonil = false;
-				} else {
-					MT_lock_set(&upv->theaplock);
-					*nonil &= upv->tnonil && !upv->tnil;
-					MT_lock_unset(&upv->theaplock);
-					bat_destroy(upv);
-				}
-			}
+			if (*nonil && d->cs.ucnt > 0)
+				*nonil = false;
 		}
 	}
 	return ok;

@@ -2154,7 +2154,7 @@ _rel_unnest(visitor *v, sql_rel *rel)
 	sql_rel *l = rel->l;
 	sql_rel *r = rel->r;
 	/* try to push select up */
-	if (!rel_is_ref(rel) && ((is_simple_project(rel->op) && !rel->r && l && is_select(l->op) && exps_have_freevar(v->sql, l->exps) && !rel_is_ref(l)) ||
+	if (!rel_is_ref(rel) && ((is_simple_project(rel->op) && !exps_have_fallible(rel->exps) && !rel->r && l && is_select(l->op) && exps_have_freevar(v->sql, l->exps) && !rel_is_ref(l)) ||
 	    (is_join(rel->op) && l && is_select(l->op) && exps_have_freevar(v->sql, l->exps) && !rel_is_ref(l)) ||
 	    (is_join(rel->op) && r && is_select(r->op) && exps_have_freevar(v->sql, r->exps) && !rel_is_ref(r)))) {
 		rel = push_up_select2(v, rel);
@@ -4259,7 +4259,7 @@ add_null_projects(visitor *v, sql_rel *prel, sql_rel *irel, bool end)
 static sql_rel *
 rewrite_outer2inner_union(visitor *v, sql_rel *rel)
 {
-	if (is_outerjoin(rel->op) && rel->flag != MERGE_LEFT) {
+	if (is_outerjoin(rel->op)) {
 		int nrcols = rel->nrcols;
 
 		nrcols = include_tid(rel->l);

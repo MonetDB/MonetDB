@@ -202,7 +202,8 @@ rel_insert_join_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *inserts)
 	}
 
 	pexps = rel_projections(sql, ins, NULL, 1, 1);
-	ins = rel_crossproduct(sql->sa, ins, rt, op_left/*op_join*/);
+	ins = rel_crossproduct(sql->sa, ins, rt, op_left);
+	set_single(ins);
 	ins->exps = join_exps;
 	ins = rel_project(sql->sa, ins, pexps);
 	/* add row numbers */
@@ -850,7 +851,8 @@ rel_update_join_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *updates)
 	}
 
 	pexps = rel_projections(sql, ups, NULL, 1, 1);
-	ups = rel_crossproduct(sql->sa, ups, rt, op_left/*op_join*/);
+	ups = rel_crossproduct(sql->sa, ups, rt, op_left);
+	set_single(ups);
 	ups->exps = join_exps;
 	ups = rel_project(sql->sa, ups, pexps);
 	/* add row numbers */
@@ -876,8 +878,6 @@ rel_update_join_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *updates)
 static sql_rel *
 rel_update_idxs(mvc *sql, const char *alias, sql_table *t, sql_rel *relup)
 {
-	sql_rel *p = relup->r;
-
 	if (!ol_length(t->idxs))
 		return relup;
 
@@ -900,17 +900,6 @@ rel_update_idxs(mvc *sql, const char *alias, sql_table *t, sql_rel *relup)
 		} else if (i->type == join_idx) {
 			rel_update_join_idx(sql, alias, i, relup);
 		}
-	}
-	if (relup->r != p) {
-		sql_rel *r = rel_create(sql->sa);
-		if(!r)
-			return NULL;
-		r->op = op_update;
-		r->l = rel_dup(p);
-		r->r = relup;
-		r->card = relup->card;
-		r->flag |= UPD_COMP; /* mark as special update */
-		return r;
 	}
 	return relup;
 }
@@ -1046,7 +1035,6 @@ update_generate_assignments(sql_query *query, sql_table *t, sql_rel *r, sql_rel 
 					reset_processed(rel_val);
 				}
 				r = rel_crossproduct(sql->sa, r, rel_val, op_left);
-				r->flag |= MERGE_LEFT;
 				set_dependent(r);
 				set_processed(r);
 				if (single) {
@@ -1457,6 +1445,11 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 	if (rel_name(joined) && strcmp(bt_name, rel_name(joined)) == 0)
 		return sql_error(sql, 02, SQLSTATE(42000) "MERGE: '%s' on both sides of the joining condition", bt_name);
 
+	join_rel = rel_crossproduct(sql->sa, bt, joined, op_left);
+	if (!(join_rel = rel_logical_exp(query, join_rel, search_cond, sql_where | sql_join | sql_merge)))
+		return NULL;
+	set_processed(join_rel);
+
 	for (dnode *m = merge_list->h; m; m = m->next) {
 		symbol *sym = m->data.sym, *opt_search, *action;
 		tokens token = sym->token;
@@ -1474,18 +1467,13 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 			processed |= MERGE_UPDATE_DELETE;
 
 			rel_base_use_tid(sql, bt);
+
+			if ((processed & MERGE_INSERT) == MERGE_INSERT)
+				join_rel = rel_dup(join_rel);
+
 			if (uptdel == SQL_UPDATE) {
 				if (!update_allowed(sql, t, tname, "MERGE", "update", 0))
 					return NULL;
-				if ((processed & MERGE_INSERT) == MERGE_INSERT) {
-					join_rel = rel_dup(join_rel);
-				} else {
-					join_rel = rel_crossproduct(sql->sa, bt, joined, op_left);
-					if (!(join_rel = rel_logical_exp(query, join_rel, search_cond, sql_where | sql_join | sql_merge)))
-						return NULL;
-					set_processed(join_rel);
-				}
-
 				sel_rel = join_rel;
 				if (opt_search && !(sel_rel = rel_logical_exp(query, sel_rel, opt_search, sql_where | sql_merge)))
 					return NULL;
@@ -1494,15 +1482,6 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 			} else if (uptdel == SQL_DELETE) {
 				if (!update_allowed(sql, t, tname, "MERGE", "delete", 1))
 					return NULL;
-				if ((processed & MERGE_INSERT) == MERGE_INSERT) {
-					join_rel = rel_dup(join_rel);
-				} else {
-					join_rel = rel_crossproduct(sql->sa, bt, joined, op_left);
-					if (!(join_rel = rel_logical_exp(query, join_rel, search_cond, sql_where | sql_join | sql_merge)))
-						return NULL;
-					set_processed(join_rel);
-				}
-
 				sql_exp *ne = exp_column(sql->sa, bt_name, TID, sql_fetch_localtype(TYPE_oid), CARD_MULTI, 0, 1, 1);
 				ne->nid = rel_base_nid(bt, NULL);
 				ne->alias.label = ne->nid;
@@ -1522,25 +1501,18 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 				return sql_error(sql, 02, SQLSTATE(42000) "MERGE: only one WHEN NOT MATCHED clause is allowed");
 			processed |= MERGE_INSERT;
 
+			if ((processed & MERGE_UPDATE_DELETE) == MERGE_UPDATE_DELETE)
+				join_rel = rel_dup(join_rel);
+
 			assert(action->token == SQL_INSERT);
 			if (!insert_allowed(sql, t, tname, "MERGE", "insert"))
 				return NULL;
-			if ((processed & MERGE_UPDATE_DELETE) == MERGE_UPDATE_DELETE) {
-				join_rel = rel_dup(join_rel);
-			} else {
-				join_rel = rel_crossproduct(sql->sa, bt, joined, op_left);
-				if (!(join_rel = rel_logical_exp(query, join_rel, search_cond, sql_where | sql_join | sql_merge)))
-					return NULL;
-				set_processed(join_rel);
-			}
-
 			sel_rel = join_rel;
 			if (opt_search && !(sel_rel = rel_logical_exp(query, sel_rel, opt_search, sql_where | sql_merge)))
 				return NULL;
 			extra_project = rel_project(sql->sa, sel_rel, rel_projections(sql, joined, NULL, 1, 0));
 			if (!(insert = merge_generate_inserts(query, t, extra_project, sts->h->data.lval, sts->h->next->data.sym)))
 				return NULL;
-
 			sql_rel *ibt = rel_dup(bt);
 			rel_base_use_all(query->sql, ibt);
 			ibt = rewrite_basetable(query->sql, ibt, false);
@@ -1554,7 +1526,6 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 
 	if (!join_rel)
 		return sql_error(sql, 02, SQLSTATE(42000) "MERGE: an insert or update or delete clause is required");
-	join_rel->flag |= MERGE_LEFT;
 	if (processed == (MERGE_UPDATE_DELETE | MERGE_INSERT)) {
 		res = rel_merge(sql, rel_dup(join_rel), upd_del, insert);
 	} else if ((processed & MERGE_UPDATE_DELETE) == MERGE_UPDATE_DELETE) {

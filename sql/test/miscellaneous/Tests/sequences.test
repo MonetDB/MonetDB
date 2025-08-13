@@ -135,3 +135,83 @@ SELECT next value for ups5 from generate_series(1,20)
 statement ok
 rollback
 
+
+statement ok
+CREATE SCHEMA sqt
+
+statement ok
+SET SCHEMA sqt
+
+statement error 42000!syntax error, unexpected EXISTS, expecting NOT_EXISTS in: "create sequence if exists"
+create sequence IF EXISTS sqt.ups AS smallint START WITH 0 INCREMENT BY 1 MINVALUE 0 MAXVALUE 10 CYCLE
+
+statement ok
+create sequence IF not EXISTS sqt.ups AS smallint START WITH 0 INCREMENT BY 1 MINVALUE 0 MAXVALUE 10 CYCLE
+
+statement ok
+create sequence IF not EXISTS sqt.ups AS smallint START WITH 1 INCREMENT BY 2 MINVALUE 1 MAXVALUE 11 CYCLE
+
+statement ok
+create sequence IF not EXISTS ups START WITH 0 INCREMENT BY 1 MINVALUE 0 MAXVALUE 10 CYCLE
+
+statement error 42000!syntax error, unexpected NOT, expecting NOT_EXISTS in: "create sequence if not exist"
+create sequence if not exist ups2 START WITH -10 INCREMENT BY 1 MINVALUE -10 MAXVALUE 0 CYCLE
+
+statement ok
+create sequence if not exists ups2 START WITH -10 INCREMENT BY 1 MINVALUE -10 MAXVALUE 0 CYCLE
+
+statement ok
+CREATE	SEQUENCE	IF	NOT	EXISTS	UPS2	START	WITH	-10	INCREMENT	BY	-10	
+
+statement error 42000!syntax error, unexpected NOT_EXISTS, expecting EXISTS in: "alter	sequence	if	not	exists"
+ALTER	SEQUENCE	IF	NOT	EXISTS	UPS2	START	WITH	-20	INCREMENT	BY	-1	
+
+statement error 42000!ALTER SEQUENCE: cannot set sequence start to a value less than the minimum (-20 < -10)
+ALTER	SEQUENCE	IF		EXISTS	UPS2	RESTART	WITH	-20	INCREMENT	BY	-1	
+
+statement ok
+alter sequence  ups2 AS tinyint
+
+statement error 42000!ALTER SEQUENCE: cannot set sequence start to a value higher than the maximum (2 > 0)
+alter sequence if exists ups2 AS tinyint RESTART WITH (select 1*1/1+1)
+
+statement error 3F000!ALTER SEQUENCE: AS type should be specified at most once
+alter sequence if exists ups2 AS tinyint RESTART WITH (select 1*1/1+1) AS integer
+
+
+
+-- test if exists
+statement ok
+DROP SEQUENCE IF EXISTS "sqt"."ups"
+
+statement ok
+DROP SEQUENCE IF EXISTS sqt.ups
+
+statement ok
+DROP SEQUENCE IF EXISTS sqt."ups"
+
+statement error 42000!DROP SEQUENCE: no such sequence 'sqt'.'ups'
+DROP SEQUENCE sqt.ups
+
+statement ok
+DROP SEQUENCE IF EXISTS "ups"
+
+
+statement ok
+DROP SEQUENCE IF EXISTS "sqt"."ups2"
+
+statement error 42000!syntax error, unexpected CASCADE, expecting SCOLON or ':' in: "drop sequence if exists ups2 cascade"
+DROP SEQUENCE IF EXISTS ups2 CASCADE
+
+statement error 42000!DROP SEQUENCE: no such sequence 'sqt'.'ups2'
+DROP SEQUENCE "sqt"."ups2"
+
+statement error 42000!DROP SEQUENCE: no such sequence 'ups2'
+DROP SEQUENCE ups2
+
+
+statement ok
+SET SCHEMA SYS
+
+statement ok
+DROP SCHEMA SQT CASCADE

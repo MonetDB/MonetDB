@@ -15,12 +15,7 @@
  * PCRE library interface
  * The  PCRE library is a set of functions that implement regular
  * expression pattern matching using the same syntax  and  semantics  as  Perl,
- * with  just  a  few  differences.  The  current  implementation of PCRE
- * (release 4.x) corresponds approximately with Perl 5.8, including  support
- * for  UTF-8  encoded  strings.   However,  this support has to be
- * explicitly enabled; it is not the default.
- *
- * ftp://ftp.csx.cam.ac.uk/pub/software/programming/pcre
+ * with  just  a  few  differences.
  */
 #include "monetdb_config.h"
 #include <string.h>
@@ -34,19 +29,15 @@
 #include <wctype.h>
 
 #ifdef HAVE_LIBPCRE
-#include <pcre.h>
-#ifndef PCRE_STUDY_JIT_COMPILE
-/* old library version on e.g. EPEL 6 */
-#define pcre_free_study(x)		pcre_free(x)
-#define PCRE_STUDY_JIT_COMPILE	0
-#endif
+#define PCRE2_CODE_UNIT_WIDTH 8
+#include <pcre2.h>
 #define JIT_COMPILE_MIN	1024	/* when to try JIT compilation of patterns */
 
 #else
 
 #include <regex.h>
 
-typedef regex_t pcre;
+typedef regex_t pcre2_code;
 #endif
 
 /* current implementation assumes simple %keyword% [keyw%]* */
@@ -316,26 +307,6 @@ mnre_create(allocator *ma, const char *pat, bool caseignore, uint32_t esc)
 	return NULL;
 }
 
-#ifdef HAVE_LIBPCRE
-static str
-pcre_compile_wrap(pcre **res, const char *pattern, bit insensitive)
-{
-	pcre *r;
-	const char *err_p = NULL;
-	int errpos = 0;
-	int options = PCRE_UTF8 | PCRE_NO_UTF8_CHECK | PCRE_MULTILINE;
-	if (insensitive)
-		options |= PCRE_CASELESS;
-
-	if ((r = pcre_compile(pattern, options, &err_p, &errpos, NULL)) == NULL) {
-		throw(MAL, "pcre.compile", OPERATION_FAILED
-			  " with\n'%s'\nat %d in\n'%s'.\n", err_p, errpos, pattern);
-	}
-	*res = r;
-	return MAL_SUCCEED;
-}
-#endif
-
 /* maximum number of back references and quoted \ or $ in replacement string */
 #define MAX_NR_REFS		20
 
@@ -346,160 +317,27 @@ struct backref {
 };
 
 #ifdef HAVE_LIBPCRE
-/* fill in parameter backrefs (length maxrefs) with information about
- * back references in the replacement string; a back reference is a
- * dollar or backslash followed by a number */
-static int
-parse_replacement(const char *replacement, int len_replacement,
-				  struct backref *backrefs, int maxrefs)
+static PCRE2_UCHAR *
+single_replace(allocator ma, pcre2_code *pcre_code, pcre2_match_data *match_data,
+			   PCRE2_SPTR origin_str, PCRE2_SIZE len_origin_str,
+			   uint32_t exec_options,
+			   PCRE2_SPTR replacement, PCRE2_SIZE len_replacement,
+			   PCRE2_UCHAR *result, PCRE2_SIZE *max_result)
 {
-	int nbackrefs = 0;
-
-	for (int i = 0; i < len_replacement && nbackrefs < maxrefs; i++) {
-		if (replacement[i] == '$' || replacement[i] == '\\') {
-			char *endptr;
-			backrefs[nbackrefs].idx = strtol(replacement + i + 1, &endptr, 10);
-			if (endptr > replacement + i + 1) {
-				int k = (int) (endptr - (replacement + i + 1));
-				backrefs[nbackrefs].start = i;
-				backrefs[nbackrefs].end = i + k + 1;
-				nbackrefs++;
-			} else if (replacement[i] == replacement[i + 1]) {
-				/* doubled $ or \, we must copy just one to the output */
-				backrefs[nbackrefs].idx = INT_MAX;	/* impossible value > 0 */
-				backrefs[nbackrefs].start = i;
-				backrefs[nbackrefs].end = i + 1;
-				i++;			/* don't look at second $ or \ again */
-				nbackrefs++;
-			}
-			/* else: $ or \ followed by something we don't recognize,
-			 * so just leave it */
-		}
+	(void) ma;
+	int j = pcre2_substitute(pcre_code, origin_str, len_origin_str, 0, exec_options | PCRE2_SUBSTITUTE_OVERFLOW_LENGTH, match_data, NULL, replacement, len_replacement, result, max_result);
+	//if (j == PCRE2_ERROR_NOMEMORY) {
+	//	GDKfree(result);
+	//	result = GDKmalloc(*max_result);
+	//	if (result == NULL)
+	//		return NULL;
+	//	/* try again with bigger result buffer */
+	//	j = pcre2_substitute(pcre_code, origin_str, len_origin_str, 0, exec_options, match_data, NULL, replacement, len_replacement, result, max_result);
+	//}
+	if (j < 0) {
+		//GDKfree(result);
+		return NULL;
 	}
-	return nbackrefs;
-}
-
-static char *
-single_replace(allocator *ma, pcre *pcre_code, pcre_extra *extra,
-			   const char *origin_str, int len_origin_str,
-			   int exec_options, int *ovector, int ovecsize,
-			   const char *replacement, int len_replacement,
-			   struct backref *backrefs, int nbackrefs,
-			   bool global, char *result, int *max_result)
-{
-	int offset = 0;
-	int len_result = 0;
-	int addlen;
-	int empty_match_correction = 0;
-	char *tmp;
-
-	do {
-		int j = pcre_exec(pcre_code, extra, origin_str, len_origin_str, offset,
-						  exec_options, ovector, ovecsize);
-		if (j <= 0)
-			break;
-
-		empty_match_correction = ovector[0] == ovector[1] ? 1 : 0;
-
-		// calculate the length of the string that will be appended to result
-		addlen = ovector[0] - offset
-				+ (nbackrefs == 0 ? len_replacement : 0) + empty_match_correction;
-		if (len_result + addlen >= *max_result) {
-			tmp = ma_realloc(ma, result, len_result + addlen + 1, len_result);
-			if (tmp == NULL) {
-				//GDKfree(result);
-				return NULL;
-			}
-			result = tmp;
-			*max_result = len_result + addlen + 1;
-		}
-		// append to the result the parts of the original string that are left unchanged
-		if (ovector[0] > offset) {
-			strncpy(result + len_result, origin_str + offset,
-					ovector[0] - offset);
-			len_result += ovector[0] - offset;
-		}
-		// append to the result the replacement of the matched string
-		if (nbackrefs == 0) {
-			strncpy(result + len_result, replacement, len_replacement);
-			len_result += len_replacement;
-		} else {
-			int prevend = 0;
-			for (int i = 0; i < nbackrefs; i++) {
-				int off, len;
-				if (backrefs[i].idx >= ovecsize / 3) {
-					/* out of bounds, replace with empty string */
-					off = 0;
-					len = 0;
-				} else {
-					off = ovector[backrefs[i].idx * 2];
-					len = ovector[backrefs[i].idx * 2 + 1] - off;
-				}
-				addlen = backrefs[i].start - prevend + len;
-				if (len_result + addlen >= *max_result) {
-					tmp = ma_realloc(ma, result, len_result + addlen + 1, len_result);
-					if (tmp == NULL) {
-						//GDKfree(result);
-						return NULL;
-					}
-					result = tmp;
-					*max_result = len_result + addlen + 1;
-				}
-				if (backrefs[i].start > prevend) {
-					strncpy(result + len_result, replacement + prevend,
-							backrefs[i].start - prevend);
-					len_result += backrefs[i].start - prevend;
-				}
-				if (len > 0) {
-					strncpy(result + len_result, origin_str + off, len);
-					len_result += len;
-				}
-				prevend = backrefs[i].end;
-			}
-			/* copy rest of replacement string (after last backref) */
-			addlen = len_replacement - prevend;
-			if (addlen > 0) {
-				if (len_result + addlen >= *max_result) {
-					tmp = ma_realloc(ma, result, len_result + addlen + 1, len_result);
-					if (tmp == NULL) {
-						//GDKfree(result);
-						return NULL;
-					}
-					result = tmp;
-					*max_result = len_result + addlen + 1;
-				}
-				strncpy(result + len_result, replacement + prevend, addlen);
-				len_result += addlen;
-			}
-		}
-		// In case of an empty match just advance the offset by 1
-		offset = ovector[1] + empty_match_correction;
-		// and copy the character that we just advanced over
-		if (empty_match_correction) {
-			strncpy(result + len_result, origin_str + ovector[1], 1);
-			++len_result;
-		}
-		// before we loop around check with the offset - 1 if we had an empty match
-		// since we manually advanced the offset by one. otherwise we gonna skip a
-		// replacement at the end of the string
-	} while ((offset - empty_match_correction) < len_origin_str && global);
-
-	if (offset < len_origin_str) {
-		addlen = len_origin_str - offset;
-		if (len_result + addlen >= *max_result) {
-			tmp = ma_realloc(ma, result, len_result + addlen + 1, len_result);
-			if (tmp == NULL) {
-				//GDKfree(result);
-				return NULL;
-			}
-			result = tmp;
-			*max_result = len_result + addlen + 1;
-		}
-		strncpy(result + len_result, origin_str + offset, addlen);
-		len_result += addlen;
-	}
-	/* null terminate string */
-	result[len_result] = '\0';
 	return result;
 }
 #endif
@@ -510,36 +348,33 @@ pcre_replace(allocator *ma, str *res, const char *origin_str, const char *patter
 {
 	(void) ma;
 #ifdef HAVE_LIBPCRE
-	const char *err_p = NULL;
-	pcre *pcre_code = NULL;
-	pcre_extra *extra;
-	char *tmpres;
-	int max_result;
-	int i, errpos = 0;
-	int compile_options = PCRE_UTF8 | PCRE_NO_UTF8_CHECK;
-	int exec_options = PCRE_NOTEMPTY | PCRE_NO_UTF8_CHECK;
-	int *ovector, ovecsize;
-	int len_origin_str = (int) strlen(origin_str);
-	int len_replacement = (int) strlen(replacement);
-	struct backref backrefs[MAX_NR_REFS];
-	int nbackrefs = 0;
+	int err = 0;
+	pcre2_code *pcre_code = NULL;
+	pcre2_match_data *match_data;
+	PCRE2_UCHAR *tmpres;
+	PCRE2_SIZE max_result;
+	PCRE2_SIZE errpos = 0;
+	uint32_t compile_options = PCRE2_UTF | PCRE2_NO_UTF_CHECK;
+	uint32_t exec_options = PCRE2_NOTEMPTY | PCRE2_NO_UTF_CHECK;
+	PCRE2_SIZE len_origin_str = (PCRE2_SIZE) strlen(origin_str);
+	PCRE2_SIZE len_replacement = (PCRE2_SIZE) strlen(replacement);
 
 	while (*flags) {
 		switch (*flags) {
 		case 'e':
-			exec_options &= ~PCRE_NOTEMPTY;
+			exec_options &= ~PCRE2_NOTEMPTY;
 			break;
 		case 'i':
-			compile_options |= PCRE_CASELESS;
+			compile_options |= PCRE2_CASELESS;
 			break;
 		case 'm':
-			compile_options |= PCRE_MULTILINE;
+			compile_options |= PCRE2_MULTILINE;
 			break;
 		case 's':
-			compile_options |= PCRE_DOTALL;
+			compile_options |= PCRE2_DOTALL;
 			break;
 		case 'x':
-			compile_options |= PCRE_EXTENDED;
+			compile_options |= PCRE2_EXTENDED;
 			break;
 		default:
 			throw(MAL, global ? "pcre.replace" : "pcre.replace_first",
@@ -549,60 +384,44 @@ pcre_replace(allocator *ma, str *res, const char *origin_str, const char *patter
 		flags++;
 	}
 
-	if ((pcre_code = pcre_compile(pattern, compile_options, &err_p, &errpos, NULL)) == NULL) {
+	if (global)
+		exec_options |= PCRE2_SUBSTITUTE_GLOBAL;
+	pcre_code = pcre2_compile((PCRE2_SPTR) pattern, PCRE2_ZERO_TERMINATED,
+							  compile_options, &err, &errpos, NULL);
+	if (pcre_code == NULL) {
+		PCRE2_UCHAR errbuf[256];
+		pcre2_get_error_message(err, errbuf, sizeof(errbuf));
 		throw(MAL, global ? "pcre.replace" : "pcre.replace_first",
 			  OPERATION_FAILED
 			  ": pcre compile of pattern (%s) failed at %d with\n'%s'.\n",
-			  pattern, errpos, err_p);
+			  pattern, (int) errpos, (char *) errbuf);
 	}
-
-	/* Since the compiled pattern is going to be used several times, it is
-	 * worth spending more time analyzing it in order to speed up the time
-	 * taken for matching.
-	 */
-	extra = pcre_study(pcre_code, 0, &err_p);
-	if (err_p != NULL) {
-		pcre_free(pcre_code);
-		throw(MAL, global ? "pcre.replace" : "pcre.replace_first",
-			  OPERATION_FAILED
-			  ": pcre study of pattern (%s) failed with '%s'.\n", pattern,
-			  err_p);
+	match_data = pcre2_match_data_create_from_pattern(pcre_code, NULL);
+	if (match_data == NULL) {
+		pcre2_code_free(pcre_code);
+		throw(MAL, "regexp.rematch", MAL_MALLOC_FAIL);
 	}
-	pcre_fullinfo(pcre_code, extra, PCRE_INFO_CAPTURECOUNT, &i);
-	ovecsize = (i + 1) * 3;
-	if ((ovector = (int *) ma_alloc(ma, sizeof(int) * ovecsize)) == NULL) {
-		pcre_free_study(extra);
-		pcre_free(pcre_code);
-		throw(MAL, global ? "pcre.replace" : "pcre.replace_first",
-			  SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	}
-
-	/* identify back references in the replacement string */
-	nbackrefs = parse_replacement(replacement, len_replacement,
-								  backrefs, MAX_NR_REFS);
 
 	max_result = len_origin_str + 1;
 	tmpres = ma_alloc(ma, max_result);
 	if (tmpres == NULL) {
-		//GDKfree(ovector);
-		pcre_free_study(extra);
-		pcre_free(pcre_code);
+		pcre2_match_data_free(match_data);
+		pcre2_code_free(pcre_code);
 		throw(MAL, global ? "pcre.replace" : "pcre.replace_first",
 			  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
-	tmpres = single_replace(ma, pcre_code, extra, origin_str, len_origin_str,
-							exec_options, ovector, ovecsize, replacement,
-							len_replacement, backrefs, nbackrefs, global,
+	tmpres = single_replace(ma, pcre_code, match_data, (PCRE2_SPTR) origin_str,
+							len_origin_str, exec_options,
+							(PCRE2_SPTR) replacement, len_replacement,
 							tmpres, &max_result);
-	//GDKfree(ovector);
-	pcre_free_study(extra);
-	pcre_free(pcre_code);
+	pcre2_match_data_free(match_data);
+	pcre2_code_free(pcre_code);
 	if (tmpres == NULL)
 		throw(MAL, global ? "pcre.replace" : "pcre.replace_first",
 			  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
-	*res = tmpres;
+	*res = (char *) tmpres;
 	return MAL_SUCCEED;
 #else
 	(void) res;
@@ -622,38 +441,35 @@ pcre_replace_bat(allocator *ma, BAT **res, BAT *origin_strs, const char *pattern
 {
 	(void) ma;
 #ifdef HAVE_LIBPCRE
-	const char *err_p = NULL;
-	char *tmpres;
-	int i, errpos = 0;
-	int compile_options = PCRE_UTF8 | PCRE_NO_UTF8_CHECK;
-	int exec_options = PCRE_NOTEMPTY | PCRE_NO_UTF8_CHECK;
-	pcre *pcre_code = NULL;
-	pcre_extra *extra;
+	int err = 0;
+	PCRE2_UCHAR *tmpres;
+	PCRE2_SIZE errpos = 0;
+	uint32_t compile_options = PCRE2_UTF | PCRE2_NO_UTF_CHECK;
+	uint32_t exec_options = PCRE2_NOTEMPTY | PCRE2_NO_UTF_CHECK;
+	pcre2_code *pcre_code = NULL;
+	pcre2_match_data *match_data;
 	BAT *tmpbat;
 	BUN p, q;
-	int *ovector, ovecsize;
-	int len_replacement = (int) strlen(replacement);
-	struct backref backrefs[MAX_NR_REFS];
-	int nbackrefs = 0;
-	const char *origin_str;
-	int max_dest_size = 0;
+	PCRE2_SIZE len_replacement = (PCRE2_SIZE) strlen(replacement);
+	PCRE2_SPTR origin_str;
+	PCRE2_SIZE max_dest_size = 0;
 
 	while (*flags) {
 		switch (*flags) {
 		case 'e':
-			exec_options &= ~PCRE_NOTEMPTY;
+			exec_options &= ~PCRE2_NOTEMPTY;
 			break;
 		case 'i':
-			compile_options |= PCRE_CASELESS;
+			compile_options |= PCRE2_CASELESS;
 			break;
 		case 'm':
-			compile_options |= PCRE_MULTILINE;
+			compile_options |= PCRE2_MULTILINE;
 			break;
 		case 's':
-			compile_options |= PCRE_DOTALL;
+			compile_options |= PCRE2_DOTALL;
 			break;
 		case 'x':
-			compile_options |= PCRE_EXTENDED;
+			compile_options |= PCRE2_EXTENDED;
 			break;
 		default:
 			throw(MAL, global ? "batpcre.replace" : "batpcre.replace_first",
@@ -663,37 +479,21 @@ pcre_replace_bat(allocator *ma, BAT **res, BAT *origin_strs, const char *pattern
 		flags++;
 	}
 
-	if ((pcre_code = pcre_compile(pattern, compile_options, &err_p, &errpos, NULL)) == NULL) {
-		throw(MAL, global ? "batpcre.replace" : "batpcre.replace_first",
+	pcre_code = pcre2_compile((PCRE2_SPTR) pattern, PCRE2_ZERO_TERMINATED,
+							  compile_options, &err, &errpos, NULL);
+	if (pcre_code == NULL) {
+		PCRE2_UCHAR errbuf[256];
+		pcre2_get_error_message(err, errbuf, sizeof(errbuf));
+		throw(MAL, global ? "pcre.replace" : "pcre.replace_first",
 			  OPERATION_FAILED
 			  ": pcre compile of pattern (%s) failed at %d with\n'%s'.\n",
-			  pattern, errpos, err_p);
+			  pattern, (int) errpos, (char *) errbuf);
 	}
-
-	/* Since the compiled pattern is going to be used several times,
-	 * it is worth spending more time analyzing it in order to speed
-	 * up the time taken for matching.
-	 */
-	extra = pcre_study(pcre_code,
-					   BATcount(origin_strs) >
-					   JIT_COMPILE_MIN ? PCRE_STUDY_JIT_COMPILE : 0, &err_p);
-	if (err_p != NULL) {
-		pcre_free(pcre_code);
-		throw(MAL, global ? "batpcre.replace" : "batpcre.replace_first",
-			  OPERATION_FAILED);
+	match_data = pcre2_match_data_create_from_pattern(pcre_code, NULL);
+	if (match_data == NULL) {
+		pcre2_code_free(pcre_code);
+		throw(MAL, "regexp.rematch", MAL_MALLOC_FAIL);
 	}
-	pcre_fullinfo(pcre_code, extra, PCRE_INFO_CAPTURECOUNT, &i);
-	ovecsize = (i + 1) * 3;
-	if ((ovector = (int *) ma_zalloc(ma, sizeof(int) * ovecsize)) == NULL) {
-		pcre_free_study(extra);
-		pcre_free(pcre_code);
-		throw(MAL, global ? "batpcre.replace" : "batpcre.replace_first",
-			  SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	}
-
-	/* identify back references in the replacement string */
-	nbackrefs = parse_replacement(replacement, len_replacement,
-								  backrefs, MAX_NR_REFS);
 
 	tmpbat = COLnew(origin_strs->hseqbase, TYPE_str, BATcount(origin_strs),
 					TRANSIENT);
@@ -703,9 +503,8 @@ pcre_replace_bat(allocator *ma, BAT **res, BAT *origin_strs, const char *pattern
 	max_dest_size = len_replacement + 1;
 	tmpres = ma_alloc(ma, max_dest_size);
 	if (tmpbat == NULL || tmpres == NULL) {
-		pcre_free_study(extra);
-		pcre_free(pcre_code);
-		//GDKfree(ovector);
+		pcre2_match_data_free(match_data);
+		pcre2_code_free(pcre_code);
 		BBPreclaim(tmpbat);
 		//GDKfree(tmpres);
 		throw(MAL, global ? "batpcre.replace" : "batpcre.replace_first",
@@ -714,16 +513,14 @@ pcre_replace_bat(allocator *ma, BAT **res, BAT *origin_strs, const char *pattern
 	BATiter origin_strsi = bat_iterator(origin_strs);
 	BATloop(origin_strs, p, q) {
 		origin_str = BUNtvar(origin_strsi, p);
-		tmpres = single_replace(ma, pcre_code, extra, origin_str,
-								(int) strlen(origin_str), exec_options,
-								ovector, ovecsize, replacement,
-								len_replacement, backrefs, nbackrefs, global,
+		tmpres = single_replace(ma, pcre_code, match_data, origin_str,
+								(PCRE2_SIZE) strlen((char *) origin_str), exec_options,
+								(PCRE2_SPTR) replacement, len_replacement,
 								tmpres, &max_dest_size);
 		if (tmpres == NULL || BUNappend(tmpbat, tmpres, false) != GDK_SUCCEED) {
 			bat_iterator_end(&origin_strsi);
-			pcre_free_study(extra);
-			pcre_free(pcre_code);
-			//GDKfree(ovector);
+			pcre2_match_data_free(match_data);
+			pcre2_code_free(pcre_code);
 			//GDKfree(tmpres);
 			BBPreclaim(tmpbat);
 			throw(MAL, global ? "batpcre.replace" : "batpcre.replace_first",
@@ -731,9 +528,8 @@ pcre_replace_bat(allocator *ma, BAT **res, BAT *origin_strs, const char *pattern
 		}
 	}
 	bat_iterator_end(&origin_strsi);
-	pcre_free_study(extra);
-	pcre_free(pcre_code);
-	//GDKfree(ovector);
+	pcre2_match_data_free(match_data);
+	pcre2_code_free(pcre_code);
 	//GDKfree(tmpres);
 	*res = tmpbat;
 	return MAL_SUCCEED;
@@ -755,10 +551,11 @@ pcre_match_with_flags(bit *ret, const char *val, const char *pat,
 {
 	int pos;
 #ifdef HAVE_LIBPCRE
-	const char *err_p = NULL;
-	int errpos = 0;
-	int options = PCRE_UTF8 | PCRE_NO_UTF8_CHECK | PCRE_DOTALL;
-	pcre *re;
+	int err = 0;
+	PCRE2_SIZE errpos = 0;
+	uint32_t options = PCRE2_UTF | PCRE2_NO_UTF_CHECK | PCRE2_DOTALL;
+	pcre2_code *re;
+	pcre2_match_data *match_data;
 #else
 	int options = REG_NOSUB | REG_EXTENDED;
 	regex_t re;
@@ -768,32 +565,30 @@ pcre_match_with_flags(bit *ret, const char *val, const char *pat,
 
 	while (*flags) {
 		switch (*flags) {
-		case 'i':
 #ifdef HAVE_LIBPCRE
-			options |= PCRE_CASELESS;
-#else
-			options |= REG_ICASE;
-#endif
+		case 'i':
+			options |= PCRE2_CASELESS;
 			break;
 		case 'm':
-#ifdef HAVE_LIBPCRE
-			options |= PCRE_MULTILINE;
-#else
-			options |= REG_NEWLINE;
-#endif
+			options |= PCRE2_MULTILINE;
 			break;
-#ifdef HAVE_LIBPCRE
 		case 's':
-			options |= PCRE_DOTALL;
+			options |= PCRE2_DOTALL;
 			break;
-#endif
 		case 'x':
-#ifdef HAVE_LIBPCRE
-			options |= PCRE_EXTENDED;
-#else
-			options |= REG_EXTENDED;
-#endif
+			options |= PCRE2_EXTENDED;
 			break;
+#else
+		case 'i':
+			options |= REG_ICASE;
+			break;
+		case 'm':
+			options |= REG_NEWLINE;
+			break;
+		case 'x':
+			options |= REG_EXTENDED;
+			break;
+#endif
 		default:
 			throw(MAL, "pcre.match", ILLEGAL_ARGUMENT
 				  ": unsupported flag character '%c'\n", *flags);
@@ -806,25 +601,29 @@ pcre_match_with_flags(bit *ret, const char *val, const char *pat,
 	}
 
 #ifdef HAVE_LIBPCRE
-	if ((re = pcre_compile(pat, options, &err_p, &errpos, NULL)) == NULL)
-#else
-	if ((errcode = regcomp(&re, pat, options)) != 0)
-#endif
-	{
-		throw(MAL, "pcre.match", OPERATION_FAILED
-			  ": compilation of regular expression (%s) failed "
-#ifdef HAVE_LIBPCRE
-			  "at %d with '%s'", pat, errpos, err_p
-#else
-			  , pat
-#endif
-				);
+	re = pcre2_compile((PCRE2_SPTR) pat, PCRE2_ZERO_TERMINATED, options,
+					   &err, &errpos, NULL);
+	if (re == NULL) {
+		PCRE2_UCHAR buffer[256];
+		pcre2_get_error_message(err, buffer, sizeof(buffer));
+		throw(MAL, "pcre.match",
+		      "compilation of regular expression (%s) failed at %d with %s",
+		      pat, (int) errpos, (char *) buffer);
 	}
-#ifdef HAVE_LIBPCRE
-	pos = pcre_exec(re, NULL, val, (int) strlen(val), 0, PCRE_NO_UTF8_CHECK,
-					NULL, 0);
-	pcre_free(re);
+	match_data = pcre2_match_data_create_from_pattern(re, NULL);
+	if (match_data == NULL) {
+		pcre2_code_free(re);
+		throw(MAL, "pcre.match", MAL_MALLOC_FAIL);
+	}
+	pos = pcre2_match(re, (PCRE2_SPTR) val, PCRE2_ZERO_TERMINATED, 0, PCRE2_NO_UTF_CHECK,
+					  match_data, NULL);
+	pcre2_match_data_free(match_data);
+	pcre2_code_free(re);
 #else
+	if ((errcode = regcomp(&re, pat, options)) != 0) {
+		throw(MAL, "pcre.match", OPERATION_FAILED
+			  ": compilation of regular expression (%s) failed ", pat);
+	}
 	retval = regexec(&re, val, (size_t) 0, NULL, 0);
 	pos = retval == REG_NOMATCH ? -1 : (retval == REG_ENOSYS ? -2 : 0);
 	regfree(&re);
@@ -1049,33 +848,16 @@ PCREimatch(Client ctx, bit *ret, const char *const *val, const char *const *pat)
 }
 
 static str
-PCREindex(Client ctx, int *res, const pcre *pattern, const char *const *s)
-{
-	(void) ctx;
-#ifdef HAVE_LIBPCRE
-	int v[3];
-
-	v[0] = v[1] = *res = 0;
-	if (pcre_exec(pattern, NULL, *s, (int) strlen(*s), 0,
-				  PCRE_NO_UTF8_CHECK, v, 3) >= 0) {
-		*res = v[1];
-	}
-	return MAL_SUCCEED;
-#else
-	(void) res;
-	(void) pattern;
-	(void) s;
-	throw(MAL, "pcre.index", "Database was compiled without PCRE support.");
-#endif
-}
-
-static str
 PCREpatindex(Client ctx, int *ret, const char *const *pat, const char *const *val)
 {
 	(void) ctx;
 #ifdef HAVE_LIBPCRE
-	pcre *re = NULL;
+	pcre2_code *re;
+	pcre2_match_data *match_data;
 	char *ppat = NULL, *msg;
+	int errcode;
+	PCRE2_SIZE errpos;
+	int pos;
 
 	if (strNil(*pat) || strNil(*val)) {
 		*ret = int_nil;
@@ -1084,13 +866,33 @@ PCREpatindex(Client ctx, int *ret, const char *const *pat, const char *const *va
 
 	if ((msg = pat2pcre(&ppat, *pat)) != MAL_SUCCEED)
 		return msg;
-	if ((msg = pcre_compile_wrap(&re, ppat, FALSE)) != MAL_SUCCEED) {
-		GDKfree(ppat);
+	re = pcre2_compile((PCRE2_SPTR) ppat, PCRE2_ZERO_TERMINATED, PCRE2_UTF | PCRE2_NO_UTF_CHECK | PCRE2_MULTILINE, &errcode, &errpos, NULL);
+	if (re == NULL) {
+		PCRE2_UCHAR errbuf[256];
+		pcre2_get_error_message(errcode, errbuf, sizeof(errbuf));
+		msg = createException(MAL, "pcre.patindex",
+							  "compilation of regular expression (%s) failed at %d with %s",
+							  ppat, (int) errpos, (char *) errbuf);
+		//GDKfree(ppat);
 		return msg;
 	}
-	GDKfree(ppat);
-	msg = PCREindex(ctx, ret, re, val);
-	pcre_free(re);
+	//GDKfree(ppat);
+	match_data = pcre2_match_data_create_from_pattern(re, NULL);
+	if (match_data == NULL) {
+		pcre2_code_free(re);
+		throw(MAL, "pcre.patindex", MAL_MALLOC_FAIL);
+	}
+	pos = pcre2_match(re, (PCRE2_SPTR) *val, PCRE2_ZERO_TERMINATED, 0,
+					  PCRE2_NO_UTF_CHECK, match_data, NULL);
+	if (pos >= 0) {
+		/* there was a match, get index of end of match */
+		*ret = (int) pcre2_get_ovector_pointer(match_data)[1];
+	} else {
+		/* no match or error */
+		*ret = 0;
+	}
+	pcre2_match_data_free(match_data);
+	pcre2_code_free(re);
 	return msg;
 #else
 	(void) ret;
@@ -1114,9 +916,7 @@ PCREquote(Client ctx, str *ret, const char *const *val)
 	/* quote all non-alphanumeric ASCII characters (i.e. leave
 	   non-ASCII and alphanumeric alone) */
 	while (*s) {
-		if (!((*s & 0x80) != 0 ||
-			  ('a' <= *s && *s <= 'z') ||
-			  ('A' <= *s && *s <= 'Z') || isdigit((unsigned char) *s)))
+		if ((*s & 0x80) == 0 && isalnum((unsigned char) *s))
 			*p++ = '\\';
 		*p++ = *s++;
 	}
@@ -2014,11 +1814,7 @@ LIKEjoin1(Client ctx, bat *r1, const bat *lid, const bat *rid, const bat *elid,
 }
 
 #include "mel.h"
-mel_atom pcre_init_atoms[] = {
- { .name="pcre", },  { .cmp=NULL }
-};
 mel_func pcre_init_funcs[] = {
- command("pcre", "index", PCREindex, false, "match a pattern, return matched position (or 0 when not found)", args(1,3, arg("",int),arg("pat",pcre),arg("s",str))),
  command("pcre", "match", PCREmatch, false, "Perl Compatible Regular Expression pattern matching against a string", args(1,3, arg("",bit),arg("s",str),arg("pat",str))),
  command("pcre", "imatch", PCREimatch, false, "Caseless Perl Compatible Regular Expression pattern matching against a string", args(1,3, arg("",bit),arg("s",str),arg("pat",str))),
  command("pcre", "patindex", PCREpatindex, false, "Location of the first POSIX pattern matching against a string", args(1,3, arg("",int),arg("pat",str),arg("s",str))),
@@ -2048,4 +1844,4 @@ mel_func pcre_init_funcs[] = {
 #pragma section(".CRT$XCU",read)
 #endif
 LIB_STARTUP_FUNC(init_pcre_mal)
-{ mal_module("pcre", pcre_init_atoms, pcre_init_funcs); }
+{ mal_module("pcre", NULL, pcre_init_funcs); }

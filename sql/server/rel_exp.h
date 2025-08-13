@@ -187,6 +187,8 @@ extern bool exps_have_unsafe(list *exps, bool allow_identity, bool card /* on tr
 																		  unsafeness (conversions for example) */);
 extern bool exp_unsafe(sql_exp *e, bool allow_identity, bool card);
 extern int exp_has_sideeffect(sql_exp *e);
+extern bool exp_is_fallible(sql_exp *e); /* exp could result in an error, ie push up of lower restricting expressions isn't possible */
+extern bool exps_have_fallible(list *l);
 
 extern sql_exp *exps_find_prop(list *exps, rel_prop kind);
 

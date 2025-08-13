@@ -29,9 +29,31 @@ test -x $DAEMON || exit 0
 
 umask 022
 
-# Include monetdb5-sql defaults if available
-if [ -f /etc/default/monetdb5-sql ] ; then
-    . /etc/default/monetdb5-sql
+# Include monetdb-sql defaults if available
+if [ -f /etc/default/monetdb5-sql -a -f /etc/default/monetdb-sql ]; then
+    # old and new both available
+    case $(sum /etc/default/monetdb5-sql) in
+    46711*)			# unchanged
+	rm /etc/default/monetdb5-sql
+	;;
+    *)				# changed
+	case $(sum /etc/default/monetdb-sql) in
+	46711*)			# unchanged
+	    mv /etc/default/monetdb5-sql /etc/default/monetdb-sql
+	    ;;
+	*)			# changed
+	    rm /etc/default/monetdb5-sql
+	    ;;
+	esac
+	;;
+    esac
+    . /etc/default/monetdb-sql
+elif [ -f /etc/default/monetdb5-sql ]; then
+    # unexpected: only old available
+    mv /etc/default/monetdb5-sql /etc/default/monetdb-sql
+    . /etc/default/monetdb-sql
+elif [ -f /etc/default/monetdb-sql ]; then
+    . /etc/default/monetdb-sql
 fi
 
 PIDFILE=${DBFARM}/merovingian.pid

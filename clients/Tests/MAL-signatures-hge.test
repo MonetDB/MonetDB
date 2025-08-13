@@ -29265,26 +29265,6 @@ CMDbatNOT
 Unary bitwise not over the tail of the bat with candidates list
 batcalc
 not
-pattern batcalc.not(X_0:bat[:dbl]):bat[:dbl]
-CMDbatNOT
-Unary bitwise not over the tail of the bat
-batcalc
-not
-pattern batcalc.not(X_0:bat[:dbl], X_1:bat[:oid]):bat[:dbl]
-CMDbatNOT
-Unary bitwise not over the tail of the bat with candidates list
-batcalc
-not
-pattern batcalc.not(X_0:bat[:flt]):bat[:flt]
-CMDbatNOT
-Unary bitwise not over the tail of the bat
-batcalc
-not
-pattern batcalc.not(X_0:bat[:flt], X_1:bat[:oid]):bat[:flt]
-CMDbatNOT
-Unary bitwise not over the tail of the bat with candidates list
-batcalc
-not
 pattern batcalc.not(X_0:bat[:hge]):bat[:hge]
 CMDbatNOT
 Unary bitwise not over the tail of the bat
@@ -48188,11 +48168,6 @@ imatch
 command pcre.imatch(X_0:str, X_1:str):bit
 PCREimatch
 Caseless Perl Compatible Regular Expression pattern matching against a string
-pcre
-index
-command pcre.index(X_0:pcre, X_1:str):int
-PCREindex
-match a pattern, return matched position (or 0 when not found)
 pcre
 match
 command pcre.match(X_0:str, X_1:str):bit

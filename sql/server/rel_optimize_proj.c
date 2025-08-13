@@ -518,7 +518,6 @@ rel_push_project_up_(visitor *v, sql_rel *rel)
 		if (!l || rel_is_ref(l) || is_topn(l->op) || is_sample(l->op) ||
 		   (is_join(rel->op) && !list_empty(rel->attr)) ||
 		   (is_join(rel->op) && (!r || rel_is_ref(r))) ||
-		   (is_left(rel->op) && (rel->flag&MERGE_LEFT) /* can't push projections above merge statements left joins */) ||
 		   (is_select(rel->op) && l->op != op_project) ||
 		   (is_join(rel->op) && ((l->op != op_project && r->op != op_project) || is_topn(r->op) || is_sample(r->op))) ||
 		  ((l->op == op_project && (!l->l || l->r || project_unsafe(l, is_select(rel->op)))) ||
@@ -3363,19 +3362,13 @@ rel_merge_unions(visitor *v, sql_rel *rel)
 		list *l = rel->l;
 		for(node *n = l->h; n; ) {
 			node *next = n->next;
-			sql_rel *oc = n->data;
-			sql_rel *c = oc;
-
-			/* account for any group-bys pushed down between stacked munions */
-			if (oc->op == op_groupby)
-				c = oc->l;
-
+			sql_rel *c = n->data;
 			if (is_munion(c->op)) {
 				c = rel_dup(c);
 				list_remove_node(l, NULL, n);
 				l = list_join(l, c->l);
 				c->l = NULL;
-				rel_destroy(v->sql, oc);
+				rel_destroy(v->sql, c);
 				if (!next)
 					next = l->h;
 				v->changes++;

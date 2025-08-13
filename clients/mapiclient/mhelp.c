@@ -61,7 +61,7 @@ SQLhelp sqlhelp1[] = {
 	 "See also https://www.monetdb.org/documentation/user-guide/sql-manual/data-definition/schema-definitions/"},
 	{"ALTER SEQUENCE",
 	 "",
-	 "ALTER SEQUENCE qname [AS seq_int_datatype] [RESTART [WITH {bigint|subquery}] ] [INCREMENT BY bigint]\n"
+	 "ALTER SEQUENCE [ IF EXISTS ] qname [AS seq_int_datatype] [RESTART [WITH {bigint|subquery}] ] [INCREMENT BY bigint]\n"
 	 "  [MINVALUE bigint | NO MINVALUE] [MAXVALUE bigint | NO MAXVALUE] [CACHE bigint] [[NO] CYCLE]",
 	 "seq_int_datatype",
 	 "See also https://www.monetdb.org/documentation/user-guide/sql-manual/data-types/serial-types/"},
@@ -83,9 +83,9 @@ SQLhelp sqlhelp1[] = {
 	 "See also https://www.monetdb.org/documentation/user-guide/sql-manual/data-definition/alter-statement/"},
 	{"ALTER USER",
 	 "Change a user's login name or password or default schema",
-	 "ALTER USER ident RENAME TO ident\n"
+	 "ALTER USER [ IF EXISTS ] ident RENAME TO ident\n"
 	 "ALTER USER SET [ENCRYPTED | UNENCRYPTED] PASSWORD string USING OLD PASSWORD string\n"
-	 "ALTER USER ident\n"
+	 "ALTER USER [ IF EXISTS ] ident\n"
 	 "    [WITH [ENCRYPTED | UNENCRYPTED] PASSWORD string]\n"
 	 "    [SET SCHEMA ident] [SCHEMA PATH string] [DEFAULT ROLE ident]\n"
 	 "    [MAX_MEMORY posbytes | MAX_MEMORY sizestr | NO MAX_MEMORY] [MAX_WORKERS poscount | NO MAX_WORKERS]",
@@ -175,7 +175,7 @@ SQLhelp sqlhelp1[] = {
 	 "See also https://www.monetdb.org/documentation/user-guide/sql-programming/function-definitions/"},
 	{"CREATE INDEX",
 	 "Create a hint for a secondary index on a column or set of columns of a table",
-	 "CREATE [ UNIQUE | ORDERED | IMPRINTS ] INDEX ident ON qname '(' ident_list ')'",
+	 "CREATE [ UNIQUE | ORDERED | IMPRINTS ] INDEX [ IF NOT EXISTS ] ident ON qname '(' ident_list ')'",
 	 NULL,
 	 "See also https://www.monetdb.org/documentation/user-guide/sql-manual/data-definition/index-definitions/"},
 	{"CREATE LOADER",
@@ -217,7 +217,7 @@ SQLhelp sqlhelp1[] = {
 	{"CREATE ROLE",
 	 "Create a new role. You can grant privileges to a role and next\n"
 	 "grant a role (or multiple roles) to specific users",
-	 "CREATE ROLE ident [ WITH ADMIN { CURRENT_USER | CURRENT_ROLE } ]",
+	 "CREATE ROLE [ IF NOT EXISTS ] ident [ WITH ADMIN { CURRENT_USER | CURRENT_ROLE } ]",
 	 "ident",
 	 "See also https://www.monetdb.org/documentation/user-guide/sql-manual/data-definition/privileges/#roles"},
 	{"CREATE SCHEMA",
@@ -227,7 +227,7 @@ SQLhelp sqlhelp1[] = {
 	 "See also https://www.monetdb.org/documentation/user-guide/sql-manual/data-definition/schema-definitions/"},
 	{"CREATE SEQUENCE",
 	 "Define a new integer number sequence generator",
-	 "CREATE SEQUENCE qname [AS seq_int_datatype] [START WITH bigint] [INCREMENT BY bigint]\n"
+	 "CREATE SEQUENCE [ IF NOT EXISTS ] qname [AS seq_int_datatype] [START WITH bigint] [INCREMENT BY bigint]\n"
 	 "  [MINVALUE bigint | NO MINVALUE] [MAXVALUE bigint | NO MAXVALUE] [CACHE bigint] [[NO] CYCLE]",
 	 "seq_int_datatype",
 	 "See also https://www.monetdb.org/documentation/user-guide/sql-manual/data-types/serial-types/"},
@@ -247,14 +247,14 @@ SQLhelp sqlhelp1[] = {
 	 "See also https://www.monetdb.org/documentation/user-guide/sql-programming/trigger-definition/"},
 	{"CREATE TYPE",
 	 "Add user defined type to the type system ",
-	 "CREATE TYPE qname EXTERNAL NAME ident",
+	 "CREATE TYPE [ IF NOT EXISTS ] qname EXTERNAL NAME ident",
 	 NULL,
 	 NULL},
 	{"CREATE USER",
 	 "Create a new database user",
-	 "CREATE USER ident WITH [ENCRYPTED | UNENCRYPTED] PASSWORD string NAME string [SCHEMA ident] [SCHEMA PATH string]\n"
-	 "[MAX_MEMORY posbytes | MAX_MEMORY sizestr | NO MAX_MEMORY] [MAX_WORKERS poscount | NO MAX_WORKERS]\n"
-	 "[OPTIMIZER string] [DEFAULT ROLE ident]",
+	 "CREATE USER [ IF NOT EXISTS ] ident WITH [ENCRYPTED | UNENCRYPTED] PASSWORD string NAME string\n"
+	 "    [SCHEMA ident] [SCHEMA PATH string] [MAX_MEMORY posbytes | MAX_MEMORY sizestr | NO MAX_MEMORY]\n"
+	 "    [MAX_WORKERS poscount | NO MAX_WORKERS] [OPTIMIZER string] [DEFAULT ROLE ident]",
 	 "ident",
 	 "See also https://www.monetdb.org/documentation/user-guide/sql-manual/data-definition/privileges/"},
 	{"CREATE VIEW",
@@ -343,7 +343,7 @@ SQLhelp sqlhelp1[] = {
 	 NULL},
 	{"DROP INDEX",
 	 "",
-	 "DROP INDEX qname",
+	 "DROP INDEX [ IF EXISTS ] qname",
 	 NULL,
 	 NULL},
 	{"DROP LOADER",
@@ -360,7 +360,7 @@ SQLhelp sqlhelp1[] = {
 	 NULL},
 	{"DROP ROLE",
 	 "",
-	 "DROP ROLE ident",
+	 "DROP ROLE [ IF EXISTS ] ident",
 	 NULL,
 	 NULL},
 	{"DROP SCHEMA",
@@ -370,7 +370,7 @@ SQLhelp sqlhelp1[] = {
 	 NULL},
 	{"DROP SEQUENCE",
 	 "",
-	 "DROP SEQUENCE qname",
+	 "DROP SEQUENCE [ IF EXISTS ] qname",
 	 NULL,
 	 NULL},
 	{"DROP TABLE",
@@ -385,12 +385,12 @@ SQLhelp sqlhelp1[] = {
 	 NULL},
 	{"DROP TYPE",
 	 "",
-	 "DROP TYPE qname [ RESTRICT | CASCADE ]",
+	 "DROP TYPE [ IF EXISTS ] qname [ RESTRICT | CASCADE ]",
 	 NULL,
 	 NULL},
 	{"DROP USER",
 	 "",
-	 "DROP USER ident",
+	 "DROP USER [ IF EXISTS ] ident",
 	 NULL,
 	 NULL},
 	{"DROP VIEW",

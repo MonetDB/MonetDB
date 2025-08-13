@@ -23,7 +23,6 @@ typedef struct global_props {
 		needs_mergetable_rewrite:1,
 		needs_remote_replica_rewrite:1,
 		needs_distinct:1,
-		has_special_modify:1, /* Don't prune updates as pruning will possibly result in removing the joins which therefore cannot be used for constraint checking */
 		opt_level:1, /* 0 run necessary rewriters, 1 run all optimizers */
 		recursive:1,
 		has_pkey:1; /* any table has a pkey */

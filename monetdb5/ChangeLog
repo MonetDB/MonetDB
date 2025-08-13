@@ -1,3 +1,8 @@
 # ChangeLog file for MonetDB5
 # This file is updated with Maddlog
 
+* Mon Aug  4 2025 Sjoerd Mullender <sjoerd@acm.org>
+- The type "pcre" has been removed.  There was no way to create a value of
+  the type, and there was only one function that used a value of the type.
+  That function (pcre.index) has also been removed.
+

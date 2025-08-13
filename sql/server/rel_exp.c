@@ -2834,6 +2834,60 @@ exp_unsafe(sql_exp *e, bool allow_identity, bool card)
 	return 0;
 }
 
+bool
+exps_have_fallible(list *exps)
+{
+	if (!exps)
+		return false;
+	for (node *n = exps->h; n; n = n->next)
+		if (exp_is_fallible(n->data))
+			return true;
+	return false;
+}
+
+bool
+exp_is_fallible(sql_exp *e)
+{
+	switch (e->type) {
+	case e_convert:
+		{
+			sql_subtype *t = exp_totype(e);
+			sql_subtype *f = exp_fromtype(e);
+			if (t->type->eclass == EC_FLT && (f->type->eclass == EC_DEC || f->type->eclass == EC_NUM))
+				return exp_is_fallible(e->l);
+			if (f->type->localtype > t->type->localtype)
+				return true;
+			/* TODO for types with digits check if t->digits is large enough
+			 * for types with scale etc */
+			return exp_is_fallible(e->l);
+		}
+	case e_aggr:
+	case e_func: {
+		sql_subfunc *f = e->f;
+
+		if (IS_ANALYTIC(f->func) || !LANG_INT_OR_MAL(f->func->lang) || f->func->side_effect)
+			return true;
+		return exps_have_fallible(e->l);
+	} break;
+	case e_cmp: {
+		if (e->flag == cmp_con || e->flag == cmp_dis) {
+			return exps_have_fallible(e->l);
+		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
+			return exp_is_fallible(e->l) || exps_have_fallible(e->r);
+		} else if (e->flag == cmp_filter) {
+			return exps_have_fallible(e->l) || exps_have_fallible(e->r);
+		} else {
+			return exp_is_fallible(e->l) || exp_is_fallible(e->r) || (e->f && exp_is_fallible(e->f));
+		}
+	} break;
+	case e_atom:
+	case e_column:
+	case e_psm:
+		return false;
+	}
+	return false;
+}
+
 static inline int
 exp_key( sql_exp *e )
 {

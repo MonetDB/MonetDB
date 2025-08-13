@@ -228,7 +228,7 @@ replica_rewrite(visitor *v, sql_table *t, list *exps)
 static bool
 eliminate_remote_or_replica_refs(visitor *v, sql_rel **rel)
 {
-	if (rel_is_ref(*rel) && !((*rel)->flag&MERGE_LEFT)) {
+	if (rel_is_ref(*rel)) {
  		if (has_remote_or_replica(*rel)) {
  			sql_rel *nrel = rel_copy(v->sql, *rel, 1);
  			rel_destroy(v->sql, *rel);
@@ -410,9 +410,6 @@ rel_rewrite_remote_(visitor *v, sql_rel *rel)
 	case op_insert:
 	case op_update:
 	case op_delete:
-
-		if (rel->flag&MERGE_LEFT) /* search for any remote tables but don't propagate over to this relation */
-			return rel;
 
 		/* if both subtrees have REMOTE property with the common uri then pull it up */
 		if (l && (pl = find_prop(l->p, PROP_REMOTE)) != NULL &&
