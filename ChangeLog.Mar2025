@@ -1,7 +1,9 @@
 # ChangeLog file for devel
 # This file is updated with Maddlog
 
-* Tue Jul  8 2025 Niels Nes <niels@cwi.nl>
-- Fixed issue #7655, now the segments keep the number of deleted
-  rows. Only search for reuse when deleted rows are available.
+* Wed Aug 13 2025 Sjoerd Mullender <sjoerd@acm.org>
+- It is now relatively easy to configure the location of the database farm
+  (aka dbfarm) directory when using systemd.  Just create an override
+  file for the monetdbd service and add an Environment entry for DBFARM
+  pointing to the new directory.
 
