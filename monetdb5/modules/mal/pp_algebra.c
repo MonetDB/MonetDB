@@ -4020,25 +4020,41 @@ bail:
 /* TODO handle nil based on argument 'skipnil' */
 #define gfunc(Type, f) \
 	if (tt == TYPE_##Type) { \
-			Type *in = Tloc(b, 0); \
-			Type *o = Tloc(r, 0); \
+		Type *in = Tloc(b, 0); \
+		Type *o = Tloc(r, 0); \
+		if (g->ttype == TYPE_void) { \
+			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) \
+				if (is_##Type##_nil(o[i])) \
+					o[i] = in[i]; \
+				else if (!is_##Type##_nil(in[i])) \
+					o[i] = f(o[i], in[i]); \
+		} else { \
 			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) \
 				if (is_##Type##_nil(o[grp[i]])) \
 					o[grp[i]] = in[i]; \
 				else if (!is_##Type##_nil(in[i])) \
 					o[grp[i]] = f(o[grp[i]], in[i]); \
+		} \
 	}
 
 #define gfunc2(Type, f) \
 	if (tt == TYPE_##Type) { \
-		    int (*cmp)(const void *v1,const void *v2) = ATOMcompare(tt); \
-			Type *in = Tloc(b, 0); \
-			Type *o = Tloc(r, 0); \
+		int (*cmp)(const void *v1,const void *v2) = ATOMcompare(tt); \
+		Type *in = Tloc(b, 0); \
+		Type *o = Tloc(r, 0); \
+		if (g->ttype == TYPE_void) { \
+			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) \
+				if (is_##Type##_nil(o[i])) \
+					o[i] = in[i]; \
+				else if (!is_##Type##_nil(in[i])) \
+					o[i] = f(o[i], in[i]); \
+		} else { \
 			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) \
 				if (is_##Type##_nil(o[grp[i]])) \
 					o[grp[i]] = in[i]; \
 				else if (!is_##Type##_nil(in[i])) \
 					o[grp[i]] = f(o[grp[i]], in[i]); \
+		} \
 	}
 
 /* from now on assume shared heap */
@@ -4270,6 +4286,7 @@ LALGmin(bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 	oid *grp = Tloc(g, 0);
 
+	assert(BATcount(b) == BATcount(g));
 	gfunc(bit,min);
 	gfunc(bte,min);
 	gfunc(sht,min);
