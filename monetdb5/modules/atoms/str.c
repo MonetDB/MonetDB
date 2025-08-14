@@ -266,11 +266,11 @@ STRlikewrap(Client ctx, bit *ret, const char *const *s, const char *const *pat)
 static str
 STRtostr(Client ctx, str *res, const char *const *src)
 {
-	(void) ctx;
+	allocator *ma = ctx->curprg->def->ma;
 	if (*src == 0)
-		*res = MA_STRDUP(ctx->alloc, str_nil);
+		*res = MA_STRDUP(ma, str_nil);
 	else
-		*res = MA_STRDUP(ctx->alloc, *src);
+		*res = MA_STRDUP(ma, *src);
 	if (*res == NULL)
 		throw(MAL, "str.str", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
@@ -314,13 +314,13 @@ str_tail(str *buf, size_t *buflen, const char *s, int off)
 static str
 STRTail(Client ctx, str *res, const char *const *arg1, const int *offset)
 {
-	(void) ctx;
+	allocator *ma = ctx->curprg->def->ma;
 	str buf = NULL, msg = MAL_SUCCEED;
 	const char *s = *arg1;
 	int off = *offset;
 
 	if (strNil(s) || is_int_nil(off)) {
-		*res = MA_STRDUP(ctx->alloc, str_nil);
+		*res = MA_STRDUP(ma, str_nil);
 	} else {
 		size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 
@@ -331,7 +331,7 @@ STRTail(Client ctx, str *res, const char *const *arg1, const int *offset)
 			GDKfree(buf);
 			return msg;
 		}
-		*res = MA_STRDUP(ctx->alloc, buf);
+		*res = MA_STRDUP(ma, buf);
 	}
 
 	GDKfree(buf);
@@ -371,13 +371,13 @@ str_Sub_String(str *buf, size_t *buflen, const char *s, int off, int l)
 static str
 STRSubString(Client ctx, str *res, const char *const *arg1, const int *offset, const int *length)
 {
-	(void) ctx;
+	allocator *ma = ctx->curprg->def->ma;
 	str buf = NULL, msg = MAL_SUCCEED;
 	const char *s = *arg1;
 	int off = *offset, len = *length;
 
 	if (strNil(s) || is_int_nil(off) || is_int_nil(len)) {
-		*res = MA_STRDUP(ctx->alloc, str_nil);
+		*res = MA_STRDUP(ma, str_nil);
 	} else {
 		size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 
@@ -388,7 +388,7 @@ STRSubString(Client ctx, str *res, const char *const *arg1, const int *offset, c
 			GDKfree(buf);
 			return msg;
 		}
-		*res = MA_STRDUP(ctx->alloc, buf);
+		*res = MA_STRDUP(ma, buf);
 	}
 
 	GDKfree(buf);
@@ -413,12 +413,12 @@ str_from_wchr(str *buf, size_t *buflen, int c)
 static str
 STRFromWChr(Client ctx, str *res, const int *c)
 {
-	(void) ctx;
+	allocator *ma = ctx->curprg->def->ma;
 	str buf = NULL, msg = MAL_SUCCEED;
 	int cc = *c;
 
 	if (is_int_nil(cc)) {
-		*res = MA_STRDUP(ctx->alloc, str_nil);
+		*res = MA_STRDUP(ma, str_nil);
 	} else {
 		size_t buflen = MAX(strlen(str_nil) + 1, 8);
 
@@ -429,7 +429,7 @@ STRFromWChr(Client ctx, str *res, const int *c)
 			GDKfree(buf);
 			return msg;
 		}
-		*res = MA_STRDUP(ctx->alloc, buf);
+		*res = MA_STRDUP(ma, buf);
 	}
 
 	GDKfree(buf);
@@ -472,12 +472,12 @@ STRWChrAt(Client ctx, int *res, const char *const *arg1, const int *at)
 }
 
 static inline str
-doStrConvert(allocator *alloc, str *res, const char *arg1, gdk_return (*func)(char **restrict, size_t *restrict, const char *restrict))
+doStrConvert(allocator *ma, str *res, const char *arg1, gdk_return (*func)(char **restrict, size_t *restrict, const char *restrict))
 {
 	str buf = NULL, msg = MAL_SUCCEED;
 
 	if (strNil(arg1)) {
-		*res = MA_STRDUP(alloc, str_nil);
+		*res = MA_STRDUP(ma, str_nil);
 	} else {
 		size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 
@@ -488,7 +488,7 @@ doStrConvert(allocator *alloc, str *res, const char *arg1, gdk_return (*func)(ch
 			GDKfree(buf);
 			throw(MAL, "str.lower", GDK_EXCEPTION);
 		}
-		*res = MA_STRDUP(alloc, buf);
+		*res = MA_STRDUP(ma, buf);
 	}
 
 	GDKfree(buf);
@@ -501,22 +501,22 @@ doStrConvert(allocator *alloc, str *res, const char *arg1, gdk_return (*func)(ch
 static inline str
 STRlower(Client ctx, str *res, const char *const *arg1)
 {
-	(void) ctx;
-	return doStrConvert(ctx->alloc, res, *arg1, GDKtolower);
+	allocator *ma = ctx->curprg->def->ma;
+	return doStrConvert(ma, res, *arg1, GDKtolower);
 }
 
 static inline str
 STRupper(Client ctx, str *res, const char *const *arg1)
 {
-	(void) ctx;
-	return doStrConvert(ctx->alloc, res, *arg1, GDKtoupper);
+	allocator *ma = ctx->curprg->def->ma;
+	return doStrConvert(ma, res, *arg1, GDKtoupper);
 }
 
 static inline str
 STRcasefold(Client ctx, str *res, const char *const *arg1)
 {
-	(void) ctx;
-	return doStrConvert(ctx->alloc, res, *arg1, GDKcasefold);
+	allocator *ma = ctx->curprg->def->ma;
+	return doStrConvert(ma, res, *arg1, GDKcasefold);
 }
 
 /* returns whether arg1 starts with arg2 */
@@ -579,9 +579,9 @@ str_icontains(const char *h, const char *n, int nlen)
 }
 
 static str
-STRstartswith(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+STRstartswith(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	(void) cntxt;
+	(void) ctx;
 	(void) mb;
 
 	bit *r = getArgReference_bit(stk, pci, 0);
@@ -601,9 +601,9 @@ STRstartswith(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 static str
-STRendswith(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+STRendswith(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	(void) cntxt;
+	(void) ctx;
 	(void) mb;
 
 	bit *r = getArgReference_bit(stk, pci, 0);
@@ -624,9 +624,9 @@ STRendswith(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 /* returns whether haystack contains needle */
 static str
-STRcontains(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+STRcontains(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	(void) cntxt;
+	(void) ctx;
 	(void) mb;
 
 	bit *r = getArgReference_bit(stk, pci, 0);
@@ -667,9 +667,9 @@ str_isearch(const char *haystack, const char *needle)
 
 /* find first occurrence of needle in haystack */
 static str
-STRstr_search(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+STRstr_search(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	(void) cntxt;
+	(void) ctx;
 	(void) mb;
 	bit *res = getArgReference(stk, pci, 0);
 	const char *haystack = *getArgReference_str(stk, pci, 1);
@@ -722,9 +722,9 @@ str_reverse_str_isearch(const char *haystack, const char *needle)
 
 /* find last occurrence of arg2 in arg1 */
 static str
-STRrevstr_search(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+STRrevstr_search(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	(void) cntxt;
+	(void) ctx;
 	(void) mb;
 	int *res = getArgReference_int(stk, pci, 0);
 	const str haystack = *getArgReference_str(stk, pci, 1);
@@ -779,13 +779,13 @@ str_splitpart(str *buf, size_t *buflen, const char *s, const char *s2, int f)
 static str
 STRsplitpart(Client ctx, str *res, const char *const *haystack, const char *const *needle, const int *field)
 {
-	(void) ctx;
+	allocator *ma = ctx->curprg->def->ma;
 	str buf = NULL, msg = MAL_SUCCEED;
 	const char *s = *haystack, *s2 = *needle;
 	int f = *field;
 
 	if (strNil(s) || strNil(s2) || is_int_nil(f)) {
-		*res = MA_STRDUP(ctx->alloc, str_nil);
+		*res = MA_STRDUP(ma, str_nil);
 	} else {
 		size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 
@@ -796,7 +796,7 @@ STRsplitpart(Client ctx, str *res, const char *const *haystack, const char *cons
 			GDKfree(buf);
 			return msg;
 		}
-		*res = MA_STRDUP(ctx->alloc, buf);
+		*res = MA_STRDUP(ma, buf);
 	}
 
 	GDKfree(buf);
@@ -904,12 +904,12 @@ str_strip(str *buf, size_t *buflen, const char *s)
 static str
 STRStrip(Client ctx, str *res, const char *const *arg1)
 {
-	(void) ctx;
+	allocator *ma = ctx->curprg->def->ma;
 	str buf = NULL, msg = MAL_SUCCEED;
 	const char *s = *arg1;
 
 	if (strNil(s)) {
-		*res = MA_STRDUP(ctx->alloc, str_nil);
+		*res = MA_STRDUP(ma, str_nil);
 	} else {
 		size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 
@@ -920,7 +920,7 @@ STRStrip(Client ctx, str *res, const char *const *arg1)
 			GDKfree(buf);
 			return msg;
 		}
-		*res = MA_STRDUP(ctx->alloc, buf);
+		*res = MA_STRDUP(ma, buf);
 	}
 
 	GDKfree(buf);
@@ -946,12 +946,12 @@ str_ltrim(str *buf, size_t *buflen, const char *s)
 static str
 STRLtrim(Client ctx, str *res, const char *const *arg1)
 {
-	(void) ctx;
+	allocator *ma = ctx->curprg->def->ma;
 	str buf = NULL, msg = MAL_SUCCEED;
 	const char *s = *arg1;
 
 	if (strNil(s)) {
-		*res = MA_STRDUP(ctx->alloc, str_nil);
+		*res = MA_STRDUP(ma, str_nil);
 	} else {
 		size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 
@@ -962,7 +962,7 @@ STRLtrim(Client ctx, str *res, const char *const *arg1)
 			GDKfree(buf);
 			return msg;
 		}
-		*res = MA_STRDUP(ctx->alloc, buf);
+		*res = MA_STRDUP(ma, buf);
 	}
 
 	GDKfree(buf);
@@ -988,12 +988,12 @@ str_rtrim(str *buf, size_t *buflen, const char *s)
 static str
 STRRtrim(Client ctx, str *res, const char *const *arg1)
 {
-	(void) ctx;
+	allocator *ma = ctx->curprg->def->ma;
 	str buf = NULL, msg = MAL_SUCCEED;
 	const char *s = *arg1;
 
 	if (strNil(s)) {
-		*res = MA_STRDUP(ctx->alloc, str_nil);
+		*res = MA_STRDUP(ma, str_nil);
 	} else {
 		size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 
@@ -1004,7 +1004,7 @@ STRRtrim(Client ctx, str *res, const char *const *arg1)
 			GDKfree(buf);
 			return msg;
 		}
-		*res = MA_STRDUP(ctx->alloc, buf);
+		*res = MA_STRDUP(ma, buf);
 	}
 
 	GDKfree(buf);
@@ -1072,12 +1072,12 @@ str_strip2(str *buf, size_t *buflen, const char *s, const char *s2)
 static str
 STRStrip2(Client ctx, str *res, const char *const *arg1, const char *const *arg2)
 {
-	(void) ctx;
+	allocator *ma = ctx->curprg->def->ma;
 	str buf = NULL, msg = MAL_SUCCEED;
 	const char *s = *arg1, *s2 = *arg2;
 
 	if (strNil(s) || strNil(s2)) {
-		*res = MA_STRDUP(ctx->alloc, str_nil);
+		*res = MA_STRDUP(ma, str_nil);
 	} else {
 		size_t buflen = INITIAL_STR_BUFFER_LENGTH * sizeof(int);
 
@@ -1088,7 +1088,7 @@ STRStrip2(Client ctx, str *res, const char *const *arg1, const char *const *arg2
 			GDKfree(buf);
 			return msg;
 		}
-		*res = MA_STRDUP(ctx->alloc, buf);
+		*res = MA_STRDUP(ma, buf);
 	}
 
 	GDKfree(buf);
@@ -1127,12 +1127,12 @@ str_ltrim2(str *buf, size_t *buflen, const char *s, const char *s2)
 static str
 STRLtrim2(Client ctx, str *res, const char *const *arg1, const char *const *arg2)
 {
-	(void) ctx;
+	allocator *ma = ctx->curprg->def->ma;
 	str buf = NULL, msg = MAL_SUCCEED;
 	const char *s = *arg1, *s2 = *arg2;
 
 	if (strNil(s) || strNil(s2)) {
-		*res = MA_STRDUP(ctx->alloc, str_nil);
+		*res = MA_STRDUP(ma, str_nil);
 	} else {
 		size_t buflen = INITIAL_STR_BUFFER_LENGTH * sizeof(int);
 
@@ -1143,7 +1143,7 @@ STRLtrim2(Client ctx, str *res, const char *const *arg1, const char *const *arg2
 			GDKfree(buf);
 			return msg;
 		}
-		*res = MA_STRDUP(ctx->alloc, buf);
+		*res = MA_STRDUP(ma, buf);
 	}
 
 	GDKfree(buf);
@@ -1182,12 +1182,12 @@ str_rtrim2(str *buf, size_t *buflen, const char *s, const char *s2)
 static str
 STRRtrim2(Client ctx, str *res, const char *const *arg1, const char *const *arg2)
 {
-	(void) ctx;
+	allocator *ma = ctx->curprg->def->ma;
 	str buf = NULL, msg = MAL_SUCCEED;
 	const char *s = *arg1, *s2 = *arg2;
 
 	if (strNil(s) || strNil(s2)) {
-		*res = MA_STRDUP(ctx->alloc, str_nil);
+		*res = MA_STRDUP(ma, str_nil);
 	} else {
 		size_t buflen = INITIAL_STR_BUFFER_LENGTH * sizeof(int);
 
@@ -1198,7 +1198,7 @@ STRRtrim2(Client ctx, str *res, const char *const *arg1, const char *const *arg2
 			GDKfree(buf);
 			return msg;
 		}
-		*res = MA_STRDUP(ctx->alloc, buf);
+		*res = MA_STRDUP(ma, buf);
 	}
 
 	GDKfree(buf);
@@ -1283,13 +1283,13 @@ str_lpad(str *buf, size_t *buflen, const char *s, int len)
 static str
 STRLpad(Client ctx, str *res, const char *const *arg1, const int *len)
 {
-	(void) ctx;
+	allocator *ma = ctx->curprg->def->ma;
 	str buf = NULL, msg = MAL_SUCCEED;
 	const char *s = *arg1;
 	int l = *len;
 
 	if (strNil(s) || is_int_nil(l)) {
-		*res = MA_STRDUP(ctx->alloc, str_nil);
+		*res = MA_STRDUP(ma, str_nil);
 	} else {
 		size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 
@@ -1300,7 +1300,7 @@ STRLpad(Client ctx, str *res, const char *const *arg1, const int *len)
 			GDKfree(buf);
 			return msg;
 		}
-		*res = MA_STRDUP(ctx->alloc, buf);
+		*res = MA_STRDUP(ma, buf);
 	}
 
 	GDKfree(buf);
@@ -1325,13 +1325,13 @@ str_rpad(str *buf, size_t *buflen, const char *s, int len)
 static str
 STRRpad(Client ctx, str *res, const char *const *arg1, const int *len)
 {
-	(void) ctx;
+	allocator *ma = ctx->curprg->def->ma;
 	str buf = NULL, msg = MAL_SUCCEED;
 	const char *s = *arg1;
 	int l = *len;
 
 	if (strNil(s) || is_int_nil(l)) {
-		*res = MA_STRDUP(ctx->alloc, str_nil);
+		*res = MA_STRDUP(ma, str_nil);
 	} else {
 		size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 
@@ -1342,7 +1342,7 @@ STRRpad(Client ctx, str *res, const char *const *arg1, const int *len)
 			GDKfree(buf);
 			return msg;
 		}
-		*res = MA_STRDUP(ctx->alloc, buf);
+		*res = MA_STRDUP(ma, buf);
 	}
 
 	GDKfree(buf);
@@ -1367,13 +1367,13 @@ str_lpad3(str *buf, size_t *buflen, const char *s, int len, const char *s2)
 static str
 STRLpad3(Client ctx, str *res, const char *const *arg1, const int *len, const char *const *arg2)
 {
-	(void) ctx;
+	allocator *ma = ctx->curprg->def->ma;
 	str buf = NULL, msg = MAL_SUCCEED;
 	const char *s = *arg1, *s2 = *arg2;
 	int l = *len;
 
 	if (strNil(s) || strNil(s2) || is_int_nil(l)) {
-		*res = MA_STRDUP(ctx->alloc, str_nil);
+		*res = MA_STRDUP(ma, str_nil);
 	} else {
 		size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 
@@ -1384,7 +1384,7 @@ STRLpad3(Client ctx, str *res, const char *const *arg1, const int *len, const ch
 			GDKfree(buf);
 			return msg;
 		}
-		*res = MA_STRDUP(ctx->alloc, buf);
+		*res = MA_STRDUP(ma, buf);
 	}
 
 	GDKfree(buf);
@@ -1410,13 +1410,13 @@ str_rpad3(str *buf, size_t *buflen, const char *s, int len, const char *s2)
 static str
 STRRpad3(Client ctx, str *res, const char *const *arg1, const int *len, const char *const *arg2)
 {
-	(void) ctx;
+	allocator *ma = ctx->curprg->def->ma;
 	str buf = NULL, msg = MAL_SUCCEED;
 	const char *s = *arg1, *s2 = *arg2;
 	int l = *len;
 
 	if (strNil(s) || strNil(s2) || is_int_nil(l)) {
-		*res = MA_STRDUP(ctx->alloc, str_nil);
+		*res = MA_STRDUP(ma, str_nil);
 	} else {
 		size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 
@@ -1427,7 +1427,7 @@ STRRpad3(Client ctx, str *res, const char *const *arg1, const int *len, const ch
 			GDKfree(buf);
 			return msg;
 		}
-		*res = MA_STRDUP(ctx->alloc, buf);
+		*res = MA_STRDUP(ma, buf);
 	}
 
 	GDKfree(buf);
@@ -1485,12 +1485,12 @@ static str
 STRSubstitute(Client ctx, str *res, const char *const *arg1, const char *const *arg2, const char *const *arg3,
 			  const bit *g)
 {
-	(void) ctx;
+	allocator *ma = ctx->curprg->def->ma;
 	str buf = NULL, msg = MAL_SUCCEED;
 	const char *s = *arg1, *s2 = *arg2, *s3 = *arg3;
 
 	if (strNil(s) || strNil(s2) || strNil(s3)) {
-		*res = MA_STRDUP(ctx->alloc, str_nil);
+		*res = MA_STRDUP(ma, str_nil);
 	} else {
 		size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 
@@ -1501,7 +1501,7 @@ STRSubstitute(Client ctx, str *res, const char *const *arg1, const char *const *
 			GDKfree(buf);
 			return msg;
 		}
-		*res = MA_STRDUP(ctx->alloc, buf);
+		*res = MA_STRDUP(ma, buf);
 	}
 
 	GDKfree(buf);
@@ -1530,13 +1530,13 @@ str_substring_tail(str *buf, size_t *buflen, const char *s, int start)
 static str
 STRsubstringTail(Client ctx, str *res, const char *const *arg1, const int *start)
 {
-	(void) ctx;
+	allocator *ma = ctx->curprg->def->ma;
 	str buf = NULL, msg = MAL_SUCCEED;
 	const char *s = *arg1;
 	int st = *start;
 
 	if (strNil(s) || is_int_nil(st)) {
-		*res = MA_STRDUP(ctx->alloc, str_nil);
+		*res = MA_STRDUP(ma, str_nil);
 	} else {
 		size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 
@@ -1547,7 +1547,7 @@ STRsubstringTail(Client ctx, str *res, const char *const *arg1, const int *start
 			GDKfree(buf);
 			return msg;
 		}
-		*res = MA_STRDUP(ctx->alloc, buf);
+		*res = MA_STRDUP(ma, buf);
 	}
 
 	GDKfree(buf);
@@ -1569,13 +1569,13 @@ str_sub_string(str *buf, size_t *buflen, const char *s, int start, int l)
 static str
 STRsubstring(Client ctx, str *res, const char *const *arg1, const int *start, const int *ll)
 {
-	(void) ctx;
+	allocator *ma = ctx->curprg->def->ma;
 	str buf = NULL, msg = MAL_SUCCEED;
 	const char *s = *arg1;
 	int st = *start, l = *ll;
 
 	if (strNil(s) || is_int_nil(st) || is_int_nil(l)) {
-		*res = MA_STRDUP(ctx->alloc, str_nil);
+		*res = MA_STRDUP(ma, str_nil);
 	} else {
 		size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 
@@ -1586,7 +1586,7 @@ STRsubstring(Client ctx, str *res, const char *const *arg1, const int *start, co
 			GDKfree(buf);
 			return msg;
 		}
-		*res = MA_STRDUP(ctx->alloc, buf);
+		*res = MA_STRDUP(ma, buf);
 	}
 
 	GDKfree(buf);
@@ -1599,13 +1599,13 @@ STRsubstring(Client ctx, str *res, const char *const *arg1, const int *start, co
 static str
 STRprefix(Client ctx, str *res, const char *const *arg1, const int *ll)
 {
-	(void) ctx;
+	allocator *ma = ctx->curprg->def->ma;
 	str buf = NULL, msg = MAL_SUCCEED;
 	const char *s = *arg1;
 	int l = *ll;
 
 	if (strNil(s) || is_int_nil(l)) {
-		*res = MA_STRDUP(ctx->alloc, str_nil);
+		*res = MA_STRDUP(ma, str_nil);
 	} else {
 		size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 
@@ -1616,7 +1616,7 @@ STRprefix(Client ctx, str *res, const char *const *arg1, const int *ll)
 			GDKfree(buf);
 			return msg;
 		}
-		*res = MA_STRDUP(ctx->alloc, buf);
+		*res = MA_STRDUP(ma, buf);
 	}
 
 	GDKfree(buf);
@@ -1636,13 +1636,13 @@ str_suffix(str *buf, size_t *buflen, const char *s, int l)
 static str
 STRsuffix(Client ctx, str *res, const char *const *arg1, const int *ll)
 {
-	(void) ctx;
+	allocator *ma = ctx->curprg->def->ma;
 	str buf = NULL, msg = MAL_SUCCEED;
 	const char *s = *arg1;
 	int l = *ll;
 
 	if (strNil(s) || is_int_nil(l)) {
-		*res = MA_STRDUP(ctx->alloc, str_nil);
+		*res = MA_STRDUP(ma, str_nil);
 	} else {
 		size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 
@@ -1653,7 +1653,7 @@ STRsuffix(Client ctx, str *res, const char *const *arg1, const int *ll)
 			GDKfree(buf);
 			return msg;
 		}
-		*res = MA_STRDUP(ctx->alloc, buf);
+		*res = MA_STRDUP(ma, buf);
 	}
 
 	GDKfree(buf);
@@ -1734,13 +1734,13 @@ static str
 STRinsert(Client ctx, str *res, const char *const *input, const int *start, const int *nchars,
 		  const char *const *input2)
 {
-	(void) ctx;
+	allocator *ma = ctx->curprg->def->ma;
 	str buf = NULL, msg = MAL_SUCCEED;
 	const char *s = *input, *s2 = *input2;
 	int st = *start, n = *nchars;
 
 	if (strNil(s) || is_int_nil(st) || is_int_nil(n) || strNil(s2)) {
-		*res = MA_STRDUP(ctx->alloc, str_nil);
+		*res = MA_STRDUP(ma, str_nil);
 	} else {
 		size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 
@@ -1751,7 +1751,7 @@ STRinsert(Client ctx, str *res, const char *const *input, const int *start, cons
 			GDKfree(buf);
 			return msg;
 		}
-		*res = MA_STRDUP(ctx->alloc, buf);
+		*res = MA_STRDUP(ma, buf);
 	}
 
 	GDKfree(buf);
@@ -1789,13 +1789,13 @@ str_repeat(str *buf, size_t *buflen, const char *s, int c)
 static str
 STRrepeat(Client ctx, str *res, const char *const *arg1, const int *c)
 {
-	(void) ctx;
+	allocator *ma = ctx->curprg->def->ma;
 	str buf = NULL, msg = MAL_SUCCEED;
 	const char *s = *arg1;
 	int cc = *c;
 
 	if (strNil(s) || is_int_nil(cc) || cc < 0) {
-		*res = MA_STRDUP(ctx->alloc, str_nil);
+		*res = MA_STRDUP(ma, str_nil);
 	} else {
 		size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 
@@ -1806,7 +1806,7 @@ STRrepeat(Client ctx, str *res, const char *const *arg1, const int *c)
 			GDKfree(buf);
 			return msg;
 		}
-		*res = MA_STRDUP(ctx->alloc, buf);
+		*res = MA_STRDUP(ma, buf);
 	}
 
 	GDKfree(buf);
@@ -1819,12 +1819,12 @@ STRrepeat(Client ctx, str *res, const char *const *arg1, const int *c)
 static str
 STRspace(Client ctx, str *res, const int *ll)
 {
-	(void) ctx;
+	allocator *ma = ctx->curprg->def->ma;
 	str buf = NULL, msg = MAL_SUCCEED;
 	int l = *ll;
 
 	if (is_int_nil(l) || l < 0) {
-		*res = MA_STRDUP(ctx->alloc, str_nil);
+		*res = MA_STRDUP(ma, str_nil);
 	} else {
 		const char space[] = " ", *s = space;
 		size_t buflen = INITIAL_STR_BUFFER_LENGTH;
@@ -1836,7 +1836,7 @@ STRspace(Client ctx, str *res, const int *ll)
 			GDKfree(buf);
 			return msg;
 		}
-		*res = MA_STRDUP(ctx->alloc, buf);
+		*res = MA_STRDUP(ma, buf);
 	}
 
 	GDKfree(buf);
@@ -1849,12 +1849,12 @@ STRspace(Client ctx, str *res, const int *ll)
 static str
 STRasciify(Client ctx, str *r, const char *const *s)
 {
-	(void) ctx;
+	allocator *ma = ctx->curprg->def->ma;
 	char *buf = NULL;
 	size_t buflen = 0;
 	if (GDKasciify(&buf, &buflen, *s) != GDK_SUCCEED)
 		throw(MAL, "str.asciify", GDK_EXCEPTION);
-	*r = MA_STRDUP(ctx->alloc, buf);
+	*r = MA_STRDUP(ma, buf);
 	GDKfree(buf);
 	return MAL_SUCCEED;
 }
@@ -1977,25 +1977,25 @@ STRselect(MalStkPtr stk, InstrPtr pci, const str fname,
 }
 
 static str
-STRstartswithselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+STRstartswithselect(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	(void) cntxt;
+	(void) ctx;
 	(void) mb;
 	return STRselect(stk, pci, "str.startswithselect", str_is_prefix);
 }
 
 static str
-STRendswithselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+STRendswithselect(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	(void) cntxt;
+	(void) ctx;
 	(void) mb;
 	return STRselect(stk, pci, "str.endswithselect", str_is_suffix);
 }
 
 static str
-STRcontainsselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+STRcontainsselect(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	(void) cntxt;
+	(void) ctx;
 	(void) mb;
 	return STRselect(stk, pci, "str.containsselect", str_contains);
 }
@@ -2717,25 +2717,25 @@ STRjoin(MalStkPtr stk, InstrPtr pci, const str fname,
 }
 
 static str
-STRstartswithjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+STRstartswithjoin(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	(void)cntxt;
+	(void)ctx;
 	(void)mb;
 	return STRjoin(stk, pci, "str.startswithjoin", str_is_prefix);
 }
 
 static str
-STRendswithjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+STRendswithjoin(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	(void)cntxt;
+	(void)ctx;
 	(void)mb;
 	return STRjoin(stk, pci, "str.endswithjoin", str_is_suffix);
 }
 
 static str
-STRcontainsjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+STRcontainsjoin(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	(void)cntxt;
+	(void)ctx;
 	(void)mb;
 	return STRjoin(stk, pci, "str.containsjoin", str_contains);
 }
