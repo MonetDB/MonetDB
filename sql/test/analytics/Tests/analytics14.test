@@ -11,7 +11,7 @@ query RRRR nosort
 select stddev_samp(aa) over (partition by bb),
        stddev_samp(aa) over (partition by bb order by bb asc),
        stddev_samp(aa) over (partition by bb order by bb desc),
-       stddev_samp(aa) over (order by bb desc) from analytics
+       stddev_samp(aa) over (order by bb desc) from analytics order by bb desc
 ----
 NULL
 NULL
@@ -58,7 +58,7 @@ query RRRR nosort
 select stddev_samp(cc) over (partition by bb),
        stddev_samp(cc) over (partition by bb order by bb asc),
        stddev_samp(cc) over (partition by bb order by bb desc),
-       stddev_samp(cc) over (order by bb desc) from analytics
+       stddev_samp(cc) over (order by bb desc) from analytics order by bb desc
 ----
 NULL
 NULL
@@ -105,7 +105,7 @@ query RRRR nosort
 select stddev_pop(aa) over (partition by bb),
        stddev_pop(aa) over (partition by bb order by bb asc),
        stddev_pop(aa) over (partition by bb order by bb desc),
-       stddev_pop(aa) over (order by bb desc) from analytics
+       stddev_pop(aa) over (order by bb desc) from analytics order by bb desc
 ----
 NULL
 NULL
@@ -152,7 +152,7 @@ query RRRR nosort
 select stddev_pop(cc) over (partition by bb),
        stddev_pop(cc) over (partition by bb order by bb asc),
        stddev_pop(cc) over (partition by bb order by bb desc),
-       stddev_pop(cc) over (order by bb desc) from analytics
+       stddev_pop(cc) over (order by bb desc) from analytics order by bb desc
 ----
 NULL
 NULL
@@ -199,7 +199,7 @@ query RRRR nosort
 select var_samp(aa) over (partition by bb),
        var_samp(aa) over (partition by bb order by bb asc),
        var_samp(aa) over (partition by bb order by bb desc),
-       var_samp(aa) over (order by bb desc) from analytics
+       var_samp(aa) over (order by bb desc) from analytics order by bb desc
 ----
 NULL
 NULL
@@ -246,7 +246,7 @@ query RRRR nosort
 select var_samp(cc) over (partition by bb),
        var_samp(cc) over (partition by bb order by bb asc),
        var_samp(cc) over (partition by bb order by bb desc),
-       var_samp(cc) over (order by bb desc) from analytics
+       var_samp(cc) over (order by bb desc) from analytics order by bb desc
 ----
 NULL
 NULL
@@ -293,7 +293,7 @@ query RRRR nosort
 select var_pop(aa) over (partition by bb),
        var_pop(aa) over (partition by bb order by bb asc),
        var_pop(aa) over (partition by bb order by bb desc),
-       var_pop(aa) over (order by bb desc) from analytics
+       var_pop(aa) over (order by bb desc) from analytics order by bb desc
 ----
 NULL
 NULL
@@ -340,7 +340,7 @@ query RRRR nosort
 select var_pop(cc) over (partition by bb),
        var_pop(cc) over (partition by bb order by bb asc),
        var_pop(cc) over (partition by bb order by bb desc),
-       var_pop(cc) over (order by bb desc) from analytics
+       var_pop(cc) over (order by bb desc) from analytics order by bb desc
 ----
 NULL
 NULL
@@ -383,7 +383,7 @@ NULL
 0.667
 15.438
 
-query RRRR rowsort
+query RRRR nosort
 select stddev_samp(aa) over (),
        stddev_pop(aa) over (),
        var_samp(aa) over (),
@@ -430,7 +430,7 @@ select stddev_samp(aa) over (),
 17.643
 15.437
 
-query RRRR rowsort
+query RRRR nosort
 select stddev_samp(NULL) over (),
        stddev_pop(NULL) over (),
        var_samp(NULL) over (),
@@ -478,10 +478,10 @@ NULL
 NULL
 
 query RRRR nosort
-select stddev_samp(aa) over (rows between 5 preceding and 0 following),
-       stddev_samp(aa) over (rows between 5 preceding and 2 following),
-       stddev_samp(aa) over (partition by bb order by bb rows between 5 preceding and 0 following),
-       stddev_samp(aa) over (partition by bb order by bb rows between 5 preceding and 2 following) from analytics
+select stddev_samp(aa) over (order by bb, aa nulls first rows between 5 preceding and 0 following),
+       stddev_samp(aa) over (order by bb, aa nulls first rows between 5 preceding and 2 following),
+       stddev_samp(aa) over (partition by bb order by bb, aa nulls first rows between 5 preceding and 0 following),
+       stddev_samp(aa) over (partition by bb order by bb, aa nulls first rows between 5 preceding and 2 following) from analytics order by bb, aa nulls first
 ----
 NULL
 1.000
@@ -500,20 +500,20 @@ NULL
 NULL
 3.536
 0.816
-4.956
+2.137
 NULL
 3.536
 2.345
-4.536
+2.070
 3.536
 3.536
-5.320
-4.375
+2.074
+4.231
 NULL
 5.508
-4.848
+1.924
 4.355
-7.071
+0.707
 5.508
 4.615
 4.615
@@ -525,8 +525,8 @@ NULL
 NULL
 
 query RR nosort
-select stddev_samp(aa) over (rows 2 preceding),
-       stddev_samp(aa) over (partition by bb order by bb, aa rows 2 preceding) from analytics
+select stddev_samp(aa) over (order by bb, aa nulls first rows 2 preceding),
+       stddev_samp(aa) over (partition by bb order by bb, aa nulls first rows 2 preceding) from analytics order by bb, aa nulls first
 ----
 NULL
 NULL
@@ -553,7 +553,7 @@ query RRRR nosort
 select var_pop(aa) over (order by bb groups between 5 preceding and 0 following),
        var_pop(aa) over (order by bb groups between 5 preceding and 2 following),
        var_pop(aa) over (partition by bb order by bb groups between 5 preceding and 0 following),
-       var_pop(aa) over (partition by bb order by bb groups between 5 preceding and 2 following) from analytics
+       var_pop(aa) over (partition by bb order by bb groups between 5 preceding and 2 following) from analytics order by bb
 ----
 0.667
 15.438
@@ -598,7 +598,7 @@ NULL
 
 query RR nosort
 select var_pop(aa) over (order by bb groups 2 preceding),
-       var_pop(aa) over (partition by bb order by bb groups 2 preceding) from analytics
+       var_pop(aa) over (partition by bb order by bb groups 2 preceding) from analytics order by bb
 ----
 0.667
 0.667
