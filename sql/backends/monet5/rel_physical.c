@@ -1084,7 +1084,7 @@ static sql_rel *
 rel_count_gt_zero(visitor *v, sql_rel *rel)
 {
 	mvc *sql = v->sql;
-	if (is_groupby(rel->op)) {
+	if (is_groupby(rel->op) && !find_prop(rel->p, PROP_REMOTE)) {
 		list *exps, *gbe;
 
 		gbe = rel->r;
