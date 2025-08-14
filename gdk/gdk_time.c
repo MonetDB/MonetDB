@@ -363,7 +363,7 @@ daytime_add_usec_modulo(daytime t, lng usec)
 timestamp
 timestamp_fromtime(time_t timeval)
 {
-	struct tm tm = (struct tm) {0};
+	struct tm tm = {0};
 	date d;
 	daytime t;
 

@@ -17,10 +17,13 @@ def printit(file, string):
     if not string.endswith('\n'):
         file.write('\n')
 
-funny = u'\u00e0\u00e1\u00e2\u00e3\u00e4\u00e5'
+funny = (0x00e0, 0x00e1, 0x00e2, 0x00e3, 0x00e4, 0x00e5)
+funnyp = ''.join([chr(x) for x in funny])
+funnys = ''.join([fr'\{x:04x}' for x in funny])
 
 text1 = 'value without special characters'
-text2 = 'funny characters: %s' % funny
+text2p = 'funny characters: %s' % funnyp
+text2s = 'funny characters: %s' % funnys
 
 expectraw = f'''% sys.utf8test # table_name
 % s # name
@@ -28,13 +31,13 @@ expectraw = f'''% sys.utf8test # table_name
 % 32 # length
 % 50 0 # typesizes
 [ "{text1}"\t]
-[ "{text2}"\t]
+[ "{text2p}"\t]
 '''
 expectsql = f'''+----------------------------------+
 | s                                |
 +==================================+
 | {text1} |
-| {text2}         |
+| {text2p}         |
 +----------------------------------+
 2 tuples
 '''
@@ -42,7 +45,7 @@ expecterr = 'invalid multibyte sequence\n'
 
 out, err = client(['-s', 'create table utf8test (s varchar(50))'])
 out, err = client(['-s', f"insert into utf8test values ('{text1}')"])
-out, err = client(['-s', f"insert into utf8test values ('{text2}')"], encoding=locale.getpreferredencoding())
+out, err = client(['-s', f"insert into utf8test values (u&'{text2s}')"], encoding=locale.getpreferredencoding())
 out, err = client(['-s', 'select * from utf8test'], encoding='utf-8', format='raw')
 if out != expectraw:
     sys.stdout.write('utf-8, raw:\n')

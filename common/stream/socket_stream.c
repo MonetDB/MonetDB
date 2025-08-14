@@ -31,14 +31,14 @@ socket_getoob(const stream *s)
 {
 	SOCKET fd = s->stream_data.s;
 #ifdef HAVE_POLL
-	struct pollfd pfd = (struct pollfd) {
+	struct pollfd pfd = {
 		.fd = fd,
 		.events = POLLPRI,
 	};
 	if (poll(&pfd, 1, 0) > 0)
 #else
 	fd_set xfds;
-	struct timeval t = (struct timeval) {
+	struct timeval t = {
 		.tv_sec = 0,
 		.tv_usec = 0,
 	};
@@ -129,14 +129,14 @@ socket_getoob_unix(const stream *s)
 {
 	SOCKET fd = s->stream_data.s;
 #ifdef HAVE_POLL
-	struct pollfd pfd = (struct pollfd) {
+	struct pollfd pfd = {
 		.fd = fd,
 		.events = POLLIN,
 	};
 	if (poll(&pfd, 1, 0) > 0)
 #else
 	fd_set fds;
-	struct timeval t = (struct timeval) {
+	struct timeval t = {
 		.tv_sec = 0,
 		.tv_usec = 0,
 	};
@@ -286,10 +286,10 @@ socket_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
 		if (s->timeout) {
 			int ret;
 #ifdef HAVE_POLL
-			struct pollfd pfd;
-
-			pfd = (struct pollfd) {.fd = s->stream_data.s,
-					       .events = POLLIN};
+			struct pollfd pfd = {
+				.fd = s->stream_data.s,
+				.events = POLLIN
+			};
 #ifdef HAVE_SYS_UN_H
 			if (s->putoob != socket_putoob_unix)
 				pfd.events |= POLLPRI;
@@ -530,9 +530,8 @@ socket_isalive(const stream *s)
 {
 	SOCKET fd = s->stream_data.s;
 #ifdef HAVE_POLL
-	struct pollfd pfd;
+	struct pollfd pfd = {.fd = fd};
 	int ret;
-	pfd = (struct pollfd){.fd = fd};
 	if ((ret = poll(&pfd, 1, 0)) == 0)
 		return 1;
 	if (ret == -1 && errno == EINTR)

@@ -123,7 +123,7 @@ recvWithTimeout(int msgsock, stream *fdin, char *buf, size_t buflen)
 {
 	int retval;
 #ifdef HAVE_POLL
-	struct pollfd pfd = (struct pollfd) {.fd = msgsock, .events = POLLIN};
+	struct pollfd pfd = {.fd = msgsock, .events = POLLIN};
 
 	/* Wait up to 1 second.  If a client doesn't make this, it's too slow */
 	retval = poll(&pfd, 1, 1000);

@@ -462,7 +462,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 
 	lng initial_output_count = -1;
 
-	struct sigaction sa = (struct sigaction) {.sa_flags = 0}, oldsa, oldsb;
+	struct sigaction sa = {.sa_flags = 0}, oldsa, oldsb;
 	sigset_t signal_set;
 
 #ifdef NDEBUG

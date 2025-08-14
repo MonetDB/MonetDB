@@ -1569,7 +1569,6 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out,
 	int j;
 	BUN firstcol;
 	BUN i, attr;
-	READERtask task;
 	READERtask ptask[MAXWORKERS];
 	int threads = 1;
 	lng tio, t1 = 0;
@@ -1586,7 +1585,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out,
 /*	TRC_DEBUG(MAL_SERVER, "Prepare copy work for '%d' threads col '%s' rec '%s' quot '%c'\n", threads, csep, rsep, quote);*/
 
 	memset(ptask, 0, sizeof(ptask));
-	task = (READERtask) {
+	READERtask task = {
 		.cntxt = cntxt,
 		.from_stdin = from_stdin,
 		.as = as,

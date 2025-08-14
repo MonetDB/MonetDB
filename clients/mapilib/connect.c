@@ -244,7 +244,7 @@ connect_socket_tcp(Mapi mid)
 
 	mapi_log_record(mid, "CONN", "Connecting to %s:%d", host, port);
 
-	struct addrinfo hints = (struct addrinfo) {
+	struct addrinfo hints = {
 		.ai_family = AF_UNSPEC,
 		.ai_socktype = SOCK_STREAM,
 		.ai_protocol = IPPROTO_TCP,

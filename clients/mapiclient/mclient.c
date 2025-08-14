@@ -3934,8 +3934,7 @@ main(int argc, char **argv)
 		}
 	}
 
-	struct privdata priv;
-	priv = (struct privdata) {.mid = mid};
+	struct privdata priv = {.mid = mid};
 	mapi_setfilecallback2(mid, getfile, putfile, &priv);
 
 	mapi_trace(mid, trace);

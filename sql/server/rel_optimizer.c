@@ -638,7 +638,7 @@ run_optimizer_set(visitor *v, sql_optimizer_run *runs, sql_rel *rel, global_prop
 static sql_rel *
 rel_optimizer_one(mvc *sql, sql_rel *rel, int profile, int instantiate, int value_based_opt, int storage_based_opt)
 {
-	global_props gp = (global_props) {.cnt = {0}, .instantiate = (uint8_t)instantiate, .opt_cycle = 0 };
+	global_props gp = {.cnt = {0}, .instantiate = (uint8_t)instantiate, .opt_cycle = 0 };
 	visitor v = { .sql = sql, .value_based_opt = value_based_opt, .storage_based_opt = storage_based_opt, .changes = 1, .data = &gp };
 
 	sql->runs = !(ATOMIC_GET(&GDKdebug) & TESTINGMASK) && profile ? sa_zalloc(sql->sa, NSQLREWRITERS * sizeof(sql_optimizer_run)) : NULL;
