@@ -387,7 +387,7 @@ MANIFOLDevaluate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	*/
 	mut.pci->fcn = fcn;
-	msg = MANIFOLDjob(cntxt->alloc, &mut);
+	msg = MANIFOLDjob(mb->ma, &mut);
 	//freeInstruction(mut.pci);
 
   wrapup:

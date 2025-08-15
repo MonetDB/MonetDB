@@ -69,18 +69,18 @@ CMDvarADD(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 static str
 CMDvarADDstr(Client ctx, str *ret, const char *const *s1, const char *const *s2)
 {
-	(void) ctx;
+	allocator *ma = ctx->curprg->def->ma;
 	str s;
 	size_t l1;
 
 	if (strNil(*s1) || strNil(*s2)) {
-		*ret = MA_STRDUP(ctx->alloc, str_nil);
+		*ret = MA_STRDUP(ma, str_nil);
 		if (*ret == NULL)
 			return mythrow(MAL, "calc.+", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
 	l1 = strlen(*s1) + strlen(*s2) + 1;
-	s = ma_alloc(ctx->alloc, l1);
+	s = ma_alloc(ma, l1);
 	if (s == NULL)
 		return mythrow(MAL, "calc.+", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	strconcat_len(s, l1, *s1, *s2, NULL);
@@ -553,7 +553,7 @@ CALCswitchbit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (ATOMextern(t1)) {
 		//*(ptr **) retval = ATOMdup(t1, *(ptr **) p);
 		size_t len = ATOMlen(t1, *(ptr **)p);
-		*(ptr **) retval = ma_realloc(cntxt->alloc, *(ptr **) p, len, len);
+		*(ptr **) retval = ma_realloc(mb->ma, *(ptr **) p, len, len);
 		if (*(ptr **) retval == NULL)
 			throw(MAL, "ifthenelse", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	} else if (t1 == TYPE_void) {

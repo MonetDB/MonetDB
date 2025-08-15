@@ -231,7 +231,7 @@ escape_str(str *retval, const char *s)
 	if (!s)
 		throw(ILLARG, "url.escape", "url missing");
 
-	if (!(res = (str) ma_alloc(ctx->alloc, strlen(s) * 3)))
+	if (!(res = (str) ma_alloc(ma, strlen(s) * 3)))
 		throw(MAL, "url.escape", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	for (x = 0, y = 0; s[x]; ++x, ++y) {
 		if (needEscape(s[x])) {
@@ -266,7 +266,7 @@ unescape_str(str *retval, const char *s)
 	if (!s)
 		throw(ILLARG, "url.escape", "url missing");
 
-	res = (str) ma_alloc(ctx->alloc, strlen(s));
+	res = (str) ma_alloc(ma, strlen(s));
 	if (!res)
 		throw(MAL, "url.unescape", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
@@ -353,7 +353,7 @@ URLtoString(str *s, size_t *len, const void *SRC, bool external)
 static str
 URLgetAnchor(Client ctx, str *retval, const url *val)
 {
-	(void) ctx;
+	allocator *ma = ctx->curprg->def->ma;
 	const char *s;
 
 	if (val == NULL || *val == NULL)
@@ -373,7 +373,7 @@ URLgetAnchor(Client ctx, str *retval, const url *val)
 			s = str_nil;
 	}
 
-	if ((*retval = MA_STRDUP(ctx->alloc, s)) == NULL)
+	if ((*retval = MA_STRDUP(ma, s)) == NULL)
 		throw(MAL, "url.getAnchor", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
@@ -384,7 +384,7 @@ URLgetAnchor(Client ctx, str *retval, const url *val)
 static str
 URLgetBasename(Client ctx, str *retval, const url *val)
 {
-	(void) ctx;
+	allocator *ma = ctx->curprg->def->ma;
 	const char *s;
 	const char *b = NULL;
 	const char *e = NULL;
@@ -393,14 +393,14 @@ URLgetBasename(Client ctx, str *retval, const url *val)
 		throw(ILLARG, "url.getBasename", "url missing");
 
 	if (strNil(*val)) {
-		*retval = MA_STRDUP(ctx->alloc, str_nil);
+		*retval = MA_STRDUP(ma, str_nil);
 	} else {
 		if ((s = skip_scheme(*val)) == NULL
 			|| (s = skip_authority(s, NULL, NULL, NULL, NULL)) == NULL
 			|| (s = skip_path(s, &b, &e)) == NULL)
 			throw(ILLARG, "url.getBasename", "bad url");
 		if (b == NULL) {
-			*retval = MA_STRDUP(ctx->alloc, str_nil);
+			*retval = MA_STRDUP(ma, str_nil);
 		} else {
 			size_t l;
 
@@ -409,7 +409,7 @@ URLgetBasename(Client ctx, str *retval, const url *val)
 			} else {
 				l = s - b;
 			}
-			if ((*retval = ma_alloc(ctx->alloc, l + 1)) != NULL) {
+			if ((*retval = ma_alloc(ma, l + 1)) != NULL) {
 				strcpy_len(*retval, b, l + 1);
 			}
 		}
@@ -425,7 +425,7 @@ URLgetBasename(Client ctx, str *retval, const url *val)
 static str
 URLgetContext(Client ctx, str *retval, const url *val)
 {
-	(void) ctx;
+	allocator *ma = ctx->curprg->def->ma;
 	const char *s;
 	const char *p;
 
@@ -433,15 +433,15 @@ URLgetContext(Client ctx, str *retval, const url *val)
 		throw(ILLARG, "url.getContext", "url missing");
 
 	if (strNil(*val)) {
-		*retval = MA_STRDUP(ctx->alloc, str_nil);
+		*retval = MA_STRDUP(ma, str_nil);
 	} else {
 		if ((s = skip_scheme(*val)) == NULL
 			|| (p = skip_authority(s, NULL, NULL, NULL, NULL)) == NULL
 			|| (s = skip_path(p, NULL, NULL)) == NULL)
 			throw(ILLARG, "url.getContext", "bad url");
 		if (p == s) {
-			*retval = MA_STRDUP(ctx->alloc, str_nil);
-		} else if ((*retval = ma_alloc(ctx->alloc, s - p + 1)) != NULL) {
+			*retval = MA_STRDUP(ma, str_nil);
+		} else if ((*retval = ma_alloc(ma, s - p + 1)) != NULL) {
 			strcpy_len(*retval, p, s - p + 1);
 		}
 	}
@@ -456,7 +456,7 @@ URLgetContext(Client ctx, str *retval, const url *val)
 static str
 URLgetExtension(Client ctx, str *retval, const url *val)
 {
-	(void) ctx;
+	allocator *ma = ctx->curprg->def->ma;
 	const char *s;
 	const char *e = NULL;
 
@@ -464,19 +464,19 @@ URLgetExtension(Client ctx, str *retval, const url *val)
 		throw(ILLARG, "url.getExtension", "url missing");
 
 	if (strNil(*val)) {
-		*retval = MA_STRDUP(ctx->alloc, str_nil);
+		*retval = MA_STRDUP(ma, str_nil);
 	} else {
 		if ((s = skip_scheme(*val)) == NULL
 			|| (s = skip_authority(s, NULL, NULL, NULL, NULL)) == NULL
 			|| (s = skip_path(s, NULL, &e)) == NULL)
 			throw(ILLARG, "url.getExtension", "bad url");
 		if (e == NULL) {
-			*retval = MA_STRDUP(ctx->alloc, str_nil);
+			*retval = MA_STRDUP(ma, str_nil);
 		} else {
 			size_t l = s - e;
 
 			assert(*e == '.');
-			if ((*retval = ma_alloc(ctx->alloc, l)) != NULL) {
+			if ((*retval = ma_alloc(ma, l)) != NULL) {
 				strcpy_len(*retval, e + 1, l);
 			}
 		}
@@ -492,7 +492,7 @@ URLgetExtension(Client ctx, str *retval, const url *val)
 static str
 URLgetFile(Client ctx, str *retval, const url *val)
 {
-	(void) ctx;
+	allocator *ma = ctx->curprg->def->ma;
 	const char *s;
 	const char *b = NULL;
 
@@ -500,19 +500,19 @@ URLgetFile(Client ctx, str *retval, const url *val)
 		throw(ILLARG, "url.getFile", "url missing");
 
 	if (strNil(*val)) {
-		*retval = MA_STRDUP(ctx->alloc, str_nil);
+		*retval = MA_STRDUP(ma, str_nil);
 	} else {
 		if ((s = skip_scheme(*val)) == NULL
 			|| (s = skip_authority(s, NULL, NULL, NULL, NULL)) == NULL
 			|| (s = skip_path(s, &b, NULL)) == NULL)
 			throw(ILLARG, "url.getFile", "bad url");
 		if (b == NULL) {
-			*retval = MA_STRDUP(ctx->alloc, str_nil);
+			*retval = MA_STRDUP(ma, str_nil);
 		} else {
 			size_t l;
 
 			l = s - b;
-			if ((*retval = ma_alloc(ctx->alloc, l + 1)) != NULL) {
+			if ((*retval = ma_alloc(ma, l + 1)) != NULL) {
 				strcpy_len(*retval, b, l + 1);
 			}
 		}
@@ -528,7 +528,7 @@ URLgetFile(Client ctx, str *retval, const url *val)
 static str
 URLgetHost(Client ctx, str *retval, const url *val)
 {
-	(void) ctx;
+	allocator *ma = ctx->curprg->def->ma;
 	const char *s;
 	const char *h = NULL;
 	const char *p = NULL;
@@ -537,13 +537,13 @@ URLgetHost(Client ctx, str *retval, const url *val)
 		throw(ILLARG, "url.getHost", "url missing");
 
 	if (strNil(*val)) {
-		*retval = MA_STRDUP(ctx->alloc, str_nil);
+		*retval = MA_STRDUP(ma, str_nil);
 	} else {
 		if ((s = skip_scheme(*val)) == NULL
 			|| (s = skip_authority(s, NULL, NULL, &h, &p)) == NULL)
 			throw(ILLARG, "url.getHost", "bad url");
 		if (h == NULL) {
-			*retval = MA_STRDUP(ctx->alloc, str_nil);
+			*retval = MA_STRDUP(ma, str_nil);
 		} else {
 			size_t l;
 
@@ -552,7 +552,7 @@ URLgetHost(Client ctx, str *retval, const url *val)
 			} else {
 				l = s - h;
 			}
-			if ((*retval = ma_alloc(ctx->alloc, l + 1)) != NULL) {
+			if ((*retval = ma_alloc(ma, l + 1)) != NULL) {
 				strcpy_len(*retval, h, l + 1);
 			}
 		}
@@ -568,7 +568,7 @@ URLgetHost(Client ctx, str *retval, const url *val)
 static str
 URLgetDomain(Client ctx, str *retval, const url *val)
 {
-	(void) ctx;
+	allocator *ma = ctx->curprg->def->ma;
 	const char *s;
 	const char *h = NULL;
 	const char *p = NULL;
@@ -577,13 +577,13 @@ URLgetDomain(Client ctx, str *retval, const url *val)
 		throw(ILLARG, "url.getDomain", "url missing");
 
 	if (strNil(*val)) {
-		*retval = MA_STRDUP(ctx->alloc, str_nil);
+		*retval = MA_STRDUP(ma, str_nil);
 	} else {
 		if ((s = skip_scheme(*val)) == NULL
 			|| (s = skip_authority(s, NULL, NULL, &h, &p)) == NULL)
 			throw(ILLARG, "url.getDomain", "bad url");
 		if (h == NULL) {
-			*retval = MA_STRDUP(ctx->alloc, str_nil);
+			*retval = MA_STRDUP(ma, str_nil);
 		} else {
 			size_t l;
 
@@ -596,7 +596,7 @@ URLgetDomain(Client ctx, str *retval, const url *val)
 				p--;
 				l++;
 			}
-			if ((*retval = ma_alloc(ctx->alloc, l + 1)) != NULL) {
+			if ((*retval = ma_alloc(ma, l + 1)) != NULL) {
 				strcpy_len(*retval, p, l + 1);
 			}
 		}
@@ -612,7 +612,7 @@ URLgetDomain(Client ctx, str *retval, const url *val)
 static str
 URLgetPort(Client ctx, str *retval, const url *val)
 {
-	(void) ctx;
+	allocator *ma = ctx->curprg->def->ma;
 	const char *s;
 	const char *p = NULL;
 
@@ -620,17 +620,17 @@ URLgetPort(Client ctx, str *retval, const url *val)
 		throw(ILLARG, "url.getPort", "url missing");
 
 	if (strNil(*val)) {
-		*retval = MA_STRDUP(ctx->alloc, str_nil);
+		*retval = MA_STRDUP(ma, str_nil);
 	} else {
 		if ((s = skip_scheme(*val)) == NULL
 			|| (s = skip_authority(s, NULL, NULL, NULL, &p)) == NULL)
 			throw(ILLARG, "url.getPort", "bad url");
 		if (p == NULL) {
-			*retval = MA_STRDUP(ctx->alloc, str_nil);
+			*retval = MA_STRDUP(ma, str_nil);
 		} else {
 			size_t l = s - p;
 
-			if ((*retval = ma_alloc(ctx->alloc, l + 1)) != NULL) {
+			if ((*retval = ma_alloc(ma, l + 1)) != NULL) {
 				strcpy_len(*retval, p, l + 1);
 			}
 		}
@@ -646,20 +646,20 @@ URLgetPort(Client ctx, str *retval, const url *val)
 static str
 URLgetProtocol(Client ctx, str *retval, const url *val)
 {
-	(void) ctx;
+	allocator *ma = ctx->curprg->def->ma;
 	const char *s;
 
 	if (val == NULL || *val == NULL)
 		throw(ILLARG, "url.getProtocol", "url missing");
 
 	if (strNil(*val)) {
-		*retval = MA_STRDUP(ctx->alloc, str_nil);
+		*retval = MA_STRDUP(ma, str_nil);
 	} else {
 		if ((s = skip_scheme(*val)) == NULL)
 			throw(ILLARG, "url.getProtocol", "bad url");
 		size_t l = s - *val;
 
-		if ((*retval = ma_alloc(ctx->alloc, l)) != NULL) {
+		if ((*retval = ma_alloc(ma, l)) != NULL) {
 			strcpy_len(*retval, *val, l);
 		}
 	}
@@ -674,7 +674,7 @@ URLgetProtocol(Client ctx, str *retval, const url *val)
 static str
 URLgetQuery(Client ctx, str *retval, const url *val)
 {
-	(void) ctx;
+	allocator *ma = ctx->curprg->def->ma;
 	const char *s;
 	const char *q;
 
@@ -682,7 +682,7 @@ URLgetQuery(Client ctx, str *retval, const url *val)
 		throw(ILLARG, "url.getQuery", "url missing");
 
 	if (strNil(*val)) {
-		*retval = MA_STRDUP(ctx->alloc, str_nil);
+		*retval = MA_STRDUP(ma, str_nil);
 	} else {
 		if ((s = skip_scheme(*val)) == NULL
 			|| (s = skip_authority(s, NULL, NULL, NULL, NULL)) == NULL
@@ -694,11 +694,11 @@ URLgetQuery(Client ctx, str *retval, const url *val)
 
 			q++;
 			l = s - q;
-			if ((*retval = ma_alloc(ctx->alloc, l + 1)) != NULL) {
+			if ((*retval = ma_alloc(ma, l + 1)) != NULL) {
 				strcpy_len(*retval, q, l + 1);
 			}
 		} else {
-			*retval = MA_STRDUP(ctx->alloc, str_nil);
+			*retval = MA_STRDUP(ma, str_nil);
 		}
 	}
 
@@ -712,7 +712,7 @@ URLgetQuery(Client ctx, str *retval, const url *val)
 static str
 URLgetRobotURL(Client ctx, str *retval, const url *val)
 {
-	(void) ctx;
+	allocator *ma = ctx->curprg->def->ma;
 	const char *s;
 	size_t l;
 
@@ -720,14 +720,14 @@ URLgetRobotURL(Client ctx, str *retval, const url *val)
 		throw(ILLARG, "url.getQuery", "url missing");
 
 	if (strNil(*val)) {
-		*retval = MA_STRDUP(ctx->alloc, str_nil);
+		*retval = MA_STRDUP(ma, str_nil);
 	} else {
 		if ((s = skip_scheme(*val)) == NULL
 			|| (s = skip_authority(s, NULL, NULL, NULL, NULL)) == NULL)
 			throw(ILLARG, "url.getQuery", "bad url");
 		l = s - *val;
 
-		if ((*retval = ma_alloc(ctx->alloc, l + sizeof("/robots.txt"))) != NULL) {
+		if ((*retval = ma_alloc(ma, l + sizeof("/robots.txt"))) != NULL) {
 			sprintf(*retval, "%.*s/robots.txt", (int) l, *val);
 		}
 	}
@@ -742,20 +742,20 @@ URLgetRobotURL(Client ctx, str *retval, const url *val)
 static str
 URLgetUser(Client ctx, str *retval, const url *val)
 {
-	(void) ctx;
+	allocator *ma = ctx->curprg->def->ma;
 	const char *s, *h, *u, *p;
 
 	if (val == NULL || *val == NULL)
 		throw(ILLARG, "url.getUser", "url missing");
 
 	if (strNil(*val)) {
-		*retval = MA_STRDUP(ctx->alloc, str_nil);
+		*retval = MA_STRDUP(ma, str_nil);
 	} else {
 		if ((s = skip_scheme(*val)) == NULL
 			|| (s = skip_authority(s, &u, &p, &h, NULL)) == NULL)
 			throw(ILLARG, "url.getHost", "bad url");
 		if (u == NULL || h == NULL) {
-			*retval = MA_STRDUP(ctx->alloc, str_nil);
+			*retval = MA_STRDUP(ma, str_nil);
 		} else {
 			size_t l;
 
@@ -764,7 +764,7 @@ URLgetUser(Client ctx, str *retval, const url *val)
 			} else {
 				l = h - u - 1;
 			}
-			if ((*retval = ma_alloc(ctx->alloc, l + 1)) != NULL) {
+			if ((*retval = ma_alloc(ma, l + 1)) != NULL) {
 				strcpy_len(*retval, u, l + 1);
 			}
 		}
@@ -793,8 +793,8 @@ URLisaURL(Client ctx, bit *retval, const char *const *val)
 static str
 URLnew(Client ctx, url *u, const char *const *val)
 {
-	(void) ctx;
-	*u = MA_STRDUP(ctx->alloc, *val);
+	allocator *ma = ctx->curprg->def->ma;
+	*u = MA_STRDUP(ma, *val);
 	if (*u == NULL)
 		throw(MAL, "url.new", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
@@ -803,7 +803,7 @@ URLnew(Client ctx, url *u, const char *const *val)
 static str
 URLnew3(Client ctx, url *u, const char *const *protocol, const char *const *server, const char *const *file)
 {
-	(void) ctx;
+	allocator *ma = ctx->curprg->def->ma;
 	const char *Protocol = *protocol;
 	const char *Server = *server;
 	const char *File = *file;
@@ -818,7 +818,7 @@ URLnew3(Client ctx, url *u, const char *const *protocol, const char *const *serv
 	if (strNil(Protocol))
 		Protocol = "";
 	l = strlen(File) + strlen(Server) + strlen(Protocol) + 10;
-	*u = ma_alloc(ctx->alloc, l);
+	*u = ma_alloc(ma, l);
 	if (*u == NULL)
 		throw(MAL, "url.newurl", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	snprintf(*u, l, "%s://%s/%s", Protocol, Server, File);
@@ -828,7 +828,7 @@ URLnew3(Client ctx, url *u, const char *const *protocol, const char *const *serv
 static str
 URLnew4(Client ctx, url *u, const char *const *protocol, const char *const *server, const int *port, const char *const *file)
 {
-	(void) ctx;
+	allocator *ma = ctx->curprg->def->ma;
 	const char *Protocol = *protocol;
 	const char *Server = *server;
 	int Port = *port;
@@ -846,7 +846,7 @@ URLnew4(Client ctx, url *u, const char *const *protocol, const char *const *serv
 	if (strNil(Protocol))
 		Protocol = "";
 	l = strlen(File) + strlen(Server) + strlen(Protocol) + 20;
-	*u = ma_alloc(ctx->alloc, l);
+	*u = ma_alloc(ma, l);
 	if (*u == NULL)
 		throw(MAL, "url.newurl", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	snprintf(*u, l, "%s://%s:%d/%s", Protocol, Server, Port, File);
@@ -856,8 +856,8 @@ URLnew4(Client ctx, url *u, const char *const *protocol, const char *const *serv
 static str
 URLnoop(Client ctx, url *u, const url *val)
 {
-	(void) ctx;
-	*u = MA_STRDUP(ctx->alloc, *val);
+	allocator *ma = ctx->curprg->def->ma;
+	*u = MA_STRDUP(ma, *val);
 	if (*u == NULL)
 		throw(MAL, "url.noop", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
@@ -871,7 +871,7 @@ URLnoop(Client ctx, url *u, const url *val)
 static str
 extractURLHost(Client ctx, str *retval, const char *const *url, const bit *no_www)
 {
-	(void) ctx;
+	allocator *ma = ctx->curprg->def->ma;
 	const char *s;
 	const char *h = NULL;
 	const char *p = NULL;
@@ -901,16 +901,16 @@ extractURLHost(Client ctx, str *retval, const char *const *url, const bit *no_ww
 				l -= 4;
 			}
 			if (domain && l > 3) {
-				if ((*retval = ma_alloc(ctx->alloc, l + 1)) != NULL)
+				if ((*retval = ma_alloc(ma, l + 1)) != NULL)
 					strcpy_len(*retval, h, l + 1);
 			} else {
-				*retval = MA_STRDUP(ctx->alloc, str_nil);
+				*retval = MA_STRDUP(ma, str_nil);
 			}
 		} else {
-			*retval = MA_STRDUP(ctx->alloc, str_nil);
+			*retval = MA_STRDUP(ma, str_nil);
 		}
 	} else {
-		*retval = MA_STRDUP(ctx->alloc, str_nil);
+		*retval = MA_STRDUP(ma, str_nil);
 	}
 	if (!*retval)
 		throw(MAL, "url.getURLHost", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -932,14 +932,14 @@ str_buf_copy(str *buf, size_t *buflen, const char *s, size_t l)
 static str
 BATextractURLHost(Client ctx, bat *res, const bat *bid, const bit *no_www)
 {
-	(void) ctx;
+	allocator *ma = ctx->curprg->def->ma;
 	const char *s;
 	const char *host = NULL;
 	const char *port = NULL;
 	BAT *bn = NULL, *b = NULL;
 	BUN p, q;
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
-	str buf = ma_alloc(ctx->alloc, buflen);
+	str buf = ma_alloc(ma, buflen);
 	str msg = MAL_SUCCEED;
 	bool nils = false;
 

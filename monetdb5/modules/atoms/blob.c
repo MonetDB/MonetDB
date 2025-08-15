@@ -133,7 +133,7 @@ BLOBnitems_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 static str
 BLOBtoblob(Client ctx, blob **retval, const char *const *s)
 {
-	allocator *ma = ctx->alloc;
+	allocator *ma = ctx->curprg->def->ma;
 	size_t len = strLen(*s);
 	blob *b = (blob *) ma_alloc(ma, blobsize(len));
 
@@ -148,7 +148,7 @@ BLOBtoblob(Client ctx, blob **retval, const char *const *s)
 static str
 BLOBblob_blob(Client ctx, blob **d, const blob *const*s)
 {
-	allocator *ma = ctx->alloc;
+	allocator *ma = ctx->curprg->def->ma;
 	size_t len = blobsize((*s)->nitems);
 	blob *b;
 

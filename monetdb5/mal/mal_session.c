@@ -85,12 +85,12 @@ malBootstrap(char *modules[], bool embedded, const char *initpasswd)
  * BATs introduced.
  */
 static str
-MSresetClientPrg(Client cntxt, const char *mod, const char *fcn)
+MSresetClientPrg(Client ctx, const char *mod, const char *fcn)
 {
 	MalBlkPtr mb;
 	InstrPtr p;
 
-	mb = cntxt->curprg->def;
+	mb = ctx->curprg->def;
 	mb->stop = 1;
 	mb->errors = MAL_SUCCEED;
 	p = mb->stmt[0];
@@ -115,25 +115,25 @@ MSresetClientPrg(Client cntxt, const char *mod, const char *fcn)
  */
 
 str
-MSinitClientPrg(Client cntxt, const char *mod, const char *nme)
+MSinitClientPrg(Client ctx, const char *mod, const char *nme)
 {
 	int idx;
 
-	if (cntxt->curprg && idcmp(nme, cntxt->curprg->name) == 0)
-		return MSresetClientPrg(cntxt, putName(mod), putName(nme));
-	cntxt->curprg = newFunction(putName(mod), putName(nme), FUNCTIONsymbol);
-	if (cntxt->curprg == 0)
+	if (ctx->curprg && idcmp(nme, ctx->curprg->name) == 0)
+		return MSresetClientPrg(ctx, putName(mod), putName(nme));
+	ctx->curprg = newFunction(putName(mod), putName(nme), FUNCTIONsymbol);
+	if (ctx->curprg == 0)
 		throw(MAL, "initClientPrg", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	if ((idx = findVariable(cntxt->curprg->def, mainRef)) >= 0)
-		setVarType(cntxt->curprg->def, idx, TYPE_void);
-	insertSymbol(cntxt->usermodule, cntxt->curprg);
+	if ((idx = findVariable(ctx->curprg->def, mainRef)) >= 0)
+		setVarType(ctx->curprg->def, idx, TYPE_void);
+	insertSymbol(ctx->usermodule, ctx->curprg);
 
-	if (cntxt->glb == NULL)
-		cntxt->glb = newGlobalStack(cntxt->alloc, MAXGLOBALS + cntxt->curprg->def->vsize);
-	if (cntxt->glb == NULL)
+	if (ctx->glb == NULL)
+		ctx->glb = newGlobalStack(ctx->alloc, MAXGLOBALS + ctx->curprg->def->vsize);
+	if (ctx->glb == NULL)
 		throw(MAL, "initClientPrg", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	assert(cntxt->curprg->def != NULL);
-	assert(cntxt->curprg->def->vtop > 0);
+	assert(ctx->curprg->def != NULL);
+	assert(ctx->curprg->def->vtop > 0);
 	return MAL_SUCCEED;
 }
 

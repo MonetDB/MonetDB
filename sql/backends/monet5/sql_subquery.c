@@ -17,7 +17,7 @@
 str
 zero_or_one_error(Client ctx, ptr ret, const bat *bid, const bit *err)
 {
-	(void) ctx;
+	allocator *ma = ctx->curprg->def->ma;
 	BAT *b;
 	BUN c;
 	size_t _s;
@@ -42,7 +42,7 @@ zero_or_one_error(Client ctx, ptr ret, const bat *bid, const bit *err)
 		p = &oid_nil;
 	if (ATOMextern(b->ttype)) {
 		_s = ATOMlen(ATOMtype(b->ttype), p);
-		*(ptr *) ret = sa_alloc(ctx->alloc, _s);
+		*(ptr *) ret = sa_alloc(ma, _s);
 		if (*(ptr *) ret == NULL) {
 			bat_iterator_end(&bi);
 			BBPunfix(b->batCacheid);
@@ -142,7 +142,7 @@ SQLsubzero_or_one(Client ctx, bat *ret, const bat *bid, const bat *gid, const ba
 str
 SQLall(Client ctx, ptr ret, const bat *bid)
 {
-	(void) ctx;
+	allocator *ma = ctx->curprg->def->ma;
 	BAT *b;
 	BUN c, q = 0;
 
@@ -204,7 +204,7 @@ SQLall(Client ctx, ptr ret, const bat *bid)
 			}
 			s = ATOMlen(ATOMtype(bi.type), p);
 			if (ATOMextern(bi.type)) {
-				*(ptr *) ret = sa_alloc(ctx->alloc, s);
+				*(ptr *) ret = sa_alloc(ma, s);
 				if (*(ptr *) ret == NULL) {
 					bat_iterator_end(&bi);
 					BBPunfix(b->batCacheid);

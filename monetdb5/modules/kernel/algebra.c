@@ -140,6 +140,7 @@ static str
 ALGminany_skipnil(Client ctx, ptr result, const bat *bid, const bit *skipnil)
 {
 	(void) ctx;
+	allocator *ma = ctx->curprg->def->ma;
 	BAT *b;
 	ptr p;
 	str msg = MAL_SUCCEED;
@@ -153,9 +154,9 @@ ALGminany_skipnil(Client ctx, ptr result, const bat *bid, const bit *skipnil)
 							  ATOMname(b->ttype));
 	} else {
 		if (ATOMextern(b->ttype)) {
-			*(ptr *) result = p = BATmin_skipnil(ctx->alloc, b, NULL, *skipnil);
+			*(ptr *) result = p = BATmin_skipnil(ma, b, NULL, *skipnil);
 		} else {
-			p = BATmin_skipnil(ctx->alloc, b, result, *skipnil);
+			p = BATmin_skipnil(ma, b, result, *skipnil);
 			if (p != result)
 				msg = createException(MAL, "algebra.min",
 									  SQLSTATE(HY002) "INTERNAL ERROR");
@@ -178,7 +179,7 @@ ALGminany(Client ctx, ptr result, const bat *bid)
 static str
 ALGmaxany_skipnil(Client ctx, ptr result, const bat *bid, const bit *skipnil)
 {
-	(void) ctx;
+	allocator *ma = ctx->curprg->def->ma;
 	BAT *b;
 	ptr p;
 	str msg = MAL_SUCCEED;
@@ -192,9 +193,9 @@ ALGmaxany_skipnil(Client ctx, ptr result, const bat *bid, const bit *skipnil)
 							  ATOMname(b->ttype));
 	} else {
 		if (ATOMextern(b->ttype)) {
-			*(ptr *) result = p = BATmax_skipnil(ctx->alloc, b, NULL, *skipnil);
+			*(ptr *) result = p = BATmax_skipnil(ma, b, NULL, *skipnil);
 		} else {
-			p = BATmax_skipnil(ctx->alloc, b, result, *skipnil);
+			p = BATmax_skipnil(ma, b, result, *skipnil);
 			if (p != result)
 				msg = createException(MAL, "algebra.max",
 									  SQLSTATE(HY002) "INTERNAL ERROR");
@@ -1640,10 +1641,10 @@ ALGfetch(allocator *alloc, ptr ret, const bat *bid, const lng *pos)
 str
 ALGfetchoid(Client ctx, ptr ret, const bat *bid, const oid *pos)
 {
-	(void) ctx;
+	allocator *ma = ctx->curprg->def->ma;
 	lng o = *pos;
 
-	return ALGfetch(ctx->alloc, ret, bid, &o);
+	return ALGfetch(ma, ret, bid, &o);
 }
 
 static str

@@ -1198,12 +1198,13 @@ static str
 soundex(Client ctx, str *res, const char *const *Name)
 {
 	(void) ctx;
+	allocator *ma = ctx->curprg->def->ma;
 	str msg = MAL_SUCCEED;
 
 	//GDKfree(*res);
 	RETURN_NIL_IF(strNil(*Name), TYPE_str);
 
-	*res = (str) ma_alloc(ctx->alloc, sizeof(char) * (SoundexLen + 1));
+	*res = (str) ma_alloc(ma, sizeof(char) * (SoundexLen + 1));
 	if (*res == NULL)
 		throw(MAL, "soundex", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
@@ -1251,14 +1252,14 @@ stringdiff(Client ctx, int *res, const char *const *s1, const char *const *s2)
 static str
 qgram_normalize(Client ctx, str *res, const char *const *Input)
 {
-	(void) ctx;
+	allocator *ma = ctx->curprg->def->ma;
 	const char *input = *Input;
 	int i, j = 0;
 	char c, last = ' ';
 
 	// GDKfree(*res);
 	RETURN_NIL_IF(strNil(input), TYPE_str);
-	*res = (str) ma_alloc(ctx->alloc, sizeof(char) * (strlen(input) + 1));	/* normalized strings are never longer than original */
+	*res = (str) ma_alloc(ma, sizeof(char) * (strlen(input) + 1));	/* normalized strings are never longer than original */
 	if (*res == NULL)
 		throw(MAL, "txtsim.qgramnormalize", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 

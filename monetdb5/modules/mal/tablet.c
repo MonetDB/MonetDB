@@ -1088,7 +1088,7 @@ SQLworker(void *arg)
 	GDKclrerr();
 	task->errbuf = GDKerrbuf;
 	MT_thread_set_qry_ctx(task->set_qry_ctx ? &task->cntxt->qryctx : NULL);
-	allocator *ma = task->cntxt ? ma_create(task->cntxt->alloc) : NULL;
+	allocator *ma = task->cntxt ? ma_create(task->cntxt->curprg->def->ma) : NULL;
 	MT_thread_setallocator(ma);
 
 	MT_sema_down(&task->sema);
@@ -1260,7 +1260,7 @@ SQLproducer(void *p)
 	lng lineno = 1;
 	lng startlineno = 1;
 	int more = 0;
-	allocator *ma = task->cntxt ? ma_create(task->cntxt->alloc) : NULL;
+	allocator *ma = task->cntxt ? ma_create(task->cntxt->curprg->def->ma) : NULL;
 	MT_thread_setallocator(ma);
 
 	MT_sema_down(&task->producer);
@@ -1584,7 +1584,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out,
 	int threads = 1;
 	lng tio, t1 = 0;
 	char name[MT_NAME_LEN];
-	allocator *ma = cntxt->alloc;
+	allocator *ma = cntxt->curprg->def->ma;
 
 	if (maxrow < 0 || maxrow > (LL_CONSTANT(1) << 16)) {
 		threads = GDKgetenv_int("tablet_threads", GDKnr_threads);

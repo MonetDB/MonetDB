@@ -203,6 +203,7 @@ RMTconnectScen(Client ctx, str *ret,
 			   const char *const *ouri, const char *const *user, const char *const *passwd, const char *const *scen, bit *columnar)
 {
 	(void) ctx;
+	allocator *ma = ctx->curprg->def->ma;
 	connection c;
 	char conn[BUFSIZ];
 	char *s;
@@ -310,7 +311,7 @@ RMTconnectScen(Client ctx, str *ret,
 #endif
 	MT_lock_unset(&mal_remoteLock);
 
-	*ret = MA_STRDUP(ctx->alloc, conn);
+	*ret = MA_STRDUP(ma, conn);
 	if (*ret == NULL)
 		throw(MAL, "remote.connect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return (MAL_SUCCEED);
