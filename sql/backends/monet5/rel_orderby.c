@@ -25,7 +25,7 @@ rel2bin_project_prepare(backend *be, sql_rel *rel)
 		BUN est = get_rel_count(rel);
 		lng estimate;
 
-		if (est == BUN_NONE || (ulng) est > (ulng) GDK_lng_max) {
+		if (est == BUN_NONE || (ulng) est > (ulng) GDK_int_max) {
 			estimate = 1024;
 		} else {
 			estimate = (lng) est;
