@@ -13,8 +13,8 @@ create table stressme (aa varchar(64), bb int)
 statement ok
 insert into stressme values ('one', 1), ('another', 1), ('stress', 1), (NULL, 2), ('ok', 2), ('check', 3), ('me', 3), ('please', 3), (NULL, 4)
 
-query TIITTT nosort
-prepare select count(*) over (rows ? preceding) from analytics
+query TIITTT rowsort
+prepare select count(*) over (rows ? preceding) from analytics order by 1
 ----
 bigint
 63
@@ -43,50 +43,50 @@ exec <LAST_PREPARE_ID>(2)
 3
 3
 
-query TIITTT nosort
-prepare select max(aa) over (rows between 5 preceding and ? following) from stressme
+query TIITTT rowsort
+prepare select max(aa) over (order by aa nulls first rows between 5 preceding and ? following) from stressme order by 1
 ----
-varchar
-64
-0
-(empty)
-%1
-%1
 bigint
 63
 0
 NULL
 NULL
 NULL
-
-query T rowsort
-exec <LAST_PREPARE_ID>(2)
-----
-please
-stress
-stress
-stress
-stress
-stress
-stress
-stress
-stress
-
-query TIITTT nosort
-prepare select max(aa) over (order by bb range between ? preceding and 10 following) from stressme
-----
 varchar
 64
 0
 (empty)
-%2
-%2
+%1
+%1
+
+query T nosort
+exec <LAST_PREPARE_ID>(2)
+----
+another
+check
+me
+ok
+one
+please
+stress
+stress
+stress
+
+query TIITTT rowsort
+prepare select max(aa) over (order by bb range between ? preceding and 10 following) from stressme order by 1
+----
 int
 31
 0
 NULL
 NULL
 NULL
+varchar
+64
+0
+(empty)
+%1
+%1
 
 query T rowsort
 exec <LAST_PREPARE_ID>(2)
