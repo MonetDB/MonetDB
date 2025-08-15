@@ -13,7 +13,7 @@ query TTTT nosort
 select avg(aa) over (partition by bb),
        avg(aa) over (partition by bb order by bb asc),
        avg(aa) over (partition by bb order by bb desc),
-       avg(aa) over (order by bb desc) from analytics
+       avg(aa) over (order by bb desc) from analytics order by bb desc
 ----
 NULL
 NULL
@@ -60,7 +60,7 @@ query TTTT nosort
 select avg(bb) over (partition by bb),
        avg(bb) over (partition by bb order by bb asc),
        avg(bb) over (partition by bb order by bb desc),
-       avg(bb) over (order by bb desc) from analytics
+       avg(bb) over (order by bb desc) from analytics order by bb desc
 ----
 4
 4
@@ -107,7 +107,7 @@ query TTTT nosort
 select avg(aa) over (partition by aa),
        avg(aa) over (partition by aa order by aa asc),
        avg(aa) over (partition by aa order by aa desc),
-       avg(aa) over (order by aa desc) from analytics
+       avg(aa) over (order by aa desc) from analytics order by aa desc nulls last
 ----
 0:00:15
 0:00:15
@@ -151,10 +151,10 @@ NULL
 0:00:05.750000
 
 query TTTT nosort
-select avg(bb) over (partition by aa),
-       avg(bb) over (partition by aa order by aa asc),
-       avg(bb) over (partition by aa order by aa desc),
-       avg(bb) over (order by aa desc) from analytics
+select avg(bb) over (partition by aa order by bb),
+       avg(bb) over (partition by aa order by aa asc nulls last, bb),
+       avg(bb) over (partition by aa order by aa desc nulls last, bb),
+       avg(bb) over (order by aa desc nulls last) from analytics order by aa desc nulls last, bb
 ----
 3
 3
@@ -176,9 +176,9 @@ select avg(bb) over (partition by aa),
 1
 1
 2
-2
-2
-2
+1
+1
+1
 2
 2
 2
@@ -188,9 +188,9 @@ select avg(bb) over (partition by aa),
 1
 1
 2
-3
-3
-3
+2
+2
+2
 2
 3
 3
@@ -291,7 +291,7 @@ select avg(interval '-1' second) over (partition by bb),
 -100
 -100
 
-query TTTTTT rowsort
+query TTTTTT nosort
 select avg(aa) over (),
        avg(bb) over (),
        avg(aa) over (),
@@ -360,7 +360,7 @@ select avg(aa) over (),
 0:00:01
 1
 
-query TT rowsort
+query TT nosort
 select avg(CAST(NULL as interval second)) over (),
        avg(CAST(NULL as interval month)) over () from analytics
 ----
@@ -386,14 +386,14 @@ NULL
 NULL
 
 query TTTT nosort
-select avg(aa) over (order by bb rows between 5 preceding and 0 following),
-       avg(aa) over (order by bb rows between 5 preceding and 2 following),
-       avg(aa) over (partition by bb order by bb rows between 5 preceding and 0 following),
-       avg(aa) over (partition by bb order by bb rows between 5 preceding and 2 following) from analytics
+select avg(aa) over (order by bb, aa nulls first rows between 5 preceding and 0 following),
+       avg(aa) over (order by bb, aa nulls first rows between 5 preceding and 2 following),
+       avg(aa) over (partition by bb order by bb, aa nulls first rows between 5 preceding and 0 following),
+       avg(aa) over (partition by bb order by bb, aa nulls first rows between 5 preceding and 2 following) from analytics order by bb, aa nulls first
 ----
+0:00:02
 0:00:03
-0:00:03
-0:00:03
+0:00:02
 0:00:03
 0:00:02.500000
 0:00:03
@@ -408,20 +408,20 @@ select avg(aa) over (order by bb rows between 5 preceding and 0 following),
 NULL
 0:00:05.500000
 0:00:03
-0:00:05.833000
+0:00:04.167000
 0:00:03
 0:00:05.500000
 0:00:04
-0:00:05.714000
+0:00:04.429000
 0:00:05.500000
 0:00:05.500000
-0:00:06.400000
-0:00:06.143000
-0:00:15
+0:00:04.600000
+0:00:06.286000
+0:00:05
 0:00:08.667000
-0:00:07
+0:00:05.200000
 0:00:06.833000
-0:00:10
+0:00:05.500000
 0:00:08.667000
 0:00:07.400000
 0:00:07.400000
@@ -433,38 +433,38 @@ NULL
 NULL
 
 query TTT nosort
-select avg(aa) over (order by bb rows 2 preceding),
-       avg(aa) over (partition by bb order by bb rows 2 preceding),
-       avg(aa) over (order by bb nulls last, aa nulls last rows 2 preceding) from analytics
+select avg(aa) over (order by bb, aa nulls last rows 2 preceding),
+       avg(aa) over (partition by bb order by bb, aa nulls last rows 2 preceding),
+       avg(aa) over (order by bb nulls last, aa nulls last rows 2 preceding) from analytics order by bb, aa nulls last
 ----
-0:00:02.500000
-0:00:02.500000
 0:00:02
-0:00:03
-0:00:03
+0:00:02
+0:00:02
+0:00:02.500000
+0:00:02.500000
 0:00:02.500000
 0:00:03
 0:00:03
-0:00:03
-0:00:03.500000
 0:00:03
 0:00:03.333000
-0:00:05.500000
+0:00:03
+0:00:03.333000
+0:00:05
 0:00:05.500000
 0:00:05
-0:00:03
-NULL
 0:00:05.500000
-0:00:09.333000
-0:00:10
+0:00:05.500000
+0:00:05.500000
 0:00:06.500000
-0:00:08.667000
-0:00:08.667000
+0:00:05
+0:00:06.500000
+0:00:05.500000
+0:00:05.500000
 0:00:05.500000
 0:00:08.667000
-0:00:15
 0:00:08.667000
-0:00:05.500000
+0:00:08.667000
+0:00:10.500000
 NULL
 0:00:10.500000
 
@@ -472,7 +472,7 @@ query TTTT nosort
 select avg(bb) over (order by bb groups between 5 preceding and 0 following),
        avg(bb) over (order by bb groups between 5 preceding and 2 following),
        avg(bb) over (partition by bb order by bb groups between 5 preceding and 0 following),
-       avg(bb) over (partition by bb order by bb groups between 5 preceding and 2 following) from analytics
+       avg(bb) over (partition by bb order by bb groups between 5 preceding and 2 following) from analytics order by bb
 ----
 1
 2
@@ -517,7 +517,7 @@ select avg(bb) over (order by bb groups between 5 preceding and 0 following),
 
 query TT nosort
 select avg(bb) over (order by bb groups 2 preceding),
-       avg(bb) over (partition by bb order by bb groups 2 preceding) from analytics
+       avg(bb) over (partition by bb order by bb groups 2 preceding) from analytics order by bb
 ----
 1
 1
@@ -544,7 +544,7 @@ query TTTT nosort
 select sum(aa) over (partition by bb),
        sum(aa) over (partition by bb order by bb asc),
        sum(aa) over (partition by bb order by bb desc),
-       sum(aa) over (order by bb desc) from analytics
+       sum(aa) over (order by bb desc) from analytics order by bb desc
 ----
 NULL
 NULL
@@ -591,7 +591,7 @@ query TTTT nosort
 select sum(bb) over (partition by aa),
        sum(bb) over (partition by aa order by aa asc),
        sum(bb) over (partition by aa order by aa desc),
-       sum(bb) over (order by aa desc) from analytics
+       sum(bb) over (order by aa desc nulls last) from analytics order by aa desc nulls last, bb
 ----
 3
 3
@@ -638,7 +638,7 @@ query TTTT nosort
 select min(aa) over (partition by bb),
        min(aa) over (partition by bb order by bb asc),
        min(aa) over (partition by bb order by bb desc),
-       min(aa) over (order by bb desc) from analytics
+       min(aa) over (order by bb desc) from analytics order by bb desc
 ----
 NULL
 NULL
@@ -683,9 +683,9 @@ NULL
 
 query TTTT nosort
 select max(bb) over (partition by aa),
-       max(bb) over (partition by aa order by aa asc),
-       max(bb) over (partition by aa order by aa desc),
-       max(bb) over (order by aa desc) from analytics
+       max(bb) over (partition by aa order by aa asc, bb asc),
+       max(bb) over (partition by aa order by aa desc, bb desc),
+       max(bb) over (order by aa desc nulls last, bb desc) from analytics order by aa desc nulls last, bb asc
 ----
 3
 3
@@ -708,7 +708,7 @@ select max(bb) over (partition by aa),
 1
 3
 2
-2
+1
 2
 3
 2
@@ -720,7 +720,7 @@ select max(bb) over (partition by aa),
 1
 3
 4
-4
+2
 4
 4
 4
