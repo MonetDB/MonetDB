@@ -24,7 +24,7 @@ project (
 | group by (
 | | table ("sys"."generate_series"(int(31) "0", int(4) "10", int(1) "1"), 
 | | ) [ "%1"."value" ]
-| ) [  ] [ "sys"."avg" no nil (tinyint(2) "3") UNIQUE as "%2"."%2" ]
+| ) [  ] [ "sys"."avg" no nil (tinyint(2) "3") NOT NULL UNIQUE as "%2"."%2" ]
 ) [ "%2"."%2" UNIQUE ]
 
 query I rowsort
