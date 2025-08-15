@@ -1144,6 +1144,8 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 				set_count_prop(v->sql->sa, rel, 1000 /* TODO get size of users */);
 			} else if (f->func->lang == FUNC_LANG_MAL && strncmp(f->func->base.name, "querylog", 8) == 0) {
 				set_count_prop(v->sql->sa, rel, 1000 /* TODO get size of querylog */);
+			} else if (f->func->lang == FUNC_LANG_MAL && strncmp(f->func->base.name, "generate_series", 15) == 0) {
+				set_count_prop(v->sql->sa, rel, 1000 /* TODO get size of (limit - start + 1) */);
 			} else if (f->func->lang == FUNC_LANG_MAL &&
 					   (strcmp(f->func->base.name, "env") == 0 ||
 						strcmp(f->func->base.name, "keywords") == 0 ||
