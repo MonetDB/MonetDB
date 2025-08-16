@@ -24,7 +24,7 @@ jobs:
           - os: macos-latest
             c_compiler: clang
           - os: macos-latest
-            c_compiler: gcc-15
+            c_compiler: gcc-14
           - os: ubuntu-latest
             c_compiler: gcc
           - os: ubuntu-latest
