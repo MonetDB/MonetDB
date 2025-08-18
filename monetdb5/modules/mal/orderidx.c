@@ -395,7 +395,7 @@ OIDXmerge(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "bat.orderidx", TYPE_NOT_SUPPORTED);
 	}
 
-	if ((a = (BAT **) GDKmalloc(n_ar * sizeof(BAT *))) == NULL) {
+	if ((a = (BAT **) ma_alloc(mb->ma, n_ar * sizeof(BAT *))) == NULL) {
 		BBPunfix(bid);
 		throw(MAL, "bat.orderidx", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
@@ -406,7 +406,7 @@ OIDXmerge(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			for (j = i - 1; j >= 0; j--) {
 				BBPunfix(a[j]->batCacheid);
 			}
-			GDKfree(a);
+			//GDKfree(a);
 			BBPunfix(bid);
 			throw(MAL, "bat.orderidx", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		}
@@ -429,7 +429,7 @@ OIDXmerge(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BBPunfix(bid);
 		for (i = 0; i < n_ar; i++)
 			BBPunfix(a[i]->batCacheid);
-		GDKfree(a);
+		//GDKfree(a);
 		throw(MAL, "bat.orderidx", "count mismatch");
 	}
 
@@ -437,7 +437,7 @@ OIDXmerge(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	for (i = 0; i < n_ar; i++)
 		BBPunfix(a[i]->batCacheid);
-	GDKfree(a);
+	//GDKfree(a);
 	BBPunfix(bid);
 
 	if (rc != GDK_SUCCEED)

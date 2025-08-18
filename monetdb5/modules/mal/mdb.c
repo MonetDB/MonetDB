@@ -356,7 +356,7 @@ MDBStkTrace(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 		throw(MAL, "mdb.getStackTrace", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	len = strlen(msg);
-	buf = (char *) GDKmalloc(len + 1024);
+	buf = (char *) ma_alloc(m->ma, len + 1024);
 	if (buf == NULL) {
 		//GDKfree(msg);
 		BBPreclaim(b);
@@ -369,7 +369,7 @@ MDBStkTrace(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 	if (BUNappend(b, &k, false) != GDK_SUCCEED ||
 		BUNappend(bn, buf, false) != GDK_SUCCEED) {
 		//GDKfree(msg);
-		GDKfree(buf);
+		//GDKfree(buf);
 		BBPreclaim(b);
 		BBPreclaim(bn);
 		throw(MAL, "mdb.setTrace", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -386,9 +386,9 @@ MDBStkTrace(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 		}
 		l = strlen(msg);
 		if (l > len) {
-			GDKfree(buf);
+			//GDKfree(buf);
 			len = l;
-			buf = (char *) GDKmalloc(len + 1024);
+			buf = (char *) ma_alloc(m->ma, len + 1024);
 			if (buf == NULL) {
 				//GDKfree(msg);
 				BBPunfix(b->batCacheid);
@@ -401,7 +401,7 @@ MDBStkTrace(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 				 getFunctionId(getInstrPtr(s->blk, 0)), pcup);
 		if (BUNappend(b, &k, false) != GDK_SUCCEED ||
 			BUNappend(bn, buf, false) != GDK_SUCCEED) {
-			GDKfree(buf);
+			//GDKfree(buf);
 			//GDKfree(msg);
 			BBPunfix(b->batCacheid);
 			BBPunfix(bn->batCacheid);
@@ -409,7 +409,7 @@ MDBStkTrace(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 		}
 		//GDKfree(msg);
 	}
-	GDKfree(buf);
+	//GDKfree(buf);
 	*ret = b->batCacheid;
 	BBPkeepref(b);
 	*ret2 = bn->batCacheid;
@@ -673,7 +673,7 @@ MDBgetDefinition(Client cntxt, MalBlkPtr m, MalStkPtr stk, InstrPtr p)
 static str
 MDBgetExceptionVariable(Client ctx, str *ret, const char *const *msg)
 {
-	(void) ctx;
+	allocator *ma = ctx->curprg->def->ma;
 	str tail;
 
 	tail = strchr(*msg, ':');
@@ -682,7 +682,7 @@ MDBgetExceptionVariable(Client ctx, str *ret, const char *const *msg)
 			  OPERATION_FAILED " ':'<name> missing");
 
 	*tail = 0;
-	*ret = GDKstrdup(*msg);
+	*ret = MA_STRDUP(ma, *msg);
 	if (*ret == NULL)
 		throw(MAL, "mdb.getExceptionVariable", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	*tail = ':';
@@ -692,7 +692,7 @@ MDBgetExceptionVariable(Client ctx, str *ret, const char *const *msg)
 static str
 MDBgetExceptionContext(Client ctx, str *ret, const char *const *msg)
 {
-	(void) ctx;
+	allocator *ma = ctx->curprg->def->ma;
 	str tail, tail2;
 
 	tail = strchr(*msg, ':');
@@ -705,7 +705,7 @@ MDBgetExceptionContext(Client ctx, str *ret, const char *const *msg)
 			  OPERATION_FAILED " <name> missing");
 
 	*tail2 = 0;
-	*ret = GDKstrdup(tail + 1);
+	*ret = MA_STRDUP(ma, tail + 1);
 	if (*ret == NULL)
 		throw(MAL, "mdb.getExceptionContext", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	*tail2 = ':';
@@ -715,7 +715,7 @@ MDBgetExceptionContext(Client ctx, str *ret, const char *const *msg)
 static str
 MDBgetExceptionReason(Client ctx, str *ret, const char *const *msg)
 {
-	(void) ctx;
+	allocator *ma = ctx->curprg->def->ma;
 	str tail;
 
 	tail = strchr(*msg, ':');
@@ -725,7 +725,7 @@ MDBgetExceptionReason(Client ctx, str *ret, const char *const *msg)
 	if (tail == 0)
 		throw(MAL, "mdb.getExceptionReason", OPERATION_FAILED " ':' missing");
 
-	*ret = GDKstrdup(tail + 1);
+	*ret = MA_STRDUP(ma, tail + 1);
 	if (*ret == NULL)
 		throw(MAL, "mdb.getExceptionReason", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
