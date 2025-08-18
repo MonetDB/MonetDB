@@ -7,8 +7,21 @@ After=network.target
 Type=forking
 User=monetdb
 Group=monetdb
-ExecStart=@CMAKE_INSTALL_FULL_BINDIR@/monetdbd-@MONETDB_VERSION@ start @CMAKE_INSTALL_FULL_LOCALSTATEDIR@/monetdb5/dbfarm
-ExecStop=@CMAKE_INSTALL_FULL_BINDIR@/monetdbd-@MONETDB_VERSION@ stop @CMAKE_INSTALL_FULL_LOCALSTATEDIR@/monetdb5/dbfarm
+UMask=0007
+# DBFARM is configurable by creating an override file in
+# /etc/systemd/system/monetdbd.service.d (to be created) with content
+# [Service]
+# Environment=DBFARM=/some/other/directory
+Environment=DBFARM=@CMAKE_INSTALL_FULL_LOCALSTATEDIR@/monetdb5/dbfarm
+# create the dbfarm directory if it doesn't exist
+ExecStartPre=/bin/bash -c 'test -d ${DBFARM} || (mkdir -m 770 ${DBFARM}; chcon -u system_u -r object_r -t mserver5_db_t ${DBFARM})'
+# if no properties file, create one with correct pidfile, and set contexts
+ExecStartPre=/bin/bash -c 'test -f ${DBFARM}/.merovingian_properties || (umask 0007; @CMAKE_INSTALL_FULL_BINDIR@/monetdbd-@MONETDB_VERSION@ create ${DBFARM}; @CMAKE_INSTALL_FULL_BINDIR@/monetdbd-@MONETDB_VERSION@ set pidfile=@CMAKE_INSTALL_FULL_RUNSTATEDIR@/monetdb/merovingian.pid ${DBFARM}; touch ${DBFARM}/.merovingian_lock; chcon -u system_u -r object_r -t monetdbd_lock_t ${DBFARM}/.merovingian_lock; chcon -u system_u -r object_r -t monetdbd_etc_t ${DBFARM}/.merovingian_properties)'
+# make sure pidfile property is set correctly since systemd depends on it
+ExecStartPre=/usr/bin/grep -q pidfile=@CMAKE_INSTALL_FULL_RUNSTATEDIR@/monetdb/merovingian.pid ${DBFARM}/.merovingian_properties
+# start and stop the server
+ExecStart=@CMAKE_INSTALL_FULL_BINDIR@/monetdbd-@MONETDB_VERSION@ start ${DBFARM}
+ExecStop=@CMAKE_INSTALL_FULL_BINDIR@/monetdbd-@MONETDB_VERSION@ stop ${DBFARM}
 Restart=on-failure
 PIDFile=@CMAKE_INSTALL_FULL_RUNSTATEDIR@/monetdb/merovingian.pid
 PrivateDevices=no

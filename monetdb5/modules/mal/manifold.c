@@ -288,7 +288,6 @@ MANIFOLDtypecheck(Client cntxt, MalBlkPtr mb, InstrPtr pci, int checkprops)
 static str
 MANIFOLDevaluate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	MULTItask mut;
 	MULTIarg *mat;
 	int i, tpe = 0;
 	BUN cnt = 0;
@@ -311,7 +310,7 @@ MANIFOLDevaluate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "mal.manifold", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	// mr-job structure preparation
-	mut = (MULTItask) {
+	MULTItask mut = {
 		.cntxt = cntxt,
 		.mb = mb,
 		.stk = stk,

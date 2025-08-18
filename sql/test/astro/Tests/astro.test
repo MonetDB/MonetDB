@@ -71,14 +71,7 @@ group by (
 | | & REF 1 
 | | project (
 | | | left outer join (
-| | | | semijoin (
-| | | | | & REF 1 ,
-| | | | | project (
-| | | | | | select (
-| | | | | | | table("sys"."cm_flux") [ "cm_flux"."runcat" NOT NULL UNIQUE, "cm_flux"."filter" NOT NULL UNIQUE, "cm_flux"."active" NOT NULL UNIQUE ]
-| | | | | | ) [ ("cm_flux"."active" NOT NULL UNIQUE) = (boolean(1) "true"), (varchar(1)["cm_flux"."filter" NOT NULL UNIQUE] NOT NULL) = (varchar(1) "g") ]
-| | | | | ) [ "cm_flux"."runcat" NOT NULL UNIQUE, "cm_flux"."filter" NOT NULL UNIQUE ]
-| | | | ) [ ("cm_flux"."runcat" NOT NULL UNIQUE) = ("fluxz"."runcat" NOT NULL UNIQUE), ("cm_flux"."filter" NOT NULL UNIQUE) = ("fluxz"."filter" NOT NULL UNIQUE) ],
+| | | | & REF 1 ,
 | | | | select (
 | | | | | table("sys"."cm_flux") [ "cm_flux"."runcat" NOT NULL UNIQUE, "cm_flux"."filter" NOT NULL UNIQUE, "cm_flux"."f_datapoints" NOT NULL UNIQUE, "cm_flux"."active" NOT NULL UNIQUE, "cm_flux"."avg_flux" NOT NULL UNIQUE, "cm_flux"."avg_fluxsq" NOT NULL UNIQUE, "cm_flux"."avg_w" NOT NULL UNIQUE, "cm_flux"."avg_wflux" NOT NULL UNIQUE, "cm_flux"."avg_wfluxsq" NOT NULL UNIQUE, "cm_flux"."avg_dec_zone_deg" NOT NULL UNIQUE ]
 | | | | ) [ ("cm_flux"."active" NOT NULL UNIQUE) = (boolean(1) "true"), (varchar(1)["cm_flux"."filter" NOT NULL UNIQUE] NOT NULL) = (varchar(1) "g") ]

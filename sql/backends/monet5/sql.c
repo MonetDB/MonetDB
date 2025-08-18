@@ -896,7 +896,7 @@ sql_variables(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			sql_var *var = (sql_var*) n->data;
 			atom value = var->var;
 			ValPtr myptr = &(value.data);
-			ValRecord val = (ValRecord) {.vtype = TYPE_void,};
+			ValRecord val = {.vtype = TYPE_void,};
 			gdk_return res;
 
 			if (value.tpe.type->localtype != TYPE_str) {

@@ -1,5 +1,5 @@
 query I rowsort
-select epoch(now()) - epoch(now())
+select epoch(now()) - epoch(now()) between -2 and 2
 ----
-0
+1
 

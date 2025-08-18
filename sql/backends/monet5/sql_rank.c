@@ -961,7 +961,7 @@ SQLlast_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (!VALisnil(nth) && val < 1)									\
 			throw(SQL, "sql.nth_value", SQLSTATE(42000) "nth_value must be greater than zero"); \
 		if (VALisnil(nth) || val > 1) {									\
-			ValRecord def = (ValRecord) {.vtype = TYPE_void,};			\
+			ValRecord def = {.vtype = TYPE_void,};						\
 			if (!VALinit(NULL, &def, tp1, ATOMnilptr(tp1)) || !VALcopy(res, &def)) { \
 				VALclear(&def);											\
 				throw(SQL, "sql.nth_value", SQLSTATE(HY013) MAL_MALLOC_FAIL); \
@@ -1040,7 +1040,7 @@ SQLnth_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			goto bailout;
 		}
 		if (is_lng_nil(nth) || nth > 1) {
-			ValRecord def = (ValRecord) {.vtype = TYPE_void,};
+			ValRecord def = {.vtype = TYPE_void,};
 			if (!VALinit(NULL, &def, tpe, ATOMnilptr(tpe)) || !VALcopy(NULL, res, &def)) {
 				VALclear(&def);
 				msg = createException(SQL, "sql.nth_value", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -1201,7 +1201,7 @@ do_lead_lag(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char 
 			if (!VALcopy(NULL, res, in))
 				msg = createException(SQL, op, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		} else {
-			ValRecord def = (ValRecord) {.vtype = TYPE_void,};
+			ValRecord def = {.vtype = TYPE_void,};
 
 			if (!VALinit(NULL, &def, tp1, default_value) || !VALcopy(NULL, res, &def))
 				msg = createException(SQL, op, SQLSTATE(HY013) MAL_MALLOC_FAIL);
