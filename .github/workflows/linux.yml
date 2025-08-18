@@ -124,7 +124,7 @@ jobs:
       - name: ctest 
         run: |
           cd build 
-          cmake --build . --target ${{ runner.os == 'Windows' && 'RUN_TESTS' || 'test' }}
+          cmake CTEST_OUTPUT_ON_FAILURE=1 --build . --target ${{ runner.os == 'Windows' && 'RUN_TESTS' || 'test' }}
         if: runner.os != 'Windows'
 
       - name: mtest 
