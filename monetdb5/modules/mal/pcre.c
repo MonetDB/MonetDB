@@ -743,10 +743,10 @@ sql2pcre(allocator *ma, str *r, const char *pat, const char *esc_str)
 #ifdef HAVE_LIBPCRE
 /* change SQL PATINDEX pattern into PCRE pattern */
 static str
-pat2pcre(str *r, const char *pat)
+pat2pcre(allocator *ma, str *r, const char *pat)
 {
 	size_t len = strlen(pat);
-	char *ppat = GDKmalloc(len * 2 + 3 /* 3 = "^'the translated regexp'$0" */ );
+	char *ppat = ma_alloc(ma, len * 2 + 3 /* 3 = "^'the translated regexp'$0" */ );
 	int start = 0;
 
 	if (ppat == NULL)
@@ -850,7 +850,8 @@ PCREimatch(Client ctx, bit *ret, const char *const *val, const char *const *pat)
 static str
 PCREpatindex(Client ctx, int *ret, const char *const *pat, const char *const *val)
 {
-	(void) ctx;
+	allocator *ma = ctx->curprg->def->ma;
+	(void) ma;
 #ifdef HAVE_LIBPCRE
 	pcre2_code *re;
 	pcre2_match_data *match_data;
