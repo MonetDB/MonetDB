@@ -318,7 +318,7 @@ struct backref {
 
 #ifdef HAVE_LIBPCRE
 static PCRE2_UCHAR *
-single_replace(allocator ma, pcre2_code *pcre_code, pcre2_match_data *match_data,
+single_replace(allocator *ma, pcre2_code *pcre_code, pcre2_match_data *match_data,
 			   PCRE2_SPTR origin_str, PCRE2_SIZE len_origin_str,
 			   uint32_t exec_options,
 			   PCRE2_SPTR replacement, PCRE2_SIZE len_replacement,
