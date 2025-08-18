@@ -92,18 +92,18 @@ CMDvarADDstr(Client ctx, str *ret, const char *const *s1, const char *const *s2)
 static str
 CMDvarADDstrint(Client ctx, str *ret, const char *const *s1, const int *i)
 {
-	(void) ctx;
+	allocator *ma = ctx->curprg->def->ma;
 	str s;
 	size_t len;
 
 	if (strNil(*s1) || is_int_nil(*i)) {
-		*ret = GDKstrdup(str_nil);
+		*ret = MA_STRDUP(ma, str_nil);
 		if (*ret == NULL)
 			return mythrow(MAL, "calc.+", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
 	len = strlen(*s1) + 16;		/* maxint = 2147483647 which fits easily */
-	s = GDKmalloc(len);
+	s = ma_alloc(ma, len);
 	if (s == NULL)
 		return mythrow(MAL, "calc.+", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	snprintf(s, len, "%s%d", *s1, *i);
