@@ -476,7 +476,7 @@ class server(Popen):
     def __init__(self, args=[], stdin=None, stdout=None, stderr=None,
                  mapiport=None, dbname=os.getenv('TSTDB'), dbfarm=None,
                  dbextra=None, bufsize=0,
-                 notrace=False, ipv6=False):
+                 notrace=False, ipv6=True):
         '''Start a server process.'''
         cmd = _server[:]
         if not cmd:
