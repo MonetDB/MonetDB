@@ -25870,6 +25870,46 @@ CMDbatAND
 Return B and V
 batcalc
 and
+pattern batcalc.and(X_0:bat[:inet4], X_1:bat[:inet4]):bat[:inet4]
+CMDbatAND
+Return B1 and B2
+batcalc
+and
+pattern batcalc.and(X_0:bat[:inet4], X_1:bat[:inet4], X_2:bat[:oid], X_3:bat[:oid]):bat[:inet4]
+CMDbatAND
+Return B1 and B2
+batcalc
+and
+pattern batcalc.and(X_0:bat[:inet4], X_1:inet4):bat[:inet4]
+CMDbatAND
+Return B and V
+batcalc
+and
+pattern batcalc.and(X_0:bat[:inet4], X_1:inet4, X_2:bat[:oid]):bat[:inet4]
+CMDbatAND
+Return B and V
+batcalc
+and
+pattern batcalc.and(X_0:bat[:inet6], X_1:bat[:inet6]):bat[:inet6]
+CMDbatAND
+Return B1 and B2
+batcalc
+and
+pattern batcalc.and(X_0:bat[:inet6], X_1:bat[:inet6], X_2:bat[:oid], X_3:bat[:oid]):bat[:inet6]
+CMDbatAND
+Return B1 and B2
+batcalc
+and
+pattern batcalc.and(X_0:bat[:inet6], X_1:inet6):bat[:inet6]
+CMDbatAND
+Return B and V
+batcalc
+and
+pattern batcalc.and(X_0:bat[:inet6], X_1:inet6, X_2:bat[:oid]):bat[:inet6]
+CMDbatAND
+Return B and V
+batcalc
+and
 pattern batcalc.and(X_0:bat[:int], X_1:bat[:int]):bat[:int]
 CMDbatAND
 Return B1 and B2
@@ -25976,6 +26016,26 @@ Return V and B
 batcalc
 and
 pattern batcalc.and(X_0:hge, X_1:bat[:hge], X_2:bat[:oid]):bat[:hge]
+CMDbatAND
+Return V and B
+batcalc
+and
+pattern batcalc.and(X_0:inet4, X_1:bat[:inet4]):bat[:inet4]
+CMDbatAND
+Return V and B
+batcalc
+and
+pattern batcalc.and(X_0:inet4, X_1:bat[:inet4], X_2:bat[:oid]):bat[:inet4]
+CMDbatAND
+Return V and B
+batcalc
+and
+pattern batcalc.and(X_0:inet6, X_1:bat[:inet6]):bat[:inet6]
+CMDbatAND
+Return V and B
+batcalc
+and
+pattern batcalc.and(X_0:inet6, X_1:bat[:inet6], X_2:bat[:oid]):bat[:inet6]
 CMDbatAND
 Return V and B
 batcalc
@@ -29102,12 +29162,12 @@ batcalc
 inet4
 command batcalc.inet4(X_0:bat[:str], X_1:bat[:oid]):bat[:inet4]
 INETstr2inet4_bulk
-Coerce a string to a inet4, validating its format
+Coerce a string to an inet4, validating its format
 batcalc
 inet6
 command batcalc.inet6(X_0:bat[:inet4], X_1:bat[:oid]):bat[:inet6]
 INETinet42inet6_bulk
-Coerce a inet4 to a inet6
+Coerce an inet4 to an inet6
 batcalc
 inet6
 command batcalc.inet6(X_0:bat[:inet6], X_1:bat[:oid]):bat[:inet6]
@@ -29117,7 +29177,7 @@ batcalc
 inet6
 command batcalc.inet6(X_0:bat[:str], X_1:bat[:oid]):bat[:inet6]
 INETstr2inet6_bulk
-Coerce a string to a inet6, validating its format
+Coerce a string to an inet6, validating its format
 batcalc
 int
 pattern batcalc.int(X_0:bat[:bit]):bat[:int]
@@ -29780,6 +29840,26 @@ CMDbatNOT
 Unary bitwise not over the tail of the bat with candidates list
 batcalc
 not
+pattern batcalc.not(X_0:bat[:inet4]):bat[:inet4]
+CMDbatNOT
+Unary bitwise not over the tail of the bat
+batcalc
+not
+pattern batcalc.not(X_0:bat[:inet4], X_1:bat[:oid]):bat[:inet4]
+CMDbatNOT
+Unary bitwise not over the tail of the bat with candidates list
+batcalc
+not
+pattern batcalc.not(X_0:bat[:inet6]):bat[:inet6]
+CMDbatNOT
+Unary bitwise not over the tail of the bat
+batcalc
+not
+pattern batcalc.not(X_0:bat[:inet6], X_1:bat[:oid]):bat[:inet6]
+CMDbatNOT
+Unary bitwise not over the tail of the bat with candidates list
+batcalc
+not
 pattern batcalc.not(X_0:bat[:int]):bat[:int]
 CMDbatNOT
 Unary bitwise not over the tail of the bat
@@ -30010,6 +30090,46 @@ CMDbatOR
 Return B or V
 batcalc
 or
+pattern batcalc.or(X_0:bat[:inet4], X_1:bat[:inet4]):bat[:inet4]
+CMDbatOR
+Return B1 or B2
+batcalc
+or
+pattern batcalc.or(X_0:bat[:inet4], X_1:bat[:inet4], X_2:bat[:oid], X_3:bat[:oid]):bat[:inet4]
+CMDbatOR
+Return B1 or B2
+batcalc
+or
+pattern batcalc.or(X_0:bat[:inet4], X_1:inet4):bat[:inet4]
+CMDbatOR
+Return B or V
+batcalc
+or
+pattern batcalc.or(X_0:bat[:inet4], X_1:inet4, X_2:bat[:oid]):bat[:inet4]
+CMDbatOR
+Return B or V
+batcalc
+or
+pattern batcalc.or(X_0:bat[:inet6], X_1:bat[:inet6]):bat[:inet6]
+CMDbatOR
+Return B1 or B2
+batcalc
+or
+pattern batcalc.or(X_0:bat[:inet6], X_1:bat[:inet6], X_2:bat[:oid], X_3:bat[:oid]):bat[:inet6]
+CMDbatOR
+Return B1 or B2
+batcalc
+or
+pattern batcalc.or(X_0:bat[:inet6], X_1:inet6):bat[:inet6]
+CMDbatOR
+Return B or V
+batcalc
+or
+pattern batcalc.or(X_0:bat[:inet6], X_1:inet6, X_2:bat[:oid]):bat[:inet6]
+CMDbatOR
+Return B or V
+batcalc
+or
 pattern batcalc.or(X_0:bat[:int], X_1:bat[:int]):bat[:int]
 CMDbatOR
 Return B1 or B2
@@ -30116,6 +30236,26 @@ Return V or B
 batcalc
 or
 pattern batcalc.or(X_0:hge, X_1:bat[:hge], X_2:bat[:oid]):bat[:hge]
+CMDbatOR
+Return V or B
+batcalc
+or
+pattern batcalc.or(X_0:inet4, X_1:bat[:inet4]):bat[:inet4]
+CMDbatOR
+Return V or B
+batcalc
+or
+pattern batcalc.or(X_0:inet4, X_1:bat[:inet4], X_2:bat[:oid]):bat[:inet4]
+CMDbatOR
+Return V or B
+batcalc
+or
+pattern batcalc.or(X_0:inet6, X_1:bat[:inet6]):bat[:inet6]
+CMDbatOR
+Return V or B
+batcalc
+or
+pattern batcalc.or(X_0:inet6, X_1:bat[:inet6], X_2:bat[:oid]):bat[:inet6]
 CMDbatOR
 Return V or B
 batcalc
@@ -30697,12 +30837,12 @@ batcalc
 str
 command batcalc.str(X_0:bat[:inet4], X_1:bat[:oid]):bat[:str]
 INETinet42str_bulk
-Coerce a inet4 to a string type
+Coerce an inet4 to a string type
 batcalc
 str
 command batcalc.str(X_0:bat[:inet6], X_1:bat[:oid]):bat[:str]
 INETinet62str_bulk
-Coerce a inet6 to a string type
+Coerce an inet6 to a string type
 batcalc
 str
 pattern batcalc.str(X_0:int, X_1:int, X_2:int, X_3:int, X_4:bat[:any_1], X_5:bat[:oid], X_6:int):bat[:str]
@@ -30895,6 +31035,46 @@ CMDbatXOR
 Return B xor V
 batcalc
 xor
+pattern batcalc.xor(X_0:bat[:inet4], X_1:bat[:inet4]):bat[:inet4]
+CMDbatXOR
+Return B1 xor B2
+batcalc
+xor
+pattern batcalc.xor(X_0:bat[:inet4], X_1:bat[:inet4], X_2:bat[:oid], X_3:bat[:oid]):bat[:inet4]
+CMDbatXOR
+Return B1 xor B2
+batcalc
+xor
+pattern batcalc.xor(X_0:bat[:inet4], X_1:inet4):bat[:inet4]
+CMDbatXOR
+Return B xor V
+batcalc
+xor
+pattern batcalc.xor(X_0:bat[:inet4], X_1:inet4, X_2:bat[:oid]):bat[:inet4]
+CMDbatXOR
+Return B xor V
+batcalc
+xor
+pattern batcalc.xor(X_0:bat[:inet6], X_1:bat[:inet6]):bat[:inet6]
+CMDbatXOR
+Return B1 xor B2
+batcalc
+xor
+pattern batcalc.xor(X_0:bat[:inet6], X_1:bat[:inet6], X_2:bat[:oid], X_3:bat[:oid]):bat[:inet6]
+CMDbatXOR
+Return B1 xor B2
+batcalc
+xor
+pattern batcalc.xor(X_0:bat[:inet6], X_1:inet6):bat[:inet6]
+CMDbatXOR
+Return B xor V
+batcalc
+xor
+pattern batcalc.xor(X_0:bat[:inet6], X_1:inet6, X_2:bat[:oid]):bat[:inet6]
+CMDbatXOR
+Return B xor V
+batcalc
+xor
 pattern batcalc.xor(X_0:bat[:int], X_1:bat[:int]):bat[:int]
 CMDbatXOR
 Return B1 xor B2
@@ -31001,6 +31181,26 @@ Return V xor B
 batcalc
 xor
 pattern batcalc.xor(X_0:hge, X_1:bat[:hge], X_2:bat[:oid]):bat[:hge]
+CMDbatXOR
+Return V xor B
+batcalc
+xor
+pattern batcalc.xor(X_0:inet4, X_1:bat[:inet4]):bat[:inet4]
+CMDbatXOR
+Return V xor B
+batcalc
+xor
+pattern batcalc.xor(X_0:inet4, X_1:bat[:inet4], X_2:bat[:oid]):bat[:inet4]
+CMDbatXOR
+Return V xor B
+batcalc
+xor
+pattern batcalc.xor(X_0:inet6, X_1:bat[:inet6]):bat[:inet6]
+CMDbatXOR
+Return V xor B
+batcalc
+xor
+pattern batcalc.xor(X_0:inet6, X_1:bat[:inet6], X_2:bat[:oid]):bat[:inet6]
 CMDbatXOR
 Return V xor B
 batcalc
@@ -42905,6 +43105,16 @@ CMDvarAND
 Return V1 AND V2
 calc
 and
+pattern calc.and(X_0:inet4, X_1:inet4):inet4
+CMDvarAND
+Return V1 AND V2
+calc
+and
+pattern calc.and(X_0:inet6, X_1:inet6):inet6
+CMDvarAND
+Return V1 AND V2
+calc
+and
 pattern calc.and(X_0:int, X_1:int):int
 CMDvarAND
 Return V1 AND V2
@@ -43942,12 +44152,12 @@ calc
 inet4
 command calc.inet4(X_0:str):inet4
 INETstr2inet4
-Coerce a string to a inet4, validating its format
+Coerce a string to an inet4, validating its format
 calc
 inet6
 command calc.inet6(X_0:inet4):inet6
 INETinet42inet6
-Coerce a inet4 to a inet6
+Coerce an inet4 to an inet6
 calc
 inet6
 command calc.inet6(X_0:inet6):inet6
@@ -43957,7 +44167,7 @@ calc
 inet6
 command calc.inet6(X_0:str):inet6
 INETstr2inet6
-Coerce a string to a inet6, validating its format
+Coerce a string to an inet6, validating its format
 calc
 int
 pattern calc.int(X_0:bit):int
@@ -44395,6 +44605,26 @@ CMDvarNOT
 Unary bitwise not of V
 calc
 not
+pattern calc.not(X_0:inet4):inet4
+CMDvarNOT
+Return the Boolean inverse
+calc
+not
+pattern calc.not(X_0:inet4):inet4
+CMDvarNOT
+Unary bitwise not of V
+calc
+not
+pattern calc.not(X_0:inet6):inet6
+CMDvarNOT
+Return the Boolean inverse
+calc
+not
+pattern calc.not(X_0:inet6):inet6
+CMDvarNOT
+Unary bitwise not of V
+calc
+not
 pattern calc.not(X_0:int):int
 CMDvarNOT
 Unary bitwise not of V
@@ -44476,6 +44706,16 @@ Return V1 OR V2
 calc
 or
 pattern calc.or(X_0:hge, X_1:hge):hge
+CMDvarOR
+Return V1 OR V2
+calc
+or
+pattern calc.or(X_0:inet4, X_1:inet4):inet4
+CMDvarOR
+Return V1 OR V2
+calc
+or
+pattern calc.or(X_0:inet6, X_1:inet6):inet6
 CMDvarOR
 Return V1 OR V2
 calc
@@ -44792,12 +45032,12 @@ calc
 str
 command calc.str(X_0:inet4):str
 INETinet42str
-Coerce a inet4 to a string type
+Coerce an inet4 to a string type
 calc
 str
 command calc.str(X_0:inet6):str
 INETinet62str
-Coerce a inet6 to a string type
+Coerce an inet6 to a string type
 calc
 str
 pattern calc.str(X_0:int, X_1:int, X_2:int, X_3:int, X_4:any_1, X_5:int):str
@@ -44971,6 +45211,16 @@ Return V1 XOR V2
 calc
 xor
 pattern calc.xor(X_0:hge, X_1:hge):hge
+CMDvarXOR
+Return V1 XOR V2
+calc
+xor
+pattern calc.xor(X_0:inet4, X_1:inet4):inet4
+CMDvarXOR
+Return V1 XOR V2
+calc
+xor
+pattern calc.xor(X_0:inet6, X_1:inet6):inet6
 CMDvarXOR
 Return V1 XOR V2
 calc
@@ -46817,22 +47067,102 @@ inet46
 inet4
 command inet46.inet4(X_0:str):inet4
 INETstr2inet4
-Coerce a string to a inet4, validating its format
+Coerce a string to an inet4, validating its format
+inet46
+inet4containsinet4
+command inet46.inet4containsinet4(X_0:inet4, X_1:bte, X_2:inet4, X_3:bte):bit
+INETinet4containsinet4
+(empty)
+inet46
+inet4containsinet4
+command inet46.inet4containsinet4(X_0:bat[:inet4], X_1:bat[:bte], X_2:bat[:oid], X_3:bat[:inet4], X_4:bat[:bte], X_5:bat[:oid]):bat[:bit]
+INETinet4containsinet4_bulk
+(empty)
+inet46
+inet4containsinet4
+command inet46.inet4containsinet4(X_0:inet4, X_1:inet4, X_2:bte):bit
+INETinet4containsinet4nomask
+(empty)
+inet46
+inet4containsorequalinet4
+command inet46.inet4containsorequalinet4(X_0:inet4, X_1:bte, X_2:inet4, X_3:bte):bit
+INETinet4containsorequalinet4
+(empty)
+inet46
+inet4containsorequalinet4
+command inet46.inet4containsorequalinet4(X_0:bat[:inet4], X_1:bat[:bte], X_2:bat[:oid], X_3:bat[:inet4], X_4:bat[:bte], X_5:bat[:oid]):bat[:bit]
+INETinet4containsorequalinet4_bulk
+(empty)
+inet46
+inet4containsorequalinet4
+command inet46.inet4containsorequalinet4(X_0:inet4, X_1:inet4, X_2:bte):bit
+INETinet4containsorequalinet4nomask
+(empty)
+inet46
+inet4containssymmetricinet4
+command inet46.inet4containssymmetricinet4(X_0:inet4, X_1:bte, X_2:inet4, X_3:bte):bit
+INETinet4containssymmetricinet4
+(empty)
+inet46
+inet4containssymmetricinet4
+command inet46.inet4containssymmetricinet4(X_0:bat[:inet4], X_1:bat[:bte], X_2:bat[:oid], X_3:bat[:inet4], X_4:bat[:bte], X_5:bat[:oid]):bat[:bit]
+INETinet4containssymmetricinet4_bulk
+(empty)
 inet46
 inet6
 command inet46.inet6(X_0:str):inet6
 INETstr2inet6
-Coerce a string to a inet6, validating its format
+Coerce a string to an inet6, validating its format
+inet46
+inet6containsinet6
+command inet46.inet6containsinet6(X_0:inet6, X_1:sht, X_2:inet6, X_3:sht):bit
+INETinet6containsinet6
+(empty)
+inet46
+inet6containsinet6
+command inet46.inet6containsinet6(X_0:bat[:inet6], X_1:bat[:sht], X_2:bat[:oid], X_3:bat[:inet6], X_4:bat[:sht], X_5:bat[:oid]):bat[:bit]
+INETinet6containsinet6_bulk
+(empty)
+inet46
+inet6containsinet6
+command inet46.inet6containsinet6(X_0:inet6, X_1:inet6, X_2:sht):bit
+INETinet6containsinet6nomask
+(empty)
+inet46
+inet6containsorequalinet6
+command inet46.inet6containsorequalinet6(X_0:inet6, X_1:sht, X_2:inet6, X_3:sht):bit
+INETinet6containsorequalinet6
+(empty)
+inet46
+inet6containsorequalinet6
+command inet46.inet6containsorequalinet6(X_0:bat[:inet6], X_1:bat[:sht], X_2:bat[:oid], X_3:bat[:inet6], X_4:bat[:sht], X_5:bat[:oid]):bat[:bit]
+INETinet6containsorequalinet6_bulk
+(empty)
+inet46
+inet6containsorequalinet6
+command inet46.inet6containsorequalinet6(X_0:inet6, X_1:inet6, X_2:sht):bit
+INETinet6containsorequalinet6nomask
+(empty)
+inet46
+inet6containssymmetricinet6
+command inet46.inet6containssymmetricinet6(X_0:inet6, X_1:sht, X_2:inet6, X_3:sht):bit
+INETinet6containssymmetricinet6
+(empty)
+inet46
+inet6containssymmetricinet6
+command inet46.inet6containssymmetricinet6(X_0:bat[:inet6], X_1:bat[:sht], X_2:bat[:oid], X_3:bat[:inet6], X_4:bat[:sht], X_5:bat[:oid]):bat[:bit]
+INETinet6containssymmetricinet6_bulk
+(empty)
 inet46
 str
 command inet46.str(X_0:inet4):str
 INETinet42str
-Coerce a inet4 to its string type
+Coerce an inet4 to its string type
 inet46
 str
 command inet46.str(X_0:inet6):str
 INETinet62str
-Coerce a inet6 to its string type
+Coerce an inet6 to its string type
 inspect
 equalType
 pattern inspect.equalType(X_0:any, X_1:any):bit

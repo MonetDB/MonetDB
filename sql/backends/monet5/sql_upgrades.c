@@ -4905,6 +4905,249 @@ sql_update_snapshot(Client c, mvc *sql, sql_schema *s)
 	return err;
 }
 
+static str
+sql_update_inet46(Client c, mvc *sql, sql_schema *s)
+{
+	char *err;
+	res_table *output;
+	BAT *b;
+
+	err = SQLstatementIntern(c, "select id from sys.types where sqlname = 'inet4' and schema_id = 2000;\n", "update", true, false, &output);
+	if (err)
+		return err;
+	b = BATdescriptor(output->cols[0].b);
+	if (b != NULL) {
+		if (BATcount(b) == 0) {
+			const char query[] =
+				"create type inet4 external name inet4;\n"
+				"create type inet6 external name inet6;\n"
+				"create function contains(ip1 inet4, ip2 inet4, netmask tinyint)\n"
+				" returns bool external name \"inet46\".\"inet4containsinet4\";\n"
+				"create function contains(ip1 inet4, netmask1 tinyint, ip2 inet4, netmask2 tinyint)\n"
+				" returns bool external name \"inet46\".\"inet4containsinet4\";\n"
+				"create function containsorequal(ip1 inet4, ip2 inet4, netmask tinyint)\n"
+				" returns bool external name \"inet46\".\"inet4containsorequalinet4\";\n"
+				"create function containsorequal(ip1 inet4, netmask1 tinyint, ip2 inet4, netmask2 tinyint)\n"
+				" returns bool external name \"inet46\".\"inet4containsorequalinet4\";\n"
+				"create function containssymmetric(ip1 inet4, netmask1 tinyint, ip2 inet4, netmask2 tinyint)\n"
+				" returns bool external name \"inet46\".\"inet4containssymmetricinet4\";\n"
+				"create function contains(ip1 inet6, ip2 inet6, netmask smallint)\n"
+				" returns bool external name \"inet46\".\"inet6containsinet6\";\n"
+				"create function contains(ip1 inet6, netmask1 smallint, ip2 inet6, netmask2 smallint)\n"
+				" returns bool external name \"inet46\".\"inet6containsinet6\";\n"
+				"create function containsorequal(ip1 inet6, ip2 inet6, netmask smallint)\n"
+				" returns bool external name \"inet46\".\"inet6containsorequalinet6\";\n"
+				"create function containsorequal(ip1 inet6, netmask1 smallint, ip2 inet6, netmask2 smallint)\n"
+				" returns bool external name \"inet46\".\"inet6containsorequalinet6\";\n"
+				"create function containssymmetric(ip1 inet6, netmask1 smallint, ip2 inet6, netmask2 smallint)\n"
+				" returns bool external name \"inet46\".\"inet6containssymmetricinet6\";\n"
+				"create function bit_not(ip1 inet4)\n"
+				" returns inet4 external name \"calc\".\"not\";\n"
+				"create function bit_and(ip1 inet4, ip2 inet4)\n"
+				" returns inet4 external name \"calc\".\"and\";\n"
+				"create function bit_or(ip1 inet4, ip2 inet4)\n"
+				" returns inet4 external name \"calc\".\"or\";\n"
+				"create function bit_xor(ip1 inet4, ip2 inet4)\n"
+				" returns inet4 external name \"calc\".\"xor\";\n"
+				"create function bit_not(ip1 inet6)\n"
+				" returns inet6 external name \"calc\".\"not\";\n"
+				"create function bit_and(ip1 inet6, ip2 inet6)\n"
+				" returns inet6 external name \"calc\".\"and\";\n"
+				"create function bit_or(ip1 inet6, ip2 inet6)\n"
+				" returns inet6 external name \"calc\".\"or\";\n"
+				"create function bit_xor(ip1 inet6, ip2 inet6)\n"
+				" returns inet6 external name \"calc\".\"xor\";\n"
+				"grant execute on function contains(inet4, inet4, tinyint) to public;\n"
+				"grant execute on function contains(inet4, tinyint, inet4, tinyint) to public;\n"
+				"grant execute on function containsorequal(inet4, inet4, tinyint) to public;\n"
+				"grant execute on function containsorequal(inet4, tinyint, inet4, tinyint) to public;\n"
+				"grant execute on function containssymmetric(inet4, tinyint, inet4, tinyint) to public;\n"
+				"grant execute on function contains(inet6, inet6, smallint) to public;\n"
+				"grant execute on function contains(inet6, smallint, inet6, smallint) to public;\n"
+				"grant execute on function containsorequal(inet6, inet6, smallint) to public;\n"
+				"grant execute on function containsorequal(inet6, smallint, inet6, smallint) to public;\n"
+				"grant execute on function containssymmetric(inet6, smallint, inet6, smallint) to public;\n"
+				"grant execute on function bit_not(inet4) to public;\n"
+				"grant execute on function bit_and(inet4, inet4) to public;\n"
+				"grant execute on function bit_or(inet4, inet4) to public;\n"
+				"grant execute on function bit_xor(inet4, inet4) to public;\n"
+				"grant execute on function bit_not(inet6) to public;\n"
+				"grant execute on function bit_and(inet6, inet6) to public;\n"
+				"grant execute on function bit_or(inet6, inet6) to public;\n"
+				"grant execute on function bit_xor(inet6, inet6) to public;\n"
+				"drop view sys.dependencies_vw cascade;\n"
+				"drop view sys.ids cascade;\n"
+				"CREATE VIEW sys.ids (id, name, schema_id, table_id, table_name, obj_type, sys_table, system) AS\n"
+				"SELECT id, name, cast(null as int) as schema_id, cast(null as int) as table_id, cast(null as varchar(124)) as table_name, 'author' AS obj_type, 'sys.auths' AS sys_table, (name in ('public','sysadmin','monetdb','.snapshot')) AS system FROM sys.auths UNION ALL\n"
+				"SELECT id, name, cast(null as int) as schema_id, cast(null as int) as table_id, cast(null as varchar(124)) as table_name, ifthenelse(system, 'system schema', 'schema'), 'sys.schemas', system FROM sys.schemas UNION ALL\n"
+				"SELECT t.id, name, t.schema_id, t.id as table_id, t.name as table_name, cast(lower(tt.table_type_name) as varchar(40)), 'sys.tables', t.system FROM sys.tables t left outer join sys.table_types tt on t.type = tt.table_type_id UNION ALL\n"
+				"SELECT c.id, c.name, t.schema_id, c.table_id, t.name as table_name, ifthenelse(t.system, 'system column', 'column'), 'sys._columns', t.system FROM sys._columns c JOIN sys._tables t ON c.table_id = t.id UNION ALL\n"
+				"SELECT c.id, c.name, t.schema_id, c.table_id, t.name as table_name, 'column', 'tmp._columns', t.system FROM tmp._columns c JOIN tmp._tables t ON c.table_id = t.id UNION ALL\n"
+				"SELECT k.id, k.name, t.schema_id, k.table_id, t.name as table_name, ifthenelse(t.system, 'system key', 'key'), 'sys.keys', t.system FROM sys.keys k JOIN sys._tables t ON k.table_id = t.id UNION ALL\n"
+				"SELECT k.id, k.name, t.schema_id, k.table_id, t.name as table_name, 'key', 'tmp.keys', t.system FROM tmp.keys k JOIN tmp._tables t ON k.table_id = t.id UNION ALL\n"
+				"SELECT i.id, i.name, t.schema_id, i.table_id, t.name as table_name, ifthenelse(t.system, 'system index', 'index'), 'sys.idxs', t.system FROM sys.idxs i JOIN sys._tables t ON i.table_id = t.id UNION ALL\n"
+				"SELECT i.id, i.name, t.schema_id, i.table_id, t.name as table_name, 'index' , 'tmp.idxs', t.system FROM tmp.idxs i JOIN tmp._tables t ON i.table_id = t.id UNION ALL\n"
+				"SELECT g.id, g.name, t.schema_id, g.table_id, t.name as table_name, ifthenelse(t.system, 'system trigger', 'trigger'), 'sys.triggers', t.system FROM sys.triggers g JOIN sys._tables t ON g.table_id = t.id UNION ALL\n"
+				"SELECT g.id, g.name, t.schema_id, g.table_id, t.name as table_name, 'trigger', 'tmp.triggers', t.system FROM tmp.triggers g JOIN tmp._tables t ON g.table_id = t.id UNION ALL\n"
+				"SELECT f.id, f.name, f.schema_id, cast(null as int) as table_id, cast(null as varchar(124)) as table_name, cast(ifthenelse(f.system, 'system ', '') || lower(ft.function_type_keyword) as varchar(40)), 'sys.functions', f.system FROM sys.functions f left outer join sys.function_types ft on f.type = ft.function_type_id UNION ALL\n"
+				"SELECT a.id, a.name, f.schema_id, a.func_id as table_id, f.name as table_name, cast(ifthenelse(f.system, 'system ', '') || lower(ft.function_type_keyword) || ' arg' as varchar(44)), 'sys.args', f.system FROM sys.args a JOIN sys.functions f ON a.func_id = f.id left outer join sys.function_types ft on f.type = ft.function_type_id UNION ALL\n"
+				"SELECT id, name, schema_id, cast(null as int) as table_id, cast(null as varchar(124)) as table_name, 'sequence', 'sys.sequences', false FROM sys.sequences UNION ALL\n"
+				"SELECT o.id, o.name, pt.schema_id, pt.id, pt.name, 'partition of merge table', 'sys.objects', false FROM sys.objects o JOIN sys._tables pt ON o.sub = pt.id JOIN sys._tables mt ON o.nr = mt.id WHERE mt.type = 3 UNION ALL\n"
+				"SELECT id, sqlname, schema_id, cast(null as int) as table_id, cast(null as varchar(124)) as table_name, 'type', 'sys.types', (sqlname in ('inet','json','url','uuid','inet4','inet6')) FROM sys.types\n"
+				" ORDER BY id;\n"
+				"CREATE VIEW sys.dependencies_vw AS\n"
+				"SELECT d.id, i1.obj_type, i1.name,\n"
+				" d.depend_id as used_by_id, i2.obj_type as used_by_obj_type, i2.name as used_by_name,\n"
+				" d.depend_type, dt.dependency_type_name\n"
+				" FROM sys.dependencies d\n"
+				" JOIN sys.ids i1 ON d.id = i1.id\n"
+				" JOIN sys.ids i2 ON d.depend_id = i2.id\n"
+				" JOIN sys.dependency_types dt ON d.depend_type = dt.dependency_type_id\n"
+				" ORDER BY id, depend_id;\n"
+				"GRANT SELECT ON sys.ids TO PUBLIC;\n"
+				"GRANT SELECT ON sys.dependencies_vw TO PUBLIC;\n"
+				"drop function sys.dump_database cascade;\n"
+				"drop view sys.dump_user_defined_types cascade;\n"
+				"drop view sys.describe_user_defined_types cascade;\n"
+				"CREATE VIEW sys.describe_user_defined_types AS\n"
+				" SELECT\n"
+				" s.name sch,\n"
+				" t.sqlname sql_tpe,\n"
+				" t.systemname ext_tpe\n"
+				" FROM sys.types t JOIN sys.schemas s ON t.schema_id = s.id\n"
+				" WHERE\n"
+				" t.eclass = 18 AND\n"
+				" (\n"
+				" (s.name = 'sys' AND t.sqlname not in ('geometrya', 'mbr', 'url', 'inet', 'json', 'uuid', 'xml', 'inet4', 'inet6')) OR\n"
+				" (s.name <> 'sys')\n"
+				" );\n"
+				"GRANT SELECT ON sys.describe_user_defined_types TO PUBLIC;\n"
+				"CREATE VIEW sys.dump_user_defined_types AS\n"
+				" SELECT 'CREATE TYPE ' || sys.FQN(sch, sql_tpe) || ' EXTERNAL NAME ' || sys.DQ(ext_tpe) || ';' stmt,\n"
+				" sch schema_name,\n"
+				" sql_tpe type_name\n"
+				" FROM sys.describe_user_defined_types;\n"
+				"CREATE FUNCTION sys.dump_database(describe BOOLEAN) RETURNS TABLE(o int, stmt STRING)\n"
+				"BEGIN\n"
+				" SET SCHEMA sys;\n"
+				" TRUNCATE sys.dump_statements;\n"
+				" INSERT INTO sys.dump_statements VALUES (1, 'START TRANSACTION;');\n"
+				" INSERT INTO sys.dump_statements VALUES (2, 'SET SCHEMA \"sys\";');\n"
+				" INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_create_roles;\n"
+				" INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_create_users;\n"
+				" INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_create_schemas;\n"
+				" INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_user_defined_types;\n"
+				" INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_add_schemas_to_users;\n"
+				" INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_grant_user_privileges;\n"
+				" INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_sequences;\n"
+				" --functions and table-likes can be interdependent. They should be inserted in the order of their catalogue id.\n"
+				" INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(ORDER BY stmts.o), stmts.s\n"
+				" FROM (\n"
+				" SELECT f.o, f.stmt FROM sys.dump_functions f\n"
+				" UNION ALL\n"
+				" SELECT t.o, t.stmt FROM sys.dump_tables t\n"
+				" ) AS stmts(o, s);\n"
+				" -- dump table data before adding constraints and fixing sequences\n"
+				" IF NOT DESCRIBE THEN\n"
+				" CALL sys.dump_table_data();\n"
+				" END IF;\n"
+				" INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_start_sequences;\n"
+				" INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_column_defaults;\n"
+				" INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_table_constraint_type;\n"
+				" INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_indices;\n"
+				" INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_foreign_keys;\n"
+				" INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_partition_tables;\n"
+				" INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_triggers;\n"
+				" INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_comments;\n"
+				" INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_table_grants;\n"
+				" INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_column_grants;\n"
+				" INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_function_grants;\n"
+				" --TODO Improve performance of dump_table_data.\n"
+				" --TODO loaders, procedures, window and filter sys.functions.\n"
+				" --TODO look into order dependent group_concat\n"
+				" INSERT INTO sys.dump_statements VALUES ((SELECT COUNT(*) FROM sys.dump_statements) + 1, 'COMMIT;');\n"
+				" RETURN sys.dump_statements;\n"
+				"END;\n"
+				"drop view sys.storagemodel cascade;\n"
+				"drop view sys.tablestoragemodel cascade;\n"
+				"drop function sys.columnsize cascade;\n"
+				"create function sys.columnsize(tpe varchar(1024), count bigint)\n"
+				"returns bigint\n"
+				"begin\n"
+				" -- for fixed size types: typewidth_inbytes * count\n"
+				" if tpe in ('tinyint', 'boolean')\n"
+				" then return count;\n"
+				" end if;\n"
+				" if tpe = 'smallint'\n"
+				" then return 2 * count;\n"
+				" end if;\n"
+				" if tpe in ('int', 'real', 'date', 'time', 'timetz', 'sec_interval', 'day_interval', 'month_interval', 'inet4')\n"
+				" then return 4 * count;\n"
+				" end if;\n"
+				" if tpe in ('bigint', 'double', 'timestamp', 'timestamptz', 'inet', 'oid')\n"
+				" then return 8 * count;\n"
+				" end if;\n"
+				" if tpe in ('hugeint', 'decimal', 'uuid', 'mbr', 'inet6')\n"
+				" then return 16 * count;\n"
+				" end if;\n"
+				"\n"
+				" -- for variable size types we compute the columnsize as refs (assume 4 bytes each for char strings) to the heap, excluding data in the var heap\n"
+				" if tpe in ('varchar', 'char', 'clob', 'json', 'url')\n"
+				" then return 4 * count;\n"
+				" end if;\n"
+				" if tpe in ('blob', 'geometry', 'geometrya')\n"
+				" then return 8 * count;\n"
+				" end if;\n"
+				"\n"
+				" return 8 * count;\n"
+				"end;\n"
+				"create view sys.storagemodel as\n"
+				"select \"schema\", \"table\", \"column\", \"type\", \"count\",\n"
+				" sys.columnsize(\"type\", \"count\") as columnsize,\n"
+				" sys.heapsize(\"type\", \"count\", \"distinct\", \"atomwidth\") as heapsize,\n"
+				" sys.hashsize(\"reference\", \"count\") as hashsize,\n"
+				" case when isacolumn then sys.imprintsize(\"type\", \"count\") else 0 end as imprintsize,\n"
+				" case when (isacolumn and not sorted) then cast(8 * \"count\" as bigint) else 0 end as orderidxsize,\n"
+				" sorted, \"unique\", isacolumn\n"
+				" from sys.storagemodelinput\n"
+				"order by \"schema\", \"table\", \"column\";\n"
+				"create view sys.tablestoragemodel as\n"
+				"select \"schema\", \"table\",\n"
+				" max(\"count\") as \"rowcount\",\n"
+				" count(*) as \"storages\",\n"
+				" sum(sys.columnsize(\"type\", \"count\")) as columnsize,\n"
+				" sum(sys.heapsize(\"type\", \"count\", \"distinct\", \"atomwidth\")) as heapsize,\n"
+				" sum(sys.hashsize(\"reference\", \"count\")) as hashsize,\n"
+				" sum(case when isacolumn then sys.imprintsize(\"type\", \"count\") else 0 end) as imprintsize,\n"
+				" sum(case when (isacolumn and not sorted) then cast(8 * \"count\" as bigint) else 0 end) as orderidxsize\n"
+				" from sys.storagemodelinput\n"
+				"group by \"schema\", \"table\"\n"
+				"order by \"schema\", \"table\";\n"
+				"update sys.functions set system = true where not system and schema_id = 2000 and name in ('contains', 'containsorequal', 'containssymmetric', 'bit_not', 'bit_and', 'bit_or', 'bit_xor', 'dump_database', 'columnsize');\n"
+				"update sys._tables set system = true where not system and schema_id = 2000 and name in ('ids', 'dependencies_vw', 'describe_user_defined_types', 'dump_user_defined_types', 'storagemodel', 'tablestoragemodel');\n";
+			sql_table *t;
+			t = mvc_bind_table(sql, s, "dependencies_vw");
+			t->system = 0; /* make it non-system else the drop view will fail */
+			t = mvc_bind_table(sql, s, "ids");
+			t->system = 0; /* make it non-system else the drop view will fail */
+			t = mvc_bind_table(sql, s, "describe_user_defined_types");
+			t->system = 0; /* make it non-system else the drop view will fail */
+			t = mvc_bind_table(sql, s, "dump_user_defined_types");
+			t->system = 0; /* make it non-system else the drop view will fail */
+			t = mvc_bind_table(sql, s, "storagemodel");
+			t->system = 0; /* make it non-system else the drop view will fail */
+			t = mvc_bind_table(sql, s, "tablestoragemodel");
+			t->system = 0; /* make it non-system else the drop view will fail */
+			printf("Running database upgrade commands:\n%s\n", query);
+			fflush(stdout);
+			err = SQLstatementIntern(c, query, "update", true, false, NULL);
+		}
+		BBPreclaim(b);
+	}
+	res_table_destroy(output);
+	return err;
+}
+
 int
 SQLupgrades(Client c, mvc *m)
 {
@@ -4979,6 +5222,11 @@ SQLupgrades(Client c, mvc *m)
 	}
 
 	if ((err = sql_update_snapshot(c, m, s)) != NULL) {
+		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
+		goto handle_error;
+	}
+
+	if ((err = sql_update_inet46(c, m, s)) != NULL) {
 		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 		goto handle_error;
 	}
