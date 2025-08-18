@@ -865,7 +865,7 @@ PCREpatindex(Client ctx, int *ret, const char *const *pat, const char *const *va
 		return MAL_SUCCEED;
 	}
 
-	if ((msg = pat2pcre(&ppat, *pat)) != MAL_SUCCEED)
+	if ((msg = pat2pcre(ma, &ppat, *pat)) != MAL_SUCCEED)
 		return msg;
 	re = pcre2_compile((PCRE2_SPTR) ppat, PCRE2_ZERO_TERMINATED, PCRE2_UTF | PCRE2_NO_UTF_CHECK | PCRE2_MULTILINE, &errcode, &errpos, NULL);
 	if (re == NULL) {
