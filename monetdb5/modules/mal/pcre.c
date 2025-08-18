@@ -865,7 +865,7 @@ PCREpatindex(Client ctx, int *ret, const char *const *pat, const char *const *va
 		return MAL_SUCCEED;
 	}
 
-	if ((msg = pat2pcre(&ppat, *pat)) != MAL_SUCCEED)
+	if ((msg = pat2pcre(ma, &ppat, *pat)) != MAL_SUCCEED)
 		return msg;
 	re = pcre2_compile((PCRE2_SPTR) ppat, PCRE2_ZERO_TERMINATED, PCRE2_UTF | PCRE2_NO_UTF_CHECK | PCRE2_MULTILINE, &errcode, &errpos, NULL);
 	if (re == NULL) {
@@ -1085,7 +1085,7 @@ BATPCRElike_imp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	BUN q = 0;
 	bit *restrict ret = NULL;
 	struct RE *mnre_simple = NULL;
-	BATiter bi = (BATiter) { 0 }, pi;
+	BATiter bi = { 0 }, pi;
 
 	allocator *ma = cntxt->curprg->def->ma;
 	if (input_is_a_bat) {

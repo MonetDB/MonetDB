@@ -490,7 +490,7 @@ BATXMLoptions(Client ctx, bat *ret, const char *const *name, const char *const *
 	str buf = GDKmalloc(BUFSIZ);
 	str val = GDKmalloc(BUFSIZ);
 	size_t size = BUFSIZ, len = strlen(*name);
-	BATiter bi = (BATiter) {.b = NULL };
+	BATiter bi = {.b = NULL };
 	const char *err = OPERATION_FAILED " During bulk options analysis";
 
 	if (val == NULL || buf == NULL) {
@@ -1257,7 +1257,7 @@ static const char *
 BATxmlaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 {
 	BAT *bn = NULL, *t1, *t2 = NULL;
-	BATiter bi = (BATiter) {.b = NULL };
+	BATiter bi = {.b = NULL };
 	oid min, max;
 	BUN ngrp;
 	BUN nils = 0;

@@ -1775,7 +1775,6 @@ monetdbe_execute(monetdbe_statement *stmt, monetdbe_result **result, monetdbe_cn
 	}
 
 cleanup:
-	GDKfree(glb);
 	return commit_action(m, stmt_internal->mdbe, result, res_internal);
 }
 

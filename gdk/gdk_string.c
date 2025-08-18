@@ -809,7 +809,7 @@ concat_strings(allocator *alloc, BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 	BUN i, p, nils = 0;
 	size_t *restrict lengths = NULL, separator_length = 0, next_length;
 	str *restrict astrings = NULL;
-	BATiter bi, bis = (BATiter) {0};
+	BATiter bi, bis = {0};
 	BAT *bn = NULL;
 	gdk_return rres = GDK_FAIL;
 
