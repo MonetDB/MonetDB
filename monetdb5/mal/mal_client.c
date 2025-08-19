@@ -285,8 +285,8 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 	c->filetrans = false;
 	c->handshake_options = NULL;
 	c->query = NULL;
-	c->alloc = ma_create(NULL);
-	c->ta = ma_create(c->alloc);
+	c->ma = ma_create(NULL);
+	c->ta = ma_create(c->ma);
 
 	char name[MT_NAME_LEN];
 	snprintf(name, sizeof(name), "Client%d->s", (int) (c - mal_clients));
@@ -303,7 +303,7 @@ MCinitClient(oid user, bstream *fin, stream *fout)
 	c = MCnewClient();
 	if (c) {
 		c = MCinitClientRecord(c, user, fin, fout);
-		MT_thread_setallocator(c->alloc);
+		MT_thread_setallocator(c->ma);
 		MT_thread_set_qry_ctx(&c->qryctx);
 	}
 	MT_lock_unset(&mal_contextLock);
@@ -463,7 +463,7 @@ MCcloseClient(Client c)
 		c->idx = -1;
 	}
 	c->ta = NULL;
-	ma_destroy(c->alloc);
+	ma_destroy(c->ma);
 	MT_thread_setallocator(NULL);
 	MT_lock_unset(&mal_contextLock);
 }

@@ -592,7 +592,7 @@ wkbMBR(Client ctx, mbr **geomMBR, wkb **geomWKB)
 	GEOSGeom geosGeometry;
 	str ret = MAL_SUCCEED;
 	bit empty;
-	allocator *ma = ctx->alloc;
+	allocator *ma = ctx->ma;
 	assert(ma);
 
 	//check if the geometry is nil
@@ -639,7 +639,7 @@ wkbBox2D(Client ctx, mbr **box, wkb **point1, wkb **point2)
 	GEOSGeom point1_geom, point2_geom;
 	double xmin = 0.0, ymin = 0.0, xmax = 0.0, ymax = 0.0;
 	str err = MAL_SUCCEED;
-	allocator *ma = ctx->alloc;
+	allocator *ma = ctx->ma;
 	assert(ma);
 
 	//check null input

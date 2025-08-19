@@ -55,9 +55,9 @@ CLTgetScenario(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) mb;
 	if (ctx->scenario)
-		*getArgReference_str(stk, pci, 0) = MA_STRDUP(ctx->alloc, ctx->scenario);
+		*getArgReference_str(stk, pci, 0) = MA_STRDUP(ctx->ma, ctx->scenario);
 	else
-		*getArgReference_str(stk, pci, 0) = MA_STRDUP(ctx->alloc, "nil");
+		*getArgReference_str(stk, pci, 0) = MA_STRDUP(ctx->ma, "nil");
 	if (*getArgReference_str(stk, pci, 0) == NULL)
 		throw(MAL, "clients.getScenario", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
@@ -72,7 +72,7 @@ CLTsetScenario(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	msg = setScenario(ctx, *getArgReference_str(stk, pci, 1));
 	*getArgReference_str(stk, pci, 0) = 0;
 	if (msg == NULL) {
-		*getArgReference_str(stk, pci, 0) = MA_STRDUP(ctx->alloc, ctx->scenario);
+		*getArgReference_str(stk, pci, 0) = MA_STRDUP(ctx->ma, ctx->scenario);
 		if (*getArgReference_str(stk, pci, 0) == NULL)
 			throw(MAL, "clients.setScenario", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
@@ -564,7 +564,7 @@ CLTgetProfile(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int *wlim = getArgReference_int(stk, pci, 3);
 	int *mlim = getArgReference_int(stk, pci, 4);
 	(void) mb;
-	if (!(*opt = MA_STRDUP(ctx->alloc, ctx->optimizer)))
+	if (!(*opt = MA_STRDUP(ctx->ma, ctx->optimizer)))
 		throw(MAL, "clients.getProfile", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	*qto = (int) (ctx->querytimeout / 1000000);
 	*sto = (int) (ctx->sessiontimeout / 1000000);
@@ -593,13 +593,13 @@ CLTmd5sum(Client ctx, str *ret, const char *const *pw)
 {
 	(void) ctx;
 	if (strNil(*pw)) {
-		*ret = MA_STRDUP(ctx->alloc, str_nil);
+		*ret = MA_STRDUP(ctx->ma, str_nil);
 	} else {
 		char *mret = mcrypt_MD5Sum(*pw, strlen(*pw));
 
 		if (!mret)
 			throw(MAL, "clients.md5sum", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		*ret = MA_STRDUP(ctx->alloc, mret);
+		*ret = MA_STRDUP(ctx->ma, mret);
 		free(mret);
 	}
 	if (*ret == NULL)
@@ -612,13 +612,13 @@ CLTsha1sum(Client ctx, str *ret, const char *const *pw)
 {
 	(void) ctx;
 	if (strNil(*pw)) {
-		*ret = MA_STRDUP(ctx->alloc, str_nil);
+		*ret = MA_STRDUP(ctx->ma, str_nil);
 	} else {
 		char *mret = mcrypt_SHA1Sum(*pw, strlen(*pw));
 
 		if (!mret)
 			throw(MAL, "clients.sha1sum", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		*ret = MA_STRDUP(ctx->alloc, mret);
+		*ret = MA_STRDUP(ctx->ma, mret);
 		free(mret);
 	}
 	if (*ret == NULL)
@@ -631,13 +631,13 @@ CLTripemd160sum(Client ctx, str *ret, const char *const *pw)
 {
 	(void) ctx;
 	if (strNil(*pw)) {
-		*ret = MA_STRDUP(ctx->alloc, str_nil);
+		*ret = MA_STRDUP(ctx->ma, str_nil);
 	} else {
 		char *mret = mcrypt_RIPEMD160Sum(*pw, strlen(*pw));
 
 		if (!mret)
 			throw(MAL, "clients.ripemd160sum", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		*ret = MA_STRDUP(ctx->alloc, mret);
+		*ret = MA_STRDUP(ctx->ma, mret);
 		free(mret);
 	}
 	if (*ret == NULL)
@@ -650,7 +650,7 @@ CLTsha2sum(Client ctx, str *ret, const char *const *pw, const int *bits)
 {
 	(void) ctx;
 	if (strNil(*pw) || is_int_nil(*bits)) {
-		*ret = MA_STRDUP(ctx->alloc, str_nil);
+		*ret = MA_STRDUP(ctx->ma, str_nil);
 	} else {
 		char *mret = 0;
 		switch (*bits) {
@@ -673,7 +673,7 @@ CLTsha2sum(Client ctx, str *ret, const char *const *pw, const int *bits)
 		}
 		if (!mret)
 			throw(MAL, "clients.sha2sum", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		*ret = MA_STRDUP(ctx->alloc, mret);
+		*ret = MA_STRDUP(ctx->ma, mret);
 		free(mret);
 	}
 	if (*ret == NULL)
@@ -686,12 +686,12 @@ CLTbackendsum(Client ctx, str *ret, const char *const *pw)
 {
 	(void) ctx;
 	if (strNil(*pw)) {
-		*ret = MA_STRDUP(ctx->alloc, str_nil);
+		*ret = MA_STRDUP(ctx->ma, str_nil);
 	} else {
 		char *mret = mcrypt_BackendSum(*pw, strlen(*pw));
 		if (mret == NULL)
 			throw(MAL, "clients.backendsum", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		*ret = MA_STRDUP(ctx->alloc, mret);
+		*ret = MA_STRDUP(ctx->ma, mret);
 		free(mret);
 	}
 	if (*ret == NULL)
@@ -705,7 +705,7 @@ CLTgetUsername(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str *ret = getArgReference_str(stk, pci, 0);
 	(void) mb;
 
-	*ret = MA_STRDUP(ctx->alloc, ctx->username);
+	*ret = MA_STRDUP(ctx->ma, ctx->username);
 	return MAL_SUCCEED;
 }
 
@@ -766,7 +766,7 @@ CLTshutdown(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	} while (delay > 0 && leftover > 1);
 	if (delay == 0 && leftover > 1)
 		snprintf(buf, 1024, "%d client sessions still running", leftover);
-	*ret = MA_STRDUP(ctx->alloc, buf);
+	*ret = MA_STRDUP(ctx->ma, buf);
 	if (force)
 		GDKprepareExit();
 	if (*ret == NULL)

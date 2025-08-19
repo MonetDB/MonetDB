@@ -241,7 +241,7 @@ format_val2json(const Client c, const ValPtr res)
 		(!VALget(res)
 		 || BATatoms[res->vtype].atomCmp(VALget(res),
 										 BATatoms[res->vtype].atomNull) == 0))
-		return MA_STRDUP(c->alloc, "\"nil\"");
+		return MA_STRDUP(c->ma, "\"nil\"");
 
 	bool use_external = true;
 
