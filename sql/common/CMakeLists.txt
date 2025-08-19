@@ -40,8 +40,7 @@ target_link_libraries(sqlcommon
   matomic
   stream
   bat
-  sqlinclude
-  sqlstorage)
+  sqlinclude)
 
 target_compile_definitions(sqlcommon
   PRIVATE
