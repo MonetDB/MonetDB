@@ -471,7 +471,7 @@ getStrConstant(MalBlkPtr mb, str val)
 	VALset(&cst, TYPE_str, val);
 	_t = fndConstant(mb, &cst, MAL_VAR_WINDOW);
 	if (_t < 0) {
-		if ((cst.val.sval = /*GDKmalloc*/ma_alloc(mb->ma, cst.len)) == NULL)
+		if ((cst.val.sval = ma_alloc(mb->ma, cst.len)) == NULL)
 			return -1;
 		memcpy(cst.val.sval, val, cst.len);	/* includes terminating \0 */
 		_t = defConstant(mb, TYPE_str, &cst);

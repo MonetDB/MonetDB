@@ -52,14 +52,14 @@
 /* #define DEBUG_MAL_STACK*/
 
 MalStkPtr
-newGlobalStack(allocator *alloc, int size)
+newGlobalStack(allocator *ma, int size)
 {
 	MalStkPtr s;
 
-	s = (MalStkPtr) alloc? ma_alloc(alloc, stackSize(size)) : GDKmalloc(stackSize(size));
+	s = (MalStkPtr) ma? ma_alloc(ma, stackSize(size)) : GDKmalloc(stackSize(size));
 	if (!s)
 		return NULL;
-	s->allocated = !alloc;
+	s->allocated = !ma;
 	s->stksize = size;
 	s->stktop = s->stkbot = s->stkdepth = s->calldepth = 0;
 	s->keepAlive = s->keepTmps = 0;
@@ -79,7 +79,7 @@ newGlobalStack(allocator *alloc, int size)
 }
 
 MalStkPtr
-reallocGlobalStack(allocator *alloc, MalStkPtr old, int cnt)
+reallocGlobalStack(allocator *ma, MalStkPtr old, int cnt)
 {
 	int k;
 	MalStkPtr s;
@@ -87,7 +87,7 @@ reallocGlobalStack(allocator *alloc, MalStkPtr old, int cnt)
 	if (old->stksize > cnt)
 		return old;
 	k = ((cnt / STACKINCR) + 1) * STACKINCR;
-	s = newGlobalStack(alloc, k);
+	s = newGlobalStack(ma, k);
 	if (!s) {
 		return NULL;
 	}

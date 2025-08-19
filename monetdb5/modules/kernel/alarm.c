@@ -76,7 +76,7 @@ ALARMsleep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 static str
 ALARMctime(Client ctx, str *res)
 {
-	(void) ctx;
+	allocator *ma = ctx->curprg->def->ma;
 	time_t t = time(0);
 	char *base;
 	char buf[26];
@@ -91,7 +91,7 @@ ALARMctime(Client ctx, str *res)
 		throw(MAL, "alarm.ctime", "failed to format time");
 
 	base[24] = 0;				/* squash final newline */
-	*res = GDKstrdup(base);
+	*res = MA_STRDUP(ma, base);
 	if (*res == NULL)
 		throw(MAL, "alarm.ctime", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;

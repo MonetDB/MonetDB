@@ -374,14 +374,14 @@ BKCgetCapacity(Client ctx, lng *res, const bat *bid)
 static str
 BKCgetColumnType(Client ctx, str *res, const bat *bid)
 {
-	(void) ctx;
+	allocator *ma = ctx->curprg->def->ma;
 	const char *ret = str_nil;
 	BAT *b = BBPquickdesc(*bid);
 
 	if (b == NULL)
 		throw(MAL, "bat.getColumnType", ILLEGAL_ARGUMENT);
 	ret = *bid < 0 ? ATOMname(TYPE_void) : ATOMname(b->ttype);
-	*res = GDKstrdup(ret);
+	*res = MA_STRDUP(ma, ret);
 	if (*res == NULL)
 		throw(MAL, "bat.getColumnType", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
@@ -541,20 +541,20 @@ BKCsetAccess(Client ctx, bat *res, const bat *bid, const char *const *param)
 static str
 BKCgetAccess(Client ctx, str *res, const bat *bid)
 {
-	(void) ctx;
+	allocator *ma = ctx->curprg->def->ma;
 	BAT *b;
 
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "bat.getAccess", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	switch (BATgetaccess(b)) {
 	case BAT_READ:
-		*res = GDKstrdup("read");
+		*res = MA_STRDUP(ma, "read");
 		break;
 	case BAT_APPEND:
-		*res = GDKstrdup("append");
+		*res = MA_STRDUP(ma, "append");
 		break;
 	case BAT_WRITE:
-		*res = GDKstrdup("write");
+		*res = MA_STRDUP(ma, "write");
 		break;
 	default:
 		MT_UNREACHABLE();
@@ -949,13 +949,13 @@ BKCsetName(Client ctx, void *r, const bat *bid, const char *const *s)
 static str
 BKCgetBBPname(Client ctx, str *ret, const bat *bid)
 {
-	(void) ctx;
+	allocator *ma = ctx->curprg->def->ma;
 	BAT *b;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "bat.getName", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
-	*ret = GDKstrdup(BBP_logical(b->batCacheid));
+	*ret = MA_STRDUP(ma, BBP_logical(b->batCacheid));
 	BBPunfix(b->batCacheid);
 	return *ret ? MAL_SUCCEED : createException(MAL, "bat.getName",
 												SQLSTATE(HY013)

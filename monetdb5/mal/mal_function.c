@@ -679,7 +679,7 @@ chkDeclarations(MalBlkPtr mb)
 	char name[IDLENGTH];
 
 	if (mb->errors)
-		return GDKstrdup(mb->errors);
+		return MA_STRDUP(mb->ma, mb->errors);
 	blks[top] = blkId;
 
 	/* initialize the scope */

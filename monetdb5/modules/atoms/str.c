@@ -2073,8 +2073,9 @@ strbat_reverse(allocator *ma, BAT *b)
 		len = strlen(src);
 		if (len >= dstlen) {
 			char *ndst;
+			size_t osz = dstlen;
 			dstlen = len + 1024;
-			ndst = GDKrealloc(dst, dstlen);
+			ndst = ma_realloc(ma, dst, dstlen, osz);
 			if (ndst == NULL) {
 				bat_iterator_end(&bi);
 				BBPreclaim(bn);

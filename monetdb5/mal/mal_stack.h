@@ -16,7 +16,7 @@
 
 #define stackSize(CNT) (sizeof(ValRecord)*(CNT) + offsetof(MalStack, stk))
 
-mal_export MalStkPtr newGlobalStack(allocator *alloc, int size);
+mal_export MalStkPtr newGlobalStack(allocator *ma, int size);
 mal_export MalStkPtr reallocGlobalStack(allocator *alloc, MalStkPtr s, int cnt);
 mal_export void clearStack(MalStkPtr s);
 mal_export void freeStack(MalStkPtr stk);

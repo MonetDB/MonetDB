@@ -2275,7 +2275,7 @@ parseMAL(Client ctx, Symbol curPrg, int skipcomments, int lines,
 	(void) curPrg;
 	echoInput(ctx);
 	// can we use mal block allocator always?
-	allocator *ma = ctx->backup ? ctx->alloc : curPrg->def->ma;
+	allocator *ma = ctx->backup? ctx->backup->def->ma:curPrg->def->ma;
 	/* here the work takes place */
 	while ((c = currChar(ctx)) && lines > 0) {
 		switch (c) {
