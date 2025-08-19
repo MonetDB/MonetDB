@@ -870,20 +870,20 @@ handle_error(mvc *m, int pstatus, str msg)
 		freeException(msg);
 		return createException(SQL,"sql.execute",TRANS_ABORTED);
 	} else if ( GDKerrbuf && GDKerrbuf[0]){
-		new = GDKstrdup(GDKerrbuf);
+		new = sa_strdup(m->sa, GDKerrbuf);
 		GDKerrbuf[0] = 0;
 	} else if ( *m->errstr){
-		new = GDKstrdup(m->errstr);
+		new = sa_strdup(m->sa, m->errstr);
 		m->errstr[0] = 0;
 	}
 	if ( new && msg){
-		newmsg = concatErrors(msg, new);
-		GDKfree(new);
+		newmsg = concatErrors(m->sa, msg, new);
+		//GDKfree(new);
 	} else if (msg)
 		newmsg = msg;
 	else if (new) {
 		newmsg = createException(SQL, "sql.execute", "%s", new);
-		GDKfree(new);
+		//GDKfree(new);
 	} else {
 		newmsg = createException(SQL, "sql.execute", MAL_MALLOC_FAIL);
 	}

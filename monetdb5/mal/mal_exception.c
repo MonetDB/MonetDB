@@ -51,20 +51,12 @@ isExceptionVariable(const char *nme)
 static char *M5OutOfMemory = MAL_MALLOC_FAIL;
 
 char *
-dupError(const char *err)
-{
-	char *msg = GDKstrdup(err);
-
-	return msg ? msg : M5OutOfMemory;
-}
-
-char *
-concatErrors(char *err1, const char *err2)
+concatErrors(allocator *ma, char *err1, const char *err2)
 {
 	size_t len = strlen(err1);
 	bool addnl = err1[len - 1] != '\n';
 	len += strlen(err2) + 1 + addnl;
-	char *new = GDKmalloc(len);
+	char *new = ma_alloc(ma, len);
 	if (new == NULL)
 		return err1;
 	strconcat_len(new, len, err1, addnl ? "\n" : "", err2, NULL);
@@ -310,7 +302,7 @@ getExceptionType(const char *exception)
  * needs to be GDKfreed.
  */
 str
-getExceptionPlace(const char *exception)
+getExceptionPlace(allocator *ma, const char *exception)
 {
 	str ret;
 	const char *s, *t;
@@ -323,7 +315,7 @@ getExceptionPlace(const char *exception)
 			exception[l] == ':') {
 			s = exception + l + 1;
 			if ((t = strchr(s, ':')) != NULL) {
-				if ((ret = GDKmalloc(t - s + 1)) == NULL)
+				if ((ret = ma_alloc(ma, t - s + 1)) == NULL)
 					return NULL;
 				strcpy_len(ret, s, t - s + 1);
 				return ret;
@@ -331,7 +323,7 @@ getExceptionPlace(const char *exception)
 			break;
 		}
 	}
-	return GDKstrdup("(unknown)");
+	return MA_STRDUP(ma, "(unknown)");
 }
 
 /**

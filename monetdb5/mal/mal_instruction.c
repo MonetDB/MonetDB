@@ -33,9 +33,9 @@ addMalException(MalBlkPtr mb, str msg)
 	if (msg == NULL)
 		return;
 	if (mb->errors) {
-		mb->errors = concatErrors(mb->errors, msg);
+		mb->errors = concatErrors(mb->ma, mb->errors, msg);
 	} else {
-		mb->errors = dupError(msg);
+		mb->errors = MA_STRDUP(mb->ma, msg);
 	}
 }
 

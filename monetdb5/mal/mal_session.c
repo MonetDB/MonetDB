@@ -864,12 +864,12 @@ optimizeMALBlock(Client cntxt, MalBlkPtr mb)
 				mb->errors = NULL;
 			}
 			if (msg) {
-				str place = getExceptionPlace(msg);
+				str place = getExceptionPlace(mb->ma, msg);
 				str nmsg = NULL;
 				if (place) {
 					nmsg = createException(getExceptionType(msg), place, "%s",
 										   getExceptionMessageAndState(msg));
-					GDKfree(place);
+					//GDKfree(place);
 				}
 				if (nmsg) {
 					freeException(msg);
