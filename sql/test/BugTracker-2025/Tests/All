@@ -27,3 +27,4 @@ KNOWNFAIL?7653_incorrect_join_results
 7680-union-all
 7682_trigger_crash
 7686-delete-all-empty-table
+7688_not_exists_null
