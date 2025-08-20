@@ -147,7 +147,7 @@ SQLhelp sqlhelp1[] = {
 	 "can also be defined in other programming languages such as Python, R, C or CPP.",
 	 "CREATE [ OR REPLACE ] AGGREGATE [ FUNCTION ] qname '(' { '*' | [ param [',' ...]] } ')'\n"
 	 "    RETURNS function_return_data_type\n"
-	 "    EXTERNAL NAME ident ',' ident\n"
+	 "    EXTERNAL NAME ident '.' ident\n"
 	 "CREATE [ OR REPLACE ] AGGREGATE [ FUNCTION ] qname '(' { '*' | [ param [',' ...]] } ')'\n"
 	 "    RETURNS function_return_data_type\n"
 	 "    LANGUAGE language_keyword external_code",
@@ -157,7 +157,7 @@ SQLhelp sqlhelp1[] = {
 	 "Create a user-defined filter function. Currently only MAL definitions\n"
 	 "CREATE [ OR REPLACE ] FILTER [ FUNCTION ] qname '(' { '*' | [ param [',' ...]] } ')'\n"
 	 "    RETURNS function_return_data_type\n"
-	 "    EXTERNAL NAME ident ',' ident",
+	 "    EXTERNAL NAME ident '.' ident",
 	 "qname,param,function_return_data_type,ident",
 	 "See also https://www.monetdb.org/documentation/user-guide/sql-programming/function-definitions/"},
 	{"CREATE FUNCTION",
@@ -168,7 +168,7 @@ SQLhelp sqlhelp1[] = {
 	 "    BEGIN [ ATOMIC ] statement [ ';' ...] END\n"
 	 "CREATE [ OR REPLACE ] FUNCTION qname '(' { '*' | [ param [',' ...]] } ')'\n"
 	 "    RETURNS function_return_data_type\n"
-	 "    EXTERNAL NAME ident ',' ident\n"
+	 "    EXTERNAL NAME ident '.' ident\n"
 	 "CREATE [ OR REPLACE ] FUNCTION qname '(' { '*' | [ param [',' ...]] } ')'\n"
 	 "    RETURNS function_return_data_type\n"
 	 "    LANGUAGE language_keyword external_code",
@@ -195,7 +195,7 @@ SQLhelp sqlhelp1[] = {
 	 "CREATE [ OR REPLACE ] PROCEDURE qname '(' { '*' | [ param [',' ...]] } ')'\n"
 	 "    BEGIN [ ATOMIC ] procedure_statement [ ';' ...] END\n"
 	 "CREATE [ OR REPLACE ] PROCEDURE qname '(' { '*' | [ param [',' ...]] } ')'\n"
-	 "    EXTERNAL NAME ident ',' ident",
+	 "    EXTERNAL NAME ident '.' ident",
 	 "qname,param,procedure_statement,ident",
 	 "See also https://www.monetdb.org/documentation/user-guide/sql-programming/procedure-definitions/"},
 	{"CREATE REMOTE TABLE",
@@ -267,11 +267,10 @@ SQLhelp sqlhelp1[] = {
 	 "qname,column_list,query_expression",
 	 "See also https://www.monetdb.org/documentation/user-guide/sql-manual/data-definition/view-definition/"},
 	{"CREATE WINDOW",
-	 "Create a user-defined window function. Currently only MAL definitions\n"
-	 "are supported.",
+	 "Create a user-defined window function. Currently only MAL definitions are supported.",
 	 "CREATE [ OR REPLACE ] WINDOW [ FUNCTION ] qname '(' { '*' | [ param [',' ...]] } ')'\n"
 	 "    RETURNS function_return_data_type\n"
-	 "    EXTERNAL NAME ident ',' ident",
+	 "    EXTERNAL NAME ident '.' ident",
 	 "qname,param,function_return_data_type,ident",
 	 "See also https://www.monetdb.org/documentation/user-guide/sql-manual/data-manipulation/window-expressions/"},
 	{"CURRENT_DATE",
