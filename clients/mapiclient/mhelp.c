@@ -103,10 +103,11 @@ SQLhelp sqlhelp1[] = {
 	 "See also https://www.monetdb.org/documentation/user-guide/sql-programming/flow-of-control/"},
 	{"COMMENT",
 	 "Add, update or remove a comment or description for a database object",
-	 "COMMENT ON { SCHEMA | TABLE | VIEW | INDEX | SEQUENCE | function_type }\n"
-	 "     qname IS { 'my description text' | NULL | '' }\n"
-	 "COMMENT ON COLUMN q3name IS { 'my description text' | NULL | '' }",
-	 "function_type,qname,q3name",
+	 "COMMENT ON SCHEMA ident IS { 'comment text' | NULL | '' }\n"
+	 "COMMENT ON { TABLE | VIEW | INDEX | SEQUENCE } qname IS { 'comment text' | NULL | '' }\n"
+	 "COMMENT ON COLUMN q3name IS { 'comment text' | NULL | '' }\n"
+	 "COMMENT ON function_type qname [ '(' [ data_type [',' ...]] ')' ] IS { 'comment text' | NULL | '' }",
+	 "function_type,qname,q3name,ident",
 	 NULL},
 	{"COMMIT",
 	 "Commit the current transaction",
@@ -818,7 +819,7 @@ SQLhelp sqlhelp2[] = {
 	 NULL},
 	{"privileges",
 	 NULL,
-	 "table_privileges | EXECUTE ON function_type qname | global_privileges",
+	 "table_privileges | EXECUTE ON function_type qname [ '(' [ data_type [',' ...]] ')' ] | global_privileges",
 	 "function_type,table_privileges,global_privileges",
 	 NULL},
 	{"procedure_statement",
