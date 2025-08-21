@@ -103,10 +103,11 @@ SQLhelp sqlhelp1[] = {
 	 "See also https://www.monetdb.org/documentation/user-guide/sql-programming/flow-of-control/"},
 	{"COMMENT",
 	 "Add, update or remove a comment or description for a database object",
-	 "COMMENT ON { SCHEMA | TABLE | VIEW | INDEX | SEQUENCE | function_type }\n"
-	 "     qname IS { 'my description text' | NULL | '' }\n"
-	 "COMMENT ON COLUMN q3name IS { 'my description text' | NULL | '' }",
-	 "function_type,qname,q3name",
+	 "COMMENT ON SCHEMA ident IS { 'comment text' | NULL | '' }\n"
+	 "COMMENT ON { TABLE | VIEW | INDEX | SEQUENCE } qname IS { 'comment text' | NULL | '' }\n"
+	 "COMMENT ON COLUMN q3name IS { 'comment text' | NULL | '' }\n"
+	 "COMMENT ON function_type qname [ '(' [ data_type [',' ...]] ')' ] IS { 'comment text' | NULL | '' }",
+	 "function_type,qname,q3name,ident",
 	 NULL},
 	{"COMMIT",
 	 "Commit the current transaction",
@@ -146,7 +147,7 @@ SQLhelp sqlhelp1[] = {
 	 "can also be defined in other programming languages such as Python, R, C or CPP.",
 	 "CREATE [ OR REPLACE ] AGGREGATE [ FUNCTION ] qname '(' { '*' | [ param [',' ...]] } ')'\n"
 	 "    RETURNS function_return_data_type\n"
-	 "    EXTERNAL NAME ident ',' ident\n"
+	 "    EXTERNAL NAME ident '.' ident\n"
 	 "CREATE [ OR REPLACE ] AGGREGATE [ FUNCTION ] qname '(' { '*' | [ param [',' ...]] } ')'\n"
 	 "    RETURNS function_return_data_type\n"
 	 "    LANGUAGE language_keyword external_code",
@@ -156,7 +157,7 @@ SQLhelp sqlhelp1[] = {
 	 "Create a user-defined filter function. Currently only MAL definitions\n"
 	 "CREATE [ OR REPLACE ] FILTER [ FUNCTION ] qname '(' { '*' | [ param [',' ...]] } ')'\n"
 	 "    RETURNS function_return_data_type\n"
-	 "    EXTERNAL NAME ident ',' ident",
+	 "    EXTERNAL NAME ident '.' ident",
 	 "qname,param,function_return_data_type,ident",
 	 "See also https://www.monetdb.org/documentation/user-guide/sql-programming/function-definitions/"},
 	{"CREATE FUNCTION",
@@ -167,7 +168,7 @@ SQLhelp sqlhelp1[] = {
 	 "    BEGIN [ ATOMIC ] statement [ ';' ...] END\n"
 	 "CREATE [ OR REPLACE ] FUNCTION qname '(' { '*' | [ param [',' ...]] } ')'\n"
 	 "    RETURNS function_return_data_type\n"
-	 "    EXTERNAL NAME ident ',' ident\n"
+	 "    EXTERNAL NAME ident '.' ident\n"
 	 "CREATE [ OR REPLACE ] FUNCTION qname '(' { '*' | [ param [',' ...]] } ')'\n"
 	 "    RETURNS function_return_data_type\n"
 	 "    LANGUAGE language_keyword external_code",
@@ -194,7 +195,7 @@ SQLhelp sqlhelp1[] = {
 	 "CREATE [ OR REPLACE ] PROCEDURE qname '(' { '*' | [ param [',' ...]] } ')'\n"
 	 "    BEGIN [ ATOMIC ] procedure_statement [ ';' ...] END\n"
 	 "CREATE [ OR REPLACE ] PROCEDURE qname '(' { '*' | [ param [',' ...]] } ')'\n"
-	 "    EXTERNAL NAME ident ',' ident",
+	 "    EXTERNAL NAME ident '.' ident",
 	 "qname,param,procedure_statement,ident",
 	 "See also https://www.monetdb.org/documentation/user-guide/sql-programming/procedure-definitions/"},
 	{"CREATE REMOTE TABLE",
@@ -266,11 +267,10 @@ SQLhelp sqlhelp1[] = {
 	 "qname,column_list,query_expression",
 	 "See also https://www.monetdb.org/documentation/user-guide/sql-manual/data-definition/view-definition/"},
 	{"CREATE WINDOW",
-	 "Create a user-defined window function. Currently only MAL definitions\n"
-	 "are supported.",
+	 "Create a user-defined window function. Currently only MAL definitions are supported.",
 	 "CREATE [ OR REPLACE ] WINDOW [ FUNCTION ] qname '(' { '*' | [ param [',' ...]] } ')'\n"
 	 "    RETURNS function_return_data_type\n"
-	 "    EXTERNAL NAME ident ',' ident",
+	 "    EXTERNAL NAME ident '.' ident",
 	 "qname,param,function_return_data_type,ident",
 	 "See also https://www.monetdb.org/documentation/user-guide/sql-manual/data-manipulation/window-expressions/"},
 	{"CURRENT_DATE",
@@ -818,7 +818,7 @@ SQLhelp sqlhelp2[] = {
 	 NULL},
 	{"privileges",
 	 NULL,
-	 "table_privileges | EXECUTE ON function_type qname | global_privileges",
+	 "table_privileges | EXECUTE ON function_type qname [ '(' [ data_type [',' ...]] ')' ] | global_privileges",
 	 "function_type,table_privileges,global_privileges",
 	 NULL},
 	{"procedure_statement",

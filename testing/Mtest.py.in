@@ -1866,6 +1866,9 @@ def RunTest(env, TST, COND, oktests, length, pSrvr, total_tests, options, enviro
                 print('%s%s' % (prompt(), s), end='')
                 prred('TEST MISSING')
                 print()
+            else:
+                prred('MISSING')
+                print(':', os.path.join(TSTDIR, TSTSUFF, TST + EXT))
 
             return TX,Failed,Failed,elem,reason,links
 
