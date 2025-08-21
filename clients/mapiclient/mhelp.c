@@ -487,13 +487,13 @@ SQLhelp sqlhelp1[] = {
 	 "[ GROUP BY { ALL | '*' | group_by_element [',' ...] } ]\n"
 	 "[ HAVING search_condition ]\n"
 	 "[ WINDOW window_definition [',' ...] ]\n"
-	 "[ QUALIFY search_condition ]\n"
-	 "[ { UNION | INTERSECT | EXCEPT | OUTER UNION } [ DISTINCT | ALL ] [ CORRESPONDING [ BY '(' column_ref_commalist ')' ] ] select_clause ]\n"
-	 "[ ORDER BY expression [ ASC | DESC ] [ NULLS { FIRST | LAST } ] [',' ...] ]\n"
-	 "[ limit_offset_clause | offset_fetchfirst_clause ]\n"
-	 "[ SAMPLE size_or_perc ]\n"
-	 "[ SEED size ]",
-	 "cte_list,expression,table_ref,search_condition,group_by_element,window_definition",
+	 "[ qualify_clause ]\n"
+	 "[ { UNION | INTERSECT | EXCEPT | OUTER UNION } [ DISTINCT | ALL ] [ corresponding ] select_clause ]\n"
+	 "[ order_by_clause ]\n"
+	 "[ limit_clause ]\n"
+	 "[ sample_clause ]\n"
+	 "[ seed_clause ]",
+	 "cte_list,expression,table_ref,search_condition,group_by_element,window_definition,qualify_clause,corresponding,order_by_clause,limit_clause,sample_clause,seed_clause",
 	 "See also https://www.monetdb.org/documentation/user-guide/sql-manual/data-manipulation/table-expressions/"},
 	{"SET",
 	 "Assign a value to a variable or column",
@@ -633,6 +633,11 @@ SQLhelp sqlhelp2[] = {
 	 "call_procedure | while_statement | if_statement | case_statement | return_statement",
 	 "call_procedure,while_statement,if_statement,case_statement,return_statement",
 	 "See also https://www.monetdb.org/documentation/user-guide/sql-programming/flow-of-control/"},
+	{"corresponding",
+	 NULL,
+	 "CORRESPONDING [ BY '(' column_ref_commalist ')' ]",
+	 "column_ref_commalist",
+	 NULL},
 	{"datetime_type",
 	 NULL,
 	 "DATE | TIME [ time_precision ] [ WITH TIME ZONE ] |\n"
@@ -724,11 +729,6 @@ SQLhelp sqlhelp2[] = {
 	 "[ ELSE procedure_statement ... ] END IF",
 	 "search_condition,procedure_statement",
 	 "See also https://www.monetdb.org/documentation/user-guide/sql-programming/flow-of-control/"},
-	{"seq_int_datatype",
-	 NULL,
-	 "BIGINT | INTEGER | INT | SMALLINT | TINYINT",
-	 NULL,
-	 NULL},
 	{"interval",
 	 NULL,
 	 "INTERVAL [ '+' | '-' ] string start_field TO end_field",
@@ -762,6 +762,14 @@ SQLhelp sqlhelp2[] = {
 	 NULL,
 	 "C | CPP | R | PYTHON | PYTHON3",
 	 NULL,
+	 NULL},
+	{"limit_clause",
+	 NULL,
+	 "{ LIMIT poslng_or_param [ OFFSET poslng_or_param ]\n"
+	 "| OFFSET poslng_or_param [ {ROW|ROWS} ]\n"
+	 "| OFFSET poslng_or_param [ {ROW|ROWS} ] FETCH {FIRST|NEXT} poslng_or_param_rows\n"
+	 "| FETCH {FIRST|NEXT} poslng_or_param_rows",
+	 "poslng_or_param,poslng_or_param_rows",
 	 NULL},
 	{"match_option",
 	 NULL,
@@ -821,6 +829,16 @@ SQLhelp sqlhelp2[] = {
 	 "{ RANGE MAXVALUE | query_expression }",
 	 "query_expression",
 	 NULL},
+	{"poslng_or_param",
+	 NULL,
+	 "poslng | param",
+	 "",
+	 NULL},
+	{"poslng_or_param_rows",
+	 NULL,
+	 "[ nonzerolng | param ] {ROW|ROWS} ONLY",
+	 "",
+	 NULL},
 	{"pred_exp",
 	 NULL,
 	 "{ NOT pred_exp | predicate }",
@@ -841,44 +859,44 @@ SQLhelp sqlhelp2[] = {
 	 "{ update_statement | declare_statement | set_statement | control_statement | select_single_row } ';'",
 	 "update_statement,declare_statement,set_statement,control_statement,select_single_row",
 	 NULL},
-	{"select_single_row",
+	{"qualify_clause",
 	 NULL,
-	 "SELECT [ ALL | DISTINCT ] column_exp_commalist INTO select_target_list [ from_clause ]\n"
-	 "  [ where_clause ] [ group_by_clause ] [ having_clause ] [ window_clause ] [ qualify_clause ]",
-	 "column_exp_commalist,select_target_list,from_clause,where_clause,group_by_clause,having_clause,window_clause,qualify_clause",
+	 "QUALIFY scalar_expression",
+	 "scalar_expression",
 	 NULL},
 	{"query_expression",
 	 NULL,
-	 "select_no_parens [ order_by_clause ] [ limit_offset_clause | offset_fetchfirst_clause ] [ sample_clause ]",
-	 "select_no_parens",
+	 "select_no_parens [ order_by_clause ] [ limit_clause ] [ sample_clause ] [ seed_clause ]",
+	 "select_no_parens,order_by_clause,limit_clause,sample_clause,seed_clause",
+	 NULL},
+	{"select_single_row",
+	 NULL,
+	 "SELECT [ ALL | DISTINCT ] column_exp_commalist INTO select_target_list [ from_clause ]\n"
+	 "  [ where_clause ] [ group_by_clause ] [ having_clause ] [ WINDOW window_definition [',' ...] ] [ qualify_clause ]",
+	 "column_exp_commalist,select_target_list,from_clause,where_clause,group_by_clause,having_clause,window_definition,qualify_clause",
 	 NULL},
 	{"select_no_parens",
 	 NULL,
 	 "{ SELECT [ ALL | DISTINCT ] column_exp_commalist [ from_clause ] [ where_clause ]\n"
-	 "       [ group_by_clause ] [ having_clause ] [ window_clause ] [ qualify_clause ]\n"
-	 "| select_no_parens { UNION | EXCEPT | INTERSECT } [ ALL | DISTINCT ] [ corresponding ] select_no_parens\n"
+	 "       [ group_by_clause ] [ having_clause ] [ WINDOW window_definition [',' ...] ] [ qualify_clause ]\n"
+	 "| select_no_parens { UNION | INTERSECT | EXCEPT | OUTER UNION } [ DISTINCT | ALL ] [ corresponding ] select_no_parens\n"
 	 "| '(' select_no_parens ')' }",
-	 "column_exp_commalist,from_clause,where_clause,group_by_clause,having_clause,window_clause,qualify_clause,corresponding",
+	 "column_exp_commalist,from_clause,where_clause,group_by_clause,having_clause,window_definition,qualify_clause,corresponding",
 	 NULL},
 	{"order_by_clause",
 	 NULL,
-	 "ORDER BY expression [ ASC | DESC ] [ NULLS { FIRST | LAST } ] [',' ...]",
-	 "",
+	 "ORDER BY { ALL | '*' | sort_specification_list }",
+	 "sort_specification_list",
 	 NULL},
-	{"limit_offset_clause",
+	{"sort_specification_list",
 	 NULL,
-	 "[ LIMIT { count | param } ]  [ OFFSET { count | param } ]",
-	 "",
+	 "ordering_spec [',' ordering_spec [',' ...] ]",
+	 "ordering_spec",
 	 NULL},
-	{"offset_fetchfirst_clause",
+	{"ordering_spec",
 	 NULL,
-	 "[ OFFSET { count | param } [ {ROW|ROWS} ] ]  [ FETCH {FIRST|NEXT} [ count | param ] {ROW|ROWS} ONLY ]",
-	 "",
-	 NULL},
-	{"corresponding",
+	 "scalar_expression [ ASC | DESC ] [ NULLS FIRST | NULLS LAST ]",
 	 NULL,
-	 "{ CORRESPONDING | CORRESPONDING BY '(' column_ref_commalist ')' }",
-	 "column_ref_commalist",
 	 NULL},
 	{"qname",
 	 NULL,
@@ -920,6 +938,11 @@ SQLhelp sqlhelp2[] = {
 	 "'(' atom [ ',' atom ]... ')' [ ',' row_values ] ...",
 	 "atom",
 	 NULL},
+	{"sample_clause",
+	 NULL,
+	 "SAMPLE { poslng | decimal_percentage | param }",
+	 NULL,
+	 NULL},
 	{"schema_name",
 	 NULL,
 	 "ident | [ident] AUTHORIZATION authorization_ident",
@@ -935,9 +958,19 @@ SQLhelp sqlhelp2[] = {
 	 "{ search_condition OR and_exp | and_exp }",
 	 "and_exp",
 	 NULL},
+	{"seed_clause",
+	 NULL,
+	 "SEED { intval | param }",
+	 NULL,
+	 NULL},
 	{"separators",
 	 NULL,
 	 "[USING] DELIMITERS field_sep_string [',' record_sep_string [',' quote_string]]",
+	 NULL,
+	 NULL},
+	{"seq_int_datatype",
+	 NULL,
+	 "BIGINT | INTEGER | INT | SMALLINT | TINYINT",
 	 NULL,
 	 NULL},
 	{"split_part",
@@ -1065,7 +1098,7 @@ SQLhelp sqlhelp2[] = {
 	 NULL,
 	 "[ ident ]\n"
 	 "[ PARTITION BY expression [',' ...] ]\n"
-	 "[ ORDER BY expression [ ASC | DESC ] [ NULLS { FIRST | LAST } ] [',' ...] ]\n"
+	 "[ ORDER BY sort_specification_list ]\n"
 	 "[ { ROWS | RANGE | GROUPS } { window_frame_start | BETWEEN window_bound AND window_bound }\n"
 	 "  [ EXCLUDING { CURRENT ROW | GROUP | TIES | NO OTHERS } ] ]",
 	 "window_bound,window_frame_start",
