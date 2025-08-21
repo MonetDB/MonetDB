@@ -95,7 +95,7 @@ Group: Applications/Databases
 License: MPL-2.0
 URL: https://www.monetdb.org/
 BugURL: https://github.com/MonetDB/MonetDB/issues
-Source: https://www.monetdb.org/downloads/sources/Mar2025-SP1/MonetDB-%{version}.tar.bz2
+Source: https://www.monetdb.org/downloads/sources/Mar2025-SP2/MonetDB-%{version}.tar.bz2
 
 # The Fedora packaging document says we need systemd-rpm-macros for
 # the _unitdir and _tmpfilesdir macros to exist; however on RHEL 7
@@ -1057,6 +1057,55 @@ rm "${RPM_BUILD_ROOT}"%{_unitdir}/monetdbd.service
 %endif
 
 %changelog
+* Thu Aug 21 2025 Sjoerd Mullender <sjoerd@acm.org> - 11.53.11-20250821
+- Rebuilt.
+- GH#7643: Unable to process field with split_part(). Facing Issue
+  "client4681: exp_bin: CRITICAL: Could not find (null).rate"
+- GH#7647: 'mat.packIncrement' undefined
+- GH#7648: Unexpected Right Join Assertion Error
+- GH#7649: Unexpected Inner Join Crash
+- GH#7650: Unexpected Right Join Crash
+- GH#7655: slow concurrent insert
+- GH#7656: Primary key reported as being a foreign key to itself
+- GH#7657: MonetDB Mar2025-SP1 crashes at `sqlparse()` with a crafted
+  MERGE statement
+- GH#7659: MonetDB Mar2025-SP1 crashes at `rel_select_add_exp()` with a
+  crafted CREATE TRIGGER statement
+- GH#7660: MonetDB Mar2025-SP1 crashes at `subrel_bin()` with a COPY
+  statement
+- GH#7661: MonetDB Mar2025-SP1 crashes at `dlist_length()` with a crafted
+  CREATE TRIGGER statement
+- GH#7671: MonetDB Mar2025-SP1 crashes at `BLOBlength()`
+- GH#7675: Debian service start on new install not getting environment
+  variables from /etc/default/monetdb-sql
+- GH#7680: `UNION ALL` doesn't work as expected
+- GH#7681: Describe table feature not working correctly
+- GH#7682: replacing a login trigger crashes server
+- GH#7683: wrong  Driver= and Setup= libary paths stored in
+  /etc/odbcinst.ini after installation of MonetDB ODBC driver on ubuntu
+- GH#7686: DELETE FROM empty table should always be a no-op
+- GH#7688: exists with nulls gives incorrect result
+
+* Wed Aug 13 2025 Sjoerd Mullender <sjoerd@acm.org> - 11.53.11-20250821
+- MonetDB: It is now relatively easy to configure the location of the database farm
+  (aka dbfarm) directory when using systemd.  Just create an override
+  file for the monetdbd service and add an Environment entry for DBFARM
+  pointing to the new directory.
+
+* Tue Aug  5 2025 Sjoerd Mullender <sjoerd@acm.org> - 11.53.11-20250821
+- gdk: The SIGUSR1 output now displays counts for memory sizes in a
+  human-readable format next to the original byte counts.
+
+* Fri Aug  1 2025 Sjoerd Mullender <sjoerd@acm.org> - 11.53.11-20250821
+- monetdb5: The PCRE module has been ported to the PCRE2 version of the library.
+  The main difference is in the regexp_replace function which now no
+  longer accepts \ to introduce replacements.  Only $ is accepted (it
+  was already accepted before).
+
+* Tue Jul  8 2025 Niels Nes <niels@cwi.nl> - 11.53.11-20250821
+- sql: Fixed issue #7655, now the segments keep the number of deleted
+  rows. Only search for reuse when deleted rows are available.
+
 * Fri Jul 04 2025 Sjoerd Mullender <sjoerd@acm.org> - 11.53.9-20250704
 - Rebuilt.
 - GH#7629: monetdbd causes SELinux denial
