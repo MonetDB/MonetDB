@@ -479,19 +479,21 @@ SQLhelp sqlhelp1[] = {
 	 NULL},
 	{"SELECT",
 	 "",
-	 "[ WITH cte_list ]\n"
-	 "SELECT [ ALL | DISTINCT [ ON { expression [',' ...] } ] ]\n"
-	 "[ '*' | expression [ [ AS ] output_name ] [',' ...] ]\n"
-	 "[ FROM from_item [',' ...] ]\n"
+	 "[ WITH [ RECURSIVE ] cte_list ]\n"
+	 "SELECT [ ALL | DISTINCT ] { '*' | expression [ [ AS ] output_name ] [',' ...] }\n"
+	 "[ INTO variable_ref [',' ...] ]\n"
+	 "[ FROM table_ref [',' ...] ]\n"
+	 "[ WHERE search_condition ]\n"
+	 "[ GROUP BY { ALL | '*' | group_by_element [',' ...] } ]\n"
+	 "[ HAVING search_condition ]\n"
 	 "[ WINDOW window_definition [',' ...] ]\n"
-	 "[ WHERE condition ]\n"
-	 "[ GROUP BY group_by_element [',' ...] ]\n"
-	 "[ HAVING condition [',' ...] ]\n"
-	 "[ { UNION | INTERSECT | EXCEPT } [ ALL | DISTINCT ] [ CORRESPONDING ] select ]\n"
+	 "[ QUALIFY search_condition ]\n"
+	 "[ { UNION | INTERSECT | EXCEPT | OUTER UNION } [ DISTINCT | ALL ] [ CORRESPONDING [ BY '(' column_ref_commalist ')' ] ] select_clause ]\n"
 	 "[ ORDER BY expression [ ASC | DESC ] [ NULLS { FIRST | LAST } ] [',' ...] ]\n"
 	 "[ limit_offset_clause | offset_fetchfirst_clause ]\n"
-	 "[ SAMPLE size [ SEED size ] ]",
-	 "cte_list,expression,group_by_element,window_definition",
+	 "[ SAMPLE size_or_perc ]\n"
+	 "[ SEED size ]",
+	 "cte_list,expression,table_ref,search_condition,group_by_element,window_definition",
 	 "See also https://www.monetdb.org/documentation/user-guide/sql-manual/data-manipulation/table-expressions/"},
 	{"SET",
 	 "Assign a value to a variable or column",
@@ -545,12 +547,8 @@ SQLhelp sqlhelp1[] = {
 	 "See also https://www.monetdb.org/documentation/user-guide/sql-manual/transactions/"},
 	{"TABLE JOINS",
 	 "",
-	 "'(' joined_table ') |\n"
-	 "table_ref CROSS JOIN table_ref ')' |\n"
-	 "table_ref NATURAL [ INNER | LEFT | RIGHT | FULL ] JOIN table_ref |\n"
-	 "table_ref UNION JOIN table_ref { ON search_condition | USING column_list } |\n"
-	 "table_ref [ INNER | LEFT | RIGHT | FULL ] JOIN table_ref { ON search_condition | USING column_list }",
-	 "table_ref,search_condition,column_list",
+	 "joined_table",
+	 "joined_table,join_type",
 	 "See also https://www.monetdb.org/documentation/user-guide/sql-manual/data-manipulation/table-expressions/"},
 	{"TRACE",
 	 "Give execution trace for the SQL statement",
@@ -696,9 +694,12 @@ SQLhelp sqlhelp2[] = {
 	 NULL},
 	{"group_by_element",
 	 NULL,
-	 "{ expression | '(' ')' | ROLLUP '(' ident [',' ... ] ')' | CUBE '(' ident [',' ... ] ')'\n"
-	 "| GROUPING SETS '(' group_by_element [',' ... ] ')' }",
-	 "expression",
+	 "{ scalar_expression\n"
+	 "| ROLLUP '(' ident [',' ... ] ')'\n"
+	 "| CUBE '(' ident [',' ... ] ')'\n"
+	 "| GROUPING SETS '(' group_set_element [',' ... ] ')'\n"
+	 "| '(' ')' }",
+	 "scalar_expression",
 	 NULL},
 	{"headerlist",
 	 NULL,
@@ -741,6 +742,20 @@ SQLhelp sqlhelp2[] = {
 	{"isolevel",
 	 NULL,
 	 "READ UNCOMMITTED | READ COMMITTED | REPEATABLE READ | SERIALIZABLE",
+	 NULL,
+	 NULL},
+	{"joined_table",
+	 NULL,
+	 "  '(' joined_table ')'\n"
+	 "| table_ref CROSS JOIN table_ref ')'\n"
+	 "| table_ref NATURAL [ join_type ] JOIN table_ref\n"
+	 "| table_ref [ join_type ] JOIN table_ref { ON search_condition | USING column_list }\n"
+	 "| '{' 'oj' table_ref [ join_type ] JOIN table_ref { ON search_condition | USING column_list } '}'",
+	 "join_type,search_condition,column_list,table_ref",
+	 NULL},
+	{"join_type",
+	 NULL,
+	 "INNER | { { LEFT | RIGHT | FULL } [ OUTER ] }",
 	 NULL,
 	 NULL},
 	{"language_keyword",
@@ -813,7 +828,7 @@ SQLhelp sqlhelp2[] = {
 	 NULL},
 	{"predicate",
 	 NULL,
-	 "comparison_predicate | between_predicate | like_predicate | test_for_null | in_predicate | all_or_any_predicate | existence_test | filter_exp | scalar_exp",
+	 "comparison_predicate | between_predicate | like_predicate | test_for_null | in_predicate | all_or_any_predicate | existence_test | filter_exp | scalar_expression",
 	 NULL,
 	 NULL},
 	{"privileges",
@@ -828,8 +843,9 @@ SQLhelp sqlhelp2[] = {
 	 NULL},
 	{"select_single_row",
 	 NULL,
-	 "SELECT [ ALL | DISTINCT ] column_exp_commalist INTO select_target_list [ from_clause ] [ window_clause ] [ where_clause ] [ group_by_clause ] [ having_clause ]",
-	 "column_exp_commalist,select_target_list,from_clause,window_clause,where_clause,group_by_clause,having_clause",
+	 "SELECT [ ALL | DISTINCT ] column_exp_commalist INTO select_target_list [ from_clause ]\n"
+	 "  [ where_clause ] [ group_by_clause ] [ having_clause ] [ window_clause ] [ qualify_clause ]",
+	 "column_exp_commalist,select_target_list,from_clause,where_clause,group_by_clause,having_clause,window_clause,qualify_clause",
 	 NULL},
 	{"query_expression",
 	 NULL,
@@ -838,10 +854,11 @@ SQLhelp sqlhelp2[] = {
 	 NULL},
 	{"select_no_parens",
 	 NULL,
-	 "{ SELECT [ ALL | DISTINCT ] column_exp_commalist [ from_clause ] [ window_clause ] [ where_clause ] [ group_by_clause ] [ having_clause ]\n"
+	 "{ SELECT [ ALL | DISTINCT ] column_exp_commalist [ from_clause ] [ where_clause ]\n"
+	 "       [ group_by_clause ] [ having_clause ] [ window_clause ] [ qualify_clause ]\n"
 	 "| select_no_parens { UNION | EXCEPT | INTERSECT } [ ALL | DISTINCT ] [ corresponding ] select_no_parens\n"
 	 "| '(' select_no_parens ')' }",
-	 "column_exp_commalist,from_clause,window_clause,where_clause,group_by_clause,having_clause,corresponding",
+	 "column_exp_commalist,from_clause,where_clause,group_by_clause,having_clause,window_clause,qualify_clause,corresponding",
 	 NULL},
 	{"order_by_clause",
 	 NULL,
@@ -953,8 +970,9 @@ SQLhelp sqlhelp2[] = {
 	 NULL},
 	{"table_ref",
 	 NULL,
-	 "[LATERAL] func_ref [table_name] | [LATERAL] subquery | joined_table",
-	 "table_name,subquery",
+	 "{ qname | file_path_str | proto_loader_uri_str | [ LATERAL ] func_ref | [ LATERAL ] '(' subquery ')' } [ [AS] table_name ]\n"
+	 "| joined_table | '(' joined_table ')' [AS] table_name",
+	 "table_name,subquery,joined_table",
 	 NULL},
 	{"table_source",
 	 NULL,
