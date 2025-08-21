@@ -970,8 +970,8 @@ SQLhelp sqlhelp2[] = {
 	 NULL},
 	{"table_ref",
 	 NULL,
-	 "{ qname | file_path_str | proto_loader_uri_str | [ LATERAL ] func_ref | [ LATERAL ] '(' subquery ')' } [ [AS] table_name ]\n"
-	 "| joined_table | '(' joined_table ')' [AS] table_name",
+	 "{ qname | file_path_str | proto_loader_uri_str | [ LATERAL ] func_ref | [ LATERAL ] '(' subquery ')' } [ table_name ]\n"
+	 "| joined_table | '(' joined_table ')' table_name",
 	 "table_name,subquery,joined_table",
 	 NULL},
 	{"table_source",
