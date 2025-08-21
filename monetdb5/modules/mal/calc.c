@@ -1559,8 +1559,6 @@ mel_func calc_init_funcs[] = {
  pattern("calc", "not", CMDvarNOT, false, "Unary bitwise not of V", args(1,2, arg("",sht),arg("v",sht))),
  pattern("calc", "not", CMDvarNOT, false, "Unary bitwise not of V", args(1,2, arg("",int),arg("v",int))),
  pattern("calc", "not", CMDvarNOT, false, "Unary bitwise not of V", args(1,2, arg("",lng),arg("v",lng))),
- pattern("calc", "not", CMDvarNOT, false, "Unary bitwise not of V", args(1,2, arg("",inet4),arg("v",inet4))),
- pattern("calc", "not", CMDvarNOT, false, "Unary bitwise not of V", args(1,2, arg("",inet6),arg("v",inet6))),
  pattern("calc", "sign", CMDvarSIGN, false, "Unary sign (-1,0,1) of V", args(1,2, arg("",bte),arg("v",bte))),
  pattern("calc", "sign", CMDvarSIGN, false, "Unary sign (-1,0,1) of V", args(1,2, arg("",bte),arg("v",sht))),
  pattern("calc", "sign", CMDvarSIGN, false, "Unary sign (-1,0,1) of V", args(1,2, arg("",bte),arg("v",int))),
