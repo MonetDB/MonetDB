@@ -326,11 +326,12 @@ getErrMsg(SQLSMALLINT handleType, SQLHANDLE handle) {
 			/* e.g SQL_NTS */
 			msglen = (SQLSMALLINT) strlen((char *)msg);
 		}
-		char * retmsg = (char *) GDKmalloc(sizeof(format) + SQL_SQLSTATE_SIZE + 10 + msglen);
+		size_t retlen = sizeof(format) + SQL_SQLSTATE_SIZE + 10 + msglen;
+		char * retmsg = GDKmalloc(retlen);
 		if (retmsg != NULL) {
 			if (state[SQL_SQLSTATE_SIZE] != '\0')
 				state[SQL_SQLSTATE_SIZE] = '\0';
-			sprintf(retmsg, format, (char *)state, (int)errnr, (char *)msg);
+			snprintf(retmsg, retlen, format, (char *)state, (int)errnr, (char *)msg);
 			return retmsg;
 		}
 	}

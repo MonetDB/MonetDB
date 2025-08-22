@@ -2964,7 +2964,7 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 						char *dst = buf;
 						*dst++ = '[';
 						*dst++ = ' ';
-						dst += sprintf(dst, "%f", val);
+						dst += snprintf(dst, maxlen - 5, "%f", val);
 						*dst++ = ' ';
 						*dst++ = ']';
 						*dst = '\0';

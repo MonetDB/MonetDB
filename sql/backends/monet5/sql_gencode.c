@@ -397,7 +397,7 @@ _create_relational_remote_body(mvc *m, const char *mod, const char *name, sql_re
 			sql_subtype *t = tail_type(op);
 			int type = t->type->localtype, varid = 0;
 
-			sprintf(nbuf, "A%d", i++);
+			snprintf(nbuf, sizeof(nbuf), "A%d", i++);
 			if ((varid = newVariable(curBlk, nbuf, strlen(nbuf), type)) < 0) {
 				sql_error(m, 10, SQLSTATE(42000) "Internal error while compiling statement: variable id too long");
 				goto cleanup;
@@ -547,8 +547,8 @@ _create_relational_remote_body(mvc *m, const char *mod, const char *name, sql_re
 			sql_subtype *t = tail_type(op);
 			const char *nme = (op->op3)?op->op3->op4.aval->data.val.sval:op->cname;
 
-			sprintf(dbuf, "%u", t->digits);
-			sprintf(sbuf, "%u", t->scale);
+			snprintf(dbuf, sizeof(dbuf), "%u", t->digits);
+			snprintf(sbuf, sizeof(sbuf), "%u", t->scale);
 			size_t nlen = strlen(nme) + strlen(t->type->base.name) + strlen(dbuf) + strlen(sbuf) + 6;
 
 			if ((nr + nlen) > len) {

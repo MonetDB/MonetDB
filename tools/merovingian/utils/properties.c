@@ -160,8 +160,11 @@ writePropsBuf(confkeyval *ckv, char **buf)
 	p += sizeof(MEROPROPFILEHEADER) - 1;
 	w = ckv;
 	while (w->key != NULL) {
-		if (w->val != NULL)
-			p += sprintf(p, "%s=%s\n", w->key, w->val);
+		if (w->val != NULL) {
+			int l = snprintf(p, len + 1, "%s=%s\n", w->key, w->val);
+			p += l;
+			len -= l;
+		}
 		w++;
 	}
 }

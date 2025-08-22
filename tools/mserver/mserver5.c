@@ -193,10 +193,11 @@ static str
 absolute_path(const char *s)
 {
 	if (!MT_path_absolute(s)) {
-		str ret = (str) GDKmalloc(strlen(s) + strlen(monet_cwd) + 2);
+		size_t l = strlen(s) + strlen(monet_cwd) + 2;
+		str ret = (str) GDKmalloc(l);
 
 		if (ret)
-			sprintf(ret, "%s%c%s", monet_cwd, DIR_SEP, s);
+			snprintf(ret, l, "%s%c%s", monet_cwd, DIR_SEP, s);
 		return ret;
 	}
 	return GDKstrdup(s);

@@ -2023,12 +2023,13 @@ dumpPointsPoint(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry, unsi
 		throw(MAL, "geom.Dump", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	(*lvl)++;
-	newPath = GDKmalloc(pathLength + lvlDigitsNum + 1);
+	size_t newLen = pathLength + lvlDigitsNum + 1;
+	newPath = GDKmalloc(newLen);
 	if (newPath == NULL) {
 		GDKfree(pointWKB);
 		throw(MAL, "geom.Dump", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
-	sprintf(newPath, "%s%u", path, *lvl);
+	snprintf(newPath, newLen, "%s%u", path, *lvl);
 
 	if (BUNappend(idBAT, newPath, false) != GDK_SUCCEED ||
 	    BUNappend(geomBAT, pointWKB, false) != GDK_SUCCEED)

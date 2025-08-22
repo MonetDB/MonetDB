@@ -459,9 +459,10 @@ locate_file(const char *basename, const char *ext, bit recurse)
 					continue;
 				if (strcmp(e->d_name + strlen(e->d_name) - strlen(ext), ext) == 0) {
 					int len;
-					strs[lasts] = GDKmalloc(strlen(fullname) + sizeof(DIR_SEP)
-											+ strlen(e->d_name) +
-											sizeof(PATH_SEP) + 1);
+					size_t strslen = strlen(fullname) + sizeof(DIR_SEP)
+						+ strlen(e->d_name) +
+						sizeof(PATH_SEP) + 1;
+					strs[lasts] = GDKmalloc(strslen);
 					if (strs[lasts] == NULL) {
 						while (lasts >= 0)
 							GDKfree(strs[lasts--]);
@@ -469,7 +470,8 @@ locate_file(const char *basename, const char *ext, bit recurse)
 						(void) closedir(rdir);
 						return NULL;
 					}
-					len = sprintf(strs[lasts], "%s%c%s%c", fullname, DIR_SEP,
+					len = snprintf(strs[lasts], strslen,
+								   "%s%c%s%c", fullname, DIR_SEP,
 								  e->d_name, PATH_SEP);
 					if (len == -1 || len >= FILENAME_MAX) {
 						while (lasts >= 0)
