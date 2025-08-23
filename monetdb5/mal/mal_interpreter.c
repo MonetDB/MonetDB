@@ -1178,7 +1178,7 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			ret = MAL_SUCCEED;
 			if (getVarType(mb, getDestVar(pci)) == TYPE_str) {
 				char nme[256];
-				snprintf(nme, 256, "%s.%s[%d]", getModuleId(getInstrPtr(mb, 0)),
+				snprintf(nme, sizeof(nme), "%s.%s[%d]", getModuleId(getInstrPtr(mb, 0)),
 						 getFunctionId(getInstrPtr(mb, 0)), stkpc);
 				ret = createException(MAL, nme, "%s",
 									  stk->stk[getDestVar(pci)].val.sval);
@@ -1247,7 +1247,7 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 	/* don't add 'exception not caught' extra message for MAL sequences besides main function calls */
 	if (exceptionVar >= 0 && (ret == MAL_SUCCEED || !pcicaller)) {
 		char nme[256];
-		snprintf(nme, 256, "%s.%s[%d]", getModuleId(getInstrPtr(mb, 0)),
+		snprintf(nme, sizeof(nme), "%s.%s[%d]", getModuleId(getInstrPtr(mb, 0)),
 				 getFunctionId(getInstrPtr(mb, 0)), stkpc);
 		if (ret != MAL_SUCCEED) {
 			str new, n;

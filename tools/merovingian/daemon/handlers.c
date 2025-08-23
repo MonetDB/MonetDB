@@ -316,7 +316,7 @@ childhandler(void)
 					const char *sigstr = sigtostr(WTERMSIG(wstatus));
 					char signum[8];
 					if (sigstr == NULL) {
-						snprintf(signum, 8, "%d", WTERMSIG(wstatus));
+						snprintf(signum, sizeof(signum), "%d", WTERMSIG(wstatus));
 						sigstr = signum;
 					}
 					if (WCOREDUMP(wstatus)) {

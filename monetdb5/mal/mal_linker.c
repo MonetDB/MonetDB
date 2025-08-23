@@ -185,11 +185,11 @@ loadLibrary(const char *filename, int flag)
 		int len;
 
 		if (is_mod && flag < 0)
-			len = snprintf(nme, FILENAME_MAX, ".%c%s_%s%s", DIR_SEP, SO_PREFIX, s, SO_EXT);
+			len = snprintf(nme, sizeof(nme), ".%c%s_%s%s", DIR_SEP, SO_PREFIX, s, SO_EXT);
 		else if (is_mod)
-			len = snprintf(nme, FILENAME_MAX, "%s_%s%s", SO_PREFIX, s, SO_EXT);
+			len = snprintf(nme, sizeof(nme), "%s_%s%s", SO_PREFIX, s, SO_EXT);
 		else
-			len = snprintf(nme, FILENAME_MAX, "%s%s%s", SO_PREFIX, s, SO_EXT);
+			len = snprintf(nme, sizeof(nme), "%s%s%s", SO_PREFIX, s, SO_EXT);
 		if (len == -1 || len >= FILENAME_MAX)
 			throw(LOADER, "loadLibrary",
 				  RUNTIME_LOAD_ERROR "Library filename path is too large");
@@ -222,11 +222,11 @@ loadLibrary(const char *filename, int flag)
 			;
 
 		if (is_mod)
-			len = snprintf(nme, FILENAME_MAX, "%.*s%c%s_%s%s",
+			len = snprintf(nme, sizeof(nme), "%.*s%c%s_%s%s",
 						   (int) (p - mod_path), mod_path, DIR_SEP, SO_PREFIX,
 						   s, SO_EXT);
 		else
-			len = snprintf(nme, FILENAME_MAX, "%.*s%c%s%s%s",
+			len = snprintf(nme, sizeof(nme), "%.*s%c%s%s%s",
 						   (int) (p - mod_path), mod_path, DIR_SEP, SO_PREFIX,
 						   s, SO_EXT);
 		if (len == -1 || len >= FILENAME_MAX)
@@ -241,11 +241,11 @@ loadLibrary(const char *filename, int flag)
 		if (handle == NULL && strcmp(SO_EXT, ".so") != /* DISABLES CODE */ (0)) {
 			/* try .so */
 			if (is_mod)
-				len = snprintf(nme, FILENAME_MAX, "%.*s%c%s_%s.so",
+				len = snprintf(nme, sizeof(nme), "%.*s%c%s_%s.so",
 							   (int) (p - mod_path), mod_path, DIR_SEP,
 							   SO_PREFIX, s);
 			else
-				len = snprintf(nme, FILENAME_MAX, "%.*s%c%s%s.so",
+				len = snprintf(nme, sizeof(nme), "%.*s%c%s%s.so",
 							   (int) (p - mod_path), mod_path, DIR_SEP,
 							   SO_PREFIX, s);
 			if (len == -1 || len >= FILENAME_MAX)
@@ -262,11 +262,11 @@ loadLibrary(const char *filename, int flag)
 		if (handle == NULL && strcmp(SO_EXT, ".bundle") != 0) {
 			/* try .bundle */
 			if (is_mod)
-				len = snprintf(nme, FILENAME_MAX, "%.*s%c%s_%s.bundle",
+				len = snprintf(nme, sizeof(nme), "%.*s%c%s_%s.bundle",
 							   (int) (p - mod_path), mod_path, DIR_SEP,
 							   SO_PREFIX, s);
 			else
-				len = snprintf(nme, FILENAME_MAX, "%.*s%c%s%s.bundle",
+				len = snprintf(nme, sizeof(nme), "%.*s%c%s%s.bundle",
 							   (int) (p - mod_path), mod_path, DIR_SEP,
 							   SO_PREFIX, s);
 			if (len == -1 || len >= FILENAME_MAX)

@@ -954,7 +954,7 @@ exp2bin_named_placeholders(backend *be, sql_exp *fe)
 		}
 		int type = t->type->localtype, varid = 0;
 
-		snprintf(arg, IDLENGTH, "A%d", argc);
+		snprintf(arg, sizeof(arg), "A%d", argc);
 		if ((varid = newVariable(be->mb, arg, strlen(arg), type)) < 0) {
 			sql_error(be->mvc, 10, SQLSTATE(42000) "Internal error while compiling statement: variable id too long");
 			return NULL;

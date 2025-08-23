@@ -1160,7 +1160,7 @@ snapshot_heap(stream *plan, const char *db_dir, bat batid, const char *filename,
 		return GDK_SUCCEED;
 	}
 	// first check the backup dir
-	len = snprintf(path1, FILENAME_MAX, "%s/%s/%o.%s", db_dir, BAKDIR, (int) batid, suffix);
+	len = snprintf(path1, sizeof(path1), "%s/%s/%o.%s", db_dir, BAKDIR, (int) batid, suffix);
 	if (len == -1 || len >= FILENAME_MAX) {
 		path1[FILENAME_MAX - 1] = '\0';
 		GDKerror("Could not open %s, filename is too large", path1);
@@ -1175,7 +1175,7 @@ snapshot_heap(stream *plan, const char *db_dir, bat batid, const char *filename,
 	}
 
 	// then check the regular location
-	len = snprintf(path2, FILENAME_MAX, "%s/%s/%s.%s", db_dir, BATDIR, filename, suffix);
+	len = snprintf(path2, sizeof(path2), "%s/%s/%s.%s", db_dir, BATDIR, filename, suffix);
 	if (len == -1 || len >= FILENAME_MAX) {
 		path2[FILENAME_MAX - 1] = '\0';
 		GDKerror("Could not open %s, filename is too large", path2);
@@ -1359,7 +1359,7 @@ snapshot_vaultkey(stream *plan, const char *db_dir)
 	char path[FILENAME_MAX];
 	struct stat statbuf;
 
-	int len = snprintf(path, FILENAME_MAX, "%s/.vaultkey", db_dir);
+	int len = snprintf(path, sizeof(path), "%s/.vaultkey", db_dir);
 	if (len == -1 || len >= FILENAME_MAX) {
 		path[FILENAME_MAX - 1] = '\0';
 		GDKerror("Could not open %s, filename is too large", path);

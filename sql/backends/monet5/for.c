@@ -184,7 +184,7 @@ FORcompress_intern(char **comp_min_val, BAT **r, BAT *b)
 		o = FORcompress_(b, min_val, max_val, PERSISTENT);
 		if (!o)
 			throw(SQL, "for.compress", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		snprintf(buf, 64, "FOR-" LLFMT, min_val);
+		snprintf(buf, sizeof(buf), "FOR-" LLFMT, min_val);
 	} else {
 		GDKfree(mn);
 		GDKfree(mx);

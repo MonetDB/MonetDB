@@ -103,11 +103,11 @@ dump_sql_subtype(allocator *sa, sql_subtype *t)
 	char buf[BUFSIZ];
 
 	if (t->digits && t->scale)
-		snprintf(buf, BUFSIZ, "%s(%u,%u)", t->type->base.name, t->digits, t->scale);
+		snprintf(buf, sizeof(buf), "%s(%u,%u)", t->type->base.name, t->digits, t->scale);
 	else if (t->digits)
-		snprintf(buf, BUFSIZ, "%s(%u)", t->type->base.name, t->digits);
+		snprintf(buf, sizeof(buf), "%s(%u)", t->type->base.name, t->digits);
 	else
-		snprintf(buf, BUFSIZ, "%s", t->type->base.name);
+		snprintf(buf, sizeof(buf), "%s", t->type->base.name);
 	return sa_strdup(sa, buf);
 }
 

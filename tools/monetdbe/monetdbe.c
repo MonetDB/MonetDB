@@ -1873,7 +1873,7 @@ monetdbe_get_columns_remote(monetdbe_database_internal *mdbe, const char* schema
 		return mdbe->msg;
 	}
 
-	int len = snprintf(buf, 1024, "SELECT * FROM %s%s%s\"%s\" WHERE FALSE;",
+	int len = snprintf(buf, sizeof(buf), "SELECT * FROM %s%s%s\"%s\" WHERE FALSE;",
 					   escaped_schema_name ? "\"" : "",  escaped_schema_name ? escaped_schema_name : "",
 					   escaped_schema_name ? escaped_schema_name : "\".", escaped_table_name);
 	GDKfree(escaped_schema_name);

@@ -91,7 +91,7 @@ writeProps(confkeyval *ckv, const char *path)
 	char file[1024];
 	FILE *cnf;
 
-	snprintf(file, 1024, "%s/" MEROPROPFILE, path);
+	snprintf(file, sizeof(file), "%s/" MEROPROPFILE, path);
 	pthread_mutex_lock(&readprops_lock);
 	if ((cnf = fopen(file, "w")) == NULL) {
 		pthread_mutex_unlock(&readprops_lock);
@@ -122,7 +122,7 @@ appendProp(confkeyval *ckv, const char *path)
 	char file[1024];
 	FILE *cnf;
 
-	snprintf(file, 1024, "%s/" MEROPROPFILE, path);
+	snprintf(file, sizeof(file), "%s/" MEROPROPFILE, path);
 	if ((cnf = fopen(file, "a")) == NULL)
 		return(1);
 
@@ -179,7 +179,7 @@ readProps(confkeyval *ckv, const char *path)
 	char file[1024];
 	FILE *cnf;
 
-	snprintf(file, 1024, "%s/" MEROPROPFILE, path);
+	snprintf(file, sizeof(file), "%s/" MEROPROPFILE, path);
 	pthread_mutex_lock(&readprops_lock);
 	if ((cnf = fopen(file, "r")) != NULL) {
 		readConfFile(ckv, cnf);
@@ -201,7 +201,7 @@ readAllProps(confkeyval *ckv, const char *path)
 	char file[1024];
 	FILE *cnf;
 
-	snprintf(file, 1024, "%s/" MEROPROPFILE, path);
+	snprintf(file, sizeof(file), "%s/" MEROPROPFILE, path);
 	pthread_mutex_lock(&readprops_lock);
 	if ((cnf = fopen(file, "r")) != NULL) {
 		readConfFileFull(ckv, cnf);

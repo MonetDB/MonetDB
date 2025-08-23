@@ -990,7 +990,7 @@ SQLload_parse_row(READERtask *task, int idx)
 
 				if (!row) {
 					errline = SQLload_error(task, idx, i + 1);
-					snprintf(errmsg, BUFSIZ, "Quote (%c) missing", task->quote);
+					snprintf(errmsg, sizeof(errmsg), "Quote (%c) missing", task->quote);
 					tablet_error(task, idx, startlineno, (int) i, errmsg,
 								 errline);
 					GDKfree(errline);
@@ -1078,7 +1078,7 @@ SQLload_parse_row(READERtask *task, int idx)
 	/* check for too many values as well */
 	if (row && *row && i == as->nr_attrs) {
 		errline = SQLload_error(task, idx, task->as->nr_attrs);
-		snprintf(errmsg, BUFSIZ, "Leftover data '%s'", row);
+		snprintf(errmsg, sizeof(errmsg), "Leftover data '%s'", row);
 		tablet_error(task, idx, startlineno, (int) i, errmsg, errline);
 		GDKfree(errline);
 		error = true;

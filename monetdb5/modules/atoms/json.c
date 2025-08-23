@@ -1517,7 +1517,7 @@ JSONfilterArrayDefault(json *ret, const json *js, lng index, const char *other)
 	if (index < 0)
 		throw(MAL, "json.filter",
 			  SQLSTATE(42000) "Filter index cannot be negative");
-	snprintf(expr, BUFSIZ, "[" LLFMT "]", index);
+	snprintf(expr, sizeof(expr), "[" LLFMT "]", index);
 	return JSONfilterInternal(ret, js, &(const char *){s}, other);
 }
 
