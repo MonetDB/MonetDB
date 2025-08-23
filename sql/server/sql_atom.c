@@ -664,7 +664,7 @@ atom2sql(allocator *sa, atom *a, int timezone)
 		return res;
 	} break;
 	default:
-		snprintf(buf, BUFSIZ, "atom2sql(TYPE_%d) not implemented", a->data.vtype);
+		snprintf(buf, sizeof(buf), "atom2sql(TYPE_%d) not implemented", a->data.vtype);
 	}
 	return sa_strdup(sa, buf);
 }
