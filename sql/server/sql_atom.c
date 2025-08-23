@@ -367,9 +367,9 @@ atom2string(allocator *sa, atom *a)
 		return sa_strdup(sa, "NULL");
 	switch (a->data.vtype) {
 #ifdef HAVE_HGE
-	case TYPE_hge:
-	{	char *_buf = buf;
-		size_t _bufsiz = BUFSIZ;
+	case TYPE_hge: {
+		char *_buf = buf;
+		size_t _bufsiz = sizeof(buf);
 		hgeToStr(&_buf, &_bufsiz, &a->data.val.hval, true);
 		break;
 	}
@@ -404,7 +404,7 @@ atom2string(allocator *sa, atom *a)
 		return sa_strdup(sa, a->data.val.sval);
 	default:
 		if ((p = ATOMformat(a->data.vtype, VALget(&a->data))) == NULL) {
-			snprintf(buf, BUFSIZ, "atom2string(TYPE_%d) not implemented", a->data.vtype);
+			snprintf(buf, sizeof(buf), "atom2string(TYPE_%d) not implemented", a->data.vtype);
 		} else {
 			 char *r = sa_strdup(sa, p);
 			 GDKfree(p);
@@ -520,9 +520,9 @@ atom2sql(allocator *sa, atom *a, int timezone)
 	case EC_NUM:
 		switch (a->data.vtype) {
 #ifdef HAVE_HGE
-		case TYPE_hge:
-		{	char *_buf = buf;
-			size_t _bufsiz = BUFSIZ;
+		case TYPE_hge: {
+			char *_buf = buf;
+			size_t _bufsiz = sizeof(buf);
 			hgeToStr(&_buf, &_bufsiz, &a->data.val.hval, true);
 			break;
 		}
