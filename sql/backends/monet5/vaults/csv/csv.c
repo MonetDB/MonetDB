@@ -80,7 +80,7 @@ detect_quote(const char *buf)
 static char
 detect_delimiter(const char *buf, char q, int *nr_fields)
 {
-	const char delimiter[] = ",|;\t";
+	static const char delimiter[] = ",|;\t";
 	int cnts[DLEN][2] = { 0 }, l = 0;
 
 	const char *cur = buf;

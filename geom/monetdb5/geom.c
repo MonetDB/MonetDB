@@ -2078,7 +2078,7 @@ dumpPointsPolygon(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry, un
 	const int lvlDigitsNum = 10;	//MAX_UNIT = 4,294,967,295
 	size_t pathLength = strlen(path);
 	char *newPath;
-	const char extraStr[] = ",";
+	static const char extraStr[] = ",";
 	int extraLength = 1;
 
 	//get the exterior ring of the polygon
@@ -2133,7 +2133,7 @@ dumpPointsMultiGeometry(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeomet
 	unsigned int lvl = 0;
 	size_t pathLength = strlen(path);
 	char *newPath = NULL;
-	const char extraStr[] = ",";
+	static const char extraStr[] = ",";
 	int extraLength = 1;
 
 	geometriesNum = GEOSGetNumGeometries_r(geoshandle, geosGeometry);
@@ -2648,7 +2648,7 @@ wkbAsText(char **txt, wkb **geomWKB, int *withSRID)
 {
 	size_t len = 0;
 	char *wkt = NULL;
-	const char sridTxt[] = "SRID:";
+	static const char sridTxt[] = "SRID:";
 
 	if (is_wkb_nil(*geomWKB) || (withSRID && is_int_nil(*withSRID))) {
 		if ((*txt = GDKstrdup(str_nil)) == NULL)

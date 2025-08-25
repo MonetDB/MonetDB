@@ -2332,7 +2332,7 @@ command_snapshot_write(int argc, char *argv[])
 	}
 	msab_freeStatus(&stats);
 
-	const char merocmd[] = "snapshot stream";
+	static const char merocmd[] = "snapshot stream";
 
 	msg = control_send_callback(
 			&out, mero_host, mero_port, dbname,
