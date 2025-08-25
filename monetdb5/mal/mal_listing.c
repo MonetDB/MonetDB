@@ -175,7 +175,7 @@ cfcnDefinition(Symbol s, str base, size_t len)
 
 	char var[16];
 	for (i = f->retc; i < f->argc; i++) {
-		if (snprintf(var, 16, "X_%d:", i-f->retc) >= 16 || !copystring(&t, var, &len))
+		if (snprintf(var, sizeof(var), "X_%d:", i-f->retc) >= 16 || !copystring(&t, var, &len))
 			return base;
 		if ((f->args[i].isbat || (f->args[i].opt == 1)) && !copystring(&t, (f->args[i].opt == 1)?"bat?[:":"bat[:", &len))
 			return base;
@@ -184,7 +184,7 @@ cfcnDefinition(Symbol s, str base, size_t len)
 			return base;
 		if (!arg[0]) {
 			if (f->args[i].nr) {
-				if (snprintf(var, 16, "any_%d", f->args[i].nr ) >= 16 || !copystring(&t, var, &len))
+				if (snprintf(var, sizeof(var), "any_%d", f->args[i].nr ) >= 16 || !copystring(&t, var, &len))
 					return base;
 			} else if (!copystring(&t, "any", &len))
 				return base;
@@ -212,7 +212,7 @@ cfcnDefinition(Symbol s, str base, size_t len)
 			return base;
 		if (!tpe[0]) {
 			if (f->args[0].nr) {
-				if (snprintf(var, 16, "any_%d", f->args[0].nr ) >= 16 || !copystring(&t, var, &len))
+				if (snprintf(var, sizeof(var), "any_%d", f->args[0].nr ) >= 16 || !copystring(&t, var, &len))
 					return base;
 			} else if (!copystring(&t, "any", &len))
 				return base;
@@ -225,7 +225,7 @@ cfcnDefinition(Symbol s, str base, size_t len)
 		if (!copystring(&t, ") (", &len))
 			return base;
 		for (i = 0; i < f->retc; i++) {
-			if (snprintf(var, 16, "X_%d:", i+(f->argc-f->retc)) >= 16 || !copystring(&t, var, &len))
+			if (snprintf(var, sizeof(var), "X_%d:", i+(f->argc-f->retc)) >= 16 || !copystring(&t, var, &len))
 				return base;
 			if ((f->args[i].isbat || (f->args[i].opt == 1)) && !copystring(&t, (f->args[i].opt == 1)?"bat?[:":"bat[:", &len))
 				return base;
@@ -234,7 +234,7 @@ cfcnDefinition(Symbol s, str base, size_t len)
 				return base;
 			if (!arg[0]) {
 				if (f->args[i].nr) {
-					if (snprintf(var, 16, "any_%d", f->args[i].nr ) >= 16 || !copystring(&t, var, &len))
+					if (snprintf(var, sizeof(var), "any_%d", f->args[i].nr ) >= 16 || !copystring(&t, var, &len))
 						return base;
 				} else if (!copystring(&t, "any", &len))
 				return base;
@@ -330,13 +330,13 @@ fcnDefinition(MalBlkPtr mb, InstrPtr p, str t, int flg, str base, size_t len)
 		char extra[256];
 		if (p->token == REMsymbol) {
 		} else {
-			snprintf(extra, 256, "\t#[%d] (" BUNFMT ") %s ", getPC(mb, p),
+			snprintf(extra, sizeof(extra), "\t#[%d] (" BUNFMT ") %s ", getPC(mb, p),
 					 getRowCnt(mb, getArg(p, 0)),
 					 (p->blk ? p->blk->binding : ""));
 			if (!copystring(&t, extra, &len))
 				return base;
 			for (j = 0; j < p->retc; j++) {
-				snprintf(extra, 256, "%d ", getArg(p, j));
+				snprintf(extra, sizeof(extra), "%d ", getArg(p, j));
 				if (!copystring(&t, extra, &len))
 					return base;
 			}
@@ -345,7 +345,7 @@ fcnDefinition(MalBlkPtr mb, InstrPtr p, str t, int flg, str base, size_t len)
 					return base;
 			}
 			for (; j < p->argc; j++) {
-				snprintf(extra, 256, "%d ", getArg(p, j));
+				snprintf(extra, sizeof(extra), "%d ", getArg(p, j));
 				if (!copystring(&t, extra, &len))
 					return base;
 			}
@@ -376,9 +376,9 @@ fmtRemark(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, str t, int flg, str base,
 			long a2 = atol(arg);
 			const char *f = getFunctionId(pci);
 			if (strcmp(f, "total") == 0)
-				snprintf(aux, 128, "%d optimizers %ld usecs", a1, a2);
+				snprintf(aux, sizeof(aux), "%d optimizers %ld usecs", a1, a2);
 			else
-				snprintf(aux, 128, "%-36s %d actions %ld usecs", f, a1, a2);
+				snprintf(aux, sizeof(aux), "%-36s %d actions %ld usecs", f, a1, a2);
 			(void) copystring(&t, aux, &len);
 		}
 	} else if (pci->argc == 1) {
@@ -574,13 +574,13 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int flg)
 		char extra[256];
 		if (p->token == REMsymbol) {
 		} else {
-			snprintf(extra, 256, "\t#[%d] (" BUNFMT ") %s ", p->pc,
+			snprintf(extra, sizeof(extra), "\t#[%d] (" BUNFMT ") %s ", p->pc,
 					 getRowCnt(mb, getArg(p, 0)),
 					 (p->blk ? p->blk->binding : ""));
 			if (!copystring(&t, extra, &len))
 				return base;
 			for (j = 0; j < p->retc; j++) {
-				snprintf(extra, 256, "%d ", getArg(p, j));
+				snprintf(extra, sizeof(extra), "%d ", getArg(p, j));
 				if (!copystring(&t, extra, &len))
 					return base;
 			}
@@ -589,7 +589,7 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int flg)
 					return base;
 			}
 			for (; j < p->argc; j++) {
-				snprintf(extra, 256, "%d ", getArg(p, j));
+				snprintf(extra, sizeof(extra), "%d ", getArg(p, j));
 				if (!copystring(&t, extra, &len))
 					return base;
 			}

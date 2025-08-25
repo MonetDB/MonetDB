@@ -100,7 +100,7 @@ OIDXcreateImplementation(Client cntxt, int tpe, BAT *b, int pieces)
 	}
 
 	/* create a temporary MAL function to sort the BAT in parallel */
-	snprintf(name, IDLENGTH, "sort%d", rand() % 1000);
+	snprintf(name, sizeof(name), "sort%d", rand() % 1000);
 	snew = newFunction(userRef, putName(name), FUNCTIONsymbol);
 	if (snew == NULL) {
 		throw(MAL, "bat.orderidx", SQLSTATE(HY013) MAL_MALLOC_FAIL);

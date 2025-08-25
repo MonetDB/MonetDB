@@ -881,7 +881,7 @@ rel_generate_subinserts(visitor *v, sql_rel *rel, sql_table *t,
 		exp_label(sql->sa, aggr, ++sql->label);
 
 		aggr = exp_ref(sql, aggr);
-		snprintf(buf, BUFSIZ, "%s: the %s violates the partition %s of values", operation, desc,
+		snprintf(buf, sizeof(buf), "%s: the %s violates the partition %s of values", operation, desc,
 				isRangePartitionTable(t) ? "range (NB higher limit exclusive)" : "list");
 
 		sql_exp *exception = exp_exception(sql->sa, aggr, buf);
@@ -1059,7 +1059,7 @@ rel_subtable_insert(visitor *v, sql_rel *p, sql_table *t)
 
 		/* generate the exception */
 		aggr = exp_ref(sql, aggr);
-		snprintf(buf, BUFSIZ, "INSERT: table %s.%s is part of merge table %s.%s and the insert violates the "
+		snprintf(buf, sizeof(buf), "INSERT: table %s.%s is part of merge table %s.%s and the insert violates the "
 				"partition %s of values", t->s->base.name, t->base.name, upper->t->s->base.name,
 				upper->t->base.name, isRangePartitionTable(upper->t) ? "range" : "list");
 		exception = exp_exception(sql->sa, aggr, buf);

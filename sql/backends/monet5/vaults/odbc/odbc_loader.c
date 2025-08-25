@@ -315,7 +315,7 @@ getErrMsg(SQLSMALLINT handleType, SQLHANDLE handle) {
 	// TODO use ODBC W function
 	ret = SQLGetDiagRec(handleType, handle, 1, state, &errnr, msg, SQL_MAX_MESSAGE_LENGTH -1, &msglen);
 	if (ret == SQL_SUCCESS || ret == SQL_SUCCESS_WITH_INFO) {
-		const char format[] = "SQLSTATE %s, Error code %d, Message %s";
+		static const char format[] = "SQLSTATE %s, Error code %d, Message %s";
 		/* ignore msg when using MS Excel ODBC driver, which does not support setting connection timeout */
 		if ((strcmp("IM006", (char *)state) == 0)
 		 && (strcmp("[Microsoft][ODBC Driver Manager] Driver's SQLSetConnectAttr failed", (char *)msg) == 0)) {
@@ -326,11 +326,12 @@ getErrMsg(SQLSMALLINT handleType, SQLHANDLE handle) {
 			/* e.g SQL_NTS */
 			msglen = (SQLSMALLINT) strlen((char *)msg);
 		}
-		char * retmsg = (char *) GDKmalloc(sizeof(format) + SQL_SQLSTATE_SIZE + 10 + msglen);
+		size_t retlen = sizeof(format) + SQL_SQLSTATE_SIZE + 10 + msglen;
+		char * retmsg = GDKmalloc(retlen);
 		if (retmsg != NULL) {
 			if (state[SQL_SQLSTATE_SIZE] != '\0')
 				state[SQL_SQLSTATE_SIZE] = '\0';
-			sprintf(retmsg, format, (char *)state, (int)errnr, (char *)msg);
+			snprintf(retmsg, retlen, format, (char *)state, (int)errnr, (char *)msg);
 			return retmsg;
 		}
 	}

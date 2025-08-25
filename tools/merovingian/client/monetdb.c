@@ -364,14 +364,14 @@ printStatus(sabdb *stats, int mode, int dbwidth, int uriwidth)
 		switch (stats->state) {
 			case SABdbRunning:
 			case SABdbStarting:
-				secondsToString(uptime, time(NULL) - uplog.laststart, 1);
+				secondsToString(uptime, sizeof(uptime), time(NULL) - uplog.laststart, 1);
 				break;
 			case SABdbCrashed:
-				secondsToString(uptime, time(NULL) - uplog.lastcrash, 1);
+				secondsToString(uptime, sizeof(uptime), time(NULL) - uplog.lastcrash, 1);
 				break;
 			case SABdbInactive:
 				if (uplog.laststop != -1) {
-					secondsToString(uptime, time(NULL) - uplog.laststop, 1);
+					secondsToString(uptime, sizeof(uptime), time(NULL) - uplog.laststop, 1);
 					break;
 				} /* else fall through */
 			default:
@@ -391,7 +391,7 @@ printStatus(sabdb *stats, int mode, int dbwidth, int uriwidth)
 				locked ? locked : state, locked ? state : ' ', uptime);
 		free(dbname);
 		if (uplog.startcntr) {
-			secondsToString(avg, uplog.avguptime, 1);
+			secondsToString(avg, sizeof(avg), uplog.avguptime, 1);
 			printf("  %3d%% %3s",
 					100 - (uplog.crashcntr * 100 / uplog.startcntr), avg);
 		} else {
@@ -441,34 +441,34 @@ printStatus(sabdb *stats, int mode, int dbwidth, int uriwidth)
 		printf("  start count: %d\n  stop count: %d\n  crash count: %d\n",
 				uplog.startcntr, uplog.stopcntr, uplog.crashcntr);
 		if (stats->state == SABdbRunning) {
-			secondsToString(up, time(NULL) - uplog.laststart, 999);
+			secondsToString(up, sizeof(up), time(NULL) - uplog.laststart, 999);
 			printf("  current uptime: %s\n", up);
 		}
-		secondsToString(up, uplog.avguptime, 999);
+		secondsToString(up, sizeof(up), uplog.avguptime, 999);
 		printf("  average uptime: %s\n", up);
-		secondsToString(up, uplog.maxuptime, 999);
+		secondsToString(up, sizeof(up), uplog.maxuptime, 999);
 		printf("  maximum uptime: %s\n", up);
-		secondsToString(up, uplog.minuptime, 999);
+		secondsToString(up, sizeof(up), uplog.minuptime, 999);
 		printf("  minimum uptime: %s\n", up);
 		if (uplog.lastcrash != -1) {
 			t = localtime(&uplog.lastcrash);
 			strftime(up, 32, "%Y-%m-%d %H:%M:%S", t);
 		} else {
-			sprintf(up, "(unknown)");
+			snprintf(up, sizeof(up), "(unknown)");
 		}
 		printf("  last start with crash: %s\n", up);
 		if (uplog.laststart != -1) {
 			t = localtime(&uplog.laststart);
 			strftime(up, 32, "%Y-%m-%d %H:%M:%S", t);
 		} else {
-			sprintf(up, "(unknown)");
+			snprintf(up, sizeof(up), "(unknown)");
 		}
 		printf("  last start: %s\n", up);
 		if (uplog.laststop != -1) {
 			t = localtime(&uplog.laststop);
 			strftime(up, 32, "%Y-%m-%d %H:%M:%S", t);
 		} else {
-			sprintf(up, "(unknown)");
+			snprintf(up, sizeof(up), "(unknown)");
 		}
 		printf("  last stop: %s\n", up);
 		printf("  average of crashes in the last start attempt: %d\n",
@@ -496,7 +496,7 @@ printStatus(sabdb *stats, int mode, int dbwidth, int uriwidth)
 				t = localtime(&uplog.laststart);
 				off += strftime(buf + off, sizeof(buf) - off,
 								"up since %Y-%m-%d %H:%M:%S, ", t);
-				secondsToString(up, time(NULL) - uplog.laststart, 999);
+				secondsToString(up, sizeof(up), time(NULL) - uplog.laststart, 999);
 				strcpy(buf + off, up);
 			break;
 			case SABdbCrashed:
@@ -517,9 +517,9 @@ printStatus(sabdb *stats, int mode, int dbwidth, int uriwidth)
 				"in total %d crashes\n",
 				uplog.crashavg1, uplog.crashavg10, uplog.crashavg30,
 				uplog.crashcntr);
-		secondsToString(min, uplog.minuptime, 1);
-		secondsToString(avg, uplog.avguptime, 1);
-		secondsToString(max, uplog.maxuptime, 1);
+		secondsToString(min, sizeof(min), uplog.minuptime, 1);
+		secondsToString(avg, sizeof(avg), uplog.avguptime, 1);
+		secondsToString(max, sizeof(max), uplog.maxuptime, 1);
 		printf("  uptime stats (min/avg/max): %s/%s/%s over %d runs\n",
 				min, avg, max, uplog.stopcntr);
 	}
@@ -1710,8 +1710,9 @@ snapshot_create_adhoc(sabdb *databases, char *filename) {
 	assert(databases != NULL);
 	assert(databases->next == NULL);
 
-	char *merocmd = malloc(100 + strlen(filename));
-	sprintf(merocmd, "snapshot create adhoc %s", filename);
+	size_t merolen = 100 + strlen(filename);
+	char *merocmd = malloc(merolen);
+	snprintf(merocmd, merolen, "snapshot create adhoc %s", filename);
 
 	simple_argv_cmd("snapshot", databases, merocmd, NULL, "snapshotting database");
 
@@ -1824,8 +1825,9 @@ snapshot_enumerate(struct snapshot **snapshots, int *nsnapshots)
 			if (prev == NULL || strcmp(prev->dbname, cur->dbname) != 0)
 				counter = 0;
 			counter++;
-			cur->name = malloc(strlen(cur->dbname) + 10);
-			sprintf(cur->name, "%s@%d", cur->dbname, counter);
+			size_t nmlen = strlen(cur->dbname) + 10;
+			cur->name = malloc(nmlen);
+			snprintf(cur->name, nmlen, "%s@%d", cur->dbname, counter);
 			prev = cur;
 		}
 	}
@@ -1910,14 +1912,15 @@ snapshot_restore_file(char *sourcefile, char *dbname)
 {
 	char *ret;
 	char *out;
-	char *merocmd = malloc(100 + strlen(sourcefile));
+	size_t merolen = 100 + strlen(sourcefile);
+	char *merocmd = malloc(merolen);
 
 	if (!monetdb_quiet) {
 		printf("Restore '%s' from '%s'... ", dbname, sourcefile);
 		fflush(stdout);
 	}
 
-	sprintf(merocmd, "snapshot restore adhoc %s", sourcefile);
+	snprintf(merocmd, merolen, "snapshot restore adhoc %s", sourcefile);
 	ret = control_send(&out, mero_host, mero_port, dbname, merocmd, false, mero_pass);
 	free(merocmd);
 
@@ -1942,9 +1945,10 @@ snapshot_destroy_file(char *path)
 {
 	char *ret;
 	char *out = NULL;
-	char *merocmd = malloc(100 + strlen(path));
+	size_t merolen = 100 + strlen(path);
+	char *merocmd = malloc(merolen);
 
-	sprintf(merocmd, "snapshot destroy %s", path);
+	snprintf(merocmd, merolen, "snapshot destroy %s", path);
 	ret = control_send(&out, mero_host, mero_port, "", merocmd, false, mero_pass);
 	if (ret != NULL) {
 		fprintf(stderr, "snapshot destroy %s failed: %s", path, ret);
@@ -2328,7 +2332,7 @@ command_snapshot_write(int argc, char *argv[])
 	}
 	msab_freeStatus(&stats);
 
-	const char merocmd[] = "snapshot stream";
+	static const char merocmd[] = "snapshot stream";
 
 	msg = control_send_callback(
 			&out, mero_host, mero_port, dbname,

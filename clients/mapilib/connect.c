@@ -617,13 +617,14 @@ mapi_handshake(Mapi mid)
 			return mapi_setError(mid, buf, __func__, MERROR);
 		}
 
-		char *replacement_password = malloc(1 + strlen(pwdhash) + 1);
+		size_t replpwlen = 1 + strlen(pwdhash) + 1;
+		char *replacement_password = malloc(replpwlen);
 		if (replacement_password == NULL) {
 			free(pwdhash);
 			close_connection(mid);
 			return mapi_setError(mid, "malloc failed", __func__, MERROR);
 		}
-		sprintf(replacement_password, "\1%s", pwdhash);
+		snprintf(replacement_password, replpwlen, "\1%s", pwdhash);
 		free(pwdhash);
 		msettings_error errmsg = msetting_set_string(mid->settings, MP_PASSWORD, replacement_password);
 		free(replacement_password);
@@ -866,7 +867,7 @@ mapi_handshake(Mapi mid)
 	bool autocommit = msetting_bool(mid->settings, MP_AUTOCOMMIT);
 	if (mid->handshake_options <= MAPI_HANDSHAKE_AUTOCOMMIT && autocommit != msetting_bool(msettings_default, MP_AUTOCOMMIT)) {
 		char buf[50];
-		sprintf(buf, "%d", !!autocommit);
+		snprintf(buf, sizeof(buf), "%d", !!autocommit);
 		MapiMsg result = mapi_Xcommand(mid, "auto_commit", buf);
 		if (result != MOK)
 			return mid->error;
@@ -874,14 +875,14 @@ mapi_handshake(Mapi mid)
 	long replysize = msetting_long(mid->settings, MP_REPLYSIZE);
 	if (mid->handshake_options <= MAPI_HANDSHAKE_REPLY_SIZE && replysize != msetting_long(msettings_default, MP_REPLYSIZE)) {
 		char buf[50];
-		sprintf(buf, "%ld", replysize);
+		snprintf(buf, sizeof(buf), "%ld", replysize);
 		MapiMsg result = mapi_Xcommand(mid, "reply_size", buf);
 		if (result != MOK)
 			return mid->error;
 	}
 	if (mid->handshake_options <= MAPI_HANDSHAKE_SIZE_HEADER && mid->sizeheader != MapiStructDefaults.sizeheader) {
 		char buf[50];
-		sprintf(buf, "%d", !!mid->sizeheader);
+		snprintf(buf, sizeof(buf), "%d", !!mid->sizeheader);
 		MapiMsg result = mapi_Xcommand(mid, "sizeheader", buf); // no underscore!
 		if (result != MOK)
 			return mid->error;

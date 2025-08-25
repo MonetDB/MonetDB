@@ -3032,7 +3032,7 @@ pick_tmp_name(str filename)
 	if (ext == NULL) {
 		return strcat(name, "..tmp");
 	} else {
-		const char tmp[] = "..tmp.";
+		static const char tmp[] = "..tmp.";
 		size_t tmplen = strlen(tmp);
 		memmove(ext + tmplen, ext, strlen(ext) + 1);
 		memmove(ext, tmp, tmplen);
@@ -4789,7 +4789,7 @@ sys_drop_sequence(sql_trans *tr, sql_sequence * seq, int drop_action)
 static int
 sys_drop_default_object(sql_trans *tr, sql_column *col, int drop_action)
 {
-	const char next_value_for[] = "next value for ";
+	static const char next_value_for[] = "next value for ";
 	int res = LOG_OK;
 
 	/* Drop sequence for generated column if it's the case */
