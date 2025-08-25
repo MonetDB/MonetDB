@@ -367,44 +367,44 @@ atom2string(allocator *sa, atom *a)
 		return sa_strdup(sa, "NULL");
 	switch (a->data.vtype) {
 #ifdef HAVE_HGE
-	case TYPE_hge:
-	{	char *_buf = buf;
-		size_t _bufsiz = BUFSIZ;
+	case TYPE_hge: {
+		char *_buf = buf;
+		size_t _bufsiz = sizeof(buf);
 		hgeToStr(&_buf, &_bufsiz, &a->data.val.hval, true);
 		break;
 	}
 #endif
 	case TYPE_lng:
-		sprintf(buf, LLFMT, a->data.val.lval);
+		snprintf(buf, sizeof(buf), LLFMT, a->data.val.lval);
 		break;
 	case TYPE_oid:
-		sprintf(buf, OIDFMT "@0", a->data.val.oval);
+		snprintf(buf, sizeof(buf), OIDFMT "@0", a->data.val.oval);
 		break;
 	case TYPE_int:
-		sprintf(buf, "%d", a->data.val.ival);
+		snprintf(buf, sizeof(buf), "%d", a->data.val.ival);
 		break;
 	case TYPE_sht:
-		sprintf(buf, "%d", a->data.val.shval);
+		snprintf(buf, sizeof(buf), "%d", a->data.val.shval);
 		break;
 	case TYPE_bte:
-		sprintf(buf, "%d", a->data.val.btval);
+		snprintf(buf, sizeof(buf), "%d", a->data.val.btval);
 		break;
 	case TYPE_bit:
 		if (a->data.val.btval)
 			return sa_strdup(sa, "true");
 		return sa_strdup(sa, "false");
 	case TYPE_flt:
-		sprintf(buf, "%f", a->data.val.fval);
+		snprintf(buf, sizeof(buf), "%f", a->data.val.fval);
 		break;
 	case TYPE_dbl:
-		sprintf(buf, "%f", a->data.val.dval);
+		snprintf(buf, sizeof(buf), "%f", a->data.val.dval);
 		break;
 	case TYPE_str:
 		assert(a->data.val.sval);
 		return sa_strdup(sa, a->data.val.sval);
 	default:
 		if ((p = ATOMformat(a->data.vtype, VALget(&a->data))) == NULL) {
-			snprintf(buf, BUFSIZ, "atom2string(TYPE_%d) not implemented", a->data.vtype);
+			snprintf(buf, sizeof(buf), "atom2string(TYPE_%d) not implemented", a->data.vtype);
 		} else {
 			 char *r = sa_strdup(sa, p);
 			 GDKfree(p);
@@ -441,7 +441,7 @@ char *
 atom2sql(allocator *sa, atom *a, int timezone)
 {
 	sql_class ec = a->tpe.type->eclass;
-	char buf[BUFSIZ];
+	char buf[512];
 
 	if (a->data.vtype == TYPE_str && EC_INTERVAL(ec))
 		ec = EC_STRING;
@@ -514,30 +514,30 @@ atom2sql(allocator *sa, atom *a, int timezone)
 		case 13:	/* second */
 			break;
 		}
-		sprintf(buf, "interval '" LLFMT "' %s", ec == EC_MONTH ? v : v/1000, ec == EC_MONTH ? "month" : "second");
+		snprintf(buf, sizeof(buf), "interval '" LLFMT "' %s", ec == EC_MONTH ? v : v/1000, ec == EC_MONTH ? "month" : "second");
 		break;
 	}
 	case EC_NUM:
 		switch (a->data.vtype) {
 #ifdef HAVE_HGE
-		case TYPE_hge:
-		{	char *_buf = buf;
-			size_t _bufsiz = BUFSIZ;
+		case TYPE_hge: {
+			char *_buf = buf;
+			size_t _bufsiz = sizeof(buf);
 			hgeToStr(&_buf, &_bufsiz, &a->data.val.hval, true);
 			break;
 		}
 #endif
 		case TYPE_lng:
-			sprintf(buf, LLFMT, a->data.val.lval);
+			snprintf(buf, sizeof(buf), LLFMT, a->data.val.lval);
 			break;
 		case TYPE_int:
-			sprintf(buf, "%d", a->data.val.ival);
+			snprintf(buf, sizeof(buf), "%d", a->data.val.ival);
 			break;
 		case TYPE_sht:
-			sprintf(buf, "%d", a->data.val.shval);
+			snprintf(buf, sizeof(buf), "%d", a->data.val.shval);
 			break;
 		case TYPE_bte:
-			sprintf(buf, "%d", a->data.val.btval);
+			snprintf(buf, sizeof(buf), "%d", a->data.val.btval);
 			break;
 		default:
 			break;
@@ -563,9 +563,9 @@ atom2sql(allocator *sa, atom *a, int timezone)
 	}
 	case EC_FLT:
 		if (a->data.vtype == TYPE_dbl)
-			sprintf(buf, "%f", a->data.val.dval);
+			snprintf(buf, sizeof(buf), "%f", a->data.val.dval);
 		else
-			sprintf(buf, "%f", a->data.val.fval);
+			snprintf(buf, sizeof(buf), "%f", a->data.val.fval);
 		break;
 	case EC_TIME:
 	case EC_TIME_TZ:
@@ -583,7 +583,7 @@ atom2sql(allocator *sa, atom *a, int timezone)
 			char *n = stpcpy(val1, (ec == EC_TIME || ec == EC_TIME_TZ) ? "TIME" : "TIMESTAMP");
 			if (a->tpe.digits) {
 				char str[16];
-				sprintf(str, "%u", a->tpe.digits);
+				snprintf(str, sizeof(str), "%u", a->tpe.digits);
 				n = stpcpy(stpcpy(stpcpy(n, " ("), str), ")");
 			}
 			if (ec == EC_TIME_TZ || ec == EC_TIMESTAMP_TZ)
@@ -664,7 +664,7 @@ atom2sql(allocator *sa, atom *a, int timezone)
 		return res;
 	} break;
 	default:
-		snprintf(buf, BUFSIZ, "atom2sql(TYPE_%d) not implemented", a->data.vtype);
+		snprintf(buf, sizeof(buf), "atom2sql(TYPE_%d) not implemented", a->data.vtype);
 	}
 	return sa_strdup(sa, buf);
 }

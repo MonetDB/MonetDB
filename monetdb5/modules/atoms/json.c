@@ -1517,7 +1517,7 @@ JSONfilterArrayDefault(json *ret, const json *js, lng index, const char *other)
 	if (index < 0)
 		throw(MAL, "json.filter",
 			  SQLSTATE(42000) "Filter index cannot be negative");
-	snprintf(expr, BUFSIZ, "[" LLFMT "]", index);
+	snprintf(expr, sizeof(expr), "[" LLFMT "]", index);
 	return JSONfilterInternal(ret, js, &(const char *){s}, other);
 }
 
@@ -2964,7 +2964,7 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 						char *dst = buf;
 						*dst++ = '[';
 						*dst++ = ' ';
-						dst += sprintf(dst, "%f", val);
+						dst += snprintf(dst, maxlen - 5, "%f", val);
 						*dst++ = ' ';
 						*dst++ = ']';
 						*dst = '\0';

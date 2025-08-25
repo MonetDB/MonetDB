@@ -1,3 +1,67 @@
+monetdb (11.53.11) unstable; urgency=low
+
+  * Rebuilt.
+  * GH#7643: Unable to process field with split_part(). Facing Issue
+    "client4681: exp_bin: CRITICAL: Could not find (null).rate"
+  * GH#7647: 'mat.packIncrement' undefined
+  * GH#7648: Unexpected Right Join Assertion Error
+  * GH#7649: Unexpected Inner Join Crash
+  * GH#7650: Unexpected Right Join Crash
+  * GH#7655: slow concurrent insert
+  * GH#7656: Primary key reported as being a foreign key to itself
+  * GH#7657: MonetDB Mar2025-SP1 crashes at `sqlparse()` with a crafted
+    MERGE statement
+  * GH#7659: MonetDB Mar2025-SP1 crashes at `rel_select_add_exp()` with a
+    crafted CREATE TRIGGER statement
+  * GH#7660: MonetDB Mar2025-SP1 crashes at `subrel_bin()` with a COPY
+    statement
+  * GH#7661: MonetDB Mar2025-SP1 crashes at `dlist_length()` with a crafted
+    CREATE TRIGGER statement
+  * GH#7671: MonetDB Mar2025-SP1 crashes at `BLOBlength()`
+  * GH#7675: Debian service start on new install not getting environment
+    variables from /etc/default/monetdb-sql
+  * GH#7680: `UNION ALL` doesn't work as expected
+  * GH#7681: Describe table feature not working correctly
+  * GH#7682: replacing a login trigger crashes server
+  * GH#7683: wrong  Driver= and Setup= libary paths stored in
+    /etc/odbcinst.ini after installation of MonetDB ODBC driver on ubuntu
+  * GH#7686: DELETE FROM empty table should always be a no-op
+  * GH#7688: exists with nulls gives incorrect result
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Thu, 21 Aug 2025 11:09:16 +0200
+
+monetdb (11.53.11) unstable; urgency=low
+
+  * MonetDB: It is now relatively easy to configure the location of the database farm
+    (aka dbfarm) directory when using systemd.  Just create an override
+    file for the monetdbd service and add an Environment entry for DBFARM
+    pointing to the new directory.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 13 Aug 2025 11:09:16 +0200
+
+monetdb (11.53.11) unstable; urgency=low
+
+  * gdk: The SIGUSR1 output now displays counts for memory sizes in a
+    human-readable format next to the original byte counts.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 5 Aug 2025 11:09:16 +0200
+
+monetdb (11.53.11) unstable; urgency=low
+
+  * monetdb5: The PCRE module has been ported to the PCRE2 version of the library.
+    The main difference is in the regexp_replace function which now no
+    longer accepts \ to introduce replacements.  Only $ is accepted (it
+    was already accepted before).
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 1 Aug 2025 11:09:16 +0200
+
+monetdb (11.53.11) unstable; urgency=low
+
+  * sql: Fixed issue #7655, now the segments keep the number of deleted
+    rows. Only search for reuse when deleted rows are available.
+
+ -- Niels Nes <niels@cwi.nl>  Tue, 8 Jul 2025 11:09:16 +0200
+
 monetdb (11.53.9) unstable; urgency=low
 
   * Rebuilt.

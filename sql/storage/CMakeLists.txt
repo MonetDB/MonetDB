@@ -28,6 +28,7 @@ target_sources(sqlstorage
 target_include_directories(sqlstorage
   PRIVATE
   $<TARGET_PROPERTY:mapi,INTERFACE_INCLUDE_DIRECTORIES>
+  $<TARGET_PROPERTY:sqlcommon,INTERFACE_INCLUDE_DIRECTORIES>
   PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
   $<INSTALL_INTERFACE:${INCLUDEDIR}/monetdb>)
@@ -36,7 +37,7 @@ target_link_libraries(sqlstorage
   PRIVATE
   monetdb_config_header
   bat
-  sqlcommon
+  batstore
   sqlinclude)
 
 if(NOT MONETDB_STATIC)

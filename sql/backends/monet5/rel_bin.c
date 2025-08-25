@@ -950,7 +950,7 @@ exp2bin_named_placeholders(backend *be, sql_exp *fe)
 		}
 		int type = t->type->localtype, varid = 0;
 
-		snprintf(arg, IDLENGTH, "A%d", argc);
+		snprintf(arg, sizeof(arg), "A%d", argc);
 		if ((varid = newVariable(be->mb, arg, strlen(arg), type)) < 0) {
 			sql_error(be->mvc, 10, SQLSTATE(42000) "Internal error while compiling statement: variable id too long");
 			return NULL;
@@ -3513,7 +3513,13 @@ rel2bin_antijoin(backend *be, sql_rel *rel, list *refs)
 	list *l, *jexps = NULL, *sexps = NULL;
 	node *en = NULL, *n;
 	stmt *left = NULL, *right = NULL, *join = NULL, *sel = NULL, *sub = NULL;
+	bool any = false;
 
+	if (rel->exps)
+		for (node *n = rel->exps->h; n && !any; n = n->next) {
+			sql_exp *e = n->data;
+			any = is_any(e);
+		}
 	if (rel->l) /* first construct the left sub relation */
 		left = subrel_bin(be, rel->l, refs);
 	if (rel->r) /* first construct the right sub relation */
@@ -3586,7 +3592,7 @@ rel2bin_antijoin(backend *be, sql_rel *rel, list *refs)
 		stmt *jr = stmt_result(be, join, 1);
 		stmt *nulls = NULL;
 
-		if (li && stmt_has_null(li)) {
+		if (li && stmt_has_null(li) && any) {
 			nulls = stmt_selectnil(be, li);
 		}
 		/* construct relation */

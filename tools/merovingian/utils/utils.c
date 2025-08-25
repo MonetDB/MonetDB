@@ -349,14 +349,14 @@ setConfValForKey(confkeyval *list, const char *key, const char *val) {
  * starting from the biggest unit that has a non-zero value for t.
  */
 inline void
-secondsToString(char *buf, time_t t, int longness)
+secondsToString(char *buf, size_t buflen, time_t t, int longness)
 {
 	time_t p;
 	size_t i = 0;
 
 	p = 1 * 60 * 60 * 24 * 7 * 52;
 	if (t > p) {
-		i += sprintf(buf + i, "%dy", (int)(t / p));
+		i += snprintf(buf + i, buflen - i, "%dy", (int)(t / p));
 		t -= (t / p) * p;
 		if (--longness == 0)
 			return;
@@ -364,7 +364,7 @@ secondsToString(char *buf, time_t t, int longness)
 	}
 	p /= 52;
 	if (t > p) {
-		i += sprintf(buf + i, "%dw", (int)(t / p));
+		i += snprintf(buf + i, buflen - i, "%dw", (int)(t / p));
 		t -= (t / p) * p;
 		if (--longness == 0)
 			return;
@@ -372,7 +372,7 @@ secondsToString(char *buf, time_t t, int longness)
 	}
 	p /= 7;
 	if (t > p) {
-		i += sprintf(buf + i, "%dd", (int)(t / p));
+		i += snprintf(buf + i, buflen - i, "%dd", (int)(t / p));
 		t -= (t / p) * p;
 		if (--longness == 0)
 			return;
@@ -380,7 +380,7 @@ secondsToString(char *buf, time_t t, int longness)
 	}
 	p /= 24;
 	if (t > p) {
-		i += sprintf(buf + i, "%dh", (int)(t / p));
+		i += snprintf(buf + i, buflen - i, "%dh", (int)(t / p));
 		t -= (t / p) * p;
 		if (--longness == 0)
 			return;
@@ -388,7 +388,7 @@ secondsToString(char *buf, time_t t, int longness)
 	}
 	p /= 60;
 	if (t > p) {
-		i += sprintf(buf + i, "%dm", (int)(t / p));
+		i += snprintf(buf + i, buflen - i, "%dm", (int)(t / p));
 		t -= (t / p) * p;
 		if (--longness == 0)
 			return;
@@ -397,7 +397,7 @@ secondsToString(char *buf, time_t t, int longness)
 
 	/* t must be < 60 */
 	if (--longness == 0 || !(i > 0 && t == 0)) {
-		sprintf(buf + i, "%ds", (int)(t));
+		snprintf(buf + i, buflen - i, "%ds", (int)(t));
 	} else {
 		buf[--i] = '\0';
 	}
@@ -422,7 +422,7 @@ abbreviateString(char *ret, const char *in, size_t width)
 		off = len - (width - ((width / 2) - 2) - 3);
 		memcpy(ret + (width / 2) + 1, in + off, (len - off) + 1);
 	} else {
-		sprintf(ret, "%s", in);
+		snprintf(ret, width + 1, "%s", in);
 	}
 }
 

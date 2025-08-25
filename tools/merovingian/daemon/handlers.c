@@ -316,7 +316,7 @@ childhandler(void)
 					const char *sigstr = sigtostr(WTERMSIG(wstatus));
 					char signum[8];
 					if (sigstr == NULL) {
-						snprintf(signum, 8, "%d", WTERMSIG(wstatus));
+						snprintf(signum, sizeof(signum), "%d", WTERMSIG(wstatus));
 						sigstr = signum;
 					}
 					if (WCOREDUMP(wstatus)) {
@@ -353,7 +353,7 @@ segvhandler(int sig) {
 	sigaction(SIGSEGV, &sa, NULL);
 
 	if (_mero_topdp != NULL) {
-		const char errmsg[] = "\nSEGMENTATION FAULT OCCURRED\n"
+		static const char errmsg[] = "\nSEGMENTATION FAULT OCCURRED\n"
 				"\nA fatal error has occurred which prevents monetdbd from operating."
 				"\nThis is likely a bug in monetdbd, please report it on https://github.com/MonetDB/MonetDB/issues/"
 				"\nand include the tail of this log in your bugreport with your explanation of "

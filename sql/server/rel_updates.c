@@ -1590,12 +1590,15 @@ rel_import(mvc *sql, sql_table *t, const char *tsep, const char *rsep, const cha
 	if (fwf_widths && dlist_length(fwf_widths) > 0) {
 		dnode *dn;
 		int ncol = 0;
-		char *fwf_string_cur = fwf_string = sa_alloc(sql->sa, 20 * dlist_length(fwf_widths) + 1); /* a 64 bit int needs 19 characters in decimal representation plus the separator */
+		size_t fwf_len = 20 * dlist_length(fwf_widths) + 1;
+		char *fwf_string_cur = fwf_string = sa_alloc(sql->sa, fwf_len); /* a 64 bit int needs 19 characters in decimal representation plus the separator */
 
 		if (!fwf_string)
 			return NULL;
 		for (dn = fwf_widths->h; dn; dn = dn->next) {
-			fwf_string_cur += sprintf(fwf_string_cur, LLFMT"%c", dn->data.l_val, STREAM_FWF_FIELD_SEP);
+			int l = snprintf(fwf_string_cur, fwf_len, LLFMT"%c", dn->data.l_val, STREAM_FWF_FIELD_SEP);
+			fwf_string_cur += l;
+			fwf_len -= l;
 			ncol++;
 		}
 		if (list_length(f->res) != ncol)

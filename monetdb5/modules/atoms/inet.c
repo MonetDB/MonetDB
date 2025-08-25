@@ -545,10 +545,10 @@ INEThost(str *retval, const inet *val)
 		if (*retval == NULL)
 			throw(MAL, "INEThost", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	} else {
-		ip = GDKmalloc(sizeof(char) * 16);
+		ip = GDKmalloc(16);
 		if (ip == NULL)
 			throw(MAL, "INEThost", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		sprintf(ip, "%d.%d.%d.%d", val->q1, val->q2, val->q3, val->q4);
+		snprintf(ip, 16, "%d.%d.%d.%d", val->q1, val->q2, val->q3, val->q4);
 		*retval = ip;
 	}
 	return (MAL_SUCCEED);
