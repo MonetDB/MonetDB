@@ -2670,6 +2670,8 @@ log_new(int debug, const char *fn, const char *logdir, int version, preversionfi
 		.cur_max_pending = max_pending,
 
 		.id = 0,
+		.updated = NULL,
+		.maxupdated = 0,
 		.saved_id = getBBPlogno(),	/* get saved log number from bbp */
 		.nr_flushers = ATOMIC_VAR_INIT(0),
 		.fn = GDKstrdup(fn),
@@ -3130,6 +3132,15 @@ log_constant(logger *lg, int type, const void *val, log_id id, lng offset, lng c
 
 	if (LOG_DISABLED(lg) || !nr) {
 		/* logging is switched off */
+		if (lg->updated != NULL) {
+			BUN p = log_find(lg->catalog_id, lg->dcatalog, id);
+			if (p == BUN_NONE) {
+				GDKerror("%d not found in catalog_id BAT", id);
+				return GDK_FAIL;
+			}
+			if (p < lg->maxupdated)
+				lg->updated[p / 32] |= 1U << (p % 32);
+		}
 		if (nr) {
 			log_lock(lg);
 			ok = la_bat_update_count(lg, id, offset + cnt, lg->tid);
@@ -3236,6 +3247,15 @@ internal_log_bat(logger *lg, BAT *b, log_id id, lng offset, lng cnt, int sliced,
 
 	if (LOG_DISABLED(lg) || !nr) {
 		/* logging is switched off */
+		if (lg->updated != NULL) {
+			BUN p = log_find(lg->catalog_id, lg->dcatalog, id);
+			if (p == BUN_NONE) {
+				GDKerror("%d not found in catalog_id BAT", id);
+				return GDK_FAIL;
+			}
+			if (p < lg->maxupdated)
+				lg->updated[p / 32] |= 1U << (p % 32);
+		}
 		if (nr)
 			return la_bat_update_count(lg, id, offset + cnt, lg->tid);
 		return GDK_SUCCEED;
@@ -3610,7 +3630,11 @@ log_tflush(logger *lg, ulng file_id, ulng commit_ts)
 		(void) do_flush_range_cleanup(lg);
 		assert(lg->flush_ranges == lg->current);
 		rotation_unlock(lg);
-		return log_commit(lg, p, NULL, 0);
+		gdk_return r = log_commit(lg, p, lg->updated, lg->maxupdated);
+		GDKfree(lg->updated);
+		lg->updated = NULL;
+		lg->maxupdated = 0;
+		return r;
 	}
 
 	if (LOG_DISABLED(lg)) {
@@ -3841,6 +3865,18 @@ log_tstart(logger *lg, bool flushnow, ulng *file_id)
 		if (lg->saved_id + 1 < lg->id)
 			log_flush(lg, (1ULL << 63));
 		lg->flushnow = flushnow;
+
+		assert(lg->updated == NULL);
+		BUN cnt = BATcount(lg->catalog_id);
+		size_t allocated = ((cnt + 31) & ~31) / 8;
+		if (allocated == 0)
+			allocated = 4;
+		lg->maxupdated = allocated;
+		lg->updated = GDKzalloc(allocated);
+		if (lg->updated == NULL) {
+			GDKerror("Failed to allocate updated BAT id's.\n");
+			return GDK_FAIL;
+		}
 	} else {
 		if (check_rotation_conditions(lg)) {
 			lg->id++;
