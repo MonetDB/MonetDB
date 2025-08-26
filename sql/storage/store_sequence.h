@@ -27,7 +27,7 @@ extern int seq_restart(sql_store store, sql_sequence *seq, lng start);
 extern void log_store_sequence(sql_store store, void *seq); /* called locked */
 extern int seqbulk_next_value(sql_store store, sql_sequence *seq, lng cnt, lng* dest);
 
-extern void sequences_lock(sql_store store);
-extern void sequences_unlock(sql_store store);
+//extern void sequences_lock(sql_store store);
+//extern void sequences_unlock(sql_store store);
 
 #endif /* STORE_SEQ_H */

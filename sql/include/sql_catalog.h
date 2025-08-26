@@ -573,6 +573,7 @@ typedef struct sql_idx {
 	struct list *columns;	/* list of sql_kc */
 	struct sql_table *t;
 	struct sql_key *key;	/* key */
+	MT_Lock lock;		/* lock protecting concurrent writes to the changes list */
 	ATOMIC_PTR_TYPE data;
 } sql_idx;
 
@@ -627,6 +628,7 @@ typedef struct sql_sequence {
 	bit cycle;
 	bit bedropped;		/*Drop the SEQUENCE if you are dropping the column, e.g., SERIAL COLUMN".*/
 	sql_schema *s;
+	MT_Lock lock;		/* lock protecting concurrent writes to the changes list */
 } sql_sequence;
 
 typedef struct sql_column {
@@ -643,6 +645,7 @@ typedef struct sql_column {
 	void *max;
 
 	struct sql_table *t;
+	MT_Lock lock;		/* lock protecting concurrent writes to the changes list */
 	ATOMIC_PTR_TYPE data;
 } sql_column;
 
@@ -729,6 +732,7 @@ typedef struct sql_table {
 	list *members;		/* member tables of merge/replica tables */
 	int drop_action;	/* only needed for alter drop table */
 
+	MT_Lock lock;		/* lock protecting concurrent writes to the changes list */
 	ATOMIC_PTR_TYPE data;
 	sql_schema *s;
 
