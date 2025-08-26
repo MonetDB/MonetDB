@@ -259,11 +259,13 @@ find_sql_table(sql_trans *tr, sql_schema *s, const char *tname)
 		if (lt)
 			return lt;
 
+		MT_lock_set(&tr->localtmplock);
 		lt = (sql_table*) os_find_name(tr->localtmps, tr, tname);
 		if (!lt)
 			t = globaltmp_instantiate(tr, t);
 		else
 			t = lt;
+		MT_lock_unset(&tr->localtmplock);
 		return t;
 	}
 
@@ -285,11 +287,13 @@ find_sql_table_id(sql_trans *tr, sql_schema *s, sqlid id)
 		sql_table* lt = (sql_table*) os_find_id(tr->localtmps, tr, id);
 		if (lt)
 			return lt;
+		MT_lock_set(&tr->localtmplock);
 		lt = (sql_table*) os_find_id(tr->localtmps, tr, id);
 		if (!lt)
 			t = globaltmp_instantiate(tr, t);
 		else
 			t = lt;
+		MT_lock_unset(&tr->localtmplock);
 		return t;
 	}
 	return t;

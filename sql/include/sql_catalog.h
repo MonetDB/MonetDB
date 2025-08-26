@@ -327,6 +327,7 @@ typedef struct sql_trans {
 
 	sql_store store;	/* keep link into the global store */
 	MT_Lock lock;		/* lock protecting concurrent writes to the changes list */
+	MT_Lock localtmplock;		/* lock protecting concurrent writes to the localtmps list */
 	list *changes;		/* list of changes */
 
 	list *dropped;  	/* protection against recursive cascade action*/

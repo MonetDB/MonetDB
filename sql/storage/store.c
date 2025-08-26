@@ -4142,6 +4142,7 @@ sql_trans_destroy(sql_trans *tr)
 	sqlstore *store = tr->store;
 	os_destroy(tr->localtmps, store);
 	MT_lock_destroy(&tr->lock);
+	MT_lock_destroy(&tr->localtmplock);
 	if (!list_empty(tr->dropped))
 		list_destroy(tr->dropped);
 	if (!list_empty(tr->predicates))
@@ -4161,6 +4162,7 @@ sql_trans_create_(sqlstore *store, sql_trans *parent, const char *name)
 	if (!tr)
 		return NULL;
 	MT_lock_init(&tr->lock, "trans_lock");
+	MT_lock_init(&tr->localtmplock, "localtmp");
 	tr->parent = parent;
 	if (name) {
 		_DELETE(parent->name);
