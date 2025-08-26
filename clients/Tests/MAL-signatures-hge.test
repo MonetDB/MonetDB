@@ -29160,6 +29160,11 @@ INETinet42inet4_bulk
 (empty)
 batcalc
 inet4
+command batcalc.inet4(X_0:bat[:inet6], X_1:bat[:oid]):bat[:inet4]
+INETinet62inet4_bulk
+Coerce an inet6 to an inet4
+batcalc
+inet4
 command batcalc.inet4(X_0:bat[:str], X_1:bat[:oid]):bat[:inet4]
 INETstr2inet4_bulk
 Coerce a string to an inet4, validating its format
@@ -44148,6 +44153,11 @@ inet4
 command calc.inet4(X_0:inet4):inet4
 INETinet42inet4
 (empty)
+calc
+inet4
+command calc.inet4(X_0:inet6):inet4
+INETinet62inet4
+Coerce an inet6 to an inet4
 calc
 inet4
 command calc.inet4(X_0:str):inet4

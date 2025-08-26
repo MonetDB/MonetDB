@@ -1674,19 +1674,19 @@ INET6toString(str *retval, size_t *len, const void *VALUE, bool external)
 		*len = 40;
 	}
 	/* find longest stretch of zeroes */
-	int rl = 0;
-	int rl1 = -1;
-	int mrl = 0;
-	int mrl1 = -1;
+	int rl = 0;		/* length of current stretch of zeros */
+	int rl1 = -1;		/* start of current stretch of zeros */
+	int mrl = 0;		/* length of longest stretch of zeros */
+	int mrl1 = -1;		/* start of longest stretch of zeros */
 	for (int i = 0; i < 8; i++) {
 		if (value->oct[i] == 0) {
 			if (rl++ == 0)
 				rl1 = i;
-		} else if (rl > 1 && rl > mrl) {
-			mrl = rl;
-			mrl1 = rl1;
-			rl = 0;
 		} else {
+			if (rl > 1 && rl > mrl) {
+				mrl = rl;
+				mrl1 = rl1;
+			}
 			rl = 0;
 		}
 	}
@@ -1698,6 +1698,7 @@ INET6toString(str *retval, size_t *len, const void *VALUE, bool external)
 		mrl1 = 8;
 	int pos = 0;
 	if (mrl1 == 0 && mrl == 5 && value->oct[5] == 0xFFFF) {
+		/* IPv4 address disguised as IPv6 */
 		pos += snprintf(*retval + pos, *len - pos,
 				"::%x:%d.%d.%d.%d",
 				value->oct[5], value->oct[6] >> 8,
