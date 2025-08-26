@@ -14,22 +14,6 @@
 #include "store_sequence.h"
 #include "sql_storage.h"
 
-/*
-void
-sequences_lock(sql_store Store)
-{
-	sqlstore *store = Store;
-	MT_lock_set(&store->column_locks[NR_COLUMN_LOCKS-1]);
-}
-
-void
-sequences_unlock(sql_store Store)
-{
-	sqlstore *store = Store;
-	MT_lock_unset(&store->column_locks[NR_COLUMN_LOCKS-1]);
-}
-*/
-
 static void
 sequence_lock(sql_sequence *seq)
 {
