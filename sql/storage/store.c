@@ -3989,7 +3989,7 @@ sql_trans_copy_column( sql_trans *tr, sql_table *t, sql_column *c, sql_column **
 			}
 
 	if (!isDeclaredTable(t)) {
-		obj_lock_init(&c->lock, 'c', c->base.id);
+		obj_lock_init(&col->lock, 'c', col->base.id);
 		char *strnil = (char*)ATOMnilptr(TYPE_str);
 		int digits = type_digits(&col->type);
 		if ((res = store->table_api.table_insert(tr, syscolumn, &col->base.id, &col->base.name, &col->type.type->base.name,
@@ -6453,6 +6453,7 @@ sql_trans_create_column(sql_column **rcol, sql_trans *tr, sql_table *t, const ch
 			return res;
 		}
 	if (!isDeclaredTable(t)) {
+		obj_lock_init(&col->lock, 'c', col->base.id);
 		char *strnil = (char*)ATOMnilptr(TYPE_str);
 		int digits = type_digits(&col->type);
 		if ((res = store->table_api.table_insert(tr, syscolumn, &col->base.id, &col->base.name, &col->type.type->base.name, &digits, &col->type.scale,
