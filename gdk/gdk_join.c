@@ -2095,7 +2095,7 @@ mergejoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 			 !BATtvoid(l) && !BATtvoid(r));
 		lordering = li.sorted && (ri.sorted || !equal_order) ? 1 : -1;
 		rordering = equal_order ? lordering : -lordering;
-		if (!li.nonil && !nil_matches && !nil_on_miss && lvals != NULL) {
+		if (!li.nonil && !nil_matches && !nil_on_miss && lvals != NULL && not_in) {
 			/* find first non-nil */
 			nl = binsearch(NULL, 0, li.type, lvals, lvars, li.width, 0, BATcount(l), nil, li.sorted ? 1 : -1, li.sorted ? 1 : 0);
 			nl = canditer_search(lci, nl + l->hseqbase, true);

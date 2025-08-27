@@ -2331,7 +2331,7 @@ stmt_tdiff(backend *be, stmt *op1, stmt *op2, stmt *lcand)
 }
 
 stmt *
-stmt_tdiff2(backend *be, stmt *op1, stmt *op2, stmt *lcand)
+stmt_tdiff2(backend *be, stmt *op1, stmt *op2, stmt *lcand, bool any)
 {
 	InstrPtr q = NULL;
 	MalBlkPtr mb = be->mb;
@@ -2349,7 +2349,7 @@ stmt_tdiff2(backend *be, stmt *op1, stmt *op2, stmt *lcand)
 		q = pushNilBat(mb, q); /* left candidate */
 	q = pushNilBat(mb, q); /* right candidate */
 	q = pushBit(mb, q, FALSE);     /* nil matches */
-	q = pushBit(mb, q, TRUE);     /* not in */
+	q = pushBit(mb, q, any);     /* not in */
 	q = pushNil(mb, q, TYPE_lng); /* estimate */
 
 	bool enabled = sa_get_eb(be->mvc->sa)->enabled;
