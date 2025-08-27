@@ -3682,6 +3682,23 @@ rel2bin_antijoin(backend *be, sql_rel *rel, list *refs)
 	return stmt_list(be, l);
 }
 
+static sql_rel *
+rel_has_partition_(visitor *v, sql_rel *rel)
+{
+	if (rel && is_basetable(rel->op))
+		v->changes |= (rel->flag & REL_PARTITION);
+	return rel;
+}
+
+static bool
+rel_has_partition(mvc *sql, sql_rel *rel)
+{
+	visitor v = { .sql = sql, .changes = 0 };
+
+	rel = rel_visitor_bottomup(&v, rel, &rel_has_partition_);
+	return v.changes;
+}
+
 static stmt *
 rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 {
@@ -3772,7 +3789,7 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 
 					if (!l || !r)
 						return NULL;
-					if (/*be->no_mitosis &&*/ list_length(jexps) == 1 && list_empty(sexps) && rel->op == op_semi && !is_anti(e) && is_equi_exp_(e)) {
+					if (list_length(jexps) == 1 && list_empty(sexps) && rel->op == op_semi && !is_anti(e) && is_equi_exp_(e) && (rel_has_partition(be->mvc, rel->l) || be->no_mitosis)) {
 						join = stmt_semijoin(be, column(be, l), column(be, r), left->cand, NULL/*right->cand*/, is_semantics(e), false);
 						semijoin_only = 1;
 						en = NULL;
