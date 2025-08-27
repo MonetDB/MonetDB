@@ -2440,6 +2440,12 @@ stmt_join_cand(backend *be, stmt *op1, stmt *op2, stmt *lcand, stmt *rcand, int 
 
 	assert (!single || cmptype == cmp_all);
 
+	if (anti) {
+		if (cmptype == cmp_equal)
+			cmptype = cmp_notequal;
+		else if (cmptype == cmp_notequal)
+			cmptype = cmp_equal;
+	}
 	switch (cmptype) {
 	case cmp_equal:
 		q = newStmtArgs(mb, algebraRef, sjt, 9);
