@@ -1690,6 +1690,14 @@ setWidth(void)
 			pagewidth = ws.ws_col;
 			pageheight = ws.ws_row;
 		} else
+#else
+#ifdef _MSC_VER
+		CONSOLE_SCREEN_BUFFER_INFO csbi;
+		if (GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &csbi) != 0) {
+			pagewidth = csbi.srWindow.Right - csbi.srWindow.Left;
+			pageheight = csbi.srWindow.Bottom - csbi.srWindow.Top + 1;
+		} else
+#endif
 #endif
 		{
 			pagewidth = pageheight = -1;
