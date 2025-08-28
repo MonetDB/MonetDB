@@ -3737,7 +3737,7 @@ rel_set_type_param(mvc *sql, sql_subtype *type, sql_rel *rel, sql_exp *exp, int 
  * interface.
  */
 static sql_exp *
-exp_convert_inplace(sql_subtype *t, sql_exp *exp)
+exp_convert_inplace(allocator *sa, sql_subtype *t, sql_exp *exp)
 {
 	atom *a, *na;
 
@@ -3749,7 +3749,7 @@ exp_convert_inplace(sql_subtype *t, sql_exp *exp)
 	if (!a->isnull && t->scale && t->type->eclass != EC_FLT)
 		return NULL;
 
-	if ((na = atom_cast_inplace(a, t))) {
+	if ((na = atom_cast_inplace(sa, a, t))) {
 		exp->l = na;
 		return exp;
 	}
@@ -3789,7 +3789,7 @@ exp_check_type(mvc *sql, sql_subtype *t, sql_rel *rel, sql_exp *exp, check_type 
 		return exp;
 
 	/* first try cheap internal (in-place) conversions ! */
-	if ((nexp = exp_convert_inplace(t, exp)) != NULL)
+	if ((nexp = exp_convert_inplace(sql->sa, t, exp)) != NULL)
 		return nexp;
 
 	if (fromtype && subtype_cmp(t, fromtype) != 0) {

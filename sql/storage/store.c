@@ -5794,7 +5794,7 @@ sql_trans_add_range_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_s
 	if (min) {
 		ok = VALinit(NULL, &vmin, localtype, min);
 		if (ok && localtype != TYPE_str)
-			ok = VALconvert(TYPE_str, &vmin);
+			ok = VALconvert(NULL, TYPE_str, &vmin);
 	} else {
 		ok = VALinit(NULL, &vmin, TYPE_str, ATOMnilptr(TYPE_str));
 		min = (ptr) ATOMnilptr(localtype);
@@ -5812,7 +5812,7 @@ sql_trans_add_range_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_s
 	if (max) {
 		ok = VALinit(NULL, &vmax, localtype, max);
 		if (ok && localtype != TYPE_str)
-			ok = VALconvert(TYPE_str, &vmax);
+			ok = VALconvert(NULL, TYPE_str, &vmax);
 	} else {
 		ok = VALinit(NULL, &vmax, TYPE_str, ATOMnilptr(TYPE_str));
 		max = (ptr) ATOMnilptr(localtype);
@@ -5990,7 +5990,7 @@ sql_trans_add_value_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_s
 		}
 		ok = VALinit(NULL, &vvalue, localtype, next->value);
 		if (ok && localtype != TYPE_str)
-			ok = VALconvert(TYPE_str, &vvalue);
+			ok = VALconvert(NULL, TYPE_str, &vvalue);
 		if (!ok) {
 			if (!update)
 				part_destroy(store, p);
@@ -7706,7 +7706,7 @@ convert_part_values(sql_trans *tr, sql_table *mt )
 
 					ok = VALinit(NULL, &vvalue, TYPE_str, v->value);
 					if (ok)
-						ok = VALconvert(localtype, &vvalue);
+						ok = VALconvert(NULL, localtype, &vvalue);
 					if (ok) {
 						ok = v->value = NEW_ARRAY(char, vvalue.len);
 						if (ok) {
@@ -7749,9 +7749,9 @@ convert_part_values(sql_trans *tr, sql_table *mt )
 							p->part.range.maxlength = nil_len;
 						}
 					} else {
-						ok = VALconvert(localtype, &vmin);
+						ok = VALconvert(NULL, localtype, &vmin);
 						if (ok)
-							ok = VALconvert(localtype, &vmax);
+							ok = VALconvert(NULL, localtype, &vmax);
 						if (ok) {
 							p->part.range.minvalue = NEW_ARRAY(char, vmin.len);
 							p->part.range.maxvalue = NEW_ARRAY(char, vmax.len);

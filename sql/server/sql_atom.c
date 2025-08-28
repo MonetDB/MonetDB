@@ -278,6 +278,7 @@ atom_general(allocator *sa, sql_subtype *tpe, const char *val, long tz_offset)
 			a->data.len = strLen(val);
 			a->data.val.sval = sa_alloc(sa, a->data.len);
 			memcpy(a->data.val.sval, val, a->data.len);
+			a->data.allocated = false;
 		} else if (type == TYPE_timestamp) {
 			if (sql_timestamp_fromstr(val, &a->data.val.lval, tz_offset/1000, tpe->type->eclass == EC_TIMESTAMP) < 0 ||
 					(timestamp)a->data.val.lval == timestamp_nil)
@@ -352,6 +353,7 @@ atom_general_ptr( allocator *sa, sql_subtype *tpe, void *v)
 		a->data.len = strLen(p);
 		a->data.val.sval = sa_alloc(sa, a->data.len);
 		memcpy(a->data.val.sval, p, a->data.len);
+		a->data.allocated = false;
 	} else {
 		a->data.len = ATOMlen(a->data.vtype, v);
 		a->data.val.pval = sa_alloc(sa, a->data.len);
@@ -765,7 +767,7 @@ atom_cast(allocator *sa, atom *a, sql_subtype *tp)
 			 (tp->type->eclass == EC_DATE ||
 			  EC_TEMP_NOFRAC(tp->type->eclass)))) {
 			ValRecord v = { .vtype = tp->type->localtype };
-			if (VARconvert(&v, &a->data, at->scale, tp->scale, tp->type->eclass == EC_DEC ? tp->digits : 0) != GDK_SUCCEED) {
+			if (VARconvert(sa, &v, &a->data, at->scale, tp->scale, tp->type->eclass == EC_DEC ? tp->digits : 0) != GDK_SUCCEED) {
 				GDKclrerr();
 				return NULL;
 			}
@@ -790,7 +792,7 @@ atom_cast(allocator *sa, atom *a, sql_subtype *tp)
 }
 
 atom *
-atom_cast_inplace(atom *a, sql_subtype *tp)
+atom_cast_inplace(allocator *sa, atom *a, sql_subtype *tp)
 {
 	sql_subtype *at = &a->tpe;
 
@@ -823,13 +825,13 @@ atom_cast_inplace(atom *a, sql_subtype *tp)
 			 (tp->type->eclass == EC_DATE ||
 			  EC_TEMP_NOFRAC(tp->type->eclass)))) {
 			ValRecord v = { .vtype = tp->type->localtype };
-			if (VARconvert(&v, &a->data, at->scale, tp->scale, tp->type->eclass == EC_DEC ? tp->digits : 0) != GDK_SUCCEED) {
+			if (VARconvert(sa, &v, &a->data, at->scale, tp->scale, tp->type->eclass == EC_DEC ? tp->digits : 0) != GDK_SUCCEED) {
 				GDKclrerr();
 				return NULL;
 			}
 			a->tpe = *tp;
 			a->isnull = 0;
-			VALcopy(NULL, &a->data, &v);
+			VALcopy(sa, &a->data, &v);
 			if (!v.bat && ATOMextern(v.vtype))
 				assert(0);
 			return a;

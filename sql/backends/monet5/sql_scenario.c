@@ -568,10 +568,10 @@ SQLprepareClient(Client c, const char *pwhash, const char *challenge, const char
 				sql_schema *s = mvc_bind_schema(m, "sys");
 				sql_var *var = find_global_var(m, s, "current_timezone");
 				ValRecord val;
-				VALinit(NULL, &val, TYPE_lng, &(lng){1000 * value});
+				VALinit(m->sa, &val, TYPE_lng, &(lng){1000 * value});
 				if ((msg = sql_update_var(m, s, "current_timezone", &val)))
 					goto bailout1;
-				sqlvar_set(var, &val);
+				sqlvar_set(m->sa, var, &val);
 			} else {
 				msg = createException(SQL, "SQLprepareClient", SQLSTATE(42000) "unexpected handshake option: %s", tok);
 				goto bailout1;

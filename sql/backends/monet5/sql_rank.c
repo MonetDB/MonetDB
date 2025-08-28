@@ -877,7 +877,7 @@ SQLanalytical_func(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, cons
 		ValRecord *res = &(stk)->stk[(pci)->argv[0]];
 		ValRecord *in = &(stk)->stk[(pci)->argv[1]];
 
-		if (!VALcopy(NULL, res, in))
+		if (!VALcopy(mb->ma, res, in))
 			msg = createException(SQL, op, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
@@ -933,7 +933,7 @@ do_limit_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const ch
 		ValRecord *res = &(stk)->stk[(pci)->argv[0]];
 		ValRecord *in = &(stk)->stk[(pci)->argv[1]];
 
-		if (!VALcopy(NULL, res, in))
+		if (!VALcopy(mb->ma, res, in))
 			msg = createException(SQL, op, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
@@ -962,7 +962,7 @@ SQLlast_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			throw(SQL, "sql.nth_value", SQLSTATE(42000) "nth_value must be greater than zero"); \
 		if (VALisnil(nth) || val > 1) {									\
 			ValRecord def = {.vtype = TYPE_void,};						\
-			if (!VALinit(NULL, &def, tp1, ATOMnilptr(tp1)) || !VALcopy(res, &def)) { \
+			if (!VALinit(NULL, &def, tp1, ATOMnilptr(tp1)) || !VALcopy(NULL, res, &def)) { \
 				VALclear(&def);											\
 				throw(SQL, "sql.nth_value", SQLSTATE(HY013) MAL_MALLOC_FAIL); \
 			}															\
@@ -1041,14 +1041,14 @@ SQLnth_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 		if (is_lng_nil(nth) || nth > 1) {
 			ValRecord def = {.vtype = TYPE_void,};
-			if (!VALinit(NULL, &def, tpe, ATOMnilptr(tpe)) || !VALcopy(NULL, res, &def)) {
+			if (!VALinit(mb->ma, &def, tpe, ATOMnilptr(tpe)) || !VALcopy(mb->ma, res, &def)) {
 				VALclear(&def);
 				msg = createException(SQL, "sql.nth_value", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto bailout;
 			}
 			VALclear(&def);
 		} else {
-			if (!VALcopy(NULL, res, in))
+			if (!VALcopy(mb->ma, res, in))
 				msg = createException(SQL, "sql.nth_value", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 	}
@@ -1090,7 +1090,7 @@ do_lead_lag(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char 
 	void *restrict default_value;
 	BAT *(*gdk_call)(BAT *, BAT *, BUN, const void* restrict, int) = func;
 	BAT *b = NULL, *l = NULL, *d = NULL, *p = NULL, *r = NULL;
-	bool tp2_is_a_bat, free_default_value = false;
+	bool tp2_is_a_bat;
 	str msg = MAL_SUCCEED;
 	bat *res = NULL;
 
@@ -1146,10 +1146,9 @@ do_lead_lag(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char 
 			if (bpi.count > 0) {
 				p = BUNtail(bpi, 0);
 				default_size = ATOMlen(tp3, p);
-				default_value = GDKmalloc(default_size);
+				default_value = ma_alloc(mb->ma, default_size);
 				if (default_value)
 					memcpy(default_value, p, default_size);
-				free_default_value = true;
 			} else {
 				default_value = (void *)ATOMnilptr(bpi.type);
 			}
@@ -1198,20 +1197,18 @@ do_lead_lag(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char 
 		ValRecord *in = &(stk)->stk[(pci)->argv[1]];
 
 		if (l_value == 0) {
-			if (!VALcopy(NULL, res, in))
+			if (!VALcopy(mb->ma, res, in))
 				msg = createException(SQL, op, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		} else {
 			ValRecord def = {.vtype = TYPE_void,};
 
-			if (!VALinit(NULL, &def, tp1, default_value) || !VALcopy(NULL, res, &def))
+			if (!VALinit(mb->ma, &def, tp1, default_value) || !VALcopy(mb->ma, res, &def))
 				msg = createException(SQL, op, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			VALclear(&def);
 		}
 	}
 
 bailout:
-	if (free_default_value)
-		GDKfree(default_value);
 	unfix_inputs(4, b, p, l, d);
 	finalize_output(res, r, msg);
 	return msg;
@@ -1615,7 +1612,7 @@ SQLavginteger(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #ifdef HAVE_HGE
 		case TYPE_hge:
 #endif
-			if (!VALcopy(NULL, res, in))
+			if (!VALcopy(mb->ma, res, in))
 				msg = createException(SQL, "sql.avg", SQLSTATE(HY013) MAL_MALLOC_FAIL); /* malloc failure should never happen, but let it be here */
 			break;
 		default:

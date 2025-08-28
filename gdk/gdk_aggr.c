@@ -2029,7 +2029,7 @@ BATgroupavg3(BAT **avgp, BAT **remp, BAT **cntp, BAT *b, BAT *g, BAT *e, BAT *s,
 	}
 	ValRecord zero;
 	(void) VALinit(NULL, &zero, TYPE_bte, &(bte){0});
-	bn = BATconstant(min, b->ttype, VALconvert(b->ttype, &zero),
+	bn = BATconstant(min, b->ttype, VALconvert(NULL, b->ttype, &zero),
 			 ngrp, TRANSIENT);
 	rn = BATconstant(min, TYPE_lng, &(lng){0}, ngrp, TRANSIENT);
 	cn = BATconstant(min, TYPE_lng, &(lng){0}, ngrp, TRANSIENT);
@@ -2657,7 +2657,8 @@ BATgroupavg3combine(BAT *avg, BAT *rem, BAT *cnt, BAT *g, BAT *e, bool skip_nils
 	}
 	ValRecord zero;
 	(void) VALinit(NULL, &zero, TYPE_bte, &(bte){0});
-	bn = BATconstant(min, avg->ttype, VALconvert(avg->ttype, &zero),
+	bn = BATconstant(min, avg->ttype,
+			VALconvert(NULL, avg->ttype, &zero),
 			 ngrp, TRANSIENT);
 	/* rn and cn are temporary storage of intermediates */
 	rn = BATconstant(min, TYPE_lng, &(lng){0}, ngrp, TRANSIENT);

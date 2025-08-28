@@ -130,11 +130,18 @@ VALget(ValPtr v)
 void
 VALclear(ValPtr v)
 {
-	//if (v->allocated && !v->bat && ATOMextern(v->vtype)) {
-	//	if (v->val.pval && v->val.pval != ATOMnilptr(v->vtype))
-	//		GDKfree(v->val.pval);
-	//}
-	VALempty(v);
+    if (v->allocated && !v->bat && ATOMextern(v->vtype)) {
+        if (v->vtype == TYPE_str) {
+            if (v->val.sval && v->val.sval != ATOMnilptr(v->vtype)) {
+                GDKfree(v->val.sval);
+            }
+        } else {
+            if (v->val.pval && v->val.pval != ATOMnilptr(v->vtype)) {
+                GDKfree(v->val.pval);
+            }
+        }
+    }
+    VALempty(v);
 }
 
 /* Initialize V to an empty value (type void, value nil).  See
@@ -156,35 +163,35 @@ VALempty(ValPtr v)
  *
  * Returns NULL In case of (malloc) failure. */
 ValPtr
-VALcopy(allocator *va, ValPtr d, const ValRecord *s)
+VALcopy(allocator *ma, ValPtr d, const ValRecord *s)
 {
 	if (d == s) {
 		return d;
 	}
-	allocator *ma = va? va : MT_thread_getallocator();
-	assert(ma);
 	*d = *s;
-	d->allocated = false;
 	if (s->bat || !ATOMextern(s->vtype)) {
 		//*d = *s;
+		d->allocated = false;
 	} else if (s->val.pval == NULL) {
 		return VALinit(ma, d, s->vtype, ATOMnilptr(s->vtype));
 	} else if (s->vtype == TYPE_str) {
 		const char *p = s->val.sval;
 		d->vtype = TYPE_str;
 		d->len = strLen(p);
-		d->val.sval = ma_alloc(ma, d->len);
+		d->val.sval = ma? ma_alloc(ma, d->len) : GDKmalloc(d->len);
 		if (d->val.sval == NULL)
 			return NULL;
 		memcpy(d->val.sval, p, d->len);
+		d->allocated = !ma;
 	} else {
 		const void *p = s->val.pval;
 		d->vtype = s->vtype;
 		d->len = ATOMlen(d->vtype, p);
-		d->val.pval = ma_alloc(ma, d->len);
+		d->val.pval = ma? ma_alloc(ma, d->len) : GDKmalloc(d->len);
 		if (d->val.pval == NULL)
 			return NULL;
 		memcpy(d->val.pval, p, d->len);
+		d->allocated = !ma;
 	}
 	return d;
 }
@@ -196,10 +203,8 @@ VALcopy(allocator *va, ValPtr d, const ValRecord *s)
  *
  * Returns NULL in case of (malloc) failure. */
 ValPtr
-VALinit(allocator *va, ValPtr d, int tpe, const void *s)
+VALinit(allocator *ma, ValPtr d, int tpe, const void *s)
 {
-	allocator *ma = va? va : MT_thread_getallocator();
-	assert(ma);
 	d->bat = false;
 	d->allocated = false;
 	switch (ATOMstorage(d->vtype = tpe)) {
@@ -237,10 +242,12 @@ VALinit(allocator *va, ValPtr d, int tpe, const void *s)
 		break;
 	case TYPE_str:
 		d->len = strLen(s);
-		d->val.sval = ma_alloc(ma, d->len);
+		d->val.sval = ma? ma_alloc(ma, d->len) :
+			GDKmalloc(d->len);
 		if (d->val.sval == NULL)
 			return NULL;
 		memcpy(d->val.sval, s, d->len);
+		d->allocated = !ma;
 		return d;
 	case TYPE_ptr:
 		d->val.pval = *(const ptr *) s;
@@ -249,10 +256,12 @@ VALinit(allocator *va, ValPtr d, int tpe, const void *s)
 	default:
 		assert(ATOMextern(ATOMstorage(tpe)));
 		d->len = ATOMlen(tpe, s);
-		d->val.pval = ma_alloc(ma, d->len);
+		d->val.pval = ma? ma_alloc(ma, d->len) :
+			GDKmalloc(d->len);
 		if (d->val.pval == NULL)
 			return NULL;
 		memcpy(d->val.pval, s, d->len);
+		d->allocated = !ma;
 		return d;
 	}
 	d->len = ATOMsize(d->vtype);
@@ -281,13 +290,13 @@ VALformat(const ValRecord *res)
  * didn't succeed.  If the conversion didn't succeed, the original
  * value is not modified.  Also see VARconvert. */
 ptr
-VALconvert(int typ, ValPtr t)
+VALconvert(allocator *ma, int typ, ValPtr t)
 {
 	int src_tpe = t->vtype;
 	ValRecord dst = { .vtype = typ };
 
 	/* first convert into a new location */
-	if (VARconvert(&dst, t, 0, 0, 0) != GDK_SUCCEED)
+	if (VARconvert(ma, &dst, t, 0, 0, 0) != GDK_SUCCEED)
 		return NULL;
 
 	/* then maybe free the old */

@@ -640,7 +640,7 @@ typedef struct {
 } *ValPtr, ValRecord;
 
 /* interface definitions */
-gdk_export void *VALconvert(int typ, ValPtr t);
+gdk_export void *VALconvert(allocator *ma, int typ, ValPtr t);
 gdk_export char *VALformat(const ValRecord *res)
 	__attribute__((__warn_unused_result__));
 gdk_export void VALempty(ValPtr v)

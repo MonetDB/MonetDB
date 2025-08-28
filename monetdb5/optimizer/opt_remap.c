@@ -421,6 +421,7 @@ OPTremapSwitched(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 
 			/* always restore the allocated function name */
 			getVarConstant(mb, getArg(pci, 2)).val.sval = fcn;
+			getVarConstant(mb, getArg(pci, 2)).allocated = false;
 			getVarConstant(mb, getArg(pci, 2)).len = strlen(fcn);
 
 			if (r)

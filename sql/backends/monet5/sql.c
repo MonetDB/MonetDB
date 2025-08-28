@@ -824,7 +824,7 @@ setVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 			if ((msg = sql_update_var(m, s, varname, ptr)))
 				return msg;
-			if (!sqlvar_set(var, ptr))
+			if (!sqlvar_set(mb->ma, var, ptr))
 				throw(SQL, "sql.setVariable", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		return MAL_SUCCEED;
@@ -858,7 +858,6 @@ getVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL, "sql.getVariable", SQLSTATE(42100) "Variable '%s.%s' unknown", sname, varname);
 	src = &(var->var.data);
 	dst = &stk->stk[getArg(pci, 0)];
-	// which alloc to use?
 	if (VALcopy(mb->ma, dst, src) == NULL)
 		throw(MAL, "sql.getVariable", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
@@ -900,9 +899,9 @@ sql_variables(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			gdk_return res;
 
 			if (value.tpe.type->localtype != TYPE_str) {
-				ptr ok = VALcopy(NULL, &val, myptr);
+				ptr ok = VALcopy(mb->ma, &val, myptr);
 				if (ok)
-					ok = VALconvert(TYPE_str, &val);
+					ok = VALconvert(mb->ma, TYPE_str, &val);
 				if (!ok) {
 					VALclear(&val);
 					msg = createException(SQL, "sql.variables", SQLSTATE(HY013) "Failed to convert variable '%s.%s' into a string", var->sname, var->name);

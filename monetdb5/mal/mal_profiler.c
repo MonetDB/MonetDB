@@ -236,12 +236,14 @@ format_val2json(const Client c, const ValPtr res)
 {
 	char *buf = NULL;
 	size_t sz = 0;
+	MalBlkPtr mb = c->curprg->def;
+	allocator *ma = mb->ma;
 
 	if (BATatoms[res->vtype].atomNull &&
 		(!VALget(res)
 		 || BATatoms[res->vtype].atomCmp(VALget(res),
 										 BATatoms[res->vtype].atomNull) == 0))
-		return MA_STRDUP(c->ma, "\"nil\"");
+		return MA_STRDUP(ma, "\"nil\"");
 
 	bool use_external = true;
 
@@ -267,8 +269,8 @@ format_val2json(const Client c, const ValPtr res)
 
 	ValRecord val;
 	/* NOTE c->ta maybe active from caller */
-	allocator *ta = (allocator_tmp_active(c->ta)) ? c->ta : NULL;
-	if (VALinit(ta, &val, TYPE_str, buf) == NULL) {
+	//allocator *ta = (allocator_tmp_active(c->ta)) ? c->ta : NULL;
+	if (VALinit(ma, &val, TYPE_str, buf) == NULL) {
 		//GDKfree(buf);
 		return NULL;
 	}

@@ -840,7 +840,7 @@ trimMalVariables(MalBlkPtr mb, MalStkPtr stk)
 /* Converts the constant in vr to the MAL type type.  Conversion is
  * done in the vr struct. */
 str
-convertConstant(int type, ValPtr vr)
+convertConstant(allocator *ma, int type, ValPtr vr)
 {
 	if (type > GDKatomcnt)
 		throw(SYNTAX, "convertConstant", "type index out of bound");
@@ -872,7 +872,7 @@ convertConstant(int type, ValPtr vr)
 #endif
 		throw(SYNTAX, "convertConstant", "missing type");
 	}
-	if (VALconvert(type, vr) == NULL) {
+	if (VALconvert(ma, type, vr) == NULL) {
 		if (vr->vtype == TYPE_str)
 			throw(SYNTAX, "convertConstant", "parse error in '%s'", vr->val.sval);
 		throw(SYNTAX, "convertConstant", "coercion failed");
@@ -938,7 +938,7 @@ defConstant(MalBlkPtr mb, int type, ValPtr cst)
 	} else if (cst->vtype != type && !isPolyType(type)) {
 		int otype = cst->vtype;
 		assert(type != TYPE_any);	/* help Coverity */
-		msg = convertConstant(getBatType(type), cst);
+		msg = convertConstant(mb->ma, getBatType(type), cst);
 		if (msg) {
 			str ft, tt;			/* free old value */
 			ft = getTypeName(mb->ma, otype);

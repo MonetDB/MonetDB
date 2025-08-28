@@ -186,7 +186,7 @@ mal_export void clearVariable(MalBlkPtr mb, int varid);
 mal_export int cpyConstant(MalBlkPtr mb, VarPtr vr);
 mal_export int defConstant(MalBlkPtr mb, int type, ValPtr cst);
 mal_export int fndConstant(MalBlkPtr mb, const ValRecord *cst, int depth);
-mal_export str convertConstant(malType type, ValPtr vr);
+mal_export str convertConstant(allocator *ma, malType type, ValPtr vr);
 
 mal_export void pushInstruction(MalBlkPtr mb, InstrPtr p);
 mal_export InstrPtr pushArgument(MalBlkPtr mb, InstrPtr p, int varid);

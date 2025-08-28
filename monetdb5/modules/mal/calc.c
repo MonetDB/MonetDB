@@ -368,7 +368,7 @@ CMDvarCONVERT(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;
 
 	if (VARconvert
-		(&stk->stk[getArg(pci, 0)], &stk->stk[getArg(pci, 1)], 0, 0,
+		(mb->ma, &stk->stk[getArg(pci, 0)], &stk->stk[getArg(pci, 1)], 0, 0,
 		 0) != GDK_SUCCEED) {
 		snprintf(buf, sizeof(buf), "%s.%s", pci->modname, pci->fcnname);
 		return mythrow(MAL, buf, OPERATION_FAILED);

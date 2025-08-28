@@ -1548,7 +1548,7 @@ BATconvert(BAT *b, BAT *s, int tp,
 }
 
 gdk_return
-VARconvert(ValPtr ret, const ValRecord *v,
+VARconvert(allocator *ma, ValPtr ret, const ValRecord *v,
 	   uint8_t scale1, uint8_t scale2, uint8_t precision)
 {
 	ptr p;
@@ -1558,7 +1558,7 @@ VARconvert(ValPtr ret, const ValRecord *v,
 	assert(!v->bat);
 	if (ret->vtype == TYPE_msk) {
 		ValRecord tmp = { .vtype = TYPE_bit };
-		if (VARconvert(&tmp, v, scale1, scale2, precision) != GDK_SUCCEED)
+		if (VARconvert(ma, &tmp, v, scale1, scale2, precision) != GDK_SUCCEED)
 			return GDK_FAIL;
 		if (is_bte_nil(tmp.val.btval)) {
 			GDKerror("22003!cannot convert nil to msk.\n");
@@ -1568,16 +1568,16 @@ VARconvert(ValPtr ret, const ValRecord *v,
 		ret->len = ATOMsize(TYPE_msk);
 	} else if (v->vtype == TYPE_msk) {
 		ValRecord tmp = { .vtype = TYPE_bit, .val.btval = v->val.mval };
-		if (VARconvert(ret, &tmp, scale1, scale2, precision) != GDK_SUCCEED)
+		if (VARconvert(ma, ret, &tmp, scale1, scale2, precision) != GDK_SUCCEED)
 			return GDK_FAIL;
 	} else if (ret->vtype == TYPE_str) {
 		if (v->vtype == TYPE_void ||
 		    (*ATOMcompare(v->vtype))(VALptr(v),
 					     ATOMnilptr(v->vtype)) == 0) {
-			if (VALinit(NULL, ret, TYPE_str, str_nil) == NULL)
+			if (VALinit(ma, ret, TYPE_str, str_nil) == NULL)
 				return GDK_FAIL;
 		} else if (BATatoms[v->vtype].atomToStr == BATatoms[TYPE_str].atomToStr) {
-			if (VALinit(NULL, ret, TYPE_str, v->val.sval) == NULL)
+			if (VALinit(ma, ret, TYPE_str, v->val.sval) == NULL)
 				return GDK_FAIL;
 		} else {
 			ret->len = 0;
@@ -1586,7 +1586,7 @@ VARconvert(ValPtr ret, const ValRecord *v,
 							    &ret->len,
 							    VALptr(v),
 							    false) < 0) {
-				GDKfree(ret->val.sval);
+				//GDKfree(ret->val.sval);
 				ret->val.sval = NULL;
 				ret->len = 0;
 				return GDK_FAIL;
@@ -1600,11 +1600,11 @@ VARconvert(ValPtr ret, const ValRecord *v,
 		ret->val.oval = oid_nil;
 		ret->len = ATOMsize(TYPE_void);
 	} else if (v->vtype == TYPE_void) {
-		if (VALinit(NULL, ret, ret->vtype, ATOMnilptr(ret->vtype)) == NULL)
+		if (VALinit(ma, ret, ret->vtype, ATOMnilptr(ret->vtype)) == NULL)
 			return GDK_FAIL;
 	} else if (v->vtype == TYPE_str) {
 		if (strNil(v->val.sval)) {
-			if (VALinit(NULL, ret, ret->vtype, ATOMnilptr(ret->vtype)) == NULL)
+			if (VALinit(ma, ret, ret->vtype, ATOMnilptr(ret->vtype)) == NULL)
 				return GDK_FAIL;
 		} else if (ATOMstorage(ret->vtype) == TYPE_ptr) {
 			nils = BUN_NONE + 1;
@@ -1625,8 +1625,8 @@ VARconvert(ValPtr ret, const ValRecord *v,
 			if ((l = (*BATatoms[ret->vtype].atomFromStr)(
 				     v->val.sval, &len, &p, false)) < 0 ||
 			    l < (ssize_t) strlen(v->val.sval)) {
-				if (ATOMextern(ret->vtype))
-					GDKfree(p);
+				//if (ATOMextern(ret->vtype))
+				//	GDKfree(p);
 				GDKclrerr();
 				size_t sz = escapedStrlen(v->val.sval, NULL, NULL, '\'');
 				char *bf = GDKmalloc(sz + 1);
@@ -1647,8 +1647,10 @@ VARconvert(ValPtr ret, const ValRecord *v,
 				assert(ATOMextern(ret->vtype) ||
 				       p == VALget(ret));
 				ret->len = (int) len;
-				if (ATOMextern(ret->vtype))
+				if (ATOMextern(ret->vtype)) {
 					VALset(ret, ret->vtype, p);
+					ret->allocated = false;
+				}
 			}
 		}
 	} else {
@@ -1666,6 +1668,6 @@ VARconvert(ValPtr ret, const ValRecord *v,
 			 ATOMname(v->vtype), ATOMname(ret->vtype));
 		return GDK_FAIL;
 	}
-	ret->allocated = true;
+	//ret->allocated = !ma;
 	return nils == BUN_NONE ? GDK_FAIL : GDK_SUCCEED;
 }

@@ -119,11 +119,18 @@ clearStack(MalStkPtr s)
 		if (v->bat) {
 			BBPrelease(v->val.bval);
 			v->bat = false;
-		} else if (v->allocated && ATOMextern(v->vtype) && v->val.pval) {
-			// GDKfree(v->val.pval);
-			v->vtype = 0;
-			v->val.pval = NULL;
+		} else if (v->allocated && ATOMextern(v->vtype)) {
+			if (v->vtype == TYPE_str && v->val.sval) {
+				GDKfree(v->val.sval);
+				v->val.sval = NULL;
+			}
+			else if (v->val.pval) {
+				GDKfree(v->val.pval);
+				v->val.pval = NULL;
+			}
+			v->allocated = false;
 		}
+		v->vtype = 0;
 	}
 	s->stkbot = 0;
 }

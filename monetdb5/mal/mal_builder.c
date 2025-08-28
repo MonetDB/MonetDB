@@ -593,7 +593,7 @@ pushNilType(MalBlkPtr mb, InstrPtr q, char *tpe)
 	} else {
 		ValRecord cst = { .vtype = TYPE_void, .val.oval = oid_nil };
 
-		msg = convertConstant(idx, &cst);
+		msg = convertConstant(mb->ma, idx, &cst);
 		if (msg == MAL_SUCCEED) {
 			_t = defConstant(mb, idx, &cst);
 			if (_t >= 0) {
@@ -617,7 +617,7 @@ pushType(MalBlkPtr mb, InstrPtr q, int tpe)
 	if (q == NULL || mb->errors)
 		return q;
 	ValRecord cst = { .vtype = TYPE_void, .val.oval = oid_nil };
-	msg = convertConstant(tpe, &cst);
+	msg = convertConstant(mb->ma, tpe, &cst);
 	if (msg != MAL_SUCCEED) {
 		addMalException(mb, msg);
 		freeException(msg);
@@ -639,7 +639,7 @@ pushZero(MalBlkPtr mb, InstrPtr q, int tpe)
 	if (q == NULL || mb->errors)
 		return q;
 	ValRecord cst = { .vtype = TYPE_int, .val.ival = 0 };
-	msg = convertConstant(tpe, &cst);
+	msg = convertConstant(mb->ma, tpe, &cst);
 	if (msg != MAL_SUCCEED) {
 		addMalException(mb, msg);
 		freeException(msg);
