@@ -16,8 +16,9 @@
 #include "mal_interpreter.h"
 
 static str
-INETstr2inet4(inet4 *ret, const char *const *s)
+INETstr2inet4(Client ctx, inet4 *ret, const char *const *s)
 {
+	(void) ctx;
 	size_t l = sizeof(inet4);
 
 	if (BATatoms[TYPE_inet4].atomFromStr(*s, &l, (void **) &ret, false) > 0) {
@@ -27,8 +28,9 @@ INETstr2inet4(inet4 *ret, const char *const *s)
 }
 
 static str
-INETinet42str(char **ret, const inet4 *val)
+INETinet42str(Client ctx, char **ret, const inet4 *val)
 {
+	(void) ctx;
 	size_t l = 0;
 	*ret = NULL;
 	if (BATatoms[TYPE_inet4].atomToStr(ret, &l, val, false) < 0)
@@ -37,8 +39,9 @@ INETinet42str(char **ret, const inet4 *val)
 }
 
 static str
-INETinet42inet4(inet4 *ret, const inet4 *val)
+INETinet42inet4(Client ctx, inet4 *ret, const inet4 *val)
 {
+	(void) ctx;
 	*ret = *val;
 	return MAL_SUCCEED;
 }
@@ -83,8 +86,9 @@ inet4containsinet4(const inet4 *ip1, const bte *msk1, const inet4 *ip2, const bt
 }
 
 static str
-INETinet4containsinet4(bit *ret, const inet4 *ip1, const bte *msk1, const inet4 *ip2, const bte *msk2)
+INETinet4containsinet4(Client ctx, bit *ret, const inet4 *ip1, const bte *msk1, const inet4 *ip2, const bte *msk2)
 {
+	(void) ctx;
 	bte r = inet4containsinet4(ip1, msk1, ip2, msk2, true, false);
 	if (r == -1)
 		throw(MAL, "inet46.inet4contains", "Network mask value out of range.\n");
@@ -94,8 +98,9 @@ INETinet4containsinet4(bit *ret, const inet4 *ip1, const bte *msk1, const inet4 
 }
 
 static str
-INETinet4containsinet4nomask(bit *ret, const inet4 *ip1, const inet4 *ip2, const bte *msk2)
+INETinet4containsinet4nomask(Client ctx, bit *ret, const inet4 *ip1, const inet4 *ip2, const bte *msk2)
 {
+	(void) ctx;
 	bte r = inet4containsinet4(ip1, &(bte){32}, ip2, msk2, true, false);
 	if (r == -1)
 		throw(MAL, "inet46.inet4contains", "Network mask value out of range.\n");
@@ -105,8 +110,9 @@ INETinet4containsinet4nomask(bit *ret, const inet4 *ip1, const inet4 *ip2, const
 }
 
 static str
-INETinet4containsorequalinet4(bit *ret, const inet4 *ip1, const bte *msk1, const inet4 *ip2, const bte *msk2)
+INETinet4containsorequalinet4(Client ctx, bit *ret, const inet4 *ip1, const bte *msk1, const inet4 *ip2, const bte *msk2)
 {
+	(void) ctx;
 	bte r = inet4containsinet4(ip1, msk1, ip2, msk2, false, false);
 	if (r == -1)
 		throw(MAL, "inet46.inet4containsorequal", "Network mask value out of range.\n");
@@ -116,8 +122,9 @@ INETinet4containsorequalinet4(bit *ret, const inet4 *ip1, const bte *msk1, const
 }
 
 static str
-INETinet4containsorequalinet4nomask(bit *ret, const inet4 *ip1, const inet4 *ip2, const bte *msk2)
+INETinet4containsorequalinet4nomask(Client ctx, bit *ret, const inet4 *ip1, const inet4 *ip2, const bte *msk2)
 {
+	(void) ctx;
 	bte r = inet4containsinet4(ip1, &(bte){32}, ip2, msk2, false, false);
 	if (r == -1)
 		throw(MAL, "inet46.inet4containsorequal", "Network mask value out of range.\n");
@@ -127,8 +134,9 @@ INETinet4containsorequalinet4nomask(bit *ret, const inet4 *ip1, const inet4 *ip2
 }
 
 static str
-INETinet4containssymmetricinet4(bit *ret, const inet4 *ip1, const bte *msk1, const inet4 *ip2, const bte *msk2)
+INETinet4containssymmetricinet4(Client ctx, bit *ret, const inet4 *ip1, const bte *msk1, const inet4 *ip2, const bte *msk2)
 {
+	(void) ctx;
 	bte r = inet4containsinet4(ip1, msk1, ip2, msk2, false, true);
 	if (r == -1)
 		throw(MAL, "inet46.inet4containssymmetric", "Network mask value out of range.\n");
@@ -138,8 +146,9 @@ INETinet4containssymmetricinet4(bit *ret, const inet4 *ip1, const bte *msk1, con
 }
 
 static str
-INETstr2inet4_bulk(bat *ret, const bat *bid, const bat *sid)
+INETstr2inet4_bulk(Client ctx, bat *ret, const bat *bid, const bat *sid)
 {
+	(void) ctx;
 	BAT *b = NULL, *s = NULL, *dst = NULL;
 	BATiter bi;
 	str msg = NULL;
@@ -219,8 +228,9 @@ INETstr2inet4_bulk(bat *ret, const bat *bid, const bat *sid)
 }
 
 static str
-INETinet42inet4_bulk(bat *ret, const bat *bid, const bat *sid)
+INETinet42inet4_bulk(Client ctx, bat *ret, const bat *bid, const bat *sid)
 {
+	(void) ctx;
 	BAT *b = NULL, *s = NULL, *dst = NULL;
 	inet4 *restrict bv, *restrict dv;
 	str msg = NULL;
@@ -294,8 +304,9 @@ INETinet42inet4_bulk(bat *ret, const bat *bid, const bat *sid)
 }
 
 static str
-INETinet42str_bulk(bat *ret, const bat *bid, const bat *sid)
+INETinet42str_bulk(Client ctx, bat *ret, const bat *bid, const bat *sid)
 {
+	(void) ctx;
 	BAT *b = NULL, *s = NULL, *dst = NULL;
 	str msg = NULL;
 	inet4 *restrict vals;
@@ -516,32 +527,36 @@ inet4containsinet4_bulk(bat *ret, const bat *bip1, const bat *bmsk1, const bat *
 }
 
 static str
-INETinet4containsinet4_bulk(bat *ret, const bat *bip1, const bat *bmsk1, const bat *sid1,
+INETinet4containsinet4_bulk(Client ctx, bat *ret, const bat *bip1, const bat *bmsk1, const bat *sid1,
 							const bat *bip2, const bat *bmsk2, const bat *sid2)
 {
+	(void) ctx;
 	return inet4containsinet4_bulk(ret, bip1, bmsk1, sid1, bip2, bmsk2, sid2,
 								   true, false);
 }
 
 static str
-INETinet4containsorequalinet4_bulk(bat *ret, const bat *bip1, const bat *bmsk1, const bat *sid1,
+INETinet4containsorequalinet4_bulk(Client ctx, bat *ret, const bat *bip1, const bat *bmsk1, const bat *sid1,
 							const bat *bip2, const bat *bmsk2, const bat *sid2)
 {
+	(void) ctx;
 	return inet4containsinet4_bulk(ret, bip1, bmsk1, sid1, bip2, bmsk2, sid2,
 								   false, false);
 }
 
 static str
-INETinet4containssymmetricinet4_bulk(bat *ret, const bat *bip1, const bat *bmsk1, const bat *sid1,
+INETinet4containssymmetricinet4_bulk(Client ctx, bat *ret, const bat *bip1, const bat *bmsk1, const bat *sid1,
 							const bat *bip2, const bat *bmsk2, const bat *sid2)
 {
+	(void) ctx;
 	return inet4containsinet4_bulk(ret, bip1, bmsk1, sid1, bip2, bmsk2, sid2,
 								   false, true);
 }
 
 static str
-INETstr2inet6(inet6 *ret, const char *const *s)
+INETstr2inet6(Client ctx, inet6 *ret, const char *const *s)
 {
+	(void) ctx;
 	size_t l = sizeof(inet6);
 
 	if (BATatoms[TYPE_inet6].atomFromStr(*s, &l, (void **) &ret, false) > 0) {
@@ -551,8 +566,9 @@ INETstr2inet6(inet6 *ret, const char *const *s)
 }
 
 static str
-INETinet62str(char **ret, const inet6 *val)
+INETinet62str(Client ctx, char **ret, const inet6 *val)
 {
+	(void) ctx;
 	size_t l = 0;
 	*ret = NULL;
 	if (BATatoms[TYPE_inet6].atomToStr(ret, &l, val, false) < 0)
@@ -561,8 +577,9 @@ INETinet62str(char **ret, const inet6 *val)
 }
 
 static str
-INETinet42inet6(inet6 *ret, const inet4 *s)
+INETinet42inet6(Client ctx, inet6 *ret, const inet4 *s)
 {
+	(void) ctx;
 	/* could use VALconvert like the function below, but this has less
 	 * overhead */
 	if (is_inet4_nil(*s))
@@ -577,11 +594,12 @@ INETinet42inet6(inet6 *ret, const inet4 *s)
 }
 
 static str
-INETinet62inet4(inet4 *ret, const inet6 *s)
+INETinet62inet4(Client ctx, inet4 *ret, const inet6 *s)
 {
+	allocator *ma = ctx->curprg->def->ma;
 	ValRecord val;
-	VALinit(NULL, &val, TYPE_inet6, s);
-	if (VALconvert(NULL, TYPE_inet4, &val) == NULL)
+	VALinit(ma, &val, TYPE_inet6, s);
+	if (VALconvert(ma, TYPE_inet4, &val) == NULL)
 		throw(MAL, "inet46.inet4",
 			  SQLSTATE(22003) "overflow in conversion to inet4");
 	*ret = val.val.ip4val;
@@ -628,8 +646,9 @@ inet6containsinet6(const inet6 *ip1, const sht *msk1, const inet6 *ip2, const sh
 }
 
 static str
-INETinet6containsinet6(bit *ret, const inet6 *ip1, const sht *msk1, const inet6 *ip2, const sht *msk2)
+INETinet6containsinet6(Client ctx, bit *ret, const inet6 *ip1, const sht *msk1, const inet6 *ip2, const sht *msk2)
 {
+	(void) ctx;
 	bte r = inet6containsinet6(ip1, msk1, ip2, msk2, true, false);
 	if (r == -1)
 		throw(MAL, "inet46.inet6contains", "Network mask value out of range.\n");
@@ -639,8 +658,9 @@ INETinet6containsinet6(bit *ret, const inet6 *ip1, const sht *msk1, const inet6 
 }
 
 static str
-INETinet6containsinet6nomask(bit *ret, const inet6 *ip1, const inet6 *ip2, const sht *msk2)
+INETinet6containsinet6nomask(Client ctx, bit *ret, const inet6 *ip1, const inet6 *ip2, const sht *msk2)
 {
+	(void) ctx;
 	bte r = inet6containsinet6(ip1, &(sht){128}, ip2, msk2, true, false);
 	if (r == -1)
 		throw(MAL, "inet46.inet6contains", "Network mask value out of range.\n");
@@ -650,8 +670,9 @@ INETinet6containsinet6nomask(bit *ret, const inet6 *ip1, const inet6 *ip2, const
 }
 
 static str
-INETinet6containsorequalinet6(bit *ret, const inet6 *ip1, const sht *msk1, const inet6 *ip2, const sht *msk2)
+INETinet6containsorequalinet6(Client ctx, bit *ret, const inet6 *ip1, const sht *msk1, const inet6 *ip2, const sht *msk2)
 {
+	(void) ctx;
 	bte r = inet6containsinet6(ip1, msk1, ip2, msk2, false, false);
 	if (r == -1)
 		throw(MAL, "inet46.inet6containsorequal", "Network mask value out of range.\n");
@@ -661,8 +682,9 @@ INETinet6containsorequalinet6(bit *ret, const inet6 *ip1, const sht *msk1, const
 }
 
 static str
-INETinet6containsorequalinet6nomask(bit *ret, const inet6 *ip1, const inet6 *ip2, const sht *msk2)
+INETinet6containsorequalinet6nomask(Client ctx, bit *ret, const inet6 *ip1, const inet6 *ip2, const sht *msk2)
 {
+	(void) ctx;
 	bte r = inet6containsinet6(ip1, &(sht){128}, ip2, msk2, false, false);
 	if (r == -1)
 		throw(MAL, "inet46.inet6containsorequal", "Network mask value out of range.\n");
@@ -672,8 +694,9 @@ INETinet6containsorequalinet6nomask(bit *ret, const inet6 *ip1, const inet6 *ip2
 }
 
 static str
-INETinet6containssymmetricinet6(bit *ret, const inet6 *ip1, const sht *msk1, const inet6 *ip2, const sht *msk2)
+INETinet6containssymmetricinet6(Client ctx, bit *ret, const inet6 *ip1, const sht *msk1, const inet6 *ip2, const sht *msk2)
 {
+	(void) ctx;
 	bte r = inet6containsinet6(ip1, msk1, ip2, msk2, false, true);
 	if (r == -1)
 		throw(MAL, "inet46.inet6containssymmetric", "Network mask value out of range.\n");
@@ -683,8 +706,9 @@ INETinet6containssymmetricinet6(bit *ret, const inet6 *ip1, const sht *msk1, con
 }
 
 static str
-INETinet42inet6_bulk(bat *ret, const bat *bid, const bat *sid)
+INETinet42inet6_bulk(Client ctx, bat *ret, const bat *bid, const bat *sid)
 {
+	(void) ctx;
 	BAT *b = NULL, *s = NULL, *dst = NULL;
 	str msg = NULL;
 
@@ -718,8 +742,9 @@ INETinet42inet6_bulk(bat *ret, const bat *bid, const bat *sid)
 }
 
 static str
-INETinet62inet4_bulk(bat *ret, const bat *bid, const bat *sid)
+INETinet62inet4_bulk(Client ctx, bat *ret, const bat *bid, const bat *sid)
 {
+	(void) ctx;
 	BAT *b = NULL, *s = NULL, *dst = NULL;
 	str msg = NULL;
 
@@ -753,15 +778,17 @@ INETinet62inet4_bulk(bat *ret, const bat *bid, const bat *sid)
 }
 
 static str
-INETinet62inet6(inet6 *ret, const inet6 *val)
+INETinet62inet6(Client ctx, inet6 *ret, const inet6 *val)
 {
+	(void) ctx;
 	*ret = *val;
 	return MAL_SUCCEED;
 }
 
 static str
-INETstr2inet6_bulk(bat *ret, const bat *bid, const bat *sid)
+INETstr2inet6_bulk(Client ctx, bat *ret, const bat *bid, const bat *sid)
 {
+	(void) ctx;
 	BAT *b = NULL, *s = NULL, *dst = NULL;
 	BATiter bi;
 	str msg = NULL;
@@ -841,8 +868,9 @@ INETstr2inet6_bulk(bat *ret, const bat *bid, const bat *sid)
 }
 
 static str
-INETinet62inet6_bulk(bat *ret, const bat *bid, const bat *sid)
+INETinet62inet6_bulk(Client ctx, bat *ret, const bat *bid, const bat *sid)
 {
+	(void) ctx;
 	BAT *b = NULL, *s = NULL, *dst = NULL;
 	inet6 *restrict bv, *restrict dv;
 	str msg = NULL;
@@ -916,8 +944,9 @@ INETinet62inet6_bulk(bat *ret, const bat *bid, const bat *sid)
 }
 
 static str
-INETinet62str_bulk(bat *ret, const bat *bid, const bat *sid)
+INETinet62str_bulk(Client ctx, bat *ret, const bat *bid, const bat *sid)
 {
+	(void) ctx;
 	BAT *b = NULL, *s = NULL, *dst = NULL;
 	str msg = NULL;
 	inet6 *restrict vals;
@@ -1138,25 +1167,28 @@ inet6containsinet6_bulk(bat *ret, const bat *bip1, const bat *bmsk1, const bat *
 }
 
 static str
-INETinet6containsinet6_bulk(bat *ret, const bat *bip1, const bat *bmsk1, const bat *sid1,
+INETinet6containsinet6_bulk(Client ctx,  bat *ret, const bat *bip1, const bat *bmsk1, const bat *sid1,
 							const bat *bip2, const bat *bmsk2, const bat *sid2)
 {
+	(void) ctx;
 	return inet6containsinet6_bulk(ret, bip1, bmsk1, sid1, bip2, bmsk2, sid2,
 								   true, false);
 }
 
 static str
-INETinet6containsorequalinet6_bulk(bat *ret, const bat *bip1, const bat *bmsk1, const bat *sid1,
+INETinet6containsorequalinet6_bulk(Client ctx, bat *ret, const bat *bip1, const bat *bmsk1, const bat *sid1,
 								   const bat *bip2, const bat *bmsk2, const bat *sid2)
 {
+	(void) ctx;
 	return inet6containsinet6_bulk(ret, bip1, bmsk1, sid1, bip2, bmsk2, sid2,
 								   false, false);
 }
 
 static str
-INETinet6containssymmetricinet6_bulk(bat *ret, const bat *bip1, const bat *bmsk1, const bat *sid1,
+INETinet6containssymmetricinet6_bulk(Client ctx, bat *ret, const bat *bip1, const bat *bmsk1, const bat *sid1,
 								   const bat *bip2, const bat *bmsk2, const bat *sid2)
 {
+	(void) ctx;
 	return inet6containsinet6_bulk(ret, bip1, bmsk1, sid1, bip2, bmsk2, sid2,
 								   false, true);
 }
