@@ -56,7 +56,7 @@ OPTremapDirect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int idx,
 		mod += 3;
 
 
-	snprintf(buf, 1024, "bat%s", mod);
+	snprintf(buf, sizeof(buf), "bat%s", mod);
 	bufName = putName(buf);
 	fcnName = putName(fcn);
 	if (bufName == NULL || fcnName == NULL)
@@ -273,7 +273,7 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc)
 					|| q->barrier == LEAVEsymbol)
 					goto terminateMX;
 				if (getModuleId(q)) {
-					snprintf(buf, 1024, "bat%s", getModuleId(q));
+					snprintf(buf, sizeof(buf), "bat%s", getModuleId(q));
 					setModuleId(q, putName(buf));
 					q->typeresolved = false;
 					if (q->retc == 1 &&

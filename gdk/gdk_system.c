@@ -1001,7 +1001,7 @@ MT_create_thread(MT_Id *t, void (*f) (void *), void *arg, enum MT_thr_detach d, 
 		/* overwrite XXXX with thread ID; bottom three bits are
 		 * likely 0, so skip those */
 		char buf[5];
-		snprintf(buf, 5, "%04zu", self->tid % 9999);
+		snprintf(buf, sizeof(buf), "%04zu", self->tid % 9999);
 		memcpy(p, buf, 4);
 	}
 	TRC_DEBUG(THRD, "Create thread \"%s\"\n", self->threadname);

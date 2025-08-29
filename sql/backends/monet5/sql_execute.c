@@ -828,7 +828,7 @@ RAstatement2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			lvars[lentries] = (struct local_var_entry) {.tpe = tpe, .vname = var,};
 			lentries++;
 
-			snprintf(opname, BUFSIZ, "%d%%%s", level, var); /* engineering trick */
+			snprintf(opname, sizeof(opname), "%d%%%s", level, var); /* engineering trick */
 			list_append(ops, exp_var(m->sa, NULL, sa_strdup(m->sa, opname), &tpe, level));
 		}
 	}

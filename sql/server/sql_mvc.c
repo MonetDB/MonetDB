@@ -511,11 +511,11 @@ mvc_commit(mvc *m, int chain, const char *name, bool enabling_auto_commit)
 	assert(m->session->tr->active);	/* only commit an active transaction */
 	TRC_DEBUG(SQL_TRANS,"Commit: %s\n", (name) ? name : "");
 	if(enabling_auto_commit)
-		snprintf(operation, BUFSIZ, "Commit failed while enabling auto_commit: ");
+		snprintf(operation, sizeof(operation), "Commit failed while enabling auto_commit: ");
 	else if(name)
-		snprintf(operation, BUFSIZ, "SAVEPOINT: (%s)", name);
+		snprintf(operation, sizeof(operation), "SAVEPOINT: (%s)", name);
 	else
-		snprintf(operation, BUFSIZ, "COMMIT:");
+		snprintf(operation, sizeof(operation), "COMMIT:");
 
 	if (m->session->status < 0) {
 		msg = createException(SQL, "sql.commit", SQLSTATE(40000) "%s transaction is aborted, will ROLLBACK instead", operation);

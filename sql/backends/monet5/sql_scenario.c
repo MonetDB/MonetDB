@@ -296,7 +296,7 @@ SQLexit(Client c)
 str
 SQLepilogue(Client cntxt, void *ret)
 {
-	const char s[] = "sql", m[] = "msql";
+	static const char s[] = "sql", m[] = "msql";
 	char *msg;
 
 	(void) cntxt;

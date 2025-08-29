@@ -293,7 +293,7 @@ header: %s", nc_strerror(retval));
 		msg = createException(MAL, "netcdf.attach", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto finish;
 	}
-	snprintf(buf, BUFSIZ, INSFILE, (int)fid, esc_str0);
+	snprintf(buf, sizeof(buf), INSFILE, (int)fid, esc_str0);
 	GDKfree(esc_str0);
 	if ( ( msg = SQLstatementIntern(cntxt, s, "netcdf.attach", TRUE, FALSE, NULL))
 		 != MAL_SUCCEED )
@@ -316,7 +316,7 @@ header: %s", nc_strerror(retval));
 			goto finish;
 		}
 
-		snprintf(buf, BUFSIZ, INSDIM, didx, (int)fid, esc_str0, (int)dlen);
+		snprintf(buf, sizeof(buf), INSDIM, didx, (int)fid, esc_str0, (int)dlen);
 		GDKfree(esc_str0);
 		if ( ( msg = SQLstatementIntern(cntxt, s, "netcdf.attach", TRUE, FALSE, NULL))
 			 != MAL_SUCCEED )
@@ -347,7 +347,7 @@ header: %s", nc_strerror(retval));
 			goto finish;
 		}
 
-		snprintf(buf, BUFSIZ, INSVAR, vidx, (int)fid, esc_str0, prim_type_name(vtype), vndims, coord_dim_id);
+		snprintf(buf, sizeof(buf), INSVAR, vidx, (int)fid, esc_str0, prim_type_name(vtype), vndims, coord_dim_id);
 		GDKfree(esc_str0);
 		if ( ( msg = SQLstatementIntern(cntxt, s, "netcdf.attach", TRUE, FALSE, NULL))
 			 != MAL_SUCCEED )
@@ -355,7 +355,7 @@ header: %s", nc_strerror(retval));
 
 		if ( coord_dim_id < 0 ){
 			for (i = 0; i < vndims; i++){
-				snprintf(buf, BUFSIZ, INSVARDIM, vidx, vdims[i], (int)fid, i);
+				snprintf(buf, sizeof(buf), INSVARDIM, vidx, vdims[i], (int)fid, i);
 				if ( ( msg = SQLstatementIntern(cntxt, s, "netcdf.attach", TRUE, FALSE, NULL))
 					 != MAL_SUCCEED )
 					goto finish;
@@ -401,7 +401,7 @@ header: %s", nc_strerror(retval));
 											   aname, nc_strerror(retval));
 					fix_quote(aval, alen);
 					aval[alen] = '\0';
-					snprintf(buf, BUFSIZ, INSATTR, esc_str0, esc_str1, "string", aval, (int)fid, "root");
+					snprintf(buf, sizeof(buf), INSATTR, esc_str0, esc_str1, "string", aval, (int)fid, "root");
 					GDKfree(aval);
 					break;
 
@@ -410,8 +410,8 @@ header: %s", nc_strerror(retval));
 						return createException(MAL, "netcdf.attach",
 											   SQLSTATE(NC000) "Cannot read attribute %s value: %s",
 											   aname, nc_strerror(retval));
-					snprintf(abuf,80,"%d",avalint);
-					snprintf(buf, BUFSIZ, INSATTR, esc_str0, esc_str1, prim_type_name(atype), abuf, (int)fid, "root");
+					snprintf(abuf,sizeof(abuf),"%d",avalint);
+					snprintf(buf, sizeof(buf), INSATTR, esc_str0, esc_str1, prim_type_name(atype), abuf, (int)fid, "root");
 					break;
 
 				case NC_FLOAT:
@@ -419,8 +419,8 @@ header: %s", nc_strerror(retval));
 						return createException(MAL, "netcdf.attach",
 											   SQLSTATE(NC000) "Cannot read attribute %s value: %s",
 											   aname, nc_strerror(retval));
-					snprintf(abuf,80,"%7.2f",avalfl);
-					snprintf(buf, BUFSIZ, INSATTR, esc_str0, esc_str1, prim_type_name(atype), abuf, (int)fid, "root");
+					snprintf(abuf,sizeof(abuf),"%7.2f",avalfl);
+					snprintf(buf, sizeof(buf), INSATTR, esc_str0, esc_str1, prim_type_name(atype), abuf, (int)fid, "root");
 					break;
 
 				case NC_DOUBLE:
@@ -428,8 +428,8 @@ header: %s", nc_strerror(retval));
 						return createException(MAL, "netcdf.attach",
 											   SQLSTATE(NC000) "Cannot read attribute %s value: %s",
 											   aname, nc_strerror(retval));
-					snprintf(abuf,80,"%7.2e",avaldbl);
-					snprintf(buf, BUFSIZ, INSATTR, esc_str0, esc_str1, prim_type_name(atype), abuf, (int)fid, "root");
+					snprintf(abuf,sizeof(abuf),"%7.2e",avaldbl);
+					snprintf(buf, sizeof(buf), INSATTR, esc_str0, esc_str1, prim_type_name(atype), abuf, (int)fid, "root");
 					break;
 
 				default: continue; /* next attribute */
@@ -493,7 +493,7 @@ header: %s", nc_strerror(retval));
 			}
 			fix_quote(aval, alen);
 			aval[alen] = '\0';
-			snprintf(buf, BUFSIZ, INSATTR, "GLOBAL", esc_str0, "string", aval, (int)fid, "root");
+			snprintf(buf, sizeof(buf), INSATTR, "GLOBAL", esc_str0, "string", aval, (int)fid, "root");
 			GDKfree(aval);
 			break;
 
@@ -509,8 +509,8 @@ header: %s", nc_strerror(retval));
 									   SQLSTATE(NC000) "Cannot read global attribute %s of type %s : %s",
 									   aname, prim_type_name(atype), nc_strerror(retval));
 			}
-			snprintf(abuf,80,"%d",avalint);
-			snprintf(buf, BUFSIZ, INSATTR, "GLOBAL", esc_str0, prim_type_name(atype), abuf, (int)fid, "root");
+			snprintf(abuf,sizeof(abuf),"%d",avalint);
+			snprintf(buf, sizeof(buf), INSATTR, "GLOBAL", esc_str0, prim_type_name(atype), abuf, (int)fid, "root");
 			break;
 
 		case NC_FLOAT:
@@ -525,8 +525,8 @@ header: %s", nc_strerror(retval));
 									   SQLSTATE(NC000) "Cannot read global attribute %s of type %s: %s",
 									   aname, prim_type_name(atype), nc_strerror(retval));
 			}
-			snprintf(abuf,80,"%7.2f",avalfl);
-			snprintf(buf, BUFSIZ, INSATTR, "GLOBAL", esc_str0, prim_type_name(atype), abuf, (int)fid, "root");
+			snprintf(abuf,sizeof(abuf),"%7.2f",avalfl);
+			snprintf(buf, sizeof(buf), INSATTR, "GLOBAL", esc_str0, prim_type_name(atype), abuf, (int)fid, "root");
 			break;
 
 		case NC_DOUBLE:
@@ -541,8 +541,8 @@ header: %s", nc_strerror(retval));
 									   SQLSTATE(NC000) "Cannot read global attribute %s value: %s",
 									   aname, nc_strerror(retval));
 			}
-			snprintf(abuf,80,"%7.2e",avaldbl);
-			snprintf(buf, BUFSIZ, INSATTR, "GLOBAL", esc_str0, prim_type_name(atype), abuf, (int)fid, "root");
+			snprintf(abuf,sizeof(abuf),"%7.2e",avaldbl);
+			snprintf(buf, sizeof(buf), INSATTR, "GLOBAL", esc_str0, prim_type_name(atype), abuf, (int)fid, "root");
 			break;
 
 		default: continue; /* next attribute */
@@ -597,7 +597,7 @@ NCDFimportVarStmt(Client ctx, str *sciqlstmt, str *fname, int *varid)
 							   SQLSTATE(NC000) "Cannot read variable %d : %s", *varid, nc_strerror(retval));
 
 
-	j = snprintf(buf, BUFSIZ,"create table %s( ", vname);
+	j = snprintf(buf, sizeof(buf),"create table %s( ", vname);
 
 	for (i = 0; i < vndims; i++){
 		if ((retval = nc_inq_dim(ncid, vdims[i], dname, &dlen)))
@@ -810,9 +810,9 @@ NCDFimportVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 	}
 
-	snprintf(aname, 256, "%s%d", vname, fid);
+	snprintf(aname, sizeof(aname), "%s%d", vname, fid);
 
-	j = snprintf(buf, BUFSIZ,"create table %s.%s( ", sch->base.name, aname);
+	j = snprintf(buf, sizeof(buf),"create table %s.%s( ", sch->base.name, aname);
 
 	for (i = 0; i < vndims; i++){
 		if ((retval = nc_inq_dim(ncid, vdims[i], dname[i], &dlen))) {

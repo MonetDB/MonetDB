@@ -1,6 +1,16 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Tue Aug 26 2025 Sjoerd Mullender <sjoerd@acm.org>
+- There are new types "inet4" and "inet6" which can hold respecitvely
+  IPv4 and IPv6 internet addresses without CIDR network mask
+  information.  Netmask information can be held in a separate column if
+  they are needed.  The 0 address (0.0.0.0 and ::) are used as NULL
+  value and can therefore not be used as addresses.  Bitwise operations
+  (AND, OR, XOR, NOT) are supported on the addresses, and there are
+  various functions to check whether an address is contained in a
+  (sub)net (where an extra CIDR netmask column is also needed).
+
 * Thu Jul 24 2025 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
 - Added the possibility to specify IF NOT EXISTS for the following
   CREATE statements:

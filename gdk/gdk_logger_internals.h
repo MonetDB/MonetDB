@@ -71,6 +71,8 @@ struct logger {
 
 	// synchronized by store->flush
 	bool flushnow;
+	BUN maxupdated;
+	uint32_t *updated;
 	bool flushing;		/* log_flush only */
 	int max_pending, cur_max_pending;
 				/* iff log files pending is larger then

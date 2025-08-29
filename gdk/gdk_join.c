@@ -2095,7 +2095,7 @@ mergejoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 			 !BATtvoid(l) && !BATtvoid(r));
 		lordering = li.sorted && (ri.sorted || !equal_order) ? 1 : -1;
 		rordering = equal_order ? lordering : -lordering;
-		if (!li.nonil && !nil_matches && !nil_on_miss && lvals != NULL) {
+		if (!li.nonil && !nil_matches && !nil_on_miss && lvals != NULL && not_in) {
 			/* find first non-nil */
 			nl = binsearch(NULL, 0, li.type, lvals, lvars, li.width, 0, BATcount(l), nil, li.sorted ? 1 : -1, li.sorted ? 1 : 0);
 			nl = canditer_search(lci, nl + l->hseqbase, true);
@@ -4083,7 +4083,9 @@ bitmaskjoin(BAT *l, BAT *r,
 }
 
 /* Make the implementation choices for various left joins.
- * If r3p is set, this is a "mark join" and *r3p will be a third return value containing a bat with type msk with a bit set for each
+ * If r3p is set, this is a "mark join" and *r3p will be a third return
+ * value containing a bat with type bit that returns the "certainty" of
+ * the match (see BATmarkjoin).
  * nil_matches: nil is an ordinary value that can match;
  * nil_on_miss: outer join: fill in a nil value in case of no match;
  * semi: semi join: return one of potentially more than one matches;

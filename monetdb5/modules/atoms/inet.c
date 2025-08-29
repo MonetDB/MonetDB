@@ -64,9 +64,9 @@ typedef struct _inet {
 #else
 #define is_inet_nil(i) ((i)->q1 == 0 && (i)->q2 == 0 && (i)->q3 == 0 && (i)->q4 == 0 && (i)->mask == 0 && (i)->isnil != 0)
 #endif
-#define in_setnil(i) (i)->q1 = (i)->q2 = (i)->q3 = (i)->q4 = (i)->mask = (i)->filler1 = (i)->filler2 = 0; (i)->isnil = 1
+#define in_setnil(i) (*(i) = (inet) {.isnil = 1})
 
-static const inet inet_nil = { {{0, 0, 0, 0, 0, 0, 0, 1}} };
+static const inet inet_nil = {.isnil = 1};
 
 /**
  * Creates a new inet from the given string.
@@ -340,7 +340,6 @@ INET_comp_LT(Client ctx, bit *retval, const inet *val1, const inet *val2)
 static str
 INET_comp_GT(Client ctx, bit *retval, const inet *val1, const inet *val2)
 {
-	(void) ctx;
 	return (INET_comp_LT(ctx, retval, val2, val1));
 }
 
@@ -350,7 +349,6 @@ INET_comp_GT(Client ctx, bit *retval, const inet *val1, const inet *val2)
 static str
 INET_comp_LE(Client ctx, bit *retval, const inet *val1, const inet *val2)
 {
-	(void) ctx;
 	bit ret;
 
 	INET_comp_LT(ctx, &ret, val1, val2);
@@ -367,7 +365,6 @@ INET_comp_LE(Client ctx, bit *retval, const inet *val1, const inet *val2)
 static str
 INET_comp_GE(Client ctx, bit *retval, const inet *val1, const inet *val2)
 {
-	(void) ctx;
 	bit ret;
 
 	/* warning: we use LT here with swapped arguments to avoid one
@@ -447,7 +444,6 @@ INET_comp_CW(Client ctx, bit *retval, const inet *val1, const inet *val2)
 static str
 INET_comp_CWE(Client ctx, bit *retval, const inet *val1, const inet *val2)
 {
-	(void) ctx;
 	bit ret;
 
 	/* use existing code, not fully optimal, but cheap enough */
@@ -465,7 +461,6 @@ INET_comp_CWE(Client ctx, bit *retval, const inet *val1, const inet *val2)
 static str
 INET_comp_CS(Client ctx, bit *retval, const inet *val1, const inet *val2)
 {
-	(void) ctx;
 	/* swap the input arguments and call the contained within function */
 	return (INET_comp_CW(ctx, retval, val2, val1));
 }
@@ -476,7 +471,6 @@ INET_comp_CS(Client ctx, bit *retval, const inet *val1, const inet *val2)
 static str
 INET_comp_CSE(Client ctx, bit *retval, const inet *val1, const inet *val2)
 {
-	(void) ctx;
 	/* swap the input arguments and call the contained within function */
 	return (INET_comp_CWE(ctx, retval, val2, val1));
 }
@@ -649,7 +643,6 @@ INETnetmask(Client ctx, inet *retval, const inet *val)
 static str
 INEThostmask(Client ctx, inet *retval, const inet *val)
 {
-	(void) ctx;
 	INETnetmask(ctx, retval, val);
 	/* invert the netmask to obtain the host mask */
 	if (!is_inet_nil(retval)) {

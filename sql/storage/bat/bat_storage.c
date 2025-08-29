@@ -95,27 +95,45 @@ transfer_to_systrans(BAT *b)
 }
 
 static void
-lock_table(sqlstore *store, sqlid id)
+lock_table(sqlstore *store, sql_table *t)
 {
-	MT_lock_set(&store->table_locks[id&(NR_TABLE_LOCKS-1)]);
+	(void)store;
+	MT_lock_set(&t->lock);
 }
 
 static void
-unlock_table(sqlstore *store, sqlid id)
+unlock_table(sqlstore *store, sql_table *t)
 {
-	MT_lock_unset(&store->table_locks[id&(NR_TABLE_LOCKS-1)]);
+	(void)store;
+	MT_lock_unset(&t->lock);
 }
 
 static void
-lock_column(sqlstore *store, sqlid id)
+lock_column(sqlstore *store, sql_column *c)
 {
-	MT_lock_set(&store->column_locks[id&(NR_COLUMN_LOCKS-1)]);
+	(void)store;
+	MT_lock_set(&c->lock);
 }
 
 static void
-unlock_column(sqlstore *store, sqlid id)
+unlock_column(sqlstore *store, sql_column *c)
 {
-	MT_lock_unset(&store->column_locks[id&(NR_COLUMN_LOCKS-1)]);
+	(void)store;
+	MT_lock_unset(&c->lock);
+}
+
+static void
+lock_idx(sqlstore *store, sql_idx *c)
+{
+	(void)store;
+	MT_lock_set(&c->lock);
+}
+
+static void
+unlock_idx(sqlstore *store, sql_idx *c)
+{
+	(void)store;
+	MT_lock_unset(&c->lock);
 }
 
 static void
@@ -508,7 +526,7 @@ segs_end( segments *segs, sql_trans *tr, sql_table *table)
 
 	/* because a table can grow rows over the time a transaction is running, we need to find the last valid segment, to
 	 * keep all of the parts aligned */
-	lock_table(tr->store, table->base.id);
+	lock_table(tr->store, table);
 	segment *s = segs->h, *l = NULL;
 
 	if (segs->t && SEG_IS_VALID(segs->t, tr))
@@ -520,7 +538,7 @@ segs_end( segments *segs, sql_trans *tr, sql_table *table)
 	}
 	if (l)
 		cnt = l->end;
-	unlock_table(tr->store, table->base.id);
+	unlock_table(tr->store, table);
 	return cnt;
 }
 
@@ -671,9 +689,9 @@ count_col(sql_trans *tr, sql_column *c, int access)
 		return d->segs->t?d->segs->t->end:0;
 	if (access == CNT_ACTIVE) {
 		size_t cnt = segs_end(d->segs, tr, c->t);
-		lock_table(tr->store, c->t->base.id);
+		lock_table(tr->store, c->t);
 		cnt -= count_deletes_in_range(d->segs->h, tr, 0, cnt);
-		unlock_table(tr->store, c->t->base.id);
+		unlock_table(tr->store, c->t);
 		return cnt;
 	}
 	return segs_end(d->segs, tr, c->t);
@@ -911,13 +929,13 @@ cs_bind_bat(column_storage *cs, int access, size_t cnt, bool view)
 static int
 bind_updates(sql_trans *tr, sql_column *c, BAT **ui, BAT **uv)
 {
-	lock_column(tr->store, c->base.id);
+	lock_column(tr->store, c);
 	size_t cnt = count_col(tr, c, 0);
 	sql_delta *d = col_timestamp_delta(tr, c);
 	int type = c->type.type->localtype;
 
 	if (!d) {
-		unlock_column(tr->store, c->base.id);
+		unlock_column(tr->store, c);
 		return LOG_ERR;
 	}
 	if (d->cs.st == ST_DICT) {
@@ -929,7 +947,7 @@ bind_updates(sql_trans *tr, sql_column *c, BAT **ui, BAT **uv)
 	*ui = bind_ubat(tr, d, RD_UPD_ID, type, cnt);
 	*uv = bind_ubat(tr, d, RD_UPD_VAL, type, cnt);
 
-	unlock_column(tr->store, c->base.id);
+	unlock_column(tr->store, c);
 
 	if (*ui == NULL || *uv == NULL) {
 		bat_destroy(*ui);
@@ -942,20 +960,20 @@ bind_updates(sql_trans *tr, sql_column *c, BAT **ui, BAT **uv)
 static int
 bind_updates_idx(sql_trans *tr, sql_idx *i, BAT **ui, BAT **uv)
 {
-	lock_column(tr->store, i->base.id);
+	lock_idx(tr->store, i);
 	size_t cnt = count_idx(tr, i, 0);
 	sql_delta *d = idx_timestamp_delta(tr, i);
 	int type = oid_index(i->type)?TYPE_oid:TYPE_lng;
 
 	if (!d) {
-		unlock_column(tr->store, i->base.id);
+		unlock_idx(tr->store, i);
 		return LOG_ERR;
 	}
 
 	*ui = bind_ubat(tr, d, RD_UPD_ID, type, cnt);
 	*uv = bind_ubat(tr, d, RD_UPD_VAL, type, cnt);
 
-	unlock_column(tr->store, i->base.id);
+	unlock_idx(tr->store, i);
 
 	if (*ui == NULL || *uv == NULL) {
 		bat_destroy(*ui);
@@ -1342,7 +1360,7 @@ cs_update_bat( sql_trans *tr, sql_delta **batp, sql_table *t, BAT *tids, BAT *up
 
 	/* When we go to smaller grained update structures we should check for concurrent updates on this column ! */
 	/* currently only one update delta is possible */
-	lock_table(tr->store, t->base.id);
+	lock_table(tr->store, t);
 	storage *s = ATOMIC_PTR_GET(&t->data);
 	if (!is_new && !cs->cleared) {
 		if (!tids->tsorted /* make sure we have simple dense or oids */) {
@@ -1352,7 +1370,7 @@ cs_update_bat( sql_trans *tr, sql_delta **batp, sql_table *t, BAT *tids, BAT *up
 					bat_destroy(tids);
 				if (oupdates != updates)
 					bat_destroy(updates);
-				unlock_table(tr->store, t->base.id);
+				unlock_table(tr->store, t);
 				return LOG_ERR;
 			}
 			if (otids != tids)
@@ -1365,7 +1383,7 @@ cs_update_bat( sql_trans *tr, sql_delta **batp, sql_table *t, BAT *tids, BAT *up
 			updates = nupdates;
 			if (!updates) {
 				bat_destroy(tids);
-				unlock_table(tr->store, t->base.id);
+				unlock_table(tr->store, t);
 				return LOG_ERR;
 			}
 		}
@@ -1643,7 +1661,7 @@ cs_update_bat( sql_trans *tr, sql_delta **batp, sql_table *t, BAT *tids, BAT *up
 		}
 		bat_iterator_end(&upi);
 		bat_destroy(b);
-		unlock_table(tr->store, t->base.id);
+		unlock_table(tr->store, t);
 		bat_destroy(ins);
 		bat_destroy(ui);
 		bat_destroy(uv);
@@ -1667,7 +1685,7 @@ cs_update_bat( sql_trans *tr, sql_delta **batp, sql_table *t, BAT *tids, BAT *up
 			bat_destroy(b);
 		}
 	}
-	unlock_table(tr->store, t->base.id);
+	unlock_table(tr->store, t);
 	if (otids != tids)
 		bat_destroy(tids);
 	if (oupdates != updates)
@@ -1902,9 +1920,9 @@ static int
 delta_update_val( sql_trans *tr, sql_delta **bat, sql_table *t, oid rid, void *upd, int is_new)
 {
 	int res = LOG_OK;
-	lock_table(tr->store, t->base.id);
+	lock_table(tr->store, t);
 	res = cs_update_val(tr, bat, t, rid, upd, is_new);
-	unlock_table(tr->store, t->base.id);
+	unlock_table(tr->store, t);
 	return res;
 }
 
@@ -2113,7 +2131,7 @@ update_idx(sql_trans *tr, sql_idx * i, void *tids, void *upd, bool isbat)
 }
 
 static int
-delta_append_bat(sql_trans *tr, sql_delta **batp, sqlid id, BUN offset, BAT *offsets, BAT *i, char *storage_type)
+delta_append_bat(sql_trans *tr, sql_delta **batp, BUN offset, BAT *offsets, BAT *i, char *storage_type)
 {
 	BAT *b, *oi = i;
 	int err = 0;
@@ -2125,7 +2143,6 @@ delta_append_bat(sql_trans *tr, sql_delta **batp, sqlid id, BUN offset, BAT *off
 	if ((i->ttype == TYPE_msk || mask_cand(i)) && !(oi = BATunmask(i)))
 		return LOG_ERR;
 
-	lock_column(tr->store, id);
 	if (bat->cs.st == ST_DICT) {
 		BAT *ni = dict_append_bat(tr, batp, oi);
 		bat = *batp;
@@ -2133,7 +2150,6 @@ delta_append_bat(sql_trans *tr, sql_delta **batp, sqlid id, BUN offset, BAT *off
 			bat_destroy(oi);
 		oi = ni;
 		if (!oi) {
-			unlock_column(tr->store, id);
 			return LOG_ERR;
 		}
 	}
@@ -2144,14 +2160,12 @@ delta_append_bat(sql_trans *tr, sql_delta **batp, sqlid id, BUN offset, BAT *off
 			bat_destroy(oi);
 		oi = ni;
 		if (!oi) {
-			unlock_column(tr->store, id);
 			return LOG_ERR;
 		}
 	}
 
 	b = temp_descriptor(bat->cs.bid);
 	if (b == NULL) {
-		unlock_column(tr->store, id);
 		if (oi != i)
 			bat_destroy(oi);
 		return LOG_ERR;
@@ -2169,7 +2183,6 @@ delta_append_bat(sql_trans *tr, sql_delta **batp, sqlid id, BUN offset, BAT *off
 			err = 1;
 	}
 	bat_destroy(b);
-	unlock_column(tr->store, id);
 
 	if (oi != i)
 		bat_destroy(oi);
@@ -2204,11 +2217,10 @@ start_of_appends(BAT *offsets, BUN bcnt)
 
 
 static int
-delta_append_val(sql_trans *tr, sql_delta **batp, sqlid id, BUN offset, BAT *offsets, void *i, BUN cnt, char *storage_type, int tt)
+delta_append_val(sql_trans *tr, sql_delta **batp, BUN offset, BAT *offsets, void *i, BUN cnt, char *storage_type, int tt)
 {
 	void *oi = i;
 	BAT *b;
-	lock_column(tr->store, id);
 	sql_delta *bat = *batp;
 
 	if (bat->cs.st == ST_DICT) {
@@ -2216,7 +2228,6 @@ delta_append_val(sql_trans *tr, sql_delta **batp, sqlid id, BUN offset, BAT *off
 		i = dict_append_val(tr, batp, i, cnt);
 		bat = *batp;
 		if (!i) {
-			unlock_column(tr->store, id);
 			return LOG_ERR;
 		}
 	}
@@ -2225,7 +2236,6 @@ delta_append_val(sql_trans *tr, sql_delta **batp, sqlid id, BUN offset, BAT *off
 		i = for_append_val(&bat->cs, i, cnt, storage_type, tt);
 		bat = *batp;
 		if (!i) {
-			unlock_column(tr->store, id);
 			return LOG_ERR;
 		}
 	}
@@ -2234,7 +2244,6 @@ delta_append_val(sql_trans *tr, sql_delta **batp, sqlid id, BUN offset, BAT *off
 	if (b == NULL) {
 		if (i != oi)
 			GDKfree(i);
-		unlock_column(tr->store, id);
 		return LOG_ERR;
 	}
 	BUN bcnt = BATcount(b);
@@ -2249,7 +2258,6 @@ delta_append_val(sql_trans *tr, sql_delta **batp, sqlid id, BUN offset, BAT *off
 			bat_destroy(b);
 			if (i != oi)
 				GDKfree(i);
-			unlock_column(tr->store, id);
 			return LOG_ERR;
 		}
 
@@ -2265,7 +2273,6 @@ delta_append_val(sql_trans *tr, sql_delta **batp, sqlid id, BUN offset, BAT *off
 			bat_destroy(b);
 			if (i != oi)
 				GDKfree(i);
-			unlock_column(tr->store, id);
 			return LOG_ERR;
 		}
 		cnt -= ccnt;
@@ -2278,7 +2285,6 @@ delta_append_val(sql_trans *tr, sql_delta **batp, sqlid id, BUN offset, BAT *off
 				bat_destroy(b);
 				if (i != oi)
 					GDKfree(i);
-				unlock_column(tr->store, id);
 				return LOG_ERR;
 			}
 		}
@@ -2286,14 +2292,12 @@ delta_append_val(sql_trans *tr, sql_delta **batp, sqlid id, BUN offset, BAT *off
 			bat_destroy(b);
 			if (i != oi)
 				GDKfree(i);
-			unlock_column(tr->store, id);
 			return LOG_ERR;
 		}
 	}
 	bat_destroy(b);
 	if (i != oi)
 		GDKfree(i);
-	unlock_column(tr->store, id);
 	return LOG_OK;
 }
 
@@ -2306,20 +2310,22 @@ dup_storage( sql_trans *tr, storage *obat, storage *bat)
 }
 
 static int
-append_col_execute(sql_trans *tr, sql_delta **delta, sqlid id, BUN offset, BAT *offsets, void *incoming_data, BUN cnt, bool isbat, int tt, char *storage_type)
+append_col_execute(sql_trans *tr, sql_delta **delta, sql_column *c, BUN offset, BAT *offsets, void *incoming_data, BUN cnt, bool isbat, int tt, char *storage_type)
 {
 	int ok = LOG_OK;
 
 	if ((*delta)->cs.merged)
 		(*delta)->cs.merged = false; /* TODO needs to move */
+	lock_column(tr->store, c);
 	if (isbat) {
 		BAT *bat = incoming_data;
 
 		if (BATcount(bat))
-			ok = delta_append_bat(tr, delta, id, offset, offsets, bat, storage_type);
+			ok = delta_append_bat(tr, delta, offset, offsets, bat, storage_type);
 	} else {
-		ok = delta_append_val(tr, delta, id, offset, offsets, incoming_data, cnt, storage_type, tt);
+		ok = delta_append_val(tr, delta, offset, offsets, incoming_data, cnt, storage_type, tt);
 	}
+	unlock_column(tr->store, c);
 	return ok;
 }
 
@@ -2341,7 +2347,7 @@ append_col(sql_trans *tr, sql_column *c, BUN offset, BAT *offsets, void *data, B
 	assert(delta->cs.st == ST_DEFAULT || delta->cs.st == ST_DICT || delta->cs.st == ST_FOR);
 
 	odelta = delta;
-	if ((res = append_col_execute(tr, &delta, c->base.id, offset, offsets, data, cnt, isbat, tpe, c->storage_type)) != LOG_OK)
+	if ((res = append_col_execute(tr, &delta, c, offset, offsets, data, cnt, isbat, tpe, c->storage_type)) != LOG_OK)
 		return res;
 	if (odelta != delta) {
 		delta->next = odelta;
@@ -2354,6 +2360,26 @@ append_col(sql_trans *tr, sql_column *c, BUN offset, BAT *offsets, void *data, B
 	if (delta->cs.st == ST_DEFAULT && c->storage_type)
 		res = sql_trans_alter_storage(tr, c, NULL);
 	return res;
+}
+
+static int
+append_idx_execute(sql_trans *tr, sql_delta **delta, sql_idx *c, BUN offset, BAT *offsets, void *incoming_data, BUN cnt, bool isbat, int tt, char *storage_type)
+{
+	int ok = LOG_OK;
+
+	if ((*delta)->cs.merged)
+		(*delta)->cs.merged = false; /* TODO needs to move */
+	lock_idx(tr->store, c);
+	if (isbat) {
+		BAT *bat = incoming_data;
+
+		if (BATcount(bat))
+			ok = delta_append_bat(tr, delta, offset, offsets, bat, storage_type);
+	} else {
+		ok = delta_append_val(tr, delta, offset, offsets, incoming_data, cnt, storage_type, tt);
+	}
+	unlock_idx(tr->store, c);
+	return ok;
 }
 
 static int
@@ -2373,7 +2399,7 @@ append_idx(sql_trans *tr, sql_idx *i, BUN offset, BAT *offsets, void *data, BUN 
 
 	assert(delta->cs.st == ST_DEFAULT);
 
-	res = append_col_execute(tr, &delta, i->base.id, offset, offsets, data, cnt, isbat, tpe, NULL);
+	res = append_idx_execute(tr, &delta, i, offset, offsets, data, cnt, isbat, tpe, NULL);
 	return res;
 }
 
@@ -2399,7 +2425,7 @@ deletes_conflict_updates(sql_trans *tr, sql_table *t, oid rid, size_t cnt)
 static int
 storage_delete_val(sql_trans *tr, sql_table *t, storage *s, oid rid)
 {
-	lock_table(tr->store, t->base.id);
+	lock_table(tr->store, t);
 
 	int in_transaction = segments_in_transaction(tr, t);
 
@@ -2408,22 +2434,22 @@ storage_delete_val(sql_trans *tr, sql_table *t, storage *s, oid rid)
 	for (; seg; p = seg, seg = ATOMIC_PTR_GET(&seg->next)) {
 		if (seg->start <= rid && seg->end > rid) {
 			if (!SEG_VALID_4_DELETE(seg,tr)) {
-				unlock_table(tr->store, t->base.id);
+				unlock_table(tr->store, t);
 				return LOG_CONFLICT;
 			}
 			if (deletes_conflict_updates( tr, t, rid, 1)) {
-				unlock_table(tr->store, t->base.id);
+				unlock_table(tr->store, t);
 				return LOG_CONFLICT;
 			}
 			if (!split_segment(s->segs, seg, p, tr, rid, 1, true)) {
-				unlock_table(tr->store, t->base.id);
+				unlock_table(tr->store, t);
 				return LOG_ERR;
 			}
 			ATOMIC_ADD(&s->segs->deleted, 1);
 			break;
 		}
 	}
-	unlock_table(tr->store, t->base.id);
+	unlock_table(tr->store, t);
 	if (!in_transaction)
 		trans_add_obj(tr, &t->base, s, &tc_gc_del, &commit_update_del, NOT_TO_BE_LOGGED(t) ? NULL : &log_update_del);
 	return LOG_OK;
@@ -2481,9 +2507,9 @@ storage_delete_bat(sql_trans *tr, sql_table *t, storage *s, BAT *i)
 			size_t start = i->tseqbase;
 			size_t cnt = BATcount(i);
 
-			lock_table(tr->store, t->base.id);
+			lock_table(tr->store, t);
 			ok = delete_range(tr, t, s, start, cnt);
-			unlock_table(tr->store, t->base.id);
+			unlock_table(tr->store, t);
 		} else if (complex_cand(i)) {
 			struct canditer ci;
 			oid f = 0, l = 0, cur = 0;
@@ -2491,7 +2517,7 @@ storage_delete_bat(sql_trans *tr, sql_table *t, storage *s, BAT *i)
 			canditer_init(&ci, NULL, i);
 			cur = f = canditer_next(&ci);
 
-			lock_table(tr->store, t->base.id);
+			lock_table(tr->store, t);
 			if (!is_oid_nil(f)) {
 				segment *seg = s->segs->h;
 				for(l = canditer_next(&ci); !is_oid_nil(l) && ok == LOG_OK; l = canditer_next(&ci)) {
@@ -2505,7 +2531,7 @@ storage_delete_bat(sql_trans *tr, sql_table *t, storage *s, BAT *i)
 				if (ok == LOG_OK)
 					ok = seg_delete_range(tr, t, s, &seg, f, cur-f);
 			}
-			unlock_table(tr->store, t->base.id);
+			unlock_table(tr->store, t);
 		} else {
 			if (!i->tsorted) {
 				assert(oi == i);
@@ -2521,7 +2547,7 @@ storage_delete_bat(sql_trans *tr, sql_table *t, storage *s, BAT *i)
 			oid *o = ii.base, n = o[0]+1;
 			size_t lcnt = 1;
 
-			lock_table(tr->store, t->base.id);
+			lock_table(tr->store, t);
 			segment *seg = s->segs->h;
 			for (size_t i=1; i<icnt && ok == LOG_OK; i++) {
 				if (o[i] == n) {
@@ -2539,7 +2565,7 @@ storage_delete_bat(sql_trans *tr, sql_table *t, storage *s, BAT *i)
 			bat_iterator_end(&ii);
 			if (lcnt && ok == LOG_OK)
 				ok = seg_delete_range(tr, t, s, &seg, n-lcnt, lcnt);
-			unlock_table(tr->store, t->base.id);
+			unlock_table(tr->store, t);
 		}
 	}
 	if (i != oi)
@@ -2704,7 +2730,7 @@ set_stats_col(sql_trans *tr, sql_column *c, double *unique_est, char *min, char 
 	assert(tr->active);
 	if (!c || !ATOMIC_PTR_GET(&c->data) || !isTable(c->t) || !c->t->s)
 		return 0;
-	lock_column(tr->store, c->base.id);
+	lock_column(tr->store, c);
 	if (unique_est) {
 		sql_delta *d;
 		if ((d = ATOMIC_PTR_GET(&c->data)) && d->cs.st == ST_DEFAULT) {
@@ -2733,7 +2759,7 @@ set_stats_col(sql_trans *tr, sql_column *c, double *unique_est, char *min, char 
 			ok = 1;
 		}
 	}
-	unlock_column(tr->store, c->base.id);
+	unlock_column(tr->store, c);
 	return ok;
 }
 
@@ -2753,9 +2779,9 @@ min_max_col(sql_trans *tr, sql_column *c)
 		if (d->cs.st == ST_FOR)
 			return 0;
 		int access = d->cs.st == ST_DICT ? RD_EXT : RDONLY;
-		lock_column(tr->store, c->base.id);
+		lock_column(tr->store, c);
 		if (c->min && c->max) {
-			unlock_column(tr->store, c->base.id);
+			unlock_column(tr->store, c);
 			return 1;
 		}
 		_DELETE(c->min);
@@ -2778,7 +2804,7 @@ min_max_col(sql_trans *tr, sql_column *c)
 			bat_iterator_end(&bi);
 			bat_destroy(b);
 		}
-		unlock_column(tr->store, c->base.id);
+		unlock_column(tr->store, c);
 	}
 	return ok;
 }
@@ -3499,27 +3525,27 @@ log_segment(sql_trans *tr, segment *s, sqlid id, size_t total)
 }
 
 static int
-log_segments(sql_trans *tr, segments *segs, sqlid id)
+log_segments(sql_trans *tr, segments *segs, sql_table *t)
 {
 	size_t total = 0;
 	/* log segments */
-	lock_table(tr->store, id);
+	lock_table(tr->store, t);
 	for (segment *seg = segs->h; seg; seg=ATOMIC_PTR_GET(&seg->next)) {
 		if (seg->ts == tr->tid && seg->end-seg->start &&
 			(ATOMIC_PTR_GET(&seg->next) || !seg->deleted || seg->ts != seg->oldts))
 			total += seg->end-seg->start;
 	}
 	for (segment *seg = segs->h; seg; seg=ATOMIC_PTR_GET(&seg->next)) {
-		unlock_table(tr->store, id);
+		unlock_table(tr->store, t);
 		if (seg->ts == tr->tid && seg->end-seg->start &&
 			(ATOMIC_PTR_GET(&seg->next) || !seg->deleted || seg->ts != seg->oldts)) {
-			if (log_segment(tr, seg, id, total) != LOG_OK) {
+			if (log_segment(tr, seg, t->base.id, total) != LOG_OK) {
 				return LOG_ERR;
 			}
 		}
-		lock_table(tr->store, id);
+		lock_table(tr->store, t);
 	}
-	unlock_table(tr->store, id);
+	unlock_table(tr->store, t);
 	return LOG_OK;
 }
 
@@ -3541,7 +3567,7 @@ log_create_storage(sql_trans *tr, storage *bat, sql_table *t)
 	if (ok == LOG_OK)
 		ok = (log_bat_persists(store->logger, b, t->base.id) == GDK_SUCCEED)?LOG_OK:LOG_ERR;
 	if (ok == LOG_OK)
-		ok = log_segments(tr, bat->segs, t->base.id);
+		ok = log_segments(tr, bat->segs, t);
 	bat_destroy(b);
 	return ok;
 }
@@ -3889,9 +3915,9 @@ clear_del(sql_trans *tr, sql_table *t, int in_transaction)
 		return conflict?BUN_NONE-1:BUN_NONE;
 
 	if (!clear) {
-		lock_table(tr->store, t->base.id);
+		lock_table(tr->store, t);
 		ok = delete_range(tr, t, bat, 0, bat->segs->t->end);
-		unlock_table(tr->store, t->base.id);
+		unlock_table(tr->store, t);
 	}
 	assert(t->persistence != SQL_DECLARED_TABLE);
 	if (!in_transaction)
@@ -3915,9 +3941,9 @@ clear_table(sql_trans *tr, sql_table *t)
 
 	if (!d)
 		return BUN_NONE;
-	lock_table(tr->store, t->base.id);
+	lock_table(tr->store, t);
 	in_transaction = segments_in_transaction(tr, t);
-	unlock_table(tr->store, t->base.id);
+	unlock_table(tr->store, t);
 	clear = !in_transaction;
 	sz = count_col(tr, c, CNT_ACTIVE);
 	if ((clear_ok = clear_del(tr, t, in_transaction)) >= BUN_NONE - 1)
@@ -4021,21 +4047,21 @@ log_table_append(sql_trans *tr, sql_table *t, segments *segs)
 
 	size_t nr_appends = 0;
 
-	lock_table(tr->store, t->base.id);
+	lock_table(tr->store, t);
 	for (segment *seg = segs->h; seg; seg=ATOMIC_PTR_GET(&seg->next)) {
 		if (seg->ts == tr->tid && seg->end-seg->start && !seg->deleted)
 			nr_appends += (seg->end - seg->start);
 	}
 	for (segment *seg = segs->h; seg; seg=ATOMIC_PTR_GET(&seg->next)) {
-		unlock_table(tr->store, t->base.id);
+		unlock_table(tr->store, t);
 
 		if (seg->ts == tr->tid && seg->end-seg->start && !seg->deleted) {
 			if (log_segment(tr, seg, t->base.id, nr_appends) != LOG_OK)
 				return LOG_ERR;
 		}
-		lock_table(tr->store, t->base.id);
+		lock_table(tr->store, t);
 	}
-	unlock_table(tr->store, t->base.id);
+	unlock_table(tr->store, t);
 
 	for (node *n = ol_first_node(t->columns); n && ok == GDK_SUCCEED; n = n->next) {
 		sql_column *c = n->data;
@@ -4046,10 +4072,10 @@ log_table_append(sql_trans *tr, sql_table *t, segments *segs)
 			continue;
 		}
 
-		lock_table(tr->store, t->base.id);
+		lock_table(tr->store, t);
 		if (!cs->cleared) {
 			for (segment *cur = segs->h; cur && ok == GDK_SUCCEED; cur = ATOMIC_PTR_GET(&cur->next)) {
-				unlock_table(tr->store, t->base.id);
+				unlock_table(tr->store, t);
 				if (cur->ts == tr->tid && !cur->deleted && cur->start < end) {
 					/* append col*/
 					BAT *ins = temp_descriptor(cs->bid);
@@ -4059,10 +4085,10 @@ log_table_append(sql_trans *tr, sql_table *t, segments *segs)
 					ok = log_bat(store->logger, ins, c->base.id, cur->start, cur->end-cur->start, nr_appends);
 					bat_destroy(ins);
 				}
-				lock_table(tr->store, t->base.id);
+				lock_table(tr->store, t);
 			}
 		}
-		unlock_table(tr->store, t->base.id);
+		unlock_table(tr->store, t);
 
 		if (ok == GDK_SUCCEED && cs->ebid) {
 			BAT *ins = temp_descriptor(cs->ebid);
@@ -4089,9 +4115,9 @@ log_table_append(sql_trans *tr, sql_table *t, segments *segs)
 					continue;
 				}
 
-				lock_table(tr->store, t->base.id);
+				lock_table(tr->store, t);
 				for (segment *cur = segs->h; cur && ok == GDK_SUCCEED; cur = ATOMIC_PTR_GET(&cur->next)) {
-					unlock_table(tr->store, t->base.id);
+					unlock_table(tr->store, t);
 					if (cur->ts == tr->tid && !cur->deleted && cur->start < end) {
 						/* append idx */
 						BAT *ins = temp_descriptor(cs->bid);
@@ -4101,9 +4127,9 @@ log_table_append(sql_trans *tr, sql_table *t, segments *segs)
 						ok = log_bat(store->logger, ins, i->base.id, cur->start, cur->end-cur->start, nr_appends);
 						bat_destroy(ins);
 					}
-					lock_table(tr->store, t->base.id);
+					lock_table(tr->store, t);
 				}
-				unlock_table(tr->store, t->base.id);
+				unlock_table(tr->store, t);
 			}
 		}
 	}
@@ -4122,7 +4148,7 @@ log_storage(sql_trans *tr, sql_table *t, storage *s)
 	if (ok == LOG_OK && cleared)
 		ok =  tr_log_cs(tr, t, &s->cs, s->segs->h, t->base.id);
 	if (ok == LOG_OK)
-		ok = log_segments(tr, s->segs, t->base.id);
+		ok = log_segments(tr, s->segs, t);
 	if (ok == LOG_OK && !cleared)
 		ok = log_table_append(tr, t, s->segs);
 	return ok;
@@ -4266,7 +4292,7 @@ tc_gc_rollbacked_storage( sql_store Store, sql_change *change, ulng oldest)
 }
 
 static int
-commit_update_delta( sql_trans *tr, sql_change *change, sql_table* t, sql_base* base, ATOMIC_PTR_TYPE* data, int type, ulng commit_ts, ulng oldest)
+commit_update_delta( sql_trans *tr, sql_change *change, sql_table* t, sql_column *c, sql_idx *i, ATOMIC_PTR_TYPE* data, int type, ulng commit_ts, ulng oldest)
 {
 	(void) type; // TODO transaction_layer_revamp remove if remains unused
 
@@ -4277,8 +4303,12 @@ commit_update_delta( sql_trans *tr, sql_change *change, sql_table* t, sql_base* 
 		assert(isTempTable(t));
 		if (clear_cs(tr, &delta->cs, true, isTempTable(t)) == BUN_NONE)
 			ok = LOG_ERR; /* CA_DELETE as CA_DROP's are gone already (or for globals are equal to a CA_DELETE) */
-		if (!tr->parent)
-			t->base.new = base->new = 0;
+		if (!tr->parent) {
+			if (c)
+				t->base.new = c->base.new = 0;
+			else
+				t->base.new = i->base.new = 0;
+		}
 		change->handled = true;
 		return ok;
 	}
@@ -4305,9 +4335,15 @@ commit_update_delta( sql_trans *tr, sql_change *change, sql_table* t, sql_base* 
 		while (delta && delta->cs.ts > oldest)
 			delta = delta->next;
 		if (delta && !delta->cs.merged && delta->cs.ts <= oldest) {
-			lock_column(tr->store, base->id); /* lock for concurrent updates (appends) */
+			if (c)
+				lock_column(tr->store, c); /* lock for concurrent updates (appends) */
+			else
+				lock_idx(tr->store, i); /* lock for concurrent updates (appends) */
 			idelta->nr_updates += merge_delta(delta);
-			unlock_column(tr->store, base->id);
+			if (c)
+				unlock_column(tr->store, c);
+			else
+				unlock_idx(tr->store, i);
 		}
 	} else if (tr->parent) /* move delta into older and cleanup current save points */
 		ATOMIC_PTR_SET(data, savepoint_commit_delta(delta, commit_ts));
@@ -4319,7 +4355,6 @@ commit_update_col( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldes
 {
 
 	sql_column *c = (sql_column*)change->obj;
-	sql_base* base = &c->base;
 	sql_table* t = c->t;
 	ATOMIC_PTR_TYPE* data = &c->data;
 	int type = c->type.type->localtype;
@@ -4327,7 +4362,7 @@ commit_update_col( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldes
 	if (change->handled || isDeleted(c->t))
 		return LOG_OK;
 
-	return commit_update_delta(tr, change, t, base, data, type, commit_ts, oldest);
+	return commit_update_delta(tr, change, t, c, NULL, data, type, commit_ts, oldest);
 }
 
 static int
@@ -4353,7 +4388,6 @@ static int
 commit_update_idx( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldest)
 {
 	sql_idx *i = (sql_idx*)change->obj;
-	sql_base* base = &i->base;
 	sql_table* t = i->t;
 	ATOMIC_PTR_TYPE* data = &i->data;
 	int type = (oid_index(i->type))?TYPE_oid:TYPE_lng;
@@ -4361,7 +4395,7 @@ commit_update_idx( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldes
 	if (change->handled || isDeleted(i->t))
 		return LOG_OK;
 
-	return commit_update_delta(tr, change, t, base, data, type, commit_ts, oldest);
+	return commit_update_delta(tr, change, t, NULL, i, data, type, commit_ts, oldest);
 }
 
 static storage *
@@ -4416,11 +4450,11 @@ commit_update_del( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldes
 		return ok;
 	}
 
-	lock_table(tr->store, t->base.id);
+	lock_table(tr->store, t);
 	if (!commit_ts) { /* rollback */
 		if (dbat->cs.ts == tr->tid) {
 			if (change->ts && t->base.new) { /* handled by the create table */
-				unlock_table(tr->store, t->base.id);
+				unlock_table(tr->store, t);
 				return ok;
 			}
 			storage *d = change->data, *o = ATOMIC_PTR_GET(&t->data);
@@ -4457,7 +4491,7 @@ commit_update_del( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldes
 		if (s->cs.ts == tr->tid)
 			s->cs.ts = commit_ts;
 	}
-	unlock_table(tr->store, t->base.id);
+	unlock_table(tr->store, t);
 	return ok;
 }
 
@@ -4494,9 +4528,9 @@ tc_gc_col( sql_store Store, sql_change *change, ulng oldest)
 			destroy_delta(d->next, true);
 			d->next = NULL;
 		}
-		lock_column(store, c->base.id); /* lock for concurrent updates (appends) */
+		lock_column(store, c); /* lock for concurrent updates (appends) */
 		id->nr_updates += merge_delta(d);
-		unlock_column(store, c->base.id);
+		unlock_column(store, c);
 	}
 	column_destroy(store, c);
 	return 1;
@@ -4534,9 +4568,9 @@ tc_gc_upd_col( sql_store Store, sql_change *change, ulng oldest)
 			destroy_delta(d->next, true);
 			d->next = NULL;
 		}
-		lock_column(store, c->base.id); /* lock for concurrent updates (appends) */
+		lock_column(store, c); /* lock for concurrent updates (appends) */
 		id->nr_updates += merge_delta(d);
-		unlock_column(store, c->base.id);
+		unlock_column(store, c);
 	}
 	table_destroy(store, c->t);
 	return 1;
@@ -4573,9 +4607,9 @@ tc_gc_idx( sql_store Store, sql_change *change, ulng oldest)
 			destroy_delta(d->next, true);
 			d->next = NULL;
 		}
-		lock_column(store, i->base.id); /* lock for concurrent updates (appends) */
+		lock_idx(store, i); /* lock for concurrent updates (appends) */
 		id->nr_updates += merge_delta(d);
-		unlock_column(store, i->base.id);
+		unlock_idx(store, i);
 	}
 	idx_destroy(store, i);
 	return 1;
@@ -4612,9 +4646,9 @@ tc_gc_upd_idx( sql_store Store, sql_change *change, ulng oldest)
 			destroy_delta(d->next, true);
 			d->next = NULL;
 		}
-		lock_column(store, i->base.id); /* lock for concurrent updates (appends) */
+		lock_idx(store, i); /* lock for concurrent updates (appends) */
 		id->nr_updates += merge_delta(d);
-		unlock_column(store, i->base.id);
+		unlock_idx(store, i);
 	}
 	table_destroy(store, i->t);
 	return 1;
@@ -4681,7 +4715,7 @@ claim_segmentsV2(sql_trans *tr, sql_table *t, storage *s, size_t cnt, BUN *offse
 	size_t total = cnt;
 
 	if (!locked)
-		lock_table(tr->store, t->base.id);
+		lock_table(tr->store, t);
 	int ok = LOG_OK;
 	/* naive vacuum approach, iterator through segments, use deleted segments or create new segment at the end */
 	if (ATOMIC_GET(&s->segs->deleted) != 0)
@@ -4741,7 +4775,7 @@ claim_segmentsV2(sql_trans *tr, sql_table *t, storage *s, size_t cnt, BUN *offse
 			ok = add_offsets(slot, cnt, total, offset, offsets);
 	}
 	if (!locked)
-		unlock_table(tr->store, t->base.id);
+		unlock_table(tr->store, t);
 
 	if (ok == LOG_OK) {
 		/* hard to only add this once per transaction (probably want to change to once per new segment) */
@@ -4773,7 +4807,7 @@ claim_segments(sql_trans *tr, sql_table *t, storage *s, size_t cnt, BUN *offset,
 	int reused = 0;
 
 	if (!locked)
-		lock_table(tr->store, t->base.id);
+		lock_table(tr->store, t);
 	int ok = LOG_OK;
 	/* naive vacuum approach, iterator through segments, check for large enough deleted segments
 	 * or create new segment at the end */
@@ -4823,7 +4857,7 @@ claim_segments(sql_trans *tr, sql_table *t, storage *s, size_t cnt, BUN *offset,
 		}
 	}
 	if (!locked)
-		unlock_table(tr->store, t->base.id);
+		unlock_table(tr->store, t);
 
 	if (ok == LOG_OK) {
 		/* hard to only add this once per transaction (probably want to change to once per new segment) */
@@ -4867,13 +4901,13 @@ key_claim_tab(sql_trans *tr, sql_table *t, size_t cnt, BUN *offset, BAT **offset
 		/* TODO check for other inserts ! */
 		return LOG_ERR;
 
-	lock_table(tr->store, t->base.id);
+	lock_table(tr->store, t);
 	if ((res = segments_conflict(tr, s->segs, 1))) {
-		unlock_table(tr->store, t->base.id);
+		unlock_table(tr->store, t);
 		return LOG_CONFLICT;
 	}
 	res = claim_segments(tr, t, s, cnt, offset, offsets, true); /* find slot(s) */
-	unlock_table(tr->store, t->base.id);
+	unlock_table(tr->store, t);
 	return res;
 }
 
@@ -4886,9 +4920,9 @@ tab_validate(sql_trans *tr, sql_table *t, int uncommitted)
 	if ((s = bind_del_data(tr, t, NULL)) == NULL)
 		return LOG_ERR;
 
-	lock_table(tr->store, t->base.id);
+	lock_table(tr->store, t);
 	res = segments_conflict(tr, s->segs, uncommitted);
-	unlock_table(tr->store, t->base.id);
+	unlock_table(tr->store, t);
 	return res ? LOG_CONFLICT : LOG_OK;
 }
 
@@ -4910,19 +4944,19 @@ has_deletes_in_range( segment *s, sql_trans *tr, BUN start, BUN end)
 static BAT *
 segments2cands(storage *S, sql_trans *tr, sql_table *t, size_t start, size_t end)
 {
-	lock_table(tr->store, t->base.id);
+	lock_table(tr->store, t);
 	segment *s = S->segs->h;
 	/* step one no deletes -> dense range */
 	uint32_t cur = 0;
 	size_t dnr = has_deletes_in_range(s, tr, start, end), nr = end - start, pos = 0;
 	if (!dnr) {
-		unlock_table(tr->store, t->base.id);
+		unlock_table(tr->store, t);
 		return BATdense(start, start, end-start);
 	}
 
 	BAT *b = COLnew(0, TYPE_msk, nr, SYSTRANS), *bn = NULL;
 	if (!b) {
-		unlock_table(tr->store, t->base.id);
+		unlock_table(tr->store, t);
 		return NULL;
 	}
 
@@ -4992,7 +5026,7 @@ segments2cands(storage *S, sql_trans *tr, sql_table *t, size_t start, size_t end
 		}
 	}
 
-	unlock_table(tr->store, t->base.id);
+	unlock_table(tr->store, t);
 	if (pos%32)
 		*dst=cur;
 	BATsetcount(b, nr);

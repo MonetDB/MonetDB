@@ -813,7 +813,7 @@ monetdbe_open_remote(monetdbe_database_internal *mdbe, monetdbe_options *opts) {
 
 	assert(!c->curprg);
 
-	const char mod[] = "user";
+	static const char mod[] = "user";
 	char nme[16];
 	const char *name = number2name(nme, sizeof(nme), ++((backend*)  c->sqlcontext)->remote);
 	c->curprg = newFunction(putName(mod), putName(name), FUNCTIONsymbol);
@@ -1433,7 +1433,7 @@ cleanup:
 static char*
 monetdbe_query_remote(monetdbe_database_internal *mdbe, char* query, monetdbe_result** result, monetdbe_cnt* affected_rows, int *prepare_id)
 {
-	const char mod[] = "user";
+	static const char mod[] = "user";
 	char nme[16];
 
 	Client c = mdbe->c;
@@ -1466,7 +1466,7 @@ monetdbe_query_remote(monetdbe_database_internal *mdbe, char* query, monetdbe_re
 		size_t query_len, input_query_len, prep_len = 0;
 		input_query_len = strlen(query);
 		query_len = input_query_len + 3;
-		const char PREPARE[] = "PREPARE ";
+		static const char PREPARE[] = "PREPARE ";
 		prep_len = sizeof(PREPARE)-1;
 		query_len += prep_len;
 		char *nq = NULL;
@@ -1873,7 +1873,7 @@ monetdbe_get_columns_remote(monetdbe_database_internal *mdbe, const char* schema
 		return mdbe->msg;
 	}
 
-	int len = snprintf(buf, 1024, "SELECT * FROM %s%s%s\"%s\" WHERE FALSE;",
+	int len = snprintf(buf, sizeof(buf), "SELECT * FROM %s%s%s\"%s\" WHERE FALSE;",
 					   escaped_schema_name ? "\"" : "",  escaped_schema_name ? escaped_schema_name : "",
 					   escaped_schema_name ? escaped_schema_name : "\".", escaped_table_name);
 	GDKfree(escaped_schema_name);

@@ -224,13 +224,13 @@ begin
 	if tpe = 'smallint'
 		then return 2 * count;
 	end if;
-	if tpe in ('int', 'real', 'date', 'time', 'timetz', 'sec_interval', 'day_interval', 'month_interval')
+	if tpe in ('int', 'real', 'date', 'time', 'timetz', 'sec_interval', 'day_interval', 'month_interval', 'inet4')
 		then return 4 * count;
 	end if;
 	if tpe in ('bigint', 'double', 'timestamp', 'timestamptz', 'inet', 'oid')
 		then return 8 * count;
 	end if;
-	if tpe in ('hugeint', 'decimal', 'uuid', 'mbr')
+	if tpe in ('hugeint', 'decimal', 'uuid', 'mbr', 'inet6')
 		then return 16 * count;
 	end if;
 

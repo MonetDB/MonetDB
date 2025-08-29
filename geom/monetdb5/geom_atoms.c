@@ -386,7 +386,7 @@ mbrTOSTR(char **dst, size_t *len, const void *ATOM, bool external)
 	size_t dstStrLen;
 
 	if (!is_mbr_nil(atom)) {
-		dstStrLen = (size_t) snprintf(tempWkt, MBR_WKTLEN,
+		dstStrLen = (size_t) snprintf(tempWkt, sizeof(tempWkt),
 					      "BOX (%f %f, %f %f)",
 					      atom->xmin, atom->ymin,
 					      atom->xmax, atom->ymax);

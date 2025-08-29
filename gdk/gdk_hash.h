@@ -196,6 +196,7 @@ HASHgetlink(const Hash *h, BUN i)
 			 ((uhge) (X) >> 116) ^	\
 			 (uhge) (X))
 #endif
+#define mix_inet4(X)	mix_int((X).align)
 #define hash_loc(H,V)	hash_any(H,V)
 #define hash_var(H,V)	hash_any(H,V)
 #define hash_any(H,V)	HASHbucket(H, ATOMhash((H)->type, (V)))
@@ -212,6 +213,7 @@ HASHgetlink(const Hash *h, BUN i)
 #else
 #define hash_oid(H,V)	hash_lng(H,V)
 #endif
+#define hash_inet4(H,V)	HASHbucket(H, (BUN) mix_inet4(*(const inet4 *) (V)))
 
 #define hash_flt(H,V)	HASHbucket(H, ATOMhash(TYPE_flt, (V)))
 #define hash_dbl(H,V)	HASHbucket(H, ATOMhash(TYPE_dbl, (V)))
@@ -243,6 +245,22 @@ mix_uuid(const uuid *u)
 	return (BUN) (mix_lng(u1) ^ mix_lng(u2));
 }
 #define hash_uuid(H,V)	HASHbucket(H, mix_uuid((const uuid *) (V)))
+
+__attribute__((__pure__))
+static inline BUN
+mix_inet6(const inet6 *u)
+{
+	ulng u1, u2;
+
+	u1 = (ulng) u->oct[0] << 48 | (ulng) u->oct[1] << 32 |
+		(ulng) u->oct[2] << 16 | (ulng) u->oct[3];
+	u2 = (ulng) u->oct[4] << 48 | (ulng) u->oct[5] << 32 |
+		(ulng) u->oct[6] << 16 | (ulng) u->oct[7];
+	/* we're not using mix_hge since this way we get the same result
+	 * on systems with and without 128 bit integer support */
+	return (BUN) (mix_lng(u1) ^ mix_lng(u2));
+}
+#define hash_inet6(H,V)	HASHbucket(H, mix_inet6((const inet6 *) (V)))
 
 /*
  * @- hash-table supported loop over BUNs The first parameter `bi' is
@@ -297,12 +315,22 @@ mix_uuid(const uuid *u)
 #endif
 #define HASHloop_flt(bi, h, hb, v)	HASHloop_fTYPE(bi, h, hb, v, flt)
 #define HASHloop_dbl(bi, h, hb, v)	HASHloop_fTYPE(bi, h, hb, v, dbl)
+#define HASHloop_inet4(bi, hsh, hb, v)					\
+	for (hb = HASHget(hsh, hash_inet4(hsh, v));			\
+	     hb != BUN_NONE;						\
+	     hb = HASHgetlink(hsh,hb))					\
+		if (((const inet4 *) (v))->align == ((const inet4 *) BUNtloc(bi, hb))->align)
 #ifdef HAVE_HGE
 #define HASHloop_uuid(bi, hsh, hb, v)					\
 	for (hb = HASHget(hsh, hash_uuid(hsh, v));			\
 	     hb != BUN_NONE;						\
 	     hb = HASHgetlink(hsh,hb))					\
 		if (((const uuid *) (v))->h == ((const uuid *) BUNtloc(bi, hb))->h)
+#define HASHloop_inet6(bi, hsh, hb, v)					\
+	for (hb = HASHget(hsh, hash_inet6(hsh, v));			\
+	     hb != BUN_NONE;						\
+	     hb = HASHgetlink(hsh,hb))					\
+		if (((const inet6 *) (v))->align == ((const inet6 *) BUNtloc(bi, hb))->align)
 #else
 #define HASHloop_uuid(bi, h, hb, v)					\
 	for (hb = HASHget(h, hash_uuid(h, v));				\
@@ -310,6 +338,12 @@ mix_uuid(const uuid *u)
 	     hb = HASHgetlink(h,hb))					\
 		if (memcmp((const uuid *) (v), (const uuid *) BUNtloc(bi, hb), 16) == 0)
 //		if (((const uuid *) (v))->l[0] == ((const uuid *) BUNtloc(bi, hb))->l[0] && ((const uuid *) (v))->l[1] == ((const uuid *) BUNtloc(bi, hb))->l[1])
+#define HASHloop_inet6(bi, h, hb, v)					\
+	for (hb = HASHget(h, hash_inet6(h, v));				\
+	     hb != BUN_NONE;						\
+	     hb = HASHgetlink(h,hb))					\
+		if (memcmp((const inet6 *) (v), (const inet6 *) BUNtloc(bi, hb), 16) == 0)
+//		if (((const inet6 *) (v))->align[0] == ((const inet6 *) BUNtloc(bi, hb))->align[0] && ((const inet6 *) (v))->align[1] == ((const inet6 *) BUNtloc(bi, hb))->align[1])
 #endif
 
 #endif /* _GDK_SEARCH_H_ */

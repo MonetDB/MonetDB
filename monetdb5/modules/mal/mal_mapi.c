@@ -2063,9 +2063,9 @@ SERVERput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		/* reconstruct the object */
 		ht = getTypeName(mb->ma, TYPE_oid);
 		tt = getTypeName(mb->ma, getBatType(tpe));
-		snprintf(buf, BUFSIZ, "%s:= bat.new(:%s,%s);", *nme, ht, tt);
+		snprintf(buf, sizeof(buf), "%s:= bat.new(:%s,%s);", *nme, ht, tt);
 		len = strlen(buf);
-		snprintf(buf + len, BUFSIZ - len, "%s:= io.import(%s,tuples);", *nme,
+		snprintf(buf + len, sizeof(buf) - len, "%s:= io.import(%s,tuples);", *nme,
 				 *nme);
 
 		/* and execute the request */
@@ -2078,7 +2078,7 @@ SERVERput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	} else {
 		switch (tpe) {
 		case TYPE_str:
-			snprintf(buf, BUFSIZ, "%s:=%s;", *nme, *(char **) val);
+			snprintf(buf, sizeof(buf), "%s:=%s;", *nme, *(char **) val);
 			if (SERVERsessions[i].hdl)
 				mapi_close_handle(SERVERsessions[i].hdl);
 			SERVERsessions[i].hdl = mapi_query(mid, buf);
@@ -2086,7 +2086,7 @@ SERVERput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		default:
 			if ((w = ATOMformat(tpe, val)) == NULL)
 				throw(MAL, "mapi.put", GDK_EXCEPTION);
-			snprintf(buf, BUFSIZ, "%s:=%s;", *nme, w);
+			snprintf(buf, sizeof(buf), "%s:=%s;", *nme, w);
 			// GDKfree(w);
 			if (SERVERsessions[i].hdl)
 				mapi_close_handle(SERVERsessions[i].hdl);
@@ -2117,12 +2117,12 @@ SERVERputLocal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	case TYPE_ptr:
 		throw(MAL, "mapi.glue", "Unsupported type");
 	case TYPE_str:
-		snprintf(buf, BUFSIZ, "%s:=%s;", *nme, *(char **) val);
+		snprintf(buf, sizeof(buf), "%s:=%s;", *nme, *(char **) val);
 		break;
 	default:
 		if ((w = ATOMformat(tpe, val)) == NULL)
 			throw(MAL, "mapi.glue", GDK_EXCEPTION);
-		snprintf(buf, BUFSIZ, "%s:=%s;", *nme, w);
+		snprintf(buf, sizeof(buf), "%s:=%s;", *nme, w);
 		// GDKfree(w);
 		break;
 	}
@@ -2153,13 +2153,13 @@ SERVERbindBAT(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		col = getArgReference_str(stk, pci, pci->retc + 3);
 		i = *getArgReference_int(stk, pci, pci->retc + 4);
 		tn = getTypeName(mb->ma, getBatType(getVarType(mb, getDestVar(pci))));
-		snprintf(buf, BUFSIZ, "%s:bat[:%s]:=sql.bind(\"%s\",\"%s\",\"%s\",%d);",
+		snprintf(buf, sizeof(buf), "%s:bat[:%s]:=sql.bind(\"%s\",\"%s\",\"%s\",%d);",
 				 getVarNameIntoBuffer(mb, getDestVar(pci), name), tn, *nme, *tab, *col, i);
 		//GDKfree(tn);
 	} else if (pci->argc == 5) {
 		tab = getArgReference_str(stk, pci, pci->retc + 2);
 		i = *getArgReference_int(stk, pci, pci->retc + 3);
-		snprintf(buf, BUFSIZ, "%s:bat[:oid]:=sql.bind(\"%s\",\"%s\",0,%d);",
+		snprintf(buf, sizeof(buf), "%s:bat[:oid]:=sql.bind(\"%s\",\"%s\",0,%d);",
 				 getVarNameIntoBuffer(mb, getDestVar(pci), name), *nme, *tab, i);
 	} else {
 		str hn, tn;
@@ -2167,7 +2167,7 @@ SERVERbindBAT(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		int target = getArgType(mb, pci, 0);
 		//hn = getTypeName(mb->ma, TYPE_oid);
 		tn = getTypeName(mb->ma, getBatType(target));
-		snprintf(buf, BUFSIZ, "%s:bat[:%s]:=bbp.bind(\"%s\");",
+		snprintf(buf, sizeof(buf), "%s:bat[:%s]:=bbp.bind(\"%s\");",
 				 getVarNameIntoBuffer(mb, getDestVar(pci), name), tn, *nme);
 		//GDKfree(hn);
 		//GDKfree(tn);

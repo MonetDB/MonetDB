@@ -1271,7 +1271,7 @@ mapi_impl_log_record(Mapi mid, const char *funcname, long line, const char *mark
 void
 mapi_impl_log_data(Mapi mid, const char *filename, long line, const char *mark, const char *start, size_t len)
 {
-	const char hexdigits[] = "0123456789abcdef";
+	static const char hexdigits[] = "0123456789abcdef";
 	if (mid->tracelog == NULL)
 		return;
 

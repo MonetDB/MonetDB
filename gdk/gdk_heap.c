@@ -720,7 +720,7 @@ HEAPload(Heap *h, const char *nme, const char *ext, bool trunc)
 	int ret = 0;
 	char srcpath[MAXPATH], dstpath[MAXPATH];
 	lng t0;
-	const char suffix[] = ".new";
+	static const char suffix[] = ".new";
 
 	if (h->storage == STORE_INVALID || h->newstorage == STORE_INVALID) {
 		size_t allocated;
@@ -841,7 +841,7 @@ HEAPsave(Heap *h, const char *nme, const char *ext, bool dosync, BUN free, MT_Lo
 	storage_t store = h->newstorage;
 	long_str extension;
 	gdk_return rc;
-	const char suffix[] = ".new";
+	static const char suffix[] = ".new";
 
 	if (h->base == NULL) {
 		GDKerror("no heap to save\n");

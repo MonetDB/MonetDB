@@ -195,6 +195,8 @@ gdk_export const oid oid_nil;
 gdk_export const char str_nil[2];
 gdk_export const ptr ptr_nil;
 gdk_export const uuid uuid_nil;
+gdk_export const inet4 inet4_nil;
+gdk_export const inet6 inet6_nil;
 
 /* derived NIL values - OIDDEPEND */
 #define bit_nil	((bit) bte_nil)
@@ -226,9 +228,12 @@ gdk_export const uuid uuid_nil;
 
 #ifdef HAVE_HGE
 #define is_uuid_nil(x)	((x).h == 0)
+#define is_inet6_nil(x)	((x).align == 0)
 #else
 #define is_uuid_nil(x)	(memcmp((x).u, uuid_nil.u, UUID_SIZE) == 0)
+#define is_inet6_nil(x)	(memcmp((x).oct, inet6_nil.oct, 16) == 0)
 #endif
+#define is_inet4_nil(x)	((x).align == 0)
 
 #define is_blob_nil(x)	((x)->nitems == ~(size_t)0)
 
@@ -326,6 +331,7 @@ ATOMputFIX(int type, void *dst, const void *src)
 		* (lng *) dst = * (lng *) src;
 		break;
 	case 16:
+		/* any 16 byte atom will do here */
 #ifdef HAVE_HGE
 		* (hge *) dst = * (hge *) src;
 #else

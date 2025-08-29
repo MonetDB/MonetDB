@@ -950,7 +950,7 @@ exp2bin_named_placeholders(backend *be, sql_exp *fe)
 		}
 		int type = t->type->localtype, varid = 0;
 
-		snprintf(arg, IDLENGTH, "A%d", argc);
+		snprintf(arg, sizeof(arg), "A%d", argc);
 		if ((varid = newVariable(be->mb, arg, strlen(arg), type)) < 0) {
 			sql_error(be->mvc, 10, SQLSTATE(42000) "Internal error while compiling statement: variable id too long");
 			return NULL;
@@ -3513,7 +3513,13 @@ rel2bin_antijoin(backend *be, sql_rel *rel, list *refs)
 	list *l, *jexps = NULL, *sexps = NULL;
 	node *en = NULL, *n;
 	stmt *left = NULL, *right = NULL, *join = NULL, *sel = NULL, *sub = NULL;
+	bool any = false;
 
+	if (rel->exps)
+		for (node *n = rel->exps->h; n && !any; n = n->next) {
+			sql_exp *e = n->data;
+			any = is_any(e);
+		}
 	if (rel->l) /* first construct the left sub relation */
 		left = subrel_bin(be, rel->l, refs);
 	if (rel->r) /* first construct the right sub relation */
@@ -3574,7 +3580,7 @@ rel2bin_antijoin(backend *be, sql_rel *rel, list *refs)
 			li = ls;
 
 		if (!en->next && (constval || stmt_has_null(ls) /*|| stmt_has_null(rs) (change into check for fk)*/)) {
-			join = stmt_tdiff2(be, ls, rs, NULL);
+			join = stmt_tdiff2(be, ls, rs, NULL, is_any(e));
 			jexps = NULL;
 		} else {
 			join = stmt_join_cand(be, ls, rs, NULL, NULL, is_anti(e), (comp_type) e->flag, 0, is_semantics(e), false, true);
@@ -3586,7 +3592,7 @@ rel2bin_antijoin(backend *be, sql_rel *rel, list *refs)
 		stmt *jr = stmt_result(be, join, 1);
 		stmt *nulls = NULL;
 
-		if (li && stmt_has_null(li)) {
+		if (li && stmt_has_null(li) && any) {
 			nulls = stmt_selectnil(be, li);
 		}
 		/* construct relation */
@@ -3648,7 +3654,7 @@ rel2bin_antijoin(backend *be, sql_rel *rel, list *refs)
 			jl = stmt_project(be, sel, jl);
 			join = stmt_tdiff(be, c, jl, NULL);
 		} else {
-			join = stmt_tdiff2(be, c, jl, NULL);
+			join = stmt_tdiff2(be, c, jl, NULL, true);
 		}
 		if (nulls)
 			join = stmt_project(be, join, c);
@@ -3656,7 +3662,7 @@ rel2bin_antijoin(backend *be, sql_rel *rel, list *refs)
 	} else if (jexps && list_empty(jexps)) {
 		stmt *jl = stmt_result(be, join, 0);
 		stmt *c = stmt_mirror(be, bin_find_smallest_column(be, left));
-		join = stmt_tdiff2(be, c, jl, NULL);
+		join = stmt_tdiff2(be, c, jl, NULL, true);
 	}
 
 	/* construct relation */
@@ -3674,6 +3680,23 @@ rel2bin_antijoin(backend *be, sql_rel *rel, list *refs)
 		list_append(l, s);
 	}
 	return stmt_list(be, l);
+}
+
+static sql_rel *
+rel_has_partition_(visitor *v, sql_rel *rel)
+{
+	if (rel && is_basetable(rel->op))
+		v->changes |= (rel->flag & REL_PARTITION);
+	return rel;
+}
+
+static bool
+rel_has_partition(mvc *sql, sql_rel *rel)
+{
+	visitor v = { .sql = sql, .changes = 0 };
+
+	rel = rel_visitor_bottomup(&v, rel, &rel_has_partition_);
+	return v.changes;
 }
 
 static stmt *
@@ -3766,7 +3789,7 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 
 					if (!l || !r)
 						return NULL;
-					if (/*be->no_mitosis &&*/ list_length(jexps) == 1 && list_empty(sexps) && rel->op == op_semi && !is_anti(e) && is_equi_exp_(e)) {
+					if (list_length(jexps) == 1 && list_empty(sexps) && rel->op == op_semi && !is_anti(e) && is_equi_exp_(e) && (rel_has_partition(be->mvc, rel->l) || be->no_mitosis)) {
 						join = stmt_semijoin(be, column(be, l), column(be, r), left->cand, NULL/*right->cand*/, is_semantics(e), false);
 						semijoin_only = 1;
 						en = NULL;

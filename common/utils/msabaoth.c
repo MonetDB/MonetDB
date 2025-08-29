@@ -187,35 +187,38 @@ msab_init(const char *dbfarm, const char *dbname)
 
 	/* clean out old UUID files in case the database crashed in a
 	 * previous incarnation */
-	if (_sabaoth_internal_dbname != NULL &&
-		(tmp = malloc(strlen(_sabaoth_internal_dbfarm) + strlen(_sabaoth_internal_dbname) + 2)) != NULL) {
-		sprintf(tmp, "%s%c%s", _sabaoth_internal_dbfarm, DIR_SEP, _sabaoth_internal_dbname);
-		if ((d = opendir(tmp)) != NULL) {
-			struct dbe {
-				struct dbe *next;
-				char path[];
-			} *dbe = NULL, *db;
-			struct dirent *e;
-			len = offsetof(struct dbe, path) + strlen(tmp) + 2;
-			while ((e = readdir(d)) != NULL) {
-				if (msab_isuuid(e->d_name) &&
-					(db = malloc(strlen(e->d_name) + len)) != NULL) {
-					db->next = dbe;
-					dbe = db;
-					sprintf(db->path, "%s%c%s", tmp, DIR_SEP, e->d_name);
+	if (_sabaoth_internal_dbname != NULL) {
+		size_t len = strlen(_sabaoth_internal_dbfarm) + strlen(_sabaoth_internal_dbname) + 2;
+		if ((tmp = malloc(len)) != NULL) {
+			snprintf(tmp, len, "%s%c%s", _sabaoth_internal_dbfarm, DIR_SEP, _sabaoth_internal_dbname);
+			if ((d = opendir(tmp)) != NULL) {
+				struct dbe {
+					struct dbe *next;
+					char path[];
+				} *dbe = NULL, *db;
+				struct dirent *e;
+				len = offsetof(struct dbe, path) + strlen(tmp) + 2;
+				while ((e = readdir(d)) != NULL) {
+					if (msab_isuuid(e->d_name) &&
+						(db = malloc(strlen(e->d_name) + len)) != NULL) {
+						db->next = dbe;
+						dbe = db;
+						snprintf(db->path, len - offsetof(struct dbe, path),
+								 "%s%c%s", tmp, DIR_SEP, e->d_name);
+					}
+				}
+				closedir(d);
+				/* remove in a separate loop after reading the directory,
+				 * so as to not have any interference */
+				while (dbe != NULL) {
+					(void) MT_remove(dbe->path);
+					db = dbe;
+					dbe = dbe->next;
+					free(db);
 				}
 			}
-			closedir(d);
-			/* remove in a separate loop after reading the directory,
-			 * so as to not have any interference */
-			while (dbe != NULL) {
-				(void) MT_remove(dbe->path);
-				db = dbe;
-				dbe = dbe->next;
-				free(db);
-			}
+			free(tmp);
 		}
-		free(tmp);
 	}
 }
 void

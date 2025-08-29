@@ -3373,6 +3373,7 @@ rewrite_anyequal(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 				}
 				if (!rewrite)
 					return NULL;
+				sql_exp *inexp;
 				if (is_tuple) {
 					list *t = le->f;
 					int s1 = list_length(t), s2 = list_length(rsq->exps);
@@ -3382,8 +3383,11 @@ rewrite_anyequal(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 						return sql_error(sql, 02, SQLSTATE(42000) "Subquery has too %s columns", (s2 < s1) ? "few" : "many");
 					if (!rewrite->exps)
 						rewrite->exps = sa_list(sql->sa);
-					for (node *n = t->h, *m = rsq->exps->h; n && m; n = n->next, m = m->next )
-						append(rewrite->exps, exp_compare(sql->sa, n->data, exp_ref(sql, m->data), cmp_equal));
+					for (node *n = t->h, *m = rsq->exps->h; n && m; n = n->next, m = m->next ) {
+						append(rewrite->exps, inexp = exp_compare(sql->sa, n->data, exp_ref(sql, m->data), cmp_equal));
+						if (inexp)
+							set_any(inexp);
+					}
 					v->changes++;
 					return exp_atom_bool(sql->sa, 1);
 				} else {
@@ -3393,7 +3397,9 @@ rewrite_anyequal(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 						return NULL;
 					if (!rewrite->exps)
 						rewrite->exps = sa_list(sql->sa);
-					append(rewrite->exps, exp_compare(sql->sa, le, exp_ref(sql, re), cmp_equal));
+					append(rewrite->exps, inexp=exp_compare(sql->sa, le, exp_ref(sql, re), cmp_equal));
+					if (inexp)
+						set_any(inexp);
 					v->changes++;
 					return exp_atom_bool(sql->sa, 1);
 				}

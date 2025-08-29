@@ -238,7 +238,7 @@ escape_str(str *retval, const char *s)
 			if (s[x] == ' ') {
 				res[y] = '+';
 			} else {
-				sprintf(res + y, "%%%2x", (uint8_t) s[x]);
+				snprintf(res + y, reslen - y, "%%%2x", (uint8_t) s[x]);
 				y += 2;
 			}
 		} else {
@@ -727,8 +727,9 @@ URLgetRobotURL(Client ctx, str *retval, const url *val)
 			throw(ILLARG, "url.getQuery", "bad url");
 		l = s - *val;
 
-		if ((*retval = ma_alloc(ma, l + sizeof("/robots.txt"))) != NULL) {
-			sprintf(*retval, "%.*s/robots.txt", (int) l, *val);
+		size_t retlen = l + sizeof("/robots.txt");
+		if ((*retval = ma_alloc(ma, retlen)) != NULL) {
+			snprintf(*retval, retlen, "%.*s/robots.txt", (int) l, *val);
 		}
 	}
 

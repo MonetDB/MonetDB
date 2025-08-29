@@ -765,7 +765,7 @@ CLTshutdown(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		delay--;
 	} while (delay > 0 && leftover > 1);
 	if (delay == 0 && leftover > 1)
-		snprintf(buf, 1024, "%d client sessions still running", leftover);
+		snprintf(buf, sizeof(buf), "%d client sessions still running", leftover);
 	*ret = MA_STRDUP(mb->ma, buf);
 	if (force)
 		GDKprepareExit();

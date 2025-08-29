@@ -29,6 +29,7 @@ install(FILES
   39_analytics.sql
   40_json.sql
   42_md5sum.sql
+  44_inet46.sql
   45_uuid.sql
   46_profiler.sql
   47_regexp.sql

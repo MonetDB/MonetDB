@@ -42,7 +42,7 @@ RQcall2str(str msg, MalBlkPtr mb, InstrPtr p)
 	}
 	if (p->retc > 1)
 		strcat(msg, ")");
-	sprintf(msg + len, ":= %s.%s(", getModuleId(p), getFunctionId(p));
+	snprintf(msg + len, BUFSIZ - len, ":= %s.%s(", getModuleId(p), getFunctionId(p));
 	s = strchr(msg, '(');
 	if (s) {
 		s++;
@@ -52,12 +52,12 @@ RQcall2str(str msg, MalBlkPtr mb, InstrPtr p)
 			VarPtr v = getVar(mb, getArg(p, k));
 			if (isVarConstant(mb, getArg(p, k))) {
 				if (v->type == TYPE_void) {
-					sprintf(msg + len, "nil");
+					snprintf(msg + len, BUFSIZ - len, "nil");
 				} else {
 					if ((cv = VALformat(&v->value)) == NULL) {
 						return NULL;
 					}
-					sprintf(msg + len, "%s:%s", cv, ATOMname(v->type));
+					snprintf(msg + len, BUFSIZ - len, "%s:%s", cv, ATOMname(v->type));
 					// GDKfree(cv);
 				}
 

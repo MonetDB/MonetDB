@@ -199,7 +199,7 @@ CMDbbpLocation(Client ctx, bat *ret)
 	for (i = 1; i < getBBPsize(); i++)
 		if (i != b->batCacheid) {
 			if (BBP_logical(i) && (BBP_refs(i) || BBP_lrefs(i))) {
-				int len = snprintf(buf, FILENAME_MAX, "%s/bat/%s", cwd,
+				int len = snprintf(buf, sizeof(buf), "%s/bat/%s", cwd,
 								   BBP_physical(i));
 				if (len == -1 || len >= FILENAME_MAX) {
 					BBPunlock();
@@ -460,7 +460,7 @@ CMDbbp(Client ctx, bat *ID, bat *NS, bat *TT, bat *CNT, bat *REFCNT, bat *LREFCN
 				if ((BBP_status(i) & BBPDELETED)
 					|| !(BBP_status(i) & BBPPERSISTENT))
 					mode = "transient";
-				len = snprintf(buf, FILENAME_MAX, "%s", BBP_physical(i));
+				len = snprintf(buf, sizeof(buf), "%s", BBP_physical(i));
 				if (len == -1 || len >= FILENAME_MAX) {
 					msg = createException(MAL, "catalog.bbp",
 										  SQLSTATE(HY013)

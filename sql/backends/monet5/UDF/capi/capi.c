@@ -481,7 +481,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 									   : JIT_CPP_COMPILER_NAME)
 				: (GDKgetenv(cc_flag) ? GDKgetenv(cc_flag) : JIT_COMPILER_NAME);
 
-	const char struct_prefix[] = "struct cudf_data_struct_";
+	static const char struct_prefix[] = "struct cudf_data_struct_";
 	const char *funcname;
 
 	BUN expression_hash = 0, funcname_hash = 0;
@@ -674,7 +674,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		// we place the temporary files in the TEMPDIR directory
 		// because this will be removed again upon server startup
 		const int RANDOM_NAME_SIZE = 32;
-		const char prefix[] = TEMPDIR_NAME DIR_SEP_STR;
+		static const char prefix[] = TEMPDIR_NAME DIR_SEP_STR;
 		size_t prefix_size = strlen(prefix);
 		char tempdirpath[MAXPATH];
 

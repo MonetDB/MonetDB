@@ -1826,7 +1826,8 @@ STRspace(Client ctx, str *res, const int *ll)
 	if (is_int_nil(l) || l < 0) {
 		*res = MA_STRDUP(ma, str_nil);
 	} else {
-		const char space[] = " ", *s = space;
+		static const char space[] = " ";
+		const char *s = space;
 		size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 
 		*res = NULL;

@@ -85,6 +85,12 @@ VALset(ValPtr v, int t, ptr p)
 	case TYPE_uuid:
 		v->val.uval = *(uuid *) p;
 		break;
+	case TYPE_inet4:
+		v->val.ip4val = *(inet4 *) p;
+		break;
+	case TYPE_inet6:
+		v->val.ip6val = *(inet6 *) p;
+		break;
 	case TYPE_str:
 		v->val.sval = (str) p;
 		break;
@@ -118,6 +124,8 @@ VALget(ValPtr v)
 	case TYPE_hge: return (void *) &v->val.hval;
 #endif
 	case TYPE_uuid: return (void *) &v->val.uval;
+	case TYPE_inet4: return (void *) &v->val.ip4val;
+	case TYPE_inet6: return (void *) &v->val.ip6val;
 	case TYPE_ptr: return (void *) &v->val.pval;
 	case TYPE_str: return (void *) v->val.sval;
 	default:       return (void *) v->val.pval;
@@ -239,6 +247,12 @@ VALinit(allocator *ma, ValPtr d, int tpe, const void *s)
 #endif
 	case TYPE_uuid:
 		d->val.uval = *(const uuid *) s;
+		break;
+	case TYPE_inet4:
+		d->val.ip4val = *(const inet4 *) s;
+		break;
+	case TYPE_inet6:
+		d->val.ip6val = *(const inet6 *) s;
 		break;
 	case TYPE_str:
 		d->len = strLen(s);
@@ -368,6 +382,10 @@ VALisnil(const ValRecord *v)
 #endif
 	case TYPE_uuid:
 		return is_uuid_nil(v->val.uval);
+	case TYPE_inet4:
+		return is_inet4_nil(v->val.ip4val);
+	case TYPE_inet6:
+		return is_inet6_nil(v->val.ip6val);
 	case TYPE_flt:
 		return is_flt_nil(v->val.fval);
 	case TYPE_dbl:
