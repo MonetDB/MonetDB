@@ -34,3 +34,4 @@ DROP TABLE schema1.table1
 
 statement ok
 DROP SCHEMA schema1
+

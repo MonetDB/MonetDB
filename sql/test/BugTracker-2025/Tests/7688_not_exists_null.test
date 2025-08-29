@@ -1,12 +1,12 @@
-
 statement ok
 create table a (i int, j int)
 
 statement ok
 insert into a values(0, 1), (2, 4)
 
-query II
+query II nosort
 select * from (select cast(null as int), 0 ) b(i,j) where not exists (select 1 from a where a.i = b.i and a.j = b.j)
 ----
 NULL
 0
+
