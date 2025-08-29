@@ -580,8 +580,8 @@ static str
 INETinet62inet4(inet4 *ret, const inet6 *s)
 {
 	ValRecord val;
-	VALinit(&val, TYPE_inet6, s);
-	if (VALconvert(TYPE_inet4, &val) == NULL)
+	VALinit(NULL, &val, TYPE_inet6, s);
+	if (VALconvert(NULL, TYPE_inet4, &val) == NULL)
 		throw(MAL, "inet46.inet4",
 			  SQLSTATE(22003) "overflow in conversion to inet4");
 	*ret = val.val.ip4val;
