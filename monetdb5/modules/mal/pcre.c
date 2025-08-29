@@ -324,16 +324,15 @@ single_replace(allocator *ma, pcre2_code *pcre_code, pcre2_match_data *match_dat
 			   PCRE2_SPTR replacement, PCRE2_SIZE len_replacement,
 			   PCRE2_UCHAR *result, PCRE2_SIZE *max_result)
 {
-	(void) ma;
 	int j = pcre2_substitute(pcre_code, origin_str, len_origin_str, 0, exec_options | PCRE2_SUBSTITUTE_OVERFLOW_LENGTH, match_data, NULL, replacement, len_replacement, result, max_result);
-	//if (j == PCRE2_ERROR_NOMEMORY) {
+	if (j == PCRE2_ERROR_NOMEMORY) {
 	//	GDKfree(result);
-	//	result = GDKmalloc(*max_result);
-	//	if (result == NULL)
-	//		return NULL;
-	//	/* try again with bigger result buffer */
-	//	j = pcre2_substitute(pcre_code, origin_str, len_origin_str, 0, exec_options, match_data, NULL, replacement, len_replacement, result, max_result);
-	//}
+		result = ma_alloc(ma, *max_result);
+		if (result == NULL)
+			return NULL;
+		/* try again with bigger result buffer */
+		j = pcre2_substitute(pcre_code, origin_str, len_origin_str, 0, exec_options, match_data, NULL, replacement, len_replacement, result, max_result);
+	}
 	if (j < 0) {
 		//GDKfree(result);
 		return NULL;
