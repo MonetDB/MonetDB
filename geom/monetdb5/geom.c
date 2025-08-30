@@ -2045,10 +2045,8 @@ wkbDump(Client ctx, bat *idBAT_id, bat *geomBAT_id, wkb **geomWKB)
 }
 
 static str
-dumpPointsPoint(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry, unsigned int *lvl, const char *path)
+dumpPointsPoint(allocator *ma, BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry, unsigned int *lvl, const char *path)
 {
-	allocator *ma = MT_thread_getallocator();
-	assert(ma);
 	char *newPath = NULL;
 	size_t pathLength = strlen(path);
 	wkb *pointWKB = geos2wkb(geosGeometry);
@@ -2060,7 +2058,7 @@ dumpPointsPoint(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry, unsi
 
 	(*lvl)++;
 	size_t newLen = pathLength + lvlDigitsNum + 1;
-	newPath = GDKmalloc(newLen);
+	newPath = ma_alloc(ma, newLen);
 	if (newPath == NULL) {
 		////GDKfree(pointWKB);
 		throw(MAL, "geom.Dump", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -2086,6 +2084,7 @@ dumpPointsLineString(Client ctx, BAT *idBAT, BAT *geomBAT, const GEOSGeometry *g
 	int check = 0;
 	unsigned int lvl = 0;
 	wkb *geomWKB = geos2wkb(geosGeometry);
+	allocator *ma = ctx->curprg->def->ma;
 
 	err = wkbNumPoints(ctx, &pointsNum, &geomWKB, &check);
 	////GDKfree(geomWKB);
@@ -2098,7 +2097,7 @@ dumpPointsLineString(Client ctx, BAT *idBAT, BAT *geomBAT, const GEOSGeometry *g
 		if (pointGeometry == NULL)
 			throw(MAL, "geom.DumpPoints", SQLSTATE(38000) "Geos operation GEOSGeomGetPointN failed");
 
-		err = dumpPointsPoint(idBAT, geomBAT, pointGeometry, &lvl, path);
+		err = dumpPointsPoint(ma, idBAT, geomBAT, pointGeometry, &lvl, path);
 		GEOSGeom_destroy_r(geoshandle, pointGeometry);
 	}
 
@@ -2205,11 +2204,12 @@ dumpPointsGeometry(Client ctx, BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geo
 {
 	int geometryType = GEOSGeomTypeId_r(geoshandle, geosGeometry) + 1;
 	unsigned int lvl = 0;
+	allocator *ma = ctx->curprg->def->ma;
 
 	//check the type of the geometry
 	switch (geometryType) {
 	case wkbPoint_mdb:
-		return dumpPointsPoint(idBAT, geomBAT, geosGeometry, &lvl, path);
+		return dumpPointsPoint(ma, idBAT, geomBAT, geosGeometry, &lvl, path);
 	case wkbLineString_mdb:
 	case wkbLinearRing_mdb:
 		return dumpPointsLineString(ctx, idBAT, geomBAT, geosGeometry, path);
