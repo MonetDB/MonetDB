@@ -106,10 +106,9 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 		no_mito = 0;
 	bool *rslices = NULL, *oclean = NULL;
 	InstrPtr p, *old = NULL;
-	subselect_t subselects;
+	subselect_t subselects = { 0 };
 	str msg = MAL_SUCCEED;
 
-	subselects = (subselect_t) { 0 };
 	if (mb->errors)
 		throw(MAL, "optimizer.pushselect", "%s", mb->errors);
 

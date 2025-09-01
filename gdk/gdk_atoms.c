@@ -278,6 +278,8 @@ const hge hge_nil = GDK_hge_min-1;
 const oid oid_nil = (oid) 1 << (sizeof(oid) * 8 - 1);
 const ptr ptr_nil = NULL;
 const uuid uuid_nil = {0};
+const inet4 inet4_nil = {0};
+const inet6 inet6_nil = {0};
 
 ptr
 ATOMnil(int t)
@@ -1343,6 +1345,384 @@ UUIDtoString(str *retval, size_t *len, const void *VALUE, bool external)
 	return UUID_STRLEN;
 }
 
+static int
+INET4compare(const void *L, const void *R)
+{
+	const inet4 *l = L, *r = R;
+	return memcmp(l->quad, r->quad, sizeof(l->quad));
+}
+
+static ssize_t
+INET4fromString(const char *svalue, size_t *len, void **RETVAL, bool external)
+{
+	inet4 **retval = (inet4 **) RETVAL;
+	const char *s = svalue;
+
+	if (*len < 4 || *retval == NULL) {
+		GDKfree(*retval);
+		if ((*retval = GDKmalloc(4)) == NULL)
+			return -1;
+		*len = 4;
+	}
+	if (external && strcmp(svalue, "nil") == 0) {
+		**retval = inet4_nil;
+		return 3;
+	}
+	if (strNil(svalue)) {
+		**retval = inet4_nil;
+		return 1;
+	}
+	while (GDKisspace(*s))
+		s++;
+	inet4 i4;
+	unsigned long ul;
+	char *e;
+	ul = strtoul(s, &e, 10);
+	if (ul == 0 && s == e) {
+		GDKerror("IPv4 address does not start with a number.");
+		goto bailout;
+	}
+	if (ul > 255) {
+		GDKerror("Overflow in IPv4 address.");
+		goto bailout;
+	}
+	i4.quad[0] = (uint8_t) ul;
+	s = e;
+	for (int i = 1; i < 4; i++) {
+		if (*s++ != '.') {
+			GDKerror("Missing components in IPv4 address.");
+			goto bailout;
+		}
+		if (!isdigit(*s)) {
+			GDKerror("Not a number in IPv4 address.");
+			goto bailout;
+		}
+		ul = strtoul(s, &e, 10);
+		if (ul == 0 && s == e) {
+			GDKerror("Impossible error.");
+			goto bailout;
+		}
+		if (ul > 255) {
+			GDKerror("Overflow in IPv4 address.");
+			goto bailout;
+		}
+		i4.quad[i] = (uint8_t) ul;
+		s = e;
+	}
+	while (GDKisspace(*s))
+		s++;
+	if (*s != 0) {
+		GDKerror("Extra junk after IP4v address.");
+		goto bailout;
+	}
+	**retval = i4;
+	return (ssize_t) (s - svalue);
+
+  bailout:
+	**retval = inet4_nil;
+	return -1;
+}
+
+static BUN
+INET4hash(const void *v)
+{
+	return intHash(v);
+}
+
+static void *
+INET4read(void *U, size_t *dstlen, stream *s, size_t cnt)
+{
+	inet4 *u = U;
+	if (u == NULL || *dstlen < cnt * sizeof(inet4)) {
+		if ((u = GDKrealloc(u, cnt * sizeof(inet4))) == NULL)
+			return NULL;
+		*dstlen = cnt * sizeof(inet4);
+	}
+	if (mnstr_read(s, u, 4, cnt) < (ssize_t) cnt) {
+		if (u != U)
+			GDKfree(u);
+		return NULL;
+	}
+	return u;
+}
+
+static gdk_return
+INET4write(const void *u, stream *s, size_t cnt)
+{
+	return mnstr_write(s, u, 4, cnt) ? GDK_SUCCEED : GDK_FAIL;
+}
+
+static ssize_t
+INET4toString(str *retval, size_t *len, const void *VALUE, bool external)
+{
+	const inet4 *value = VALUE;
+	(void) external;
+	if (*len < 16 || *retval == NULL) {
+		if (*retval)
+			GDKfree(*retval);
+		if ((*retval = GDKmalloc(16)) == NULL)
+			return -1;
+		*len = 16;
+	}
+	return snprintf(*retval, *len,
+			"%u.%u.%u.%u",
+			(unsigned) value->quad[0],
+			(unsigned) value->quad[1],
+			(unsigned) value->quad[2],
+			(unsigned) value->quad[3]);
+}
+
+static int
+INET6compare(const void *L, const void *R)
+{
+	const inet6 *l = L, *r = R;
+	for (int i = 0; i < 8; i++) {
+		int v = (l->oct[i] > r->oct[i]) - (l->oct[i] < r->oct[i]);
+		if (v != 0)
+			return v;
+	}
+	return 0;
+}
+
+static ssize_t
+INET6fromString(const char *svalue, size_t *len, void **RETVAL, bool external)
+{
+	inet6 **retval = (inet6 **) RETVAL;
+	const char *s = svalue;
+
+	if (*len < 16 || *retval == NULL) {
+		GDKfree(*retval);
+		if ((*retval = GDKmalloc(16)) == NULL)
+			return -1;
+		*len = 16;
+	}
+	if (external && strcmp(svalue, "nil") == 0) {
+		**retval = inet6_nil;
+		return 3;
+	}
+	if (strNil(svalue)) {
+		**retval = inet6_nil;
+		return 1;
+	}
+	while (GDKisspace(*s))
+		s++;
+	inet6 i6 = {0};
+	bool brkt = *s == '[';
+	if (brkt) {
+		s++;
+		if (!GDKisxdigit(*s) && *s != ':') {
+			GDKerror("Invalid IPv6 address.");
+			goto bailout;
+		}
+	} else if (strlen(s) == 32 && strspn(s, "0123456789abcdefABCDEF") == 32) {
+		/* special case: 32 hex digits without [ ] */
+		for (int i = 0; i < 8; i++) {
+			uint16_t val = 0;
+			for (int j = 12; j >= 0; j -= 4) {
+				if ('0' <= *s && *s <= '9')
+					val |= (*s - '0') << j;
+				else if ('a' <= *s && *s <= 'f')
+					val |= (*s - 'a' + 10) << j;
+				else if ('A' <= *s && *s <= 'F')
+					val |= (*s - 'A' + 10) << j;
+				s++;
+			}
+			i6.oct[i] = val;
+		}
+		**retval = i6;
+		return (ssize_t) (s - svalue);
+	}
+	int dcolpos = -1;
+	int i;
+	int maybeip4 = 0;
+	for (i = 0; i < 8; i++) {
+		if (s[0] == ':' && s[1] == ':') {
+			if (dcolpos >= 0) {
+				GDKerror("Invalid IPv6 address: multiple ::.");
+				goto bailout;
+			}
+			dcolpos = i;
+			s += 2;
+		} else if (i > 0 && s[0] == ':') {
+			s++;
+		}
+		if (*s == 0 || (brkt && *s == ']'))
+			break;
+		char *e;
+		unsigned long ul;
+		if (maybeip4 == 1 && (dcolpos == -1 ? i == 6 : i < 6)) {
+			ul = strtoul(s, &e, 10);
+			if (e > s && *e == '.') {
+				/* address such as ::ffff:192.0.2.128
+				 * i.e. an IPv4 address inside an
+				 * IPv6 */
+				if (ul > 255) {
+					GDKerror("Invalid IPv6 address.");
+					goto bailout;
+				}
+				s = e + 1;
+				unsigned long u2 = strtoul(s, &e, 10);
+				if (e == s || *e != '.' || u2 > 255) {
+					GDKerror("Invalid IPv6 address.");
+					goto bailout;
+				}
+				i6.oct[i++] = (uint16_t) ((ul << 8) | u2);
+				s = e + 1;
+				ul = strtoul(s, &e, 10);
+				if (e == s || *e != '.' || ul > 255) {
+					GDKerror("Invalid IPv6 address.");
+					goto bailout;
+				}
+				s = e + 1;
+				u2 = strtoul(s, &e, 10);
+				if (e == s || u2 > 255) {
+					GDKerror("Invalid IPv6 address.");
+					goto bailout;
+				}
+				i6.oct[i++] = (uint16_t) ((ul << 8) | u2);
+				s = e;
+				break;
+			}
+		}
+		ul = strtoul(s, &e, 16);
+		if (e == s || ul > 65535) {
+			GDKerror("Invalid IPv6 address.");
+			goto bailout;
+		}
+		i6.oct[i] = (uint16_t) ul;
+		s = e;
+		if (maybeip4 == 0) {
+			if (ul == 0xFFFF)
+				maybeip4 = 1;
+			else if (ul != 0)
+				maybeip4 = -1;
+		}
+	}
+	if (brkt) {
+		if (*s != ']') {
+			GDKerror("Invalid IPv6 address.");
+			goto bailout;
+		}
+		s++;
+	}
+	if ((dcolpos < 0 && i < 8) || (dcolpos >= 0 && i == 8)) {
+		GDKerror("Invalid IPv6 address.");
+		goto bailout;
+	}
+	if (dcolpos >= 0) {
+		int j;
+		for (j = 7; i > dcolpos; j--) {
+			i6.oct[j] = i6.oct[--i];
+			i6.oct[i] = 0;
+		}
+	}
+	while (GDKisspace(*s))
+		s++;
+	if (*s) {
+		GDKerror("Garbage at end of IPv6 address.");
+		goto bailout;
+	}
+
+	**retval = i6;
+	return (ssize_t) (s - svalue);
+
+  bailout:
+	**retval = inet6_nil;
+	return -1;
+}
+
+static BUN
+INET6hash(const void *v)
+{
+	return mix_inet6(v);
+}
+
+static void *
+INET6read(void *U, size_t *dstlen, stream *s, size_t cnt)
+{
+	inet6 *u = U;
+	if (u == NULL || *dstlen < cnt * sizeof(inet6)) {
+		if ((u = GDKrealloc(u, cnt * sizeof(inet6))) == NULL)
+			return NULL;
+		*dstlen = cnt * sizeof(inet6);
+	}
+	if (mnstr_read(s, u, sizeof(inet6), cnt) < (ssize_t) cnt) {
+		if (u != U)
+			GDKfree(u);
+		return NULL;
+	}
+	return u;
+}
+
+static gdk_return
+INET6write(const void *u, stream *s, size_t cnt)
+{
+	return mnstr_write(s, u, sizeof(inet6), cnt) ? GDK_SUCCEED : GDK_FAIL;
+}
+
+static ssize_t
+INET6toString(str *retval, size_t *len, const void *VALUE, bool external)
+{
+	const inet6 *value = VALUE;
+	(void) external;
+	/* max size: strlen("1234:1234:1234:1234:1234:1234:1234:1234")+1 */
+	if (*len < 40 || *retval == NULL) {
+		if (*retval)
+			GDKfree(*retval);
+		if ((*retval = GDKmalloc(40)) == NULL)
+			return -1;
+		*len = 40;
+	}
+	/* find longest stretch of zeroes */
+	int rl = 0;		/* length of current stretch of zeros */
+	int rl1 = -1;		/* start of current stretch of zeros */
+	int mrl = 0;		/* length of longest stretch of zeros */
+	int mrl1 = -1;		/* start of longest stretch of zeros */
+	for (int i = 0; i < 8; i++) {
+		if (value->oct[i] == 0) {
+			if (rl++ == 0)
+				rl1 = i;
+		} else {
+			if (rl > 1 && rl > mrl) {
+				mrl = rl;
+				mrl1 = rl1;
+			}
+			rl = 0;
+		}
+	}
+	if (rl > 1 && rl > mrl) {
+		mrl = rl;
+		mrl1 = rl1;
+	}
+	if (mrl1 < 0)
+		mrl1 = 8;
+	int pos = 0;
+	if (mrl1 == 0 && mrl == 5 && value->oct[5] == 0xFFFF) {
+		/* IPv4 address disguised as IPv6 */
+		pos += snprintf(*retval + pos, *len - pos,
+				"::%x:%d.%d.%d.%d",
+				value->oct[5], value->oct[6] >> 8,
+				value->oct[6] & 0xFF, value->oct[7] >> 8,
+				value->oct[7] & 0xFF);
+		return pos;
+	}
+	for (int i = 0; i < mrl1; i++) {
+		if (i > 0)
+			(*retval)[pos++] = ':';
+		pos += snprintf(*retval + pos, *len - pos, "%x", value->oct[i]);
+	}
+	if (mrl1 < 8) {
+		(*retval)[pos++] = ':';
+		(*retval)[pos++] = ':';
+	}
+	for (int i = mrl1 + mrl; i < 8; i++) {
+		pos += snprintf(*retval + pos, *len - pos, "%x", value->oct[i]);
+		if (i < 7)
+			(*retval)[pos++] = ':';
+	}
+	return pos;
+}
+
 static const blob blob_nil = {
 	~(size_t) 0
 };
@@ -1815,6 +2195,32 @@ atomDesc BATatoms[MAXATOMS] = {
 		.atomWrite = UUIDwrite,
 		.atomCmp = UUIDcompare,
 		.atomHash = UUIDhash,
+	},
+	[TYPE_inet4] = {
+		.name = "inet4",
+		.storage = TYPE_inet4,
+		.linear = true,
+		.size = sizeof(inet4),
+		.atomNull = (void *) &inet4_nil,
+		.atomFromStr = INET4fromString,
+		.atomToStr = INET4toString,
+		.atomRead = INET4read,
+		.atomWrite = INET4write,
+		.atomCmp = INET4compare,
+		.atomHash = INET4hash,
+	},
+	[TYPE_inet6] = {
+		.name = "inet6",
+		.storage = TYPE_inet6,
+		.linear = true,
+		.size = sizeof(inet6),
+		.atomNull = (void *) &inet6_nil,
+		.atomFromStr = INET6fromString,
+		.atomToStr = INET6toString,
+		.atomRead = INET6read,
+		.atomWrite = INET6write,
+		.atomCmp = INET6compare,
+		.atomHash = INET6hash,
 	},
 	[TYPE_str] = {
 		.name = "str",

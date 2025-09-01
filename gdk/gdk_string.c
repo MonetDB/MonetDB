@@ -148,6 +148,31 @@ strCleanHash(Heap *h, bool rebuild)
 	h->cleanhash = false;
 }
 
+
+BUN
+countStrings(const Heap *h)
+{
+	BUN n = 0;
+	size_t pos = GDK_STRHASHSIZE;
+	size_t pad;
+	const char *s;
+
+	while (pos < h->free) {
+		pad = GDK_VARALIGN - (pos & (GDK_VARALIGN - 1));
+		if (pos + pad < GDK_ELIMLIMIT) {
+			if (pad < sizeof(stridx_t))
+				pad += GDK_VARALIGN;
+		} else if (pos >= GDK_ELIMLIMIT)
+			pad = 0;
+		pos += pad;
+		s = h->base + pos;
+		n++;
+		pos += strlen(s) + 1;
+	}
+	return n;
+}
+
+
 /*
  * The strPut routine. The routine strLocate can be used to identify
  * the location of a string in the heap if it exists. Otherwise it
@@ -780,7 +805,7 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 	BUN i, p, nils = 0;
 	size_t *restrict lengths = NULL, separator_length = 0, next_length;
 	str *restrict astrings = NULL;
-	BATiter bi, bis = (BATiter) {0};
+	BATiter bi, bis = {0};
 	BAT *bn = NULL;
 	gdk_return rres = GDK_FAIL;
 

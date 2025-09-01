@@ -299,8 +299,8 @@
 #define sht_equ(a, b)	((a) == (b))
 #define int_equ(a, b)	((a) == (b))
 #define lng_equ(a, b)	((a) == (b))
-#define hge_equ(a, b)	((a) == (b))
 #ifdef HAVE_HGE
+#define hge_equ(a, b)	((a) == (b))
 #define uuid_equ(a, b)	((a).h == (b).h)
 #else
 #define uuid_equ(a, b)	(memcmp((a).u, (b).u, UUID_SIZE) == 0)

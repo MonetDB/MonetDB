@@ -1853,6 +1853,14 @@ BUNfnd(BAT *b, const void *v)
 			HASHloop_uuid(bi, b->thash, r, v)
 				break;
 			break;
+		case TYPE_inet4:
+			HASHloop_inet4(bi, b->thash, r, v)
+				break;
+			break;
+		case TYPE_inet6:
+			HASHloop_inet6(bi, b->thash, r, v)
+				break;
+			break;
 		case TYPE_str:
 			HASHloop_str(bi, b->thash, r, v)
 				break;

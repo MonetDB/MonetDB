@@ -23,6 +23,13 @@ HAVE_HGE?7637_str_to_decimal
 7654_non_monetdb_user_remote_table_exec
 7656_incorrect_error
 7659_trigger_crashes
+7661_trigger_crash
 7671-lag-over-empty-bat
 7674-rel_find_designated_index_crash
 7680-union-all
+7682_trigger_crash
+7686-delete-all-empty-table
+7688_not_exists_null
+7651-anti-join
+7652-anti-join-optimizer-bug
+7694-anti-join-and-filters

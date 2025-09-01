@@ -265,10 +265,11 @@ snapshot_restore_from(char *dbname, char *source)
 	e = msab_getDBfarm(&dbfarm);
 	if (e != NO_ERR)
 		goto bailout;
-	tmppath = malloc(strlen(dbfarm) + strlen(dbname) + 100);
-	sprintf(tmppath, "%s/.tmp.%s", dbfarm, dbname);
-	destpath = malloc(strlen(dbfarm) + strlen(dbname) + 100);
-	sprintf(destpath, "%s/%s", dbfarm, dbname);
+	size_t tmplen = strlen(dbfarm) + strlen(dbname) + 100;
+	tmppath = malloc(tmplen);
+	snprintf(tmppath, tmplen, "%s/.tmp.%s", dbfarm, dbname);
+	destpath = malloc(tmplen);
+	snprintf(destpath, tmplen, "%s/%s", dbfarm, dbname);
 
 	/* Remove the tmp directory, if it exists. */
 	e = deletedir(tmppath);
@@ -379,8 +380,9 @@ snapshot_list(int *nsnapshots, struct snapshot **snapshots)
 		snap->dbname = dbname;
 		snap->time = timestamp;
 		snap->size = statbuf.st_size;
-		snap->path = malloc(strlen(snapdir) + 1 + strlen(ent->d_name) + 1);
-		sprintf(snap->path, "%s/%s", snapdir, ent->d_name);
+		size_t pathlen = strlen(snapdir) + 1 + strlen(ent->d_name) + 1;
+		snap->path = malloc(pathlen);
+		snprintf(snap->path, pathlen, "%s/%s", snapdir, ent->d_name);
 	}
 
 bailout:
@@ -559,7 +561,7 @@ snapshot_default_filename(char **ret, const char *dbname)
 	len = strlen(dbname) + strlen(snapdir) + 100;
 	name_buf = malloc(len + 1);
 	p = name_buf;
-	p += sprintf(p, "%s%c%s_", snapdir, DIR_SEP, dbname);
+	p += snprintf(p, len + 1, "%s%c%s_", snapdir, DIR_SEP, dbname);
 	p += strftime(p, name_buf + len - p, "%Y%m%dT%H%M%SUTC", &time_parts);
 	strcpy(p, snapext);
 
@@ -847,8 +849,9 @@ unpack_tarstream(stream *tarstream, char *destdir, int skipfirstcomponent)
 		} else {
 			useful_part = whole_filename;
 		}
-		destfile = realloc(destfile, strlen(destdir) + 1 + strlen(useful_part) + 1);
-		sprintf(destfile, "%s/%s", destdir, useful_part);
+		size_t destlen = strlen(destdir) + 1 + strlen(useful_part) + 1;
+		destfile = realloc(destfile, destlen);
+		snprintf(destfile, destlen, "%s/%s", destdir, useful_part);
 
 		// Create any missing directories and take care of fsync'ing them
 		e = prepare_directory(&dirhelper, destdir, destfile);

@@ -332,7 +332,8 @@ STRbatSpace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int *restrict vals, x;
 	str buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
 	bool nils = false;
-	const char space[] = " ", *s = space;
+	static const char space[] = " ";
+	const char *s = space;
 	struct canditer ci1 = { 0 };
 	oid off1;
 	bat *res = getArgReference_bat(stk, pci, 0),

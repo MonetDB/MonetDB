@@ -69,12 +69,6 @@ connect_socket_unix(Mapi mid)
 	return mapi_setError(mid, "Unix domain sockets not supported", __func__, MERROR);
 }
 
-static MapiMsg
-scan_unix_sockets(Mapi mid)
-{
-	return mapi_setError(mid, "Unix domain sockets not supported", __func__, MERROR);
-}
-
 #endif
 
 
@@ -90,8 +84,9 @@ mapi_reconnect(Mapi mid)
 		return MERROR;
 	}
 
-	// If neither host nor port are given, scan the Unix domain sockets in
-	// /tmp and see if any of them serve this database.
+	// If neither host nor port are given, scan all Unix domain sockets
+	// and then all 'localhost' TCP sockets to see if any of them
+	// serve this database.
 	// Otherwise, just try to connect to what was given.
 	if (msettings_connect_scan(mid->settings))
 		return scan_sockets(mid);
@@ -104,13 +99,17 @@ scan_sockets(Mapi mid)
 {
 	msettings_error errmsg;
 
+	// If we support Unix domain sockets, scan them first
+#ifdef HAVE_SYS_UN_H
 	if (scan_unix_sockets(mid) == MOK)
 		return MOK;
 	/* if database was not unknown (no message "no such database"),
 	 * skip further attempts to connect */
 	if (mid->errorstr && strstr(mid->errorstr, "no such database") == NULL)
 		return MERROR;
+#endif
 
+	// If that didn't succeed, force the connection to TCP 'localhost'.
 	errmsg = msetting_set_string(mid->settings, MP_HOST, "localhost");
 	if (!errmsg)
 		errmsg = msettings_validate(mid->settings);
@@ -244,7 +243,7 @@ connect_socket_tcp(Mapi mid)
 
 	mapi_log_record(mid, "CONN", "Connecting to %s:%d", host, port);
 
-	struct addrinfo hints = (struct addrinfo) {
+	struct addrinfo hints = {
 		.ai_family = AF_UNSPEC,
 		.ai_socktype = SOCK_STREAM,
 		.ai_protocol = IPPROTO_TCP,
@@ -617,13 +616,14 @@ mapi_handshake(Mapi mid)
 			return mapi_setError(mid, buf, __func__, MERROR);
 		}
 
-		char *replacement_password = malloc(1 + strlen(pwdhash) + 1);
+		size_t replpwlen = 1 + strlen(pwdhash) + 1;
+		char *replacement_password = malloc(replpwlen);
 		if (replacement_password == NULL) {
 			free(pwdhash);
 			close_connection(mid);
 			return mapi_setError(mid, "malloc failed", __func__, MERROR);
 		}
-		sprintf(replacement_password, "\1%s", pwdhash);
+		snprintf(replacement_password, replpwlen, "\1%s", pwdhash);
 		free(pwdhash);
 		msettings_error errmsg = msetting_set_string(mid->settings, MP_PASSWORD, replacement_password);
 		free(replacement_password);
@@ -866,7 +866,7 @@ mapi_handshake(Mapi mid)
 	bool autocommit = msetting_bool(mid->settings, MP_AUTOCOMMIT);
 	if (mid->handshake_options <= MAPI_HANDSHAKE_AUTOCOMMIT && autocommit != msetting_bool(msettings_default, MP_AUTOCOMMIT)) {
 		char buf[50];
-		sprintf(buf, "%d", !!autocommit);
+		snprintf(buf, sizeof(buf), "%d", !!autocommit);
 		MapiMsg result = mapi_Xcommand(mid, "auto_commit", buf);
 		if (result != MOK)
 			return mid->error;
@@ -874,14 +874,14 @@ mapi_handshake(Mapi mid)
 	long replysize = msetting_long(mid->settings, MP_REPLYSIZE);
 	if (mid->handshake_options <= MAPI_HANDSHAKE_REPLY_SIZE && replysize != msetting_long(msettings_default, MP_REPLYSIZE)) {
 		char buf[50];
-		sprintf(buf, "%ld", replysize);
+		snprintf(buf, sizeof(buf), "%ld", replysize);
 		MapiMsg result = mapi_Xcommand(mid, "reply_size", buf);
 		if (result != MOK)
 			return mid->error;
 	}
 	if (mid->handshake_options <= MAPI_HANDSHAKE_SIZE_HEADER && mid->sizeheader != MapiStructDefaults.sizeheader) {
 		char buf[50];
-		sprintf(buf, "%d", !!mid->sizeheader);
+		snprintf(buf, sizeof(buf), "%d", !!mid->sizeheader);
 		MapiMsg result = mapi_Xcommand(mid, "sizeheader", buf); // no underscore!
 		if (result != MOK)
 			return mid->error;

@@ -130,8 +130,8 @@ CMDscienceBINARY(MalStkPtr stk, InstrPtr pci,
 	bat bid;
 	BAT *bn, *b1 = NULL, *b2 = NULL, *s1 = NULL, *s2 = NULL;
 	int tp1, tp2;
-	struct canditer ci1 = (struct canditer) { 0 },
-		ci2 = (struct canditer) { 0 };
+	struct canditer ci1 = { 0 },
+		ci2 = { 0 };
 	oid x1, x2, off1, off2;
 	BUN i, ncand, nils = 0;
 	int e = 0, ex = 0;

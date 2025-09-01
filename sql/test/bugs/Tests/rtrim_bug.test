@@ -55,7 +55,7 @@ project (
 | | project (
 | | | table("sys"."t1") [ "t1"."m" NOT NULL UNIQUE ]
 | | ) [ "sys"."rtrim"("t1"."m" NOT NULL UNIQUE) NOT NULL as "%1"."%1" ]
-| ) [ ("%4"."%4" NOT NULL) = ("%1"."%1" NOT NULL) ]
+| ) [ ("%4"."%4" NOT NULL) + = ("%1"."%1" NOT NULL) ]
 ) [ "sys"."length"("t1"."m" NOT NULL UNIQUE) NOT NULL as "data_length", "t1"."m" NOT NULL UNIQUE as "data_value" ]
 
 statement ok

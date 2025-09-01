@@ -63,9 +63,9 @@ typedef struct _inet {
 #else
 #define is_inet_nil(i) ((i)->q1 == 0 && (i)->q2 == 0 && (i)->q3 == 0 && (i)->q4 == 0 && (i)->mask == 0 && (i)->isnil != 0)
 #endif
-#define in_setnil(i) (i)->q1 = (i)->q2 = (i)->q3 = (i)->q4 = (i)->mask = (i)->filler1 = (i)->filler2 = 0; (i)->isnil = 1
+#define in_setnil(i) (*(i) = (inet) {.isnil = 1})
 
-static const inet inet_nil = { {{0, 0, 0, 0, 0, 0, 0, 1}} };
+static const inet inet_nil = {.isnil = 1};
 
 /**
  * Creates a new inet from the given string.
@@ -545,10 +545,10 @@ INEThost(str *retval, const inet *val)
 		if (*retval == NULL)
 			throw(MAL, "INEThost", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	} else {
-		ip = GDKmalloc(sizeof(char) * 16);
+		ip = GDKmalloc(16);
 		if (ip == NULL)
 			throw(MAL, "INEThost", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		sprintf(ip, "%d.%d.%d.%d", val->q1, val->q2, val->q3, val->q4);
+		snprintf(ip, 16, "%d.%d.%d.%d", val->q1, val->q2, val->q3, val->q4);
 		*retval = ip;
 	}
 	return (MAL_SUCCEED);

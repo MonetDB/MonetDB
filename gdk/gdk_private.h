@@ -134,6 +134,8 @@ BUN binsearch_flt(const oid *restrict indir, oid offset, const flt *restrict val
 	__attribute__((__visibility__("hidden")));
 BUN binsearch_dbl(const oid *restrict indir, oid offset, const dbl *restrict vals, BUN lo, BUN hi, dbl v, int ordering, int last)
 	__attribute__((__visibility__("hidden")));
+BUN countStrings(const Heap *h)
+	__attribute__((__visibility__("hidden")));
 Heap *createOIDXheap(BAT *b, bool stable)
 	__attribute__((__visibility__("hidden")));
 void doHASHdestroy(BAT *b, Hash *hs)
@@ -226,6 +228,8 @@ void HEAP_recover(Heap *, const var_t *, BUN)
 	__attribute__((__visibility__("hidden")));
 gdk_return HEAPsave(Heap *h, const char *nme, const char *ext, bool dosync, BUN free, MT_Lock *lock)
 	__attribute__((__warn_unused_result__))
+	__attribute__((__visibility__("hidden")));
+char *humansize(size_t val, char *buf, size_t buflen)
 	__attribute__((__visibility__("hidden")));
 double joincost(BAT *r, BUN lcount, struct canditer *rci, bool *hash, bool *phash, bool *cand)
 	__attribute__((__visibility__("hidden")));
