@@ -321,8 +321,8 @@ MSscheduleClient(str command, str peer, str challenge, bstream *fin, stream *fou
 			cleanUpScheduleClient(c, &command, &msg);
 			return;
 		}
-		if (strncasecmp("sql", lang, 3) != 0
-			&& strncasecmp("msql", lang, 3) != 0
+		if (strncasecmp("sql", lang, strlen(lang)) != 0
+			&& strncasecmp("msql", lang, strlen(lang)) != 0
 			&& strcmp(user, "monetdb") != 0) {
 			mnstr_printf(fout,
 						 "!only the 'monetdb' user can use non-sql languages. "
