@@ -946,6 +946,26 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 		int xx = ATOMcmp(b->ttype,
 				 BUNtail(ni, ci.seq - hseq),
 				 BUNtail(bi, last));
+		if (b->tsorted && !ni.sorted && ni.nosorted == 0 && xx >= 0) {
+			/* b is currently sorted; we don't know whether
+			 * n is sorted; first value of n is at least as
+			 * large as last value of b: we invest in an
+			 * order check of n to see whether the result is
+			 * still sorted */
+			(void) BATordered(n);
+			bat_iterator_end(&ni);
+			ni = bat_iterator(n);
+		}
+		if (b->trevsorted && !ni.revsorted && ni.norevsorted == 0 && xx <= 0) {
+			/* b is currently reverse sorted; we don't know
+			 * whether n is reverse sorted; first value of n
+			 * is at most as large as last value of b: we
+			 * invest in an order check of n to see whether
+			 * the result is still reverse sorted */
+			(void) BATordered_rev(n);
+			bat_iterator_end(&ni);
+			ni = bat_iterator(n);
+		}
 		if (b->tsorted && (!ni.sorted || xx < 0)) {
 			b->tsorted = false;
 			b->tnosorted = 0;

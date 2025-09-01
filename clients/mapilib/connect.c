@@ -69,12 +69,6 @@ connect_socket_unix(Mapi mid)
 	return mapi_setError(mid, "Unix domain sockets not supported", __func__, MERROR);
 }
 
-static MapiMsg
-scan_unix_sockets(Mapi mid)
-{
-	return mapi_setError(mid, "Unix domain sockets not supported", __func__, MERROR);
-}
-
 #endif
 
 
@@ -90,8 +84,9 @@ mapi_reconnect(Mapi mid)
 		return MERROR;
 	}
 
-	// If neither host nor port are given, scan the Unix domain sockets in
-	// /tmp and see if any of them serve this database.
+	// If neither host nor port are given, scan all Unix domain sockets
+	// and then all 'localhost' TCP sockets to see if any of them
+	// serve this database.
 	// Otherwise, just try to connect to what was given.
 	if (msettings_connect_scan(mid->settings))
 		return scan_sockets(mid);
@@ -104,13 +99,17 @@ scan_sockets(Mapi mid)
 {
 	msettings_error errmsg;
 
+	// If we support Unix domain sockets, scan them first
+#ifdef HAVE_SYS_UN_H
 	if (scan_unix_sockets(mid) == MOK)
 		return MOK;
 	/* if database was not unknown (no message "no such database"),
 	 * skip further attempts to connect */
 	if (mid->errorstr && strstr(mid->errorstr, "no such database") == NULL)
 		return MERROR;
+#endif
 
+	// If that didn't succeed, force the connection to TCP 'localhost'.
 	errmsg = msetting_set_string(mid->settings, MP_HOST, "localhost");
 	if (!errmsg)
 		errmsg = msettings_validate(mid->settings);
