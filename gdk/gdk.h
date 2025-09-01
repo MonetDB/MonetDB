@@ -457,7 +457,7 @@ typedef union {
 #else
 	lng align[2];		/* force alignment, not otherwise used */
 #endif
-	uint16_t oct[8];
+	uint8_t hex[16];
 } inet6;
 
 #define SIZEOF_OID	SIZEOF_SIZE_T

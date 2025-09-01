@@ -659,7 +659,7 @@ BAThashsave(BAT *b, bool dosync)
 #define EQinet6(a, b)	((a).align == (b).align)
 #else
 #define EQuuid(a, b)	(memcmp((a).u, (b).u, UUID_SIZE) == 0)
-#define EQinet6(a, b)	(memcmp((a).align, (b).align, sizeof(inet6)) == 0)
+#define EQinet6(a, b)	(memcmp((a).hex, (b).hex, sizeof(inet6)) == 0)
 #endif
 
 #define starthash(TYPE)							\
