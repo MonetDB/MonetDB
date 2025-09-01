@@ -6,7 +6,7 @@ CREATE TABLE "test_bug_repro" (
   "final_rank_driver_" BIGINT
 )
 
-query I
+query I nosort
 WITH "second_place_days" AS (
   SELECT COUNT(DISTINCT "event_date_") AS "count" FROM "test_bug_repro" WHERE "position_" = 2
 ),
@@ -29,3 +29,4 @@ WITH "second_place_days" AS (
 SELECT COUNT(*) FROM "results"
 ----
 3
+
