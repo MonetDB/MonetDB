@@ -944,7 +944,7 @@ rel2bin_oahash_outerjoin(backend *be, sql_rel *rel, list *refs)
 	InstrPtr probed_ids = NULL, hash_ids = NULL;
 	stmt *m = NULL;
 
-	assert(rel->op == op_left || rel->op == op_right);
+	assert(!(rel->single && list_empty(jexps)));
 	if (list_empty(jexps)) { /* cartesian */
 		sub = rel2bin_oahash_cart(be, rel, refs, &probed_ids, &probe_sub, &probe_side, &hash_side, &hash_ids);
 	} else {
@@ -971,26 +971,6 @@ rel2bin_oahash_outerjoin(backend *be, sql_rel *rel, list *refs)
 			append(res, c);
 		}
 		sub = stmt_list(be, res);
-	}
-	if (list_length(rel->attr)) {
-		if (m) {
-			sql_exp *e = rel->attr->h->data;
-			const char *rnme = exp_relname(e);
-			const char *nme = exp_name(e);
-
-			assert(m);
-			if (exp_is_atom(e) && need_no_nil(e))
-				m = sql_Nop_(be, "ifthenelse", sql_unop_(be, "isnull", m), stmt_bool(be, false), m, NULL);
-			/*
-			if (!exist) {
-				sql_subtype *bt = sql_fetch_localtype(TYPE_bit);
-				sql_subfunc *not = sql_bind_func(be->mvc, "sys", "not", bt, NULL, F_FUNC, true, true);
-				m = stmt_unop(be, m, NULL, not);
-            }
-			*/
-            stmt *s = stmt_alias(be, m, e->alias.label, rnme, nme);
-            append(sub->op4.lval, s);
-        }
 	}
 	return sub;
 }
