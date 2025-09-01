@@ -1832,6 +1832,10 @@ GDKfree(void *s)
 	size_t *p = s;
 	assert((asize & 2) == 0);   /* check against duplicate free */
 	size_t size = p[-2];
+	if (((size + 7) & ~7) + MALLOC_EXTRA_SPACE + DEBUG_SPACE != asize) {
+		fprintf(stderr, "GDKfree %p, size: %zu, asize %zu\n", s, size, asize);
+		fflush(stderr);
+	}
 	assert(((size + 7) & ~7) + MALLOC_EXTRA_SPACE + DEBUG_SPACE == asize);
 	/* check for out-of-bounds writes */
 	for (size_t i = size; i < asize - MALLOC_EXTRA_SPACE; i++)

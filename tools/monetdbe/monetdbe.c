@@ -704,6 +704,7 @@ monetdbe_startup(monetdbe_database_internal *mdbe, const char* dbdir, monetdbe_o
 			set_error(mdbe, createException(MAL, "monetdbe.monetdbe_startup", GDK_EXCEPTION));
 			goto cleanup;
 		}
+		GDKsetdebug(ALLOCMASK);
 		GDKtracer_set_adapter("BASIC");
 	} else {
 		/* otherwise no trace output */

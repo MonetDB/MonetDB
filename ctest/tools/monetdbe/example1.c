@@ -23,9 +23,10 @@ main(void)
 	char* err = NULL;
 	monetdbe_database mdbe = NULL;
 	monetdbe_result* result = NULL;
+	monetdbe_options opts = {.trace_file = "stdout"};
 
 	// second argument is a string for the db directory or NULL for in-memory mode
-	if (monetdbe_open(&mdbe, NULL, NULL))
+	if (monetdbe_open(&mdbe, NULL, &opts))
 		error("Failed to open database");
 	if ((err = monetdbe_query(mdbe, "CREATE TABLE test (x integer, y string)", NULL, NULL)) != NULL)
 		error(err);
