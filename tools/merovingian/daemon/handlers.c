@@ -301,6 +301,7 @@ childhandler(void)
 			if (p->pid == pid) {
 				/* log everything that's still in the pipes */
 				logFD(p, 0, "MSG", p->dbname, (long long int)p->pid, _mero_logfile, true);
+				logFD(p, 1, "ERR", p->dbname, (long long int)p->pid, _mero_logfile, true);
 				p->pid = -1;	/* indicate the process is dead */
 
 				/* close the descriptors */
