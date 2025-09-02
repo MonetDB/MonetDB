@@ -129,8 +129,10 @@ BATXMLxmltext(bat *ret, const bat *bid)
 		case 'D':{
 			xmlDocPtr d = xmlParseMemory(t + 1, (int) (len - 1));
 			elem = xmlDocGetRootElement(d);
-			content = (str) xmlNodeGetContent(elem);
+			xmlChar *cont = xmlNodeGetContent(elem);
 			xmlFreeDoc(d);
+			content = GDKstrdup((const char *) cont);
+			xmlFree(cont);
 			if (content == NULL) {
 				err = SQLSTATE(HY013) MAL_MALLOC_FAIL;
 				goto bunins_failed;
@@ -142,8 +144,10 @@ BATXMLxmltext(bat *ret, const bat *bid)
 				doc = xmlParseMemory("<doc/>", 6);
 			xmlParseInNodeContext(xmlDocGetRootElement(doc), t + 1,
 								  (int) (len - 1), 0, &elem);
-			content = (str) xmlNodeGetContent(elem);
+			xmlChar *cont = xmlNodeGetContent(elem);
 			xmlFreeNodeList(elem);
+			content = GDKstrdup((const char *) cont);
+			xmlFree(cont);
 			if (content == NULL) {
 				err = SQLSTATE(HY013) MAL_MALLOC_FAIL;
 				goto bunins_failed;
@@ -321,12 +325,14 @@ BATXMLdocument(bat *ret, const bat *bid)
 			size = (size_t) len + 128;
 			buf = GDKmalloc(size);
 			if (buf == NULL) {
+				xmlFree(s);
 				err = MAL_MALLOC_FAIL;
 				goto bunins_failed;
 			}
 		}
 		buf[0] = 'D';
 		strcpy(buf + 1, (char *) s);
+		xmlFree(s);
 		if (bunfastapp_nocheckVAR(bn, buf) != GDK_SUCCEED)
 			goto bunins_failed;
 	}
