@@ -405,6 +405,24 @@ sql_create_auth_id(mvc *m, sqlid id, str auth)
 	return true;
 }
 
+static bool
+role_granting_privs(mvc *m, oid role_rid, sqlid role_id, sqlid grantor_id)
+{
+	sql_schema *sys = find_sql_schema(m->session->tr, "sys");
+	sql_table *auths = find_sql_table(m->session->tr, sys, "auths");
+	sql_column *auths_grantor = find_sql_column(auths, "grantor");
+	sqlid owner_id;
+	sqlstore *store = m->session->tr->store;
+
+	owner_id = store->table_api.column_find_sqlid(m->session->tr, auths_grantor, role_rid);
+	if (owner_id == grantor_id)
+		return true;
+	if (sql_privilege(m, grantor_id, role_id, PRIV_ROLE_ADMIN) == PRIV_ROLE_ADMIN)
+		return true;
+	/* check for grant rights in the privs table */
+	return false;
+}
+
 str
 sql_create_role(mvc *m, str auth, sqlid grantor)
 {
@@ -443,6 +461,16 @@ sql_drop_role(mvc *m, str auth)
 	rid = store->table_api.column_find_row(tr, find_sql_column(auths, "name"), auth, NULL);
 	if (is_oid_nil(rid))
 		throw(SQL, "sql.drop_role", SQLSTATE(0P000) "DROP ROLE: no such role '%s'", auth);
+
+	if (!admin_privs(m->user_id) &&
+		!admin_privs(m->role_id) &&
+		!role_granting_privs(m, rid, role_id, m->user_id) &&
+		!role_granting_privs(m, rid, role_id, m->role_id))
+		throw(SQL,"sql.drop_role", SQLSTATE(0P000) "Insufficient privileges to drop role '%s'", auth);
+
+	if (!is_oid_nil(backend_find_user(m, auth)))
+		throw(SQL,"sql.drop_role", SQLSTATE(M1M05) "DROP: '%s' is a USER not a ROLE", auth);
+
 	if ((log_res = store->table_api.table_delete(m->session->tr, auths, rid)) != LOG_OK)
 		throw(SQL, "sql.drop_role", SQLSTATE(42000) "DROP ROLE: failed%s", log_res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
 
@@ -555,21 +583,15 @@ execute_priv(mvc *m, sql_func *f)
 }
 
 static bool
-role_granting_privs(mvc *m, oid role_rid, sqlid role_id, sqlid grantor_id)
+sql_user_has_role(mvc *m, sqlid user_id, sqlid role_id)
 {
+	if (user_id == role_id)
+		return true;
 	sql_schema *sys = find_sql_schema(m->session->tr, "sys");
-	sql_table *auths = find_sql_table(m->session->tr, sys, "auths");
-	sql_column *auths_grantor = find_sql_column(auths, "grantor");
-	sqlid owner_id;
+	sql_table *roles = find_sql_table(m->session->tr, sys, "user_role");
 	sqlstore *store = m->session->tr->store;
-
-	owner_id = store->table_api.column_find_sqlid(m->session->tr, auths_grantor, role_rid);
-	if (owner_id == grantor_id)
-		return true;
-	if (sql_privilege(m, grantor_id, role_id, PRIV_ROLE_ADMIN) == PRIV_ROLE_ADMIN)
-		return true;
-	/* check for grant rights in the privs table */
-	return false;
+	oid rid = store->table_api.column_find_row(m->session->tr, find_sql_column(roles, "login_id"), &user_id, find_sql_column(roles, "role_id"), &role_id, NULL);
+	return (!is_oid_nil(rid));
 }
 
 char *
@@ -877,6 +899,7 @@ sql_drop_granted_users(mvc *sql, sqlid user_id, char *user, list *deleted_users)
 	if (!list_find(deleted_users, &user_id, (fcmp) &id_cmp)) {
 		if (mvc_check_dependency(sql, user_id, OWNER_DEPENDENCY, NULL))
 			throw(SQL,"sql.drop_user",SQLSTATE(M1M05) "DROP USER: '%s' owns a schema", user);
+
 		if (backend_drop_user(sql, user) == FALSE)
 			throw(SQL,"sql.drop_user",SQLSTATE(M0M27) "%s", sql->errstr);
 
@@ -947,9 +970,21 @@ sql_drop_granted_users(mvc *sql, sqlid user_id, char *user, list *deleted_users)
 char *
 sql_drop_user(mvc *sql, char *user)
 {
-	sqlid user_id = sql_find_auth(sql, user);
 	list *deleted = list_create(NULL);
 	str msg = NULL;
+
+	sqlid user_id = sql_find_auth(sql, user);
+	sql_schema *sys = find_sql_schema(sql->session->tr, "sys");
+	sql_table *auths = find_sql_table(sql->session->tr, sys, "auths");
+	sql_trans *tr = sql->session->tr;
+	sqlstore *store = sql->session->tr->store;
+	oid rid = store->table_api.column_find_row(tr, find_sql_column(auths, "name"), user, NULL);
+
+	if (!admin_privs(sql->user_id) &&
+	    !admin_privs(sql->role_id) &&
+	    !role_granting_privs(sql, rid, user_id, sql->user_id) &&
+	    !role_granting_privs(sql, rid, user_id, sql->role_id))
+		throw(SQL,"sql.drop_role", SQLSTATE(0P000) "Insufficient privileges to drop user '%s'", user);
 
 	if (!deleted)
 		throw(SQL, "sql.drop_user", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -983,6 +1018,12 @@ sql_alter_user(mvc *sql, char *user, char *passwd, bool enc, char *schema, char 
 
 	if (user != NULL && is_oid_nil(backend_find_user(sql, user)))
 		throw(SQL,"sql.alter_user", SQLSTATE(42M32) "ALTER USER: no such user '%s'", user);
+
+	sqlid user_id = !user ? sql->user_id : sql_find_auth(sql, user);
+	bool has_role = role_id && sql_user_has_role(sql, user_id, role_id);
+	if (!admin_privs(sql->user_id) && !admin_privs(sql->role_id) && role_id && !has_role)
+		throw(SQL,"sql.alter_user", SQLSTATE(M1M05) "User has not been granted the role '%s'", role);
+
 	if (schema) {
 		if (!(s = find_sql_schema(sql->session->tr, schema)))
 			throw(SQL,"sql.alter_user", SQLSTATE(3F000) "ALTER USER: no such schema '%s'", schema);
@@ -992,6 +1033,18 @@ sql_alter_user(mvc *sql, char *user, char *passwd, bool enc, char *schema, char 
 	}
 	if (backend_alter_user(sql, user, passwd, enc, schema_id, schema_path, oldpasswd, role_id, max_memory, max_workers) == FALSE)
 		throw(SQL,"sql.alter_user", SQLSTATE(M0M27) "%s", sql->errstr);
+
+	/* the default role must explicitly granted to the new user */
+	if (role_id && !has_role) {
+		str r;
+		/* - we don't grant the default role WITH ADMIN OPTION hence admin=0
+		 * - we should use sql->role_id instead of sql->user_id otherwise a user with high privs
+		 * (e.g. sysadmin) might not be able to GRANT the DEFAULT ROLE (see sql_grant_role() impl)
+		 */
+		if ((r = sql_grant_role(sql, user, role, sql->role_id, 0)))
+			return r;
+	}
+
 	return NULL;
 }
 

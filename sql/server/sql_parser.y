@@ -1028,7 +1028,7 @@ set_statement:
 		{ dlist *l = L();
 		  sql_subtype t;
 		sql_find_subtype(&t, "char", UTF8_strlen($5), 0 );
-		append_list(l, append_string(append_string(L(), sa_strdup(SA, "sys")), sa_strdup(SA, "current_user")));
+		append_list(l, append_string(append_string(L(), sa_strdup(SA, "sys")), sa_strdup(SA, "current_role")));
 		append_symbol(l, _newAtomNode( _atom_string(&t, $5)) );
 		$$ = _symbol_create_list( SQL_SET, l); }
   | set session_schema ident
@@ -1042,7 +1042,7 @@ set_statement:
 		{ dlist *l = L();
 		  sql_subtype t;
 		sql_find_subtype(&t, "char", UTF8_strlen($4), 0 );
-		append_list(l, append_string(append_string(L(), sa_strdup(SA, "sys")), sa_strdup(SA, "current_user")));
+		append_list(l, append_string(append_string(L(), sa_strdup(SA, "sys")), sa_strdup(SA, "current_role")));
 		append_symbol(l, _newAtomNode( _atom_string(&t, $4)) );
 		$$ = _symbol_create_list( SQL_SET, l); }
   | set ROLE ident
