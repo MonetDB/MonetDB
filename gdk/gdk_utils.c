@@ -25,6 +25,10 @@
 #include "gdk_private.h"
 #include "mutils.h"
 
+#ifdef HAVE_MACH_O_DYLD_H
+#include <execinfo.h>
+#endif
+
 static BAT *GDKkey = NULL;
 static BAT *GDKval = NULL;
 ATOMIC_TYPE GDKdebug = ATOMIC_VAR_INIT(0);
@@ -1830,9 +1834,17 @@ GDKfree(void *s)
 
 #if !defined(NDEBUG) && !defined(SANITIZER)
 	size_t *p = s;
-	assert((asize & 2) == 0);   /* check against duplicate free */
 	size_t size = p[-2];
+	assert((asize & 2) == 0);   /* check against duplicate free */
 	assert(((size + 7) & ~7) + MALLOC_EXTRA_SPACE + DEBUG_SPACE == asize);
+#ifdef HAVE_MACH_O_DYLD_H
+	if ((asize & 2) != 0 || ((size + 7) & ~7) + MALLOC_EXTRA_SPACE + DEBUG_SPACE != asize) {
+		void *callstack[128];
+		int frames = backtrace(callstack, 128);
+		backtrace_symbols_fd(callstack, frames, 2);
+	}
+#endif
+
 	/* check for out-of-bounds writes */
 	for (size_t i = size; i < asize - MALLOC_EXTRA_SPACE; i++)
 		assert(((char *) s)[i] == '\xBD');
