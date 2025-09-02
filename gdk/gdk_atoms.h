@@ -231,7 +231,7 @@ gdk_export const inet6 inet6_nil;
 #define is_inet6_nil(x)	((x).align == 0)
 #else
 #define is_uuid_nil(x)	(memcmp((x).u, uuid_nil.u, UUID_SIZE) == 0)
-#define is_inet6_nil(x)	(memcmp((x).oct, inet6_nil.oct, 16) == 0)
+#define is_inet6_nil(x)	(memcmp((x).hex, inet6_nil.hex, 16) == 0)
 #endif
 #define is_inet4_nil(x)	((x).align == 0)
 
