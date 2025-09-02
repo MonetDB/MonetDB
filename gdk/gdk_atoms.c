@@ -1586,7 +1586,7 @@ INET6fromString(const char *svalue, size_t *len, void **RETVAL, bool external)
 			GDKerror("Invalid IPv6 address.");
 			goto bailout;
 		}
-		i6.hex[i] = (uint8_t) ul >> 8;
+		i6.hex[i] = (uint8_t) (ul >> 8);
 		i6.hex[i + 1] = (uint8_t) (ul & 0xFF);
 		s = e;
 		if (maybeip4 == 0) {
