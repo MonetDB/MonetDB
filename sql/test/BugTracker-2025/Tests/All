@@ -33,3 +33,4 @@ HAVE_HGE?7637_str_to_decimal
 7651-anti-join
 7652-anti-join-optimizer-bug
 7694-anti-join-and-filters
+7695-antijoin-without-expressions

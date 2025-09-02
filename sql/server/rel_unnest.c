@@ -1052,7 +1052,7 @@ push_up_project(mvc *sql, sql_rel *rel, list *ad)
 						append(nexps, e);
 				}
 			}
-			if (list_empty(nexps)) {
+			if (list_empty(nexps)) { /* L semi/anti join R, non of the attributes of R are used */
 				assert(!r->l);
 				/* remove old project and change outer into select */
 				rel->r = NULL;
@@ -1068,6 +1068,8 @@ push_up_project(mvc *sql, sql_rel *rel, list *ad)
 						else if (op == op_anti && is_compare(e->type) && e->flag == cmp_notequal)
 							e->flag = cmp_equal;
 					}
+				} else if (op == op_anti) { /* no expression means allways true, so in case of antijoin always false */
+					append(rel->exps = sa_list(sql->sa), exp_atom_bool(sql->sa, false));
 				}
 				return rel;
 			}
