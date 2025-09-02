@@ -154,6 +154,10 @@ GDKtracer_init_trace_file(const char *dbpath, const char *dbtrace)
 		write_to_tracer = false;
 		active_tracer = stdout;
 		return GDK_SUCCEED;
+	} else if (strcmp(dbtrace, "stderr") == 0) {
+		write_to_tracer = false;
+		active_tracer = stderr;
+		return GDK_SUCCEED;
 	} else {
 		write_to_tracer = true;
 		size_t fnl = strlen(dbtrace) + 1;

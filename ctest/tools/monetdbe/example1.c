@@ -23,7 +23,7 @@ main(void)
 	char* err = NULL;
 	monetdbe_database mdbe = NULL;
 	monetdbe_result* result = NULL;
-	monetdbe_options opts = {.trace_file = "stdout"};
+	monetdbe_options opts = {.trace_file = "stderr"};
 
 	// second argument is a string for the db directory or NULL for in-memory mode
 	if (monetdbe_open(&mdbe, NULL, &opts))
