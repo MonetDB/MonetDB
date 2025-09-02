@@ -151,14 +151,8 @@ GDKtracer_init_trace_file(const char *dbpath, const char *dbtrace)
 			goto too_long;
 		}
 	} else if (strcmp(dbtrace, "stdout") == 0) {
-		file_name = strdup("stdout");
 		write_to_tracer = false;
 		active_tracer = stdout;
-		return GDK_SUCCEED;
-	} else if (strcmp(dbtrace, "stderr") == 0) {
-		file_name = strdup("stderr");
-		write_to_tracer = false;
-		active_tracer = stderr;
 		return GDK_SUCCEED;
 	} else {
 		write_to_tracer = true;
@@ -511,9 +505,7 @@ GDKtracer_init(const char *dbpath, const char *dbtrace)
 #else
 	add_ts = isatty(2) || lseek(2, 0, SEEK_CUR) != (off_t) -1 || errno != ESPIPE;
 #endif
-	gdk_return rc = GDK_SUCCEED;
-	if (dbpath != NULL || dbtrace != NULL || file_name == NULL)
-		rc = GDKtracer_init_trace_file(dbpath, dbtrace);
+	gdk_return rc = GDKtracer_init_trace_file(dbpath, dbtrace);
 	MT_lock_unset(&GDKtracer_lock);
 	return rc;
 }
