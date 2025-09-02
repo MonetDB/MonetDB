@@ -1830,8 +1830,12 @@ GDKfree(void *s)
 
 #if !defined(NDEBUG) && !defined(SANITIZER)
 	size_t *p = s;
-	assert((asize & 2) == 0);   /* check against duplicate free */
 	size_t size = p[-2];
+	if ((asize & 2) != 0) {
+		fprintf(stderr, "GDKfree %p, size: %zu, asize %zu\n", s, size, asize);
+		fflush(stderr);
+	}
+	assert((asize & 2) == 0);   /* check against duplicate free */
 	if (((size + 7) & ~7) + MALLOC_EXTRA_SPACE + DEBUG_SPACE != asize) {
 		fprintf(stderr, "GDKfree %p, size: %zu, asize %zu\n", s, size, asize);
 		fflush(stderr);
