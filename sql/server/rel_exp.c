@@ -1962,6 +1962,10 @@ exp_single_bound_cmp_exp_is_false(sql_exp* e)
     assert(e->f == NULL);
     assert (l && r);
 
+	if (e->flag == cmp_equal) {
+		if (exp_is_false(e->l) && exp_is_true(e->r))
+			return true;
+	}
     return exp_is_null(l) || exp_is_null(r);
 }
 

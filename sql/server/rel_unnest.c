@@ -1068,6 +1068,8 @@ push_up_project(mvc *sql, sql_rel *rel, list *ad)
 						else if (op == op_anti && is_compare(e->type) && e->flag == cmp_notequal)
 							e->flag = cmp_equal;
 					}
+					if (list_length(rel->exps) > 1 && op == op_anti)
+						rel->exps = append(sa_list(sql->sa), exp_disjunctive(sql->sa, rel->exps));
 				} else if (op == op_anti) { /* no expression means allways true, so in case of antijoin always false */
 					append(rel->exps = sa_list(sql->sa), exp_atom_bool(sql->sa, false));
 				}
