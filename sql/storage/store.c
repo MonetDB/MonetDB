@@ -3753,13 +3753,10 @@ sql_trans_copy_key( sql_trans *tr, sql_table *t, sql_key *k, sql_key **kres)
 		if (nk->type == fkey) {
 			if ((res = sql_trans_create_dependency(tr, kc->c->base.id, nk->base.id, FKEY_DEPENDENCY)))
 				return res;
-		} else if (nk->type == ukey || nk->type == ckey) {
+		} else if (nk->type == pkey || nk->type == ukey || nk->type == unndkey || nk->type == ckey) {
 			if ((res = sql_trans_create_dependency(tr, kc->c->base.id, nk->base.id, KEY_DEPENDENCY)))
 				return res;
-		} else if (nk->type == pkey) {
-			if ((res = sql_trans_create_dependency(tr, kc->c->base.id, nk->base.id, KEY_DEPENDENCY)))
-				return res;
-			if ((res = sql_trans_alter_null(tr, kc->c, 0)))
+			if (nk->type == pkey && (res = sql_trans_alter_null(tr, kc->c, 0)))
 				return res;
 		}
 
@@ -6987,10 +6984,10 @@ sql_trans_create_kc(sql_trans *tr, sql_key *k, sql_column *c)
 	if (k->idx && (res = sql_trans_create_ic(tr, k->idx, c)))
 		return res;
 
-	if (k->type == pkey) {
+	if (k->type == pkey || k->type == ukey || k->type == unndkey || k->type == ckey) {
 		if ((res = sql_trans_create_dependency(tr, c->base.id, k->base.id, KEY_DEPENDENCY)))
 			return res;
-		if ((res = sql_trans_alter_null(tr, c, 0))) /* should never trigger error */
+		if (k->type == pkey && (res = sql_trans_alter_null(tr, c, 0))) /* should never trigger error */
 			return res;
 	}
 
