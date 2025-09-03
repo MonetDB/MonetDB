@@ -13,8 +13,7 @@ ALTER TABLE table1 SET SCHEMA schema1
 statement error 42000!syntax error, unexpected IDENT, expecting INSERT or READ or SCHEMA or TABLE in: "alter table table1 set access"
 ALTER TABLE table1 SET ACCESS READ ONLY
 
-skipif knownfail
-statement ok
+statement error 42S12!COMMENT ON: no such index 'index1'
 COMMENT ON INDEX index1 IS 'Index created for analytical queries'
 
 statement error 42S02!ALTER TABLE: no such table 'table1'

@@ -25,6 +25,7 @@ KNOWNFAIL?7653_incorrect_join_results
 7662-drop-role-user
 7663-alter-user-role
 7664-session-user
+7670-missing-table-compatibility-checks
 7671-lag-over-empty-bat
 7674-rel_find_designated_index_crash
 7680-union-all
