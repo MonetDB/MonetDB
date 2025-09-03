@@ -3767,13 +3767,10 @@ sql_trans_copy_key( sql_trans *tr, sql_table *t, sql_key *k, sql_key **kres)
 		if (nk->type == fkey) {
 			if ((res = sql_trans_create_dependency(tr, kc->c->base.id, nk->base.id, FKEY_DEPENDENCY)))
 				return res;
-		} else if (nk->type == ukey || nk->type == ckey) {
+		} else if (nk->type == pkey || nk->type == ukey || nk->type == unndkey || nk->type == ckey) {
 			if ((res = sql_trans_create_dependency(tr, kc->c->base.id, nk->base.id, KEY_DEPENDENCY)))
 				return res;
-		} else if (nk->type == pkey) {
-			if ((res = sql_trans_create_dependency(tr, kc->c->base.id, nk->base.id, KEY_DEPENDENCY)))
-				return res;
-			if ((res = sql_trans_alter_null(tr, kc->c, 0)))
+			if (nk->type == pkey && (res = sql_trans_alter_null(tr, kc->c, 0)))
 				return res;
 		}
 
@@ -6056,6 +6053,35 @@ sql_trans_add_value_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_s
 	return res;
 }
 
+/* here we should delete also all tables idxs, keys and triggers from the schema */
+static int
+cleanup_schema_objects( sql_table *t, sql_trans *tr)
+{
+	int res = LOG_OK;
+	if (ol_length(t->idxs))
+		for (node *n = ol_first_node(t->idxs); n; n = n->next) {
+			sql_idx *i = n->data;
+
+			if ((res = os_del(i->t->s->idxs, tr, i->base.name, dup_base(&i->base))))
+				return res;
+		}
+	if (ol_length(t->keys))
+		for (node *n = ol_first_node(t->keys); n; n = n->next) {
+			sql_key *k = n->data;
+
+			if ((res = os_del(k->t->s->keys, tr, k->base.name, dup_base(&k->base))))
+				return res;
+		}
+	if (ol_length(t->triggers))
+		for (node *n = ol_first_node(t->triggers); n; n = n->next) {
+			sql_key *t = n->data;
+
+			if ((res = os_del(t->t->s->triggers, tr, t->base.name, dup_base(&t->base))))
+				return res;
+		}
+	return res;
+}
+
 int
 sql_trans_rename_table(sql_trans *tr, sql_schema *s, sqlid id, const char *new_name)
 {
@@ -6086,6 +6112,8 @@ sql_trans_rename_table(sql_trans *tr, sql_schema *s, sqlid id, const char *new_n
 
 	if ((res = table_dup(tr, t, t->s, new_name, &dup, true)))
 		return res;
+	if (isGlobal(t))
+		res = cleanup_schema_objects(t, tr);
 	return res;
 }
 
@@ -6108,7 +6136,11 @@ sql_trans_set_table_schema(sql_trans *tr, sqlid id, sql_schema *os, sql_schema *
 		return res;
 	if ((res = os_del(os->tables, tr, t->base.name, dup_base(&t->base))))
 		return res;
-	return table_dup(tr, t, ns, NULL, &dup, true);
+	if ((res = table_dup(tr, t, ns, NULL, &dup, true)))
+		return res;
+	if (isGlobal(t))
+		res = cleanup_schema_objects(t, tr);
+	return res;
 }
 
 int
@@ -6973,10 +7005,10 @@ sql_trans_create_kc(sql_trans *tr, sql_key *k, sql_column *c)
 	if (k->idx && (res = sql_trans_create_ic(tr, k->idx, c)))
 		return res;
 
-	if (k->type == pkey) {
+	if (k->type == pkey || k->type == ukey || k->type == unndkey || k->type == ckey) {
 		if ((res = sql_trans_create_dependency(tr, c->base.id, k->base.id, KEY_DEPENDENCY)))
 			return res;
-		if ((res = sql_trans_alter_null(tr, c, 0))) /* should never trigger error */
+		if (k->type == pkey && (res = sql_trans_alter_null(tr, c, 0))) /* should never trigger error */
 			return res;
 	}
 
