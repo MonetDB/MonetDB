@@ -1631,7 +1631,12 @@ def GetBitsAndModsAndThreads(env) :
                 except KeyboardInterrupt:
                     raise
                 except:
-                    pass
+                    print('Exception caught')
+                    print('Local variables:')
+                    print(locals())
+                    print('Global variables:')
+                    print(globals())
+                    raise
                 proc.terminate()
                 qOut = proc.stdout.read(timeout=5)
                 qErr = proc.stderr.read(timeout=5)
