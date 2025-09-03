@@ -40,3 +40,4 @@ HAVE_HGE?7637_str_to_decimal
 7694-anti-join-and-filters
 7695-antijoin-without-expressions
 7696-antijoin-with-complex-expression
+7697-exists-any-semantics

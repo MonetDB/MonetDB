@@ -3627,13 +3627,16 @@ rel2bin_antijoin(backend *be, sql_rel *rel, list *refs)
 
 		/* continue with non equi-joins */
 		for (; en; en = en->next) {
-			stmt *s = exp_bin(be, en->data, sub, NULL, NULL, NULL, NULL, NULL /* sel */, 0, 0/* just the project call not the select*/, 0);
+			sql_exp *e = en->data;
+			stmt *s = exp_bin(be, e, sub, NULL, NULL, NULL, NULL, NULL /* sel */, 0, 0/* just the project call not the select*/, 0);
 
-			/* ifthenelse if (not(predicate)) then false else true (needed for antijoin) */
-			sql_subtype *bt = sql_fetch_localtype(TYPE_bit);
-			sql_subfunc *not = sql_bind_func(be->mvc, "sys", "not", bt, NULL, F_FUNC, true, true);
-			s = stmt_unop(be, s, NULL, not);
-			s = sql_Nop_(be, "ifthenelse", s, stmt_bool(be, 0), stmt_bool(be, 1), NULL);
+			if (is_any(e)) {
+				sql_subtype *bt = sql_fetch_localtype(TYPE_bit);
+				/* ifthenelse if (not(predicate)) then false else true (needed for antijoin) */
+				sql_subfunc *not = sql_bind_func(be->mvc, "sys", "not", bt, NULL, F_FUNC, true, true);
+				s = stmt_unop(be, s, NULL, not);
+				s = sql_Nop_(be, "ifthenelse", s, stmt_bool(be, 0), stmt_bool(be, 1), NULL);
+			}
 
 			if (s->nrcols == 0) {
 				stmt *l = bin_find_smallest_column(be, sub);
