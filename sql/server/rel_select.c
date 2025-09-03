@@ -3259,7 +3259,7 @@ rel_nop(sql_query *query, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 		if (find_func(sql, sname, fname, nargs, F_AGGR, false, NULL, NULL)) {
 			dnode *dn = l->next->next;
 			symbol *orderby = dn->next?dn->next->data.sym:NULL;
-			return _rel_aggr(query, rel, l->next->data.i_val, sname, fname, dn->data.lval->h, orderby, fs);
+			return _rel_aggr(query, rel, l->next->data.i_val, sname, fname, dn->data.lval?dn->data.lval->h:NULL, orderby, fs);
 		}
 	}
 
