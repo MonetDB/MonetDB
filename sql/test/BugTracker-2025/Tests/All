@@ -24,6 +24,9 @@ HAVE_HGE?7637_str_to_decimal
 7656_incorrect_error
 7659_trigger_crashes
 7661_trigger_crash
+7662-drop-role-user
+7663-alter-user-role
+7664-session-user
 7671-lag-over-empty-bat
 7674-rel_find_designated_index_crash
 7680-union-all
