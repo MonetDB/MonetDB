@@ -68,7 +68,7 @@ test_progress = 0
 # whether output goes to a tty
 isatty = os.isatty(sys.stdout.fileno())
 
-mapiportre = re.compile(r'mapi:monetdb://[-.a-zA-Z0-9]+:(?P<port>\d+)/')
+mapiportre = re.compile(r'mapi:monetdb://[-.a-zA-Z0-9_]+:(?P<port>\d+)/')
 
 geos_version = '@GEOS_VERSION@'.split('.')
 
