@@ -30,6 +30,8 @@
 sql_rel *
 rel_parse(mvc *m, sql_schema *s, const char *query, char emode)
 {
+	if (mvc_highwater(m))
+        return sql_error(m, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 	sql_rel *rel = NULL;
 	buffer *b;
 	bstream *bs;
