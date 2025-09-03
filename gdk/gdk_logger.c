@@ -3480,6 +3480,15 @@ log_delta(logger *lg, BAT *uid, BAT *uval, log_id id)
 
 	if (LOG_DISABLED(lg)) {
 		/* logging is switched off */
+		if (lg->updated != NULL) {
+			BUN p = log_find(lg->catalog_id, lg->dcatalog, id);
+			if (p == BUN_NONE) {
+				GDKerror("%d not found in catalog_id BAT", id);
+				return GDK_FAIL;
+			}
+			if (p < lg->maxupdated)
+				lg->updated[p / 32] |= 1U << (p % 32);
+		}
 		log_unlock(lg);
 		return GDK_SUCCEED;
 	}
@@ -3816,6 +3825,8 @@ log_del_bat(logger *lg, log_bid bid)
 	}
 
 	assert(lg->catalog_lid->hseqbase == 0);
+	if (lg->updated != NULL && p < lg->maxupdated)
+		lg->updated[p / 32] |= 1U << (p % 32);
 	return BUNreplace(lg->catalog_lid, p, &lid, false);
 }
 
@@ -3871,7 +3882,7 @@ log_tstart(logger *lg, bool flushnow, ulng *file_id)
 		size_t allocated = ((cnt + 31) & ~31) / 8;
 		if (allocated == 0)
 			allocated = 4;
-		lg->maxupdated = allocated;
+		lg->maxupdated = allocated * 8; /* nr of allocated bits */
 		lg->updated = GDKzalloc(allocated);
 		if (lg->updated == NULL) {
 			GDKerror("Failed to allocate updated BAT id's.\n");
