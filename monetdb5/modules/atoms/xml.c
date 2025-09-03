@@ -219,37 +219,41 @@ XMLxmltext(str *s, const xml *x)
 	if (**x == 'D') {
 		doc = xmlParseMemory(*x + 1, (int) strlen(*x + 1));
 		elem = xmlDocGetRootElement(doc);
-		content = (str) xmlNodeGetContent(elem);
+		xmlChar *cont = xmlNodeGetContent(elem);
 		xmlFreeDoc(doc);
+		content = GDKstrdup((const char *) cont);
+		xmlFree(cont);
 	} else if (**x == 'C') {
 		doc = xmlParseMemory("<doc/>", 6);
 		xmlParseInNodeContext(xmlDocGetRootElement(doc), *x + 1,
 							  (int) strlen(*x + 1), 0, &elem);
-		content = (str) xmlNodeGetContent(elem);
+		xmlChar *cont = xmlNodeGetContent(elem);
 		xmlFreeNodeList(elem);
 		xmlFreeDoc(doc);
+		content = GDKstrdup((const char *) cont);
+		xmlFree(cont);
 	} else if (**x == 'A') {
 		const char *t = *x + 1;
-		str p;
 
-		p = content = GDKmalloc(strlen(*x) + 1);
-		if (p == NULL)
-			throw(MAL, "xml.text", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		while (*t) {
-			if (*t == '"' || *t == '\'') {
-				char q = *t++;
+		content = GDKmalloc(strlen(*x) + 1);
+		if (content) {
+			str p = content;
+			while (*t) {
+				if (*t == '"' || *t == '\'') {
+					char q = *t++;
 
-				p += XMLunquotestring(&t, q, p);
+					p += XMLunquotestring(&t, q, p);
+				}
+				t++;
 			}
-			t++;
+			*p = 0;
 		}
-		*p = 0;
+	} else {
+		content = GDKstrdup("");
 	}
-	if (content == NULL) {
-		*s = GDKstrdup("");
-		if (*s == NULL)
-			throw(MAL, "xml.text", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	} else
+	if (content == NULL)
+		throw(MAL, "xml.text", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	else
 		*s = (str) content;
 	return MAL_SUCCEED;
 }
@@ -286,7 +290,7 @@ XMLdocument(xml *x, const char * const *val)
 		if (*x == NULL)
 			throw(MAL, "xml.document", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		snprintf(*x, len + 2, "D%s", (char *) buf);
-		GDKfree(buf);
+		xmlFree(buf);
 		return MAL_SUCCEED;
 	}
 	throw(MAL, "xml.document", "Document parse error");
@@ -312,7 +316,7 @@ XMLcontent(xml *x, const char * const *val)
 	doc = xmlParseMemory("<doc/>", 6);
 	err = xmlParseInNodeContext(xmlDocGetRootElement(doc), *val,
 								(int) strlen(*val), 0, &elem);
-	if (err !=XML_ERR_OK) {
+	if (err != XML_ERR_OK) {
 		xmlFreeDoc(doc);
 		throw(MAL, "xml.content", "Content parse error");
 	}
@@ -459,9 +463,7 @@ XMLroot(xml *ret, const xml *val, const char * const *version, const char * cons
 	if (!strNil(*standalone) && **standalone)
 		i += snprintf(buf + i, len - i, " standalone=\"%s\"", *standalone);
 	snprintf(buf + i, len - i, "?>%s", *val + 1);
-	buf++;
-	XMLisdocument(&isdoc, &(const char *){buf});	/* check well-formedness */
-	buf--;
+	XMLisdocument(&isdoc, &(const char *){buf + 1});	/* check well-formedness */
 	if (!isdoc) {
 		GDKfree(buf);
 		throw(MAL, "xml.root", "resulting document not well-formed");
@@ -635,7 +637,6 @@ static str
 XMLprelude(void)
 {
 	TYPE_xml = ATOMindex("xml");
-	xmlMemSetup(GDKfree, GDKmalloc, GDKrealloc, GDKstrdup);
 	xmlInitParser();
 	return MAL_SUCCEED;
 }
