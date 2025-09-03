@@ -33225,19 +33225,9 @@ CMDvarNOT
 Return the Boolean inverse
 calc
 not
-pattern calc.not(X_0:inet4):inet4
-CMDvarNOT
-Unary bitwise not of V
-calc
-not
 pattern calc.not(X_0:inet6):inet6
 CMDvarNOT
 Return the Boolean inverse
-calc
-not
-pattern calc.not(X_0:inet6):inet6
-CMDvarNOT
-Unary bitwise not of V
 calc
 not
 pattern calc.not(X_0:int):int
