@@ -40,7 +40,7 @@
 
 /* Insert the instruction immediately after a previous instruction that
  * generated an argument needed.
- * If non can be found, add it to the end.
+ * If none can be found, add it to the end.
  * Be aware of side-effect instructions, they may not be skipped.
  */
 str
@@ -57,10 +57,6 @@ OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 
 	for (i = 0; i < MAXSLICES; i++)
 		top[i] = 0;
-	if (strcmp(pci->fcnname, "defaultfast") != 0
-		&& isOptimizerUsed(mb, pci, mitosisRef) <= 0) {
-		goto wrapup;
-	}
 	(void) cntxt;
 	(void) stk;
 
@@ -174,7 +170,6 @@ OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	/* keep all actions taken as a post block comment */
 	//mnstr_printf(cntxt->fdout,"REORDER RESULT ");
 	//printFunction(cntxt->fdout, mb, 0, LIST_MAL_ALL);
-  wrapup:
 	for (i = 0; i <= blkcnt; i++)
 		if (top[i])
 			GDKfree(blocks[i]);

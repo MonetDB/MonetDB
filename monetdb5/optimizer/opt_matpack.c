@@ -27,11 +27,6 @@ OPTmatpackImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	InstrPtr *old = NULL;
 	str msg = MAL_SUCCEED;
 
-	if (strcmp(pci->fcnname, "defaultfast") != 0
-		&& isOptimizerUsed(mb, pci, mergetableRef) <= 0) {
-		goto wrapup;
-	}
-
 	(void) cntxt;
 	(void) stk;
 	for (i = 1; i < mb->stop; i++)

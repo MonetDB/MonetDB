@@ -2292,9 +2292,6 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	char *group_input;
 	str msg = MAL_SUCCEED;
 
-	if (strcmp(pci->fcnname, "defaultfast") != 0
-		&& isOptimizerUsed(mb, pci, mitosisRef) <= 0)
-		goto cleanup2;
 	old = mb->stmt;
 	oldtop = mb->stop;
 
@@ -2913,7 +2910,6 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 		if (!msg)
 			msg = chkDeclarations(mb);
 	}
-  cleanup2:
 	/* keep actions taken as a fake argument */
 	if (msg == MAL_SUCCEED) {
 		(void) pushInt(mb, pci, actions);
