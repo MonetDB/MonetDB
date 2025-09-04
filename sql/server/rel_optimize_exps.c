@@ -813,9 +813,9 @@ rel_simplify_predicates(visitor *v, sql_rel *rel, sql_exp *e)
 static inline sql_exp *
 rel_remove_alias(visitor *v, sql_rel *rel, sql_exp *e)
 {
-	if (e->type != e_column)
+	if (e->type != e_column || is_selfref(e) || rel_is_ref(rel))
 		return e;
-	if (!rel_is_ref(rel) && rel->op == op_project && rel->l && list_length(rel->exps) > 1) {
+	if (rel->op == op_project && rel->l && list_length(rel->exps) > 1) {
 		sql_rel *l = rel->l;
 		if (l->op == op_project) {
 			sql_exp *ne = rel_find_exp(l, e);
@@ -831,7 +831,7 @@ rel_remove_alias(visitor *v, sql_rel *rel, sql_exp *e)
 			}
 		}
 	}
-	if (!rel_is_ref(rel) && rel->op != op_project) {
+	if (rel->op != op_project) {
 		bool found = false;
 		if ((is_select(rel->op) || is_join(rel->op)) && rel->l && list_length(rel->exps) > 1) {
 			sql_rel *l = rel->l;
