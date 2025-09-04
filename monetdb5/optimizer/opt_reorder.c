@@ -57,7 +57,8 @@ OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 
 	for (i = 0; i < MAXSLICES; i++)
 		top[i] = 0;
-	if (isOptimizerUsed(mb, pci, mitosisRef) <= 0) {
+	if (strcmp(pci->fcnname, "defaultfast") != 0
+		&& isOptimizerUsed(mb, pci, mitosisRef) <= 0) {
 		goto wrapup;
 	}
 	(void) cntxt;
