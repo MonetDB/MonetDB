@@ -253,7 +253,6 @@ validatePipe(struct pipeline *pipe)
 {
 	bool mitosis = false, deadcode = false, mergetable = false;
 	bool multiplex = false, garbage = false, generator = false, remap = false;
-	int i;
 
 	if (pipe->def == NULL || pipe->def[0] == NULL)
 		throw(MAL, "optimizer.validate", SQLSTATE(42000) "missing optimizers");
@@ -266,7 +265,7 @@ validatePipe(struct pipeline *pipe)
 		throw(MAL, "optimizer.validate",
 			  SQLSTATE(42000) "'inline' should be the first\n");
 
-	for (i = 0; pipe->def[i]; i++) {
+	for (int i = 0; pipe->def[i]; i++) {
 		const char *fname = pipe->def[i];
 		if (garbage)
 			throw(MAL, "optimizer.validate",
@@ -278,8 +277,17 @@ validatePipe(struct pipeline *pipe)
 			remap = true;
 		else if (strcmp(fname, "mitosis") == 0)
 			mitosis = true;
-		else if (strcmp(fname, "mergetable") == 0)
+		else if (strcmp(fname, "mergetable") == 0) {
+			if (!mitosis)
+				throw(MAL, "optimizer.validate",
+					  SQLSTATE(42000) "'mergetable' requires 'mitosis'\n");
 			mergetable = true;
+		} else if (strcmp(fname, "matpack") == 0 && !mergetable)
+			throw(MAL, "optimizer.validate",
+				  SQLSTATE(42000) "'matpack' requires 'mergetable'\n");
+		else if (strcmp(fname, "reorder") == 0 && !mitosis)
+			throw(MAL, "optimizer.validate",
+				  SQLSTATE(42000) "'reorder' requires 'mitosis'\n");
 		else if (strcmp(fname, "multiplex") == 0)
 			multiplex = true;
 		else if (strcmp(fname, "generator") == 0)
