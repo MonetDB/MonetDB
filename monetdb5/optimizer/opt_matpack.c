@@ -27,10 +27,6 @@ OPTmatpackImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	InstrPtr *old = NULL;
 	str msg = MAL_SUCCEED;
 
-	if (!isOptimizerUsed(mb, pci, mergetableRef)) {
-		goto wrapup;
-	}
-
 	(void) cntxt;
 	(void) stk;
 	for (i = 1; i < mb->stop; i++)
