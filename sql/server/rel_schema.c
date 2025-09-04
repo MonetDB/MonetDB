@@ -1720,10 +1720,13 @@ rel_create_view(sql_query *query, int temp, dlist *qname, dlist *column_spec, sy
 				return sql_error(sql, 01, SQLSTATE(42000) "%s: %s not supported", base, sn->limit ? "LIMIT" : "SAMPLE");
 		}
 
+		bool globals = sql->globals;
+		sql->globals = (temp != SQL_LOCAL_TEMP);
 		pfoundid = sql->objid;
 		sql->objid = foundid; /* when recreating a view, the view itself can't be found */
 		sq = schema_selects(query, s, ast);
 		sql->objid = pfoundid;
+		sql->globals = globals;
 		if (!sq)
 			return NULL;
 		if (!is_project(sq->op)) /* make sure sq is a projection */

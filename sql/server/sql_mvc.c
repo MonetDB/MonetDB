@@ -948,8 +948,9 @@ mvc_bind_table(mvc *m, sql_schema *s, const char *tname)
 {
 	sql_table *t = find_sql_table(m->session->tr, s, tname);
 
-	(void) m;
 	if (!t)
+		return NULL;
+	if (t && m->globals && !t->globaltemp && t->persistence == SQL_LOCAL_TEMP)
 		return NULL;
 
 	TRC_DEBUG(SQL_TRANS, "Bind table: %s.%s\n", s->base.name, tname);

@@ -770,8 +770,10 @@ load_table(sql_trans *tr, sql_schema *s, res_table *rt_tables, res_table *rt_par
 	t->system = *(bit*)store->table_api.table_fetch_value(rt_tables, find_sql_column(tables, "system"));
 	t->commit_action = (ca_t)*(sht*)store->table_api.table_fetch_value(rt_tables, find_sql_column(tables, "commit_action"));
 	t->persistence = SQL_PERSIST;
-	if (t->commit_action)
+	if (t->commit_action) {
 		t->persistence = SQL_GLOBAL_TEMP;
+		t->globaltemp = true;
+	}
 	if (isRemote(t))
 		t->persistence = SQL_REMOTE;
 	t->access = *(sht*)store->table_api.table_fetch_value(rt_tables, find_sql_column(tables, "access"));
@@ -1672,6 +1674,8 @@ create_sql_table_with_id(allocator *sa, sqlid id, const char *name, sht type, bi
 	t->type = type;
 	t->system = system;
 	t->persistence = (temp_t)persistence;
+	if (t->persistence == SQL_GLOBAL_TEMP)
+		t->globaltemp = true;
 	t->commit_action = (ca_t)commit_action;
 	t->query = NULL;
 	t->access = 0;
@@ -3500,6 +3504,7 @@ table_dup(sql_trans *tr, sql_table *ot, sql_schema *s, const char *name,
 	t->type = ot->type;
 	t->system = ot->system;
 	t->bootstrap = ot->bootstrap;
+	t->globaltemp = ot->globaltemp;
 	t->persistence = (s || dup_global_as_global)?ot->persistence:SQL_LOCAL_TEMP;
 	t->commit_action = ot->commit_action;
 	t->access = ot->access;

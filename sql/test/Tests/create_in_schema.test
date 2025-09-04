@@ -45,12 +45,8 @@ query I rowsort
 select * from v_bla1
 ----
 
-statement ok
+statement error 42S02!SELECT: no such table 'bla2'
 create view v_bla2 as select * from bla2
-
-query I rowsort
-select * from v_bla2
-----
 
 statement ok
 create view v_bla3 as select * from bla.bla3
@@ -59,12 +55,8 @@ query I rowsort
 select * from v_bla3
 ----
 
-statement ok
+statement error 42S02!SELECT: no such table 'bla4'
 create view bla.v_bla4 as select * from bla4
-
-query I rowsort
-select * from bla.v_bla4
-----
 
 statement error
 create view tmp.v_bla5 as select * from bla5
@@ -78,17 +70,8 @@ drop view v_bla5
 statement error
 drop view tmp.v_bla5
 
-statement error
-drop view v_bla4
-
-statement ok
-drop view bla.v_bla4
-
 statement ok
 drop view v_bla3
-
-statement ok
-drop view v_bla2
 
 statement ok
 drop view v_bla1
