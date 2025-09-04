@@ -1,0 +1,5 @@
+statement ok
+CREATE GLOBAL TEMPORARY TABLE table1 (column1 INT) ON COMMIT PRESERVE ROWS
+
+statement ok
+ALTER TABLE table1 RENAME COLUMN column1 TO column2

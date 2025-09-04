@@ -6539,9 +6539,17 @@ drop_sql_key(sql_table *t, sqlid id, int drop_action)
 }
 
 int
-sql_trans_rename_column(sql_trans *tr, sql_table *t, sqlid id, const char *old_name, const char *new_name)
+sql_trans_rename_column(sql_trans *tr, sql_schema *s, sql_table *t, sqlid id, const char *old_name, const char *new_name)
 {
 	sqlstore *store = tr->store;
+
+	if (t && isTempTable(t)) {
+		sql_table *gt = (sql_table*)os_find_id(s->tables, tr, t->base.id);
+		assert(t == gt || !gt || (isTempTable(gt) && !isLocalTemp(gt) && isLocalTemp(t)));
+		if (gt)
+			t = gt;
+	}
+
 	sql_table *syscolumn = find_sql_table(tr, find_sql_schema(tr, isGlobal(t)?"sys":"tmp"), "_columns");
 	oid rid;
 	int res = LOG_OK;
