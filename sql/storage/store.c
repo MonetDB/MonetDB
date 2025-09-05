@@ -1584,7 +1584,7 @@ insert_args(sql_trans *tr, sql_table *sysarg, list *args, sqlid funcid, const ch
 		if (a->name) {
 			next_name = a->name;
 		} else {
-			snprintf(buf, sizeof(buf), arg_def, next_number);
+			snprintf(buf, sizeof(buf), "%s_%d", arg_def, next_number);
 			next_name = buf;
 		}
 		if ((res = store->table_api.table_insert(tr, sysarg, &id, &funcid, &next_name, &a->type.type->base.name, &a->type.digits, &a->type.scale, &a->inout, &next_number)))
@@ -1609,9 +1609,9 @@ insert_functions(sql_trans *tr, sql_table *sysfunc, list *funcs_list, sql_table 
 			continue;
 		if ((res = store->table_api.table_insert(tr, sysfunc, &f->base.id, &f->base.name, &f->imp, &f->mod, &flang, &ftype, &se, &vares, &varg, &next_schema, &system, &sem, &order)))
 			return res;
-		if (f->res && (res = insert_args(tr, sysarg, f->res, f->base.id, "res_%d", &number)))
+		if (f->res && (res = insert_args(tr, sysarg, f->res, f->base.id, "res", &number)))
 			return res;
-		if (f->ops && (res = insert_args(tr, sysarg, f->ops, f->base.id, "arg_%d", &number)))
+		if (f->ops && (res = insert_args(tr, sysarg, f->ops, f->base.id, "arg", &number)))
 			return res;
 	}
 	return res;
@@ -2776,7 +2776,7 @@ tar_write_header_field(char **cursor_ptr, size_t size, const char *fmt, ...)
 // Write a tar header to the given stream.
 __attribute__((__warn_unused_result__))
 static gdk_return
-tar_write_header(stream *tarfile, const char *path, time_t mtime, int64_t size)
+tar_write_header(stream *tarfile, const char *path, time_t mtime, uint64_t size)
 {
 	char buf[TAR_BLOCK_SIZE] = {0};
 	char *cursor = buf;
@@ -2810,7 +2810,7 @@ tar_write_header(stream *tarfile, const char *path, time_t mtime, int64_t size)
 	tar_write_header_field(&cursor, 155, "%s", ""); // prefix[155]
 	assert(cursor - buf == 500);
 
-	int64_t max_oct_size = 077777777777;    // 0_777_7777_7777, 11 octal digits
+	const uint64_t max_oct_size = 077777777777;    // 0_777_7777_7777, 11 octal digits
 	// max_oct_size = 077; // for testing
 	if (size <= max_oct_size) {
 		tar_write_header_field(&size_field, 12, "%011"PRIo64, size);      // size[12]
@@ -2885,7 +2885,7 @@ tar_write_data(stream *tarfile, const char *path, time_t mtime, const char *data
 
 __attribute__((__warn_unused_result__))
 static gdk_return
-tar_copy_stream(stream *tarfile, const char *path, time_t mtime, stream *contents, int64_t size, char *buf, size_t bufsize)
+tar_copy_stream(stream *tarfile, const char *path, time_t mtime, stream *contents, uint64_t size, char *buf, size_t bufsize)
 {
 	assert( (bufsize % TAR_BLOCK_SIZE) == 0);
 	assert(bufsize >= TAR_BLOCK_SIZE);
@@ -2893,23 +2893,23 @@ tar_copy_stream(stream *tarfile, const char *path, time_t mtime, stream *content
 	if (tar_write_header(tarfile, path, mtime, size) != GDK_SUCCEED)
 		return GDK_FAIL;
 
-	int64_t to_do = size;
+	uint64_t to_do = size;
 	while (to_do > 0) {
-		size_t chunk = (to_do <= (int64_t)bufsize) ? (size_t)to_do : bufsize;
+		size_t chunk = (to_do <= (uint64_t)bufsize) ? (size_t)to_do : bufsize;
 		ssize_t nbytes = mnstr_read(contents, buf, 1, chunk);
 		if (nbytes > 0) {
 			if (tar_write(tarfile, path, buf, nbytes) != GDK_SUCCEED)
 				return GDK_FAIL;
-			to_do -= (int64_t)nbytes;
+			to_do -= (uint64_t)nbytes;
 			continue;
 		}
 		// error handling
 		if (nbytes < 0) {
-			GDKerror("Error after reading %"PRId64"/%"PRId64" bytes: %s",
+			GDKerror("Error after reading %"PRIu64"/%"PRIu64" bytes: %s",
 				size - to_do, size, mnstr_peek_error(contents));
 			return GDK_FAIL;
 		} else {
-			GDKerror("Unexpected end of file after reading %"PRId64"/%"PRId64" bytes of %s",
+			GDKerror("Unexpected end of file after reading %"PRIu64"/%"PRIu64" bytes of %s",
 				size - to_do, size, path);
 			return GDK_FAIL;
 		}
@@ -2967,15 +2967,11 @@ hot_snapshot_write_tar(stream *out, const char *prefix, const char *plan)
 	// 	goto end;
 
 	char command;
-	int64_t size;
-	while (sscanf(p, "%c %"SCNi64" %100s\n%n", &command, &size, src_name, &len) == 3) {
+	uint64_t size;
+	while (sscanf(p, "%c %"SCNu64" %100s\n%n", &command, &size, src_name, &len) == 3) {
 		GDK_CHECK_TIMEOUT_BODY(qry_ctx, GOTO_LABEL_TIMEOUT_HANDLER(end, qry_ctx));
 		p += len;
 		strcpy(dest_name, src_name);
-		if (size < 0) {
-			GDKerror("malformed snapshot plan for %s: size %"PRId64" < 0", src_name, size);
-			goto end;
-		}
 		switch (command) {
 			case 'c':
 				infile = open_rstream(abs_src_path);

@@ -5380,8 +5380,9 @@ column_exp(sql_query *query, sql_rel **rel, symbol *column_e, int f)
 }
 
 static int
-exp_is_not_intern(sql_exp *e)
+exp_is_not_intern(sql_exp *e, void *dummy)
 {
+	(void) dummy;
 	return is_intern(e)?-1:0;
 }
 

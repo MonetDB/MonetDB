@@ -789,7 +789,7 @@ extract_tar_member_filename(const char *block)
 static int64_t
 extract_tar_member_size(const char *block)
 {
-	int64_t size;
+	uint64_t size;
 	const uint8_t *field = (const uint8_t*)&block[124];
 	if (field[0] >= 0x80) {
 		// binary format
@@ -864,7 +864,7 @@ unpack_tarstream(stream *tarstream, char *destdir, int skipfirstcomponent)
 			e = newErr("Could not open %s", destfile);
 			goto bailout;
 		}
-		int64_t size = extract_tar_member_size(block);
+		uint64_t size = extract_tar_member_size(block);
 		while (size > 0) {
 			int read_result = read_tar_block(tarstream, block, &e);
 			if (e != NO_ERR) {
@@ -880,7 +880,10 @@ unpack_tarstream(stream *tarstream, char *destdir, int skipfirstcomponent)
 				e = newErr("Error writing %s: %s", destfile, strerror(errno));
 				goto bailout;
 			}
-			size -= TAR_BLOCK_SIZE;
+			if (size < TAR_BLOCK_SIZE)
+				size = 0;
+			else
+				size -= TAR_BLOCK_SIZE;
 		}
 
 		if (fsync(fileno(outfile)) < 0) {

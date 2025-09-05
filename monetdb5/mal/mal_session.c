@@ -565,9 +565,12 @@ MSserveClient(Client c)
  * in size.
  */
 str
-MALinitClient(Client c)
+MALinitClient(Client c, const char *d1, const char *d2, const char *d3)
 {
 	(void) c;
+	(void) d1;
+	(void) d2;
+	(void) d3;
 	return MAL_SUCCEED;
 }
 

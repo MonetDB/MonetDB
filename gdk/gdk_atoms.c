@@ -1708,7 +1708,7 @@ INET6toString(str *retval, size_t *len, const void *VALUE, bool external)
 		if (i > 0)
 			(*retval)[pos++] = ':';
 		pos += snprintf(*retval + pos, *len - pos, "%x",
-				(value->hex[i] << 8) | value->hex[i + 1]);
+				(unsigned) ((value->hex[i] << 8) | value->hex[i + 1]));
 	}
 	if (mrl1 < 8) {
 		(*retval)[pos++] = ':';
@@ -1716,7 +1716,7 @@ INET6toString(str *retval, size_t *len, const void *VALUE, bool external)
 	}
 	for (int i = mrl1 + mrl; i < 16; i += 2) {
 		pos += snprintf(*retval + pos, *len - pos, "%x",
-				(value->hex[i] << 8) | value->hex[i + 1]);
+				(unsigned) ((value->hex[i] << 8) | value->hex[i + 1]));
 		if (i < 15)
 			(*retval)[pos++] = ':';
 	}

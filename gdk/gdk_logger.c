@@ -1301,7 +1301,7 @@ log_open_output(logger *lg)
 		char id[32];
 		char filename[MAXPATH];
 
-		if (snprintf(id, sizeof(id), LLFMT, lg->id) >= (int) sizeof(id)) {
+		if (snprintf(id, sizeof(id), ULLFMT, lg->id) >= (int) sizeof(id)) {
 			TRC_CRITICAL(GDK, "filename is too large\n");
 			GDKfree(new_range);
 			return GDK_FAIL;
@@ -1697,7 +1697,7 @@ log_readlogs(logger *lg, const char *filename)
 	BAT *ids_to_omit = NULL;
 
 	assert(!lg->inmemory);
-	TRC_DEBUG(WAL, "logger id is " LLFMT " last logger id is " LLFMT "\n", lg->id, lg->saved_id);
+	TRC_DEBUG(WAL, "logger id is " ULLFMT " last logger id is " ULLFMT "\n", lg->id, lg->saved_id);
 
 	if (snprintf(log_filename, sizeof(log_filename), "%s.omitted", filename) >= FILENAME_MAX) {
 		GDKerror("Logger filename path is too large\n");
@@ -1712,7 +1712,7 @@ log_readlogs(logger *lg, const char *filename)
 		lg->id = lg->saved_id + 1;
 		gdk_return res = GDK_SUCCEED;
 		while (res == GDK_SUCCEED && !filemissing) {
-			if (snprintf(log_filename, sizeof(log_filename), "%s." LLFMT, filename, lg->id) >= FILENAME_MAX) {
+			if (snprintf(log_filename, sizeof(log_filename), "%s." ULLFMT, filename, lg->id) >= FILENAME_MAX) {
 				GDKerror("Logger filename path is too large\n");
 				goto end;
 			}
@@ -2260,7 +2260,7 @@ clean_bbp(logger *lg)
 				BBPreclaim(b);
 				return;
 			}
-			printf("# removing bat %d (tmp_%o)\n", bid, bid);
+			printf("# removing bat %d (tmp_%o)\n", bid, (unsigned) bid);
 		}
 	/* if there were any junk bats, commit their removal */
 	if (b->batCount > 1 &&
@@ -2941,7 +2941,7 @@ log_flush(logger *lg, ulng ts)
 		/* if too many pending */
 		if (lg->saved_id + lg->cur_max_pending < lg->id) {
 			lg->cur_max_pending *= 2; /* when to warn again */
-			TRC_WARNING(GDK, "Too many pending log files " LLFMT "\n", (lg->id - lg->saved_id));
+			TRC_WARNING(GDK, "Too many pending log files " ULLFMT "\n", (lg->id - lg->saved_id));
 			if (GDKtriggerusr1 &&
 			    !(ATOMIC_GET(&GDKdebug) & TESTINGMASK))
 				(*GDKtriggerusr1)();
@@ -2966,7 +2966,7 @@ log_flush(logger *lg, ulng ts)
 		if (!lg->input_log) {
 			char filename[MAXPATH];
 			char id[32];
-			if (snprintf(id, sizeof(id), LLFMT, cid + 1) >= (int) sizeof(id)) {
+			if (snprintf(id, sizeof(id), ULLFMT, cid + 1) >= (int) sizeof(id)) {
 				GDKfree(updated);
 				TRC_CRITICAL(GDK, "log_id filename is too large\n");
 				return GDK_FAIL;
@@ -3615,7 +3615,7 @@ static inline void
 log_tdone(logger *lg, logged_range *range, ulng commit_ts)
 {
 	(void) lg;
-	TRC_DEBUG(WAL, "tdone " LLFMT "\n", commit_ts);
+	TRC_DEBUG(WAL, "tdone " ULLFMT "\n", commit_ts);
 
 	if ((ulng) ATOMIC_GET(&range->last_ts) < commit_ts)
 		ATOMIC_SET(&range->last_ts, commit_ts);

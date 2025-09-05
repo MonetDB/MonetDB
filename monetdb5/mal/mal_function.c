@@ -182,7 +182,7 @@ chkFlow(MalBlkPtr mb)
 				for (e = 0; e < p->retc; e++) {
 					if (resolvedType(getArgType(mb, ps, e), getArgType(mb, p, e)) < 0) {
 						str tpname = getTypeName(getArgType(mb, p, e));
-						msg = createException(MAL,
+						msg = createException(MAL, "chkFlow",
 											  "%s.%s RETURN type mismatch at type '%s'\n",
 											  getModuleId(p) ? getModuleId(p) :
 											  "",
@@ -208,7 +208,8 @@ chkFlow(MalBlkPtr mb)
 					/* do nothing */
 				} else if (i) {
 					str l = instruction2str(mb, 0, p, TRUE);
-					msg = createException(MAL, "%s.%s signature misplaced\n!%s",
+					msg = createException(MAL, "chkFlow",
+										  "%s.%s signature misplaced\n!%s",
 										  getModuleId(p), getFunctionId(p), l);
 					GDKfree(l);
 					return msg;

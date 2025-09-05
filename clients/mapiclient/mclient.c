@@ -691,10 +691,10 @@ XMLprdata(const char *val)
 			default:
 				if ((codepoint & ~0x80) <= 0x1F || codepoint == 0177) {
 					/* control character */
-					mnstr_printf(toConsole, "&#%d;", codepoint);
+					mnstr_printf(toConsole, "&#%u;", codepoint);
 				} else if (codepoint < 0x80) {
 					/* ASCII */
-					mnstr_printf(toConsole, "%c", codepoint);
+					mnstr_printf(toConsole, "%c", (int) codepoint);
 				} else {
 					mnstr_printf(toConsole, "&#x%x;", codepoint);
 				}
