@@ -13,7 +13,6 @@
 #include "monetdb_config.h"
 #include "rel_physical.h"
 #include "rel_optimizer_private.h"
-#include "rel_rewriter.h"
 #include "rel_exp.h"
 #include "rel_rel.h"
 
