@@ -35,4 +35,7 @@ KNOWNFAIL?7653_incorrect_join_results
 7682_trigger_crash
 7686-delete-all-empty-table
 7688_not_exists_null
+7690-case_in_aggr
+7691-slow-query-on-allways-false
 7694-anti-join-and-filters
+7702-stmt_convert_cands
