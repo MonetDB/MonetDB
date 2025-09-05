@@ -304,7 +304,7 @@ MSscheduleClient(str command, str peer, str challenge, bstream *fin, stream *fou
 			return;
 		}
 		c->filetrans = filetrans;
-		c->handshake_options = handshake_opts ? strdup(handshake_opts) : NULL;
+		c->handshake_options = handshake_opts ? MA_STRDUP(c->ma, handshake_opts) : NULL;
 		/* move this back !! */
 		if (c->usermodule == 0) {
 			c->curmodule = c->usermodule = userModule();
@@ -340,9 +340,9 @@ MSscheduleClient(str command, str peer, str challenge, bstream *fin, stream *fou
 	}
 
 	// at this point username should have being verified
-	c->username = GDKstrdup(user);
+	c->username = MA_STRDUP(c->ma, user);
 	if (peer)
-		c->peer = GDKstrdup(peer);
+		c->peer = MA_STRDUP(c->ma, peer);
 
 	/* NOTE ABOUT STARTING NEW THREADS
 	 * At this point we have conducted experiments (Jun 2012) with
