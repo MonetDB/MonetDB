@@ -980,15 +980,15 @@ sql_drop_user(mvc *sql, char *user)
 	sqlstore *store = sql->session->tr->store;
 	oid rid = store->table_api.column_find_row(tr, find_sql_column(auths, "name"), user, NULL);
 
+	if (!deleted)
+		throw(SQL, "sql.drop_user", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	if (!admin_privs(sql->user_id) &&
 	    !admin_privs(sql->role_id) &&
 	    !role_granting_privs(sql, rid, user_id, sql->user_id) &&
 	    !role_granting_privs(sql, rid, user_id, sql->role_id))
-		throw(SQL,"sql.drop_role", SQLSTATE(0P000) "Insufficient privileges to drop user '%s'", user);
-
-	if (!deleted)
-		throw(SQL, "sql.drop_user", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	msg = sql_drop_granted_users(sql, user_id, user, deleted);
+		msg = createException(SQL,"sql.drop_role", SQLSTATE(0P000) "Insufficient privileges to drop user '%s'", user);
+	else
+		msg = sql_drop_granted_users(sql, user_id, user, deleted);
 	list_destroy(deleted);
 
 	/* Flag as removed */
