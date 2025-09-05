@@ -13,7 +13,6 @@
 #include "monetdb_config.h"
 #include "sql_types.h"
 #include "sql_storage.h"
-#include "store_dependency.h"
 #include "store_sequence.h"
 #include "mutils.h"
 

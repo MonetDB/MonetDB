@@ -16,7 +16,6 @@
 #include "rel_sequence.h"
 #include "rel_exp.h"
 #include "sql_privileges.h"
-#include "store_sequence.h"
 #include "sql_storage.h"
 
 char*

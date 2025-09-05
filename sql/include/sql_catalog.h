@@ -17,7 +17,6 @@
 #include "sql_list.h"
 #include "sql_hash.h"
 #include "mapi_querytype.h"
-#include "stream.h"
 #include "matomic.h"
 
 #define sql_shared_module_name "sql"

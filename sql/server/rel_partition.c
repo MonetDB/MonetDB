@@ -14,9 +14,6 @@
 #include "sql_query.h"
 #include "rel_partition.h"
 #include "rel_exp.h"
-#include "rel_prop.h"
-#include "rel_dump.h"
-#include "rel_select.h"
 #include "sql_storage.h"
 
 static lng

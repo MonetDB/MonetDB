@@ -17,8 +17,6 @@
 #include "rel_basetable.h"
 #include "rel_exp.h"
 #include "rel_propagate.h"
-#include "rel_statistics.h"
-#include "sql_privileges.h"
 #include "sql_storage.h"
 
 static sql_rel *
