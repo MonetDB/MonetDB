@@ -2461,6 +2461,7 @@ def killchildren(pid, procs = None):
             print('killing process %d failed' % pid)
 
 def stacktrace(proc, outfile):
+    out = ''
     if os.name == 'nt':
         sym = ''
         if os.path.exists(r'c:\Program Files\Debugging Tools for Windows (x64)\cdb.exe'):
@@ -2481,8 +2482,6 @@ def stacktrace(proc, outfile):
                     out, err = p.communicate(timeout=60)
                 except process.TimeoutExpired:
                     p.kill()
-        else:
-            out = ''
     elif platform.system() == 'Darwin':
         try:
             with process.Popen(['lldb', '--attach-pid', str(proc.pid), '--batch', '--one-line', 'bt all'], stdout=process.PIPE, text=True) as p:
@@ -2493,7 +2492,7 @@ def stacktrace(proc, outfile):
         except KeyboardInterrupt:
             raise
         except:
-            out = ''
+            pass
     else:
         try:
             with process.Popen(['gdb', '-p', str(proc.pid), '-batch', '-ex', 'thread apply all bt full'], stdout=process.PIPE,
@@ -2511,7 +2510,7 @@ def stacktrace(proc, outfile):
         except KeyboardInterrupt:
             raise
         except:
-            out = ''
+            pass
     if outfile is not None and out:
         try:
             outfile.write(f'\n{out}\n')

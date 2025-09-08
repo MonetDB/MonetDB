@@ -1871,7 +1871,7 @@ SQLdrop_user(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str sname = *getArgReference_str(stk, pci, 1);
 
 	initcontext();
-	 msg = sql_drop_user(sql, sname);
+	msg = sql_drop_user(sql, sname);
 	return msg;
 }
 
