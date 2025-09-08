@@ -37,7 +37,7 @@ pushNilAt(MalBlkPtr mb, InstrPtr p, int pos)
 }
 
 static int
-OPTremapDirect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int idx,
+OPTremapDirect(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int idx,
 			   Module scope)
 {
 	str mod, fcn;
@@ -46,7 +46,7 @@ OPTremapDirect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int idx,
 	InstrPtr p;
 	const char *bufName, *fcnName;
 
-	(void) cntxt;
+	(void) ctx;
 	(void) stk;
 	int plus_one = getArgType(mb, pci, pci->retc) == TYPE_lng ? 1 : 0;
 	mod = VALget(&getVar(mb, getArg(pci, retc + 0 + plus_one))->value);
@@ -146,7 +146,7 @@ OPTremapDirect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int idx,
  * counterpart.
  */
 static int
-OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc)
+OPTmultiplexInline(Client ctx, MalBlkPtr mb, InstrPtr p, int pc)
 {
 	MalBlkPtr mq;
 	InstrPtr q = NULL, sig;
@@ -155,11 +155,12 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc)
 	int refbat = 0, retc = p->retc;
 	bit *upgrade;
 	str msg;
+	allocator *ta = mb->ta;
 
 
 	str mod = VALget(&getVar(mb, getArg(p, retc + 0))->value);
 	str fcn = VALget(&getVar(mb, getArg(p, retc + 1))->value);
-	//Symbol s = findSymbol(cntxt->usermodule, mod,fcn);
+	//Symbol s = findSymbol(ctx->usermodule, mod,fcn);
 	Symbol s = findSymbolInModule(getModule(putName(mod)), putName(fcn));
 
 	if (s == NULL || !isSideEffectFree(s->def)
@@ -174,10 +175,10 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc)
 	}
 	sig = getInstrPtr(mq, 0);
 
-	ma_open(cntxt->ta);
-	upgrade = (bit *) ma_zalloc(cntxt->ta, sizeof(bit) * mq->vtop);
+	ma_open(ta);
+	upgrade = (bit *) ma_zalloc(ta, sizeof(bit) * mq->vtop);
 	if (upgrade == NULL) {
-		ma_close(cntxt->ta);
+		ma_close(ta);
 		freeMalBlk(mq);
 		return 0;
 	}
@@ -324,7 +325,7 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc)
 					}
 
 					/* now see if we can resolve the instruction */
-					typeChecker(cntxt->usermodule, mq, q, i, TRUE);
+					typeChecker(ctx->usermodule, mq, q, i, TRUE);
 					if (!q->typeresolved)
 						goto terminateMX;
 					break;
@@ -339,7 +340,7 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc)
 					getArg(q, 1) = refbat;
 
 					q->typeresolved = false;
-					typeChecker(cntxt->usermodule, mq, q, i, TRUE);
+					typeChecker(ctx->usermodule, mq, q, i, TRUE);
 					if (!q->typeresolved)
 						goto terminateMX;
 					break;
@@ -351,18 +352,18 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc)
 	if (mq->errors) {
   terminateMX:
 
-		ma_close(cntxt->ta);
+		ma_close(ta);
 		freeMalBlk(mq);
 
 		/* ugh ugh, fallback to non inline, but optimized code */
-		msg = OPTmultiplexSimple(cntxt, s->def);
+		msg = OPTmultiplexSimple(ctx, s->def);
 		if (msg)
 			freeException(msg);
 		if (s->kind == FUNCTIONsymbol)
 			s->def->inlineProp = 0;
 		return 0;
 	}
-	ma_close(cntxt->ta);
+	ma_close(ta);
 	/*
 	 * We have successfully constructed a variant
 	 * of the to-be-inlined function. Put it in place
@@ -371,7 +372,7 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc)
 	 */
 	delArgument(p, 2);
 	delArgument(p, 1);
-	inlineMALblock(cntxt, mb, pc, mq);
+	inlineMALblock(ctx, mb, pc, mq);
 
 	freeMalBlk(mq);
 	return 1;
@@ -395,7 +396,7 @@ static const struct {
 };
 
 static int
-OPTremapSwitched(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
+OPTremapSwitched(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 				 int idx, Module scope)
 {
 	char *fcn;
@@ -417,7 +418,7 @@ OPTremapSwitched(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 			r = getArg(pci, 3);
 			getArg(pci, 3) = getArg(pci, 4);
 			getArg(pci, 4) = r;
-			r = OPTremapDirect(cntxt, mb, stk, pci, idx, scope);
+			r = OPTremapDirect(ctx, mb, stk, pci, idx, scope);
 
 			/* always restore the allocated function name */
 			getVarConstant(mb, getArg(pci, 2)).val.sval = fcn;
@@ -436,11 +437,11 @@ OPTremapSwitched(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 }
 
 str
-OPTremapImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+OPTremapImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	InstrPtr *old, p;
 	int i, limit, slimit, actions = 0;
-	Module scope = cntxt->usermodule;
+	Module scope = ctx->usermodule;
 	str msg = MAL_SUCCEED;
 
 	for (i = 0; i < mb->stop; i++) {
@@ -473,16 +474,16 @@ OPTremapImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			int plus_one = getArgType(mb, p, p->retc) == TYPE_lng ? 1 : 0;
 			str mod = VALget(&getVar(mb, getArg(p, p->retc + 0 + plus_one))-> value);
 			str fcn = VALget(&getVar(mb, getArg(p, p->retc + 1 + plus_one))-> value);
-			//Symbol s = findSymbol(cntxt->usermodule, mod,fcn);
+			//Symbol s = findSymbol(ctx->usermodule, mod,fcn);
 			Symbol s = findSymbolInModule(getModule(putName(mod)), putName(fcn));
 
 			if (s && s->kind == FUNCTIONsymbol && s->def->inlineProp) {
 				pushInstruction(mb, p);
-				if (OPTmultiplexInline(cntxt, mb, p, mb->stop - 1)) {
+				if (OPTmultiplexInline(ctx, mb, p, mb->stop - 1)) {
 					actions++;
 				}
-			} else if (OPTremapDirect(cntxt, mb, stk, p, i, scope)
-					   || OPTremapSwitched(cntxt, mb, stk, p, i, scope)) {
+			} else if (OPTremapDirect(ctx, mb, stk, p, i, scope)
+					   || OPTremapSwitched(ctx, mb, stk, p, i, scope)) {
 				freeInstruction(mb, p);
 				actions++;
 			} else {
@@ -584,7 +585,7 @@ OPTremapImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	/* Defense line against incorrect plans */
 	if (msg == MAL_SUCCEED && actions > 0) {
-		msg = chkTypes(cntxt->usermodule, mb, FALSE);
+		msg = chkTypes(ctx->usermodule, mb, FALSE);
 		if (!msg)
 			msg = chkFlow(mb);
 		if (!msg)

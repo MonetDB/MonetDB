@@ -18,7 +18,7 @@
 #include "opt_projectionpath.h"
 
 str
-OPTprojectionpathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
+OPTprojectionpathImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 								InstrPtr pci)
 {
 	int i, j, k, actions = 0, maxprefixlength = 0;
@@ -29,8 +29,9 @@ OPTprojectionpathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	int limit, slimit;
 	str msg = MAL_SUCCEED;
 	int vtop = mb->vtop;
+	allocator *ta = mb->ta;
 
-	(void) cntxt;
+	(void) ctx;
 	(void) stk;
 	if (mb->inlineProp)
 		goto wrapupall1;
@@ -54,11 +55,11 @@ OPTprojectionpathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 		throw(MAL, "optimizer.projectionpath", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	/* beware, new variables and instructions are introduced */
-	ma_open(cntxt->ta);
-	pc = (int *) ma_zalloc(cntxt->ta, sizeof(int) * /*mb->*/vtop/* * 2*/);	/* to find last assignment */
-	varcnt = (int *) ma_zalloc(cntxt->ta, sizeof(int) * /*mb->*/vtop/* * 2*/);
+	ma_open(ta);
+	pc = (int *) ma_zalloc(ta, sizeof(int) * /*mb->*/vtop/* * 2*/);	/* to find last assignment */
+	varcnt = (int *) ma_zalloc(ta, sizeof(int) * /*mb->*/vtop/* * 2*/);
 	if (pc == NULL || varcnt == NULL) {
-		ma_close(cntxt->ta);
+		ma_close(ta);
 		throw(MAL, "optimizer.projectionpath", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
@@ -175,7 +176,7 @@ OPTprojectionpathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 
 	/* Defense line against incorrect plans */
 	if (actions > 0) {
-		msg = chkTypes(cntxt->usermodule, mb, FALSE);
+		msg = chkTypes(ctx->usermodule, mb, FALSE);
 		if (!msg)
 			msg = chkFlow(mb);
 		if (!msg)
@@ -183,7 +184,7 @@ OPTprojectionpathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	}
 	assert(vtop == mb->vtop);
   wrapupall:
-	ma_close(cntxt->ta);
+	ma_close(ta);
   wrapupall1:
 	/* keep actions taken as a fake argument */
 	(void) pushInt(mb, pci, actions);

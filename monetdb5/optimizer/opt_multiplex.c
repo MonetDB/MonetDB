@@ -35,7 +35,7 @@
  * code construction.
  */
 static str
-OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+OPTexpandMultiplex(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i = 2, iter = 0;
 	int hvar, tvar;
@@ -44,8 +44,9 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	InstrPtr q;
 	int tt;
 	int bat = (getModuleId(pci) == batmalRef);
+	allocator *ta = mb->ta;
 
-	(void) cntxt;
+	(void) ctx;
 	(void) stk;
 	for (i = 0; i < pci->retc; i++) {
 		tt = getBatType(getArgType(mb, pci, i));
@@ -98,9 +99,9 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	 * find the actual arguments at the proper place of the callee.
 	 */
 
-	ma_open(cntxt->ta);
-	alias = (int *) ma_alloc(cntxt->ta, sizeof(int) * pci->maxarg);
-	resB = (int *) ma_alloc(cntxt->ta, sizeof(int) * pci->retc);
+	ma_open(ta);
+	alias = (int *) ma_alloc(ta, sizeof(int) * pci->maxarg);
+	resB = (int *) ma_alloc(ta, sizeof(int) * pci->retc);
 	if (alias == NULL || resB == NULL) {
 		goto nomem;
 	}
@@ -220,11 +221,11 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		q = pushArgument(mb, q, resB[i]);
 		pushInstruction(mb, q);
 	}
-	ma_close(cntxt->ta);
+	ma_close(ta);
 	return MAL_SUCCEED;
 
   nomem:
-	ma_close(cntxt->ta);
+	ma_close(ta);
 	throw(MAL, "optimizer.multiplex", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 }
 
@@ -234,7 +235,7 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
  * and interpretation overhead.
  */
 str
-OPTmultiplexSimple(Client cntxt, MalBlkPtr mb)
+OPTmultiplexSimple(Client ctx, MalBlkPtr mb)
 {
 	int i, doit = 0;
 	InstrPtr p;
@@ -249,9 +250,9 @@ OPTmultiplexSimple(Client cntxt, MalBlkPtr mb)
 			}
 		}
 	if (doit) {
-		msg = OPTmultiplexImplementation(cntxt, mb, 0, 0);
+		msg = OPTmultiplexImplementation(ctx, mb, 0, 0);
 		if (!msg)
-			msg = chkTypes(cntxt->usermodule, mb, TRUE);
+			msg = chkTypes(ctx->usermodule, mb, TRUE);
 		if (!msg)
 			msg = chkFlow(mb);
 		if (!msg)
@@ -261,7 +262,7 @@ OPTmultiplexSimple(Client cntxt, MalBlkPtr mb)
 }
 
 str
-OPTmultiplexImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
+OPTmultiplexImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 						   InstrPtr pci)
 {
 	InstrPtr *old = 0, p;
@@ -288,14 +289,14 @@ OPTmultiplexImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	for (i = 0; i < limit; i++) {
 		p = old[i];
 		if (msg == MAL_SUCCEED && isMultiplex(p)) {
-			if (MANIFOLDtypecheck(cntxt, mb, p, 0) != NULL) {
+			if (MANIFOLDtypecheck(ctx, mb, p, 0) != NULL) {
 				setFunctionId(p, manifoldRef);
 				p->typeresolved = false;
 				pushInstruction(mb, p);
 				actions++;
 				continue;
 			}
-			msg = OPTexpandMultiplex(cntxt, mb, stk, p);
+			msg = OPTexpandMultiplex(ctx, mb, stk, p);
 			if (msg == MAL_SUCCEED) {
 				freeInstruction(mb, p);
 				old[i] = 0;
@@ -315,7 +316,7 @@ OPTmultiplexImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 
 	/* Defense line against incorrect plans */
 	if (msg == MAL_SUCCEED && actions > 0) {
-		msg = chkTypes(cntxt->usermodule, mb, FALSE);
+		msg = chkTypes(ctx->usermodule, mb, FALSE);
 		if (!msg)
 			msg = chkFlow(mb);
 		if (!msg)

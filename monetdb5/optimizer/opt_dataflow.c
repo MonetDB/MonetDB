@@ -116,12 +116,12 @@ simpleFlow(InstrPtr *old, int start, int last, region_state *state)
 
 /* a limited set of MAL instructions may appear in the dataflow block*/
 static int
-dataflowBreakpoint(Client cntxt, MalBlkPtr mb, InstrPtr p, States states)
+dataflowBreakpoint(Client ctx, MalBlkPtr mb, InstrPtr p, States states)
 {
 	int j;
 
 	if (p->token == ENDsymbol || p->barrier || isUnsafeFunction(p)
-		|| (isMultiplex(p) && MANIFOLDtypecheck(cntxt, mb, p, 0) == NULL)) {
+		|| (isMultiplex(p) && MANIFOLDtypecheck(ctx, mb, p, 0) == NULL)) {
 		return TRUE;
 	}
 
@@ -263,7 +263,7 @@ sqlBreakpoint(MalBlkPtr mb, InstrPtr *first, InstrPtr *p)
 }
 
 static bool
-checkBreakpoint(Client cntxt, MalBlkPtr mb, InstrPtr *first, InstrPtr *p,
+checkBreakpoint(Client ctx, MalBlkPtr mb, InstrPtr *first, InstrPtr *p,
 				States states, region_state *state)
 {
 	InstrPtr instr = *p;
@@ -272,7 +272,7 @@ checkBreakpoint(Client cntxt, MalBlkPtr mb, InstrPtr *first, InstrPtr *p,
 		// by definition
 		return true;
 	case dataflow_region:
-		return dataflowBreakpoint(cntxt, mb, instr, states);
+		return dataflowBreakpoint(ctx, mb, instr, states);
 	case existing_region:
 		if (state->st.existing_region.level == 0) {
 			// previous statement ended the region so we break here
@@ -296,10 +296,10 @@ checkBreakpoint(Client cntxt, MalBlkPtr mb, InstrPtr *first, InstrPtr *p,
 }
 
 static void
-decideRegionType(Client cntxt, MalBlkPtr mb, InstrPtr p, States states,
+decideRegionType(Client ctx, MalBlkPtr mb, InstrPtr p, States states,
 				 region_state *state)
 {
-	(void) cntxt;
+	(void) ctx;
 
 	state->type = no_region;
 	if (blockStart(p)) {
@@ -336,7 +336,7 @@ decideRegionType(Client cntxt, MalBlkPtr mb, InstrPtr p, States states,
    executed, either sequentially or in parallel */
 
 str
-OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+OPTdataflowImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i, j, k, start, slimit, breakpoint, actions = 0;
 	bool simple = true;
@@ -346,9 +346,10 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	States states = NULL;
 	region_state state = { singleton_region };
 	str msg = MAL_SUCCEED;
+	allocator *ta = mb->ta;
 
 	/* don't use dataflow on single processor systems */
-	if (GDKnr_threads <= 1 || cntxt->workerlimit == 1 || MB_LARGE(mb))
+	if (GDKnr_threads <= 1 || ctx->workerlimit == 1 || MB_LARGE(mb))
 		goto wrapup;
 
 	if (optimizerIsApplied(mb, dataflowRef))
@@ -359,10 +360,10 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 		goto wrapup;
 
 	vlimit = mb->vtop *2;
-	ma_open( cntxt->ta );
-	states = (States) ma_zalloc(cntxt->ta, vlimit * sizeof(char));
+	ma_open( ta );
+	states = (States) ma_zalloc(ta, vlimit * sizeof(char));
 	if (states == NULL) {
-		ma_close(cntxt->ta);
+		ma_close(ta);
 		throw(MAL, "optimizer.dataflow", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
@@ -372,7 +373,7 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	slimit = mb->ssize;
 	old = mb->stmt;
 	if (newMalBlkStmt(mb, mb->ssize) < 0) {
-		ma_close(cntxt->ta);
+		ma_close(ta);
 		throw(MAL, "optimizer.dataflow", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
@@ -382,7 +383,7 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	for (i = 1; mb->errors == NULL && i < limit; i++) {
 		p = old[i];
 		assert(p);
-		breakpoint = checkBreakpoint(cntxt, mb, &old[start], &old[i], states, &state);
+		breakpoint = checkBreakpoint(ctx, mb, &old[start], &old[i], states, &state);
 		if (breakpoint) {
 			/* close previous flow block */
 			simple = simpleFlow(old, start, i, &state);
@@ -453,7 +454,7 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			// Start a new region
 			memset((char *) states, 0, vlimit * sizeof(char));
 			start = i;
-			decideRegionType(cntxt, mb, p, states, &state);
+			decideRegionType(ctx, mb, p, states, &state);
 		}
 		// remember you assigned/read variables
 		for (k = 0; k < p->retc; k++)
@@ -477,7 +478,7 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			pushInstruction(mb, old[i]);
 	/* Defense line against incorrect plans */
 	if (msg == MAL_SUCCEED && actions > 0) {
-		msg = chkTypes(cntxt->usermodule, mb, FALSE);
+		msg = chkTypes(ctx->usermodule, mb, FALSE);
 		if (msg == MAL_SUCCEED) {
 			msg = chkFlow(mb);
 			if (msg == MAL_SUCCEED)
@@ -485,7 +486,7 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 		}
 	}
 
-	ma_close( cntxt->ta );
+	ma_close( ta );
   wrapup:
 	/* keep actions taken as a fake argument */
 	(void) pushInt(mb, pci, actions);

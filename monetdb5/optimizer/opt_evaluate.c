@@ -15,10 +15,10 @@
 #include "opt_aliases.h"
 
 static bool
-OPTallConstant(Client cntxt, MalBlkPtr mb, InstrPtr p)
+OPTallConstant(Client ctx, MalBlkPtr mb, InstrPtr p)
 {
 	int i;
-	(void) cntxt;
+	(void) ctx;
 
 	if (p->token != ASSIGNsymbol
 		&& getModuleId(p) != calcRef
@@ -65,7 +65,7 @@ OPTsimpleflow(MalBlkPtr mb, int pc)
 
 /* barrier blocks can only be dropped when they are fully excluded.  */
 static str
-OPTremoveUnusedBlocks(Client cntxt, MalBlkPtr mb)
+OPTremoveUnusedBlocks(Client ctx, MalBlkPtr mb)
 {
 	/* catch and remove constant bounded blocks */
 	int i, j = 0, action = 0, block = -1, skip = 0, multipass = 1;
@@ -118,12 +118,12 @@ OPTremoveUnusedBlocks(Client cntxt, MalBlkPtr mb)
 			mb->stmt[j] = NULL;
 	}
 	if (action)
-		msg = chkTypes(cntxt->usermodule, mb, TRUE);
+		msg = chkTypes(ctx->usermodule, mb, TRUE);
 	return msg;
 }
 
 str
-OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
+OPTevaluateImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 						  InstrPtr pci)
 {
 	InstrPtr p;
@@ -132,17 +132,18 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	int actions = 0, constantblock = 0;
 	int *assigned = 0, use;
 	str msg = MAL_SUCCEED;
+	allocator *ta = mb->ta;
 
 	(void) stk;
 
 	if (mb->inlineProp || MB_LARGE(mb))
 		return MAL_SUCCEED;
 
-	ma_open(cntxt->ta);
-	assigned = (int *) ma_zalloc(cntxt->ta, sizeof(int) * mb->vtop);
-	alias = (int *) ma_zalloc(cntxt->ta, mb->vtop * sizeof(int) * 2);	/* we introduce more */
+	ma_open(ta);
+	assigned = (int *) ma_zalloc(ta, sizeof(int) * mb->vtop);
+	alias = (int *) ma_zalloc(ta, mb->vtop * sizeof(int) * 2);	/* we introduce more */
 	if (assigned == NULL || alias == NULL) {
-		ma_close(cntxt->ta);
+		ma_close(ta);
 		throw(MAL, "optimizer.evaluate", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	// arguments are implicitly assigned by context
@@ -163,7 +164,7 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 				}
 	}
 
-	for (i = 1; i < limit && cntxt->mode != FINISHCLIENT; i++) {
+	for (i = 1; i < limit && ctx->mode != FINISHCLIENT; i++) {
 		p = getInstrPtr(mb, i);
 		// to avoid management of duplicate assignments over multiple blocks
 		// we limit ourselves to evaluation of the first assignment only.
@@ -175,7 +176,7 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 				getArg(p, k) = alias[getArg(p, k)];
 		/* be aware that you only assign once to a variable */
 		if (use && p->retc == 1 && getFunctionId(p)
-			&& OPTallConstant(cntxt, mb, p) && !isUnsafeFunction(p)) {
+			&& OPTallConstant(ctx, mb, p) && !isUnsafeFunction(p)) {
 			barrier = p->barrier;
 			p->barrier = 0;
 			if (env == NULL) {
@@ -188,7 +189,7 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 				}
 				env->keepAlive = TRUE;
 			}
-			msg = reenterMAL(cntxt, mb, i, i + 1, env);
+			msg = reenterMAL(ctx, mb, i, i + 1, env);
 			p->barrier = barrier;
 			if (msg == MAL_SUCCEED) {
 				int nvar;
@@ -230,16 +231,16 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 				mb->errors = 0;
 			}
 		}
-		constantblock += blockStart(p) && OPTallConstant(cntxt, mb, p);	/* default */
+		constantblock += blockStart(p) && OPTallConstant(ctx, mb, p);	/* default */
 	}
 	// produces errors in SQL when enabled
 	if (constantblock)
-		msg = OPTremoveUnusedBlocks(cntxt, mb);
+		msg = OPTremoveUnusedBlocks(ctx, mb);
 
 	/* Defense line against incorrect plans */
 	/* Plan is unaffected */
 	if (!msg)
-		msg = chkTypes(cntxt->usermodule, mb, FALSE);
+		msg = chkTypes(ctx->usermodule, mb, FALSE);
 	if (!msg)
 		msg = chkFlow(mb);
 	if (!msg)
@@ -247,7 +248,7 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	/* keep all actions taken as a post block comment */
 
   wrapup:
-	ma_close(cntxt->ta);
+	ma_close(ta);
 
 	/* keep actions taken as a fake argument */
 	(void) pushInt(mb, pci, actions);

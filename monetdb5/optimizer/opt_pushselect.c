@@ -98,7 +98,7 @@ no_updates(InstrPtr *old, int *vars, int oldv, int newv)
 #define isIntersect(p) (getModuleId(p) == algebraRef && getFunctionId(p) == intersectRef)
 
 str
-OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
+OPTpushselectImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 							InstrPtr pci)
 {
 	int i, j, limit, slimit, actions = 0, *vars, *nvars = NULL,
@@ -108,6 +108,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	InstrPtr p, *old = NULL;
 	subselect_t subselects = { 0 };
 	str msg = MAL_SUCCEED;
+	allocator *ta = mb->ta;
 
 	if (MB_LARGE(mb))
 			return msg;
@@ -116,10 +117,10 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 
 	no_mito = !isOptimizerEnabled(mb, mitosisRef);
 	(void) stk;
-	ma_open(cntxt->ta);
-	vars = (int *) ma_zalloc(cntxt->ta, sizeof(int) * mb->vtop);
+	ma_open(ta);
+	vars = (int *) ma_zalloc(ta, sizeof(int) * mb->vtop);
 	if (vars == NULL) {
-		ma_close(cntxt->ta);
+		ma_close(ta);
 		throw(MAL, "optimizer.pushselect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
@@ -426,10 +427,10 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	slimit = mb->ssize;
 	old = mb->stmt;
 
-	nvars = (int *) ma_zalloc(cntxt->ta, sizeof(int) * mb->vtop);
-	slices = (int *) ma_zalloc(cntxt->ta, sizeof(int) * mb->vtop);
-	rslices = (bool *) ma_zalloc(cntxt->ta, sizeof(bool) * mb->vtop);
-	oclean = (bool *) ma_zalloc(cntxt->ta, sizeof(bool) * mb->vtop);
+	nvars = (int *) ma_zalloc(ta, sizeof(int) * mb->vtop);
+	slices = (int *) ma_zalloc(ta, sizeof(int) * mb->vtop);
+	rslices = (bool *) ma_zalloc(ta, sizeof(bool) * mb->vtop);
+	oclean = (bool *) ma_zalloc(ta, sizeof(bool) * mb->vtop);
 	if (!nvars || !slices || !rslices || !oclean
 		|| newMalBlkStmt(mb,
 						 mb->stop + (5 * push_down_delta) + (2 * nr_topn)) <
@@ -799,14 +800,14 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 
 	/* Defense line against incorrect plans */
 	if (msg == MAL_SUCCEED && actions > 0) {
-		msg = chkTypes(cntxt->usermodule, mb, FALSE);
+		msg = chkTypes(ctx->usermodule, mb, FALSE);
 		if (msg == MAL_SUCCEED)
 			msg = chkFlow(mb);
 		if (msg == MAL_SUCCEED)
 			msg = chkDeclarations(mb);
 	}
   wrapup:
-	ma_close(cntxt->ta);
+	ma_close(ta);
 	/* keep actions taken as a fake argument */
 	(void) pushInt(mb, pci, actions);
 	return msg;

@@ -44,7 +44,7 @@
  * Be aware of side-effect instructions, they may not be skipped.
  */
 str
-OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
+OPTreorderImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 						 InstrPtr pci)
 {
 	int i, j, k, blkcnt = 1, pc = 0, actions = 0;
@@ -66,10 +66,12 @@ OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	slimit = mb->ssize;
 	old = mb->stmt;
 
-	ma_open(cntxt->ta);
-	depth = (int *) ma_zalloc(cntxt->ta, mb->vtop * sizeof(int));
+	allocator *ta = mb->ta;
+
+	ma_open(ta);
+	depth = (int *) ma_zalloc(ta, mb->vtop * sizeof(int));
 	if (depth == NULL || newMalBlkStmt(mb, mb->ssize) < 0) {
-		ma_close(cntxt->ta);
+		ma_close(ta);
 		throw(MAL, "optimizer.reorder", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
@@ -78,7 +80,7 @@ OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	for (i = 0; i < limit; i++) {
 		p = old[i];
 		if (!p) {
-			//mnstr_printf(cntxt->fdout, "empty stmt:pc %d \n", i);
+			//mnstr_printf(ctx->fdout, "empty stmt:pc %d \n", i);
 			continue;
 		}
 		if (p->token == ENDsymbol)
@@ -124,9 +126,9 @@ OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 		}
 
 		if (top[k] == 0) {
-			blocks[k] = ma_zalloc(cntxt->ta, limit * sizeof(InstrPtr));
+			blocks[k] = ma_zalloc(ta, limit * sizeof(InstrPtr));
 			if (blocks[k] == NULL) {
-				ma_close(cntxt->ta);
+				ma_close(ta);
 				//GDKfree(mb->stmt);
 				mb->stop = limit;
 				mb->ssize = slimit;
@@ -137,8 +139,8 @@ OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 		}
 		blocks[k][top[k]] = p;
 		top[k] = top[k] + 1;
-		//mnstr_printf(cntxt->fdout, "block[%d] :%d:",i, k);
-		//printInstruction(cntxt->fdout, mb, stk, p, LIST_MAL_DEBUG);
+		//mnstr_printf(ctx->fdout, "block[%d] :%d:",i, k);
+		//printInstruction(ctx->fdout, mb, stk, p, LIST_MAL_DEBUG);
 		if (k > blkcnt)
 			blkcnt = k;
 	}
@@ -158,15 +160,15 @@ OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 			pushInstruction(mb, old[i]);
 
 	/* Defense line against incorrect plans */
-	msg = chkTypes(cntxt->usermodule, mb, FALSE);
+	msg = chkTypes(ctx->usermodule, mb, FALSE);
 	if (!msg)
 		msg = chkFlow(mb);
 	if (!msg)
 		msg = chkDeclarations(mb);
 	/* keep all actions taken as a post block comment */
-	//mnstr_printf(cntxt->fdout,"REORDER RESULT ");
-	//printFunction(cntxt->fdout, mb, 0, LIST_MAL_ALL);
-	ma_close(cntxt->ta);
+	//mnstr_printf(ctx->fdout,"REORDER RESULT ");
+	//printFunction(ctx->fdout, mb, 0, LIST_MAL_ALL);
+	ma_close(ta);
   wrapup:
 	/* keep actions taken as a fake argument */
 	(void) pushInt(mb, pci, actions);

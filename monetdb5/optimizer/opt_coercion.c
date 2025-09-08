@@ -32,7 +32,7 @@ typedef struct {
  * Superfluous coercion statements will be garbagecollected later on in the pipeline
  */
 static void
-coercionOptimizerCalcStep(Client cntxt, MalBlkPtr mb, int i, Coercion *coerce)
+coercionOptimizerCalcStep(Client ctx, MalBlkPtr mb, int i, Coercion *coerce)
 {
 	InstrPtr p = getInstrPtr(mb, i);
 	int r, a, b, varid;
@@ -55,26 +55,26 @@ coercionOptimizerCalcStep(Client cntxt, MalBlkPtr mb, int i, Coercion *coerce)
 	if (a == r && coerce[varid].src && coerce[varid].fromtype < r) {
 		// Remove upcast on first argument
 		getArg(p, 1) = coerce[varid].src;
-		if (chkInstruction(cntxt->usermodule, mb, p) || !p->typeresolved)
+		if (chkInstruction(ctx->usermodule, mb, p) || !p->typeresolved)
 			getArg(p, 1) = varid;
 	}
 	varid = getArg(p, 2);
 	if (b == r && coerce[varid].src && coerce[varid].fromtype < r) {
 		// Remove upcast on second argument
 		getArg(p, 2) = coerce[varid].src;
-		if (chkInstruction(cntxt->usermodule, mb, p) || !p->typeresolved)
+		if (chkInstruction(ctx->usermodule, mb, p) || !p->typeresolved)
 			getArg(p, 2) = varid;
 	}
 	return;
 }
 
 static void
-coercionOptimizerAggrStep(Client cntxt, MalBlkPtr mb, int i, Coercion *coerce)
+coercionOptimizerAggrStep(Client ctx, MalBlkPtr mb, int i, Coercion *coerce)
 {
 	InstrPtr p = getInstrPtr(mb, i);
 	int r, k;
 
-	(void) cntxt;
+	(void) ctx;
 
 	if (getModuleId(p) != aggrRef || getFunctionId(p) == 0)
 		return;
@@ -85,28 +85,29 @@ coercionOptimizerAggrStep(Client cntxt, MalBlkPtr mb, int i, Coercion *coerce)
 	k = getArg(p, 1);
 	if (r == TYPE_dbl && coerce[k].src) {
 		getArg(p, 1) = coerce[k].src;
-		if (chkInstruction(cntxt->usermodule, mb, p) || !p->typeresolved)
+		if (chkInstruction(ctx->usermodule, mb, p) || !p->typeresolved)
 			getArg(p, 1) = k;
 	}
 	return;
 }
 
 str
-OPTcoercionImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
+OPTcoercionImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 						  InstrPtr pci)
 {
 	int i, k, t;
 	InstrPtr p;
 	int actions = 0;
 	str msg = MAL_SUCCEED;
+	allocator *ta = mb->ta;
 
 	if (MB_LARGE(mb))
 		goto wrapup;
 
-	ma_open(cntxt->ta);
-	Coercion *coerce = ma_zalloc(cntxt->ta, sizeof(Coercion) * mb->vtop);
+	ma_open(ta);
+	Coercion *coerce = ma_zalloc(ta, sizeof(Coercion) * mb->vtop);
 	if (coerce == NULL) {
-		ma_close(cntxt->ta);
+		ma_close(ta);
 		throw(MAL, "optimizer.coercion", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	(void) stk;
@@ -150,8 +151,8 @@ OPTcoercionImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 			coerce[k].src = getArg(p, 1 + (p->argc == 3));
 			coerce[k].fromtype = getBatType(getArgType(mb, p, 1 + (p->argc == 3)));
 		}
-		coercionOptimizerAggrStep(cntxt, mb, i, coerce);
-		coercionOptimizerCalcStep(cntxt, mb, i, coerce);
+		coercionOptimizerAggrStep(ctx, mb, i, coerce);
+		coercionOptimizerCalcStep(ctx, mb, i, coerce);
 		if (getModuleId(p) == calcRef && p->argc == 2) {
 			t = getVarType(mb, getArg(p, 1));
 			if (getVarType(mb, getArg(p, 0)) == t
@@ -166,11 +167,11 @@ OPTcoercionImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	 * This optimizer affects the flow, but not the type and declaration
 	 * structure. A cheaper optimizer is sufficient.
 	 */
-	ma_close(cntxt->ta);
+	ma_close(ta);
 
 	/* Defense line against incorrect plans */
 	if (actions > 0) {
-		msg = chkTypes(cntxt->usermodule, mb, FALSE);
+		msg = chkTypes(ctx->usermodule, mb, FALSE);
 		if (!msg)
 			msg = chkFlow(mb);
 		if (!msg)

@@ -18,14 +18,16 @@
 #define OPTisAlias(X) (X->argc == 2 && X->token == ASSIGNsymbol && X->barrier == 0 )
 
 str
-OPTaliasesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+OPTaliasesImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i, j, k = 1, limit, actions = 0;
 	int *alias = 0;
 	str msg = MAL_SUCCEED;
 	InstrPtr p;
+	allocator *ta = mb->ta;
 
 	(void) stk;
+	(void) ctx;
 
 	if (MB_LARGE(mb))
 		goto wrapup;
@@ -41,11 +43,11 @@ OPTaliasesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 		goto wrapup;
 	}
 	k = i;
-	ma_open(cntxt->ta);
+	ma_open(ta);
 	if (i < limit) {
-		alias = ma_alloc(cntxt->ta, sizeof(int) * mb->vtop);
+		alias = ma_alloc(ta, sizeof(int) * mb->vtop);
 		if (alias == NULL) {
-			ma_close(cntxt->ta);
+			ma_close(ta);
 			throw(MAL, "optimizer.aliases", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		setVariableScope(mb);
@@ -73,11 +75,11 @@ OPTaliasesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 		mb->stmt[i] = NULL;
 
 	mb->stop = k;
-	ma_close(cntxt->ta);
+	ma_close(ta);
 
 	/* Defense line against incorrect plans */
 	/* Plan is unaffected */
-	// msg = chkTypes(cntxt->usermodule, mb, FALSE);
+	// msg = chkTypes(ctx->usermodule, mb, FALSE);
 	// if ( msg == MAL_SUCCEED)
 	//      msg = chkFlow(mb);
 	// if ( msg == MAL_SUCCEED)

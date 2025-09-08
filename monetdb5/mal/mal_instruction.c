@@ -119,6 +119,7 @@ newMalBlk(int elements, allocator *pa)
 	MalBlkPtr mb;
 	VarRecord *v;
 	allocator *ma = ma_create(pa);
+	allocator *ta = ma_create(ma);
 	allocator *instr_allocator = ma_create(ma);
 
 	if (!ma)
@@ -147,6 +148,7 @@ newMalBlk(int elements, allocator *pa)
 		.maxarg = MAXARG,		/* the minimum for each instruction */
 		.workers = ATOMIC_VAR_INIT(1),
 		.ma = ma,
+		.ta = ta,
 		.instr_allocator = instr_allocator
 	};
 	if (newMalBlkStmt(mb, elements) < 0) {
@@ -316,6 +318,7 @@ copyMalBlk(MalBlkPtr old)
 	}
 
 	mb->ma = ma;
+	mb->ta = ma_create(ma);
 	mb->instr_allocator = ma_create(ma);
 	mb->var = MA_ZNEW_ARRAY(ma, VarRecord, old->vsize);
 	if (mb->var == NULL) {

@@ -1130,7 +1130,7 @@ static int sessionkey = 0;
 /* #define MAPI_TEST*/
 
 static str
-SERVERconnectAll(Client cntxt, int *key, const char *host, int port, const char *username,
+SERVERconnectAll(Client ctx, int *key, const char *host, int port, const char *username,
 				 const char *password, const char *lang)
 {
 	Mapi mid;
@@ -1145,7 +1145,7 @@ SERVERconnectAll(Client cntxt, int *key, const char *host, int port, const char 
 		MT_lock_unset(&mal_contextLock);
 		throw(IO, "mapi.connect", OPERATION_FAILED ": too many sessions");
 	}
-	SERVERsessions[i].c = cntxt;
+	SERVERsessions[i].c = ctx;
 	SERVERsessions[i].key = ++sessionkey;
 	MT_lock_unset(&mal_contextLock);
 
@@ -1239,7 +1239,7 @@ SERVERdisconnectWithAlias(Client ctx, int *key, const char *const *dbalias)
 }
 
 static str
-SERVERconnect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+SERVERconnect(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int *key = getArgReference_int(stk, pci, 0);
 	const char *host = *getArgReference_str(stk, pci, 1);
@@ -1249,12 +1249,12 @@ SERVERconnect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	const char *lang = *getArgReference_str(stk, pci, 5);
 
 	(void) mb;
-	return SERVERconnectAll(cntxt, key, host, port, username, password, lang);
+	return SERVERconnectAll(ctx, key, host, port, username, password, lang);
 }
 
 
 static str
-SERVERreconnectAlias(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+SERVERreconnectAlias(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int *key = getArgReference_int(stk, pci, 0);
 	const char *host = *getArgReference_str(stk, pci, 1);
@@ -1276,14 +1276,14 @@ SERVERreconnectAlias(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			return msg;
 		}
 
-	msg = SERVERconnectAll(cntxt, key, host, port, username, password, lang);
+	msg = SERVERconnectAll(ctx, key, host, port, username, password, lang);
 	if (msg == MAL_SUCCEED)
-		msg = SERVERsetAlias(cntxt, NULL, key, &dbalias);
+		msg = SERVERsetAlias(ctx, NULL, key, &dbalias);
 	return msg;
 }
 
 static str
-SERVERreconnectWithoutAlias(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
+SERVERreconnectWithoutAlias(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 							InstrPtr pci)
 {
 	int *key = getArgReference_int(stk, pci, 0);
@@ -1304,9 +1304,9 @@ SERVERreconnectWithoutAlias(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 			return msg;
 		}
 
-	msg = SERVERconnectAll(cntxt, key, host, port, username, password, lang);
+	msg = SERVERconnectAll(ctx, key, host, port, username, password, lang);
 	if (msg == MAL_SUCCEED)
-		msg = SERVERsetAlias(cntxt, NULL, key, &nme);
+		msg = SERVERsetAlias(ctx, NULL, key, &nme);
 	return msg;
 }
 
@@ -1455,9 +1455,9 @@ SERVERquery_handle(Client ctx, int *ret, const int *key, const char *const *qry)
 }
 
 static str
-SERVERquery_array(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc)
+SERVERquery_array(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc)
 {
-	(void) cntxt, (void) mb;
+	(void) ctx, (void) mb;
 	(void) stk;
 	(void) pc;
 	throw(MAL, "mapi.query_array", SQLSTATE(0 A000) PROGRAM_NYI);
@@ -1904,19 +1904,21 @@ SERVERfieldAnalysis(str fld, int tpe, ValPtr v)
 }
 
 static str
-SERVERmapi_rpc_single_row(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
+SERVERmapi_rpc_single_row(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 						  InstrPtr pci)
 {
+	(void) ctx;
 	int key, i, j;
 	Mapi mid;
 	MapiHdl hdl;
 	char *s, *fld, *qry = 0;
 
-	allocator *ta = cntxt->ta;
+	allocator *ta = mb->ta;
+	ma_open(ta);
 	key = *getArgReference_int(stk, pci, pci->retc);
 	accessTest(key, "rpc");
 #ifdef MAPI_TEST
-	mnstr_printf(cntxt->fdout, "about to send: %s\n", qry);
+	mnstr_printf(ctx->fdout, "about to send: %s\n", qry);
 #endif
 	/* glue all strings together */
 	for (i = pci->retc + 1; i < pci->argc; i++) {
@@ -1945,7 +1947,7 @@ SERVERmapi_rpc_single_row(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 		for (j = 0; j < pci->retc; j++) {
 			fld = mapi_fetch_field(hdl, j);
 #ifdef MAPI_TEST
-			mnstr_printf(cntxt->fdout, "Got: %s\n", fld);
+			mnstr_printf(ctx->fdout, "Got: %s\n", fld);
 #endif
 			switch (getVarType(mb, getArg(pci, j))) {
 			case TYPE_void:
@@ -1978,6 +1980,7 @@ SERVERmapi_rpc_single_row(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	mapi_close_handle(hdl);
 	if (i > 1)
 		throw(MAL, "mapi.rpc", "Too many answers");
+	ma_close(ta);
 	return MAL_SUCCEED;
 }
 
@@ -1987,7 +1990,7 @@ SERVERmapi_rpc_single_row(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
  * step.
  */
 static str
-SERVERmapi_rpc_bat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+SERVERmapi_rpc_bat(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bat *ret;
 	const int *key;
@@ -1999,7 +2002,7 @@ SERVERmapi_rpc_bat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	ValRecord tval;
 	int i = 0, tt;
 
-	(void) cntxt;
+	(void) ctx;
 	ret = getArgReference_bat(stk, pci, 0);
 	key = getArgReference_int(stk, pci, pci->retc);
 	qry = getArgReference_str(stk, pci, pci->retc + 1);
@@ -2035,7 +2038,7 @@ SERVERmapi_rpc_bat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 static str
-SERVERput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+SERVERput(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	const int *key;
 	str *nme;
@@ -2045,7 +2048,7 @@ SERVERput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	MapiHdl hdl = 0;
 	char *w = 0, buf[BUFSIZ];
 
-	(void) cntxt;
+	(void) ctx;
 	key = getArgReference_int(stk, pci, pci->retc);
 	nme = getArgReference_str(stk, pci, pci->retc + 1);
 	val = getArgReference(stk, pci, pci->retc + 2);
@@ -2099,14 +2102,14 @@ SERVERput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 static str
-SERVERputLocal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+SERVERputLocal(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str *ret, *nme;
 	ptr val;
 	int tpe;
 	char *w = 0, buf[BUFSIZ];
 
-	(void) cntxt;
+	(void) ctx;
 	ret = getArgReference_str(stk, pci, 0);
 	nme = getArgReference_str(stk, pci, pci->retc);
 	val = getArgReference(stk, pci, pci->retc + 1);
@@ -2133,7 +2136,7 @@ SERVERputLocal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 static str
-SERVERbindBAT(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+SERVERbindBAT(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	const int *key;
 	str *nme, *tab, *col;
@@ -2143,7 +2146,7 @@ SERVERbindBAT(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	char buf[BUFSIZ];
 	char name[IDLENGTH];
 
-	(void) cntxt;
+	(void) ctx;
 	key = getArgReference_int(stk, pci, pci->retc);
 	nme = getArgReference_str(stk, pci, pci->retc + 1);
 	accessTest(*key, "bind");

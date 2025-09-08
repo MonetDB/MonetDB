@@ -35,13 +35,14 @@ allConstExcept(MalBlkPtr mb, InstrPtr p, int except)
 }
 
 str
-OPTforImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+OPTforImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i, j, k, limit, slimit;
 	InstrPtr p = 0, *old = NULL;
 	int actions = 0;
 	int *varisfor = NULL, *varforvalue = NULL;
 	str msg = MAL_SUCCEED;
+	allocator *ta = mb->ta;
 
 	(void) stk;
 
@@ -60,16 +61,16 @@ OPTforImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (i == limit)
 		goto wrapup1;			/* nothing to do */
 
-	ma_open(cntxt->ta);
-	varisfor = ma_zalloc(cntxt->ta, 2 * mb->vtop * sizeof(int));
-	varforvalue = ma_zalloc(cntxt->ta, 2 * mb->vtop * sizeof(int));
+	ma_open(ta);
+	varisfor = ma_zalloc(ta, 2 * mb->vtop * sizeof(int));
+	varforvalue = ma_zalloc(ta, 2 * mb->vtop * sizeof(int));
 	if (varisfor == NULL || varforvalue == NULL)
 		goto wrapup;
 
 	slimit = mb->ssize;
 	old = mb->stmt;
 	if (newMalBlkStmt(mb, mb->ssize) < 0) {
-		ma_close(cntxt->ta);
+		ma_close(ta);
 		throw(MAL, "optimizer.for", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	// Consolidate the actual need for variables
@@ -352,7 +353,7 @@ OPTforImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			freeInstruction(mb, old[i]);
 	/* Defense line against incorrect plans */
 	if (msg == MAL_SUCCEED && actions > 0) {
-		msg = chkTypes(cntxt->usermodule, mb, FALSE);
+		msg = chkTypes(ctx->usermodule, mb, FALSE);
 		if (!msg)
 			msg = chkFlow(mb);
 		if (!msg)
@@ -360,7 +361,7 @@ OPTforImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	/* keep all actions taken as a post block comment */
   wrapup:
-	ma_close(cntxt->ta);
+	ma_close(ta);
   wrapup1:
 	/* keep actions taken as a fake argument */
 	(void) pushInt(mb, pci, actions);

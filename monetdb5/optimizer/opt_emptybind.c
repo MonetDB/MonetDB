@@ -39,7 +39,7 @@
 
 
 str
-OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
+OPTemptybindImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 						   InstrPtr pci)
 {
 	int i, j, actions = 0, extras = 0;
@@ -49,9 +49,10 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	str sch, tbl;
 	int etop = 0, esize = 256;
 	str msg = MAL_SUCCEED;
+	allocator *ta = mb->ta;
 
 	(void) stk;
-	(void) cntxt;
+	(void) ctx;
 
 	// use an instruction reference table to keep
 
@@ -69,19 +70,19 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	// track of where 'emptybind' results are produced
 	// reserve space for maximal number of emptybat variables created
 	// empty = (int *) GDKzalloc((mb->vsize + extras) * sizeof(int));
-	ma_open(cntxt->ta);
-	empty = (int *) ma_zalloc(cntxt->ta, (mb->vsize + extras) * sizeof(int));
+	ma_open(ta);
+	empty = (int *) ma_zalloc(ta, (mb->vsize + extras) * sizeof(int));
 	if (empty == NULL) {
-		ma_close(cntxt->ta);
+		ma_close(ta);
 		throw(MAL, "optimizer.emptybind", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
 	// updated = (InstrPtr *) GDKzalloc(esize * sizeof(InstrPtr));
 	size_t updated_size = esize * sizeof(InstrPtr);
-	updated = (InstrPtr *) ma_zalloc(cntxt->ta, updated_size);
+	updated = (InstrPtr *) ma_zalloc(ta, updated_size);
 	if (updated == 0) {
 		// GDKfree(empty);
-		ma_close(cntxt->ta);
+		ma_close(ta);
 		throw(MAL, "optimizer.emptybind", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
@@ -89,7 +90,7 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	if (newMalBlkStmt(mb, mb->ssize) < 0) {
 		// GDKfree(empty);
 		 // GDKfree(updated);
-		ma_close(cntxt->ta);
+		ma_close(ta);
 		throw(MAL, "optimizer.emptybind", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
@@ -122,7 +123,7 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 				//					 (esize += 256) * sizeof(InstrPtr));
 				size_t osz = esize;
 				esize += 256;
-				updated = MA_RENEW_ARRAY(cntxt->ta, InstrPtr, updated,
+				updated = MA_RENEW_ARRAY(ta, InstrPtr, updated,
 									 esize, osz);
 				if (updated == NULL) {
 					// GDKfree(tmp);
@@ -298,10 +299,10 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	//GDKfree(old);
 	// GDKfree(empty);
 	// GDKfree(updated);
-	ma_close(cntxt->ta);
+	ma_close(ta);
 	/* Defense line against incorrect plans */
 	if (msg == MAL_SUCCEED)
-		msg = chkTypes(cntxt->usermodule, mb, FALSE);
+		msg = chkTypes(ctx->usermodule, mb, FALSE);
 	if (msg == MAL_SUCCEED)
 		msg = chkFlow(mb);
 	if (msg == MAL_SUCCEED)

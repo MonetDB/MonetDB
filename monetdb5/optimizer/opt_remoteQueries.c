@@ -162,7 +162,7 @@ typedef struct {
 } DBalias;
 
 str
-OPTremoteQueriesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
+OPTremoteQueriesImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 							   InstrPtr pci)
 {
 	InstrPtr p, q, r, *old;
@@ -185,12 +185,13 @@ OPTremoteQueriesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	limit = mb->stop;
 	slimit = mb->ssize;
 	old = mb->stmt;
+	allocator *ta = mb->ta;
 
-	ma_open(cntxt->ta);
-	location = (int *) ma_zalloc(cntxt->ta, mb->vsize * sizeof(int));
-	dbalias = (DBalias *) ma_zalloc(cntxt->ta, 128 * sizeof(DBalias));
+	ma_open(ta);
+	location = (int *) ma_zalloc(ta, mb->vsize * sizeof(int));
+	dbalias = (DBalias *) ma_zalloc(ta, 128 * sizeof(DBalias));
 	if (location == NULL || dbalias == NULL || newMalBlkStmt(mb, mb->ssize) < 0) {
-		ma_close(cntxt->ta);
+		ma_close(ta);
 		throw(MAL, "optimizer.remote", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	dbtop = 0;
@@ -375,7 +376,7 @@ OPTremoteQueriesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 		}
 	}
   bailout:
-	ma_close(cntxt->ta);
+	ma_close(ta);
 	for (; i < slimit; i++)
 		if (old[i])
 			pushInstruction(mb, old[i]);
@@ -383,7 +384,7 @@ OPTremoteQueriesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 
 	/* Defense line against incorrect plans */
 	if (msg == MAL_SUCCEED && actions) {
-		msg = chkTypes(cntxt->usermodule, mb, FALSE);
+		msg = chkTypes(ctx->usermodule, mb, FALSE);
 		if (!msg)
 			msg = chkFlow(mb);
 		if (!msg)
