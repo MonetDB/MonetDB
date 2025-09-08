@@ -4025,8 +4025,7 @@ stmt_convert(backend *be, stmt *v, stmt *sel, sql_subtype *f, sql_subtype *t)
 
 	if ((type_has_tz(f) && !type_has_tz(t) && !EC_VARCHAR(t->type->eclass)) || (!type_has_tz(f) && type_has_tz(t))) {
 		v = temporal_convert(be, v, sel, f, t, true);
-		sel = NULL;
-		pushed = 0;
+		pushed = 1;
 		if (EC_VARCHAR(f->type->eclass))
 			return v;
 	}

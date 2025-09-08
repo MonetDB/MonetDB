@@ -20,12 +20,9 @@
 #include "rel_schema.h"
 #include "rel_psm.h"
 #include "rel_sequence.h"
-#include "rel_exp.h"
-#include "sql_privileges.h"
 
 #include <unistd.h>
 #include <string.h>
-#include <ctype.h>
 
 sql_rel *
 rel_parse(mvc *m, sql_schema *s, const char *query, char emode)

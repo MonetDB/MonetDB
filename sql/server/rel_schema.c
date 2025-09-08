@@ -11,7 +11,6 @@
  */
 
 #include "monetdb_config.h"
-#include "rel_trans.h"
 #include "rel_rel.h"
 #include "rel_basetable.h"
 #include "rel_select.h"
@@ -22,14 +21,9 @@
 #include "rel_psm.h"
 #include "rel_dump.h"
 #include "rel_propagate.h"
-#include "rel_unnest.h"
 #include "sql_parser.h"
 #include "sql_privileges.h"
-#include "sql_partition.h"
 #include "sql_storage.h"
-
-#include "mal_authorize.h"
-#include "mal_exception.h"
 
 sql_rel *
 rel_table(mvc *sql, int cat_type, const char *sname, sql_table *t, int nr)

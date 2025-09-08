@@ -12,7 +12,6 @@
 
 #include "monetdb_config.h"
 #include "rel_updates.h"
-#include "rel_semantic.h"
 #include "rel_select.h"
 #include "rel_rel.h"
 #include "rel_basetable.h"
@@ -20,10 +19,8 @@
 #include "rel_schema.h"
 #include "sql_privileges.h"
 #include "sql_partition.h"
-#include "rel_dump.h"
 #include "rel_psm.h"
 #include "sql_symbol.h"
-#include "rel_prop.h"
 #include "sql_storage.h"
 
 static sql_exp *
