@@ -14,19 +14,14 @@
 #include "rel_select.h"
 #include "sql_tokens.h"
 #include "sql_privileges.h"
-#include "sql_env.h"
-#include "sql_decimal.h"
 #include "sql_qc.h"
 #include "rel_rel.h"
 #include "rel_basetable.h"
 #include "rel_exp.h"
 #include "rel_xml.h"
-#include "rel_dump.h"
 #include "rel_prop.h"
 #include "rel_psm.h"
-#include "rel_schema.h"
 #include "rel_unnest.h"
-#include "rel_sequence.h"
 #include "rel_file_loader.h"
 #include "rel_proto_loader.h"
 #include "rel_optimizer_private.h"
@@ -3290,7 +3285,7 @@ rel_nop(sql_query *query, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 		if (find_func(sql, sname, fname, nargs, F_AGGR, false, NULL, NULL)) {
 			dnode *dn = l->next->next;
 			symbol *orderby = dn->next?dn->next->data.sym:NULL;
-			return _rel_aggr(query, rel, l->next->data.i_val, sname, fname, dn->data.lval->h, orderby, fs);
+			return _rel_aggr(query, rel, l->next->data.i_val, sname, fname, dn->data.lval?dn->data.lval->h:NULL, orderby, fs);
 		}
 	}
 
@@ -5380,8 +5375,9 @@ column_exp(sql_query *query, sql_rel **rel, symbol *column_e, int f)
 }
 
 static int
-exp_is_not_intern(sql_exp *e)
+exp_is_not_intern(sql_exp *e, void *dummy)
 {
+	(void) dummy;
 	return is_intern(e)?-1:0;
 }
 

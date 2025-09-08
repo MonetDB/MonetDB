@@ -1144,7 +1144,7 @@ snapshot_wal(logger *bat_logger, stream *plan, const char *db_dir)
 	for (ulng id = bat_logger->saved_id+1; id <= bat_logger->id; id++) {
 		struct stat statbuf;
 
-		len = snprintf(log_file, sizeof(log_file), "%s/%s%s." LLFMT, db_dir, bat_logger->dir, LOGFILE, id);
+		len = snprintf(log_file, sizeof(log_file), "%s/%s%s." ULLFMT, db_dir, bat_logger->dir, LOGFILE, id);
 		if (len == -1 || (size_t)len >= sizeof(log_file)) {
 			GDKerror("Could not open %s, filename is too large", log_file);
 			return GDK_FAIL;
@@ -1175,7 +1175,7 @@ snapshot_heap(stream *plan, const char *db_dir, bat batid, const char *filename,
 		return GDK_SUCCEED;
 	}
 	// first check the backup dir
-	len = snprintf(path1, sizeof(path1), "%s/%s/%o.%s", db_dir, BAKDIR, (int) batid, suffix);
+	len = snprintf(path1, sizeof(path1), "%s/%s/%o.%s", db_dir, BAKDIR, (unsigned) batid, suffix);
 	if (len == -1 || len >= FILENAME_MAX) {
 		path1[FILENAME_MAX - 1] = '\0';
 		GDKerror("Could not open %s, filename is too large", path1);

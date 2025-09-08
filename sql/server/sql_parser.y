@@ -1033,7 +1033,7 @@ set_statement:
 		{ dlist *l = L();
 		  sql_subtype t;
 		sql_find_subtype(&t, "char", UTF8_strlen($5), 0 );
-		append_list(l, append_string(append_string(L(), sa_strdup(SA, "sys")), sa_strdup(SA, "current_user")));
+		append_list(l, append_string(append_string(L(), sa_strdup(SA, "sys")), sa_strdup(SA, "current_role")));
 		append_symbol(l, _newAtomNode( _atom_string(&t, $5)) );
 		$$ = _symbol_create_list( SQL_SET, l); }
   | set session_schema ident
@@ -1047,7 +1047,7 @@ set_statement:
 		{ dlist *l = L();
 		  sql_subtype t;
 		sql_find_subtype(&t, "char", UTF8_strlen($4), 0 );
-		append_list(l, append_string(append_string(L(), sa_strdup(SA, "sys")), sa_strdup(SA, "current_user")));
+		append_list(l, append_string(append_string(L(), sa_strdup(SA, "sys")), sa_strdup(SA, "current_role")));
 		append_symbol(l, _newAtomNode( _atom_string(&t, $4)) );
 		$$ = _symbol_create_list( SQL_SET, l); }
   | set ROLE ident
@@ -2311,13 +2311,13 @@ view_def:
 	}
   | CREATE OR REPLACE local_temp VIEW qname opt_column_list AS SelectStmt
 	{  dlist *l = L();
-	  append_int(l, SQL_PERSIST);
+	  append_int(l, $4);
 	  append_list(l, $6);
 	  append_list(l, $7);
 	  append_symbol(l, $9);
 	  append_int(l, FALSE);
 	  append_int(l, TRUE);	/* persistent view */
-	  append_int(l, $4);
+	  append_int(l, TRUE);  /* replace */
 	  $$ = _symbol_create_list( SQL_CREATE_VIEW, l );
 	}
   ;

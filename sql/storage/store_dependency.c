@@ -11,7 +11,8 @@
  */
 
 #include "monetdb_config.h"
-#include "store_dependency.h"
+#include "sql_storage.h"
+#include "sql_backend.h"
 
 static void
 _free(void *dummy, void *data)

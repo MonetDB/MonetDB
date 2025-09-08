@@ -321,8 +321,8 @@ MSscheduleClient(str command, str peer, str challenge, bstream *fin, stream *fou
 			cleanUpScheduleClient(c, &command, &msg);
 			return;
 		}
-		if (strncasecmp("sql", lang, 3) != 0
-			&& strncasecmp("msql", lang, 3) != 0
+		if (strncasecmp("sql", lang, strlen(lang)) != 0
+			&& strncasecmp("msql", lang, strlen(lang)) != 0
 			&& strcmp(user, "monetdb") != 0) {
 			mnstr_printf(fout,
 						 "!only the 'monetdb' user can use non-sql languages. "
@@ -567,9 +567,12 @@ MSserveClient(Client c)
  * in size.
  */
 str
-MALinitClient(Client c)
+MALinitClient(Client c, const char *d1, const char *d2, const char *d3)
 {
 	(void) c;
+	(void) d1;
+	(void) d2;
+	(void) d3;
 	return MAL_SUCCEED;
 }
 

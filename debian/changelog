@@ -1,3 +1,20 @@
+monetdb (11.53.13) unstable; urgency=low
+
+  * Rebuilt.
+  * GH#7692: Illegal argument on range select with equality
+  * GH#7693: Obscure failure when running mserver5 on an older monetdbd
+    release
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 01 Sep 2025 14:46:20 +0200
+
+monetdb (11.53.13) unstable; urgency=low
+
+  * clients: We now try to figure out the size of the terminal window on Windows.
+    This means that mclient will, by default, format tabular output to
+    not wrap long lines, like is already done on Unix/Linux.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Thu, 28 Aug 2025 14:46:20 +0200
+
 monetdb (11.53.11) unstable; urgency=low
 
   * Rebuilt.

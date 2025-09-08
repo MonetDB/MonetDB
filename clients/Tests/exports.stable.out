@@ -782,7 +782,7 @@ int MALcommentsOnly(MalBlkPtr mb);
 lng MALdebug;
 void MALengine(Client c);
 str MALexitClient(Client c);
-str MALinitClient(Client c);
+str MALinitClient(Client c, const char *, const char *, const char *);
 str MALparser(Client c);
 MALfcn MANIFOLDtypecheck(Client cntxt, MalBlkPtr mb, InstrPtr pci, int checkprops);
 int MCactiveClients(void);

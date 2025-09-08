@@ -334,7 +334,7 @@ dump_threads(void)
 				   t->threadname,
 				   t->tid,
 #ifdef HAVE_PTHREAD_H
-				   (long) t->hdl,
+				   (unsigned long) t->hdl,
 #endif
 #ifdef HAVE_GETTID
 				   (long) t->lwptid,

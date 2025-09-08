@@ -1510,12 +1510,7 @@ static int
 INET6compare(const void *L, const void *R)
 {
 	const inet6 *l = L, *r = R;
-	for (int i = 0; i < 8; i++) {
-		int v = (l->oct[i] > r->oct[i]) - (l->oct[i] < r->oct[i]);
-		if (v != 0)
-			return v;
-	}
-	return 0;
+	return memcmp(l->hex, r->hex, sizeof(l->hex));
 }
 
 static ssize_t
@@ -1550,9 +1545,9 @@ INET6fromString(const char *svalue, size_t *len, void **RETVAL, bool external)
 		}
 	} else if (strlen(s) == 32 && strspn(s, "0123456789abcdefABCDEF") == 32) {
 		/* special case: 32 hex digits without [ ] */
-		for (int i = 0; i < 8; i++) {
-			uint16_t val = 0;
-			for (int j = 12; j >= 0; j -= 4) {
+		for (int i = 0; i < 16; i++) {
+			uint8_t val = 0;
+			for (int j = 4; j >= 0; j -= 4) {
 				if ('0' <= *s && *s <= '9')
 					val |= (*s - '0') << j;
 				else if ('a' <= *s && *s <= 'f')
@@ -1561,7 +1556,7 @@ INET6fromString(const char *svalue, size_t *len, void **RETVAL, bool external)
 					val |= (*s - 'A' + 10) << j;
 				s++;
 			}
-			i6.oct[i] = val;
+			i6.hex[i] = val;
 		}
 		**retval = i6;
 		return (ssize_t) (s - svalue);
@@ -1569,7 +1564,7 @@ INET6fromString(const char *svalue, size_t *len, void **RETVAL, bool external)
 	int dcolpos = -1;
 	int i;
 	int maybeip4 = 0;
-	for (i = 0; i < 8; i++) {
+	for (i = 0; i < 16; i += 2) {
 		if (s[0] == ':' && s[1] == ':') {
 			if (dcolpos >= 0) {
 				GDKerror("Invalid IPv6 address: multiple ::.");
@@ -1594,26 +1589,28 @@ INET6fromString(const char *svalue, size_t *len, void **RETVAL, bool external)
 					GDKerror("Invalid IPv6 address.");
 					goto bailout;
 				}
-				s = e + 1;
-				unsigned long u2 = strtoul(s, &e, 10);
-				if (e == s || *e != '.' || u2 > 255) {
-					GDKerror("Invalid IPv6 address.");
-					goto bailout;
-				}
-				i6.oct[i++] = (uint16_t) ((ul << 8) | u2);
+				i6.hex[i++] = (uint8_t) ul;
 				s = e + 1;
 				ul = strtoul(s, &e, 10);
 				if (e == s || *e != '.' || ul > 255) {
 					GDKerror("Invalid IPv6 address.");
 					goto bailout;
 				}
+				i6.hex[i++] = (uint8_t) ul;
 				s = e + 1;
-				u2 = strtoul(s, &e, 10);
-				if (e == s || u2 > 255) {
+				ul = strtoul(s, &e, 10);
+				if (e == s || *e != '.' || ul > 255) {
 					GDKerror("Invalid IPv6 address.");
 					goto bailout;
 				}
-				i6.oct[i++] = (uint16_t) ((ul << 8) | u2);
+				i6.hex[i++] = (uint8_t) ul;
+				s = e + 1;
+				ul = strtoul(s, &e, 10);
+				if (e == s || ul > 255) {
+					GDKerror("Invalid IPv6 address.");
+					goto bailout;
+				}
+				i6.hex[i++] = (uint8_t) ul;
 				s = e;
 				break;
 			}
@@ -1623,7 +1620,8 @@ INET6fromString(const char *svalue, size_t *len, void **RETVAL, bool external)
 			GDKerror("Invalid IPv6 address.");
 			goto bailout;
 		}
-		i6.oct[i] = (uint16_t) ul;
+		i6.hex[i] = (uint8_t) (ul >> 8);
+		i6.hex[i + 1] = (uint8_t) (ul & 0xFF);
 		s = e;
 		if (maybeip4 == 0) {
 			if (ul == 0xFFFF)
@@ -1639,15 +1637,15 @@ INET6fromString(const char *svalue, size_t *len, void **RETVAL, bool external)
 		}
 		s++;
 	}
-	if ((dcolpos < 0 && i < 8) || (dcolpos >= 0 && i == 8)) {
+	if ((dcolpos < 0 && i < 16) || (dcolpos >= 0 && i == 16)) {
 		GDKerror("Invalid IPv6 address.");
 		goto bailout;
 	}
 	if (dcolpos >= 0) {
 		int j;
-		for (j = 7; i > dcolpos; j--) {
-			i6.oct[j] = i6.oct[--i];
-			i6.oct[i] = 0;
+		for (j = 15; i > dcolpos; j--) {
+			i6.hex[j] = i6.hex[--i];
+			i6.hex[i] = 0;
 		}
 	}
 	while (GDKisspace(*s))
@@ -1712,8 +1710,8 @@ INET6toString(str *retval, size_t *len, const void *VALUE, bool external)
 	int rl1 = -1;		/* start of current stretch of zeros */
 	int mrl = 0;		/* length of longest stretch of zeros */
 	int mrl1 = -1;		/* start of longest stretch of zeros */
-	for (int i = 0; i < 8; i++) {
-		if (value->oct[i] == 0) {
+	for (int i = 0; i < 16; i += 2) {
+		if (value->hex[i] == 0 && value->hex[i + 1] == 0) {
 			if (rl++ == 0)
 				rl1 = i;
 		} else {
@@ -1729,29 +1727,31 @@ INET6toString(str *retval, size_t *len, const void *VALUE, bool external)
 		mrl1 = rl1;
 	}
 	if (mrl1 < 0)
-		mrl1 = 8;
+		mrl1 = 16;
 	int pos = 0;
-	if (mrl1 == 0 && mrl == 5 && value->oct[5] == 0xFFFF) {
+	if (mrl1 == 0 && mrl == 10
+	    && value->hex[10] == 0xFF && value->hex[11] == 0xFF) {
 		/* IPv4 address disguised as IPv6 */
 		pos += snprintf(*retval + pos, *len - pos,
-				"::%x:%d.%d.%d.%d",
-				value->oct[5], value->oct[6] >> 8,
-				value->oct[6] & 0xFF, value->oct[7] >> 8,
-				value->oct[7] & 0xFF);
+				"::ffff:%d.%d.%d.%d",
+				value->hex[12], value->hex[13],
+				value->hex[14], value->hex[15]);
 		return pos;
 	}
-	for (int i = 0; i < mrl1; i++) {
+	for (int i = 0; i < mrl1; i += 2) {
 		if (i > 0)
 			(*retval)[pos++] = ':';
-		pos += snprintf(*retval + pos, *len - pos, "%x", value->oct[i]);
+		pos += snprintf(*retval + pos, *len - pos, "%x",
+				(unsigned) ((value->hex[i] << 8) | value->hex[i + 1]));
 	}
 	if (mrl1 < 8) {
 		(*retval)[pos++] = ':';
 		(*retval)[pos++] = ':';
 	}
-	for (int i = mrl1 + mrl; i < 8; i++) {
-		pos += snprintf(*retval + pos, *len - pos, "%x", value->oct[i]);
-		if (i < 7)
+	for (int i = mrl1 + mrl; i < 16; i += 2) {
+		pos += snprintf(*retval + pos, *len - pos, "%x",
+				(unsigned) ((value->hex[i] << 8) | value->hex[i + 1]));
+		if (i < 15)
 			(*retval)[pos++] = ':';
 	}
 	return pos;

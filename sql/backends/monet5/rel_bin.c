@@ -17,15 +17,11 @@
 #include "rel_basetable.h"
 #include "rel_exp.h"
 #include "rel_dump.h"
-#include "rel_psm.h"
 #include "rel_prop.h"
-#include "rel_select.h"
 #include "rel_updates.h"
 #include "rel_predicates.h"
 #include "rel_file_loader.h"
 #include "rel_proto_loader.h"
-#include "sql_env.h"
-#include "sql_optimizer.h"
 #include "sql_gencode.h"
 #include "mal_builder.h"
 
@@ -3551,41 +3547,46 @@ rel2bin_antijoin(backend *be, sql_rel *rel, list *refs)
 			jexps = list_join(jexps, sexps);
 		en = jexps->h;
 		sql_exp *e = en->data;
-		assert(e->type == e_cmp);
-		stmt *ls = exp_bin(be, e->l, left, NULL, NULL, NULL, NULL, NULL, 1, 0, 0), *rs;
-		bool constval = false;
-		if (!ls) {
-			swap = true;
-			ls = exp_bin(be, e->l, right, NULL, NULL, NULL, NULL, NULL, 1, 0, 0);
-		}
-		if (!ls)
-			return NULL;
+		if (e->type == e_cmp && (e->flag == cmp_equal || e->flag == cmp_notequal)) {
+			stmt *ls = exp_bin(be, e->l, left, NULL, NULL, NULL, NULL, NULL, 1, 0, 0), *rs;
+			bool constval = false;
+			if (!ls) {
+				swap = true;
+				ls = exp_bin(be, e->l, right, NULL, NULL, NULL, NULL, NULL, 1, 0, 0);
+			}
+			if (!ls)
+				return NULL;
 
-		if (!(rs = exp_bin(be, e->r, left, right, NULL, NULL, NULL, NULL, 1, 0, 0)))
-			return NULL;
+			if (!(rs = exp_bin(be, e->r, left, right, NULL, NULL, NULL, NULL, 1, 0, 0)))
+				return NULL;
 
-		if (swap) {
-			stmt *t = ls;
-			ls = rs;
-			rs = t;
-		}
-		if (ls->nrcols == 0) {
-			constval = true;
-			ls = stmt_const(be, bin_find_smallest_column(be, left), ls);
-		}
-		if (rs->nrcols == 0)
-			rs = stmt_const(be, bin_find_smallest_column(be, right), rs);
+			if (swap) {
+				stmt *t = ls;
+				ls = rs;
+				rs = t;
+			}
+			if (ls->nrcols == 0) {
+				constval = true;
+				ls = stmt_const(be, bin_find_smallest_column(be, left), ls);
+			}
+			if (rs->nrcols == 0)
+				rs = stmt_const(be, bin_find_smallest_column(be, right), rs);
 
-		if (!li)
-			li = ls;
+			if (!li)
+				li = ls;
 
-		if (!en->next && (constval || stmt_has_null(ls) /*|| stmt_has_null(rs) (change into check for fk)*/)) {
-			join = stmt_tdiff2(be, ls, rs, NULL, is_any(e));
-			jexps = NULL;
+			if (!en->next && (constval || stmt_has_null(ls) /*|| stmt_has_null(rs) (change into check for fk)*/)) {
+				join = stmt_tdiff2(be, ls, rs, NULL, is_any(e));
+				jexps = NULL;
+			} else {
+				join = stmt_join_cand(be, ls, rs, NULL, NULL, is_anti(e), (comp_type) e->flag, 0, is_semantics(e), false, true);
+			}
+			en = en->next;
 		} else {
-			join = stmt_join_cand(be, ls, rs, NULL, NULL, is_anti(e), (comp_type) e->flag, 0, is_semantics(e), false, true);
+			stmt *l = bin_find_smallest_column(be, left);
+			stmt *r = bin_find_smallest_column(be, right);
+			join = stmt_join(be, l, r, 0, cmp_all, 0, 0, false);
 		}
-		en = en->next;
 	}
 	if (en || jexps) {
 		stmt *jl = stmt_result(be, join, 0);
@@ -3622,13 +3623,16 @@ rel2bin_antijoin(backend *be, sql_rel *rel, list *refs)
 
 		/* continue with non equi-joins */
 		for (; en; en = en->next) {
-			stmt *s = exp_bin(be, en->data, sub, NULL, NULL, NULL, NULL, NULL /* sel */, 0, 0/* just the project call not the select*/, 0);
+			sql_exp *e = en->data;
+			stmt *s = exp_bin(be, e, sub, NULL, NULL, NULL, NULL, NULL /* sel */, 0, 0/* just the project call not the select*/, 0);
 
-			/* ifthenelse if (not(predicate)) then false else true (needed for antijoin) */
-			sql_subtype *bt = sql_fetch_localtype(TYPE_bit);
-			sql_subfunc *not = sql_bind_func(be->mvc, "sys", "not", bt, NULL, F_FUNC, true, true);
-			s = stmt_unop(be, s, NULL, not);
-			s = sql_Nop_(be, "ifthenelse", s, stmt_bool(be, 0), stmt_bool(be, 1), NULL);
+			if (is_any(e)) {
+				sql_subtype *bt = sql_fetch_localtype(TYPE_bit);
+				/* ifthenelse if (not(predicate)) then false else true (needed for antijoin) */
+				sql_subfunc *not = sql_bind_func(be->mvc, "sys", "not", bt, NULL, F_FUNC, true, true);
+				s = stmt_unop(be, s, NULL, not);
+				s = sql_Nop_(be, "ifthenelse", s, stmt_bool(be, 0), stmt_bool(be, 1), NULL);
+			}
 
 			if (s->nrcols == 0) {
 				stmt *l = bin_find_smallest_column(be, sub);

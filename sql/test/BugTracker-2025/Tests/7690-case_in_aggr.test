@@ -1,0 +1,13 @@
+statement ok
+create table test(doc_num string, doc_type string, inserted timestamp)
+
+statement ok
+insert into test values('doc1', 'invoice', '1970-01-01'), ('doc1', 'invoice', '1970-01-02'), ('doc2', 'order', '1970-01-01'), ('doc2', 'order', '1970-01-02')
+
+query TI
+select doc_num, avg(case when doc_type = 'invoice' then epoch(inserted) else 0 end) from test group by doc_num
+----
+doc1
+36000
+doc2
+0

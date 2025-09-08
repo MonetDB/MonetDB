@@ -1052,7 +1052,7 @@ push_up_project(mvc *sql, sql_rel *rel, list *ad)
 						append(nexps, e);
 				}
 			}
-			if (list_empty(nexps)) {
+			if (list_empty(nexps)) { /* L semi/anti join R, non of the attributes of R are used */
 				assert(!r->l);
 				/* remove old project and change outer into select */
 				rel->r = NULL;
@@ -1068,6 +1068,10 @@ push_up_project(mvc *sql, sql_rel *rel, list *ad)
 						else if (op == op_anti && is_compare(e->type) && e->flag == cmp_notequal)
 							e->flag = cmp_equal;
 					}
+					if (list_length(rel->exps) > 1 && op == op_anti)
+						rel->exps = append(sa_list(sql->sa), exp_disjunctive(sql->sa, rel->exps));
+				} else if (op == op_anti) { /* no expression means allways true, so in case of antijoin always false */
+					append(rel->exps = sa_list(sql->sa), exp_atom_bool(sql->sa, false));
 				}
 				return rel;
 			}
@@ -2559,6 +2563,7 @@ rel_set_type(visitor *v, sql_rel *rel)
 	if (!rel)
 		return rel;
 	if (is_project(rel->op) && rel->l) {
+		bool clear_hash = false;
 		if (is_set(rel->op)) {
 			sql_rel *l = rel->l, *r = rel->r;
 			list *exps = l->exps;
@@ -2567,13 +2572,18 @@ rel_set_type(visitor *v, sql_rel *rel)
 					sql_exp *e = n->data;
 					sql_subtype *t = exp_subtype(e);
 
-					if (t && !t->type->localtype)
+					if (t && !t->type->localtype) {
 						n->data = exp_set_type(v->sql, m->data, e);
+						clear_hash = true;
+					}
 				}
+				if (clear_hash)
+					list_hash_clear(exps);
 				if (exps != r->exps)
 					exps = r->exps;
 				else
 					exps = NULL;
+				clear_hash = false;
 			}
 		} else if (is_munion(rel->op)) {
 			list *l = rel->l;
@@ -2584,9 +2594,13 @@ rel_set_type(visitor *v, sql_rel *rel)
 					sql_exp *e = n->data;
 					sql_subtype *t = exp_subtype(e);
 
-					if (t && !t->type->localtype)
+					if (t && !t->type->localtype) {
 						n->data = exp_set_type(v->sql, m->data, e);
+						clear_hash = true;
+					}
 				}
+				if (clear_hash)
+					list_hash_clear(exps);
 			}
 		} else if ((is_simple_project(rel->op) || is_groupby(rel->op)) && rel->l) {
 			list *exps = rel->exps;
@@ -2617,6 +2631,7 @@ rel_set_type(visitor *v, sql_rel *rel)
 												int label = e->alias.label;
 												n->data = e = exp_convert(v->sql, e, t, exp_subtype(te));
 												e->alias.label = label;
+												list_hash_clear(l->exps);
 												break;
 											}
 										}

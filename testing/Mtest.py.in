@@ -68,7 +68,7 @@ test_progress = 0
 # whether output goes to a tty
 isatty = os.isatty(sys.stdout.fileno())
 
-mapiportre = re.compile(r'mapi:monetdb://[-.a-zA-Z0-9]+:(?P<port>\d+)/')
+mapiportre = re.compile(r'mapi:monetdb://[-.a-zA-Z0-9_]+:(?P<port>\d+)/')
 
 geos_version = '@GEOS_VERSION@'.split('.')
 
@@ -1631,7 +1631,12 @@ def GetBitsAndModsAndThreads(env) :
                 except KeyboardInterrupt:
                     raise
                 except:
-                    pass
+                    print('Exception caught')
+                    print('Local variables:')
+                    print(locals())
+                    print('Global variables:')
+                    print(globals())
+                    raise
                 proc.terminate()
                 qOut = proc.stdout.read(timeout=5)
                 qErr = proc.stderr.read(timeout=5)
@@ -2456,6 +2461,7 @@ def killchildren(pid, procs = None):
             print('killing process %d failed' % pid)
 
 def stacktrace(proc, outfile):
+    out = ''
     if os.name == 'nt':
         sym = ''
         if os.path.exists(r'c:\Program Files\Debugging Tools for Windows (x64)\cdb.exe'):
@@ -2476,8 +2482,6 @@ def stacktrace(proc, outfile):
                     out, err = p.communicate(timeout=60)
                 except process.TimeoutExpired:
                     p.kill()
-        else:
-            out = ''
     elif platform.system() == 'Darwin':
         try:
             with process.Popen(['lldb', '--attach-pid', str(proc.pid), '--batch', '--one-line', 'bt all'], stdout=process.PIPE, text=True) as p:
@@ -2488,7 +2492,7 @@ def stacktrace(proc, outfile):
         except KeyboardInterrupt:
             raise
         except:
-            out = ''
+            pass
     else:
         try:
             with process.Popen(['gdb', '-p', str(proc.pid), '-batch', '-ex', 'thread apply all bt full'], stdout=process.PIPE,
@@ -2506,7 +2510,7 @@ def stacktrace(proc, outfile):
         except KeyboardInterrupt:
             raise
         except:
-            out = ''
+            pass
     if outfile is not None and out:
         try:
             outfile.write(f'\n{out}\n')
@@ -4133,34 +4137,49 @@ def main(argv) :
                 testdirs = [d for (prio, d) in sorted(td)]
                 if verbosity > 1:
                     print('\nRunning all tests in directories %s.\n' % str(testdirs))
-                with concurrent.futures.ThreadPoolExecutor(max_workers=opts.parallel) as tp:
-                    try:
+                tp = None
+                try:
+                    if opts.parallel > 1 and len(testdirs) > 1:
+                        tp = concurrent.futures.ThreadPoolExecutor(max_workers=opts.parallel)
                         futures = {tp.submit(PerformDir, env, d, [], test_count): d for d in testdirs}
-                        for future in concurrent.futures.as_completed(futures):
+                        iter = concurrent.futures.as_completed(futures)
+                    else:
+                        iter = testdirs
+                    for d in iter:
+                        if tp is not None:
+                            future = d
                             d = futures[future]
                             elem, diff, interrupted = future.result()
-                            if elem is not None:
-                                if diff <= F_OK:
-                                    body_good.append(elem)
-                                else:
-                                    body_bad.append(elem)
-                            if not errseen and diff > F_WARN:
-                                errseen = True
-                            if interrupted:
+                        else:
+                            elem, diff, interrupted = PerformDir(env, d, [], test_count)
+                        if elem is not None:
+                            if diff <= F_OK:
+                                body_good.append(elem)
+                            else:
+                                body_bad.append(elem)
+                        if not errseen and diff > F_WARN:
+                            errseen = True
+                        if interrupted:
+                            break
+                        if not testweb:
+                            if global_timeout and start_time + global_timeout < time.time():
+                                print('\nGlobal testing timeout reached\n')
                                 break
-                            if not testweb:
-                                if global_timeout and start_time + global_timeout < time.time():
-                                    print('\nGlobal testing timeout reached\n')
-                                    break
-                                if produce_html:
-                                    # after a directory has been tested, create
-                                    # the index file so that we can look at test
-                                    # results while the tests are running
-                                    body = body_bad + body_good
-                                    CreateHtmlIndex(env, '', os.path.join(TSTTRGBASE, TSTPREF), F_SKIP, F_SKIP, *body)
-                    except KeyboardInterrupt:
+                            if produce_html:
+                                # after a directory has been tested, create
+                                # the index file so that we can look at test
+                                # results while the tests are running
+                                body = body_bad + body_good
+                                CreateHtmlIndex(env, '', os.path.join(TSTTRGBASE, TSTPREF), F_SKIP, F_SKIP, *body)
+                except KeyboardInterrupt:
+                    if tp is not None:
                         tp.shutdown(cancel_futures=True)
-                        raise
+                        tp = None
+                    raise
+                finally:
+                    if tp is not None:
+                        tp.shutdown(wait=True)
+                        tp = None
             if verbosity == 0:
                 print()
         except KeyboardInterrupt:

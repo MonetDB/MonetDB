@@ -11,7 +11,6 @@
  */
 
 #include "monetdb_config.h"
-#include "rel_trans.h"
 #include "rel_rel.h"
 #include "rel_basetable.h"
 #include "rel_select.h"
@@ -22,14 +21,9 @@
 #include "rel_psm.h"
 #include "rel_dump.h"
 #include "rel_propagate.h"
-#include "rel_unnest.h"
 #include "sql_parser.h"
 #include "sql_privileges.h"
-#include "sql_partition.h"
 #include "sql_storage.h"
-
-#include "mal_authorize.h"
-#include "mal_exception.h"
 
 sql_rel *
 rel_table(mvc *sql, int cat_type, const char *sname, sql_table *t, int nr)
@@ -1720,10 +1714,13 @@ rel_create_view(sql_query *query, int temp, dlist *qname, dlist *column_spec, sy
 				return sql_error(sql, 01, SQLSTATE(42000) "%s: %s not supported", base, sn->limit ? "LIMIT" : "SAMPLE");
 		}
 
+		bool globals = sql->globals;
+		sql->globals = (temp != SQL_LOCAL_TEMP);
 		pfoundid = sql->objid;
 		sql->objid = foundid; /* when recreating a view, the view itself can't be found */
 		sq = schema_selects(query, s, ast);
 		sql->objid = pfoundid;
+		sql->globals = globals;
 		if (!sq)
 			return NULL;
 		if (!is_project(sq->op)) /* make sure sq is a projection */
@@ -2038,22 +2035,31 @@ sql_alter_table(sql_query *query, dlist *dl, dlist *qname, symbol *te, int if_ex
 
 		if (!(pt = find_table_or_view_on_scope(sql, t->s, nsname, ntname, "ALTER TABLE", false)))
 			return NULL;
+		const char *errt = TABLE_TYPE_DESCRIPTION(t->type, t->properties);
+		const char *errpt = TABLE_TYPE_DESCRIPTION(pt->type, pt->properties);
 		if (isView(pt))
-			return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: can't add/drop a view into a %s",
-							TABLE_TYPE_DESCRIPTION(t->type, t->properties));
+			return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: can't add/drop a view into a %s", errt);
 		if (isDeclaredTable(pt))
-			return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: can't add/drop a declared table into a %s",
-							TABLE_TYPE_DESCRIPTION(t->type, t->properties));
+			return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: can't add/drop a declared table into a %s", errt);
 		if (isTempSchema(pt->s))
-			return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: can't add/drop a temporary table into a %s",
-							TABLE_TYPE_DESCRIPTION(t->type, t->properties));
+			return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: can't add/drop a temporary table into a %s", errt);
 		if (isReplicaTable(t) && isMergeTable(pt))
-			return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: can't add/drop a %s table into a %s",
-							TABLE_TYPE_DESCRIPTION(pt->type, pt->properties), TABLE_TYPE_DESCRIPTION(t->type, t->properties));
+			return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: can't add/drop a %s table into a %s", errpt, errt);
 		nsname = pt->s->base.name;
 		if (strcmp(sname, nsname) != 0)
-			return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: all children tables of '%s.%s' must be part of schema '%s'",
-						sname, tname, sname);
+			return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: all children tables of '%s.%s' must be part of schema '%s'", sname, tname, sname);
+
+		if (ol_length(t->columns) != ol_length(pt->columns))
+			return sql_error(sql, 02, SQLSTATE(3F000) "ALTER %s: to be added table doesn't match %s definition", errt, errt);
+		for (node *n = ol_first_node(t->columns), *m = ol_first_node(pt->columns); n && m; n = n->next, m = m->next) {
+			sql_column *nc = n->data;
+			sql_column *mc = m->data;
+
+			if (subtype_cmp(&nc->type, &mc->type) != 0)
+			return sql_error(sql, 02, SQLSTATE(3F000) "ALTER %s: to be added table column type doesn't match %s definition", errt, errt);
+			if (nc->null != mc->null)
+				return sql_error(sql, 02, SQLSTATE(3F000) "ALTER %s: to be added table column NULL check doesn't match %s definition", errt, errt);
+		}
 
 		if (te->token == SQL_TABLE) {
 			symbol *extra = dl->h->next->next->next->data.sym;

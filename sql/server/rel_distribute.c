@@ -15,7 +15,6 @@
 #include "rel_basetable.h"
 #include "rel_exp.h"
 #include "rel_remote.h"
-#include "sql_privileges.h"
 
 typedef struct rmt_prop_state {
 	int depth;

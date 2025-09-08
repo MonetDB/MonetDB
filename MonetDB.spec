@@ -1057,6 +1057,17 @@ rm "${RPM_BUILD_ROOT}"%{_unitdir}/monetdbd.service
 %endif
 
 %changelog
+* Mon Sep 01 2025 Sjoerd Mullender <sjoerd@acm.org> - 11.53.13-20250901
+- Rebuilt.
+- GH#7692: Illegal argument on range select with equality
+- GH#7693: Obscure failure when running mserver5 on an older monetdbd
+  release
+
+* Thu Aug 28 2025 Sjoerd Mullender <sjoerd@acm.org> - 11.53.13-20250901
+- clients: We now try to figure out the size of the terminal window on Windows.
+  This means that mclient will, by default, format tabular output to
+  not wrap long lines, like is already done on Unix/Linux.
+
 * Thu Aug 21 2025 Sjoerd Mullender <sjoerd@acm.org> - 11.53.11-20250821
 - Rebuilt.
 - GH#7643: Unable to process field with split_part(). Facing Issue

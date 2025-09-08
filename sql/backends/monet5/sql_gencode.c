@@ -1650,7 +1650,7 @@ backend_create_sql_func(backend *be, sql_subfunc *sf, list *restypes, list *ops)
 	if (f->instantiated || (m->forward && m->forward->base.id == f->base.id))
 		return 0;
 
-	(void) snprintf(befname, sizeof(befname), "f_" LLFMT, store_function_counter(m->store));
+	(void) snprintf(befname, sizeof(befname), "f_" ULLFMT, store_function_counter(m->store));
 	TRC_INFO(SQL_PARSER, "Mapping SQL name '%s' to MAL name '%s'\n", f->base.name, befname);
 	nargs = (f->res && f->type == F_UNION ? list_length(f->res) : 1) + (f->vararg && ops ? list_length(ops) : f->ops ? list_length(f->ops) : 0);
 	c->curprg = newFunctionArgs(modname, putName(befname), FUNCTIONsymbol, nargs);

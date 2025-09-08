@@ -12,7 +12,6 @@
 
 #include "monetdb_config.h"
 #include "sql_catalog.h"
-#include "sql_storage.h"
 
 static inline int
 node_key( node *n )

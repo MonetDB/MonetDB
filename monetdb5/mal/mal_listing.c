@@ -175,7 +175,7 @@ cfcnDefinition(Symbol s, str base, size_t len)
 
 	char var[16];
 	for (i = f->retc; i < f->argc; i++) {
-		if (snprintf(var, sizeof(var), "X_%d:", i-f->retc) >= 16 || !copystring(&t, var, &len))
+		if (snprintf(var, sizeof(var), "X_%u:", i-f->retc) >= 16 || !copystring(&t, var, &len))
 			return base;
 		if ((f->args[i].isbat || (f->args[i].opt == 1)) && !copystring(&t, (f->args[i].opt == 1)?"bat?[:":"bat[:", &len))
 			return base;
@@ -225,7 +225,7 @@ cfcnDefinition(Symbol s, str base, size_t len)
 		if (!copystring(&t, ") (", &len))
 			return base;
 		for (i = 0; i < f->retc; i++) {
-			if (snprintf(var, sizeof(var), "X_%d:", i+(f->argc-f->retc)) >= 16 || !copystring(&t, var, &len))
+			if (snprintf(var, sizeof(var), "X_%u:", i+(f->argc-f->retc)) >= 16 || !copystring(&t, var, &len))
 				return base;
 			if ((f->args[i].isbat || (f->args[i].opt == 1)) && !copystring(&t, (f->args[i].opt == 1)?"bat?[:":"bat[:", &len))
 				return base;

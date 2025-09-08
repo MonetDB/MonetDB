@@ -11,10 +11,9 @@
  */
 
 #include "monetdb_config.h"
-#include "sql_relation.h"
+#include "sql_catalog.h"
 #include "rel_prop.h"
 #include "sql_string.h"
-#include "sql_atom.h"
 
 prop *
 prop_create( allocator *sa, rel_prop kind, prop *pre )

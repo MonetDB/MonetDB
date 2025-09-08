@@ -1,0 +1,5 @@
+statement ok
+CREATE AGGREGATE function1() RETURNS bigint EXTERNAL NAME "aggr"."count"
+
+statement error 42000!FUNCTION1: unable to perform 'function1(*)'
+SELECT function1()

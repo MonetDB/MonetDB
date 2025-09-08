@@ -40,7 +40,7 @@
 
 /* Insert the instruction immediately after a previous instruction that
  * generated an argument needed.
- * If non can be found, add it to the end.
+ * If none can be found, add it to the end.
  * Be aware of side-effect instructions, they may not be skipped.
  */
 str
@@ -57,7 +57,7 @@ OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 
 	for (i = 0; i < MAXSLICES; i++)
 		top[i] = 0;
-	if (!isOptimizerUsed(mb, pci, mitosisRef) || MB_LARGE(mb)) {
+	if (MB_LARGE(mb)) {
 		goto wrapup;
 	}
 	(void) stk;

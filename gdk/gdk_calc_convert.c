@@ -1,7 +1,7 @@
 /*
  * SPDX-License-Identifier: MPL-2.0
  *
- * This Source Code Form is subject to the terms of the Mozilla Public
+\ * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
@@ -992,18 +992,27 @@ convert_inet6_inet4(const inet6 *src, inet4 *restrict dst,
 			if (is_inet6_nil(src[x])) {
 				dst[i] = inet4_nil;
 				nils++;
-			} else if (src[x].oct[0] == 0 &&
-				   src[x].oct[1] == 0 &&
-				   src[x].oct[2] == 0 &&
-				   src[x].oct[3] == 0 &&
-				   src[x].oct[4] == 0 &&
-				   src[x].oct[5] == 0xFFFF &&
-				   (src[x].oct[6] != 0 || src[x].oct[7] != 0)) {
+			} else if (src[x].hex[0] == 0 &&
+				   src[x].hex[1] == 0 &&
+				   src[x].hex[2] == 0 &&
+				   src[x].hex[3] == 0 &&
+				   src[x].hex[4] == 0 &&
+				   src[x].hex[5] == 0 &&
+				   src[x].hex[6] == 0 &&
+				   src[x].hex[7] == 0 &&
+				   src[x].hex[8] == 0 &&
+				   src[x].hex[9] == 0 &&
+				   src[x].hex[10] == 0xFF &&
+				   src[x].hex[11] == 0xFF &&
+				   (src[x].hex[12] != 0 ||
+				    src[x].hex[13] != 0 ||
+				    src[x].hex[14] != 0 ||
+				    src[x].hex[15] != 0)) {
 				dst[i] = (inet4) {
-					.quad[0] = src[x].oct[6] >> 8,
-					.quad[1] = src[x].oct[6] & 0xFF,
-					.quad[2] = src[x].oct[7] >> 8,
-					.quad[3] = src[x].oct[7] & 0xFF,
+					.quad[0] = src[x].hex[12],
+					.quad[1] = src[x].hex[13],
+					.quad[2] = src[x].hex[14],
+					.quad[3] = src[x].hex[15],
 				};
 			} else {
 				char buf[40], *s = buf;
@@ -1021,18 +1030,27 @@ convert_inet6_inet4(const inet6 *src, inet4 *restrict dst,
 			if (is_inet6_nil(src[x])) {
 				dst[i] = inet4_nil;
 				nils++;
-			} else if (src[x].oct[0] == 0 &&
-				   src[x].oct[1] == 0 &&
-				   src[x].oct[2] == 0 &&
-				   src[x].oct[3] == 0 &&
-				   src[x].oct[4] == 0 &&
-				   src[x].oct[5] == 0xFFFF &&
-				   (src[x].oct[6] != 0 || src[x].oct[7] != 0)) {
+			} else if (src[x].hex[0] == 0 &&
+				   src[x].hex[1] == 0 &&
+				   src[x].hex[2] == 0 &&
+				   src[x].hex[3] == 0 &&
+				   src[x].hex[4] == 0 &&
+				   src[x].hex[5] == 0 &&
+				   src[x].hex[6] == 0 &&
+				   src[x].hex[7] == 0 &&
+				   src[x].hex[8] == 0 &&
+				   src[x].hex[9] == 0 &&
+				   src[x].hex[10] == 0xFF &&
+				   src[x].hex[11] == 0xFF &&
+				   (src[x].hex[12] != 0 ||
+				    src[x].hex[13] != 0 ||
+				    src[x].hex[14] != 0 ||
+				    src[x].hex[15] != 0)) {
 				dst[i] = (inet4) {
-					.quad[0] = src[x].oct[6] >> 8,
-					.quad[1] = src[x].oct[6] & 0xFF,
-					.quad[2] = src[x].oct[7] >> 8,
-					.quad[3] = src[x].oct[7] & 0xFF,
+					.quad[0] = src[x].hex[12],
+					.quad[1] = src[x].hex[13],
+					.quad[2] = src[x].hex[14],
+					.quad[3] = src[x].hex[15],
 				};
 			} else {
 				char buf[40], *s = buf;
@@ -1065,9 +1083,12 @@ convert_inet4_inet6(const inet4 *src, inet6 *restrict dst,
 				nils++;
 			} else {
 				dst[i] = (inet6) {
-					.oct[5] = 0xffff,
-					.oct[6] = (src[x].quad[0] << 8) | src[x].quad[1],
-					.oct[7] = (src[x].quad[2] << 8) | src[x].quad[3],
+					.hex[10] = 0xff,
+					.hex[11] = 0xff,
+					.hex[12] = src[x].quad[0],
+					.hex[13] = src[x].quad[1],
+					.hex[14] = src[x].quad[2],
+					.hex[15] = src[x].quad[3],
 				};
 			}
 		}
@@ -1080,9 +1101,12 @@ convert_inet4_inet6(const inet4 *src, inet6 *restrict dst,
 				nils++;
 			} else {
 				dst[i] = (inet6) {
-					.oct[5] = 0xffff,
-					.oct[6] = (src[x].quad[0] << 8) | src[x].quad[1],
-					.oct[7] = (src[x].quad[2] << 8) | src[x].quad[3],
+					.hex[10] = 0xff,
+					.hex[11] = 0xff,
+					.hex[12] = src[x].quad[0],
+					.hex[13] = src[x].quad[1],
+					.hex[14] = src[x].quad[2],
+					.hex[15] = src[x].quad[3],
 				};
 			}
 		}

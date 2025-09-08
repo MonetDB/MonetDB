@@ -11,7 +11,6 @@
  */
 
 #include "monetdb_config.h"
-#include "sql.h"
 #include "mal_backend.h"
 
 backend *
