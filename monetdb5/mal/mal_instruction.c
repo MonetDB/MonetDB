@@ -104,7 +104,7 @@ newMalBlkStmt(MalBlkPtr mb, int maxstmts)
 	InstrPtr *p;
 	maxstmts = maxstmts % MALCHUNK == 0 ? maxstmts : ((maxstmts / MALCHUNK) + 1) * MALCHUNK;
 
-	p = MA_ZNEW_ARRAY(mb->ma, InstrPtr, maxstmts);
+	p = MA_ZNEW_ARRAY(mb->instr_allocator, InstrPtr, maxstmts);
 	if (p == NULL)
 		return -1;
 	mb->stmt = p;
@@ -342,7 +342,7 @@ copyMalBlk(MalBlkPtr old)
 	}
 	mb->vtop = old->vtop;
 
-	mb->stmt = MA_ZNEW_ARRAY(mb->ma, InstrPtr, old->ssize);
+	mb->stmt = MA_ZNEW_ARRAY(mb->instr_allocator, InstrPtr, old->ssize);
 	if (mb->stmt == NULL) {
 		goto bailout;
 	}
