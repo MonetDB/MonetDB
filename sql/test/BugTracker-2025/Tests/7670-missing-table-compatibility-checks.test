@@ -1,0 +1,8 @@
+statement ok
+CREATE TABLE table1 (column1 STRING, column2 INT)
+
+statement ok
+CREATE MERGE TABLE table2 (column3 INT, column4 VARCHAR(100)) PARTITION BY VALUES USING (UPPER(column4))
+
+statement error 3F000!ALTER LIST PARTITION TABLE: to be added table column type doesn't match LIST PARTITION TABLE definition
+ALTER TABLE table2 SET TABLE table1 AS PARTITION IN (4, 5, 6)

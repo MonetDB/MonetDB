@@ -569,9 +569,12 @@ INETinet42inet6(inet6 *ret, const inet4 *s)
 		*ret = inet6_nil;
 	else
 		*ret = (inet6) {
-			.oct[5] = 0xffff,
-			.oct[6] = (s->quad[0] << 8) | s->quad[1],
-			.oct[7] = (s->quad[2] << 8) | s->quad[3],
+			.hex[10] = 0xff,
+			.hex[11] = 0xff,
+			.hex[12] = s->quad[0],
+			.hex[13] = s->quad[1],
+			.hex[14] = s->quad[2],
+			.hex[15] = s->quad[3],
 		};
 	return MAL_SUCCEED;
 }
@@ -615,16 +618,16 @@ inet6containsinet6(const inet6 *ip1, const sht *msk1, const inet6 *ip2, const sh
 		 * value) cannot be contained in a more specific one */
 		return 0;
 	}
-	sht n = m2 / 16;
-	sht r = m2 % 16;
+	sht n = m2 / 8;
+	sht r = m2 % 8;
 	for (sht i = 0; i < n; i++) {
-		if (ip1->oct[i] != ip2->oct[i])
+		if (ip1->hex[i] != ip2->hex[i])
 			return 0;
 	}
 	if (r == 0)
 		return 1;
-	uint16_t m = (UINT16_C(1) << (16 - r)) - 1;
-	return (ip1->oct[n] & m) == (ip2->oct[n] & m);
+	uint8_t m = (UINT8_C(1) << (8 - r)) - 1;
+	return (ip1->hex[n] & m) == (ip2->hex[n] & m);
 }
 
 static str

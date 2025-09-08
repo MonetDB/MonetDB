@@ -1718,8 +1718,9 @@ exp_is_join(sql_exp *e, list *rels)
 }
 
 int
-exp_is_eqjoin(sql_exp *e)
+exp_is_eqjoin(sql_exp *e, void *dummy)
 {
+	(void) dummy;
 	if (e->flag == cmp_equal) {
 		sql_exp *l = e->l;
 		sql_exp *r = e->r;
@@ -1962,6 +1963,10 @@ exp_single_bound_cmp_exp_is_false(sql_exp* e)
     assert(e->f == NULL);
     assert (l && r);
 
+	if (e->flag == cmp_equal) {
+		if (exp_is_false(e->l) && exp_is_true(e->r))
+			return true;
+	}
     return exp_is_null(l) || exp_is_null(r);
 }
 
@@ -3375,7 +3380,7 @@ exp_scale_algebra(mvc *sql, sql_subfunc *f, sql_rel *rel, sql_exp *l, sql_exp *r
 
 		sql_find_subtype(&nlt, lt->type->base.name, digL, scaleL);
 		if (nlt.digits < scaleL)
-			return sql_error(sql, 01, SQLSTATE(42000) "Scale (%d) overflows type", scaleL);
+			return sql_error(sql, 01, SQLSTATE(42000) "Scale (%u) overflows type", scaleL);
 		l = exp_check_type(sql, &nlt, rel, l, type_equal);
 
 		sql_find_subtype(res, lt->type->base.name, digits, scale);

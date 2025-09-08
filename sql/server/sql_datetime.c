@@ -520,7 +520,7 @@ process_odbc_interval(mvc *sql, itype interval, int val, sql_subtype *t, lng *i)
 			d = 5;
 			break;
 		default:
-			snprintf(sql->errstr, ERRSIZE, _("Internal error: bad interval qualifier (%d)\n"), interval);
+			snprintf(sql->errstr, ERRSIZE, _("Internal error: bad interval qualifier (%d)\n"), (int) interval);
 			return -1;
 	}
 

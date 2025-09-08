@@ -1,0 +1,14 @@
+statement ok
+CREATE USER test WITH PASSWORD 'test' NAME 'test';
+
+@connection(id=test, username=test, password=test)
+statement error M1M05!Insufficient privileges to change user 'monetdb'
+ALTER USER monetdb MAX_WORKERS 10
+
+@connection(id=test)
+statement error HY009!Role (monetdb) missing
+SET SESSION AUTHORIZATION monetdb;
+
+@connection(id=test)
+statement error M1M05!Insufficient privileges to change user 'monetdb'
+ALTER USER monetdb MAX_WORKERS 10;

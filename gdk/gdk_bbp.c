@@ -391,7 +391,7 @@ BBPgetfilename(char *s, size_t len, bat i)
 		len -= (p - s);
 		s = p;
 	}
-	if (snprintf(s, len, "%o", i) >= (int) len)
+	if (snprintf(s, len, "%o", (unsigned) i) >= (int) len)
 		TRC_CRITICAL(BAT, "impossible error\n");
 }
 
@@ -2126,7 +2126,7 @@ new_bbpentry(FILE *fp, bat i, BUN size, BATiter *bi)
 	}
 	if (size > bi->count)
 		size = bi->count;
-	if (fprintf(fp, "%d %s %d " BUNFMT " " OIDFMT,
+	if (fprintf(fp, "%d %s %u " BUNFMT " " OIDFMT,
 		    /* BAT info */
 		    (int) i,
 		    BBP_logical(i),

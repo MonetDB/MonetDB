@@ -59,29 +59,6 @@ isOptimizerEnabled(MalBlkPtr mb, const char *opt)
 	return 0;
 }
 
-/*
- * Find if an optimizer 'opt' has run before the instruction 'p'.
- */
-bool
-isOptimizerUsed(MalBlkPtr mb, InstrPtr p, const char *opt)
-{
-	bool p_found = false;
-
-	if (getModuleId(p) == optimizerRef && getFunctionId(p) == defaultfastRef)
-		return true;
-	for (int i = mb->stop - 1; i > 0; i--) {
-		InstrPtr q = getInstrPtr(mb, i);
-
-		p_found |= q == p;		/* the optimizer to find must come before p */
-		if (q && q->token == ENDsymbol)
-			return false;
-		if (p_found && q && q != p && getModuleId(q) == optimizerRef
-			&& getFunctionId(q) == opt)
-			return true;
-	}
-	return false;
-}
-
 /* Simple insertion statements do not require complex optimizer steps */
 int
 isSimpleSQL(MalBlkPtr mb)

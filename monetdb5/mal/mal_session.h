@@ -23,7 +23,7 @@ mal_export void MSscheduleClient(str command, str peer, str challenge, bstream *
 								 stream *fout, protocol_version protocol,
 								 size_t blocksize);
 
-mal_export str MALinitClient(Client c);
+mal_export str MALinitClient(Client c, const char *, const char *, const char *);
 mal_export str MALexitClient(Client c);
 mal_export str MALparser(Client c);
 mal_export void MALengine(Client c);

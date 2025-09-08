@@ -250,15 +250,8 @@ __attribute__((__pure__))
 static inline BUN
 mix_inet6(const inet6 *u)
 {
-	ulng u1, u2;
-
-	u1 = (ulng) u->oct[0] << 48 | (ulng) u->oct[1] << 32 |
-		(ulng) u->oct[2] << 16 | (ulng) u->oct[3];
-	u2 = (ulng) u->oct[4] << 48 | (ulng) u->oct[5] << 32 |
-		(ulng) u->oct[6] << 16 | (ulng) u->oct[7];
-	/* we're not using mix_hge since this way we get the same result
-	 * on systems with and without 128 bit integer support */
-	return (BUN) (mix_lng(u1) ^ mix_lng(u2));
+	/* like uuid, inet6 is an array of 16 uint8_t values */
+	return mix_uuid((const uuid *) u);
 }
 #define hash_inet6(H,V)	HASHbucket(H, mix_inet6((const inet6 *) (V)))
 

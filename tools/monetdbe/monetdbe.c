@@ -2357,7 +2357,7 @@ remote_cleanup:
 			BAT *bn = NULL;
 
 			if (mtype != c->type.type->localtype) {
-				set_error(mdbe, createException(SQL, "monetdbe.monetdbe_append", "Cannot append %d into column '%s'", input[i]->type, c->base.name));
+				set_error(mdbe, createException(SQL, "monetdbe.monetdbe_append", "Cannot append %u into column '%s'", (unsigned) input[i]->type, c->base.name));
 				goto cleanup;
 			}
 

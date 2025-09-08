@@ -1057,7 +1057,7 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 		case op_project:
 			if (l) {
 				if (need_distinct(rel)) {
-					set_count_prop(v->sql->sa, rel, rel_calc_nuniques(v->sql, l, rel->exps));
+					set_count_prop(v->sql->sa, rel, rel_calc_nuniques(v->sql, l, rel->exps)+1);
 				} else {
 					set_count_prop(v->sql->sa, rel, get_rel_count(l));
 				}
