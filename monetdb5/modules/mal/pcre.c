@@ -477,6 +477,8 @@ pcre_replace_bat(allocator *ma, BAT **res, BAT *origin_strs, const char *pattern
 		}
 		flags++;
 	}
+	if (global)
+		exec_options |= PCRE2_SUBSTITUTE_GLOBAL;
 
 	pcre_code = pcre2_compile((PCRE2_SPTR) pattern, PCRE2_ZERO_TERMINATED,
 							  compile_options, &err, &errpos, NULL);
