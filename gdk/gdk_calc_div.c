@@ -2066,6 +2066,7 @@ gdk_return
 VARcalcdiv(ValPtr ret, const ValRecord *lft, const ValRecord *rgt)
 {
 	ret->bat = false;
+	ret->allocated = false;
 	if (div_typeswitchloop(VALptr(lft), lft->vtype, false,
 			       VALptr(rgt), rgt->vtype, false,
 			       VALget(ret), ret->vtype,

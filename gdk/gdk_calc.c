@@ -2616,6 +2616,7 @@ VARcalcxor(ValPtr ret, const ValRecord *lft, const ValRecord *rgt)
 	}
 
 	ret->bat = false;
+	ret->allocated = false;
 	if (xor_typeswitchloop(VALptr(lft), false,
 			       VALptr(rgt), false,
 			       VALget(ret), lft->vtype,
@@ -2864,6 +2865,7 @@ VARcalcor(ValPtr ret, const ValRecord *lft, const ValRecord *rgt)
 	}
 
 	ret->bat = false;
+	ret->allocated = false;
 	if (or_typeswitchloop(VALptr(lft), false,
 			      VALptr(rgt), false,
 			      VALget(ret), lft->vtype,
@@ -3107,6 +3109,7 @@ VARcalcand(ValPtr ret, const ValRecord *lft, const ValRecord *rgt)
 	}
 
 	ret->bat = false;
+	ret->allocated = false;
 	if (and_typeswitchloop(VALptr(lft), false,
 			       VALptr(rgt), false,
 			       VALget(ret), lft->vtype,

@@ -50,9 +50,10 @@ ValPtr
 VALset(ValPtr v, int t, ptr p)
 {
 	assert(t < TYPE_any);
-	v->bat = false;
-	v->allocated = false;
-	switch (ATOMstorage(v->vtype = t)) {
+	*v = (ValRecord) {
+		.vtype = t,
+	};
+	switch (ATOMstorage(t)) {
 	case TYPE_void:
 		v->val.oval = *(oid *) p;
 		break;

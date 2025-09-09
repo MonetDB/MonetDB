@@ -74,6 +74,7 @@ newGlobalStack(allocator *ma, int size)
 	for(int i = 0; i < size; i++) {
 		s->stk[i].vtype = 0;
 		s->stk[i].bat = false;
+		s->stk[i].allocated = false;
 	}
 	return s;
 }
@@ -128,8 +129,8 @@ clearStack(MalStkPtr s)
 				GDKfree(v->val.pval);
 				v->val.pval = NULL;
 			}
-			v->allocated = false;
 		}
+		v->allocated = false;
 		v->vtype = 0;
 	}
 	s->stkbot = 0;
