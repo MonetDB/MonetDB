@@ -1130,18 +1130,6 @@ static const int Code[] = { 0, 1, 2, 3, 0, 1,
 	2, 3, 0, 1, 0, 2, 0, 2
 };
 
-#define RETURN_NIL_IF(b,t)												\
-	if (b) {															\
-		if (ATOMextern(t)) {											\
-			*(ptr*) res = (ptr) ATOMnil(t);							\
-			if ( *(ptr *) res == NULL)									\
-				throw(MAL,"txtsim", SQLSTATE(HY013) MAL_MALLOC_FAIL);	\
-		} else {														\
-			memcpy(res, ATOMnilptr(t), ATOMsize(t));					\
-		}																\
-		return MAL_SUCCEED;											\
-	}
-
 static inline char
 SCode(unsigned char c)
 {
@@ -1203,7 +1191,12 @@ soundex(Client ctx, str *res, const char *const *Name)
 	str msg = MAL_SUCCEED;
 
 	////GDKfree(*res);
-	RETURN_NIL_IF(strNil(*Name), TYPE_str);
+	if (strNil(*Name)) {
+		*res = MA_STRDUP(ma, str_nil);
+		if (*res == NULL)
+			throw(MAL, "soundex", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		return MAL_SUCCEED;
+	}
 
 	*res = (str) ma_alloc(ma, sizeof(char) * (SoundexLen + 1));
 	if (*res == NULL)
@@ -1259,7 +1252,12 @@ qgram_normalize(Client ctx, str *res, const char *const *Input)
 	char c, last = ' ';
 
 	// //GDKfree(*res);
-	RETURN_NIL_IF(strNil(input), TYPE_str);
+	if (strNil(*Input)) {
+		*res = MA_STRDUP(ma, str_nil);
+		if (*res == NULL)
+			throw(MAL, "txtsim.qgramnormalize", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		return MAL_SUCCEED;
+	}
 	*res = (str) ma_alloc(ma, sizeof(char) * (strlen(input) + 1));	/* normalized strings are never longer than original */
 	if (*res == NULL)
 		throw(MAL, "txtsim.qgramnormalize", SQLSTATE(HY013) MAL_MALLOC_FAIL);
