@@ -2049,7 +2049,13 @@ GDKprintinfo(void)
 	    mallctl("stats.mapped", &jemapped, &(size_t){sizeof(jemapped)}, NULL, 0) == 0 &&
 	    mallctl("stats.resident", &jeresident, &(size_t){sizeof(jeresident)}, NULL, 0) == 0 &&
 	    mallctl("stats.retained", &jeretained, &(size_t){sizeof(jeretained)}, NULL, 0) == 0)
-		printf("JEmalloc: allocated %zu, active %zu, mapped %zu, resident %zu, retained %zu\n", jeallocated, jeactive, jemapped, jeresident, jeretained);
+		printf("JEmalloc: allocated %zu%s, active %zu%s, "
+		       "mapped %zu%s, resident %zu%s, retained %zu%s\n",
+		       jeallocated, humansize(jeallocated, (char[24]){0}, 24),
+		       jeactive, humansize(jeactive, (char[24]){0}, 24),
+		       jemapped, humansize(jemapped, (char[24]){0}, 24),
+		       jeresident, humansize(jeresident, (char[24]){0}, 24),
+		       jeretained, humansize(jeretained, (char[24]){0}, 24));
 #endif
 #elif defined(HAVE_MALLINFO2)
 	struct mallinfo2 mi = mallinfo2();
