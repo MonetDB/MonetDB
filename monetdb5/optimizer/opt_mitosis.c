@@ -16,7 +16,7 @@
 #include "gdk_utils.h"
 
 #define MIN_PART_SIZE 100000	/* minimal record count per partition */
-#define MAX_PARTS2THREADS_RATIO 4	/* There should be at most this multiple more of partitions then threads */
+#define MAX_PARTS2THREADS_RATIO 4	/* There should be at most this multiple more of partitions than threads */
 
 
 str
@@ -50,11 +50,10 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 			&& p->argc > 2 && getArgType(mb, p, 2) == TYPE_str
 			&& isVarConstant(mb, getArg(p, 2))
 			&& getVarConstant(mb, getArg(p, 2)).val.sval != NULL
-			&&
-			(strstr(getVarConstant(mb, getArg(p, 2)).val.sval,
-					"PRIMARY KEY constraint")
-			 || strstr(getVarConstant(mb, getArg(p, 2)).val.sval,
-					   "UNIQUE constraint"))) {
+			&& (strstr(getVarConstant(mb, getArg(p, 2)).val.sval,
+					   "PRIMARY KEY constraint")
+				|| strstr(getVarConstant(mb, getArg(p, 2)).val.sval,
+						  "UNIQUE constraint"))) {
 			pieces = 0;
 			goto bailout;
 		}
@@ -118,7 +117,8 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 
 		/* locate the largest non-partitioned table */
 		if (getModuleId(p) != sqlRef
-			|| (getFunctionId(p) != bindRef && getFunctionId(p) != bindidxRef
+			|| (getFunctionId(p) != bindRef
+				&& getFunctionId(p) != bindidxRef
 				&& getFunctionId(p) != tidRef))
 			continue;
 		/* don't split insert BATs */
@@ -135,7 +135,7 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 		if (r == rowcnt)
 			nr_cols++;
 		if (r > rowcnt) {
-			/* the rowsize depends on the column types, assume void-headed */
+			/* the rowsize depends on the column types */
 			row_size = ATOMsize(getBatType(getArgType(mb, p, 0)));
 			rowcnt = r;
 			nr_cols = 1;
