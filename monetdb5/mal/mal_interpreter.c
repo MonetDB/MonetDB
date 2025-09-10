@@ -1432,7 +1432,7 @@ garbageElement(Client cntxt, ValPtr v)
 		v->val.pval = 0;
 		v->len = 0;
 	}
-	v->allocated = 0;
+	v->allocated = false;
 }
 
 /*

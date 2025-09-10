@@ -952,6 +952,7 @@ defConstant(MalBlkPtr mb, int type, ValPtr cst)
 
 	assert(!isaBatType(type) || cst->bat);
 	cst->bat = false;
+	cst->allocated = false;
 	if (isaBatType(type)) {
 		if (cst->vtype == TYPE_void) {
 			cst->vtype = getBatType(type);

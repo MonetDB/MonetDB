@@ -238,10 +238,12 @@ OPTmultiplexInline(Client ctx, MalBlkPtr mb, InstrPtr p, int pc)
 				ValRecord cst;
 				int tpe = getArgType(mq, q, 1);
 
-				cst.vtype = tpe;
-				cst.bat = true;
-				cst.val.bval = bat_nil;
-				cst.len = 0;
+				cst = (ValRecord) {
+					.vtype = tpe,
+					.bat = true,
+					.val.bval = bat_nil,
+					.len = 0,
+				};
 				tpe = newBatType(tpe);
 				setVarType(mq, getArg(q, 0), tpe);
 				m = defConstant(mq, tpe, &cst);

@@ -1195,19 +1195,18 @@ BATXMLconcat(Client ctx, bat *ret, const bat *bid, const bat *rid)
 static str
 BATXMLgroup(Client ctx, xml *ret, const bat *bid)
 {
-	(void) ctx;
+	allocator *ma = ctx->curprg->def->ma;
 	BAT *b;
 	BUN p, q;
 	const char *t;
 	size_t len, size = BUFSIZ, offset;
-	str buf = GDKmalloc(size);
+	str buf = ma_alloc(ma, size);
 	BATiter bi;
 	const char *err = NULL;
 
 	if (buf == NULL)
 		throw(MAL, "aggr.xmlaggr", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		GDKfree(buf);
 		throw(MAL, "aggr.xmlaggr", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 
@@ -1223,14 +1222,12 @@ BATXMLgroup(Client ctx, xml *ret, const bat *bid)
 			continue;
 		len = strlen(t) + 1;
 		if (len >= size - offset) {
-			char *tmp;
-			size += len + 128;
-			tmp = GDKrealloc(buf, size);
-			if (tmp == NULL) {
+			buf = ma_realloc(ma, buf, size + len + 128, size);
+			if (buf == NULL) {
 				err = MAL_MALLOC_FAIL;
 				goto failed;
 			}
-			buf = tmp;
+			size += len + 128;
 		}
 		if (offset == 0)
 			n = snprintf(buf, size, "%s", t);
@@ -1254,8 +1251,6 @@ BATXMLgroup(Client ctx, xml *ret, const bat *bid)
   failed:
 	bat_iterator_end(&bi);
 	BBPunfix(b->batCacheid);
-	if (buf != NULL)
-		GDKfree(buf);
 	throw(MAL, "aggr.xmlaggr", "%s", err);
 }
 

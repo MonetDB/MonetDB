@@ -171,32 +171,32 @@ XMLunquotestring(const char **p, char q, char *buf)
 str
 XMLxml2str(Client ctx, str *s, const xml *x)
 {
-	(void) ctx;
+	allocator *ma = ctx->curprg->def->ma;
 	if (strNil(*x)) {
-		*s = GDKstrdup(str_nil);
+		*s = MA_STRDUP(ma, str_nil);
 		return MAL_SUCCEED;
 	}
 	assert(**x == 'A' || **x == 'C' || **x == 'D');
-	*s = GDKstrdup(*x + 1);
+	*s = MA_STRDUP(ma, *x + 1);
 	return MAL_SUCCEED;
 }
 
 str
 XMLstr2xml(Client ctx, xml *x, const char *const*val)
 {
-	(void) ctx;
+	allocator *ma = ctx->curprg->def->ma;
 	const char *t = *val;
 	str buf;
 	size_t len;
 
 	if (strNil(t)) {
-		*x = (xml) GDKstrdup(str_nil);
+		*x = (xml) MA_STRDUP(ma, str_nil);
 		if (*x == NULL)
 			throw(MAL, "xml.xml", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
 	len = 6 * strlen(t) + 1;
-	buf = GDKmalloc(len + 1);
+	buf = ma_alloc(ma, len + 1);
 	if (buf == NULL)
 		throw(MAL, "xml.xml", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	buf[0] = 'C';
@@ -208,13 +208,13 @@ XMLstr2xml(Client ctx, xml *x, const char *const*val)
 str
 XMLxmltext(Client ctx, str *s, const xml *x)
 {
-	(void) ctx;
+	allocator *ma = ctx->curprg->def->ma;
 	xmlDocPtr doc;
 	xmlNodePtr elem;
 	str content = NULL;
 
 	if (strNil(*x)) {
-		*s = GDKstrdup(str_nil);
+		*s = MA_STRDUP(ma, str_nil);
 		if (*s == NULL)
 			throw(MAL, "xml.text", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
@@ -224,7 +224,7 @@ XMLxmltext(Client ctx, str *s, const xml *x)
 		elem = xmlDocGetRootElement(doc);
 		xmlChar *cont = xmlNodeGetContent(elem);
 		xmlFreeDoc(doc);
-		content = GDKstrdup((const char *) cont);
+		content = MA_STRDUP(ma, (const char *) cont);
 		xmlFree(cont);
 	} else if (**x == 'C') {
 		doc = xmlParseMemory("<doc/>", 6);
@@ -233,12 +233,12 @@ XMLxmltext(Client ctx, str *s, const xml *x)
 		xmlChar *cont = xmlNodeGetContent(elem);
 		xmlFreeNodeList(elem);
 		xmlFreeDoc(doc);
-		content = GDKstrdup((const char *) cont);
+		content = MA_STRDUP(ma, (const char *) cont);
 		xmlFree(cont);
 	} else if (**x == 'A') {
 		const char *t = *x + 1;
 
-		content = GDKmalloc(strlen(*x) + 1);
+		content = ma_alloc(ma, strlen(*x) + 1);
 		if (content) {
 			str p = content;
 			while (*t) {
@@ -252,7 +252,7 @@ XMLxmltext(Client ctx, str *s, const xml *x)
 			*p = 0;
 		}
 	} else {
-		content = GDKstrdup("");
+		content = MA_STRDUP(ma, "");
 	}
 	if (content == NULL)
 		throw(MAL, "xml.text", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -264,8 +264,8 @@ XMLxmltext(Client ctx, str *s, const xml *x)
 str
 XMLxml2xml(Client ctx, xml *s, const xml *x)
 {
-	(void) ctx;
-	*s = GDKstrdup(*x);
+	allocator *ma = ctx->curprg->def->ma;
+	*s = MA_STRDUP(ma, *x);
 	if (*s == NULL)
 		throw(MAL, "xml.xml", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
@@ -274,11 +274,11 @@ XMLxml2xml(Client ctx, xml *s, const xml *x)
 str
 XMLdocument(Client ctx, xml *x, const char * const *val)
 {
-	(void) ctx;
+	allocator *ma = ctx->curprg->def->ma;
 	xmlDocPtr doc;
 
 	if (strNil(*val)) {
-		*x = (xml) GDKstrdup(str_nil);
+		*x = (xml) MA_STRDUP(ma, str_nil);
 		if (*x == NULL)
 			throw(MAL, "xml.document", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
@@ -291,7 +291,7 @@ XMLdocument(Client ctx, xml *x, const char * const *val)
 
 		xmlDocDumpMemory(doc, &buf, &len);
 		xmlFreeDoc(doc);
-		*x = GDKmalloc(len + 2);
+		*x = ma_alloc(ma, len + 2);
 		if (*x == NULL)
 			throw(MAL, "xml.document", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		snprintf(*x, len + 2, "D%s", (char *) buf);
@@ -304,7 +304,7 @@ XMLdocument(Client ctx, xml *x, const char * const *val)
 str
 XMLcontent(Client ctx, xml *x, const char * const *val)
 {
-	(void) ctx;
+	allocator *ma = ctx->curprg->def->ma;
 	xmlDocPtr doc;
 	xmlNodePtr elem;
 	xmlParserErrors err;
@@ -313,7 +313,7 @@ XMLcontent(Client ctx, xml *x, const char * const *val)
 	size_t len;
 
 	if (strNil(*val)) {
-		*x = (xml) GDKstrdup(str_nil);
+		*x = (xml) MA_STRDUP(ma, str_nil);
 		if (*x == NULL)
 			throw(MAL, "xml.content", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
@@ -330,7 +330,7 @@ XMLcontent(Client ctx, xml *x, const char * const *val)
 	xmlNodeDump(buf, doc, elem, 0, 0);
 	s = xmlBufferContent(buf);
 	len = strlen((const char *) s) + 2;
-	*x = GDKmalloc(len);
+	*x = ma_alloc(ma, len);
 	if (*x == NULL)
 		throw(MAL, "xml.content", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	snprintf(*x, len, "C%s", (const char *) s);
@@ -361,12 +361,12 @@ XMLisdocument(Client ctx, bit *x, const char * const *s)
 str
 XMLcomment(Client ctx, xml *x, const char * const *s)
 {
-	(void) ctx;
+	allocator *ma = ctx->curprg->def->ma;
 	size_t len;
 	str buf;
 
 	if (strNil(*s)) {
-		*x = (xml) GDKstrdup(str_nil);
+		*x = (xml) MA_STRDUP(ma, str_nil);
 		if (*x == NULL)
 			throw(MAL, "xml.comment", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
@@ -374,7 +374,7 @@ XMLcomment(Client ctx, xml *x, const char * const *s)
 	if (strstr(*s, "--") != NULL)
 		throw(MAL, "xml.comment", "comment may not contain `--'");
 	len = strlen(*s) + 9;
-	buf = (str) GDKmalloc(len);
+	buf = ma_alloc(ma, len);
 	if (buf == NULL)
 		throw(MAL, "xml.comment", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	snprintf(buf, len, "C<!--%s-->", *s);
@@ -397,13 +397,13 @@ XMLparse(Client ctx, xml *x, const char * const *doccont, const char * const *va
 str
 XMLpi(Client ctx, xml *ret, const char * const *target, const char * const *value)
 {
-	(void) ctx;
+	allocator *ma = ctx->curprg->def->ma;
 	size_t len;
 	str buf;
 	str val = NULL;
 
 	if (strNil(*target)) {
-		*ret = GDKstrdup(str_nil);
+		*ret = MA_STRDUP(ma, str_nil);
 		if (*ret == NULL)
 			throw(MAL, "xml.attribute", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
@@ -415,22 +415,19 @@ XMLpi(Client ctx, xml *ret, const char * const *target, const char * const *valu
 	if (strNil(*value) || **value == 0) {
 		size_t n = 6 * strlen(*value) + 1;
 
-		val = GDKmalloc(n);
+		val = ma_alloc(ma, n);
 		if (val == NULL)
 			throw(MAL, "xml.attribute", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		len += XMLquotestring(*value, val, n) + 1;
 	}
-	buf = GDKmalloc(len);
+	buf = ma_alloc(ma, len);
 	if (buf == NULL) {
-		if (val)
-			GDKfree(val);
 		throw(MAL, "xml.attribute", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	if (val == NULL) {
 		snprintf(buf, len, "C<?%s?>", *target);
 	} else {
 		snprintf(buf, len, "C<?%s %s?>", *target, val);
-		GDKfree(val);
 	}
 	*ret = buf;
 	return MAL_SUCCEED;
@@ -439,13 +436,13 @@ XMLpi(Client ctx, xml *ret, const char * const *target, const char * const *valu
 str
 XMLroot(Client ctx, xml *ret, const xml *val, const char * const *version, const char * const *standalone)
 {
-	(void) ctx;
+	allocator *ma = ctx->curprg->def->ma;
 	size_t len = 0, i = 0;
 	str buf;
 	bit isdoc = 0;
 
 	if (strNil(*val)) {
-		*ret = GDKstrdup(str_nil);
+		*ret = MA_STRDUP(ma, str_nil);
 		if (*ret == NULL)
 			throw(MAL, "xml.root", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
@@ -464,7 +461,7 @@ XMLroot(Client ctx, xml *ret, const xml *val, const char * const *version, const
 			throw(MAL, "xml.root", "illegal XML standalone value");
 		len += 14 + strlen(*standalone);	/* strlen(" standalone=\"\"") */
 	}
-	buf = GDKmalloc(len);
+	buf = ma_alloc(ma, len);
 	if (buf == NULL)
 		throw(MAL, "xml.root", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	strcpy(buf, "D<?xml");
@@ -476,7 +473,6 @@ XMLroot(Client ctx, xml *ret, const xml *val, const char * const *version, const
 	snprintf(buf + i, len - i, "?>%s", *val + 1);
 	XMLisdocument(ctx, &isdoc, &(const char *){buf + 1});	/* check well-formedness */
 	if (!isdoc) {
-		GDKfree(buf);
 		throw(MAL, "xml.root", "resulting document not well-formed");
 	}
 	*ret = buf;
@@ -486,13 +482,13 @@ XMLroot(Client ctx, xml *ret, const xml *val, const char * const *version, const
 str
 XMLattribute(Client ctx, xml *x, const char * const *name, const char * const *val)
 {
-	(void) ctx;
+	allocator *ma = ctx->curprg->def->ma;
 	const char *t = *val;
 	str buf;
 	size_t len;
 
 	if (strNil(t) || strNil(*name)) {
-		*x = (xml) GDKstrdup(str_nil);
+		*x = (xml) MA_STRDUP(ma, str_nil);
 		if (*x == NULL)
 			throw(MAL, "xml.attribute", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
@@ -500,25 +496,23 @@ XMLattribute(Client ctx, xml *x, const char * const *name, const char * const *v
 	if (xmlValidateName((xmlChar *) *name, 0) != 0)
 		throw(MAL, "xml.attribute", "invalid attribute name");
 	len = 6 * strlen(t) + 1;
-	buf = GDKmalloc(len);
+	buf = ma_alloc(ma, len);
 	if (buf == NULL)
 		throw(MAL, "xml.attribute", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	len = XMLquotestring(t, buf, len);
 	len += strlen(*name) + 5;
-	*x = GDKmalloc(len);
+	*x = ma_alloc(ma, len);
 	if (*x == NULL) {
-		GDKfree(buf);
 		throw(MAL, "xml.attribute", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	snprintf(*x, len, "A%s=\"%s\"", *name, buf);
-	GDKfree(buf);
 	return MAL_SUCCEED;
 }
 
 str
 XMLelement(Client ctx, xml *ret, const char * const *name, const xml *nspace, const xml *attr, const xml *val)
 {
-	(void) ctx;
+	allocator *ma = ctx->curprg->def->ma;
 	size_t len, i, namelen;
 	str buf;
 
@@ -546,7 +540,7 @@ XMLelement(Client ctx, xml *ret, const char * const *name, const xml *nspace, co
 			throw(MAL, "xml.element", "illegal content");
 		len += strlen(*val + 1) + namelen + 2;	/* extra "<", ">", and name ("/" already counted) */
 	}
-	buf = GDKmalloc(len);
+	buf = ma_alloc(ma, len);
 	if (buf == NULL)
 		throw(MAL, "xml.element", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	if (strNil(*val) && (!attr || strNil(*attr))) {
@@ -576,26 +570,26 @@ XMLelementSmall(Client ctx, xml *ret, const char * const *name, const xml *val)
 str
 XMLconcat(Client ctx, xml *ret, const xml *left, const xml *right)
 {
-	(void) ctx;
+	allocator *ma = ctx->curprg->def->ma;
 	size_t len;
 	str buf;
 
 	/* if either side is nil, return the other, otherwise concatenate */
 	if (strNil(*left))
-		buf = GDKstrdup(*right);
+		buf = MA_STRDUP(ma, *right);
 	else if (strNil(*right))
-		buf = GDKstrdup(*left);
+		buf = MA_STRDUP(ma, *left);
 	else if (**left != **right)
 		throw(MAL, "xml.concat", "arguments not compatible");
 	else if (**left == 'A') {
 		len = strlen(*left) + strlen(*right) + 1;
-		buf = GDKmalloc(len);
+		buf = ma_alloc(ma, len);
 		if (buf == NULL)
 			throw(MAL, "xml.concat", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		snprintf(buf, len, "A%s %s", *left + 1, *right + 1);
 	} else if (**left == 'C') {
 		len = strlen(*left) + strlen(*right) + 2;
-		buf = GDKmalloc(len);
+		buf = ma_alloc(ma, len);
 		if (buf == NULL)
 			throw(MAL, "xml.concat", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		snprintf(buf, len, "C%s%s", *left + 1, *right + 1);
@@ -617,7 +611,7 @@ XMLforest(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	str buf;
 	xml x;
 
-	(void) cntxt;
+	allocator *ma = cntxt->curprg->def->ma;
 	(void) mb;
 
 	len = 2;
@@ -628,7 +622,7 @@ XMLforest(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 				throw(MAL, "xml.forest", "arguments must be element content");
 		len += strlen(x + 1);
 	}
-	buf = (str) GDKmalloc(len);
+	buf = (str) ma_alloc(ma, len);
 	if (buf == NULL)
 		throw(MAL, "xml.forest", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	*ret = buf;
@@ -670,16 +664,17 @@ XMLfromString(const char *src, size_t *len, void **X, bool external)
 {
 	xml *x = (xml *) X;
 	if (*x) {
-		GDKfree(*x);
 		*x = NULL;
 	}
 	if (external && strcmp(src, "nil") == 0) {
-		*x = GDKstrdup(str_nil);
+		allocator *ma = MT_thread_getallocator();
+		*x = MA_STRDUP(ma, str_nil);
 		if (*x == NULL)
 			return -1;
 		return 3;
 	} else if (strNil(src)) {
-		*x = GDKstrdup(str_nil);
+		allocator *ma = MT_thread_getallocator();
+		*x = MA_STRDUP(ma, str_nil);
 		if (*x == NULL)
 			return -1;
 		return 1;
@@ -707,8 +702,8 @@ XMLtoString(str *s, size_t *len, const void *SRC, bool external)
 		src++;
 	l = strlen(src) + 1;
 	if (l >= *len || *s == NULL) {
-		GDKfree(*s);
-		*s = GDKmalloc(l);
+		allocator *ma = MT_thread_getallocator();
+		*s = ma_alloc(ma, l);
 		if (*s == NULL)
 			return -1;
 		*len = l;
