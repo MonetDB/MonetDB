@@ -2575,6 +2575,7 @@ gdk_export exception_buffer *sa_get_eb(allocator *sa)
 #define ma_open(ma)		sa_open(ma)
 #define ma_close(ma)		sa_close(ma)
 #define ma_free(ma, obj)	sa_free(ma, obj)
+#define ma_reset(ma)		sa_reset(ma)
 
 #define MA_NEW( sa, type )				((type*)sa_alloc( sa, sizeof(type)))
 #define MA_ZNEW( sa, type )				((type*)sa_zalloc( sa, sizeof(type)))

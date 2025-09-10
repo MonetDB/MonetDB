@@ -158,8 +158,8 @@ mal_export void freeSymbol(Symbol s);
 mal_export void freeSymbolList(Symbol s);
 mal_export void printSignature(stream *fd, Symbol s, int flg);
 
-mal_export MalBlkPtr newMalBlk(int elements, allocator *pa);
-mal_export void resetMalBlk(MalBlkPtr mb);
+mal_export MalBlkPtr newMalBlk(int elements);
+mal_export str resetMalBlk(MalBlkPtr *mb);
 mal_export void resetMalTypes(MalBlkPtr mb, int stop);
 mal_export int newMalBlkStmt(MalBlkPtr mb, int elements);
 mal_export int resizeMalBlk(MalBlkPtr mb, int elements);

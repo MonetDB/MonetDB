@@ -815,16 +815,16 @@ setVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			if (!isOptimizerPipe(newopt) || strcmp(buf, newopt) == 0) {
 				if ((msg = addPipeDefinition(cntxt, buf, newopt)))
 					return msg;
-				if (!sqlvar_set_string(mb->ma, find_global_var(m, s, varname), buf))
+				if (!sqlvar_set_string(m->session->sa, find_global_var(m, s, varname), buf))
 					throw(SQL, "sql.setVariable", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			} else if (!sqlvar_set_string(mb->ma, find_global_var(m, s, varname), newopt))
+			} else if (!sqlvar_set_string(m->session->sa, find_global_var(m, s, varname), newopt))
 				throw(SQL, "sql.setVariable", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		} else {
 			ValPtr ptr = &stk->stk[getArg(pci, 4)];
 
 			if ((msg = sql_update_var(m, s, varname, ptr)))
 				return msg;
-			if (!sqlvar_set(mb->ma, var, ptr))
+			if (!sqlvar_set(m->session->sa, var, ptr))
 				throw(SQL, "sql.setVariable", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		return MAL_SUCCEED;
@@ -4968,7 +4968,7 @@ SQLunionfunc(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int arg = pci->retc;
 	str mod, fcn, ret = MAL_SUCCEED;
 	InstrPtr npci;
-	MalBlkPtr nmb = newMalBlk(1, NULL), omb = NULL;
+	MalBlkPtr nmb = newMalBlk(1), omb = NULL;
 
 	if (!nmb)
 		return createException(MAL, "sql.unionfunc", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -5072,10 +5072,8 @@ SQLunionfunc(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			//GDKfree(stmt);
 			start = 2;
 		}
-		allocator *ta = sa_create(nmb->ma);
 		for (BUN cur = 0; cur<cnt && !ret; cur++ ) {
-			sa_reset(ta);
-			MalStkPtr nstk = prepareMALstack(ta, nmb, nmb->vsize);
+			MalStkPtr nstk = prepareMALstack(nmb->ma, nmb, nmb->vsize);
 			int i,ii;
 
 			if (!nstk) { /* needed for result */
@@ -5094,7 +5092,7 @@ SQLunionfunc(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					if (!omb && npci->fcn && npci->token == PATcall) /* pattern */
 						ret = (*(str (*)(Client, MalBlkPtr, MalStkPtr, InstrPtr))npci->fcn)(cntxt, nmb, nstk, npci);
 					else
-						ret = runMALsequence(ta, cntxt, nmb, start, nmb->stop, nstk, env /* copy result in nstk first instruction*/, q);
+						ret = runMALsequence(nmb->ma, cntxt, nmb, start, nmb->stop, nstk, env /* copy result in nstk first instruction*/, q);
 
 					if (!ret) {
 						/* insert into result */

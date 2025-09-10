@@ -283,7 +283,8 @@ SQLrun(Client c, mvc *m)
 			MT_lock_unset(&mal_contextLock);
 			msg = runMAL(c, mb, 0, 0);
 		}
-		resetMalBlk(mb);
+		if (msg == MAL_SUCCEED)
+			msg = resetMalBlk(&c->curprg->def);
 	}
 	/* after the query has been finished we enter the idle state */
 	MT_lock_set(&mal_contextLock);
@@ -657,7 +658,8 @@ RAstatement(Client c, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			msg = SQLoptimizeFunction(c, c->curprg->def);
 			if (msg == MAL_SUCCEED)
 				msg = SQLrun(c,m);
-			resetMalBlk(c->curprg->def);
+			if (msg == MAL_SUCCEED)
+				msg = resetMalBlk(&c->curprg->def);
 		}
 		rel_destroy(m, rel);
 	}

@@ -659,9 +659,8 @@ sqlvar_set_string(allocator *sa, sql_var *var, const char *val)
 	atom *a = &var->var;
 
 	if (a != NULL) {
-		allocator *ma = sa? sa : MT_thread_getallocator();
-		assert(ma);
-		str new_val = SA_STRDUP(ma, val);
+		assert(sa);
+		str new_val = SA_STRDUP(sa, val);
 		if (new_val) {
 			ValRecord *v = &a->data;
 

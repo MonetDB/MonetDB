@@ -542,8 +542,8 @@ MSserveClient(Client c)
 		c->backup = 0;
 	}
 
-	if (c->curprg && c->curprg->def)
-		resetMalBlk(c->curprg->def);
+	//if (c->curprg && c->curprg->def)
+	//	resetMalBlk(&c->curprg->def);
 	/*
 	   if (c->curprg) {
 	   freeSymbol(c->curprg);

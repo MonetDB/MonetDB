@@ -198,8 +198,8 @@ MCexitClient(Client c)
 {
 	MCresetProfiler(c->fdout);
 	// Remove any left over constant symbols
-	if (c->curprg)
-		resetMalBlk(c->curprg->def);
+	//if (c->curprg)
+	//	resetMalBlk(&c->curprg->def);
 	if (c->father == NULL) {	/* normal client */
 		if (c->fdout && c->fdout != GDKstdout)
 			close_stream(c->fdout);

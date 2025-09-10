@@ -59,7 +59,7 @@ newSymbol(const char *nme, int kind)
 		return NULL;
 	}
 	if (kind == FUNCTIONsymbol) {
-		cur->def = newMalBlk(STMT_INCREMENT, NULL);
+		cur->def = newMalBlk(STMT_INCREMENT);
 		if (cur->def == NULL) {
 			GDKfree(cur);
 			return NULL;
@@ -114,16 +114,24 @@ newMalBlkStmt(MalBlkPtr mb, int maxstmts)
 }
 
 MalBlkPtr
-newMalBlk(int elements, allocator *pa)
+newMalBlk(int elements)
 {
 	MalBlkPtr mb;
 	VarRecord *v;
-	allocator *ma = ma_create(pa);
-	allocator *ta = ma_create(ma);
-	allocator *instr_allocator = ma_create(ma);
+	allocator *ma = ma_create(NULL);
 
 	if (!ma)
 		return NULL;
+	allocator *ta = ma_create(ma);
+	if (ta == NULL) {
+		ma_destroy(ma);
+		return NULL;
+	}
+	allocator *instr_allocator = ma_create(ma);
+	if (instr_allocator == NULL) {
+		ma_destroy(ma);
+		return NULL;
+	}
 
 	mb = MA_NEW(ma, MalBlkRecord);
 	if (mb == NULL) {
@@ -200,16 +208,31 @@ resetMalTypes(MalBlkPtr mb, int stop)
 
 /* For SQL operations we have to cleanup variables and trim the space
  * A portion is retained for the next query */
-void
-resetMalBlk(MalBlkPtr mb)
+str
+resetMalBlk(MalBlkPtr *mbpp)
 {
-	int i;
+	MalBlkPtr mb = *mbpp;
+	MalBlkPtr nmb = newMalBlk(MALCHUNK);
+	if (nmb == NULL)
+		return createMalException(mb, 0, TYPE, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	nmb->stmt[0] = copyInstruction(nmb, mb->stmt[0]);
+	if (nmb->stmt[0] == NULL)
+		return createMalException(mb, 0, TYPE, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	strcpy_len(nmb->binding, mb->binding, sizeof(mb->binding));
+	nmb->stop = 1;
+	nmb->vtop = 0;
+	nmb->tag = mb->tag;
+	freeMalBlk(mb);
+	*mbpp = nmb;
+	return MAL_SUCCEED;
 
-	for (i = 1/*MALCHUNK*/; i < mb->ssize; i++) {
-		if (mb->stmt[i])
-			freeInstruction(mb, mb->stmt[i]);
-		mb->stmt[i] = NULL;
-	}
+	//int i;
+
+	//for (i = 1/*MALCHUNK*/; i < mb->ssize; i++) {
+	//	if (mb->stmt[i])
+	//		freeInstruction(mb, mb->stmt[i]);
+	//	mb->stmt[i] = NULL;
+	//}
 #if 0
 	if (mb->ssize != MALCHUNK) {
 		InstrPtr *new = GDKrealloc(mb->stmt, sizeof(InstrPtr) * MALCHUNK);
@@ -225,17 +248,17 @@ resetMalBlk(MalBlkPtr mb)
 	}
 #endif
 	/* Reuse the initial function statement */
-	mb->stop = 1;
+	//mb->stop = 1;
 
-	for (i = 0; i < mb->vtop; i++) {
-		/*
-		if (mb->var[i].name)
-			GDKfree(mb->var[i].name);
-			*/
-		mb->var[i].name = NULL;
-		if (isVarConstant(mb, i))
-			VALclear(&getVarConstant(mb, i));
-	}
+	//for (i = 0; i < mb->vtop; i++) {
+	//	/*
+	//	if (mb->var[i].name)
+	//		GDKfree(mb->var[i].name);
+	//		*/
+	//	mb->var[i].name = NULL;
+	//	if (isVarConstant(mb, i))
+	//		VALclear(&getVarConstant(mb, i));
+	//}
 #if 0
 	if (mb->vsize != MALCHUNK) {
 		VarRecord *vnew = GDKrealloc(mb->var, sizeof(VarRecord) * MALCHUNK);
@@ -250,7 +273,8 @@ resetMalBlk(MalBlkPtr mb)
 		mb->vsize = MALCHUNK;
 	}
 #endif
-	mb->vtop = 0;
+	//mb->vtop = 0;
+	//return MAL_SUCCEED;
 }
 
 
