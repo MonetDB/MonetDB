@@ -4722,14 +4722,14 @@ BBPprintinfo(void)
 		       bats[1][1][1][1][1].sz,
 		       humansize(bats[1][1][1][1][1].sz, mbuf, sizeof(mbuf)));
 	if (bats[1][1][1][1][0].nr > 0)
-		printf("fix, dirty, persistent, not loaded, hot: %d bats, %zu%s virtual, %zu%s malloc\n",
+		printf("fix, dirty, persistent, loaded, cold: %d bats, %zu%s virtual, %zu%s malloc\n",
 		       bats[1][1][1][1][0].nr,
 		       bats[1][1][1][1][0].vmsz,
 		       humansize(bats[1][1][1][1][0].vmsz, vbuf, sizeof(vbuf)),
 		       bats[1][1][1][1][0].sz,
 		       humansize(bats[1][1][1][1][0].sz, mbuf, sizeof(mbuf)));
 	if (bats[1][1][1][0][1].nr > 0)
-		printf("fix, dirty, persistent, loaded, cold: %d bats, %zu%s virtual, %zu%s malloc\n",
+		printf("fix, dirty, persistent, not loaded, hot: %d bats, %zu%s virtual, %zu%s malloc\n",
 		       bats[1][1][1][0][1].nr,
 		       bats[1][1][1][0][1].vmsz,
 		       humansize(bats[1][1][1][0][1].vmsz, vbuf, sizeof(vbuf)),
@@ -4750,14 +4750,14 @@ BBPprintinfo(void)
 		       bats[1][1][0][1][1].sz,
 		       humansize(bats[1][1][0][1][1].sz, mbuf, sizeof(mbuf)));
 	if (bats[1][1][0][1][0].nr > 0)
-		printf("fix, dirty, transient, not loaded, hot: %d bats, %zu%s virtual, %zu%s malloc\n",
+		printf("fix, dirty, transient, loaded, cold: %d bats, %zu%s virtual, %zu%s malloc\n",
 		       bats[1][1][0][1][0].nr,
 		       bats[1][1][0][1][0].vmsz,
 		       humansize(bats[1][1][0][1][0].vmsz, vbuf, sizeof(vbuf)),
 		       bats[1][1][0][1][0].sz,
 		       humansize(bats[1][1][0][1][0].sz, mbuf, sizeof(mbuf)));
 	if (bats[1][1][0][0][1].nr > 0)
-		printf("fix, dirty, transient, loaded, cold: %d bats, %zu%s virtual, %zu%s malloc\n",
+		printf("fix, dirty, transient, not loaded, hot: %d bats, %zu%s virtual, %zu%s malloc\n",
 		       bats[1][1][0][0][1].nr,
 		       bats[1][1][0][0][1].vmsz,
 		       humansize(bats[1][1][0][0][1].vmsz, vbuf, sizeof(vbuf)),
@@ -4778,14 +4778,14 @@ BBPprintinfo(void)
 		       bats[1][0][1][1][1].sz,
 		       humansize(bats[1][0][1][1][1].sz, mbuf, sizeof(mbuf)));
 	if (bats[1][0][1][1][0].nr > 0)
-		printf("fix, clean, persistent, not loaded, hot: %d bats, %zu%s virtual, %zu%s malloc\n",
+		printf("fix, clean, persistent, loaded, cold: %d bats, %zu%s virtual, %zu%s malloc\n",
 		       bats[1][0][1][1][0].nr,
 		       bats[1][0][1][1][0].vmsz,
 		       humansize(bats[1][0][1][1][0].vmsz, vbuf, sizeof(vbuf)),
 		       bats[1][0][1][1][0].sz,
 		       humansize(bats[1][0][1][1][0].sz, mbuf, sizeof(mbuf)));
 	if (bats[1][0][1][0][1].nr > 0)
-		printf("fix, clean, persistent, loaded, cold: %d bats, %zu%s virtual, %zu%s malloc\n",
+		printf("fix, clean, persistent, not loaded, hot: %d bats, %zu%s virtual, %zu%s malloc\n",
 		       bats[1][0][1][0][1].nr,
 		       bats[1][0][1][0][1].vmsz,
 		       humansize(bats[1][0][1][0][1].vmsz, vbuf, sizeof(vbuf)),
@@ -4806,14 +4806,14 @@ BBPprintinfo(void)
 		       bats[1][0][0][1][1].sz,
 		       humansize(bats[1][0][0][1][1].sz, mbuf, sizeof(mbuf)));
 	if (bats[1][0][0][1][0].nr > 0)
-		printf("fix, clean, transient, not loaded, hot: %d bats, %zu%s virtual, %zu%s malloc\n",
+		printf("fix, clean, transient, loaded, cold: %d bats, %zu%s virtual, %zu%s malloc\n",
 		       bats[1][0][0][1][0].nr,
 		       bats[1][0][0][1][0].vmsz,
 		       humansize(bats[1][0][0][1][0].vmsz, vbuf, sizeof(vbuf)),
 		       bats[1][0][0][1][0].sz,
 		       humansize(bats[1][0][0][1][0].sz, mbuf, sizeof(mbuf)));
 	if (bats[1][0][0][0][1].nr > 0)
-		printf("fix, clean, transient, loaded, cold: %d bats, %zu%s virtual, %zu%s malloc\n",
+		printf("fix, clean, transient, not loaded, hot: %d bats, %zu%s virtual, %zu%s malloc\n",
 		       bats[1][0][0][0][1].nr,
 		       bats[1][0][0][0][1].vmsz,
 		       humansize(bats[1][0][0][0][1].vmsz, vbuf, sizeof(vbuf)),
@@ -4834,14 +4834,14 @@ BBPprintinfo(void)
 		       bats[0][1][1][1][1].sz,
 		       humansize(bats[0][1][1][1][1].sz, mbuf, sizeof(mbuf)));
 	if (bats[0][1][1][1][0].nr > 0)
-		printf("no fix, dirty, persistent, not loaded, hot: %d bats, %zu%s virtual, %zu%s malloc\n",
+		printf("no fix, dirty, persistent, loaded, cold: %d bats, %zu%s virtual, %zu%s malloc\n",
 		       bats[0][1][1][1][0].nr,
 		       bats[0][1][1][1][0].vmsz,
 		       humansize(bats[0][1][1][1][0].vmsz, vbuf, sizeof(vbuf)),
 		       bats[0][1][1][1][0].sz,
 		       humansize(bats[0][1][1][1][0].sz, mbuf, sizeof(mbuf)));
 	if (bats[0][1][1][0][1].nr > 0)
-		printf("no fix, dirty, persistent, loaded, cold: %d bats, %zu%s virtual, %zu%s malloc\n",
+		printf("no fix, dirty, persistent, not loaded, hot: %d bats, %zu%s virtual, %zu%s malloc\n",
 		       bats[0][1][1][0][1].nr,
 		       bats[0][1][1][0][1].vmsz,
 		       humansize(bats[0][1][1][0][1].vmsz, vbuf, sizeof(vbuf)),
@@ -4862,14 +4862,14 @@ BBPprintinfo(void)
 		       bats[0][1][0][1][1].sz,
 		       humansize(bats[0][1][0][1][1].sz, mbuf, sizeof(mbuf)));
 	if (bats[0][1][0][1][0].nr > 0)
-		printf("no fix, dirty, transient, not loaded, hot: %d bats, %zu%s virtual, %zu%s malloc\n",
+		printf("no fix, dirty, transient, loaded, cold: %d bats, %zu%s virtual, %zu%s malloc\n",
 		       bats[0][1][0][1][0].nr,
 		       bats[0][1][0][1][0].vmsz,
 		       humansize(bats[0][1][0][1][0].vmsz, vbuf, sizeof(vbuf)),
 		       bats[0][1][0][1][0].sz,
 		       humansize(bats[0][1][0][1][0].sz, mbuf, sizeof(mbuf)));
 	if (bats[0][1][0][0][1].nr > 0)
-		printf("no fix, dirty, transient, loaded, cold: %d bats, %zu%s virtual, %zu%s malloc\n",
+		printf("no fix, dirty, transient, not loaded, hot: %d bats, %zu%s virtual, %zu%s malloc\n",
 		       bats[0][1][0][0][1].nr,
 		       bats[0][1][0][0][1].vmsz,
 		       humansize(bats[0][1][0][0][1].vmsz, vbuf, sizeof(vbuf)),
@@ -4890,14 +4890,14 @@ BBPprintinfo(void)
 		       bats[0][0][1][1][1].sz,
 		       humansize(bats[0][0][1][1][1].sz, mbuf, sizeof(mbuf)));
 	if (bats[0][0][1][1][0].nr > 0)
-		printf("no fix, clean, persistent, not loaded, hot: %d bats, %zu%s virtual, %zu%s malloc\n",
+		printf("no fix, clean, persistent, loaded, cold: %d bats, %zu%s virtual, %zu%s malloc\n",
 		       bats[0][0][1][1][0].nr,
 		       bats[0][0][1][1][0].vmsz,
 		       humansize(bats[0][0][1][1][0].vmsz, vbuf, sizeof(vbuf)),
 		       bats[0][0][1][1][0].sz,
 		       humansize(bats[0][0][1][1][0].sz, mbuf, sizeof(mbuf)));
 	if (bats[0][0][1][0][1].nr > 0)
-		printf("no fix, clean, persistent, loaded, cold: %d bats, %zu%s virtual, %zu%s malloc\n",
+		printf("no fix, clean, persistent, not loaded, hot: %d bats, %zu%s virtual, %zu%s malloc\n",
 		       bats[0][0][1][0][1].nr,
 		       bats[0][0][1][0][1].vmsz,
 		       humansize(bats[0][0][1][0][1].vmsz, vbuf, sizeof(vbuf)),
@@ -4918,14 +4918,14 @@ BBPprintinfo(void)
 		       bats[0][0][0][1][1].sz,
 		       humansize(bats[0][0][0][1][1].sz, mbuf, sizeof(mbuf)));
 	if (bats[0][0][0][1][0].nr > 0)
-		printf("no fix, clean, transient, not loaded, hot: %d bats, %zu%s virtual, %zu%s malloc\n",
+		printf("no fix, clean, transient, loaded, cold: %d bats, %zu%s virtual, %zu%s malloc\n",
 		       bats[0][0][0][1][0].nr,
 		       bats[0][0][0][1][0].vmsz,
 		       humansize(bats[0][0][0][1][0].vmsz, vbuf, sizeof(vbuf)),
 		       bats[0][0][0][1][0].sz,
 		       humansize(bats[0][0][0][1][0].sz, mbuf, sizeof(mbuf)));
 	if (bats[0][0][0][0][1].nr > 0)
-		printf("no fix, clean, transient, loaded, cold: %d bats, %zu%s virtual, %zu%s malloc\n",
+		printf("no fix, clean, transient, not loaded, hot: %d bats, %zu%s virtual, %zu%s malloc\n",
 		       bats[0][0][0][0][1].nr,
 		       bats[0][0][0][0][1].vmsz,
 		       humansize(bats[0][0][0][0][1].vmsz, vbuf, sizeof(vbuf)),
