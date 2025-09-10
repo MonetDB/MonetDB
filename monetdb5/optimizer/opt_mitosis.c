@@ -23,7 +23,7 @@ str
 OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 						 InstrPtr pci)
 {
-	int i, j, limit, slimit, estimate = 0, pieces = 1, mito_parts = 0,
+	int i, j, limit, slimit, pieces = 1, mito_parts = 0,
 		mito_size = 0, row_size = 0, mt = -1, nr_cols = 0, nr_aggrs = 0,
 		nr_maps = 0;
 	str schema = 0, table = 0;
@@ -140,7 +140,6 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 			rowcnt = r;
 			nr_cols = 1;
 			target = p;
-			estimate++;
 			r = 0;
 		}
 	}
@@ -229,9 +228,8 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	/* at this stage we have identified the #chunks to be used for the largest table */
 	limit = mb->stop;
 	slimit = mb->ssize;
-	if (newMalBlkStmt(mb, mb->stop + 2 * estimate) < 0)
+	if (newMalBlkStmt(mb, mb->stop + nr_cols * pieces + 2) < 0)
 		throw(MAL, "optimizer.mitosis", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	estimate = 0;
 
 	schema = getVarConstant(mb, getArg(target, 2)).val.sval;
 	table = getVarConstant(mb, getArg(target, 3)).val.sval;
@@ -241,7 +239,8 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 		p = old[i];
 
 		if (getModuleId(p) != sqlRef
-			|| !(getFunctionId(p) == bindRef || getFunctionId(p) == bindidxRef
+			|| !(getFunctionId(p) == bindRef
+				 || getFunctionId(p) == bindidxRef
 				 || getFunctionId(p) == tidRef)) {
 			pushInstruction(mb, p);
 			continue;
@@ -271,9 +270,6 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 			pushInstruction(mb, p);
 			continue;
 		}
-		/* we keep the original bind operation, because it allows for
-		 * easy undo when the mergtable can not do something */
-		// pushInstruction(mb, p);
 
 		qtpe = getVarType(mb, getArg(p, 0));
 
