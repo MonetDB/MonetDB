@@ -2191,12 +2191,12 @@ stmt_markselect(backend *be, stmt *g, stmt *m, stmt *p, bool any)
 }
 
 stmt *
-stmt_markjoin(backend *be, stmt *l, stmt *r, bool final)
+stmt_markjoin(backend *be, stmt *l, stmt *r, bool nil_matches, bool final)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q;
 
-	q = newStmtArgs(mb, algebraRef, markjoinRef, 8);
+	q = newStmtArgs(mb, algebraRef, markjoinRef, 9);
 	q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 	if (!final)
 		q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
@@ -2204,6 +2204,7 @@ stmt_markjoin(backend *be, stmt *l, stmt *r, bool final)
 	q = pushArgument(mb, q, r->nr); /* mark info mask */
 	q = pushNilBat(mb, q);
 	q = pushNilBat(mb, q);
+	q = pushBit(mb, q, nil_matches);    /* nil matches */
 	q = pushNil(mb, q, TYPE_lng);
 	pushInstruction(mb, q);
 

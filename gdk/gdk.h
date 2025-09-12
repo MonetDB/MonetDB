@@ -2275,7 +2275,7 @@ gdk_export gdk_return BATleftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl,
 	__attribute__((__access__(write_only, 1)))
 	__attribute__((__access__(write_only, 2)))
 	__attribute__((__warn_unused_result__));
-gdk_export gdk_return BATmarkjoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r, BAT *sl, BAT *sr, BUN estimate)
+gdk_export gdk_return BATmarkjoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches, BUN estimate)
 	__attribute__((__access__(write_only, 1)))
 	__attribute__((__access__(write_only, 2)))
 	__attribute__((__access__(write_only, 3)))
