@@ -11,299 +11,13 @@
  */
 
 /*
- * @t The Goblin Database Kernel
- * @v Version 3.05
- * @a Martin L. Kersten, Peter Boncz, Niels Nes, Sjoerd Mullender
- *
- * @+ The Inner Core
- * The innermost library of the MonetDB database system is formed by
- * the library called GDK, an abbreviation of Goblin Database Kernel.
- * Its development was originally rooted in the design of a pure
- * active-object-oriented programming language, before development
- * was shifted towards a reusable database kernel engine.
- *
- * GDK is a C library that provides ACID properties on a DSM model
- * @tex
- * [@cite{Copeland85}]
- * @end tex
- * , using main-memory
- * database algorithms
- * @tex
- * [@cite{Garcia-Molina92}]
- * @end tex
- *  built on virtual-memory
- * OS primitives and multi-threaded parallelism.
- * Its implementation has undergone various changes over its decade
- * of development, many of which were driven by external needs to
- * obtain a robust and fast database system.
- *
- * The coding scheme explored in GDK has also laid a foundation to
- * communicate over time experiences and to provide (hopefully)
- * helpful advice near to the place where the code-reader needs it.
- * Of course, over such a long time the documentation diverges from
- * reality. Especially in areas where the environment of this package
- * is being described.
- * Consider such deviations as historic landmarks, e.g. crystallization
- * of brave ideas and mistakes rectified at a later stage.
- *
- * @+ Short Outline
- * The facilities provided in this implementation are:
- * @itemize
- * @item
- * GDK or Goblin Database Kernel routines for session management
- * @item
- *  BAT routines that define the primitive operations on the
- * database tables (BATs).
- * @item
- *  BBP routines to manage the BAT Buffer Pool (BBP).
- * @item
- *  ATOM routines to manipulate primitive types, define new types
- * using an ADT interface.
- * @item
- *  HEAP routines for manipulating heaps: linear spaces of memory
- * that are GDK's vehicle of mass storage (on which BATs are built).
- * @item
- *  DELTA routines to access inserted/deleted elements within a
- * transaction.
- * @item
- *  HASH routines for manipulating GDK's built-in linear-chained
- * hash tables, for accelerating lookup searches on BATs.
- * @item
- *  TM routines that provide basic transaction management primitives.
- * @item
- *  TRG routines that provided active database support. [DEPRECATED]
- * @item
- *  ALIGN routines that implement BAT alignment management.
- * @end itemize
- *
- * The Binary Association Table (BAT) is the lowest level of storage
- * considered in the Goblin runtime system
- * @tex
- * [@cite{Goblin}]
- * @end tex
- * .  A BAT is a
- * self-descriptive main-memory structure that represents the
- * @strong{binary relationship} between two atomic types.  The
- * association can be defined over:
- * @table @code
- * @item void:
- *  virtual-OIDs: a densely ascending column of OIDs (takes zero-storage).
- * @item bit:
- *  Booleans, implemented as one byte values.
- * @item bte:
- *  Tiny (1-byte) integers (8-bit @strong{integer}s).
- * @item sht:
- *  Short integers (16-bit @strong{integer}s).
- * @item int:
- *  This is the C @strong{int} type (32-bit).
- * @item oid:
- *  Unique @strong{long int} values uses as object identifier. Highest
- *	    bit cleared always.  Thus, oids-s are 31-bit numbers on
- *	    32-bit systems, and 63-bit numbers on 64-bit systems.
- * @item ptr:
- * Memory pointer values. DEPRECATED.  Can only be stored in transient
- * BATs.
- * @item flt:
- *  The IEEE @strong{float} type.
- * @item dbl:
- *  The IEEE @strong{double} type.
- * @item lng:
- *  Longs: the C @strong{long long} type (64-bit integers).
- * @item hge:
- *  "huge" integers: the GCC @strong{__int128} type (128-bit integers).
- * @item str:
- *  UTF-8 strings (Unicode). A zero-terminated byte sequence.
- * @item bat:
- *  Bat descriptor. This allows for recursive administered tables, but
- *  severely complicates transaction management. Therefore, they CAN
- *  ONLY BE STORED IN TRANSIENT BATs.
- * @end table
- *
- * This model can be used as a back-end model underlying other -higher
- * level- models, in order to achieve @strong{better performance} and
- * @strong{data independence} in one go. The relational model and the
- * object-oriented model can be mapped on BATs by vertically splitting
- * every table (or class) for each attribute. Each such a column is
- * then stored in a BAT with type @strong{bat[oid,attribute]}, where
- * the unique object identifiers link tuples in the different BATs.
- * Relationship attributes in the object-oriented model hence are
- * mapped to @strong{bat[oid,oid]} tables, being equivalent to the
- * concept of @emph{join indexes} @tex [@cite{Valduriez87}] @end tex .
- *
- * The set of built-in types can be extended with user-defined types
- * through an ADT interface.  They are linked with the kernel to
- * obtain an enhanced library, or they are dynamically loaded upon
- * request.
- *
- * Types can be derived from other types. They represent something
- * different than that from which they are derived, but their internal
- * storage management is equal. This feature facilitates the work of
- * extension programmers, by enabling reuse of implementation code,
- * but is also used to keep the GDK code portable from 32-bits to
- * 64-bits machines: the @strong{oid} and @strong{ptr} types are
- * derived from @strong{int} on 32-bits machines, but is derived from
- * @strong{lng} on 64 bits machines. This requires changes in only two
- * lines of code each.
- *
- * To accelerate lookup and search in BATs, GDK supports one built-in
- * search accelerator: hash tables. We choose an implementation
- * efficient for main-memory: bucket chained hash
- * @tex
- * [@cite{LehCar86,Analyti92}]
- * @end tex
- * . Alternatively, when the table is sorted, it will resort to
- * merge-scan operations or binary lookups.
- *
- * BATs are built on the concept of heaps, which are large pieces of
- * main memory. They can also consist of virtual memory, in case the
- * working set exceeds main-memory. In this case, GDK supports
- * operations that cluster the heaps of a BAT, in order to improve
- * performance of its main-memory.
- *
- *
- * @- Rationale
- * The rationale for choosing a BAT as the building block for both
- * relational and object-oriented system is based on the following
- * observations:
- *
- * @itemize
- * @item -
- * Given the fact that CPU speed and main-memory increase in current
- * workstation hardware for the last years has been exceeding IO
- * access speed increase, traditional disk-page oriented algorithms do
- * no longer take best advantage of hardware, in most database
- * operations.
- *
- * Instead of having a disk-block oriented kernel with a large memory
- * cache, we choose to build a main-memory kernel, that only under
- * large data volumes slowly degrades to IO-bound performance,
- * comparable to traditional systems
- * @tex
- * [@cite{boncz95,boncz96}]
- * @end tex
- * .
- *
- * @item -
- * Traditional (disk-based) relational systems move too much data
- * around to save on (main-memory) join operations.
- *
- * The fully decomposed store (DSM
- * @tex
- * [@cite{Copeland85})]
- * @end tex
- * assures that only those attributes of a relation that are needed,
- * will have to be accessed.
- *
- * @item -
- * The data management issues for a binary association is much
- * easier to deal with than traditional @emph{struct}-based approaches
- * encountered in relational systems.
- *
- * @item -
- * Object-oriented systems often maintain a double cache, one with the
- * disk-based representation and a C pointer-based main-memory
- * structure.  This causes expensive conversions and replicated
- * storage management.  GDK does not do such `pointer swizzling'. It
- * used virtual-memory (@strong{mmap()}) and buffer management advice
- * (@strong{madvise()}) OS primitives to cache only once. Tables take
- * the same form in memory as on disk, making the use of this
- * technique transparent
- * @tex
- * [@cite{oo7}]
- * @end tex
- * .
- * @end itemize
- *
- * A RDBMS or OODBMS based on BATs strongly depends on our ability to
- * efficiently support tuples and to handle small joins, respectively.
- *
- * The remainder of this document describes the Goblin Database kernel
- * implementation at greater detail. It is organized as follows:
- * @table @code
- * @item @strong{GDK Interface}:
- *
- * It describes the global interface with which GDK sessions can be
- * started and ended, and environment variables used.
- *
- * @item @strong{Binary Association Tables}:
- *
- * As already mentioned, these are the primary data structure of GDK.
- * This chapter describes the kernel operations for creation,
- * destruction and basic manipulation of BATs and BUNs (i.e. tuples:
- * Binary UNits).
- *
- * @item @strong{BAT Buffer Pool:}
- *
- * All BATs are registered in the BAT Buffer Pool. This directory is
- * used to guide swapping in and out of BATs. Here we find routines
- * that guide this swapping process.
- *
- * @item @strong{GDK Extensibility:}
- *
- * Atoms can be defined using a unified ADT interface.  There is also
- * an interface to extend the GDK library with dynamically linked
- * object code.
- *
- * @item @strong{GDK Utilities:}
- *
- * Memory allocation and error handling primitives are
- * provided. Layers built on top of GDK should use them, for proper
- * system monitoring.  Thread management is also included here.
- *
- * @item @strong{Transaction Management:}
- *
- * For the time being, we just provide BAT-grained concurrency and
- * global transactions. Work is needed here.
- *
- * @item @strong{BAT Alignment:}
- * Due to the mapping of multi-ary datamodels onto the BAT model, we
- * expect many correspondences among BATs, e.g.
- * @emph{bat(oid,attr1),..  bat(oid,attrN)} vertical
- * decompositions. Frequent activities will be to jump from one
- * attribute to the other (`bunhopping'). If the head columns are
- * equal lists in two BATs, merge or even array lookups can be used
- * instead of hash lookups. The alignment interface makes these
- * relations explicitly manageable.
- *
- * In GDK, complex data models are mapped with DSM on binary tables.
- * Usually, one decomposes @emph{N}-ary relations into @emph{N} BATs
- * with an @strong{oid} in the head column, and the attribute in the
- * tail column.  There may well be groups of tables that have the same
- * sets of @strong{oid}s, equally ordered. The alignment interface is
- * intended to make this explicit.  Implementations can use this
- * interface to detect this situation, and use cheaper algorithms
- * (like merge-join, or even array lookup) instead.
- *
- * @item @strong{BAT Iterators:}
- *
- * Iterators are C macros that generally encapsulate a complex
- * for-loop.  They would be the equivalent of cursors in the SQL
- * model. The macro interface (instead of a function call interface)
- * is chosen to achieve speed when iterating main-memory tables.
- *
- * @item @strong{Common BAT Operations:}
- *
- * These are much used operations on BATs, such as aggregate functions
- * and relational operators. They are implemented in terms of BAT- and
- * BUN-manipulation GDK primitives.
- * @end table
- *
- * @+ Interface Files
- * In this section we summarize the user interface to the GDK library.
- * It consist of a header file (gdk.h) and an object library
- * (gdklib.a), which implements the required functionality. The header
- * file must be included in any program that uses the library. The
- * library must be linked with such a program.
- *
- * @- Database Context
- *
- * The MonetDB environment settings are collected in a configuration
- * file. Amongst others it contains the location of the database
- * directory.  First, the database directory is closed for other
- * servers running at the same time.  Second, performance enhancements
- * may take effect, such as locking the code into memory (if the OS
- * permits) and preloading the data dictionary.  An error at this
- * stage normally lead to an abort.
+ * The name GDK comes from the original name: Goblin Database Kernel.
+ * This kernel was originally written as a library by Martin L. Kersten,
+ * Peter Boncz, and Niels Nes, and subsequently heavily modified by
+ * Sjoerd Mullender.
+ * For the old documentation on the library, dig down in the archives:
+ * you can find the old comments in the repository from which this file
+ * came.
  */
 
 #ifndef _GDK_H_
@@ -522,9 +236,6 @@ typedef size_t BUN;
 #endif
 #define BUN_MAX (BUN_NONE - 1)	/* maximum allowed size of a BAT */
 
-/*
- * @- Checking and Error definitions:
- */
 #define ATOMextern(t)	(ATOMstorage(t) >= TYPE_str)
 
 typedef enum {
@@ -574,60 +285,6 @@ typedef struct Strimps Strimps;
 typedef struct RTree RTree;
 #endif
 
-/*
- * @+ Binary Association Tables
- * Having gone to the previous preliminary definitions, we will now
- * introduce the structure of Binary Association Tables (BATs) in
- * detail. They are the basic storage unit on which GDK is modeled.
- *
- * The BAT holds an unlimited number of binary associations, called
- * BUNs (@strong{Binary UNits}).  The two attributes of a BUN are
- * called @strong{head} (left) and @strong{tail} (right) in the
- * remainder of this document.
- *
- *  @c image{http://monetdb.cwi.nl/projects/monetdb-mk/imgs/bat1,,,,feps}
- *
- * The above figure shows what a BAT looks like. It consists of two
- * columns, called head and tail, such that we have always binary
- * tuples (BUNs). The overlooking structure is the @strong{BAT
- * record}.  It points to a heap structure called the @strong{BUN
- * heap}.  This heap contains the atomic values inside the two
- * columns. If they are fixed-sized atoms, these atoms reside directly
- * in the BUN heap. If they are variable-sized atoms (such as string
- * or polygon), however, the columns has an extra heap for storing
- * those (such @strong{variable-sized atom heaps} are then referred to
- * as @strong{Head Heap}s and @strong{Tail Heap}s). The BUN heap then
- * contains integer byte-offsets (fixed-sized, of course) into a head-
- * or tail-heap.
- *
- * The BUN heap contains a contiguous range of BUNs. It starts after
- * the @strong{first} pointer, and finishes at the end in the
- * @strong{free} area of the BUN. All BUNs after the @strong{inserted}
- * pointer have been added in the last transaction (and will be
- * deleted on a transaction abort). All BUNs between the
- * @strong{deleted} pointer and the @strong{first} have been deleted
- * in this transaction (and will be reinserted at a transaction
- * abort).
- *
- * The location of a certain BUN in a BAT may change between
- * successive library routine invocations.  Therefore, one should
- * avoid keeping references into the BAT storage area for long
- * periods.
- *
- * Passing values between the library routines and the enclosing C
- * program is primarily through value pointers of type ptr. Pointers
- * into the BAT storage area should only be used for retrieval. Direct
- * updates of data stored in a BAT is forbidden. The user should
- * adhere to the interface conventions to guarantee the integrity
- * rules and to maintain the (hidden) auxiliary search structures.
- *
- * @- GDK variant record type
- * When manipulating values, MonetDB puts them into value records.
- * The built-in types have a direct entry in the union. Others should
- * be represented as a pointer of memory in pval or as a string, which
- * is basically the same. In such cases the len field indicates the
- * size of this piece of memory.
- */
 typedef struct {
 	union {			/* storage is first in the record */
 		int ival;
@@ -668,50 +325,6 @@ gdk_export ValPtr VALset(ValPtr v, int t, void *p);
 gdk_export void *VALget(ValPtr v);
 gdk_export int VALcmp(const ValRecord *p, const ValRecord *q);
 gdk_export bool VALisnil(const ValRecord *v);
-
-/*
- * @- The BAT record
- * The elements of the BAT structure are introduced in the remainder.
- * Instead of using the underlying types hidden beneath it, one should
- * use a @emph{BAT} type that is supposed to look like this:
- * @verbatim
- * typedef struct {
- *           // static BAT properties
- *           bat    batCacheid;       // bat id: index in BBPcache
- *           bool   batTransient;     // persistence mode
- *           bool   batCopiedtodisk;  // BAT is saved on disk?
- *           // dynamic BAT properties
- *           int    batHeat;          // heat of BAT in the BBP
- *           Heap*  batBuns;          // Heap where the buns are stored
- *           // DELTA status
- *           BUN    batInserted;      // first inserted BUN
- *           BUN    batCount;         // Tuple count
- *           // Tail properties
- *           int    ttype;            // Tail type number
- *           bool   tkey;             // tail values are unique
- *           bool   tnonil;           // tail has no nils
- *           bool   tsorted;          // are tail values currently ordered?
- *           // Tail storage
- *           int    tloc;             // byte-offset in BUN for tail elements
- *           Heap   *theap;           // heap for varsized tail values
- *           Hash   *thash;           // linear chained hash table on tail
- *           orderidx torderidx;      // order oid index on tail
- *  } BAT;
- * @end verbatim
- *
- * The internal structure of the @strong{BAT} record is in fact much
- * more complex, but GDK programmers should refrain of making use of
- * that.
- *
- * Since we don't want to pay cost to keep both views in line with
- * each other under BAT updates, we work with shared pieces of memory
- * between the two views. An update to one will thus automatically
- * update the other.  In the same line, we allow @strong{synchronized
- * BATs} (BATs with identical head columns, and marked as such in the
- * @strong{BAT Alignment} interface) now to be clustered horizontally.
- *
- *  @c image{http://monetdb.cwi.nl/projects/monetdb-mk/imgs/bat2,,,,feps}
- */
 
 typedef struct PROPrec PROPrec;
 
@@ -834,36 +447,6 @@ mskGetVal(BAT *b, BUN p)
 	return ((uint32_t *) b->theap->base)[p / 32] & (1U << (p % 32));
 }
 
-/*
- * @- Heap Management
- * Heaps are the low-level entities of mass storage in
- * BATs. Currently, they can either be stored on disk, loaded into
- * memory, or memory mapped.
- * @multitable @columnfractions 0.08 0.7
- * @item int
- * @tab
- *  HEAPalloc (Heap *h, size_t nitems, size_t itemsize);
- * @item int
- * @tab
- *  HEAPfree (Heap *h, bool remove);
- * @item int
- * @tab
- *  HEAPextend (Heap *h, size_t size, bool mayshare);
- * @item int
- * @tab
- *  HEAPload (Heap *h, str nme,ext, bool trunc);
- * @item int
- * @tab
- *  HEAPsave (Heap *h, str nme,ext, bool dosync);
- * @item int
- * @tab
- *  HEAPcopy (Heap *dst,*src);
- * @end multitable
- *
- *
- * These routines should be used to alloc free or extend heaps; they
- * isolate you from the different ways heaps can be accessed.
- */
 gdk_export gdk_return HEAPextend(Heap *h, size_t size, bool mayshare)
 	__attribute__((__warn_unused_result__));
 gdk_export size_t HEAPvmsize(Heap *h);
@@ -876,47 +459,6 @@ gdk_export void HEAPincref(Heap *h);
 
 #define isVIEW(x)	(VIEWtparent(x) != 0 || VIEWvtparent(x) != 0)
 
-/*
- * @+ BAT Buffer Pool
- * @multitable @columnfractions 0.08 0.7
- * @item int
- * @tab BBPfix (bat bi)
- * @item int
- * @tab BBPunfix (bat bi)
- * @item int
- * @tab BBPretain (bat bi)
- * @item int
- * @tab BBPrelease (bat bi)
- * @item bat
- * @tab BBPindex  (str nme)
- * @item BAT*
- * @tab BATdescriptor (bat bi)
- * @end multitable
- *
- * The BAT Buffer Pool module contains the code to manage the storage
- * location of BATs.
- *
- * The remaining BBP tables contain status information to load, swap
- * and migrate the BATs. The core table is BBPcache which contains a
- * pointer to the BAT descriptor with its heaps.  A zero entry means
- * that the file resides on disk. Otherwise it has been read or mapped
- * into memory.
- *
- * BATs loaded into memory are retained in a BAT buffer pool.  They
- * retain their position within the cache during their life cycle,
- * which make indexing BATs a stable operation.
- *
- * The BBPindex routine checks if a BAT with a certain name is
- * registered in the buffer pools. If so, it returns its BAT id.  The
- * BATdescriptor routine has a BAT id parameter, and returns a pointer
- * to the corresponding BAT record (after incrementing the reference
- * count). The BAT will be loaded into memory, if necessary.
- *
- * The structure of the BBP file obeys the tuple format for GDK.
- *
- * The status and BAT persistency information is encoded in the status
- * field.
- */
 typedef struct {
 	char *logical;		/* logical name (may point at bak) */
 	char bak[16];		/* logical name backup (tmp_%o) */
@@ -1184,35 +726,6 @@ bat_iterator_end(BATiter *bip)
 	*bip = (BATiter) {0};
 }
 
-/*
- * @- Internal HEAP Chunk Management
- * Heaps are used in BATs to store data for variable-size atoms.  The
- * implementer must manage malloc()/free() functionality for atoms in
- * this heap. A standard implementation is provided here.
- *
- * @table @code
- * @item void
- * HEAP_initialize  (Heap* h, size_t nbytes, size_t nprivate, int align )
- * @item void
- * HEAP_destroy     (Heap* h)
- * @item var_t
- * HEAP_malloc      (Heap* heap, size_t nbytes)
- * @item void
- * HEAP_free        (Heap *heap, var_t block)
- * @item int
- * HEAP_private     (Heap* h)
- * @item void
- * HEAP_printstatus (Heap* h)
- * @end table
- *
- * The heap space starts with a private space that is left untouched
- * by the normal chunk allocation.  You can use this private space
- * e.g. to store the root of an rtree HEAP_malloc allocates a chunk of
- * memory on the heap, and returns an index to it.  HEAP_free frees a
- * previously allocated chunk HEAP_private returns an integer index to
- * private space.
- */
-
 gdk_export gdk_return HEAP_initialize(
 	Heap *heap,		/* nbytes -- Initial size of the heap. */
 	size_t nbytes,		/* alignment -- for objects on the heap. */
@@ -1223,26 +736,6 @@ gdk_export gdk_return HEAP_initialize(
 gdk_export var_t HEAP_malloc(BAT *b, size_t nbytes);
 gdk_export void HEAP_free(Heap *heap, var_t block);
 
-/*
- * @- BAT construction
- * @multitable @columnfractions 0.08 0.7
- * @item @code{BAT* }
- * @tab COLnew (oid headseq, int tailtype, BUN cap, role_t role)
- * @item @code{BAT* }
- * @tab BATextend (BAT *b, BUN newcap)
- * @end multitable
- *
- * A temporary BAT is instantiated using COLnew with the type aliases
- * of the required binary association. The aliases include the
- * built-in types, such as TYPE_int....TYPE_ptr, and the atomic types
- * introduced by the user. The initial capacity to be accommodated
- * within a BAT is indicated by cap.  Their extend is automatically
- * incremented upon storage overflow.  Failure to create the BAT
- * results in a NULL pointer.
- *
- * The routine BATclone creates an empty BAT storage area with the
- * properties inherited from its argument.
- */
 gdk_export BAT *COLnew(oid hseq, int tltype, BUN capacity, role_t role)
 	__attribute__((__warn_unused_result__));
 gdk_export BAT *COLnew2(oid hseq, int tt, BUN cap, role_t role, uint16_t width)
@@ -1334,54 +827,6 @@ typedef var_t stridx_t;
 
 #include "gdk_cand.h"
 
-/*
- * @- BAT properties
- * @multitable @columnfractions 0.08 0.7
- * @item BUN
- * @tab BATcount (BAT *b)
- * @item void
- * @tab BATsetcapacity (BAT *b, BUN cnt)
- * @item void
- * @tab BATsetcount (BAT *b, BUN cnt)
- * @item BAT *
- * @tab BATkey (BAT *b, bool onoff)
- * @item BAT *
- * @tab BATmode (BAT *b, bool transient)
- * @item BAT *
- * @tab BATsetaccess (BAT *b, restrict_t mode)
- * @item int
- * @tab BATdirty (BAT *b)
- * @item restrict_t
- * @tab BATgetaccess (BAT *b)
- * @end multitable
- *
- * The function BATcount returns the number of associations stored in
- * the BAT.
- *
- * The BAT is given a new logical name using BBPrename.
- *
- * The integrity properties to be maintained for the BAT are
- * controlled separately.  A key property indicates that duplicates in
- * the association dimension are not permitted.
- *
- * The persistency indicator tells the retention period of BATs.  The
- * system support two modes: PERSISTENT and TRANSIENT.
- * The PERSISTENT BATs are automatically saved upon session boundary
- * or transaction commit.  TRANSIENT BATs are removed upon transaction
- * boundary.  All BATs are initially TRANSIENT unless their mode is
- * changed using the routine BATmode.
- *
- * The BAT properties may be changed at any time using BATkey
- * and BATmode.
- *
- * Valid BAT access properties can be set with BATsetaccess and
- * BATgetaccess: BAT_READ, BAT_APPEND, and BAT_WRITE.  BATs can be
- * designated to be read-only. In this case some memory optimizations
- * may be made (slice and fragment bats can point to stable subsets of
- * a parent bat).  A special mode is append-only. It is then allowed
- * to insert BUNs at the end of the BAT, but not to modify anything
- * that already was in there.
- */
 gdk_export BUN BATcount_no_nil(BAT *b, BAT *s);
 gdk_export void BATsetcapacity(BAT *b, BUN cnt);
 gdk_export void BATsetcount(BAT *b, BUN cnt);
@@ -1402,20 +847,7 @@ gdk_export restrict_t BATgetaccess(BAT *b);
 #define BATdirtybi(bi)	(!(bi).copiedtodisk || (bi).hdirty || (bi).vhdirty)
 
 #define BATcapacity(b)	(b)->batCapacity
-/*
- * @- BAT manipulation
- * @multitable @columnfractions 0.08 0.7
- * @item BAT *
- * @tab BATclear (BAT *b, bool force)
- * @item BAT *
- * @tab COLcopy (BAT *b, int tt, bool writeable, role_t role)
- * @end multitable
- *
- * The routine BATclear removes the binary associations, leading to an
- * empty, but (re-)initialized BAT. Its properties are retained.  A
- * temporary copy is obtained with Colcopy. The new BAT has an unique
- * name.
- */
+
 gdk_export gdk_return BATclear(BAT *b, bool force);
 gdk_export BAT *COLcopy(BAT *b, int tt, bool writable, role_t role);
 
@@ -1424,32 +856,6 @@ gdk_export gdk_return BATgroup(BAT **groups, BAT **extents, BAT **histo, BAT *b,
 	__attribute__((__access__(write_only, 2)))
 	__attribute__((__access__(write_only, 3)))
 	__attribute__((__warn_unused_result__));
-/*
- * @- BAT Input/Output
- * @multitable @columnfractions 0.08 0.7
- * @item BAT *
- * @tab BATload (str name)
- * @item BAT *
- * @tab BATsave (BAT *b)
- * @item int
- * @tab BATdelete (BAT *b)
- * @end multitable
- *
- * A BAT created by COLnew is considered temporary until one calls the
- * routine BATsave or BATmode.  This routine reserves disk space and
- * checks for name clashes in the BAT directory. It also makes the BAT
- * persistent. The empty BAT is initially marked as ordered on both
- * columns.
- *
- * Failure to read or write the BAT results in a NULL, otherwise it
- * returns the BAT pointer.
- *
- * @- Heap Storage Modes
- * The discriminative storage modes are memory-mapped, compressed, or
- * loaded in memory.  As can be seen in the bat record, each BAT has
- * one BUN-heap (@emph{bn}), and possibly two heaps (@emph{hh} and
- * @emph{th}) for variable-sized atoms.
- */
 
 gdk_export gdk_return BATsave(BAT *b)
 	__attribute__((__warn_unused_result__));
@@ -1465,42 +871,9 @@ gdk_export gdk_return GDKcreatedir(const char *nme);
 
 gdk_export void OIDXdestroy(BAT *b);
 
-/*
- * @- Printing
- * @multitable @columnfractions 0.08 0.7
- * @item int
- * @tab BATprintcolumns (stream *f, int argc, BAT *b[]);
- * @end multitable
- *
- * The functions to convert BATs into ASCII. They are primarily meant for ease of
- * debugging and to a lesser extent for output processing.  Printing a
- * BAT is done essentially by looping through its components, printing
- * each association.
- *
- */
 gdk_export gdk_return BATprintcolumns(stream *s, int argc, BAT *argv[]);
 gdk_export gdk_return BATprint(stream *s, BAT *b);
 
-/*
- * @- BAT clustering
- * @multitable @columnfractions 0.08 0.7
- * @item bool
- * @tab BATordered (BAT *b)
- * @end multitable
- *
- * When working in a main-memory situation, clustering of data on
- * disk-pages is not important. Whenever mmap()-ed data is used
- * intensively, reducing the number of page faults is a hot issue.
- *
- * The above functions rearrange data in MonetDB heaps (used for
- * storing BUNs var-sized atoms, or accelerators). Applying these
- * clusterings will allow that MonetDB's main-memory oriented
- * algorithms work efficiently also in a disk-oriented context.
- *
- * BATordered starts a check on the tail values to see if they are
- * ordered. The result is returned and stored in the tsorted field of
- * the BAT.
- */
 gdk_export bool BATordered(BAT *b);
 gdk_export bool BATordered_rev(BAT *b);
 gdk_export gdk_return BATsort(BAT **sorted, BAT **order, BAT **groups, BAT *b, BAT *o, BAT *g, bool reverse, bool nilslast, bool stable)
@@ -1640,50 +1013,6 @@ BATnegateprops(BAT *b)
 	b->tmaxpos = b->tminpos = BUN_NONE;
 }
 
-/*
- * @- GDK error handling
- *  @multitable @columnfractions 0.08 0.7
- * @item str
- * @tab
- *  GDKmessage
- * @item bit
- * @tab
- *  GDKfatal(str msg)
- * @item int
- * @tab
- *  GDKwarning(str msg)
- * @item int
- * @tab
- *  GDKerror (str msg)
- * @item int
- * @tab
- *  GDKgoterrors ()
- * @item int
- * @tab
- *  GDKsyserror (str msg)
- * @item str
- * @tab
- *  GDKerrbuf
- *  @item
- * @tab GDKsetbuf (str buf)
- * @end multitable
- *
- * The error handling mechanism is not sophisticated yet. Experience
- * should show if this mechanism is sufficient.  Most routines return
- * a pointer with zero to indicate an error.
- *
- * The error messages are also copied to standard output.  The last
- * error message is kept around in a global variable.
- *
- * Error messages can also be collected in a user-provided buffer,
- * instead of being echoed to a stream. This is a thread-specific
- * issue; you want to decide on the error mechanism on a
- * thread-specific basis.  This effect is established with
- * GDKsetbuf. The memory (de)allocation of this buffer, that must at
- * least be 1024 chars long, is entirely by the user. A pointer to
- * this buffer is kept in the pseudo-variable GDKerrbuf. Normally,
- * this is a NULL pointer.
- */
 #define GDKMAXERRLEN	10240
 #define GDKERROR	"!ERROR: "
 #define GDKFATAL	"!FATAL: "
@@ -2077,68 +1406,11 @@ BUNtoid(BAT *b, BUN p)
 	return * (oid *) Tpos(&bi, p);
 }
 
-/*
- * @+ Transaction Management
- */
 gdk_export gdk_return TMsubcommit_list(bat *restrict subcommit, BUN *restrict sizes, int cnt, lng logno)
 	__attribute__((__warn_unused_result__));
 
-/*
- * @- Delta Management
- *  @multitable @columnfractions 0.08 0.6
- * @item BAT *
- * @tab BATcommit (BAT *b)
- * @end multitable
- *
- * The BAT keeps track of updates with respect to a 'previous state'.
- * Do not confuse 'previous state' with 'stable' or 'commited-on-disk',
- * because these concepts are not always the same. In particular, they
- * diverge when BATcommit and BATfakecommit are called explicitly,
- * bypassing the normal global TMcommit protocol (some applications need
- * that flexibility).
- *
- * BATcommit make the current BAT state the new 'stable state'.  This
- * happens inside the global TMcommit on all persistent BATs previous
- * to writing all bats to persistent storage using a BBPsync.
- */
 gdk_export void BATcommit(BAT *b, BUN size);
 
-/*
- * @+ BAT Alignment and BAT views
- * @multitable @columnfractions 0.08 0.7
- * @item int
- * @tab ALIGNsynced (BAT* b1, BAT* b2)
- * @item int
- * @tab ALIGNsync   (BAT *b1, BAT *b2)
- * @item int
- * @tab ALIGNrelated (BAT *b1, BAT *b2)
- *
- * @item BAT*
- * @tab VIEWcreate   (oid seq, BAT *b, BUN lo, BUN hi)
- * @item int
- * @tab isVIEW   (BAT *b)
- * @item bat
- * @tab VIEWhparent   (BAT *b)
- * @item bat
- * @tab VIEWtparent   (BAT *b)
- * @end multitable
- *
- * Alignments of two columns of a BAT means that the system knows
- * whether these two columns are exactly equal. Relatedness of two
- * BATs means that one pair of columns (either head or tail) of both
- * BATs is aligned. The first property is checked by ALIGNsynced, the
- * latter by ALIGNrelated.
- *
- * All algebraic BAT commands propagate the properties - including
- * alignment properly on their results.
- *
- * VIEW BATs are BATs that lend their storage from a parent BAT.  They
- * are just a descriptor that points to the data in this parent BAT. A
- * view is created with VIEWcreate. The cache id of the parent (if
- * any) is returned by VIEWtparent (otherwise it returns 0).
- *
- * VIEW bats are read-only!!
- */
 gdk_export int ALIGNsynced(BAT *b1, BAT *b2);
 
 gdk_export void BATassertProps(BAT *b);
@@ -2160,68 +1432,9 @@ gdk_export void VIEWbounds(BAT *b, BAT *view, BUN l, BUN h);
 		}							\
 	} while (false)
 
-/*
- * @+ BAT Iterators
- *  @multitable @columnfractions 0.15 0.7
- * @item BATloop
- * @tab
- *  (BAT *b; BUN p, BUN q)
- * @item BATloopDEL
- * @tab
- *  (BAT *b; BUN p; BUN q; int dummy)
- * @item HASHloop
- * @tab
- *  (BAT *b; Hash *h, size_t dummy; ptr value)
- * @item HASHloop_bte
- * @tab
- *  (BAT *b; Hash *h, size_t idx; bte *value, BUN w)
- * @item HASHloop_sht
- * @tab
- *  (BAT *b; Hash *h, size_t idx; sht *value, BUN w)
- * @item HASHloop_int
- * @tab
- *  (BAT *b; Hash *h, size_t idx; int *value, BUN w)
- * @item HASHloop_flt
- * @tab
- *  (BAT *b; Hash *h, size_t idx; flt *value, BUN w)
- * @item HASHloop_lng
- * @tab
- *  (BAT *b; Hash *h, size_t idx; lng *value, BUN w)
- * @item HASHloop_hge
- * @tab
- *  (BAT *b; Hash *h, size_t idx; hge *value, BUN w)
- * @item HASHloop_dbl
- * @tab
- *  (BAT *b; Hash *h, size_t idx; dbl *value, BUN w)
- * @item  HASHloop_str
- * @tab
- *  (BAT *b; Hash *h, size_t idx; str value, BUN w)
- * @item HASHlooploc
- * @tab
- *  (BAT *b; Hash *h, size_t idx; ptr value, BUN w)
- * @item HASHloopvar
- * @tab
- *  (BAT *b; Hash *h, size_t idx; ptr value, BUN w)
- * @end multitable
- *
- * The @emph{BATloop()} looks like a function call, but is actually a
- * macro.
- *
- * @- simple sequential scan
- * The first parameter is a BAT, the p and q are BUN pointers, where p
- * is the iteration variable.
- */
 #define BATloop(r, p, q)				\
 	for (q = BATcount(r), p = 0; p < q; p++)
 
-/*
- * @+ Common BAT Operations
- * Much used, but not necessarily kernel-operations on BATs.
- *
- * For each BAT we maintain its dimensions as separately accessible
- * properties. They can be used to improve query processing at higher
- * levels.
- */
 enum prop_t {
 	GDK_MIN_BOUND, /* MINimum allowed value for range partitions [min, max> */
 	GDK_MAX_BOUND, /* MAXimum of the range partitions [min, max>, ie. excluding this max value */
@@ -2236,20 +1449,6 @@ gdk_export void BATrmprop_nolock(BAT *b, enum prop_t idx);
 gdk_export ValPtr BATsetprop(BAT *b, enum prop_t idx, int type, const void *v);
 gdk_export ValPtr BATsetprop_nolock(BAT *b, enum prop_t idx, int type, const void *v);
 
-/*
- * @- BAT relational operators
- *
- * The full-materialization policy intermediate results in MonetDB
- * means that a join can produce an arbitrarily large result and choke
- * the system. The Data Distilleries tool therefore first computes the
- * join result size before the actual join (better waste time than
- * crash the server). To exploit that perfect result size knowledge,
- * an result-size estimate parameter was added to all equi-join
- * implementations.  TODO: add this for
- * semijoin/select/unique/diff/intersect
- *
- * @- modes for thethajoin
- */
 #define JOIN_EQ		0
 #define JOIN_LT		(-1)
 #define JOIN_LE		(-2)
@@ -2342,23 +1541,9 @@ gdk_export BAT *BATcasefold(BAT *b, BAT *s);
 gdk_export gdk_return GDKasciify(char **restrict buf, size_t *restrict buflen, const char *restrict s);
 gdk_export BAT *BATasciify(BAT *b, BAT *s);
 
-/*
- * @- BAT sample operators
- *
- * @multitable @columnfractions 0.08 0.7
- * @item BAT *
- * @tab BATsample (BAT *b, n)
- * @end multitable
- *
- * The routine BATsample returns a random sample on n BUNs of a BAT.
- *
- */
 gdk_export BAT *BATsample(BAT *b, BUN n);
 gdk_export BAT *BATsample_with_seed(BAT *b, BUN n, uint64_t seed);
 
-/*
- *
- */
 #define MAXPARAMS	32
 
 #define CHECK_QRY_TIMEOUT_SHIFT	14
