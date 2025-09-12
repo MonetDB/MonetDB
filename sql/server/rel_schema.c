@@ -1366,6 +1366,8 @@ table_element(sql_query *query, symbol *s, sql_schema *ss, sql_table *t, int alt
 				default:
 					break;
 			}
+			if (nc && oc->null != nc->null)
+				mvc_null(sql, nc, oc->null);
 		}
 	} 	break;
 	case SQL_DROP_COLUMN:
