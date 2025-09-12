@@ -2550,7 +2550,7 @@ gdk_export char *sa_strdup( allocator *sa, const char *s);
 gdk_export char *sa_strconcat( allocator *sa, const char *s1, const char *s2);
 gdk_export size_t sa_size( allocator *sa );
 
-#if !defined(NDEBUG) && !defined(__COVERITY__) && defined(__GNUC__)
+#if !defined(NDEBUG) && !defined(__COVERITY__) && defined(__GNUC__) && !defined(_CLANGD)
 #define sa_alloc(sa, sz)					\
 	({							\
 		allocator *_sa = (sa);				\

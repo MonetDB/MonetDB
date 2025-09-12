@@ -461,7 +461,7 @@ extern dbl no_hash_select_fraction;           /* same here */
 #define HASH_DESTROY_CHAIN_LENGTH		1000
 extern BUN hash_destroy_chain_length;
 
-#if !defined(NDEBUG) && !defined(__COVERITY__)
+#if !defined(NDEBUG) && !defined(__COVERITY__) && !defined(_CLANGD)
 /* see comment in gdk.h */
 #ifdef __GNUC__
 #define GDKmremap(p, m, oa, os, ns)					\
