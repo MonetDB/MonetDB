@@ -39,3 +39,4 @@ KNOWNFAIL?7653_incorrect_join_results
 7691-slow-query-on-allways-false
 7694-anti-join-and-filters
 7702-stmt_convert_cands
+7706-set-user
