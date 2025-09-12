@@ -811,7 +811,7 @@ monetdbe_open_remote(monetdbe_database_internal *mdbe, monetdbe_options *opts) {
 
 	Client c = mdbe->c;
 
-	assert(!c->curprg);
+	Symbol curprg = c->curprg;
 
 	static const char mod[] = "user";
 	char nme[16];
@@ -819,6 +819,7 @@ monetdbe_open_remote(monetdbe_database_internal *mdbe, monetdbe_options *opts) {
 	c->curprg = newFunction(putName(mod), putName(name), FUNCTIONsymbol);
 
 	if (c->curprg == NULL) {
+		c->curprg = curprg;
 		set_error(mdbe, createException(MAL, "monetdbe.monetdbe_open_remote", MAL_MALLOC_FAIL));
 		return -2;
 	}
@@ -848,7 +849,7 @@ monetdbe_open_remote(monetdbe_database_internal *mdbe, monetdbe_options *opts) {
 	if (p == NULL) {
 		set_error(mdbe, createException(MAL, "monetdbe.monetdbe_open_remote", MAL_MALLOC_FAIL));
 		freeSymbol(c->curprg);
-		c->curprg= NULL;
+		c->curprg = curprg;
 		return -2;
 	}
 	pushInstruction(mb, p);
@@ -857,7 +858,7 @@ monetdbe_open_remote(monetdbe_database_internal *mdbe, monetdbe_options *opts) {
 	if (q == NULL) {
 		set_error(mdbe, createException(MAL, "monetdbe.monetdbe_open_remote", MAL_MALLOC_FAIL));
 		freeSymbol(c->curprg);
-		c->curprg= NULL;
+		c->curprg = curprg;
 		return -2;
 	}
 	q->barrier= RETURNsymbol;
@@ -867,14 +868,14 @@ monetdbe_open_remote(monetdbe_database_internal *mdbe, monetdbe_options *opts) {
 
 	if ( (mdbe->msg = chkProgram(c->usermodule, mb)) != MAL_SUCCEED ) {
 		freeSymbol(c->curprg);
-		c->curprg= NULL;
+		c->curprg = curprg;
 		return -2;
 	}
 	MalStkPtr stk = prepareMALstack(mb, mb->vsize);
 	if (!stk) {
 		set_error(mdbe, createException(MAL, "monetdbe.monetdbe_open_remote", MAL_MALLOC_FAIL));
 		freeSymbol(c->curprg);
-		c->curprg= NULL;
+		c->curprg = curprg;
 		return -2;
 	}
 	stk->keepAlive = TRUE;
@@ -883,7 +884,7 @@ monetdbe_open_remote(monetdbe_database_internal *mdbe, monetdbe_options *opts) {
 	if ( (mdbe->msg = runMALsequence(c, mb, 1, 0, stk, 0, 0)) != MAL_SUCCEED ) {
 		freeStack(stk);
 		freeSymbol(c->curprg);
-		c->curprg= NULL;
+		c->curprg = curprg;
 		return -2;
 	}
 
@@ -891,7 +892,7 @@ monetdbe_open_remote(monetdbe_database_internal *mdbe, monetdbe_options *opts) {
 		set_error(mdbe, createException(MAL, "monetdbe.monetdbe_open_remote", MAL_MALLOC_FAIL));
 		freeStack(stk);
 		freeSymbol(c->curprg);
-		c->curprg= NULL;
+		c->curprg = curprg;
 		return -2;
 	}
 
@@ -899,7 +900,7 @@ monetdbe_open_remote(monetdbe_database_internal *mdbe, monetdbe_options *opts) {
 	freeStack(stk);
 
 	freeSymbol(c->curprg);
-	c->curprg= NULL;
+	c->curprg = curprg;
 
 	return 0;
 }

@@ -462,6 +462,9 @@ SQLprepareClient(Client c, const char *pwhash, const char *challenge, const char
 	backend *be = NULL;
 	str msg = MAL_SUCCEED;
 
+	msg = MSinitClientPrg(c, userRef, mainRef);
+	if (msg)
+		return msg;
 	if (c->sqlcontext == 0) {
 		allocator *sa = sa_create(NULL);
 		if (sa == NULL) {

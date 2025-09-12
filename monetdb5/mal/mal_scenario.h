@@ -48,6 +48,7 @@ extern void showScenarioByName(stream *f, const char *s);
 extern void showScenario(stream *f, Scenario s);
 extern void showAllScenarios(stream *f);
 extern void resetScenario(Client c);
+extern str defaultScenario(Client c);
 #endif
 
 #endif /* _MAL_SCENARIO_H */

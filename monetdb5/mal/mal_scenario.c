@@ -282,7 +282,7 @@ runScenarioBody(Client c)
 	MT_thread_setworking("engine");
 	while (c->mode > FINISHCLIENT && !GDKexiting()) {
 		c->engine(c);
-		assert(c->curprg->def->errors == NULL);
+		assert(!c->curprg || c->curprg->def->errors == NULL);
 	}
 	if (!GDKexiting() && GDKerrbuf && GDKerrbuf[0])
 		mnstr_printf(c->fdout, "!GDKerror: %s\n", GDKerrbuf);
