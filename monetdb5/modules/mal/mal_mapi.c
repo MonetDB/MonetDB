@@ -203,65 +203,29 @@ is_exiting(void *data)
 static str
 MSserveClient(Client c)
 {
-	str msg = 0;
-
 	if (MCinitClientThread(c) < 0) {
 		MCcloseClient(c);
 		return MAL_SUCCEED;
 	}
-	/*
-	 * A stack frame is initialized to keep track of global variables.
-	 * The scenarios are run until we finally close the last one.
-	 */
-#if 0
-	MalBlkPtr mb = c->curprg->def;
-	if (c->glb == NULL)
-		c->glb = newGlobalStack(MAXGLOBALS + mb->vsize);
-	if (c->glb == NULL) {
-		MCcloseClient(c);
-		throw(MAL, "serveClient", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	} else {
-		c->glb->stktop = mb->vtop;
-		c->glb->blk = mb;
-	}
-#endif
 
-	if (c->scenario == 0)
-		msg = defaultScenario(c);
-	if (msg) {
-		MCcloseClient(c);
-		return msg;
-	} else {
+	assert(c->scenario);
+	do {
 		do {
-			do {
-				MT_thread_setworking("running scenario");
-				msg = runScenario(c);
-				freeException(msg);
-				if (c->mode == FINISHCLIENT)
-					break;
-				resetScenario(c);
-			} while (c->scenario && !GDKexiting());
-		} while (c->scenario && c->mode != FINISHCLIENT && !GDKexiting());
-	}
+			MT_thread_setworking("running scenario");
+			str msg = runScenario(c);
+			freeException(msg);
+			if (c->mode == FINISHCLIENT)
+				break;
+			resetScenario(c);
+		} while (c->scenario && !GDKexiting());
+	} while (c->scenario && c->mode != FINISHCLIENT && !GDKexiting());
 	MT_thread_setworking("exiting");
 	/* pre announce our exiting: cleaning up may take a while and we
 	 * don't want to get killed during that time for fear of
 	 * deadlocks */
 	MT_exiting_thread();
-	/*
-	 * At this stage we should clean out the MAL block
-	 */
-	if (c->backup) {
-		assert(0);
-		freeSymbol(c->backup);
-		c->backup = 0;
-	}
-
-	if (c->curprg && c->curprg->def) {
-		printf("needs cleanup\n");
-		resetMalBlk(c->curprg->def);
-	}
-
+	assert(c->backup == NULL);
+	assert(c->curprg == NULL);
 	MCcloseClient(c);
 	return MAL_SUCCEED;
 }
@@ -431,14 +395,6 @@ MSscheduleClient(str command, str peer, str challenge, bstream *fin, stream *fou
 		}
 	}
 
-	/*
-	if ((msg = MSinitClientPrg(c, userRef, mainRef)) != MAL_SUCCEED) {
-		mnstr_printf(fout, "!could not allocate space\n");
-		cleanUpScheduleClient(c, &command, &msg);
-		return;
-	}
-	*/
-
 	// at this point username should have being verified
 	c->username = GDKstrdup(user);
 	if (peer)
@@ -457,7 +413,6 @@ MSscheduleClient(str command, str peer, str challenge, bstream *fin, stream *fou
 	 * demand. */
 
 	/* fork a new thread to handle this client */
-
 	c->protocol = protocol;
 	c->blocksize = blocksize;
 
