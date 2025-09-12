@@ -1178,10 +1178,8 @@ push_up_select(mvc *sql, sql_rel *rel, list *ad)
 			rel->r = rel_dup(r->l);
 			rel_destroy(r);
 			r = rel->r;
-			if (is_single(r)) {
+			if (is_single(r))
 				set_single(rel);
-				rel->op = op_left;
-			}
 			if (!inner)
 				reset_dependent(rel);
 		}
