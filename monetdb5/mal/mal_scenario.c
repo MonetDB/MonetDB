@@ -81,11 +81,11 @@ static struct SCENARIO scenarioRec[MAXSCEN] = {
 		.name = "mal",
 		.language = "mal",
 		.initClient = "MALinitClient",
-		.initClientCmd = (init_client) MALinitClient,
+		.initClientCmd = MALinitClient,
 		.exitClient = "MALexitClient",
-		.exitClientCmd = (exit_client) MALexitClient,
+		.exitClientCmd = MALexitClient,
 		.engine = "MALengine",
-		.engineCmd = (engine_fptr) MALengine,
+		.engineCmd = MALengine,
 	},
 	{
 		.name = NULL,
@@ -282,7 +282,7 @@ runScenarioBody(Client c)
 	MT_thread_setworking("engine");
 	while (c->mode > FINISHCLIENT && !GDKexiting()) {
 		c->engine(c);
-		assert(c->curprg->def->errors == NULL);
+		assert(!c->curprg || c->curprg->def->errors == NULL);
 	}
 	if (!GDKexiting() && GDKerrbuf && GDKerrbuf[0])
 		mnstr_printf(c->fdout, "!GDKerror: %s\n", GDKerrbuf);

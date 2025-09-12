@@ -2228,12 +2228,12 @@ stmt_markselect(backend *be, stmt *g, stmt *m, stmt *p, bool any)
 }
 
 stmt *
-stmt_markjoin(backend *be, stmt *l, stmt *r, bool final)
+stmt_markjoin(backend *be, stmt *l, stmt *r, bool nil_matches, bool final)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q;
 
-	q = newStmtArgs(mb, algebraRef, markjoinRef, 8);
+	q = newStmtArgs(mb, algebraRef, markjoinRef, 9);
 	q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 	if (!final)
 		q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
@@ -2241,6 +2241,7 @@ stmt_markjoin(backend *be, stmt *l, stmt *r, bool final)
 	q = pushArgument(mb, q, r->nr); /* mark info mask */
 	q = pushNilBat(mb, q);
 	q = pushNilBat(mb, q);
+	q = pushBit(mb, q, nil_matches);    /* nil matches */
 	q = pushNil(mb, q, TYPE_lng);
 	pushInstruction(mb, q);
 
@@ -2368,7 +2369,7 @@ stmt_tdiff(backend *be, stmt *op1, stmt *op2, stmt *lcand)
 }
 
 stmt *
-stmt_tdiff2(backend *be, stmt *op1, stmt *op2, stmt *lcand)
+stmt_tdiff2(backend *be, stmt *op1, stmt *op2, stmt *lcand, bool any)
 {
 	InstrPtr q = NULL;
 	MalBlkPtr mb = be->mb;
@@ -2386,7 +2387,7 @@ stmt_tdiff2(backend *be, stmt *op1, stmt *op2, stmt *lcand)
 		q = pushNilBat(mb, q); /* left candidate */
 	q = pushNilBat(mb, q); /* right candidate */
 	q = pushBit(mb, q, FALSE);     /* nil matches */
-	q = pushBit(mb, q, TRUE);     /* not in */
+	q = pushBit(mb, q, any);     /* not in */
 	q = pushNil(mb, q, TYPE_lng); /* estimate */
 
 	bool enabled = sa_get_eb(be->mvc->sa)->enabled;
@@ -2477,6 +2478,12 @@ stmt_join_cand(backend *be, stmt *op1, stmt *op2, stmt *lcand, stmt *rcand, int 
 
 	assert (!single || cmptype == cmp_all);
 
+	if (anti) {
+		if (cmptype == cmp_equal)
+			cmptype = cmp_notequal;
+		else if (cmptype == cmp_notequal)
+			cmptype = cmp_equal;
+	}
 	switch (cmptype) {
 	case cmp_equal:
 		q = newStmtArgs(mb, algebraRef, sjt, 9);
@@ -4062,8 +4069,7 @@ stmt_convert(backend *be, stmt *v, stmt *sel, sql_subtype *f, sql_subtype *t)
 
 	if ((type_has_tz(f) && !type_has_tz(t) && !EC_VARCHAR(t->type->eclass)) || (!type_has_tz(f) && type_has_tz(t))) {
 		v = temporal_convert(be, v, sel, f, t, true);
-		sel = NULL;
-		pushed = 0;
+		pushed = 1;
 		if (EC_VARCHAR(f->type->eclass))
 			return v;
 	}

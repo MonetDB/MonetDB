@@ -88,7 +88,7 @@ if __name__ == '__main__':
         p = run(cmd, stdout=PIPE, stderr=PIPE, check=True, encoding='utf-8')
         pout = str(p.stdout)
         perr = str(p.stderr)
-        if perr != "Error on line 12: [22000] Missing file name\nError on line 30: [22000] Requested file compression format .bz2 is not supported. Use .gz instead.\nError on line 32: [22000] Requested file compression format .lz4 is not supported. Use .gz instead.\nError on line 34: [22000] Requested file compression format .xz is not supported. Use .gz instead.\nError on line 36: [22000] Requested file compression format .zip is not supported. Use .gz instead.\n":
+        if perr != "Error on line 12: [22000] Missing file name\nError on line 30: [22000] Specified file compression format .bz2 is not supported. Only .gz is supported.\nError on line 32: [22000] Specified file compression format .lz4 is not supported. Only .gz is supported.\nError on line 34: [22000] Specified file compression format .xz is not supported. Only .gz is supported.\nError on line 36: [22000] Specified file compression format .zip is not supported. Only .gz is supported.\n":
             print(perr)
             print("OnClientDownloadData err difference detected")
         if pout != "121 affected rows\n122 affected rows\n123 affected rows\n124 affected rows\n120 affected rows\n":

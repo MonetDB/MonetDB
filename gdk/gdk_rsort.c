@@ -17,8 +17,10 @@
 #define RADIX 8			/* one char at a time */
 #define NBUCKETS (1 << RADIX)
 
+/* bigendian means value is in big-endian byte order, but also that it
+ * is unsigned */
 gdk_return
-GDKrsort(void *restrict h, void *restrict t, size_t n, size_t hs, size_t ts, bool reverse, bool isuuid)
+GDKrsort(void *restrict h, void *restrict t, size_t n, size_t hs, size_t ts, bool reverse, bool bigendian)
 {
 	size_t (*counts)[NBUCKETS] = GDKzalloc(hs * sizeof(counts[0]));
 	size_t pos[NBUCKETS];
@@ -58,7 +60,7 @@ GDKrsort(void *restrict h, void *restrict t, size_t n, size_t hs, size_t ts, boo
 	}
 
 #ifndef WORDS_BIGENDIAN
-	if (isuuid /* UUID, treat like big-endian */) {
+	if (bigendian /* treat like big-endian */) {
 #endif
 		for (size_t i = 0, o = 0; i < n; i++, o += hs) {
 			for (size_t j = 0, k = hs - 1; j < hs; j++, k--) {
@@ -107,7 +109,7 @@ GDKrsort(void *restrict h, void *restrict t, size_t n, size_t hs, size_t ts, boo
 		}
 		/* note, this loop changes the pos array */
 #ifndef WORDS_BIGENDIAN
-		if (isuuid /* UUID, treat like big-endian */)
+		if (bigendian /* treat like big-endian */)
 #endif
 			for (size_t i = 0, ho = 0, to = 0; i < n; i++, ho += hs, to += ts) {
 				uint8_t v = h1[ho + k];
@@ -135,8 +137,8 @@ GDKrsort(void *restrict h, void *restrict t, size_t n, size_t hs, size_t ts, boo
 
 	if (h1 != (uint8_t *) h) {
 		/* we need to copy the data back to the correct heap */
-		if (isuuid) {
-			/* no negative values in uuid, so no shuffling */
+		if (bigendian) {
+			/* no negative values in bigendian, so no shuffling */
 			memcpy(h2, h1, n * hs);
 			if (t)
 				memcpy(t2, t1, n * ts);
@@ -153,7 +155,7 @@ GDKrsort(void *restrict h, void *restrict t, size_t n, size_t hs, size_t ts, boo
 					memcpy(t2 + ts * (n - negpos), t1, negpos * ts);
 			}
 		}
-	} else if (negpos > 0 && negpos < n && !isuuid) {
+	} else if (negpos > 0 && negpos < n && !bigendian) {
 		/* copy the negative integers to the start, copy positive after */
 		memcpy(h2, h1 + hs * negpos, (n - negpos) * hs);
 		memcpy(h2 + hs * (n - negpos), h1, negpos * hs);

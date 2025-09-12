@@ -296,10 +296,10 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bo
 			ssize_t length;
 			if (exprStr[0] == '/') {
 				// absolute path
-				snprintf(address, 1000, "%s", exprStr);
+				snprintf(address, sizeof(address), "%s", exprStr);
 			} else {
 				// relative path
-				snprintf(address, 1000, "%s/%s", FunctionBasePath((char[256]){0}, 256), exprStr);
+				snprintf(address, sizeof(address), "%s/%s", FunctionBasePath((char[256]){0}, 256), exprStr);
 			}
 			if (MT_stat(address, &buffer) < 0) {
 				msg = createException(
@@ -793,7 +793,7 @@ char *PyError_CreateException(char *error_text, char *pycall)
 								lineinformation[pos++] = ' ';
 								lineinformation[pos++] = ' ';
 							}
-							snprintf(linenr, 32, "%zu", nrpos);
+							snprintf(linenr, sizeof(linenr), "%zu", nrpos);
 							for (j = 0; j < strlen(linenr); j++) {
 								lineinformation[pos++] = linenr[j];
 							}

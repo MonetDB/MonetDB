@@ -81,7 +81,7 @@ main(int argc, char **argv)
 	bool quiet = false;
 	stream *out;
 	bool user_set_as_flag = false;
-	char *table = NULL;
+	const char *table = NULL;
 	static struct option long_options[] = {
 		{"host", 1, 0, 'h'},
 		{"port", 1, 0, 'p'},

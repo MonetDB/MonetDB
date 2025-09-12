@@ -57,7 +57,7 @@ malResolveFile(const char *fname)
 	str script;
 	int written;
 
-	written = snprintf(path, FILENAME_MAX, "%s", fname);
+	written = snprintf(path, sizeof(path), "%s", fname);
 	if (written == -1 || written >= FILENAME_MAX)
 		return NULL;
 	slash_2_dir_sep(path);

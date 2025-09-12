@@ -12,7 +12,6 @@
 
 #include "monetdb_config.h"
 #include "rel_trans.h"
-#include "rel_select.h"
 #include "rel_rel.h"
 #include "rel_exp.h"
 #include "sql_parser.h"

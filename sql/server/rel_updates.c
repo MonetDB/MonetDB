@@ -12,7 +12,6 @@
 
 #include "monetdb_config.h"
 #include "rel_updates.h"
-#include "rel_semantic.h"
 #include "rel_select.h"
 #include "rel_rel.h"
 #include "rel_basetable.h"
@@ -20,10 +19,8 @@
 #include "rel_schema.h"
 #include "sql_privileges.h"
 #include "sql_partition.h"
-#include "rel_dump.h"
 #include "rel_psm.h"
 #include "sql_symbol.h"
-#include "rel_prop.h"
 #include "sql_storage.h"
 
 static sql_exp *
@@ -1596,12 +1593,15 @@ rel_import(mvc *sql, sql_table *t, const char *tsep, const char *rsep, const cha
 	if (fwf_widths && dlist_length(fwf_widths) > 0) {
 		dnode *dn;
 		int ncol = 0;
-		char *fwf_string_cur = fwf_string = sa_alloc(sql->sa, 20 * dlist_length(fwf_widths) + 1); /* a 64 bit int needs 19 characters in decimal representation plus the separator */
+		size_t fwf_len = 20 * dlist_length(fwf_widths) + 1;
+		char *fwf_string_cur = fwf_string = sa_alloc(sql->sa, fwf_len); /* a 64 bit int needs 19 characters in decimal representation plus the separator */
 
 		if (!fwf_string)
 			return NULL;
 		for (dn = fwf_widths->h; dn; dn = dn->next) {
-			fwf_string_cur += sprintf(fwf_string_cur, LLFMT"%c", dn->data.l_val, STREAM_FWF_FIELD_SEP);
+			int l = snprintf(fwf_string_cur, fwf_len, LLFMT"%c", dn->data.l_val, STREAM_FWF_FIELD_SEP);
+			fwf_string_cur += l;
+			fwf_len -= l;
 			ncol++;
 		}
 		if (list_length(f->res) != ncol)

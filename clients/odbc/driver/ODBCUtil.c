@@ -896,9 +896,9 @@ ODBCTranslateSQL(ODBCDbc *dbc, const SQLCHAR *query, size_t length, SQLULEN nosc
 			}
 			if (query[i] != '{')
 				continue;
-			size_t n = 0;
-			if (sscanf((const char *) query + i, "{ ts '%127[0-9:. -]' }%zn", buf, &n) >= 1 && n > 0) {
-				char *rest = ODBCTranslateSQL(dbc, query + i + n, length - i - n, noscan);
+			int n = 0;
+			if (sscanf((const char *) query + i, "{ ts '%127[0-9:. -]' }%n", buf, &n) >= 1 && n > 0) {
+				char *rest = ODBCTranslateSQL(dbc, query + i + (size_t) n, length - i - (size_t) n, noscan);
 				size_t len = strlen(buf) + strlen(rest);
 				nquery = malloc(i + len + 13);
 				snprintf(nquery, i + len + 13,
@@ -907,8 +907,8 @@ ODBCTranslateSQL(ODBCDbc *dbc, const SQLCHAR *query, size_t length, SQLULEN nosc
 				free(rest);
 				return nquery;
 			}
-			if (sscanf((const char *) query + i, "{ t '%127[0-9:]' }%zn", buf, &n) >= 1 && n > 0) {
-				char *rest = ODBCTranslateSQL(dbc, query + i + n, length - i - n, noscan);
+			if (sscanf((const char *) query + i, "{ t '%127[0-9:]' }%n", buf, &n) >= 1 && n > 0) {
+				char *rest = ODBCTranslateSQL(dbc, query + i + (size_t) n, length - i - (size_t) n, noscan);
 				size_t len = strlen(buf) + strlen(rest);
 				nquery = malloc(i + len + 8);
 				snprintf(nquery, i + len + 8,
@@ -917,8 +917,8 @@ ODBCTranslateSQL(ODBCDbc *dbc, const SQLCHAR *query, size_t length, SQLULEN nosc
 				free(rest);
 				return nquery;
 			}
-			if (sscanf((const char *) query + i, "{ d '%127[0-9-]' }%zn", buf, &n) >= 1 && n > 0) {
-				char *rest = ODBCTranslateSQL(dbc, query + i + n, length - i - n, noscan);
+			if (sscanf((const char *) query + i, "{ d '%127[0-9-]' }%n", buf, &n) >= 1 && n > 0) {
+				char *rest = ODBCTranslateSQL(dbc, query + i + (size_t) n, length - i - (size_t) n, noscan);
 				size_t len = strlen(buf) + strlen(rest);
 				nquery = malloc(i + len + 8);
 				snprintf(nquery, i + len + 8,
@@ -927,8 +927,8 @@ ODBCTranslateSQL(ODBCDbc *dbc, const SQLCHAR *query, size_t length, SQLULEN nosc
 				free(rest);
 				return nquery;
 			}
-			if (sscanf((const char *) query + i, "{ guid '%127[0-9a-fA-F-]' }%zn", buf, &n) >= 1 && n > 0) {
-				char *rest = ODBCTranslateSQL(dbc, query + i + n, length - i - n, noscan);
+			if (sscanf((const char *) query + i, "{ guid '%127[0-9a-fA-F-]' }%n", buf, &n) >= 1 && n > 0) {
+				char *rest = ODBCTranslateSQL(dbc, query + i + (size_t) n, length - i - (size_t) n, noscan);
 				size_t len = strlen(buf) + strlen(rest);
 				nquery = malloc(i + len + 8);
 				snprintf(nquery, i + len + 8,
@@ -937,8 +937,8 @@ ODBCTranslateSQL(ODBCDbc *dbc, const SQLCHAR *query, size_t length, SQLULEN nosc
 				free(rest);
 				return nquery;
 			}
-			if (sscanf((const char *) query + i, "{ escape '%127[^']' }%zn", buf, &n) >= 1 && n > 0) {
-				char *rest = ODBCTranslateSQL(dbc, query + i + n, length - i - n, noscan);
+			if (sscanf((const char *) query + i, "{ escape '%127[^']' }%n", buf, &n) >= 1 && n > 0) {
+				char *rest = ODBCTranslateSQL(dbc, query + i + (size_t) n, length - i - (size_t) n, noscan);
 				size_t len = strlen(buf) + strlen(rest);
 				nquery = malloc(i + len + 10);
 				snprintf(nquery, i + len + 10,
@@ -947,8 +947,8 @@ ODBCTranslateSQL(ODBCDbc *dbc, const SQLCHAR *query, size_t length, SQLULEN nosc
 				free(rest);
 				return nquery;
 			}
-			if (sscanf((const char *) query + i, "{ interval '%127[^']' %127[a-zA-Z ] }%zn", buf, buf2, &n) >= 2 && n > 0) {
-				char *rest = ODBCTranslateSQL(dbc, query + i + n, length - i - n, noscan);
+			if (sscanf((const char *) query + i, "{ interval '%127[^']' %127[a-zA-Z ] }%n", buf, buf2, &n) >= 2 && n > 0) {
+				char *rest = ODBCTranslateSQL(dbc, query + i + (size_t) n, length - i - (size_t) n, noscan);
 				size_t len = strlen(buf) + strlen(buf2) + strlen(rest);
 				nquery = malloc(i + len + 14);
 				snprintf(nquery, i + len + 14,
@@ -957,8 +957,8 @@ ODBCTranslateSQL(ODBCDbc *dbc, const SQLCHAR *query, size_t length, SQLULEN nosc
 				free(rest);
 				return nquery;
 			}
-			if (sscanf((const char *) query + i, "{ interval + '%127[^']' %127[a-zA-Z ] }%zn", buf, buf2, &n) >= 2 && n > 0) {
-				char *rest = ODBCTranslateSQL(dbc, query + i + n, length - i - n, noscan);
+			if (sscanf((const char *) query + i, "{ interval + '%127[^']' %127[a-zA-Z ] }%n", buf, buf2, &n) >= 2 && n > 0) {
+				char *rest = ODBCTranslateSQL(dbc, query + i + (size_t) n, length - i - (size_t) n, noscan);
 				size_t len = strlen(buf) + strlen(buf2) + strlen(rest);
 				nquery = malloc(i + len + 15);
 				snprintf(nquery, i + len + 15,
@@ -967,8 +967,8 @@ ODBCTranslateSQL(ODBCDbc *dbc, const SQLCHAR *query, size_t length, SQLULEN nosc
 				free(rest);
 				return nquery;
 			}
-			if (sscanf((const char *) query + i, "{ interval - '%127[^']' %127[a-zA-Z ] }%zn", buf, buf2, &n) >= 2 && n > 0) {
-				char *rest = ODBCTranslateSQL(dbc, query + i + n, length - i - n, noscan);
+			if (sscanf((const char *) query + i, "{ interval - '%127[^']' %127[a-zA-Z ] }%n", buf, buf2, &n) >= 2 && n > 0) {
+				char *rest = ODBCTranslateSQL(dbc, query + i + (size_t) n, length - i - (size_t) n, noscan);
 				size_t len = strlen(buf) + strlen(buf2) + strlen(rest);
 				nquery = malloc(i + len + 15);
 				snprintf(nquery, i + len + 15,
@@ -977,8 +977,8 @@ ODBCTranslateSQL(ODBCDbc *dbc, const SQLCHAR *query, size_t length, SQLULEN nosc
 				free(rest);
 				return nquery;
 			}
-			if (sscanf((const char *) query + i, "{ oj %zn", &n) >= 0 && n > 0) {
-				char *rest = ODBCTranslateSQL(dbc, query + i + n, length - i - n, noscan);
+			if (sscanf((const char *) query + i, "{ oj %n", &n) >= 0 && n > 0) {
+				char *rest = ODBCTranslateSQL(dbc, query + i + (size_t) n, length - i - (size_t) n, noscan);
 				for (size_t j = 0; rest[j]; j++) {
 					if (quoted && rest[j] == '\\') {
 						j++;
@@ -1026,8 +1026,8 @@ ODBCTranslateSQL(ODBCDbc *dbc, const SQLCHAR *query, size_t length, SQLULEN nosc
 				free(rest);
 				continue;
 			}
-			if (sscanf((const char *) query + i, "{ call %zn", &n) >= 0 && n > 0) {
-				char *rest = ODBCTranslateSQL(dbc, query + i + n, length - i - n, noscan);
+			if (sscanf((const char *) query + i, "{ call %n", &n) >= 0 && n > 0) {
+				char *rest = ODBCTranslateSQL(dbc, query + i + (size_t) n, length - i - (size_t) n, noscan);
 				for (size_t j = 0; rest[j]; j++) {
 					if (quoted && rest[j] == '\\') {
 						j++;
@@ -1075,8 +1075,8 @@ ODBCTranslateSQL(ODBCDbc *dbc, const SQLCHAR *query, size_t length, SQLULEN nosc
 				free(rest);
 				continue;
 			}
-			if (sscanf((const char *) query + i, "{ fn %127[a-zA-Z0-9_] ( %zn", buf, &n) >= 1 && n > 0) {
-				char *rest = ODBCTranslateSQL(dbc, query + i + n, length - i - n, noscan);
+			if (sscanf((const char *) query + i, "{ fn %127[a-zA-Z0-9_] ( %n", buf, &n) >= 1 && n > 0) {
+				char *rest = ODBCTranslateSQL(dbc, query + i + (size_t) n, length - i - (size_t) n, noscan);
 				size_t arglen = 0;
 				size_t lastarg = 0;
 				int nargs = 0;

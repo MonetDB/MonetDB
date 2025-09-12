@@ -20,15 +20,9 @@
 /* _MAL_CLIENT_H_ is defined in the same file as Client */
 bool MCinit(void)
 	__attribute__((__visibility__("hidden")));
-int MCinitClientThread(Client c)
-	__attribute__((__visibility__("hidden")));
 void MCpopClientInput(Client c)
 	__attribute__((__visibility__("hidden")));
 int MCreadClient(Client c)
-	__attribute__((__visibility__("hidden")));
-bool MCshutdowninprogress(void)
-	__attribute__((__visibility__("hidden")));
-str defaultScenario(Client c)	/* used in src/mal/mal_session.c */
 	__attribute__((__visibility__("hidden")));
 #endif
 

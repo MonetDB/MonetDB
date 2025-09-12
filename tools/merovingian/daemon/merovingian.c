@@ -151,6 +151,7 @@ logFD(dpair dp, int fd, const char *type, const char *dbname, long long pid, FIL
 	char *p, *q;
 	struct tm *tmp;
 	char mytime[20];
+	bool do_repeat = rest;
 
 	assert(fd == 0 || fd == 1);
 	do {
@@ -159,7 +160,7 @@ logFD(dpair dp, int fd, const char *type, const char *dbname, long long pid, FIL
 		  repeat:
 			n = read(dp->input[fd].fd, buf + len, sizeof(buf) - len - 1);
 			if (n <= 0) {
-				rest = false;
+				do_repeat = false;
 				break;
 			}
 			len += n;
@@ -202,7 +203,7 @@ logFD(dpair dp, int fd, const char *type, const char *dbname, long long pid, FIL
 				/* shorten message with reference to logfile */
 				*s = '\0';
 			}
-			if (dp->input[fd].cnt < 30000 && strcmp(dp->input[fd].buf, q) == 0) {
+			if (!rest && dp->input[fd].cnt < 30000 && strcmp(dp->input[fd].buf, q) == 0) {
 				/* repeat of last message */
 				dp->input[fd].cnt++;
 				dp->input[fd].ts = now;
@@ -227,7 +228,21 @@ logFD(dpair dp, int fd, const char *type, const char *dbname, long long pid, FIL
 			}
 		}
 		fflush(stream);
-	} while (rest);
+	} while (do_repeat);
+	if (rest && dp->input[fd].cnt > 0) {
+		/* last message was repeated but not all repeats reported */
+		char tmptime[20];
+		strftime(tmptime, sizeof(tmptime), "%Y-%m-%d %H:%M:%S",
+				 localtime(&dp->input[fd].ts));
+		if (dp->input[fd].cnt == 1)
+			fprintf(stream, "%s %s %s[%lld]: %s\n",
+					tmptime, type, dbname, pid, dp->input[fd].buf);
+		else
+			fprintf(stream, "%s %s %s[%lld]: message repeated %d times: %s\n",
+					tmptime, type, dbname, pid, dp->input[fd].cnt, dp->input[fd].buf);
+		dp->input[fd].cnt = 0;
+		dp->input[fd].buf[0] = 0;
+	}
 	fflush(stream);
 }
 

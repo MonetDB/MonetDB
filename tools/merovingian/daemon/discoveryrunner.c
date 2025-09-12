@@ -330,7 +330,7 @@ discoveryRunner(void *d)
 
 	/* start shouting around that we're here ;) request others to tell
 	 * what databases they have */
-	snprintf(buf, 512, "HELO %s", _mero_hostname);
+	snprintf(buf, sizeof(buf), "HELO %s", _mero_hostname);
 	broadcast(buf);
 
 	ckv = getDefaultProps();
@@ -368,7 +368,7 @@ discoveryRunner(void *d)
 					/* craft ANNC message for this db */
 					if (strcmp(val, "yes") == 0)
 						val = "";
-					snprintf(buf, 512, "ANNC %s%s%s mapi:monetdb://%s:%u/ %d",
+					snprintf(buf, sizeof(buf), "ANNC %s%s%s mapi:monetdb://%s:%u/ %d",
 							stats->dbname, val[0] == '\0' ? "" : "/", val,
 							_mero_hostname, (unsigned int)getConfNum(_mero_props, "port"),
 							discttl->ival + 60);
@@ -382,7 +382,7 @@ discoveryRunner(void *d)
 
 			if (getConfNum(_mero_props, "control") != 0) {
 				/* announce control port */
-				snprintf(buf, 512, "ANNC * %s:%u %d",
+				snprintf(buf, sizeof(buf), "ANNC * %s:%u %d",
 						_mero_hostname, (unsigned int)getConfNum(_mero_props, "port"),
 						discttl->ival + 60);
 				/* coverity[string_null] */
@@ -582,7 +582,7 @@ discoveryRunner(void *d)
 		readProps(ckv, stats->path);
 		kv = findConfKey(ckv, "shared");
 		if (kv->val != NULL && strcmp(kv->val, "no") != 0) {
-			snprintf(buf, 512, "LEAV %s mapi:monetdb://%s:%u/",
+			snprintf(buf, sizeof(buf), "LEAV %s mapi:monetdb://%s:%u/",
 					stats->dbname, _mero_hostname,
 					(unsigned int)getConfNum(_mero_props, "port"));
 			broadcast(buf);
@@ -596,7 +596,7 @@ discoveryRunner(void *d)
 
 	/* deregister this merovingian, so it doesn't remain a stale entry */
 	if (getConfNum(_mero_props, "control") != 0) {
-		snprintf(buf, 512, "LEAV * %s:%u",
+		snprintf(buf, sizeof(buf), "LEAV * %s:%u",
 				_mero_hostname, (unsigned int)getConfNum(_mero_props, "port"));
 		broadcast(buf);
 	}

@@ -369,7 +369,7 @@ invoke_editor(int cnt, int key) {
 		}
 	}
 
-	snprintf(editor_command, BUFFER_SIZE, "%s %s", editor, template);
+	snprintf(editor_command, sizeof(editor_command), "%s %s", editor, template);
 	if (system(editor_command) != 0) {
 		readline_show_error("invoke_editor: Starting editor failed\n");
 		goto bailout;
@@ -472,7 +472,7 @@ init_readline(Mapi mid, const char *lang, bool save_history)
 	if (save_history) {
 		int len;
 		if (getenv("HOME") != NULL) {
-			len = snprintf(_history_file, FILENAME_MAX,
+			len = snprintf(_history_file, sizeof(_history_file),
 				 "%s/.mapiclient_history_%s",
 				 getenv("HOME"), language);
 			if (len == -1 || len >= FILENAME_MAX)

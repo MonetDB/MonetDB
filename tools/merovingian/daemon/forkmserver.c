@@ -332,9 +332,9 @@ forkMserver(const char *database, sabdb** stats, bool force)
 		}
 		t = localtime(&info.lastcrash);
 		strftime(tstr, sizeof(tstr), "%Y-%m-%d %H:%M:%S", t);
-		secondsToString(upmin, info.minuptime, 1);
-		secondsToString(upavg, info.avguptime, 1);
-		secondsToString(upmax, info.maxuptime, 1);
+		secondsToString(upmin, sizeof(upmin), info.minuptime, 1);
+		secondsToString(upavg, sizeof(upavg), info.avguptime, 1);
+		secondsToString(upmax, sizeof(upmax), info.maxuptime, 1);
 		Mlevelfprintf(ERROR, stdout, "%s '%s' has crashed after start on %s, "
 				 "attempting restart, "
 				 "up min/avg/max: %s/%s/%s, "
@@ -345,9 +345,9 @@ forkMserver(const char *database, sabdb** stats, bool force)
 				 info.startcntr, info.stopcntr, info.crashcntr);
 		break;
 	case SABdbInactive:
-		secondsToString(upmin, info.minuptime, 1);
-		secondsToString(upavg, info.avguptime, 1);
-		secondsToString(upmax, info.maxuptime, 1);
+		secondsToString(upmin, sizeof(upmin), info.minuptime, 1);
+		secondsToString(upavg, sizeof(upavg), info.avguptime, 1);
+		secondsToString(upmax, sizeof(upmax), info.maxuptime, 1);
 		Mlevelfprintf(INFORMATION, stdout, "starting %s '%s', "
 				 "up min/avg/max: %s/%s/%s, "
 				 "crash average: %d.00 %.2f %.2f (%d-%d=%d)\n",

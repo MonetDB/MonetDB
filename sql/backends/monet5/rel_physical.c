@@ -248,9 +248,7 @@ rel_partition(mvc *sql, sql_rel *rel)
 		break;
 	case op_semi:
 	case op_anti:
-		if (rel->l)
-			rel_partition(sql, rel->l);
-		break;
+
 	case op_inter:
 	case op_except:
 		if (rel->l)
@@ -1335,9 +1333,15 @@ rel_add_project(visitor *v, sql_rel *rel)
 	return rel;
 }
 
+#define rewrite_physical_used      (1 << 6)
+#define is_physical_done(X)        ((X & rewrite_physical_used) == rewrite_physical_used)
+
 static sql_rel *
 rel_rewrite_physical(visitor *v, sql_rel *rel)
 {
+	if (is_physical_done(rel->used))
+		return rel;
+	rel->used |= rewrite_physical_used;
 	if (rel)
 		rel = rel_add_orderby(v, rel);
 	if (rel)
@@ -1358,7 +1362,10 @@ rel_physical(mvc *sql, sql_rel *rel)
 {
 	visitor v = { .sql = sql };
 
-	rel = rel_visitor_bottomup(&v, rel, &rel_rewrite_physical);
+	do {
+		v.changes = 0;
+		rel = rel_visitor_bottomup(&v, rel, &rel_rewrite_physical);
+	} while (v.changes);
 
 	v.changes = 0;
 	global_props gp = (global_props) {.cnt = {0} };

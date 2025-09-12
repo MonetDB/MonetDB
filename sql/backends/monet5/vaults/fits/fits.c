@@ -282,7 +282,7 @@ str FITSexportTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	nrows = store->storage_api.count_col(tr, col, 0);
 	assert(nrows <= (size_t) GDK_oid_max);
 
-	snprintf(filename,BUFSIZ,"\n%s.fit",tname);
+	snprintf(filename,sizeof(filename),"\n%s.fit",tname);
 	TRC_INFO(FITS, "Filename: %s\n", filename);
 
 	MT_remove(filename);
@@ -1000,10 +1000,10 @@ str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	for (j = 1; j <= cnum; j++) {
 		sql_column *col = NULL;
 		/*		fits_get_acolparms(fptr, j, cname, &tbcol, tunit, tform, &tscal, &tzero, tnull, tdisp, &status); */
-		snprintf(keywrd, 80, "TTYPE%d", j);
+		snprintf(keywrd, sizeof(keywrd), "TTYPE%d", j);
 		fits_read_key(fptr, TSTRING, keywrd, nm, NULL, &status);
 		if (status) {
-			snprintf(nm, FLEN_VALUE, "column_%d", j);
+			snprintf(nm, sizeof(nm), "column_%d", j);
 			status = 0;
 		}
 		cname[j - 1] = toLower(nm);

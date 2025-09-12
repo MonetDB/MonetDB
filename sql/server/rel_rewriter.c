@@ -13,7 +13,6 @@
 #include "monetdb_config.h"
 #include "rel_rewriter.h"
 #include "rel_exp.h"
-#include "rel_dump.h"
 #include "rel_basetable.h"
 
 /* simplify expressions, such as not(not(x)) */

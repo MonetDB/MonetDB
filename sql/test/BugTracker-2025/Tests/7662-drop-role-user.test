@@ -1,0 +1,19 @@
+statement ok
+CREATE USER test WITH PASSWORD 'test' NAME 'test'
+
+statement ok
+CREATE USER alice WITH PASSWORD 'alice' NAME 'alice' SCHEMA sys
+
+@connection(id=test, username=test, password=test)
+query T
+select CURRENT_ROLE
+----
+test
+
+@connection(id=test)
+statement error
+DROP ROLE alice
+
+@connection(id=test)
+statement error
+DROP USER alice

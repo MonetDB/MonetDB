@@ -488,7 +488,7 @@ run_tests_inner(stream *s, int verbose)
 
 	while (true) {
 		lineno++;
-		sprintf(location_lineno, "%d", lineno);
+		snprintf(location_lineno, 100 - 1, "%d", lineno);
 		ssize_t nread = mnstr_readline(s, line_buffer, sizeof(line_buffer));
 		if (nread == 0)
 			break;

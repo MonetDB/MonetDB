@@ -30,6 +30,7 @@ target_include_directories(batstore
   $<TARGET_PROPERTY:mal,INTERFACE_INCLUDE_DIRECTORIES>
   $<TARGET_PROPERTY:kernel,INTERFACE_INCLUDE_DIRECTORIES>
   $<TARGET_PROPERTY:malmodules,INTERFACE_INCLUDE_DIRECTORIES>
+  $<TARGET_PROPERTY:sqlstorage,INTERFACE_INCLUDE_DIRECTORIES>
   PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
   $<INSTALL_INTERFACE:${INCLUDEDIR}/monetdb>)
@@ -39,8 +40,7 @@ target_link_libraries(batstore
   monetdb_config_header
   bat
   sqlcommon
-  sqlinclude
-  sqlstorage)
+  sqlinclude)
 
 if(NOT MONETDB_STATIC)
   set_target_properties(batstore

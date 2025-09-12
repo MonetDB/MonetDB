@@ -67,7 +67,7 @@ main(void)
 					if (time_eq(col->data[r], col->null_value)) {
 						printf("NULL");
 					} else {
-						printf("%d:%d:%d.%d", col->data[r].hours, col->data[r].minutes, col->data[r].seconds, col->data[r].ms);
+						printf("%d:%d:%d.%u", col->data[r].hours, col->data[r].minutes, col->data[r].seconds, col->data[r].ms);
 					}
 					break;
 				}
@@ -77,7 +77,7 @@ main(void)
 						printf("NULL");
 					} else {
 						printf("%d-%d-%d ", col->data[r].date.year, col->data[r].date.month, col->data[r].date.day);
-						printf("%d:%d:%d.%d", col->data[r].time.hours, col->data[r].time.minutes, col->data[r].time.seconds, col->data[r].time.ms);
+						printf("%d:%d:%d.%u", col->data[r].time.hours, col->data[r].time.minutes, col->data[r].time.seconds, col->data[r].time.ms);
 					}
 					break;
 				}

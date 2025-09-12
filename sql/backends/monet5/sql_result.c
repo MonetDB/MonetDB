@@ -170,7 +170,7 @@ sql_time_tostr(void *TS_RES, char **buf, size_t *len, int type, const void *A)
 
 	if (ts_res->has_tz) {
 		lng timezone = llabs(ts_res->timezone / 60000);
-		s += sprintf(s, "%c%02d:%02d",
+		s += snprintf(s, 8, "%c%02d:%02d",
 			     (ts_res->timezone >= 0) ? '+' : '-',
 			     (int) (timezone / 60), (int) (timezone % 60));
 	}
@@ -234,7 +234,7 @@ sql_timestamp_tostr(void *TS_RES, char **buf, size_t *len, int type, const void 
 	if (ts_res->has_tz) {
 		timezone = ts_res->timezone / 60000;
 		*s++ = (ts_res->timezone >= 0) ? '+' : '-';
-		sprintf(s, "%02d:%02d", (int) (llabs(timezone) / 60), (int) (llabs(timezone) % 60));
+		snprintf(s, 6, "%02d:%02d", (int) (llabs(timezone) / 60), (int) (llabs(timezone) % 60));
 		s += 5;
 	}
 	return (ssize_t) (s - *buf);
@@ -1542,8 +1542,12 @@ get_print_width(int mtype, sql_class eclass, int digits, int scale, int tz, bat 
 		return count;
 	} else if (eclass == EC_BIT) {
 		return 5;	/* max(strlen("true"), strlen("false")) */
-	} else if (strcmp(ATOMname(mtype), "uuid") == 0) {
-		return 36;	/* xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx */
+	} else if (mtype == TYPE_uuid) {
+		return 36;	/* 3a0200f8-351f-4e4e-801d-b2d1fbde6ab7 */
+	} else if (mtype == TYPE_inet4) {
+		return 15;	/* 255.255.255.255 */
+	} else if (mtype == TYPE_inet6) {
+		return 39;	/* ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff */
 	} else {
 		return 0;
 	}

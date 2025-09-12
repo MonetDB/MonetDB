@@ -157,11 +157,11 @@ pqc_statistics( pqc_reader_t *r, pqc_creader_t *pr, pqc_stat *stat, int pos )
 			} break;
 		case STATISTICS_NULL_COUNT: {
 			pos += pqc_get_int64(pr->buffer+pos, &stat->null_count);
-			TRC_INFO(PARQUET, "null_count %" PRId64 "\n", stat->null_count);
+			TRC_INFO(PARQUET, "null_count %" PRIu64 "\n", stat->null_count);
 		}	break;
 		case STATISTICS_DISTINCT_COUNT: {
 			pos += pqc_get_int64(pr->buffer+pos, &stat->distinct_count);
-			TRC_INFO(PARQUET, "distinct_count %" PRId64 "\n", stat->distinct_count);
+			TRC_INFO(PARQUET, "distinct_count %" PRIu64 "\n", stat->distinct_count);
 		}	break;
 		case STATISTICS_MAX_VALUE: {
 			assert(type == T_BINARY);
@@ -231,11 +231,11 @@ pqc_index_page(pqc_reader_t *r, pqc_creader_t *pr, int64_t pos, u_int32_t *num_v
 		switch (fieldid) {
 		case 1:
 			pos += pqc_get_zint32(pr->buffer+pos, num_values);
-			TRC_INFO(PARQUET, "num_values %d\n", *num_values);
+			TRC_INFO(PARQUET, "num_values %u\n", *num_values);
 			break;
 		case 2:
 			pos += pqc_get_zint32(pr->buffer+pos, &encoding);
-			TRC_INFO(PARQUET, "encoding %d\n", encoding);
+			TRC_INFO(PARQUET, "encoding %u\n", encoding);
 			break;
 		case 3:
 			TRC_INFO(PARQUET, "isSorted %d\n", type!=2);
@@ -262,7 +262,7 @@ pqc_dictionary_page(pqc_reader_t *r, pqc_creader_t *pr, int64_t pos, u_int32_t *
 		switch (fieldid) {
 		case DICTIONARY_PAGE_HEADER_NUM_VALUES:
 			pos += pqc_get_zint32(pr->buffer+pos, num_values);
-			TRC_INFO(PARQUET, "num_values %d\n", *num_values);
+			TRC_INFO(PARQUET, "num_values %u\n", *num_values);
 			break;
 		case DICTIONARY_PAGE_HEADER_ENCODING:
 			pos += pqc_get_zint32(pr->buffer+pos, &encoding);
@@ -295,7 +295,7 @@ pqc_data_page(pqc_reader_t *r, pqc_creader_t *pr, int64_t pos, u_int32_t *num_va
 		case DATA_PAGE_HEADER_NUM_VALUES:
 			pos += pqc_get_zint32(pr->buffer+pos, num_values);
 			pr->cc->cur_page.num_values = *num_values;
-			TRC_INFO(PARQUET, "num_values %d\n", *num_values);
+			TRC_INFO(PARQUET, "num_values %u\n", *num_values);
 			break;
 		case DATA_PAGE_HEADER_ENCODING:
 			pos += pqc_get_zint32(pr->buffer+pos, &encoding);

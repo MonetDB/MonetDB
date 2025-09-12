@@ -333,7 +333,7 @@ CREATE VIEW sys.describe_user_defined_types AS
 	WHERE
 		t.eclass = 18 AND
 		(
-			(s.name = 'sys' AND t.sqlname not in ('geometrya', 'mbr', 'url', 'inet', 'json', 'uuid', 'xml')) OR
+			(s.name = 'sys' AND t.sqlname not in ('geometrya', 'mbr', 'url', 'inet', 'json', 'uuid', 'xml', 'inet4', 'inet6')) OR
 			(s.name <> 'sys')
 		);
 

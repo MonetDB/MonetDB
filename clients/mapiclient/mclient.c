@@ -691,10 +691,10 @@ XMLprdata(const char *val)
 			default:
 				if ((codepoint & ~0x80) <= 0x1F || codepoint == 0177) {
 					/* control character */
-					mnstr_printf(toConsole, "&#%d;", codepoint);
+					mnstr_printf(toConsole, "&#%u;", codepoint);
 				} else if (codepoint < 0x80) {
 					/* ASCII */
-					mnstr_printf(toConsole, "%c", codepoint);
+					mnstr_printf(toConsole, "%c", (int) codepoint);
 				} else {
 					mnstr_printf(toConsole, "&#x%x;", codepoint);
 				}
@@ -1690,6 +1690,14 @@ setWidth(void)
 			pagewidth = ws.ws_col;
 			pageheight = ws.ws_row;
 		} else
+#else
+#ifdef _MSC_VER
+		CONSOLE_SCREEN_BUFFER_INFO csbi;
+		if (GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &csbi) != 0) {
+			pagewidth = csbi.srWindow.Right - csbi.srWindow.Left;
+			pageheight = csbi.srWindow.Bottom - csbi.srWindow.Top + 1;
+		} else
+#endif
 #endif
 		{
 			pagewidth = pageheight = -1;
@@ -2533,7 +2541,7 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, bool save_histor
 					}
 
 					if (x & MD_MERGE) {
-						const char mquery[] = "select s1.name as s1name,"
+						static const char mquery[] = "select s1.name as s1name,"
 							" t1.name as t1name,"
 							" c1.name as c1name,"
 							" s2.name as s2name,"
@@ -2706,7 +2714,7 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, bool save_histor
 					}
 					if (x & (MD_TABLE|MD_VIEW|MD_SEQ|MD_FUNC|MD_SCHEMA)) {
 						/* get all object names in current schema */
-						const char with_clause[] =
+						static const char with_clause[] =
 							"with describe_all_objects AS (\n"
 							"  SELECT s.name AS sname,\n"
 							"      t.name,\n"

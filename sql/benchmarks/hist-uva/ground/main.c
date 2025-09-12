@@ -184,7 +184,7 @@ void
 readGround()
 {
 	char filename[80];
-	sprintf(filename, "ground_%d_%d", entries, bins);
+	snprintf(filename, sizeof(filename), "ground_%d_%d", entries, bins);
 
 	FILE *fp = fopen(filename, "rb");
 	if (!fp) {
@@ -205,7 +205,7 @@ int
 main()
 {
 	data = new float[23907840];
-	sprintf(filename, "ground_%d_%d", entries, bins);
+	snprintf(filename, sizeof(filename), "ground_%d_%d", entries, bins);
 
 	startTime();
 	fillData();

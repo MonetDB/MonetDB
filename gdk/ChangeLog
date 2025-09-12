@@ -1,3 +1,10 @@
 # ChangeLog file for GDK
 # This file is updated with Maddlog
 
+* Tue Aug 26 2025 Lucas Pereira <lucas.pereira@monetdbsolutions.com>
+- log_tflush function, when flushnow flag is true, now passes bitmap array
+  that indicates which bat id's need to be sync'ed to disk, instead
+  of passing NULL which would trigger a sync of the full catalog. If
+  new bats are added to the catalog, they will be sync'ed always (see
+  maxupdated flag).
+

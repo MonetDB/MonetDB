@@ -229,12 +229,12 @@ TestConnection(HWND hwndDlg, struct data *datap)
 			// get Error msg
 			ret2 = SQLGetDiagRec(SQL_HANDLE_DBC, dbc, 1, state, &errnr, msg, sizeof(msg), &msglen);
 			if (ret == SQL_SUCCESS_WITH_INFO) {
-				sprintf(buf, "Connection successful\n\nWarning message: %s\n\nSQLState %s\n\nConnectString used: %s\n\nReturned ConnectString: %s",
+				snprintf(buf, sizeof(buf), "Connection successful\n\nWarning message: %s\n\nSQLState %s\n\nConnectString used: %s\n\nReturned ConnectString: %s",
 					(char *) msg, (char *) state, inStr, outStr);
 				MessageBox(hwndDlg, buf, boxtitle, MB_OK | MB_ICONWARNING);
 				ret = SQLDisconnect(dbc);
 			} else {
-				sprintf(buf, "Connection failed!\n\nError message: %s\n\nSQLState %s, Errnr %d\n\nConnectString used: %s\n\nReturned ConnectString: %s",
+				snprintf(buf, sizeof(buf), "Connection failed!\n\nError message: %s\n\nSQLState %s, Errnr %d\n\nConnectString used: %s\n\nReturned ConnectString: %s",
 					(char *) msg, (char *) state, (int) errnr, inStr, outStr);
 				MessageBox(hwndDlg, buf, boxtitle, MB_ICONERROR);
 			}

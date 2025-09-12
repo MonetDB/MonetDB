@@ -70,9 +70,9 @@ main(int argc, char **argv)
 			die(dbh,NULL);
 
 		if (lang==1)
-			snprintf(buf, 40, "select %d;", i);
+			snprintf(buf, sizeof(buf), "select %d;", i);
 		else
-			snprintf(buf, 40, "io.print(%d);", i);
+			snprintf(buf, sizeof(buf), "io.print(%d);", i);
 		if ((hdl = mapi_query(dbh, buf)) == NULL || mapi_error(dbh))
 			die(dbh, hdl);
 		while ((line = mapi_fetch_line(hdl))) {

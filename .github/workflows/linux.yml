@@ -24,7 +24,7 @@ jobs:
           - os: macos-latest
             c_compiler: clang
           - os: macos-latest
-            c_compiler: gcc-12
+            c_compiler: gcc-14
           - os: ubuntu-latest
             c_compiler: gcc
           - os: ubuntu-latest
@@ -124,7 +124,7 @@ jobs:
       - name: ctest 
         run: |
           cd build 
-          cmake --build . --target ${{ runner.os == 'Windows' && 'RUN_TESTS' || 'test' }}
+          CTEST_OUTPUT_ON_FAILURE=1 cmake --build . --target ${{ runner.os == 'Windows' && 'RUN_TESTS' || 'test' }}
         if: runner.os != 'Windows'
 
       - name: mtest 

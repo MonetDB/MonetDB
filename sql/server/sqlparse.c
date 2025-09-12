@@ -497,7 +497,7 @@ sp_symbol2string(mvc *sql, symbol *se, int expression, char **err, int depth, bo
 			}
 			return res;
 		} else {
-			const char msg[] = "SQL feature not yet available for expressions and default values: ";
+			static const char msg[] = "SQL feature not yet available for expressions and default values: ";
 			char *tok_str = token2string(se->token);
 			if ((*err = SA_NEW_ARRAY(sql->ta, char, strlen(msg) + strlen(tok_str) + 1)))
 				stpcpy(stpcpy(*err, msg), tok_str);

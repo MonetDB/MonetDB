@@ -524,6 +524,9 @@ CREATE TABLE t0(c0 BLOB DEFAULT (blob 'E443Aefab0') UNIQUE PRIMARY KEY NULL)
 statement ok
 CREATE TABLE t2(LIKE t0)
 
+statement ok
+ALTER TABLE t2 ALTER COLUMN c0 SET NULL
+
 statement ok rowcount 3
 INSERT INTO t2(c0) VALUES(blob ''), (NULL), (blob 'A0')
 

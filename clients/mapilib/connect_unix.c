@@ -63,7 +63,7 @@ scan_unix_sockets(Mapi mid)
 			if (port < 1 || port > 65535 || *end)
 				continue;
 
-			sprintf(put_port_here, "%ld", port);
+			snprintf(put_port_here, 50 - 12, "%ld", port);
 			struct stat st;
 			if (stat(namebuf, &st) < 0 || !S_ISSOCK(st.st_mode))
 				continue;

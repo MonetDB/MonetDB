@@ -1188,6 +1188,7 @@ log_read_types_file(logger *lg, FILE *fp, int version, bool *needsnew)
 	int id = 0;
 	char atom_name[IDLENGTH];
 	bool seen_geom = false;
+	bool seen_inet = false;
 
 	/* scanf should use IDLENGTH somehow */
 	while (fscanf(fp, "%d,%63s\n", &id, atom_name) == 2) {
@@ -1211,6 +1212,7 @@ log_read_types_file(logger *lg, FILE *fp, int version, bool *needsnew)
 			*needsnew = true;
 			continue;
 		}
+		seen_inet |= strcmp(atom_name, "inet4") == 0;
 		int i = ATOMindex(atom_name);
 
 		if (id < -127 || id > 127 || i < 0) {
@@ -1221,6 +1223,8 @@ log_read_types_file(logger *lg, FILE *fp, int version, bool *needsnew)
 		lg->type_id[i] = (int8_t) id;
 		lg->type_nr[id < 0 ? 256 + id : id] = i;
 	}
+	if (!seen_inet)
+		*needsnew = true;
 #ifdef HAVE_GEOM
 	if (!seen_geom && ATOMindex("mbr") > 0) {
 		GDKerror("incompatible database: server supports GEOM, but database does not\n");
@@ -1297,7 +1301,7 @@ log_open_output(logger *lg)
 		char id[32];
 		char filename[MAXPATH];
 
-		if (snprintf(id, sizeof(id), LLFMT, lg->id) >= (int) sizeof(id)) {
+		if (snprintf(id, sizeof(id), ULLFMT, lg->id) >= (int) sizeof(id)) {
 			TRC_CRITICAL(GDK, "filename is too large\n");
 			GDKfree(new_range);
 			return GDK_FAIL;
@@ -1693,7 +1697,7 @@ log_readlogs(logger *lg, const char *filename)
 	BAT *ids_to_omit = NULL;
 
 	assert(!lg->inmemory);
-	TRC_DEBUG(WAL, "logger id is " LLFMT " last logger id is " LLFMT "\n", lg->id, lg->saved_id);
+	TRC_DEBUG(WAL, "logger id is " ULLFMT " last logger id is " ULLFMT "\n", lg->id, lg->saved_id);
 
 	if (snprintf(log_filename, sizeof(log_filename), "%s.omitted", filename) >= FILENAME_MAX) {
 		GDKerror("Logger filename path is too large\n");
@@ -1708,7 +1712,7 @@ log_readlogs(logger *lg, const char *filename)
 		lg->id = lg->saved_id + 1;
 		gdk_return res = GDK_SUCCEED;
 		while (res == GDK_SUCCEED && !filemissing) {
-			if (snprintf(log_filename, sizeof(log_filename), "%s." LLFMT, filename, lg->id) >= FILENAME_MAX) {
+			if (snprintf(log_filename, sizeof(log_filename), "%s." ULLFMT, filename, lg->id) >= FILENAME_MAX) {
 				GDKerror("Logger filename path is too large\n");
 				goto end;
 			}
@@ -2256,7 +2260,7 @@ clean_bbp(logger *lg)
 				BBPreclaim(b);
 				return;
 			}
-			printf("# removing bat %d (tmp_%o)\n", bid, bid);
+			printf("# removing bat %d (tmp_%o)\n", bid, (unsigned) bid);
 		}
 	/* if there were any junk bats, commit their removal */
 	if (b->batCount > 1 &&
@@ -2666,6 +2670,8 @@ log_new(int debug, const char *fn, const char *logdir, int version, preversionfi
 		.cur_max_pending = max_pending,
 
 		.id = 0,
+		.updated = NULL,
+		.maxupdated = 0,
 		.saved_id = getBBPlogno(),	/* get saved log number from bbp */
 		.nr_flushers = ATOMIC_VAR_INIT(0),
 		.fn = GDKstrdup(fn),
@@ -2935,7 +2941,7 @@ log_flush(logger *lg, ulng ts)
 		/* if too many pending */
 		if (lg->saved_id + lg->cur_max_pending < lg->id) {
 			lg->cur_max_pending *= 2; /* when to warn again */
-			TRC_WARNING(GDK, "Too many pending log files " LLFMT "\n", (lg->id - lg->saved_id));
+			TRC_WARNING(GDK, "Too many pending log files " ULLFMT "\n", (lg->id - lg->saved_id));
 			if (GDKtriggerusr1 &&
 			    !(ATOMIC_GET(&GDKdebug) & TESTINGMASK))
 				(*GDKtriggerusr1)();
@@ -2960,7 +2966,7 @@ log_flush(logger *lg, ulng ts)
 		if (!lg->input_log) {
 			char filename[MAXPATH];
 			char id[32];
-			if (snprintf(id, sizeof(id), LLFMT, cid + 1) >= (int) sizeof(id)) {
+			if (snprintf(id, sizeof(id), ULLFMT, cid + 1) >= (int) sizeof(id)) {
 				GDKfree(updated);
 				TRC_CRITICAL(GDK, "log_id filename is too large\n");
 				return GDK_FAIL;
@@ -3126,6 +3132,15 @@ log_constant(logger *lg, int type, const void *val, log_id id, lng offset, lng c
 
 	if (LOG_DISABLED(lg) || !nr) {
 		/* logging is switched off */
+		if (lg->updated != NULL) {
+			BUN p = log_find(lg->catalog_id, lg->dcatalog, id);
+			if (p == BUN_NONE) {
+				GDKerror("%d not found in catalog_id BAT", id);
+				return GDK_FAIL;
+			}
+			if (p < lg->maxupdated)
+				lg->updated[p / 32] |= 1U << (p % 32);
+		}
 		if (nr) {
 			log_lock(lg);
 			ok = la_bat_update_count(lg, id, offset + cnt, lg->tid);
@@ -3232,6 +3247,15 @@ internal_log_bat(logger *lg, BAT *b, log_id id, lng offset, lng cnt, int sliced,
 
 	if (LOG_DISABLED(lg) || !nr) {
 		/* logging is switched off */
+		if (lg->updated != NULL) {
+			BUN p = log_find(lg->catalog_id, lg->dcatalog, id);
+			if (p == BUN_NONE) {
+				GDKerror("%d not found in catalog_id BAT", id);
+				return GDK_FAIL;
+			}
+			if (p < lg->maxupdated)
+				lg->updated[p / 32] |= 1U << (p % 32);
+		}
 		if (nr)
 			return la_bat_update_count(lg, id, offset + cnt, lg->tid);
 		return GDK_SUCCEED;
@@ -3456,6 +3480,15 @@ log_delta(logger *lg, BAT *uid, BAT *uval, log_id id)
 
 	if (LOG_DISABLED(lg)) {
 		/* logging is switched off */
+		if (lg->updated != NULL) {
+			BUN p = log_find(lg->catalog_id, lg->dcatalog, id);
+			if (p == BUN_NONE) {
+				GDKerror("%d not found in catalog_id BAT", id);
+				return GDK_FAIL;
+			}
+			if (p < lg->maxupdated)
+				lg->updated[p / 32] |= 1U << (p % 32);
+		}
 		log_unlock(lg);
 		return GDK_SUCCEED;
 	}
@@ -3582,7 +3615,7 @@ static inline void
 log_tdone(logger *lg, logged_range *range, ulng commit_ts)
 {
 	(void) lg;
-	TRC_DEBUG(WAL, "tdone " LLFMT "\n", commit_ts);
+	TRC_DEBUG(WAL, "tdone " ULLFMT "\n", commit_ts);
 
 	if ((ulng) ATOMIC_GET(&range->last_ts) < commit_ts)
 		ATOMIC_SET(&range->last_ts, commit_ts);
@@ -3606,7 +3639,11 @@ log_tflush(logger *lg, ulng file_id, ulng commit_ts)
 		(void) do_flush_range_cleanup(lg);
 		assert(lg->flush_ranges == lg->current);
 		rotation_unlock(lg);
-		return log_commit(lg, p, NULL, 0);
+		gdk_return r = log_commit(lg, p, lg->updated, lg->maxupdated);
+		GDKfree(lg->updated);
+		lg->updated = NULL;
+		lg->maxupdated = 0;
+		return r;
 	}
 
 	if (LOG_DISABLED(lg)) {
@@ -3788,6 +3825,8 @@ log_del_bat(logger *lg, log_bid bid)
 	}
 
 	assert(lg->catalog_lid->hseqbase == 0);
+	if (lg->updated != NULL && p < lg->maxupdated)
+		lg->updated[p / 32] |= 1U << (p % 32);
 	return BUNreplace(lg->catalog_lid, p, &lid, false);
 }
 
@@ -3837,6 +3876,18 @@ log_tstart(logger *lg, bool flushnow, ulng *file_id)
 		if (lg->saved_id + 1 < lg->id)
 			log_flush(lg, (1ULL << 63));
 		lg->flushnow = flushnow;
+
+		assert(lg->updated == NULL);
+		BUN cnt = BATcount(lg->catalog_id);
+		size_t allocated = ((cnt + 31) & ~31) / 8;
+		if (allocated == 0)
+			allocated = 4;
+		lg->maxupdated = allocated * 8; /* nr of allocated bits */
+		lg->updated = GDKzalloc(allocated);
+		if (lg->updated == NULL) {
+			GDKerror("Failed to allocate updated BAT id's.\n");
+			return GDK_FAIL;
+		}
 	} else {
 		if (check_rotation_conditions(lg)) {
 			lg->id++;

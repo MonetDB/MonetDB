@@ -230,14 +230,15 @@ escape_str(str *retval, const char *s)
 	if (!s)
 		throw(ILLARG, "url.escape", "url missing");
 
-	if (!(res = (str) GDKmalloc(strlen(s) * 3)))
+	size_t reslen = strlen(s) * 3;
+	if (!(res = (str) GDKmalloc(reslen)))
 		throw(MAL, "url.escape", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	for (x = 0, y = 0; s[x]; ++x, ++y) {
 		if (needEscape(s[x])) {
 			if (s[x] == ' ') {
 				res[y] = '+';
 			} else {
-				sprintf(res + y, "%%%2x", (uint8_t) s[x]);
+				snprintf(res + y, reslen - y, "%%%2x", (uint8_t) s[x]);
 				y += 2;
 			}
 		} else {
@@ -711,8 +712,9 @@ URLgetRobotURL(str *retval, const url *val)
 			throw(ILLARG, "url.getQuery", "bad url");
 		l = s - *val;
 
-		if ((*retval = GDKmalloc(l + sizeof("/robots.txt"))) != NULL) {
-			sprintf(*retval, "%.*s/robots.txt", (int) l, *val);
+		size_t retlen = l + sizeof("/robots.txt");
+		if ((*retval = GDKmalloc(retlen)) != NULL) {
+			snprintf(*retval, retlen, "%.*s/robots.txt", (int) l, *val);
 		}
 	}
 

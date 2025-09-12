@@ -948,6 +948,26 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 		int xx = ATOMcmp(b->ttype,
 				 BUNtail(ni, ci.seq - hseq),
 				 BUNtail(bi, last));
+		if (b->tsorted && !ni.sorted && ni.nosorted == 0 && xx >= 0) {
+			/* b is currently sorted; we don't know whether
+			 * n is sorted; first value of n is at least as
+			 * large as last value of b: we invest in an
+			 * order check of n to see whether the result is
+			 * still sorted */
+			(void) BATordered(n);
+			bat_iterator_end(&ni);
+			ni = bat_iterator(n);
+		}
+		if (b->trevsorted && !ni.revsorted && ni.norevsorted == 0 && xx <= 0) {
+			/* b is currently reverse sorted; we don't know
+			 * whether n is reverse sorted; first value of n
+			 * is at most as large as last value of b: we
+			 * invest in an order check of n to see whether
+			 * the result is still reverse sorted */
+			(void) BATordered_rev(n);
+			bat_iterator_end(&ni);
+			ni = bat_iterator(n);
+		}
 		if (b->tsorted && (!ni.sorted || xx < 0)) {
 			b->tsorted = false;
 			b->tnosorted = 0;
@@ -2394,6 +2414,7 @@ do_sort(void *restrict h, void *restrict t, const void *restrict base,
 			return GDKrsort(h, t, n, hs, ts, reverse, false);
 		break;
 	case TYPE_uuid:
+	case TYPE_inet4:
 		assert(base == NULL);
 		if (nilslast == reverse && (stable || n > 100))
 			return GDKrsort(h, t, n, hs, ts, reverse, true);
@@ -2975,6 +2996,7 @@ BATconstant(oid hseq, int tailtype, const void *v, BUN n, role_t role)
 			break;
 		case TYPE_int:
 		case TYPE_flt:
+		case TYPE_inet4:
 			assert(sizeof(int) == sizeof(flt));
 			for (i = 0; i < n; i++)
 				((int *) p)[i] = *(int *) v;
@@ -2987,14 +3009,18 @@ BATconstant(oid hseq, int tailtype, const void *v, BUN n, role_t role)
 			break;
 #ifdef HAVE_HGE
 		case TYPE_hge:
+		case TYPE_uuid:
+		case TYPE_inet6:
 			for (i = 0; i < n; i++)
 				((hge *) p)[i] = *(hge *) v;
 			break;
-#endif
+#else
 		case TYPE_uuid:
+		case TYPE_inet6:
 			for (i = 0; i < n; i++)
 				((uuid *) p)[i] = *(uuid *) v;
 			break;
+#endif
 		case TYPE_str:
 			/* insert the first value, then just copy the
 			 * offset lots of times */
@@ -3247,6 +3273,14 @@ BATcount_no_nil(BAT *b, BAT *s)
 	case TYPE_uuid:
 		CAND_LOOP(&ci)
 			cnt += !is_uuid_nil(((const uuid *) p)[canditer_next(&ci) - hseq]);
+		break;
+	case TYPE_inet4:
+		CAND_LOOP(&ci)
+			cnt += !is_inet4_nil(((const inet4 *) p)[canditer_next(&ci) - hseq]);
+		break;
+	case TYPE_inet6:
+		CAND_LOOP(&ci)
+			cnt += !is_inet6_nil(((const inet6 *) p)[canditer_next(&ci) - hseq]);
 		break;
 	case TYPE_str:
 		base = bi.vh->base;

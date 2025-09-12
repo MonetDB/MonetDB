@@ -4,7 +4,7 @@ CREATE TABLE "cases" (caseid varchar(255))
 statement ok
 INSERT INTO "cases" (caseid) VALUES ('DL1-1')
 
-query TT
+query TT nosort
 SELECT
 	caseid as caseid,
 	caseid as "delivery.caseid"
@@ -23,10 +23,11 @@ SELECT
 FROM
 	"cases"
 order by caseid, "delivery.caseid"
------
+----
 DL1-1
 NULL
 DL1-1
 NULL
 DL1-1
 DL1-1
+

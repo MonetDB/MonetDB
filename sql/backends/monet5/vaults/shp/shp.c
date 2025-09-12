@@ -155,6 +155,7 @@ GDALWSpatialInfo GDALWGetSpatialInfo(GDALWConnection conn) {
 //Using SQL query
 str createSHPtable(Client cntxt, str schemaname, str tablename, GDALWConnection shp_conn, GDALWSimpleFieldDef *field_definitions) {
 	unsigned int size = BUFSIZ;
+	size_t temp_len = 0;
 	char *buf = NULL, *temp_buf = GDKmalloc(BUFSIZ * sizeof(char));
 	char *nameToLowerCase = NULL;
 	str msg = MAL_SUCCEED;
@@ -177,21 +178,23 @@ str createSHPtable(Client cntxt, str schemaname, str tablename, GDALWConnection 
 			temp_buf = GDKrealloc(temp_buf, size);
 		}
 		nameToLowerCase = toLower(field_definitions[i].fieldName);
+		temp_len = strlen(temp_buf);
 		if (strcmp(field_definitions[i].fieldType, "Integer") == 0)
 		{
-			sprintf(temp_buf + strlen(temp_buf), "\"%s\" INT, ", nameToLowerCase);
+			snprintf(temp_buf + temp_len, size - temp_len, "\"%s\" INT, ", nameToLowerCase);
 		}
 		else if (strcmp(field_definitions[i].fieldType, "Real") == 0)
 		{
-			sprintf(temp_buf + strlen(temp_buf), "\"%s\" FLOAT, ", nameToLowerCase);
+			snprintf(temp_buf + temp_len, size - temp_len, "\"%s\" FLOAT, ", nameToLowerCase);
 		}
 		else
-			sprintf(temp_buf + strlen(temp_buf), "\"%s\" STRING, ", nameToLowerCase);
+			snprintf(temp_buf + temp_len, size - temp_len, "\"%s\" STRING, ", nameToLowerCase);
 		GDKfree(nameToLowerCase);
 	}
 
 	//Each shapefile table has one geom column
-	sprintf(temp_buf + strlen(temp_buf), "geom GEOMETRY ");
+	temp_len = strlen(temp_buf);
+	snprintf(temp_buf + temp_len, size - temp_len, "geom GEOMETRY ");
 
 	//Concat the schema name with the table name
 	size_t schemaTableSize = strlen(schemaname) + strlen(tablename) + 3;

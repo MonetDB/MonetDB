@@ -11,10 +11,9 @@
  */
 
 #include "monetdb_config.h"
-#include "sql_relation.h"
+#include "sql_catalog.h"
 #include "rel_prop.h"
 #include "sql_string.h"
-#include "sql_atom.h"
 
 prop *
 prop_create( allocator *sa, rel_prop kind, prop *pre )
@@ -123,18 +122,18 @@ propvalue2string(allocator *sa, prop *p)
 
 	switch(p->kind) {
 	case PROP_COUNT: {
-		snprintf(buf, BUFSIZ, BUNFMT, p->value.lval);
+		snprintf(buf, sizeof(buf), BUNFMT, p->value.lval);
 		return sa_strdup(sa, buf);
 	}
 	case PROP_NUNIQUES: {
-		snprintf(buf, BUFSIZ, "%f", p->value.dval);
+		snprintf(buf, sizeof(buf), "%f", p->value.dval);
 		return sa_strdup(sa, buf);
 	}
 	case PROP_JOINIDX: {
 		sql_idx *i = p->value.pval;
 
 		if (i) {
-			snprintf(buf, BUFSIZ, "\"%s\".\"%s\".\"%s\"", sql_escape_ident(sa, i->t->s->base.name),
+			snprintf(buf, sizeof(buf), "\"%s\".\"%s\".\"%s\"", sql_escape_ident(sa, i->t->s->base.name),
 					 sql_escape_ident(sa, i->t->base.name), sql_escape_ident(sa, i->base.name));
 			return sa_strdup(sa, buf);
 		}

@@ -1,7 +1,7 @@
 /*
  * SPDX-License-Identifier: MPL-2.0
  *
- * This Source Code Form is subject to the terms of the Mozilla Public
+\ * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
@@ -978,6 +978,144 @@ convert_void_any(oid seq, BAT *bn,
 }
 
 static BUN
+convert_inet6_inet4(const inet6 *src, inet4 *restrict dst,
+		    struct canditer *restrict ci,
+		    oid candoff)
+{
+	BUN i, nils = 0;
+	oid x;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+
+	if (ci->tpe == cand_dense) {
+		TIMEOUT_LOOP_IDX(i, ci->ncand, qry_ctx) {
+			x = canditer_next_dense(ci) - candoff;
+			if (is_inet6_nil(src[x])) {
+				dst[i] = inet4_nil;
+				nils++;
+			} else if (src[x].hex[0] == 0 &&
+				   src[x].hex[1] == 0 &&
+				   src[x].hex[2] == 0 &&
+				   src[x].hex[3] == 0 &&
+				   src[x].hex[4] == 0 &&
+				   src[x].hex[5] == 0 &&
+				   src[x].hex[6] == 0 &&
+				   src[x].hex[7] == 0 &&
+				   src[x].hex[8] == 0 &&
+				   src[x].hex[9] == 0 &&
+				   src[x].hex[10] == 0xFF &&
+				   src[x].hex[11] == 0xFF &&
+				   (src[x].hex[12] != 0 ||
+				    src[x].hex[13] != 0 ||
+				    src[x].hex[14] != 0 ||
+				    src[x].hex[15] != 0)) {
+				dst[i] = (inet4) {
+					.quad[0] = src[x].hex[12],
+					.quad[1] = src[x].hex[13],
+					.quad[2] = src[x].hex[14],
+					.quad[3] = src[x].hex[15],
+				};
+			} else {
+				char buf[40], *s = buf;
+				size_t l = sizeof(buf);
+				BATatoms[TYPE_inet6].atomToStr(&s, &l, &src[x], false);
+				assert(buf == s);
+				GDKerror("22003!overflow in conversion of %s to inet4.\n", buf);
+				return BUN_NONE;
+			}
+		}
+		TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx));
+	} else {
+		TIMEOUT_LOOP_IDX(i, ci->ncand, qry_ctx) {
+			x = canditer_next(ci) - candoff;
+			if (is_inet6_nil(src[x])) {
+				dst[i] = inet4_nil;
+				nils++;
+			} else if (src[x].hex[0] == 0 &&
+				   src[x].hex[1] == 0 &&
+				   src[x].hex[2] == 0 &&
+				   src[x].hex[3] == 0 &&
+				   src[x].hex[4] == 0 &&
+				   src[x].hex[5] == 0 &&
+				   src[x].hex[6] == 0 &&
+				   src[x].hex[7] == 0 &&
+				   src[x].hex[8] == 0 &&
+				   src[x].hex[9] == 0 &&
+				   src[x].hex[10] == 0xFF &&
+				   src[x].hex[11] == 0xFF &&
+				   (src[x].hex[12] != 0 ||
+				    src[x].hex[13] != 0 ||
+				    src[x].hex[14] != 0 ||
+				    src[x].hex[15] != 0)) {
+				dst[i] = (inet4) {
+					.quad[0] = src[x].hex[12],
+					.quad[1] = src[x].hex[13],
+					.quad[2] = src[x].hex[14],
+					.quad[3] = src[x].hex[15],
+				};
+			} else {
+				char buf[40], *s = buf;
+				size_t l = sizeof(buf);
+				BATatoms[TYPE_inet6].atomToStr(&s, &l, &src[x], false);
+				assert(buf == s);
+				GDKerror("22003!overflow in conversion of %s to inet4.\n", buf);
+				return BUN_NONE;
+			}
+		}
+		TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx));
+	}
+	return nils;
+}
+
+static BUN
+convert_inet4_inet6(const inet4 *src, inet6 *restrict dst,
+		    struct canditer *restrict ci,
+		    oid candoff)
+{
+	BUN i, nils = 0;
+	oid x;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+
+	if (ci->tpe == cand_dense) {
+		TIMEOUT_LOOP_IDX(i, ci->ncand, qry_ctx) {
+			x = canditer_next_dense(ci) - candoff;
+			if (is_inet4_nil(src[x])) {
+				dst[i] = inet6_nil;
+				nils++;
+			} else {
+				dst[i] = (inet6) {
+					.hex[10] = 0xff,
+					.hex[11] = 0xff,
+					.hex[12] = src[x].quad[0],
+					.hex[13] = src[x].quad[1],
+					.hex[14] = src[x].quad[2],
+					.hex[15] = src[x].quad[3],
+				};
+			}
+		}
+		TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx));
+	} else {
+		TIMEOUT_LOOP_IDX(i, ci->ncand, qry_ctx) {
+			x = canditer_next(ci) - candoff;
+			if (is_inet4_nil(src[x])) {
+				dst[i] = inet6_nil;
+				nils++;
+			} else {
+				dst[i] = (inet6) {
+					.hex[10] = 0xff,
+					.hex[11] = 0xff,
+					.hex[12] = src[x].quad[0],
+					.hex[13] = src[x].quad[1],
+					.hex[14] = src[x].quad[2],
+					.hex[15] = src[x].quad[3],
+				};
+			}
+		}
+		TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx));
+	}
+	return nils;
+}
+
+static BUN
 convert_typeswitchloop(const void *src, int stp, void *restrict dst, int dtp,
 		       struct canditer *restrict ci,
 		       oid candoff, bool *reduce,
@@ -1403,6 +1541,22 @@ convert_typeswitchloop(const void *src, int stp, void *restrict dst, int dtp,
 			return convert_dbl_dbl(src, dst, ci, candoff,
 					       0,
 					       reduce);
+		default:
+			return BUN_NONE + 1;
+		}
+	case TYPE_inet4:
+		switch (ATOMbasetype(dtp)) {
+		case TYPE_inet6:
+			*reduce = false;
+			return convert_inet4_inet6(src, dst, ci, candoff);
+		default:
+			return BUN_NONE + 1;
+		}
+	case TYPE_inet6:
+		switch (ATOMbasetype(dtp)) {
+		case TYPE_inet4:
+			*reduce = false;
+			return convert_inet6_inet4(src, dst, ci, candoff);
 		default:
 			return BUN_NONE + 1;
 		}

@@ -73,9 +73,6 @@ project1_loop(int)
 project1_loop(flt)
 project1_loop(dbl)
 project1_loop(lng)
-#ifdef HAVE_HGE
-project1_loop(hge)
-#endif
 project1_loop(uuid)
 
 #define project_loop(TYPE)						\
@@ -83,7 +80,7 @@ static gdk_return							\
 project_##TYPE(BAT *restrict bn, BATiter *restrict li,			\
 	       struct canditer *restrict ci,				\
 	       BATiter *restrict r1i, BATiter *restrict r2i,		\
-	       QryCtx *qry_ctx)						\
+	       QryCtx *qry_ctx, const void *nil)			\
 {									\
 	BUN lo;								\
 	const TYPE *restrict r1t;					\
@@ -141,7 +138,7 @@ project_##TYPE(BAT *restrict bn, BATiter *restrict li,			\
 		TIMEOUT_LOOP_IDX(lo, li->count, qry_ctx) {		\
 			oid o = ot[lo];					\
 			if (is_oid_nil(o)) {				\
-				bt[lo] = v = TYPE##_nil;		\
+				bt[lo] = v = *(TYPE *) nil;		\
 				bn->tnil = true;			\
 			} else if (o < r1seq || o >= r2end) {		\
 				GDKerror("does not match always\n");	\
@@ -168,9 +165,6 @@ project_loop(int)
 project_loop(flt)
 project_loop(dbl)
 project_loop(lng)
-#ifdef HAVE_HGE
-project_loop(hge)
-#endif
 project_loop(uuid)
 
 static gdk_return
@@ -758,33 +752,39 @@ BATproject2(BAT *restrict l, BAT *restrict r1, BAT *restrict r2)
 		tpe = ATOMbasetype(tpe);
 	switch (tpe) {
 	case TYPE_bte:
-		res = project_bte(bn, &li, lci, &r1i, r2 ? &r2i : NULL, qry_ctx);
+		res = project_bte(bn, &li, lci, &r1i, r2 ? &r2i : NULL, qry_ctx, &bte_nil);
 		break;
 	case TYPE_sht:
-		res = project_sht(bn, &li, lci, &r1i, r2 ? &r2i : NULL, qry_ctx);
+		res = project_sht(bn, &li, lci, &r1i, r2 ? &r2i : NULL, qry_ctx, &sht_nil);
 		break;
 	case TYPE_int:
-		res = project_int(bn, &li, lci, &r1i, r2 ? &r2i : NULL, qry_ctx);
+		res = project_int(bn, &li, lci, &r1i, r2 ? &r2i : NULL, qry_ctx, &int_nil);
 		break;
 	case TYPE_flt:
-		res = project_flt(bn, &li, lci, &r1i, r2 ? &r2i : NULL, qry_ctx);
+		res = project_flt(bn, &li, lci, &r1i, r2 ? &r2i : NULL, qry_ctx, &flt_nil);
 		break;
 	case TYPE_dbl:
-		res = project_dbl(bn, &li, lci, &r1i, r2 ? &r2i : NULL, qry_ctx);
+		res = project_dbl(bn, &li, lci, &r1i, r2 ? &r2i : NULL, qry_ctx, &dbl_nil);
 		break;
 	case TYPE_lng:
-		res = project_lng(bn, &li, lci, &r1i, r2 ? &r2i : NULL, qry_ctx);
+		res = project_lng(bn, &li, lci, &r1i, r2 ? &r2i : NULL, qry_ctx, &lng_nil);
 		break;
 #ifdef HAVE_HGE
 	case TYPE_hge:
-		res = project_hge(bn, &li, lci, &r1i, r2 ? &r2i : NULL, qry_ctx);
+		res = project_uuid(bn, &li, lci, &r1i, r2 ? &r2i : NULL, qry_ctx, &hge_nil);
 		break;
 #endif
 	case TYPE_oid:
 		res = project_oid(bn, &li, lci, &r1i, r2 ? &r2i : NULL, qry_ctx);
 		break;
 	case TYPE_uuid:
-		res = project_uuid(bn, &li, lci, &r1i, r2 ? &r2i : NULL, qry_ctx);
+		res = project_uuid(bn, &li, lci, &r1i, r2 ? &r2i : NULL, qry_ctx, &uuid_nil);
+		break;
+	case TYPE_inet4:
+		res = project_int(bn, &li, lci, &r1i, r2 ? &r2i : NULL, qry_ctx, &inet4_nil);
+		break;
+	case TYPE_inet6:
+		res = project_uuid(bn, &li, lci, &r1i, r2 ? &r2i : NULL, qry_ctx, &inet6_nil);
 		break;
 	default:
 		res = project_any(bn, &li, lci, &r1i, r2 ? &r2i : NULL, qry_ctx);

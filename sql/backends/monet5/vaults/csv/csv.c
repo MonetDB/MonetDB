@@ -80,7 +80,7 @@ detect_quote(const char *buf)
 static char
 detect_delimiter(const char *buf, char q, int *nr_fields)
 {
-	const char delimiter[] = ",|;\t";
+	static const char delimiter[] = ",|;\t";
 	int cnts[DLEN][2] = { 0 }, l = 0;
 
 	const char *cur = buf;
@@ -382,7 +382,7 @@ get_name(allocator *sa, const char *s, const char *es, const char **E, char deli
 {
 	if (!has_header) {
 		char buff[25];
-		snprintf(buff, 25, "name_%i", col);
+		snprintf(buff, sizeof(buff), "name_%i", col);
 		return SA_STRDUP(sa, buff);
 	} else {
 		const char *e = next_delim(s, es, delim, quote);

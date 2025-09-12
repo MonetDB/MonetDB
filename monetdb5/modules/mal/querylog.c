@@ -175,7 +175,7 @@ QLOGcreate(const char *hnme, const char *tnme, int tt)
 	BAT *b;
 	char buf[128];
 
-	snprintf(buf, 128, "querylog_%s_%s", hnme, tnme);
+	snprintf(buf, sizeof(buf), "querylog_%s_%s", hnme, tnme);
 	b = BATdescriptor(BBPindex(buf));
 	if (b) {
 		/* make append-only in case this wasn't done when created */
@@ -376,7 +376,7 @@ QLOGappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	msg = initQlog();
 	if (msg)
 		return msg;
-	snprintf(buf, 128, "%s.%s", getModuleId(sig), getFunctionId(sig));
+	snprintf(buf, sizeof(buf), "%s.%s", getModuleId(sig), getFunctionId(sig));
 	MT_lock_set(&QLOGlock);
 	o = BUNfnd(QLOG_cat_id, &mb->tag);
 	if (o == BUN_NONE) {

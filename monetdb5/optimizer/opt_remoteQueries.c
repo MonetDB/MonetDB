@@ -46,7 +46,7 @@ RQcall2str(MalBlkPtr mb, InstrPtr p)
 	}
 	if (p->retc > 1)
 		strcat(msg, ")");
-	sprintf(msg + len, ":= %s.%s(", getModuleId(p), getFunctionId(p));
+	snprintf(msg + len, BUFSIZ - len, ":= %s.%s(", getModuleId(p), getFunctionId(p));
 	s = strchr(msg, '(');
 	if (s) {
 		s++;
@@ -56,13 +56,13 @@ RQcall2str(MalBlkPtr mb, InstrPtr p)
 			VarPtr v = getVar(mb, getArg(p, k));
 			if (isVarConstant(mb, getArg(p, k))) {
 				if (v->type == TYPE_void) {
-					sprintf(msg + len, "nil");
+					snprintf(msg + len, BUFSIZ - len, "nil");
 				} else {
 					if ((cv = VALformat(&v->value)) == NULL) {
 						GDKfree(msg);
 						return NULL;
 					}
-					sprintf(msg + len, "%s:%s", cv, ATOMname(v->type));
+					snprintf(msg + len, BUFSIZ - len, "%s:%s", cv, ATOMname(v->type));
 					GDKfree(cv);
 				}
 
@@ -333,7 +333,7 @@ OPTremoteQueriesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 						}
 						getArg(q, 0) = getArg(p, j);
 						q = pushArgument(mb, q, location[getArg(p, j)]);
-						snprintf(buf, BUFSIZ, "io.print(%s);",
+						snprintf(buf, sizeof(buf), "io.print(%s);",
 								 getVarNameIntoBuffer(mb, getArg(p, j), name));
 						q = pushStr(mb, q, buf);
 						pushInstruction(mb, q);

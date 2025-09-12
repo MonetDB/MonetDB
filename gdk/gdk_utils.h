@@ -225,7 +225,7 @@ gdk_export int GDKms(void);
 		gdk_return _res = GDKmunmap(_ptr, _mode, _len);	\
 		TRC_DEBUG(ALLOC,				\
 			  "GDKmunmap(%p,0x%x,%zu) -> %u\n",	\
-			  _ptr, _mode, _len, _res);		\
+			  _ptr, (unsigned) _mode, _len, _res);	\
 		_res;						\
 	})
 #define malloc(s)					\

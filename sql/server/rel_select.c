@@ -2320,8 +2320,11 @@ rel_in_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 				add_select = 1;
 				if (rel && *rel && is_join((*rel)->op))
 					set_dependent((*rel));
-				if (is_project(r->op) && is_project_true(r->l) && list_length(r->exps) == 1)
+				if (is_project(r->op) && is_project_true(r->l) && list_length(r->exps) == 1) {
 					re = r->exps->h->data;
+					if (is_freevar(re))
+						reset_freevar(re);
+				}
 			} else if (is_values(re) && is_tuple != list_length(exp_get_values(re))) {
 				return sql_error(sql, 02, SQLSTATE(42000) "Tuple sizes do not match");
 			}
@@ -3294,7 +3297,7 @@ rel_nop(sql_query *query, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 		if (find_func(sql, sname, fname, nargs, F_AGGR, false, NULL, NULL)) {
 			dnode *dn = l->next->next;
 			symbol *orderby = dn->next?dn->next->data.sym:NULL;
-			return _rel_aggr(query, rel, l->next->data.i_val, sname, fname, dn->data.lval->h, orderby, fs);
+			return _rel_aggr(query, rel, l->next->data.i_val, sname, fname, dn->data.lval?dn->data.lval->h:NULL, orderby, fs);
 		}
 	}
 

@@ -125,6 +125,7 @@ typedef struct mvc {
 	list *params;
 	sqlid objid;                /* when replacing an existing view, it can't be seen */
 	sql_func *forward;	        /* forward definitions for recursive functions */
+	bool globals;				/* only globals */
 	list *global_vars;          /* SQL declared variables on the global scope */
 	sql_frame **frames;	        /* stack of frames with variables */
 	int topframes;

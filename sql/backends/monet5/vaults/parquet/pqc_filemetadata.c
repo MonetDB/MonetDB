@@ -186,7 +186,7 @@ pqc_open( pqc_file **PQ, char *fn)
 	pq->buffer = NULL;
 	pq->bsz = 0;
 
-	TRC_DEBUG(PARQUET, "fd = %d, file_size = %zd\n", pq->fd, pq->sz);
+	TRC_DEBUG(PARQUET, "fd = %d, file_size = %zu\n", pq->fd, pq->sz);
 
 	ssize_t sz = pq->sz;
 	off_t offset = 0;
@@ -622,7 +622,7 @@ pqc_read_schema_element( pqc_file *pq, int nr, int pos, int *ccnr, pqc_schema_el
 			pos += pqc_get_zint32(pq->buffer+pos, &oldtype);
 			if (pqc_oldtype2logicaltype(pse, oldtype) < 0)
 				TRC_ERROR(PARQUET, "type %u not handled\n", oldtype);
-			TRC_INFO(PARQUET, "old type %u to type %u\n", oldtype, pse->type);
+			TRC_INFO(PARQUET, "old type %u to type %d\n", oldtype, pse->type);
 			pse->physical_type = oldtype;
 			break;
 		case SCHEMA_ELEMENT_TYPE_LENGTH:
@@ -826,15 +826,15 @@ pqc_pageencodingsstats( pqc_file *pq, pqc_pageencodings *pe, int pos )
 		switch (fieldid) {
 		case PAGE_ENCODING_STATS_PAGE_TYPE:
 			pos += pqc_get_zint32(pq->buffer+pos, &pe->page_type);
-			TRC_INFO(PARQUET, "page_type %d\n", pe->page_type);
+			TRC_INFO(PARQUET, "page_type %u\n", pe->page_type);
 			break;
 		case PAGE_ENCODING_STATS_ENCODING:
 			pos += pqc_get_zint32(pq->buffer+pos, &pe->page_encoding);
-			TRC_INFO(PARQUET, "page_encoding %d\n", pe->page_encoding);
+			TRC_INFO(PARQUET, "page_encoding %u\n", pe->page_encoding);
 			break;
 		case PAGE_ENCODING_STATS_COUNT:
 			pos += pqc_get_zint32(pq->buffer+pos, &pe->page_count);
-			TRC_INFO(PARQUET, "page_count %d\n", pe->page_count);
+			TRC_INFO(PARQUET, "page_count %u\n", pe->page_count);
 			break;
 		}
 	}
@@ -854,7 +854,7 @@ pqc_column_metadata( pqc_file *pq, pqc_columnchunk *cc, int pos )
 		switch (fieldid) {
 		case COLUMN_META_DATA_TYPE:
 			pos += pqc_get_zint32(pq->buffer+pos, &cc->type);
-			TRC_INFO(PARQUET, "column type %d\n", cc->type);
+			TRC_INFO(PARQUET, "column type %u\n", cc->type);
 			break;
 		case COLUMN_META_DATA_ENCODINGS: {
 			pos += pqc_get_list(pq->buffer+pos, &size, &type);
