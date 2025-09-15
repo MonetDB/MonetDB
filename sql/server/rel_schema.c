@@ -1678,7 +1678,7 @@ rel_create_view(sql_query *query, int temp, dlist *qname, dlist *column_spec, sy
 	const char *base = replace ? "CREATE OR REPLACE VIEW" : "CREATE VIEW";
 	const char *action = (temp == SQL_DECLARED_TABLE)?"DECLARE":"CREATE";
 
-	(void) check;		/* Stefan: unused!? */
+	(void) check;
 
 	if (temp == SQL_GLOBAL_TEMP)
 		temp = SQL_PERSIST; /* just normal view */
