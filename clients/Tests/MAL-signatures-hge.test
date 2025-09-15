@@ -48894,13 +48894,13 @@ pattern optimizer.deadcode(X_0:str, X_1:str):str
 OPTwrapper
 Dead code optimizer
 optimizer
-defaultfast
-pattern optimizer.defaultfast():str
+defaultpipe
+pattern optimizer.defaultpipe():str
 OPTwrapper
 (empty)
 optimizer
-defaultfast
-pattern optimizer.defaultfast(X_0:str, X_1:str):str
+defaultpipe
+pattern optimizer.defaultpipe(X_0:str, X_1:str):str
 OPTwrapper
 Fast compound default optimizer pipe
 optimizer
@@ -48999,13 +48999,13 @@ pattern optimizer.mergetable(X_0:str, X_1:str):str
 OPTwrapper
 Resolve the multi-table definitions
 optimizer
-minimalfast
-pattern optimizer.minimalfast():str
+minimalpipe
+pattern optimizer.minimalpipe():str
 OPTwrapper
 (empty)
 optimizer
-minimalfast
-pattern optimizer.minimalfast(X_0:str, X_1:str):str
+minimalpipe
+pattern optimizer.minimalpipe(X_0:str, X_1:str):str
 OPTwrapper
 Fast compound minimal optimizer pipe
 optimizer
@@ -49028,6 +49028,16 @@ multiplex
 pattern optimizer.multiplex(X_0:str, X_1:str):str
 OPTwrapper
 Compiler for multiplexed instructions
+optimizer
+nomitosispipe
+pattern optimizer.nomitosispipe():str
+OPTwrapper
+(empty)
+optimizer
+nomitosispipe
+pattern optimizer.nomitosispipe(X_0:str, X_1:str):str
+OPTwrapper
+Fast compound optimizer pipe without mitosis
 optimizer
 optimize
 pattern optimizer.optimize(X_0:str, X_1:str):void
@@ -49084,6 +49094,16 @@ pattern optimizer.querylog(X_0:str, X_1:str):str
 OPTwrapper
 Collect SQL query statistics
 optimizer
+recursivepipe
+pattern optimizer.recursivepipe():str
+OPTwrapper
+(empty)
+optimizer
+recursivepipe
+pattern optimizer.recursivepipe(X_0:str, X_1:str):str
+OPTwrapper
+Fast compound recursive optimizer pipe
+optimizer
 reduce
 pattern optimizer.reduce():str
 OPTwrapper
@@ -49123,6 +49143,16 @@ reorder
 pattern optimizer.reorder(X_0:str, X_1:str):str
 OPTwrapper
 Reorder by dataflow dependencies
+optimizer
+sequentialpipe
+pattern optimizer.sequentialpipe():str
+OPTwrapper
+(empty)
+optimizer
+sequentialpipe
+pattern optimizer.sequentialpipe(X_0:str, X_1:str):str
+OPTwrapper
+Fast compound sequential optimizer pipe
 optimizer
 strimps
 pattern optimizer.strimps():str

@@ -29,25 +29,19 @@ query TTT nosort
 select * from optimizers()
 ----
 minimal_pipe
-optimizer.inline();optimizer.remap();optimizer.emptybind();optimizer.deadcode();optimizer.for();optimizer.dict();optimizer.multiplex();optimizer.generator();optimizer.profiler();optimizer.garbageCollector();
-stable
-minimal_fast
-optimizer.minimalfast();
+optimizer.minimalpipe();
 stable
 default_pipe
-optimizer.inline();optimizer.remap();optimizer.costModel();optimizer.coercions();optimizer.aliases();optimizer.evaluate();optimizer.emptybind();optimizer.deadcode();optimizer.pushselect();optimizer.aliases();optimizer.for();optimizer.dict();optimizer.mitosis();optimizer.mergetable();optimizer.aliases();optimizer.constants();optimizer.commonTerms();optimizer.projectionpath();optimizer.deadcode();optimizer.matpack();optimizer.reorder();optimizer.dataflow();optimizer.querylog();optimizer.multiplex();optimizer.generator();optimizer.candidates();optimizer.deadcode();optimizer.postfix();optimizer.profiler();optimizer.garbageCollector();
-stable
-default_fast
-optimizer.defaultfast();
+optimizer.defaultpipe();
 stable
 no_mitosis_pipe
-optimizer.inline();optimizer.remap();optimizer.costModel();optimizer.coercions();optimizer.aliases();optimizer.evaluate();optimizer.emptybind();optimizer.deadcode();optimizer.pushselect();optimizer.aliases();optimizer.for();optimizer.dict();optimizer.aliases();optimizer.constants();optimizer.commonTerms();optimizer.projectionpath();optimizer.deadcode();optimizer.dataflow();optimizer.querylog();optimizer.multiplex();optimizer.generator();optimizer.candidates();optimizer.deadcode();optimizer.postfix();optimizer.profiler();optimizer.garbageCollector();
+optimizer.nomitosispipe();
 stable
 sequential_pipe
-optimizer.inline();optimizer.remap();optimizer.costModel();optimizer.coercions();optimizer.aliases();optimizer.evaluate();optimizer.emptybind();optimizer.deadcode();optimizer.pushselect();optimizer.aliases();optimizer.for();optimizer.dict();optimizer.aliases();optimizer.constants();optimizer.commonTerms();optimizer.projectionpath();optimizer.deadcode();optimizer.querylog();optimizer.multiplex();optimizer.generator();optimizer.candidates();optimizer.deadcode();optimizer.postfix();optimizer.profiler();optimizer.garbageCollector();
+optimizer.sequentialpipe();
 stable
 recursive_pipe
-optimizer.inline();optimizer.remap();optimizer.costModel();optimizer.coercions();optimizer.aliases();optimizer.evaluate();optimizer.deadcode();optimizer.pushselect();optimizer.aliases();optimizer.for();optimizer.dict();optimizer.aliases();optimizer.constants();optimizer.projectionpath();optimizer.deadcode();optimizer.querylog();optimizer.multiplex();optimizer.generator();optimizer.candidates();optimizer.deadcode();optimizer.postfix();optimizer.profiler();optimizer.garbageCollector();
+optimizer.recursivepipe();
 stable
 
 statement ok

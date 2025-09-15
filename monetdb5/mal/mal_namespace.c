@@ -152,7 +152,7 @@ const char cume_distRef[] = "cume_dist";
 const char dataflowRef[] = "dataflow";
 const char dblRef[] = "dbl";
 const char decompressRef[] = "decompress";
-const char defaultfastRef[] = "defaultfast";
+const char defaultpipeRef[] = "defaultpipe";
 const char defineRef[] = "define";
 const char deleteRef[] = "delete";
 const char deltaRef[] = "delta";
@@ -419,7 +419,7 @@ initNamespace(void)
 	fixName(dataflowRef);
 	fixName(dblRef);
 	fixName(decompressRef);
-	fixName(defaultfastRef);
+	fixName(defaultpipeRef);
 	fixName(defineRef);
 	fixName(deleteRef);
 	fixName(deltaRef);

@@ -57,11 +57,19 @@
 
 // keep the optimizer list sorted
 static struct {
-	str nme;
+	const char *nme;
 	str (*fcn)(Client, MalBlkPtr, MalStkPtr, InstrPtr);
 	int calls;
 	lng timing;
 } codes[] = {
+	/* most used compound optiimizers at the top */
+	{"defaultpipe", &OPTdefaultpipeImplementation, 0, 0},
+	{"recursivepipe", &OPTdefaultpipeImplementation, 0, 0},
+	{"nomitosispipe", &OPTdefaultpipeImplementation, 0, 0},
+	{"minimalpipe", &OPTminimalpipeImplementation, 0, 0},
+	{"sequentialpipe", &OPTdefaultpipeImplementation, 0, 0},
+
+	/* all regular MAL optimizers */
 	{"aliases", &OPTaliasesImplementation, 0, 0},
 	{"candidates", &OPTcandidatesImplementation, 0, 0},
 	{"coercions", &OPTcoercionImplementation, 0, 0},
@@ -70,7 +78,6 @@ static struct {
 	{"costModel", &OPTcostModelImplementation, 0, 0},
 	{"dataflow", &OPTdataflowImplementation, 0, 0},
 	{"deadcode", &OPTdeadcodeImplementation, 0, 0},
-	{"defaultfast", &OPTdefaultfastImplementation, 0, 0},
 	{"dict", &OPTdictImplementation, 0, 0},
 	{"emptybind", &OPTemptybindImplementation, 0, 0},
 	{"evaluate", &OPTevaluateImplementation, 0, 0},
@@ -80,7 +87,6 @@ static struct {
 	{"inline", &OPTinlineImplementation, 0, 0},
 	{"matpack", &OPTmatpackImplementation, 0, 0},
 	{"mergetable", &OPTmergetableImplementation, 0, 0},
-	{"minimalfast", &OPTminimalfastImplementation, 0, 0},
 	{"mitosis", &OPTmitosisImplementation, 0, 0},
 	{"multiplex", &OPTmultiplexImplementation, 0, 0},
 	{"postfix", &OPTpostfixImplementation, 0, 0},
