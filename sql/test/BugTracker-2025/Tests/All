@@ -49,3 +49,4 @@ HAVE_HGE?7637_str_to_decimal
 7702-stmt_convert_cands
 7703-left-join
 7705-anti-join
+7706-set-user

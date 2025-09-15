@@ -477,7 +477,7 @@ extern BUN hash_destroy_chain_length;
 
 extern void (*GDKtriggerusr1)(void);
 
-#if !defined(NDEBUG) && !defined(__COVERITY__)
+#if !defined(NDEBUG) && !defined(__COVERITY__) && !defined(_CLANGD)
 /* see comment in gdk.h */
 #ifdef __GNUC__
 #define GDKmremap(p, m, oa, os, ns)					\

@@ -1,0 +1,13 @@
+statement ok
+CREATE USER "bob" WITH UNENCRYPTED PASSWORD 'bob' NAME 'Bob user' SCHEMA "sys"
+
+statement ok
+SET USER "bob"
+
+query T
+select current_user
+----
+bob
+
+statement error HY009!Switching to user monetdb not allowed
+SET USER monetdb

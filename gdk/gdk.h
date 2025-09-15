@@ -1743,7 +1743,7 @@ gdk_export size_t sa_size(allocator *sa );
 gdk_export exception_buffer *sa_get_eb(allocator *sa)
 	__attribute__((__pure__));
 
-#if !defined(NDEBUG) && !defined(__COVERITY__) && defined(__GNUC__)
+#if !defined(NDEBUG) && !defined(__COVERITY__) && defined(__GNUC__) && !defined(_CLANGD)
 #define sa_alloc(sa, sz)					\
 	({							\
 		allocator *_sa = (sa);				\
