@@ -3052,8 +3052,9 @@ swap_bats(sql_trans *tr, sql_column *col, BAT *bn)
 static int
 col_subtype(sql_trans *tr, sql_column *col, sql_subtype *t)
 {
-	int res = LOG_ERR;
 	assert(tr->active);
+	int res = LOG_ERR;
+	allocator *sa = ((sqlstore*)tr->store)->sa;
 	if (!isTable(col->t) || !col->t->s)
 		return res;
 
@@ -3063,7 +3064,7 @@ col_subtype(sql_trans *tr, sql_column *col, sql_subtype *t)
 		if (!b)
 			return res;
 
-		BAT *bn = BATconvert(b, NULL /* could use tids, but need NILS */, t->type->localtype, col->type.scale, t->scale, t->type->eclass == EC_NUM ? 0 : t->digits);
+		BAT *bn = BATconvert(sa, b, NULL /* could use tids, but need NILS */, t->type->localtype, col->type.scale, t->scale, t->type->eclass == EC_NUM ? 0 : t->digits);
 		if (!bn)
 			return res;
 		BBPreclaim(b);

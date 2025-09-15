@@ -897,7 +897,7 @@ dosum(const void *restrict values, bool nonil, oid seqb,
 
 /* calculate group sums with optional candidates list */
 BAT *
-BATgroupsum(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils)
+BATgroupsum(allocator *ma, BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils)
 {
 	const oid *restrict gids;
 	oid min, max;
@@ -931,7 +931,7 @@ BATgroupsum(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils)
 	    (BATtdense(g) || (g->tkey && g->tnonil))) {
 		/* trivial: singleton groups, so all results are equal
 		 * to the inputs (but possibly a different type) */
-		return BATconvert(b, s, tp, 0, 0, 0);
+		return BATconvert(ma, b, s, tp, 0, 0, 0);
 	}
 
 	bn = BATconstant(min, tp, ATOMnilptr(tp), ngrp, TRANSIENT);
@@ -1572,7 +1572,7 @@ doprod(const void *restrict values, oid seqb, struct canditer *restrict ci,
 
 /* calculate group products with optional candidates list */
 BAT *
-BATgroupprod(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils)
+BATgroupprod(allocator *ma, BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils)
 {
 	const oid *restrict gids;
 	oid min, max;
@@ -1605,7 +1605,7 @@ BATgroupprod(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils)
 	    (BATtdense(g) || (g->tkey && g->tnonil))) {
 		/* trivial: singleton groups, so all results are equal
 		 * to the inputs (but possibly a different type) */
-		return BATconvert(b, s, tp, 0, 0, 0);
+		return BATconvert(ma, b, s, tp, 0, 0, 0);
 	}
 
 	bn = BATconstant(min, tp, ATOMnilptr(tp), ngrp, TRANSIENT);
@@ -1798,7 +1798,7 @@ BATprod(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool nil_if_empty)
  * point which could potentially losse bits during processing
  * (e.g. average of 2**62 and a billion 1's). */
 gdk_return
-BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, int scale)
+BATgroupavg(allocator *ma, BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, int scale)
 {
 	const oid *restrict gids;
 	oid gid;
@@ -1856,7 +1856,7 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool
 	    (BATtdense(g) || (g->tkey && g->tnonil))) {
 		/* trivial: singleton groups, so all results are equal
 		 * to the inputs (but possibly a different type) */
-		if ((bn = BATconvert(b, s, TYPE_dbl, 0, 0, 0)) == NULL)
+		if ((bn = BATconvert(ma, b, s, TYPE_dbl, 0, 0, 0)) == NULL)
 			return GDK_FAIL;
 		if (cntsp) {
 			lng one = 1;
@@ -3067,8 +3067,9 @@ bailout:
 
 /* calculate group counts with optional candidates list */
 BAT *
-BATgroupcount(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils)
+BATgroupcount(allocator *ma, BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils)
 {
+	(void) ma;
 	const oid *restrict gids;
 	oid gid;
 	oid min, max;
@@ -3559,8 +3560,9 @@ BATgroupminmax(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils,
 }
 
 BAT *
-BATgroupmin(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils)
+BATgroupmin(allocator *ma, BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils)
 {
+	(void) ma;
 	return BATgroupminmax(b, g, e, s, tp, skip_nils,
 			      do_groupmin, __func__);
 }
@@ -3718,8 +3720,9 @@ BATmin(BAT *b, void *aggr)
 }
 
 BAT *
-BATgroupmax(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils)
+BATgroupmax(allocator *ma, BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils)
 {
+	(void) ma;
 	return BATgroupminmax(b, g, e, s, tp, skip_nils,
 			      do_groupmax, __func__);
 }
@@ -3879,7 +3882,7 @@ BATmax(BAT *b, void *aggr)
 	} while (0)
 
 static BAT *
-doBATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
+doBATgroupquantile(allocator *ma, BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 		   bool skip_nils, bool average)
 {
 	BAT *origb = b;
@@ -3970,7 +3973,7 @@ doBATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 			/* singleton groups, so calculating quantile is
 			 * easy */
 			if (average)
-				bn = BATconvert(b, NULL, TYPE_dbl, 0, 0, 0);
+				bn = BATconvert(ma, b, NULL, TYPE_dbl, 0, 0, 0);
 			else
 				bn = COLcopy(b, tp, false, TRANSIENT);
 			BAThseqbase(bn, g->tseqbase); /* deals with NULL */
@@ -4230,32 +4233,32 @@ doBATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 }
 
 BAT *
-BATgroupmedian(BAT *b, BAT *g, BAT *e, BAT *s, int tp,
+BATgroupmedian(allocator *ma, BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 	       bool skip_nils)
 {
-	return doBATgroupquantile(b, g, e, s, tp, 0.5,
+	return doBATgroupquantile(ma, b, g, e, s, tp, 0.5,
 				  skip_nils, false);
 }
 
 BAT *
-BATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
+BATgroupquantile(allocator *ma, BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 		 bool skip_nils)
 {
-	return doBATgroupquantile(b, g, e, s, tp, quantile,
+	return doBATgroupquantile(ma, b, g, e, s, tp, quantile,
 				  skip_nils, false);
 }
 
 BAT *
-BATgroupmedian_avg(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils)
+BATgroupmedian_avg(allocator *ma, BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils)
 {
-	return doBATgroupquantile(b, g, e, s, tp, 0.5, skip_nils, true);
+	return doBATgroupquantile(ma, b, g, e, s, tp, 0.5, skip_nils, true);
 }
 
 BAT *
-BATgroupquantile_avg(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
+BATgroupquantile_avg(allocator *ma, BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 		     bool skip_nils)
 {
-	return doBATgroupquantile(b, g, e, s, tp, quantile,
+	return doBATgroupquantile(ma, b, g, e, s, tp, quantile,
 				  skip_nils, true);
 }
 
@@ -4783,32 +4786,36 @@ dogroupstdev(BAT **avgb, BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 }
 
 BAT *
-BATgroupstdev_sample(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils)
+BATgroupstdev_sample(allocator *ma, BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils)
 {
+	(void) ma;
 	return dogroupstdev(NULL, b, g, e, s, tp, skip_nils, true, false,
 			    __func__);
 }
 
 BAT *
-BATgroupstdev_population(BAT *b, BAT *g, BAT *e, BAT *s, int tp,
+BATgroupstdev_population(allocator *ma, BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 			 bool skip_nils)
 {
+	(void) ma;
 	return dogroupstdev(NULL, b, g, e, s, tp, skip_nils, false, false,
 			    __func__);
 }
 
 BAT *
-BATgroupvariance_sample(BAT *b, BAT *g, BAT *e, BAT *s, int tp,
+BATgroupvariance_sample(allocator *ma, BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 			bool skip_nils)
 {
+	(void) ma;
 	return dogroupstdev(NULL, b, g, e, s, tp, skip_nils, true, true,
 			    __func__);
 }
 
 BAT *
-BATgroupvariance_population(BAT *b, BAT *g, BAT *e, BAT *s, int tp,
+BATgroupvariance_population(allocator *ma, BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 			    bool skip_nils)
 {
+	(void) ma;
 	return dogroupstdev(NULL, b, g, e, s, tp, skip_nils, false, true,
 			    __func__);
 }

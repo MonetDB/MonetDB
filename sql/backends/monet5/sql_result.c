@@ -102,9 +102,8 @@
 	} while (0)
 
 static ssize_t
-dec_tostr(void *extra, char **Buf, size_t *len, int type, const void *a)
+dec_tostr(allocator *sa, void *extra, char **Buf, size_t *len, int type, const void *a)
 {
-	allocator *sa = MT_thread_getallocator();
 	assert(sa);
 	/* support dec map to bte, sht, int and lng */
 	if (type == TYPE_bte) {
@@ -132,27 +131,26 @@ struct time_res {
 };
 
 static ssize_t
-sql_time_tostr(void *TS_RES, char **buf, size_t *len, int type, const void *A)
+sql_time_tostr(allocator *sa, void *TS_RES, char **buf, size_t *len, int type, const void *A)
 {
 	struct time_res *ts_res = TS_RES;
 	ssize_t len1;
 	size_t big = 128;
 	char buf1[128], *s1 = buf1, *s;
 	daytime tmp;
+	assert(sa);
 
 	(void) type;
 	tmp = *(const daytime *) A;
 	if (ts_res->has_tz)
 		tmp = daytime_add_usec_modulo(tmp, ts_res->timezone * 1000);
 
-	len1 = daytime_precision_tostr(&s1, &big, tmp, ts_res->fraction, true);
+	len1 = daytime_precision_tostr(sa, &s1, &big, tmp, ts_res->fraction, true);
 	if (len1 < 0)
 		return -1;
 	if (len1 == 3 && strcmp(s1, "nil") == 0) {
 		if (*len < 4 || *buf == NULL) {
 			//GDKfree(*buf);
-			allocator *sa = MT_thread_getallocator();
-			assert(sa);
 			*buf = sa_zalloc(sa, *len = 4);
 			if (*buf == NULL)
 				return -1;
@@ -163,8 +161,6 @@ sql_time_tostr(void *TS_RES, char **buf, size_t *len, int type, const void *A)
 
 	if (*buf == NULL || *len < (size_t) len1 + 8) {
 		//GDKfree(*buf);
-		allocator *sa = MT_thread_getallocator();
-		assert(sa);
 		*buf = (str) sa_zalloc(sa, *len = len1 + 8);
 		if (*buf == NULL) {
 			return -1;
@@ -184,7 +180,7 @@ sql_time_tostr(void *TS_RES, char **buf, size_t *len, int type, const void *A)
 }
 
 static ssize_t
-sql_timestamp_tostr(void *TS_RES, char **buf, size_t *len, int type, const void *A)
+sql_timestamp_tostr(allocator *sa, void *TS_RES, char **buf, size_t *len, int type, const void *A)
 {
 	struct time_res *ts_res = TS_RES;
 	ssize_t len1, len2;
@@ -202,8 +198,8 @@ sql_timestamp_tostr(void *TS_RES, char **buf, size_t *len, int type, const void 
 	}
 	days = timestamp_date(tmp);
 	usecs = timestamp_daytime(tmp);
-	len1 = date_tostr(&s1, &big, &days, true);
-	len2 = daytime_precision_tostr(&s2, &big, usecs, ts_res->fraction, true);
+	len1 = date_tostr(sa, &s1, &big, &days, true);
+	len2 = daytime_precision_tostr(sa, &s2, &big, usecs, ts_res->fraction, true);
 	if (len1 < 0 || len2 < 0) {
 		//GDKfree(s1);
 		//GDKfree(s2);
@@ -214,8 +210,6 @@ sql_timestamp_tostr(void *TS_RES, char **buf, size_t *len, int type, const void 
 	    (len2 == 3 && strcmp(s2, "nil") == 0)) {
 		if (*len < 4 || *buf == NULL) {
 			//GDKfree(*buf);
-			allocator *sa = MT_thread_getallocator();
-			assert(sa);
 			*buf = sa_zalloc(sa, *len = 4);
 			if (*buf == NULL)
 				return -1;
@@ -226,8 +220,6 @@ sql_timestamp_tostr(void *TS_RES, char **buf, size_t *len, int type, const void 
 
 	if (*buf == NULL || *len < (size_t) len1 + (size_t) len2 + 8) {
 		//GDKfree(*buf);
-		allocator *sa = MT_thread_getallocator();
-		assert(sa);
 		*buf = (str) sa_zalloc(sa, *len = (size_t) (len1 + len2 + 8));
 		if (*buf == NULL) {
 			return -1;
@@ -372,10 +364,9 @@ bat_max_length(hge, hge)
 	} while (0)
 
 static void *
-dec_frstr(Column *c, int type, const char *s)
+dec_frstr(allocator *sa, Column *c, int type, const char *s)
 {
 	assert(c->decsep != '\0');
-	allocator *sa = MT_thread_getallocator();
 	assert(sa);
 
 	/* support dec map to bte, sht, int and lng */
@@ -398,10 +389,11 @@ dec_frstr(Column *c, int type, const char *s)
 }
 
 static void *
-sec_frstr(Column *c, int type, const char *s)
+sec_frstr(allocator *sa, Column *c, int type, const char *s)
 {
 	/* read a sec_interval value
 	 * this knows that the stored scale is always 3 */
+	assert(sa);
 	unsigned int i, neg = 0;
 	lng *r;
 	lng res = 0;
@@ -449,8 +441,6 @@ sec_frstr(Column *c, int type, const char *s)
 		res *= 10;
 	}
 	r = c->data;
-	allocator *sa = MT_thread_getallocator();
-	assert(sa);
 	if (r == NULL && (r = (lng *) sa_zalloc(sa, sizeof(lng))) == NULL)
 		return NULL;
 	c->data = r;
@@ -462,7 +452,7 @@ sec_frstr(Column *c, int type, const char *s)
 }
 
 static void *
-fltdbl_frStr(Column *c, int type, const char *s)
+fltdbl_frStr(allocator *sa, Column *c, int type, const char *s)
 {
 	// The regular fltFromStr/dblFromStr functions do not take decimal commas
 	// and thousands separators into account. When these are in use, this
@@ -515,17 +505,17 @@ fltdbl_frStr(Column *c, int type, const char *s)
 		s = &tmp[0];
 	}
 
-	ssize_t len = (*BATatoms[type].atomFromStr) (s, &c->len, &c->data, false);
+	ssize_t len = (*BATatoms[type].atomFromStr) (sa, s, &c->len, &c->data, false);
 	return (len > 0) ? c->data : NULL;
 }
 
 /* Literal parsing for SQL all pass through this routine */
 static void *
-_ASCIIadt_frStr(Column *c, int type, const char *s)
+_ASCIIadt_frStr(allocator *sa, Column *c, int type, const char *s)
 {
 	ssize_t len;
 
-	len = (*BATatoms[type].atomFromStr) (s, &c->len, &c->data, false);
+	len = (*BATatoms[type].atomFromStr) (sa, s, &c->len, &c->data, false);
 	if (len < 0)
 		return NULL;
 	switch (type) {
@@ -564,8 +554,9 @@ _ASCIIadt_frStr(Column *c, int type, const char *s)
 
 
 static ssize_t
-_ASCIIadt_toStr(void *extra, char **buf, size_t *len, int type, const void *a)
+_ASCIIadt_toStr(allocator *sa, void *extra, char **buf, size_t *len, int type, const void *a)
 {
+	assert(sa);
 	if (type == TYPE_str) {
 		Column *c = extra;
 		char *dst;
@@ -578,8 +569,6 @@ _ASCIIadt_toStr(void *extra, char **buf, size_t *len, int type, const void *a)
 			l = escapedStrlen(src, c->sep, c->rsep, 0);
 		if (l + 3 > *len) {
 			//GDKfree(*buf);
-			allocator *sa = MT_thread_getallocator();
-			assert(sa);
 			*len = 2 * l + 3;
 			*buf = sa_zalloc(sa, *len);
 			if (*buf == NULL) {
@@ -601,7 +590,7 @@ _ASCIIadt_toStr(void *extra, char **buf, size_t *len, int type, const void *a)
 		dst[l + l2] = 0;
 		return l + l2;
 	} else {
-		return (*BATatoms[type].atomToStr) (buf, len, a, true);
+		return (*BATatoms[type].atomToStr) (sa, buf, len, a, true);
 	}
 }
 
@@ -1084,21 +1073,21 @@ convert2str(mvc *m, sql_class eclass, int d, int sc, int has_tz, const void *p, 
 		(*buf)[0] = '\200';
 		(*buf)[1] = 0;
 	} else if (eclass == EC_DEC) {
-		l = dec_tostr((void *) (ptrdiff_t) sc, buf, len, mtype, p);
+		l = dec_tostr(m->sa, (void *) (ptrdiff_t) sc, buf, len, mtype, p);
 	} else if (eclass == EC_TIME || eclass == EC_TIME_TZ) {
 		struct time_res ts_res;
 		ts_res.has_tz = has_tz;
 		ts_res.fraction = d ? d - 1 : 0;
 		ts_res.timezone = m->timezone;
-		l = sql_time_tostr((void *) &ts_res, buf, len, mtype, p);
+		l = sql_time_tostr(m->sa, (void *) &ts_res, buf, len, mtype, p);
 	} else if (eclass == EC_TIMESTAMP || eclass == EC_TIMESTAMP_TZ) {
 		struct time_res ts_res;
 		ts_res.has_tz = has_tz;
 		ts_res.fraction = d ? d - 1 : 0;
 		ts_res.timezone = m->timezone;
-		l = sql_timestamp_tostr((void *) &ts_res, buf, len, mtype, p);
+		l = sql_timestamp_tostr(m->sa, (void *) &ts_res, buf, len, mtype, p);
 	} else if (eclass == EC_SEC) {
-		l = dec_tostr((void *) (ptrdiff_t) 3, buf, len, mtype, p);
+		l = dec_tostr(m->sa, (void *) (ptrdiff_t) 3, buf, len, mtype, p);
 	} else if (eclass == EC_BIT) {
 		bit b = *(bit *) p;
 		if (*len == 0 || *len > 5) {
@@ -1115,7 +1104,7 @@ convert2str(mvc *m, sql_class eclass, int d, int sc, int has_tz, const void *p, 
 			l = 1;
 		}
 	} else {
-		l = (*BATatoms[mtype].atomToStr) (buf, len, p, false);
+		l = (*BATatoms[mtype].atomToStr) (m->sa, buf, len, p, false);
 	}
 	return l;
 }
@@ -1130,7 +1119,7 @@ export_value(mvc *m, stream *s, sql_class eclass, const char *sqlname, int d, in
 		if (mnstr_write(s, ns, strlen(ns), 1) < 1)
 			ok = -4;
 	} else if (eclass == EC_DEC) {
-		l = dec_tostr((void *) (ptrdiff_t) sc, buf, len, mtype, p);
+		l = dec_tostr(m->sa, (void *) (ptrdiff_t) sc, buf, len, mtype, p);
 		if (l > 0 && mnstr_write(s, *buf, l, 1) < 1)
 			ok = -4;
 	} else if (eclass == EC_TIME || eclass == EC_TIME_TZ) {
@@ -1138,7 +1127,7 @@ export_value(mvc *m, stream *s, sql_class eclass, const char *sqlname, int d, in
 		ts_res.has_tz = (strcmp(sqlname, "timetz") == 0);
 		ts_res.fraction = d ? d - 1 : 0;
 		ts_res.timezone = m->timezone;
-		l = sql_time_tostr((void *) &ts_res, buf, len, mtype, p);
+		l = sql_time_tostr(m->sa, (void *) &ts_res, buf, len, mtype, p);
 		if (l >= 0 && mnstr_write(s, *buf, l, 1) < 1)
 			ok = -4;
 	} else if (eclass == EC_TIMESTAMP || eclass == EC_TIMESTAMP_TZ) {
@@ -1146,11 +1135,11 @@ export_value(mvc *m, stream *s, sql_class eclass, const char *sqlname, int d, in
 		ts_res.has_tz = (strcmp(sqlname, "timestamptz") == 0);
 		ts_res.fraction = d ? d - 1 : 0;
 		ts_res.timezone = m->timezone;
-		l = sql_timestamp_tostr((void *) &ts_res, buf, len, mtype, p);
+		l = sql_timestamp_tostr(m->sa, (void *) &ts_res, buf, len, mtype, p);
 		if (l >= 0 && mnstr_write(s, *buf, l, 1) < 1)
 			ok = -4;
 	} else if (eclass == EC_SEC) {
-		l = dec_tostr((void *) (ptrdiff_t) 3, buf, len, mtype, p);
+		l = dec_tostr(m->sa, (void *) (ptrdiff_t) 3, buf, len, mtype, p);
 		if (l >= 0 && mnstr_write(s, *buf, l, 1) < 1)
 			ok = -4;
 	} else {
@@ -1178,7 +1167,7 @@ export_value(mvc *m, stream *s, sql_class eclass, const char *sqlname, int d, in
 			break;
 #endif
 		default:
-			l = (*BATatoms[mtype].atomToStr) (buf, len, p, true);
+			l = (*BATatoms[mtype].atomToStr) (m->sa, buf, len, p, true);
 			if (l >= 0 && mnstr_write(s, *buf, l, 1) < 1)
 				ok = -4;
 		}
@@ -1381,7 +1370,7 @@ mvc_export_table_(mvc *m, int output_format, stream *s, res_table *t, BUN offset
 		}
 	}
 	if (i == t->nr_cols + 1)
-		ok = TABLEToutput_file(&as, NULL, s, m->scanner.rs);
+		ok = TABLEToutput_file(sa, &as, NULL, s, m->scanner.rs);
 	for (i = 0; i <= t->nr_cols; i++) {
 		fmt[i].sep = NULL;
 		fmt[i].rsep = NULL;
@@ -2006,7 +1995,7 @@ mvc_export_bin_chunk(backend *b, stream *s, int res_id, BUN offset, BUN nr)
 	if (res == NULL)
 		return 0;
 
-	allocator *sa = MT_thread_getallocator();
+	allocator *sa = b->mvc->sa;
 	assert(sa);
 	colinfo = ma_zalloc(sa, res->nr_cols * sizeof(*colinfo));
 	if (!colinfo) {

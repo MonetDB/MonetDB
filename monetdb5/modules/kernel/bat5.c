@@ -593,9 +593,9 @@ local_utoa(size_t i, char *buf)
 }
 
 static inline char *
-oidtostr(oid i, char *p, size_t len)
+oidtostr(allocator *ma, oid i, char *p, size_t len)
 {
-	if (OIDtoStr(&p, &len, &i, false) < 0)
+	if (OIDtoStr(ma, &p, &len, &i, false) < 0)
 		return NULL;
 	return p;
 }
@@ -676,7 +676,7 @@ HASHinfo(BAT *bk, BAT *bv, Hash *h, const char *s)
 static str
 BKCinfo(Client ctx, bat *ret1, bat *ret2, const bat *bid)
 {
-	(void) ctx;
+	allocator *ma = ctx->curprg->def->ma;
 	const char *mode, *accessmode;
 	BAT *bk = NULL, *bv = NULL, *b;
 	char bf[oidStrlen];
@@ -748,13 +748,13 @@ BKCinfo(Client ctx, bat *ret1, bat *ret2, const bat *bid)
 		|| BUNappend(bv, BATdirtybi(bi) ? "dirty" : "clean",
 					 false) != GDK_SUCCEED
 		|| BUNappend(bk, "hseqbase", false) != GDK_SUCCEED
-		|| BUNappend(bv, oidtostr(b->hseqbase, bf, sizeof(bf)),
+		|| BUNappend(bv, oidtostr(ma, b->hseqbase, bf, sizeof(bf)),
 					 FALSE) != GDK_SUCCEED
 		|| BUNappend(bk, "tdense", false) != GDK_SUCCEED
 		|| BUNappend(bv, local_itoa((ssize_t) BATtdensebi(&bi), buf),
 					 false) != GDK_SUCCEED
 		|| BUNappend(bk, "tseqbase", false) != GDK_SUCCEED
-		|| BUNappend(bv, oidtostr(bi.tseq, bf, sizeof(bf)),
+		|| BUNappend(bv, oidtostr(ma, bi.tseq, bf, sizeof(bf)),
 					 FALSE) != GDK_SUCCEED
 		|| BUNappend(bk, "tsorted", false) != GDK_SUCCEED
 		|| BUNappend(bv, local_itoa((ssize_t) bi.sorted, buf),

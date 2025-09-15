@@ -339,6 +339,7 @@ load_zero_terminated_text(BAT *bat, stream *s, int *eof_reached, int width, bool
 	int tpe = BATttype(bat);
 	void *buffer = NULL;
 	size_t buffer_len = 0;
+	allocator *sa = sa_create(NULL);
 
 	// convert_and_validate_utf8() above counts on the following property to hold:
 	assert(strNil((const char[2]){ 0x80, 0 }));
@@ -377,7 +378,7 @@ load_zero_terminated_text(BAT *bat, stream *s, int *eof_reached, int width, bool
 				}
 				value = start;
 			} else {
-				ssize_t n = ATOMfromstr(tpe, &buffer, &buffer_len, start, false);
+				ssize_t n = ATOMfromstr(sa, tpe, &buffer, &buffer_len, start, false);
 				if (n <= 0) {
 					msg = createException(SQL, "sql.importColumn", GDK_EXCEPTION);
 					goto end;
@@ -404,6 +405,7 @@ end:
 		bs->s = NULL;
 		bstream_destroy(bs);
 	}
+	sa_destroy(sa);
 	return msg;
 }
 

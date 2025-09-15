@@ -238,7 +238,7 @@ JSONtoStorageString(JSON *jt, int idx, json *ret, size_t *out_size)
 static str JSONstr2json(Client ctx, json *ret, const char *const*j);
 
 static ssize_t
-JSONfromString(const char *src, size_t *len, void **J, bool external)
+JSONfromString(allocator *ma, const char *src, size_t *len, void **J, bool external)
 {
 	json *buf = (json *) J;
 	if(*buf) {
@@ -246,8 +246,6 @@ JSONfromString(const char *src, size_t *len, void **J, bool external)
 		*buf = NULL;
 	}
 	if (strNil(src) || (external && strncmp(src, "nil", 3) == 0)) {
-		allocator *ma = MT_thread_getallocator();
-		assert(ma);
 		*buf = MA_STRDUP(ma, str_nil);
 		if (*buf == NULL)
 			return -1;
@@ -266,7 +264,7 @@ JSONfromString(const char *src, size_t *len, void **J, bool external)
 }
 
 static ssize_t
-JSONtoString(str *s, size_t *len, const void *SRC, bool external)
+JSONtoString(allocator *ma, str *s, size_t *len, const void *SRC, bool external)
 {
 	const char *src = SRC;
 	size_t cnt;
@@ -276,8 +274,6 @@ JSONtoString(str *s, size_t *len, const void *SRC, bool external)
 	if (strNil(src)) {
 		if (*s == NULL || *len < 4) {
 			//GDKfree(*s);
-			allocator *ma = MT_thread_getallocator();
-			assert(ma);
 			*len = 4;
 			*s = ma_alloc(ma, 4);
 			if (*s == NULL)
@@ -616,21 +612,22 @@ upgradeJSONStorage(char **out, const char **in)
 }
 
 static str
-jsonRead(str a, size_t *dstlen, stream *s, size_t cnt)
+jsonRead(allocator *ma, str a, size_t *dstlen, stream *s, size_t cnt)
 {
 	str out = NULL;
 	str msg;
+	(void) ma;
 
-	if ((a = BATatoms[TYPE_str].atomRead(a, dstlen, s, cnt)) == NULL)
+	if ((a = BATatoms[TYPE_str].atomRead(ma, a, dstlen, s, cnt)) == NULL)
 		return NULL;
 
 	if ((msg = JSONstr2json(/*ctx*/NULL, &out, &(const char *){a})) != MAL_SUCCEED) {
 		freeException(msg);
-		GDKfree(a);
+		//GDKfree(a);
 		return NULL;
 	}
 	*dstlen = strlen(out) + 1;
-	GDKfree(a);
+	//GDKfree(a);
 
 	return out;
 }
@@ -659,7 +656,7 @@ JSONprelude(void)
 		/* Change the read function of the json atom so that any values in the WAL
 		 * will also be upgraded.
 		 */
-		BATatoms[TYPE_json].atomRead = (void *(*)(void *, size_t *, stream *, size_t)) jsonRead;
+		BATatoms[TYPE_json].atomRead = (void *(*)(allocator *, void *, size_t *, stream *, size_t)) jsonRead;
 	}
 #endif
 	return MAL_SUCCEED;
@@ -2368,7 +2365,7 @@ JSONrenderRowObject(Client ctx, BAT **bl, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		tpe = getBatType(getArgType(mb, pci, i + 1));
 		bi = bat_iterator(bl[i + 1]);
 		p = BUNtail(bi, idx);
-		val = ATOMformat(tpe, p);
+		val = ATOMformat(mb->ma, tpe, p);
 		bat_iterator_end(&bi);
 		if (val == NULL) {
 			//GDKfree(row);
@@ -2489,7 +2486,7 @@ JSONrenderRowArray(Client ctx, BAT **bl, MalBlkPtr mb, InstrPtr pci, BUN idx)
 		tpe = getBatType(getArgType(mb, pci, i));
 		bi = bat_iterator(bl[i]);
 		p = BUNtail(bi, idx);
-		val = ATOMformat(tpe, p);
+		val = ATOMformat(ma, tpe, p);
 		bat_iterator_end(&bi);
 		if (val == NULL)
 			goto memfail;
@@ -2664,7 +2661,7 @@ JSONfoldKeyValue(Client ctx, str *ret, const bat *id, const bat *key, const bat 
 		if (tpe == TYPE_json)
 			val = p;
 		else {
-			if ((val = ATOMformat(tpe, p)) == NULL) {
+			if ((val = ATOMformat(ma, tpe, p)) == NULL) {
 				bat_iterator_end(&bki);
 				bat_iterator_end(&bvi);
 				goto memfail;

@@ -609,7 +609,7 @@ cstToken(allocator *ma, Client ctx, MalBlkPtr mb, ValPtr cst)
 		if (cst->vtype == TYPE_flt) {
 			size_t len = sizeof(flt);
 			float *pval = &cst->val.fval;
-			if (fltFromStr(CURRENT(ctx), &len, &pval, false) < 0) {
+			if (fltFromStr(ma, CURRENT(ctx), &len, &pval, false) < 0) {
 				parseError(ma, ctx, GDKerrbuf);
 				return i;
 			}
@@ -617,7 +617,7 @@ cstToken(allocator *ma, Client ctx, MalBlkPtr mb, ValPtr cst)
 		if (cst->vtype == TYPE_dbl) {
 			size_t len = sizeof(dbl);
 			double *pval = &cst->val.dval;
-			if (dblFromStr(CURRENT(ctx), &len, &pval, false) < 0) {
+			if (dblFromStr(ma, CURRENT(ctx), &len, &pval, false) < 0) {
 				parseError(ma, ctx, GDKerrbuf);
 				return i;
 			}
@@ -625,7 +625,7 @@ cstToken(allocator *ma, Client ctx, MalBlkPtr mb, ValPtr cst)
 		if (*s == '@') {
 			size_t len = sizeof(lng);
 			lng l, *pval = &l;
-			if (lngFromStr(CURRENT(ctx), &len, &pval, false) < 0) {
+			if (lngFromStr(ma, CURRENT(ctx), &len, &pval, false) < 0) {
 				parseError(ma, ctx, GDKerrbuf);
 				return i;
 			}
@@ -660,14 +660,14 @@ cstToken(allocator *ma, Client ctx, MalBlkPtr mb, ValPtr cst)
 			if (cst->vtype == TYPE_dbl) {
 				size_t len = sizeof(dbl);
 				dbl *pval = &cst->val.dval;
-				if (dblFromStr(CURRENT(ctx), &len, &pval, false) < 0) {
+				if (dblFromStr(ma, CURRENT(ctx), &len, &pval, false) < 0) {
 					parseError(ma, ctx, GDKerrbuf);
 					return i;
 				}
 			} else {
 				size_t len = sizeof(lng);
 				lng *pval = &cst->val.lval;
-				if (lngFromStr(CURRENT(ctx), &len, &pval, false) < 0) {
+				if (lngFromStr(ma, CURRENT(ctx), &len, &pval, false) < 0) {
 					parseError(ma, ctx, GDKerrbuf);
 					return i;
 				}
@@ -685,7 +685,7 @@ cstToken(allocator *ma, Client ctx, MalBlkPtr mb, ValPtr cst)
 				i++;
 				s++;
 			}
-			if (hgeFromStr(CURRENT(ctx), &len, &pval, false) < 0) {
+			if (hgeFromStr(ma, CURRENT(ctx), &len, &pval, false) < 0) {
 				parseError(ma, ctx, GDKerrbuf);
 				return i;
 			}
@@ -701,7 +701,7 @@ cstToken(allocator *ma, Client ctx, MalBlkPtr mb, ValPtr cst)
 #ifdef HAVE_HGE
 			size_t len = sizeof(hge);
 			hge l, *pval = &l;
-			if (hgeFromStr(CURRENT(ctx), &len, &pval, false) < 0)
+			if (hgeFromStr(ma, CURRENT(ctx), &len, &pval, false) < 0)
 				l = hge_nil;
 
 			if ((hge) GDK_int_min <= l && l <= (hge) GDK_int_max) {

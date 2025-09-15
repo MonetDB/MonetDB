@@ -580,13 +580,11 @@ GDKstrFromStr(unsigned char *restrict dst, const unsigned char *restrict src, ss
 }
 
 ssize_t
-strFromStr(const char *restrict src, size_t *restrict len, char **restrict dst, bool external)
+strFromStr(allocator *ma, const char *restrict src, size_t *restrict len, char **restrict dst, bool external)
 {
 	const char *cur = src, *start = NULL;
 	size_t l = 1;
 	bool escaped = false;
-	allocator *ma = MT_thread_getallocator();
-	assert(ma);
 
 	if (!external) {
 		size_t sz = strLen(src);
@@ -626,7 +624,7 @@ strFromStr(const char *restrict src, size_t *restrict len, char **restrict dst, 
 		}
 	}
 
-	/* alloc new memory */
+	/* allocate new memory */
 	if (*dst == NULL || *len < l) {
 		//GDKfree(*dst);
 		*dst = ma_alloc(ma, *len = l);
@@ -800,7 +798,7 @@ strWrite(const char *a, stream *s, size_t cnt)
 }
 
 static gdk_return
-concat_strings(allocator *alloc, BAT **bnp, ValPtr pt, BAT *b, oid seqb,
+concat_strings(allocator *ma, BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 	       BUN ngrp, struct canditer *restrict ci,
 	       const oid *restrict gids, oid min, oid max, bool skip_nils,
 	       BAT *sep, const char *restrict separator, BUN *has_nils)
@@ -884,7 +882,7 @@ concat_strings(allocator *alloc, BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 		if (nils == 0 && !empty) {
 			char *single_str = NULL;
 
-			if ((single_str = sa_alloc(alloc, single_length + 1)) == NULL) {
+			if ((single_str = sa_alloc(ma, single_length + 1)) == NULL) {
 				bat_iterator_end(&bi);
 				bat_iterator_end(&bis);
 				BBPreclaim(bn);
@@ -950,7 +948,7 @@ concat_strings(allocator *alloc, BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 				return GDK_FAIL;
 			}
 		} else {
-			if (VALinit(alloc, pt, TYPE_str, str_nil) == NULL) {
+			if (VALinit(ma, pt, TYPE_str, str_nil) == NULL) {
 				bat_iterator_end(&bi);
 				bat_iterator_end(&bis);
 				return GDK_FAIL;
@@ -962,8 +960,8 @@ concat_strings(allocator *alloc, BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 	} else {
 		/* first used to calculated the total length of
 		 * each group, then the the total offset */
-		lengths = sa_zalloc(alloc, ngrp * sizeof(*lengths));
-		astrings = sa_alloc(alloc, ngrp * sizeof(str));
+		lengths = sa_zalloc(ma, ngrp * sizeof(*lengths));
+		astrings = sa_alloc(ma, ngrp * sizeof(str));
 		if (lengths == NULL || astrings == NULL) {
 			goto finish;
 		}
@@ -1021,7 +1019,7 @@ concat_strings(allocator *alloc, BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 		if (separator) {
 			for (i = 0; i < ngrp; i++) {
 				if (astrings[i] == NULL) {
-					if ((astrings[i] = sa_alloc(alloc, lengths[i] + 1)) == NULL) {
+					if ((astrings[i] = sa_alloc(ma, lengths[i] + 1)) == NULL) {
 						goto finish;
 					}
 					astrings[i][0] = 0;
@@ -1033,7 +1031,7 @@ concat_strings(allocator *alloc, BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 			assert(sep != NULL);
 			for (i = 0; i < ngrp; i++) {
 				if (astrings[i] == NULL) {
-					if ((astrings[i] = sa_alloc(alloc, lengths[i] + 1)) == NULL) {
+					if ((astrings[i] = sa_alloc(ma, lengths[i] + 1)) == NULL) {
 						goto finish;
 					}
 					astrings[i][0] = 0;
@@ -1129,7 +1127,7 @@ concat_strings(allocator *alloc, BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 }
 
 gdk_return
-BATstr_group_concat(allocator *alloc, ValPtr res, BAT *b, BAT *s, BAT *sep, bool skip_nils,
+BATstr_group_concat(allocator *ma, ValPtr res, BAT *b, BAT *s, BAT *sep, bool skip_nils,
 		    bool nil_if_empty, const char *restrict separator)
 {
 	struct canditer ci;
@@ -1144,7 +1142,7 @@ BATstr_group_concat(allocator *alloc, ValPtr res, BAT *b, BAT *s, BAT *sep, bool
 
 	if (sep && BATcount(sep) == 1) { /* Only one element in sep */
 		BATiter bi = bat_iterator(sep);
-		nseparator = sa_strdup(alloc, BUNtvar(bi, 0));
+		nseparator = sa_strdup(ma, BUNtvar(bi, 0));
 		bat_iterator_end(&bi);
 		if (!nseparator)
 			return GDK_FAIL;
@@ -1153,14 +1151,14 @@ BATstr_group_concat(allocator *alloc, ValPtr res, BAT *b, BAT *s, BAT *sep, bool
 	}
 
 	if (ci.ncand == 0 || (nseparator && strNil(nseparator))) {
-		if (VALinit(alloc, res, TYPE_str, nil_if_empty ? str_nil : "") == NULL)
+		if (VALinit(ma, res, TYPE_str, nil_if_empty ? str_nil : "") == NULL)
 			r = GDK_FAIL;
 		//if (free_nseparator)
 		//	GDKfree(nseparator);
 		return r;
 	}
 
-	r = concat_strings(alloc, NULL, res, b, b->hseqbase, 1, &ci, NULL, 0, 0,
+	r = concat_strings(ma, NULL, res, b, b->hseqbase, 1, &ci, NULL, 0, 0,
 			      skip_nils, sep, nseparator, NULL);
 	//if (free_nseparator)
 	//	GDKfree(nseparator);
@@ -1168,7 +1166,7 @@ BATstr_group_concat(allocator *alloc, ValPtr res, BAT *b, BAT *s, BAT *sep, bool
 }
 
 BAT *
-BATgroupstr_group_concat(allocator *alloc, BAT *b, BAT *g, BAT *e, BAT *s, BAT *sep, bool skip_nils,
+BATgroupstr_group_concat(allocator *ma, BAT *b, BAT *g, BAT *e, BAT *s, BAT *sep, bool skip_nils,
 			 const char *restrict separator)
 {
 	BAT *bn = NULL;
@@ -1195,7 +1193,7 @@ BATgroupstr_group_concat(allocator *alloc, BAT *b, BAT *g, BAT *e, BAT *s, BAT *
 
 	if (sep && BATcount(sep) == 1) { /* Only one element in sep */
 		BATiter bi = bat_iterator(sep);
-		nseparator = sa_strdup(alloc, BUNtvar(bi, 0));
+		nseparator = sa_strdup(ma, BUNtvar(bi, 0));
 		bat_iterator_end(&bi);
 		if (!nseparator)
 			return NULL;
@@ -1213,13 +1211,13 @@ BATgroupstr_group_concat(allocator *alloc, BAT *b, BAT *g, BAT *e, BAT *s, BAT *
 	if (ci.ncand == ngrp && (BATtdense(g) || (g->tkey && g->tnonil))) {
 		/* trivial: singleton groups, so all results are equal
 		 * to the inputs (but possibly a different type) */
-		bn = BATconvert(b, s, TYPE_str, 0, 0, 0);
+		bn = BATconvert(ma, b, s, TYPE_str, 0, 0, 0);
 		if (bn)
 			bn->hseqbase = min;
 		goto done;
 	}
 
-	res = concat_strings(alloc, &bn, NULL, b, b->hseqbase, ngrp, &ci,
+	res = concat_strings(ma, &bn, NULL, b, b->hseqbase, ngrp, &ci,
 			     (const oid *) Tloc(g, 0), min, max, skip_nils, sep,
 			     nseparator, &nils);
 	if (res != GDK_SUCCEED)

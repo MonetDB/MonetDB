@@ -244,10 +244,10 @@ BLOBblob_blob_bulk(Client ctx, bat *res, const bat *bid, const bat *sid)
 static str
 BLOBblob_fromstr(Client ctx, blob **b, const char *const*s)
 {
-	(void) ctx;
+	allocator *ma = ctx->curprg->def->ma;
 	size_t len = 0;
 
-	if (BATatoms[TYPE_blob].atomFromStr(*s, &len, (void **) b, false) < 0)
+	if (BATatoms[TYPE_blob].atomFromStr(ma, *s, &len, (void **) b, false) < 0)
 		throw(MAL, "blob", GDK_EXCEPTION);
 	return MAL_SUCCEED;
 }
@@ -255,7 +255,7 @@ BLOBblob_fromstr(Client ctx, blob **b, const char *const*s)
 static str
 BLOBblob_fromstr_bulk(Client ctx, bat *res, const bat *bid, const bat *sid)
 {
-	(void) ctx;
+	allocator *ma = ctx->curprg->def->ma;
 	BAT *b, *s = NULL, *bn;
 
 	if ((b = BATdescriptor(*bid)) == NULL)
@@ -264,7 +264,7 @@ BLOBblob_fromstr_bulk(Client ctx, bat *res, const bat *bid, const bat *sid)
 		BBPunfix(b->batCacheid);
 		throw(MAL, "batcalc.blob", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
-	bn = BATconvert(b, s, TYPE_blob, 0, 0, 0);
+	bn = BATconvert(ma, b, s, TYPE_blob, 0, 0, 0);
 	BBPunfix(b->batCacheid);
 	BBPreclaim(s);
 	if (bn == NULL)

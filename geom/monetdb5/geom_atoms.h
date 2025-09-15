@@ -20,12 +20,12 @@ extern mbr mbrNIL;
 static const wkb wkb_nil = { ~0, 0 };
 
 /* WKB atom type functions */
-ssize_t wkbTOSTR(char **geomWKT, size_t *len, const void *GEOMWKB, bool external);
-ssize_t wkbFROMSTR(const char *geomWKT, size_t *len, void **GEOMWKB, bool external);
+ssize_t wkbTOSTR(allocator *, char **geomWKT, size_t *len, const void *GEOMWKB, bool external);
+ssize_t wkbFROMSTR(allocator *, const char *geomWKT, size_t *len, void **GEOMWKB, bool external);
 BUN wkbHASH(const void *W);
 const void * wkbNULL(void);
 int wkbCOMP(const void *L, const void *R);
-void * wkbREAD(void *A, size_t *dstlen, stream *s, size_t cnt);
+void * wkbREAD(allocator *ma, void *A, size_t *dstlen, stream *s, size_t cnt);
 gdk_return wkbWRITE(const void *A, stream *s, size_t cnt);
 var_t wkbPUT(BAT *b, var_t *bun, const void *VAL);
 void wkbDEL(Heap *h, var_t *index);
@@ -38,12 +38,12 @@ var_t wkb_size(size_t len);
 str wkbFROMSTR_withSRID(const char *geomWKT, size_t *len, wkb **geomWKB, int srid, size_t *nread);
 
 /* MBR atom type functions */
-ssize_t mbrTOSTR(char **dst, size_t *len, const void *ATOM, bool external);
-ssize_t mbrFROMSTR(const char *src, size_t *len, void **ATOM, bool external);
+ssize_t mbrTOSTR(allocator *, char **dst, size_t *len, const void *ATOM, bool external);
+ssize_t mbrFROMSTR(allocator *, const char *src, size_t *len, void **ATOM, bool external);
 BUN mbrHASH(const void *ATOM);
 const void * mbrNULL(void);
 int mbrCOMP(const void *L, const void *R);
-void * mbrREAD(void *A, size_t *dstlen, stream *s, size_t cnt);
+void * mbrREAD(allocator *, void *A, size_t *dstlen, stream *s, size_t cnt);
 gdk_return mbrWRITE(const void *C, stream *s, size_t cnt);
 /* Non-atom MBR functions */
 bool is_mbr_nil(const mbr *m);

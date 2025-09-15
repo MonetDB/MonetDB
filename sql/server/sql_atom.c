@@ -280,16 +280,16 @@ atom_general(allocator *sa, sql_subtype *tpe, const char *val, long tz_offset)
 			memcpy(a->data.val.sval, val, a->data.len);
 			a->data.allocated = false;
 		} else if (type == TYPE_timestamp) {
-			if (sql_timestamp_fromstr(val, &a->data.val.lval, tz_offset/1000, tpe->type->eclass == EC_TIMESTAMP) < 0 ||
+			if (sql_timestamp_fromstr(sa, val, &a->data.val.lval, tz_offset/1000, tpe->type->eclass == EC_TIMESTAMP) < 0 ||
 					(timestamp)a->data.val.lval == timestamp_nil)
 					return NULL;
 		} else if (type == TYPE_daytime) {
-			if (sql_daytime_fromstr(val, &a->data.val.lval, tz_offset/1000, tpe->type->eclass == EC_TIME) < 0 ||
+			if (sql_daytime_fromstr(sa, val, &a->data.val.lval, tz_offset/1000, tpe->type->eclass == EC_TIME) < 0 ||
 					(daytime)a->data.val.lval == daytime_nil)
 					return NULL;
 		} else {
 			ptr p = NULL;
-			ssize_t res = ATOMfromstr(type, &p, &a->data.len, val, false);
+			ssize_t res = ATOMfromstr(sa, type, &p, &a->data.len, val, false);
 
 			/* no result or nil means error (SQL has NULL not nil) */
 			if (res < 0 || !p || ATOMcmp(type, p, ATOMnilptr(type)) == 0) {
@@ -375,7 +375,7 @@ atom2string(allocator *sa, atom *a)
 	case TYPE_hge: {
 		char *_buf = buf;
 		size_t _bufsiz = sizeof(buf);
-		hgeToStr(&_buf, &_bufsiz, &a->data.val.hval, true);
+		hgeToStr(sa, &_buf, &_bufsiz, &a->data.val.hval, true);
 		break;
 	}
 #endif
@@ -408,12 +408,12 @@ atom2string(allocator *sa, atom *a)
 		assert(a->data.val.sval);
 		return sa_strdup(sa, a->data.val.sval);
 	default:
-		if ((p = ATOMformat(a->data.vtype, VALget(&a->data))) == NULL) {
+		if ((p = ATOMformat(sa, a->data.vtype, VALget(&a->data))) == NULL) {
 			snprintf(buf, sizeof(buf), "atom2string(TYPE_%d) not implemented", a->data.vtype);
 		} else {
-			 char *r = sa_strdup(sa, p);
+			 //char *r = sa_strdup(sa, p);
 			 // GDKfree(p);
-			 return r;
+			 return p;
 		}
 	}
 	return sa_strdup(sa, buf);
@@ -469,7 +469,7 @@ atom2sql(allocator *sa, atom *a, int timezone)
 
 		if ((res = SA_NEW_ARRAY(sa, char, blobstr_size + 8))) {
 			char *tail = stpcpy(res, "blob '");
-			ssize_t blobstr_offset = BATatoms[TYPE_blob].atomToStr(&tail, &blobstr_size, b, true);
+			ssize_t blobstr_offset = BATatoms[TYPE_blob].atomToStr(sa, &tail, &blobstr_size, b, true);
 			strcpy(res + blobstr_offset + 6, "'");
 		}
 		return res;
@@ -528,7 +528,7 @@ atom2sql(allocator *sa, atom *a, int timezone)
 		case TYPE_hge: {
 			char *_buf = buf;
 			size_t _bufsiz = sizeof(buf);
-			hgeToStr(&_buf, &_bufsiz, &a->data.val.hval, true);
+			hgeToStr(sa, &_buf, &_bufsiz, &a->data.val.hval, true);
 			break;
 		}
 #endif
@@ -611,7 +611,7 @@ atom2sql(allocator *sa, atom *a, int timezone)
 
 			if (ec == EC_TIME_TZ)
 				dt = daytime_add_usec_modulo(dt, timezone * 1000);
-			if ((lens = daytime_precision_tostr(&s, &len, dt, (int) digits, true)) < 0)
+			if ((lens = daytime_precision_tostr(sa, &s, &len, dt, (int) digits, true)) < 0)
 				assert(0);
 
 			if (ec == EC_TIME_TZ) {
@@ -624,7 +624,7 @@ atom2sql(allocator *sa, atom *a, int timezone)
 		} break;
 		case EC_DATE: {
 			date dt = a->data.val.ival;
-			if (date_tostr(&val2, &len, &dt, false) < 0)
+			if (date_tostr(sa, &val2, &len, &dt, false) < 0)
 				assert(0);
 		} break;
 		case EC_TIMESTAMP:
@@ -640,7 +640,7 @@ atom2sql(allocator *sa, atom *a, int timezone)
 			if (ec == EC_TIMESTAMP_TZ)
 				ts = timestamp_add_usec(ts, timezone * 1000);
 			days = timestamp_date(ts);
-			if ((lens = date_tostr(&s, &len, &days, true)) < 0)
+			if ((lens = date_tostr(sa, &s, &len, &days, true)) < 0)
 				assert(0);
 
 			s += lens;
@@ -649,7 +649,7 @@ atom2sql(allocator *sa, atom *a, int timezone)
 			assert(nlen < len);
 
 			usecs = timestamp_daytime(ts);
-			if ((lens = daytime_precision_tostr(&s, &nlen, usecs, (int) digits, true)) < 0)
+			if ((lens = daytime_precision_tostr(sa, &s, &nlen, usecs, (int) digits, true)) < 0)
 				assert(0);
 
 			if (ec == EC_TIMESTAMP_TZ) {

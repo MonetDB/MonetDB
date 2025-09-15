@@ -165,7 +165,7 @@ propvalue2string(allocator *sa, prop *p)
 		if (a->isnull) {
 			res = sa_strdup(sa, "\"NULL\"");
 		} else {
-			char *s = ATOMformat(a->data.vtype, VALptr(&a->data));
+			char *s = ATOMformat(sa, a->data.vtype, VALptr(&a->data));
 			if (s && *s == '"') {
 				res = sa_strdup(sa, s);
 			} else if (s) {

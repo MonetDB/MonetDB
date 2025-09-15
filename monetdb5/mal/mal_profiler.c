@@ -260,7 +260,7 @@ format_val2json(const Client c, const ValPtr res)
 		use_external = false;
 	}
 
-	if ((*BATatoms[res->vtype].atomToStr) (&buf, &sz, VALptr(res),
+	if ((*BATatoms[res->vtype].atomToStr) (ma, &buf, &sz, VALptr(res),
 										   use_external) < 0)
 		return NULL;
 
@@ -278,7 +278,7 @@ format_val2json(const Client c, const ValPtr res)
 	//GDKfree(buf);
 
 	char *buf2;
-	buf2 = VALformat(&val);
+	buf2 = VALformat(ma, &val);
 	VALclear(&val);
 
 	return buf2;
@@ -449,7 +449,7 @@ prepareMalEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 							goto cleanup_and_exit;
 						}
 
-						cv = VALformat(&stk->stk[getArg(pci, j)]);
+						cv = VALformat(mb->ma, &stk->stk[getArg(pci, j)]);
 						if (cv) {
 							c = strchr(cv, '>');
 							if (c)	/* unlikely that this isn't true */

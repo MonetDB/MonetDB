@@ -657,7 +657,7 @@ typedef struct {
 
 /* interface definitions */
 gdk_export void *VALconvert(allocator *ma, int typ, ValPtr t);
-gdk_export char *VALformat(const ValRecord *res)
+gdk_export char *VALformat(allocator *ma, const ValRecord *res)
 	__attribute__((__warn_unused_result__));
 gdk_export void VALempty(ValPtr v)
 	__attribute__((__access__(write_only, 1)));
@@ -1476,8 +1476,8 @@ gdk_export void OIDXdestroy(BAT *b);
  * each association.
  *
  */
-gdk_export gdk_return BATprintcolumns(stream *s, int argc, BAT *argv[]);
-gdk_export gdk_return BATprint(stream *s, BAT *b);
+gdk_export gdk_return BATprintcolumns(allocator *ma, stream *s, int argc, BAT *argv[]);
+gdk_export gdk_return BATprint(allocator *ma, stream *s, BAT *b);
 
 /*
  * @- BAT clustering

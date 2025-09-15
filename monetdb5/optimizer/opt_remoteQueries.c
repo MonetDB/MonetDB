@@ -54,7 +54,7 @@ RQcall2str(str msg, MalBlkPtr mb, InstrPtr p)
 				if (v->type == TYPE_void) {
 					snprintf(msg + len, BUFSIZ - len, "nil");
 				} else {
-					if ((cv = VALformat(&v->value)) == NULL) {
+					if ((cv = VALformat(mb->ma, &v->value)) == NULL) {
 						return NULL;
 					}
 					snprintf(msg + len, BUFSIZ - len, "%s:%s", cv, ATOMname(v->type));

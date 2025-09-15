@@ -1244,7 +1244,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 				} else {
 					char *result = NULL;
 					size_t length = 0;
-					if (BATatoms[bat_type].atomToStr(&result, &length, t, false) ==
+					if (BATatoms[bat_type].atomToStr(mb->ma, &result, &length, t, false) ==
 						0) {
 						bat_iterator_end(&li);
 						msg = createException(
@@ -1535,7 +1535,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 					if (strNil(ptr)) {
 						appended_element = (void *)BATatoms[bat_type].atomNull;
 					} else {
-						if (BATatoms[bat_type].atomFromStr(ptr, &len, &element, false) ==
+						if (BATatoms[bat_type].atomFromStr(mb->ma, ptr, &len, &element, false) ==
 							0) {
 							msg = createException(MAL, "cudf.eval",
 												  "Failed to convert output "

@@ -75,7 +75,7 @@ static const inet inet_nil = {.isnil = 1};
  * Returns the number of chars read
  */
 static ssize_t
-INETfromString(const char *src, size_t *len, void **RETVAL, bool external)
+INETfromString(allocator *ma, const char *src, size_t *len, void **RETVAL, bool external)
 {
 	inet **retval = (inet **) RETVAL;
 	int i, last, type;
@@ -88,8 +88,6 @@ INETfromString(const char *src, size_t *len, void **RETVAL, bool external)
 
 	if (*len < sizeof(inet) || *retval == NULL) {
 		// GDKfree(*retval);
-		allocator *ma = MT_thread_getallocator();
-		assert(ma);
 		*retval = ma_zalloc(ma, sizeof(inet));
 		if (*retval == NULL) {
 			*len = 0;
@@ -202,14 +200,12 @@ INETfromString(const char *src, size_t *len, void **RETVAL, bool external)
  * Returns the length of the string
  */
 static ssize_t
-INETtoString(str *retval, size_t *len, const void *handle, bool external)
+INETtoString(allocator *ma, str *retval, size_t *len, const void *handle, bool external)
 {
 	const inet *value = (const inet *) handle;
 
 	if (*len < 20 || *retval == NULL) {
 		// GDKfree(*retval);
-		allocator *ma = MT_thread_getallocator();
-		assert(ma);
 		*retval = ma_alloc(ma, sizeof(char) * (*len = 20));
 		if (*retval == NULL)
 			return -1;
@@ -236,11 +232,11 @@ INETtoString(str *retval, size_t *len, const void *handle, bool external)
 static str
 INETnew(Client ctx, inet *retval, const char *const *in)
 {
-	(void) ctx;
+	allocator *ma = ctx->curprg->def->ma;
 	ssize_t pos;
 	size_t len = sizeof(inet);
 
-	pos = INETfromString(*in, &len, (void **) &retval, false);
+	pos = INETfromString(ma, *in, &len, (void **) &retval, false);
 	if (pos < 0)
 		throw(PARSE, "inet.new", GDK_EXCEPTION);
 
@@ -809,9 +805,9 @@ INET_inet(Client ctx, inet *d, const inet *s)
 static str
 INET_fromstr(Client ctx, inet *ret, const char *const *s)
 {
-	(void) ctx;
+	allocator *ma = ctx->curprg->def->ma;
 	size_t len = sizeof(inet);
-	if (INETfromString(*s, &len, (void **) &ret, false) < 0)
+	if (INETfromString(ma, *s, &len, (void **) &ret, false) < 0)
 		throw(MAL, "inet.inet", GDK_EXCEPTION);
 	return MAL_SUCCEED;
 }

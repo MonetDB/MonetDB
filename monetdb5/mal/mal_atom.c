@@ -56,7 +56,7 @@ malAtomProperty(mel_func *f)
 		break;
 	case 'f':
 		if (idcmp("fromstr", name) == 0 && f->argc == 1) {
-			BATatoms[tpe].atomFromStr = (ssize_t (*)(const char *, size_t *, ptr *, bool)) f->imp;
+			BATatoms[tpe].atomFromStr = (ssize_t (*)(allocator *, const char *, size_t *, ptr *, bool)) f->imp;
 			return MAL_SUCCEED;
 		}
 		break;
@@ -105,13 +105,13 @@ malAtomProperty(mel_func *f)
 		break;
 	case 't':
 		if (idcmp("tostr", name) == 0 && f->argc == 1) {
-			BATatoms[tpe].atomToStr = (ssize_t (*)(str *, size_t *, const void *, bool)) f->imp;
+			BATatoms[tpe].atomToStr = (ssize_t (*)(allocator *, str *, size_t *, const void *, bool)) f->imp;
 			return MAL_SUCCEED;
 		}
 		break;
 	case 'r':
 		if (idcmp("read", name) == 0 && f->argc == 1) {
-			BATatoms[tpe].atomRead = (void *(*)(void *, size_t *, stream *, size_t)) f->imp;
+			BATatoms[tpe].atomRead = (void *(*)(allocator *, void *, size_t *, stream *, size_t)) f->imp;
 			return MAL_SUCCEED;
 		}
 		break;

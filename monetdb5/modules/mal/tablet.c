@@ -223,7 +223,7 @@ TABLET_error(stream *s)
    with UDP, where you may loose most of the information using short writes
 */
 static inline int
-output_line(char **buf, size_t *len, char **localbuf, size_t *locallen,
+output_line(allocator *ma, char **buf, size_t *len, char **localbuf, size_t *locallen,
 			Column *fmt, stream *fd, BUN nr_attrs, oid id)
 {
 	BUN i;
@@ -250,7 +250,7 @@ output_line(char **buf, size_t *len, char **localbuf, size_t *locallen,
 					p = f->nullstr;
 					l = (ssize_t) strlen(f->nullstr);
 				} else {
-					l = f->tostr(f->extra, localbuf, locallen, f->adt, p);
+					l = f->tostr(ma, f->extra, localbuf, locallen, f->adt, p);
 					if (l < 0)
 						return -1;
 					p = *localbuf;
@@ -277,7 +277,7 @@ output_line(char **buf, size_t *len, char **localbuf, size_t *locallen,
 }
 
 static inline int
-output_line_dense(char **buf, size_t *len, char **localbuf, size_t *locallen,
+output_line_dense(allocator *ma, char **buf, size_t *len, char **localbuf, size_t *locallen,
 				  Column *fmt, stream *fd, BUN nr_attrs)
 {
 	BUN i;
@@ -295,7 +295,7 @@ output_line_dense(char **buf, size_t *len, char **localbuf, size_t *locallen,
 				p = f->nullstr;
 				l = (ssize_t) strlen(p);
 			} else {
-				l = f->tostr(f->extra, localbuf, locallen, f->adt, p);
+				l = f->tostr(ma, f->extra, localbuf, locallen, f->adt, p);
 				if (l < 0)
 					return -1;
 				p = *localbuf;
@@ -324,7 +324,7 @@ output_line_dense(char **buf, size_t *len, char **localbuf, size_t *locallen,
 }
 
 static inline int
-output_line_lookup(char **buf, size_t *len, Column *fmt, stream *fd,
+output_line_lookup(allocator *ma, char **buf, size_t *len, Column *fmt, stream *fd,
 				   BUN nr_attrs, oid id)
 {
 	BUN i;
@@ -340,7 +340,7 @@ output_line_lookup(char **buf, size_t *len, Column *fmt, stream *fd,
 				if (mnstr_write(fd, f->nullstr, 1, l) != (ssize_t) l)
 					return TABLET_error(fd);
 			} else {
-				ssize_t l = f->tostr(f->extra, buf, len, f->adt, p);
+				ssize_t l = f->tostr(ma, f->extra, buf, len, f->adt, p);
 
 				if (l < 0 || mnstr_write(fd, *buf, 1, l) != l)
 					return TABLET_error(fd);
@@ -399,19 +399,19 @@ output_line_lookup(char **buf, size_t *len, Column *fmt, stream *fd,
  */
 
 static int
-output_file_default(Tablet *as, BAT *order, stream *fd, bstream *in)
+output_file_default(allocator *ma, Tablet *as, BAT *order, stream *fd, bstream *in)
 {
 	size_t len = BUFSIZ, locallen = BUFSIZ;
 	int res = 0;
-	char *buf = GDKmalloc(len);
-	char *localbuf = GDKmalloc(len);
+	char *buf = ma_alloc(ma, len);
+	char *localbuf = ma_alloc(ma, len);
 	BUN p, q;
 	oid id;
 	BUN offset = as->offset;
 
 	if (buf == NULL || localbuf == NULL) {
-		GDKfree(buf);
-		GDKfree(localbuf);
+		//GDKfree(buf);
+		//GDKfree(localbuf);
 		return -1;
 	}
 	for (q = offset + as->nr, p = offset, id = order->hseqbase + offset; p < q;
@@ -420,21 +420,20 @@ output_file_default(Tablet *as, BAT *order, stream *fd, bstream *in)
 			res = -5;
 			break;
 		}
-		if ((res = output_line(&buf, &len, &localbuf, &locallen, as->format, fd, as->nr_attrs, id)) < 0) {
+		if ((res = output_line(ma, &buf, &len, &localbuf, &locallen, as->format, fd, as->nr_attrs, id)) < 0) {
 			break;
 		}
 	}
-	GDKfree(localbuf);
-	GDKfree(buf);
+	//GDKfree(localbuf);
+	//GDKfree(buf);
 	return res;
 }
 
 static int
-output_file_dense(Tablet *as, stream *fd, bstream *in)
+output_file_dense(allocator *ma, Tablet *as, stream *fd, bstream *in)
 {
 	size_t len = BUFSIZ, locallen = BUFSIZ;
 	int res = 0;
-	allocator *ma = MT_thread_getallocator();
 	assert(ma);
 	char *buf = ma_alloc(ma, len);
 	char *localbuf = ma_alloc(ma, len);
@@ -450,7 +449,7 @@ output_file_dense(Tablet *as, stream *fd, bstream *in)
 			res = -5;			/* "Query aborted" */
 			break;
 		}
-		if ((res = output_line_dense(&buf, &len, &localbuf, &locallen, as->format, fd, as->nr_attrs)) < 0) {
+		if ((res = output_line_dense(ma, &buf, &len, &localbuf, &locallen, as->format, fd, as->nr_attrs)) < 0) {
 			break;
 		}
 	}
@@ -460,11 +459,11 @@ output_file_dense(Tablet *as, stream *fd, bstream *in)
 }
 
 static int
-output_file_ordered(Tablet *as, BAT *order, stream *fd, bstream *in)
+output_file_ordered(allocator *ma, Tablet *as, BAT *order, stream *fd, bstream *in)
 {
 	size_t len = BUFSIZ;
 	int res = 0;
-	char *buf = GDKmalloc(len);
+	char *buf = ma_alloc(ma, len);
 	BUN p, q;
 	BUN i = 0;
 	BUN offset = as->offset;
@@ -478,17 +477,17 @@ output_file_ordered(Tablet *as, BAT *order, stream *fd, bstream *in)
 			res = -5;
 			break;
 		}
-		if ((res = output_line_lookup(&buf, &len, as->format, fd, as->nr_attrs, h)) < 0) {
-			GDKfree(buf);
+		if ((res = output_line_lookup(ma, &buf, &len, as->format, fd, as->nr_attrs, h)) < 0) {
+			//GDKfree(buf);
 			return res;
 		}
 	}
-	GDKfree(buf);
+	//GDKfree(buf);
 	return res;
 }
 
 int
-TABLEToutput_file(Tablet *as, BAT *order, stream *s, bstream *in)
+TABLEToutput_file(allocator *ma, Tablet *as, BAT *order, stream *s, bstream *in)
 {
 	oid base = oid_nil;
 	int ret = 0;
@@ -508,11 +507,11 @@ TABLEToutput_file(Tablet *as, BAT *order, stream *s, bstream *in)
 	base = check_BATs(as);
 	if (!order || !is_oid_nil(base)) {
 		if (!order || order->hseqbase == base)
-			ret = output_file_dense(as, s, in);
+			ret = output_file_dense(ma, as, s, in);
 		else
-			ret = output_file_ordered(as, order, s, in);
+			ret = output_file_ordered(ma, as, order, s, in);
 	} else {
-		ret = output_file_default(as, order, s, in);
+		ret = output_file_default(ma, as, order, s, in);
 	}
 	return ret;
 }
@@ -851,7 +850,7 @@ SQLload_error(READERtask *task, lng idx, BUN attrs)
  * either case an entry is added to the error table.
  */
 static inline int
-SQLinsert_val(READERtask *task, int col, int idx)
+SQLinsert_val(allocator *ma, READERtask *task, int col, int idx)
 {
 	Column *fmt = task->as->format + col;
 	const void *adt;
@@ -867,17 +866,17 @@ SQLinsert_val(READERtask *task, int col, int idx)
 	} else {
 		if (task->escape) {
 			size_t slen = strlen(s) + 1;
-			char *data = slen <= sizeof(buf) ? buf : GDKmalloc(strlen(s) + 1);
+			char *data = slen <= sizeof(buf) ? buf : ma_alloc(ma, strlen(s) + 1);
 			if (data == NULL
 				|| GDKstrFromStr((unsigned char *) data, (unsigned char *) s,
 								 strlen(s), '\0') < 0)
 				adt = NULL;
 			else
-				adt = fmt->frstr(fmt, fmt->adt, data);
-			if (data != buf)
-				GDKfree(data);
+				adt = fmt->frstr(ma, fmt, fmt->adt, data);
+			//if (data != buf)
+			//	GDKfree(data);
 		} else
-			adt = fmt->frstr(fmt, fmt->adt, s);
+			adt = fmt->frstr(ma, fmt, fmt->adt, s);
 	}
 
 	lng row = task->cnt + idx + 1;
@@ -886,7 +885,7 @@ SQLinsert_val(READERtask *task, int col, int idx)
 			err = SQLload_error(task, idx, task->as->nr_attrs);
 			if (s) {
 				size_t slen = mystrlen(s);
-				char *scpy = GDKmalloc(slen + 1);
+				char *scpy = ma_alloc(ma, slen + 1);
 				if (scpy == NULL) {
 					tablet_error(task, idx, row, col,
 								 SQLSTATE(HY013) MAL_MALLOC_FAIL, err);
@@ -899,7 +898,7 @@ SQLinsert_val(READERtask *task, int col, int idx)
 			}
 			snprintf(buf, sizeof(buf), "'%s' expected%s%s%s", fmt->type,
 					 s ? " in '" : "", s ? s : "", s ? "'" : "");
-			GDKfree(s);
+			//GDKfree(s);
 			tablet_error(task, idx, row, col, buf, err);
 			GDKfree(err);
 			if (!task->besteffort)
@@ -930,6 +929,8 @@ SQLworker_column(READERtask *task, int col)
 {
 	int i;
 	Column *fmt = task->as->format;
+	allocator *ma = task->cntxt->curprg->def->ma;
+	assert(ma);
 
 	if (fmt[col].c == NULL)
 		return 0;
@@ -948,7 +949,7 @@ SQLworker_column(READERtask *task, int col)
 	MT_lock_unset(&mal_copyLock);
 
 	for (i = 0; i < task->top[task->cur]; i++) {
-		if (!fmt[col].skip && SQLinsert_val(task, col, i) < 0) {
+		if (!fmt[col].skip && SQLinsert_val(ma, task, col, i) < 0) {
 			BATsetcount(fmt[col].c, BATcount(fmt[col].c));
 			return -1;
 		}

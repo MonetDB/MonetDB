@@ -691,7 +691,7 @@ XMLfromString(const char *src, size_t *len, void **X, bool external)
 }
 
 static ssize_t
-XMLtoString(str *s, size_t *len, const void *SRC, bool external)
+XMLtoString(allocator *ma, str *s, size_t *len, const void *SRC, bool external)
 {
 	const char *src = SRC;
 	size_t l;
@@ -702,7 +702,6 @@ XMLtoString(str *s, size_t *len, const void *SRC, bool external)
 		src++;
 	l = strlen(src) + 1;
 	if (l >= *len || *s == NULL) {
-		allocator *ma = MT_thread_getallocator();
 		*s = ma_alloc(ma, l);
 		if (*s == NULL)
 			return -1;
@@ -717,23 +716,25 @@ XMLtoString(str *s, size_t *len, const void *SRC, bool external)
 #define NO_LIBXML_FATAL "xml: MonetDB was built without libxml, but what you are trying to do requires it."
 
 static ssize_t
-XMLfromString(const char *src, size_t *len, void **x, bool external)
+XMLfromString(allocator *ma, const char *src, size_t *len, void **x, bool external)
 {
 	(void) src;
 	(void) len;
 	(void) x;
 	(void) external;
+	(void) ma;
 	GDKerror("not implemented\n");
 	return -1;
 }
 
 static ssize_t
-XMLtoString(str *s, size_t *len, const void *src, bool external)
+XMLtoString(allocator *ma, str *s, size_t *len, const void *src, bool external)
 {
 	(void) s;
 	(void) len;
 	(void) src;
 	(void) external;
+	(void) ma;
 	GDKerror("not implemented\n");
 	return -1;
 }

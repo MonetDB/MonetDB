@@ -580,7 +580,7 @@ typedef struct _binbat_v1 {
 } binbat;
 
 static str
-RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in, bool must_flush, int *typemap)
+RMTinternalcopyfrom(allocator *ma, BAT **ret, char *hdr, stream *in, bool must_flush, int *typemap)
 {
 	binbat bb = { 0, 0, 0, false, false, false, false, false, 0, 0, 0 };
 	char *nme = NULL;
@@ -635,7 +635,7 @@ RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in, bool must_flush, int *type
 			} else {
 				/* all values should be non-negative, so we check that
 				 * here as well */
-				if (lngFromStr(val, &len, &lvp, true) < 0 ||
+				if (lngFromStr(ma, val, &len, &lvp, true) < 0 ||
 					lv < 0 /* includes lng_nil */ )
 					throw(MAL, "remote.bincopyfrom",
 						  "bad %s value: %s", nme, val);
@@ -851,15 +851,15 @@ RMTget(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					var = "nil";
 				s = 0;
 				r = NULL;
-				if (ATOMfromstr(t, &r, &s, var, true) < 0 ||
+				if (ATOMfromstr(mb->ma, t, &r, &s, var, true) < 0 ||
 					BUNappend(b, r, false) != GDK_SUCCEED) {
 					BBPreclaim(b);
-					GDKfree(r);
+					//GDKfree(r);
 					mapi_close_handle(mhdl);
 					MT_lock_unset(&c->lock);
 					throw(MAL, "remote.get", GDK_EXCEPTION);
 				}
-				GDKfree(r);
+				//GDKfree(r);
 			}
 
 		*v = (ValRecord) {
@@ -899,7 +899,7 @@ RMTget(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			return tmp;
 		}
 
-		if ((tmp = RMTinternalcopyfrom(&b, buf, sin, true, c->typemap)) != MAL_SUCCEED) {
+		if ((tmp = RMTinternalcopyfrom(mb->ma, &b, buf, sin, true, c->typemap)) != MAL_SUCCEED) {
 			MT_lock_unset(&c->lock);
 			return (tmp);
 		}
@@ -930,19 +930,19 @@ RMTget(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				mapi_close_handle(mhdl);
 				throw(MAL, "remote.get", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
-		} else if (ATOMfromstr(rtype, &p, &len, val == NULL ? "nil" : val, true)
+		} else if (ATOMfromstr(mb->ma, rtype, &p, &len, val == NULL ? "nil" : val, true)
 				   < 0) {
 			char *msg;
 			msg = createException(MAL, "remote.get",
 								  "unable to parse value: %s",
 								  val == NULL ? "nil" : val);
 			mapi_close_handle(mhdl);
-			GDKfree(p);
+			//GDKfree(p);
 			return msg;
 		} else {
 			VALset(v, rtype, p);
-			if (ATOMextern(rtype) == 0)
-				GDKfree(p);
+			//if (ATOMextern(rtype) == 0)
+			//	GDKfree(p);
 		}
 
 		mapi_close_handle(mhdl);
@@ -1047,7 +1047,7 @@ RMTput(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			bi = bat_iterator(b);
 			BATloop(b, p, q) {
 				const void *v = BUNtail(bi, p);
-				tailv = ATOMformat(tpe, v);
+				tailv = ATOMformat(ma, tpe, v);
 				if (tailv == NULL) {
 					bat_iterator_end(&bi);
 					BBPunfix(b->batCacheid);
@@ -1090,7 +1090,7 @@ RMTput(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (ATOMextern(type))
 			p = *(ptr *) value;
 
-		val = ATOMformat(type, p);
+		val = ATOMformat(ma, type, p);
 		if (val == NULL) {
 			MT_lock_unset(&c->lock);
 			throw(MAL, "remote.put", GDK_EXCEPTION);
@@ -1401,7 +1401,7 @@ RMTexec(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				BAT *b = NULL;
 
 				if ((tmp = RMTreadbatheader(sin, buf)) != MAL_SUCCEED ||
-					(tmp = RMTinternalcopyfrom(&b, buf, sin, i == fields - 1, c->typemap)) != MAL_SUCCEED) {
+					(tmp = RMTinternalcopyfrom(mb->ma, &b, buf, sin, i == fields - 1, c->typemap)) != MAL_SUCCEED) {
 					break;
 				}
 
@@ -1495,13 +1495,13 @@ RMTbatload(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 		s = 0;
 		r = NULL;
-		if (ATOMfromstr(t, &r, &s, var, true) < 0 ||
+		if (ATOMfromstr(mb->ma, t, &r, &s, var, true) < 0 ||
 			BUNappend(b, r, false) != GDK_SUCCEED) {
 			BBPreclaim(b);
-			GDKfree(r);
+			//GDKfree(r);
 			throw(MAL, "remote.get", GDK_EXCEPTION);
 		}
-		GDKfree(r);
+		//GDKfree(r);
 	}
 
 	*v = (ValRecord) {
@@ -1614,7 +1614,7 @@ RMTbincopyfrom(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "remote.bincopyfrom", "expected JSON header");
 
 	ctx->fdin->buf[ctx->fdin->len] = '\0';
-	err = RMTinternalcopyfrom(&b,
+	err = RMTinternalcopyfrom(mb->ma, &b,
 			&ctx->fdin->buf[ctx->fdin->pos], ctx->fdin->s, true, NULL /* library should be compatible */);
 	/* skip the JSON line */
 	ctx->fdin->pos = ++ctx->fdin->len;

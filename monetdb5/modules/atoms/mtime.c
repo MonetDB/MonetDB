@@ -110,7 +110,6 @@ MTIMEcurrent_timestamp(Client ctx, timestamp *ret)
 #define FINISH_BUFFER_SINGLE(MALFUNC) \
 bailout: \
 	*ret = NULL; \
-	allocator *ma = ctx->curprg->def->ma;\
 	if (!msg && res && !(*ret = MA_STRDUP(ma, res))) \
 		msg = createException(MAL, "batmtime." MALFUNC, SQLSTATE(HY013) MAL_MALLOC_FAIL); \
 	GDKfree(res)
@@ -131,7 +130,8 @@ bailout: \
 static str																\
 NAME(Client ctx, OUTTYPE *ret, const INTYPE *src)						\
 {																		\
-	(void) ctx;															\
+	allocator *ma = ctx->curprg->def->ma;								\
+	(void) ma;															\
 	str msg = MAL_SUCCEED;												\
 	do {																\
 		FUNC_CALL(FUNC, (*ret), *src);									\
@@ -141,6 +141,9 @@ NAME(Client ctx, OUTTYPE *ret, const INTYPE *src)						\
 static str																\
 NAME##_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 {																		\
+	allocator *ma = cntxt->curprg->def->ma;								\
+	(void) ma;															\
+	(void) mb;															\
 	str msg = MAL_SUCCEED;												\
 	BAT *b1 = NULL, *s = NULL, *bn = NULL;								\
 	struct canditer ci = {0};											\
@@ -153,8 +156,6 @@ NAME##_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 	DEC_SRC(INTYPE, 1);													\
 	DEC_OUTPUT(OUTTYPE, n);												\
 																		\
-	(void) cntxt;														\
-	(void) mb;															\
 	if ((b1 = BATdescriptor(*bid)) == NULL)	{							\
 		msg = createException(MAL, "batmtime." MALFUNC,					\
 			  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);					\
@@ -211,7 +212,7 @@ bailout:																\
 }
 
 #define func1_noexcept(FUNC, RET, PARAM) RET = FUNC(PARAM)
-#define func1_except(FUNC, RET, PARAM) msg = FUNC(&RET, PARAM); if (msg) break
+#define func1_except(FUNC, RET, PARAM) msg = FUNC(ma, &RET, PARAM); if (msg) break
 
 #define func2(NAME, MALFUNC,											\
 			  INTYPE1, INTYPE2, OUTTYPE, FUNC, FUNC_CALL,				\
@@ -222,7 +223,8 @@ bailout:																\
 static str																\
 NAME(Client ctx, OUTTYPE *ret, const INTYPE1 *v1, const INTYPE2 *v2)	\
 {																		\
-	(void) ctx;															\
+	allocator *ma = ctx->curprg->def->ma;								\
+	(void) ma;															\
 	str msg = MAL_SUCCEED;												\
 	DEC_EXTRA(OUTTYPE, res, MALFUNC);									\
 																		\
@@ -235,6 +237,9 @@ NAME(Client ctx, OUTTYPE *ret, const INTYPE1 *v1, const INTYPE2 *v2)	\
 static str																\
 NAME##_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 {																		\
+	allocator *ma = cntxt->curprg->def->ma;								\
+	(void) ma;															\
+	(void) mb;															\
 	str msg = MAL_SUCCEED;												\
 	BAT *b1 = NULL, *b2 = NULL, *s1 = NULL, *s2 = NULL, *bn = NULL;		\
 	oid off1, off2;														\
@@ -250,8 +255,6 @@ NAME##_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 	DEC_SRC2(INTYPE2, 2);												\
 	DEC_OUTPUT(OUTTYPE, n);												\
 																		\
-	(void) cntxt;														\
-	(void) mb;															\
 	b1 = BATdescriptor(*bid1);											\
 	b2 = BATdescriptor(*bid2);											\
 	b1i = bat_iterator(b1);												\
@@ -496,12 +499,13 @@ bailout:																\
 static str																\
 NAME(Client ctx, OUTTYPE *ret, const INTYPE1 *v1, const INTYPE2 *v2, const lng *extra) \
 {																		\
-	(void) ctx;															\
+	allocator *ma = ctx->curprg->def->ma;									\
+	(void) ma;															\
 	str msg = MAL_SUCCEED;												\
 	DEC_EXTRA(OUTTYPE, res, MALFUNC);									\
 																		\
 	do {																\
-		FUNC_CALL(FUNC, res, *v1, *v2, *extra);									\
+		FUNC_CALL(FUNC, res, *v1, *v2, *extra);							\
 	} while (0);														\
 	CLEAR_EXTRA_SINGLE(MALFUNC);										\
 	return msg;															\
@@ -509,6 +513,9 @@ NAME(Client ctx, OUTTYPE *ret, const INTYPE1 *v1, const INTYPE2 *v2, const lng *
 static str																\
 NAME##_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 {																		\
+	allocator *ma = cntxt->curprg->def->ma;								\
+	(void) ma;															\
+	(void) mb;															\
 	str msg = MAL_SUCCEED;												\
 	BAT *b1 = NULL, *b2 = NULL, *s1 = NULL, *s2 = NULL, *bn = NULL;		\
 	oid off1, off2;														\
@@ -525,8 +532,6 @@ NAME##_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 	DEC_SRC2(INTYPE2, 2);												\
 	DEC_OUTPUT(OUTTYPE, n);												\
 																		\
-	(void) cntxt;														\
-	(void) mb;															\
 	b1 = BATdescriptor(*bid1);											\
 	b2 = BATdescriptor(*bid2);											\
 	b1i = bat_iterator(b1);												\
@@ -934,9 +939,9 @@ func1(MTIMEmsec_extract_epoch_ms, "epoch_ms", lng, lng, msec_since_epoch,
 	  COPYFLAGS, func1_noexcept, DEC_VAR_R, DEC_VAR_R, INIT_VARIN, INIT_VAROUT,
 	  GET_NEXT_VAR)
 static inline str
-date_fromstr_func(date *ret, const char *s)
+date_fromstr_func(allocator *ma, date *ret, const char *s)
 {
-	if (date_fromstr(s, &(size_t) { sizeof(date) }, &ret, false) < 0) {
+	if (date_fromstr(ma, s, &(size_t) { sizeof(date) }, &ret, false) < 0) {
 		if (strNil(s))
 			throw(MAL, "mtime.date_fromstr",
 				  SQLSTATE(42000) "Conversion of NULL string to date failed");
@@ -971,9 +976,9 @@ func2(MTIMEtimestamp_tz_extract_date, "date",
 	  GET_NEXT_VAR, GET_NEXT_VAR, APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
 
 static inline str
-timestamp_fromstr_func(timestamp *ret, const char *s)
+timestamp_fromstr_func(allocator *ma, timestamp *ret, const char *s)
 {
-	if (timestamp_fromstr(s, &(size_t) { sizeof(timestamp) }, &ret, false) < 0)
+	if (timestamp_fromstr(ma, s, &(size_t) { sizeof(timestamp) }, &ret, false) < 0)
 		throw(MAL, "mtime.timestamp_fromstr", GDK_EXCEPTION);
 	return MAL_SUCCEED;
 }
@@ -1016,9 +1021,9 @@ func1(MTIMEtimestamp_frommsec, "timestamp", lng, timestamp,
 	  mktsfrommsec, COPYFLAGS, func1_noexcept,
 	  DEC_VAR_R, DEC_VAR_R, INIT_VARIN, INIT_VAROUT, GET_NEXT_VAR)
 static inline str
-daytime_fromstr_func(daytime *ret, const char *s)
+daytime_fromstr_func(allocator *ma, daytime *ret, const char *s)
 {
-	if (daytime_fromstr(s, &(size_t) { sizeof(daytime) }, &ret, false) < 0)
+	if (daytime_fromstr(ma, s, &(size_t) { sizeof(daytime) }, &ret, false) < 0)
 		throw(MAL, "mtime.daytime_fromstr", GDK_EXCEPTION);
 	return MAL_SUCCEED;
 }
@@ -1031,8 +1036,9 @@ func1(MTIMEdaytime_daytime, "daytime", daytime, daytime,
 	  daytime_daytime, COPYFLAGS, func1_noexcept,
 	  DEC_VAR_R, DEC_VAR_R, INIT_VARIN, INIT_VAROUT, GET_NEXT_VAR)
 static inline str
-daytime_fromseconds(daytime *ret, lng secs)
+daytime_fromseconds(allocator *ma, daytime *ret, lng secs)
 {
+	(void) ma;
 	if (is_lng_nil(secs))
 		*ret = daytime_nil;
 	else if (secs < 0 || secs >= 24 * 60 * 60)

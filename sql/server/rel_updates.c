@@ -1768,7 +1768,7 @@ copyfrom(sql_query *query, CopyFromNode *copy)
 			sql_rel *nrel;
 
 			if (!copy->on_client && fname && !MT_path_absolute(fname)) {
-				char *fn = ATOMformat(TYPE_str, fname);
+				char *fn = ATOMformat(sql->ta, TYPE_str, fname);
 				sql_error(sql, 02, SQLSTATE(42000) "COPY INTO: filename must "
 					  "have absolute path: %s", fn);
 				// GDKfree(fn);

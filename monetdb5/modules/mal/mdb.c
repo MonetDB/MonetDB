@@ -251,8 +251,8 @@ MDBgetFrame(BAT *b, BAT *bn, MalBlkPtr mb, MalStkPtr s, int depth, const char *n
 		char namebuf[IDLENGTH];
 		for (i = 0; i < s->stktop; i++, v++) {
 			v = &s->stk[i];
-			if ((v->bat && (buf = ATOMformat(TYPE_int, &v->val.ival)) == NULL) ||
-			    (!v->bat && (buf = ATOMformat(v->vtype, VALptr(v))) == NULL) ||
+			if ((v->bat && (buf = ATOMformat(mb->ma, TYPE_int, &v->val.ival)) == NULL) ||
+			    (!v->bat && (buf = ATOMformat(mb->ma, v->vtype, VALptr(v))) == NULL) ||
 				BUNappend(b, getVarNameIntoBuffer(mb, i, namebuf), false) != GDK_SUCCEED ||
 				BUNappend(bn, buf, false) != GDK_SUCCEED) {
 				BBPunfix(b->batCacheid);
@@ -497,7 +497,7 @@ printStackHdr(stream *f, MalBlkPtr mb, const ValRecord *v, int index)
 	mnstr_printf(f, " (%d,%d,%d) = ", getBeginScope(mb, index),
 				 getLastUpdate(mb, index), getEndScope(mb, index));
 	if (v)
-		ATOMprint(v->vtype, VALptr(v), f);
+		ATOMprint(mb->ma, v->vtype, VALptr(v), f);
 }
 
 static void
@@ -543,7 +543,7 @@ printBATelm(allocator *ma, stream *f, bat i, BUN cnt, BUN first)
 			if (bs == NULL)
 				mnstr_printf(f, "Failed to take chunk\n");
 			else {
-				if (BATprint(f, bs) != GDK_SUCCEED)
+				if (BATprint(ma, f, bs) != GDK_SUCCEED)
 					 mnstr_printf(f, "Failed to print chunk\n");
 				BBPunfix(bs->batCacheid);
 			}

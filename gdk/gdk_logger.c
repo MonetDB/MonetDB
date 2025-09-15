@@ -378,7 +378,7 @@ struct offset {
 };
 
 static log_return
-log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, BAT **cands, bool skip_entry)
+log_read_updates(allocator *ma, logger *lg, trans *tr, logformat *l, log_id id, BAT **cands, bool skip_entry)
 {
 	log_return res = LOG_OK;
 	lng nr, pnr;
@@ -399,7 +399,7 @@ log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, BAT **cands, bo
 	if (tpe >= 0) {
 		BAT *uid = NULL;
 		BAT *r = NULL;
-		void *(*rt)(ptr, size_t *, stream *, size_t) = BATatoms[tpe].atomRead;
+		void *(*rt)(allocator *ma, ptr, size_t *, stream *, size_t) = BATatoms[tpe].atomRead;
 		lng offset;
 
 		assert(nr <= (lng) BUN_MAX);
@@ -452,7 +452,7 @@ log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, BAT **cands, bo
 
 				/* We have to read the value to update the read cursor */
 				size_t tlen = lg->rbufsize;
-				void *t = rt(lg->rbuf, &tlen, lg->input_log, 1);
+				void *t = rt(ma, lg->rbuf, &tlen, lg->input_log, 1);
 				if (t == NULL) {
 					TRC_CRITICAL(GDK, "read failed\n");
 					res = LOG_EOF;
@@ -477,7 +477,7 @@ log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, BAT **cands, bo
 						return LOG_EOF;
 					}
 					size_t tlen = lg->rbufsize;
-					void *t = rt(lg->rbuf, &tlen, lg->input_log, 1);
+					void *t = rt(ma, lg->rbuf, &tlen, lg->input_log, 1);
 					if (t == NULL) {
 						TRC_CRITICAL(GDK, "read failed\n");
 						return LOG_EOF;
@@ -520,7 +520,7 @@ log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, BAT **cands, bo
 
 		if (l->flag == LOG_UPDATE_CONST) {
 			size_t tlen = lg->rbufsize;
-			void *t = rt(lg->rbuf, &tlen, lg->input_log, 1);
+			void *t = rt(ma, lg->rbuf, &tlen, lg->input_log, 1);
 			if (t == NULL) {
 				TRC_CRITICAL(GDK, "read failed\n");
 				res = LOG_EOF;
@@ -557,7 +557,7 @@ log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, BAT **cands, bo
 					return LOG_EOF;
 				}
 				size_t tlen = lg->rbufsize;
-				void *t = rt(lg->rbuf, &tlen, lg->input_log, 1);
+				void *t = rt(ma, lg->rbuf, &tlen, lg->input_log, 1);
 				if (t == NULL) {
 					TRC_CRITICAL(GDK, "read failed\n");
 					res = LOG_EOF;
@@ -627,7 +627,7 @@ log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, BAT **cands, bo
 					 * BUFSIZE/width rows */
 					for (; res == LOG_OK && snr > 0; snr -= cnt) {
 						cnt = snr > tlen ? tlen : snr;
-						void *t = rt(lg->rbuf, &ntlen, lg->input_log, cnt);
+						void *t = rt(ma, lg->rbuf, &ntlen, lg->input_log, cnt);
 
 						if (t == NULL) {
 							res = LOG_EOF;
@@ -645,7 +645,7 @@ log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, BAT **cands, bo
 				} else {
 					for (; res == LOG_OK && nr > 0; nr--) {
 						size_t tlen = lg->rbufsize;
-						void *t = rt(lg->rbuf, &tlen, lg->input_log, 1);
+						void *t = rt(ma, lg->rbuf, &tlen, lg->input_log, 1);
 
 						if (t == NULL) {
 							/* see if failure was due to
@@ -669,7 +669,7 @@ log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, BAT **cands, bo
 				}
 			}
 		} else {
-			void *(*rh)(ptr, size_t *, stream *, size_t) = BATatoms[TYPE_oid].atomRead;
+			void *(*rh)(allocator *ma, ptr, size_t *, stream *, size_t) = BATatoms[TYPE_oid].atomRead;
 			void *hv = ATOMnil(TYPE_oid);
 			offset = 0;
 
@@ -679,7 +679,7 @@ log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, BAT **cands, bo
 			}
 			for (; res == LOG_OK && nr > 0; nr--) {
 				size_t hlen = sizeof(oid);
-				void *h = rh(hv, &hlen, lg->input_log, 1);
+				void *h = rh(ma, hv, &hlen, lg->input_log, 1);
 				if (h == NULL) {
 					res = LOG_EOF;
 					TRC_CRITICAL(GDK, "read failed\n");
@@ -725,7 +725,7 @@ log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, BAT **cands, bo
 				} else {
 					for (; res == LOG_OK && nr > 0; nr--) {
 						size_t tlen = lg->rbufsize;
-						void *t = rt(lg->rbuf, &tlen, lg->input_log, 1);
+						void *t = rt(ma, lg->rbuf, &tlen, lg->input_log, 1);
 
 						if (t == NULL) {
 							if (strstr(GDKerrbuf, "malloc") == NULL)
@@ -1396,7 +1396,7 @@ log_open_input(logger *lg, const char *filename, bool *filemissing)
 }
 
 static log_return
-log_read_transaction(logger *lg, BAT *ids_to_omit, uint32_t *updated, BUN maxupdated, time_t *t)
+log_read_transaction(allocator *ma, logger *lg, BAT *ids_to_omit, uint32_t *updated, BUN maxupdated, time_t *t)
 {
 	logformat l;
 	trans *tr = NULL;
@@ -1539,7 +1539,7 @@ log_read_transaction(logger *lg, BAT *ids_to_omit, uint32_t *updated, BUN maxupd
 			if (tr == NULL)
 				err = LOG_EOF;
 			else {
-				err = log_read_updates(lg, tr, &l, l.id, cands ? &cands : NULL, skip_entry);
+				err = log_read_updates(ma, lg, tr, &l, l.id, cands ? &cands : NULL, skip_entry);
 			}
 			break;
 		case LOG_CREATE:
@@ -1604,7 +1604,7 @@ log_read_transaction(logger *lg, BAT *ids_to_omit, uint32_t *updated, BUN maxupd
 }
 
 static gdk_return
-log_readlog(logger *lg, const char *filename, BAT *ids_to_omit, bool *filemissing)
+log_readlog(allocator *ma, logger *lg, const char *filename, BAT *ids_to_omit, bool *filemissing)
 {
 	log_return err = LOG_OK;
 	time_t t0;
@@ -1620,7 +1620,7 @@ log_readlog(logger *lg, const char *filename, BAT *ids_to_omit, bool *filemissin
 		GDKtracer_flush_buffer();
 	}
 	while (err != LOG_EOF && err != LOG_ERR) {
-		err = log_read_transaction(lg, ids_to_omit, NULL, 0, &t0);
+		err = log_read_transaction(ma, lg, ids_to_omit, NULL, 0, &t0);
 	}
 	log_close_input(lg);
 	lg->input_log = NULL;
@@ -1690,7 +1690,7 @@ end:
  * processed in the same sequence.
  */
 static gdk_return
-log_readlogs(logger *lg, const char *filename)
+log_readlogs(allocator *ma, logger *lg, const char *filename)
 {
 	gdk_return ret = GDK_FAIL;
 	char log_filename[FILENAME_MAX];
@@ -1716,7 +1716,7 @@ log_readlogs(logger *lg, const char *filename)
 				GDKerror("Logger filename path is too large\n");
 				goto end;
 			}
-			res = log_readlog(lg, log_filename, ids_to_omit, &filemissing);
+			res = log_readlog(ma, lg, log_filename, ids_to_omit, &filemissing);
 			if (!filemissing) {
 				lg->saved_id++;
 				lg->id++;
@@ -2218,7 +2218,7 @@ log_json_upgrade_finalize(void)
 		TRC_CRITICAL(GDK, "Failed to remove json upgrade signal file");
 		return GDK_FAIL;
 	}
-	BATatoms[json_tpe].atomRead = (void *(*)(void *, size_t *, stream *, size_t))strRead;
+	BATatoms[json_tpe].atomRead = (void *(*)(allocator *ma, void *, size_t *, stream *, size_t))strRead;
 
 	return GDK_SUCCEED;
 }
@@ -2274,7 +2274,7 @@ clean_bbp(logger *lg)
  * unless running in read-only mode
  * Load data and persist it in the BATs */
 static gdk_return
-log_load(const char *fn, logger *lg, char filename[FILENAME_MAX])
+log_load(allocator *ma, const char *fn, logger *lg, char filename[FILENAME_MAX])
 {
 	FILE *fp = NULL;
 	char bak[FILENAME_MAX];
@@ -2540,7 +2540,7 @@ log_load(const char *fn, logger *lg, char filename[FILENAME_MAX])
 	if (readlogs) {
 		ulng log_id = lg->saved_id + 1;
 		bool earlyexit = GDKgetenv_isyes("process-wal-and-exit");
-		if (log_readlogs(lg, filename) != GDK_SUCCEED) {
+		if (log_readlogs(ma, lg, filename) != GDK_SUCCEED) {
 			goto error;
 		}
 		if (!earlyexit) {
@@ -2620,7 +2620,7 @@ log_load(const char *fn, logger *lg, char filename[FILENAME_MAX])
 /* Initialize a new logger
  * It will load any data in the logdir and persist it in the BATs*/
 static logger *
-log_new(int debug, const char *fn, const char *logdir, int version, preversionfix_fptr prefuncp,
+log_new(allocator *ma, int debug, const char *fn, const char *logdir, int version, preversionfix_fptr prefuncp,
 	postversionfix_fptr postfuncp, void *funcdata)
 {
 	logger *lg;
@@ -2702,7 +2702,7 @@ log_new(int debug, const char *fn, const char *logdir, int version, preversionfi
 	MT_lock_init(&lg->flush_lock, "flush_lock");
 	MT_cond_init(&lg->excl_flush_cv, "flush_cond");
 
-	if (log_load(fn, lg, filename) == GDK_SUCCEED) {
+	if (log_load(ma, fn, lg, filename) == GDK_SUCCEED) {
 		return lg;
 	}
 	return NULL;
@@ -2793,7 +2793,7 @@ log_destroy(logger *lg)
 
 /* Create a new logger */
 logger *
-log_create(int debug, const char *fn, const char *logdir, int version,
+log_create(allocator *ma, int debug, const char *fn, const char *logdir, int version,
 	   preversionfix_fptr prefuncp, postversionfix_fptr postfuncp,
 	   void *funcdata)
 {
@@ -2802,7 +2802,7 @@ log_create(int debug, const char *fn, const char *logdir, int version,
 		TRC_INFO_ENDIF(WAL, "Started processing logs %s/%s version %d\n", fn, logdir, version);
 		GDKtracer_flush_buffer();
 	}
-	lg = log_new(debug, fn, logdir, version, prefuncp, postfuncp, funcdata);
+	lg = log_new(ma, debug, fn, logdir, version, prefuncp, postfuncp, funcdata);
 	if (lg == NULL)
 		return NULL;
 	TRC_INFO_IF(WAL) {
@@ -2924,7 +2924,7 @@ log_activate(logger *lg)
 }
 
 gdk_return
-log_flush(logger *lg, ulng ts)
+log_flush(allocator *ma, logger *lg, ulng ts)
 {
 	logged_range *pending = log_next_logfile(lg, ts);
 	ulng lid = pending ? pending->id : 0, olid = lg->saved_id;
@@ -3016,7 +3016,7 @@ log_flush(logger *lg, ulng ts)
 			nupdated = n;
 		}
 		lg->flushing = true;
-		res = log_read_transaction(lg, NULL, updated, nupdated, NULL);
+		res = log_read_transaction(ma, lg, NULL, updated, nupdated, NULL);
 		lg->flushing = false;
 		log_unlock(lg);
 		if (res == LOG_EOF) {
@@ -3847,7 +3847,7 @@ log_find_bat(logger *lg, log_id id)
 
 
 gdk_return
-log_tstart(logger *lg, bool flushnow, ulng *file_id)
+log_tstart(allocator *ma, logger *lg, bool flushnow, ulng *file_id)
 {
 	rotation_lock(lg);
 	if (flushnow) {
@@ -3874,7 +3874,7 @@ log_tstart(logger *lg, bool flushnow, ulng *file_id)
 		rotation_unlock(lg);
 
 		if (lg->saved_id + 1 < lg->id)
-			log_flush(lg, (1ULL << 63));
+			log_flush(ma, lg, (1ULL << 63));
 		lg->flushnow = flushnow;
 
 		assert(lg->updated == NULL);

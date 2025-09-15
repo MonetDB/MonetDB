@@ -294,15 +294,13 @@ unescape_str(str *retval, const char *s)
  */
 
 static ssize_t
-URLfromString(const char *src, size_t *len, void **U, bool external)
+URLfromString(allocator *ma, const char *src, size_t *len, void **U, bool external)
 {
 	char **u = (char **) U;
 	size_t l = strlen(src) + 1;
 
 	if (*len < l || *u == NULL) {
 		// GDKfree(*u);
-		allocator *ma = MT_thread_getallocator();
-		assert(ma);
 		*u = ma_alloc(ma, l);
 		if (*u == NULL)
 			return -1;
@@ -319,7 +317,7 @@ URLfromString(const char *src, size_t *len, void **U, bool external)
 }
 
 static ssize_t
-URLtoString(str *s, size_t *len, const void *SRC, bool external)
+URLtoString(allocator *ma, str *s, size_t *len, const void *SRC, bool external)
 {
 	const char *src = SRC;
 	size_t l = strlen(src);
@@ -328,8 +326,6 @@ URLtoString(str *s, size_t *len, const void *SRC, bool external)
 		l += 2;
 	if (l >= *len || *s == NULL) {
 		// GDKfree(*s);
-		allocator *ma = MT_thread_getallocator();
-		assert(ma);
 		*s = ma_alloc(ma, l + 1);
 		if (*s == NULL)
 			return -1;

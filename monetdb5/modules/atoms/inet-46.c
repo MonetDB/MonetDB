@@ -18,10 +18,10 @@
 static str
 INETstr2inet4(Client ctx, inet4 *ret, const char *const *s)
 {
-	(void) ctx;
+	allocator *ma = ctx->curprg->def->ma;
 	size_t l = sizeof(inet4);
 
-	if (BATatoms[TYPE_inet4].atomFromStr(*s, &l, (void **) &ret, false) > 0) {
+	if (BATatoms[TYPE_inet4].atomFromStr(ma, *s, &l, (void **) &ret, false) > 0) {
 		return MAL_SUCCEED;
 	}
 	throw(MAL, "inet46.inet4", "Not an IPv4 address");
@@ -30,10 +30,10 @@ INETstr2inet4(Client ctx, inet4 *ret, const char *const *s)
 static str
 INETinet42str(Client ctx, char **ret, const inet4 *val)
 {
-	(void) ctx;
+	allocator *ma = ctx->curprg->def->ma;
 	size_t l = 0;
 	*ret = NULL;
-	if (BATatoms[TYPE_inet4].atomToStr(ret, &l, val, false) < 0)
+	if (BATatoms[TYPE_inet4].atomToStr(ma, ret, &l, val, false) < 0)
 		throw(MAL, "inet46.str", GDK_EXCEPTION);
 	return MAL_SUCCEED;
 }
@@ -148,7 +148,7 @@ INETinet4containssymmetricinet4(Client ctx, bit *ret, const inet4 *ip1, const bt
 static str
 INETstr2inet4_bulk(Client ctx, bat *ret, const bat *bid, const bat *sid)
 {
-	(void) ctx;
+	allocator *ma = ctx->curprg->def->ma;
 	BAT *b = NULL, *s = NULL, *dst = NULL;
 	BATiter bi;
 	str msg = NULL;
@@ -157,7 +157,7 @@ INETstr2inet4_bulk(Client ctx, bat *ret, const bat *bid, const bat *sid)
 	oid off;
 	bool nils = false, btkey = false;
 	size_t l = sizeof(inet4);
-	ssize_t (*conv)(const char *, size_t *, void **, bool) = BATatoms[TYPE_inet4].atomFromStr;
+	ssize_t (*conv)(allocator *, const char *, size_t *, void **, bool) = BATatoms[TYPE_inet4].atomFromStr;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		msg = createException(SQL, "batcalc.inet4",
@@ -185,7 +185,7 @@ INETstr2inet4_bulk(Client ctx, bat *ret, const bat *bid, const bat *sid)
 			const char *v = BUNtvar(bi, p);
 			inet4 *up = &vals[i], **pp = &up;
 
-			if (conv(v, &l, (void **) pp, false) <= 0) {
+			if (conv(ma, v, &l, (void **) pp, false) <= 0) {
 				msg = createException(SQL, "batcalc.inet4",
 									  SQLSTATE(42000) "Not an IPv4 address");
 				goto bailout1;
@@ -198,7 +198,7 @@ INETstr2inet4_bulk(Client ctx, bat *ret, const bat *bid, const bat *sid)
 			const char *v = BUNtvar(bi, p);
 			inet4 *up = &vals[i], **pp = &up;
 
-			if (conv(v, &l, (void **) pp, false) <= 0) {
+			if (conv(ma, v, &l, (void **) pp, false) <= 0) {
 				msg = createException(SQL, "batcalc.inet4",
 									  SQLSTATE(42000) "Not an IPv4 address");
 				goto bailout1;
@@ -306,7 +306,7 @@ INETinet42inet4_bulk(Client ctx, bat *ret, const bat *bid, const bat *sid)
 static str
 INETinet42str_bulk(Client ctx, bat *ret, const bat *bid, const bat *sid)
 {
-	(void) ctx;
+	allocator *ma = ctx->curprg->def->ma;
 	BAT *b = NULL, *s = NULL, *dst = NULL;
 	str msg = NULL;
 	inet4 *restrict vals;
@@ -315,7 +315,7 @@ INETinet42str_bulk(Client ctx, bat *ret, const bat *bid, const bat *sid)
 	bool nils = false, btkey = false;
 	char buf[16], *pbuf = buf;
 	size_t l = sizeof(buf);
-	ssize_t (*conv)(char **, size_t *, const void *, bool) = BATatoms[TYPE_inet4].atomToStr;
+	ssize_t (*conv)(allocator *, char **, size_t *, const void *, bool) = BATatoms[TYPE_inet4].atomToStr;
 	BATiter bi;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
@@ -343,7 +343,7 @@ INETinet42str_bulk(Client ctx, bat *ret, const bat *bid, const bat *sid)
 			oid p = (canditer_next_dense(&ci) - off);
 			inet4 v = vals[p];
 
-			if (conv(&pbuf, &l, &v, false) < 0) {	/* it should never be reallocated */
+			if (conv(ma, &pbuf, &l, &v, false) < 0) {	/* it should never be reallocated */
 				msg = createException(MAL, "batcalc.str",
 									  GDK_EXCEPTION);
 				goto bailout1;
@@ -360,7 +360,7 @@ INETinet42str_bulk(Client ctx, bat *ret, const bat *bid, const bat *sid)
 			oid p = (canditer_next(&ci) - off);
 			inet4 v = vals[p];
 
-			if (conv(&pbuf, &l, &v, false) < 0) {	/* it should never be reallocated */
+			if (conv(ma, &pbuf, &l, &v, false) < 0) {	/* it should never be reallocated */
 				msg = createException(MAL, "batcalc.str",
 									  GDK_EXCEPTION);
 				goto bailout1;
@@ -556,10 +556,10 @@ INETinet4containssymmetricinet4_bulk(Client ctx, bat *ret, const bat *bip1, cons
 static str
 INETstr2inet6(Client ctx, inet6 *ret, const char *const *s)
 {
-	(void) ctx;
+	allocator *ma = ctx->curprg->def->ma;
 	size_t l = sizeof(inet6);
 
-	if (BATatoms[TYPE_inet6].atomFromStr(*s, &l, (void **) &ret, false) > 0) {
+	if (BATatoms[TYPE_inet6].atomFromStr(ma, *s, &l, (void **) &ret, false) > 0) {
 		return MAL_SUCCEED;
 	}
 	throw(MAL, "inet46.inet6", "Not an IPv6 address");
@@ -568,10 +568,10 @@ INETstr2inet6(Client ctx, inet6 *ret, const char *const *s)
 static str
 INETinet62str(Client ctx, char **ret, const inet6 *val)
 {
-	(void) ctx;
+	allocator *ma = ctx->curprg->def->ma;
 	size_t l = 0;
 	*ret = NULL;
-	if (BATatoms[TYPE_inet6].atomToStr(ret, &l, val, false) < 0)
+	if (BATatoms[TYPE_inet6].atomToStr(ma, ret, &l, val, false) < 0)
 		throw(MAL, "inet46.str", GDK_EXCEPTION);
 	return MAL_SUCCEED;
 }
@@ -711,7 +711,7 @@ INETinet6containssymmetricinet6(Client ctx, bit *ret, const inet6 *ip1, const sh
 static str
 INETinet42inet6_bulk(Client ctx, bat *ret, const bat *bid, const bat *sid)
 {
-	(void) ctx;
+	allocator *ma = ctx->curprg->def->ma;
 	BAT *b = NULL, *s = NULL, *dst = NULL;
 	str msg = NULL;
 
@@ -730,7 +730,7 @@ INETinet42inet6_bulk(Client ctx, bat *ret, const bat *bid, const bat *sid)
 							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	if ((dst = BATconvert(b, s, TYPE_inet6, 0, 0, 0)) == NULL) {
+	if ((dst = BATconvert(ma, b, s, TYPE_inet6, 0, 0, 0)) == NULL) {
 		msg = createException(SQL, "batcalc.inet6",
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
@@ -747,7 +747,7 @@ INETinet42inet6_bulk(Client ctx, bat *ret, const bat *bid, const bat *sid)
 static str
 INETinet62inet4_bulk(Client ctx, bat *ret, const bat *bid, const bat *sid)
 {
-	(void) ctx;
+	allocator *ma = ctx->curprg->def->ma;
 	BAT *b = NULL, *s = NULL, *dst = NULL;
 	str msg = NULL;
 
@@ -766,7 +766,7 @@ INETinet62inet4_bulk(Client ctx, bat *ret, const bat *bid, const bat *sid)
 							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	if ((dst = BATconvert(b, s, TYPE_inet4, 0, 0, 0)) == NULL) {
+	if ((dst = BATconvert(ma, b, s, TYPE_inet4, 0, 0, 0)) == NULL) {
 		msg = createException(SQL, "batcalc.inet4",
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
@@ -791,7 +791,7 @@ INETinet62inet6(Client ctx, inet6 *ret, const inet6 *val)
 static str
 INETstr2inet6_bulk(Client ctx, bat *ret, const bat *bid, const bat *sid)
 {
-	(void) ctx;
+	allocator *ma = ctx->curprg->def->ma;
 	BAT *b = NULL, *s = NULL, *dst = NULL;
 	BATiter bi;
 	str msg = NULL;
@@ -800,7 +800,7 @@ INETstr2inet6_bulk(Client ctx, bat *ret, const bat *bid, const bat *sid)
 	oid off;
 	bool nils = false, btkey = false;
 	size_t l = sizeof(inet6);
-	ssize_t (*conv)(const char *, size_t *, void **, bool) = BATatoms[TYPE_inet6].atomFromStr;
+	ssize_t (*conv)(allocator *, const char *, size_t *, void **, bool) = BATatoms[TYPE_inet6].atomFromStr;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		msg = createException(SQL, "batcalc.inet6",
@@ -828,7 +828,7 @@ INETstr2inet6_bulk(Client ctx, bat *ret, const bat *bid, const bat *sid)
 			const char *v = BUNtvar(bi, p);
 			inet6 *up = &vals[i], **pp = &up;
 
-			if (conv(v, &l, (void **) pp, false) <= 0) {
+			if (conv(ma, v, &l, (void **) pp, false) <= 0) {
 				msg = createException(SQL, "batcalc.inet6",
 									  SQLSTATE(42000) "Not an IPv6 address");
 				goto bailout1;
@@ -841,7 +841,7 @@ INETstr2inet6_bulk(Client ctx, bat *ret, const bat *bid, const bat *sid)
 			const char *v = BUNtvar(bi, p);
 			inet6 *up = &vals[i], **pp = &up;
 
-			if (conv(v, &l, (void **) pp, false) <= 0) {
+			if (conv(ma, v, &l, (void **) pp, false) <= 0) {
 				msg = createException(SQL, "batcalc.inet6",
 									  SQLSTATE(42000) "Not an IPv6 address");
 				goto bailout1;
@@ -949,7 +949,7 @@ INETinet62inet6_bulk(Client ctx, bat *ret, const bat *bid, const bat *sid)
 static str
 INETinet62str_bulk(Client ctx, bat *ret, const bat *bid, const bat *sid)
 {
-	(void) ctx;
+	allocator *ma = ctx->curprg->def->ma;
 	BAT *b = NULL, *s = NULL, *dst = NULL;
 	str msg = NULL;
 	inet6 *restrict vals;
@@ -958,7 +958,7 @@ INETinet62str_bulk(Client ctx, bat *ret, const bat *bid, const bat *sid)
 	bool nils = false, btkey = false;
 	char buf[16], *pbuf = buf;
 	size_t l = sizeof(buf);
-	ssize_t (*conv)(char **, size_t *, const void *, bool) = BATatoms[TYPE_inet6].atomToStr;
+	ssize_t (*conv)(allocator *, char **, size_t *, const void *, bool) = BATatoms[TYPE_inet6].atomToStr;
 	BATiter bi;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
@@ -986,7 +986,7 @@ INETinet62str_bulk(Client ctx, bat *ret, const bat *bid, const bat *sid)
 			oid p = (canditer_next_dense(&ci) - off);
 			inet6 v = vals[p];
 
-			if (conv(&pbuf, &l, &v, false) < 0) {	/* it should never be reallocated */
+			if (conv(ma, &pbuf, &l, &v, false) < 0) {	/* it should never be reallocated */
 				msg = createException(MAL, "batcalc.str",
 									  GDK_EXCEPTION);
 				goto bailout1;
@@ -1003,7 +1003,7 @@ INETinet62str_bulk(Client ctx, bat *ret, const bat *bid, const bat *sid)
 			oid p = (canditer_next(&ci) - off);
 			inet6 v = vals[p];
 
-			if (conv(&pbuf, &l, &v, false) < 0) {	/* it should never be reallocated */
+			if (conv(ma, &pbuf, &l, &v, false) < 0) {	/* it should never be reallocated */
 				msg = createException(MAL, "batcalc.str",
 									  GDK_EXCEPTION);
 				goto bailout1;

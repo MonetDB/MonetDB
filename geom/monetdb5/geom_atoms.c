@@ -11,6 +11,7 @@
  */
 
 #include "geom_atoms.h"
+#include "gdk.h"
 
 /***********************************************/
 /************* wkb type functions **************/
@@ -19,8 +20,9 @@
 /* Creates the string representation (WKT) of a WKB */
 /* return length of resulting string. */
 ssize_t
-wkbTOSTR(char **geomWKT, size_t *len, const void *GEOMWKB, bool external)
+wkbTOSTR(allocator *ma, char **geomWKT, size_t *len, const void *GEOMWKB, bool external)
 {
+	assert(ma);
 	const wkb *geomWKB = GEOMWKB;
 	char *wkt = NULL;
 	size_t dstStrLen = 5;	/* "nil" */
@@ -69,8 +71,6 @@ wkbTOSTR(char **geomWKT, size_t *len, const void *GEOMWKB, bool external)
 	/* geosGeometry == NULL */
 	if (*len < 4 || *geomWKT == NULL) {
 		////GDKfree(*geomWKT);
-		allocator *ma = MT_thread_getallocator();
-		assert(ma);
 		if ((*geomWKT = ma_alloc(ma, *len = 4)) == NULL)
 			return -1;
 	}
@@ -83,14 +83,15 @@ wkbTOSTR(char **geomWKT, size_t *len, const void *GEOMWKB, bool external)
 }
 
 ssize_t
-wkbFROMSTR(const char *geomWKT, size_t *len, void **GEOMWKB, bool external)
+wkbFROMSTR(allocator *ma, const char *geomWKT, size_t *len, void **GEOMWKB, bool external)
 {
+	assert(ma);
 	wkb **geomWKB = (wkb **) GEOMWKB;
 	size_t parsedBytes;
 	str err;
 
 	if (external && strncmp(geomWKT, "nil", 3) == 0) {
-		*geomWKB = wkbNULLcopy(MT_thread_getallocator());
+		*geomWKB = wkbNULLcopy(ma);
 		if (*geomWKB == NULL)
 			return -1;
 		return 3;
@@ -154,8 +155,9 @@ wkbCOMP(const void *L, const void *R)
 
 /* read wkb from log */
 void *
-wkbREAD(void *A, size_t *dstlen, stream *s, size_t cnt)
+wkbREAD(allocator *ma, void *A, size_t *dstlen, stream *s, size_t cnt)
 {
+	assert(ma);
 	wkb *a = A;
 	int len;
 	int srid;
@@ -168,7 +170,7 @@ wkbREAD(void *A, size_t *dstlen, stream *s, size_t cnt)
 		return NULL;
 	size_t wkblen = (size_t) wkb_size(len);
 	if (a == NULL || *dstlen < wkblen) {
-		if ((a = GDKrealloc(a, wkblen)) == NULL)
+		if ((a = ma_realloc(ma, a, wkblen, *dstlen)) == NULL)
 			return NULL;
 		*dstlen = wkblen;
 	}
@@ -379,8 +381,9 @@ wkbFROMSTR_withSRID(const char *geomWKT, size_t *len, wkb **geomWKB, int srid, s
 /* TOSTR: print atom in a string. */
 /* return length of resulting string. */
 ssize_t
-mbrTOSTR(char **dst, size_t *len, const void *ATOM, bool external)
+mbrTOSTR(allocator *ma, char **dst, size_t *len, const void *ATOM, bool external)
 {
+	assert(ma);
 	const mbr *atom = ATOM;
 	char tempWkt[MBR_WKTLEN];
 	size_t dstStrLen;
@@ -397,8 +400,6 @@ mbrTOSTR(char **dst, size_t *len, const void *ATOM, bool external)
 
 	if (*len < dstStrLen + 4 || *dst == NULL) {
 		////GDKfree(*dst);
-		allocator *ma = MT_thread_getallocator();
-		assert(ma);
 		if ((*dst = ma_alloc(ma, *len = dstStrLen + 4)) == NULL)
 			return -1;
 	}
@@ -423,8 +424,9 @@ mbrTOSTR(char **dst, size_t *len, const void *ATOM, bool external)
 /* FROMSTR: parse string to mbr. */
 /* return number of parsed characters. */
 ssize_t
-mbrFROMSTR(const char *src, size_t *len, void **ATOM, bool external)
+mbrFROMSTR(allocator *ma, const char *src, size_t *len, void **ATOM, bool external)
 {
+	assert(ma);
 	mbr **atom = (mbr **) ATOM;
 	size_t nchars = 0;	/* The number of characters parsed; the return value. */
 	GEOSGeom geosMbr = NULL;	/* The geometry object that is parsed from the src string. */
@@ -433,8 +435,6 @@ mbrFROMSTR(const char *src, size_t *len, void **ATOM, bool external)
 
 	if (*len < sizeof(mbr) || *atom == NULL) {
 		// //GDKfree(*atom);
-		allocator *ma = MT_thread_getallocator();
-		assert(ma);
 		if ((*atom = ma_alloc(ma, *len = sizeof(mbr))) == NULL)
 			return -1;
 	}
@@ -525,7 +525,7 @@ mbrCOMP(const void *L, const void *R)
 
 /* read mbr from log */
 void *
-mbrREAD(void *A, size_t *dstlen, stream *s, size_t cnt)
+mbrREAD(allocator *ma, void *A, size_t *dstlen, stream *s, size_t cnt)
 {
 	mbr *a = A;
 	mbr *c;
@@ -534,7 +534,7 @@ mbrREAD(void *A, size_t *dstlen, stream *s, size_t cnt)
 	flt vals[4];
 
 	if (a == NULL || *dstlen < cnt * sizeof(mbr)) {
-		if ((a = GDKrealloc(a, cnt * sizeof(mbr))) == NULL)
+		if ((a = ma_realloc(ma, a, cnt * sizeof(mbr), *dstlen)) == NULL)
 			return NULL;
 		*dstlen = cnt * sizeof(mbr);
 	}
@@ -1097,12 +1097,12 @@ wkbCoordinateFromWKB(Client ctx, dbl *coordinateValue, wkb **geomWKB, int *coord
 str
 mbrFromString(Client ctx, mbr **w, const char **src)
 {
-	(void) ctx;
+	allocator *ma = ctx->curprg->def->ma;
 	size_t len = *w ? sizeof(mbr) : 0;
 	char *errbuf;
 	str ex;
 
-	if (mbrFROMSTR(*src, &len, (void **) w, false) >= 0)
+	if (mbrFROMSTR(ma, *src, &len, (void **) w, false) >= 0)
 		return MAL_SUCCEED;
 	//GDKfree(*w);
 	*w = NULL;

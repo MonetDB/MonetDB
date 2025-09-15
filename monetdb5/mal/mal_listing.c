@@ -91,7 +91,7 @@ renderTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx, int flg, char *buf,
 		} else if (stk) {
 			val = &stk->stk[varid];
 		}
-		cv = VALformat(val);
+		cv = VALformat(mb->ma, val);
 		if (cv == NULL) {
 			bufend = stpcpy(bufend, "<alloc failed...>");
 		} else if (!val->bat && strcmp(cv, "nil") == 0) {

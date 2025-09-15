@@ -2868,7 +2868,7 @@ monetdbe_result_fetch(monetdbe_result* mres, monetdbe_column** res, size_t colum
 			} else {
 				char *sresult = NULL;
 				size_t length = 0;
-				if (BATatoms[bat_type].atomToStr(&sresult, &length, t, true) == 0) {
+				if (BATatoms[bat_type].atomToStr(m->sa, &sresult, &length, t, true) == 0) {
 					bat_iterator_end(&li);
 					set_error(mdbe, createException(MAL, "monetdbe.monetdbe_result_fetch", "Failed to convert element to string"));
 					goto cleanup;

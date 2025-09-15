@@ -661,7 +661,7 @@ convertimpl_msk(flt)
 convertimpl_msk(dbl)
 
 static BUN
-convert_any_str(BATiter *bi, BAT *bn, struct canditer *restrict ci)
+convert_any_str(allocator *ma, BATiter *bi, BAT *bn, struct canditer *restrict ci)
 {
 	int tp = bi->type;
 	oid candoff = bi->b->hseqbase;
@@ -671,7 +671,7 @@ convert_any_str(BATiter *bi, BAT *bn, struct canditer *restrict ci)
 	BUN i;
 	const void *nil = ATOMnilptr(tp);
 	const void *restrict src;
-	ssize_t (*atomtostr)(str *, size_t *, const void *, bool) = BATatoms[tp].atomToStr;
+	ssize_t (*atomtostr)(allocator *ma, str *, size_t *, const void *, bool) = BATatoms[tp].atomToStr;
 	int (*atomcmp)(const void *, const void *) = ATOMcompare(tp);
 	oid x;
 
@@ -700,7 +700,7 @@ convert_any_str(BATiter *bi, BAT *bn, struct canditer *restrict ci)
 					goto bailout;
 				}
 			} else {
-				if ((*atomtostr)(&dst, &len, src, false) < 0 ||
+				if ((*atomtostr)(ma, &dst, &len, src, false) < 0 ||
 				    tfastins_nocheckVAR(bn, i, dst) != GDK_SUCCEED) {
 					goto bailout;
 				}
@@ -723,7 +723,7 @@ convert_any_str(BATiter *bi, BAT *bn, struct canditer *restrict ci)
 				if (tfastins_nocheckVAR(bn, i, str_nil) != GDK_SUCCEED)
 					goto bailout;
 			} else {
-				if ((*atomtostr)(&dst, &len, src, false) < 0)
+				if ((*atomtostr)(ma, &dst, &len, src, false) < 0)
 					goto bailout;
 				if (tfastins_nocheckVAR(bn, i, dst) != GDK_SUCCEED)
 					goto bailout;
@@ -740,7 +740,7 @@ convert_any_str(BATiter *bi, BAT *bn, struct canditer *restrict ci)
 }
 
 static BUN
-convert_str_var(BATiter *bi, BAT *bn, struct canditer *restrict ci)
+convert_str_var(allocator *ma, BATiter *bi, BAT *bn, struct canditer *restrict ci)
 {
 	int tp = bn->ttype;
 	oid candoff = bi->b->hseqbase;
@@ -750,7 +750,7 @@ convert_str_var(BATiter *bi, BAT *bn, struct canditer *restrict ci)
 	BUN i;
 	const void *nil = ATOMnilptr(tp);
 	const char *restrict src;
-	ssize_t (*atomfromstr)(const char *, size_t *, ptr *, bool) = BATatoms[tp].atomFromStr;
+	ssize_t (*atomfromstr)(allocator *ma, const char *, size_t *, ptr *, bool) = BATatoms[tp].atomFromStr;
 	oid x;
 
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
@@ -765,7 +765,7 @@ convert_str_var(BATiter *bi, BAT *bn, struct canditer *restrict ci)
 			}
 		} else {
 			ssize_t l;
-			if ((l = (*atomfromstr)(src, &len, &dst, false)) < 0 ||
+			if ((l = (*atomfromstr)(ma, src, &len, &dst, false)) < 0 ||
 			    l < (ssize_t) strlen(src) ||
 			    tfastins_nocheckVAR(bn, i, dst) != GDK_SUCCEED) {
 				goto bailout;
@@ -782,14 +782,14 @@ convert_str_var(BATiter *bi, BAT *bn, struct canditer *restrict ci)
 }
 
 static BUN
-convert_str_fix(BATiter *bi, int tp, void *restrict dst,
+convert_str_fix(allocator *ma, BATiter *bi, int tp, void *restrict dst,
 		struct canditer *restrict ci, oid candoff)
 {
 	BUN nils = 0;
 	const void *nil = ATOMnilptr(tp);
 	size_t len = ATOMsize(tp);
 	ssize_t l;
-	ssize_t (*atomfromstr)(const char *, size_t *, ptr *, bool) = BATatoms[tp].atomFromStr;
+	ssize_t (*atomfromstr)(allocator *ma, const char *, size_t *, ptr *, bool) = BATatoms[tp].atomFromStr;
 	const char *s = NULL;
 
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
@@ -830,7 +830,7 @@ convert_str_fix(BATiter *bi, int tp, void *restrict dst,
 			nils++;
 		} else {
 			void *d = dst;
-			if ((l = (*atomfromstr)(s, &len, &d, false)) < 0 ||
+			if ((l = (*atomfromstr)(ma, s, &len, &d, false)) < 0 ||
 			    l < (ssize_t) strlen(s)) {
 				goto conversion_failed;
 			}
@@ -867,7 +867,7 @@ convert_str_fix(BATiter *bi, int tp, void *restrict dst,
 }
 
 static BUN
-convert_void_any(oid seq, BAT *bn,
+convert_void_any(allocator *ma, oid seq, BAT *bn,
 		 struct canditer *restrict ci,
 		 oid candoff, bool *reduce)
 {
@@ -875,7 +875,7 @@ convert_void_any(oid seq, BAT *bn,
 	BUN i;
 	int tp = bn->ttype;
 	void *restrict dst = Tloc(bn, 0);
-	ssize_t (*atomtostr)(str *, size_t *, const void *, bool) = BATatoms[TYPE_oid].atomToStr;
+	ssize_t (*atomtostr)(allocator *ma, str *, size_t *, const void *, bool) = BATatoms[TYPE_oid].atomToStr;
 	char *s = NULL;
 	size_t len = 0;
 	oid x;
@@ -956,7 +956,7 @@ convert_void_any(oid seq, BAT *bn,
 	case TYPE_str:
 		TIMEOUT_LOOP_IDX(i, ci->ncand, qry_ctx) {
 			x = canditer_next(ci) - candoff;
-			if ((*atomtostr)(&s, &len, &(oid){seq + x}, false) < 0)
+			if ((*atomtostr)(ma, &s, &len, &(oid){seq + x}, false) < 0)
 				goto bailout;
 			if (tfastins_nocheckVAR(bn, i, s) != GDK_SUCCEED)
 				goto bailout;
@@ -978,7 +978,7 @@ convert_void_any(oid seq, BAT *bn,
 }
 
 static BUN
-convert_inet6_inet4(const inet6 *src, inet4 *restrict dst,
+convert_inet6_inet4(allocator *ma, const inet6 *src, inet4 *restrict dst,
 		    struct canditer *restrict ci,
 		    oid candoff)
 {
@@ -1017,7 +1017,7 @@ convert_inet6_inet4(const inet6 *src, inet4 *restrict dst,
 			} else {
 				char buf[40], *s = buf;
 				size_t l = sizeof(buf);
-				BATatoms[TYPE_inet6].atomToStr(&s, &l, &src[x], false);
+				BATatoms[TYPE_inet6].atomToStr(ma, &s, &l, &src[x], false);
 				assert(buf == s);
 				GDKerror("22003!overflow in conversion of %s to inet4.\n", buf);
 				return BUN_NONE;
@@ -1055,7 +1055,7 @@ convert_inet6_inet4(const inet6 *src, inet4 *restrict dst,
 			} else {
 				char buf[40], *s = buf;
 				size_t l = sizeof(buf);
-				BATatoms[TYPE_inet6].atomToStr(&s, &l, &src[x], false);
+				BATatoms[TYPE_inet6].atomToStr(ma, &s, &l, &src[x], false);
 				assert(buf == s);
 				GDKerror("22003!overflow in conversion of %s to inet4.\n", buf);
 				return BUN_NONE;
@@ -1116,7 +1116,7 @@ convert_inet4_inet6(const inet4 *src, inet6 *restrict dst,
 }
 
 static BUN
-convert_typeswitchloop(const void *src, int stp, void *restrict dst, int dtp,
+convert_typeswitchloop(allocator *ma, const void *src, int stp, void *restrict dst, int dtp,
 		       struct canditer *restrict ci,
 		       oid candoff, bool *reduce,
 		       uint8_t scale1, uint8_t scale2, uint8_t precision)
@@ -1556,7 +1556,7 @@ convert_typeswitchloop(const void *src, int stp, void *restrict dst, int dtp,
 		switch (ATOMbasetype(dtp)) {
 		case TYPE_inet4:
 			*reduce = false;
-			return convert_inet6_inet4(src, dst, ci, candoff);
+			return convert_inet6_inet4(ma, src, dst, ci, candoff);
 		default:
 			return BUN_NONE + 1;
 		}
@@ -1566,7 +1566,7 @@ convert_typeswitchloop(const void *src, int stp, void *restrict dst, int dtp,
 }
 
 BAT *
-BATconvert(BAT *b, BAT *s, int tp,
+BATconvert(allocator *ma, BAT *b, BAT *s, int tp,
 	   uint8_t scale1, uint8_t scale2, uint8_t precision)
 {
 	lng t0 = 0;
@@ -1639,16 +1639,16 @@ BATconvert(BAT *b, BAT *s, int tp,
 	}
 
 	if (bi.type == TYPE_void)
-		nils = convert_void_any(b->tseqbase, bn,
+		nils = convert_void_any(ma, b->tseqbase, bn,
 					&ci, b->hseqbase, &reduce);
 	else if (tp == TYPE_str)
-		nils = convert_any_str(&bi, bn, &ci);
+		nils = convert_any_str(ma, &bi, bn, &ci);
 	else if (bi.type == TYPE_str) {
 		reduce = true;
 		if (ATOMvarsized(tp)) {
-			nils = convert_str_var(&bi, bn, &ci);
+			nils = convert_str_var(ma, &bi, bn, &ci);
 		} else {
-			nils = convert_str_fix(&bi, tp, Tloc(bn, 0),
+			nils = convert_str_fix(ma, &bi, tp, Tloc(bn, 0),
 					       &ci, b->hseqbase);
 		}
 	} else if (ATOMstorage(bi.type) == TYPE_msk &&
@@ -1656,7 +1656,7 @@ BATconvert(BAT *b, BAT *s, int tp,
 		if (BATappend(bn, b, s, false) != GDK_SUCCEED)
 			nils = BUN_NONE + 2;
 	} else {
-		nils = convert_typeswitchloop(bi.base, bi.type,
+		nils = convert_typeswitchloop(ma, bi.base, bi.type,
 					      Tloc(bn, 0), tp,
 					      &ci, b->hseqbase, &reduce,
 					      scale1, scale2, precision);
@@ -1736,7 +1736,7 @@ VARconvert(allocator *ma, ValPtr ret, const ValRecord *v,
 		} else {
 			ret->len = 0;
 			ret->val.sval = NULL;
-			if ((*BATatoms[v->vtype].atomToStr)(&ret->val.sval,
+			if ((*BATatoms[v->vtype].atomToStr)(ma, &ret->val.sval,
 							    &ret->len,
 							    VALptr(v),
 							    false) < 0) {
@@ -1776,7 +1776,7 @@ VARconvert(allocator *ma, ValPtr ret, const ValRecord *v,
 				p = VALget(ret);
 				len = ATOMsize(ret->vtype);
 			}
-			if ((l = (*BATatoms[ret->vtype].atomFromStr)(
+			if ((l = (*BATatoms[ret->vtype].atomFromStr)(ma,
 				     v->val.sval, &len, &p, false)) < 0 ||
 			    l < (ssize_t) strlen(v->val.sval)) {
 				//if (ATOMextern(ret->vtype))
@@ -1808,7 +1808,7 @@ VARconvert(allocator *ma, ValPtr ret, const ValRecord *v,
 			}
 		}
 	} else {
-		nils = convert_typeswitchloop(VALptr(v), v->vtype,
+		nils = convert_typeswitchloop(ma, VALptr(v), v->vtype,
 					      VALget(ret), ret->vtype,
 					      &(struct canditer){.tpe=cand_dense, .ncand=1},
 					      0, &reduce,

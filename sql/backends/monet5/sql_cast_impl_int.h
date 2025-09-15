@@ -51,7 +51,7 @@ FUN(,TP1,_num2dec_,TP2) (Client ctx, TP2 *res, const TP1 *v, const int *d2, cons
 str
 FUN(bat,TP1,_dec2_,TP2) (Client ctx, bat *res, const int *s1, const bat *bid, const bat *sid)
 {
-	(void) ctx;
+	allocator *ma = ctx->curprg->def->ma;
 	BAT *b, *s = NULL, *bn;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
@@ -61,7 +61,7 @@ FUN(bat,TP1,_dec2_,TP2) (Client ctx, bat *res, const int *s1, const bat *bid, co
 		BBPunfix(b->batCacheid);
 		throw(SQL, "batcalc."STRNG(FUN(,TP1,_dec2_,TP2)), SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
-	bn = BATconvert(b, s, TPE(TP2), *s1, 0, 0);
+	bn = BATconvert(ma, b, s, TPE(TP2), *s1, 0, 0);
 	BBPunfix(b->batCacheid);
 	BBPreclaim(s);
 	if (bn == NULL)
@@ -74,7 +74,7 @@ FUN(bat,TP1,_dec2_,TP2) (Client ctx, bat *res, const int *s1, const bat *bid, co
 str
 FUN(bat,TP1,_dec2dec_,TP2) (Client ctx, bat *res, const int *S1, const bat *bid, const bat *sid, const int *d2, const int *S2)
 {
-	(void) ctx;
+	allocator *ma = ctx->curprg->def->ma;
 	BAT *b, *s = NULL, *bn;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
@@ -84,7 +84,7 @@ FUN(bat,TP1,_dec2dec_,TP2) (Client ctx, bat *res, const int *S1, const bat *bid,
 		BBPunfix(b->batCacheid);
 		throw(SQL, "batcalc."STRNG(FUN(,TP1,_dec2_,TP2)), SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
-	bn = BATconvert(b, s, TPE(TP2), *S1, *S2, *d2);
+	bn = BATconvert(ma, b, s, TPE(TP2), *S1, *S2, *d2);
 	BBPunfix(b->batCacheid);
 	BBPreclaim(s);
 	if (bn == NULL)
@@ -99,7 +99,7 @@ FUN(bat,TP1,_dec2dec_,TP2) (Client ctx, bat *res, const int *S1, const bat *bid,
 str
 FUN(bat,TP1,_num2dec_,TP2) (Client ctx, bat *res, const bat *bid, const bat *sid, const int *d2, const int *s2)
 {
-	(void) ctx;
+	allocator *ma = ctx->curprg->def->ma;
 	BAT *b, *s = NULL, *bn;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
@@ -109,7 +109,7 @@ FUN(bat,TP1,_num2dec_,TP2) (Client ctx, bat *res, const bat *bid, const bat *sid
 		BBPunfix(b->batCacheid);
 		throw(SQL, "batcalc."STRNG(FUN(,TP1,_dec2_,TP2)), SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
-	bn = BATconvert(b, s, TPE(TP2), 0, *s2, *d2);
+	bn = BATconvert(ma, b, s, TPE(TP2), 0, *s2, *d2);
 	BBPunfix(b->batCacheid);
 	BBPreclaim(s);
 	if (bn == NULL)

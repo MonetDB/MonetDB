@@ -286,7 +286,7 @@ nil_2time_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 static inline str
-str_2time_daytimetz_internal_imp(daytime *ret, const char *next, ssize_t (*fromstr_func)(const char *, daytime *, long, bool),
+str_2time_daytimetz_internal_imp(allocator *sa, daytime *ret, const char *next, ssize_t (*fromstr_func)(allocator *, const char *, daytime *, long, bool),
 #ifdef HAVE_HGE
 hge shift, hge divider, hge multiplier, long tz_off
 #else
@@ -297,7 +297,7 @@ lng shift, lng divider, lng multiplier, long tz_off
 	ssize_t pos = 0;
 	daytime dt = 0;
 
-	pos = fromstr_func(next, &dt, tz_off, false);
+	pos = fromstr_func(sa, next, &dt, tz_off, false);
 	if (pos < (ssize_t) strlen(next) || /* includes pos < 0 */ is_daytime_nil(dt))
 		return createException(SQL, "batcalc.str_2time_daytimetz", SQLSTATE(22007) "Daytime '%s' has incorrect format", next);
 	*ret = daytime_2time_daytime_imp(dt, shift, divider, multiplier);
@@ -305,7 +305,7 @@ lng shift, lng divider, lng multiplier, long tz_off
 }
 
 static str
-str_2time_daytimetz_internal(ptr out, ptr in, const bat *sid, int tpe, int digits, lng tz)
+str_2time_daytimetz_internal(allocator *sa, ptr out, ptr in, const bat *sid, int tpe, int digits, lng tz)
 {
 	str msg = MAL_SUCCEED;
 	BAT *b = NULL, *s = NULL, *res = NULL;
@@ -313,7 +313,7 @@ str_2time_daytimetz_internal(ptr out, ptr in, const bat *sid, int tpe, int digit
 	int d = (digits) ? digits - 1 : 0;
 	bool is_a_bat = false, nils = false;
 	bat *r = NULL;
-	ssize_t (*fromstr_func)(const char *, daytime *, long, bool) = sql_daytime_fromstr;
+	ssize_t (*fromstr_func)(allocator *, const char *, daytime *, long, bool) = sql_daytime_fromstr;
 	struct canditer ci = {0};
 #ifdef HAVE_HGE
 	hge shift = 0, divider = 1, multiplier = 1;
@@ -372,7 +372,7 @@ str_2time_daytimetz_internal(ptr out, ptr in, const bat *sid, int tpe, int digit
 					ret[i] = daytime_nil;
 					nils = true;
 				} else {
-					msg = str_2time_daytimetz_internal_imp(&(ret[i]), next, fromstr_func, shift, divider, multiplier, (long)(tz/1000));
+					msg = str_2time_daytimetz_internal_imp(sa, &(ret[i]), next, fromstr_func, shift, divider, multiplier, (long)(tz/1000));
 				}
 			}
 		} else {
@@ -384,7 +384,7 @@ str_2time_daytimetz_internal(ptr out, ptr in, const bat *sid, int tpe, int digit
 					ret[i] = daytime_nil;
 					nils = true;
 				} else {
-					msg = str_2time_daytimetz_internal_imp(&(ret[i]), next, fromstr_func, shift, divider, multiplier, (long)(tz/1000));
+					msg = str_2time_daytimetz_internal_imp(sa, &(ret[i]), next, fromstr_func, shift, divider, multiplier, (long)(tz/1000));
 				}
 			}
 		}
@@ -394,7 +394,7 @@ str_2time_daytimetz_internal(ptr out, ptr in, const bat *sid, int tpe, int digit
 		if (strNil(next))
 			*ret = daytime_nil;
 		else
-			msg = str_2time_daytimetz_internal_imp(ret, next, fromstr_func, shift, divider, multiplier, (long)(tz/1000));
+			msg = str_2time_daytimetz_internal_imp(sa, ret, next, fromstr_func, shift, divider, multiplier, (long)(tz/1000));
 	}
 
 bailout:
@@ -422,14 +422,14 @@ str_2time_daytimetz(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	lng tz = *getArgReference_lng(stk, pci, pci->argc == 5 ? 4 : 3);
 	bat *sid = pci->argc == 5 ? getArgReference_bat(stk, pci, 2) : NULL;
 	(void) cntxt;
-	return str_2time_daytimetz_internal(getArgReference(stk, pci, 0), getArgReference(stk, pci, 1), sid, tpe, digits, tz);
+	return str_2time_daytimetz_internal(mb->ma, getArgReference(stk, pci, 0), getArgReference(stk, pci, 1), sid, tpe, digits, tz);
 }
 
 str
 batstr_2time_daytime(Client ctx, bat *res, const bat *bid, const bat *s, const int *digits)
 {
-	(void) ctx;
-	return str_2time_daytimetz_internal((ptr) res, (ptr) bid, s, newBatType(TYPE_str), *digits, 0);
+	allocator *ma = ctx->curprg->def->ma;
+	return str_2time_daytimetz_internal(ma, (ptr) res, (ptr) bid, s, newBatType(TYPE_str), *digits, 0);
 }
 
 str
@@ -437,7 +437,7 @@ str_2time_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int tpe = getArgType(mb, pci, 1), digits = *getArgReference_int(stk, pci, 2);
 	(void) cntxt;
-	return str_2time_daytimetz_internal(getArgReference(stk, pci, 0), getArgReference(stk, pci, 1), NULL, tpe, digits, 0);
+	return str_2time_daytimetz_internal(mb->ma, getArgReference(stk, pci, 0), getArgReference(stk, pci, 1), NULL, tpe, digits, 0);
 }
 
 static inline daytime
@@ -788,7 +788,7 @@ nil_2time_timestamp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 static inline str
-str_2time_timestamptz_internal_imp(timestamp *ret, const char *next, ssize_t (*fromstr_func)(const char *, timestamp *, long, bool),
+str_2time_timestamptz_internal_imp(allocator *sa, timestamp *ret, const char *next, ssize_t (*fromstr_func)(allocator *, const char *, timestamp *, long, bool),
 #ifdef HAVE_HGE
 hge shift, hge divider, hge multiplier, lng tz_off
 #else
@@ -799,7 +799,7 @@ lng shift, lng divider, lng multiplier, lng tz_off
 	ssize_t pos = 0;
 	timestamp tp = 0;
 
-	pos = fromstr_func(next, &tp, (long)tz_off, false);
+	pos = fromstr_func(sa, next, &tp, (long)tz_off, false);
 	if (pos < (ssize_t) strlen(next) || /* includes pos < 0 */ is_timestamp_nil(tp))
 		return createException(SQL, "batcalc.str_2time_timestamptz_internal", SQLSTATE(22007) "Timestamp '%s' has incorrect format", next);
 	*ret = timestamp_2time_timestamp_imp(tp, shift, divider, multiplier);
@@ -807,15 +807,16 @@ lng shift, lng divider, lng multiplier, lng tz_off
 }
 
 static str
-str_2time_timestamptz_internal(ptr out, ptr in, const bat *sid, int tpe, int digits, lng tz)
+str_2time_timestamptz_internal(allocator *sa, ptr out, ptr in, const bat *sid, int tpe, int digits, lng tz)
 {
+	assert(sa);
 	str msg = MAL_SUCCEED;
 	BAT *b = NULL, *s = NULL, *res = NULL;
 	timestamp *restrict ret = NULL;
 	int d = (digits) ? digits - 1 : 0;
 	bool is_a_bat = false, nils = false;
 	bat *r = NULL;
-	ssize_t (*fromstr_func)(const char *, timestamp *, long, bool) = sql_timestamp_fromstr;
+	ssize_t (*fromstr_func)(allocator *, const char *, timestamp *, long, bool) = sql_timestamp_fromstr;
 	struct canditer ci = {0};
 #ifdef HAVE_HGE
 	hge shift = 0, divider = 1, multiplier = 1;
@@ -874,7 +875,7 @@ str_2time_timestamptz_internal(ptr out, ptr in, const bat *sid, int tpe, int dig
 					ret[i] = timestamp_nil;
 					nils = true;
 				} else {
-					msg = str_2time_timestamptz_internal_imp(&(ret[i]), next, fromstr_func, shift, divider, multiplier, (long)(tz/1000));
+					msg = str_2time_timestamptz_internal_imp(sa, &(ret[i]), next, fromstr_func, shift, divider, multiplier, (long)(tz/1000));
 				}
 			}
 		} else {
@@ -886,7 +887,7 @@ str_2time_timestamptz_internal(ptr out, ptr in, const bat *sid, int tpe, int dig
 					ret[i] = timestamp_nil;
 					nils = true;
 				} else {
-					msg = str_2time_timestamptz_internal_imp(&(ret[i]), next, fromstr_func, shift, divider, multiplier, (long)(tz/1000));
+					msg = str_2time_timestamptz_internal_imp(sa, &(ret[i]), next, fromstr_func, shift, divider, multiplier, (long)(tz/1000));
 				}
 			}
 		}
@@ -896,7 +897,7 @@ str_2time_timestamptz_internal(ptr out, ptr in, const bat *sid, int tpe, int dig
 		if (strNil(next))
 			*ret = timestamp_nil;
 		else
-			msg = str_2time_timestamptz_internal_imp(ret, next, fromstr_func, shift, divider, multiplier, (long)(tz/1000));
+			msg = str_2time_timestamptz_internal_imp(sa, ret, next, fromstr_func, shift, divider, multiplier, (long)(tz/1000));
 	}
 
 bailout:
@@ -923,14 +924,14 @@ str_2time_timestamptz(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		digits = *getArgReference_int(stk, pci, pci->argc == 5 ? 3 : 2);
 	lng tz = *getArgReference_lng(stk, pci, pci->argc == 5 ? 4 : 3);
 	(void) cntxt;
-	return str_2time_timestamptz_internal(getArgReference(stk, pci, 0), getArgReference(stk, pci, 1), NULL, tpe, digits, tz);
+	return str_2time_timestamptz_internal(mb->ma, getArgReference(stk, pci, 0), getArgReference(stk, pci, 1), NULL, tpe, digits, tz);
 }
 
 str
 batstr_2time_timestamptz(Client ctx, bat *res, const bat *bid, const bat *sid, const int *digits, const lng *tz)
 {
-	(void) ctx;
-	return str_2time_timestamptz_internal((ptr) res, (ptr) bid, sid, newBatType(TYPE_str), *digits, *tz);
+	allocator *ma = ctx->curprg->def->ma;
+	return str_2time_timestamptz_internal(ma, (ptr) res, (ptr) bid, sid, newBatType(TYPE_str), *digits, *tz);
 }
 
 str
@@ -938,14 +939,14 @@ str_2time_timestamp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int tpe = getArgType(mb, pci, 1), digits = *getArgReference_int(stk, pci, 2);
 	(void) cntxt;
-	return str_2time_timestamptz_internal(getArgReference(stk, pci, 0), getArgReference(stk, pci, 1), NULL, tpe, digits, 0);
+	return str_2time_timestamptz_internal(mb->ma, getArgReference(stk, pci, 0), getArgReference(stk, pci, 1), NULL, tpe, digits, 0);
 }
 
 str
 batstr_2time_timestamp(Client ctx, bat *res, const bat *bid, const bat *sid, const int *digits)
 {
-	(void) ctx;
-	return str_2time_timestamptz_internal((ptr) res, (ptr) bid, sid, newBatType(TYPE_str), *digits, 0);
+	allocator *ma = ctx->curprg->def->ma;
+	return str_2time_timestamptz_internal(ma, (ptr) res, (ptr) bid, sid, newBatType(TYPE_str), *digits, 0);
 }
 
 static inline str
@@ -1202,12 +1203,12 @@ bailout:
 		if (next > (TPE_IN) MAX_VALUE) { \
 			size_t len = 0; \
 			char *str_val = NULL; \
-			if (BATatoms[tpe].atomToStr(&str_val, &len, &next, false) < 0) { \
+			if (BATatoms[tpe].atomToStr(mb->ma, &str_val, &len, &next, false) < 0) { \
 				msg = createException(SQL, "batcalc." FUNC_NAME, SQLSTATE(HY013) MAL_MALLOC_FAIL); \
 				goto bailout1; \
 			} \
 			msg = createException(SQL, "batcalc." FUNC_NAME, SQLSTATE(22003) "Value %s too large to fit at a " FUNC_NAME, str_val); \
-			GDKfree(str_val); \
+			/*GDKfree(str_val);*/ \
 			goto bailout1; \
 		} \
 	} while (0)
@@ -1217,12 +1218,12 @@ bailout:
 		if (r < cast) { \
 			size_t len = 0; \
 			char *str_val = NULL; \
-			if (BATatoms[tpe].atomToStr(&str_val, &len, &cast, false) < 0) { \
+			if (BATatoms[tpe].atomToStr(mb->ma, &str_val, &len, &cast, false) < 0) { \
 				msg = createException(SQL, "batcalc." FUNC_NAME, SQLSTATE(HY013) MAL_MALLOC_FAIL); \
 				goto bailout1; \
 			} \
 			msg = createException(SQL, "batcalc." FUNC_NAME, SQLSTATE(22003) "Overflow in conversion of %s to " FUNC_NAME, str_val); \
-			GDKfree(str_val); \
+			/*GDKfree(str_val);*/ \
 			goto bailout1; \
 		} \
 	} while (0)

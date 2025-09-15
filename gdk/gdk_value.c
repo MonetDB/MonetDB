@@ -286,18 +286,16 @@ VALinit(allocator *ma, ValPtr d, int tpe, const void *s)
 /* Format the value in RES in the standard way for the type of RES
  * into a newly allocated buffer.  Also see ATOMformat. */
 char *
-VALformat(const ValRecord *res)
+VALformat(allocator *ma, const ValRecord *res)
 {
 	if (res->bat) {
 		if (is_bat_nil(res->val.bval)) {
-			allocator *ma = MT_thread_getallocator();
-			assert(ma);
 			return MA_STRDUP(ma, "nil");
 		}
 		else
-			return ATOMformat(TYPE_int, (const void *) &res->val.ival);
+			return ATOMformat(ma, TYPE_int, (const void *) &res->val.ival);
 	} else
-		return ATOMformat(res->vtype, VALptr(res));
+		return ATOMformat(ma, res->vtype, VALptr(res));
 }
 
 /* Convert (cast) the value in T to the type TYP, do this in place.

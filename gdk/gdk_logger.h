@@ -46,9 +46,9 @@ typedef int log_id;
 #define LOG_BATGROUP_ID 5
 #define LOG_BATGROUP_END 6
 
-gdk_export logger *log_create(int debug, const char *fn, const char *logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp, void *funcdata);
+gdk_export logger *log_create(allocator *ma, int debug, const char *fn, const char *logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp, void *funcdata);
 gdk_export void log_destroy(logger *lg);
-gdk_export gdk_return log_flush(logger *lg, ulng saved_id); /* try to flush a part of the logs, including the passed saved_id transaction id */
+gdk_export gdk_return log_flush(allocator *ma, logger *lg, ulng saved_id); /* try to flush a part of the logs, including the passed saved_id transaction id */
 gdk_export gdk_return log_activate(logger *lg); /* when the server has been idle, activate logger to make more cleanup possible */
 
 gdk_export lng log_changes(logger *lg);
@@ -69,7 +69,7 @@ gdk_export gdk_return log_bat_group_end(logger *lg, log_id id);
 /* mark end of batgroup insert or clear */
 //gdk_export gdk_return log_batgroup_end(logger *lg, oid id);
 
-gdk_export gdk_return log_tstart(logger *lg, bool flushnow, ulng *log_file_id);
+gdk_export gdk_return log_tstart(allocator *ma, logger *lg, bool flushnow, ulng *log_file_id);
 gdk_export gdk_return log_tend(logger *lg);
 gdk_export gdk_return log_tflush(logger *lg, ulng log_file_id, ulng commit_ts); /* Flush the WAL to disk using group commit */
 

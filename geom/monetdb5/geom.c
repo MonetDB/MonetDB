@@ -2720,7 +2720,7 @@ wkbAsText(Client ctx, char **txt, wkb **geomWKB, int *withSRID)
 	if ((*geomWKB)->srid < 0)
 		throw(MAL, "geom.AsText", SQLSTATE(38000) "Geod negative SRID");
 
-	if (wkbTOSTR(&wkt, &len, *geomWKB, false) < 0)
+	if (wkbTOSTR(ma, &wkt, &len, *geomWKB, false) < 0)
 		throw(MAL, "geom.AsText", SQLSTATE(38000) "Geos failed to create Text from Well Known Format");
 
 	if (withSRID == NULL || *withSRID == 0) {	//accepting NULL withSRID to make internal use of it easier
