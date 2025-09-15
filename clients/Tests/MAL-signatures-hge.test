@@ -47258,11 +47258,6 @@ getType
 pattern inspect.getType(X_0:any_1):str
 INSPECTtypeName
 Return the concrete type of a variable (expression).
-inspect
-optimizer_stats
-pattern inspect.optimizer_stats() (X_0:bat[:str], X_1:bat[:int], X_2:bat[:lng])
-OPTstatistics
-Get optimizer use statistics, i.e. calls and total time
 io
 print
 pattern io.print(X_0:any_1):void
