@@ -3291,9 +3291,6 @@ rewrite_anyequal(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 				if (!is_tuple) {
 					re = rsq->exps->t->data;
 
-					if (!is_tuple && is_func(re->type))
-						depth++;
-
 					if (rsq && lsq)
 						exp_set_freevar(sql, re, rsq);
 					if (!is_tuple && !is_freevar(re)) {
@@ -3313,10 +3310,8 @@ rewrite_anyequal(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 
 				sql_rel *join = NULL;
 				if (lsq) {
-					sql_rel *rewrite = NULL;
-					(void)rewrite_inner(sql, rel, lsq, op_left, &rewrite, NULL);
-					exp_reset_props(rewrite, le, is_left(rewrite->op));
-					join = (is_full(rel->op)||is_left(rel->op))?rel->r:rel->l;
+					(void)rewrite_inner(sql, rel, lsq, op_left, &join, NULL);
+					exp_reset_props(join, le, is_left(join->op));
 				}
 				if (rsq) {
 					(void)rewrite_inner(sql, rel, rsq, op_left, &join, le);

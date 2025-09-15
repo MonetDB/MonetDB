@@ -50,3 +50,4 @@ HAVE_HGE?7637_str_to_decimal
 7703-left-join
 7705-anti-join
 7706-set-user
+7707-left-join
