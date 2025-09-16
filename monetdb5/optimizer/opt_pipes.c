@@ -40,214 +40,58 @@ static struct pipeline {
 	bool builtin;
 } pipes[MAXOPTPIPES] = {
 /* The minimal pipeline necessary by the server to operate correctly
- *
- * NOTE:
- * If you change the minimal pipe, please also update the man page
- * (see tools/mserver/mserver5.1) accordingly!
  */
 	{"minimal_pipe",
 	 (char *[]) {
-		 "inline",
-		 "remap",
-		 "emptybind",
-		 "deadcode",
-		 "for",
-		 "dict",
-		 "multiplex",
-		 "generator",
-		 "profiler",
-		 "garbageCollector",
+		 "minimalpipe",
 		 NULL,
 	 },
 	 true,
 	},
-	{"minimal_fast",
-	 (char *[]) {
-		 "minimalfast",
-		 NULL,
-	 },
-	 true,
-	},
-/* NOTE:
- * If you change the default pipe, please also update the no_mitosis
- * pipe and sequential pipe (see below, as well as the man page (see
- * tools/mserver/mserver5.1) accordingly!
- */
 	{"default_pipe",
-	 /* NOTE: this pipeline is automatically replaced by the
-	  * default_fast pipeline by the SQL layer, i.e. this list of
-	  * optimizers isn't actually used (look in opt_fastpath.c
-	  * instead) */
 	 (char *[]) {
-		 "inline",
-		 "remap",
-		 "costModel",
-		 "coercions",
-		 "aliases",
-		 "evaluate",
-		 "emptybind",
-		 "deadcode",
-		 "pushselect",
-		 "aliases",
-		 "for",
-		 "dict",
-		 "mitosis",
-		 "mergetable",
-		 "aliases",
-		 "constants",
-		 "commonTerms",
-		 "projectionpath",
-		 "deadcode",
-		 "matpack",
-		 "reorder",
-		 "dataflow",
-		 "querylog",
-		 "multiplex",
-		 "generator",
-		 "candidates",
-		 "deadcode",
-		 "postfix",
-		 "profiler",
-		 "garbageCollector",
+		 "defaultpipe",
 		 NULL,
 	 },
 	 true,
 	},
-	{"default_fast",
-	 (char *[]) {
-		 "defaultfast",
-		 NULL,
-	 },
-	 true,
-	},
-/* The no_mitosis pipe line is (and should be kept!) identical to the
- * default pipeline, except that optimizer mitosis is omitted.  It is
- * used mainly to make some tests work deterministically, and to check
- * / debug whether "unexpected" problems are related to mitosis
- * (and/or mergetable).
- *
- * NOTE:
- * If you change the no_mitosis pipe, please also update the man page
- * (see tools/mserver/mserver5.1) accordingly!
+/* The no_mitosis pipe line is identical to the default pipeline, except
+ * that optimizer mitosis and dependent optimizers are omitted.  It is
+ * used mainly to make some tests work deterministically, and to check /
+ * debug whether "unexpected" problems are related to mitosis (and/or
+ * mergetable).
  */
 	{"no_mitosis_pipe",
 	 /* NOTE: this pipeline is automatically replaced by the
-	  * default_fast pipeline by the SQL layer with the no_mitosis
+	  * default_pipe pipeline by the SQL layer with the no_mitosis
 	  * option set, i.e. this list of optimizers isn't actually used
 	  * (look in opt_fastpath.c instead) */
 	 (char *[]) {
-		 "inline",
-		 "remap",
-		 "costModel",
-		 "coercions",
-		 "aliases",
-		 "evaluate",
-		 "emptybind",
-		 "deadcode",
-		 "pushselect",
-		 "aliases",
-		 "for",
-		 "dict",
-		 "mergetable",
-		 "aliases",
-		 "constants",
-		 "commonTerms",
-		 "projectionpath",
-		 "deadcode",
-		 "matpack",
-		 "reorder",
-		 "dataflow",
-		 "querylog",
-		 "multiplex",
-		 "generator",
-		 "candidates",
-		 "deadcode",
-		 "postfix",
-		 "profiler",
-		 "garbageCollector",
+		 "nomitosispipe",
 		 NULL,
 	 },
 	 true,
 	},
-/* The sequential pipe line is (and should be kept!) identical to the
+/* The sequential pipe line is identical to the
  * default pipeline, except that optimizers mitosis & dataflow are
  * omitted.  It is used mainly to make some tests work
  * deterministically, i.e., avoid ambiguous output, by avoiding
  * parallelism.
- *
- * NOTE:
- * If you change the sequential pipe, please also update the man page
- * (see tools/mserver/mserver5.1) accordingly!
  */
 	{"sequential_pipe",
 	 (char *[]) {
-		 "inline",
-		 "remap",
-		 "costModel",
-		 "coercions",
-		 "aliases",
-		 "evaluate",
-		 "emptybind",
-		 "deadcode",
-		 "pushselect",
-		 "aliases",
-		 "for",
-		 "dict",
-		 "mergetable",
-		 "aliases",
-		 "constants",
-		 "commonTerms",
-		 "projectionpath",
-		 "deadcode",
-		 "matpack",
-		 "reorder",
-		 "querylog",
-		 "multiplex",
-		 "generator",
-		 "candidates",
-		 "deadcode",
-		 "postfix",
-		 "profiler",
-		 "garbageCollector",
+		 "sequentialpipe",
 		 NULL,
 	 },
 	 true,
 	},
 	{"recursive_pipe",
 	 (char *[]) {
-		 "inline",
-		 "remap",
-		 "costModel",
-		 "coercions",
-		 "aliases",
-		 "evaluate",
-		 "deadcode",
-		 "pushselect",
-		 "aliases",
-		 "for",
-		 "dict",
-		 "mergetable",
-		 "aliases",
-		 "constants",
-		 "projectionpath",
-		 "deadcode",
-		 "matpack",
-		 "querylog",
-		 "multiplex",
-		 "generator",
-		 "candidates",
-		 "deadcode",
-		 "postfix",
-		 "profiler",
-		 "garbageCollector",
+		 "recursivepipe",
 		 NULL,
 	 },
 	 true,
 	},
-/* Experimental pipelines stressing various components under
- * development.  Do not use any of these pipelines in production
- * settings!
- */
 /* sentinel */
 	{NULL, NULL, false,},
 };
@@ -265,8 +109,8 @@ validatePipe(struct pipeline *pipe)
 	if (pipe->def == NULL || pipe->def[0] == NULL)
 		throw(MAL, "optimizer.validate", SQLSTATE(42000) "missing optimizers");
 
-	if (strcmp(pipe->def[0], "defaultfast") == 0
-		|| strcmp(pipe->def[0], "minimalfast") == 0)
+	if (strcmp(pipe->def[0], "defaultpipe") == 0
+		|| strcmp(pipe->def[0], "minimalpipe") == 0)
 		return MAL_SUCCEED;
 
 	if (strcmp(pipe->def[0], "inline") != 0)
@@ -506,9 +350,9 @@ addOptimizerPipe(Client cntxt, MalBlkPtr mb, const char *name)
 	str msg = MAL_SUCCEED;
 
 	(void) cntxt;
-	if (strcmp(name, "default_fast") == 0 && isSimpleSQL(mb)) {
+	if (strcmp(name, "default_pipe") == 0 && isSimpleSQL(mb)) {
 		for (i = 0; i < MAXOPTPIPES && pipes[i].name; i++)
-			if (strcmp(pipes[i].name, "minimal_fast") == 0)
+			if (strcmp(pipes[i].name, "minimal_pipe") == 0)
 				break;
 	} else {
 		for (i = 0; i < MAXOPTPIPES && pipes[i].name; i++)

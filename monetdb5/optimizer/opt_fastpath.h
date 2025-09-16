@@ -15,9 +15,9 @@
 #include "opt_support.h"
 #include "mal_instruction.h"
 
-extern str OPTminimalfastImplementation(Client cntxt, MalBlkPtr mb,
+extern str OPTminimalpipeImplementation(Client cntxt, MalBlkPtr mb,
 										MalStkPtr stk, InstrPtr p);
-extern str OPTdefaultfastImplementation(Client cntxt, MalBlkPtr mb,
+extern str OPTdefaultpipeImplementation(Client cntxt, MalBlkPtr mb,
 										MalStkPtr stk, InstrPtr p);
 
 #endif

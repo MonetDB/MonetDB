@@ -2945,12 +2945,12 @@ PCRElikeselect
 Select all head values of the first input BAT for which the@tail value is "like" the given (SQL-style) pattern and for@which the head value occurs in the tail of the second input@BAT.@Input is a dense-headed BAT, output is a dense-headed BAT with in@the tail the head value of the input BAT for which the@relationship holds.  The output BAT is sorted on the tail value.
 algebra
 markjoin
-command algebra.markjoin(X_0:bat[:any_1], X_1:bat[:any_1], X_2:bat[:oid], X_3:bat[:oid], X_4:lng) (X_5:bat[:oid], X_6:bat[:bit])
+command algebra.markjoin(X_0:bat[:any_1], X_1:bat[:any_1], X_2:bat[:oid], X_3:bat[:oid], X_4:bit, X_5:lng) (X_6:bat[:oid], X_7:bat[:bit])
 ALGmark2join
 Mark join with candidate lists
 algebra
 markjoin
-command algebra.markjoin(X_0:bat[:any_1], X_1:bat[:any_1], X_2:bat[:oid], X_3:bat[:oid], X_4:lng) (X_5:bat[:oid], X_6:bat[:oid], X_7:bat[:bit])
+command algebra.markjoin(X_0:bat[:any_1], X_1:bat[:any_1], X_2:bat[:oid], X_3:bat[:oid], X_4:bit, X_5:lng) (X_6:bat[:oid], X_7:bat[:oid], X_8:bat[:bit])
 ALGmark3join
 Mark join with candidate lists
 algebra
@@ -35758,11 +35758,6 @@ getType
 pattern inspect.getType(X_0:any_1):str
 INSPECTtypeName
 Return the concrete type of a variable (expression).
-inspect
-optimizer_stats
-pattern inspect.optimizer_stats() (X_0:bat[:str], X_1:bat[:int], X_2:bat[:lng])
-OPTstatistics
-Get optimizer use statistics, i.e. calls and total time
 io
 print
 pattern io.print(X_0:any_1):void
@@ -37374,13 +37369,13 @@ pattern optimizer.deadcode(X_0:str, X_1:str):str
 OPTwrapper
 Dead code optimizer
 optimizer
-defaultfast
-pattern optimizer.defaultfast():str
+defaultpipe
+pattern optimizer.defaultpipe():str
 OPTwrapper
 (empty)
 optimizer
-defaultfast
-pattern optimizer.defaultfast(X_0:str, X_1:str):str
+defaultpipe
+pattern optimizer.defaultpipe(X_0:str, X_1:str):str
 OPTwrapper
 Fast compound default optimizer pipe
 optimizer
@@ -37479,13 +37474,13 @@ pattern optimizer.mergetable(X_0:str, X_1:str):str
 OPTwrapper
 Resolve the multi-table definitions
 optimizer
-minimalfast
-pattern optimizer.minimalfast():str
+minimalpipe
+pattern optimizer.minimalpipe():str
 OPTwrapper
 (empty)
 optimizer
-minimalfast
-pattern optimizer.minimalfast(X_0:str, X_1:str):str
+minimalpipe
+pattern optimizer.minimalpipe(X_0:str, X_1:str):str
 OPTwrapper
 Fast compound minimal optimizer pipe
 optimizer
@@ -37508,6 +37503,16 @@ multiplex
 pattern optimizer.multiplex(X_0:str, X_1:str):str
 OPTwrapper
 Compiler for multiplexed instructions
+optimizer
+nomitosispipe
+pattern optimizer.nomitosispipe():str
+OPTwrapper
+(empty)
+optimizer
+nomitosispipe
+pattern optimizer.nomitosispipe(X_0:str, X_1:str):str
+OPTwrapper
+Fast compound optimizer pipe without mitosis
 optimizer
 optimize
 pattern optimizer.optimize(X_0:str, X_1:str):void
@@ -37564,6 +37569,16 @@ pattern optimizer.querylog(X_0:str, X_1:str):str
 OPTwrapper
 Collect SQL query statistics
 optimizer
+recursivepipe
+pattern optimizer.recursivepipe():str
+OPTwrapper
+(empty)
+optimizer
+recursivepipe
+pattern optimizer.recursivepipe(X_0:str, X_1:str):str
+OPTwrapper
+Fast compound recursive optimizer pipe
+optimizer
 reduce
 pattern optimizer.reduce():str
 OPTwrapper
@@ -37603,6 +37618,16 @@ reorder
 pattern optimizer.reorder(X_0:str, X_1:str):str
 OPTwrapper
 Reorder by dataflow dependencies
+optimizer
+sequentialpipe
+pattern optimizer.sequentialpipe():str
+OPTwrapper
+(empty)
+optimizer
+sequentialpipe
+pattern optimizer.sequentialpipe(X_0:str, X_1:str):str
+OPTwrapper
+Fast compound sequential optimizer pipe
 optimizer
 strimps
 pattern optimizer.strimps():str

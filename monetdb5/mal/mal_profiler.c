@@ -891,28 +891,6 @@ TRACEtable(Client cntxt, BAT **r)
 	return 3;
 }
 
-BAT *
-getTrace(Client cntxt, const char *nme)
-{
-	BAT *bn = NULL;
-
-	MT_lock_set(&mal_profileLock);
-	if (cntxt->profticks) {
-		if (strcmp(nme, "usec") == 0) {
-			bn = COLcopy(cntxt->profticks, cntxt->profticks->ttype, false,
-						 TRANSIENT);
-		} else if (strcmp(nme, "stmt") == 0) {
-			bn = COLcopy(cntxt->profstmt, cntxt->profstmt->ttype, false,
-						 TRANSIENT);
-		} else if (strcmp(nme, "events") == 0) {
-			bn = COLcopy(cntxt->profevents, cntxt->profevents->ttype, false,
-						 TRANSIENT);
-		}
-	}
-	MT_lock_unset(&mal_profileLock);
-	return bn;
-}
-
 void
 clearTrace(Client cntxt)
 {

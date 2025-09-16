@@ -27,7 +27,6 @@ Welcome to MonetDB's documentation!
    source/design
    source/input
    source/json
-   source/manual_pages
    source/cmake
    source/release
    source/developers_handbook

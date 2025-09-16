@@ -1366,6 +1366,8 @@ table_element(sql_query *query, symbol *s, sql_schema *ss, sql_table *t, int alt
 				default:
 					break;
 			}
+			if (nc && oc->null != nc->null)
+				mvc_null(sql, nc, oc->null);
 		}
 	} 	break;
 	case SQL_DROP_COLUMN:
@@ -1676,7 +1678,7 @@ rel_create_view(sql_query *query, int temp, dlist *qname, dlist *column_spec, sy
 	const char *base = replace ? "CREATE OR REPLACE VIEW" : "CREATE VIEW";
 	const char *action = (temp == SQL_DECLARED_TABLE)?"DECLARE":"CREATE";
 
-	(void) check;		/* Stefan: unused!? */
+	(void) check;
 
 	if (temp == SQL_GLOBAL_TEMP)
 		temp = SQL_PERSIST; /* just normal view */

@@ -201,4 +201,9 @@ mal_export int MCpushClientInput(Client c, bstream *new_input, int listing,
 mal_export int MCvalid(Client c);
 mal_export void MCsetClientInfo(Client c, const char *property, const char *value);
 
+#ifdef LIBMONETDB5
+extern int MCinitClientThread(Client c);
+extern bool MCshutdowninprogress(void);
+#endif
+
 #endif /* _MAL_CLIENT_H_ */

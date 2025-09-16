@@ -145,7 +145,7 @@ gdk_export lng GDKusec(void);
 gdk_export int GDKms(void);
 
 
-#if !defined(NDEBUG) && !defined(__COVERITY__)
+#if !defined(NDEBUG) && !defined(__COVERITY__) && !defined(_CLANGD)
 /* In debugging mode, replace GDKmalloc and other functions with a
  * version that optionally prints calling information.
  *

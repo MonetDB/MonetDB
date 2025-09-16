@@ -3075,7 +3075,7 @@ rel2bin_groupjoin(backend *be, sql_rel *rel, list *refs)
 			/* split out (left)join vs (left)mark-join */
 			/* call 3 result version */
 			if (mark && is_any(e)) {
-				join = stmt_markjoin(be, l, r, 0);
+				join = stmt_markjoin(be, l, r, !is_any(e), 0);
 			} else
 				join = stmt_join_cand(be, column(be, l), column(be, r), left->cand, NULL/*right->cand*/, is_anti(e), (comp_type) cmp_equal/*e->flag*/, 0, is_any(e)|is_semantics(e), false, rel->op == op_left?false:true);
 			jl = stmt_result(be, join, 0);
@@ -3083,7 +3083,7 @@ rel2bin_groupjoin(backend *be, sql_rel *rel, list *refs)
 			if (mark && is_any(e))
 				m = stmt_result(be, join, 2);
 		} else {
-			join = stmt_markjoin(be, l, r, 1);
+			join = stmt_markjoin(be, l, r, is_semantics(e), 1);
 			jl = stmt_result(be, join, 0);
 			m = stmt_result(be, join, 1);
 		}
@@ -7303,9 +7303,7 @@ rel2bin_output(backend *be, sql_rel *rel, list *refs)
 static stmt *
 rel2bin_list(backend *be, sql_rel *rel, list *refs)
 {
-	mvc *sql = be->mvc;
 	stmt *l = NULL, *r = NULL;
-	list *slist = sa_list(sql->sa);
 
 	if (rel->l)  /* first construct the sub relation */
 		l = subrel_bin(be, rel->l, refs);
@@ -7315,6 +7313,7 @@ rel2bin_list(backend *be, sql_rel *rel, list *refs)
 	r = subrel_project(be, r, refs, rel->r);
 	if (!l || !r)
 		return NULL;
+	list *slist = sa_list(be->mvc->sa);
 	list_append(slist, l);
 	list_append(slist, r);
 	return stmt_list(be, slist);

@@ -92,34 +92,6 @@ CMDstopProfiler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return stopProfiler(cntxt);
 }
 
-// called by the SQL front end optional a directory to keep the traces.
-static str
-CMDstartTrace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	(void) mb;
-	(void) stk;
-	(void) pci;
-
-	return startTrace(cntxt);
-}
-
-static str
-CMDstopTrace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	(void) mb;
-	(void) stk;
-	(void) pci;
-	return stopTrace(cntxt);
-}
-
-static str
-CMDnoopProfiler(Client ctx, void *res)
-{
-	(void) ctx;
-	(void) res;
-	return MAL_SUCCEED;
-}
-
 static str
 CMDcleanupTraces(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -128,24 +100,6 @@ CMDcleanupTraces(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) pci;
 	cleanupTraces(cntxt);
 	return MAL_SUCCEED;
-}
-
-static str
-CMDgetTrace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	str path = *getArgReference_str(stk, pci, 1);
-	bat *res = getArgReference_bat(stk, pci, 0);
-	BAT *bn;
-
-	(void) cntxt;
-	(void) mb;
-	bn = getTrace(cntxt, path);
-	if (bn) {
-		*res = bn->batCacheid;
-		BBPkeepref(bn);
-		return MAL_SUCCEED;
-	}
-	throw(MAL, "getTrace", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING "%s", path);
 }
 
 static str
@@ -240,16 +194,14 @@ CMDcpuloadPercentage(Client ctx, int *cycles, int *io, const lng *user, const ln
 mel_func profiler_init_funcs[] = {
  pattern("profiler", "start", CMDstartProfiler, true, "Start offline performance profiling", noargs),
  pattern("profiler", "stop", CMDstopProfiler, true, "Stop offline performance profiling", args(1,1, arg("",void))),
- pattern("profiler", "starttrace", CMDstartTrace, true, "Start collecting trace information", noargs),
- pattern("profiler", "stoptrace", CMDstopTrace, true, "Stop collecting trace information", args(1,1, arg("",void))),
  command("profiler", "setheartbeat", CMDsetHeartbeat, true, "Set heart beat performance tracing", args(1,2, arg("",void),arg("b",int))),
  command("profiler", "getlimit", CMDgetprofilerlimit, false, "Get profiler limit", args(1,1, arg("",int))),
  command("profiler", "setlimit", CMDsetprofilerlimit, true, "Set profiler limit", args(1,2, arg("",void),arg("l",int))),
  pattern("profiler", "openstream", CMDopenProfilerStream, false, "Start profiling the events, send to output stream", args(1,1, arg("",void))),
  pattern("profiler", "openstream", CMDopenProfilerStream, false, "Start profiling the events, send to output stream", args(1,2, arg("",void), arg("m",int))),
- pattern("profiler", "closestream", CMDcloseProfilerStream, false, "Stop offline proviling", args(1,1, arg("",void))),
- command("profiler", "noop", CMDnoopProfiler, false, "Fetch any pending performance events", args(1,1, arg("",void))),
- pattern("profiler", "getTrace", CMDgetTrace, false, "Get the trace details of a specific event", args(1,2, batargany("",1),arg("e",str))),
+
+ pattern("profiler", "closestream", CMDcloseProfilerStream, false, "Stop offline profiling", args(1,1, arg("",void))),
+
  pattern("profiler", "cleanup", CMDcleanupTraces, true, "Remove the temporary tables for profiling", args(1,1, arg("",void))),
  command("profiler", "getDiskReads", CMDgetDiskReads, false, "Obtain the number of physical reads", args(1,1, arg("",lng))),
  command("profiler", "getDiskWrites", CMDgetDiskWrites, false, "Obtain the number of physical reads", args(1,1, arg("",lng))),

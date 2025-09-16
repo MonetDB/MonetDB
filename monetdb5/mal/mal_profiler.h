@@ -76,7 +76,6 @@ extern void setprofilerlimit(int limit);
 extern void MPresetProfiler(stream *fdout);
 
 extern str cleanupTraces(Client cntxt);
-extern BAT *getTrace(Client cntxt, const char *nme);
 
 extern lng getDiskSpace(void);
 extern lng getDiskReads(void);

@@ -53,7 +53,7 @@
 	} while (0)
 
 str
-OPTminimalfastImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
+OPTminimalpipeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 							 InstrPtr pci)
 {
 	str msg = MAL_SUCCEED;
@@ -97,14 +97,18 @@ OPTminimalfastImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 }
 
 str
-OPTdefaultfastImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
+OPTdefaultpipeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 							 InstrPtr pci)
 {
 	str msg = MAL_SUCCEED;
 	bool generator = false, multiplex = false;
+	bool no_mitosis = cntxt->no_mitosis;
+	bool recursive = strcmp(pci->fcnname, "recursivepipe") == 0;
+	bool sequential = strcmp(pci->fcnname, "sequentialpipe") == 0;
 	int actions = 0;
 
-	/* perform a single scan through the plan to determine which optimizer steps to skip */
+	/* perform a single scan through the plan to determine which
+	 * optimizer steps to skip */
 	for (int i = 0; i < mb->stop; i++) {
 		InstrPtr q = getInstrPtr(mb, i);
 		if (getModuleId(q) == generatorRef) {
@@ -118,6 +122,8 @@ OPTdefaultfastImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 				break;
 		}
 	}
+	if (pci->fcnname != defaultpipeRef)
+		no_mitosis = true;
 
 	optcall(OPTinlineImplementation);
 	optcall(OPTremapImplementation);
@@ -125,26 +131,29 @@ OPTdefaultfastImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	optcall(OPTcoercionImplementation);
 	optcall(OPTaliasesImplementation);
 	optcall(OPTevaluateImplementation);
-	optcall(OPTemptybindImplementation);
+	if (!recursive)
+		optcall(OPTemptybindImplementation);
 	optcall(OPTdeadcodeImplementation);
 	optcall(OPTpushselectImplementation);
 	optcall(OPTaliasesImplementation);
 	optcall(OPTforImplementation);
 	optcall(OPTdictImplementation);
-	if (!cntxt->no_mitosis) {
+	if (!no_mitosis) {
 		optcall(OPTmitosisImplementation);
 		optcall(OPTmergetableImplementation); /* depends on mitosis */
 	}
 	optcall(OPTaliasesImplementation);
 	optcall(OPTconstantsImplementation);
-	optcall(OPTcommonTermsImplementation);
+	if (!recursive)
+		optcall(OPTcommonTermsImplementation);
 	optcall(OPTprojectionpathImplementation);
 	optcall(OPTdeadcodeImplementation);
-	if (!cntxt->no_mitosis) {
+	if (!no_mitosis) {
 		optcall(OPTmatpackImplementation); /* depends on mergetable */
 		optcall(OPTreorderImplementation); /* depends on mitosis */
 	}
-	optcall(OPTdataflowImplementation);
+	if (!sequential && !recursive)
+		optcall(OPTdataflowImplementation);
 	optcall(OPTquerylogImplementation);
 	if (multiplex)
 		optcall(OPTmultiplexImplementation);

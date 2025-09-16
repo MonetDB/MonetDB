@@ -139,11 +139,6 @@
 # include <sys/sysctl.h>
 #endif
 
-/* new pthread interface, where the thread id changed to a struct */
-#ifdef PTW32_VERSION
-#define PTW32 1
-#endif
-
 #include "matomic.h"
 
 /* debug and errno integers */

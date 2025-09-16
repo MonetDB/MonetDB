@@ -24,6 +24,7 @@ extern char * sql_revoke_table_privs( mvc *sql, char *grantee, int privs, char *
 extern char * sql_grant_func_privs( mvc *sql, char *grantee, int privs, char *sname, sqlid func_id, int grant, sqlid grantor);
 extern char * sql_revoke_func_privs( mvc *sql, char *grantee, int privs, char *sname, sqlid func_id, int grant, sqlid grantor);
 
+extern int mvc_set_user(mvc *m, char *user);
 extern int mvc_set_role(mvc *m, char *role);
 extern int mvc_set_schema(mvc *m, char *schema);
 
