@@ -56,7 +56,6 @@ mal_export oid runtimeProfileSetTag(Client cntxt);
 
 mal_export str startTrace(Client cntxt);
 mal_export str stopTrace(Client cntxt);
-mal_export void clearTrace(Client cntxt);
 mal_export int TRACEtable(Client cntxt, BAT **r);
 
 #ifdef LIBMONETDB5
@@ -73,8 +72,6 @@ extern int getprofilerlimit(void);
 extern void setprofilerlimit(int limit);
 
 extern void MPresetProfiler(stream *fdout);
-
-extern str cleanupTraces(Client cntxt);
 
 extern lng getDiskSpace(void);
 extern void profilerGetCPUStat(lng *user, lng *nice, lng *sys, lng *idle,

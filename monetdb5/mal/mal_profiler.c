@@ -762,6 +762,7 @@ closeProfilerStream(Client cntxt)
 
 /* SQL tracing is simplified, because it only collects the events in the temporary table.
  */
+static void clearTrace(Client cntxt);
 str
 startTrace(Client cntxt)
 {
@@ -820,9 +821,7 @@ TRACEcreate(int tt)
 static void
 initTrace(Client cntxt)
 {
-	MT_lock_set(&mal_profileLock);
 	if (cntxt->profticks) {
-		MT_lock_unset(&mal_profileLock);
 		return;					/* already initialized */
 	}
 	cntxt->profticks = TRACEcreate(TYPE_lng);
@@ -831,7 +830,6 @@ initTrace(Client cntxt)
 	if (cntxt->profticks == NULL || cntxt->profstmt == NULL
 		|| cntxt->profevents == NULL)
 		_cleanupProfiler(cntxt);
-	MT_lock_unset(&mal_profileLock);
 }
 
 int
@@ -861,27 +859,15 @@ TRACEtable(Client cntxt, BAT **r)
 	return 3;
 }
 
-void
+static void
 clearTrace(Client cntxt)
 {
 	(void) cntxt;
-	MT_lock_set(&mal_profileLock);
-	if (cntxt->profticks == NULL) {
-		MT_lock_unset(&mal_profileLock);
-		initTrace(cntxt);
-		return;					/* not initialized */
+	if (cntxt->profticks != NULL) {
+		/* drop all trace tables */
+		_cleanupProfiler(cntxt);
 	}
-	/* drop all trace tables */
-	_cleanupProfiler(cntxt);
-	MT_lock_unset(&mal_profileLock);
 	initTrace(cntxt);
-}
-
-str
-cleanupTraces(Client cntxt)
-{
-	clearTrace(cntxt);
-	return MAL_SUCCEED;
 }
 
 void

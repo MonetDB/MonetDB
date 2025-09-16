@@ -864,7 +864,6 @@ int chkInstruction(Module s, MalBlkPtr mb, InstrPtr p);
 str chkProgram(Module s, MalBlkPtr mb);
 str chkTypes(Module s, MalBlkPtr mb, int silent);
 const char claimRef[];
-void clearTrace(Client cntxt);
 void clearVariable(MalBlkPtr mb, int varid);
 const char clear_tableRef[];
 int cloneVariable(MalBlkPtr dst, MalBlkPtr src, int varid);

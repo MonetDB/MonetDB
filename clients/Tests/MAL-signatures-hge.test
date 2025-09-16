@@ -49204,11 +49204,6 @@ command pcre.sql2pcre(X_0:str, X_1:str):str
 PCREsql2pcre
 Convert a SQL like pattern with the given escape character into a PCRE pattern.
 profiler
-cleanup
-unsafe pattern profiler.cleanup():void
-CMDcleanupTraces
-Remove the temporary tables for profiling
-profiler
 closestream
 pattern profiler.closestream():void
 CMDcloseProfilerStream

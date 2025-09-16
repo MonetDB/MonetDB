@@ -71,16 +71,6 @@ CMDcloseProfilerStream(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc)
 	return closeProfilerStream(cntxt);
 }
 
-static str
-CMDcleanupTraces(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	(void) mb;
-	(void) stk;
-	(void) pci;
-	cleanupTraces(cntxt);
-	return MAL_SUCCEED;
-}
-
 /*
  * Tracing an active system.
  */
@@ -128,7 +118,6 @@ mel_func profiler_init_funcs[] = {
 
  pattern("profiler", "closestream", CMDcloseProfilerStream, false, "Stop offline profiling", args(1,1, arg("",void))),
 
- pattern("profiler", "cleanup", CMDcleanupTraces, true, "Remove the temporary tables for profiling", args(1,1, arg("",void))),
  command("profiler", "cpustats", CMDcpustats, false, "Extract cpu statistics from the kernel", args(5,5, arg("user",lng),arg("nice",lng),arg("sys",lng),arg("idle",lng),arg("iowait",lng))),
  command("profiler", "cpuload", CMDcpuloadPercentage, false, "Calculate the average cpu load percentage and io waiting times", args(2,7, arg("cycles",int),arg("io",int),arg("user",lng),arg("nice",lng),arg("sys",lng),arg("idle",lng),arg("iowait",lng))),
  { .imp=NULL }
