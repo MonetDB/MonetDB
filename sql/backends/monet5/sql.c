@@ -3532,6 +3532,8 @@ dump_trace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) cntxt;
 	(void) mb;
+	if (cntxt->sqlprofiler)
+		throw(SQL, "sql.dump_trace", SQLSTATE(3F000) "Cannot trace this call");
 	if (TRACEtable(cntxt, t) != 3)
 		throw(SQL, "sql.dump_trace", SQLSTATE(3F000) "Profiler not started");
 	for (i = 0; i < 3; i++) {

@@ -837,17 +837,21 @@ initTrace(Client cntxt)
 int
 TRACEtable(Client cntxt, BAT **r)
 {
-	initTrace(cntxt);
-	MT_lock_set(&mal_profileLock);
+	if (cntxt->sqlprofiler)
+		return -1;
+
 	if (cntxt->profticks == NULL) {
-		MT_lock_unset(&mal_profileLock);
-		return -1;				/* not initialized */
+		r[0] = COLnew(0, TYPE_lng, 0, TRANSIENT);
+		r[1] = COLnew(0, TYPE_str, 0, TRANSIENT);
+		r[2] = COLnew(0, TYPE_str, 0, TRANSIENT);
+	} else {
+		r[0] = COLcopy(cntxt->profticks, cntxt->profticks->ttype, false,
+					   TRANSIENT);
+		r[1] = COLcopy(cntxt->profstmt, cntxt->profstmt->ttype, false,
+					   TRANSIENT);
+		r[2] = COLcopy(cntxt->profevents, cntxt->profevents->ttype, false,
+					   TRANSIENT);
 	}
-	r[0] = COLcopy(cntxt->profticks, cntxt->profticks->ttype, false, TRANSIENT);
-	r[1] = COLcopy(cntxt->profstmt, cntxt->profstmt->ttype, false, TRANSIENT);
-	r[2] = COLcopy(cntxt->profevents, cntxt->profevents->ttype, false,
-				   TRANSIENT);
-	MT_lock_unset(&mal_profileLock);
 	if (r[0] == NULL || r[1] == NULL || r[2] == NULL) {
 		BBPreclaim(r[0]);
 		BBPreclaim(r[1]);
