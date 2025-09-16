@@ -49244,11 +49244,6 @@ command profiler.getUserTime():lng
 CMDgetUserTime
 Obtain the user timing information.
 profiler
-getlimit
-command profiler.getlimit():int
-CMDgetprofilerlimit
-Get profiler limit
-profiler
 openstream
 pattern profiler.openstream():void
 CMDopenProfilerStream
@@ -49263,21 +49258,6 @@ setheartbeat
 unsafe command profiler.setheartbeat(X_0:int):void
 CMDsetHeartbeat
 Set heart beat performance tracing
-profiler
-setlimit
-unsafe command profiler.setlimit(X_0:int):void
-CMDsetprofilerlimit
-Set profiler limit
-profiler
-start
-unsafe pattern profiler.start():void
-CMDstartProfiler
-Start offline performance profiling
-profiler
-stop
-unsafe pattern profiler.stop():void
-CMDstopProfiler
-Stop offline performance profiling
 pyapi3
 epilogue
 command pyapi3.epilogue():void

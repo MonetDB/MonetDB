@@ -71,27 +71,6 @@ CMDcloseProfilerStream(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc)
 	return closeProfilerStream(cntxt);
 }
 
-// initialize SQL tracing
-static str
-CMDstartProfiler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc)
-{
-	(void) mb;
-	(void) stk;
-	(void) pc;
-	(void) cntxt;
-	return startProfiler(cntxt);
-}
-
-static str
-CMDstopProfiler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	(void) mb;
-	(void) stk;
-	(void) pci;
-
-	return stopProfiler(cntxt);
-}
-
 static str
 CMDcleanupTraces(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -99,21 +78,6 @@ CMDcleanupTraces(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) stk;
 	(void) pci;
 	cleanupTraces(cntxt);
-	return MAL_SUCCEED;
-}
-
-static str
-CMDgetprofilerlimit(int *res)
-{
-	*res = getprofilerlimit();
-	return MAL_SUCCEED;
-}
-
-static str
-CMDsetprofilerlimit(void *res, const int *lim)
-{
-	(void) res;
-	setprofilerlimit(*lim);
 	return MAL_SUCCEED;
 }
 
@@ -184,11 +148,7 @@ CMDcpuloadPercentage(int *cycles, int *io, const lng *user, const lng *nice,
 #include "mel.h"
 mel_func profiler_init_funcs[] = {
  /* referenced in 46_profiler.sql */
- pattern("profiler", "start", CMDstartProfiler, true, "Start offline performance profiling", noargs),
- pattern("profiler", "stop", CMDstopProfiler, true, "Stop offline performance profiling", args(1,1, arg("",void))),
  command("profiler", "setheartbeat", CMDsetHeartbeat, true, "Set heart beat performance tracing", args(1,2, arg("",void),arg("b",int))),
- command("profiler", "getlimit", CMDgetprofilerlimit, false, "Get profiler limit", args(1,1, arg("",int))),
- command("profiler", "setlimit", CMDsetprofilerlimit, true, "Set profiler limit", args(1,2, arg("",void),arg("l",int))),
 
  /* used by stethoscope (also setheartbeat above) */
  pattern("profiler", "openstream", CMDopenProfilerStream, false, "Start profiling the events, send to output stream", args(1,1, arg("",void))),

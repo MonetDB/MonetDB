@@ -65,7 +65,6 @@ extern void initProfiler(void);
 extern str openProfilerStream(Client cntxt, int m);
 extern str closeProfilerStream(Client cntxt);
 
-extern str startProfiler(Client cntxt);
 extern str stopProfiler(Client cntxt);
 extern void setHeartbeat(int delay);
 extern void initHeartbeat(void);

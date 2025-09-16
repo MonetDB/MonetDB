@@ -760,36 +760,6 @@ closeProfilerStream(Client cntxt)
 	return MAL_SUCCEED;
 }
 
-/* the second scheme is to collect the profile
- * events in a local table for direct SQL inspection
- */
-str
-startProfiler(Client cntxt)
-{
-#ifdef HAVE_SYS_RESOURCE_H
-	getrusage(RUSAGE_SELF, &infoUsage);
-	prevUsage = infoUsage;
-#endif
-	(void) cntxt;
-
-	MT_lock_set(&mal_profileLock);
-	if (maleventstream) {
-		MT_lock_unset(&mal_profileLock);
-		throw(MAL, "profiler.start",
-			  "Profiler already running, stream not available");
-	}
-	if (myname == NULL) {
-		myname = profilerRef;
-	}
-	profilerStatus = 1;
-	logjsonInternal(monet_characteristics, true);
-	MT_lock_unset(&mal_profileLock);
-	// reset the trace table
-	clearTrace(cntxt);
-
-	return MAL_SUCCEED;
-}
-
 /* SQL tracing is simplified, because it only collects the events in the temporary table.
  */
 str
@@ -1092,20 +1062,6 @@ setHeartbeat(int delay)
 	if (delay > 0 && delay <= 10)
 		delay = 10;
 	ATOMIC_SET(&hbdelay, delay);
-}
-
-/* TODO getprofilerlimit and setprofilerlimit functions */
-
-int
-getprofilerlimit(void)
-{
-	return 0;
-}
-
-void
-setprofilerlimit(int limit)
-{
-	(void) limit;
 }
 
 void

@@ -5152,6 +5152,15 @@ sql_update_default(Client c, mvc *sql, sql_schema *s)
 		err = SQLstatementIntern(c, query, "update", true, false, NULL);
 	}
 
+	if (sql_bind_func(sql, "profiler", "start", NULL, NULL, F_PROC, true, true)) {
+		const char query[] = "drop procedure profiler.start cascade;\n"
+			"drop procedure profiler.stop cascade;\n"
+			"drop procedure profiler.setlimit cascade;\n"
+			"drop function profiler.getlimit cascade;\n";
+		printf("Running database upgrade commands:\n%s\n", query);
+		err = SQLstatementIntern(c, query, "update", true, false, NULL);
+	}
+
 	return err;
 }
 
