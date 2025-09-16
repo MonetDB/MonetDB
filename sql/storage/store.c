@@ -5779,7 +5779,7 @@ sql_trans_add_table(sql_trans *tr, sql_table *mt, sql_table *pt)
 }
 
 int
-sql_trans_add_range_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_subtype tpe, ptr min, ptr max,
+sql_trans_add_range_partition(allocator *sa, sql_trans *tr, sql_table *mt, sql_table *pt, sql_subtype tpe, ptr min, ptr max,
 		bit with_nills, int update, sql_part **err)
 {
 	sqlstore *store = tr->store;
@@ -5808,11 +5808,11 @@ sql_trans_add_range_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_s
 	if (!mt->members)
 		mt->members = list_create((fdestroy) &part_destroy);
 	if (min) {
-		ok = VALinit(NULL, &vmin, localtype, min);
+		ok = VALinit(sa, &vmin, localtype, min);
 		if (ok && localtype != TYPE_str)
-			ok = VALconvert(NULL, TYPE_str, &vmin);
+			ok = VALconvert(sa, TYPE_str, &vmin);
 	} else {
-		ok = VALinit(NULL, &vmin, TYPE_str, ATOMnilptr(TYPE_str));
+		ok = VALinit(sa, &vmin, TYPE_str, ATOMnilptr(TYPE_str));
 		min = (ptr) ATOMnilptr(localtype);
 	}
 	if (!ok) {
@@ -5826,11 +5826,11 @@ sql_trans_add_range_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_s
 	}
 
 	if (max) {
-		ok = VALinit(NULL, &vmax, localtype, max);
+		ok = VALinit(sa, &vmax, localtype, max);
 		if (ok && localtype != TYPE_str)
-			ok = VALconvert(NULL, TYPE_str, &vmax);
+			ok = VALconvert(sa, TYPE_str, &vmax);
 	} else {
-		ok = VALinit(NULL, &vmax, TYPE_str, ATOMnilptr(TYPE_str));
+		ok = VALinit(sa, &vmax, TYPE_str, ATOMnilptr(TYPE_str));
 		max = (ptr) ATOMnilptr(localtype);
 	}
 	if (!ok) {
@@ -5919,13 +5919,13 @@ sql_trans_add_range_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_s
 	res = sql_trans_propagate_dependencies_children(tr, pt, true);
 
 finish:
-	VALclear(&vmin);
-	VALclear(&vmax);
+	//VALclear(&vmin);
+	//VALclear(&vmax);
 	return res;
 }
 
 int
-sql_trans_add_value_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_subtype tpe, list* vals, bit with_nills,
+sql_trans_add_value_partition(allocator *sa, sql_trans *tr, sql_table *mt, sql_table *pt, sql_subtype tpe, list* vals, bit with_nills,
 		int update, sql_part **err)
 {
 	sqlstore *store = tr->store;
@@ -5979,7 +5979,7 @@ sql_trans_add_value_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_s
 
 	if (with_nills) { /* store the null value first */
 		ValRecord vnnil;
-		if (VALinit(NULL, &vnnil, TYPE_str, ATOMnilptr(TYPE_str)) == NULL) {
+		if (VALinit(sa, &vnnil, TYPE_str, ATOMnilptr(TYPE_str)) == NULL) {
 			if (!update)
 				part_destroy(store, p);
 			list_destroy2(vals, store);
@@ -5990,7 +5990,7 @@ sql_trans_add_value_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_s
 			list_destroy2(vals, store);
 			return res;
 		}
-		VALclear(&vnnil);
+		//VALclear(&vnnil);
 	}
 
 	for (node *n = vals->h ; n ; n = n->next) {
@@ -6004,24 +6004,24 @@ sql_trans_add_value_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_s
 			list_destroy2(vals, store);
 			return -i - 10;
 		}
-		ok = VALinit(NULL, &vvalue, localtype, next->value);
+		ok = VALinit(sa, &vvalue, localtype, next->value);
 		if (ok && localtype != TYPE_str)
-			ok = VALconvert(NULL, TYPE_str, &vvalue);
+			ok = VALconvert(sa, TYPE_str, &vvalue);
 		if (!ok) {
 			if (!update)
 				part_destroy(store, p);
-			VALclear(&vvalue);
+			//VALclear(&vvalue);
 			list_destroy2(vals, store);
 			return -i - 10;
 		}
 		char *vvalue_val = VALget(&vvalue);
 		if ((res = store->table_api.table_insert(tr, values, &pt->base.id, &id, &vvalue_val))) {
-			VALclear(&vvalue);
+			//VALclear(&vvalue);
 			list_destroy2(vals, store);
 			return res;
 		}
 
-		VALclear(&vvalue);
+		//VALclear(&vvalue);
 		i++;
 	}
 
@@ -7751,7 +7751,7 @@ find_partition_type(sql_subtype *tpe, sql_table *mt)
 }
 
 static int
-convert_part_values(sql_trans *tr, sql_table *mt )
+convert_part_values(allocator *sa, sql_trans *tr, sql_table *mt )
 {
 	sql_subtype found = { 0 };
 	int localtype;
@@ -7768,9 +7768,9 @@ convert_part_values(sql_trans *tr, sql_table *mt )
 					ValRecord vvalue = {.vtype = TYPE_void,};
 					ptr ok;
 
-					ok = VALinit(NULL, &vvalue, TYPE_str, v->value);
+					ok = VALinit(sa, &vvalue, TYPE_str, v->value);
 					if (ok)
-						ok = VALconvert(NULL, localtype, &vvalue);
+						ok = VALconvert(sa, localtype, &vvalue);
 					if (ok) {
 						ok = v->value = NEW_ARRAY(char, vvalue.len);
 						if (ok) {
@@ -7778,7 +7778,7 @@ convert_part_values(sql_trans *tr, sql_table *mt )
 							v->length = vvalue.len;
 						}
 					}
-					VALclear(&vvalue);
+					//VALclear(&vvalue);
 					if (!ok)
 						return -1;
 					_DELETE(ov.value);
@@ -7788,9 +7788,9 @@ convert_part_values(sql_trans *tr, sql_table *mt )
 				ptr ok;
 
 				vmin = vmax = (ValRecord) {.vtype = TYPE_void,};
-				ok = VALinit(NULL, &vmin, TYPE_str, p->part.range.minvalue);
+				ok = VALinit(sa, &vmin, TYPE_str, p->part.range.minvalue);
 				if (ok)
-					ok = VALinit(NULL, &vmax, TYPE_str, p->part.range.maxvalue);
+					ok = VALinit(sa, &vmax, TYPE_str, p->part.range.maxvalue);
 				_DELETE(p->part.range.minvalue);
 				_DELETE(p->part.range.maxvalue);
 				if (ok) {
@@ -7813,9 +7813,9 @@ convert_part_values(sql_trans *tr, sql_table *mt )
 							p->part.range.maxlength = nil_len;
 						}
 					} else {
-						ok = VALconvert(NULL, localtype, &vmin);
+						ok = VALconvert(sa, localtype, &vmin);
 						if (ok)
-							ok = VALconvert(NULL, localtype, &vmax);
+							ok = VALconvert(sa, localtype, &vmax);
 						if (ok) {
 							p->part.range.minvalue = NEW_ARRAY(char, vmin.len);
 							p->part.range.maxvalue = NEW_ARRAY(char, vmax.len);
@@ -7835,8 +7835,8 @@ convert_part_values(sql_trans *tr, sql_table *mt )
 					if (ok && isPartitionedByColumnTable(p->t))
 						col_set_range(tr, p, true);
 				}
-				VALclear(&vmin);
-				VALclear(&vmax);
+				//VALclear(&vmin);
+				//VALclear(&vmax);
 				if (!ok)
 					return -1;
 			}
@@ -7846,7 +7846,7 @@ convert_part_values(sql_trans *tr, sql_table *mt )
 }
 
 int
-sql_trans_convert_partitions(sql_trans *tr)
+sql_trans_convert_partitions(allocator *sa, sql_trans *tr)
 {
 	struct os_iter si;
 	os_iterator(&si, tr->cat->schemas, tr, NULL);
@@ -7857,7 +7857,7 @@ sql_trans_convert_partitions(sql_trans *tr)
 		for(sql_base *b = oi_next(&oi); b; b = oi_next(&oi)) {
 			sql_table *tt = (sql_table*)b;
 			if (isPartitionedByColumnTable(tt) || isPartitionedByExpressionTable(tt)) {
-				if (convert_part_values(tr, tt) < 0)
+				if (convert_part_values(sa, tr, tt) < 0)
 					return -1;
 			}
 		}

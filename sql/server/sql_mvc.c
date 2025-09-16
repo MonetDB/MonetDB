@@ -405,7 +405,7 @@ mvc_init(int debug, store_type store_tpe, int ro, int su, const char *initpasswd
 			}
 		}
 	}
-	if (sql_trans_convert_partitions(m->session->tr) < 0) {
+	if (sql_trans_convert_partitions(m->sa, m->session->tr) < 0) {
 		TRC_CRITICAL(SQL_TRANS, "Unable to start partitioned tables\n");
 		mvc_destroy(m);
 		mvc_exit(store);

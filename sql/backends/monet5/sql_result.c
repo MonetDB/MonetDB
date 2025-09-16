@@ -1245,8 +1245,9 @@ mvc_export_table_columnar(stream *s, res_table *t, bstream *in)
 }
 
 static int
-mvc_export_table_(mvc *m, int output_format, stream *s, res_table *t, BUN offset, BUN nr, const char *btag, const char *sep, const char *rsep, const char *ssep, const char *ns)
+mvc_export_table_(allocator *sa, mvc *m, int output_format, stream *s, res_table *t, BUN offset, BUN nr, const char *btag, const char *sep, const char *rsep, const char *ssep, const char *ns)
 {
+	assert(sa);
 	Tablet as;
 	Column *fmt;
 	int i, ok = 0;
@@ -1261,8 +1262,6 @@ mvc_export_table_(mvc *m, int output_format, stream *s, res_table *t, BUN offset
 	as.nr_attrs = t->nr_cols + 1;	/* for the leader */
 	as.nr = nr;
 	as.offset = offset;
-	allocator *sa = m->sa ? m->sa : MT_thread_getallocator();
-	assert(sa);
 	fmt = as.format = (Column *) sa_zalloc(sa, sizeof(Column) * (as.nr_attrs + 1));
 	tres = sa_zalloc(sa, sizeof(struct time_res) * (as.nr_attrs));
 	if (fmt == NULL || tres == NULL) {
@@ -1391,7 +1390,9 @@ mvc_export_table_(mvc *m, int output_format, stream *s, res_table *t, BUN offset
 static int
 mvc_export_table(backend *b, stream *s, res_table *t, BUN offset, BUN nr, const char *btag, const char *sep, const char *rsep, const char *ssep, const char *ns)
 {
-	return mvc_export_table_(b->mvc, b->output_format, s, t, offset, nr, btag, sep, rsep, ssep, ns);
+	mvc *m = b->mvc;
+	allocator *sa = m->sa ? m->sa : b->client->curprg->def->ma;
+	return mvc_export_table_(sa, m, b->output_format, s, t, offset, nr, btag, sep, rsep, ssep, ns);
 }
 
 int
@@ -1404,7 +1405,7 @@ mvc_export(mvc *m, stream *s, res_table *t, BUN nr)
 	t->nr_rows = nr;
 	if (mvc_export_head(&b, s, t->id, TRUE, TRUE, 0/*starttime*/, 0/*maloptimizer*/) < 0)
 		return -1;
-	return mvc_export_table_(m, OFMT_CSV, s, t, 0, nr, "[ ", ",\t", "\t]\n", "\"", "NULL");
+	return mvc_export_table_(m->sa, m, OFMT_CSV, s, t, 0, nr, "[ ", ",\t", "\t]\n", "\"", "NULL");
 }
 
 

@@ -767,7 +767,7 @@ AGGRavg3(Client ctx, bat *retval1, bat *retval2, bat *retval3, const bat *bid,
 		throw(MAL, "aggr.subavg", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 
-	rc = BATgroupavg3(&avgs, &rems, &cnts, b, g, e, s, *skip_nils);
+	rc = BATgroupavg3(ma, &avgs, &rems, &cnts, b, g, e, s, *skip_nils);
 
 	BBPunfix(b->batCacheid);
 	BBPreclaim(g);
@@ -811,7 +811,7 @@ AGGRavg3comb(Client ctx, bat *retval1, const bat *bid, const bat *rid, const bat
 		throw(MAL, "aggr.subavg", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 
-	bn = BATgroupavg3combine(b, r, c, g, e, *skip_nils);
+	bn = BATgroupavg3combine(ma, b, r, c, g, e, *skip_nils);
 
 	BBPunfix(b->batCacheid);
 	BBPunfix(r->batCacheid);

@@ -217,9 +217,7 @@ createMalExceptionInternal(MalBlkPtr mb, int pc, enum malexception type,
 	int len = vsnprintf(NULL, 0, format, ap);
 	if (len < 0)
 		len = 0;
-	allocator *ma = MT_thread_getallocator();
-	assert(ma);
-	char *msg = ma_alloc(ma, msglen + len + 1);
+	char *msg = ma_alloc(mb->ma, msglen + len + 1);
 	if (msg != NULL) {
 		/* the calls below succeed: the arguments have already been checked */
 		if (prev) {

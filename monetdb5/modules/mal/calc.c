@@ -775,7 +775,7 @@ CMDBATavg3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BBPreclaim(b);
 		throw(MAL, "aggr.avg", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
-	if (BATgroupavg3(&avgs, &rems, &cnts, b, NULL, NULL, s, *skip_nils) != GDK_SUCCEED)
+	if (BATgroupavg3(mb->ma, &avgs, &rems, &cnts, b, NULL, NULL, s, *skip_nils) != GDK_SUCCEED)
 		return mythrow(MAL, "aggr.avg", GDK_EXCEPTION);
 	if (avgs && BATcount(avgs) == 1) {
 		/* only type bte, sht, int, lng and hge */
@@ -837,7 +837,7 @@ CMDBATavg3comb(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BBPreclaim(c);
 		throw(MAL, "aggr.avg", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
-	avgs = BATgroupavg3combine(b, r, c, NULL, NULL, TRUE);
+	avgs = BATgroupavg3combine(mb->ma, b, r, c, NULL, NULL, TRUE);
 	if (avgs && BATcount(avgs) == 1) {
 		/* only type bte, sht, int, lng and hge */
 		ptr res = VALget(ret);

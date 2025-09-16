@@ -1993,7 +1993,7 @@ BATgroupavg(allocator *ma, BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *
  * this way to correct averages by rounding or truncating towards zero
  * (depending on the symbol TRUNCATE_NUMBERS). */
 gdk_return
-BATgroupavg3(BAT **avgp, BAT **remp, BAT **cntp, BAT *b, BAT *g, BAT *e, BAT *s, bool skip_nils)
+BATgroupavg3(allocator *ma, BAT **avgp, BAT **remp, BAT **cntp, BAT *b, BAT *g, BAT *e, BAT *s, bool skip_nils)
 {
 	const char *err;
 	oid min, max;
@@ -2028,8 +2028,8 @@ BATgroupavg3(BAT **avgp, BAT **remp, BAT **cntp, BAT *b, BAT *g, BAT *e, BAT *s,
 		return GDK_SUCCEED;
 	}
 	ValRecord zero;
-	(void) VALinit(NULL, &zero, TYPE_bte, &(bte){0});
-	bn = BATconstant(min, b->ttype, VALconvert(NULL, b->ttype, &zero),
+	(void) VALinit(ma, &zero, TYPE_bte, &(bte){0});
+	bn = BATconstant(min, b->ttype, VALconvert(ma, b->ttype, &zero),
 			 ngrp, TRANSIENT);
 	rn = BATconstant(min, TYPE_lng, &(lng){0}, ngrp, TRANSIENT);
 	cn = BATconstant(min, TYPE_lng, &(lng){0}, ngrp, TRANSIENT);
@@ -2631,7 +2631,7 @@ combine_averages_hge(hge *avgp, lng *remp, lng *cntp,
 #endif
 
 BAT *
-BATgroupavg3combine(BAT *avg, BAT *rem, BAT *cnt, BAT *g, BAT *e, bool skip_nils)
+BATgroupavg3combine(allocator *ma, BAT *avg, BAT *rem, BAT *cnt, BAT *g, BAT *e, bool skip_nils)
 {
 	const char *err;
 	oid min, max;
@@ -2656,9 +2656,9 @@ BATgroupavg3combine(BAT *avg, BAT *rem, BAT *cnt, BAT *g, BAT *e, bool skip_nils
 				   ATOMnilptr(avg->ttype), ngrp, TRANSIENT);
 	}
 	ValRecord zero;
-	(void) VALinit(NULL, &zero, TYPE_bte, &(bte){0});
+	(void) VALinit(ma, &zero, TYPE_bte, &(bte){0});
 	bn = BATconstant(min, avg->ttype,
-			VALconvert(NULL, avg->ttype, &zero),
+			VALconvert(ma, avg->ttype, &zero),
 			 ngrp, TRANSIENT);
 	/* rn and cn are temporary storage of intermediates */
 	rn = BATconstant(min, TYPE_lng, &(lng){0}, ngrp, TRANSIENT);

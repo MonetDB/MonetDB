@@ -1559,7 +1559,7 @@ SERVERfetch_all_rows(Client ctx, lng *ret, const int *key)
 static str
 SERVERfetch_field_str(Client ctx, str *ret, const int *key, const int *fnr)
 {
-	allocator *ma = ctx? ctx->curprg->def->ma : MT_thread_getallocator();
+	allocator *ma = ctx->curprg->def->ma;
 	assert(ma);
 	Mapi mid;
 	int i;
@@ -1694,7 +1694,7 @@ SERVERfetch_field_bte(Client ctx, bte *ret, const int *key, const int *fnr)
 static str
 SERVERfetch_line(Client ctx, str *ret, const int *key)
 {
-	allocator *ma = ctx? ctx->curprg->def->ma : MT_thread_getallocator();
+	allocator *ma = ctx->curprg->def->ma;
 	assert(ma);
 	Mapi mid;
 	int i;
@@ -1785,7 +1785,7 @@ SERVERerror(Client ctx, int *ret, const int *key)
 static str
 SERVERgetError(Client ctx, str *ret, const int *key)
 {
-	allocator *ma = ctx? ctx->curprg->def->ma : MT_thread_getallocator();
+	allocator *ma = ctx->curprg->def->ma;
 	assert(ma);
 	Mapi mid;
 	int i;
@@ -1799,7 +1799,7 @@ SERVERgetError(Client ctx, str *ret, const int *key)
 static str
 SERVERexplain(Client ctx, str *ret, const int *key)
 {
-	allocator *ma = ctx? ctx->curprg->def->ma : MT_thread_getallocator();
+	allocator *ma = ctx->curprg->def->ma;
 	assert(ma);
 	Mapi mid;
 	int i;

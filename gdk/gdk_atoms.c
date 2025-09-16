@@ -436,11 +436,12 @@ TYPE##ToStr(allocator *ma, char **dst, size_t *len, const TYPE *src, bool extern
 #define mult16(x)	((x) << 4)
 
 static void *
-voidRead(void *a, size_t *dstlen, stream *s, size_t cnt)
+voidRead(allocator *ma, void *a, size_t *dstlen, stream *s, size_t cnt)
 {
 	(void) dstlen;
 	(void) s;
 	(void) cnt;
+	(void) ma;
 	return a;
 }
 
@@ -863,8 +864,9 @@ mskWrite(const msk *a, stream *s, size_t cnt)
 }
 
 static void *
-mskRead(msk *A, size_t *dstlen, stream *s, size_t cnt)
+mskRead(allocator *ma, msk *A, size_t *dstlen, stream *s, size_t cnt)
 {
+	(void) ma;
 	int8_t v;
 	msk *a = A;
 	if (cnt != 1)

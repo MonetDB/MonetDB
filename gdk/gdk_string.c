@@ -730,10 +730,9 @@ escapedStr(char *restrict dst, const char *restrict src, size_t dstlen, const ch
 }
 
 ssize_t
-strToStr(char **restrict dst, size_t *restrict len, const char *restrict src, bool external)
+strToStr(allocator *ma, char **restrict dst, size_t *restrict len, const char *restrict src, bool external)
 {
 	size_t sz;
-	allocator *ma = MT_thread_getallocator();
 	assert(ma);
 
 	if (!external) {
@@ -759,7 +758,7 @@ strToStr(char **restrict dst, size_t *restrict len, const char *restrict src, bo
 }
 
 str
-strRead(str a, size_t *dstlen, stream *s, size_t cnt)
+strRead(allocator *ma, str a, size_t *dstlen, stream *s, size_t cnt)
 {
 	int len;
 
@@ -768,12 +767,12 @@ strRead(str a, size_t *dstlen, stream *s, size_t cnt)
 	if (mnstr_readInt(s, &len) != 1 || len < 0)
 		return NULL;
 	if (a == NULL || *dstlen < (size_t) len + 1) {
-		if ((a = GDKrealloc(a, len + 1)) == NULL)
+		if ((a = ma_realloc(ma, a, len + 1, *dstlen)) == NULL)
 			return NULL;
 		*dstlen = len + 1;
 	}
 	if (len && mnstr_read(s, a, len, 1) != 1) {
-		GDKfree(a);
+		//GDKfree(a);
 		return NULL;
 	}
 	a[len] = 0;

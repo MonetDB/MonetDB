@@ -277,7 +277,7 @@ alter_table_add_range_partition(mvc *sql, char *msname, char *mtname, char *psna
 		}
 	}
 
-	errcode = sql_trans_add_range_partition(sql->session->tr, mt, pt, tpe, min, max, with_nills, update, &err);
+	errcode = sql_trans_add_range_partition(sql->sa, sql->session->tr, mt, pt, tpe, min, max, with_nills, update, &err);
 	switch (errcode) {
 		case 0:
 			break;
@@ -446,7 +446,7 @@ alter_table_add_value_partition(mvc *sql, MalStkPtr stk, InstrPtr pci, char *msn
 		}
 	}
 
-	errcode = sql_trans_add_value_partition(sql->session->tr, mt, pt, tpe, values, with_nills, update, &err);
+	errcode = sql_trans_add_value_partition(sql->sa, sql->session->tr, mt, pt, tpe, values, with_nills, update, &err);
 	if (errcode <= -10) {
 		msg = createException(SQL,"sql.alter_table_add_value_partition",SQLSTATE(42000)
 								  "ALTER TABLE: value at position %d length is higher than %d",

@@ -1709,6 +1709,7 @@ VARconvert(allocator *ma, ValPtr ret, const ValRecord *v,
 	BUN nils = 0;
 	bool reduce;
 
+	assert(ma);
 	assert(!v->bat);
 	if (ret->vtype == TYPE_msk) {
 		ValRecord tmp = { .vtype = TYPE_bit };

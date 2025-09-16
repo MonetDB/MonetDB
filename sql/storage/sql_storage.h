@@ -380,11 +380,11 @@ sql_export int sql_trans_create_table(sql_table **tres, sql_trans *tr, sql_schem
 
 extern int sql_trans_set_partition_table(sql_trans *tr, sql_table *t);
 extern int sql_trans_add_table(sql_trans *tr, sql_table *mt, sql_table *pt);
-extern int sql_trans_add_range_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_subtype tpe, ptr min, ptr max, bit with_nills, int update, sql_part** err);
-extern int sql_trans_add_value_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_subtype tpe, list* vals, bit with_nills, int update, sql_part **err);
+extern int sql_trans_add_range_partition(allocator *, sql_trans *tr, sql_table *mt, sql_table *pt, sql_subtype tpe, ptr min, ptr max, bit with_nills, int update, sql_part** err);
+extern int sql_trans_add_value_partition(allocator *, sql_trans *tr, sql_table *mt, sql_table *pt, sql_subtype tpe, list* vals, bit with_nills, int update, sql_part **err);
 /* during loading the partition data (expression, values and ranges) are stored as strings, we convert them after the
  * expressions are initialized (once the parser can handle that).*/
-extern int sql_trans_convert_partitions(sql_trans *tr);
+extern int sql_trans_convert_partitions(allocator *, sql_trans *tr);
 extern void find_partition_type(sql_subtype *tpe, sql_table *mt);
 
 extern int sql_trans_rename_table(sql_trans *tr, sql_schema *s, sqlid id, const char *new_name);

@@ -127,8 +127,8 @@ gdk_export gdk_return BATcalcavg(BAT *b, BAT *s, dbl *avg, BUN *vals, int scale)
 gdk_export BAT *BATgroupsum(allocator *ma, BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils);
 gdk_export BAT *BATgroupprod(allocator *ma, BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils);
 gdk_export gdk_return BATgroupavg(allocator *ma, BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, int scale);
-gdk_export gdk_return BATgroupavg3(BAT **avgp, BAT **remp, BAT **cntp, BAT *b, BAT *g, BAT *e, BAT *s, bool skip_nils);
-gdk_export BAT *BATgroupavg3combine(BAT *avg, BAT *rem, BAT *cnt, BAT *g, BAT *e, bool skip_nils);
+gdk_export gdk_return BATgroupavg3(allocator *, BAT **avgp, BAT **remp, BAT **cntp, BAT *b, BAT *g, BAT *e, BAT *s, bool skip_nils);
+gdk_export BAT *BATgroupavg3combine(allocator *, BAT *avg, BAT *rem, BAT *cnt, BAT *g, BAT *e, bool skip_nils);
 gdk_export BAT *BATgroupcount(allocator *ma, BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils);
 gdk_export BAT *BATgroupmin(allocator *ma, BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils);
 gdk_export BAT *BATgroupmax(allocator *ma, BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils);
