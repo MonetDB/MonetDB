@@ -49212,7 +49212,7 @@ profiler
 closestream
 pattern profiler.closestream():void
 CMDcloseProfilerStream
-Stop offline proviling
+Stop offline profiling
 profiler
 cpuload
 command profiler.cpuload(X_0:lng, X_1:lng, X_2:lng, X_3:lng, X_4:lng) (X_5:int, X_6:int)
@@ -49239,11 +49239,6 @@ command profiler.getSystemTime():lng
 CMDgetSystemTime
 Obtain the user timing information.
 profiler
-getTrace
-pattern profiler.getTrace(X_0:str):bat[:any_1]
-CMDgetTrace
-Get the trace details of a specific event
-profiler
 getUserTime
 command profiler.getUserTime():lng
 CMDgetUserTime
@@ -49253,11 +49248,6 @@ getlimit
 command profiler.getlimit():int
 CMDgetprofilerlimit
 Get profiler limit
-profiler
-noop
-command profiler.noop():void
-CMDnoopProfiler
-Fetch any pending performance events
 profiler
 openstream
 pattern profiler.openstream():void
@@ -49284,20 +49274,10 @@ unsafe pattern profiler.start():void
 CMDstartProfiler
 Start offline performance profiling
 profiler
-starttrace
-unsafe pattern profiler.starttrace():void
-CMDstartTrace
-Start collecting trace information
-profiler
 stop
 unsafe pattern profiler.stop():void
 CMDstopProfiler
 Stop offline performance profiling
-profiler
-stoptrace
-unsafe pattern profiler.stoptrace():void
-CMDstopTrace
-Stop collecting trace information
 pyapi3
 epilogue
 command pyapi3.epilogue():void

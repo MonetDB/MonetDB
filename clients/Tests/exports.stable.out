@@ -999,7 +999,6 @@ const char getRef[];
 str getScenarioLanguage(Client c);
 int getShtConstant(MalBlkPtr mb, sht val);
 int getStrConstant(MalBlkPtr mb, str val);
-const char getTraceRef[];
 str getTypeIdentifier(malType tpe);
 str getTypeName(malType tpe);
 char *getVarNameIntoBuffer(MalBlkPtr mb, int idx, char *buf) __attribute__((__access__(write_only, 3)));

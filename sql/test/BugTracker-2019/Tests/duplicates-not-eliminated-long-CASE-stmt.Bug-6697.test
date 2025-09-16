@@ -11,16 +11,8 @@ statement ok rowcount 4
 INSERT INTO "task" VALUES ('incident', 1, timestamp '2010-10-10 10:00:00'), ('incident', 2, timestamp '2011-10-10 10:00:00'),
 ('incident', 3, timestamp '2012-10-10 10:00:00'), ('incident', 4, timestamp '2013-10-10 10:00:00')
 
-statement ok
-create procedure profiler.starttrace() external name profiler."starttrace"
-
-statement ok
-create procedure profiler.stoptrace() external name profiler.stoptrace
-
-statement ok
-call profiler."starttrace"()
-
 query T rowsort
+trace
 SELECT sys.timestamp_to_str(case when task0."sys_created_on" >= '1999-10-31 09:00:00' and task0."sys_created_on" < '2000-04-02 10:00:00'
 then task0."sys_created_on" + interval '-28800' second when task0."sys_created_on" >= '2000-04-02 10:00:00' and task0."sys_created_on" < '2000-10-29 09:00:00'
 then task0."sys_created_on" + interval '-25200' second when task0."sys_created_on" >= '2000-10-29 09:00:00' and task0."sys_created_on" < '2001-04-01 10:00:00'
@@ -73,9 +65,6 @@ then task0."sys_created_on" + interval '-25200' second else task0."sys_created_o
 2011
 2012
 2013
-
-statement ok
-call profiler.stoptrace()
 
 query I rowsort
 select count(*) from sys.tracelog() where stmt like '%batcalc.between%'

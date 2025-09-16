@@ -191,7 +191,6 @@ const char first_valueRef[] = "first_value";
 const char forRef[] = "for";
 const char generatorRef[] = "generator";
 const char getRef[] = "get";
-const char getTraceRef[] = "getTrace";
 const char getVariableRef[] = "getVariable";
 const char grant_functionRef[] = "grant_function";
 const char grantRef[] = "grant";
@@ -458,7 +457,6 @@ initNamespace(void)
 	fixName(forRef);
 	fixName(generatorRef);
 	fixName(getRef);
-	fixName(getTraceRef);
 	fixName(getVariableRef);
 	fixName(grant_functionRef);
 	fixName(grantRef);
