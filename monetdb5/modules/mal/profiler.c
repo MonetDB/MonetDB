@@ -94,34 +94,6 @@ CMDsetHeartbeat(void *res, const int *ev)
 }
 
 static str
-CMDgetDiskReads(lng *ret)
-{
-	*ret = getDiskReads();
-	return MAL_SUCCEED;
-}
-
-static str
-CMDgetDiskWrites(lng *ret)
-{
-	*ret = getDiskWrites();
-	return MAL_SUCCEED;
-}
-
-static str
-CMDgetUserTime(lng *ret)
-{
-	*ret = getUserTime();
-	return MAL_SUCCEED;
-}
-
-static str
-CMDgetSystemTime(lng *ret)
-{
-	*ret = getUserTime();
-	return MAL_SUCCEED;
-}
-
-static str
 CMDcpustats(lng *user, lng *nice, lng *sys, lng *idle, lng *iowait)
 {
 	profilerGetCPUStat(user, nice, sys, idle, iowait);
@@ -157,10 +129,6 @@ mel_func profiler_init_funcs[] = {
  pattern("profiler", "closestream", CMDcloseProfilerStream, false, "Stop offline profiling", args(1,1, arg("",void))),
 
  pattern("profiler", "cleanup", CMDcleanupTraces, true, "Remove the temporary tables for profiling", args(1,1, arg("",void))),
- command("profiler", "getDiskReads", CMDgetDiskReads, false, "Obtain the number of physical reads", args(1,1, arg("",lng))),
- command("profiler", "getDiskWrites", CMDgetDiskWrites, false, "Obtain the number of physical reads", args(1,1, arg("",lng))),
- command("profiler", "getUserTime", CMDgetUserTime, false, "Obtain the user timing information.", args(1,1, arg("",lng))),
- command("profiler", "getSystemTime", CMDgetSystemTime, false, "Obtain the user timing information.", args(1,1, arg("",lng))),
  command("profiler", "cpustats", CMDcpustats, false, "Extract cpu statistics from the kernel", args(5,5, arg("user",lng),arg("nice",lng),arg("sys",lng),arg("idle",lng),arg("iowait",lng))),
  command("profiler", "cpuload", CMDcpuloadPercentage, false, "Calculate the average cpu load percentage and io waiting times", args(2,7, arg("cycles",int),arg("io",int),arg("user",lng),arg("nice",lng),arg("sys",lng),arg("idle",lng),arg("iowait",lng))),
  { .imp=NULL }

@@ -925,54 +925,6 @@ sqlProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	GDKfree(ev);
 }
 
-lng
-getDiskWrites(void)
-{
-#ifdef HAVE_SYS_RESOURCE_H
-	struct rusage infoUsage;
-	getrusage(RUSAGE_SELF, &infoUsage);
-	return infoUsage.ru_oublock;
-#else
-	return 0;
-#endif
-}
-
-lng
-getDiskReads(void)
-{
-#ifdef HAVE_SYS_RESOURCE_H
-	struct rusage infoUsage;
-	getrusage(RUSAGE_SELF, &infoUsage);
-	return infoUsage.ru_inblock;
-#else
-	return 0;
-#endif
-}
-
-lng
-getUserTime(void)
-{
-#ifdef HAVE_TIMES
-	struct tms newTms;
-	times(&newTms);
-	return newTms.tms_utime;
-#else
-	return 0;
-#endif
-}
-
-lng
-getSystemTime(void)
-{
-#ifdef HAVE_TIMES
-	struct tms newTms;
-	times(&newTms);
-	return newTms.tms_stime;
-#else
-	return 0;
-#endif
-}
-
 /* Calculate a pessimistic size of the disk storage */
 lng
 getDiskSpace(void)

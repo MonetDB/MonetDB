@@ -77,10 +77,6 @@ extern void MPresetProfiler(stream *fdout);
 extern str cleanupTraces(Client cntxt);
 
 extern lng getDiskSpace(void);
-extern lng getDiskReads(void);
-extern lng getDiskWrites(void);
-extern lng getUserTime(void);
-extern lng getSystemTime(void);
 extern void profilerGetCPUStat(lng *user, lng *nice, lng *sys, lng *idle,
 							   lng *iowait);
 #endif

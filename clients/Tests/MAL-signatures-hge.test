@@ -49224,26 +49224,6 @@ command profiler.cpustats() (X_0:lng, X_1:lng, X_2:lng, X_3:lng, X_4:lng)
 CMDcpustats
 Extract cpu statistics from the kernel
 profiler
-getDiskReads
-command profiler.getDiskReads():lng
-CMDgetDiskReads
-Obtain the number of physical reads
-profiler
-getDiskWrites
-command profiler.getDiskWrites():lng
-CMDgetDiskWrites
-Obtain the number of physical reads
-profiler
-getSystemTime
-command profiler.getSystemTime():lng
-CMDgetSystemTime
-Obtain the user timing information.
-profiler
-getUserTime
-command profiler.getUserTime():lng
-CMDgetUserTime
-Obtain the user timing information.
-profiler
 openstream
 pattern profiler.openstream():void
 CMDopenProfilerStream
