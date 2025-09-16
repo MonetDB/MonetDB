@@ -755,6 +755,32 @@ sql_grantable(mvc *m, sqlid grantorid, sqlid obj_id, int privs)
 }
 
 sqlid
+mvc_set_user(mvc *m, char *user)
+{
+	oid rid;
+	sql_schema *sys = find_sql_schema(m->session->tr, "sys");
+	sql_table *auths = find_sql_table(m->session->tr, sys, "auths");
+	sql_column *auths_name = find_sql_column(auths, "name");
+	sqlid res = 0;
+	sqlstore *store = m->session->tr->store;
+
+	TRC_DEBUG(SQL_TRANS, "Set user: %s\n", user);
+
+	rid = store->table_api.column_find_row(m->session->tr, auths_name, user, NULL);
+	if (!is_oid_nil(rid)) {
+		sql_column *auths_id = find_sql_column(auths, "id");
+		sqlid id = store->table_api.column_find_sqlid(m->session->tr, auths_id, rid);
+
+		if (m->user_id == id || admin_privs(m->user_id)) {
+			m->user_id = id;
+			m->role_id = id;
+			res = 1;
+		}
+	}
+	return res;
+}
+
+sqlid
 mvc_set_role(mvc *m, char *role)
 {
 	oid rid;
@@ -771,7 +797,7 @@ mvc_set_role(mvc *m, char *role)
 		sql_column *auths_id = find_sql_column(auths, "id");
 		sqlid id = store->table_api.column_find_sqlid(m->session->tr, auths_id, rid);
 
-		if (m->user_id == id) {
+		if (m->user_id == id || admin_privs(m->user_id)) {
 			m->role_id = id;
 			res = 1;
 		} else {

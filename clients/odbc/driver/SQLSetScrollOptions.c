@@ -45,9 +45,9 @@ SQLSetScrollOptions(SQLHSTMT StatementHandle,
 		LENCAST crowKeyset, (unsigned int) crowRowset);
 #endif
 
-	(void) fConcurrency;	/* Stefan: unused!? */
-	(void) crowKeyset;	/* Stefan: unused!? */
-	(void) crowRowset;	/* Stefan: unused!? */
+	(void) fConcurrency;
+	(void) crowKeyset;
+	(void) crowRowset;
 
 	if (!isValidStmt((ODBCStmt *) StatementHandle))
 		return SQL_INVALID_HANDLE;

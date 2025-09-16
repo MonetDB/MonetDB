@@ -131,7 +131,7 @@ getSQLoptimizer(mvc *m)
 }
 
 static str
-addOptimizers(Client c, MalBlkPtr mb, char *pipe, int prepare)
+addOptimizers(Client c, MalBlkPtr mb, const char *pipe, int prepare)
 {
 	int i;
 	InstrPtr q;
@@ -143,11 +143,10 @@ addOptimizers(Client c, MalBlkPtr mb, char *pipe, int prepare)
 	assert(be && be->mvc);	/* SQL clients should always have their state set */
 
 	(void) SQLgetSpace(be->mvc, mb, prepare); // detect empty bats.
-	pipe = pipe? pipe: "default_pipe";
-	if (strcmp(pipe, "default_pipe") == 0) {
-		pipe = "default_fast";
-	} else if (strcmp(pipe, "no_mitosis_pipe") == 0) {
-		pipe = "default_fast";
+	if (pipe == NULL)
+		pipe = "default_pipe";
+	else if (strcmp(pipe, "no_mitosis_pipe") == 0) {
+		pipe = "default_pipe";
 		c->no_mitosis = true;
 	}
 	msg = addOptimizerPipe(c, mb, pipe);

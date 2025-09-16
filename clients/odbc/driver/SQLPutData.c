@@ -46,8 +46,8 @@ SQLPutData(SQLHSTMT StatementHandle,
 	ODBCLOG("SQLPutData %p\n", StatementHandle);
 #endif
 
-	(void) DataPtr;		/* Stefan: unused!? */
-	(void) StrLen_or_Ind;	/* Stefan: unused!? */
+	(void) DataPtr;
+	(void) StrLen_or_Ind;
 
 	if (!isValidStmt(stmt))
 		 return SQL_INVALID_HANDLE;

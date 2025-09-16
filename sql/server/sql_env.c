@@ -81,7 +81,9 @@ sql_update_var(mvc *m, sql_schema *s, const char *name, const ValRecord *ptr)
 			} else {
 				m->sql_optimizer = (int) sgn;
 			}
-		} else if (strcmp(name, "current_schema") == 0 || strcmp(name, "current_role") == 0) {
+		} else if (strcmp(name, "current_schema") == 0 ||
+				   strcmp(name, "current_role") == 0 ||
+				   strcmp(name, "current_user") == 0) {
 			if (VALisnil(ptr))
 				throw(SQL,"sql.update_var", SQLSTATE(HY009)
 					  "Variable '%s.%s' cannot be NULL", s->base.name, name);
@@ -91,6 +93,9 @@ sql_update_var(mvc *m, sql_schema *s, const char *name, const ValRecord *ptr)
 			else if (strcmp(name, "current_role") == 0 && !mvc_set_role(m, ptr->val.sval))
 				throw(SQL,"sql.update_var", SQLSTATE(HY009)
 					  "Role (%s) missing\n", ptr->val.sval);
+			else if (strcmp(name, "current_user") == 0 && !mvc_set_user(m, ptr->val.sval))
+				throw(SQL,"sql.update_var", SQLSTATE(HY009)
+					  "Switching to user %s not allowed\n", ptr->val.sval);
 		}
 	}
 	return NULL;

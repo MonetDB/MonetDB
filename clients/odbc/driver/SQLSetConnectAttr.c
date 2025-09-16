@@ -40,7 +40,7 @@ MNDBSetConnectAttr(ODBCDbc *dbc,
 		   SQLPOINTER ValuePtr,
 		   SQLINTEGER StringLength)
 {
-	(void) StringLength;	/* Stefan: unused!? */
+	(void) StringLength;
 
 	bool autocommit = false;
 	switch (Attribute) {

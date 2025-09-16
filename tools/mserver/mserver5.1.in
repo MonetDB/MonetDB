@@ -469,31 +469,23 @@ The following are possible pipes to use:
 .TP
 .B minimal_pipe
 The minimal pipeline necessary by the server to operate correctly.
-.\" this documentation must be kept in sync with the respective code in monetdb5/optimizer/opt_pipes.c
-minimal_pipe=inline,remap,emptybind,deadcode,for,dict,multiplex,generator,profiler,garbageCollector
 .TP
 .B default_pipe
 The default pipeline contains the mitosis-mergetable-reorder
 optimizers, aimed at large tables and improved access locality.
-.\" this documentation must be kept in sync with the respective code in monetdb5/optimizer/opt_pipes.c
-default_pipe=inline,remap,costModel,coercions,aliases,evaluate,emptybind,deadcode,pushselect,aliases,for,dict,mitosis,mergetable,aliases,constants,commonTerms,projectionpath,deadcode,matpack,reorder,dataflow,querylog,multiplex,generator,candidates,deadcode,postfix,profiler,garbageCollector
 .TP
 .B no_mitosis_pipe
 The no_mitosis pipeline is identical to the default pipeline, except
-that optimizer mitosis is omitted.
+that optimizer mitosis and dependent optimizers are omitted.
 It is used mainly to make some tests work deterministically, and to
 check/debug whether ``unexpected'' problems are related to mitosis
 (and/or mergetable).
-.\" this documentation must be kept in sync with the respective code in monetdb5/optimizer/opt_pipes.c
-no_mitosis_pipe=inline,remap,costModel,coercions,aliases,evaluate,emptybind,deadcode,pushselect,aliases,for,dict,mergetable,aliases,constants,commonTerms,projectionpath,deadcode,matpack,reorder,dataflow,querylog,multiplex,generator,candidates,deadcode,postfix,profiler,garbageCollector
 .TP
 .B sequential_pipe
 The sequential pipeline is identical to the default pipeline, except
-that optimizers mitosis & dataflow are omitted.
-It is use mainly to make some tests work deterministically, i.e.,
-avoid ambiguous output, by avoiding parallelism.
-.\" this documentation must be kept in sync with the respective code in monetdb5/optimizer/opt_pipes.c
-sequential_pipe=inline,remap,costModel,coercions,aliases,evaluate,emptybind,deadcode,pushselect,aliases,for,dict,mergetable,aliases,constants,commonTerms,projectionpath,deadcode,matpack,reorder,querylog,multiplex,generator,candidates,deadcode,postfix,profiler,garbageCollector
+that optimizers mitosis, dataflow and dependent optimizers are omitted.
+It is use mainly to make some tests work deterministically, i.e., avoid
+ambiguous output, by avoiding parallelism.
 .RE
 .TP
 .B embedded_py

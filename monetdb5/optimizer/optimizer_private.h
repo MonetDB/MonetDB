@@ -17,4 +17,3 @@
 #endif
 
 str OPTwrapper(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-str OPTstatistics(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);

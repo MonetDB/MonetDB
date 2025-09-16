@@ -45,7 +45,7 @@ SQLParamData(SQLHSTMT StatementHandle,
 	ODBCLOG("SQLParamData %p\n", StatementHandle);
 #endif
 
-	(void) ValuePtrPtr;		/* Stefan: unused!? */
+	(void) ValuePtrPtr;
 
 	if (!isValidStmt(stmt))
 		 return SQL_INVALID_HANDLE;
