@@ -49204,11 +49204,6 @@ command pcre.sql2pcre(X_0:str, X_1:str):str
 PCREsql2pcre
 Convert a SQL like pattern with the given escape character into a PCRE pattern.
 profiler
-closestream
-pattern profiler.closestream():void
-CMDcloseProfilerStream
-Stop offline profiling
-profiler
 cpuload
 command profiler.cpuload(X_0:lng, X_1:lng, X_2:lng, X_3:lng, X_4:lng) (X_5:int, X_6:int)
 CMDcpuloadPercentage
@@ -49218,21 +49213,6 @@ cpustats
 command profiler.cpustats() (X_0:lng, X_1:lng, X_2:lng, X_3:lng, X_4:lng)
 CMDcpustats
 Extract cpu statistics from the kernel
-profiler
-openstream
-pattern profiler.openstream():void
-CMDopenProfilerStream
-Start profiling the events, send to output stream
-profiler
-openstream
-pattern profiler.openstream(X_0:int):void
-CMDopenProfilerStream
-Start profiling the events, send to output stream
-profiler
-setheartbeat
-unsafe command profiler.setheartbeat(X_0:int):void
-CMDsetHeartbeat
-Set heart beat performance tracing
 pyapi3
 epilogue
 command pyapi3.epilogue():void

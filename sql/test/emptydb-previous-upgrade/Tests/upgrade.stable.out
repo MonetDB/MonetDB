@@ -589,4 +589,5 @@ drop procedure profiler.start cascade;
 drop procedure profiler.stop cascade;
 drop procedure profiler.setlimit cascade;
 drop function profiler.getlimit cascade;
+drop procedure profiler.setheartbeat cascade;
 

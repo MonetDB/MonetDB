@@ -48,10 +48,6 @@ typedef struct MalEvent {
 	lng duration;
 } MalEvent;
 
-mal_export int profilerStatus;
-mal_export int profilerMode;
-
-mal_export void profilerEvent(MalEvent * me, NonMalEvent * nme);
 mal_export oid runtimeProfileSetTag(Client cntxt);
 
 mal_export str startTrace(Client cntxt);
@@ -61,15 +57,6 @@ mal_export int TRACEtable(Client cntxt, BAT **r);
 #ifdef LIBMONETDB5
 /* only available in monetdb5 */
 extern void initProfiler(void);
-extern str openProfilerStream(Client cntxt, int m);
-extern str closeProfilerStream(Client cntxt);
-
-extern str stopProfiler(Client cntxt);
-extern void setHeartbeat(int delay);
-extern void initHeartbeat(void);
-extern void profilerHeartbeatEvent(char *alter);
-extern int getprofilerlimit(void);
-extern void setprofilerlimit(int limit);
 
 extern void MPresetProfiler(stream *fdout);
 

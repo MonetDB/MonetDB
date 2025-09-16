@@ -140,15 +140,10 @@ sql_symbol2relation(backend *be, symbol *sym)
 	lng Tbegin, Tend;
 	int value_based_opt = be->mvc->emode != m_prepare, storage_based_opt;
 	int profile = be->mvc->emode == m_plan;
-	Client c = be->client;
 
 	Tbegin = GDKusec();
 	rel = rel_semantic(query, sym);
 	Tend = GDKusec();
-	if(profilerStatus > 0 )
-		profilerEvent(NULL,
-					  &(struct NonMalEvent)
-					  {SQL_TO_REL, c, Tend, NULL, NULL, rel?0:1, Tend-Tbegin});
 
 	storage_based_opt = value_based_opt && rel && !is_ddl(rel->op);
 	Tbegin = Tend;
@@ -163,10 +158,6 @@ sql_symbol2relation(backend *be, symbol *sym)
 	Tend = GDKusec();
 	be->reloptimizer = Tend - Tbegin;
 
-	if(profilerStatus > 0)
-		profilerEvent(NULL,
-					  &(struct NonMalEvent)
-					  {REL_OPT, c, Tend, NULL, NULL, rel?0:1, be->reloptimizer});
 	return rel;
 }
 

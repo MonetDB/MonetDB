@@ -47,41 +47,9 @@
 #include "mal_interpreter.h"
 #include "mal_runtime.h"
 
-static str
-CMDopenProfilerStream(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc)
-{
-	(void) cntxt;
-	(void) mb;
-	(void) stk;
-	(void) pc;
-	int m = 0;
-	if (pc->argc == 2 && getArgType(mb, pc, 1) == TYPE_int)
-		m = *getArgReference_int(stk, pc, 1);
-	else if (pc->argc > 2)
-		m = -1;
-	return openProfilerStream(cntxt, m);
-}
-
-static str
-CMDcloseProfilerStream(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc)
-{
-	(void) mb;
-	(void) stk;
-	(void) pc;
-	return closeProfilerStream(cntxt);
-}
-
 /*
  * Tracing an active system.
  */
-
-static str
-CMDsetHeartbeat(void *res, const int *ev)
-{
-	(void) res;
-	setHeartbeat(*ev);
-	return MAL_SUCCEED;
-}
 
 static str
 CMDcpustats(lng *user, lng *nice, lng *sys, lng *idle, lng *iowait)
@@ -109,15 +77,6 @@ CMDcpuloadPercentage(int *cycles, int *io, const lng *user, const lng *nice,
 
 #include "mel.h"
 mel_func profiler_init_funcs[] = {
- /* referenced in 46_profiler.sql */
- command("profiler", "setheartbeat", CMDsetHeartbeat, true, "Set heart beat performance tracing", args(1,2, arg("",void),arg("b",int))),
-
- /* used by stethoscope (also setheartbeat above) */
- pattern("profiler", "openstream", CMDopenProfilerStream, false, "Start profiling the events, send to output stream", args(1,1, arg("",void))),
- pattern("profiler", "openstream", CMDopenProfilerStream, false, "Start profiling the events, send to output stream", args(1,2, arg("",void), arg("m",int))),
-
- pattern("profiler", "closestream", CMDcloseProfilerStream, false, "Stop offline profiling", args(1,1, arg("",void))),
-
  command("profiler", "cpustats", CMDcpustats, false, "Extract cpu statistics from the kernel", args(5,5, arg("user",lng),arg("nice",lng),arg("sys",lng),arg("idle",lng),arg("iowait",lng))),
  command("profiler", "cpuload", CMDcpuloadPercentage, false, "Calculate the average cpu load percentage and io waiting times", args(2,7, arg("cycles",int),arg("io",int),arg("user",lng),arg("nice",lng),arg("sys",lng),arg("idle",lng),arg("iowait",lng))),
  { .imp=NULL }
