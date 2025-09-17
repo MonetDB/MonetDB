@@ -140,6 +140,9 @@ addOptimizers(Client c, MalBlkPtr mb, const char *pipe, int prepare)
 
 	be = (backend *) c->sqlcontext;
 	c->no_mitosis = be->no_mitosis;
+	ATOMIC_TYPE oahash_enabled = (1U<<19);
+	if ((GDKdebug & oahash_enabled))
+		c->no_mitosis = 1;
 	assert(be && be->mvc);	/* SQL clients should always have their state set */
 
 	(void) SQLgetSpace(be->mvc, mb, prepare); // detect empty bats.

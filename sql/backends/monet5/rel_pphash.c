@@ -15,7 +15,6 @@
 #include "rel_rewriter.h"
 #include "rel_physical.h"
 #include "sql_pp_statement.h"
-#include "bin_partition.h"
 #include "bin_partition_by_value.h"
 #include "mal_builder.h"
 
