@@ -142,8 +142,8 @@ OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 		p = old[i];
 
 		if (getModuleId(p) == sqlRef
-			&& (idcmp(getFunctionId(p), "exportValue") == 0
-				|| idcmp(getFunctionId(p), "exportResult") == 0)) {
+			&& (strcmp(getFunctionId(p), "exportValue") == 0
+				|| strcmp(getFunctionId(p), "exportResult") == 0)) {
 
 			q = newStmt(mb, alarmRef, "usec");
 			if (q == NULL) {
