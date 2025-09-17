@@ -5150,6 +5150,9 @@ sql_update_default(Client c, mvc *sql, sql_schema *s)
 		const char query[] = "drop function sys.optimizer_stats cascade;\n";
 		printf("Running database upgrade commands:\n%s\n", query);
 		err = SQLstatementIntern(c, query, "update", true, false, NULL);
+	} else {
+		sql->session->status = 0; /* if the function was not found clean the error */
+		sql->errstr[0] = '\0';
 	}
 
 	if (sql_bind_func(sql, "profiler", "start", NULL, NULL, F_PROC, true, true)) {
@@ -5160,8 +5163,10 @@ sql_update_default(Client c, mvc *sql, sql_schema *s)
 			"drop procedure profiler.setheartbeat cascade;\n";
 		printf("Running database upgrade commands:\n%s\n", query);
 		err = SQLstatementIntern(c, query, "update", true, false, NULL);
+	} else {
+		sql->session->status = 0; /* if the function was not found clean the error */
+		sql->errstr[0] = '\0';
 	}
-
 	return err;
 }
 
