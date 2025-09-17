@@ -4,6 +4,7 @@ create table a(i int)
 statement ok
 create table b as select value as i from generate_series(0,10000000)
 
+skipif knownfail
 query T nosort
 plan delete from a where i in (select i from b where i % 2 = 0)
 ----

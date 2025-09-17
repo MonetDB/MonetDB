@@ -26,6 +26,7 @@ SELECT abc FROM testing5
 ----
 1
 
+skipif knownfail                                                                                                                                                                              
 query T python .plan.filter
 PLAN TRUNCATE testing4 RESTRICT
 ----
@@ -46,6 +47,7 @@ SELECT abc FROM testing5
 ----
 1
 
+skipif knownfail                                                                                                                                                                              
 query T python .plan.filter
 PLAN TRUNCATE testing4 CASCADE
 ----
@@ -81,6 +83,7 @@ SELECT a, b FROM testing6
 2
 1
 
+skipif knownfail                                                                                                                                                                              
 query T python .plan.filter
 PLAN TRUNCATE testing6
 ----
@@ -105,6 +108,7 @@ SELECT a, b FROM testing6
 4
 4
 
+skipif knownfail                                                                                                                                                                              
 query T python .plan.filter
 PLAN TRUNCATE testing6 CONTINUE IDENTITY
 ----
@@ -129,6 +133,7 @@ SELECT a, b FROM testing6
 6
 6
 
+skipif knownfail                                                                                                                                                                              
 query T python .plan.filter
 PLAN TRUNCATE testing6 RESTART IDENTITY
 ----

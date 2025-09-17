@@ -1710,7 +1710,8 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 			if (strcmp(fname, "-1") == 0) /* map arguments to A0 .. An */
 				return exp2bin_named_placeholders(be, e);
 		}
-		if (SQLrunning && f->func->mod && f->func->imp && strcmp(f->func->mod, "sql") == 0 && strcmp(f->func->imp, "copy_from") == 0)
+		ATOMIC_TYPE oahash_enabled = (1U<<19);
+		if (SQLrunning && GDKdebug & oahash_enabled && f->func->mod && f->func->imp && strcmp(f->func->mod, "sql") == 0 && strcmp(f->func->imp, "copy_from") == 0)
 			return exp2bin_copyparpipe(be, e);
 		if (!list_empty(exps)) {
 			unsigned nrcols = 0;
@@ -5707,20 +5708,6 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 		}
 	}
 
-	/*
-	if (!(GDKdebug & 4) && pp) {
-		InstrPtr q = newStmt(be->mb, ioRef, printRef);
-		for( n = aggrs->h, m = cursub->op4.lval->h; n && m; n = n->next, m = m->next ) {
-			sql_exp *aggrexp = n->data;
-			stmt *s = m->data;
-			if (is_aggr(aggrexp->type)) {
-				(void) pushArgument(be->mb, q, getArg(s->q, 0));
-			}
-		}
-		pushInstruction(be->mb, q);
-	}
-	*/
-
 	/* GROUP BY ends the current pipeline() block.  If needed, start a new
 	 * block to partition the result of this GROUP BY for the upper-level
 	 * operators, e.g. topN. */
@@ -6238,6 +6225,12 @@ sql_insert_triggers(backend *be, sql_table *t, stmt **updates, int time)
 	if (!ol_length(t->triggers))
 		return res;
 
+	InstrPtr q = newStmt(be->mb, sqlRef, mvcRef);
+	q->argv[0] = be->mvc_var;
+	q->argv[1] = be->mvc_var;
+	q->argc++;
+	pushInstruction(be->mb, q);
+
 	for (n = ol_first_node(t->triggers); n; n = n->next) {
 		sql_trigger *trigger = n->data;
 
@@ -6452,6 +6445,7 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 
 	if (!sql_insert_triggers(be, t, updates, 1))
 		return sql_error(sql, 10, SQLSTATE(27000) "INSERT INTO: triggers failed for table '%s'", t->base.name);
+
 	/* update predicate list */
 	if (rel->r && !rel_predicates(be, rel->r))
 		return NULL;
@@ -7428,8 +7422,6 @@ rel2bin_update(backend *be, sql_rel *rel, list *refs)
 	sql_rel *tr = rel->l;
 	sql_table *t = NULL;
 
-	if (tr->op == op_buildhash || tr->op == op_probehash)
-		tr = tr->l;
 	if (tr->op == op_basetable) {
 		t = tr->l;
 	} else {
@@ -7817,14 +7809,12 @@ rel2bin_delete(backend *be, sql_rel *rel, list *refs)
 			sql_exp *exp = n->data;
 			stmt *s = exp_bin(be, exp, returning, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
 
-			//if (tids && s)
-				//s = stmt_project(be, tids, s);
 			if (!s) /* error */
 				return NULL;
 
-			if (!exp_name(exp))
+			if (!exp_name(exp)) {
 				exp_label(sql->sa, exp, ++sql->label);
-			if (exp_name(exp)) {
+			} else {
 				s = stmt_rename(be, exp, s);
 				s->label = exp->alias.label;
 			}
@@ -8104,10 +8094,13 @@ rel2bin_list(backend *be, sql_rel *rel, list *refs)
 	r = subrel_project(be, r, refs, rel->r);
 	if (!l || !r)
 		return NULL;
+	/*
 	list *slist = sa_list(be->mvc->sa);
 	list_append(slist, l);
 	list_append(slist, r);
 	return stmt_list(be, slist);
+	*/
+	return l;
 }
 
 static stmt *

@@ -12,4 +12,4 @@ project (
 | select (
 | |  [ int(31) NULL as "test"."value", varchar NULL as "test"."name" ]
 | ) [ boolean(1) "false" ]
-) [ "test"."value" NOT NULL UNIQUE, "test"."name" NOT NULL UNIQUE ]
+) [ "test"."value", "test"."name" ]

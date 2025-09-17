@@ -396,14 +396,18 @@ rel_bind_column2( mvc *sql, sql_rel *rel, const char *tname, const char *cname, 
 	if (mvc_highwater(sql))
 		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 
-	if ((is_project(rel->op) || is_base(rel->op))) {
+	if ((is_project(rel->op) || is_base(rel->op) || is_modify(rel->op))) {
 		sql_exp *e = NULL;
+		list *exps = rel->exps;
+
+		if (rel->op == op_update)
+			exps = rel->attr;
 
 		if (is_basetable(rel->op) && !rel->exps)
 			return rel_base_bind_column2(sql, rel, tname, cname);
 		/* in case of orderby we should also lookup the column in group by list (and use existing references) */
-		if (!list_empty(rel->exps)) {
-			e = exps_bind_column2(rel->exps, tname, cname, &multi);
+		if (!list_empty(exps)) {
+			e = exps_bind_column2(exps, tname, cname, &multi);
 			if (multi)
 				return sql_error(sql, ERR_AMBIGUOUS, SQLSTATE(42000) "SELECT: identifier '%s.%s' ambiguous",
 								 tname, cname);
@@ -1332,6 +1336,9 @@ _rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int in
 			return exps;
 		}
 		/* fall through */
+	case op_delete:
+	case op_insert:
+
 	case op_buildhash:
 	case op_probehash:
 	case op_project:

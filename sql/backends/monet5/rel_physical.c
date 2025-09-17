@@ -19,7 +19,6 @@
 #include "sql_storage.h"
 #include "sql_scenario.h"
 #include "rel_bin.h"
-#include "rel_pphash.h"
 
 #define IS_ORDER_BASED_AGGR(fname, argc) (\
 				(argc == 2 && (strcmp((fname), "quantile") == 0 || strcmp((fname), "quantile_avg") == 0)) || \
@@ -844,7 +843,7 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 
 			if (!rel_hsh) {
 				/* For both left-outer join and all single outer joins, we hash the RHS */
-				if (rel->single || rel->op == op_left)
+				if ((rel->single && rel->op != op_right) || rel->op == op_left)
 					rel->oahash = 2;
 				else if (rel->op == op_right)
 					rel->oahash = 1;
@@ -917,7 +916,9 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 						append(nl, exp_ref(v->sql, n->data));
 					rel_hsh->exps = !rel_hsh->exps?nl:list_distinct(list_merge(rel_hsh->exps, nl, NULL), (fcmp) exp_equal, NULL);
 				}
+			}
 
+			if (!list_empty(other)) {
 				if (!is_base(rel_prb->op)) {
 					sql_rel *l = rel_prb->l;
 					if (!is_project(l->op) && !is_base(l->op))
@@ -1324,7 +1325,7 @@ rel_add_project(visitor *v, sql_rel *rel)
 	v->parent = rel;
 	if (is_join(rel->op) || is_semi(rel->op)) {
 		list *exps = rel_projections(v->sql, rel, NULL, 1, 1);
-	   	if (!rel_is_ref(rel))
+		if (!rel_is_ref(rel))
 			rel = rel_project(v->sql->sa, rel, exps);
 		else
 			rel = rel_inplace_project(v->sql->sa, rel, NULL, exps);
@@ -1342,6 +1343,7 @@ rel_rewrite_physical(visitor *v, sql_rel *rel)
 	if (is_physical_done(rel->used))
 		return rel;
 	rel->used |= rewrite_physical_used;
+
 	if (rel)
 		rel = rel_add_orderby(v, rel);
 	if (rel)
@@ -1367,6 +1369,8 @@ rel_physical(mvc *sql, sql_rel *rel)
 		rel = rel_visitor_bottomup(&v, rel, &rel_rewrite_physical);
 	} while (v.changes);
 
+	if (!rel)
+		return NULL;
 	v.changes = 0;
 	global_props gp = (global_props) {.cnt = {0} };
 	v.data = &gp;
@@ -1375,7 +1379,7 @@ rel_physical(mvc *sql, sql_rel *rel)
 
 	if (!sql->recursive) {
 		ATOMIC_TYPE oahash_enabled = (1U<<19);
-		if (!SQLrunning || !(GDKdebug & oahash_enabled) || gp.cnt[op_except] || gp.cnt[op_inter] /*|| gp.cnt[op_full]*/) {
+		if (!SQLrunning || !(GDKdebug & oahash_enabled) || gp.complex_modify || gp.cnt[op_except] || gp.cnt[op_inter] /*|| gp.cnt[op_full]*/) {
 			(void)rel_partition(sql, rel);
 		} else {
 			rel = rel_dce(&v, NULL, rel);

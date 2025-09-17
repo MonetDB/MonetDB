@@ -37,6 +37,15 @@ rel_properties(visitor *v, sql_rel *rel)
 		gp->needs_mergetable_rewrite |= (isMergeTable(t) || (t->s && t->s->parts && (pt = partition_find_part(sql->session->tr, t, NULL))));
 		gp->needs_remote_replica_rewrite |= (isRemote(t) || isReplicaTable(t));
 	}
+	if (is_modify(rel->op)) {
+		sql_table *t = NULL;
+		sql_rel *pbt = rel->l;
+		if (pbt->op == op_basetable)
+			t = pbt->l;
+		else
+			t = rel_ddl_table_get(pbt);
+		gp->complex_modify |= ol_length(t->triggers) || (rel->op != op_insert && ol_length(t->keys));
+	}
 	return rel;
 }
 
