@@ -95,7 +95,6 @@ malEmbeddedBoot(int workerlimit, int memorylimit, int querytimeout,
 		throw(MAL, "malEmbeddedBoot", "Failed to initialize clients structure");
 	// monet_memory = MT_npages() * MT_pagesize();
 	initNamespace();
-	initHeartbeat();
 	// initResource();
 	qc_old = MT_thread_get_qry_ctx();
 	c = MCinitClient((oid) 0, 0, 0);
@@ -165,8 +164,6 @@ malEmbeddedReset(void)			//remove extra modules and set to non-initialized again
 
 	GDKprepareExit();
 	MCstopClients(0);
-	setHeartbeat(-1);
-	stopProfiler(0);
 	AUTHreset();
 	if (!GDKinmemory(0) && !GDKembedded()) {
 		str err = 0;
@@ -189,7 +186,6 @@ malEmbeddedReset(void)			//remove extra modules and set to non-initialized again
 	mal_atom_reset();
 
 	memset((char *) monet_cwd, 0, sizeof(monet_cwd));
-	memset((char *) monet_characteristics, 0, sizeof(monet_characteristics));
 	mal_namespace_reset();
 	GDKreset(0);				// terminate all other threads
 	embeddedinitialized = false;

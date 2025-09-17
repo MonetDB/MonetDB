@@ -85,8 +85,6 @@ OPTminimalpipeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 		optcall(OPTmultiplexImplementation);
 	if (generator)
 		optcall(OPTgeneratorImplementation);
-	if (profilerStatus)
-		optcall(OPTprofilerImplementation);
 	optcall(OPTgarbageCollectorImplementation);
 
 	/* Defense line against incorrect plans  handled by optimizer steps */
@@ -159,12 +157,8 @@ OPTdefaultpipeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 		optcall(OPTmultiplexImplementation);
 	if (generator)
 		optcall(OPTgeneratorImplementation);
-	if (profilerStatus)
-		optcall(OPTcandidatesImplementation);
 	optcall(OPTdeadcodeImplementation);
 	optcall(OPTpostfixImplementation);
-	if (profilerStatus)
-		optcall(OPTprofilerImplementation);
 	optcall(OPTgarbageCollectorImplementation);
 
 	/* Defense line against incorrect plans  handled by optimizer steps */

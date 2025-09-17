@@ -117,7 +117,6 @@ mal_export const char first_valueRef[];
 mal_export const char forRef[];
 mal_export const char generatorRef[];
 mal_export const char getRef[];
-mal_export const char getTraceRef[];
 mal_export const char getVariableRef[];
 mal_export const char grant_functionRef[];
 mal_export const char grantRef[];

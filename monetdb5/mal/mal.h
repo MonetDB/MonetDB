@@ -51,8 +51,6 @@ mal_export lng MALdebug;
 #define MEMORY_THRESHOLD  (0.2 * GDK_mem_maxsize > 8 * GB?  GDK_mem_maxsize - 8 * GB: 0.8 * GDK_mem_maxsize)
 
 mal_export char monet_cwd[FILENAME_MAX];
-mal_export char monet_characteristics[4096];
-mal_export stream *maleventstream;
 
 /*
    See gdk/gdk.h for the definition of all debug masks.

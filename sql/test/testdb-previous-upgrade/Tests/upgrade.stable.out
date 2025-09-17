@@ -584,3 +584,10 @@ update sys._tables set system = true where not system and schema_id = 2000 and n
 Running database upgrade commands:
 drop function sys.optimizer_stats cascade;
 
+Running database upgrade commands:
+drop procedure profiler.start cascade;
+drop procedure profiler.stop cascade;
+drop procedure profiler.setlimit cascade;
+drop function profiler.getlimit cascade;
+drop procedure profiler.setheartbeat cascade;
+

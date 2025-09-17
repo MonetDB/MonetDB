@@ -102,8 +102,6 @@ median_stdev
 ifexists
 ifexists-views
 
-trace
-
 str-pad
 str-trim
 
