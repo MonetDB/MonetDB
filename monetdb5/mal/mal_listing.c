@@ -458,8 +458,7 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int flg)
 	}
 	*t = 0;
 	if (p->token == REMsymbol
-		&& !(getModuleId(p) && strcmp(getModuleId(p), "querylog") == 0
-			 && getFunctionId(p) && strcmp(getFunctionId(p), "define") == 0)) {
+		&& !(getModuleId(p) == querylogRef && getFunctionId(p) == defineRef)) {
 		/* do nothing */
 	} else if (p->barrier) {
 		if (p->barrier == LEAVEsymbol ||

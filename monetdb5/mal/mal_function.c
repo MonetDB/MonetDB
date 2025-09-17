@@ -109,9 +109,7 @@ chkFlow(MalBlkPtr mb)
 		   because it is needed by the interpreter */
 		switch (p->barrier) {
 		case BARRIERsymbol:
-			if (getModuleId(p) && getFunctionId(p)
-				&& strcmp(getModuleId(p), "language") == 0
-				&& strcmp(getFunctionId(p), "pipelines") == 0) {
+			if (getModuleId(p) == languageRef && getFunctionId(p) == pipelinesRef) {
 				pp = p;
 			}
 			/* fall through */
@@ -534,10 +532,7 @@ setVariableScope(MalBlkPtr mb)
 		p = getInstrPtr(mb, pc);
 
 		if (blockStart(p)) {
-			if (getModuleId(p) && getFunctionId(p)
-				&& strcmp(getModuleId(p), "language") == 0
-				&& (strcmp(getFunctionId(p), "dataflow") == 0
-				|| strcmp(getFunctionId(p), "pipelines") == 0)) {
+			if (getModuleId(p) == languageRef && (getFunctionId(p) == dataflowRef || getFunctionId(p) == pipelinesRef)) {
 				if (dflow != -1)
 					addMalException(mb,
 									"setLifeSpan nested dataflow blocks not allowed");
@@ -779,10 +774,7 @@ chkDeclarations(MalBlkPtr mb)
 						  "%s.%s too deeply nested  MAL program",
 						  getModuleId(sig), getFunctionId(sig));
 				blkId++;
-				if (getModuleId(p) && getFunctionId(p)
-					&& strcmp(getModuleId(p), "language") == 0
-				    && (strcmp(getFunctionId(p), "dataflow") == 0
-					|| strcmp(getFunctionId(p), "pipelines") == 0)) {
+				if (getModuleId(p) == languageRef && (getFunctionId(p) == dataflowRef || getFunctionId(p) == pipelinesRef)) {
 					if (dflow != -1)
 						throw(MAL, "chkFlow",
 							  "%s.%s setLifeSpan nested dataflow blocks not allowed",

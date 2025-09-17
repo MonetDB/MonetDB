@@ -486,10 +486,6 @@ stringLength(Client cntxt)
 	return l + 2;
 }
 
-/*Beware, the idcmp routine uses a short cast to compare multiple bytes
- * at once. This may cause problems when the net string length is zero.
-*/
-
 str
 strCopy(Client cntxt, int length)
 {

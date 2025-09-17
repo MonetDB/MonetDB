@@ -328,7 +328,7 @@ insertSymbol(Module scope, Symbol prg)
 	if (scope->space[t] != prg) {
 		prg->peer = scope->space[t];
 		scope->space[t] = prg;
-		if (prg->peer && idcmp(prg->name, prg->peer->name) == 0)
+		if (prg->peer && strcmp(prg->name, prg->peer->name) == 0)
 			prg->skip = prg->peer->skip;
 		else
 			prg->skip = prg->peer;
@@ -419,7 +419,7 @@ findSymbolInModule(Module v, const char *fcn)
 		return NULL;
 	s = v->space[(int) (*fcn)];
 	while (s != NULL) {
-		if (idcmp(s->name, fcn) == 0)
+		if (strcmp(s->name, fcn) == 0)
 			return s;
 		s = s->skip;
 	}
