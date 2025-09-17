@@ -660,20 +660,18 @@ XMLepilogue(Client ctx, void *ret)
 }
 
 static ssize_t
-XMLfromString(const char *src, size_t *len, void **X, bool external)
+XMLfromString(allocator *ma, const char *src, size_t *len, void **X, bool external)
 {
 	xml *x = (xml *) X;
 	if (*x) {
 		*x = NULL;
 	}
 	if (external && strcmp(src, "nil") == 0) {
-		allocator *ma = MT_thread_getallocator();
 		*x = MA_STRDUP(ma, str_nil);
 		if (*x == NULL)
 			return -1;
 		return 3;
 	} else if (strNil(src)) {
-		allocator *ma = MT_thread_getallocator();
 		*x = MA_STRDUP(ma, str_nil);
 		if (*x == NULL)
 			return -1;
