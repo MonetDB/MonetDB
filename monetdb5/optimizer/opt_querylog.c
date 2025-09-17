@@ -36,8 +36,7 @@ OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	/* gather information */
 	for (i = 1; i < mb->stop; i++) {
 		p = getInstrPtr(mb, i);
-		if (getModuleId(p) && idcmp(getModuleId(p), "querylog") == 0
-			&& idcmp(getFunctionId(p), "define") == 0) {
+		if (getModuleId(p) == querylogRef && getFunctionId(p) == defineRef) {
 			defineQuery = p;
 			getVarConstant(mb, getArg(p, 3)).val.lval = GDKusec() - getVarConstant(mb, getArg(p, 3)).val.lval;
 		}
