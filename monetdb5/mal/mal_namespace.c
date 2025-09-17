@@ -160,6 +160,7 @@ const char dense_rankRef[] = "dense_rank";
 const char dependRef[] = "depend";
 const char deregisterRef[] = "deregister";
 const char dictRef[] = "dict";
+const char diffRef[] = "diff";
 const char diffcandRef[] = "diffcand";
 const char differenceRef[] = "difference";
 const char disconnectRef[] = "disconnect";
@@ -426,6 +427,7 @@ initNamespace(void)
 	fixName(dependRef);
 	fixName(deregisterRef);
 	fixName(dictRef);
+	fixName(diffRef);
 	fixName(diffcandRef);
 	fixName(differenceRef);
 	fixName(disconnectRef);

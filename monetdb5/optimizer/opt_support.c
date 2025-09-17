@@ -411,7 +411,7 @@ isOrderDepenent(InstrPtr p)
 {
 	if (getModuleId(p) != batsqlRef)
 		return 0;
-	if (getFunctionId(p) == differenceRef || getFunctionId(p) == window_boundRef
+	if (getFunctionId(p) == diffRef || getFunctionId(p) == window_boundRef
 		|| getFunctionId(p) == row_numberRef || getFunctionId(p) == rankRef
 		|| getFunctionId(p) == dense_rankRef
 		|| getFunctionId(p) == percent_rankRef
