@@ -16,7 +16,6 @@ copy-decimal-with-space.Bug-6917
 isauuid.Bug-6934
 interval-math.Bug-6935
 tpch-cube.Bug-6938
-mal-multiplex.Bug-6939
 remote-table-like.Bug-6841
 copy-empty-blob.Bug-6948
 values-like-join.Bug-6954

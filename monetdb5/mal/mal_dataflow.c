@@ -416,9 +416,6 @@ DFLOWworker(void *T)
 #endif
 
 			q_enqueue(flow->done, fe);
-			if (fnxt == 0 && profilerStatus) {
-				profilerHeartbeatEvent("wait");
-			}
 		}
 		MT_lock_set(&dataflowLock);
 		if (GDKexiting() || ATOMIC_GET(&exiting) || free_count >= free_max) {

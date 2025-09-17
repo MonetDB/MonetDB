@@ -368,15 +368,6 @@ runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 {
 	lng ticks = GDKusec();
 
-	if (profilerStatus > 0)
-		profilerEvent(&(struct MalEvent) { cntxt, mb, stk, pci, ticks,
-					  ticks - prof->ticks },
-					  NULL);
 	if (cntxt->sqlprofiler)
 		sqlProfilerEvent(cntxt, mb, stk, pci, ticks, ticks - prof->ticks);
-	if (profilerStatus < 0) {
-		/* delay profiling until you encounter start of MAL function */
-		if (getInstrPtr(mb, 0) == pci)
-			profilerStatus = 1;
-	}
 }

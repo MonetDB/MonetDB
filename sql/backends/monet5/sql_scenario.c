@@ -1445,12 +1445,6 @@ SQLparser_body(Client c, backend *be)
 	 */
 	c->query = query_cleaned(m->sa, QUERY(m->scanner));
 
-	if (profilerStatus > 0) {
-		profilerEvent(NULL,
-					  &(struct NonMalEvent)
-					  {TEXT_TO_SQL, c, Tend, &m->session->tr->ts, NULL, c->query?0:1, Tend-Tbegin});
-	}
-
 	if (c->query == NULL) {
 		err = 1;
 		msg = createException(PARSE, "SQLparser", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -1544,10 +1538,6 @@ SQLparser_body(Client c, backend *be)
 				opt = ((m->emod & mod_exec) == 0); /* no need to optimize prepare - execute */
 
 			Tend = GDKusec();
-			if(profilerStatus > 0)
-				profilerEvent(NULL,
-							  &(struct NonMalEvent)
-							  {REL_TO_MAL, c, Tend, NULL, NULL, c->query?0:1, Tend-Tbegin});
 			if (err)
 				m->session->status = -10;
 			if (err == 0) {
@@ -1562,10 +1552,6 @@ SQLparser_body(Client c, backend *be)
 					Tbegin = Tend;
 					msg = SQLoptimizeQuery(c, c->curprg->def);
 					Tend = GDKusec();
-					if (profilerStatus > 0)
-						profilerEvent(NULL,
-							  &(struct NonMalEvent)
-							  {MAL_OPT, c, Tend, NULL, NULL, msg==MAL_SUCCEED?0:1, Tend-Tbegin});
 					if (msg != MAL_SUCCEED) {
 						str other = c->curprg->def->errors;
 						c->curprg->def->errors = 0;

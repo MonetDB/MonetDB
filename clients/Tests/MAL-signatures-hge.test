@@ -49204,16 +49204,6 @@ command pcre.sql2pcre(X_0:str, X_1:str):str
 PCREsql2pcre
 Convert a SQL like pattern with the given escape character into a PCRE pattern.
 profiler
-cleanup
-unsafe pattern profiler.cleanup():void
-CMDcleanupTraces
-Remove the temporary tables for profiling
-profiler
-closestream
-pattern profiler.closestream():void
-CMDcloseProfilerStream
-Stop offline profiling
-profiler
 cpuload
 command profiler.cpuload(X_0:lng, X_1:lng, X_2:lng, X_3:lng, X_4:lng) (X_5:int, X_6:int)
 CMDcpuloadPercentage
@@ -49223,61 +49213,6 @@ cpustats
 command profiler.cpustats() (X_0:lng, X_1:lng, X_2:lng, X_3:lng, X_4:lng)
 CMDcpustats
 Extract cpu statistics from the kernel
-profiler
-getDiskReads
-command profiler.getDiskReads():lng
-CMDgetDiskReads
-Obtain the number of physical reads
-profiler
-getDiskWrites
-command profiler.getDiskWrites():lng
-CMDgetDiskWrites
-Obtain the number of physical reads
-profiler
-getSystemTime
-command profiler.getSystemTime():lng
-CMDgetSystemTime
-Obtain the user timing information.
-profiler
-getUserTime
-command profiler.getUserTime():lng
-CMDgetUserTime
-Obtain the user timing information.
-profiler
-getlimit
-command profiler.getlimit():int
-CMDgetprofilerlimit
-Get profiler limit
-profiler
-openstream
-pattern profiler.openstream():void
-CMDopenProfilerStream
-Start profiling the events, send to output stream
-profiler
-openstream
-pattern profiler.openstream(X_0:int):void
-CMDopenProfilerStream
-Start profiling the events, send to output stream
-profiler
-setheartbeat
-unsafe command profiler.setheartbeat(X_0:int):void
-CMDsetHeartbeat
-Set heart beat performance tracing
-profiler
-setlimit
-unsafe command profiler.setlimit(X_0:int):void
-CMDsetprofilerlimit
-Set profiler limit
-profiler
-start
-unsafe pattern profiler.start():void
-CMDstartProfiler
-Start offline performance profiling
-profiler
-stop
-unsafe pattern profiler.stop():void
-CMDstopProfiler
-Stop offline performance profiling
 pyapi3
 epilogue
 command pyapi3.epilogue():void

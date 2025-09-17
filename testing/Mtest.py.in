@@ -4289,7 +4289,12 @@ def main(argv) :
             print()
             print(f'failed={Failed}, skipped={len(Failure[F_SKIP])}')
             if produce_html and (Failed or errseen):
-                print(f'see {urllib.parse.urlunsplit(("file", "", urllib.request.pathname2url(os.path.join(TSTTRGBASE, TSTPREF, "index.html")), "", ""))}')
+                f = os.path.join(TSTTRGBASE, TSTPREF, "index.html")
+                if sys.version_info[1] >= 14:
+                    u = urllib.request.pathname2url(f, add_scheme=True)
+                else:
+                    u = urllib.parse.urlunsplit(("file", "", urllib.request.pathname2url(f), "", ""))
+                print(f'see {u}')
             print(f'Ran {num_tests - len(Failure[F_SKIP])} tests in {t_:.3f}s')
         elif Failed:
             print('''\

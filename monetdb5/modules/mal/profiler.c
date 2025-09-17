@@ -47,122 +47,9 @@
 #include "mal_interpreter.h"
 #include "mal_runtime.h"
 
-static str
-CMDopenProfilerStream(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc)
-{
-	(void) cntxt;
-	(void) mb;
-	(void) stk;
-	(void) pc;
-	int m = 0;
-	if (pc->argc == 2 && getArgType(mb, pc, 1) == TYPE_int)
-		m = *getArgReference_int(stk, pc, 1);
-	else if (pc->argc > 2)
-		m = -1;
-	return openProfilerStream(cntxt, m);
-}
-
-static str
-CMDcloseProfilerStream(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc)
-{
-	(void) mb;
-	(void) stk;
-	(void) pc;
-	return closeProfilerStream(cntxt);
-}
-
-// initialize SQL tracing
-static str
-CMDstartProfiler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc)
-{
-	(void) mb;
-	(void) stk;
-	(void) pc;
-	(void) cntxt;
-	return startProfiler(cntxt);
-}
-
-static str
-CMDstopProfiler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	(void) mb;
-	(void) stk;
-	(void) pci;
-
-	return stopProfiler(cntxt);
-}
-
-static str
-CMDcleanupTraces(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	(void) mb;
-	(void) stk;
-	(void) pci;
-	cleanupTraces(cntxt);
-	return MAL_SUCCEED;
-}
-
-static str
-CMDgetprofilerlimit(Client ctx, int *res)
-{
-	(void) ctx;
-	*res = getprofilerlimit();
-	return MAL_SUCCEED;
-}
-
-static str
-CMDsetprofilerlimit(Client ctx, void *res, const int *lim)
-{
-	(void) ctx;
-	(void) res;
-	setprofilerlimit(*lim);
-	return MAL_SUCCEED;
-}
-
 /*
  * Tracing an active system.
  */
-
-static str
-CMDsetHeartbeat(Client ctx, void *res, const int *ev)
-{
-	(void) ctx;
-	(void) res;
-	setHeartbeat(*ev);
-	return MAL_SUCCEED;
-}
-
-static str
-CMDgetDiskReads(Client ctx, lng *ret)
-{
-	(void) ctx;
-	*ret = getDiskReads();
-	return MAL_SUCCEED;
-}
-
-static str
-CMDgetDiskWrites(Client ctx, lng *ret)
-{
-	(void) ctx;
-	*ret = getDiskWrites();
-	return MAL_SUCCEED;
-}
-
-static str
-CMDgetUserTime(Client ctx, lng *ret)
-{
-	(void) ctx;
-	*ret = getUserTime();
-	return MAL_SUCCEED;
-}
-
-static str
-CMDgetSystemTime(Client ctx, lng *ret)
-{
-	(void) ctx;
-	*ret = getUserTime();
-	return MAL_SUCCEED;
-}
 
 static str
 CMDcpustats(Client ctx, lng *user, lng *nice, lng *sys, lng *idle, lng *iowait)
@@ -192,21 +79,6 @@ CMDcpuloadPercentage(Client ctx, int *cycles, int *io, const lng *user, const ln
 
 #include "mel.h"
 mel_func profiler_init_funcs[] = {
- pattern("profiler", "start", CMDstartProfiler, true, "Start offline performance profiling", noargs),
- pattern("profiler", "stop", CMDstopProfiler, true, "Stop offline performance profiling", args(1,1, arg("",void))),
- command("profiler", "setheartbeat", CMDsetHeartbeat, true, "Set heart beat performance tracing", args(1,2, arg("",void),arg("b",int))),
- command("profiler", "getlimit", CMDgetprofilerlimit, false, "Get profiler limit", args(1,1, arg("",int))),
- command("profiler", "setlimit", CMDsetprofilerlimit, true, "Set profiler limit", args(1,2, arg("",void),arg("l",int))),
- pattern("profiler", "openstream", CMDopenProfilerStream, false, "Start profiling the events, send to output stream", args(1,1, arg("",void))),
- pattern("profiler", "openstream", CMDopenProfilerStream, false, "Start profiling the events, send to output stream", args(1,2, arg("",void), arg("m",int))),
-
- pattern("profiler", "closestream", CMDcloseProfilerStream, false, "Stop offline profiling", args(1,1, arg("",void))),
-
- pattern("profiler", "cleanup", CMDcleanupTraces, true, "Remove the temporary tables for profiling", args(1,1, arg("",void))),
- command("profiler", "getDiskReads", CMDgetDiskReads, false, "Obtain the number of physical reads", args(1,1, arg("",lng))),
- command("profiler", "getDiskWrites", CMDgetDiskWrites, false, "Obtain the number of physical reads", args(1,1, arg("",lng))),
- command("profiler", "getUserTime", CMDgetUserTime, false, "Obtain the user timing information.", args(1,1, arg("",lng))),
- command("profiler", "getSystemTime", CMDgetSystemTime, false, "Obtain the user timing information.", args(1,1, arg("",lng))),
  command("profiler", "cpustats", CMDcpustats, false, "Extract cpu statistics from the kernel", args(5,5, arg("user",lng),arg("nice",lng),arg("sys",lng),arg("idle",lng),arg("iowait",lng))),
  command("profiler", "cpuload", CMDcpuloadPercentage, false, "Calculate the average cpu load percentage and io waiting times", args(2,7, arg("cycles",int),arg("io",int),arg("user",lng),arg("nice",lng),arg("sys",lng),arg("idle",lng),arg("iowait",lng))),
  { .imp=NULL }
