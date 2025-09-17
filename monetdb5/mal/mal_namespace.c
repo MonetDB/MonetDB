@@ -535,6 +535,7 @@ initNamespace(void)
 	fixName(parametersRef);
 	fixName(passRef);
 	fixName(percent_rankRef);
+	fixName(pipelinesRef);
 	fixName(plusRef);
 	fixName(predicateRef);
 	fixName(printRef);
