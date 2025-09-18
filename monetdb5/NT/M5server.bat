@@ -52,7 +52,7 @@ call "%MONETDB%\pyapi_locatepython3.bat"
 :skippython3
 
 rem start the real server
-"%MONETDB%\bin\mserver5.exe" --set "prefix=%MONETDB%" --set %MONETDBPYTHONUDF% --set "exec_prefix=%MONETDB%" %MONETDBFARM% %*
+"%MONETDB%\bin\mserver5.exe" --set "prefix=%MONETDB%" --set %MONETDBPYTHONUDF% --set "exec_prefix=%MONETDB%" --loadmodule=odbc_loader %MONETDBFARM% %*
 
 if ERRORLEVEL 1 pause
 
