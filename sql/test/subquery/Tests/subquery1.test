@@ -65,8 +65,10 @@ NULL
 statement error
 SELECT * FROM integers WHERE i=(SELECT i FROM integers WHERE i IS NOT NULL ORDER BY i)
 
-statement error
+query I
 SELECT * FROM integers WHERE i=(SELECT i FROM integers WHERE i IS NOT NULL ORDER BY i LIMIT 1)
+----
+1
 
 statement error
 SELECT * FROM integers WHERE i=(SELECT 1, 2)
