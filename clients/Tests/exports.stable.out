@@ -1372,8 +1372,8 @@ int winerror(int);
 # sql
 char *BatType_Format(int);
 int BatType_ToPyType(int);
-str ConvertFromSQLType(BAT *b, sql_subtype *sql_subtype, BAT **ret_bat, int *ret_type);
-str ConvertToSQLType(Client cntxt, BAT *b, sql_subtype *sql_subtype, BAT **ret_bat, int *ret_type);
+str ConvertFromSQLType(allocator *, Client ctx, BAT *b, sql_subtype *sql_subtype, BAT **ret_bat, int *ret_type);
+str ConvertToSQLType(allocator *, Client cntxt, BAT *b, sql_subtype *sql_subtype, BAT **ret_bat, int *ret_type);
 bit ConvertableSQLType(sql_subtype *sql_subtype);
 str FITSattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 str FITSdir(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -1391,14 +1391,14 @@ str PYAPI3PyAPIevalAggrMap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 str PYAPI3PyAPIevalLoader(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 str PYAPI3PyAPIevalStd(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 str PYAPI3PyAPIevalStdMap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-PyObject *PyArrayObject_FromBAT(PyInput *input_bat, size_t start, size_t end, char **return_message, bool copy);
+PyObject *PyArrayObject_FromBAT(allocator *, Client ctx, PyInput *input_bat, size_t start, size_t end, char **return_message, bool copy);
 PyObject *PyArrayObject_FromScalar(PyInput *input_scalar, char **return_message);
 PyObject *PyDict_CheckForConversion(PyObject *pResult, int expected_columns, char **retcol_names, char **return_message);
 char *PyError_CreateException(char *error_text, char *pycall);
-PyObject *PyMaskedArray_FromBAT(PyInput *inp, size_t t_start, size_t t_end, char **return_message, bool copy);
+PyObject *PyMaskedArray_FromBAT(allocator *, Client ctx, PyInput *inp, size_t t_start, size_t t_end, char **return_message, bool copy);
 PyObject *PyNullMask_FromBAT(BAT *b, size_t start, size_t end);
 PyObject *PyObject_CheckForConversion(PyObject *pResult, int expected_columns, int *actual_columns, char **return_message);
-BAT *PyObject_ConvertToBAT(PyReturn *ret, sql_subtype *type, int bat_type, int index, oid seqbase, char **return_message, bool copy);
+BAT *PyObject_ConvertToBAT(allocator *, Client ctx, PyReturn *ret, sql_subtype *type, int bat_type, int index, oid seqbase, char **return_message, bool copy);
 str PyObject_GetReturnValues(PyObject *obj, PyReturn *return_value);
 bool PyObject_PreprocessObject(PyObject *pResult, PyReturn *pyreturn_values, int column_count, char **return_message);
 char *PyType_Format(int);

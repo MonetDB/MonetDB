@@ -26,11 +26,12 @@ typedef struct {
 	BUN nvals;
 	size_t maxcols;
 	bool create_table;
+	allocator *ma;
 } PyEmitObject;
 
 extern PyTypeObject PyEmitType;
 
-PyObject *PyEmit_Create(sql_emit_col *cols, size_t ncols);
+PyObject *PyEmit_Create(allocator *ma, sql_emit_col *cols, size_t ncols);
 PyObject *PyEmit_Emit(PyEmitObject *self, PyObject *args);
 
 str _emit_init(void);

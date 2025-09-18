@@ -46,7 +46,7 @@ typedef struct {
 } PyInput;
 
 //! Create a Numpy Array Object from a PyInput structure containing a BAT
-pyapi_export PyObject *PyArrayObject_FromBAT(PyInput *input_bat, size_t start,
+pyapi_export PyObject *PyArrayObject_FromBAT(allocator *, Client ctx, PyInput *input_bat, size_t start,
 											 size_t end, char **return_message,
 											 bool copy);
 //! Creates a Null Mask from a BAT (a Numpy Boolean Array of equal length to the
@@ -57,7 +57,7 @@ pyapi_export PyObject *PyArrayObject_FromScalar(PyInput *input_scalar,
 												char **return_message);
 //! Creates a Numpy Masked Array  from an PyInput structure containing a BAT
 //! (essentially just combines PyArrayObject_FromBAT and PyNullMask_FromBAT)
-pyapi_export PyObject *PyMaskedArray_FromBAT(PyInput *inp, size_t t_start,
+pyapi_export PyObject *PyMaskedArray_FromBAT(allocator *, Client ctx, PyInput *inp, size_t t_start,
 											 size_t t_end,
 											 char **return_message, bool copy);
 //! Test if a PyDict object can be converted to the expected set of return
@@ -85,7 +85,7 @@ pyapi_export bool PyObject_PreprocessObject(PyObject *pResult,
 //! PyObject_PreprocessObject), with bat_type set to the expected BAT Type (set
 //! this to PyType_ToBat(ret->result_type) if there is no expected type),
 //! seqbase should be set to 0 unless you know what you're doing
-pyapi_export BAT *PyObject_ConvertToBAT(PyReturn *ret, sql_subtype *type,
+pyapi_export BAT *PyObject_ConvertToBAT(allocator *, Client ctx, PyReturn *ret, sql_subtype *type,
 										int bat_type, int index, oid seqbase,
 										char **return_message, bool copy);
 //! Returns the size of the Python object when converted
@@ -101,11 +101,11 @@ pyapi_export bit IsStandardBATType(int type);
 pyapi_export bit ConvertableSQLType(sql_subtype *sql_subtype);
 //! Convert a BAT of a non-standard type (SQL type) to a standard type (numeric
 //! or string)
-pyapi_export str ConvertFromSQLType(BAT *b, sql_subtype *sql_subtype,
+pyapi_export str ConvertFromSQLType(allocator *, Client ctx, BAT *b, sql_subtype *sql_subtype,
 									BAT **ret_bat, int *ret_type);
 //! Convert a BAT of a standard type (numeric or string) to a BAT of the
 //! specified SQL type
-pyapi_export str ConvertToSQLType(Client cntxt, BAT *b,
+pyapi_export str ConvertToSQLType(allocator *, Client cntxt, BAT *b,
 								  sql_subtype *sql_subtype, BAT **ret_bat,
 								  int *ret_type);
 
