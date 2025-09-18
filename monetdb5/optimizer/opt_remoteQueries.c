@@ -272,7 +272,7 @@ OPTremoteQueriesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 				}
 			} else
 				pushInstruction(mb, p);
-		} else if (getModuleId(p) == sqlRef && getFunctionId(p) == binddbatRef) {
+		} else if (getModuleId(p) == sqlRef && getFunctionId(p) == bind_dbatRef) {
 
 			if (p->argc == 5 && getArgType(mb, p, 3) == TYPE_str) {
 				lookupServer(3);

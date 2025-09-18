@@ -68,7 +68,7 @@ OPTcostModelImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 					   || getFunctionId(p) == projectionpathRef) {
 				/* assume 1-1 joins */
 				newRows(1, 2, (c1 < c2 ? c1 : c2), 0);
-			} else if (getFunctionId(p) == crossRef) {
+			} else if (getFunctionId(p) == crossproductRef) {
 				newRows(1, 2,
 						((log((double) c1) + log((double) c2) >
 						  log(INT_MAX) ? INT_MAX : c1 * c2 + 1)), 0);
