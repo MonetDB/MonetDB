@@ -2332,7 +2332,7 @@ stmt_tdiff(backend *be, stmt *op1, stmt *op2, stmt *lcand)
 }
 
 stmt *
-stmt_tdiff2(backend *be, stmt *op1, stmt *op2, stmt *lcand, bool any)
+stmt_tdiff2(backend *be, stmt *op1, stmt *op2, stmt *lcand, bool is_semantics, bool any)
 {
 	InstrPtr q = NULL;
 	MalBlkPtr mb = be->mb;
@@ -2349,7 +2349,7 @@ stmt_tdiff2(backend *be, stmt *op1, stmt *op2, stmt *lcand, bool any)
 	else
 		q = pushNilBat(mb, q); /* left candidate */
 	q = pushNilBat(mb, q); /* right candidate */
-	q = pushBit(mb, q, FALSE);     /* nil matches */
+	q = pushBit(mb, q, is_semantics);     /* nil matches */
 	q = pushBit(mb, q, any);     /* not in */
 	q = pushNil(mb, q, TYPE_lng); /* estimate */
 

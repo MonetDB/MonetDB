@@ -3576,7 +3576,7 @@ rel2bin_antijoin(backend *be, sql_rel *rel, list *refs)
 				li = ls;
 
 			if (!en->next && (constval || stmt_has_null(ls) /*|| stmt_has_null(rs) (change into check for fk)*/)) {
-				join = stmt_tdiff2(be, ls, rs, NULL, is_any(e));
+				join = stmt_tdiff2(be, ls, rs, NULL, is_semantics(e), is_any(e));
 				jexps = NULL;
 			} else {
 				join = stmt_join_cand(be, ls, rs, NULL, NULL, is_anti(e), (comp_type) e->flag, 0, is_semantics(e), false, true);
@@ -3658,7 +3658,7 @@ rel2bin_antijoin(backend *be, sql_rel *rel, list *refs)
 			jl = stmt_project(be, sel, jl);
 			join = stmt_tdiff(be, c, jl, NULL);
 		} else {
-			join = stmt_tdiff2(be, c, jl, NULL, true);
+			join = stmt_tdiff2(be, c, jl, NULL, false, true);
 		}
 		if (nulls)
 			join = stmt_project(be, join, c);
@@ -3666,7 +3666,7 @@ rel2bin_antijoin(backend *be, sql_rel *rel, list *refs)
 	} else if (jexps && list_empty(jexps)) {
 		stmt *jl = stmt_result(be, join, 0);
 		stmt *c = stmt_mirror(be, bin_find_smallest_column(be, left));
-		join = stmt_tdiff2(be, c, jl, NULL, true);
+		join = stmt_tdiff2(be, c, jl, NULL, false, true);
 	}
 
 	/* construct relation */
