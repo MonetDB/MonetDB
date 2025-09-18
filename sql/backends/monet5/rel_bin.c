@@ -1216,7 +1216,10 @@ exp2bin_coalesce(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *isel, 
 				else if (!val->cand && nsel)
 					val = stmt_project(be, nsel, val);
 
-				res = stmt_replace(be, res, pos, val);
+				if (pos)
+					res = stmt_replace(be, res, pos, val);
+				else
+					res = val;
 			}
 			if (en->next) { /* handled then part */
 				stmt *s = stmt_uselect(be, ncond, stmt_bool(be, 1), cmp_equal, NULL, 1/*anti*/, 0);
