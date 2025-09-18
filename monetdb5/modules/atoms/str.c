@@ -151,18 +151,18 @@ UTF8_strlen(const char *s)
 		 * for correctly encoded UTF-8 */
 		pos += (*s++ & 0xC0) != 0x80;
 	}
-	assert(pos < INT_MAX);
+	assert(pos <= (size_t) INT_MAX);
 	return (int) pos;
 }
 
 /* return (int) strlen(s); s is not nil */
 int
 str_strlen(const char *s)
-{								/* This function assumes s is never nil */
-	UTF8_assert(s);
-	assert(!strNil(s));
-
-	return (int) strlen(s);
+{
+	size_t len = strlen(s);
+	if (len > (size_t) INT_MAX)
+		return -1;
+	return (int) len;
 }
 
 /* return the display width of s */
@@ -285,8 +285,14 @@ static str
 STRBytes(int *res, const char *const *arg1)
 {
 	const char *s = *arg1;
-
-	*res = strNil(s) ? int_nil : str_strlen(s);
+	if (strNil(s)) {
+		*res = int_nil;
+	} else {
+		size_t len = strlen(s);
+		if (len > (size_t) INT_MAX)
+			throw(MAL, "str.bytes", "string too long to count bytes");
+		*res = (int) len;
+	}
 	return MAL_SUCCEED;
 }
 
@@ -508,23 +514,23 @@ STRcasefold(str *res, const char *const *arg1)
 
 /* returns whether arg1 starts with arg2 */
 int
-str_is_prefix(const char *s, const char *prefix, int plen)
+str_is_prefix(const char *s, const char *prefix, size_t plen)
 {
 	return strncmp(s, prefix, plen);
 }
 
 int
-str_is_iprefix(const char *s, const char *prefix, int plen)
+str_is_iprefix(const char *s, const char *prefix, size_t plen)
 {
 	return GDKstrncasecmp(s, prefix, SIZE_MAX, plen);
 }
 
 int
-str_is_suffix(const char *s, const char *suffix, int sul)
+str_is_suffix(const char *s, const char *suffix, size_t sul)
 {
-	int sl = str_strlen(s);
+	size_t sl = strlen(s);
 
-	if (sl < sul)
+	if (sl < (size_t) sul)
 		return -1;
 	else
 		return strcmp(s + sl - sul, suffix);
@@ -532,7 +538,7 @@ str_is_suffix(const char *s, const char *suffix, int sul)
 
 /* case insensitive endswith check */
 int
-str_is_isuffix(const char *s, const char *suffix, int sul)
+str_is_isuffix(const char *s, const char *suffix, size_t sul)
 {
 	const char *e = s + strlen(s);
 	const char *sf;
@@ -552,14 +558,14 @@ str_is_isuffix(const char *s, const char *suffix, int sul)
 }
 
 int
-str_contains(const char *h, const char *n, int nlen)
+str_contains(const char *h, const char *n, size_t nlen)
 {
 	(void) nlen;
 	return strstr(h, n) == NULL;
 }
 
 int
-str_icontains(const char *h, const char *n, int nlen)
+str_icontains(const char *h, const char *n, size_t nlen)
 {
 	(void) nlen;
 	return GDKstrcasestr(h, n) == NULL;
@@ -579,7 +585,7 @@ STRstartswith(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (strNil(s1) || strNil(s2)) {
 		*r = bit_nil;
 	} else {
-		int s2_len = str_strlen(s2);
+		size_t s2_len = strlen(s2);
 		*r = icase ?
 			str_is_iprefix(s1, s2, s2_len) == 0 :
 			str_is_prefix(s1, s2, s2_len) == 0;
@@ -601,7 +607,7 @@ STRendswith(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (strNil(s1) || strNil(s2)) {
 		*r = bit_nil;
 	} else {
-		int s2_len = str_strlen(s2);
+		size_t s2_len = strlen(s2);
 		*r = icase ?
 			str_is_isuffix(s1, s2, s2_len) == 0 :
 			str_is_suffix(s1, s2, s2_len) == 0;
@@ -624,7 +630,7 @@ STRcontains(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (strNil(s1) || strNil(s2)) {
 		*r = bit_nil;
 	} else {
-		int s2_len = str_strlen(s2);
+		size_t s2_len = strlen(s2);
 		*r = icase ?
 			str_icontains(s1, s2, s2_len) == 0 :
 			str_contains(s1, s2, s2_len) == 0;
@@ -679,12 +685,12 @@ str_reverse_str_search(const char *haystack, const char *needle)
 	int nulen = UTF8_strlen(needle);
 	size_t nlen = strlen(needle);
 
-	for (int pos = str_strlen(haystack) - 1; pos >= 0; pos--) {
-		if ((haystack[pos] & 0xC0) != 0x80) {
+	for (size_t pos = strlen(haystack); pos > 0; pos--) {
+		if ((haystack[pos - 1] & 0xC0) != 0x80) {
 			if (nulen > 0)
 				nulen--;
-			else if (strncmp(haystack + pos, needle, nlen) == 0)
-				return pos;
+			else if (strncmp(haystack + pos - 1, needle, nlen) == 0)
+				return pos - 1;
 		}
 	}
 	return -1;
@@ -696,12 +702,12 @@ str_reverse_str_isearch(const char *haystack, const char *needle)
 	int nulen = UTF8_strlen(needle);
 	size_t nlen = strlen(needle);
 
-	for (int pos = str_strlen(haystack) - 1; pos >= 0; pos--) {
-		if ((haystack[pos] & 0xC0) != 0x80) {
+	for (size_t pos = strlen(haystack); pos > 0; pos--) {
+		if ((haystack[pos - 1] & 0xC0) != 0x80) {
 			if (nulen > 0)
 				nulen--;
-			else if (GDKstrncasecmp(haystack + pos, needle, SIZE_MAX, nlen) == 0)
-				return pos;
+			else if (GDKstrncasecmp(haystack + pos - 1, needle, SIZE_MAX, nlen) == 0)
+				return pos - 1;
 		}
 	}
 	return -1;
@@ -1740,7 +1746,7 @@ str_repeat(str *buf, size_t *buflen, const char *s, int c)
 {
 	size_t l = strlen(s), nextlen;
 
-	if (l >= INT_MAX)
+	if (l > (size_t) INT_MAX)
 		throw(MAL, "str.repeat", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	nextlen = (size_t) c *l + 1;
 
@@ -1854,8 +1860,8 @@ BBPnreclaim(int nargs, ...)
 
 static str
 STRselect(MalStkPtr stk, InstrPtr pci,
-		  int (*str_icmp)(const char *, const char *, int),
-		  int (*str_cmp)(const char *, const char *, int),
+		  int (*str_icmp)(const char *, const char *, size_t),
+		  int (*str_cmp)(const char *, const char *, size_t),
 		  const char *fname)
 {
 	str msg = MAL_SUCCEED;
@@ -1917,7 +1923,7 @@ STRselect(MalStkPtr stk, InstrPtr pci,
 		if (icase)
 			str_cmp = str_icmp;
 		oid *vals = Tloc(bn, 0);
-		const int klen = str_strlen(key);
+		const size_t klen = strlen(key);
 		if (ci.tpe == cand_dense) {
 			if (with_strimps_anti)
 				scanloop(strNil(v) || str_cmp(v, key, klen) == 0, canditer_next_dense);
@@ -2407,7 +2413,7 @@ batstr_strlower(BAT *b)
 
 static str
 str_join_nested(BAT *rl, BAT *rr, BAT *l, BAT *r, BAT *cl, BAT *cr,
-				bit anti, int (*str_cmp)(const char *, const char *, int),
+				bit anti, int (*str_cmp)(const char *, const char *, size_t),
 				const char *fname)
 {
 	str msg = MAL_SUCCEED;
@@ -2450,12 +2456,13 @@ str_join_nested(BAT *rl, BAT *rr, BAT *l, BAT *r, BAT *cl, BAT *cr,
 		*rvars = ri.vh->base,
 		*vl, *vr;
 	BUN matches, newcap;
-	int rskipped = 0, vr_len = 0;
+	int rskipped = 0;
+	size_t vr_len = 0;
 
 	if (anti)
-		STR_JOIN_NESTED_LOOP((str_cmp(vl, vr, vr_len) != 0), str_strlen(vr), fname);
+		STR_JOIN_NESTED_LOOP((str_cmp(vl, vr, vr_len) != 0), strlen(vr), fname);
 	else
-		STR_JOIN_NESTED_LOOP((str_cmp(vl, vr, vr_len) == 0), str_strlen(vr), fname);
+		STR_JOIN_NESTED_LOOP((str_cmp(vl, vr, vr_len) == 0), strlen(vr), fname);
 
 	assert(!rr || BATcount(rl) == BATcount(rr));
 	BATsetcount(rl, BATcount(rl));
@@ -2491,7 +2498,7 @@ exit:
 
 static str
 contains_join(BAT *rl, BAT *rr, BAT *l, BAT *r, BAT *cl, BAT *cr, bit anti,
-			  int (*str_cmp)(const char *, const char *, int),
+			  int (*str_cmp)(const char *, const char *, size_t),
 			  const char *fname)
 {
 	str msg = MAL_SUCCEED;
@@ -2543,13 +2550,14 @@ contains_join(BAT *rl, BAT *rr, BAT *l, BAT *r, BAT *cl, BAT *cr, bit anti,
 		*lvars = li.vh->base,
 		*rvars = ri.vh->base,
 		*vl, *vr;
-	int rskipped = 0, vr_len = 0;
+	int rskipped = 0;
+	size_t vr_len = 0;
 	BUN matches, newcap;
 
 	if (anti)
-		CONTAINS_JOIN_LOOP(str_cmp(vl, vr, vr_len) == 0, str_strlen(vr));
+		CONTAINS_JOIN_LOOP(str_cmp(vl, vr, vr_len) == 0, strlen(vr));
 	else
-		CONTAINS_JOIN_LOOP(str_cmp(vl, vr, vr_len) != 0, str_strlen(vr));
+		CONTAINS_JOIN_LOOP(str_cmp(vl, vr, vr_len) != 0, strlen(vr));
 
 	assert(!rr || BATcount(rl) == BATcount(rr));
 	BATsetcount(rl, BATcount(rl));
@@ -2583,7 +2591,7 @@ exit:
 
 static str
 startswith_join(BAT **rl_ptr, BAT **rr_ptr, BAT *l, BAT *r, BAT *cl, BAT *cr,
-				bit anti, int (*str_cmp)(const char *, const char *, int),
+				bit anti, int (*str_cmp)(const char *, const char *, size_t),
 				const char *fname)
 {
 	str msg = MAL_SUCCEED;
@@ -2678,12 +2686,13 @@ startswith_join(BAT **rl_ptr, BAT **rr_ptr, BAT *l, BAT *r, BAT *cl, BAT *cr,
 		*rvars = ri.vh->base,
 		*vl, *vr;
 	BUN matches, newcap, n = 0, rx = 0, lx = 0;
-	int rskipped = 0, vr_len = 0, cmp = 0;
+	int rskipped = 0, cmp = 0;
+	size_t vr_len = 0;
 
 	if (anti)
-		STR_JOIN_NESTED_LOOP(str_cmp(vl, vr, vr_len) != 0, str_strlen(vr), fname);
+		STR_JOIN_NESTED_LOOP(str_cmp(vl, vr, vr_len) != 0, strlen(vr), fname);
 	else
-		STARTSWITH_SORTED_LOOP(str_cmp(vl, vr, vr_len), str_strlen(vr), fname);
+		STARTSWITH_SORTED_LOOP(str_cmp(vl, vr, vr_len), strlen(vr), fname);
 
 	assert(!rr || BATcount(rl) == BATcount(rr));
 	BATsetcount(rl, BATcount(rl));
@@ -2749,7 +2758,7 @@ exit:
 static str
 STRjoin(bat *rl_id, bat *rr_id, const bat l_id, const bat r_id,
 		const bat cl_id, const bat cr_id, const bit anti, bool icase,
-		int (*str_cmp)(const char *, const char *, int), const char *fname)
+		int (*str_cmp)(const char *, const char *, size_t), const char *fname)
 {
 	str msg = MAL_SUCCEED;
 
