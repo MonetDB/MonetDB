@@ -757,7 +757,7 @@ stmt_idxbat(backend *be, sql_idx *i, int access, int partition)
 {
 	int tt = hash_index(i->type)?TYPE_lng:TYPE_oid;
 	MalBlkPtr mb = be->mb;
-	InstrPtr q = newStmtArgs(mb, sqlRef, bindidxRef, 9);
+	InstrPtr q = newStmtArgs(mb, sqlRef, bind_idxbatRef, 9);
 
 	if (q == NULL)
 		goto bailout;
@@ -2525,7 +2525,7 @@ stmt_join_cand(backend *be, stmt *op1, stmt *op2, stmt *lcand, stmt *rcand, int 
 		pushInstruction(mb, q);
 		break;
 	case cmp_all:	/* aka cross table */
-		q = newStmt(mb, algebraRef, inner?crossRef:outercrossRef);
+		q = newStmt(mb, algebraRef, inner?crossproductRef:outercrossproductRef);
 		if (q == NULL)
 			goto bailout;
 		q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));

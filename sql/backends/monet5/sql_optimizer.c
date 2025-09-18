@@ -92,14 +92,14 @@ SQLgetSpace(mvc *m, MalBlkPtr mb, int prepare)
 					setFunctionId(p, emptybindRef);
 			}
 		}
-		if (getModuleId(p) == sqlRef && (getFunctionId(p) == bindidxRef)) {
+		if (getModuleId(p) == sqlRef && (getFunctionId(p) == bind_idxbatRef)) {
 			char *sname = getVarConstant(mb, getArg(p, 1 + p->retc)).val.sval;
 			//char *tname = getVarConstant(mb, getArg(p, 2 + p->retc)).val.sval;
 			char *idxname = getVarConstant(mb, getArg(p, 3 + p->retc)).val.sval;
 			int access = getVarConstant(mb, getArg(p, 4 + p->retc)).val.ival;
 			sql_schema *s = mvc_bind_schema(m, sname);
 
-			if (getFunctionId(p) == bindidxRef) {
+			if (getFunctionId(p) == bind_idxbatRef) {
 				sql_idx *i = mvc_bind_idx(m, s, idxname);
 
 				if (i && isTable(i->t)) {
