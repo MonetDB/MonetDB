@@ -1668,6 +1668,8 @@ opt_max_memory_max_workers: /* pair of (max_workers -1, max_memory default -1) *
  |  NO MAX_MEMORY NO MAX_WORKERS      	{ $$[0] = 0; $$[1] = 0; }
  |  max_memory NO MAX_WORKERS		{ $$[0] = $1; $$[1] = 0; }
  |  max_memory 				{ $$[0] = $1; $$[1] = -1; }
+ |  NO MAX_WORKERS     			{ $$[0] = -1; $$[1] = 0; }
+ |  NO MAX_WORKERS NO MAX_MEMORY      	{ $$[0] = 0; $$[1] = 0; }
  |  max_workers 			{ $$[0] = -1; $$[1] = $1; }
  |  max_memory max_workers		{ $$[0] = $1; $$[1] = $2; }
  ;
