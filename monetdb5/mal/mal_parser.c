@@ -717,7 +717,7 @@ cstToken(allocator *ma, Client ctx, MalBlkPtr mb, ValPtr cst)
 #else
 			size_t len = sizeof(lng);
 			lng l, *pval = &l;
-			if (lngFromStr(CURRENT(ctx), &len, &pval, false) < 0)
+			if (lngFromStr(ma, CURRENT(ctx), &len, &pval, false) < 0)
 				l = lng_nil;
 
 			if ((lng) GDK_int_min <= l && l <= (lng) GDK_int_max) {
