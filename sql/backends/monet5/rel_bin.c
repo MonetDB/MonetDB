@@ -3216,7 +3216,7 @@ rel2bin_groupjoin(backend *be, sql_rel *rel, list *refs)
 			append(l, s);
 		} else {
 			/* group / aggrs */
-			stmt *nls = stmt_project(be, jl, ls);
+			stmt *nls = ls?stmt_project(be, jl, ls):jl;
 			stmt *groupby = stmt_group(be, nls, NULL, NULL, NULL, true);
 			stmt *grp = stmt_result(be, groupby, 0);
 			stmt *ext = stmt_result(be, groupby, 1);
