@@ -107,7 +107,7 @@ UTF8_strtail(const char *s, int pos)
 }
 
 /* copy n Unicode codepoints from s to dst, return pointer to new end */
-static inline str
+static inline char *
 UTF8_strncpy(char *restrict dst, const char *restrict s, int n)
 {
 	UTF8_assert(s);
@@ -155,7 +155,8 @@ UTF8_strlen(const char *s)
 	return (int) pos;
 }
 
-/* return (int) strlen(s); s is not nil */
+/* return (int) strlen(s); s is not nil; returns -1 for strings that are
+ * too long (longer than INT_MAX bytes) */
 int
 str_strlen(const char *s)
 {
@@ -165,7 +166,7 @@ str_strlen(const char *s)
 	return (int) len;
 }
 
-/* return the display width of s */
+/* return the display width of s or INT_MAX if too large */
 int
 UTF8_strwidth(const char *S)
 {
@@ -173,7 +174,7 @@ UTF8_strwidth(const char *S)
 		return int_nil;
 
 	const uint8_t *s = (const uint8_t *) S;
-	int len = 0;
+	unsigned len = 0;
 
 	for (uint32_t state = 0, codepoint = 0; *s; s++) {
 		switch (decode(&state, &codepoint, (uint8_t) *s)) {
@@ -183,6 +184,8 @@ UTF8_strwidth(const char *S)
 				len += n;
 			else
 				len++;			/* assume width 1 if unprintable */
+			if (len >= (unsigned) INT_MAX)
+				return INT_MAX;
 			break;
 		}
 		default:
@@ -191,7 +194,7 @@ UTF8_strwidth(const char *S)
 			assert(0);
 		}
 	}
-	return len;
+	return (int) len;
 }
 
 /*
@@ -356,7 +359,7 @@ str_Sub_String(str *buf, size_t *buflen, const char *s, int off, int l)
 		}
 	}
 	/* here, off >= 0 */
-	if (l < 0) {
+	if (l <= 0) {
 		strcpy(*buf, "");
 		return MAL_SUCCEED;
 	}
@@ -452,11 +455,18 @@ str_wchr_at(int *res, const char *s, int at)
 	}
 	uint32_t state = 0, codepoint;
 	while (*s) {
-		if (decode(&state, &codepoint, (uint8_t) *s) == UTF8_ACCEPT) {
+		switch (decode(&state, &codepoint, (uint8_t) *s)) {
+		case UTF8_ACCEPT:
 			*res = codepoint;
 			return MAL_SUCCEED;
+		case UTF8_REJECT:
+			break;
+		default:
+			s++;
+			continue;
 		}
-		s++;
+		/* we only get here in case of UTF8_REJECT */
+		break;
 	}
 	throw(MAL, "str.unicodeAt", SQLSTATE(42000) "Illegal Unicode code point");
 }
@@ -512,7 +522,7 @@ STRcasefold(str *res, const char *const *arg1)
 	return doStrConvert(res, *arg1, GDKcasefold);
 }
 
-/* returns whether arg1 starts with arg2 */
+/* returns 0 if arg1 starts with arg2 */
 int
 str_is_prefix(const char *s, const char *prefix, size_t plen)
 {
@@ -525,12 +535,13 @@ str_is_iprefix(const char *s, const char *prefix, size_t plen)
 	return GDKstrncasecmp(s, prefix, SIZE_MAX, plen);
 }
 
+/* returns 0 if s ends with suffix */
 int
 str_is_suffix(const char *s, const char *suffix, size_t sul)
 {
 	size_t sl = strlen(s);
 
-	if (sl < (size_t) sul)
+	if (sl < sul)
 		return -1;
 	else
 		return strcmp(s + sl - sul, suffix);
@@ -547,6 +558,8 @@ str_is_isuffix(const char *s, const char *suffix, size_t sul)
 	/* note that the uppercase and lowercase forms of a character aren't
 	 * necessarily the same length in their UTF-8 encodings */
 	for (sf = suffix; *sf && e > s; sf++) {
+		/* starting at the end of s, for each codepoint in suffix, go
+		 * back one codepoint in s */
 		if ((*sf & 0xC0) != 0x80) {
 			while ((*--e & 0xC0) == 0x80)
 				;
@@ -557,6 +570,7 @@ str_is_isuffix(const char *s, const char *suffix, size_t sul)
 	return *sf != 0 || GDKstrcasecmp(e, suffix) != 0;
 }
 
+/* returns 0 if h contains n (counterintuitive!) */
 int
 str_contains(const char *h, const char *n, size_t nlen)
 {
@@ -690,7 +704,7 @@ str_reverse_str_search(const char *haystack, const char *needle)
 			if (nulen > 0)
 				nulen--;
 			else if (strncmp(haystack + pos - 1, needle, nlen) == 0)
-				return pos - 1;
+				return UTF8_strpos(haystack, haystack + pos - 1);
 		}
 	}
 	return -1;
@@ -707,7 +721,7 @@ str_reverse_str_isearch(const char *haystack, const char *needle)
 			if (nulen > 0)
 				nulen--;
 			else if (GDKstrncasecmp(haystack + pos - 1, needle, SIZE_MAX, nlen) == 0)
-				return pos - 1;
+				return UTF8_strpos(haystack, haystack + pos - 1);
 		}
 	}
 	return -1;
