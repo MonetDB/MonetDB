@@ -664,7 +664,7 @@ STRstr_search(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) cntxt;
 	(void) mb;
-	bit *res = getArgReference(stk, pci, 0);
+	int *res = getArgReference_int(stk, pci, 0);
 	const char *haystack = *getArgReference_str(stk, pci, 1);
 	const char *needle = *getArgReference_str(stk, pci, 2);
 	bit icase = pci->argc == 4 && *getArgReference_bit(stk, pci, 3);
@@ -2864,17 +2864,18 @@ STRjoin(bat *rl_id, bat *rr_id, const bat l_id, const bat r_id,
 
 #define STRJOIN_MAPARGS(STK, PCI, RL_ID, RR_ID, L_ID, R_ID, CL_ID, CR_ID, IC_ID, ANTI) \
 	do {																\
-		RL_ID = getArgReference(STK, PCI, 0);							\
-		RR_ID = PCI->retc == 1 ? 0 : getArgReference(STK, PCI, 1);		\
+		RL_ID = getArgReference_bat(STK, PCI, 0);						\
+		RR_ID = PCI->retc == 1 ? 0 : getArgReference_bat(STK, PCI, 1);	\
 		int i = PCI->retc == 1 ? 1 : 2;									\
-		L_ID = getArgReference(STK, PCI, i++);							\
-		R_ID = getArgReference(STK, PCI, i++);							\
+		L_ID = getArgReference_bat(STK, PCI, i++);						\
+		R_ID = getArgReference_bat(STK, PCI, i++);						\
 		IC_ID = PCI->argc - PCI->retc == 7 ?							\
-			NULL : getArgReference(stk, pci, i++);						\
-		CL_ID = getArgReference(STK, PCI, i++);							\
-		CR_ID = getArgReference(STK, PCI, i++);							\
+			NULL : getArgReference_bat(stk, pci, i++);					\
+		CL_ID = getArgReference_bat(STK, PCI, i++);						\
+		CR_ID = getArgReference_bat(STK, PCI, i++);						\
 		ANTI = PCI->argc - PCI->retc == 7 ?								\
-			getArgReference(STK, PCI, 8) : getArgReference(STK, PCI, 9); \
+			getArgReference_bit(STK, PCI, 8) :							\
+			getArgReference_bit(STK, PCI, 9);							\
 	} while (0)
 
 static inline str
