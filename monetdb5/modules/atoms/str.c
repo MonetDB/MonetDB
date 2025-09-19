@@ -293,7 +293,7 @@ STRBytes(int *res, const char *const *arg1)
 	} else {
 		size_t len = strlen(s);
 		if (len > (size_t) INT_MAX)
-			throw(MAL, "str.bytes", "string too long to count bytes");
+			throw(MAL, "str.bytes", SQLSTATE(22003) "string too long to count bytes");
 		*res = (int) len;
 	}
 	return MAL_SUCCEED;
@@ -1758,17 +1758,28 @@ STRreplace(str *ret, const char *const *s1, const char *const *s2, const char *c
 str
 str_repeat(str *buf, size_t *buflen, const char *s, int c)
 {
-	size_t l = strlen(s), nextlen;
+	if (c < 0)
+		throw(MAL, "str.repeat", SQLSTATE(42000) "Repeat count cannot be negative");
+	if (c == 0) {
+		CHECK_STR_BUFFER_LENGTH(buf, buflen, 1, "str.repeat");
+		**buf = 0;
+		return MAL_SUCCEED;
+	}
+	size_t l = strlen(s);
+	if (
+#if SIZEOF_SIZE_T == SIZEOF_INT
+		(lng) l * c >= ((lng) 1 << 32) - 1 ||
+#endif
+		(lng) UTF8_strlen(s) * c > (lng) INT_MAX)
+		throw(MAL, "str.repeat", SQLSTATE(22003) "String is getting too long");
 
-	if (l > (size_t) INT_MAX)
-		throw(MAL, "str.repeat", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	nextlen = (size_t) c *l + 1;
+	size_t nextlen = (size_t) c * l + 1;
 
 	CHECK_STR_BUFFER_LENGTH(buf, buflen, nextlen, "str.repeat");
 	str t = *buf;
 	*t = 0;
-	for (int i = c; i > 0; i--, t += l)
-		strcpy(t, s);
+	while (c-- > 0)
+		t = stpcpy(t, s);
 	return MAL_SUCCEED;
 }
 

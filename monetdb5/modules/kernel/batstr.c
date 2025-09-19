@@ -120,7 +120,7 @@ do_batstr_int(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 			} else {
 				vals[i] = func(x);
 				if (vals[i] < 0) {
-					msg = createException(MAL, "str.bytes", "string too long to count bytes");
+					msg = createException(MAL, "str.bytes", SQLSTATE(22003) "string too long to count bytes");
 					goto bailout;
 				}
 			}
@@ -136,7 +136,7 @@ do_batstr_int(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 			} else {
 				vals[i] = func(x);
 				if (vals[i] < 0) {
-					msg = createException(MAL, "str.bytes", "string too long to count bytes");
+					msg = createException(MAL, "str.bytes", SQLSTATE(22003) "string too long to count bytes");
 					goto bailout;
 				}
 			}
