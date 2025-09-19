@@ -385,7 +385,7 @@ load_zero_terminated_text(BAT *bat, stream *s, int *eof_reached, int width, bool
 				}
 				value = buffer;
 			}
-			if (BUNappend(bat, value, false) != GDK_SUCCEED) {
+			if (bunfastapp(bat, value) != GDK_SUCCEED) {
 				msg = createException(SQL, "sql.importColumn", GDK_EXCEPTION);
 				goto end;
 			}

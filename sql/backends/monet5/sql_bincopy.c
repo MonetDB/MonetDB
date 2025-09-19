@@ -213,6 +213,15 @@ load_column(type_record_t *rec, const char *name, BAT *bat, stream *s, int width
 	new_count = BATcount(bat);
 	rows_added = new_count - orig_count;
 
+	if (rows_added > 0) {
+		// We don't know anything about the data we just loaded
+		bat->tkey = false;
+		bat->tnonil = false;
+		bat->tsorted = false;
+		bat->trevsorted = false;
+		bat->tascii = false;
+	}
+
 	if (msg == MAL_SUCCEED && rows_estimate != 0 && rows_estimate != rows_added)
 		bailout(
 			"inconsistent row count in %s: expected "BUNFMT", got "BUNFMT,
