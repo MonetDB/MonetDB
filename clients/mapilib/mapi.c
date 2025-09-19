@@ -2716,7 +2716,7 @@ read_line(Mapi mid)
 
 		/* fetch one more block */
 		if (mid->trace)
-			printf("fetch next block: start at:%ld\n", (unsigned long) mid->blk.end);
+			printf("fetch next block: start at:%lu\n", (unsigned long) mid->blk.end);
 		for (;;) {
 			len = mnstr_read(mid->from, mid->blk.buf + mid->blk.end, 1, BLOCK);
 			if (len == -1 && mnstr_errnr(mid->from) == MNSTR_INTERRUPT) {
