@@ -210,9 +210,9 @@ struct MapiStatement {
 
 struct BlockCache {
 	char *buf;
-	int lim;
-	int nxt;
-	int end;
+	size_t lim;
+	size_t nxt;
+	size_t end;
 	bool eos;		/* end of sequence */
 };
 

@@ -2696,7 +2696,7 @@ read_line(Mapi mid)
 		ssize_t len;
 
 		if (mid->blk.lim - mid->blk.end < BLOCK) {
-			int len;
+			size_t len;
 
 			len = mid->blk.lim;
 			if (mid->blk.nxt <= BLOCK) {
@@ -2716,7 +2716,7 @@ read_line(Mapi mid)
 
 		/* fetch one more block */
 		if (mid->trace)
-			printf("fetch next block: start at:%d\n", mid->blk.end);
+			printf("fetch next block: start at:%ld\n", (unsigned long) mid->blk.end);
 		for (;;) {
 			len = mnstr_read(mid->from, mid->blk.buf + mid->blk.end, 1, BLOCK);
 			if (len == -1 && mnstr_errnr(mid->from) == MNSTR_INTERRUPT) {
@@ -2750,7 +2750,7 @@ read_line(Mapi mid)
 			mid->blk.buf[mid->blk.end + 1] = '\n';
 			mid->blk.buf[mid->blk.end + 2] = 0;
 		}
-		mid->blk.end += (int) len;
+		mid->blk.end += len;
 	}
 	if (mid->trace) {
 		printf("got complete block: \n");
@@ -2761,7 +2761,7 @@ read_line(Mapi mid)
 	assert(nl);
 	*nl++ = 0;
 	reply = mid->blk.buf + mid->blk.nxt;
-	mid->blk.nxt = (int) (nl - mid->blk.buf);
+	mid->blk.nxt = nl - mid->blk.buf;
 
 	if (mid->trace)
 		printf("read_line:%s\n", reply);
