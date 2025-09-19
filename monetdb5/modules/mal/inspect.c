@@ -506,7 +506,7 @@ INSPECTgetEnvironmentKey(Client ctx, str *ret, const char *const *key)
 	(void) ctx;
 	const char *s;
 	*ret = 0;
-	allocator *ma = ctx ? ctx->curprg->def->ma : MT_thread_getallocator();
+	allocator *ma = ctx->curprg->def->ma;
 	assert(ma);
 
 	s = GDKgetenv(*key);

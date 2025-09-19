@@ -308,8 +308,6 @@ JSONtoString(allocator *ma, str *s, size_t *len, const void *SRC, bool external)
 
 	if (cnt > (size_t) *len) {
 		// GDKfree(*s);
-		allocator *ma = MT_thread_getallocator();
-		assert(ma);
 		*s = ma_alloc(ma, cnt);
 		if (*s == NULL)
 			return -1;

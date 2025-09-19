@@ -301,8 +301,6 @@ output_line_dense(allocator *ma, char **buf, size_t *len, char **localbuf, size_
 				p = *localbuf;
 			}
 			if (fill + l + f->seplen >= (ssize_t) * len) {
-				allocator *ma = MT_thread_getallocator();
-				assert(ma);
 				/* extend the buffer */
 				char *nbuf;
 				nbuf = ma_realloc(ma, *buf, fill + l + f->seplen + BUFSIZ, *len);
