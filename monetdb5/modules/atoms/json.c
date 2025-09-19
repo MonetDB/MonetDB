@@ -235,6 +235,7 @@ JSONtoStorageString(JSON *jt, int idx, json *ret, size_t *out_size)
 	return msg;
 }
 
+static str JSONstr2json_intern(allocator *, json *ret, size_t len, const char *const*j);
 static str JSONstr2json(Client ctx, json *ret, const char *const*j);
 
 static ssize_t
@@ -252,7 +253,7 @@ JSONfromString(allocator *ma, const char *src, size_t *len, void **J, bool exter
 		*len = 2;
 		return strNil(src) ? 1 : 3;
 	} else {
-		str msg = JSONstr2json(/*ctx*/NULL, buf, &src);
+		str msg = JSONstr2json_intern(ma, buf, *len, &src);
 		if (msg != MAL_SUCCEED) {
 			GDKerror("%s", getExceptionMessageAndState(msg));
 			freeException(msg);
@@ -512,24 +513,27 @@ JSON2json(Client ctx, json *ret, const json *j)
 }
 
 static str
-JSONstr2json(Client ctx, json *ret, const char *const*j)
+JSONstr2json_intern(allocator *ma, json *ret, size_t len, const char *const*j)
 {
-	allocator *ma = ctx ? ctx->curprg->def->ma : MT_thread_getallocator();
 	assert(ma);
 	str msg = MAL_SUCCEED;
-	json buf = NULL;
+	json buf = *ret;
 	size_t ln = strlen(*j)+1;
 	size_t out_size = 0;
 
 	JSON *jt = NULL;
 
 	if (strNil(*j)) {
-		buf = MA_STRDUP(ma, *j);
+		if (!buf || len < strLen(*j))
+			buf = (json) ma_alloc(ma, strLen(*j));
+
+		buf = strcpy(buf, *j);
 	} else {
 		jt = JSONparse(ma, *j);
 		CHECK_JSON(jt);
 
-		buf = (json)ma_alloc(ma, ln);
+		if (!buf || len < ln)
+			buf = (json) ma_alloc(ma, ln);
 	}
 	if (buf == NULL) {
 		msg = createException(MAL, "json.new", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -550,6 +554,21 @@ JSONstr2json(Client ctx, json *ret, const char *const*j)
 	JSONfree(jt);
 	return msg;
 }
+
+static str
+JSONstr2json(Client ctx, json *ret, const char *const*j)
+{
+	allocator *ta = ctx ? ctx->curprg->def->ta : ma_create(NULL);
+	assert(ta);
+	ma_open(ta);
+	str res = JSONstr2json_intern(ta, ret, 0, j);
+	if (ctx)
+		ma_close(ta);
+	else
+		ma_destroy(ta);
+	return res;
+}
+
 
 static str
 JSONisvalid(Client ctx, bit *ret, const char *const *j)

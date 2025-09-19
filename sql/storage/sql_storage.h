@@ -504,6 +504,7 @@ typedef struct sqlstore {
 	sql_hash *sequences;	/* loaded store sequence numbers */
 
 	allocator *sa;		/* for now a store allocator, needs a special version with free operations (with reuse) */
+	allocator *ta;		/* temporary allocator*/
 	ATOMIC_TYPE obj_id;
 	sqlid prev_oid;
 

@@ -132,7 +132,7 @@ OPTevaluateImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 	int actions = 0, constantblock = 0;
 	int *assigned = 0, use;
 	str msg = MAL_SUCCEED;
-	allocator *ta = mb->ta;
+	allocator *ta = ctx->ta;
 
 	(void) stk;
 

@@ -509,7 +509,7 @@ void
 freeInstruction(MalBlkPtr mb, InstrPtr p)
 {
 	assert(p && mb && mb->instr_allocator);
-	sa_free(mb->instr_allocator, p);
+	ma_free(mb->instr_allocator, p);
 }
 
 
