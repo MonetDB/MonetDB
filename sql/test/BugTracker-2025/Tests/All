@@ -58,3 +58,4 @@ HAVE_HGE?7637_str_to_decimal
 7712-cross-group
 7713-crash-groupby-cse
 7714-crash-in-window-with-subquery
+7715-anti-like

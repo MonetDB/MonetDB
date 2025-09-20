@@ -1905,6 +1905,11 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 					append(ops, n->data);
 				if (!(s = stmt_Nop(be, stmt_list(be, ops), sel, f, NULL)))
 					return NULL;
+				if (is_anti(e)) {
+					sql_subtype *bt = sql_fetch_localtype(TYPE_bit);
+					sql_subfunc *not = sql_bind_func(be->mvc, "sys", "not", bt, NULL, F_FUNC, true, true);
+					s = stmt_unop(be, s, NULL, not);
+				}
 				return s;
 			}
 
