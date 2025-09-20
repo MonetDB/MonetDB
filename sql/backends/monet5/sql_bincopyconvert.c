@@ -340,6 +340,8 @@ load_zero_terminated_text(BAT *bat, stream *s, int *eof_reached, int width, bool
 	void *buffer = NULL;
 	size_t buffer_len = 0;
 	allocator *sa = sa_create(NULL);
+	allocator *ta = sa_create(NULL);
+	sa_set_ta(sa, ta);
 
 	// convert_and_validate_utf8() above counts on the following property to hold:
 	assert(strNil((const char[2]){ 0x80, 0 }));
@@ -406,6 +408,7 @@ end:
 		bstream_destroy(bs);
 	}
 	sa_destroy(sa);
+	sa_destroy(ta);
 	return msg;
 }
 

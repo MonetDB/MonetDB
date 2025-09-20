@@ -1751,6 +1751,9 @@ gdk_export void sa_free(allocator *sa, void *);
 gdk_export exception_buffer *sa_get_eb(allocator *sa)
        __attribute__((__pure__));
 
+gdk_export void sa_set_ta(allocator *sa,  allocator *ta);
+gdk_export allocator *sa_get_ta(allocator *sa);
+
 #define sa_create(pa)		create_allocator(pa, false)
 #define ma_create(pa)		create_allocator(pa, true)
 #define ma_destroy(ma)		sa_destroy(ma)

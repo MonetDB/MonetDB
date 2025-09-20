@@ -41,6 +41,7 @@ enum range_comp_t {
 
 struct allocator {
 	struct allocator *pa;
+	struct allocator *ta;
 	size_t size;	 /* size of the allocator in terms of blocks */
 	size_t nr;	 /* number of blocks allocated */
 	char **blks;

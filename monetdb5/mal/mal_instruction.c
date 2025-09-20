@@ -127,6 +127,7 @@ newMalBlk(int elements)
 		ma_destroy(ma);
 		return NULL;
 	}
+	sa_set_ta(ma, ta);
 	allocator *instr_allocator = ma_create(ma);
 	if (instr_allocator == NULL) {
 		ma_destroy(ma);

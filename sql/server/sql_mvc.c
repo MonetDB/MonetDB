@@ -165,6 +165,7 @@ mvc_init(int debug, store_type store_tpe, int ro, int su, const char *initpasswd
 
 	assert(m->sa == NULL);
 	m->sa = sa_create(m->pa);
+	sa_set_ta(m->sa, m->ta);
 	if (!m->sa) {
 		mvc_destroy(m);
 		mvc_exit(store);

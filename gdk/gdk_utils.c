@@ -2230,7 +2230,7 @@ sa_free_blk(allocator *sa, void *blk)
 		// all blks are GDKmalloc
 		size_t sz = GDKmallocated(blk) - (MALLOC_EXTRA_SPACE + DEBUG_SPACE);
 		assert(sz > 0);
-		if (sz == SA_BLOCK_SIZE) {
+		if (0 && sz == SA_BLOCK_SIZE) {
 			freed_t *f = blk;
 			f->sz = sz;
 			f->n = sa->freelist_blks;
@@ -2374,6 +2374,23 @@ sa_realloc(allocator *sa, void *p, size_t sz, size_t oldsz)
 
 	if (r)
 		memcpy(r, p, oldsz);
+	if (oldsz >= sa->blk_size && !sa->tmp_active) {
+		char* ptr = (char *) p - SA_HEADER_SIZE;
+		size_t i;
+		for (i = 1; i < sa->nr; i++)
+			if (sa->blks[i] == ptr)
+				break;
+
+		if (i<sa->nr) {
+			sa_free_blk(sa, ptr);
+
+			if (sa->pa) {
+				sa->nr--;
+				for (; i < sa->nr; i++)
+					sa->blks[i] = sa->blks[i+1];
+			}
+		}
+	}
 	return r;
 }
 
@@ -2452,11 +2469,36 @@ _sa_alloc_internal(allocator *sa, size_t sz)
 				GDKfree(r);
 			return NULL;
 		}
-		sa->blk_size = blk_size;
-		sa->blks[sa->nr] = r;
+		if (sz >= SA_BLOCK_SIZE && sa->nr > 1) {
+			/* don't move blk 0 as thats us! */
+			sa->blks[sa->nr] = sa->blks[sa->nr-1];
+			sa->blks[sa->nr-1] = r;
+		} else {
+			//sa->blk_size = blk_size;
+			sa->blks[sa->nr] = r;
+			sa->used = sz;
+			//sa->usedmem += sa->blk_size;
+		}
 		sa->nr ++;
-		sa->used = sz;
-		sa->usedmem += sa->blk_size;
+		sa->usedmem += blk_size;
+		if (sz >= SA_BLOCK_SIZE && sa->nr == 2) {
+			char *r;
+			if (sa->pa) {
+				r = (char*) _sa_alloc_internal(sa->pa, blk_size);
+			} else {
+				r = GDKmalloc(blk_size);
+			}
+			if (r == NULL) {
+				COND_UNLOCK_ALLOCATOR(sa);
+				if (sa->eb.enabled)
+					eb_error(&sa->eb, "out of memory", 1000);
+				return NULL;
+			}
+			sa->blks[sa->nr] = r;
+			sa->used = 0;
+			sa->nr ++;
+			sa->usedmem += blk_size;
+		}
 	} else {
 		r = sa->blks[sa->nr-1] + sa->used;
 		sa->used += sz;
@@ -2486,6 +2528,20 @@ sa_alloc(allocator *sa, size_t sz)
 	return sa_fill_in_header(r, sz);
 }
 
+void
+sa_set_ta(allocator *sa, allocator *ta)
+{
+	assert(ta);
+	assert(sa->ta == NULL);
+	sa->ta = ta;
+}
+
+allocator *
+sa_get_ta(allocator *sa)
+{
+	assert(sa->ta);
+	return sa->ta;
+}
 
 allocator *
 create_allocator(allocator *pa, bool use_lock)
@@ -2510,6 +2566,7 @@ create_allocator(allocator *pa, bool use_lock)
 	sa->first_blk = first_blk;
 	eb_init(&sa->eb);
 	sa->pa = pa;
+	sa->ta = NULL;
 	sa->nr = 1;
 	sa->usedmem = SA_BLOCK_SIZE;
 	sa->blk_size = SA_BLOCK_SIZE;

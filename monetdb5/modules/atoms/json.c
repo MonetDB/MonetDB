@@ -235,21 +235,18 @@ JSONtoStorageString(JSON *jt, int idx, json *ret, size_t *out_size)
 	return msg;
 }
 
-static str JSONstr2json_intern(allocator *, json *ret, size_t len, const char *const*j);
-static str JSONstr2json(Client ctx, json *ret, const char *const*j);
+static str JSONstr2json_intern(allocator *ma, json *ret, size_t len, const char *const*j);
 
 static ssize_t
 JSONfromString(allocator *ma, const char *src, size_t *len, void **J, bool external)
 {
 	json *buf = (json *) J;
-	if(*buf) {
-		// GDKfree(*buf);
-		*buf = NULL;
-	}
 	if (strNil(src) || (external && strncmp(src, "nil", 3) == 0)) {
-		*buf = MA_STRDUP(ma, str_nil);
+		if (*buf || *len < 3)
+			*buf = ma_alloc(ma, strlen(str_nil)+1);
 		if (*buf == NULL)
 			return -1;
+		strcpy(*buf, str_nil);
 		*len = 2;
 		return strNil(src) ? 1 : 3;
 	} else {
@@ -525,15 +522,14 @@ JSONstr2json_intern(allocator *ma, json *ret, size_t len, const char *const*j)
 
 	if (strNil(*j)) {
 		if (!buf || len < strLen(*j))
-			buf = (json) ma_alloc(ma, strLen(*j));
-
+			buf = (json)ma_alloc(ma, strLen(*j));
 		buf = strcpy(buf, *j);
 	} else {
-		jt = JSONparse(ma, *j);
+		jt = JSONparse(sa_get_ta(ma), *j);
 		CHECK_JSON(jt);
 
 		if (!buf || len < ln)
-			buf = (json) ma_alloc(ma, ln);
+			buf = (json)ma_alloc(ma, ln);
 	}
 	if (buf == NULL) {
 		msg = createException(MAL, "json.new", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -543,10 +539,12 @@ JSONstr2json_intern(allocator *ma, json *ret, size_t len, const char *const*j)
 	if (jt != NULL) {
 		msg = JSONtoStorageString(jt, 0, &buf, &out_size);
 		if (msg != MAL_SUCCEED) {
+			sa_reset(sa_get_ta(ma));
 			//GDKfree(buf);
 			goto bailout;
 		}
 	}
+	sa_reset(sa_get_ta(ma));
 
 	*ret = buf;
 
@@ -558,17 +556,9 @@ JSONstr2json_intern(allocator *ma, json *ret, size_t len, const char *const*j)
 static str
 JSONstr2json(Client ctx, json *ret, const char *const*j)
 {
-	allocator *ta = ctx ? ctx->curprg->def->ta : ma_create(NULL);
-	assert(ta);
-	ma_open(ta);
-	str res = JSONstr2json_intern(ta, ret, 0, j);
-	if (ctx)
-		ma_close(ta);
-	else
-		ma_destroy(ta);
-	return res;
+	allocator *ma = ctx ? ctx->curprg->def->ma : MT_thread_getallocator();
+	return JSONstr2json_intern(ma, ret, 0, j);
 }
-
 
 static str
 JSONisvalid(Client ctx, bit *ret, const char *const *j)
@@ -621,7 +611,8 @@ static gdk_return
 upgradeJSONStorage(char **out, const char **in)
 {
 	str msg;
-	if ((msg = JSONstr2json(/*ctx*/NULL, out, in)) != MAL_SUCCEED) {
+	allocator *ma = MT_thread_getallocator();
+	if ((msg = JSONstr2json_intern(ma, out, 0, in)) != MAL_SUCCEED) {
 		freeException(msg);
 		return GDK_FAIL;
 	}
@@ -638,7 +629,7 @@ jsonRead(allocator *ma, str a, size_t *dstlen, stream *s, size_t cnt)
 	if ((a = BATatoms[TYPE_str].atomRead(ma, a, dstlen, s, cnt)) == NULL)
 		return NULL;
 
-	if ((msg = JSONstr2json(/*ctx*/NULL, &out, &(const char *){a})) != MAL_SUCCEED) {
+	if ((msg = JSONstr2json_intern(ma, &out, 0, &(const char *){a})) != MAL_SUCCEED) {
 		freeException(msg);
 		//GDKfree(a);
 		return NULL;

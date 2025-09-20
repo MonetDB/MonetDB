@@ -604,6 +604,7 @@ create_trigger(mvc *sql, char *sname, char *tname, char *triggername, int time, 
 				sql->sa = sa;
 				throw(SQL, "sql.create_trigger", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
+			sa_set_ta(sql->sa, sql->ta);
 			r = rel_parse(sql, s, buf, m_deps);
 			if (r)
 				r = sql_processrelation(sql, r, 0, 0, 0, 0);
@@ -1100,6 +1101,7 @@ create_func(mvc *sql, char *sname, char *fname, sql_func *f, int replace)
 			sql->sa = sa;
 			throw(SQL, "sql.create_func", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
+		sa_set_ta(sql->sa, sql->ta);
 		r = rel_parse(sql, s, buf, m_deps);
 		if (r)
 			r = sql_processrelation(sql, r, 0, 0, 0, 0);

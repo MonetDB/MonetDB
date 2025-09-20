@@ -267,6 +267,7 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 	c->query = NULL;
 	c->ma = ma_create(NULL);
 	c->ta = ma_create(c->ma);
+	sa_set_ta(c->ma, c->ta);
 
 	char name[MT_NAME_LEN];
 	snprintf(name, sizeof(name), "Client%d->s", (int) (c - mal_clients));
