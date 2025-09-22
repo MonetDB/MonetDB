@@ -2551,8 +2551,6 @@ mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT *b = NULL, *tbl = NULL, *atr = NULL, *tpe = NULL,*len = NULL,*scale = NULL;
 	res_table *t = NULL;
 	bool tostdout;
-	char buf[80];
-	ssize_t sz;
 
 	(void) format;
 
@@ -2618,33 +2616,18 @@ mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/* now select the file channel */
 	if ((tostdout = strcmp(filename,"stdout") == 0)) {
 		s = cntxt->fdout;
-	} else if (!onclient) {
-		if ((s = open_wastream(filename)) == NULL || mnstr_errnr(s) != MNSTR_NO__ERROR) {
+	} else {
+		if (onclient) {
+			s = mapi_request_download(filename, false, m->scanner.rs, m->scanner.ws);
+		} else {
+			s = open_wastream(filename);
+		}
+		if (s == NULL || mnstr_errnr(s) != MNSTR_NO__ERROR) {
 			msg=  createException(IO, "streams.open", SQLSTATE(42000) "%s", mnstr_peek_error(NULL));
 			close_stream(s);
 			goto wrapup_result_set1;
 		}
 		be->output_format = OFMT_CSV;
-	} else {
-		while (!m->scanner.rs->eof) {
-			if (bstream_next(m->scanner.rs) < 0) {
-				msg = createException(IO, "streams.open", "interrupted");
-				goto wrapup_result_set1;
-			}
-		}
-		s = m->scanner.ws;
-		mnstr_write(s, PROMPT3, sizeof(PROMPT3) - 1, 1);
-		mnstr_printf(s, "w %s\n", filename);
-		mnstr_flush(s, MNSTR_FLUSH_DATA);
-		if ((sz = mnstr_readline(m->scanner.rs->s, buf, sizeof(buf))) > 1) {
-			/* non-empty line indicates failure on client */
-			msg = createException(IO, "streams.open", "%s", buf);
-			/* discard until client flushes */
-			while (mnstr_read(m->scanner.rs->s, buf, 1, sizeof(buf)) > 0) {
-				/* ignore remainder of error message */
-			}
-			goto wrapup_result_set1;
-		}
 	}
 	if ((ok = mvc_export_result(cntxt->sqlcontext, s, res, tostdout, cntxt->qryctx.starttime, mb->optimize)) < 0) {
 		msg = createException(SQL, "sql.resultSet", SQLSTATE(45000) "Result set construction failed: %s", mvc_export_error(cntxt->sqlcontext, s, ok));
@@ -2653,14 +2636,7 @@ mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (ok != -5)
 			goto wrapup_result_set1;
 	}
-	if (onclient) {
-		mnstr_flush(s, MNSTR_FLUSH_DATA);
-		if ((sz = mnstr_readline(m->scanner.rs->s, buf, sizeof(buf))) > 1) {
-			msg = createException(IO, "streams.open", "%s", buf);
-		}
-		while (sz > 0)
-			sz = mnstr_readline(m->scanner.rs->s, buf, sizeof(buf));
-	} else if (!tostdout) {
+	if (!tostdout) {
 		close_stream(s);
 	}
   wrapup_result_set1:
