@@ -2230,13 +2230,14 @@ sa_free_blk(allocator *sa, void *blk)
 		// all blks are GDKmalloc
 		size_t sz = GDKmallocated(blk) - (MALLOC_EXTRA_SPACE + DEBUG_SPACE);
 		assert(sz > 0);
-		if (0 && sz == SA_BLOCK_SIZE) {
+		if (sz == SA_BLOCK_SIZE) {
 			freed_t *f = blk;
 			f->sz = sz;
 			f->n = sa->freelist_blks;
 			sa->freelist_blks = f;
 		} else {
 			GDKfree(blk);
+			sa->usedmem -= sz;
 		}
 		for (; i < sa->nr-1; i++)
 			sa->blks[i] = sa->blks[i+1];
@@ -2416,13 +2417,17 @@ sa_double_num_blks(allocator *sa)
 	if (sa->pa)
 		tmp = (char**)_sa_alloc_internal(sa->pa, sizeof(char*) * sa->size);
 	else {
-		tmp = GDKmalloc(sizeof(char*) * sa->size);
+		size_t bytes = sizeof(char*) * sa->size;
+		tmp = GDKmalloc(bytes);
+		sa->usedmem += bytes;
 	}
 	if (tmp) {
 		bool reallocated = sa->blks != (char **)sa->first_blk;
-		memcpy(tmp, sa->blks, sizeof(char*) * osz);
+		size_t bytes = sizeof(char*) * osz;
+		memcpy(tmp, sa->blks, bytes);
 		if (!sa->pa && reallocated) {
 			GDKfree(sa->blks);
+			sa->usedmem -= bytes;
 		}
 	} else {
 		sa->size /= 2; /* undo */
