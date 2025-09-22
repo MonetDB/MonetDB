@@ -3193,7 +3193,7 @@ parse_header_line(MapiHdl hdl, char *line, struct MapiResultSet *result)
 		result->fieldcnt = n;
 		for (i = 0; i < n; i++) {
 			if (anchors[i])
-				result->fields[i].columnlength = atoi(anchors[i]);
+				result->fields[i].columnlength = (int64_t) strtoll(anchors[i], NULL, 10);
 		}
 	} else if (strcmp(tag, "table_name") == 0) {
 		result->fieldcnt = n;
@@ -4584,7 +4584,7 @@ mapi_get_len(MapiHdl hdl, int fnr)
 
 	mapi_hdl_check0(hdl);
 	if ((result = hdl->result) != 0 && fnr >= 0 && fnr < result->fieldcnt)
-		return result->fields[fnr].columnlength;
+		return result->fields[fnr].columnlength > INT_MAX ? INT_MAX : (int) result->fields[fnr].columnlength;
 	mapi_setError(hdl->mid, "Illegal field number", __func__, MERROR);
 	return 0;
 }

@@ -122,7 +122,7 @@ struct MapiColumn {
 	char *tablename;
 	char *columnname;
 	char *columntype;
-	int columnlength;
+	int64_t columnlength;
 	int digits;
 	int scale;
 };

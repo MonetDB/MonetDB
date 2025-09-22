@@ -375,9 +375,11 @@ utf8strlenmax(char *s, char *e, size_t max, char **t)
 	size_t len = 0, len0 = 0;
 	char *t0 = s;
 
-	assert(max == 0 || t != NULL);
-	if (s == NULL)
+	if (s == NULL) {
+		if (t)
+			*t = NULL;
 		return 0;
+	}
 
 	uint32_t state = 0, codepoint = 0;
 	while (*s && (e == NULL || s < e)) {
@@ -385,7 +387,8 @@ utf8strlenmax(char *s, char *e, size_t max, char **t)
 		case UTF8_ACCEPT:
 			if (codepoint == '\n') {
 				if (max) {
-					*t = s - 1;	/* before the \n */
+					if (t)
+						*t = s - 1;	/* before the \n */
 					return len;
 				}
 				len++;
@@ -401,15 +404,20 @@ utf8strlenmax(char *s, char *e, size_t max, char **t)
 			}
 			if (max != 0) {
 				if (len > max) {
-					*t = t0;
+					if (t)
+						*t = t0;
 					return len0;
 				}
 				if (len == max) {
-					/* add any following combining (zero width) characters */
-					do {
-						*t = s;
-						s = nextcharn(s, e == NULL ? 4 : (size_t) (e - s), &codepoint);
-					} while (codepoint > 0 && charwidth(codepoint) == 0);
+					if (t) {
+						/* add any following combining (zero width)
+						 * characters */
+						do {
+							*t = s;
+							s = nextcharn(s, e == NULL ? 4 : (size_t) (e - s),
+										  &codepoint);
+						} while (codepoint > 0 && charwidth(codepoint) == 0);
+					}
 					return len;
 				}
 			}
@@ -424,7 +432,7 @@ utf8strlenmax(char *s, char *e, size_t max, char **t)
 			break;
 		}
 	}
-	if (max != 0)
+	if (t)
 		*t = s;
 	return len;
 }
@@ -461,7 +469,7 @@ SQLrow(int *len, int *numeric, char **rest, int fields, int trim, char wm)
 	if (trim == 1) {
 		for (i = 0; i < fields; i++) {
 			if ((t = rest[i]) != NULL &&
-			    utf8strlen(t, NULL) > (size_t) len[i]) {
+				utf8strlenmax(t, NULL, (size_t) len[i] + 10, NULL) > (size_t) len[i]) {
 				/* eat leading whitespace */
 				while (*t != 0 && my_isspace(*t))
 					t++;
@@ -481,7 +489,7 @@ SQLrow(int *len, int *numeric, char **rest, int fields, int trim, char wm)
 					     first ? '|' : i > 0 && cutafter[i - 1] == 0 ? '>' : ':',
 					     len[i], "");
 			} else {
-				ulen = utf8strlen(rest[i], NULL);
+				ulen = utf8strlenmax(rest[i], NULL, len[i], &t);
 
 				if (first && trim == 2) {
 					/* calculate the height of
@@ -490,7 +498,7 @@ SQLrow(int *len, int *numeric, char **rest, int fields, int trim, char wm)
 					 * correction for a terminal
 					 * screen (1.62 * 2 -> 3 :
 					 * 9.72~10) */
-					if (ulen > (size_t) len[i]) {
+					if (ulen > (size_t) len[i] || *t) {
 						cutafter[i] = 3 * len[i] / 10;
 						if (cutafter[i] == 1)
 							cutafter[i]++;
@@ -503,11 +511,9 @@ SQLrow(int *len, int *numeric, char **rest, int fields, int trim, char wm)
 
 				/* break the string into pieces and
 				 * left-adjust them in the column */
-				t = strchr(rest[i], '\n');
-				if (ulen > (size_t) len[i] || t) {
+				if (ulen > (size_t) len[i] || *t) {
 					char *s;
 
-					t = utf8skip(rest[i], len[i]);
 					if (trim == 1) {
 						while (t > rest[i] && !my_isspace(*t))
 							while ((*--t & 0xC0) == 0x80)
@@ -519,7 +525,7 @@ SQLrow(int *len, int *numeric, char **rest, int fields, int trim, char wm)
 						     first ? '|' : i > 0 && cutafter[i - 1] == 0 ? '>' : ':');
 					if (numeric[i])
 						mnstr_printf(toConsole, "%*s",
-							     (int) (len[i] - (ulen - utf8strlen(t, NULL))),
+							     (int) (len[i] - ulen),
 							     "");
 
 					s = t;
@@ -529,7 +535,8 @@ SQLrow(int *len, int *numeric, char **rest, int fields, int trim, char wm)
 					if (trim == 2 && *s == '\n')
 						s++;
 					if (*s && cutafter[i] == 0) {
-						t = utf8skip(rest[i], len[i] - 2);
+						size_t x = utf8strlenmax(rest[i], NULL, len[i] - 2, &t);
+//						t = utf8skip(rest[i], len[i] - 2);
 						s = t;
 						if (trim == 1)
 							while (my_isspace(*s))
@@ -559,7 +566,7 @@ SQLrow(int *len, int *numeric, char **rest, int fields, int trim, char wm)
 							}
 						}
 						mnstr_printf(toConsole, "...%*s",
-							     len[i] - 2 - (int) utf8strlen(rest[i], t),
+							     len[i] - 2 - (int) x,
 							     "");
 						croppedfields++;
 					} else {
@@ -588,7 +595,7 @@ SQLrow(int *len, int *numeric, char **rest, int fields, int trim, char wm)
 						mnstr_write(toConsole, " ", 1, 1);
 						if (!numeric[i])
 							mnstr_printf(toConsole, "%*s",
-								     (int) (len[i] - (ulen - utf8strlen(t, NULL))),
+								     (int) (len[i] - ulen),
 								     "");
 					}
 					rest[i] = *s ? s : 0;
@@ -1328,7 +1335,8 @@ sigint_handler(int signum)
 static void
 SQLrenderer(MapiHdl hdl)
 {
-	int i, total, lentotal, vartotal, minvartotal;
+	int i;
+	int64_t total, lentotal, vartotal, minvartotal;
 	int fields, rfields, printfields = 0, max = 1, graphwaste = 0;
 	int *len = NULL, *hdr = NULL, *numeric = NULL;
 	char **rest = NULL;
