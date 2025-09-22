@@ -2520,6 +2520,43 @@ mvc_result_set_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return msg;
 }
 
+
+str
+wrap_onclient_compression(stream **inner, str context, int nr)
+{
+	if (nr <= 1)
+	return MAL_SUCCEED;
+
+	// these number match those in sql_parser.y's opt_on_location.
+	stream *s = *inner;
+	stream *cs;
+	switch (nr) {
+		case 11:
+			cs = gz_stream(s, 0);
+			break;
+		case 12:
+			cs = bz2_stream(s, 0);
+			break;
+		case 13:
+			cs = xz_stream(s, 0);
+			break;
+		case 14:
+			cs = lz4_stream(s, 0);
+			break;
+		default:
+			throw(IO, context, SQLSTATE(42000) "compression algo id not found");
+	}
+	if (cs == NULL || mnstr_errnr(cs) != MNSTR_NO__ERROR) {
+		str msg = createException(IO, context, SQLSTATE(42000) "%s", mnstr_peek_error(NULL));
+		close_stream(cs);
+		return msg;
+	}
+	*inner = cs;
+	return MAL_SUCCEED;
+}
+
+
+
 /* Copy the result set into a CSV file */
 str
 mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -2626,6 +2663,11 @@ mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			msg=  createException(IO, "streams.open", SQLSTATE(42000) "%s", mnstr_peek_error(NULL));
 			close_stream(s);
 			goto wrapup_result_set1;
+		}
+		msg = wrap_onclient_compression(&s, "sql.copy_from", onclient);
+		if (msg != NULL) {
+			close_stream(s);
+			return msg;
 		}
 		be->output_format = OFMT_CSV;
 	}
@@ -3155,6 +3197,11 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 		if (ss == NULL || mnstr_errnr(ss) != MNSTR_NO__ERROR) {
 			msg = createException(IO, "sql.copy_from", SQLSTATE(42000) "%s", mnstr_peek_error(NULL));
+			close_stream(ss);
+			return msg;
+		}
+		msg = wrap_onclient_compression(&ss, "sql.copy_from", onclient);
+		if (msg != NULL) {
 			close_stream(ss);
 			return msg;
 		}

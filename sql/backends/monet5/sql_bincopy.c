@@ -272,9 +272,12 @@ import_column(backend *be, bat *ret, BUN *retcnt, str method, int width, bool by
 	} else {
 		s = open_rstream(path);
 	}
-	if (!s) {
+	if (s == NULL || mnstr_errnr(s) != MNSTR_NO__ERROR) {
 		bailout("%s", mnstr_peek_error(NULL));
 	}
+	msg = wrap_onclient_compression(&s, "sql.copy_from", onclient);
+	if (msg != NULL)
+		goto end;
 
 	// Do the work
 	msg = load_column(rec, path, bat, s, width, byteswap, nrows, &eof_reached);
@@ -431,7 +434,7 @@ dump_binary_column(const struct type_record_t *rec, BAT *b, BUN start, BUN lengt
 
 
 static str
-export_column(backend *be, BAT *b, bool byteswap, str filename, bool onclient)
+export_column(backend *be, BAT *b, bool byteswap, str filename, int onclient)
 {
 	static const char mal_operator[] = "sql.export_bin_column";
 	str msg = MAL_SUCCEED;
@@ -445,14 +448,15 @@ export_column(backend *be, BAT *b, bool byteswap, str filename, bool onclient)
 		bailout("COPY INTO BINARY not implemented for '%s'", gdk_name);
 
 	if (onclient) {
-		(void)be;
 		s = mapi_request_download(filename, true, be->mvc->scanner.rs, be->mvc->scanner.ws);
 	} else {
 		s = open_wstream(filename);
 	}
-	if (!s) {
-		bailout("%s", mnstr_peek_error(NULL));
+	if (s == NULL || mnstr_errnr(s) != MNSTR_NO__ERROR) {
 	}
+	msg = wrap_onclient_compression(&s, "sql.copy_from", onclient);
+	if (msg != NULL)
+		goto end;
 
 	msg = dump_binary_column(rec, b, 0, BATcount(b), byteswap, s);
 
@@ -481,7 +485,7 @@ mvc_bin_export_column_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	// arg 1 handled below
 	bool byteswap = *getArgReference_bit(stk, pci, 2);
 	str filename = *getArgReference_str(stk, pci, 3);
-	bool onclient = (bool) *getArgReference_int(stk, pci, 4);
+	int onclient = *getArgReference_int(stk, pci, 4);
 
 	// Usually we are called with a BAT argument but if the user types
 	// something like

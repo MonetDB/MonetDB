@@ -3189,10 +3189,24 @@ opt_to_savepoint:
 	;
 
 opt_on_location:
-		/* empty */ { $$ = 0; }
-	|	ON CLIENT   { $$ = 1; }
-	|	ON SERVER   { $$ = 0; }
-	;
+		/* empty */	{ $$ = 0; }
+	| ON SERVER		{ $$ = 0; }
+	| ON CLIENT		{ $$ = 1; }
+	| ON string CLIENT {
+		if (strcmp($2, "gz") == 0)
+			$$ = 11;
+		else if (strcmp($2, "bz2") == 0)
+			$$ = 12;
+		else if (strcmp($2, "xz") == 0)
+			$$ = 13;
+		else if (strcmp($2, "lz4") == 0)
+			$$ = 14;
+		else {
+			yyerror(m, "unknown ON CLIENT compression algorithm");
+			YYABORT;
+		}
+  }
+  ;
 
 import_stmt:
 		copyfrom_stmt    { $$ = $1; }
@@ -3210,7 +3224,7 @@ copyfrom_stmt:
 												 $7, /* sources */
 												 $8, /* header_list */
 												 $2  /* nr_offset */);
-			copy->on_client = !!$9;
+			copy->on_client = $9;
 			$$ = (symbol*)copy;
 		}
     /*  1    2      3    4     5               6    7     8 */
