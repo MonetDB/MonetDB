@@ -291,3 +291,13 @@ order by "schema", "table";
 update sys.functions set system = true where not system and schema_id = 2000 and name in ('contains', 'containsorequal', 'containssymmetric', 'bit_not', 'bit_and', 'bit_or', 'bit_xor', 'dump_database', 'columnsize');
 update sys._tables set system = true where not system and schema_id = 2000 and name in ('ids', 'dependencies_vw', 'describe_user_defined_types', 'dump_user_defined_types', 'storagemodel', 'tablestoragemodel');
 
+Running database upgrade commands:
+drop function sys.optimizer_stats cascade;
+
+Running database upgrade commands:
+drop procedure profiler.start cascade;
+drop procedure profiler.stop cascade;
+drop procedure profiler.setlimit cascade;
+drop function profiler.getlimit cascade;
+drop procedure profiler.setheartbeat cascade;
+

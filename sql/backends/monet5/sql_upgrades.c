@@ -4906,7 +4906,7 @@ sql_update_snapshot(Client c, mvc *sql, sql_schema *s)
 }
 
 static str
-sql_update_inet46(Client c, mvc *sql, sql_schema *s)
+sql_update_default(Client c, mvc *sql, sql_schema *s)
 {
 	char *err;
 	res_table *output;
@@ -5145,6 +5145,28 @@ sql_update_inet46(Client c, mvc *sql, sql_schema *s)
 		BBPreclaim(b);
 	}
 	res_table_destroy(output);
+
+	if (sql_bind_func(sql, "sys", "optimizer_stats", NULL, NULL, F_UNION, true, true)) {
+		const char query[] = "drop function sys.optimizer_stats cascade;\n";
+		printf("Running database upgrade commands:\n%s\n", query);
+		err = SQLstatementIntern(c, query, "update", true, false, NULL);
+	} else {
+		sql->session->status = 0; /* if the function was not found clean the error */
+		sql->errstr[0] = '\0';
+	}
+
+	if (sql_bind_func(sql, "profiler", "start", NULL, NULL, F_PROC, true, true)) {
+		const char query[] = "drop procedure profiler.start cascade;\n"
+			"drop procedure profiler.stop cascade;\n"
+			"drop procedure profiler.setlimit cascade;\n"
+			"drop function profiler.getlimit cascade;\n"
+			"drop procedure profiler.setheartbeat cascade;\n";
+		printf("Running database upgrade commands:\n%s\n", query);
+		err = SQLstatementIntern(c, query, "update", true, false, NULL);
+	} else {
+		sql->session->status = 0; /* if the function was not found clean the error */
+		sql->errstr[0] = '\0';
+	}
 	return err;
 }
 
@@ -5226,7 +5248,7 @@ SQLupgrades(Client c, mvc *m)
 		goto handle_error;
 	}
 
-	if ((err = sql_update_inet46(c, m, s)) != NULL) {
+	if ((err = sql_update_default(c, m, s)) != NULL) {
 		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 		goto handle_error;
 	}

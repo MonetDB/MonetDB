@@ -516,7 +516,7 @@ findVariable(MalBlkPtr mb, const char *name)
 	if (name == NULL)
 		return -1;
 	for (i = mb->vtop - 1; i >= 0; i--)
-		if (mb->var[i].name && idcmp(name, mb->var[i].name) == 0)
+		if (mb->var[i].name && strcmp(name, mb->var[i].name) == 0)
 			return i;
 	return -1;
 }

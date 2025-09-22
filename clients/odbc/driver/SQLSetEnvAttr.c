@@ -48,7 +48,7 @@ SQLSetEnvAttr(SQLHENV EnvironmentHandle,
 		ValuePtr, (int) StringLength);
 #endif
 
-	(void) StringLength;	/* Stefan: unused!? */
+	(void) StringLength;
 
 	/* global attribute */
 	if (Attribute == SQL_ATTR_CONNECTION_POOLING && env == NULL) {

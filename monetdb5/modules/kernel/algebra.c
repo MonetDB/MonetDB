@@ -601,7 +601,7 @@ do_join(bat *r1, bat *r2, bat *r3, const bat *lid, const bat *rid, const bat *r2
 		gdk_return (*semifunc)(BAT **, BAT **, BAT *, BAT *, BAT *, BAT *,
 							  bool, bool, BUN),
 		gdk_return (*markfunc)(BAT **, BAT **, BAT **,
-							   BAT *, BAT *, BAT *, BAT *, BUN),
+							   BAT *, BAT *, BAT *, BAT *, bool, BUN),
 		gdk_return (*thetafunc)(BAT **, BAT **, BAT *, BAT *, BAT *, BAT *,
 							   int, bool, BUN),
 		gdk_return (*bandfunc)(BAT **, BAT **, BAT *, BAT *, BAT *, BAT *,
@@ -676,7 +676,7 @@ do_join(bat *r1, bat *r2, bat *r3, const bat *lid, const bat *rid, const bat *r2
 		assert(difffunc == NULL);
 		assert(interfunc == NULL);
 		if ((*markfunc) (&result1, r2 ? &result2 : NULL, &result3,
-						 left, right, candleft, candright, est) != GDK_SUCCEED)
+						 left, right, candleft, candright, *nil_matches, est) != GDK_SUCCEED)
 			goto fail;
 	} else if (bandfunc) {
 		assert(rangefunc == NULL);
@@ -812,20 +812,20 @@ ALGsemijoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *slid,
 
 static str
 ALGmark2join(bat *r1, bat *r3, const bat *lid, const bat *rid,
-			 const bat *slid, const bat *srid, const lng *estimate)
+			 const bat *slid, const bat *srid, const bit *nil_matches, const lng *estimate)
 {
 	return do_join(r1, NULL, r3, lid, rid, NULL, slid, srid, 0, NULL, NULL,
-				   false, false, false, false, NULL, NULL, NULL,
+				   false, false, false, false, nil_matches, NULL, NULL,
 				   estimate, NULL, NULL, BATmarkjoin, NULL, NULL, NULL, NULL, NULL,
 				   "algebra.markjoin");
 }
 
 static str
 ALGmark3join(bat *r1, bat *r2, bat *r3, const bat *lid, const bat *rid,
-			 const bat *slid, const bat *srid, const lng *estimate)
+			 const bat *slid, const bat *srid, const bit *nil_matches, const lng *estimate)
 {
 	return do_join(r1, r2, r3, lid, rid, NULL, slid, srid, 0, NULL, NULL,
-				   false, false, false, false, NULL, NULL, NULL,
+				   false, false, false, false, nil_matches, NULL, NULL,
 				   estimate, NULL, NULL, BATmarkjoin, NULL, NULL, NULL, NULL, NULL,
 				   "algebra.markjoin");
 }
@@ -1864,8 +1864,8 @@ mel_func algebra_init_funcs[] = {
  command("algebra", "outerjoin", ALGouterjoin, false, "Left outer join with candidate lists", args(2,9, batarg("",oid),batarg("",oid),batargany("l",1),batargany("r",1),batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("match_one",bit),arg("estimate",lng))),
  command("algebra", "outerjoin", ALGouterjoin1, false, "Left outer join with candidate lists; only produce left output", args(1,8,batarg("",oid),batargany("l",1),batargany("r",1),batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("match_one",bit),arg("estimate",lng))),
  command("algebra", "semijoin", ALGsemijoin, false, "Semi join with candidate lists", args(2,9, batarg("",oid),batarg("",oid),batargany("l",1),batargany("r",1),batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("max_one",bit),arg("estimate",lng))),
- command("algebra", "markjoin", ALGmark2join, false, "Mark join with candidate lists", args(2,7, batarg("",oid),batarg("",bit),batargany("l",1),batargany("r",1),batarg("sl",oid),batarg("sr",oid),arg("estimate",lng))),
- command("algebra", "markjoin", ALGmark3join, false, "Mark join with candidate lists", args(3,8, batarg("",oid),batarg("",oid),batarg("",bit),batargany("l",1),batargany("r",1),batarg("sl",oid),batarg("sr",oid),arg("estimate",lng))),
+ command("algebra", "markjoin", ALGmark2join, false, "Mark join with candidate lists", args(2,8, batarg("",oid),batarg("",bit),batargany("l",1),batargany("r",1),batarg("sl",oid),batarg("sr",oid),arg("nil_matches", bit), arg("estimate",lng))),
+ command("algebra", "markjoin", ALGmark3join, false, "Mark join with candidate lists", args(3,9, batarg("",oid),batarg("",oid),batarg("",bit),batargany("l",1),batargany("r",1),batarg("sl",oid),batarg("sr",oid),arg("nil_matches", bit), arg("estimate",lng))),
  command("algebra", "thetajoin", ALGthetajoin, false, "Theta join with candidate lists", args(2,9, batarg("",oid),batarg("",oid),batargany("l",1),batargany("r",1),batarg("sl",oid),batarg("sr",oid),arg("op",int),arg("nil_matches",bit),arg("estimate",lng))),
  command("algebra", "thetajoin", ALGthetajoin1, false, "Theta join with candidate lists; only produce left output", args(1,8, batarg("",oid),batargany("l",1),batargany("r",1),batarg("sl",oid),batarg("sr",oid),arg("op",int),arg("nil_matches",bit),arg("estimate",lng))),
  command("algebra", "bandjoin", ALGbandjoin, false, "Band join: values in l and r match if r - c1 <[=] l <[=] r + c2", args(2,11, batarg("",oid),batarg("",oid),batargany("l",1),batargany("r",1),batarg("sl",oid),batarg("sr",oid),argany("c1",1),argany("c2",1),arg("li",bit),arg("hi",bit),arg("estimate",lng))),

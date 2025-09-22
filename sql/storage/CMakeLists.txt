@@ -21,7 +21,6 @@ target_sources(sqlstorage
   objectset.c
   objlist.c
   store_sequence.h
-  store_dependency.h
   PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}/sql_storage.h)
 

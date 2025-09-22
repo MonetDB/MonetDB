@@ -1,0 +1,69 @@
+statement ok
+ALTER USER monetdb MAX_WORKERS 0
+
+statement ok
+ALTER USER monetdb MAX_WORKERS 10
+
+query II
+SELECT "max_memory", "max_workers" FROM sys.users WHERE "name" = 'monetdb'
+----
+0
+10
+
+statement ok
+ALTER USER monetdb NO MAX_WORKERS
+
+query II
+SELECT "max_memory", "max_workers" FROM sys.users WHERE "name" = 'monetdb'
+----
+0
+0
+
+statement ok
+ALTER USER monetdb MAX_MEMORY 1234567 MAX_WORKERS 8
+
+query II
+SELECT "max_memory", "max_workers" FROM sys.users WHERE "name" = 'monetdb'
+----
+1234567
+8
+
+statement ok
+ALTER USER monetdb NO MAX_MEMORY  NO MAX_WORKERS
+
+query II
+SELECT "max_memory", "max_workers" FROM sys.users WHERE "name" = 'monetdb'
+----
+0
+0
+
+statement ok
+ALTER USER monetdb MAX_MEMORY 1234568 MAX_WORKERS 2
+
+query II
+SELECT "max_memory", "max_workers" FROM sys.users WHERE "name" = 'monetdb'
+----
+1234568
+2
+
+statement ok
+ALTER USER monetdb NO MAX_MEMORY
+
+query II
+SELECT "max_memory", "max_workers" FROM sys.users WHERE "name" = 'monetdb'
+----
+0
+2
+
+statement ok
+ALTER USER monetdb NO MAX_WORKERS NO MAX_MEMORY
+
+query II
+SELECT "max_memory", "max_workers" FROM sys.users WHERE "name" = 'monetdb'
+----
+0
+0
+
+statement error 42000!syntax error, unexpected MAX_WORKERS, expecting SCOLON or ':' in: "alter user monetdb no max_workers max_workers"
+ALTER USER monetdb NO MAX_WORKERS MAX_WORKERS 7
+

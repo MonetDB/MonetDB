@@ -92,14 +92,14 @@ SQLgetSpace(mvc *m, MalBlkPtr mb, int prepare)
 					setFunctionId(p, emptybindRef);
 			}
 		}
-		if (getModuleId(p) == sqlRef && (getFunctionId(p) == bindidxRef)) {
+		if (getModuleId(p) == sqlRef && (getFunctionId(p) == bind_idxbatRef)) {
 			char *sname = getVarConstant(mb, getArg(p, 1 + p->retc)).val.sval;
 			//char *tname = getVarConstant(mb, getArg(p, 2 + p->retc)).val.sval;
 			char *idxname = getVarConstant(mb, getArg(p, 3 + p->retc)).val.sval;
 			int access = getVarConstant(mb, getArg(p, 4 + p->retc)).val.ival;
 			sql_schema *s = mvc_bind_schema(m, sname);
 
-			if (getFunctionId(p) == bindidxRef) {
+			if (getFunctionId(p) == bind_idxbatRef) {
 				sql_idx *i = mvc_bind_idx(m, s, idxname);
 
 				if (i && isTable(i->t)) {
@@ -131,7 +131,7 @@ getSQLoptimizer(mvc *m)
 }
 
 static str
-addOptimizers(Client c, MalBlkPtr mb, char *pipe, int prepare)
+addOptimizers(Client c, MalBlkPtr mb, const char *pipe, int prepare)
 {
 	int i;
 	InstrPtr q;
@@ -143,11 +143,10 @@ addOptimizers(Client c, MalBlkPtr mb, char *pipe, int prepare)
 	assert(be && be->mvc);	/* SQL clients should always have their state set */
 
 	(void) SQLgetSpace(be->mvc, mb, prepare); // detect empty bats.
-	pipe = pipe? pipe: "default_pipe";
-	if (strcmp(pipe, "default_pipe") == 0) {
-		pipe = "default_fast";
-	} else if (strcmp(pipe, "no_mitosis_pipe") == 0) {
-		pipe = "default_fast";
+	if (pipe == NULL)
+		pipe = "default_pipe";
+	else if (strcmp(pipe, "no_mitosis_pipe") == 0) {
+		pipe = "default_pipe";
 		c->no_mitosis = true;
 	}
 	msg = addOptimizerPipe(c, mb, pipe);

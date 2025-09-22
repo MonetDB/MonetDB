@@ -16,9 +16,6 @@
 
 char monet_cwd[FILENAME_MAX] = { 0 };
 
-char monet_characteristics[4096];
-stream *maleventstream = 0;
-
 /* The compile time debugging flags are turned into bit masks, akin to GDK */
 lng MALdebug;
 
@@ -102,7 +99,6 @@ mal_init(char *modules[], bool embedded, const char *initpasswd,
 		return -1;
 	}
 	initProfiler();
-	initHeartbeat();
 	return 0;
 }
 
@@ -121,8 +117,6 @@ mal_reset(void)
 {
 	GDKprepareExit();
 	MCstopClients(0);
-	setHeartbeat(-1);
-	stopProfiler(0);
 	AUTHreset();
 	if (!GDKinmemory(0) && !GDKembedded()) {
 		str err = 0;
@@ -145,7 +139,6 @@ mal_reset(void)
 	mal_atom_reset();
 
 	memset((char *) monet_cwd, 0, sizeof(monet_cwd));
-	memset((char *) monet_characteristics, 0, sizeof(monet_characteristics));
 	mal_namespace_reset();
 	GDKreset(0);				// terminate all other threads
 }

@@ -1,6 +1,18 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Tue Sep 16 2025 Sjoerd Mullender <sjoerd@acm.org>
+- The TRACE prefix for SQL queries now no longer produces two result sets.
+  Before, the first result set was the result of the query, and the
+  second result set was timing information of the query execution.
+  This second result set is no longer produced.  Instead, use the
+  (already existing) function sys.tracelog() of view sys.tracelog to
+  retrieve this information.  As before, the table that is produced by the
+  function/view is reset whenever a new TRACE prefixed query is executed.
+
+* Mon Sep 15 2025 Sjoerd Mullender <sjoerd@acm.org>
+- Removed table returning function sys.optimizer_stats().
+
 * Tue Aug 26 2025 Sjoerd Mullender <sjoerd@acm.org>
 - There are new types "inet4" and "inet6" which can hold respecitvely
   IPv4 and IPv6 internet addresses without CIDR network mask

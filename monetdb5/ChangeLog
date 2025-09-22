@@ -1,6 +1,15 @@
 # ChangeLog file for MonetDB5
 # This file is updated with Maddlog
 
+* Wed Sep 17 2025 Sjoerd Mullender <sjoerd@acm.org>
+- We no longer persist querylog results.  If you want to keep the data,
+  make a copy into an SQL table.
+
+* Mon Sep 15 2025 Sjoerd Mullender <sjoerd@acm.org>
+- The default_fast and minimal_fast optimizer pipelines have been
+  removed.  The default_pipe and minimal_pipe optimizers now use the
+  "fast" path always.
+
 * Mon Aug  4 2025 Sjoerd Mullender <sjoerd@acm.org>
 - The type "pcre" has been removed.  There was no way to create a value of
   the type, and there was only one function that used a value of the type.

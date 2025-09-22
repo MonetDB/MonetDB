@@ -757,7 +757,7 @@ stmt_idxbat(backend *be, sql_idx *i, int access, int partition)
 {
 	int tt = hash_index(i->type)?TYPE_lng:TYPE_oid;
 	MalBlkPtr mb = be->mb;
-	InstrPtr q = newStmtArgs(mb, sqlRef, bindidxRef, 9);
+	InstrPtr q = newStmtArgs(mb, sqlRef, bind_idxbatRef, 9);
 
 	if (q == NULL)
 		goto bailout;
@@ -2191,12 +2191,12 @@ stmt_markselect(backend *be, stmt *g, stmt *m, stmt *p, bool any)
 }
 
 stmt *
-stmt_markjoin(backend *be, stmt *l, stmt *r, bool final)
+stmt_markjoin(backend *be, stmt *l, stmt *r, bool nil_matches, bool final)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q;
 
-	q = newStmtArgs(mb, algebraRef, markjoinRef, 8);
+	q = newStmtArgs(mb, algebraRef, markjoinRef, 9);
 	q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 	if (!final)
 		q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
@@ -2204,6 +2204,7 @@ stmt_markjoin(backend *be, stmt *l, stmt *r, bool final)
 	q = pushArgument(mb, q, r->nr); /* mark info mask */
 	q = pushNilBat(mb, q);
 	q = pushNilBat(mb, q);
+	q = pushBit(mb, q, nil_matches);    /* nil matches */
 	q = pushNil(mb, q, TYPE_lng);
 	pushInstruction(mb, q);
 
@@ -2331,7 +2332,7 @@ stmt_tdiff(backend *be, stmt *op1, stmt *op2, stmt *lcand)
 }
 
 stmt *
-stmt_tdiff2(backend *be, stmt *op1, stmt *op2, stmt *lcand, bool any)
+stmt_tdiff2(backend *be, stmt *op1, stmt *op2, stmt *lcand, bool is_semantics, bool any)
 {
 	InstrPtr q = NULL;
 	MalBlkPtr mb = be->mb;
@@ -2348,7 +2349,7 @@ stmt_tdiff2(backend *be, stmt *op1, stmt *op2, stmt *lcand, bool any)
 	else
 		q = pushNilBat(mb, q); /* left candidate */
 	q = pushNilBat(mb, q); /* right candidate */
-	q = pushBit(mb, q, FALSE);     /* nil matches */
+	q = pushBit(mb, q, is_semantics);     /* nil matches */
 	q = pushBit(mb, q, any);     /* not in */
 	q = pushNil(mb, q, TYPE_lng); /* estimate */
 
@@ -2524,7 +2525,7 @@ stmt_join_cand(backend *be, stmt *op1, stmt *op2, stmt *lcand, stmt *rcand, int 
 		pushInstruction(mb, q);
 		break;
 	case cmp_all:	/* aka cross table */
-		q = newStmt(mb, algebraRef, inner?crossRef:outercrossRef);
+		q = newStmt(mb, algebraRef, inner?crossproductRef:outercrossproductRef);
 		if (q == NULL)
 			goto bailout;
 		q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
@@ -4025,8 +4026,7 @@ stmt_convert(backend *be, stmt *v, stmt *sel, sql_subtype *f, sql_subtype *t)
 
 	if ((type_has_tz(f) && !type_has_tz(t) && !EC_VARCHAR(t->type->eclass)) || (!type_has_tz(f) && type_has_tz(t))) {
 		v = temporal_convert(be, v, sel, f, t, true);
-		sel = NULL;
-		pushed = 0;
+		pushed = 1;
 		if (EC_VARCHAR(f->type->eclass))
 			return v;
 	}

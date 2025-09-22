@@ -4082,12 +4082,6 @@ rel_select_leftgroup_2_semi(visitor *v, sql_rel *rel)
 
 			if (exps_find_exp(l->attr, e->l) && exp_is_true(e->r) && e->flag == cmp_equal /*&& exp_is_true(a)*/) {
 				// printf("# optimize select leftgroup -> semi\n");
-				if (!list_empty(l->exps)) {
-					for(node *m = l->exps->h; m; m = m->next) {
-						sql_exp *j = m->data;
-						reset_any(j);
-					}
-				}
 				l->attr = NULL;
 				l->op = exp_is_true(a)?op_semi:op_anti;
 				list_remove_node(rel->exps, NULL, n);

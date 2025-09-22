@@ -10,10 +10,3 @@
 
 -- start/stop collecting MDBS profiler traces in a profiler_logs pool with a specific heartbeat
 create schema profiler;
-
-create procedure profiler.start() external name profiler."start";
-create procedure profiler.stop() external name profiler.stop;
-
-create procedure profiler.setheartbeat(beat int) external name profiler.setheartbeat;
-create function profiler.getlimit() returns integer external name profiler.getlimit;
-create procedure  profiler.setlimit(lim integer) external name profiler.setlimit;

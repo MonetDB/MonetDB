@@ -205,11 +205,11 @@ extern stmt *stmt_uselect2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp
 extern stmt *stmt_genselect(backend *be, stmt *lops, stmt *rops, sql_subfunc *f, stmt *sub, int anti);
 extern stmt *stmt_outerselect(backend *be, stmt *g, stmt *m, stmt *p, bool any);
 extern stmt *stmt_markselect(backend *be, stmt *g, stmt *m, stmt *p, bool any);
-extern stmt *stmt_markjoin(backend *be, stmt *l, stmt *r, bool final);
+extern stmt *stmt_markjoin(backend *be, stmt *l, stmt *r, bool nil_matches, bool final);
 
 extern stmt *stmt_tunion(backend *be, stmt *op1, stmt *op2);
 extern stmt *stmt_tdiff(backend *be, stmt *op1, stmt *op2, stmt *lcand);
-extern stmt *stmt_tdiff2(backend *be, stmt *op1, stmt *op2, stmt *lcand, bool any);
+extern stmt *stmt_tdiff2(backend *be, stmt *op1, stmt *op2, stmt *lcand, bool is_semantics, bool any);
 extern stmt *stmt_tinter(backend *be, stmt *op1, stmt *op2, bool single);
 
 extern stmt *stmt_join(backend *be, stmt *op1, stmt *op2, int anti, comp_type cmptype, int need_left, int is_semantics, bool single);

@@ -4412,10 +4412,10 @@ BATsemijoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
  * and the left input is also not NIL, otherwise the mark output is
  * NIL. */
 gdk_return
-BATmarkjoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r, BAT *sl, BAT *sr,
+BATmarkjoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches,
 	    BUN estimate)
 {
-	return leftjoin(r1p, r2p, r3p, l, r, sl, sr, false, true, r2p == NULL,
+	return leftjoin(r1p, r2p, r3p, l, r, sl, sr, nil_matches, true, r2p == NULL,
 			false, false, false, false, estimate, __func__,
 			GDK_TRACER_TEST(M_DEBUG, ALGO) ? GDKusec() : 0);
 }

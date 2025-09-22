@@ -34,10 +34,10 @@
  */
 #include "monetdb_config.h"
 #include "mal_client.h"
+#include "mal_scenario.h"
 #include "mal_session.h"
 #include "mal_exception.h"
 #include "mal_interpreter.h"
-#include "mal_authorize.h"
 #include "mal_internal.h"
 #include "msabaoth.h"
 #include "mcrypt.h"
@@ -166,6 +166,274 @@ struct challengedata {
 };
 
 static str SERVERsetAlias(void *ret, const int *key, const char *const *dbalias);
+
+/*
+ * The default method to interact with the database server is to connect
+ * using a port number. The first line received should contain
+ * authorization information, such as user name.
+ *
+ * The scheduleClient receives a challenge response consisting of
+ * endian:user:password:lang:database:
+ */
+static void
+exit_streams(bstream *fin, stream *fout)
+{
+	if (fout && fout != GDKstdout) {
+		mnstr_flush(fout, MNSTR_FLUSH_DATA);
+		close_stream(fout);
+	}
+	if (fin)
+		bstream_destroy(fin);
+}
+
+static const char mal_enableflag[] = "mal_for_all";
+
+static bool
+is_exiting(void *data)
+{
+	(void) data;
+	return GDKexiting();
+}
+
+/*
+ * Here we start the client.  We need to initialize and allocate space
+ * for the global variables.  Thereafter it is up to the scenario
+ * interpreter to process input.
+ */
+static str
+MSserveClient(Client c)
+{
+	if (MCinitClientThread(c) < 0) {
+		MCcloseClient(c);
+		return MAL_SUCCEED;
+	}
+
+	assert(c->scenario);
+	do {
+		do {
+			MT_thread_setworking("running scenario");
+			str msg = runScenario(c);
+			freeException(msg);
+			if (c->mode == FINISHCLIENT)
+				break;
+			resetScenario(c);
+		} while (c->scenario && !GDKexiting());
+	} while (c->scenario && c->mode != FINISHCLIENT && !GDKexiting());
+	MT_thread_setworking("exiting");
+	/* pre announce our exiting: cleaning up may take a while and we
+	 * don't want to get killed during that time for fear of
+	 * deadlocks */
+	MT_exiting_thread();
+	assert(c->backup == NULL);
+	assert(c->curprg == NULL);
+	MCcloseClient(c);
+	return MAL_SUCCEED;
+}
+
+
+static inline void
+cleanUpScheduleClient(Client c, str *command, str *err)
+{
+	if (c) {
+		MCcloseClient(c);
+	}
+	if (command) {
+		GDKfree(*command);
+		*command = NULL;
+	}
+	if (err) {
+		freeException(*err);
+		*err = NULL;
+	}
+}
+
+static void
+MSscheduleClient(str command, str peer, str challenge, bstream *fin, stream *fout,
+				 protocol_version protocol, size_t blocksize)
+{
+	char *user = command, *algo = NULL, *passwd = NULL, *lang = NULL,
+		*handshake_opts = NULL;
+	char *database = NULL, *s;
+	const char *dbname;
+	str msg = MAL_SUCCEED;
+	bool filetrans = false;
+	Client c;
+
+	MT_thread_set_qry_ctx(NULL);
+
+	/* decode BIG/LIT:user:{cypher}passwordchal:lang:database: line */
+
+	/* byte order */
+	s = strchr(user, ':');
+	if (s) {
+		*s = 0;
+		mnstr_set_bigendian(fin->s, strcmp(user, "BIG") == 0);
+		user = s + 1;
+	} else {
+		mnstr_printf(fout, "!incomplete challenge '%s'\n", user);
+		exit_streams(fin, fout);
+		GDKfree(command);
+		return;
+	}
+
+	/* passwd */
+	s = strchr(user, ':');
+	if (s) {
+		*s = 0;
+		passwd = s + 1;
+		/* decode algorithm, i.e. {plain}mypasswordchallenge */
+		if (*passwd != '{') {
+			mnstr_printf(fout, "!invalid password entry\n");
+			exit_streams(fin, fout);
+			GDKfree(command);
+			return;
+		}
+		algo = passwd + 1;
+		s = strchr(algo, '}');
+		if (!s) {
+			mnstr_printf(fout, "!invalid password entry\n");
+			exit_streams(fin, fout);
+			GDKfree(command);
+			return;
+		}
+		*s = 0;
+		passwd = s + 1;
+	} else {
+		mnstr_printf(fout, "!incomplete challenge '%s'\n", user);
+		exit_streams(fin, fout);
+		GDKfree(command);
+		return;
+	}
+
+	/* lang */
+	s = strchr(passwd, ':');
+	if (s) {
+		*s = 0;
+		lang = s + 1;
+	} else {
+		mnstr_printf(fout, "!incomplete challenge, missing language\n");
+		exit_streams(fin, fout);
+		GDKfree(command);
+		return;
+	}
+
+	/* database */
+	s = strchr(lang, ':');
+	if (s) {
+		*s = 0;
+		database = s + 1;
+		/* we can have stuff following, make it void */
+		s = strchr(database, ':');
+		if (s)
+			*s++ = 0;
+	}
+
+	if (s && strncmp(s, "FILETRANS:", 10) == 0) {
+		s += 10;
+		filetrans = true;
+	} else if (s && s[0] == ':') {
+		s += 1;
+		filetrans = false;
+	}
+
+	if (s && strchr(s, ':') != NULL) {
+		handshake_opts = s;
+		s = strchr(s, ':');
+		*s++ = '\0';
+	}
+	dbname = GDKgetenv("gdk_dbname");
+	if (database != NULL && database[0] != '\0' &&
+		strcmp(database, dbname) != 0) {
+		mnstr_printf(fout, "!request for database '%s', "
+					 "but this is database '%s', "
+					 "did you mean to connect to monetdbd instead?\n",
+					 database, dbname);
+		/* flush the error to the client, and abort further execution */
+		exit_streams(fin, fout);
+		GDKfree(command);
+		return;
+	} else {
+		c = MCinitClient(0, fin, fout);
+		if (c == NULL) {
+			if (MCshutdowninprogress())
+				mnstr_printf(fout,
+							 "!system shutdown in progress, please try again later\n");
+			else
+				mnstr_printf(fout, "!maximum concurrent client limit reached "
+							 "(%d), please try again later\n", MAL_MAXCLIENTS);
+			exit_streams(fin, fout);
+			GDKfree(command);
+			return;
+		}
+		c->filetrans = filetrans;
+		c->handshake_options = handshake_opts ? strdup(handshake_opts) : NULL;
+		/* move this back !! */
+		if (c->usermodule == 0) {
+			c->curmodule = c->usermodule = userModule();
+			if (c->curmodule == NULL) {
+				mnstr_printf(fout, "!could not allocate space\n");
+				cleanUpScheduleClient(c, &command, &msg);
+				return;
+			}
+		}
+
+		if ((msg = setScenario(c, lang)) != NULL) {
+			mnstr_printf(c->fdout, "!%s\n", msg);
+			mnstr_flush(c->fdout, MNSTR_FLUSH_DATA);
+			cleanUpScheduleClient(c, &command, &msg);
+			return;
+		}
+		if (strncasecmp("sql", lang, strlen(lang)) != 0
+			&& strncasecmp("msql", lang, strlen(lang)) != 0
+			&& strcmp(user, "monetdb") != 0) {
+			mnstr_printf(fout,
+						 "!only the 'monetdb' user can use non-sql languages. "
+						 "run mserver5 with --set %s=yes to change this.\n",
+						 mal_enableflag);
+			cleanUpScheduleClient(c, &command, &msg);
+			return;
+		}
+	}
+
+	// at this point username should have being verified
+	c->username = GDKstrdup(user);
+	if (peer)
+		c->peer = GDKstrdup(peer);
+
+	/* NOTE ABOUT STARTING NEW THREADS
+	 * At this point we have conducted experiments (Jun 2012) with
+	 * reusing threads.  The implementation used was a lockless array of
+	 * semaphores to wake up threads to do work.  Experimentation on
+	 * Linux, Solaris and Darwin showed no significant improvements, in
+	 * most cases no improvements at all.  Hence the following
+	 * conclusion: thread reuse doesn't save up on the costs of just
+	 * forking new threads.  Since the latter means no difficulties of
+	 * properly maintaining a pool of threads and picking the workers
+	 * out of them, it is favourable just to start new threads on
+	 * demand. */
+
+	/* fork a new thread to handle this client */
+	c->protocol = protocol;
+	c->blocksize = blocksize;
+
+	mnstr_settimeout(c->fdin->s, 50, is_exiting, NULL);
+	if (c->initClient) {
+		if ((msg = c->initClient(c, passwd, challenge, algo)) != MAL_SUCCEED) {
+			mnstr_printf(fout, "!%s\n", msg);
+			GDKfree(command);
+			if (c->exitClient)
+				c->exitClient(c);
+			cleanUpScheduleClient(c, NULL, &msg);
+			return;
+		}
+	}
+	GDKfree(command);
+
+	msg = MSserveClient(c);
+	if (msg != MAL_SUCCEED) {
+		freeException(msg);
+	}
+}
 
 static void
 doChallenge(void *data)

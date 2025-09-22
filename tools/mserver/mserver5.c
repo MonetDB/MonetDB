@@ -170,22 +170,6 @@ monet_hello(void)
 	printf("# Copyright (c) 2024, 2025 MonetDB Foundation, all rights reserved\n");
 	printf("# Visit https://www.monetdb.org/ for further information\n");
 
-	// The properties shipped through the performance profiler
-	(void) snprintf(monet_characteristics, sizeof(monet_characteristics),
-					"{\n" "\"version\":\"%s\",\n" "\"release\":\"%s\",\n"
-					"\"host\":\"%s\",\n" "\"threads\":\"%d\",\n"
-					"\"memory\":\"%.3f %cB\",\n" "\"oid\":\"%zu\",\n"
-					"\"packages\":["
-#ifdef HAVE_HGE
-					"\"huge\""
-#endif
-					"]\n}", GDKversion(),
-#ifdef MONETDB_RELEASE
-					MONETDB_RELEASE,
-#else
-					"unreleased",
-#endif
-					HOST, GDKnr_threads, sz_mem_h, qc[qi], sizeof(oid) * 8);
 	fflush(stdout);
 }
 

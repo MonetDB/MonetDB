@@ -16,7 +16,6 @@
 #include "rel_exp.h"
 #include "rel_select.h"
 #include "rel_updates.h"
-#include "sql_partition.h"
 
 extern sql_rel *rel_list(allocator *sa, sql_rel *l, sql_rel *r);
 

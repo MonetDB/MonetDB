@@ -137,8 +137,7 @@ isaSQLquery(MalBlkPtr mb)
 	if (mb) {
 		for (int i = 1; i < mb->stop; i++) {
 			InstrPtr p = getInstrPtr(mb, i);
-			if (getModuleId(p) && idcmp(getModuleId(p), "querylog") == 0
-				&& idcmp(getFunctionId(p), "define") == 0)
+			if (getModuleId(p) == querylogRef && getFunctionId(p) == defineRef)
 				return getVarConstant(mb, getArg(p, 1)).val.sval;
 		}
 	}
@@ -368,15 +367,6 @@ runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 {
 	lng ticks = GDKusec();
 
-	if (profilerStatus > 0)
-		profilerEvent(&(struct MalEvent) { cntxt, mb, stk, pci, ticks,
-					  ticks - prof->ticks },
-					  NULL);
 	if (cntxt->sqlprofiler)
 		sqlProfilerEvent(cntxt, mb, stk, pci, ticks, ticks - prof->ticks);
-	if (profilerStatus < 0) {
-		/* delay profiling until you encounter start of MAL function */
-		if (getInstrPtr(mb, 0) == pci)
-			profilerStatus = 1;
-	}
 }

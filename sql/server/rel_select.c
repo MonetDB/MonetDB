@@ -14,19 +14,14 @@
 #include "rel_select.h"
 #include "sql_tokens.h"
 #include "sql_privileges.h"
-#include "sql_env.h"
-#include "sql_decimal.h"
 #include "sql_qc.h"
 #include "rel_rel.h"
 #include "rel_basetable.h"
 #include "rel_exp.h"
 #include "rel_xml.h"
-#include "rel_dump.h"
 #include "rel_prop.h"
 #include "rel_psm.h"
-#include "rel_schema.h"
 #include "rel_unnest.h"
-#include "rel_sequence.h"
 #include "rel_file_loader.h"
 #include "rel_proto_loader.h"
 #include "rel_optimizer_private.h"
@@ -2316,8 +2311,11 @@ rel_in_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 				add_select = 1;
 				if (rel && *rel && is_join((*rel)->op))
 					set_dependent((*rel));
-				if (is_project(r->op) && is_project_true(r->l) && list_length(r->exps) == 1)
+				if (is_project(r->op) && is_project_true(r->l) && list_length(r->exps) == 1) {
 					re = r->exps->h->data;
+					if (is_freevar(re))
+						reset_freevar(re);
+				}
 			} else if (is_values(re) && is_tuple != list_length(exp_get_values(re))) {
 				return sql_error(sql, 02, SQLSTATE(42000) "Tuple sizes do not match");
 			}
@@ -3372,11 +3370,20 @@ rel_nop(sql_query *query, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 		sql_exp *le = exps->h->data;
 		set_freevar(le, 1);
 		list_remove_data(exps, NULL, le);
-		sql_exp *re = exp_values(sql->sa, exps);
-		exp_label(sql->sa, re, ++sql->label);
-		sql_rel *r = rel_project(sql->sa, NULL, append(sa_list(sql->sa), re));
-		sql_exp *id = NULL;
-		rel_add_identity(sql, r, &id);
+		sql_rel *r = NULL;
+		sql_exp *re = NULL, *id = NULL;
+		if (exps_have_rel_exp(exps)) {
+			if (list_length(exps) > 1)
+				return sql_error(sql, 02, SQLSTATE(42000) "Field function called with multiple index subqueries");
+			r = exp_rel_get_rel(sql->sa, exps->h->data);
+			assert(is_project(r->op));
+			re = r->exps->t->data;
+		} else {
+			re = exp_values(sql->sa, exps);
+			exp_label(sql->sa, re, ++sql->label);
+			r = rel_project(sql->sa, NULL, append(sa_list(sql->sa), re));
+		}
+		r = rel_add_identity(sql, r, &id);
 		re = exp_ref(sql, re);
 		id = exp_ref(sql, id);
 		if (r) {
@@ -5893,9 +5900,6 @@ rel_query(sql_query *query, symbol *sq, exp_kind ek)
 	sn = (SelectNode *) sq;
 	if (sn->into)
 		return NULL;
-
-	if (ek.card != card_relation && sn->orderby)
-		return sql_error(sql, 01, SQLSTATE(42000) "SELECT: ORDER BY only allowed on outermost SELECT");
 
 	if (sn->window) {
 		dlist *wl = sn->window->data.lval;

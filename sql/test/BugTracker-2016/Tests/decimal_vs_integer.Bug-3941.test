@@ -7,22 +7,11 @@ start transaction
 statement ok
 create table tmp(i decimal(8))
 
-statement ok
-create procedure profiler.starttrace() external name profiler."starttrace"
-
-statement ok
-create procedure profiler.stoptrace() external name profiler.stoptrace
-
-statement ok
-call profiler."starttrace"()
-
 query I rowsort
+trace
 select count(*) from tmp where i = 20160222
 ----
 0
-
-statement ok
-call profiler.stoptrace()
 
 query I rowsort
 select count(*) from sys.tracelog() where stmt like '%batcalc.int%' or stmt like '%batcalc.lng%'
@@ -34,16 +23,11 @@ select count(*) from tmp where i = 20160222
 ----
 0
 
-statement ok
-call profiler."starttrace"()
-
 query I rowsort
+trace
 select count(*) from tmp where i = '20160222'
 ----
 0
-
-statement ok
-call profiler.stoptrace()
 
 query I rowsort
 select count(*) from sys.tracelog() where stmt like '%batcalc.int%' or stmt like '%batcalc.lng%'
@@ -55,16 +39,11 @@ select count(*) from tmp where i = '20160222'
 ----
 0
 
-statement ok
-call profiler."starttrace"()
-
 query I rowsort
+trace
 select count(*) from tmp where i = 201602221
 ----
 0
-
-statement ok
-call profiler.stoptrace()
 
 query I rowsort
 select count(*) from sys.tracelog() where stmt like '%batcalc.int%'

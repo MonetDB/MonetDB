@@ -307,9 +307,9 @@ hasSideEffects(MalBlkPtr mb, InstrPtr p, int strict)
 			return FALSE;
 		if (getFunctionId(p) == bindRef)
 			return FALSE;
-		if (getFunctionId(p) == bindidxRef)
+		if (getFunctionId(p) == bind_idxbatRef)
 			return FALSE;
-		if (getFunctionId(p) == binddbatRef)
+		if (getFunctionId(p) == bind_dbatRef)
 			return FALSE;
 		if (getFunctionId(p) == columnBindRef)
 			return FALSE;
@@ -411,7 +411,7 @@ isOrderDepenent(InstrPtr p)
 {
 	if (getModuleId(p) != batsqlRef)
 		return 0;
-	if (getFunctionId(p) == differenceRef || getFunctionId(p) == window_boundRef
+	if (getFunctionId(p) == diffRef || getFunctionId(p) == window_boundRef
 		|| getFunctionId(p) == row_numberRef || getFunctionId(p) == rankRef
 		|| getFunctionId(p) == dense_rankRef
 		|| getFunctionId(p) == percent_rankRef
@@ -496,7 +496,7 @@ isMatJoinOp(InstrPtr p)
 {
 	return (isSubJoin(p)
 			|| (getModuleId(p) == algebraRef
-				&& (getFunctionId(p) == crossRef || getFunctionId(p) == joinRef
+				&& (getFunctionId(p) == crossproductRef || getFunctionId(p) == joinRef
 					|| getFunctionId(p) == thetajoinRef
 					|| getFunctionId(p) == bandjoinRef
 					|| getFunctionId(p) == rangejoinRef)
