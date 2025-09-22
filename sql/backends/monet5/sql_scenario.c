@@ -382,7 +382,7 @@ SQLexecPostLoginTriggers(Client c)
 					stream *out = be->out;
 					be->out = NULL;	/* no output stream */
 					if (!msg)
-						msg = SQLrun(c, m);
+						msg = SQLrun(c, be);
 
 					// restore previous state
 					be->out = out;
@@ -1733,7 +1733,7 @@ SQLengine_(Client c)
 	assert (m->emode != m_deallocate && m->emode != m_prepare);
 	assert (c->curprg->def->stop > 2);
 
-	msg = SQLrun(c, m);
+	msg = SQLrun(c, be);
 
 	if (m->type == Q_SCHEMA && m->qc != NULL)
 		qc_clean(m->qc);

@@ -50,8 +50,9 @@
 */
 
 str
-SQLrun(Client c, mvc *m)
+SQLrun(Client c, backend *be)
 {
+	mvc *m = be->mvc;
 	str msg = MAL_SUCCEED;
 	MalBlkPtr mb = c->curprg->def;
 
@@ -80,8 +81,10 @@ SQLrun(Client c, mvc *m)
 			MT_lock_unset(&mal_contextLock);
 			msg = runMAL(c, mb, 0, 0);
 		}
-		if (msg == MAL_SUCCEED)
+		if (msg == MAL_SUCCEED) {
 			msg = resetMalBlk(&c->curprg->def);
+			be->mb = NULL;
+		}
 	}
 	/* after the query has been finished we enter the idle state */
 	MT_lock_set(&mal_contextLock);
@@ -338,7 +341,7 @@ SQLstatementIntern(Client c, const char *expr, const char *nme, bit execute, bit
 				sql->out = NULL;	/* no output stream */
 			be->depth++;
 			c->query = (char *) expr;
-			msg = SQLrun(c, m);
+			msg = SQLrun(c, sql);
 			be->depth--;
 			assert (c->curprg->def->stop <= 1);
 			sqlcleanup(sql, 0);
@@ -459,7 +462,7 @@ RAstatement(Client c, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		} else {
 			msg = SQLoptimizeFunction(c, c->curprg->def);
 			if (msg == MAL_SUCCEED)
-				msg = SQLrun(c,m);
+				msg = SQLrun(c, be);
 			if (msg == MAL_SUCCEED)
 				msg = resetMalBlk(&c->curprg->def);
 		}
