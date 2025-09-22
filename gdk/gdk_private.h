@@ -40,6 +40,7 @@ enum range_comp_t {
 };
 
 struct allocator {
+	const char *name; /* Name (only for display!) */
 	struct allocator *pa;
 	struct allocator *ta;
 	size_t size;	 /* size of the allocator in terms of blocks */

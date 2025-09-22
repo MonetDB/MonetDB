@@ -169,8 +169,13 @@ CLIENTprintinfo(void)
 				ma_used += sa_size(c->ma);
 			if (c->curprg && c->curprg->def)
 				ma_used += sa_size(c->curprg->def->ma);
+			if (c->sqlcontext) {
+				backend *be = (backend*) c->sqlcontext;
+				if (be->mvc)
+					ma_used += sa_size(be->mvc->pa);
+			}
 			if (ma_used)
-				snprintf(mabuf, sizeof(mabuf), ", allocator: %zu bytes", ma_used);
+				snprintf(mabuf, sizeof(mabuf), ", Allocators combined: %zu bytes", ma_used);
 			else
 				mabuf[0] = 0;
 			printf("client %d, user %s, thread %s, using %"PRIu64" bytes of transient space%s%s%s%s%s%s%s%s%s%s\n", c->idx, c->username, c->mythread ? c->mythread : "?", (uint64_t) ATOMIC_GET(&c->qryctx.datasize), mmbuf, tmbuf, trbuf, chbuf, cabuf, clbuf, cpbuf, crbuf, qybuf, mabuf);

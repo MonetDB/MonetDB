@@ -1733,7 +1733,7 @@ gdk_export ValPtr VALcopy(allocator *va, ValPtr dst, const ValRecord *src)
 gdk_export ValPtr VALinit(allocator *va, ValPtr d, int tpe, const void *s)
 	__attribute__((__access__(write_only, 1)));
 
-gdk_export allocator *create_allocator(allocator *pa, bool use_lock);
+gdk_export allocator *create_allocator(allocator *pa, const char *, bool use_lock);
 gdk_export allocator *allocator_get_parent(const allocator *alloc);
 gdk_export bool allocator_tmp_active(const allocator *alloc);
 gdk_export allocator *sa_reset(allocator *sa);
@@ -1745,6 +1745,7 @@ gdk_export char *sa_strndup(allocator *sa, const char *s, size_t l);
 gdk_export char *sa_strdup(allocator *sa, const char *s);
 gdk_export char *sa_strconcat(allocator *sa, const char *s1, const char *s2);
 gdk_export size_t sa_size(allocator *sa);
+gdk_export const char* sa_name(allocator *sa);
 gdk_export void sa_open(allocator *sa);  /* open new frame of tempory allocations */
 gdk_export void sa_close(allocator *sa); /* close temporary frame, reset to old state */
 gdk_export void sa_free(allocator *sa, void *);
@@ -1754,8 +1755,8 @@ gdk_export exception_buffer *sa_get_eb(allocator *sa)
 gdk_export void sa_set_ta(allocator *sa,  allocator *ta);
 gdk_export allocator *sa_get_ta(allocator *sa);
 
-#define sa_create(pa)		create_allocator(pa, false)
-#define ma_create(pa)		create_allocator(pa, true)
+#define sa_create(pa)		create_allocator(pa, NULL, false)
+#define ma_create(pa)		create_allocator(pa, NULL, true)
 #define ma_destroy(ma)		sa_destroy(ma)
 #define ma_alloc(ma, sz)	(void*)sa_alloc(ma, sz)
 #define ma_zalloc(ma, sz)	(void*)sa_zalloc(ma, sz)

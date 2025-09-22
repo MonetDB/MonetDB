@@ -298,7 +298,7 @@ void
 dump_threads(void)
 {
 	char buf[1024];
-	char abuf[64]; // allocator buffer
+	char abuf[128]; // allocator buffer
 #if defined(HAVE_PTHREAD_MUTEX_TIMEDLOCK) && defined(HAVE_CLOCK_GETTIME)
 	struct timespec ts;
 	clock_gettime(CLOCK_REALTIME, &ts);
@@ -324,10 +324,15 @@ dump_threads(void)
 		MT_Cond *cn = t->condwait;
 		struct mtthread *jn = t->joinwait;
 		const char *working = ATOMIC_PTR_GET(&t->working);
-		if (t->thread_allocator)
+		if (t->thread_allocator) {
+			const char *name =
+				sa_name(t->thread_allocator);
 			snprintf(abuf, sizeof(abuf),
-					", allocator %zu bytes",
+					", %s allocator %zu bytes",
+					name ? name : "(unknown)",
 					sa_size(t->thread_allocator));
+
+		}
 		else
 			abuf[0] = 0;
 

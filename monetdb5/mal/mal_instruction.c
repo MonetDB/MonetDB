@@ -118,7 +118,7 @@ newMalBlk(int elements)
 {
 	MalBlkPtr mb;
 	VarRecord *v;
-	allocator *ma = ma_create(NULL);
+	allocator *ma = create_allocator(NULL, "MA_MalBlk", true);
 
 	if (!ma)
 		return NULL;

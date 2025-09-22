@@ -2549,7 +2549,7 @@ sa_get_ta(allocator *sa)
 }
 
 allocator *
-create_allocator(allocator *pa, bool use_lock)
+create_allocator(allocator *pa, const char *name, bool use_lock)
 {
 	// allocator lives in the 1st blk
 	char *first_blk = (pa)? (char*) _sa_alloc_internal(pa, SA_BLOCK_SIZE) : (char*) GDKmalloc(SA_BLOCK_SIZE);
@@ -2587,6 +2587,10 @@ create_allocator(allocator *pa, bool use_lock)
 	sa->tmp_used = 0;
 	sa->use_lock = use_lock;
 	MT_lock_init(&sa->lock, "allocator_lock");
+	if (name)
+		sa->name = sa_strdup(sa, name);
+	else
+		sa->name = NULL;
 	return sa;
 }
 
@@ -2674,6 +2678,13 @@ sa_size(allocator *sa)
 {
 	return sa->usedmem;
 }
+
+const char *
+sa_name(allocator *sa)
+{
+	return sa->name;
+}
+
 
 exception_buffer *
 sa_get_eb(allocator *sa)
