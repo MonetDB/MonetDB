@@ -1402,6 +1402,9 @@ SQLparser_body(Client c, backend *be)
 	m->type = Q_PARSE;
 	m->emode = m_normal;
 	m->emod = mod_none;
+	m->temporal = T_NONE;
+	m->step = S_NONE;
+	m->show_props = false;
 	c->query = NULL;
 	c->qryctx.starttime = Tbegin = Tend = GDKusec();
 	c->qryctx.endtime = c->querytimeout ? c->qryctx.starttime + c->querytimeout : 0;

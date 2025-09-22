@@ -673,6 +673,7 @@ SQLCODE SQLERROR UNDER WHENEVER
 %token TYPE PROCEDURE FUNCTION sqlLOADER AGGREGATE RETURNS EXTERNAL sqlNAME DECLARE
 %token CALL LANGUAGE
 %token ANALYZE SQL_EXPLAIN SQL_PLAN SQL_TRACE PREP PREPARE EXEC EXECUTE DEALLOCATE
+%token UNNEST REWRITE SHOW PROPERTIES
 %token DEFAULT DISTINCT DROP TRUNCATE
 %token FOREIGN
 %token RENAME ENCRYPTED UNENCRYPTED PASSWORD GRANT REVOKE ROLE ADMIN INTO
@@ -817,104 +818,120 @@ SQLCODE SQLERROR UNDER WHENEVER
 %%
 
 sqlstmt:
-   sql SCOLON
-	{
-		(void)yynerrs;
-		if (m->sym) {
-			append_symbol(m->sym->data.lval, $1);
-			$$ = m->sym;
-		} else {
-			m->sym = $$ = $1;
-		}
-		YYACCEPT;
-	}
+				sql SCOLON
+				{
+					(void)yynerrs;
+					if (m->sym) {
+						append_symbol(m->sym->data.lval, $1);
+						$$ = m->sym;
+					} else {
+						m->sym = $$ = $1;
+					}
+					YYACCEPT;
+				}
+		|		sql ':' named_arg_list_ref SCOLON
+				{
+					(void) yynerrs;
+					if (!m->emode) /* don't replace m_deps/instantiate */
+						m->emode = m_prepare;
+					if (m->sym) {
+						append_symbol(m->sym->data.lval, $1);
+						$$ = m->sym;
+					} else {
+						dlist* stmts = L();
+						append_symbol(stmts, $$ = $1);
+						m->sym = _symbol_create_list(SQL_MULSTMT, stmts);
+					}
+					/* call( query, nop(-1, false, parameters) ) */
+					if (m->sym->data.lval) {
+						m->emod |= mod_exec;
+						dlist* l = L();
+						append_symbol(l, m->sym);
+						append_symbol(l, $3);
+						m->sym = _symbol_create_list(SQL_CALL, l);
+					}
+					YYACCEPT;
+				}
+		|		prepare
+				{
+					if (!m->emode) /* don't replace m_deps/instantiate */
+						m->emode = m_prepare;
+					m->scanner.as = m->scanner.yycur;
+				}
+				sql SCOLON {
+					
+					if (m->sym) {
+						append_symbol(m->sym->data.lval, $3);
+						$$ = m->sym;
+					} else {
+						m->sym = $$ = $3;
+					}
+					YYACCEPT;
+				}
+		|		explain sql SCOLON
+				{
+					if (m->sym) {
+						append_symbol(m->sym->data.lval, $2);
+						$$ = m->sym;
+					} else {
+						m->sym = $$ = $2;
+					}
+					YYACCEPT;
+				}
+		|		SQL_TRACE
+				{
+					m->emod |= mod_trace;
+					m->scanner.as = m->scanner.yycur;
+				}
+		|		exec SCOLON 	{ m->sym = $$ = $1; YYACCEPT; }
+		|		dealloc SCOLON  { m->sym = $$ = $1; YYACCEPT; }
+		|		/* empty */ 	{ m->sym = $$ = NULL; YYACCEPT; }
+		|		SCOLON          { m->sym = $$ = NULL; YYACCEPT; }
+		|		error SCOLON 	{ m->sym = $$ = NULL; YYACCEPT; }
+		|		LEX_ERROR 		{ m->sym = $$ = NULL; YYABORT; }
+		;
 
- | sql ':' named_arg_list_ref SCOLON
-	{
-		(void)yynerrs;
-		 if (!m->emode) /* don't replace m_deps/instantiate */
-			m->emode = m_prepare;
-		if (m->sym) {
-			append_symbol(m->sym->data.lval, $1);
-			$$ = m->sym;
-		} else {
-			dlist* stmts = L();
-			append_symbol(stmts, $$ = $1);
-			m->sym = _symbol_create_list(SQL_MULSTMT, stmts);
-		}
-		/* call( query, nop(-1, false, parameters) ) */
-		if (m->sym->data.lval) {
-			m->emod |= mod_exec;
-			dlist* l = L();
-			append_symbol(l, m->sym);
-			append_symbol(l, $3);
-			m->sym = _symbol_create_list(SQL_CALL, l);
-		}
-		YYACCEPT;
-	}
+explain:
+				SQL_PLAN temporal step opt_show_properties
+				{
+					m->emode = m_plan;
+					m->scanner.as = m->scanner.yycur;
+				}
+		|		SQL_PLAN opt_show_properties
+				{
+					m->emode = m_plan;
+					m->step = S_REWRITE;
+					m->temporal = T_AFTER;
+					m->scanner.as = m->scanner.yycur;
+				}
+		|		SQL_EXPLAIN
+				{
+					m->emod |= mod_explain;
+					/* m->step = S_PHYSICAL; */
+					/* m->temporal = T_BEFORE; */
+					m->scanner.as = m->scanner.yycur;
+				}
+		/* |		SQL_EXPLAIN temporal step */
+		/* 		{ */
+		/* 			m->emod |= mod_explain; */
+		/* 			m->scanner.as = m->scanner.yycur; */
+		/* 		} */
+		;
 
- | prepare		{
-			  if (!m->emode) /* don't replace m_deps/instantiate */
-				m->emode = m_prepare;
-			  m->scanner.as = m->scanner.yycur;
-			}
-   sql SCOLON	{
-			  if (m->sym) {
-				append_symbol(m->sym->data.lval, $3);
-				$$ = m->sym;
-			  } else {
-				m->sym = $$ = $3;
-			  }
-			  YYACCEPT;
-			}
- | SQL_PLAN		{
-			  m->emode = m_plan;
-			  m->scanner.as = m->scanner.yycur;
-			}
-   sql SCOLON	{
-			  if (m->sym) {
-				append_symbol(m->sym->data.lval, $3);
-				$$ = m->sym;
-			  } else {
-				m->sym = $$ = $3;
-			  }
-			  YYACCEPT;
-			}
+step:
+				UNNEST { m->step = S_UNNEST; }
+		|		REWRITE { m->step = S_REWRITE; }
+		;
 
- | SQL_EXPLAIN		{
-			  m->emod |= mod_explain;
-			  m->scanner.as = m->scanner.yycur;
-			}
-   sql SCOLON		{
-			  if (m->sym) {
-				append_symbol(m->sym->data.lval, $3);
-				$$ = m->sym;
-			  } else {
-				m->sym = $$ = $3;
-			  }
-			  YYACCEPT;
-			}
+temporal:
+				BEFORE { m->temporal = T_BEFORE; }
+		|		AFTER { m->temporal = T_AFTER; }
+		;
 
- | SQL_TRACE		{
-			  m->emod |= mod_trace;
-			  m->scanner.as = m->scanner.yycur;
-			}
-   sql SCOLON		{
-			  if (m->sym) {
-				append_symbol(m->sym->data.lval, $3);
-				$$ = m->sym;
-			  } else {
-				m->sym = $$ = $3;
-			  }
-			  YYACCEPT;
-			}
- | exec SCOLON		{ m->sym = $$ = $1; YYACCEPT; }
- | dealloc SCOLON	{ m->sym = $$ = $1; YYACCEPT; }
- | /*empty*/		{ m->sym = $$ = NULL; YYACCEPT; }
- | SCOLON		{ m->sym = $$ = NULL; YYACCEPT; }
- | error SCOLON		{ m->sym = $$ = NULL; YYACCEPT; }
- | LEX_ERROR		{ m->sym = $$ = NULL; YYABORT; }
- ;
+opt_show_properties:
+				SHOW PROPERTIES { m->show_props = true; }
+		|		/* empty */
+		;
 
 prepare:
    PREPARE

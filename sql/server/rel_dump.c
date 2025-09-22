@@ -368,7 +368,7 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 	default:
 		;
 	}
-	if (sql->debug) {
+	if (sql->show_props) {
 		if (e->type != e_atom && e->type != e_cmp && is_partitioning(e))
 			mnstr_printf(fout, " PART");
 		if (e->type != e_atom && e->type != e_cmp && is_ascending(e))
@@ -382,9 +382,7 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 		/* don't show properties on value lists */
 		if (decorate && e->p && e->type != e_atom && !exp_is_atom(e)) {
 			for (prop *p = e->p; p; p = p->p) {
-				/* Don't show min/max/unique est on atoms, or when running tests with forcemito */
-				if ((ATOMIC_GET(&GDKdebug) & TESTINGMASK) == 0 ||
-					(p->kind != PROP_MIN && p->kind != PROP_MAX && p->kind != PROP_NUNIQUES)) {
+				if (p->kind != PROP_MIN && p->kind != PROP_MAX && p->kind != PROP_NUNIQUES) {
 					char *pv = propvalue2string(sql->ta, p);
 					mnstr_printf(fout, " %s %s", propkind2string(p), pv);
 				}
@@ -744,7 +742,7 @@ rel_print_rel(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int 
 	default:
 		assert(0);
 	}
-	if (sql->debug && decorate && rel->p) {
+	if (sql->show_props && decorate && rel->p) {
 		for (prop *p = rel->p; p; p = p->p) {
 			if (p->kind != PROP_COUNT || (ATOMIC_GET(&GDKdebug) & TESTINGMASK) == 0) {
 				char *pv = propvalue2string(sql->ta, p);
@@ -857,7 +855,7 @@ void
 rel_print_(mvc *sql, stream *fout, sql_rel *rel, int depth, list *refs, int decorate)
 {
 	rel_print_rel(sql, fout, rel, depth, refs, decorate);
-	if (sql->debug && sql->runs) {
+	if (sql->show_props && sql->runs) {
 		for (int i = 0 ; i < NSQLREWRITERS ; i++) {
 			sql_optimizer_run *run = &(sql->runs[i]);
 

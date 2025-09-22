@@ -71,6 +71,19 @@
 #define mod_explain 	2
 #define mod_exec 	4
 
+#define S_NONE		0
+#define S_UNNEST	1
+#define S_REWRITE	2
+
+#define T_NONE		0
+#define T_BEFORE	1
+#define T_AFTER		2
+
+#define BEFORE_UNNEST(m) (m->step == S_UNNEST && m->temporal == T_BEFORE)
+#define AFTER_UNNEST(m) (m->step == S_UNNEST && m->temporal == T_AFTER)
+#define BEFORE_REWRITE(m) (m->step == S_REWRITE && m->temporal == T_BEFORE)
+#define AFTER_REWRITE(m) (m->step == S_REWRITE && m->temporal == T_AFTER)
+
 typedef struct sql_groupby_expression {
 	symbol *sdef;
 	tokens token;
@@ -151,6 +164,9 @@ typedef struct mvc {
 	sql_optimizer_run *runs;    /* Information about SQL optimizer runs */
 	char emode;		            /* execution mode */
 	char emod;		            /* execution modifier */
+	unsigned temporal;
+	unsigned step;
+	bool show_props;
 	sql_session *session;
 	sql_store store;
 
