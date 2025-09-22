@@ -37,6 +37,7 @@
 #include "gdk.h"
 #include "gdk_system_private.h"
 
+#include <stdio.h>
 #include <time.h>
 
 #ifdef HAVE_FTIME
@@ -297,6 +298,7 @@ void
 dump_threads(void)
 {
 	char buf[1024];
+	char abuf[64]; // allocator buffer
 #if defined(HAVE_PTHREAD_MUTEX_TIMEDLOCK) && defined(HAVE_CLOCK_GETTIME)
 	struct timespec ts;
 	clock_gettime(CLOCK_REALTIME, &ts);
@@ -322,6 +324,13 @@ dump_threads(void)
 		MT_Cond *cn = t->condwait;
 		struct mtthread *jn = t->joinwait;
 		const char *working = ATOMIC_PTR_GET(&t->working);
+		if (t->thread_allocator)
+			snprintf(abuf, sizeof(abuf),
+					", allocator %zu bytes",
+					sa_size(t->thread_allocator));
+		else
+			abuf[0] = 0;
+
 		int pos = snprintf(buf, sizeof(buf),
 				   "%s, tid %zu, "
 #ifdef HAVE_PTHREAD_H
@@ -330,7 +339,7 @@ dump_threads(void)
 #ifdef HAVE_GETTID
 				   "LWP %ld, "
 #endif
-				   "%"PRIu32" free bats, waiting for %s%s, working on %.200s",
+				   "%"PRIu32" free bats, waiting for %s%s, working on %.200s%s",
 				   t->threadname,
 				   t->tid,
 #ifdef HAVE_PTHREAD_H
@@ -343,7 +352,7 @@ dump_threads(void)
 				   lk ? "lock " : sm ? "semaphore " : cn ? "condvar " : jn ? "thread " : "",
 				   lk ? lk->name : sm ? sm->name : cn ? cn->name : jn ? jn->threadname : "nothing",
 				   ATOMIC_GET(&t->exited) ? "exiting" :
-				   working ? working : "nothing");
+				   working ? working : "nothing", abuf);
 #ifdef LOCK_OWNER
 		const char *sep = ", locked: ";
 		for (MT_Lock *l = t->mylocks; l && pos < (int) sizeof(buf); l = l->nxt) {

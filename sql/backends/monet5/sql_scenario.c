@@ -93,6 +93,7 @@ static void
 CLIENTprintinfo(void)
 {
 	int nrun = 0, nfinish = 0, nblock = 0;
+	char mabuf[64]; // memory allocator buffer
 	char mmbuf[64];
 	char tmbuf[64];
 	char trbuf[128];
@@ -163,7 +164,16 @@ CLIENTprintinfo(void)
 				snprintf(cpbuf, sizeof(cpbuf), ", client pid: %ld", c->client_pid);
 			else
 				cpbuf[0] = 0;
-			printf("client %d, user %s, thread %s, using %"PRIu64" bytes of transient space%s%s%s%s%s%s%s%s%s\n", c->idx, c->username, c->mythread ? c->mythread : "?", (uint64_t) ATOMIC_GET(&c->qryctx.datasize), mmbuf, tmbuf, trbuf, chbuf, cabuf, clbuf, cpbuf, crbuf, qybuf);
+			size_t ma_used = 0; // total allocated through client allocators
+			if (c->ma)
+				ma_used += sa_size(c->ma);
+			if (c->curprg && c->curprg->def)
+				ma_used += sa_size(c->curprg->def->ma);
+			if (ma_used)
+				snprintf(mabuf, sizeof(mabuf), ", allocator: %zu bytes", ma_used);
+			else
+				mabuf[0] = 0;
+			printf("client %d, user %s, thread %s, using %"PRIu64" bytes of transient space%s%s%s%s%s%s%s%s%s%s\n", c->idx, c->username, c->mythread ? c->mythread : "?", (uint64_t) ATOMIC_GET(&c->qryctx.datasize), mmbuf, tmbuf, trbuf, chbuf, cabuf, clbuf, cpbuf, crbuf, qybuf, mabuf);
 			break;
 		case FINISHCLIENT:
 			/* finishing */

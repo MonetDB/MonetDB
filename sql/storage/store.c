@@ -7881,6 +7881,7 @@ store_printinfo(sqlstore *store)
 	}
 	printf("WAL:\n");
 	printf("SQL store oldest pending "ULLFMT"\n", store->oldest_pending);
+	printf("SQL store allocator: %zu bytes\n", sa_size(store->sa));
 	log_printinfo(store->logger);
 	MT_lock_unset(&store->commit);
 }
