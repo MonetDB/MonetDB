@@ -52,7 +52,7 @@ exp_getcard(mvc *sql, sql_rel *rel, sql_exp *e)
 
 		if (c) {
 			int de = mvc_is_duplicate_eliminated(sql, c);
-			if (de < cnt)
+			if (de && de < cnt)
 				cnt = de;
 		}
 	}
