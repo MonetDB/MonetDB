@@ -16,7 +16,7 @@
 //#define HT_MIN_SIZE 1024*64*8
 #define HT_MIN_SIZE 1024*8
 //#define HT_MIN_SIZE 256
-#define HT_PRE_CLAIM 7
+#define HT_PRE_CLAIM 256
 #define HT_MAX_SIZE 1024*1024*1024
 #define HP_MIN_SIZE HT_MIN_SIZE
 #define HP_MAX_SIZE HT_MAX_SIZE
