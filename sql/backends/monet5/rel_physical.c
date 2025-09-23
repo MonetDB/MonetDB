@@ -1117,7 +1117,13 @@ rel_count_gt_zero(visitor *v, sql_rel *rel)
 			rel_dup(rel->l);
 			rel = rel_inplace_project(v->sql->sa, rel, i, exps);
 		} else {
-			rel = rel_select(sql->sa, rel, e);
+			sql_rel *p = v->parent;
+			if (p && is_select(p->op)) {
+				append(p->exps, e);
+				return rel;
+			} else {
+				rel = rel_select(sql->sa, rel, e);
+			}
 			set_count_prop(v->sql->sa, rel, get_rel_count(rel->l));
 			rel = rel_project(sql->sa, rel, exps);
 		}
