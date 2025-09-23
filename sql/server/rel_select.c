@@ -3239,20 +3239,20 @@ inplace_func(mvc *sql)
 {
 	sql_func *f = SA_NEW(sql->sa, sql_func);
 
-    *f = (sql_func) {
-        .mod = "",
-        .imp = "",
-        .type = F_PROC,
-        .lang = FUNC_LANG_INT,
-        .query = NULL,
-        .ops = sql->params,
-        .res = NULL,
-    };
-    base_init(sql->sa, &f->base, 0, true, NULL);
-    f->base.new = 1;
-    f->base.id = -1;
-    f->base.name = "-1";
-    f->instantiated = TRUE;
+	*f = (sql_func) {
+		.mod = "",
+		.imp = "",
+		.type = F_PROC,
+		.lang = FUNC_LANG_INT,
+		.query = NULL,
+		.ops = sql->params,
+		.res = NULL,
+	};
+	base_init(sql->sa, &f->base, 0, true, NULL);
+	f->base.new = 1;
+	f->base.id = -1;
+	f->base.name = "-1";
+	f->instantiated = TRUE;
 	return f;
 }
 
