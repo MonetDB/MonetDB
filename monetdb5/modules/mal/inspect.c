@@ -335,7 +335,7 @@ INSPECTgetSignature(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "inspect.getSignature", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	while (s != NULL) {
-		if (idcmp(s->name, *fcn) == 0) {
+		if (strcmp(s->name, *fcn) == 0) {
 			InstrPtr p = getSignature(s);
 			char *c, *w;
 
@@ -388,7 +388,7 @@ INSPECTgetComment(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "inspect.getComment", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	while (s != NULL) {
-		if (idcmp(s->name, *fcn) == 0 &&
+		if (strcmp(s->name, *fcn) == 0 &&
 			BUNappend(b, s->def->help, false) != GDK_SUCCEED)
 			goto bailout;
 		s = s->peer;

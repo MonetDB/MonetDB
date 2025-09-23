@@ -486,10 +486,6 @@ stringLength(Client ctx)
 	return l + 2;
 }
 
-/*Beware, the idcmp routine uses a short cast to compare multiple bytes
- * at once. This may cause problems when the net string length is zero.
-*/
-
 static str
 strCopy(allocator *va, Client ctx, int length)
 {
@@ -2274,7 +2270,6 @@ parseMAL(Client ctx, Symbol curPrg, int skipcomments, int lines,
 
 	(void) curPrg;
 	echoInput(ctx);
-	// can we use mal block allocator always?
 	allocator *ma = ctx->backup? ctx->backup->def->ma:curPrg->def->ma;
 	/* here the work takes place */
 	while ((c = currChar(ctx)) && lines > 0) {

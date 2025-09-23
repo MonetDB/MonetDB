@@ -2482,7 +2482,7 @@ OPTmergetableImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 			continue;
 		}
 		if (match > 0 && getModuleId(p) == algebraRef
-			&& getFunctionId(p) == crossRef && p->argc == 5 && p->retc == 2
+			&& getFunctionId(p) == crossproductRef && p->argc == 5 && p->retc == 2
 			&& bats == 2) {
 			int max_one = (isVarConstant(mb, getArg(p, 4))
 						   && getVarConstant(mb, getArg(p, 4)).val.btval);

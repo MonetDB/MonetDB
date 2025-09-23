@@ -119,7 +119,7 @@ MSinitClientPrg(Client ctx, const char *mod, const char *nme)
 {
 	int idx;
 
-	if (ctx->curprg && idcmp(nme, ctx->curprg->name) == 0)
+	if (ctx->curprg && strcmp(nme, ctx->curprg->name) == 0)
 		return MSresetClientPrg(ctx, putName(mod), putName(nme));
 	ctx->curprg = newFunction(putName(mod), putName(nme), FUNCTIONsymbol);
 	if (ctx->curprg == 0)

@@ -178,7 +178,7 @@ OPTemptybindImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 		}
 
 		if (getFunctionId(p) == emptybindidxRef) {
-			setFunctionId(p, bindidxRef);
+			setFunctionId(p, bind_idxbatRef);
 			p->typeresolved = false;
 			empty[getArg(p, 0)] = i;
 			if (p->retc == 2) {

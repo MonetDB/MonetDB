@@ -42,81 +42,81 @@ malAtomProperty(mel_func *f)
 	assert(f->imp != NULL);
 	switch (name[0]) {
 	case 'd':
-		if (idcmp("del", name) == 0 && f->argc == 1) {
+		if (strcmp("del", name) == 0 && f->argc == 1) {
 			BATatoms[tpe].atomDel = (void (*)(Heap *, var_t *)) f->imp;
 			return MAL_SUCCEED;
 		}
 		break;
 	case 'c':
-		if (idcmp("cmp", name) == 0 && f->argc == 1) {
+		if (strcmp("cmp", name) == 0 && f->argc == 1) {
 			BATatoms[tpe].atomCmp = (int (*)(const void *, const void *)) f->imp;
 			BATatoms[tpe].linear = true;
 			return MAL_SUCCEED;
 		}
 		break;
 	case 'f':
-		if (idcmp("fromstr", name) == 0 && f->argc == 1) {
+		if (strcmp("fromstr", name) == 0 && f->argc == 1) {
 			BATatoms[tpe].atomFromStr = (ssize_t (*)(allocator *, const char *, size_t *, ptr *, bool)) f->imp;
 			return MAL_SUCCEED;
 		}
 		break;
 	case 'h':
-		if (idcmp("heap", name) == 0 && f->argc == 1) {
+		if (strcmp("heap", name) == 0 && f->argc == 1) {
 			/* heap function makes an atom varsized */
 			BATatoms[tpe].size = sizeof(var_t);
 			assert_shift_width(ATOMelmshift(ATOMsize(tpe)), ATOMsize(tpe));
 			BATatoms[tpe].atomHeap = (gdk_return (*)(Heap *, size_t)) f->imp;
 			return MAL_SUCCEED;
 		}
-		if (idcmp("hash", name) == 0 && f->argc == 1) {
+		if (strcmp("hash", name) == 0 && f->argc == 1) {
 			BATatoms[tpe].atomHash = (BUN (*)(const void *)) f->imp;
 			return MAL_SUCCEED;
 		}
 		break;
 	case 'l':
-		if (idcmp("length", name) == 0 && f->argc == 1) {
+		if (strcmp("length", name) == 0 && f->argc == 1) {
 			BATatoms[tpe].atomLen = (size_t (*)(const void *)) f->imp;
 			return MAL_SUCCEED;
 		}
 		break;
 	case 'n':
-		if (idcmp("null", name) == 0 && f->argc == 1) {
+		if (strcmp("null", name) == 0 && f->argc == 1) {
 			const void *atmnull = ((const void *(*)(void)) f->imp)();
 
 			BATatoms[tpe].atomNull = atmnull;
 			return MAL_SUCCEED;
 		}
-		if (idcmp("nequal", name) == 0 && f->argc == 1) {
+		if (strcmp("nequal", name) == 0 && f->argc == 1) {
 			BATatoms[tpe].atomCmp = (int (*)(const void *, const void *)) f->imp;
 			return MAL_SUCCEED;
 		}
 		break;
 	case 'p':
-		if (idcmp("put", name) == 0 && f->argc == 1) {
+		if (strcmp("put", name) == 0 && f->argc == 1) {
 			BATatoms[tpe].atomPut = (var_t (*)(BAT *, var_t *, const void *)) f->imp;
 			return MAL_SUCCEED;
 		}
 		break;
 	case 's':
-		if (idcmp("storage", name) == 0 && f->argc == 1) {
+		if (strcmp("storage", name) == 0 && f->argc == 1) {
 			BATatoms[tpe].storage = (*(int (*)(void)) f->imp) ();
 			return MAL_SUCCEED;
 		}
 		break;
 	case 't':
-		if (idcmp("tostr", name) == 0 && f->argc == 1) {
+		if (strcmp("tostr", name) == 0 && f->argc == 1) {
 			BATatoms[tpe].atomToStr = (ssize_t (*)(allocator *, str *, size_t *, const void *, bool)) f->imp;
 			return MAL_SUCCEED;
 		}
 		break;
 	case 'r':
-		if (idcmp("read", name) == 0 && f->argc == 1) {
+		if (strcmp("read", name) == 0 && f->argc == 1) {
 			BATatoms[tpe].atomRead = (void *(*)(allocator *, void *, size_t *, stream *, size_t)) f->imp;
 			return MAL_SUCCEED;
 		}
 		break;
 	case 'w':
-		if (idcmp("write", name) == 0 && f->argc == 1) {
+		if (strcmp("write", name) == 0 && f->argc == 1) {
 			BATatoms[tpe].atomWrite = (gdk_return (*)(const void *, stream *, size_t)) f->imp;
 			return MAL_SUCCEED;
 		}

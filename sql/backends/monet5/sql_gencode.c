@@ -1574,7 +1574,7 @@ backend_create_sql_func_body(backend *be, sql_func *f, list *restypes, list *ops
 	sideeffects = f->side_effect;
 	for (i = 1; i < curBlk->stop; i++) {
 		InstrPtr p = getInstrPtr(curBlk, i);
-		if (getFunctionId(p) == bindRef || getFunctionId(p) == bindidxRef)
+		if (getFunctionId(p) == bindRef || getFunctionId(p) == bind_idxbatRef)
 			continue;
 		sideeffects = sideeffects || hasSideEffects(curBlk, p, FALSE);
 		no_inline |= (getModuleId(p) == malRef && getFunctionId(p) == multiplexRef);

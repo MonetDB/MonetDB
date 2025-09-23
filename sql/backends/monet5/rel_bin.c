@@ -1216,7 +1216,10 @@ exp2bin_coalesce(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *isel, 
 				else if (!val->cand && nsel)
 					val = stmt_project(be, nsel, val);
 
-				res = stmt_replace(be, res, pos, val);
+				if (pos)
+					res = stmt_replace(be, res, pos, val);
+				else
+					res = val;
 			}
 			if (en->next) { /* handled then part */
 				stmt *s = stmt_uselect(be, ncond, stmt_bool(be, 1), cmp_equal, NULL, 1/*anti*/, 0);
@@ -1902,6 +1905,11 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 					append(ops, n->data);
 				if (!(s = stmt_Nop(be, stmt_list(be, ops), sel, f, NULL)))
 					return NULL;
+				if (is_anti(e)) {
+					sql_subtype *bt = sql_fetch_localtype(TYPE_bit);
+					sql_subfunc *not = sql_bind_func(be->mvc, "sys", "not", bt, NULL, F_FUNC, true, true);
+					s = stmt_unop(be, s, NULL, not);
+				}
 				return s;
 			}
 
@@ -3213,7 +3221,7 @@ rel2bin_groupjoin(backend *be, sql_rel *rel, list *refs)
 			append(l, s);
 		} else {
 			/* group / aggrs */
-			stmt *nls = stmt_project(be, jl, ls);
+			stmt *nls = ls?stmt_project(be, jl, ls):jl;
 			stmt *groupby = stmt_group(be, nls, NULL, NULL, NULL, true);
 			stmt *grp = stmt_result(be, groupby, 0);
 			stmt *ext = stmt_result(be, groupby, 1);
@@ -3576,7 +3584,7 @@ rel2bin_antijoin(backend *be, sql_rel *rel, list *refs)
 				li = ls;
 
 			if (!en->next && (constval || stmt_has_null(ls) /*|| stmt_has_null(rs) (change into check for fk)*/)) {
-				join = stmt_tdiff2(be, ls, rs, NULL, is_any(e));
+				join = stmt_tdiff2(be, ls, rs, NULL, is_semantics(e), is_any(e));
 				jexps = NULL;
 			} else {
 				join = stmt_join_cand(be, ls, rs, NULL, NULL, is_anti(e), (comp_type) e->flag, 0, is_semantics(e), false, true);
@@ -3658,7 +3666,7 @@ rel2bin_antijoin(backend *be, sql_rel *rel, list *refs)
 			jl = stmt_project(be, sel, jl);
 			join = stmt_tdiff(be, c, jl, NULL);
 		} else {
-			join = stmt_tdiff2(be, c, jl, NULL, true);
+			join = stmt_tdiff2(be, c, jl, NULL, false, true);
 		}
 		if (nulls)
 			join = stmt_project(be, join, c);
@@ -3666,7 +3674,7 @@ rel2bin_antijoin(backend *be, sql_rel *rel, list *refs)
 	} else if (jexps && list_empty(jexps)) {
 		stmt *jl = stmt_result(be, join, 0);
 		stmt *c = stmt_mirror(be, bin_find_smallest_column(be, left));
-		join = stmt_tdiff2(be, c, jl, NULL, true);
+		join = stmt_tdiff2(be, c, jl, NULL, false, true);
 	}
 
 	/* construct relation */

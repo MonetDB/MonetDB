@@ -1941,7 +1941,7 @@ exp_is_cmp_exp_is_false(sql_exp* e)
 {
 	sql_exp *l = e->l;
 	sql_exp *r = e->r;
-	assert(e->type == e_cmp && e->f == NULL && l && r);
+	assert(e->type == e_cmp && l && r);
 
 	/* Handle 'v is x' and 'v is not x' expressions.
 	* Other cases in is-semantics are unspecified.
@@ -1988,10 +1988,14 @@ exp_regular_cmp_exp_is_false(sql_exp* e)
 {
     assert(e->type == e_cmp);
 
-    if (is_semantics(e) && !is_any(e)) return exp_is_cmp_exp_is_false(e);
-	if (is_any(e)) return false;
-    if (e -> f)         return exp_two_sided_bound_cmp_exp_is_false(e);
-    else                return exp_single_bound_cmp_exp_is_false(e);
+	if (is_any(e))
+		return false;
+    if (e -> f)
+		return exp_two_sided_bound_cmp_exp_is_false(e);
+    if (is_semantics(e) && !is_any(e))
+		return exp_is_cmp_exp_is_false(e);
+    else
+		return exp_single_bound_cmp_exp_is_false(e);
 }
 
 static inline bool

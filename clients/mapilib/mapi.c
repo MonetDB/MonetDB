@@ -2696,7 +2696,7 @@ read_line(Mapi mid)
 		ssize_t len;
 
 		if (mid->blk.lim - mid->blk.end < BLOCK) {
-			int len;
+			size_t len;
 
 			len = mid->blk.lim;
 			if (mid->blk.nxt <= BLOCK) {
@@ -2716,7 +2716,7 @@ read_line(Mapi mid)
 
 		/* fetch one more block */
 		if (mid->trace)
-			printf("fetch next block: start at:%d\n", mid->blk.end);
+			printf("fetch next block: start at:%zu\n", mid->blk.end);
 		for (;;) {
 			len = mnstr_read(mid->from, mid->blk.buf + mid->blk.end, 1, BLOCK);
 			if (len == -1 && mnstr_errnr(mid->from) == MNSTR_INTERRUPT) {
@@ -2750,7 +2750,7 @@ read_line(Mapi mid)
 			mid->blk.buf[mid->blk.end + 1] = '\n';
 			mid->blk.buf[mid->blk.end + 2] = 0;
 		}
-		mid->blk.end += (int) len;
+		mid->blk.end += len;
 	}
 	if (mid->trace) {
 		printf("got complete block: \n");
@@ -2761,7 +2761,7 @@ read_line(Mapi mid)
 	assert(nl);
 	*nl++ = 0;
 	reply = mid->blk.buf + mid->blk.nxt;
-	mid->blk.nxt = (int) (nl - mid->blk.buf);
+	mid->blk.nxt = nl - mid->blk.buf;
 
 	if (mid->trace)
 		printf("read_line:%s\n", reply);
@@ -3193,7 +3193,7 @@ parse_header_line(MapiHdl hdl, char *line, struct MapiResultSet *result)
 		result->fieldcnt = n;
 		for (i = 0; i < n; i++) {
 			if (anchors[i])
-				result->fields[i].columnlength = atoi(anchors[i]);
+				result->fields[i].columnlength = (int64_t) strtoll(anchors[i], NULL, 10);
 		}
 	} else if (strcmp(tag, "table_name") == 0) {
 		result->fieldcnt = n;
@@ -4584,7 +4584,7 @@ mapi_get_len(MapiHdl hdl, int fnr)
 
 	mapi_hdl_check0(hdl);
 	if ((result = hdl->result) != 0 && fnr >= 0 && fnr < result->fieldcnt)
-		return result->fields[fnr].columnlength;
+		return result->fields[fnr].columnlength > INT_MAX ? INT_MAX : (int) result->fields[fnr].columnlength;
 	mapi_setError(hdl->mid, "Illegal field number", __func__, MERROR);
 	return 0;
 }
