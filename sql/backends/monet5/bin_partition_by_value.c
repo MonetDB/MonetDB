@@ -92,7 +92,7 @@ rel_groupby_partition(backend *be, sql_rel *rel)
 	BUN est = get_rel_count(rel);
 	if (est == BUN_NONE)
 		return partition;
-	if (est >= 10000000)
+	if (est >= 100000000)
 		return true;
 	return partition;
 }
