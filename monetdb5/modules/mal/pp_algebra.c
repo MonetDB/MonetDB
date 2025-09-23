@@ -2263,7 +2263,7 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 					if (slots == 0) { \
 						slots = private?1:HT_PRE_CLAIM; \
 						slot = ATOMIC_ADD(&h->last, private?1:HT_PRE_CLAIM); \
-						if (((slot*100)/100) >= (gid)h->size) { \
+						if (((slot*100)/70) >= (gid)h->size) { \
 							hash_rehash(h, p, err); \
 							vals = h->vals; \
 							pgids = h->pgids; \
@@ -2312,7 +2312,7 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 					if (slots == 0) { \
 						slots = private?1:HT_PRE_CLAIM; \
 						slot = ATOMIC_ADD(&h->last, private?1:HT_PRE_CLAIM); \
-						if (((slot*100)/100) >= (gid)h->size) { \
+						if (((slot*100)/70) >= (gid)h->size) { \
 							hash_rehash(h, p, err); \
 							vals = h->vals; \
 							pgids = h->pgids; \
