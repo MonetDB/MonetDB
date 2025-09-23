@@ -367,6 +367,7 @@ runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 {
 	lng ticks = GDKusec();
 
+	pci->ticks += ticks - prof->ticks;
 	if (cntxt->sqlprofiler)
 		sqlProfilerEvent(cntxt, mb, stk, pci, ticks, ticks - prof->ticks);
 }
