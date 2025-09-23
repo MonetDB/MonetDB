@@ -1940,7 +1940,7 @@ exp_is_cmp_exp_is_false(sql_exp* e)
 {
 	sql_exp *l = e->l;
 	sql_exp *r = e->r;
-	assert(e->type == e_cmp && e->f == NULL && l && r);
+	assert(e->type == e_cmp && l && r);
 
 	/* Handle 'v is x' and 'v is not x' expressions.
 	* Other cases in is-semantics are unspecified.
