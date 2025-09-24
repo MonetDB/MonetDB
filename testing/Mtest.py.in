@@ -1317,6 +1317,7 @@ def PerformDir(env, testdir, testlist, total_tests) :
         finally:
             if pSrvr is not None:
                 pSrvr.sendusr1()
+                pSrvr.checkkeys()
                 pSrvr.terminate()
                 pSrvr = None
                 if produce_html:
@@ -2552,6 +2553,194 @@ def killProc(proc, outfile=None, cmd=None, psrvr=None):
     else:
         killchildren(proc.pid)
 
+sys_pkeys = [
+    ('schemas', 'id'),
+    ('_tables', 'id'),
+    ('tables', 'id'),
+    ('_columns', 'id'),
+    ('columns', 'id'),
+    ('functions', 'id'),
+    ('args', 'id'),
+    ('types', 'id'),
+    ('objects', 'id, nr'),
+    ('keys', 'id'),
+    ('idxs', 'id'),
+    ('triggers', 'id'),
+    ('sequences', 'id'),
+    ('dependency_types', 'dependency_type_id'),
+    ('dependencies', 'id, depend_id'),
+    ('auths', 'id'),
+    ('users', 'name'),
+    ('user_role', 'login_id, role_id'),
+    ('privileges', 'obj_id, auth_id, privileges'),
+    ('querylog_catalog', 'id'),
+    ('querylog_calls', 'id'),
+    ('querylog_history', 'id'),
+    ('optimizers', 'name'),
+    ('environment', 'name'),
+    ('db_user_info', 'name'),
+    ('statistics', 'column_id'),
+    ('"storage"()', 'schema, "table", "column"'),
+    ('storagemodelinput', 'schema, "table", "column"'),
+
+    ('rejects', 'rowid'),
+
+    ('keywords', 'keyword'),
+    ('table_types', 'table_type_id'),
+
+    ('function_languages', 'language_id'),
+    ('function_types', 'function_type_id'),
+    ('index_types', 'index_type_id'),
+    ('key_types', 'key_type_id'),
+    ('privilege_codes', 'privilege_code_id'),
+
+    ('comments', 'id'),
+    ('ids', 'id'),
+    ('var_values', 'var_name'),
+
+    ('table_partitions', 'id'),
+    ('range_partitions', 'table_id'),
+    ('value_partitions', 'table_id, partition_id, "value"'),
+
+    ('queue', 'tag'),
+    ('sessions', 'sessionid'),
+
+    ('fkey_actions', 'action_id'),
+    ('fkeys', 'id'),
+]
+
+sys_akeys = [
+    ('schemas', 'name'),
+    ('_tables', 'schema_id, name'),
+    ('tables', 'schema_id, name'),
+    ('_columns', 'table_id, name'),
+    ('columns', 'table_id, name'),
+    ('_columns', 'table_id, number'),
+    ('columns', 'table_id, number'),
+
+    ('(SELECT id FROM sys.schemas UNION ALL SELECT id FROM sys._tables UNION ALL SELECT id FROM sys._columns UNION ALL SELECT id FROM sys.functions) as T', 'T.id'),
+    ('(SELECT id FROM sys.schemas UNION ALL SELECT id FROM sys.tables UNION ALL SELECT id FROM sys.columns UNION ALL SELECT id FROM sys.functions) as T', 'T.id'),
+
+    ('functions f join sys.args a on f.id=a.func_id', 'schema_id, f.name, func, mod, language, f.type, side_effect, varres, vararg, a.id'),
+    ('args', 'func_id, name, inout'),
+    ('types', 'schema_id, systemname, sqlname'),
+    ('objects', 'id, name'),
+    ('keys', 'table_id, name'),
+    ('idxs', 'table_id, name'),
+    ('triggers', 'table_id, name'),
+    ('sequences', 'schema_id, name'),
+    ('dependency_types', 'dependency_type_name'),
+    ('auths', 'name'),
+    ('optimizers', 'def'),
+
+    ('table_types', 'table_type_name'),
+    ('function_types', 'function_type_name'),
+    ('function_languages', 'language_name'),
+    ('index_types', 'index_type_name'),
+    ('key_types', 'key_type_name'),
+    ('privilege_codes', 'privilege_code_name'),
+    ('comments', 'id'),
+
+    ('table_partitions WHERE column_id IS NOT NULL', 'table_id, column_id'),
+    ('table_partitions WHERE "expression" IS NOT NULL', 'table_id, "expression"'),
+
+    ('fkey_actions', 'action_name'),
+    ('fkeys', 'table_id, name'),
+]
+
+sys_fkeys = [
+    ('schemas', 'authorization', '', 'id', 'auths'),
+    ('schemas', 'owner', '', 'id', 'auths'),
+    ('_tables', 'schema_id', '', 'id', 'schemas'),
+    ('tables', 'schema_id', '', 'id', 'schemas'),
+    ('_tables', 'type', '', 'table_type_id', 'table_types'),
+    ('tables', 'type', '', 'table_type_id', 'table_types'),
+    ('_columns', 'table_id', '', 'id', '_tables'),
+    ('columns', 'table_id', '', 'id', 'tables'),
+    ('_columns', 'type', '', 'sqlname', 'types'),
+    ('columns', 'type', '', 'sqlname', 'types'),
+    ('functions', 'schema_id', '', 'id', 'schemas'),
+    ('functions', 'type', '', 'function_type_id', 'function_types'),
+    ('functions', 'language', '', 'language_id', 'function_languages'),
+
+    ('functions', 'schema_id', 'system', 'id', 'schemas WHERE system'),
+    ('args', 'func_id', '', 'id', 'functions'),
+    ('args', 'type', '', 'sqlname', 'types'),
+    ('types', 'schema_id', '', 'id', 'schemas'),
+
+    ('objects', 'id', '', 'id', 'ids'),
+    ('ids', 'id', "obj_type IN ('key', 'index')", 'id', 'objects'),
+    ('keys', 'id', '', 'id', 'objects'),
+    ('keys', 'table_id', '', 'id', '_tables'),
+    ('keys', 'table_id', '', 'id', 'tables'),
+    ('keys', 'type', '', 'key_type_id', 'key_types'),
+    ('keys', 'rkey', 'rkey <> -1', 'id', 'keys'),
+
+    ('idxs', 'id', '', 'id', 'objects'),
+    ('idxs', 'table_id', '', 'id', '_tables'),
+    ('idxs', 'table_id', '', 'id', 'tables'),
+    ('idxs', 'type', '', 'index_type_id', 'index_types'),
+    ('sequences', 'schema_id', '', 'id', 'schemas'),
+    ('triggers', 'table_id', '', 'id', '_tables'),
+    ('triggers', 'table_id', '', 'id', 'tables'),
+    ('comments', 'id', '', 'id', 'ids'),
+    ('dependencies', 'id', '', 'id', 'ids'),
+    ('dependencies', 'depend_id', '', 'id', 'ids'),
+    ('dependencies', 'depend_type', '', 'dependency_type_id', 'dependency_types'),
+    ('dependencies', 'id, depend_id, depend_type', '', 'v.id, v.used_by_id, v.depend_type', 'dependencies_vw v'),
+    ('auths', 'grantor', 'grantor > 0', 'id', 'auths'),
+    ('users', 'name', '', 'name', 'auths'),
+    ('users', 'default_schema', '', 'id', 'schemas'),
+    ('db_user_info', 'name', '', 'name', 'auths'),
+    ('db_user_info', 'default_schema', '', 'id', 'schemas'),
+    ('user_role', 'login_id', '', 'id', 'auths'),
+    ('user_role', 'login_id', '', 'a.id', 'auths a WHERE a.name IN (SELECT u.name FROM sys.users u)'),
+    ('user_role', 'role_id', '', 'id', 'auths'),
+    ('user_role', 'role_id', '', 'id', 'roles'),
+    ('privileges', 'obj_id', '', 'id', '(SELECT id FROM sys.schemas UNION ALL SELECT id FROM sys._tables UNION ALL SELECT id FROM sys._columns UNION ALL SELECT id FROM sys.functions) as t'),
+    ('privileges', 'auth_id', '', 'id', 'auths'),
+    ('privileges', 'grantor', ' grantor > 0', 'id', 'auths'),
+    ('privileges', 'privileges', '', 'privilege_code_id', 'privilege_codes'),
+    ('querylog_catalog', 'owner', '', 'name', 'users'),
+    ('querylog_catalog', 'pipe', '', 'name', 'optimizers'),
+    ('querylog_calls', 'id', '', 'id', 'querylog_catalog'),
+    ('querylog_history', 'id', '', 'id', 'querylog_catalog'),
+    ('querylog_history', 'owner', '', 'name', 'users'),
+    ('querylog_history', 'pipe', '', 'name', 'optimizers'),
+    ('remote_user_info', 'table_id', '', 'id', '_tables'),
+    ('sessions', '"username"', '', 'name', 'users'),
+    ('sessions', 'optimizer', '', 'name', 'optimizers'),
+    ('statistics', 'column_id', '', 'id', '(SELECT id FROM sys._columns UNION ALL SELECT id FROM tmp._columns) as c'),
+    ('statistics', 'type', '', 'sqlname', 'types'),
+    ('storage()', 'schema', '', 'name', 'schemas'),
+    ('storage()', '"table"', '', 'name', '(SELECT name FROM sys._tables UNION ALL SELECT name FROM tmp._tables) as t'),
+    ('storage()', 'schema, "table"', '', 'sname, tname', '(SELECT sch.name as sname, tbl.name as tname FROM sys.schemas AS sch JOIN sys.tables AS tbl ON sch.id = tbl.schema_id) as t'),
+    ('storage()', '"column"', '', 'name', '(SELECT name FROM sys._columns UNION ALL SELECT name FROM tmp._columns UNION ALL SELECT name FROM sys.keys UNION ALL SELECT name FROM tmp.keys UNION ALL SELECT name FROM sys.idxs UNION ALL SELECT name FROM tmp.idxs) as c'),
+    ('storage()', 'type', '', 'sqlname', 'types'),
+    ('storage', 'schema', '', 'name', 'schemas'),
+    ('storage', '"table"', '', 'name', '(SELECT name FROM sys._tables UNION ALL SELECT name FROM tmp._tables) as t'),
+    ('storage', 'schema, "table"', '', 'sname, tname', '(SELECT sch.name as sname, tbl.name as tname FROM sys.schemas AS sch JOIN sys.tables AS tbl ON sch.id = tbl.schema_id) as t'),
+    ('storage', '"column"', '', 'name', '(SELECT name FROM sys._columns UNION ALL SELECT name FROM tmp._columns UNION ALL SELECT name FROM sys.keys UNION ALL SELECT name FROM tmp.keys UNION ALL SELECT name FROM sys.idxs UNION ALL SELECT name FROM tmp.idxs) as c'),
+    ('storage', 'type', '', 'sqlname', 'types'),
+
+    ('schemastorage', 'schema', '', 'name', 'schemas'),
+    ('tablestorage', 'schema', '', 'name', 'schemas'),
+    ('tablestorage', '"table"', '', 'name', '(SELECT name FROM sys._tables UNION ALL SELECT name FROM tmp._tables) as t'),
+    ('tablestorage', 'schema, "table"', '', 'sname, tname', '(SELECT sch.name as sname, tbl.name as tname FROM sys.schemas AS sch JOIN sys.tables AS tbl ON sch.id = tbl.schema_id) as t'),
+    ('table_partitions', 'table_id', '', 'id', '_tables'),
+    ('table_partitions', 'column_id', 'column_id IS NOT NULL', 'id', '_columns'),
+    ('range_partitions', 'table_id', '', 'id', '_tables'),
+    ('range_partitions', 'partition_id', '', 'id', 'table_partitions'),
+    ('value_partitions', 'table_id', '', 'id', '_tables'),
+    ('value_partitions', 'partition_id', '', 'id', 'table_partitions'),
+
+    ('keys', 'cast(((action >> 8) & 255) as smallint)', 'action >= 0', 'action_id', 'fkey_actions'),
+    ('keys', 'cast((action & 255) as smallint)', 'action >= 0', 'action_id', 'fkey_actions'),
+    ('fkeys', 'id, table_id, type, name, rkey', '', 'id, table_id, type, name, rkey', 'keys'),
+    ('fkeys', 'update_action_id', '', 'action_id', 'fkey_actions'),
+    ('fkeys', 'delete_action_id', '', 'action_id', 'fkey_actions'),
+]
+
 class ServerClass:
     def __init__(self, cmd, TestOut, TestErr, TimeOut, pollfile, dbname, inmem=False, dbg=None):
         self.proc = None
@@ -2609,6 +2798,35 @@ class ServerClass:
     def stacktrace(self):
         stacktrace(self.proc, self.outfile)
         self.sendusr1()
+
+    def checkkeys(self):
+        if not checkkeys:
+            return
+        with pymonetdb.connect(username='monetdb',
+                               password='monetdb',
+                               hostname=HOST,
+                               port=int(self.port),
+                               database=self.dbname,
+                               connect_timeout=1.0) as dbh:
+            dbh.settimeout(20)
+            with dbh.cursor() as crs:
+                for table, columns in sys_pkeys + sys_akeys:
+                    qtable = table.replace('"', '')
+                    schema = 'sys.' if not table.startswith('(') else ''
+                    crs.execute(f"select 'duplicates in {qtable}', count(*), {columns} from {schema}{table} group by {columns} having count(*) > 1")
+                    rows = crs.fetchall()
+                    for row in rows:  # should be empty
+                        print(row, file=self.outfile)
+                for table, columns, where, ref_columns, ref_table in sys_fkeys:
+                    if where:
+                        where += ' AND '
+                    schema = '' if '.' in ref_table else 'sys.'
+                    qtable = table.split(' ')[0]
+                    qcolumns = columns.replace('"', '')
+                    crs.execute(f"select 'missing reference in {qtable} {qcolumns}', {columns}, * from sys.{table} WHERE {where}({columns}) not in (select {ref_columns} from {schema}{ref_table})")
+                    rows = crs.fetchall()
+                    for row in rows:  # should be empty
+                        print(row, file=self.outfile)
 
     def stopsessions(self):
         if self.lock.acquire(blocking=False):
@@ -3529,6 +3747,7 @@ def main(argv) :
     parser.add_argument('--stop-at-crash', action='store_true', dest='stop_crash', help='stop testing when the server crashes')
     parser.add_argument('--ci', action='store_true', dest='ci', help='special handling for continuous integration (no error return unless serious problem)')
     parser.add_argument('--parallel', action='store', type=int, default=1, metavar='<directories>', help='run multiple directories in parallel')
+    parser.add_argument('--checkkeys', action='store_true', help='at end of directory check all system keys')
     global produce_html
     if produce_html:
         parser.add_argument('--no-html', action='store_false', dest='produce_html', help='do not produce HTML files')
@@ -3582,6 +3801,8 @@ def main(argv) :
     restart = opts.restart
     if opts.alltests:
         CONDITIONALS['KNOWNFAIL'] = True
+    global checkkeys
+    checkkeys = opts.checkkeys
     par['TIMEOUT'] = opts.timeout
     env['GDK_DEBUG'] = str(opts.debug)
     env['GDK_NR_THREADS'] = str(opts.nr_threads)
