@@ -185,7 +185,6 @@ static str
 load_column(type_record_t *rec, const char *name, BAT *bat, stream *s, int width, bool byteswap, BUN rows_estimate, int *eof_reached)
 {
 	static const char mal_operator[] = "sql.importColumn";
-	BUN orig_count, new_count;
 	str msg = MAL_SUCCEED;
 	BUN rows_added;
 
@@ -195,11 +194,10 @@ load_column(type_record_t *rec, const char *name, BAT *bat, stream *s, int width
 
 	// sanity check
 	assert( (loader != NULL) + (decoder != NULL) + trivial == 1); (void)trivial;
+	assert(BATcount(bat) == 0);
 
 	if (rec->trivial_if_no_byteswap && !byteswap)
 		decoder = NULL;
-
-	orig_count = BATcount(bat);
 
 	if (loader) {
 		msg = loader(bat, s, eof_reached, width, byteswap);
@@ -210,8 +208,7 @@ load_column(type_record_t *rec, const char *name, BAT *bat, stream *s, int width
 		msg = load_trivial(bat, s, name, rec->validate, width, rows_estimate, eof_reached);
 	}
 
-	new_count = BATcount(bat);
-	rows_added = new_count - orig_count;
+	rows_added = BATcount(bat);
 
 	if (rows_added > 0) {
 		// We don't know anything about the data we just loaded

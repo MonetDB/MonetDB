@@ -69,5 +69,16 @@ extern bool can_dump_binary_column(type_record_t *rec);
 
 extern str dump_binary_column(type_record_t *rec, BAT *b, BUN start, BUN length, bool byteswap, stream *s);
 
+struct insert_state {
+	BAT *bat;
+	int width;
+	void *scratch;
+	size_t schratch_len;
+	size_t left_over;
+	allocator *ma;
+};
+extern void init_insert_state(struct insert_state *st, allocator *ma, BAT *bat, int width);
+extern void release_insert_state(struct insert_state *st);
+extern str insert_some_nul_terminated(struct insert_state *st, const char *data, size_t total_len, size_t *consumed);
 
 #endif
