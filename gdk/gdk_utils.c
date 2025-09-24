@@ -2283,7 +2283,7 @@ static int sa_double_num_blks(allocator *sa);
 
 
 /*
- * Free blocks are maintain at top level
+ * Free blocks are maintained at top level
  */
 static void *
 sa_use_freed_blk(allocator *sa, size_t sz)
@@ -2325,34 +2325,52 @@ sa_use_freed(allocator *sa, size_t sz)
 	return NULL;
 }
 
+static inline bool
+sa_reallocated(allocator *sa)
+{
+	return sa->blks != (char **)sa->first_blk;
+}
+
+
+static inline void
+_sa_free_blks(allocator *sa, size_t start_idx)
+{
+	size_t n_blks = sa->nr;
+	char **blks = sa->blks;
+
+	for (size_t i = start_idx; i < n_blks; i++) {
+		char *next = blks[i];
+		sa_free_blk(sa, next);
+		sa->blks[i] = NULL;
+	}
+}
+
 
 /*
  * Reset allocator to initial state
  */
 allocator *sa_reset(allocator *sa)
 {
-	size_t i;
-	size_t n_blks = sa->nr;
-	char **blks = sa->blks;
-
-	// only child allocators
-	//assert(sa->pa);
+	//size_t i;
+	//size_t n_blks = sa->nr;
+	//char **blks = sa->blks;
 
 	// free all but 1st
-	for (i = 1; i < n_blks; i++) {
-		char *next = blks[i];
-		sa_free_blk(sa, next);
-		sa->blks[i] = NULL;
-	}
-
-	sa->size = SA_NUM_BLOCKS;
-	sa->blks = (char **)sa->first_blk;
-	sa->blks[0] = sa->first_blk;
+	_sa_free_blks(sa, 1);
+	//for (i = 1; i < n_blks; i++) {
+	//	char *next = blks[i];
+	//	sa_free_blk(sa, next);
+	//	sa->blks[i] = NULL;
+	//}
 
 	// compute start offset
 	size_t offset = round16(sizeof(char*) * SA_NUM_BLOCKS) +
 		round16(sizeof(allocator));
 
+	COND_LOCK_ALLOCATOR(sa);
+	sa->size = SA_NUM_BLOCKS;
+	sa->blks = (char **)sa->first_blk;
+	sa->blks[0] = sa->first_blk;
 	sa->used = offset;
 	sa->frees = 0;
 	sa->nr = 1;
@@ -2362,6 +2380,8 @@ allocator *sa_reset(allocator *sa)
 	sa->blk_size = SA_BLOCK_SIZE;
 	sa->objects = 0;
 	sa->inuse = 0;
+	sa->tmp_used = 0;
+	COND_UNLOCK_ALLOCATOR(sa);
 	return sa;
 }
 
@@ -2375,7 +2395,7 @@ sa_realloc(allocator *sa, void *p, size_t sz, size_t oldsz)
 
 	if (r)
 		memcpy(r, p, oldsz);
-	if (oldsz >= sa->blk_size && !sa->tmp_active) {
+	if (oldsz >= sa->blk_size && !sa_tmp_active(sa)) {
 		char* ptr = (char *) p - SA_HEADER_SIZE;
 		size_t i;
 		for (i = 1; i < sa->nr; i++)
@@ -2422,10 +2442,10 @@ sa_double_num_blks(allocator *sa)
 		sa->usedmem += bytes;
 	}
 	if (tmp) {
-		bool reallocated = sa->blks != (char **)sa->first_blk;
+		//bool reallocated = sa->blks != (char **)sa->first_blk;
 		size_t bytes = sizeof(char*) * osz;
 		memcpy(tmp, sa->blks, bytes);
-		if (!sa->pa && reallocated) {
+		if (!sa->pa && sa_reallocated(sa)) {
 			GDKfree(sa->blks);
 			sa->usedmem -= bytes;
 		}
@@ -2583,7 +2603,6 @@ create_allocator(allocator *pa, const char *name, bool use_lock)
 	sa->inuse = 0;
 	sa->free_obj_hits = 0;
 	sa->free_blk_hits = 0;
-	sa->tmp_active = 0;
 	sa->tmp_used = 0;
 	sa->use_lock = use_lock;
 	MT_lock_init(&sa->lock, "allocator_lock");
@@ -2685,33 +2704,63 @@ sa_name(allocator *sa)
 	return sa->name;
 }
 
-
 exception_buffer *
 sa_get_eb(allocator *sa)
 {
 	return &sa->eb;
 }
 
-void
+#define SA_PACK_INT32(hi, lo)\
+    ((((uint64_t)(hi)) << 32) | ((uint64_t)(lo)))
+#define SA_UNPACK_HI(v)\
+	((uint32_t)((uint64_t)(v) >> 32))
+#define SA_UNPACK_LO(v)\
+       	((int32_t)((uint64_t)(v) & 0xFFFFFFFFULL))
+
+uint64_t
 sa_open(allocator *sa)
 {
-	assert(!sa->tmp_active);
-	sa->tmp_active = 1;
-	sa->tmp_used = 0;
+	assert(sa->pa); // only child allocators are tmp used
+	sa->tmp_used += 1;
+	return SA_PACK_INT32(sa->nr, sa->used);
 }
 
 void
 sa_close(allocator *sa)
 {
-	assert(sa->tmp_active);
+	assert(sa_tmp_active(sa));
 	sa_reset(sa);
-	sa->tmp_active = 0;
+	sa->tmp_used = 0;
+}
+
+void
+sa_close_to(allocator *sa, uint64_t offset)
+{
+	assert(sa_tmp_active(sa));
+	assert(offset);
+	if (offset && !sa_reallocated(sa)) {
+		size_t blk_idx = SA_UNPACK_HI(offset);
+		size_t blk_offset = SA_UNPACK_LO(offset);
+		assert((blk_idx > 0) && (blk_idx <= sa->nr));
+		assert(blk_offset > 0 && blk_offset < SA_BLOCK_SIZE);
+		_sa_free_blks(sa, blk_idx);
+		sa->nr = blk_idx;
+		sa->used = blk_offset;
+	}
+	if (sa->tmp_used > 0)
+		sa->tmp_used -= 1;
+}
+
+bool
+sa_tmp_active(const allocator *a)
+{
+    return a && (a->tmp_used > 0);
 }
 
 void
 sa_free(allocator *sa, void *obj)
 {
-	if (!obj) return; // nothing to do
+	if (!obj || sa_tmp_active(sa)) return; // nothing to do
 	// retrieve size from header
 	char* ptr = (char *) obj - SA_HEADER_SIZE;
 	size_t sz = *((size_t *) ptr);
@@ -2724,14 +2773,9 @@ sa_free(allocator *sa, void *obj)
 		sa_free_obj(sa, ptr, sz);
 }
 
-bool
-allocator_tmp_active(const allocator *a)
-{
-    return a && a->tmp_active;
-}
 
 allocator *
-allocator_get_parent(const allocator *a)
+sa_get_parent(const allocator *a)
 {
     return a ? a->pa : NULL;
 }

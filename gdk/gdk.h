@@ -1734,8 +1734,8 @@ gdk_export ValPtr VALinit(allocator *va, ValPtr d, int tpe, const void *s)
 	__attribute__((__access__(write_only, 1)));
 
 gdk_export allocator *create_allocator(allocator *pa, const char *, bool use_lock);
-gdk_export allocator *allocator_get_parent(const allocator *alloc);
-gdk_export bool allocator_tmp_active(const allocator *alloc);
+gdk_export allocator *sa_get_parent(const allocator *sa);
+gdk_export bool sa_tmp_active(const allocator *sa);
 gdk_export allocator *sa_reset(allocator *sa);
 gdk_export void *sa_alloc(allocator *sa,  size_t sz);
 gdk_export void *sa_zalloc(allocator *sa,  size_t sz);
@@ -1746,8 +1746,9 @@ gdk_export char *sa_strdup(allocator *sa, const char *s);
 gdk_export char *sa_strconcat(allocator *sa, const char *s1, const char *s2);
 gdk_export size_t sa_size(allocator *sa);
 gdk_export const char* sa_name(allocator *sa);
-gdk_export void sa_open(allocator *sa);  /* open new frame of tempory allocations */
-gdk_export void sa_close(allocator *sa); /* close temporary frame, reset to old state */
+gdk_export uint64_t sa_open(allocator *sa);  /* open new frame of tempory allocations */
+gdk_export void sa_close(allocator *sa); /* close temporary frame, reset to initial state */
+gdk_export void sa_close_to(allocator *sa, uint64_t); /* close temporary frame, reset to old state */
 gdk_export void sa_free(allocator *sa, void *);
 gdk_export exception_buffer *sa_get_eb(allocator *sa)
        __attribute__((__pure__));
@@ -1763,6 +1764,7 @@ gdk_export allocator *sa_get_ta(allocator *sa);
 #define ma_realloc(ma, obj, sz, osz) (void *) sa_realloc(ma, obj, sz, osz)
 #define ma_open(ma)		sa_open(ma)
 #define ma_close(ma)		sa_close(ma)
+#define ma_close_to(ma, offset)	sa_close_to(ma, offset)
 #define ma_free(ma, obj)	sa_free(ma, obj)
 #define ma_reset(ma)		sa_reset(ma)
 

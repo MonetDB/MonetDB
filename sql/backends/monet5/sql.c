@@ -335,7 +335,7 @@ create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp,
 			break;
 	}
 	osa = sql->sa;
-	allocator *nsa = sql->sa = sa_create(allocator_get_parent(osa));
+	allocator *nsa = sql->sa = sa_create(sa_get_parent(osa));
 	/* first check default values */
 	for (n = ol_first_node(t->columns); n; n = n->next) {
 		sql_column *c = n->data;

@@ -517,6 +517,8 @@ JSONstr2json_intern(allocator *ma, json *ret, size_t len, const char *const*j)
 	json buf = *ret;
 	size_t ln = strlen(*j)+1;
 	size_t out_size = 0;
+	allocator *ta = sa_get_ta(ma);
+	uint64_t ta_offset = ma_open(ta);
 
 	JSON *jt = NULL;
 
@@ -525,8 +527,16 @@ JSONstr2json_intern(allocator *ma, json *ret, size_t len, const char *const*j)
 			buf = (json)ma_alloc(ma, strLen(*j));
 		buf = strcpy(buf, *j);
 	} else {
-		jt = JSONparse(sa_get_ta(ma), *j);
-		CHECK_JSON(jt);
+		jt = JSONparse(ta, *j);
+		if (jt == NULL || jt->error) {
+			if (jt) {
+				msg = jt->error;
+				jt->error = NULL;
+			} else {
+				msg = createException(MAL, "json.new", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			}
+			goto bailout;
+		}
 
 		if (!buf || len < ln)
 			buf = (json)ma_alloc(ma, ln);
@@ -539,17 +549,14 @@ JSONstr2json_intern(allocator *ma, json *ret, size_t len, const char *const*j)
 	if (jt != NULL) {
 		msg = JSONtoStorageString(jt, 0, &buf, &out_size);
 		if (msg != MAL_SUCCEED) {
-			sa_reset(sa_get_ta(ma));
 			//GDKfree(buf);
 			goto bailout;
 		}
 	}
-	sa_reset(sa_get_ta(ma));
-
 	*ret = buf;
-
  bailout:
 	JSONfree(jt);
+	ma_close_to(ta, ta_offset);
 	return msg;
 }
 

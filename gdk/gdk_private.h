@@ -58,8 +58,7 @@ struct allocator {
 	size_t frees;
 	size_t free_blk_hits;
 
-	size_t tmp_used; /* keeps total of tmp allocated bytes */
-	bool tmp_active; /* currently only one level of temp usage */
+	size_t tmp_used; /* keeps track of temp usage via sa_open/sa_close */
 	exception_buffer eb;
 	MT_Lock lock;    /* lock for thread-safe allocations */
 	bool use_lock;
