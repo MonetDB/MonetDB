@@ -87,7 +87,7 @@ sys_pkeys = [
     ('var_values', 'var_name'),
 
     ('table_partitions', 'id'),
-    ('range_partitions', 'table_id, partition_id, minimum'),
+    ('range_partitions', 'table_id'),
     ('value_partitions', 'table_id, partition_id, "value"'),
 
     ('queue', 'tag'),
@@ -131,7 +131,6 @@ sys_akeys = [
 
     ('table_partitions WHERE column_id IS NOT NULL', 'table_id, column_id'),
     ('table_partitions WHERE "expression" IS NOT NULL', 'table_id, "expression"'),
-    ('range_partitions', 'table_id, partition_id, "maximum"'),
 
     ('fkey_actions', 'action_name'),
     ('fkeys', 'table_id, name'),

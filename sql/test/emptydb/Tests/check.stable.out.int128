@@ -114,7 +114,7 @@ select 'duplicates in comments', count(*), id from sys.comments group by id havi
 select 'duplicates in ids', count(*), id from sys.ids group by id having count(*) > 1;
 select 'duplicates in var_values', count(*), var_name from sys.var_values group by var_name having count(*) > 1;
 select 'duplicates in table_partitions', count(*), id from sys.table_partitions group by id having count(*) > 1;
-select 'duplicates in range_partitions', count(*), table_id, partition_id, minimum from sys.range_partitions group by table_id, partition_id, minimum having count(*) > 1;
+select 'duplicates in range_partitions', count(*), table_id from sys.range_partitions group by table_id having count(*) > 1;
 select 'duplicates in value_partitions', count(*), table_id, partition_id, "value" from sys.value_partitions group by table_id, partition_id, "value" having count(*) > 1;
 select 'duplicates in queue', count(*), tag from sys.queue group by tag having count(*) > 1;
 select 'duplicates in sessions', count(*), sessionid from sys.sessions group by sessionid having count(*) > 1;
@@ -149,7 +149,6 @@ select 'duplicates in privilege_codes', count(*), privilege_code_name from sys.p
 select 'duplicates in comments', count(*), id from sys.comments group by id having count(*) > 1;
 select 'duplicates in table_partitions WHERE column_id IS NOT NULL', count(*), table_id, column_id from sys.table_partitions WHERE column_id IS NOT NULL group by table_id, column_id having count(*) > 1;
 select 'duplicates in table_partitions WHERE expression IS NOT NULL', count(*), table_id, "expression" from sys.table_partitions WHERE "expression" IS NOT NULL group by table_id, "expression" having count(*) > 1;
-select 'duplicates in range_partitions', count(*), table_id, partition_id, "maximum" from sys.range_partitions group by table_id, partition_id, "maximum" having count(*) > 1;
 select 'duplicates in fkey_actions', count(*), action_name from sys.fkey_actions group by action_name having count(*) > 1;
 select 'duplicates in fkeys', count(*), table_id, name from sys.fkeys group by table_id, name having count(*) > 1;
 select 'missing reference in schemas authorization', authorization, * from sys.schemas where (authorization) not in (select id from sys.auths);
@@ -5875,10 +5874,10 @@ select 'null in fkeys.delete_action', delete_action, * from sys.fkeys where dele
 % %2,	%1,	id # name
 % varchar,	bigint,	int # type
 % 0,	1,	1 # length
-% .%2,	sys.%1,	sys.range_partitions,	sys.range_partitions,	sys.range_partitions # table_name
-% %2,	%1,	table_id,	partition_id,	minimum # name
-% varchar,	bigint,	int,	int,	varchar # type
-% 0,	1,	1,	1,	0 # length
+% .%2,	sys.%1,	sys.range_partitions # table_name
+% %2,	%1,	table_id # name
+% varchar,	bigint,	int # type
+% 0,	1,	1 # length
 % .%2,	sys.%1,	sys.value_partitions,	sys.value_partitions,	sys.value_partitions # table_name
 % %2,	%1,	table_id,	partition_id,	value # name
 % varchar,	bigint,	int,	int,	varchar # type
@@ -6015,10 +6014,6 @@ select 'null in fkeys.delete_action', delete_action, * from sys.fkeys where dele
 % %2,	%1,	table_id,	expression # name
 % varchar,	bigint,	int,	varchar # type
 % 0,	1,	1,	0 # length
-% .%2,	sys.%1,	sys.range_partitions,	sys.range_partitions,	sys.range_partitions # table_name
-% %2,	%1,	table_id,	partition_id,	maximum # name
-% varchar,	bigint,	int,	int,	varchar # type
-% 0,	1,	1,	1,	0 # length
 % .%2,	sys.%1,	sys.fkey_actions # table_name
 % %2,	%1,	action_name # name
 % varchar,	bigint,	varchar # type
