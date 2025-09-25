@@ -2653,19 +2653,19 @@ sys_fkeys = [
     ('schemas', 'owner', '', 'id', 'auths'),
     ('_tables', 'schema_id', '', 'id', 'schemas'),
     ('tables', 'schema_id', '', 'id', 'schemas'),
-    ('_tables', 'type', '', 'table_type_id', 'table_types'),
+    ('_tables', '"type"', '', 'table_type_id', 'table_types'),
     ('tables', 'type', '', 'table_type_id', 'table_types'),
     ('_columns', 'table_id', '', 'id', '_tables'),
     ('columns', 'table_id', '', 'id', 'tables'),
-    ('_columns', 'type', '', 'sqlname', 'types'),
-    ('columns', 'type', '', 'sqlname', 'types'),
+    ('_columns', '"type"', '', 'sqlname', 'types'),
+    ('columns', '"type"', '', 'sqlname', 'types'),
     ('functions', 'schema_id', '', 'id', 'schemas'),
-    ('functions', 'type', '', 'function_type_id', 'function_types'),
+    ('functions', '"type"', '', 'function_type_id', 'function_types'),
     ('functions', 'language', '', 'language_id', 'function_languages'),
 
     ('functions', 'schema_id', 'system', 'id', 'schemas WHERE system'),
     ('args', 'func_id', '', 'id', 'functions'),
-    ('args', 'type', '', 'sqlname', 'types'),
+    ('args', '"type"', '', 'sqlname', 'types'),
     ('types', 'schema_id', '', 'id', 'schemas'),
 
     ('objects', 'id', '', 'id', 'ids'),
@@ -2673,31 +2673,35 @@ sys_fkeys = [
     ('keys', 'id', '', 'id', 'objects'),
     ('keys', 'table_id', '', 'id', '_tables'),
     ('keys', 'table_id', '', 'id', 'tables'),
-    ('keys', 'type', '', 'key_type_id', 'key_types'),
+    ('keys', '"type"', '', 'key_type_id', 'key_types'),
     ('keys', 'rkey', 'rkey <> -1', 'id', 'keys'),
 
     ('idxs', 'id', '', 'id', 'objects'),
     ('idxs', 'table_id', '', 'id', '_tables'),
     ('idxs', 'table_id', '', 'id', 'tables'),
-    ('idxs', 'type', '', 'index_type_id', 'index_types'),
+    ('idxs', '"type"', '', 'index_type_id', 'index_types'),
     ('sequences', 'schema_id', '', 'id', 'schemas'),
     ('triggers', 'table_id', '', 'id', '_tables'),
     ('triggers', 'table_id', '', 'id', 'tables'),
     ('comments', 'id', '', 'id', 'ids'),
-    ('dependencies', 'id', '', 'id', 'ids'),
-    ('dependencies', 'depend_id', '', 'id', 'ids'),
-    ('dependencies', 'depend_type', '', 'dependency_type_id', 'dependency_types'),
-    ('dependencies', 'id, depend_id, depend_type', '', 'v.id, v.used_by_id, v.depend_type', 'dependencies_vw v'),
+    # ('dependencies', 'id', '', 'id', 'ids'),
+    # ('dependencies', 'depend_id', '', 'id', 'ids'),
+    # ('dependencies', 'depend_type', '', 'dependency_type_id', 'dependency_types'),
+    # ('dependencies', 'id, depend_id, depend_type', '', 'v.id, v.used_by_id, v.depend_type', 'dependencies_vw v'),
     ('auths', 'grantor', 'grantor > 0', 'id', 'auths'),
     ('users', 'name', '', 'name', 'auths'),
     ('users', 'default_schema', '', 'id', 'schemas'),
+    ('users', 'optimizer', '', 'name', 'optimizers'),
+    ('users', 'default_role', '', 'id', 'auths'),
     ('db_user_info', 'name', '', 'name', 'auths'),
     ('db_user_info', 'default_schema', '', 'id', 'schemas'),
+    ('db_user_info', 'optimizer', '', 'name', 'optimizers'),
+    ('db_user_info', 'default_role', '', 'id', 'auths'),
     ('user_role', 'login_id', '', 'id', 'auths'),
     ('user_role', 'login_id', '', 'a.id', 'auths a WHERE a.name IN (SELECT u.name FROM sys.users u)'),
     ('user_role', 'role_id', '', 'id', 'auths'),
     ('user_role', 'role_id', '', 'id', 'roles'),
-    ('privileges', 'obj_id', '', 'id', '(SELECT id FROM sys.schemas UNION ALL SELECT id FROM sys._tables UNION ALL SELECT id FROM sys._columns UNION ALL SELECT id FROM sys.functions) as t'),
+    ('privileges', 'obj_id', '(obj_id <> 0 OR auth_id NOT IN (SELECT id FROM sys.auths))', 'id', '(SELECT id FROM sys.schemas UNION ALL SELECT id FROM sys._tables UNION ALL SELECT id FROM sys._columns UNION ALL SELECT id FROM sys.functions) as t'),
     ('privileges', 'auth_id', '', 'id', 'auths'),
     ('privileges', 'grantor', ' grantor > 0', 'id', 'auths'),
     ('privileges', 'privileges', '', 'privilege_code_id', 'privilege_codes'),
@@ -2711,22 +2715,22 @@ sys_fkeys = [
     ('sessions', '"username"', '', 'name', 'users'),
     ('sessions', 'optimizer', '', 'name', 'optimizers'),
     ('statistics', 'column_id', '', 'id', '(SELECT id FROM sys._columns UNION ALL SELECT id FROM tmp._columns) as c'),
-    ('statistics', 'type', '', 'sqlname', 'types'),
-    ('storage()', 'schema', '', 'name', 'schemas'),
+    ('statistics', '"type"', '', 'sqlname', 'types'),
+    ('storage()', '"schema"', '', 'name', 'schemas'),
     ('storage()', '"table"', '', 'name', '(SELECT name FROM sys._tables UNION ALL SELECT name FROM tmp._tables) as t'),
-    ('storage()', 'schema, "table"', '', 'sname, tname', '(SELECT sch.name as sname, tbl.name as tname FROM sys.schemas AS sch JOIN sys.tables AS tbl ON sch.id = tbl.schema_id) as t'),
+    ('storage()', '"schema", "table"', '', 'sname, tname', '(SELECT sch.name as sname, tbl.name as tname FROM sys.schemas AS sch JOIN sys.tables AS tbl ON sch.id = tbl.schema_id) as t'),
     ('storage()', '"column"', '', 'name', '(SELECT name FROM sys._columns UNION ALL SELECT name FROM tmp._columns UNION ALL SELECT name FROM sys.keys UNION ALL SELECT name FROM tmp.keys UNION ALL SELECT name FROM sys.idxs UNION ALL SELECT name FROM tmp.idxs) as c'),
-    ('storage()', 'type', '', 'sqlname', 'types'),
-    ('storage', 'schema', '', 'name', 'schemas'),
+    ('storage()', '"type"', '', 'sqlname', 'types'),
+    ('storage', '"schema"', '', 'name', 'schemas'),
     ('storage', '"table"', '', 'name', '(SELECT name FROM sys._tables UNION ALL SELECT name FROM tmp._tables) as t'),
-    ('storage', 'schema, "table"', '', 'sname, tname', '(SELECT sch.name as sname, tbl.name as tname FROM sys.schemas AS sch JOIN sys.tables AS tbl ON sch.id = tbl.schema_id) as t'),
+    ('storage', '"schema", "table"', '', 'sname, tname', '(SELECT sch.name as sname, tbl.name as tname FROM sys.schemas AS sch JOIN sys.tables AS tbl ON sch.id = tbl.schema_id) as t'),
     ('storage', '"column"', '', 'name', '(SELECT name FROM sys._columns UNION ALL SELECT name FROM tmp._columns UNION ALL SELECT name FROM sys.keys UNION ALL SELECT name FROM tmp.keys UNION ALL SELECT name FROM sys.idxs UNION ALL SELECT name FROM tmp.idxs) as c'),
-    ('storage', 'type', '', 'sqlname', 'types'),
+    ('storage', '"type"', '', 'sqlname', 'types'),
 
-    ('schemastorage', 'schema', '', 'name', 'schemas'),
-    ('tablestorage', 'schema', '', 'name', 'schemas'),
+    ('schemastorage', '"schema"', '', 'name', 'schemas'),
+    ('tablestorage', '"schema"', '', 'name', 'schemas'),
     ('tablestorage', '"table"', '', 'name', '(SELECT name FROM sys._tables UNION ALL SELECT name FROM tmp._tables) as t'),
-    ('tablestorage', 'schema, "table"', '', 'sname, tname', '(SELECT sch.name as sname, tbl.name as tname FROM sys.schemas AS sch JOIN sys.tables AS tbl ON sch.id = tbl.schema_id) as t'),
+    ('tablestorage', '"schema", "table"', '', 'sname, tname', '(SELECT sch.name as sname, tbl.name as tname FROM sys.schemas AS sch JOIN sys.tables AS tbl ON sch.id = tbl.schema_id) as t'),
     ('table_partitions', 'table_id', '', 'id', '_tables'),
     ('table_partitions', 'column_id', 'column_id IS NOT NULL', 'id', '_columns'),
     ('range_partitions', 'table_id', '', 'id', '_tables'),
@@ -2736,7 +2740,7 @@ sys_fkeys = [
 
     ('keys', 'cast(((action >> 8) & 255) as smallint)', 'action >= 0', 'action_id', 'fkey_actions'),
     ('keys', 'cast((action & 255) as smallint)', 'action >= 0', 'action_id', 'fkey_actions'),
-    ('fkeys', 'id, table_id, type, name, rkey', '', 'id, table_id, type, name, rkey', 'keys'),
+    ('fkeys', 'id, table_id, "type", name, rkey', '', 'id, table_id, "type", name, rkey', 'keys'),
     ('fkeys', 'update_action_id', '', 'action_id', 'fkey_actions'),
     ('fkeys', 'delete_action_id', '', 'action_id', 'fkey_actions'),
 ]
@@ -2802,6 +2806,7 @@ class ServerClass:
     def checkkeys(self):
         if not checkkeys:
             return
+        self.outfile.flush()
         with pymonetdb.connect(username='monetdb',
                                password='monetdb',
                                hostname=HOST,
@@ -2813,20 +2818,29 @@ class ServerClass:
                 for table, columns in sys_pkeys + sys_akeys:
                     qtable = table.replace('"', '')
                     schema = 'sys.' if not table.startswith('(') else ''
-                    crs.execute(f"select 'duplicates in {qtable}', count(*), {columns} from {schema}{table} group by {columns} having count(*) > 1")
+                    query = f"select count(*), {columns} " \
+                        f"from {schema}{table} " \
+                        f"group by {columns} having count(*) > 1"
+                    crs.execute(query)
                     rows = crs.fetchall()
                     for row in rows:  # should be empty
-                        print(row, file=self.outfile)
+                        print(f'duplicates in {qtable}', row, query,
+                              file=self.outfile)
                 for table, columns, where, ref_columns, ref_table in sys_fkeys:
                     if where:
                         where += ' AND '
                     schema = '' if '.' in ref_table else 'sys.'
                     qtable = table.split(' ')[0]
                     qcolumns = columns.replace('"', '')
-                    crs.execute(f"select 'missing reference in {qtable} {qcolumns}', {columns}, * from sys.{table} WHERE {where}({columns}) not in (select {ref_columns} from {schema}{ref_table})")
+                    query = f"select {columns}, * from sys.{table} " \
+                        f"where {where}({columns}) not in " \
+                        f"(select {ref_columns} from {schema}{ref_table})"
+                    crs.execute(query)
                     rows = crs.fetchall()
                     for row in rows:  # should be empty
-                        print(row, file=self.outfile)
+                        print(f'missing reference in {qtable} {qcolumns}', row,
+                              query, file=self.outfile)
+        self.outfile.flush()
 
     def stopsessions(self):
         if self.lock.acquire(blocking=False):
