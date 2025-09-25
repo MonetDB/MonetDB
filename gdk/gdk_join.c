@@ -554,10 +554,10 @@ selectjoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 }
 
 #if SIZEOF_OID == SIZEOF_INT
-#define binsearch_oid(indir, offset, vals, lo, hi, v, ordering, last) binsearch_int(indir, offset, (const int *) vals, lo, hi, (int) (v), ordering, last)
+#define binsearch_oid(indir, vals, lo, hi, v, ordering, last) binsearch_int(indir, (const int *) vals, lo, hi, (int) (v), ordering, last)
 #endif
 #if SIZEOF_OID == SIZEOF_LNG
-#define binsearch_oid(indir, offset, vals, lo, hi, v, ordering, last) binsearch_lng(indir, offset, (const lng *) vals, lo, hi, (lng) (v), ordering, last)
+#define binsearch_oid(indir, vals, lo, hi, v, ordering, last) binsearch_lng(indir, (const lng *) vals, lo, hi, (lng) (v), ordering, last)
 #endif
 
 /* Implementation of join where the right-hand side is dense, and if
@@ -1081,14 +1081,14 @@ mergejoin_int(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	if (!nil_matches) {
 		/* skip over nils at the start of the columns */
 		if (lscan < lend - lstart && is_int_nil(lvals[lstart + lscan])) {
-			lstart = binsearch_int(NULL, 0, lvals, lstart + lscan,
+			lstart = binsearch_int(NULL, lvals, lstart + lscan,
 					       lend - 1, int_nil, 1, 1);
 		} else {
 			while (is_int_nil(lvals[lstart]))
 				lstart++;
 		}
 		if (rscan < rend - rstart && is_int_nil(rvals[rstart + rscan])) {
-			rstart = binsearch_int(NULL, 0, rvals, rstart + rscan,
+			rstart = binsearch_int(NULL, rvals, rstart + rscan,
 					       rend - 1, int_nil, 1, 1);
 		} else {
 			while (is_int_nil(rvals[rstart]))
@@ -1104,7 +1104,7 @@ mergejoin_int(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 		v = rvals[rstart];
 
 		if (lscan < lend - lstart && lvals[lstart + lscan] < v) {
-			lstart = binsearch_int(NULL, 0, lvals, lstart + lscan,
+			lstart = binsearch_int(NULL, lvals, lstart + lscan,
 					       lend - 1, v, 1, 0);
 		} else {
 			/* scan l for v */
@@ -1137,7 +1137,7 @@ mergejoin_int(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 			   v == lvals[lstart + lscan]) {
 			/* lots of equal values: use binary search to
 			 * find end */
-			nl = binsearch_int(NULL, 0, lvals, lstart + lscan,
+			nl = binsearch_int(NULL, lvals, lstart + lscan,
 					   lend - 1, v, 1, 1);
 			nl -= lstart;
 			lstart += nl;
@@ -1169,7 +1169,7 @@ mergejoin_int(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 		if (rscan < rend - rstart && rvals[rstart + rscan] < v) {
 			/* value too far away in r: use binary
 			 * search */
-			rstart = binsearch_int(NULL, 0, rvals, rstart + rscan,
+			rstart = binsearch_int(NULL, rvals, rstart + rscan,
 					       rend - 1, v, 1, 0);
 		} else {
 			/* scan r for v */
@@ -1194,7 +1194,7 @@ mergejoin_int(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 		} else if (rscan < rend - rstart &&
 			   v == rvals[rstart + rscan]) {
 			/* range too large: use binary search */
-			nr = binsearch_int(NULL, 0, rvals, rstart + rscan,
+			nr = binsearch_int(NULL, rvals, rstart + rscan,
 					   rend - 1, v, 1, 1);
 			nr -= rstart;
 			rstart += nr;
@@ -1395,14 +1395,14 @@ mergejoin_lng(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	if (!nil_matches) {
 		/* skip over nils at the start of the columns */
 		if (lscan < lend - lstart && is_lng_nil(lvals[lstart + lscan])) {
-			lstart = binsearch_lng(NULL, 0, lvals, lstart + lscan,
+			lstart = binsearch_lng(NULL, lvals, lstart + lscan,
 					       lend - 1, lng_nil, 1, 1);
 		} else {
 			while (is_lng_nil(lvals[lstart]))
 				lstart++;
 		}
 		if (rscan < rend - rstart && is_lng_nil(rvals[rstart + rscan])) {
-			rstart = binsearch_lng(NULL, 0, rvals, rstart + rscan,
+			rstart = binsearch_lng(NULL, rvals, rstart + rscan,
 					       rend - 1, lng_nil, 1, 1);
 		} else {
 			while (is_lng_nil(rvals[rstart]))
@@ -1417,7 +1417,7 @@ mergejoin_lng(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 		v = rvals[rstart];
 
 		if (lscan < lend - lstart && lvals[lstart + lscan] < v) {
-			lstart = binsearch_lng(NULL, 0, lvals, lstart + lscan,
+			lstart = binsearch_lng(NULL, lvals, lstart + lscan,
 					       lend - 1, v, 1, 0);
 		} else {
 			/* scan l for v */
@@ -1450,7 +1450,7 @@ mergejoin_lng(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 			   v == lvals[lstart + lscan]) {
 			/* lots of equal values: use binary search to
 			 * find end */
-			nl = binsearch_lng(NULL, 0, lvals, lstart + lscan,
+			nl = binsearch_lng(NULL, lvals, lstart + lscan,
 					   lend - 1, v, 1, 1);
 			nl -= lstart;
 			lstart += nl;
@@ -1482,7 +1482,7 @@ mergejoin_lng(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 		if (rscan < rend - rstart && rvals[rstart + rscan] < v) {
 			/* value too far away in r: use binary
 			 * search */
-			rstart = binsearch_lng(NULL, 0, rvals, rstart + rscan,
+			rstart = binsearch_lng(NULL, rvals, rstart + rscan,
 					       rend - 1, v, 1, 0);
 		} else {
 			/* scan r for v */
@@ -1507,7 +1507,7 @@ mergejoin_lng(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 		} else if (rscan < rend - rstart &&
 			   v == rvals[rstart + rscan]) {
 			/* range too large: use binary search */
-			nr = binsearch_lng(NULL, 0, rvals, rstart + rscan,
+			nr = binsearch_lng(NULL, rvals, rstart + rscan,
 					   rend - 1, v, 1, 1);
 			nr -= rstart;
 			rstart += nr;
@@ -1718,7 +1718,7 @@ mergejoin_cand(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	if (!nil_matches) {
 		/* skip over nils at the start of the columns */
 		if (lscan < lend - lstart && lvals && is_oid_nil(lvals[lstart + lscan])) {
-			lstart = binsearch_oid(NULL, 0, lvals, lstart + lscan,
+			lstart = binsearch_oid(NULL, lvals, lstart + lscan,
 					       lend - 1, oid_nil, 1, 1);
 		} else if (lvals) {
 			while (is_oid_nil(lvals[lstart]))
@@ -1735,7 +1735,7 @@ mergejoin_cand(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 		if (lvals) {
 			if (lscan < lend - lstart &&
 			    lvals[lstart + lscan] < v) {
-				lstart = binsearch_oid(NULL, 0, lvals,
+				lstart = binsearch_oid(NULL, lvals,
 						       lstart + lscan,
 						       lend - 1, v, 1, 0);
 			} else {
@@ -1773,7 +1773,7 @@ mergejoin_cand(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 			   v == lvals[lstart + lscan]) {
 			/* lots of equal values: use binary search to
 			 * find end */
-			nl = binsearch_oid(NULL, 0, lvals, lstart + lscan,
+			nl = binsearch_oid(NULL, lvals, lstart + lscan,
 					   lend - 1, v, 1, 1);
 			nl -= lstart;
 			lstart += nl;
@@ -2097,7 +2097,7 @@ mergejoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 		rordering = equal_order ? lordering : -lordering;
 		if (!li.nonil && !nil_matches && !nil_on_miss && lvals != NULL && not_in) {
 			/* find first non-nil */
-			nl = binsearch(NULL, 0, li.type, lvals, lvars, li.width, 0, BATcount(l), nil, li.sorted ? 1 : -1, li.sorted ? 1 : 0);
+			nl = binsearch(NULL, li.type, lvals, lvars, li.width, 0, BATcount(l), nil, li.sorted ? 1 : -1, li.sorted ? 1 : 0);
 			nl = canditer_search(lci, nl + l->hseqbase, true);
 			if (li.sorted) {
 				canditer_setidx(lci, nl);
@@ -2212,7 +2212,7 @@ mergejoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 					lv -= l->hseqbase;
 					if (lvals) {
 						if (lordering * cmp(VALUE(l, lv), v) < 0) {
-							nlx = binsearch(NULL, 0, li.type, lvals, lvars, li.width, lv, BATcount(l), v, lordering, 0);
+							nlx = binsearch(NULL, li.type, lvals, lvars, li.width, lv, BATcount(l), v, lordering, 0);
 							nlx = canditer_search(lci, nlx + l->hseqbase, true);
 							nlx -= lci->next;
 						}
@@ -2318,7 +2318,7 @@ mergejoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 			/* lots of equal values: use binary search to
 			 * find end */
 			assert(lvals != NULL);
-			nl = binsearch(NULL, 0,
+			nl = binsearch(NULL,
 				       li.type, lvals, lvars,
 				       li.width, lci->next + lscan,
 				       BATcount(l),
@@ -2391,7 +2391,7 @@ mergejoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 				    rordering * cmp(v, VALUE(r, canditer_idx(rci, rci->next + rscan) - r->hseqbase)) > 0) {
 					/* value too far away in r:
 					 * use binary search */
-					lv = binsearch(NULL, 0, ri.type, rvals, rvars, ri.width, rci->next + rscan, BATcount(r), v, rordering, 0);
+					lv = binsearch(NULL, ri.type, rvals, rvars, ri.width, rci->next + rscan, BATcount(r), v, rordering, 0);
 					lv = canditer_search(rci, lv + r->hseqbase, true);
 					canditer_setidx(rci, lv);
 				} else {
@@ -2418,7 +2418,7 @@ mergejoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 						/* many equal values:
 						 * use binary search
 						 * to find the end */
-						nr = binsearch(NULL, 0, ri.type, rvals, rvars, ri.width, rci->next + rscan, BATcount(r), v, rordering, 1);
+						nr = binsearch(NULL, ri.type, rvals, rvars, ri.width, rci->next + rscan, BATcount(r), v, rordering, 1);
 						nr = canditer_search(rci, nr + r->hseqbase, true);
 						nr -= rci->next;
 						canditer_setidx(rci, rci->next + nr);
@@ -2460,7 +2460,7 @@ mergejoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 					/* value too far away
 					 * in r: use binary
 					 * search */
-					lv = binsearch(NULL, 0, ri.type, rvals, rvars, ri.width, 0, rci->next - rscan, v, rordering, 1);
+					lv = binsearch(NULL, ri.type, rvals, rvars, ri.width, 0, rci->next - rscan, v, rordering, 1);
 					lv = canditer_search(rci, lv + r->hseqbase, true);
 					canditer_setidx(rci, lv);
 				} else {
@@ -2481,7 +2481,7 @@ mergejoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 					} else if (rci->next > rscan &&
 						   cmp(v, VALUE(r, canditer_idx(rci, rci->next - rscan) - r->hseqbase)) == 0) {
 						/* use binary search to find the start */
-						nr = binsearch(NULL, 0, ri.type, rvals, rvars, ri.width, 0, rci->next - rscan, v, rordering, 0);
+						nr = binsearch(NULL, ri.type, rvals, rvars, ri.width, 0, rci->next - rscan, v, rordering, 0);
 						nr = canditer_search(rci, nr + r->hseqbase, true);
 						nr = rci->next - nr;
 						canditer_setidx(rci, rci->next - nr);

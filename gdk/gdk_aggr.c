@@ -3594,7 +3594,7 @@ BATmin_skipnil(BAT *b, void *aggr, bit skipnil)
 
 		if (BATordered(b)) {
 			if (skipnil && !bi.nonil) {
-				pos = binsearch(NULL, 0, bi.type, bi.base,
+				pos = binsearch(NULL, bi.type, bi.base,
 						bi.vh ? bi.vh->base : NULL,
 						bi.width, 0, bi.count,
 						ATOMnilptr(bi.type), 1, 1);
@@ -3607,7 +3607,7 @@ BATmin_skipnil(BAT *b, void *aggr, bit skipnil)
 			}
 		} else if (BATordered_rev(b)) {
 			if (skipnil && !bi.nonil) {
-				pos = binsearch(NULL, 0, bi.type, bi.base,
+				pos = binsearch(NULL, bi.type, bi.base,
 						bi.vh ? bi.vh->base : NULL,
 						bi.width, 0, bi.count,
 						ATOMnilptr(bi.type), -1, 0);
@@ -3647,7 +3647,7 @@ BATmin_skipnil(BAT *b, void *aggr, bit skipnil)
 				BUN r;
 				if (skipnil && !bi.nonil) {
 					MT_thread_setalgorithm(usepoidx ? "binsearch on parent oidx" : "binsearch on oidx");
-					r = binsearch(ords, 0, bi.type, bi.base,
+					r = binsearch(ords, bi.type, bi.base,
 						      bi.vh ? bi.vh->base : NULL,
 						      bi.width, 0, bi.count,
 						      ATOMnilptr(bi.type), 1, 1);
@@ -3851,10 +3851,10 @@ BATmax(BAT *b, void *aggr)
 /* quantiles/median */
 
 #if SIZEOF_OID == SIZEOF_INT
-#define binsearch_oid(indir, offset, vals, lo, hi, v, ordering, last) binsearch_int(indir, offset, (const int *) vals, lo, hi, (int) (v), ordering, last)
+#define binsearch_oid(indir, vals, lo, hi, v, ordering, last) binsearch_int(indir, (const int *) vals, lo, hi, (int) (v), ordering, last)
 #endif
 #if SIZEOF_OID == SIZEOF_LNG
-#define binsearch_oid(indir, offset, vals, lo, hi, v, ordering, last) binsearch_lng(indir, offset, (const lng *) vals, lo, hi, (lng) (v), ordering, last)
+#define binsearch_oid(indir, vals, lo, hi, v, ordering, last) binsearch_lng(indir, (const lng *) vals, lo, hi, (lng) (v), ordering, last)
 #endif
 
 #define DO_QUANTILE_AVG(TPE)						\
@@ -4013,10 +4013,10 @@ doBATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 			prev = grps[r];
 			/* search for end of current group (grps is
 			 * sorted so we can use binary search) */
-			p = binsearch_oid(NULL, 0, grps, r, q - 1, prev, 1, 1);
+			p = binsearch_oid(NULL, grps, r, q - 1, prev, 1, 1);
 			if (skip_nils && !bi.nonil) {
 				/* within group, locate start of non-nils */
-				r = binsearch(NULL, 0, tp, bi.base,
+				r = binsearch(NULL, tp, bi.base,
 					      bi.vh ? bi.vh->base : NULL,
 					      bi.width, r, p, nil,
 					      1, 1);
@@ -4136,7 +4136,7 @@ doBATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 		bi = bat_iterator(b);
 
 		if (skip_nils && !bi.nonil)
-			r = binsearch(ords, 0, tp, bi.base,
+			r = binsearch(ords, tp, bi.base,
 				      bi.vh ? bi.vh->base : NULL,
 				      bi.width, 0, p,
 				      nil, 1, 1);

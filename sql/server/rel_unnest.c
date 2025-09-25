@@ -1171,6 +1171,8 @@ push_up_select(mvc *sql, sql_rel *rel, list *ad)
 					e = exp_copy(sql, e);
 					if (exp_has_freevar(sql, e))
 						rel_bind_var(sql, rel->l, e);
+					if (rel->op == op_anti && !is_any(e))
+						set_semantics(e);
 					rel_join_add_exp(sql->sa, rel, e);
 				}
 			}
