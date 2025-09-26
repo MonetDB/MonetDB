@@ -2813,33 +2813,36 @@ class ServerClass:
                                port=int(self.port),
                                database=self.dbname,
                                connect_timeout=1.0) as dbh:
-            dbh.settimeout(20)
-            with dbh.cursor() as crs:
-                for table, columns in sys_pkeys + sys_akeys:
-                    qtable = table.replace('"', '')
-                    schema = 'sys.' if not table.startswith('(') else ''
-                    query = f"select count(*), {columns} " \
-                        f"from {schema}{table} " \
-                        f"group by {columns} having count(*) > 1"
-                    crs.execute(query)
-                    rows = crs.fetchall()
-                    for row in rows:  # should be empty
-                        print(f'duplicates in {qtable}', row, query,
-                              file=self.outfile)
-                for table, columns, where, ref_columns, ref_table in sys_fkeys:
-                    if where:
-                        where += ' AND '
-                    schema = '' if '.' in ref_table else 'sys.'
-                    qtable = table.split(' ')[0]
-                    qcolumns = columns.replace('"', '')
-                    query = f"select {columns}, * from sys.{table} " \
-                        f"where {where}({columns}) not in " \
-                        f"(select {ref_columns} from {schema}{ref_table})"
-                    crs.execute(query)
-                    rows = crs.fetchall()
-                    for row in rows:  # should be empty
-                        print(f'missing reference in {qtable} {qcolumns}', row,
-                              query, file=self.outfile)
+            dbh.settimeout(60)
+            try:
+                with dbh.cursor() as crs:
+                    for table, columns in sys_pkeys + sys_akeys:
+                        qtable = table.replace('"', '')
+                        schema = 'sys.' if not table.startswith('(') else ''
+                        query = f"select count(*), {columns} " \
+                            f"from {schema}{table} " \
+                            f"group by {columns} having count(*) > 1"
+                        crs.execute(query)
+                        rows = crs.fetchall()
+                        for row in rows:  # should be empty
+                            print(f'duplicates in {qtable}', row, query,
+                                  file=self.outfile)
+                    for table, columns, where, ref_columns, ref_table in sys_fkeys:
+                        if where:
+                            where += ' AND '
+                        schema = '' if '.' in ref_table else 'sys.'
+                        qtable = table.split(' ')[0]
+                        qcolumns = columns.replace('"', '')
+                        query = f"select {columns}, * from sys.{table} " \
+                            f"where {where}({columns}) not in " \
+                            f"(select {ref_columns} from {schema}{ref_table})"
+                        crs.execute(query)
+                        rows = crs.fetchall()
+                        for row in rows:  # should be empty
+                            print(f'missing reference in {qtable} {qcolumns}', row,
+                                  query, file=self.outfile)
+            except TimeoutError:
+                pass
         self.outfile.flush()
 
     def stopsessions(self):
