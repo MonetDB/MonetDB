@@ -330,12 +330,12 @@ encode_timestamp(void *dst_, void *src_, size_t count, bool byteswap)
 
 void init_insert_state(struct insert_state *st, allocator *ma, BAT *bat, int width) {
 	*st = (struct insert_state) {
+		.ma = ma,
 		.bat = bat,
 		.width = width,
 		.scratch = NULL,
 		.schratch_len = 0,
-		.left_over = 0,
-		.ma = ma,
+		.resume = 0,
 	};
 };
 
@@ -346,65 +346,155 @@ void release_insert_state(struct insert_state *st) {
 }
 
 static str
-insert_one_nul_terminated(struct insert_state *st, const char *item, size_t item_len)
+reinsert(struct insert_state *st, BUN bun)
+{
+	if (bun >= BATcount(st->bat))
+		throw(SQL, "insert_nul_terminated_values", SQLSTATE(42000) "invalid repeat bun " BUNFMT, bun);
+	if (BATcount(st->bat) == BATcapacity(st->bat)) {
+		if (BATextend(st->bat, BATgrows(st->bat)) != GDK_SUCCEED)
+				throw(SQL, "insert_nul_terminated_values", GDK_EXCEPTION);
+	}
+	void *src = Tloc(st->bat, bun);
+	void *dst = Tloc(st->bat, BATcount(st->bat));
+	switch (st->bat->twidth) {
+		case 1:
+			*(uint8_t*)dst = *(uint8_t*)src;
+			break;
+		case 2:
+			*(uint16_t*)dst = *(uint16_t*)src;
+			break;
+		case 4:
+			*(uint32_t*)dst = *(uint32_t*)src;
+			break;
+		case 8:
+			*(uint64_t*)dst = *(uint64_t*)src;
+			break;
+		default:
+			MT_UNREACHABLE();
+	}
+	st->bat->batCount++;
+	return MAL_SUCCEED;
+}
+
+static str
+insert_non_nil(struct insert_state *st, const char *item)
 {
 	int tpe = BATttype(st->bat);
 	const void *value;
 
-	assert(item_len > 0);
-	assert(item[item_len - 1] == '\0');
-
-	unsigned char *uitem = (unsigned char *)item;
-
-	if (uitem[0] == 0x80 && item_len == 2) {
-		value = ATOMnilptr(tpe);
+	if (!checkUTF8(item)) {
+		throw(SQL, "insert_nul_terminated_values", SQLSTATE(42000) "malformed utf-8 byte sequence");
+	}
+	if (tpe == TYPE_str) {
+		if (st->width > 0 && UTF8_strlen(item) > st->width)
+			throw(SQL, "insert_nul_terminated_values", "string too wide for column");
+		value = item;
 	} else {
-		if (!checkUTF8(item)) {
-			throw(SQL, "insert_nul_terminated", SQLSTATE(42000) "malformed utf-8 byte sequence");
-		}
-		if (tpe == TYPE_str) {
-			if (st->width > 0 && UTF8_strlen(item) > st->width)
-				throw(SQL, "insert_nul_terminated", "string too wide for column");
-			value = item;
-		} else {
-			ssize_t n = ATOMfromstr(st->ma, tpe, &st->scratch, &st->schratch_len, item, false);
-			if (n <= 0)
-				throw(SQL, "insert_nul_terminated", GDK_EXCEPTION);
-			value = st->scratch;
-		}
+		ssize_t n = ATOMfromstr(st->ma, tpe, &st->scratch, &st->schratch_len, item, false);
+		if (n <= 0)
+			throw(SQL, "insert_nul_terminated_values", GDK_EXCEPTION);
+		value = st->scratch;
 	}
 
 	// By now 'value' has been set
 	if (bunfastapp(st->bat, value) != GDK_SUCCEED) {
-		throw(SQL, "insert_nul_terminated", GDK_EXCEPTION);
+		throw(SQL, "insert_nul_terminated_values", GDK_EXCEPTION);
 	}
 
 	return MAL_SUCCEED;
 }
 
-str insert_some_nul_terminated(struct insert_state *st, const char *data, size_t total_len, size_t *consumed)
+static str
+insert_nil(struct insert_state *st)
 {
-	str msg;
-	assert(st->left_over <= total_len);
+	int tpe = BATttype(st->bat);
+	const void *value = ATOMnilptr(tpe);
+	if (bunfastapp(st->bat, value) != GDK_SUCCEED) {
+		throw(SQL, "insert_nul_terminated_values", GDK_EXCEPTION);
+	}
+	return MAL_SUCCEED;
+}
 
-	const char *start = data; // start of the current item
-	const char *pos = data + st->left_over; // where to start searching
-	const char *limit = data + total_len;
+str
+insert_nul_terminated_values(struct insert_state *st, const char *data, size_t total_len, size_t *consumed)
+{
+	assert(st->resume < total_len);
 
-	while (pos < limit) {
-		const char *end = memchr(pos, '\0', limit - pos);
-		if (end == NULL)
-			break;
-		size_t len = end + 1 - start;
-		msg = insert_one_nul_terminated(st, start, len);
-		if (msg != MAL_SUCCEED)
-			return msg;
-		start += len;
-		pos = start;
+	// We use unsigned char to make the backref computations easier
+	const unsigned char *start = (const unsigned char*)data;
+	const unsigned char *limit = start + total_len;
+	const unsigned char *current = start;   // start of the current item
+	const unsigned char *resume = current + st->resume; // where to start looking for NUL
+
+	while (current < limit) {
+		// Recognize the item and determine where it ends.
+		// If we reach 'limit' we'll goto end without updating 'current'.
+		const unsigned char *pos = current;
+		const unsigned char first = *pos++;
+		if ((first & 0xC0) != 0x80) {
+			// Not a nil, not a backref. Find out how long it is
+			pos = memchr(resume, '\0', limit - resume);
+			if (pos == NULL) {
+				// the end of the string is not yet in our buffer
+				resume = limit;
+				goto end;
+			}
+			pos++; // include the NUL terminator
+			str msg = insert_non_nil(st, (char*)current);
+			if (msg != MAL_SUCCEED)
+				return msg;
+		} else if (first > 0x80) {
+			// 0x81 .. 0xBF, a short back ref
+			assert(first <= 0xBF);
+			BUN delta = first - 0x80;
+			reinsert(st, BATcount(st->bat) - delta);
+		} else {
+			// 0x80 so it's either a nil or a long backref
+			assert(first == 0x80);
+			if (pos == limit) {
+				// can't tell the difference
+				resume = current;
+				goto end;
+			}
+			unsigned char follower = *pos++;
+			if (follower == '\0') {
+				// it's a nil
+				str msg = insert_nil(st);
+				if (msg != MAL_SUCCEED)
+					return msg;
+			} else {
+				// it's a long backref
+				BUN delta = follower & 0x7F;
+				unsigned int shift = 0;
+				while (follower > 0x7F) {
+					if (pos == limit) {
+						// incomplete
+						resume = current;
+						goto end;
+					}
+					if (shift > 8 * sizeof(BUN) - 14) {
+						// the payload is 7 bits wide, if we increase shift
+						// by 7 it's going to overflow.
+						// TODO maybe we need to set a stricter limit?
+						throw(SQL, "insert_nul_terminated_values", SQLSTATE(42000)"invalid backref in binary data at %ld", (long)BATcount(st->bat));
+					}
+					shift += 7;
+					follower = *pos++;
+					BUN payload = follower & 0x7F;
+					delta = delta | (payload << shift);
+				}
+				reinsert(st, BATcount(st->bat) - delta);
+			}
+		}
+
+		// Prepare for the next iteration
+		current = pos;
+		resume = current;
 	}
 
-	*consumed = start - data;
-	st->left_over = data + total_len - start;
+end:
+	*consumed = current - start;
+	st->resume = resume - current;
 	return MAL_SUCCEED;
 }
 
@@ -453,7 +543,7 @@ load_zero_terminated_text(BAT *bat, stream *s, int *eof_reached, int width, bool
 		fprintf(stderr, "\n");
 		#endif
 		size_t consumed;
-		msg = insert_some_nul_terminated(&state, &bs->buf[bs->pos], bs->len - bs->pos, &consumed);
+		msg = insert_nul_terminated_values(&state, &bs->buf[bs->pos], bs->len - bs->pos, &consumed);
 		#ifdef DEBUG_PRINTFS
 		fprintf(stderr, "# consumed %zu, left_over=%zu, batcount=%zu\n", consumed, state.left_over, BATcount(bat));
 		#endif
@@ -464,6 +554,10 @@ load_zero_terminated_text(BAT *bat, stream *s, int *eof_reached, int width, bool
 
 	if (bs->pos < bs->len)
 		bailout("unterminated string at end");
+
+	// We've been incrementing bat->batCount directly but there is some
+	// bookkeeping that must be maintained as well
+	BATsetcount(bat, bat->batCount);
 
 	msg = MAL_SUCCEED;
 end:
