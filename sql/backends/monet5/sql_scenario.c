@@ -1489,7 +1489,8 @@ SQLparser_body(Client c, backend *be)
 		int oldvtop = c->curprg->def->vtop;
 		int oldstop = c->curprg->def->stop;
 		(void)runtimeProfileSetTag(c); /* generate and set the tag in the mal block of the clients current program. */
-		if (m->emode != m_prepare || (m->emode == m_prepare && (m->emod & mod_exec) && is_ddl(r->op)) /* direct execution prepare */) {
+		if (m->emode != m_prepare ||
+			(m->emode == m_prepare && m->emod == mod_exec && is_ddl(r->op)) /* direct execution prepare */) {
 			mvc_query_processed(m);
 
 			err = 0;
@@ -1508,7 +1509,7 @@ SQLparser_body(Client c, backend *be)
 			}
 
 			int opt = 0;
-			if (m->emode == m_prepare && (m->emod & mod_exec)) {
+			if (m->emode == m_prepare && m->emod == mod_exec) {
 				/* generated the named parameters for the placeholders */
 				if (backend_dumpstmt(be, c->curprg->def, r->r, !(m->emod & mod_exec), 0, c->query) < 0) {
 					msg = handle_error(m, 0, msg);
@@ -1520,15 +1521,19 @@ SQLparser_body(Client c, backend *be)
 				m->emode = m_normal;
 				m->emod &= ~mod_exec;
 			}
-			if (!err && backend_dumpstmt(be, c->curprg->def, r, !(m->emod & mod_exec), 0, c->query) < 0) {
+			if (!err && backend_dumpstmt(be, c->curprg->def, r, !(m->emod == mod_exec), 0, c->query) < 0) {
 				msg = handle_error(m, 0, msg);
 				err = 1;
 				MSresetInstructions(c->curprg->def, oldstop);
 				freeVariables(c, c->curprg->def, NULL, oldvtop);
 				freeException(c->curprg->def->errors);
 				c->curprg->def->errors = NULL;
-			} else
-				opt = ((m->emod & mod_exec) == 0); /* no need to optimize prepare - execute */
+			} else {
+				opt = ((m->emod == mod_exec) == 0); /* no need to optimize prepare - execute */
+			}
+
+			if (be->mvc->emod == mod_explain && be->mvc->step == S_PHYSICAL && be->mvc->temporal == T_BEFORE)
+				opt = 0;
 
 			if (err)
 				m->session->status = -10;

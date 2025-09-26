@@ -482,9 +482,9 @@ scanner_init_keywords(void)
 	failed += keywords_insert("DEALLOCATE", DEALLOCATE);
 	failed += keywords_insert("UNNEST", UNNEST);
 	failed += keywords_insert("REWRITE", REWRITE);
+	failed += keywords_insert("PHYSICAL", PHYSICAL);
 	failed += keywords_insert("SHOW", SHOW);
 	failed += keywords_insert("PROPERTIES", PROPERTIES);
-	/* failed += keywords_insert("PHYSICAL", PHYSICAL); */
 
 	failed += keywords_insert("INDEX", INDEX);
 

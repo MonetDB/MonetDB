@@ -20,6 +20,7 @@
 #include "sql_semantic.h"	/* for sql_add_param() */
 #include "sql_env.h"
 #include "rel_sequence.h"	/* for sql_next_seq_name() */
+#include "rel_optimizer.h"
 
 static int sqlerror(mvc *sql, const char *err);
 
@@ -673,7 +674,7 @@ SQLCODE SQLERROR UNDER WHENEVER
 %token TYPE PROCEDURE FUNCTION sqlLOADER AGGREGATE RETURNS EXTERNAL sqlNAME DECLARE
 %token CALL LANGUAGE
 %token ANALYZE SQL_EXPLAIN SQL_PLAN SQL_TRACE PREP PREPARE EXEC EXECUTE DEALLOCATE
-%token UNNEST REWRITE SHOW PROPERTIES
+%token UNNEST REWRITE PHYSICAL SHOW PROPERTIES
 %token DEFAULT DISTINCT DROP TRUNCATE
 %token FOREIGN
 %token RENAME ENCRYPTED UNENCRYPTED PASSWORD GRANT REVOKE ROLE ADMIN INTO
@@ -859,7 +860,6 @@ sqlstmt:
 					m->scanner.as = m->scanner.yycur;
 				}
 				sql SCOLON {
-					
 					if (m->sym) {
 						append_symbol(m->sym->data.lval, $3);
 						$$ = m->sym;
@@ -878,10 +878,16 @@ sqlstmt:
 					}
 					YYACCEPT;
 				}
-		|		SQL_TRACE
-				{
-					m->emod |= mod_trace;
+		|		SQL_TRACE sql SCOLON {
+					m->emod = mod_trace;
 					m->scanner.as = m->scanner.yycur;
+					if (m->sym) {
+						append_symbol(m->sym->data.lval, $2);
+						$$ = m->sym;
+					} else {
+						m->sym = $$ = $2;
+					}
+					YYACCEPT;
 				}
 		|		exec SCOLON 	{ m->sym = $$ = $1; YYACCEPT; }
 		|		dealloc SCOLON  { m->sym = $$ = $1; YYACCEPT; }
@@ -892,35 +898,56 @@ sqlstmt:
 		;
 
 explain:
-				SQL_PLAN temporal step opt_show_properties
-				{
-					m->emode = m_plan;
-					m->scanner.as = m->scanner.yycur;
-				}
-		|		SQL_PLAN opt_show_properties
+				SQL_PLAN
 				{
 					m->emode = m_plan;
 					m->step = S_REWRITE;
 					m->temporal = T_AFTER;
 					m->scanner.as = m->scanner.yycur;
 				}
-		|		SQL_EXPLAIN
-				{
-					m->emod |= mod_explain;
-					/* m->step = S_PHYSICAL; */
-					/* m->temporal = T_BEFORE; */
-					m->scanner.as = m->scanner.yycur;
-				}
-		/* |		SQL_EXPLAIN temporal step */
+		/* |		SQL_PLAN temporal relational_step opt_show_properties */
 		/* 		{ */
-		/* 			m->emod |= mod_explain; */
+		/* 			m->emode = m_plan; */
 		/* 			m->scanner.as = m->scanner.yycur; */
 		/* 		} */
+		/* |		SQL_PLAN opt_show_properties */
+		/* 		{ */
+		/* 			m->emode = m_plan; */
+		/* 			m->step = S_REWRITE; */
+		/* 			m->temporal = T_AFTER; */
+		/* 			m->scanner.as = m->scanner.yycur; */
+		/* 		} */
+		|		SQL_EXPLAIN temporal relational_step opt_show_properties
+				{
+					m->emode = m_plan;
+					m->scanner.as = m->scanner.yycur;
+				}
+		|		SQL_EXPLAIN temporal physical_step opt_show_properties
+				{
+					m->emod = mod_explain;
+					m->scanner.as = m->scanner.yycur;
+				}
+		|		SQL_EXPLAIN physical_step opt_show_properties
+				{
+					m->emod = mod_explain;
+					m->scanner.as = m->scanner.yycur;
+				}
+		|		SQL_EXPLAIN opt_show_properties
+				{
+					m->emode = m_plan;
+					m->step = S_REWRITE;
+					m->temporal = T_AFTER;
+					m->scanner.as = m->scanner.yycur;
+				}
 		;
 
-step:
+relational_step:
 				UNNEST { m->step = S_UNNEST; }
 		|		REWRITE { m->step = S_REWRITE; }
+		;
+
+physical_step:
+				PHYSICAL { m->step = S_PHYSICAL; }
 		;
 
 temporal:
