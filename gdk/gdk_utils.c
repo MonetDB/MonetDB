@@ -2164,7 +2164,7 @@ eb_error(exception_buffer *eb, const char *msg, int val)
 
 #define COND_LOCK_ALLOCATOR(a)    \
     bool __alloc_locked = false;  \
-    if ((a)->pa == NULL && a->use_lock) { \
+    if ((a)->pa == NULL || a->use_lock) { \
         MT_lock_set(&(a)->lock);         \
         __alloc_locked = true;           \
     }
@@ -2721,8 +2721,11 @@ uint64_t
 sa_open(allocator *sa)
 {
 	assert(sa->pa); // only child allocators are tmp used
+	COND_LOCK_ALLOCATOR(sa);
 	sa->tmp_used += 1;
-	return SA_PACK_INT32(sa->nr, sa->used);
+	uint64_t offset = SA_PACK_INT32(sa->nr, sa->used);
+	COND_UNLOCK_ALLOCATOR(sa);
+	return offset;
 }
 
 void
@@ -2744,11 +2747,16 @@ sa_close_to(allocator *sa, uint64_t offset)
 		assert((blk_idx > 0) && (blk_idx <= sa->nr));
 		assert(blk_offset > 0 && blk_offset < SA_BLOCK_SIZE);
 		_sa_free_blks(sa, blk_idx);
+		COND_LOCK_ALLOCATOR(sa);
 		sa->nr = blk_idx;
 		sa->used = blk_offset;
+		COND_UNLOCK_ALLOCATOR(sa);
 	}
-	if (sa->tmp_used > 0)
+	if (sa->tmp_used > 0) {
+		COND_LOCK_ALLOCATOR(sa);
 		sa->tmp_used -= 1;
+		COND_UNLOCK_ALLOCATOR(sa);
+	}
 }
 
 bool
