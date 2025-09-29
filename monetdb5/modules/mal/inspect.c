@@ -417,7 +417,7 @@ INSPECTgetSource(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (s == 0)
 		throw(MAL, "inspect.getSource", RUNTIME_SIGNATURE_MISSING);
 
-	buf = (char *) GDKmalloc(BUFSIZ);
+	buf = (char *) ma_alloc(mb->ma, BUFSIZ);
 	if (buf == NULL)
 		throw(MAL, "inspect.getSource", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	snprintf(buf, BUFSIZ, "%s.%s", *mod, *fcn);
@@ -432,17 +432,17 @@ INSPECTgetSource(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		for (i = 0; i < s->def->stop; i++) {
 			if ((ps = instruction2str(s->def, 0, getInstrPtr(s->def, i),
 									  LIST_MAL_NAME)) == NULL) {
-				GDKfree(buf);
+				//GDKfree(buf);
 				throw(MAL, "inspect.getSource",
 					  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 			if (strlen(ps) >= lim - len) {
 				/* expand the buffer */
 				char *bn;
-				bn = GDKrealloc(buf, lim + BUFSIZ);
+				bn = ma_realloc(mb->ma, buf, lim + BUFSIZ, lim);
 				if (bn == NULL) {
 					//GDKfree(ps);
-					GDKfree(buf);
+					//GDKfree(buf);
 					throw(MAL, "inspect.getSource",
 						  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				}

@@ -185,8 +185,11 @@ static void
 MCexitClient(Client c)
 {
 	// Remove any left over constant symbols
-	//if (c->curprg)
-	//	resetMalBlk(&c->curprg->def);
+	if (c->curprg) {
+		//resetMalBlk(&c->curprg->def);
+		freeMalBlk(c->curprg->def);
+		c->curprg->def = NULL;
+	}
 	if (c->father == NULL) {	/* normal client */
 		if (c->fdout && c->fdout != GDKstdout)
 			close_stream(c->fdout);

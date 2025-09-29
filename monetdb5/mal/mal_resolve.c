@@ -173,7 +173,7 @@ findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 			returns[i] = 0;
 		returntype = returns;
 	} else {
-		returntype = (int *) GDKzalloc(p->retc * sizeof(int));
+		returntype = (int *) ma_zalloc(mb->ma, p->retc * sizeof(int));
 		if (returntype == 0)
 			return -1;
 	}
@@ -530,8 +530,8 @@ findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 			p->blk = s->def;
 		}
 
-		if (returntype != returns)
-			GDKfree(returntype);
+		//if (returntype != returns)
+		//	GDKfree(returntype);
 		return s1;
 	}							/* while */
 	/*
@@ -540,8 +540,8 @@ findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 	 * arguments, but that clashes with one of the target variables.
 	 */
   wrapup:
-	if (returntype != returns)
-		GDKfree(returntype);
+	//if (returntype != returns)
+	//	GDKfree(returntype);
 	return -3;
 }
 

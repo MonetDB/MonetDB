@@ -137,8 +137,8 @@ CMDgetPageSize(Client ctx, int *ret)
 static str
 CMDbbpName(Client ctx, str *ret, const bat *bid)
 {
-	(void) ctx;
-	*ret = (str) GDKstrdup(BBP_logical(*bid));
+	allocator *ma = ctx->curprg->def->ma;
+	*ret = (str) MA_STRDUP(ma, BBP_logical(*bid));
 	if (*ret == NULL)
 		throw(MAL, "catalog.bbpName", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
@@ -532,7 +532,7 @@ CMDbbp(Client ctx, bat *ID, bat *NS, bat *TT, bat *CNT, bat *REFCNT, bat *LREFCN
 static str
 CMDsetName(Client ctx, str *rname, const bat *bid, const char *const *name)
 {
-	(void) ctx;
+	allocator *ma = ctx->curprg->def->ma;
 	BAT *b;
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "bbp.setName", INTERNAL_BAT_ACCESS);
@@ -541,7 +541,7 @@ CMDsetName(Client ctx, str *rname, const bat *bid, const char *const *name)
 		BBPunfix(b->batCacheid);
 		throw(MAL, "bbp.setName", GDK_EXCEPTION);
 	}
-	*rname = GDKstrdup(*name);
+	*rname = MA_STRDUP(ma, *name);
 	BBPunfix(b->batCacheid);
 	if (*rname == NULL)
 		throw(MAL, "bbp.setName", SQLSTATE(HY013) MAL_MALLOC_FAIL);

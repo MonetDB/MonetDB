@@ -80,7 +80,7 @@ MTIMEcurrent_timestamp(Client ctx, timestamp *ret)
 #define DEC_ITER(TYPE, ARG)
 
 #define DEC_BUFFER(OUTTYPE, RES, MALFUNC) \
-	OUTTYPE RES = GDKmalloc(MTIME_STR_BUFFER_LENGTH); \
+	OUTTYPE RES = ma_alloc(ma, MTIME_STR_BUFFER_LENGTH); \
 	if (!res) {	\
 		msg = createException(MAL, "batmtime." MALFUNC, SQLSTATE(HY013) MAL_MALLOC_FAIL); \
 		goto bailout; \
@@ -112,11 +112,11 @@ bailout: \
 	*ret = NULL; \
 	if (!msg && res && !(*ret = MA_STRDUP(ma, res))) \
 		msg = createException(MAL, "batmtime." MALFUNC, SQLSTATE(HY013) MAL_MALLOC_FAIL); \
-	GDKfree(res)
+	/*GDKfree(res)*/
 
 #define FINISH_INT_SINGLE(MALFUNC) *ret = res
 
-#define FINISH_BUFFER_MULTI(RES) GDKfree(RES)
+#define FINISH_BUFFER_MULTI(RES) /*GDKfree(RES)*/
 
 #define CLEAR_NOTHING(RES)
 
@@ -336,6 +336,9 @@ bailout:																\
 static str																\
 NAME##_bulk_p1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 {																		\
+	allocator *ma = cntxt->curprg->def->ma;								\
+	(void) ma;															\
+	(void) mb;															\
 	str msg = MAL_SUCCEED;												\
 	BAT *b2 = NULL, *s2 = NULL, *bn = NULL;								\
 	oid off2;															\
@@ -412,6 +415,9 @@ bailout:																\
 static str																\
 NAME##_bulk_p2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 {																		\
+	allocator *ma = cntxt->curprg->def->ma;								\
+	(void) ma;															\
+	(void) mb;															\
 	str msg = MAL_SUCCEED;												\
 	BAT *b1 = NULL, *s1 = NULL, *bn = NULL;								\
 	oid off1;															\
@@ -613,6 +619,9 @@ bailout:																\
 static str																\
 NAME##_bulk_p1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 {																		\
+	allocator *ma = cntxt->curprg->def->ma;								\
+	(void) ma;															\
+	(void) mb;															\
 	str msg = MAL_SUCCEED;												\
 	BAT *b2 = NULL, *s2 = NULL, *bn = NULL;								\
 	oid off2;															\
@@ -690,6 +699,9 @@ bailout:																\
 static str																\
 NAME##_bulk_p2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 {																		\
+	allocator *ma = cntxt->curprg->def->ma;								\
+	(void) ma;															\
+	(void) mb;															\
 	str msg = MAL_SUCCEED;												\
 	BAT *b1 = NULL, *s1 = NULL, *bn = NULL;								\
 	oid off1;															\
