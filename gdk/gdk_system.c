@@ -195,7 +195,7 @@ struct thread_funcs {
 };
 
 struct mtthread {
-	allocator* thread_allocator;
+	allocator *thread_allocator;
 	struct mtthread *next;
 	void (*func) (void *);	/* function to be called */
 	void *data;		/* and its data */
@@ -298,7 +298,6 @@ void
 dump_threads(void)
 {
 	char buf[1024];
-	char abuf[128]; // allocator buffer
 #if defined(HAVE_PTHREAD_MUTEX_TIMEDLOCK) && defined(HAVE_CLOCK_GETTIME)
 	struct timespec ts;
 	clock_gettime(CLOCK_REALTIME, &ts);
@@ -324,17 +323,6 @@ dump_threads(void)
 		MT_Cond *cn = t->condwait;
 		struct mtthread *jn = t->joinwait;
 		const char *working = ATOMIC_PTR_GET(&t->working);
-		if (t->thread_allocator) {
-			const char *name =
-				sa_name(t->thread_allocator);
-			snprintf(abuf, sizeof(abuf),
-					", %s allocator %zu bytes",
-					name ? name : "(unknown)",
-					sa_size(t->thread_allocator));
-
-		}
-		else
-			abuf[0] = 0;
 
 		int pos = snprintf(buf, sizeof(buf),
 				   "%s, tid %zu, "
@@ -344,7 +332,7 @@ dump_threads(void)
 #ifdef HAVE_GETTID
 				   "LWP %ld, "
 #endif
-				   "%"PRIu32" free bats, waiting for %s%s, working on %.200s%s",
+				   "%"PRIu32" free bats, waiting for %s%s, working on %.200s",
 				   t->threadname,
 				   t->tid,
 #ifdef HAVE_PTHREAD_H
@@ -357,7 +345,7 @@ dump_threads(void)
 				   lk ? "lock " : sm ? "semaphore " : cn ? "condvar " : jn ? "thread " : "",
 				   lk ? lk->name : sm ? sm->name : cn ? cn->name : jn ? jn->threadname : "nothing",
 				   ATOMIC_GET(&t->exited) ? "exiting" :
-				   working ? working : "nothing", abuf);
+				   working ? working : "nothing");
 #ifdef LOCK_OWNER
 		const char *sep = ", locked: ";
 		for (MT_Lock *l = t->mylocks; l && pos < (int) sizeof(buf); l = l->nxt) {

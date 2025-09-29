@@ -534,6 +534,7 @@ struct tm *gmtime_r(const time_t *restrict, struct tm *restrict);
 ssize_t hgeFromStr(allocator *ma, const char *src, size_t *len, hge **dst, bool external);
 ssize_t hgeToStr(allocator *ma, str *dst, size_t *len, const hge *src, bool external);
 const hge hge_nil;
+char *humansize(size_t val, char *buf, size_t buflen) __attribute__((__access__(write_only, 2, 3)));
 const inet4 inet4_nil;
 const inet6 inet6_nil;
 ssize_t intFromStr(allocator *ma, const char *src, size_t *len, int **dst, bool external);

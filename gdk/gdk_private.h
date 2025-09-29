@@ -241,8 +241,6 @@ void HEAP_recover(Heap *, const var_t *, BUN)
 gdk_return HEAPsave(Heap *h, const char *nme, const char *ext, bool dosync, BUN free, MT_Lock *lock)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
-char *humansize(size_t val, char *buf, size_t buflen)
-	__attribute__((__visibility__("hidden")));
 double joincost(BAT *r, BUN lcount, struct canditer *rci, bool *hash, bool *phash, bool *cand)
 	__attribute__((__visibility__("hidden")));
 void STRMPincref(Strimps *strimps)

@@ -1494,8 +1494,7 @@ INET6fromString(allocator *ma, const char *svalue, size_t *len, void **RETVAL, b
 	const char *s = svalue;
 
 	if (*len < 16 || *retval == NULL) {
-		GDKfree(*retval);
-		if ((*retval = GDKmalloc(16)) == NULL)
+		if ((*retval = ma_alloc(ma, 16)) == NULL)
 			return -1;
 		*len = 16;
 	}
@@ -1675,9 +1674,7 @@ INET6toString(allocator *ma, str *retval, size_t *len, const void *VALUE, bool e
 	(void) external;
 	/* max size: strlen("1234:1234:1234:1234:1234:1234:1234:1234")+1 */
 	if (*len < 40 || *retval == NULL) {
-		if (*retval)
-			GDKfree(*retval);
-		if ((*retval = GDKmalloc(40)) == NULL)
+		if ((*retval = ma_alloc(ma, 40)) == NULL)
 			return -1;
 		*len = 40;
 	}

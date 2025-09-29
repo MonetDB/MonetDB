@@ -440,10 +440,10 @@ MCcloseClient(Client c)
 		c->mode = FREECLIENT;
 		c->idx = -1;
 	}
+	MT_thread_setallocator(NULL);
 	ma_destroy(c->ma);
 	c->ta = NULL;
 	c->ma = NULL;
-	MT_thread_setallocator(NULL);
 	MT_lock_unset(&mal_contextLock);
 }
 
