@@ -175,10 +175,10 @@ CLIENTprintinfo(void)
 					ma_used += sa_size(be->mvc->pa);
 			}
 			if (ma_used)
-				snprintf(mabuf, sizeof(mabuf), ", Allocators combined: %zu bytes", ma_used);
+				snprintf(mabuf, sizeof(mabuf), ", allocators combined: %zu%s bytes", ma_used, humansize(ma_used, (char[24]){0}, 24));
 			else
 				mabuf[0] = 0;
-			printf("client %d, user %s, thread %s, using %"PRIu64" bytes of transient space%s%s%s%s%s%s%s%s%s%s\n", c->idx, c->username, c->mythread ? c->mythread : "?", (uint64_t) ATOMIC_GET(&c->qryctx.datasize), mmbuf, tmbuf, trbuf, chbuf, cabuf, clbuf, cpbuf, crbuf, qybuf, mabuf);
+			printf("client %d, user %s, thread %s, using %"PRIu64" bytes of transient space%s%s%s%s%s%s%s%s%s%s\n", c->idx, c->username, c->mythread ? c->mythread : "?", (uint64_t) ATOMIC_GET(&c->qryctx.datasize), mmbuf, mabuf, tmbuf, trbuf, chbuf, cabuf, clbuf, cpbuf, crbuf, qybuf);
 			break;
 		case FINISHCLIENT:
 			/* finishing */
