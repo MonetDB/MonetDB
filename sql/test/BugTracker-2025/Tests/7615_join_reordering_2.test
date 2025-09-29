@@ -20,7 +20,7 @@ statement ok
 CREATE VIEW result AS SELECT x1.a1 AS a1, x1.a2 AS a2, x5.a1 AS a3, x5.a2 AS a4, x5.a3 AS a5, x1.p * x5.p as p from x1, x5 where [x1.a1,x1.a2] maxlevhelper [x5.a1,x5.a2,x5.a3]
 
 query T nosort
-plan select * from result
+explain show details select * from result
 ----
 project (
 | project (

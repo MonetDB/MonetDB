@@ -14,7 +14,7 @@ statement ok
 INSERT INTO bar VALUES (30, 300), (20, 200), (50, 500), (40, 400)
 
 query T nosort
-PLAN SELECT foo.i, bar.i FROM foo LEFT JOIN bar ON foo.i = bar.i WHERE bar.i IS NOT NULL
+EXPLAIN SHOW DETAILS SELECT foo.i, bar.i FROM foo LEFT JOIN bar ON foo.i = bar.i WHERE bar.i IS NOT NULL
 ----
 project (
 | join (
@@ -24,7 +24,7 @@ project (
 ) [ "foo"."i" NOT NULL, "bar"."i" NOT NULL ]
 
 query T nosort
-PLAN SELECT foo.i, bar.i FROM foo LEFT JOIN bar ON foo.i = bar.i WHERE bar.j IS NOT NULL
+EXPLAIN SHOW DETAILS SELECT foo.i, bar.i FROM foo LEFT JOIN bar ON foo.i = bar.i WHERE bar.j IS NOT NULL
 ----
 project (
 | join (
@@ -34,7 +34,7 @@ project (
 ) [ "foo"."i" NOT NULL, "bar"."i" NOT NULL ]
 
 query T nosort
-PLAN SELECT foo.i, bar.i FROM foo RIGHT JOIN bar ON foo.i = bar.i WHERE (2*foo.i > 20 OR (400 < foo.i*2 AND foo.i+foo.i = foo.i))
+EXPLAIN SHOW DETAILS SELECT foo.i, bar.i FROM foo RIGHT JOIN bar ON foo.i = bar.i WHERE (2*foo.i > 20 OR (400 < foo.i*2 AND foo.i+foo.i = foo.i))
 ----
 project (
 | join (
@@ -46,7 +46,7 @@ project (
 ) [ "foo"."i" NOT NULL, "bar"."i" NOT NULL ]
 
 query T nosort
-PLAN SELECT foo.i, bar.i FROM foo FULL OUTER JOIN bar ON foo.i = bar.i WHERE (2*foo.i > 20 OR (400 < foo.i*2 AND foo.i+foo.i = foo.i))
+EXPLAIN SHOW DETAILS SELECT foo.i, bar.i FROM foo FULL OUTER JOIN bar ON foo.i = bar.i WHERE (2*foo.i > 20 OR (400 < foo.i*2 AND foo.i+foo.i = foo.i))
 ----
 project (
 | left outer join (
@@ -58,7 +58,7 @@ project (
 ) [ "foo"."i" NOT NULL, "bar"."i" ]
 
 query T nosort
-PLAN SELECT foo.i, bar.i FROM foo FULL OUTER JOIN bar ON foo.i = bar.i WHERE bar.j IS NOT NULL
+EXPLAIN SHOW DETAILS SELECT foo.i, bar.i FROM foo FULL OUTER JOIN bar ON foo.i = bar.i WHERE bar.j IS NOT NULL
 ----
 project (
 | right outer join (
@@ -68,7 +68,7 @@ project (
 ) [ "foo"."i", "bar"."i" NOT NULL ]
 
 query T nosort
-PLAN SELECT foo.i, bar.i FROM foo FULL OUTER JOIN bar ON foo.i = bar.i WHERE (2*foo.i > 20 OR (400 < foo.i*2 AND foo.i+foo.i = foo.i)) AND bar.j IS NOT NULL
+EXPLAIN SHOW DETAILS SELECT foo.i, bar.i FROM foo FULL OUTER JOIN bar ON foo.i = bar.i WHERE (2*foo.i > 20 OR (400 < foo.i*2 AND foo.i+foo.i = foo.i)) AND bar.j IS NOT NULL
 ----
 project (
 | join (

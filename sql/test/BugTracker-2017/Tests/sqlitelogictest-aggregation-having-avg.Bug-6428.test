@@ -12,7 +12,7 @@ SELECT - col0 AS col1 FROM tab0 AS cor0 WHERE NOT + col0 IS NOT NULL GROUP BY co
 ----
 
 query T nosort
-PLAN SELECT - col0 AS col1 FROM tab0 AS cor0 WHERE NOT + col0 IS NOT NULL GROUP BY col1, col0 HAVING NOT - col1 + + AVG ( DISTINCT col0 ) IS NULL
+EXPLAIN SHOW DETAILS SELECT - col0 AS col1 FROM tab0 AS cor0 WHERE NOT + col0 IS NOT NULL GROUP BY col1, col0 HAVING NOT - col1 + + AVG ( DISTINCT col0 ) IS NULL
 ----
 project (
 | select (

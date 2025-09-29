@@ -29,7 +29,7 @@ statement ok
 alter table bar_rpl_rmt_node3 add table bar_r3
 
 query T nosort
-plan select * from foo_rpl_rmt
+explain show details select * from foo_rpl_rmt
 ----
 table (
 | project (
@@ -38,7 +38,7 @@ table (
 ) [ "foo_rpl_rmt"."n", "foo_rpl_rmt"."m" ]
 
 query T nosort
-plan select * from foo_rpl_rmt, bar_rpl_rmt
+explain show details select * from foo_rpl_rmt, bar_rpl_rmt
 ----
 table (
 | project (
@@ -50,7 +50,7 @@ table (
 ) [ "foo_rpl_rmt"."n", "foo_rpl_rmt"."m", "bar_rpl_rmt"."n", "bar_rpl_rmt"."m" ]
 
 query T nosort
-plan select * from foo_rpl_rmt_node2, bar_rpl_rmt_node3
+explain show details select * from foo_rpl_rmt_node2, bar_rpl_rmt_node3
 ----
 project (
 | crossproduct (
@@ -64,7 +64,7 @@ project (
 ) [ "foo_rpl_rmt_node2"."n", "foo_rpl_rmt_node2"."m", "bar_rpl_rmt_node3"."n", "bar_rpl_rmt_node3"."m" ]
 
 query T nosort
-plan select * from foo_rpl_rmt, buz_rmt
+explain show details select * from foo_rpl_rmt, buz_rmt
 ----
 table (
 | project (
@@ -76,7 +76,7 @@ table (
 ) [ "foo_rpl_rmt"."n", "foo_rpl_rmt"."m", "buz_rmt"."l" ]
 
 query T nosort
-plan select * from bar_rpl_rmt_node3, buz_rmt
+explain show details select * from bar_rpl_rmt_node3, buz_rmt
 ----
 project (
 | crossproduct (

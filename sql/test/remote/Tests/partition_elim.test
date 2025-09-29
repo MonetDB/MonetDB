@@ -106,7 +106,7 @@ statement ok
 analyze sys.test4
 
 query T python .explain.function_histogram
-explain select x,y from test where x between 4.0 and 6.0
+explain physical select x,y from test where x between 4.0 and 6.0
 ----
 algebra.projection
 6
@@ -134,7 +134,7 @@ user.main
 1
 
 query T python .explain.function_histogram
-explain select x,y from test where x between (7-3) and (7-1)
+explain physical select x,y from test where x between (7-3) and (7-1)
 ----
 algebra.projection
 6
@@ -162,7 +162,7 @@ user.main
 1
 
 query T python .explain.function_histogram
-explain select x,y from test where x between 4.0 and 6.0 and y between 0.0 and 2.0
+explain physical select x,y from test where x between 4.0 and 6.0 and y between 0.0 and 2.0
 ----
 algebra.projection
 4
@@ -190,7 +190,7 @@ user.main
 1
 
 query T python .explain.function_histogram
-explain select x,y from test where x between 4.0 and 6.0 and y between (1.0-1.0) and (4.0-2.0)
+explain physical select x,y from test where x between 4.0 and 6.0 and y between (1.0-1.0) and (4.0-2.0)
 ----
 algebra.projection
 4
@@ -218,7 +218,7 @@ user.main
 1
 
 query T python .explain.function_histogram
-explain select x,y from test where x between (7-3) and (7-1) and y between (1.0-1.0) and (4.0-2.0)
+explain physical select x,y from test where x between (7-3) and (7-1) and y between (1.0-1.0) and (4.0-2.0)
 ----
 algebra.projection
 4
@@ -259,4 +259,3 @@ drop table test3
 
 statement ok
 drop table test4
-

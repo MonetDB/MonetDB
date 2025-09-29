@@ -1,5 +1,5 @@
 query T nosort
-plan select * from f
+explain show details select * from f
 where n = 1
    or n = 2
    or n = 3
@@ -52,7 +52,7 @@ where m = 40
 ## chained where-in for n
 
 query T nosort
-plan select * from f
+explain show details select * from f
 where n in (1, 2)
    or n in (3)
 ----
@@ -65,7 +65,7 @@ project (
 ## chained cmp_equal-atom ors with lhs in [n, m]
 
 query T nosort
-plan select * from f
+explain show details select * from f
 where n = 1
    or n = 2
    or m = 60
@@ -77,7 +77,7 @@ project (
 ) [ "f"."n" NOT NULL, "f"."m" NOT NULL ]
 
 query T nosort
-plan select * from f
+explain show details select * from f
 where n = 1
    or m = 60
    or n = 2
@@ -89,7 +89,7 @@ project (
 ) [ "f"."n" NOT NULL, "f"."m" NOT NULL ]
 
 query T nosort
-plan select * from f
+explain show details select * from f
 where m = 60
    or n = 1
    or n = 2
@@ -103,7 +103,7 @@ project (
 ## chained ors with lhs in [n, (n && m)]
 
 query T nosort
-plan select * from f
+explain show details select * from f
 where (n = 3 and m = 60)
    or n = 1
    or n = 2
@@ -115,7 +115,7 @@ project (
 ) [ "f"."n" NOT NULL, "f"."m" NOT NULL ]
 
 query T nosort
-plan select * from f
+explain show details select * from f
 where n = 1
    or (n = 3 and m = 60)
    or n = 2
@@ -127,7 +127,7 @@ project (
 ) [ "f"."n" NOT NULL, "f"."m" NOT NULL ]
 
 query T nosort
-plan select * from f
+explain show details select * from f
 where n = 1
    or n = 2
    or (n = 3 and m = 60)

@@ -43,7 +43,7 @@ SELECT * FROM v2
 2
 
 query T nosort
-PLAN SELECT length("m") as data_length, "m" as data_value FROM "sys"."v2" WHERE "m" IS NOT NULL AND length("m") > 1
+EXPLAIN SHOW DETAILS SELECT length("m") as data_length, "m" as data_value FROM "sys"."v2" WHERE "m" IS NOT NULL AND length("m") > 1
 ----
 project (
 | semijoin (

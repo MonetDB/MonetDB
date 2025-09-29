@@ -31,7 +31,7 @@ CREATE TABLE "cm_flux" (
 )
 
 query T nosort
-plan UPDATE fluxz
+explain show details UPDATE fluxz
    SET (filter
        ,f_datapoints
        ,avg_flux

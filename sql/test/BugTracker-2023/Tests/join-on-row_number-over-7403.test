@@ -14,7 +14,7 @@ statement ok
 insert into b7403 values (20), (20)
 
 query T nosort
-plan
+explain show details
 with
   a1 as (select row_number() over() as r, i from a7403),
   b1 as (select row_number() over() as r, i from b7403)

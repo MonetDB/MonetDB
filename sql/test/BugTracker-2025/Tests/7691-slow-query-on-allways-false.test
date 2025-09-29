@@ -6,7 +6,7 @@ insert into test (select i, cast(i as string) from generate_series(0, 10000000) 
 
 # optimize the base table away !
 query T python .plan.filter
-    plan select * from test where 1 = 0
+    explain show details select * from test where 1 = 0
 ----
 project (
 | select (

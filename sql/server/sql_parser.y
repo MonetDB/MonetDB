@@ -673,8 +673,8 @@ SQLCODE SQLERROR UNDER WHENEVER
 %token CHECK CONSTRAINT CREATE COMMENT NULLS FIRST LAST
 %token TYPE PROCEDURE FUNCTION sqlLOADER AGGREGATE RETURNS EXTERNAL sqlNAME DECLARE
 %token CALL LANGUAGE
-%token ANALYZE SQL_EXPLAIN SQL_PLAN SQL_TRACE PREP PREPARE EXEC EXECUTE DEALLOCATE
-%token UNNEST REWRITE PHYSICAL SHOW PROPERTIES
+%token ANALYZE SQL_EXPLAIN SQL_TRACE PREP PREPARE EXEC EXECUTE DEALLOCATE
+%token UNNEST REWRITE PHYSICAL SHOW DETAILS
 %token DEFAULT DISTINCT DROP TRUNCATE
 %token FOREIGN
 %token RENAME ENCRYPTED UNENCRYPTED PASSWORD GRANT REVOKE ROLE ADMIN INTO
@@ -898,26 +898,7 @@ sqlstmt:
 		;
 
 explain:
-				SQL_PLAN
-				{
-					m->emode = m_plan;
-					m->step = S_REWRITE;
-					m->temporal = T_AFTER;
-					m->scanner.as = m->scanner.yycur;
-				}
-		/* |		SQL_PLAN temporal relational_step opt_show_properties */
-		/* 		{ */
-		/* 			m->emode = m_plan; */
-		/* 			m->scanner.as = m->scanner.yycur; */
-		/* 		} */
-		/* |		SQL_PLAN opt_show_properties */
-		/* 		{ */
-		/* 			m->emode = m_plan; */
-		/* 			m->step = S_REWRITE; */
-		/* 			m->temporal = T_AFTER; */
-		/* 			m->scanner.as = m->scanner.yycur; */
-		/* 		} */
-		|		SQL_EXPLAIN temporal relational_step opt_show_properties
+				SQL_EXPLAIN temporal relational_step opt_show_properties
 				{
 					m->emode = m_plan;
 					m->scanner.as = m->scanner.yycur;
@@ -956,7 +937,7 @@ temporal:
 		;
 
 opt_show_properties:
-				SHOW PROPERTIES { m->show_props = true; }
+				SHOW DETAILS { m->show_props = true; }
 		|		/* empty */
 		;
 
@@ -6342,7 +6323,6 @@ non_reserved_keyword:
 | OPTIONS	{ $$ = sa_strdup(SA, "options"); }
 | PASSWORD	{ $$ = sa_strdup(SA, "password"); }
 | PATH		{ $$ = sa_strdup(SA, "path"); }
-| SQL_PLAN	{ $$ = sa_strdup(SA, "plan"); }
 | PREP		{ $$ = sa_strdup(SA, "prep"); }
 | PRIVILEGES	{ $$ = sa_strdup(SA, "privileges"); }
 | QUARTER	{ $$ = sa_strdup(SA, "quarter"); }

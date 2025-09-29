@@ -5580,6 +5580,10 @@ SQLread_dump_rel(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (refs == NULL)
 		goto bailout;
 
+	m->step = S_REWRITE;
+	m->temporal = T_AFTER;
+	m->show_props = true;
+
 	rel_print_refs(m, s, rel, 0, refs, 0);
 	rel_print_(m, s, rel, 0, refs, 0);
 	res = buffer_get_buf(b);

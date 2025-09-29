@@ -2,7 +2,7 @@ statement ok
 CREATE TABLE t4311 ( "a"    INT, "b"    INT)
 
 query T nosort
-PLAN
+EXPLAIN SHOW DETAILS
 SELECT t2.a
 FROM  t4311 t1, t4311 t2
 WHERE t2.a between t1.a and t1.b
@@ -15,7 +15,7 @@ project (
 ) [ "t2"."a" NOT NULL ]
 
 query T nosort
-PLAN
+EXPLAIN SHOW DETAILS
 SELECT t2.a
 FROM  t4311 t1, t4311 t2
 WHERE t2.a >= t1.a
@@ -29,7 +29,7 @@ project (
 ) [ "t2"."a" NOT NULL ]
 
 query T nosort
-PLAN
+EXPLAIN SHOW DETAILS
 SELECT t2.a
 FROM  t4311 t1, t4311 t2
 WHERE t1.a <= t2.a

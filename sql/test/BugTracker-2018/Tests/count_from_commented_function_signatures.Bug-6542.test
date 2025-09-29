@@ -31,7 +31,7 @@ select * from sys.commented_function_signatures_6542
 ----
 
 query T nosort
-plan select count (*) from sys.commented_function_signatures_6542
+EXPLAIN SHOW DETAILS select count (*) from sys.commented_function_signatures_6542
 ----
 project (
 | group by (
