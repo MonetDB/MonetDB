@@ -148,7 +148,7 @@ STRINGS = ("""
 CREATE TABLE foo(id INT NOT NULL, s VARCHAR(20));
 COPY BINARY INTO foo(id, s) FROM @ints@, @strings@ @ON@;
 COPY SELECT id, s FROM foo INTO BINARY @>ints@, @>strings@ @ON@;
-SELECT COUNT(id) FROM foo WHERE s = ('int' || id);
+SELECT COUNT(id) FROM foo WHERE s = ('int' || id % 987);
 """, [f"{NRECS}"])
 
 NULL_INTS = ("""
@@ -179,7 +179,7 @@ COPY BINARY INTO foo(id, s) FROM @ints@, @broken_strings@ @ON@;
 NEWLINE_STRINGS = (r"""
 CREATE TABLE foo(id INT NOT NULL, s TEXT);
 COPY BINARY INTO foo(id, s) FROM @ints@, @newline_strings@ @ON@;
-SELECT COUNT(id) FROM foo WHERE s = (E'RN\r\nR\r' || id);
+SELECT COUNT(id) FROM foo WHERE s = (E'RN\r\nR\r' || id % 987);
 """, [f"{NRECS}"])
 
 NULL_STRINGS = ("""
