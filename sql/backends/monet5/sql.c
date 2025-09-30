@@ -137,16 +137,13 @@ sql_symbol2relation(backend *be, symbol *sym)
 {
 	sql_rel *rel;
 	sql_query *query = query_create(be->mvc);
-	lng Tbegin, Tend;
 	int value_based_opt = be->mvc->emode != m_prepare, storage_based_opt;
 	int profile = be->mvc->emode == m_plan;
 
-	Tbegin = GDKusec();
 	rel = rel_semantic(query, sym);
-	Tend = GDKusec();
 
+	lng t_begin = GDKusec();
 	storage_based_opt = value_based_opt && rel && !is_ddl(rel->op);
-	Tbegin = Tend;
 	if (rel && !(rel->op == op_ddl && rel->card == CARD_ATOM && rel->flag == ddl_psm && (be->mvc->emod & mod_exec) != 0)) { /* no need to optimize exec */
 		if (rel)
 			rel = sql_processrelation(be->mvc, rel, profile, 1, value_based_opt, storage_based_opt);
@@ -155,8 +152,7 @@ sql_symbol2relation(backend *be, symbol *sym)
 		if (rel)
 			rel = rel_physical(be->mvc, rel);
 	}
-	Tend = GDKusec();
-	be->reloptimizer = Tend - Tbegin;
+	be->reloptimizer = GDKusec() - t_begin;
 
 	return rel;
 }

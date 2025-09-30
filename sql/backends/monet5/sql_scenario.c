@@ -1419,7 +1419,6 @@ SQLparser_body(Client c, backend *be)
 {
 	str msg = MAL_SUCCEED;
 	mvc *m = be->mvc;
-	lng Tbegin = 0, Tend = 0;
 
 	int pstatus = m->session->status;
 
@@ -1428,7 +1427,7 @@ SQLparser_body(Client c, backend *be)
 	m->emode = m_normal;
 	m->emod = mod_none;
 	c->query = NULL;
-	c->qryctx.starttime = Tbegin = Tend = GDKusec();
+	c->qryctx.starttime = GDKusec();
 	c->qryctx.endtime = c->querytimeout ? c->qryctx.starttime + c->querytimeout : 0;
 
 	if ((err = sqlparse(m)) ||
@@ -1530,8 +1529,6 @@ SQLparser_body(Client c, backend *be)
 				be->subbackend->reset(be->subbackend);
 			}
 
-			Tbegin = GDKusec();
-
 			int opt = 0;
 			if (m->emode == m_prepare && (m->emod & mod_exec)) {
 				/* generated the named parameters for the placeholders */
@@ -1555,7 +1552,6 @@ SQLparser_body(Client c, backend *be)
 			} else
 				opt = ((m->emod & mod_exec) == 0); /* no need to optimize prepare - execute */
 
-			Tend = GDKusec();
 			if (err)
 				m->session->status = -10;
 			if (err == 0) {
@@ -1567,9 +1563,7 @@ SQLparser_body(Client c, backend *be)
 					msg = chkTypes(c->usermodule, c->curprg->def, TRUE);
 
 				if (msg == MAL_SUCCEED && opt) {
-					Tbegin = Tend;
 					msg = SQLoptimizeQuery(c, c->curprg->def);
-					Tend = GDKusec();
 					if (msg != MAL_SUCCEED) {
 						str other = c->curprg->def->errors;
 						c->curprg->def->errors = 0;
