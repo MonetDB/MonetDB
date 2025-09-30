@@ -1373,109 +1373,6 @@ error:
 	return err;
 }
 
-#if 0
-static str
-OAHASHcmpt_freq(bat *ht_sink, const bat *slot_id, const ptr *H)
-{
-	Pipeline *p = (Pipeline*)*H;
-	str err = NULL;
-	BAT *hts = NULL, *slt = NULL;
-
-	assert(ht_sink && !is_bat_nil(*ht_sink));
-
-	hts = BATdescriptor(*ht_sink);
-	slt = BATdescriptor(*slot_id);
-	if (!hts || !slt) {
-		err = createException(MAL, "oahash.compute_frequencies", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-		goto error;
-	}
-	hash_table *ht = (hash_table*)hts->tsink;
-	assert(ht && ht->s.type == OA_HASH_TABLE_SINK);
-
-	BUN cnt = BATcount(slt);
-	if (cnt) {
-		gid *sltid = Tloc(slt, 0);
-		ATOMIC_TYPE *freqs = ht->frequency;
-
-		QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-		qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
-		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) {
-			ATOMIC_INC(&freqs[sltid[i]]);
-		}
-		TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "oahash.compute_frequencies", RUNTIME_QRY_TIMEOUT));
-	}
-	if (err || p->p->status) {
-		if (!err)
-			err = createException(MAL, "oahash.compute_frequencies", "pipeline execution error");
-		goto error;
-	}
-
-	BBPunfix(slt->batCacheid);
-	BBPkeepref(hts);
-	return MAL_SUCCEED;
-error:
-	BBPreclaim(hts);
-	BBPreclaim(slt);
-	return err;
-}
-
-static str
-OAHASHcmpt_freq_pos(bat *payload_pos, bat *ht_sink, const bat *slot_id, const ptr *H)
-{
-	Pipeline *p = (Pipeline*)*H;
-	str err = NULL;
-	BAT *hts = NULL, *slt = NULL, *res = NULL;
-
-	assert(ht_sink && !is_bat_nil(*ht_sink));
-
-	hts = BATdescriptor(*ht_sink);
-	slt = BATdescriptor(*slot_id);
-	if (!hts || !slt) {
-		err = createException(MAL, "oahash.compute_frequencies", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-		goto error;
-	}
-	hash_table *ht = (hash_table*)hts->tsink;
-	assert(ht && ht->s.type == OA_HASH_TABLE_SINK);
-
-	BUN cnt = BATcount(slt);
-	res = COLnew(0, TYPE_oid, cnt, TRANSIENT);
-	if (!res) {
-			err = createException(MAL, "oahash.compute_frequencies", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			goto error;
-	}
-	if (cnt) {
-		gid *sltid = Tloc(slt, 0);
-		ATOMIC_TYPE *freqs = ht->frequency;
-		gid *ppos = Tloc(res, 0);
-
-		QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-		qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
-		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) {
-			ppos[i] = ATOMIC_ADD(&freqs[sltid[i]], 1);
-		}
-		TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "oahash.compute_frequencies", RUNTIME_QRY_TIMEOUT));
-	}
-	if (err || p->p->status) {
-		if (!err)
-			err = createException(MAL, "oahash.compute_frequencies", "pipeline execution error");
-		goto error;
-	}
-
-	BBPunfix(slt->batCacheid);
-	BATsetcount(res, cnt);
-	BATnegateprops(res);
-	*payload_pos = res->batCacheid;
-	BBPkeepref(res);
-	BBPkeepref(hts);
-	return MAL_SUCCEED;
-error:
-	BBPreclaim(hts);
-	BBPreclaim(slt);
-	BBPreclaim(res);
-	return err;
-}
-#endif
-
 static str
 OAHASHadd_freq(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -2003,7 +1900,6 @@ BAT_OAHASHprobe1(bat *LHS_matched, bat *RHS_slotid, const bat *LHS_key, const ba
 	str err = NULL;
 
 	(void) H;
-	assert((*single && frequency) || !(*single));
 
 	k = BATdescriptor(*LHS_key);
 	h = BATdescriptor(*LHS_hash);
@@ -2014,7 +1910,7 @@ BAT_OAHASHprobe1(bat *LHS_matched, bat *RHS_slotid, const bat *LHS_key, const ba
 	}
 	if (*single) {
 		assert(frequency);
-		/* frequency is required to check if the result is single */
+		/* frequency is required to check if a match is single */
 		f = BATdescriptor(*frequency);
 		if (!f) {
 			err = createException(SQL, "oahash.probe", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
@@ -2333,7 +2229,6 @@ BAT_OAHASHomprobe(bat *LHS_matched, bat *RHS_slotid, bat *outer, const bat *LHS_
 	str err = NULL;
 
 	(void) H;
-	assert((*single && frequency) || !(*single));
 
 	k = BATdescriptor(*LHS_key);
 	h = BATdescriptor(*LHS_hash);
@@ -2343,8 +2238,7 @@ BAT_OAHASHomprobe(bat *LHS_matched, bat *RHS_slotid, bat *outer, const bat *LHS_
 		goto error;
 	}
 	if (*single) {
-		assert(frequency);
-		/* frequency is required to check if the result is single */
+		/* frequency is required to check if a match is single */
 		f = BATdescriptor(*frequency);
 		if (!f) {
 			err = createException(SQL, "oahash.probe", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
@@ -2615,7 +2509,7 @@ BAT_OAHASHprobe_cmbd_single(bat *LHS_matched, bat *RHS_slotid, const bat *LHS_ke
 	}
 	if (*single) {
 		assert(frequency);
-		/* frequency is required to check if the result is single */
+		/* frequency is required to check if a match is single */
 		f = BATdescriptor(*frequency);
 		if (!f) {
 			err = createException(SQL, "oahash.probe", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
@@ -2942,7 +2836,7 @@ BAT_OAHASHomprobe_cmbd(bat *LHS_matched, bat *RHS_slotid, bat *outer, const bat 
 	}
 	if (*single) {
 		assert(frequency);
-		/* frequency is required to check if the result is single */
+		/* frequency is required to check if a match is single */
 		f = BATdescriptor(*frequency);
 		if (!f) {
 			err = createException(SQL, "oahash.probe", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
