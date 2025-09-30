@@ -1783,7 +1783,7 @@ error:
 		\
 		gid *hs = Tloc(h, 0); \
 		oid *vals = ht->vals; \
-		oid *mtd = Tloc(m, 0); \
+		oid *oid_mtd = Tloc(o, 0); \
 		oid *slt = Tloc(s, 0); \
 		\
 		TIMEOUT_LOOP_IDX_DECL(i, keycnt, qry_ctx) { \
@@ -1791,7 +1791,7 @@ error:
 			assert(ky != oid_nil); \
 			if (!(*semantics) && ky == oid_nil) { \
 				if (!match && empty) { \
-					mtd[mtdcnt] = i; \
+					oid_mtd[mtdcnt] = i; \
 					slt[mtdcnt] = oid_nil; \
 					mtdcnt++; \
 				}\
@@ -1805,7 +1805,7 @@ error:
 				slot = ht->gids[k]; \
 			} \
 			if ((slot?1:0) == match) { \
-				mtd[mtdcnt] = i; \
+				oid_mtd[mtdcnt] = i; \
 				slt[mtdcnt] = slot - 1; \
 				mtdcnt++; \
 				if (match && *single && freq[slot - 1] > 1) { \
@@ -1821,12 +1821,12 @@ error:
 		Type *ky = Tloc(k, 0); \
 		gid *hs = Tloc(h, 0); \
 		Type *vals = ht->vals; \
-		oid *mtd = Tloc(m, 0); \
+		oid *oid_mtd = Tloc(o, 0); \
 		oid *slt = Tloc(s, 0); \
 		TIMEOUT_LOOP_IDX_DECL(i, keycnt, qry_ctx) { \
 			if (!(*semantics) && is_##Type##_nil(ky[i])) { \
 				if (!match && empty) { \
-					mtd[mtdcnt] = i; \
+					oid_mtd[mtdcnt] = i; \
 					slt[mtdcnt] = oid_nil; \
 					mtdcnt++; \
 				}\
@@ -1840,7 +1840,7 @@ error:
 				slot = ht->gids[k]; \
 			} \
 			if ((slot?1:0) == match) { \
-				mtd[mtdcnt] = i; \
+				oid_mtd[mtdcnt] = i; \
 				slt[mtdcnt] = match?(oid)(slot - 1):oid_nil; \
 				mtdcnt++; \
 				if (match && *single && freq[slot - 1] > 1) { \
@@ -1856,7 +1856,7 @@ error:
 		BATiter bi = bat_iterator(k); \
 		gid *hs = Tloc(h, 0); \
 		char **vals = ht->vals; \
-		oid *mtd = Tloc(m, 0); \
+		oid *oid_mtd = Tloc(o, 0); \
 		oid *slt = Tloc(s, 0); \
 		int (*atomcmp)(const void *, const void *) = ATOMstorage(tt) == TYPE_str? (int (*)(const void *, const void *)) str_cmp : ATOMcompare(tt); \
 		const void *nil = ATOMnilptr(tt); \
@@ -1864,7 +1864,7 @@ error:
 			char *val = (bi).vh->base+BUNtvaroff(bi,i); \
 			if (!(*semantics) && atomcmp(val, nil) == 0) { \
 				if (!match && empty) { \
-					mtd[mtdcnt] = i; \
+					oid_mtd[mtdcnt] = i; \
 					slt[mtdcnt] = oid_nil; \
 					mtdcnt++; \
 				}\
@@ -1878,7 +1878,7 @@ error:
 				slot = ht->gids[k]; \
 			} \
 			if ((slot?1:0) == match) { \
-				mtd[mtdcnt] = i; \
+				oid_mtd[mtdcnt] = i; \
 				slt[mtdcnt] = match?(oid)(slot - 1):oid_nil; \
 				mtdcnt++; \
 				if (match && *single && freq[slot - 1] > 1) { \
@@ -1892,24 +1892,24 @@ error:
 	} while (0)
 
 static str
-BAT_OAHASHprobe1(bat *LHS_matched, bat *RHS_slotid, const bat *LHS_key, const bat *LHS_hash, const bat *RHS_ht, const bat *frequency, const bit *single, const bit *semantics, const ptr *H, bit match)
+BAT_OAHASHprobe1(bat *PRB_oid, bat *HSH_slotid, const bat *PRB_key, const bat *PRB_hash, const bat *HSH_ht, const bat *frequency, const bit *single, const bit *semantics, const ptr *H, bit match)
 {
-	BAT *m = NULL, *s = NULL, *k = NULL, *h = NULL, *t = NULL, *f = NULL;
+	BAT *o = NULL, *s = NULL, *k = NULL, *h = NULL, *t = NULL, *f = NULL;
 	BUN keycnt, mtdcnt = 0;
 	lng *freq = NULL;
 	str err = NULL;
 
 	(void) H;
+	assert(((*single) && frequency) || !(*single));
 
-	k = BATdescriptor(*LHS_key);
-	h = BATdescriptor(*LHS_hash);
-	t = BATdescriptor(*RHS_ht);
+	k = BATdescriptor(*PRB_key);
+	h = BATdescriptor(*PRB_hash);
+	t = BATdescriptor(*HSH_ht);
 	if (!k || !h || !t) {
 		err = createException(SQL, "oahash.probe", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto error;
 	}
 	if (*single) {
-		assert(frequency);
 		/* frequency is required to check if a match is single */
 		f = BATdescriptor(*frequency);
 		if (!f) {
@@ -1920,9 +1920,9 @@ BAT_OAHASHprobe1(bat *LHS_matched, bat *RHS_slotid, const bat *LHS_key, const ba
 	}
 
 	keycnt = BATcount(k);
-	m = COLnew(k->hseqbase, TYPE_oid, keycnt, TRANSIENT);
+	o = COLnew(k->hseqbase, TYPE_oid, keycnt, TRANSIENT);
 	s = COLnew(k->hseqbase, TYPE_oid, keycnt, TRANSIENT);
-	if (!m || !s) {
+	if (!o || !s) {
 		err = createException(SQL, "oahash.probe", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto error;
 	}
@@ -1995,21 +1995,21 @@ BAT_OAHASHprobe1(bat *LHS_matched, bat *RHS_slotid, const bat *LHS_key, const ba
 	BBPunfix(h->batCacheid);
 	BBPunfix(t->batCacheid);
 	BBPreclaim(f);
-	BATsetcount(m, mtdcnt);
+	BATsetcount(o, mtdcnt);
 	BATsetcount(s, mtdcnt);
-	BATnegateprops(m);
+	BATnegateprops(o);
 	BATnegateprops(s);
-	m->tnonil = true;
+	o->tnonil = true;
 	s->tnonil = match?true:false;
-	m->tsorted = true;
-	BATkey(m, true);
-	*LHS_matched = m->batCacheid;
-	*RHS_slotid = s->batCacheid;
-	BBPkeepref(m);
+	o->tsorted = true;
+	BATkey(o, true);
+	*PRB_oid = o->batCacheid;
+	*HSH_slotid = s->batCacheid;
+	BBPkeepref(o);
 	BBPkeepref(s);
 	return MAL_SUCCEED;
 error:
-	BBPreclaim(m);
+	BBPreclaim(o);
 	BBPreclaim(s);
 	BBPreclaim(k);
 	BBPreclaim(h);
@@ -2019,27 +2019,27 @@ error:
 }
 
 static str
-BAT_OAHASHprobe_single(bat *LHS_matched, bat *RHS_slotid, const bat *LHS_key, const bat *LHS_hash, const bat *RHS_ht, const bat *frequency, const bit *single, const bit *semantics, const ptr *H)
+BAT_OAHASHprobe_single(bat *PRB_oid, bat *HSH_slotid, const bat *PRB_key, const bat *PRB_hash, const bat *HSH_ht, const bat *frequency, const bit *single, const bit *semantics, const ptr *H)
 {
-	return BAT_OAHASHprobe1(LHS_matched, RHS_slotid, LHS_key, LHS_hash, RHS_ht, frequency, single, semantics, H, true);
+	return BAT_OAHASHprobe1(PRB_oid, HSH_slotid, PRB_key, PRB_hash, HSH_ht, frequency, single, semantics, H, true);
 }
 
 static str
-BAT_OAHASHprobe(bat *LHS_matched, bat *RHS_slotid, const bat *LHS_key, const bat *LHS_hash, const bat *RHS_ht, const bit *single, const bit *semantics, const ptr *H)
+BAT_OAHASHprobe(bat *PRB_oid, bat *HSH_slotid, const bat *PRB_key, const bat *PRB_hash, const bat *HSH_ht, const bit *single, const bit *semantics, const ptr *H)
 {
-	return BAT_OAHASHprobe1(LHS_matched, RHS_slotid, LHS_key, LHS_hash, RHS_ht, NULL, single, semantics, H, true);
+	return BAT_OAHASHprobe1(PRB_oid, HSH_slotid, PRB_key, PRB_hash, HSH_ht, NULL, single, semantics, H, true);
 }
 
 static str
-BAT_OAHASHnprobe_single(bat *LHS_matched, bat *RHS_slotid, const bat *LHS_key, const bat *LHS_hash, const bat *RHS_ht, const bat *frequency, const bit *single, const bit *semantics, const ptr *H)
+BAT_OAHASHnprobe_single(bat *PRB_oid, bat *HSH_slotid, const bat *PRB_key, const bat *PRB_hash, const bat *HSH_ht, const bat *frequency, const bit *single, const bit *semantics, const ptr *H)
 {
-	return BAT_OAHASHprobe1(LHS_matched, RHS_slotid, LHS_key, LHS_hash, RHS_ht, frequency, single, semantics, H, false);
+	return BAT_OAHASHprobe1(PRB_oid, HSH_slotid, PRB_key, PRB_hash, HSH_ht, frequency, single, semantics, H, false);
 }
 
 static str
-BAT_OAHASHnprobe(bat *LHS_matched, bat *RHS_slotid, const bat *LHS_key, const bat *LHS_hash, const bat *RHS_ht, const bit *single, const bit *semantics, const ptr *H)
+BAT_OAHASHnprobe(bat *PRB_oid, bat *HSH_slotid, const bat *PRB_key, const bat *PRB_hash, const bat *HSH_ht, const bit *single, const bit *semantics, const ptr *H)
 {
-	return BAT_OAHASHprobe1(LHS_matched, RHS_slotid, LHS_key, LHS_hash, RHS_ht, NULL, single, semantics, H, false);
+	return BAT_OAHASHprobe1(PRB_oid, HSH_slotid, PRB_key, PRB_hash, HSH_ht, NULL, single, semantics, H, false);
 }
 
 #define BATvoprobe() \
@@ -2050,9 +2050,9 @@ BAT_OAHASHnprobe(bat *LHS_matched, bat *RHS_slotid, const bat *LHS_key, const ba
 		\
 		gid *hs = Tloc(h, 0); \
 		oid *vals = ht->vals; \
-		oid *mtd = Tloc(m, 0); \
+		oid *oid_mtd = Tloc(o, 0); \
 		oid *slt = Tloc(s, 0); \
-		bit *mark = Tloc(o, 0); \
+		bit *mark = Tloc(m, 0); \
 		bit has_nil = false, empty = bit_nil; \
 		\
 		if (ht->empty) \
@@ -2072,7 +2072,7 @@ BAT_OAHASHnprobe(bat *LHS_matched, bat *RHS_slotid, const bat *LHS_key, const ba
 			oid ky = canditer_next(&ci); \
 			assert(ky != oid_nil); \
 			if (!(*semantics) && ky == oid_nil) { \
-				mtd[mtdcnt] = i; \
+				oid_mtd[mtdcnt] = i; \
 				slt[mtdcnt] = oid_nil; \
 				mark[i] = any?empty:false; \
 				mtdcnt++; \
@@ -2086,7 +2086,7 @@ BAT_OAHASHnprobe(bat *LHS_matched, bat *RHS_slotid, const bat *LHS_key, const ba
 				slot = ht->gids[k]; \
 			} \
 			if (slot) { \
-				mtd[mtdcnt] = i; \
+				oid_mtd[mtdcnt] = i; \
 				slt[mtdcnt] = slot - 1; \
 				mark[i] = true; \
 				mtdcnt++; \
@@ -2095,7 +2095,7 @@ BAT_OAHASHnprobe(bat *LHS_matched, bat *RHS_slotid, const bat *LHS_key, const ba
 					goto error; \
 				} \
 			} else { \
-				mtd[mtdcnt] = i; \
+				oid_mtd[mtdcnt] = i; \
 				slt[mtdcnt] = oid_nil; \
 				mark[i] = (any)?has_nil:false; \
 				mtdcnt++; \
@@ -2108,9 +2108,9 @@ BAT_OAHASHnprobe(bat *LHS_matched, bat *RHS_slotid, const bat *LHS_key, const ba
 		Type *ky = Tloc(k, 0); \
 		gid *hs = Tloc(h, 0); \
 		Type *vals = ht->vals; \
-		oid *mtd = Tloc(m, 0); \
+		oid *oid_mtd = Tloc(o, 0); \
 		oid *slt = Tloc(s, 0); \
-		bit *mark = Tloc(o, 0); \
+		bit *mark = Tloc(m, 0); \
 		bit has_nil = false, empty = bit_nil; \
 		\
 		if (ht->empty) \
@@ -2128,7 +2128,7 @@ BAT_OAHASHnprobe(bat *LHS_matched, bat *RHS_slotid, const bat *LHS_key, const ba
 		} \
 		TIMEOUT_LOOP_IDX_DECL(i, keycnt, qry_ctx) { \
 			if (!(*semantics) && is_##Type##_nil(ky[i])) { \
-				mtd[mtdcnt] = i; \
+				oid_mtd[mtdcnt] = i; \
 				slt[mtdcnt] = oid_nil; \
 				mark[i] = any?empty:false; \
 				mtdcnt++; \
@@ -2142,7 +2142,7 @@ BAT_OAHASHnprobe(bat *LHS_matched, bat *RHS_slotid, const bat *LHS_key, const ba
 				slot = ht->gids[k]; \
 			} \
 			if (slot) { \
-				mtd[mtdcnt] = i; \
+				oid_mtd[mtdcnt] = i; \
 				slt[mtdcnt] = (oid)(slot - 1); \
 				mark[i] = true; \
 				mtdcnt++; \
@@ -2151,7 +2151,7 @@ BAT_OAHASHnprobe(bat *LHS_matched, bat *RHS_slotid, const bat *LHS_key, const ba
 					goto error; \
 				} \
 			} else { \
-				mtd[mtdcnt] = i; \
+				oid_mtd[mtdcnt] = i; \
 				slt[mtdcnt] = oid_nil; \
 				mark[i] = (any)?has_nil:false; \
 				mtdcnt++; \
@@ -2164,9 +2164,9 @@ BAT_OAHASHnprobe(bat *LHS_matched, bat *RHS_slotid, const bat *LHS_key, const ba
 		BATiter bi = bat_iterator(k); \
 		gid *hs = Tloc(h, 0); \
 		char **vals = ht->vals; \
-		oid *mtd = Tloc(m, 0); \
+		oid *oid_mtd = Tloc(o, 0); \
 		oid *slt = Tloc(s, 0); \
-		bit *mark = Tloc(o, 0); \
+		bit *mark = Tloc(m, 0); \
 		int (*atomcmp)(const void *, const void *) = ATOMstorage(tt) == TYPE_str? (int (*)(const void *, const void *)) str_cmp : ATOMcompare(tt); \
 		const void *nil = ATOMnilptr(tt); \
 		bit has_nil = false, empty = bit_nil; \
@@ -2187,7 +2187,7 @@ BAT_OAHASHnprobe(bat *LHS_matched, bat *RHS_slotid, const bat *LHS_key, const ba
 		TIMEOUT_LOOP_IDX_DECL(i, keycnt, qry_ctx) { \
 			char *val = (bi).vh->base+BUNtvaroff(bi,i); \
 			if (!(*semantics) && atomcmp(val, nil) == 0) { \
-				mtd[mtdcnt] = i; \
+				oid_mtd[mtdcnt] = i; \
 				slt[mtdcnt] = oid_nil; \
 				mark[i] = any?empty:false; \
 				mtdcnt++; \
@@ -2201,7 +2201,7 @@ BAT_OAHASHnprobe(bat *LHS_matched, bat *RHS_slotid, const bat *LHS_key, const ba
 				slot = ht->gids[k]; \
 			} \
 			if (slot) { \
-				mtd[mtdcnt] = i; \
+				oid_mtd[mtdcnt] = i; \
 				slt[mtdcnt] = (oid)(slot - 1); \
 				mark[i] = true; \
 				mtdcnt++; \
@@ -2211,7 +2211,7 @@ BAT_OAHASHnprobe(bat *LHS_matched, bat *RHS_slotid, const bat *LHS_key, const ba
 					goto error; \
 				} \
 			} else { \
-				mtd[mtdcnt] = i; \
+				oid_mtd[mtdcnt] = i; \
 				slt[mtdcnt] = oid_nil; \
 				mark[i] = (any)?has_nil:false; \
 				mtdcnt++; \
@@ -2221,18 +2221,19 @@ BAT_OAHASHnprobe(bat *LHS_matched, bat *RHS_slotid, const bat *LHS_key, const ba
 	} while (0)
 
 static str
-BAT_OAHASHomprobe(bat *LHS_matched, bat *RHS_slotid, bat *outer, const bat *LHS_key, const bat *LHS_hash, const bat *RHS_ht, const bat *frequency, const bit *single, const bit *semantics, const ptr *H, bool any)
+BAT_OAHASHomprobe(bat *PRB_oid, bat *HSH_slotid, bat *PRB_mark, const bat *PRB_key, const bat *PRB_hash, const bat *HSH_ht, const bat *frequency, const bit *single, const bit *semantics, const ptr *H, bool any)
 {
-	BAT *m = NULL, *s = NULL, *o = NULL, *k = NULL, *h = NULL, *t = NULL, *f = NULL;
+	BAT *o = NULL, *s = NULL, *m = NULL, *k = NULL, *h = NULL, *t = NULL, *f = NULL;
 	BUN keycnt, mtdcnt = 0;
 	lng *freq = NULL;
 	str err = NULL;
 
 	(void) H;
+	assert(((*single) && frequency) || !(*single));
 
-	k = BATdescriptor(*LHS_key);
-	h = BATdescriptor(*LHS_hash);
-	t = BATdescriptor(*RHS_ht);
+	k = BATdescriptor(*PRB_key);
+	h = BATdescriptor(*PRB_hash);
+	t = BATdescriptor(*HSH_ht);
 	if (!k || !h || !t) {
 		err = createException(SQL, "oahash.probe", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto error;
@@ -2248,10 +2249,10 @@ BAT_OAHASHomprobe(bat *LHS_matched, bat *RHS_slotid, bat *outer, const bat *LHS_
 	}
 
 	keycnt = BATcount(k);
-	m = COLnew(k->hseqbase, TYPE_oid, keycnt, TRANSIENT);
+	o = COLnew(k->hseqbase, TYPE_oid, keycnt, TRANSIENT);
 	s = COLnew(k->hseqbase, TYPE_oid, keycnt, TRANSIENT);
-	o = COLnew(k->hseqbase, TYPE_bit, keycnt, TRANSIENT);
-	if (!m || !s || !o) {
+	m = COLnew(k->hseqbase, TYPE_bit, keycnt, TRANSIENT);
+	if (!o || !s || !m) {
 		err = createException(SQL, "oahash.probe", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto error;
 	}
@@ -2323,27 +2324,27 @@ BAT_OAHASHomprobe(bat *LHS_matched, bat *RHS_slotid, bat *outer, const bat *LHS_
 	BBPunfix(h->batCacheid);
 	BBPunfix(t->batCacheid);
 	BBPreclaim(f);
-	BATsetcount(m, mtdcnt);
+	BATsetcount(o, mtdcnt);
 	BATsetcount(s, mtdcnt);
-	BATsetcount(o, keycnt); /* aligned with input key */
-	BATnegateprops(m);
-	BATnegateprops(s);
+	BATsetcount(m, keycnt); /* aligned with input key */
 	BATnegateprops(o);
-	m->tnonil = true;
+	BATnegateprops(s);
+	BATnegateprops(m);
+	o->tnonil = true;
 	s->tnonil = false;
-	m->tsorted = true;
-	BATkey(m, true);
-	*LHS_matched = m->batCacheid;
-	*RHS_slotid = s->batCacheid;
-	*outer = o->batCacheid;
-	BBPkeepref(m);
-	BBPkeepref(s);
+	o->tsorted = true;
+	BATkey(o, true);
+	*PRB_oid = o->batCacheid;
+	*HSH_slotid = s->batCacheid;
+	*PRB_mark = m->batCacheid;
 	BBPkeepref(o);
+	BBPkeepref(s);
+	BBPkeepref(m);
 	return MAL_SUCCEED;
 error:
-	BBPreclaim(m);
-	BBPreclaim(s);
 	BBPreclaim(o);
+	BBPreclaim(s);
+	BBPreclaim(m);
 	BBPreclaim(k);
 	BBPreclaim(h);
 	BBPreclaim(t);
@@ -2352,27 +2353,27 @@ error:
 }
 
 static str
-BAT_OAHASHoprobe_single(bat *LHS_matched, bat *RHS_slotid, bat *outer, const bat *LHS_key, const bat *LHS_hash, const bat *RHS_ht, const bat *frequency, const bit *single, const bit *semantics, const ptr *H)
+BAT_OAHASHoprobe_single(bat *PRB_oid, bat *HSH_slotid, bat *PRB_mark, const bat *PRB_key, const bat *PRB_hash, const bat *HSH_ht, const bat *frequency, const bit *single, const bit *semantics, const ptr *H)
 {
-	return BAT_OAHASHomprobe(LHS_matched, RHS_slotid, outer, LHS_key, LHS_hash, RHS_ht, frequency, single, semantics, H, false);
+	return BAT_OAHASHomprobe(PRB_oid, HSH_slotid, PRB_mark, PRB_key, PRB_hash, HSH_ht, frequency, single, semantics, H, false);
 }
 
 static str
-BAT_OAHASHoprobe(bat *LHS_matched, bat *RHS_slotid, bat *outer, const bat *LHS_key, const bat *LHS_hash, const bat *RHS_ht, const bit *single, const bit *semantics, const ptr *H)
+BAT_OAHASHoprobe(bat *PRB_oid, bat *HSH_slotid, bat *PRB_mark, const bat *PRB_key, const bat *PRB_hash, const bat *HSH_ht, const bit *single, const bit *semantics, const ptr *H)
 {
-	return BAT_OAHASHomprobe(LHS_matched, RHS_slotid, outer, LHS_key, LHS_hash, RHS_ht, NULL, single, semantics, H, false);
+	return BAT_OAHASHomprobe(PRB_oid, HSH_slotid, PRB_mark, PRB_key, PRB_hash, HSH_ht, NULL, single, semantics, H, false);
 }
 
 static str
-BAT_OAHASHmprobe_single(bat *LHS_matched, bat *RHS_slotid, bat *outer, const bat *LHS_key, const bat *LHS_hash, const bat *RHS_ht, const bat *frequency, const bit *single, const bit *semantics, const ptr *H)
+BAT_OAHASHmprobe_single(bat *PRB_oid, bat *HSH_slotid, bat *PRB_mark, const bat *PRB_key, const bat *PRB_hash, const bat *HSH_ht, const bat *frequency, const bit *single, const bit *semantics, const ptr *H)
 {
-	return BAT_OAHASHomprobe(LHS_matched, RHS_slotid, outer, LHS_key, LHS_hash, RHS_ht, frequency, single, semantics, H, true);
+	return BAT_OAHASHomprobe(PRB_oid, HSH_slotid, PRB_mark, PRB_key, PRB_hash, HSH_ht, frequency, single, semantics, H, true);
 }
 
 static str
-BAT_OAHASHmprobe(bat *LHS_matched, bat *RHS_slotid, bat *outer, const bat *LHS_key, const bat *LHS_hash, const bat *RHS_ht, const bit *single, const bit *semantics, const ptr *H)
+BAT_OAHASHmprobe(bat *PRB_oid, bat *HSH_slotid, bat *PRB_mark, const bat *PRB_key, const bat *PRB_hash, const bat *HSH_ht, const bit *single, const bit *semantics, const ptr *H)
 {
-	return BAT_OAHASHomprobe(LHS_matched, RHS_slotid, outer, LHS_key, LHS_hash, RHS_ht, NULL, single, semantics, H, true);
+	return BAT_OAHASHomprobe(PRB_oid, HSH_slotid, PRB_mark, PRB_key, PRB_hash, HSH_ht, NULL, single, semantics, H, true);
 }
 
 #define BATvprobe_cmbd() \
@@ -2381,9 +2382,9 @@ BAT_OAHASHmprobe(bat *LHS_matched, bat *RHS_slotid, bat *outer, const bat *LHS_k
 		canditer_init(&ci, NULL, k); \
 		\
 		gid *hs = Tloc(h, 0); \
-		oid *mt = Tloc(m, 0); \
+		oid *mt = Tloc(s, 0); \
 		oid *vals = ht->vals; \
-		oid *mtd = Tloc(res_m, 0); \
+		oid *oid_mtd = Tloc(res_o, 0); \
 		oid *slt = Tloc(res_s, 0); \
 		lng *gi = Tloc(p, 0); \
 		lng *pgids = ht->pgids; \
@@ -2403,7 +2404,7 @@ BAT_OAHASHmprobe(bat *LHS_matched, bat *RHS_slotid, bat *outer, const bat *LHS_k
 				slot = ATOMIC_GET(ht->gids+hsh); \
 			} \
 			if (slot) { \
-				mtd[mtdcnt2] = mt[i]; \
+				oid_mtd[mtdcnt2] = mt[i]; \
 				slt[mtdcnt2] = slot - 1; \
 				mtdcnt2++; \
 				if (*single && freq[slot - 1] > 1) { \
@@ -2418,9 +2419,9 @@ BAT_OAHASHmprobe(bat *LHS_matched, bat *RHS_slotid, bat *outer, const bat *LHS_k
 	do { \
 		Type *ky = Tloc(k, 0); \
 		gid *hs = Tloc(h, 0); \
-		oid *mt = Tloc(m, 0); \
+		oid *mt = Tloc(s, 0); \
 		Type *vals = ht->vals; \
-		oid *mtd = Tloc(res_m, 0); \
+		oid *oid_mtd = Tloc(res_o, 0); \
 		oid *slt = Tloc(res_s, 0); \
 		lng *gi = Tloc(p, 0); \
 		lng *pgids = ht->pgids; \
@@ -2438,7 +2439,7 @@ BAT_OAHASHmprobe(bat *LHS_matched, bat *RHS_slotid, bat *outer, const bat *LHS_k
 				slot = ATOMIC_GET(ht->gids+hsh); \
 			} \
 			if (slot) { \
-				mtd[mtdcnt2] = mt[i]; \
+				oid_mtd[mtdcnt2] = mt[i]; \
 				slt[mtdcnt2] = slot - 1; \
 				mtdcnt2++; \
 				if (*single && freq[slot - 1] > 1) { \
@@ -2453,9 +2454,9 @@ BAT_OAHASHmprobe(bat *LHS_matched, bat *RHS_slotid, bat *outer, const bat *LHS_k
 	do { \
 		BATiter bi = bat_iterator(k); \
 		gid *hs = Tloc(h, 0); \
-		oid *mt = Tloc(m, 0); \
+		oid *mt = Tloc(s, 0); \
 		char **vals = ht->vals; \
-		oid *mtd = Tloc(res_m, 0); \
+		oid *oid_mtd = Tloc(res_o, 0); \
 		oid *slt = Tloc(res_s, 0); \
 		lng *gi = Tloc(p, 0); \
 		lng *pgids = ht->pgids; \
@@ -2475,7 +2476,7 @@ BAT_OAHASHmprobe(bat *LHS_matched, bat *RHS_slotid, bat *outer, const bat *LHS_k
 				slot = ATOMIC_GET(ht->gids+hsh); \
 			} \
 			if (slot) { \
-				mtd[mtdcnt2] = mt[i]; \
+				oid_mtd[mtdcnt2] = mt[i]; \
 				slt[mtdcnt2] = slot - 1; \
 				mtdcnt2++; \
 				if (*single && freq[slot - 1] > 1) { \
@@ -2489,26 +2490,26 @@ BAT_OAHASHmprobe(bat *LHS_matched, bat *RHS_slotid, bat *outer, const bat *LHS_k
 	} while (0)
 
 static str
-BAT_OAHASHprobe_cmbd_single(bat *LHS_matched, bat *RHS_slotid, const bat *LHS_key, const bat *LHS_hash, const bat *LHS_selected, const bat *RHS_gid, const bat *RHS_ht, const bat *frequency, const bit *single, const bit *semantics, const ptr *H)
+BAT_OAHASHprobe_cmbd_single(bat *PRB_oid, bat *HSH_slotid, const bat *PRB_key, const bat *PRB_hash, const bat *PRB_selected, const bat *HSH_gid, const bat *HSH_ht, const bat *frequency, const bit *single, const bit *semantics, const ptr *H)
 {
-	BAT *res_m = NULL, *res_s = NULL, *k = NULL, *h = NULL, *m = NULL, *t = NULL, *p = NULL, *f = NULL;
+	BAT *res_o = NULL, *res_s = NULL, *k = NULL, *h = NULL, *s = NULL, *t = NULL, *p = NULL, *f = NULL;
 	BUN mtdcnt, mtdcnt2 = 0;
 	lng *freq = NULL;
 	str err = NULL;
 
 	(void) H;
+	assert(((*single) && frequency) || !(*single));
 
-	k = BATdescriptor(*LHS_key);
-	h = BATdescriptor(*LHS_hash);
-	m = BATdescriptor(*LHS_selected);
-	p = BATdescriptor(*RHS_gid);
-	t = BATdescriptor(*RHS_ht);
-	if (!k || !h || !m || !t || !p) {
+	k = BATdescriptor(*PRB_key);
+	h = BATdescriptor(*PRB_hash);
+	s = BATdescriptor(*PRB_selected);
+	p = BATdescriptor(*HSH_gid);
+	t = BATdescriptor(*HSH_ht);
+	if (!k || !h || !s || !t || !p) {
 		err = createException(SQL, "oahash.combined_probe", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto error;
 	}
 	if (*single) {
-		assert(frequency);
 		/* frequency is required to check if a match is single */
 		f = BATdescriptor(*frequency);
 		if (!f) {
@@ -2518,10 +2519,10 @@ BAT_OAHASHprobe_cmbd_single(bat *LHS_matched, bat *RHS_slotid, const bat *LHS_ke
 		freq = Tloc(f, 0);
 	}
 
-	mtdcnt = BATcount(m);
-	res_m = COLnew(k->hseqbase, TYPE_oid, mtdcnt, TRANSIENT);
+	mtdcnt = BATcount(s);
+	res_o = COLnew(k->hseqbase, TYPE_oid, mtdcnt, TRANSIENT);
 	res_s = COLnew(k->hseqbase, TYPE_oid, mtdcnt, TRANSIENT);
-	if (!res_m || !res_s) {
+	if (!res_o || !res_s) {
 		err = createException(SQL, "oahash.combined_probe", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto error;
 	}
@@ -2594,29 +2595,29 @@ BAT_OAHASHprobe_cmbd_single(bat *LHS_matched, bat *RHS_slotid, const bat *LHS_ke
 
 	BBPunfix(k->batCacheid);
 	BBPunfix(h->batCacheid);
-	BBPunfix(m->batCacheid);
+	BBPunfix(s->batCacheid);
 	BBPunfix(t->batCacheid);
 	BBPunfix(p->batCacheid);
 	BBPreclaim(f);
-	BATsetcount(res_m, mtdcnt2);
+	BATsetcount(res_o, mtdcnt2);
 	BATsetcount(res_s, mtdcnt2);
-	BATnegateprops(res_m);
+	BATnegateprops(res_o);
 	BATnegateprops(res_s);
-	res_m->tnonil = true;
+	res_o->tnonil = true;
 	res_s->tnonil = true;
-	res_m->tsorted = true;
-	BATkey(res_m, true);
-	*LHS_matched = res_m->batCacheid;
-	*RHS_slotid = res_s->batCacheid;
-	BBPkeepref(res_m);
+	res_o->tsorted = true;
+	BATkey(res_o, true);
+	*PRB_oid = res_o->batCacheid;
+	*HSH_slotid = res_s->batCacheid;
+	BBPkeepref(res_o);
 	BBPkeepref(res_s);
 	return MAL_SUCCEED;
 error:
-	BBPreclaim(res_m);
+	BBPreclaim(res_o);
 	BBPreclaim(res_s);
 	BBPreclaim(k);
 	BBPreclaim(h);
-	BBPreclaim(m);
+	BBPreclaim(s);
 	BBPreclaim(t);
 	BBPreclaim(p);
 	BBPreclaim(f);
@@ -2624,9 +2625,9 @@ error:
 }
 
 static str
-BAT_OAHASHprobe_cmbd(bat *LHS_matched, bat *RHS_slotid, const bat *LHS_key, const bat *LHS_hash, const bat *LHS_selected, const bat *RHS_gid, const bat *RHS_ht, const bit *single, const bit *semantics, const ptr *H)
+BAT_OAHASHprobe_cmbd(bat *PRB_oid, bat *HSH_slotid, const bat *PRB_key, const bat *PRB_hash, const bat *PRB_selected, const bat *HSH_gid, const bat *HSH_ht, const bit *single, const bit *semantics, const ptr *H)
 {
-	return BAT_OAHASHprobe_cmbd_single(LHS_matched, RHS_slotid, LHS_key, LHS_hash, LHS_selected, RHS_gid, RHS_ht, NULL, single, semantics, H);
+	return BAT_OAHASHprobe_cmbd_single(PRB_oid, HSH_slotid, PRB_key, PRB_hash, PRB_selected, HSH_gid, HSH_ht, NULL, single, semantics, H);
 }
 
 #define BATvoprobe_cmbd() \
@@ -2638,17 +2639,17 @@ BAT_OAHASHprobe_cmbd(bat *LHS_matched, bat *RHS_slotid, const bat *LHS_key, cons
 		gid *hs = Tloc(h, 0); \
 		oid *mt = Tloc(m, 0); \
 		oid *vals = ht->vals; \
-		oid *mtd = Tloc(res_m, 0); \
+		oid *oid_mtd = Tloc(res_o, 0); \
 		oid *slt = Tloc(res_s, 0); \
 		lng *gi = Tloc(p, 0); \
 		lng *pgids = ht->pgids; \
-		bit *mark = Tloc(res_o, 0); \
+		bit *mark = Tloc(res_m, 0); \
 		\
 		TIMEOUT_LOOP_IDX_DECL(i, mtdcnt, qry_ctx) { \
 			oid ky = canditer_idx(&ci, mt[i]); \
 			assert(ky != oid_nil); \
 			if (!mark[i] || (!(*semantics) && ky == oid_nil)) { \
-				mtd[mtdcnt2] = i; \
+				oid_mtd[mtdcnt2] = i; \
 				slt[mtdcnt2] = oid_nil; \
 				mark[i] = (any && mark[i])?bit_nil:false; \
 				mtdcnt2++; \
@@ -2663,7 +2664,7 @@ BAT_OAHASHprobe_cmbd(bat *LHS_matched, bat *RHS_slotid, const bat *LHS_key, cons
 				slot = ATOMIC_GET(ht->gids+hsh); \
 			} \
 			if (slot) { \
-				mtd[mtdcnt2] = mt[i]; \
+				oid_mtd[mtdcnt2] = mt[i]; \
 				slt[mtdcnt2] = slot - 1; \
 				mark[i] = true; \
 				mtdcnt2++; \
@@ -2672,7 +2673,7 @@ BAT_OAHASHprobe_cmbd(bat *LHS_matched, bat *RHS_slotid, const bat *LHS_key, cons
 					goto error; \
 				} \
 			} else { \
-				mtd[mtdcnt2] = i; \
+				oid_mtd[mtdcnt2] = i; \
 				slt[mtdcnt2] = oid_nil; \
 				bit has_nil = false; \
 				if (any) { \
@@ -2699,17 +2700,17 @@ BAT_OAHASHprobe_cmbd(bat *LHS_matched, bat *RHS_slotid, const bat *LHS_key, cons
 		gid *hs = Tloc(h, 0); \
 		oid *mt = Tloc(m, 0); \
 		Type *vals = ht->vals; \
-		oid *mtd = Tloc(res_m, 0); \
+		oid *oid_mtd = Tloc(res_o, 0); \
 		oid *slt = Tloc(res_s, 0); \
 		lng *gi = Tloc(p, 0); \
 		lng *pgids = ht->pgids; \
-		bit *mark = Tloc(res_o, 0); \
+		bit *mark = Tloc(res_m, 0); \
 		TIMEOUT_LOOP_IDX_DECL(i, mtdcnt, qry_ctx) { \
 			gid hsh = hs[i]&ht->mask; \
 			gid slot = 0; \
 			Type val = ky[mt[i]]; \
 			if (!mark[i] || (!(*semantics) && is_##Type##_nil(val))) { \
-				mtd[mtdcnt2] = i; \
+				oid_mtd[mtdcnt2] = i; \
 				slt[mtdcnt2] = oid_nil; \
 				mark[i] = (any && mark[i])?bit_nil:false; \
 				mtdcnt2++; \
@@ -2722,7 +2723,7 @@ BAT_OAHASHprobe_cmbd(bat *LHS_matched, bat *RHS_slotid, const bat *LHS_key, cons
 				slot = ATOMIC_GET(ht->gids+hsh); \
 			} \
 			if (slot) { \
-				mtd[mtdcnt2] = mt[i]; \
+				oid_mtd[mtdcnt2] = mt[i]; \
 				slt[mtdcnt2] = slot - 1; \
 				mark[i] = true; \
 				mtdcnt2++; \
@@ -2731,7 +2732,7 @@ BAT_OAHASHprobe_cmbd(bat *LHS_matched, bat *RHS_slotid, const bat *LHS_key, cons
 					goto error; \
 				} \
 			} else { \
-				mtd[mtdcnt2] = i; \
+				oid_mtd[mtdcnt2] = i; \
 				slt[mtdcnt2] = oid_nil; \
 				bit has_nil = false; \
 				if (any) { \
@@ -2758,11 +2759,11 @@ BAT_OAHASHprobe_cmbd(bat *LHS_matched, bat *RHS_slotid, const bat *LHS_key, cons
 		gid *hs = Tloc(h, 0); \
 		oid *mt = Tloc(m, 0); \
 		char **vals = ht->vals; \
-		oid *mtd = Tloc(res_m, 0); \
+		oid *oid_mtd = Tloc(res_o, 0); \
 		oid *slt = Tloc(res_s, 0); \
 		lng *gi = Tloc(p, 0); \
 		lng *pgids = ht->pgids; \
-		bit *mark = Tloc(res_o, 0); \
+		bit *mark = Tloc(res_m, 0); \
 		int (*atomcmp)(const void *, const void *) = ATOMstorage(tt) == TYPE_str? (int (*)(const void *, const void *)) str_cmp : ATOMcompare(tt); \
 		const void *nil = ATOMnilptr(tt); \
 		TIMEOUT_LOOP_IDX_DECL(i, mtdcnt, qry_ctx) { \
@@ -2770,7 +2771,7 @@ BAT_OAHASHprobe_cmbd(bat *LHS_matched, bat *RHS_slotid, const bat *LHS_key, cons
 			gid slot = 0; \
 			char *val = (bi).vh->base+BUNtvaroff(bi,mt[i]); \
 			if (!mark[i] || (!(*semantics) && atomcmp(val, nil) == 0)) { \
-				mtd[mtdcnt2] = i; \
+				oid_mtd[mtdcnt2] = i; \
 				slt[mtdcnt2] = oid_nil; \
 				mark[i] = (any && mark[i])?bit_nil:false; \
 				mtdcnt2++; \
@@ -2783,7 +2784,7 @@ BAT_OAHASHprobe_cmbd(bat *LHS_matched, bat *RHS_slotid, const bat *LHS_key, cons
 				slot = ATOMIC_GET(ht->gids+hsh); \
 			} \
 			if (slot) { \
-				mtd[mtdcnt2] = mt[i]; \
+				oid_mtd[mtdcnt2] = mt[i]; \
 				slt[mtdcnt2] = slot - 1; \
 				mark[i] = true; \
 				mtdcnt2++; \
@@ -2793,7 +2794,7 @@ BAT_OAHASHprobe_cmbd(bat *LHS_matched, bat *RHS_slotid, const bat *LHS_key, cons
 					goto error; \
 				} \
 			} else { \
-				mtd[mtdcnt2] = i; \
+				oid_mtd[mtdcnt2] = i; \
 				slt[mtdcnt2] = oid_nil; \
 				bit has_nil = false; \
 				if (any) { \
@@ -2815,27 +2816,27 @@ BAT_OAHASHprobe_cmbd(bat *LHS_matched, bat *RHS_slotid, const bat *LHS_key, cons
 	} while (0)
 
 static str
-BAT_OAHASHomprobe_cmbd(bat *LHS_matched, bat *RHS_slotid, bat *outer, const bat *LHS_key, const bat *LHS_hash, const bat *LHS_selected, const bat *RHS_gid, const bat *RHS_ht, const bat *frequency, const bit *single, const bit *semantics, const ptr *H, bool any)
+BAT_OAHASHomprobe_cmbd(bat *PRB_oid, bat *HSH_slotid, bat *PRB_mark, const bat *PRB_key, const bat *PRB_hash, const bat *PRB_selected, const bat *HSH_gid, const bat *HSH_ht, const bat *frequency, const bit *single, const bit *semantics, const ptr *H, bool any)
 {
-	BAT *res_m = NULL, *res_s = NULL, *res_o = NULL, *k = NULL, *h = NULL, *m = NULL, *t = NULL, *p = NULL, *f = NULL;
+	BAT *res_o = NULL, *res_s = NULL, *res_m = NULL, *k = NULL, *h = NULL, *m = NULL, *t = NULL, *p = NULL, *f = NULL;
 	BUN mtdcnt, mtdcnt2 = 0;
 	lng *freq = NULL;
 	str err = NULL;
 
 	(void) H;
+    assert(((*single) && frequency) || !(*single));
 
-	k = BATdescriptor(*LHS_key);
-	h = BATdescriptor(*LHS_hash);
-	m = BATdescriptor(*LHS_selected);
-	p = BATdescriptor(*RHS_gid);
-	t = BATdescriptor(*RHS_ht);
-	res_o = BATdescriptor(*outer);
-	if (!k || !h || !m || !t || !p || !res_o) {
+	k = BATdescriptor(*PRB_key);
+	h = BATdescriptor(*PRB_hash);
+	m = BATdescriptor(*PRB_selected);
+	p = BATdescriptor(*HSH_gid);
+	t = BATdescriptor(*HSH_ht);
+	res_m = BATdescriptor(*PRB_mark);
+	if (!k || !h || !m || !t || !p || !res_m) {
 		err = createException(SQL, "oahash.combined_probe", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto error;
 	}
 	if (*single) {
-		assert(frequency);
 		/* frequency is required to check if a match is single */
 		f = BATdescriptor(*frequency);
 		if (!f) {
@@ -2846,9 +2847,9 @@ BAT_OAHASHomprobe_cmbd(bat *LHS_matched, bat *RHS_slotid, bat *outer, const bat 
 	}
 
 	mtdcnt = BATcount(m);
-	res_m = COLnew(k->hseqbase, TYPE_oid, mtdcnt, TRANSIENT);
+	res_o = COLnew(k->hseqbase, TYPE_oid, mtdcnt, TRANSIENT);
 	res_s = COLnew(k->hseqbase, TYPE_oid, mtdcnt, TRANSIENT);
-	if (!res_m || !res_s) {
+	if (!res_o || !res_s) {
 		err = createException(SQL, "oahash.combined_probe", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto error;
 	}
@@ -2919,32 +2920,32 @@ BAT_OAHASHomprobe_cmbd(bat *LHS_matched, bat *RHS_slotid, bat *outer, const bat 
 			goto error;
 	}
 
-	assert(BATcount(res_o) == BATcount(k));
+	assert(BATcount(res_m) == BATcount(k));
 	BBPunfix(k->batCacheid);
 	BBPunfix(h->batCacheid);
 	BBPunfix(m->batCacheid);
 	BBPunfix(t->batCacheid);
 	BBPunfix(p->batCacheid);
 	BBPreclaim(f);
-	BATsetcount(res_m, mtdcnt2);
+	BATsetcount(res_o, mtdcnt2);
 	BATsetcount(res_s, mtdcnt2);
-	BATnegateprops(res_m);
-	BATnegateprops(res_s);
 	BATnegateprops(res_o);
-	res_m->tnonil = true;
+	BATnegateprops(res_s);
+	BATnegateprops(res_m);
+	res_o->tnonil = true;
 	//res_s->tnil = true;
-	res_m->tsorted = true;
-	BATkey(res_m, true);
-	*LHS_matched = res_m->batCacheid;
-	*RHS_slotid = res_s->batCacheid;
-	BBPkeepref(res_m);
-	BBPkeepref(res_s);
+	res_o->tsorted = true;
+	BATkey(res_o, true);
+	*PRB_oid = res_o->batCacheid;
+	*HSH_slotid = res_s->batCacheid;
 	BBPkeepref(res_o);
+	BBPkeepref(res_s);
+	BBPkeepref(res_m);
 	return MAL_SUCCEED;
 error:
-	BBPreclaim(res_m);
-	BBPreclaim(res_s);
 	BBPreclaim(res_o);
+	BBPreclaim(res_s);
+	BBPreclaim(res_m);
 	BBPreclaim(k);
 	BBPreclaim(h);
 	BBPreclaim(m);
@@ -2955,27 +2956,27 @@ error:
 }
 
 static str
-BAT_OAHASHoprobe_cmbd_single(bat *LHS_matched, bat *RHS_slotid, bat *outer, const bat *LHS_key, const bat *LHS_hash, const bat *LHS_selected, const bat *RHS_gid, const bat *RHS_ht, const bat *frequency, const bit *single, const bit *semantics, const ptr *H)
+BAT_OAHASHoprobe_cmbd_single(bat *PRB_oid, bat *HSH_slotid, bat *PRB_mark, const bat *PRB_key, const bat *PRB_hash, const bat *PRB_selected, const bat *HSH_gid, const bat *HSH_ht, const bat *frequency, const bit *single, const bit *semantics, const ptr *H)
 {
-	return BAT_OAHASHomprobe_cmbd( LHS_matched, RHS_slotid, outer, LHS_key, LHS_hash, LHS_selected, RHS_gid, RHS_ht, frequency, single, semantics, H, false);
+	return BAT_OAHASHomprobe_cmbd( PRB_oid, HSH_slotid, PRB_mark, PRB_key, PRB_hash, PRB_selected, HSH_gid, HSH_ht, frequency, single, semantics, H, false);
 }
 
 static str
-BAT_OAHASHoprobe_cmbd(bat *LHS_matched, bat *RHS_slotid, bat *outer, const bat *LHS_key, const bat *LHS_hash, const bat *LHS_selected, const bat *RHS_gid, const bat *RHS_ht, const bit *single, const bit *semantics, const ptr *H)
+BAT_OAHASHoprobe_cmbd(bat *PRB_oid, bat *HSH_slotid, bat *PRB_mark, const bat *PRB_key, const bat *PRB_hash, const bat *PRB_selected, const bat *HSH_gid, const bat *HSH_ht, const bit *single, const bit *semantics, const ptr *H)
 {
-	return BAT_OAHASHomprobe_cmbd( LHS_matched, RHS_slotid, outer, LHS_key, LHS_hash, LHS_selected, RHS_gid, RHS_ht, NULL, single, semantics, H, false);
+	return BAT_OAHASHomprobe_cmbd( PRB_oid, HSH_slotid, PRB_mark, PRB_key, PRB_hash, PRB_selected, HSH_gid, HSH_ht, NULL, single, semantics, H, false);
 }
 
 static str
-BAT_OAHASHmprobe_cmbd_single(bat *LHS_matched, bat *RHS_slotid, bat *outer, const bat *LHS_key, const bat *LHS_hash, const bat *LHS_selected, const bat *RHS_gid, const bat *RHS_ht, const bat *frequency, const bit *single, const bit *semantics, const ptr *H)
+BAT_OAHASHmprobe_cmbd_single(bat *PRB_oid, bat *HSH_slotid, bat *PRB_mark, const bat *PRB_key, const bat *PRB_hash, const bat *PRB_selected, const bat *HSH_gid, const bat *HSH_ht, const bat *frequency, const bit *single, const bit *semantics, const ptr *H)
 {
-	return BAT_OAHASHomprobe_cmbd( LHS_matched, RHS_slotid, outer, LHS_key, LHS_hash, LHS_selected, RHS_gid, RHS_ht, frequency, single, semantics, H, true);
+	return BAT_OAHASHomprobe_cmbd( PRB_oid, HSH_slotid, PRB_mark, PRB_key, PRB_hash, PRB_selected, HSH_gid, HSH_ht, frequency, single, semantics, H, true);
 }
 
 static str
-BAT_OAHASHmprobe_cmbd(bat *LHS_matched, bat *RHS_slotid, bat *outer, const bat *LHS_key, const bat *LHS_hash, const bat *LHS_selected, const bat *RHS_gid, const bat *RHS_ht, const bit *single, const bit *semantics, const ptr *H)
+BAT_OAHASHmprobe_cmbd(bat *PRB_oid, bat *HSH_slotid, bat *PRB_mark, const bat *PRB_key, const bat *PRB_hash, const bat *PRB_selected, const bat *HSH_gid, const bat *HSH_ht, const bit *single, const bit *semantics, const ptr *H)
 {
-	return BAT_OAHASHomprobe_cmbd( LHS_matched, RHS_slotid, outer, LHS_key, LHS_hash, LHS_selected, RHS_gid, RHS_ht, NULL, single, semantics, H, true);
+	return BAT_OAHASHomprobe_cmbd( PRB_oid, HSH_slotid, PRB_mark, PRB_key, PRB_hash, PRB_selected, HSH_gid, HSH_ht, NULL, single, semantics, H, true);
 }
 
 
@@ -3127,7 +3128,7 @@ error:
 		keycnt = ci.ncand; \
 		\
 		oid *res = Tloc(e, 0); \
-		if (*outer && freq) { \
+		if (*leftouter && freq) { \
 			TIMEOUT_LOOP_IDX_DECL(i, keycnt, qry_ctx) { \
 				oid s = sid[i]; \
 				oid val = canditer_idx(&ci, i); \
@@ -3162,7 +3163,7 @@ error:
 	do { \
 		Type *val = Tloc(k, 0); \
 		Type *res = Tloc(e, 0); \
-		if (*outer && freq) { \
+		if (*leftouter && freq) { \
 			TIMEOUT_LOOP_IDX_DECL(i, keycnt, qry_ctx) { \
 				oid s = sid[i]; \
 				Type v = val[i]; \
@@ -3195,7 +3196,7 @@ error:
 #define BATaexpand() \
 	do { \
 		BATiter bi = bat_iterator(k); \
-		if (*outer && freq) { \
+		if (*leftouter && freq) { \
 			TIMEOUT_LOOP_IDX_DECL(i, keycnt, qry_ctx) { \
 				oid s = sid[i]; \
 				void *v =  (void *) ((bi).vh->base+BUNtvaroff(bi,i)); \
@@ -3242,7 +3243,7 @@ error:
 	} while (0)
 
 static str
-BAT_OAHASHexpand(bat *expanded, const bat *key, const bat *selected, const bat *slotid, const bat *frequency, const bit *outer, const ptr *H)
+BAT_OAHASHexpand(bat *expanded, const bat *key, const bat *selected, const bat *slotid, const bat *frequency, const bit *leftouter, const ptr *H)
 {
 	BAT *e = NULL, *k = NULL, *s = NULL, *l = NULL, *f = NULL;
 	BUN keycnt, selcnt, ttlcnt = 0, xpdcnt = 0;
@@ -3522,7 +3523,7 @@ error:
 }
 
 static str
-BAT_OAHASHexplode(bat *fetched, const bat *slotid, const bat *frequency, const bat *ht_sink, const bit *outer)
+BAT_OAHASHexplode(bat *fetched, const bat *slotid, const bat *frequency, const bat *ht_sink, const bit *leftouter)
 {
 	BAT *f = NULL, *l = NULL, *h = NULL, *r = NULL;
 	BUN selcnt, fchcnt = 0;
@@ -3543,7 +3544,7 @@ BAT_OAHASHexplode(bat *fetched, const bat *slotid, const bat *frequency, const b
 	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 	selcnt = BATcount(l);
 	if (selcnt) {
-		if (*outer) {
+		if (*leftouter) {
 			TIMEOUT_LOOP_IDX_DECL(i, selcnt, qry_ctx) {
 				if (sid[i] != oid_nil)
 					fchcnt += freq[sid[i]];
@@ -3572,7 +3573,7 @@ BAT_OAHASHexplode(bat *fetched, const bat *slotid, const bat *frequency, const b
 		oid *res = Tloc(r, 0);
 		oid *vals = ht->vals;
 		oid *pgids = (oid*)ht->pgids;
-		if (*outer) {
+		if (*leftouter) {
 			TIMEOUT_LOOP_IDX_DECL(i, selcnt, qry_ctx) {
 				oid s = sid[i];
 				if (s != oid_nil) {
@@ -3921,37 +3922,37 @@ static mel_func oa_hash_init_funcs[] = {
 
  command("oahash", "hash", BAT_OAHASHhash, false, "Compute the hashs for the keys", args(1,3, batarg("hsh",lng),batargany("key",1),arg("pipeline",ptr))),
 
- command("oahash", "probe", BAT_OAHASHprobe_single, false, "Probe the (key, hash) pairs in the hash table. For a matched key, return its OID in the left-hand-side column and the slot ID in the right-hand-side hash table", args(2,9, batarg("LHS_matched",oid),batarg("RHS_slotid",oid),batargany("LHS_key",1),batarg("LHS_hash",lng),batargany("RHS_ht",2),batarg("frequency",lng),arg("single",bit),arg("semantics",bit),arg("pipeline",ptr))),
- command("oahash", "probe", BAT_OAHASHprobe, false, "Probe the (key, hash) pairs in the hash table. For a matched key, return its OID in the left-hand-side column and the slot ID in the right-hand-side hash table", args(2,8, batarg("LHS_matched",oid),batarg("RHS_slotid",oid),batargany("LHS_key",1),batarg("LHS_hash",lng),batargany("RHS_ht",2),arg("single",bit),arg("semantics",bit),arg("pipeline",ptr))),
+ command("oahash", "probe", BAT_OAHASHprobe_single, false, "Probe the (key, hash) pairs in the hash table. For a matched key, return its OID in the 'key' column and the slot ID in the hash table", args(2,9, batarg("PRB_oid",oid),batarg("HSH_slotid",oid),batargany("PRB_key",1),batarg("PRB_hash",lng),batargany("HSH_ht",2),batarg("frequency",lng),arg("single",bit),arg("semantics",bit),arg("pipeline",ptr))),
+ command("oahash", "probe", BAT_OAHASHprobe, false, "Probe the (key, hash) pairs in the hash table. For a matched key, return its OID in the 'key' column and the slot ID in the hash table", args(2,8, batarg("PRB_oid",oid),batarg("HSH_slotid",oid),batargany("PRB_key",1),batarg("PRB_hash",lng),batargany("HSH_ht",2),arg("single",bit),arg("semantics",bit),arg("pipeline",ptr))),
 
- command("oahash", "nprobe", BAT_OAHASHnprobe_single, false, "Probe the (key, hash) pairs in the hash table. For a not-matched key, return its OID in the left-hand-side column and the slot ID in the right-hand-side hash table", args(2,9, batarg("LHS_matched",oid),batarg("RHS_slotid",oid),batargany("LHS_key",1),batarg("LHS_hash",lng),batargany("RHS_ht",2),batarg("frequency",lng),arg("single",bit),arg("semantics",bit),arg("pipeline",ptr))),
- command("oahash", "nprobe", BAT_OAHASHnprobe, false, "Probe the (key, hash) pairs in the hash table. For a not-matched key, return its OID in the left-hand-side column and the slot ID in the right-hand-side hash table", args(2,8, batarg("LHS_matched",oid),batarg("RHS_slotid",oid),batargany("LHS_key",1),batarg("LHS_hash",lng),batargany("RHS_ht",2),arg("single",bit),arg("semantics",bit),arg("pipeline",ptr))),
+ command("oahash", "nprobe", BAT_OAHASHnprobe_single, false, "Probe the (key, hash) pairs in the hash table. For a not-matched key, return its OID in the 'key' column and the slot ID in the hash table", args(2,9, batarg("PRB_oid",oid),batarg("HSH_slotid",oid),batargany("PRB_key",1),batarg("PRB_hash",lng),batargany("HSH_ht",2),batarg("frequency",lng),arg("single",bit),arg("semantics",bit),arg("pipeline",ptr))),
+ command("oahash", "nprobe", BAT_OAHASHnprobe, false, "Probe the (key, hash) pairs in the hash table. For a not-matched key, return its OID in the 'key' column and the slot ID in the hash table", args(2,8, batarg("PRB_oid",oid),batarg("HSH_slotid",oid),batargany("PRB_key",1),batarg("PRB_hash",lng),batargany("HSH_ht",2),arg("single",bit),arg("semantics",bit),arg("pipeline",ptr))),
 
- command("oahash", "oprobe", BAT_OAHASHoprobe_single, false, "Probe the (key, hash) pairs in the hash table. For a matched key, return its OID in the left-hand-side column and the slot ID in the right-hand-side hash table", args(3,10, batarg("LHS_matched",oid),batarg("RHS_slotid",oid),batarg("outer",bit),batargany("LHS_key",1),batarg("LHS_hash",lng),batargany("RHS_ht",2),batarg("frequency",lng),arg("single",bit),arg("semantics",bit),arg("pipeline",ptr))),
- command("oahash", "oprobe", BAT_OAHASHoprobe, false, "Probe the (key, hash) pairs in the hash table. For a matched key, return its OID in the left-hand-side column and the slot ID in the right-hand-side hash table", args(3,9, batarg("LHS_matched",oid),batarg("RHS_slotid",oid),batarg("outer",bit),batargany("LHS_key",1),batarg("LHS_hash",lng),batargany("RHS_ht",2),arg("single",bit),arg("semantics",bit),arg("pipeline",ptr))),
+ command("oahash", "oprobe", BAT_OAHASHoprobe_single, false, "Probe the (key, hash) pairs in the hash table. For a matched key, return its OID in the 'key' column and the slot ID in the hash table", args(3,10, batarg("PRB_oid",oid),batarg("HSH_slotid",oid),batarg("PRB_mark",bit),batargany("PRB_key",1),batarg("PRB_hash",lng),batargany("HSH_ht",2),batarg("frequency",lng),arg("single",bit),arg("semantics",bit),arg("pipeline",ptr))),
+ command("oahash", "oprobe", BAT_OAHASHoprobe, false, "Probe the (key, hash) pairs in the hash table. For a matched key, return its OID in the 'key' column and the slot ID in the hash table", args(3,9, batarg("PRB_oid",oid),batarg("HSH_slotid",oid),batarg("PRB_mark",bit),batargany("PRB_key",1),batarg("PRB_hash",lng),batargany("HSH_ht",2),arg("single",bit),arg("semantics",bit),arg("pipeline",ptr))),
 
- command("oahash", "mprobe", BAT_OAHASHmprobe_single, false, "Probe the (key, hash) pairs in the hash table. For a matched key, return its OID in the left-hand-side column and the slot ID in the right-hand-side hash table", args(3,10, batarg("LHS_matched",oid),batarg("RHS_slotid",oid),batarg("mark",bit),batargany("LHS_key",1),batarg("LHS_hash",lng),batargany("RHS_ht",2),batarg("frequency",lng),arg("single",bit),arg("semantics",bit),arg("pipeline",ptr))),
- command("oahash", "mprobe", BAT_OAHASHmprobe, false, "Probe the (key, hash) pairs in the hash table. For a matched key, return its OID in the left-hand-side column and the slot ID in the right-hand-side hash table", args(3,9, batarg("LHS_matched",oid),batarg("RHS_slotid",oid),batarg("mark",bit),batargany("LHS_key",1),batarg("LHS_hash",lng),batargany("RHS_ht",2),arg("single",bit),arg("semantics",bit),arg("pipeline",ptr))),
+ command("oahash", "mprobe", BAT_OAHASHmprobe_single, false, "Probe the (key, hash) pairs in the hash table. For a matched key, return its OID in the 'key' column and the slot ID in the hash table", args(3,10, batarg("PRB_oid",oid),batarg("HSH_slotid",oid),batarg("PRB_matched",bit),batargany("PRB_key",1),batarg("PRB_hash",lng),batargany("HSH_ht",2),batarg("frequency",lng),arg("single",bit),arg("semantics",bit),arg("pipeline",ptr))),
+ command("oahash", "mprobe", BAT_OAHASHmprobe, false, "Probe the (key, hash) pairs in the hash table. For a matched key, return its OID in the 'key' column and the slot ID in the hash table", args(3,9, batarg("PRB_oid",oid),batarg("HSH_slotid",oid),batarg("PRB_matched",bit),batargany("PRB_key",1),batarg("PRB_hash",lng),batargany("HSH_ht",2),arg("single",bit),arg("semantics",bit),arg("pipeline",ptr))),
 
 
  command("oahash", "combined_hash", BAT_OAHASHhash_cmbd, false, "For the selected keys, compute the combined hash of key+parent_slotid", args(1,5,batarg("hsh",lng),batargany("key",1),batarg("selected",oid),batarg("parent_slotid",oid),batargany("ht_sink",2))),
 
- command("oahash", "combined_probe", BAT_OAHASHprobe_cmbd_single, false, "Probe the selected (key, hash) pairs in the hash table. For a matched item, return its OID in the left-hand-side column and the slot ID in the right-hand-side hash table", args(2,11, batarg("LHS_matched",oid),batarg("RHS_slotid",oid),batargany("LHS_key",1),batarg("LHS_hash",lng),batarg("LHS_selected",oid),batarg("RHS_pgids",oid),batargany("RHS_ht",2),batarg("frequency",lng),arg("single",bit),arg("semantics",bit),arg("pipeline",ptr))),
- command("oahash", "combined_probe", BAT_OAHASHprobe_cmbd, false, "Probe the selected (key, hash) pairs in the hash table. For a matched item, return its OID in the left-hand-side column and the slot ID in the right-hand-side hash table", args(2,10, batarg("LHS_matched",oid),batarg("RHS_slotid",oid),batargany("LHS_key",1),batarg("LHS_hash",lng),batarg("LHS_selected",oid),batarg("RHS_pgids",oid),batargany("RHS_ht",2),arg("single",bit),arg("semantics",bit),arg("pipeline",ptr))),
+ command("oahash", "combined_probe", BAT_OAHASHprobe_cmbd_single, false, "Probe the selected (key, hash) pairs in the hash table. For a matched item, return its OID in the 'key' column and the slot ID in the hash table", args(2,11, batarg("PRB_oid",oid),batarg("HSH_slotid",oid),batargany("PRB_key",1),batarg("PRB_hash",lng),batarg("PRB_selected",oid),batarg("HSH_pgids",oid),batargany("HSH_ht",2),batarg("frequency",lng),arg("single",bit),arg("semantics",bit),arg("pipeline",ptr))),
+ command("oahash", "combined_probe", BAT_OAHASHprobe_cmbd, false, "Probe the selected (key, hash) pairs in the hash table. For a matched item, return its OID in the 'key' column and the slot ID in the hash table", args(2,10, batarg("PRB_oid",oid),batarg("HSH_slotid",oid),batargany("PRB_key",1),batarg("PRB_hash",lng),batarg("PRB_selected",oid),batarg("HSH_pgids",oid),batargany("HSH_ht",2),arg("single",bit),arg("semantics",bit),arg("pipeline",ptr))),
 
- command("oahash", "combined_oprobe", BAT_OAHASHoprobe_cmbd_single, false, "Probe the selected (key, hash) pairs in the hash table. For a matched item, return its OID in the left-hand-side column and the slot ID in the right-hand-side hash table", args(3,12, batarg("LHS_matched",oid),batarg("RHS_slotid",oid),batarg("outer",bit),batargany("LHS_key",1),batarg("LHS_hash",lng),batarg("LHS_selected",oid),batarg("RHS_pgids",oid),batargany("RHS_ht",2),batarg("frequency",lng),arg("single",bit),arg("semantics",bit),arg("pipeline",ptr))),
- command("oahash", "combined_oprobe", BAT_OAHASHoprobe_cmbd, false, "Probe the selected (key, hash) pairs in the hash table. For a matched item, return its OID in the left-hand-side column and the slot ID in the right-hand-side hash table", args(3,11, batarg("LHS_matched",oid),batarg("RHS_slotid",oid),batarg("outer",bit),batargany("LHS_key",1),batarg("LHS_hash",lng),batarg("LHS_selected",oid),batarg("RHS_pgids",oid),batargany("RHS_ht",2),arg("single",bit),arg("semantics",bit),arg("pipeline",ptr))),
+ command("oahash", "combined_oprobe", BAT_OAHASHoprobe_cmbd_single, false, "Probe the selected (key, hash) pairs in the hash table. For a matched item, return its OID in the 'key' column and the slot ID in the hash table", args(3,12, batarg("PRB_oid",oid),batarg("HSH_slotid",oid),batarg("PRB_mark",bit),batargany("PRB_key",1),batarg("PRB_hash",lng),batarg("PRB_selected",oid),batarg("HSH_pgids",oid),batargany("HSH_ht",2),batarg("frequency",lng),arg("single",bit),arg("semantics",bit),arg("pipeline",ptr))),
+ command("oahash", "combined_oprobe", BAT_OAHASHoprobe_cmbd, false, "Probe the selected (key, hash) pairs in the hash table. For a matched item, return its OID in the 'key' column and the slot ID in the hash table", args(3,11, batarg("PRB_oid",oid),batarg("HSH_slotid",oid),batarg("PRB_mark",bit),batargany("PRB_key",1),batarg("PRB_hash",lng),batarg("PRB_selected",oid),batarg("HSH_pgids",oid),batargany("HSH_ht",2),arg("single",bit),arg("semantics",bit),arg("pipeline",ptr))),
 
- command("oahash", "combined_mprobe", BAT_OAHASHmprobe_cmbd_single, false, "Probe the selected (key, hash) pairs in the hash table. For a matched item, return its OID in the left-hand-side column and the slot ID in the right-hand-side hash table", args(3,12, batarg("LHS_matched",oid),batarg("RHS_slotid",oid),batarg("mark",bit),batargany("LHS_key",1),batarg("LHS_hash",lng),batarg("LHS_selected",oid),batarg("RHS_pgids",oid),batargany("RHS_ht",2),batarg("frequency",lng),arg("single",bit),arg("semantics",bit),arg("pipeline",ptr))),
- command("oahash", "combined_mprobe", BAT_OAHASHmprobe_cmbd, false, "Probe the selected (key, hash) pairs in the hash table. For a matched item, return its OID in the left-hand-side column and the slot ID in the right-hand-side hash table", args(3,11, batarg("LHS_matched",oid),batarg("RHS_slotid",oid),batarg("mark",bit),batargany("LHS_key",1),batarg("LHS_hash",lng),batarg("LHS_selected",oid),batarg("RHS_pgids",oid),batargany("RHS_ht",2),arg("single",bit),arg("semantics",bit),arg("pipeline",ptr))),
+ command("oahash", "combined_mprobe", BAT_OAHASHmprobe_cmbd_single, false, "Probe the selected (key, hash) pairs in the hash table. For a matched item, return its OID in the 'key' column and the slot ID in the hash table", args(3,12, batarg("PRB_oid",oid),batarg("HSH_slotid",oid),batarg("PRB_matched",bit),batargany("PRB_key",1),batarg("PRB_hash",lng),batarg("PRB_selected",oid),batarg("HSH_pgids",oid),batargany("HSH_ht",2),batarg("frequency",lng),arg("single",bit),arg("semantics",bit),arg("pipeline",ptr))),
+ command("oahash", "combined_mprobe", BAT_OAHASHmprobe_cmbd, false, "Probe the selected (key, hash) pairs in the hash table. For a matched item, return its OID in the 'key' column and the slot ID in the hash table", args(3,11, batarg("PRB_oid",oid),batarg("HSH_slotid",oid),batarg("PRB_matched",bit),batargany("PRB_key",1),batarg("PRB_hash",lng),batarg("PRB_selected",oid),batarg("HSH_pgids",oid),batargany("HSH_ht",2),arg("single",bit),arg("semantics",bit),arg("pipeline",ptr))),
 
  command("oahash", "project", OAHASHproject, false, "Project the selected OIDs onto the keys", args(1,4, batargany("res",1),batargany("key",1),batarg("selected",oid),arg("pipeline",ptr))),
 
- command("oahash", "expand", BAT_OAHASHexpand, false, "Expand the selected keys according to their frequencies in the hash table. If 'outer' is true, append the not 'selected' keys", args(1,7,batargany("expanded",1),batargany("key",1),batarg("selected",oid),batarg("slotid",oid),batarg("frequency",lng),arg("outer",bit),arg("pipeline",ptr))),
+ command("oahash", "expand", BAT_OAHASHexpand, false, "Expand the selected keys according to their frequencies in the hash table. If 'leftouter' is true, append the not 'selected' keys", args(1,7,batargany("expanded",1),batargany("key",1),batarg("selected",oid),batarg("slotid",oid),batarg("frequency",lng),arg("leftouter",bit),arg("pipeline",ptr))),
 
  command("oahash", "expand_cartesian", BAT_OAHASHexpand_cart, false, "Duplicate each value in 'col' the number of times as the count of 'rowrepeat'. For a left/right-outer join, if 'rowrepeat' is empty, output the values in 'col' once.", args(1,5, batargany("expanded",1),batargany("col",1),batargany("rowrepeat",2),arg("LRouter",bit),arg("pipeline",ptr))),
 
- command("oahash", "explode", BAT_OAHASHexplode, false, "Explode the result vector 'frequency' times and return payload heap slot ids.", args(1,5, batarg("fetched",oid),batarg("slotid",oid),batarg("frequency",lng),batargany("hash_sink",2),arg("outer",bit))),
+ command("oahash", "explode", BAT_OAHASHexplode, false, "Explode the result vector 'frequency' times and return payload heap slot ids. If 'leftouter' is true, fill the not 'selected' slot with oid_nil", args(1,5, batarg("fetched",oid),batarg("slotid",oid),batarg("frequency",lng),batargany("hash_sink",2),arg("leftouter",bit))),
 
  command("oahash", "fetch_payload_cartesian", BAT_OAHASHfetch_pld_cart, false, "Duplicate the whole 'col' the number of times as the count of 'setrepeat'.  For a left/right-ourter join, if 'col' is empty, output NULLs.", args(1,5, batargany("fetched",1),batargany("col",1),batarg("setrepeat",2),arg("LRouter",bit),arg("pipeline",ptr))),
 
