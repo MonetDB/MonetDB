@@ -2374,8 +2374,9 @@ allocator *sa_reset(allocator *sa)
 	sa->used = offset;
 	sa->frees = 0;
 	sa->nr = 1;
+	// reset freelist only i.e. leave freelist_blks alone as
+	// it may have blocks we can re-use
 	sa->freelist = NULL;
-	sa->freelist_blks = NULL;
 	sa->usedmem = SA_BLOCK_SIZE;
 	sa->blk_size = SA_BLOCK_SIZE;
 	sa->objects = 0;
