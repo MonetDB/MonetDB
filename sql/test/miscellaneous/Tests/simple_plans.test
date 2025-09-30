@@ -505,15 +505,11 @@ explain select t1.a, t1.b from t1 inner join t2 on t1.a = t2.a inner join t3 on 
 ----
 algebra.intersect
 1
-algebra.join
-1
 algebra.likejoin
 1
 algebra.projection
 4
 algebra.projectionpath
-1
-bat.mirror
 1
 bat.pack
 5

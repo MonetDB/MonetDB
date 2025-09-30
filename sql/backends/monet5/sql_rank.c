@@ -961,7 +961,7 @@ SQLlast_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (!VALisnil(nth) && val < 1)									\
 			throw(SQL, "sql.nth_value", SQLSTATE(42000) "nth_value must be greater than zero"); \
 		if (VALisnil(nth) || val > 1) {									\
-			ValRecord def = (ValRecord) {.vtype = TYPE_void,};			\
+			ValRecord def = {.vtype = TYPE_void,};						\
 			if (!VALinit(&def, tp1, ATOMnilptr(tp1)) || !VALcopy(res, &def)) { \
 				VALclear(&def);											\
 				throw(SQL, "sql.nth_value", SQLSTATE(HY013) MAL_MALLOC_FAIL); \
@@ -1040,7 +1040,7 @@ SQLnth_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			goto bailout;
 		}
 		if (is_lng_nil(nth) || nth > 1) {
-			ValRecord def = (ValRecord) {.vtype = TYPE_void,};
+			ValRecord def = {.vtype = TYPE_void,};
 			if (!VALinit(&def, tpe, ATOMnilptr(tpe)) || !VALcopy(res, &def)) {
 				VALclear(&def);
 				msg = createException(SQL, "sql.nth_value", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -1143,17 +1143,21 @@ do_lead_lag(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char 
 				goto bailout;
 			}
 			bpi = bat_iterator(d);
-			p = BUNtail(bpi, 0);
-			default_size = ATOMlen(tp3, p);
-			default_value = GDKmalloc(default_size);
-			if (default_value)
-				memcpy(default_value, p, default_size);
+			if (bpi.count > 0) {
+				p = BUNtail(bpi, 0);
+				default_size = ATOMlen(tp3, p);
+				default_value = GDKmalloc(default_size);
+				if (default_value)
+					memcpy(default_value, p, default_size);
+				free_default_value = true;
+			} else {
+				default_value = (void *)ATOMnilptr(bpi.type);
+			}
 			bat_iterator_end(&bpi);
 			if (!default_value) {
 				msg = createException(SQL, op, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto bailout;
 			}
-			free_default_value = true;
 		} else {
 			ValRecord *in = &(stk)->stk[(pci)->argv[3]];
 			default_value = VALget(in);
@@ -1197,7 +1201,7 @@ do_lead_lag(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char 
 			if (!VALcopy(res, in))
 				msg = createException(SQL, op, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		} else {
-			ValRecord def = (ValRecord) {.vtype = TYPE_void,};
+			ValRecord def = {.vtype = TYPE_void,};
 
 			if (!VALinit(&def, tp1, default_value) || !VALcopy(res, &def))
 				msg = createException(SQL, op, SQLSTATE(HY013) MAL_MALLOC_FAIL);

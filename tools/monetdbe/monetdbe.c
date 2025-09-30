@@ -811,14 +811,15 @@ monetdbe_open_remote(monetdbe_database_internal *mdbe, monetdbe_options *opts) {
 
 	Client c = mdbe->c;
 
-	assert(!c->curprg);
+	Symbol curprg = c->curprg;
 
-	const char mod[] = "user";
+	static const char mod[] = "user";
 	char nme[16];
 	const char *name = number2name(nme, sizeof(nme), ++((backend*)  c->sqlcontext)->remote);
 	c->curprg = newFunction(putName(mod), putName(name), FUNCTIONsymbol);
 
 	if (c->curprg == NULL) {
+		c->curprg = curprg;
 		set_error(mdbe, createException(MAL, "monetdbe.monetdbe_open_remote", MAL_MALLOC_FAIL));
 		return -2;
 	}
@@ -848,7 +849,7 @@ monetdbe_open_remote(monetdbe_database_internal *mdbe, monetdbe_options *opts) {
 	if (p == NULL) {
 		set_error(mdbe, createException(MAL, "monetdbe.monetdbe_open_remote", MAL_MALLOC_FAIL));
 		freeSymbol(c->curprg);
-		c->curprg= NULL;
+		c->curprg = curprg;
 		return -2;
 	}
 	pushInstruction(mb, p);
@@ -857,7 +858,7 @@ monetdbe_open_remote(monetdbe_database_internal *mdbe, monetdbe_options *opts) {
 	if (q == NULL) {
 		set_error(mdbe, createException(MAL, "monetdbe.monetdbe_open_remote", MAL_MALLOC_FAIL));
 		freeSymbol(c->curprg);
-		c->curprg= NULL;
+		c->curprg = curprg;
 		return -2;
 	}
 	q->barrier= RETURNsymbol;
@@ -867,14 +868,14 @@ monetdbe_open_remote(monetdbe_database_internal *mdbe, monetdbe_options *opts) {
 
 	if ( (mdbe->msg = chkProgram(c->usermodule, mb)) != MAL_SUCCEED ) {
 		freeSymbol(c->curprg);
-		c->curprg= NULL;
+		c->curprg = curprg;
 		return -2;
 	}
 	MalStkPtr stk = prepareMALstack(mb, mb->vsize);
 	if (!stk) {
 		set_error(mdbe, createException(MAL, "monetdbe.monetdbe_open_remote", MAL_MALLOC_FAIL));
 		freeSymbol(c->curprg);
-		c->curprg= NULL;
+		c->curprg = curprg;
 		return -2;
 	}
 	stk->keepAlive = TRUE;
@@ -883,7 +884,7 @@ monetdbe_open_remote(monetdbe_database_internal *mdbe, monetdbe_options *opts) {
 	if ( (mdbe->msg = runMALsequence(c, mb, 1, 0, stk, 0, 0)) != MAL_SUCCEED ) {
 		freeStack(stk);
 		freeSymbol(c->curprg);
-		c->curprg= NULL;
+		c->curprg = curprg;
 		return -2;
 	}
 
@@ -891,7 +892,7 @@ monetdbe_open_remote(monetdbe_database_internal *mdbe, monetdbe_options *opts) {
 		set_error(mdbe, createException(MAL, "monetdbe.monetdbe_open_remote", MAL_MALLOC_FAIL));
 		freeStack(stk);
 		freeSymbol(c->curprg);
-		c->curprg= NULL;
+		c->curprg = curprg;
 		return -2;
 	}
 
@@ -899,7 +900,7 @@ monetdbe_open_remote(monetdbe_database_internal *mdbe, monetdbe_options *opts) {
 	freeStack(stk);
 
 	freeSymbol(c->curprg);
-	c->curprg= NULL;
+	c->curprg = curprg;
 
 	return 0;
 }
@@ -1434,7 +1435,7 @@ cleanup:
 static char*
 monetdbe_query_remote(monetdbe_database_internal *mdbe, char* query, monetdbe_result** result, monetdbe_cnt* affected_rows, int *prepare_id)
 {
-	const char mod[] = "user";
+	static const char mod[] = "user";
 	char nme[16];
 
 	Client c = mdbe->c;
@@ -1467,7 +1468,7 @@ monetdbe_query_remote(monetdbe_database_internal *mdbe, char* query, monetdbe_re
 		size_t query_len, input_query_len, prep_len = 0;
 		input_query_len = strlen(query);
 		query_len = input_query_len + 3;
-		const char PREPARE[] = "PREPARE ";
+		static const char PREPARE[] = "PREPARE ";
 		prep_len = sizeof(PREPARE)-1;
 		query_len += prep_len;
 		char *nq = NULL;
@@ -1874,7 +1875,7 @@ monetdbe_get_columns_remote(monetdbe_database_internal *mdbe, const char* schema
 		return mdbe->msg;
 	}
 
-	int len = snprintf(buf, 1024, "SELECT * FROM %s%s%s\"%s\" WHERE FALSE;",
+	int len = snprintf(buf, sizeof(buf), "SELECT * FROM %s%s%s\"%s\" WHERE FALSE;",
 					   escaped_schema_name ? "\"" : "",  escaped_schema_name ? escaped_schema_name : "",
 					   escaped_schema_name ? escaped_schema_name : "\".", escaped_table_name);
 	GDKfree(escaped_schema_name);
@@ -2358,7 +2359,7 @@ remote_cleanup:
 			BAT *bn = NULL;
 
 			if (mtype != c->type.type->localtype) {
-				set_error(mdbe, createException(SQL, "monetdbe.monetdbe_append", "Cannot append %d into column '%s'", input[i]->type, c->base.name));
+				set_error(mdbe, createException(SQL, "monetdbe.monetdbe_append", "Cannot append %u into column '%s'", (unsigned) input[i]->type, c->base.name));
 				goto cleanup;
 			}
 

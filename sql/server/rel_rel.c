@@ -18,7 +18,6 @@
 #include "rel_unnest.h"
 #include "sql_semantic.h"
 #include "sql_mvc.h"
-#include "rel_rewriter.h"
 #include "sql_storage.h"
 
 void

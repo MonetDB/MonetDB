@@ -382,7 +382,7 @@ _create_relational_remote_body(mvc *m, const char *mod, const char *name, sql_re
 			sql_subtype *t = tail_type(op);
 			int type = t->type->localtype, varid = 0;
 
-			sprintf(nbuf, "A%d", i++);
+			snprintf(nbuf, sizeof(nbuf), "A%d", i++);
 			if ((varid = newVariable(curBlk, nbuf, strlen(nbuf), type)) < 0) {
 				sql_error(m, 10, SQLSTATE(42000) "Internal error while compiling statement: variable id too long");
 				goto cleanup;
@@ -532,8 +532,8 @@ _create_relational_remote_body(mvc *m, const char *mod, const char *name, sql_re
 			sql_subtype *t = tail_type(op);
 			const char *nme = (op->op3)?op->op3->op4.aval->data.val.sval:op->cname;
 
-			sprintf(dbuf, "%u", t->digits);
-			sprintf(sbuf, "%u", t->scale);
+			snprintf(dbuf, sizeof(dbuf), "%u", t->digits);
+			snprintf(sbuf, sizeof(sbuf), "%u", t->scale);
 			size_t nlen = strlen(nme) + strlen(t->type->base.name) + strlen(dbuf) + strlen(sbuf) + 6;
 
 			if ((nr + nlen) > len) {
@@ -1126,7 +1126,7 @@ backend_dumpproc_body(backend *be, Client c, sql_rel *r)
 				goto cleanup;
 			}
 			type = tpe->localtype;
-			snprintf(arg, IDLENGTH, "A%d", argc);
+			snprintf(arg, sizeof(arg), "A%d", argc);
 			if ((varid = newVariable(mb, arg,strlen(arg), type)) < 0) {
 				sql_error(m, 10, SQLSTATE(42000) "Internal error while compiling statement: variable id too long");
 				goto cleanup;
@@ -1520,7 +1520,7 @@ backend_create_sql_func_body(backend *be, sql_func *f, list *restypes, list *ops
 			int varid = 0;
 			char buf[IDLENGTH];
 
-			(void) snprintf(buf, IDLENGTH, "A%d", argc);
+			(void) snprintf(buf, sizeof(buf), "A%d", argc);
 			if ((varid = newVariable(curBlk, buf, strlen(buf), type)) < 0) {
 				sql_error(m, 10, SQLSTATE(42000) "Internal error while compiling statement: variable id too long");
 				goto cleanup;
@@ -1573,7 +1573,7 @@ backend_create_sql_func_body(backend *be, sql_func *f, list *restypes, list *ops
 	sideeffects = f->side_effect;
 	for (i = 1; i < curBlk->stop; i++) {
 		InstrPtr p = getInstrPtr(curBlk, i);
-		if (getFunctionId(p) == bindRef || getFunctionId(p) == bindidxRef)
+		if (getFunctionId(p) == bindRef || getFunctionId(p) == bind_idxbatRef)
 			continue;
 		sideeffects = sideeffects || hasSideEffects(curBlk, p, FALSE);
 		no_inline |= (getModuleId(p) == malRef && getFunctionId(p) == multiplexRef);
@@ -1649,7 +1649,7 @@ backend_create_sql_func(backend *be, sql_subfunc *sf, list *restypes, list *ops)
 	if (f->instantiated || (m->forward && m->forward->base.id == f->base.id))
 		return 0;
 
-	(void) snprintf(befname, IDLENGTH, "f_" LLFMT, store_function_counter(m->store));
+	(void) snprintf(befname, sizeof(befname), "f_" ULLFMT, store_function_counter(m->store));
 	TRC_INFO(SQL_PARSER, "Mapping SQL name '%s' to MAL name '%s'\n", f->base.name, befname);
 	nargs = (f->res && f->type == F_UNION ? list_length(f->res) : 1) + (f->vararg && ops ? list_length(ops) : f->ops ? list_length(f->ops) : 0);
 	c->curprg = newFunctionArgs(modname, putName(befname), FUNCTIONsymbol, nargs);
@@ -1784,7 +1784,7 @@ _stmt_print_list_(stmt *s, size_t depth, size_t *lvls, bool last)
             _stmt_print_list_(s->op2, depth+1, lvls, true);
             break;
         default:
-            mnstr_printf(GDKstdout, "%s%sUNKNOWN stmt type=%d (X_%d)\n",
+            mnstr_printf(GDKstdout, "%s%sUNKNOWN stmt type=%u (X_%d)\n",
                          node_prefix, tg[TG_DOT], s->type, s->nr);
             break;
     }

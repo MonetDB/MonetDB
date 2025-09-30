@@ -100,13 +100,13 @@ dump_sql_subtype(allocator *sa, sql_subtype *t)
 	char buf[BUFSIZ];
 
 	if (t->digits && t->scale)
-		snprintf(buf, BUFSIZ, "%s(%u,%u)%s", t->type->base.name, t->digits, t->scale,
+		snprintf(buf, sizeof(buf), "%s(%u,%u)%s", t->type->base.name, t->digits, t->scale,
 				t->multiset==2?"[]":t->multiset == 1?"{}": "");
 	else if (t->digits)
-		snprintf(buf, BUFSIZ, "%s(%u)%s", t->type->base.name, t->digits,
+		snprintf(buf, sizeof(buf), "%s(%u)%s", t->type->base.name, t->digits,
 				t->multiset==2?"[]":t->multiset == 1?"{}": "");
 	else
-		snprintf(buf, BUFSIZ, "%s%s", t->type->base.name,
+		snprintf(buf, sizeof(buf), "%s%s", t->type->base.name,
 				t->multiset==2?"[]":t->multiset == 1?"{}": "");
 	return sa_strdup(sa, buf);
 }
@@ -155,7 +155,7 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 	if (!e)
 		return;
 	/*mnstr_printf(fout, "%p ", e);*/
-	if (mvc_debug_on(sql, 4) && e->alias.label != 0)
+	if (mvc_debug_on(sql, 4) && e->alias.label < 0)
 		mnstr_printf(fout, "%d: ", e->alias.label);
 	switch(e->type) {
 	case e_psm: {

@@ -80,7 +80,7 @@ detect_quote(const char *buf)
 static char
 detect_delimiter(const char *buf, char q, int *nr_fields)
 {
-	const char delimiter[] = ",|;\t";
+	static const char delimiter[] = ",|;\t";
 	int cnts[DLEN][2] = { 0 }, l = 0;
 
 	const char *cur = buf;
@@ -228,16 +228,21 @@ detect_decimal(const char *s, const char *e, int *scale)
 static bool
 detect_time(const char *s, const char *e)
 {
+	/* ISO 8601 format HH:MI:SS  00:00:00 - 23:59:59
+	 *       or format HH:MI     00:00 - 23:59 */
+	/* TODO accept time with milliseconds, HH:MI:SS.sss 00:00:00.000 - 23:59:59.999 */
 	/* TODO detect time with timezone */
-	if ((e-s) != 5)
+	size_t len = e-s;
+	if (len != 5 && len != 8)
 		return false;
-	/* 00:00 - 23:59 */
-	if (s[2] != ':')
+	if (s[2] != ':' || (len == 8 && s[5] != ':'))
 		return false;
-	if ((((s[0] == '0' || s[0] == '1') &&
-	      (s[1] >= '0' && s[1] <= '9'))  ||
-	      (s[0] == '2' && (s[1] >= '0' && s[1] <= '3'))) &&
-		(s[3] >= '0' && s[3] <= '5' && s[4] >= '0' && s[4] <= '9'))
+	if ((((s[0] == '0' || s[0] == '1') && (s[1] >= '0' && s[1] <= '9'))  ||	/* HH 00 - 19 */
+	      (s[0] == '2' && (s[1] >= '0' && s[1] <= '3'))) &&		/* HH 20 - 23 */
+	    (s[3] >= '0' && s[3] <= '5' && s[4] >= '0' && s[4] <= '9') &&	/* MI 00 - 59 */
+	    (len == 5 ||
+	    (len == 8 && (s[6] >= '0' && s[6] <= '5' && s[7] >= '0' && s[7] <= '9')))	/* SS 00 - 59 */
+	   )
 		return true;
 	return false;
 }
@@ -245,14 +250,21 @@ detect_time(const char *s, const char *e)
 static bool
 detect_date(const char *s, const char *e)
 {
+	/* ISO 8601 format YYYY-MM-DD  0000-01-01 - 9999-12-31 */
 	/* TODO detect negative years */
 	if ((e-s) != 10)
 		return false;
-	/* YYYY-MM-DD */
-	if ( s[4] == '-' && s[7] == '-' &&
-	   ((s[5] == '0' && s[6] >= '0' && s[6] <= '9') ||
-	    (s[5] == '1' && s[6] >= '0' && s[6] <= '2')) &&
-	    (s[8] >= '0' && s[8] <= '3' && s[9] >= '0' && s[9] <= '9'))
+	if (s[4] != '-' || s[7] != '-')
+		return false;
+	if (s[0] >= '0' && s[0] <= '9' &&
+	    s[1] >= '0' && s[1] <= '9' &&
+	    s[2] >= '0' && s[2] <= '9' &&
+	    s[3] >= '0' && s[3] <= '9' &&	/* YYYY 0000 - 9999 */
+	   ((s[5] == '0' && s[6] >= '1' && s[6] <= '9') ||	/* MM 01 - 09 */
+	    (s[5] == '1' && s[6] >= '0' && s[6] <= '2')) &&	/* MM 10 - 12 */
+	   ((s[8] == '0' && s[9] >= '1' && s[9] <= '9') ||	/* DD 01 - 09 */
+	    (s[8] >= '1' && s[8] <= '2' && s[9] >= '0' && s[9] <= '9') ||	/* DD 10 - 29 */
+	    (s[8] == '3' && s[9] >= '0' && s[9] <= '1')))	/* DD 30 - 31 */
 		return true;
 	return false;
 }
@@ -260,11 +272,16 @@ detect_date(const char *s, const char *e)
 static bool
 detect_timestamp(const char *s, const char *e)
 {
+	/* ISO 8601 format YYYY-MM-DDTHH:MI:SS
+	 *       or format YYYY-MM-DD HH:MI */
+	/* https://en.wikipedia.org/wiki/ISO_8601 */
 	/* TODO detect negative years */
-	if ((e-s) != 16)
+	size_t len = e-s;
+	if (len != 16 && len != 19)
 		return false;
-	/* DATE TIME */
-	if (detect_date(s, s+5) && detect_time(s+6, e))
+	if (s[10] != ' ' && s[10] != 'T')
+		return false;
+	if (detect_date(s, s+10) && detect_time(s+11, e))
 		return true;
 	return false;
 }
@@ -365,7 +382,7 @@ get_name(allocator *sa, const char *s, const char *es, const char **E, char deli
 {
 	if (!has_header) {
 		char buff[25];
-		snprintf(buff, 25, "name_%i", col);
+		snprintf(buff, sizeof(buff), "name_%i", col);
 		return SA_STRDUP(sa, buff);
 	} else {
 		const char *e = next_delim(s, es, delim, quote);

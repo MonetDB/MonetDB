@@ -241,7 +241,7 @@ RMTconnectScen(str *ret,
 
 	/* generate an unique connection name, they are only known
 	 * within one mserver, id is primary key, the rest is super key */
-	snprintf(conn, BUFSIZ, "%s_%s_%zu", mapi_get_dbname(m), *user,
+	snprintf(conn, sizeof(conn), "%s_%s_%zu", mapi_get_dbname(m), *user,
 			 connection_id++);
 	/* make sure we can construct MAL identifiers using conn */
 	for (s = conn; *s != '\0'; s++) {
@@ -261,8 +261,8 @@ RMTconnectScen(str *ret,
 
 	if (columnar && *columnar) {
 		char set_protocol_query_buf[50];
-		snprintf(set_protocol_query_buf, 50, "sql.set_protocol(%d:int);",
-				 PROTOCOL_COLUMNAR);
+		snprintf(set_protocol_query_buf, sizeof(set_protocol_query_buf),
+				 "sql.set_protocol(%d:int);", PROTOCOL_COLUMNAR);
 		if ((msg = RMTquery(&hdl, "remote.connect", m, set_protocol_query_buf))) {
 			mapi_destroy(m);
 			MT_lock_unset(&mal_remoteLock);
@@ -806,7 +806,7 @@ RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		str var;
 		BAT *b;
 
-		snprintf(qbuf, BUFSIZ, "io.print(%s);", ident);
+		snprintf(qbuf, sizeof(qbuf), "io.print(%s);", ident);
 
 		TRC_DEBUG(MAL_REMOTE, "Remote get: %s\n", qbuf);
 
@@ -912,7 +912,7 @@ RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		str val;
 		size_t len = 0;
 
-		snprintf(qbuf, BUFSIZ, "io.print(%s);", ident);
+		snprintf(qbuf, sizeof(qbuf), "io.print(%s);", ident);
 		TRC_DEBUG(MAL_REMOTE, "Remote get: %s - %s\n", c->name, qbuf);
 		if ((tmp = RMTquery(&mhdl, "remote.get", c->mconn, qbuf)) != MAL_SUCCEED) {
 			return tmp;
@@ -1169,7 +1169,7 @@ RMTregisterInternal(Client cntxt, char **fcn_id, const char *conn,
 	}
 
 	/* check remote definition */
-	snprintf(buf, BUFSIZ,
+	snprintf(buf, sizeof(buf),
 			 "b:bit:=inspect.getExistence(\"%s\",\"%s\");\nio.print(b);", mod,
 			 ident);
 	TRC_DEBUG(MAL_REMOTE, "Remote register: %s - %s\n", c->name, buf);

@@ -653,10 +653,13 @@ BAThashsave(BAT *b, bool dosync)
 #endif
 #define EQflt(a, b)	(is_flt_nil(a) ? is_flt_nil(b) : (a) == (b))
 #define EQdbl(a, b)	(is_dbl_nil(a) ? is_dbl_nil(b) : (a) == (b))
+#define EQinet4(a, b)	((a).align == (b).align)
 #ifdef HAVE_HGE
 #define EQuuid(a, b)	((a).h == (b).h)
+#define EQinet6(a, b)	((a).align == (b).align)
 #else
 #define EQuuid(a, b)	(memcmp((a).u, (b).u, UUID_SIZE) == 0)
+#define EQinet6(a, b)	(memcmp((a).hex, (b).hex, sizeof(inet6)) == 0)
 #endif
 
 #define starthash(TYPE)							\
@@ -861,6 +864,12 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 		case TYPE_uuid:
 			starthash(uuid);
 			break;
+		case TYPE_inet4:
+			starthash(inet4);
+			break;
+		case TYPE_inet6:
+			starthash(inet6);
+			break;
 		default: {
 			int (*atomcmp)(const void *, const void *) = ATOMcompare(h->type);
 			TIMEOUT_LOOP(p, qry_ctx) {
@@ -937,6 +946,12 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 #endif
 	case TYPE_uuid:
 		finishhash(uuid);
+		break;
+	case TYPE_inet4:
+		finishhash(inet4);
+		break;
+	case TYPE_inet6:
+		finishhash(inet6);
 		break;
 	default: {
 		int (*atomcmp)(const void *, const void *) = ATOMcompare(h->type);
@@ -1068,6 +1083,10 @@ HASHprobe(const Hash *h, const void *v)
 		return hash_dbl(h, v);
 	case TYPE_uuid:
 		return hash_uuid(h, v);
+	case TYPE_inet4:
+		return hash_inet4(h, v);
+	case TYPE_inet6:
+		return hash_inet6(h, v);
 	default:
 		return hash_any(h, v);
 	}

@@ -102,12 +102,12 @@ def main():
     print(r'      </DirectorySearch>')
     print(r'    </Property>')
     print(r'    <Property Id="GEOMMALEXISTS">')
-    print(rf'      <DirectorySearch Id="CheckFileDir3" Path="[INSTALLDIR]\lib\monetdb5-{version}" Depth="0">')
+    print(r'      <DirectorySearch Id="CheckFileDir3" Path="[INSTALLDIR]\lib\monetdb5" Depth="0">')
     print(r'        <FileSearch Id="CheckFile3" Name="geom.mal"/>')
     print(r'      </DirectorySearch>')
     print(r'    </Property>')
     print(r'    <Property Id="GEOMLIBEXISTS">')
-    print(rf'      <DirectorySearch Id="CheckFileDir4" Path="[INSTALLDIR]\lib\monetdb5-{version}" Depth="0">')
+    print(r'      <DirectorySearch Id="CheckFileDir4" Path="[INSTALLDIR]\lib\monetdb5" Depth="0">')
     print(r'        <FileSearch Id="CheckFile4" Name="_geom.dll"/>')
     print(r'      </DirectorySearch>')
     print(r'    </Property>')
@@ -169,7 +169,7 @@ def main():
                vcpkg.format(r'bin\libxml2.dll'),
                vcpkg.format(r'bin\lz4.dll'),
                vcpkg.format(r'bin\liblzma.dll'),
-               vcpkg.format(r'bin\pcre.dll'),
+               vcpkg.format(r'bin\pcre2-8.dll'),
                vcpkg.format(r'bin\zlib1.dll')])
     id = comp(debug, id, 14,
               [r'bin\mclient.pdb',
@@ -230,7 +230,7 @@ def main():
                vcpkg.format(r'lib\libxml2.lib'),
                vcpkg.format(r'lib\lz4.lib'),
                vcpkg.format(r'lib\lzma.lib'),
-               vcpkg.format(r'lib\pcre.lib'),
+               vcpkg.format(r'lib\pcre2-8.lib'),
                vcpkg.format(r'lib\zlib.lib')])
     print(r'            </Directory>')
     print(r'            <Directory Id="share" Name="share">')

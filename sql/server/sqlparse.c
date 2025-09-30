@@ -80,7 +80,7 @@ mvc_new( bstream *rs, stream *ws) {
 	mvc *m;
 
 	allocator *pa = sa_create(NULL);
- 	m = SA_ZNEW(pa, mvc);
+	m = SA_ZNEW(pa, mvc);
 	if (!m)
 		return NULL;
 
@@ -324,7 +324,7 @@ sp_symbol2string(mvc *sql, symbol *se, int expression, char **err, int depth, bo
 	case SQL_NOP: {
 		dnode *lst = se->data.lval->h, *ops = NULL, *aux;
 		const char *op = symbol_escape_ident(sql->ta, qname_schema_object(lst->data.lval)),
-				   *sname = symbol_escape_ident(sql->ta, qname_schema(lst->data.lval));
+				*sname = symbol_escape_ident(sql->ta, qname_schema(lst->data.lval));
 		int i = 0, nargs = 0;
 		char** inputs = NULL, *res;
 		size_t inputs_length = 0, extra = sname ? strlen(sname) + 3 : 0;
@@ -374,7 +374,7 @@ sp_symbol2string(mvc *sql, symbol *se, int expression, char **err, int depth, bo
 	}
 	case SQL_NEXT: {
 		const char *seq = symbol_escape_ident(sql->ta, qname_schema_object(se->data.lval)),
-				   *sname = qname_schema(se->data.lval);
+				*sname = qname_schema(se->data.lval);
 		char *res;
 
 		if (!sname)
@@ -403,7 +403,7 @@ sp_symbol2string(mvc *sql, symbol *se, int expression, char **err, int depth, bo
 			return res;
 		} else if (expression && dlist_length(l) == 2 && l->h->type == type_string && l->h->next->type == type_string) {
 			const char *first = symbol_escape_ident(sql->ta, l->h->data.sval),
-					   *second = symbol_escape_ident(sql->ta, l->h->next->data.sval);
+					*second = symbol_escape_ident(sql->ta, l->h->next->data.sval);
 			char *res;
 
 			if (!first || !second)
@@ -427,15 +427,15 @@ sp_symbol2string(mvc *sql, symbol *se, int expression, char **err, int depth, bo
 		return res;
 	}
 	case SQL_SET: { /* dlist(ident-list, expression) */
-					  dlist *set = se->data.lval;
-					  char *ident = dlist2string(sql, set->h->data.lval, ".", NULL, NULL, expression, err, depth, false);
-					  char *exp = dnode2string(sql, set->h->next, expression, err, depth, indent);
-					  size_t len = strlen(ident) + strlen(exp);
-					  char *res;
-					  if ((res = SA_NEW_ARRAY(sql->ta, char, len + 6)))
-							stpcpy(stpcpy(stpcpy(stpcpy(res, "SET "), ident), " "), exp);
-					  return res;
-				}
+		dlist *set = se->data.lval;
+		char *ident = dlist2string(sql, set->h->data.lval, ".", NULL, NULL, expression, err, depth, false);
+		char *exp = dnode2string(sql, set->h->next, expression, err, depth, indent);
+		size_t len = strlen(ident) + strlen(exp);
+		char *res;
+		if ((res = SA_NEW_ARRAY(sql->ta, char, len + 6)))
+			stpcpy(stpcpy(stpcpy(stpcpy(res, "SET "), ident), " "), exp);
+		return res;
+	}
 	case SQL_AND:
 	case SQL_OR: {
 		char *tok_str = token2string(se->token);
@@ -444,8 +444,8 @@ sp_symbol2string(mvc *sql, symbol *se, int expression, char **err, int depth, bo
 
 		if (!args)
 			args = "";
-		 if ((res = SA_NEW_ARRAY(sql->ta, char, strlen(tok_str) + strlen(args) + 1)))
-			 stpcpy(stpcpy(res, tok_str), args);
+		if ((res = SA_NEW_ARRAY(sql->ta, char, strlen(tok_str) + strlen(args) + 1)))
+			stpcpy(stpcpy(res, tok_str), args);
 		return res;
 	}
 	default:
@@ -497,7 +497,7 @@ sp_symbol2string(mvc *sql, symbol *se, int expression, char **err, int depth, bo
 			}
 			return res;
 		} else {
-			const char msg[] = "SQL feature not yet available for expressions and default values: ";
+			static const char msg[] = "SQL feature not yet available for expressions and default values: ";
 			char *tok_str = token2string(se->token);
 			if ((*err = SA_NEW_ARRAY(sql->ta, char, strlen(msg) + strlen(tok_str) + 1)))
 				stpcpy(stpcpy(*err, msg), tok_str);
@@ -543,7 +543,7 @@ main(int argc, char *argv[])
 	bstream *rs = bstream_create(f, 8192);
 	mvc *m = mvc_new( rs, stdout_wastream());
 	keyword_init();
-    if (scanner_init_keywords() != 0) {
+	if (scanner_init_keywords() != 0) {
 		return -3;
 	}
 	types_init(m->pa);
@@ -561,7 +561,7 @@ main(int argc, char *argv[])
 				printf("ERROR:\n%s\n", err);
 			else
 				printf("SYM:\n%s\n", res);
-	 	} else {
+		} else {
 			if (m->session->status)
 				printf("ERROR:\n%s\n", m->errstr);
 		}

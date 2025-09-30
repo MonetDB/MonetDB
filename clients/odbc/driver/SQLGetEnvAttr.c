@@ -51,8 +51,8 @@ SQLGetEnvAttr(SQLHENV EnvironmentHandle,
 		StringLengthPtr);
 #endif
 
-	(void) BufferLength;	/* Stefan: unused!? */
-	(void) StringLengthPtr;	/* Stefan: unused!? */
+	(void) BufferLength;
+	(void) StringLengthPtr;
 
 	if (!isValidEnv(env))
 		return SQL_INVALID_HANDLE;

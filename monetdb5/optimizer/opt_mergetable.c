@@ -2292,8 +2292,6 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	char *group_input;
 	str msg = MAL_SUCCEED;
 
-	if (!isOptimizerUsed(mb, pci, mitosisRef))
-		goto cleanup2;
 	old = mb->stmt;
 	oldtop = mb->stop;
 
@@ -2503,7 +2501,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 			continue;
 		}
 		if (match > 0 && getModuleId(p) == algebraRef
-			&& getFunctionId(p) == crossRef && p->argc == 5 && p->retc == 2
+			&& getFunctionId(p) == crossproductRef && p->argc == 5 && p->retc == 2
 			&& bats == 2) {
 			int max_one = (isVarConstant(mb, getArg(p, 4))
 						   && getVarConstant(mb, getArg(p, 4)).val.btval);
@@ -2912,7 +2910,6 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 		if (!msg)
 			msg = chkDeclarations(mb);
 	}
-  cleanup2:
 	/* keep actions taken as a fake argument */
 	if (msg == MAL_SUCCEED) {
 		(void) pushInt(mb, pci, actions);

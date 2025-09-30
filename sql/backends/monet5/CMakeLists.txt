@@ -106,6 +106,7 @@ set(include_sql_files
   39_analytics
   40_json
   42_md5sum
+  44_inet46
   45_uuid
   46_profiler
   47_regexp
@@ -179,6 +180,8 @@ target_include_directories(sql
   $<TARGET_PROPERTY:mal,INTERFACE_INCLUDE_DIRECTORIES>
   $<TARGET_PROPERTY:malmodules,INTERFACE_INCLUDE_DIRECTORIES>
   $<TARGET_PROPERTY:kernel,INTERFACE_INCLUDE_DIRECTORIES>
+  $<TARGET_PROPERTY:sqlcommon,INTERFACE_INCLUDE_DIRECTORIES>
+  $<TARGET_PROPERTY:sqlstorage,INTERFACE_INCLUDE_DIRECTORIES>
   PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
   $<INSTALL_INTERFACE:${INCLUDEDIR}/monetdb>)
@@ -186,11 +189,7 @@ target_include_directories(sql
 target_link_libraries(sql
   PRIVATE
   monetdb_config_header
-  sqlstorage
-  sqlcommon
-  batstore
   sqlserver
-  sqlparserlib
   sqlinclude
   copybinary
   monetdb5

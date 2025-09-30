@@ -100,7 +100,7 @@ On Fedora, the following packages are required:
 ``bison``, ``cmake``, ``gcc``, ``pkgconf``, ``python3``.
 
 The following packages are optional but recommended:
-``bzip2-devel``, ``lz4-devel``, ``openssl-devel``, ``pcre-devel``,
+``bzip2-devel``, ``lz4-devel``, ``openssl-devel``, ``pcre2-devel``,
 ``readline-devel``, ``xz-devel``, ``zlib-devel``.
 
 The following packages are optional:
@@ -113,7 +113,7 @@ On Ubuntu and Debian the following packages are required:
 ``bison``, ``cmake``, ``gcc``, ``pkg-config``, ``python3``.
 
 The following packages are optional but recommended:
-``libbz2-dev``, ``liblz4-dev``, ``libpcre3-dev``, ``libreadline-dev``,
+``libbz2-dev``, ``liblz4-dev``, ``libpcre2-dev``, ``libreadline-dev``,
 ``liblzma-dev``, ``libssl-dev``, ``zlib1g-dev``.
 
 The following packages are optional:

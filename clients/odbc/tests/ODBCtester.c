@@ -388,7 +388,7 @@ testGetDataIntervalDay(SQLHANDLE stmt, int sqlquery)
 		if (vallen == SQL_NULL_DATA)
 			pos += snprintf(outp + pos, outp_len - pos, "NULL\n");
 		else
-			pos += snprintf(outp + pos, outp_len - pos, "%lu (type %d, sign %d)\n", (unsigned long) itv_val.intval.day_second.day, itv_val.interval_type, itv_val.interval_sign);
+			pos += snprintf(outp + pos, outp_len - pos, "%lu (type %u, sign %d)\n", (unsigned long) itv_val.intval.day_second.day, (unsigned) itv_val.interval_type, itv_val.interval_sign);
 		check(ret, SQL_HANDLE_STMT, stmt, "SQLGetData(col) as int");
 	}
 

@@ -17,6 +17,8 @@
 #include "rel_exp.h"
 #include "rel_rel.h"
 #include "sql_storage.h"
+#include "rel_basetable.h"
+#include "rel_updates.h"
 #include "rel_bin.h"
 
 #define IS_ORDER_BASED_AGGR(fname, argc) (\
@@ -350,14 +352,38 @@ exp_timezone(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 	return e;
 }
 
+#define rewrite_physical_used      (1 << 6)
+#define is_physical_done(X)        ((X & rewrite_physical_used) == rewrite_physical_used)
+
+static sql_rel *
+rel_rewrite_physical(visitor *v, sql_rel *rel)
+{
+	if (is_physical_done(rel->used))
+		return rel;
+	rel->used |= rewrite_physical_used;
+
+	if (rel && is_basetable(rel->op) && list_empty(rel->exps))
+		rel = rewrite_basetable(v->sql, rel, 0);
+	if (rel)
+		rel = rel_add_orderby(v, rel);
+	return rel;
+}
+
 sql_rel *
 rel_physical(mvc *sql, sql_rel *rel)
 {
 	visitor v = { .sql = sql };
 
-	rel = rel_visitor_bottomup(&v, rel, &rel_add_orderby);
-	if (!sql->recursive)
-		(void)rel_partition(sql, rel);
+	do {
+		v.changes = 0;
+		rel = rel_visitor_bottomup(&v, rel, &rel_rewrite_physical);
+	} while (v.changes);
+
+	v.changes = 0;
+	if (!sql->recursive) {
+			(void)rel_partition(sql, rel);
+	}
+
 	rel = rel_exp_visitor_topdown(&v, rel, &exp_timezone, true);
 
 #ifdef HAVE_HGE

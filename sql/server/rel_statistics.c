@@ -748,8 +748,7 @@ static sql_rel *
 rel_get_statistics_(visitor *v, sql_rel *rel)
 {
 	/* Don't prune updates as pruning will possibly result in removing the joins which therefore cannot be used for constraint checking */
-	uint8_t has_special_modify = *(uint8_t*) v->data;
-	bool can_be_pruned = !has_special_modify && v->storage_based_opt;
+	bool can_be_pruned = v->storage_based_opt;
 
 	/* Don't look at the same relation twice */
 	if (are_statistics_gathered(rel->used))
@@ -1050,11 +1049,15 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 					set_count_prop(v->sql->sa, rel, get_rel_count(l));
 				}
 			}
+			if (can_be_pruned && is_semi(rel->op)) {
+				if (get_rel_count(rel->l) == 0)
+					return rel->l;
+			}
 			break;
 		case op_project:
 			if (l) {
 				if (need_distinct(rel)) {
-					set_count_prop(v->sql->sa, rel, rel_calc_nuniques(v->sql, l, rel->exps));
+					set_count_prop(v->sql->sa, rel, rel_calc_nuniques(v->sql, l, rel->exps)+1);
 				} else {
 					set_count_prop(v->sql->sa, rel, get_rel_count(l));
 				}
@@ -1166,8 +1169,6 @@ static sql_rel *
 rel_get_statistics(visitor *v, global_props *gp, sql_rel *rel)
 {
 	/* Don't prune updates as pruning will possibly result in removing the joins which therefore cannot be used for constraint checking */
-	uint8_t has_special_modify = (uint8_t) gp->has_special_modify;
-	v->data = &has_special_modify;
 	rel = rel_visitor_bottomup(v, rel, &rel_get_statistics_);
 	v->data = gp;
 	return rel;

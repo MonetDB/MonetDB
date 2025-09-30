@@ -484,11 +484,11 @@ sql_subtype_string(allocator *sa, sql_subtype *t)
 	if (t->multiset == MS_SETOF)
 		i = snprintf(buf, BUFSIZ, "SETOF ");
 	if (t->digits && t->scale)
-		i += snprintf(buf+i, BUFSIZ-i, "%s(%u,%u)", t->type->base.name, t->digits, t->scale);
+		i += snprintf(buf+i, sizeof(buf)-i, "%s(%u,%u)", t->type->base.name, t->digits, t->scale);
 	else if (t->digits && t->type->radix != 2)
-		i += snprintf(buf+i, BUFSIZ-i, "%s(%u)", t->type->base.name, t->digits);
+		i += snprintf(buf+i, sizeof(buf)-i, "%s(%u)", t->type->base.name, t->digits);
 	else
-		i += snprintf(buf+i, BUFSIZ-i, "%s", t->type->base.name);
+		i += snprintf(buf+i, sizeof(buf)-i, "%s", t->type->base.name);
 	if (t->multiset == MS_ARRAY)
 		i += snprintf(buf+i, BUFSIZ-i, "[]");
 	return sa_strdup(sa, buf);
@@ -501,17 +501,17 @@ subtype2string2(allocator *sa, sql_subtype *tpe) /* distinguish char(n), decimal
 
 	switch (tpe->type->eclass) {
 		case EC_SEC:
-			snprintf(buf, BUFSIZ, "INTERVAL SECOND");
+			snprintf(buf, sizeof(buf), "INTERVAL SECOND");
 			break;
 		case EC_MONTH:
-			snprintf(buf, BUFSIZ, "INTERVAL MONTH");
+			snprintf(buf, sizeof(buf), "INTERVAL MONTH");
 			break;
 		case EC_CHAR:
 		case EC_STRING:
 		case EC_DEC:
 			return sql_subtype_string(sa, tpe);
 		default:
-			snprintf(buf, BUFSIZ, "%s", tpe->type->base.name);
+			snprintf(buf, sizeof(buf), "%s", tpe->type->base.name);
 	}
 	return sa_strdup(sa, buf);
 }

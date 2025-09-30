@@ -1,0 +1,7 @@
+statement ok
+CREATE TABLE table1 (column1 INT, column2 BLOB)
+
+query T nosort
+SELECT LAG(column2, 1, column2) OVER () FROM table1
+----
+

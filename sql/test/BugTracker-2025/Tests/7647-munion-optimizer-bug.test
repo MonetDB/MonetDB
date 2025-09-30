@@ -1,0 +1,32 @@
+statement ok
+CREATE TABLE "test_bug_repro" (
+  "year_" TIMESTAMP,
+  "event_date_" TIMESTAMP,
+  "position_" BIGINT,
+  "final_rank_driver_" BIGINT
+)
+
+query I nosort
+WITH "second_place_days" AS (
+  SELECT COUNT(DISTINCT "event_date_") AS "count" FROM "test_bug_repro" WHERE "position_" = 2
+),
+"championship_years" AS (
+  SELECT COUNT(DISTINCT "year_") AS "count" FROM "test_bug_repro" WHERE "final_rank_driver_" = 1
+),
+"race_days" AS (
+  SELECT COUNT(DISTINCT "event_date_") AS "count" FROM "test_bug_repro"
+),
+"podium_days" AS (
+  SELECT COUNT(DISTINCT "event_date_") AS "count" FROM "test_bug_repro" WHERE "position_" IN (1, 2, 3)
+),
+"results" AS (
+  SELECT '2nd' FROM "second_place_days"
+  UNION ALL
+  SELECT 'Championships' FROM "championship_years"
+  UNION ALL
+  SELECT 'Podium finishes' FROM "podium_days", "race_days"
+)
+SELECT COUNT(*) FROM "results"
+----
+3
+

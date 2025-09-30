@@ -2164,6 +2164,16 @@ command aggr.subvariancep(X_0:bat[:sht], X_1:bat[:oid], X_2:bat[:any_1], X_3:bat
 AGGRsubvariancepcand_dbl
 Grouped variance (population/biased) aggregate with candidates list
 aggr
+subxmlaggr
+command aggr.subxmlaggr(X_0:bat[:xml], X_1:bat[:oid], X_2:bat[:any_1], X_3:bit):bat[:xml]
+AGGRsubxml
+Grouped aggregation of XML values.
+aggr
+subxmlaggr
+command aggr.subxmlaggr(X_0:bat[:xml], X_1:bat[:oid], X_2:bat[:any_1], X_3:bat[:oid], X_4:bit):bat[:xml]
+AGGRsubxmlcand
+Grouped aggregation of XML values with candidates list.
+aggr
 subzero_or_one
 command aggr.subzero_or_one(X_0:bat[:any_1], X_1:bat[:oid], X_2:bat[:oid], X_3:bit):bat[:any_1]
 SQLsubzero_or_one
@@ -2764,6 +2774,11 @@ command aggr.variancep(X_0:bat[:any_2]):dbl
 ALGvariancep
 Gives the variance of all tail values
 aggr
+xmlaggr
+command aggr.xmlaggr(X_0:bat[:xml]):xml
+BATXMLgroup
+Aggregate the XML values.
+aggr
 zero_or_one
 command aggr.zero_or_one(X_0:bat[:any_1]):any_1
 zero_or_one
@@ -2930,12 +2945,12 @@ PCRElikeselect
 Select all head values of the first input BAT for which the@tail value is "like" the given (SQL-style) pattern and for@which the head value occurs in the tail of the second input@BAT.@Input is a dense-headed BAT, output is a dense-headed BAT with in@the tail the head value of the input BAT for which the@relationship holds.  The output BAT is sorted on the tail value.
 algebra
 markjoin
-command algebra.markjoin(X_0:bat[:any_1], X_1:bat[:any_1], X_2:bat[:oid], X_3:bat[:oid], X_4:lng) (X_5:bat[:oid], X_6:bat[:bit])
+command algebra.markjoin(X_0:bat[:any_1], X_1:bat[:any_1], X_2:bat[:oid], X_3:bat[:oid], X_4:bit, X_5:lng) (X_6:bat[:oid], X_7:bat[:bit])
 ALGmark2join
 Mark join with candidate lists
 algebra
 markjoin
-command algebra.markjoin(X_0:bat[:any_1], X_1:bat[:any_1], X_2:bat[:oid], X_3:bat[:oid], X_4:lng) (X_5:bat[:oid], X_6:bat[:oid], X_7:bat[:bit])
+command algebra.markjoin(X_0:bat[:any_1], X_1:bat[:any_1], X_2:bat[:oid], X_3:bat[:oid], X_4:bit, X_5:lng) (X_6:bat[:oid], X_7:bat[:oid], X_8:bat[:bit])
 ALGmark3join
 Mark join with candidate lists
 algebra
@@ -3755,6 +3770,86 @@ CMDbatNE
 Return B != V
 batcalc
 !=
+pattern batcalc.!=(X_0:bat[:inet4], X_1:bat[:inet4]):bat[:bit]
+CMDbatNE
+Return B1 != B2
+batcalc
+!=
+pattern batcalc.!=(X_0:bat[:inet4], X_1:bat[:inet4], X_2:bat[:oid], X_3:bat[:oid]):bat[:bit]
+CMDbatNE
+Return B1 != B2
+batcalc
+!=
+pattern batcalc.!=(X_0:bat[:inet4], X_1:bat[:inet4], X_2:bat[:oid], X_3:bat[:oid], X_4:bit):bat[:bit]
+CMDbatNE
+Return B1 != B2
+batcalc
+!=
+pattern batcalc.!=(X_0:bat[:inet4], X_1:bat[:inet4], X_2:bit):bat[:bit]
+CMDbatNE
+Return B1 != B2
+batcalc
+!=
+pattern batcalc.!=(X_0:bat[:inet4], X_1:inet4):bat[:bit]
+CMDbatNE
+Return B != V
+batcalc
+!=
+pattern batcalc.!=(X_0:bat[:inet4], X_1:inet4, X_2:bat[:oid]):bat[:bit]
+CMDbatNE
+Return B != V
+batcalc
+!=
+pattern batcalc.!=(X_0:bat[:inet4], X_1:inet4, X_2:bat[:oid], X_3:bit):bat[:bit]
+CMDbatNE
+Return B != V
+batcalc
+!=
+pattern batcalc.!=(X_0:bat[:inet4], X_1:inet4, X_2:bit):bat[:bit]
+CMDbatNE
+Return B != V
+batcalc
+!=
+pattern batcalc.!=(X_0:bat[:inet6], X_1:bat[:inet6]):bat[:bit]
+CMDbatNE
+Return B1 != B2
+batcalc
+!=
+pattern batcalc.!=(X_0:bat[:inet6], X_1:bat[:inet6], X_2:bat[:oid], X_3:bat[:oid]):bat[:bit]
+CMDbatNE
+Return B1 != B2
+batcalc
+!=
+pattern batcalc.!=(X_0:bat[:inet6], X_1:bat[:inet6], X_2:bat[:oid], X_3:bat[:oid], X_4:bit):bat[:bit]
+CMDbatNE
+Return B1 != B2
+batcalc
+!=
+pattern batcalc.!=(X_0:bat[:inet6], X_1:bat[:inet6], X_2:bit):bat[:bit]
+CMDbatNE
+Return B1 != B2
+batcalc
+!=
+pattern batcalc.!=(X_0:bat[:inet6], X_1:inet6):bat[:bit]
+CMDbatNE
+Return B != V
+batcalc
+!=
+pattern batcalc.!=(X_0:bat[:inet6], X_1:inet6, X_2:bat[:oid]):bat[:bit]
+CMDbatNE
+Return B != V
+batcalc
+!=
+pattern batcalc.!=(X_0:bat[:inet6], X_1:inet6, X_2:bat[:oid], X_3:bit):bat[:bit]
+CMDbatNE
+Return B != V
+batcalc
+!=
+pattern batcalc.!=(X_0:bat[:inet6], X_1:inet6, X_2:bit):bat[:bit]
+CMDbatNE
+Return B != V
+batcalc
+!=
 pattern batcalc.!=(X_0:bat[:inet], X_1:bat[:inet]):bat[:bit]
 CMDbatNE
 Return B1 != B2
@@ -4391,6 +4486,46 @@ Return B != V
 batcalc
 !=
 pattern batcalc.!=(X_0:inet, X_1:bat[:inet], X_2:bit):bat[:bit]
+CMDbatNE
+Return B != V
+batcalc
+!=
+pattern batcalc.!=(X_0:inet4, X_1:bat[:inet4]):bat[:bit]
+CMDbatNE
+Return B != V
+batcalc
+!=
+pattern batcalc.!=(X_0:inet4, X_1:bat[:inet4], X_2:bat[:oid]):bat[:bit]
+CMDbatNE
+Return B != V
+batcalc
+!=
+pattern batcalc.!=(X_0:inet4, X_1:bat[:inet4], X_2:bat[:oid], X_3:bit):bat[:bit]
+CMDbatNE
+Return B != V
+batcalc
+!=
+pattern batcalc.!=(X_0:inet4, X_1:bat[:inet4], X_2:bit):bat[:bit]
+CMDbatNE
+Return B != V
+batcalc
+!=
+pattern batcalc.!=(X_0:inet6, X_1:bat[:inet6]):bat[:bit]
+CMDbatNE
+Return B != V
+batcalc
+!=
+pattern batcalc.!=(X_0:inet6, X_1:bat[:inet6], X_2:bat[:oid]):bat[:bit]
+CMDbatNE
+Return B != V
+batcalc
+!=
+pattern batcalc.!=(X_0:inet6, X_1:bat[:inet6], X_2:bat[:oid], X_3:bit):bat[:bit]
+CMDbatNE
+Return B != V
+batcalc
+!=
+pattern batcalc.!=(X_0:inet6, X_1:bat[:inet6], X_2:bit):bat[:bit]
 CMDbatNE
 Return B != V
 batcalc
@@ -13165,6 +13300,46 @@ CMDbatLT
 Return B < V
 batcalc
 <
+pattern batcalc.<(X_0:bat[:inet4], X_1:bat[:inet4]):bat[:bit]
+CMDbatLT
+Return B1 < B2
+batcalc
+<
+pattern batcalc.<(X_0:bat[:inet4], X_1:bat[:inet4], X_2:bat[:oid], X_3:bat[:oid]):bat[:bit]
+CMDbatLT
+Return B1 < B2
+batcalc
+<
+pattern batcalc.<(X_0:bat[:inet4], X_1:inet4):bat[:bit]
+CMDbatLT
+Return B < V
+batcalc
+<
+pattern batcalc.<(X_0:bat[:inet4], X_1:inet4, X_2:bat[:oid]):bat[:bit]
+CMDbatLT
+Return B < V
+batcalc
+<
+pattern batcalc.<(X_0:bat[:inet6], X_1:bat[:inet6]):bat[:bit]
+CMDbatLT
+Return B1 < B2
+batcalc
+<
+pattern batcalc.<(X_0:bat[:inet6], X_1:bat[:inet6], X_2:bat[:oid], X_3:bat[:oid]):bat[:bit]
+CMDbatLT
+Return B1 < B2
+batcalc
+<
+pattern batcalc.<(X_0:bat[:inet6], X_1:inet6):bat[:bit]
+CMDbatLT
+Return B < V
+batcalc
+<
+pattern batcalc.<(X_0:bat[:inet6], X_1:inet6, X_2:bat[:oid]):bat[:bit]
+CMDbatLT
+Return B < V
+batcalc
+<
 pattern batcalc.<(X_0:bat[:inet], X_1:bat[:inet]):bat[:bit]
 CMDbatLT
 Return B1 < B2
@@ -13481,6 +13656,26 @@ Return B < V
 batcalc
 <
 pattern batcalc.<(X_0:inet, X_1:bat[:inet], X_2:bat[:oid]):bat[:bit]
+CMDbatLT
+Return B < V
+batcalc
+<
+pattern batcalc.<(X_0:inet4, X_1:bat[:inet4]):bat[:bit]
+CMDbatLT
+Return B < V
+batcalc
+<
+pattern batcalc.<(X_0:inet4, X_1:bat[:inet4], X_2:bat[:oid]):bat[:bit]
+CMDbatLT
+Return B < V
+batcalc
+<
+pattern batcalc.<(X_0:inet6, X_1:bat[:inet6]):bat[:bit]
+CMDbatLT
+Return B < V
+batcalc
+<
+pattern batcalc.<(X_0:inet6, X_1:bat[:inet6], X_2:bat[:oid]):bat[:bit]
 CMDbatLT
 Return B < V
 batcalc
@@ -14215,6 +14410,46 @@ CMDbatLE
 Return B <= V
 batcalc
 <=
+pattern batcalc.<=(X_0:bat[:inet4], X_1:bat[:inet4]):bat[:bit]
+CMDbatLE
+Return B1 <= B2
+batcalc
+<=
+pattern batcalc.<=(X_0:bat[:inet4], X_1:bat[:inet4], X_2:bat[:oid], X_3:bat[:oid]):bat[:bit]
+CMDbatLE
+Return B1 <= B2
+batcalc
+<=
+pattern batcalc.<=(X_0:bat[:inet4], X_1:inet4):bat[:bit]
+CMDbatLE
+Return B <= V
+batcalc
+<=
+pattern batcalc.<=(X_0:bat[:inet4], X_1:inet4, X_2:bat[:oid]):bat[:bit]
+CMDbatLE
+Return B <= V
+batcalc
+<=
+pattern batcalc.<=(X_0:bat[:inet6], X_1:bat[:inet6]):bat[:bit]
+CMDbatLE
+Return B1 <= B2
+batcalc
+<=
+pattern batcalc.<=(X_0:bat[:inet6], X_1:bat[:inet6], X_2:bat[:oid], X_3:bat[:oid]):bat[:bit]
+CMDbatLE
+Return B1 <= B2
+batcalc
+<=
+pattern batcalc.<=(X_0:bat[:inet6], X_1:inet6):bat[:bit]
+CMDbatLE
+Return B <= V
+batcalc
+<=
+pattern batcalc.<=(X_0:bat[:inet6], X_1:inet6, X_2:bat[:oid]):bat[:bit]
+CMDbatLE
+Return B <= V
+batcalc
+<=
 pattern batcalc.<=(X_0:bat[:inet], X_1:bat[:inet]):bat[:bit]
 CMDbatLE
 Return B1 <= B2
@@ -14531,6 +14766,26 @@ Return B <= V
 batcalc
 <=
 pattern batcalc.<=(X_0:inet, X_1:bat[:inet], X_2:bat[:oid]):bat[:bit]
+CMDbatLE
+Return B <= V
+batcalc
+<=
+pattern batcalc.<=(X_0:inet4, X_1:bat[:inet4]):bat[:bit]
+CMDbatLE
+Return B <= V
+batcalc
+<=
+pattern batcalc.<=(X_0:inet4, X_1:bat[:inet4], X_2:bat[:oid]):bat[:bit]
+CMDbatLE
+Return B <= V
+batcalc
+<=
+pattern batcalc.<=(X_0:inet6, X_1:bat[:inet6]):bat[:bit]
+CMDbatLE
+Return B <= V
+batcalc
+<=
+pattern batcalc.<=(X_0:inet6, X_1:bat[:inet6], X_2:bat[:oid]):bat[:bit]
 CMDbatLE
 Return B <= V
 batcalc
@@ -14911,6 +15166,86 @@ Return B == V
 batcalc
 ==
 pattern batcalc.==(X_0:bat[:daytime], X_1:daytime, X_2:bit):bat[:bit]
+CMDbatEQ
+Return B == V
+batcalc
+==
+pattern batcalc.==(X_0:bat[:inet4], X_1:bat[:inet4]):bat[:bit]
+CMDbatEQ
+Return B1 == B2
+batcalc
+==
+pattern batcalc.==(X_0:bat[:inet4], X_1:bat[:inet4], X_2:bat[:oid], X_3:bat[:oid]):bat[:bit]
+CMDbatEQ
+Return B1 == B2
+batcalc
+==
+pattern batcalc.==(X_0:bat[:inet4], X_1:bat[:inet4], X_2:bat[:oid], X_3:bat[:oid], X_4:bit):bat[:bit]
+CMDbatEQ
+Return B1 == B2
+batcalc
+==
+pattern batcalc.==(X_0:bat[:inet4], X_1:bat[:inet4], X_2:bit):bat[:bit]
+CMDbatEQ
+Return B1 == B2
+batcalc
+==
+pattern batcalc.==(X_0:bat[:inet4], X_1:inet4):bat[:bit]
+CMDbatEQ
+Return B == V
+batcalc
+==
+pattern batcalc.==(X_0:bat[:inet4], X_1:inet4, X_2:bat[:oid]):bat[:bit]
+CMDbatEQ
+Return B == V
+batcalc
+==
+pattern batcalc.==(X_0:bat[:inet4], X_1:inet4, X_2:bat[:oid], X_3:bit):bat[:bit]
+CMDbatEQ
+Return B == V
+batcalc
+==
+pattern batcalc.==(X_0:bat[:inet4], X_1:inet4, X_2:bit):bat[:bit]
+CMDbatEQ
+Return B == V
+batcalc
+==
+pattern batcalc.==(X_0:bat[:inet6], X_1:bat[:inet6]):bat[:bit]
+CMDbatEQ
+Return B1 == B2
+batcalc
+==
+pattern batcalc.==(X_0:bat[:inet6], X_1:bat[:inet6], X_2:bat[:oid], X_3:bat[:oid]):bat[:bit]
+CMDbatEQ
+Return B1 == B2
+batcalc
+==
+pattern batcalc.==(X_0:bat[:inet6], X_1:bat[:inet6], X_2:bat[:oid], X_3:bat[:oid], X_4:bit):bat[:bit]
+CMDbatEQ
+Return B1 == B2
+batcalc
+==
+pattern batcalc.==(X_0:bat[:inet6], X_1:bat[:inet6], X_2:bit):bat[:bit]
+CMDbatEQ
+Return B1 == B2
+batcalc
+==
+pattern batcalc.==(X_0:bat[:inet6], X_1:inet6):bat[:bit]
+CMDbatEQ
+Return B == V
+batcalc
+==
+pattern batcalc.==(X_0:bat[:inet6], X_1:inet6, X_2:bat[:oid]):bat[:bit]
+CMDbatEQ
+Return B == V
+batcalc
+==
+pattern batcalc.==(X_0:bat[:inet6], X_1:inet6, X_2:bat[:oid], X_3:bit):bat[:bit]
+CMDbatEQ
+Return B == V
+batcalc
+==
+pattern batcalc.==(X_0:bat[:inet6], X_1:inet6, X_2:bit):bat[:bit]
 CMDbatEQ
 Return B == V
 batcalc
@@ -15555,6 +15890,46 @@ CMDbatEQ
 Return B == V
 batcalc
 ==
+pattern batcalc.==(X_0:inet4, X_1:bat[:inet4]):bat[:bit]
+CMDbatEQ
+Return B == V
+batcalc
+==
+pattern batcalc.==(X_0:inet4, X_1:bat[:inet4], X_2:bat[:oid]):bat[:bit]
+CMDbatEQ
+Return B == V
+batcalc
+==
+pattern batcalc.==(X_0:inet4, X_1:bat[:inet4], X_2:bat[:oid], X_3:bit):bat[:bit]
+CMDbatEQ
+Return B == V
+batcalc
+==
+pattern batcalc.==(X_0:inet4, X_1:bat[:inet4], X_2:bit):bat[:bit]
+CMDbatEQ
+Return B == V
+batcalc
+==
+pattern batcalc.==(X_0:inet6, X_1:bat[:inet6]):bat[:bit]
+CMDbatEQ
+Return B == V
+batcalc
+==
+pattern batcalc.==(X_0:inet6, X_1:bat[:inet6], X_2:bat[:oid]):bat[:bit]
+CMDbatEQ
+Return B == V
+batcalc
+==
+pattern batcalc.==(X_0:inet6, X_1:bat[:inet6], X_2:bat[:oid], X_3:bit):bat[:bit]
+CMDbatEQ
+Return B == V
+batcalc
+==
+pattern batcalc.==(X_0:inet6, X_1:bat[:inet6], X_2:bit):bat[:bit]
+CMDbatEQ
+Return B == V
+batcalc
+==
 pattern batcalc.==(X_0:int, X_1:bat[:bte]):bat[:bit]
 CMDbatEQ
 Return B == V
@@ -15925,6 +16300,46 @@ CMDbatGT
 Return B > V
 batcalc
 >
+pattern batcalc.>(X_0:bat[:inet4], X_1:bat[:inet4]):bat[:bit]
+CMDbatGT
+Return B1 > B2
+batcalc
+>
+pattern batcalc.>(X_0:bat[:inet4], X_1:bat[:inet4], X_2:bat[:oid], X_3:bat[:oid]):bat[:bit]
+CMDbatGT
+Return B1 > B2
+batcalc
+>
+pattern batcalc.>(X_0:bat[:inet4], X_1:inet4):bat[:bit]
+CMDbatGT
+Return B > V
+batcalc
+>
+pattern batcalc.>(X_0:bat[:inet4], X_1:inet4, X_2:bat[:oid]):bat[:bit]
+CMDbatGT
+Return B > V
+batcalc
+>
+pattern batcalc.>(X_0:bat[:inet6], X_1:bat[:inet6]):bat[:bit]
+CMDbatGT
+Return B1 > B2
+batcalc
+>
+pattern batcalc.>(X_0:bat[:inet6], X_1:bat[:inet6], X_2:bat[:oid], X_3:bat[:oid]):bat[:bit]
+CMDbatGT
+Return B1 > B2
+batcalc
+>
+pattern batcalc.>(X_0:bat[:inet6], X_1:inet6):bat[:bit]
+CMDbatGT
+Return B > V
+batcalc
+>
+pattern batcalc.>(X_0:bat[:inet6], X_1:inet6, X_2:bat[:oid]):bat[:bit]
+CMDbatGT
+Return B > V
+batcalc
+>
 pattern batcalc.>(X_0:bat[:inet], X_1:bat[:inet]):bat[:bit]
 CMDbatGT
 Return B1 > B2
@@ -16245,6 +16660,26 @@ CMDbatGT
 Return B > V
 batcalc
 >
+pattern batcalc.>(X_0:inet4, X_1:bat[:inet4]):bat[:bit]
+CMDbatGT
+Return B > V
+batcalc
+>
+pattern batcalc.>(X_0:inet4, X_1:bat[:inet4], X_2:bat[:oid]):bat[:bit]
+CMDbatGT
+Return B > V
+batcalc
+>
+pattern batcalc.>(X_0:inet6, X_1:bat[:inet6]):bat[:bit]
+CMDbatGT
+Return B > V
+batcalc
+>
+pattern batcalc.>(X_0:inet6, X_1:bat[:inet6], X_2:bat[:oid]):bat[:bit]
+CMDbatGT
+Return B > V
+batcalc
+>
 pattern batcalc.>(X_0:int, X_1:bat[:bte]):bat[:bit]
 CMDbatGT
 Return B > V
@@ -16491,6 +16926,46 @@ Return B >= V
 batcalc
 >=
 pattern batcalc.>=(X_0:bat[:daytime], X_1:daytime, X_2:bat[:oid]):bat[:bit]
+CMDbatGE
+Return B >= V
+batcalc
+>=
+pattern batcalc.>=(X_0:bat[:inet4], X_1:bat[:inet4]):bat[:bit]
+CMDbatGE
+Return B1 >= B2
+batcalc
+>=
+pattern batcalc.>=(X_0:bat[:inet4], X_1:bat[:inet4], X_2:bat[:oid], X_3:bat[:oid]):bat[:bit]
+CMDbatGE
+Return B1 >= B2
+batcalc
+>=
+pattern batcalc.>=(X_0:bat[:inet4], X_1:inet4):bat[:bit]
+CMDbatGE
+Return B >= V
+batcalc
+>=
+pattern batcalc.>=(X_0:bat[:inet4], X_1:inet4, X_2:bat[:oid]):bat[:bit]
+CMDbatGE
+Return B >= V
+batcalc
+>=
+pattern batcalc.>=(X_0:bat[:inet6], X_1:bat[:inet6]):bat[:bit]
+CMDbatGE
+Return B1 >= B2
+batcalc
+>=
+pattern batcalc.>=(X_0:bat[:inet6], X_1:bat[:inet6], X_2:bat[:oid], X_3:bat[:oid]):bat[:bit]
+CMDbatGE
+Return B1 >= B2
+batcalc
+>=
+pattern batcalc.>=(X_0:bat[:inet6], X_1:inet6):bat[:bit]
+CMDbatGE
+Return B >= V
+batcalc
+>=
+pattern batcalc.>=(X_0:bat[:inet6], X_1:inet6, X_2:bat[:oid]):bat[:bit]
 CMDbatGE
 Return B >= V
 batcalc
@@ -16811,6 +17286,26 @@ Return B >= V
 batcalc
 >=
 pattern batcalc.>=(X_0:inet, X_1:bat[:inet], X_2:bat[:oid]):bat[:bit]
+CMDbatGE
+Return B >= V
+batcalc
+>=
+pattern batcalc.>=(X_0:inet4, X_1:bat[:inet4]):bat[:bit]
+CMDbatGE
+Return B >= V
+batcalc
+>=
+pattern batcalc.>=(X_0:inet4, X_1:bat[:inet4], X_2:bat[:oid]):bat[:bit]
+CMDbatGE
+Return B >= V
+batcalc
+>=
+pattern batcalc.>=(X_0:inet6, X_1:bat[:inet6]):bat[:bit]
+CMDbatGE
+Return B >= V
+batcalc
+>=
+pattern batcalc.>=(X_0:inet6, X_1:bat[:inet6], X_2:bat[:oid]):bat[:bit]
 CMDbatGE
 Return B >= V
 batcalc
@@ -17555,6 +18050,46 @@ CMDbatAND
 Return B and V
 batcalc
 and
+pattern batcalc.and(X_0:bat[:inet4], X_1:bat[:inet4]):bat[:inet4]
+CMDbatAND
+Return B1 and B2
+batcalc
+and
+pattern batcalc.and(X_0:bat[:inet4], X_1:bat[:inet4], X_2:bat[:oid], X_3:bat[:oid]):bat[:inet4]
+CMDbatAND
+Return B1 and B2
+batcalc
+and
+pattern batcalc.and(X_0:bat[:inet4], X_1:inet4):bat[:inet4]
+CMDbatAND
+Return B and V
+batcalc
+and
+pattern batcalc.and(X_0:bat[:inet4], X_1:inet4, X_2:bat[:oid]):bat[:inet4]
+CMDbatAND
+Return B and V
+batcalc
+and
+pattern batcalc.and(X_0:bat[:inet6], X_1:bat[:inet6]):bat[:inet6]
+CMDbatAND
+Return B1 and B2
+batcalc
+and
+pattern batcalc.and(X_0:bat[:inet6], X_1:bat[:inet6], X_2:bat[:oid], X_3:bat[:oid]):bat[:inet6]
+CMDbatAND
+Return B1 and B2
+batcalc
+and
+pattern batcalc.and(X_0:bat[:inet6], X_1:inet6):bat[:inet6]
+CMDbatAND
+Return B and V
+batcalc
+and
+pattern batcalc.and(X_0:bat[:inet6], X_1:inet6, X_2:bat[:oid]):bat[:inet6]
+CMDbatAND
+Return B and V
+batcalc
+and
 pattern batcalc.and(X_0:bat[:int], X_1:bat[:int]):bat[:int]
 CMDbatAND
 Return B1 and B2
@@ -17651,6 +18186,26 @@ Return V and B
 batcalc
 and
 pattern batcalc.and(X_0:flt, X_1:bat[:flt], X_2:bat[:oid]):bat[:flt]
+CMDbatAND
+Return V and B
+batcalc
+and
+pattern batcalc.and(X_0:inet4, X_1:bat[:inet4]):bat[:inet4]
+CMDbatAND
+Return V and B
+batcalc
+and
+pattern batcalc.and(X_0:inet4, X_1:bat[:inet4], X_2:bat[:oid]):bat[:inet4]
+CMDbatAND
+Return V and B
+batcalc
+and
+pattern batcalc.and(X_0:inet6, X_1:bat[:inet6]):bat[:inet6]
+CMDbatAND
+Return V and B
+batcalc
+and
+pattern batcalc.and(X_0:inet6, X_1:bat[:inet6], X_2:bat[:oid]):bat[:inet6]
 CMDbatAND
 Return V and B
 batcalc
@@ -20029,6 +20584,36 @@ pattern batcalc.ifthenelse(X_0:bit, X_1:bat[:any_1], X_2:bat[:any_1]):bat[:any_1
 CMDifthen
 If-then-else operation to assemble a conditional result
 batcalc
+inet4
+command batcalc.inet4(X_0:bat[:inet4], X_1:bat[:oid]):bat[:inet4]
+INETinet42inet4_bulk
+(empty)
+batcalc
+inet4
+command batcalc.inet4(X_0:bat[:inet6], X_1:bat[:oid]):bat[:inet4]
+INETinet62inet4_bulk
+Coerce an inet6 to an inet4
+batcalc
+inet4
+command batcalc.inet4(X_0:bat[:str], X_1:bat[:oid]):bat[:inet4]
+INETstr2inet4_bulk
+Coerce a string to an inet4, validating its format
+batcalc
+inet6
+command batcalc.inet6(X_0:bat[:inet4], X_1:bat[:oid]):bat[:inet6]
+INETinet42inet6_bulk
+Coerce an inet4 to an inet6
+batcalc
+inet6
+command batcalc.inet6(X_0:bat[:inet6], X_1:bat[:oid]):bat[:inet6]
+INETinet62inet6_bulk
+(empty)
+batcalc
+inet6
+command batcalc.inet6(X_0:bat[:str], X_1:bat[:oid]):bat[:inet6]
+INETstr2inet6_bulk
+Coerce a string to an inet6, validating its format
+batcalc
 int
 pattern batcalc.int(X_0:bat[:bit]):bat[:int]
 CMDconvertsignal_int
@@ -20615,22 +21200,22 @@ CMDbatNOT
 Unary bitwise not over the tail of the bat with candidates list
 batcalc
 not
-pattern batcalc.not(X_0:bat[:dbl]):bat[:dbl]
+pattern batcalc.not(X_0:bat[:inet4]):bat[:inet4]
 CMDbatNOT
 Unary bitwise not over the tail of the bat
 batcalc
 not
-pattern batcalc.not(X_0:bat[:dbl], X_1:bat[:oid]):bat[:dbl]
+pattern batcalc.not(X_0:bat[:inet4], X_1:bat[:oid]):bat[:inet4]
 CMDbatNOT
 Unary bitwise not over the tail of the bat with candidates list
 batcalc
 not
-pattern batcalc.not(X_0:bat[:flt]):bat[:flt]
+pattern batcalc.not(X_0:bat[:inet6]):bat[:inet6]
 CMDbatNOT
 Unary bitwise not over the tail of the bat
 batcalc
 not
-pattern batcalc.not(X_0:bat[:flt], X_1:bat[:oid]):bat[:flt]
+pattern batcalc.not(X_0:bat[:inet6], X_1:bat[:oid]):bat[:inet6]
 CMDbatNOT
 Unary bitwise not over the tail of the bat with candidates list
 batcalc
@@ -20835,6 +21420,46 @@ CMDbatOR
 Return B or V
 batcalc
 or
+pattern batcalc.or(X_0:bat[:inet4], X_1:bat[:inet4]):bat[:inet4]
+CMDbatOR
+Return B1 or B2
+batcalc
+or
+pattern batcalc.or(X_0:bat[:inet4], X_1:bat[:inet4], X_2:bat[:oid], X_3:bat[:oid]):bat[:inet4]
+CMDbatOR
+Return B1 or B2
+batcalc
+or
+pattern batcalc.or(X_0:bat[:inet4], X_1:inet4):bat[:inet4]
+CMDbatOR
+Return B or V
+batcalc
+or
+pattern batcalc.or(X_0:bat[:inet4], X_1:inet4, X_2:bat[:oid]):bat[:inet4]
+CMDbatOR
+Return B or V
+batcalc
+or
+pattern batcalc.or(X_0:bat[:inet6], X_1:bat[:inet6]):bat[:inet6]
+CMDbatOR
+Return B1 or B2
+batcalc
+or
+pattern batcalc.or(X_0:bat[:inet6], X_1:bat[:inet6], X_2:bat[:oid], X_3:bat[:oid]):bat[:inet6]
+CMDbatOR
+Return B1 or B2
+batcalc
+or
+pattern batcalc.or(X_0:bat[:inet6], X_1:inet6):bat[:inet6]
+CMDbatOR
+Return B or V
+batcalc
+or
+pattern batcalc.or(X_0:bat[:inet6], X_1:inet6, X_2:bat[:oid]):bat[:inet6]
+CMDbatOR
+Return B or V
+batcalc
+or
 pattern batcalc.or(X_0:bat[:int], X_1:bat[:int]):bat[:int]
 CMDbatOR
 Return B1 or B2
@@ -20931,6 +21556,26 @@ Return V or B
 batcalc
 or
 pattern batcalc.or(X_0:flt, X_1:bat[:flt], X_2:bat[:oid]):bat[:flt]
+CMDbatOR
+Return V or B
+batcalc
+or
+pattern batcalc.or(X_0:inet4, X_1:bat[:inet4]):bat[:inet4]
+CMDbatOR
+Return V or B
+batcalc
+or
+pattern batcalc.or(X_0:inet4, X_1:bat[:inet4], X_2:bat[:oid]):bat[:inet4]
+CMDbatOR
+Return V or B
+batcalc
+or
+pattern batcalc.or(X_0:inet6, X_1:bat[:inet6]):bat[:inet6]
+CMDbatOR
+Return V or B
+batcalc
+or
+pattern batcalc.or(X_0:inet6, X_1:bat[:inet6], X_2:bat[:oid]):bat[:inet6]
 CMDbatOR
 Return V or B
 batcalc
@@ -21435,6 +22080,16 @@ CMDconvertsignal_str
 (empty)
 batcalc
 str
+command batcalc.str(X_0:bat[:inet4], X_1:bat[:oid]):bat[:str]
+INETinet42str_bulk
+Coerce an inet4 to a string type
+batcalc
+str
+command batcalc.str(X_0:bat[:inet6], X_1:bat[:oid]):bat[:str]
+INETinet62str_bulk
+Coerce an inet6 to a string type
+batcalc
+str
 pattern batcalc.str(X_0:int, X_1:int, X_2:int, X_3:int, X_4:bat[:any_1], X_5:bat[:oid], X_6:int):bat[:str]
 SQLbatstr_cast
 cast to string and check for overflow
@@ -21605,6 +22260,46 @@ CMDbatXOR
 Return B xor V
 batcalc
 xor
+pattern batcalc.xor(X_0:bat[:inet4], X_1:bat[:inet4]):bat[:inet4]
+CMDbatXOR
+Return B1 xor B2
+batcalc
+xor
+pattern batcalc.xor(X_0:bat[:inet4], X_1:bat[:inet4], X_2:bat[:oid], X_3:bat[:oid]):bat[:inet4]
+CMDbatXOR
+Return B1 xor B2
+batcalc
+xor
+pattern batcalc.xor(X_0:bat[:inet4], X_1:inet4):bat[:inet4]
+CMDbatXOR
+Return B xor V
+batcalc
+xor
+pattern batcalc.xor(X_0:bat[:inet4], X_1:inet4, X_2:bat[:oid]):bat[:inet4]
+CMDbatXOR
+Return B xor V
+batcalc
+xor
+pattern batcalc.xor(X_0:bat[:inet6], X_1:bat[:inet6]):bat[:inet6]
+CMDbatXOR
+Return B1 xor B2
+batcalc
+xor
+pattern batcalc.xor(X_0:bat[:inet6], X_1:bat[:inet6], X_2:bat[:oid], X_3:bat[:oid]):bat[:inet6]
+CMDbatXOR
+Return B1 xor B2
+batcalc
+xor
+pattern batcalc.xor(X_0:bat[:inet6], X_1:inet6):bat[:inet6]
+CMDbatXOR
+Return B xor V
+batcalc
+xor
+pattern batcalc.xor(X_0:bat[:inet6], X_1:inet6, X_2:bat[:oid]):bat[:inet6]
+CMDbatXOR
+Return B xor V
+batcalc
+xor
 pattern batcalc.xor(X_0:bat[:int], X_1:bat[:int]):bat[:int]
 CMDbatXOR
 Return B1 xor B2
@@ -21701,6 +22396,26 @@ Return V xor B
 batcalc
 xor
 pattern batcalc.xor(X_0:flt, X_1:bat[:flt], X_2:bat[:oid]):bat[:flt]
+CMDbatXOR
+Return V xor B
+batcalc
+xor
+pattern batcalc.xor(X_0:inet4, X_1:bat[:inet4]):bat[:inet4]
+CMDbatXOR
+Return V xor B
+batcalc
+xor
+pattern batcalc.xor(X_0:inet4, X_1:bat[:inet4], X_2:bat[:oid]):bat[:inet4]
+CMDbatXOR
+Return V xor B
+batcalc
+xor
+pattern batcalc.xor(X_0:inet6, X_1:bat[:inet6]):bat[:inet6]
+CMDbatXOR
+Return V xor B
+batcalc
+xor
+pattern batcalc.xor(X_0:inet6, X_1:bat[:inet6], X_2:bat[:oid]):bat[:inet6]
 CMDbatXOR
 Return V xor B
 batcalc
@@ -26665,6 +27380,26 @@ CMDvarNE
 Return V1 != V2
 calc
 !=
+pattern calc.!=(X_0:inet4, X_1:inet4):bit
+CMDvarNE
+Return V1 != V2
+calc
+!=
+pattern calc.!=(X_0:inet4, X_1:inet4, X_2:bit):bit
+CMDvarNE
+Return V1 != V2
+calc
+!=
+pattern calc.!=(X_0:inet6, X_1:inet6):bit
+CMDvarNE
+Return V1 != V2
+calc
+!=
+pattern calc.!=(X_0:inet6, X_1:inet6, X_2:bit):bit
+CMDvarNE
+Return V1 != V2
+calc
+!=
 pattern calc.!=(X_0:int, X_1:bte):bit
 CMDvarNE
 Return V1 != V2
@@ -29815,6 +30550,16 @@ CMDvarLT
 Return V1 < V2
 calc
 <
+pattern calc.<(X_0:inet4, X_1:inet4):bit
+CMDvarLT
+Return V1 < V2
+calc
+<
+pattern calc.<(X_0:inet6, X_1:inet6):bit
+CMDvarLT
+Return V1 < V2
+calc
+<
 pattern calc.<(X_0:int, X_1:bte):bit
 CMDvarLT
 Return V1 < V2
@@ -30121,6 +30866,16 @@ Return V1 <= V2
 calc
 <=
 pattern calc.<=(X_0:inet, X_1:inet):bit
+CMDvarLE
+Return V1 <= V2
+calc
+<=
+pattern calc.<=(X_0:inet4, X_1:inet4):bit
+CMDvarLE
+Return V1 <= V2
+calc
+<=
+pattern calc.<=(X_0:inet6, X_1:inet6):bit
 CMDvarLE
 Return V1 <= V2
 calc
@@ -30470,6 +31225,26 @@ CMDvarEQ
 Return V1 == V2
 calc
 ==
+pattern calc.==(X_0:inet4, X_1:inet4):bit
+CMDvarEQ
+Return V1 == V2
+calc
+==
+pattern calc.==(X_0:inet4, X_1:inet4, X_2:bit):bit
+CMDvarEQ
+Return V1 == V2
+calc
+==
+pattern calc.==(X_0:inet6, X_1:inet6):bit
+CMDvarEQ
+Return V1 == V2
+calc
+==
+pattern calc.==(X_0:inet6, X_1:inet6, X_2:bit):bit
+CMDvarEQ
+Return V1 == V2
+calc
+==
 pattern calc.==(X_0:int, X_1:bte):bit
 CMDvarEQ
 Return V1 == V2
@@ -30815,6 +31590,16 @@ CMDvarGT
 Return V1 > V2
 calc
 >
+pattern calc.>(X_0:inet4, X_1:inet4):bit
+CMDvarGT
+Return V1 > V2
+calc
+>
+pattern calc.>(X_0:inet6, X_1:inet6):bit
+CMDvarGT
+Return V1 > V2
+calc
+>
 pattern calc.>(X_0:int, X_1:bte):bit
 CMDvarGT
 Return V1 > V2
@@ -31041,6 +31826,16 @@ Return V1 >= V2
 calc
 >=
 pattern calc.>=(X_0:inet, X_1:inet):bit
+CMDvarGE
+Return V1 >= V2
+calc
+>=
+pattern calc.>=(X_0:inet4, X_1:inet4):bit
+CMDvarGE
+Return V1 >= V2
+calc
+>=
+pattern calc.>=(X_0:inet6, X_1:inet6):bit
 CMDvarGE
 Return V1 >= V2
 calc
@@ -31276,6 +32071,16 @@ Return V1 AND V2
 calc
 and
 pattern calc.and(X_0:bte, X_1:bte):bte
+CMDvarAND
+Return V1 AND V2
+calc
+and
+pattern calc.and(X_0:inet4, X_1:inet4):inet4
+CMDvarAND
+Return V1 AND V2
+calc
+and
+pattern calc.and(X_0:inet6, X_1:inet6):inet6
 CMDvarAND
 Return V1 AND V2
 calc
@@ -32024,6 +32829,36 @@ command calc.inet(X_0:inet):inet
 INET_inet
 Convert a inet to an inet
 calc
+inet4
+command calc.inet4(X_0:inet4):inet4
+INETinet42inet4
+(empty)
+calc
+inet4
+command calc.inet4(X_0:inet6):inet4
+INETinet62inet4
+Coerce an inet6 to an inet4
+calc
+inet4
+command calc.inet4(X_0:str):inet4
+INETstr2inet4
+Coerce a string to an inet4, validating its format
+calc
+inet6
+command calc.inet6(X_0:inet4):inet6
+INETinet42inet6
+Coerce an inet4 to an inet6
+calc
+inet6
+command calc.inet6(X_0:inet6):inet6
+INETinet62inet6
+(empty)
+calc
+inet6
+command calc.inet6(X_0:str):inet6
+INETstr2inet6
+Coerce a string to an inet6, validating its format
+calc
 int
 pattern calc.int(X_0:bit):int
 CMDvarCONVERT
@@ -32405,6 +33240,16 @@ CMDvarNOT
 Unary bitwise not of V
 calc
 not
+pattern calc.not(X_0:inet4):inet4
+CMDvarNOT
+Return the Boolean inverse
+calc
+not
+pattern calc.not(X_0:inet6):inet6
+CMDvarNOT
+Return the Boolean inverse
+calc
+not
 pattern calc.not(X_0:int):int
 CMDvarNOT
 Unary bitwise not of V
@@ -32476,6 +33321,16 @@ Return V1 OR V2
 calc
 or
 pattern calc.or(X_0:bte, X_1:bte):bte
+CMDvarOR
+Return V1 OR V2
+calc
+or
+pattern calc.or(X_0:inet4, X_1:inet4):inet4
+CMDvarOR
+Return V1 OR V2
+calc
+or
+pattern calc.or(X_0:inet6, X_1:inet6):inet6
 CMDvarOR
 Return V1 OR V2
 calc
@@ -32750,6 +33605,16 @@ CMDvarCONVERT
 Cast VALUE to str
 calc
 str
+command calc.str(X_0:inet4):str
+INETinet42str
+Coerce an inet4 to a string type
+calc
+str
+command calc.str(X_0:inet6):str
+INETinet62str
+Coerce an inet6 to a string type
+calc
+str
 pattern calc.str(X_0:int, X_1:int, X_2:int, X_3:int, X_4:any_1, X_5:int):str
 SQLstr_cast
 cast to string and check for overflow
@@ -32911,6 +33776,16 @@ Return V1 XOR V2
 calc
 xor
 pattern calc.xor(X_0:bte, X_1:bte):bte
+CMDvarXOR
+Return V1 XOR V2
+calc
+xor
+pattern calc.xor(X_0:inet4, X_1:inet4):inet4
+CMDvarXOR
+Return V1 XOR V2
+calc
+xor
+pattern calc.xor(X_0:inet6, X_1:inet6):inet6
 CMDvarXOR
 Return V1 XOR V2
 calc
@@ -34708,6 +35583,106 @@ text
 command inet.text(X_0:inet):str
 INETtext
 Extract IP address and netmask length as text
+inet46
+inet4
+command inet46.inet4(X_0:str):inet4
+INETstr2inet4
+Coerce a string to an inet4, validating its format
+inet46
+inet4containsinet4
+command inet46.inet4containsinet4(X_0:inet4, X_1:bte, X_2:inet4, X_3:bte):bit
+INETinet4containsinet4
+(empty)
+inet46
+inet4containsinet4
+command inet46.inet4containsinet4(X_0:bat[:inet4], X_1:bat[:bte], X_2:bat[:oid], X_3:bat[:inet4], X_4:bat[:bte], X_5:bat[:oid]):bat[:bit]
+INETinet4containsinet4_bulk
+(empty)
+inet46
+inet4containsinet4
+command inet46.inet4containsinet4(X_0:inet4, X_1:inet4, X_2:bte):bit
+INETinet4containsinet4nomask
+(empty)
+inet46
+inet4containsorequalinet4
+command inet46.inet4containsorequalinet4(X_0:inet4, X_1:bte, X_2:inet4, X_3:bte):bit
+INETinet4containsorequalinet4
+(empty)
+inet46
+inet4containsorequalinet4
+command inet46.inet4containsorequalinet4(X_0:bat[:inet4], X_1:bat[:bte], X_2:bat[:oid], X_3:bat[:inet4], X_4:bat[:bte], X_5:bat[:oid]):bat[:bit]
+INETinet4containsorequalinet4_bulk
+(empty)
+inet46
+inet4containsorequalinet4
+command inet46.inet4containsorequalinet4(X_0:inet4, X_1:inet4, X_2:bte):bit
+INETinet4containsorequalinet4nomask
+(empty)
+inet46
+inet4containssymmetricinet4
+command inet46.inet4containssymmetricinet4(X_0:inet4, X_1:bte, X_2:inet4, X_3:bte):bit
+INETinet4containssymmetricinet4
+(empty)
+inet46
+inet4containssymmetricinet4
+command inet46.inet4containssymmetricinet4(X_0:bat[:inet4], X_1:bat[:bte], X_2:bat[:oid], X_3:bat[:inet4], X_4:bat[:bte], X_5:bat[:oid]):bat[:bit]
+INETinet4containssymmetricinet4_bulk
+(empty)
+inet46
+inet6
+command inet46.inet6(X_0:str):inet6
+INETstr2inet6
+Coerce a string to an inet6, validating its format
+inet46
+inet6containsinet6
+command inet46.inet6containsinet6(X_0:inet6, X_1:sht, X_2:inet6, X_3:sht):bit
+INETinet6containsinet6
+(empty)
+inet46
+inet6containsinet6
+command inet46.inet6containsinet6(X_0:bat[:inet6], X_1:bat[:sht], X_2:bat[:oid], X_3:bat[:inet6], X_4:bat[:sht], X_5:bat[:oid]):bat[:bit]
+INETinet6containsinet6_bulk
+(empty)
+inet46
+inet6containsinet6
+command inet46.inet6containsinet6(X_0:inet6, X_1:inet6, X_2:sht):bit
+INETinet6containsinet6nomask
+(empty)
+inet46
+inet6containsorequalinet6
+command inet46.inet6containsorequalinet6(X_0:inet6, X_1:sht, X_2:inet6, X_3:sht):bit
+INETinet6containsorequalinet6
+(empty)
+inet46
+inet6containsorequalinet6
+command inet46.inet6containsorequalinet6(X_0:bat[:inet6], X_1:bat[:sht], X_2:bat[:oid], X_3:bat[:inet6], X_4:bat[:sht], X_5:bat[:oid]):bat[:bit]
+INETinet6containsorequalinet6_bulk
+(empty)
+inet46
+inet6containsorequalinet6
+command inet46.inet6containsorequalinet6(X_0:inet6, X_1:inet6, X_2:sht):bit
+INETinet6containsorequalinet6nomask
+(empty)
+inet46
+inet6containssymmetricinet6
+command inet46.inet6containssymmetricinet6(X_0:inet6, X_1:sht, X_2:inet6, X_3:sht):bit
+INETinet6containssymmetricinet6
+(empty)
+inet46
+inet6containssymmetricinet6
+command inet46.inet6containssymmetricinet6(X_0:bat[:inet6], X_1:bat[:sht], X_2:bat[:oid], X_3:bat[:inet6], X_4:bat[:sht], X_5:bat[:oid]):bat[:bit]
+INETinet6containssymmetricinet6_bulk
+(empty)
+inet46
+str
+command inet46.str(X_0:inet4):str
+INETinet42str
+Coerce an inet4 to its string type
+inet46
+str
+command inet46.str(X_0:inet6):str
+INETinet62str
+Coerce an inet6 to its string type
 inspect
 equalType
 pattern inspect.equalType(X_0:any, X_1:any):bit
@@ -34803,11 +35778,6 @@ getType
 pattern inspect.getType(X_0:any_1):str
 INSPECTtypeName
 Return the concrete type of a variable (expression).
-inspect
-optimizer_stats
-pattern inspect.optimizer_stats() (X_0:bat[:str], X_1:bat[:int], X_2:bat[:lng])
-OPTstatistics
-Get optimizer use statistics, i.e. calls and total time
 io
 print
 pattern io.print(X_0:any_1):void
@@ -36439,13 +37409,13 @@ pattern optimizer.deadcode(X_0:str, X_1:str):str
 OPTwrapper
 Dead code optimizer
 optimizer
-defaultfast
-pattern optimizer.defaultfast():str
+defaultpipe
+pattern optimizer.defaultpipe():str
 OPTwrapper
 (empty)
 optimizer
-defaultfast
-pattern optimizer.defaultfast(X_0:str, X_1:str):str
+defaultpipe
+pattern optimizer.defaultpipe(X_0:str, X_1:str):str
 OPTwrapper
 Fast compound default optimizer pipe
 optimizer
@@ -36544,13 +37514,13 @@ pattern optimizer.mergetable(X_0:str, X_1:str):str
 OPTwrapper
 Resolve the multi-table definitions
 optimizer
-minimalfast
-pattern optimizer.minimalfast():str
+minimalpipe
+pattern optimizer.minimalpipe():str
 OPTwrapper
 (empty)
 optimizer
-minimalfast
-pattern optimizer.minimalfast(X_0:str, X_1:str):str
+minimalpipe
+pattern optimizer.minimalpipe(X_0:str, X_1:str):str
 OPTwrapper
 Fast compound minimal optimizer pipe
 optimizer
@@ -36573,6 +37543,16 @@ multiplex
 pattern optimizer.multiplex(X_0:str, X_1:str):str
 OPTwrapper
 Compiler for multiplexed instructions
+optimizer
+nomitosispipe
+pattern optimizer.nomitosispipe():str
+OPTwrapper
+(empty)
+optimizer
+nomitosispipe
+pattern optimizer.nomitosispipe(X_0:str, X_1:str):str
+OPTwrapper
+Fast compound optimizer pipe without mitosis
 optimizer
 optimize
 pattern optimizer.optimize(X_0:str, X_1:str):void
@@ -36629,6 +37609,16 @@ pattern optimizer.querylog(X_0:str, X_1:str):str
 OPTwrapper
 Collect SQL query statistics
 optimizer
+recursivepipe
+pattern optimizer.recursivepipe():str
+OPTwrapper
+(empty)
+optimizer
+recursivepipe
+pattern optimizer.recursivepipe(X_0:str, X_1:str):str
+OPTwrapper
+Fast compound recursive optimizer pipe
+optimizer
 reduce
 pattern optimizer.reduce():str
 OPTwrapper
@@ -36669,6 +37659,16 @@ pattern optimizer.reorder(X_0:str, X_1:str):str
 OPTwrapper
 Reorder by dataflow dependencies
 optimizer
+sequentialpipe
+pattern optimizer.sequentialpipe():str
+OPTwrapper
+(empty)
+optimizer
+sequentialpipe
+pattern optimizer.sequentialpipe(X_0:str, X_1:str):str
+OPTwrapper
+Fast compound sequential optimizer pipe
+optimizer
 strimps
 pattern optimizer.strimps():str
 OPTwrapper
@@ -36693,11 +37693,6 @@ imatch
 command pcre.imatch(X_0:str, X_1:str):bit
 PCREimatch
 Caseless Perl Compatible Regular Expression pattern matching against a string
-pcre
-index
-command pcre.index(X_0:pcre, X_1:str):int
-PCREindex
-match a pattern, return matched position (or 0 when not found)
 pcre
 match
 command pcre.match(X_0:str, X_1:str):bit
@@ -36729,16 +37724,6 @@ command pcre.sql2pcre(X_0:str, X_1:str):str
 PCREsql2pcre
 Convert a SQL like pattern with the given escape character into a PCRE pattern.
 profiler
-cleanup
-unsafe pattern profiler.cleanup():void
-CMDcleanupTraces
-Remove the temporary tables for profiling
-profiler
-closestream
-pattern profiler.closestream():void
-CMDcloseProfilerStream
-Stop offline proviling
-profiler
 cpuload
 command profiler.cpuload(X_0:lng, X_1:lng, X_2:lng, X_3:lng, X_4:lng) (X_5:int, X_6:int)
 CMDcpuloadPercentage
@@ -36748,81 +37733,6 @@ cpustats
 command profiler.cpustats() (X_0:lng, X_1:lng, X_2:lng, X_3:lng, X_4:lng)
 CMDcpustats
 Extract cpu statistics from the kernel
-profiler
-getDiskReads
-command profiler.getDiskReads():lng
-CMDgetDiskReads
-Obtain the number of physical reads
-profiler
-getDiskWrites
-command profiler.getDiskWrites():lng
-CMDgetDiskWrites
-Obtain the number of physical reads
-profiler
-getSystemTime
-command profiler.getSystemTime():lng
-CMDgetSystemTime
-Obtain the user timing information.
-profiler
-getTrace
-pattern profiler.getTrace(X_0:str):bat[:any_1]
-CMDgetTrace
-Get the trace details of a specific event
-profiler
-getUserTime
-command profiler.getUserTime():lng
-CMDgetUserTime
-Obtain the user timing information.
-profiler
-getlimit
-command profiler.getlimit():int
-CMDgetprofilerlimit
-Get profiler limit
-profiler
-noop
-command profiler.noop():void
-CMDnoopProfiler
-Fetch any pending performance events
-profiler
-openstream
-pattern profiler.openstream():void
-CMDopenProfilerStream
-Start profiling the events, send to output stream
-profiler
-openstream
-pattern profiler.openstream(X_0:int):void
-CMDopenProfilerStream
-Start profiling the events, send to output stream
-profiler
-setheartbeat
-unsafe command profiler.setheartbeat(X_0:int):void
-CMDsetHeartbeat
-Set heart beat performance tracing
-profiler
-setlimit
-unsafe command profiler.setlimit(X_0:int):void
-CMDsetprofilerlimit
-Set profiler limit
-profiler
-start
-unsafe pattern profiler.start():void
-CMDstartProfiler
-Start offline performance profiling
-profiler
-starttrace
-unsafe pattern profiler.starttrace():void
-CMDstartTrace
-Start collecting trace information
-profiler
-stop
-unsafe pattern profiler.stop():void
-CMDstopProfiler
-Stop offline performance profiling
-profiler
-stoptrace
-unsafe pattern profiler.stoptrace():void
-CMDstopTrace
-Stop collecting trace information
 pyapi3
 epilogue
 command pyapi3.epilogue():void
@@ -39294,11 +40204,6 @@ command uuid.uuid(X_0:str):uuid
 UUIDstr2uuid
 Coerce a string to a uuid, validating its format
 xml
-aggr
-command xml.aggr(X_0:bat[:xml]):xml
-BATXMLgroup
-Aggregate the XML values.
-xml
 attribute
 command xml.attribute(X_0:str, X_1:str):xml
 XMLattribute
@@ -39368,16 +40273,6 @@ str
 command xml.str(X_0:xml):str
 XMLxml2str
 Cast the string to an xml compliant string
-xml
-subaggr
-command xml.subaggr(X_0:bat[:xml], X_1:bat[:oid], X_2:bat[:any_1], X_3:bit):bat[:xml]
-AGGRsubxml
-Grouped aggregation of XML values.
-xml
-subaggr
-command xml.subaggr(X_0:bat[:xml], X_1:bat[:oid], X_2:bat[:any_1], X_3:bat[:oid], X_4:bit):bat[:xml]
-AGGRsubxmlcand
-Grouped aggregation of XML values with candidates list.
 xml
 text
 command xml.text(X_0:xml):str

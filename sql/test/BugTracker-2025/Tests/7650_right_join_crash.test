@@ -1,6 +1,7 @@
 statement ok
 CREATE TABLE IF NOT EXISTS t1(c0 INTERVAL DAY,c2 DOUBLE)
 
-query ITI 
+# error because the relational algebra doesn't allow for perfect lazy evaluation always
+# sql correct result should be: NULL | NULL | 0
+statement error GDK reported error: selectjoin: more than one match
 SELECT ALL * FROM t1 RIGHT JOIN (VALUES (0)) AS subQuery1(col_1) ON ( t1.c0 < ANY(VALUES (t1.c0+t1.c0)) ) AND (VALUES (subQuery1.col_1), (EXISTS (VALUES (t1.c2))) )
-----

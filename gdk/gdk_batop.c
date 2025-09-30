@@ -30,7 +30,6 @@ unshare_varsized_heap(BAT *b)
 		Heap *h = GDKmalloc(sizeof(Heap));
 		if (h == NULL)
 			return GDK_FAIL;
-		MT_thread_setalgorithm("unshare vheap");
 		*h = (Heap) {
 			.parentid = b->batCacheid,
 			.farmid = BBPselectfarm(b->batRole, TYPE_str, varheap),
@@ -38,6 +37,74 @@ unshare_varsized_heap(BAT *b)
 		};
 		strconcat_len(h->filename, sizeof(h->filename),
 			      BBP_physical(b->batCacheid), ".theap", NULL);
+		/* if parent bat is much larger (currently more than
+		 * twice) than the view, we copy the strings
+		 * individually so that the resulting vheap is reduced
+		 * in size
+		 * we do this only if there are no other references to
+		 * the bat since we're changing the offset heap and the
+		 * values are going to be temporarily incorrect */
+		MT_lock_set(&GDKswapLock(b->batCacheid));
+		if (BBP_refs(b->batCacheid) == 1 &&
+		    BATcount(BBP_desc(b->tvheap->parentid)) > 2 * BATcount(b)) {
+			MT_thread_setalgorithm("unshare vheap reinsert strings");
+			MT_lock_set(&b->theaplock);
+			strHeap(h, b->batCapacity);
+			Heap *oh = b->tvheap;
+			b->tvheap = h;
+			var_t o;
+			switch (b->twidth) {
+			case 1:
+				for (BUN i = 0; i < b->batCount; i++) {
+					o = (var_t) ((uint8_t *) b->theap->base)[i] + GDK_VAROFFSET;
+					if (strPut(b, &o, oh->base + o) == (var_t) -1)
+						goto bailout;
+					((uint8_t *) b->theap->base)[i] = (uint8_t) (o - GDK_VAROFFSET);
+				}
+				break;
+			case 2:
+				for (BUN i = 0; i < b->batCount; i++) {
+					o = (var_t) ((uint16_t *) b->theap->base)[i] + GDK_VAROFFSET;
+					if (strPut(b, &o, oh->base + o) == (var_t) -1)
+						goto bailout;
+					((uint16_t *) b->theap->base)[i] = (uint16_t) (o - GDK_VAROFFSET);
+				}
+				break;
+#if SIZEOF_VAR_T == 8
+			case 4:
+				for (BUN i = 0; i < b->batCount; i++) {
+					o = (var_t) ((uint32_t *) b->theap->base)[i];
+					if (strPut(b, &o, oh->base + o) == (var_t) -1)
+						goto bailout;
+					((uint32_t *) b->theap->base)[i] = (uint32_t) o;
+				}
+				break;
+#endif
+			case SIZEOF_VAR_T:
+				for (BUN i = 0; i < b->batCount; i++) {
+					o = ((var_t *) b->theap->base)[i];
+					if (strPut(b, &o, oh->base + o) == (var_t) -1)
+						goto bailout;
+					((var_t *) b->theap->base)[i] = o;
+				}
+				break;
+			default:
+				MT_UNREACHABLE();
+			}
+			MT_lock_unset(&b->theaplock);
+			MT_lock_unset(&GDKswapLock(b->batCacheid));
+			BBPrelease(oh->parentid);
+			HEAPdecref(oh, false);
+			return GDK_SUCCEED;
+		  bailout:
+			MT_lock_unset(&b->theaplock);
+			MT_lock_unset(&GDKswapLock(b->batCacheid));
+			BBPrelease(oh->parentid);
+			HEAPdecref(oh, false);
+			return GDK_FAIL;
+		}
+		MT_lock_unset(&GDKswapLock(b->batCacheid));
+		MT_thread_setalgorithm("unshare vheap by copying");
 		if (HEAPcopy(h, b->tvheap, 0) != GDK_SUCCEED) {
 			HEAPfree(h, true);
 			GDKfree(h);
@@ -879,6 +946,26 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 		int xx = ATOMcmp(b->ttype,
 				 BUNtail(ni, ci.seq - hseq),
 				 BUNtail(bi, last));
+		if (b->tsorted && !ni.sorted && ni.nosorted == 0 && xx >= 0) {
+			/* b is currently sorted; we don't know whether
+			 * n is sorted; first value of n is at least as
+			 * large as last value of b: we invest in an
+			 * order check of n to see whether the result is
+			 * still sorted */
+			(void) BATordered(n);
+			bat_iterator_end(&ni);
+			ni = bat_iterator(n);
+		}
+		if (b->trevsorted && !ni.revsorted && ni.norevsorted == 0 && xx <= 0) {
+			/* b is currently reverse sorted; we don't know
+			 * whether n is reverse sorted; first value of n
+			 * is at most as large as last value of b: we
+			 * invest in an order check of n to see whether
+			 * the result is still reverse sorted */
+			(void) BATordered_rev(n);
+			bat_iterator_end(&ni);
+			ni = bat_iterator(n);
+		}
 		if (b->tsorted && (!ni.sorted || xx < 0)) {
 			b->tsorted = false;
 			b->tnosorted = 0;
@@ -1256,6 +1343,11 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 	bool locked = false;
 
 	if (b->tvheap) {
+		const void *prevnew = NULL;
+		var_t prevoff = 0;
+		const bool hasdel = BATatoms[b->ttype].atomDel != NULL;
+		bool minupdated = false;
+		bool maxupdated = false;
 		for (BUN i = 0; i < ni.count; i++) {
 			oid updid;
 			if (positions) {
@@ -1332,13 +1424,22 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 			b->tnil |= isnil;
 			MT_lock_unset(&b->theaplock);
 			if (bi.maxpos != BUN_NONE) {
+				/* if new value is the same as the
+				 * previous new value, we've already
+				 * dealt with it; if we've already
+				 * updated the maxpos, it cannot be the
+				 * same as the old value, so we can skip
+				 * that check */
 				if (!isnil &&
+				    (prevnew == NULL || prevnew != new) &&
 				    atomcmp(BUNtvar(bi, bi.maxpos), new) < 0) {
 					/* new value is larger than
 					 * previous largest */
 					bi.maxpos = updid;
+					maxupdated = true;
 				} else if (old == NULL ||
-					   (atomcmp(BUNtvar(bi, bi.maxpos), old) == 0 &&
+					   (!maxupdated &&
+					    atomcmp(BUNtvar(bi, bi.maxpos), old) == 0 &&
 					    atomcmp(new, old) != 0)) {
 					/* old value is equal to
 					 * largest and new value is
@@ -1350,12 +1451,15 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 			}
 			if (bi.minpos != BUN_NONE) {
 				if (!isnil &&
+				    (prevnew == NULL || prevnew != new) &&
 				    atomcmp(BUNtvar(bi, bi.minpos), new) > 0) {
 					/* new value is smaller than
 					 * previous smallest */
 					bi.minpos = updid;
+					minupdated = true;
 				} else if (old == NULL ||
-					   (atomcmp(BUNtvar(bi, bi.minpos), old) == 0 &&
+					   (!minupdated &&
+					    atomcmp(BUNtvar(bi, bi.minpos), old) == 0 &&
 					    atomcmp(new, old) != 0)) {
 					/* old value is equal to
 					 * smallest and new value is
@@ -1396,7 +1500,16 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 				MT_UNREACHABLE();
 			}
 			MT_lock_set(&b->theaplock);
-			gdk_return rc = ATOMreplaceVAR(b, &d, new);
+			gdk_return rc = GDK_SUCCEED;
+			bool skip = false;
+			if (new == prevnew && !hasdel) {
+				d = prevoff;
+				skip = true;
+			} else {
+				rc = ATOMreplaceVAR(b, &d, new);
+				prevnew = new;
+				prevoff = d;
+			}
 			MT_lock_unset(&b->theaplock);
 			if (rc != GDK_SUCCEED) {
 				goto bailout;
@@ -1411,7 +1524,7 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 			/* in case ATOMreplaceVAR and/or
 			 * GDKupgradevarheap replaces a heap, we need to
 			 * reinitialize the iterator */
-			{
+			if (!skip) {
 				/* save and restore minpos/maxpos */
 				BUN minpos = bi.minpos;
 				BUN maxpos = bi.maxpos;
@@ -2297,6 +2410,7 @@ do_sort(void *restrict h, void *restrict t, const void *restrict base,
 			return GDKrsort(h, t, n, hs, ts, reverse, false);
 		break;
 	case TYPE_uuid:
+	case TYPE_inet4:
 		assert(base == NULL);
 		if (nilslast == reverse && (stable || n > 100))
 			return GDKrsort(h, t, n, hs, ts, reverse, true);
@@ -2878,6 +2992,7 @@ BATconstant(oid hseq, int tailtype, const void *v, BUN n, role_t role)
 			break;
 		case TYPE_int:
 		case TYPE_flt:
+		case TYPE_inet4:
 			assert(sizeof(int) == sizeof(flt));
 			for (i = 0; i < n; i++)
 				((int *) p)[i] = *(int *) v;
@@ -2890,14 +3005,18 @@ BATconstant(oid hseq, int tailtype, const void *v, BUN n, role_t role)
 			break;
 #ifdef HAVE_HGE
 		case TYPE_hge:
+		case TYPE_uuid:
+		case TYPE_inet6:
 			for (i = 0; i < n; i++)
 				((hge *) p)[i] = *(hge *) v;
 			break;
-#endif
+#else
 		case TYPE_uuid:
+		case TYPE_inet6:
 			for (i = 0; i < n; i++)
 				((uuid *) p)[i] = *(uuid *) v;
 			break;
+#endif
 		case TYPE_str:
 			/* insert the first value, then just copy the
 			 * offset lots of times */
@@ -3150,6 +3269,14 @@ BATcount_no_nil(BAT *b, BAT *s)
 	case TYPE_uuid:
 		CAND_LOOP(&ci)
 			cnt += !is_uuid_nil(((const uuid *) p)[canditer_next(&ci) - hseq]);
+		break;
+	case TYPE_inet4:
+		CAND_LOOP(&ci)
+			cnt += !is_inet4_nil(((const inet4 *) p)[canditer_next(&ci) - hseq]);
+		break;
+	case TYPE_inet6:
+		CAND_LOOP(&ci)
+			cnt += !is_inet6_nil(((const inet6 *) p)[canditer_next(&ci) - hseq]);
 		break;
 	case TYPE_str:
 		base = bi.vh->base;

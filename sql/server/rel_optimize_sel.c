@@ -1635,6 +1635,15 @@ rel_uses_exp_outside_subrel(sql_rel *rel, list *l, sql_rel *c)
 static inline sql_rel *
 rel_join2semijoin(visitor *v, sql_rel *rel)
 {
+	if (!rel_is_ref(rel) && is_simple_project(rel->op) && need_distinct(rel) && rel->l) {
+		sql_rel *l = rel->l;
+
+		if (!rel_is_ref(l) && l->op == op_join && rel_has_all_exps(l->l, rel->exps)) {
+			l->op = op_semi;
+			v->changes++;
+			return rel;
+		}
+	}
 	if ((is_simple_project(rel->op) || is_groupby(rel->op)) && rel->l) {
 		bool swap = false;
 		sql_rel *l = rel->l;
@@ -3811,27 +3820,24 @@ rel_push_select_down(visitor *v, sql_rel *rel)
 				list_destroy(keyColumns);
 			}
 			/* also push (rewrite) limits on output of row_number/(*)rank like window functions */
-			if (is_simple_project(r->op) /*&& is_simple_project(pl->op)*/) { /* possible window functions */
+			if (is_simple_project(r->op)) { /* possible window functions */
 				for (n = exps->h; n; n = n->next) {
 					sql_exp *e = n->data;
 
-					if (e->type == e_cmp && (e->flag == cmp_lt || e->flag == cmp_lte) && exp_is_atom(e->r)) { /* simple limit */
+					if (e->type == e_cmp && (e->flag == cmp_lt || e->flag == cmp_lte) && exp_is_atom(e->r) && !e->f) { /* simple limit */
 						sql_exp *ranke = rel_find_exp(r, e->l);
 
 						if (ranke && ranke->type == e_func) {
 							sql_subfunc *rankf = ranke->f;
 							if (rankf->func->type == F_ANALYTIC) { /* rank functions cannot have a frame */
-								// For now only for rank/row_number without partition by
 								sql_rel *tn = NULL;
-							   	if (strcmp(rankf->func->base.name, "rank") == 0 && is_simple_project(pl->op) && pl->r /* &&
-										!rank_exp_has_partition_key(ranke)*/) {
+							   	if (strcmp(rankf->func->base.name, "rank") == 0 && is_simple_project(pl->op) && pl->r) {
 									tn = r->l = rel_topn(v->sql->sa, r->l, append(sa_list(v->sql->sa), e->r));
 									tn->grouped = 1;
 									v->changes++;
 									break;
 								}
-							   	if (strcmp(rankf->func->base.name, "row_number") == 0 && list_empty(r->r) && !is_topn(pl->op) /*&&
-										!rank_exp_has_partition_key(ranke)*/) {
+							   	if (strcmp(rankf->func->base.name, "row_number") == 0 && list_empty(r->r) && !is_topn(pl->op)) {
 									tn = r->l = rel_topn(v->sql->sa, r->l, append(sa_list(v->sql->sa), e->r));
 									tn->grouped = 1;
 									v->changes++;
@@ -4072,12 +4078,6 @@ rel_select_leftgroup_2_semi(visitor *v, sql_rel *rel)
 
 			if (exps_find_exp(l->attr, e->l) && exp_is_true(e->r) && e->flag == cmp_equal /*&& exp_is_true(a)*/) {
 				// printf("# optimize select leftgroup -> semi\n");
-				if (!list_empty(l->exps)) {
-					for(node *m = l->exps->h; m; m = m->next) {
-						sql_exp *j = m->data;
-						reset_any(j);
-					}
-				}
 				l->attr = NULL;
 				l->op = exp_is_true(a)?op_semi:op_anti;
 				list_remove_node(rel->exps, NULL, n);

@@ -401,7 +401,7 @@ extern BUN sql_trans_clear_table(sql_trans *tr, sql_table *t);
 extern int sql_trans_alter_access(sql_trans *tr, sql_table *t, sht access);
 
 extern int sql_trans_create_column(sql_column **rcol, sql_trans *tr, sql_table *t, const char *name, sql_subtype *tpe);
-extern int sql_trans_rename_column(sql_trans *tr, sql_table *t, sqlid id, const char *old_name, const char *new_name);
+extern int sql_trans_rename_column(sql_trans *tr, sql_schema *s, sql_table *t, sqlid id, const char *old_name, const char *new_name);
 extern int sql_trans_drop_column(sql_trans *tr, sql_table *t, sqlid id, int drop_action);
 extern int sql_trans_alter_null(sql_trans *tr, sql_column *col, int isnull);
 extern int sql_trans_alter_default(sql_trans *tr, sql_column *col, char *val);
@@ -480,8 +480,6 @@ extern int sql_trans_copy_idx(sql_trans *tr, sql_table *t, sql_idx *i, sql_idx *
 extern int sql_trans_copy_trigger(sql_trans *tr, sql_table *t, sql_trigger *tri, sql_trigger **tres);
 extern sql_table *globaltmp_instantiate(sql_trans *tr, sql_table *t);
 
-#define NR_TABLE_LOCKS 64
-#define NR_COLUMN_LOCKS 512
 #define TRANSACTION_ID_BASE	(1ULL<<(sizeof(ATOMIC_BASE_TYPE) * 8 - 1))
 
 typedef struct sqlstore {
@@ -521,8 +519,6 @@ typedef struct sqlstore {
 	MT_Lock lock;			/* lock protecting concurrent writes (not reads, ie use rcu) */
 	MT_Lock commit;			/* protect transactions, only single commit (one wal writer) */
 	MT_Lock flush;			/* flush lock protecting concurrent writes (not reads, ie use rcu) */
-	MT_Lock table_locks[NR_TABLE_LOCKS];		/* protecting concurrent writes to tables (storage) */
-	MT_Lock column_locks[NR_COLUMN_LOCKS];		/* protecting concurrent writes to columns (storage) */
 } sqlstore;
 
 typedef enum sql_dependency_change_type {

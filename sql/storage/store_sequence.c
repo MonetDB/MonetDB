@@ -14,18 +14,16 @@
 #include "store_sequence.h"
 #include "sql_storage.h"
 
-void
-sequences_lock(sql_store Store)
+static void
+sequence_lock(sql_sequence *seq)
 {
-	sqlstore *store = Store;
-	MT_lock_set(&store->column_locks[NR_COLUMN_LOCKS-1]);
+	MT_lock_set(&seq->lock);
 }
 
-void
-sequences_unlock(sql_store Store)
+static void
+sequence_unlock(sql_sequence *seq)
 {
-	sqlstore *store = Store;
-	MT_lock_unset(&store->column_locks[NR_COLUMN_LOCKS-1]);
+	MT_lock_unset(&seq->lock);
 }
 
 typedef struct store_sequence {
@@ -133,19 +131,19 @@ seq_restart(sql_store Store, sql_sequence *seq, lng start)
 	sqlstore *store = Store;
 
 	assert(!is_lng_nil(start));
-	sequences_lock(store);
+	sequence_lock(seq);
 	s = sequence_lookup(store->sequences, seq->base.id);
 
 	if (!s) {
 		lng val = 0;
 
 		if (isNew(seq) || !store->logger_api.get_sequence(store, seq->base.id, &val )) {
-			sequences_unlock(store);
+			sequence_unlock(seq);
 			return 1;
 		} else {
 			s = sequence_create(store, seq);
 			if (!s) {
-				sequences_unlock(store);
+				sequence_unlock(seq);
 				return 0;
 			}
 		}
@@ -154,10 +152,10 @@ seq_restart(sql_store Store, sql_sequence *seq, lng start)
 	s->cur = start;
 	if (!update_sequence(store, s)) {
 		s->cur = ocur;
-		sequences_unlock(store);
+		sequence_unlock(seq);
 		return 0;
 	}
-	sequences_unlock(store);
+	sequence_unlock(seq);
 	return 1;
 }
 
@@ -171,12 +169,12 @@ seqbulk_next_value_intern(sql_store Store, sql_sequence *seq, lng cnt, lng* dest
 
 	assert(dest);
 
-	sequences_lock(store);
+	sequence_lock(seq);
 	s = sequence_lookup(store->sequences, seq->base.id);
 	if (!s) {
 		s = sequence_create(store, seq);
 		if (!s) {
-			sequences_unlock(store);
+			sequence_unlock(seq);
 			return 0;
 		}
 	}
@@ -188,7 +186,7 @@ seqbulk_next_value_intern(sql_store Store, sql_sequence *seq, lng cnt, lng* dest
 	if (!seq->cycle) {
 		if ((seq->increment > 0 && s->cur > max) ||
 		    (seq->increment < 0 && s->cur < min)) {
-			sequences_unlock(store);
+			sequence_unlock(seq);
 			return 0;
 		}
 	}
@@ -203,13 +201,13 @@ seqbulk_next_value_intern(sql_store Store, sql_sequence *seq, lng cnt, lng* dest
 
 				if (!update_sequence(store, s)) {
 					s->cur = ocur;
-					sequences_unlock(store);
+					sequence_unlock(seq);
 					return 0;
 				}
-				sequences_unlock(store);
+				sequence_unlock(seq);
 				store_unlocked = true;
 			} else {
-				sequences_unlock(store);
+				sequence_unlock(seq);
 				return 0;
 			}
 		}
@@ -234,13 +232,13 @@ seqbulk_next_value_intern(sql_store Store, sql_sequence *seq, lng cnt, lng* dest
 
 				if (!update_sequence(store, s)) {
 					s->cur = ocur;
-					sequences_unlock(store);
+					sequence_unlock(seq);
 					return 0;
 				}
-				sequences_unlock(store);
+				sequence_unlock(seq);
 				store_unlocked = true;
 			} else {
-				sequences_unlock(store);
+				sequence_unlock(seq);
 				return 0;
 			}
 		}
@@ -263,10 +261,10 @@ seqbulk_next_value_intern(sql_store Store, sql_sequence *seq, lng cnt, lng* dest
 
 		if (!update_sequence(store, s)) {
 			s->cur = ocur;
-			sequences_unlock(store);
+			sequence_unlock(seq);
 			return 0;
 		}
-		sequences_unlock(store);
+		sequence_unlock(seq);
 	}
 	return 1;
 }
@@ -296,16 +294,16 @@ seq_get_value(sql_store Store, sql_sequence *seq, lng *val)
 	sqlstore *store = Store;
 
 	*val = 0;
-	sequences_lock(store);
+	sequence_lock(seq);
 	s = sequence_lookup(store->sequences, seq->base.id);
 	if (!s) {
 		s = sequence_create(store, seq);
 		if (!s) {
-			sequences_unlock(store);
+			sequence_unlock(seq);
 			return 0;
 		}
 	}
 	*val = s->cur;
-	sequences_unlock(store);
+	sequence_unlock(seq);
 	return 1;
 }

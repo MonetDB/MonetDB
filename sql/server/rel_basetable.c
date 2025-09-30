@@ -68,7 +68,7 @@ rel_base_idx_nid(sql_rel *r, sql_idx *i)
 		int j = ba->basenr + ol_length(b->columns) + 1;
 		for (node *in = ol_first_node(i->t->idxs); in; in = in->next, j++) {
 			if (i == in->data)
-				return -(ba->basenr + j);
+				return -j;
 		}
 	}
 	return 0;

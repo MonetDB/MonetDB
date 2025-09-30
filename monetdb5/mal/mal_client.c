@@ -182,21 +182,8 @@ MCgetClient(int id)
  */
 
 static void
-MCresetProfiler(stream *fdout)
-{
-	MT_lock_set(&mal_profileLock);
-	if (fdout == maleventstream) {
-		maleventstream = NULL;
-		profilerStatus = 0;
-		profilerMode = 0;
-	}
-	MT_lock_unset(&mal_profileLock);
-}
-
-static void
 MCexitClient(Client c)
 {
-	MCresetProfiler(c->fdout);
 	// Remove any left over constant symbols
 	if (c->curprg)
 		resetMalBlk(c->curprg->def);
@@ -215,13 +202,6 @@ MCexitClient(Client c)
 		c->qryctx.bs = NULL;
 	}
 	assert(c->query == NULL);
-	if (profilerStatus > 0) {
-		lng Tend = GDKusec();
-		profilerEvent(NULL,
-					  &(struct NonMalEvent)
-					  { CLIENT_END, c, Tend, NULL, NULL, 0,
-					  Tend - (c->session) });
-	}
 }
 
 static Client
@@ -305,11 +285,6 @@ MCinitClient(oid user, bstream *fin, stream *fout)
 	}
 	MT_lock_unset(&mal_contextLock);
 
-	if (c && profilerStatus > 0)
-		profilerEvent(NULL,
-					  &(struct NonMalEvent)
-					  { CLIENT_START, c, c->session, NULL, NULL, 0, 0 }
-	);
 	return c;
 }
 
@@ -330,7 +305,6 @@ MCinitClientThread(Client c)
 	if (c->errbuf == NULL) {
 		char *n = GDKzalloc(GDKMAXERRLEN);
 		if (n == NULL) {
-			MCresetProfiler(c->fdout);
 			return -1;
 		}
 		GDKsetbuf(n);

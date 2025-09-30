@@ -17,7 +17,6 @@
 #include "sql_list.h"
 #include "sql_hash.h"
 #include "mapi_querytype.h"
-#include "stream.h"
 #include "matomic.h"
 
 #define sql_shared_module_name "sql"
@@ -332,6 +331,7 @@ typedef struct sql_trans {
 
 	sql_store store;	/* keep link into the global store */
 	MT_Lock lock;		/* lock protecting concurrent writes to the changes list */
+	MT_Lock localtmplock;		/* lock protecting concurrent writes to the localtmps list */
 	list *changes;		/* list of changes */
 
 	list *dropped;  	/* protection against recursive cascade action*/
@@ -586,6 +586,7 @@ typedef struct sql_idx {
 	struct list *columns;	/* list of sql_kc */
 	struct sql_table *t;
 	struct sql_key *key;	/* key */
+	MT_Lock lock;		/* lock protecting concurrent writes to the changes list */
 	ATOMIC_PTR_TYPE data;
 } sql_idx;
 
@@ -640,6 +641,7 @@ typedef struct sql_sequence {
 	bit cycle;
 	bit bedropped;		/*Drop the SEQUENCE if you are dropping the column, e.g., SERIAL COLUMN".*/
 	sql_schema *s;
+	MT_Lock lock;		/* lock protecting concurrent writes to the changes list */
 } sql_sequence;
 
 #define column_intern 16
@@ -660,6 +662,7 @@ typedef struct sql_column {
 	void *max;
 
 	struct sql_table *t;
+	MT_Lock lock;		/* lock protecting concurrent writes to the changes list */
 	ATOMIC_PTR_TYPE data;
 } sql_column;
 
@@ -732,6 +735,7 @@ typedef struct sql_table {
 	sht access;		/* writable, readonly, appendonly */
 	bit system;		/* system or user table */
 	bit bootstrap;		/* system table created during bootstrap */
+	bit globaltemp;		/* globaltemp is set also for instantiated version */
 	bte properties;		/* used for merge_tables */
 	unsigned char
 		composite:1,
@@ -749,6 +753,7 @@ typedef struct sql_table {
 	list *members;		/* member tables of merge/replica tables */
 	int drop_action;	/* only needed for alter drop table */
 
+	MT_Lock lock;		/* lock protecting concurrent writes to the changes list */
 	ATOMIC_PTR_TYPE data;
 	sql_schema *s;
 

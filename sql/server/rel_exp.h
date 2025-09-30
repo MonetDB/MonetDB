@@ -162,7 +162,7 @@ extern int exps_match_col_exps( sql_exp *e1, sql_exp *e2);
 /* todo rename */
 extern int exp_match_list( list *l, list *r);
 extern int exp_is_join(sql_exp *e, list *rels);
-extern int exp_is_eqjoin(sql_exp *e);
+extern int exp_is_eqjoin(sql_exp *e, void *dummy);
 extern int exp_is_join_exp(sql_exp *e);
 extern int exp_is_atom(sql_exp *e);
 /* exp_is_true/false etc return true if the expression is true, on unknown etc false is returned */
@@ -188,6 +188,8 @@ extern bool exps_have_unsafe(list *exps, bool allow_identity, bool card /* on tr
 																		  unsafeness (conversions for example) */);
 extern bool exp_unsafe(sql_exp *e, bool allow_identity, bool card);
 extern int exp_has_sideeffect(sql_exp *e);
+extern bool exp_is_fallible(sql_exp *e); /* exp could result in an error, ie push up of lower restricting expressions isn't possible */
+extern bool exps_have_fallible(list *l);
 
 extern sql_exp *exps_find_prop(list *exps, rel_prop kind);
 

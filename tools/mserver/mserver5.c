@@ -76,16 +76,18 @@ static void
 usage(char *prog, int xit)
 {
 	fprintf(stderr, "Usage: %s [options]\n", prog);
-	fprintf(stderr, "    --dbpath=<directory>      Specify database location\n");
-	fprintf(stderr, "    --dbextra=<directory>     Directory for transient BATs\n");
-	fprintf(stderr, "    --dbtrace=<file>          File for produced traces\n");
+	fprintf(stderr, "    --dbpath <directory>      Specify database location\n");
+	fprintf(stderr, "    --dbextra <directory>     Directory for transient BATs\n");
+	fprintf(stderr, "    --dbtrace <file>          File for produced traces\n");
 	fprintf(stderr, "    --in-memory               Run database in-memory only\n");
-	fprintf(stderr, "    --config=<config_file>    Use config_file to read options from\n");
+	fprintf(stderr, "    --config <config_file>    Use config_file to read options from\n");
 	fprintf(stderr, "    --single-user             Allow only one user at a time\n");
 	fprintf(stderr, "    --readonly                Safeguard database\n");
 	fprintf(stderr, "    --set <option>=<value>    Set configuration option\n");
-	fprintf(stderr, "    --loadmodule=<module>     Load extra <module> from lib/monetdb5\n");
+	fprintf(stderr, "    --loadmodule <module>     Load extra <module> from lib/monetdb5\n");
 	fprintf(stderr, "    --without-geom            Do not enable geom module\n");
+	fprintf(stderr, "    --logging <comp>=<level>  Set logging level for component\n");
+	fprintf(stderr, "    --process-wal-and-exit    Only process the write-ahead log\n");
 	fprintf(stderr, "    --help                    Print this list of options\n");
 	fprintf(stderr, "    --version                 Print version and compile time info\n");
 
@@ -112,7 +114,7 @@ static void
 monet_hello(void)
 {
 	double sz_mem_h;
-	const char qc[] = " kMGTPE";
+	static const char qc[] = " kMGTPE";
 	int qi = 0;
 
 	printf("# MonetDB 5 server v%s", GDKversion());
@@ -168,22 +170,6 @@ monet_hello(void)
 	printf("# Copyright (c) 2024, 2025 MonetDB Foundation, all rights reserved\n");
 	printf("# Visit https://www.monetdb.org/ for further information\n");
 
-	// The properties shipped through the performance profiler
-	(void) snprintf(monet_characteristics, sizeof(monet_characteristics),
-					"{\n" "\"version\":\"%s\",\n" "\"release\":\"%s\",\n"
-					"\"host\":\"%s\",\n" "\"threads\":\"%d\",\n"
-					"\"memory\":\"%.3f %cB\",\n" "\"oid\":\"%zu\",\n"
-					"\"packages\":["
-#ifdef HAVE_HGE
-					"\"huge\""
-#endif
-					"]\n}", GDKversion(),
-#ifdef MONETDB_RELEASE
-					MONETDB_RELEASE,
-#else
-					"unreleased",
-#endif
-					HOST, GDKnr_threads, sz_mem_h, qc[qi], sizeof(oid) * 8);
 	fflush(stdout);
 }
 
@@ -191,10 +177,11 @@ static str
 absolute_path(const char *s)
 {
 	if (!MT_path_absolute(s)) {
-		str ret = (str) GDKmalloc(strlen(s) + strlen(monet_cwd) + 2);
+		size_t l = strlen(s) + strlen(monet_cwd) + 2;
+		str ret = (str) GDKmalloc(l);
 
 		if (ret)
-			sprintf(ret, "%s%c%s", monet_cwd, DIR_SEP, s);
+			snprintf(ret, l, "%s%c%s", monet_cwd, DIR_SEP, s);
 		return ret;
 	}
 	return GDKstrdup(s);

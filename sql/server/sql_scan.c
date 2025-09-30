@@ -1222,7 +1222,7 @@ int scanner_symbol(mvc * c, int cur)
 			cur = skip_c_comment(c);
 			if (cur < 0)
 				return EOF;
-			return tokenize(c, cur);
+			return ' ';
 		} else {
 			utf8_putchar(lc, next);
 			return scanner_token(lc, cur);
@@ -1241,7 +1241,7 @@ int scanner_symbol(mvc * c, int cur)
 	case '#':
 		if ((cur = skip_sql_comment(c)) == EOF)
 			return cur;
-		return tokenize(c, cur);
+		return ' ';
 	case '\'':
 		if (lc->raw_string_mode || lc->next_string_is_raw)
 			return scanner_string(c, cur, false);
@@ -1267,7 +1267,7 @@ int scanner_symbol(mvc * c, int cur)
 			lc->started = started;
 			if ((cur = skip_sql_comment(c)) == EOF)
 				return cur;
-			return tokenize(c, cur);
+			return ' ';
 		}
 		lc->started = 1;
 		utf8_putchar(lc, next);
@@ -1499,7 +1499,10 @@ tokenize(mvc * c, int cur)
 			}
 			return keyword_or_ident(c, cur);
 		} else if (iswpunct(cur)) {
-			return scanner_symbol(c, cur);
+			cur = scanner_symbol(c, cur);
+			if (iswspace(cur))
+				continue;
+			return cur;
 		}
 		if (cur == EOF) {
 			if (lc->mode == LINE_1 || !lc->started )

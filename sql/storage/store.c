@@ -13,7 +13,6 @@
 #include "monetdb_config.h"
 #include "sql_types.h"
 #include "sql_storage.h"
-#include "store_dependency.h"
 #include "store_sequence.h"
 #include "mutils.h"
 #include "sql_keyword.h"
@@ -25,6 +24,14 @@
 
 /* version 05.23.05 of catalog */
 #define CATALOG_VERSION 52305	/* first after Mar2025 */
+
+static void
+obj_lock_init( MT_Lock *l, char c, sqlid id)
+{
+	char name[MT_NAME_LEN];
+    snprintf(name, sizeof(name), "%clock%d", c, id); /* fits */
+	MT_lock_init(l, name);
+}
 
 ulng
 store_function_counter(sqlstore *store)
@@ -147,6 +154,7 @@ seq_destroy(sqlstore *store, sql_sequence *s)
 	if (ATOMIC_DEC(&s->base.refcnt) > 0)
 		return;
 	_DELETE(s->base.name);
+	MT_lock_destroy(&s->lock);
 	_DELETE(s);
 }
 
@@ -182,6 +190,7 @@ idx_destroy(sqlstore *store, sql_idx * i)
 	if (ATOMIC_PTR_GET(&i->data))
 		store->storage_api.destroy_idx(store, i);
 	_DELETE(i->base.name);
+	MT_lock_destroy(&i->lock);
 	_DELETE(i);
 }
 
@@ -217,6 +226,7 @@ column_destroy(sqlstore *store, sql_column *c)
 	_DELETE(c->def);
 	_DELETE(c->storage_type);
 	_DELETE(c->base.name);
+	MT_lock_destroy(&c->lock);
 	_DELETE(c);
 }
 
@@ -249,6 +259,7 @@ table_destroy(sqlstore *store, sql_table *t)
 	}
 	_DELETE(t->query);
 	_DELETE(t->base.name);
+	MT_lock_destroy(&t->lock);
 	_DELETE(t);
 }
 
@@ -487,6 +498,7 @@ load_idx(sql_trans *tr, sql_table *t, res_table *rt_idx, res_table *rt_idxcols/*
 	ni->t = t;
 	ni->key = NULL;
 	ATOMIC_PTR_INIT(&ni->data, NULL);
+	obj_lock_init(&ni->lock, 'i', ni->base.id);
 
 	if (isTable(ni->t) && idx_has_column(ni->type))
 		store->storage_api.create_idx(tr, ni);
@@ -601,6 +613,7 @@ load_column(sql_trans *tr, sql_table *t, res_table *rt_cols)
 	c->column_type = *(bte*)store->table_api.table_fetch_value(rt_cols, find_sql_column(columns, "column_type"));
 	ATOMIC_PTR_INIT(&c->data, NULL);
 	c->t = t;
+	obj_lock_init(&c->lock, 'c', c->base.id);
 	if (isTable(c->t) && (c->type.multiset || !c->type.type->composite))
 		store->storage_api.create_col(tr, c);
 	TRC_DEBUG(SQL_STORE, "Load column: %s\n", c->base.name);
@@ -762,8 +775,10 @@ load_table(sql_trans *tr, sql_schema *s, res_table *rt_tables, res_table *rt_par
 	t->system = *(bit*)store->table_api.table_fetch_value(rt_tables, find_sql_column(tables, "system"));
 	t->commit_action = (ca_t)*(sht*)store->table_api.table_fetch_value(rt_tables, find_sql_column(tables, "commit_action"));
 	t->persistence = SQL_PERSIST;
-	if (t->commit_action)
+	if (t->commit_action) {
 		t->persistence = SQL_GLOBAL_TEMP;
+		t->globaltemp = true;
+	}
 	if (isRemote(t))
 		t->persistence = SQL_REMOTE;
 	t->access = *(sht*)store->table_api.table_fetch_value(rt_tables, find_sql_column(tables, "access"));
@@ -779,6 +794,7 @@ load_table(sql_trans *tr, sql_schema *s, res_table *rt_tables, res_table *rt_par
 	if (isMergeTable(t) || isReplicaTable(t))
 		t->members = list_create((fdestroy) &part_destroy);
 	ATOMIC_PTR_INIT(&t->data, NULL);
+	obj_lock_init(&t->lock, 't', t->base.id);
 
 	if (isTable(t)) {
 		if (store->storage_api.create_del(tr, t) != LOG_OK) {
@@ -1102,6 +1118,7 @@ load_seq(sql_trans *tr, sql_schema * s, oid rid)
 	seq->cacheinc = store->table_api.column_find_lng(tr, find_sql_column(seqs, "cacheinc"), rid);
 	seq->cycle = (bit) store->table_api.column_find_bte(tr, find_sql_column(seqs, "cycle"), rid);
 	seq->s = s;
+	obj_lock_init(&seq->lock, 's', seq->base.id);
 	return seq;
 }
 
@@ -1717,6 +1734,7 @@ bootstrap_create_column(sql_trans *tr, sql_table *t, const char *name, sqlid id,
 		return NULL;
 
 	ATOMIC_PTR_INIT(&col->data, NULL);
+	obj_lock_init(&col->lock, 'c', col->base.id);
 	if (isTable(col->t))
 		store->storage_api.create_col(tr, col);
 	return col;
@@ -1735,6 +1753,8 @@ create_sql_table_with_id(allocator *sa, sqlid id, const char *name, sht type, bi
 	t->type = type;
 	t->system = system;
 	t->persistence = (temp_t)persistence;
+	if (t->persistence == SQL_GLOBAL_TEMP)
+		t->globaltemp = true;
 	t->commit_action = (ca_t)commit_action;
 	t->query = NULL;
 	t->access = 0;
@@ -1848,6 +1868,7 @@ dup_sql_table(allocator *sa, sql_table *t)
 	nt->query = (t->query) ? SA_STRDUP(sa, t->query) : NULL;
 	nt->s = t->s;
 
+	obj_lock_init(&t->lock, 't', t->base.id);
 	if (isPartitionedByExpressionTable(nt)) {
 		nt->part.pexp = SA_ZNEW(sa, sql_expression);
 		nt->part.pexp->exp = SA_STRDUP(sa, t->part.pexp->exp);
@@ -1886,6 +1907,7 @@ bootstrap_create_table(sql_trans *tr, sql_schema *s, const char *name, sqlid id)
 		ATOMIC_SET(&store->obj_id, id + 1);
 	t = create_sql_table_with_id(NULL, id, name, tt_table, 1, persistence, commit_action, 0);
 	t->bootstrap = 1;
+	obj_lock_init(&t->lock, 't', t->base.id);
 
 	TRC_DEBUG(SQL_STORE, "Create table: %s\n", name);
 
@@ -2329,10 +2351,6 @@ store_init(int debug, store_type store_tpe, int readonly, int singleuser)
 	MT_lock_init(&store->lock, "sqlstore_lock");
 	MT_lock_init(&store->commit, "sqlstore_commit");
 	MT_lock_init(&store->flush, "sqlstore_flush");
-	for(int i = 0; i<NR_TABLE_LOCKS; i++)
-		MT_lock_init(&store->table_locks[i], "sqlstore_table");
-	for(int i = 0; i<NR_COLUMN_LOCKS; i++)
-		MT_lock_init(&store->column_locks[i], "sqlstore_column");
 
 	MT_lock_set(&store->flush);
 	MT_lock_set(&store->lock);
@@ -2436,10 +2454,6 @@ store_exit(sqlstore *store)
 	MT_lock_destroy(&store->lock);
 	MT_lock_destroy(&store->commit);
 	MT_lock_destroy(&store->flush);
-	for(int i = 0; i<NR_TABLE_LOCKS; i++)
-		MT_lock_destroy(&store->table_locks[i]);
-	for(int i = 0; i<NR_COLUMN_LOCKS; i++)
-		MT_lock_destroy(&store->column_locks[i]);
 	_DELETE(store);
 }
 
@@ -2847,7 +2861,7 @@ tar_write_header_field(char **cursor_ptr, size_t size, const char *fmt, ...)
 // Write a tar header to the given stream.
 __attribute__((__warn_unused_result__))
 static gdk_return
-tar_write_header(stream *tarfile, const char *path, time_t mtime, int64_t size)
+tar_write_header(stream *tarfile, const char *path, time_t mtime, uint64_t size)
 {
 	char buf[TAR_BLOCK_SIZE] = {0};
 	char *cursor = buf;
@@ -2881,7 +2895,7 @@ tar_write_header(stream *tarfile, const char *path, time_t mtime, int64_t size)
 	tar_write_header_field(&cursor, 155, "%s", ""); // prefix[155]
 	assert(cursor - buf == 500);
 
-	int64_t max_oct_size = 077777777777;    // 0_777_7777_7777, 11 octal digits
+	const uint64_t max_oct_size = 077777777777;    // 0_777_7777_7777, 11 octal digits
 	// max_oct_size = 077; // for testing
 	if (size <= max_oct_size) {
 		tar_write_header_field(&size_field, 12, "%011"PRIo64, size);      // size[12]
@@ -2956,7 +2970,7 @@ tar_write_data(stream *tarfile, const char *path, time_t mtime, const char *data
 
 __attribute__((__warn_unused_result__))
 static gdk_return
-tar_copy_stream(stream *tarfile, const char *path, time_t mtime, stream *contents, int64_t size, char *buf, size_t bufsize)
+tar_copy_stream(stream *tarfile, const char *path, time_t mtime, stream *contents, uint64_t size, char *buf, size_t bufsize)
 {
 	assert( (bufsize % TAR_BLOCK_SIZE) == 0);
 	assert(bufsize >= TAR_BLOCK_SIZE);
@@ -2964,23 +2978,23 @@ tar_copy_stream(stream *tarfile, const char *path, time_t mtime, stream *content
 	if (tar_write_header(tarfile, path, mtime, size) != GDK_SUCCEED)
 		return GDK_FAIL;
 
-	int64_t to_do = size;
+	uint64_t to_do = size;
 	while (to_do > 0) {
-		size_t chunk = (to_do <= (int64_t)bufsize) ? (size_t)to_do : bufsize;
+		size_t chunk = (to_do <= (uint64_t)bufsize) ? (size_t)to_do : bufsize;
 		ssize_t nbytes = mnstr_read(contents, buf, 1, chunk);
 		if (nbytes > 0) {
 			if (tar_write(tarfile, path, buf, nbytes) != GDK_SUCCEED)
 				return GDK_FAIL;
-			to_do -= (int64_t)nbytes;
+			to_do -= (uint64_t)nbytes;
 			continue;
 		}
 		// error handling
 		if (nbytes < 0) {
-			GDKerror("Error after reading %"PRId64"/%"PRId64" bytes: %s",
+			GDKerror("Error after reading %"PRIu64"/%"PRIu64" bytes: %s",
 				size - to_do, size, mnstr_peek_error(contents));
 			return GDK_FAIL;
 		} else {
-			GDKerror("Unexpected end of file after reading %"PRId64"/%"PRId64" bytes of %s",
+			GDKerror("Unexpected end of file after reading %"PRIu64"/%"PRIu64" bytes of %s",
 				size - to_do, size, path);
 			return GDK_FAIL;
 		}
@@ -3038,15 +3052,11 @@ hot_snapshot_write_tar(stream *out, const char *prefix, const char *plan)
 	// 	goto end;
 
 	char command;
-	int64_t size;
-	while (sscanf(p, "%c %"SCNi64" %100s\n%n", &command, &size, src_name, &len) == 3) {
+	uint64_t size;
+	while (sscanf(p, "%c %"SCNu64" %100s\n%n", &command, &size, src_name, &len) == 3) {
 		GDK_CHECK_TIMEOUT_BODY(qry_ctx, GOTO_LABEL_TIMEOUT_HANDLER(end, qry_ctx));
 		p += len;
 		strcpy(dest_name, src_name);
-		if (size < 0) {
-			GDKerror("malformed snapshot plan for %s: size %"PRId64" < 0", src_name, size);
-			goto end;
-		}
 		switch (command) {
 			case 'c':
 				infile = open_rstream(abs_src_path);
@@ -3118,7 +3128,7 @@ pick_tmp_name(str filename)
 	if (ext == NULL) {
 		return strcat(name, "..tmp");
 	} else {
-		const char tmp[] = "..tmp.";
+		static const char tmp[] = "..tmp.";
 		size_t tmplen = strlen(tmp);
 		memmove(ext + tmplen, ext, strlen(ext) + 1);
 		memmove(ext, tmp, tmplen);
@@ -3376,6 +3386,7 @@ column_dup(sql_trans *tr, sql_column *oc, sql_table *t, sql_column **cres)
 		c->storage_type =_STRDUP(oc->storage_type);
 	ATOMIC_PTR_INIT(&c->data, NULL);
 
+	obj_lock_init(&c->lock, 'c', c->base.id);
 	if (isTable(c->t)) {
 		if (isTempTable(c->t)) {
 			if ((res = store->storage_api.create_col(tr, c))) {
@@ -3467,6 +3478,7 @@ idx_dup(sql_trans *tr, sql_idx * i, sql_table *t, sql_idx **ires)
 	ni->type = i->type;
 	ni->key = NULL;
 	ATOMIC_PTR_INIT(&ni->data, NULL);
+	obj_lock_init(&ni->lock, 'i', ni->base.id);
 
 	if (isTable(i->t)) {
 		if (isTempTable(i->t)) {
@@ -3573,6 +3585,7 @@ table_dup(sql_trans *tr, sql_table *ot, sql_schema *s, const char *name,
 	t->type = ot->type;
 	t->system = ot->system;
 	t->bootstrap = ot->bootstrap;
+	t->globaltemp = ot->globaltemp;
 	t->persistence = (s || dup_global_as_global)?ot->persistence:SQL_LOCAL_TEMP;
 	t->commit_action = ot->commit_action;
 	t->access = ot->access;
@@ -3592,6 +3605,7 @@ table_dup(sql_trans *tr, sql_table *ot, sql_schema *s, const char *name,
 	t->s = s ? s : tr->tmp;
 	t->sz = ot->sz;
 	ATOMIC_PTR_INIT(&t->data, NULL);
+	obj_lock_init(&t->lock, 't', t->base.id);
 
 	if (isPartitionedByExpressionTable(ot)) {
 		t->part.pexp = ZNEW(sql_expression);
@@ -3841,13 +3855,10 @@ sql_trans_copy_key( sql_trans *tr, sql_table *t, sql_key *k, sql_key **kres)
 		if (nk->type == fkey) {
 			if ((res = sql_trans_create_dependency(tr, kc->c->base.id, nk->base.id, FKEY_DEPENDENCY)))
 				return res;
-		} else if (nk->type == ukey || nk->type == ckey) {
+		} else if (nk->type == pkey || nk->type == ukey || nk->type == unndkey || nk->type == ckey) {
 			if ((res = sql_trans_create_dependency(tr, kc->c->base.id, nk->base.id, KEY_DEPENDENCY)))
 				return res;
-		} else if (nk->type == pkey) {
-			if ((res = sql_trans_create_dependency(tr, kc->c->base.id, nk->base.id, KEY_DEPENDENCY)))
-				return res;
-			if ((res = sql_trans_alter_null(tr, kc->c, 0)))
+			if (nk->type == pkey && (res = sql_trans_alter_null(tr, kc->c, 0)))
 				return res;
 		}
 
@@ -3889,6 +3900,8 @@ sql_trans_copy_idx( sql_trans *tr, sql_table *t, sql_idx *i, sql_idx **ires)
 	ni->type = i->type;
 	ni->key = NULL;
 	ATOMIC_PTR_INIT(&ni->data, NULL);
+	if (!isDeclaredTable(t))
+		obj_lock_init(&ni->lock, 'i', ni->base.id);
 
 	for (n = i->columns->h, nr = 0; n; n = n->next, nr++) {
 		sql_kc *okc = n->data, *ic;
@@ -4226,6 +4239,7 @@ sql_trans_copy_column( sql_trans *tr, sql_table *t, sql_column *c, sql_column **
 
 	}
 	if (!isDeclaredTable(t)) {
+		obj_lock_init(&col->lock, 'c', col->base.id);
 		char *strnil = (char*)ATOMnilptr(TYPE_str);
 		int digits = type_digits(&col->type);
 		if ((res = store->table_api.table_insert(tr, syscolumn, &col->base.id, &col->base.name, &col->type.type->base.name,
@@ -4378,6 +4392,7 @@ sql_trans_destroy(sql_trans *tr)
 	sqlstore *store = tr->store;
 	os_destroy(tr->localtmps, store);
 	MT_lock_destroy(&tr->lock);
+	MT_lock_destroy(&tr->localtmplock);
 	if (!list_empty(tr->dropped))
 		list_destroy(tr->dropped);
 	if (!list_empty(tr->predicates))
@@ -4397,6 +4412,7 @@ sql_trans_create_(sqlstore *store, sql_trans *parent, const char *name)
 	if (!tr)
 		return NULL;
 	MT_lock_init(&tr->lock, "trans_lock");
+	MT_lock_init(&tr->localtmplock, "localtmp");
 	tr->parent = parent;
 	if (name) {
 		_DELETE(parent->name);
@@ -4630,19 +4646,19 @@ sql_trans_commit(sql_trans *tr)
 					ok = c->log(tr, c);
 			}
 			if (ok == LOG_OK && !list_empty(store->seqchanges)) {
-				sequences_lock(store);
+				//sequences_lock(store);
 				for(node *n = store->seqchanges->h; n; ) {
 					node *next = n->next;
 					log_store_sequence(store, n->data);
 					list_remove_node(store->seqchanges, NULL, n);
 					n = next;
 				}
-				sequences_unlock(store);
+				//sequences_unlock(store);
 			}
 			if (ok == LOG_OK && store->prev_oid != (sqlid) ATOMIC_GET(&store->obj_id)) {
 				if (!flush)
 					MT_lock_set(&store->flush);
-				ok = store->logger_api.log_tsequence(store, OBJ_SID, store->obj_id);
+				ok = store->logger_api.log_tsequence(store, OBJ_SID, (sqlid) ATOMIC_GET(&store->obj_id));
 				if (!flush)
 					MT_lock_unset(&store->flush);
 			}
@@ -5044,7 +5060,7 @@ sys_drop_sequence(sql_trans *tr, sql_sequence * seq, int drop_action)
 static int
 sys_drop_default_object(sql_trans *tr, sql_column *col, int drop_action)
 {
-	const char next_value_for[] = "next value for ";
+	static const char next_value_for[] = "next value for ";
 	int res = LOG_OK;
 
 	/* Drop sequence for generated column if it's the case */
@@ -5410,7 +5426,6 @@ sys_drop_type(sql_trans *tr, sql_type *type, int drop_action)
 
 	if ((res = store->table_api.table_delete(tr, sys_tab_type, rid)))
 		return res;
-
 	if (!isNew(type) && (res = sql_trans_add_dependency_change(tr, type->base.id, ddl)))
 		return res;
 	if ((res = sql_trans_drop_dependencies(tr, type->base.id)))
@@ -6339,6 +6354,35 @@ sql_trans_add_value_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_s
 	return res;
 }
 
+/* here we should delete also all tables idxs, keys and triggers from the schema */
+static int
+cleanup_schema_objects( sql_table *t, sql_trans *tr)
+{
+	int res = LOG_OK;
+	if (ol_length(t->idxs))
+		for (node *n = ol_first_node(t->idxs); n; n = n->next) {
+			sql_idx *i = n->data;
+
+			if ((res = os_del(i->t->s->idxs, tr, i->base.name, dup_base(&i->base))))
+				return res;
+		}
+	if (ol_length(t->keys))
+		for (node *n = ol_first_node(t->keys); n; n = n->next) {
+			sql_key *k = n->data;
+
+			if ((res = os_del(k->t->s->keys, tr, k->base.name, dup_base(&k->base))))
+				return res;
+		}
+	if (ol_length(t->triggers))
+		for (node *n = ol_first_node(t->triggers); n; n = n->next) {
+			sql_key *t = n->data;
+
+			if ((res = os_del(t->t->s->triggers, tr, t->base.name, dup_base(&t->base))))
+				return res;
+		}
+	return res;
+}
+
 int
 sql_trans_rename_table(sql_trans *tr, sql_schema *s, sqlid id, const char *new_name)
 {
@@ -6369,6 +6413,8 @@ sql_trans_rename_table(sql_trans *tr, sql_schema *s, sqlid id, const char *new_n
 
 	if ((res = table_dup(tr, t, t->s, new_name, &dup, true)))
 		return res;
+	if (isGlobal(t))
+		res = cleanup_schema_objects(t, tr);
 	return res;
 }
 
@@ -6391,7 +6437,11 @@ sql_trans_set_table_schema(sql_trans *tr, sqlid id, sql_schema *os, sql_schema *
 		return res;
 	if ((res = os_del(os->tables, tr, t->base.name, dup_base(&t->base))))
 		return res;
-	return table_dup(tr, t, ns, NULL, &dup, true);
+	if ((res = table_dup(tr, t, ns, NULL, &dup, true)))
+		return res;
+	if (isGlobal(t))
+		res = cleanup_schema_objects(t, tr);
+	return res;
 }
 
 int
@@ -6449,6 +6499,7 @@ sql_trans_create_table(sql_table **tres, sql_trans *tr, sql_schema *s, const cha
 	if (sz < 0)
 		t->sz = COLSIZE;
 
+	obj_lock_init(&t->lock, 't', t->base.id);
 	if ((res = os_add(isGlobal(t)?s->tables:tr->localtmps, tr, t->base.name, &t->base)))
 		return res;
 
@@ -6735,9 +6786,17 @@ drop_sql_key(sql_table *t, sqlid id, int drop_action)
 }
 
 int
-sql_trans_rename_column(sql_trans *tr, sql_table *t, sqlid id, const char *old_name, const char *new_name)
+sql_trans_rename_column(sql_trans *tr, sql_schema *s, sql_table *t, sqlid id, const char *old_name, const char *new_name)
 {
 	sqlstore *store = tr->store;
+
+	if (t && isTempTable(t)) {
+		sql_table *gt = (sql_table*)os_find_id(s->tables, tr, t->base.id);
+		assert(t == gt || !gt || (isTempTable(gt) && !isLocalTemp(gt) && isLocalTemp(t)));
+		if (gt)
+			t = gt;
+	}
+
 	sql_table *syscolumn = find_sql_table(tr, find_sql_schema(tr, isGlobal(t)?"sys":"tmp"), "_columns");
 	oid rid;
 	int res = LOG_OK;
@@ -7207,10 +7266,10 @@ sql_trans_create_kc(sql_trans *tr, sql_key *k, sql_column *c)
 	if (k->idx && (res = sql_trans_create_ic(tr, k->idx, c)))
 		return res;
 
-	if (k->type == pkey) {
+	if (k->type == pkey || k->type == ukey || k->type == unndkey || k->type == ckey) {
 		if ((res = sql_trans_create_dependency(tr, c->base.id, k->base.id, KEY_DEPENDENCY)))
 			return res;
-		if ((res = sql_trans_alter_null(tr, c, 0))) /* should never trigger error */
+		if (k->type == pkey && (res = sql_trans_alter_null(tr, c, 0))) /* should never trigger error */
 			return res;
 	}
 
@@ -7421,6 +7480,8 @@ sql_trans_create_idx(sql_idx **i, sql_trans *tr, sql_table *t, const char *name,
 		return res;
 
 	ATOMIC_PTR_INIT(&ni->data, NULL);
+	if (!isDeclaredTable(t))
+		obj_lock_init(&ni->lock, 'i', ni->base.id);
 	if (!isDeclaredTable(t) && isTable(ni->t) && idx_has_column(ni->type))
 		if ((res = store->storage_api.create_idx(tr, ni))) {
 			return res;
@@ -7687,6 +7748,7 @@ sql_trans_create_sequence(sql_trans *tr, sql_schema *s, const char *name, lng st
 
 	if ((res = os_add(s->seqs, tr, seq->base.name, &seq->base)))
 		return res;
+	obj_lock_init(&seq->lock, 's', seq->base.id);
 	if ((res = store->table_api.table_insert(tr, sysseqs, &seq->base.id, &s->base.id, &seq->base.name, &seq->start, &seq->minvalue,
 							 &seq->maxvalue, &seq->increment, &seq->cacheinc, &seq->cycle)))
 		return res;
@@ -7954,10 +8016,9 @@ convert_part_values(sql_trans *tr, sql_table *mt )
 			if (isListPartitionTable(mt)) {
 				for (node *m = p->part.values->h; m; m = m->next) {
 					sql_part_value *v = (sql_part_value*) m->data, ov = *v;
-					ValRecord vvalue;
+					ValRecord vvalue = {.vtype = TYPE_void,};
 					ptr ok;
 
-					vvalue = (ValRecord) {.vtype = TYPE_void,};
 					ok = VALinit(&vvalue, TYPE_str, v->value);
 					if (ok)
 						ok = VALconvert(localtype, &vvalue);

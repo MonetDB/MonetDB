@@ -23,6 +23,7 @@ target_sources(atoms
   json.c json.h
   mtime.c mtime.h
   inet.c
+  inet-46.c
   xml.c xml.h
   batxml.c)
 

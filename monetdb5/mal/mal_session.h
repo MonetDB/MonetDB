@@ -19,11 +19,8 @@
 mal_export str malBootstrap(char *modules[], bool embedded,
 							const char *initpasswd);
 mal_export str MSinitClientPrg(Client cntxt, const char *mod, const char *nme);
-mal_export void MSscheduleClient(str command, str peer, str challenge, bstream *fin,
-								 stream *fout, protocol_version protocol,
-								 size_t blocksize);
 
-mal_export str MALinitClient(Client c);
+mal_export str MALinitClient(Client c, const char *, const char *, const char *);
 mal_export str MALexitClient(Client c);
 mal_export str MALparser(Client c);
 mal_export void MALengine(Client c);

@@ -117,6 +117,7 @@ def unpack_snapshot(filename):
             tar.extractall(dbfarm, filter='data')
 
 
+shutil.rmtree(os.path.join(dbfarm, mydb), ignore_errors=True)
 # Create the database and set up some test data.
 # Instantly create a full snapshot.
 # Verify that foreign key constraints are checked.

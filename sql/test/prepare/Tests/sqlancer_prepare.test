@@ -494,7 +494,7 @@ NULL
 NULL
 NULL
 
-statement error 42000!Cannot rewrite subquery because of parameter with unknown type
+statement error 42000!Could not determine type for argument number 1
 PREPARE SELECT 1 FROM (SELECT 1) x(x) LEFT OUTER JOIN (SELECT DISTINCT ?) y(y) ON (SELECT TRUE FROM (SELECT 1) z(z))
 
 statement ok

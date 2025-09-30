@@ -401,14 +401,14 @@ foreign_key_check_types(sql_subtype *lt, sql_subtype *rt)
 static key_type
 token2key_type(int token)
 {
-		switch (token) {
+	switch (token) {
 		case SQL_UNIQUE:					return ukey;
 		case SQL_UNIQUE_NULLS_NOT_DISTINCT:	return unndkey;
 		case SQL_PRIMARY_KEY:				return pkey;
 		case SQL_CHECK:						return ckey;
-		}
-		assert(0);
-		return -1;
+	}
+	assert(0);
+	return -1;
 }
 
 static sql_rel*
@@ -417,7 +417,10 @@ create_check_plan(sql_query *query, symbol *s, sql_table *t)
 	mvc *sql = query->sql;
 	exp_kind ek = {type_value, card_value, FALSE};
 	sql_rel *rel = rel_basetable(sql, t, a_create(sql->sa, t->base.name));
+	if (!stack_push_frame(sql, NULL))
+		return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	sql_exp *e = rel_logical_value_exp(query, &rel, s->data.lval->h->data.sym, sql_sel | sql_no_subquery, ek);
+	stack_pop_frame(sql);
 
 	if (!e || !rel || !is_basetable(rel->op))
 		return NULL;
@@ -1096,8 +1099,8 @@ create_column(sql_query *query, symbol *s, sql_schema *ss, sql_table *t, int alt
 	(void) ss;
 	if (alter && !(isTable(t) || ((isMergeTable(t) || isReplicaTable(t)) && list_length(t->members)==0))) {
 		(void) sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: cannot add column to %s '%s'%s",
-				  TABLE_TYPE_DESCRIPTION(t->type, t->properties),
-				  t->base.name, ((isMergeTable(t) || isReplicaTable(t)) && list_length(t->members)) ? " while it has partitions" : "");
+				TABLE_TYPE_DESCRIPTION(t->type, t->properties),
+				t->base.name, ((isMergeTable(t) || isReplicaTable(t)) && list_length(t->members)) ? " while it has partitions" : "");
 		return SQL_ERR;
 	}
 	if (l->h->next->next)
@@ -1147,8 +1150,9 @@ table_element(sql_query *query, symbol *s, sql_schema *ss, sql_table *t, int alt
 		((isMergeTable(t) || isReplicaTable(t)) && (s->token != SQL_TABLE && s->token != SQL_DROP_TABLE && list_length(t->members))) ||
 		(isTable(t) && (s->token == SQL_TABLE || s->token == SQL_DROP_TABLE)) ||
 		(partition_find_part(sql->session->tr, t, NULL) &&
-			 (s->token == SQL_DROP_COLUMN || s->token == SQL_COLUMN || s->token == SQL_CONSTRAINT ||
-			  s->token == SQL_DEFAULT || s->token == SQL_DROP_DEFAULT || s->token == SQL_NOT_NULL || s->token == SQL_NULL || s->token == SQL_DROP_CONSTRAINT)))){
+			(s->token == SQL_DROP_COLUMN || s->token == SQL_COLUMN || s->token == SQL_CONSTRAINT ||
+			 s->token == SQL_DEFAULT || s->token == SQL_DROP_DEFAULT || s->token == SQL_NOT_NULL ||
+			 s->token == SQL_NULL || s->token == SQL_DROP_CONSTRAINT)))) {
 		const char *msg = "";
 
 		switch (s->token) {
@@ -1375,6 +1379,8 @@ table_element(sql_query *query, symbol *s, sql_schema *ss, sql_table *t, int alt
 				default:
 					break;
 			}
+			if (nc && oc->null != nc->null)
+				mvc_null(sql, nc, oc->null);
 		}
 	} 	break;
 	case SQL_DROP_COLUMN:
@@ -1405,7 +1411,7 @@ table_element(sql_query *query, symbol *s, sql_schema *ss, sql_table *t, int alt
 			sql_error(sql, 02, SQLSTATE(2BM37) "%s: cannot drop column '%s': there are database objects which depend on it\n", action, cname);
 			return SQL_ERR;
 		}
-		if (!drop_action  && t->keys) {
+		if (!drop_action && t->keys) {
 			node *n, *m;
 
 			for (n = ol_first_node(t->keys); n; n = n->next) {
@@ -1686,7 +1692,7 @@ rel_create_view(sql_query *query, int temp, dlist *qname, dlist *column_spec, sy
 	const char *base = replace ? "CREATE OR REPLACE VIEW" : "CREATE VIEW";
 	const char *action = (temp == SQL_DECLARED_TABLE)?"DECLARE":"CREATE";
 
-	(void) check;		/* Stefan: unused!? */
+	(void) check;
 
 	if (temp == SQL_GLOBAL_TEMP)
 		temp = SQL_PERSIST; /* just normal view */
@@ -1724,10 +1730,13 @@ rel_create_view(sql_query *query, int temp, dlist *qname, dlist *column_spec, sy
 				return sql_error(sql, 01, SQLSTATE(42000) "%s: %s not supported", base, sn->limit ? "LIMIT" : "SAMPLE");
 		}
 
+		bool globals = sql->globals;
+		sql->globals = (temp != SQL_LOCAL_TEMP);
 		pfoundid = sql->objid;
 		sql->objid = foundid; /* when recreating a view, the view itself can't be found */
 		sq = schema_selects(query, s, ast);
 		sql->objid = pfoundid;
+		sql->globals = globals;
 		if (!sq)
 			return NULL;
 		if (!is_project(sq->op)) /* make sure sq is a projection */
@@ -1819,14 +1828,20 @@ rel_schema3(allocator *sa, int cat_type, char *sname, char *tname, char *name)
 }
 
 static sql_rel *
-rel_drop_type(mvc *sql, dlist *qname, int drop_action)
+rel_drop_type(mvc *sql, dlist *qname, int drop_action, int if_exists)
 {
 	char *name = qname_schema_object(qname);
 	char *sname = qname_schema(qname);
 	sql_type *t = NULL;
 
-	if (!(t = find_type_on_scope(sql, sname, name, "DROP TYPE")))
+	if (!(t = find_type_on_scope(sql, sname, name, "DROP TYPE"))) {
+		if (if_exists) {
+			sql->errstr[0] = '\0'; /* reset type not found error */
+			sql->session->status = 0;
+			return rel_psm_block(sql->sa, new_exp_list(sql->sa));
+		}
 		return NULL;
+	}
 	if (!mvc_schema_privs(sql, t->s))
 		return sql_error(sql, 02, SQLSTATE(42000) "DROP TYPE: access denied for %s to schema '%s'", get_string_global_var(sql, "current_user"), t->s->base.name);
 	return rel_schema2(sql->sa, ddl_drop_type, t->s->base.name, name, drop_action);
@@ -1854,7 +1869,7 @@ rel_type(allocator *sa, int cat_type, const char *sname, const char *name, list 
 }
 
 static sql_rel *
-rel_create_type(mvc *sql, dlist *qname, dnode *impl_or_field_list)
+rel_create_type(mvc *sql, dlist *qname, dnode *impl_or_field_list, int if_not_exists)
 {
 	char *name = qname_schema_object(qname);
 	char *sname = qname_schema(qname);
@@ -1862,8 +1877,11 @@ rel_create_type(mvc *sql, dlist *qname, dnode *impl_or_field_list)
 
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
 		return sql_error(sql, ERR_NOTFOUND, SQLSTATE(3F000) "CREATE TYPE: no such schema '%s'", sname);
-	if (schema_bind_type(sql, s, name) != NULL)
+	if (schema_bind_type(sql, s, name) != NULL) {
+		if (if_not_exists == 1)
+			return rel_psm_block(sql->sa, new_exp_list(sql->sa));
 		return sql_error(sql, 02, SQLSTATE(42S01) "CREATE TYPE: name '%s' already in use", name);
+	}
 	if (!mvc_schema_privs(sql, s))
 		return sql_error(sql, 02, SQLSTATE(42000) "CREATE TYPE: access denied for %s to schema '%s'", get_string_global_var(sql, "current_user"), s->base.name);
 	if (impl_or_field_list->type == type_string) {
@@ -2018,7 +2036,7 @@ sql_drop_view(sql_query *query, dlist *qname, int nr, int if_exists)
 
 	if (!(t = find_table_or_view_on_scope(sql, NULL, sname, tname, "DROP VIEW", true))) {
 		if (if_exists) {
-			sql->errstr[0] = '\0'; /* reset table not found error */
+			sql->errstr[0] = '\0'; /* reset view not found error */
 			sql->session->status = 0;
 			return rel_psm_block(sql->sa, new_exp_list(sql->sa));
 		}
@@ -2067,22 +2085,31 @@ sql_alter_table(sql_query *query, dlist *dl, dlist *qname, symbol *te, int if_ex
 
 		if (!(pt = find_table_or_view_on_scope(sql, t->s, nsname, ntname, "ALTER TABLE", false)))
 			return NULL;
+		const char *errt = TABLE_TYPE_DESCRIPTION(t->type, t->properties);
+		const char *errpt = TABLE_TYPE_DESCRIPTION(pt->type, pt->properties);
 		if (isView(pt))
-			return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: can't add/drop a view into a %s",
-							TABLE_TYPE_DESCRIPTION(t->type, t->properties));
+			return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: can't add/drop a view into a %s", errt);
 		if (isDeclaredTable(pt))
-			return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: can't add/drop a declared table into a %s",
-							TABLE_TYPE_DESCRIPTION(t->type, t->properties));
+			return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: can't add/drop a declared table into a %s", errt);
 		if (isTempSchema(pt->s))
-			return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: can't add/drop a temporary table into a %s",
-							TABLE_TYPE_DESCRIPTION(t->type, t->properties));
+			return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: can't add/drop a temporary table into a %s", errt);
 		if (isReplicaTable(t) && isMergeTable(pt))
-			return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: can't add/drop a %s table into a %s",
-							TABLE_TYPE_DESCRIPTION(pt->type, pt->properties), TABLE_TYPE_DESCRIPTION(t->type, t->properties));
+			return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: can't add/drop a %s table into a %s", errpt, errt);
 		nsname = pt->s->base.name;
 		if (strcmp(sname, nsname) != 0)
-			return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: all children tables of '%s.%s' must be part of schema '%s'",
-						sname, tname, sname);
+			return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: all children tables of '%s.%s' must be part of schema '%s'", sname, tname, sname);
+
+		if (ol_length(t->columns) != ol_length(pt->columns))
+			return sql_error(sql, 02, SQLSTATE(3F000) "ALTER %s: to be added table doesn't match %s definition", errt, errt);
+		for (node *n = ol_first_node(t->columns), *m = ol_first_node(pt->columns); n && m; n = n->next, m = m->next) {
+			sql_column *nc = n->data;
+			sql_column *mc = m->data;
+
+			if (subtype_cmp(&nc->type, &mc->type) != 0)
+			return sql_error(sql, 02, SQLSTATE(3F000) "ALTER %s: to be added table column type doesn't match %s definition", errt, errt);
+			if (nc->null != mc->null)
+				return sql_error(sql, 02, SQLSTATE(3F000) "ALTER %s: to be added table column NULL check doesn't match %s definition", errt, errt);
+		}
 
 		if (te->token == SQL_TABLE) {
 			symbol *extra = dl->h->next->next->next->data.sym;
@@ -2480,14 +2507,16 @@ rel_grant_or_revoke_privs(mvc *sql, dlist *privs, dlist *grantees, int grant, in
 
 /* iname, itype, sname.tname (col1 .. coln) */
 static sql_rel *
-rel_create_index(mvc *sql, char *iname, idx_type itype, dlist *qname, dlist *column_list)
+rel_create_index(mvc *sql, char *iname, idx_type itype, dlist *qname, dlist *column_list, int if_not_exists)
 {
 	sql_table *t = NULL, *nt;
 	sql_rel *r, *res;
 	sql_exp **updates, *e;
 	sql_idx *i;
 	dnode *n;
-	char *sname = qname_schema(qname), *tname = qname_schema_object(qname), *s = iname;
+	char *sname = qname_schema(qname);
+	char *tname = qname_schema_object(qname);
+	char *s = iname;
 
 	if (!(t = find_table_or_view_on_scope(sql, NULL, sname, tname, "CREATE INDEX", false)))
 		return NULL;
@@ -2501,8 +2530,11 @@ rel_create_index(mvc *sql, char *iname, idx_type itype, dlist *qname, dlist *col
 		s++;
 	if (!*s) /* if an index name just contains digit characters, it can be mistaken with a label */
 		return sql_error(sql, 02, SQLSTATE(42000) "CREATE INDEX: index name cannot contain just digit characters (0 through 9)");
-	if ((i = mvc_bind_idx(sql, t->s, iname)))
+	if ((i = mvc_bind_idx(sql, t->s, iname))) {
+		if (if_not_exists == 1)
+			return rel_psm_block(sql->sa, new_exp_list(sql->sa));
 		return sql_error(sql, 02, SQLSTATE(42S11) "CREATE INDEX: name '%s' already in use", iname);
+	}
 	if (ol_find_name(t->keys, iname) || mvc_bind_key(sql, t->s, iname))
 		return sql_error(sql, 02, SQLSTATE(42000) "CREATE INDEX: a key named '%s' already exists, and it would conflict with the index", iname);
 	if (!isTable(t))
@@ -2651,7 +2683,11 @@ rel_find_designated_table(mvc *sql, symbol *sym, sql_schema **schema_out) {
 	}
 
 	sql_error(sql, ERR_NOTFOUND, SQLSTATE(42S02) "COMMENT ON: no such %s: %s%s%s'%s'",
-			  want_table ? "table" : "view", sname ? "'":"", sname ? sname : "", sname ? "'.":"", tname);
+			want_table ? "table" : "view",
+			sname ? "'" : "",
+			sname ? sname : "",
+			sname ? "'." : "",
+			tname);
 	return 0;
 }
 
@@ -2690,7 +2726,11 @@ rel_find_designated_column(mvc *sql, symbol *sym, sql_schema **schema_out) {
 	}
 	if (!(c = mvc_bind_column(sql, t, cname))) {
 		sql_error(sql, ERR_NOTFOUND, SQLSTATE(42S12) "COMMENT ON: no such column: %s%s%s'%s'.'%s'",
-				  sname ? "'":"", sname ? sname : "", sname ? "'.":"", tname, cname);
+				sname ? "'" : "",
+				sname ? sname : "",
+				sname ? "'.":"",
+				tname,
+				cname);
 		return 0;
 	}
 	*schema_out = t->s;
@@ -2869,32 +2909,24 @@ rel_rename_schema(mvc *sql, char *old_name, char *new_name, int if_exists)
 	if (!(s = mvc_bind_schema(sql, old_name))) {
 		if (if_exists)
 			return rel_psm_block(sql->sa, new_exp_list(sql->sa));
-		return sql_error(sql, ERR_NOTFOUND, SQLSTATE(3F000)
-						 "ALTER SCHEMA: no such schema '%s'", old_name);
+		return sql_error(sql, ERR_NOTFOUND, SQLSTATE(3F000) "ALTER SCHEMA: no such schema '%s'", old_name);
 	}
 
 	if (!mvc_schema_privs(sql, s))
-		return sql_error(sql, 02, SQLSTATE(3F000)
-						 "ALTER SCHEMA: access denied for %s to schema '%s'",
-						 get_string_global_var(sql, "current_user"), old_name);
+		return sql_error(sql, 02, SQLSTATE(3F000) "ALTER SCHEMA: access denied for %s to schema '%s'",
+					get_string_global_var(sql, "current_user"), old_name);
 
 	if (s->system)
-		return sql_error(sql, 02, SQLSTATE(3F000)
-						 "ALTER SCHEMA: cannot rename a system schema");
+		return sql_error(sql, 02, SQLSTATE(3F000) "ALTER SCHEMA: cannot rename a system schema");
 
 	if (strNil(new_name) || *new_name == '\0')
-		return sql_error(sql, 02, SQLSTATE(3F000)
-						 "ALTER SCHEMA: invalid new schema name");
+		return sql_error(sql, 02, SQLSTATE(3F000) "ALTER SCHEMA: invalid new schema name");
 
 	if (mvc_bind_schema(sql, new_name))
-		return sql_error(sql, 02, SQLSTATE(3F000)
-						 "ALTER SCHEMA: there is a schema named '%s' in the database", new_name);
+		return sql_error(sql, 02, SQLSTATE(3F000) "ALTER SCHEMA: there is a schema named '%s' in the database", new_name);
 
 	if (mvc_check_dependency(sql, s->base.id, SCHEMA_DEPENDENCY, NULL) != NO_DEPENDENCY) {
-		return sql_error(sql, 02,
-						 SQLSTATE(2BM37) "ALTER SCHEMA: unable to"
-						 " rename schema '%s', there are database objects"
-						 " which depend on it", old_name);
+		return sql_error(sql, 02, SQLSTATE(2BM37) "ALTER SCHEMA: unable to rename schema '%s', there are database objects which depend on it", old_name);
 	}
 
 	rel = rel_create(sql->sa);
@@ -3076,11 +3108,11 @@ rel_schemas(sql_query *query, symbol *s)
 
 		assert(l->h->next->type == type_int);
 		ret = rel_drop(sql->sa, ddl_drop_schema,
-			   dlist_get_schema_name(auth_name),
-			   NULL,
-			   NULL,
-			   l->h->next->data.i_val, 	/* drop_action */
-			   l->h->next->next->data.i_val); /* if exists */
+				dlist_get_schema_name(auth_name),
+				NULL,
+				NULL,
+				l->h->next->data.i_val,	/* drop_action */
+				l->h->next->next->data.i_val); /* if exists */
 	} 	break;
 	case SQL_DECLARE_TABLE:
 		return sql_error(sql, 02, SQLSTATE(42000) "Tables cannot be declared on the global scope");
@@ -3103,12 +3135,12 @@ rel_schemas(sql_query *query, symbol *s)
 		assert(l->h->type == type_int);
 		assert(l->h->next->next->next->type == type_int);
 		ret = rel_create_table(query, temp, sname, name, true,
-				       l->h->next->next->data.sym,                   /* elements or subquery */
-				       l->h->next->next->next->data.i_val,           /* commit action */
-				       l->h->next->next->next->next->data.sval,      /* location */
-				       username, password, pw_encrypted,
-				       l->h->next->next->next->next->next->next->next->data.sym,
-				       l->h->next->next->next->next->next->next->data.i_val); /* if not exists */
+				l->h->next->next->data.sym,                   /* elements or subquery */
+				l->h->next->next->next->data.i_val,           /* commit action */
+				l->h->next->next->next->next->data.sval,      /* location */
+				username, password, pw_encrypted,
+				l->h->next->next->next->next->next->next->next->data.sym,
+				l->h->next->next->next->next->next->next->data.i_val); /* if not exists */
 	} 	break;
 	case SQL_CREATE_VIEW:
 	{
@@ -3118,12 +3150,12 @@ rel_schemas(sql_query *query, symbol *s)
 		assert(l->h->next->next->next->next->type == type_int);
 		assert(l->h->next->next->next->next->next->type == type_int);
 		ret = rel_create_view(query, l->h->data.i_val,
-							  l->h->next->data.lval,
-							  l->h->next->next->data.lval,
-							  l->h->next->next->next->data.sym,
-							  l->h->next->next->next->next->data.i_val,
-							  l->h->next->next->next->next->next->data.i_val,
-							  l->h->next->next->next->next->next->next->data.i_val); /* or replace */
+				l->h->next->data.lval,
+				l->h->next->next->data.lval,
+				l->h->next->next->next->data.sym,
+				l->h->next->next->next->next->data.i_val,
+				l->h->next->next->next->next->next->data.i_val,
+				l->h->next->next->next->next->next->next->data.i_val); /* or replace */
 	} 	break;
 	case SQL_DROP_TABLE:
 	{
@@ -3131,8 +3163,8 @@ rel_schemas(sql_query *query, symbol *s)
 
 		assert(l->h->next->type == type_int);
 		ret = sql_drop_table(query, l->h->data.lval,
-							 l->h->next->data.i_val,
-						 	 l->h->next->next->data.i_val); /* if exists */
+				l->h->next->data.i_val,
+				l->h->next->next->data.i_val); /* if exists */
 	} 	break;
 	case SQL_DROP_VIEW:
 	{
@@ -3140,17 +3172,17 @@ rel_schemas(sql_query *query, symbol *s)
 
 		assert(l->h->next->type == type_int);
 		ret = sql_drop_view(query, l->h->data.lval,
-							l->h->next->data.i_val,
-							l->h->next->next->data.i_val); /* if exists */
+				l->h->next->data.i_val,
+				l->h->next->next->data.i_val); /* if exists */
 	} 	break;
 	case SQL_ALTER_TABLE:
 	{
 		dlist *l = s->data.lval;
 
 		ret = sql_alter_table(query, l,
-			l->h->data.lval,      /* table name */
-			l->h->next->data.sym, /* table element */
-			l->h->next->next->data.i_val); /* if exists */
+				l->h->data.lval,      /* table name */
+				l->h->next->data.sym, /* table element */
+				l->h->next->next->data.i_val); /* if exists */
 	} 	break;
 	case SQL_GRANT_ROLES:
 	{
@@ -3159,10 +3191,10 @@ rel_schemas(sql_query *query, symbol *s)
 		assert(l->h->next->next->type == type_int);
 		assert(l->h->next->next->next->type == type_int);
 		ret = rel_grant_or_revoke_roles(sql, l->h->data.lval,	/* authids */
-				  l->h->next->data.lval,	/* grantees */
-				  l->h->next->next->data.i_val,	/* admin? */
-				  l->h->next->next->next->data.i_val == cur_user ? sql->user_id : sql->role_id, ddl_grant_roles);
-		/* grantor ? */
+				l->h->next->data.lval,	/* grantees */
+				l->h->next->next->data.i_val,	/* admin? */
+				l->h->next->next->next->data.i_val == cur_user ? sql->user_id : sql->role_id,
+				ddl_grant_roles);		/* grantor ? */
 	} 	break;
 	case SQL_REVOKE_ROLES:
 	{
@@ -3171,10 +3203,10 @@ rel_schemas(sql_query *query, symbol *s)
 		assert(l->h->next->next->type == type_int);
 		assert(l->h->next->next->next->type == type_int);
 		ret = rel_grant_or_revoke_roles(sql, l->h->data.lval,	/* authids */
-				  l->h->next->data.lval,	/* grantees */
-				  l->h->next->next->data.i_val,	/* admin? */
-				  l->h->next->next->next->data.i_val  == cur_user? sql->user_id : sql->role_id, ddl_revoke_roles);
-		/* grantor ? */
+				l->h->next->data.lval,	/* grantees */
+				l->h->next->next->data.i_val,	/* admin? */
+				l->h->next->next->next->data.i_val == cur_user ? sql->user_id : sql->role_id,
+				ddl_revoke_roles);		/* grantor ? */
 	} 	break;
 	case SQL_GRANT:
 	{
@@ -3183,10 +3215,10 @@ rel_schemas(sql_query *query, symbol *s)
 		assert(l->h->next->next->type == type_int);
 		assert(l->h->next->next->next->type == type_int);
 		ret = rel_grant_or_revoke_privs(sql, l->h->data.lval,	/* privileges */
-				  l->h->next->data.lval,	/* grantees */
-				  l->h->next->next->data.i_val,	/* grant ? */
-				  l->h->next->next->next->data.i_val  == cur_user? sql->user_id : sql->role_id, ddl_grant);
-		/* grantor ? */
+				l->h->next->data.lval,	/* grantees */
+				l->h->next->next->data.i_val,	/* grant ? */
+				l->h->next->next->next->data.i_val == cur_user ? sql->user_id : sql->role_id,
+				ddl_grant);			/* grantor ? */
 	} 	break;
 	case SQL_REVOKE:
 	{
@@ -3195,76 +3227,131 @@ rel_schemas(sql_query *query, symbol *s)
 		assert(l->h->next->next->type == type_int);
 		assert(l->h->next->next->next->type == type_int);
 		ret = rel_grant_or_revoke_privs(sql, l->h->data.lval,	/* privileges */
-				   l->h->next->data.lval,	/* grantees */
-				   l->h->next->next->data.i_val,	/* grant ? */
-				   l->h->next->next->next->data.i_val  == cur_user? sql->user_id : sql->role_id, ddl_revoke);
-		/* grantor ? */
+				l->h->next->data.lval,	/* grantees */
+				l->h->next->next->data.i_val,	/* grant ? */
+				l->h->next->next->next->data.i_val == cur_user ? sql->user_id : sql->role_id,
+				ddl_revoke);			/* grantor ? */
 	} 	break;
 	case SQL_CREATE_ROLE:
 	{
 		dlist *l = s->data.lval;
 		char *rname = l->h->data.sval;
+		int if_not_exists = l->h->next->next->data.i_val;
+
+		if (if_not_exists == 1 && rname != NULL) {
+			sqlid role_id = 0;
+			if (backend_find_role(sql, rname, &role_id) >= 0)
+				/* role already exists, but IF NOT EXISTS is specified, so we are done */
+				return rel_psm_block(sql->sa, new_exp_list(sql->sa));
+		}
 		ret = rel_schema2(sql->sa, ddl_create_role, rname, NULL,
-				 l->h->next->data.i_val  == cur_user? sql->user_id : sql->role_id);
+				 l->h->next->data.i_val == cur_user ? sql->user_id : sql->role_id);
 	} 	break;
 	case SQL_DROP_ROLE:
 	{
-		char *rname = s->data.sval;
+		dlist *l = s->data.lval;
+		char *rname = l->h->data.sval;
+		int if_exists = l->h->next->data.i_val;
+
+		if (if_exists == 1 && rname != NULL) {
+			sqlid role_id = 0;
+			if (backend_find_role(sql, rname, &role_id) < 0)
+				/* role does not exist, but IF EXISTS is specified, so we are done */
+				return rel_psm_block(sql->sa, new_exp_list(sql->sa));
+		}
 		ret = rel_schema2(sql->sa, ddl_drop_role, rname, NULL, 0);
 	} 	break;
 	case SQL_CREATE_INDEX: {
 		dlist *l = s->data.lval;
-
 		assert(l->h->next->type == type_int);
-		ret = rel_create_index(sql, l->h->data.sval, (idx_type) l->h->next->data.i_val, l->h->next->next->data.lval, l->h->next->next->next->data.lval);
+		ret = rel_create_index(sql, l->h->data.sval,
+				(idx_type) l->h->next->data.i_val,
+				l->h->next->next->data.lval,
+				l->h->next->next->next->data.lval,
+				l->h->next->next->next->next->data.i_val); /* if not exists */
 	} 	break;
 	case SQL_DROP_INDEX: {
 		dlist *l = s->data.lval;
-		char *sname = qname_schema(l);
-		char *iname = qname_schema_object(l);
+		dlist *qname = l->h->data.lval;
+		char *sname = qname_schema(qname);
+		char *iname = qname_schema_object(qname);
 		sql_idx *idx = NULL;
 
-		if (!(idx = find_idx_on_scope(sql, sname, iname, "DROP INDEX")))
+		if (!(idx = find_idx_on_scope(sql, sname, iname, "DROP INDEX"))) {
+			int if_exists = l->h->next->data.i_val;
+			if (if_exists) {
+				sql->errstr[0] = '\0'; /* reset index not found error */
+				sql->session->status = 0;
+				return rel_psm_block(sql->sa, new_exp_list(sql->sa));
+			}
 			return NULL;
+		}
 		ret = rel_schema2(sql->sa, ddl_drop_index, idx->t->s->base.name, iname, 0);
 	} 	break;
 	case SQL_CREATE_USER: {
 		dlist *l = s->data.lval;
+		char *username = l->h->data.sval;
 		dlist *schema_details = l->h->next->next->next->data.lval;
+		int if_not_exists = l->h->next->next->next->next->next->next->next->next->next->data.i_val;
 
-		ret = rel_create_user(sql->sa, l->h->data.sval,	/* user name */
-				  l->h->next->data.sval,	/* password */
-				  l->h->next->next->next->next->data.i_val == SQL_PW_ENCRYPTED, /* encrypted */
-				  l->h->next->next->data.sval,	/* fullname */
-				  schema_details->h->data.sval,	/* schema ident*/
-				  schema_details->h->next->data.sval,	/* schema path */
-				  l->h->next->next->next->next->next->data.l_val,	/* max memory */
-				  l->h->next->next->next->next->next->next->data.i_val, /* max workers */
-				  l->h->next->next->next->next->next->next->next->data.sval, /* optimizer */
-				  l->h->next->next->next->next->next->next->next->next->data.sval); /* default role */
+		if (if_not_exists == 1 && username != NULL) {
+			if (!is_oid_nil(backend_find_user(sql, username)))
+				/* user already exists, but IF NOT EXISTS is specified, so we are done */
+				return rel_psm_block(sql->sa, new_exp_list(sql->sa));
+		}
+		ret = rel_create_user(sql->sa, username,	/* user name */
+				l->h->next->data.sval,	/* password */
+				l->h->next->next->next->next->data.i_val == SQL_PW_ENCRYPTED, /* encrypted */
+				l->h->next->next->data.sval,	/* fullname */
+				schema_details->h->data.sval,	/* schema ident*/
+				schema_details->h->next->data.sval,	/* schema path */
+				l->h->next->next->next->next->next->data.l_val,	/* max memory */
+				l->h->next->next->next->next->next->next->data.i_val, /* max workers */
+				l->h->next->next->next->next->next->next->next->data.sval, /* optimizer */
+				l->h->next->next->next->next->next->next->next->next->data.sval); /* default role */
 	} 	break;
-	case SQL_DROP_USER:
-		ret = rel_schema2(sql->sa, ddl_drop_user, s->data.sval, NULL, 0);
-		break;
+	case SQL_DROP_USER: {
+		dlist *l = s->data.lval;
+		char *username = l->h->data.sval;
+		int if_exists = l->h->next->data.i_val;
+
+		if (if_exists == 1 && username != NULL && is_oid_nil(backend_find_user(sql, username))) {
+			/* user does not exist, but IF EXISTS is specified, so we are done */
+			return rel_psm_block(sql->sa, new_exp_list(sql->sa));
+		}
+		ret = rel_schema2(sql->sa, ddl_drop_user, username, NULL, 0);
+	}	break;
 	case SQL_ALTER_USER: {
 		dlist *l = s->data.lval;
+		char *username = l->h->data.sval;
 		dnode *a = l->h->next->data.lval->h;
+		int if_exists = l->h->next->next->next->next->next->data.i_val;
 
-		ret = rel_alter_user(sql->sa, l->h->data.sval,	/* user */
-			     a->data.sval,	/* passwd */
-			     a->next->next->next->data.i_val == SQL_PW_ENCRYPTED, /* encrypted */
-			     a->next->data.sval,	/* schema */
-				 a->next->next->data.sval, /* schema path */
-			     a->next->next->next->next->data.sval, /* old passwd */
-			     l->h->next->next->data.sval, /* default role */
-			     l->h->next->next->next->data.l_val, /* max_memory */
-			     l->h->next->next->next->next->data.i_val /* max_workers */
-		    );
+		if (if_exists == 1 && username != NULL && is_oid_nil(backend_find_user(sql, username))) {
+			/* user does not exist, but IF EXISTS is specified, so we are done */
+			return rel_psm_block(sql->sa, new_exp_list(sql->sa));
+		}
+		ret = rel_alter_user(sql->sa, username,	/* user */
+				a->data.sval,	/* passwd */
+				a->next->next->next->data.i_val == SQL_PW_ENCRYPTED, /* encrypted */
+				a->next->data.sval,	/* schema */
+				a->next->next->data.sval, /* schema path */
+				a->next->next->next->next->data.sval, /* old passwd */
+				l->h->next->next->data.sval, /* default role */
+				l->h->next->next->next->data.l_val, /* max_memory */
+				l->h->next->next->next->next->data.i_val /* max_workers */
+			);
 	} 	break;
 	case SQL_RENAME_USER: {
 		dlist *l = s->data.lval;
+		char *username = l->h->data.sval;
+		int if_exists = l->h->next->next->data.i_val;
 
-		ret = rel_schema2(sql->sa, ddl_rename_user, l->h->data.sval, l->h->next->data.sval, 0);
+		if (if_exists == 1 && username != NULL && is_oid_nil(backend_find_user(sql, username))) {
+			/* user does not exist, but IF EXISTS is specified, so we are done */
+			return rel_psm_block(sql->sa, new_exp_list(sql->sa));
+		}
+		ret = rel_schema2(sql->sa, ddl_rename_user, username, l->h->next->data.sval, 0);
 	} 	break;
 	case SQL_RENAME_SCHEMA: {
 		dlist *l = s->data.lval;
@@ -3290,12 +3377,13 @@ rel_schemas(sql_query *query, symbol *s)
 	} 	break;
 	case SQL_CREATE_TYPE: {
 		dlist *l = s->data.lval;
-
-		ret = rel_create_type(sql, l->h->data.lval, l->h->next);
+		ret = rel_create_type(sql, l->h->data.lval, l->h->next,
+				l->h->next->next->data.i_val);	/* if not exists */
 	} 	break;
 	case SQL_DROP_TYPE: {
 		dlist *l = s->data.lval;
-		ret = rel_drop_type(sql, l->h->data.lval, l->h->next->data.i_val);
+		ret = rel_drop_type(sql, l->h->data.lval, l->h->next->data.i_val,
+				l->h->next->next->data.i_val);	/* if exists */
 	} 	break;
 	case SQL_COMMENT:
 	{

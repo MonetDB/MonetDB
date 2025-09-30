@@ -1811,8 +1811,9 @@ exp_is_join(sql_exp *e, list *rels)
 }
 
 int
-exp_is_eqjoin(sql_exp *e)
+exp_is_eqjoin(sql_exp *e, void *dummy)
 {
+	(void) dummy;
 	if (e->flag == cmp_equal) {
 		sql_exp *l = e->l;
 		sql_exp *r = e->r;
@@ -2032,7 +2033,7 @@ exp_is_cmp_exp_is_false(sql_exp* e)
 {
 	sql_exp *l = e->l;
 	sql_exp *r = e->r;
-	assert(e->type == e_cmp && e->f == NULL && l && r);
+	assert(e->type == e_cmp && l && r);
 
 	/* Handle 'v is x' and 'v is not x' expressions.
 	* Other cases in is-semantics are unspecified.
@@ -2055,6 +2056,10 @@ exp_single_bound_cmp_exp_is_false(sql_exp* e)
     assert(e->f == NULL);
     assert (l && r);
 
+	if (e->flag == cmp_equal) {
+		if (exp_is_false(e->l) && exp_is_true(e->r))
+			return true;
+	}
     return exp_is_null(l) || exp_is_null(r);
 }
 
@@ -2075,10 +2080,14 @@ exp_regular_cmp_exp_is_false(sql_exp* e)
 {
     assert(e->type == e_cmp);
 
-    if (is_semantics(e) && !is_any(e)) return exp_is_cmp_exp_is_false(e);
-	if (is_any(e)) return false;
-    if (e -> f)         return exp_two_sided_bound_cmp_exp_is_false(e);
-    else                return exp_single_bound_cmp_exp_is_false(e);
+	if (is_any(e))
+		return false;
+    if (e -> f)
+		return exp_two_sided_bound_cmp_exp_is_false(e);
+    if (is_semantics(e) && !is_any(e))
+		return exp_is_cmp_exp_is_false(e);
+    else
+		return exp_single_bound_cmp_exp_is_false(e);
 }
 
 static inline bool
@@ -2926,6 +2935,60 @@ exp_unsafe(sql_exp *e, bool allow_identity, bool card)
 	return 0;
 }
 
+bool
+exps_have_fallible(list *exps)
+{
+	if (!exps)
+		return false;
+	for (node *n = exps->h; n; n = n->next)
+		if (exp_is_fallible(n->data))
+			return true;
+	return false;
+}
+
+bool
+exp_is_fallible(sql_exp *e)
+{
+	switch (e->type) {
+	case e_convert:
+		{
+			sql_subtype *t = exp_totype(e);
+			sql_subtype *f = exp_fromtype(e);
+			if (t->type->eclass == EC_FLT && (f->type->eclass == EC_DEC || f->type->eclass == EC_NUM))
+				return exp_is_fallible(e->l);
+			if (f->type->localtype > t->type->localtype)
+				return true;
+			/* TODO for types with digits check if t->digits is large enough
+			 * for types with scale etc */
+			return exp_is_fallible(e->l);
+		}
+	case e_aggr:
+	case e_func: {
+		sql_subfunc *f = e->f;
+
+		if (IS_ANALYTIC(f->func) || !LANG_INT_OR_MAL(f->func->lang) || f->func->side_effect)
+			return true;
+		return exps_have_fallible(e->l);
+	} break;
+	case e_cmp: {
+		if (e->flag == cmp_con || e->flag == cmp_dis) {
+			return exps_have_fallible(e->l);
+		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
+			return exp_is_fallible(e->l) || exps_have_fallible(e->r);
+		} else if (e->flag == cmp_filter) {
+			return exps_have_fallible(e->l) || exps_have_fallible(e->r);
+		} else {
+			return exp_is_fallible(e->l) || exp_is_fallible(e->r) || (e->f && exp_is_fallible(e->f));
+		}
+	} break;
+	case e_atom:
+	case e_column:
+	case e_psm:
+		return false;
+	}
+	return false;
+}
+
 static inline int
 exp_key( sql_exp *e )
 {
@@ -3399,7 +3462,7 @@ exp_scale_algebra(mvc *sql, sql_subfunc *f, sql_rel *rel, sql_exp *l, sql_exp *r
 
 		sql_find_subtype(&nlt, lt->type->base.name, digL, scaleL);
 		if (nlt.digits < scaleL)
-			return sql_error(sql, 01, SQLSTATE(42000) "Scale (%d) overflows type", scaleL);
+			return sql_error(sql, 01, SQLSTATE(42000) "Scale (%u) overflows type", scaleL);
 		l = exp_check_type(sql, &nlt, rel, l, type_equal);
 
 		sql_find_subtype(res, lt->type->base.name, digits, scale);

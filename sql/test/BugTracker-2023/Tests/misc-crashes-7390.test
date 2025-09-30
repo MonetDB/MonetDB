@@ -106,7 +106,7 @@ statement ok
 DROP TABLE v0
 
 -- 06.sql
-statement error HY013!Could not allocate space
+statement error HY013!Could not allocate memory
 CREATE TEMP TABLE Table0 (Col0 INT, PRIMARY KEY(Col0), FOREIGN KEY (Col0) REFERENCES Table0)
 
 -- 07.sql
@@ -458,7 +458,7 @@ DROP TABLE v0
 
 -- 31.sql
 onlyif has-hugeint
-query I
+query I nosort
 SELECT ALL ( SELECT - - - - - - - - - - - 1 - - - - - - 16 FROM ( SELECT NULL - - - - - - - - - - - - - - - - 1 FROM ( SELECT - - - - 1 * - - - - - - 2147483648 * - - - 43 * 77745222.000000 ) AS v1 ( v1 ) GROUP BY GROUPING SETS ( GROUPING SETS ( CUBE ( v1 ) ) ) ORDER BY v1 , - - - 86 + - - 93 ^ v1 , v1 LIMIT 21 ) AS v1 UNION SELECT - - - - - - - - - - - - 93 WHERE - v1 < - 63226945.000000 - - - - - - - - - - 68 ) FROM ( VALUES ( - - - - - - - - - 40 / - ( SELECT - - - - - - - - 0 WHERE - - - - - - - 40 = - - - - - 0 ) ) , ( - - 88 ) ) v1 ( v1 )
 ----
 15

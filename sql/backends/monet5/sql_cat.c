@@ -567,11 +567,12 @@ create_trigger(mvc *sql, char *sname, char *tname, char *triggername, int time, 
 			throw(SQL,"sql.create_trigger",SQLSTATE(3F000) "%s: no such schema '%s'", base, sname);
 	}
 
-	if ((other = mvc_bind_trigger(sql, s, triggername)) && !replace)
+	other = mvc_bind_trigger(sql, s, triggername);
+	if (other && !replace)
 		throw(SQL,"sql.create_trigger",SQLSTATE(3F000) "%s: name '%s' already in use", base, triggername);
 
-	if (replace && other) {
-		if (other->t->base.id != t->base.id) /* defensive line */
+	if (other && replace) {
+		if (t && other->t && other->t->base.id != t->base.id) /* defensive line */
 			throw(SQL,"sql.create_trigger",SQLSTATE(3F000) "%s: the to be replaced trigger '%s' is not from table '%s'", base, triggername, tname);
 		switch (mvc_drop_trigger(sql, s, other)) {
 			case -1:
@@ -1875,7 +1876,7 @@ SQLdrop_user(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str sname = *getArgReference_str(stk, pci, 1);
 
 	initcontext();
-	 msg = sql_drop_user(sql, sname);
+	msg = sql_drop_user(sql, sname);
 	return msg;
 }
 
@@ -2352,7 +2353,7 @@ SQLrename_column(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (mvc_bind_column(sql, t, new_name))
 		throw(SQL, "sql.rename_column", SQLSTATE(3F000) "ALTER TABLE: there is a column named '%s' in table '%s'", new_name, table_name);
 
-	switch (sql_trans_rename_column(sql->session->tr, t, col->base.id, old_name, new_name)) {
+	switch (sql_trans_rename_column(sql->session->tr, s, t, col->base.id, old_name, new_name)) {
 		case -1:
 			throw(SQL,"sql.rename_column", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		case -2:

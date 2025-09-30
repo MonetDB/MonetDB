@@ -68,7 +68,7 @@ test_progress = 0
 # whether output goes to a tty
 isatty = os.isatty(sys.stdout.fileno())
 
-mapiportre = re.compile(r'mapi:monetdb://[-.a-zA-Z0-9]+:(?P<port>\d+)/')
+mapiportre = re.compile(r'mapi:monetdb://[-.a-zA-Z0-9_]+:(?P<port>\d+)/')
 
 geos_version = '@GEOS_VERSION@'.split('.')
 
@@ -91,19 +91,19 @@ if isatty:
         GREEN = '\033[0;32m'
         PURPLE = '\033[1;35m'       # actually magenta
         BLACK = '\033[0;0m'
-        def prred(str):
+        def prred(str, *, RED=RED, BLACK=BLACK):
             try:
                 print(RED, end='')
                 print(str, end='')
             finally:
                 print(BLACK, end='')
-        def prgreen(str):
+        def prgreen(str, *, GREEN=GREEN, BLACK=BLACK):
             try:
                 print(GREEN, end='')
                 print(str, end='')
             finally:
                 print(BLACK, end='')
-        def prpurple(str):
+        def prpurple(str, *, PURPLE=PURPLE, BLACK=BLACK):
             try:
                 print(PURPLE, end='')
                 print(str, end='')
@@ -130,7 +130,7 @@ if isatty:
                     left, top, right, bottom, maxx, maxy) = struct.unpack('hhhhHhhhhhh', csbi.raw)
                     return wattr
                 reset = get_csbi_attributes(handle)
-                def prred(str,
+                def prred(str, *,
                           scta=ctypes.windll.kernel32.SetConsoleTextAttribute):
                     try:
                         print(end='', flush=True)
@@ -138,7 +138,7 @@ if isatty:
                         print(str, end='', flush=True)
                     finally:
                         scta(handle, reset)
-                def prgreen(str,
+                def prgreen(str, *,
                             scta=ctypes.windll.kernel32.SetConsoleTextAttribute):
                     try:
                         print(end='', flush=True)
@@ -146,7 +146,7 @@ if isatty:
                         print(str, end='', flush=True)
                     finally:
                         scta(handle, reset)
-                def prpurple(str,
+                def prpurple(str, *,
                              scta=ctypes.windll.kernel32.SetConsoleTextAttribute):
                     try:
                         print(end='', flush=True)
@@ -1067,7 +1067,7 @@ def find_test_dirs(thisdir, recursive=True) :
 def PerformDir(env, testdir, testlist, total_tests) :
     global test_progress
     interrupted = False
-    td = 0
+    td = time.time()
     elem = None
     FdOut = F_SKIP
     FdErr = F_SKIP
@@ -1130,10 +1130,7 @@ def PerformDir(env, testdir, testlist, total_tests) :
             return elem, max(FdOut, FdErr), interrupted
 
         # find length of longest test name
-        length = 0
-        for tst in testlist:
-            if len(tst[0]) > length:
-                length = len(tst[0])
+        length = max([len(tst[0]) for tst in testlist])
 
         if TSTDIR == os.curdir:
             RELSRCDIR = os.path.join(os.pardir, env['RELSRCBASE'], TSTSUFF)
@@ -1295,13 +1292,7 @@ def PerformDir(env, testdir, testlist, total_tests) :
                     environ['TST'] = TST
                     tt, FtOut, FtErr, bodyline, reason, links = RunTest(env, TST, COND, oktests, length, pSrvr, total_tests, options, environ, TSTDB, TSTDIR, TSTSRCDIR, RELSRCDIR, TSTTRGDIR)
                     alllinks.extend(links)
-                if tt >= 0:
-                    t = '%7.3f' % tt
-                else:
-                    t = '-.---'
-                    tt = 0
-                TIMES.append((TSTDIR, TST, t, tt, FtOut, FtErr, reason))
-                td += tt
+                TIMES.append((TSTDIR, TST, tt, FtOut, FtErr, reason))
                 FdOut = max(FdOut,FtOut)
                 FdErr = max(FdErr,FtErr)
                 if bodyline is not None:
@@ -1320,6 +1311,7 @@ def PerformDir(env, testdir, testlist, total_tests) :
         finally:
             if pSrvr is not None:
                 pSrvr.sendusr1()
+                pSrvr.checkkeys()
                 pSrvr.terminate()
                 pSrvr = None
                 if produce_html:
@@ -1385,7 +1377,8 @@ def PerformDir(env, testdir, testlist, total_tests) :
                                     sserr = F_ERROR
                                 break
 
-        TIMES.append((TSTDIR, '', '%7.3f' % td, td, FdOut, FdErr, None))
+        td = time.time() - td
+        TIMES.append((TSTDIR, '', td, FdOut, FdErr, None))
         if testweb:
             for f in alllinks:
                 remove(os.path.join(TSTTRGDIR, f))
@@ -1639,7 +1632,12 @@ def GetBitsAndModsAndThreads(env) :
                 except KeyboardInterrupt:
                     raise
                 except:
-                    pass
+                    print('Exception caught')
+                    print('Local variables:')
+                    print(locals())
+                    print('Global variables:')
+                    print(globals())
+                    raise
                 proc.terminate()
                 qOut = proc.stdout.read(timeout=5)
                 qErr = proc.stderr.read(timeout=5)
@@ -1808,6 +1806,17 @@ relcond = {
                              'last hugeint chained empty'),
 }
 
+tests = (
+    # file extension  EXT        CALL      SERVER
+    ('.test',         '.test',   'sqltest','SQL'),
+    ('.maltest',      '.maltest','maltest','SQL'),
+    ('.py',           '.py',     'python', ''),
+    ('.SQL.py',       '.SQL.py', 'python', 'SQL'),
+    ('.sql',          '.sql',    'sql',    'SQL'),
+    ('.R',            '.R',      'R',      'SQL'),
+    ('.rb',           '.rb',     'ruby',   'SQL'),
+)
+
 def RunTest(env, TST, COND, oktests, length, pSrvr, total_tests, options, environ, TSTDB, TSTDIR, TSTSRCDIR, RELSRCDIR, TSTTRGDIR) :
     Failed = F_SKIP
     FailedOut = F_SKIP
@@ -1831,16 +1840,6 @@ def RunTest(env, TST, COND, oktests, length, pSrvr, total_tests, options, enviro
         CALL = 'other'
         SERVER = 'SQL'
     else:
-        tests = (
-            # file extension  EXT        CALL      SERVER
-            ('.test',         '.test',   'sqltest','SQL'),
-            ('.maltest',      '.maltest','maltest','SQL'),
-            ('.py',           '.py',     'python', ''),
-            ('.SQL.py',       '.SQL.py', 'python', 'SQL'),
-            ('.sql',          '.sql',    'sql',    'SQL'),
-            ('.R',            '.R',      'R',      'SQL'),
-            ('.rb',           '.rb',     'ruby',   'SQL'),
-        )
         for tst, ext, cll, srv in tests:
             if os.path.isfile(os.path.join(TSTSRCDIR, TST + tst)) or \
                os.path.isfile(os.path.join(TSTSRCDIR, TST + tst + '.src')) or \
@@ -1873,6 +1872,9 @@ def RunTest(env, TST, COND, oktests, length, pSrvr, total_tests, options, enviro
                 print('%s%s' % (prompt(), s), end='')
                 prred('TEST MISSING')
                 print()
+            else:
+                prred('MISSING')
+                print(':', os.path.join(TSTDIR, TSTSUFF, TST + EXT))
 
             return TX,Failed,Failed,elem,reason,links
 
@@ -2078,9 +2080,15 @@ def RunTest(env, TST, COND, oktests, length, pSrvr, total_tests, options, enviro
                     if not env.get('NOCLEAN'):
                         raise
 
+        myenv = env.copy()
+        myenv['TSTDB'] = TSTDB
+        myenv['TSTDIR'] = TSTDIR
+        myenv['TSTSRCDIR'] = TSTSRCDIR
+        myenv['RELSRCDIR'] = RELSRCDIR
+        myenv['TSTTRGDIR'] = TSTTRGDIR
         if os.path.isfile(os.path.join(TSTTRGDIR, TST+EXT+'.src')) and not os.path.isfile(os.path.join(TSTTRGDIR, TST+EXT)):
             with openutf8(os.path.join(TSTTRGDIR, TST+EXT+'.src'),'r') as f:
-                TSTSRC = expandvars(path(f.readline().strip()), env)
+                TSTSRC = expandvars(path(f.readline().strip()), myenv)
             if os.path.isfile(os.path.join(TSTTRGDIR, TSTSRC)):
                 try:
                     SymlinkOrCopy(TSTSRC, TST + EXT, TSTTRGDIR)
@@ -2096,7 +2104,7 @@ def RunTest(env, TST, COND, oktests, length, pSrvr, total_tests, options, enviro
         for ff in listdir(TSTTRGDIR):
             if test.match(ff) and not os.path.isfile(os.path.join(TSTTRGDIR, ff[:-4])):
                 with openutf8(os.path.join(TSTTRGDIR, ff),'r') as f:
-                    TSTSRC = expandvars(path(f.readline().strip()), env)
+                    TSTSRC = expandvars(path(f.readline().strip()), myenv)
                 if os.path.isfile(os.path.join(TSTTRGDIR, TSTSRC)):
                     try:
                         SymlinkOrCopy(TSTSRC, ff[:-4], TSTTRGDIR)
@@ -2112,7 +2120,7 @@ def RunTest(env, TST, COND, oktests, length, pSrvr, total_tests, options, enviro
             if test.match(ff) and not os.path.isfile(os.path.join(TSTTRGDIR, fff)) and not ff.endswith('.test.in'):
                 with openutf8(os.path.join(TSTTRGDIR, fff),'w') as f:
                     for l in openutf8(os.path.join(TSTTRGDIR, ff)):
-                        f.write(expandvars(l, env))
+                        f.write(expandvars(l, myenv))
 
         if odbc:
             with openutf8(os.path.join(TSTTRGDIR, 'odbcinst.ini'), 'w') as f:
@@ -2173,7 +2181,7 @@ Password = {passwd or "monetdb"}-Wrong
         t1 = time.time()
         TX = t1 - t0
         if verbosity > 0:
-            print(' %7.3fs ' % TX, end='')
+            print(f' {TX:7.3f}s ', end='')
 
         if odbc:
             if orig_odbcsysini is not None:
@@ -2454,6 +2462,7 @@ def killchildren(pid, procs = None):
             print('killing process %d failed' % pid)
 
 def stacktrace(proc, outfile):
+    out = ''
     if os.name == 'nt':
         sym = ''
         if os.path.exists(r'c:\Program Files\Debugging Tools for Windows (x64)\cdb.exe'):
@@ -2474,8 +2483,6 @@ def stacktrace(proc, outfile):
                     out, err = p.communicate(timeout=60)
                 except process.TimeoutExpired:
                     p.kill()
-        else:
-            out = ''
     elif platform.system() == 'Darwin':
         try:
             with process.Popen(['lldb', '--attach-pid', str(proc.pid), '--batch', '--one-line', 'bt all'], stdout=process.PIPE, text=True) as p:
@@ -2486,7 +2493,7 @@ def stacktrace(proc, outfile):
         except KeyboardInterrupt:
             raise
         except:
-            out = ''
+            pass
     else:
         try:
             with process.Popen(['gdb', '-p', str(proc.pid), '-batch', '-ex', 'thread apply all bt full'], stdout=process.PIPE,
@@ -2504,7 +2511,7 @@ def stacktrace(proc, outfile):
         except KeyboardInterrupt:
             raise
         except:
-            out = ''
+            pass
     if outfile is not None and out:
         try:
             outfile.write(f'\n{out}\n')
@@ -2545,6 +2552,198 @@ def killProc(proc, outfile=None, cmd=None, psrvr=None):
         proc.kill()
     else:
         killchildren(proc.pid)
+
+sys_pkeys = [
+    ('schemas', 'id'),
+    ('_tables', 'id'),
+    ('tables', 'id'),
+    ('_columns', 'id'),
+    ('columns', 'id'),
+    ('functions', 'id'),
+    ('args', 'id'),
+    ('types', 'id'),
+    ('objects', 'id, nr'),
+    ('keys', 'id'),
+    ('idxs', 'id'),
+    ('triggers', 'id'),
+    ('sequences', 'id'),
+    ('dependency_types', 'dependency_type_id'),
+    ('dependencies', 'id, depend_id'),
+    ('auths', 'id'),
+    ('users', 'name'),
+    ('user_role', 'login_id, role_id'),
+    ('privileges', 'obj_id, auth_id, privileges'),
+    ('querylog_catalog', 'id'),
+    ('querylog_calls', 'id'),
+    ('querylog_history', 'id'),
+    ('optimizers', 'name'),
+    ('environment', 'name'),
+    ('db_user_info', 'name'),
+    ('statistics', 'column_id'),
+    ('"storage"()', 'schema, "table", "column"'),
+    ('storagemodelinput', 'schema, "table", "column"'),
+
+    ('rejects', 'rowid'),
+
+    ('keywords', 'keyword'),
+    ('table_types', 'table_type_id'),
+
+    ('function_languages', 'language_id'),
+    ('function_types', 'function_type_id'),
+    ('index_types', 'index_type_id'),
+    ('key_types', 'key_type_id'),
+    ('privilege_codes', 'privilege_code_id'),
+
+    ('comments', 'id'),
+    ('ids', 'id'),
+    ('var_values', 'var_name'),
+
+    ('table_partitions', 'id'),
+    ('range_partitions', 'table_id'),
+    ('value_partitions', 'table_id, partition_id, "value"'),
+
+    ('queue', 'tag'),
+    ('sessions', 'sessionid'),
+
+    ('fkey_actions', 'action_id'),
+    ('fkeys', 'id'),
+]
+
+sys_akeys = [
+    ('schemas', 'name'),
+    ('_tables', 'schema_id, name'),
+    ('tables', 'schema_id, name'),
+    ('_columns', 'table_id, name'),
+    ('columns', 'table_id, name'),
+    ('_columns', 'table_id, number'),
+    ('columns', 'table_id, number'),
+
+    ('(SELECT id FROM sys.schemas UNION ALL SELECT id FROM sys._tables UNION ALL SELECT id FROM sys._columns UNION ALL SELECT id FROM sys.functions) as T', 'T.id'),
+    ('(SELECT id FROM sys.schemas UNION ALL SELECT id FROM sys.tables UNION ALL SELECT id FROM sys.columns UNION ALL SELECT id FROM sys.functions) as T', 'T.id'),
+
+    ('functions f join sys.args a on f.id=a.func_id', 'schema_id, f.name, func, mod, language, f.type, side_effect, varres, vararg, a.id'),
+    ('args', 'func_id, name, inout'),
+    ('types', 'schema_id, systemname, sqlname'),
+    ('objects', 'id, name'),
+    ('keys', 'table_id, name'),
+    ('idxs', 'table_id, name'),
+    ('triggers', 'table_id, name'),
+    ('sequences', 'schema_id, name'),
+    ('dependency_types', 'dependency_type_name'),
+    ('auths', 'name'),
+    ('optimizers', 'def'),
+
+    ('table_types', 'table_type_name'),
+    ('function_types', 'function_type_name'),
+    ('function_languages', 'language_name'),
+    ('index_types', 'index_type_name'),
+    ('key_types', 'key_type_name'),
+    ('privilege_codes', 'privilege_code_name'),
+    ('comments', 'id'),
+
+    ('table_partitions WHERE column_id IS NOT NULL', 'table_id, column_id'),
+    ('table_partitions WHERE "expression" IS NOT NULL', 'table_id, "expression"'),
+
+    ('fkey_actions', 'action_name'),
+    ('fkeys', 'table_id, name'),
+]
+
+sys_fkeys = [
+    ('schemas', 'authorization', '', 'id', 'auths'),
+    ('schemas', 'owner', '', 'id', 'auths'),
+    ('_tables', 'schema_id', '', 'id', 'schemas'),
+    ('tables', 'schema_id', '', 'id', 'schemas'),
+    ('_tables', '"type"', '', 'table_type_id', 'table_types'),
+    ('tables', 'type', '', 'table_type_id', 'table_types'),
+    ('_columns', 'table_id', '', 'id', '_tables'),
+    ('columns', 'table_id', '', 'id', 'tables'),
+    ('_columns', '"type"', '', 'sqlname', 'types'),
+    ('columns', '"type"', '', 'sqlname', 'types'),
+    ('functions', 'schema_id', '', 'id', 'schemas'),
+    ('functions', '"type"', '', 'function_type_id', 'function_types'),
+    ('functions', 'language', '', 'language_id', 'function_languages'),
+
+    ('functions', 'schema_id', 'system', 'id', 'schemas WHERE system'),
+    ('args', 'func_id', '', 'id', 'functions'),
+    ('args', '"type"', '', 'sqlname', 'types'),
+    ('types', 'schema_id', '', 'id', 'schemas'),
+
+    ('objects', 'id', '', 'id', 'ids'),
+    ('ids', 'id', "obj_type IN ('key', 'index')", 'id', 'objects'),
+    ('keys', 'id', '', 'id', 'objects'),
+    ('keys', 'table_id', '', 'id', '_tables'),
+    ('keys', 'table_id', '', 'id', 'tables'),
+    ('keys', '"type"', '', 'key_type_id', 'key_types'),
+    ('keys', 'rkey', 'rkey <> -1', 'id', 'keys'),
+
+    ('idxs', 'id', '', 'id', 'objects'),
+    ('idxs', 'table_id', '', 'id', '_tables'),
+    ('idxs', 'table_id', '', 'id', 'tables'),
+    ('idxs', '"type"', '', 'index_type_id', 'index_types'),
+    ('sequences', 'schema_id', '', 'id', 'schemas'),
+    ('triggers', 'table_id', '', 'id', '_tables'),
+    ('triggers', 'table_id', '', 'id', 'tables'),
+    ('comments', 'id', '', 'id', 'ids'),
+    # ('dependencies', 'id', '', 'id', 'ids'),
+    # ('dependencies', 'depend_id', '', 'id', 'ids'),
+    # ('dependencies', 'depend_type', '', 'dependency_type_id', 'dependency_types'),
+    # ('dependencies', 'id, depend_id, depend_type', '', 'v.id, v.used_by_id, v.depend_type', 'dependencies_vw v'),
+    ('auths', 'grantor', 'grantor > 0', 'id', 'auths'),
+    ('users', 'name', '', 'name', 'auths'),
+    ('users', 'default_schema', '', 'id', 'schemas'),
+    ('users', 'optimizer', '', 'name', 'optimizers'),
+    ('users', 'default_role', '', 'id', 'auths'),
+    ('db_user_info', 'name', '', 'name', 'auths'),
+    ('db_user_info', 'default_schema', '', 'id', 'schemas'),
+    ('db_user_info', 'optimizer', '', 'name', 'optimizers'),
+    ('db_user_info', 'default_role', '', 'id', 'auths'),
+    ('user_role', 'login_id', '', 'id', 'auths'),
+    ('user_role', 'login_id', '', 'a.id', 'auths a WHERE a.name IN (SELECT u.name FROM sys.users u)'),
+    ('user_role', 'role_id', '', 'id', 'auths'),
+    ('user_role', 'role_id', '', 'id', 'roles'),
+    ('privileges', 'obj_id', '(obj_id <> 0 OR auth_id NOT IN (SELECT id FROM sys.auths))', 'id', '(SELECT id FROM sys.schemas UNION ALL SELECT id FROM sys._tables UNION ALL SELECT id FROM sys._columns UNION ALL SELECT id FROM sys.functions) as t'),
+    ('privileges', 'auth_id', '', 'id', 'auths'),
+    ('privileges', 'grantor', ' grantor > 0', 'id', 'auths'),
+    ('privileges', 'privileges', '', 'privilege_code_id', 'privilege_codes'),
+    ('querylog_catalog', 'owner', '', 'name', 'users'),
+    ('querylog_catalog', 'pipe', '', 'name', 'optimizers'),
+    ('querylog_calls', 'id', '', 'id', 'querylog_catalog'),
+    ('querylog_history', 'id', '', 'id', 'querylog_catalog'),
+    ('querylog_history', 'owner', '', 'name', 'users'),
+    ('querylog_history', 'pipe', '', 'name', 'optimizers'),
+    ('remote_user_info', 'table_id', '', 'id', '_tables'),
+    ('sessions', '"username"', '', 'name', 'users'),
+    ('sessions', 'optimizer', '', 'name', 'optimizers'),
+    ('statistics', 'column_id', '', 'id', '(SELECT id FROM sys._columns UNION ALL SELECT id FROM tmp._columns) as c'),
+    ('statistics', '"type"', '', 'sqlname', 'types'),
+    ('storage()', '"schema"', '', 'name', 'schemas'),
+    ('storage()', '"table"', '', 'name', '(SELECT name FROM sys._tables UNION ALL SELECT name FROM tmp._tables) as t'),
+    ('storage()', '"schema", "table"', '', 'sname, tname', '(SELECT sch.name as sname, tbl.name as tname FROM sys.schemas AS sch JOIN sys.tables AS tbl ON sch.id = tbl.schema_id) as t'),
+    ('storage()', '"column"', '', 'name', '(SELECT name FROM sys._columns UNION ALL SELECT name FROM tmp._columns UNION ALL SELECT name FROM sys.keys UNION ALL SELECT name FROM tmp.keys UNION ALL SELECT name FROM sys.idxs UNION ALL SELECT name FROM tmp.idxs) as c'),
+    ('storage()', '"type"', '', 'sqlname', 'types'),
+    ('storage', '"schema"', '', 'name', 'schemas'),
+    ('storage', '"table"', '', 'name', '(SELECT name FROM sys._tables UNION ALL SELECT name FROM tmp._tables) as t'),
+    ('storage', '"schema", "table"', '', 'sname, tname', '(SELECT sch.name as sname, tbl.name as tname FROM sys.schemas AS sch JOIN sys.tables AS tbl ON sch.id = tbl.schema_id) as t'),
+    ('storage', '"column"', '', 'name', '(SELECT name FROM sys._columns UNION ALL SELECT name FROM tmp._columns UNION ALL SELECT name FROM sys.keys UNION ALL SELECT name FROM tmp.keys UNION ALL SELECT name FROM sys.idxs UNION ALL SELECT name FROM tmp.idxs) as c'),
+    ('storage', '"type"', '', 'sqlname', 'types'),
+
+    ('schemastorage', '"schema"', '', 'name', 'schemas'),
+    ('tablestorage', '"schema"', '', 'name', 'schemas'),
+    ('tablestorage', '"table"', '', 'name', '(SELECT name FROM sys._tables UNION ALL SELECT name FROM tmp._tables) as t'),
+    ('tablestorage', '"schema", "table"', '', 'sname, tname', '(SELECT sch.name as sname, tbl.name as tname FROM sys.schemas AS sch JOIN sys.tables AS tbl ON sch.id = tbl.schema_id) as t'),
+    ('table_partitions', 'table_id', '', 'id', '_tables'),
+    ('table_partitions', 'column_id', 'column_id IS NOT NULL', 'id', '_columns'),
+    ('range_partitions', 'table_id', '', 'id', '_tables'),
+    ('range_partitions', 'partition_id', '', 'id', 'table_partitions'),
+    ('value_partitions', 'table_id', '', 'id', '_tables'),
+    ('value_partitions', 'partition_id', '', 'id', 'table_partitions'),
+
+    ('keys', 'cast(((action >> 8) & 255) as smallint)', 'action >= 0', 'action_id', 'fkey_actions'),
+    ('keys', 'cast((action & 255) as smallint)', 'action >= 0', 'action_id', 'fkey_actions'),
+    ('fkeys', 'id, table_id, "type", name, rkey', '', 'id, table_id, "type", name, rkey', 'keys'),
+    ('fkeys', 'update_action_id', '', 'action_id', 'fkey_actions'),
+    ('fkeys', 'delete_action_id', '', 'action_id', 'fkey_actions'),
+]
 
 class ServerClass:
     def __init__(self, cmd, TestOut, TestErr, TimeOut, pollfile, dbname, inmem=False, dbg=None):
@@ -2603,6 +2802,48 @@ class ServerClass:
     def stacktrace(self):
         stacktrace(self.proc, self.outfile)
         self.sendusr1()
+
+    def checkkeys(self):
+        if not checkkeys:
+            return
+        self.outfile.flush()
+        with pymonetdb.connect(username='monetdb',
+                               password='monetdb',
+                               hostname=HOST,
+                               port=int(self.port),
+                               database=self.dbname,
+                               connect_timeout=1.0) as dbh:
+            dbh.settimeout(60)
+            try:
+                with dbh.cursor() as crs:
+                    for table, columns in sys_pkeys + sys_akeys:
+                        qtable = table.replace('"', '')
+                        schema = 'sys.' if not table.startswith('(') else ''
+                        query = f"select count(*), {columns} " \
+                            f"from {schema}{table} " \
+                            f"group by {columns} having count(*) > 1"
+                        crs.execute(query)
+                        rows = crs.fetchall()
+                        for row in rows:  # should be empty
+                            print(f'duplicates in {qtable}', row, query,
+                                  file=self.outfile)
+                    for table, columns, where, ref_columns, ref_table in sys_fkeys:
+                        if where:
+                            where += ' AND '
+                        schema = '' if '.' in ref_table else 'sys.'
+                        qtable = table.split(' ')[0]
+                        qcolumns = columns.replace('"', '')
+                        query = f"select {columns}, * from sys.{table} " \
+                            f"where {where}({columns}) not in " \
+                            f"(select {ref_columns} from {schema}{ref_table})"
+                        crs.execute(query)
+                        rows = crs.fetchall()
+                        for row in rows:  # should be empty
+                            print(f'missing reference in {qtable} {qcolumns}', row,
+                                  query, file=self.outfile)
+            except TimeoutError:
+                pass
+        self.outfile.flush()
 
     def stopsessions(self):
         if self.lock.acquire(blocking=False):
@@ -3523,6 +3764,7 @@ def main(argv) :
     parser.add_argument('--stop-at-crash', action='store_true', dest='stop_crash', help='stop testing when the server crashes')
     parser.add_argument('--ci', action='store_true', dest='ci', help='special handling for continuous integration (no error return unless serious problem)')
     parser.add_argument('--parallel', action='store', type=int, default=1, metavar='<directories>', help='run multiple directories in parallel')
+    parser.add_argument('--checkkeys', action='store_true', help='at end of directory check all system keys')
     global produce_html
     if produce_html:
         parser.add_argument('--no-html', action='store_false', dest='produce_html', help='do not produce HTML files')
@@ -3576,6 +3818,8 @@ def main(argv) :
     restart = opts.restart
     if opts.alltests:
         CONDITIONALS['KNOWNFAIL'] = True
+    global checkkeys
+    checkkeys = opts.checkkeys
     par['TIMEOUT'] = opts.timeout
     env['GDK_DEBUG'] = str(opts.debug)
     env['GDK_NR_THREADS'] = str(opts.nr_threads)
@@ -4116,36 +4360,60 @@ def main(argv) :
                 if not errseen and diff > F_WARN:
                     errseen = True
             else:
+                td = []
+                for d in testdirs:
+                    try:
+                        with openutf8(os.path.join(d, TSTSUFF, 'prio')) as f:
+                            prio = int(f.read())
+                    except:
+                        prio = 1000
+                    td.append((prio, d))
+                testdirs = [d for (prio, d) in sorted(td)]
                 if verbosity > 1:
                     print('\nRunning all tests in directories %s.\n' % str(testdirs))
-                with concurrent.futures.ThreadPoolExecutor(max_workers=opts.parallel) as tp:
-                    try:
+                tp = None
+                try:
+                    if opts.parallel > 1 and len(testdirs) > 1:
+                        tp = concurrent.futures.ThreadPoolExecutor(max_workers=opts.parallel)
                         futures = {tp.submit(PerformDir, env, d, [], test_count): d for d in testdirs}
-                        for future in concurrent.futures.as_completed(futures):
+                        iter = concurrent.futures.as_completed(futures)
+                    else:
+                        iter = testdirs
+                    for d in iter:
+                        if tp is not None:
+                            future = d
                             d = futures[future]
                             elem, diff, interrupted = future.result()
-                            if elem is not None:
-                                if diff <= F_OK:
-                                    body_good.append(elem)
-                                else:
-                                    body_bad.append(elem)
-                            if not errseen and diff > F_WARN:
-                                errseen = True
-                            if interrupted:
+                        else:
+                            elem, diff, interrupted = PerformDir(env, d, [], test_count)
+                        if elem is not None:
+                            if diff <= F_OK:
+                                body_good.append(elem)
+                            else:
+                                body_bad.append(elem)
+                        if not errseen and diff > F_WARN:
+                            errseen = True
+                        if interrupted:
+                            break
+                        if not testweb:
+                            if global_timeout and start_time + global_timeout < time.time():
+                                print('\nGlobal testing timeout reached\n')
                                 break
-                            if not testweb:
-                                if global_timeout and start_time + global_timeout < time.time():
-                                    print('\nGlobal testing timeout reached\n')
-                                    break
-                                if produce_html:
-                                    # after a directory has been tested, create
-                                    # the index file so that we can look at test
-                                    # results while the tests are running
-                                    body = body_bad + body_good
-                                    CreateHtmlIndex(env, '', os.path.join(TSTTRGBASE, TSTPREF), F_SKIP, F_SKIP, *body)
-                    except KeyboardInterrupt:
+                            if produce_html:
+                                # after a directory has been tested, create
+                                # the index file so that we can look at test
+                                # results while the tests are running
+                                body = body_bad + body_good
+                                CreateHtmlIndex(env, '', os.path.join(TSTTRGBASE, TSTPREF), F_SKIP, F_SKIP, *body)
+                except KeyboardInterrupt:
+                    if tp is not None:
                         tp.shutdown(cancel_futures=True)
-                        raise
+                        tp = None
+                    raise
+                finally:
+                    if tp is not None:
+                        tp.shutdown(wait=True)
+                        tp = None
             if verbosity == 0:
                 print()
         except KeyboardInterrupt:
@@ -4156,27 +4424,25 @@ def main(argv) :
 
         if not os.path.exists(os.path.join(TSTTRGBASE, TSTPREF)):
             os.mkdir(os.path.join(TSTTRGBASE, TSTPREF))
-        fn = os.path.join(TSTTRGBASE, TSTPREF, 'times.')
-        with openutf8(fn+'lst','w') as fl:
+        with openutf8(os.path.join(TSTTRGBASE, TSTPREF, 'times.lst'),'w') as fl:
             Failure = [[] for i in FAILURES]
-            for TSTDIR, TST, tt, ms, FtOut, FtErr, reason in TIMES:
+            for TSTDIR, TST, ms, FtOut, FtErr, reason in TIMES:
                 fl.write('%s:\t%s\t%s\t%s\t%s\n' % (url(os.path.join(TSTDIR, TST)),
-                                                    tt,
+                                                    f'{ms:7.3f}' if ms >= 0 else '  -.---',
                                                     FAILURES[FtOut][0],
                                                     FAILURES[FtErr][0],
                                                     reason or ''))
                 if TST != '':
                     Failure[max(FtOut,FtErr)].append(os.path.join(TSTDIR,TST))
-            fl.write(':\t%7.3f\t\n' % t_)
+            fl.write(f':\t{t_:7.3f}\t\n')
 
-        fl = openutf8(fn+'sql','w')
         host = socket.gethostname()
         product = os.path.split(TSTSRCBASE)[-1]
 
         compiler = ''
 
         # start of times.sql output preparation
-        now = "timestamp '" + str(datetime.datetime.now()) + "'"
+        now = f"timestamp '{datetime.datetime.now()}'"
 
         if env['TST_INT128'] != '':
             isInt128 = 'true'
@@ -4204,28 +4470,25 @@ def main(argv) :
             ccname = os.path.split(compiler)[-1]
             ccopts = ''
 
-        for TSTDIR, TST, tt, ms, FtOut, FtErr, reason in TIMES:
-            if FtOut == F_SKIP and FtErr == F_SKIP:
-                tms = 'NULL'
-            else:
-                tms = '%d' % ms
+        with openutf8(os.path.join(TSTTRGBASE, TSTPREF, 'times.sql'),'w') as fl:
+            for TSTDIR, TST, ms, FtOut, FtErr, reason in TIMES:
+                tms = '%d' % ms if ms >= 0 else 'NULL'
 
-            if TST != '':
-                # target is a platform and compilation options etc
-                fl.write("""
-INSERT INTO mtest (\"date\", \"machine\", \"os\", \"release\",
-    \"compiler\", \"compiler_opts\", \"bits\", \"oid\", \"int128\", \"single\", \"static\",
-    \"product\", \"dir\", \"test\",
-    \"time\", \"stdout\", \"stderr\")
-VALUES (%s, '%s', '%s', '%s',
-    '%s', '%s', %s, %s, %s, %s, %s,
-    '%s', '%s', '%s',
-    %s, '%s', '%s');
-""" % (now, host, env['SYST'], env['RELEASE'],
-       ccname, ccopts, bits, bits, isInt128, isSingle, 'false',
-       product, TSTDIR, TST,
-       tms, FAILURES[FtOut][1], FAILURES[FtErr][1]))
-        fl.close()
+                if TST != '':
+                    # target is a platform and compilation options etc
+                    fl.write("""
+    INSERT INTO mtest (\"date\", \"machine\", \"os\", \"release\",
+        \"compiler\", \"compiler_opts\", \"bits\", \"oid\", \"int128\", \"single\", \"static\",
+        \"product\", \"dir\", \"test\",
+        \"time\", \"stdout\", \"stderr\")
+    VALUES (%s, '%s', '%s', '%s',
+        '%s', '%s', %s, %s, %s, %s, %s,
+        '%s', '%s', '%s',
+        %s, '%s', '%s');
+    """ % (now, host, env['SYST'], env['RELEASE'],
+           ccname, ccopts, bits, bits, isInt128, isSingle, 'false',
+           product, TSTDIR, TST,
+           tms, FAILURES[FtOut][1], FAILURES[FtErr][1]))
 
         if not testweb and produce_html:
             CreateHtmlIndex(env, '', os.path.join(TSTTRGBASE, TSTPREF), F_SKIP, F_SKIP, *body)
@@ -4260,8 +4523,13 @@ VALUES (%s, '%s', '%s', '%s',
             print()
             print(f'failed={Failed}, skipped={len(Failure[F_SKIP])}')
             if produce_html and (Failed or errseen):
-                print(f'see {urllib.parse.urlunsplit(("file", "", urllib.request.pathname2url(os.path.join(TSTTRGBASE, TSTPREF, "index.html")), "", ""))}')
-            print(f'Ran {num_tests - len(Failure[F_SKIP])} tests in {t_:7.3f}s')
+                f = os.path.join(TSTTRGBASE, TSTPREF, "index.html")
+                if sys.version_info[1] >= 14:
+                    u = urllib.request.pathname2url(f, add_scheme=True)
+                else:
+                    u = urllib.parse.urlunsplit(("file", "", urllib.request.pathname2url(f), "", ""))
+                print(f'see {u}')
+            print(f'Ran {num_tests - len(Failure[F_SKIP])} tests in {t_:.3f}s')
         elif Failed:
             print('''\
 

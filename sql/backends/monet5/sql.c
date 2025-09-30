@@ -138,21 +138,13 @@ sql_symbol2relation(backend *be, symbol *sym)
 {
 	sql_rel *rel;
 	sql_query *query = query_create(be->mvc);
-	lng Tbegin, Tend;
 	int value_based_opt = be->mvc->emode != m_prepare, storage_based_opt;
 	int profile = be->mvc->emode == m_plan;
-	Client c = be->client;
 
-	Tbegin = GDKusec();
 	rel = rel_semantic(query, sym);
-	Tend = GDKusec();
-	if(profilerStatus > 0 )
-		profilerEvent(NULL,
-					  &(struct NonMalEvent)
-					  {SQL_TO_REL, c, Tend, NULL, NULL, rel?0:1, Tend-Tbegin});
 
+	lng t_begin = GDKusec();
 	storage_based_opt = value_based_opt && rel && !is_ddl(rel->op);
-	Tbegin = Tend;
 	if (rel && !(rel->op == op_ddl && rel->card == CARD_ATOM && rel->flag == ddl_psm && (be->mvc->emod & mod_exec) != 0)) { /* no need to optimize exec */
 		if (rel)
 			rel = sql_processrelation(be->mvc, rel, profile, 1, value_based_opt, storage_based_opt);
@@ -161,13 +153,8 @@ sql_symbol2relation(backend *be, symbol *sym)
 		if (rel)
 			rel = rel_physical(be->mvc, rel);
 	}
-	Tend = GDKusec();
-	be->reloptimizer = Tend - Tbegin;
+	be->reloptimizer = GDKusec() - t_begin;
 
-	if(profilerStatus > 0)
-		profilerEvent(NULL,
-					  &(struct NonMalEvent)
-					  {REL_OPT, c, Tend, NULL, NULL, rel?0:1, be->reloptimizer});
 	return rel;
 }
 
@@ -352,7 +339,7 @@ create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp,
 
 		if (c->def) {
 			/* TODO please don't place an auto incremented sequence in the default value */
-			const char next_value_for[] = "next value for \"sys\".\"seq_";
+			static const char next_value_for[] = "next value for \"sys\".\"seq_";
 			sql_rel *r = NULL;
 
 			sa_reset(nsa);
@@ -898,7 +885,7 @@ sql_variables(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			sql_var *var = (sql_var*) n->data;
 			atom value = var->var;
 			ValPtr myptr = &(value.data);
-			ValRecord val = (ValRecord) {.vtype = TYPE_void,};
+			ValRecord val = {.vtype = TYPE_void,};
 			gdk_return res;
 
 			if (value.tpe.type->localtype != TYPE_str) {
@@ -2189,7 +2176,7 @@ mvc_clear_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL, "sql.clear_table", SQLSTATE(42000) "Table clear failed%s", clear_res == (BUN_NONE - 1) ? " due to conflict with another transaction" : "");
 	if (restart_sequences) { /* restart the sequences if it's the case */
 		sql_trans *tr = m->session->tr;
-		const char next_value_for[] = "next value for ";
+		static const char next_value_for[] = "next value for ";
 
 		for (node *n = ol_first_node(t->columns); n; n = n->next) {
 			sql_column *col = n->data;
@@ -3718,6 +3705,8 @@ dump_trace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) cntxt;
 	(void) mb;
+	if (cntxt->sqlprofiler)
+		throw(SQL, "sql.dump_trace", SQLSTATE(3F000) "Cannot trace this call");
 	if (TRACEtable(cntxt, t) != 3)
 		throw(SQL, "sql.dump_trace", SQLSTATE(3F000) "Profiler not started");
 	for (i = 0; i < 3; i++) {

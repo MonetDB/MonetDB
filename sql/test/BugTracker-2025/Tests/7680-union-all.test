@@ -1,0 +1,33 @@
+statement ok
+CREATE TABLE "cases" (caseid varchar(255))
+
+statement ok
+INSERT INTO "cases" (caseid) VALUES ('DL1-1')
+
+query TT nosort
+SELECT
+	caseid as caseid,
+	caseid as "delivery.caseid"
+FROM
+	"cases"
+UNION ALL
+SELECT
+	caseid as caseid,
+	cast(null as varchar(255)) as "delivery.caseid"
+FROM
+	"cases"
+UNION ALL
+SELECT
+	caseid as caseid,
+	cast(null as varchar(255)) as "delivery.caseid"
+FROM
+	"cases"
+order by caseid, "delivery.caseid"
+----
+DL1-1
+NULL
+DL1-1
+NULL
+DL1-1
+DL1-1
+

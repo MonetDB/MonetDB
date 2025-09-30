@@ -1044,7 +1044,7 @@ mystrlen(const char *s)
 }
 
 static char *
-mycpstr(char *t, const char *s)
+mycpstr(char *t, const char *s, size_t l)
 {
 	/* Copy the string pointed to by s into the buffer pointed to by
 	 * t, and return a pointer to the NULL byte at the end.  During
@@ -1053,42 +1053,55 @@ mycpstr(char *t, const char *s)
 	 * the incorrect byte.  The buffer t needs to be large enough to
 	 * hold the result, but the correct length can be calculated by
 	 * the function mystrlen above.*/
+#ifndef NDEBUG
+	const size_t orig_l = l;
+#endif
 	while (*s) {
+		assert(l <= orig_l);	/* no overflow */
 		if ((*s & 0x80) == 0) {
 			*t++ = *s++;
+			l--;
 		} else if ((*s & 0xC0) == 0x80) {
-			t += sprintf(t, "<%02X>", (uint8_t) * s++);
+			t += snprintf(t, l, "<%02X>", (uint8_t) * s++);
+			l -= 4;
 		} else if ((*s & 0xE0) == 0xC0) {
 			/* two-byte sequence */
-			if ((s[1] & 0xC0) != 0x80)
-				t += sprintf(t, "<%02X>", (uint8_t) * s++);
-			else {
+			if ((s[1] & 0xC0) != 0x80) {
+				t += snprintf(t, l, "<%02X>", (uint8_t) * s++);
+				l -= 4;
+			} else {
 				*t++ = *s++;
 				*t++ = *s++;
+				l -= 2;
 			}
 		} else if ((*s & 0xF0) == 0xE0) {
 			/* three-byte sequence */
-			if ((s[1] & 0xC0) != 0x80 || (s[2] & 0xC0) != 0x80)
-				t += sprintf(t, "<%02X>", (uint8_t) * s++);
-			else {
+			if ((s[1] & 0xC0) != 0x80 || (s[2] & 0xC0) != 0x80) {
+				t += snprintf(t, l, "<%02X>", (uint8_t) * s++);
+				l -= 4;
+			} else {
 				*t++ = *s++;
 				*t++ = *s++;
 				*t++ = *s++;
+				l -= 3;
 			}
 		} else if ((*s & 0xF8) == 0xF0) {
 			/* four-byte sequence */
 			if ((s[1] & 0xC0) != 0x80 || (s[2] & 0xC0) != 0x80
-				|| (s[3] & 0xC0) != 0x80)
-				t += sprintf(t, "<%02X>", (uint8_t) * s++);
-			else {
+				|| (s[3] & 0xC0) != 0x80) {
+				t += snprintf(t, l, "<%02X>", (uint8_t) * s++);
+				l -= 4;
+			} else {
 				*t++ = *s++;
 				*t++ = *s++;
 				*t++ = *s++;
 				*t++ = *s++;
+				l -= 4;
 			}
 		} else {
 			/* not a valid start byte */
-			t += sprintf(t, "<%02X>", (uint8_t) * s++);
+			t += snprintf(t, l, "<%02X>", (uint8_t) * s++);
+			l -= 4;
 		}
 	}
 	*t = 0;
@@ -1109,7 +1122,8 @@ SQLload_error(READERtask *task, lng idx, BUN attrs)
 		sz += task->seplen;
 	}
 
-	s = line = GDKmalloc(sz + task->rseplen + 1);
+	sz += task->rseplen + 1;
+	s = line = GDKmalloc(sz);
 	if (line == NULL) {
 		tablet_error(task, idx, lng_nil, int_nil, "SQLload malloc error",
 					 "SQLload_error");
@@ -1117,9 +1131,9 @@ SQLload_error(READERtask *task, lng idx, BUN attrs)
 	}
 	for (i = 0; i < attrs; i++) {
 		if (task->fields[i][idx])
-			s = mycpstr(s, task->fields[i][idx]);
+			s = mycpstr(s, task->fields[i][idx], sz);
 		if (i < attrs - 1)
-			s = mycpstr(s, task->csep);
+			s = mycpstr(s, task->csep, sz);
 	}
 	strcpy(s, task->rsep);
 	return line;
@@ -1179,7 +1193,7 @@ SQLinsert_val(READERtask *task, int col, int idx)
 					GDKfree(err);
 					return -1;
 				}
-				mycpstr(scpy, s);
+				mycpstr(scpy, s, slen + 1);
 				s = scpy;
 			}
 			snprintf(buf, sizeof(buf), "'%s' expected%s%s%s", fmt->type,
@@ -1279,7 +1293,7 @@ SQLload_parse_row(READERtask *task, int idx)
 
 				if (!row) {
 					errline = SQLload_error(task, idx, i + 1);
-					snprintf(errmsg, BUFSIZ, "Quote (%c) missing", task->quote);
+					snprintf(errmsg, sizeof(errmsg), "Quote (%c) missing", task->quote);
 					tablet_error(task, idx, startlineno, (int) i, errmsg,
 								 errline);
 					GDKfree(errline);
@@ -1367,7 +1381,7 @@ SQLload_parse_row(READERtask *task, int idx)
 	/* check for too many values as well */
 	if (row && *row && i == as->nr_attrs) {
 		errline = SQLload_error(task, idx, task->as->nr_attrs);
-		snprintf(errmsg, BUFSIZ, "Leftover data '%s'", row);
+		snprintf(errmsg, sizeof(errmsg), "Leftover data '%s'", row);
 		tablet_error(task, idx, startlineno, (int) i, errmsg, errline);
 		GDKfree(errline);
 		error = true;
@@ -1872,7 +1886,6 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out,
 	int j;
 	BUN firstcol;
 	BUN i, attr;
-	READERtask task;
 	READERtask ptask[MAXWORKERS];
 	int threads = 1;
 	lng tio, t1 = 0;
@@ -1889,7 +1902,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out,
 /*	TRC_DEBUG(MAL_SERVER, "Prepare copy work for '%d' threads col '%s' rec '%s' quot '%c'\n", threads, csep, rsep, quote);*/
 
 	memset(ptask, 0, sizeof(ptask));
-	task = (READERtask) {
+	READERtask task = {
 		.cntxt = cntxt,
 		.from_stdin = from_stdin,
 		.as = as,

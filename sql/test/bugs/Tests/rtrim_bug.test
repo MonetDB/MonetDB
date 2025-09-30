@@ -55,24 +55,13 @@ project (
 | | project (
 | | | table("sys"."t1") [ "t1"."m" NOT NULL UNIQUE ]
 | | ) [ "sys"."rtrim"("t1"."m" NOT NULL UNIQUE) NOT NULL as "%1"."%1" ]
-| ) [ ("%4"."%4" NOT NULL) = ("%1"."%1" NOT NULL) ]
+| ) [ ("%4"."%4" NOT NULL) + = ("%1"."%1" NOT NULL) ]
 ) [ "sys"."length"("t1"."m" NOT NULL UNIQUE) NOT NULL as "data_length", "t1"."m" NOT NULL UNIQUE as "data_value" ]
 
-statement ok
-create procedure profiler.starttrace() external name profiler."starttrace"
-
-statement ok
-create procedure profiler.stoptrace() external name profiler.stoptrace
-
-statement ok
-call profiler."starttrace"()
-
 query IT rowsort
+trace
 SELECT length("m") as data_length, "m" as data_value FROM "sys"."v2" WHERE "m" IS NOT NULL AND length("m") > 1
 ----
-
-statement ok
-call profiler.stoptrace()
 
 query I rowsort
 select count(*) from sys.tracelog() where stmt like '% algebra.crossproduct%'
@@ -80,15 +69,9 @@ select count(*) from sys.tracelog() where stmt like '% algebra.crossproduct%'
 0
 
 query I rowsort
-select count(*) from sys.tracelog() where stmt like '% algebra.join%'
+select count(*) from sys.tracelog() where stmt like '% algebra.intersect%'
 ----
 1
-
-statement ok
-drop procedure profiler.starttrace()
-
-statement ok
-drop procedure profiler.stoptrace()
 
 statement ok
 set optimizer = 'default_pipe'

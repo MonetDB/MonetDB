@@ -20,6 +20,15 @@ my
 2
 
 query TI nosort
+select   mytable.name, count(*)
+from     test.mytable
+group by test.mytable.name
+order by test.mytable.name
+----
+my
+2
+
+query TI nosort
 select   x.name, count(*)
 from     test.mytable as x
 group by x.name

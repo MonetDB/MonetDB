@@ -8,7 +8,7 @@ statement ok
 insert into mytable values (1), (2), (3)
 
 statement ok
-create view sys.myview as select cast(2 * "b" as bigint) as mycol from mytable
+create temp view myview as select cast(2 * "b" as bigint) as mycol from mytable
 
 query TTTII rowsort
 select t.name, c.name, c.type, c.type_digits, c.type_scale

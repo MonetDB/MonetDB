@@ -116,23 +116,25 @@ gdk_return BBPsync(int cnt, const bat *restrict subcommit, const BUN *restrict s
 	__attribute__((__visibility__("hidden")))
 	__attribute__((__access__(read_only, 2, 1)))
 	__attribute__((__access__(read_only, 3, 1)));
-BUN binsearch(const oid *restrict indir, oid offset, int type, const void *restrict vals, const char * restrict vars, int width, BUN lo, BUN hi, const void *restrict v, int ordering, int last)
+BUN binsearch(const oid *restrict indir, int type, const void *restrict vals, const char * restrict vars, int width, BUN lo, BUN hi, const void *restrict v, int ordering, int last)
 	__attribute__((__visibility__("hidden")));
-BUN binsearch_bte(const oid *restrict indir, oid offset, const bte *restrict vals, BUN lo, BUN hi, bte v, int ordering, int last)
+BUN binsearch_bte(const oid *restrict indir, const bte *restrict vals, BUN lo, BUN hi, bte v, int ordering, int last)
 	__attribute__((__visibility__("hidden")));
-BUN binsearch_sht(const oid *restrict indir, oid offset, const sht *restrict vals, BUN lo, BUN hi, sht v, int ordering, int last)
+BUN binsearch_sht(const oid *restrict indir, const sht *restrict vals, BUN lo, BUN hi, sht v, int ordering, int last)
 	__attribute__((__visibility__("hidden")));
-BUN binsearch_int(const oid *restrict indir, oid offset, const int *restrict vals, BUN lo, BUN hi, int v, int ordering, int last)
+BUN binsearch_int(const oid *restrict indir, const int *restrict vals, BUN lo, BUN hi, int v, int ordering, int last)
 	__attribute__((__visibility__("hidden")));
-BUN binsearch_lng(const oid *restrict indir, oid offset, const lng *restrict vals, BUN lo, BUN hi, lng v, int ordering, int last)
+BUN binsearch_lng(const oid *restrict indir, const lng *restrict vals, BUN lo, BUN hi, lng v, int ordering, int last)
 	__attribute__((__visibility__("hidden")));
 #ifdef HAVE_HGE
-BUN binsearch_hge(const oid *restrict indir, oid offset, const hge *restrict vals, BUN lo, BUN hi, hge v, int ordering, int last)
+BUN binsearch_hge(const oid *restrict indir, const hge *restrict vals, BUN lo, BUN hi, hge v, int ordering, int last)
 	__attribute__((__visibility__("hidden")));
 #endif
-BUN binsearch_flt(const oid *restrict indir, oid offset, const flt *restrict vals, BUN lo, BUN hi, flt v, int ordering, int last)
+BUN binsearch_flt(const oid *restrict indir, const flt *restrict vals, BUN lo, BUN hi, flt v, int ordering, int last)
 	__attribute__((__visibility__("hidden")));
-BUN binsearch_dbl(const oid *restrict indir, oid offset, const dbl *restrict vals, BUN lo, BUN hi, dbl v, int ordering, int last)
+BUN binsearch_dbl(const oid *restrict indir, const dbl *restrict vals, BUN lo, BUN hi, dbl v, int ordering, int last)
+	__attribute__((__visibility__("hidden")));
+BUN countStrings(const Heap *h)
 	__attribute__((__visibility__("hidden")));
 Heap *createOIDXheap(BAT *b, bool stable)
 	__attribute__((__visibility__("hidden")));
@@ -226,6 +228,8 @@ void HEAP_recover(Heap *, const var_t *, BUN)
 	__attribute__((__visibility__("hidden")));
 gdk_return HEAPsave(Heap *h, const char *nme, const char *ext, bool dosync, BUN free, MT_Lock *lock)
 	__attribute__((__warn_unused_result__))
+	__attribute__((__visibility__("hidden")));
+char *humansize(size_t val, char *buf, size_t buflen)
 	__attribute__((__visibility__("hidden")));
 double joincost(BAT *r, BUN lcount, struct canditer *rci, bool *hash, bool *phash, bool *cand)
 	__attribute__((__visibility__("hidden")));
@@ -473,7 +477,7 @@ extern BUN hash_destroy_chain_length;
 
 extern void (*GDKtriggerusr1)(void);
 
-#if !defined(NDEBUG) && !defined(__COVERITY__)
+#if !defined(NDEBUG) && !defined(__COVERITY__) && !defined(_CLANGD)
 /* see comment in gdk.h */
 #ifdef __GNUC__
 #define GDKmremap(p, m, oa, os, ns)					\
