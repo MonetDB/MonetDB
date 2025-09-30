@@ -46,6 +46,7 @@ HAVE_HGE?7637_str_to_decimal
 7696-antijoin-with-complex-expression
 7697-exists-any-semantics
 7698-get-statistics-problem
+7699-create-user
 7701-alter-user-max_workers
 7702-stmt_convert_cands
 7703-left-join
