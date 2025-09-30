@@ -122,13 +122,13 @@ newMalBlk(int elements)
 
 	if (!ma)
 		return NULL;
-	allocator *ta = ma_create(ma);
+	allocator *ta = create_allocator(ma, "TA_MalBlk", true);
 	if (ta == NULL) {
 		ma_destroy(ma);
 		return NULL;
 	}
 	sa_set_ta(ma, ta);
-	allocator *instr_allocator = ma_create(ma);
+	allocator *instr_allocator = create_allocator(ma, "MA_MalInstructions", false);
 	if (instr_allocator == NULL) {
 		ma_destroy(ma);
 		return NULL;

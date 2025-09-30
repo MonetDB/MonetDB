@@ -269,7 +269,7 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 	c->handshake_options = NULL;
 	c->query = NULL;
 	c->ma = create_allocator(NULL, "MA_Client", true);
-	c->ta = ma_create(c->ma);
+	c->ta = create_allocator(c->ma, "TA_Client", false);
 	sa_set_ta(c->ma, c->ta);
 
 	char name[MT_NAME_LEN];

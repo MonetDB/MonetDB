@@ -253,7 +253,7 @@ DFLOWworker(void *T)
 #endif
 	GDKsetbuf(t->errbuf);		/* where to leave errors */
 	snprintf(t->s.name, sizeof(t->s.name), "DFLOWsema%04zu", MT_getpid());
-	allocator *ta = ma_create(NULL);
+	allocator *ta = create_allocator(NULL, "TA_tls", false);
 
 	for (;;) {
 		DataFlow flow;

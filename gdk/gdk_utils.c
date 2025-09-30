@@ -2164,7 +2164,7 @@ eb_error(exception_buffer *eb, const char *msg, int val)
 
 #define COND_LOCK_ALLOCATOR(a)    \
     bool __alloc_locked = false;  \
-    if ((a)->pa == NULL || a->use_lock) { \
+    if ((a)->use_lock) { \
         MT_lock_set(&(a)->lock);         \
         __alloc_locked = true;           \
     }
@@ -2608,9 +2608,8 @@ create_allocator(allocator *pa, const char *name, bool use_lock)
 	sa->use_lock = use_lock;
 	MT_lock_init(&sa->lock, "allocator_lock");
 	if (name)
-		sa->name = sa_strdup(sa, name);
-	else
-		sa->name = NULL;
+		snprintf(sa->name, sizeof(sa->name),
+				"%s", name);
 	return sa;
 }
 
@@ -2751,6 +2750,7 @@ sa_close_to(allocator *sa, uint64_t offset)
 		COND_LOCK_ALLOCATOR(sa);
 		sa->nr = blk_idx;
 		sa->used = blk_offset;
+		sa->freelist = NULL;
 		COND_UNLOCK_ALLOCATOR(sa);
 	}
 	if (sa->tmp_used > 0) {
