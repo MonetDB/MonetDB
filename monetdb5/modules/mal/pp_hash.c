@@ -1911,7 +1911,7 @@ error:
 				mtd[mtdcnt] = i; \
 				slt[mtdcnt] = slot - 1; \
 				mtdcnt++; \
-				if (*single && freq[slot - 1] > 1) { \
+				if (match && *single && freq[slot - 1] > 1) { \
 					err = createException(SQL, "oahash.probe", "more than one match"); \
 					goto error; \
 				} \
@@ -2123,25 +2123,25 @@ error:
 }
 
 static str
-BAT_OAHASHprobe(bat *LHS_matched, bat *RHS_slotid, const bat *LHS_key, const bat *LHS_hash, const bat *RHS_ht, const bat *frequency, const bit *single, const bit *semantics, const ptr *H)
+BAT_OAHASHprobe_single(bat *LHS_matched, bat *RHS_slotid, const bat *LHS_key, const bat *LHS_hash, const bat *RHS_ht, const bat *frequency, const bit *single, const bit *semantics, const ptr *H)
 {
 	return BAT_OAHASHprobe1(LHS_matched, RHS_slotid, LHS_key, LHS_hash, RHS_ht, frequency, single, semantics, H, true);
 }
 
 static str
-BAT_OAHASHprobe_nofreq(bat *LHS_matched, bat *RHS_slotid, const bat *LHS_key, const bat *LHS_hash, const bat *RHS_ht, const bit *single, const bit *semantics, const ptr *H)
+BAT_OAHASHprobe(bat *LHS_matched, bat *RHS_slotid, const bat *LHS_key, const bat *LHS_hash, const bat *RHS_ht, const bit *single, const bit *semantics, const ptr *H)
 {
 	return BAT_OAHASHprobe1(LHS_matched, RHS_slotid, LHS_key, LHS_hash, RHS_ht, NULL, single, semantics, H, true);
 }
 
 static str
-BAT_OAHASHnprobe(bat *LHS_matched, bat *RHS_slotid, const bat *LHS_key, const bat *LHS_hash, const bat *RHS_ht, const bat *frequency, const bit *single, const bit *semantics, const ptr *H)
+BAT_OAHASHnprobe_single(bat *LHS_matched, bat *RHS_slotid, const bat *LHS_key, const bat *LHS_hash, const bat *RHS_ht, const bat *frequency, const bit *single, const bit *semantics, const ptr *H)
 {
 	return BAT_OAHASHprobe1(LHS_matched, RHS_slotid, LHS_key, LHS_hash, RHS_ht, frequency, single, semantics, H, false);
 }
 
 static str
-BAT_OAHASHnprobe_nofreq(bat *LHS_matched, bat *RHS_slotid, const bat *LHS_key, const bat *LHS_hash, const bat *RHS_ht, const bit *single, const bit *semantics, const ptr *H)
+BAT_OAHASHnprobe(bat *LHS_matched, bat *RHS_slotid, const bat *LHS_key, const bat *LHS_hash, const bat *RHS_ht, const bit *single, const bit *semantics, const ptr *H)
 {
 	return BAT_OAHASHprobe1(LHS_matched, RHS_slotid, LHS_key, LHS_hash, RHS_ht, NULL, single, semantics, H, false);
 }
@@ -2458,25 +2458,25 @@ error:
 }
 
 static str
-BAT_OAHASHoprobe(bat *LHS_matched, bat *RHS_slotid, bat *outer, const bat *LHS_key, const bat *LHS_hash, const bat *RHS_ht, const bat *frequency, const bit *single, const bit *semantics, const ptr *H)
+BAT_OAHASHoprobe_single(bat *LHS_matched, bat *RHS_slotid, bat *outer, const bat *LHS_key, const bat *LHS_hash, const bat *RHS_ht, const bat *frequency, const bit *single, const bit *semantics, const ptr *H)
 {
 	return BAT_OAHASHomprobe(LHS_matched, RHS_slotid, outer, LHS_key, LHS_hash, RHS_ht, frequency, single, semantics, H, false);
 }
 
 static str
-BAT_OAHASHoprobe_nofreq(bat *LHS_matched, bat *RHS_slotid, bat *outer, const bat *LHS_key, const bat *LHS_hash, const bat *RHS_ht, const bit *single, const bit *semantics, const ptr *H)
+BAT_OAHASHoprobe(bat *LHS_matched, bat *RHS_slotid, bat *outer, const bat *LHS_key, const bat *LHS_hash, const bat *RHS_ht, const bit *single, const bit *semantics, const ptr *H)
 {
 	return BAT_OAHASHomprobe(LHS_matched, RHS_slotid, outer, LHS_key, LHS_hash, RHS_ht, NULL, single, semantics, H, false);
 }
 
 static str
-BAT_OAHASHmprobe(bat *LHS_matched, bat *RHS_slotid, bat *outer, const bat *LHS_key, const bat *LHS_hash, const bat *RHS_ht, const bat *frequency, const bit *single, const bit *semantics, const ptr *H)
+BAT_OAHASHmprobe_single(bat *LHS_matched, bat *RHS_slotid, bat *outer, const bat *LHS_key, const bat *LHS_hash, const bat *RHS_ht, const bat *frequency, const bit *single, const bit *semantics, const ptr *H)
 {
 	return BAT_OAHASHomprobe(LHS_matched, RHS_slotid, outer, LHS_key, LHS_hash, RHS_ht, frequency, single, semantics, H, true);
 }
 
 static str
-BAT_OAHASHmprobe_nofreq(bat *LHS_matched, bat *RHS_slotid, bat *outer, const bat *LHS_key, const bat *LHS_hash, const bat *RHS_ht, const bit *single, const bit *semantics, const ptr *H)
+BAT_OAHASHmprobe(bat *LHS_matched, bat *RHS_slotid, bat *outer, const bat *LHS_key, const bat *LHS_hash, const bat *RHS_ht, const bit *single, const bit *semantics, const ptr *H)
 {
 	return BAT_OAHASHomprobe(LHS_matched, RHS_slotid, outer, LHS_key, LHS_hash, RHS_ht, NULL, single, semantics, H, true);
 }
@@ -2595,7 +2595,7 @@ BAT_OAHASHmprobe_nofreq(bat *LHS_matched, bat *RHS_slotid, bat *outer, const bat
 	} while (0)
 
 static str
-BAT_OAHASHprobe_cmbd(bat *LHS_matched, bat *RHS_slotid, const bat *LHS_key, const bat *LHS_hash, const bat *LHS_selected, const bat *RHS_gid, const bat *RHS_ht, const bat *frequency, const bit *single, const bit *semantics, const ptr *H)
+BAT_OAHASHprobe_cmbd_single(bat *LHS_matched, bat *RHS_slotid, const bat *LHS_key, const bat *LHS_hash, const bat *LHS_selected, const bat *RHS_gid, const bat *RHS_ht, const bat *frequency, const bit *single, const bit *semantics, const ptr *H)
 {
 	BAT *res_m = NULL, *res_s = NULL, *k = NULL, *h = NULL, *m = NULL, *t = NULL, *p = NULL, *f = NULL;
 	BUN mtdcnt, mtdcnt2 = 0;
@@ -2730,9 +2730,9 @@ error:
 }
 
 static str
-BAT_OAHASHprobe_cmbd_nofreq(bat *LHS_matched, bat *RHS_slotid, const bat *LHS_key, const bat *LHS_hash, const bat *LHS_selected, const bat *RHS_gid, const bat *RHS_ht, const bit *single, const bit *semantics, const ptr *H)
+BAT_OAHASHprobe_cmbd(bat *LHS_matched, bat *RHS_slotid, const bat *LHS_key, const bat *LHS_hash, const bat *LHS_selected, const bat *RHS_gid, const bat *RHS_ht, const bit *single, const bit *semantics, const ptr *H)
 {
-	return BAT_OAHASHprobe_cmbd(LHS_matched, RHS_slotid, LHS_key, LHS_hash, LHS_selected, RHS_gid, RHS_ht, NULL, single, semantics, H);
+	return BAT_OAHASHprobe_cmbd_single(LHS_matched, RHS_slotid, LHS_key, LHS_hash, LHS_selected, RHS_gid, RHS_ht, NULL, single, semantics, H);
 }
 
 #define BATvoprobe_cmbd() \
@@ -3061,25 +3061,25 @@ error:
 }
 
 static str
-BAT_OAHASHoprobe_cmbd(bat *LHS_matched, bat *RHS_slotid, bat *outer, const bat *LHS_key, const bat *LHS_hash, const bat *LHS_selected, const bat *RHS_gid, const bat *RHS_ht, const bat *frequency, const bit *single, const bit *semantics, const ptr *H)
+BAT_OAHASHoprobe_cmbd_single(bat *LHS_matched, bat *RHS_slotid, bat *outer, const bat *LHS_key, const bat *LHS_hash, const bat *LHS_selected, const bat *RHS_gid, const bat *RHS_ht, const bat *frequency, const bit *single, const bit *semantics, const ptr *H)
 {
 	return BAT_OAHASHomprobe_cmbd( LHS_matched, RHS_slotid, outer, LHS_key, LHS_hash, LHS_selected, RHS_gid, RHS_ht, frequency, single, semantics, H, false);
 }
 
 static str
-BAT_OAHASHoprobe_cmbd_nofreq(bat *LHS_matched, bat *RHS_slotid, bat *outer, const bat *LHS_key, const bat *LHS_hash, const bat *LHS_selected, const bat *RHS_gid, const bat *RHS_ht, const bit *single, const bit *semantics, const ptr *H)
+BAT_OAHASHoprobe_cmbd(bat *LHS_matched, bat *RHS_slotid, bat *outer, const bat *LHS_key, const bat *LHS_hash, const bat *LHS_selected, const bat *RHS_gid, const bat *RHS_ht, const bit *single, const bit *semantics, const ptr *H)
 {
 	return BAT_OAHASHomprobe_cmbd( LHS_matched, RHS_slotid, outer, LHS_key, LHS_hash, LHS_selected, RHS_gid, RHS_ht, NULL, single, semantics, H, false);
 }
 
 static str
-BAT_OAHASHmprobe_cmbd(bat *LHS_matched, bat *RHS_slotid, bat *outer, const bat *LHS_key, const bat *LHS_hash, const bat *LHS_selected, const bat *RHS_gid, const bat *RHS_ht, const bat *frequency, const bit *single, const bit *semantics, const ptr *H)
+BAT_OAHASHmprobe_cmbd_single(bat *LHS_matched, bat *RHS_slotid, bat *outer, const bat *LHS_key, const bat *LHS_hash, const bat *LHS_selected, const bat *RHS_gid, const bat *RHS_ht, const bat *frequency, const bit *single, const bit *semantics, const ptr *H)
 {
 	return BAT_OAHASHomprobe_cmbd( LHS_matched, RHS_slotid, outer, LHS_key, LHS_hash, LHS_selected, RHS_gid, RHS_ht, frequency, single, semantics, H, true);
 }
 
 static str
-BAT_OAHASHmprobe_cmbd_nofreq(bat *LHS_matched, bat *RHS_slotid, bat *outer, const bat *LHS_key, const bat *LHS_hash, const bat *LHS_selected, const bat *RHS_gid, const bat *RHS_ht, const bit *single, const bit *semantics, const ptr *H)
+BAT_OAHASHmprobe_cmbd(bat *LHS_matched, bat *RHS_slotid, bat *outer, const bat *LHS_key, const bat *LHS_hash, const bat *LHS_selected, const bat *RHS_gid, const bat *RHS_ht, const bit *single, const bit *semantics, const ptr *H)
 {
 	return BAT_OAHASHomprobe_cmbd( LHS_matched, RHS_slotid, outer, LHS_key, LHS_hash, LHS_selected, RHS_gid, RHS_ht, NULL, single, semantics, H, true);
 }
@@ -3488,12 +3488,6 @@ error:
 	BBPreclaim(l);
 	BBPreclaim(f);
 	return err;
-}
-
-static str
-BAT_OAHASHexpand_nofreq(bat *expanded, const bat *key, const bat *selected, const bat *slotid, const bit *outer, const ptr *H)
-{
-	return BAT_OAHASHexpand(expanded, key, selected, slotid, NULL, outer, H);
 }
 
 #define vexpand_cart() \
@@ -4028,43 +4022,38 @@ static mel_func oa_hash_init_funcs[] = {
 
  command("oahash", "build_combined_table", OAHASHbuild_tbl_cmbd, false, "Build a hash table for the keys with a parent column. Returns the slot ID per key and the hash table sink", args(2,5, batarg("slot_id",oid),batargany("ht_sink",1),batargany("key",1),batarg("parent_slotid",oid),arg("pipeline",ptr))),
 
-// command("oahash", "compute_frequencies", OAHASHcmpt_freq, false, "Compute the frequencies of the slot IDs and store them in the hash-table", args(1,3, batargany("ht_sink",1),batarg("slot_id",oid),arg("pipeline",ptr))),
-// command("oahash", "compute_frequencies", OAHASHcmpt_freq_pos, false, "Compute the frequencies of the slot IDs and store them in the hash-table. Return combined_hash(slot_id, freq) for payload_pos", args(2,4, batarg("payload_pos",oid),batargany("ht_sink",1),batarg("slot_id",oid),arg("pipeline",ptr))),
-
  pattern("oahash", "frequency", OAHASHadd_freq, false, "Add the frequencies of the slot IDs to the shared frequency BAT", args(1,3, batarg("frequencies",lng),batarg("slot_id",oid),arg("pipeline",ptr))),
  pattern("oahash", "frequency", OAHASHadd_freq, false, "Add the frequencies of the slot IDs to the shared frequency BAT and return combined_hash(slot_id, freq) for payload_pos", args(2,4, batarg("payload_pos",oid),batarg("frequencies",lng),batarg("slot_id",oid),arg("pipeline",ptr))),
 
  command("oahash", "hash", BAT_OAHASHhash, false, "Compute the hashs for the keys", args(1,3, batarg("hsh",lng),batargany("key",1),arg("pipeline",ptr))),
 
- command("oahash", "probe", BAT_OAHASHprobe, false, "Probe the (key, hash) pairs in the hash table. For a matched key, return its OID in the left-hand-side column and the slot ID in the right-hand-side hash table", args(2,9, batarg("LHS_matched",oid),batarg("RHS_slotid",oid),batargany("LHS_key",1),batarg("LHS_hash",lng),batargany("RHS_ht",2),batarg("frequency",lng),arg("single",bit),arg("semantics",bit),arg("pipeline",ptr))),
- command("oahash", "probe", BAT_OAHASHprobe_nofreq, false, "Probe the (key, hash) pairs in the hash table. For a matched key, return its OID in the left-hand-side column and the slot ID in the right-hand-side hash table", args(2,8, batarg("LHS_matched",oid),batarg("RHS_slotid",oid),batargany("LHS_key",1),batarg("LHS_hash",lng),batargany("RHS_ht",2),arg("single",bit),arg("semantics",bit),arg("pipeline",ptr))),
+ command("oahash", "probe", BAT_OAHASHprobe_single, false, "Probe the (key, hash) pairs in the hash table. For a matched key, return its OID in the left-hand-side column and the slot ID in the right-hand-side hash table", args(2,9, batarg("LHS_matched",oid),batarg("RHS_slotid",oid),batargany("LHS_key",1),batarg("LHS_hash",lng),batargany("RHS_ht",2),batarg("frequency",lng),arg("single",bit),arg("semantics",bit),arg("pipeline",ptr))),
+ command("oahash", "probe", BAT_OAHASHprobe, false, "Probe the (key, hash) pairs in the hash table. For a matched key, return its OID in the left-hand-side column and the slot ID in the right-hand-side hash table", args(2,8, batarg("LHS_matched",oid),batarg("RHS_slotid",oid),batargany("LHS_key",1),batarg("LHS_hash",lng),batargany("RHS_ht",2),arg("single",bit),arg("semantics",bit),arg("pipeline",ptr))),
 
- command("oahash", "nprobe", BAT_OAHASHnprobe, false, "Probe the (key, hash) pairs in the hash table. For a not-matched key, return its OID in the left-hand-side column and the slot ID in the right-hand-side hash table", args(2,9, batarg("LHS_matched",oid),batarg("RHS_slotid",oid),batargany("LHS_key",1),batarg("LHS_hash",lng),batargany("RHS_ht",2),batarg("frequency",lng),arg("single",bit),arg("semantics",bit),arg("pipeline",ptr))),
- command("oahash", "nprobe", BAT_OAHASHnprobe_nofreq, false, "Probe the (key, hash) pairs in the hash table. For a not-matched key, return its OID in the left-hand-side column and the slot ID in the right-hand-side hash table", args(2,8, batarg("LHS_matched",oid),batarg("RHS_slotid",oid),batargany("LHS_key",1),batarg("LHS_hash",lng),batargany("RHS_ht",2),arg("single",bit),arg("semantics",bit),arg("pipeline",ptr))),
+ command("oahash", "nprobe", BAT_OAHASHnprobe_single, false, "Probe the (key, hash) pairs in the hash table. For a not-matched key, return its OID in the left-hand-side column and the slot ID in the right-hand-side hash table", args(2,9, batarg("LHS_matched",oid),batarg("RHS_slotid",oid),batargany("LHS_key",1),batarg("LHS_hash",lng),batargany("RHS_ht",2),batarg("frequency",lng),arg("single",bit),arg("semantics",bit),arg("pipeline",ptr))),
+ command("oahash", "nprobe", BAT_OAHASHnprobe, false, "Probe the (key, hash) pairs in the hash table. For a not-matched key, return its OID in the left-hand-side column and the slot ID in the right-hand-side hash table", args(2,8, batarg("LHS_matched",oid),batarg("RHS_slotid",oid),batargany("LHS_key",1),batarg("LHS_hash",lng),batargany("RHS_ht",2),arg("single",bit),arg("semantics",bit),arg("pipeline",ptr))),
 
- command("oahash", "oprobe", BAT_OAHASHoprobe, false, "Probe the (key, hash) pairs in the hash table. For a matched key, return its OID in the left-hand-side column and the slot ID in the right-hand-side hash table", args(3,10, batarg("LHS_matched",oid),batarg("RHS_slotid",oid),batarg("outer",bit),batargany("LHS_key",1),batarg("LHS_hash",lng),batargany("RHS_ht",2),batarg("frequency",lng),arg("single",bit),arg("semantics",bit),arg("pipeline",ptr))),
- command("oahash", "oprobe", BAT_OAHASHoprobe_nofreq, false, "Probe the (key, hash) pairs in the hash table. For a matched key, return its OID in the left-hand-side column and the slot ID in the right-hand-side hash table", args(3,9, batarg("LHS_matched",oid),batarg("RHS_slotid",oid),batarg("outer",bit),batargany("LHS_key",1),batarg("LHS_hash",lng),batargany("RHS_ht",2),arg("single",bit),arg("semantics",bit),arg("pipeline",ptr))),
+ command("oahash", "oprobe", BAT_OAHASHoprobe_single, false, "Probe the (key, hash) pairs in the hash table. For a matched key, return its OID in the left-hand-side column and the slot ID in the right-hand-side hash table", args(3,10, batarg("LHS_matched",oid),batarg("RHS_slotid",oid),batarg("outer",bit),batargany("LHS_key",1),batarg("LHS_hash",lng),batargany("RHS_ht",2),batarg("frequency",lng),arg("single",bit),arg("semantics",bit),arg("pipeline",ptr))),
+ command("oahash", "oprobe", BAT_OAHASHoprobe, false, "Probe the (key, hash) pairs in the hash table. For a matched key, return its OID in the left-hand-side column and the slot ID in the right-hand-side hash table", args(3,9, batarg("LHS_matched",oid),batarg("RHS_slotid",oid),batarg("outer",bit),batargany("LHS_key",1),batarg("LHS_hash",lng),batargany("RHS_ht",2),arg("single",bit),arg("semantics",bit),arg("pipeline",ptr))),
 
- command("oahash", "mprobe", BAT_OAHASHmprobe, false, "Probe the (key, hash) pairs in the hash table. For a matched key, return its OID in the left-hand-side column and the slot ID in the right-hand-side hash table", args(3,10, batarg("LHS_matched",oid),batarg("RHS_slotid",oid),batarg("mark",bit),batargany("LHS_key",1),batarg("LHS_hash",lng),batargany("RHS_ht",2),batarg("frequency",lng),arg("single",bit),arg("semantics",bit),arg("pipeline",ptr))),
- command("oahash", "mprobe", BAT_OAHASHmprobe_nofreq, false, "Probe the (key, hash) pairs in the hash table. For a matched key, return its OID in the left-hand-side column and the slot ID in the right-hand-side hash table", args(3,9, batarg("LHS_matched",oid),batarg("RHS_slotid",oid),batarg("mark",bit),batargany("LHS_key",1),batarg("LHS_hash",lng),batargany("RHS_ht",2),arg("single",bit),arg("semantics",bit),arg("pipeline",ptr))),
+ command("oahash", "mprobe", BAT_OAHASHmprobe_single, false, "Probe the (key, hash) pairs in the hash table. For a matched key, return its OID in the left-hand-side column and the slot ID in the right-hand-side hash table", args(3,10, batarg("LHS_matched",oid),batarg("RHS_slotid",oid),batarg("mark",bit),batargany("LHS_key",1),batarg("LHS_hash",lng),batargany("RHS_ht",2),batarg("frequency",lng),arg("single",bit),arg("semantics",bit),arg("pipeline",ptr))),
+ command("oahash", "mprobe", BAT_OAHASHmprobe, false, "Probe the (key, hash) pairs in the hash table. For a matched key, return its OID in the left-hand-side column and the slot ID in the right-hand-side hash table", args(3,9, batarg("LHS_matched",oid),batarg("RHS_slotid",oid),batarg("mark",bit),batargany("LHS_key",1),batarg("LHS_hash",lng),batargany("RHS_ht",2),arg("single",bit),arg("semantics",bit),arg("pipeline",ptr))),
 
 
  command("oahash", "combined_hash", BAT_OAHASHhash_cmbd, false, "For the selected keys, compute the combined hash of key+parent_slotid", args(1,5,batarg("hsh",lng),batargany("key",1),batarg("selected",oid),batarg("parent_slotid",oid),batargany("ht_sink",2))),
 
- command("oahash", "combined_probe", BAT_OAHASHprobe_cmbd, false, "Probe the selected (key, hash) pairs in the hash table. For a matched item, return its OID in the left-hand-side column and the slot ID in the right-hand-side hash table", args(2,11, batarg("LHS_matched",oid),batarg("RHS_slotid",oid),batargany("LHS_key",1),batarg("LHS_hash",lng),batarg("LHS_selected",oid),batarg("RHS_pgids",oid),batargany("RHS_ht",2),batarg("frequency",lng),arg("single",bit),arg("semantics",bit),arg("pipeline",ptr))),
- command("oahash", "combined_probe", BAT_OAHASHprobe_cmbd_nofreq, false, "Probe the selected (key, hash) pairs in the hash table. For a matched item, return its OID in the left-hand-side column and the slot ID in the right-hand-side hash table", args(2,10, batarg("LHS_matched",oid),batarg("RHS_slotid",oid),batargany("LHS_key",1),batarg("LHS_hash",lng),batarg("LHS_selected",oid),batarg("RHS_pgids",oid),batargany("RHS_ht",2),arg("single",bit),arg("semantics",bit),arg("pipeline",ptr))),
+ command("oahash", "combined_probe", BAT_OAHASHprobe_cmbd_single, false, "Probe the selected (key, hash) pairs in the hash table. For a matched item, return its OID in the left-hand-side column and the slot ID in the right-hand-side hash table", args(2,11, batarg("LHS_matched",oid),batarg("RHS_slotid",oid),batargany("LHS_key",1),batarg("LHS_hash",lng),batarg("LHS_selected",oid),batarg("RHS_pgids",oid),batargany("RHS_ht",2),batarg("frequency",lng),arg("single",bit),arg("semantics",bit),arg("pipeline",ptr))),
+ command("oahash", "combined_probe", BAT_OAHASHprobe_cmbd, false, "Probe the selected (key, hash) pairs in the hash table. For a matched item, return its OID in the left-hand-side column and the slot ID in the right-hand-side hash table", args(2,10, batarg("LHS_matched",oid),batarg("RHS_slotid",oid),batargany("LHS_key",1),batarg("LHS_hash",lng),batarg("LHS_selected",oid),batarg("RHS_pgids",oid),batargany("RHS_ht",2),arg("single",bit),arg("semantics",bit),arg("pipeline",ptr))),
 
- command("oahash", "combined_oprobe", BAT_OAHASHoprobe_cmbd, false, "Probe the selected (key, hash) pairs in the hash table. For a matched item, return its OID in the left-hand-side column and the slot ID in the right-hand-side hash table", args(3,12, batarg("LHS_matched",oid),batarg("RHS_slotid",oid),batarg("outer",bit),batargany("LHS_key",1),batarg("LHS_hash",lng),batarg("LHS_selected",oid),batarg("RHS_pgids",oid),batargany("RHS_ht",2),batarg("frequency",lng),arg("single",bit),arg("semantics",bit),arg("pipeline",ptr))),
- command("oahash", "combined_oprobe", BAT_OAHASHoprobe_cmbd_nofreq, false, "Probe the selected (key, hash) pairs in the hash table. For a matched item, return its OID in the left-hand-side column and the slot ID in the right-hand-side hash table", args(3,11, batarg("LHS_matched",oid),batarg("RHS_slotid",oid),batarg("outer",bit),batargany("LHS_key",1),batarg("LHS_hash",lng),batarg("LHS_selected",oid),batarg("RHS_pgids",oid),batargany("RHS_ht",2),arg("single",bit),arg("semantics",bit),arg("pipeline",ptr))),
+ command("oahash", "combined_oprobe", BAT_OAHASHoprobe_cmbd_single, false, "Probe the selected (key, hash) pairs in the hash table. For a matched item, return its OID in the left-hand-side column and the slot ID in the right-hand-side hash table", args(3,12, batarg("LHS_matched",oid),batarg("RHS_slotid",oid),batarg("outer",bit),batargany("LHS_key",1),batarg("LHS_hash",lng),batarg("LHS_selected",oid),batarg("RHS_pgids",oid),batargany("RHS_ht",2),batarg("frequency",lng),arg("single",bit),arg("semantics",bit),arg("pipeline",ptr))),
+ command("oahash", "combined_oprobe", BAT_OAHASHoprobe_cmbd, false, "Probe the selected (key, hash) pairs in the hash table. For a matched item, return its OID in the left-hand-side column and the slot ID in the right-hand-side hash table", args(3,11, batarg("LHS_matched",oid),batarg("RHS_slotid",oid),batarg("outer",bit),batargany("LHS_key",1),batarg("LHS_hash",lng),batarg("LHS_selected",oid),batarg("RHS_pgids",oid),batargany("RHS_ht",2),arg("single",bit),arg("semantics",bit),arg("pipeline",ptr))),
 
- command("oahash", "combined_mprobe", BAT_OAHASHmprobe_cmbd, false, "Probe the selected (key, hash) pairs in the hash table. For a matched item, return its OID in the left-hand-side column and the slot ID in the right-hand-side hash table", args(3,12, batarg("LHS_matched",oid),batarg("RHS_slotid",oid),batarg("mark",bit),batargany("LHS_key",1),batarg("LHS_hash",lng),batarg("LHS_selected",oid),batarg("RHS_pgids",oid),batargany("RHS_ht",2),batarg("frequency",lng),arg("single",bit),arg("semantics",bit),arg("pipeline",ptr))),
- command("oahash", "combined_mprobe", BAT_OAHASHmprobe_cmbd_nofreq, false, "Probe the selected (key, hash) pairs in the hash table. For a matched item, return its OID in the left-hand-side column and the slot ID in the right-hand-side hash table", args(3,11, batarg("LHS_matched",oid),batarg("RHS_slotid",oid),batarg("mark",bit),batargany("LHS_key",1),batarg("LHS_hash",lng),batarg("LHS_selected",oid),batarg("RHS_pgids",oid),batargany("RHS_ht",2),arg("single",bit),arg("semantics",bit),arg("pipeline",ptr))),
+ command("oahash", "combined_mprobe", BAT_OAHASHmprobe_cmbd_single, false, "Probe the selected (key, hash) pairs in the hash table. For a matched item, return its OID in the left-hand-side column and the slot ID in the right-hand-side hash table", args(3,12, batarg("LHS_matched",oid),batarg("RHS_slotid",oid),batarg("mark",bit),batargany("LHS_key",1),batarg("LHS_hash",lng),batarg("LHS_selected",oid),batarg("RHS_pgids",oid),batargany("RHS_ht",2),batarg("frequency",lng),arg("single",bit),arg("semantics",bit),arg("pipeline",ptr))),
+ command("oahash", "combined_mprobe", BAT_OAHASHmprobe_cmbd, false, "Probe the selected (key, hash) pairs in the hash table. For a matched item, return its OID in the left-hand-side column and the slot ID in the right-hand-side hash table", args(3,11, batarg("LHS_matched",oid),batarg("RHS_slotid",oid),batarg("mark",bit),batargany("LHS_key",1),batarg("LHS_hash",lng),batarg("LHS_selected",oid),batarg("RHS_pgids",oid),batargany("RHS_ht",2),arg("single",bit),arg("semantics",bit),arg("pipeline",ptr))),
 
  command("oahash", "project", OAHASHproject, false, "Project the selected OIDs onto the keys", args(1,4, batargany("res",1),batargany("key",1),batarg("selected",oid),arg("pipeline",ptr))),
 
  command("oahash", "expand", BAT_OAHASHexpand, false, "Expand the selected keys according to their frequencies in the hash table. If 'outer' is true, append the not 'selected' keys", args(1,7,batargany("expanded",1),batargany("key",1),batarg("selected",oid),batarg("slotid",oid),batarg("frequency",lng),arg("outer",bit),arg("pipeline",ptr))),
- command("oahash", "expand", BAT_OAHASHexpand_nofreq, false, "Expand the selected keys according to their frequencies in the hash table. If 'outer' is true, append the not 'selected' keys", args(1,6,batargany("expanded",1),batargany("key",1),batarg("selected",oid),batarg("slotid",oid),arg("outer",bit),arg("pipeline",ptr))),
-
 
  command("oahash", "expand_cartesian", BAT_OAHASHexpand_cart, false, "Duplicate each value in 'col' the number of times as the count of 'rowrepeat'. For a left/right-outer join, if 'rowrepeat' is empty, output the values in 'col' once.", args(1,5, batargany("expanded",1),batargany("col",1),batargany("rowrepeat",2),arg("LRouter",bit),arg("pipeline",ptr))),
 

@@ -523,8 +523,10 @@ stmt_oahash_probe(backend *be, stmt *key, int hsh, stmt *rhs_ht, stmt *freq, bit
 	q = pushArgument(be->mb, q, key->nr);
 	q = pushArgument(be->mb, q, hsh);
 	q = pushArgument(be->mb, q, rhs_ht->nr);
-	if (freq)
+	if (single) {
+		assert(freq);
 		q = pushArgument(be->mb, q, freq->nr);
+	}
 	q = pushBit(be->mb, q, single);
 	q = pushBit(be->mb, q, semantics);
 	q = pushArgument(be->mb, q, getArg(pp->q, 2) /* pipeline ptr*/);
@@ -564,8 +566,10 @@ stmt_oahash_combined_probe(backend *be, stmt *key, int hsh, int sel, int prnt_sl
 	q = pushArgument(be->mb, q, sel);
 	q = pushArgument(be->mb, q, prnt_sltid);
 	q = pushArgument(be->mb, q, rhs_ht->nr);
-	if (freq)
+	if (single) {
+		assert(freq);
 		q = pushArgument(be->mb, q, freq->nr);
+	}
 	q = pushBit(be->mb, q, single);
 	q = pushBit(be->mb, q, semantics);
 	q = pushArgument(be->mb, q, getArg(pp->q, 2) /* pipeline ptr*/);
@@ -592,6 +596,9 @@ stmt_oahash_project(backend *be, stmt *col, int sel, const stmt *pp)
 InstrPtr
 stmt_oahash_expand(backend *be, stmt *col, int sel, int slotid, const stmt *freq, bit outer, const stmt *pp)
 {
+	if (!freq) /* without frequency, we only need to project the selected keys */
+		return stmt_oahash_project(be, col, sel, pp);
+
 	int tt = tail_type(col)->type->localtype;
 
 	InstrPtr q = newStmtArgs(be->mb, putName("oahash"), putName("expand"), 8);
@@ -601,8 +608,7 @@ stmt_oahash_expand(backend *be, stmt *col, int sel, int slotid, const stmt *freq
 	q = pushArgument(be->mb, q, col->nr);
 	q = pushArgument(be->mb, q, sel);
 	q = pushArgument(be->mb, q, slotid);
-	if (freq)
-		q = pushArgument(be->mb, q, freq->nr);
+	q = pushArgument(be->mb, q, freq->nr);
 	q = pushBit(be->mb, q, outer);
 	q = pushArgument(be->mb, q, getArg(pp->q, 2) /* pipeline ptr*/);
 	pushInstruction(be->mb, q);
