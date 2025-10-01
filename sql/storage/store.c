@@ -7841,6 +7841,8 @@ sql_trans_convert_partitions(sql_trans *tr)
 void
 store_printinfo(sqlstore *store)
 {
+	printf("SQL store object id: %"PRIu64"\n",
+		   (uint64_t) ATOMIC_GET(&store->obj_id));
 	if (!MT_lock_trytime(&store->commit, 1000)) {
 		printf("WAL is currently locked, so no WAL information\n");
 		return;
