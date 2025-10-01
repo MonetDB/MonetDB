@@ -5426,9 +5426,11 @@ rel_table_exp(sql_query *query, sql_rel **rel, symbol *column_e, bool single_exp
 		tname = column_e->data.lval->h->data.sval;
 	} else if (column_e->token == SQL_COLUMN && column_e->data.lval->h->type == type_symbol) {
 		symbol *sym = column_e->data.lval->h->data.sym;
-		if (sym->token == SQL_COLUMN)
+		if (sym->token == SQL_COLUMN) {
 			tname = sym->data.lval->h->data.sval;
-		else
+			if (dlist_length(sym->data.lval) > 1 && sym->data.lval->t->data.sval)
+				return NULL;
+		} else
 			return NULL;
 	} else {
 		return NULL;
