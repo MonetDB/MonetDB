@@ -123,7 +123,7 @@ changeUserPassword(mvc *m, oid rid, str oldpass, str newpass)
 	}
 	if (oldpass) {
 		// validate old password match
-		if ((err = AUTHdecypherValue(&hash, passValue=getUserPassword(m, rid))) != MAL_SUCCEED) {
+		if ((err = AUTHdecypherValue(m->sa, &hash, passValue=getUserPassword(m, rid))) != MAL_SUCCEED) {
 			(void) sql_error(m, 02, SQLSTATE(42000) "changeUserPassword: %s", getExceptionMessage(err));
 			freeException(err);
 			GDKfree(passValue);
@@ -389,7 +389,7 @@ monet5_password_hash(mvc *m, const char *username)
 	oid rid = getUserOIDByName(m, username);
 	str password = getUserPassword(m, rid);
 	if (password) {
-		msg = AUTHdecypherValue(&hash, password);
+		msg = AUTHdecypherValue(m->sa, &hash, password);
 		GDKfree(password);
 		if (msg) {
 			(void) sql_error(m, 02, SQLSTATE(42000) "monet5_password_hash: %s", getExceptionMessage(msg));
@@ -943,7 +943,7 @@ remote_create(mvc *m, sqlid id, const char *username, const char *password, int 
 	if (strNil(password)) {
 		oid rid = getUserOIDByName(m, username);
 		str cypher = getUserPassword(m, rid);
-		str err = AUTHdecypherValue(&pwhash, cypher);
+		str err = AUTHdecypherValue(m->sa, &pwhash, cypher);
 		GDKfree(cypher);
 		if (err) {
 			GDKfree(err);
@@ -951,12 +951,12 @@ remote_create(mvc *m, sqlid id, const char *username, const char *password, int 
 		}
 	}
 	str msg = AUTHcypherValue(&cypher, pwhash ? pwhash : password);
-	if (pwhash != NULL) {
-		if (!pw_encrypted)
-			free(pwhash);
-		//else
-		//	GDKfree(pwhash);
-	}
+	//if (pwhash != NULL) {
+	//	if (!pw_encrypted)
+	//		free(pwhash);
+	//	//else
+	//	//	GDKfree(pwhash);
+	//}
 	if (msg != MAL_SUCCEED)
 		return msg;
 	log_res = store->table_api.table_insert(m->session->tr, remote_user_info, &id, &username, &cypher, NULL);
@@ -984,7 +984,7 @@ remote_get(mvc *m, sqlid id, str *username, str *pwhash)
 		*username = GDKstrdup("");
 	}
 	str cypher = store->table_api.column_find_value(tr, find_sql_column(remote_user_info, "password"), rid);
-	str err = AUTHdecypherValue(pwhash, cypher);
+	str err = AUTHdecypherValue(m->sa, pwhash, cypher);
 	GDKfree(cypher);
 	if (err)
 		return err;

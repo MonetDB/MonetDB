@@ -430,7 +430,7 @@ userCheckCredentials( mvc *m, Client c, const char *pwhash, const char *challeng
 	    /* find the corresponding password to the user */
 
 	str pwd = NULL;
-	str msg = AUTHdecypherValue(&pwd, passValue);
+	str msg = AUTHdecypherValue(c->ma, &pwd, passValue);
 	GDKfree(passValue);
 	if (msg)
 		return msg;

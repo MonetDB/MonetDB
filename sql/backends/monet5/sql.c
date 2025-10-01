@@ -5495,7 +5495,7 @@ SQLdecypher(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	if ((msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
-	return AUTHdecypherValue(pwhash, cypher);
+	return AUTHdecypherValue(mb->ma, pwhash, cypher);
 }
 
 static str
