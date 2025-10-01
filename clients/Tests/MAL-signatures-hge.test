@@ -3817,7 +3817,7 @@ bat
 info
 command bat.info(X_0:bat[:any_1]) (X_1:bat[:str], X_2:bat[:str])
 BKCinfo
-Produce a table containing information about a BAT in [attribute,value] format. @It contains all details of the BAT record. 
+Produce a table containing information about a BAT in [attribute,value] format. @It contains all properties of the BAT record. 
 bat
 intersectcand
 command bat.intersectcand(X_0:bat[:oid], X_1:bat[:oid]):bat[:oid]
@@ -48012,7 +48012,7 @@ mdb
 setDebug
 pattern mdb.setDebug(X_0:str):int
 MDBsetDebugStr
-Set the kernel debugging bit-set and return its previous value.@The recognized options are: threads, memory, details,@io, transactions, modules, algorithms, estimates.
+Set the kernel debugging bit-set and return its previous value.@The recognized options are: threads, memory, properties,@io, transactions, modules, algorithms, estimates.
 mdb
 setVMsize
 pattern mdb.setVMsize(X_0:lng):lng
@@ -49012,7 +49012,7 @@ optimizer
 mitosis
 pattern optimizer.mitosis(X_0:str, X_1:str):str
 OPTwrapper
-Modify the explain show details to exploit parallel processing on multiple cores
+Modify the plan to exploit parallel processing on multiple cores
 optimizer
 multiplex
 pattern optimizer.multiplex():str
@@ -49057,7 +49057,7 @@ optimizer
 profiler
 pattern optimizer.profiler(X_0:str, X_1:str):str
 OPTwrapper
-Collect details for the profiler
+Collect properties for the profiler
 optimizer
 projectionpath
 pattern optimizer.projectionpath():str

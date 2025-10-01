@@ -55,9 +55,9 @@ alter table members_rpl add table members_n3
 statement ok
 select * from foo_p1
 
-# check that the explain show details is executing the join of the remote part of the
+# check that the plan is executing the join of the remote part of the
 # merge table with the remote part of the replica and then transfers the
-# result in the master node (hint: the remote explain show details is wrapped around a
+# result in the master node (hint: the remote plan is wrapped around a
 # 'table' returning relational operator)
 
 query T nosort
