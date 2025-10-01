@@ -253,7 +253,8 @@ DFLOWworker(void *T)
 #endif
 	GDKsetbuf(t->errbuf);		/* where to leave errors */
 	snprintf(t->s.name, sizeof(t->s.name), "DFLOWsema%04zu", MT_getpid());
-	allocator *ta = create_allocator(NULL, "TA_tls", false);
+	allocator *ma = create_allocator(NULL, "TA_tls", false);
+	MT_thread_setallocator(ma);
 
 	for (;;) {
 		DataFlow flow;
@@ -337,12 +338,11 @@ DFLOWworker(void *T)
 					break;
 			}
 
-			allocator *ma = flow->mb->ma;
-			MT_thread_setallocator(ma);
-			error = runMALsequence(ta, flow->cntxt, flow->mb, fe->pc, fe->pc + 1,
+			error = runMALsequence(ma, flow->cntxt, flow->mb, fe->pc, fe->pc + 1,
 								   flow->stk, 0, 0);
-			MT_thread_setallocator(NULL);
-			sa_reset(ta);
+			if (error)
+				error = MA_STRDUP(flow->mb->ma, error);
+			sa_reset(ma);
 
 			ATOMIC_DEC(&flow->cntxt->workers);
 			/* release the memory claim */
@@ -452,7 +452,7 @@ DFLOWworker(void *T)
 	}
 	MT_lock_unset(&dataflowLock);
 	GDKsetbuf(NULL);
-	ma_destroy(ta);
+	ma_destroy(ma);
 }
 
 /*
