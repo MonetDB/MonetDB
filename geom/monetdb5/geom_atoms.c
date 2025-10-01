@@ -96,7 +96,7 @@ wkbFROMSTR(allocator *ma, const char *geomWKT, size_t *len, void **GEOMWKB, bool
 			return -1;
 		return 3;
 	}
-	err = wkbFROMSTR_withSRID(geomWKT, len, geomWKB, 0, &parsedBytes);
+	err = wkbFROMSTR_withSRID(ma, geomWKT, len, geomWKB, 0, &parsedBytes);
 	if (err != MAL_SUCCEED) {
 		GDKerror("%s", getExceptionMessageAndState(err));
 		freeException(err);
@@ -276,8 +276,9 @@ wkb_size(size_t len)
 /* Creates WKB representation (including srid) from WKT representation */
 /* return number of parsed characters. */
 str
-wkbFROMSTR_withSRID(const char *geomWKT, size_t *len, wkb **geomWKB, int srid, size_t *nread)
+wkbFROMSTR_withSRID(allocator *ma, const char *geomWKT, size_t *len, wkb **geomWKB, int srid, size_t *nread)
 {
+	assert(ma);
 	GEOSGeom geosGeometry = NULL;	/* The geometry object that is parsed from the src string. */
 	GEOSWKTReader *WKT_reader;
 	static const char polyhedralSurface[] = "POLYHEDRALSURFACE";
@@ -291,8 +292,6 @@ wkbFROMSTR_withSRID(const char *geomWKT, size_t *len, wkb **geomWKB, int srid, s
 	////GDKfree(*geomWKB);
 	*len = 0;
 	*geomWKB = NULL;
-	allocator *ma = MT_thread_getallocator();
-	assert(ma);
 
 	if (strNil(geomWKT)) {
 		*geomWKB = wkbNULLcopy(ma);
@@ -354,7 +353,7 @@ wkbFROMSTR_withSRID(const char *geomWKT, size_t *len, wkb **geomWKB, int srid, s
 
 	/* we have a GEOSGeometry with number of coordinates and SRID and we
 	 * want to get the wkb out of it */
-	*geomWKB = geos2wkb(geosGeometry);
+	*geomWKB = geos2wkb(ma, geosGeometry);
 	GEOSGeom_destroy_r(geoshandle, geosGeometry);
 	if (*geomWKB == NULL) {
 		//if (geomWKT_new)

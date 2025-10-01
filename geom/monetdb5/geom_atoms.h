@@ -35,7 +35,7 @@ gdk_return wkbHEAP(Heap *heap, size_t capacity);
 wkb * wkbNULLcopy(allocator *ma);
 wkb * wkbCopy(allocator *ma, const wkb* src);
 var_t wkb_size(size_t len);
-str wkbFROMSTR_withSRID(const char *geomWKT, size_t *len, wkb **geomWKB, int srid, size_t *nread);
+str wkbFROMSTR_withSRID(allocator *, const char *geomWKT, size_t *len, wkb **geomWKB, int srid, size_t *nread);
 
 /* MBR atom type functions */
 ssize_t mbrTOSTR(allocator *, char **dst, size_t *len, const void *ATOM, bool external);
