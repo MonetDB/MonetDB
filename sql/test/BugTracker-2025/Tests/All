@@ -41,4 +41,5 @@ KNOWNFAIL?7653_incorrect_join_results
 7699-create-user
 7702-stmt_convert_cands
 7706-set-user
+7730-generate-series-month-int
 7732-table-exp-issue
