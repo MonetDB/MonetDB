@@ -109,7 +109,7 @@ OPTremapDirect(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int idx,
 		freeInstruction(mb, p);
 		return 0;
 	}
-	printf("#remapped: %s.%s\n", getModuleId(p), getFunctionId(p));
+	//printf("#remapped: %s.%s\n", getModuleId(p), getFunctionId(p));
 	pushInstruction(mb, p);
 	return 1;
 }
