@@ -2381,7 +2381,6 @@ allocator *sa_reset(allocator *sa)
 	sa->blk_size = SA_BLOCK_SIZE;
 	sa->objects = 0;
 	sa->inuse = 0;
-	sa->tmp_used = 0;
 	COND_UNLOCK_ALLOCATOR(sa);
 	return sa;
 }
@@ -2443,7 +2442,6 @@ sa_double_num_blks(allocator *sa)
 		sa->usedmem += bytes;
 	}
 	if (tmp) {
-		//bool reallocated = sa->blks != (char **)sa->first_blk;
 		size_t bytes = sizeof(char*) * osz;
 		memcpy(tmp, sa->blks, bytes);
 		if (!sa->pa && sa_reallocated(sa)) {
@@ -2715,7 +2713,7 @@ sa_get_eb(allocator *sa)
 #define SA_UNPACK_HI(v)\
 	((uint32_t)((uint64_t)(v) >> 32))
 #define SA_UNPACK_LO(v)\
-       	((int32_t)((uint64_t)(v) & 0xFFFFFFFFULL))
+       	((uint32_t)((uint64_t)(v) & 0xFFFFFFFFULL))
 
 uint64_t
 sa_open(allocator *sa)
@@ -2733,7 +2731,9 @@ sa_close(allocator *sa)
 {
 	assert(sa_tmp_active(sa));
 	sa_reset(sa);
-	sa->tmp_used = 0;
+	COND_LOCK_ALLOCATOR(sa);
+	sa->tmp_used -= 1;
+	COND_UNLOCK_ALLOCATOR(sa);
 }
 
 void
@@ -2742,16 +2742,18 @@ sa_close_to(allocator *sa, uint64_t offset)
 	assert(sa_tmp_active(sa));
 	assert(offset);
 	if (offset && !sa_reallocated(sa)) {
-		size_t blk_idx = SA_UNPACK_HI(offset);
-		size_t blk_offset = SA_UNPACK_LO(offset);
+		uint32_t blk_idx = SA_UNPACK_HI(offset);
+		uint32_t blk_offset = SA_UNPACK_LO(offset);
 		assert((blk_idx > 0) && (blk_idx <= sa->nr));
-		assert(blk_offset > 0 && blk_offset < SA_BLOCK_SIZE);
-		_sa_free_blks(sa, blk_idx);
-		COND_LOCK_ALLOCATOR(sa);
-		sa->nr = blk_idx;
-		sa->used = blk_offset;
-		sa->freelist = NULL;
-		COND_UNLOCK_ALLOCATOR(sa);
+		assert(blk_offset < SA_BLOCK_SIZE);
+		if (blk_idx != sa->nr || blk_offset != sa->used) {
+			_sa_free_blks(sa, blk_idx);
+			COND_LOCK_ALLOCATOR(sa);
+			sa->nr = blk_idx;
+			sa->used = blk_offset;
+			sa->freelist = NULL;
+			COND_UNLOCK_ALLOCATOR(sa);
+		}
 	}
 	if (sa->tmp_used > 0) {
 		COND_LOCK_ALLOCATOR(sa);

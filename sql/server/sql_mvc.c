@@ -770,7 +770,7 @@ mvc_create(sql_store *store, allocator *pa, int clientid, int debug, bstream *rs
 	}
 	m->pa = pa;
 	m->sa = NULL;
-	m->ta = sa_create(m->pa);
+	m->ta = create_allocator(m->pa, "TA_mvc", false);
 #ifdef __has_builtin
 #if __has_builtin(__builtin_frame_address)
 	m->sp = (uintptr_t) __builtin_frame_address(0);

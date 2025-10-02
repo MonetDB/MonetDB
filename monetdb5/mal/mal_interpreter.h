@@ -29,7 +29,7 @@
 mal_export MalStkPtr prepareMALstack(allocator *pa, MalBlkPtr mb, int size);
 mal_export str runMAL(Client c, MalBlkPtr mb, MalBlkPtr mbcaller,
 					  MalStkPtr env);
-mal_export str runMALsequence(allocator *alloc, Client cntxt, MalBlkPtr mb, int startpc,
+mal_export str runMALsequence(allocator *, Client cntxt, MalBlkPtr mb, int startpc,
 							  int stoppc, MalStkPtr stk, MalStkPtr env,
 							  InstrPtr pcicaller);
 mal_export str reenterMAL(Client cntxt, MalBlkPtr mb, int startpc, int stoppc,

@@ -1128,8 +1128,9 @@ static sql_rel *
 rel_optimize_select_and_joins_bottomup(visitor *v, global_props *gp, sql_rel *rel)
 {
 	v->data = &gp->opt_cycle;
+	sa_open(v->sql->ta);
 	rel = rel_visitor_bottomup(v, rel, &rel_optimize_select_and_joins_bottomup_);
-	sa_reset(v->sql->ta);
+	sa_close(v->sql->ta);
 	v->data = gp;
 	return rel;
 }

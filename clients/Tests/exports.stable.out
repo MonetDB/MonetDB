@@ -771,7 +771,7 @@ const char *wsaerror(int);
 # monetdb5
 str AUTHGeneratePasswordHash(str *res, const char *value);
 str AUTHcypherValue(str *ret, const char *value);
-str AUTHdecypherValue(str *ret, const char *value);
+str AUTHdecypherValue(allocator *, str *ret, const char *value);
 str AUTHrequireAdmin(Client c);
 str AUTHunlockVault(const char *password);
 str AUTHverifyPassword(const char *passwd);
@@ -1220,7 +1220,7 @@ const char rpcRef[];
 const char rsColumnRef[];
 const char rtreeRef[];
 str runMAL(Client c, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr env);
-str runMALsequence(allocator *alloc, Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr stk, MalStkPtr env, InstrPtr pcicaller);
+str runMALsequence(allocator *, Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr stk, MalStkPtr env, InstrPtr pcicaller);
 oid runtimeProfileSetTag(Client cntxt);
 const char sampleRef[];
 const char selectNotNilRef[];
