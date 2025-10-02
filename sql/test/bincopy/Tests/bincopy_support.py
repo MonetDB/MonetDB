@@ -12,6 +12,7 @@ NRECS = 1_000_000
 # location generated test data files.
 BINCOPY_FILES = os.environ.get('BINCOPY_FILES', None) or os.environ['TSTTRGDIR']
 
+
 class DataMaker:
     def __init__(self):
         self.fixed_substitutions = dict()
@@ -85,7 +86,6 @@ class DataMaker:
         return self.outfile_to_expected.items()
 
 
-
 def run_test(side, testcase):
     code, expected_result = testcase
     assert len(re.findall('@ON@', code)) == len(re.findall('COPY', code))
@@ -116,18 +116,26 @@ def run_test(side, testcase):
             if err_msg:
                 err_msg = massage(err_msg)
             tr.assertFailed(err_code, err_msg)
-        for outfile, expected in data_maker.outfiles():
+        for outfile, expectedfile in data_maker.outfiles():
             if not os.path.exists(outfile):
                 tr.fail(f'Output file {outfile} was not created')
-            with open(expected, 'rb') as fil:
-                expected_content = fil.read()
-            with open(outfile, 'rb') as fil:
-                content = fil.read()
-            if len(content) != len(expected_content):
-                tr.fail(f'Outfile {outfile} has wrong length: {len(content)}, expected {len(expected_content)}')
-            elif content != expected_content:
-                tr.fail(f'Content of outfile {outfile} differs from {expected}')
+            decoded_expected_filename, expected_content = read_decode(expectedfile)
+            decoded_actual_filename, actual_content = read_decode(outfile)
+            if len(actual_content) != len(expected_content):
+                tr.fail(f'Outfile {decoded_actual_filename} has wrong length: {len(actual_content)}, expected {len(expected_content)}')
+            elif actual_content != expected_content:
+                tr.fail(f'Content of outfile {decoded_actual_filename} differs from {decoded_expected_filename}')
 
+
+def read_decode(filename):
+    if 'string' in os.path.basename(filename):
+        # must be decoded
+        outfile = filename + '.decoded'
+        with open(filename, 'rb') as rd, open(outfile, 'wb') as wr:
+                subprocess.check_call(['backrefencode', '-d'], stdin=rd, stdout=wr)
+        filename = outfile
+    with open(filename, 'rb') as f:
+        return filename, f.read()
 
 
 INTS = ("""
