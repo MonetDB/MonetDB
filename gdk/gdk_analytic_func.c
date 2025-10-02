@@ -244,7 +244,7 @@ GDKanalyticalfirst(BAT *b, BAT *s, BAT *e, int tpe)
 	oid k = 0, cnt = BATcount(b);
 	const oid *restrict start = si.base, *restrict end = ei.base;
 	const void *nil = ATOMnilptr(tpe);
-	int (*atomcmp)(const void *, const void *) = ATOMcompare(tpe);
+	bool (*atomeq)(const void *, const void *) = ATOMequal(tpe);
 
 	switch (ATOMbasetype(tpe)) {
 	case TYPE_bte:
@@ -281,7 +281,7 @@ GDKanalyticalfirst(BAT *b, BAT *s, BAT *e, int tpe)
 					bat_iterator_end(&ei);
 					return NULL;
 				}
-				has_nils |= atomcmp(curval, nil) == 0;
+				has_nils |= atomeq(curval, nil);
 			}
 		} else {
 			uint16_t width = r->twidth;
@@ -290,7 +290,7 @@ GDKanalyticalfirst(BAT *b, BAT *s, BAT *e, int tpe)
 				const void *curval = (end[k] > start[k]) ? BUNtloc(bi, start[k]) : nil;
 				memcpy(rcast, curval, width);
 				rcast += width;
-				has_nils |= atomcmp(curval, nil) == 0;
+				has_nils |= atomeq(curval, nil);
 			}
 		}
 	}
@@ -330,7 +330,7 @@ GDKanalyticallast(BAT *b, BAT *s, BAT *e, int tpe)
 	oid k = 0, cnt = BATcount(b);
 	const oid *restrict start = si.base, *restrict end = ei.base;
 	const void *nil = ATOMnilptr(tpe);
-	int (*atomcmp)(const void *, const void *) = ATOMcompare(tpe);
+	bool (*atomeq)(const void *, const void *) = ATOMequal(tpe);
 
 	switch (ATOMbasetype(tpe)) {
 	case TYPE_bte:
@@ -367,7 +367,7 @@ GDKanalyticallast(BAT *b, BAT *s, BAT *e, int tpe)
 					bat_iterator_end(&ei);
 					return NULL;
 				}
-				has_nils |= atomcmp(curval, nil) == 0;
+				has_nils |= atomeq(curval, nil);
 			}
 		} else {
 			uint16_t width = r->twidth;
@@ -376,7 +376,7 @@ GDKanalyticallast(BAT *b, BAT *s, BAT *e, int tpe)
 				const void *curval = (end[k] > start[k]) ? BUNtloc(bi, end[k] - 1) : nil;
 				memcpy(rcast, curval, width);
 				rcast += width;
-				has_nils |= atomcmp(curval, nil) == 0;
+				has_nils |= atomeq(curval, nil);
 			}
 		}
 	}
@@ -445,7 +445,7 @@ GDKanalyticalnthvalue(BAT *b, BAT *s, BAT *e, BAT *t, lng nth, int tpe)
 	const oid *restrict start = si.base, *restrict end = ei.base;
 	const lng *restrict tp = ti.base;
 	const void *nil = ATOMnilptr(tpe);
-	int (*atomcmp)(const void *, const void *) = ATOMcompare(tpe);
+	bool (*atomeq)(const void *, const void *) = ATOMequal(tpe);
 
 	if (t && t->ttype != TYPE_lng)
 		goto nosupport;
@@ -486,7 +486,7 @@ GDKanalyticalnthvalue(BAT *b, BAT *s, BAT *e, BAT *t, lng nth, int tpe)
 						has_nils = true;
 					} else {
 						curval = BUNtvar(bi, start[k] + (oid)(lnth - 1));
-						has_nils |= atomcmp(curval, nil) == 0;
+						has_nils |= atomeq(curval, nil);
 					}
 					if (tfastins_nocheckVAR(r, k, curval) != GDK_SUCCEED) {
 						bat_iterator_end(&bi);
@@ -508,7 +508,7 @@ GDKanalyticalnthvalue(BAT *b, BAT *s, BAT *e, BAT *t, lng nth, int tpe)
 						has_nils = true;
 					} else {
 						curval = BUNtloc(bi, start[k] + (oid)(lnth - 1));
-						has_nils |= atomcmp(curval, nil) == 0;
+						has_nils |= atomeq(curval, nil);
 					}
 					memcpy(rcast, curval, width);
 					rcast += width;
@@ -569,7 +569,7 @@ GDKanalyticalnthvalue(BAT *b, BAT *s, BAT *e, BAT *t, lng nth, int tpe)
 							BBPreclaim(r);
 							return NULL;
 						}
-						has_nils |= atomcmp(curval, nil) == 0;
+						has_nils |= atomeq(curval, nil);
 					}
 				}
 			} else {
@@ -587,7 +587,7 @@ GDKanalyticalnthvalue(BAT *b, BAT *s, BAT *e, BAT *t, lng nth, int tpe)
 						const void *curval = (end[k] > start[k] && nth < (lng)(end[k] - start[k])) ? BUNtloc(bi, start[k] + (oid) nth) : nil;
 						memcpy(rcast, curval, width);
 						rcast += width;
-						has_nils |= atomcmp(curval, nil) == 0;
+						has_nils |= atomeq(curval, nil);
 					}
 				}
 			}
@@ -676,7 +676,7 @@ invalidnth:
 				return NULL;				\
 			}						\
 		}							\
-		has_nils |= (lag > 0 && atomcmp(default_value, nil) == 0); \
+		has_nils |= (lag > 0 && atomeq(default_value, nil)); \
 		for (l = k - lag; k < j; k++, l++) {			\
 			curval = BUNtail(bi, l);			\
 			if (BUNappend(r, curval, false) != GDK_SUCCEED)	{ \
@@ -685,7 +685,7 @@ invalidnth:
 				BBPreclaim(r);				\
 				return NULL;				\
 			}						\
-			has_nils |= atomcmp(curval, nil) == 0;		\
+			has_nils |= atomeq(curval, nil);		\
 		}							\
 	} while (0)
 
@@ -694,7 +694,7 @@ GDKanalyticallag(BAT *b, BAT *p, BUN lag, const void *restrict default_value, in
 {
 	BATiter bi = bat_iterator(b);
 	BATiter pi = bat_iterator(p);
-	int (*atomcmp) (const void *, const void *);
+	bool (*atomeq)(const void *, const void *);
 	const void *restrict nil;
 	BUN i = 0, j = 0, k = 0, l = 0, ncnt, cnt = BATcount(b);
 	bit *np, *pnp, *end;
@@ -732,7 +732,7 @@ GDKanalyticallag(BAT *b, BAT *p, BUN lag, const void *restrict default_value, in
 	default:{
 		const void *restrict curval;
 		nil = ATOMnilptr(tpe);
-		atomcmp = ATOMcompare(tpe);
+		atomeq = ATOMequal(tpe);
 		if (lag == BUN_NONE) {
 			has_nils = true;
 			for (j = 0; j < cnt; j++) {
@@ -832,7 +832,7 @@ GDKanalyticallag(BAT *b, BAT *p, BUN lag, const void *restrict default_value, in
 					BBPreclaim(r);			\
 					return NULL;			\
 				}					\
-				has_nils |= atomcmp(curval, nil) == 0;	\
+				has_nils |= atomeq(curval, nil);	\
 			}						\
 			k += i;						\
 		}							\
@@ -844,7 +844,7 @@ GDKanalyticallag(BAT *b, BAT *p, BUN lag, const void *restrict default_value, in
 				return NULL;				\
 			}						\
 		}							\
-		has_nils |= (lead > 0 && atomcmp(default_value, nil) == 0); \
+		has_nils |= (lead > 0 && atomeq(default_value, nil)); \
 	} while (0)
 
 BAT *
@@ -852,7 +852,7 @@ GDKanalyticallead(BAT *b, BAT *p, BUN lead, const void *restrict default_value, 
 {
 	BATiter bi = bat_iterator(b);
 	BATiter pi = bat_iterator(p);
-	int (*atomcmp) (const void *, const void *);
+	bool (*atomeq) (const void *, const void *);
 	const void *restrict nil;
 	BUN i = 0, j = 0, k = 0, l = 0, ncnt, cnt = BATcount(b);
 	bit *np, *pnp, *end;
@@ -891,7 +891,7 @@ GDKanalyticallead(BAT *b, BAT *p, BUN lead, const void *restrict default_value, 
 		BUN m = 0, n = 0;
 		const void *restrict curval;
 		nil = ATOMnilptr(tpe);
-		atomcmp = ATOMcompare(tpe);
+		atomeq = ATOMequal(tpe);
 		if (lead == BUN_NONE) {
 			has_nils = true;
 			for (j = 0; j < cnt; j++) {
@@ -1041,8 +1041,8 @@ GDKanalyticallead(BAT *b, BAT *p, BUN lead, const void *restrict default_value, 
 				j = k;					\
 				do {					\
 					const void *next = BUNtvar(bi, k); \
-					if (atomcmp(next, nil) != 0) {	\
-						if (atomcmp(curval, nil) == 0) \
+					if (!atomeq(next, nil)) {	\
+						if (atomeq(curval, nil)) \
 							curval = next;	\
 						else			\
 							curval = atomcmp(next, curval) GT_LT 0 ? curval : next; \
@@ -1052,15 +1052,15 @@ GDKanalyticallead(BAT *b, BAT *p, BUN lead, const void *restrict default_value, 
 				for (; j < k; j++)			\
 					if ((res = tfastins_nocheckVAR(r, j, curval)) != GDK_SUCCEED) \
 						goto cleanup;		\
-				has_nils |= atomcmp(curval, nil) == 0;	\
+				has_nils |= atomeq(curval, nil);	\
 			}						\
 		} else {						\
 			for (; k < i;) {				\
 				j = k;					\
 				do {					\
 					const void *next = BUNtloc(bi, k); \
-					if (atomcmp(next, nil) != 0) {	\
-						if (atomcmp(curval, nil) == 0) \
+					if (!atomeq(next, nil)) {	\
+						if (atomeq(curval, nil)) \
 							curval = next;	\
 						else			\
 							curval = atomcmp(next, curval) GT_LT 0 ? curval : next; \
@@ -1071,7 +1071,7 @@ GDKanalyticallead(BAT *b, BAT *p, BUN lead, const void *restrict default_value, 
 					memcpy(rcast, curval, width);	\
 					rcast += width;			\
 				}					\
-				has_nils |= atomcmp(curval, nil) == 0;	\
+				has_nils |= atomeq(curval, nil);	\
 			}						\
 		}							\
 	} while (0)
@@ -1083,8 +1083,8 @@ GDKanalyticallead(BAT *b, BAT *p, BUN lead, const void *restrict default_value, 
 		if (ATOMvarsized(tpe)) {				\
 			for (j = l; ; j--) {				\
 				const void *next = BUNtvar(bi, j);	\
-				if (atomcmp(next, nil) != 0) {		\
-					if (atomcmp(curval, nil) == 0)	\
+				if (!atomeq(next, nil)) {		\
+					if (atomeq(curval, nil))	\
 						curval = next;		\
 					else				\
 						curval = atomcmp(next, curval) GT_LT 0 ? curval : next; \
@@ -1096,7 +1096,7 @@ GDKanalyticallead(BAT *b, BAT *p, BUN lead, const void *restrict default_value, 
 						if (l == j)		\
 							break;		\
 					}				\
-					has_nils |= atomcmp(curval, nil) == 0; \
+					has_nils |= atomeq(curval, nil); \
 					if (j == k)			\
 						break;			\
 					l = j - 1;			\
@@ -1105,8 +1105,8 @@ GDKanalyticallead(BAT *b, BAT *p, BUN lead, const void *restrict default_value, 
 		} else {						\
 			for (j = l; ; j--) {				\
 				const void *next = BUNtloc(bi, j);	\
-				if (atomcmp(next, nil) != 0) {		\
-					if (atomcmp(curval, nil) == 0)	\
+				if (!atomeq(next, nil)) {		\
+					if (atomeq(curval, nil))	\
 						curval = next;		\
 					else				\
 						curval = atomcmp(next, curval) GT_LT 0 ? curval : next; \
@@ -1119,7 +1119,7 @@ GDKanalyticallead(BAT *b, BAT *p, BUN lead, const void *restrict default_value, 
 						if (l == j)		\
 							break;		\
 					}				\
-					has_nils |= atomcmp(curval, nil) == 0; \
+					has_nils |= atomeq(curval, nil); \
 					if (j == k)			\
 						break;			\
 					l = j - 1;			\
@@ -1135,8 +1135,8 @@ GDKanalyticallead(BAT *b, BAT *p, BUN lead, const void *restrict default_value, 
 		if (ATOMvarsized(tpe)) {				\
 			for (j = k; j < i; j++) {			\
 				const void *next = BUNtvar(bi, j);	\
-				if (atomcmp(next, nil) != 0) {		\
-					if (atomcmp(curval, nil) == 0)	\
+				if (!atomeq(next, nil)) {		\
+					if (atomeq(curval, nil))	\
 						curval = next;		\
 					else				\
 						curval = atomcmp(next, curval) GT_LT 0 ? curval : next; \
@@ -1148,8 +1148,8 @@ GDKanalyticallead(BAT *b, BAT *p, BUN lead, const void *restrict default_value, 
 		} else {						\
 			for (j = k; j < i; j++) {			\
 				const void *next = BUNtloc(bi, j);	\
-				if (atomcmp(next, nil) != 0) {		\
-					if (atomcmp(curval, nil) == 0)	\
+				if (!atomeq(next, nil)) {		\
+					if (atomeq(curval, nil))	\
 						curval = next;		\
 					else				\
 						curval = atomcmp(next, curval) GT_LT 0 ? curval : next; \
@@ -1160,7 +1160,7 @@ GDKanalyticallead(BAT *b, BAT *p, BUN lead, const void *restrict default_value, 
 				rcast += width;				\
 			}						\
 		}							\
-		has_nils |= atomcmp(curval, nil) == 0;			\
+		has_nils |= atomeq(curval, nil);			\
 	} while (0)
 
 #define ANALYTICAL_MIN_MAX_CALC_OTHERS_CURRENT_ROW(GT_LT)		\
@@ -1170,14 +1170,14 @@ GDKanalyticallead(BAT *b, BAT *p, BUN lead, const void *restrict default_value, 
 				const void *next = BUNtvar(bi, k);	\
 				if ((res = tfastins_nocheckVAR(r, k, next)) != GDK_SUCCEED) \
 					goto cleanup;			\
-				has_nils |= atomcmp(next, nil) == 0;	\
+				has_nils |= atomeq(next, nil);	\
 			}						\
 		} else {						\
 			for (; k < i; k++) {				\
 				const void *next = BUNtloc(bi, k);	\
 				memcpy(rcast, next, width);		\
 				rcast += width;				\
-				has_nils |= atomcmp(next, nil) == 0;	\
+				has_nils |= atomeq(next, nil);	\
 			}						\
 		}							\
 	} while (0)
@@ -1192,8 +1192,8 @@ GDKanalyticallead(BAT *b, BAT *p, BUN lead, const void *restrict default_value, 
 	} while (0)
 #define COMPUTE_LEVELN_MIN_MAX_OTHERS(VAL, GT_LT, NOTHING1, NOTHING2)	\
 	do {								\
-		if (atomcmp(VAL, nil) != 0) {				\
-			if (atomcmp(computed, nil) == 0)		\
+		if (!atomeq(VAL, nil)) {				\
+			if (atomeq(computed, nil))		\
 				computed = VAL;				\
 			else						\
 				computed = atomcmp(VAL, computed) GT_LT 0 ? computed : VAL; \
@@ -1208,7 +1208,7 @@ GDKanalyticallead(BAT *b, BAT *p, BUN lead, const void *restrict default_value, 
 			memcpy(rcast, computed, width);			\
 			rcast += width;					\
 		}							\
-		has_nils |= atomcmp(computed, nil) == 0;		\
+		has_nils |= atomeq(computed, nil);		\
 	} while (0)
 #define ANALYTICAL_MIN_MAX_CALC_OTHERS_OTHERS(GT_LT)			\
 	do {								\
@@ -1310,6 +1310,7 @@ GDKanalytical##OP(BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, int frame_typ
 	bit *np = pi.base, *op = oi.base;				\
 	const void *nil = ATOMnilptr(tpe);				\
 	int (*atomcmp)(const void *, const void *) = ATOMcompare(tpe);	\
+	bool (*atomeq)(const void *, const void *) = ATOMequal(tpe);	\
 	void *segment_tree = NULL;					\
 	gdk_return res = GDK_SUCCEED;					\
 	uint16_t width = r->twidth;					\
@@ -1500,7 +1501,7 @@ ANALYTICAL_MIN_MAX(max, MAX, <)
 			for (; k < i; ) {				\
 				j = k;					\
 				do {					\
-					curval += cmp(BUNtail(bi, k), nil) != 0; \
+					curval += !atomeq(BUNtail(bi, k), nil); \
 					k++;				\
 				} while (k < i && !op[k]);		\
 				for (; j < k; j++)			\
@@ -1529,7 +1530,7 @@ ANALYTICAL_MIN_MAX(max, MAX, <)
 			}						\
 		} else {						\
 			for (j = l; ; j--) {				\
-				curval += cmp(BUNtail(bi, j), nil) != 0; \
+				curval += !atomeq(BUNtail(bi, j), nil); \
 				if (op[j] || j == k) {			\
 					for (; ; l--) {			\
 						rb[l] = curval;		\
@@ -1552,7 +1553,7 @@ ANALYTICAL_MIN_MAX(max, MAX, <)
 			curval = (lng)(i - k);				\
 		} else {						\
 			for (; j < i; j++)				\
-				curval += cmp(BUNtail(bi, j), nil) != 0; \
+				curval += !atomeq(BUNtail(bi, j), nil); \
 		}							\
 		for (; k < i; k++)					\
 			rb[k] = curval;					\
@@ -1565,13 +1566,13 @@ ANALYTICAL_MIN_MAX(max, MAX, <)
 				rb[k] = 1;				\
 		} else {						\
 			for (; k < i; k++)				\
-				rb[k] = cmp(BUNtail(bi, k), nil) != 0;	\
+				rb[k] = !atomeq(BUNtail(bi, k), nil);	\
 		}							\
 	} while (0)
 
 #define COMPUTE_LEVEL0_COUNT_OTHERS(X, NOTHING1, NOTHING2, NOTHING3)	\
 	do {								\
-		computed = cmp(BUNtail(bi, j + X), nil) != 0;		\
+		computed = !atomeq(BUNtail(bi, j + X), nil);		\
 	} while (0)
 #define ANALYTICAL_COUNT_OTHERS_OTHERS					\
 	do {								\
@@ -1677,7 +1678,7 @@ GDKanalyticalcount(BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, bit ignore_nils, int 
 	lng curval = 0, *rb = (lng *) Tloc(r, 0);
 	bit *np = pi.base, *op = oi.base;
 	const void *restrict nil = ATOMnilptr(tpe);
-	int (*cmp) (const void *, const void *) = ATOMcompare(tpe);
+	bool (*atomeq) (const void *, const void *) = ATOMequal(tpe);
 	const void *restrict bheap = bi.base;
 	bool count_all = !ignore_nils || bi.nonil, last = false;
 	void *segment_tree = NULL;

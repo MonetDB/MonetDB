@@ -246,7 +246,7 @@ output_line(allocator *ma, char **buf, size_t *len, char **localbuf, size_t *loc
 			if (f->c) {
 				p = BUNtail(f->ci, f->p);
 
-				if (!p || ATOMcmp(f->adt, ATOMnilptr(f->adt), p) == 0) {
+				if (!p || ATOMeq(f->adt, ATOMnilptr(f->adt), p)) {
 					p = f->nullstr;
 					l = (ssize_t) strlen(f->nullstr);
 				} else {
@@ -291,7 +291,7 @@ output_line_dense(allocator *ma, char **buf, size_t *len, char **localbuf, size_
 		if (f->c) {
 			p = BUNtail(f->ci, f->p);
 
-			if (!p || ATOMcmp(f->adt, ATOMnilptr(f->adt), p) == 0) {
+			if (!p || ATOMeq(f->adt, ATOMnilptr(f->adt), p)) {
 				p = f->nullstr;
 				l = (ssize_t) strlen(p);
 			} else {
@@ -333,7 +333,7 @@ output_line_lookup(allocator *ma, char **buf, size_t *len, Column *fmt, stream *
 		if (f->c) {
 			const void *p = BUNtail(f->ci, id - f->c->hseqbase);
 
-			if (!p || ATOMcmp(f->adt, ATOMnilptr(f->adt), p) == 0) {
+			if (!p || ATOMeq(f->adt, ATOMnilptr(f->adt), p)) {
 				size_t l = strlen(f->nullstr);
 				if (mnstr_write(fd, f->nullstr, 1, l) != (ssize_t) l)
 					return TABLET_error(fd);

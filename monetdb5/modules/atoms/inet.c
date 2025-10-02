@@ -490,6 +490,19 @@ INETcompare(const void *L, const void *R)
 	return 1;
 }
 
+static bool
+INETequal(const void *L, const void *R)
+{
+	const inet *l = L, *r = R;
+	if (is_inet_nil(l))
+		return is_inet_nil(r);
+	if (is_inet_nil(r))
+		return false;
+	return l->q1 == r->q1 && l->q2 == r->q2 &&
+		l->q3 == r->q3 && l->q4 == r->q4 &&
+		l->mask == r->mask;
+}
+
 /* === Functions === */
 /**
  * Returns the broadcast address for the network the inet represents.
@@ -820,7 +833,7 @@ INETnull(void)
 
 #include "mel.h"
 mel_atom inet_init_atoms[] = {
- { .name="inet", .basetype="lng", .size=sizeof(inet), .null=INETnull, .cmp=INETcompare, .fromstr=INETfromString, .tostr=INETtoString, },  { .cmp=NULL }
+ { .name="inet", .basetype="lng", .size=sizeof(inet), .null=INETnull, .cmp=INETcompare, .equal=INETequal, .fromstr=INETfromString, .tostr=INETtoString, },  { .cmp=NULL }
 };
 mel_func inet_init_funcs[] = {
  command("inet", "new", INETnew, false, "Create an inet from a string literal", args(1,2, arg("",inet),arg("s",str))),

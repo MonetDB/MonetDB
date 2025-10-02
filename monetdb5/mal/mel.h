@@ -31,6 +31,7 @@ typedef struct __attribute__((__designated_init__)) mel_atom {
 	ssize_t (*tostr)(allocator *, char **, size_t *, const void *, bool);
 	ssize_t (*fromstr)(allocator *, const char *, size_t *, void **, bool);
 	int (*cmp)(const void *, const void *);
+	bool (*equal)(const void *, const void *);
 	int (*nequal)(const void *, const void *);
 	BUN (*hash)(const void *);
 	const void *(*null)(void);

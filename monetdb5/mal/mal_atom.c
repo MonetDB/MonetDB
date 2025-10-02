@@ -54,6 +54,12 @@ malAtomProperty(mel_func *f)
 			return MAL_SUCCEED;
 		}
 		break;
+	case 'e':
+		if (strcmp("equal", name) == 0 && f->argc == 1) {
+			BATatoms[tpe].atomEqual = (bool (*)(const void *, const void *)) f->imp;
+			return MAL_SUCCEED;
+		}
+		break;
 	case 'f':
 		if (strcmp("fromstr", name) == 0 && f->argc == 1) {
 			BATatoms[tpe].atomFromStr = (ssize_t (*)(allocator *, const char *, size_t *, ptr *, bool)) f->imp;

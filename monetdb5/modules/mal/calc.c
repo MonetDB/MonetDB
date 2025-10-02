@@ -581,7 +581,7 @@ CALCmin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		p1 = *(ptr *) p1;
 		p2 = *(ptr *) p2;
 	}
-	if (ATOMcmp(t, p1, nil) == 0 || ATOMcmp(t, p2, nil) == 0)
+	if (ATOMeq(t, p1, nil) || ATOMeq(t, p2, nil))
 		p1 = nil;
 	else if (ATOMcmp(t, p1, p2) > 0)
 		p1 = p2;
@@ -607,8 +607,8 @@ CALCmin_no_nil(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		p1 = *(ptr *) p1;
 		p2 = *(ptr *) p2;
 	}
-	if (ATOMcmp(t, p1, nil) == 0 ||
-		(ATOMcmp(t, p2, nil) != 0 && ATOMcmp(t, p1, p2) > 0))
+	if (ATOMeq(t, p1, nil) ||
+		(!ATOMeq(t, p2, nil) && ATOMcmp(t, p1, p2) > 0))
 		p1 = p2;
 	if (pci->argc > 3) {
 		for(int i = 3; i < pci->argc; i++) {
@@ -617,8 +617,8 @@ CALCmin_no_nil(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			ptr p2 = getArgReference(stk, pci, i);
 			if (t >= TYPE_str && ATOMstorage(t) >= TYPE_str)
 				p2 = *(ptr *) p2;
-			if (ATOMcmp(t, p1, nil) == 0 ||
-				(ATOMcmp(t, p2, nil) != 0 && ATOMcmp(t, p1, p2) > 0))
+			if (ATOMeq(t, p1, nil) ||
+				(!ATOMeq(t, p2, nil) && ATOMcmp(t, p1, p2) > 0))
 				p1 = p2;
 		}
 	}
@@ -644,7 +644,7 @@ CALCmax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		p1 = *(ptr *) p1;
 		p2 = *(ptr *) p2;
 	}
-	if (ATOMcmp(t, p1, nil) == 0 || ATOMcmp(t, p2, nil) == 0)
+	if (ATOMeq(t, p1, nil) || ATOMeq(t, p2, nil))
 		p1 = nil;
 	else if (ATOMcmp(t, p1, p2) < 0)
 		p1 = p2;
@@ -670,8 +670,8 @@ CALCmax_no_nil(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		p1 = *(ptr *) p1;
 		p2 = *(ptr *) p2;
 	}
-	if (ATOMcmp(t, p1, nil) == 0 ||
-		(ATOMcmp(t, p2, nil) != 0 && ATOMcmp(t, p1, p2) < 0))
+	if (ATOMeq(t, p1, nil) ||
+		(!ATOMeq(t, p2, nil) && ATOMcmp(t, p1, p2) < 0))
 		p1 = p2;
 	if (pci->argc > 3) {
 		for(int i = 3; i < pci->argc; i++) {
@@ -680,8 +680,8 @@ CALCmax_no_nil(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			ptr p2 = getArgReference(stk, pci, i);
 			if (t >= TYPE_str && ATOMstorage(t) >= TYPE_str)
 				p2 = *(ptr *) p2;
-			if (ATOMcmp(t, p1, nil) == 0 ||
-				(ATOMcmp(t, p2, nil) != 0 && ATOMcmp(t, p1, p2) < 0))
+			if (ATOMeq(t, p1, nil) ||
+				(!ATOMeq(t, p2, nil) && ATOMcmp(t, p1, p2) < 0))
 				p1 = p2;
 		}
 	}

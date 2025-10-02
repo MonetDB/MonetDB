@@ -925,7 +925,7 @@ fndConstant(MalBlkPtr mb, const ValRecord *cst, int depth)
 			if (v && v->type == cst->vtype &&
 					v->value.len == cst->len &&
 					isaBatType(v->type) == cst->bat &&
-					ATOMcmp(cst->vtype, VALptr(&v->value), p) == 0)
+					ATOMeq(cst->vtype, VALptr(&v->value), p))
 				return i;
 		}
 	}

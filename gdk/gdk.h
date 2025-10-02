@@ -944,12 +944,12 @@ BATsettrivprop(BAT *b)
 					b->tmaxpos = 0;
 				}
 				b->tseqbase = sqbs;
-			} else if ((b->tvheap
-				    ? ATOMcmp(b->ttype,
-					      b->tvheap->base + VarHeapVal(Tloc(b, 0), 0, b->twidth),
-					      ATOMnilptr(b->ttype))
-				    : ATOMcmp(b->ttype, Tloc(b, 0),
-					      ATOMnilptr(b->ttype))) == 0) {
+			} else if (b->tvheap
+				   ? ATOMeq(b->ttype,
+					    b->tvheap->base + VarHeapVal(Tloc(b, 0), 0, b->twidth),
+					    ATOMnilptr(b->ttype))
+				   : ATOMeq(b->ttype, Tloc(b, 0),
+					    ATOMnilptr(b->ttype))) {
 				/* the only value is NIL */
 				b->tminpos = BUN_NONE;
 				b->tmaxpos = BUN_NONE;
