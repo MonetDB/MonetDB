@@ -196,7 +196,7 @@
 	GRP_compare_consecutive_values(				\
 	/* INIT_0 */	pv = NULL			,	\
 	/* INIT_1 */	v = BUNtail(bi, p)		,	\
-	/* DIFFER */	cmp(v, pv) != 0			,	\
+	/* DIFFER */	!eq(v, pv)			,	\
 	/* KEEP   */	pv = v					\
 	)
 
@@ -319,7 +319,7 @@
 	GRP_subscan_old_groups(					\
 	/* INIT_0 */	pv = NULL			,	\
 	/* INIT_1 */	v = BUNtail(bi, p)		,	\
-	/* EQUAL  */	cmp(v, pv) == 0			,	\
+	/* EQUAL  */	eq(v, pv)			,	\
 	/* KEEP   */	pv = v					\
 	)
 
@@ -428,7 +428,7 @@
 	GRP_use_existing_hash_table(				\
 	/* INIT_0 */					,	\
 	/* INIT_1 */	v = BUNtail(bi, p)		,	\
-	/* EQUAL  */	cmp(v, BUNtail(bi, hb)) == 0		\
+	/* EQUAL  */	eq(v, BUNtail(bi, hb))			\
 	)
 
 /* reverse the bits of an OID value */
@@ -601,7 +601,7 @@ ctz(oid x)
 	/* INIT_0 */					,	\
 	/* INIT_1 */	v = BUNtail(bi, p)		,	\
 	/* HASH   */	hash_any(hs, v)			,	\
-	/* EQUAL  */	cmp(v, BUNtail(bi, hb)) == 0		\
+	/* EQUAL  */	eq(v, BUNtail(bi, hb))			\
 	)
 
 #define GRP_small_values(BG, BV, GV)					\
@@ -659,7 +659,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 {
 	BAT *gn = NULL, *en = NULL, *hn = NULL;
 	int t;
-	int (*cmp)(const void *, const void *);
+	bool (*eq)(const void *, const void *);
 	const oid *grps = NULL;
 	oid *restrict ngrps, ngrp, prev = 0, hseqb = 0;
 	oid *restrict exts = NULL;
@@ -842,7 +842,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		}
 	}
 	assert(g == NULL || !BATtdense(g)); /* i.e. g->ttype == TYPE_oid */
-	cmp = ATOMcompare(bi.type);
+	eq = ATOMequal(bi.type);
 	gn = COLnew(hseqb, TYPE_oid, ci.ncand, TRANSIENT);
 	if (gn == NULL)
 		goto error;

@@ -119,7 +119,7 @@ BATall_grp(BAT *l, BAT *g, BAT *e, BAT *s)
 			SQLall_grp_imp(dbl);
 			break;
 		default: {
-			int (*ocmp) (const void *, const void *) = ATOMcompare(l->ttype);
+			bool (*atomeq) (const void *, const void *) = ATOMequal(l->ttype);
 			const void *restrict nilp = ATOMnilptr(l->ttype);
 
 			for (BUN n = 0; n < ci.ncand; n++) {
@@ -132,12 +132,12 @@ BATall_grp(BAT *l, BAT *g, BAT *e, BAT *s)
 						gid = (oid) i;
 					if (oids[gid] != (BUN_NONE - 1)) {
 						if (oids[gid] == BUN_NONE) {
-							if (ocmp(BUNtail(li, i), nilp) != 0)
+							if (!atomeq(BUNtail(li, i), nilp))
 								oids[gid] = i;
 						} else {
 							const void *pi = BUNtail(li, oids[gid]);
 							const void *pp = BUNtail(li, i);
-							if (ocmp(pi, pp) != 0 && ocmp(pp, nilp) != 0)
+							if (!atomeq(pi, pp) && !atomeq(pp, nilp))
 								oids[gid] = BUN_NONE - 1;
 						}
 					}
@@ -287,7 +287,7 @@ BATnil_grp(BAT *l, BAT *g, BAT *e, BAT *s)
 			SQLnil_grp_imp(dbl);
 			break;
 		default: {
-			int (*ocmp) (const void *, const void *) = ATOMcompare(l->ttype);
+			bool (*atomeq) (const void *, const void *) = ATOMequal(l->ttype);
 			const void *restrict nilp = ATOMnilptr(l->ttype);
 
 			for (BUN n = 0; n < ci.ncand; n++) {
@@ -299,7 +299,7 @@ BATnil_grp(BAT *l, BAT *g, BAT *e, BAT *s)
 					else
 						gid = (oid) i;
 					const void *restrict lv = BUNtail(li, i);
-					if (ret[gid] != TRUE && ocmp(lv, nilp) == 0)
+					if (ret[gid] != TRUE && atomeq(lv, nilp))
 						ret[gid] = TRUE;
 				}
 			}
@@ -420,7 +420,7 @@ BATanyequal_grp(BAT *l, BAT *r, BAT *g, BAT *e, BAT *s)
 			SQLanyequal_or_not_grp_imp(dbl, TRUE);
 			break;
 		default: {
-			int (*ocmp) (const void *, const void *) = ATOMcompare(l->ttype);
+			bool (*atomeq) (const void *, const void *) = ATOMequal(l->ttype);
 			const void *nilp = ATOMnilptr(l->ttype);
 
 			for (BUN n = 0; n < ci.ncand; n++) {
@@ -434,10 +434,10 @@ BATanyequal_grp(BAT *l, BAT *r, BAT *g, BAT *e, BAT *s)
 					if (ret[gid] != TRUE) {
 						const void *lv = BUNtail(li, i);
 						const void *rv = BUNtail(ri, i);
-						if (ocmp(lv, nilp) == 0 || ocmp(rv, nilp) == 0) {
+						if (atomeq(lv, nilp) || atomeq(rv, nilp)) {
 							ret[gid] = bit_nil;
 							hasnil = 1;
-						} else if (ocmp(lv, rv) == 0)
+						} else if (atomeq(lv, rv))
 							ret[gid] = TRUE;
 					}
 				}
@@ -536,7 +536,7 @@ BATallnotequal_grp(BAT *l, BAT *r, BAT *g, BAT *e, BAT *s)
 			SQLanyequal_or_not_grp_imp(dbl, FALSE);
 			break;
 		default: {
-			int (*ocmp) (const void *, const void *) = ATOMcompare(l->ttype);
+			bool (*atomeq) (const void *, const void *) = ATOMequal(l->ttype);
 			const void *nilp = ATOMnilptr(l->ttype);
 
 			for (BUN n = 0; n < ci.ncand; n++) {
@@ -550,10 +550,10 @@ BATallnotequal_grp(BAT *l, BAT *r, BAT *g, BAT *e, BAT *s)
 					if (ret[gid] != FALSE) {
 						const void *lv = BUNtail(li, i);
 						const void *rv = BUNtail(ri, i);
-						if (ocmp(lv, nilp) == 0 || ocmp(rv, nilp) == 0) {
+						if (atomeq(lv, nilp) || atomeq(rv, nilp)) {
 							ret[gid] = bit_nil;
 							hasnil = 1;
-						} else if (ocmp(lv, rv) == 0)
+						} else if (atomeq(lv, rv))
 							ret[gid] = FALSE;
 					}
 				}
@@ -679,7 +679,7 @@ BATanyequal_grp2(BAT *l, BAT *r, BAT *rid, BAT *g, BAT *e, BAT *s)
 			SQLanyequal_or_not_grp2_imp(dbl, TRUE, FALSE);
 			break;
 		default: {
-			int (*ocmp) (const void *, const void *) = ATOMcompare(l->ttype);
+			bool (*atomeq) (const void *, const void *) = ATOMequal(l->ttype);
 			const void *nilp = ATOMnilptr(l->ttype);
 
 			for (BUN n = 0; n < ci.ncand; n++) {
@@ -697,9 +697,9 @@ BATanyequal_grp2(BAT *l, BAT *r, BAT *rid, BAT *g, BAT *e, BAT *s)
 						} else {
 							const void *lv = BUNtail(li, i);
 							const void *rv = BUNtail(ri, i);
-							if (ocmp(lv, nilp) == 0 || ocmp(rv, nilp) == 0) {
+							if (atomeq(lv, nilp) || atomeq(rv, nilp)) {
 								ret[gid] = bit_nil;
-							} else if (ocmp(lv, rv) == 0)
+							} else if (atomeq(lv, rv))
 								ret[gid] = TRUE;
 						}
 					}
@@ -802,7 +802,7 @@ BATallnotequal_grp2(BAT *l, BAT *r, BAT *rid, BAT *g, BAT *e, BAT *s)
 			SQLanyequal_or_not_grp2_imp(dbl, FALSE, TRUE);
 			break;
 		default: {
-			int (*ocmp) (const void *, const void *) = ATOMcompare(l->ttype);
+			bool (*atomeq) (const void *, const void *) = ATOMequal(l->ttype);
 			const void *nilp = ATOMnilptr(l->ttype);
 
 			for (BUN n = 0; n < ci.ncand; n++) {
@@ -820,9 +820,9 @@ BATallnotequal_grp2(BAT *l, BAT *r, BAT *rid, BAT *g, BAT *e, BAT *s)
 						} else {
 							const void *lv = BUNtail(li, i);
 							const void *rv = BUNtail(ri, i);
-							if (ocmp(lv, nilp) == 0 || ocmp(rv, nilp) == 0) {
+							if (atomeq(lv, nilp) || atomeq(rv, nilp)) {
 								ret[gid] = bit_nil;
-							} else if (ocmp(lv, rv) == 0)
+							} else if (atomeq(lv, rv))
 								ret[gid] = FALSE;
 						}
 					}

@@ -427,7 +427,9 @@ __attribute__((__pure__))
 static inline int
 strCmp(const char *l, const char *r)
 {
-	return strNil(r)
+	return l == r
+		? 0
+		: strNil(r)
 		? !strNil(l)
 		: strNil(l) ? -1 : strcmp(l, r);
 }

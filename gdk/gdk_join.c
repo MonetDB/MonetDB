@@ -383,7 +383,7 @@ selectjoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 	v = BUNtail(li, o - l->hseqbase);
 
 	if (!nil_matches &&
-	    (*ATOMcompare(li.type))(v, ATOMnilptr(li.type)) == 0) {
+	    ATOMeq(li.type, v, ATOMnilptr(li.type))) {
 		/* NIL doesn't match anything */
 		bat_iterator_end(&li);
 		gdk_return rc = nomatch(r1p, r2p, r3p, l, r, lci, bit_nil, nil_on_miss,
@@ -1953,6 +1953,7 @@ mergejoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 	const char *lvars, *rvars; /* the indirect values (NULL if fixed size) */
 	const void *nil = ATOMnilptr(l->ttype);
 	int (*cmp)(const void *, const void *) = ATOMcompare(l->ttype);
+	bool (*eq)(const void *, const void *) = ATOMequal(l->ttype);
 	const void *v;		/* points to value under consideration */
 	const void *prev = NULL;
 	BUN nl, nr;
@@ -2033,7 +2034,7 @@ mergejoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 
 	const bool rhasnil = !ri.nonil &&
 		((BATtvoid(r) && r->tseqbase == oid_nil) ||
-		 (rvals && cmp(nil, VALUE(r, (ri.sorted ? rci->seq : canditer_last(rci)) - r->hseqbase)) == 0));
+		 (rvals && eq(nil, VALUE(r, (ri.sorted ? rci->seq : canditer_last(rci)) - r->hseqbase))));
 	const bit defmark = rhasnil ? bit_nil : 0;
 
 	if (not_in && (rhasnil || (BATtvoid(l) && l->tseqbase == oid_nil))) {
@@ -2267,7 +2268,7 @@ mergejoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 							if (r2)
 								APPEND(r2, oid_nil);
 							if (r3) {
-								if (rhasnil || cmp(VALUE(l, lv - l->hseqbase), nil) == 0) {
+								if (rhasnil || eq(VALUE(l, lv - l->hseqbase), nil)) {
 									((bit *) r3->theap->base)[r3->batCount++] = bit_nil;
 									r3->tnil = true;
 								} else {
@@ -2314,7 +2315,7 @@ mergejoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 			/* if l is key, there is a single value */
 		} else if (lscan > 0 &&
 			   lscan < lci->ncand - lci->next &&
-			   cmp(v, VALUE(l, canditer_idx(lci, lci->next + lscan) - l->hseqbase)) == 0) {
+			   eq(v, VALUE(l, canditer_idx(lci, lci->next + lscan) - l->hseqbase))) {
 			/* lots of equal values: use binary search to
 			 * find end */
 			assert(lvals != NULL);
@@ -2332,11 +2333,11 @@ mergejoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 				canditer_next(&ci);
 				nl++;
 			} while (ci.next < ci.ncand &&
-				 cmp(v, VALUE(l, canditer_peek(&ci) - l->hseqbase)) == 0);
+				 eq(v, VALUE(l, canditer_peek(&ci) - l->hseqbase)));
 		}
 		/* lci->next + nl is the position for the next iteration */
 
-		if ((!nil_matches || not_in) && !li.nonil && cmp(v, nil) == 0) {
+		if ((!nil_matches || not_in) && !li.nonil && eq(v, nil)) {
 			if (not_in) {
 				/* just skip the whole thing: nils
 				 * don't cause any output */
@@ -2403,7 +2404,7 @@ mergejoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 					}
 				}
 				if (rci->next < rci->ncand &&
-				    cmp(v, VALUE(r, canditer_peek(rci) - r->hseqbase)) == 0) {
+				    eq(v, VALUE(r, canditer_peek(rci) - r->hseqbase))) {
 					/* if we found an equal value,
 					 * look for the last equal
 					 * value */
@@ -2414,7 +2415,7 @@ mergejoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 						nr = 1;
 						canditer_next(rci);
 					} else if (rscan < rci->ncand - rci->next &&
-						   cmp(v, VALUE(r, canditer_idx(rci, rci->next + rscan) - r->hseqbase)) == 0) {
+						   eq(v, VALUE(r, canditer_idx(rci, rci->next + rscan) - r->hseqbase))) {
 						/* many equal values:
 						 * use binary search
 						 * to find the end */
@@ -2429,7 +2430,7 @@ mergejoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 							nr++;
 							canditer_next(rci);
 						} while (rci->next < rci->ncand &&
-							 cmp(v, VALUE(r, canditer_peek(rci) - r->hseqbase)) == 0);
+							 eq(v, VALUE(r, canditer_peek(rci) - r->hseqbase)));
 					}
 				}
 			} else {
@@ -2470,7 +2471,7 @@ mergejoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 						canditer_prev(rci);
 				}
 				if (rci->next > 0 &&
-				    cmp(v, VALUE(r, canditer_peekprev(rci) - r->hseqbase)) == 0) {
+				    eq(v, VALUE(r, canditer_peekprev(rci) - r->hseqbase))) {
 					/* if we found an equal value,
 					 * look for the last equal
 					 * value */
@@ -2479,7 +2480,7 @@ mergejoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 						nr = 1;
 						canditer_prev(rci);
 					} else if (rci->next > rscan &&
-						   cmp(v, VALUE(r, canditer_idx(rci, rci->next - rscan) - r->hseqbase)) == 0) {
+						   eq(v, VALUE(r, canditer_idx(rci, rci->next - rscan) - r->hseqbase))) {
 						/* use binary search to find the start */
 						nr = binsearch(NULL, ri.type, rvals, rvars, ri.width, 0, rci->next - rscan, v, rordering, 0);
 						nr = canditer_search(rci, nr + r->hseqbase, true);
@@ -2491,7 +2492,7 @@ mergejoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 							canditer_prev(rci);
 							nr++;
 						} while (rci->next > 0 &&
-							 cmp(v, VALUE(r, canditer_peekprev(rci) - r->hseqbase)) == 0);
+							 eq(v, VALUE(r, canditer_peekprev(rci) - r->hseqbase)));
 					}
 				}
 			} else {
@@ -2917,6 +2918,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 	const char *lvars;
 	const void *nil = ATOMnilptr(l->ttype);
 	int (*cmp)(const void *, const void *) = ATOMcompare(l->ttype);
+	bool (*eq)(const void *, const void *) = ATOMequal(l->ttype);
 	oid lval = oid_nil;	/* hold value if l is dense */
 	const char *v = (const char *) &lval;
 	bool lskipped = false;	/* whether we skipped values in l */
@@ -3034,7 +3036,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 			     rb != BUN_NONE;
 			     rb = HASHgetlink(hsh, rb)) {
 				ro = canditer_idx(rci, rb);
-				if ((*cmp)(nil, BUNtail(ri, ro - r->hseqbase)) == 0) {
+				if ((*eq)(nil, BUNtail(ri, ro - r->hseqbase))) {
 					assert(!locked);
 					if (r3p) {
 						defmark = bit_nil;
@@ -3057,7 +3059,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 			     rb = HASHgetlink(hsh, rb)) {
 				if (rb >= rl && rb < rh &&
 				    (cmp == NULL ||
-				     (*cmp)(nil, BUNtail(ri, rb)) == 0)) {
+				     (*eq)(nil, BUNtail(ri, rb)))) {
 					if (r3p) {
 						defmark = bit_nil;
 						break;
@@ -3134,7 +3136,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 				v = VALUE(l, lo - l->hseqbase);
 			nr = 0;
 			bit mark = defmark;
-			if ((!nil_matches || not_in) && cmp(v, nil) == 0) {
+			if ((!nil_matches || not_in) && eq(v, nil)) {
 				/* no match */
 				if (not_in) {
 					lskipped = BATcount(r1) > 0;
@@ -3146,7 +3148,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 				     rb != BUN_NONE;
 				     rb = HASHgetlink(hsh, rb)) {
 					ro = canditer_idx(rci, rb);
-					if ((*cmp)(v, BUNtail(ri, ro - r->hseqbase)) != 0)
+					if (!(*eq)(v, BUNtail(ri, ro - r->hseqbase)))
 						continue;
 					if (only_misses) {
 						nr++;
@@ -3178,7 +3180,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 				     rb != BUN_NONE;
 				     rb = HASHgetlink(hsh, rb)) {
 					if (rb >= rl && rb < rh &&
-					    (*(cmp))(v, BUNtail(ri, rb)) == 0 &&
+					    (*eq)(v, BUNtail(ri, rb)) &&
 					    canditer_contains(rci, ro = (oid) (rb - roff + rseq))) {
 						if (only_misses) {
 							nr++;
@@ -3194,7 +3196,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 				     rb != BUN_NONE;
 				     rb = HASHgetlink(hsh, rb)) {
 					if (rb >= rl && rb < rh &&
-					    (*(cmp))(v, BUNtail(ri, rb)) == 0) {
+					    (*eq)(v, BUNtail(ri, rb))) {
 						if (only_misses) {
 							nr++;
 							break;
@@ -3358,7 +3360,7 @@ count_unique(BAT *b, BAT *s, BUN *cnt1, BUN *cnt2)
 	const char *nme;
 	BUN hb;
 	BATiter bi;
-	int (*cmp)(const void *, const void *);
+	bool (*eq)(const void *, const void *);
 	const char *algomsg = "";
 	lng t0 = 0;
 
@@ -3401,7 +3403,7 @@ count_unique(BAT *b, BAT *s, BUN *cnt1, BUN *cnt2)
 		bvars = bi.vh->base;
 	else
 		bvars = NULL;
-	cmp = ATOMcompare(bi.type);
+	eq = ATOMequal(bi.type);
 
 	*cnt1 = *cnt2 = 0;
 
@@ -3415,7 +3417,7 @@ count_unique(BAT *b, BAT *s, BUN *cnt1, BUN *cnt2)
 				*cnt1 = cnt;
 			o = canditer_next(&ci);
 			v = VALUE(b, o - b->hseqbase);
-			if (prev == NULL || (*cmp)(v, prev) != 0) {
+			if (prev == NULL || !(*eq)(v, prev)) {
 				cnt++;
 			}
 			prev = v;
@@ -3514,7 +3516,7 @@ count_unique(BAT *b, BAT *s, BUN *cnt1, BUN *cnt2)
 			     hb != BUN_NONE;
 			     hb = HASHgetlink(&hs, hb)) {
 				BUN p = canditer_idx(&ci, hb) - b->hseqbase;
-				if (cmp(v, BUNtail(bi, p)) == 0)
+				if (eq(v, BUNtail(bi, p)))
 					break;
 			}
 			if (hb == BUN_NONE) {
@@ -3750,6 +3752,7 @@ thetajoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int opcode,
 	const char *lvars, *rvars;
 	const void *nil = ATOMnilptr(l->ttype);
 	int (*cmp)(const void *, const void *) = ATOMcompare(l->ttype);
+	bool (*eq)(const void *, const void *) = ATOMequal(l->ttype);
 	const void *vl, *vr;
 	oid lastr = 0;		/* last value inserted into r2 */
 	BUN nr;
@@ -3837,7 +3840,7 @@ thetajoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int opcode,
 		else if (BATtdensebi(&li))
 			lval = (oid) ((lng) lo + loff);
 		nr = 0;
-		if (nil_matches || cmp(vl, nil) != 0) {
+		if (nil_matches || !eq(vl, nil)) {
 			canditer_reset(&rci);
 			TIMEOUT_LOOP(rci.ncand, qry_ctx) {
 				ro = canditer_next(&rci);
@@ -3845,7 +3848,7 @@ thetajoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int opcode,
 					vr = VALUE(r, ro - r->hseqbase);
 				else if (BATtdensebi(&ri))
 					rval = (oid) ((lng) ro + roff);
-				if (!nil_matches && cmp(vr, nil) == 0)
+				if (!nil_matches && eq(vr, nil))
 					continue;
 				c = cmp(vl, vr);
 				if (!((opcode & MASK_LT && c < 0) ||
@@ -4679,7 +4682,7 @@ BATbandjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	const char *lvals, *rvals;
 	int t;
 	const void *nil = ATOMnilptr(l->ttype);
-	int (*cmp)(const void *, const void *) = ATOMcompare(l->ttype);
+	bool (*eq)(const void *, const void *) = ATOMequal(l->ttype);
 	const char *vl, *vr;
 	oid lastr = 0;		/* last value inserted into r2 */
 	BUN nr;
@@ -4807,7 +4810,7 @@ BATbandjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 				GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
 		lo = canditer_next(&lci);
 		vl = FVALUE(l, lo - l->hseqbase);
-		if (cmp(vl, nil) == 0)
+		if (eq(vl, nil))
 			continue;
 		nr = 0;
 		canditer_reset(&rci);
@@ -5086,8 +5089,8 @@ BATbandjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 }
 
 #define LTany(a,b)	((*cmp)(a, b) < 0)
-#define EQany(a,b)	((*cmp)(a, b) == 0)
-#define is_any_nil(v)	((v) == NULL || (*cmp)((v), nil) == 0)
+#define EQany(a,b)	((*eq)(a, b))
+#define is_any_nil(v)	((v) == NULL || (*eq)((v), nil))
 
 #define less3(a,b,i,t)	(is_##t##_nil(a) || is_##t##_nil(b) ? bit_nil : LT##t(a, b) || (i && EQ##t(a, b)))
 #define grtr3(a,b,i,t)	(is_##t##_nil(a) || is_##t##_nil(b) ? bit_nil : LT##t(b, a) || (i && EQ##t(a, b)))
@@ -5128,6 +5131,7 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh,
 	const char *lvars, *rlvars, *rhvars;
 	const void *nil = ATOMnilptr(li.type);
 	int (*cmp)(const void *, const void *) = ATOMcompare(li.type);
+	bool (*eq)(const void *, const void *) = ATOMequal(li.type);
 	int t;
 	BUN cnt, ncnt, lncand = lci->ncand, rncand = rci->ncand;
 	oid *restrict dst1, *restrict dst2;
@@ -5224,7 +5228,7 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh,
 				/* TYPE_void */
 				rhval = ro - rh->hseqbase + rh->tseqbase;
 			}
-			if (cmp(vrl, nil) == 0 || cmp(vrh, nil) == 0)
+			if (eq(vrl, nil) || eq(vrh, nil))
 				continue;
 			if (li.sorted) {
 				if (linc)
@@ -5340,7 +5344,7 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh,
 			lo = canditer_next(lci);
 			if (lvals) {
 				vl = VALUE(l, lo - l->hseqbase);
-				if (cmp(vl, nil) == 0)
+				if (eq(vl, nil))
 					continue;
 			} else {
 				lval = lo - l->hseqbase + l->tseqbase;

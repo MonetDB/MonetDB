@@ -312,8 +312,7 @@ VALconvert(int typ, ValPtr t)
 int
 VALcmp(const ValRecord *p, const ValRecord *q)
 {
-
-	int (*cmp)(const void *, const void *);
+	bool (*eq)(const void *, const void *);
 	int tpe;
 	const void *nilptr, *pp, *pq;
 
@@ -324,16 +323,15 @@ VALcmp(const ValRecord *p, const ValRecord *q)
 
 	if (tpe == TYPE_ptr)
 		return 0;	/* ignore comparing C pointers */
-	cmp = ATOMcompare(tpe);
+	eq = ATOMequal(tpe);
 	nilptr = ATOMnilptr(tpe);
 	pp = VALptr(p);
 	pq = VALptr(q);
-	if ((*cmp)(pp, nilptr) == 0 && (*cmp)(pq, nilptr) == 0)
+	if ((*eq)(pp, nilptr) && (*eq)(pq, nilptr))
 		return 0;	/* eq nil val */
-	if ((*cmp)(pp, nilptr) == 0 || (*cmp)(pq, nilptr) == 0)
+	if ((*eq)(pp, nilptr) || (*eq)(pq, nilptr))
 		return -1;
-	return (*cmp)(pp, pq);
-
+	return ATOMcmp(tpe, pp, pq);
 }
 
 /* Return TRUE if the value in V is NIL. */
@@ -376,5 +374,5 @@ VALisnil(const ValRecord *v)
 	default:
 		break;
 	}
-	return (*ATOMcompare(v->vtype))(VALptr(v), ATOMnilptr(v->vtype)) == 0;
+	return ATOMeq(v->vtype, VALptr(v), ATOMnilptr(v->vtype));
 }
