@@ -122,6 +122,8 @@ _ht_create( int type, size_t size, hash_table *p)
 		bits = GIDBITS-1;
 	h->bits = bits;
 	h->size = (gid)1<<bits;
+	if (h->size > 64*1024*1024)
+		h->size -= 1024;
 	h->mask = h->size-1;
 	h->type = type;
 	h->width = ATOMsize(type);
@@ -452,7 +454,7 @@ OAHASHnew(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 		BBPreclaim(pht);
 		return createException(MAL, "oahash.new", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
-	b->tsink = (Sink*)ht_create(tt, size*1.2*4.1, parent);
+	b->tsink = (Sink*)ht_create(tt, size*1.2*2.1, parent);
 	BBPreclaim(pht);
 	if (b->tsink == NULL) {
 		BBPunfix(b->batCacheid);
