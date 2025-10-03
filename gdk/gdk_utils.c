@@ -61,6 +61,11 @@ static void GDKunlockHome(int farmid);
 #undef realloc
 #undef free
 
+#ifdef WITH_TCMALLOC
+#include <gperftools/tcmalloc.h>
+#include <gperftools/malloc_extension_c.h>
+#endif
+
 /* when the number of updates to a BAT is less than 1 in this number, we
  * keep the unique_est property */
 BUN gdk_unique_estimate_keep_fraction = GDK_UNIQUE_ESTIMATE_KEEP_FRACTION; /* should become a define once */
@@ -2056,6 +2061,24 @@ GDKprintinfo(void)
 		       jemapped, humansize(jemapped, (char[24]){0}, 24),
 		       jeresident, humansize(jeresident, (char[24]){0}, 24),
 		       jeretained, humansize(jeretained, (char[24]){0}, 24));
+#endif
+#ifdef WITH_TCMALLOC
+	size_t tcallocated = 0, tchsize = 0, tcfree = 0, tcunmapped = 0, tcmax = 0, tccur = 0;
+	MallocExtension_GetNumericProperty("generic.current_allocated_bytes", &tcallocated);
+	MallocExtension_GetNumericProperty("generic.heap_size", &tchsize);
+	MallocExtension_GetNumericProperty("tcmalloc.pageheap_free_bytes", &tcfree);
+	MallocExtension_GetNumericProperty("tcmalloc.pageheap_unmapped_bytes", &tcunmapped);
+	MallocExtension_GetNumericProperty("tcmalloc.max_total_thread_cache_bytes", &tcmax);
+	MallocExtension_GetNumericProperty("tcmalloc.current_total_thread_cache_bytes", &tccur);
+	printf("tcmalloc: allocated %zu%s, heap size %zu%s, free %zu%s, "
+	       "unmapped %zu%s, max total thread cache %zu%s, "
+	       "current total thread cache %zu%s\n",
+	       tcallocated, humansize(tcallocated, (char[24]){0}, 24),
+	       tchsize, humansize(tchsize, (char[24]){0}, 24),
+	       tcfree, humansize(tcfree, (char[24]){0}, 24),
+	       tcunmapped, humansize(tcunmapped, (char[24]){0}, 24),
+	       tcmax, humansize(tcmax, (char[24]){0}, 24),
+	       tccur, humansize(tccur, (char[24]){0}, 24));
 #endif
 #elif defined(HAVE_MALLINFO2)
 	struct mallinfo2 mi = mallinfo2();
