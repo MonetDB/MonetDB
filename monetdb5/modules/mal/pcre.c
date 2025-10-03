@@ -26,7 +26,7 @@
 #include "mal_exception.h"
 
 #include <wchar.h>
-#include <wctype.h>
+//#include <wctype.h>
 
 #ifdef HAVE_LIBPCRE
 #define PCRE2_CODE_UNIT_WIDTH 8
@@ -449,7 +449,7 @@ pcre_replace_bat(BAT **res, BAT *origin_strs, const char *pattern,
 	BUN p, q;
 	PCRE2_SIZE len_replacement = (PCRE2_SIZE) strlen(replacement);
 	PCRE2_SPTR origin_str;
-	PCRE2_SIZE max_dest_size = 0;
+	PCRE2_SIZE max_dest_size = 0, init_size = 0;
 
 	while (*flags) {
 		switch (*flags) {
@@ -499,7 +499,7 @@ pcre_replace_bat(BAT **res, BAT *origin_strs, const char *pattern,
 
 	/* the buffer for all destination strings is allocated only once,
 	 * and extended when needed */
-	max_dest_size = len_replacement + 1;
+	init_size = max_dest_size = 64*1024;
 	tmpres = GDKmalloc(max_dest_size);
 	if (tmpbat == NULL || tmpres == NULL) {
 		pcre2_match_data_free(match_data);
@@ -525,6 +525,10 @@ pcre_replace_bat(BAT **res, BAT *origin_strs, const char *pattern,
 			throw(MAL, global ? "batpcre.replace" : "batpcre.replace_first",
 				  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
+		if (max_dest_size <= init_size)
+			max_dest_size = init_size;
+		else /* buffer is enlarged */
+			init_size = max_dest_size;
 	}
 	bat_iterator_end(&origin_strsi);
 	pcre2_match_data_free(match_data);
