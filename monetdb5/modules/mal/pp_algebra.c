@@ -2769,19 +2769,7 @@ LALGproject(bat *rid, bat *gid, bat *bid, const ptr *H)
 		vproject()
 			project(bte)
 			project(sht)
-			//project(int)
-if (ATOMstorage(tt) == TYPE_int) {
-	int *v = Tloc(b, 0);
-	int *o = Tloc(r, 0);
-	if (g->ttype == TYPE_void) {
-		oid gi = g->tseqbase;
-		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx)
-			o[gi + i] = v[i];
-	} else {
-		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx)
-			o[gp[i]] = v[i];
-	}
-}
+			project(int)
 			project(lng)
 #ifdef HAVE_HGE
 			project(hge)
