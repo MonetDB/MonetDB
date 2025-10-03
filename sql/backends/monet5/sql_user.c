@@ -951,12 +951,12 @@ remote_create(mvc *m, sqlid id, const char *username, const char *password, int 
 		}
 	}
 	str msg = AUTHcypherValue(&cypher, pwhash ? pwhash : password);
-	//if (pwhash != NULL) {
-	//	if (!pw_encrypted)
-	//		free(pwhash);
-	//	//else
-	//	//	GDKfree(pwhash);
-	//}
+	if (pwhash != NULL) {
+		if (!pw_encrypted)
+			free(pwhash);
+		//else
+		//	GDKfree(pwhash);
+	}
 	if (msg != MAL_SUCCEED)
 		return msg;
 	log_res = store->table_api.table_insert(m->session->tr, remote_user_info, &id, &username, &cypher, NULL);
