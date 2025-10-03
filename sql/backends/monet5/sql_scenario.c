@@ -1406,8 +1406,6 @@ SQLparser_body(Client c, backend *be)
 	m->emode = m_normal;
 	m->emod = mod_none;
 	c->query = NULL;
-	c->qryctx.starttime = GDKusec();
-	c->qryctx.endtime = c->querytimeout ? c->qryctx.starttime + c->querytimeout : 0;
 
 	if ((err = sqlparse(m)) ||
 		m->scanner.aborted ||
@@ -1645,6 +1643,9 @@ SQLparser(Client c, backend *be)
 	char *msg;
 
 	assert (be->language != 'X');
+
+	c->qryctx.starttime = GDKusec();
+	c->qryctx.endtime = c->querytimeout ? c->qryctx.starttime + c->querytimeout : 0;
 
 	if ((msg = SQLtrans(m)) != MAL_SUCCEED) {
 		c->mode = FINISHCLIENT;
