@@ -14,7 +14,8 @@ BINCOPY_FILES = os.environ.get('BINCOPY_FILES', None) or os.environ['TSTTRGDIR']
 
 
 class DataMaker:
-    def __init__(self):
+    def __init__(self, nrecs):
+        self.nrecs = nrecs
         self.fixed_substitutions = dict()
         self.work_list = set()
         self.outfile_to_expected = dict()
@@ -60,11 +61,11 @@ class DataMaker:
             var = var[3:]
             ext = '.ne'
             flags.append('--native-endian')
-        base = f'bincopy_{var}{ext}.bin'
+        base = f'bincopy_{var}_{self.nrecs}{ext}.bin'
         dst_filename = os.path.join(BINCOPY_FILES, base)
         tmp_filename = os.path.join(BINCOPY_FILES, 'tmp_' + base)
         if not os.path.isfile(dst_filename):
-            cmd = ("bincopydata", *flags, var, str(NRECS), tmp_filename)
+            cmd = ("bincopydata", *flags, var, str(self.nrecs), tmp_filename)
             self.work_list.add( (cmd, tmp_filename, dst_filename))
         return dst_filename
 
@@ -86,15 +87,14 @@ class DataMaker:
         return self.outfile_to_expected.items()
 
 
-def run_test(side, testcase):
+def run_test(side, testcase, nrecs=NRECS):
     code, expected_result = testcase
     assert len(re.findall('@ON@', code)) == len(re.findall('COPY', code))
     assert '@ON@' in code
     # generate the query
-    data_maker = DataMaker()
+    data_maker = DataMaker(nrecs)
     data_maker.additionally('ON', 'ON ' + side.upper())
-    data_maker.additionally('NRECS', NRECS)
-    data_maker.additionally('NRECS_DIV_4', NRECS / 4)
+    data_maker.additionally('NRECS', nrecs)
     massage = lambda s: re.sub(r'@(>?(\w|!)+)@', data_maker.substitute_match, s)
     code = massage(code)
     code = f"START TRANSACTION;\n{code}\nROLLBACK;\n"
