@@ -1315,6 +1315,8 @@ def PerformDir(env, testdir, testlist, total_tests) :
             print('\nInterrupted')
             interrupted = True
         finally:
+            sys.stdout.flush()
+            sys.stderr.flush()
             if pSrvr is not None:
                 pSrvr.sendusr1()
                 pSrvr.checkkeys()
@@ -2807,14 +2809,14 @@ class ServerClass:
         if not checkkeys:
             return
         self.outfile.flush()
-        with pymonetdb.connect(username='monetdb',
-                               password='monetdb',
-                               hostname=HOST,
-                               port=int(self.port),
-                               database=self.dbname,
-                               connect_timeout=1.0) as dbh:
-            dbh.settimeout(60)
-            try:
+        try:
+            with pymonetdb.connect(username='monetdb',
+                                   password='monetdb',
+                                   hostname=HOST,
+                                   port=int(self.port),
+                                   database=self.dbname,
+                                   connect_timeout=5.0) as dbh:
+                dbh.settimeout(60)
                 with dbh.cursor() as crs:
                     for table, columns in sys_pkeys + sys_akeys:
                         qtable = table.replace('"', '')
@@ -2841,8 +2843,8 @@ class ServerClass:
                         for row in rows:  # should be empty
                             print(f'missing reference in {qtable} {qcolumns}', row,
                                   query, file=self.outfile)
-            except TimeoutError:
-                pass
+        except TimeoutError:
+            print('timeout during checkkeys', file=self.outfile)
         self.outfile.flush()
 
     def stopsessions(self):
