@@ -15,6 +15,8 @@
 
 #include <setjmp.h>
 
+gdk_export BUN GDKL3_size;
+
 gdk_export void GDKprintinforegister(void (*func)(void));
 gdk_export void GDKprintinfo(void);
 
