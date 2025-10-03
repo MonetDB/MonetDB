@@ -64,7 +64,7 @@ SQLrun(Client c, mvc *m)
 		if (c->curprg->def)
 			printFunction(c->fdout, mb, 0, LIST_MAL_NAME | LIST_MAL_VALUE  | LIST_MAL_TYPE |  LIST_MAL_MAPI);
 	} else {
-		if (m->emod == mod_trace){
+		if (m->trace){
 			if ((msg = startTrace(c)) == MAL_SUCCEED) {
 				setVariableScope(mb);
 				MT_lock_set(&mal_contextLock);

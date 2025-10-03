@@ -368,7 +368,7 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 	default:
 		;
 	}
-	if (sql->show_props) {
+	if (sql->show_details) {
 		if (e->type != e_atom && e->type != e_cmp && is_partitioning(e))
 			mnstr_printf(fout, " PART");
 		if (e->type != e_atom && e->type != e_cmp && is_ascending(e))
@@ -742,7 +742,7 @@ rel_print_rel(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int 
 	default:
 		assert(0);
 	}
-	if (sql->show_props && decorate && rel->p) {
+	if (sql->show_details && decorate && rel->p) {
 		for (prop *p = rel->p; p; p = p->p) {
 			if (p->kind != PROP_COUNT || (ATOMIC_GET(&GDKdebug) & TESTINGMASK) == 0) {
 				char *pv = propvalue2string(sql->ta, p);
@@ -855,7 +855,7 @@ void
 rel_print_(mvc *sql, stream *fout, sql_rel *rel, int depth, list *refs, int decorate)
 {
 	rel_print_rel(sql, fout, rel, depth, refs, decorate);
-	if (sql->show_props && sql->runs) {
+	if (sql->show_details && sql->runs) {
 		for (int i = 0 ; i < NSQLREWRITERS ; i++) {
 			sql_optimizer_run *run = &(sql->runs[i]);
 

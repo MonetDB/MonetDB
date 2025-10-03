@@ -1403,7 +1403,8 @@ SQLparser_body(Client c, backend *be)
 	m->emod = mod_none;
 	m->temporal = T_NONE;
 	m->step = S_NONE;
-	m->show_props = false;
+	m->show_details = false;
+	m->trace = false;
 	c->query = NULL;
 	c->qryctx.starttime = GDKusec();
 	c->qryctx.endtime = c->querytimeout ? c->qryctx.starttime + c->querytimeout : 0;
@@ -1511,7 +1512,7 @@ SQLparser_body(Client c, backend *be)
 			int opt = 0;
 			if (m->emode == m_prepare && m->emod == mod_exec) {
 				/* generated the named parameters for the placeholders */
-				if (backend_dumpstmt(be, c->curprg->def, r->r, !(m->emod & mod_exec), 0, c->query) < 0) {
+				if (backend_dumpstmt(be, c->curprg->def, r->r, !(m->emod == mod_exec), 0, c->query) < 0) {
 					msg = handle_error(m, 0, msg);
 					err = 1;
 					MSresetInstructions(c->curprg->def, oldstop);
@@ -1519,7 +1520,7 @@ SQLparser_body(Client c, backend *be)
 				}
 				r = r->l;
 				m->emode = m_normal;
-				m->emod &= ~mod_exec;
+				m->emod = mod_none;
 			}
 			if (!err && backend_dumpstmt(be, c->curprg->def, r, !(m->emod == mod_exec), 0, c->query) < 0) {
 				msg = handle_error(m, 0, msg);

@@ -805,7 +805,8 @@ mvc_create(sql_store *store, allocator *pa, int clientid, int debug, bstream *rs
 	m->emod = mod_none;
 	m->temporal = T_NONE;
 	m->step = S_NONE;
-	m->show_props = false;
+	m->show_details = false;
+	m->trace = false;
 	m->reply_size = 100;
 	m->debug = debug;
 

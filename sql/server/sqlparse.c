@@ -118,7 +118,8 @@ mvc_new( bstream *rs, stream *ws) {
 	m->emod = mod_none;
 	m->temporal = T_NONE;
 	m->step = S_NONE;
-	m->show_props = false;
+	m->show_details = false;
+	m->trace = false;
 	m->reply_size = 100;
 	m->debug = 0;
 

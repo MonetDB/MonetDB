@@ -144,7 +144,8 @@ sql_symbol2relation(backend *be, symbol *sym)
 
 	lng t_begin = GDKusec();
 	storage_based_opt = value_based_opt && rel && !is_ddl(rel->op);
-	if (rel && !(rel->op == op_ddl && rel->card == CARD_ATOM && rel->flag == ddl_psm && (be->mvc->emod & mod_exec) != 0)) { /* no need to optimize exec */
+	if (rel && !(rel->op == op_ddl && rel->card == CARD_ATOM &&
+				 rel->flag == ddl_psm && (be->mvc->emod == mod_exec) != 0)) { /* no need to optimize exec */
 		if (rel)
 			rel = sql_processrelation(be->mvc, rel, profile, 1, value_based_opt, storage_based_opt);
 		if (rel && (rel_no_mitosis(be->mvc, rel) || rel_need_distinct_query(rel)))
@@ -5582,7 +5583,7 @@ SQLread_dump_rel(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	m->step = S_REWRITE;
 	m->temporal = T_AFTER;
-	m->show_props = true;
+	m->show_details = true;
 
 	rel_print_refs(m, s, rel, 0, refs, 0);
 	rel_print_(m, s, rel, 0, refs, 0);

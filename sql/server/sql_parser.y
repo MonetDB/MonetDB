@@ -877,7 +877,7 @@ sqlstmt:
 		}
 	|	SQL_TRACE sql SCOLON
 		{
-			m->emod = mod_trace;
+			m->trace = true;
 			m->scanner.as = m->scanner.yycur;
 			if (m->sym) {
 				append_symbol(m->sym->data.lval, $2);
@@ -935,7 +935,7 @@ temporal:
 	;
 
 opt_show_properties:
-		SHOW DETAILS   { m->show_props = true; }
+		SHOW DETAILS   { m->show_details = true; }
 	|	/* empty */
 	;
 
