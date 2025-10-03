@@ -4,7 +4,7 @@ CREATE TABLE t0(c2 INT )
 statement ok rowcount 1
 INSERT INTO t0(c2) VALUES(NULL)
 
-
-query II
-SELECT * FROM t0 INNER JOIN LATERAL (SELECT t0.c2) AS subQuery0(c0) ON NOT EXISTS (VALUES (1), (subQuery0.c0));
+query II nosort
+SELECT * FROM t0 INNER JOIN LATERAL (SELECT t0.c2) AS subQuery0(c0) ON NOT EXISTS (VALUES (1), (subQuery0.c0))
 ----
+

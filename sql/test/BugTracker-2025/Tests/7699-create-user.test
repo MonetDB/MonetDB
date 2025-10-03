@@ -1,7 +1,7 @@
 statement error
 CREATE USER test WITH PASSWORD 'me' NAME 'tester' OPTIMIZER 'xyz'
 
-query TTITIITI
+query TTITIITI nosort
 SELECT * FROM sys.users WHERE name = 'tester'
 ----
 

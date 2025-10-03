@@ -91,3 +91,4 @@ select distinct "table" table from sys.sql_keywords
 
 statement ok
 drop table sql_keywords
+

@@ -2,7 +2,7 @@ statement ok
 create table test(value int, name string)
 
 statement ok
-insert into test (select i, cast(i as string) from generate_series(0, 10000000) i(i)) ;
+insert into test (select i, cast(i as string) from generate_series(0, 10000000) i(i))
 
 # optimize the base table away !
 query T python .plan.filter
@@ -13,3 +13,4 @@ project (
 | |  [ int(31) NULL as "test"."value", varchar NULL as "test"."name" ]
 | ) [ boolean(1) "false" ]
 ) [ "test"."value" NOT NULL UNIQUE, "test"."name" NOT NULL UNIQUE ]
+

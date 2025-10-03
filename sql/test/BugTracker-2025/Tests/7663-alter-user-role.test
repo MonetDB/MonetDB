@@ -11,4 +11,5 @@ CREATE TABLE x (y INT)
 
 @connection(id=test)
 statement error M1M05!User has not been granted the role 'monetdb'
-ALTER USER test DEFAULT ROLE monetdb;
+ALTER USER test DEFAULT ROLE monetdb
+
