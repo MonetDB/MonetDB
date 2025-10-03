@@ -332,7 +332,123 @@ mvc_bin_import_column_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	return import_column(be, ret, retcnt, method, width, byteswap, path, onclient, nrows);
 }
 
+static str
+import_nul_terminated(backend *be, bat *ret, BUN *retcnt, str method, int width, bat bytes, BUN nrows)
+{
+	(void)be;
+	const str mal_operator = "sql.importNulTerminated";
+	str msg = MAL_SUCCEED;
+	BAT *input = NULL;
+	BAT *result = NULL;
+	int gdk_type;
+	allocator *ma = MT_thread_getallocator();
+	allocator_state ma_state = ma_open(ma);
+	struct insert_state state = { NULL };
+	BATiter bi;
+	const char *data;
+	size_t size;
+	size_t consumed;
 
+	*ret = 0;
+	*retcnt = 0;
+	type_record_t *rec = find_type_rec(method);
+	if (rec == NULL)
+		bailout("COPY BINARY FROM not implemented for '%s'", method);
+	if (!is_nul_terminated_text(rec))
+		bailout("'%s' does not import as zero-terminated text", method);
+
+	input = BATdescriptor(bytes);
+	if (input == NULL)
+		bailout("%s", GDK_EXCEPTION);
+
+	gdk_type = ATOMindex(rec->gdk_type);
+	if (gdk_type < 0)
+		bailout("cannot load data as %s: unknown atom type %s", method, rec->gdk_type);
+	result = COLnew(0, gdk_type, nrows, PERSISTENT);
+	if (result == NULL)
+		bailout("%s", GDK_EXCEPTION);
+
+	init_insert_state(&state, ma, result, width);
+	bi = bat_iterator(input);
+	data = BUNtloc(bi, 0);
+	size = BATcount(input);
+	msg = insert_nul_terminated_values(&state, data, size, &consumed);
+	bat_iterator_end(&bi);
+	if (msg != MAL_SUCCEED)
+		goto end;
+	if (consumed < size)
+		bailout("unterminated string at end");
+
+	// Maintain bookkeeping
+	BATsetcount(result, result->batCount);
+	result->tkey = false;
+	result->tnonil = false;
+	result->tsorted = false;
+	result->trevsorted = false;
+	result->tascii = false;
+
+	*ret = result->batCacheid;
+	*retcnt = BATcount(result);
+	msg = MAL_SUCCEED;
+
+end:
+	release_insert_state(&state);
+	ma_close(ma, &ma_state);
+	if (input != NULL)
+		BBPunfix(input->batCacheid);
+	if (result != NULL) {
+		if (msg == MAL_SUCCEED)
+			BBPkeepref(result);
+		else
+			BBPunfix(result->batCacheid);
+	}
+	return msg;
+}
+
+
+str
+mvc_bin_import_nul_terminated_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void)mb;
+
+	assert(pci->retc == 2);
+	bat *ret = getArgReference_bat(stk, pci, 0);
+	BUN *retcnt = getArgReference_oid(stk, pci, 1);
+
+	assert(pci->argc == 6);
+	str method = *getArgReference_str(stk, pci, 2);
+	int width = *getArgReference_int(stk, pci, 3);
+	bat bytes = *getArgReference_bat(stk, pci, 4);
+	BUN nrows = *getArgReference_oid(stk, pci, 5);
+
+	backend *be = cntxt->sqlcontext;
+
+	return import_nul_terminated(be, ret, retcnt, method, width, bytes, nrows);
+}
+
+
+str
+mvc_bin_import_bytes_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void)mb;
+
+	assert(pci->retc == 2);
+	bat *ret = getArgReference_bat(stk, pci, 0);
+	BUN *retcnt = getArgReference_oid(stk, pci, 1);
+
+	assert(pci->argc == 5);
+	str path = *getArgReference_str(stk, pci, 2);
+	int onclient = *getArgReference_int(stk, pci, 3);
+	// we don't use it ourselves but we MUST pass it on because
+	// we use it to sequence the loads
+	BUN ignored_nrows = *getArgReference_oid(stk, pci, 4);
+
+	backend *be = cntxt->sqlcontext;
+	str retval = import_column(be, ret, retcnt, "bte", 0, false, path, onclient, 0);
+
+	*retcnt = ignored_nrows; // just pass the value we got
+	return retval;
+}
 
 static str
 write_out(const char *start, const char *end, stream *s)

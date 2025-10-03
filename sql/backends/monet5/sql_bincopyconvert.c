@@ -571,6 +571,12 @@ end:
 	return msg;
 }
 
+bool
+is_nul_terminated_text(type_record_t *rec)
+{
+	return rec->loader == load_zero_terminated_text;
+}
+
 
 
 static str

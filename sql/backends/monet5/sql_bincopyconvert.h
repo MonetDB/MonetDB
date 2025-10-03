@@ -69,6 +69,8 @@ extern bool can_dump_binary_column(type_record_t *rec);
 
 extern str dump_binary_column(type_record_t *rec, BAT *b, BUN start, BUN length, bool byteswap, stream *s);
 
+extern bool is_nul_terminated_text(type_record_t *rec);
+
 struct insert_state {
 	allocator *ma;
 	BAT *bat;
