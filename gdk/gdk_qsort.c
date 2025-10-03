@@ -18,6 +18,7 @@ struct qsort_t {
 	unsigned int hs;
 	unsigned int ts;
 	int (*cmp)(const void *, const void *);
+	bool (*eq)(const void *, const void *);
 	const char *base;
 	const void *nil;
 };
@@ -142,8 +143,8 @@ struct qsort_t {
 #define anylel_rev(i, j)	(anyCMP(i, j) >= 0)
 #define anyltf_rev(i, j)	(!anynil(j) && (anynil(i) || anyCMP(i, j) > 0))
 #define anylef_rev(i, j)	(anynil(i) || (!anynil(j) && anyCMP(i, j) >= 0))
-#define anyeq(i, j)		(anyCMP(i, j) == 0)
-#define anynil(i)		((*buf->cmp)(h + (i)*buf->hs, buf->nil) == 0)
+#define anyeq(i, j)		((*buf->eq)(h + (i)*buf->hs, h + (j)*buf->hs))
+#define anynil(i)		((*buf->eq)(h + (i)*buf->hs, buf->nil))
 #define anyswap(i, j)							\
 	do {								\
 		SWAP1((i) * buf->hs, (j) * buf->hs, h, buf->hs);	\
@@ -161,8 +162,8 @@ struct qsort_t {
 #define varlel_rev(i, j)	(varCMP(i, j) >= 0)
 #define varltf_rev(i, j)	(!varnil(j) && (varnil(i) || varCMP(i, j) > 0))
 #define varlef_rev(i, j)	(varnil(i) || (!varnil(j) && varCMP(i, j) >= 0))
-#define vareq(i, j)		(varCMP(i, j) == 0)
-#define varnil(i)		((*buf->cmp)(varOFF(i), buf->nil) == 0)
+#define vareq(i, j)		((*buf->eq)(varOFF(i), varOFF(j)))
+#define varnil(i)		((*buf->eq)(varOFF(i), buf->nil))
 #define varswap(i, j)		anyswap(i, j)
 
 #define LE(i, j, TPE, SUFF)	CONCAT3(TPE, le, SUFF)(i, j)
@@ -372,6 +373,7 @@ GDKqsort(void *restrict h, void *restrict t, const void *restrict base,
 	buf.hs = (unsigned int) hs;
 	buf.ts = (unsigned int) ts;
 	buf.cmp = ATOMcompare(tpe);
+	buf.eq = ATOMequal(tpe);
 	buf.base = base;
 	buf.nil = ATOMnilptr(tpe);
 	assert(ATOMvarsized(tpe) ? base != NULL : base == NULL);

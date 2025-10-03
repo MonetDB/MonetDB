@@ -25,6 +25,7 @@ ssize_t wkbFROMSTR(allocator *, const char *geomWKT, size_t *len, void **GEOMWKB
 BUN wkbHASH(const void *W);
 const void * wkbNULL(void);
 int wkbCOMP(const void *L, const void *R);
+bool wkbEQ(const void *L, const void *R);
 void * wkbREAD(allocator *ma, void *A, size_t *dstlen, stream *s, size_t cnt);
 gdk_return wkbWRITE(const void *A, stream *s, size_t cnt);
 var_t wkbPUT(BAT *b, var_t *bun, const void *VAL);
@@ -43,6 +44,7 @@ ssize_t mbrFROMSTR(allocator *, const char *src, size_t *len, void **ATOM, bool 
 BUN mbrHASH(const void *ATOM);
 const void * mbrNULL(void);
 int mbrCOMP(const void *L, const void *R);
+bool mbrEQ(const void *L, const void *R);
 void * mbrREAD(allocator *, void *A, size_t *dstlen, stream *s, size_t cnt);
 gdk_return mbrWRITE(const void *C, stream *s, size_t cnt);
 /* Non-atom MBR functions */

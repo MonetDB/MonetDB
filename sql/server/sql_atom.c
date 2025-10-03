@@ -292,7 +292,7 @@ atom_general(allocator *sa, sql_subtype *tpe, const char *val, long tz_offset)
 			ssize_t res = ATOMfromstr(sa, type, &p, &a->data.len, val, false);
 
 			/* no result or nil means error (SQL has NULL not nil) */
-			if (res < 0 || !p || ATOMcmp(type, p, ATOMnilptr(type)) == 0) {
+			if (res < 0 || !p || ATOMeq(type, p, ATOMnilptr(type))) {
 				// GDKfree(p);
 				GDKclrerr();
 				return NULL;

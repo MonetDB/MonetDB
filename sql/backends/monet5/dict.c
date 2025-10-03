@@ -818,7 +818,7 @@ DICTthetaselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BUN p = BUN_NONE;
 		if (ATOMextern(lvi.type))
 			v = *(ptr*)v;
-		if (ATOMcmp(lvi.type, v,  ATOMnilptr(lvi.type)) == 0) {
+		if (ATOMeq(lvi.type, v,  ATOMnilptr(lvi.type))) {
 			/* corner case, if v is NULL skip any calculations */
 			bn = BATdense(0, 0, 0);
 		} else {
@@ -827,10 +827,10 @@ DICTthetaselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			} else if (op[0] == '<' || op[0] == '>') {
 				p = SORTfndfirst(lv, v);
 				if (p != BUN_NONE && op[0] == '<' && op[1] == '=') {
-					if (ATOMcmp(lvi.type, v, BUNtail(lvi, p)) != 0)
+					if (!ATOMeq(lvi.type, v, BUNtail(lvi, p)))
 						p--;
 				} else if (p != BUN_NONE && op[0] == '>' && !op[1]) {
-					if (ATOMcmp(lvi.type, v, BUNtail(lvi, p)) != 0)
+					if (!ATOMeq(lvi.type, v, BUNtail(lvi, p)))
 						op = ">=";
 				}
 			}
@@ -970,15 +970,15 @@ DICTselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/* here we don't need open ended parts with nil */
 	if (!anti) {
 		const void *nilptr = ATOMnilptr(lvi.type);
-		if (li == 1 && ATOMcmp(lvi.type, l, nilptr) == 0) {
+		if (li == 1 && ATOMeq(lvi.type, l, nilptr)) {
 			l = h;
 			li = 0;
 		}
-		if (hi == 1 && ATOMcmp(lvi.type, h, nilptr) == 0) {
+		if (hi == 1 && ATOMeq(lvi.type, h, nilptr)) {
 			h = l;
 			hi = 0;
 		}
-		if (ATOMcmp(lvi.type, l, h) == 0 && ATOMcmp(lvi.type, h, nilptr) == 0) /* ugh sql nil != nil */
+		if (ATOMeq(lvi.type, l, h) && ATOMeq(lvi.type, h, nilptr)) /* ugh sql nil != nil */
 			anti = 1;
 	}
 	BUN max_cnt = lvi.type == TYPE_bte?256:(64*1024);

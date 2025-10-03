@@ -285,7 +285,7 @@ merge_table_prune_and_unionize(visitor *v, sql_rel *mt_rel, merge_table_prune_in
 											skip |= nskip;
 										}
 									} else { /* limit1 to limit2 (general case), limit2 is exclusive */
-										bool max_differ_min = ATOMcmp(col->type.type->localtype, &rmin->data.val, &rmax->data.val) != 0;
+										bool max_differ_min = !ATOMeq(col->type.type->localtype, &rmin->data.val, &rmax->data.val);
 
 										if (lval) {
 											if (next->flag == cmp_equal) {
