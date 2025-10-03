@@ -52,7 +52,6 @@ wkbTOSTR(allocator *ma, char **geomWKT, size_t *len, const void *GEOMWKB, bool e
 		if (*len < dstStrLen + 1 || *geomWKT == NULL) {
 			*len = dstStrLen + 1;
 			////GDKfree(*geomWKT);
-			allocator *ma = MT_thread_getallocator();
 			assert(ma);
 			if ((*geomWKT = ma_alloc(ma, *len)) == NULL) {
 				GEOSFree_r(geoshandle, wkt);
@@ -1153,24 +1152,6 @@ mbrFromString(Client ctx, mbr **w, const char **src)
 /* COMMAND mbr
  * Creates the mbr for the given geom_geometry.
  */
-
-str
-ordinatesMBR(mbr **res, flt *minX, flt *minY, flt *maxX, flt *maxY)
-{
-	allocator *ma = MT_thread_getallocator();
-	assert(ma);
-	if ((*res = ma_alloc(ma, sizeof(mbr))) == NULL)
-		throw(MAL, "geom.mbr", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	if (is_flt_nil(*minX) || is_flt_nil(*minY) || is_flt_nil(*maxX) || is_flt_nil(*maxY))
-		**res = mbrNIL;
-	else {
-		(*res)->xmin = *minX;
-		(*res)->ymin = *minY;
-		(*res)->xmax = *maxX;
-		(*res)->ymax = *maxY;
-	}
-	return MAL_SUCCEED;
-}
 
 str
 mbrIntersects(Client ctx, bit *out, mbr** mbr1, mbr** mbr2) {
