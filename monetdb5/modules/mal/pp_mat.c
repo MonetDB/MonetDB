@@ -218,35 +218,64 @@ PARTpartition( bat *pos, const bat *part, const bat *glen )
 	return MAL_SUCCEED;
 }
 
-#define mat_project(T)																					\
-		{																								\
-			T **cp = (T**)GDKzalloc(mt->nr * sizeof(T*));												\
-			if (cp) {																					\
-				for(int i = 0; i<mt->nr; i++) {															\
-					if (BATcapacity(mt->bat[i]) < (BUN)(curpos[i]+lp[i])) {								\
-						if (BATextend(mt->bat[i], curpos[i]+lp[i]) != GDK_SUCCEED) {					\
-							err = createException(MAL, "mat.project", SQLSTATE(HY013) MAL_MALLOC_FAIL);	\
-							break;																		\
-						}																				\
-					}																					\
-					if (BATcount(mt->bat[i]) < (BUN)(curpos[i]+lp[i]))									\
-						BATsetcount(mt->bat[i], curpos[i]+lp[i]);										\
-					cp[i] = (T*)Tloc(mt->bat[i], 0);													\
-				}																						\
-				if (err == NULL) {																		\
-					T *dp = (T*)Tloc(d, 0);																\
-					for(BUN i = 0; i<BATcount(d); i++) {												\
-						int g = grp[i];																	\
-						cp[g][curpos[g]] = dp[i];														\
-						curpos[g]++;																	\
-					}																					\
-				}																						\
-				GDKfree(cp);																			\
-			} else {																					\
-				err = createException(MAL, "mat.project", SQLSTATE(HY013) MAL_MALLOC_FAIL);				\
-			}																							\
-		}																								\
-		break
+#define mat_project(T)											\
+	{											\
+		T **cp = (T**)GDKzalloc(mt->nr * sizeof(T*));					\
+		if (cp) {									\
+			for(int i = 0; i<mt->nr; i++) {						\
+				if (BATcapacity(mt->bat[i]) < (BUN)(curpos[i]+lp[i])) {		\
+					if (BATextend(mt->bat[i], curpos[i]+lp[i]) != GDK_SUCCEED) {	\
+						err = createException(MAL, "mat.project", SQLSTATE(HY013) MAL_MALLOC_FAIL);	\
+						break;						\
+					}							\
+				}								\
+				if (BATcount(mt->bat[i]) < (BUN)(curpos[i]+lp[i]))		\
+					BATsetcount(mt->bat[i], curpos[i]+lp[i]);		\
+				cp[i] = (T*)Tloc(mt->bat[i], 0);				\
+			}									\
+			if (err == NULL) {							\
+				T *dp = (T*)Tloc(d, 0);						\
+				for(BUN i = 0; i<BATcount(d); i++) {				\
+					int g = grp[i];						\
+					cp[g][curpos[g]] = dp[i];				\
+					curpos[g]++;						\
+				}								\
+			}									\
+			GDKfree(cp);								\
+		} else {									\
+			err = createException(MAL, "mat.project", SQLSTATE(HY013) MAL_MALLOC_FAIL);	\
+		}										\
+	}											\
+	break
+
+#define mat_project_() \
+	{	\
+		for(int i = 0; i<mt->nr; i++) {										\
+			if (BATcapacity(mt->bat[i]) < (BUN)(curpos[i]+lp[i])) {						\
+				if (BATextend(mt->bat[i], curpos[i]+lp[i]) != GDK_SUCCEED) {				\
+					err = createException(MAL, "mat.project", SQLSTATE(HY013) MAL_MALLOC_FAIL);	\
+					break;										\
+				}											\
+			}												\
+			if (BATcount(mt->bat[i]) < (BUN)(curpos[i]+lp[i]))						\
+				BATsetcount(mt->bat[i], curpos[i]+lp[i]);						\
+		}													\
+		if (err == NULL) {											\
+			BATiter di = bat_iterator(d); \
+			BUN cnt = BATcount(d); \
+			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
+				int g = grp[i];						\
+				if (tfastins_nocheckVAR( mt->bat[g], curpos[g], BUNtvar(di, i)) != GDK_SUCCEED) { \
+					err = createException(MAL, "pp algebra.projection", MAL_MALLOC_FAIL); \
+					goto error; \
+				} \
+				if (err) \
+					TIMEOUT_LOOP_BREAK; \
+				curpos[g]++; \
+			} \
+			bat_iterator_end(&di); 	\
+		} \
+	}
 
 static str
 MATproject( bat *mat, const bat *pos, const bat *lid, const bat *gid, const bat *data )
@@ -273,11 +302,17 @@ MATproject( bat *mat, const bat *pos, const bat *lid, const bat *gid, const bat 
 	assert(mt->nr == (int)BATcount(l));
 	assert(BATcount(g) == BATcount(d));
 
+	bool local_storage = false;
 	MT_lock_set(&m->theaplock);
 	if (BATcount(d)) {
-		if (d->ttype == TYPE_str && BATcount(mt->bat[0]) == 0) {
+		BAT *r = mt->bat[0];
+		assert(r);
+		bool hcnt = 0;
+		for (int i = 0; i < mt->nr && !hcnt; i++)
+			hcnt = BATcount(mt->bat[i]) > 0;
+		if (ATOMvarsized(r->ttype) && !hcnt && r->tvheap->parentid == r->batCacheid) {
 			for (int i = 0; i < mt->nr; i++) {
-				if (mt->bat[i]->twidth < d->twidth) {
+				if (mt->bat[i]->twidth != d->twidth) {
 					int m = d->twidth / mt->bat[i]->twidth;
 					mt->bat[i]->twidth = d->twidth;
 					mt->bat[i]->tshift = d->tshift;
@@ -285,23 +320,42 @@ MATproject( bat *mat, const bat *pos, const bat *lid, const bat *gid, const bat 
 				}
 				BATswap_heaps(mt->bat[i], d, NULL);
 			}
+		} else if (ATOMvarsized(r->ttype) && hcnt && r->tvheap->parentid == r->batCacheid) {
+			local_storage = true;
+		} else if (ATOMvarsized(r->ttype) && hcnt && r->tvheap->parentid != r->batCacheid &&
+			(r->tvheap->parentid != d->tvheap->parentid || (!VIEWvtparent(d) || BBP_desc(VIEWvtparent(d))->batRestricted != BAT_READ))) {
+			for (int i = 0; i < mt->nr; i++) {
+				BAT *r = mt->bat[i];
+				if (unshare_varsized_heap(r) != GDK_SUCCEED) {
+					err = createException(MAL, "mat.project", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					goto error;
+				}
+			}
+			local_storage = true;
 		}
-		switch(d->twidth) {
-		case 1:
-			mat_project(bte);
-		case 2:
-			mat_project(sht);
-		case 4:
-			mat_project(int);
-		case 8:
-			mat_project(lng);
+		QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+                qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
+		if (!local_storage) {
+			switch(d->twidth) {
+			case 1:
+				mat_project(bte);
+			case 2:
+				mat_project(sht);
+			case 4:
+				mat_project(int);
+			case 8:
+				mat_project(lng);
 #ifdef HAVE_HGE
-		case 16:
-			mat_project(hge);
+			case 16:
+				mat_project(hge);
 #endif
-		default:
-			err = createException(MAL, "mat.project", SQLSTATE(HY002) "invalid BAT width");
+			default:
+				err = createException(MAL, "mat.project", SQLSTATE(HY002) "invalid BAT width");
+			}
+		} else if (d->ttype == TYPE_str) {
+			mat_project_();
 		}
+		TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "pp algebra.projection", RUNTIME_QRY_TIMEOUT));
 	}
 	MT_lock_unset(&m->theaplock);
 	if (err)
