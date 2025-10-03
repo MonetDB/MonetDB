@@ -672,7 +672,7 @@ convert_any_str(BATiter *bi, BAT *bn, struct canditer *restrict ci)
 	const void *nil = ATOMnilptr(tp);
 	const void *restrict src;
 	ssize_t (*atomtostr)(str *, size_t *, const void *, bool) = BATatoms[tp].atomToStr;
-	int (*atomcmp)(const void *, const void *) = ATOMcompare(tp);
+	bool (*atomeq)(const void *, const void *) = ATOMequal(tp);
 	oid x;
 
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
@@ -694,7 +694,7 @@ convert_any_str(BATiter *bi, BAT *bn, struct canditer *restrict ci)
 		TIMEOUT_LOOP_IDX(i, ci->ncand, qry_ctx) {
 			x = canditer_next(ci) - candoff;
 			src = BUNtvar(*bi, x);
-			if ((*atomcmp)(src, nil) == 0) {
+			if ((*atomeq)(src, nil)) {
 				nils++;
 				if (tfastins_nocheckVAR(bn, i, str_nil) != GDK_SUCCEED) {
 					goto bailout;
@@ -718,7 +718,7 @@ convert_any_str(BATiter *bi, BAT *bn, struct canditer *restrict ci)
 		TIMEOUT_LOOP_IDX(i, ci->ncand, qry_ctx) {
 			x = canditer_next(ci) - candoff;
 			src = BUNtloc(*bi, x);
-			if ((*atomcmp)(src, nil) == 0) {
+			if ((*atomeq)(src, nil)) {
 				nils++;
 				if (tfastins_nocheckVAR(bn, i, str_nil) != GDK_SUCCEED)
 					goto bailout;
@@ -821,7 +821,7 @@ convert_str_fix(BATiter *bi, int tp, void *restrict dst,
 		return 0;
 	}
 
-	int (*atomcmp)(const void *, const void *) = ATOMcompare(tp);
+	bool (*atomeq)(const void *, const void *) = ATOMequal(tp);
 	TIMEOUT_LOOP(ci->ncand, qry_ctx) {
 		oid x = canditer_next(ci) - candoff;
 		const char *s = BUNtvar(*bi, x);
@@ -835,7 +835,7 @@ convert_str_fix(BATiter *bi, int tp, void *restrict dst,
 				goto conversion_failed;
 			}
 			assert(len == ATOMsize(tp));
-			if (atomcmp(dst, nil) == 0)
+			if (atomeq(dst, nil))
 				nils++;
 		}
 		dst = (void *) ((char *) dst + len);
@@ -1726,8 +1726,7 @@ VARconvert(ValPtr ret, const ValRecord *v,
 			return GDK_FAIL;
 	} else if (ret->vtype == TYPE_str) {
 		if (v->vtype == TYPE_void ||
-		    (*ATOMcompare(v->vtype))(VALptr(v),
-					     ATOMnilptr(v->vtype)) == 0) {
+		    ATOMeq(v->vtype, VALptr(v), ATOMnilptr(v->vtype))) {
 			if (VALinit(ret, TYPE_str, str_nil) == NULL)
 				return GDK_FAIL;
 		} else if (BATatoms[v->vtype].atomToStr == BATatoms[TYPE_str].atomToStr) {
@@ -1747,7 +1746,7 @@ VARconvert(ValPtr ret, const ValRecord *v,
 			}
 		}
 	} else if (ret->vtype == TYPE_void) {
-		if (ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0) {
+		if (!ATOMeq(v->vtype, VALptr(v), ATOMnilptr(v->vtype))) {
 			GDKerror("22003!cannot convert non-nil to void.\n");
 			return GDK_FAIL;
 		}

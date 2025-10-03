@@ -65,23 +65,25 @@
 
 #include <atomic>
 
-#if SIZEOF_LONG_LONG == 8
-#if ATOMIC_LLONG_LOCK_FREE != 2
-#if ATOMIC_LLONG_LOCK_FREE != 1
-#error "we need _Atomic(unsigned [long] long) to be lock free"
-#endif
-typedef atomic_ulong ATOMIC_TYPE __attribute__((__aligned__(8)));
-typedef unsigned long ATOMIC_BASE_TYPE;
-#else
-typedef atomic_ullong ATOMIC_TYPE __attribute__((__aligned__(8)));
-typedef unsigned long long ATOMIC_BASE_TYPE;
-#endif
-#elif SIZEOF_LONG == 8
+#if SIZEOF_LONG == 8
 #if ATOMIC_LONG_LOCK_FREE != 2
 #error "we need _Atomic(unsigned long) to be lock free"
 #endif
-typedef atomic_ulong ATOMIC_TYPE __attribute__((__aligned__(8)));
+typedef volatile atomic_ulong ATOMIC_TYPE __attribute__((__aligned__(8)));
 typedef unsigned long ATOMIC_BASE_TYPE;
+#elif SIZEOF_LONG_LONG == 8
+#if ATOMIC_LLONG_LOCK_FREE != 2
+#if SIZEOF_SIZE_T == 4 && ATOMIC_LONG_LOCK_FREE == 2
+/* on 32 bit arch, fall back to 32 bit atomics if 64 bit is not lock free */
+typedef volatile atomic_ulong ATOMIC_TYPE __attribute__((__aligned__(4)));
+typedef unsigned long ATOMIC_BASE_TYPE;
+#else
+#error "we need _Atomic(unsigned [long] long) to be lock free"
+#endif
+#else
+typedef volatile atomic_ullong ATOMIC_TYPE __attribute__((__aligned__(8)));
+typedef unsigned long long ATOMIC_BASE_TYPE;
+#endif
 #else
 #error "we need a 64 bit atomic type"
 #endif
@@ -90,23 +92,25 @@ typedef unsigned long ATOMIC_BASE_TYPE;
 
 #include <stdatomic.h>
 
-#if SIZEOF_LONG_LONG == 8
-#if ATOMIC_LLONG_LOCK_FREE != 2
-#if ATOMIC_LLONG_LOCK_FREE != 1
-#error "we need _Atomic(unsigned [long] long) to be lock free"
-#endif
-typedef atomic_ulong ATOMIC_TYPE __attribute__((__aligned__(8)));
-typedef unsigned long ATOMIC_BASE_TYPE;
-#else
-typedef volatile atomic_ullong ATOMIC_TYPE __attribute__((__aligned__(8)));
-typedef unsigned long long ATOMIC_BASE_TYPE;
-#endif
-#elif SIZEOF_LONG == 8
+#if SIZEOF_LONG == 8
 #if ATOMIC_LONG_LOCK_FREE != 2
 #error "we need _Atomic(unsigned long) to be lock free"
 #endif
 typedef volatile atomic_ulong ATOMIC_TYPE __attribute__((__aligned__(8)));
 typedef unsigned long ATOMIC_BASE_TYPE;
+#elif SIZEOF_LONG_LONG == 8
+#if ATOMIC_LLONG_LOCK_FREE != 2
+#if SIZEOF_SIZE_T == 4 && ATOMIC_LONG_LOCK_FREE == 2
+/* on 32 bit arch, fall back to 32 bit atomics */
+typedef volatile atomic_ulong ATOMIC_TYPE __attribute__((__aligned__(4)));
+typedef unsigned long ATOMIC_BASE_TYPE;
+#else
+#error "we need _Atomic(unsigned [long] long) to be lock free"
+#endif
+#else
+typedef volatile atomic_ullong ATOMIC_TYPE __attribute__((__aligned__(8)));
+typedef unsigned long long ATOMIC_BASE_TYPE;
+#endif
 #else
 #error "we need a 64 bit atomic type"
 #endif

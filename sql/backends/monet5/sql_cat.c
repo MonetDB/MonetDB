@@ -255,14 +255,14 @@ alter_table_add_range_partition(mvc *sql, char *msname, char *mtname, char *psna
 
 	find_partition_type(&tpe, mt);
 	tp1 = tpe.type->localtype;
-	min_null = ATOMcmp(tp1, min, ATOMnilptr(tp1)) == 0;
-	max_null = ATOMcmp(tp1, max, ATOMnilptr(tp1)) == 0;
+	min_null = ATOMeq(tp1, min, ATOMnilptr(tp1));
+	max_null = ATOMeq(tp1, max, ATOMnilptr(tp1));
 
 	if (!min_null && !max_null && ATOMcmp(tp1, min, max) > 0) {
 		msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(42000) "ALTER TABLE: minimum value is higher than maximum value");
 		goto finish;
 	}
-	if (!min_null && !max_null && ATOMcmp(tp1, min, max) == 0) {
+	if (!min_null && !max_null && ATOMeq(tp1, min, max)) {
 		msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(42000) "ALTER TABLE: minimum value is equal to the maximum value");
 		goto finish;
 	}
@@ -316,7 +316,7 @@ alter_table_add_range_partition(mvc *sql, char *msname, char *mtname, char *psna
 									  "ALTER TABLE: cannot find partition table %s.%s", err->t->s->base.name, err->base.name);
 					goto finish;
 				}
-				if (!ATOMcmp(tp1, nil, err->part.range.minvalue)) {
+				if (ATOMeq(tp1, nil, err->part.range.minvalue)) {
 					if (!(conflict_err_min = GDKstrdup("absolute min value")))
 						msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				} else if (atomtostr(&conflict_err_min, &length, err->part.range.minvalue, true) < 0) {
@@ -325,7 +325,7 @@ alter_table_add_range_partition(mvc *sql, char *msname, char *mtname, char *psna
 				if (msg)
 					goto finish;
 
-				if (!ATOMcmp(tp1, nil, err->part.range.maxvalue)) {
+				if (ATOMeq(tp1, nil, err->part.range.maxvalue)) {
 					if (!(conflict_err_max = GDKstrdup("absolute max value")))
 						msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				} else if (atomtostr(&conflict_err_max, &length, err->part.range.maxvalue, true) < 0) {
@@ -334,7 +334,7 @@ alter_table_add_range_partition(mvc *sql, char *msname, char *mtname, char *psna
 				if (msg)
 					goto finish;
 
-				if (!ATOMcmp(tp1, nil, min)) {
+				if (ATOMeq(tp1, nil, min)) {
 					if (!(err_min = GDKstrdup("absolute min value")))
 						msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				} else if (atomtostr(&err_min, &length, min, true) < 0) {
@@ -343,7 +343,7 @@ alter_table_add_range_partition(mvc *sql, char *msname, char *mtname, char *psna
 				if (msg)
 					goto finish;
 
-				if (!ATOMcmp(tp1, nil, max)) {
+				if (ATOMeq(tp1, nil, max)) {
 					if (!(err_max = GDKstrdup("absolute max value")))
 						msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				} else if (atomtostr(&err_max, &length, max, true) < 0) {

@@ -38,7 +38,7 @@ BATunique(BAT *b, BAT *s)
 	const char *nme;
 	Hash *hs = NULL;
 	BUN hb;
-	int (*cmp)(const void *, const void *);
+	bool (*eq)(const void *, const void *);
 	struct canditer ci;
 	const char *algomsg = "";
 	lng t0 = 0;
@@ -104,7 +104,7 @@ BATunique(BAT *b, BAT *s)
 	else
 		vars = NULL;
 	width = bi.width;
-	cmp = ATOMcompare(bi.type);
+	eq = ATOMequal(bi.type);
 	hseq = b->hseqbase;
 
 	if (ATOMbasetype(bi.type) == TYPE_bte ||
@@ -165,7 +165,7 @@ BATunique(BAT *b, BAT *s)
 		TIMEOUT_LOOP_IDX(i, ci.ncand, qry_ctx) {
 			o = canditer_next(&ci);
 			v = VALUE(o - hseq);
-			if (prev == NULL || (*cmp)(v, prev) != 0) {
+			if (prev == NULL || !(*eq)(v, prev)) {
 				if (bunfastappOID(bn, o) != GDK_SUCCEED)
 					goto bunins_failed;
 			}
@@ -197,7 +197,7 @@ BATunique(BAT *b, BAT *s)
 			     hb != BUN_NONE;
 			     hb = HASHgetlink(hs, hb)) {
 				assert(hb < p);
-				if (cmp(v, BUNtail(bi, hb)) == 0 &&
+				if (eq(v, BUNtail(bi, hb)) &&
 				    canditer_contains(&ci, hb + hseq)) {
 					/* we've seen this value
 					 * before */
@@ -226,10 +226,10 @@ BATunique(BAT *b, BAT *s)
 		nme = BBP_physical(b->batCacheid);
 		if (ATOMbasetype(bi.type) == TYPE_bte) {
 			mask = (BUN) 1 << 8;
-			cmp = NULL; /* no compare needed, "hash" is perfect */
+			eq = NULL; /* no compare needed, "hash" is perfect */
 		} else if (ATOMbasetype(bi.type) == TYPE_sht) {
 			mask = (BUN) 1 << 16;
-			cmp = NULL; /* no compare needed, "hash" is perfect */
+			eq = NULL; /* no compare needed, "hash" is perfect */
 		} else {
 			mask = HASHmask(ci.ncand);
 			if (mask < ((BUN) 1 << 16))
@@ -258,7 +258,7 @@ BATunique(BAT *b, BAT *s)
 			for (hb = HASHget(hs, prb);
 			     hb != BUN_NONE;
 			     hb = HASHgetlink(hs, hb)) {
-				if (cmp == NULL || cmp(v, BUNtail(bi, hb)) == 0)
+				if (eq == NULL || eq(v, BUNtail(bi, hb)))
 					break;
 			}
 			if (hb == BUN_NONE) {
