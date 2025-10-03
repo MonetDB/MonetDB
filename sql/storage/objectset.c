@@ -1017,8 +1017,8 @@ os_del_(objectset *os, struct sql_trans *tr, const char *name, sql_base *b)
 		.ts = tr->tid,
 		.b = b,
 		.os = os,
+		.state = ATOMIC_VAR_INIT(deleted),
 	};
-	os_atmc_set_state(ov, deleted);
 
 	if ((res = os_del_id_based(os, tr, b->id, ov))) {
 		if (os->destroy)

@@ -97,7 +97,6 @@ int
 hasSameArguments(MalBlkPtr mb, InstrPtr p, InstrPtr q)
 {
 	int k;
-	int (*cmp)(const void *, const void *);
 	VarPtr w, u;
 
 	(void) mb;
@@ -110,9 +109,8 @@ hasSameArguments(MalBlkPtr mb, InstrPtr p, InstrPtr q)
 				&& isVarConstant(mb, getArg(q, k))) {
 				w = getVar(mb, getArg(p, k));
 				u = getVar(mb, getArg(q, k));
-				cmp = ATOMcompare(w->value.vtype);
 				if (w->value.vtype == u->value.vtype
-					&& (*cmp) (VALptr(&w->value), VALptr(&u->value)) == 0)
+					&& ATOMeq(w->value.vtype, VALptr(&w->value), VALptr(&u->value)))
 					continue;
 			}
 			return FALSE;

@@ -560,9 +560,9 @@ PyNullMask_FromBAT(BAT *b, size_t t_start, size_t t_end)
 			break;
 #endif
 		default: {
-			int (*atomcmp)(const void *, const void *) = ATOMcompare(b->ttype);
+			bool (*atomeq)(const void *, const void *) = ATOMequal(b->ttype);
 			for (j = 0; j < count; j++) {
-				mask_data[j] = (*atomcmp)(BUNtail(bi, (BUN)(j)), nil) == 0;
+				mask_data[j] = (*atomeq)(BUNtail(bi, (BUN)(j)), nil);
 				found_nil |= mask_data[j];
 			}
 		}

@@ -1064,7 +1064,7 @@ convert2str(mvc *m, sql_class eclass, int d, int sc, int has_tz, const void *p, 
 {
 	ssize_t l = 0;
 
-	if (!p || ATOMcmp(mtype, ATOMnilptr(mtype), p) == 0) {
+	if (!p || ATOMeq(mtype, ATOMnilptr(mtype), p)) {
 		(*buf)[0] = '\200';
 		(*buf)[1] = 0;
 	} else if (eclass == EC_DEC) {
@@ -1110,7 +1110,7 @@ export_value(mvc *m, stream *s, sql_class eclass, const char *sqlname, int d, in
 	int ok = 0;
 	ssize_t l = 0;
 
-	if (!p || ATOMcmp(mtype, ATOMnilptr(mtype), p) == 0) {
+	if (!p || ATOMeq(mtype, ATOMnilptr(mtype), p)) {
 		if (mnstr_write(s, ns, strlen(ns), 1) < 1)
 			ok = -4;
 	} else if (eclass == EC_DEC) {

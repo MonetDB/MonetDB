@@ -1641,7 +1641,8 @@ rel_groupby_cse(visitor *v, sql_rel *rel)
 
 					/* use e2 from rel->exps instead of e2 from the rel->r as it can have an alias from the higher rel */
 					sql_exp *e2_in_exps = exps_uses_nid(rel->exps, e2->alias.label);
-					assert(e2_in_exps);
+					if (!e2_in_exps)
+						continue;
 
 					/* same as e2 */
 					sql_exp *e1_in_exps = exps_uses_nid(rel->exps, e1->alias.label);

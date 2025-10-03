@@ -139,16 +139,13 @@ sql_symbol2relation(backend *be, symbol *sym)
 {
 	sql_rel *rel;
 	sql_query *query = query_create(be->mvc);
-	lng Tbegin, Tend;
 	int value_based_opt = be->mvc->emode != m_prepare, storage_based_opt;
 	int profile = be->mvc->emode == m_plan;
 
-	Tbegin = GDKusec();
 	rel = rel_semantic(query, sym);
-	Tend = GDKusec();
 
+	lng t_begin = GDKusec();
 	storage_based_opt = value_based_opt && rel && !is_ddl(rel->op);
-	Tbegin = Tend;
 	if (rel && !(rel->op == op_ddl && rel->card == CARD_ATOM && rel->flag == ddl_psm && (be->mvc->emod & mod_exec) != 0)) { /* no need to optimize exec */
 		if (rel)
 			rel = sql_processrelation(be->mvc, rel, profile, 1, value_based_opt, storage_based_opt);
@@ -157,8 +154,7 @@ sql_symbol2relation(backend *be, symbol *sym)
 		if (rel)
 			rel = rel_physical(be->mvc, rel);
 	}
-	Tend = GDKusec();
-	be->reloptimizer = Tend - Tbegin;
+	be->reloptimizer = GDKusec() - t_begin;
 
 	return rel;
 }
@@ -3854,11 +3850,11 @@ do_sql_rank_grp(bat *rid, const bat *bid, const bat *gid, int nrank, int dense, 
 	BAT *r, *b, *g;
 	BUN p, q;
 	BATiter bi, gi;
-	int (*ocmp) (const void *, const void *);
-	int (*gcmp) (const void *, const void *);
+	bool (*oeq) (const void *, const void *);
+	bool (*geq) (const void *, const void *);
 	const void *oc, *gc, *on, *gn;
 	int rank = 1;
-	int c;
+	bool c;
 
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(SQL, name, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
@@ -3868,8 +3864,8 @@ do_sql_rank_grp(bat *rid, const bat *bid, const bat *gid, int nrank, int dense, 
 	}
 	bi = bat_iterator(b);
 	gi = bat_iterator(g);
-	ocmp = ATOMcompare(b->ttype);
-	gcmp = ATOMcompare(g->ttype);
+	oeq = ATOMequal(b->ttype);
+	geq = ATOMequal(g->ttype);
 	oc = BUNtail(bi, 0);
 	gc = BUNtail(gi, 0);
 	if (!ALIGNsynced(b, g)) {
@@ -3898,10 +3894,10 @@ do_sql_rank_grp(bat *rid, const bat *bid, const bat *gid, int nrank, int dense, 
 		on = BUNtail(bi, p);
 		gn = BUNtail(gi, p);
 
-		if ((c = ocmp(on, oc)) != 0)
+		if ((c = !oeq(on, oc)))
 			rank = nrank;
-		if (gcmp(gn, gc) != 0)
-			c = rank = nrank = 1;
+		if (!geq(gn, gc))
+			rank = nrank = c = 1;
 		oc = on;
 		gc = gn;
 		if (BUNappend(r, &rank, false) != GDK_SUCCEED) {
@@ -3928,11 +3924,10 @@ do_sql_rank(bat *rid, const bat *bid, int nrank, int dense, const char *name)
 {
 	BAT *r, *b;
 	BATiter bi;
-	int (*cmp) (const void *, const void *);
+	bool (*eq) (const void *, const void *);
 	const void *cur, *n;
 	BUN p, q;
 	int rank = 1;
-	int c;
 
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(SQL, name, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
@@ -3943,7 +3938,7 @@ do_sql_rank(bat *rid, const bat *bid, int nrank, int dense, const char *name)
 		throw(SQL, name, SQLSTATE(45000) "Internal error, columns not sorted");
 	}
 
-	cmp = ATOMcompare(bi.type);
+	eq = ATOMequal(bi.type);
 	cur = BUNtail(bi, 0);
 	r = COLnew(b->hseqbase, TYPE_int, BATcount(b), TRANSIENT);
 	if (r == NULL) {
@@ -3960,12 +3955,12 @@ do_sql_rank(bat *rid, const bat *bid, int nrank, int dense, const char *name)
 	} else {
 		BATloop(b, p, q) {
 			n = BUNtail(bi, p);
-			if ((c = cmp(n, cur)) != 0)
+			if (!eq(n, cur))
 				rank = nrank;
 			cur = n;
 			if (BUNappend(r, &rank, false) != GDK_SUCCEED)
 				goto bailout;
-			nrank += !dense || c;
+			nrank += !dense;
 		}
 	}
 	bat_iterator_end(&bi);

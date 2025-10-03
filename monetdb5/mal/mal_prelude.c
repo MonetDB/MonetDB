@@ -138,6 +138,8 @@ addAtom(mel_atom *atoms)
 			BATatoms[i].atomCmp = atoms->cmp;
 			BATatoms[i].linear = true;
 		}
+		if (atoms->equal)
+			BATatoms[i].atomEqual = atoms->equal;
 		if (atoms->fromstr)
 			BATatoms[i].atomFromStr = atoms->fromstr;
 		if (atoms->tostr)

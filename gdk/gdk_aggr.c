@@ -3422,7 +3422,7 @@ BATgroupcount(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils)
 	BAT *bn = NULL;
 	int t;
 	const void *nil;
-	int (*atomcmp)(const void *, const void *);
+	bool (*atomeq)(const void *, const void *);
 	struct canditer ci;
 	const char *err;
 	lng t0 = 0;
@@ -3480,7 +3480,7 @@ BATgroupcount(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils)
 	} else {
 		t = b->ttype;
 		nil = ATOMnilptr(t);
-		atomcmp = ATOMcompare(t);
+		atomeq = ATOMequal(t);
 		t = ATOMbasetype(t);
 
 		bi = bat_iterator(b);
@@ -3518,7 +3518,7 @@ BATgroupcount(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils)
 						gid = gids[i] - min;
 					else
 						gid = (oid) i;
-					if ((*atomcmp)(BUNtail(bi, i), nil) != 0) {
+					if (!(*atomeq)(BUNtail(bi, i), nil)) {
 						cnts[gid]++;
 					}
 				}
@@ -3598,6 +3598,7 @@ do_groupmin(oid *restrict oids, BATiter *bi, const oid *restrict gids, BUN ngrp,
 	BUN i, nils;
 	int t;
 	const void *nil;
+	bool (*atomeq)(const void *, const void *);
 	int (*atomcmp)(const void *, const void *);
 
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
@@ -3610,6 +3611,7 @@ do_groupmin(oid *restrict oids, BATiter *bi, const oid *restrict gids, BUN ngrp,
 
 	t = bi->b->ttype;
 	nil = ATOMnilptr(t);
+	atomeq = ATOMequal(t);
 	atomcmp = ATOMcompare(t);
 	t = ATOMbasetype(t);
 	oid hseq = bi->b->hseqbase;
@@ -3670,7 +3672,7 @@ do_groupmin(oid *restrict oids, BATiter *bi, const oid *restrict gids, BUN ngrp,
 			TIMEOUT_LOOP(ci->ncand, qry_ctx) {
 				i = canditer_next(ci) - hseq;
 				if (!skip_nils ||
-				    (*atomcmp)(BUNtail(*bi, i), nil) != 0) {
+				    !(*atomeq)(BUNtail(*bi, i), nil)) {
 					oids[gid] = i + hseq;
 					nils--;
 				}
@@ -3684,15 +3686,14 @@ do_groupmin(oid *restrict oids, BATiter *bi, const oid *restrict gids, BUN ngrp,
 					const void *v = BUNtail(*bi, i);
 					if (gids)
 						gid = gids[i] - min;
-					if (!skip_nils ||
-					    (*atomcmp)(v, nil) != 0) {
+					if (!skip_nils || !(*atomeq)(v, nil)) {
 						if (is_oid_nil(oids[gid])) {
 							oids[gid] = i + hseq;
 							nils--;
 						} else if (t != TYPE_void) {
 							const void *g = BUNtail(*bi, (BUN) (oids[gid] - hseq));
-							if ((*atomcmp)(g, nil) != 0 &&
-							    ((*atomcmp)(v, nil) == 0 ||
+							if (!(*atomeq)(g, nil) &&
+							    ((*atomeq)(v, nil) ||
 							     LT((*atomcmp)(v, g), 0)))
 								oids[gid] = i + hseq;
 						}
@@ -3721,6 +3722,7 @@ do_groupmax(oid *restrict oids, BATiter *bi, const oid *restrict gids, BUN ngrp,
 	int t;
 	const void *nil;
 	int (*atomcmp)(const void *, const void *);
+	bool (*atomeq)(const void *, const void *);
 
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 
@@ -3733,6 +3735,7 @@ do_groupmax(oid *restrict oids, BATiter *bi, const oid *restrict gids, BUN ngrp,
 	t = bi->b->ttype;
 	nil = ATOMnilptr(t);
 	atomcmp = ATOMcompare(t);
+	atomeq = ATOMequal(t);
 	t = ATOMbasetype(t);
 	oid hseq = bi->b->hseqbase;
 
@@ -3791,7 +3794,7 @@ do_groupmax(oid *restrict oids, BATiter *bi, const oid *restrict gids, BUN ngrp,
 			TIMEOUT_LOOP(ci->ncand, qry_ctx) {
 				i = canditer_next(ci) - hseq;
 				if (!skip_nils ||
-				    (*atomcmp)(BUNtail(*bi, i), nil) != 0) {
+				    !(*atomeq)(BUNtail(*bi, i), nil)) {
 					oids[gid] = i + hseq;
 					nils--;
 				}
@@ -3805,16 +3808,15 @@ do_groupmax(oid *restrict oids, BATiter *bi, const oid *restrict gids, BUN ngrp,
 					const void *v = BUNtail(*bi, i);
 					if (gids)
 						gid = gids[i] - min;
-					if (!skip_nils ||
-					    (*atomcmp)(v, nil) != 0) {
+					if (!skip_nils || !(*atomeq)(v, nil)) {
 						if (is_oid_nil(oids[gid])) {
 							oids[gid] = i + hseq;
 							nils--;
 						} else {
 							const void *g = BUNtail(*bi, (BUN) (oids[gid] - hseq));
 							if (t == TYPE_void ||
-							    ((*atomcmp)(g, nil) != 0 &&
-							     ((*atomcmp)(v, nil) == 0 ||
+							    (!(*atomeq)(g, nil) &&
+							     ((*atomeq)(v, nil) ||
 							      GT((*atomcmp)(v, g), 0))))
 								oids[gid] = i + hseq;
 						}
@@ -3940,7 +3942,7 @@ BATmin_skipnil(BAT *b, void *aggr, bit skipnil, bool inout)
 
 		if (BATordered(b)) {
 			if (skipnil && !bi.nonil) {
-				pos = binsearch(NULL, 0, bi.type, bi.base,
+				pos = binsearch(NULL, bi.type, bi.base,
 						bi.vh ? bi.vh->base : NULL,
 						bi.width, 0, bi.count,
 						ATOMnilptr(bi.type), 1, 1);
@@ -3953,7 +3955,7 @@ BATmin_skipnil(BAT *b, void *aggr, bit skipnil, bool inout)
 			}
 		} else if (BATordered_rev(b)) {
 			if (skipnil && !bi.nonil) {
-				pos = binsearch(NULL, 0, bi.type, bi.base,
+				pos = binsearch(NULL, bi.type, bi.base,
 						bi.vh ? bi.vh->base : NULL,
 						bi.width, 0, bi.count,
 						ATOMnilptr(bi.type), -1, 0);
@@ -3993,7 +3995,7 @@ BATmin_skipnil(BAT *b, void *aggr, bit skipnil, bool inout)
 				BUN r;
 				if (skipnil && !bi.nonil) {
 					MT_thread_setalgorithm(usepoidx ? "binsearch on parent oidx" : "binsearch on oidx");
-					r = binsearch(ords, 0, bi.type, bi.base,
+					r = binsearch(ords, bi.type, bi.base,
 						      bi.vh ? bi.vh->base : NULL,
 						      bi.width, 0, bi.count,
 						      ATOMnilptr(bi.type), 1, 1);
@@ -4103,14 +4105,14 @@ BATmax_skipnil(BAT *b, void *aggr, bit skipnil, bool inout)
 		if (BATordered(b)) {
 			pos = bi.count - 1 + b->hseqbase;
 			if (skipnil && !bi.nonil &&
-			    ATOMcmp(bi.type, BUNtail(bi, bi.count - 1),
-				    ATOMnilptr(bi.type)) == 0)
+			    ATOMeq(bi.type, BUNtail(bi, bi.count - 1),
+				   ATOMnilptr(bi.type)))
 				pos = oid_nil; /* no non-nil values */
 		} else if (BATordered_rev(b)) {
 			pos = b->hseqbase;
 			if (skipnil && !bi.nonil &&
-			    ATOMcmp(bi.type, BUNtail(bi, 0),
-				    ATOMnilptr(bi.type)) == 0)
+			    ATOMeq(bi.type, BUNtail(bi, 0),
+				   ATOMnilptr(bi.type)))
 				pos = oid_nil; /* no non-nil values */
 		} else {
 			if (BATcheckorderidx(b)) {
@@ -4147,7 +4149,7 @@ BATmax_skipnil(BAT *b, void *aggr, bit skipnil, bool inout)
 
 					res = BUNtail(bi, z - b->hseqbase);
 
-					if (ATOMcmp(bi.type, res, ATOMnilptr(bi.type)) == 0)
+					if (ATOMeq(bi.type, res, ATOMnilptr(bi.type)))
 						pos = z;
 				}
 				HEAPdecref(oidxh, false);
@@ -4207,10 +4209,10 @@ BATmax(BAT *b, void *aggr)
 /* quantiles/median */
 
 #if SIZEOF_OID == SIZEOF_INT
-#define binsearch_oid(indir, offset, vals, lo, hi, v, ordering, last) binsearch_int(indir, offset, (const int *) vals, lo, hi, (int) (v), ordering, last)
+#define binsearch_oid(indir, vals, lo, hi, v, ordering, last) binsearch_int(indir, (const int *) vals, lo, hi, (int) (v), ordering, last)
 #endif
 #if SIZEOF_OID == SIZEOF_LNG
-#define binsearch_oid(indir, offset, vals, lo, hi, v, ordering, last) binsearch_lng(indir, offset, (const lng *) vals, lo, hi, (lng) (v), ordering, last)
+#define binsearch_oid(indir, vals, lo, hi, v, ordering, last) binsearch_lng(indir, (const lng *) vals, lo, hi, (lng) (v), ordering, last)
 #endif
 
 #define DO_QUANTILE_AVG(TPE)						\
@@ -4250,7 +4252,7 @@ doBATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 	const void *nil = ATOMnilptr(tp);
 	const void *dnil = nil;
 	dbl val;		/* only used for average */
-	int (*atomcmp)(const void *, const void *) = ATOMcompare(tp);
+	bool (*atomeq)(const void *, const void *) = ATOMequal(tp);
 	const char *err;
 	lng t0 = 0;
 
@@ -4369,10 +4371,10 @@ doBATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 			prev = grps[r];
 			/* search for end of current group (grps is
 			 * sorted so we can use binary search) */
-			p = binsearch_oid(NULL, 0, grps, r, q - 1, prev, 1, 1);
+			p = binsearch_oid(NULL, grps, r, q - 1, prev, 1, 1);
 			if (skip_nils && !bi.nonil) {
 				/* within group, locate start of non-nils */
-				r = binsearch(NULL, 0, tp, bi.base,
+				r = binsearch(NULL, tp, bi.base,
 					      bi.vh ? bi.vh->base : NULL,
 					      bi.width, r, p, nil,
 					      1, 1);
@@ -4420,7 +4422,7 @@ doBATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 				assert(qindex >= r && qindex <  p);
 				v = BUNtail(bi, qindex);
 				if (!skip_nils && !bi.nonil)
-					nils += (*atomcmp)(v, dnil) == 0;
+					nils += (*atomeq)(v, dnil);
 			}
 			while (min < prev) {
 				if (bunfastapp_nocheck(bn, dnil) != GDK_SUCCEED)
@@ -4492,7 +4494,7 @@ doBATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 		bi = bat_iterator(b);
 
 		if (skip_nils && !bi.nonil)
-			r = binsearch(ords, 0, tp, bi.base,
+			r = binsearch(ords, tp, bi.base,
 				      bi.vh ? bi.vh->base : NULL,
 				      bi.width, 0, p,
 				      nil, 1, 1);
@@ -4545,7 +4547,7 @@ doBATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 			else
 				index = index + t1->tseqbase;
 			v = BUNtail(bi, index);
-			nils += (*atomcmp)(v, dnil) == 0;
+			nils += (*atomeq)(v, dnil);
 		}
 		if (oidxh != NULL)
 			HEAPdecref(oidxh, false);

@@ -27,6 +27,7 @@
 #include "mal_authorize.h"
 #include "mcrypt.h"
 #include "sql_execute.h"
+#include "opt_pipes.h"
 
 static inline sql_table*
 getUsersTbl(mvc *m)
@@ -321,6 +322,11 @@ monet5_create_user(ptr _mvc, str user, str passwd, bool enc, str fullname, sqlid
 
 	if (!optimizer)
 		optimizer = default_optimizer;
+	if (!isOptimizerPipe(optimizer)) {
+		GDKfree(schema_buf);
+		throw(MAL, "sql.create_user", SQLSTATE(42000) "Optimizer pipe %s unknown", optimizer);
+	}
+
 
 	if (!enc) {
 		if (!(pwd = mcrypt_BackendSum(passwd, strlen(passwd)))) {

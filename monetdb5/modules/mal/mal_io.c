@@ -301,7 +301,7 @@ IOprintf_(str *res, const char *format, ...)
 			len = 1 + (cur - paramseen);
 			memcpy(meta, paramseen, len);
 			meta[len] = 0;
-			if (ATOMcmp(type, ATOMnilptr(type), p) == 0) {
+			if (ATOMeq(type, ATOMnilptr(type), p)) {
 				/* value is nil; attempt to print formatted 'nil'
 				   without generating %ls etc. */
 				char *ctrg = meta;

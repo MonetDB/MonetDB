@@ -1,0 +1,6 @@
+statement ok
+CREATE TABLE t1(c0 boolean)
+
+query I
+SELECT * FROM t1 WHERE (((SELECT listagg('1') WHERE t1.c0)))
+----

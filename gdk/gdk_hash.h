@@ -266,7 +266,7 @@ mix_inet6(const inet6 *u)
 	for (hb = HASHget(h, HASHprobe(h, v));			\
 	     hb != BUN_NONE;					\
 	     hb = HASHgetlink(h, hb))				\
-		if (ATOMcmp(h->type, v, BUNtail(bi, hb)) == 0)
+		if (ATOMeq(h->type, v, BUNtail(bi, hb)))
 #define HASHloop_str(bi, h, hb, v)				\
 	for (hb = HASHget(h, HASHbucket(h, strHash(v)));	\
 	     hb != BUN_NONE;					\
@@ -277,12 +277,12 @@ mix_inet6(const inet6 *u)
 	for (hb = HASHget(h, HASHprobe(h, v));			\
 	     hb != BUN_NONE;					\
 	     hb = HASHgetlink(h, hb))				\
-		if (ATOMcmp(h->type, v, BUNtloc(bi, hb)) == 0)
+		if (ATOMeq(h->type, v, BUNtloc(bi, hb)))
 #define HASHloopvar(bi, h, hb, v)				\
 	for (hb = HASHget(h, HASHprobe(h, v));			\
 	     hb != BUN_NONE;					\
 	     hb = HASHgetlink(h, hb))				\
-		if (ATOMcmp(h->type, v, BUNtvar(bi, hb)) == 0)
+		if (ATOMeq(h->type, v, BUNtvar(bi, hb)))
 
 #define HASHloop_TYPE(bi, h, hb, v, TYPE)				\
 	for (hb = HASHget(h, hash_##TYPE(h, v));			\

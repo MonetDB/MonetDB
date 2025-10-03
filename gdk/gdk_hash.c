@@ -875,7 +875,7 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 			starthash(inet6);
 			break;
 		default: {
-			int (*atomcmp)(const void *, const void *) = ATOMcompare(h->type);
+			bool (*atomeq)(const void *, const void *) = ATOMequal(h->type);
 			TIMEOUT_LOOP(p, qry_ctx) {
 				const void *restrict v = BUNtail(bi, o - b->hseqbase);
 				c = hash_any(h, v);
@@ -889,8 +889,8 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 					for (hb = hget;
 					     hb != BUN_NONE;
 					     hb = HASHgetlink(h, hb)) {
-						if (atomcmp(v,
-							    BUNtail(bi, hb)) == 0)
+						if (atomeq(v,
+							   BUNtail(bi, hb)))
 							break;
 					}
 					h->nunique += hb == BUN_NONE;
@@ -958,7 +958,7 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 		finishhash(inet6);
 		break;
 	default: {
-		int (*atomcmp)(const void *, const void *) = ATOMcompare(h->type);
+		bool (*atomeq)(const void *, const void *) = ATOMequal(h->type);
 		TIMEOUT_LOOP(ci->ncand - p, qry_ctx) {
 			const void *restrict v = BUNtail(bi, o - b->hseqbase);
 			c = hash_any(h, v);
@@ -968,7 +968,7 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 				for (hb = hget;
 				     hb != BUN_NONE;
 				     hb = HASHgetlink(h, hb)) {
-					if (atomcmp(v, BUNtail(bi, hb)) == 0)
+					if (atomeq(v, BUNtail(bi, hb)))
 						break;
 				}
 				h->nunique += hb == BUN_NONE;
@@ -1146,11 +1146,11 @@ HASHappend_locked(BAT *b, BUN i, const void *v)
 	BUN hb = HASHget(h, c);
 	BUN hb2;
 	BATiter bi = bat_iterator_nolock(b);
-	int (*atomcmp)(const void *, const void *) = ATOMcompare(h->type);
+	bool (*atomeq)(const void *, const void *) = ATOMequal(h->type);
 	for (hb2 = hb;
 	     hb2 != BUN_NONE;
 	     hb2 = HASHgetlink(h, hb2)) {
-		if (atomcmp(v, BUNtail(bi, hb2)) == 0)
+		if (atomeq(v, BUNtail(bi, hb2)))
 			break;
 	}
 	h->nheads += hb == BUN_NONE;
@@ -1202,7 +1202,7 @@ HASHinsert_locked(BATiter *bi, BUN p, const void *v)
 	}
 	BUN c = HASHprobe(h, v);
 	BUN hb = HASHget(h, c);
-	int (*atomcmp)(const void *, const void *) = ATOMcompare(h->type);
+	bool (*atomeq)(const void *, const void *) = ATOMequal(h->type);
 	if (hb == BUN_NONE || hb < p) {
 		/* bucket is empty, or bucket is used by lower numbered
 		 * position */
@@ -1214,7 +1214,7 @@ HASHinsert_locked(BATiter *bi, BUN p, const void *v)
 			h->nheads++;
 		} else {
 			do {
-				if (atomcmp(v, BUNtail(*bi, hb)) == 0) {
+				if (atomeq(v, BUNtail(*bi, hb))) {
 					/* found another row with the
 					 * same value, so don't
 					 * increment nunique */
@@ -1230,14 +1230,14 @@ HASHinsert_locked(BATiter *bi, BUN p, const void *v)
 	bool seen = false;
 	for (;;) {
 		if (!seen)
-			seen = atomcmp(v, BUNtail(*bi, hb)) == 0;
+			seen = atomeq(v, BUNtail(*bi, hb));
 		BUN hb2 = HASHgetlink(h, hb);
 		if (hb2 == BUN_NONE || hb2 < p) {
 			HASHputlink(h, p, hb2);
 			HASHputlink(h, hb, p);
 			h->heaplink.dirty = true;
 			while (!seen && hb2 != BUN_NONE) {
-				seen = atomcmp(v, BUNtail(*bi, hb2)) == 0;
+				seen = atomeq(v, BUNtail(*bi, hb2));
 				hb2 = HASHgetlink(h, hb2);
 			}
 			if (!seen)
@@ -1289,7 +1289,7 @@ HASHdelete_locked(BATiter *bi, BUN p, const void *v)
 	}
 	BUN c = HASHprobe(h, v);
 	BUN hb = HASHget(h, c);
-	int (*atomcmp)(const void *, const void *) = ATOMcompare(h->type);
+	bool (*atomeq)(const void *, const void *) = ATOMequal(h->type);
 	if (hb == p) {
 		BUN hb2 = HASHgetlink(h, p);
 		HASHput(h, c, hb2);
@@ -1300,7 +1300,7 @@ HASHdelete_locked(BATiter *bi, BUN p, const void *v)
 			h->nheads--;
 		} else {
 			do {
-				if (atomcmp(v, BUNtail(*bi, hb2)) == 0) {
+				if (atomeq(v, BUNtail(*bi, hb2))) {
 					/* found another row with the
 					 * same value, so don't
 					 * decrement nunique below */
@@ -1318,7 +1318,7 @@ HASHdelete_locked(BATiter *bi, BUN p, const void *v)
 	BUN links = 0;
 	for (;;) {
 		if (!seen)
-			seen = atomcmp(v, BUNtail(*bi, hb)) == 0;
+			seen = atomeq(v, BUNtail(*bi, hb));
 		BUN hb2 = HASHgetlink(h, hb);
 		assert(hb2 != BUN_NONE );
 		assert(hb2 < hb);
@@ -1326,7 +1326,7 @@ HASHdelete_locked(BATiter *bi, BUN p, const void *v)
 			for (hb2 = HASHgetlink(h, hb2);
 			     !seen && hb2 != BUN_NONE;
 			     hb2 = HASHgetlink(h, hb2))
-				seen = atomcmp(v, BUNtail(*bi, hb2)) == 0;
+				seen = atomeq(v, BUNtail(*bi, hb2));
 			break;
 		}
 		hb = hb2;

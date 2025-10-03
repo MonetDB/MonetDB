@@ -217,6 +217,7 @@ BATfirstn_unique(BATiter *bi, BAT *s, BUN n, bool asc, bool nilslast, oid *lastp
 	struct canditer ci;
 	int tpe = bi->type;
 	int (*cmp)(const void *, const void *);
+	bool (*eq)(const void *, const void *);
 	const void *nil;
 	/* variables used in heapify/siftdown macros */
 	oid item;
@@ -363,6 +364,7 @@ BATfirstn_unique(BATiter *bi, BAT *s, BUN n, bool asc, bool nilslast, oid *lastp
 	BATsetcount(bn, n);
 	oids = (oid *) Tloc(bn, 0);
 	cmp = ATOMcompare(tpe);
+	eq = ATOMequal(tpe);
 	nil = ATOMnilptr(tpe);
 	/* if base type has same comparison function as type itself, we
 	 * can use the base type */
@@ -420,8 +422,8 @@ BATfirstn_unique(BATiter *bi, BAT *s, BUN n, bool asc, bool nilslast, oid *lastp
 				heapify(nLTany, SWAP1);
 				TIMEOUT_LOOP(ci.ncand - n, qry_ctx) {
 					i = canditer_next(&ci);
-					if (cmp(BUNtail(*bi, i - hseq), nil) != 0
-					    && (cmp(BUNtail(*bi, oids[0] - hseq), nil) == 0
+					if (!eq(BUNtail(*bi, i - hseq), nil)
+					    && (eq(BUNtail(*bi, oids[0] - hseq), nil)
 						|| cmp(BUNtail(*bi, i - hseq),
 						       BUNtail(*bi, oids[0] - hseq)) < 0)) {
 						oids[0] = i;
@@ -535,8 +537,8 @@ BATfirstn_unique(BATiter *bi, BAT *s, BUN n, bool asc, bool nilslast, oid *lastp
 				heapify(nGTany, SWAP1);
 				TIMEOUT_LOOP(ci.ncand - n, qry_ctx) {
 					i = canditer_next(&ci);
-					if (cmp(BUNtail(*bi, oids[0] - hseq), nil) != 0
-					    && (cmp(BUNtail(*bi, i - hseq), nil) == 0
+					if (!eq(BUNtail(*bi, oids[0] - hseq), nil)
+					    && (eq(BUNtail(*bi, i - hseq), nil)
 						|| cmp(BUNtail(*bi, i - hseq),
 						       BUNtail(*bi, oids[0] - hseq)) > 0)) {
 						oids[0] = i;
@@ -723,6 +725,7 @@ BATfirstn_unique_with_groups(BATiter *bi, BAT *s, BAT *g, BUN n, bool asc, bool 
 	struct canditer ci;
 	int tpe = bi->type;
 	int (*cmp)(const void *, const void *);
+	bool (*eq)(const void *, const void *);
 	const void *nil;
 	/* variables used in heapify/siftdown macros */
 	oid item;
@@ -779,6 +782,7 @@ BATfirstn_unique_with_groups(BATiter *bi, BAT *s, BAT *g, BUN n, bool asc, bool 
 	}
 
 	cmp = ATOMcompare(tpe);
+	eq = ATOMequal(tpe);
 	nil = ATOMnilptr(tpe);
 	/* if base type has same comparison function as type itself, we
 	 * can use the base type */
@@ -852,8 +856,8 @@ BATfirstn_unique_with_groups(BATiter *bi, BAT *s, BAT *g, BUN n, bool asc, bool 
 					i = canditer_next(&ci);
 					if (gv[j] < goids[0]
 					    || (gv[j] == goids[0]
-						&& cmp(BUNtail(*bi, i - hseq), nil) != 0
-						&& (cmp(BUNtail(*bi, oids[0] - hseq), nil) == 0
+						&& !eq(BUNtail(*bi, i - hseq), nil)
+						&& (eq(BUNtail(*bi, oids[0] - hseq), nil)
 						    || cmp(BUNtail(*bi, i - hseq),
 							   BUNtail(*bi, oids[0] - hseq)) < 0))) {
 						oids[0] = i;
@@ -978,8 +982,8 @@ BATfirstn_unique_with_groups(BATiter *bi, BAT *s, BAT *g, BUN n, bool asc, bool 
 				i = canditer_next(&ci);
 				if (gv[j] < goids[0]
 				    || (gv[j] == goids[0]
-					&& cmp(BUNtail(*bi, oids[0] - hseq), nil) != 0
-					&& (cmp(BUNtail(*bi, i - hseq), nil) == 0
+					&& !eq(BUNtail(*bi, oids[0] - hseq), nil)
+					&& (eq(BUNtail(*bi, i - hseq), nil)
 					    || cmp(BUNtail(*bi, i - hseq),
 						   BUNtail(*bi, oids[0] - hseq)) > 0))) {
 					oids[0] = i;

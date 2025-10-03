@@ -108,7 +108,7 @@ UTF8_strtail(const char *s, int pos)
 }
 
 /* copy n Unicode codepoints from s to dst, return pointer to new end */
-static inline str
+static inline char *
 UTF8_strncpy(char *restrict dst, const char *restrict s, int n)
 {
 	UTF8_assert(s);
@@ -152,21 +152,22 @@ UTF8_strlen(const char *s)
 		 * for correctly encoded UTF-8 */
 		pos += (*s++ & 0xC0) != 0x80;
 	}
-	assert(pos < INT_MAX);
+	assert(pos <= (size_t) INT_MAX);
 	return (int) pos;
 }
 
-/* return (int) strlen(s); s is not nil */
+/* return (int) strlen(s); s is not nil; returns -1 for strings that are
+ * too long (longer than INT_MAX bytes) */
 int
 str_strlen(const char *s)
-{								/* This function assumes s is never nil */
-	UTF8_assert(s);
-	assert(!strNil(s));
-
-	return (int) strlen(s);
+{
+	size_t len = strlen(s);
+	if (len > (size_t) INT_MAX)
+		return -1;
+	return (int) len;
 }
 
-/* return the display width of s */
+/* return the display width of s or INT_MAX if too large */
 int
 UTF8_strwidth(const char *S)
 {
@@ -174,7 +175,7 @@ UTF8_strwidth(const char *S)
 		return int_nil;
 
 	const uint8_t *s = (const uint8_t *) S;
-	int len = 0;
+	unsigned len = 0;
 
 	for (uint32_t state = 0, codepoint = 0; *s; s++) {
 		switch (decode(&state, &codepoint, (uint8_t) *s)) {
@@ -184,6 +185,8 @@ UTF8_strwidth(const char *S)
 				len += n;
 			else
 				len++;			/* assume width 1 if unprintable */
+			if (len >= (unsigned) INT_MAX)
+				return INT_MAX;
 			break;
 		}
 		default:
@@ -192,7 +195,7 @@ UTF8_strwidth(const char *S)
 			assert(0);
 		}
 	}
-	return len;
+	return (int) len;
 }
 
 /*
@@ -286,8 +289,14 @@ static str
 STRBytes(int *res, const char *const *arg1)
 {
 	const char *s = *arg1;
-
-	*res = strNil(s) ? int_nil : str_strlen(s);
+	if (strNil(s)) {
+		*res = int_nil;
+	} else {
+		size_t len = strlen(s);
+		if (len > (size_t) INT_MAX)
+			throw(MAL, "str.bytes", SQLSTATE(22003) "string too long to count bytes");
+		*res = (int) len;
+	}
 	return MAL_SUCCEED;
 }
 
@@ -351,7 +360,7 @@ str_Sub_String(str *buf, size_t *buflen, const char *s, int off, int l)
 		}
 	}
 	/* here, off >= 0 */
-	if (l < 0) {
+	if (l <= 0) {
 		strcpy(*buf, "");
 		return MAL_SUCCEED;
 	}
@@ -447,11 +456,18 @@ str_wchr_at(int *res, const char *s, int at)
 	}
 	uint32_t state = 0, codepoint;
 	while (*s) {
-		if (decode(&state, &codepoint, (uint8_t) *s) == UTF8_ACCEPT) {
+		switch (decode(&state, &codepoint, (uint8_t) *s)) {
+		case UTF8_ACCEPT:
 			*res = codepoint;
 			return MAL_SUCCEED;
+		case UTF8_REJECT:
+			break;
+		default:
+			s++;
+			continue;
 		}
-		s++;
+		/* we only get here in case of UTF8_REJECT */
+		break;
 	}
 	throw(MAL, "str.unicodeAt", SQLSTATE(42000) "Illegal Unicode code point");
 }
@@ -507,23 +523,24 @@ STRcasefold(str *res, const char *const *arg1)
 	return doStrConvert(res, *arg1, GDKcasefold);
 }
 
-/* returns whether arg1 starts with arg2 */
+/* returns 0 if arg1 starts with arg2 */
 int
-str_is_prefix(const char *s, const char *prefix, int plen)
+str_is_prefix(const char *s, const char *prefix, size_t plen)
 {
 	return strncmp(s, prefix, plen);
 }
 
 int
-str_is_iprefix(const char *s, const char *prefix, int plen)
+str_is_iprefix(const char *s, const char *prefix, size_t plen)
 {
 	return GDKstrncasecmp(s, prefix, SIZE_MAX, plen);
 }
 
+/* returns 0 if s ends with suffix */
 int
-str_is_suffix(const char *s, const char *suffix, int sul)
+str_is_suffix(const char *s, const char *suffix, size_t sul)
 {
-	int sl = str_strlen(s);
+	size_t sl = strlen(s);
 
 	if (sl < sul)
 		return -1;
@@ -533,7 +550,7 @@ str_is_suffix(const char *s, const char *suffix, int sul)
 
 /* case insensitive endswith check */
 int
-str_is_isuffix(const char *s, const char *suffix, int sul)
+str_is_isuffix(const char *s, const char *suffix, size_t sul)
 {
 	const char *e = s + strlen(s);
 	const char *sf;
@@ -542,6 +559,8 @@ str_is_isuffix(const char *s, const char *suffix, int sul)
 	/* note that the uppercase and lowercase forms of a character aren't
 	 * necessarily the same length in their UTF-8 encodings */
 	for (sf = suffix; *sf && e > s; sf++) {
+		/* starting at the end of s, for each codepoint in suffix, go
+		 * back one codepoint in s */
 		if ((*sf & 0xC0) != 0x80) {
 			while ((*--e & 0xC0) == 0x80)
 				;
@@ -552,15 +571,16 @@ str_is_isuffix(const char *s, const char *suffix, int sul)
 	return *sf != 0 || GDKstrcasecmp(e, suffix) != 0;
 }
 
+/* returns 0 if h contains n (counterintuitive!) */
 int
-str_contains(const char *h, const char *n, int nlen)
+str_contains(const char *h, const char *n, size_t nlen)
 {
 	(void) nlen;
 	return strstr(h, n) == NULL;
 }
 
 int
-str_icontains(const char *h, const char *n, int nlen)
+str_icontains(const char *h, const char *n, size_t nlen)
 {
 	(void) nlen;
 	return GDKstrcasestr(h, n) == NULL;
@@ -580,7 +600,7 @@ STRstartswith(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (strNil(s1) || strNil(s2)) {
 		*r = bit_nil;
 	} else {
-		int s2_len = str_strlen(s2);
+		size_t s2_len = strlen(s2);
 		*r = icase ?
 			str_is_iprefix(s1, s2, s2_len) == 0 :
 			str_is_prefix(s1, s2, s2_len) == 0;
@@ -602,7 +622,7 @@ STRendswith(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (strNil(s1) || strNil(s2)) {
 		*r = bit_nil;
 	} else {
-		int s2_len = str_strlen(s2);
+		size_t s2_len = strlen(s2);
 		*r = icase ?
 			str_is_isuffix(s1, s2, s2_len) == 0 :
 			str_is_suffix(s1, s2, s2_len) == 0;
@@ -625,7 +645,7 @@ STRcontains(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (strNil(s1) || strNil(s2)) {
 		*r = bit_nil;
 	} else {
-		int s2_len = str_strlen(s2);
+		size_t s2_len = strlen(s2);
 		*r = icase ?
 			str_icontains(s1, s2, s2_len) == 0 :
 			str_contains(s1, s2, s2_len) == 0;
@@ -659,7 +679,7 @@ STRstr_search(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) cntxt;
 	(void) mb;
-	bit *res = getArgReference(stk, pci, 0);
+	int *res = getArgReference_int(stk, pci, 0);
 	const char *haystack = *getArgReference_str(stk, pci, 1);
 	const char *needle = *getArgReference_str(stk, pci, 2);
 	bit icase = pci->argc == 4 && *getArgReference_bit(stk, pci, 3);
@@ -680,12 +700,12 @@ str_reverse_str_search(const char *haystack, const char *needle)
 	int nulen = UTF8_strlen(needle);
 	size_t nlen = strlen(needle);
 
-	for (int pos = str_strlen(haystack) - 1; pos >= 0; pos--) {
-		if ((haystack[pos] & 0xC0) != 0x80) {
+	for (size_t pos = strlen(haystack); pos > 0; pos--) {
+		if ((haystack[pos - 1] & 0xC0) != 0x80) {
 			if (nulen > 0)
 				nulen--;
-			else if (strncmp(haystack + pos, needle, nlen) == 0)
-				return pos;
+			else if (strncmp(haystack + pos - 1, needle, nlen) == 0)
+				return UTF8_strpos(haystack, haystack + pos - 1);
 		}
 	}
 	return -1;
@@ -697,12 +717,12 @@ str_reverse_str_isearch(const char *haystack, const char *needle)
 	int nulen = UTF8_strlen(needle);
 	size_t nlen = strlen(needle);
 
-	for (int pos = str_strlen(haystack) - 1; pos >= 0; pos--) {
-		if ((haystack[pos] & 0xC0) != 0x80) {
+	for (size_t pos = strlen(haystack); pos > 0; pos--) {
+		if ((haystack[pos - 1] & 0xC0) != 0x80) {
 			if (nulen > 0)
 				nulen--;
-			else if (GDKstrncasecmp(haystack + pos, needle, SIZE_MAX, nlen) == 0)
-				return pos;
+			else if (GDKstrncasecmp(haystack + pos - 1, needle, SIZE_MAX, nlen) == 0)
+				return UTF8_strpos(haystack, haystack + pos - 1);
 		}
 	}
 	return -1;
@@ -1739,17 +1759,28 @@ STRreplace(str *ret, const char *const *s1, const char *const *s2, const char *c
 str
 str_repeat(str *buf, size_t *buflen, const char *s, int c)
 {
-	size_t l = strlen(s), nextlen;
+	if (c < 0)
+		throw(MAL, "str.repeat", SQLSTATE(42000) "Repeat count cannot be negative");
+	if (c == 0) {
+		CHECK_STR_BUFFER_LENGTH(buf, buflen, 1, "str.repeat");
+		**buf = 0;
+		return MAL_SUCCEED;
+	}
+	size_t l = strlen(s);
+	if (
+#if SIZEOF_SIZE_T == SIZEOF_INT
+		(lng) l * c >= ((lng) 1 << 32) - 1 ||
+#endif
+		(lng) UTF8_strlen(s) * c > (lng) INT_MAX)
+		throw(MAL, "str.repeat", SQLSTATE(22003) "String is getting too long");
 
-	if (l >= INT_MAX)
-		throw(MAL, "str.repeat", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	nextlen = (size_t) c *l + 1;
+	size_t nextlen = (size_t) c * l + 1;
 
 	CHECK_STR_BUFFER_LENGTH(buf, buflen, nextlen, "str.repeat");
 	str t = *buf;
 	*t = 0;
-	for (int i = c; i > 0; i--, t += l)
-		strcpy(t, s);
+	while (c-- > 0)
+		t = stpcpy(t, s);
 	return MAL_SUCCEED;
 }
 
@@ -1850,12 +1881,12 @@ BBPreclaim_n(int nargs, ...)
 
 static str
 scan_loop_strselect(BAT *rl, BATiter *li, struct canditer *lci, const char *r,
-					int (*str_cmp)(const char *, const char *, int),
+					int (*str_cmp)(const char *, const char *, size_t),
 					bool anti, const char *fname, QryCtx *qry_ctx)
 {
 	oid l_base = li->b->hseqbase;
 	const char *l_vars = li->vh->base, *l_vals = li->base;
-	int r_len = str_strlen(r);
+	size_t r_len = strlen(r);
 
 	lng t0 = 0;
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
@@ -1883,7 +1914,7 @@ scan_loop_strselect(BAT *rl, BATiter *li, struct canditer *lci, const char *r,
 
 static str
 STRselect(MalStkPtr stk, InstrPtr pci, const str fname,
-		  int (*str_cmp)(const char *, const char *, int))
+		  int (*str_cmp)(const char *, const char *, size_t))
 {
 	str msg = MAL_SUCCEED;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
@@ -2091,7 +2122,7 @@ strbat_reverse(BAT *b)
 static str
 nested_loop_strjoin(BAT *rl, BAT *rr, BATiter *li, BATiter *ri,
 					struct canditer *lci, struct canditer *rci,
-					int (*str_cmp)(const char *, const char *, int),
+					int (*str_cmp)(const char *, const char *, size_t),
 					bool anti, const char *fname, QryCtx *qry_ctx)
 {
 	size_t new_cap;
@@ -2103,9 +2134,9 @@ nested_loop_strjoin(BAT *rl, BAT *rr, BATiter *li, BATiter *ri,
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	if (anti)
-		NESTED_LOOP(str_cmp(ls, rs, str_strlen(rs)) != 0);
+		NESTED_LOOP(str_cmp(ls, rs, strlen(rs)) != 0);
 	else
-		NESTED_LOOP(str_cmp(ls, rs, str_strlen(rs)) == 0);
+		NESTED_LOOP(str_cmp(ls, rs, strlen(rs)) == 0);
 
 	BATsetcount(rl, BATcount(rl));
 	if (rr) BATsetcount(rr, BATcount(rr));
@@ -2254,7 +2285,7 @@ init_bigram_idx(NGrams *ng, BATiter *bi, struct canditer *bci, QryCtx *qry_ctx)
 static str
 bigram_strjoin(BAT *rl, BAT *rr, BATiter *li, BATiter *ri,
 			   struct canditer *lci, struct canditer *rci,
-			   int (*str_cmp)(const char *, const char *, int),
+			   int (*str_cmp)(const char *, const char *, size_t),
 			   const char *fname, QryCtx *qry_ctx)
 {
 	str msg = MAL_SUCCEED;
@@ -2294,7 +2325,7 @@ bigram_strjoin(BAT *rl, BAT *rr, BATiter *li, BATiter *ri,
 			TIMEOUT_LOOP(lci->ncand, qry_ctx) {
 				oid ol = canditer_next(lci);
 				const char *ls = VALUE(l, ol - l_base);
-				if (!strNil(ls) && str_cmp(ls, rs, str_strlen(rs)) == 0) {
+				if (!strNil(ls) && str_cmp(ls, rs, strlen(rs)) == 0) {
 					APPEND(rl, ol);
 					if (rr) APPEND(rr, or);
 					if (BATcount(rl) == BATcapacity(rl)) {
@@ -2324,7 +2355,7 @@ bigram_strjoin(BAT *rl, BAT *rr, BATiter *li, BATiter *ri,
 					oid ol = rids[list];
 					if ((sigs[ol] & sig) == sig) {
 						const char *ls = VALUE(l, ol);
-						if (str_cmp(ls, rs, str_strlen(rs)) == 0) {
+						if (str_cmp(ls, rs, strlen(rs)) == 0) {
 							APPEND(rl, ol + l_base);
 							if (rr) APPEND(rr, or);
 							if (BATcount(rl) == BATcapacity(rl)) {
@@ -2344,7 +2375,7 @@ bigram_strjoin(BAT *rl, BAT *rr, BATiter *li, BATiter *ri,
 					oid ol = canditer_next(lci);
 					if ((sigs[ol - l_base] & sig) == sig) {
 						const char *ls = VALUE(l, ol - l_base);
-						if (str_cmp(ls, rs, str_strlen(rs)) == 0) {
+						if (str_cmp(ls, rs, strlen(rs)) == 0) {
 							APPEND(rl, ol);
 							if (rr) APPEND(rr, or);
 							if (BATcount(rl) == BATcapacity(rl)) {
@@ -2386,7 +2417,7 @@ bigram_strjoin(BAT *rl, BAT *rr, BATiter *li, BATiter *ri,
 static str
 sorted_strjoin(BAT **rl_ptr, BAT **rr_ptr, BATiter *li, BATiter *ri,
 			   struct canditer *lci, struct canditer *rci,
-			   int (*str_cmp)(const char *, const char *, int),
+			   int (*str_cmp)(const char *, const char *, size_t),
 			   const char *fname, QryCtx *qry_ctx)
 {
 	str msg = MAL_SUCCEED;
@@ -2467,7 +2498,7 @@ sorted_strjoin(BAT **rl_ptr, BAT **rr_ptr, BATiter *li, BATiter *ri,
 		for (canditer_setidx(&sorted_lci, ly), n = ly; n < sorted_lci.ncand; n++) {
 			ol = canditer_next(&sorted_lci);
 			const char *ls = VALUE(sorted_l, ol - sorted_l_base);
-			int cmp = str_cmp(ls, rs, str_strlen(rs));
+			int cmp = str_cmp(ls, rs, strlen(rs));
 			if (cmp < 0) {
 				ly++;
 				continue;
@@ -2563,7 +2594,7 @@ ignorecase(const bat IC, bool *icase, const str fname)
 
 static str
 STRjoin(MalStkPtr stk, InstrPtr pci, const str fname,
-		int (*str_cmp)(const char *, const char *, int))
+		int (*str_cmp)(const char *, const char *, size_t))
 {
 	str msg = MAL_SUCCEED;
 	int offset = pci->retc;

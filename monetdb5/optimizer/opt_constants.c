@@ -91,8 +91,8 @@ OPTconstantsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 					if (x->type == y->type && x->rowcnt == y->rowcnt
 						&& x->value.vtype == y->value.vtype
 						&& (x->value.vtype == TYPE_any
-						|| ATOMcmp(x->value.vtype, VALptr(&x->value),
-								   VALptr(&y->value)) == 0)) {
+						|| ATOMeq(x->value.vtype, VALptr(&x->value),
+								  VALptr(&y->value)))) {
 
 						/* reuse a constant */
 						alias[i] = index[k];

@@ -148,6 +148,25 @@ wkbCOMP(const void *L, const void *R)
 	return memcmp(l->data, r->data, len);
 }
 
+bool
+wkbEQ(const void *L, const void *R)
+{
+	const wkb *l = L, *r = R;
+
+	if (l->srid != r->srid)
+		return false;
+
+	int len = l->len;
+
+	if (len != r->len)
+		return false;
+
+	if (len == ~(int) 0)
+		return true;
+
+	return memcmp(l->data, r->data, len) == 0;
+}
+
 /* read wkb from log */
 void *
 wkbREAD(void *A, size_t *dstlen, stream *s, size_t cnt)
@@ -509,6 +528,17 @@ mbrCOMP(const void *L, const void *R)
 			res = (l->xmax < r->xmax) ? -1 : 1;
 	}
 	return res;
+}
+
+bool
+mbrEQ(const void *L, const void *R)
+{
+	const mbr *l = L, *r = R;
+	if (is_mbr_nil(l))
+		return is_mbr_nil(r);
+	if (is_mbr_nil(r))
+		return false;
+	return l->xmin == r->xmin && l->ymin == r->ymin && l->xmax == r->xmax && l->ymax == r->ymax;
 }
 
 /* read mbr from log */

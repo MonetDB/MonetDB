@@ -1036,7 +1036,7 @@ RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			int tpe = getBatType(type), trivial = tpe < TYPE_date
 					|| ATOMbasetype(tpe) == TYPE_str;
 			const void *nil = ATOMnilptr(tpe);
-			int (*atomcmp)(const void *, const void *) = ATOMcompare(tpe);
+			bool (*atomeq)(const void *, const void *) = ATOMequal(tpe);
 
 			bi = bat_iterator(b);
 			BATloop(b, p, q) {
@@ -1048,7 +1048,7 @@ RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					MT_lock_unset(&c->lock);
 					throw(MAL, "remote.put", GDK_EXCEPTION);
 				}
-				if (trivial || atomcmp(v, nil) == 0)
+				if (trivial || atomeq(v, nil))
 					mnstr_printf(sout, "%s\n", tailv);
 				else
 					mnstr_printf(sout, "\"%s\"\n", tailv);
@@ -1079,7 +1079,7 @@ RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		char *tpe;
 		char qbuf[512], *nbuf = qbuf;
 		const void *nil = ATOMnilptr(type), *p = value;
-		int (*atomcmp)(const void *, const void *) = ATOMcompare(type);
+		bool (*atomeq)(const void *, const void *) = ATOMequal(type);
 
 		if (ATOMextern(type))
 			p = *(ptr *) value;
@@ -1103,7 +1103,7 @@ RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			throw(MAL, "remote.put", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		if (type < TYPE_date || ATOMbasetype(type) == TYPE_str
-			|| atomcmp(p, nil) == 0)
+			|| atomeq(p, nil))
 			snprintf(nbuf, l, "%s := %s:%s;\n", ident, val, tpe);
 		else
 			snprintf(nbuf, l, "%s := \"%s\":%s;\n", ident, val, tpe);

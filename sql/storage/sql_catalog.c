@@ -458,10 +458,10 @@ sql_range_part_validate_and_insert(void *v1, void *v2, void *type)
 	if (newp->with_nills && pt->with_nills) /* only one partition at most has null values */
 		return pt;
 
-	pt_down_all = !ATOMcmp(tpe, nil, pt->part.range.minvalue);
-	pt_upper_all = !ATOMcmp(tpe, nil, pt->part.range.maxvalue);
-	newp_down_all = !ATOMcmp(tpe, nil, newp->part.range.minvalue);
-	newp_upper_all = !ATOMcmp(tpe, nil, newp->part.range.maxvalue);
+	pt_down_all = ATOMeq(tpe, nil, pt->part.range.minvalue);
+	pt_upper_all = ATOMeq(tpe, nil, pt->part.range.maxvalue);
+	newp_down_all = ATOMeq(tpe, nil, newp->part.range.minvalue);
+	newp_upper_all = ATOMeq(tpe, nil, newp->part.range.maxvalue);
 
 	/* if one partition just holds NULL values, then there's no conflict */
 	if ((newp_down_all && newp_upper_all && newp->with_nills) || (pt_down_all && pt_upper_all && pt->with_nills))
@@ -470,8 +470,8 @@ sql_range_part_validate_and_insert(void *v1, void *v2, void *type)
 	if ((pt_down_all && pt_upper_all && !pt->with_nills) || (newp_down_all && newp_upper_all && !newp->with_nills))
 		return pt;
 
-	pt_min_max_same = !ATOMcmp(tpe, pt->part.range.maxvalue, pt->part.range.minvalue);
-	newp_min_max_same = !ATOMcmp(tpe, newp->part.range.maxvalue, newp->part.range.minvalue);
+	pt_min_max_same = ATOMeq(tpe, pt->part.range.maxvalue, pt->part.range.minvalue);
+	newp_min_max_same = ATOMeq(tpe, newp->part.range.maxvalue, newp->part.range.minvalue);
 
 	if (pt_down_all) { /* from range min value until a value */
 		res1 = ATOMcmp(tpe, pt->part.range.maxvalue, newp->part.range.minvalue);

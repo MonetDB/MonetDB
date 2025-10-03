@@ -88,6 +88,64 @@ dblCmp(const dbl *l, const dbl *r)
 	return is_dbl_nil(*l) ? -!is_dbl_nil(*r) : is_dbl_nil(*r) ? 1 : (*l > *r) - (*l < *r);
 }
 
+static bool
+mskEq(const msk *l, const msk *r)
+{
+	return *l == *r;
+}
+
+static bool
+bteEq(const bte *l, const bte *r)
+{
+	return *l == *r;
+}
+
+static bool
+shtEq(const sht *l, const sht *r)
+{
+	return *l == *r;
+}
+
+static bool
+intEq(const int *l, const int *r)
+{
+	return *l == *r;
+}
+
+static bool
+fltEq(const flt *l, const flt *r)
+{
+	if (is_flt_nil(*l))
+		return is_flt_nil(*r);
+	if (is_flt_nil(*r))
+		return false;
+	return *l == *r;
+}
+
+static bool
+lngEq(const lng *l, const lng *r)
+{
+	return *l == *r;
+}
+
+static bool
+dblEq(const dbl *l, const dbl *r)
+{
+	if (is_dbl_nil(*l))
+		return is_dbl_nil(*r);
+	if (is_dbl_nil(*r))
+		return false;
+	return *l == *r;
+}
+
+#ifdef HAVE_HGE
+static bool
+hgeEq(const hge *l, const hge *r)
+{
+	return *l == *r;
+}
+#endif
+
 /*
  * @- inline hash routines
  * Return some positive integer derived from one atom value.
@@ -1220,6 +1278,13 @@ UUIDcompare(const void *L, const void *R)
 	return memcmp(l->u, r->u, UUID_SIZE);
 }
 
+static bool
+UUIDequal(const void *L, const void *R)
+{
+	const uuid *l = L, *r = R;
+	return memcmp(l->u, r->u, UUID_SIZE) == 0;
+}
+
 static ssize_t
 UUIDfromString(const char *svalue, size_t *len, void **RETVAL, bool external)
 {
@@ -1352,6 +1417,13 @@ INET4compare(const void *L, const void *R)
 	return memcmp(l->quad, r->quad, sizeof(l->quad));
 }
 
+static bool
+INET4equal(const void *L, const void *R)
+{
+	const inet4 *l = L, *r = R;
+	return l->align == r->align;
+}
+
 static ssize_t
 INET4fromString(const char *svalue, size_t *len, void **RETVAL, bool external)
 {
@@ -1477,6 +1549,13 @@ INET6compare(const void *L, const void *R)
 {
 	const inet6 *l = L, *r = R;
 	return memcmp(l->hex, r->hex, sizeof(l->hex));
+}
+
+static bool
+INET6equal(const void *L, const void *R)
+{
+	const inet6 *l = L, *r = R;
+	return memcmp(l->hex, r->hex, sizeof(l->hex)) == 0;
 }
 
 static ssize_t
@@ -1757,6 +1836,19 @@ BLOBcmp(const void *L, const void *R)
 	return c;
 }
 
+static bool
+BLOBeq(const void *L, const void *R)
+{
+	if (L == R)
+		return true;
+	const blob *l = L, *r = R;
+	if (l->nitems != r->nitems)
+		return false;
+	if (is_blob_nil(l) || l->nitems == 0)
+		return true;
+	return memcmp(l->data, r->data, l->nitems) == 0;
+}
+
 static void
 BLOBdel(Heap *h, var_t *idx)
 {
@@ -1976,10 +2068,12 @@ atomDesc BATatoms[MAXATOMS] = {
 #if SIZEOF_OID == SIZEOF_INT
 		.atomNull = (void *) &int_nil,
 		.atomCmp = (int (*)(const void *, const void *)) intCmp,
+		.atomEqual = (bool (*)(const void *, const void *)) intEq,
 		.atomHash = (BUN (*)(const void *)) intHash,
 #else
 		.atomNull = (void *) &lng_nil,
 		.atomCmp = (int (*)(const void *, const void *)) lngCmp,
+		.atomEqual = (bool (*)(const void *, const void *)) lngEq,
 		.atomHash = (BUN (*)(const void *)) lngHash,
 #endif
 		.atomFromStr = (ssize_t (*)(const char *, size_t *, void **, bool)) OIDfromStr,
@@ -1998,6 +2092,7 @@ atomDesc BATatoms[MAXATOMS] = {
 		.atomRead = (void *(*)(void *, size_t *, stream *, size_t)) bitRead,
 		.atomWrite = (gdk_return (*)(const void *, stream *, size_t)) bitWrite,
 		.atomCmp = (int (*)(const void *, const void *)) bteCmp,
+		.atomEqual = (bool (*)(const void *, const void *)) bteEq,
 		.atomHash = (BUN (*)(const void *)) bteHash,
 	},
 	[TYPE_msk] = {
@@ -2010,6 +2105,7 @@ atomDesc BATatoms[MAXATOMS] = {
 		.atomRead = (void *(*)(void *, size_t *, stream *, size_t)) mskRead,
 		.atomWrite = (gdk_return (*)(const void *, stream *, size_t)) mskWrite,
 		.atomCmp = (int (*)(const void *, const void *)) mskCmp,
+		.atomEqual = (bool (*)(const void *, const void *)) mskEq,
 	},
 	[TYPE_bte] = {
 		.name = "bte",
@@ -2022,6 +2118,7 @@ atomDesc BATatoms[MAXATOMS] = {
 		.atomRead = (void *(*)(void *, size_t *, stream *, size_t)) bteRead,
 		.atomWrite = (gdk_return (*)(const void *, stream *, size_t)) bteWrite,
 		.atomCmp = (int (*)(const void *, const void *)) bteCmp,
+		.atomEqual = (bool (*)(const void *, const void *)) bteEq,
 		.atomHash = (BUN (*)(const void *)) bteHash,
 	},
 	[TYPE_sht] = {
@@ -2035,6 +2132,7 @@ atomDesc BATatoms[MAXATOMS] = {
 		.atomRead = (void *(*)(void *, size_t *, stream *, size_t)) shtRead,
 		.atomWrite = (gdk_return (*)(const void *, stream *, size_t)) shtWrite,
 		.atomCmp = (int (*)(const void *, const void *)) shtCmp,
+		.atomEqual = (bool (*)(const void *, const void *)) shtEq,
 		.atomHash = (BUN (*)(const void *)) shtHash,
 	},
 	[TYPE_int] = {
@@ -2048,6 +2146,7 @@ atomDesc BATatoms[MAXATOMS] = {
 		.atomRead = (void *(*)(void *, size_t *, stream *, size_t)) intRead,
 		.atomWrite = (gdk_return (*)(const void *, stream *, size_t)) intWrite,
 		.atomCmp = (int (*)(const void *, const void *)) intCmp,
+		.atomEqual = (bool (*)(const void *, const void *)) intEq,
 		.atomHash = (BUN (*)(const void *)) intHash,
 	},
 	[TYPE_oid] = {
@@ -2060,6 +2159,7 @@ atomDesc BATatoms[MAXATOMS] = {
 		.atomRead = (void *(*)(void *, size_t *, stream *, size_t)) intRead,
 		.atomWrite = (gdk_return (*)(const void *, stream *, size_t)) intWrite,
 		.atomCmp = (int (*)(const void *, const void *)) intCmp,
+		.atomEqual = (bool (*)(const void *, const void *)) intEq,
 		.atomHash = (BUN (*)(const void *)) intHash,
 #else
 		.storage = TYPE_lng,
@@ -2067,6 +2167,7 @@ atomDesc BATatoms[MAXATOMS] = {
 		.atomRead = (void *(*)(void *, size_t *, stream *, size_t)) lngRead,
 		.atomWrite = (gdk_return (*)(const void *, stream *, size_t)) lngWrite,
 		.atomCmp = (int (*)(const void *, const void *)) lngCmp,
+		.atomEqual = (bool (*)(const void *, const void *)) lngEq,
 		.atomHash = (BUN (*)(const void *)) lngHash,
 #endif
 		.atomFromStr = (ssize_t (*)(const char *, size_t *, void **, bool)) OIDfromStr,
@@ -2084,9 +2185,11 @@ atomDesc BATatoms[MAXATOMS] = {
 		.atomWrite = (gdk_return (*)(const void *, stream *, size_t)) ptrWrite,
 #if SIZEOF_VOID_P == SIZEOF_INT
 		.atomCmp = (int (*)(const void *, const void *)) intCmp,
+		.atomEqual = (bool (*)(const void *, const void *)) intEq,
 		.atomHash = (BUN (*)(const void *)) intHash,
 #else /* SIZEOF_VOID_P == SIZEOF_LNG */
 		.atomCmp = (int (*)(const void *, const void *)) lngCmp,
+		.atomEqual = (bool (*)(const void *, const void *)) lngEq,
 		.atomHash = (BUN (*)(const void *)) lngHash,
 #endif
 	},
@@ -2101,6 +2204,7 @@ atomDesc BATatoms[MAXATOMS] = {
 		.atomRead = (void *(*)(void *, size_t *, stream *, size_t)) fltRead,
 		.atomWrite = (gdk_return (*)(const void *, stream *, size_t)) fltWrite,
 		.atomCmp = (int (*)(const void *, const void *)) fltCmp,
+		.atomEqual = (bool (*)(const void *, const void *)) fltEq,
 		.atomHash = (BUN (*)(const void *)) fltHash,
 	},
 	[TYPE_dbl] = {
@@ -2114,6 +2218,7 @@ atomDesc BATatoms[MAXATOMS] = {
 		.atomRead = (void *(*)(void *, size_t *, stream *, size_t)) dblRead,
 		.atomWrite = (gdk_return (*)(const void *, stream *, size_t)) dblWrite,
 		.atomCmp = (int (*)(const void *, const void *)) dblCmp,
+		.atomEqual = (bool (*)(const void *, const void *)) dblEq,
 		.atomHash = (BUN (*)(const void *)) dblHash,
 	},
 	[TYPE_lng] = {
@@ -2127,6 +2232,7 @@ atomDesc BATatoms[MAXATOMS] = {
 		.atomRead = (void *(*)(void *, size_t *, stream *, size_t)) lngRead,
 		.atomWrite = (gdk_return (*)(const void *, stream *, size_t)) lngWrite,
 		.atomCmp = (int (*)(const void *, const void *)) lngCmp,
+		.atomEqual = (bool (*)(const void *, const void *)) lngEq,
 		.atomHash = (BUN (*)(const void *)) lngHash,
 	},
 #ifdef HAVE_HGE
@@ -2141,6 +2247,7 @@ atomDesc BATatoms[MAXATOMS] = {
 		.atomRead = (void *(*)(void *, size_t *, stream *, size_t)) hgeRead,
 		.atomWrite = (gdk_return (*)(const void *, stream *, size_t)) hgeWrite,
 		.atomCmp = (int (*)(const void *, const void *)) hgeCmp,
+		.atomEqual = (bool (*)(const void *, const void *)) hgeEq,
 		.atomHash = (BUN (*)(const void *)) hgeHash,
 	},
 #endif
@@ -2155,6 +2262,7 @@ atomDesc BATatoms[MAXATOMS] = {
 		.atomRead = (void *(*)(void *, size_t *, stream *, size_t)) intRead,
 		.atomWrite = (gdk_return (*)(const void *, stream *, size_t)) intWrite,
 		.atomCmp = (int (*)(const void *, const void *)) intCmp,
+		.atomEqual = (bool (*)(const void *, const void *)) intEq,
 		.atomHash = (BUN (*)(const void *)) intHash,
 	},
 	[TYPE_daytime] = {
@@ -2168,6 +2276,7 @@ atomDesc BATatoms[MAXATOMS] = {
 		.atomRead = (void *(*)(void *, size_t *, stream *, size_t)) lngRead,
 		.atomWrite = (gdk_return (*)(const void *, stream *, size_t)) lngWrite,
 		.atomCmp = (int (*)(const void *, const void *)) lngCmp,
+		.atomEqual = (bool (*)(const void *, const void *)) lngEq,
 		.atomHash = (BUN (*)(const void *)) lngHash,
 	},
 	[TYPE_timestamp] = {
@@ -2181,6 +2290,7 @@ atomDesc BATatoms[MAXATOMS] = {
 		.atomRead = (void *(*)(void *, size_t *, stream *, size_t)) lngRead,
 		.atomWrite = (gdk_return (*)(const void *, stream *, size_t)) lngWrite,
 		.atomCmp = (int (*)(const void *, const void *)) lngCmp,
+		.atomEqual = (bool (*)(const void *, const void *)) lngEq,
 		.atomHash = (BUN (*)(const void *)) lngHash,
 	},
 	[TYPE_uuid] = {
@@ -2194,6 +2304,7 @@ atomDesc BATatoms[MAXATOMS] = {
 		.atomRead = UUIDread,
 		.atomWrite = UUIDwrite,
 		.atomCmp = UUIDcompare,
+		.atomEqual = UUIDequal,
 		.atomHash = UUIDhash,
 	},
 	[TYPE_inet4] = {
@@ -2207,6 +2318,7 @@ atomDesc BATatoms[MAXATOMS] = {
 		.atomRead = INET4read,
 		.atomWrite = INET4write,
 		.atomCmp = INET4compare,
+		.atomEqual = INET4equal,
 		.atomHash = INET4hash,
 	},
 	[TYPE_inet6] = {
@@ -2220,6 +2332,7 @@ atomDesc BATatoms[MAXATOMS] = {
 		.atomRead = INET6read,
 		.atomWrite = INET6write,
 		.atomCmp = INET6compare,
+		.atomEqual = INET6equal,
 		.atomHash = INET6hash,
 	},
 	[TYPE_str] = {
@@ -2233,6 +2346,7 @@ atomDesc BATatoms[MAXATOMS] = {
 		.atomRead = (void *(*)(void *, size_t *, stream *, size_t)) strRead,
 		.atomWrite = (gdk_return (*)(const void *, stream *, size_t)) strWrite,
 		.atomCmp = (int (*)(const void *, const void *)) strCmp,
+		.atomEqual = (bool (*)(const void *, const void *)) strEq,
 		.atomHash = (BUN (*)(const void *)) strHash,
 		.atomPut = strPut,
 		.atomLen = (size_t (*)(const void *)) strLen,
@@ -2249,6 +2363,7 @@ atomDesc BATatoms[MAXATOMS] = {
 		.atomRead = BLOBread,
 		.atomWrite = BLOBwrite,
 		.atomCmp = BLOBcmp,
+		.atomEqual = BLOBeq,
 		.atomHash = BLOBhash,
 		.atomPut = BLOBput,
 		.atomDel = BLOBdel,

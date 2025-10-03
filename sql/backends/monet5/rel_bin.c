@@ -1233,7 +1233,10 @@ exp2bin_coalesce(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *isel, 
 				else if (!val->cand && nsel)
 					val = stmt_project(be, nsel, val);
 
-				res = stmt_replace(be, res, pos, val);
+				if (pos)
+					res = stmt_replace(be, res, pos, val);
+				else
+					res = val;
 			}
 			if (en->next) { /* handled then part */
 				stmt *s = stmt_uselect(be, ncond, stmt_bool(be, 1), cmp_equal, NULL, 1/*anti*/, 0);
@@ -3306,7 +3309,7 @@ rel2bin_groupjoin(backend *be, sql_rel *rel, list *refs)
 			append(l, s);
 		} else {
 			/* group / aggrs */
-			stmt *nls = stmt_project(be, jl, ls);
+			stmt *nls = ls?stmt_project(be, jl, ls):jl;
 			stmt *groupby = stmt_group(be, nls, NULL, NULL, NULL, true);
 			stmt *grp = stmt_result(be, groupby, 0);
 			stmt *ext = stmt_result(be, groupby, 1);

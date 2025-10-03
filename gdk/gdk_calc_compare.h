@@ -28,6 +28,7 @@ op_typeswitchloop(const void *lft, int tp1, bool incr1, const char *hp1, int wd1
 	BUN i = 0, j = 0, k, ncand = ci1->ncand;
 	const void *restrict nil;
 	int (*atomcmp)(const void *, const void *);
+	bool (*atomeq)(const void *, const void *);
 
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
@@ -715,6 +716,7 @@ op_typeswitchloop(const void *lft, int tp1, bool incr1, const char *hp1, int wd1
 		    !ATOMlinear(tp1) ||
 		    (atomcmp = ATOMcompare(tp1)) == NULL)
 			goto unsupported;
+		atomeq = ATOMequal(tp1);
 		/* a bit of a hack: for inherited types, use
 		 * type-expanded version if comparison function is
 		 * equal to the inherited-from comparison function,
@@ -750,12 +752,12 @@ op_typeswitchloop(const void *lft, int tp1, bool incr1, const char *hp1, int wd1
 				? (const void *) (hp2 + VarHeapVal(rgt, j, wd2))
 				: (const void *) ((const char *) rgt + j * wd2);
 			if (p1 == NULL || p2 == NULL ||
-			    (*atomcmp)(p1, nil) == 0 ||
-			    (*atomcmp)(p2, nil) == 0) {
+			    (*atomeq)(p1, nil) ||
+			    (*atomeq)(p2, nil)) {
 #ifdef NIL_MATCHES_FLAG
 				if (nil_matches) {
-					dst[k] = OP(p1 == NULL || (*atomcmp)(p1, nil) == 0,
-						    p2 == NULL || (*atomcmp)(p2, nil) == 0);
+					dst[k] = OP(p1 == NULL || (*atomeq)(p1, nil),
+						    p2 == NULL || (*atomeq)(p2, nil));
 				} else
 #endif
 				{
@@ -914,7 +916,7 @@ BATcalcopcst(BAT *b, const ValRecord *v, BAT *s
 				&ci,
 				&(struct canditer){.tpe=cand_dense, .ncand=ci.ncand},
 				b->hseqbase, 0,
-				bi.nonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
+				bi.nonil && !ATOMeq(v->vtype, VALptr(v), ATOMnilptr(v->vtype)),
 				ci.hseq,
 #ifdef NIL_MATCHES_FLAG
 				nil_matches,
@@ -953,7 +955,7 @@ BATcalccstop(const ValRecord *v, BAT *b, BAT *s
 				&(struct canditer){.tpe=cand_dense, .ncand=ci.ncand},
 				&ci,
 				0, b->hseqbase,
-				bi.nonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
+				bi.nonil && !ATOMeq(v->vtype, VALptr(v), ATOMnilptr(v->vtype)),
 				ci.hseq,
 #ifdef NIL_MATCHES_FLAG
 				nil_matches,
