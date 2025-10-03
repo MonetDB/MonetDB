@@ -78,6 +78,7 @@ struct insert_state {
 	void *scratch;
 	size_t schratch_len;
 	size_t resume;
+	BUN singlechar[129]; // 0, ascii characters and 0x80=nil
 };
 extern void init_insert_state(struct insert_state *st, allocator *ma, BAT *bat, int width);
 extern void release_insert_state(struct insert_state *st);

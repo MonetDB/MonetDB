@@ -337,6 +337,9 @@ void init_insert_state(struct insert_state *st, allocator *ma, BAT *bat, int wid
 		.schratch_len = 0,
 		.resume = 0,
 	};
+	for (size_t i = 0; i < sizeof(st->singlechar)/sizeof(st->singlechar[0]); i++) {
+		st->singlechar[i] = BUN_NONE;
+	}
 };
 
 void release_insert_state(struct insert_state *st) {
@@ -404,14 +407,23 @@ insert_non_nil(struct insert_state *st, const char *item)
 	return MAL_SUCCEED;
 }
 
+// Can be used to insert a string that consists of a single ascii
+// character, or nil (ch==0x80), or the empty string (ch==0)
 static str
-insert_nil(struct insert_state *st)
+insert_single_char(struct insert_state *st, int ch)
 {
-	int tpe = BATttype(st->bat);
-	const void *value = ATOMnilptr(tpe);
-	if (bunfastapp(st->bat, value) != GDK_SUCCEED) {
-		throw(SQL, "insert_nul_terminated_values", GDK_EXCEPTION);
+	BUN reuse = st->singlechar[ch];
+	if (reuse != BUN_NONE) {
+		str msg = reinsert(st, reuse);
+		if (msg != MAL_SUCCEED)
+			return msg;
+	} else {
+		char value[2] = {ch, 0};
+		if (bunfastapp(st->bat, value) != GDK_SUCCEED)
+			throw(SQL, "insert_nul_terminated_values", GDK_EXCEPTION);
 	}
+	// Prefer to remember the latest occurrence so we can use short backrefs
+	st->singlechar[ch] = st->bat->batCount - 1;
 	return MAL_SUCCEED;
 }
 
@@ -431,35 +443,47 @@ insert_nul_terminated_values(struct insert_state *st, const char *data, size_t t
 		// If we reach 'limit' we'll goto end without updating 'current'.
 		const unsigned char *pos = current;
 		const unsigned char first = *pos++;
+		str msg;
 		if ((first & 0xC0) != 0x80) {
-			// Not a nil, not a backref. Find out how long it is
-			pos = memchr(resume, '\0', limit - resume);
-			if (pos == NULL) {
-				// the end of the string is not yet in our buffer
-				resume = limit;
-				goto end;
+			// Not a nil, not a backref.
+			if (first == 0 || (pos < limit && *pos == 0)) {
+				// We have an extra efficient code path for empty-
+				// and single character strings.
+				msg = insert_single_char(st, first);
+				// Skip NUL if we haven't already
+				pos += (first != 0);
+			} else {
+				//  Find out how long it is.
+				pos = memchr(resume, '\0', limit - resume);
+				if (pos == NULL) {
+					// the end of the string is not yet in our buffer
+					resume = limit;
+					goto end;
+				}
+				pos++; // include the NUL terminator
+				msg = insert_non_nil(st, (char*)current);
 			}
-			pos++; // include the NUL terminator
-			str msg = insert_non_nil(st, (char*)current);
 			if (msg != MAL_SUCCEED)
 				return msg;
 		} else if (first > 0x80) {
 			// 0x81 .. 0xBF, a short back ref
 			assert(first <= 0xBF);
 			BUN delta = first - 0x80;
-			reinsert(st, BATcount(st->bat) - delta);
+			msg = reinsert(st, BATcount(st->bat) - delta);
+			if (msg != MAL_SUCCEED)
+				return msg;
 		} else {
 			// 0x80 so it's either a nil or a long backref
 			assert(first == 0x80);
 			if (pos == limit) {
-				// can't tell the difference
+				// can't tell the difference yet
 				resume = current;
 				goto end;
 			}
 			unsigned char follower = *pos++;
 			if (follower == '\0') {
 				// it's a nil
-				str msg = insert_nil(st);
+				str msg = insert_single_char(st, 0x80);
 				if (msg != MAL_SUCCEED)
 					return msg;
 			} else {
@@ -483,7 +507,9 @@ insert_nul_terminated_values(struct insert_state *st, const char *data, size_t t
 					BUN payload = follower & 0x7F;
 					delta = delta | (payload << shift);
 				}
-				reinsert(st, BATcount(st->bat) - delta);
+				msg = reinsert(st, BATcount(st->bat) - delta);
+				if (msg != MAL_SUCCEED)
+					return msg;
 			}
 		}
 
