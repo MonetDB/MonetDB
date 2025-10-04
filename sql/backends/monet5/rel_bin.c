@@ -1152,13 +1152,17 @@ exp2bin_coalesce(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *isel, 
 	sql_subfunc *and = sql_bind_func(be->mvc, "sys", "and", bt, bt, F_FUNC, true, true);
 	sql_subfunc *not = sql_bind_func(be->mvc, "sys", "not", bt, NULL, F_FUNC, true, true);
 
+	list *exps = fe->l;
+	if (list_length(exps) == 1) {
+		sql_exp *e = exps->h->data;
+		return exp_bin(be, e, left, right, NULL, NULL, NULL, isel, depth+1, 0, 1);
+	}
 	if (single_value) {
 		/* var_x = nil; */
 		nme = number2name(name, sizeof(name), ++be->mvc->label);
 		(void)stmt_var(be, NULL, nme, exp_subtype(fe), 1, 2);
 	}
 
-	list *exps = fe->l;
 	for (node *en = exps->h; en; en = en->next) {
 		sql_exp *e = en->data;
 
