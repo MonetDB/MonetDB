@@ -4872,11 +4872,12 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 		rank = true;
 	supports_frames = (!rank || is_value);
 
-	if (is_sql_update_set(f) || is_sql_psm(f) || is_sql_values(f) || is_sql_join(f) || is_sql_where(f) || is_sql_groupby(f) || is_sql_having(f) || is_psm_call(f) || is_sql_from(f)) {
+	if (is_sql_update_set(f) || is_sql_psm(f) || is_sql_values(f) || is_sql_join(f) || is_sql_where(f) || is_sql_groupby(f) || is_sql_having(f) || is_psm_call(f) || is_sql_from(f) || is_sql_check(f)) {
 		char *uaname = SA_NEW_ARRAY(sql->ta, char, strlen(aname) + 1);
 		const char *clause = is_sql_update_set(f)||is_sql_psm(f)?"in SET, WHILE, IF, ELSE, CASE, WHEN, RETURN, ANALYZE clauses (use subquery)":is_sql_values(f)?"on an unique value":
 							 is_sql_join(f)?"in JOIN conditions":is_sql_where(f)?"in WHERE clause":is_sql_groupby(f)?"in GROUP BY clause":
-							 is_psm_call(f)?"in CALL":is_sql_from(f)?"in functions in FROM":"in HAVING clause";
+							 is_psm_call(f)?"in CALL":is_sql_from(f)?"in functions in FROM":
+							 is_sql_check(f)?"in check constraints":"in HAVING clause";
 		return sql_error(sql, 02, SQLSTATE(42000) "%s: window function '%s' not allowed %s", toUpperCopy(uaname, aname), aname, clause);
 	} else if (is_sql_aggr(f)) {
 		char *uaname = SA_NEW_ARRAY(sql->ta, char, strlen(aname) + 1);
