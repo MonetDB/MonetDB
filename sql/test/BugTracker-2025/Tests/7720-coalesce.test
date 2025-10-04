@@ -2,3 +2,9 @@ query I
 SELECT COALESCE ( 75 )
 ----
 75
+
+# bug 7721
+query I
+SELECT ( coalesce ( ( SELECT 1 ) ) )
+----
+1
