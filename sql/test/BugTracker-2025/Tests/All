@@ -62,5 +62,6 @@ HAVE_HGE?7637_str_to_decimal
 7715-anti-like
 7716-antijoin-not-exists-null
 7717-check-with-window
+7718-crash
 7730-generate-series-month-int
 7732-table-exp-issue
