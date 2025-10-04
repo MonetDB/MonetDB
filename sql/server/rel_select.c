@@ -373,6 +373,8 @@ rel_with_query(sql_query *query, symbol *q )
 				nrel = rel_setop_n_ary(sql->sa, append(append(sa_list(sql->sa), base_rel), nrel), op_munion);
 				set_recursive(nrel);
 			}
+			if (!nrel)
+				return NULL;
 			if (recursive_distinct)
 				set_distinct(nrel);
 			rel_setop_n_ary_set_exps(sql, nrel, rel_projections(sql, nrel, NULL, 0, 1), false);
