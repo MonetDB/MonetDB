@@ -5168,26 +5168,6 @@ sql_update_default(Client c, mvc *sql, sql_schema *s)
 		sql->errstr[0] = '\0';
 	}
 
-	err = SQLstatementIntern(c, "select keyword from sys.keywords where keyword = 'PLAN';\n",
-							 "update", true, false, &output);
-	if (err)
-		return err;
-	b = BATdescriptor(output->cols[0].b);
-	res_table_destroy(output);
-	if (b == NULL)
-		throw(SQL, "sql.catalog", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	BATiter bi = bat_iterator(b);
-	if (BATcount(b) > 0) {
-		bat_iterator_end(&bi);
-		sql_table *t = mvc_bind_table(sql, s, "keywords");
-		t->access = TABLE_WRITABLE; /* make it writable else the delete will fail */
-		err = SQLstatementIntern(c, "delete from sys.keywords where keyword = 'PLAN';",
-								 "update", true, false, NULL);
-		t->system = TABLE_READONLY;
-		if (err)
-			return err;
-	}
-
 	return err;
 }
 
