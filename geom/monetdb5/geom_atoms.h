@@ -83,4 +83,3 @@ geom_export str mbrDistance(Client ctx, dbl *out, mbr **b1, mbr **b2);
 geom_export str mbrDistance_wkb(Client ctx, dbl *out, wkb **geom1WKB, wkb **geom2WKB);
 geom_export str wkbCoordinateFromWKB(Client ctx, dbl*, wkb**, int*);
 geom_export str wkbCoordinateFromMBR(Client ctx, dbl*, mbr**, int*);
-geom_export str ordinatesMBR(mbr **res, flt *minX, flt *minY, flt *maxX, flt *maxY);
