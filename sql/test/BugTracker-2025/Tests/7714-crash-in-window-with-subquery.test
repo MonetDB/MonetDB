@@ -1,6 +1,6 @@
-statement error 42000!SELECT: no such window function 'dense_rank'(any)
+statement error 42000!DENSE_RANK: window function 'dense_rank' not allowed in check constraints
 CREATE TABLE v0 ( v1 INT , v2 VARCHAR ( 37 ) NOT NULL CHECK ( CAST ( DENSE_RANK ( v1 ) OVER ( PARTITION BY ( CASE WHEN v2 > 8 THEN 'x' ELSE 'x' END ) ORDER BY v2 ) AS INTEGER ) ) )
 
-statement ok
+statement error 42000!COUNT: window function 'count' not allowed in check constraints
 CREATE TABLE v1 ( v1 INT , v2 VARCHAR ( 37 ) NOT NULL CHECK ( CAST ( count ( v1 ) OVER ( PARTITION BY ( CASE WHEN v2 > 8 THEN 'x' ELSE 'x' END ) ORDER BY v2 ) AS INTEGER ) ) )
 

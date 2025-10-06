@@ -373,6 +373,8 @@ rel_with_query(sql_query *query, symbol *q )
 				nrel = rel_setop_n_ary(sql->sa, append(append(sa_list(sql->sa), base_rel), nrel), op_munion);
 				set_recursive(nrel);
 			}
+			if (!nrel)
+				return NULL;
 			if (recursive_distinct)
 				set_distinct(nrel);
 			rel_setop_n_ary_set_exps(sql, nrel, rel_projections(sql, nrel, NULL, 0, 1), false);
@@ -4872,11 +4874,12 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 		rank = true;
 	supports_frames = (!rank || is_value);
 
-	if (is_sql_update_set(f) || is_sql_psm(f) || is_sql_values(f) || is_sql_join(f) || is_sql_where(f) || is_sql_groupby(f) || is_sql_having(f) || is_psm_call(f) || is_sql_from(f)) {
+	if (is_sql_update_set(f) || is_sql_psm(f) || is_sql_values(f) || is_sql_join(f) || is_sql_where(f) || is_sql_groupby(f) || is_sql_having(f) || is_psm_call(f) || is_sql_from(f) || is_sql_check(f)) {
 		char *uaname = SA_NEW_ARRAY(sql->ta, char, strlen(aname) + 1);
 		const char *clause = is_sql_update_set(f)||is_sql_psm(f)?"in SET, WHILE, IF, ELSE, CASE, WHEN, RETURN, ANALYZE clauses (use subquery)":is_sql_values(f)?"on an unique value":
 							 is_sql_join(f)?"in JOIN conditions":is_sql_where(f)?"in WHERE clause":is_sql_groupby(f)?"in GROUP BY clause":
-							 is_psm_call(f)?"in CALL":is_sql_from(f)?"in functions in FROM":"in HAVING clause";
+							 is_psm_call(f)?"in CALL":is_sql_from(f)?"in functions in FROM":
+							 is_sql_check(f)?"in check constraints":"in HAVING clause";
 		return sql_error(sql, 02, SQLSTATE(42000) "%s: window function '%s' not allowed %s", toUpperCopy(uaname, aname), aname, clause);
 	} else if (is_sql_aggr(f)) {
 		char *uaname = SA_NEW_ARRAY(sql->ta, char, strlen(aname) + 1);
@@ -5466,9 +5469,11 @@ rel_table_exp(sql_query *query, sql_rel **rel, symbol *column_e, bool single_exp
 		tname = column_e->data.lval->h->data.sval;
 	} else if (column_e->token == SQL_COLUMN && column_e->data.lval->h->type == type_symbol) {
 		symbol *sym = column_e->data.lval->h->data.sym;
-		if (sym->token == SQL_COLUMN)
+		if (sym->token == SQL_COLUMN) {
 			tname = sym->data.lval->h->data.sval;
-		else
+			if (dlist_length(sym->data.lval) > 1 && sym->data.lval->t->data.sval)
+				return NULL;
+		} else
 			return NULL;
 	} else {
 		return NULL;
