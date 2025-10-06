@@ -52,8 +52,6 @@ wkbTOSTR(allocator *ma, char **geomWKT, size_t *len, const void *GEOMWKB, bool e
 		if (*len < dstStrLen + 1 || *geomWKT == NULL) {
 			*len = dstStrLen + 1;
 			////GDKfree(*geomWKT);
-			allocator *ma = MT_thread_getallocator();
-			assert(ma);
 			if ((*geomWKT = ma_alloc(ma, *len)) == NULL) {
 				GEOSFree_r(geoshandle, wkt);
 				return -1;
