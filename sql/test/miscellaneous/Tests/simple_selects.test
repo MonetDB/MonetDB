@@ -674,7 +674,7 @@ select x as z, 2 from (select 1) as x(x) group by z, z
 2
 
 query T nosort
-plan select x as z, 2 from (select 1) as x(x) group by z, z
+explain show details select x as z, 2 from (select 1) as x(x) group by z, z
 ----
 project (
 | group by (
@@ -921,7 +921,7 @@ SELECT x AS x, x AS x1 FROM (VALUES (1),(2),(3)) x(x) GROUP BY x, x1
 
 # remove 'x1' from grouping columns list
 query T nosort
-plan SELECT x AS x, x AS x1 FROM (VALUES (1),(2),(3)) x(x) GROUP BY x, x1
+explain show details SELECT x AS x, x AS x1 FROM (VALUES (1),(2),(3)) x(x) GROUP BY x, x1
 ----
 project (
 | group by (
@@ -941,7 +941,7 @@ SELECT x AS x, x + 1 AS x1 FROM (VALUES (1),(2),(3)) x(x) GROUP BY x, x1
 
 # remove 'x1' from grouping columns list. This one is more complex
 query T nosort
-plan SELECT x AS x, x + 1 AS x1 FROM (VALUES (1),(2),(3)) x(x) GROUP BY x, x1
+explain show details SELECT x AS x, x + 1 AS x1 FROM (VALUES (1),(2),(3)) x(x) GROUP BY x, x1
 ----
 project (
 | group by (
@@ -967,7 +967,7 @@ SELECT x AS x, (10 + x) * 2 - 29 AS x1 FROM (VALUES (1),(2),(3),(4),(5)) x(x) GR
 
 # remove 'x1' from grouping columns list. This one is even more complex
 query T nosort
-plan SELECT x AS x, (10 + x) * 2 - 29 AS x1 FROM (VALUES (1),(2),(3),(4),(5)) x(x) GROUP BY x, x1
+explain show details SELECT x AS x, (10 + x) * 2 - 29 AS x1 FROM (VALUES (1),(2),(3),(4),(5)) x(x) GROUP BY x, x1
 ----
 project (
 | group by (

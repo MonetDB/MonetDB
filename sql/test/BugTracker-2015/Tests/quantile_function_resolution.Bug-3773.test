@@ -5,7 +5,7 @@ statement ok
 create table x (y decimal(10,4))
 
 query T nosort
-PLAN select quantile(y, 0.0) from x
+EXPLAIN SHOW DETAILS select quantile(y, 0.0) from x
 ----
 project (
 | group by (
@@ -16,7 +16,7 @@ project (
 ) [ "%1"."%1" UNIQUE ]
 
 query T nosort
-PLAN select quantile(y, 0) from x
+EXPLAIN SHOW DETAILS select quantile(y, 0) from x
 ----
 project (
 | group by (

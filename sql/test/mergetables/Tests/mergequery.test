@@ -105,7 +105,7 @@ SELECT * FROM complete where x>=2.0 AND x <=3.0
 0.000
 
 query T nosort
-PLAN SELECT * FROM complete where x = 0.0
+EXPLAIN SHOW DETAILS SELECT * FROM complete where x = 0.0
 ----
 project (
 | select (
@@ -124,7 +124,7 @@ SELECT * FROM complete where x = 0.0
 0.000
 
 query T nosort
-PLAN SELECT * FROM complete where x = 3.0
+EXPLAIN SHOW DETAILS SELECT * FROM complete where x = 3.0
 ----
 project (
 | select (
@@ -143,7 +143,7 @@ SELECT * FROM complete where x = 3.0
 0.000
 
 query T nosort
-PLAN SELECT * FROM complete where x >= 1.0 AND x < 2.0
+EXPLAIN SHOW DETAILS SELECT * FROM complete where x >= 1.0 AND x < 2.0
 ----
 project (
 | select (
@@ -162,7 +162,7 @@ SELECT * FROM complete where x >= 1.0 AND x < 2.0
 0.000
 
 query T nosort
-PLAN SELECT * FROM complete where x > 1.0 AND x <= 2.0
+EXPLAIN SHOW DETAILS SELECT * FROM complete where x > 1.0 AND x <= 2.0
 ----
 project (
 | select (
@@ -181,7 +181,7 @@ SELECT * FROM complete where x > 1.0 AND x <= 2.0
 0.000
 
 query T nosort
-PLAN SELECT * FROM complete where x > 1.0 AND x < 2.0
+EXPLAIN SHOW DETAILS SELECT * FROM complete where x > 1.0 AND x < 2.0
 ----
 project (
 | select (
@@ -194,7 +194,7 @@ SELECT * FROM complete where x > 1.0 AND x < 2.0
 ----
 
 query T nosort
-PLAN SELECT * FROM complete where x >= 1.0 AND x <= 2.0
+EXPLAIN SHOW DETAILS SELECT * FROM complete where x >= 1.0 AND x <= 2.0
 ----
 munion (
 | project (
@@ -226,7 +226,7 @@ SELECT * FROM complete where x >= 1.0 AND x <= 2.0
 0.000
 
 query T nosort
-PLAN SELECT * FROM complete WHERE x BETWEEN 0 AND 2 AND Y BETWEEN 0 AND 2
+EXPLAIN SHOW DETAILS SELECT * FROM complete WHERE x BETWEEN 0 AND 2 AND Y BETWEEN 0 AND 2
 ----
 munion (
 | project (

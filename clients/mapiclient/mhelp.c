@@ -410,9 +410,16 @@ SQLhelp sqlhelp1[] = {
 	 NULL,
 	 "See also https://www.monetdb.org/documentation/user-guide/sql-manual/data-manipulation/prepare-statement/"},
 	{"EXPLAIN",
-	 "Give MAL execution plan for the SQL statement",
-	 "EXPLAIN statement",
+	 "Display logical or physical execution plan for the SQL statement.",
+	 "EXPLAIN [BEFORE|AFTER] [step] [SHOW DETAILS] statement\n"
+	 "step [UNNEST|REWRITE|PHYSICAL]",
 	 NULL,
+	 "Plain EXPLAIN defaults to logical execution plan.\n"
+	 "Use UNNEST|REWRITE|PHYSICAL to specify compilation step to show.\n"
+	 "Use BEFORE|AFTER to specify moment of compilation step\n"
+	 "to output. The default is AFTER.\n"
+	 "SHOW DETAILS displays column properties, rewriter number of changes\n"
+	 "and time spent.\n"
 	 "See also https://www.monetdb.org/documentation/admin-guide/debugging-features/explain-sql-stmt/"},
 	{"EXTRACT",
 	 "Built-in function",
@@ -446,11 +453,6 @@ SQLhelp sqlhelp1[] = {
 	 "[ WITH cte_list ] MERGE INTO qname [ [AS] ident ] USING table_ref [ [AS] ident ] ON search_condition merge_list",
 	 "cte_list,table_ref,search_condition,merge_list",
 	 "See also: https://www.monetdb.org/documentation/user-guide/blog-archive/merge-statements/"},
-	{"PLAN",
-	 "Give relational execution plan for the SQL statement",
-	 "PLAN statement",
-	 NULL,
-	 "See also https://www.monetdb.org/documentation/admin-guide/debugging-features/plan-sql-stmt/"},
 	{"PREPARE",
 	 "Prepare a SQL DML statement with optional question-mark parameter markers",
 	 "PREPARE statement",
@@ -551,7 +553,7 @@ SQLhelp sqlhelp1[] = {
 	 "joined_table,join_type",
 	 "See also https://www.monetdb.org/documentation/user-guide/sql-manual/data-manipulation/table-expressions/"},
 	{"TRACE",
-	 "Give execution trace for the SQL statement",
+	 "Trace engine execution for the SQL statement. Output can be accessed via tracelog view.",
 	 "TRACE statement",
 	 NULL,
 	 "See also https://www.monetdb.org/documentation/admin-guide/debugging-features/trace-sql-stmt/"},

@@ -8,7 +8,7 @@ statement ok
 INSERT INTO mytest VALUES (1234567890987654321, 10000000000, NULL, NULL, NULL)
 
 query T python .explain.function_histogram
-explain UPDATE mytest SET a = 1234567890987654321
+explain physical UPDATE mytest SET a = 1234567890987654321
 ----
 aggr.count
 1
@@ -30,7 +30,7 @@ user.main
 1
 
 query T python .explain.function_histogram
-explain UPDATE mytest SET b = 10000000000
+explain physical UPDATE mytest SET b = 10000000000
 ----
 aggr.count
 1
@@ -52,7 +52,7 @@ user.main
 1
 
 query T python .explain.function_histogram
-explain UPDATE mytest SET c = a * b
+explain physical UPDATE mytest SET c = a * b
 ----
 aggr.count
 1
@@ -76,7 +76,7 @@ user.main
 1
 
 query T python .explain.function_histogram
-explain UPDATE mytest SET d = c * b
+explain physical UPDATE mytest SET d = c * b
 ----
 aggr.count
 1
@@ -100,7 +100,7 @@ user.main
 1
 
 query T python .explain.function_histogram
-explain UPDATE mytest SET e = d + a
+explain physical UPDATE mytest SET e = d + a
 ----
 aggr.count
 1
@@ -162,7 +162,7 @@ statement ok
 CREATE TABLE sql_int128 (i HUGEINT)
 
 query T python .explain.function_histogram
-explain INSERT INTO sql_int128 VALUES (123456789098765432101234567890987654321)
+explain physical INSERT INTO sql_int128 VALUES (123456789098765432101234567890987654321)
 ----
 querylog.define
 1

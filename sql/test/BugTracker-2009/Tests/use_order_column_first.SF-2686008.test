@@ -54,7 +54,7 @@ select * from sorted
 3
 
 query T nosort
-PLAN select a,b from sorted group by a,b
+EXPLAIN SHOW DETAILS select a,b from sorted group by a,b
 ----
 project (
 | group by (
@@ -63,7 +63,7 @@ project (
 ) [ "sorted"."a" NOT NULL, "sorted"."b" NOT NULL ]
 
 query T nosort
-PLAN select a,b from sorted group by b,a
+EXPLAIN SHOW DETAILS select a,b from sorted group by b,a
 ----
 project (
 | group by (

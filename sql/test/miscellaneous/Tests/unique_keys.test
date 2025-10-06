@@ -6,7 +6,7 @@ insert into testkeys values (1,1,1,1),(2,2,2,2),(3,3,3,3)
 
 # The following joins can be converted into semijoins
 query T nosort
-plan select y from (values (1),(2),(cast(3 as int))) y(y) inner join testkeys on y.y = testkeys.a
+explain show details select y from (values (1),(2),(cast(3 as int))) y(y) inner join testkeys on y.y = testkeys.a
 ----
 project (
 | semijoin (
@@ -16,7 +16,7 @@ project (
 ) [ "y"."y" NOT NULL ]
 
 query T nosort
-plan select y from (values (1),(2),(cast(3 as int))) y(y) inner join testkeys on y.y = testkeys.b
+explain show details select y from (values (1),(2),(cast(3 as int))) y(y) inner join testkeys on y.y = testkeys.b
 ----
 project (
 | semijoin (
@@ -26,7 +26,7 @@ project (
 ) [ "y"."y" NOT NULL ]
 
 query T nosort
-plan select y from (values (1),(2),(cast(3 as int))) y(y) inner join testkeys on y.y = testkeys.a or (y.y is null and testkeys.a is null)
+explain show details select y from (values (1),(2),(cast(3 as int))) y(y) inner join testkeys on y.y = testkeys.a or (y.y is null and testkeys.a is null)
 ----
 project (
 | semijoin (
@@ -37,7 +37,7 @@ project (
 
 # The following joins cannot be converted into semijoins
 query T nosort
-plan select y from (values (NULL),(1),(2),(cast(3 as int))) y(y) inner join testkeys on y.y = testkeys.b or (y.y is null and testkeys.b is null)
+explain show details select y from (values (NULL),(1),(2),(cast(3 as int))) y(y) inner join testkeys on y.y = testkeys.b or (y.y is null and testkeys.b is null)
 ----
 project (
 | semijoin (
@@ -47,7 +47,7 @@ project (
 ) [ "y"."y" NOT NULL ]
 
 query T nosort
-plan select y from (values (1),(2),(cast(3 as int))) y(y) inner join testkeys on y.y = testkeys.c or (y.y is null and testkeys.c is null)
+explain show details select y from (values (1),(2),(cast(3 as int))) y(y) inner join testkeys on y.y = testkeys.c or (y.y is null and testkeys.c is null)
 ----
 project (
 | semijoin (
@@ -67,7 +67,7 @@ insert into othertable values (1,1,1,1),(2,2,2,2),(3,3,3,3)
 
 # here 'othertable.a = 2' can be pushed up
 query T nosort
-plan select othertable.a from testkeys inner join othertable on testkeys.a = othertable.a where testkeys.a = 1 and othertable.a = 1
+explain show details select othertable.a from testkeys inner join othertable on testkeys.a = othertable.a where testkeys.a = 1 and othertable.a = 1
 ----
 project (
 | join (
@@ -82,7 +82,7 @@ project (
 
 # here 'othertable.a between 2 and 5' can be pushed up too
 query T nosort
-plan select testkeys.a from testkeys inner join othertable on testkeys.a = othertable.a where testkeys.b = 1 and othertable.a between 2 and 5
+explain show details select testkeys.a from testkeys inner join othertable on testkeys.a = othertable.a where testkeys.b = 1 and othertable.a between 2 and 5
 ----
 project (
 | select (
@@ -97,7 +97,7 @@ project (
 
 # here 'othertable.a > 1' cannot be pushed up because 'testkeys.b is null' may pass multiple values
 query T nosort
-plan select testkeys.a from testkeys inner join othertable on testkeys.a = othertable.a where testkeys.b is null and othertable.a > 1
+explain show details select testkeys.a from testkeys inner join othertable on testkeys.a = othertable.a where testkeys.b is null and othertable.a > 1
 ----
 project (
 | select (
@@ -114,9 +114,9 @@ alter table testkeys drop constraint testkeys_a_pkey
 statement ok
 alter table testkeys drop constraint testkeys_b_unique
 
-# No more unique properties
+# No more unique details
 query T nosort
-plan select y from (values (1),(2),(cast(3 as int))) y(y) inner join testkeys on y.y = testkeys.a
+explain show details select y from (values (1),(2),(cast(3 as int))) y(y) inner join testkeys on y.y = testkeys.a
 ----
 project (
 | semijoin (
@@ -126,7 +126,7 @@ project (
 ) [ "y"."y" NOT NULL ]
 
 query T nosort
-plan select y from (values (1),(2),(cast(3 as int))) y(y) inner join testkeys on y.y = testkeys.b
+explain show details select y from (values (1),(2),(cast(3 as int))) y(y) inner join testkeys on y.y = testkeys.b
 ----
 project (
 | semijoin (
@@ -147,9 +147,9 @@ alter table testkeys add constraint testkeys_b_unique unique (b)
 statement ok
 rollback
 
-# The unique properties should not return
+# The unique details should not return
 query T nosort
-plan select y from (values (1),(2),(cast(3 as int))) y(y) inner join testkeys on y.y = testkeys.a
+explain show details select y from (values (1),(2),(cast(3 as int))) y(y) inner join testkeys on y.y = testkeys.a
 ----
 project (
 | semijoin (
@@ -159,7 +159,7 @@ project (
 ) [ "y"."y" NOT NULL ]
 
 query T nosort
-plan select y from (values (1),(2),(cast(3 as int))) y(y) inner join testkeys on y.y = testkeys.b
+explain show details select y from (values (1),(2),(cast(3 as int))) y(y) inner join testkeys on y.y = testkeys.b
 ----
 project (
 | semijoin (

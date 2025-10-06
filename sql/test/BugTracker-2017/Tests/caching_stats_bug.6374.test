@@ -37,7 +37,7 @@ select count(*) from mt where i >= 5 and i < 12
 1
 
 query T nosort
-PLAN select count(*) from mt where i >= 5 and i < 12
+EXPLAIN SHOW DETAILS select count(*) from mt where i >= 5 and i < 12
 ----
 project (
 | group by (
@@ -65,7 +65,7 @@ select count(*) from mt where i >= 5 and i < 12
 3
 
 query T nosort
-PLAN select count(*) from mt where i >= 5 and i < 12
+EXPLAIN SHOW DETAILS select count(*) from mt where i >= 5 and i < 12
 ----
 project (
 | group by (

@@ -5393,7 +5393,6 @@ select 'null in fkeys.delete_action', delete_action, * from sys.fkeys where dele
 [ "sys.keywords",	"PARTITION"	]
 [ "sys.keywords",	"PASSWORD"	]
 [ "sys.keywords",	"PATH"	]
-[ "sys.keywords",	"PLAN"	]
 [ "sys.keywords",	"POSITION"	]
 [ "sys.keywords",	"PRECEDING"	]
 [ "sys.keywords",	"PRECISION"	]

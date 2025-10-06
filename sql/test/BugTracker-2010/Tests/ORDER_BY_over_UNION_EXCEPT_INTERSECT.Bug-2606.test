@@ -67,7 +67,7 @@ statement ok
 analyze sys.t2606b
 
 query T nosort
-PLAN   select * from t2606a   union   select * from t2606b   order by a
+EXPLAIN SHOW DETAILS   select * from t2606a   union   select * from t2606b   order by a
 ----
 project (
 | distinct munion (
@@ -94,7 +94,7 @@ query I nosort
 33
 
 query T nosort
-PLAN ( select * from t2606a   union   select * from t2606b ) order by a
+EXPLAIN SHOW DETAILS ( select * from t2606a   union   select * from t2606b ) order by a
 ----
 project (
 | distinct munion (
@@ -121,7 +121,7 @@ query I nosort
 33
 
 query T nosort
-PLAN ( select * from t2606a ) union ( select * from t2606b ) order by a
+EXPLAIN SHOW DETAILS ( select * from t2606a ) union ( select * from t2606b ) order by a
 ----
 project (
 | distinct munion (
@@ -148,7 +148,7 @@ query I nosort
 33
 
 query T nosort
-PLAN   select * from t2606a   except   select * from t2606b   order by a
+EXPLAIN SHOW DETAILS   select * from t2606a   except   select * from t2606b   order by a
 ----
 project (
 | distinct except (
@@ -169,7 +169,7 @@ query I nosort
 13
 
 query T nosort
-PLAN ( select * from t2606a   except   select * from t2606b ) order by a
+EXPLAIN SHOW DETAILS ( select * from t2606a   except   select * from t2606b ) order by a
 ----
 project (
 | distinct except (
@@ -190,7 +190,7 @@ query I nosort
 13
 
 query T nosort
-PLAN ( select * from t2606a ) except ( select * from t2606b ) order by a
+EXPLAIN SHOW DETAILS ( select * from t2606a ) except ( select * from t2606b ) order by a
 ----
 project (
 | distinct except (
@@ -211,7 +211,7 @@ query I nosort
 13
 
 query T nosort
-PLAN   select * from t2606a   intersect   select * from t2606b   order by a
+EXPLAIN SHOW DETAILS   select * from t2606a   intersect   select * from t2606b   order by a
 ----
 project (
 | distinct intersect (
@@ -232,7 +232,7 @@ query I nosort
 23
 
 query T nosort
-PLAN ( select * from t2606a   intersect   select * from t2606b ) order by a
+EXPLAIN SHOW DETAILS ( select * from t2606a   intersect   select * from t2606b ) order by a
 ----
 project (
 | distinct intersect (
@@ -253,7 +253,7 @@ query I nosort
 23
 
 query T nosort
-PLAN ( select * from t2606a ) intersect ( select * from t2606b ) order by a
+EXPLAIN SHOW DETAILS ( select * from t2606a ) intersect ( select * from t2606b ) order by a
 ----
 project (
 | distinct intersect (
@@ -274,7 +274,7 @@ query I nosort
 23
 
 query T nosort
-PLAN select * from (select * from t2606a union select * from t2606b) as t order by a
+EXPLAIN SHOW DETAILS select * from (select * from t2606a union select * from t2606b) as t order by a
 ----
 project (
 | distinct munion (
@@ -301,7 +301,7 @@ query I nosort
 33
 
 query T nosort
-PLAN select * from (select * from t2606a except select * from t2606b) as t order by a
+EXPLAIN SHOW DETAILS select * from (select * from t2606a except select * from t2606b) as t order by a
 ----
 project (
 | distinct except (
@@ -322,7 +322,7 @@ query I nosort
 13
 
 query T nosort
-PLAN select * from (select * from t2606a intersect select * from t2606b) as t order by a
+EXPLAIN SHOW DETAILS select * from (select * from t2606a intersect select * from t2606b) as t order by a
 ----
 project (
 | distinct intersect (

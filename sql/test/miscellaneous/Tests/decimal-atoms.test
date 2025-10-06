@@ -1,33 +1,33 @@
 query T nosort
-plan select 0.001
+explain show details select 0.001
 ----
 project (
 |  [ boolean(1) "true" as "%1"."%1" ]
 ) [ decimal(4,3) "1" ]
 
 query T nosort
-plan select .001
+explain show details select .001
 ----
 project (
 |  [ boolean(1) "true" as "%1"."%1" ]
 ) [ decimal(3,3) "1" ]
 
 query T nosort
-plan select 100.00
+explain show details select 100.00
 ----
 project (
 |  [ boolean(1) "true" as "%1"."%1" ]
 ) [ decimal(5,2) "10000" ]
 
 query T nosort
-plan select 100.0
+explain show details select 100.0
 ----
 project (
 |  [ boolean(1) "true" as "%1"."%1" ]
 ) [ decimal(4,1) "1000" ]
 
 query T nosort
-plan select 100.
+explain show details select 100.
 ----
 project (
 |  [ boolean(1) "true" as "%1"."%1" ]

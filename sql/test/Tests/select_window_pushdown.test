@@ -8,7 +8,7 @@ INSERT INTO Test SELECT value % 10 as k, value as v FROM generate_series(1, 100)
 # simple eq filter on the partition key, must be pushed down,
 # while the flag filter cannot be safely pushed down
 query T nosort
-plan SELECT *
+EXPLAIN SHOW DETAILS SELECT *
 FROM (
     SELECT *, rank() OVER (PARTITION BY k ORDER BY v DESC) AS rank
     FROM (
@@ -34,7 +34,7 @@ project (
 
 # simple range filter on the partition key
 query T nosort
-plan SELECT *
+EXPLAIN SHOW DETAILS SELECT *
 FROM (
     SELECT *, rank() OVER (PARTITION BY k ORDER BY v DESC) AS rank
     FROM (
@@ -60,7 +60,7 @@ project (
 
 # simple not in filter on the partition key
 query T nosort
-plan SELECT *
+EXPLAIN SHOW DETAILS SELECT *
 FROM (
     SELECT *, rank() OVER (PARTITION BY k ORDER BY v DESC) AS rank
     FROM (
@@ -86,7 +86,7 @@ project (
 
 # another filter also not on the partition key, must not be pushed down
 query T nosort
-plan SELECT *
+EXPLAIN SHOW DETAILS SELECT *
 FROM (
     SELECT *, rank() OVER (PARTITION BY k ORDER BY v DESC) AS rank
     FROM (
@@ -113,7 +113,7 @@ project (
 # swapping k with v just to test for hardcoded optimizations,
 # v is pushed down but not k
 query T nosort
-plan SELECT *
+EXPLAIN SHOW DETAILS SELECT *
 FROM (
     SELECT *, rank() OVER (PARTITION BY v ORDER BY v DESC) AS rank
     FROM (
@@ -140,7 +140,7 @@ project (
 # performing some additional computation on the partition key,
 # filter cannot be pushed down
 query T nosort
-plan SELECT *
+EXPLAIN SHOW DETAILS SELECT *
 FROM (
     SELECT k * 10 as k, v, flag, rank() OVER (PARTITION BY k ORDER BY v DESC) AS rank
     FROM (
@@ -168,7 +168,7 @@ project (
 
 # filter [partition column OR flag], cannot be safely pushed down
 query T nosort
-plan SELECT *
+EXPLAIN SHOW DETAILS SELECT *
 FROM (
     SELECT *, rank() OVER (PARTITION BY k ORDER BY v DESC) AS rank
     FROM (
@@ -192,7 +192,7 @@ project (
 
 # filter on k and v and both are partition columns, both filters can be pushed down
 query T nosort
-plan SELECT *
+EXPLAIN SHOW DETAILS SELECT *
 FROM (
     SELECT *, rank() OVER (PARTITION BY k, v ORDER BY v DESC) AS rank
     FROM (
@@ -228,7 +228,7 @@ statement ok
 INSERT INTO Test SELECT value % 10 as k, value as v FROM generate_series(1, 100)
 
 query T nosort
-plan SELECT *
+EXPLAIN SHOW DETAILS SELECT *
 FROM (
     SELECT *, rank() OVER (PARTITION BY k ORDER BY v DESC) AS rank
     FROM (
@@ -254,7 +254,7 @@ project (
 
 # test with like-type filters
 query T nosort
-plan SELECT *
+EXPLAIN SHOW DETAILS SELECT *
 FROM (
     SELECT *, rank() OVER (PARTITION BY k ORDER BY v DESC) AS rank
     FROM (

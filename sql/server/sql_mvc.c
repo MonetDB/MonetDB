@@ -803,6 +803,10 @@ mvc_create(sql_store *store, allocator *pa, int clientid, int debug, bstream *rs
 
 	m->emode = m_normal;
 	m->emod = mod_none;
+	m->temporal = T_NONE;
+	m->step = S_NONE;
+	m->show_details = false;
+	m->trace = false;
 	m->reply_size = 100;
 	m->debug = debug;
 
@@ -1580,8 +1584,12 @@ sql_processrelation(mvc *sql, sql_rel *rel, int profile, int instantiate, int va
 	int emode = sql->emode;
 	if (!instantiate)
 		sql->emode = m_deps;
+	if (emode == m_plan && BEFORE_UNNEST(sql))
+		return rel;
 	if (rel)
 		rel = rel_unnest(sql, rel);
+	if (emode == m_plan && (AFTER_UNNEST(sql) || BEFORE_REWRITE(sql)))
+		return rel;
 	sql->emode = emode;
 	if (rel)
 		rel = rel_optimizer(sql, rel, profile, instantiate, value_based_opt, storage_based_opt);

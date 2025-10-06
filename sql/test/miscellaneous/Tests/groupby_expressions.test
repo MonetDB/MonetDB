@@ -20,7 +20,7 @@ select cast("aa"+1 as bigint) from "groupings" group by "aa"+1, "aa"+1
 3
 
 query T nosort
-plan select cast("aa"+1 as bigint) from "groupings" group by "aa"+1, "aa"+1
+explain show details select cast("aa"+1 as bigint) from "groupings" group by "aa"+1, "aa"+1
 ----
 project (
 | group by (
