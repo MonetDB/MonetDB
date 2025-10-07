@@ -475,6 +475,7 @@ scanner_init_keywords(void)
 	failed += keywords_insert("EXPLAIN", SQL_EXPLAIN);
 	failed += keywords_insert("REL_UNNEST", REL_UNNEST);
 	failed += keywords_insert("REL_REWRITE", REL_REWRITE);
+	failed += keywords_insert("REL_PHYSICAL", REL_PHYSICAL);
 	failed += keywords_insert("PHYSICAL", PHYSICAL);
 	failed += keywords_insert("SHOW", SHOW);
 	failed += keywords_insert("DETAILS", DETAILS);

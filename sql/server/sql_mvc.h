@@ -70,10 +70,11 @@
 #define mod_explain 1
 #define mod_exec    2
 
-#define S_NONE        0
-#define S_REL_UNNEST  1
-#define S_REL_REWRITE 2
-#define S_PHYSICAL    3
+#define S_NONE         0
+#define S_REL_UNNEST   1
+#define S_REL_REWRITE  2
+#define S_REL_PHYSICAL 3
+#define S_PHYSICAL     4
 
 #define T_NONE      0
 #define T_BEFORE    1
@@ -85,6 +86,7 @@
 #define AFTER_REL_REWRITE(m)  (m->step == S_REL_REWRITE && m->temporal == T_AFTER)
 #define BEFORE_PHYSICAL(m)    (m->step == S_PHYSICAL    && m->temporal == T_BEFORE)
 #define AFTER_PHYSICAL(m)     (m->step == S_PHYSICAL    && m->temporal == T_AFTER)
+#define AFTER_REL_PHYSICAL(m) (m->step == S_REL_PHYSICAL && m->temporal == T_AFTER)
 
 typedef struct sql_groupby_expression {
 	symbol *sdef;
