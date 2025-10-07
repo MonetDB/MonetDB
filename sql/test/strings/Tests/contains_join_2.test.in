@@ -11,7 +11,7 @@ statement ok
 COPY 5490 RECORDS INTO wo2_thesaurus FROM E'$QTSTDATAPATH/spinque/wo2_thesaurus.txt' NULL AS ''
 
 query I nosort
-select count(*) from creative_work_title c, wo2_thesaurus w where [c.s] contains [w.s]
+select count(*) from creative_work_title c, wo2_thesaurus w where (c.s) contains (w.s)
 ----
 142819
 
