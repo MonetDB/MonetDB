@@ -674,7 +674,7 @@ SQLCODE SQLERROR UNDER WHENEVER
 %token TYPE PROCEDURE FUNCTION sqlLOADER AGGREGATE RETURNS EXTERNAL sqlNAME DECLARE
 %token CALL LANGUAGE
 %token ANALYZE SQL_EXPLAIN SQL_TRACE PREP PREPARE EXEC EXECUTE DEALLOCATE
-%token UNNEST REWRITE PHYSICAL SHOW DETAILS
+%token REL_UNNEST REL_REWRITE PHYSICAL SHOW DETAILS
 %token DEFAULT DISTINCT DROP TRUNCATE
 %token FOREIGN
 %token RENAME ENCRYPTED UNENCRYPTED PASSWORD GRANT REVOKE ROLE ADMIN INTO
@@ -914,15 +914,15 @@ explain:
 	|	SQL_EXPLAIN opt_show_properties
 		{
 			m->emode = m_plan;
-			m->step = S_REWRITE;
+			m->step = S_REL_REWRITE;
 			m->temporal = T_AFTER;
 			m->scanner.as = m->scanner.yycur;
 		}
 	;
 
 relational_step:
-		UNNEST  { m->step = S_UNNEST; }
-	|	REWRITE { m->step = S_REWRITE; }
+		REL_UNNEST  { m->step = S_REL_UNNEST; }
+	|	REL_REWRITE { m->step = S_REL_REWRITE; }
 	;
 
 physical_step:

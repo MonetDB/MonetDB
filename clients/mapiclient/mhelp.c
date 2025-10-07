@@ -412,10 +412,10 @@ SQLhelp sqlhelp1[] = {
 	{"EXPLAIN",
 	 "Display logical or physical execution plan for the SQL statement.",
 	 "EXPLAIN [BEFORE|AFTER] [step] [SHOW DETAILS] statement\n"
-	 "step [UNNEST|REWRITE|PHYSICAL]",
+	 "step [REL_UNNEST|REL_REWRITE|PHYSICAL]",
 	 NULL,
 	 "Plain EXPLAIN defaults to logical execution plan.\n"
-	 "Use UNNEST|REWRITE|PHYSICAL to specify compilation step to show.\n"
+	 "Use REL_UNNEST|REL_REWRITE|PHYSICAL to specify compilation step to show.\n"
 	 "Use BEFORE|AFTER to specify moment of compilation step\n"
 	 "to output. The default is AFTER.\n"
 	 "SHOW DETAILS displays column properties, rewriter number of changes\n"
