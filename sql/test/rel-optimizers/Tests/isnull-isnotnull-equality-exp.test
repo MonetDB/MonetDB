@@ -11,7 +11,7 @@ NULL
 mighty null
 
 query T nosort
-plan select * from foo where n is null
+explain show details select * from foo where n is null
 ----
 project (
 | select (
@@ -28,7 +28,7 @@ one
 two
 
 query T nosort
-plan select * from foo where not n is null
+explain show details select * from foo where not n is null
 ----
 project (
 | select (
@@ -45,7 +45,7 @@ one
 two
 
 query T nosort
-plan select * from foo where n is not null
+explain show details select * from foo where n is not null
 ----
 project (
 | select (
@@ -60,7 +60,7 @@ NULL
 mighty null
 
 query T nosort
-plan select * from foo where not n is not null
+explain show details select * from foo where not n is not null
 ----
 project (
 | select (
@@ -75,7 +75,7 @@ NULL
 mighty null
 
 query T nosort
-plan select * from foo where sys.isnull(n) = true
+explain show details select * from foo where sys.isnull(n) = true
 ----
 project (
 | select (
@@ -92,7 +92,7 @@ one
 two
 
 query T nosort
-plan select * from foo where sys.isnull(n) = false
+explain show details select * from foo where sys.isnull(n) = false
 ----
 project (
 | select (
@@ -109,7 +109,7 @@ one
 two
 
 query T nosort
-plan select * from foo where sys.isnull(n) != true
+explain show details select * from foo where sys.isnull(n) != true
 ----
 project (
 | select (
@@ -124,7 +124,7 @@ NULL
 mighty null
 
 query T nosort
-plan select * from foo where sys.isnull(n) != false
+explain show details select * from foo where sys.isnull(n) != false
 ----
 project (
 | select (
@@ -141,7 +141,7 @@ one
 two
 
 query T nosort
-plan select * from foo where sys.isnotnull(n) = true
+explain show details select * from foo where sys.isnotnull(n) = true
 ----
 project (
 | select (
@@ -156,7 +156,7 @@ NULL
 mighty null
 
 query T nosort
-plan select * from foo where sys.isnotnull(n) = false
+explain show details select * from foo where sys.isnotnull(n) = false
 ----
 project (
 | select (
@@ -171,7 +171,7 @@ NULL
 mighty null
 
 query T nosort
-plan select * from foo where sys.isnotnull(n) != true
+explain show details select * from foo where sys.isnotnull(n) != true
 ----
 project (
 | select (
@@ -188,7 +188,7 @@ one
 two
 
 query T nosort
-plan select * from foo where sys.isnotnull(n) != false
+explain show details select * from foo where sys.isnotnull(n) != false
 ----
 project (
 | select (

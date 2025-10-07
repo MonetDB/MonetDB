@@ -49,7 +49,7 @@ statement ok
 alter table members_rpl add table members_n3
 
 # this statement is so to have the UNIQUE property for the foo_p1 plan
-# of the merge. It is not there the first time we execute the plan so
+# of the merge. It is not there the first time we execute the explain show details so
 # the next query-test will fail without this statement
 
 statement ok
@@ -61,7 +61,7 @@ select * from foo_p1
 # 'table' returning relational operator)
 
 query T nosort
-plan select * from foo_merge, members_rpl
+explain show details select * from foo_merge, members_rpl
 ----
 munion (
 | project (

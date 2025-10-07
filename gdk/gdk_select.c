@@ -93,8 +93,8 @@ virtualize(BAT *bn)
 	     hb != BUN_NONE;				\
 	     hb = HASHgetlink(h,hb))			\
 		if (hb >= (lo) && hb < (hi) &&		\
-		    (cmp == NULL ||			\
-		     (*cmp)(v, BUNtail(bi, hb)) == 0))
+		    (eq == NULL ||			\
+		     (*eq)(v, BUNtail(bi, hb))))
 
 static BAT *
 hashselect(BATiter *bi, struct canditer *restrict ci, BAT *bn,
@@ -105,7 +105,7 @@ hashselect(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 	oid o, *restrict dst;
 	BUN l, h, d = 0;
 	oid seq;
-	int (*cmp)(const void *, const void *);
+	bool (*eq)(const void *, const void *);
 	BAT *b2 = NULL;
 	BATiter pbi = {0};
 
@@ -151,10 +151,10 @@ hashselect(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 	switch (ATOMbasetype(bi->type)) {
 	case TYPE_bte:
 	case TYPE_sht:
-		cmp = NULL;	/* no need to compare: "hash" is perfect */
+		eq = NULL;	/* no need to compare: "hash" is perfect */
 		break;
 	default:
-		cmp = ATOMcompare(bi->type);
+		eq = ATOMequal(bi->type);
 		break;
 	}
 	dst = (oid *) Tloc(bn, 0);
@@ -455,6 +455,7 @@ fullscan_any(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 	const void *v;
 	const void *restrict nil = ATOMnilptr(bi->type);
 	int (*cmp)(const void *, const void *) = ATOMcompare(bi->type);
+	bool (*eq)(const void *, const void *) = ATOMequal(bi->type);
 	oid o;
 	BUN p, ncand = ci->ncand;
 	int c;
@@ -469,7 +470,7 @@ fullscan_any(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 			TIMEOUT_LOOP_IDX(p, ncand, qry_ctx) {
 				o = canditer_next_dense(ci);
 				v = BUNtail(*bi, o-hseq);
-				if ((*cmp)(tl, v) == 0) {
+				if ((*eq)(tl, v)) {
 					dst = buninsfix(bn, dst, cnt, o,
 							(BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
 							       * (dbl) (ncand-p) * 1.1 + 1024),
@@ -485,7 +486,7 @@ fullscan_any(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 			TIMEOUT_LOOP_IDX(p, ncand, qry_ctx) {
 				o = canditer_next(ci);
 				v = BUNtail(*bi, o-hseq);
-				if ((*cmp)(tl, v) == 0) {
+				if ((*eq)(tl, v)) {
 					dst = buninsfix(bn, dst, cnt, o,
 							(BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
 							       * (dbl) (ncand-p) * 1.1 + 1024),
@@ -504,7 +505,7 @@ fullscan_any(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 			TIMEOUT_LOOP_IDX(p, ncand, qry_ctx) {
 				o = canditer_next_dense(ci);
 				v = BUNtail(*bi, o-hseq);
-				bool isnil = nil != NULL && (*cmp)(v, nil) == 0;
+				bool isnil = nil != NULL && (*eq)(v, nil);
 				if ((nil_matches && isnil) ||
 				    (!isnil &&
 				     ((lval &&
@@ -528,7 +529,7 @@ fullscan_any(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 			TIMEOUT_LOOP_IDX(p, ncand, qry_ctx) {
 				o = canditer_next(ci);
 				v = BUNtail(*bi, o-hseq);
-				bool isnil = nil != NULL && (*cmp)(v, nil) == 0;
+				bool isnil = nil != NULL && (*eq)(v, nil);
 				if ((nil_matches && isnil) ||
 				    (!isnil &&
 				     ((lval &&
@@ -555,7 +556,7 @@ fullscan_any(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 			TIMEOUT_LOOP_IDX(p, ncand, qry_ctx) {
 				o = canditer_next_dense(ci);
 				v = BUNtail(*bi, o-hseq);
-				if ((nil == NULL || (*cmp)(v, nil) != 0) &&
+				if ((nil == NULL || !(*eq)(v, nil)) &&
 				    ((!lval ||
 				      (c = cmp(tl, v)) < 0 ||
 				      (li && c == 0)) &&
@@ -577,7 +578,7 @@ fullscan_any(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 			TIMEOUT_LOOP_IDX(p, ncand, qry_ctx) {
 				o = canditer_next(ci);
 				v = BUNtail(*bi, o-hseq);
-				if ((nil == NULL || (*cmp)(v, nil) != 0) &&
+				if ((nil == NULL || !(*eq)(v, nil)) &&
 				    ((!lval ||
 				      (c = cmp(tl, v)) < 0 ||
 				      (li && c == 0)) &&
@@ -1110,11 +1111,12 @@ BATrange(BATiter *bi, const void *tl, const void *th, bool li, bool hi)
 	BAT *pb = NULL;
 	int c;
 	int (*atomcmp) (const void *, const void *) = ATOMcompare(bi->type);
+	bool (*atomeq) (const void *, const void *) = ATOMequal(bi->type);
 	BATiter bi2 = *bi;
 
-	if (tl && (*atomcmp)(tl, ATOMnilptr(bi->type)) == 0)
+	if (tl && (*atomeq)(tl, ATOMnilptr(bi->type)))
 		tl = NULL;
-	if (th && (*atomcmp)(th, ATOMnilptr(bi->type)) == 0)
+	if (th && (*atomeq)(th, ATOMnilptr(bi->type)))
 		th = NULL;
 	if (tl == NULL && th == NULL)
 		return range_contains; /* looking for everything */
@@ -1124,18 +1126,18 @@ BATrange(BATiter *bi, const void *tl, const void *th, bool li, bool hi)
 
 	/* keep locked while we look at the property values */
 	MT_lock_set(&bi->b->theaplock);
-	if (bi->sorted && (bi->nonil || atomcmp(BUNtail(*bi, 0), ATOMnilptr(bi->type)) != 0))
+	if (bi->sorted && (bi->nonil || !atomeq(BUNtail(*bi, 0), ATOMnilptr(bi->type))))
 		minval = BUNtail(*bi, 0);
-	else if (bi->revsorted && (bi->nonil || atomcmp(BUNtail(*bi, bi->count - 1), ATOMnilptr(bi->type)) != 0))
+	else if (bi->revsorted && (bi->nonil || !atomeq(BUNtail(*bi, bi->count - 1), ATOMnilptr(bi->type))))
 		minval = BUNtail(*bi, bi->count - 1);
 	else if (bi->minpos != BUN_NONE)
 		minval = BUNtail(*bi, bi->minpos);
 	else if ((minprop = BATgetprop_nolock(bi->b, GDK_MIN_BOUND)) != NULL)
 		minval = VALptr(minprop);
-	if (bi->sorted && (bi->nonil || atomcmp(BUNtail(bi2, bi->count - 1), ATOMnilptr(bi->type)) != 0)) {
+	if (bi->sorted && (bi->nonil || !atomeq(BUNtail(bi2, bi->count - 1), ATOMnilptr(bi->type)))) {
 		maxval = BUNtail(bi2, bi->count - 1);
 		maxincl = true;
-	} else if (bi->revsorted && (bi->nonil || atomcmp(BUNtail(bi2, 0), ATOMnilptr(bi->type)) != 0)) {
+	} else if (bi->revsorted && (bi->nonil || !atomeq(BUNtail(bi2, 0), ATOMnilptr(bi->type)))) {
 		maxval = BUNtail(bi2, 0);
 		maxincl = true;
 	} else if (bi->maxpos != BUN_NONE) {
@@ -1397,10 +1399,10 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		nil_matches = false;
 	/* can we use the base type? */
 	t = ATOMbasetype(t);
-	lnil = nil && ATOMcmp(t, tl, nil) == 0; /* low value == nil? */
+	lnil = nil && ATOMeq(t, tl, nil); /* low value == nil? */
 	lval = !lnil || th == NULL;	 /* low value used for comparison */
-	equi = th == NULL || (lval && ATOMcmp(t, tl, th) == 0); /* point select? */
-	if (lnil && nil_matches && (th == NULL || ATOMcmp(t, th, nil) == 0)) {
+	equi = th == NULL || (lval && ATOMeq(t, tl, th)); /* point select? */
+	if (lnil && nil_matches && (th == NULL || ATOMeq(t, th, nil))) {
 		/* if nil_matches is set, tl==th==nil is just an equi select */
 		equi = true;
 		lval = true;
@@ -1437,7 +1439,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			assert(th != NULL);
 			hval = true;
 		} else {
-			hval = ATOMcmp(t, th, nil) != 0;
+			hval = !ATOMeq(t, th, nil);
 		}
 	}
 	if (anti) {
@@ -1456,7 +1458,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			ti = lval;
 			lval = hval;
 			hval = ti;
-			lnil = ATOMcmp(t, tl, nil) == 0;
+			lnil = ATOMeq(t, tl, nil);
 			anti = false;
 			TRC_DEBUG(ALGO, "b=" ALGOBATFMT
 				  ",s=" ALGOOPTBATFMT ",anti=%d "
@@ -2115,7 +2117,7 @@ BATthetaselect(BAT *b, BAT *s, const void *val, const char *op)
 		return BATselect(b, s, val, NULL, true, true, true, true);
 
 	nil = ATOMnilptr(b->ttype);
-	if (ATOMcmp(b->ttype, val, nil) == 0)
+	if (ATOMeq(b->ttype, val, nil))
 		return BATdense(0, 0, 0);
 	if (op[0] == '=' && ((op[1] == '=' && op[2] == 0) || op[1] == 0)) {
 		/* "=" or "==" */

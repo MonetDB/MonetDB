@@ -846,42 +846,42 @@ select CASE WHEN 9 = 9 THEN NULL ELSE 9 END
 NULL
 
 query T nosort
-plan select nullif(null, null)
+explain show details select nullif(null, null)
 ----
 project (
 |  [ boolean(1) "true" as "%1"."%1" ]
 ) [ "sys"."nullif"(smallint(15) NULL, smallint(15) NULL) ]
 
 query T nosort
-plan select CASE WHEN null = null THEN NULL ELSE null END
+explain show details select CASE WHEN null = null THEN NULL ELSE null END
 ----
 project (
 |  [ boolean(1) "true" as "%1"."%1" ]
 ) [ "sys"."case"(boolean(1) NULL, smallint(15) NULL, smallint(15) NULL) ]
 
 query T nosort
-plan select nullif('ac', 'ac')
+explain show details select nullif('ac', 'ac')
 ----
 project (
 |  [ boolean(1) "true" as "%1"."%1" ]
 ) [ "sys"."nullif"(varchar(2) "ac", varchar(2) "ac") ]
 
 query T nosort
-plan select CASE WHEN 'ac' = 'ac' THEN NULL ELSE 'ac' END
+explain show details select CASE WHEN 'ac' = 'ac' THEN NULL ELSE 'ac' END
 ----
 project (
 |  [ boolean(1) "true" as "%1"."%1" ]
 ) [ "sys"."case"((varchar(2) "ac") = (varchar(2) "ac"), varchar NULL, varchar "ac") ]
 
 query T nosort
-plan select nullif(9, 9)
+explain show details select nullif(9, 9)
 ----
 project (
 |  [ boolean(1) "true" as "%1"."%1" ]
 ) [ "sys"."nullif"(tinyint(4) "9", tinyint(4) "9") ]
 
 query T nosort
-plan select CASE WHEN 9 = 9 THEN NULL ELSE 9 END
+explain show details select CASE WHEN 9 = 9 THEN NULL ELSE 9 END
 ----
 project (
 |  [ boolean(1) "true" as "%1"."%1" ]

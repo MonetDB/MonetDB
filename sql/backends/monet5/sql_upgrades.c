@@ -5168,6 +5168,7 @@ sql_update_default(Client c, mvc *sql, sql_schema *s)
 		sql->session->status = 0; /* if the function was not found clean the error */
 		sql->errstr[0] = '\0';
 	}
+
 	return err;
 }
 

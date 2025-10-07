@@ -750,6 +750,7 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 	ValRecord minprop, maxprop;
 	const void *minbound = NULL, *maxbound = NULL;
 	int (*atomcmp) (const void *, const void *) = ATOMcompare(b->ttype);
+	bool (*atomeq) (const void *, const void *) = ATOMequal(b->ttype);
 	bool hlocked = false;
 
 	if (b == NULL || n == NULL || BATcount(n) == 0) {
@@ -1036,7 +1037,7 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 			TIMEOUT_LOOP(ci.ncand, qry_ctx) {
 				BUN p = canditer_next(&ci) - hseq;
 				const void *t = BUNtail(ni, p);
-				bool isnil = atomcmp(t, atomnil) == 0;
+				bool isnil = atomeq(t, atomnil);
 				if (notnull && isnil) {
 					assert(0);
 					GDKerror("NULL value not within bounds\n");
@@ -1334,6 +1335,7 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 	b->tnokey[0] = b->tnokey[1] = 0;
 
 	int (*atomcmp)(const void *, const void *) = ATOMcompare(b->ttype);
+	bool (*atomeq)(const void *, const void *) = ATOMequal(b->ttype);
 	const void *nil = ATOMnilptr(b->ttype);
 	oid hseqend = b->hseqbase + BATcount(b);
 
@@ -1401,19 +1403,19 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 			 * offset may point outside of the vheap */
 			const void *old = BUNtvaroff(bi, updid) < bi.vhfree ? BUNtvar(bi, updid) : NULL;
 
-			if (old && atomcmp(old, new) == 0) {
+			if (old && atomeq(old, new)) {
 				/* replacing with the same value:
 				 * nothing to do */
 				continue;
 			}
 
-			bool isnil = !ni.nonil && atomcmp(new, nil) == 0;
+			bool isnil = !ni.nonil && atomeq(new, nil);
 			anynil |= isnil;
 			MT_lock_set(&b->theaplock);
 			if (old == NULL ||
 			    (b->tnil &&
 			     !anynil &&
-			     atomcmp(old, nil) == 0)) {
+			     atomeq(old, nil))) {
 				/* if old value is nil and no new
 				 * value is, we're not sure anymore
 				 * about the nil property, so we must
@@ -1439,8 +1441,8 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 					maxupdated = true;
 				} else if (old == NULL ||
 					   (!maxupdated &&
-					    atomcmp(BUNtvar(bi, bi.maxpos), old) == 0 &&
-					    atomcmp(new, old) != 0)) {
+					    atomeq(BUNtvar(bi, bi.maxpos), old) &&
+					    !atomeq(new, old))) {
 					/* old value is equal to
 					 * largest and new value is
 					 * smaller, so we don't know
@@ -1459,8 +1461,8 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 					minupdated = true;
 				} else if (old == NULL ||
 					   (!minupdated &&
-					    atomcmp(BUNtvar(bi, bi.minpos), old) == 0 &&
-					    atomcmp(new, old) != 0)) {
+					    atomeq(BUNtvar(bi, bi.minpos), old) &&
+					    !atomeq(new, old))) {
 					/* old value is equal to
 					 * smallest and new value is
 					 * larger, so we don't know
@@ -1780,11 +1782,11 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 			}
 
 			const void *old = BUNtloc(bi, updid);
-			bool isnil = atomcmp(new, nil) == 0;
+			bool isnil = atomeq(new, nil);
 			anynil |= isnil;
 			if (b->tnil &&
 			    !anynil &&
-			    atomcmp(old, nil) == 0) {
+			    atomeq(old, nil)) {
 				/* if old value is nil and no new
 				 * value is, we're not sure anymore
 				 * about the nil property, so we must
@@ -1799,8 +1801,8 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 					/* new value is larger than
 					 * previous largest */
 					bi.maxpos = updid;
-				} else if (atomcmp(BUNtloc(bi, bi.maxpos), old) == 0 &&
-					   atomcmp(new, old) != 0) {
+				} else if (atomeq(BUNtloc(bi, bi.maxpos), old) &&
+					   !atomeq(new, old)) {
 					/* old value is equal to
 					 * largest and new value is
 					 * smaller, so we don't know
@@ -1815,8 +1817,8 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 					/* new value is smaller than
 					 * previous smallest */
 					bi.minpos = updid;
-				} else if (atomcmp(BUNtloc(bi, bi.minpos), old) == 0 &&
-					   atomcmp(new, old) != 0) {
+				} else if (atomeq(BUNtloc(bi, bi.minpos), old) &&
+					   !atomeq(new, old)) {
 					/* old value is equal to
 					 * smallest and new value is
 					 * larger, so we don't know
@@ -3047,7 +3049,7 @@ BATconstant(oid hseq, int tailtype, const void *v, BUN n, role_t role)
 			break;
 		}
 		bn->theap->dirty = true;
-		bn->tnil = n >= 1 && ATOMnilptr(tailtype) && (*ATOMcompare(tailtype))(v, ATOMnilptr(tailtype)) == 0;
+		bn->tnil = n >= 1 && ATOMnilptr(tailtype) && ATOMeq(tailtype, v, ATOMnilptr(tailtype));
 		BATsetcount(bn, n);
 		bn->tsorted = bn->trevsorted = ATOMlinear(tailtype);
 		bn->tnonil = !bn->tnil;
@@ -3214,7 +3216,7 @@ BATcount_no_nil(BAT *b, BAT *s)
 	const void *restrict p, *restrict nil;
 	const char *restrict base;
 	int t;
-	int (*cmp)(const void *, const void *);
+	bool (*atomeq)(const void *, const void *);
 	struct canditer ci;
 	oid hseq;
 
@@ -3305,16 +3307,16 @@ BATcount_no_nil(BAT *b, BAT *s)
 		break;
 	default:
 		nil = ATOMnilptr(t);
-		cmp = ATOMcompare(t);
+		atomeq = ATOMequal(t);
 		if (nil == NULL) {
 			cnt = ci.ncand;
 		} else if (b->tvheap) {
 			base = b->tvheap->base;
 			CAND_LOOP(&ci)
-				cnt += (*cmp)(nil, base + ((const var_t *) p)[canditer_next(&ci) - hseq]) != 0;
+				cnt += !(*atomeq)(nil, base + ((const var_t *) p)[canditer_next(&ci) - hseq]);
 		} else {
 			CAND_LOOP(&ci)
-				cnt += (*cmp)(BUNtloc(bi, canditer_next(&ci) - hseq), nil) != 0;
+				cnt += !(*atomeq)(BUNtloc(bi, canditer_next(&ci) - hseq), nil);
 		}
 		break;
 	}

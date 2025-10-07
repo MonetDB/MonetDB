@@ -324,7 +324,7 @@ compareResultOptClose(SQLHANDLE stmt, SQLRETURN retcode, const char * functionna
 
 /*
  * Utility function to query the gdk_nr_threads value from the server.
- * The output of some queries (EXPLAIN, TRACE) differ when the server
+ * The output of some queries (EXPLAIN PHYSICAL, TRACE) differ when the server
  * is started with 1 thread, as is done in our testweb.
  */
 static int
@@ -1519,9 +1519,9 @@ main(int argc, char **argv)
 		"ORDERID	LINES	PARTID	QUANTITY\n"
 		"INTEGER	INTEGER	INTEGER	DECIMAL(9,3)\n");
 
-	// test PLAN SELECT query
-	ret = SQLExecDirect(stmt, (SQLCHAR *) "PLAN SELECT * from odbctst.\"LINES\";", SQL_NTS);
-	compareResult(stmt, ret, "PLAN SELECT * from odbctst.\"LINES\"",
+	// test EXPLAIN SHOW DETAILS SELECT query
+	ret = SQLExecDirect(stmt, (SQLCHAR *) "EXPLAIN SHOW DETAILS SELECT * from odbctst.\"LINES\";", SQL_NTS);
+	compareResult(stmt, ret, "EXPLAIN SHOW DETAILS SELECT * from odbctst.\"LINES\"",
 		"Resultset with 1 columns\n"
 		"Resultset with 3 rows\n"
 		"rel\n"
@@ -1531,15 +1531,15 @@ main(int argc, char **argv)
 		") [ \"LINES\".\"ORDERID\" NOT NULL UNIQUE HASHCOL , \"LINES\".\"LINES\" NOT NULL UNIQUE, \"LINES\".\"PARTID\" NOT NULL UNIQUE, \"LINES\".\"QUANTITY\" NOT NULL UNIQUE ]\n");
 
 	// test EXPLAIN SELECT query
-	ret = SQLExecDirect(stmt, (SQLCHAR *) "EXPLAIN SELECT * from odbctst.\"LINES\";", SQL_NTS);
-	compareResult(stmt, ret, "EXPLAIN SELECT * from odbctst.\"LINES\"",
+	ret = SQLExecDirect(stmt, (SQLCHAR *) "EXPLAIN PHYSICAL SELECT * from odbctst.\"LINES\";", SQL_NTS);
+	compareResult(stmt, ret, "EXPLAIN PHYSICAL SELECT * from odbctst.\"LINES\"",
 	    nrServerThreads > 1 ?
 		"Resultset with 1 columns\n"
 		"Resultset with 18 rows\n"
 		"mal\n"
 		"WLONGVARCHAR(190)\n"
 		"function user.main():void;\n"
-		"    X_1:void := querylog.define(\"explain select * from odbctst.\\\"LINES\\\";\":str, \"default_pipe\":str, 27:int);\n"
+		"    X_1:void := querylog.define(\"explain physical select * from odbctst.\\\"LINES\\\";\":str, \"default_pipe\":str, 27:int);\n"
 		"\n"
 		"    X_33:bat[:int] := bat.new(nil:int);\n"
 		"    X_34:bat[:int] := bat.new(nil:int);\n"
@@ -1561,7 +1561,7 @@ main(int argc, char **argv)
 		"mal\n"
 		"WLONGVARCHAR(190)\n"
 		"function user.main():void;\n"
-		"    X_1:void := querylog.define(\"explain select * from odbctst.\\\"LINES\\\";\":str, \"default_pipe\":str, 27:int);\n"
+		"    X_1:void := querylog.define(\"explain physical select * from odbctst.\\\"LINES\\\";\":str, \"default_pipe\":str, 27:int);\n"
 		"    X_33:bat[:int] := bat.new(nil:int);\n"
 		"    X_34:bat[:int] := bat.new(nil:int);\n"
 		"    X_35:bat[:int] := bat.new(nil:int);\n"

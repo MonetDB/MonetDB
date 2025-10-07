@@ -284,22 +284,22 @@ ALGselect2nil(bat *result, const bat *bid, const bat *sid, const void *low,
 	if (!nanti && *unknown) {
 		const void *nilptr = ATOMnilptr(b->ttype);
 		if (nilptr) {
-			if (nli && ATOMcmp(b->ttype, low, nilptr) == 0) {
+			if (nli && ATOMeq(b->ttype, low, nilptr)) {
 				low = high;
 				nli = false;
 			}
-			if (nhi && ATOMcmp(b->ttype, high, nilptr) == 0) {
+			if (nhi && ATOMeq(b->ttype, high, nilptr)) {
 				high = low;
 				nhi = false;
 			}
-			if (ATOMcmp(b->ttype, low, high) == 0 && ATOMcmp(b->ttype, high, nilptr) == 0)	/* ugh sql nil != nil */
+			if (ATOMeq(b->ttype, low, high) && ATOMeq(b->ttype, high, nilptr))	/* ugh sql nil != nil */
 				nanti = true;
 		}
 	} else if (!*unknown) {
 		const void *nilptr = ATOMnilptr(b->ttype);
 		if (nli && nhi && nilptr != NULL &&
-			ATOMcmp(b->ttype, low, nilptr) == 0 &&
-			ATOMcmp(b->ttype, high, nilptr) == 0) {
+			ATOMeq(b->ttype, low, nilptr) &&
+			ATOMeq(b->ttype, high, nilptr)) {
 			/* special case: equi-select for NIL */
 			high = NULL;
 		}

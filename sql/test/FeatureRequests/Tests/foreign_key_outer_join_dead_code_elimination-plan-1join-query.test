@@ -2,21 +2,21 @@ statement ok
 set optimizer = 'sequential_pipe'
 
 query T python .plan.filter
-   plan select count(*) from fk left outer join pk1 on fk.fk1 = pk1.pk1
+   explain show details select count(*) from fk left outer join pk1 on fk.fk1 = pk1.pk1
 ----
 project (
 |  [ "sys"."cnt"(varchar "sys", varchar "fk") NOT NULL as "%1"."%1" ]
 ) [ "%1"."%1" NOT NULL ]
 
 query T python .plan.filter
-   plan select id       from fk left outer join pk1 on fk.fk1 = pk1.pk1 order by id
+   explain show details select id       from fk left outer join pk1 on fk.fk1 = pk1.pk1 order by id
 ----
 project (
 | table("sys"."fk") [ "fk"."id" NOT NULL UNIQUE HASHCOL  ]
 ) [ "fk"."id" NOT NULL UNIQUE HASHCOL  ] [ "fk"."id" ASC NOT NULL UNIQUE HASHCOL  ]
 
 query T python .plan.filter
-   plan select id , v1  from fk left outer join pk1 on fk.fk1 = pk1.pk1 order by id
+   explain show details select id , v1  from fk left outer join pk1 on fk.fk1 = pk1.pk1 order by id
 ----
 project (
 | left outer join (
@@ -26,7 +26,7 @@ project (
 ) [ "fk"."id" NOT NULL HASHCOL , "pk1"."v1" ] [ "fk"."id" ASC NOT NULL HASHCOL  ]
 
 query T python .plan.filter
-   plan select id , v2  from fk left outer join pk2 on fk.fk2 = pk2.pk2 order by id
+   explain show details select id , v2  from fk left outer join pk2 on fk.fk2 = pk2.pk2 order by id
 ----
 project (
 | left outer join (
@@ -36,21 +36,21 @@ project (
 ) [ "fk"."id" NOT NULL HASHCOL , "pk2"."v2" ] [ "fk"."id" ASC NOT NULL HASHCOL  ]
 
 query T python .plan.filter
-   plan select count(*) from pk1 right outer join fk on fk.fk1 = pk1.pk1
+   explain show details select count(*) from pk1 right outer join fk on fk.fk1 = pk1.pk1
 ----
 project (
 |  [ "sys"."cnt"(varchar "sys", varchar "fk") NOT NULL as "%1"."%1" ]
 ) [ "%1"."%1" NOT NULL ]
 
 query T python .plan.filter
-   plan select id       from pk1 right outer join fk on fk.fk1 = pk1.pk1 order by id
+   explain show details select id       from pk1 right outer join fk on fk.fk1 = pk1.pk1 order by id
 ----
 project (
 | table("sys"."fk") [ "fk"."id" NOT NULL UNIQUE HASHCOL  ]
 ) [ "fk"."id" NOT NULL UNIQUE HASHCOL  ] [ "fk"."id" ASC NOT NULL UNIQUE HASHCOL  ]
 
 query T python .plan.filter
-   plan select id , v1  from pk1 right outer join fk on fk.fk1 = pk1.pk1 order by id
+   explain show details select id , v1  from pk1 right outer join fk on fk.fk1 = pk1.pk1 order by id
 ----
 project (
 | right outer join (
@@ -60,7 +60,7 @@ project (
 ) [ "fk"."id" NOT NULL HASHCOL , "pk1"."v1" ] [ "fk"."id" ASC NOT NULL HASHCOL  ]
 
 query T python .plan.filter
-   plan select id , v2  from pk2 right outer join fk on fk.fk2 = pk2.pk2 order by id
+   explain show details select id , v2  from pk2 right outer join fk on fk.fk2 = pk2.pk2 order by id
 ----
 project (
 | right outer join (
@@ -70,21 +70,21 @@ project (
 ) [ "fk"."id" NOT NULL HASHCOL , "pk2"."v2" ] [ "fk"."id" ASC NOT NULL HASHCOL  ]
 
 query T python .plan.filter
-   plan select count(*) from pk1 full outer join fk on fk.fk1 = pk1.pk1
+   explain show details select count(*) from pk1 full outer join fk on fk.fk1 = pk1.pk1
 ----
 project (
 |  [ "sys"."cnt"(varchar "sys", varchar "fk") NOT NULL as "%1"."%1" ]
 ) [ "%1"."%1" NOT NULL ]
 
 query T python .plan.filter
-   plan select id       from pk1 full outer join fk on fk.fk1 = pk1.pk1 order by id
+   explain show details select id       from pk1 full outer join fk on fk.fk1 = pk1.pk1 order by id
 ----
 project (
 | table("sys"."fk") [ "fk"."id" NOT NULL UNIQUE HASHCOL  ]
 ) [ "fk"."id" NOT NULL UNIQUE HASHCOL  ] [ "fk"."id" ASC NOT NULL UNIQUE HASHCOL  ]
 
 query T python .plan.filter
-   plan select id , v1  from pk1 full outer join fk on fk.fk1 = pk1.pk1 order by id
+   explain show details select id , v1  from pk1 full outer join fk on fk.fk1 = pk1.pk1 order by id
 ----
 project (
 | full outer join (
@@ -94,7 +94,7 @@ project (
 ) [ "fk"."id" HASHCOL , "pk1"."v1" ] [ "fk"."id" ASC HASHCOL  ]
 
 query T python .plan.filter
-   plan select id , v2  from pk2 full outer join fk on fk.fk2 = pk2.pk2 order by id
+   explain show details select id , v2  from pk2 full outer join fk on fk.fk2 = pk2.pk2 order by id
 ----
 project (
 | full outer join (
@@ -104,7 +104,7 @@ project (
 ) [ "fk"."id" HASHCOL , "pk2"."v2" ] [ "fk"."id" ASC HASHCOL  ]
 
 query T python .plan.filter
-   plan select id , v1  from pk1 join fk on fk.fk1 = pk1.pk1 order by id
+   explain show details select id , v1  from pk1 join fk on fk.fk1 = pk1.pk1 order by id
 ----
 project (
 | join (
@@ -114,7 +114,7 @@ project (
 ) [ "fk"."id" NOT NULL HASHCOL , "pk1"."v1" NOT NULL ] [ "fk"."id" ASC NOT NULL HASHCOL  ]
 
 query T python .plan.filter
-   plan select id , v2  from pk2 join fk on fk.fk2 = pk2.pk2 order by id
+   explain show details select id , v2  from pk2 join fk on fk.fk2 = pk2.pk2 order by id
 ----
 project (
 | join (

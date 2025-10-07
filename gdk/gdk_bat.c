@@ -973,6 +973,7 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 	MT_rwlock_wrlock(&b->thashlock);
 	if (values && b->ttype) {
 		int (*atomcmp) (const void *, const void *) = ATOMcompare(b->ttype);
+		bool (*atomeq) (const void *, const void *) = ATOMequal(b->ttype);
 		const void *atomnil = ATOMnilptr(b->ttype);
 		const void *minvalp = NULL, *maxvalp = NULL;
 		if (b->tvheap) {
@@ -983,7 +984,7 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 			const void *vbase = b->tvheap->base;
 			for (BUN i = 0; i < count; i++) {
 				t = ((void **) values)[i];
-				bool isnil = atomcmp(t, atomnil) == 0;
+				bool isnil = atomeq(t, atomnil);
 				gdk_return rc;
 				if (notnull && isnil) {
 					assert(0);
@@ -1089,7 +1090,7 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 				if (b->thash) {
 					HASHappend_locked(b, p, t);
 				}
-				if (atomcmp(t, atomnil) != 0) {
+				if (!atomeq(t, atomnil)) {
 					if (p == 0) {
 						bi.minpos = bi.maxpos = 0;
 						minvalp = maxvalp = t;
@@ -1372,6 +1373,7 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 	BUN prv, nxt;
 	const void *val;
 	int (*atomcmp) (const void *, const void *) = ATOMcompare(b->ttype);
+	bool (*atomeq) (const void *, const void *) = ATOMequal(b->ttype);
 	const void *atomnil = ATOMnilptr(b->ttype);
 
 	MT_lock_set(&b->theaplock);
@@ -1414,7 +1416,7 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 		const void *t = b->ttype && b->tvheap ?
 			((const void **) values)[i] :
 			(const void *) ((const char *) values + (i << b->tshift));
-		bool isnil = atomnil && atomcmp(t, atomnil) == 0;
+		bool isnil = atomnil && atomeq(t, atomnil);
 		if (notnull && isnil) {
 			assert(0);
 			GDKerror("NULL value not within bounds\n");
@@ -1449,11 +1451,11 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 		}
 
 		if (val) {
-			if (atomcmp(val, t) == 0)
+			if (atomeq(val, t))
 				continue; /* nothing to do */
 			if (!isnil &&
 			    b->tnil &&
-			    atomcmp(val, atomnil) == 0) {
+			    atomeq(val, atomnil)) {
 				/* if old value is nil and new value
 				 * isn't, we're not sure anymore about
 				 * the nil property, so we must clear
@@ -1469,7 +1471,7 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 						 * than previous
 						 * largest */
 						bi.maxpos = p;
-					} else if (bi.maxpos == p && atomcmp(BUNtail(bi, bi.maxpos), t) != 0) {
+					} else if (bi.maxpos == p && !atomeq(BUNtail(bi, bi.maxpos), t)) {
 						/* old value is equal to
 						 * largest and new value
 						 * is smaller or nil (see
@@ -1485,7 +1487,7 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 						 * than previous
 						 * smallest */
 						bi.minpos = p;
-					} else if (bi.minpos == p && atomcmp(BUNtail(bi, bi.minpos), t) != 0) {
+					} else if (bi.minpos == p && !atomeq(BUNtail(bi, bi.minpos), t)) {
 						/* old value is equal to
 						 * smallest and new value
 						 * is larger or nil (see
@@ -1659,7 +1661,7 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 		} else if (!b->tkey && (b->tnokey[0] == p || b->tnokey[1] == p))
 			b->tnokey[0] = b->tnokey[1] = 0;
 		if (b->tnonil && ATOMstorage(b->ttype) != TYPE_msk)
-			b->tnonil = t && atomcmp(t, atomnil) != 0;
+			b->tnonil = t && !atomeq(t, atomnil);
 		MT_lock_unset(&b->theaplock);
 	}
 	BUN nunique = b->thash ? b->thash->nunique : 0;
@@ -1750,10 +1752,10 @@ slowfnd(BAT *b, const void *v)
 {
 	BATiter bi = bat_iterator(b);
 	BUN p, q;
-	int (*cmp)(const void *, const void *) = ATOMcompare(bi.type);
+	bool (*atomeq)(const void *, const void *) = ATOMequal(bi.type);
 
 	BATloop(b, p, q) {
-		if ((*cmp)(v, BUNtail(bi, p)) == 0) {
+		if ((*atomeq)(v, BUNtail(bi, p))) {
 			bat_iterator_end(&bi);
 			return p;
 		}
@@ -2536,6 +2538,7 @@ BATassertProps(BAT *b)
 	unsigned bbpstatus;
 	BUN p, q;
 	int (*cmpf)(const void *, const void *);
+	bool (*eqf)(const void *, const void *);
 	int cmp;
 	const void *prev = NULL, *valp, *nilp;
 	char filename[sizeof(b->theap->filename)];
@@ -2574,6 +2577,7 @@ BATassertProps(BAT *b)
 	       (BBPfarms[b->tvheap->farmid].roles & (1 << b->batRole)));
 
 	cmpf = ATOMcompare(b->ttype);
+	eqf = ATOMequal(b->ttype);
 	nilp = ATOMnilptr(b->ttype);
 
 	assert(isview1 || b->theap->free >= tailsize(b, BATcount(b)));
@@ -2722,8 +2726,8 @@ BATassertProps(BAT *b)
 		assert(b->tnokey[0] != b->tnokey[1]);
 		assert(b->tnokey[0] < b->batCount);
 		assert(b->tnokey[1] < b->batCount);
-		assert(cmpf(BUNtail(bi, b->tnokey[0]),
-			    BUNtail(bi, b->tnokey[1])) == 0);
+		assert(eqf(BUNtail(bi, b->tnokey[0]),
+			   BUNtail(bi, b->tnokey[1])));
 	}
 	/* var heaps must have sane sizes */
 	assert(b->tvheap == NULL || b->tvheap->free <= b->tvheap->size);
@@ -2753,12 +2757,12 @@ BATassertProps(BAT *b)
 		if (b->tmaxpos != BUN_NONE) {
 			assert(b->tmaxpos < BATcount(b));
 			maxval = BUNtail(bi, b->tmaxpos);
-			assert(cmpf(maxval, nilp) != 0);
+			assert(!eqf(maxval, nilp));
 		}
 		if (b->tminpos != BUN_NONE) {
 			assert(b->tminpos < BATcount(b));
 			minval = BUNtail(bi, b->tminpos);
-			assert(cmpf(minval, nilp) != 0);
+			assert(!eqf(minval, nilp));
 		}
 		if (ATOMstorage(b->ttype) == TYPE_msk) {
 			/* for now, don't do extra checks for bit mask */
@@ -2772,7 +2776,7 @@ BATassertProps(BAT *b)
 
 			BATloop(b, p, q) {
 				valp = BUNtail(bi, p);
-				bool isnil = cmpf(valp, nilp) == 0;
+				bool isnil = eqf(valp, nilp);
 				assert(!isnil || !notnull);
 				assert(!b->tnonil || !isnil);
 				assert(b->ttype != TYPE_flt || !isinf(*(flt*)valp));
@@ -2855,7 +2859,7 @@ BATassertProps(BAT *b)
 				BUN hb;
 				BUN prb;
 				valp = BUNtail(bi, p);
-				bool isnil = cmpf(valp, nilp) == 0;
+				bool isnil = eqf(valp, nilp);
 				assert(!isnil || !notnull);
 				assert(b->ttype != TYPE_flt || !isinf(*(flt*)valp));
 				assert(b->ttype != TYPE_dbl || !isinf(*(dbl*)valp));
@@ -2883,7 +2887,7 @@ BATassertProps(BAT *b)
 				for (hb = HASHget(hs, prb);
 				     hb != BUN_NONE;
 				     hb = HASHgetlink(hs, hb))
-					if (cmpf(valp, BUNtail(bi, hb)) == 0)
+					if (eqf(valp, BUNtail(bi, hb)))
 						assert(!b->tkey);
 				HASHputlink(hs, p, HASHget(hs, prb));
 				HASHput(hs, prb, p);

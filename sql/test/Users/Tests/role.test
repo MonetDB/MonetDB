@@ -97,3 +97,4 @@ DROP USER alice
 
 statement ok
 DROP USER IF EXISTS alice
+

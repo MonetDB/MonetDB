@@ -52,6 +52,7 @@ typedef struct {
 	void *(*atomRead) (void *dst, size_t *dstlen, stream *s, size_t cnt);
 	gdk_return (*atomWrite) (const void *src, stream *s, size_t cnt);
 	int (*atomCmp) (const void *v1, const void *v2);
+	bool (*atomEqual) (const void *v1, const void *v2);
 	BUN (*atomHash) (const void *v);
 
 	/* varsized atom-only ADT functions */
@@ -276,6 +277,8 @@ gdk_export const inet6 inet6_nil;
 #define ATOMnilptr(t)		BATatoms[t].atomNull
 #define ATOMcompare(t)		BATatoms[t].atomCmp
 #define ATOMcmp(t,l,r)		((*ATOMcompare(t))(l, r))
+#define ATOMequal(t)		BATatoms[t].atomEqual
+#define ATOMeq(t,l,r)		(*ATOMequal(t))(l, r)
 #define ATOMhash(t,src)		BATatoms[t].atomHash(src)
 #define ATOMdel(t,hp,src)	do if (BATatoms[t].atomDel) BATatoms[t].atomDel(hp,src); while (0)
 #define ATOMvarsized(t)		(BATatoms[t].atomPut != NULL)
@@ -424,9 +427,22 @@ __attribute__((__pure__))
 static inline int
 strCmp(const char *l, const char *r)
 {
-	return strNil(r)
+	return l == r
+		? 0
+		: strNil(r)
 		? !strNil(l)
 		: strNil(l) ? -1 : strcmp(l, r);
+}
+
+__attribute__((__pure__))
+static inline bool
+strEq(const char *l, const char *r)
+{
+	return l == r
+		? true
+		: strNil(r)
+		? strNil(l)
+		: strNil(l) ? false : strcmp(l, r) == 0;
 }
 
 __attribute__((__pure__))

@@ -175,7 +175,7 @@ SQLall(ptr ret, const bat *bid)
 			SQLall_imp(dbl);
 			break;
 		default: {
-			int (*ocmp) (const void *, const void *) = ATOMcompare(bi.type);
+			bool (*oeq) (const void *, const void *) = ATOMequal(bi.type);
 			const void *n = ATOMnilptr(bi.type), *p = n;
 			size_t s;
 
@@ -185,12 +185,12 @@ SQLall(ptr ret, const bat *bid)
 				} else {
 					for (; q < c; q++) { /* find first non nil */
 						p = BUNtail(bi, q);
-						if (ocmp(n, p) != 0)
+						if (!oeq(n, p))
 							break;
 					}
 					for (; q < c; q++) {
 						const void *pp = BUNtail(bi, q);
-						if (ocmp(p, pp) != 0 && ocmp(n, pp) != 0) { /* values != and not nil */
+						if (!oeq(p, pp) && !oeq(n, pp)) { /* values != and not nil */
 							p = n;
 							break;
 						}
@@ -307,12 +307,12 @@ SQLnil(bit *ret, const bat *bid)
 			SQLnil_imp(dbl);
 			break;
 		default: {
-			int (*ocmp) (const void *, const void *) = ATOMcompare(bi.type);
+			bool (*oeq) (const void *, const void *) = ATOMequal(bi.type);
 			const void *restrict nilp = ATOMnilptr(bi.type);
 
 			for (BUN q = 0; q < o; q++) {
 				const void *restrict c = BUNtail(bi, q);
-				if (ocmp(nilp, c) == 0) {
+				if (oeq(nilp, c)) {
 					*ret = TRUE;
 					break;
 				}
@@ -672,12 +672,12 @@ SQLanyequal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			SQLanyequal_or_not_imp_multi(dbl, ==);
 			break;
 		default: {
-			int (*ocmp) (const void *, const void *) = ATOMcompare(li.type);
+			bool (*oeq) (const void *, const void *) = ATOMequal(li.type);
 			const void *nilp = ATOMnilptr(li.type);
 
 			for (BUN q = 0; q < o; q++) {
 				const void *c = BUNtail(ri, q), *d = BUNtail(li, q);
-				res_l[q] = ocmp(nilp, c) == 0 || ocmp(nilp, d) == 0 ? bit_nil : ocmp(c, d) == 0;
+				res_l[q] = oeq(nilp, c) || oeq(nilp, d) ? bit_nil : oeq(c, d);
 			}
 		}
 		}
@@ -718,15 +718,15 @@ SQLanyequal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				SQLanyequal_or_not_imp_single(dbl, TRUE);
 				break;
 			default: {
-				int (*ocmp) (const void *, const void *) = ATOMcompare(li.type);
+				bool (*oeq) (const void *, const void *) = ATOMequal(li.type);
 				const void *nilp = ATOMnilptr(li.type);
 				const void *p = BUNtail(li, 0);
 
 				for (BUN q = 0; q < o; q++) {
 					const void *c = BUNtail(ri, q);
-					if (ocmp(nilp, c) == 0)
+					if (oeq(nilp, c))
 						*ret = bit_nil;
-					else if (ocmp(p, c) == 0) {
+					else if (oeq(p, c)) {
 						*ret = TRUE;
 						break;
 					}
@@ -919,12 +919,12 @@ SQLallnotequal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			SQLanyequal_or_not_imp_multi(dbl, !=);
 			break;
 		default: {
-			int (*ocmp) (const void *, const void *) = ATOMcompare(li.type);
+			bool (*oeq) (const void *, const void *) = ATOMequal(li.type);
 			const void *nilp = ATOMnilptr(li.type);
 
 			for (BUN q = 0; q < o; q++) {
 				const void *c = BUNtail(ri, q), *d = BUNtail(li, q);
-				res_l[q] = ocmp(nilp, c) == 0 || ocmp(nilp, d) == 0 ? bit_nil : ocmp(c, d) != 0;
+				res_l[q] = oeq(nilp, c) || oeq(nilp, d) ? bit_nil : !oeq(c, d);
 			}
 		}
 		}
@@ -965,15 +965,15 @@ SQLallnotequal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				SQLanyequal_or_not_imp_single(dbl, FALSE);
 				break;
 			default: {
-				int (*ocmp) (const void *, const void *) = ATOMcompare(li.type);
+				bool (*oeq) (const void *, const void *) = ATOMequal(li.type);
 				const void *nilp = ATOMnilptr(li.type);
 				const void *p = BUNtail(li, 0);
 
 				for (BUN q = 0; q < o; q++) {
 					const void *c = BUNtail(ri, q);
-					if (ocmp(nilp, c) == 0)
+					if (oeq(nilp, c))
 						*ret = bit_nil;
-					else if (ocmp(p, c) == 0) {
+					else if (oeq(p, c)) {
 						*ret = FALSE;
 						break;
 					}

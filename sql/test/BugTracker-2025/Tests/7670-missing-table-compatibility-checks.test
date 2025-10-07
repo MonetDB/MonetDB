@@ -6,3 +6,4 @@ CREATE MERGE TABLE table2 (column3 INT, column4 VARCHAR(100)) PARTITION BY VALUE
 
 statement error 3F000!ALTER LIST PARTITION TABLE: to be added table column type doesn't match LIST PARTITION TABLE definition
 ALTER TABLE table2 SET TABLE table1 AS PARTITION IN (4, 5, 6)
+

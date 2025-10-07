@@ -278,13 +278,13 @@ propagate_validation_to_upper_tables(sql_query* query, sql_table *mt, sql_table 
 
 			if (isRangePartitionTable(it->t)) {
 				int tpe = tp.type->localtype;
-				int (*atomcmp)(const void *, const void *) = ATOMcompare(tpe);
+				bool (*atomeq)(const void *, const void *) = ATOMequal(tpe);
 				const void *nil = ATOMnilptr(tpe);
 				sql_exp *e1 = NULL, *e2 = NULL;
 				bool found_all = false, max_equal_min = false;
 
-				if (atomcmp(spt->part.range.minvalue, nil) != 0 && atomcmp(spt->part.range.maxvalue, nil) != 0) {
-					max_equal_min = ATOMcmp(tpe, spt->part.range.maxvalue, spt->part.range.minvalue) == 0;
+				if (!atomeq(spt->part.range.minvalue, nil) && !atomeq(spt->part.range.maxvalue, nil)) {
+					max_equal_min = ATOMeq(tpe, spt->part.range.maxvalue, spt->part.range.minvalue);
 					e1 = exp_atom(sql->sa, atom_general_ptr(sql->sa, &tp, spt->part.range.minvalue));
 					if (!max_equal_min)
 						e2 = exp_atom(sql->sa, atom_general_ptr(sql->sa, &tp, spt->part.range.maxvalue));
@@ -375,7 +375,7 @@ rel_alter_table_add_partition_range(sql_query* query, sql_table *mt, sql_table *
 		bool min_max_equal = false;
 		if (pmin && pmax && pmin->type == e_atom && pmax->type == e_atom && pmin->l && pmax->l) {
 			atom *e1 = pmin->l, *e2 = pmax->l;
-			min_max_equal = ATOMcmp(tpe.type->localtype, &e1->data.val, &e2->data.val) == 0;
+			min_max_equal = ATOMeq(tpe.type->localtype, &e1->data.val, &e2->data.val);
 		}
 		check_count = create_range_partition_anti_rel(query, mt, pt, with_nills, (min && max) ? pmin : NULL, (min && max) ? pmax : NULL, all_ranges, min_max_equal);
 	}
@@ -748,9 +748,9 @@ rel_generate_subinserts(visitor *v, sql_rel *rel, sql_table *t,
 		if (isRangePartitionTable(t)) {
 			sql_exp *range = NULL, *full_range = NULL;
 			int tpe = tp.type->localtype;
-			int (*atomcmp)(const void *, const void *) = ATOMcompare(tpe);
+			bool (*atomeq)(const void *, const void *) = ATOMequal(tpe);
 			const void *nil = ATOMnilptr(tpe);
-			bool is_min_nil = atomcmp(pt->part.range.minvalue, nil) == 0, is_max_nil = atomcmp(pt->part.range.maxvalue, nil) == 0;
+			bool is_min_nil = atomeq(pt->part.range.minvalue, nil), is_max_nil = atomeq(pt->part.range.maxvalue, nil);
 
 			if (is_min_nil && is_max_nil) {
 				found_all_range_values |= (pt->with_nills != 1);
@@ -767,7 +767,7 @@ rel_generate_subinserts(visitor *v, sql_rel *rel, sql_table *t,
 			} else if (is_max_nil) {
 				full_range = range = exp_compare(sql->sa, le, exp_atom(sql->sa, atom_general_ptr(sql->sa, &tp, pt->part.range.minvalue)), cmp_gte);
 			} else {
-				bool max_equal_min = ATOMcmp(tpe, pt->part.range.maxvalue, pt->part.range.minvalue) == 0;
+				bool max_equal_min = ATOMeq(tpe, pt->part.range.maxvalue, pt->part.range.minvalue);
 
 				full_range = range = max_equal_min ?
 					exp_compare(sql->sa, le, exp_atom(sql->sa, atom_general_ptr(sql->sa, &tp, pt->part.range.minvalue)), cmp_equal) :
@@ -980,14 +980,14 @@ rel_subtable_insert(visitor *v, sql_rel *p, sql_table *t)
 	find_partition_type(&tp, upper->t);
 	if (isRangePartitionTable(upper->t)) {
 		int tpe = tp.type->localtype;
-		int (*atomcmp)(const void *, const void *) = ATOMcompare(tpe);
+		bool (*atomeq)(const void *, const void *) = ATOMequal(tpe);
 		const void *nil = ATOMnilptr(tpe);
 
 		if (pt->with_nills == true || is_bit_nil(pt->with_nills))
 			found_nils = true;
 
-		if (atomcmp(pt->part.range.minvalue, nil) == 0) {
-			if (atomcmp(pt->part.range.maxvalue, nil) == 0) {
+		if (atomeq(pt->part.range.minvalue, nil)) {
+			if (atomeq(pt->part.range.maxvalue, nil)) {
 				found_all_range_values = pt->with_nills != 1;
 				if (pt->with_nills == true) {
 					anti_nils = rel_unop_(sql, anti_dup, exp_copy(sql, anti_le), "sys", "isnull", card_value);
@@ -999,12 +999,12 @@ rel_subtable_insert(visitor *v, sql_rel *p, sql_table *t)
 				anti_exp = exp_compare(sql->sa, exp_copy(sql, anti_le), e2, cmp_gte);
 			}
 		} else {
-			if (atomcmp(pt->part.range.maxvalue, nil) == 0) {
+			if (atomeq(pt->part.range.maxvalue, nil)) {
 				sql_exp *e1 = exp_atom(sql->sa, atom_general_ptr(sql->sa, &tp, pt->part.range.minvalue));
 				anti_exp = exp_compare(sql->sa, exp_copy(sql, anti_le), e1, cmp_lt);
 			} else {
 				sql_exp *e1 = exp_atom(sql->sa, atom_general_ptr(sql->sa, &tp, pt->part.range.minvalue));
-				bool max_equal_min = ATOMcmp(tpe, pt->part.range.maxvalue, pt->part.range.minvalue) == 0;
+				bool max_equal_min = ATOMeq(tpe, pt->part.range.maxvalue, pt->part.range.minvalue);
 
 				if (max_equal_min) {
 					anti_exp = exp_compare(sql->sa, exp_copy(sql, anti_le), e1, cmp_notequal);

@@ -50,7 +50,7 @@ statement ok
 analyze sys.mt2 (id,posX)
 
 query T nosort
-plan select * from test where id between 1 and 10000
+explain show details select * from test where id between 1 and 10000
 ----
 munion (
 | project (
@@ -62,14 +62,14 @@ munion (
 ) [ "test"."id" NOT NULL, "test"."posx" NOT NULL ]
 
 query T nosort
-plan select * from test where id between 1 and 1000
+explain show details select * from test where id between 1 and 1000
 ----
 project (
 | table("sys"."mt2") [ "mt2"."id" NOT NULL UNIQUE as "test"."id", "mt2"."posx" NOT NULL as "test"."posx" ]
 ) [ "test"."id" NOT NULL UNIQUE, "test"."posx" NOT NULL ]
 
 query T nosort
-plan select * from test where id between 1 and 10000
+explain show details select * from test where id between 1 and 10000
 ----
 munion (
 | project (
@@ -81,14 +81,14 @@ munion (
 ) [ "test"."id" NOT NULL, "test"."posx" NOT NULL ]
 
 query T nosort
-plan select * from test where id between 1 and 1000
+explain show details select * from test where id between 1 and 1000
 ----
 project (
 | table("sys"."mt2") [ "mt2"."id" NOT NULL UNIQUE as "test"."id", "mt2"."posx" NOT NULL as "test"."posx" ]
 ) [ "test"."id" NOT NULL UNIQUE, "test"."posx" NOT NULL ]
 
 query T nosort
-plan select * from test where id between 1 and 1000*10
+explain show details select * from test where id between 1 and 1000*10
 ----
 munion (
 | project (
@@ -100,7 +100,7 @@ munion (
 ) [ "test"."id" NOT NULL, "test"."posx" NOT NULL ]
 
 query T nosort
-plan select * from test where id between 1 and 100*10
+explain show details select * from test where id between 1 and 100*10
 ----
 munion (
 | project (
@@ -116,7 +116,7 @@ munion (
 ) [ "test"."id" NOT NULL, "test"."posx" NOT NULL ]
 
 query T nosort
-plan select * from test where id in (1, 1022)
+explain show details select * from test where id in (1, 1022)
 ----
 munion (
 | project (
@@ -132,7 +132,7 @@ munion (
 ) [ "test"."id" NOT NULL, "test"."posx" NOT NULL ]
 
 query T nosort
-plan select * from test where id in (1, 1000)
+explain show details select * from test where id in (1, 1000)
 ----
 project (
 | select (

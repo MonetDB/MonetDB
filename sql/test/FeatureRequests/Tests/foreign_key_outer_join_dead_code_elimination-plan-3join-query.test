@@ -1,5 +1,5 @@
 query T python .plan.filter
-plan select count(*) from pk1 join fk on fk.fk1 = pk1.pk1
+explain show details select count(*) from pk1 join fk on fk.fk1 = pk1.pk1
 ----
 project (
 | group by (
@@ -10,7 +10,7 @@ project (
 ) [ "%1"."%1" NOT NULL UNIQUE ]
 
 query T python .plan.filter
-plan select id from pk1 join fk on fk.fk1 = pk1.pk1 order by id
+explain show details select id from pk1 join fk on fk.fk1 = pk1.pk1 order by id
 ----
 project (
 | select (
@@ -19,7 +19,7 @@ project (
 ) [ "fk"."id" NOT NULL UNIQUE HASHCOL  ] [ "fk"."id" ASC NOT NULL UNIQUE HASHCOL  ]
 
 query T python .plan.filter
-plan select count(*) from pk2 join (pk1 join fk on fk.fk1 = pk1.pk1) on fk.fk2 = pk2.pk2
+explain show details select count(*) from pk2 join (pk1 join fk on fk.fk1 = pk1.pk1) on fk.fk2 = pk2.pk2
 ----
 project (
 | group by (
@@ -30,7 +30,7 @@ project (
 ) [ "%1"."%1" NOT NULL UNIQUE ]
 
 query T python .plan.filter
-plan select id from pk2 join (pk1 join fk on fk.fk1 = pk1.pk1) on fk.fk2 = pk2.pk2 order by id
+explain show details select id from pk2 join (pk1 join fk on fk.fk1 = pk1.pk1) on fk.fk2 = pk2.pk2 order by id
 ----
 project (
 | select (
@@ -39,7 +39,7 @@ project (
 ) [ "fk"."id" NOT NULL UNIQUE HASHCOL  ] [ "fk"."id" ASC NOT NULL UNIQUE HASHCOL  ]
 
 query T python .plan.filter
-plan select id, v1 from pk2 join (pk1 join fk on fk.fk1 = pk1.pk1) on fk.fk2 = pk2.pk2 order by id
+explain show details select id, v1 from pk2 join (pk1 join fk on fk.fk1 = pk1.pk1) on fk.fk2 = pk2.pk2 order by id
 ----
 project (
 | join (
@@ -52,7 +52,7 @@ project (
 ) [ "fk"."id" NOT NULL HASHCOL , "pk1"."v1" NOT NULL ] [ "fk"."id" ASC NOT NULL HASHCOL  ]
 
 query T python .plan.filter
-plan select id, v2 from pk2 join (pk1 join fk on fk.fk1 = pk1.pk1) on fk.fk2 = pk2.pk2 order by id
+explain show details select id, v2 from pk2 join (pk1 join fk on fk.fk1 = pk1.pk1) on fk.fk2 = pk2.pk2 order by id
 ----
 project (
 | join (

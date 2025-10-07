@@ -39,7 +39,7 @@ select * from plantest1
 ) as v
 
 query T nosort
-plan select
+EXPLAIN SHOW DETAILS select
 id_r * 10000000 as id_range_base,
 count(id_r) as nrows
 from
@@ -99,7 +99,7 @@ id_r asc
 2
 
 query T nosort
-plan select
+EXPLAIN SHOW DETAILS select
 id_r * 10000000 as id_range_base,
 count(id_r) as nrows
 from

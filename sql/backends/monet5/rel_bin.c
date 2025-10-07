@@ -1429,13 +1429,17 @@ exp2bin_coalesce(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *isel, 
 	sql_subfunc *and = sql_bind_func(be->mvc, "sys", "and", bt, bt, F_FUNC, true, true);
 	sql_subfunc *not = sql_bind_func(be->mvc, "sys", "not", bt, NULL, F_FUNC, true, true);
 
+	list *exps = fe->l;
+	if (list_length(exps) == 1) {
+		sql_exp *e = exps->h->data;
+		return exp_bin(be, e, left, right, NULL, NULL, NULL, isel, depth+1, 0, 1);
+	}
 	if (single_value) {
 		/* var_x = nil; */
 		nme = number2name(name, sizeof(name), ++be->mvc->label);
 		(void)stmt_var(be, NULL, nme, exp_subtype(fe), 1, 2);
 	}
 
-	list *exps = fe->l;
 	for (node *en = exps->h; en; en = en->next) {
 		sql_exp *e = en->data;
 
@@ -2043,6 +2047,9 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 						es = stmt_const(be, bin_find_smallest_column(be, left), es); /* ensure the first argument is a column */
 					if (!f->func->s && !strcmp(f->func->base.name, "window_bound")
 						&& exps->h->next && list_length(f->func->ops) == 6 && en == exps->h->next && left->nrcols)
+						es = stmt_const(be, bin_find_smallest_column(be, left), es);
+					if (!f->func->s && (!strcmp(f->func->base.name, "first_value") || !strcmp(f->func->base.name, "last_value"))
+						&& (!en->next || !en->next->next) && list_length(f->func->ops) == 1 && left->nrcols)
 						es = stmt_const(be, bin_find_smallest_column(be, left), es);
 				}
 				if (es->nrcols > nrcols)

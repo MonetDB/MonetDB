@@ -5,7 +5,7 @@ statement ok
 CREATE TABLE y (a1 INTEGER, p DOUBLE)
 
 query T nosort
-PLAN SELECT a1, p FROM (SELECT y.a1 AS a1, foo_x3.a1 AS a2, y.p * foo_x3.p AS p FROM y, (SELECT a1, p FROM (SELECT foo_x0.a1 AS a1, foo_x0.a2 AS a2, foo_x1.a1 AS a3, foo_x0.p AS p FROM (SELECT a1, a3 AS a2, p FROM x) AS foo_x0, (VALUES ('bar',1.0e0)) AS foo_x1(a1,p) WHERE contains( foo_x0.a2, foo_x1.a1,true)) AS foo_x2) AS foo_x3 WHERE y.a1 = foo_x3.a1) AS foo_x4
+EXPLAIN SHOW DETAILS SELECT a1, p FROM (SELECT y.a1 AS a1, foo_x3.a1 AS a2, y.p * foo_x3.p AS p FROM y, (SELECT a1, p FROM (SELECT foo_x0.a1 AS a1, foo_x0.a2 AS a2, foo_x1.a1 AS a3, foo_x0.p AS p FROM (SELECT a1, a3 AS a2, p FROM x) AS foo_x0, (VALUES ('bar',1.0e0)) AS foo_x1(a1,p) WHERE contains( foo_x0.a2, foo_x1.a1,true)) AS foo_x2) AS foo_x3 WHERE y.a1 = foo_x3.a1) AS foo_x4
 ----
 project (
 | project (

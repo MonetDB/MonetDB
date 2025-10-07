@@ -2976,7 +2976,7 @@ col_set_range(sql_trans *tr, sql_column *col, sql_part *pt, bool add_range)
 			MT_lock_set(&b->theaplock);
 			if (add_range) {
 				BATsetprop_nolock(b, GDK_MIN_BOUND, b->ttype, pt->part.range.minvalue);
-				if (ATOMcmp(b->ttype, pt->part.range.maxvalue, ATOMnilptr(b->ttype)) != 0)
+				if (!ATOMeq(b->ttype, pt->part.range.maxvalue, ATOMnilptr(b->ttype)))
 					BATsetprop_nolock(b, GDK_MAX_BOUND, b->ttype, pt->part.range.maxvalue);
 				else
 					BATrmprop_nolock(b, GDK_MAX_BOUND);

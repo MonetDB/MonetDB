@@ -51,7 +51,7 @@ select * from r
 0.900
 
 query T nosort
-PLAN select * from r
+EXPLAIN SHOW DETAILS select * from r
 ----
 project (
 | project (

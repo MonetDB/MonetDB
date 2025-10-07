@@ -61,7 +61,7 @@ statement ok
 set optimizer = 'sequential_pipe'
 
 query T python .explain.function_histogram
-EXPLAIN SELECT 1 FROM t1 WHERE (((COALESCE('b', 'a'))ILIKE('c'))) = FALSE
+EXPLAIN PHYSICAL SELECT 1 FROM t1 WHERE (((COALESCE('b', 'a'))ILIKE('c'))) = FALSE
 ----
 algebra.likeselect
 1
@@ -378,7 +378,7 @@ SELECT 1 FROM t0, t2 GROUP BY t2.c1 HAVING ((((SELECT FALSE WHERE FALSE) EXCEPT 
 1
 
 query T nosort
-PLAN SELECT (SELECT c0 FROM t0) FROM t0
+EXPLAIN SHOW DETAILS SELECT (SELECT c0 FROM t0) FROM t0
 ----
 project (
 | single left outer join (

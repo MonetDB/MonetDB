@@ -18,7 +18,7 @@ select avg(3) from generate_series(cast(0 as integer), 10, 1)
 3.000
 
 query T nosort
-PLAN SELECT avg(3) FROM generate_series(cast(0 as integer), 10, 1)
+EXPLAIN SHOW DETAILS SELECT avg(3) FROM generate_series(cast(0 as integer), 10, 1)
 ----
 project (
 | group by (
@@ -36,7 +36,7 @@ SELECT avg(3) FROM baz GROUP BY b
 3
 
 query T nosort
-PLAN SELECT avg(3) FROM baz GROUP BY b
+EXPLAIN SHOW DETAILS SELECT avg(3) FROM baz GROUP BY b
 ----
 project (
 | group by (
@@ -53,7 +53,7 @@ SELECT 1 + avg(3) FROM baz GROUP BY b
 4.000
 
 query T nosort
-PLAN SELECT 1 + avg(3) FROM baz GROUP BY b
+EXPLAIN SHOW DETAILS SELECT 1 + avg(3) FROM baz GROUP BY b
 ----
 project (
 | group by (
@@ -82,7 +82,7 @@ SELECT 1 + avg(3), avg(3) * 10 FROM baz GROUP BY b
 30.000
 
 query T nosort
-PLAN SELECT 1 + avg(3), avg(3) * 10 FROM baz GROUP BY b
+EXPLAIN SHOW DETAILS SELECT 1 + avg(3), avg(3) * 10 FROM baz GROUP BY b
 ----
 project (
 | project (
@@ -113,7 +113,7 @@ SELECT count(3) FROM baz GROUP BY b
 2
 
 query T nosort
-PLAN SELECT count(3) FROM baz GROUP BY b
+EXPLAIN SHOW DETAILS SELECT count(3) FROM baz GROUP BY b
 ----
 project (
 | group by (
@@ -122,7 +122,7 @@ project (
 ) [ "%1"."%1" NOT NULL ]
 
 query T nosort
-plan select prod(cast(1 as real)) from baz group by b
+explain show details select prod(cast(1 as real)) from baz group by b
 ----
 project (
 | group by (
@@ -131,7 +131,7 @@ project (
 ) [ real(24) "1" as "%1"."%1" ]
 
 query T nosort
-plan select prod(1), sum(0) from baz group by a
+explain show details select prod(1), sum(0) from baz group by a
 ----
 project (
 | group by (
@@ -168,7 +168,7 @@ NULL
 NULL
 
 query T nosort
-plan select count(null) + 3 from baz group by a
+explain show details select count(null) + 3 from baz group by a
 ----
 project (
 | group by (

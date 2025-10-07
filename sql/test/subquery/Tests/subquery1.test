@@ -65,7 +65,7 @@ NULL
 statement error
 SELECT * FROM integers WHERE i=(SELECT i FROM integers WHERE i IS NOT NULL ORDER BY i)
 
-query I
+query I nosort
 SELECT * FROM integers WHERE i=(SELECT i FROM integers WHERE i IS NOT NULL ORDER BY i LIMIT 1)
 ----
 1
