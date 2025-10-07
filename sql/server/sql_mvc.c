@@ -1584,11 +1584,11 @@ sql_processrelation(mvc *sql, sql_rel *rel, int profile, int instantiate, int va
 	int emode = sql->emode;
 	if (!instantiate)
 		sql->emode = m_deps;
-	if (emode == m_plan && BEFORE_UNNEST(sql))
+	if (emode == m_plan && BEFORE_REL_UNNEST(sql))
 		return rel;
 	if (rel)
 		rel = rel_unnest(sql, rel);
-	if (emode == m_plan && (AFTER_UNNEST(sql) || BEFORE_REWRITE(sql)))
+	if (emode == m_plan && (AFTER_REL_UNNEST(sql) || BEFORE_REL_REWRITE(sql)))
 		return rel;
 	sql->emode = emode;
 	if (rel)

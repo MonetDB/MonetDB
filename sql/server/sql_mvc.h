@@ -70,21 +70,21 @@
 #define mod_explain 1
 #define mod_exec    2
 
-#define S_NONE      0
-#define S_UNNEST    1
-#define S_REWRITE   2
-#define S_PHYSICAL  3
+#define S_NONE        0
+#define S_REL_UNNEST  1
+#define S_REL_REWRITE 2
+#define S_PHYSICAL    3
 
 #define T_NONE      0
 #define T_BEFORE    1
 #define T_AFTER     2
 
-#define BEFORE_UNNEST(m) (m->step == S_UNNEST && m->temporal == T_BEFORE)
-#define AFTER_UNNEST(m) (m->step == S_UNNEST && m->temporal == T_AFTER)
-#define BEFORE_REWRITE(m) (m->step == S_REWRITE && m->temporal == T_BEFORE)
-#define AFTER_REWRITE(m) (m->step == S_REWRITE && m->temporal == T_AFTER)
-#define BEFORE_PHYSICAL(m) (m->step == S_PHYSICAL && m->temporal == T_BEFORE)
-#define AFTER_PHYSICAL(m) (m->step == S_PHYSICAL && m->temporal == T_AFTER)
+#define BEFORE_REL_UNNEST(m)  (m->step == S_REL_UNNEST  && m->temporal == T_BEFORE)
+#define AFTER_REL_UNNEST(m)   (m->step == S_REL_UNNEST  && m->temporal == T_AFTER)
+#define BEFORE_REL_REWRITE(m) (m->step == S_REL_REWRITE && m->temporal == T_BEFORE)
+#define AFTER_REL_REWRITE(m)  (m->step == S_REL_REWRITE && m->temporal == T_AFTER)
+#define BEFORE_PHYSICAL(m)    (m->step == S_PHYSICAL    && m->temporal == T_BEFORE)
+#define AFTER_PHYSICAL(m)     (m->step == S_PHYSICAL    && m->temporal == T_AFTER)
 
 typedef struct sql_groupby_expression {
 	symbol *sdef;
