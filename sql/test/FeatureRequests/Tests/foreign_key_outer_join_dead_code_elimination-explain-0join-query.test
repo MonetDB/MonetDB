@@ -6,7 +6,7 @@ explain select count(*) from fk
 
 skipif knowfail
 query T python .explain.function_histogram
-explain select count(*) from fk
+explain physical select count(*) from fk
 ----
 querylog.define
 1
@@ -22,7 +22,7 @@ explain select id       from fk order by id
 
 skipif knowfail
 query T python .explain.function_histogram
-explain select id       from fk order by id
+explain physical select id       from fk order by id
 ----
 algebra.projection
 1

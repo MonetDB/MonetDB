@@ -184,6 +184,7 @@ SELECT * from generate_series(cast('2024-02-28' as date),cast('2024-12-31' as da
 2024-02-28
 2024-05-28
 2024-08-28
+2024-11-28
 
 @connection(id=c2, username=test, password=test)
 query T nosort

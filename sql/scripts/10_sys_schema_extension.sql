@@ -200,7 +200,6 @@ INSERT INTO sys.keywords (keyword) VALUES
   ('PARTITION'),
   ('PASSWORD'),
   ('PATH'),
-  ('PLAN'),
   ('POSITION'),
   ('PRECEDING'),
   ('PRECISION'),

@@ -3,7 +3,7 @@ set optimizer = 'sequential_pipe'
 
 skipif knownfail
 query T python .plan.filter
-   plan select count(*) from v0
+   explain show details select count(*) from v0
 ----
 project (
 | group by (
@@ -15,7 +15,7 @@ project (
 
 skipif knownfail
 query T python .plan.filter
-   plan select id       from v0 order by id
+   explain show details select id       from v0 order by id
 ----
 project (
 | project (

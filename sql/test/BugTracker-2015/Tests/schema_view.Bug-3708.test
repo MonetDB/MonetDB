@@ -51,8 +51,8 @@ set schema s1
 statement ok
 create view s4 as select * from s3
 
-query T python .plan.filter
-PLAN select * from s1.s4
+query T nosort
+EXPLAIN SHOW DETAILS select * from s1.s4
 ----
 project (
 | table("s1"."s3") [ "s3"."x" NOT NULL UNIQUE ]
@@ -61,8 +61,8 @@ project (
 statement ok
 set schema s2
 
-query T python .plan.filter
-PLAN select * from s1.s4
+query T nosort
+EXPLAIN SHOW DETAILS select * from s1.s4
 ----
 project (
 | table("s1"."s3") [ "s3"."x" NOT NULL UNIQUE ]

@@ -12,7 +12,7 @@ mighty null
 
 skipif knownfail
 query T nosort
-plan select * from foo where n is null
+explain show details select * from foo where n is null
 ----
 project (
 | select (
@@ -30,7 +30,7 @@ two
 
 skipif knownfail
 query T nosort
-plan select * from foo where not n is null
+explain show details select * from foo where not n is null
 ----
 project (
 | select (
@@ -48,7 +48,7 @@ two
 
 skipif knownfail
 query T nosort
-plan select * from foo where n is not null
+explain show details select * from foo where n is not null
 ----
 project (
 | select (
@@ -64,7 +64,7 @@ mighty null
 
 skipif knownfail
 query T nosort
-plan select * from foo where not n is not null
+explain show details select * from foo where not n is not null
 ----
 project (
 | select (
@@ -80,7 +80,7 @@ mighty null
 
 skipif knownfail
 query T nosort
-plan select * from foo where sys.isnull(n) = true
+explain show details select * from foo where sys.isnull(n) = true
 ----
 project (
 | select (
@@ -98,7 +98,7 @@ two
 
 skipif knownfail
 query T nosort
-plan select * from foo where sys.isnull(n) = false
+explain show details select * from foo where sys.isnull(n) = false
 ----
 project (
 | select (
@@ -116,7 +116,7 @@ two
 
 skipif knownfail
 query T nosort
-plan select * from foo where sys.isnull(n) != true
+explain show details select * from foo where sys.isnull(n) != true
 ----
 project (
 | select (
@@ -132,7 +132,7 @@ mighty null
 
 skipif knownfail
 query T nosort
-plan select * from foo where sys.isnull(n) != false
+explain show details select * from foo where sys.isnull(n) != false
 ----
 project (
 | select (
@@ -150,7 +150,7 @@ two
 
 skipif knownfail
 query T nosort
-plan select * from foo where sys.isnotnull(n) = true
+explain show details select * from foo where sys.isnotnull(n) = true
 ----
 project (
 | select (
@@ -166,7 +166,7 @@ mighty null
 
 skipif knownfail
 query T nosort
-plan select * from foo where sys.isnotnull(n) = false
+explain show details select * from foo where sys.isnotnull(n) = false
 ----
 project (
 | select (
@@ -182,7 +182,7 @@ mighty null
 
 skipif knownfail
 query T nosort
-plan select * from foo where sys.isnotnull(n) != true
+explain show details select * from foo where sys.isnotnull(n) != true
 ----
 project (
 | select (
@@ -200,7 +200,7 @@ two
 
 skipif knownfail
 query T nosort
-plan select * from foo where sys.isnotnull(n) != false
+explain show details select * from foo where sys.isnotnull(n) != false
 ----
 project (
 | select (

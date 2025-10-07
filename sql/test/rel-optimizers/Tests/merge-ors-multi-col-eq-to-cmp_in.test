@@ -12,8 +12,8 @@ select * from b where n > 3 or (m = 20 and k = 200) or (m = 60 and k = 600)
 1800
 
 skipif knownfail
-query T python .plan.filter non-eq-two-col-2-value
-plan select * from b where n > 3 or (m = 20 and k = 200) or (m = 60 and k = 600)
+query T nosort non-eq-two-col-2-value
+explain show details select * from b where n > 3 or (m = 20 and k = 200) or (m = 60 and k = 600)
 ----
 project (
 | select (
@@ -35,8 +35,8 @@ select * from b where (n > 3 and (m = 180 and k = 1800)) or (m = 20 and k = 200)
 1800
 
 skipif knownfail
-query T python .plan.filter non-eq-two-col-3-value
-plan select * from b where (n > 3 and (m = 180 and k = 1800)) or (m = 20 and k = 200) or (m = 60 and k = 600)
+query T nosort
+explain show details select * from b where (n > 3 and (m = 180 and k = 1800)) or (m = 20 and k = 200) or (m = 60 and k = 600)
 ----
 project (
 | select (
@@ -45,8 +45,8 @@ project (
 ) [ "b"."n" NOT NULL, "b"."m" NOT NULL, "b"."k" NOT NULL ]
 
 skipif knownfail
-query T python .plan.filter non-eq-two-col-2-value
-plan select * from b where (m = 20 and k = 200) or n > 3 or (m = 60 and k = 600)
+query T nosort non-eq-two-col-2-value
+explain show details select * from b where (m = 20 and k = 200) or n > 3 or (m = 60 and k = 600)
 ----
 project (
 | select (
@@ -56,8 +56,8 @@ project (
 
 # order of m,k equality statements are swapped in the last AND expression
 skipif knownfail
-query T python .plan.filter non-eq-two-col-2-value
-plan select * from b where (m = 20 and k = 200) or n > 3 or (k = 600 and m = 60)
+query T nosort non-eq-two-col-2-value
+explain show details select * from b where (m = 20 and k = 200) or n > 3 or (k = 600 and m = 60)
 ----
 project (
 | select (
@@ -66,8 +66,8 @@ project (
 ) [ "b"."n" NOT NULL, "b"."m" NOT NULL, "b"."k" NOT NULL ]
 
 skipif knownfail
-query T python .plan.filter non-eq-two-col-2-value
-plan select * from b where (m = 20 and k = 200) or (m = 60 and k = 600) or n > 3
+query T nosort non-eq-two-col-2-value
+explain show details select * from b where (m = 20 and k = 200) or (m = 60 and k = 600) or n > 3
 ----
 project (
 | select (
@@ -86,8 +86,8 @@ select * from b where (n = 1 and m = 20) or (m = 20 and k = 200) or (m = 60 and 
 600
 
 skipif knownfail
-query T python .plan.filter two-col-1-value-two-col-2-value
-plan select * from b where (n = 1 and m = 20) or (m = 20 and k = 200) or (m = 60 and k = 600)
+query T nosort two-col-1-value-two-col-2-value
+explain show details select * from b where (n = 1 and m = 20) or (m = 20 and k = 200) or (m = 60 and k = 600)
 ----
 project (
 | select (
@@ -96,8 +96,8 @@ project (
 ) [ "b"."n" NOT NULL, "b"."m" NOT NULL, "b"."k" NOT NULL ]
 
 skipif knownfail
-query T python .plan.filter two-col-1-value-two-col-2-value
-plan select * from b where (m = 20 and k = 200) or (n = 1 and m = 20) or (m = 60 and k = 600)
+query T nosort two-col-1-value-two-col-2-value
+explain show details select * from b where (m = 20 and k = 200) or (n = 1 and m = 20) or (m = 60 and k = 600)
 ----
 project (
 | select (
@@ -106,8 +106,8 @@ project (
 ) [ "b"."n" NOT NULL, "b"."m" NOT NULL, "b"."k" NOT NULL ]
 
 skipif knownfail
-query T python .plan.filter two-col-1-value-two-col-2-value
-plan select * from b where (m = 20 and k = 200) or (m = 60 and k = 600) or (n = 1 and m = 20)
+query T nosort two-col-1-value-two-col-2-value
+explain show details select * from b where (m = 20 and k = 200) or (m = 60 and k = 600) or (n = 1 and m = 20)
 ----
 project (
 | select (
@@ -130,8 +130,8 @@ select * from b where (m = 40 and k > 0) or (m = 20 and k = 200) or (m = 60 and 
 
 #skipif threads=1
 skipif knownfail
-query T python .plan.filter
-plan select * from b where (m = 40 and k > 0) or (m = 20 and k = 200) or (m = 60 and k = 600)
+query T nosort
+explain show details select * from b where (m = 40 and k > 0) or (m = 20 and k = 200) or (m = 60 and k = 600)
 ----
 project (
 | select (
@@ -141,8 +141,8 @@ project (
 
 #onlyif threads=1
 skipif knownfail
-query T python .plan.filter
-plan select * from b where (m = 40 and k > 0) or (m = 20 and k = 200) or (m = 60 and k = 600)
+query T nosort
+explain show details select * from b where (m = 40 and k > 0) or (m = 20 and k = 200) or (m = 60 and k = 600)
 ----
 project (
 | select (
@@ -166,8 +166,8 @@ select m, k from b where (m = 40) or (m = 20 and k = 200) or (m = 0) or (m = 60 
 
 #skipif threads=1
 skipif knownfail
-query T python .plan.filter single-col-3-val-2-col-2-val
-plan select m, k from b where (m = 40) or (m = 20 and k = 200) or (m = 0) or (m = 60 and k = 600) or (m = 180)
+query T nosort single-col-3-val-2-col-2-val
+explain show details select m, k from b where (m = 40) or (m = 20 and k = 200) or (m = 0) or (m = 60 and k = 600) or (m = 180)
 ----
 project (
 | select (
@@ -177,8 +177,8 @@ project (
 
 #onlyif threads=1
 skipif knownfail
-query T python .plan.filter single-col-3-val-2-col-2-val
-plan select m, k from b where (m = 40) or (m = 20 and k = 200) or (m = 0) or (m = 60 and k = 600) or (m = 180)
+query T nosort single-col-3-val-2-col-2-val
+explain show details select m, k from b where (m = 40) or (m = 20 and k = 200) or (m = 0) or (m = 60 and k = 600) or (m = 180)
 ----
 project (
 | select (

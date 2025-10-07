@@ -14,7 +14,7 @@ select 2 ^ 3
 1
 
 query T nosort
-plan select 2 ^ 3
+explain show details select 2 ^ 3
 ----
 project (
 |  [ boolean(1) "true" as "%1"."%1" ]
@@ -61,7 +61,7 @@ select 17 ^ 5
 20
 
 query T nosort
-plan select 17 ^ 5
+explain show details select 17 ^ 5
 ----
 project (
 |  [ boolean(1) "true" as "%1"."%1" ]
@@ -73,7 +73,7 @@ select 2 ^ 3
 1
 
 query T nosort
-plan select 2 ^ 3
+explain show details select 2 ^ 3
 ----
 project (
 |  [ boolean(1) "true" as "%1"."%1" ]
@@ -85,7 +85,7 @@ select ~1
 -2
 
 query T nosort
-plan select ~1
+explain show details select ~1
 ----
 project (
 |  [ boolean(1) "true" as "%1"."%1" ]
@@ -97,7 +97,7 @@ select 1 << 4
 16
 
 query T nosort
-plan select 1 << 4
+explain show details select 1 << 4
 ----
 project (
 |  [ boolean(1) "true" as "%1"."%1" ]
@@ -114,7 +114,7 @@ select 8 >> 2
 2
 
 query T nosort
-plan select 8 >> 2
+explain show details select 8 >> 2
 ----
 project (
 |  [ boolean(1) "true" as "%1"."%1" ]
@@ -306,7 +306,7 @@ select 2144156907 / 2147483648
 0
 
 query T nosort
-plan select CAST(RAND() as float) / 2147483648
+explain show details select CAST(RAND() as float) / 2147483648
 ----
 project (
 |  [ boolean(1) "true" as "%1"."%1" ]

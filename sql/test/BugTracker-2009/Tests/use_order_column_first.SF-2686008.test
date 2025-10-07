@@ -53,12 +53,9 @@ select * from sorted
 4
 3
 
-statement ok
-PLAN select a,b from sorted group by a,b
-
 skipif knownfail
-query T python .plan.filter
-PLAN select a,b from sorted group by a,b
+query T nosort
+EXPLAIN SHOW DETAILS select a,b from sorted group by a,b
 ----
 project (
 | group by (
@@ -66,12 +63,9 @@ project (
 | ) [ "sorted"."a" NOT NULL, "sorted"."b" NOT NULL ] [ "sorted"."a" NOT NULL, "sorted"."b" NOT NULL ]
 ) [ "sorted"."a" NOT NULL, "sorted"."b" NOT NULL ]
 
-statement ok
-PLAN select a,b from sorted group by b,a
-
 skipif knownfail
-query T python .plan.filter
-PLAN select a,b from sorted group by b,a
+query T nosort
+EXPLAIN SHOW DETAILS select a,b from sorted group by b,a
 ----
 project (
 | group by (

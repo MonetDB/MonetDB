@@ -43,8 +43,8 @@ SELECT * FROM v2
 2
 
 skipif knownfail
-query T python .plan.filter
-PLAN SELECT length("m") as data_length, "m" as data_value FROM "sys"."v2" WHERE "m" IS NOT NULL AND length("m") > 1
+query T nosort
+EXPLAIN SHOW DETAILS SELECT length("m") as data_length, "m" as data_value FROM "sys"."v2" WHERE "m" IS NOT NULL AND length("m") > 1
 ----
 project (
 | semijoin (

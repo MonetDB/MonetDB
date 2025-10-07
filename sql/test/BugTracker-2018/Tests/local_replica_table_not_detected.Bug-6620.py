@@ -51,12 +51,12 @@ with tempfile.TemporaryDirectory() as farm_dir:
             cur2.execute("alter table mrgT add table t1")
             cur2.execute("alter table mrgT add table t2")
 
-            cur2.execute("plan select * from repS")
+            cur2.execute("explain show details select * from repS")
             for r in cur2.fetchall():
                if 'remote' in ''.join(r).lower():
                    sys.stderr.write('No REMOTE properties expected')
 
-            cur2.execute("plan select * from repS, mrgT")
+            cur2.execute("explain show details select * from repS, mrgT")
             for r in cur2.fetchall():
                if 'remote(sys.s1)' in ''.join(r).lower():
                    sys.stderr.write('remote(sys.s1) not expected')

@@ -28,12 +28,9 @@ INSERT INTO splitted VALUES (TIMESTAMP '2000-01-01 00:00:00', 1), (TIMESTAMP '20
 statement ok rowcount 2
 INSERT INTO splitted VALUES (TIMESTAMP '2020-01-01 00:00:00', 5), (NULL, 6)
 
-statement ok
-plan select 1 from splitted where stamp = TIMESTAMP '2020-01-01 00:00:00'
-
 skipif knownfail
-query T python .plan.filter
-plan select 1 from splitted where stamp = TIMESTAMP '2020-01-01 00:00:00'
+query T nosort
+explain show details select 1 from splitted where stamp = TIMESTAMP '2020-01-01 00:00:00'
 ----
 project (
 | select (
@@ -41,12 +38,9 @@ project (
 | ) [ ("splitted"."stamp" UNIQUE) = (timestamp(7) "2020-01-01 00:00:00.000000") ]
 ) [ tinyint(1) "1" ]
 
-statement ok
-plan select 1 from splitted where stamp IN (TIMESTAMP '2000-01-01 00:00:00', TIMESTAMP '2000-02-01 00:00:00')
-
 skipif knownfail
-query T python .plan.filter
-plan select 1 from splitted where stamp IN (TIMESTAMP '2000-01-01 00:00:00', TIMESTAMP '2000-02-01 00:00:00')
+query T nosort
+explain show details select 1 from splitted where stamp IN (TIMESTAMP '2000-01-01 00:00:00', TIMESTAMP '2000-02-01 00:00:00')
 ----
 project (
 | select (
@@ -54,12 +48,9 @@ project (
 | ) [ ("splitted"."stamp" NOT NULL UNIQUE) in (timestamp(7) "2000-01-01 00:00:00.000000", timestamp(7) "2000-02-01 00:00:00.000000") ]
 ) [ tinyint(1) "1" ]
 
-statement ok
-plan select 1 from splitted where stamp IN (TIMESTAMP '2000-01-01 00:00:00', TIMESTAMP '2010-01-01 00:00:00')
-
 skipif knownfail
-query T python .plan.filter
-plan select 1 from splitted where stamp IN (TIMESTAMP '2000-01-01 00:00:00', TIMESTAMP '2010-01-01 00:00:00')
+query T nosort
+explain show details select 1 from splitted where stamp IN (TIMESTAMP '2000-01-01 00:00:00', TIMESTAMP '2010-01-01 00:00:00')
 ----
 munion (
 | project (
@@ -74,12 +65,9 @@ munion (
 | ) [ tinyint(1) "1" ]
 ) [ "%2"."%2" NOT NULL ]
 
-statement ok
-plan select 1 from splitted where stamp IN (TIMESTAMP '2000-02-01 00:00:00', TIMESTAMP '2010-02-01 00:00:00', TIMESTAMP '2020-02-01 00:00:00')
-
 skipif knownfail
-query T python .plan.filter
-plan select 1 from splitted where stamp IN (TIMESTAMP '2000-02-01 00:00:00', TIMESTAMP '2010-02-01 00:00:00', TIMESTAMP '2020-02-01 00:00:00')
+query T nosort
+explain show details select 1 from splitted where stamp IN (TIMESTAMP '2000-02-01 00:00:00', TIMESTAMP '2010-02-01 00:00:00', TIMESTAMP '2020-02-01 00:00:00')
 ----
 munion (
 | project (
@@ -99,12 +87,9 @@ munion (
 | ) [ tinyint(1) "1" ]
 ) [ "%2"."%2" NOT NULL ]
 
-statement ok
-plan select 1 from splitted where stamp BETWEEN TIMESTAMP '2020-01-01 00:00:00' AND TIMESTAMP '2020-10-01 00:00:00'
-
 skipif knownfail
-query T python .plan.filter
-plan select 1 from splitted where stamp BETWEEN TIMESTAMP '2020-01-01 00:00:00' AND TIMESTAMP '2020-10-01 00:00:00'
+query T nosort
+explain show details select 1 from splitted where stamp BETWEEN TIMESTAMP '2020-01-01 00:00:00' AND TIMESTAMP '2020-10-01 00:00:00'
 ----
 project (
 | select (
@@ -112,12 +97,9 @@ project (
 | ) [ (timestamp(7) "2020-01-01 00:00:00.000000") <= ("splitted"."stamp" UNIQUE) <= (timestamp(7) "2020-10-01 00:00:00.000000") ]
 ) [ tinyint(1) "1" ]
 
-statement ok
-plan select 1 from splitted where stamp NOT BETWEEN TIMESTAMP '2020-01-01 00:00:00' AND TIMESTAMP '2020-10-01 00:00:00'
-
 skipif knownfail
-query T python .plan.filter
-plan select 1 from splitted where stamp NOT BETWEEN TIMESTAMP '2020-01-01 00:00:00' AND TIMESTAMP '2020-10-01 00:00:00'
+query T nosort
+explain show details select 1 from splitted where stamp NOT BETWEEN TIMESTAMP '2020-01-01 00:00:00' AND TIMESTAMP '2020-10-01 00:00:00'
 ----
 munion (
 | project (
@@ -132,12 +114,9 @@ munion (
 | ) [ tinyint(1) "1" ]
 ) [ "%1"."%1" NOT NULL ]
 
-statement ok
-plan select 1 from splitted where stamp BETWEEN TIMESTAMP '2010-01-01 00:00:00' AND TIMESTAMP '2020-03-01 00:00:00'
-
 skipif knownfail
-query T python .plan.filter
-plan select 1 from splitted where stamp BETWEEN TIMESTAMP '2010-01-01 00:00:00' AND TIMESTAMP '2020-03-01 00:00:00'
+query T nosort
+explain show details select 1 from splitted where stamp BETWEEN TIMESTAMP '2010-01-01 00:00:00' AND TIMESTAMP '2020-03-01 00:00:00'
 ----
 munion (
 | project (
@@ -152,12 +131,9 @@ munion (
 | ) [ tinyint(1) "1" ]
 ) [ "%1"."%1" NOT NULL ]
 
-statement ok
-plan select 1 from splitted where stamp BETWEEN TIMESTAMP '2000-02-01 00:00:00' AND TIMESTAMP '2020-03-01 00:00:00'
-
 skipif knownfail
-query T python .plan.filter
-plan select 1 from splitted where stamp BETWEEN TIMESTAMP '2000-02-01 00:00:00' AND TIMESTAMP '2020-03-01 00:00:00'
+query T nosort
+explain show details select 1 from splitted where stamp BETWEEN TIMESTAMP '2000-02-01 00:00:00' AND TIMESTAMP '2020-03-01 00:00:00'
 ----
 munion (
 | project (
@@ -177,12 +153,9 @@ munion (
 | ) [ tinyint(1) "1" ]
 ) [ "%1"."%1" NOT NULL ]
 
-statement ok
-plan select 1 from splitted where stamp NOT BETWEEN TIMESTAMP '2000-02-01 00:00:00' AND TIMESTAMP '2020-03-01 00:00:00'
-
 skipif knownfail
-query T python .plan.filter
-plan select 1 from splitted where stamp NOT BETWEEN TIMESTAMP '2000-02-01 00:00:00' AND TIMESTAMP '2020-03-01 00:00:00'
+query T nosort
+explain show details select 1 from splitted where stamp NOT BETWEEN TIMESTAMP '2000-02-01 00:00:00' AND TIMESTAMP '2020-03-01 00:00:00'
 ----
 project (
 | select (
@@ -194,12 +167,9 @@ query TI rowsort
 select * from splitted where stamp NOT BETWEEN TIMESTAMP '2000-02-01 00:00:00' AND TIMESTAMP '2020-03-01 00:00:00'
 ----
 
-statement ok
-plan select 1 from splitted where stamp > TIMESTAMP '2010-03-01 00:00:00'
-
 skipif knownfail
-query T python .plan.filter
-plan select 1 from splitted where stamp > TIMESTAMP '2010-03-01 00:00:00'
+query T nosort
+explain show details select 1 from splitted where stamp > TIMESTAMP '2010-03-01 00:00:00'
 ----
 munion (
 | project (
@@ -214,12 +184,9 @@ munion (
 | ) [ tinyint(1) "1" ]
 ) [ "%1"."%1" NOT NULL ]
 
-statement ok
-plan select 1 from splitted where stamp <= TIMESTAMP '2009-01-01 00:00:00'
-
 skipif knownfail
-query T python .plan.filter
-plan select 1 from splitted where stamp <= TIMESTAMP '2009-01-01 00:00:00'
+query T nosort
+explain show details select 1 from splitted where stamp <= TIMESTAMP '2009-01-01 00:00:00'
 ----
 project (
 | select (
@@ -227,12 +194,9 @@ project (
 | ) [ ("splitted"."stamp" NOT NULL UNIQUE) <= (timestamp(7) "2009-01-01 00:00:00.000000") ]
 ) [ tinyint(1) "1" ]
 
-statement ok
-plan select 1 from splitted where stamp >= TIMESTAMP '2010-01-01 00:00:00' AND stamp < TIMESTAMP '2019-01-01 00:00:00'
-
 skipif knownfail
-query T python .plan.filter
-plan select 1 from splitted where stamp >= TIMESTAMP '2010-01-01 00:00:00' AND stamp < TIMESTAMP '2019-01-01 00:00:00'
+query T nosort
+explain show details select 1 from splitted where stamp >= TIMESTAMP '2010-01-01 00:00:00' AND stamp < TIMESTAMP '2019-01-01 00:00:00'
 ----
 project (
 | select (
@@ -240,12 +204,9 @@ project (
 | ) [ (timestamp(7) "2010-01-01 00:00:00.000000") <= ("splitted"."stamp" NOT NULL UNIQUE) < (timestamp(7) "2019-01-01 00:00:00.000000") ]
 ) [ tinyint(1) "1" ]
 
-statement ok
-plan select 1 from splitted where stamp <= TIMESTAMP '2020-10-01 00:00:00'
-
 skipif knownfail
-query T python .plan.filter
-plan select 1 from splitted where stamp <= TIMESTAMP '2020-10-01 00:00:00'
+query T nosort
+explain show details select 1 from splitted where stamp <= TIMESTAMP '2020-10-01 00:00:00'
 ----
 munion (
 | project (
@@ -265,12 +226,9 @@ munion (
 | ) [ tinyint(1) "1" ]
 ) [ "%1"."%1" NOT NULL ]
 
-statement ok
-plan select 1 from splitted where stamp < TIMESTAMP '2000-01-01 00:00:00'
-
 skipif knownfail
-query T python .plan.filter
-plan select 1 from splitted where stamp < TIMESTAMP '2000-01-01 00:00:00'
+query T nosort
+explain show details select 1 from splitted where stamp < TIMESTAMP '2000-01-01 00:00:00'
 ----
 project (
 | select (
@@ -278,12 +236,9 @@ project (
 | ) [ boolean(1) "false" ]
 ) [ tinyint(1) "1" ]
 
-statement ok
-plan select 1 from splitted where stamp <= TIMESTAMP '2000-01-01 00:00:00'
-
 skipif knownfail
-query T python .plan.filter
-plan select 1 from splitted where stamp <= TIMESTAMP '2000-01-01 00:00:00'
+query T nosort
+explain show details select 1 from splitted where stamp <= TIMESTAMP '2000-01-01 00:00:00'
 ----
 project (
 | select (
@@ -291,12 +246,9 @@ project (
 | ) [ ("splitted"."stamp" NOT NULL UNIQUE) <= (timestamp(7) "2000-01-01 00:00:00.000000") ]
 ) [ tinyint(1) "1" ]
 
-statement ok
-plan select 1 from splitted where stamp is null
-
 skipif knownfail
-query T python .plan.filter
-plan select 1 from splitted where stamp is null
+query T nosort
+explain show details select 1 from splitted where stamp is null
 ----
 project (
 | select (
@@ -304,12 +256,9 @@ project (
 | ) [ ("splitted"."stamp" UNIQUE) * = (timestamp(7) NULL) ]
 ) [ tinyint(1) "1" ]
 
-statement ok
-plan select 1 from splitted where stamp is null and stamp < TIMESTAMP '2008-01-01 00:00:00'
-
 skipif knownfail
-query T python .plan.filter
-plan select 1 from splitted where stamp is null and stamp < TIMESTAMP '2008-01-01 00:00:00'
+query T nosort
+explain show details select 1 from splitted where stamp is null and stamp < TIMESTAMP '2008-01-01 00:00:00'
 ----
 project (
 | select (
@@ -317,12 +266,9 @@ project (
 | ) [ boolean(1) "false" ]
 ) [ tinyint(1) "1" ]
 
-statement ok
-plan select 1 from splitted where stamp > TIMESTAMP '2020-01-01 00:00:00' and stamp <= TIMESTAMP '2020-01-01 00:00:00'
-
 skipif knownfail
-query T python .plan.filter
-plan select 1 from splitted where stamp > TIMESTAMP '2020-01-01 00:00:00' and stamp <= TIMESTAMP '2020-01-01 00:00:00'
+query T nosort
+explain show details select 1 from splitted where stamp > TIMESTAMP '2020-01-01 00:00:00' and stamp <= TIMESTAMP '2020-01-01 00:00:00'
 ----
 project (
 | select (
@@ -330,12 +276,9 @@ project (
 | ) [ (timestamp(7) "2020-01-01 00:00:00.000000") < ("splitted"."stamp" UNIQUE) <= (timestamp(7) "2020-01-01 00:00:00.000000") ]
 ) [ tinyint(1) "1" ]
 
-statement ok
-plan select 1 from splitted where stamp >= TIMESTAMP '2000-01-01 00:00:00' and stamp < TIMESTAMP '2020-01-01 00:00:00'
-
 skipif knownfail
-query T python .plan.filter
-plan select 1 from splitted where stamp >= TIMESTAMP '2000-01-01 00:00:00' and stamp < TIMESTAMP '2020-01-01 00:00:00'
+query T nosort
+explain show details select 1 from splitted where stamp >= TIMESTAMP '2000-01-01 00:00:00' and stamp < TIMESTAMP '2020-01-01 00:00:00'
 ----
 munion (
 | project (
@@ -350,12 +293,9 @@ munion (
 | ) [ tinyint(1) "1" ]
 ) [ "%1"."%1" NOT NULL ]
 
-statement ok
-plan select 1 from splitted where stamp > TIMESTAMP '2010-01-01 00:00:00' and stamp < TIMESTAMP '2020-01-01 00:00:00'
-
 skipif knownfail
-query T python .plan.filter
-plan select 1 from splitted where stamp > TIMESTAMP '2010-01-01 00:00:00' and stamp < TIMESTAMP '2020-01-01 00:00:00'
+query T nosort
+explain show details select 1 from splitted where stamp > TIMESTAMP '2010-01-01 00:00:00' and stamp < TIMESTAMP '2020-01-01 00:00:00'
 ----
 project (
 | select (
@@ -363,12 +303,9 @@ project (
 | ) [ (timestamp(7) "2010-01-01 00:00:00.000000") < ("splitted"."stamp" NOT NULL UNIQUE) < (timestamp(7) "2020-01-01 00:00:00.000000") ]
 ) [ tinyint(1) "1" ]
 
-statement ok
-plan select 1 from splitted where stamp >= TIMESTAMP '2010-01-01 00:00:00' and stamp < TIMESTAMP '2020-01-01 00:00:00'
-
 skipif knownfail
-query T python .plan.filter
-plan select 1 from splitted where stamp >= TIMESTAMP '2010-01-01 00:00:00' and stamp < TIMESTAMP '2020-01-01 00:00:00'
+query T nosort
+explain show details select 1 from splitted where stamp >= TIMESTAMP '2010-01-01 00:00:00' and stamp < TIMESTAMP '2020-01-01 00:00:00'
 ----
 project (
 | select (
@@ -376,12 +313,9 @@ project (
 | ) [ (timestamp(7) "2010-01-01 00:00:00.000000") <= ("splitted"."stamp" NOT NULL UNIQUE) < (timestamp(7) "2020-01-01 00:00:00.000000") ]
 ) [ tinyint(1) "1" ]
 
-statement ok
-plan select 1 from splitted where stamp > TIMESTAMP '2001-01-02 00:00:00' and stamp < TIMESTAMP '2015-01-01 00:00:00'
-
 skipif knownfail
-query T python .plan.filter
-plan select 1 from splitted where stamp > TIMESTAMP '2001-01-02 00:00:00' and stamp < TIMESTAMP '2015-01-01 00:00:00'
+query T nosort
+explain show details select 1 from splitted where stamp > TIMESTAMP '2001-01-02 00:00:00' and stamp < TIMESTAMP '2015-01-01 00:00:00'
 ----
 munion (
 | project (
@@ -396,12 +330,9 @@ munion (
 | ) [ tinyint(1) "1" ]
 ) [ "%1"."%1" NOT NULL ]
 
-statement ok
-plan select 1 from splitted where stamp > TIMESTAMP '2010-01-01 00:00:00' and stamp < TIMESTAMP '2010-01-01 00:00:00'
-
 skipif knownfail
-query T python .plan.filter
-plan select 1 from splitted where stamp > TIMESTAMP '2010-01-01 00:00:00' and stamp < TIMESTAMP '2010-01-01 00:00:00'
+query T nosort
+explain show details select 1 from splitted where stamp > TIMESTAMP '2010-01-01 00:00:00' and stamp < TIMESTAMP '2010-01-01 00:00:00'
 ----
 project (
 | select (
@@ -409,12 +340,9 @@ project (
 | ) [ boolean(1) "false" ]
 ) [ tinyint(1) "1" ]
 
-statement ok
-plan select 1 from splitted where stamp > TIMESTAMP '2009-01-01 00:00:00' and stamp <= TIMESTAMP '2010-01-01 00:00:00'
-
 skipif knownfail
-query T python .plan.filter
-plan select 1 from splitted where stamp > TIMESTAMP '2009-01-01 00:00:00' and stamp <= TIMESTAMP '2010-01-01 00:00:00'
+query T nosort
+explain show details select 1 from splitted where stamp > TIMESTAMP '2009-01-01 00:00:00' and stamp <= TIMESTAMP '2010-01-01 00:00:00'
 ----
 munion (
 | project (
@@ -429,12 +357,9 @@ munion (
 | ) [ tinyint(1) "1" ]
 ) [ "%1"."%1" NOT NULL ]
 
-statement ok
-plan select 1 from splitted where stamp > TIMESTAMP '2009-01-01 00:00:00' and stamp <= TIMESTAMP '2020-01-01 00:00:00'
-
 skipif knownfail
-query T python .plan.filter
-plan select 1 from splitted where stamp > TIMESTAMP '2009-01-01 00:00:00' and stamp <= TIMESTAMP '2020-01-01 00:00:00'
+query T nosort
+explain show details select 1 from splitted where stamp > TIMESTAMP '2009-01-01 00:00:00' and stamp <= TIMESTAMP '2020-01-01 00:00:00'
 ----
 munion (
 | project (
@@ -463,12 +388,9 @@ ALTER TABLE splitted ADD TABLE fourth_decade AS PARTITION FROM RANGE MINVALUE TO
 statement ok rowcount 1
 INSERT INTO splitted VALUES (TIMESTAMP '1999-01-01 00:00:00', 7)
 
-statement ok
-plan select 1 from splitted where stamp >= TIMESTAMP '2000-01-01 00:00:00' and stamp <= TIMESTAMP '2001-01-01 00:00:00'
-
 skipif knownfail
-query T python .plan.filter
-plan select 1 from splitted where stamp >= TIMESTAMP '2000-01-01 00:00:00' and stamp <= TIMESTAMP '2001-01-01 00:00:00'
+query T nosort
+explain show details select 1 from splitted where stamp >= TIMESTAMP '2000-01-01 00:00:00' and stamp <= TIMESTAMP '2001-01-01 00:00:00'
 ----
 project (
 | select (
@@ -476,14 +398,11 @@ project (
 | ) [ (timestamp(7) "2000-01-01 00:00:00.000000") <= ("splitted"."stamp" NOT NULL UNIQUE) <= (timestamp(7) "2001-01-01 00:00:00.000000") ]
 ) [ tinyint(1) "1" ]
 
-statement ok
-plan select 1 from splitted where stamp > TIMESTAMP '1999-01-01 00:00:00' and stamp <= TIMESTAMP '2001-01-01 00:00:00'
-
 skipif knownfail
-query T python .plan.filter
-plan select 1 from splitted where stamp > TIMESTAMP '1999-01-01 00:00:00' and stamp <= TIMESTAMP '2001-01-01 00:00:00'
+query T nosort
+explain show details select 1 from splitted where stamp > TIMESTAMP '1999-01-01 00:00:00' and stamp <= TIMESTAMP '2001-01-01 00:00:00'
 ----
-project (
+munion (
 | project (
 | | select (
 | | | table("sys"."first_decade") [ "first_decade"."stamp" NOT NULL UNIQUE as "splitted"."stamp" ]
@@ -496,12 +415,9 @@ project (
 | ) [ tinyint(1) "1" ]
 ) [ "%1"."%1" NOT NULL ]
 
-statement ok
-plan select 1 from splitted where stamp = TIMESTAMP '2010-01-01 00:00:00'
-
 skipif knownfail
-query T python .plan.filter
-plan select 1 from splitted where stamp = TIMESTAMP '2010-01-01 00:00:00'
+query T nosort
+explain show details select 1 from splitted where stamp = TIMESTAMP '2010-01-01 00:00:00'
 ----
 project (
 | select (
@@ -509,12 +425,9 @@ project (
 | ) [ ("splitted"."stamp" NOT NULL UNIQUE) = (timestamp(7) "2010-01-01 00:00:00.000000") ]
 ) [ tinyint(1) "1" ]
 
-statement ok
-plan select 1 from splitted where stamp = TIMESTAMP '2000-01-01 00:00:00'
-
 skipif knownfail
-query T python .plan.filter
-plan select 1 from splitted where stamp = TIMESTAMP '2000-01-01 00:00:00'
+query T nosort
+explain show details select 1 from splitted where stamp = TIMESTAMP '2000-01-01 00:00:00'
 ----
 project (
 | select (
@@ -531,12 +444,9 @@ ALTER TABLE splitted DROP TABLE third_decade
 statement ok
 ALTER TABLE splitted DROP TABLE fourth_decade
 
-statement ok
-plan select 1 from splitted where stamp = TIMESTAMP '2010-01-01 00:00:00'
-
 skipif knownfail
-query T python .plan.filter
-plan select 1 from splitted where stamp = TIMESTAMP '2010-01-01 00:00:00'
+query T nosort
+explain show details select 1 from splitted where stamp = TIMESTAMP '2010-01-01 00:00:00'
 ----
 project (
 | select (
@@ -572,12 +482,9 @@ ALTER TABLE splitted2 ADD TABLE third_decade2 AS PARTITION IN (5,6,7)
 statement ok rowcount 6
 INSERT INTO splitted2 VALUES (1, 1), (2, 2), (3, 3), (4, 4), (5, 5), (6, 6)
 
-statement ok
-plan select 1 from splitted2 where stamp = 5
-
 skipif knownfail
-query T python .plan.filter
-plan select 1 from splitted2 where stamp = 5
+query T nosort
+explain show details select 1 from splitted2 where stamp = 5
 ----
 project (
 | select (
@@ -585,12 +492,9 @@ project (
 | ) [ ("splitted2"."stamp" NOT NULL UNIQUE) = (int(31) "5") ]
 ) [ tinyint(1) "1" ]
 
-statement ok
-plan select 1 from splitted2 where val = 1
-
 skipif knownfail
-query T python .plan.filter
-plan select 1 from splitted2 where val = 1
+query T nosort
+explain show details select 1 from splitted2 where val = 1
 ----
 munion (
 | project (
@@ -610,12 +514,9 @@ munion (
 | ) [ tinyint(1) "1" ]
 ) [ "%1"."%1" NOT NULL ]
 
-statement ok
-plan select 1 from splitted2 where stamp is null
-
 skipif knownfail
-query T python .plan.filter
-plan select 1 from splitted2 where stamp is null
+query T nosort
+explain show details select 1 from splitted2 where stamp is null
 ----
 project (
 | select (
@@ -623,12 +524,9 @@ project (
 | ) [ boolean(1) "false" ]
 ) [ tinyint(1) "1" ]
 
-statement ok
-plan select 1 from splitted2 where stamp is null and stamp in (3,4,5)
-
 skipif knownfail
-query T python .plan.filter
-plan select 1 from splitted2 where stamp is null and stamp in (3,4,5)
+query T nosort
+explain show details select 1 from splitted2 where stamp is null and stamp in (3,4,5)
 ----
 project (
 | select (
@@ -636,12 +534,9 @@ project (
 | ) [ boolean(1) "false" ]
 ) [ tinyint(1) "1" ]
 
-statement ok
-plan select 1 from splitted2 where stamp is null and stamp in (5,6)
-
 skipif knownfail
-query T python .plan.filter
-plan select 1 from splitted2 where stamp is null and stamp in (5,6)
+query T nosort
+explain show details select 1 from splitted2 where stamp is null and stamp in (5,6)
 ----
 project (
 | select (
@@ -649,12 +544,9 @@ project (
 | ) [ boolean(1) "false" ]
 ) [ tinyint(1) "1" ]
 
-statement ok
-plan select 1 from splitted2 where stamp = 10
-
 skipif knownfail
-query T python .plan.filter
-plan select 1 from splitted2 where stamp = 10
+query T nosort
+explain show details select 1 from splitted2 where stamp = 10
 ----
 project (
 | select (
@@ -666,12 +558,9 @@ query I rowsort
 select 1 from splitted2 where stamp = 10
 ----
 
-statement ok
-plan select 1 from splitted2 where stamp in (2,1)
-
 skipif knownfail
-query T python .plan.filter
-plan select 1 from splitted2 where stamp in (2,1)
+query T nosort
+explain show details select 1 from splitted2 where stamp in (2,1)
 ----
 project (
 | select (
@@ -679,12 +568,9 @@ project (
 | ) [ ("splitted2"."stamp" NOT NULL UNIQUE) in (int(31) "2", int(31) "1") ]
 ) [ tinyint(1) "1" ]
 
-statement ok
-plan select 1 from splitted2 where stamp in (5,6) and stamp in (6,7)
-
 skipif knownfail
-query T python .plan.filter
-plan select 1 from splitted2 where stamp in (4)
+query T nosort
+explain show details select 1 from splitted2 where stamp in (4)
 ----
 project (
 | select (
@@ -692,12 +578,9 @@ project (
 | ) [ ("splitted2"."stamp" NOT NULL UNIQUE) = (int(31) "4") ]
 ) [ tinyint(1) "1" ]
 
-statement ok
-plan select 1 from splitted2 where stamp in (5,6) and stamp in (6,7)
-
 skipif knownfail
-query T python .plan.filter
-plan select 1 from splitted2 where stamp in (5,6) and stamp in (6,7)
+query T nosort
+explain show details select 1 from splitted2 where stamp in (5,6) and stamp in (6,7)
 ----
 project (
 | select (
@@ -705,12 +588,9 @@ project (
 | ) [ ("splitted2"."stamp" NOT NULL UNIQUE) in (int(31) "5", int(31) "6"), ("splitted2"."stamp" NOT NULL UNIQUE) in (int(31) "6", int(31) "7") ]
 ) [ tinyint(1) "1" ]
 
-statement ok
-plan select 1 from splitted2 where stamp in (5,6) and stamp > 100
-
 skipif knownfail
-query T python .plan.filter
-plan select 1 from splitted2 where stamp in (5,6) and stamp > 100
+query T nosort
+explain show details select 1 from splitted2 where stamp in (5,6) and stamp > 100
 ----
 project (
 | select (
@@ -718,12 +598,9 @@ project (
 | ) [ ("splitted2"."stamp" NOT NULL UNIQUE) > (int(31) "100"), ("splitted2"."stamp" NOT NULL UNIQUE) in (int(31) "5", int(31) "6") ]
 ) [ tinyint(1) "1" ]
 
-statement ok
-plan select 1 from splitted2 where stamp in (1,2,3)
-
 skipif knownfail
-query T python .plan.filter
-plan select 1 from splitted2 where stamp in (1,2,3)
+query T nosort
+explain show details select 1 from splitted2 where stamp in (1,2,3)
 ----
 project (
 | select (
@@ -731,12 +608,9 @@ project (
 | ) [ boolean(1) "false" ]
 ) [ tinyint(1) "1" ]
 
-statement ok
-plan select 1 from splitted2 where stamp in (8,9)
-
 skipif knownfail
-query T python .plan.filter
-plan select 1 from splitted2 where stamp in (8,9)
+query T nosort
+explain show details select 1 from splitted2 where stamp in (8,9)
 ----
 project (
 | select (
@@ -763,12 +637,9 @@ ALTER TABLE table1 ADD TABLE another1 AS PARTITION FROM 10 TO 11
 statement ok
 ALTER TABLE table1 ADD TABLE another2 AS PARTITION FROM 11 TO 12
 
-statement ok
-plan select 1 from table1 where a = 10
-
 skipif knownfail
-query T python .plan.filter
-plan select 1 from table1 where a = 10
+query T nosort
+explain show details select 1 from table1 where a = 10
 ----
 project (
 | select (
@@ -776,12 +647,9 @@ project (
 | ) [ ("table1"."a" NOT NULL UNIQUE) = (int(31) "10") ]
 ) [ tinyint(1) "1" ]
 
-statement ok
-plan select 1 from table1 where a = 11
-
 skipif knownfail
-query T python .plan.filter
-plan select 1 from table1 where a = 11
+query T nosort
+explain show details select 1 from table1 where a = 11
 ----
 project (
 | select (
@@ -801,12 +669,9 @@ analyze sys.another1
 statement ok
 analyze sys.another2
 
-statement ok
-plan select 1 from table1 where a = 10 or a = 11
-
 skipif knownfail
-query T python .plan.filter
-plan select 1 from table1 where a = 10 or a = 11
+query T nosort
+explain show details select 1 from table1 where a = 10 or a = 11
 ----
 munion (
 | project (
@@ -821,8 +686,8 @@ munion (
 | ) [ tinyint(1) "1" ]
 ) [ "%1"."%1" NOT NULL ]
 
-query T python .plan.filter
-plan select 1 from table1 where a >= 10
+query T nosort
+explain show details select 1 from table1 where a >= 10
 ----
 munion (
 | project (
@@ -833,12 +698,9 @@ munion (
 | ) [ tinyint(1) "1" ]
 ) [ "%1"."%1" NOT NULL ]
 
-statement ok
-plan select 1 from table1 where a > 11
-
 skipif knownfail
-query T python .plan.filter
-plan select 1 from table1 where a > 11
+query T nosort
+explain show details select 1 from table1 where a > 11
 ----
 project (
 | select (
@@ -846,26 +708,23 @@ project (
 | ) [ boolean(1) "false" ]
 ) [ tinyint(1) "1" ]
 
-query T python .plan.filter
-plan select 1 from table1 where a <= 10
+query T nosort
+explain show details select 1 from table1 where a <= 10
 ----
 project (
 | table("sys"."another1") [ "another1"."a" NOT NULL as "table1"."a" ]
 ) [ tinyint(1) "1" ]
 
-query T python .plan.filter
-plan select 1 from table1 where a between 10 and 10
+query T nosort
+explain show details select 1 from table1 where a between 10 and 10
 ----
 project (
 | table("sys"."another1") [ "another1"."a" NOT NULL as "table1"."a" ]
 ) [ tinyint(1) "1" ]
-
-statement ok
-plan select 1 from table1 where a = 10 or b = 11
 
 skipif knownfail
-query T python .plan.filter
-plan select 1 from table1 where a = 10 or b = 11
+query T nosort
+explain show details select 1 from table1 where a = 10 or b = 11
 ----
 munion (
 | project (
@@ -880,12 +739,9 @@ munion (
 | ) [ tinyint(1) "1" ]
 ) [ "%1"."%1" NOT NULL ]
 
-statement ok
-plan select 1 from table1 where a not between 10 and 11
-
 skipif knownfail
-query T python .plan.filter
-plan select 1 from table1 where a not between 10 and 11
+query T nosort
+explain show details select 1 from table1 where a not between 10 and 11
 ----
 project (
 | select (
@@ -893,8 +749,8 @@ project (
 | ) [ boolean(1) "false" ]
 ) [ tinyint(1) "1" ]
 
-query T python .plan.filter
-plan select 1 from table1 where a not between 10 and 10
+query T nosort
+explain show details select 1 from table1 where a not between 10 and 10
 ----
 project (
 | table("sys"."another2") [ "another2"."a" NOT NULL as "table1"."a" ]

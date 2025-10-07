@@ -67,8 +67,8 @@ statement ok
 analyze sys.t2606b
 
 skipif knownfail
-query T python .plan.filter
-PLAN   select * from t2606a   union   select * from t2606b   order by a
+query T nosort
+EXPLAIN SHOW DETAILS   select * from t2606a   union   select * from t2606b   order by a
 ----
 project (
 | group by (
@@ -97,8 +97,8 @@ query I nosort
 33
 
 skipif knownfail
-query T python .plan.filter
-PLAN ( select * from t2606a   union   select * from t2606b ) order by a
+query T nosort
+EXPLAIN SHOW DETAILS ( select * from t2606a   union   select * from t2606b ) order by a
 ----
 project (
 | group by (
@@ -127,8 +127,8 @@ query I nosort
 33
 
 skipif knownfail
-query T python .plan.filter
-PLAN ( select * from t2606a ) union ( select * from t2606b ) order by a
+query T nosort
+EXPLAIN SHOW DETAILS ( select * from t2606a ) union ( select * from t2606b ) order by a
 ----
 project (
 | group by (
@@ -156,8 +156,8 @@ query I nosort
 32
 33
 
-query T python .plan.filter
-PLAN   select * from t2606a   except   select * from t2606b   order by a
+query T nosort
+EXPLAIN SHOW DETAILS   select * from t2606a   except   select * from t2606b   order by a
 ----
 project (
 | distinct except (
@@ -177,8 +177,8 @@ query I nosort
 12
 13
 
-query T python .plan.filter
-PLAN ( select * from t2606a   except   select * from t2606b ) order by a
+query T nosort
+EXPLAIN SHOW DETAILS ( select * from t2606a   except   select * from t2606b ) order by a
 ----
 project (
 | distinct except (
@@ -198,8 +198,8 @@ query I nosort
 12
 13
 
-query T python .plan.filter
-PLAN ( select * from t2606a ) except ( select * from t2606b ) order by a
+query T nosort
+EXPLAIN SHOW DETAILS ( select * from t2606a ) except ( select * from t2606b ) order by a
 ----
 project (
 | distinct except (
@@ -219,8 +219,8 @@ query I nosort
 12
 13
 
-query T python .plan.filter
-PLAN   select * from t2606a   intersect   select * from t2606b   order by a
+query T nosort
+EXPLAIN SHOW DETAILS   select * from t2606a   intersect   select * from t2606b   order by a
 ----
 project (
 | distinct intersect (
@@ -240,8 +240,8 @@ query I nosort
 22
 23
 
-query T python .plan.filter
-PLAN ( select * from t2606a   intersect   select * from t2606b ) order by a
+query T nosort
+EXPLAIN SHOW DETAILS ( select * from t2606a   intersect   select * from t2606b ) order by a
 ----
 project (
 | distinct intersect (
@@ -261,8 +261,8 @@ query I nosort
 22
 23
 
-query T python .plan.filter
-PLAN ( select * from t2606a ) intersect ( select * from t2606b ) order by a
+query T nosort
+EXPLAIN SHOW DETAILS ( select * from t2606a ) intersect ( select * from t2606b ) order by a
 ----
 project (
 | distinct intersect (
@@ -283,8 +283,8 @@ query I nosort
 23
 
 skipif knownfail
-query T python .plan.filter
-PLAN select * from (select * from t2606a union select * from t2606b) as t order by a
+query T nosort
+EXPLAIN SHOW DETAILS select * from (select * from t2606a union select * from t2606b) as t order by a
 ----
 project (
 | group by (
@@ -312,8 +312,8 @@ query I nosort
 32
 33
 
-query T python .plan.filter
-PLAN select * from (select * from t2606a except select * from t2606b) as t order by a
+query T nosort
+EXPLAIN SHOW DETAILS select * from (select * from t2606a except select * from t2606b) as t order by a
 ----
 project (
 | distinct except (
@@ -333,8 +333,8 @@ query I nosort
 12
 13
 
-query T python .plan.filter
-PLAN select * from (select * from t2606a intersect select * from t2606b) as t order by a
+query T nosort
+EXPLAIN SHOW DETAILS select * from (select * from t2606a intersect select * from t2606b) as t order by a
 ----
 project (
 | distinct intersect (

@@ -262,6 +262,8 @@ _create_relational_function(mvc *m, const char *mod, const char *name, sql_rel *
 	backend bebackup = *be;		/* backup current backend */
 	exception_buffer ebsave = *sa_get_eb(m->sa);
 
+	m->show_details = true;
+
 	if (strlen(mod) >= IDLENGTH) {
 		(void) sql_error(m, 10, SQLSTATE(42000) "Module name '%s' too large for the backend", mod);
 		goto bailout;
@@ -911,6 +913,8 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 	backend *be = (backend *) c->sqlcontext;
 	Symbol symbackup = c->curprg;
 	exception_buffer ebsave = *sa_get_eb(m->sa);
+
+	m->show_details = true;
 
 	if (list_empty(prp->value.pval)) {
 		sql_error(m, 003, SQLSTATE(42000) "Missing REMOTE property on the input relation");

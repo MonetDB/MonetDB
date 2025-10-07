@@ -413,7 +413,7 @@ create_check_plan(sql_query *query, symbol *s, sql_table *t)
 	sql_rel *rel = rel_basetable(sql, t, t->base.name);
 	if (!stack_push_frame(sql, NULL))
 		return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	sql_exp *e = rel_logical_value_exp(query, &rel, s->data.lval->h->data.sym, sql_sel | sql_no_subquery, ek);
+	sql_exp *e = rel_logical_value_exp(query, &rel, s->data.lval->h->data.sym, sql_sel | sql_no_subquery | sql_check, ek);
 	stack_pop_frame(sql);
 
 	if (!e || !rel || !is_basetable(rel->op))

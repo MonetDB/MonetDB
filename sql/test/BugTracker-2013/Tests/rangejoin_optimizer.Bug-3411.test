@@ -1,12 +1,9 @@
 statement ok
 CREATE TABLE t4311 ( "a"    INT, "b"    INT)
 
-statement ok
-PLAN SELECT t2.a FROM  t4311 t1, t4311 t2 WHERE t2.a between t1.a and t1.b
-
 skipif knownfail
-query T python .plan.filter
-PLAN
+query T nosort
+EXPLAIN SHOW DETAILS
 SELECT t2.a
 FROM  t4311 t1, t4311 t2
 WHERE t2.a between t1.a and t1.b
@@ -18,12 +15,9 @@ project (
 | ) [ ("t1"."a" NOT NULL UNIQUE) <= ("t2"."a" NOT NULL UNIQUE) <= ("t1"."b" NOT NULL UNIQUE) ]
 ) [ "t2"."a" NOT NULL ]
 
-statement ok
-PLAN SELECT t2.a FROM  t4311 t1, t4311 t2 WHERE t2.a >= t1.a AND   t2.a <= t1.b
-
 skipif knownfail
-query T python .plan.filter
-PLAN
+query T nosort
+EXPLAIN SHOW DETAILS
 SELECT t2.a
 FROM  t4311 t1, t4311 t2
 WHERE t2.a >= t1.a
@@ -36,12 +30,9 @@ project (
 | ) [ ("t1"."a" NOT NULL UNIQUE) <= ("t2"."a" NOT NULL UNIQUE) <= ("t1"."b" NOT NULL UNIQUE) ]
 ) [ "t2"."a" NOT NULL ]
 
-statement ok
-PLAN SELECT t2.a FROM  t4311 t1, t4311 t2 WHERE t1.a <= t2.a AND   t1.b >= t2.a
-
 skipif knownfail
-query T python .plan.filter
-PLAN
+query T nosort
+EXPLAIN SHOW DETAILS
 SELECT t2.a
 FROM  t4311 t1, t4311 t2
 WHERE t1.a <= t2.a

@@ -4,7 +4,7 @@ ALTER USER monetdb MAX_WORKERS 0
 statement ok
 ALTER USER monetdb MAX_WORKERS 10
 
-query II
+query II nosort
 SELECT "max_memory", "max_workers" FROM sys.users WHERE "name" = 'monetdb'
 ----
 0
@@ -13,7 +13,7 @@ SELECT "max_memory", "max_workers" FROM sys.users WHERE "name" = 'monetdb'
 statement ok
 ALTER USER monetdb NO MAX_WORKERS
 
-query II
+query II nosort
 SELECT "max_memory", "max_workers" FROM sys.users WHERE "name" = 'monetdb'
 ----
 0
@@ -22,7 +22,7 @@ SELECT "max_memory", "max_workers" FROM sys.users WHERE "name" = 'monetdb'
 statement ok
 ALTER USER monetdb MAX_MEMORY 1234567 MAX_WORKERS 8
 
-query II
+query II nosort
 SELECT "max_memory", "max_workers" FROM sys.users WHERE "name" = 'monetdb'
 ----
 1234567
@@ -31,7 +31,7 @@ SELECT "max_memory", "max_workers" FROM sys.users WHERE "name" = 'monetdb'
 statement ok
 ALTER USER monetdb NO MAX_MEMORY  NO MAX_WORKERS
 
-query II
+query II nosort
 SELECT "max_memory", "max_workers" FROM sys.users WHERE "name" = 'monetdb'
 ----
 0
@@ -40,7 +40,7 @@ SELECT "max_memory", "max_workers" FROM sys.users WHERE "name" = 'monetdb'
 statement ok
 ALTER USER monetdb MAX_MEMORY 1234568 MAX_WORKERS 2
 
-query II
+query II nosort
 SELECT "max_memory", "max_workers" FROM sys.users WHERE "name" = 'monetdb'
 ----
 1234568
@@ -49,7 +49,7 @@ SELECT "max_memory", "max_workers" FROM sys.users WHERE "name" = 'monetdb'
 statement ok
 ALTER USER monetdb NO MAX_MEMORY
 
-query II
+query II nosort
 SELECT "max_memory", "max_workers" FROM sys.users WHERE "name" = 'monetdb'
 ----
 0
@@ -58,7 +58,7 @@ SELECT "max_memory", "max_workers" FROM sys.users WHERE "name" = 'monetdb'
 statement ok
 ALTER USER monetdb NO MAX_WORKERS NO MAX_MEMORY
 
-query II
+query II nosort
 SELECT "max_memory", "max_workers" FROM sys.users WHERE "name" = 'monetdb'
 ----
 0

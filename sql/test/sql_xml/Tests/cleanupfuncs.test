@@ -189,3 +189,4 @@ DROP TYPE xml2
 
 statement ok
 DROP TYPE IF EXISTS xml2
+

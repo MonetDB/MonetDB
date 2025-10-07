@@ -135,7 +135,6 @@ SELECT next value for ups5 from generate_series(1,20)
 statement ok
 rollback
 
-
 statement ok
 CREATE SCHEMA sqt
 
@@ -161,13 +160,13 @@ statement ok
 create sequence if not exists ups2 START WITH -10 INCREMENT BY 1 MINVALUE -10 MAXVALUE 0 CYCLE
 
 statement ok
-CREATE	SEQUENCE	IF	NOT	EXISTS	UPS2	START	WITH	-10	INCREMENT	BY	-10	
+CREATE	SEQUENCE	IF	NOT	EXISTS	UPS2	START	WITH	-10	INCREMENT	BY	-10
 
 statement error 42000!syntax error, unexpected NOT_EXISTS, expecting EXISTS in: "alter	sequence	if	not	exists"
-ALTER	SEQUENCE	IF	NOT	EXISTS	UPS2	START	WITH	-20	INCREMENT	BY	-1	
+ALTER	SEQUENCE	IF	NOT	EXISTS	UPS2	START	WITH	-20	INCREMENT	BY	-1
 
 statement error 42000!ALTER SEQUENCE: cannot set sequence start to a value less than the minimum (-20 < -10)
-ALTER	SEQUENCE	IF		EXISTS	UPS2	RESTART	WITH	-20	INCREMENT	BY	-1	
+ALTER	SEQUENCE	IF		EXISTS	UPS2	RESTART	WITH	-20	INCREMENT	BY	-1
 
 statement ok
 alter sequence  ups2 AS tinyint
@@ -177,8 +176,6 @@ alter sequence if exists ups2 AS tinyint RESTART WITH (select 1*1/1+1)
 
 statement error 3F000!ALTER SEQUENCE: AS type should be specified at most once
 alter sequence if exists ups2 AS tinyint RESTART WITH (select 1*1/1+1) AS integer
-
-
 
 -- test if exists
 statement ok
@@ -196,7 +193,6 @@ DROP SEQUENCE sqt.ups
 statement ok
 DROP SEQUENCE IF EXISTS "ups"
 
-
 statement ok
 DROP SEQUENCE IF EXISTS "sqt"."ups2"
 
@@ -209,9 +205,9 @@ DROP SEQUENCE "sqt"."ups2"
 statement error 42000!DROP SEQUENCE: no such sequence 'ups2'
 DROP SEQUENCE ups2
 
-
 statement ok
 SET SCHEMA SYS
 
 statement ok
 DROP SCHEMA SQT CASCADE
+

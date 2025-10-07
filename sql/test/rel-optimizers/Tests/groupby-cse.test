@@ -27,12 +27,9 @@ VALUES
 
 # the same expression should be removed from the GROUPBY op list of
 # group expressions (->l)
-statement ok
-PLAN SELECT c1, c1, count(c3) FROM foo GROUP BY c1, c1
-
 skipif knownfail
-query T python .plan.filter
-PLAN
+query T nosort
+EXPLAIN SHOW DETAILS
 SELECT
     c1,
     c1,
@@ -68,12 +65,9 @@ GROUP BY
 1
 
 # same as before
-statement ok
-PLAN SELECT c1 AS c1_alias1, c1 AS c1_alias2, count(c3) FROM foo GROUP BY c1_alias1, c1_alias2
-
 skipif knownfail
-query T python .plan.filter
-PLAN
+query T nosort
+EXPLAIN SHOW DETAILS
 SELECT
     c1 AS c1_alias1,
     c1 AS c1_alias2,
@@ -119,12 +113,9 @@ END
 
 # the same expression should be removed from the GROUPBY op list of
 # group expressions (->l) exactly like in the case of basetable
-statement ok
-PLAN SELECT a1, a1, count(a3) FROM tableReturnUDF() GROUP BY a1, a1
-
 skipif knownfail
-query T python .plan.filter
-PLAN
+query T nosort
+EXPLAIN SHOW DETAILS
 SELECT
     a1,
     a1,
@@ -165,12 +156,9 @@ GROUP BY
 
 ## in this example the order by groups are aliases of the same column
 ## coming from the inner projection operator
-statement ok
-PLAN SELECT c1_alias1, c1_alias2, c2, count(c1_alias2) FROM ( SELECT c1 AS c1_alias1, c1 AS c1_alias2, c2, c3 FROM foo) AS sq GROUP BY c1_alias1, c1_alias2, c2
-
 skipif knownfail
-query T python .plan.filter
-PLAN
+query T nosort
+EXPLAIN SHOW DETAILS
 SELECT
     c1_alias1,
     c1_alias2,
@@ -227,12 +215,9 @@ GROUP BY
 2
 1
 
-statement ok
-PLAN SELECT c1 AS c1_alias_1, c1 AS c1_alias_2, count(c3) FROM ( SELECT c1, c2, c3 FROM foo) AS sq GROUP BY c1_alias_1, c1_alias_2, c2
-
 skipif knownfail
-query T python .plan.filter
-PLAN
+query T nosort
+EXPLAIN SHOW DETAILS
 SELECT
     c1 AS c1_alias_1,
     c1 AS c1_alias_2,
@@ -288,12 +273,9 @@ GROUP BY
 
 # in this example both outer project/groupby and the inner (subquery)
 # projet use aliases for the column c1.
-statement ok
-PLAN SELECT c1_in_alias_1 AS c1_out_alias_1, c1_in_alias_2 AS c1_out_alias_2, count(c3) FROM ( SELECT c1 as c1_in_alias_1, c1 as c1_in_alias_2, c2, c3 FROM foo) AS sq GROUP BY c1_out_alias_1, c1_out_alias_2, c2
-
 skipif knownfail
-query T python .plan.filter
-PLAN
+query T nosort
+EXPLAIN SHOW DETAILS
 SELECT
     c1_in_alias_1 AS c1_out_alias_1,
     c1_in_alias_2 AS c1_out_alias_2,
@@ -351,12 +333,9 @@ GROUP BY
 
 # combinations of outer project/groupby and inner (subquery) projet
 # aliases for c1 column
-statement ok
-PLAN SELECT c1_in_alias_1 AS c1_out_alias_1, c1_in_alias_2, count(c3) FROM ( SELECT c1 as c1_in_alias_1, c1 as c1_in_alias_2, c2, c3 FROM foo) AS sq GROUP BY c1_out_alias_1, c1_in_alias_2, c2
-
 skipif knownfail
-query T python .plan.filter
-PLAN
+query T nosort
+EXPLAIN SHOW DETAILS
 SELECT
     c1_in_alias_1 AS c1_out_alias_1,
     c1_in_alias_2,
@@ -412,12 +391,9 @@ GROUP BY
 2
 1
 
-statement ok
-PLAN SELECT c1_in_alias_1, c1_in_alias_2 AS c1_out_alias_2, count(c3) FROM ( SELECT c1 as c1_in_alias_1, c1 as c1_in_alias_2, c2, c3 FROM foo) AS sq GROUP BY c1_in_alias_1, c1_out_alias_2, c2
-
 skipif knownfail
-query T python .plan.filter
-PLAN
+query T nosort
+EXPLAIN SHOW DETAILS
 SELECT
     c1_in_alias_1,
     c1_in_alias_2 AS c1_out_alias_2,
@@ -475,12 +451,9 @@ GROUP BY
 
 ## GROUPBY <--input-- JOIN ############################################
 
-statement ok
-PLAN SELECT foo.c2 AS col, count(*) FROM foo JOIN bar ON foo.c2 = bar.c2 GROUP BY foo.c2, col
-
 skipif knownfail
-query T python .plan.filter
-PLAN
+query T nosort
+EXPLAIN SHOW DETAILS
 SELECT
     foo.c2 AS col,
     count(*)

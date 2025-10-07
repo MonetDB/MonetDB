@@ -5,7 +5,7 @@ statement ok
 CREATE USER alice WITH PASSWORD 'alice' NAME 'alice' SCHEMA sys
 
 @connection(id=test, username=test, password=test)
-query T
+query T nosort
 select CURRENT_ROLE
 ----
 test
@@ -17,3 +17,4 @@ DROP ROLE alice
 @connection(id=test)
 statement error
 DROP USER alice
+

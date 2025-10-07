@@ -10,7 +10,8 @@ CREATE TABLE t1(c0 INT)
 statement ok
 INSERT INTO t1(c0) VALUES(0)
 
-query I
+query I nosort
 SELECT * FROM t0 WHERE NOT EXISTS (SELECT 1 FROM t1 WHERE t1.c0 LIKE t0.c0)
 ----
 60
+

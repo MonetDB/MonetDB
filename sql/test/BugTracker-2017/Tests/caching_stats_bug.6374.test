@@ -36,12 +36,9 @@ select count(*) from mt where i >= 5 and i < 12
 ----
 1
 
-statement ok
-PLAN select count(*) from mt where i >= 5 and i < 12
-
 skipif knownfail
-query T python .plan.filter
-PLAN select count(*) from mt where i >= 5 and i < 12
+query T nosort
+EXPLAIN SHOW DETAILS select count(*) from mt where i >= 5 and i < 12
 ----
 project (
 | group by (
@@ -68,12 +65,9 @@ select count(*) from mt where i >= 5 and i < 12
 ----
 3
 
-statement ok
-PLAN select count(*) from mt where i >= 5 and i < 12
-
 skipif knownfail
-query T python .plan.filter
-PLAN select count(*) from mt where i >= 5 and i < 12
+query T nosort
+EXPLAIN SHOW DETAILS select count(*) from mt where i >= 5 and i < 12
 ----
 project (
 | group by (

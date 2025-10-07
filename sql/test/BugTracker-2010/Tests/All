@@ -32,7 +32,7 @@ ORDER_BY_over_UNION_EXCEPT_INTERSECT.Bug-2606
 second_function_existing_signature.Bug-2611
 update_statement_in_function_ignored.Bug-2614
 error-truncated.Bug-2615
-LIMIT_OFFSET_big-endian.Bug-2622        # Fails because of EXPLAIN and PLAN
+LIMIT_OFFSET_big-endian.Bug-2622 #Fails because of EXPLAIN and EXPLAIN PHYSICAL
 decimal-function.BUG-2624
 function_results_NULL.Bug-2626
 with_row_number_crash.Bug-2631

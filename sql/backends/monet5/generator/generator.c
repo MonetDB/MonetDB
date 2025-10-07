@@ -250,7 +250,7 @@ VLTgenerator_table_(BAT **result, Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 				throw(MAL, "generator.table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			v = (date *) Tloc(bn, 0);
 			BUN c;
-			for (c = 0; c < n && f < l; c++) {
+			for (c = 0; f < l; c++) {
 				*v++ = f;
 				f = date_add_month(f, s);
 				if (is_date_nil(f)) {

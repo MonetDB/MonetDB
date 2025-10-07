@@ -4,6 +4,7 @@ CREATE TABLE t0(c0 INT)
 statement ok
 INSERT INTO t0(c0) VALUES(82)
 
-query I
+query I nosort
 SELECT * FROM t0 WHERE NOT EXISTS (SELECT 1 FROM (VALUES (t0.c0)) WHERE TRUE)
 ----
+

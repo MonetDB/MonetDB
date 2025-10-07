@@ -5,7 +5,7 @@ root = true
 end_of_line = lf
 insert_final_newline = true
 
-[*.{c,h}{,.in}]
+[*.{c,h,y}{,.in}]
 indent_style = tab
 tab_width = 4
 indent_size = tab

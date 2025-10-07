@@ -2559,7 +2559,7 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, bool save_histor
 							" ''''||replace(rp.minimum, '''', '''''')||'''' as minimum,"
 							" ''''||replace(rp.maximum, '''', '''''')||'''' as maximum,"
 							" rp.with_nulls,"
-							" '('||group_concat(''''||replace(vp.value, '''', '''''')||'''', ',' order by vp.value)||')' as values,"
+							" '('||group_concat(''''||replace(vp.value, '''', '''''')||'''', ','%s)||')' as \"values\","
 							" count(vp.value) <> count(*) as has_nulls"
 							" from sys.schemas as s1,"
 							" sys._tables as t1 left outer join sys.table_partitions as tp on t1.id = tp.table_id left outer join sys._columns as c1 on tp.column_id = c1.id,"
@@ -2574,10 +2574,25 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, bool save_histor
 							" d.id = t2.id"
 							" group by s1.name, t1.name, s2.name, t2.name, c1.name, tp.expression, tp.type, rp.minimum, rp.maximum, rp.with_nulls"
 							" order by s1.name, t1.name, s2.name, t2.name";
+						const char *ordering = "";
 						char *squery = NULL;
 						size_t squerylen = 0;
 						char *tquery = NULL;
 						size_t tquerylen = 0;
+						hdl = mapi_query(mid, "select value from sys.env() where name = 'monet_version'");
+						CHECK_RESULT(mid, hdl, buf, fp);
+						if (fetch_row(hdl) > 0) {
+							const char *version = mapi_fetch_field(hdl, 0);
+							int major, minor, patch;
+							if (version &&
+								sscanf(version, "%d.%d.%d",
+									   &major, &minor, &patch) == 3 &&
+								major == 11 &&
+								minor >= 53)
+								ordering = " order by vp.value";
+						}
+						mapi_close_handle(hdl);
+						hdl = NULL;
 						if (sname) {
 							sname = sescape(sname);
 							squerylen = strlen(sname) + 21;
@@ -2604,9 +2619,9 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, bool save_histor
 							free(tname);
 							tname = NULL;
 						}
-						size_t qlen = sizeof(mquery) + squerylen + tquerylen;
+						size_t qlen = sizeof(mquery) + strlen(ordering) + squerylen + tquerylen;
 						char *query = malloc(qlen);
-						snprintf(query, qlen, mquery, squery ? squery : "", tquery ? tquery : "");
+						snprintf(query, qlen, mquery, ordering, squery ? squery : "", tquery ? tquery : "");
 						free(squery);
 						free(tquery);
 						hdl = mapi_query(mid, query);

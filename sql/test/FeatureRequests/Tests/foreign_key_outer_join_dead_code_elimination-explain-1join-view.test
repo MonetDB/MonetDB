@@ -6,7 +6,7 @@ explain select count(*) from v1
 
 skipif knownfail
 query T python .explain.function_histogram
-explain select count(*) from v1
+explain physical select count(*) from v1
 ----
 querylog.define
 1
@@ -22,7 +22,7 @@ explain select id       from v1 order by id
 
 skipif knownfail
 query T python .explain.function_histogram
-explain select id       from v1 order by id
+explain physical select id       from v1 order by id
 ----
 algebra.projection
 1
@@ -68,7 +68,7 @@ explain select id , v1  from v1 order by id
 
 skipif knownfail
 query T python .explain.function_histogram
-explain select id , v1  from v1 order by id
+explain physical select id , v1  from v1 order by id
 ----
 algebra.difference
 1

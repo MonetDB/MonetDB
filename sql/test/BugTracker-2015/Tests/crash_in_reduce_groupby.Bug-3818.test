@@ -20,12 +20,9 @@ SELECT 0 AS cods, 0 AS elrik, 0 AS ether, 0 AS jaelen, 0 AS sora, cast( SUM(tib0
 GROUP BY cods, elrik, ether, jaelen, sora
 ----
 
-statement ok
-PLAN SELECT 0 AS cods, 0 AS elrik, 0 AS ether, 0 AS jaelen, 0 AS sora, MIN(tib0) FROM t2a GROUP BY cods, elrik, ether, jaelen, sora
-
 skipif knownfail
-query T python .plan.filter
-PLAN SELECT 0 AS cods, 0 AS elrik, 0 AS ether, 0 AS jaelen, 0 AS sora, MIN(tib0)
+query T nosort
+EXPLAIN SHOW DETAILS SELECT 0 AS cods, 0 AS elrik, 0 AS ether, 0 AS jaelen, 0 AS sora, MIN(tib0)
  FROM t2a
 GROUP BY cods, elrik, ether, jaelen, sora
 ----

@@ -673,12 +673,9 @@ select x as z, 2 from (select 1) as x(x) group by z, z
 1
 2
 
-statement ok
-plan select x as z, 2 from (select 1) as x(x) group by z, z
-
 skipif knownfail
-query T python .plan.filter
-plan select x as z, 2 from (select 1) as x(x) group by z, z
+query T nosort
+explain show details select x as z, 2 from (select 1) as x(x) group by z, z
 ----
 project (
 | group by (
@@ -924,12 +921,9 @@ SELECT x AS x, x AS x1 FROM (VALUES (1),(2),(3)) x(x) GROUP BY x, x1
 3
 
 # remove 'x1' from grouping columns list
-statement ok
-plan SELECT x AS x, x AS x1 FROM (VALUES (1),(2),(3)) x(x) GROUP BY x, x1
-
 skipif knownfail
-query T python .plan.filter
-plan SELECT x AS x, x AS x1 FROM (VALUES (1),(2),(3)) x(x) GROUP BY x, x1
+query T nosort
+explain show details SELECT x AS x, x AS x1 FROM (VALUES (1),(2),(3)) x(x) GROUP BY x, x1
 ----
 project (
 | group by (
@@ -948,12 +942,9 @@ SELECT x AS x, x + 1 AS x1 FROM (VALUES (1),(2),(3)) x(x) GROUP BY x, x1
 4
 
 # remove 'x1' from grouping columns list. This one is more complex
-statement ok
-plan SELECT x AS x, x + 1 AS x1 FROM (VALUES (1),(2),(3)) x(x) GROUP BY x, x1
-
 skipif knownfail
-query T python .plan.filter
-plan SELECT x AS x, x + 1 AS x1 FROM (VALUES (1),(2),(3)) x(x) GROUP BY x, x1
+query T nosort
+explain show details SELECT x AS x, x + 1 AS x1 FROM (VALUES (1),(2),(3)) x(x) GROUP BY x, x1
 ----
 project (
 | group by (
@@ -978,12 +969,9 @@ SELECT x AS x, (10 + x) * 2 - 29 AS x1 FROM (VALUES (1),(2),(3),(4),(5)) x(x) GR
 1
 
 # remove 'x1' from grouping columns list. This one is even more complex
-statement ok
-plan SELECT x AS x, (10 + x) * 2 - 29 AS x1 FROM (VALUES (1),(2),(3),(4),(5)) x(x) GROUP BY x, x1
-
 skipif knownfail
-query T python .plan.filter
-plan SELECT x AS x, (10 + x) * 2 - 29 AS x1 FROM (VALUES (1),(2),(3),(4),(5)) x(x) GROUP BY x, x1
+query T nosort
+explain show details SELECT x AS x, (10 + x) * 2 - 29 AS x1 FROM (VALUES (1),(2),(3),(4),(5)) x(x) GROUP BY x, x1
 ----
 project (
 | group by (

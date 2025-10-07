@@ -1,12 +1,9 @@
 statement ok
 set optimizer = 'sequential_pipe'
 
-statement ok
-explain select count(*) from v0
-
 skipif knownfail
 query T python .explain.function_histogram
-explain select count(*) from v0
+explain physical select count(*) from v0
 ----
 algebra.fetch
 1
@@ -40,9 +37,6 @@ sql.tid
 1
 user.main
 1
-
-statement ok
-explain select id       from v0 order by id
 
 skipif knownfail
 query T python .explain.function_histogram

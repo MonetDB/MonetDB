@@ -27,8 +27,8 @@ SELECT abc FROM testing5
 1
 
 skipif knownfail                                                                                                                                                                              
-query T python .plan.filter
-PLAN TRUNCATE testing4 RESTRICT
+query T nosort
+EXPLAIN SHOW DETAILS TRUNCATE testing4 RESTRICT
 ----
 truncate continue identity, restrict(
 | table("sys"."testing4") [ "testing4"."%TID%" NOT NULL UNIQUE ]
@@ -48,8 +48,8 @@ SELECT abc FROM testing5
 1
 
 skipif knownfail                                                                                                                                                                              
-query T python .plan.filter
-PLAN TRUNCATE testing4 CASCADE
+query T nosort
+EXPLAIN SHOW DETAILS TRUNCATE testing4 CASCADE
 ----
 truncate continue identity, cascade(
 | table("sys"."testing4") [ "testing4"."%TID%" NOT NULL UNIQUE ]
@@ -84,8 +84,8 @@ SELECT a, b FROM testing6
 1
 
 skipif knownfail                                                                                                                                                                              
-query T python .plan.filter
-PLAN TRUNCATE testing6
+query T nosort
+EXPLAIN SHOW DETAILS TRUNCATE testing6
 ----
 truncate continue identity, restrict(
 | table("sys"."testing6") [ "testing6"."%TID%" NOT NULL UNIQUE ]
@@ -109,8 +109,8 @@ SELECT a, b FROM testing6
 4
 
 skipif knownfail                                                                                                                                                                              
-query T python .plan.filter
-PLAN TRUNCATE testing6 CONTINUE IDENTITY
+query T nosort
+EXPLAIN SHOW DETAILS TRUNCATE testing6 CONTINUE IDENTITY
 ----
 truncate continue identity, restrict(
 | table("sys"."testing6") [ "testing6"."%TID%" NOT NULL UNIQUE ]
@@ -134,8 +134,8 @@ SELECT a, b FROM testing6
 6
 
 skipif knownfail                                                                                                                                                                              
-query T python .plan.filter
-PLAN TRUNCATE testing6 RESTART IDENTITY
+query T nosort
+EXPLAIN SHOW DETAILS TRUNCATE testing6 RESTART IDENTITY
 ----
 truncate restart identity, restrict(
 | table("sys"."testing6") [ "testing6"."%TID%" NOT NULL UNIQUE ]

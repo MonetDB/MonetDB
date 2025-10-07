@@ -5,12 +5,9 @@ statement ok
 insert into integers values(1),(2),(3),(NULL)
 
 # split case into project under select
-statement ok
-plan select i, i in (select i from integers where i = i1.i) or i is NULL from integers i1
-
 skipif knownfail
-query T python .plan.filter
-plan select i, i in (select i from integers where i = i1.i) or i is NULL from integers i1
+query T nosort
+explain show details select i, i in (select i from integers where i = i1.i) or i is NULL from integers i1
 ----
 project (
 | left outer group join (

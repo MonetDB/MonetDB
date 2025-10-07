@@ -10,8 +10,8 @@ select * from f_uchain
 4
 5
 
-query T python .plan.filter
-plan select * from f_uchain
+query T nosort
+explain show details select * from f_uchain
 ----
 munion (
 | project (
@@ -39,12 +39,9 @@ where n > 1 and n < 5
 4
 4
 
-statement ok
-plan select * from f_uchain where n > 1 and n < 5
-
 skipif knownfail
-query T python .plan.filter
-plan select * from f_uchain
+query T nosort
+explain show details select * from f_uchain
      where n > 1 and n < 5
 ----
 munion (
@@ -80,12 +77,9 @@ select n, count(n) from f_uchain group by n
 5
 1
 
-statement ok
-plan select * from f_uchain where n > 1 and n < 5
-
 skipif knownfail
-query T python .plan.filter
-plan select * from f_uchain
+query T nosort
+explain show details select * from f_uchain
      where n > 1 and n < 5
 ----
 munion (
@@ -119,8 +113,8 @@ select * from f_merge
 4
 5
 
-query T python .plan.filter
-plan select * from f_merge
+query T nosort
+explain show details select * from f_merge
 ----
 munion (
 | project (
@@ -148,12 +142,9 @@ where n > 1 and n < 5
 4
 4
 
-statement ok
-plan select * from f_merge where n > 1 and n < 5
-
 skipif knownfail
-query T python .plan.filter
-plan select * from f_merge
+query T nosort
+explain show details select * from f_merge
      where n > 1 and n < 5
 ----
 munion (
@@ -187,8 +178,8 @@ select * from f_merge_rec
 4
 5
 
-query T python .plan.filter
-plan select * from f_merge_rec
+query T nosort
+explain show details select * from f_merge_rec
 ----
 munion (
 | project (
@@ -216,12 +207,9 @@ where n > 1 and n < 5
 4
 4
 
-statement ok
-plan select * from f_merge_rec where n > 1 and n < 5
-
 skipif knownfail
-query T python .plan.filter
-plan select * from f_merge_rec
+query T nosort
+explain show details select * from f_merge_rec
      where n > 1 and n < 5
 ----
 munion (
@@ -257,12 +245,9 @@ select n, count(n) from f_merge_rec group by n
 5
 1
 
-statement ok
-plan select n, count(n) from f_merge_rec group by n
-
 skipif knownfail
-query T python .plan.filter
-plan select n, count(n) from f_merge_rec group by n
+query T nosort
+explain show details select n, count(n) from f_merge_rec group by n
 ----
 project (
 | group by (

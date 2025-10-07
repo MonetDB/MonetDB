@@ -1,8 +1,9 @@
 statement ok
-CREATE TABLE table1 (column1 INT, column2 INT, CONSTRAINT constraint1 UNIQUE NULLS NOT DISTINCT (column1, column2));
+CREATE TABLE table1 (column1 INT, column2 INT, CONSTRAINT constraint1 UNIQUE NULLS NOT DISTINCT (column1, column2))
 
 statement ok
 ALTER TABLE table1 DROP COLUMN column2 CASCADE
 
 statement error 42000!ALTER TABLE: no such constraint 'constraint1'
 ALTER TABLE table1 DROP CONSTRAINT constraint1 CASCADE
+

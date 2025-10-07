@@ -4,7 +4,8 @@ create table test( username varchar, inserted timestamp with time zone)
 statement ok
 insert into test values ('user1', '2025-01-21 00:48:02.707000-04:00'), ('Admin', '2025-01-21 00:14:12.201000-04:00'), ('user2', '2025-01-21 00:29:29.896000-04:00'), ('user3', '2025-01-21 03:39:09.373000-04:00')
 
-query T
+query T nosort
 select username from test where username = 'Admin' and cast(inserted as date) = '2025-01-21'
 ----
 Admin
+

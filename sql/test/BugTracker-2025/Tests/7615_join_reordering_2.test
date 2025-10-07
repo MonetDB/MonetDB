@@ -21,7 +21,7 @@ CREATE VIEW result AS SELECT x1.a1 AS a1, x1.a2 AS a2, x5.a1 AS a3, x5.a2 AS a4,
 
 skipif knownfail
 query T nosort
-plan select * from result
+explain show details select * from result
 ----
 project (
 | project (

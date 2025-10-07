@@ -14,7 +14,7 @@ explain select * from test where (k1, k2) not in ( select k1, k2 from test where
 # unoptimized anti join
 skipif knownfail
 query T python .explain.function_histogram
-explain select * from test
+explain physical select * from test
 where (k1, k2) not in (
     select k1, k2
     from test
@@ -57,7 +57,7 @@ user.main
 # optimized anti join
 skipif knownfail
 query T python .explain.function_histogram
-explain select * from test
+explain physical select * from test
 where k2 not in (
     select k2
     from test
