@@ -516,7 +516,7 @@ pcre_replace_bat(BAT **res, BAT *origin_strs, const char *pattern,
 								(PCRE2_SIZE) strlen((char *) origin_str), exec_options,
 								(PCRE2_SPTR) replacement, len_replacement,
 								tmpres, &max_dest_size);
-		if (tmpres == NULL || BUNappend(tmpbat, tmpres, false) != GDK_SUCCEED) {
+		if (tmpres == NULL || tfastins_nocheckVAR(tmpbat, p, tmpres) != GDK_SUCCEED) {
 			bat_iterator_end(&origin_strsi);
 			pcre2_match_data_free(match_data);
 			pcre2_code_free(pcre_code);
@@ -530,6 +530,7 @@ pcre_replace_bat(BAT **res, BAT *origin_strs, const char *pattern,
 		else /* buffer is enlarged */
 			init_size = max_dest_size;
 	}
+	BATsetcount(tmpbat, BATcount(origin_strs));
 	bat_iterator_end(&origin_strsi);
 	pcre2_match_data_free(match_data);
 	pcre2_code_free(pcre_code);
