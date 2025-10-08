@@ -195,7 +195,7 @@ struct thread_funcs {
 };
 
 struct mtthread {
-	allocator *thread_allocator;
+	allocator *ma;
 	struct mtthread *next;
 	void (*func) (void *);	/* function to be called */
 	void *data;		/* and its data */
@@ -366,15 +366,18 @@ static void
 rm_mtthread(struct mtthread *t)
 {
 	struct mtthread **pt;
+	allocator *ta = t->ma;
 
 	assert(t != &mainthread);
 	thread_lock();
+	t->ma = NULL;
 	for (pt = &mtthreads; *pt && *pt != t; pt = &(*pt)->next)
 		;
 	if (*pt)
 		*pt = t->next;
 	free(t);
 	thread_unlock();
+	sa_destroy(ta);
 }
 
 bool
@@ -573,14 +576,14 @@ MT_thread_getfreebats(void)
 }
 
 void
-MT_thread_setallocator(allocator *allocator)
+MT_thread_setallocator(allocator *ma)
 {
 	if (!thread_initialized)
 		return;
 	struct mtthread *self = thread_self();
 
 	if (self)
-		self->thread_allocator = allocator;
+		self->ma = ma;
 }
 
 allocator *
@@ -590,7 +593,7 @@ MT_thread_getallocator(void)
 		return NULL;
 	struct mtthread *self = thread_self();
 
-	return self ? self->thread_allocator : NULL;
+	return self ? self->ma : NULL;
 }
 
 void
@@ -969,7 +972,13 @@ MT_create_thread(MT_Id *t, void (*f) (void *), void *arg, enum MT_thr_detach d, 
 		.exited = ATOMIC_VAR_INIT(0),
 		.working = ATOMIC_PTR_VAR_INIT(NULL),
 		.semawait = ATOMIC_PTR_VAR_INIT(NULL),
+		.ma = create_allocator(NULL, threadname, false),
 	};
+	if (self->ma == NULL) {
+		free(self);
+		GDKerror("Creating thread allocator failed\n");
+		return -1;
+	}
 	MT_lock_set(&thread_init_lock);
 	/* remember the list of callback functions we need to call for
 	 * this thread (i.e. anything registered so far) */

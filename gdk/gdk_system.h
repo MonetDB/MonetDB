@@ -185,7 +185,7 @@ gdk_export bool MT_thread_register(void);
 gdk_export void MT_thread_deregister(void);
 gdk_export const char *MT_thread_getname(void);
 gdk_export allocator *MT_thread_getallocator(void);
-gdk_export void MT_thread_setallocator(allocator *allocator);
+gdk_export void MT_thread_setallocator(allocator *ma);
 gdk_export void *MT_thread_getdata(void);
 gdk_export void MT_thread_setdata(void *data);
 gdk_export void MT_exiting_thread(void);
