@@ -6,7 +6,7 @@ insert into integers values(1),(2),(3),(NULL)
 
 # split case into project under select
 query T python .plan.filter
-plan select i from integers where case i when i*i then i else i end > 1
+explain show details select i from integers where case i when i*i then i else i end > 1
 ----
 project (
 | select (

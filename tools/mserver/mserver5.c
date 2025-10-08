@@ -675,7 +675,7 @@ main(int argc, char **av)
 	}
 
 	if (inmemory) {
-		if (BBPaddfarm(NULL, (1U << PERSISTENT) | (1U << TRANSIENT), true) !=
+		if (BBPaddfarm(NULL, (1U << PERSISTENT) | (1U << TRANSIENT) | (1U << SYSTRANS), true) !=
 			GDK_SUCCEED) {
 			fprintf(stderr, "!ERROR: cannot add in-memory farm\n");
 			exit(1);

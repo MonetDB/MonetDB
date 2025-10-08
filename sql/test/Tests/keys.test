@@ -199,7 +199,7 @@ insert into dummyme values (1,1), (2,1), (3,1)
 
 query T nosort
 /* eliminated */
-plan select count(distinct a) from dummyme
+explain show details select count(distinct a) from dummyme
 ----
 project (
 |  [ "sys"."cnt"(varchar "sys", varchar "dummyme") NOT NULL as "%1"."%1" ]
@@ -211,7 +211,7 @@ select count(distinct a) from dummyme
 3
 
 query T nosort
-PLAN select count(distinct a) from dummyme group by b
+EXPLAIN SHOW DETAILS select count(distinct a) from dummyme group by b
 ----
 project (
 | group by (
@@ -226,7 +226,7 @@ select count(distinct a) from dummyme group by b
 
 query T nosort
 /* not eliminated */
-plan select count(distinct b) from dummyme
+explain show details select count(distinct b) from dummyme
 ----
 project (
 | group by (
@@ -240,7 +240,7 @@ select count(distinct b) from dummyme
 1
 
 query T nosort
-PLAN select count(distinct a + 1) from dummyme
+EXPLAIN SHOW DETAILS select count(distinct a + 1) from dummyme
 ----
 project (
 | group by (
@@ -256,7 +256,7 @@ select count(distinct a + 1) from dummyme
 3
 
 query T nosort
-PLAN select count(distinct a + b) from dummyme
+EXPLAIN SHOW DETAILS select count(distinct a + b) from dummyme
 ----
 project (
 | group by (
@@ -272,7 +272,7 @@ select count(distinct a + b) from dummyme
 3
 
 query T nosort
-PLAN select count(distinct abs(a)) from dummyme
+EXPLAIN SHOW DETAILS select count(distinct abs(a)) from dummyme
 ----
 project (
 | group by (
@@ -288,7 +288,7 @@ select count(distinct abs(a)) from dummyme
 3
 
 query T nosort
-PLAN select count(abs(a)) from dummyme
+EXPLAIN SHOW DETAILS select count(abs(a)) from dummyme
 ----
 project (
 | group by (
@@ -304,7 +304,7 @@ select count(abs(a)) from dummyme
 3
 
 query T nosort
-PLAN select count(a) as x, count(*) as y from dummyme
+EXPLAIN SHOW DETAILS select count(a) as x, count(*) as y from dummyme
 ----
 project (
 | project (

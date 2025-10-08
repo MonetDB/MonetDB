@@ -14,7 +14,7 @@ statement ok
 CREATE VIEW t4 AS SELECT t3.a1 AS a1, t3.a2 AS a2, t2.p AS a3, t2.p AS p FROM t3, t2 WHERE t3.a2 = t2.a1
 
 query T nosort
-PLAN SELECT COUNT(*) FROM (SELECT t1.a1 AS a1, t1.a2 AS a2, t4.a1 AS a3, t4.a2 AS a4, t4.a3 AS a5, t1.p AS p FROM t1, t4 WHERE [t1.a1,t1.a2] maxlev_helper [t4.a1,t4.a2,t4.a3]) AS foo
+EXPLAIN SHOW DETAILS SELECT COUNT(*) FROM (SELECT t1.a1 AS a1, t1.a2 AS a2, t4.a1 AS a3, t4.a2 AS a4, t4.a3 AS a5, t1.p AS p FROM t1, t4 WHERE [t1.a1,t1.a2] maxlev_helper [t4.a1,t4.a2,t4.a3]) AS foo
 ----
 project (
 | group by (

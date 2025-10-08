@@ -6,7 +6,7 @@ CREATE TABLE sys.myfunctions ("id" INTEGER,"name" VARCHAR(256),"func" VARCHAR(81
 	"schema_id" INTEGER,"system" BOOLEAN,"semantics" BOOLEAN)
 
 statement ok
-insert into sys.myfunctions values( 10000000, 'test', 'func', 'mod', 0, 0, false, false, false, 2000, true, false);
+insert into sys.myfunctions values( 10000000, 'test', 'func', 'mod', 0, 0, false, false, false, 2000, true, false)
 
 statement ok
 CREATE VIEW sys.commented_function_signatures_6542 AS
@@ -31,7 +31,7 @@ select * from sys.commented_function_signatures_6542
 ----
 
 query T nosort
-plan select count (*) from sys.commented_function_signatures_6542
+EXPLAIN SHOW DETAILS select count (*) from sys.commented_function_signatures_6542
 ----
 project (
 | group by (

@@ -187,7 +187,7 @@ statement ok
 CREATE VIEW s__RESULTVIEW__2084207473789121672 AS SELECT id AS a1, prob AS prob FROM am_obj_dict
 
 statement ok
-CREATE VIEW s__RESULTVIEW__3744103893006362204 AS SELECT tree AS a1, subject AS a2, pre AS a3, post AS a4, size AS a5, level AS a6, prob AS prob FROM am_obj_tree WHERE tree = 'RDF_properties'
+CREATE VIEW s__RESULTVIEW__3744103893006362204 AS SELECT tree AS a1, subject AS a2, pre AS a3, post AS a4, size AS a5, level AS a6, prob AS prob FROM am_obj_tree WHERE tree = 'RDF_details'
 
 statement ok
 CREATE VIEW s__RESULTVIEW__5907800622365123282 AS SELECT paramName AS a1, value AS a2, prob AS prob FROM params_str WHERE paramName = 's_generator_bag_of_words_ATTRIBUTE_A'
@@ -196,7 +196,7 @@ statement ok
 CREATE VIEW s__RESULTVIEW__8689322627111648167 AS SELECT id AS a1, prob AS prob FROM gtaa_obj_dict
 
 statement ok
-CREATE VIEW s__RESULTVIEW__6885005865828173703 AS SELECT tree AS a1, subject AS a2, pre AS a3, post AS a4, size AS a5, level AS a6, prob AS prob FROM gtaa_obj_tree WHERE tree = 'RDF_properties'
+CREATE VIEW s__RESULTVIEW__6885005865828173703 AS SELECT tree AS a1, subject AS a2, pre AS a3, post AS a4, size AS a5, level AS a6, prob AS prob FROM gtaa_obj_tree WHERE tree = 'RDF_details'
 
 statement ok
 CREATE VIEW s__RESULTVIEW_6439365964835459461 AS SELECT paramName AS a1, value AS a2, prob AS prob FROM params_str WHERE paramName = 's_generator_bag_of_words_ATTRIBUTE_B'

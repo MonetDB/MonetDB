@@ -11,14 +11,14 @@ statement ok
 alter table bar_rpl_loc add table bar_local
 
 query T nosort
-plan select * from foo_rpl_loc
+explain show details select * from foo_rpl_loc
 ----
 project (
 | table("sys"."foo_local") [ "foo_local"."n" NOT NULL as "foo_rpl_loc"."n", "foo_local"."m" NOT NULL as "foo_rpl_loc"."m", "foo_local"."%TID%" NOT NULL UNIQUE as "foo_rpl_loc"."%TID%" ]
 ) [ "foo_rpl_loc"."n" NOT NULL, "foo_rpl_loc"."m" NOT NULL ]
 
 query T nosort
-plan select * from foo_rpl_loc, bar_rpl_loc
+explain show details select * from foo_rpl_loc, bar_rpl_loc
 ----
 project (
 | crossproduct (
@@ -96,7 +96,7 @@ mary
 tom
 
 query T nosort
-plan select * from foo_rpl_loc, buz_rmt
+explain show details select * from foo_rpl_loc, buz_rmt
 ----
 project (
 | crossproduct (

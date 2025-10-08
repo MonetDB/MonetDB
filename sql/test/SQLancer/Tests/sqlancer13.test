@@ -734,7 +734,7 @@ statement ok
 set optimizer='sequential_pipe'
 
 query T python .explain.function_histogram
-EXPLAIN SELECT t0.c0 FROM t0 WHERE t0.c0 NOT BETWEEN 0 AND 2
+EXPLAIN PHYSICAL SELECT t0.c0 FROM t0 WHERE t0.c0 NOT BETWEEN 0 AND 2
 ----
 algebra.projection
 1

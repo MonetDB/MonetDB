@@ -36,7 +36,7 @@ statement ok
 INSERT INTO test02 VALUES (19,'ABF',30)
 
 query T nosort
-PLAN select col1
+EXPLAIN SHOW DETAILS select col1
 from test02
 group by col1
 order by count(col1), col1

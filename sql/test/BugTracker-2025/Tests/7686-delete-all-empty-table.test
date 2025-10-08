@@ -5,7 +5,7 @@ statement ok
 create table b as select value as i from generate_series(0,10000000)
 
 query T nosort
-plan delete from a where i in (select i from b where i % 2 = 0)
+explain show details delete from a where i in (select i from b where i % 2 = 0)
 ----
 REF 1 (2)
 table("sys"."a") [ "a"."i" NOT NULL UNIQUE, "a"."%TID%" NOT NULL UNIQUE ]

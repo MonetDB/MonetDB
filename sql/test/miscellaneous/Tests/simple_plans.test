@@ -17,7 +17,7 @@ select distinct col1 + col2 from myy order by col1 + col2
 6
 
 query T nosort
-plan select distinct col1 + col2 from myy order by col1 + col2
+explain show details select distinct col1 + col2 from myy order by col1 + col2
 ----
 project (
 | group by (
@@ -28,14 +28,14 @@ project (
 ) [ "%1"."%1" NOT NULL UNIQUE ] [ "%1"."%1" ASC NOT NULL UNIQUE ]
 
 query T nosort
-plan select col2 from myy order by col1 ASC, col1 DESC
+explain show details select col2 from myy order by col1 ASC, col1 DESC
 ----
 project (
 | table("sys"."myy") [ "myy"."col1" NOT NULL UNIQUE, "myy"."col2" NOT NULL ]
 ) [ "myy"."col2" NOT NULL ] [ "myy"."col1" ASC NOT NULL UNIQUE, "myy"."col1" NULLS LAST NOT NULL UNIQUE ]
 
 query T nosort
-plan select col2 from myy order by col1 DESC, col1 DESC
+explain show details select col2 from myy order by col1 DESC, col1 DESC
 ----
 project (
 | table("sys"."myy") [ "myy"."col1" NOT NULL UNIQUE, "myy"."col2" NOT NULL ]
@@ -45,7 +45,7 @@ statement ok
 create table myx (x uuid, y uuid)
 
 query T nosort
-plan select * from myx where x in ('1aea00e5db6e0810b554fde31d961965') or y = '1aea00e5db6e0810b554fde31d961965'
+explain show details select * from myx where x in ('1aea00e5db6e0810b554fde31d961965') or y = '1aea00e5db6e0810b554fde31d961965'
 ----
 project (
 | select (
@@ -54,7 +54,7 @@ project (
 ) [ "myx"."x" NOT NULL UNIQUE, "myx"."y" NOT NULL UNIQUE ]
 
 query T nosort
-plan select * from myx where x in ('1aea00e5db6e0810b554fde31d961965') or y is null
+explain show details select * from myx where x in ('1aea00e5db6e0810b554fde31d961965') or y is null
 ----
 project (
 | select (
@@ -63,7 +63,7 @@ project (
 ) [ uuid[varchar(32) "1aea00e5db6e0810b554fde31d961965"] NOT NULL as "myx"."x", "myx"."y" NOT NULL UNIQUE ]
 
 query T nosort
-plan select * from myx where x in ('1aea00e5db6e0810b554fde31d961965', '1aea00e5db6e0810b554fde31d961966') or y = '1aea00e5db6e0810b554fde31d961967'
+explain show details select * from myx where x in ('1aea00e5db6e0810b554fde31d961965', '1aea00e5db6e0810b554fde31d961966') or y = '1aea00e5db6e0810b554fde31d961967'
 ----
 project (
 | select (
@@ -91,7 +91,7 @@ statement ok
 INSERT INTO tab0 VALUES (97,1,99), (15,81,47),(87,21,10)
 
 query T nosort
-plan select 1 from tab0 where col1 = 1 or col1 = 81
+explain show details select 1 from tab0 where col1 = 1 or col1 = 81
 ----
 project (
 | select (
@@ -100,7 +100,7 @@ project (
 ) [ tinyint(1) "1" ]
 
 query T nosort
-plan select 1 from tab0 where col1 = 1 or col1 = 81 or col1 = 100
+explain show details select 1 from tab0 where col1 = 1 or col1 = 81 or col1 = 100
 ----
 project (
 | select (
@@ -109,7 +109,7 @@ project (
 ) [ tinyint(1) "1" ]
 
 query T nosort
-plan select 1 from tab0 where (col1 = 1 or col1 = 81) or (col2 < 0)
+explain show details select 1 from tab0 where (col1 = 1 or col1 = 81) or (col2 < 0)
 ----
 project (
 | select (
@@ -118,7 +118,7 @@ project (
 ) [ tinyint(1) "1" ]
 
 query T nosort
-plan select 1 from tab0 where ((col1 = 1 or col1 = 81) or col1 = 100) or (col2 > 10)
+explain show details select 1 from tab0 where ((col1 = 1 or col1 = 81) or col1 = 100) or (col2 > 10)
 ----
 project (
 | select (
@@ -127,7 +127,7 @@ project (
 ) [ tinyint(1) "1" ]
 
 query T nosort
-plan select 1 from tab0 where ((col1 = 1 or col1 = 81) or col2 = 100) or (col1 = 100)
+explain show details select 1 from tab0 where ((col1 = 1 or col1 = 81) or col2 = 100) or (col1 = 100)
 ----
 project (
 | select (
@@ -136,7 +136,7 @@ project (
 ) [ tinyint(1) "1" ]
 
 query T nosort
-plan select 1 from tab0 where col1 <> 1 and col1 <> 81
+explain show details select 1 from tab0 where col1 <> 1 and col1 <> 81
 ----
 project (
 | select (
@@ -146,7 +146,7 @@ project (
 
 # don't rewrite col2 <> 10 into notin
 query T nosort
-plan select 1 from tab0 where col1 <> 1 and col1 <> 81 and col2 <> 10
+explain show details select 1 from tab0 where col1 <> 1 and col1 <> 81 and col2 <> 10
 ----
 project (
 | select (
@@ -155,7 +155,7 @@ project (
 ) [ tinyint(1) "1" ]
 
 query T nosort
-plan select 1 from tab0 where col1 <> 1 and col1 <> 81 and (col2 < 100)
+explain show details select 1 from tab0 where col1 <> 1 and col1 <> 81 and (col2 < 100)
 ----
 project (
 | select (
@@ -164,7 +164,7 @@ project (
 ) [ tinyint(1) "1" ]
 
 query T nosort
-plan select 1 from tab0 where (col1 <> 1 and col1 <> 81) or (col2 < 0)
+explain show details select 1 from tab0 where (col1 <> 1 and col1 <> 81) or (col2 < 0)
 ----
 project (
 | select (
@@ -173,7 +173,7 @@ project (
 ) [ tinyint(1) "1" ]
 
 query T nosort
-plan select 1 from tab0 where ((col1 <> 1 and col1 <> 81) and col1 <> 100) or (col2 > 10)
+explain show details select 1 from tab0 where ((col1 <> 1 and col1 <> 81) and col1 <> 100) or (col2 > 10)
 ----
 project (
 | select (
@@ -182,7 +182,7 @@ project (
 ) [ tinyint(1) "1" ]
 
 query T nosort
-plan select 1 from tab0 where ((col1 <> 1 and col1 <> 81) or col2 = 100) and (col1 <> 47)
+explain show details select 1 from tab0 where ((col1 <> 1 and col1 <> 81) or col2 = 100) and (col1 <> 47)
 ----
 project (
 | select (
@@ -203,7 +203,7 @@ statement ok
 INSERT INTO another_T VALUES (1,2,3,4,5,6,7,8), (11,22,33,44,55,66,77,88), (111,222,333,444,555,666,777,888), (1111,2222,3333,4444,5555,6666,7777,8888)
 
 query T python .explain.function_histogram
-EXPLAIN SELECT 1 FROM another_t t1 INNER JOIN another_t t2 ON t1.col1 BETWEEN t2.col1 AND t2.col1
+EXPLAIN PHYSICAL SELECT 1 FROM another_t t1 INNER JOIN another_t t2 ON t1.col1 BETWEEN t2.col1 AND t2.col1
 ----
 algebra.project
 1
@@ -227,7 +227,7 @@ user.main
 1
 
 query T python .explain.function_histogram
-EXPLAIN SELECT 1 FROM another_t t1 INNER JOIN another_t t2 ON t1.col1 BETWEEN t2.col1 - 1 AND t2.col1 + 1
+EXPLAIN PHYSICAL SELECT 1 FROM another_t t1 INNER JOIN another_t t2 ON t1.col1 BETWEEN t2.col1 - 1 AND t2.col1 + 1
 ----
 algebra.project
 1
@@ -251,7 +251,7 @@ user.main
 1
 
 query T python .explain.function_histogram
-EXPLAIN SELECT 1 FROM another_t t1 INNER JOIN another_t t2 ON t1.col1 BETWEEN t2.col1 AND 2
+EXPLAIN PHYSICAL SELECT 1 FROM another_t t1 INNER JOIN another_t t2 ON t1.col1 BETWEEN t2.col1 AND 2
 ----
 algebra.project
 2
@@ -275,7 +275,7 @@ user.main
 1
 
 query T python .explain.function_histogram
-EXPLAIN SELECT 1 FROM tbl_productsales t1 INNER JOIN tbl_productsales t2 ON t1.product_category LIKE t2.product_category
+EXPLAIN PHYSICAL SELECT 1 FROM tbl_productsales t1 INNER JOIN tbl_productsales t2 ON t1.product_category LIKE t2.product_category
 ----
 algebra.likejoin
 1
@@ -301,35 +301,35 @@ user.main
 1
 
 query T python .explain.function_with_more_than_one_result_bat
-EXPLAIN SELECT t1.col1 FROM another_t t1 INNER JOIN another_t t2 ON t1.col1 = t2.col1
+EXPLAIN PHYSICAL SELECT t1.col1 FROM another_t t1 INNER JOIN another_t t2 ON t1.col1 = t2.col1
 ----
 
 query T python .explain.function_with_more_than_one_result_bat
-EXPLAIN SELECT t2.col1 FROM another_t t1 INNER JOIN another_t t2 ON t1.col1 = t2.col1
+EXPLAIN PHYSICAL SELECT t2.col1 FROM another_t t1 INNER JOIN another_t t2 ON t1.col1 = t2.col1
 ----
 
 query T python .explain.function_with_more_than_one_result_bat
-EXPLAIN SELECT t1.col1, t2.col1 FROM another_t t1 INNER JOIN another_t t2 ON t1.col1 = t2.col1
+EXPLAIN PHYSICAL SELECT t1.col1, t2.col1 FROM another_t t1 INNER JOIN another_t t2 ON t1.col1 = t2.col1
 ----
 algebra.join
 1
 
 query T python .explain.function_with_more_than_one_result_bat
-EXPLAIN SELECT t1.col1 FROM another_t t1 INNER JOIN another_t t2 ON t1.col1 > t2.col1
+EXPLAIN PHYSICAL SELECT t1.col1 FROM another_t t1 INNER JOIN another_t t2 ON t1.col1 > t2.col1
 ----
 
 query T python .explain.function_with_more_than_one_result_bat
-EXPLAIN SELECT t2.col1 FROM another_t t1 INNER JOIN another_t t2 ON t1.col1 > t2.col1
+EXPLAIN PHYSICAL SELECT t2.col1 FROM another_t t1 INNER JOIN another_t t2 ON t1.col1 > t2.col1
 ----
 
 query T python .explain.function_with_more_than_one_result_bat
-EXPLAIN SELECT t1.col1, t2.col1 FROM another_t t1 INNER JOIN another_t t2 ON t1.col1 > t2.col1
+EXPLAIN PHYSICAL SELECT t1.col1, t2.col1 FROM another_t t1 INNER JOIN another_t t2 ON t1.col1 > t2.col1
 ----
 algebra.thetajoin
 1
 
 query T nosort
-PLAN SELECT 1 FROM another_t WHERE (col1 >= 1 AND col1 <= 2) OR col2 IS NULL
+EXPLAIN SHOW DETAILS SELECT 1 FROM another_t WHERE (col1 >= 1 AND col1 <= 2) OR col2 IS NULL
 ----
 project (
 | select (
@@ -338,7 +338,7 @@ project (
 ) [ tinyint(1) "1" ]
 
 query T nosort
-PLAN SELECT 1 FROM another_t WHERE col1 > 1 and cast(col1 as bigint) < 2
+EXPLAIN SHOW DETAILS SELECT 1 FROM another_t WHERE col1 > 1 and cast(col1 as bigint) < 2
 ----
 project (
 | select (
@@ -347,7 +347,7 @@ project (
 ) [ tinyint(1) "1" ]
 
 query T nosort
-PLAN SELECT (col1 >= 1 AND col1 <= 2) OR col2 IS NULL FROM another_t
+EXPLAIN SHOW DETAILS SELECT (col1 >= 1 AND col1 <= 2) OR col2 IS NULL FROM another_t
 ----
 project (
 | table("sys"."another_t") [ "another_t"."col1" NOT NULL UNIQUE, "another_t"."col2" NOT NULL UNIQUE ]
@@ -381,7 +381,7 @@ statement ok
 create view view3 as SELECT * FROM tabel3 as a
 
 query T nosort
-PLAN SELECT 1 FROM view1 s INNER JOIN view2 h ON s.id_nr = h.id_nr LEFT JOIN view2 h2 ON h.id_nr = h2.id_nr INNER JOIN view3 a ON a.id_nr = s.id_nr
+EXPLAIN SHOW DETAILS SELECT 1 FROM view1 s INNER JOIN view2 h ON s.id_nr = h.id_nr LEFT JOIN view2 h2 ON h.id_nr = h2.id_nr INNER JOIN view3 a ON a.id_nr = s.id_nr
 ----
 project (
 | join (
@@ -403,7 +403,7 @@ statement ok
 INSERT INTO integers VALUES (1,4), (2,5), (3,6), (NULL,NULL)
 
 query T nosort
-plan select i1.i, i2.i from integers i1 inner join integers i2 on i1.i = i2.i or (i1.i is null and i2.i is null)
+explain show details select i1.i, i2.i from integers i1 inner join integers i2 on i1.i = i2.i or (i1.i is null and i2.i is null)
 ----
 project (
 | join (
@@ -425,7 +425,7 @@ NULL
 NULL
 
 query T nosort
-plan select i1.i, i2.i from integers i1 full outer join integers i2 on (i1.i is null and i2.i is null) or i1.i = i2.i
+explain show details select i1.i, i2.i from integers i1 full outer join integers i2 on (i1.i is null and i2.i is null) or i1.i = i2.i
 ----
 project (
 | full outer join (
@@ -447,7 +447,7 @@ NULL
 NULL
 
 query T nosort
-plan select i, j from integers where i = j or (i is null and j is null)
+explain show details select i, j from integers where i = j or (i is null and j is null)
 ----
 project (
 | select (
@@ -463,7 +463,7 @@ NULL
 
 # (x*c1)*c2 -> x * (c1*c2)
 query T nosort
-plan select (34*another_t.col1)*3 from another_t
+explain show details select (34*another_t.col1)*3 from another_t
 ----
 project (
 | table("sys"."another_t") [ "another_t"."col1" NOT NULL UNIQUE ]
@@ -488,7 +488,7 @@ statement ok rowcount 4
 insert into t3 values ('a'),('b'),('c'),('d')
 
 query T nosort
-plan select t1.a, t1.b from t1 inner join t2 on t1.a = t2.a inner join t3 on t1.b like t3.b
+explain show details select t1.a, t1.b from t1 inner join t2 on t1.a = t2.a inner join t3 on t1.b like t3.b
 ----
 project (
 | join (
@@ -501,7 +501,7 @@ project (
 ) [ "t1"."a" NOT NULL, "t1"."b" NOT NULL ]
 
 query T python .explain.function_histogram
-explain select t1.a, t1.b from t1 inner join t2 on t1.a = t2.a inner join t3 on t1.b like t3.b
+EXPLAIN PHYSICAL select t1.a, t1.b from t1 inner join t2 on t1.a = t2.a inner join t3 on t1.b like t3.b
 ----
 algebra.intersect
 1
@@ -529,7 +529,7 @@ user.main
 1
 
 query T nosort
-plan select x, y from (select a as b, a / 3 as c from t1 intersect all select a as z, a / 5 as d from t2) x(x,y) where x > 2
+explain show details select x, y from (select a as b, a / 3 as c from t1 intersect all select a as z, a / 5 as d from t2) x(x,y) where x > 2
 ----
 project (
 | intersect (
@@ -551,7 +551,7 @@ project (
 ) [ "x"."x" NOT NULL UNIQUE, "x"."y" NOT NULL ]
 
 query T nosort
-plan select x, y from (select a as b, a / 3 as c from t1 union distinct select a as z, a / 5 as d from t2) x(x,y) where x > 2
+explain show details select x, y from (select a as b, a / 3 as c from t1 union distinct select a as z, a / 5 as d from t2) x(x,y) where x > 2
 ----
 project (
 | distinct munion (
@@ -584,7 +584,7 @@ set optimizer='default_pipe'
 
 # push select expressions under group by if possible
 query T nosort
-plan select 1 from (select x from (values(1),(2),(3)) x(x) group by x) x(x) where x > 2
+explain show details select 1 from (select x from (values(1),(2),(3)) x(x) group by x) x(x) where x > 2
 ----
 project (
 | group by (
@@ -595,7 +595,7 @@ project (
 ) [ tinyint(1) "1" ]
 
 query T nosort
-plan select y from (select x, max(x) as y from (values(1),(2),(3)) x(x) group by x) x(x,y) where x > 2
+explain show details select y from (select x, max(x) as y from (values(1),(2),(3)) x(x) group by x) x(x,y) where x > 2
 ----
 project (
 | group by (
@@ -607,7 +607,7 @@ project (
 
 # here the select cannot be pushed down
 query T nosort
-plan select x from (select min(x) as x from (values(1,1),(2,2),(3,3)) x(x,y)) x(x) where x > 2
+explain show details select x from (select min(x) as x from (values(1,1),(2,2),(3,3)) x(x,y)) x(x) where x > 2
 ----
 project (
 | select (
@@ -627,7 +627,7 @@ SELECT sum(x), sum(x + 1), sum(x + 2), sum(x + 3) FROM (VALUES (1),(2),(3),(4),(
 30
 
 query T nosort
-PLAN SELECT sum(x), sum(x + 1), sum(x + 2), sum(x + 3) FROM (VALUES (1),(2),(3),(4),(5)) x(x)
+EXPLAIN SHOW DETAILS SELECT sum(x), sum(x + 1), sum(x + 2), sum(x + 3) FROM (VALUES (1),(2),(3),(4),(5)) x(x)
 ----
 project (
 | project (
@@ -645,7 +645,7 @@ SELECT 10*sum(5 - x) as aa, sum(x + 12) + 15 as bb, count(*) as cc FROM (VALUES 
 5
 
 query T nosort
-PLAN SELECT 10*sum(5 - x) as aa, sum(x + 12) * 2 as bb, count(*) as cc FROM (VALUES (1),(2),(3),(4),(5)) x(x)
+EXPLAIN SHOW DETAILS SELECT 10*sum(5 - x) as aa, sum(x + 12) * 2 as bb, count(*) as cc FROM (VALUES (1),(2),(3),(4),(5)) x(x)
 ----
 project (
 | project (
@@ -674,7 +674,7 @@ SELECT sum((x + x) + 2) FROM (VALUES (1),(2),(3),(4),(5)) x(x)
 40
 
 query T nosort
-PLAN SELECT sum((x + x) + 2) FROM (VALUES (1),(2),(3),(4),(5)) x(x)
+EXPLAIN SHOW DETAILS SELECT sum((x + x) + 2) FROM (VALUES (1),(2),(3),(4),(5)) x(x)
 ----
 project (
 | project (

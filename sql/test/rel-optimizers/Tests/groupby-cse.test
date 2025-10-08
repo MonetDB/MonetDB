@@ -28,7 +28,7 @@ VALUES
 # the same expression should be removed from the GROUPBY op list of
 # group expressions (->l)
 query T nosort
-PLAN
+EXPLAIN SHOW DETAILS
 SELECT
     c1,
     c1,
@@ -65,7 +65,7 @@ GROUP BY
 
 # same as before
 query T nosort
-PLAN
+EXPLAIN SHOW DETAILS
 SELECT
     c1 AS c1_alias1,
     c1 AS c1_alias2,
@@ -112,7 +112,7 @@ END
 # the same expression should be removed from the GROUPBY op list of
 # group expressions (->l) exactly like in the case of basetable
 query T nosort
-PLAN
+EXPLAIN SHOW DETAILS
 SELECT
     a1,
     a1,
@@ -154,7 +154,7 @@ GROUP BY
 ## in this example the order by groups are aliases of the same column
 ## coming from the inner projection operator
 query T nosort
-PLAN
+EXPLAIN SHOW DETAILS
 SELECT
     c1_alias1,
     c1_alias2,
@@ -212,7 +212,7 @@ GROUP BY
 1
 
 query T nosort
-PLAN
+EXPLAIN SHOW DETAILS
 SELECT
     c1 AS c1_alias_1,
     c1 AS c1_alias_2,
@@ -269,7 +269,7 @@ GROUP BY
 # in this example both outer project/groupby and the inner (subquery)
 # projet use aliases for the column c1.
 query T nosort
-PLAN
+EXPLAIN SHOW DETAILS
 SELECT
     c1_in_alias_1 AS c1_out_alias_1,
     c1_in_alias_2 AS c1_out_alias_2,
@@ -329,7 +329,7 @@ GROUP BY
 # aliases for c1 column
 
 query T nosort
-PLAN
+EXPLAIN SHOW DETAILS
 SELECT
     c1_in_alias_1 AS c1_out_alias_1,
     c1_in_alias_2,
@@ -386,7 +386,7 @@ GROUP BY
 1
 
 query T nosort
-PLAN
+EXPLAIN SHOW DETAILS
 SELECT
     c1_in_alias_1,
     c1_in_alias_2 AS c1_out_alias_2,
@@ -445,7 +445,7 @@ GROUP BY
 ## GROUPBY <--input-- JOIN ############################################
 
 query T nosort
-PLAN
+EXPLAIN SHOW DETAILS
 SELECT
     foo.c2 AS col,
     count(*)

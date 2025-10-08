@@ -37,6 +37,7 @@
 #define sql_merge        (1 << 17) //ORed
 #define sql_no_subquery  (1 << 18) //ORed
 #define sql_qualify      (1 << 19) //ORed
+#define sql_check        (1 << 20) //ORed
 
 #define is_sql_from(X)         ((X & sql_from) == sql_from)
 #define is_sql_where(X)        ((X & sql_where) == sql_where)
@@ -58,6 +59,7 @@
 #define is_sql_merge(X)        ((X & sql_merge) == sql_merge)
 #define is_sql_no_subquery(X)  ((X & sql_no_subquery) == sql_no_subquery)
 #define is_sql_qualify(X)      ((X & sql_qualify) == sql_qualify)
+#define is_sql_check(X)        ((X & sql_check) == sql_check)
 
 #define is_anyequal_func(sf) (strcmp((sf)->func->base.name, "sql_anyequal") == 0 || strcmp((sf)->func->base.name, "sql_not_anyequal") == 0)
 #define is_anyequal(sf) (strcmp((sf)->func->base.name, "sql_anyequal") == 0)

@@ -2,7 +2,7 @@ statement ok
 create table cm_tmp(i int)
 
 query T nosort
-plan copy into cm_tmp from '/file1','/file2'
+explain show details copy into cm_tmp from '/file1','/file2'
 ----
 group by (
 | insert(
@@ -21,10 +21,10 @@ group by (
 ) [  ] [ "sys"."count"() NOT NULL as "%1"."%1" ]
 
 statement error
-plan copy into cm_tmp from E'\\file1',E'\\file2'
+explain show details copy into cm_tmp from E'\\file1',E'\\file2'
 
 statement error
-plan copy into cm_tmp from E'a:\\file1','Z:/file2'
+explain show details copy into cm_tmp from E'a:\\file1','Z:/file2'
 
 statement ok
 drop table cm_tmp

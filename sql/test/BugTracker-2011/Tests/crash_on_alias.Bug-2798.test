@@ -8,7 +8,7 @@ statement ok
 INSERT INTO dbg (a,b) VALUES (10,10)
 
 query T nosort
-PLAN
+EXPLAIN SHOW DETAILS
 SELECT a as d, MIN(b), (2 * (MIN(b) / (SELECT 2))) as f FROM dbg GROUP BY d
 ----
 project (
@@ -48,7 +48,7 @@ statement ok
 INSERT INTO dbg (a,b) VALUES (10,10)
 
 query T nosort
-PLAN
+EXPLAIN SHOW DETAILS
 SELECT a as d, MIN(b) as e, (2 * (MIN(b) / (SELECT 2))) as f FROM dbg GROUP BY d
 ----
 project (
