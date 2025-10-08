@@ -2180,6 +2180,26 @@ typedef struct freed_t {
 	struct freed_t *n;
 } freed_t;
 
+
+static inline size_t
+sa_get_blk_idx(allocator *sa, void *blk, size_t offset)
+{
+	size_t i;
+	for(i = offset; i < sa->nr; i++) {
+		if (sa->blks[i] == blk)
+			break;
+	}
+	if (i >= sa->nr) {
+		assert(0 && "allocator block not found");
+		if (sa->eb.enabled) {
+			eb_error(&sa->eb, "allocator block not found", 1000);
+		}
+
+	}
+	return i;
+}
+
+
 static void
 sa_free_obj(allocator *sa, void *obj, size_t sz)
 {
@@ -2196,37 +2216,22 @@ sa_free_obj(allocator *sa, void *obj, size_t sz)
 	//		break;
 	//}
 	//assert (i < sa->nr);
-	COND_LOCK_ALLOCATOR(sa);
 	freed_t *f = obj;
 	f->sz = sz;
 	f->n = sa->freelist;
 	sa->freelist = f;
 	if (sa->inuse > 0)
 		sa->inuse -= 1;
-	COND_UNLOCK_ALLOCATOR(sa);
 }
-
 
 /*
  * Put regular blks of size SA_BLOCK_SIZE on freelist_blks
  * all others are GDKfree
  */
 static void
-sa_free_blk(allocator *sa, void *blk)
+sa_free_blk_memory(allocator *sa, void *blk)
 {
-	// free blks are maintained on the root allocator
-	if (sa->pa) {
-		sa_free_blk(sa->pa, blk);
-	} else {
-		COND_LOCK_ALLOCATOR(sa);
-		size_t i;
-
-		for(i = 0; i < sa->nr; i++) {
-			if (sa->blks[i] == blk)
-				break;
-		}
-		assert (i < sa->nr);
-
+	if (!sa->pa) {
 		// all blks are GDKmalloc
 		size_t sz = GDKmallocated(blk) - (MALLOC_EXTRA_SPACE + DEBUG_SPACE);
 		assert(sz > 0);
@@ -2239,10 +2244,23 @@ sa_free_blk(allocator *sa, void *blk)
 			GDKfree(blk);
 			sa->usedmem -= sz;
 		}
+	}
+}
+
+
+static void
+sa_free_blk(allocator *sa, void *blk)
+{
+	size_t i = sa_get_blk_idx(sa, blk, 0);
+	if (i < sa->nr) {
+		if (sa->pa)
+			sa_free_blk(sa->pa, blk);
+		else
+			sa_free_blk_memory(sa, blk);
+		// compact
 		for (; i < sa->nr-1; i++)
 			sa->blks[i] = sa->blks[i+1];
 		sa->nr--;
-		COND_UNLOCK_ALLOCATOR(sa);
 	}
 }
 
@@ -2335,14 +2353,17 @@ sa_reallocated(allocator *sa)
 static inline void
 _sa_free_blks(allocator *sa, size_t start_idx)
 {
-	size_t n_blks = sa->nr;
-	char **blks = sa->blks;
-
-	for (size_t i = start_idx; i < n_blks; i++) {
-		char *next = blks[i];
-		sa_free_blk(sa, next);
-		sa->blks[i] = NULL;
+	for (size_t i = start_idx; i < sa->nr; i++) {
+		char *blk = sa->blks[i];
+		if (blk) {
+			if (sa->pa) {
+				sa_free_blk(sa->pa, blk);
+			} else {
+				sa_free_blk_memory(sa, blk);
+			}
+		}
 	}
+	sa->nr = start_idx;
 }
 
 
@@ -2351,25 +2372,24 @@ _sa_free_blks(allocator *sa, size_t start_idx)
  */
 allocator *sa_reset(allocator *sa)
 {
-	//size_t i;
-	//size_t n_blks = sa->nr;
-	//char **blks = sa->blks;
-
-	// free all but 1st
+	COND_LOCK_ALLOCATOR(sa);
+	// 1st block is where we live, free the rest
 	_sa_free_blks(sa, 1);
-	//for (i = 1; i < n_blks; i++) {
-	//	char *next = blks[i];
-	//	sa_free_blk(sa, next);
-	//	sa->blks[i] = NULL;
-	//}
 
 	// compute start offset
 	size_t offset = round16(sizeof(char*) * SA_NUM_BLOCKS) +
 		round16(sizeof(allocator));
+	// If reallocated, we need to restore original layout
+	if (sa_reallocated(sa)) {
+		char **old_blks = sa->blks;
+		sa->blks = (char **)sa->first_blk;
+		if (!sa->pa) {
+		    GDKfree(old_blks);
+		    sa->usedmem -= sizeof(char*) * sa->size;
+		}
+	}
 
-	COND_LOCK_ALLOCATOR(sa);
 	sa->size = SA_NUM_BLOCKS;
-	sa->blks = (char **)sa->first_blk;
 	sa->blks[0] = sa->first_blk;
 	sa->used = offset;
 	sa->frees = 0;
@@ -2395,22 +2415,11 @@ sa_realloc(allocator *sa, void *p, size_t sz, size_t oldsz)
 
 	if (r)
 		memcpy(r, p, oldsz);
-	if (oldsz >= sa->blk_size && !sa_tmp_active(sa)) {
+	if (oldsz >= sa->blk_size) {
 		char* ptr = (char *) p - SA_HEADER_SIZE;
-		size_t i;
-		for (i = 1; i < sa->nr; i++)
-			if (sa->blks[i] == ptr)
-				break;
-
-		if (i<sa->nr) {
-			sa_free_blk(sa, ptr);
-
-			if (sa->pa) {
-				sa->nr--;
-				for (; i < sa->nr; i++)
-					sa->blks[i] = sa->blks[i+1];
-			}
-		}
+		COND_LOCK_ALLOCATOR(sa);
+		sa_free_blk(sa, ptr);
+		COND_UNLOCK_ALLOCATOR(sa);
 	}
 	return r;
 }
@@ -2542,13 +2551,6 @@ sa_alloc(allocator *sa, size_t sz)
 {
 	size_t nsize = sz + SA_HEADER_SIZE;
 	char* r = (char*) _sa_alloc_internal(sa, nsize);
-	//if (r) {
-	//	// store size in header
-	//	*((size_t *) r) = nsize;
-	//	// store canary value to help us detect double free
-	//	*((size_t *) r + 1) = CANARY_VALUE;
-	//	return r + SA_HEADER_SIZE;
-	//}
 	return sa_fill_in_header(r, sz);
 }
 
@@ -2635,9 +2637,8 @@ sa_destroy(allocator *sa)
 			if (root_allocator) {
 				GDKfree(next);
 			} else {
-				sa_free_blk(sa, next);
+				sa_free_blk(sa->pa, next);
 			}
-			sa->blks[i] = NULL;
 		}
 		MT_lock_destroy(&sa->lock);
 		if (root_allocator) {
@@ -2650,7 +2651,7 @@ sa_destroy(allocator *sa)
 			}
 			GDKfree(sa->first_blk);
 		} else {
-			sa_free_blk(sa, sa->first_blk);
+			sa_free_blk(sa->pa, sa->first_blk);
 		}
 	}
 }
@@ -2718,7 +2719,7 @@ sa_get_eb(allocator *sa)
 uint64_t
 sa_open(allocator *sa)
 {
-	assert(sa->pa); // only child allocators are tmp used
+	//assert(sa->pa); // only child allocators are tmp used
 	COND_LOCK_ALLOCATOR(sa);
 	sa->tmp_used += 1;
 	uint64_t offset = SA_PACK_INT32(sa->nr, sa->used);
@@ -2739,16 +2740,22 @@ sa_close(allocator *sa)
 void
 sa_close_to(allocator *sa, uint64_t offset)
 {
+	// only child allocators for now as
+	// allocator statistics get affected
+	// and complications if there are children
+	assert(sa->pa);
+	if(sa->pa)
+		return;
 	assert(sa_tmp_active(sa));
 	assert(offset);
-	if (offset && !sa_reallocated(sa)) {
+	if (offset) {
 		uint32_t blk_idx = SA_UNPACK_HI(offset);
 		uint32_t blk_offset = SA_UNPACK_LO(offset);
 		assert((blk_idx > 0) && (blk_idx <= sa->nr));
 		assert(blk_offset < SA_BLOCK_SIZE);
 		if (blk_idx != sa->nr || blk_offset != sa->used) {
-			_sa_free_blks(sa, blk_idx);
 			COND_LOCK_ALLOCATOR(sa);
+			_sa_free_blks(sa, blk_idx);
 			sa->nr = blk_idx;
 			sa->used = blk_offset;
 			sa->freelist = NULL;
@@ -2771,17 +2778,28 @@ sa_tmp_active(const allocator *a)
 void
 sa_free(allocator *sa, void *obj)
 {
+	COND_LOCK_ALLOCATOR(sa);
 	if (!obj || sa_tmp_active(sa)) return; // nothing to do
 	// retrieve size from header
 	char* ptr = (char *) obj - SA_HEADER_SIZE;
 	size_t sz = *((size_t *) ptr);
+	size_t canary = *((size_t *) ptr + 1);
 	// double free check point
-	assert(*((size_t *) ptr + 1) == CANARY_VALUE);
-	sa->frees++;
-	// free only obj here,
-	// blks are handled elsewhere
+	assert(canary == CANARY_VALUE);
+	if (canary != CANARY_VALUE) {
+		COND_UNLOCK_ALLOCATOR(sa);
+		if (sa->eb.enabled)
+		    eb_error(&sa->eb, "double free or corruption detected", 1000);
+		return;
+	}
+	// Clear canary to detect future double-frees
+	*((size_t *) ptr + 1) = 0;
 	if (sz < SA_BLOCK_SIZE)
 		sa_free_obj(sa, ptr, sz);
+	else
+		sa_free_blk(sa, ptr);
+	sa->frees++;
+	COND_UNLOCK_ALLOCATOR(sa);
 }
 
 
