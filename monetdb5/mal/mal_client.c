@@ -287,7 +287,7 @@ MCinitClient(oid user, bstream *fin, stream *fout)
 	c = MCnewClient();
 	if (c) {
 		c = MCinitClientRecord(c, user, fin, fout);
-		MT_thread_setallocator(c->ma);
+		//MT_thread_setallocator(c->ma);
 		MT_thread_set_qry_ctx(&c->qryctx);
 	}
 	MT_lock_unset(&mal_contextLock);
@@ -440,7 +440,6 @@ MCcloseClient(Client c)
 		c->mode = FREECLIENT;
 		c->idx = -1;
 	}
-	MT_thread_setallocator(NULL);
 	ma_destroy(c->ma);
 	c->ta = NULL;
 	c->ma = NULL;

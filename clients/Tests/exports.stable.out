@@ -390,7 +390,7 @@ gdk_return MT_thread_init_add_callback(void (*init)(void *), void (*destroy)(voi
 bool MT_thread_register(void);
 void MT_thread_set_qry_ctx(QryCtx *ctx);
 void MT_thread_setalgorithm(const char *algo);
-void MT_thread_setallocator(allocator *allocator);
+void MT_thread_setallocator(allocator *ma);
 void MT_thread_setdata(void *data);
 void MT_thread_setlockwait(MT_Lock *lock);
 void MT_thread_setsemawait(MT_Sema *sema);
@@ -891,6 +891,7 @@ char *concatErrors(allocator *ma, char *err1, const char *err2) __attribute__((_
 const char connectRef[];
 const char containsRef[];
 str convertConstant(allocator *ma, malType type, ValPtr vr);
+str copyException(allocator *, const char *);
 InstrPtr copyInstruction(MalBlkPtr mb, const InstrRecord *p);
 InstrPtr copyInstructionArgs(MalBlkPtr mb, const InstrRecord *p, int args);
 MalBlkPtr copyMalBlk(MalBlkPtr mb);

@@ -366,14 +366,12 @@ runMAL(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr env)
 		 * been observed due the small size of the function).
 		 */
 	}
-	allocator *tlsma = MT_thread_getallocator();
-	MT_thread_setallocator(mb->ta);
-	uint64_t offset = ma_open(mb->ta);
-	ret = runMALsequence(mb->ta, cntxt, mb, 1, 0, stk, env, 0);
-	if (ret)
-		ret = MA_STRDUP(mb->ma, ret);
-	ma_close_to(mb->ta, offset);
-	MT_thread_setallocator(tlsma);
+	// FIX use tls allocator
+	allocator *ta = mb->ta;
+	assert(ta);
+	uint64_t offset = ma_open(ta);
+	ret = copyException(mb->ma, runMALsequence(ta, cntxt, mb, 1, 0, stk, env, 0));
+	ma_close_to(ta, offset);
 
 	if (!stk->keepAlive && garbageControl(getInstrPtr(mb, 0)))
 		garbageCollector(cntxt, mb, stk, env != stk);
@@ -410,14 +408,10 @@ reenterMAL(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr stk)
 	if (stk == NULL)
 		throw(MAL, "mal.interpreter", MAL_STACK_FAIL);
 	keepAlive = stk->keepAlive;
-	allocator *tlsma = MT_thread_getallocator();
-	MT_thread_setallocator(mb->ta);
-	uint64_t offset = ma_open(mb->ta);
-	ret = runMALsequence(mb->ta, cntxt, mb, startpc, stoppc, stk, 0, 0);
-	if (ret)
-		ret = MA_STRDUP(mb->ta, ret);
-	ma_close_to(mb->ta, offset);
-	MT_thread_setallocator(tlsma);
+	allocator *ta = MT_thread_getallocator();
+	ma_open(ta);
+	ret = copyException(mb->ma, runMALsequence(ta, cntxt, mb, startpc, stoppc, stk, 0, 0));
+	ma_close(ta);
 
 	if (keepAlive == 0 && garbageControl(getInstrPtr(mb, 0)))
 		garbageCollector(cntxt, mb, stk, stk != 0);
@@ -473,7 +467,10 @@ callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *env, ValPtr argv[])
 			if (lhs->bat)
 				BBPretain(lhs->val.bval);
 		}
-		ret = runMALsequence(mb->ma, cntxt, mb, 1, 0, stk, 0, 0);
+		allocator *ta = MT_thread_getallocator();
+		ma_open(ta);
+		ret = copyException(mb->ma, runMALsequence(ta, cntxt, mb, 1, 0, stk, 0, 0));
+		ma_close(ta);
 		break;
 	case PATcall:
 	case CMDcall:

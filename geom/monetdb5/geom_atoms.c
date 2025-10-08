@@ -667,7 +667,7 @@ wkbBox2D(Client ctx, mbr **box, wkb **point1, wkb **point2)
 	GEOSGeom point1_geom, point2_geom;
 	double xmin = 0.0, ymin = 0.0, xmax = 0.0, ymax = 0.0;
 	str err = MAL_SUCCEED;
-	allocator *ma = ctx->ma;
+	allocator *ma = ctx->curprg->def->ma;
 	assert(ma);
 
 	//check null input

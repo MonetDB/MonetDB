@@ -69,6 +69,7 @@ mal_export enum malexception getExceptionType(const char *);
 mal_export str getExceptionPlace(allocator *ma, const char *);
 mal_export str getExceptionMessageAndState(const char *);
 mal_export str getExceptionMessage(const char *);
+mal_export str copyException(allocator *, const char *);
 
 #include "mal_errors.h"
 #endif /*  _MAL_EXCEPTION_H */
