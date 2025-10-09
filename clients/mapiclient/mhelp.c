@@ -412,12 +412,12 @@ SQLhelp sqlhelp1[] = {
 	{"EXPLAIN",
 	 "Display logical or physical execution plan for the SQL statement.",
 	 "EXPLAIN [BEFORE|AFTER] [step] [SHOW DETAILS] statement\n"
-	 "step [REL_UNNEST|REL_REWRITE|PHYSICAL]",
+	 "\twhere step is UNNEST|REWRITE|PHYSICAL",
 	 NULL,
-	 "Plain EXPLAIN defaults to logical execution plan.\n"
+	 "Plain EXPLAIN defaults to logical plan.\n"
 	 "Use REL_UNNEST|REL_REWRITE|PHYSICAL to specify compilation step to show.\n"
-	 "Use BEFORE|AFTER to specify moment of compilation step\n"
-	 "to output. The default is AFTER.\n"
+	 "Use BEFORE|AFTER to specify moment of compilation step to output.\n"
+	 "The default is AFTER.\n"
 	 "SHOW DETAILS displays column properties, rewriter number of changes\n"
 	 "and time spent.\n"
 	 "See also https://www.monetdb.org/documentation/admin-guide/debugging-features/explain-sql-stmt/"},

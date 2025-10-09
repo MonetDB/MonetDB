@@ -906,11 +906,6 @@ explain:
 			m->emod = mod_explain;
 			m->scanner.as = m->scanner.yycur;
 		}
-	|	SQL_EXPLAIN physical_step opt_show_properties
-		{
-			m->emod = mod_explain;
-			m->scanner.as = m->scanner.yycur;
-		}
 	|	SQL_EXPLAIN opt_show_properties
 		{
 			m->emode = m_plan;
@@ -927,11 +922,12 @@ relational_step:
 
 physical_step:
 		PHYSICAL { m->step = S_PHYSICAL; }
-		;
+	;
 
 temporal:
-		BEFORE { m->temporal = T_BEFORE; }
-	|	AFTER  { m->temporal = T_AFTER; }
+		BEFORE      { m->temporal = T_BEFORE; }
+	|	AFTER       { m->temporal = T_AFTER; }
+	|	/* empty */ { m->temporal = T_AFTER; }
 	;
 
 opt_show_properties:
