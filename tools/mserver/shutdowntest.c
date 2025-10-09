@@ -92,7 +92,7 @@ static str monetdb_initialize(void) {
 	char prmodpath[FILENAME_MAX];
 	const char *modpath = NULL;
 	char *binpath = NULL;
-	allocator * ma = NULL;
+	allocator * volatile ma = NULL;
 
 	if (monetdb_initialized) return MAL_SUCCEED;
 	monetdb_initialized = 1;
