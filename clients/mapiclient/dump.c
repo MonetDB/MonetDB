@@ -426,9 +426,13 @@ has_multiset(Mapi mid)
 		return answer;
 
 	if ((hdl = mapi_query(mid,
-						  "select id from sys._columns"
-						  " where table_id = 2076"
-						  " and name = 'multiset'")) == NULL ||
+						  "select c.*, t.name"
+						  "  from sys._columns c"
+						  "  join sys._tables t on t.id = c.table_id"
+						  "  join sys.schemas s on s.id = t.schema_id"
+						  " where s.name = 'sys'"
+						  "   and t.name = '_columns'"
+						  "   and c.name = 'multiset'")) == NULL ||
 	    mapi_error(mid))
 		goto bailout;
 	ret = mapi_get_row_count(hdl) == 1;
