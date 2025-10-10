@@ -577,14 +577,14 @@ ssize_t ptrToStr(allocator *ma, str *dst, size_t *len, const ptr *src, bool exte
 const ptr ptr_nil;
 void *sa_alloc(allocator *sa, size_t sz);
 void sa_close(allocator *sa);
-void sa_close_to(allocator *sa, uint64_t);
+void sa_close_to(allocator *sa, allocator_state *);
 void sa_destroy(allocator *sa);
 void sa_free(allocator *sa, void *);
 exception_buffer *sa_get_eb(allocator *sa) __attribute__((__pure__));
 allocator *sa_get_parent(const allocator *sa);
 allocator *sa_get_ta(allocator *sa);
 const char *sa_name(allocator *sa);
-uint64_t sa_open(allocator *sa);
+allocator_state *sa_open(allocator *sa);
 void *sa_realloc(allocator *sa, void *ptr, size_t sz, size_t osz);
 allocator *sa_reset(allocator *sa);
 void sa_set_ta(allocator *sa, allocator *ta);

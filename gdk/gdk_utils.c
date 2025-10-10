@@ -2349,6 +2349,12 @@ sa_reallocated(allocator *sa)
 	return sa->blks != (char **)sa->first_blk;
 }
 
+static inline bool
+sa_has_dependencies(allocator *sa)
+{
+	return (sa->refcount > 0) && !sa->pa;
+}
+
 
 static inline void
 _sa_free_blks(allocator *sa, size_t start_idx)
@@ -2373,6 +2379,12 @@ _sa_free_blks(allocator *sa, size_t start_idx)
 allocator *sa_reset(allocator *sa)
 {
 	COND_LOCK_ALLOCATOR(sa);
+	assert(!sa_has_dependencies(sa));
+	if (sa_has_dependencies(sa)) {
+		if (sa->eb.enabled)
+			eb_error(&sa->eb, "reset failed, allocator has dependencies", 1000);
+		return sa;
+	}
 	// 1st block is where we live, free the rest
 	_sa_free_blks(sa, 1);
 
@@ -2401,6 +2413,7 @@ allocator *sa_reset(allocator *sa)
 	sa->blk_size = SA_BLOCK_SIZE;
 	sa->objects = 0;
 	sa->inuse = 0;
+	sa->tmp_used = 0;
 	COND_UNLOCK_ALLOCATOR(sa);
 	return sa;
 }
@@ -2415,7 +2428,7 @@ sa_realloc(allocator *sa, void *p, size_t sz, size_t oldsz)
 
 	if (r)
 		memcpy(r, p, oldsz);
-	if (oldsz >= sa->blk_size) {
+	if (oldsz >= sa->blk_size && !sa_tmp_active(sa)) {
 		char* ptr = (char *) p - SA_HEADER_SIZE;
 		COND_LOCK_ALLOCATOR(sa);
 		sa_free_blk(sa, ptr);
@@ -2471,7 +2484,7 @@ _sa_alloc_internal(allocator *sa, size_t sz)
 {
 	assert(sz > 0);
 	sz = round16(sz);
-	char *r = sa_use_freed(sa, sz);
+	char *r = sa_tmp_active(sa) ? NULL : sa_use_freed(sa, sz);
 	if (r)
 		return r;
 	COND_LOCK_ALLOCATOR(sa);
@@ -2605,11 +2618,14 @@ create_allocator(allocator *pa, const char *name, bool use_lock)
 	sa->free_obj_hits = 0;
 	sa->free_blk_hits = 0;
 	sa->tmp_used = 0;
+	sa->refcount = 0;
 	sa->use_lock = use_lock;
 	MT_lock_init(&sa->lock, "allocator_lock");
 	if (name)
 		snprintf(sa->name, sizeof(sa->name),
 				"%s", name);
+	if (sa->pa)
+		sa->pa->refcount++;
 	return sa;
 }
 
@@ -2640,6 +2656,8 @@ sa_destroy(allocator *sa)
 				sa_free_blk(sa->pa, next);
 			}
 		}
+		if (sa->pa)
+			sa->pa->refcount--;
 		MT_lock_destroy(&sa->lock);
 		if (root_allocator) {
 			if (blks_relocated)
@@ -2709,64 +2727,65 @@ sa_get_eb(allocator *sa)
 	return &sa->eb;
 }
 
-#define SA_PACK_INT32(hi, lo)\
-    ((((uint64_t)(hi)) << 32) | ((uint64_t)(lo)))
-#define SA_UNPACK_HI(v)\
-	((uint32_t)((uint64_t)(v) >> 32))
-#define SA_UNPACK_LO(v)\
-       	((uint32_t)((uint64_t)(v) & 0xFFFFFFFFULL))
-
-uint64_t
+allocator_state *
 sa_open(allocator *sa)
 {
-	//assert(sa->pa); // only child allocators are tmp used
+	allocator_state *res = sa_alloc(sa,
+			sizeof(allocator_state));
+	if (!res) {
+		if (sa->eb.enabled)
+			eb_error(&sa->eb, "out of memory", 1000);
+		return NULL;
+	}
+
 	COND_LOCK_ALLOCATOR(sa);
 	sa->tmp_used += 1;
-	uint64_t offset = SA_PACK_INT32(sa->nr, sa->used);
+	res->nr = sa->nr;
+	res->used = sa->used;
+	res->usedmem = sa->usedmem;
+	res->objects = sa->objects;
+	res->inuse = sa->inuse;
 	COND_UNLOCK_ALLOCATOR(sa);
-	return offset;
+	return res;
 }
 
 void
 sa_close(allocator *sa)
 {
-	assert(sa_tmp_active(sa));
-	sa_reset(sa);
 	COND_LOCK_ALLOCATOR(sa);
-	sa->tmp_used -= 1;
+	assert(sa_tmp_active(sa));
+	if (sa->tmp_used > 0)
+		sa->tmp_used -= 1;
+	if (!sa_tmp_active(sa) && !sa_has_dependencies(sa)) {
+		COND_UNLOCK_ALLOCATOR(sa);
+		sa_reset(sa);
+		return;
+	}
 	COND_UNLOCK_ALLOCATOR(sa);
 }
 
 void
-sa_close_to(allocator *sa, uint64_t offset)
+sa_close_to(allocator *sa, allocator_state *state)
 {
-	// only child allocators for now as
-	// allocator statistics get affected
-	// and complications if there are children
-	assert(sa->pa);
-	if(sa->pa)
-		return;
+	COND_LOCK_ALLOCATOR(sa);
+	assert(state);
 	assert(sa_tmp_active(sa));
-	assert(offset);
-	if (offset) {
-		uint32_t blk_idx = SA_UNPACK_HI(offset);
-		uint32_t blk_offset = SA_UNPACK_LO(offset);
-		assert((blk_idx > 0) && (blk_idx <= sa->nr));
-		assert(blk_offset < SA_BLOCK_SIZE);
-		if (blk_idx != sa->nr || blk_offset != sa->used) {
-			COND_LOCK_ALLOCATOR(sa);
-			_sa_free_blks(sa, blk_idx);
-			sa->nr = blk_idx;
-			sa->used = blk_offset;
-			sa->freelist = NULL;
-			COND_UNLOCK_ALLOCATOR(sa);
+	if (state && !sa_has_dependencies(sa)) {
+		assert((state->nr > 0) && (state->nr <= sa->nr));
+		assert(state->used <= SA_BLOCK_SIZE);
+		if (state->nr != sa->nr || state->used != sa->used) {
+			_sa_free_blks(sa, state->nr);
+			sa->nr = state->nr;
+			sa->used = state->used;
+			sa->usedmem = state->usedmem;
+			sa->objects = state->objects;
+			sa->inuse = state->inuse;
 		}
 	}
 	if (sa->tmp_used > 0) {
-		COND_LOCK_ALLOCATOR(sa);
 		sa->tmp_used -= 1;
-		COND_UNLOCK_ALLOCATOR(sa);
 	}
+	COND_UNLOCK_ALLOCATOR(sa);
 }
 
 bool

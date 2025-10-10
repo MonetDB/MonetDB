@@ -52,16 +52,27 @@ struct allocator {
 	size_t objects;  /* number of objects */
 	size_t inuse;    /* number of objects in use*/
 	size_t free_obj_hits; /* number of object reuse*/
-	void *freelist;	/* list of freed objects */
-	void *freelist_blks;	/* list of freed blks */
+	void *freelist;	/* first free object */
+	void *freelist_blks;	/* first free blk */
 	size_t frees;
 	size_t free_blk_hits;
+	size_t tmp_used; /* counter for temp usage */
 
-	size_t tmp_used; /* keeps track of temp usage via sa_open/sa_close */
+	int refcount;
 	exception_buffer eb;
 	MT_Lock lock;    /* lock for thread-safe allocations */
 	bool use_lock;
 	char name [MT_NAME_LEN]; /* Name (only for display!) */
+};
+
+/* checkpoint or snapshot of allocator internal state we can use
+ * to restore to a point in time */
+struct allocator_state {
+	size_t nr;
+	size_t used;
+	size_t usedmem;	 /* total used memory */
+	size_t objects;
+	size_t inuse;
 };
 
 bool ATOMisdescendant(int id, int parentid)

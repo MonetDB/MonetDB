@@ -62,6 +62,7 @@ gdk_export _Noreturn void GDKfatal(_In_z_ _Printf_format_string_ const char *for
 	__attribute__((__format__(__printf__, 1, 2)));
 
 typedef struct allocator allocator;
+typedef struct allocator_state allocator_state;
 #include "gdk_system.h"
 #include "gdk_posix.h"
 #include "stream.h"
@@ -1746,9 +1747,9 @@ gdk_export char *sa_strdup(allocator *sa, const char *s);
 gdk_export char *sa_strconcat(allocator *sa, const char *s1, const char *s2);
 gdk_export size_t sa_size(allocator *sa);
 gdk_export const char* sa_name(allocator *sa);
-gdk_export uint64_t sa_open(allocator *sa);  /* open new frame of tempory allocations */
+gdk_export allocator_state* sa_open(allocator *sa);  /* open new frame of tempory allocations */
 gdk_export void sa_close(allocator *sa); /* close temporary frame, reset to initial state */
-gdk_export void sa_close_to(allocator *sa, uint64_t); /* close temporary frame, reset to old state */
+gdk_export void sa_close_to(allocator *sa, allocator_state *); /* close temporary frame, reset to old state */
 gdk_export void sa_free(allocator *sa, void *);
 gdk_export exception_buffer *sa_get_eb(allocator *sa)
        __attribute__((__pure__));

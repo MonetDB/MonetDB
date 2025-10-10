@@ -317,6 +317,10 @@ runMAL(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr env)
 	ValPtr lhs, rhs;
 	str ret;
 	(void) mbcaller;
+	allocator *ta = MT_thread_getallocator();
+	if(!ta)
+		ta = mb->ta;
+	assert(ta);
 
 	/* Prepare a new interpreter call. This involves two steps, (1)
 	 * allocate the minimum amount of stack space needed, some slack
@@ -366,12 +370,9 @@ runMAL(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr env)
 		 * been observed due the small size of the function).
 		 */
 	}
-	// FIX use tls allocator
-	allocator *ta = mb->ta;
-	assert(ta);
-	uint64_t offset = ma_open(ta);
+	allocator_state *ta_state = ma_open(ta);
 	ret = copyException(mb->ma, runMALsequence(ta, cntxt, mb, 1, 0, stk, env, 0));
-	ma_close_to(ta, offset);
+	ma_close_to(ta, ta_state);
 
 	if (!stk->keepAlive && garbageControl(getInstrPtr(mb, 0)))
 		garbageCollector(cntxt, mb, stk, env != stk);

@@ -518,7 +518,7 @@ JSONstr2json_intern(allocator *ma, json *ret, size_t len, const char *const*j)
 	size_t ln = strlen(*j)+1;
 	size_t out_size = 0;
 	allocator *ta = sa_get_ta(ma);
-	uint64_t ta_offset = ma_open(ta);
+	allocator_state *ta_state = ma_open(ta);
 
 	JSON *jt = NULL;
 
@@ -556,7 +556,7 @@ JSONstr2json_intern(allocator *ma, json *ret, size_t len, const char *const*j)
 	*ret = buf;
  bailout:
 	JSONfree(jt);
-	ma_close_to(ta, ta_offset);
+	ma_close_to(ta, ta_state);
 	return msg;
 }
 
