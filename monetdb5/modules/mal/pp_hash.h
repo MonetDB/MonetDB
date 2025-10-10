@@ -36,7 +36,7 @@
 #define _hash_int(X)  ((((unsigned int)X)>>7)^(((unsigned int)X)>>13)^(((unsigned int)X)>>21)^((unsigned int)X))
 #define _hash_date(X) _hash_int(X)
 #define _hash_lng(X)  ((((ulng)X)>>7)^(((ulng)X)>>13)^(((ulng)X)>>21)^(((ulng)X)>>31)^(((ulng)X)>>38)^(((ulng)X)>>46)^(((ulng)X)>>56)^((ulng)X))
-#define _hash_oid(X)  _hash_lng(X)
+#define _hash_oid(X)  _hash_lng((X*98317))
 #define _hash_daytime(X) _hash_lng(X)
 #define _hash_timestamp(X) _hash_lng(X)
 
