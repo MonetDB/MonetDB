@@ -1307,7 +1307,7 @@ rel_simplify_project(visitor *v, sql_rel *rel)
 	sql_rel *l = rel->l;
 	if (v->depth > 1 &&
 			is_simple_project(rel->op) && !need_distinct(rel) && !rel_is_ref(rel) && rel->l && rel->r &&
-			is_simple_project(l->op) && !rel_is_ref(l) /*&& l->l*/ && !l->r &&
+			is_simple_project(l->op) && !rel_is_ref(l) && !l->r &&
 			v->parent && is_topn(v->parent->op)  &&
 			list_check_prop_all(rel->exps, (prop_check_func)&exp_is_rename)) {
 
