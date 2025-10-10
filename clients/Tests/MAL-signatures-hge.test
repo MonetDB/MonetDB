@@ -49375,44 +49375,39 @@ BAT_OAHASHhash_cmbd
 For the selected keys, compute the combined hash of key+parent_slotid
 oahash
 combined_mprobe
-command oahash.combined_mprobe(X_0:bat[:any_1], X_1:bat[:lng], X_2:bat[:oid], X_3:bat[:oid], X_4:bat[:any_2], X_5:bat[:lng], X_6:bit, X_7:bit, X_8:ptr) (X_9:bat[:oid], X_10:bat[:oid], X_11:bat[:bit])
+command oahash.combined_mprobe(X_0:bat[:any_1], X_1:bat[:lng], X_2:bat[:oid], X_3:bat[:oid], X_4:bat[:any_2], X_5:bit, X_6:bit, X_7:ptr) (X_8:bat[:oid], X_9:bat[:oid], X_10:bat[:bit])
 BAT_OAHASHmprobe_cmbd
-Probe the selected (key, hash) pairs in the hash table. For a matched item, return its OID in the left-hand-side column and the slot ID in the right-hand-side hash table
+Probe the selected (key, hash) pairs in the hash table. For a matched item, return its OID in the 'key' column and the slot ID in the hash table
 oahash
 combined_mprobe
-command oahash.combined_mprobe(X_0:bat[:any_1], X_1:bat[:lng], X_2:bat[:oid], X_3:bat[:oid], X_4:bat[:any_2], X_5:bit, X_6:bit, X_7:ptr) (X_8:bat[:oid], X_9:bat[:oid], X_10:bat[:bit])
-BAT_OAHASHmprobe_cmbd_nofreq
-Probe the selected (key, hash) pairs in the hash table. For a matched item, return its OID in the left-hand-side column and the slot ID in the right-hand-side hash table
-oahash
-combined_oprobe
-command oahash.combined_oprobe(X_0:bat[:any_1], X_1:bat[:lng], X_2:bat[:oid], X_3:bat[:oid], X_4:bat[:any_2], X_5:bat[:lng], X_6:bit, X_7:bit, X_8:ptr) (X_9:bat[:oid], X_10:bat[:oid], X_11:bat[:bit])
-BAT_OAHASHoprobe_cmbd
-Probe the selected (key, hash) pairs in the hash table. For a matched item, return its OID in the left-hand-side column and the slot ID in the right-hand-side hash table
+command oahash.combined_mprobe(X_0:bat[:any_1], X_1:bat[:lng], X_2:bat[:oid], X_3:bat[:oid], X_4:bat[:any_2], X_5:bat[:lng], X_6:bit, X_7:bit, X_8:ptr) (X_9:bat[:oid], X_10:bat[:oid], X_11:bat[:bit])
+BAT_OAHASHmprobe_cmbd_single
+Probe the selected (key, hash) pairs in the hash table. For a matched item, return its OID in the 'key' column and the slot ID in the hash table
 oahash
 combined_oprobe
 command oahash.combined_oprobe(X_0:bat[:any_1], X_1:bat[:lng], X_2:bat[:oid], X_3:bat[:oid], X_4:bat[:any_2], X_5:bit, X_6:bit, X_7:ptr) (X_8:bat[:oid], X_9:bat[:oid], X_10:bat[:bit])
-BAT_OAHASHoprobe_cmbd_nofreq
-Probe the selected (key, hash) pairs in the hash table. For a matched item, return its OID in the left-hand-side column and the slot ID in the right-hand-side hash table
+BAT_OAHASHoprobe_cmbd
+Probe the selected (key, hash) pairs in the hash table. For a matched item, return its OID in the 'key' column and the slot ID in the hash table
 oahash
-combined_probe
-command oahash.combined_probe(X_0:bat[:any_1], X_1:bat[:lng], X_2:bat[:oid], X_3:bat[:oid], X_4:bat[:any_2], X_5:bat[:lng], X_6:bit, X_7:bit, X_8:ptr) (X_9:bat[:oid], X_10:bat[:oid])
-BAT_OAHASHprobe_cmbd
-Probe the selected (key, hash) pairs in the hash table. For a matched item, return its OID in the left-hand-side column and the slot ID in the right-hand-side hash table
+combined_oprobe
+command oahash.combined_oprobe(X_0:bat[:any_1], X_1:bat[:lng], X_2:bat[:oid], X_3:bat[:oid], X_4:bat[:any_2], X_5:bat[:lng], X_6:bit, X_7:bit, X_8:ptr) (X_9:bat[:oid], X_10:bat[:oid], X_11:bat[:bit])
+BAT_OAHASHoprobe_cmbd_single
+Probe the selected (key, hash) pairs in the hash table. For a matched item, return its OID in the 'key' column and the slot ID in the hash table
 oahash
 combined_probe
 command oahash.combined_probe(X_0:bat[:any_1], X_1:bat[:lng], X_2:bat[:oid], X_3:bat[:oid], X_4:bat[:any_2], X_5:bit, X_6:bit, X_7:ptr) (X_8:bat[:oid], X_9:bat[:oid])
-BAT_OAHASHprobe_cmbd_nofreq
-Probe the selected (key, hash) pairs in the hash table. For a matched item, return its OID in the left-hand-side column and the slot ID in the right-hand-side hash table
+BAT_OAHASHprobe_cmbd
+Probe the selected (key, hash) pairs in the hash table. For a matched item, return its OID in the 'key' column and the slot ID in the hash table
+oahash
+combined_probe
+command oahash.combined_probe(X_0:bat[:any_1], X_1:bat[:lng], X_2:bat[:oid], X_3:bat[:oid], X_4:bat[:any_2], X_5:bat[:lng], X_6:bit, X_7:bit, X_8:ptr) (X_9:bat[:oid], X_10:bat[:oid])
+BAT_OAHASHprobe_cmbd_single
+Probe the selected (key, hash) pairs in the hash table. For a matched item, return its OID in the 'key' column and the slot ID in the hash table
 oahash
 expand
 command oahash.expand(X_0:bat[:any_1], X_1:bat[:oid], X_2:bat[:oid], X_3:bat[:lng], X_4:bit, X_5:ptr):bat[:any_1]
 BAT_OAHASHexpand
-Expand the selected keys according to their frequencies in the hash table. If 'outer' is true, append the not 'selected' keys
-oahash
-expand
-command oahash.expand(X_0:bat[:any_1], X_1:bat[:oid], X_2:bat[:oid], X_3:bit, X_4:ptr):bat[:any_1]
-BAT_OAHASHexpand_nofreq
-Expand the selected keys according to their frequencies in the hash table. If 'outer' is true, append the not 'selected' keys
+Expand the selected keys according to their frequencies in the hash table. If 'leftouter' is true, append the not 'selected' keys
 oahash
 expand_cartesian
 command oahash.expand_cartesian(X_0:bat[:any_1], X_1:bat[:any_2], X_2:bit, X_3:ptr):bat[:any_1]
@@ -49422,7 +49417,7 @@ oahash
 explode
 command oahash.explode(X_0:bat[:oid], X_1:bat[:lng], X_2:bat[:any_2], X_3:bit):bat[:oid]
 BAT_OAHASHexplode
-Explode the result vector 'frequency' times and return payload heap slot ids.
+Explode the result vector 'frequency' times and return payload heap slot ids. If 'leftouter' is true, fill the not 'selected' slot with oid_nil
 oahash
 fetch_payload_cartesian
 command oahash.fetch_payload_cartesian(X_0:bat[:any_1], X_1:bat[:2], X_2:bit, X_3:ptr):bat[:any_1]
@@ -49445,14 +49440,14 @@ BAT_OAHASHhash
 Compute the hashs for the keys
 oahash
 mprobe
-command oahash.mprobe(X_0:bat[:any_1], X_1:bat[:lng], X_2:bat[:any_2], X_3:bat[:lng], X_4:bit, X_5:bit, X_6:ptr) (X_7:bat[:oid], X_8:bat[:oid], X_9:bat[:bit])
+command oahash.mprobe(X_0:bat[:any_1], X_1:bat[:lng], X_2:bat[:any_2], X_3:bit, X_4:bit, X_5:ptr) (X_6:bat[:oid], X_7:bat[:oid], X_8:bat[:bit])
 BAT_OAHASHmprobe
-Probe the (key, hash) pairs in the hash table. For a matched key, return its OID in the left-hand-side column and the slot ID in the right-hand-side hash table
+Probe the (key, hash) pairs in the hash table. For a matched key, return its OID in the 'key' column and the slot ID in the hash table
 oahash
 mprobe
-command oahash.mprobe(X_0:bat[:any_1], X_1:bat[:lng], X_2:bat[:any_2], X_3:bit, X_4:bit, X_5:ptr) (X_6:bat[:oid], X_7:bat[:oid], X_8:bat[:bit])
-BAT_OAHASHmprobe_nofreq
-Probe the (key, hash) pairs in the hash table. For a matched key, return its OID in the left-hand-side column and the slot ID in the right-hand-side hash table
+command oahash.mprobe(X_0:bat[:any_1], X_1:bat[:lng], X_2:bat[:any_2], X_3:bat[:lng], X_4:bit, X_5:bit, X_6:ptr) (X_7:bat[:oid], X_8:bat[:oid], X_9:bat[:bit])
+BAT_OAHASHmprobe_single
+Probe the (key, hash) pairs in the hash table. For a matched key, return its OID in the 'key' column and the slot ID in the hash table
 oahash
 new
 pattern oahash.new(X_0:any_1, X_1:int):bat[:any_1]
@@ -49470,14 +49465,14 @@ OAHASHno_slices
 Get the number of slices for this hashtable.
 oahash
 nprobe
-command oahash.nprobe(X_0:bat[:any_1], X_1:bat[:lng], X_2:bat[:any_2], X_3:bat[:lng], X_4:bit, X_5:bit, X_6:ptr) (X_7:bat[:oid], X_8:bat[:oid])
+command oahash.nprobe(X_0:bat[:any_1], X_1:bat[:lng], X_2:bat[:any_2], X_3:bit, X_4:bit, X_5:ptr) (X_6:bat[:oid], X_7:bat[:oid])
 BAT_OAHASHnprobe
-Probe the (key, hash) pairs in the hash table. For a not-matched key, return its OID in the left-hand-side column and the slot ID in the right-hand-side hash table
+Probe the (key, hash) pairs in the hash table. For a not-matched key, return its OID in the 'key' column and the slot ID in the hash table
 oahash
 nprobe
-command oahash.nprobe(X_0:bat[:any_1], X_1:bat[:lng], X_2:bat[:any_2], X_3:bit, X_4:bit, X_5:ptr) (X_6:bat[:oid], X_7:bat[:oid])
-BAT_OAHASHnprobe_nofreq
-Probe the (key, hash) pairs in the hash table. For a not-matched key, return its OID in the left-hand-side column and the slot ID in the right-hand-side hash table
+command oahash.nprobe(X_0:bat[:any_1], X_1:bat[:lng], X_2:bat[:any_2], X_3:bat[:lng], X_4:bit, X_5:bit, X_6:ptr) (X_7:bat[:oid], X_8:bat[:oid])
+BAT_OAHASHnprobe_single
+Probe the (key, hash) pairs in the hash table. For a not-matched key, return its OID in the 'key' column and the slot ID in the hash table
 oahash
 nth_slice
 command oahash.nth_slice(X_0:int) (X_1:bat[:oid], X_2:bat[:any_1])
@@ -49485,24 +49480,24 @@ OAHASHnth_slice
 Get the nth slice of this hashtable.
 oahash
 oprobe
-command oahash.oprobe(X_0:bat[:any_1], X_1:bat[:lng], X_2:bat[:any_2], X_3:bat[:lng], X_4:bit, X_5:bit, X_6:ptr) (X_7:bat[:oid], X_8:bat[:oid], X_9:bat[:bit])
+command oahash.oprobe(X_0:bat[:any_1], X_1:bat[:lng], X_2:bat[:any_2], X_3:bit, X_4:bit, X_5:ptr) (X_6:bat[:oid], X_7:bat[:oid], X_8:bat[:bit])
 BAT_OAHASHoprobe
-Probe the (key, hash) pairs in the hash table. For a matched key, return its OID in the left-hand-side column and the slot ID in the right-hand-side hash table
+Probe the (key, hash) pairs in the hash table. For a matched key, return its OID in the 'key' column and the slot ID in the hash table
 oahash
 oprobe
-command oahash.oprobe(X_0:bat[:any_1], X_1:bat[:lng], X_2:bat[:any_2], X_3:bit, X_4:bit, X_5:ptr) (X_6:bat[:oid], X_7:bat[:oid], X_8:bat[:bit])
-BAT_OAHASHoprobe_nofreq
-Probe the (key, hash) pairs in the hash table. For a matched key, return its OID in the left-hand-side column and the slot ID in the right-hand-side hash table
-oahash
-probe
-command oahash.probe(X_0:bat[:any_1], X_1:bat[:lng], X_2:bat[:any_2], X_3:bat[:lng], X_4:bit, X_5:bit, X_6:ptr) (X_7:bat[:oid], X_8:bat[:oid])
-BAT_OAHASHprobe
-Probe the (key, hash) pairs in the hash table. For a matched key, return its OID in the left-hand-side column and the slot ID in the right-hand-side hash table
+command oahash.oprobe(X_0:bat[:any_1], X_1:bat[:lng], X_2:bat[:any_2], X_3:bat[:lng], X_4:bit, X_5:bit, X_6:ptr) (X_7:bat[:oid], X_8:bat[:oid], X_9:bat[:bit])
+BAT_OAHASHoprobe_single
+Probe the (key, hash) pairs in the hash table. For a matched key, return its OID in the 'key' column and the slot ID in the hash table
 oahash
 probe
 command oahash.probe(X_0:bat[:any_1], X_1:bat[:lng], X_2:bat[:any_2], X_3:bit, X_4:bit, X_5:ptr) (X_6:bat[:oid], X_7:bat[:oid])
-BAT_OAHASHprobe_nofreq
-Probe the (key, hash) pairs in the hash table. For a matched key, return its OID in the left-hand-side column and the slot ID in the right-hand-side hash table
+BAT_OAHASHprobe
+Probe the (key, hash) pairs in the hash table. For a matched key, return its OID in the 'key' column and the slot ID in the hash table
+oahash
+probe
+command oahash.probe(X_0:bat[:any_1], X_1:bat[:lng], X_2:bat[:any_2], X_3:bat[:lng], X_4:bit, X_5:bit, X_6:ptr) (X_7:bat[:oid], X_8:bat[:oid])
+BAT_OAHASHprobe_single
+Probe the (key, hash) pairs in the hash table. For a matched key, return its OID in the 'key' column and the slot ID in the hash table
 oahash
 project
 command oahash.project(X_0:bat[:any_1], X_1:bat[:oid], X_2:ptr):bat[:any_1]
