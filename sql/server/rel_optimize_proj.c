@@ -17,21 +17,10 @@
 #include "rel_select.h"
 #include "rel_rewriter.h"
 
-static int
-exp_is_rename(sql_exp *e)
-{
-	return (e->type == e_column);
-}
-
-static int
-exp_is_useless_rename(sql_exp *e)
-{
-	return (e->type == e_column && e->alias.label == e->nid);
-}
-
 static list *
 rel_used_projections(mvc *sql, list *exps, list *users)
 {
+	/* todo check if we keep the right order of expressions (users defines the order) */
 	list *nexps = sa_list(sql->sa);
 	bool *used = SA_ZNEW_ARRAY(sql->ta, bool, list_length(exps));
 	int i = 0;
@@ -58,6 +47,22 @@ static sql_rel *
 rel_push_project_down_(visitor *v, sql_rel *rel)
 {
 	/* for now only push down renames */
+	sql_rel *l = rel->l;
+	if (v->depth > 1 && is_simple_project(rel->op) && !need_distinct(rel) && !rel_is_ref(rel) && rel->l && rel->r &&
+			is_simple_project(l->op) && !l->r && !rel_is_ref(l) &&
+			v->parent && is_topn(v->parent->op)  &&
+			list_check_prop_all(rel->exps, (prop_check_func)&exp_is_rename)) {
+			if (list_length(rel->exps) == list_length(l->exps) && list_check_prop_all(rel->exps, (prop_check_func)&exp_is_useless_rename)) {
+				rel->l = NULL;
+				l->exps = rel_used_projections(v->sql, l->exps, rel->exps);
+				l->r = rel->r;
+				rel_destroy(rel);
+				v->changes++;
+				return l;
+			}
+			return rel;
+	}
+
 	if (v->depth > 1 && is_simple_project(rel->op) && !need_distinct(rel) && !rel_is_ref(rel) && rel->l && !rel->r &&
 			v->parent &&
 			!is_modify(v->parent->op) && !is_topn(v->parent->op) && !is_sample(v->parent->op) &&
@@ -69,7 +74,6 @@ rel_push_project_down_(visitor *v, sql_rel *rel)
 			return rel;
 		if (is_basetable(l->op)) {
 			if (list_check_prop_all(rel->exps, (prop_check_func)&exp_is_useless_rename)) {
-				/* TODO reduce list (those in the project + internal) */
 				rel->l = NULL;
 				l->exps = rel_used_projections(v->sql, l->exps, rel->exps);
 				rel_destroy(rel);

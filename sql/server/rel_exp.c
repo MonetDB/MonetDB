@@ -4106,3 +4106,15 @@ topn_limit(sql_rel *rel)
     return NULL;
 }
 
+int
+exp_is_rename(sql_exp *e)
+{
+	return (e->type == e_column);
+}
+
+int
+exp_is_useless_rename(sql_exp *e)
+{
+	return (e->type == e_column && e->alias.label == e->nid);
+}
+

@@ -1084,16 +1084,15 @@ rel_count_gt_zero(visitor *v, sql_rel *rel)
 {
 	mvc *sql = v->sql;
 	if (is_groupby(rel->op) && !find_prop(rel->p, PROP_REMOTE)) {
-		list *exps, *gbe;
+		list *gbe = rel->r;
 
-		gbe = rel->r;
 		if (!gbe || list_empty(gbe) || is_rewrite_gt_zero_used(rel->used))
 			return rel;
 		/* introduce select * from l where cnt > 0 */
 		/* find count */
 		if (list_empty(rel->exps)) /* no result expressions, just project the groupby expressions */
 			rel->exps = rel_projections(sql, rel, NULL, 1, 1);
-		exps = rel_projections(sql, rel, NULL, 1, 1);
+		list *exps = rel_projections(sql, rel, NULL, 1, 1);
 		sql_exp *e = find_aggr_exp(sql, rel->exps, "count"), *ea = e;
 		if (e && e->type == e_column)
 			ea = exps_find_exp(rel->exps, e);
@@ -1183,7 +1182,6 @@ rel_avg_rewrite(visitor *v, sql_rel *rel)
 			sql_subfunc *div, *ifthen, *cmp;
 			list *l = avg->l;
 			sql_subtype *avg_input_t = exp_subtype(l->h->data);
-
 
 			/* create nsum/cnt exp */
 			if (!cnt) {
@@ -1303,6 +1301,136 @@ rel_avg_rewrite(visitor *v, sql_rel *rel)
 	return rel;
 }
 
+static sql_rel *
+rel_simplify_project(visitor *v, sql_rel *rel)
+{
+	sql_rel *l = rel->l;
+	if (v->depth > 1 &&
+			is_simple_project(rel->op) && !need_distinct(rel) && !rel_is_ref(rel) && rel->l && rel->r &&
+			is_simple_project(l->op) && !rel_is_ref(l) /*&& l->l*/ && !l->r &&
+			v->parent && is_topn(v->parent->op)  &&
+			list_check_prop_all(rel->exps, (prop_check_func)&exp_is_rename)) {
+
+			if (list_length(rel->exps) != list_length(l->exps))
+				return rel;
+			for(node *n = rel->exps->h, *m = l->exps->h; n && m; n = n->next, m = m->next ) {
+				sql_exp *oe = n->data;
+				sql_exp *ie = m->data;
+				if (!(exp_is_useless_rename(oe) && oe->nid == ie->alias.label) &&
+				    !(exp_is_rename(oe) && oe->nid != oe->alias.label && oe->nid == ie->alias.label))
+					return rel;
+			}
+			list *nexps = sa_list(v->sql->sa);
+			for(node *n = rel->exps->h, *m = l->exps->h; n && m; n = n->next, m = m->next ) {
+				sql_exp *oe = n->data;
+				sql_exp *ie = m->data;
+
+				if (exp_is_useless_rename(oe) && oe->nid == ie->alias.label)
+					append(nexps, ie);
+				else if (exp_is_rename(oe) && oe->nid != oe->alias.label && oe->nid == ie->alias.label) {
+					if (!ie->nid || ie->nid != ie->alias.label) {
+						exp_setalias(ie, oe->alias.label, exp_relname(oe), exp_name(oe));
+						append(nexps, ie);
+					} else
+						append(nexps, oe);
+				}
+			}
+			rel->l = NULL;
+			l->exps = nexps;
+			if (l->l) /* constants don't need order by */
+				l->r = rel->r;
+			rel_destroy(rel);
+			v->changes++;
+			return l;
+	}
+	return rel;
+}
+
+
+static list * append_func_arguments(visitor *v, list *iexps, list *resultexps);
+
+static list *
+append_func_argument(visitor *v, sql_exp *ie, list *resultexps)
+{
+	while (ie->type == e_convert)
+		ie = ie->l;
+
+	if (ie->type == e_column) {
+		append(resultexps, exp_copy(v->sql, ie));
+	} else if (ie->type == e_func || ie->type == e_aggr) {
+		resultexps = append_func_arguments(v, ie->l, resultexps);
+	} else if (ie->type == e_cmp) {
+		if (ie->flag == cmp_con || ie->flag == cmp_dis) {
+			resultexps = append_func_arguments(v, ie->l, resultexps);
+		} else if (ie->flag == cmp_in || ie->flag == cmp_notin) {
+			resultexps = append_func_argument(v, ie->l, resultexps);
+			resultexps = append_func_arguments(v, ie->r, resultexps);
+		} else if (ie->flag == cmp_filter) {
+			resultexps = append_func_arguments(v, ie->l, resultexps);
+			resultexps = append_func_arguments(v, ie->r, resultexps);
+		} else {
+			resultexps = append_func_argument(v, ie->l, resultexps);
+			resultexps = append_func_argument(v, ie->r, resultexps);
+			if (ie->f)
+				resultexps = append_func_argument(v, ie->f, resultexps);
+		}
+	}
+	return resultexps;
+}
+
+static list *
+append_func_arguments(visitor *v, list *iexps, list *resultexps)
+{
+	if (list_empty(iexps))
+		return resultexps;
+	for(node *m = iexps->h; m; m = m->next)
+		resultexps = append_func_argument(v, m->data, resultexps);
+	return resultexps;
+}
+
+static sql_rel *
+rel_push_down_topn(visitor *v, sql_rel *rel)
+{
+	if (is_topn(rel->op) && !rel_is_ref(rel) && rel->l) {
+		sql_rel *orderby = rel->l;
+
+		if (is_simple_project(orderby->op) && !rel_is_ref(orderby) && orderby->l && orderby->r && exps_have_func(orderby->exps) && !exps_have_unsafe(orderby->exps, false, false)) {
+			list *nexps = sa_list(v->sql->sa);
+			list *pexps = sa_list(v->sql->sa);
+			list *oexps = orderby->exps;
+			list *obes = orderby->r;
+			/* todo mark the expression we cannot push down */
+			for(node *m = obes->h; m; m = m->next) {
+				sql_exp *obe = m->data;
+
+				assert(obe->type == e_column);
+				sql_exp *ne = exps_bind_nid(oexps, obe->nid);
+				if (ne && ne->type == e_func)
+					return rel;
+			}
+			orderby->exps = pexps;
+			for (node *n = oexps->h; n; n = n->next) {
+				sql_exp *oe = n->data;
+				if (oe->type != e_column && oe->type != e_atom) {
+					nexps = append_func_argument(v, oe, nexps);
+					append(pexps, oe);
+				} else {
+					assert (exp_is_useless_rename(oe) || (exp_is_rename(oe) && oe->nid != oe->alias.label));
+					append(nexps, oe);
+					append(pexps, exp_ref(v->sql, oe));
+				}
+			}
+			sql_rel *norderby = rel_project(v->sql->sa, orderby->l, nexps);
+			norderby->r = orderby->r;
+			orderby->r = NULL;
+			rel->l = norderby;
+			orderby->l = rel;
+			return orderby;
+		}
+	}
+	return rel;
+}
+
 void
 split_join_exps_pp(sql_rel *rel, list *joinable, list *not_joinable, bool anti)
 {
@@ -1354,6 +1482,10 @@ rel_rewrite_physical(visitor *v, sql_rel *rel)
 		rel = rel_add_orderby(v, rel);
 	if (rel)
 		rel = rel_avg_rewrite(v, rel);
+	if (rel)
+		rel = rel_simplify_project(v, rel);
+	if (rel)
+		rel = rel_push_down_topn(v, rel);
 	if (rel) { /* split equi-join/select */
 		rel = rel_count_gt_zero(v, rel);
 		ATOMIC_TYPE oahash_enabled = (1U<<19);

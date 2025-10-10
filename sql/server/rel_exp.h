@@ -241,4 +241,7 @@ extern sql_subtype* first_arg_subtype(sql_exp *e);
 
 extern sql_exp* topn_limit(sql_rel *rel);
 
+extern int exp_is_rename(sql_exp *e);
+extern int exp_is_useless_rename(sql_exp *e);
+
 #endif /* _REL_EXP_H_ */
