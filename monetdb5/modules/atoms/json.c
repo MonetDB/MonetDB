@@ -466,15 +466,17 @@ static str
 JSONdump(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) mb;
-	allocator *ma = ctx->curprg->def->ma;
+	allocator *ta = MT_thread_getallocator();
+	allocator_state *ta_state = ma_open(ta);
 
 	bat *ret = getArgReference_bat(stk, pci, 0);
 	const json *val = (json *) getArgReference(stk, pci, 1);
-	JSON *jt = JSONparse(ma, *val);
+	JSON *jt = JSONparse(ta, *val);
 
 	CHECK_JSON(jt);
 	BAT *bn = JSONdumpInternal(ctx, jt, 0);
 	JSONfree(jt);
+	ma_close_to(ta, ta_state);
 	if (bn == NULL)
 		throw(MAL, "json.dump", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	*ret = bn->batCacheid;
@@ -517,7 +519,7 @@ JSONstr2json_intern(allocator *ma, json *ret, size_t len, const char *const*j)
 	json buf = *ret;
 	size_t ln = strlen(*j)+1;
 	size_t out_size = 0;
-	allocator *ta = sa_get_ta(ma);
+	allocator *ta = MT_thread_getallocator();
 	allocator_state *ta_state = ma_open(ta);
 
 	JSON *jt = NULL;
@@ -570,15 +572,20 @@ JSONstr2json(Client ctx, json *ret, const char *const*j)
 static str
 JSONisvalid(Client ctx, bit *ret, const char *const *j)
 {
-	allocator *ma = ctx->curprg->def->ma;
+	(void) ctx;
+	allocator *ta = MT_thread_getallocator();
 	if (strNil(*j)) {
 		*ret = bit_nil;
 	} else {
-		JSON *jt = JSONparse(ma, *j);
-		if (jt == NULL)
+		allocator_state *ta_state = ma_open(ta);
+		JSON *jt = JSONparse(ta, *j);
+		if (jt == NULL) {
+			ma_close_to(ta, ta_state);
 			throw(MAL, "json.isvalid", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		}
 		*ret = jt->error == MAL_SUCCEED;
 		JSONfree(jt);
+		ma_close_to(ta, ta_state);
 	}
 	return MAL_SUCCEED;
 }
@@ -988,6 +995,8 @@ static str
 JSONfilterInternal(Client ctx, json *ret, const json *js, const char *const *expr, const char *other)
 {
 	allocator *ma = ctx->curprg->def->ma;
+	allocator *ta = MT_thread_getallocator();
+	assert(ta);
 	pattern terms[MAXTERMS];
 	int tidx = 0;
 	JSON *jt;
@@ -1002,7 +1011,8 @@ JSONfilterInternal(Client ctx, json *ret, const json *js, const char *const *exp
 			throw(MAL, "JSONfilterInternal", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
-	jt = JSONparse(ma, j);
+	allocator_state *ta_state = ma_open(ta);
+	jt = JSONparse(ta, j);
 	CHECK_JSON(jt);
 	memset(terms, 0, sizeof(terms));
 	msg = JSONcompile(ctx, *expr, terms);
@@ -1088,6 +1098,7 @@ JSONfilterInternal(Client ctx, json *ret, const json *js, const char *const *exp
 	//	if (terms[l].name)
 	//		GDKfree(terms[l].name);
 	JSONfree(jt);
+	ma_close_to(ta, ta_state);
 	return msg;
 }
 
@@ -1527,7 +1538,8 @@ JSONparse(allocator *ma, const char *j)
 static str
 JSONlength(Client ctx, int *ret, const json *j)
 {
-	allocator *ma = ctx->curprg->def->ma;
+	(void) ctx;
+	allocator *ta = MT_thread_getallocator();
 	int i, cnt = 0;
 	JSON *jt;
 
@@ -1535,13 +1547,14 @@ JSONlength(Client ctx, int *ret, const json *j)
 		*ret = int_nil;
 		return MAL_SUCCEED;
 	}
-
-	jt = JSONparse(ma, *j);
+	allocator_state *ta_state = ma_open(ta);
+	jt = JSONparse(ta, *j);
 	CHECK_JSON(jt);
 	for (i = jt->elm[0].next; i; i = jt->elm[i].next)
 		cnt++;
 	*ret = cnt;
 	JSONfree(jt);
+	ma_close_to(ta, ta_state);
 	return MAL_SUCCEED;
 }
 
@@ -1858,6 +1871,8 @@ static str
 JSONjson2textSeparator(Client ctx, str *ret, const json *js, const char *const *sep)
 {
 	allocator *ma = ctx->curprg->def->ma;
+	allocator *ta = MT_thread_getallocator();
+	assert(ta);
 	size_t l, ilen, sep_len;
 	str s, msg;
 	JSON *jt;
@@ -1867,17 +1882,19 @@ JSONjson2textSeparator(Client ctx, str *ret, const json *js, const char *const *
 			throw(MAL, "json2txt", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
-
-	jt = JSONparse(ma, *js);
+	allocator_state *ta_state = ma_open(ta);
+	jt = JSONparse(ta, *js);
 	CHECK_JSON(jt);
 	sep_len = strlen(*sep);
 	ilen = l = strlen(*js) + 1;
 	if (!(s = ma_alloc(ma, l))) {
 		JSONfree(jt);
+		ma_close_to(ta, ta_state);
 		throw(MAL, "json2txt", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	msg = JSONplaintext(ctx, &s, &l, &ilen, jt, 0, *sep, sep_len);
 	JSONfree(jt);
+	ma_close_to(ta, ta_state);
 	if (msg) {
 		//GDKfree(s);
 		return msg;
@@ -1903,10 +1920,11 @@ JSONjson2numberInternal(Client ctx, void **ret, const json *js,
 						void (*str2num)(void **ret, const char *nptr,
 										size_t len))
 {
-	allocator *ma = ctx->curprg->def->ma;
+	(void) ctx;
+	allocator *ta = MT_thread_getallocator();
 	JSON *jt;
-
-	jt = JSONparse(ma, *js);
+	allocator_state *ta_state = ma_open(ta);
+	jt = JSONparse(ta, *js);
 	CHECK_JSON(jt);
 	switch (jt->elm[0].kind) {
 	case JSON_NUMBER:
@@ -1930,6 +1948,7 @@ JSONjson2numberInternal(Client ctx, void **ret, const json *js,
 		*ret = NULL;
 	}
 	JSONfree(jt);
+	ma_close_to(ta, ta_state);
 
 	return MAL_SUCCEED;
 }
@@ -2072,17 +2091,20 @@ JSONunfoldContainer(Client ctx, JSON *jt, int idx, BAT *bo, BAT *bk, BAT *bv, oi
 static str
 JSONunfoldInternal(Client ctx, bat *od, bat *key, bat *val, const json *js)
 {
-	allocator *ma = ctx->curprg->def->ma;
+	(void) ctx;
+	allocator *ta = MT_thread_getallocator();
 	BAT *bo = NULL, *bk, *bv;
 	oid o = 0;
 	str msg = MAL_SUCCEED;
 
-	JSON *jt = JSONparse(ma, *js);
+	allocator_state *ta_state = ma_open(ta);
+	JSON *jt = JSONparse(ta, *js);
 
 	CHECK_JSON(jt);
 	bk = COLnew(0, TYPE_str, 64, TRANSIENT);
 	if (bk == NULL) {
 		JSONfree(jt);
+		ma_close_to(ta, ta_state);
 		throw(MAL, "json.unfold", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
@@ -2091,6 +2113,7 @@ JSONunfoldInternal(Client ctx, bat *od, bat *key, bat *val, const json *js)
 		if (bo == NULL) {
 			BBPreclaim(bk);
 			JSONfree(jt);
+			ma_close_to(ta, ta_state);
 			throw(MAL, "json.unfold", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 	}
@@ -2098,6 +2121,7 @@ JSONunfoldInternal(Client ctx, bat *od, bat *key, bat *val, const json *js)
 	bv = COLnew(0, TYPE_json, 64, TRANSIENT);
 	if (bv == NULL) {
 		JSONfree(jt);
+		ma_close_to(ta, ta_state);
 		BBPreclaim(bo);
 		BBPreclaim(bk);
 		throw(MAL, "json.unfold", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -2109,6 +2133,7 @@ JSONunfoldInternal(Client ctx, bat *od, bat *key, bat *val, const json *js)
 		msg = createException(MAL, "json.unfold",
 							  "JSON object or array expected");
 	JSONfree(jt);
+	ma_close_to(ta, ta_state);
 	if (msg) {
 		BBPreclaim(bk);
 		BBPreclaim(bo);
@@ -2131,17 +2156,21 @@ JSONunfoldInternal(Client ctx, bat *od, bat *key, bat *val, const json *js)
 static str
 JSONkeyTable(Client ctx, bat *ret, const json *js)
 {
-	allocator *ma = ctx->curprg->def->ma;
+	(void) ctx;
+	allocator *ta = MT_thread_getallocator();
+	assert(ta);
 	BAT *bn;
 	char *r;
 	int i;
 	JSON *jt;
 
-	jt = JSONparse(ma, *js);		// already validated
+	allocator_state *ta_state = ma_open(ta);
+	jt = JSONparse(ta, *js);		// already validated
 	CHECK_JSON(jt);
 	bn = COLnew(0, TYPE_str, 64, TRANSIENT);
 	if (bn == NULL) {
 		JSONfree(jt);
+		ma_close_to(ta, ta_state);
 		throw(MAL, "json.keys", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
@@ -2150,12 +2179,14 @@ JSONkeyTable(Client ctx, bat *ret, const json *js)
 		if (r == NULL || BUNappend(bn, r, false) != GDK_SUCCEED) {
 			//GDKfree(r);
 			JSONfree(jt);
+			ma_close_to(ta, ta_state);
 			BBPreclaim(bn);
 			throw(MAL, "json.keys", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		//GDKfree(r);
 	}
 	JSONfree(jt);
+	ma_close_to(ta, ta_state);
 	*ret = bn->batCacheid;
 	BBPkeepref(bn);
 	return MAL_SUCCEED;
@@ -2165,6 +2196,8 @@ static str
 JSONkeyArray(Client ctx, json *ret, const json *js)
 {
 	allocator *ma = ctx->curprg->def->ma;
+	allocator *ta = MT_thread_getallocator();
+	assert(ta);
 	char *result = NULL;
 	str r;
 	int i;
@@ -2176,7 +2209,8 @@ JSONkeyArray(Client ctx, json *ret, const json *js)
 		return MAL_SUCCEED;
 	}
 
-	jt = JSONparse(ma, *js);		// already validated
+	allocator_state *ta_state = ma_open(ta);
+	jt = JSONparse(ta, *js);		// already validated
 
 	CHECK_JSON(jt);
 	if (jt->elm[0].kind == JSON_OBJECT) {
@@ -2185,6 +2219,7 @@ JSONkeyArray(Client ctx, json *ret, const json *js)
 				r = ma_alloc(ma, jt->elm[i].valuelen + 3);
 				if (r == NULL) {
 					JSONfree(jt);
+					ma_close_to(ta, ta_state);
 					goto memfail;
 				}
 				strcpy_len(r, jt->elm[i].value - 1, jt->elm[i].valuelen + 3);
@@ -2192,18 +2227,22 @@ JSONkeyArray(Client ctx, json *ret, const json *js)
 				r = MA_STRDUP(ma, "\"\"");
 				if (r == NULL) {
 					JSONfree(jt);
+					ma_close_to(ta, ta_state);
 					goto memfail;
 				}
 			}
 			result = JSONglue(ctx, result, r, ',');
 			if (result == NULL) {
 				JSONfree(jt);
+				ma_close_to(ta, ta_state);
 				goto memfail;
 			}
 		}
 		JSONfree(jt);
+		ma_close_to(ta, ta_state);
 	} else {
 		JSONfree(jt);
+		ma_close_to(ta, ta_state);
 		throw(MAL, "json.keyarray", "Object expected");
 	}
 	r = MA_STRDUP(ma, "[");
@@ -2230,17 +2269,20 @@ JSONkeyArray(Client ctx, json *ret, const json *js)
 static str
 JSONvalueTable(Client ctx, bat *ret, const json *js)
 {
-	allocator *ma = ctx->curprg->def->ma;
+	(void) ctx;
+	allocator *ta = MT_thread_getallocator();
 	BAT *bn;
 	char *r;
 	int i;
 	JSON *jt;
 
-	jt = JSONparse(ma, *js);		// already validated
+	allocator_state *ta_state = ma_open(ta);
+	jt = JSONparse(ta, *js);		// already validated
 	CHECK_JSON(jt);
 	bn = COLnew(0, TYPE_json, 64, TRANSIENT);
 	if (bn == NULL) {
 		JSONfree(jt);
+		ma_close_to(ta, ta_state);
 		throw(MAL, "json.values", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
@@ -2253,11 +2295,13 @@ JSONvalueTable(Client ctx, bat *ret, const json *js)
 			//GDKfree(r);
 			BBPreclaim(bn);
 			JSONfree(jt);
+			ma_close_to(ta, ta_state);
 			throw(MAL, "json.values", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		//GDKfree(r);
 	}
 	JSONfree(jt);
+	ma_close_to(ta, ta_state);
 	*ret = bn->batCacheid;
 	BBPkeepref(bn);
 	return MAL_SUCCEED;
@@ -2267,6 +2311,7 @@ static str
 JSONvalueArray(Client ctx, json *ret, const json *js)
 {
 	allocator *ma = ctx->curprg->def->ma;
+	allocator *ta = MT_thread_getallocator();
 	char *result = NULL;
 	str r;
 	int i;
@@ -2278,7 +2323,8 @@ JSONvalueArray(Client ctx, json *ret, const json *js)
 		return MAL_SUCCEED;
 	}
 
-	jt = JSONparse(ma, *js);		// already validated
+	allocator_state *ta_state = ma_open(ta);
+	jt = JSONparse(ta, *js);		// already validated
 
 	CHECK_JSON(jt);
 	if (jt->elm[0].kind == JSON_OBJECT) {
@@ -2295,8 +2341,10 @@ JSONvalueArray(Client ctx, json *ret, const json *js)
 			}
 		}
 		JSONfree(jt);
+		ma_close_to(ta, ta_state);
 	} else {
 		JSONfree(jt);
+		ma_close_to(ta, ta_state);
 		throw(MAL, "json.valuearray", "Object expected");
 	}
 	r = MA_STRDUP(ma, "[");

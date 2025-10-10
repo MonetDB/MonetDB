@@ -1765,7 +1765,7 @@ gdk_export allocator *sa_get_ta(allocator *sa);
 #define ma_realloc(ma, obj, sz, osz) (void *) sa_realloc(ma, obj, sz, osz)
 #define ma_open(ma)		sa_open(ma)
 #define ma_close(ma)		sa_close(ma)
-#define ma_close_to(ma, offset)	sa_close_to(ma, offset)
+#define ma_close_to(ma, state)	sa_close_to(ma, state)
 #define ma_free(ma, obj)	sa_free(ma, obj)
 #define ma_reset(ma)		sa_reset(ma)
 
