@@ -1363,7 +1363,7 @@ OAHASHadd_freq(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	assert(pci->retc == 1 || pci->retc == 2);
 
-	bat *payload_pos = pci->retc == 2? getArgReference_bat(stk, pci, 0) : NULL;
+	bat *occrrence_idx = pci->retc == 2? getArgReference_bat(stk, pci, 0) : NULL;
 	bat *frequencies = getArgReference_bat(stk, pci, pci->retc - 1);
 	bat *slot_id = getArgReference_bat(stk, pci, pci->retc);
 	Pipeline *p = (Pipeline*)*getArgReference_ptr(stk, pci, pci->retc + 1);
@@ -1384,7 +1384,7 @@ OAHASHadd_freq(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	BUN cnt = BATcount(slt);
 
-	if (payload_pos) {
+	if (occrrence_idx) {
 		res = COLnew(0, TYPE_oid, cnt, TRANSIENT);
 		if (!res) {
 			err = createException(MAL, "oahash.frequency", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -1418,10 +1418,10 @@ OAHASHadd_freq(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 		QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 		qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
-		if (payload_pos) {
-			gid *ppos = Tloc(res, 0);
+		if (occrrence_idx) {
+			gid *occIdx = Tloc(res, 0);
 			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) {
-				ppos[i] = freqs[sltid[i]];
+				occIdx[i] = freqs[sltid[i]];
 				freqs[sltid[i]]++;
 			}
 		} else {
@@ -1443,10 +1443,10 @@ OAHASHadd_freq(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	BBPunfix(slt->batCacheid);
 	BBPkeepref(frq);
-	if (payload_pos) {
+	if (occrrence_idx) {
 		BATsetcount(res, cnt);
 		BATnegateprops(res);
-		*payload_pos = res->batCacheid;
+		*occrrence_idx = res->batCacheid;
 		BBPkeepref(res);
 	}
 	return MAL_SUCCEED;
@@ -3899,8 +3899,8 @@ static mel_func oa_hash_init_funcs[] = {
 
  command("oahash", "build_combined_table", OAHASHbuild_tbl_cmbd, false, "Build a hash table for the keys with a parent column. Returns the slot ID per key and the hash table sink", args(2,5, batarg("slot_id",oid),batargany("ht_sink",1),batargany("key",1),batarg("parent_slotid",oid),arg("pipeline",ptr))),
 
- pattern("oahash", "frequency", OAHASHadd_freq, false, "Add the frequencies of the slot IDs to the shared frequency BAT", args(1,3, batarg("frequencies",lng),batarg("slot_id",oid),arg("pipeline",ptr))),
- pattern("oahash", "frequency", OAHASHadd_freq, false, "Add the frequencies of the slot IDs to the shared frequency BAT and return combined_hash(slot_id, freq) for payload_pos", args(2,4, batarg("payload_pos",oid),batarg("frequencies",lng),batarg("slot_id",oid),arg("pipeline",ptr))),
+ pattern("oahash", "frequency", OAHASHadd_freq, false, "Add `slot_id` to the shared `frequencies` BAT. Returns the updated `frequencies`", args(1,3, batarg("frequencies",lng),batarg("slot_id",oid),arg("pipeline",ptr))),
+ pattern("oahash", "frequency", OAHASHadd_freq, false, "Add `slot_id` to the shared `frequencies` BAT. Returns the occurrence index for each `slot_id` (i.e. it is the n-th time the `slot_id` is seen so far) and the updated `frequencies`", args(2,4, batarg("occrrence_idx",oid),batarg("frequencies",lng),batarg("slot_id",oid),arg("pipeline",ptr))),
 
  command("oahash", "hash", BAT_OAHASHhash, false, "Compute the hashs for the keys", args(1,3, batarg("hsh",lng),batargany("key",1),arg("pipeline",ptr))),
 
