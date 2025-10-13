@@ -372,6 +372,6 @@ inline str
 copyException(allocator *ma, const char *exception)
 {
 	if (exception)
-		return MA_STRDUP(ma, exception);
+		return ma ? MA_STRDUP(ma, exception) : (char *)exception;
 	return NULL;
 }
