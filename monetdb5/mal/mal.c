@@ -155,6 +155,7 @@ mal_reset(void)
 void
 mal_exit(int status)
 {
+	TRC_DEBUG(MAL_SERVER, "MAL exiting\n");
 	mal_reset();
 	printf("# mserver5 exiting\n");
 	exit(status);				/* properly end GDK */
