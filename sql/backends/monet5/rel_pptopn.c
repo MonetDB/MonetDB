@@ -332,26 +332,23 @@ rel2bin_ordered_topn(backend *be, sql_rel *rel, list *refs, sql_rel *topn, stmt 
 		n=oexps->h;
 		grouped = topn->grouped && has_partitioning(oexps);
 		if (grouped) { /* first group by */
-			int prev_ht = -1;
 			/* first n order by expressions are the partitioning expressions */
+			gids = 0;
 			for (; n; n = n->next) {
 				sql_exp *gbe = n->data;
+				stmt *ht = stmt_none(be);
+				ht->nr = gbe->shared;
+				ht->op4.typeval = *exp_subtype(gbe);
+
 				if (!is_partitioning(gbe))
 					break;
 				/* build hash ! */
 				stmt *key = exp_bin(be, gbe, sub, psub, NULL, NULL, NULL, NULL, 0, 0, 0);
 				key = column(be, key);
 
-				InstrPtr q = NULL;
-				if (prev_ht < 0) {
-					q = stmt_oahash_build_ht(be, gbe->shared, key->nr, pp);
-				} else {
-					q = stmt_oahash_build_combined_ht(be, gbe->shared, key->nr, gids, pp);
-				}
-				if (q == NULL) return NULL;
-
-				gids = getArg(q, 0);
-				prev_ht = getArg(q, 1);
+				stmt *s = stmt_oahash_build_ht(be, ht, key, gids, pp);
+				if (s == NULL) return NULL;
+				gids = getArg(s->q, 0);
 			}
 		}
 

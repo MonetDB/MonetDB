@@ -472,35 +472,29 @@ stmt_oahash_new(backend *be, sql_subtype *tpe, int estimate, int parent)
 	return s;
 }
 
-InstrPtr
-stmt_oahash_build_ht(backend *be, int ht_sink, int key, const stmt *pp)
+stmt *
+stmt_oahash_build_ht(backend *be, stmt *ht, stmt *key, int prnt_slts, const stmt *pp)
 {
-	InstrPtr q = newStmtArgs(be->mb, putName("oahash"), putName("build_table"), 4);
+	InstrPtr q = newStmt(be->mb, putName("oahash"), prnt_slts?putName("build_combined_table"):putName("build_table"));
 	if (q == NULL) return NULL;
 
 	setVarType(be->mb, getArg(q, 0), newBatType(TYPE_oid)); /* slot_id */
-	q = pushReturn(be->mb, q, ht_sink);
-	q = pushArgument(be->mb, q, key);
+	q = pushReturn(be->mb, q, ht->nr);
+	q = pushArgument(be->mb, q, key->nr);
+	if (prnt_slts > 0)
+		q = pushArgument(be->mb, q, prnt_slts);
 	q = pushArgument(be->mb, q, getArg(pp->q, 2) /* pipeline ptr*/);
 	q->inout = 1;
 	pushInstruction(be->mb, q);
-	return q;
-}
 
-InstrPtr
-stmt_oahash_build_combined_ht(backend *be, int ht_sink, int key, int prnt_slts, const stmt *pp)
-{
-	InstrPtr q = newStmtArgs(be->mb, putName("oahash"), putName("build_combined_table"), 6);
-	if (q == NULL) return NULL;
+	stmt *s = stmt_none(be);
+	if (s == NULL) return NULL;
+	s->op4.typeval = ht->op4.typeval;
+	s->nr = getArg(q, 1);
+	s->nrcols = key->nrcols;
+	s->q = q;
 
-	setVarType(be->mb, getArg(q, 0), newBatType(TYPE_oid)); /* slot_id */
-	q = pushReturn(be->mb, q, ht_sink);
-	q = pushArgument(be->mb, q, key);
-	q = pushArgument(be->mb, q, prnt_slts);
-	q = pushArgument(be->mb, q, getArg(pp->q, 2) /* pipeline ptr*/);
-	q->inout = 1;
-	pushInstruction(be->mb, q);
-	return q;
+	return s;
 }
 
 InstrPtr

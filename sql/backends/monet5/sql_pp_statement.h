@@ -18,8 +18,7 @@ extern void set_pipeline(backend *be, stmt *pp);
 extern stmt * get_pipeline(backend *be);
 
 extern stmt *stmt_oahash_new(backend *be, sql_subtype *tpe, int estimate, int parent);
-extern InstrPtr stmt_oahash_build_ht(backend *be, int ht_sink, int key, const stmt *pp);
-extern InstrPtr stmt_oahash_build_combined_ht(backend *be, int ht_sink, int key, int prnt_slts, const stmt *pp);
+extern stmt *stmt_oahash_build_ht(backend *be, stmt *ht, stmt *key, int prnt_slts, const stmt *pp);
 
 extern InstrPtr stmt_oahash_hash(backend *be, stmt *key, const stmt *pp);
 extern InstrPtr stmt_oahash_probe(backend *be, stmt *key, int hsh, stmt *rhs_ht, stmt *freq, bit single, bit semantics, bit eq, bool outer, bool groupedjoin, const stmt *pp);
