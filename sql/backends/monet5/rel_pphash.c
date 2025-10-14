@@ -99,58 +99,58 @@ _start_pp(backend *be, sql_rel *rel, bit buildphase, list *refs)
 
 /* exps: hash-side of cmp exps or prj exps (e.g. in case of cross-product).
  */
-static list *
+static stmt *
 oahash_prepare_bld_ht(backend *be, const list *exps, lng sz)
 {
 	assert(exps && exps->cnt);
 
-	list *shared_ht = sa_list(be->mvc->sa);
+	list *l = sa_list(be->mvc->sa);
 	int curhash = 0;
 	for (node *n = exps->h; n; n = n->next) {
-		sql_subtype *t = exp_subtype((sql_exp*)n->data);
-		InstrPtr q = stmt_oahash_new(be, t->type->localtype, sz, curhash);
-		if (q == NULL) return NULL;
-		curhash = getArg(q, 0);
-		append(shared_ht, q);
+		stmt *s = stmt_oahash_new(be, exp_subtype((sql_exp*)n->data), sz, curhash);
+		if (s == NULL) return NULL;
+		curhash = s->nr;
+		append(l, s);
 	}
-	assert(shared_ht->cnt == exps->cnt);
-	return shared_ht;
+	assert(l->cnt == exps->cnt);
+	return stmt_list(be, l);
 }
 
-static list *
+static stmt *
 oahash_prepare_bld_hp(backend *be, const list *exps_prj_hsh, lng sz)
 {
-	list *shared_hp = sa_list(be->mvc->sa);
+	list *l = sa_list(be->mvc->sa);
 	for (node *n = exps_prj_hsh->h; n; n = n->next) {
 		sql_subtype *t = exp_subtype((sql_exp*)n->data);
 		stmt *s = stmt_bat_new(be, t, sz);
 		if (!s)
 			return NULL;
-		append(shared_hp, s);
+		append(l, s);
 	}
-	assert(shared_hp->cnt == exps_prj_hsh->cnt);
-	return shared_hp;
+	assert(l->cnt == exps_prj_hsh->cnt);
+	return stmt_list(be, l);
 }
 
 /* exps: hash-side of cmp exps or prj exps (e.g. in case of cross-product).
  */
 static stmt *
-oahash_build_ht(backend *be, int *slt_ids, const list *exps, const list *shared_ht, stmt *freq, stmt *sub, const stmt *pp)
+oahash_build_ht(backend *be, int *slt_ids, const list *exps, const stmt *shared_ht, stmt *freq, stmt *sub, const stmt *pp)
 {
 	list *l = sa_list(be->mvc->sa);
 	node *n = NULL, *inout = NULL;
 	bool first = true;
 
-	for (n = exps->h, inout = shared_ht->h; n && inout; n = n->next, inout = inout->next) {
+	for (n = exps->h, inout = shared_ht->op4.lval->h; n && inout; n = n->next, inout = inout->next) {
+		stmt *ht = (stmt *)inout->data;
 		stmt *key = exp_bin(be, n->data, sub, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
 		assert(key); /* must find */
 		key = column(be, key);
 
 		InstrPtr q = NULL;
 		if (first) {
-			q = stmt_oahash_build_ht(be, getArg((InstrPtr)inout->data,0), key->nr, pp);
+			q = stmt_oahash_build_ht(be, ht->nr, key->nr, pp);
 		} else {
-			q = stmt_oahash_build_combined_ht(be, getArg((InstrPtr)inout->data,0), key->nr, *slt_ids, pp);
+			q = stmt_oahash_build_combined_ht(be, ht->nr, key->nr, *slt_ids, pp);
 		}
 		if (q == NULL) return NULL;
 
@@ -188,7 +188,8 @@ oahash_build_ht(backend *be, int *slt_ids, const list *exps, const list *shared_
 		pushInstruction(be->mb, q);
 		if (inout) {
 			int freq_nr = getArg(q, 0);
-			q = stmt_oahash_build_combined_ht(be, getArg((InstrPtr)inout->data,0), freq_nr, *slt_ids, pp);
+			stmt *prnt = (stmt *)inout->data;
+			q = stmt_oahash_build_combined_ht(be, prnt->nr, freq_nr, *slt_ids, pp);
 			if (q == NULL) return NULL;
 			*slt_ids = getArg(q,0);
 
@@ -203,11 +204,11 @@ oahash_build_ht(backend *be, int *slt_ids, const list *exps, const list *shared_
 }
 
 static stmt *
-oahash_build_hp(backend *be, list *exps_prj_hsh, list *shared_hp, int pld_pos, stmt *sub, const stmt *pp)
+oahash_build_hp(backend *be, list *exps_prj_hsh, stmt *shared_hp, int pld_pos, stmt *sub, const stmt *pp)
 {
 	list *l = sa_list(be->mvc->sa);
 
-	for (node *n = exps_prj_hsh->h, *inout = shared_hp->h; n && inout; n = n->next, inout = inout->next) {
+	for (node *n = exps_prj_hsh->h, *inout = shared_hp->op4.lval->h; n && inout; n = n->next, inout = inout->next) {
 		stmt *res = inout->data;
 		stmt *payload = exp_bin(be, n->data, sub, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
 		assert(payload); /* must find */
@@ -545,18 +546,19 @@ rel2bin_oahash_build(backend *be, sql_rel *rel, list *refs)
 
 	bool need_freq = (rel->flag != (int)op_semi || rel->ref.refcnt > 2 || !list_empty(exps_prj_hsh));
 	lng bld_sz = _estimate(be->mvc, rel); /* TODO: change into dynamic where possible ?? */
-	list *shared_ht = oahash_prepare_bld_ht(be, exps_cmp_hsh, bld_sz);
+	stmt *shared_ht = oahash_prepare_bld_ht(be, exps_cmp_hsh, bld_sz);
 	stmt *freq = NULL;
 	if (need_freq) {
 		freq = stmt_bat_new(be, sql_fetch_localtype(TYPE_lng), bld_sz);
 	}
-	list *shared_hp = NULL;
+	stmt *shared_hp = NULL;
 	if (exps_prj_hsh) {
 		if (!list_empty(exps_prj_hsh)) {
-			InstrPtr ht = shared_ht->t->data;
-			InstrPtr q = stmt_oahash_new(be, TYPE_oid, bld_sz, getArg(ht, 0));
-			if (q == NULL) return NULL;
-			append(shared_ht, q);
+			list *l = shared_ht->op4.lval;
+			stmt *prnt = (stmt*)l->t->data;
+			stmt *s = stmt_oahash_new(be, sql_fetch_localtype(TYPE_oid), bld_sz, prnt->nr);
+			if (s == NULL) return NULL;
+			append(l, s);
 		}
 		shared_hp = oahash_prepare_bld_hp(be, exps_prj_hsh, bld_sz);
 	}

@@ -200,18 +200,17 @@ rel_groupby_prepare_pp(list **aggrresults, list **serializedresults, backend *be
 							return NULL;
 						append(*serializedresults, s);
 						if (need_distinct) { /* create shared bat, for hash table */
-							sql_subtype *t = exp_subtype(e);
 							int estimate = exp_getcard(be->mvc, rel->l /* count before group by */, e);
 							if (estimate<0) {
 								assert(0);
 								estimate = 85000000;
 							}
 
-							InstrPtr q = stmt_oahash_new(be, t->type->localtype, estimate, curhash); /* pushed already */
-							if (q == NULL)
+							stmt *s = stmt_oahash_new(be, t, estimate, curhash); /* pushed already */
+							if (s == NULL)
 								return NULL;
 							assert(!e->shared);
-							curhash = e->shared = q->argv[0]; /* pass hash table statment via expression */
+							curhash = e->shared = s->nr; /* pass hash table statment via expression */
 						}
 					}
 				}
@@ -267,11 +266,11 @@ rel_groupby_prepare_pp(list **aggrresults, list **serializedresults, backend *be
 					estimate = 85000000;
 				}
 
-				InstrPtr q = stmt_oahash_new(be, t->type->localtype, estimate, 0); /* pushed already */
-				if (q == NULL)
+				stmt *s = stmt_oahash_new(be, t, estimate, 0); /* pushed already */
+				if (s == NULL)
 					return NULL;
 				assert(!e->shared);
-				e->shared = q->argv[0];
+				e->shared = s->nr;
 			}
 		}
 	} else if (is_groupby(rel->op) && !list_empty(rel->r) && !list_empty(rel->exps)) {
@@ -297,12 +296,12 @@ rel_groupby_prepare_pp(list **aggrresults, list **serializedresults, backend *be
 			if (card > INT_MAX)
 				card = INT_MAX;
 
-			InstrPtr q = stmt_oahash_new(be, t->type->localtype, card, curhash);
-			if (q == NULL)
+			stmt *s = stmt_oahash_new(be, t, card, curhash);
+			if (s == NULL)
 				return NULL;
-			curhash = getArg(q,0);
-			append(shared, q->argv);
-			append(*aggrresults, q->argv);
+			curhash = s->nr;
+			append(shared, s->q->argv);
+			append(*aggrresults, s->q->argv);
 		}
 		if (card < estimate)
 			estimate = card;
@@ -345,11 +344,11 @@ rel_groupby_prepare_pp(list **aggrresults, list **serializedresults, backend *be
 								estimate = (lng) est;
 							}
 
-							InstrPtr q = stmt_oahash_new(be, t->type->localtype, estimate, grphash);
-							if (q == NULL)
+							stmt *s = stmt_oahash_new(be, t, estimate, grphash);
+							if (s == NULL)
 								return NULL;
 							assert(!e->shared);
-							grphash = e->shared = q->argv[0];
+							grphash = e->shared = s->nr;
 						}
 					}
 				}
@@ -405,11 +404,11 @@ rel_groupby_prepare_pp(list **aggrresults, list **serializedresults, backend *be
 				if ((BUN)estimate < est) /* unique count * current (group) card */
 					estimate *= card;
 
-				InstrPtr q = stmt_oahash_new(be, t->type->localtype, estimate, curhash);
-				if (q == NULL)
+				stmt *s = stmt_oahash_new(be, t, estimate, curhash);
+				if (s == NULL)
 					return NULL;
 				assert(!e->shared);
-				e->shared = q->argv[0];
+				e->shared = s->nr;
 			}
 		}
 	} else {

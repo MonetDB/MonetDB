@@ -17,7 +17,7 @@ extern bool get_need_pipeline(backend *be);
 extern void set_pipeline(backend *be, stmt *pp);
 extern stmt * get_pipeline(backend *be);
 
-extern InstrPtr stmt_oahash_new(backend *be, int tt, int estimate, int parent);
+extern stmt *stmt_oahash_new(backend *be, sql_subtype *tpe, int estimate, int parent);
 extern InstrPtr stmt_oahash_build_ht(backend *be, int ht_sink, int key, const stmt *pp);
 extern InstrPtr stmt_oahash_build_combined_ht(backend *be, int ht_sink, int key, int prnt_slts, const stmt *pp);
 

@@ -168,7 +168,6 @@ rel_topn_prepare_pp(backend *be, sql_rel *rel, stmt *all)
 				if (!is_partitioning(e))
 					break;
 				sql_subtype *t = exp_subtype(e);
-				int tt = t->type->localtype;
 				lng ncard = exp_getcard(be->mvc, rel, e);
 				card *= ncard;
 				if (card > estimate || ncard >= estimate)
@@ -178,10 +177,10 @@ rel_topn_prepare_pp(backend *be, sql_rel *rel, stmt *all)
 				if (card > INT_MAX)
 					card = INT_MAX;
 
-				InstrPtr q = stmt_oahash_new(be, tt, card, curhash);
-				if (q == NULL)
+				stmt *s = stmt_oahash_new(be, t, card, curhash);
+				if (s == NULL)
 					return NULL;
-				curhash = e->shared = q->argv[0]; /* pass hash table statment via expression */
+				curhash = e->shared = s->nr; /* pass hash table statment via expression */
 			}
 		}
 		for(; n; n = n->next ) {

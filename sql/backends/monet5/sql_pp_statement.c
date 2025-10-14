@@ -447,8 +447,8 @@ stmt_unique_sharedout(backend *be, stmt *s, int output)
 	return NULL;
 }
 
-InstrPtr
-stmt_oahash_new(backend *be, int tt, int estimate, int parent)
+stmt *
+stmt_oahash_new(backend *be, sql_subtype *tpe, int estimate, int parent)
 {
 	InstrPtr q = newStmt(be->mb, putName("oahash"), newRef);
 	if (q == NULL)
@@ -456,13 +456,20 @@ stmt_oahash_new(backend *be, int tt, int estimate, int parent)
 
 	assert (estimate >= 0);
 
+	int tt = tpe->type->localtype;
 	setVarType(be->mb, getArg(q, 0), newBatType(tt)); /* ht_sink */
 	q = pushType(be->mb, q, tt);
 	q = pushInt(be->mb, q, estimate);
 	if (parent)
 		q = pushArgument(be->mb, q, parent);
 	pushInstruction(be->mb, q);
-	return q;
+
+	stmt *s = stmt_none(be);
+	s->op4.typeval = *tpe;
+	s->q = q;
+	s->nr = getArg(q, 0);
+	s->nrcols = 2;
+	return s;
 }
 
 InstrPtr
