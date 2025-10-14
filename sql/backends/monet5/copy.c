@@ -104,8 +104,11 @@ bufferstream_read( bufferstream *bs, int cur)
 	/* out of space ? */
 	if (!bs->pos[cur] && bs->len[cur] == bs->sz[cur]) {
 		bs->sz[cur] *= 2;
-		bs->sz[cur] += 2;
-		bs->buf[cur] = (unsigned char*)GDKrealloc(bs->buf[cur], bs->sz[cur] + 2);
+		//bs->sz[cur] += 2;
+		bs->buf[cur] = (unsigned char*)GDKrealloc(bs->buf[cur], bs->sz[cur] + 2 + 2);
+		/* add nil add end */
+		bs->buf[cur][bs->sz[0]+2] = '\200';
+		bs->buf[cur][bs->sz[0]+3] = 0;
 	}
 
 	/* read new */

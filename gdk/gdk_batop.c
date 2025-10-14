@@ -341,7 +341,9 @@ insert_string_bat(BAT *b, BATiter *ni, struct canditer *ci, bool force, bool may
 			p = canditer_next(ci) - ni->b->hseqbase;
 			off = BUNtvaroff(*ni, p); /* the offset */
 			tp = ni->vh->base + off; /* the string */
-			if (off < b->tvheap->free &&
+			if (ni->b->tvheap->storage != STORE_NOWN &&
+			    b->twidth == ni->b->twidth &&
+			    off < b->tvheap->free &&
 			    strcmp(b->tvheap->base + off, tp) == 0) {
 				/* we found the string at the same
 				 * offset in b's string heap as it was
