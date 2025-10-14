@@ -2730,23 +2730,26 @@ sa_get_eb(allocator *sa)
 allocator_state *
 sa_open(allocator *sa)
 {
-	allocator_state *res = sa_alloc(sa,
-			sizeof(allocator_state));
-	if (!res) {
-		if (sa->eb.enabled)
-			eb_error(&sa->eb, "out of memory", 1000);
-		return NULL;
-	}
+	if (sa) {
+		allocator_state *res = sa_alloc(sa,
+				sizeof(allocator_state));
+		if (!res) {
+			if (sa->eb.enabled)
+				eb_error(&sa->eb, "out of memory", 1000);
+			return NULL;
+		}
 
-	COND_LOCK_ALLOCATOR(sa);
-	sa->tmp_used += 1;
-	res->nr = sa->nr;
-	res->used = sa->used;
-	res->usedmem = sa->usedmem;
-	res->objects = sa->objects;
-	res->inuse = sa->inuse;
-	COND_UNLOCK_ALLOCATOR(sa);
-	return res;
+		COND_LOCK_ALLOCATOR(sa);
+		sa->tmp_used += 1;
+		res->nr = sa->nr;
+		res->used = sa->used;
+		res->usedmem = sa->usedmem;
+		res->objects = sa->objects;
+		res->inuse = sa->inuse;
+		COND_UNLOCK_ALLOCATOR(sa);
+		return res;
+	}
+	return NULL;
 }
 
 void
@@ -2767,25 +2770,26 @@ sa_close(allocator *sa)
 void
 sa_close_to(allocator *sa, allocator_state *state)
 {
-	COND_LOCK_ALLOCATOR(sa);
-	assert(state);
-	assert(sa_tmp_active(sa));
-	if (state && !sa_has_dependencies(sa)) {
-		assert((state->nr > 0) && (state->nr <= sa->nr));
-		assert(state->used <= SA_BLOCK_SIZE);
-		if (state->nr != sa->nr || state->used != sa->used) {
-			_sa_free_blks(sa, state->nr);
-			sa->nr = state->nr;
-			sa->used = state->used;
-			sa->usedmem = state->usedmem;
-			sa->objects = state->objects;
-			sa->inuse = state->inuse;
+	if (sa) {
+		COND_LOCK_ALLOCATOR(sa);
+		assert(sa_tmp_active(sa));
+		if (state && !sa_has_dependencies(sa)) {
+			assert((state->nr > 0) && (state->nr <= sa->nr));
+			assert(state->used <= SA_BLOCK_SIZE);
+			if (state->nr != sa->nr || state->used != sa->used) {
+				_sa_free_blks(sa, state->nr);
+				sa->nr = state->nr;
+				sa->used = state->used;
+				sa->usedmem = state->usedmem;
+				sa->objects = state->objects;
+				sa->inuse = state->inuse;
+			}
 		}
+		if (sa->tmp_used > 0) {
+			sa->tmp_used -= 1;
+		}
+		COND_UNLOCK_ALLOCATOR(sa);
 	}
-	if (sa->tmp_used > 0) {
-		sa->tmp_used -= 1;
-	}
-	COND_UNLOCK_ALLOCATOR(sa);
 }
 
 bool
