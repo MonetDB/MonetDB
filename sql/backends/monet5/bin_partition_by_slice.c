@@ -403,6 +403,8 @@ rel_groupby_prepare_pp(list **aggrresults, list **serializedresults, backend *be
 				}
 				if ((BUN)estimate < est) /* unique count * current (group) card */
 					estimate *= card;
+				if ((BUN)estimate > est)
+					estimate = est;
 
 				stmt *s = stmt_oahash_new(be, t, estimate, curhash);
 				if (s == NULL)
