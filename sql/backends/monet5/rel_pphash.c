@@ -138,7 +138,6 @@ oahash_build_ht(backend *be, int *slt_ids, const list *exps, const stmt *shared_
 {
 	list *l = sa_list(be->mvc->sa);
 	node *n = NULL, *inout = NULL;
-	bool first = true;
 
 	for (n = exps->h, inout = shared_ht->op4.lval->h; n && inout; n = n->next, inout = inout->next) {
 		stmt *ht = (stmt *)inout->data;
@@ -146,27 +145,15 @@ oahash_build_ht(backend *be, int *slt_ids, const list *exps, const stmt *shared_
 		assert(key); /* must find */
 		key = column(be, key);
 
-		InstrPtr q = NULL;
-		if (first) {
-			q = stmt_oahash_build_ht(be, ht->nr, key->nr, pp);
-		} else {
-			q = stmt_oahash_build_combined_ht(be, ht->nr, key->nr, *slt_ids, pp);
-		}
-		if (q == NULL) return NULL;
+		stmt *s = stmt_oahash_build_ht(be, ht, key, *slt_ids, pp);
+		if (s == NULL) return NULL;
 
 		sql_exp *e = n->data;
-		stmt *s = stmt_none(be);
-		if (s == NULL) return NULL;
-		s->op4.typeval = *exp_subtype(e);
-		s->nr = getArg(q, 1);
-		s->nrcols = key->nrcols;
-		s->q = q;
 		if (e->alias.label)
 			s = stmt_alias(be, s, e->alias.label, exp_find_rel_name(e), exp_name(e));
 		append(l, s);
 
-		*slt_ids = getArg(q,0);
-		first = false;
+		*slt_ids = getArg(s->q,0);
 	}
 	stmt *ht_stmts = stmt_list(be, l);
 	if ((!n && inout) || freq) { /* frequencies */
@@ -186,18 +173,18 @@ oahash_build_ht(backend *be, int *slt_ids, const list *exps, const stmt *shared_
 		q = pushArgument(be->mb, q, *slt_ids);
 		q = pushArgument(be->mb, q, getArg(pp->q, 2) /* pipeline ptr*/);
 		pushInstruction(be->mb, q);
-		if (inout) {
-			int freq_nr = getArg(q, 0);
-			stmt *prnt = (stmt *)inout->data;
-			q = stmt_oahash_build_combined_ht(be, prnt->nr, freq_nr, *slt_ids, pp);
-			if (q == NULL) return NULL;
-			*slt_ids = getArg(q,0);
 
+		if (inout) {
 			stmt *s = stmt_none(be);
-			if (s == NULL) return NULL;
-			s->nr = getArg(q, 1);
+			s->nr = getArg(q, 0);
+			s->nrcols = 2;
 			s->q = q;
-			ht_stmts->op2 = s;
+
+			stmt *prnt = (stmt *)inout->data;
+			stmt *s2 = stmt_oahash_build_ht(be, prnt, s, *slt_ids, pp);
+			if (s2 == NULL) return NULL;
+			ht_stmts->op2 = s2;
+			*slt_ids = getArg(s2->q,0);
 		}
 	}
 	return ht_stmts;
