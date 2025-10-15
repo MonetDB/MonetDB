@@ -949,7 +949,6 @@ pqc_definition( pqc_reader_t *r, pqc_creader_t *cr, void *output, u_int32_t num_
 		cr->definitionsize = j;
 
 	TRC_DEBUG(PARQUET, "nulls %" PRIu64 " rows %u (%p)\n", null, num_values, cr->definition);
-	// printf( "nulls %" PRIu64 " rows %u (%p)\n", null, num_values, cr->definition);
 	cr->cc->cur_page.num_nulls = null;
 	/* return definition level as structure 0/1 + len */
 	return pos; //nr_bytes + sizeof(nr_bytes);
@@ -1020,7 +1019,6 @@ pqc_dict_lookup( pqc_reader_t *r, pqc_creader_t *cr, void *output, void *voutput
 		cr->nr_bits = data[pos++];
 	int nr_bits = cr->nr_bits;
 
-	//printf("precision %d bits %d dict %d\n", r->pse->precision, nr_bits, (int)dict);
 	if (r->pse->precision == 0 && !dict) {
 		int64_t i = 0;
 		char **dst = output;
