@@ -878,7 +878,7 @@ SQLinsert_val(allocator *ma, READERtask *task, int col, int idx)
 			//if (data != buf)
 			//	GDKfree(data);
 		} else {
-			allocator *ma = task->cntxt->curprg->def->ma;
+			//allocator *ma = task->cntxt->curprg->def->ma;
 			adt = fmt->frstr(ma, fmt, fmt->adt, s);
 		}
 	}
