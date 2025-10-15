@@ -12,10 +12,6 @@
 #include <mutils.h>
 #include <gdk.h>
 #include <sql_mem.h>
-//#include <utils/mem.h>
-//#include <utils/str.h>
-//#include <utils/file.h>
-//#include <utils/thread.h>
 
 #define PQC_SMALL 64*1024
 
