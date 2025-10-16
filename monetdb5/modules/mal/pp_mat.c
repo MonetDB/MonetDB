@@ -65,6 +65,18 @@ part_destroy( part_t *p )
 	GDKfree(p);
 }
 
+static void
+mat_activate(mat_t *mt)
+{
+	MT_rwlock_rdlock(&mt->rwlock);
+}
+
+static void
+mat_deactivate(mat_t *mt)
+{
+	MT_rwlock_rdunlock(&mt->rwlock);
+}
+
 static str
 MATnew(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
@@ -78,6 +90,7 @@ MATnew(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		throw(MAL, "mat.new", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	mat->nr = nr;
 	mat->bat = (BAT**)GDKzalloc(nr * sizeof(BAT*));
+	MT_rwlock_init(&mat->rwlock, "mat.new");
 	if (!mat->bat) {
 		GDKfree(mat);
 		throw(MAL, "mat.new", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -218,34 +231,51 @@ PARTpartition( bat *pos, const bat *part, const bat *glen )
 	return MAL_SUCCEED;
 }
 
-#define mat_project(T)											\
-	{											\
-		T **cp = (T**)GDKzalloc(mt->nr * sizeof(T*));					\
-		if (cp) {									\
-			for(int i = 0; i<mt->nr; i++) {						\
-				if (BATcapacity(mt->bat[i]) < (BUN)(curpos[i]+lp[i])) {		\
-					if (BATextend(mt->bat[i], curpos[i]+lp[i]) != GDK_SUCCEED) {	\
-						err = createException(MAL, "mat.project", SQLSTATE(HY013) MAL_MALLOC_FAIL);	\
-						break;						\
-					}							\
-				}								\
+#define mat_project(T)										\
+	{														\
+		T **cp = (T**)GDKzalloc(mt->nr * sizeof(T*));		\
+		if (cp) {											\
+			bool extend = false;							\
+			for(int i = 0; i<mt->nr && !extend; i++) {					\
+				if (BATcapacity(mt->bat[i]) < (BUN)(curpos[i]+lp[i]))	\
+					extend = true;										\
+			}												\
+			if (extend) {									\
+				mat_deactivate(mt);							\
+				MT_rwlock_wrlock(&mt->rwlock);				\
+				for(int i = 0; i<mt->nr; i++) {				\
+					if (BATcapacity(mt->bat[i]) < (BUN)(curpos[i]+lp[i])) {		\
+						if (BATextend(mt->bat[i], curpos[i]+lp[i]) != GDK_SUCCEED) {	\
+							err = createException(MAL, "mat.project", SQLSTATE(HY013) MAL_MALLOC_FAIL);	\
+							break;							\
+						}									\
+					}										\
+				}											\
+				MT_rwlock_wrunlock(&mt->rwlock);			\
+				mat_activate(mt);							\
+			}												\
+			if (!ATOMvarsized(d->ttype))					\
+			MT_lock_set(&m->theaplock);						\
+			for(int i = 0; i<mt->nr; i++) {					\
 				if (BATcount(mt->bat[i]) < (BUN)(curpos[i]+lp[i]))		\
 					BATsetcount(mt->bat[i], curpos[i]+lp[i]);		\
-				cp[i] = (T*)Tloc(mt->bat[i], 0);				\
-			}									\
-			if (err == NULL) {							\
+				cp[i] = (T*)Tloc(mt->bat[i], 0);			\
+			}												\
+			if (!ATOMvarsized(d->ttype))					\
+			MT_lock_unset(&m->theaplock);					\
+			if (err == NULL) {								\
 				T *dp = (T*)Tloc(d, 0);						\
-				for(BUN i = 0; i<BATcount(d); i++) {				\
-					int g = grp[i];						\
+				for(BUN i = 0; i<BATcount(d); i++) {		\
+					int g = grp[i];							\
 					cp[g][curpos[g]] = dp[i];				\
-					curpos[g]++;						\
-				}								\
-			}									\
-			GDKfree(cp);								\
-		} else {									\
+					curpos[g]++;							\
+				}											\
+			}												\
+			GDKfree(cp);									\
+		} else {										\
 			err = createException(MAL, "mat.project", SQLSTATE(HY013) MAL_MALLOC_FAIL);	\
-		}										\
-	}											\
+		}												\
+	}													\
 	break
 
 #define mat_project_() \
@@ -303,7 +333,10 @@ MATproject( bat *mat, const bat *pos, const bat *lid, const bat *gid, const bat 
 	assert(BATcount(g) == BATcount(d));
 
 	bool local_storage = false;
-	MT_lock_set(&m->theaplock);
+	if (ATOMvarsized(d->ttype))
+		MT_lock_set(&m->theaplock);
+	else
+		mat_activate(mt);
 	if (BATcount(d)) {
 		BAT *r = mt->bat[0];
 		assert(r);
@@ -327,12 +360,15 @@ MATproject( bat *mat, const bat *pos, const bat *lid, const bat *gid, const bat 
 			for (int i = 0; i < mt->nr; i++) {
 				BAT *r = mt->bat[i];
 				if (unshare_varsized_heap(r) != GDK_SUCCEED) {
+					MT_lock_unset(&m->theaplock);
 					err = createException(MAL, "mat.project", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					goto error;
 				}
 			}
 			local_storage = true;
 		}
+		if (ATOMvarsized(r->ttype) && !local_storage)
+			mat_activate(mt);
 		QryCtx *qry_ctx = MT_thread_get_qry_ctx();
                 qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 		if (!local_storage) {
@@ -356,8 +392,13 @@ MATproject( bat *mat, const bat *pos, const bat *lid, const bat *gid, const bat 
 			mat_project_();
 		}
 		TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "pp algebra.projection", RUNTIME_QRY_TIMEOUT));
+		if (ATOMvarsized(r->ttype) && !local_storage)
+			mat_deactivate(mt);
 	}
-	MT_lock_unset(&m->theaplock);
+	if (ATOMvarsized(d->ttype))
+		MT_lock_unset(&m->theaplock);
+	else
+		mat_deactivate(mt);
 	if (err)
 		goto error;
 	GDKfree(curpos);

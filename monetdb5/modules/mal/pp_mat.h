@@ -13,6 +13,7 @@ typedef struct mat_t {
 	Sink s;
 	int nr;
 	BAT **bat;
+	MT_RWLock rwlock;	/* needed for save resizing */
 } mat_t;
 
 extern BAT * pack_mat(BAT *b);
