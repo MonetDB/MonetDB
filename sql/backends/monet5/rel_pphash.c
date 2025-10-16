@@ -131,100 +131,6 @@ oahash_prepare_bld_hp(backend *be, const list *exps_prj_hsh, lng sz)
 	return stmt_list(be, l);
 }
 
-/* exps: hash-side of cmp exps or prj exps (e.g. in case of cross-product).
- */
-static stmt *
-oahash_build_ht(backend *be, int *slt_ids, const list *exps, const stmt *shared_ht, stmt *freq, stmt *sub, const stmt *pp)
-{
-	list *l = sa_list(be->mvc->sa);
-	node *n = NULL, *inout = NULL;
-
-	for (n = exps->h, inout = shared_ht->op4.lval->h; n && inout; n = n->next, inout = inout->next) {
-		stmt *ht = (stmt *)inout->data;
-		stmt *key = exp_bin(be, n->data, sub, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
-		assert(key); /* must find */
-		key = column(be, key);
-
-		stmt *s = stmt_oahash_build_ht(be, ht, key, *slt_ids, pp);
-		if (s == NULL) return NULL;
-
-		sql_exp *e = n->data;
-		if (e->alias.label)
-			s = stmt_alias(be, s, e->alias.label, exp_find_rel_name(e), exp_name(e));
-		append(l, s);
-
-		*slt_ids = getArg(s->q,0);
-	}
-	stmt *ht_stmts = stmt_list(be, l);
-	if ((!n && inout) || freq) { /* frequencies */
-		InstrPtr q = newStmt(be->mb, putName("oahash"), putName("frequency"));
-		if (q == NULL)
-			return NULL;
-		if (!inout) {
-			assert(freq && "freq w/o pos");
-			getArg(q, 0) = freq->nr;
-			q->inout = 0;
-		} else {
-			assert(freq && "freq w pos");
-			setVarType(be->mb, getArg(q, 0), newBatType(TYPE_oid));
-			q = pushReturn(be->mb, q, freq->nr);
-			q->inout = 1;
-		}
-		q = pushArgument(be->mb, q, *slt_ids);
-		q = pushArgument(be->mb, q, getArg(pp->q, 2) /* pipeline ptr*/);
-		pushInstruction(be->mb, q);
-
-		if (inout) {
-			stmt *s = stmt_none(be);
-			s->nr = getArg(q, 0);
-			s->nrcols = 2;
-			s->q = q;
-
-			stmt *prnt = (stmt *)inout->data;
-			stmt *s2 = stmt_oahash_build_ht(be, prnt, s, *slt_ids, pp);
-			if (s2 == NULL) return NULL;
-			ht_stmts->op2 = s2;
-			*slt_ids = getArg(s2->q,0);
-		}
-	}
-	return ht_stmts;
-}
-
-static stmt *
-oahash_build_hp(backend *be, list *exps_prj_hsh, stmt *shared_hp, int pld_pos, stmt *sub, const stmt *pp)
-{
-	list *l = sa_list(be->mvc->sa);
-
-	for (node *n = exps_prj_hsh->h, *inout = shared_hp->op4.lval->h; n && inout; n = n->next, inout = inout->next) {
-		stmt *res = inout->data;
-		stmt *payload = exp_bin(be, n->data, sub, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
-		assert(payload); /* must find */
-		payload = column(be, payload);
-
-		InstrPtr q = NULL;
-				q = newStmt(be->mb, getName("algebra"), projectionRef);
-		if (q == NULL) return NULL;
-				q = pushArgument(be->mb, q, pld_pos);
-				q = pushArgument(be->mb, q, payload->nr);
-				q = pushArgument(be->mb, q, getArg(pp->q, 2));
-			getArg(q, 0) = res->nr;
-			q->inout = 0;
-			pushInstruction(be->mb, q);
-
-		sql_exp *e = n->data;
-		stmt *s = stmt_none(be);
-		if (s == NULL) return NULL;
-		s->op4.typeval = *exp_subtype(e);
-		s->nr = getArg(q, 0);
-		s->nrcols = 1;
-		s->q = q;
-		if (e->alias.label)
-			s = stmt_alias(be, s, e->alias.label, exp_find_rel_name(e), exp_name(e));
-		append(l, s);
-	}
-	return stmt_list(be, l);
-}
-
 /* Generate for every projection column, eg.:
  *   (X_80:bat[:str], !X_19:bat[:str]) := slicer.nth_slice(X_77:int);
  */
@@ -517,6 +423,8 @@ oahash_project_cart(backend *be, str func, list *exps_prj, stmt *sub, stmt *repe
 stmt *
 rel2bin_oahash_build(backend *be, sql_rel *rel, list *refs)
 {
+	stmt *stmts_ht = NULL;
+
 	/*** HASH PHASE ***/
 	list *exps_cmp_hsh = rel->attr;
 	list *exps_prj_hsh = rel->exps;
@@ -534,19 +442,18 @@ rel2bin_oahash_build(backend *be, sql_rel *rel, list *refs)
 	bool need_freq = (rel->flag != (int)op_semi || rel->ref.refcnt > 2 || !list_empty(exps_prj_hsh));
 	lng bld_sz = _estimate(be->mvc, rel); /* TODO: change into dynamic where possible ?? */
 	stmt *shared_ht = oahash_prepare_bld_ht(be, exps_cmp_hsh, bld_sz);
-	stmt *freq = NULL;
+	stmt *freq = NULL, *pld_sltid = NULL;
 	if (need_freq) {
 		freq = stmt_bat_new(be, sql_fetch_localtype(TYPE_lng), bld_sz);
-	}
-	stmt *shared_hp = NULL;
-	if (exps_prj_hsh) {
 		if (!list_empty(exps_prj_hsh)) {
 			list *l = shared_ht->op4.lval;
 			stmt *prnt = (stmt*)l->t->data;
-			stmt *s = stmt_oahash_new(be, sql_fetch_localtype(TYPE_oid), bld_sz, prnt->nr);
-			if (s == NULL) return NULL;
-			append(l, s);
+			pld_sltid = stmt_oahash_new(be, sql_fetch_localtype(TYPE_oid), bld_sz, prnt->nr);
+			if (pld_sltid == NULL) return NULL;
 		}
+	}
+	stmt *shared_hp = NULL;
+	if (exps_prj_hsh) {
 		shared_hp = oahash_prepare_bld_hp(be, exps_prj_hsh, bld_sz);
 	}
 
@@ -554,16 +461,57 @@ rel2bin_oahash_build(backend *be, sql_rel *rel, list *refs)
 	if (!sub) return NULL;
 
 	stmt *pp = get_pipeline(be);
-	int slt_ids = 0;
-	stmt *stmts_ht = oahash_build_ht(be, &slt_ids, exps_cmp_hsh, shared_ht, freq, sub, pp);
+	/* BUILD HT */
+	list *l = sa_list(be->mvc->sa);
+	stmt *prnt = NULL;
+	for (node *n = exps_cmp_hsh->h, *inout = shared_ht->op4.lval->h; n && inout; n = n->next, inout = inout->next) {
+		sql_exp *e = n->data;
+		stmt *ht = inout->data;
+		stmt *key = exp_bin(be, e, sub, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
+		assert(key); /* must find */
+		key = column(be, key);
+
+		prnt = stmt_oahash_build_ht(be, ht, key, prnt, pp);
+		if (prnt == NULL) return NULL;
+
+		if (e->alias.label)
+			ht = stmt_alias(be, ht, e->alias.label, exp_find_rel_name(e), exp_name(e));
+		append(l, ht);
+	}
+	stmts_ht = stmt_list(be, l);
+
+	if (freq) {
+		stmt *s = stmt_oahash_frequency(be, freq, prnt, (pld_sltid != NULL), pp);
+
+		if (pld_sltid) {
+			prnt = stmt_oahash_build_ht(be, pld_sltid, s, prnt, pp);
+			if (prnt == NULL) return NULL;
+		}
+	}
+
+	/* BUILD HP */
 	stmt *stmts_hp = NULL;
 	if (shared_hp) {
-		if (exps_prj_hsh)
-			stmts_hp = oahash_build_hp(be, exps_prj_hsh, shared_hp, slt_ids, sub, pp);
+		list *ll = sa_list(be->mvc->sa);
+		for (node *n = exps_prj_hsh->h, *inout = shared_hp->op4.lval->h; n && inout; n = n->next, inout = inout->next) {
+			sql_exp *e = n->data;
+			stmt *res = inout->data;
+			stmt *payload = exp_bin(be, e, sub, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
+			assert(payload); /* must find */
+			payload = column(be, payload);
+			stmt *s = stmt_algebra_project(be, res, prnt, payload, pp);
+			if (e->alias.label)
+				s = stmt_alias(be, s, e->alias.label, exp_find_rel_name(e), exp_name(e));
+			append(ll, s);
+		}
+		stmts_hp = stmt_list(be, ll);
 	}
+
 	(void)stmt_pp_jump(be, pp, be->nrparts);
 	(void)stmt_pp_end(be, pp);
+
 	stmts_ht->op1 = stmts_hp;
+	stmts_ht->op2 = pld_sltid;
 	stmts_ht->op3 = freq;
 	return stmts_ht;
 }
