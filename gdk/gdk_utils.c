@@ -2562,6 +2562,7 @@ _sa_alloc_internal(allocator *sa, size_t sz)
 void *
 sa_alloc(allocator *sa, size_t sz)
 {
+	assert(sa);
 	size_t nsize = sz + SA_HEADER_SIZE;
 	char* r = (char*) _sa_alloc_internal(sa, nsize);
 	return sa_fill_in_header(r, sz);
@@ -2730,6 +2731,7 @@ sa_get_eb(allocator *sa)
 allocator_state *
 sa_open(allocator *sa)
 {
+	assert(sa);
 	if (sa) {
 		allocator_state *res = sa_alloc(sa,
 				sizeof(allocator_state));
@@ -2770,6 +2772,7 @@ sa_close(allocator *sa)
 void
 sa_close_to(allocator *sa, allocator_state *state)
 {
+	assert(sa);
 	if (sa) {
 		COND_LOCK_ALLOCATOR(sa);
 		assert(sa_tmp_active(sa));

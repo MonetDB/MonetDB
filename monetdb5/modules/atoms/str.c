@@ -332,15 +332,18 @@ STRTail(Client ctx, str *res, const char *const *arg1, const int *offset)
 		*res = MA_STRDUP(ma, str_nil);
 	} else {
 		size_t buflen = INITIAL_STR_BUFFER_LENGTH;
+		allocator *ta = MT_thread_getallocator();
+		allocator_state *ta_state = ma_open(ta);
 
 		*res = NULL;
-		if (!(buf = ma_alloc(ma, buflen)))
+		if (!(buf = ma_alloc(ta, buflen)))
 			throw(MAL, "str.tail", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		if ((msg = str_tail(&buf, &buflen, s, off)) != MAL_SUCCEED) {
 			//GDKfree(buf);
 			return msg;
 		}
 		*res = MA_STRDUP(ma, buf);
+		ma_close_to(ta, ta_state);
 	}
 
 	//GDKfree(buf);
@@ -389,15 +392,18 @@ STRSubString(Client ctx, str *res, const char *const *arg1, const int *offset, c
 		*res = MA_STRDUP(ma, str_nil);
 	} else {
 		size_t buflen = INITIAL_STR_BUFFER_LENGTH;
+		allocator *ta = MT_thread_getallocator();
+		allocator_state *ta_state = ma_open(ta);
 
 		*res = NULL;
-		if (!(buf = ma_alloc(ma, buflen)))
+		if (!(buf = ma_alloc(ta, buflen)))
 			throw(MAL, "str.substring", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		if ((msg = str_Sub_String(&buf, &buflen, s, off, len)) != MAL_SUCCEED) {
 			//GDKfree(buf);
 			return msg;
 		}
 		*res = MA_STRDUP(ma, buf);
+		ma_close_to(ta, ta_state);
 	}
 
 	//GDKfree(buf);
@@ -430,15 +436,18 @@ STRFromWChr(Client ctx, str *res, const int *c)
 		*res = MA_STRDUP(ma, str_nil);
 	} else {
 		size_t buflen = MAX(strlen(str_nil) + 1, 8);
+		allocator *ta = MT_thread_getallocator();
+		allocator_state *ta_state = ma_open(ta);
 
 		*res = NULL;
-		if (!(buf = ma_alloc(ma, buflen)))
+		if (!(buf = ma_alloc(ta, buflen)))
 			throw(MAL, "str.unicode", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		if ((msg = str_from_wchr(&buf, &buflen, cc)) != MAL_SUCCEED) {
 			//GDKfree(buf);
 			return msg;
 		}
 		*res = MA_STRDUP(ma, buf);
+		ma_close_to(ta, ta_state);
 	}
 
 	//GDKfree(buf);
@@ -496,15 +505,18 @@ doStrConvert(allocator *ma, str *res, const char *arg1, gdk_return (*func)(char 
 		*res = MA_STRDUP(ma, str_nil);
 	} else {
 		size_t buflen = INITIAL_STR_BUFFER_LENGTH;
+		allocator *ta = MT_thread_getallocator();
+		allocator_state *ta_state = ma_open(ta);
 
 		*res = NULL;
-		if (!(buf = ma_alloc(ma, buflen)))
+		if (!(buf = ma_alloc(ta, buflen)))
 			throw(MAL, "str.lower", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		if ((*func)(&buf, &buflen, arg1) != GDK_SUCCEED) {
 			//GDKfree(buf);
 			throw(MAL, "str.lower", GDK_EXCEPTION);
 		}
 		*res = MA_STRDUP(ma, buf);
+		ma_close_to(ta, ta_state);
 	}
 
 	//GDKfree(buf);
@@ -808,15 +820,18 @@ STRsplitpart(Client ctx, str *res, const char *const *haystack, const char *cons
 		*res = MA_STRDUP(ma, str_nil);
 	} else {
 		size_t buflen = INITIAL_STR_BUFFER_LENGTH;
+		allocator *ta = MT_thread_getallocator();
+		allocator_state *ta_state = ma_open(ta);
 
 		*res = NULL;
-		if (!(buf = ma_alloc(ma, buflen)))
+		if (!(buf = ma_alloc(ta, buflen)))
 			throw(MAL, "str.splitpart", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		if ((msg = str_splitpart(&buf, &buflen, s, s2, f)) != MAL_SUCCEED) {
 			//GDKfree(buf);
 			return msg;
 		}
 		*res = MA_STRDUP(ma, buf);
+		ma_close_to(ta, ta_state);
 	}
 
 	//GDKfree(buf);
@@ -932,15 +947,18 @@ STRStrip(Client ctx, str *res, const char *const *arg1)
 		*res = MA_STRDUP(ma, str_nil);
 	} else {
 		size_t buflen = INITIAL_STR_BUFFER_LENGTH;
+		allocator *ta = MT_thread_getallocator();
+		allocator_state *ta_state = ma_open(ta);
 
 		*res = NULL;
-		if (!(buf = ma_alloc(ma, buflen)))
+		if (!(buf = ma_alloc(ta, buflen)))
 			throw(MAL, "str.strip", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		if ((msg = str_strip(&buf, &buflen, s)) != MAL_SUCCEED) {
 			//GDKfree(buf);
 			return msg;
 		}
 		*res = MA_STRDUP(ma, buf);
+		ma_close_to(ta, ta_state);
 	}
 
 	//GDKfree(buf);
@@ -974,15 +992,18 @@ STRLtrim(Client ctx, str *res, const char *const *arg1)
 		*res = MA_STRDUP(ma, str_nil);
 	} else {
 		size_t buflen = INITIAL_STR_BUFFER_LENGTH;
+		allocator *ta = MT_thread_getallocator();
+		allocator_state *ta_state = ma_open(ta);
 
 		*res = NULL;
-		if (!(buf = ma_alloc(ma, buflen)))
+		if (!(buf = ma_alloc(ta, buflen)))
 			throw(MAL, "str.ltrim", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		if ((msg = str_ltrim(&buf, &buflen, s)) != MAL_SUCCEED) {
 			//GDKfree(buf);
 			return msg;
 		}
 		*res = MA_STRDUP(ma, buf);
+		ma_close_to(ta, ta_state);
 	}
 
 	//GDKfree(buf);
@@ -1016,15 +1037,18 @@ STRRtrim(Client ctx, str *res, const char *const *arg1)
 		*res = MA_STRDUP(ma, str_nil);
 	} else {
 		size_t buflen = INITIAL_STR_BUFFER_LENGTH;
+		allocator *ta = MT_thread_getallocator();
+		allocator_state *ta_state = ma_open(ta);
 
 		*res = NULL;
-		if (!(buf = ma_alloc(ma, buflen)))
+		if (!(buf = ma_alloc(ta, buflen)))
 			throw(MAL, "str.rtrim", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		if ((msg = str_rtrim(&buf, &buflen, s)) != MAL_SUCCEED) {
 			//GDKfree(buf);
 			return msg;
 		}
 		*res = MA_STRDUP(ma, buf);
+		ma_close_to(ta, ta_state);
 	}
 
 	//GDKfree(buf);
@@ -1100,15 +1124,18 @@ STRStrip2(Client ctx, str *res, const char *const *arg1, const char *const *arg2
 		*res = MA_STRDUP(ma, str_nil);
 	} else {
 		size_t buflen = INITIAL_STR_BUFFER_LENGTH * sizeof(int);
+		allocator *ta = MT_thread_getallocator();
+		allocator_state *ta_state = ma_open(ta);
 
 		*res = NULL;
-		if (!(buf = ma_alloc(ma, buflen)))
+		if (!(buf = ma_alloc(ta, buflen)))
 			throw(MAL, "str.strip2", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		if ((msg = str_strip2(&buf, &buflen, s, s2)) != MAL_SUCCEED) {
 			//GDKfree(buf);
 			return msg;
 		}
 		*res = MA_STRDUP(ma, buf);
+		ma_close_to(ta, ta_state);
 	}
 
 	//GDKfree(buf);
@@ -1155,15 +1182,18 @@ STRLtrim2(Client ctx, str *res, const char *const *arg1, const char *const *arg2
 		*res = MA_STRDUP(ma, str_nil);
 	} else {
 		size_t buflen = INITIAL_STR_BUFFER_LENGTH * sizeof(int);
+		allocator *ta = MT_thread_getallocator();
+		allocator_state *ta_state = ma_open(ta);
 
 		*res = NULL;
-		if (!(buf = ma_alloc(ma, buflen)))
+		if (!(buf = ma_alloc(ta, buflen)))
 			throw(MAL, "str.ltrim2", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		if ((msg = str_ltrim2(&buf, &buflen, s, s2)) != MAL_SUCCEED) {
 			//GDKfree(buf);
 			return msg;
 		}
 		*res = MA_STRDUP(ma, buf);
+		ma_close_to(ta, ta_state);
 	}
 
 	//GDKfree(buf);
@@ -1210,15 +1240,18 @@ STRRtrim2(Client ctx, str *res, const char *const *arg1, const char *const *arg2
 		*res = MA_STRDUP(ma, str_nil);
 	} else {
 		size_t buflen = INITIAL_STR_BUFFER_LENGTH * sizeof(int);
+		allocator *ta = MT_thread_getallocator();
+		allocator_state *ta_state = ma_open(ta);
 
 		*res = NULL;
-		if (!(buf = ma_alloc(ma, buflen)))
+		if (!(buf = ma_alloc(ta, buflen)))
 			throw(MAL, "str.rtrim2", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		if ((msg = str_rtrim2(&buf, &buflen, s, s2)) != MAL_SUCCEED) {
 			//GDKfree(buf);
 			return msg;
 		}
 		*res = MA_STRDUP(ma, buf);
+		ma_close_to(ta, ta_state);
 	}
 
 	//GDKfree(buf);
@@ -1312,15 +1345,18 @@ STRLpad(Client ctx, str *res, const char *const *arg1, const int *len)
 		*res = MA_STRDUP(ma, str_nil);
 	} else {
 		size_t buflen = INITIAL_STR_BUFFER_LENGTH;
+		allocator *ta = MT_thread_getallocator();
+		allocator_state *ta_state = ma_open(ta);
 
 		*res = NULL;
-		if (!(buf = ma_alloc(ma, buflen)))
+		if (!(buf = ma_alloc(ta, buflen)))
 			throw(MAL, "str.lpad", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		if ((msg = str_lpad(&buf, &buflen, s, l)) != MAL_SUCCEED) {
 			//GDKfree(buf);
 			return msg;
 		}
 		*res = MA_STRDUP(ma, buf);
+		ma_close_to(ta, ta_state);
 	}
 
 	//GDKfree(buf);
@@ -1354,15 +1390,18 @@ STRRpad(Client ctx, str *res, const char *const *arg1, const int *len)
 		*res = MA_STRDUP(ma, str_nil);
 	} else {
 		size_t buflen = INITIAL_STR_BUFFER_LENGTH;
+		allocator *ta = MT_thread_getallocator();
+		allocator_state *ta_state = ma_open(ta);
 
 		*res = NULL;
-		if (!(buf = ma_alloc(ma, buflen)))
+		if (!(buf = ma_alloc(ta, buflen)))
 			throw(MAL, "str.rpad", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		if ((msg = str_rpad(&buf, &buflen, s, l)) != MAL_SUCCEED) {
 			//GDKfree(buf);
 			return msg;
 		}
 		*res = MA_STRDUP(ma, buf);
+		ma_close_to(ta, ta_state);
 	}
 
 	//GDKfree(buf);
@@ -1396,15 +1435,18 @@ STRLpad3(Client ctx, str *res, const char *const *arg1, const int *len, const ch
 		*res = MA_STRDUP(ma, str_nil);
 	} else {
 		size_t buflen = INITIAL_STR_BUFFER_LENGTH;
+		allocator *ta = MT_thread_getallocator();
+		allocator_state *ta_state = ma_open(ta);
 
 		*res = NULL;
-		if (!(buf = ma_alloc(ma, buflen)))
+		if (!(buf = ma_alloc(ta, buflen)))
 			throw(MAL, "str.lpad2", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		if ((msg = str_lpad3(&buf, &buflen, s, l, s2)) != MAL_SUCCEED) {
 			//GDKfree(buf);
 			return msg;
 		}
 		*res = MA_STRDUP(ma, buf);
+		ma_close_to(ta, ta_state);
 	}
 
 	//GDKfree(buf);
@@ -1439,15 +1481,18 @@ STRRpad3(Client ctx, str *res, const char *const *arg1, const int *len, const ch
 		*res = MA_STRDUP(ma, str_nil);
 	} else {
 		size_t buflen = INITIAL_STR_BUFFER_LENGTH;
+		allocator *ta = MT_thread_getallocator();
+		allocator_state *ta_state = ma_open(ta);
 
 		*res = NULL;
-		if (!(buf = ma_alloc(ma, buflen)))
+		if (!(buf = ma_alloc(ta, buflen)))
 			throw(MAL, "str.rpad2", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		if ((msg = str_rpad3(&buf, &buflen, s, l, s2)) != MAL_SUCCEED) {
 			//GDKfree(buf);
 			return msg;
 		}
 		*res = MA_STRDUP(ma, buf);
+		ma_close_to(ta, ta_state);
 	}
 
 	//GDKfree(buf);
@@ -1513,15 +1558,18 @@ STRSubstitute(Client ctx, str *res, const char *const *arg1, const char *const *
 		*res = MA_STRDUP(ma, str_nil);
 	} else {
 		size_t buflen = INITIAL_STR_BUFFER_LENGTH;
+		allocator *ta = MT_thread_getallocator();
+		allocator_state *ta_state = ma_open(ta);
 
 		*res = NULL;
-		if (!(buf = ma_alloc(ma, buflen)))
+		if (!(buf = ma_alloc(ta, buflen)))
 			throw(MAL, "str.substitute", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		if ((msg = str_substitute(&buf, &buflen, s, s2, s3, *g)) != MAL_SUCCEED) {
 			//GDKfree(buf);
 			return msg;
 		}
 		*res = MA_STRDUP(ma, buf);
+		ma_close_to(ta, ta_state);
 	}
 
 	//GDKfree(buf);
@@ -1559,15 +1607,18 @@ STRsubstringTail(Client ctx, str *res, const char *const *arg1, const int *start
 		*res = MA_STRDUP(ma, str_nil);
 	} else {
 		size_t buflen = INITIAL_STR_BUFFER_LENGTH;
+		allocator *ta = MT_thread_getallocator();
+		allocator_state *ta_state = ma_open(ta);
 
 		*res = NULL;
-		if (!(buf = ma_alloc(ma, buflen)))
+		if (!(buf = ma_alloc(ta, buflen)))
 			throw(MAL, "str.substringTail", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		if ((msg = str_substring_tail(&buf, &buflen, s, st)) != MAL_SUCCEED) {
 			//GDKfree(buf);
 			return msg;
 		}
 		*res = MA_STRDUP(ma, buf);
+		ma_close_to(ta, ta_state);
 	}
 
 	//GDKfree(buf);
@@ -1598,15 +1649,18 @@ STRsubstring(Client ctx, str *res, const char *const *arg1, const int *start, co
 		*res = MA_STRDUP(ma, str_nil);
 	} else {
 		size_t buflen = INITIAL_STR_BUFFER_LENGTH;
+		allocator *ta = MT_thread_getallocator();
+		allocator_state *ta_state = ma_open(ta);
 
 		*res = NULL;
-		if (!(buf = ma_alloc(ma, buflen)))
+		if (!(buf = ma_alloc(ta, buflen)))
 			throw(MAL, "str.substring", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		if ((msg = str_sub_string(&buf, &buflen, s, st, l)) != MAL_SUCCEED) {
 			//GDKfree(buf);
 			return msg;
 		}
 		*res = MA_STRDUP(ma, buf);
+		ma_close_to(ta, ta_state);
 	}
 
 	//GDKfree(buf);
@@ -1628,15 +1682,18 @@ STRprefix(Client ctx, str *res, const char *const *arg1, const int *ll)
 		*res = MA_STRDUP(ma, str_nil);
 	} else {
 		size_t buflen = INITIAL_STR_BUFFER_LENGTH;
+		allocator *ta = MT_thread_getallocator();
+		allocator_state *ta_state = ma_open(ta);
 
 		*res = NULL;
-		if (!(buf = ma_alloc(ma, buflen)))
+		if (!(buf = ma_alloc(ta, buflen)))
 			throw(MAL, "str.prefix", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		if ((msg = str_Sub_String(&buf, &buflen, s, 0, l)) != MAL_SUCCEED) {
 			//GDKfree(buf);
 			return msg;
 		}
 		*res = MA_STRDUP(ma, buf);
+		ma_close_to(ta, ta_state);
 	}
 
 	//GDKfree(buf);
@@ -1665,15 +1722,18 @@ STRsuffix(Client ctx, str *res, const char *const *arg1, const int *ll)
 		*res = MA_STRDUP(ma, str_nil);
 	} else {
 		size_t buflen = INITIAL_STR_BUFFER_LENGTH;
+		allocator *ta = MT_thread_getallocator();
+		allocator_state *ta_state = ma_open(ta);
 
 		*res = NULL;
-		if (!(buf = ma_alloc(ma, buflen)))
+		if (!(buf = ma_alloc(ta, buflen)))
 			throw(MAL, "str.suffix", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		if ((msg = str_suffix(&buf, &buflen, s, l)) != MAL_SUCCEED) {
 			//GDKfree(buf);
 			return msg;
 		}
 		*res = MA_STRDUP(ma, buf);
+		ma_close_to(ta, ta_state);
 	}
 
 	//GDKfree(buf);
@@ -1763,15 +1823,18 @@ STRinsert(Client ctx, str *res, const char *const *input, const int *start, cons
 		*res = MA_STRDUP(ma, str_nil);
 	} else {
 		size_t buflen = INITIAL_STR_BUFFER_LENGTH;
+		allocator *ta = MT_thread_getallocator();
+		allocator_state *ta_state = ma_open(ta);
 
 		*res = NULL;
-		if (!(buf = ma_alloc(ma, buflen)))
+		if (!(buf = ma_alloc(ta, buflen)))
 			throw(MAL, "str.insert", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		if ((msg = str_insert(&buf, &buflen, s, st, n, s2)) != MAL_SUCCEED) {
 			//GDKfree(buf);
 			return msg;
 		}
 		*res = MA_STRDUP(ma, buf);
+		ma_close_to(ta, ta_state);
 	}
 
 	//GDKfree(buf);
@@ -1829,15 +1892,18 @@ STRrepeat(Client ctx, str *res, const char *const *arg1, const int *c)
 		*res = MA_STRDUP(ma, str_nil);
 	} else {
 		size_t buflen = INITIAL_STR_BUFFER_LENGTH;
+		allocator *ta = MT_thread_getallocator();
+		allocator_state *ta_state = ma_open(ta);
 
 		*res = NULL;
-		if (!(buf = ma_alloc(ma, buflen)))
+		if (!(buf = ma_alloc(ta, buflen)))
 			throw(MAL, "str.repeat", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		if ((msg = str_repeat(&buf, &buflen, s, cc)) != MAL_SUCCEED) {
 			//GDKfree(buf);
 			return msg;
 		}
 		*res = MA_STRDUP(ma, buf);
+		ma_close_to(ta, ta_state);
 	}
 
 	//GDKfree(buf);
@@ -1860,15 +1926,18 @@ STRspace(Client ctx, str *res, const int *ll)
 		static const char space[] = " ";
 		const char *s = space;
 		size_t buflen = INITIAL_STR_BUFFER_LENGTH;
+		allocator *ta = MT_thread_getallocator();
+		allocator_state *ta_state = ma_open(ta);
 
 		*res = NULL;
-		if (!(buf = ma_alloc(ma, buflen)))
+		if (!(buf = ma_alloc(ta, buflen)))
 			throw(MAL, "str.space", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		if ((msg = str_repeat(&buf, &buflen, s, l)) != MAL_SUCCEED) {
 			//GDKfree(buf);
 			return msg;
 		}
 		*res = MA_STRDUP(ma, buf);
+		ma_close_to(ta, ta_state);
 	}
 
 	//GDKfree(buf);
