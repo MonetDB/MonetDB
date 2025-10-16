@@ -18,13 +18,15 @@ extern void set_pipeline(backend *be, stmt *pp);
 extern stmt * get_pipeline(backend *be);
 
 extern stmt *stmt_oahash_new(backend *be, sql_subtype *tpe, int estimate, int parent);
-extern stmt *stmt_oahash_build_ht(backend *be, stmt *ht, stmt *key, int prnt_slts, const stmt *pp);
+extern stmt *stmt_oahash_build_ht(backend *be, stmt *ht, stmt *key, stmt *prnt, const stmt *pp);
+extern stmt *stmt_oahash_frequency(backend *be, stmt *freq, stmt *prnt, bool occ_cnt, const stmt *pp);
 
 extern InstrPtr stmt_oahash_hash(backend *be, stmt *key, const stmt *pp);
 extern InstrPtr stmt_oahash_probe(backend *be, stmt *key, int hsh, stmt *rhs_ht, stmt *freq, bit single, bit semantics, bit eq, bool outer, bool groupedjoin, const stmt *pp);
 extern InstrPtr stmt_oahash_combined_hash(backend *be, stmt *key, int sel, int prnt_sltid, stmt *ht);
 extern InstrPtr stmt_oahash_combined_probe(backend *be, stmt *key, int hsh, int sel, int prnt_sltid, stmt *rhs_ht, stmt *freq, bit single, bit semantics, stmt *outer, const bool groupedjoin, const stmt *pp);
 
+extern stmt *stmt_algebra_project(backend *be, stmt *inout, stmt *pos, stmt *val, const stmt *pp);
 extern InstrPtr stmt_oahash_project(backend *be, stmt *col, int sel, const stmt *pp);
 extern InstrPtr stmt_oahash_expand(backend *be, stmt *col, int sel, int slotid, const stmt *freq, bit append_vals, const stmt *pp);
 extern stmt *stmt_oahash_explode(backend *be, int slotid, const stmt *freq, const stmt *ht_sink, bit outer, sql_subtype *st);

@@ -468,30 +468,59 @@ stmt_oahash_new(backend *be, sql_subtype *tpe, int estimate, int parent)
 	s->op4.typeval = *tpe;
 	s->q = q;
 	s->nr = getArg(q, 0);
-	s->nrcols = 2;
+	s->nrcols = 1;
 	return s;
 }
 
 stmt *
-stmt_oahash_build_ht(backend *be, stmt *ht, stmt *key, int prnt_slts, const stmt *pp)
+stmt_oahash_build_ht(backend *be, stmt *ht, stmt *key, stmt *prnt, const stmt *pp)
 {
-	InstrPtr q = newStmt(be->mb, putName("oahash"), prnt_slts?putName("build_combined_table"):putName("build_table"));
+	InstrPtr q = newStmt(be->mb, putName("oahash"), prnt?putName("build_combined_table"):putName("build_table"));
 	if (q == NULL) return NULL;
 
 	setVarType(be->mb, getArg(q, 0), newBatType(TYPE_oid)); /* slot_id */
 	q = pushReturn(be->mb, q, ht->nr);
 	q = pushArgument(be->mb, q, key->nr);
-	if (prnt_slts > 0)
-		q = pushArgument(be->mb, q, prnt_slts);
+	if (prnt)
+		q = pushArgument(be->mb, q, prnt->nr);
 	q = pushArgument(be->mb, q, getArg(pp->q, 2) /* pipeline ptr*/);
 	q->inout = 1;
 	pushInstruction(be->mb, q);
 
 	stmt *s = stmt_none(be);
 	if (s == NULL) return NULL;
-	s->op4.typeval = ht->op4.typeval;
-	s->nr = getArg(q, 1);
+	s->op4.typeval = *tail_type(ht);
+	s->nr = getArg(q, 0);
 	s->nrcols = key->nrcols;
+	s->q = q;
+
+	return s;
+}
+
+stmt *
+stmt_oahash_frequency(backend *be, stmt *freq, stmt *prnt, bool occ_cnt, const stmt *pp)
+{
+	InstrPtr q = newStmt(be->mb, putName("oahash"), putName("frequency"));
+	if (q == NULL)
+		return NULL;
+
+	if (occ_cnt) {
+		setVarType(be->mb, getArg(q, 0), newBatType(TYPE_oid));
+		q = pushReturn(be->mb, q, freq->nr);
+		q->inout = 1;
+	} else {
+		getArg(q, 0) = freq->nr;
+		q->inout = 0;
+	}
+	q = pushArgument(be->mb, q, prnt->nr);
+	q = pushArgument(be->mb, q, getArg(pp->q, 2) /* pipeline ptr*/);
+	pushInstruction(be->mb, q);
+
+	stmt *s = stmt_none(be);
+	if (s == NULL) return NULL;
+	s->op4.typeval = *tail_type(freq);
+	s->nr = getArg(q, 0);
+	s->nrcols = 1;
 	s->q = q;
 
 	return s;
@@ -592,6 +621,27 @@ stmt_oahash_project(backend *be, stmt *col, int sel, const stmt *pp)
 	q = pushArgument(be->mb, q, getArg(pp->q, 2) /* pipeline ptr*/);
 	pushInstruction(be->mb, q);
 	return q;
+}
+
+stmt *
+stmt_algebra_project(backend *be, stmt *inout, stmt *pos, stmt *val, const stmt *pp)
+{
+	InstrPtr q = newStmt(be->mb, getName("algebra"), projectionRef);
+	if (q == NULL) return NULL;
+	getArg(q, 0) = inout->nr;
+	q->inout = 0;
+	q = pushArgument(be->mb, q, pos->nr);
+	q = pushArgument(be->mb, q, val->nr);
+	q = pushArgument(be->mb, q, getArg(pp->q, 2));
+	pushInstruction(be->mb, q);
+
+	stmt *s = stmt_none(be);
+	if (s == NULL) return NULL;
+	s->op4.typeval = *tail_type(val);
+	s->nr = getArg(q, 0);
+	s->nrcols = 1;
+	s->q = q;
+	return s;
 }
 
 InstrPtr
@@ -1098,15 +1148,15 @@ stmt_mproject(backend *be, stmt *zl, stmt *lc, stmt *rc, int pipeline)
 stmt *
 stmt_pp_alias(backend *be, InstrPtr q, sql_exp *e, int resultargnr)
 {
-		stmt *s = stmt_none(be);
-		s->op4.typeval = *exp_subtype(e);
-		assert(resultargnr >= 0 && resultargnr < q->retc);
-		s->nr = getArg(q, resultargnr);
-		s->key = s->nrcols = 1;
-		s->q = q;
-		s = stmt_alias(be, s, e->alias.label, exp_find_rel_name(e), exp_name(e));
-		s->q = q;
-		return s;
+	stmt *s = stmt_none(be);
+	s->op4.typeval = *exp_subtype(e);
+	assert(resultargnr >= 0 && resultargnr < q->retc);
+	s->nr = getArg(q, resultargnr);
+	s->key = s->nrcols = 1;
+	s->q = q;
+	s = stmt_alias(be, s, e->alias.label, exp_find_rel_name(e), exp_name(e));
+	s->q = q;
+	return s;
 }
 
 
