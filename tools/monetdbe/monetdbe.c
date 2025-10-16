@@ -943,6 +943,13 @@ monetdbe_open(monetdbe_database *dbhdl, char *url, monetdbe_options *opts)
 
 	if (res == 0 && is_remote && !mdbe->msg)
 		res = monetdbe_open_remote(mdbe, opts);
+	allocator *ta = MT_thread_getallocator();
+	if (!ta) {
+		allocator *ma = create_allocator(NULL, MT_thread_getname(), false);
+		assert(ma);
+		if (ma)
+			MT_thread_setallocator(ma);
+	}
 
 	MT_lock_unset(&embedded_lock);
 	if (mdbe->msg)
