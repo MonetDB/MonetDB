@@ -454,6 +454,7 @@ MT_thread_register(void)
 		.semawait = ATOMIC_PTR_VAR_INIT(NULL),
 	};
 	snprintf(self->threadname, sizeof(self->threadname), "foreign %zu", self->tid);
+	self->ma = create_allocator(NULL, self->threadname, false),
 	thread_setself(self);
 	thread_lock();
 	self->next = mtthreads;
