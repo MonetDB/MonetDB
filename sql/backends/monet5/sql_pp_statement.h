@@ -21,10 +21,8 @@ extern stmt *stmt_oahash_new(backend *be, sql_subtype *tpe, int estimate, int pa
 extern stmt *stmt_oahash_build_ht(backend *be, stmt *ht, stmt *key, stmt *prnt, const stmt *pp);
 extern stmt *stmt_oahash_frequency(backend *be, stmt *freq, stmt *prnt, bool occ_cnt, const stmt *pp);
 
-extern InstrPtr stmt_oahash_hash(backend *be, stmt *key, const stmt *pp);
-extern InstrPtr stmt_oahash_probe(backend *be, stmt *key, int hsh, stmt *rhs_ht, stmt *freq, bit single, bit semantics, bit eq, bool outer, bool groupedjoin, const stmt *pp);
-extern InstrPtr stmt_oahash_combined_hash(backend *be, stmt *key, int sel, int prnt_sltid, stmt *ht);
-extern InstrPtr stmt_oahash_combined_probe(backend *be, stmt *key, int hsh, int sel, int prnt_sltid, stmt *rhs_ht, stmt *freq, bit single, bit semantics, stmt *outer, const bool groupedjoin, const stmt *pp);
+extern stmt *stmt_oahash_hash(backend *be, stmt *key, stmt *prev, stmt *ht);
+extern stmt *stmt_oahash_probe(backend *be, stmt *key, stmt *hsh, stmt *prev, stmt *rhs_ht, stmt *freq, stmt *outer, bool single, bool semantics, bool eq, bool outerjoin, bool groupedjoin, const stmt *pp);
 
 extern stmt *stmt_algebra_project(backend *be, stmt *inout, stmt *pos, stmt *val, const stmt *pp);
 extern InstrPtr stmt_oahash_project(backend *be, stmt *col, int sel, const stmt *pp);

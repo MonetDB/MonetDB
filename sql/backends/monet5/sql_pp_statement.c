@@ -526,75 +526,51 @@ stmt_oahash_frequency(backend *be, stmt *freq, stmt *prnt, bool occ_cnt, const s
 	return s;
 }
 
-InstrPtr
-stmt_oahash_hash(backend *be, stmt *key, const stmt *pp)
+stmt *
+stmt_oahash_hash(backend *be, stmt *key, stmt *prev, stmt *ht)
 {
-	InstrPtr q = newStmtArgs(be->mb, putName("oahash"), putName("hash"), 3);
+	InstrPtr q = newStmt(be->mb, putName("oahash"), prev?putName("combined_hash"):putName("hash"));
 	if (q == NULL)
 		return NULL;
-
 	setVarType(be->mb, getArg(q, 0), newBatType(TYPE_lng)); /* hsh */
 	q = pushArgument(be->mb, q, key->nr);
-	q = pushArgument(be->mb, q, getArg(pp->q, 2) /* pipeline ptr*/);
-	pushInstruction(be->mb, q);
-	return q;
-}
-
-InstrPtr
-stmt_oahash_probe(backend *be, stmt *key, int hsh, stmt *rhs_ht, stmt *freq, bit single, bit semantics, bit eq, bool outer, bool groupedjoin, const stmt *pp)
-{
-	InstrPtr q = newStmt(be->mb, putName("oahash"), groupedjoin?putName("mprobe"):outer?putName("oprobe"):eq?putName("probe"):putName("nprobe"));
-	if (q == NULL)
-		return NULL;
-	setVarType(be->mb, getArg(q, 0), newBatType(TYPE_oid));
-	q = pushReturn(be->mb, q, newTmpVariable(be->mb, newBatType(TYPE_oid)));
-	if (outer || groupedjoin)
-		q = pushReturn(be->mb, q, newTmpVariable(be->mb, newBatType(TYPE_bit)));
-	q = pushArgument(be->mb, q, key->nr);
-	q = pushArgument(be->mb, q, hsh);
-	q = pushArgument(be->mb, q, rhs_ht->nr);
-	if (single) {
-		assert(freq);
-		q = pushArgument(be->mb, q, freq->nr);
+	if (prev) {
+		q = pushArgument(be->mb, q, getArg(prev->q, 0));
+		q = pushArgument(be->mb, q, getArg(prev->q, 1));
+		q = pushArgument(be->mb, q, ht->nr);
 	}
-	q = pushBit(be->mb, q, single);
-	q = pushBit(be->mb, q, semantics);
-	q = pushArgument(be->mb, q, getArg(pp->q, 2) /* pipeline ptr*/);
 	pushInstruction(be->mb, q);
-	return q;
+
+	stmt *s = stmt_none(be);
+	if (s == NULL) return NULL;
+	s->op4.typeval = *sql_fetch_localtype(TYPE_lng);
+	s->nr = getArg(q, 0);
+	s->nrcols = 1;
+	s->q = q;
+
+	return s;
 }
 
-InstrPtr
-stmt_oahash_combined_hash(backend *be, stmt *key, int sel, int prnt_sltid, stmt *ht)
+stmt *
+stmt_oahash_probe(backend *be, stmt *key, stmt *hsh, stmt *prev, stmt *rhs_ht, stmt *freq, stmt *outer, bool single, bool semantics, bool eq, bool outerjoin, bool groupedjoin, const stmt *pp)
 {
-	InstrPtr q = newStmtArgs(be->mb, putName("oahash"), putName("combined_hash"), 5);
-	if (q == NULL)
-		return NULL;
-	setVarType(be->mb, getArg(q, 0), newBatType(TYPE_lng)); /* hsh */
-	q = pushArgument(be->mb, q, key->nr);
-	q = pushArgument(be->mb, q, sel);
-	q = pushArgument(be->mb, q, prnt_sltid);
-	q = pushArgument(be->mb, q, ht->nr);
-	pushInstruction(be->mb, q);
-	return q;
-}
-
-InstrPtr
-stmt_oahash_combined_probe(backend *be, stmt *key, int hsh, int sel, int prnt_sltid, stmt *rhs_ht, stmt *freq, bit single, bit semantics, stmt *outer, bool groupedjoin, const stmt *pp)
-{
-	InstrPtr q = newStmt(be->mb, putName("oahash"), groupedjoin?putName("combined_mprobe"):outer?putName("combined_oprobe"):putName("combined_probe"));
+	InstrPtr q = newStmt(be->mb, putName("oahash"), prev == NULL?
+									groupedjoin?putName("mprobe")         :outerjoin?putName("oprobe")         :eq?putName("probe"):putName("nprobe"):
+									groupedjoin?putName("combined_mprobe"):outerjoin?putName("combined_oprobe"):putName("combined_probe"));
 	if (q == NULL)
 		return NULL;
 	setVarType(be->mb, getArg(q, 0), newBatType(TYPE_oid));
 	q = pushReturn(be->mb, q, newTmpVariable(be->mb, newBatType(TYPE_oid)));
-	if (outer || groupedjoin) {
-		q = pushReturn(be->mb, q, outer->nr);
+	if (outerjoin || groupedjoin) {
+		q = pushReturn(be->mb, q, outer?outer->nr:newTmpVariable(be->mb, newBatType(TYPE_bit)));
 		q->inout = 2;
 	}
 	q = pushArgument(be->mb, q, key->nr);
-	q = pushArgument(be->mb, q, hsh);
-	q = pushArgument(be->mb, q, sel);
-	q = pushArgument(be->mb, q, prnt_sltid);
+	q = pushArgument(be->mb, q, hsh->nr);
+	if (prev) {
+		q = pushArgument(be->mb, q, getArg(prev->q, 0));
+		q = pushArgument(be->mb, q, getArg(prev->q, 1));
+	}
 	q = pushArgument(be->mb, q, rhs_ht->nr);
 	if (single) {
 		assert(freq);
@@ -604,7 +580,14 @@ stmt_oahash_combined_probe(backend *be, stmt *key, int hsh, int sel, int prnt_sl
 	q = pushBit(be->mb, q, semantics);
 	q = pushArgument(be->mb, q, getArg(pp->q, 2) /* pipeline ptr*/);
 	pushInstruction(be->mb, q);
-	return q;
+
+	stmt *s = stmt_none(be);
+	if (s == NULL) return NULL;
+	s->op4.typeval = *sql_fetch_localtype(TYPE_oid);
+	s->nr = getArg(q, 0);
+	s->nrcols = 1;
+	s->q = q;
+	return s;
 }
 
 InstrPtr

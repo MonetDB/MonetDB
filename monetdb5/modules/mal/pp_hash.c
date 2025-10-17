@@ -1507,13 +1507,11 @@ error:
 	} while (0)
 
 static str
-BAT_OAHASHhash(bat *hsh, const bat *key, const ptr *H)
+BAT_OAHASHhash(bat *hsh, const bat *key)
 {
 	BAT *h = NULL, *k = NULL;
 	BUN cnt;
 	str err = NULL;
-
-	(void) H;
 
 	k = BATdescriptor(*key);
 	if (!k)
@@ -3902,7 +3900,7 @@ static mel_func oa_hash_init_funcs[] = {
  pattern("oahash", "frequency", OAHASHadd_freq, false, "Add `slot_id` to the shared `frequencies` BAT. Returns the updated `frequencies`", args(1,3, batarg("frequencies",lng),batarg("slot_id",oid),arg("pipeline",ptr))),
  pattern("oahash", "frequency", OAHASHadd_freq, false, "Add `slot_id` to the shared `frequencies` BAT. Returns the occurrence index for each `slot_id` (i.e. it is the n-th time the `slot_id` is seen so far) and the updated `frequencies`", args(2,4, batarg("occrrence_idx",oid),batarg("frequencies",lng),batarg("slot_id",oid),arg("pipeline",ptr))),
 
- command("oahash", "hash", BAT_OAHASHhash, false, "Compute the hashs for the keys", args(1,3, batarg("hsh",lng),batargany("key",1),arg("pipeline",ptr))),
+ command("oahash", "hash", BAT_OAHASHhash, false, "Compute the hashs for the keys", args(1,2, batarg("hsh",lng),batargany("key",1))),
 
  command("oahash", "probe", BAT_OAHASHprobe_single, false, "Probe the (key, hash) pairs in the hash table. For a matched key, return its OID in the 'key' column and the slot ID in the hash table", args(2,9, batarg("PRB_oid",oid),batarg("HSH_slotid",oid),batargany("PRB_key",1),batarg("PRB_hash",lng),batargany("HSH_ht",2),batarg("frequency",lng),arg("single",bit),arg("semantics",bit),arg("pipeline",ptr))),
  command("oahash", "probe", BAT_OAHASHprobe, false, "Probe the (key, hash) pairs in the hash table. For a matched key, return its OID in the 'key' column and the slot ID in the hash table", args(2,8, batarg("PRB_oid",oid),batarg("HSH_slotid",oid),batargany("PRB_key",1),batarg("PRB_hash",lng),batargany("HSH_ht",2),arg("single",bit),arg("semantics",bit),arg("pipeline",ptr))),

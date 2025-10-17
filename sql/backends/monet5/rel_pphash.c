@@ -162,50 +162,40 @@ oahash_slicer(backend *be, stmt *sub)
 static stmt *
 oahash_probe(backend *be, sql_rel *rel, list *jexps, list *exps_cmp_prb, const stmt *stmts_ht, stmt *sub, const stmt *pp, bool anti, bool outer, bool groupjoin, bool has_outerselect, stmt **nulls, stmt **m)
 {
-	sql_exp *e = NULL, *e2 = NULL;
-	InstrPtr q = NULL;
-	int matched = 0, rhs_slts = 0;
-	bool single = false;
-	stmt *outerm = NULL;
+	stmt *prb_res = NULL, *outerm = NULL;
 
 	/* stmts_ht is in the same order as the join columns */
 	for (node *n = exps_cmp_prb->h, *m = stmts_ht->op4.lval->h, *o = jexps->h; n && m && o; n = n->next, m = m->next, o = o->next) {
-		e = n->data;
-		e2 = o->data;
+		sql_exp *e = n->data;
+		sql_exp *e2 = o->data;
 		stmt *key = exp_bin(be, e, sub, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
 		assert(key); /* must find */
 		key = column(be, key);
-		single = ((rel->single == 1) && (n->next == NULL) && !has_outerselect);
+		bool single = ((rel->single == 1) && (n->next == NULL) && !has_outerselect);
+		bool eq = (e2->flag == cmp_equal) && !anti;
+		bool grpjoin = groupjoin && is_any(e2);
 
-		if (!matched) {
-			q = stmt_oahash_hash(be, key, pp);
-			if (q == NULL) return NULL;
-			q = stmt_oahash_probe(be, key, getDestVar(q), m->data, stmts_ht->op3, single, e2->semantics, e2->flag == cmp_equal && !anti, outer, groupjoin && is_any(e2), pp);
-			if (nulls && stmt_has_null(key) && is_any(e2))
-				*nulls = stmt_selectnil(be, key, NULL);
-		} else {
-			q = stmt_oahash_combined_hash(be, key, matched, rhs_slts, m->data);
-			if (q == NULL) return NULL;
-			q = stmt_oahash_combined_probe(be, key, getDestVar(q), matched, rhs_slts, m->data, stmts_ht->op3, single, e2->semantics, outerm, groupjoin && is_any(e2), pp);
-			if (nulls && stmt_has_null(key) && is_any(e2))
-				*nulls = stmt_selectnil(be, key, *nulls);
+		stmt *hsh = stmt_oahash_hash(be, key, prb_res, m->data);
+		if (hsh == NULL) return NULL;
+		prb_res = stmt_oahash_probe(be, key, hsh, prb_res, m->data, stmts_ht->op3, outerm, single, e2->semantics, eq, outer, grpjoin, pp);
+		if (prb_res == NULL) return NULL;
+
+		//if (m && prb_res->q->retc == 3)
+		if (outer || grpjoin) {  // FIXME: check with Niels!
+			assert (prb_res->q->retc == 3);
+			outerm = stmt_blackbox_result(be, prb_res->q, 2, sql_fetch_localtype(TYPE_bit));
 		}
-		if (q == NULL) return NULL;
-		matched = getArg(q, 0);
-		rhs_slts = getArg(q, 1);
-		if (m && q->retc == 3)
-			outerm = stmt_blackbox_result(be, q, 2, sql_fetch_localtype(TYPE_bit));
+
+		if (nulls && stmt_has_null(key) && is_any(e2))
+			*nulls = stmt_selectnil(be, key, *nulls);
 	}
-	if (m)
+	//if (m)
+	if (outer || groupjoin) {  // FIXME: check with Niels!
+		assert(m);
 		*m = outerm;
+	}
 	/* probe of last column is the final res */
-	stmt *s = stmt_none(be);
-	if (s == NULL) return NULL;
-	s->op4.typeval = *exp_subtype(e);
-	s->nr = getArg(q, 0);
-	s->nrcols = 1;
-	s->q = q;
-	return s;
+	return prb_res;
 }
 
 static list *
@@ -533,7 +523,8 @@ rel2bin_oahash_equi_join(backend *be, sql_rel *rel, list *refs, list *jexps, Ins
 {
 	sql_rel *rel_hsh = NULL, *rel_prb = NULL;
 
-	int neededpp = (rel->spb || rel->partition) && get_need_pipeline(be); /* start new parallel block after join */
+	/* start new parallel block after join. NB get_need_pipeline has side effect! */
+	int neededpp = (rel->spb || rel->partition) && get_need_pipeline(be);
 	(void)neededpp;
 
 	assert(rel->oahash == 1 || rel->oahash == 2);
@@ -550,10 +541,9 @@ rel2bin_oahash_equi_join(backend *be, sql_rel *rel, list *refs, list *jexps, Ins
 
 	assert(list_length(jexps) == list_length(exps_cmp_prb));
 	/* build-phase res: hash-table and hash-payload stmts */
-	stmt *ht = refs_find_rel(refs, rel_hsh);
-	assert(ht);
-	stmt *stmts_ht = ht;
-	stmt *stmts_hp = ht->op1;
+	stmt *stmts_ht = refs_find_rel(refs, rel_hsh);
+	assert(stmts_ht);
+	stmt *stmts_hp = stmts_ht->op1;
 	bool groupedjoin = (!list_empty(rel->attr)), mark = groupjoin_mark(rel->attr);
 
 	/*** PROBE PHASE ***/
@@ -682,7 +672,8 @@ rel2bin_oahash_cart(backend *be, sql_rel *rel, list *refs, InstrPtr *probed_rowi
 {
 	sql_rel *rel_hsh = NULL, *rel_prb = NULL;
 
-	int neededpp = (rel->spb || rel->partition) && get_need_pipeline(be); /* start new parallel block after join */
+	/* start new parallel block after join. NB get_need_pipeline has side effect! */
+	int neededpp = (rel->spb || rel->partition) && get_need_pipeline(be);
 	(void)neededpp;
 
 	assert(rel->oahash == 1 || rel->oahash == 2);
@@ -868,7 +859,7 @@ rel2bin_oahash_join(backend *be, sql_rel *rel, list *refs)
 	} else {
 		sub = rel2bin_oahash_equi_join(be, rel, refs, jexps, NULL, NULL, NULL, NULL, &probe_side, &hash_side, !list_empty(sexps));
 	}
-	if (!list_empty(sexps)/* && rel->op == op_join */) {
+	if (!list_empty(sexps)) {
 		sub->cand = rel2bin_oahash_select(be, sub, sexps, rel);
 		sub = subrel_project(be, sub, refs, rel);
 	}
@@ -924,7 +915,8 @@ rel2bin_oahash_semi(backend *be, sql_rel *rel, list *refs)
 	stmt *probe_sub = NULL, *sub = NULL, *pp = NULL, *nulls = NULL;
 	InstrPtr probed_ids = NULL;
 
-	int neededpp = (rel->spb || rel->partition) && get_need_pipeline(be); /* start new parallel block after join */
+	/* start new parallel block after join. NB get_need_pipeline has side effect! */
+	int neededpp = (rel->spb || rel->partition) && get_need_pipeline(be);
 	(void)neededpp;
 
 	list *exps_cmp_prb = rel_prb->attr;
