@@ -2199,7 +2199,7 @@ SQLrename_schema(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL, "sql.rename_schema", SQLSTATE(3F000)
 			  "ALTER SCHEMA: there is a schema named '%s' in the database", new_name);
 
-	if (mvc_check_dependency(sql, s->base.id, SCHEMA_DEPENDENCY, NULL) == HAS_DEPENDENCY) {
+	if (mvc_check_dependency(sql, s->base.id, SCHEMA_DEPENDENCY, NULL)) {
 		throw(SQL, "sql.rename_schema", "ALTER SCHEMA: unable to"
 			  " rename schema '%s', there are database objects"
 			  " which depend on it", old_name);
