@@ -590,20 +590,27 @@ stmt_oahash_probe(backend *be, stmt *key, stmt *hsh, stmt *prev, stmt *rhs_ht, s
 	return s;
 }
 
-InstrPtr
-stmt_oahash_project(backend *be, stmt *col, int sel, const stmt *pp)
+stmt *
+stmt_oahash_project(backend *be, stmt *col, const stmt *prb_res, const stmt *pp)
 {
-	int tt = tail_type(col)->type->localtype;
+	sql_subtype *tpe = tail_type(col);
 
 	InstrPtr q = newStmt(be->mb, putName("oahash"), putName("project"));
 	if (q == NULL)
 		return NULL;
-	setVarType(be->mb, getArg(q, 0), newBatType(tt)); /* res */
+	setVarType(be->mb, getArg(q, 0), newBatType(tpe->type->localtype)); /* res */
 	q = pushArgument(be->mb, q, col->nr);
-	q = pushArgument(be->mb, q, sel);
+	q = pushArgument(be->mb, q, getArg(prb_res->q, 0));
 	q = pushArgument(be->mb, q, getArg(pp->q, 2) /* pipeline ptr*/);
 	pushInstruction(be->mb, q);
-	return q;
+
+	stmt *s = stmt_none(be);
+	if (s == NULL) return NULL;
+	s->op4.typeval = *tpe;
+	s->nr = getArg(q, 0);
+	s->nrcols = col->nrcols;
+	s->q = q;
+	return s;
 }
 
 stmt *
@@ -627,36 +634,43 @@ stmt_algebra_project(backend *be, stmt *inout, stmt *pos, stmt *val, const stmt 
 	return s;
 }
 
-InstrPtr
-stmt_oahash_expand(backend *be, stmt *col, int sel, int slotid, const stmt *freq, bit outer, const stmt *pp)
+stmt *
+stmt_oahash_expand(backend *be, stmt *col, const stmt *prb_res, const stmt *freq, bit outer, const stmt *pp)
 {
 	if (!freq) /* without frequency, we only need to project the selected keys */
-		return stmt_oahash_project(be, col, sel, pp);
+		return stmt_oahash_project(be, col, prb_res, pp);
 
-	int tt = tail_type(col)->type->localtype;
+	sql_subtype *tpe = tail_type(col);
 
 	InstrPtr q = newStmtArgs(be->mb, putName("oahash"), putName("expand"), 8);
 	if (q == NULL)
 		return NULL;
-	setVarType(be->mb, getArg(q, 0), newBatType(tt)); /* expanded */
+	setVarType(be->mb, getArg(q, 0), newBatType(tpe->type->localtype)); /* expanded */
 	q = pushArgument(be->mb, q, col->nr);
-	q = pushArgument(be->mb, q, sel);
-	q = pushArgument(be->mb, q, slotid);
+	q = pushArgument(be->mb, q, getArg(prb_res->q, 0));
+	q = pushArgument(be->mb, q, getArg(prb_res->q, 1));
 	q = pushArgument(be->mb, q, freq->nr);
 	q = pushBit(be->mb, q, outer);
 	q = pushArgument(be->mb, q, getArg(pp->q, 2) /* pipeline ptr*/);
 	pushInstruction(be->mb, q);
-	return q;
+
+	stmt *s = stmt_none(be);
+	if (s == NULL) return NULL;
+	s->op4.typeval = *tpe;
+	s->nr = getArg(q, 0);
+	s->nrcols = col->nrcols;
+	s->q = q;
+	return s;
 }
 
 stmt *
-stmt_oahash_explode(backend *be, int slotid, const stmt *freq, const stmt *ht_sink, bit outer, sql_subtype *st)
+stmt_oahash_explode(backend *be, const stmt *prb_res, const stmt *freq, const stmt *ht_sink, bit outer, sql_subtype *st)
 {
 	InstrPtr q = newStmtArgs(be->mb, putName("oahash"), putName("explode"), 5);
 	if (q == NULL)
 		return NULL;
 	setVarType(be->mb, getArg(q, 0), newBatType(TYPE_oid));
-	q = pushArgument(be->mb, q, slotid);
+	q = pushArgument(be->mb, q, getArg(prb_res->q, 1));
 	q = pushArgument(be->mb, q, freq->nr);
 	q = pushArgument(be->mb, q, ht_sink->nr);
 	q = pushBit(be->mb, q, outer);
