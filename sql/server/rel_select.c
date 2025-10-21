@@ -494,7 +494,7 @@ exp_fix_scale(mvc *sql, sql_subtype *ct, sql_exp *e)
 		int scale_diff = ((int) ct->scale - (int) et->scale);
 
 		if (scale_diff) {
-			if (scale_diff < 0)
+			if (!ct->scale && scale_diff < 0)
 				return e;
 			sql_subtype st;
 			int scale = ct->scale;
