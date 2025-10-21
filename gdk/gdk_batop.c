@@ -2703,7 +2703,7 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 		if (bn == NULL)
 			goto error;
 		if (bn->ttype == TYPE_void || isVIEW(bn)) {
-			BAT *b2 = COLcopy(bn, ATOMtype(bn->ttype), true, TRANSIENT);
+			BAT *b2 = COLcopy2(bn, ATOMtype(bn->ttype), true, true, TRANSIENT);
 			BBPunfix(bn->batCacheid);
 			bn = b2;
 		}
@@ -2715,7 +2715,7 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 			pb = NULL;
 		}
 	} else {
-		bn = COLcopy(b, b->ttype, true, TRANSIENT);
+		bn = COLcopy2(b, b->ttype, true, true, TRANSIENT);
 	}
 	if (bn == NULL)
 		goto error;
