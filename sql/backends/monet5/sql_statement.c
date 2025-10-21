@@ -1200,7 +1200,7 @@ stmt_mirror(backend *be, stmt *s)
 		if (ns == NULL) {
 			goto bailout;
 		}
-
+		ns->op4.typeval = *sql_fetch_localtype(TYPE_oid);
 		ns->op1 = s;
 		ns->nrcols = 2;
 		ns->key = s->key;

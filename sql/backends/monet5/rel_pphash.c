@@ -295,93 +295,46 @@ static list *
 oahash_project_cart(backend *be, str func, list *exps_prj, stmt *sub, stmt *repeat, bit LRouter, const stmt *pp, InstrPtr *rowids)
 {
 	list *l = sa_list(be->mvc->sa);
-	int tt;
 	stmt *icol = NULL;
 
 	stmt *rpt = column(be, repeat);
 	if (list_empty(exps_prj)) {
 		for (node *o = sub->op4.lval->h; o; o = o->next) {
-			stmt *key = o->data, *okey = key;
-
-			key = column(be, key);
+			stmt *okey = o->data, *key = column(be, okey);
 			icol = key;
-			InstrPtr q = newStmt(be->mb, putName("oahash"), putName(func));
-			if (q == NULL) return NULL;
-			tt = tail_type(key)->type->localtype;
-			setVarType(be->mb, getArg(q, 0), newBatType(tt));
-			q = pushArgument(be->mb, q, key->nr);
-			q = pushArgument(be->mb, q, rpt->nr);
-			q = pushBit(be->mb, q, LRouter);
-			q = pushArgument(be->mb, q, getArg(pp->q, 2) /* pipeline ptr*/);
-			pushInstruction(be->mb, q);
-
-			stmt *s = stmt_none(be);
+			stmt *s = stmt_oahash_project_cart(be, key, rpt, func, LRouter, pp);
 			if (s == NULL) return NULL;
-			s->op4.typeval = *tail_type(key);
-			s->nr = getArg(q, 0);
-			s->nrcols = key->nrcols;
-			s->q = q;
 			if (okey->label)
 				s = stmt_alias(be, s, okey->label, table_name(be->mvc->sa, okey), column_name(be->mvc->sa, okey));
 			append(l, s);
 		}
 		if (icol && rowids) { /* the rowids are needed for post processing semi/anti joins based on the probe side row ids */
 			stmt *rids = stmt_mirror(be, icol);
-
-			InstrPtr q = newStmt(be->mb, putName("oahash"), putName(func));
-			if (q == NULL) return NULL;
-			setVarType(be->mb, getArg(q, 0), newBatType(TYPE_oid));
-			q = pushArgument(be->mb, q, rids->nr);
-			q = pushArgument(be->mb, q, rpt->nr);
-			q = pushBit(be->mb, q, LRouter);
-			q = pushArgument(be->mb, q, getArg(pp->q, 2) /* pipeline ptr*/);
-			pushInstruction(be->mb, q);
-			if (q == NULL) return NULL;
-			*rowids = q;
+			stmt *s = stmt_oahash_project_cart(be, rids, rpt, func, LRouter, pp);
+			if (s == NULL) return NULL;
+			*rowids = s->q;
 		}
 		return l;
 	}
 
 	for (node *o = exps_prj->h; o; o = o->next) {
-		stmt *key = exp_bin(be, o->data, sub, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
+		sql_exp *e = o->data;
+		stmt *key = exp_bin(be, e, sub, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
 		assert(key); /* must find */
 		key = column(be, key);
 		icol = key;
 
-		InstrPtr q = newStmt(be->mb, putName("oahash"), putName(func));
-		if (q == NULL) return NULL;
-		tt = tail_type(key)->type->localtype;
-		setVarType(be->mb, getArg(q, 0), newBatType(tt));
-		q = pushArgument(be->mb, q, key->nr);
-		q = pushArgument(be->mb, q, rpt->nr);
-		q = pushBit(be->mb, q, LRouter);
-		q = pushArgument(be->mb, q, getArg(pp->q, 2) /* pipeline ptr*/);
-		pushInstruction(be->mb, q);
-
-		sql_exp *e = o->data;
-		stmt *s = stmt_none(be);
+		stmt *s = stmt_oahash_project_cart(be, key, rpt, func, LRouter, pp);
 		if (s == NULL) return NULL;
-		s->op4.typeval = *exp_subtype(e);
-		s->nr = getArg(q, 0);
-		s->nrcols = key->nrcols;
-		s->q = q;
 		if (e->alias.label)
 			s = stmt_alias(be, s, e->alias.label, exp_find_rel_name(e), exp_name(e));
 		append(l, s);
 	}
 	if (icol && rowids) { /* the rowids are needed for post processing semi/anti joins based on the probe side row ids */
 		stmt *rids = stmt_mirror(be, icol);
-
-		InstrPtr q = newStmt(be->mb, putName("oahash"), putName(func));
-		if (q == NULL) return NULL;
-		setVarType(be->mb, getArg(q, 0), newBatType(TYPE_oid));
-		q = pushArgument(be->mb, q, rids->nr);
-		q = pushArgument(be->mb, q, rpt->nr);
-		q = pushBit(be->mb, q, LRouter);
-		q = pushArgument(be->mb, q, getArg(pp->q, 2) /* pipeline ptr*/);
-		pushInstruction(be->mb, q);
-		if (q == NULL) return NULL;
-		*rowids = q;
+		stmt *s = stmt_oahash_project_cart(be, rids, rpt, func, LRouter, pp);
+		if (s == NULL) return NULL;
+		*rowids = s->q;
 	}
 	return l;
 }
@@ -818,7 +771,6 @@ rel2bin_oahash_groupjoin(backend *be, sql_rel *rel, list *refs)
 	return sub;
 }
 
-/* split into equi and outer equi */
 static stmt *
 rel2bin_oahash_join(backend *be, sql_rel *rel, list *refs)
 {
@@ -922,7 +874,6 @@ rel2bin_oahash_semi(backend *be, sql_rel *rel, list *refs)
 
 		/*** PROJECT RESULT PHASE ***/
 		list *lp = oahash_project_single(be, exps_prj_prb, prb_res, sub, pp, &probed_ids);
-
 		sub = stmt_list(be, lp);
 	}
 	if (!sub)

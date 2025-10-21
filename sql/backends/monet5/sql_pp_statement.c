@@ -685,6 +685,29 @@ stmt_oahash_explode(backend *be, const stmt *prb_res, const stmt *freq, const st
 	return s;
 }
 
+stmt *
+stmt_oahash_project_cart(backend *be, stmt *col, stmt *repeat, str fname, bool LRouter, const stmt *pp)
+{
+	InstrPtr q = newStmt(be->mb, putName("oahash"), putName(fname));
+	if (q == NULL) return NULL;
+
+	sql_subtype *tpe = tail_type(col);
+	setVarType(be->mb, getArg(q, 0), newBatType(tpe->type->localtype));
+	q = pushArgument(be->mb, q, col->nr);
+	q = pushArgument(be->mb, q, repeat->nr);
+	q = pushBit(be->mb, q, LRouter);
+	q = pushArgument(be->mb, q, getArg(pp->q, 2) /* pipeline ptr*/);
+	pushInstruction(be->mb, q);
+
+	stmt *s = stmt_none(be);
+	if (s == NULL) return NULL;
+	s->op4.typeval = *tpe;
+	s->nr = getArg(q, 0);
+	s->nrcols = col->nrcols;
+	s->q = q;
+	return s;
+}
+
 InstrPtr
 stmt_part_new(backend *be, int nr_parts)
 {
