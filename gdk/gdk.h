@@ -850,6 +850,7 @@ gdk_export restrict_t BATgetaccess(BAT *b);
 
 gdk_export gdk_return BATclear(BAT *b, bool force);
 gdk_export BAT *COLcopy(BAT *b, int tt, bool writable, role_t role);
+gdk_export BAT *COLcopy2(BAT *b, int tt, bool writable, bool mayshare, role_t role);
 
 gdk_export gdk_return BATgroup(BAT **groups, BAT **extents, BAT **histo, BAT *b, BAT *s, BAT *g, BAT *e, BAT *h)
 	__attribute__((__access__(write_only, 1)))

@@ -634,7 +634,7 @@ wrongtype(int t1, int t2)
  * do inline array[T] inserts.
  */
 BAT *
-COLcopy(BAT *b, int tt, bool writable, role_t role)
+COLcopy2(BAT *b, int tt, bool writable, bool mayshare, role_t role)
 {
 	bool slowcopy = false;
 	BAT *bn = NULL;
@@ -642,6 +642,11 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 	char strhash[GDK_STRHASHSIZE];
 
 	BATcheck(b, NULL);
+
+	/* can't share vheap when persistent */
+	assert(!mayshare || role == TRANSIENT);
+	if (mayshare && role != TRANSIENT)
+		mayshare = false;
 
 	/* maybe a bit ugly to change the requested bat type?? */
 	if (b->ttype == TYPE_void && !writable)
@@ -712,26 +717,29 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 		if (ATOMsize(tt) != ATOMsize(bi.type)) {
 			/* oops, void materialization */
 			slowcopy = true;
-		} else if (bi.h && bi.h->parentid != b->batCacheid &&
-			   BATcapacity(BBP_desc(bi.h->parentid)) > bi.count + bi.count) {
-			/* reduced slice view: do not copy too much
-			 * garbage */
-			slowcopy = true;
-		} else if (bi.vh && bi.vh->parentid != b->batCacheid &&
-			   BATcount(BBP_desc(bi.vh->parentid)) > bi.count + bi.count) {
-			/* reduced vheap view: do not copy too much
-			 * garbage; this really is a heuristic since the
-			 * vheap could be used completely, even if the
-			 * offset heap is only (less than) half the size
-			 * of the parent's offset heap */
-			slowcopy = true;
+			mayshare = false;
+		} else if (!mayshare) {
+			if (bi.h && bi.h->parentid != b->batCacheid &&
+			    BATcapacity(BBP_desc(bi.h->parentid)) > bi.count + bi.count) {
+				/* reduced slice view: do not copy too much
+				 * garbage */
+				slowcopy = true;
+			} else if (bi.vh && bi.vh->parentid != b->batCacheid &&
+				   BATcount(BBP_desc(bi.vh->parentid)) > bi.count + bi.count) {
+				/* reduced vheap view: do not copy too much
+				 * garbage; this really is a heuristic since the
+				 * vheap could be used completely, even if the
+				 * offset heap is only (less than) half the size
+				 * of the parent's offset heap */
+				slowcopy = true;
+			}
 		}
 
 		bn = COLnew2(b->hseqbase, tt, bi.count, role, bi.width);
 		if (bn == NULL) {
 			goto bunins_failed;
 		}
-		if (bn->tvheap != NULL && bn->tvheap->base == NULL) {
+		if (bn->tvheap != NULL && bn->tvheap->base == NULL && !mayshare) {
 			/* this combination can happen since the last
 			 * argument of COLnew2 not being zero triggers a
 			 * skip in the allocation of the tvheap */
@@ -746,20 +754,26 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 			bn->theap->free = 0;
 		} else if (!slowcopy) {
 			/* case (3): just copy the heaps */
-			if (bn->tvheap && HEAPextend(bn->tvheap, bi.vhfree, true) != GDK_SUCCEED) {
-				goto bunins_failed;
+			if (bn->tvheap) {
+				if (mayshare) {
+					HEAPincref(bi.vh);
+					HEAPdecref(bn->tvheap, true);
+					BBPretain(bi.vh->parentid);
+					bn->tvheap = bi.vh;
+				} else {
+					if (HEAPextend(bn->tvheap, bi.vhfree, true) != GDK_SUCCEED)
+						goto bunins_failed;
+					memcpy(bn->tvheap->base, bi.vh->base, bi.vhfree);
+					bn->tvheap->free = bi.vhfree;
+					bn->tvheap->dirty = true;
+					bn->tascii = bi.ascii;
+					if (ATOMstorage(b->ttype) == TYPE_str && bi.vhfree >= GDK_STRHASHSIZE)
+						memcpy(bn->tvheap->base, strhash, GDK_STRHASHSIZE);
+				}
 			}
 			memcpy(bn->theap->base, bi.base, bi.hfree);
 			bn->theap->free = bi.hfree;
 			bn->theap->dirty = true;
-			if (bn->tvheap) {
-				memcpy(bn->tvheap->base, bi.vh->base, bi.vhfree);
-				bn->tvheap->free = bi.vhfree;
-				bn->tvheap->dirty = true;
-				bn->tascii = bi.ascii;
-				if (ATOMstorage(b->ttype) == TYPE_str && bi.vhfree >= GDK_STRHASHSIZE)
-					memcpy(bn->tvheap->base, strhash, GDK_STRHASHSIZE);
-			}
 
 			/* make sure we use the correct capacity */
 			if (ATOMstorage(bn->ttype) == TYPE_msk)
@@ -884,6 +898,12 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 	bat_iterator_end(&bi);
 	BBPreclaim(bn);
 	return NULL;
+}
+
+BAT *
+COLcopy(BAT *b, int tt, bool writable, role_t role)
+{
+	return COLcopy2(b, tt, writable, false, role);
 }
 
 /* Append an array of values of length count to the bat.  For
