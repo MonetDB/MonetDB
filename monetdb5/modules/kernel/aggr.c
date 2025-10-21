@@ -23,11 +23,12 @@ AGGRgrouped_bat_or_val(bat *retval1, bat *retval2, const bat *bid,
 					   const bat *gid, const bat *eid, const bat *sid,
 					   bool skip_nils, int scale, int tp,
 					   BAT *(*grpfunc1)(BAT *, BAT *, BAT *, BAT *, int, bool),
-					   gdk_return(*grpfunc2)(BAT **, BAT **, BAT *, BAT *,
-											 BAT *, BAT *, int, bool, int),
-					   BAT * (*quantilefunc)(BAT *, BAT *, BAT *, BAT *, int,
-											 double, bool), const bat *quantile,
-					   const double *quantile_val, const char *malfunc)
+					   gdk_return (*grpfunc2)(BAT **, BAT **, BAT *, BAT *,
+											  BAT *, BAT *, int, bool, int),
+					   BAT *(*quantilefunc)(BAT *, BAT *, BAT *, BAT *, int,
+											double, bool),
+					   const bat *quantile, const double *quantile_val,
+					   const char *malfunc)
 {
 	BAT *b, *g = NULL, *e = NULL, *s = NULL, *bn = NULL, *cnts = NULL, *q = NULL;
 	double qvalue;
@@ -45,7 +46,8 @@ AGGRgrouped_bat_or_val(bat *retval1, bat *retval2, const bat *bid,
 		(gid && !is_bat_nil(*gid) && (g = BATdescriptor(*gid)) == NULL) ||
 		(eid && !is_bat_nil(*eid) && (e = BATdescriptor(*eid)) == NULL) ||
 		(sid && !is_bat_nil(*sid) && (s = BATdescriptor(*sid)) == NULL) ||
-		(quantile && !is_bat_nil(*quantile) && (q = BATdescriptor(*quantile)) == NULL)) {
+		(quantile && !is_bat_nil(*quantile) &&
+		 (q = BATdescriptor(*quantile)) == NULL)) {
 		BBPreclaim(b);
 		BBPreclaim(g);
 		BBPreclaim(e);
@@ -111,14 +113,9 @@ static str
 AGGRgrouped(bat *retval1, bat *retval2, const bat *bid, const bat *gid,
 			const bat *eid, const bat *sid, bool skip_nils, int scale, int tp,
 			BAT *(*grpfunc1)(BAT *, BAT *, BAT *, BAT *, int, bool),
-			gdk_return(*grpfunc2)(BAT **, BAT **, BAT *, BAT *, BAT *, BAT *,
-								  int, bool, int), BAT * (*quantilefunc)(BAT *,
-																		 BAT *,
-																		 BAT *,
-																		 BAT *,
-																		 int,
-																		 double,
-																		 bool),
+			gdk_return (*grpfunc2)(BAT **, BAT **, BAT *, BAT *, BAT *, BAT *,
+								   int, bool, int),
+			BAT *(*quantilefunc)(BAT *, BAT *, BAT *, BAT *, int, double, bool),
 			const bat *quantile, const char *malfunc)
 {
 	return AGGRgrouped_bat_or_val(retval1, retval2, bid, gid, eid, sid,
