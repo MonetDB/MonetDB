@@ -240,7 +240,9 @@ STRbatFromWChr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT *bn = NULL, *b = NULL, *bs = NULL;
 	size_t buflen = MAX(strlen(str_nil) + 1, 8);
 	int *restrict vals, x;
-	str buf = ma_alloc(mb->ma, buflen), msg = MAL_SUCCEED;
+	allocator *ma = MT_thread_getallocator();
+	allocator_state *ma_state = ma_open(ma);
+	str buf = ma_alloc(ma, buflen), msg = MAL_SUCCEED;
 	bool nils = false;
 	struct canditer ci1 = { 0 };
 	oid off1;
@@ -327,6 +329,8 @@ STRbatFromWChr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat_iterator_end(&bi);
   bailout:
 	//GDKfree(buf);
+	if (ma_state)
+		ma_close_to(ma, ma_state);
 	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
@@ -338,7 +342,9 @@ STRbatSpace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT *bn = NULL, *b = NULL, *bs = NULL;
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 	int *restrict vals, x;
-	str buf = ma_alloc(mb->ma, buflen), msg = MAL_SUCCEED;
+	allocator *ma = MT_thread_getallocator();
+	allocator_state *ma_state = ma_open(ma);
+	str buf = ma_alloc(ma, buflen), msg = MAL_SUCCEED;
 	bool nils = false;
 	static const char space[] = " ";
 	const char *s = space;
@@ -425,6 +431,8 @@ STRbatSpace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat_iterator_end(&bi);
   bailout:
 	//GDKfree(buf);
+	if (ma_state)
+		ma_close_to(ma, ma_state);
 	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
@@ -437,7 +445,9 @@ do_batstr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	BATiter bi;
 	BAT *bn = NULL, *b = NULL, *bs = NULL;
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
-	str buf = ma_alloc(mb->ma, buflen), msg = MAL_SUCCEED;
+	allocator *ma = MT_thread_getallocator();
+	allocator_state *ma_state = ma_open(ma);
+	str buf = ma_alloc(ma, buflen), msg = MAL_SUCCEED;
 	bool nils = false;
 	struct canditer ci1 = { 0 };
 	oid off1;
@@ -518,6 +528,8 @@ do_batstr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	bat_iterator_end(&bi);
   bailout:
 	//GDKfree(buf);
+	if (ma_state)
+		ma_close_to(ma, ma_state);
 	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
@@ -534,7 +546,9 @@ do_batstr_conststr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	BATiter bi;
 	BAT *bn = NULL, *b = NULL, *bs = NULL;
 	const char *y = *getArgReference_str(stk, pci, 2);
-	str buf = ma_alloc(mb->ma, buflen), msg = MAL_SUCCEED;
+	allocator *ma = MT_thread_getallocator();
+	allocator_state *ma_state = ma_open(ma);
+	str buf = ma_alloc(ma, buflen), msg = MAL_SUCCEED;
 	bool nils = false;
 	struct canditer ci1 = { 0 };
 	oid off1;
@@ -615,6 +629,8 @@ do_batstr_conststr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	bat_iterator_end(&bi);
   bailout:
 	//GDKfree(buf);
+	if (ma_state)
+		ma_close_to(ma, ma_state);
 	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
@@ -631,7 +647,9 @@ do_batstr_str_conststr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	BATiter bi;
 	BAT *bn = NULL, *b = NULL, *bs = NULL;
 	const char *x = *getArgReference_str(stk, pci, 1);
-	str buf = ma_alloc(mb->ma, buflen), msg = MAL_SUCCEED;
+	allocator *ma = MT_thread_getallocator();
+	allocator_state *ma_state = ma_open(ma);
+	str buf = ma_alloc(ma, buflen), msg = MAL_SUCCEED;
 	bool nils = false;
 	struct canditer ci1 = { 0 };
 	oid off1;
@@ -712,6 +730,8 @@ do_batstr_str_conststr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	bat_iterator_end(&bi);
   bailout:
 	//GDKfree(buf);
+	if (ma_state)
+		ma_close_to(ma, ma_state);
 	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
@@ -727,7 +747,9 @@ do_batstr_batstr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 {
 	BATiter lefti, righti;
 	BAT *bn = NULL, *left = NULL, *lefts = NULL, *right = NULL, *rights = NULL;
-	str buf = ma_alloc(mb->ma, buflen), msg = MAL_SUCCEED;
+	allocator *ma = MT_thread_getallocator();
+	allocator_state *ma_state = ma_open(ma);
+	str buf = ma_alloc(ma, buflen), msg = MAL_SUCCEED;
 	bool nils = false;
 	struct canditer ci1 = { 0 }, ci2 = { 0 };
 	oid off1, off2;
@@ -825,6 +847,8 @@ do_batstr_batstr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	bat_iterator_end(&righti);
   bailout:
 	//GDKfree(buf);
+	if (ma_state)
+		ma_close_to(ma, ma_state);
 	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(4, left, lefts, right, rights);
 	return msg;
@@ -841,7 +865,9 @@ do_batstr_constint_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	BATiter bi;
 	BAT *bn = NULL, *b = NULL, *bs = NULL;
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
-	str buf = ma_alloc(mb->ma, buflen), msg = MAL_SUCCEED;
+	allocator *ma = MT_thread_getallocator();
+	allocator_state *ma_state = ma_open(ma);
+	str buf = ma_alloc(ma, buflen), msg = MAL_SUCCEED;
 	int y = *getArgReference_int(stk, pci, 2);
 	bool nils = false;
 	struct canditer ci1 = { 0 };
@@ -923,6 +949,8 @@ do_batstr_constint_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	bat_iterator_end(&bi);
   bailout:
 	//GDKfree(buf);
+	if (ma_state)
+		ma_close_to(ma, ma_state);
 	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
@@ -939,7 +967,9 @@ do_batstr_int_conststr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	BAT *bn = NULL, *b = NULL, *bs = NULL;
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 	const char *x = *getArgReference_str(stk, pci, 1);
-	str buf = ma_alloc(mb->ma, buflen), msg = MAL_SUCCEED;
+	allocator *ma = MT_thread_getallocator();
+	allocator_state *ma_state = ma_open(ma);
+	str buf = ma_alloc(ma, buflen), msg = MAL_SUCCEED;
 	int y, *restrict inputs;
 	bool nils = false;
 	struct canditer ci1 = { 0 };
@@ -1023,6 +1053,8 @@ do_batstr_int_conststr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	bat_iterator_end(&bi);
   bailout:
 	//GDKfree(buf);
+	if (ma_state)
+		ma_close_to(ma, ma_state);
 	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
@@ -1039,7 +1071,9 @@ do_batstr_batint_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	BATiter lefti;
 	BAT *bn = NULL, *left = NULL, *ls = NULL, *right = NULL, *rs = NULL;
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
-	str buf = ma_alloc(mb->ma, buflen), msg = MAL_SUCCEED;
+	allocator *ma = MT_thread_getallocator();
+	allocator_state *ma_state = ma_open(ma);
+	str buf = ma_alloc(ma, buflen), msg = MAL_SUCCEED;
 	bool nils = false;
 	int *restrict righti, y;
 	struct canditer ci1 = { 0 }, ci2 = { 0 };
@@ -1140,6 +1174,8 @@ do_batstr_batint_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	bat_iterator_end(&lefti);
   bailout:
 	//GDKfree(buf);
+	if (ma_state)
+		ma_close_to(ma, ma_state);
 	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(4, left, ls, right, rs);
 	return msg;
@@ -1157,7 +1193,9 @@ do_batstr_constint_conststr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	BAT *bn = NULL, *b = NULL, *bs = NULL;
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 	const char *z = *getArgReference_str(stk, pci, 3);
-	str buf = ma_alloc(mb->ma, buflen), msg = MAL_SUCCEED;
+	allocator *ma = MT_thread_getallocator();
+	allocator_state *ma_state = ma_open(ma);
+	str buf = ma_alloc(ma, buflen), msg = MAL_SUCCEED;
 	int y = *getArgReference_int(stk, pci, 2);
 	bool nils = false;
 	struct canditer ci1 = { 0 };
@@ -1239,6 +1277,8 @@ do_batstr_constint_conststr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	bat_iterator_end(&bi);
   bailout:
 	//GDKfree(buf);
+	if (ma_state)
+		ma_close_to(ma, ma_state);
 	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
@@ -1257,7 +1297,9 @@ do_batstr_batint_conststr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	BAT *bn = NULL, *left = NULL, *ls = NULL, *right = NULL, *rs = NULL;
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 	const char *z = *getArgReference_str(stk, pci, 3);
-	str buf = ma_alloc(mb->ma, buflen), msg = MAL_SUCCEED;
+	allocator *ma = MT_thread_getallocator();
+	allocator_state *ma_state = ma_open(ma);
+	str buf = ma_alloc(ma, buflen), msg = MAL_SUCCEED;
 	bool nils = false;
 	int *restrict righti, y;
 	struct canditer ci1 = { 0 }, ci2 = { 0 };
@@ -1358,6 +1400,8 @@ do_batstr_batint_conststr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	bat_iterator_end(&lefti);
   bailout:
 	//GDKfree(buf);
+	if (ma_state)
+		ma_close_to(ma, ma_state);
 	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(4, left, ls, right, rs);
 	return msg;
@@ -1375,7 +1419,9 @@ do_batstr_constint_batstr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	BATiter lefti, righti;
 	BAT *bn = NULL, *left = NULL, *ls = NULL, *right = NULL, *rs = NULL;
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
-	str buf = ma_alloc(mb->ma, buflen), msg = MAL_SUCCEED;
+	allocator *ma = MT_thread_getallocator();
+	allocator_state *ma_state = ma_open(ma);
+	str buf = ma_alloc(ma, buflen), msg = MAL_SUCCEED;
 	bool nils = false;
 	int y = *getArgReference_int(stk, pci, 2);
 	struct canditer ci1 = { 0 }, ci2 = { 0 };
@@ -1474,6 +1520,8 @@ do_batstr_constint_batstr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	bat_iterator_end(&righti);
   bailout:
 	//GDKfree(buf);
+	if (ma_state)
+		ma_close_to(ma, ma_state);
 	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(4, left, ls, right, rs);
 	return msg;
@@ -1492,7 +1540,9 @@ do_batstr_batint_batstr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	BAT *bn = NULL, *arg1 = NULL, *arg1s = NULL, *arg2 = NULL, *arg2s = NULL,
 		*arg3 = NULL, *arg3s = NULL;
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
-	str buf = ma_alloc(mb->ma, buflen), msg = MAL_SUCCEED;
+	allocator *ma = MT_thread_getallocator();
+	allocator_state *ma_state = ma_open(ma);
+	str buf = ma_alloc(ma, buflen), msg = MAL_SUCCEED;
 	bool nils = false;
 	int *restrict arg2i, y;
 	struct canditer ci1 = { 0 }, ci2 = { 0 }, ci3 = { 0 };
@@ -1605,6 +1655,8 @@ do_batstr_batint_batstr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	bat_iterator_end(&bi);
   bailout:
 	//GDKfree(buf);
+	if (ma_state)
+		ma_close_to(ma, ma_state);
 	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(6, arg1, arg1s, arg2, arg2s, arg3, arg3s);
 	return msg;
@@ -2587,7 +2639,9 @@ STRbatWChrAt(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT *bn = NULL, *left = NULL, *lefts = NULL, *right = NULL, *rights = NULL;
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 	int *restrict righti, *restrict vals, next, y;
-	str buf = ma_alloc(mb->ma, buflen), msg = MAL_SUCCEED;
+	allocator *ma = MT_thread_getallocator();
+	allocator_state *ma_state = ma_open(ma);
+	str buf = ma_alloc(ma, buflen), msg = MAL_SUCCEED;
 	bool nils = false;
 	struct canditer ci1 = { 0 }, ci2 = { 0 };
 	oid off1, off2;
@@ -2665,6 +2719,8 @@ STRbatWChrAt(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat_iterator_end(&lefti);
   bailout:
 	//GDKfree(buf);
+	if (ma_state)
+		ma_close_to(ma, ma_state);
 	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(4, left, lefts, right, rights);
 	return msg;
@@ -2677,7 +2733,9 @@ STRbatWChrAtcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT *bn = NULL, *b = NULL, *bs = NULL;
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 	int y = *getArgReference_int(stk, pci, 2), *restrict vals, next;
-	str buf = ma_alloc(mb->ma, buflen), msg = MAL_SUCCEED;
+	allocator *ma = MT_thread_getallocator();
+	allocator_state *ma_state = ma_open(ma);
+	str buf = ma_alloc(ma, buflen), msg = MAL_SUCCEED;
 	bool nils = false;
 	struct canditer ci1 = { 0 };
 	oid off1;
@@ -2737,6 +2795,8 @@ STRbatWChrAtcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat_iterator_end(&bi);
   bailout:
 	//GDKfree(buf);
+	if (ma_state)
+		ma_close_to(ma, ma_state);
 	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
@@ -2749,7 +2809,9 @@ STRbatWChrAt_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 	int y, *restrict vals, *restrict input, next;
 	const char *x = *getArgReference_str(stk, pci, 1);
-	str buf = ma_alloc(mb->ma, buflen), msg = MAL_SUCCEED;
+	allocator *ma = MT_thread_getallocator();
+	allocator_state *ma_state = ma_open(ma);
+	str buf = ma_alloc(ma, buflen), msg = MAL_SUCCEED;
 	bool nils = false;
 	struct canditer ci1 = { 0 };
 	oid off1;
@@ -2811,6 +2873,8 @@ STRbatWChrAt_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat_iterator_end(&bi);
   bailout:
 	//GDKfree(buf);
+	if (ma_state)
+		ma_close_to(ma, ma_state);
 	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
@@ -2825,7 +2889,9 @@ do_batstr_str_int_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	BAT *bn = NULL, *b = NULL, *bs = NULL;
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 	int y = *getArgReference_int(stk, pci, 2);
-	str buf = ma_alloc(mb->ma, buflen), msg = MAL_SUCCEED;
+	allocator *ma = MT_thread_getallocator();
+	allocator_state *ma_state = ma_open(ma);
+	str buf = ma_alloc(ma, buflen), msg = MAL_SUCCEED;
 	bool nils = false;
 	struct canditer ci1 = { 0 };
 	oid off1;
@@ -2906,6 +2972,8 @@ do_batstr_str_int_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	bat_iterator_end(&bi);
   bailout:
 	//GDKfree(buf);
+	if (ma_state)
+		ma_close_to(ma, ma_state);
 	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
@@ -2945,7 +3013,9 @@ STRbatrepeatcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT *bn = NULL, *b = NULL, *bs = NULL;
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 	int y = *getArgReference_int(stk, pci, 2);
-	str buf = ma_alloc(mb->ma, buflen), msg = MAL_SUCCEED;
+	allocator *ma = MT_thread_getallocator();
+	allocator_state *ma_state = ma_open(ma);
+	str buf = ma_alloc(ma, buflen), msg = MAL_SUCCEED;
 	bool nils = false;
 	struct canditer ci1 = { 0 };
 	oid off1;
@@ -3028,6 +3098,8 @@ STRbatrepeatcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat_iterator_end(&bi);
   bailout:
 	//GDKfree(buf);
+	if (ma_state)
+		ma_close_to(ma, ma_state);
 	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
@@ -3042,7 +3114,9 @@ do_batstr_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 	int *restrict vals, y;
 	const char *x = *getArgReference_str(stk, pci, 1);
-	str buf = ma_alloc(mb->ma, buflen), msg = MAL_SUCCEED;
+	allocator *ma = MT_thread_getallocator();
+	allocator_state *ma_state = ma_open(ma);
+	str buf = ma_alloc(ma, buflen), msg = MAL_SUCCEED;
 	bool nils = false;
 	struct canditer ci1 = { 0 };
 	oid off1;
@@ -3125,6 +3199,8 @@ do_batstr_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	bat_iterator_end(&bi);
   bailout:
 	//GDKfree(buf);
+	if (ma_state)
+		ma_close_to(ma, ma_state);
 	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
@@ -3163,7 +3239,9 @@ STRbatrepeat_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 	int *restrict vals, y;
 	const char *x = *getArgReference_str(stk, pci, 1);
-	str buf = ma_alloc(mb->ma, buflen), msg = MAL_SUCCEED;
+	allocator *ma = MT_thread_getallocator();
+	allocator_state *ma_state = ma_open(ma);
+	str buf = ma_alloc(ma, buflen), msg = MAL_SUCCEED;
 	bool nils = false;
 	struct canditer ci1 = { 0 };
 	oid off1;
@@ -3248,6 +3326,8 @@ STRbatrepeat_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat_iterator_end(&bi);
   bailout:
 	//GDKfree(buf);
+	if (ma_state)
+		ma_close_to(ma, ma_state);
 	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
@@ -3262,7 +3342,9 @@ do_batstr_str_int(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	BAT *bn = NULL, *left = NULL, *lefts = NULL, *right = NULL, *rights = NULL;
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 	int *restrict righti, y;
-	str buf = ma_alloc(mb->ma, buflen), msg = MAL_SUCCEED;
+	allocator *ma = MT_thread_getallocator();
+	allocator_state *ma_state = ma_open(ma);
+	str buf = ma_alloc(ma, buflen), msg = MAL_SUCCEED;
 	bool nils = false;
 	struct canditer ci1 = { 0 }, ci2 = { 0 };
 	oid off1, off2;
@@ -3362,6 +3444,8 @@ do_batstr_str_int(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	bat_iterator_end(&lefti);
   bailout:
 	//GDKfree(buf);
+	if (ma_state)
+		ma_close_to(ma, ma_state);
 	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(4, left, lefts, right, rights);
 	return msg;
@@ -3399,7 +3483,9 @@ STRbatrepeat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT *bn = NULL, *left = NULL, *lefts = NULL, *right = NULL, *rights = NULL;
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 	int *restrict righti, y;
-	str buf = ma_alloc(mb->ma, buflen), msg = MAL_SUCCEED;
+	allocator *ma = MT_thread_getallocator();
+	allocator_state *ma_state = ma_open(ma);
+	str buf = ma_alloc(ma, buflen), msg = MAL_SUCCEED;
 	bool nils = false;
 	struct canditer ci1 = { 0 }, ci2 = { 0 };
 	oid off1, off2;
@@ -3501,6 +3587,8 @@ STRbatrepeat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat_iterator_end(&lefti);
   bailout:
 	//GDKfree(buf);
+	if (ma_state)
+		ma_close_to(ma, ma_state);
 	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(4, left, lefts, right, rights);
 	return msg;
@@ -3515,7 +3603,9 @@ STRbatSubstitutecst_imp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 	const char *y = *getArgReference_str(stk, pci, 2),
 		*z = *getArgReference_str(stk, pci, 3);
-	str buf = ma_alloc(mb->ma, buflen), msg = MAL_SUCCEED;
+	allocator *ma = MT_thread_getallocator();
+	allocator_state *ma_state = ma_open(ma);
+	str buf = ma_alloc(ma, buflen), msg = MAL_SUCCEED;
 	bool nils = false;
 	bit w = *rep;
 	struct canditer ci1 = { 0 };
@@ -3599,6 +3689,8 @@ STRbatSubstitutecst_imp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	bat_iterator_end(&bi);
   bailout:
 	//GDKfree(buf);
+	if (ma_state)
+		ma_close_to(ma, ma_state);
 	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
@@ -3618,7 +3710,9 @@ STRbatSubstitute(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT *bn = NULL, *arg1 = NULL, *arg1s = NULL, *arg2 = NULL, *arg2s = NULL,
 		*arg3 = NULL, *arg3s = NULL, *arg4 = NULL, *arg4s = NULL;
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
-	str buf = ma_alloc(mb->ma, buflen), msg = MAL_SUCCEED;
+	allocator *ma = MT_thread_getallocator();
+	allocator_state *ma_state = ma_open(ma);
+	str buf = ma_alloc(ma, buflen), msg = MAL_SUCCEED;
 	bool nils = false;
 	bit *restrict arg4i, w;
 	struct canditer ci1 = { 0 }, ci2 = { 0 }, ci3 = { 0 }, ci4 = { 0 };
@@ -3747,6 +3841,8 @@ STRbatSubstitute(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat_iterator_end(&arg3i);
   bailout:
 	//GDKfree(buf);
+	if (ma_state)
+		ma_close_to(ma, ma_state);
 	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(8, arg1, arg1, arg2, arg2s, arg3, arg3s, arg4, arg4s);
 	return msg;
@@ -3760,7 +3856,9 @@ STRbatsplitpartcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 	int z = *getArgReference_int(stk, pci, 3);
 	const char *y = *getArgReference_str(stk, pci, 2);
-	str buf = ma_alloc(mb->ma, buflen), msg = MAL_SUCCEED;
+	allocator *ma = MT_thread_getallocator();
+	allocator_state *ma_state = ma_open(ma);
+	str buf = ma_alloc(ma, buflen), msg = MAL_SUCCEED;
 	bool nils = false;
 	struct canditer ci1 = { 0 };
 	oid off1;
@@ -3843,6 +3941,8 @@ STRbatsplitpartcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat_iterator_end(&bi);
   bailout:
 	//GDKfree(buf);
+	if (ma_state)
+		ma_close_to(ma, ma_state);
 	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
@@ -3857,7 +3957,9 @@ STRbatsplitpart_needlecst(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 	int *restrict field, z;
 	const char *y = *getArgReference_str(stk, pci, 2);
-	str buf = ma_alloc(mb->ma, buflen), msg = MAL_SUCCEED;
+	allocator *ma = MT_thread_getallocator();
+	allocator_state *ma_state = ma_open(ma);
+	str buf = ma_alloc(ma, buflen), msg = MAL_SUCCEED;
 	bool nils = false;
 	struct canditer ci1 = { 0 }, ci2 = { 0 };
 	oid off1, off2;
@@ -3958,6 +4060,8 @@ STRbatsplitpart_needlecst(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	bat_iterator_end(&bi);
   bailout:
 	//GDKfree(buf);
+	if (ma_state)
+		ma_close_to(ma, ma_state);
 	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(4, b, bs, f, fs);
 	return msg;
@@ -3971,7 +4075,9 @@ STRbatsplitpart_fieldcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	BAT *bn = NULL, *b = NULL, *bs = NULL, *n = NULL, *ns = NULL;
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 	int z = *getArgReference_int(stk, pci, 3);
-	str buf = ma_alloc(mb->ma, buflen), msg = MAL_SUCCEED;
+	allocator *ma = MT_thread_getallocator();
+	allocator_state *ma_state = ma_open(ma);
+	str buf = ma_alloc(ma, buflen), msg = MAL_SUCCEED;
 	bool nils = false;
 	struct canditer ci1 = { 0 }, ci2 = { 0 };
 	oid off1, off2;
@@ -4071,6 +4177,8 @@ STRbatsplitpart_fieldcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	bat_iterator_end(&ni);
   bailout:
 	//GDKfree(buf);
+	if (ma_state)
+		ma_close_to(ma, ma_state);
 	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(4, b, bs, n, ns);
 	return msg;
@@ -4084,7 +4192,9 @@ STRbatsplitpart(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		*arg2s = NULL, *arg3 = NULL, *arg3s = NULL;
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 	int *restrict arg3i, z;
-	str buf = ma_alloc(mb->ma, buflen), msg = MAL_SUCCEED;
+	allocator *ma = MT_thread_getallocator();
+	allocator_state *ma_state = ma_open(ma);
+	str buf = ma_alloc(ma, buflen), msg = MAL_SUCCEED;
 	bool nils = false;
 	struct canditer ci1 = { 0 }, ci2 = { 0 }, ci3 = { 0 };
 	oid off1, off2, off3;
@@ -4200,6 +4310,8 @@ STRbatsplitpart(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat_iterator_end(&arg2i);
   bailout:
 	//GDKfree(buf);
+	if (ma_state)
+		ma_close_to(ma, ma_state);
 	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(6, arg1, arg1s, arg2, arg2s, arg3, arg3s);
 	return msg;
@@ -4220,7 +4332,9 @@ STRbatReplace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT *bn = NULL, *arg1 = NULL, *arg1s = NULL, *arg2 = NULL,
 		*arg2s = NULL, *arg3 = NULL, *arg3s = NULL;
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
-	str buf = ma_alloc(mb->ma, buflen), msg = MAL_SUCCEED;
+	allocator *ma = MT_thread_getallocator();
+	allocator_state *ma_state = ma_open(ma);
+	str buf = ma_alloc(ma, buflen), msg = MAL_SUCCEED;
 	bool nils = false;
 	struct canditer ci1 = { 0 }, ci2 = { 0 }, ci3 = { 0 };
 	oid off1, off2, off3;
@@ -4334,6 +4448,8 @@ STRbatReplace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat_iterator_end(&arg3i);
   bailout:
 	//GDKfree(buf);
+	if (ma_state)
+		ma_close_to(ma, ma_state);
 	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(6, arg1, arg1s, arg2, arg2s, arg3, arg3s);
 	return msg;
@@ -4347,7 +4463,9 @@ STRbatInsert(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		*ss = NULL, *nchars = NULL, *ns = NULL, *right = NULL, *rs = NULL;
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 	int *sval, *lval, y, z;
-	str buf = ma_alloc(mb->ma, buflen), msg = MAL_SUCCEED;
+	allocator *ma = MT_thread_getallocator();
+	allocator_state *ma_state = ma_open(ma);
+	str buf = ma_alloc(ma, buflen), msg = MAL_SUCCEED;
 	bool nils = false;
 	struct canditer ci1 = { 0 }, ci2 = { 0 }, ci3 = { 0 }, ci4 = { 0 };
 	oid off1, off2, off3, off4;
@@ -4475,6 +4593,8 @@ STRbatInsert(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat_iterator_end(&righti);
   bailout:
 	//GDKfree(buf);
+	if (ma_state)
+		ma_close_to(ma, ma_state);
 	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(8, left, ls, start, ss, nchars, ns, right, rs);
 	return msg;
@@ -4489,7 +4609,9 @@ STRbatInsertcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int y = *getArgReference_int(stk, pci, 2),
 		z = *getArgReference_int(stk, pci, 3);
 	const char *w = *getArgReference_str(stk, pci, 4);
-	str buf = ma_alloc(mb->ma, buflen), msg = MAL_SUCCEED;
+	allocator *ma = MT_thread_getallocator();
+	allocator_state *ma_state = ma_open(ma);
+	str buf = ma_alloc(ma, buflen), msg = MAL_SUCCEED;
 	bool nils = false;
 	struct canditer ci1 = { 0 };
 	oid off1;
@@ -4572,6 +4694,8 @@ STRbatInsertcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat_iterator_end(&bi);
   bailout:
 	//GDKfree(buf);
+	if (ma_state)
+		ma_close_to(ma, ma_state);
 	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
@@ -4589,7 +4713,9 @@ STRbatsubstring_2nd_3rd_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 	int y = *getArgReference_int(stk, pci, 2),
 		z = *getArgReference_int(stk, pci, 3);
-	str buf = ma_alloc(mb->ma, buflen), msg = MAL_SUCCEED;
+	allocator *ma = MT_thread_getallocator();
+	allocator_state *ma_state = ma_open(ma);
+	str buf = ma_alloc(ma, buflen), msg = MAL_SUCCEED;
 	bool nils = false;
 	struct canditer ci1 = { 0 };
 	oid off1;
@@ -4672,6 +4798,8 @@ STRbatsubstring_2nd_3rd_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	bat_iterator_end(&bi);
   bailout:
 	//GDKfree(buf);
+	if (ma_state)
+		ma_close_to(ma, ma_state);
 	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
@@ -4685,7 +4813,9 @@ STRbatsubstring_1st_2nd_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 	int y = *getArgReference_int(stk, pci, 2), z, *restrict input;
 	const char *x = *getArgReference_str(stk, pci, 1);
-	str buf = ma_alloc(mb->ma, buflen), msg = MAL_SUCCEED;
+	allocator *ma = MT_thread_getallocator();
+	allocator_state *ma_state = ma_open(ma);
+	str buf = ma_alloc(ma, buflen), msg = MAL_SUCCEED;
 	bool nils = false;
 	struct canditer ci1 = { 0 };
 	oid off1;
@@ -4770,6 +4900,8 @@ STRbatsubstring_1st_2nd_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	bat_iterator_end(&bi);
   bailout:
 	//GDKfree(buf);
+	if (ma_state)
+		ma_close_to(ma, ma_state);
 	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
@@ -4783,7 +4915,9 @@ STRbatsubstring_1st_3rd_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 	int y, z = *getArgReference_int(stk, pci, 3), *restrict input;
 	const char *x = *getArgReference_str(stk, pci, 1);
-	str buf = ma_alloc(mb->ma, buflen), msg = MAL_SUCCEED;
+	allocator *ma = MT_thread_getallocator();
+	allocator_state *ma_state = ma_open(ma);
+	str buf = ma_alloc(ma, buflen), msg = MAL_SUCCEED;
 	bool nils = false;
 	struct canditer ci1 = { 0 };
 	oid off1;
@@ -4868,6 +5002,8 @@ STRbatsubstring_1st_3rd_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	bat_iterator_end(&bi);
   bailout:
 	//GDKfree(buf);
+	if (ma_state)
+		ma_close_to(ma, ma_state);
 	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
@@ -4880,7 +5016,9 @@ STRbatsubstring_1st_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 	int y, z, *vals1, *vals2;
 	const char *x = *getArgReference_str(stk, pci, 1);
-	str buf = ma_alloc(mb->ma, buflen), msg = MAL_SUCCEED;
+	allocator *ma = MT_thread_getallocator();
+	allocator_state *ma_state = ma_open(ma);
+	str buf = ma_alloc(ma, buflen), msg = MAL_SUCCEED;
 	bool nils = false;
 	struct canditer ci1 = { 0 }, ci2 = { 0 };
 	oid off1, off2;
@@ -4984,6 +5122,8 @@ STRbatsubstring_1st_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat_iterator_end(&lbi);
   bailout:
 	//GDKfree(buf);
+	if (ma_state)
+		ma_close_to(ma, ma_state);
 	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(4, b, bs, lb, lbs);
 	return msg;
@@ -4997,7 +5137,9 @@ STRbatsubstring_2nd_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT *bn = NULL, *b = NULL, *bs = NULL, *lb = NULL, *lbs = NULL;
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 	int y = *getArgReference_int(stk, pci, 2), *len, z;
-	str buf = ma_alloc(mb->ma, buflen), msg = MAL_SUCCEED;
+	allocator *ma = MT_thread_getallocator();
+	allocator_state *ma_state = ma_open(ma);
+	str buf = ma_alloc(ma, buflen), msg = MAL_SUCCEED;
 	bool nils = false;
 	struct canditer ci1 = { 0 }, ci2 = { 0 };
 	oid off1, off2;
@@ -5098,6 +5240,8 @@ STRbatsubstring_2nd_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat_iterator_end(&bi);
   bailout:
 	//GDKfree(buf);
+	if (ma_state)
+		ma_close_to(ma, ma_state);
 	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(4, b, bs, lb, lbs);
 	return msg;
@@ -5110,7 +5254,9 @@ STRbatsubstring_3rd_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT *bn = NULL, *b = NULL, *bs = NULL, *lb = NULL, *lbs = NULL;
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 	int *start, y, z = *getArgReference_int(stk, pci, 3);
-	str buf = ma_alloc(mb->ma, buflen), msg = MAL_SUCCEED;
+	allocator *ma = MT_thread_getallocator();
+	allocator_state *ma_state = ma_open(ma);
+	str buf = ma_alloc(ma, buflen), msg = MAL_SUCCEED;
 	bool nils = false;
 	struct canditer ci1 = { 0 }, ci2 = { 0 };
 	oid off1, off2;
@@ -5211,6 +5357,8 @@ STRbatsubstring_3rd_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat_iterator_end(&bi);
   bailout:
 	//GDKfree(buf);
+	if (ma_state)
+		ma_close_to(ma, ma_state);
 	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(4, b, bs, lb, lbs);
 	return msg;
@@ -5224,7 +5372,9 @@ STRbatsubstring(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		*ss = NULL, *length = NULL, *lens = NULL;
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 	int *svals, *lvals, y, z;
-	str buf = ma_alloc(mb->ma, buflen), msg = MAL_SUCCEED;
+	allocator *ma = MT_thread_getallocator();
+	allocator_state *ma_state = ma_open(ma);
+	str buf = ma_alloc(ma, buflen), msg = MAL_SUCCEED;
 	bool nils = false;
 	struct canditer ci1 = { 0 }, ci2 = { 0 }, ci3 = { 0 };
 	oid off1, off2, off3;
@@ -5339,6 +5489,8 @@ STRbatsubstring(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat_iterator_end(&lengthi);
   bailout:
 	//GDKfree(buf);
+	if (ma_state)
+		ma_close_to(ma, ma_state);
 	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(6, left, ls, start, ss, length, lens);
 	return msg;
