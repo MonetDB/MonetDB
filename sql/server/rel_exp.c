@@ -581,7 +581,7 @@ exp_atom_dbl(allocator *sa, dbl f)
 sql_exp *
 exp_atom_str(allocator *sa, const char *s, sql_subtype *st)
 {
-	return exp_atom(sa, atom_string(sa, st, s?sa_strdup(sa, s):NULL));
+	return exp_atom(sa, atom_string(sa, st, s?ma_strdup(sa, s):NULL));
 }
 
 sql_exp *
@@ -590,7 +590,7 @@ exp_atom_clob(allocator *sa, const char *s)
 	sql_subtype clob;
 
 	sql_find_subtype(&clob, "varchar", 0, 0);
-	return exp_atom(sa, atom_string(sa, &clob, s?sa_strdup(sa, s):NULL));
+	return exp_atom(sa, atom_string(sa, &clob, s?ma_strdup(sa, s):NULL));
 }
 
 sql_exp *
@@ -654,7 +654,7 @@ exp_param_or_declared(allocator *sa, const char *sname, const char *name, sql_su
 	if (e == NULL)
 		return NULL;
 
-	e->r = sa_alloc(sa, sizeof(sql_var_name));
+	e->r = ma_alloc(sa, sizeof(sql_var_name));
 	vname = (sql_var_name*) e->r;
 	vname->sname = sname;
 	vname->name = name;
@@ -987,7 +987,7 @@ exp_exception(allocator *sa, sql_exp *cond, const char *error_message)
 	if (e == NULL)
 		return NULL;
 	e->l = cond;
-	e->r = sa_strdup(sa, error_message);
+	e->r = ma_strdup(sa, error_message);
 	e->flag = PSM_EXCEPTION;
 	return e;
 }
@@ -1054,7 +1054,7 @@ exp_setrelname(allocator *sa, sql_exp *e, int nr)
 
 	nme = number2name(name, sizeof(name), nr);
 	e->alias.label = 0;
-	e->alias.rname = sa_strdup(sa, nme);
+	e->alias.rname = ma_strdup(sa, nme);
 }
 
 char *
@@ -1063,7 +1063,7 @@ make_label(allocator *sa, int nr)
 	char name[16], *nme;
 
 	nme = number2name(name, sizeof(name), nr);
-	return sa_strdup(sa, nme);
+	return ma_strdup(sa, nme);
 }
 
 sql_exp*
@@ -4035,7 +4035,7 @@ _free_exp_internal(allocator *sa, sql_exp *e)
 		e->p = NULL;
 	}
 	e->type = -1;
-	sa_free(sa, e);
+	ma_free(sa, e);
 }
 
 

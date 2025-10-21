@@ -64,7 +64,7 @@ mvc_init_create_view(mvc *m, sql_schema *s, const char *name, const char *query)
 		char *buf;
 		sql_rel *r = NULL;
 
-		if (!(buf = sa_strdup(m->ta, t->query))) {
+		if (!(buf = ma_strdup(m->ta, t->query))) {
 			(void) sql_error(m, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			return NULL;
 		}
@@ -75,12 +75,12 @@ mvc_init_create_view(mvc *m, sql_schema *s, const char *name, const char *query)
 		if (r) {
 			list *blist = rel_dependencies(m, r);
 			if (mvc_create_dependencies(m, blist, t->base.id, VIEW_DEPENDENCY)) {
-				sa_reset(m->ta);
+				ma_reset(m->ta);
 				(void) sql_error(m, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				return NULL;
 			}
 		}
-		sa_reset(m->ta);
+		ma_reset(m->ta);
 		assert(r);
 	}
 	return t;
@@ -164,8 +164,8 @@ mvc_init(int debug, store_type store_tpe, int ro, int su, const char *initpasswd
 	}
 
 	assert(m->sa == NULL);
-	m->sa = sa_create(m->pa);
-	sa_set_ta(m->sa, m->ta);
+	m->sa = create_allocator(m->pa, NULL, false);
+	ma_set_ta(m->sa, m->ta);
 	if (!m->sa) {
 		mvc_destroy(m);
 		mvc_exit(store);
@@ -1266,7 +1266,7 @@ mvc_create_view(sql_table **t, mvc *m, sql_schema *s, const char *name, int pers
 	if (persistence == SQL_DECLARED_TABLE) {
 		*t = create_sql_table(m->store, m->sa, name, tt_view, system, persistence, 0, 0);
 		(*t)->s = s;
-		(*t)->query = sa_strdup(m->sa, sql);
+		(*t)->query = ma_strdup(m->sa, sql);
 	} else {
 		res = sql_trans_create_table(t, m->session->tr, s, name, sql, tt_view, system, SQL_PERSIST, 0, 0, 0);
 	}
@@ -1471,7 +1471,7 @@ mvc_default(mvc *m, sql_column *col, char *val)
 {
 	TRC_DEBUG(SQL_TRANS, "Default: %s %s\n", col->base.name, val);
 	if (col->t->persistence == SQL_DECLARED_TABLE) {
-		col->def = val?sa_strdup(m->sa, val):NULL;
+		col->def = val?ma_strdup(m->sa, val):NULL;
 		return 0;
 	} else {
 		return sql_trans_alter_default(m->session->tr, col, val);
@@ -1495,7 +1495,7 @@ mvc_storage(mvc *m, sql_column *col, char *storage)
 {
 	TRC_DEBUG(SQL_TRANS, "Storage: %s %s\n", col->base.name, storage);
 	if (col->t->persistence == SQL_DECLARED_TABLE) {
-		col->storage_type = storage?sa_strdup(m->sa, storage):NULL;
+		col->storage_type = storage?ma_strdup(m->sa, storage):NULL;
 		return 0;
 	} else {
 		return sql_trans_alter_storage(m->session->tr, col, storage);

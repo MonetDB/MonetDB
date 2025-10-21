@@ -881,7 +881,7 @@ concat_strings(allocator *ma, BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 		if (nils == 0 && !empty) {
 			char *single_str = NULL;
 
-			if ((single_str = sa_alloc(ma, single_length + 1)) == NULL) {
+			if ((single_str = ma_alloc(ma, single_length + 1)) == NULL) {
 				bat_iterator_end(&bi);
 				bat_iterator_end(&bis);
 				BBPreclaim(bn);
@@ -959,8 +959,8 @@ concat_strings(allocator *ma, BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 	} else {
 		/* first used to calculated the total length of
 		 * each group, then the the total offset */
-		lengths = sa_zalloc(ma, ngrp * sizeof(*lengths));
-		astrings = sa_alloc(ma, ngrp * sizeof(str));
+		lengths = ma_zalloc(ma, ngrp * sizeof(*lengths));
+		astrings = ma_alloc(ma, ngrp * sizeof(str));
 		if (lengths == NULL || astrings == NULL) {
 			goto finish;
 		}
@@ -1018,7 +1018,7 @@ concat_strings(allocator *ma, BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 		if (separator) {
 			for (i = 0; i < ngrp; i++) {
 				if (astrings[i] == NULL) {
-					if ((astrings[i] = sa_alloc(ma, lengths[i] + 1)) == NULL) {
+					if ((astrings[i] = ma_alloc(ma, lengths[i] + 1)) == NULL) {
 						goto finish;
 					}
 					astrings[i][0] = 0;
@@ -1030,7 +1030,7 @@ concat_strings(allocator *ma, BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 			assert(sep != NULL);
 			for (i = 0; i < ngrp; i++) {
 				if (astrings[i] == NULL) {
-					if ((astrings[i] = sa_alloc(ma, lengths[i] + 1)) == NULL) {
+					if ((astrings[i] = ma_alloc(ma, lengths[i] + 1)) == NULL) {
 						goto finish;
 					}
 					astrings[i][0] = 0;
@@ -1141,7 +1141,7 @@ BATstr_group_concat(allocator *ma, ValPtr res, BAT *b, BAT *s, BAT *sep, bool sk
 
 	if (sep && BATcount(sep) == 1) { /* Only one element in sep */
 		BATiter bi = bat_iterator(sep);
-		nseparator = sa_strdup(ma, BUNtvar(bi, 0));
+		nseparator = ma_strdup(ma, BUNtvar(bi, 0));
 		bat_iterator_end(&bi);
 		if (!nseparator)
 			return GDK_FAIL;
@@ -1192,7 +1192,7 @@ BATgroupstr_group_concat(allocator *ma, BAT *b, BAT *g, BAT *e, BAT *s, BAT *sep
 
 	if (sep && BATcount(sep) == 1) { /* Only one element in sep */
 		BATiter bi = bat_iterator(sep);
-		nseparator = sa_strdup(ma, BUNtvar(bi, 0));
+		nseparator = ma_strdup(ma, BUNtvar(bi, 0));
 		bat_iterator_end(&bi);
 		if (!nseparator)
 			return NULL;

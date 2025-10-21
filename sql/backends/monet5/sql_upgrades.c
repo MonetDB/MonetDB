@@ -2304,7 +2304,7 @@ sql_update_jun2023(Client c, mvc *sql, sql_schema *s)
 
 	/* new function sys.regexp_replace */
 	allocator *old_sa = sql->sa;
-	if ((sql->sa = sa_create(sql->pa)) != NULL) {
+	if ((sql->sa = create_allocator(sql->pa, NULL, false)) != NULL) {
 		list *l;
 		if ((l = sa_list(sql->sa)) != NULL) {
 			sql_subtype tp;
@@ -2333,7 +2333,7 @@ sql_update_jun2023(Client c, mvc *sql, sql_schema *s)
 				fflush(stdout);
 				err = SQLstatementIntern(c, buf, "update", true, false, NULL);
 			}
-			sa_destroy(sql->sa);
+			ma_destroy(sql->sa);
 		}
 	}
 	sql->sa = old_sa;
@@ -3127,7 +3127,7 @@ sql_update_dec2023(Client c, mvc *sql, sql_schema *s)
 
 	/* 52_describe.sql New function sys.sql_datatype(mtype varchar(999), digits integer, tscale integer, nameonly boolean, shortname boolean) */
 	allocator *old_sa = sql->sa;
-	if ((sql->sa = sa_create(sql->pa)) != NULL) {
+	if ((sql->sa = create_allocator(sql->pa, NULL, false)) != NULL) {
 		list *l;
 		if ((l = sa_list(sql->sa)) != NULL) {
 			sql_subtype t1, t2;
@@ -3207,7 +3207,7 @@ sql_update_dec2023(Client c, mvc *sql, sql_schema *s)
 				err = SQLstatementIntern(c, cmds, "update", true, false, NULL);
 			}
 		}
-		sa_destroy(sql->sa);
+		ma_destroy(sql->sa);
 	}
 	sql->sa = old_sa;
 

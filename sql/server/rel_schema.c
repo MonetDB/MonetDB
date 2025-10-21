@@ -418,7 +418,7 @@ create_check_plan(sql_query *query, symbol *s, sql_table *t)
 
 	if (!e || !rel || !is_basetable(rel->op))
 		return NULL;
-	e->comment = sa_strdup(sql->sa, s->data.lval->h->next->data.sval);
+	e->comment = ma_strdup(sql->sa, s->data.lval->h->next->data.sval);
 	rel->exps = rel_base_projection(sql, rel, 0);
 	list *pexps = sa_list(sql->sa);
 	pexps = append(pexps, e);

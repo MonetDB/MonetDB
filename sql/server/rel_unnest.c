@@ -2846,7 +2846,7 @@ static inline sql_rel *
 rewrite_split_select_exps(visitor *v, sql_rel *rel)
 {
 	if (is_select(rel->op) && !list_empty(rel->exps)) {
-		sa_open(v->sql->ta);
+		ma_open(v->sql->ta);
 		int i = 0;
 		bool has_complex_exps = false, has_simple_exps = false, *complex_exps = SA_NEW_ARRAY(v->sql->ta, bool, list_length(rel->exps));
 
@@ -2881,7 +2881,7 @@ rewrite_split_select_exps(visitor *v, sql_rel *rel)
 			set_processed(nsel);
 			v->changes++;
 		}
-		sa_close(v->sql->ta);
+		ma_close(v->sql->ta);
 	}
 	return rel;
 }
@@ -2947,7 +2947,7 @@ rewrite_rank(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 
 	/* The following array remembers the original positions of gbe and obe expressions to replace them in order later at diff_replace_arguments */
 	if (gbe || obe) {
-		sa_open(v->sql->ta);
+		ma_open(v->sql->ta);
 		int gbeoffset = list_length(gbe), i = 0, added = 0;
 		int *pos = SA_NEW_ARRAY(v->sql->ta, int, gbeoffset + list_length(obe));
 		if (gbe) {
@@ -3109,7 +3109,7 @@ rewrite_rank(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 				}
 			}
 		}
-		sa_close(v->sql->ta);
+		ma_close(v->sql->ta);
 
 		/* move rank down add ref */
 		if (!exp_name(e))

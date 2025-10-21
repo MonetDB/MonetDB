@@ -490,7 +490,7 @@ exp_change_column_table(mvc *sql, sql_exp *e, sql_table* oldt, sql_table* newt)
 		} break;
 		case e_column: {
 			if (!strcmp(e->l, oldt->base.name))
-				e->l = sa_strdup(sql->sa, newt->base.name);
+				e->l = ma_strdup(sql->sa, newt->base.name);
 		} break;
 		case e_cmp: {
 			if (e->flag == cmp_in || e->flag == cmp_notin) {

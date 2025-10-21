@@ -483,7 +483,7 @@ csv_relation(mvc *sql, sql_subfunc *f, char *filename, list *res_exps, char *tna
 	f->coltypes = typelist;
 	f->colnames = nameslist;
 
-	csv_t *r = (csv_t *)sa_alloc(sql->sa, sizeof(csv_t));
+	csv_t *r = (csv_t *)ma_alloc(sql->sa, sizeof(csv_t));
 	r->sname[0] = 0;
 	r->quote = q;
 	r->delim = d;

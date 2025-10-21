@@ -240,11 +240,11 @@ SQLstatementIntern(Client c, const char *expr, const char *nme, bit execute, bit
 	m->params = NULL;
 	m->session->auto_commit = 0;
 	if (!m->sa) {
-		if (!(m->sa = sa_create(m->pa)) ) {
+		if (!(m->sa = create_allocator(m->pa, NULL, false)) ) {
 			msg = createException(SQL,"sql.statement",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto endofcompile;
 		}
-		sa_set_ta(m->sa, m->ta);
+		ma_set_ta(m->sa, m->ta);
 	}
 
 	/*
@@ -374,7 +374,7 @@ endofcompile:
 	buffer_destroy(b);
 	bstream_destroy(m->scanner.rs);
 	if (m->sa)
-		sa_destroy(m->sa);
+		ma_destroy(m->sa);
 	m->sa = NULL;
 	m->sym = NULL;
 	m->runs = NULL;
@@ -437,8 +437,8 @@ RAstatement(Client c, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ((msg = SQLtrans(m)) != MAL_SUCCEED)
 		return msg;
 	if (!m->sa) {
-		m->sa = sa_create(m->pa);
-		sa_set_ta(m->sa, m->ta);
+		m->sa = create_allocator(m->pa, NULL, false);
+		ma_set_ta(m->sa, m->ta);
 	}
 	if (!m->sa)
 		return RAcommit_statement(be, createException(SQL,"RAstatement",SQLSTATE(HY013) MAL_MALLOC_FAIL));
@@ -507,7 +507,7 @@ RAstatement2_return(backend *be, mvc *m, int nlevels, struct global_var_entry *g
 		struct global_var_entry gv = gvars[i];
 		(void) remove_global_var(m, gv.s, gv.vname);
 	}
-	sa_reset(m->ta);
+	ma_reset(m->ta);
 	return RAcommit_statement(be, msg);
 }
 
@@ -554,8 +554,8 @@ RAstatement2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ((msg = SQLtrans(m)) != MAL_SUCCEED)
 		return msg;
 	if (!m->sa) {
-		m->sa = sa_create(m->pa);
-		sa_set_ta(m->sa, m->ta);
+		m->sa = create_allocator(m->pa, NULL, false);
+		ma_set_ta(m->sa, m->ta);
 	}
 	if (!m->sa)
 		return RAstatement2_return(be, m, nlevels, gvars, gentries, createException(SQL,"RAstatement2",SQLSTATE(HY013) MAL_MALLOC_FAIL));
@@ -617,7 +617,7 @@ RAstatement2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					gvars[gentries++] = (struct global_var_entry) {.s = sh, .vname = var,};
 				}
 			}
-			list_append(ops, exp_var(m->sa, sa_strdup(m->sa, sch), sa_strdup(m->sa, var), &tpe, 0));
+			list_append(ops, exp_var(m->sa, ma_strdup(m->sa, sch), ma_strdup(m->sa, var), &tpe, 0));
 		} else {
 			char opname[BUFSIZ];
 
@@ -638,7 +638,7 @@ RAstatement2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			lentries++;
 
 			snprintf(opname, sizeof(opname), "%d%%%s", level, var); /* engineering trick */
-			list_append(ops, exp_var(m->sa, NULL, sa_strdup(m->sa, opname), &tpe, level));
+			list_append(ops, exp_var(m->sa, NULL, ma_strdup(m->sa, opname), &tpe, level));
 		}
 	}
 	if (lentries) {

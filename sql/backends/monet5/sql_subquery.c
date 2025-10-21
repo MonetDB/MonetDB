@@ -42,7 +42,7 @@ zero_or_one_error(Client ctx, ptr ret, const bat *bid, const bit *err)
 		p = &oid_nil;
 	if (ATOMextern(b->ttype)) {
 		_s = ATOMlen(ATOMtype(b->ttype), p);
-		*(ptr *) ret = sa_alloc(ma, _s);
+		*(ptr *) ret = ma_alloc(ma, _s);
 		if (*(ptr *) ret == NULL) {
 			bat_iterator_end(&bi);
 			BBPunfix(b->batCacheid);
@@ -204,7 +204,7 @@ SQLall(Client ctx, ptr ret, const bat *bid)
 			}
 			s = ATOMlen(ATOMtype(bi.type), p);
 			if (ATOMextern(bi.type)) {
-				*(ptr *) ret = sa_alloc(ma, s);
+				*(ptr *) ret = ma_alloc(ma, s);
 				if (*(ptr *) ret == NULL) {
 					bat_iterator_end(&bi);
 					BBPunfix(b->batCacheid);

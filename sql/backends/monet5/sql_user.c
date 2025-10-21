@@ -763,7 +763,7 @@ monet5_user_get_def_schema(mvc *m, int user, str *schema)
 
 	if (!(sname = store->table_api.column_find_value(m->session->tr, find_sql_column(schemas, "name"), rid)))
 		return -1;
-	*schema = sa_strdup(m->session->sa, sname);
+	*schema = ma_strdup(m->session->sa, sname);
 	_DELETE(sname);
 	return *schema ? 0 : -1;
 }
@@ -834,7 +834,7 @@ monet5_user_set_def_schema(mvc *m, oid user, str username)
 		return -1;
 	}
 	schema_cpy = schema;
-	schema = sa_strdup(m->session->sa, schema);
+	schema = ma_strdup(m->session->sa, schema);
 	_DELETE(schema_cpy);
 
 	/* check if username exists */

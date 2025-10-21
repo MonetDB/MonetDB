@@ -1106,7 +1106,7 @@ SQLworker(void *arg)
 	GDKclrerr();
 	task->errbuf = GDKerrbuf;
 	MT_thread_set_qry_ctx(task->set_qry_ctx ? &task->cntxt->qryctx : NULL);
-	//allocator *ma = task->cntxt ? ma_create(task->cntxt->curprg->def->ma) : NULL;
+	//allocator *ma = task->cntxt ? create_allocator(task->cntxt->curprg->def->ma, NULL, true) : NULL;
 	//MT_thread_setallocator(ma);
 	allocator *ma = MT_thread_getallocator();
 	assert(ma);
@@ -1281,7 +1281,7 @@ SQLproducer(void *p)
 	lng lineno = 1;
 	lng startlineno = 1;
 	int more = 0;
-	//allocator *ma = task->cntxt ? ma_create(task->cntxt->curprg->def->ma) : NULL;
+	//allocator *ma = task->cntxt ? create_allocator(task->cntxt->curprg->def->ma, NULL, true) : NULL;
 	//MT_thread_setallocator(ma);
 	allocator *ma = MT_thread_getallocator();
 

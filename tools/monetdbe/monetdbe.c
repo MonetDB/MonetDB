@@ -404,7 +404,7 @@ monetdbe_query_internal(monetdbe_database_internal *mdbe, char* query, monetdbe_
 	m->runs = NULL;
 	m->label = 0;
 	if (m->sa)
-		m->sa = sa_reset(m->sa);
+		m->sa = ma_reset(m->sa);
 	m->scanner.mode = LINE_N;
 	m->scanner.rs = c->fdin;
 	mvc_query_processed(m);
@@ -578,11 +578,11 @@ monetdbe_open_internal(monetdbe_database_internal *mdbe, monetdbe_options *opts 
 		goto cleanup;
 	m->session->auto_commit = 1;
 	if (!m->pa)
-		m->pa = sa_create(NULL);
+		m->pa = create_allocator(NULL, NULL, false);
 	if (!m->sa)
-		m->sa = sa_create(m->pa);
+		m->sa = create_allocator(m->pa, NULL, false);
 	if (!m->ta)
-		m->ta = sa_create(m->pa);
+		m->ta = create_allocator(m->pa, NULL, false);
 	if (!m->pa || !m->sa || !m->ta) {
 		set_error(mdbe, createException(SQL, "monetdbe.monetdbe_open_internal", MAL_MALLOC_FAIL));
 		goto cleanup;
@@ -2128,7 +2128,7 @@ append_create_remote_append_mal_program(
 			msg = createException(SQL, "monetdbe.monetdbe_append", MAL_MALLOC_FAIL);
 			goto cleanup;
 		}
-		tpe->base.name = sa_strdup(m->sa, columns[i].name);
+		tpe->base.name = ma_strdup(m->sa, columns[i].name);
 		tpe->localtype = monetdbe_2_gdk_type((monetdbe_types) columns[i].type);
 		tpe->digits = columns[i].sql_type.digits;
 		tpe->scale = columns[i].sql_type.scale;

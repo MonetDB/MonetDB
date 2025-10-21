@@ -90,7 +90,7 @@ monetdb_relation(mvc *sql, sql_subfunc *f, char *raw_uri, list *res_exps, char *
 		goto end;
 	}
 	if (mapi_reconnect(dbh) < 0) {
-		ret = sa_strdup(sql->sa, mapi_error_str(dbh));
+		ret = ma_strdup(sql->sa, mapi_error_str(dbh));
 		goto end;
 	}
 	mapi_cache_limit(dbh, 100);
@@ -109,7 +109,7 @@ monetdb_relation(mvc *sql, sql_subfunc *f, char *raw_uri, list *res_exps, char *
 	if ((hdl = mapi_query(dbh, query)) == NULL || mapi_error(dbh)) {
 		const char *err = mapi_error_str(dbh);
 		if (err)
-			ret = sa_strdup(sql->sa, err);
+			ret = ma_strdup(sql->sa, err);
 		else
 			ret = sa_message(sql->sa, "Failed to access remote server");
 		goto end;
@@ -121,14 +121,14 @@ monetdb_relation(mvc *sql, sql_subfunc *f, char *raw_uri, list *res_exps, char *
 	}
 
 	if (!aname)
-		aname = sa_strdup(sql->sa, tname);
+		aname = ma_strdup(sql->sa, tname);
 
-	f->tname = sa_strdup(sql->sa, aname);
+	f->tname = ma_strdup(sql->sa, aname);
 
 	list *typelist = sa_list(sql->sa);
 	list *nameslist = sa_list(sql->sa);
 	while (mapi_fetch_row(hdl)) {
-		char *nme = sa_strdup(sql->sa, mapi_fetch_field(hdl, 0));
+		char *nme = ma_strdup(sql->sa, mapi_fetch_field(hdl, 0));
 		char *tpe = mapi_fetch_field(hdl, 1);
 		char *dig = mapi_fetch_field(hdl, 2);
 		char *scl = mapi_fetch_field(hdl, 3);
@@ -159,10 +159,10 @@ monetdb_relation(mvc *sql, sql_subfunc *f, char *raw_uri, list *res_exps, char *
 	f->coltypes = typelist;
 	f->colnames = nameslist;
 
-	mdb_loader_t *r = (mdb_loader_t *)sa_alloc(sql->sa, sizeof(mdb_loader_t));
+	mdb_loader_t *r = (mdb_loader_t *)ma_alloc(sql->sa, sizeof(mdb_loader_t));
 	r->sname = sname;
 	r->tname = tname;
-	r->uri = sa_strdup(sql->sa, uri);
+	r->uri = ma_strdup(sql->sa, uri);
 	f->sname = (char*)r; /* pass mdb_loader */
 	ret = NULL;
 
@@ -196,7 +196,7 @@ sql_template(allocator *sa, const char **parts)
 			length += length;
 		max_length += length;
 	}
-	char *result = sa_alloc(sa, max_length + 1);
+	char *result = ma_alloc(sa, max_length + 1);
 
 	char *w = result;
 	for (int i = 0; i < nparts; i++) {
@@ -257,7 +257,7 @@ monetdb_load(void *BE, sql_subfunc *f, char *uri, sql_exp *topn)
 	p->id = tu->id;
 	p->value.pval = append(sa_list(sql->sa), tu);
 
-	stmt *s = stmt_func(be, NULL, sa_strdup(sql->sa, nme), rel, 0);
+	stmt *s = stmt_func(be, NULL, ma_strdup(sql->sa, nme), rel, 0);
 	return s;
 }
 

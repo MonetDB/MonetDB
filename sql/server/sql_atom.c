@@ -276,7 +276,7 @@ atom_general(allocator *sa, sql_subtype *tpe, const char *val, long tz_offset)
 
 		if (type == TYPE_str) {
 			a->data.len = strLen(val);
-			a->data.val.sval = sa_alloc(sa, a->data.len);
+			a->data.val.sval = ma_alloc(sa, a->data.len);
 			memcpy(a->data.val.sval, val, a->data.len);
 			a->data.allocated = false;
 		} else if (type == TYPE_timestamp) {
@@ -351,12 +351,12 @@ atom_general_ptr( allocator *sa, sql_subtype *tpe, void *v)
 	} else if (a->data.vtype == TYPE_str) {
 		const char *p = (const char*) v;
 		a->data.len = strLen(p);
-		a->data.val.sval = sa_alloc(sa, a->data.len);
+		a->data.val.sval = ma_alloc(sa, a->data.len);
 		memcpy(a->data.val.sval, p, a->data.len);
 		a->data.allocated = false;
 	} else {
 		a->data.len = ATOMlen(a->data.vtype, v);
-		a->data.val.pval = sa_alloc(sa, a->data.len);
+		a->data.val.pval = ma_alloc(sa, a->data.len);
 		memcpy(a->data.val.pval, v, a->data.len);
 	}
 	a->isnull = VALisnil(&a->data);
@@ -369,7 +369,7 @@ atom2string(allocator *sa, atom *a)
 	char buf[BUFSIZ], *p = NULL;
 
 	if (a->isnull)
-		return sa_strdup(sa, "NULL");
+		return ma_strdup(sa, "NULL");
 	switch (a->data.vtype) {
 #ifdef HAVE_HGE
 	case TYPE_hge: {
@@ -396,8 +396,8 @@ atom2string(allocator *sa, atom *a)
 		break;
 	case TYPE_bit:
 		if (a->data.val.btval)
-			return sa_strdup(sa, "true");
-		return sa_strdup(sa, "false");
+			return ma_strdup(sa, "true");
+		return ma_strdup(sa, "false");
 	case TYPE_flt:
 		snprintf(buf, sizeof(buf), "%f", a->data.val.fval);
 		break;
@@ -406,17 +406,17 @@ atom2string(allocator *sa, atom *a)
 		break;
 	case TYPE_str:
 		assert(a->data.val.sval);
-		return sa_strdup(sa, a->data.val.sval);
+		return ma_strdup(sa, a->data.val.sval);
 	default:
 		if ((p = ATOMformat(sa, a->data.vtype, VALget(&a->data))) == NULL) {
 			snprintf(buf, sizeof(buf), "atom2string(TYPE_%d) not implemented", a->data.vtype);
 		} else {
-			 //char *r = sa_strdup(sa, p);
+			 //char *r = ma_strdup(sa, p);
 			 // GDKfree(p);
 			 return p;
 		}
 	}
-	return sa_strdup(sa, buf);
+	return ma_strdup(sa, buf);
 }
 
 static inline char *
@@ -671,7 +671,7 @@ atom2sql(allocator *sa, atom *a, int timezone)
 	default:
 		snprintf(buf, sizeof(buf), "atom2sql(TYPE_%d) not implemented", a->data.vtype);
 	}
-	return sa_strdup(sa, buf);
+	return ma_strdup(sa, buf);
 }
 
 sql_subtype *
@@ -1389,5 +1389,5 @@ free_atom(allocator *sa, atom *a)
 		// FIX free sql_type
 		a->tpe.type = NULL;
 	}
-	sa_free(sa, a);
+	ma_free(sa, a);
 }

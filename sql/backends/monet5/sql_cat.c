@@ -595,28 +595,28 @@ create_trigger(mvc *sql, char *sname, char *tname, char *triggername, int time, 
 			sql_rel *r = NULL;
 			allocator *sa = sql->sa;
 
-			if (!(sql->sa = sa_create(sql->pa))) {
+			if (!(sql->sa = create_allocator(sql->pa, NULL, false))) {
 				sql->sa = sa;
 				throw(SQL, "sql.create_trigger", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
-			if (!(buf = sa_strdup(sql->sa, query))) {
-				sa_destroy(sql->sa);
+			if (!(buf = ma_strdup(sql->sa, query))) {
+				ma_destroy(sql->sa);
 				sql->sa = sa;
 				throw(SQL, "sql.create_trigger", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
-			sa_set_ta(sql->sa, sql->ta);
+			ma_set_ta(sql->sa, sql->ta);
 			r = rel_parse(sql, s, buf, m_deps);
 			if (r)
 				r = sql_processrelation(sql, r, 0, 0, 0, 0);
 			if (r) {
 				list *blist = rel_dependencies(sql, r);
 				if (mvc_create_dependencies(sql, blist, tri->base.id, TRIGGER_DEPENDENCY)) {
-					sa_destroy(sql->sa);
+					ma_destroy(sql->sa);
 					sql->sa = sa;
 					throw(SQL, "sql.create_trigger", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				}
 			}
-			sa_destroy(sql->sa);
+			ma_destroy(sql->sa);
 			sql->sa = sa;
 			if (!r) {
 				if (strlen(sql->errstr) > 6 && sql->errstr[5] == '!')
@@ -1092,16 +1092,16 @@ create_func(mvc *sql, char *sname, char *fname, sql_func *f, int replace)
 		allocator *sa = sql->sa;
 
 		assert(nf->query);
-		if (!(sql->sa = sa_create(sql->pa))) {
+		if (!(sql->sa = create_allocator(sql->pa, NULL, false))) {
 			sql->sa = sa;
 			throw(SQL, "sql.create_func", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
-		if (!(buf = sa_strdup(sql->sa, nf->query))) {
-			sa_destroy(sql->sa);
+		if (!(buf = ma_strdup(sql->sa, nf->query))) {
+			ma_destroy(sql->sa);
 			sql->sa = sa;
 			throw(SQL, "sql.create_func", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
-		sa_set_ta(sql->sa, sql->ta);
+		ma_set_ta(sql->sa, sql->ta);
 		r = rel_parse(sql, s, buf, m_deps);
 		if (r)
 			r = sql_processrelation(sql, r, 0, 0, 0, 0);
@@ -1114,7 +1114,7 @@ create_func(mvc *sql, char *sname, char *fname, sql_func *f, int replace)
 					sql_arg *a = n->data;
 
 					if (a->type.type->s && mvc_create_dependency(sql, &a->type.type->base, nf->base.id, TYPE_DEPENDENCY)) {
-						sa_destroy(sql->sa);
+						ma_destroy(sql->sa);
 						sql->sa = sa;
 						throw(SQL, "sql.create_func", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					}
@@ -1125,19 +1125,19 @@ create_func(mvc *sql, char *sname, char *fname, sql_func *f, int replace)
 					sql_arg *a = n->data;
 
 					if (a->type.type->s && mvc_create_dependency(sql, &a->type.type->base, nf->base.id, TYPE_DEPENDENCY)) {
-						sa_destroy(sql->sa);
+						ma_destroy(sql->sa);
 						sql->sa = sa;
 						throw(SQL, "sql.create_func", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					}
 				}
 			}
 			if (mvc_create_dependencies(sql, blist, nf->base.id, !IS_PROC(f) ? FUNC_DEPENDENCY : PROC_DEPENDENCY)) {
-				sa_destroy(sql->sa);
+				ma_destroy(sql->sa);
 				sql->sa = sa;
 				throw(SQL, "sql.create_func", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 		}
-		sa_destroy(sql->sa);
+		ma_destroy(sql->sa);
 		sql->sa = sa;
 		if (!r) {
 			if (strlen(sql->errstr) > 6 && sql->errstr[5] == '!')

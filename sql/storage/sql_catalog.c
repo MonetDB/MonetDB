@@ -609,7 +609,7 @@ SA_VALcopy(allocator *sa, ValPtr d, const ValRecord *s)
 		const void *p = ATOMnilptr(s->vtype);
 		d->vtype = s->vtype;
 		d->len = ATOMlen(d->vtype, p);
-		d->val.pval = sa_alloc(sa, d->len);
+		d->val.pval = ma_alloc(sa, d->len);
 		if (d->val.pval == NULL)
 			return NULL;
 		memcpy(d->val.pval, p, d->len);
@@ -617,7 +617,7 @@ SA_VALcopy(allocator *sa, ValPtr d, const ValRecord *s)
 		const char *p = s->val.sval;
 		d->vtype = TYPE_str;
 		d->len = strLen(p);
-		d->val.sval = sa_alloc(sa, d->len);
+		d->val.sval = ma_alloc(sa, d->len);
 		if (d->val.sval == NULL)
 			return NULL;
 		memcpy(d->val.sval, p, d->len);
@@ -625,7 +625,7 @@ SA_VALcopy(allocator *sa, ValPtr d, const ValRecord *s)
 		const void *p = s->val.pval;
 		d->vtype = s->vtype;
 		d->len = ATOMlen(d->vtype, p);
-		d->val.pval = sa_alloc(sa, d->len);
+		d->val.pval = ma_alloc(sa, d->len);
 		if (d->val.pval == NULL)
 			return NULL;
 		memcpy(d->val.pval, p, d->len);

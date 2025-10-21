@@ -3703,7 +3703,7 @@ BATmin_skipnil(allocator *alloc, BAT *b, void *aggr, bit skipnil)
 	}
 	if (aggr == NULL) {
 		s = ATOMlen(bi.type, res);
-		aggr = alloc? sa_alloc(alloc, s) : GDKmalloc(s);
+		aggr = alloc? ma_alloc(alloc, s) : GDKmalloc(s);
 	} else {
 		s = ATOMsize(ATOMtype(bi.type));
 	}
@@ -3834,7 +3834,7 @@ BATmax_skipnil(allocator *alloc, BAT *b, void *aggr, bit skipnil)
 	}
 	if (aggr == NULL) {
 		s = ATOMlen(bi.type, res);
-		aggr = alloc? sa_alloc(alloc, s) : GDKmalloc(s);
+		aggr = alloc? ma_alloc(alloc, s) : GDKmalloc(s);
 	} else {
 		s = ATOMsize(ATOMtype(bi.type));
 	}

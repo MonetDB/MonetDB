@@ -172,9 +172,9 @@ sqlcleanup(backend *be, int err)
 	be->mvc->sym = NULL;
 	be->mvc->runs = NULL;
 	if (be->mvc->ta)
-		be->mvc->ta = sa_reset(be->mvc->ta);
+		be->mvc->ta = ma_reset(be->mvc->ta);
 	if (be->mvc->sa)
-		be->mvc->sa = sa_reset(be->mvc->sa);
+		be->mvc->sa = ma_reset(be->mvc->sa);
 	if (err >0)
 		be->mvc->session->status = -err;
 	if (err <0)
@@ -332,7 +332,7 @@ create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp,
 			break;
 	}
 	osa = sql->sa;
-	allocator *nsa = sql->sa = sa_create(sa_get_parent(osa));
+	allocator *nsa = sql->sa = create_allocator(ma_get_parent(osa), NULL, false);
 	/* first check default values */
 	for (n = ol_first_node(t->columns); n; n = n->next) {
 		sql_column *c = n->data;
@@ -347,7 +347,7 @@ create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp,
 				exp_check_type(sql, &c->type, r, r->exps->h->data, type_equal) == NULL) {
 				if (r)
 					rel_destroy(sql, r);
-				sa_destroy(nsa);
+				ma_destroy(nsa);
 				sql->sa = osa;
 				if (strlen(sql->errstr) > 6 && sql->errstr[5] == '!')
 					throw(SQL, "sql.catalog", "%s", sql->errstr);
@@ -359,12 +359,12 @@ create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp,
 			if (strncmp(c->def, next_value_for, strlen(next_value_for)) != 0) {
 				list *blist = rel_dependencies(sql, r);
 				if (mvc_create_dependencies(sql, blist, nt->base.id, FUNC_DEPENDENCY)) {
-					sa_destroy(nsa);
+					ma_destroy(nsa);
 					sql->sa = osa;
 					throw(SQL, "sql.catalog", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				}
 			}
-			sa_reset(sql->sa);
+			ma_reset(sql->sa);
 		}
 	}
 
@@ -373,12 +373,12 @@ create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp,
 
 		switch (mvc_copy_column(sql, nt, c, &copied)) {
 			case -1:
-				sa_destroy(nsa);
+				ma_destroy(nsa);
 				sql->sa = osa;
 				throw(SQL, "sql.catalog", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			case -2:
 			case -3:
-				sa_destroy(nsa);
+				ma_destroy(nsa);
 				sql->sa = osa;
 				throw(SQL, "sql.catalog", SQLSTATE(42000) "CREATE TABLE: %s_%s_%s conflicts", s->base.name, t->base.name, c->base.name);
 			default:
@@ -394,19 +394,19 @@ create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp,
 		nt->part.pexp->exp = _STRDUP(t->part.pexp->exp);
 		err = bootstrap_partition_expression(sql, nt, 1);
 		if (err) {
-			sa_destroy(nsa);
+			ma_destroy(nsa);
 			sql->sa = osa;
 			return err;
 		}
-		sa_reset(nsa);
+		ma_reset(nsa);
 	}
 	check = sql_trans_set_partition_table(sql->session->tr, nt);
 	if (check == -4) {
-		sa_destroy(nsa);
+		ma_destroy(nsa);
 		sql->sa = osa;
 		throw(SQL, "sql.catalog", SQLSTATE(42000) "CREATE TABLE: %s_%s: the partition's expression is too long", s->base.name, t->base.name);
 	} else if (check) {
-		sa_destroy(nsa);
+		ma_destroy(nsa);
 		sql->sa = osa;
 		throw(SQL, "sql.catalog", SQLSTATE(42000) "CREATE TABLE: %s_%s: an internal error occurred", s->base.name, t->base.name);
 	}
@@ -417,12 +417,12 @@ create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp,
 
 			switch (mvc_copy_idx(sql, nt, i, NULL)) {
 				case -1:
-					sa_destroy(nsa);
+					ma_destroy(nsa);
 					sql->sa = osa;
 					throw(SQL, "sql.catalog", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				case -2:
 				case -3:
-					sa_destroy(nsa);
+					ma_destroy(nsa);
 					sql->sa = osa;
 					throw(SQL, "sql.catalog", SQLSTATE(42000) "CREATE TABLE: %s_%s_%s index conflicts", s->base.name, t->base.name, i->base.name);
 				default:
@@ -437,25 +437,25 @@ create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp,
 
 			err = sql_partition_validate_key(sql, nt, k, "CREATE");
 			if (err) {
-				sa_destroy(nsa);
+				ma_destroy(nsa);
 				sql->sa = osa;
 				return err;
 			}
-			sa_reset(sql->sa);
+			ma_reset(sql->sa);
 			switch (mvc_copy_key(sql, nt, k, NULL)) {
 				case -1:
-					sa_destroy(nsa);
+					ma_destroy(nsa);
 					sql->sa = osa;
 					throw(SQL, "sql.catalog", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				case -2:
 				case -3:
-					sa_destroy(nsa);
+					ma_destroy(nsa);
 					sql->sa = osa;
 					throw(SQL, "sql.catalog", SQLSTATE(42000) "CREATE TABLE: %s_%s_%s constraint conflicts", s->base.name, t->base.name, k->base.name);
 				default:
 					break;
 			}
-			sa_reset(sql->sa);
+			ma_reset(sql->sa);
 		}
 	}
 	if (t->triggers) {
@@ -464,12 +464,12 @@ create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp,
 
 			switch (mvc_copy_trigger(sql, nt, tr, NULL)) {
 				case -1:
-					sa_destroy(nsa);
+					ma_destroy(nsa);
 					sql->sa = osa;
 					throw(SQL, "sql.catalog", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				case -2:
 				case -3:
-					sa_destroy(nsa);
+					ma_destroy(nsa);
 					sql->sa = osa;
 					throw(SQL, "sql.catalog", SQLSTATE(42000) "CREATE TABLE: %s_%s_%s trigger conflicts", s->base.name, t->base.name, nt->base.name);
 				default:
@@ -481,28 +481,28 @@ create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp,
 	if (nt->query && isView(nt)) {
 		sql_rel *r = NULL;
 
-		sa_reset(nsa);
+		ma_reset(nsa);
 		r = rel_parse(sql, s, nt->query, m_deps);
 		if (r)
 			r = sql_processrelation(sql, r, 0, 0, 0, 0);
 		if (r) {
 			list *blist = rel_dependencies(sql, r);
 			if (mvc_create_dependencies(sql, blist, nt->base.id, VIEW_DEPENDENCY)) {
-				sa_destroy(nsa);
+				ma_destroy(nsa);
 				sql->sa = osa;
 				throw(SQL, "sql.catalog", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 		}
 		sql->sa = osa;
 		if (!r) {
-			sa_destroy(nsa);
+			ma_destroy(nsa);
 			if (strlen(sql->errstr) > 6 && sql->errstr[5] == '!')
 				throw(SQL, "sql.catalog", "%s", sql->errstr);
 			else
 				throw(SQL, "sql.catalog", SQLSTATE(42000) "%s", sql->errstr);
 		}
 	}
-	sa_destroy(nsa);
+	ma_destroy(nsa);
 	sql->sa = osa;
 	return MAL_SUCCEED;
 }
@@ -4997,11 +4997,11 @@ SQLunionfunc(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		MalStkPtr env = NULL;
 		InstrPtr q = NULL;
 
-		if (!(input = sa_zalloc(nmb->ma, sizeof(BAT*) * nrinput))) {
+		if (!(input = ma_zalloc(nmb->ma, sizeof(BAT*) * nrinput))) {
 			ret = createException(MAL, "sql.unionfunc", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto finalize;
 		}
-		if (!(bi = sa_alloc(nmb->ma, sizeof(BATiter) * nrinput))) {
+		if (!(bi = ma_alloc(nmb->ma, sizeof(BATiter) * nrinput))) {
 			ret = createException(MAL, "sql.unionfunc", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto finalize;
 		}
@@ -5024,7 +5024,7 @@ SQLunionfunc(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 
 		/* create result bats */
-		if (!(res = sa_zalloc(nmb->ma, sizeof(BAT*) * pci->retc))) {
+		if (!(res = ma_zalloc(nmb->ma, sizeof(BAT*) * pci->retc))) {
 			ret = createException(MAL, "sql.unionfunc", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto finalize;
 		}
@@ -5053,7 +5053,7 @@ SQLunionfunc(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		int start = 1;
 		if (nmb->stop == 1 && (omb || !npci->fcn || npci->token != PATcall)) {
 			InstrPtr *stmt = nmb->stmt;
-			nmb->stmt = (InstrPtr*)sa_alloc(nmb->instr_allocator, sizeof(InstrPtr*)*3);
+			nmb->stmt = (InstrPtr*)ma_alloc(nmb->instr_allocator, sizeof(InstrPtr*)*3);
 			nmb->stmt[0] = NULL; /* no main() */
 			nmb->stmt[1] = NULL; /* no profiling */
 			nmb->stmt[2] = stmt[0];
@@ -5251,21 +5251,21 @@ str_vacuum_callback(int argc, void *argv[])
 
 	(void) argc;
 
-	if ((sa = sa_create(NULL)) == NULL) {
+	if ((sa = create_allocator(NULL, NULL, false)) == NULL) {
 		TRC_ERROR(SQL_EXECUTION, "[str_vacuum_callback] -- Failed to create allocator!");
 		return GDK_FAIL;
 	}
 
 	if ((session = sql_session_create(store, sa, 0)) == NULL) {
 		TRC_ERROR(SQL_EXECUTION, "[str_vacuum_callback] -- Failed to create session!");
-		sa_destroy(sa);
+		ma_destroy(sa);
 		return GDK_FAIL;
 	}
 
 	if (sql_trans_begin(session) < 0) {
 		TRC_ERROR(SQL_EXECUTION, "[str_vacuum_callback] -- Failed to begin transaction!");
 		sql_session_destroy(session);
-		sa_destroy(sa);
+		ma_destroy(sa);
 		return GDK_FAIL;
 	}
 
@@ -5319,7 +5319,7 @@ str_vacuum_callback(int argc, void *argv[])
 	}
 
 	sql_session_destroy(session);
-	sa_destroy(sa);
+	ma_destroy(sa);
 	return res;
 }
 
@@ -5532,7 +5532,7 @@ SQLcheck(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			sql_exp *exp = NULL;
 			if (rel) {
 				rel_base_use_all(m, rel);
-				exp = exp_read(m, rel, NULL, NULL, sa_strdup(m->sa, k->check), &pos, 0);
+				exp = exp_read(m, rel, NULL, NULL, ma_strdup(m->sa, k->check), &pos, 0);
 			}
 			assert(exp);
 			if (!exp)

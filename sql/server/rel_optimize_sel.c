@@ -1128,9 +1128,9 @@ static sql_rel *
 rel_optimize_select_and_joins_bottomup(visitor *v, global_props *gp, sql_rel *rel)
 {
 	v->data = &gp->opt_cycle;
-	sa_open(v->sql->ta);
+	ma_open(v->sql->ta);
 	rel = rel_visitor_bottomup(v, rel, &rel_optimize_select_and_joins_bottomup_);
-	sa_close(v->sql->ta);
+	ma_close(v->sql->ta);
 	v->data = gp;
 	return rel;
 }
@@ -2146,7 +2146,7 @@ find_fk( mvc *sql, list *rels, list *exps)
 				swapped = 1;
 			}
 
-			if (idx && (iname = sa_strconcat( sql->sa, "%", idx->base.name)) != NULL &&
+			if (idx && (iname = ma_strconcat( sql->sa, "%", idx->base.name)) != NULL &&
 				   ((!swapped && name_find_column(olr, NULL, iname, -2, &bt) == NULL) ||
 			            ( swapped && name_find_column(orr, NULL, iname, -2, &bt) == NULL)))
 				idx = NULL;
@@ -2820,7 +2820,7 @@ rel_join_order(visitor *v, global_props *gp, sql_rel *rel)
 {
 	(void) gp;
 	sql_rel *r = rel_join_order_(v, rel);
-	sa_reset(v->sql->ta);
+	ma_reset(v->sql->ta);
 	return r;
 }
 

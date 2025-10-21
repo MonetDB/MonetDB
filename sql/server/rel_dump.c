@@ -105,7 +105,7 @@ dump_sql_subtype(allocator *sa, sql_subtype *t)
 		snprintf(buf, sizeof(buf), "%s(%u)", t->type->base.name, t->digits);
 	else
 		snprintf(buf, sizeof(buf), "%s", t->type->base.name);
-	return sa_strdup(sa, buf);
+	return ma_strdup(sa, buf);
 }
 
 static void exps_print(mvc *sql, stream *fout, list *exps, int depth, list *refs, int alias, int brackets, int decorate, int expbrk);
@@ -1257,8 +1257,8 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 		}
 		*e = 0;
 
-		tname = sa_strdup(sql->sa, tname);
-		cname = sa_strdup(sql->sa, cname);
+		tname = ma_strdup(sql->sa, tname);
+		cname = ma_strdup(sql->sa, cname);
 		*e = old;
 		skipWS(r, pos);
 		if (r[*pos] != '(') { /* if there's a function/aggregate call next don't attempt to bind columns */
@@ -1725,7 +1725,7 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 		old = *e;
 		*e = 0;
 		convertIdent(b);
-		var_cname = sa_strdup(sql->sa, b);
+		var_cname = ma_strdup(sql->sa, b);
 		if (top_exps) {
 			exp = exps_bind_column(top_exps, var_cname, &amb, &mul, 1);
 			if (exp)
@@ -1751,9 +1751,9 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 
 		if (find_variable_on_scope(sql, has_tname ? tname : NULL, cname ? cname : var_cname, &var, &a, &tpe, &level, "SELECT")) {
 			if (var) /* if variable is known from the stack or a global var */
-				exp = exp_param_or_declared(sql->sa, var->sname ? sa_strdup(sql->sa, var->sname) : NULL, sa_strdup(sql->sa, var->name), &(var->var.tpe), level);
+				exp = exp_param_or_declared(sql->sa, var->sname ? ma_strdup(sql->sa, var->sname) : NULL, ma_strdup(sql->sa, var->name), &(var->var.tpe), level);
 			if (a) /* if variable is a parameter */
-				exp = exp_param_or_declared(sql->sa, NULL, sa_strdup(sql->sa, cname), &(a->type), level);
+				exp = exp_param_or_declared(sql->sa, NULL, ma_strdup(sql->sa, cname), &(a->type), level);
 		}
 	}
 
@@ -1814,7 +1814,7 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 		if (r[*pos] != '.') {
 			cname = tname;
 			tname = NULL;
-			exp_setname(sql, exp, NULL, sa_strdup(sql->sa, cname));
+			exp_setname(sql, exp, NULL, ma_strdup(sql->sa, cname));
 			skipWS(r, pos);
 		} else {
 			(*pos)++;
@@ -1823,7 +1823,7 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 			convertIdent(cname);
 			(*pos)++;
 			skipWS(r, pos);
-			exp_setname(sql, exp, sa_strdup(sql->sa, tname), sa_strdup(sql->sa, cname));
+			exp_setname(sql, exp, ma_strdup(sql->sa, tname), ma_strdup(sql->sa, cname));
 		}
 		rlabel = try_update_label_count(sql, tname);
 		nlabel = try_update_label_count(sql, cname);

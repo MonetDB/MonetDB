@@ -154,7 +154,7 @@ rel_basetable(mvc *sql, sql_table *t, const char *atname)
 	allocator *sa = sql->sa;
 	sql_rel *rel = rel_create(sa);
 	int nrcols = ol_length(t->columns), end = nrcols + 1 + ol_length(t->idxs);
-	rel_base_t *ba = (rel_base_t*)sa_zalloc(sa, sizeof(rel_base_t) + sizeof(int)*USED_LEN(end));
+	rel_base_t *ba = (rel_base_t*)ma_zalloc(sa, sizeof(rel_base_t) + sizeof(int)*USED_LEN(end));
 	sqlstore *store = sql->session->tr->store;
 
 	if(!rel || !ba)
@@ -166,7 +166,7 @@ rel_basetable(mvc *sql, sql_table *t, const char *atname)
 		set_count_prop(sql->sa, rel, (BUN)store->storage_api.count_col(sql->session->tr, ol_first_node(t->columns)->data, CNT_ACTIVE));
 	assert(atname);
 	if (strcmp(atname, t->base.name) != 0)
-		ba->name = sa_strdup(sa, atname);
+		ba->name = ma_strdup(sa, atname);
 	for(int i = nrcols; i<end; i++)
 		rel_base_set_used(ba, i);
 	rel->l = t;
@@ -187,11 +187,11 @@ rel_base_copy(mvc *sql, sql_rel *in, sql_rel *out)
 	assert(is_basetable(in->op) && is_basetable(out->op));
 	int nrcols = ol_length(t->columns), end = nrcols + 1 + ol_length(t->idxs);
 	size_t bsize = sizeof(rel_base_t) + sizeof(uint32_t)*USED_LEN(end);
-	rel_base_t *nba = (rel_base_t*)sa_alloc(sa, bsize);
+	rel_base_t *nba = (rel_base_t*)ma_alloc(sa, bsize);
 
 	memcpy(nba, ba, bsize);
 	if (ba->name)
-		nba->name = sa_strdup(sa, ba->name);
+		nba->name = ma_strdup(sa, ba->name);
 
 	out->l = t;
 	out->r = nba;
@@ -349,7 +349,7 @@ rel_base_projection( mvc *sql, sql_rel *rel, int intern)
 				if (i->type == join_idx)
 					t = sql_fetch_localtype(TYPE_oid);
 
-				char *iname = sa_strconcat( sql->sa, "%", i->base.name);
+				char *iname = ma_strconcat( sql->sa, "%", i->base.name);
 				for (node *n = i->columns->h ; n && !has_nils; n = n->next) { /* check for NULL values */
 					sql_kc *kc = n->data;
 
@@ -507,7 +507,7 @@ rewrite_basetable(mvc *sql, sql_rel *rel, bool stats)
 				continue;
 
 			t = (i->type == join_idx) ? sql_fetch_localtype(TYPE_oid) : sql_fetch_localtype(TYPE_lng);
-			iname = sa_strconcat( sa, "%", i->base.name);
+			iname = ma_strconcat( sa, "%", i->base.name);
 			for (node *n = i->columns->h ; n && !has_nils; n = n->next) { /* check for NULL values */
 				sql_kc *kc = n->data;
 
@@ -636,7 +636,7 @@ rel_rename_part(mvc *sql, sql_rel *p, sql_rel *mt_rel, const char *mtalias)
 
 			assert((!hash_index(ri->type) || list_length(ri->columns) > 1) && idx_has_column(ri->type));
 			sql_subtype *t = (ri->type == join_idx) ? sql_fetch_localtype(TYPE_oid) : sql_fetch_localtype(TYPE_lng);
-			char *iname1 = sa_strconcat(sql->sa, "%", i->base.name), *iname2 = sa_strconcat(sql->sa, "%", ri->base.name);
+			char *iname1 = ma_strconcat(sql->sa, "%", i->base.name), *iname2 = ma_strconcat(sql->sa, "%", ri->base.name);
 
 			ne = exp_alias(sql, mtalias, iname1, pname, iname2, t, CARD_MULTI, has_nil(e), is_unique(e), 1);
 			/* index names are prefixed, to make them independent */

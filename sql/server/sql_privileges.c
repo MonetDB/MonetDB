@@ -820,7 +820,7 @@ mvc_set_schema(mvc *m, char *schema)
 {
 	int ret = 0;
 	sql_schema *s = find_sql_schema(m->session->tr, schema);
-	char* new_schema_name = sa_strdup(m->session->sa, schema);
+	char* new_schema_name = ma_strdup(m->session->sa, schema);
 
 	if (s && new_schema_name) {
 		m->session->schema_name = new_schema_name;

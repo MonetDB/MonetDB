@@ -127,7 +127,7 @@ newMalBlk(int elements)
 		ma_destroy(ma);
 		return NULL;
 	}
-	sa_set_ta(ma, ta);
+	ma_set_ta(ma, ta);
 	allocator *instr_allocator = create_allocator(ma, "MA_MalInstructions", false);
 	if (instr_allocator == NULL) {
 		ma_destroy(ma);
@@ -332,7 +332,7 @@ copyMalBlk(MalBlkPtr old)
 {
 	MalBlkPtr mb;
 	int i;
-	allocator *ma = ma_create(NULL);
+	allocator *ma = create_allocator(NULL, NULL, true);
 
 	if (!ma)
 		return NULL;
@@ -343,8 +343,8 @@ copyMalBlk(MalBlkPtr old)
 	}
 
 	mb->ma = ma;
-	mb->ta = ma_create(ma);
-	mb->instr_allocator = ma_create(ma);
+	mb->ta = create_allocator(ma, NULL, true);
+	mb->instr_allocator = create_allocator(ma, NULL, true);
 	mb->var = MA_ZNEW_ARRAY(ma, VarRecord, old->vsize);
 	if (mb->var == NULL) {
 		ma_destroy(ma);

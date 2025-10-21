@@ -377,7 +377,7 @@ rm_mtthread(struct mtthread *t)
 		*pt = t->next;
 	free(t);
 	thread_unlock();
-	sa_destroy(ta);
+	ma_destroy(ta);
 }
 
 bool

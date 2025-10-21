@@ -2399,7 +2399,7 @@ _sa_free_blks(allocator *sa, size_t start_idx)
 /*
  * Reset allocator to initial state
  */
-allocator *sa_reset(allocator *sa)
+allocator *ma_reset(allocator *sa)
 {
 	COND_LOCK_ALLOCATOR(sa);
 	assert(!sa_has_dependencies(sa));
@@ -2443,15 +2443,15 @@ allocator *sa_reset(allocator *sa)
 
 static void * _sa_alloc_internal(allocator* sa, size_t sz);
 
-#undef sa_realloc
+#undef ma_realloc
 void *
-sa_realloc(allocator *sa, void *p, size_t sz, size_t oldsz)
+ma_realloc(allocator *sa, void *p, size_t sz, size_t oldsz)
 {
-	void *r = sa_alloc(sa, sz);
+	void *r = ma_alloc(sa, sz);
 
 	if (r)
 		memcpy(r, p, oldsz);
-	if (oldsz >= sa->blk_size && !sa_tmp_active(sa)) {
+	if (oldsz >= sa->blk_size && !ma_tmp_active(sa)) {
 		char* ptr = (char *) p - SA_HEADER_SIZE;
 		COND_LOCK_ALLOCATOR(sa);
 		sa_free_blk(sa, ptr);
@@ -2507,7 +2507,7 @@ _sa_alloc_internal(allocator *sa, size_t sz)
 {
 	assert(sz > 0);
 	sz = round16(sz);
-	char *r = sa_tmp_active(sa) ? NULL : sa_use_freed(sa, sz);
+	char *r = ma_tmp_active(sa) ? NULL : sa_use_freed(sa, sz);
 	if (r)
 		return r;
 	COND_LOCK_ALLOCATOR(sa);
@@ -2581,9 +2581,9 @@ _sa_alloc_internal(allocator *sa, size_t sz)
 	return r;
 }
 
-#undef sa_alloc
+#undef ma_alloc
 void *
-sa_alloc(allocator *sa, size_t sz)
+ma_alloc(allocator *sa, size_t sz)
 {
 	assert(sa);
 	size_t nsize = sz + SA_HEADER_SIZE;
@@ -2592,7 +2592,7 @@ sa_alloc(allocator *sa, size_t sz)
 }
 
 void
-sa_set_ta(allocator *sa, allocator *ta)
+ma_set_ta(allocator *sa, allocator *ta)
 {
 	assert(ta);
 	assert(sa->ta == NULL);
@@ -2600,7 +2600,7 @@ sa_set_ta(allocator *sa, allocator *ta)
 }
 
 allocator *
-sa_get_ta(allocator *sa)
+ma_get_ta(allocator *sa)
 {
 	assert(sa->ta);
 	return sa->ta;
@@ -2653,11 +2653,11 @@ create_allocator(allocator *pa, const char *name, bool use_lock)
 	return sa;
 }
 
-#undef sa_zalloc
+#undef ma_zalloc
 void *
-sa_zalloc(allocator *sa, size_t sz)
+ma_zalloc(allocator *sa, size_t sz)
 {
-	void *r = sa_alloc(sa, sz);
+	void *r = ma_alloc(sa, sz);
 
 	if (r)
 		memset(r, 0, sz);
@@ -2665,7 +2665,7 @@ sa_zalloc(allocator *sa, size_t sz)
 }
 
 void
-sa_destroy(allocator *sa)
+ma_destroy(allocator *sa)
 {
 	if (sa) {
 		bool root_allocator = sa->pa == NULL;
@@ -2698,11 +2698,11 @@ sa_destroy(allocator *sa)
 	}
 }
 
-#undef sa_strndup
+#undef ma_strndup
 char *
-sa_strndup(allocator *sa, const char *s, size_t l)
+ma_strndup(allocator *sa, const char *s, size_t l)
 {
-	char *r = sa_alloc(sa, l+1);
+	char *r = ma_alloc(sa, l+1);
 
 	if (r) {
 		memcpy(r, s, l);
@@ -2711,19 +2711,19 @@ sa_strndup(allocator *sa, const char *s, size_t l)
 	return r;
 }
 
-#undef sa_strdup
+#undef ma_strdup
 char *
-sa_strdup(allocator *sa, const char *s)
+ma_strdup(allocator *sa, const char *s)
 {
-	return sa_strndup(sa, s, strlen(s));
+	return ma_strndup(sa, s, strlen(s));
 }
 
 char *
-sa_strconcat(allocator *sa, const char *s1, const char *s2)
+ma_strconcat(allocator *sa, const char *s1, const char *s2)
 {
 	size_t l1 = strlen(s1);
 	size_t l2 = strlen(s2);
-	char *r = sa_alloc(sa, l1+l2+1);
+	char *r = ma_alloc(sa, l1+l2+1);
 
 	if (l1)
 		memcpy(r, s1, l1);
@@ -2734,29 +2734,29 @@ sa_strconcat(allocator *sa, const char *s1, const char *s2)
 }
 
 size_t
-sa_size(allocator *sa)
+ma_size(allocator *sa)
 {
 	return sa->usedmem;
 }
 
 const char *
-sa_name(allocator *sa)
+ma_name(allocator *sa)
 {
 	return sa->name;
 }
 
 exception_buffer *
-sa_get_eb(allocator *sa)
+ma_get_eb(allocator *sa)
 {
 	return &sa->eb;
 }
 
 allocator_state *
-sa_open(allocator *sa)
+ma_open(allocator *sa)
 {
 	assert(sa);
 	if (sa) {
-		allocator_state *res = sa_alloc(sa,
+		allocator_state *res = ma_alloc(sa,
 				sizeof(allocator_state));
 		if (!res) {
 			if (sa->eb.enabled)
@@ -2778,27 +2778,27 @@ sa_open(allocator *sa)
 }
 
 void
-sa_close(allocator *sa)
+ma_close(allocator *sa)
 {
 	COND_LOCK_ALLOCATOR(sa);
-	assert(sa_tmp_active(sa));
+	assert(ma_tmp_active(sa));
 	if (sa->tmp_used > 0)
 		sa->tmp_used -= 1;
-	if (!sa_tmp_active(sa) && !sa_has_dependencies(sa)) {
+	if (!ma_tmp_active(sa) && !sa_has_dependencies(sa)) {
 		COND_UNLOCK_ALLOCATOR(sa);
-		sa_reset(sa);
+		ma_reset(sa);
 		return;
 	}
 	COND_UNLOCK_ALLOCATOR(sa);
 }
 
 void
-sa_close_to(allocator *sa, allocator_state *state)
+ma_close_to(allocator *sa, allocator_state *state)
 {
 	assert(sa);
 	if (sa) {
 		COND_LOCK_ALLOCATOR(sa);
-		assert(sa_tmp_active(sa));
+		assert(ma_tmp_active(sa));
 		if (state && !sa_has_dependencies(sa)) {
 			assert((state->nr > 0) && (state->nr <= sa->nr));
 			assert(state->used <= SA_BLOCK_SIZE);
@@ -2820,16 +2820,16 @@ sa_close_to(allocator *sa, allocator_state *state)
 }
 
 bool
-sa_tmp_active(const allocator *a)
+ma_tmp_active(const allocator *a)
 {
     return a && (a->tmp_used > 0);
 }
 
 void
-sa_free(allocator *sa, void *obj)
+ma_free(allocator *sa, void *obj)
 {
 	COND_LOCK_ALLOCATOR(sa);
-	if (!obj || sa_tmp_active(sa)) return; // nothing to do
+	if (!obj || ma_tmp_active(sa)) return; // nothing to do
 	// retrieve size from header
 	char* ptr = (char *) obj - SA_HEADER_SIZE;
 	size_t sz = *((size_t *) ptr);
@@ -2854,7 +2854,7 @@ sa_free(allocator *sa, void *obj)
 
 
 allocator *
-sa_get_parent(const allocator *a)
+ma_get_parent(const allocator *a)
 {
     return a ? a->pa : NULL;
 }

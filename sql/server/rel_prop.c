@@ -59,13 +59,13 @@ prop_remove(allocator *sa, prop *plist, prop *p)
 
 	if (plist == p) {
 		plist = p->p;
-		// sa_free(sa, p);
+		// ma_free(sa, p);
 		return plist;
 	}
 	for(; op; op = op->p) {
 		if (op->p == p) {
 			op->p = p->p;
-			// sa_free(sa, p);
+			// ma_free(sa, p);
 			break;
 		}
 	}
@@ -128,11 +128,11 @@ propvalue2string(allocator *sa, prop *p)
 	switch(p->kind) {
 	case PROP_COUNT: {
 		snprintf(buf, sizeof(buf), BUNFMT, p->value.lval);
-		return sa_strdup(sa, buf);
+		return ma_strdup(sa, buf);
 	}
 	case PROP_NUNIQUES: {
 		snprintf(buf, sizeof(buf), "%f", p->value.dval);
-		return sa_strdup(sa, buf);
+		return ma_strdup(sa, buf);
 	}
 	case PROP_JOINIDX: {
 		sql_idx *i = p->value.pval;
@@ -140,7 +140,7 @@ propvalue2string(allocator *sa, prop *p)
 		if (i) {
 			snprintf(buf, sizeof(buf), "\"%s\".\"%s\".\"%s\"", sql_escape_ident(sa, i->t->s->base.name),
 					 sql_escape_ident(sa, i->t->base.name), sql_escape_ident(sa, i->base.name));
-			return sa_strdup(sa, buf);
+			return ma_strdup(sa, buf);
 		}
 	} break;
 	case PROP_REMOTE: {
@@ -154,7 +154,7 @@ propvalue2string(allocator *sa, prop *p)
 					                   sql_escape_ident(sa, offset?" ":""),
 					                   sql_escape_ident(sa, tu->uri));
 			}
-			return sa_strdup(sa, buf);
+			return ma_strdup(sa, buf);
 		}
 	} break;
 	case PROP_MIN:
@@ -163,13 +163,13 @@ propvalue2string(allocator *sa, prop *p)
 		char *res = NULL;
 
 		if (a->isnull) {
-			res = sa_strdup(sa, "\"NULL\"");
+			res = ma_strdup(sa, "\"NULL\"");
 		} else {
 			char *s = ATOMformat(sa, a->data.vtype, VALptr(&a->data));
 			if (s && *s == '"') {
-				res = sa_strdup(sa, s);
+				res = ma_strdup(sa, s);
 			} else if (s) {
-				res = sa_alloc(sa, strlen(s) + 3);
+				res = ma_alloc(sa, strlen(s) + 3);
 				stpcpy(stpcpy(stpcpy(res, "\""), s), "\"");
 			}
 			// GDKfree(s);
@@ -179,7 +179,7 @@ propvalue2string(allocator *sa, prop *p)
 	default:
 		break;
 	}
-	return sa_strdup(sa, "");
+	return ma_strdup(sa, "");
 }
 
 
@@ -189,6 +189,6 @@ free_props( allocator *sa, prop *p )
 	while(p) {
 		prop* tmp = p;
 		p = p->p;
-		sa_free(sa, tmp);
+		ma_free(sa, tmp);
 	}
 }

@@ -1735,100 +1735,88 @@ gdk_export ValPtr VALinit(allocator *va, ValPtr d, int tpe, const void *s)
 	__attribute__((__access__(write_only, 1)));
 
 gdk_export allocator *create_allocator(allocator *pa, const char *, bool use_lock);
-gdk_export allocator *sa_get_parent(const allocator *sa);
-gdk_export bool sa_tmp_active(const allocator *sa);
-gdk_export allocator *sa_reset(allocator *sa);
-gdk_export void *sa_alloc(allocator *sa,  size_t sz);
-gdk_export void *sa_zalloc(allocator *sa,  size_t sz);
-gdk_export void *sa_realloc(allocator *sa,  void *ptr, size_t sz, size_t osz);
-gdk_export void sa_destroy(allocator *sa);
-gdk_export char *sa_strndup(allocator *sa, const char *s, size_t l);
-gdk_export char *sa_strdup(allocator *sa, const char *s);
-gdk_export char *sa_strconcat(allocator *sa, const char *s1, const char *s2);
-gdk_export size_t sa_size(allocator *sa);
-gdk_export const char* sa_name(allocator *sa);
-gdk_export allocator_state* sa_open(allocator *sa);  /* open new frame of tempory allocations */
-gdk_export void sa_close(allocator *sa); /* close temporary frame, reset to initial state */
-gdk_export void sa_close_to(allocator *sa, allocator_state *); /* close temporary frame, reset to old state */
-gdk_export void sa_free(allocator *sa, void *);
-gdk_export exception_buffer *sa_get_eb(allocator *sa)
+gdk_export allocator *ma_get_parent(const allocator *sa);
+gdk_export bool ma_tmp_active(const allocator *sa);
+gdk_export allocator *ma_reset(allocator *sa);
+gdk_export void *ma_alloc(allocator *sa,  size_t sz);
+gdk_export void *ma_zalloc(allocator *sa,  size_t sz);
+gdk_export void *ma_realloc(allocator *sa,  void *ptr, size_t sz, size_t osz);
+gdk_export void ma_destroy(allocator *sa);
+gdk_export char *ma_strndup(allocator *sa, const char *s, size_t l);
+gdk_export char *ma_strdup(allocator *sa, const char *s);
+gdk_export char *ma_strconcat(allocator *sa, const char *s1, const char *s2);
+gdk_export size_t ma_size(allocator *sa);
+gdk_export const char* ma_name(allocator *sa);
+gdk_export allocator_state* ma_open(allocator *sa);  /* open new frame of tempory allocations */
+gdk_export void ma_close(allocator *sa); /* close temporary frame, reset to initial state */
+gdk_export void ma_close_to(allocator *sa, allocator_state *); /* close temporary frame, reset to old state */
+gdk_export void ma_free(allocator *sa, void *);
+gdk_export exception_buffer *ma_get_eb(allocator *sa)
        __attribute__((__pure__));
 
-gdk_export void sa_set_ta(allocator *sa,  allocator *ta);
-gdk_export allocator *sa_get_ta(allocator *sa);
+gdk_export void ma_set_ta(allocator *sa,  allocator *ta);
+gdk_export allocator *ma_get_ta(allocator *sa);
 
-#define sa_create(pa)		create_allocator(pa, NULL, false)
-#define ma_create(pa)		create_allocator(pa, NULL, true)
-#define ma_destroy(ma)		sa_destroy(ma)
-#define ma_alloc(ma, sz)	(void*)sa_alloc(ma, sz)
-#define ma_zalloc(ma, sz)	(void*)sa_zalloc(ma, sz)
-#define ma_realloc(ma, obj, sz, osz) (void *) sa_realloc(ma, obj, sz, osz)
-#define ma_open(ma)		sa_open(ma)
-#define ma_close(ma)		sa_close(ma)
-#define ma_close_to(ma, state)	sa_close_to(ma, state)
-#define ma_free(ma, obj)	sa_free(ma, obj)
-#define ma_reset(ma)		sa_reset(ma)
-
-#define MA_NEW( sa, type )				((type*)sa_alloc( sa, sizeof(type)))
-#define MA_ZNEW( sa, type )				((type*)sa_zalloc( sa, sizeof(type)))
-#define MA_NEW_ARRAY( sa, type, size )			(type*)sa_alloc( sa, ((size)*sizeof(type)))
-#define MA_ZNEW_ARRAY( sa, type, size )			(type*)sa_zalloc( sa, ((size)*sizeof(type)))
-#define MA_RENEW_ARRAY( sa, type, ptr, sz, osz )	(type*)sa_realloc( sa, ptr, ((sz)*sizeof(type)), ((osz)*sizeof(type)))
-#define MA_STRDUP( sa, s)				sa_strdup(sa, s)
-#define MA_STRNDUP( sa, s, l)				sa_strndup(sa, s, l)
+#define MA_NEW( sa, type )				((type*)ma_alloc( sa, sizeof(type)))
+#define MA_ZNEW( sa, type )				((type*)ma_zalloc( sa, sizeof(type)))
+#define MA_NEW_ARRAY( sa, type, size )			(type*)ma_alloc( sa, ((size)*sizeof(type)))
+#define MA_ZNEW_ARRAY( sa, type, size )			(type*)ma_zalloc( sa, ((size)*sizeof(type)))
+#define MA_RENEW_ARRAY( sa, type, ptr, sz, osz )	(type*)ma_realloc( sa, ptr, ((sz)*sizeof(type)), ((osz)*sizeof(type)))
+#define MA_STRDUP( sa, s)				ma_strdup(sa, s)
+#define MA_STRNDUP( sa, s, l)				ma_strndup(sa, s, l)
 
 
 #if !defined(NDEBUG) && !defined(__COVERITY__) && defined(__GNUC__)
-#define sa_alloc(sa, sz)					\
+#define ma_alloc(sa, sz)					\
 	({							\
 		allocator *_sa = (sa);				\
 		size_t _sz = (sz);				\
-		void *_res = sa_alloc(_sa, _sz);		\
+		void *_res = ma_alloc(_sa, _sz);		\
 		TRC_DEBUG(ALLOC,				\
-			  "sa_alloc(%p,%zu) -> %p\n",		\
+			  "ma_alloc(%p,%zu) -> %p\n",		\
 			  _sa, _sz, _res);			\
 		_res;						\
 	})
-#define sa_zalloc(sa, sz)					\
+#define ma_zalloc(sa, sz)					\
 	({							\
 		allocator *_sa = (sa);				\
 		size_t _sz = (sz);				\
-		void *_res = sa_zalloc(_sa, _sz);		\
+		void *_res = ma_zalloc(_sa, _sz);		\
 		TRC_DEBUG(ALLOC,				\
-			  "sa_zalloc(%p,%zu) -> %p\n",		\
+			  "ma_zalloc(%p,%zu) -> %p\n",		\
 			  _sa, _sz, _res);			\
 		_res;						\
 	})
-#define sa_realloc(sa, ptr, sz, osz)					\
+#define ma_realloc(sa, ptr, sz, osz)					\
 	({								\
 		allocator *_sa = (sa);					\
 		void *_ptr = (ptr);					\
 		size_t _sz = (sz);					\
 		size_t _osz = (osz);					\
-		void *_res = sa_realloc(_sa, _ptr, _sz, _osz);		\
+		void *_res = ma_realloc(_sa, _ptr, _sz, _osz);		\
 		TRC_DEBUG(ALLOC,					\
-			  "sa_realloc(%p,%p,%zu,%zu) -> %p\n",		\
+			  "ma_realloc(%p,%p,%zu,%zu) -> %p\n",		\
 			  _sa, _ptr, _sz, _osz, _res);			\
 		_res;							\
 	})
-#define sa_strdup(sa, s)						\
+#define ma_strdup(sa, s)						\
 	({								\
 		allocator *_sa = (sa);					\
 		const char *_s = (s);					\
-		char *_res = sa_strdup(_sa, _s);			\
+		char *_res = ma_strdup(_sa, _s);			\
 		TRC_DEBUG(ALLOC,					\
-			  "sa_strdup(%p,len=%zu) -> %p\n",		\
+			  "ma_strdup(%p,len=%zu) -> %p\n",		\
 			  _sa, strlen(_s), _res);			\
 		_res;							\
 	})
-#define sa_strndup(sa, s, l)						\
+#define ma_strndup(sa, s, l)						\
 	({								\
 		allocator *_sa = (sa);					\
 		const char *_s = (s);					\
 		size_t _l = (l);					\
-		char *_res = sa_strndup(_sa, _s, _l);			\
+		char *_res = ma_strndup(_sa, _s, _l);			\
 		TRC_DEBUG(ALLOC,					\
-			  "sa_strndup(%p,len=%zu) -> %p\n",		\
+			  "ma_strndup(%p,len=%zu) -> %p\n",		\
 			  _sa, _l, _res);				\
 		_res;							\
 	})
