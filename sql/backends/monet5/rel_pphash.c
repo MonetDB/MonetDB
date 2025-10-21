@@ -18,30 +18,6 @@
 #include "bin_partition_by_value.h"
 #include "mal_builder.h"
 
-#if 0
-static lng
-get_max_bt_count(mvc *sql, sql_rel *rel, lng max)
-{
-	lng cur_max = max;
-
-	if (rel->op == op_basetable) {
-		sql_table *t = rel->l;
-		if (t && isTable(t)) {
-			sqlstore *store = sql->session->tr->store;
-			lng nr =  (lng)store->storage_api.count_col(sql->session->tr, ol_first_node(t->columns)->data, 0);
-			assert(nr >= 0);
-			return nr > max? nr : max;
-		}
-	} else {
-		if (rel->l)
-			cur_max = get_max_bt_count(sql, rel->l, cur_max);
-		if (rel->r)
-			cur_max = get_max_bt_count(sql, rel->r, cur_max);
-	}
-	return cur_max;
-}
-#endif
-
 static lng
 _estimate(mvc *sql, sql_rel *rel)
 {
