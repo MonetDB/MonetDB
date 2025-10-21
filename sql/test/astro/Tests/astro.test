@@ -69,7 +69,7 @@ table("sys"."fluxz") [ "fluxz"."runcat" NOT NULL UNIQUE, "fluxz"."filter" NOT NU
 update(
 | & REF 1 
 | project (
-| | left outer join (
+| | single left outer join (
 | | | & REF 1 ,
 | | | single project (
 | | | | select (

@@ -1109,6 +1109,7 @@ update_generate_assignments(sql_query *query, sql_table *t, sql_rel *r, sql_rel 
 				r->flag |= MERGE_LEFT;
 				set_dependent(r);
 				set_processed(r);
+				set_single(r);
 				if (single) {
 					v = exp_column(sql->sa, NULL, exp_name(v), exp_subtype(v), v->card, has_nil(v), is_unique(v), is_intern(v));
 					rel_val = NULL;
