@@ -674,3 +674,10 @@ drop procedure profiler.setlimit cascade;
 drop function profiler.getlimit cascade;
 drop procedure profiler.setheartbeat cascade;
 
+Running database upgrade commands:
+ALTER TABLE sys.keywords SET READ WRITE;
+DELETE FROM sys.keywords WHERE keyword = 'PLAN';
+
+Running database upgrade commands:
+ALTER TABLE sys.keywords SET READ ONLY;
+
