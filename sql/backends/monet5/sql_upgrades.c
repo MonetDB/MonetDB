@@ -5145,11 +5145,15 @@ sql_update_default(Client c, mvc *sql, sql_schema *s)
 		BBPreclaim(b);
 	}
 	res_table_destroy(output);
+	if (err)
+		return err;
 
 	if (sql_bind_func(sql, "sys", "optimizer_stats", NULL, NULL, F_UNION, true, true)) {
 		const char query[] = "drop function sys.optimizer_stats cascade;\n";
 		printf("Running database upgrade commands:\n%s\n", query);
 		err = SQLstatementIntern(c, query, "update", true, false, NULL);
+		if (err)
+			return err;
 	} else {
 		sql->session->status = 0; /* if the function was not found clean the error */
 		sql->errstr[0] = '\0';
@@ -5163,10 +5167,31 @@ sql_update_default(Client c, mvc *sql, sql_schema *s)
 			"drop procedure profiler.setheartbeat cascade;\n";
 		printf("Running database upgrade commands:\n%s\n", query);
 		err = SQLstatementIntern(c, query, "update", true, false, NULL);
+		if (err)
+			return err;
 	} else {
 		sql->session->status = 0; /* if the function was not found clean the error */
 		sql->errstr[0] = '\0';
 	}
+
+	if ((err = SQLstatementIntern(c, "select keyword from sys.keywords where keyword = 'PLAN';\n", "update", true, false, &output)))
+		return err;
+	if ((b = BBPquickdesc(output->cols[0].b)) && BATcount(b) > 0) {
+		const char query[] =
+			"ALTER TABLE sys.keywords SET READ WRITE;\n"
+			"DELETE FROM sys.keywords WHERE keyword = 'PLAN';\n";
+		printf("Running database upgrade commands:\n%s\n", query);
+		fflush(stdout);
+		err = SQLstatementIntern(c, query, "update", true, false, NULL);
+		if (err == MAL_SUCCEED) {
+			const char query2[] = "ALTER TABLE sys.keywords SET READ ONLY;\n";
+			printf("Running database upgrade commands:\n%s\n", query2);
+			fflush(stdout);
+			err = SQLstatementIntern(c, query2, "update", true, false, NULL);
+		}
+	}
+	res_table_destroy(output);
+	output = NULL;
 
 	return err;
 }

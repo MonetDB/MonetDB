@@ -213,8 +213,7 @@ VIEWcreate(oid seq, BAT *b, BUN l, BUN h)
 
 /*
  * The BATmaterialize routine produces in-place materialized version
- * of a void bat (which should not be a VIEW) (later we should add the
- * code for VIEWs).
+ * of a void bat.
  */
 
 gdk_return
@@ -226,7 +225,6 @@ BATmaterialize(BAT *b, BUN cap)
 	oid t, *x;
 
 	BATcheck(b, GDK_FAIL);
-	assert(!isVIEW(b));
 	if (cap == BUN_NONE || cap < BATcapacity(b))
 		cap = BATcapacity(b);
 	MT_lock_set(&b->theaplock);
