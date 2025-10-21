@@ -366,10 +366,10 @@ static void
 rm_mtthread(struct mtthread *t)
 {
 	struct mtthread **pt;
-	allocator *ta = t->ma;
 
 	assert(t != &mainthread);
 	thread_lock();
+	allocator *ta = t->ma;
 	t->ma = NULL;
 	for (pt = &mtthreads; *pt && *pt != t; pt = &(*pt)->next)
 		;
@@ -454,7 +454,11 @@ MT_thread_register(void)
 		.semawait = ATOMIC_PTR_VAR_INIT(NULL),
 	};
 	snprintf(self->threadname, sizeof(self->threadname), "foreign %zu", self->tid);
-	self->ma = create_allocator(NULL, self->threadname, false),
+	self->ma = create_allocator(NULL, self->threadname, false);
+	if (self->ma == NULL) {
+		free(self);
+		return false;
+	}
 	thread_setself(self);
 	thread_lock();
 	self->next = mtthreads;

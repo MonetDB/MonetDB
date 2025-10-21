@@ -2803,12 +2803,13 @@ sa_close_to(allocator *sa, allocator_state *state)
 			assert((state->nr > 0) && (state->nr <= sa->nr));
 			assert(state->used <= SA_BLOCK_SIZE);
 			if (state->nr != sa->nr || state->used != sa->used) {
-				_sa_free_blks(sa, state->nr);
-				sa->nr = state->nr;
-				sa->used = state->used;
-				sa->usedmem = state->usedmem;
-				sa->objects = state->objects;
-				sa->inuse = state->inuse;
+				allocator_state state_save = *state;
+				_sa_free_blks(sa, state_save.nr);
+				sa->nr = state_save.nr;
+				sa->used = state_save.used;
+				sa->usedmem = state_save.usedmem;
+				sa->objects = state_save.objects;
+				sa->inuse = state_save.inuse;
 			}
 		}
 		if (sa->tmp_used > 0) {
