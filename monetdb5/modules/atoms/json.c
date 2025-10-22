@@ -647,13 +647,14 @@ jsonRead(allocator *ma, str a, size_t *dstlen, stream *s, size_t cnt)
 	if ((a = BATatoms[TYPE_str].atomRead(ma, a, dstlen, s, cnt)) == NULL)
 		return NULL;
 
-	if ((msg = JSONstr2json_intern(ma, &out, 0, &(const char *){a})) != MAL_SUCCEED) {
+	msg = JSONstr2json_intern(ma, &out, 0, &(const char *){a});
+	if (ma == NULL)
+		GDKfree(a);
+	if (msg != MAL_SUCCEED) {
 		freeException(msg);
-		//GDKfree(a);
 		return NULL;
 	}
 	*dstlen = strlen(out) + 1;
-	//GDKfree(a);
 
 	return out;
 }

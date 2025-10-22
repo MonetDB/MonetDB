@@ -323,6 +323,8 @@ dump_threads(void)
 		MT_Cond *cn = t->condwait;
 		struct mtthread *jn = t->joinwait;
 		const char *working = ATOMIC_PTR_GET(&t->working);
+		size_t allocsz = t->ma ? ma_size(t->ma) : 0;
+		const char *allocnm = t->ma ? ma_name(t->ma) : NULL;
 
 		int pos = snprintf(buf, sizeof(buf),
 				   "%s, tid %zu, "
@@ -332,7 +334,7 @@ dump_threads(void)
 #ifdef HAVE_GETTID
 				   "LWP %ld, "
 #endif
-				   "%"PRIu32" free bats, waiting for %s%s, working on %.200s",
+				   "%"PRIu32" free bats, waiting for %s%s, allocator %s %zu%s, working on %.200s",
 				   t->threadname,
 				   t->tid,
 #ifdef HAVE_PTHREAD_H
@@ -344,6 +346,8 @@ dump_threads(void)
 				   t->freebats.nfreebats,
 				   lk ? "lock " : sm ? "semaphore " : cn ? "condvar " : jn ? "thread " : "",
 				   lk ? lk->name : sm ? sm->name : cn ? cn->name : jn ? jn->threadname : "nothing",
+				   allocnm ? allocnm : "unnamed",
+				   allocsz, humansize(allocsz, (char[24]){0}, 24),
 				   ATOMIC_GET(&t->exited) ? "exiting" :
 				   working ? working : "nothing");
 #ifdef LOCK_OWNER
@@ -1014,6 +1018,13 @@ MT_create_thread(MT_Id *t, void (*f) (void *), void *arg, enum MT_thr_detach d, 
 	strcpy_len(self->threadname, threadname, sizeof(self->threadname));
 	char *p;
 	if ((p = strstr(self->threadname, "XXXX")) != NULL) {
+		/* overwrite XXXX with thread ID; bottom three bits are
+		 * likely 0, so skip those */
+		char buf[5];
+		snprintf(buf, sizeof(buf), "%04zu", self->tid % 9999);
+		memcpy(p, buf, 4);
+	}
+	if ((p = strstr(self->ma->name, "XXXX")) != NULL) {
 		/* overwrite XXXX with thread ID; bottom three bits are
 		 * likely 0, so skip those */
 		char buf[5];

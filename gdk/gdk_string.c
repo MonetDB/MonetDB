@@ -55,9 +55,9 @@
 #define atommem(size)					\
 	do {						\
 		if (*dst == NULL || *len < (size)) {	\
-			/*GDKfree(*dst);*/			\
+			/*GDKfree(*dst);*/		\
 			*len = (size);			\
-			*dst = ma_alloc(ma, *len);		\
+			*dst = ma_alloc(ma, *len);	\
 			if (*dst == NULL) {		\
 				*len = 0;		\
 				return -1;		\
@@ -767,7 +767,13 @@ strRead(allocator *ma, str a, size_t *dstlen, stream *s, size_t cnt)
 	if (mnstr_readInt(s, &len) != 1 || len < 0)
 		return NULL;
 	if (a == NULL || *dstlen < (size_t) len + 1) {
-		if ((a = ma_realloc(ma, a, len + 1, *dstlen)) == NULL)
+		if (ma) {
+			a = ma_realloc(ma, a, (size_t) len + 1, *dstlen);
+		} else {
+			GDKfree(a);
+			a = GDKmalloc((size_t) len + 1);
+		}
+		if (a == NULL)
 			return NULL;
 		*dstlen = len + 1;
 	}

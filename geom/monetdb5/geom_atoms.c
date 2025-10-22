@@ -175,7 +175,6 @@ wkbEQ(const void *L, const void *R)
 void *
 wkbREAD(allocator *ma, void *A, size_t *dstlen, stream *s, size_t cnt)
 {
-	assert(ma);
 	wkb *a = A;
 	int len;
 	int srid;
@@ -188,7 +187,13 @@ wkbREAD(allocator *ma, void *A, size_t *dstlen, stream *s, size_t cnt)
 		return NULL;
 	size_t wkblen = (size_t) wkb_size(len);
 	if (a == NULL || *dstlen < wkblen) {
-		if ((a = ma_realloc(ma, a, wkblen, *dstlen)) == NULL)
+		if (ma) {
+			a = ma_realloc(ma, a, wkblen, *dstlen);
+		} else {
+			GDKfree(a);
+			a = GDKmalloc(wkblen);
+		}
+		if (a == NULL)
 			return NULL;
 		*dstlen = wkblen;
 	}
@@ -562,7 +567,13 @@ mbrREAD(allocator *ma, void *A, size_t *dstlen, stream *s, size_t cnt)
 	flt vals[4];
 
 	if (a == NULL || *dstlen < cnt * sizeof(mbr)) {
-		if ((a = ma_realloc(ma, a, cnt * sizeof(mbr), *dstlen)) == NULL)
+		if (ma) {
+			a = ma_realloc(ma, a, cnt * sizeof(mbr), *dstlen);
+		} else {
+			GDKfree(a);
+			a = GDKmalloc(cnt * sizeof(mbr));
+		}
+		if (a == NULL)
 			return NULL;
 		*dstlen = cnt * sizeof(mbr);
 	}

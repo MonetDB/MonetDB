@@ -460,9 +460,9 @@ ATOMdup(int t, const void *p)
 #define atommem(size)					\
 	do {						\
 		if (*dst == NULL || *len < (size)) {	\
-			/*GDKfree(*dst);*/			\
+			/*GDKfree(*dst);*/		\
 			*len = (size);			\
-			*dst = ma_alloc(ma, *len);		\
+			*dst = ma_alloc(ma, *len);	\
 			if (*dst == NULL) {		\
 				*len = 0;		\
 				return -1;		\
@@ -887,12 +887,17 @@ hgeFromStr(allocator *ma, const char *src, size_t *len, hge **dst, bool external
 
 #define atom_io(TYPE, NAME, CAST)					\
 static TYPE *								\
-TYPE##Read(allocator *ma, TYPE *A, size_t *dstlen, stream *s, size_t cnt)		\
+TYPE##Read(allocator *ma, TYPE *A, size_t *dstlen, stream *s, size_t cnt) \
 {									\
-	(void) ma;                                                      \
 	TYPE *a = A;							\
 	if (a == NULL || *dstlen < cnt * sizeof(TYPE)) {		\
-		if ((a = GDKrealloc(a, cnt * sizeof(TYPE))) == NULL)	\
+		if (ma) {						\
+			a = ma_realloc(ma, a, cnt * sizeof(TYPE), *dstlen); \
+		} else {						\
+			GDKfree(a);					\
+			a = GDKmalloc(cnt * sizeof(TYPE));		\
+		}							\
+		if (a == NULL)						\
 			return NULL;					\
 		*dstlen = cnt * sizeof(TYPE);				\
 	}								\
@@ -924,13 +929,18 @@ mskWrite(const msk *a, stream *s, size_t cnt)
 static void *
 mskRead(allocator *ma, msk *A, size_t *dstlen, stream *s, size_t cnt)
 {
-	(void) ma;
 	int8_t v;
 	msk *a = A;
 	if (cnt != 1)
 		return NULL;
 	if (a == NULL || *dstlen == 0) {
-		if ((a = GDKrealloc(a, 1)) == NULL)
+		if (ma) {
+			a = ma_realloc(ma, a, 1, *dstlen);
+		} else {
+			GDKfree(a);
+			a = GDKmalloc(1);
+		}
+		if (a == NULL)
 			return NULL;
 		*dstlen = 1;
 	}
@@ -1361,10 +1371,15 @@ UUIDhash(const void *v)
 static void *
 UUIDread(allocator *ma, void *U, size_t *dstlen, stream *s, size_t cnt)
 {
-	(void) ma;
 	uuid *u = U;
 	if (u == NULL || *dstlen < cnt * sizeof(uuid)) {
-		if ((u = GDKrealloc(u, cnt * sizeof(uuid))) == NULL)
+		if (ma) {
+			u = ma_realloc(ma, u, cnt * sizeof(uuid), *dstlen);
+		} else {
+			GDKfree(u);
+			u = GDKmalloc(cnt * sizeof(uuid));
+		}
+		if (u == NULL)
 			return NULL;
 		*dstlen = cnt * sizeof(uuid);
 	}
@@ -1509,10 +1524,15 @@ INET4hash(const void *v)
 static void *
 INET4read(allocator *ma, void *U, size_t *dstlen, stream *s, size_t cnt)
 {
-	(void) ma;
 	inet4 *u = U;
 	if (u == NULL || *dstlen < cnt * sizeof(inet4)) {
-		if ((u = GDKrealloc(u, cnt * sizeof(inet4))) == NULL)
+		if (ma) {
+			u = ma_realloc(ma, u, cnt * sizeof(inet4), *dstlen);
+		} else {
+			GDKfree(u);
+			u = GDKmalloc(cnt * sizeof(inet4));
+		}
+		if (u == NULL)
 			return NULL;
 		*dstlen = cnt * sizeof(inet4);
 	}
@@ -1724,10 +1744,15 @@ INET6hash(const void *v)
 static void *
 INET6read(allocator *ma, void *U, size_t *dstlen, stream *s, size_t cnt)
 {
-	(void) ma;
 	inet6 *u = U;
 	if (u == NULL || *dstlen < cnt * sizeof(inet6)) {
-		if ((u = GDKrealloc(u, cnt * sizeof(inet6))) == NULL)
+		if (ma) {
+			u = ma_realloc(ma, u, cnt * sizeof(inet6), *dstlen);
+		} else {
+			GDKfree(u);
+			u = GDKmalloc(cnt * sizeof(inet6));
+		}
+		if (u == NULL)
 			return NULL;
 		*dstlen = cnt * sizeof(inet6);
 	}
@@ -1880,7 +1905,13 @@ BLOBread(allocator *ma, void *A, size_t *dstlen, stream *s, size_t cnt)
 	if (mnstr_readInt(s, &len) != 1 || len < 0)
 		return NULL;
 	if (a == NULL || *dstlen < (size_t) len) {
-		if ((a = ma_realloc(ma, a, (size_t) len, *dstlen)) == NULL)
+		if (ma) {
+			a = ma_realloc(ma, a, (size_t) len, *dstlen);
+		} else {
+			GDKfree(a);
+			a = GDKmalloc((size_t) len);
+		}
+		if (a == NULL)
 			return NULL;
 		*dstlen = (size_t) len;
 	}

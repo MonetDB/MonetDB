@@ -2623,31 +2623,32 @@ create_allocator(allocator *pa, const char *name, bool use_lock)
 	allocator *sa = (allocator *)(first_blk + offset);
 	offset += round16(sizeof(allocator));
 
-	sa->size = SA_NUM_BLOCKS;
-	sa->blks = blks;
+	*sa = (allocator) {
+		.size = SA_NUM_BLOCKS,
+		.blks = blks,
+		.first_blk = first_blk,
+		.pa = pa,
+		.ta = NULL,
+		.nr = 1,
+		.usedmem = SA_BLOCK_SIZE,
+		.blk_size = SA_BLOCK_SIZE,
+		.freelist = NULL,
+		.freelist_blks = NULL,
+		.frees = 0,
+		.used = offset,
+		.objects = 0,
+		.inuse = 0,
+		.free_obj_hits = 0,
+		.free_blk_hits = 0,
+		.tmp_used = 0,
+		.refcount = 0,
+		.use_lock = use_lock,
+	};
 	sa->blks[0] = first_blk;
-	sa->first_blk = first_blk;
 	eb_init(&sa->eb);
-	sa->pa = pa;
-	sa->ta = NULL;
-	sa->nr = 1;
-	sa->usedmem = SA_BLOCK_SIZE;
-	sa->blk_size = SA_BLOCK_SIZE;
-	sa->freelist = NULL;
-	sa->freelist_blks = NULL;
-	sa->frees = 0;
-	sa->used = offset;
-	sa->objects = 0;
-	sa->inuse = 0;
-	sa->free_obj_hits = 0;
-	sa->free_blk_hits = 0;
-	sa->tmp_used = 0;
-	sa->refcount = 0;
-	sa->use_lock = use_lock;
 	MT_lock_init(&sa->lock, "allocator_lock");
 	if (name)
-		snprintf(sa->name, sizeof(sa->name),
-				"%s", name);
+		strcpy_len(sa->name, name, sizeof(sa->name));
 	if (sa->pa)
 		sa->pa->refcount++;
 	return sa;

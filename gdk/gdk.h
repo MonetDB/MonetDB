@@ -1767,7 +1767,7 @@ gdk_export allocator *ma_get_ta(allocator *sa);
 #define MA_STRNDUP( sa, s, l)				ma_strndup(sa, s, l)
 
 
-#if !defined(NDEBUG) && !defined(__COVERITY__) && defined(__GNUC__)
+#if !defined(NDEBUG) && !defined(__COVERITY__) && defined(__GNUC__) && !defined(_CLANGD)
 #define ma_alloc(sa, sz)					\
 	({							\
 		allocator *_sa = (sa);				\

@@ -385,6 +385,7 @@ log_read_updates(allocator *ma, logger *lg, trans *tr, logformat *l, log_id id, 
 	bte type_id = -1;
 	int tpe;
 
+	(void) ma;
 	assert(!lg->inmemory);
 	TRC_DEBUG(WAL, "found %d %s", id, l->flag == LOG_UPDATE ? "update" : "update_buld");
 
@@ -452,10 +453,13 @@ log_read_updates(allocator *ma, logger *lg, trans *tr, logformat *l, log_id id, 
 
 				/* We have to read the value to update the read cursor */
 				size_t tlen = lg->rbufsize;
-				void *t = rt(ma, lg->rbuf, &tlen, lg->input_log, 1);
+				void *t = rt(NULL, lg->rbuf, &tlen, lg->input_log, 1);
 				if (t == NULL) {
 					TRC_CRITICAL(GDK, "read failed\n");
 					res = LOG_EOF;
+				} else {
+					lg->rbuf = t;
+					lg->rbufsize = tlen;
 				}
 				return res;
 			}
@@ -477,13 +481,14 @@ log_read_updates(allocator *ma, logger *lg, trans *tr, logformat *l, log_id id, 
 						return LOG_EOF;
 					}
 					size_t tlen = lg->rbufsize;
-					void *t = rt(ma, lg->rbuf, &tlen, lg->input_log, 1);
+					void *t = rt(NULL, lg->rbuf, &tlen, lg->input_log, 1);
 					if (t == NULL) {
 						TRC_CRITICAL(GDK, "read failed\n");
 						return LOG_EOF;
-					} else if (append) {
-						lg->rbuf = t;
-						lg->rbufsize = tlen;
+					}
+					lg->rbuf = t;
+					lg->rbufsize = tlen;
+					if (append) {
 						for (BUN p = 0; p < (BUN) nr; p++)
 							*c++ = (oid) offset++;
 					} else
@@ -520,7 +525,7 @@ log_read_updates(allocator *ma, logger *lg, trans *tr, logformat *l, log_id id, 
 
 		if (l->flag == LOG_UPDATE_CONST) {
 			size_t tlen = lg->rbufsize;
-			void *t = rt(ma, lg->rbuf, &tlen, lg->input_log, 1);
+			void *t = rt(NULL, lg->rbuf, &tlen, lg->input_log, 1);
 			if (t == NULL) {
 				TRC_CRITICAL(GDK, "read failed\n");
 				res = LOG_EOF;
@@ -557,7 +562,7 @@ log_read_updates(allocator *ma, logger *lg, trans *tr, logformat *l, log_id id, 
 					return LOG_EOF;
 				}
 				size_t tlen = lg->rbufsize;
-				void *t = rt(ma, lg->rbuf, &tlen, lg->input_log, 1);
+				void *t = rt(NULL, lg->rbuf, &tlen, lg->input_log, 1);
 				if (t == NULL) {
 					TRC_CRITICAL(GDK, "read failed\n");
 					res = LOG_EOF;
@@ -627,7 +632,7 @@ log_read_updates(allocator *ma, logger *lg, trans *tr, logformat *l, log_id id, 
 					 * BUFSIZE/width rows */
 					for (; res == LOG_OK && snr > 0; snr -= cnt) {
 						cnt = snr > tlen ? tlen : snr;
-						void *t = rt(ma, lg->rbuf, &ntlen, lg->input_log, cnt);
+						void *t = rt(NULL, lg->rbuf, &ntlen, lg->input_log, cnt);
 
 						if (t == NULL) {
 							res = LOG_EOF;
@@ -645,7 +650,7 @@ log_read_updates(allocator *ma, logger *lg, trans *tr, logformat *l, log_id id, 
 				} else {
 					for (; res == LOG_OK && nr > 0; nr--) {
 						size_t tlen = lg->rbufsize;
-						void *t = rt(ma, lg->rbuf, &tlen, lg->input_log, 1);
+						void *t = rt(NULL, lg->rbuf, &tlen, lg->input_log, 1);
 
 						if (t == NULL) {
 							/* see if failure was due to
@@ -679,7 +684,7 @@ log_read_updates(allocator *ma, logger *lg, trans *tr, logformat *l, log_id id, 
 			}
 			for (; res == LOG_OK && nr > 0; nr--) {
 				size_t hlen = sizeof(oid);
-				void *h = rh(ma, hv, &hlen, lg->input_log, 1);
+				void *h = rh(NULL, hv, &hlen, lg->input_log, 1);
 				if (h == NULL) {
 					res = LOG_EOF;
 					TRC_CRITICAL(GDK, "read failed\n");
@@ -725,7 +730,7 @@ log_read_updates(allocator *ma, logger *lg, trans *tr, logformat *l, log_id id, 
 				} else {
 					for (; res == LOG_OK && nr > 0; nr--) {
 						size_t tlen = lg->rbufsize;
-						void *t = rt(ma, lg->rbuf, &tlen, lg->input_log, 1);
+						void *t = rt(NULL, lg->rbuf, &tlen, lg->input_log, 1);
 
 						if (t == NULL) {
 							if (strstr(GDKerrbuf, "malloc") == NULL)
