@@ -561,7 +561,14 @@ mvc_claim_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BBPreclaim(b);
 		int nr = *getArgReference_int(stk, pci, 7);
 		Pipeline *p = (Pipeline*)*getArgReference_ptr(stk, pci, 8);
-		counter_wait(sync, nr, p);
+		if (p->seqnr >= 0)
+			nr = p->seqnr;
+		else if (!cnt && p->seqnr == -2)
+			nr = -1;
+		if (nr >= 0)
+			counter_wait(sync, nr, p);
+		else
+			sync = NULL;
 	}
 	if (mvc_claim_slots(m->session->tr, t, (size_t)cnt, offset, &pos) == LOG_OK) {
 		*res = bat_nil;

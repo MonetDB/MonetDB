@@ -567,6 +567,10 @@ COPYsplitlines(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	while (!r->done && !r->error && ATOMIC_GET(&r->seqnr) != r->bs->seq[p->wid])
 		sleep_ns(1);
 
+	if (!r->done)
+		p->seqnr = r->bs->seq[p->wid];
+	else
+		p->seqnr = -2;
 	if (!r->done && !r->error) {
 		if (bufferstream_read(r->bs, p->wid) < 0) {
 			bailout("copy.splitlines", SQLSTATE(42000) "unterminated line at end of file");

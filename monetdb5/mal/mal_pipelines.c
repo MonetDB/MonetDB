@@ -214,6 +214,7 @@ PIPELINEworker(void *T)
 			*p = (Pipeline) {
 				.p = s,
 				.wid = (int) ATOMIC_INC(&s->workers),
+				.seqnr = -1,
 				.wls = NULL,
 			};
 			stk->stk[s->mb->stmt[s->start]->argv[1]].val.ival = PIPELINEnext_counter(p);

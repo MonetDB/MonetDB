@@ -32,6 +32,7 @@ typedef struct Pipelines {
 typedef struct Pipeline {
 	Pipelines *p;	/* the shared pipelines */
 	int wid;	/* worker id [ 0 .. nr_workers ] */
+	int seqnr;	/* needed to keep things align/ordered */
 	void *wls;	/* worker local storage */
 } Pipeline;
 
