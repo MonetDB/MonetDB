@@ -1651,360 +1651,6 @@ GDKlibversion(void)
 	return GDK_VERSION;
 }
 
-inline size_t
-GDKmem_cursize(void)
-{
-	/* RAM/swapmem that Monet is really using now */
-	return (size_t) ATOMIC_GET(&GDK_mallocedbytes_estimate);
-}
-
-inline size_t
-GDKvm_cursize(void)
-{
-	/* current Monet VM address space usage */
-	return (size_t) ATOMIC_GET(&GDK_vm_cursize) + GDKmem_cursize();
-}
-
-#define heapinc(_memdelta)						\
-	ATOMIC_ADD(&GDK_mallocedbytes_estimate, _memdelta)
-#ifndef NDEBUG
-#define heapdec(_memdelta)							\
-	do {								\
-		ATOMIC_BASE_TYPE old = ATOMIC_SUB(&GDK_mallocedbytes_estimate, _memdelta); \
-		assert(old >= (ATOMIC_BASE_TYPE) _memdelta);		\
-	} while (0)
-#else
-#define heapdec(_memdelta)						\
-	ATOMIC_SUB(&GDK_mallocedbytes_estimate, _memdelta)
-#endif
-
-#define meminc(vmdelta)							\
-	ATOMIC_ADD(&GDK_vm_cursize, SEG_SIZE(vmdelta))
-#ifndef NDEBUG
-#define memdec(vmdelta)							\
-	do {								\
-		ssize_t diff = SEG_SIZE(vmdelta);			\
-		ATOMIC_BASE_TYPE old = ATOMIC_SUB(&GDK_vm_cursize, diff); \
-		assert(old >= (ATOMIC_BASE_TYPE) diff);			\
-	} while (0)
-#else
-#define memdec(vmdelta)							\
-	ATOMIC_SUB(&GDK_vm_cursize, SEG_SIZE(vmdelta))
-#endif
-
-/* Memory allocation
- *
- * The functions GDKmalloc, GDKzalloc, GDKrealloc, GDKstrdup, and
- * GDKfree are used throughout to allocate and free memory.  These
- * functions are almost directly mapped onto the system
- * malloc/realloc/free functions, but they give us some extra
- * debugging hooks.
- *
- * When allocating memory, we allocate a bit more than was asked for.
- * The extra space is added onto the front of the memory area that is
- * returned, and in debug builds also some at the end.  The area in
- * front is used to store the actual size of the allocated area.  The
- * most important use is to be able to keep statistics on how much
- * memory is being used.  In debug builds, the size is also used to
- * make sure that we don't write outside of the allocated arena.  This
- * is also where the extra space at the end comes in.
- */
-
-/* we allocate extra space and return a pointer offset by this amount */
-#define MALLOC_EXTRA_SPACE	(2 * SIZEOF_VOID_P)
-
-#if defined(NDEBUG) || defined(SANITIZER)
-#define DEBUG_SPACE	0
-#else
-#define DEBUG_SPACE	16
-#endif
-
-/* malloc smaller than this aren't subject to the GDK_vm_maxsize test */
-#define SMALL_MALLOC	256
-
-static void *
-GDKmalloc_internal(size_t size, bool clear)
-{
-	void *s;
-	size_t nsize;
-
-	assert(size != 0);
-#ifndef SIZE_CHECK_IN_HEAPS_ONLY
-	if (size > SMALL_MALLOC &&
-	    GDKvm_cursize() + size >= GDK_vm_maxsize &&
-	    !MT_thread_override_limits()) {
-		GDKerror("allocating too much memory\n");
-		return NULL;
-	}
-#endif
-
-	/* pad to multiple of eight bytes and add some extra space to
-	 * write real size in front; when debugging, also allocate
-	 * extra space for check bytes */
-	nsize = (size + 7) & ~7;
-	if (clear)
-		s = calloc(nsize + MALLOC_EXTRA_SPACE + DEBUG_SPACE, 1);
-	else
-		s = malloc(nsize + MALLOC_EXTRA_SPACE + DEBUG_SPACE);
-	if (s == NULL) {
-		GDKsyserror("malloc failed; memory requested: %zu, memory in use: %zu, virtual memory in use: %zu\n", size, GDKmem_cursize(), GDKvm_cursize());;
-		return NULL;
-	}
-	s = (void *) ((char *) s + MALLOC_EXTRA_SPACE);
-
-	heapinc(nsize + MALLOC_EXTRA_SPACE + DEBUG_SPACE);
-
-	/* just before the pointer that we return, write how much we
-	 * asked of malloc */
-	((size_t *) s)[-1] = nsize + MALLOC_EXTRA_SPACE + DEBUG_SPACE;
-#if !defined(NDEBUG) && !defined(SANITIZER)
-	/* just before that, write how much was asked of us */
-	((size_t *) s)[-2] = size;
-	/* write pattern to help find out-of-bounds writes */
-	memset((char *) s + size, '\xBD', nsize + DEBUG_SPACE - size);
-#endif
-	return s;
-}
-
-#undef GDKmalloc
-void *
-GDKmalloc(size_t size)
-{
-	void *s;
-
-	if ((s = GDKmalloc_internal(size, false)) == NULL)
-		return NULL;
-#if !defined(NDEBUG) && !defined(SANITIZER)
-	/* write a pattern to help make sure all data is properly
-	 * initialized by the caller */
-	DEADBEEFCHK memset(s, '\xBD', size);
-#endif
-	return s;
-}
-
-#undef GDKzalloc
-void *
-GDKzalloc(size_t size)
-{
-	return GDKmalloc_internal(size, true);
-}
-
-#undef GDKstrdup
-char *
-GDKstrdup(const char *s)
-{
-	size_t size;
-	char *p;
-
-	if (s == NULL)
-		return NULL;
-	size = strlen(s) + 1;
-
-	if ((p = GDKmalloc_internal(size, false)) == NULL)
-		return NULL;
-	memcpy(p, s, size);	/* including terminating NULL byte */
-	return p;
-}
-
-#undef GDKstrndup
-char *
-GDKstrndup(const char *s, size_t size)
-{
-	char *p;
-
-	if (s == NULL)
-		return NULL;
-	if ((p = GDKmalloc_internal(size + 1, false)) == NULL)
-		return NULL;
-	if (size > 0)
-		memcpy(p, s, size);
-	p[size] = '\0';		/* make sure it's NULL terminated */
-	return p;
-}
-
-#undef GDKfree
-void
-GDKfree(void *s)
-{
-	size_t asize;
-
-	if (s == NULL)
-		return;
-
-	asize = ((size_t *) s)[-1]; /* how much allocated last */
-
-#if !defined(NDEBUG) && !defined(SANITIZER)
-	size_t *p = s;
-	assert((asize & 2) == 0);   /* check against duplicate free */
-	size_t size = p[-2];
-	assert(((size + 7) & ~7) + MALLOC_EXTRA_SPACE + DEBUG_SPACE == asize);
-	/* check for out-of-bounds writes */
-	for (size_t i = size; i < asize - MALLOC_EXTRA_SPACE; i++)
-		assert(((char *) s)[i] == '\xBD');
-	p[-1] |= 2;		/* indicate area is freed */
-
-	/* overwrite memory that is to be freed with a pattern that
-	 * will help us recognize access to already freed memory in
-	 * the debugger */
-	DEADBEEFCHK memset(s, '\xDB', asize - MALLOC_EXTRA_SPACE);
-#endif
-
-	free((char *) s - MALLOC_EXTRA_SPACE);
-	heapdec((ssize_t) asize);
-}
-
-#undef GDKrealloc
-void *
-GDKrealloc(void *s, size_t size)
-{
-	size_t nsize, asize;
-#if !defined(NDEBUG) && !defined(SANITIZER)
-	size_t osize;
-#endif
-	size_t *os = s;
-
-	assert(size != 0);
-
-	if (s == NULL)
-		return GDKmalloc(size);
-
-	nsize = (size + 7) & ~7;
-	asize = os[-1];		/* how much allocated last */
-
-#ifndef SIZE_CHECK_IN_HEAPS_ONLY
-	if (size > SMALL_MALLOC &&
-	    nsize > asize &&
-	    GDKvm_cursize() + nsize - asize >= GDK_vm_maxsize &&
-	    !MT_thread_override_limits()) {
-		GDKerror("allocating too much memory\n");
-		return NULL;
-	}
-#endif
-#if !defined(NDEBUG) && !defined(SANITIZER)
-	assert((asize & 2) == 0);   /* check against duplicate free */
-	/* check for out-of-bounds writes */
-	osize = os[-2];		/* how much asked for last */
-	assert(((osize + 7) & ~7) + MALLOC_EXTRA_SPACE + DEBUG_SPACE == asize);
-	for (size_t i = osize; i < asize - MALLOC_EXTRA_SPACE; i++)
-		assert(((char *) s)[i] == '\xBD');
-	/* if shrinking, write debug pattern into to-be-freed memory */
-	DEADBEEFCHK if (size < osize)
-		memset((char *) s + size, '\xDB', osize - size);
-	os[-1] |= 2;		/* indicate area is freed */
-#endif
-	s = realloc((char *) s - MALLOC_EXTRA_SPACE,
-		    nsize + MALLOC_EXTRA_SPACE + DEBUG_SPACE);
-	if (s == NULL) {
-#if !defined(NDEBUG) && !defined(SANITIZER)
-		os[-1] &= ~2;	/* not freed after all */
-		assert(os[-1] == asize);
-		assert(os[-2] == osize);
-#endif
-		GDKsyserror("realloc failed; memory requested: %zu, memory in use: %zu, virtual memory in use: %zu\n", size, GDKmem_cursize(), GDKvm_cursize());;
-		return NULL;
-	}
-	s = (void *) ((char *) s + MALLOC_EXTRA_SPACE);
-	/* just before the pointer that we return, write how much we
-	 * asked of malloc */
-	((size_t *) s)[-1] = nsize + MALLOC_EXTRA_SPACE + DEBUG_SPACE;
-#if !defined(NDEBUG) && !defined(SANITIZER)
-	/* just before that, write how much was asked of us */
-	((size_t *) s)[-2] = size;
-	/* if growing, initialize new memory with debug pattern */
-	DEADBEEFCHK if (size > osize)
-		memset((char *) s + osize, '\xBD', size - osize);
-	/* write pattern to help find out-of-bounds writes */
-	memset((char *) s + size, '\xBD', nsize + DEBUG_SPACE - size);
-#endif
-
-	heapinc(nsize + MALLOC_EXTRA_SPACE + DEBUG_SPACE);
-	heapdec((ssize_t) asize);
-
-	return s;
-}
-
-/* return how much memory was allocated; the argument must be a value
- * returned by GDKmalloc, GDKzalloc, GDKrealloc, GDKstrdup, or
- * GDKstrndup */
-size_t
-GDKmallocated(const void *s)
-{
-	return ((const size_t *) s)[-1]; /* how much allocated last */
-}
-
-/*
- * @- virtual memory
- * allocations affect only the logical VM resources.
- */
-#undef GDKmmap
-void *
-GDKmmap(const char *path, int mode, size_t len)
-{
-	void *ret;
-
-#ifndef SIZE_CHECK_IN_HEAPS_ONLY
-	if (GDKvm_cursize() + len >= GDK_vm_maxsize &&
-	    !MT_thread_override_limits()) {
-		GDKerror("requested too much virtual memory; memory requested: %zu, memory in use: %zu, virtual memory in use: %zu\n", len, GDKmem_cursize(), GDKvm_cursize());
-		return NULL;
-	}
-#endif
-	ret = MT_mmap(path, mode, len);
-	if (ret != NULL) {
-		if (mode & MMAP_COPY)
-			heapinc(len);
-		else
-			meminc(len);
-	} else
-		GDKerror("requesting virtual memory failed; memory requested: %zu, memory in use: %zu, virtual memory in use: %zu\n", len, GDKmem_cursize(), GDKvm_cursize());
-	return ret;
-}
-
-#undef GDKmunmap
-gdk_return
-GDKmunmap(void *addr, int mode, size_t size)
-{
-	int ret;
-
-	ret = MT_munmap(addr, size);
-	if (ret == 0) {
-		if (mode & MMAP_COPY)
-			heapdec(size);
-		else
-			memdec(size);
-	}
-	return ret == 0 ? GDK_SUCCEED : GDK_FAIL;
-}
-
-#undef GDKmremap
-void *
-GDKmremap(const char *path, int mode, void *old_address, size_t old_size, size_t *new_size)
-{
-	void *ret;
-
-#ifndef SIZE_CHECK_IN_HEAPS_ONLY
-	if (*new_size > old_size &&
-	    GDKvm_cursize() + *new_size - old_size >= GDK_vm_maxsize &&
-	    !MT_thread_override_limits()) {
-		GDKerror("requested too much virtual memory; memory requested: %zu, memory in use: %zu, virtual memory in use: %zu\n", *new_size, GDKmem_cursize(), GDKvm_cursize());
-		return NULL;
-	}
-#endif
-	ret = MT_mremap(path, mode, old_address, old_size, new_size);
-	if (ret != NULL) {
-		if (mode & MMAP_COPY) {
-			heapdec(old_size);
-			heapinc(*new_size);
-		} else {
-			memdec(old_size);
-			meminc(*new_size);
-		}
-	} else {
-		GDKerror("requesting virtual memory failed; memory requested: %zu, memory in use: %zu, virtual memory in use: %zu\n", *new_size, GDKmem_cursize(), GDKvm_cursize());
-	}
-	return ret;
-}
-
 /* print some potentially interesting information */
 struct prinfocb {
 	struct prinfocb *next;
@@ -2027,156 +1673,14 @@ GDKprintinforegister(void (*func)(void))
 	*pp = p;
 }
 
-char *
-humansize(size_t val, char *buf, size_t buflen)
-{
-	static const char q[] = " kMGTPE";
-	double v = (double) val;
-	int i = 0;
-	if (val < 1000)
-		return "";
-	while (v >= 1000.0 && i < 6) {
-		v /= 1024.0;
-		i++;
-	}
-	snprintf(buf, buflen, " (%.3f %ciB)", v, q[i]);
-	return buf;
-}
+/* we allocate extra space and return a pointer offset by this amount */
+#define MALLOC_EXTRA_SPACE	(2 * SIZEOF_VOID_P)
 
-void
-GDKprintinfo(void)
-{
-	size_t allocated = (size_t) ATOMIC_GET(&GDK_mallocedbytes_estimate);
-	size_t vmallocated = (size_t) ATOMIC_GET(&GDK_vm_cursize);
-
-	printf("SIGUSR1 info start\n");
-	printf("Virtual memory allocated: %zu%s, of which %zu%s with malloc\n",
-	       vmallocated + allocated, humansize(vmallocated + allocated, (char[24]){0}, 24), allocated, humansize(allocated, (char[24]){0}, 24));
-#ifdef WITH_MALLOC
-#ifdef WITH_JEMALLOC
-	size_t jeallocated = 0, jeactive = 0, jemapped = 0, jeresident = 0, jeretained = 0;
-	if (mallctl("stats.allocated", &jeallocated, &(size_t){sizeof(jeallocated)}, NULL, 0) == 0 &&
-	    mallctl("stats.active", &jeactive, &(size_t){sizeof(jeactive)}, NULL, 0) == 0 &&
-	    mallctl("stats.mapped", &jemapped, &(size_t){sizeof(jemapped)}, NULL, 0) == 0 &&
-	    mallctl("stats.resident", &jeresident, &(size_t){sizeof(jeresident)}, NULL, 0) == 0 &&
-	    mallctl("stats.retained", &jeretained, &(size_t){sizeof(jeretained)}, NULL, 0) == 0)
-		printf("JEmalloc: allocated %zu%s, active %zu%s, "
-		       "mapped %zu%s, resident %zu%s, retained %zu%s\n",
-		       jeallocated, humansize(jeallocated, (char[24]){0}, 24),
-		       jeactive, humansize(jeactive, (char[24]){0}, 24),
-		       jemapped, humansize(jemapped, (char[24]){0}, 24),
-		       jeresident, humansize(jeresident, (char[24]){0}, 24),
-		       jeretained, humansize(jeretained, (char[24]){0}, 24));
-#endif
-#ifdef WITH_TCMALLOC
-	size_t tcallocated = 0, tchsize = 0, tcfree = 0, tcunmapped = 0, tcmax = 0, tccur = 0;
-	MallocExtension_GetNumericProperty("generic.current_allocated_bytes", &tcallocated);
-	MallocExtension_GetNumericProperty("generic.heap_size", &tchsize);
-	MallocExtension_GetNumericProperty("tcmalloc.pageheap_free_bytes", &tcfree);
-	MallocExtension_GetNumericProperty("tcmalloc.pageheap_unmapped_bytes", &tcunmapped);
-	MallocExtension_GetNumericProperty("tcmalloc.max_total_thread_cache_bytes", &tcmax);
-	MallocExtension_GetNumericProperty("tcmalloc.current_total_thread_cache_bytes", &tccur);
-	printf("tcmalloc: allocated %zu%s, heap size %zu%s, free %zu%s, "
-	       "unmapped %zu%s, max total thread cache %zu%s, "
-	       "current total thread cache %zu%s\n",
-	       tcallocated, humansize(tcallocated, (char[24]){0}, 24),
-	       tchsize, humansize(tchsize, (char[24]){0}, 24),
-	       tcfree, humansize(tcfree, (char[24]){0}, 24),
-	       tcunmapped, humansize(tcunmapped, (char[24]){0}, 24),
-	       tcmax, humansize(tcmax, (char[24]){0}, 24),
-	       tccur, humansize(tccur, (char[24]){0}, 24));
-#endif
-#elif defined(HAVE_MALLINFO2)
-	struct mallinfo2 mi = mallinfo2();
-	printf("mallinfo: arena %zu%s, ordblks %zu, smblks %zu, hblks %zu, "
-	       "hblkhd %zu%s, fsmblks %zu%s, uordblks %zu%s, fordblks %zu%s, "
-	       "keepcost %zu\n",
-	       mi.arena, humansize(mi.arena, (char[24]){0}, 24),
-	       mi.ordblks, mi.smblks, mi.hblks,
-	       mi.hblkhd, humansize(mi.hblkhd, (char[24]){0}, 24),
-	       mi.fsmblks, humansize(mi.fsmblks, (char[24]){0}, 24),
-	       mi.uordblks, humansize(mi.uordblks, (char[24]){0}, 24),
-	       mi.fordblks, humansize(mi.fordblks, (char[24]){0}, 24),
-	       mi.keepcost);
-	printf("   total allocated (arena+hblkhd): %zu%s\n",
-	       mi.arena + mi.hblkhd,
-	       humansize(mi.arena + mi.hblkhd, (char[24]){0}, 24));
-#endif
-	printf("gdk_vm_maxsize: %zu%s, gdk_mem_maxsize: %zu%s\n",
-	       GDK_vm_maxsize, humansize(GDK_vm_maxsize, (char[24]){0}, 24),
-	       GDK_mem_maxsize, humansize(GDK_mem_maxsize, (char[24]){0}, 24));
-	printf("gdk_mmap_minsize_persistent %zu%s, gdk_mmap_minsize_transient %zu%s\n",
-	       GDK_mmap_minsize_persistent,
-	       humansize(GDK_mmap_minsize_persistent, (char[24]){0}, 24),
-	       GDK_mmap_minsize_transient,
-	       humansize(GDK_mmap_minsize_transient, (char[24]){0}, 24));
-#ifdef __linux__
-	int fd = open("/proc/self/statm", O_RDONLY | O_CLOEXEC);
-	if (fd >= 0) {
-		char buf[512];
-		ssize_t s = read(fd, buf, sizeof(buf) - 1);
-		close(fd);
-		if (s > 0) {
-			assert((size_t) s < sizeof(buf));
-			size_t size, resident, shared;
-			buf[s] = 0;
-			if (sscanf(buf, "%zu %zu %zu", &size, &resident, &shared) == 3) {
-				size *= MT_pagesize();
-				resident *= MT_pagesize();
-				shared *= MT_pagesize();
-				printf("Virtual size: %zu%s, anonymous RSS: %zu%s, shared RSS: %zu%s (together: %zu%s)\n",
-				       size,
-				       humansize(size, (char[24]){0}, 24),
-				       resident - shared,
-				       humansize(resident - shared, (char[24]){0}, 24),
-				       shared,
-				       humansize(shared, (char[24]){0}, 24),
-				       resident,
-				       humansize(resident, (char[24]){0}, 24));
-			}
-		}
-	}
-#endif
-	BBPprintinfo();
-#ifdef LOCK_STATS
-	GDKlockstatistics(3);
-#endif
-	dump_threads();
-	for (struct prinfocb *p = prinfocb; p; p = p->next)
-		(*p->func)();
-	printf("SIGUSR1 info end\n");
-}
-
-void (*GDKtriggerusr1)(void);
-void
-GDKusr1triggerCB(void (*func)(void))
-{
-	GDKtriggerusr1 = func;
-}
-
-exception_buffer *
-eb_init(exception_buffer *eb)
-{
-	if (eb) {
-		eb->enabled = 0;
-		eb->code = 0;
-		eb->msg = NULL;
-	}
-	return eb;
-}
-
-void
-eb_error(exception_buffer *eb, const char *msg, int val)
-{
-	eb->code = val;
-	eb->msg = msg;
-	eb->enabled = 0;			/* not any longer... */
-#ifdef HAVE_SIGLONGJMP
-	siglongjmp(eb->state, eb->code);
+#if defined(NDEBUG) || defined(SANITIZER)
+#define DEBUG_SPACE	0
 #else
-	longjmp(eb->state, eb->code);
+#define DEBUG_SPACE	16
 #endif
-}
 
 #define SA_NUM_BLOCKS 64
 #define SA_BLOCK_SIZE (128*1024)
@@ -2858,4 +2362,500 @@ allocator *
 ma_get_parent(const allocator *a)
 {
     return a ? a->pa : NULL;
+}
+
+inline size_t
+GDKmem_cursize(void)
+{
+	/* RAM/swapmem that Monet is really using now */
+	return (size_t) ATOMIC_GET(&GDK_mallocedbytes_estimate);
+}
+
+inline size_t
+GDKvm_cursize(void)
+{
+	/* current Monet VM address space usage */
+	return (size_t) ATOMIC_GET(&GDK_vm_cursize) + GDKmem_cursize();
+}
+
+#define heapinc(_memdelta)						\
+	ATOMIC_ADD(&GDK_mallocedbytes_estimate, _memdelta)
+#ifndef NDEBUG
+#define heapdec(_memdelta)							\
+	do {								\
+		ATOMIC_BASE_TYPE old = ATOMIC_SUB(&GDK_mallocedbytes_estimate, _memdelta); \
+		assert(old >= (ATOMIC_BASE_TYPE) _memdelta);		\
+	} while (0)
+#else
+#define heapdec(_memdelta)						\
+	ATOMIC_SUB(&GDK_mallocedbytes_estimate, _memdelta)
+#endif
+
+#define meminc(vmdelta)							\
+	ATOMIC_ADD(&GDK_vm_cursize, SEG_SIZE(vmdelta))
+#ifndef NDEBUG
+#define memdec(vmdelta)							\
+	do {								\
+		ssize_t diff = SEG_SIZE(vmdelta);			\
+		ATOMIC_BASE_TYPE old = ATOMIC_SUB(&GDK_vm_cursize, diff); \
+		assert(old >= (ATOMIC_BASE_TYPE) diff);			\
+	} while (0)
+#else
+#define memdec(vmdelta)							\
+	ATOMIC_SUB(&GDK_vm_cursize, SEG_SIZE(vmdelta))
+#endif
+
+/* Memory allocation
+ *
+ * The functions GDKmalloc, GDKzalloc, GDKrealloc, GDKstrdup, and
+ * GDKfree are used throughout to allocate and free memory.  These
+ * functions are almost directly mapped onto the system
+ * malloc/realloc/free functions, but they give us some extra
+ * debugging hooks.
+ *
+ * When allocating memory, we allocate a bit more than was asked for.
+ * The extra space is added onto the front of the memory area that is
+ * returned, and in debug builds also some at the end.  The area in
+ * front is used to store the actual size of the allocated area.  The
+ * most important use is to be able to keep statistics on how much
+ * memory is being used.  In debug builds, the size is also used to
+ * make sure that we don't write outside of the allocated arena.  This
+ * is also where the extra space at the end comes in.
+ */
+
+/* malloc smaller than this aren't subject to the GDK_vm_maxsize test */
+#define SMALL_MALLOC	256
+
+static void *
+GDKmalloc_internal(size_t size, bool clear)
+{
+	void *s;
+	size_t nsize;
+
+	assert(size != 0);
+#ifndef SIZE_CHECK_IN_HEAPS_ONLY
+	if (size > SMALL_MALLOC &&
+	    GDKvm_cursize() + size >= GDK_vm_maxsize &&
+	    !MT_thread_override_limits()) {
+		GDKerror("allocating too much memory\n");
+		return NULL;
+	}
+#endif
+
+	/* pad to multiple of eight bytes and add some extra space to
+	 * write real size in front; when debugging, also allocate
+	 * extra space for check bytes */
+	nsize = (size + 7) & ~7;
+	if (clear)
+		s = calloc(nsize + MALLOC_EXTRA_SPACE + DEBUG_SPACE, 1);
+	else
+		s = malloc(nsize + MALLOC_EXTRA_SPACE + DEBUG_SPACE);
+	if (s == NULL) {
+		GDKsyserror("malloc failed; memory requested: %zu, memory in use: %zu, virtual memory in use: %zu\n", size, GDKmem_cursize(), GDKvm_cursize());;
+		return NULL;
+	}
+	s = (void *) ((char *) s + MALLOC_EXTRA_SPACE);
+
+	heapinc(nsize + MALLOC_EXTRA_SPACE + DEBUG_SPACE);
+
+	/* just before the pointer that we return, write how much we
+	 * asked of malloc */
+	((size_t *) s)[-1] = nsize + MALLOC_EXTRA_SPACE + DEBUG_SPACE;
+#if !defined(NDEBUG) && !defined(SANITIZER)
+	/* just before that, write how much was asked of us */
+	((size_t *) s)[-2] = size;
+	/* write pattern to help find out-of-bounds writes */
+	memset((char *) s + size, '\xBD', nsize + DEBUG_SPACE - size);
+#endif
+	return s;
+}
+
+#undef GDKmalloc
+void *
+GDKmalloc(size_t size)
+{
+	void *s;
+
+	if ((s = GDKmalloc_internal(size, false)) == NULL)
+		return NULL;
+#if !defined(NDEBUG) && !defined(SANITIZER)
+	/* write a pattern to help make sure all data is properly
+	 * initialized by the caller */
+	DEADBEEFCHK memset(s, '\xBD', size);
+#endif
+	return s;
+}
+
+#undef GDKzalloc
+void *
+GDKzalloc(size_t size)
+{
+	return GDKmalloc_internal(size, true);
+}
+
+#undef GDKstrdup
+char *
+GDKstrdup(const char *s)
+{
+	size_t size;
+	char *p;
+
+	if (s == NULL)
+		return NULL;
+	size = strlen(s) + 1;
+
+	if ((p = GDKmalloc_internal(size, false)) == NULL)
+		return NULL;
+	memcpy(p, s, size);	/* including terminating NULL byte */
+	return p;
+}
+
+#undef GDKstrndup
+char *
+GDKstrndup(const char *s, size_t size)
+{
+	char *p;
+
+	if (s == NULL)
+		return NULL;
+	if ((p = GDKmalloc_internal(size + 1, false)) == NULL)
+		return NULL;
+	if (size > 0)
+		memcpy(p, s, size);
+	p[size] = '\0';		/* make sure it's NULL terminated */
+	return p;
+}
+
+#undef GDKfree
+void
+GDKfree(void *s)
+{
+	size_t asize;
+
+	if (s == NULL)
+		return;
+
+	asize = ((size_t *) s)[-1]; /* how much allocated last */
+
+#if !defined(NDEBUG) && !defined(SANITIZER)
+	size_t *p = s;
+	assert((asize & 2) == 0);   /* check against duplicate free */
+	size_t size = p[-2];
+	assert(((size + 7) & ~7) + MALLOC_EXTRA_SPACE + DEBUG_SPACE == asize);
+	/* check for out-of-bounds writes */
+	for (size_t i = size; i < asize - MALLOC_EXTRA_SPACE; i++)
+		assert(((char *) s)[i] == '\xBD');
+	p[-1] |= 2;		/* indicate area is freed */
+
+	/* overwrite memory that is to be freed with a pattern that
+	 * will help us recognize access to already freed memory in
+	 * the debugger */
+	DEADBEEFCHK memset(s, '\xDB', asize - MALLOC_EXTRA_SPACE);
+#endif
+
+	free((char *) s - MALLOC_EXTRA_SPACE);
+	heapdec((ssize_t) asize);
+}
+
+#undef GDKrealloc
+void *
+GDKrealloc(void *s, size_t size)
+{
+	size_t nsize, asize;
+#if !defined(NDEBUG) && !defined(SANITIZER)
+	size_t osize;
+#endif
+	size_t *os = s;
+
+	assert(size != 0);
+
+	if (s == NULL)
+		return GDKmalloc(size);
+
+	nsize = (size + 7) & ~7;
+	asize = os[-1];		/* how much allocated last */
+
+#ifndef SIZE_CHECK_IN_HEAPS_ONLY
+	if (size > SMALL_MALLOC &&
+	    nsize > asize &&
+	    GDKvm_cursize() + nsize - asize >= GDK_vm_maxsize &&
+	    !MT_thread_override_limits()) {
+		GDKerror("allocating too much memory\n");
+		return NULL;
+	}
+#endif
+#if !defined(NDEBUG) && !defined(SANITIZER)
+	assert((asize & 2) == 0);   /* check against duplicate free */
+	/* check for out-of-bounds writes */
+	osize = os[-2];		/* how much asked for last */
+	assert(((osize + 7) & ~7) + MALLOC_EXTRA_SPACE + DEBUG_SPACE == asize);
+	for (size_t i = osize; i < asize - MALLOC_EXTRA_SPACE; i++)
+		assert(((char *) s)[i] == '\xBD');
+	/* if shrinking, write debug pattern into to-be-freed memory */
+	DEADBEEFCHK if (size < osize)
+		memset((char *) s + size, '\xDB', osize - size);
+	os[-1] |= 2;		/* indicate area is freed */
+#endif
+	s = realloc((char *) s - MALLOC_EXTRA_SPACE,
+		    nsize + MALLOC_EXTRA_SPACE + DEBUG_SPACE);
+	if (s == NULL) {
+#if !defined(NDEBUG) && !defined(SANITIZER)
+		os[-1] &= ~2;	/* not freed after all */
+		assert(os[-1] == asize);
+		assert(os[-2] == osize);
+#endif
+		GDKsyserror("realloc failed; memory requested: %zu, memory in use: %zu, virtual memory in use: %zu\n", size, GDKmem_cursize(), GDKvm_cursize());;
+		return NULL;
+	}
+	s = (void *) ((char *) s + MALLOC_EXTRA_SPACE);
+	/* just before the pointer that we return, write how much we
+	 * asked of malloc */
+	((size_t *) s)[-1] = nsize + MALLOC_EXTRA_SPACE + DEBUG_SPACE;
+#if !defined(NDEBUG) && !defined(SANITIZER)
+	/* just before that, write how much was asked of us */
+	((size_t *) s)[-2] = size;
+	/* if growing, initialize new memory with debug pattern */
+	DEADBEEFCHK if (size > osize)
+		memset((char *) s + osize, '\xBD', size - osize);
+	/* write pattern to help find out-of-bounds writes */
+	memset((char *) s + size, '\xBD', nsize + DEBUG_SPACE - size);
+#endif
+
+	heapinc(nsize + MALLOC_EXTRA_SPACE + DEBUG_SPACE);
+	heapdec((ssize_t) asize);
+
+	return s;
+}
+
+/* return how much memory was allocated; the argument must be a value
+ * returned by GDKmalloc, GDKzalloc, GDKrealloc, GDKstrdup, or
+ * GDKstrndup */
+size_t
+GDKmallocated(const void *s)
+{
+	return ((const size_t *) s)[-1]; /* how much allocated last */
+}
+
+/*
+ * @- virtual memory
+ * allocations affect only the logical VM resources.
+ */
+#undef GDKmmap
+void *
+GDKmmap(const char *path, int mode, size_t len)
+{
+	void *ret;
+
+#ifndef SIZE_CHECK_IN_HEAPS_ONLY
+	if (GDKvm_cursize() + len >= GDK_vm_maxsize &&
+	    !MT_thread_override_limits()) {
+		GDKerror("requested too much virtual memory; memory requested: %zu, memory in use: %zu, virtual memory in use: %zu\n", len, GDKmem_cursize(), GDKvm_cursize());
+		return NULL;
+	}
+#endif
+	ret = MT_mmap(path, mode, len);
+	if (ret != NULL) {
+		if (mode & MMAP_COPY)
+			heapinc(len);
+		else
+			meminc(len);
+	} else
+		GDKerror("requesting virtual memory failed; memory requested: %zu, memory in use: %zu, virtual memory in use: %zu\n", len, GDKmem_cursize(), GDKvm_cursize());
+	return ret;
+}
+
+#undef GDKmunmap
+gdk_return
+GDKmunmap(void *addr, int mode, size_t size)
+{
+	int ret;
+
+	ret = MT_munmap(addr, size);
+	if (ret == 0) {
+		if (mode & MMAP_COPY)
+			heapdec(size);
+		else
+			memdec(size);
+	}
+	return ret == 0 ? GDK_SUCCEED : GDK_FAIL;
+}
+
+#undef GDKmremap
+void *
+GDKmremap(const char *path, int mode, void *old_address, size_t old_size, size_t *new_size)
+{
+	void *ret;
+
+#ifndef SIZE_CHECK_IN_HEAPS_ONLY
+	if (*new_size > old_size &&
+	    GDKvm_cursize() + *new_size - old_size >= GDK_vm_maxsize &&
+	    !MT_thread_override_limits()) {
+		GDKerror("requested too much virtual memory; memory requested: %zu, memory in use: %zu, virtual memory in use: %zu\n", *new_size, GDKmem_cursize(), GDKvm_cursize());
+		return NULL;
+	}
+#endif
+	ret = MT_mremap(path, mode, old_address, old_size, new_size);
+	if (ret != NULL) {
+		if (mode & MMAP_COPY) {
+			heapdec(old_size);
+			heapinc(*new_size);
+		} else {
+			memdec(old_size);
+			meminc(*new_size);
+		}
+	} else {
+		GDKerror("requesting virtual memory failed; memory requested: %zu, memory in use: %zu, virtual memory in use: %zu\n", *new_size, GDKmem_cursize(), GDKvm_cursize());
+	}
+	return ret;
+}
+
+char *
+humansize(size_t val, char *buf, size_t buflen)
+{
+	static const char q[] = " kMGTPE";
+	double v = (double) val;
+	int i = 0;
+	if (val < 1000)
+		return "";
+	while (v >= 1000.0 && i < 6) {
+		v /= 1024.0;
+		i++;
+	}
+	snprintf(buf, buflen, " (%.3f %ciB)", v, q[i]);
+	return buf;
+}
+
+void
+GDKprintinfo(void)
+{
+	size_t allocated = (size_t) ATOMIC_GET(&GDK_mallocedbytes_estimate);
+	size_t vmallocated = (size_t) ATOMIC_GET(&GDK_vm_cursize);
+
+	printf("SIGUSR1 info start\n");
+	printf("Virtual memory allocated: %zu%s, of which %zu%s with malloc\n",
+	       vmallocated + allocated, humansize(vmallocated + allocated, (char[24]){0}, 24), allocated, humansize(allocated, (char[24]){0}, 24));
+#ifdef WITH_MALLOC
+#ifdef WITH_JEMALLOC
+	size_t jeallocated = 0, jeactive = 0, jemapped = 0, jeresident = 0, jeretained = 0;
+	if (mallctl("stats.allocated", &jeallocated, &(size_t){sizeof(jeallocated)}, NULL, 0) == 0 &&
+	    mallctl("stats.active", &jeactive, &(size_t){sizeof(jeactive)}, NULL, 0) == 0 &&
+	    mallctl("stats.mapped", &jemapped, &(size_t){sizeof(jemapped)}, NULL, 0) == 0 &&
+	    mallctl("stats.resident", &jeresident, &(size_t){sizeof(jeresident)}, NULL, 0) == 0 &&
+	    mallctl("stats.retained", &jeretained, &(size_t){sizeof(jeretained)}, NULL, 0) == 0)
+		printf("JEmalloc: allocated %zu%s, active %zu%s, "
+		       "mapped %zu%s, resident %zu%s, retained %zu%s\n",
+		       jeallocated, humansize(jeallocated, (char[24]){0}, 24),
+		       jeactive, humansize(jeactive, (char[24]){0}, 24),
+		       jemapped, humansize(jemapped, (char[24]){0}, 24),
+		       jeresident, humansize(jeresident, (char[24]){0}, 24),
+		       jeretained, humansize(jeretained, (char[24]){0}, 24));
+#endif
+#ifdef WITH_TCMALLOC
+	size_t tcallocated = 0, tchsize = 0, tcfree = 0, tcunmapped = 0, tcmax = 0, tccur = 0;
+	MallocExtension_GetNumericProperty("generic.current_allocated_bytes", &tcallocated);
+	MallocExtension_GetNumericProperty("generic.heap_size", &tchsize);
+	MallocExtension_GetNumericProperty("tcmalloc.pageheap_free_bytes", &tcfree);
+	MallocExtension_GetNumericProperty("tcmalloc.pageheap_unmapped_bytes", &tcunmapped);
+	MallocExtension_GetNumericProperty("tcmalloc.max_total_thread_cache_bytes", &tcmax);
+	MallocExtension_GetNumericProperty("tcmalloc.current_total_thread_cache_bytes", &tccur);
+	printf("tcmalloc: allocated %zu%s, heap size %zu%s, free %zu%s, "
+	       "unmapped %zu%s, max total thread cache %zu%s, "
+	       "current total thread cache %zu%s\n",
+	       tcallocated, humansize(tcallocated, (char[24]){0}, 24),
+	       tchsize, humansize(tchsize, (char[24]){0}, 24),
+	       tcfree, humansize(tcfree, (char[24]){0}, 24),
+	       tcunmapped, humansize(tcunmapped, (char[24]){0}, 24),
+	       tcmax, humansize(tcmax, (char[24]){0}, 24),
+	       tccur, humansize(tccur, (char[24]){0}, 24));
+#endif
+#elif defined(HAVE_MALLINFO2)
+	struct mallinfo2 mi = mallinfo2();
+	printf("mallinfo: arena %zu%s, ordblks %zu, smblks %zu, hblks %zu, "
+	       "hblkhd %zu%s, fsmblks %zu%s, uordblks %zu%s, fordblks %zu%s, "
+	       "keepcost %zu\n",
+	       mi.arena, humansize(mi.arena, (char[24]){0}, 24),
+	       mi.ordblks, mi.smblks, mi.hblks,
+	       mi.hblkhd, humansize(mi.hblkhd, (char[24]){0}, 24),
+	       mi.fsmblks, humansize(mi.fsmblks, (char[24]){0}, 24),
+	       mi.uordblks, humansize(mi.uordblks, (char[24]){0}, 24),
+	       mi.fordblks, humansize(mi.fordblks, (char[24]){0}, 24),
+	       mi.keepcost);
+	printf("   total allocated (arena+hblkhd): %zu%s\n",
+	       mi.arena + mi.hblkhd,
+	       humansize(mi.arena + mi.hblkhd, (char[24]){0}, 24));
+#endif
+	printf("gdk_vm_maxsize: %zu%s, gdk_mem_maxsize: %zu%s\n",
+	       GDK_vm_maxsize, humansize(GDK_vm_maxsize, (char[24]){0}, 24),
+	       GDK_mem_maxsize, humansize(GDK_mem_maxsize, (char[24]){0}, 24));
+	printf("gdk_mmap_minsize_persistent %zu%s, gdk_mmap_minsize_transient %zu%s\n",
+	       GDK_mmap_minsize_persistent,
+	       humansize(GDK_mmap_minsize_persistent, (char[24]){0}, 24),
+	       GDK_mmap_minsize_transient,
+	       humansize(GDK_mmap_minsize_transient, (char[24]){0}, 24));
+#ifdef __linux__
+	int fd = open("/proc/self/statm", O_RDONLY | O_CLOEXEC);
+	if (fd >= 0) {
+		char buf[512];
+		ssize_t s = read(fd, buf, sizeof(buf) - 1);
+		close(fd);
+		if (s > 0) {
+			assert((size_t) s < sizeof(buf));
+			size_t size, resident, shared;
+			buf[s] = 0;
+			if (sscanf(buf, "%zu %zu %zu", &size, &resident, &shared) == 3) {
+				size *= MT_pagesize();
+				resident *= MT_pagesize();
+				shared *= MT_pagesize();
+				printf("Virtual size: %zu%s, anonymous RSS: %zu%s, shared RSS: %zu%s (together: %zu%s)\n",
+				       size,
+				       humansize(size, (char[24]){0}, 24),
+				       resident - shared,
+				       humansize(resident - shared, (char[24]){0}, 24),
+				       shared,
+				       humansize(shared, (char[24]){0}, 24),
+				       resident,
+				       humansize(resident, (char[24]){0}, 24));
+			}
+		}
+	}
+#endif
+	BBPprintinfo();
+#ifdef LOCK_STATS
+	GDKlockstatistics(3);
+#endif
+	dump_threads();
+	for (struct prinfocb *p = prinfocb; p; p = p->next)
+		(*p->func)();
+	printf("SIGUSR1 info end\n");
+}
+
+void (*GDKtriggerusr1)(void);
+void
+GDKusr1triggerCB(void (*func)(void))
+{
+	GDKtriggerusr1 = func;
+}
+
+exception_buffer *
+eb_init(exception_buffer *eb)
+{
+	if (eb) {
+		eb->enabled = 0;
+		eb->code = 0;
+		eb->msg = NULL;
+	}
+	return eb;
+}
+
+void
+eb_error(exception_buffer *eb, const char *msg, int val)
+{
+	eb->code = val;
+	eb->msg = msg;
+	eb->enabled = 0;			/* not any longer... */
+#ifdef HAVE_SIGLONGJMP
+	siglongjmp(eb->state, eb->code);
+#else
+	longjmp(eb->state, eb->code);
+#endif
 }
