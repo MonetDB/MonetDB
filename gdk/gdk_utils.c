@@ -2304,6 +2304,15 @@ ma_close_to(allocator *sa, allocator_state *state)
 	if (sa) {
 		COND_LOCK_ALLOCATOR(sa);
 		assert(ma_tmp_active(sa));
+		if (sa->tmp_used > 0) {
+			sa->tmp_used -= 1;
+		}
+		// check if we can reset to the initial state
+		if (!ma_tmp_active(sa) && !sa_has_dependencies(sa)) {
+			COND_UNLOCK_ALLOCATOR(sa);
+			ma_reset(sa);
+			return;
+		}
 		if (state && !sa_has_dependencies(sa)) {
 			assert((state->nr > 0) && (state->nr <= sa->nr));
 			assert(state->used <= SA_BLOCK_SIZE);
@@ -2316,9 +2325,6 @@ ma_close_to(allocator *sa, allocator_state *state)
 				sa->objects = state_save.objects;
 				sa->inuse = state_save.inuse;
 			}
-		}
-		if (sa->tmp_used > 0) {
-			sa->tmp_used -= 1;
 		}
 		COND_UNLOCK_ALLOCATOR(sa);
 	}
