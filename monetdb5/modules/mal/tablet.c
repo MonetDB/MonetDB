@@ -872,13 +872,11 @@ SQLinsert_val(allocator *ma, READERtask *task, int col, int idx)
 								 strlen(s), '\0') < 0)
 				adt = NULL;
 			else {
-				allocator *ma = task->cntxt->curprg->def->ma;
 				adt = fmt->frstr(ma, fmt, fmt->adt, data);
 			}
 			//if (data != buf)
 			//	GDKfree(data);
 		} else {
-			allocator *ma = task->cntxt->curprg->def->ma;
 			adt = fmt->frstr(ma, fmt, fmt->adt, s);
 		}
 	}
@@ -1106,7 +1104,7 @@ SQLworker(void *arg)
 	GDKclrerr();
 	task->errbuf = GDKerrbuf;
 	MT_thread_set_qry_ctx(task->set_qry_ctx ? &task->cntxt->qryctx : NULL);
-	allocator *ma = task->cntxt ? task->cntxt->curprg->def->ma : NULL;
+	allocator *ma = task->cntxt->curprg->def->ma;
 	assert(ma);
 
 	MT_sema_down(&task->sema);
@@ -1277,9 +1275,7 @@ SQLproducer(void *p)
 	lng lineno = 1;
 	lng startlineno = 1;
 	int more = 0;
-	//allocator *ma = task->cntxt ? create_allocator(task->cntxt->curprg->def->ma, NULL, true) : NULL;
-	//MT_thread_setallocator(ma);
-	allocator *ma = MT_thread_getallocator();
+	allocator *ma = task->cntxt->curprg->def->ma;
 
 	MT_sema_down(&task->producer);
 	if (task->id < 0) {
@@ -1547,7 +1543,6 @@ SQLproducer(void *p)
 	if (unlikely(cnt < task->maxrow && task->maxrow != BUN_NONE)) {
 		char msg[256];
 		snprintf(msg, sizeof(msg), "incomplete record at end of file:%s\n", s);
-		allocator *ma = task->cntxt->curprg->def->ma;
 		task->as->error = MA_STRDUP(ma, msg);
 		tablet_error(task, rowno, startlineno, int_nil,
 					 "incomplete record at end of file", s);
