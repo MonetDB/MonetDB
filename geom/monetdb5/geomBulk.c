@@ -835,7 +835,7 @@ wkbTransform_bat_cand(allocator *ma, bat *outBAT_id, bat *inBAT_id, bat *s_id, i
 			/* set the new srid */
 			GEOSSetSRID_r(geoshandle, transformedGeosGeometry, *srid_dst);
 			/* get the wkb */
-			if ((transformedWKB = geos2wkb(ma, transformedGeosGeometry)) == NULL)
+			if ((transformedWKB = geos2wkb(ma, &(wkb*){NULL}, &(size_t){0}, transformedGeosGeometry)) == NULL)
 				err = createException(MAL, "batgeom.Transform", SQLSTATE(38000) "Geos operation geos2wkb failed");
 			else {
 				if (BUNappend(outBAT, transformedWKB, false) != GDK_SUCCEED) {
