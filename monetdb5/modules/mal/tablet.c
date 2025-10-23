@@ -1106,14 +1106,11 @@ SQLworker(void *arg)
 	GDKclrerr();
 	task->errbuf = GDKerrbuf;
 	MT_thread_set_qry_ctx(task->set_qry_ctx ? &task->cntxt->qryctx : NULL);
-	//allocator *ma = task->cntxt ? create_allocator(task->cntxt->curprg->def->ma, NULL, true) : NULL;
-	//MT_thread_setallocator(ma);
-	allocator *ma = MT_thread_getallocator();
+	allocator *ma = task->cntxt ? task->cntxt->curprg->def->ma : NULL;
 	assert(ma);
 
 	MT_sema_down(&task->sema);
 	while (task->top[task->cur] >= 0) {
-		allocator_state *ma_state = ma_open(ma);
 		/* stage one, break the rows spread the work over the workers */
 		switch (task->state) {
 		case BREAKROW:
@@ -1158,7 +1155,6 @@ SQLworker(void *arg)
 		}
 		MT_sema_up(&task->reply);
 		MT_sema_down(&task->sema);
-		ma_close_to(ma, ma_state);
 	}
 	MT_sema_up(&task->reply);
 
