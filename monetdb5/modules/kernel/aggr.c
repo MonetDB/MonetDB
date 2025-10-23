@@ -19,13 +19,13 @@
  * grouped aggregates
  */
 static str
-AGGRgrouped_bat_or_val(allocator *ma, bat *retval1, bat *retval2, const bat *bid,
+AGGRgrouped_bat_or_val(bat *retval1, bat *retval2, const bat *bid,
 					   const bat *gid, const bat *eid, const bat *sid,
 					   bool skip_nils, int scale, int tp,
-					   BAT *(*grpfunc1)(allocator *, BAT *, BAT *, BAT *, BAT *, int, bool),
-					   gdk_return (*grpfunc2)(allocator *, BAT **, BAT **, BAT *, BAT *,
+					   BAT *(*grpfunc1)(BAT *, BAT *, BAT *, BAT *, int, bool),
+					   gdk_return (*grpfunc2)(BAT **, BAT **, BAT *, BAT *,
 											  BAT *, BAT *, int, bool, int),
-					   BAT *(*quantilefunc)(allocator *, BAT *, BAT *, BAT *, BAT *, int,
+					   BAT *(*quantilefunc)(BAT *, BAT *, BAT *, BAT *, int,
 											double, bool),
 					   const bat *quantile, const double *quantile_val,
 					   const char *malfunc)
@@ -63,7 +63,7 @@ AGGRgrouped_bat_or_val(allocator *ma, bat *retval1, bat *retval2, const bat *bid
 		tp = b->ttype;
 
 	if (grpfunc1) {
-		bn = (*grpfunc1) (ma, b, g, e, s, tp, skip_nils);
+		bn = (*grpfunc1) (b, g, e, s, tp, skip_nils);
 	} else if (quantilefunc) {
 		if (!quantile_val) {
 			assert(BATcount(q) > 0 || BATcount(b) == 0);
@@ -88,8 +88,8 @@ AGGRgrouped_bat_or_val(allocator *ma, bat *retval1, bat *retval2, const bat *bid
 		} else {
 			qvalue = *(quantile_val);
 		}
-		bn = (*quantilefunc) (ma, b, g, e, s, tp, qvalue, skip_nils);
-	} else if ((*grpfunc2) (ma, &bn, retval2 ? &cnts : NULL, b, g, e, s, tp,
+		bn = (*quantilefunc) (b, g, e, s, tp, qvalue, skip_nils);
+	} else if ((*grpfunc2) (&bn, retval2 ? &cnts : NULL, b, g, e, s, tp,
 							skip_nils, scale) != GDK_SUCCEED) {
 		bn = NULL;
 	}
@@ -110,15 +110,15 @@ AGGRgrouped_bat_or_val(allocator *ma, bat *retval1, bat *retval2, const bat *bid
 }
 
 static str
-AGGRgrouped(allocator *ma, bat *retval1, bat *retval2, const bat *bid, const bat *gid,
+AGGRgrouped(bat *retval1, bat *retval2, const bat *bid, const bat *gid,
 			const bat *eid, const bat *sid, bool skip_nils, int scale, int tp,
-			BAT *(*grpfunc1)(allocator *, BAT *, BAT *, BAT *, BAT *, int, bool),
-			gdk_return (*grpfunc2)(allocator *, BAT **, BAT **, BAT *, BAT *, BAT *, BAT *,
+			BAT *(*grpfunc1)(BAT *, BAT *, BAT *, BAT *, int, bool),
+			gdk_return (*grpfunc2)(BAT **, BAT **, BAT *, BAT *, BAT *, BAT *,
 								   int, bool, int),
-			BAT *(*quantilefunc)(allocator *, BAT *, BAT *, BAT *, BAT *, int, double, bool),
+			BAT *(*quantilefunc)(BAT *, BAT *, BAT *, BAT *, int, double, bool),
 			const bat *quantile, const char *malfunc)
 {
-	return AGGRgrouped_bat_or_val(ma, retval1, retval2, bid, gid, eid, sid,
+	return AGGRgrouped_bat_or_val(retval1, retval2, bid, gid, eid, sid,
 								  skip_nils, scale, tp, grpfunc1, grpfunc2,
 								  quantilefunc, quantile, NULL, malfunc);
 }
@@ -126,32 +126,32 @@ AGGRgrouped(allocator *ma, bat *retval1, bat *retval2, const bat *bid, const bat
 static str
 AGGRsum3_bte(Client ctx, bat *retval, const bat *bid, const bat *gid, const bat *eid)
 {
-	allocator *ma = ctx->curprg->def->ma;
-	return AGGRgrouped(ma, retval, NULL, bid, gid, eid, NULL, true, 0, TYPE_bte,
+	(void) ctx;
+	return AGGRgrouped(retval, NULL, bid, gid, eid, NULL, true, 0, TYPE_bte,
 					   BATgroupsum, NULL, NULL, NULL, "aggr.sum");
 }
 
 static str
 AGGRsum3_sht(Client ctx, bat *retval, const bat *bid, const bat *gid, const bat *eid)
 {
-	allocator *ma = ctx->curprg->def->ma;
-	return AGGRgrouped(ma, retval, NULL, bid, gid, eid, NULL, true, 0, TYPE_sht,
+	(void) ctx;
+	return AGGRgrouped(retval, NULL, bid, gid, eid, NULL, true, 0, TYPE_sht,
 					   BATgroupsum, NULL, NULL, NULL, "aggr.sum");
 }
 
 static str
 AGGRsum3_int(Client ctx, bat *retval, const bat *bid, const bat *gid, const bat *eid)
 {
-	allocator *ma = ctx->curprg->def->ma;
-	return AGGRgrouped(ma, retval, NULL, bid, gid, eid, NULL, true, 0, TYPE_int,
+	(void) ctx;
+	return AGGRgrouped(retval, NULL, bid, gid, eid, NULL, true, 0, TYPE_int,
 					   BATgroupsum, NULL, NULL, NULL, "aggr.sum");
 }
 
 str
 AGGRsum3_lng(Client ctx, bat *retval, const bat *bid, const bat *gid, const bat *eid)
 {
-	allocator *ma = ctx->curprg->def->ma;
-	return AGGRgrouped(ma, retval, NULL, bid, gid, eid, NULL, true, 0, TYPE_lng,
+	(void) ctx;
+	return AGGRgrouped(retval, NULL, bid, gid, eid, NULL, true, 0, TYPE_lng,
 					   BATgroupsum, NULL, NULL, NULL, "aggr.sum");
 }
 
@@ -159,8 +159,8 @@ AGGRsum3_lng(Client ctx, bat *retval, const bat *bid, const bat *gid, const bat 
 str
 AGGRsum3_hge(Client ctx, bat *retval, const bat *bid, const bat *gid, const bat *eid)
 {
-	allocator *ma = ctx->curprg->def->ma;
-	return AGGRgrouped(ma, retval, NULL, bid, gid, eid, NULL, true, 0, TYPE_hge,
+	(void) ctx;
+	return AGGRgrouped(retval, NULL, bid, gid, eid, NULL, true, 0, TYPE_hge,
 					   BATgroupsum, NULL, NULL, NULL, "aggr.sum");
 }
 #endif
@@ -168,48 +168,48 @@ AGGRsum3_hge(Client ctx, bat *retval, const bat *bid, const bat *gid, const bat 
 static str
 AGGRsum3_flt(Client ctx, bat *retval, const bat *bid, const bat *gid, const bat *eid)
 {
-	allocator *ma = ctx->curprg->def->ma;
-	return AGGRgrouped(ma, retval, NULL, bid, gid, eid, NULL, true, 0, TYPE_flt,
+	(void) ctx;
+	return AGGRgrouped(retval, NULL, bid, gid, eid, NULL, true, 0, TYPE_flt,
 					   BATgroupsum, NULL, NULL, NULL, "aggr.sum");
 }
 
 static str
 AGGRsum3_dbl(Client ctx, bat *retval, const bat *bid, const bat *gid, const bat *eid)
 {
-	allocator *ma = ctx->curprg->def->ma;
-	return AGGRgrouped(ma, retval, NULL, bid, gid, eid, NULL, true, 0, TYPE_dbl,
+	(void) ctx;
+	return AGGRgrouped(retval, NULL, bid, gid, eid, NULL, true, 0, TYPE_dbl,
 					   BATgroupsum, NULL, NULL, NULL, "aggr.sum");
 }
 
 static str
 AGGRprod3_bte(Client ctx, bat *retval, const bat *bid, const bat *gid, const bat *eid)
 {
-	allocator *ma = ctx->curprg->def->ma;
-	return AGGRgrouped(ma, retval, NULL, bid, gid, eid, NULL, true, 0, TYPE_bte,
+	(void) ctx;
+	return AGGRgrouped(retval, NULL, bid, gid, eid, NULL, true, 0, TYPE_bte,
 					   BATgroupprod, NULL, NULL, NULL, "aggr.prod");
 }
 
 static str
 AGGRprod3_sht(Client ctx, bat *retval, const bat *bid, const bat *gid, const bat *eid)
 {
-	allocator *ma = ctx->curprg->def->ma;
-	return AGGRgrouped(ma, retval, NULL, bid, gid, eid, NULL, true, 0, TYPE_sht,
+	(void) ctx;
+	return AGGRgrouped(retval, NULL, bid, gid, eid, NULL, true, 0, TYPE_sht,
 					   BATgroupprod, NULL, NULL, NULL, "aggr.prod");
 }
 
 static str
 AGGRprod3_int(Client ctx, bat *retval, const bat *bid, const bat *gid, const bat *eid)
 {
-	allocator *ma = ctx->curprg->def->ma;
-	return AGGRgrouped(ma, retval, NULL, bid, gid, eid, NULL, true, 0, TYPE_int,
+	(void) ctx;
+	return AGGRgrouped(retval, NULL, bid, gid, eid, NULL, true, 0, TYPE_int,
 					   BATgroupprod, NULL, NULL, NULL, "aggr.prod");
 }
 
 static str
 AGGRprod3_lng(Client ctx, bat *retval, const bat *bid, const bat *gid, const bat *eid)
 {
-	allocator *ma = ctx->curprg->def->ma;
-	return AGGRgrouped(ma, retval, NULL, bid, gid, eid, NULL, true, 0, TYPE_lng,
+	(void) ctx;
+	return AGGRgrouped(retval, NULL, bid, gid, eid, NULL, true, 0, TYPE_lng,
 					   BATgroupprod, NULL, NULL, NULL, "aggr.prod");
 }
 
@@ -217,8 +217,8 @@ AGGRprod3_lng(Client ctx, bat *retval, const bat *bid, const bat *gid, const bat
 static str
 AGGRprod3_hge(Client ctx, bat *retval, const bat *bid, const bat *gid, const bat *eid)
 {
-	allocator *ma = ctx->curprg->def->ma;
-	return AGGRgrouped(ma, retval, NULL, bid, gid, eid, NULL, true, 0, TYPE_hge,
+	(void) ctx;
+	return AGGRgrouped(retval, NULL, bid, gid, eid, NULL, true, 0, TYPE_hge,
 					   BATgroupprod, NULL, NULL, NULL, "aggr.prod");
 }
 #endif
@@ -226,24 +226,24 @@ AGGRprod3_hge(Client ctx, bat *retval, const bat *bid, const bat *gid, const bat
 static str
 AGGRprod3_flt(Client ctx, bat *retval, const bat *bid, const bat *gid, const bat *eid)
 {
-	allocator *ma = ctx->curprg->def->ma;
-	return AGGRgrouped(ma, retval, NULL, bid, gid, eid, NULL, true, 0, TYPE_flt,
+	(void) ctx;
+	return AGGRgrouped(retval, NULL, bid, gid, eid, NULL, true, 0, TYPE_flt,
 					   BATgroupprod, NULL, NULL, NULL, "aggr.prod");
 }
 
 static str
 AGGRprod3_dbl(Client ctx, bat *retval, const bat *bid, const bat *gid, const bat *eid)
 {
-	allocator *ma = ctx->curprg->def->ma;
-	return AGGRgrouped(ma, retval, NULL, bid, gid, eid, NULL, true, 0, TYPE_dbl,
+	(void) ctx;
+	return AGGRgrouped(retval, NULL, bid, gid, eid, NULL, true, 0, TYPE_dbl,
 					   BATgroupprod, NULL, NULL, NULL, "aggr.prod");
 }
 
 static str
 AGGRavg13_dbl(Client ctx, bat *retval, const bat *bid, const bat *gid, const bat *eid)
 {
-	allocator *ma = ctx->curprg->def->ma;
-	return AGGRgrouped(ma, retval, NULL, bid, gid, eid, NULL, true, 0, TYPE_dbl,
+	(void) ctx;
+	return AGGRgrouped(retval, NULL, bid, gid, eid, NULL, true, 0, TYPE_dbl,
 					   NULL, BATgroupavg, NULL, NULL, "aggr.avg");
 }
 
@@ -251,8 +251,8 @@ static str
 AGGRavg23_dbl(Client ctx, bat *retval1, bat *retval2, const bat *bid, const bat *gid,
 			  const bat *eid)
 {
-	allocator *ma = ctx->curprg->def->ma;
-	return AGGRgrouped(ma, retval1, retval2, bid, gid, eid, NULL, true, 0, TYPE_dbl,
+	(void) ctx;
+	return AGGRgrouped(retval1, retval2, bid, gid, eid, NULL, true, 0, TYPE_dbl,
 					   NULL, BATgroupavg, NULL, NULL, "aggr.avg");
 }
 
@@ -260,8 +260,8 @@ static str
 AGGRavg14_dbl(Client ctx, bat *retval, const bat *bid, const bat *gid, const bat *eid,
 			  int *scale)
 {
-	allocator *ma = ctx->curprg->def->ma;
-	return AGGRgrouped(ma, retval, NULL, bid, gid, eid, NULL, true, *scale,
+	(void) ctx;
+	return AGGRgrouped(retval, NULL, bid, gid, eid, NULL, true, *scale,
 					   TYPE_dbl, NULL, BATgroupavg, NULL, NULL, "aggr.avg");
 }
 
@@ -269,24 +269,24 @@ static str
 AGGRavg24_dbl(Client ctx, bat *retval1, bat *retval2, const bat *bid, const bat *gid,
 			  const bat *eid, int *scale)
 {
-	allocator *ma = ctx->curprg->def->ma;
-	return AGGRgrouped(ma, retval1, retval2, bid, gid, eid, NULL, true, *scale,
+	(void) ctx;
+	return AGGRgrouped(retval1, retval2, bid, gid, eid, NULL, true, *scale,
 					   TYPE_dbl, NULL, BATgroupavg, NULL, NULL, "aggr.avg");
 }
 
 static str
 AGGRstdev3_dbl(Client ctx, bat *retval, const bat *bid, const bat *gid, const bat *eid)
 {
-	allocator *ma = ctx->curprg->def->ma;
-	return AGGRgrouped(ma, retval, NULL, bid, gid, eid, NULL, true, 0, TYPE_dbl,
+	(void) ctx;
+	return AGGRgrouped(retval, NULL, bid, gid, eid, NULL, true, 0, TYPE_dbl,
 					   BATgroupstdev_sample, NULL, NULL, NULL, "aggr.stdev");
 }
 
 static str
 AGGRstdevp3_dbl(Client ctx, bat *retval, const bat *bid, const bat *gid, const bat *eid)
 {
-	allocator *ma = ctx->curprg->def->ma;
-	return AGGRgrouped(ma, retval, NULL, bid, gid, eid, NULL, true, 0, TYPE_dbl,
+	(void) ctx;
+	return AGGRgrouped(retval, NULL, bid, gid, eid, NULL, true, 0, TYPE_dbl,
 					   BATgroupstdev_population, NULL, NULL, NULL,
 					   "aggr.stdevp");
 }
@@ -294,8 +294,8 @@ AGGRstdevp3_dbl(Client ctx, bat *retval, const bat *bid, const bat *gid, const b
 static str
 AGGRvariance3_dbl(Client ctx, bat *retval, const bat *bid, const bat *gid, const bat *eid)
 {
-	allocator *ma = ctx->curprg->def->ma;
-	return AGGRgrouped(ma, retval, NULL, bid, gid, eid, NULL, true, 0, TYPE_dbl,
+	(void) ctx;
+	return AGGRgrouped(retval, NULL, bid, gid, eid, NULL, true, 0, TYPE_dbl,
 					   BATgroupvariance_sample, NULL, NULL, NULL,
 					   "aggr.variance");
 }
@@ -303,8 +303,8 @@ AGGRvariance3_dbl(Client ctx, bat *retval, const bat *bid, const bat *gid, const
 static str
 AGGRvariancep3_dbl(Client ctx, bat *retval, const bat *bid, const bat *gid, const bat *eid)
 {
-	allocator *ma = ctx->curprg->def->ma;
-	return AGGRgrouped(ma, retval, NULL, bid, gid, eid, NULL, true, 0, TYPE_dbl,
+	(void) ctx;
+	return AGGRgrouped(retval, NULL, bid, gid, eid, NULL, true, 0, TYPE_dbl,
 					   BATgroupvariance_population, NULL, NULL, NULL,
 					   "aggr.variancep");
 }
@@ -313,24 +313,24 @@ static str
 AGGRcount3(Client ctx, bat *retval, const bat *bid, const bat *gid, const bat *eid,
 		   const bit *ignorenils)
 {
-	allocator *ma = ctx->curprg->def->ma;
-	return AGGRgrouped(ma, retval, NULL, bid, gid, eid, NULL, *ignorenils, 0,
+	(void) ctx;
+	return AGGRgrouped(retval, NULL, bid, gid, eid, NULL, *ignorenils, 0,
 					   TYPE_lng, BATgroupcount, NULL, NULL, NULL, "aggr.count");
 }
 
 static str
 AGGRcount3nonils(Client ctx, bat *retval, const bat *bid, const bat *gid, const bat *eid)
 {
-	allocator *ma = ctx->curprg->def->ma;
-	return AGGRgrouped(ma, retval, NULL, bid, gid, eid, NULL, true, 0, TYPE_lng,
+	(void) ctx;
+	return AGGRgrouped(retval, NULL, bid, gid, eid, NULL, true, 0, TYPE_lng,
 					   BATgroupcount, NULL, NULL, NULL, "aggr.count");
 }
 
 static str
 AGGRcount3nils(Client ctx, bat *retval, const bat *bid, const bat *gid, const bat *eid)
 {
-	allocator *ma = ctx->curprg->def->ma;
-	return AGGRgrouped(ma, retval, NULL, bid, gid, eid, NULL, false, 0, TYPE_lng,
+	(void) ctx;
+	return AGGRgrouped(retval, NULL, bid, gid, eid, NULL, false, 0, TYPE_lng,
 					   BATgroupcount, NULL, NULL, NULL, "aggr.count");
 }
 
@@ -338,11 +338,10 @@ AGGRcount3nils(Client ctx, bat *retval, const bat *bid, const bat *gid, const ba
 static str
 AGGRmin3(Client ctx, bat *retval, const bat *bid, const bat *gid, const bat *eid)
 {
-	allocator *ma = ctx->curprg->def->ma;
 	bat tmpid;
 	str err;
 
-	err = AGGRgrouped(ma, &tmpid, NULL, bid, gid, eid, NULL, false, 0, TYPE_oid,
+	err = AGGRgrouped(&tmpid, NULL, bid, gid, eid, NULL, false, 0, TYPE_oid,
 					  BATgroupmin, NULL, NULL, NULL, "aggr.min");
 	if (err == MAL_SUCCEED) {
 		err = ALGprojection(ctx, retval, &tmpid, bid);
@@ -354,12 +353,10 @@ AGGRmin3(Client ctx, bat *retval, const bat *bid, const bat *gid, const bat *eid
 static str
 AGGRmax3(Client ctx, bat *retval, const bat *bid, const bat *gid, const bat *eid)
 {
-	allocator *ma = ctx->curprg->def->ma;
-	(void) ma;
 	bat tmpid;
 	str err;
 
-	err = AGGRgrouped(ma, &tmpid, NULL, bid, gid, eid, NULL, false, 0, TYPE_oid,
+	err = AGGRgrouped(&tmpid, NULL, bid, gid, eid, NULL, false, 0, TYPE_oid,
 					  BATgroupmax, NULL, NULL, NULL, "aggr.max");
 	if (err == MAL_SUCCEED) {
 		err = ALGprojection(ctx, retval, &tmpid, bid);
@@ -372,8 +369,8 @@ static str
 AGGRsubsum_bte(Client ctx, bat *retval, const bat *bid, const bat *gid, const bat *eid,
 			   const bit *skip_nils)
 {
-	allocator *ma = ctx->curprg->def->ma;
-	return AGGRgrouped(ma, retval, NULL, bid, gid, eid, NULL, *skip_nils,
+	(void) ctx;
+	return AGGRgrouped(retval, NULL, bid, gid, eid, NULL, *skip_nils,
 					   0, TYPE_bte, BATgroupsum, NULL,
 					   NULL, NULL, "aggr.subsum");
 }
@@ -382,8 +379,8 @@ static str
 AGGRsubsum_sht(Client ctx, bat *retval, const bat *bid, const bat *gid, const bat *eid,
 			   const bit *skip_nils)
 {
-	allocator *ma = ctx->curprg->def->ma;
-	return AGGRgrouped(ma, retval, NULL, bid, gid, eid, NULL, *skip_nils,
+	(void) ctx;
+	return AGGRgrouped(retval, NULL, bid, gid, eid, NULL, *skip_nils,
 					   0, TYPE_sht, BATgroupsum, NULL,
 					   NULL, NULL, "aggr.subsum");
 }
@@ -392,8 +389,8 @@ static str
 AGGRsubsum_int(Client ctx, bat *retval, const bat *bid, const bat *gid, const bat *eid,
 			   const bit *skip_nils)
 {
-	allocator *ma = ctx->curprg->def->ma;
-	return AGGRgrouped(ma, retval, NULL, bid, gid, eid, NULL, *skip_nils,
+	(void) ctx;
+	return AGGRgrouped(retval, NULL, bid, gid, eid, NULL, *skip_nils,
 					   0, TYPE_int, BATgroupsum, NULL,
 					   NULL, NULL, "aggr.subsum");
 }
@@ -402,8 +399,8 @@ static str
 AGGRsubsum_lng(Client ctx, bat *retval, const bat *bid, const bat *gid, const bat *eid,
 			   const bit *skip_nils)
 {
-	allocator *ma = ctx->curprg->def->ma;
-	return AGGRgrouped(ma, retval, NULL, bid, gid, eid, NULL, *skip_nils,
+	(void) ctx;
+	return AGGRgrouped(retval, NULL, bid, gid, eid, NULL, *skip_nils,
 					   0, TYPE_lng, BATgroupsum, NULL,
 					   NULL, NULL, "aggr.subsum");
 }
@@ -413,8 +410,8 @@ static str
 AGGRsubsum_hge(Client ctx, bat *retval, const bat *bid, const bat *gid, const bat *eid,
 			   bit *skip_nils)
 {
-	allocator *ma = ctx->curprg->def->ma;
-	return AGGRgrouped(ma, retval, NULL, bid, gid, eid, NULL, *skip_nils,
+	(void) ctx;
+	return AGGRgrouped(retval, NULL, bid, gid, eid, NULL, *skip_nils,
 					   0, TYPE_hge, BATgroupsum, NULL,
 					   NULL, NULL, "aggr.subsum");
 }
@@ -424,8 +421,8 @@ static str
 AGGRsubsum_flt(Client ctx, bat *retval, const bat *bid, const bat *gid, const bat *eid,
 			   const bit *skip_nils)
 {
-	allocator *ma = ctx->curprg->def->ma;
-	return AGGRgrouped(ma, retval, NULL, bid, gid, eid, NULL, *skip_nils,
+	(void) ctx;
+	return AGGRgrouped(retval, NULL, bid, gid, eid, NULL, *skip_nils,
 					   0, TYPE_flt, BATgroupsum, NULL,
 					   NULL, NULL, "aggr.subsum");
 }
@@ -434,8 +431,8 @@ static str
 AGGRsubsum_dbl(Client ctx, bat *retval, const bat *bid, const bat *gid, const bat *eid,
 			   const bit *skip_nils)
 {
-	allocator *ma = ctx->curprg->def->ma;
-	return AGGRgrouped(ma, retval, NULL, bid, gid, eid, NULL, *skip_nils,
+	(void) ctx;
+	return AGGRgrouped(retval, NULL, bid, gid, eid, NULL, *skip_nils,
 					   0, TYPE_dbl, BATgroupsum, NULL,
 					   NULL, NULL, "aggr.subsum");
 }
@@ -444,8 +441,8 @@ static str
 AGGRsubsumcand_bte(Client ctx, bat *retval, const bat *bid, const bat *gid, const bat *eid,
 				   const bat *sid, const bit *skip_nils)
 {
-	allocator *ma = ctx->curprg->def->ma;
-	return AGGRgrouped(ma, retval, NULL, bid, gid, eid, sid, *skip_nils,
+	(void) ctx;
+	return AGGRgrouped(retval, NULL, bid, gid, eid, sid, *skip_nils,
 					   0, TYPE_bte, BATgroupsum, NULL,
 					   NULL, NULL, "aggr.subsum");
 }
@@ -454,8 +451,8 @@ static str
 AGGRsubsumcand_sht(Client ctx, bat *retval, const bat *bid, const bat *gid, const bat *eid,
 				   const bat *sid, const bit *skip_nils)
 {
-	allocator *ma = ctx->curprg->def->ma;
-	return AGGRgrouped(ma, retval, NULL, bid, gid, eid, sid, *skip_nils,
+	(void) ctx;
+	return AGGRgrouped(retval, NULL, bid, gid, eid, sid, *skip_nils,
 					   0, TYPE_sht, BATgroupsum, NULL,
 					   NULL, NULL, "aggr.subsum");
 }
@@ -464,8 +461,8 @@ static str
 AGGRsubsumcand_int(Client ctx, bat *retval, const bat *bid, const bat *gid, const bat *eid,
 				   const bat *sid, const bit *skip_nils)
 {
-	allocator *ma = ctx->curprg->def->ma;
-	return AGGRgrouped(ma, retval, NULL, bid, gid, eid, sid, *skip_nils,
+	(void) ctx;
+	return AGGRgrouped(retval, NULL, bid, gid, eid, sid, *skip_nils,
 					   0, TYPE_int, BATgroupsum, NULL,
 					   NULL, NULL, "aggr.subsum");
 }
@@ -474,8 +471,8 @@ static str
 AGGRsubsumcand_lng(Client ctx, bat *retval, const bat *bid, const bat *gid, const bat *eid,
 				   const bat *sid, const bit *skip_nils)
 {
-	allocator *ma = ctx->curprg->def->ma;
-	return AGGRgrouped(ma, retval, NULL, bid, gid, eid, sid, *skip_nils,
+	(void) ctx;
+	return AGGRgrouped(retval, NULL, bid, gid, eid, sid, *skip_nils,
 					   0, TYPE_lng, BATgroupsum, NULL,
 					   NULL, NULL, "aggr.subsum");
 }
@@ -485,8 +482,8 @@ static str
 AGGRsubsumcand_hge(Client ctx, bat *retval, const bat *bid, const bat *gid, const bat *eid,
 				   const bat *sid, const bit *skip_nils)
 {
-	allocator *ma = ctx->curprg->def->ma;
-	return AGGRgrouped(ma, retval, NULL, bid, gid, eid, sid, *skip_nils,
+	(void) ctx;
+	return AGGRgrouped(retval, NULL, bid, gid, eid, sid, *skip_nils,
 					   0, TYPE_hge, BATgroupsum, NULL,
 					   NULL, NULL, "aggr.subsum");
 }
@@ -496,8 +493,8 @@ static str
 AGGRsubsumcand_flt(Client ctx, bat *retval, const bat *bid, const bat *gid, const bat *eid,
 				   const bat *sid, const bit *skip_nils)
 {
-	allocator *ma = ctx->curprg->def->ma;
-	return AGGRgrouped(ma, retval, NULL, bid, gid, eid, sid, *skip_nils,
+	(void) ctx;
+	return AGGRgrouped(retval, NULL, bid, gid, eid, sid, *skip_nils,
 					   0, TYPE_flt, BATgroupsum, NULL,
 					   NULL, NULL, "aggr.subsum");
 }
@@ -506,8 +503,8 @@ static str
 AGGRsubsumcand_dbl(Client ctx, bat *retval, const bat *bid, const bat *gid, const bat *eid,
 				   const bat *sid, const bit *skip_nils)
 {
-	allocator *ma = ctx->curprg->def->ma;
-	return AGGRgrouped(ma, retval, NULL, bid, gid, eid, sid, *skip_nils,
+	(void) ctx;
+	return AGGRgrouped(retval, NULL, bid, gid, eid, sid, *skip_nils,
 					   0, TYPE_dbl, BATgroupsum, NULL,
 					   NULL, NULL, "aggr.subsum");
 }
@@ -516,8 +513,8 @@ static str
 AGGRsubprod_bte(Client ctx, bat *retval, const bat *bid, const bat *gid, const bat *eid,
 				const bit *skip_nils)
 {
-	allocator *ma = ctx->curprg->def->ma;
-	return AGGRgrouped(ma, retval, NULL, bid, gid, eid, NULL, *skip_nils,
+	(void) ctx;
+	return AGGRgrouped(retval, NULL, bid, gid, eid, NULL, *skip_nils,
 					   0, TYPE_bte, BATgroupprod, NULL,
 					   NULL, NULL, "aggr.subprod");
 }
@@ -526,8 +523,8 @@ static str
 AGGRsubprod_sht(Client ctx, bat *retval, const bat *bid, const bat *gid, const bat *eid,
 				const bit *skip_nils)
 {
-	allocator *ma = ctx->curprg->def->ma;
-	return AGGRgrouped(ma, retval, NULL, bid, gid, eid, NULL, *skip_nils,
+	(void) ctx;
+	return AGGRgrouped(retval, NULL, bid, gid, eid, NULL, *skip_nils,
 					   0, TYPE_sht, BATgroupprod, NULL,
 					   NULL, NULL, "aggr.subprod");
 }
@@ -536,8 +533,8 @@ static str
 AGGRsubprod_int(Client ctx, bat *retval, const bat *bid, const bat *gid, const bat *eid,
 				const bit *skip_nils)
 {
-	allocator *ma = ctx->curprg->def->ma;
-	return AGGRgrouped(ma, retval, NULL, bid, gid, eid, NULL, *skip_nils,
+	(void) ctx;
+	return AGGRgrouped(retval, NULL, bid, gid, eid, NULL, *skip_nils,
 					   0, TYPE_int, BATgroupprod, NULL,
 					   NULL, NULL, "aggr.subprod");
 }
@@ -546,8 +543,8 @@ static str
 AGGRsubprod_lng(Client ctx, bat *retval, const bat *bid, const bat *gid, const bat *eid,
 				const bit *skip_nils)
 {
-	allocator *ma = ctx->curprg->def->ma;
-	return AGGRgrouped(ma, retval, NULL, bid, gid, eid, NULL, *skip_nils,
+	(void) ctx;
+	return AGGRgrouped(retval, NULL, bid, gid, eid, NULL, *skip_nils,
 					   0, TYPE_lng, BATgroupprod, NULL,
 					   NULL, NULL, "aggr.subprod");
 }
@@ -557,8 +554,8 @@ static str
 AGGRsubprod_hge(Client ctx, bat *retval, const bat *bid, const bat *gid, const bat *eid,
 				const bit *skip_nils)
 {
-	allocator *ma = ctx->curprg->def->ma;
-	return AGGRgrouped(ma, retval, NULL, bid, gid, eid, NULL, *skip_nils,
+	(void) ctx;
+	return AGGRgrouped(retval, NULL, bid, gid, eid, NULL, *skip_nils,
 					   0, TYPE_hge, BATgroupprod, NULL,
 					   NULL, NULL, "aggr.subprod");
 }
@@ -568,8 +565,8 @@ static str
 AGGRsubprod_flt(Client ctx, bat *retval, const bat *bid, const bat *gid, const bat *eid,
 				const bit *skip_nils)
 {
-	allocator *ma = ctx->curprg->def->ma;
-	return AGGRgrouped(ma, retval, NULL, bid, gid, eid, NULL, *skip_nils,
+	(void) ctx;
+	return AGGRgrouped(retval, NULL, bid, gid, eid, NULL, *skip_nils,
 					   0, TYPE_flt, BATgroupprod, NULL,
 					   NULL, NULL, "aggr.subprod");
 }
@@ -578,8 +575,8 @@ static str
 AGGRsubprod_dbl(Client ctx, bat *retval, const bat *bid, const bat *gid, const bat *eid,
 				const bit *skip_nils)
 {
-	allocator *ma = ctx->curprg->def->ma;
-	return AGGRgrouped(ma, retval, NULL, bid, gid, eid, NULL, *skip_nils,
+	(void) ctx;
+	return AGGRgrouped(retval, NULL, bid, gid, eid, NULL, *skip_nils,
 					   0, TYPE_dbl, BATgroupprod, NULL,
 					   NULL, NULL, "aggr.subprod");
 }
@@ -588,8 +585,8 @@ static str
 AGGRsubprodcand_bte(Client ctx, bat *retval, const bat *bid, const bat *gid, const bat *eid,
 					const bat *sid, const bit *skip_nils)
 {
-	allocator *ma = ctx->curprg->def->ma;
-	return AGGRgrouped(ma, retval, NULL, bid, gid, eid, sid, *skip_nils,
+	(void) ctx;
+	return AGGRgrouped(retval, NULL, bid, gid, eid, sid, *skip_nils,
 					   0, TYPE_bte, BATgroupprod, NULL,
 					   NULL, NULL, "aggr.subprod");
 }
@@ -598,8 +595,8 @@ static str
 AGGRsubprodcand_sht(Client ctx, bat *retval, const bat *bid, const bat *gid, const bat *eid,
 					const bat *sid, const bit *skip_nils)
 {
-	allocator *ma = ctx->curprg->def->ma;
-	return AGGRgrouped(ma, retval, NULL, bid, gid, eid, sid, *skip_nils,
+	(void) ctx;
+	return AGGRgrouped(retval, NULL, bid, gid, eid, sid, *skip_nils,
 					   0, TYPE_sht, BATgroupprod, NULL,
 					   NULL, NULL, "aggr.subprod");
 }
@@ -608,8 +605,8 @@ static str
 AGGRsubprodcand_int(Client ctx, bat *retval, const bat *bid, const bat *gid, const bat *eid,
 					const bat *sid, const bit *skip_nils)
 {
-	allocator *ma = ctx->curprg->def->ma;
-	return AGGRgrouped(ma, retval, NULL, bid, gid, eid, sid, *skip_nils,
+	(void) ctx;
+	return AGGRgrouped(retval, NULL, bid, gid, eid, sid, *skip_nils,
 					   0, TYPE_int, BATgroupprod, NULL,
 					   NULL, NULL, "aggr.subprod");
 }
@@ -618,8 +615,8 @@ static str
 AGGRsubprodcand_lng(Client ctx, bat *retval, const bat *bid, const bat *gid, const bat *eid,
 					const bat *sid, const bit *skip_nils)
 {
-	allocator *ma = ctx->curprg->def->ma;
-	return AGGRgrouped(ma, retval, NULL, bid, gid, eid, sid, *skip_nils,
+	(void) ctx;
+	return AGGRgrouped(retval, NULL, bid, gid, eid, sid, *skip_nils,
 					   0, TYPE_lng, BATgroupprod, NULL,
 					   NULL, NULL, "aggr.subprod");
 }
@@ -629,8 +626,8 @@ static str
 AGGRsubprodcand_hge(Client ctx, bat *retval, const bat *bid, const bat *gid, const bat *eid,
 					const bat *sid, const bit *skip_nils)
 {
-	allocator *ma = ctx->curprg->def->ma;
-	return AGGRgrouped(ma, retval, NULL, bid, gid, eid, sid, *skip_nils,
+	(void) ctx;
+	return AGGRgrouped(retval, NULL, bid, gid, eid, sid, *skip_nils,
 					   0, TYPE_hge, BATgroupprod, NULL,
 					   NULL, NULL, "aggr.subprod");
 }
@@ -640,8 +637,8 @@ static str
 AGGRsubprodcand_flt(Client ctx, bat *retval, const bat *bid, const bat *gid, const bat *eid,
 					const bat *sid, const bit *skip_nils)
 {
-	allocator *ma = ctx->curprg->def->ma;
-	return AGGRgrouped(ma, retval, NULL, bid, gid, eid, sid, *skip_nils,
+	(void) ctx;
+	return AGGRgrouped(retval, NULL, bid, gid, eid, sid, *skip_nils,
 					   0, TYPE_flt, BATgroupprod, NULL,
 					   NULL, NULL, "aggr.subprod");
 }
@@ -650,8 +647,8 @@ static str
 AGGRsubprodcand_dbl(Client ctx, bat *retval, const bat *bid, const bat *gid, const bat *eid,
 					const bat *sid, const bit *skip_nils)
 {
-	allocator *ma = ctx->curprg->def->ma;
-	return AGGRgrouped(ma, retval, NULL, bid, gid, eid, sid, *skip_nils,
+	(void) ctx;
+	return AGGRgrouped(retval, NULL, bid, gid, eid, sid, *skip_nils,
 					   0, TYPE_dbl, BATgroupprod, NULL,
 					   NULL, NULL, "aggr.subprod");
 }
@@ -660,8 +657,8 @@ static str
 AGGRsubavg1_dbl(Client ctx, bat *retval, const bat *bid, const bat *gid, const bat *eid,
 				const bit *skip_nils)
 {
-	allocator *ma = ctx->curprg->def->ma;
-	return AGGRgrouped(ma, retval, NULL, bid, gid, eid, NULL, *skip_nils,
+	(void) ctx;
+	return AGGRgrouped(retval, NULL, bid, gid, eid, NULL, *skip_nils,
 					   0, TYPE_dbl, NULL, BATgroupavg,
 					   NULL, NULL, "aggr.subavg");
 }
@@ -670,8 +667,8 @@ static str
 AGGRsubavg1cand_dbl(Client ctx, bat *retval, const bat *bid, const bat *gid, const bat *eid,
 					const bat *sid, const bit *skip_nils)
 {
-	allocator *ma = ctx->curprg->def->ma;
-	return AGGRgrouped(ma, retval, NULL, bid, gid, eid, sid, *skip_nils,
+	(void) ctx;
+	return AGGRgrouped(retval, NULL, bid, gid, eid, sid, *skip_nils,
 					   0, TYPE_dbl, NULL, BATgroupavg,
 					   NULL, NULL, "aggr.subavg");
 }
@@ -680,8 +677,8 @@ static str
 AGGRsubavg2_dbl(Client ctx, bat *retval1, bat *retval2, const bat *bid, const bat *gid,
 				const bat *eid, const bit *skip_nils)
 {
-	allocator *ma = ctx->curprg->def->ma;
-	return AGGRgrouped(ma, retval1, retval2, bid, gid, eid, NULL, *skip_nils,
+	(void) ctx;
+	return AGGRgrouped(retval1, retval2, bid, gid, eid, NULL, *skip_nils,
 					   0, TYPE_dbl, NULL, BATgroupavg,
 					   NULL, NULL, "aggr.subavg");
 }
@@ -690,8 +687,8 @@ static str
 AGGRsubavg2cand_dbl(Client ctx, bat *retval1, bat *retval2, const bat *bid, const bat *gid,
 					const bat *eid, const bat *sid, const bit *skip_nils)
 {
-	allocator *ma = ctx->curprg->def->ma;
-	return AGGRgrouped(ma, retval1, retval2, bid, gid, eid, sid, *skip_nils,
+	(void) ctx;
+	return AGGRgrouped(retval1, retval2, bid, gid, eid, sid, *skip_nils,
 					   0, TYPE_dbl, NULL, BATgroupavg,
 					   NULL, NULL, "aggr.subavg");
 }
@@ -700,8 +697,8 @@ static str
 AGGRsubavg1s_dbl(Client ctx, bat *retval, const bat *bid, const bat *gid, const bat *eid,
 				 const bit *skip_nils, const int *scale)
 {
-	allocator *ma = ctx->curprg->def->ma;
-	return AGGRgrouped(ma, retval, NULL, bid, gid, eid, NULL, *skip_nils,
+	(void) ctx;
+	return AGGRgrouped(retval, NULL, bid, gid, eid, NULL, *skip_nils,
 					   *scale, TYPE_dbl, NULL, BATgroupavg,
 					   NULL, NULL, "aggr.subavg");
 }
@@ -711,8 +708,8 @@ AGGRsubavg1scand_dbl(Client ctx, bat *retval, const bat *bid, const bat *gid,
 					 const bat *eid, const bat *sid, const bit *skip_nils,
 					 const int *scale)
 {
-	allocator *ma = ctx->curprg->def->ma;
-	return AGGRgrouped(ma, retval, NULL, bid, gid, eid, sid, *skip_nils,
+	(void) ctx;
+	return AGGRgrouped(retval, NULL, bid, gid, eid, sid, *skip_nils,
 					   *scale, TYPE_dbl, NULL, BATgroupavg,
 					   NULL, NULL, "aggr.subavg");
 }
@@ -721,8 +718,8 @@ static str
 AGGRsubavg2s_dbl(Client ctx, bat *retval1, bat *retval2, const bat *bid, const bat *gid,
 				 const bat *eid, const bit *skip_nils, const int *scale)
 {
-	allocator *ma = ctx->curprg->def->ma;
-	return AGGRgrouped(ma, retval1, retval2, bid, gid, eid, NULL, *skip_nils,
+	(void) ctx;
+	return AGGRgrouped(retval1, retval2, bid, gid, eid, NULL, *skip_nils,
 					   *scale, TYPE_dbl, NULL, BATgroupavg,
 					   NULL, NULL, "aggr.subavg");
 }
@@ -732,8 +729,8 @@ AGGRsubavg2scand_dbl(Client ctx, bat *retval1, bat *retval2, const bat *bid, con
 					 const bat *eid, const bat *sid, const bit *skip_nils,
 					 const int *scale)
 {
-	allocator *ma = ctx->curprg->def->ma;
-	return AGGRgrouped(ma, retval1, retval2, bid, gid, eid, sid, *skip_nils,
+	(void) ctx;
+	return AGGRgrouped(retval1, retval2, bid, gid, eid, sid, *skip_nils,
 					   *scale, TYPE_dbl, NULL, BATgroupavg,
 					   NULL, NULL, "aggr.subavg");
 }
@@ -742,8 +739,7 @@ static str
 AGGRavg3(Client ctx, bat *retval1, bat *retval2, bat *retval3, const bat *bid,
 		 const bat *gid, const bat *eid, const bat *sid, const bit *skip_nils)
 {
-	allocator *ma = ctx->curprg->def->ma;
-	(void) ma;
+	(void) ctx;
 	BAT *b, *g, *e, *s, *avgs, *cnts, *rems;
 	gdk_return rc;
 
@@ -763,7 +759,7 @@ AGGRavg3(Client ctx, bat *retval1, bat *retval2, bat *retval3, const bat *bid,
 		throw(MAL, "aggr.subavg", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 
-	rc = BATgroupavg3(ma, &avgs, &rems, &cnts, b, g, e, s, *skip_nils);
+	rc = BATgroupavg3(&avgs, &rems, &cnts, b, g, e, s, *skip_nils);
 
 	BBPunfix(b->batCacheid);
 	BBPreclaim(g);
@@ -784,8 +780,7 @@ static str
 AGGRavg3comb(Client ctx, bat *retval1, const bat *bid, const bat *rid, const bat *cid,
 			 const bat *gid, const bat *eid, const bit *skip_nils)
 {
-	allocator *ma = ctx->curprg->def->ma;
-	(void) ma;
+	(void) ctx;
 	BAT *b, *r, *c, *g, *e, *bn;
 
 	b = BATdescriptor(*bid);
@@ -807,7 +802,7 @@ AGGRavg3comb(Client ctx, bat *retval1, const bat *bid, const bat *rid, const bat
 		throw(MAL, "aggr.subavg", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 
-	bn = BATgroupavg3combine(ma, b, r, c, g, e, *skip_nils);
+	bn = BATgroupavg3combine(b, r, c, g, e, *skip_nils);
 
 	BBPunfix(b->batCacheid);
 	BBPunfix(r->batCacheid);
@@ -825,8 +820,8 @@ static str
 AGGRsubstdev_dbl(Client ctx, bat *retval, const bat *bid, const bat *gid, const bat *eid,
 				 const bit *skip_nils)
 {
-	allocator *ma = ctx->curprg->def->ma;
-	return AGGRgrouped(ma, retval, NULL, bid, gid, eid, NULL, *skip_nils,
+	(void) ctx;
+	return AGGRgrouped(retval, NULL, bid, gid, eid, NULL, *skip_nils,
 					   0, TYPE_dbl, BATgroupstdev_sample,
 					   NULL, NULL, NULL, "aggr.substdev");
 }
@@ -835,8 +830,8 @@ static str
 AGGRsubstdevcand_dbl(Client ctx, bat *retval, const bat *bid, const bat *gid,
 					 const bat *eid, const bat *sid, const bit *skip_nils)
 {
-	allocator *ma = ctx->curprg->def->ma;
-	return AGGRgrouped(ma, retval, NULL, bid, gid, eid, sid, *skip_nils,
+	(void) ctx;
+	return AGGRgrouped(retval, NULL, bid, gid, eid, sid, *skip_nils,
 					   0, TYPE_dbl, BATgroupstdev_sample,
 					   NULL, NULL, NULL, "aggr.substdev");
 }
@@ -845,8 +840,8 @@ static str
 AGGRsubstdevp_dbl(Client ctx, bat *retval, const bat *bid, const bat *gid, const bat *eid,
 				  const bit *skip_nils)
 {
-	allocator *ma = ctx->curprg->def->ma;
-	return AGGRgrouped(ma, retval, NULL, bid, gid, eid, NULL, *skip_nils,
+	(void) ctx;
+	return AGGRgrouped(retval, NULL, bid, gid, eid, NULL, *skip_nils,
 					   0, TYPE_dbl,
 					   BATgroupstdev_population, NULL, NULL, NULL,
 					   "aggr.substdevp");
@@ -856,8 +851,8 @@ static str
 AGGRsubstdevpcand_dbl(Client ctx, bat *retval, const bat *bid, const bat *gid,
 					  const bat *eid, const bat *sid, const bit *skip_nils)
 {
-	allocator *ma = ctx->curprg->def->ma;
-	return AGGRgrouped(ma, retval, NULL, bid, gid, eid, sid, *skip_nils,
+	(void) ctx;
+	return AGGRgrouped(retval, NULL, bid, gid, eid, sid, *skip_nils,
 					   0, TYPE_dbl,
 					   BATgroupstdev_population,
 					   NULL, NULL, NULL, "aggr.substdevp");
@@ -867,8 +862,8 @@ static str
 AGGRsubvariance_dbl(Client ctx, bat *retval, const bat *bid, const bat *gid, const bat *eid,
 					const bit *skip_nils)
 {
-	allocator *ma = ctx->curprg->def->ma;
-	return AGGRgrouped(ma, retval, NULL, bid, gid, eid, NULL, *skip_nils,
+	(void) ctx;
+	return AGGRgrouped(retval, NULL, bid, gid, eid, NULL, *skip_nils,
 					   0, TYPE_dbl, BATgroupvariance_sample,
 					   NULL, NULL, NULL, "aggr.subvariance");
 }
@@ -877,8 +872,8 @@ static str
 AGGRsubvariancecand_dbl(Client ctx, bat *retval, const bat *bid, const bat *gid,
 						const bat *eid, const bat *sid, const bit *skip_nils)
 {
-	allocator *ma = ctx->curprg->def->ma;
-	return AGGRgrouped(ma, retval, NULL, bid, gid, eid, sid, *skip_nils,
+	(void) ctx;
+	return AGGRgrouped(retval, NULL, bid, gid, eid, sid, *skip_nils,
 					   0, TYPE_dbl, BATgroupvariance_sample,
 					   NULL, NULL, NULL, "aggr.subvariance");
 }
@@ -887,8 +882,8 @@ static str
 AGGRsubvariancep_dbl(Client ctx, bat *retval, const bat *bid, const bat *gid,
 					 const bat *eid, const bit *skip_nils)
 {
-	allocator *ma = ctx->curprg->def->ma;
-	return AGGRgrouped(ma, retval, NULL, bid, gid, eid, NULL, *skip_nils,
+	(void) ctx;
+	return AGGRgrouped(retval, NULL, bid, gid, eid, NULL, *skip_nils,
 					   0, TYPE_dbl,
 					   BATgroupvariance_population, NULL,
 					   NULL, NULL, "aggr.subvariancep");
@@ -898,8 +893,8 @@ static str
 AGGRsubvariancepcand_dbl(Client ctx, bat *retval, const bat *bid, const bat *gid,
 						 const bat *eid, const bat *sid, const bit *skip_nils)
 {
-	allocator *ma = ctx->curprg->def->ma;
-	return AGGRgrouped(ma, retval, NULL, bid, gid, eid, sid, *skip_nils,
+	(void) ctx;
+	return AGGRgrouped(retval, NULL, bid, gid, eid, sid, *skip_nils,
 					   0, TYPE_dbl,
 					   BATgroupvariance_population, NULL,
 					   NULL, NULL, "aggr.subvariancep");
@@ -909,8 +904,8 @@ static str
 AGGRsubcount(Client ctx, bat *retval, const bat *bid, const bat *gid, const bat *eid,
 			 const bit *skip_nils)
 {
-	allocator *ma = ctx->curprg->def->ma;
-	return AGGRgrouped(ma, retval, NULL, bid, gid, eid, NULL, *skip_nils,
+	(void) ctx;
+	return AGGRgrouped(retval, NULL, bid, gid, eid, NULL, *skip_nils,
 					   0, TYPE_lng, BATgroupcount, NULL, NULL,
 					   NULL, "aggr.subcount");
 }
@@ -919,8 +914,8 @@ static str
 AGGRsubcountcand(Client ctx, bat *retval, const bat *bid, const bat *gid, const bat *eid,
 				 const bat *sid, const bit *skip_nils)
 {
-	allocator *ma = ctx->curprg->def->ma;
-	return AGGRgrouped(ma, retval, NULL, bid, gid, eid, sid, *skip_nils,
+	(void) ctx;
+	return AGGRgrouped(retval, NULL, bid, gid, eid, sid, *skip_nils,
 					   0, TYPE_lng, BATgroupcount, NULL,
 					   NULL, NULL, "aggr.subcount");
 }
@@ -929,8 +924,8 @@ static str
 AGGRsubmin(Client ctx, bat *retval, const bat *bid, const bat *gid, const bat *eid,
 		   const bit *skip_nils)
 {
-	allocator *ma = ctx->curprg->def->ma;
-	return AGGRgrouped(ma, retval, NULL, bid, gid, eid, NULL, *skip_nils,
+	(void) ctx;
+	return AGGRgrouped(retval, NULL, bid, gid, eid, NULL, *skip_nils,
 					   0, TYPE_oid, BATgroupmin, NULL,
 					   NULL, NULL, "aggr.submin");
 }
@@ -939,8 +934,8 @@ static str
 AGGRsubmincand(Client ctx, bat *retval, const bat *bid, const bat *gid, const bat *eid,
 			   const bat *sid, const bit *skip_nils)
 {
-	allocator *ma = ctx->curprg->def->ma;
-	return AGGRgrouped(ma, retval, NULL, bid, gid, eid, sid, *skip_nils,
+	(void) ctx;
+	return AGGRgrouped(retval, NULL, bid, gid, eid, sid, *skip_nils,
 					   0, TYPE_oid, BATgroupmin, NULL,
 					   NULL, NULL, "aggr.submin");
 }
@@ -949,8 +944,8 @@ static str
 AGGRsubmax(Client ctx, bat *retval, const bat *bid, const bat *gid, const bat *eid,
 		   const bit *skip_nils)
 {
-	allocator *ma = ctx->curprg->def->ma;
-	return AGGRgrouped(ma, retval, NULL, bid, gid, eid, NULL, *skip_nils,
+	(void) ctx;
+	return AGGRgrouped(retval, NULL, bid, gid, eid, NULL, *skip_nils,
 					   0, TYPE_oid, BATgroupmax, NULL,
 					   NULL, NULL, "aggr.submax");
 }
@@ -959,8 +954,8 @@ static str
 AGGRsubmaxcand(Client ctx, bat *retval, const bat *bid, const bat *gid, const bat *eid,
 			   const bat *sid, const bit *skip_nils)
 {
-	allocator *ma = ctx->curprg->def->ma;
-	return AGGRgrouped(ma, retval, NULL, bid, gid, eid, sid, *skip_nils,
+	(void) ctx;
+	return AGGRgrouped(retval, NULL, bid, gid, eid, sid, *skip_nils,
 					   0, TYPE_oid, BATgroupmax, NULL,
 					   NULL, NULL, "aggr.submax");
 }
@@ -969,11 +964,10 @@ static str
 AGGRsubmincand_val(Client ctx, bat *retval, const bat *bid, const bat *gid, const bat *eid,
 				   const bat *sid, const bit *skip_nils)
 {
-	allocator *ma = ctx->curprg->def->ma;
 	bat tmpid;
 	str err;
 
-	err = AGGRgrouped(ma, &tmpid, NULL, bid, gid, eid, sid, *skip_nils,
+	err = AGGRgrouped(&tmpid, NULL, bid, gid, eid, sid, *skip_nils,
 					  0, TYPE_oid, BATgroupmin, NULL, NULL, NULL,
 					  "aggr.submin");
 	if (err == MAL_SUCCEED) {
@@ -987,8 +981,7 @@ static str
 AGGRsubmin_val(Client ctx, bat *retval, const bat *bid, const bat *gid, const bat *eid,
 			   const bit *skip_nils)
 {
-	allocator *ma = ctx->curprg->def->ma;
-	(void) ma;
+	(void) ctx;
 	return AGGRsubmincand_val(ctx, retval, bid, gid, eid, NULL, skip_nils);
 }
 
@@ -996,11 +989,10 @@ static str
 AGGRsubmaxcand_val(Client ctx, bat *retval, const bat *bid, const bat *gid, const bat *eid,
 				   const bat *sid, const bit *skip_nils)
 {
-	allocator *ma = ctx->curprg->def->ma;
 	bat tmpid;
 	str err;
 
-	err = AGGRgrouped(ma, &tmpid, NULL, bid, gid, eid, sid, *skip_nils,
+	err = AGGRgrouped(&tmpid, NULL, bid, gid, eid, sid, *skip_nils,
 					  0, TYPE_oid, BATgroupmax, NULL, NULL, NULL,
 					  "aggr.submax");
 	if (err == MAL_SUCCEED) {
@@ -1014,19 +1006,15 @@ static str
 AGGRsubmax_val(Client ctx, bat *retval, const bat *bid, const bat *gid, const bat *eid,
 			   const bit *skip_nils)
 {
-	allocator *ma = ctx->curprg->def->ma;
-	(void) ma;
 	return AGGRsubmaxcand_val(ctx, retval, bid, gid, eid, NULL, skip_nils);
 }
 
 static str
 AGGRmedian(Client ctx, void *retval, const bat *bid)
 {
-	allocator *ma = ctx->curprg->def->ma;
-	(void) ma;
 	str err;
 	bat rval;
-	if ((err = AGGRgrouped(ma, &rval, NULL, bid, NULL, NULL, NULL, true,
+	if ((err = AGGRgrouped(&rval, NULL, bid, NULL, NULL, NULL, true,
 						   0, TYPE_any, BATgroupmedian, NULL,
 						   NULL, NULL, "aggr.submedian")) == MAL_SUCCEED) {
 		oid pos = 0;
@@ -1040,8 +1028,8 @@ static str
 AGGRsubmedian(Client ctx, bat *retval, const bat *bid, const bat *gid, const bat *eid,
 			  const bit *skip_nils)
 {
-	allocator *ma = ctx->curprg->def->ma;
-	return AGGRgrouped(ma, retval, NULL, bid, gid, eid, NULL, *skip_nils,
+	(void) ctx;
+	return AGGRgrouped(retval, NULL, bid, gid, eid, NULL, *skip_nils,
 					   0, TYPE_any, BATgroupmedian, NULL,
 					   NULL, NULL, "aggr.submedian");
 }
@@ -1050,8 +1038,8 @@ static str
 AGGRsubmediancand(Client ctx, bat *retval, const bat *bid, const bat *gid, const bat *eid,
 				  const bat *sid, const bit *skip_nils)
 {
-	allocator *ma = ctx->curprg->def->ma;
-	return AGGRgrouped(ma, retval, NULL, bid, gid, eid, sid, *skip_nils,
+	(void) ctx;
+	return AGGRgrouped(retval, NULL, bid, gid, eid, sid, *skip_nils,
 					   0, TYPE_any, BATgroupmedian, NULL,
 					   NULL, NULL, "aggr.submedian");
 }
@@ -1060,10 +1048,9 @@ AGGRsubmediancand(Client ctx, bat *retval, const bat *bid, const bat *gid, const
 static str
 AGGRquantile(Client ctx, void *retval, const bat *bid, const bat *qid)
 {
-	allocator *ma = ctx->curprg->def->ma;
 	str err;
 	bat rval;
-	if ((err = AGGRgrouped(ma, &rval, NULL, bid, NULL, NULL, NULL, true,
+	if ((err = AGGRgrouped(&rval, NULL, bid, NULL, NULL, NULL, true,
 						   0, TYPE_any, NULL, NULL, BATgroupquantile,
 						   qid, "aggr.subquantile")) == MAL_SUCCEED) {
 		oid pos = 0;
@@ -1076,11 +1063,9 @@ AGGRquantile(Client ctx, void *retval, const bat *bid, const bat *qid)
 static str
 AGGRquantile_cst(Client ctx, void *retval, const bat *bid, const dbl *q)
 {
-	allocator *ma = ctx->curprg->def->ma;
-	(void) ma;
 	str err;
 	bat rval;
-	if ((err = AGGRgrouped_bat_or_val(ma, &rval, NULL, bid, NULL, NULL, NULL, true,
+	if ((err = AGGRgrouped_bat_or_val(&rval, NULL, bid, NULL, NULL, NULL, true,
 									  0, TYPE_any, NULL, NULL, BATgroupquantile,
 									  NULL, q,
 									  "aggr.subquantile")) == MAL_SUCCEED) {
@@ -1095,8 +1080,8 @@ static str
 AGGRsubquantile(Client ctx, bat *retval, const bat *bid, const bat *quantile,
 				const bat *gid, const bat *eid, const bit *skip_nils)
 {
-	allocator *ma = ctx->curprg->def->ma;
-	return AGGRgrouped(ma, retval, NULL, bid, gid, eid, NULL, *skip_nils,
+	(void) ctx;
+	return AGGRgrouped(retval, NULL, bid, gid, eid, NULL, *skip_nils,
 					   0, TYPE_any, NULL, NULL, BATgroupquantile,
 					   quantile, "aggr.subquantile");
 }
@@ -1106,8 +1091,8 @@ AGGRsubquantilecand(Client ctx, bat *retval, const bat *bid, const bat *quantile
 					const bat *gid, const bat *eid, const bat *sid,
 					const bit *skip_nils)
 {
-	allocator *ma = ctx->curprg->def->ma;
-	return AGGRgrouped(ma, retval, NULL, bid, gid, eid, sid, *skip_nils,
+	(void) ctx;
+	return AGGRgrouped(retval, NULL, bid, gid, eid, sid, *skip_nils,
 					   0, TYPE_any, NULL, NULL, BATgroupquantile,
 					   quantile, "aggr.subquantile");
 }
@@ -1115,11 +1100,9 @@ AGGRsubquantilecand(Client ctx, bat *retval, const bat *bid, const bat *quantile
 static str
 AGGRmedian_avg(Client ctx, dbl *retval, const bat *bid)
 {
-	allocator *ma = ctx->curprg->def->ma;
-	(void) ma;
 	str err;
 	bat rval;
-	if ((err = AGGRgrouped(ma, &rval, NULL, bid, NULL, NULL, NULL, true,
+	if ((err = AGGRgrouped(&rval, NULL, bid, NULL, NULL, NULL, true,
 						   0, TYPE_any, BATgroupmedian_avg, NULL,
 						   NULL, NULL, "aggr.submedian_avg")) == MAL_SUCCEED) {
 		oid pos = 0;
@@ -1133,8 +1116,8 @@ static str
 AGGRsubmedian_avg(Client ctx, bat *retval, const bat *bid, const bat *gid, const bat *eid,
 				  const bit *skip_nils)
 {
-	allocator *ma = ctx->curprg->def->ma;
-	return AGGRgrouped(ma, retval, NULL, bid, gid, eid, NULL, *skip_nils,
+	(void) ctx;
+	return AGGRgrouped(retval, NULL, bid, gid, eid, NULL, *skip_nils,
 					   0, TYPE_any, BATgroupmedian_avg, NULL,
 					   NULL, NULL, "aggr.submedian_avg");
 }
@@ -1143,8 +1126,8 @@ static str
 AGGRsubmediancand_avg(Client ctx, bat *retval, const bat *bid, const bat *gid,
 					  const bat *eid, const bat *sid, const bit *skip_nils)
 {
-	allocator *ma = ctx->curprg->def->ma;
-	return AGGRgrouped(ma, retval, NULL, bid, gid, eid, sid, *skip_nils,
+	(void) ctx;
+	return AGGRgrouped(retval, NULL, bid, gid, eid, sid, *skip_nils,
 					   0, TYPE_any, BATgroupmedian_avg, NULL,
 					   NULL, NULL, "aggr.submedian_avg");
 }
@@ -1153,11 +1136,9 @@ AGGRsubmediancand_avg(Client ctx, bat *retval, const bat *bid, const bat *gid,
 static str
 AGGRquantile_avg(Client ctx, dbl *retval, const bat *bid, const bat *qid)
 {
-	allocator *ma = ctx->curprg->def->ma;
-	(void) ma;
 	str err;
 	bat rval;
-	if ((err = AGGRgrouped(ma, &rval, NULL, bid, NULL, NULL, NULL, true,
+	if ((err = AGGRgrouped(&rval, NULL, bid, NULL, NULL, NULL, true,
 						   0, TYPE_any, NULL, NULL, BATgroupquantile_avg,
 						   qid, "aggr.subquantile_avg")) == MAL_SUCCEED) {
 		oid pos = 0;
@@ -1170,11 +1151,9 @@ AGGRquantile_avg(Client ctx, dbl *retval, const bat *bid, const bat *qid)
 static str
 AGGRquantile_avg_cst(Client ctx, dbl *retval, const bat *bid, const dbl *q)
 {
-	allocator *ma = ctx->curprg->def->ma;
-	(void) ma;
 	str err;
 	bat rval;
-	if ((err = AGGRgrouped_bat_or_val(ma, &rval, NULL, bid, NULL, NULL, NULL, true,
+	if ((err = AGGRgrouped_bat_or_val(&rval, NULL, bid, NULL, NULL, NULL, true,
 									  0, TYPE_any, NULL, NULL,
 									  BATgroupquantile_avg, NULL, q,
 									  "aggr.subquantile_avg")) == MAL_SUCCEED) {
@@ -1189,8 +1168,8 @@ static str
 AGGRsubquantile_avg(Client ctx, bat *retval, const bat *bid, const bat *quantile,
 					const bat *gid, const bat *eid, const bit *skip_nils)
 {
-	allocator *ma = ctx->curprg->def->ma;
-	return AGGRgrouped(ma, retval, NULL, bid, gid, eid, NULL, *skip_nils,
+	(void) ctx;
+	return AGGRgrouped(retval, NULL, bid, gid, eid, NULL, *skip_nils,
 					   0, TYPE_any, NULL, NULL, BATgroupquantile_avg,
 					   quantile, "aggr.subquantile_avg");
 }
@@ -1200,14 +1179,14 @@ AGGRsubquantilecand_avg(Client ctx, bat *retval, const bat *bid, const bat *quan
 						const bat *gid, const bat *eid, const bat *sid,
 						const bit *skip_nils)
 {
-	allocator *ma = ctx->curprg->def->ma;
-	return AGGRgrouped(ma, retval, NULL, bid, gid, eid, sid, *skip_nils,
+	(void) ctx;
+	return AGGRgrouped(retval, NULL, bid, gid, eid, sid, *skip_nils,
 					   0, TYPE_any, NULL, NULL, BATgroupquantile_avg,
 					   quantile, "aggr.subquantile_avg");
 }
 
 static str
-AGGRgroup_str_concat(allocator *ma, bat *retval1, const bat *bid, const bat *gid,
+AGGRgroup_str_concat(bat *retval1, const bat *bid, const bat *gid,
 					 const bat *eid, const bat *sid, bool skip_nils,
 					 const bat *sepid, const char *separator,
 					 const char *malfunc)
@@ -1230,7 +1209,7 @@ AGGRgroup_str_concat(allocator *ma, bat *retval1, const bat *bid, const bat *gid
 		throw(MAL, malfunc, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 
-	bn = BATgroupstr_group_concat(ma, b, g, e, s, sep, skip_nils, separator);
+	bn = BATgroupstr_group_concat(b, g, e, s, sep, skip_nils, separator);
 
 	BBPunfix(b->batCacheid);
 	BBPreclaim(g);
@@ -1248,58 +1227,58 @@ AGGRgroup_str_concat(allocator *ma, bat *retval1, const bat *bid, const bat *gid
 
 static str
 AGGRstr_group_concat(Client ctx, bat *retval, const bat *bid, const bat *gid,
-                                        const bat *eid)
+					 const bat *eid)
 {
-	allocator *ma = ctx->curprg->def->ma;
-	return AGGRgroup_str_concat(ma, retval, bid, gid, eid, NULL, true, NULL,
+	(void) ctx;
+	return AGGRgroup_str_concat(retval, bid, gid, eid, NULL, true, NULL,
 								DEFAULT_SEPARATOR, "aggr.str_group_concat");
 }
 
 static str
 AGGRsubstr_group_concat(Client ctx, bat *retval, const bat *bid, const bat *gid,
-                                               const bat *eid, const bit *skip_nils)
+						const bat *eid, const bit *skip_nils)
 {
-	allocator *ma = ctx->curprg->def->ma;
-	return AGGRgroup_str_concat(ma, retval, bid, gid, eid, NULL, *skip_nils, NULL,
+	(void) ctx;
+	return AGGRgroup_str_concat(retval, bid, gid, eid, NULL, *skip_nils, NULL,
 								DEFAULT_SEPARATOR, "aggr.substr_group_concat");
 }
 
 static str
 AGGRsubstr_group_concatcand(Client ctx, bat *retval, const bat *bid, const bat *gid,
-                                                       const bat *eid, const bat *sid,
-                                                       const bit *skip_nils)
+							const bat *eid, const bat *sid,
+							const bit *skip_nils)
 {
-	allocator *ma = ctx->curprg->def->ma;
-	return AGGRgroup_str_concat(ma, retval, bid, gid, eid, sid, *skip_nils, NULL,
+	(void) ctx;
+	return AGGRgroup_str_concat(retval, bid, gid, eid, sid, *skip_nils, NULL,
 								DEFAULT_SEPARATOR, "aggr.substr_group_concat");
 }
 
 static str
 AGGRstr_group_concat_sep(Client ctx, bat *retval, const bat *bid, const bat *sep,
-                                                const bat *gid, const bat *eid)
+						 const bat *gid, const bat *eid)
 {
-	allocator *ma = ctx->curprg->def->ma;
-	return AGGRgroup_str_concat(ma, retval, bid, gid, eid, NULL, true, sep, NULL,
+	(void) ctx;
+	return AGGRgroup_str_concat(retval, bid, gid, eid, NULL, true, sep, NULL,
 								"aggr.str_group_concat_sep");
 }
 
 static str
 AGGRsubstr_group_concat_sep(Client ctx, bat *retval, const bat *bid, const bat *sep,
-                                                       const bat *gid, const bat *eid,
-                                                       const bit *skip_nils)
+							const bat *gid, const bat *eid,
+							const bit *skip_nils)
 {
-	allocator *ma = ctx->curprg->def->ma;
-	return AGGRgroup_str_concat(ma, retval, bid, gid, eid, NULL, *skip_nils, sep,
+	(void) ctx;
+	return AGGRgroup_str_concat(retval, bid, gid, eid, NULL, *skip_nils, sep,
 								NULL, "aggr.substr_group_concat_sep");
 }
 
 static str
 AGGRsubstr_group_concatcand_sep(Client ctx, bat *retval, const bat *bid, const bat *sep,
-                                                               const bat *gid, const bat *eid, const bat *sid,
-                                                               const bit *skip_nils)
+								const bat *gid, const bat *eid, const bat *sid,
+								const bit *skip_nils)
 {
-	allocator *ma = ctx->curprg->def->ma;
-	return AGGRgroup_str_concat(ma, retval, bid, gid, eid, sid, *skip_nils, sep,
+	(void) ctx;
+	return AGGRgroup_str_concat(retval, bid, gid, eid, sid, *skip_nils, sep,
 								NULL, "aggr.substr_group_concat_sep");
 }
 
@@ -1358,8 +1337,7 @@ static str
 AGGRcovariance(Client ctx, bat *retval, const bat *b1, const bat *b2, const bat *gid,
 			   const bat *eid)
 {
-	allocator *ma = ctx->curprg->def->ma;
-	(void) ma;
+	(void) ctx;
 	return AGGRgrouped2(retval, b1, b2, gid, eid, NULL, true, TYPE_dbl,
 						BATgroupcovariance_sample, "aggr.covariance");
 }
@@ -1368,8 +1346,7 @@ static str
 AGGRsubcovariance(Client ctx, bat *retval, const bat *b1, const bat *b2, const bat *gid,
 				  const bat *eid, const bit *skip_nils)
 {
-	allocator *ma = ctx->curprg->def->ma;
-	(void) ma;
+	(void) ctx;
 	return AGGRgrouped2(retval, b1, b2, gid, eid, NULL, *skip_nils, TYPE_dbl,
 						BATgroupcovariance_sample, "aggr.subcovariance");
 }
@@ -1378,8 +1355,7 @@ static str
 AGGRsubcovariancecand(Client ctx, bat *retval, const bat *b1, const bat *b2, const bat *gid,
 					  const bat *eid, const bat *sid, const bit *skip_nils)
 {
-	allocator *ma = ctx->curprg->def->ma;
-	(void) ma;
+	(void) ctx;
 	return AGGRgrouped2(retval, b1, b2, gid, eid, sid, *skip_nils, TYPE_dbl,
 						BATgroupcovariance_sample, "aggr.subcovariance");
 }
@@ -1388,8 +1364,7 @@ static str
 AGGRcovariancep(Client ctx, bat *retval, const bat *b1, const bat *b2, const bat *gid,
 				const bat *eid)
 {
-	allocator *ma = ctx->curprg->def->ma;
-	(void) ma;
+	(void) ctx;
 	return AGGRgrouped2(retval, b1, b2, gid, eid, NULL, true, TYPE_dbl,
 						BATgroupcovariance_population, "aggr.covariancep");
 }
@@ -1398,8 +1373,7 @@ static str
 AGGRsubcovariancep(Client ctx, bat *retval, const bat *b1, const bat *b2, const bat *gid,
 				   const bat *eid, const bit *skip_nils)
 {
-	allocator *ma = ctx->curprg->def->ma;
-	(void) ma;
+	(void) ctx;
 	return AGGRgrouped2(retval, b1, b2, gid, eid, NULL, *skip_nils, TYPE_dbl,
 						BATgroupcovariance_population, "aggr.subcovariancep");
 }
@@ -1409,8 +1383,7 @@ AGGRsubcovariancepcand(Client ctx, bat *retval, const bat *b1, const bat *b2,
 					   const bat *gid, const bat *eid, const bat *sid,
 					   const bit *skip_nils)
 {
-	allocator *ma = ctx->curprg->def->ma;
-	(void) ma;
+	(void) ctx;
 	return AGGRgrouped2(retval, b1, b2, gid, eid, sid, *skip_nils, TYPE_dbl,
 						BATgroupcovariance_population, "aggr.subcovariancep");
 }
@@ -1419,8 +1392,7 @@ static str
 AGGRcorr(Client ctx, bat *retval, const bat *b1, const bat *b2, const bat *gid,
 		 const bat *eid)
 {
-	allocator *ma = ctx->curprg->def->ma;
-	(void) ma;
+	(void) ctx;
 	return AGGRgrouped2(retval, b1, b2, gid, eid, NULL, true, TYPE_dbl,
 						BATgroupcorrelation, "aggr.corr");
 }
@@ -1429,8 +1401,7 @@ static str
 AGGRsubcorr(Client ctx, bat *retval, const bat *b1, const bat *b2, const bat *gid,
 			const bat *eid, const bit *skip_nils)
 {
-	allocator *ma = ctx->curprg->def->ma;
-	(void) ma;
+	(void) ctx;
 	return AGGRgrouped2(retval, b1, b2, gid, eid, NULL, *skip_nils, TYPE_dbl,
 						BATgroupcorrelation, "aggr.subcorr");
 }
@@ -1439,8 +1410,7 @@ static str
 AGGRsubcorrcand(Client ctx, bat *retval, const bat *b1, const bat *b2, const bat *gid,
 				const bat *eid, const bat *sid, const bit *skip_nils)
 {
-	allocator *ma = ctx->curprg->def->ma;
-	(void) ma;
+	(void) ctx;
 	return AGGRgrouped2(retval, b1, b2, gid, eid, sid, *skip_nils, TYPE_dbl,
 						BATgroupcorrelation, "aggr.subcorr");
 }

@@ -1566,7 +1566,7 @@ convert_typeswitchloop(allocator *ma, const void *src, int stp, void *restrict d
 }
 
 BAT *
-BATconvert(allocator *ma, BAT *b, BAT *s, int tp,
+BATconvert(BAT *b, BAT *s, int tp,
 	   uint8_t scale1, uint8_t scale2, uint8_t precision)
 {
 	lng t0 = 0;
@@ -1638,6 +1638,8 @@ BATconvert(allocator *ma, BAT *b, BAT *s, int tp,
 		return NULL;
 	}
 
+	allocator *ma = MT_thread_getallocator();
+	allocator_state ma_state = ma_open(ma);
 	if (bi.type == TYPE_void)
 		nils = convert_void_any(ma, b->tseqbase, bn,
 					&ci, b->hseqbase, &reduce);
@@ -1661,6 +1663,7 @@ BATconvert(allocator *ma, BAT *b, BAT *s, int tp,
 					      &ci, b->hseqbase, &reduce,
 					      scale1, scale2, precision);
 	}
+	ma_close(ma, &ma_state);
 
 	if (nils >= BUN_NONE) {
 		BBPunfix(bn->batCacheid);

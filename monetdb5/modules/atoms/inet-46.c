@@ -711,10 +711,10 @@ INETinet6containssymmetricinet6(Client ctx, bit *ret, const inet6 *ip1, const sh
 static str
 INETinet42inet6_bulk(Client ctx, bat *ret, const bat *bid, const bat *sid)
 {
-	allocator *ma = ctx->curprg->def->ma;
 	BAT *b = NULL, *s = NULL, *dst = NULL;
 	str msg = NULL;
 
+	(void) ctx;
 	if (sid && !is_bat_nil(*sid)) {
 		if ((s = BATdescriptor(*sid)) == NULL) {
 			msg = createException(SQL, "batcalc.inet6",
@@ -730,7 +730,7 @@ INETinet42inet6_bulk(Client ctx, bat *ret, const bat *bid, const bat *sid)
 							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	if ((dst = BATconvert(ma, b, s, TYPE_inet6, 0, 0, 0)) == NULL) {
+	if ((dst = BATconvert(b, s, TYPE_inet6, 0, 0, 0)) == NULL) {
 		msg = createException(SQL, "batcalc.inet6",
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
@@ -747,10 +747,10 @@ INETinet42inet6_bulk(Client ctx, bat *ret, const bat *bid, const bat *sid)
 static str
 INETinet62inet4_bulk(Client ctx, bat *ret, const bat *bid, const bat *sid)
 {
-	allocator *ma = ctx->curprg->def->ma;
 	BAT *b = NULL, *s = NULL, *dst = NULL;
 	str msg = NULL;
 
+	(void) ctx;
 	if (sid && !is_bat_nil(*sid)) {
 		if ((s = BATdescriptor(*sid)) == NULL) {
 			msg = createException(SQL, "batcalc.inet4",
@@ -766,7 +766,7 @@ INETinet62inet4_bulk(Client ctx, bat *ret, const bat *bid, const bat *sid)
 							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	if ((dst = BATconvert(ma, b, s, TYPE_inet4, 0, 0, 0)) == NULL) {
+	if ((dst = BATconvert(b, s, TYPE_inet4, 0, 0, 0)) == NULL) {
 		msg = createException(SQL, "batcalc.inet4",
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;

@@ -2223,7 +2223,7 @@ store_load(sqlstore *store, allocator *pa)
 sqlstore *
 store_init(int debug, store_type store_tpe, int readonly, int singleuser)
 {
-	allocator *pa, *ta;
+	allocator *pa;
 	sqlstore *store = MNEW(sqlstore);
 
 	if (debug&2)
@@ -2240,14 +2240,6 @@ store_init(int debug, store_type store_tpe, int readonly, int singleuser)
 		return NULL;
 	}
 
-	if (!(ta = create_allocator(pa, "TA_SQLstore", false))) {
-		TRC_CRITICAL(SQL_STORE, "Allocation failure while initializing store\n");
-		if (pa)
-			ma_destroy(pa);
-		_DELETE(store);
-		return NULL;
-	}
-
 	*store = (sqlstore) {
 		.readonly = readonly,
 		.singleuser = singleuser,
@@ -2260,7 +2252,6 @@ store_init(int debug, store_type store_tpe, int readonly, int singleuser)
 		.oldest = ATOMIC_VAR_INIT(0),
 		.obj_id = ATOMIC_VAR_INIT(0),
 		.sa = pa,
-		.ta = ta,
 	};
 
 	(void)store_timestamp(store); /* increment once */

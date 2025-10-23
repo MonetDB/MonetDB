@@ -105,7 +105,7 @@ pyapi_export str ConvertFromSQLType(allocator *, Client ctx, BAT *b, sql_subtype
 									BAT **ret_bat, int *ret_type);
 //! Convert a BAT of a standard type (numeric or string) to a BAT of the
 //! specified SQL type
-pyapi_export str ConvertToSQLType(allocator *, Client cntxt, BAT *b,
+pyapi_export str ConvertToSQLType(Client cntxt, BAT *b,
 								  sql_subtype *sql_subtype, BAT **ret_bat,
 								  int *ret_type);
 

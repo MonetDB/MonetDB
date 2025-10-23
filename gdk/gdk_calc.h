@@ -120,22 +120,22 @@ gdk_export gdk_return VARcalcge(ValPtr ret, const ValRecord *lft, const ValRecor
 gdk_export gdk_return VARcalceq(ValPtr ret, const ValRecord *lft, const ValRecord *rgt, bool nil_matches);
 gdk_export gdk_return VARcalcne(ValPtr ret, const ValRecord *lft, const ValRecord *rgt, bool nil_matches);
 gdk_export gdk_return VARcalccmp(ValPtr ret, const ValRecord *lft, const ValRecord *rgt);
-gdk_export BAT *BATconvert(allocator *ma, BAT *b, BAT *s, int tp, uint8_t scale1, uint8_t scale2, uint8_t precision);
+gdk_export BAT *BATconvert(BAT *b, BAT *s, int tp, uint8_t scale1, uint8_t scale2, uint8_t precision);
 gdk_export gdk_return VARconvert(allocator *ma, ValPtr ret, const ValRecord *v, uint8_t scale1, uint8_t scale2, uint8_t precision);
 gdk_export gdk_return BATcalcavg(BAT *b, BAT *s, dbl *avg, BUN *vals, int scale);
 
-gdk_export BAT *BATgroupsum(allocator *ma, BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils);
-gdk_export BAT *BATgroupprod(allocator *ma, BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils);
-gdk_export gdk_return BATgroupavg(allocator *ma, BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, int scale);
-gdk_export gdk_return BATgroupavg3(allocator *, BAT **avgp, BAT **remp, BAT **cntp, BAT *b, BAT *g, BAT *e, BAT *s, bool skip_nils);
-gdk_export BAT *BATgroupavg3combine(allocator *, BAT *avg, BAT *rem, BAT *cnt, BAT *g, BAT *e, bool skip_nils);
-gdk_export BAT *BATgroupcount(allocator *ma, BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils);
-gdk_export BAT *BATgroupmin(allocator *ma, BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils);
-gdk_export BAT *BATgroupmax(allocator *ma, BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils);
-gdk_export BAT *BATgroupmedian(allocator *ma, BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils);
-gdk_export BAT *BATgroupquantile(allocator *ma, BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile, bool skip_nils);
-gdk_export BAT *BATgroupmedian_avg(allocator *ma, BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils);
-gdk_export BAT *BATgroupquantile_avg(allocator *ma, BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile, bool skip_nils);
+gdk_export BAT *BATgroupsum(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils);
+gdk_export BAT *BATgroupprod(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils);
+gdk_export gdk_return BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, int scale);
+gdk_export gdk_return BATgroupavg3(BAT **avgp, BAT **remp, BAT **cntp, BAT *b, BAT *g, BAT *e, BAT *s, bool skip_nils);
+gdk_export BAT *BATgroupavg3combine(BAT *avg, BAT *rem, BAT *cnt, BAT *g, BAT *e, bool skip_nils);
+gdk_export BAT *BATgroupcount(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils);
+gdk_export BAT *BATgroupmin(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils);
+gdk_export BAT *BATgroupmax(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils);
+gdk_export BAT *BATgroupmedian(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils);
+gdk_export BAT *BATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile, bool skip_nils);
+gdk_export BAT *BATgroupmedian_avg(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils);
+gdk_export BAT *BATgroupquantile_avg(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile, bool skip_nils);
 
 /* helper function for grouped aggregates */
 gdk_export const char *BATgroupaggrinit(
@@ -153,12 +153,12 @@ gdk_export void *BATmin_skipnil(allocator *alloc, BAT *b, void *aggr, bit skipni
 
 gdk_export dbl BATcalcstdev_population(dbl *avgp, BAT *b);
 gdk_export dbl BATcalcstdev_sample(dbl *avgp, BAT *b);
-gdk_export BAT *BATgroupstdev_sample(allocator *ma, BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils);
-gdk_export BAT *BATgroupstdev_population(allocator *ma, BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils);
+gdk_export BAT *BATgroupstdev_sample(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils);
+gdk_export BAT *BATgroupstdev_population(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils);
 gdk_export dbl BATcalcvariance_population(dbl *avgp, BAT *b);
 gdk_export dbl BATcalcvariance_sample(dbl *avgp, BAT *b);
-gdk_export BAT *BATgroupvariance_sample(allocator *ma, BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils);
-gdk_export BAT *BATgroupvariance_population(allocator *ma, BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils);
+gdk_export BAT *BATgroupvariance_sample(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils);
+gdk_export BAT *BATgroupvariance_population(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils);
 gdk_export dbl BATcalccovariance_sample(BAT *b1, BAT *b2);
 gdk_export dbl BATcalccovariance_population(BAT *b1, BAT *b2);
 gdk_export dbl BATcalccorrelation(BAT *b1, BAT *b2);
@@ -166,6 +166,6 @@ gdk_export BAT *BATgroupcovariance_sample(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT 
 gdk_export BAT *BATgroupcovariance_population(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils);
 gdk_export BAT *BATgroupcorrelation(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils);
 
-gdk_export BAT *BATgroupstr_group_concat(allocator *alloc, BAT *b, BAT *g, BAT *e, BAT *s, BAT *sep, bool skip_nils, const char *restrict separator);
-gdk_export gdk_return BATstr_group_concat(allocator *alloc, ValPtr res, BAT *b, BAT *s, BAT *sep, bool skip_nils, bool nil_if_empty, const char *restrict separator);
+gdk_export BAT *BATgroupstr_group_concat(BAT *b, BAT *g, BAT *e, BAT *s, BAT *sep, bool skip_nils, const char *restrict separator);
+gdk_export gdk_return BATstr_group_concat(allocator *ma, ValPtr res, BAT *b, BAT *s, BAT *sep, bool skip_nils, bool nil_if_empty, const char *restrict separator);
 gdk_export gdk_return GDKanalytical_str_group_concat(BAT *r, BAT *p, BAT *o, BAT *b, BAT *sep, BAT *s, BAT *e, const char *restrict separator, int frame_type);

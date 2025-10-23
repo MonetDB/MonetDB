@@ -818,14 +818,20 @@ concat_strings(allocator *ma, BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
+
+	assert(pt == NULL || ma != NULL);
 	/* exactly one of bnp and pt must be NULL, the other non-NULL */
 	assert((bnp == NULL) != (pt == NULL));
 	/* if pt not NULL, only a single group allowed */
 	assert(pt == NULL || ngrp == 1);
 
 	if (bnp) {
-		if ((bn = COLnew(min, TYPE_str, ngrp, TRANSIENT)) == NULL)
+		if ((bn = COLnew(min, TYPE_str, ngrp, TRANSIENT)) == NULL) {
+			ma_close(ta, &ta_state);
 			return GDK_FAIL;
+		}
 		*bnp = bn;
 	}
 
@@ -887,7 +893,7 @@ concat_strings(allocator *ma, BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 		if (nils == 0 && !empty) {
 			char *single_str = NULL;
 
-			if ((single_str = ma_alloc(ma, single_length + 1)) == NULL) {
+			if ((single_str = ma_alloc(ta, single_length + 1)) == NULL) {
 				bat_iterator_end(&bi);
 				bat_iterator_end(&bis);
 				BBPreclaim(bn);
@@ -933,40 +939,42 @@ concat_strings(allocator *ma, BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 			TIMEOUT_CHECK(qry_ctx, do { GDKfree(single_str); GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx); } while (0));
 			if (bn) {
 				if (BUNappend(bn, single_str, false) != GDK_SUCCEED) {
-					//GDKfree(single_str);
+					ma_close(ta, &ta_state);
 					bat_iterator_end(&bi);
 					bat_iterator_end(&bis);
 					BBPreclaim(bn);
 					return GDK_FAIL;
 				}
 			} else {
+				assert(ma != NULL);
 				pt->len = offset + 1;
-				pt->val.sval = single_str;
-				single_str = NULL;	/* don't free */
+				pt->val.sval = ma_strdup(ma, single_str);
 			}
-			//GDKfree(single_str);
 		} else if (bn) {
 			if (BUNappend(bn, str_nil, false) != GDK_SUCCEED) {
 				bat_iterator_end(&bi);
 				bat_iterator_end(&bis);
 				BBPreclaim(bn);
+				ma_close(ta, &ta_state);
 				return GDK_FAIL;
 			}
 		} else {
 			if (VALinit(ma, pt, TYPE_str, str_nil) == NULL) {
 				bat_iterator_end(&bi);
 				bat_iterator_end(&bis);
+				ma_close(ta, &ta_state);
 				return GDK_FAIL;
 			}
 		}
 		bat_iterator_end(&bi);
 		bat_iterator_end(&bis);
+		ma_close(ta, &ta_state);
 		return GDK_SUCCEED;
 	} else {
 		/* first used to calculated the total length of
 		 * each group, then the the total offset */
-		lengths = ma_zalloc(ma, ngrp * sizeof(*lengths));
-		astrings = ma_alloc(ma, ngrp * sizeof(str));
+		lengths = ma_zalloc(ta, ngrp * sizeof(*lengths));
+		astrings = ma_alloc(ta, ngrp * sizeof(str));
 		if (lengths == NULL || astrings == NULL) {
 			goto finish;
 		}
@@ -1024,7 +1032,7 @@ concat_strings(allocator *ma, BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 		if (separator) {
 			for (i = 0; i < ngrp; i++) {
 				if (astrings[i] == NULL) {
-					if ((astrings[i] = ma_alloc(ma, lengths[i] + 1)) == NULL) {
+					if ((astrings[i] = ma_alloc(ta, lengths[i] + 1)) == NULL) {
 						goto finish;
 					}
 					astrings[i][0] = 0;
@@ -1036,7 +1044,7 @@ concat_strings(allocator *ma, BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 			assert(sep != NULL);
 			for (i = 0; i < ngrp; i++) {
 				if (astrings[i] == NULL) {
-					if ((astrings[i] = ma_alloc(ma, lengths[i] + 1)) == NULL) {
+					if ((astrings[i] = ma_alloc(ta, lengths[i] + 1)) == NULL) {
 						goto finish;
 					}
 					astrings[i][0] = 0;
@@ -1111,6 +1119,7 @@ concat_strings(allocator *ma, BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 	bat_iterator_end(&bis);
 	if (has_nils)
 		*has_nils = nils;
+	ma_close(ta, &ta_state);
 	// GDKfree(lengths);
 	//if (astrings) {
 	//	for (i = 0; i < ngrp; i++) {
@@ -1145,33 +1154,36 @@ BATstr_group_concat(allocator *ma, ValPtr res, BAT *b, BAT *s, BAT *sep, bool sk
 
 	canditer_init(&ci, b, s);
 
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
+
 	if (sep && BATcount(sep) == 1) { /* Only one element in sep */
 		BATiter bi = bat_iterator(sep);
-		nseparator = ma_strdup(ma, BUNtvar(bi, 0));
+		nseparator = ma_strdup(ta, BUNtvar(bi, 0));
 		bat_iterator_end(&bi);
-		if (!nseparator)
+		if (!nseparator) {
+			ma_close(ta, &ta_state);
 			return GDK_FAIL;
+		}
 		//free_nseparator = true;
 		sep = NULL;
 	}
 
 	if (ci.ncand == 0 || (nseparator && strNil(nseparator))) {
-		if (VALinit(ma, res, TYPE_str, nil_if_empty ? str_nil : "") == NULL)
+		if (VALinit(ta, res, TYPE_str, nil_if_empty ? str_nil : "") == NULL)
 			r = GDK_FAIL;
-		//if (free_nseparator)
-		//	GDKfree(nseparator);
+		ma_close(ta, &ta_state);
 		return r;
 	}
 
 	r = concat_strings(ma, NULL, res, b, b->hseqbase, 1, &ci, NULL, 0, 0,
 			      skip_nils, sep, nseparator, NULL);
-	//if (free_nseparator)
-	//	GDKfree(nseparator);
+	ma_close(ta, &ta_state);
 	return r;
 }
 
 BAT *
-BATgroupstr_group_concat(allocator *ma, BAT *b, BAT *g, BAT *e, BAT *s, BAT *sep, bool skip_nils,
+BATgroupstr_group_concat(BAT *b, BAT *g, BAT *e, BAT *s, BAT *sep, bool skip_nils,
 			 const char *restrict separator)
 {
 	BAT *bn = NULL;
@@ -1196,12 +1208,17 @@ BATgroupstr_group_concat(allocator *ma, BAT *b, BAT *g, BAT *e, BAT *s, BAT *sep
 		return NULL;
 	}
 
+	allocator *ma = MT_thread_getallocator();
+	allocator_state ma_state = ma_open(ma);
+
 	if (sep && BATcount(sep) == 1) { /* Only one element in sep */
 		BATiter bi = bat_iterator(sep);
 		nseparator = ma_strdup(ma, BUNtvar(bi, 0));
 		bat_iterator_end(&bi);
-		if (!nseparator)
+		if (!nseparator) {
+			ma_close(ma, &ma_state);
 			return NULL;
+		}
 		//free_nseparator = true;
 		sep = NULL;
 	}
@@ -1216,21 +1233,20 @@ BATgroupstr_group_concat(allocator *ma, BAT *b, BAT *g, BAT *e, BAT *s, BAT *sep
 	if (ci.ncand == ngrp && (BATtdense(g) || (g->tkey && g->tnonil))) {
 		/* trivial: singleton groups, so all results are equal
 		 * to the inputs (but possibly a different type) */
-		bn = BATconvert(ma, b, s, TYPE_str, 0, 0, 0);
+		bn = BATconvert(b, s, TYPE_str, 0, 0, 0);
 		if (bn)
 			bn->hseqbase = min;
 		goto done;
 	}
 
-	res = concat_strings(ma, &bn, NULL, b, b->hseqbase, ngrp, &ci,
+	res = concat_strings(NULL, &bn, NULL, b, b->hseqbase, ngrp, &ci,
 			     (const oid *) Tloc(g, 0), min, max, skip_nils, sep,
 			     nseparator, &nils);
 	if (res != GDK_SUCCEED)
 		bn = NULL;
 
 done:
-	//if (free_nseparator)
-	//	GDKfree(nseparator);
+	ma_close(ma, &ma_state);
 	return bn;
 }
 

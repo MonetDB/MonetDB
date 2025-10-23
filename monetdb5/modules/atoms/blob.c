@@ -255,16 +255,16 @@ BLOBblob_fromstr(Client ctx, blob **b, const char *const*s)
 static str
 BLOBblob_fromstr_bulk(Client ctx, bat *res, const bat *bid, const bat *sid)
 {
-	allocator *ma = ctx->curprg->def->ma;
 	BAT *b, *s = NULL, *bn;
 
+	(void) ctx;
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "batcalc.blob", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	if (sid && !is_bat_nil(*sid) && (s = BATdescriptor(*sid)) == NULL) {
 		BBPunfix(b->batCacheid);
 		throw(MAL, "batcalc.blob", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
-	bn = BATconvert(ma, b, s, TYPE_blob, 0, 0, 0);
+	bn = BATconvert(b, s, TYPE_blob, 0, 0, 0);
 	BBPunfix(b->batCacheid);
 	BBPreclaim(s);
 	if (bn == NULL)

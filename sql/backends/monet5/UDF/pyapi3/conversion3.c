@@ -1141,7 +1141,7 @@ PyObject_ConvertToBAT(allocator *ma, Client ctx, PyReturn *ret, sql_subtype *typ
 	}
 	if (ConvertableSQLType(type)) {
 		BAT *result;
-		msg = ConvertToSQLType(ma, ctx, b, type, &result, &bat_type);
+		msg = ConvertToSQLType(ctx, b, type, &result, &bat_type);
 		BBPunfix(b->batCacheid);
 		if (msg != MAL_SUCCEED) {
 			goto wrapup;
@@ -1264,7 +1264,7 @@ ConvertFromSQLType(allocator *ma, Client ctx, BAT *b, sql_subtype *sql_subtype, 
 	return createException(MAL, "pyapi3.eval", "Unrecognized conv type.");
 }
 
-str ConvertToSQLType(allocator *ma, Client cntxt, BAT *b, sql_subtype *sql_subtype,
+str ConvertToSQLType(Client cntxt, BAT *b, sql_subtype *sql_subtype,
 					 BAT **ret_bat, int *ret_type)
 {
 	str res = MAL_SUCCEED;
@@ -1283,7 +1283,7 @@ str ConvertToSQLType(allocator *ma, Client cntxt, BAT *b, sql_subtype *sql_subty
 			res = batstr_2time_daytime(cntxt, &result_bat, &b->batCacheid, NULL, &digits);
 			break;
 		case EC_DATE:
-			if ((*ret_bat = BATconvert(ma, b, NULL, TYPE_date, 0, 0, 0)) == NULL)
+			if ((*ret_bat = BATconvert(b, NULL, TYPE_date, 0, 0, 0)) == NULL)
 				throw(MAL, "pyapi3.eval", GDK_EXCEPTION);
 			*ret_type = TYPE_date;
 			return MAL_SUCCEED;

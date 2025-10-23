@@ -1028,7 +1028,6 @@ CMDconvertbat(MalStkPtr stk, InstrPtr pci, int tp)
 {
 	bat bid;
 	BAT *b, *bn, *s = NULL;
-	allocator *ma = stk->blk->ma;
 
 	bid = *getArgReference_bat(stk, pci, 1);
 	if ((b = BATdescriptor(bid)) == NULL)
@@ -1047,7 +1046,7 @@ CMDconvertbat(MalStkPtr stk, InstrPtr pci, int tp)
 		}
 	}
 
-	bn = BATconvert(ma, b, s, tp, 0, 0, 0);
+	bn = BATconvert(b, s, tp, 0, 0, 0);
 	BBPunfix(b->batCacheid);
 	BBPreclaim(s);
 	if (bn == NULL) {
