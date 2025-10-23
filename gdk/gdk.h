@@ -1755,9 +1755,6 @@ gdk_export void ma_free(allocator *sa, void *);
 gdk_export exception_buffer *ma_get_eb(allocator *sa)
        __attribute__((__pure__));
 
-gdk_export void ma_set_ta(allocator *sa,  allocator *ta);
-gdk_export allocator *ma_get_ta(allocator *sa);
-
 #define MA_NEW( sa, type )				((type*)ma_alloc( sa, sizeof(type)))
 #define MA_ZNEW( sa, type )				((type*)ma_zalloc( sa, sizeof(type)))
 #define MA_NEW_ARRAY( sa, type, size )			(type*)ma_alloc( sa, ((size)*sizeof(type)))

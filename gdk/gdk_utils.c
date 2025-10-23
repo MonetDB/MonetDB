@@ -2095,21 +2095,6 @@ ma_alloc(allocator *sa, size_t sz)
 	return sa_fill_in_header(r, sz);
 }
 
-void
-ma_set_ta(allocator *sa, allocator *ta)
-{
-	assert(ta);
-	assert(sa->ta == NULL);
-	sa->ta = ta;
-}
-
-allocator *
-ma_get_ta(allocator *sa)
-{
-	assert(sa->ta);
-	return sa->ta;
-}
-
 allocator *
 create_allocator(allocator *pa, const char *name, bool use_lock)
 {
@@ -2132,7 +2117,6 @@ create_allocator(allocator *pa, const char *name, bool use_lock)
 		.blks = blks,
 		.first_blk = first_blk,
 		.pa = pa,
-		.ta = NULL,
 		.nr = 1,
 		.usedmem = SA_BLOCK_SIZE,
 		.blk_size = SA_BLOCK_SIZE,
