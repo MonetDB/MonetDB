@@ -370,7 +370,6 @@ SQLexecPostLoginTriggers(Client c)
 						m->sa = sa;
 						throw(SQL, "sql.SQLexecPostLoginTriggers", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					}
-					ma_set_ta(m->sa, m->ta);
 					r = rel_parse(m, sys, stmt, m_deps);
 					if (r)
 						r = sql_processrelation(m, r, 0, 0, 0, 0);
@@ -826,7 +825,6 @@ SQLinit(Client c, const char *initpasswd)
 			m->sa = create_allocator(m->pa, NULL, false);
 			if (!m->sa)
 				msg = createException(MAL, "createdb", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			ma_set_ta(m->sa, m->ta);
 		}
 		if (!msg && maybeupgrade) {
 			if ((msg = SQLtrans(m)) == MAL_SUCCEED) {
@@ -1690,7 +1688,6 @@ SQLparser(Client c, backend *be)
 			c->mode = FINISHCLIENT;
 			throw(SQL, "SQLparser", SQLSTATE(HY013) MAL_MALLOC_FAIL " for SQL allocator");
 		}
-		ma_set_ta(m->sa, m->ta);
 	}
 	if (eb_savepoint(ma_get_eb(m->sa))) {
 		msg = createException(SQL, "SQLparser", "%s", ma_get_eb(m->sa)->msg);

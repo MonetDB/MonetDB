@@ -36,7 +36,7 @@
 #define geom_export extern
 #endif
 
-wkb * geos2wkb(allocator *, const GEOSGeometry *geosGeometry);
+wkb * geos2wkb(allocator *, wkb **geomWKB, size_t *len, const GEOSGeometry *geosGeometry);
 
 /* general functions */
 geom_export str geoHasZ(Client ctx, int* res, int* info);
@@ -77,7 +77,8 @@ geom_export str wkbAsText(Client ctx, char **outTXT, wkb **inWKB, int *withSRID)
 geom_export str wkbAsText_bat(Client ctx, bat *inBAT_id, bat *outBAT_id, int *withSRID);
 
 geom_export str wkbAsBinary(Client ctx, char**, wkb**);
-geom_export str wkbFromBinary(Client ctx, wkb**, const char**);
+//geom_export str wkbFromBinary(Client ctx, wkb**, const char**);
+geom_export str wkbFromBinaryWithBuffer(allocator *ma, wkb **geomWKB, size_t *len, const char **inStr);
 
 geom_export str wkbIsEmpty(Client ctx, bit*, wkb**);
 geom_export str wkbIsEmpty_bat(Client ctx, bat *inBAT_id, bat *outBAT_id);

@@ -12,6 +12,7 @@
 
 #include "geom_atoms.h"
 #include "gdk.h"
+#include "gdk_system.h"
 
 /***********************************************/
 /************* wkb type functions **************/
@@ -311,21 +312,19 @@ wkbFROMSTR_withSRID(allocator *ma, const char *geomWKT, size_t *len, wkb **geomW
 
 	*nread = 0;
 
-	/* we always allocate new memory */
-	////GDKfree(*geomWKB);
-	*len = 0;
-	*geomWKB = NULL;
-
 	if (strNil(geomWKT)) {
-		*geomWKB = wkbNULLcopy(ma);
+		if (*len < sizeof(wkb_nil)) {
+			*len = sizeof(wkb_nil);
+			*geomWKB = ma_alloc(ma, *len);
+		}
 		if (*geomWKB == NULL)
 			throw(MAL, "wkb.FromText", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		*len = sizeof(wkb_nil);
+		**geomWKB = wkb_nil;
 		return MAL_SUCCEED;
 	}
 	//check whether the representation is binary (hex)
 	if (geomWKT[0] == '0') {
-		str ret = wkbFromBinary(/*ctx*/NULL, geomWKB, &geomWKT);
+		str ret = wkbFromBinaryWithBuffer(ma, geomWKB, len, &geomWKT);
 
 		if (ret != MAL_SUCCEED)
 			return ret;
@@ -338,9 +337,11 @@ wkbFROMSTR_withSRID(allocator *ma, const char *geomWKT, size_t *len, wkb **geomW
 	//a special type of multipolygon I just change the type before
 	//continuing. Of course this means that isValid for example does
 	//not work correctly.
+	allocator *ta = MT_thread_getallocator();
+	allocator_state *state = ma_open(ta);
 	if (strncasecmp(geomWKT, polyhedralSurface, strlen(polyhedralSurface)) == 0) {
 		size_t sizeOfInfo = strlen(geomWKT) - strlen(polyhedralSurface) + strlen(multiPolygon) + 1;
-		geomWKT_new = ma_alloc(ma, sizeOfInfo);
+		geomWKT_new = ma_alloc(ta, sizeOfInfo);
 		if (geomWKT_new == NULL)
 			throw(MAL, "wkb.FromText", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		snprintf(geomWKT_new, sizeOfInfo, "%s%s", multiPolygon, geomWKT + strlen(polyhedralSurface));
@@ -350,23 +351,20 @@ wkbFROMSTR_withSRID(allocator *ma, const char *geomWKT, size_t *len, wkb **geomW
 
 	WKT_reader = GEOSWKTReader_create_r(geoshandle);
 	if (WKT_reader == NULL) {
-		if (geomWKT_new)
-			//GDKfree(geomWKT_new);
+		ma_close_to(ta, state);
 		throw(MAL, "wkb.FromText", SQLSTATE(38000) "Geos operation GEOSWKTReader_create failed");
 	}
 	geosGeometry = GEOSWKTReader_read_r(geoshandle, WKT_reader, geomWKT);
 	GEOSWKTReader_destroy_r(geoshandle, WKT_reader);
 
 	if (geosGeometry == NULL) {
-		//if (geomWKT_new)
-			//GDKfree(geomWKT_new);
+		ma_close_to(ta, state);
 		throw(MAL, "wkb.FromText", SQLSTATE(38000) "Geos operation GEOSWKTReader_read failed");
 	}
 
 	if (GEOSGeomTypeId_r(geoshandle, geosGeometry) == -1) {
-		//if (geomWKT_new)
-			//GDKfree(geomWKT_new);
 		GEOSGeom_destroy_r(geoshandle, geosGeometry);
+		ma_close_to(ta, state);
 		throw(MAL, "wkb.FromText", SQLSTATE(38000) "Geos operation GEOSGeomTypeId failed");
 	}
 
@@ -376,11 +374,10 @@ wkbFROMSTR_withSRID(allocator *ma, const char *geomWKT, size_t *len, wkb **geomW
 
 	/* we have a GEOSGeometry with number of coordinates and SRID and we
 	 * want to get the wkb out of it */
-	*geomWKB = geos2wkb(ma, geosGeometry);
+	*geomWKB = geos2wkb(ma, geomWKB, len, geosGeometry);
 	GEOSGeom_destroy_r(geoshandle, geosGeometry);
 	if (*geomWKB == NULL) {
-		//if (geomWKT_new)
-			//GDKfree(geomWKT_new);
+		ma_close_to(ta, state);
 		throw(MAL, "wkb.FromText", SQLSTATE(38000) "Geos operation geos2wkb failed");
 	}
 
@@ -388,8 +385,7 @@ wkbFROMSTR_withSRID(allocator *ma, const char *geomWKT, size_t *len, wkb **geomW
 	parsedCharacters = strlen(geomWKT);
 	assert(parsedCharacters <= GDK_int_max);
 
-	//GDKfree(geomWKT_new);
-
+	ma_close_to(ta, state);
 	*nread = parsedCharacters;
 	return MAL_SUCCEED;
 }
