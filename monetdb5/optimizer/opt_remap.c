@@ -175,10 +175,10 @@ OPTmultiplexInline(Client ctx, MalBlkPtr mb, InstrPtr p, int pc)
 	}
 	sig = getInstrPtr(mq, 0);
 
-	ma_open(ta);
+	allocator_state ta_state = ma_open(ta);
 	upgrade = (bit *) ma_zalloc(ta, sizeof(bit) * mq->vtop);
 	if (upgrade == NULL) {
-		ma_close(ta);
+		ma_close(ta, &ta_state);
 		freeMalBlk(mq);
 		return 0;
 	}
@@ -354,7 +354,7 @@ OPTmultiplexInline(Client ctx, MalBlkPtr mb, InstrPtr p, int pc)
 	if (mq->errors) {
   terminateMX:
 
-		ma_close(ta);
+		ma_close(ta, &ta_state);
 		freeMalBlk(mq);
 
 		/* ugh ugh, fallback to non inline, but optimized code */
@@ -365,7 +365,7 @@ OPTmultiplexInline(Client ctx, MalBlkPtr mb, InstrPtr p, int pc)
 			s->def->inlineProp = 0;
 		return 0;
 	}
-	ma_close(ta);
+	ma_close(ta, &ta_state);
 	/*
 	 * We have successfully constructed a variant
 	 * of the to-be-inlined function. Put it in place

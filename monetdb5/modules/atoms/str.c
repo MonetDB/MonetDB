@@ -333,7 +333,7 @@ STRTail(Client ctx, str *res, const char *const *arg1, const int *offset)
 	} else {
 		size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 		allocator *ta = MT_thread_getallocator();
-		allocator_state *ta_state = ma_open(ta);
+		allocator_state ta_state = ma_open(ta);
 
 		*res = NULL;
 		if (!(buf = ma_alloc(ta, buflen)))
@@ -343,7 +343,7 @@ STRTail(Client ctx, str *res, const char *const *arg1, const int *offset)
 			return msg;
 		}
 		*res = MA_STRDUP(ma, buf);
-		ma_close_to(ta, ta_state);
+		ma_close(ta, &ta_state);
 	}
 
 	//GDKfree(buf);
@@ -393,7 +393,7 @@ STRSubString(Client ctx, str *res, const char *const *arg1, const int *offset, c
 	} else {
 		size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 		allocator *ta = MT_thread_getallocator();
-		allocator_state *ta_state = ma_open(ta);
+		allocator_state ta_state = ma_open(ta);
 
 		*res = NULL;
 		if (!(buf = ma_alloc(ta, buflen)))
@@ -403,7 +403,7 @@ STRSubString(Client ctx, str *res, const char *const *arg1, const int *offset, c
 			return msg;
 		}
 		*res = MA_STRDUP(ma, buf);
-		ma_close_to(ta, ta_state);
+		ma_close(ta, &ta_state);
 	}
 
 	//GDKfree(buf);
@@ -437,7 +437,7 @@ STRFromWChr(Client ctx, str *res, const int *c)
 	} else {
 		size_t buflen = MAX(strlen(str_nil) + 1, 8);
 		allocator *ta = MT_thread_getallocator();
-		allocator_state *ta_state = ma_open(ta);
+		allocator_state ta_state = ma_open(ta);
 
 		*res = NULL;
 		if (!(buf = ma_alloc(ta, buflen)))
@@ -447,7 +447,7 @@ STRFromWChr(Client ctx, str *res, const int *c)
 			return msg;
 		}
 		*res = MA_STRDUP(ma, buf);
-		ma_close_to(ta, ta_state);
+		ma_close(ta, &ta_state);
 	}
 
 	//GDKfree(buf);
@@ -506,7 +506,7 @@ doStrConvert(allocator *ma, str *res, const char *arg1, gdk_return (*func)(char 
 	} else {
 		size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 		allocator *ta = MT_thread_getallocator();
-		allocator_state *ta_state = ma_open(ta);
+		allocator_state ta_state = ma_open(ta);
 
 		*res = NULL;
 		if (!(buf = ma_alloc(ta, buflen)))
@@ -516,7 +516,7 @@ doStrConvert(allocator *ma, str *res, const char *arg1, gdk_return (*func)(char 
 			throw(MAL, "str.lower", GDK_EXCEPTION);
 		}
 		*res = MA_STRDUP(ma, buf);
-		ma_close_to(ta, ta_state);
+		ma_close(ta, &ta_state);
 	}
 
 	//GDKfree(buf);
@@ -821,7 +821,7 @@ STRsplitpart(Client ctx, str *res, const char *const *haystack, const char *cons
 	} else {
 		size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 		allocator *ta = MT_thread_getallocator();
-		allocator_state *ta_state = ma_open(ta);
+		allocator_state ta_state = ma_open(ta);
 
 		*res = NULL;
 		if (!(buf = ma_alloc(ta, buflen)))
@@ -831,7 +831,7 @@ STRsplitpart(Client ctx, str *res, const char *const *haystack, const char *cons
 			return msg;
 		}
 		*res = MA_STRDUP(ma, buf);
-		ma_close_to(ta, ta_state);
+		ma_close(ta, &ta_state);
 	}
 
 	//GDKfree(buf);
@@ -948,7 +948,7 @@ STRStrip(Client ctx, str *res, const char *const *arg1)
 	} else {
 		size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 		allocator *ta = MT_thread_getallocator();
-		allocator_state *ta_state = ma_open(ta);
+		allocator_state ta_state = ma_open(ta);
 
 		*res = NULL;
 		if (!(buf = ma_alloc(ta, buflen)))
@@ -958,7 +958,7 @@ STRStrip(Client ctx, str *res, const char *const *arg1)
 			return msg;
 		}
 		*res = MA_STRDUP(ma, buf);
-		ma_close_to(ta, ta_state);
+		ma_close(ta, &ta_state);
 	}
 
 	//GDKfree(buf);
@@ -993,7 +993,7 @@ STRLtrim(Client ctx, str *res, const char *const *arg1)
 	} else {
 		size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 		allocator *ta = MT_thread_getallocator();
-		allocator_state *ta_state = ma_open(ta);
+		allocator_state ta_state = ma_open(ta);
 
 		*res = NULL;
 		if (!(buf = ma_alloc(ta, buflen)))
@@ -1003,7 +1003,7 @@ STRLtrim(Client ctx, str *res, const char *const *arg1)
 			return msg;
 		}
 		*res = MA_STRDUP(ma, buf);
-		ma_close_to(ta, ta_state);
+		ma_close(ta, &ta_state);
 	}
 
 	//GDKfree(buf);
@@ -1038,7 +1038,7 @@ STRRtrim(Client ctx, str *res, const char *const *arg1)
 	} else {
 		size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 		allocator *ta = MT_thread_getallocator();
-		allocator_state *ta_state = ma_open(ta);
+		allocator_state ta_state = ma_open(ta);
 
 		*res = NULL;
 		if (!(buf = ma_alloc(ta, buflen)))
@@ -1048,7 +1048,7 @@ STRRtrim(Client ctx, str *res, const char *const *arg1)
 			return msg;
 		}
 		*res = MA_STRDUP(ma, buf);
-		ma_close_to(ta, ta_state);
+		ma_close(ta, &ta_state);
 	}
 
 	//GDKfree(buf);
@@ -1125,7 +1125,7 @@ STRStrip2(Client ctx, str *res, const char *const *arg1, const char *const *arg2
 	} else {
 		size_t buflen = INITIAL_STR_BUFFER_LENGTH * sizeof(int);
 		allocator *ta = MT_thread_getallocator();
-		allocator_state *ta_state = ma_open(ta);
+		allocator_state ta_state = ma_open(ta);
 
 		*res = NULL;
 		if (!(buf = ma_alloc(ta, buflen)))
@@ -1135,7 +1135,7 @@ STRStrip2(Client ctx, str *res, const char *const *arg1, const char *const *arg2
 			return msg;
 		}
 		*res = MA_STRDUP(ma, buf);
-		ma_close_to(ta, ta_state);
+		ma_close(ta, &ta_state);
 	}
 
 	//GDKfree(buf);
@@ -1183,7 +1183,7 @@ STRLtrim2(Client ctx, str *res, const char *const *arg1, const char *const *arg2
 	} else {
 		size_t buflen = INITIAL_STR_BUFFER_LENGTH * sizeof(int);
 		allocator *ta = MT_thread_getallocator();
-		allocator_state *ta_state = ma_open(ta);
+		allocator_state ta_state = ma_open(ta);
 
 		*res = NULL;
 		if (!(buf = ma_alloc(ta, buflen)))
@@ -1193,7 +1193,7 @@ STRLtrim2(Client ctx, str *res, const char *const *arg1, const char *const *arg2
 			return msg;
 		}
 		*res = MA_STRDUP(ma, buf);
-		ma_close_to(ta, ta_state);
+		ma_close(ta, &ta_state);
 	}
 
 	//GDKfree(buf);
@@ -1241,7 +1241,7 @@ STRRtrim2(Client ctx, str *res, const char *const *arg1, const char *const *arg2
 	} else {
 		size_t buflen = INITIAL_STR_BUFFER_LENGTH * sizeof(int);
 		allocator *ta = MT_thread_getallocator();
-		allocator_state *ta_state = ma_open(ta);
+		allocator_state ta_state = ma_open(ta);
 
 		*res = NULL;
 		if (!(buf = ma_alloc(ta, buflen)))
@@ -1251,7 +1251,7 @@ STRRtrim2(Client ctx, str *res, const char *const *arg1, const char *const *arg2
 			return msg;
 		}
 		*res = MA_STRDUP(ma, buf);
-		ma_close_to(ta, ta_state);
+		ma_close(ta, &ta_state);
 	}
 
 	//GDKfree(buf);
@@ -1346,7 +1346,7 @@ STRLpad(Client ctx, str *res, const char *const *arg1, const int *len)
 	} else {
 		size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 		allocator *ta = MT_thread_getallocator();
-		allocator_state *ta_state = ma_open(ta);
+		allocator_state ta_state = ma_open(ta);
 
 		*res = NULL;
 		if (!(buf = ma_alloc(ta, buflen)))
@@ -1356,7 +1356,7 @@ STRLpad(Client ctx, str *res, const char *const *arg1, const int *len)
 			return msg;
 		}
 		*res = MA_STRDUP(ma, buf);
-		ma_close_to(ta, ta_state);
+		ma_close(ta, &ta_state);
 	}
 
 	//GDKfree(buf);
@@ -1391,7 +1391,7 @@ STRRpad(Client ctx, str *res, const char *const *arg1, const int *len)
 	} else {
 		size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 		allocator *ta = MT_thread_getallocator();
-		allocator_state *ta_state = ma_open(ta);
+		allocator_state ta_state = ma_open(ta);
 
 		*res = NULL;
 		if (!(buf = ma_alloc(ta, buflen)))
@@ -1401,7 +1401,7 @@ STRRpad(Client ctx, str *res, const char *const *arg1, const int *len)
 			return msg;
 		}
 		*res = MA_STRDUP(ma, buf);
-		ma_close_to(ta, ta_state);
+		ma_close(ta, &ta_state);
 	}
 
 	//GDKfree(buf);
@@ -1436,7 +1436,7 @@ STRLpad3(Client ctx, str *res, const char *const *arg1, const int *len, const ch
 	} else {
 		size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 		allocator *ta = MT_thread_getallocator();
-		allocator_state *ta_state = ma_open(ta);
+		allocator_state ta_state = ma_open(ta);
 
 		*res = NULL;
 		if (!(buf = ma_alloc(ta, buflen)))
@@ -1446,7 +1446,7 @@ STRLpad3(Client ctx, str *res, const char *const *arg1, const int *len, const ch
 			return msg;
 		}
 		*res = MA_STRDUP(ma, buf);
-		ma_close_to(ta, ta_state);
+		ma_close(ta, &ta_state);
 	}
 
 	//GDKfree(buf);
@@ -1482,7 +1482,7 @@ STRRpad3(Client ctx, str *res, const char *const *arg1, const int *len, const ch
 	} else {
 		size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 		allocator *ta = MT_thread_getallocator();
-		allocator_state *ta_state = ma_open(ta);
+		allocator_state ta_state = ma_open(ta);
 
 		*res = NULL;
 		if (!(buf = ma_alloc(ta, buflen)))
@@ -1492,7 +1492,7 @@ STRRpad3(Client ctx, str *res, const char *const *arg1, const int *len, const ch
 			return msg;
 		}
 		*res = MA_STRDUP(ma, buf);
-		ma_close_to(ta, ta_state);
+		ma_close(ta, &ta_state);
 	}
 
 	//GDKfree(buf);
@@ -1559,7 +1559,7 @@ STRSubstitute(Client ctx, str *res, const char *const *arg1, const char *const *
 	} else {
 		size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 		allocator *ta = MT_thread_getallocator();
-		allocator_state *ta_state = ma_open(ta);
+		allocator_state ta_state = ma_open(ta);
 
 		*res = NULL;
 		if (!(buf = ma_alloc(ta, buflen)))
@@ -1569,7 +1569,7 @@ STRSubstitute(Client ctx, str *res, const char *const *arg1, const char *const *
 			return msg;
 		}
 		*res = MA_STRDUP(ma, buf);
-		ma_close_to(ta, ta_state);
+		ma_close(ta, &ta_state);
 	}
 
 	//GDKfree(buf);
@@ -1608,7 +1608,7 @@ STRsubstringTail(Client ctx, str *res, const char *const *arg1, const int *start
 	} else {
 		size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 		allocator *ta = MT_thread_getallocator();
-		allocator_state *ta_state = ma_open(ta);
+		allocator_state ta_state = ma_open(ta);
 
 		*res = NULL;
 		if (!(buf = ma_alloc(ta, buflen)))
@@ -1618,7 +1618,7 @@ STRsubstringTail(Client ctx, str *res, const char *const *arg1, const int *start
 			return msg;
 		}
 		*res = MA_STRDUP(ma, buf);
-		ma_close_to(ta, ta_state);
+		ma_close(ta, &ta_state);
 	}
 
 	//GDKfree(buf);
@@ -1650,7 +1650,7 @@ STRsubstring(Client ctx, str *res, const char *const *arg1, const int *start, co
 	} else {
 		size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 		allocator *ta = MT_thread_getallocator();
-		allocator_state *ta_state = ma_open(ta);
+		allocator_state ta_state = ma_open(ta);
 
 		*res = NULL;
 		if (!(buf = ma_alloc(ta, buflen)))
@@ -1660,7 +1660,7 @@ STRsubstring(Client ctx, str *res, const char *const *arg1, const int *start, co
 			return msg;
 		}
 		*res = MA_STRDUP(ma, buf);
-		ma_close_to(ta, ta_state);
+		ma_close(ta, &ta_state);
 	}
 
 	//GDKfree(buf);
@@ -1683,7 +1683,7 @@ STRprefix(Client ctx, str *res, const char *const *arg1, const int *ll)
 	} else {
 		size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 		allocator *ta = MT_thread_getallocator();
-		allocator_state *ta_state = ma_open(ta);
+		allocator_state ta_state = ma_open(ta);
 
 		*res = NULL;
 		if (!(buf = ma_alloc(ta, buflen)))
@@ -1693,7 +1693,7 @@ STRprefix(Client ctx, str *res, const char *const *arg1, const int *ll)
 			return msg;
 		}
 		*res = MA_STRDUP(ma, buf);
-		ma_close_to(ta, ta_state);
+		ma_close(ta, &ta_state);
 	}
 
 	//GDKfree(buf);
@@ -1723,7 +1723,7 @@ STRsuffix(Client ctx, str *res, const char *const *arg1, const int *ll)
 	} else {
 		size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 		allocator *ta = MT_thread_getallocator();
-		allocator_state *ta_state = ma_open(ta);
+		allocator_state ta_state = ma_open(ta);
 
 		*res = NULL;
 		if (!(buf = ma_alloc(ta, buflen)))
@@ -1733,7 +1733,7 @@ STRsuffix(Client ctx, str *res, const char *const *arg1, const int *ll)
 			return msg;
 		}
 		*res = MA_STRDUP(ma, buf);
-		ma_close_to(ta, ta_state);
+		ma_close(ta, &ta_state);
 	}
 
 	//GDKfree(buf);
@@ -1824,7 +1824,7 @@ STRinsert(Client ctx, str *res, const char *const *input, const int *start, cons
 	} else {
 		size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 		allocator *ta = MT_thread_getallocator();
-		allocator_state *ta_state = ma_open(ta);
+		allocator_state ta_state = ma_open(ta);
 
 		*res = NULL;
 		if (!(buf = ma_alloc(ta, buflen)))
@@ -1834,7 +1834,7 @@ STRinsert(Client ctx, str *res, const char *const *input, const int *start, cons
 			return msg;
 		}
 		*res = MA_STRDUP(ma, buf);
-		ma_close_to(ta, ta_state);
+		ma_close(ta, &ta_state);
 	}
 
 	//GDKfree(buf);
@@ -1893,7 +1893,7 @@ STRrepeat(Client ctx, str *res, const char *const *arg1, const int *c)
 	} else {
 		size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 		allocator *ta = MT_thread_getallocator();
-		allocator_state *ta_state = ma_open(ta);
+		allocator_state ta_state = ma_open(ta);
 
 		*res = NULL;
 		if (!(buf = ma_alloc(ta, buflen)))
@@ -1903,7 +1903,7 @@ STRrepeat(Client ctx, str *res, const char *const *arg1, const int *c)
 			return msg;
 		}
 		*res = MA_STRDUP(ma, buf);
-		ma_close_to(ta, ta_state);
+		ma_close(ta, &ta_state);
 	}
 
 	//GDKfree(buf);
@@ -1927,7 +1927,7 @@ STRspace(Client ctx, str *res, const int *ll)
 		const char *s = space;
 		size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 		allocator *ta = MT_thread_getallocator();
-		allocator_state *ta_state = ma_open(ta);
+		allocator_state ta_state = ma_open(ta);
 
 		*res = NULL;
 		if (!(buf = ma_alloc(ta, buflen)))
@@ -1937,7 +1937,7 @@ STRspace(Client ctx, str *res, const int *ll)
 			return msg;
 		}
 		*res = MA_STRDUP(ma, buf);
-		ma_close_to(ta, ta_state);
+		ma_close(ta, &ta_state);
 	}
 
 	//GDKfree(buf);

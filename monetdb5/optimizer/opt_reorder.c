@@ -68,10 +68,10 @@ OPTreorderImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 
 	allocator *ta = mb->ta;
 
-	ma_open(ta);
+	allocator_state ta_state = ma_open(ta);
 	depth = (int *) ma_zalloc(ta, mb->vtop * sizeof(int));
 	if (depth == NULL || newMalBlkStmt(mb, mb->ssize) < 0) {
-		ma_close(ta);
+		ma_close(ta, &ta_state);
 		throw(MAL, "optimizer.reorder", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
@@ -128,7 +128,7 @@ OPTreorderImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 		if (top[k] == 0) {
 			blocks[k] = ma_zalloc(ta, limit * sizeof(InstrPtr));
 			if (blocks[k] == NULL) {
-				ma_close(ta);
+				ma_close(ta, &ta_state);
 				//GDKfree(mb->stmt);
 				mb->stop = limit;
 				mb->ssize = slimit;
@@ -168,7 +168,7 @@ OPTreorderImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 	/* keep all actions taken as a post block comment */
 	//mnstr_printf(ctx->fdout,"REORDER RESULT ");
 	//printFunction(ctx->fdout, mb, 0, LIST_MAL_ALL);
-	ma_close(ta);
+	ma_close(ta, &ta_state);
   wrapup:
 	/* keep actions taken as a fake argument */
 	(void) pushInt(mb, pci, actions);

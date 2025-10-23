@@ -338,7 +338,7 @@ wkbFROMSTR_withSRID(allocator *ma, const char *geomWKT, size_t *len, wkb **geomW
 	//continuing. Of course this means that isValid for example does
 	//not work correctly.
 	allocator *ta = MT_thread_getallocator();
-	allocator_state *state = ma_open(ta);
+	allocator_state state = ma_open(ta);
 	if (strncasecmp(geomWKT, polyhedralSurface, strlen(polyhedralSurface)) == 0) {
 		size_t sizeOfInfo = strlen(geomWKT) - strlen(polyhedralSurface) + strlen(multiPolygon) + 1;
 		geomWKT_new = ma_alloc(ta, sizeOfInfo);
@@ -351,20 +351,20 @@ wkbFROMSTR_withSRID(allocator *ma, const char *geomWKT, size_t *len, wkb **geomW
 
 	WKT_reader = GEOSWKTReader_create_r(geoshandle);
 	if (WKT_reader == NULL) {
-		ma_close_to(ta, state);
+		ma_close(ta, &state);
 		throw(MAL, "wkb.FromText", SQLSTATE(38000) "Geos operation GEOSWKTReader_create failed");
 	}
 	geosGeometry = GEOSWKTReader_read_r(geoshandle, WKT_reader, geomWKT);
 	GEOSWKTReader_destroy_r(geoshandle, WKT_reader);
 
 	if (geosGeometry == NULL) {
-		ma_close_to(ta, state);
+		ma_close(ta, &state);
 		throw(MAL, "wkb.FromText", SQLSTATE(38000) "Geos operation GEOSWKTReader_read failed");
 	}
 
 	if (GEOSGeomTypeId_r(geoshandle, geosGeometry) == -1) {
 		GEOSGeom_destroy_r(geoshandle, geosGeometry);
-		ma_close_to(ta, state);
+		ma_close(ta, &state);
 		throw(MAL, "wkb.FromText", SQLSTATE(38000) "Geos operation GEOSGeomTypeId failed");
 	}
 
@@ -377,7 +377,7 @@ wkbFROMSTR_withSRID(allocator *ma, const char *geomWKT, size_t *len, wkb **geomW
 	*geomWKB = geos2wkb(ma, geomWKB, len, geosGeometry);
 	GEOSGeom_destroy_r(geoshandle, geosGeometry);
 	if (*geomWKB == NULL) {
-		ma_close_to(ta, state);
+		ma_close(ta, &state);
 		throw(MAL, "wkb.FromText", SQLSTATE(38000) "Geos operation geos2wkb failed");
 	}
 
@@ -385,7 +385,7 @@ wkbFROMSTR_withSRID(allocator *ma, const char *geomWKT, size_t *len, wkb **geomW
 	parsedCharacters = strlen(geomWKT);
 	assert(parsedCharacters <= GDK_int_max);
 
-	ma_close_to(ta, state);
+	ma_close(ta, &state);
 	*nread = parsedCharacters;
 	return MAL_SUCCEED;
 }

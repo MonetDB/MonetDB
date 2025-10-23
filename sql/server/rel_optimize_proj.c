@@ -33,7 +33,7 @@ static list *
 rel_used_projections(mvc *sql, list *exps, list *users)
 {
 	list *nexps = sa_list(sql->sa);
-	ma_open(sql->ta);
+	allocator_state ta_state = ma_open(sql->ta);
 	bool *used = SA_ZNEW_ARRAY(sql->ta, bool, list_length(exps));
 	int i = 0;
 
@@ -49,7 +49,7 @@ rel_used_projections(mvc *sql, list *exps, list *users)
 		if (is_intern(e) || used[i])
 			append(nexps, e);
 	}
-	ma_close(sql->ta);
+	ma_close(sql->ta, &ta_state);
 	return nexps;
 }
 
@@ -2335,7 +2335,7 @@ rel_reduce_groupby_exps(visitor *v, sql_rel *rel)
 	global_props *gp = v->data;
 
 	if (gp->has_pkey && is_groupby(rel->op) && rel->r && !rel_is_ref(rel) && list_length(gbe)) {
-		ma_open(v->sql->ta);
+		allocator_state ta_state = ma_open(v->sql->ta);
 		node *n, *m;
 		int k, j, i, ngbe = list_length(gbe);
 		sql_column *c;
@@ -2452,13 +2452,13 @@ rel_reduce_groupby_exps(visitor *v, sql_rel *rel)
 					/* only one reduction at a time */
 					list_hash_clear(rel->exps);
 					v->changes++;
-					ma_close(v->sql->ta);
+					ma_close(v->sql->ta, &ta_state);
 					return rel;
 				}
 				gbe = rel->r;
 			}
 		}
-		ma_close(v->sql->ta);
+		ma_close(v->sql->ta, &ta_state);
 	}
 	/* remove constants from group by list */
 	if (is_groupby(rel->op) && rel->r && !rel_is_ref(rel)) {

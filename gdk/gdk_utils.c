@@ -2099,6 +2099,7 @@ ma_alloc(allocator *sa, size_t sz)
 allocator *
 create_allocator(allocator *pa, const char *name, bool use_lock)
 {
+//	assert(pa == NULL || pa->use_lock);
 	// allocator lives in the 1st blk
 	char *first_blk = (pa)? (char*) _sa_alloc_internal(pa, SA_BLOCK_SIZE) : (char*) GDKmalloc(SA_BLOCK_SIZE);
 	if (!first_blk)
@@ -2241,53 +2242,29 @@ ma_get_eb(allocator *sa)
 	return &sa->eb;
 }
 
-allocator_state *
+allocator_state
 ma_open(allocator *sa)
 {
+	allocator_state st = {0};
 	assert(sa);
 	if (sa) {
-		allocator_state st;
 		COND_LOCK_ALLOCATOR(sa);
-		sa->tmp_used += 1;
 		st = (allocator_state) {
 			.nr = sa->nr,
 			.used = sa->used,
 			.usedmem = sa->usedmem,
 			.objects = sa->objects,
 			.inuse = sa->inuse,
+			.tmp_used = sa->tmp_used,
 		};
+		sa->tmp_used += 1;
 		COND_UNLOCK_ALLOCATOR(sa);
-		allocator_state *res = ma_alloc(sa,
-				sizeof(allocator_state));
-		if (!res) {
-			if (sa->eb.enabled)
-				eb_error(&sa->eb, "out of memory", 1000);
-			return NULL;
-		}
-		*res = st;
-
-		return res;
 	}
-	return NULL;
+	return st;
 }
 
 void
-ma_close(allocator *sa)
-{
-	COND_LOCK_ALLOCATOR(sa);
-	assert(ma_tmp_active(sa));
-	if (sa->tmp_used > 0)
-		sa->tmp_used -= 1;
-	if (!ma_tmp_active(sa) && !sa_has_dependencies(sa)) {
-		COND_UNLOCK_ALLOCATOR(sa);
-		ma_reset(sa);
-		return;
-	}
-	COND_UNLOCK_ALLOCATOR(sa);
-}
-
-void
-ma_close_to(allocator *sa, allocator_state *state)
+ma_close(allocator *sa, const allocator_state *state)
 {
 	assert(sa);
 	if (sa) {
@@ -2297,22 +2274,22 @@ ma_close_to(allocator *sa, allocator_state *state)
 			sa->tmp_used -= 1;
 		}
 		// check if we can reset to the initial state
-		if (!ma_tmp_active(sa) && !sa_has_dependencies(sa)) {
+		if (state->tmp_used == 0 && !sa_has_dependencies(sa)) {
 			COND_UNLOCK_ALLOCATOR(sa);
 			ma_reset(sa);
 			return;
 		}
-		if (state && !sa_has_dependencies(sa)) {
+		if (!sa_has_dependencies(sa)) {
 			assert((state->nr > 0) && (state->nr <= sa->nr));
 			assert(state->used <= SA_BLOCK_SIZE);
 			if (state->nr != sa->nr || state->used != sa->used) {
-				allocator_state state_save = *state;
-				_sa_free_blks(sa, state_save.nr);
-				sa->nr = state_save.nr;
-				sa->used = state_save.used;
-				sa->usedmem = state_save.usedmem;
-				sa->objects = state_save.objects;
-				sa->inuse = state_save.inuse;
+				_sa_free_blks(sa, state->nr);
+				sa->nr = state->nr;
+				sa->used = state->used;
+				sa->usedmem = state->usedmem;
+				sa->objects = state->objects;
+				sa->inuse = state->inuse;
+				sa->tmp_used = state->tmp_used;
 			}
 		}
 		COND_UNLOCK_ALLOCATOR(sa);

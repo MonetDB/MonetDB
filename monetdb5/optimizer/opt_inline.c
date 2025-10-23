@@ -30,11 +30,11 @@ inlineMALblock(Client ctx, MalBlkPtr mb, int pc, MalBlkPtr mc)
 	ns = (InstrPtr*)MA_ZNEW_ARRAY(mb->instr_allocator, char, (l = (mb->ssize + mc->ssize + p->retc - 3)) * sizeof(InstrPtr));
 	if (ns == NULL)
 		return -1;
-	ma_open(ta);
+	allocator_state ta_state = ma_open(ta);
 	nv = (int *) ma_alloc(ta, mc->vtop * sizeof(int));
 	if (nv == 0) {
 		//GDKfree(ns);
-		ma_close(ta);
+		ma_close(ta, &ta_state);
 		return -1;
 	}
 
@@ -51,7 +51,7 @@ inlineMALblock(Client ctx, MalBlkPtr mb, int pc, MalBlkPtr mc)
 			nv[n] = newTmpVariable(mb, getVarType(mc, n));
 		}
 		if (nv[n] < 0) {
-			ma_close(ta);
+			ma_close(ta, &ta_state);
 			//GDKfree(ns);
 			return -1;
 		}
@@ -84,7 +84,7 @@ inlineMALblock(Client ctx, MalBlkPtr mb, int pc, MalBlkPtr mc)
 		/* copy the instruction and fix variable references */
 		ns[k] = copyInstruction(mb, q);
 		if (ns[k] == NULL) {
-			ma_close(ta);
+			ma_close(ta, &ta_state);
 			//GDKfree(ns);
 			return -1;
 		}
@@ -120,7 +120,7 @@ inlineMALblock(Client ctx, MalBlkPtr mb, int pc, MalBlkPtr mc)
 
 	mb->ssize = l;
 	mb->stop = k;
-	ma_close(ta);
+	ma_close(ta, &ta_state);
 	return pc;
 }
 

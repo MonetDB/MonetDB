@@ -99,7 +99,7 @@ OPTexpandMultiplex(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	 * find the actual arguments at the proper place of the callee.
 	 */
 
-	ma_open(ta);
+	allocator_state ta_state = ma_open(ta);
 	alias = (int *) ma_alloc(ta, sizeof(int) * pci->maxarg);
 	resB = (int *) ma_alloc(ta, sizeof(int) * pci->retc);
 	if (alias == NULL || resB == NULL) {
@@ -221,11 +221,11 @@ OPTexpandMultiplex(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		q = pushArgument(mb, q, resB[i]);
 		pushInstruction(mb, q);
 	}
-	ma_close(ta);
+	ma_close(ta, &ta_state);
 	return MAL_SUCCEED;
 
   nomem:
-	ma_close(ta);
+	ma_close(ta, &ta_state);
 	throw(MAL, "optimizer.multiplex", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 }
 

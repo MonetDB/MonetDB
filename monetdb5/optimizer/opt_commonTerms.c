@@ -69,7 +69,7 @@ OPTcommonTermsImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 	}
 
 	(void) stk;
-	ma_open(ta);
+	allocator_state ta_state = ma_open(ta);
 	alias = (int *) ma_zalloc(ta, sizeof(int) * mb->vtop);
 	list = (int *) ma_zalloc(ta, sizeof(int) * mb->stop);
 	hash = (int *) ma_zalloc(ta, sizeof(int) * mb->vtop);
@@ -255,7 +255,7 @@ OPTcommonTermsImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 			msg = chkDeclarations(mb);
 	}
   wrapup:
-	ma_close(ta);
+	ma_close(ta, &ta_state);
   wrapup1:
 	/* keep actions taken as a fake argument */
 	(void) pushInt(mb, pci, actions);

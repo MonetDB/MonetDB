@@ -370,9 +370,9 @@ runMAL(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr env)
 		 * been observed due the small size of the function).
 		 */
 	}
-	allocator_state *ta_state = ma_open(ta);
+	allocator_state ta_state = ma_open(ta);
 	ret = copyException(mb->ma, runMALsequence(ta, cntxt, mb, 1, 0, stk, env, 0));
-	ma_close_to(ta, ta_state);
+	ma_close(ta, &ta_state);
 
 	if (!stk->keepAlive && garbageControl(getInstrPtr(mb, 0)))
 		garbageCollector(cntxt, mb, stk, env != stk);
@@ -410,9 +410,9 @@ reenterMAL(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr stk)
 		throw(MAL, "mal.interpreter", MAL_STACK_FAIL);
 	keepAlive = stk->keepAlive;
 	allocator *ta = MT_thread_getallocator();
-	ma_open(ta);
+	allocator_state ta_state = ma_open(ta);
 	ret = copyException(mb->ma, runMALsequence(ta, cntxt, mb, startpc, stoppc, stk, 0, 0));
-	ma_close(ta);
+	ma_close(ta, &ta_state);
 
 	if (keepAlive == 0 && garbageControl(getInstrPtr(mb, 0)))
 		garbageCollector(cntxt, mb, stk, stk != 0);
@@ -469,9 +469,9 @@ callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *env, ValPtr argv[])
 				BBPretain(lhs->val.bval);
 		}
 		allocator *ta = MT_thread_getallocator();
-		ma_open(ta);
+		allocator_state ta_state = ma_open(ta);
 		ret = copyException(mb->ma, runMALsequence(ta, cntxt, mb, 1, 0, stk, 0, 0));
-		ma_close(ta);
+		ma_close(ta, &ta_state);
 		break;
 	case PATcall:
 	case CMDcall:

@@ -39,16 +39,6 @@ enum range_comp_t {
 	range_inside,		/* search range inside bat range */
 };
 
-/* checkpoint or snapshot of allocator internal state we can use
- * to restore to a point in time */
-struct allocator_state {
-	size_t nr;
-	size_t used;
-	size_t usedmem;	 /* total used memory */
-	size_t objects;
-	size_t inuse;
-};
-
 bool ATOMisdescendant(int id, int parentid)
 	__attribute__((__visibility__("hidden")));
 int ATOMunknown_find(const char *nme)

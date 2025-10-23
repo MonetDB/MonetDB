@@ -46,7 +46,7 @@ OPTconstantsImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 	if (isSimpleSQL(mb) || MB_LARGE(mb)) {
 		goto wrapup1;
 	}
-	ma_open(ta);
+	allocator_state ta_state = ma_open(ta);
 	alias = (int *) ma_zalloc(ta, sizeof(int) * mb->vtop);
 	cand = (int *) ma_zalloc(ta, sizeof(int) * mb->vtop);
 	cst = (VarPtr *) ma_zalloc(ta, sizeof(VarPtr) * mb->vtop);
@@ -126,7 +126,7 @@ OPTconstantsImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 	//      msg = chkDeclarations(mb);
 	/* keep all actions taken as a post block comment */
   wrapup:
-	ma_close(ta);
+	ma_close(ta, &ta_state);
   wrapup1:
 	/* keep actions taken as a fake argument */
 	(void) pushInt(mb, pci, actions);

@@ -32,7 +32,7 @@ OPTdeadcodeImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 	if (mb->inlineProp || MB_LARGE(mb))
 		goto wrapup1;
 
-	ma_open(ta);
+	allocator_state ta_state = ma_open(ta);
 	varused = ma_zalloc(ta, mb->vtop * sizeof(int));
 	if (varused == NULL)
 		goto wrapup;
@@ -41,7 +41,7 @@ OPTdeadcodeImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 	limit = mb->stop;
 	slimit = mb->ssize;
 	if (newMalBlkStmt(mb, mb->ssize) < 0) {
-		ma_close( ta );
+		ma_close( ta , &ta_state);
 		throw(MAL, "optimizer.deadcode", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	//mnstr_printf(ctx->fdout,"deadcode limit %d ssize %d vtop %d vsize %d\n", limit, (int)(mb->ssize), mb->vtop, (int)(mb->vsize));
@@ -124,7 +124,7 @@ OPTdeadcodeImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 			msg = chkDeclarations(mb);
 	}
   wrapup:
-	ma_close( ta );
+	ma_close( ta , &ta_state);
   wrapup1:
 	/* keep actions taken as a fake argument */
 	(void) pushInt(mb, pci, actions);

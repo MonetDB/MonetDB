@@ -360,10 +360,10 @@ OPTdataflowImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		goto wrapup;
 
 	vlimit = mb->vtop *2;
-	ma_open( ta );
+	allocator_state ta_state = ma_open( ta );
 	states = (States) ma_zalloc(ta, vlimit * sizeof(char));
 	if (states == NULL) {
-		ma_close(ta);
+		ma_close(ta, &ta_state);
 		throw(MAL, "optimizer.dataflow", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
@@ -373,7 +373,7 @@ OPTdataflowImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	slimit = mb->ssize;
 	old = mb->stmt;
 	if (newMalBlkStmt(mb, mb->ssize) < 0) {
-		ma_close(ta);
+		ma_close(ta, &ta_state);
 		throw(MAL, "optimizer.dataflow", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
@@ -486,7 +486,7 @@ OPTdataflowImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 	}
 
-	ma_close( ta );
+	ma_close( ta , &ta_state);
   wrapup:
 	/* keep actions taken as a fake argument */
 	(void) pushInt(mb, pci, actions);

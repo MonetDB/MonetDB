@@ -61,7 +61,7 @@ OPTforImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (i == limit)
 		goto wrapup1;			/* nothing to do */
 
-	ma_open(ta);
+	allocator_state ta_state = ma_open(ta);
 	varisfor = ma_zalloc(ta, 2 * mb->vtop * sizeof(int));
 	varforvalue = ma_zalloc(ta, 2 * mb->vtop * sizeof(int));
 	if (varisfor == NULL || varforvalue == NULL)
@@ -70,7 +70,7 @@ OPTforImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	slimit = mb->ssize;
 	old = mb->stmt;
 	if (newMalBlkStmt(mb, mb->ssize) < 0) {
-		ma_close(ta);
+		ma_close(ta, &ta_state);
 		throw(MAL, "optimizer.for", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	// Consolidate the actual need for variables
@@ -361,7 +361,7 @@ OPTforImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	/* keep all actions taken as a post block comment */
   wrapup:
-	ma_close(ta);
+	ma_close(ta, &ta_state);
   wrapup1:
 	/* keep actions taken as a fake argument */
 	(void) pushInt(mb, pci, actions);

@@ -965,9 +965,9 @@ bl_create(sqlstore *store, int debug, const char *logdir, int cat_version)
 {
 	if (store->logger)
 		return LOG_ERR;
-	ma_open(store->ta);
+	allocator_state ta_state = ma_open(store->ta);
 	store->logger = log_create(store->ta, debug, "sql", logdir, cat_version, (preversionfix_fptr)&bl_preversion, (postversionfix_fptr)&bl_postversion, store);
-	ma_close(store->ta);
+	ma_close(store->ta, &ta_state);
 	if (store->logger)
 		return LOG_OK;
 	return LOG_ERR;

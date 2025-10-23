@@ -70,10 +70,10 @@ OPTemptybindImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 	// track of where 'emptybind' results are produced
 	// reserve space for maximal number of emptybat variables created
 	// empty = (int *) GDKzalloc((mb->vsize + extras) * sizeof(int));
-	ma_open(ta);
+	allocator_state ta_state = ma_open(ta);
 	empty = (int *) ma_zalloc(ta, (mb->vsize + extras) * sizeof(int));
 	if (empty == NULL) {
-		ma_close(ta);
+		ma_close(ta, &ta_state);
 		throw(MAL, "optimizer.emptybind", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
@@ -82,7 +82,7 @@ OPTemptybindImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 	updated = (InstrPtr *) ma_zalloc(ta, updated_size);
 	if (updated == 0) {
 		// GDKfree(empty);
-		ma_close(ta);
+		ma_close(ta, &ta_state);
 		throw(MAL, "optimizer.emptybind", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
@@ -90,7 +90,7 @@ OPTemptybindImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 	if (newMalBlkStmt(mb, mb->ssize) < 0) {
 		// GDKfree(empty);
 		 // GDKfree(updated);
-		ma_close(ta);
+		ma_close(ta, &ta_state);
 		throw(MAL, "optimizer.emptybind", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
@@ -299,7 +299,7 @@ OPTemptybindImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 	//GDKfree(old);
 	// GDKfree(empty);
 	// GDKfree(updated);
-	ma_close(ta);
+	ma_close(ta, &ta_state);
 	/* Defense line against incorrect plans */
 	if (msg == MAL_SUCCEED)
 		msg = chkTypes(ctx->usermodule, mb, FALSE);

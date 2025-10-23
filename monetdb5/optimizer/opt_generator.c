@@ -125,10 +125,10 @@ OPTgeneratorImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 	if (!needed)
 		goto wrapup;
 
-	ma_open(ta);
+	allocator_state ta_state = ma_open(ta);
 	series = (InstrPtr *) ma_zalloc(ta, sizeof(InstrPtr) * mb->vtop);
 	if (series == NULL || newMalBlkStmt(mb, mb->ssize) < 0) {
-		ma_close(ta);
+		ma_close(ta, &ta_state);
 		throw(MAL, "optimizer.generator", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
@@ -215,7 +215,7 @@ OPTgeneratorImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 		if (old[i])
 			pushInstruction(mb, old[i]);
 	}
-	ma_close(ta);
+	ma_close(ta, &ta_state);
 	//GDKfree(old);
 
 	/* Defense line against incorrect plans */

@@ -2183,7 +2183,7 @@ SERVERmapi_rpc_single_row(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 	char *s, *fld, *qry = 0;
 
 	allocator *ta = mb->ta;
-	ma_open(ta);
+	allocator_state ta_state = ma_open(ta);
 	key = *getArgReference_int(stk, pci, pci->retc);
 	accessTest(key, "rpc");
 #ifdef MAPI_TEST
@@ -2247,9 +2247,9 @@ SERVERmapi_rpc_single_row(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 		i++;
 	}
 	mapi_close_handle(hdl);
+	ma_close(ta, &ta_state);
 	if (i > 1)
 		throw(MAL, "mapi.rpc", "Too many answers");
-	ma_close(ta);
 	return MAL_SUCCEED;
 }
 
