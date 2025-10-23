@@ -439,7 +439,6 @@ MCcloseClient(Client c)
 		c->idx = -1;
 	}
 	ma_destroy(c->ma);
-	c->ta = NULL;
 	c->ma = NULL;
 	MT_lock_unset(&mal_contextLock);
 }

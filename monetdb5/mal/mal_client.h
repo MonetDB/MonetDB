@@ -161,7 +161,6 @@ typedef struct CLIENT {
 	Symbol backup;				/* saving the parser context for functions,commands/patterns */
 	MalStkPtr glb;				/* global variable stack */
 
-	allocator *ta;				/* temporary memory allocator used during parsing and optimization */
 	allocator *ma;				/* main client memory allocator */
 	/*
 	 * Here are pointers to scenario backends contexts.  For the time
