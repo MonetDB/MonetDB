@@ -966,7 +966,7 @@ bl_create(sqlstore *store, int debug, const char *logdir, int cat_version)
 	if (store->logger)
 		return LOG_ERR;
 	allocator_state ta_state = ma_open(store->ta);
-	store->logger = log_create(store->ta, debug, "sql", logdir, cat_version, (preversionfix_fptr)&bl_preversion, (postversionfix_fptr)&bl_postversion, store);
+	store->logger = log_create(debug, "sql", logdir, cat_version, (preversionfix_fptr)&bl_preversion, (postversionfix_fptr)&bl_postversion, store);
 	ma_close(store->ta, &ta_state);
 	if (store->logger)
 		return LOG_OK;
@@ -987,7 +987,7 @@ static int
 bl_flush(sqlstore *store, lng save_id)
 {
 	if (store->logger) {
-		int res = log_flush(store->ta, store->logger, save_id) == GDK_SUCCEED ? LOG_OK : LOG_ERR;
+		int res = log_flush(store->logger, save_id) == GDK_SUCCEED ? LOG_OK : LOG_ERR;
 		ma_reset(store->ta);
 		return res;
 	}
@@ -1027,7 +1027,7 @@ bl_log_isnew(sqlstore *store)
 static int
 bl_tstart(sqlstore *store, bool flush, ulng *log_file_id)
 {
-	return log_tstart(store->ta, store->logger, flush, log_file_id) == GDK_SUCCEED ? LOG_OK : LOG_ERR;
+	return log_tstart(store->logger, flush, log_file_id) == GDK_SUCCEED ? LOG_OK : LOG_ERR;
 }
 
 static int
