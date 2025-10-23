@@ -711,6 +711,9 @@ dosum(const void *restrict values, bool nonil, oid seqb,
 
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 
+	allocator *ma = MT_thread_getallocator();
+	allocator_state ma_state = ma_open(ma);
+
 	switch (tp2) {
 	case TYPE_flt:
 		if (tp1 != TYPE_flt)
@@ -724,9 +727,6 @@ dosum(const void *restrict values, bool nonil, oid seqb,
 			      gids, min, max, skip_nils,
 			      nil_if_empty);
 	}
-
-	allocator *ma = MT_thread_getallocator();
-	allocator_state ma_state = ma_open(ma);
 
 	/* allocate bitmap for seen group ids */
 	seen = ma_zalloc(ma, ((ngrp + 31) / 32) * sizeof(int));
