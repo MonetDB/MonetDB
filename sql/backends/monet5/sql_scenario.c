@@ -93,7 +93,6 @@ static void
 CLIENTprintinfo(void)
 {
 	int nrun = 0, nfinish = 0, nblock = 0;
-	char mabuf[64]; // memory allocator buffer
 	char mmbuf[64];
 	char tmbuf[64];
 	char trbuf[128];
@@ -164,21 +163,18 @@ CLIENTprintinfo(void)
 				snprintf(cpbuf, sizeof(cpbuf), ", client pid: %ld", c->client_pid);
 			else
 				cpbuf[0] = 0;
-			size_t ma_used = 0; // total allocated through client allocators
-			if (c->ma)
-				ma_used += ma_size(c->ma);
+			char mabuf1[300] = "";
+			char mabuf2[300] = "";
+			char mabuf3[300] = "";
+			ma_info(c->ma, mabuf1, sizeof(mabuf1));
 			if (c->curprg && c->curprg->def)
-				ma_used += ma_size(c->curprg->def->ma);
+				ma_info(c->curprg->def->ma, mabuf2, sizeof(mabuf2));
 			if (c->sqlcontext) {
 				backend *be = (backend*) c->sqlcontext;
 				if (be->mvc)
-					ma_used += ma_size(be->mvc->pa);
+					ma_info(be->mvc->pa, mabuf3, sizeof(mabuf3));
 			}
-			if (ma_used)
-				snprintf(mabuf, sizeof(mabuf), ", allocators combined: %zu%s bytes", ma_used, humansize(ma_used, (char[24]){0}, 24));
-			else
-				mabuf[0] = 0;
-			printf("client %d, user %s, thread %s, using %"PRIu64" bytes of transient space%s%s%s%s%s%s%s%s%s%s\n", c->idx, c->username, c->mythread ? c->mythread : "?", (uint64_t) ATOMIC_GET(&c->qryctx.datasize), mmbuf, mabuf, tmbuf, trbuf, chbuf, cabuf, clbuf, cpbuf, crbuf, qybuf);
+			printf("client %d, user %s, thread %s, using %"PRIu64" bytes of transient space%s%s%s%s%s%s%s%s%s%s%s%s\n", c->idx, c->username, c->mythread ? c->mythread : "?", (uint64_t) ATOMIC_GET(&c->qryctx.datasize), mmbuf, mabuf1, mabuf2, mabuf3, tmbuf, trbuf, chbuf, cabuf, clbuf, cpbuf, crbuf, qybuf);
 			break;
 		case FINISHCLIENT:
 			/* finishing */

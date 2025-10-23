@@ -1684,7 +1684,7 @@ GDKprintinforegister(void (*func)(void))
 
 #define SA_NUM_BLOCKS 64
 #define SA_BLOCK_SIZE (128*1024)
-#define SA_HEADER_SIZE 2*(sizeof(size_t))
+#define SA_HEADER_SIZE (2*(sizeof(size_t)))
 #define CANARY_VALUE ((size_t)0xDEADBEEFDEADBEEF)
 #define round16(sz) ((sz+15)&~15)
 #define round_block_size(sz) ((sz + (SA_BLOCK_SIZE - 1))&~(SA_BLOCK_SIZE - 1))
@@ -2095,6 +2095,7 @@ ma_alloc(allocator *sa, size_t sz)
 	return sa_fill_in_header(r, sz);
 }
 
+#undef create_allocator
 allocator *
 create_allocator(allocator *pa, const char *name, bool use_lock)
 {
@@ -2231,7 +2232,7 @@ ma_size(allocator *sa)
 const char *
 ma_name(allocator *sa)
 {
-	return sa->name;
+	return sa ? sa->name : "";
 }
 
 exception_buffer *
@@ -2245,6 +2246,17 @@ ma_open(allocator *sa)
 {
 	assert(sa);
 	if (sa) {
+		allocator_state st;
+		COND_LOCK_ALLOCATOR(sa);
+		sa->tmp_used += 1;
+		st = (allocator_state) {
+			.nr = sa->nr,
+			.used = sa->used,
+			.usedmem = sa->usedmem,
+			.objects = sa->objects,
+			.inuse = sa->inuse,
+		};
+		COND_UNLOCK_ALLOCATOR(sa);
 		allocator_state *res = ma_alloc(sa,
 				sizeof(allocator_state));
 		if (!res) {
@@ -2252,15 +2264,8 @@ ma_open(allocator *sa)
 				eb_error(&sa->eb, "out of memory", 1000);
 			return NULL;
 		}
+		*res = st;
 
-		COND_LOCK_ALLOCATOR(sa);
-		sa->tmp_used += 1;
-		res->nr = sa->nr;
-		res->used = sa->used;
-		res->usedmem = sa->usedmem;
-		res->objects = sa->objects;
-		res->inuse = sa->inuse;
-		COND_UNLOCK_ALLOCATOR(sa);
 		return res;
 	}
 	return NULL;
@@ -2352,6 +2357,14 @@ allocator *
 ma_get_parent(const allocator *a)
 {
     return a ? a->pa : NULL;
+}
+
+void
+ma_info(const allocator *a, char *buf, size_t bufsize)
+{
+	buf[0] = 0;
+	if (a != NULL)
+		snprintf(buf, bufsize, ", allocator %s, size %zu, nr %zu, used %zu, usedmem %zu, blk_size %zu, objects %zu, inuse %zu, free_obj_hits %zu, frees %zu, free_blk_hits %zu, tmp_used %zu, refcount %d", a->name, a->size, a->nr, a->used, a->usedmem, a->blk_size, a->objects, a->inuse, a->free_obj_hits, a->frees, a->free_blk_hits, a->tmp_used, a->refcount);
 }
 
 inline size_t

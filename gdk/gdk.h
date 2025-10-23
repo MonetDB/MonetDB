@@ -1755,6 +1755,8 @@ gdk_export void ma_free(allocator *sa, void *);
 gdk_export exception_buffer *ma_get_eb(allocator *sa)
        __attribute__((__pure__));
 
+gdk_export void ma_info(const allocator *sa, char *buf, size_t buflen);
+
 #define MA_NEW( sa, type )				((type*)ma_alloc( sa, sizeof(type)))
 #define MA_ZNEW( sa, type )				((type*)ma_zalloc( sa, sizeof(type)))
 #define MA_NEW_ARRAY( sa, type, size )			(type*)ma_alloc( sa, ((size)*sizeof(type)))
@@ -1771,8 +1773,8 @@ gdk_export exception_buffer *ma_get_eb(allocator *sa)
 		size_t _sz = (sz);				\
 		void *_res = ma_alloc(_sa, _sz);		\
 		TRC_DEBUG(ALLOC,				\
-			  "ma_alloc(%p,%zu) -> %p\n",		\
-			  _sa, _sz, _res);			\
+			  "ma_alloc(%p(%s),%zu) -> %p\n",	\
+			  _sa, ma_name(_sa), _sz, _res);	\
 		_res;						\
 	})
 #define ma_zalloc(sa, sz)					\
@@ -1781,8 +1783,8 @@ gdk_export exception_buffer *ma_get_eb(allocator *sa)
 		size_t _sz = (sz);				\
 		void *_res = ma_zalloc(_sa, _sz);		\
 		TRC_DEBUG(ALLOC,				\
-			  "ma_zalloc(%p,%zu) -> %p\n",		\
-			  _sa, _sz, _res);			\
+			  "ma_zalloc(%p(%s),%zu) -> %p\n",	\
+			  _sa, ma_name(_sa), _sz, _res);	\
 		_res;						\
 	})
 #define ma_realloc(sa, ptr, sz, osz)					\
@@ -1793,8 +1795,8 @@ gdk_export exception_buffer *ma_get_eb(allocator *sa)
 		size_t _osz = (osz);					\
 		void *_res = ma_realloc(_sa, _ptr, _sz, _osz);		\
 		TRC_DEBUG(ALLOC,					\
-			  "ma_realloc(%p,%p,%zu,%zu) -> %p\n",		\
-			  _sa, _ptr, _sz, _osz, _res);			\
+			  "ma_realloc(%p(%s),%p,%zu,%zu) -> %p\n",	\
+			  _sa, ma_name(_sa), _ptr, _sz, _osz, _res);	\
 		_res;							\
 	})
 #define ma_strdup(sa, s)						\
@@ -1803,8 +1805,8 @@ gdk_export exception_buffer *ma_get_eb(allocator *sa)
 		const char *_s = (s);					\
 		char *_res = ma_strdup(_sa, _s);			\
 		TRC_DEBUG(ALLOC,					\
-			  "ma_strdup(%p,len=%zu) -> %p\n",		\
-			  _sa, strlen(_s), _res);			\
+			  "ma_strdup(%p(%s),len=%zu) -> %p\n",		\
+			  _sa, ma_name(_sa), strlen(_s), _res);		\
 		_res;							\
 	})
 #define ma_strndup(sa, s, l)						\
@@ -1814,8 +1816,19 @@ gdk_export exception_buffer *ma_get_eb(allocator *sa)
 		size_t _l = (l);					\
 		char *_res = ma_strndup(_sa, _s, _l);			\
 		TRC_DEBUG(ALLOC,					\
-			  "ma_strndup(%p,len=%zu) -> %p\n",		\
-			  _sa, _l, _res);				\
+			  "ma_strndup(%p(%s),len=%zu) -> %p\n",		\
+			  _sa, ma_name(_sa), _l, _res);			\
+		_res;							\
+	})
+#define create_allocator(sa, nm, lk)						\
+	({								\
+		allocator *_sa = (sa);					\
+		const char *_nm = (nm);					\
+		bool _lk = (lk);					\
+		allocator *_res = create_allocator(_sa, _nm, _lk);	\
+		TRC_DEBUG(ALLOC,					\
+			  "create_allocator(%p(%s)) -> %p(%s)\n",	\
+			  _sa, ma_name(_sa), _res, ma_name(_res));	\
 		_res;							\
 	})
 #endif

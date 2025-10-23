@@ -323,8 +323,8 @@ dump_threads(void)
 		MT_Cond *cn = t->condwait;
 		struct mtthread *jn = t->joinwait;
 		const char *working = ATOMIC_PTR_GET(&t->working);
-		size_t allocsz = t->ma ? ma_size(t->ma) : 0;
-		const char *allocnm = t->ma ? ma_name(t->ma) : NULL;
+		char mabuf[300];
+		ma_info(t->ma, mabuf, sizeof(mabuf));
 
 		int pos = snprintf(buf, sizeof(buf),
 				   "%s, tid %zu, "
@@ -334,7 +334,7 @@ dump_threads(void)
 #ifdef HAVE_GETTID
 				   "LWP %ld, "
 #endif
-				   "%"PRIu32" free bats, waiting for %s%s, allocator %s %zu%s, working on %.200s",
+				   "%"PRIu32" free bats, waiting for %s%s%s, working on %.200s",
 				   t->threadname,
 				   t->tid,
 #ifdef HAVE_PTHREAD_H
@@ -346,8 +346,7 @@ dump_threads(void)
 				   t->freebats.nfreebats,
 				   lk ? "lock " : sm ? "semaphore " : cn ? "condvar " : jn ? "thread " : "",
 				   lk ? lk->name : sm ? sm->name : cn ? cn->name : jn ? jn->threadname : "nothing",
-				   allocnm ? allocnm : "unnamed",
-				   allocsz, humansize(allocsz, (char[24]){0}, 24),
+				   mabuf,
 				   ATOMIC_GET(&t->exited) ? "exiting" :
 				   working ? working : "nothing");
 #ifdef LOCK_OWNER
