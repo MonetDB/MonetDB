@@ -2965,7 +2965,7 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 		return rel_select_push_compare_exp_down(sql, rel, le, le->l, le->r, NULL, f);
 	}
 	case SQL_NOT: {
-		sql_exp *le = rel_value_exp(query, &rel, sc->data.sym, f|sql_farg, ek);
+		sql_exp *le = rel_value_exp(query, &rel, sc->data.sym, f, ek);
 		sql_subtype bt;
 
 		sql_find_subtype(&bt, "boolean", 0, 0);
