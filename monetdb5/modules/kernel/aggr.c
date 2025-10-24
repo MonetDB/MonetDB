@@ -1100,50 +1100,60 @@ AGGRsubquantilecand_avg(bat *retval, const bat *bid, const bat *quantile,
 }
 
 static str
-AGGRgroup_str_concat(bat *retval1, const bat *bid, const bat *gid,
-					 const bat *eid, const bat *sid, bool skip_nils,
+AGGRgroup_str_concat(bat *retval1, str *retval2, /* one or the other! */
+					 const bat *bid, const bat *gid,
+					 const bat *eid, bool skip_nils,
 					 const bat *sepid, const char *separator,
 					 const char *malfunc)
 {
-	BAT *b, *g, *e, *s, *sep, *bn = NULL;
+	BAT *b, *g, *e, *sep, *bn = NULL;
 
 	b = BATdescriptor(*bid);
 	g = gid ? BATdescriptor(*gid) : NULL;
 	e = eid ? BATdescriptor(*eid) : NULL;
-	s = sid ? BATdescriptor(*sid) : NULL;
 	sep = sepid ? BATdescriptor(*sepid) : NULL;
 
 	if (b == NULL || (gid != NULL && g == NULL) || (eid != NULL && e == NULL) ||
-		(sid != NULL && s == NULL) || (sepid != NULL && sep == NULL)) {
+		(sepid != NULL && sep == NULL)) {
 		BBPreclaim(b);
 		BBPreclaim(g);
 		BBPreclaim(e);
-		BBPreclaim(s);
 		BBPreclaim(sep);
 		throw(MAL, malfunc, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 
-	bn = BATgroupstr_group_concat(b, g, e, s, sep, skip_nils, separator);
+	if (retval1) {
+		bn = BATgroupstr_group_concat(b, g, e, NULL, sep, skip_nils, separator);
+	} else {
+		ValRecord res;
+		if (BATstr_group_concat(&res, b, NULL, sep, true, true, separator) == GDK_SUCCEED)
+			*retval2 = res.val.sval;
+		else
+			*retval2 = NULL;
+	}
 
 	BBPunfix(b->batCacheid);
 	BBPreclaim(g);
 	BBPreclaim(e);
-	BBPreclaim(s);
 	BBPreclaim(sep);
-	if (bn == NULL)
-		throw(MAL, malfunc, GDK_EXCEPTION);
-	*retval1 = bn->batCacheid;
-	BBPkeepref(bn);
+	if (retval1) {
+		if (bn == NULL)
+			throw(MAL, malfunc, GDK_EXCEPTION);
+		*retval1 = bn->batCacheid;
+		BBPkeepref(bn);
+	} else {
+		if (*retval2 == NULL)
+			throw(MAL, malfunc, GDK_EXCEPTION);
+	}
 	return MAL_SUCCEED;
 }
 
 #define DEFAULT_SEPARATOR ","
 
 static str
-AGGRstr_group_concat(bat *retval, const bat *bid, const bat *gid,
-					 const bat *eid)
+AGGRstr_group_concat(str *retval, const bat *bid)
 {
-	return AGGRgroup_str_concat(retval, bid, gid, eid, NULL, true, NULL,
+	return AGGRgroup_str_concat(NULL, retval, bid, NULL, NULL, true, NULL,
 								DEFAULT_SEPARATOR, "aggr.str_group_concat");
 }
 
@@ -1151,25 +1161,16 @@ static str
 AGGRsubstr_group_concat(bat *retval, const bat *bid, const bat *gid,
 						const bat *eid, const bit *skip_nils)
 {
-	return AGGRgroup_str_concat(retval, bid, gid, eid, NULL, *skip_nils, NULL,
-								DEFAULT_SEPARATOR, "aggr.substr_group_concat");
+	return AGGRgroup_str_concat(retval, NULL, bid, gid, eid, *skip_nils,
+								NULL, DEFAULT_SEPARATOR,
+								"aggr.substr_group_concat");
 }
 
 static str
-AGGRsubstr_group_concatcand(bat *retval, const bat *bid, const bat *gid,
-							const bat *eid, const bat *sid,
-							const bit *skip_nils)
+AGGRstr_group_concat_sep(str *retval, const bat *bid, const bat *sep)
 {
-	return AGGRgroup_str_concat(retval, bid, gid, eid, sid, *skip_nils, NULL,
-								DEFAULT_SEPARATOR, "aggr.substr_group_concat");
-}
-
-static str
-AGGRstr_group_concat_sep(bat *retval, const bat *bid, const bat *sep,
-						 const bat *gid, const bat *eid)
-{
-	return AGGRgroup_str_concat(retval, bid, gid, eid, NULL, true, sep, NULL,
-								"aggr.str_group_concat_sep");;
+	return AGGRgroup_str_concat(NULL, retval, bid, NULL, NULL, true, sep,
+								NULL, "aggr.str_group_concat_sep");;
 }
 
 static str
@@ -1177,17 +1178,8 @@ AGGRsubstr_group_concat_sep(bat *retval, const bat *bid, const bat *sep,
 							const bat *gid, const bat *eid,
 							const bit *skip_nils)
 {
-	return AGGRgroup_str_concat(retval, bid, gid, eid, NULL, *skip_nils, sep,
-								NULL, "aggr.substr_group_concat_sep");
-}
-
-static str
-AGGRsubstr_group_concatcand_sep(bat *retval, const bat *bid, const bat *sep,
-								const bat *gid, const bat *eid, const bat *sid,
-								const bit *skip_nils)
-{
-	return AGGRgroup_str_concat(retval, bid, gid, eid, sid, *skip_nils, sep,
-								NULL, "aggr.substr_group_concat_sep");
+	return AGGRgroup_str_concat(retval, NULL, bid, gid, eid, *skip_nils,
+								sep, NULL, "aggr.substr_group_concat_sep");
 }
 
 static str
@@ -1625,12 +1617,10 @@ mel_func aggr_init_funcs[] = {
  command("aggr", "quantile_avg", AGGRquantile_avg_cst, false, "Quantile aggregate", args(1,3, arg("",dbl),batargany("b",1),arg("q",dbl))),
  command("aggr", "subquantile_avg", AGGRsubquantile_avg, false, "Grouped quantile aggregate", args(1,6, batarg("",dbl),batargany("b",1),batarg("q",dbl),batarg("g",oid),batargany("e",2),arg("skip_nils",bit))),
  command("aggr", "subquantile_avg", AGGRsubquantilecand_avg, false, "Grouped quantile aggregate with candidate list", args(1,7, batarg("",dbl),batargany("b",1),batarg("q",dbl),batarg("g",oid),batargany("e",2),batarg("s",oid),arg("skip_nils",bit))),
- command("aggr", "str_group_concat", AGGRstr_group_concat, false, "Grouped string tail concat", args(1,4, batarg("",str),batarg("b",str),batarg("g",oid),batargany("e",1))),
+ command("aggr", "str_group_concat", AGGRstr_group_concat, false, "Ungrouped string tail concat", args(1,2, arg("",str),batarg("b",str))),
  command("aggr", "substr_group_concat", AGGRsubstr_group_concat, false, "Grouped string concat", args(1,5, batarg("",str),batarg("b",str),batarg("g",oid),batargany("e",1),arg("skip_nils",bit))),
- command("aggr", "substr_group_concat", AGGRsubstr_group_concatcand, false, "Grouped string concat with candidates list", args(1,6, batarg("",str),batarg("b",str),batarg("g",oid),batargany("e",1),batarg("s",oid),arg("skip_nils",bit))),
- command("aggr", "str_group_concat", AGGRstr_group_concat_sep, false, "Grouped string tail concat with custom separator", args(1,5, batarg("",str),batarg("b",str),batarg("sep",str),batarg("g",oid),batargany("e",1))),
+ command("aggr", "str_group_concat", AGGRstr_group_concat_sep, false, "Ungrouped string tail concat with custom separator", args(1,3, arg("",str),batarg("b",str),batarg("sep",str))),
  command("aggr", "substr_group_concat", AGGRsubstr_group_concat_sep, false, "Grouped string concat with custom separator", args(1,6, batarg("",str),batarg("b",str),batarg("sep",str),batarg("g",oid),batargany("e",1),arg("skip_nils",bit))),
- command("aggr", "substr_group_concat", AGGRsubstr_group_concatcand_sep, false, "Grouped string concat with candidates list with custom separator", args(1,7, batarg("",str),batarg("b",str),batarg("sep",str),batarg("g",oid),batargany("e",1),batarg("s",oid),arg("skip_nils",bit))),
 
  command("aggr", "subavg", AGGRavg3, false, "Grouped average aggregation", args(3,8, batarg("",bte),batarg("",lng),batarg("",lng),batarg("b",bte),batarg("g",oid),batargany("e",1),batarg("s",oid),arg("skip_nils",bit))),
  command("aggr", "subavg", AGGRavg3, false, "Grouped average aggregation", args(3,8, batarg("",sht),batarg("",lng),batarg("",lng),batarg("b",sht),batarg("g",oid),batargany("e",1),batarg("s",oid),arg("skip_nils",bit))),

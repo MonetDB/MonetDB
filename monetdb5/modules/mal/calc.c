@@ -861,71 +861,6 @@ CMDBATavg3comb(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-static str
-CMDBATstr_group_concat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	ValPtr ret = &stk->stk[getArg(pci, 0)];
-	bat bid = *getArgReference_bat(stk, pci, 1), sid = 0;
-	BAT *b, *s = NULL, *sep = NULL;
-	bool nil_if_empty = true;
-	int next_argument = 2;
-	const char *separator = ",";
-	gdk_return r;
-
-	(void) cntxt;
-
-	if ((b = BATdescriptor(bid)) == NULL)
-		throw(MAL, "aggr.str_group_concat",
-			  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-
-	if (isaBatType(getArgType(mb, pci, 2))) {
-		sid = *getArgReference_bat(stk, pci, 2);
-		if ((sep = BATdescriptor(sid)) == NULL) {
-			BBPunfix(b->batCacheid);
-			throw(MAL, "aggr.str_group_concat",
-				  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-		}
-		if (sep->ttype == TYPE_str) {	/* the separator bat */
-			next_argument = 3;
-			separator = NULL;
-		}
-	}
-
-	if (pci->argc >= (next_argument + 1)) {
-		if (getArgType(mb, pci, next_argument) == TYPE_bit) {
-			assert(pci->argc == (next_argument + 1));
-			nil_if_empty = *getArgReference_bit(stk, pci, next_argument);
-		} else {
-			if (next_argument == 3) {
-				bat sid = *getArgReference_bat(stk, pci, next_argument);
-				if (!is_bat_nil(sid) && (s = BATdescriptor(sid)) == NULL) {
-					BBPunfix(b->batCacheid);
-					BBPunfix(sep->batCacheid);
-					throw(MAL, "aggr.str_group_concat",
-						  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-				}
-			} else {
-				s = sep;
-				sep = NULL;
-			}
-			if (pci->argc >= (next_argument + 2)) {
-				assert(pci->argc == (next_argument + 2));
-				assert(getArgType(mb, pci, (next_argument + 1)) == TYPE_bit);
-				nil_if_empty = *getArgReference_bit(stk, pci, (next_argument + 1));
-			}
-		}
-	}
-
-	assert((separator && !sep) || (!separator && sep));
-	r = BATstr_group_concat(ret, b, s, sep, true, nil_if_empty, separator);
-	BBPunfix(b->batCacheid);
-	BBPreclaim(sep);
-	BBPreclaim(s);
-	if (r != GDK_SUCCEED)
-		return mythrow(MAL, "aggr.str_group_concat", OPERATION_FAILED);
-	return MAL_SUCCEED;
-}
-
 #include "mel.h"
 mel_func calc_init_funcs[] = {
 #ifdef HAVE_HGE
@@ -2795,14 +2730,6 @@ mel_func calc_init_funcs[] = {
  pattern("aggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,3, arg("",dbl),batarg("b",dbl),arg("nil_if_empty",bit))),
  pattern("aggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,3, arg("",dbl),batarg("b",dbl),batarg("s",oid))),
  pattern("aggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,4, arg("",dbl),batarg("b",dbl),batarg("s",oid),arg("nil_if_empty",bit))),
- pattern("aggr", "str_group_concat", CMDBATstr_group_concat, false, "Calculate aggregate string concatenate of B.", args(1,2, arg("",str),batarg("b",str))),
- pattern("aggr", "str_group_concat", CMDBATstr_group_concat, false, "Calculate aggregate string concatenate of B.", args(1,3, arg("",str),batarg("b",str),arg("nil_if_empty",bit))),
- pattern("aggr", "str_group_concat", CMDBATstr_group_concat, false, "Calculate aggregate string concatenate of B with candidate list.", args(1,3, arg("",str),batarg("b",str),batarg("s",oid))),
- pattern("aggr", "str_group_concat", CMDBATstr_group_concat, false, "Calculate aggregate string concatenate of B with candidate list.", args(1,4, arg("",str),batarg("b",str),batarg("s",oid),arg("nil_if_empty",bit))),
- pattern("aggr", "str_group_concat", CMDBATstr_group_concat, false, "Calculate aggregate string concatenate of B with separator SEP.", args(1,3, arg("",str),batarg("b",str),batarg("sep",str))),
- pattern("aggr", "str_group_concat", CMDBATstr_group_concat, false, "Calculate aggregate string concatenate of B with separator SEP.", args(1,4, arg("",str),batarg("b",str),batarg("sep",str),arg("nil_if_empty",bit))),
- pattern("aggr", "str_group_concat", CMDBATstr_group_concat, false, "Calculate aggregate string concatenate of B with candidate list and separator SEP.", args(1,4, arg("",str),batarg("b",str),batarg("sep",str),batarg("s",oid))),
- pattern("aggr", "str_group_concat", CMDBATstr_group_concat, false, "Calculate aggregate string concatenate of B with candidate list and separator SEP.", args(1,5, arg("",str),batarg("b",str),batarg("sep",str),batarg("s",oid),arg("nil_if_empty",bit))),
  //from sql
  pattern("aggr", "anyequal", CMDvarEQ, false, "", args(1,3, arg("",bit),argany("l",1),argany("r",1))),
  pattern("aggr", "not_anyequal", CMDvarNE, false, "", args(1,3, arg("",bit),argany("l",1),argany("r",1))),
