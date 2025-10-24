@@ -337,7 +337,7 @@ DFLOWworker(void *T)
 					break;
 			}
 
-			error = runMALsequence(ma, flow->cntxt, flow->mb, fe->pc, fe->pc + 1,
+			error = runMALsequence(flow->cntxt, flow->mb, fe->pc, fe->pc + 1,
 								   flow->stk, 0, 0);
 			if (error)
 				error = MA_STRDUP(flow->mb->ma, error);

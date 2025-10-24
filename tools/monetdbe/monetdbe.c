@@ -881,7 +881,7 @@ monetdbe_open_remote(monetdbe_database_internal *mdbe, monetdbe_options *opts) {
 	stk->keepAlive = TRUE;
 	c->qryctx.starttime = GDKusec();
 	c->qryctx.endtime = c->querytimeout ? c->qryctx.starttime + c->querytimeout : 0;
-	if ( (mdbe->msg = runMALsequence(mb->ma, c, mb, 1, 0, stk, 0, 0)) != MAL_SUCCEED ) {
+	if ( (mdbe->msg = runMALsequence(c, mb, 1, 0, stk, 0, 0)) != MAL_SUCCEED ) {
 		freeStack(stk);
 		freeSymbol(c->curprg);
 		c->curprg = curprg;
@@ -943,13 +943,6 @@ monetdbe_open(monetdbe_database *dbhdl, char *url, monetdbe_options *opts)
 
 	if (res == 0 && is_remote && !mdbe->msg)
 		res = monetdbe_open_remote(mdbe, opts);
-	allocator *ta = MT_thread_getallocator();
-	if (!ta) {
-		allocator *ma = create_allocator(NULL, MT_thread_getname(), false);
-		assert(ma);
-		if (ma)
-			MT_thread_setallocator(ma);
-	}
 
 	MT_lock_unset(&embedded_lock);
 	if (mdbe->msg)

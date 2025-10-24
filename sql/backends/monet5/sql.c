@@ -5081,7 +5081,7 @@ SQLunionfunc(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					if (!omb && npci->fcn && npci->token == PATcall) /* pattern */
 						ret = (*(str (*)(Client, MalBlkPtr, MalStkPtr, InstrPtr))npci->fcn)(cntxt, nmb, nstk, npci);
 					else
-						ret = runMALsequence(nmb->ma, cntxt, nmb, start, nmb->stop, nstk, env /* copy result in nstk first instruction*/, q);
+						ret = runMALsequence(cntxt, nmb, start, nmb->stop, nstk, env /* copy result in nstk first instruction*/, q);
 
 					if (!ret) {
 						/* insert into result */

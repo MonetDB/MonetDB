@@ -418,6 +418,11 @@ MT_thread_init(void)
 	}
 	InitializeCriticalSection(&winthread_cs);
 #endif
+	mainthread.ma = create_allocator(NULL, mainthread.threadname, false);
+	if (mainthread.ma == NULL) {
+		GDKerror("Creating thread-local allocator failed");
+		return false;
+	}
 	thread_initialized = true;
 	return true;
 }
