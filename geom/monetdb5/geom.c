@@ -2595,7 +2595,7 @@ str
 wkbFromBinaryWithBuffer(allocator *ma, wkb **geomWKB, size_t *len, const char **inStr)
 {
 	size_t strLength, wkbLength, i;
-	wkb *w;
+	wkb *w = NULL;
 
 	if (strNil(*inStr)) {
 		if (*len < sizeof(wkb_nil)) {
