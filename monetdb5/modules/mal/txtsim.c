@@ -382,6 +382,7 @@ BATTXTSIMmaxlevenshtein(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	size_t llen = 0, rlen = 0, maxlen = 0;
 	int d;
 	bit v;
+	allocator *ma = NULL;
 
 	if ((left = BATdescriptor(*lid)) == NULL) {
 		msg = createException(MAL, "battxtsim.maxlevenshtein",
@@ -407,7 +408,7 @@ BATTXTSIMmaxlevenshtein(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	li = bat_iterator(left);
 	ri = bat_iterator(right);
 
-	allocator *ma = MT_thread_getallocator();
+	ma = MT_thread_getallocator();
 	allocator_state ma_state = ma_open(ma);
 
 	BATloop(left, p, q) {
@@ -449,7 +450,8 @@ BATTXTSIMmaxlevenshtein(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	*res = bn->batCacheid;
 	BBPkeepref(bn);
   exit:
-	ma_close(ma, &ma_state);
+	if (ma)
+		ma_close(ma, &ma_state);
 	BBPreclaim(left);
 	BBPreclaim(right);
 	if (msg != MAL_SUCCEED)
