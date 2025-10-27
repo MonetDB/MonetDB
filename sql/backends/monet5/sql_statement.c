@@ -4462,7 +4462,6 @@ stmt_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int red
 	sql_subtype *res = op->res->h->data;
 	int restype = res->type->localtype;
 	bool complex_aggr = false;
-	int *stmt_nr = NULL;
 	int avg = 0;
 
 	if (op1->nr < 0)
@@ -4546,10 +4545,7 @@ stmt_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int red
 		for (i=0, n = op1->op4.lval->h; n; n = n->next, i++) {
 			stmt *op = n->data;
 
-			if (stmt_nr)
-				q = pushArgument(mb, q, stmt_nr[i]);
-			else
-				q = pushArgument(mb, q, op->nr);
+			q = pushArgument(mb, q, op->nr);
 		}
 	}
 	if (grp) {
