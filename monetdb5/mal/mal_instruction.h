@@ -148,10 +148,10 @@ mal_export InstrPtr newInstruction(MalBlkPtr mb, const char *modnme,
 								   const char *fcnnme);
 mal_export InstrPtr newInstructionArgs(MalBlkPtr mb, const char *modnme,
 									   const char *fcnnme, int args);
-mal_export InstrPtr copyInstruction(const InstrRecord *p);
-mal_export InstrPtr copyInstructionArgs(const InstrRecord *p, int args);
+mal_export InstrPtr copyInstruction(MalBlkPtr mb, const InstrRecord *p);
+mal_export InstrPtr copyInstructionArgs(MalBlkPtr mb, const InstrRecord *p, int args);
 mal_export void clrInstruction(InstrPtr p);
-mal_export void freeInstruction(InstrPtr p);
+mal_export void freeInstruction(MalBlkPtr mb, InstrPtr p);
 mal_export void clrFunction(InstrPtr p);
 mal_export Symbol newSymbol(const char *nme, int kind);
 mal_export void freeSymbol(Symbol s);
@@ -159,7 +159,7 @@ mal_export void freeSymbolList(Symbol s);
 mal_export void printSignature(stream *fd, Symbol s, int flg);
 
 mal_export MalBlkPtr newMalBlk(int elements);
-mal_export void resetMalBlk(MalBlkPtr mb);
+mal_export str resetMalBlk(MalBlkPtr *mb);
 mal_export void resetMalTypes(MalBlkPtr mb, int stop);
 mal_export int newMalBlkStmt(MalBlkPtr mb, int elements);
 mal_export int resizeMalBlk(MalBlkPtr mb, int elements);
@@ -186,7 +186,7 @@ mal_export void clearVariable(MalBlkPtr mb, int varid);
 mal_export int cpyConstant(MalBlkPtr mb, VarPtr vr);
 mal_export int defConstant(MalBlkPtr mb, int type, ValPtr cst);
 mal_export int fndConstant(MalBlkPtr mb, const ValRecord *cst, int depth);
-mal_export str convertConstant(malType type, ValPtr vr);
+mal_export str convertConstant(allocator *ma, malType type, ValPtr vr);
 
 mal_export void pushInstruction(MalBlkPtr mb, InstrPtr p);
 mal_export InstrPtr pushArgument(MalBlkPtr mb, InstrPtr p, int varid);

@@ -646,11 +646,11 @@ parse_date(const char *buf, date *d, bool external)
 }
 
 ssize_t
-date_fromstr(const char *buf, size_t *len, date **d, bool external)
+date_fromstr(allocator *ma, const char *buf, size_t *len, date **d, bool external)
 {
 	if (*len < sizeof(date) || *d == NULL) {
-		GDKfree(*d);
-		*d = (date *) GDKmalloc(*len = sizeof(date));
+		//GDKfree(*d);
+		*d = (date *) ma_alloc(ma, *len = sizeof(date));
 		if( *d == NULL)
 			return -1;
 	}
@@ -685,12 +685,12 @@ do_date_tostr(char *buf, size_t len, const date *val, bool external)
 }
 
 ssize_t
-date_tostr(str *buf, size_t *len, const date *val, bool external)
+date_tostr(allocator *ma, str *buf, size_t *len, const date *val, bool external)
 {
 	/* 15 bytes is more than enough */
 	if (*len < 15 || *buf == NULL) {
-		GDKfree(*buf);
-		*buf = GDKmalloc(15);
+		//GDKfree(*buf);
+		*buf = ma_alloc(ma, 15);
 		if( *buf == NULL)
 			return -1;
 		*len = 15;
@@ -778,11 +778,11 @@ parse_daytime(const char *buf, daytime *dt, bool external)
 }
 
 ssize_t
-daytime_fromstr(const char *buf, size_t *len, daytime **ret, bool external)
+daytime_fromstr(allocator *ma, const char *buf, size_t *len, daytime **ret, bool external)
 {
 	if (*len < sizeof(daytime) || *ret == NULL) {
-		GDKfree(*ret);
-		*ret = (daytime *) GDKmalloc(*len = sizeof(daytime));
+		//GDKfree(*ret);
+		*ret = (daytime *) ma_alloc(ma, *len = sizeof(daytime));
 		if (*ret == NULL)
 			return -1;
 	}
@@ -799,7 +799,7 @@ daytime_fromstr(const char *buf, size_t *len, daytime **ret, bool external)
 }
 
 static ssize_t
-daytime_tz_fromstr_internal(const char *buf, size_t *len, daytime **ret, long tz_sec, bool tzlocal, bool external)
+daytime_tz_fromstr_internal(allocator *ma, const char *buf, size_t *len, daytime **ret, long tz_sec, bool tzlocal, bool external)
 {
 	const char *s = buf;
 	ssize_t pos;
@@ -807,7 +807,7 @@ daytime_tz_fromstr_internal(const char *buf, size_t *len, daytime **ret, long tz
 	int offset = 0;
 	bool has_tz = false;
 
-	pos = daytime_fromstr(s, len, ret, external);
+	pos = daytime_fromstr(ma, s, len, ret, external);
 	if (pos < 0 || is_daytime_nil(**ret))
 		return pos;
 
@@ -847,16 +847,16 @@ daytime_tz_fromstr_internal(const char *buf, size_t *len, daytime **ret, long tz
 }
 
 ssize_t
-daytime_tz_fromstr(const char *buf, size_t *len, daytime **ret, bool external)
+daytime_tz_fromstr(allocator *ma, const char *buf, size_t *len, daytime **ret, bool external)
 {
-	return daytime_tz_fromstr_internal(buf, len, ret, 0, false, external);
+	return daytime_tz_fromstr_internal(ma, buf, len, ret, 0, false, external);
 }
 
 ssize_t
-sql_daytime_fromstr(const char *buf, daytime *ret, long tz_sec, bool tclocal)
+sql_daytime_fromstr(allocator *ma, const char *buf, daytime *ret, long tz_sec, bool tclocal)
 {
 	size_t len = sizeof(daytime);
-	return daytime_tz_fromstr_internal(buf, &len, &ret, tz_sec, tclocal, false);
+	return daytime_tz_fromstr_internal(ma, buf, &len, &ret, tz_sec, tclocal, false);
 }
 
 static ssize_t
@@ -907,14 +907,14 @@ GCC_Pragma("GCC diagnostic ignored \"-Wformat-truncation\"")
 }
 
 ssize_t
-daytime_precision_tostr(str *buf, size_t *len, const daytime dt,
+daytime_precision_tostr(allocator *ma, str *buf, size_t *len, const daytime dt,
 			int precision, bool external)
 {
 	if (precision < 0)
 		precision = 0;
 	if (*len < 10 + (size_t) precision || *buf == NULL) {
-		GDKfree(*buf);
-		*buf = (str) GDKmalloc(*len = 10 + (size_t) precision);
+		//GDKfree(*buf);
+		*buf = (str) ma_alloc(ma, *len = 10 + (size_t) precision);
 		if( *buf == NULL)
 			return -1;
 	}
@@ -922,13 +922,13 @@ daytime_precision_tostr(str *buf, size_t *len, const daytime dt,
 }
 
 ssize_t
-daytime_tostr(str *buf, size_t *len, const daytime *val, bool external)
+daytime_tostr(allocator *ma, str *buf, size_t *len, const daytime *val, bool external)
 {
-	return daytime_precision_tostr(buf, len, *val, 6, external);
+	return daytime_precision_tostr(ma, buf, len, *val, 6, external);
 }
 
 static ssize_t
-timestamp_fromstr_internal(const char *buf, size_t *len, timestamp **ret, bool external, bool parse_offset)
+timestamp_fromstr_internal(allocator *ma, const char *buf, size_t *len, timestamp **ret, bool external, bool parse_offset)
 {
 	const char *s = buf;
 	ssize_t pos;
@@ -936,8 +936,8 @@ timestamp_fromstr_internal(const char *buf, size_t *len, timestamp **ret, bool e
 	daytime tm;
 
 	if (*len < sizeof(timestamp) || *ret == NULL) {
-		GDKfree(*ret);
-		*ret = (timestamp *) GDKmalloc(*len = sizeof(timestamp));
+		//GDKfree(*ret);
+		*ret = (timestamp *) ma_alloc(ma, *len = sizeof(timestamp));
 		if (*ret == NULL)
 			return -1;
 	}
@@ -998,16 +998,16 @@ timestamp_fromstr_internal(const char *buf, size_t *len, timestamp **ret, bool e
 }
 
 ssize_t
-timestamp_fromstr(const char *buf, size_t *len, timestamp **ret, bool external)
+timestamp_fromstr(allocator *ma, const char *buf, size_t *len, timestamp **ret, bool external)
 {
-	return timestamp_fromstr_internal(buf, len, ret, external, true);
+	return timestamp_fromstr_internal(ma, buf, len, ret, external, true);
 }
 
 static ssize_t
-timestamp_tz_fromstr_internal(const char *buf, size_t *len, timestamp **ret, long tz_sec, bool tzlocal, bool external)
+timestamp_tz_fromstr_internal(allocator *ma, const char *buf, size_t *len, timestamp **ret, long tz_sec, bool tzlocal, bool external)
 {
 	const char *s = buf;
-	ssize_t pos = timestamp_fromstr_internal(s, len, ret, external, false);
+	ssize_t pos = timestamp_fromstr_internal(ma, s, len, ret, external, false);
 	lng offset = 0;
 	bool has_tz = false;
 
@@ -1042,21 +1042,21 @@ timestamp_tz_fromstr_internal(const char *buf, size_t *len, timestamp **ret, lon
 }
 
 ssize_t
-timestamp_tz_fromstr(const char *buf, size_t *len, timestamp **ret, bool external)
+timestamp_tz_fromstr(allocator *ma, const char *buf, size_t *len, timestamp **ret, bool external)
 {
-	return timestamp_tz_fromstr_internal(buf, len, ret, 0, false, external);
+	return timestamp_tz_fromstr_internal(ma, buf, len, ret, 0, false, external);
 }
 
 /* timestamp from str (return timestamp in local time */
 ssize_t
-sql_timestamp_fromstr(const char *buf, timestamp *ret, long tz_sec, bool tzlocal)
+sql_timestamp_fromstr(allocator *ma, const char *buf, timestamp *ret, long tz_sec, bool tzlocal)
 {
 	size_t len = sizeof(timestamp);
-	return timestamp_tz_fromstr_internal(buf, &len, &ret, tz_sec, tzlocal, false);
+	return timestamp_tz_fromstr_internal(ma, buf, &len, &ret, tz_sec, tzlocal, false);
 }
 
 ssize_t
-timestamp_precision_tostr(str *buf, size_t *len, timestamp val, int precision, bool external)
+timestamp_precision_tostr(allocator *ma, str *buf, size_t *len, timestamp val, int precision, bool external)
 {
 	ssize_t len1, len2;
 	char buf1[128], buf2[128];
@@ -1065,8 +1065,8 @@ timestamp_precision_tostr(str *buf, size_t *len, timestamp val, int precision, b
 
 	if (is_timestamp_nil(val)) {
 		if (*len < 4 || *buf == NULL) {
-			GDKfree(*buf);
-			*buf = GDKmalloc(*len = 4);
+			//GDKfree(*buf);
+			*buf = ma_alloc(ma, *len = 4);
 			if( *buf == NULL)
 				return -1;
 		}
@@ -1087,8 +1087,8 @@ timestamp_precision_tostr(str *buf, size_t *len, timestamp val, int precision, b
 		return -1;
 
 	if (*len < 2 + (size_t) len1 + (size_t) len2 || *buf == NULL) {
-		GDKfree(*buf);
-		*buf = GDKmalloc(*len = (size_t) len1 + (size_t) len2 + 2);
+		//GDKfree(*buf);
+		*buf = ma_alloc(ma, *len = (size_t) len1 + (size_t) len2 + 2);
 		if( *buf == NULL)
 			return -1;
 	}
@@ -1096,7 +1096,7 @@ timestamp_precision_tostr(str *buf, size_t *len, timestamp val, int precision, b
 }
 
 ssize_t
-timestamp_tostr(str *buf, size_t *len, const timestamp *val, bool external)
+timestamp_tostr(allocator *ma, str *buf, size_t *len, const timestamp *val, bool external)
 {
-	return timestamp_precision_tostr(buf, len, *val, 6, external);
+	return timestamp_precision_tostr(ma, buf, len, *val, 6, external);
 }

@@ -47,7 +47,7 @@ hashInstruction(const MalBlkRecord *mb, const InstrRecord *p)
 }
 
 str
-OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
+OPTcommonTermsImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 							 InstrPtr pci)
 {
 	int i, j, k, barrier = 0, bailout = 0;
@@ -61,17 +61,18 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	str msg = MAL_SUCCEED;
 
 	InstrPtr *old = NULL;
+	allocator *ta = mb->ta;
 
 	/* catch simple insert operations */
-	if (isSimpleSQL(mb)) {
-		goto wrapup;
+	if (isSimpleSQL(mb) || MB_LARGE(mb)) {
+		goto wrapup1;
 	}
 
-	(void) cntxt;
 	(void) stk;
-	alias = (int *) GDKzalloc(sizeof(int) * mb->vtop);
-	list = (int *) GDKzalloc(sizeof(int) * mb->stop);
-	hash = (int *) GDKzalloc(sizeof(int) * mb->vtop);
+	allocator_state ta_state = ma_open(ta);
+	alias = (int *) ma_zalloc(ta, sizeof(int) * mb->vtop);
+	list = (int *) ma_zalloc(ta, sizeof(int) * mb->stop);
+	hash = (int *) ma_zalloc(ta, sizeof(int) * mb->vtop);
 	if (alias == NULL || list == NULL || hash == NULL) {
 		msg = createException(MAL, "optimizer.commonTerms",
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -132,7 +133,7 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 		/* side-effect producing operators can never be replaced */
 		/* the same holds for function calls without an argument, it is
 		 * unclear where the results comes from (e.g. clock()) */
-		if (mayhaveSideEffects(cntxt, mb, p, TRUE) || p->argc == p->retc) {
+		if (mayhaveSideEffects(ctx, mb, p, TRUE) || p->argc == p->retc) {
 			TRC_DEBUG(MAL_OPTIMIZER, "Skipped[%d] side-effect: %d\n", i,
 					  p->retc == p->argc);
 			pushInstruction(mb, p);
@@ -216,7 +217,7 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 				}
 			} else if (isUpdateInstruction(p)) {
 				TRC_DEBUG(MAL_OPTIMIZER, "Skipped: %d %d\n",
-						  mayhaveSideEffects(cntxt, mb, q, TRUE),
+						  mayhaveSideEffects(ctx, mb, q, TRUE),
 						  isUpdateInstruction(p));
 				traceInstruction(mb, 0, q, LIST_MAL_ALL);
 			}
@@ -233,7 +234,7 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 				  getArg(p, p->argc - 1), h, hash[h]);
 		traceInstruction(mb, 0, p, LIST_MAL_ALL);
 
-		if (!mayhaveSideEffects(cntxt, mb, p, TRUE) && p->argc != p->retc
+		if (!mayhaveSideEffects(ctx, mb, p, TRUE) && p->argc != p->retc
 			&& isLinearFlow(p) && !isUnsafeFunction(p)
 			&& !isUpdateInstruction(p)) {
 			list[i] = hash[h];
@@ -247,23 +248,21 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 			pushInstruction(mb, old[i]);
 	/* Defense line against incorrect plans */
 	if (actions > 0) {
-		msg = chkTypes(cntxt->usermodule, mb, FALSE);
+		msg = chkTypes(ctx->usermodule, mb, FALSE);
 		if (!msg)
 			msg = chkFlow(mb);
 		if (!msg)
 			msg = chkDeclarations(mb);
 	}
   wrapup:
+	ma_close(ta, &ta_state);
+  wrapup1:
 	/* keep actions taken as a fake argument */
 	(void) pushInt(mb, pci, actions);
 
-	if (alias)
-		GDKfree(alias);
-	if (list)
-		GDKfree(list);
-	if (hash)
-		GDKfree(hash);
+	/*
 	if (old)
-		GDKfree(old);
+		//GDKfree(old);
+		*/
 	return msg;
 }

@@ -399,7 +399,7 @@ log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, BAT **cands, bo
 	if (tpe >= 0) {
 		BAT *uid = NULL;
 		BAT *r = NULL;
-		void *(*rt)(ptr, size_t *, stream *, size_t) = BATatoms[tpe].atomRead;
+		void *(*rt)(allocator *ma, ptr, size_t *, stream *, size_t) = BATatoms[tpe].atomRead;
 		lng offset;
 
 		assert(nr <= (lng) BUN_MAX);
@@ -452,10 +452,13 @@ log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, BAT **cands, bo
 
 				/* We have to read the value to update the read cursor */
 				size_t tlen = lg->rbufsize;
-				void *t = rt(lg->rbuf, &tlen, lg->input_log, 1);
+				void *t = rt(NULL, lg->rbuf, &tlen, lg->input_log, 1);
 				if (t == NULL) {
 					TRC_CRITICAL(GDK, "read failed\n");
 					res = LOG_EOF;
+				} else {
+					lg->rbuf = t;
+					lg->rbufsize = tlen;
 				}
 				return res;
 			}
@@ -477,13 +480,14 @@ log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, BAT **cands, bo
 						return LOG_EOF;
 					}
 					size_t tlen = lg->rbufsize;
-					void *t = rt(lg->rbuf, &tlen, lg->input_log, 1);
+					void *t = rt(NULL, lg->rbuf, &tlen, lg->input_log, 1);
 					if (t == NULL) {
 						TRC_CRITICAL(GDK, "read failed\n");
 						return LOG_EOF;
-					} else if (append) {
-						lg->rbuf = t;
-						lg->rbufsize = tlen;
+					}
+					lg->rbuf = t;
+					lg->rbufsize = tlen;
+					if (append) {
 						for (BUN p = 0; p < (BUN) nr; p++)
 							*c++ = (oid) offset++;
 					} else
@@ -520,7 +524,7 @@ log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, BAT **cands, bo
 
 		if (l->flag == LOG_UPDATE_CONST) {
 			size_t tlen = lg->rbufsize;
-			void *t = rt(lg->rbuf, &tlen, lg->input_log, 1);
+			void *t = rt(NULL, lg->rbuf, &tlen, lg->input_log, 1);
 			if (t == NULL) {
 				TRC_CRITICAL(GDK, "read failed\n");
 				res = LOG_EOF;
@@ -557,7 +561,7 @@ log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, BAT **cands, bo
 					return LOG_EOF;
 				}
 				size_t tlen = lg->rbufsize;
-				void *t = rt(lg->rbuf, &tlen, lg->input_log, 1);
+				void *t = rt(NULL, lg->rbuf, &tlen, lg->input_log, 1);
 				if (t == NULL) {
 					TRC_CRITICAL(GDK, "read failed\n");
 					res = LOG_EOF;
@@ -627,7 +631,7 @@ log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, BAT **cands, bo
 					 * BUFSIZE/width rows */
 					for (; res == LOG_OK && snr > 0; snr -= cnt) {
 						cnt = snr > tlen ? tlen : snr;
-						void *t = rt(lg->rbuf, &ntlen, lg->input_log, cnt);
+						void *t = rt(NULL, lg->rbuf, &ntlen, lg->input_log, cnt);
 
 						if (t == NULL) {
 							res = LOG_EOF;
@@ -645,7 +649,7 @@ log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, BAT **cands, bo
 				} else {
 					for (; res == LOG_OK && nr > 0; nr--) {
 						size_t tlen = lg->rbufsize;
-						void *t = rt(lg->rbuf, &tlen, lg->input_log, 1);
+						void *t = rt(NULL, lg->rbuf, &tlen, lg->input_log, 1);
 
 						if (t == NULL) {
 							/* see if failure was due to
@@ -669,7 +673,7 @@ log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, BAT **cands, bo
 				}
 			}
 		} else {
-			void *(*rh)(ptr, size_t *, stream *, size_t) = BATatoms[TYPE_oid].atomRead;
+			void *(*rh)(allocator *ma, ptr, size_t *, stream *, size_t) = BATatoms[TYPE_oid].atomRead;
 			void *hv = ATOMnil(TYPE_oid);
 			offset = 0;
 
@@ -679,7 +683,7 @@ log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, BAT **cands, bo
 			}
 			for (; res == LOG_OK && nr > 0; nr--) {
 				size_t hlen = sizeof(oid);
-				void *h = rh(hv, &hlen, lg->input_log, 1);
+				void *h = rh(NULL, hv, &hlen, lg->input_log, 1);
 				if (h == NULL) {
 					res = LOG_EOF;
 					TRC_CRITICAL(GDK, "read failed\n");
@@ -725,7 +729,7 @@ log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, BAT **cands, bo
 				} else {
 					for (; res == LOG_OK && nr > 0; nr--) {
 						size_t tlen = lg->rbufsize;
-						void *t = rt(lg->rbuf, &tlen, lg->input_log, 1);
+						void *t = rt(NULL, lg->rbuf, &tlen, lg->input_log, 1);
 
 						if (t == NULL) {
 							if (strstr(GDKerrbuf, "malloc") == NULL)
@@ -2218,7 +2222,7 @@ log_json_upgrade_finalize(void)
 		TRC_CRITICAL(GDK, "Failed to remove json upgrade signal file");
 		return GDK_FAIL;
 	}
-	BATatoms[json_tpe].atomRead = (void *(*)(void *, size_t *, stream *, size_t))strRead;
+	BATatoms[json_tpe].atomRead = (void *(*)(allocator *ma, void *, size_t *, stream *, size_t))strRead;
 
 	return GDK_SUCCEED;
 }

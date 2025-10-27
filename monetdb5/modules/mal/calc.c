@@ -67,19 +67,20 @@ CMDvarADD(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 
 static str
-CMDvarADDstr(str *ret, const char *const *s1, const char *const *s2)
+CMDvarADDstr(Client ctx, str *ret, const char *const *s1, const char *const *s2)
 {
+	allocator *ma = ctx->curprg->def->ma;
 	str s;
 	size_t l1;
 
 	if (strNil(*s1) || strNil(*s2)) {
-		*ret = GDKstrdup(str_nil);
+		*ret = MA_STRDUP(ma, str_nil);
 		if (*ret == NULL)
 			return mythrow(MAL, "calc.+", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
 	l1 = strlen(*s1) + strlen(*s2) + 1;
-	s = GDKmalloc(l1);
+	s = ma_alloc(ma, l1);
 	if (s == NULL)
 		return mythrow(MAL, "calc.+", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	strconcat_len(s, l1, *s1, *s2, NULL);
@@ -89,19 +90,20 @@ CMDvarADDstr(str *ret, const char *const *s1, const char *const *s2)
 
 
 static str
-CMDvarADDstrint(str *ret, const char *const *s1, const int *i)
+CMDvarADDstrint(Client ctx, str *ret, const char *const *s1, const int *i)
 {
+	allocator *ma = ctx->curprg->def->ma;
 	str s;
 	size_t len;
 
 	if (strNil(*s1) || is_int_nil(*i)) {
-		*ret = GDKstrdup(str_nil);
+		*ret = MA_STRDUP(ma, str_nil);
 		if (*ret == NULL)
 			return mythrow(MAL, "calc.+", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
 	len = strlen(*s1) + 16;		/* maxint = 2147483647 which fits easily */
-	s = GDKmalloc(len);
+	s = ma_alloc(ma, len);
 	if (s == NULL)
 		return mythrow(MAL, "calc.+", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	snprintf(s, len, "%s%d", *s1, *i);
@@ -345,8 +347,9 @@ CMDvarBETWEEN(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 
 static str
-CMDstrlength(int *ret, const char *const *v)
+CMDstrlength(Client ctx, int *ret, const char *const *v)
 {
+	(void) ctx;
 	size_t l = strlen(*v);
 
 	if (l > (size_t) GDK_int_max)
@@ -365,7 +368,7 @@ CMDvarCONVERT(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;
 
 	if (VARconvert
-		(&stk->stk[getArg(pci, 0)], &stk->stk[getArg(pci, 1)], 0, 0,
+		(mb->ma, &stk->stk[getArg(pci, 0)], &stk->stk[getArg(pci, 1)], 0, 0,
 		 0) != GDK_SUCCEED) {
 		snprintf(buf, sizeof(buf), "%s.%s", pci->modname, pci->fcnname);
 		return mythrow(MAL, buf, OPERATION_FAILED);
@@ -375,8 +378,9 @@ CMDvarCONVERT(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 
 static str
-CMDvarCONVERTptr(ptr *ret, ptr *v)
+CMDvarCONVERTptr(Client ctx, ptr *ret, ptr *v)
 {
+	(void) ctx;
 	*ret = *v;
 	return MAL_SUCCEED;
 }
@@ -547,7 +551,9 @@ CALCswitchbit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		p = getArgReference(stk, pci, 3);
 	}
 	if (ATOMextern(t1)) {
-		*(ptr **) retval = ATOMdup(t1, *(ptr **) p);
+		//*(ptr **) retval = ATOMdup(t1, *(ptr **) p);
+		size_t len = ATOMlen(t1, *(ptr **)p);
+		*(ptr **) retval = ma_realloc(mb->ma, *(ptr **) p, len, len);
 		if (*(ptr **) retval == NULL)
 			throw(MAL, "ifthenelse", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	} else if (t1 == TYPE_void) {
@@ -579,7 +585,7 @@ CALCmin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		p1 = nil;
 	else if (ATOMcmp(t, p1, p2) > 0)
 		p1 = p2;
-	if (VALinit(&stk->stk[getArg(pci, 0)], t, p1) == NULL)
+	if (VALinit(NULL, &stk->stk[getArg(pci, 0)], t, p1) == NULL)
 		return mythrow(MAL, "calc.min", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
@@ -616,7 +622,7 @@ CALCmin_no_nil(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				p1 = p2;
 		}
 	}
-	if (VALinit(&stk->stk[getArg(pci, 0)], t, p1) == NULL)
+	if (VALinit(NULL, &stk->stk[getArg(pci, 0)], t, p1) == NULL)
 		return mythrow(MAL, "calc.min", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
@@ -642,7 +648,7 @@ CALCmax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		p1 = nil;
 	else if (ATOMcmp(t, p1, p2) < 0)
 		p1 = p2;
-	if (VALinit(&stk->stk[getArg(pci, 0)], t, p1) == NULL)
+	if (VALinit(NULL, &stk->stk[getArg(pci, 0)], t, p1) == NULL)
 		return mythrow(MAL, "calc.max", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
@@ -679,7 +685,7 @@ CALCmax_no_nil(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				p1 = p2;
 		}
 	}
-	if (VALinit(&stk->stk[getArg(pci, 0)], t, p1) == NULL)
+	if (VALinit(NULL, &stk->stk[getArg(pci, 0)], t, p1) == NULL)
 		return mythrow(MAL, "calc.max", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }

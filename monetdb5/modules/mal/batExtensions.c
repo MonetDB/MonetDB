@@ -261,8 +261,9 @@ CMDBATappend_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 static str
-CMDBATvacuum(bat *r, const bat *bid)
+CMDBATvacuum(Client ctx, bat *r, const bat *bid)
 {
+	(void) ctx;
 	BAT *b, *bn;
 
 	if ((b = BATdescriptor(*bid)) == NULL)

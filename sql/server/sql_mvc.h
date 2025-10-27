@@ -316,9 +316,9 @@ extern sql_rel *frame_find_rel_view(mvc *sql, const char *name);
 extern int stack_has_frame(mvc *sql, const char *name);
 extern int stack_nr_of_declared_tables(mvc *sql);
 
-extern atom *sqlvar_set(sql_var *var, ValRecord *v);
+extern atom *sqlvar_set(allocator *sa, sql_var *var, ValRecord *v);
 extern str sqlvar_get_string(sql_var *var);
-extern str sqlvar_set_string(sql_var *var, const char *v);
+extern str sqlvar_set_string(allocator *sa, sql_var *var, const char *v);
 #ifdef HAVE_HGE
 extern hge val_get_number(const ValRecord *val);
 extern void sqlvar_set_number(sql_var *var, hge v);

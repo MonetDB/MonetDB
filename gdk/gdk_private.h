@@ -39,19 +39,6 @@ enum range_comp_t {
 	range_inside,		/* search range inside bat range */
 };
 
-struct allocator {
-	struct allocator *pa;
-	size_t size;
-	size_t nr;
-	char **blks;
-	size_t used; 	/* memory used in last block */
-	size_t usedmem;	/* used memory */
-	void *freelist;	/* list of freed blocks */
-	exception_buffer eb;
-	char *first_block; /* the special block in blks that also holds our bookkeeping */
-	size_t reserved;  /* space in first_block is reserved up to here  */
-};
-
 bool ATOMisdescendant(int id, int parentid)
 	__attribute__((__visibility__("hidden")));
 int ATOMunknown_find(const char *nme)
@@ -229,8 +216,6 @@ void HEAP_recover(Heap *, const var_t *, BUN)
 gdk_return HEAPsave(Heap *h, const char *nme, const char *ext, bool dosync, BUN free, MT_Lock *lock)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
-char *humansize(size_t val, char *buf, size_t buflen)
-	__attribute__((__visibility__("hidden")));
 double joincost(BAT *r, BUN lcount, struct canditer *rci, bool *hash, bool *phash, bool *cand)
 	__attribute__((__visibility__("hidden")));
 void STRMPincref(Strimps *strimps)
@@ -267,9 +252,9 @@ var_t strLocate(Heap *h, const char *v)
 	__attribute__((__visibility__("hidden")));
 var_t strPut(BAT *b, var_t *dst, const void *v)
 	__attribute__((__visibility__("hidden")));
-char *strRead(str a, size_t *dstlen, stream *s, size_t cnt)
+char *strRead(allocator *, str a, size_t *dstlen, stream *s, size_t cnt)
 	__attribute__((__visibility__("hidden")));
-ssize_t strToStr(char **restrict dst, size_t *restrict len, const char *restrict src, bool external)
+ssize_t strToStr(allocator *, char **restrict dst, size_t *restrict len, const char *restrict src, bool external)
 	__attribute__((__visibility__("hidden")));
 gdk_return strWrite(const char *a, stream *s, size_t cnt)
 	__attribute__((__visibility__("hidden")));

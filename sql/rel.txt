@@ -160,6 +160,8 @@ e_aggr
 	-> f	func / aggr
 for aggr
 	-> flag DISTINCT and NO_NIL could be set
+for func
+ 	-> flag could be the quantifiers (ALL/ANY)
 for window functions
 	-> r contains a list with two values: the first is a list with the partition by expressions, and the second a list with order by expressions
 for aggregate functions

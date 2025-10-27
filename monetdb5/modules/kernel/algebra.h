@@ -17,7 +17,7 @@
 #include "mal_exception.h"
 #include "mal_interpreter.h"
 
-extern str ALGprojection(bat *result, const bat *lid, const bat *rid);
-extern str ALGfetchoid(ptr ret, const bat *bid, const oid *pos);
+extern str ALGprojection(Client ctx, bat *result, const bat *lid, const bat *rid);
+extern str ALGfetchoid(Client ctx, ptr ret, const bat *bid, const oid *pos);
 
 #endif

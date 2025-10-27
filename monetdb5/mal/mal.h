@@ -180,6 +180,9 @@ typedef struct MALBLK {
 
 	str errors;					/* left over errors */
 	int maxarg;					/* keep track on the maximal arguments used */
+	allocator *ma;				/* mal blocks are fully allocated using a single allocator */
+	allocator *ta;				/* temporary allocator */
+	allocator *instr_allocator;	/* mal instructions allocator */
 
 	/* During the run we keep track on the maximum number of concurrent threads and memory claim */
 	ATOMIC_TYPE workers;
@@ -195,6 +198,7 @@ typedef struct MALBLK {
 typedef int (*DFhook)(void *, void *, void *, void *);
 
 typedef struct MALSTK {
+	bool allocated;
 	int stksize;
 	int stktop;
 	int stkbot;					/* the first variable to be initialized */

@@ -13,13 +13,14 @@
 #ifndef _GROUP_H_
 #define _GROUP_H_
 #include "gdk.h"
+#include "mal_client.h"
 
-mal_export str GRPgroup1(bat *ngid, bat *next, bat *nhis, const bat *bid);
-mal_export str GRPsubgroup5(bat *ngid, bat *next, bat *nhis,
+mal_export str GRPgroup1(Client ctx, bat *ngid, bat *next, bat *nhis, const bat *bid);
+mal_export str GRPsubgroup5(Client ctx, bat *ngid, bat *next, bat *nhis,
 							const bat *bid, const bat *sid,
 							const bat *gid, const bat *eid, const bat *hid);
 
-extern str GRPsubgroup2(bat *ngid, bat *next, bat *nhis, const bat *bid,
+extern str GRPsubgroup2(Client ctx, bat *ngid, bat *next, bat *nhis, const bat *bid,
 						const bat *gid);
-extern str GRPgroup3(bat *ngid, bat *next, const bat *bid);
+extern str GRPgroup3(Client ctx, bat *ngid, bat *next, const bat *bid);
 #endif /* _GROUP_H_ */

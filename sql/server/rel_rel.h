@@ -73,7 +73,7 @@ extern const char *rel_name( sql_rel *r );
 extern sql_rel *rel_distinct(sql_rel *l);
 
 extern sql_rel *rel_dup(sql_rel *r);
-extern void rel_destroy(sql_rel *rel);
+extern void rel_destroy(mvc *sql, sql_rel *rel);
 extern sql_rel *rel_create(allocator *sa);
 extern sql_rel *rel_copy(mvc *sql, sql_rel *r, int deep);
 extern sql_rel *rel_select_copy(allocator *sa, sql_rel *l, list *exps);
@@ -167,5 +167,15 @@ extern sql_rel *rel_visitor_bottomup(visitor *v, sql_rel *rel, rel_rewrite_fptr 
 extern bool rel_rebind_exp(mvc *sql, sql_rel *rel, sql_exp *e);
 
 extern int exp_freevar_offset(mvc *sql, sql_exp *e);
+
+#define SQL_REL_DESTROY(sql, rel_ptr)			\
+	do {									\
+		rel_destroy(sql, rel_ptr);			\
+		if (rel_ptr->ref.refcnt == 0		\
+			   	&& rel_ptr->l == NULL		\
+			   	&& rel_ptr->r == NULL		\
+			   	&& rel_ptr->exps == NULL)	\
+			rel_ptr = NULL;					\
+	} while (0)
 
 #endif /* _REL_REL_H_ */

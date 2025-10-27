@@ -490,7 +490,7 @@ exp_change_column_table(mvc *sql, sql_exp *e, sql_table* oldt, sql_table* newt)
 		} break;
 		case e_column: {
 			if (!strcmp(e->l, oldt->base.name))
-				e->l = sa_strdup(sql->sa, newt->base.name);
+				e->l = ma_strdup(sql->sa, newt->base.name);
 		} break;
 		case e_cmp: {
 			if (e->flag == cmp_in || e->flag == cmp_notin) {
@@ -637,7 +637,7 @@ rel_generate_subdeletes(visitor *v, sql_rel *rel, sql_table *t)
 		}
 		v->changes++;
 	}
-	rel_destroy(rel);
+	rel_destroy(sql, rel);
 	return sel;
 }
 
@@ -692,7 +692,7 @@ rel_generate_subupdates(visitor *v, sql_rel *rel, sql_table *t)
 		}
 		v->changes++;
 	}
-	rel_destroy(rel);
+	rel_destroy(sql, rel);
 	return sel;
 }
 
@@ -886,7 +886,7 @@ rel_generate_subinserts(visitor *v, sql_rel *rel, sql_table *t,
 		sql_exp *exception = exp_exception(sql->sa, aggr, buf);
 		sel = rel_exception(v->sql->sa, sel, anti_rel, list_append(new_exp_list(v->sql->sa), exception));
 	}
-	rel_destroy(rel);
+	rel_destroy(sql, rel);
 	return sel;
 }
 

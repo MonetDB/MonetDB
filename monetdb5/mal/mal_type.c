@@ -36,13 +36,13 @@
  * the type descriptor. Including the variable references.
  */
 str
-getTypeName(malType tpe)
+getTypeName(allocator *ma, malType tpe)
 {
 	char buf[IDLENGTH + 6];
 	int k;
 
 	if (tpe == TYPE_any)
-		return GDKstrdup("any");
+		return MA_STRDUP(ma, "any");
 	if (isaBatType(tpe)) {
 		k = getTypeIndex(tpe);
 		if (k)
@@ -51,13 +51,13 @@ getTypeName(malType tpe)
 			snprintf(buf, sizeof(buf), "bat[:any]");
 		else
 			snprintf(buf, sizeof(buf), "bat[:%s]", ATOMname(getBatType(tpe)));
-		return GDKstrdup(buf);
+		return MA_STRDUP(ma, buf);
 	}
 	if (isAnyExpression(tpe)) {
 		snprintf(buf, sizeof(buf), "any_%d", getTypeIndex(tpe));
-		return GDKstrdup(buf);
+		return MA_STRDUP(ma, buf);
 	}
-	return GDKstrdup(ATOMname(tpe));
+	return MA_STRDUP(ma, ATOMname(tpe));
 }
 
 /*
@@ -65,10 +65,10 @@ getTypeName(malType tpe)
  * string for ease of comparison later.
  */
 str
-getTypeIdentifier(malType tpe)
+getTypeIdentifier(allocator *ma, malType tpe)
 {
 	str s, t, v;
-	s = getTypeName(tpe);
+	s = getTypeName(ma, tpe);
 	if (s == NULL)
 		return NULL;
 	for (t = s; *t; t++)

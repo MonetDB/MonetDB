@@ -18,7 +18,7 @@
 #include "opt_projectionpath.h"
 
 str
-OPTprojectionpathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
+OPTprojectionpathImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 								InstrPtr pci)
 {
 	int i, j, k, actions = 0, maxprefixlength = 0;
@@ -28,11 +28,13 @@ OPTprojectionpathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	int *varcnt = NULL;			/* use count */
 	int limit, slimit;
 	str msg = MAL_SUCCEED;
+	int vtop = mb->vtop;
+	allocator *ta = mb->ta;
 
-	(void) cntxt;
+	(void) ctx;
 	(void) stk;
 	if (mb->inlineProp)
-		goto wrapupall;
+		goto wrapupall1;
 
 	for (i = 0; i < mb->stop; i++) {
 		p = getInstrPtr(mb, i);
@@ -43,7 +45,7 @@ OPTprojectionpathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 		}
 	}
 	if (i == mb->stop) {
-		goto wrapupall;
+		goto wrapupall1;
 	}
 
 	limit = mb->stop;
@@ -53,13 +55,11 @@ OPTprojectionpathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 		throw(MAL, "optimizer.projectionpath", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	/* beware, new variables and instructions are introduced */
-	pc = (int *) GDKzalloc(sizeof(int) * mb->vtop * 2);	/* to find last assignment */
-	varcnt = (int *) GDKzalloc(sizeof(int) * mb->vtop * 2);
+	allocator_state ta_state = ma_open(ta);
+	pc = (int *) ma_zalloc(ta, sizeof(int) * /*mb->*/vtop/* * 2*/);	/* to find last assignment */
+	varcnt = (int *) ma_zalloc(ta, sizeof(int) * /*mb->*/vtop/* * 2*/);
 	if (pc == NULL || varcnt == NULL) {
-		if (pc)
-			GDKfree(pc);
-		if (varcnt)
-			GDKfree(varcnt);
+		ma_close(ta, &ta_state);
 		throw(MAL, "optimizer.projectionpath", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
@@ -96,7 +96,11 @@ OPTprojectionpathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 				else
 					args++;
 			}
-			if ((q = copyInstructionArgs(p, args)) == NULL) {
+			if (args == p->argc) {
+				/* no change */
+				goto wrapup;
+			}
+			if ((q = copyInstructionArgs(mb, p, args)) == NULL) {
 				msg = createException(MAL, "optimizer.projectionpath",
 									  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto wrapupall;
@@ -112,20 +116,18 @@ OPTprojectionpathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 					r = 0;
 
 				/* inject the complete sub-path */
-
-				if (getFunctionId(p) == projectionRef) {
-					if (r && getModuleId(r) == algebraRef
+				if (r && getModuleId(r) == algebraRef
 						&& (getFunctionId(r) == projectionRef
 							|| getFunctionId(r) == projectionpathRef)) {
-						for (k = r->retc; k < r->argc; k++)
+					for (k = r->retc; k < r->argc; k++)
 							q = pushArgument(mb, q, getArg(r, k));
-					} else
-						q = pushArgument(mb, q, getArg(p, j));
-				}
+				} else
+					q = pushArgument(mb, q, getArg(p, j));
 			}
 			if (q->argc <= p->argc) {
+				assert(0);
 				/* no change */
-				freeInstruction(q);
+				freeInstruction(mb, q);
 				goto wrapup;
 			}
 			/*
@@ -136,7 +138,7 @@ OPTprojectionpathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 				if (getBatType(getArgType(mb, q, j)) != TYPE_oid
 					&& getBatType(getArgType(mb, q, j)) != TYPE_void) {
 					/* don't use the candidate list */
-					freeInstruction(q);
+					freeInstruction(mb, q);
 					goto wrapup;
 				}
 
@@ -147,7 +149,7 @@ OPTprojectionpathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 				setFunctionId(q, projectionpathRef);
 			q->typeresolved = false;
 
-			freeInstruction(p);
+			freeInstruction(mb, p);
 			p = q;
 			/* keep track of the longest projection path */
 			if (p->argc > maxprefixlength)
@@ -156,12 +158,12 @@ OPTprojectionpathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 		}
   wrapup:
 		pushInstruction(mb, p);
-		for (j = 0; j < p->retc; j++)
-			if (getModuleId(p) == algebraRef
+		if (getModuleId(p) == algebraRef
 				&& (getFunctionId(p) == projectionRef
 					|| getFunctionId(p) == projectionpathRef)) {
+			for (j = 0; j < p->retc; j++)
 				pc[getArg(p, j)] = mb->stop - 1;
-			}
+		}
 	}
 
 	for (; i < slimit; i++)
@@ -174,22 +176,23 @@ OPTprojectionpathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 
 	/* Defense line against incorrect plans */
 	if (actions > 0) {
-		msg = chkTypes(cntxt->usermodule, mb, FALSE);
+		msg = chkTypes(ctx->usermodule, mb, FALSE);
 		if (!msg)
 			msg = chkFlow(mb);
 		if (!msg)
 			msg = chkDeclarations(mb);
 	}
+	assert(vtop == mb->vtop);
   wrapupall:
+	ma_close(ta, &ta_state);
+  wrapupall1:
 	/* keep actions taken as a fake argument */
 	(void) pushInt(mb, pci, actions);
 
-	if (pc)
-		GDKfree(pc);
-	if (varcnt)
-		GDKfree(varcnt);
+	/*
 	if (old)
-		GDKfree(old);
+		//GDKfree(old);
+		*/
 
 	return msg;
 }

@@ -90,7 +90,7 @@ psm_set_exp(sql_query *query, dnode *n)
 
 		if (!(e = exp_check_type(sql, tpe, rel, e, type_cast)))
 			return NULL;
-		res = exp_set(sql->sa, var && var->sname ? sa_strdup(sql->sa, var->sname) : NULL, sa_strdup(sql->sa, vname), e, level);
+		res = exp_set(sql->sa, var && var->sname ? ma_strdup(sql->sa, var->sname) : NULL, ma_strdup(sql->sa, vname), e, level);
 	} else { /* multi assignment */
 		exp_kind ek = {type_relation, card_value, FALSE};
 		sql_rel *rel_val = rel_subquery(query, val, ek);
@@ -124,7 +124,7 @@ psm_set_exp(sql_query *query, dnode *n)
 			v = exp_ref(sql, v);
 			if (!(v = exp_check_type(sql, tpe, rel_val, v, type_cast)))
 				return NULL;
-			append(b, exp_set(sql->sa, var && var->sname ? sa_strdup(sql->sa, var->sname) : NULL, sa_strdup(sql->sa, vname), v, level));
+			append(b, exp_set(sql->sa, var && var->sname ? ma_strdup(sql->sa, var->sname) : NULL, ma_strdup(sql->sa, vname), v, level));
 		}
 		res = exp_rel(sql, rel_psm_block(sql->sa, b));
 	}
@@ -171,7 +171,7 @@ rel_psm_declare(mvc *sql, dnode *n)
 			/* variables are put on stack, globals on a separate list */
 			if (!frame_push_var(sql, tname, ctype))
 				return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			r = exp_var(sql->sa, NULL, sa_strdup(sql->sa, tname), ctype, sql->frame);
+			r = exp_var(sql->sa, NULL, ma_strdup(sql->sa, tname), ctype, sql->frame);
 			append(l, r);
 			ids = ids->next;
 		}
@@ -211,7 +211,7 @@ rel_psm_declare_table(sql_query *query, dnode *n)
 	t = (sql_table*)((atom*)((sql_exp*)baset->exps->t->data)->l)->data.val.pval;
 	if (!frame_push_table(sql, t))
 		return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	return exp_table(sql->sa, sa_strdup(sql->sa, name), t, sql->frame);
+	return exp_table(sql->sa, ma_strdup(sql->sa, name), t, sql->frame);
 }
 
 /* [ label: ]
@@ -492,7 +492,7 @@ rel_psm_return( sql_query *query, sql_subtype *restype, list *restypelist, symbo
 			char name[16];
 
 			if (!cname)
-				cname = sa_strdup(sql->sa, number2name(name, sizeof(name), ++sql->label));
+				cname = ma_strdup(sql->sa, number2name(name, sizeof(name), ++sql->label));
 			if (!isproject)
 				e = exp_ref(sql, e);
 			e = exp_check_type(sql, &ce->type, oexps_rel, e, type_equal);
@@ -576,7 +576,7 @@ rel_select_into( sql_query *query, symbol *sq, exp_kind ek)
 		v = exp_ref(sql, v);
 		if (!(v = exp_check_type(sql, tpe, r, v, type_equal)))
 			return NULL;
-		v = exp_set(sql->sa, var && var->sname ? sa_strdup(sql->sa, var->sname) : NULL, sa_strdup(sql->sa, vname), v, level);
+		v = exp_set(sql->sa, var && var->sname ? ma_strdup(sql->sa, var->sname) : NULL, ma_strdup(sql->sa, vname), v, level);
 		list_append(nl, v);
 	}
 	return nl;
@@ -1554,8 +1554,8 @@ create_table_from_loader(sql_query *query, dlist *qname, symbol *fcall)
 	if (!rel || !loader)
 		return NULL;
 
-	loader->sname = s ? sa_strdup(sql->sa, s->base.name) : NULL;
-	loader->tname = tname ? sa_strdup(sql->sa, tname) : NULL;
+	loader->sname = s ? ma_strdup(sql->sa, s->base.name) : NULL;
+	loader->tname = tname ? ma_strdup(sql->sa, tname) : NULL;
 
 	return rel;
 }

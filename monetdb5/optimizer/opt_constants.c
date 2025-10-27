@@ -33,7 +33,7 @@
 #include "opt_constants.h"
 
 str
-OPTconstantsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
+OPTconstantsImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 						   InstrPtr pci)
 {
 	int i, j, k = 1, n = 0, fnd = 0, actions = 0, limit = 0;
@@ -41,14 +41,16 @@ OPTconstantsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	VarPtr x, y, *cst = NULL;
 	str msg = MAL_SUCCEED;
 	InstrPtr p, q;
+	allocator *ta = mb->ta;
 
-	if (isSimpleSQL(mb)) {
-		goto wrapup;
+	if (isSimpleSQL(mb) || MB_LARGE(mb)) {
+		goto wrapup1;
 	}
-	alias = (int *) GDKzalloc(sizeof(int) * mb->vtop);
-	cand = (int *) GDKzalloc(sizeof(int) * mb->vtop);
-	cst = (VarPtr *) GDKzalloc(sizeof(VarPtr) * mb->vtop);
-	index = (int *) GDKzalloc(sizeof(int) * mb->vtop);
+	allocator_state ta_state = ma_open(ta);
+	alias = (int *) ma_zalloc(ta, sizeof(int) * mb->vtop);
+	cand = (int *) ma_zalloc(ta, sizeof(int) * mb->vtop);
+	cst = (VarPtr *) ma_zalloc(ta, sizeof(VarPtr) * mb->vtop);
+	index = (int *) ma_zalloc(ta, sizeof(int) * mb->vtop);
 
 	if (alias == NULL || cst == NULL || index == NULL || cand == NULL) {
 		msg = createException(MAL, "optimizer.constants",
@@ -57,7 +59,7 @@ OPTconstantsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	}
 
 	(void) stk;
-	(void) cntxt;
+	(void) ctx;
 
 	for (i = 0; i < mb->stop; i++) {
 		q = getInstrPtr(mb, i);
@@ -117,23 +119,16 @@ OPTconstantsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 
 	/* Defense line against incorrect plans */
 	/* Plan remains unaffected */
-	// msg = chkTypes(cntxt->usermodule, mb, FALSE);
+	// msg = chkTypes(ctx->usermodule, mb, FALSE);
 	// if (!msg)
 	//      msg = chkFlow(mb);
 	// if(!msg)
 	//      msg = chkDeclarations(mb);
 	/* keep all actions taken as a post block comment */
   wrapup:
+	ma_close(ta, &ta_state);
+  wrapup1:
 	/* keep actions taken as a fake argument */
 	(void) pushInt(mb, pci, actions);
-
-	if (cand)
-		GDKfree(cand);
-	if (alias)
-		GDKfree(alias);
-	if (cst)
-		GDKfree(cst);
-	if (index)
-		GDKfree(index);
 	return msg;
 }

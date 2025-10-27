@@ -36,6 +36,7 @@ rel_properties(visitor *v, sql_rel *rel)
 		/* If the plan has a merge table or a child of one, then rel_merge_table_rewrite has to run */
 		gp->needs_mergetable_rewrite |= (isMergeTable(t) || (t->s && t->s->parts && (pt = partition_find_part(sql->session->tr, t, NULL))));
 		gp->needs_remote_replica_rewrite |= (isRemote(t) || isReplicaTable(t));
+		gp->has_pkey |= (t->pkey != NULL);
 	}
 	return rel;
 }
@@ -530,8 +531,8 @@ rel_merge_table_rewrite_(visitor *v, sql_rel *rel)
 				rel->card = exps_card(nrel->exps);
 			}
 			/* make sure that we do NOT destroy the subrels */
-			nrel->l = nrel->r = NULL;
-			rel_destroy(nrel);
+			nrel->l = nrel->r = nrel->exps = NULL;
+			rel_destroy(v->sql, nrel);
 			v->changes++;
 		}
 	}
@@ -639,7 +640,7 @@ rel_optimizer_one(mvc *sql, sql_rel *rel, int profile, int instantiate, int valu
 	global_props gp = {.cnt = {0}, .instantiate = (uint8_t)instantiate, .opt_cycle = 0 };
 	visitor v = { .sql = sql, .value_based_opt = value_based_opt, .storage_based_opt = storage_based_opt, .changes = 1, .data = &gp };
 
-	sql->runs = !(ATOMIC_GET(&GDKdebug) & TESTINGMASK) && profile ? sa_zalloc(sql->sa, NSQLREWRITERS * sizeof(sql_optimizer_run)) : NULL;
+	sql->runs = !(ATOMIC_GET(&GDKdebug) & TESTINGMASK) && profile ? ma_zalloc(sql->sa, NSQLREWRITERS * sizeof(sql_optimizer_run)) : NULL;
 	for ( ;rel && gp.opt_cycle < 20 && v.changes; gp.opt_cycle++) {
 		v.changes = 0;
 		gp = (global_props) {.cnt = {0}, .instantiate = (uint8_t)instantiate, .opt_cycle = gp.opt_cycle};

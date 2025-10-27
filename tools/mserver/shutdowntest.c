@@ -92,6 +92,7 @@ static str monetdb_initialize(void) {
 	char prmodpath[FILENAME_MAX];
 	const char *modpath = NULL;
 	char *binpath = NULL;
+	allocator * volatile ma = NULL;
 
 	if (monetdb_initialized) return MAL_SUCCEED;
 	monetdb_initialized = 1;
@@ -248,6 +249,16 @@ static str monetdb_initialize(void) {
 		}
 	}
 
+	ma = MT_thread_getallocator();
+	if (!ma) {
+		if ((ma = create_allocator(NULL, "MA_tls_main_shutdowntest", false)) == NULL) {
+			retval = GDKstrdup("Failed to create allocator");
+			goto cleanup;
+		}
+		MT_thread_setallocator(ma);
+		assert(MT_thread_getallocator() != NULL);
+	}
+
 	char *modules[2];
 	modules[0] = "sql";
 	modules[1] = 0;
@@ -276,9 +287,12 @@ static str monetdb_initialize(void) {
 	}
 
 	mo_free_options(set, setlen);
-
 	return MAL_SUCCEED;
 cleanup:
+	if (ma) {
+		ma_destroy(ma);
+		MT_thread_setallocator(NULL);
+	}
 	if (set)
 		mo_free_options(set, setlen);
 	monetdb_initialized = 0;
@@ -289,6 +303,11 @@ static void monetdb_shutdown(void) {
 	if (monetdb_initialized) {
 		mal_reset();
 		monetdb_initialized = 0;
+		allocator *ma = MT_thread_getallocator();
+		if (ma) {
+			ma_destroy(ma);
+			MT_thread_setallocator(NULL);
+		}
 	}
 }
 

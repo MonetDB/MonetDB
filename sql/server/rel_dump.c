@@ -105,7 +105,7 @@ dump_sql_subtype(allocator *sa, sql_subtype *t)
 		snprintf(buf, sizeof(buf), "%s(%u)", t->type->base.name, t->digits);
 	else
 		snprintf(buf, sizeof(buf), "%s", t->type->base.name);
-	return sa_strdup(sa, buf);
+	return ma_strdup(sa, buf);
 }
 
 static void exps_print(mvc *sql, stream *fout, list *exps, int depth, list *refs, int alias, int brackets, int decorate, int expbrk);
@@ -151,7 +151,7 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 	(void)sql;
 	if (!e)
 		return;
-	/*mnstr_printf(fout, "%p ", e);*/
+	// mnstr_printf(fout, "%p ", e);
 	if (mvc_debug_on(sql, 4) && e->alias.label < 0)
 		mnstr_printf(fout, "%d: ", e->alias.label);
 	switch(e->type) {
@@ -224,12 +224,12 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 				if (a->isnull)
 					mnstr_printf(fout, "%s NULL", t);
 				else {
-					char *s = ATOMformat(a->data.vtype, VALptr(&a->data));
+					char *s = ATOMformat(sql->sa, a->data.vtype, VALptr(&a->data));
 					if (s && *s == '"')
 						mnstr_printf(fout, "%s %s", t, s);
 					else if (s)
 						mnstr_printf(fout, "%s \"%s\"", t, s);
-					GDKfree(s);
+					// GDKfree(s);
 				}
 			}
 		} else { /* variables */
@@ -397,9 +397,9 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 	}
 
 	if (e->comment) {
-		str s = ATOMformat(TYPE_str, e->comment);
+		str s = ATOMformat(sql->sa, TYPE_str, e->comment);
 		mnstr_printf(fout,  " COMMENT %s ", s);
-		GDKfree(s);
+		// GDKfree(s);
 	}
 	if (comma)
 		mnstr_printf(fout, ", ");
@@ -947,7 +947,7 @@ readInt( char *r, int *pos)
 }
 
 static void *
-readAtomString(int localtype, char *r, int *pos)
+readAtomString(allocator *sa, int localtype, char *r, int *pos)
 {
 	void *res = NULL;
 	size_t nbytes = 0;
@@ -974,8 +974,8 @@ readAtomString(int localtype, char *r, int *pos)
 		r[*pos] = '\0';
 	(*pos)++;
 
-	if (ATOMfromstr(rtype, &res, &nbytes, r + firstpos, true) < 0) {
-		GDKfree(res);
+	if (ATOMfromstr(sa, rtype, &res, &nbytes, r + firstpos, true) < 0) {
+		// GDKfree(res);
 		return NULL;
 	}
 	return res;
@@ -1085,11 +1085,11 @@ exp_read_min_or_max(mvc *sql, sql_exp *exp, char *r, int *pos, const char *prop_
 		(*pos)+= (int) strlen("NULL");
 		a = atom_general(sql->sa, tpe, NULL, 0);
 	} else {
-		void *ptr = readAtomString(tpe->type->localtype, r, pos);
+		void *ptr = readAtomString(sql->sa, tpe->type->localtype, r, pos);
 		if (!ptr)
 			return sql_error(sql, -1, SQLSTATE(42000) "Invalid atom string\n");
 		a = atom_general_ptr(sql->sa, tpe, ptr);
-		GDKfree(ptr);
+		//GDKfree(ptr);
 	}
 	if (!find_prop(exp->p, kind)) {
 		prop *p = exp->p = prop_create(sql->sa, kind, exp->p);
@@ -1110,8 +1110,8 @@ exp_read_nuniques(mvc *sql, sql_exp *exp, char *r, int *pos)
 	(*pos)+= (int) strlen("NUNIQUES");
 	skipWS(r, pos);
 
-	if ((res = ATOMfromstr(tpe->type->localtype, &ptr, &nbytes, r + *pos, true)) < 0) {
-		GDKfree(ptr);
+	if ((res = ATOMfromstr(sql->sa, tpe->type->localtype, &ptr, &nbytes, r + *pos, true)) < 0) {
+		//GDKfree(ptr);
 		return sql_error(sql, -1, SQLSTATE(42000) "Invalid atom string\n");
 	}
 
@@ -1120,7 +1120,7 @@ exp_read_nuniques(mvc *sql, sql_exp *exp, char *r, int *pos)
 		p->value.dval = *(dbl*)ptr;
 	}
 	(*pos) += (int) res; /* it should always fit */
-	GDKfree(ptr);
+	//GDKfree(ptr);
 	skipWS(r, pos);
 	return exp;
 }
@@ -1176,11 +1176,11 @@ parse_atom(mvc *sql, char *r, int *pos, sql_subtype *tpe)
 		(*pos)+= (int) strlen("NULL");
 		return exp_atom(sql->sa, atom_general(sql->sa, tpe, NULL, 0));
 	} else {
-		void *ptr = readAtomString(tpe->type->localtype, r, pos);
+		void *ptr = readAtomString(sql->sa, tpe->type->localtype, r, pos);
 		if (!ptr)
 			return sql_error(sql, -1, SQLSTATE(42000) "Invalid atom string\n");
 		sql_exp *res = exp_atom(sql->sa, atom_general_ptr(sql->sa, tpe, ptr));
-		GDKfree(ptr);
+		// GDKfree(ptr);
 		return res;
 	}
 }
@@ -1257,8 +1257,8 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 		}
 		*e = 0;
 
-		tname = sa_strdup(sql->sa, tname);
-		cname = sa_strdup(sql->sa, cname);
+		tname = ma_strdup(sql->sa, tname);
+		cname = ma_strdup(sql->sa, cname);
 		*e = old;
 		skipWS(r, pos);
 		if (r[*pos] != '(') { /* if there's a function/aggregate call next don't attempt to bind columns */
@@ -1725,7 +1725,7 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 		old = *e;
 		*e = 0;
 		convertIdent(b);
-		var_cname = sa_strdup(sql->sa, b);
+		var_cname = ma_strdup(sql->sa, b);
 		if (top_exps) {
 			exp = exps_bind_column(top_exps, var_cname, &amb, &mul, 1);
 			if (exp)
@@ -1751,9 +1751,9 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 
 		if (find_variable_on_scope(sql, has_tname ? tname : NULL, cname ? cname : var_cname, &var, &a, &tpe, &level, "SELECT")) {
 			if (var) /* if variable is known from the stack or a global var */
-				exp = exp_param_or_declared(sql->sa, var->sname ? sa_strdup(sql->sa, var->sname) : NULL, sa_strdup(sql->sa, var->name), &(var->var.tpe), level);
+				exp = exp_param_or_declared(sql->sa, var->sname ? ma_strdup(sql->sa, var->sname) : NULL, ma_strdup(sql->sa, var->name), &(var->var.tpe), level);
 			if (a) /* if variable is a parameter */
-				exp = exp_param_or_declared(sql->sa, NULL, sa_strdup(sql->sa, cname), &(a->type), level);
+				exp = exp_param_or_declared(sql->sa, NULL, ma_strdup(sql->sa, cname), &(a->type), level);
 		}
 	}
 
@@ -1814,7 +1814,7 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 		if (r[*pos] != '.') {
 			cname = tname;
 			tname = NULL;
-			exp_setname(sql, exp, NULL, sa_strdup(sql->sa, cname));
+			exp_setname(sql, exp, NULL, ma_strdup(sql->sa, cname));
 			skipWS(r, pos);
 		} else {
 			(*pos)++;
@@ -1823,7 +1823,7 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 			convertIdent(cname);
 			(*pos)++;
 			skipWS(r, pos);
-			exp_setname(sql, exp, sa_strdup(sql->sa, tname), sa_strdup(sql->sa, cname));
+			exp_setname(sql, exp, ma_strdup(sql->sa, tname), ma_strdup(sql->sa, cname));
 		}
 		rlabel = try_update_label_count(sql, tname);
 		nlabel = try_update_label_count(sql, cname);
@@ -1838,9 +1838,8 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 	if (strncmp(r+*pos, "COMMENT",  strlen("COMMENT")) == 0) {
 		(*pos)+= (int) strlen("COMMENT");
 		skipWS(r, pos);
-		str comment = readAtomString(TYPE_str, r, pos);
-		exp->comment = sa_strdup(sql->sa, comment);
-		GDKfree(comment);
+		exp->comment = readAtomString(sql->sa, TYPE_str, r, pos);
+		//GDKfree(comment);
 	}
 
 	return exp;
@@ -1892,14 +1891,14 @@ rel_read_count(mvc *sql, sql_rel *rel, char *r, int *pos)
 	(*pos)+= (int) strlen("COUNT");
 	skipWS(r, pos);
 
-	if ((res = ATOMfromstr(tpe->type->localtype, &ptr, &nbytes, r + *pos, true)) < 0) {
-		GDKfree(ptr);
+	if ((res = ATOMfromstr(sql->sa, tpe->type->localtype, &ptr, &nbytes, r + *pos, true)) < 0) {
+		//GDKfree(ptr);
 		return sql_error(sql, -1, SQLSTATE(42000) "Invalid atom string\n");
 	}
 
 	set_count_prop(sql->sa, rel, *(BUN*)ptr);
 	(*pos) += (int) res; /* it should always fit */
-	GDKfree(ptr);
+	//GDKfree(ptr);
 	skipWS(r, pos);
 	return rel;
 }

@@ -273,8 +273,9 @@ isOptimizerPipe(const char *name)
 }
 
 str
-getPipeCatalog(bat *nme, bat *def, bat *stat)
+getPipeCatalog(Client ctx, bat *nme, bat *def, bat *stat)
 {
+	(void) ctx;
 	BAT *b, *bn, *bs;
 	int i;
 	size_t l = 2048;

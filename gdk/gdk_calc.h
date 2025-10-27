@@ -121,7 +121,7 @@ gdk_export gdk_return VARcalceq(ValPtr ret, const ValRecord *lft, const ValRecor
 gdk_export gdk_return VARcalcne(ValPtr ret, const ValRecord *lft, const ValRecord *rgt, bool nil_matches);
 gdk_export gdk_return VARcalccmp(ValPtr ret, const ValRecord *lft, const ValRecord *rgt);
 gdk_export BAT *BATconvert(BAT *b, BAT *s, int tp, uint8_t scale1, uint8_t scale2, uint8_t precision);
-gdk_export gdk_return VARconvert(ValPtr ret, const ValRecord *v, uint8_t scale1, uint8_t scale2, uint8_t precision);
+gdk_export gdk_return VARconvert(allocator *ma, ValPtr ret, const ValRecord *v, uint8_t scale1, uint8_t scale2, uint8_t precision);
 gdk_export gdk_return BATcalcavg(BAT *b, BAT *s, dbl *avg, BUN *vals, int scale);
 
 gdk_export BAT *BATgroupsum(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils);
@@ -148,8 +148,8 @@ gdk_export gdk_return BATsum(void *res, int tp, BAT *b, BAT *s, bool skip_nils, 
 gdk_export gdk_return BATprod(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool nil_if_empty);
 gdk_export void *BATmax(BAT *b, void *aggr);
 gdk_export void *BATmin(BAT *b, void *aggr);
-gdk_export void *BATmax_skipnil(BAT *b, void *aggr, bit skipnil);
-gdk_export void *BATmin_skipnil(BAT *b, void *aggr, bit skipnil);
+gdk_export void *BATmax_skipnil(allocator *alloc, BAT *b, void *aggr, bit skipnil);
+gdk_export void *BATmin_skipnil(allocator *alloc, BAT *b, void *aggr, bit skipnil);
 
 gdk_export dbl BATcalcstdev_population(dbl *avgp, BAT *b);
 gdk_export dbl BATcalcstdev_sample(dbl *avgp, BAT *b);
@@ -167,5 +167,5 @@ gdk_export BAT *BATgroupcovariance_population(BAT *b1, BAT *b2, BAT *g, BAT *e, 
 gdk_export BAT *BATgroupcorrelation(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils);
 
 gdk_export BAT *BATgroupstr_group_concat(BAT *b, BAT *g, BAT *e, BAT *s, BAT *sep, bool skip_nils, const char *restrict separator);
-gdk_export gdk_return BATstr_group_concat(ValPtr res, BAT *b, BAT *s, BAT *sep, bool skip_nils, bool nil_if_empty, const char *restrict separator);
+gdk_export gdk_return BATstr_group_concat(allocator *ma, ValPtr res, BAT *b, BAT *s, BAT *sep, bool skip_nils, bool nil_if_empty, const char *restrict separator);
 gdk_export gdk_return GDKanalytical_str_group_concat(BAT *r, BAT *p, BAT *o, BAT *b, BAT *sep, BAT *s, BAT *e, const char *restrict separator, int frame_type);

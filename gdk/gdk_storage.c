@@ -888,12 +888,13 @@ BATdelete(BAT *b)
  */
 
 gdk_return
-BATprintcolumns(stream *s, int argc, BAT *argv[])
+BATprintcolumns(allocator *ma, stream *s, int argc, BAT *argv[])
 {
+	(void) ma;
 	int i;
 	BUN n, cnt;
 	struct colinfo {
-		ssize_t (*s) (str *, size_t *, const void *, bool);
+		ssize_t (*s) (allocator *ma, str *, size_t *, const void *, bool);
 		BATiter i;
 	} *colinfo;
 	char *buf;
@@ -913,7 +914,7 @@ BATprintcolumns(stream *s, int argc, BAT *argv[])
 		}
 	}
 
-	if ((colinfo = GDKmalloc(argc * sizeof(*colinfo))) == NULL) {
+	if ((colinfo = ma_alloc(ma, argc * sizeof(*colinfo))) == NULL) {
 		GDKerror("Cannot allocate memory\n");
 		return GDK_FAIL;
 	}
@@ -938,7 +939,7 @@ BATprintcolumns(stream *s, int argc, BAT *argv[])
 	for (n = 0, cnt = BATcount(argv[0]); n < cnt; n++) {
 		mnstr_write(s, "[ ", 1, 2);
 		for (i = 0; i < argc; i++) {
-			len = colinfo[i].s(&buf, &buflen, BUNtail(colinfo[i].i, n), true);
+			len = colinfo[i].s(ma, &buf, &buflen, BUNtail(colinfo[i].i, n), true);
 			if (len < 0) {
 				rc = GDK_FAIL;
 				goto bailout;
@@ -954,14 +955,15 @@ BATprintcolumns(stream *s, int argc, BAT *argv[])
 	for (i = 0; i < argc; i++) {
 		bat_iterator_end(&colinfo[i].i);
 	}
-	GDKfree(buf);
-	GDKfree(colinfo);
+	// buf came from allocator
+	// GDKfree(buf);
+	//GDKfree(colinfo);
 
 	return rc;
 }
 
 gdk_return
-BATprint(stream *fdout, BAT *b)
+BATprint(allocator *ma, stream *fdout, BAT *b)
 {
 	if (complex_cand(b)) {
 		struct canditer ci;
@@ -987,7 +989,7 @@ BATprint(stream *fdout, BAT *b)
 	argv[0] = BATdense(b->hseqbase, b->hseqbase, BATcount(b));
 	if (argv[0]) {
 		argv[1] = b;
-		ret = BATprintcolumns(fdout, 2, argv);
+		ret = BATprintcolumns(ma, fdout, 2, argv);
 		BBPunfix(argv[0]->batCacheid);
 	}
 	return ret;

@@ -158,7 +158,7 @@ rel_remove_redundant_join_(visitor *v, sql_rel *rel)
 			}
 			if (exp_match_list(j->exps, rel->exps)) {
 				p->l = (left)?rel_dup(jr):rel_dup(jl);
-				rel_destroy(j);
+				rel_destroy(v->sql, j);
 				set_nodistinct(p);
 				v->changes++;
 				return rel;
@@ -1128,7 +1128,9 @@ static sql_rel *
 rel_optimize_select_and_joins_bottomup(visitor *v, global_props *gp, sql_rel *rel)
 {
 	v->data = &gp->opt_cycle;
+	allocator_state ta_state = ma_open(v->sql->ta);
 	rel = rel_visitor_bottomup(v, rel, &rel_optimize_select_and_joins_bottomup_);
+	ma_close(v->sql->ta, &ta_state);
 	v->data = gp;
 	return rel;
 }
@@ -1702,7 +1704,7 @@ rel_push_join_down_outer(visitor *v, sql_rel *rel)
 			rel->attr = NULL;
 			set_processed(nl);
 			rel_dup(r);
-			rel_destroy(rel);
+			rel_destroy(v->sql, rel);
 			rel = r;
 			v->changes++;
 		}
@@ -1749,7 +1751,7 @@ get_relations(visitor *v, sql_rel *rel, list *rels)
 		get_relations(v, r, rels);
 		rel->l = NULL;
 		rel->r = NULL;
-		rel_destroy(rel);
+		rel_destroy(v->sql, rel);
 	} else {
 		rel = rel_join_order_(v, rel);
 		append(rels, rel);
@@ -2144,7 +2146,7 @@ find_fk( mvc *sql, list *rels, list *exps)
 				swapped = 1;
 			}
 
-			if (idx && (iname = sa_strconcat( sql->sa, "%", idx->base.name)) != NULL &&
+			if (idx && (iname = ma_strconcat( sql->sa, "%", idx->base.name)) != NULL &&
 				   ((!swapped && name_find_column(olr, NULL, iname, -2, &bt) == NULL) ||
 			            ( swapped && name_find_column(orr, NULL, iname, -2, &bt) == NULL)))
 				idx = NULL;
@@ -2510,7 +2512,7 @@ order_joins(visitor *v, list *rels, list *exps)
 		if (list_empty(exps))
 			exps = sdje;
 		else
-			exps = list_merge(exps, sdje, (fdup)NULL);
+			exps = list_join(exps, sdje);
 	}
 	if (list_length(exps)) { /* more expressions (add selects) */
 		top = rel_select(v->sql->sa, top, NULL);
@@ -2534,7 +2536,7 @@ order_joins(visitor *v, list *rels, list *exps)
 		if (list_empty(top->exps)) { /* empty select */
 			sql_rel *l = top->l;
 			top->l = NULL;
-			rel_destroy(top);
+			rel_destroy(v->sql, top);
 			top = l;
 		}
 	}
@@ -2561,7 +2563,7 @@ rel_neg_in_size(sql_rel *r)
 static void _rel_destroy(void *dummy, sql_rel *rel)
 {
 	(void)dummy;
-	rel_destroy(rel);
+	rel_destroy(NULL, rel);
 }
 
 static list *
@@ -2651,7 +2653,7 @@ remove_blocking_selects( mvc *sql, sql_rel *p, sql_rel *rel)
 				if (list_empty(rel->exps)) {
 					sql_rel *l = rel->l;
 					rel->l = NULL;
-					rel_destroy(rel);
+					rel_destroy(sql, rel);
 					return remove_blocking_selects( sql, p, l);
 				}
 			}
@@ -2686,16 +2688,18 @@ push_up_join_exps( mvc *sql, sql_rel *rel)
 		l = push_up_join_exps(sql, rl);
 		r = push_up_join_exps(sql, rr);
 		if (l && r) {
-			l = list_merge(l, r, (fdup)NULL);
+			l = list_join(l, r);
 			r = NULL;
 		} else if (!l) {
 			l = r;
 			r = NULL;
 		}
 		if (rel->exps) {
-			if (l && !r)
-				r = l;
-			l = list_merge(rel->exps, r, (fdup)NULL);
+			assert(!r);
+			if (l)
+				l = list_join(rel->exps, l);
+			else
+				l = rel->exps;
 		}
 		rel->exps = NULL;
 		return l;
@@ -2816,7 +2820,7 @@ rel_join_order(visitor *v, global_props *gp, sql_rel *rel)
 {
 	(void) gp;
 	sql_rel *r = rel_join_order_(v, rel);
-	sa_reset(v->sql->ta);
+	ma_reset(v->sql->ta);
 	return r;
 }
 
@@ -2884,7 +2888,7 @@ rel_rewrite_semijoin(visitor *v, sql_rel *rel)
 			r->exps = NULL;
 			rel->attr = r->attr;
 			r->attr = NULL;
-			rel_destroy(or);
+			rel_destroy(v->sql, or);
 			v->changes++;
 		}
 	}
@@ -2966,7 +2970,7 @@ rel_rewrite_semijoin(visitor *v, sql_rel *rel)
 
 			rel->r = rel_dup(r->r);
 			rel->exps = exps;
-			rel_destroy(or);
+			rel_destroy(v->sql, or);
 			v->changes++;
 		}
 	}
@@ -3110,7 +3114,7 @@ rel_push_semijoin_down_or_up(visitor *v, sql_rel *rel)
 		l->exps = njexps;
 		l->attr = njattr;
 		set_processed(l);
-		rel_destroy(rel);
+		rel_destroy(v->sql, rel);
 		rel = l;
 		if (cycle <= 0)
 			v->changes++;
@@ -3148,7 +3152,7 @@ rel_rewrite_antijoin(visitor *v, sql_rel *rel)
 		set_processed(nl);
 		rel->l = nl;
 		rel->r = rr;
-		rel_destroy(r);
+		rel_destroy(v->sql, r);
 		v->changes++;
 		return rel;
 	}
@@ -3184,8 +3188,7 @@ bind_optimize_semi_and_anti(visitor *v, global_props *gp)
 {
 	/* Important -> Re-write semijoins after rel_join_order */
 	int flag = v->sql->sql_optimizer;
-	return gp->opt_level == 1 && (gp->cnt[op_join] || gp->cnt[op_left] || gp->cnt[op_right]
-		   || gp->cnt[op_full] || gp->cnt[op_semi] || gp->cnt[op_anti]) && (flag & optimize_semi_and_anti) ? rel_optimize_semi_and_anti : NULL;
+	return gp->opt_level == 1 && (gp->cnt[op_semi] || gp->cnt[op_anti]) && (flag & optimize_semi_and_anti) ? rel_optimize_semi_and_anti : NULL;
 }
 
 
@@ -3209,7 +3212,7 @@ rel_semijoin_use_fk(visitor *v, sql_rel *rel)
 /*
  * Push {semi}joins down, pushes the joins through group by expressions.
  * When the join is on the group by columns, we can push the joins left
- * under the group by. This should only be done, iff the new semijoin would
+ * under the group by. This should only be done, if the new semijoin would
  * reduce the input table to the groupby. So there should be a reduction
  * (selection) on the table A and this should be propagated to the groupby via
  * for example a primary key.
@@ -3425,12 +3428,12 @@ rel_simplify_count_fk_join(mvc *sql, sql_rel *r, list *gexps, list *gcols, int *
 	if (fk_left && is_join(rl->op) && !rel_is_ref(rl)) {
 		r->l = rel_simplify_count_fk_join(sql, rl, gexps, gcols, changes);
 		if (rl != r->l)
-			rel_destroy(rl);
+			rel_destroy(sql, rl);
 	}
 	if (!fk_left && is_join(rr->op) && !rel_is_ref(rr)) {
 		r->r = rel_simplify_count_fk_join(sql, rr, gexps, gcols, changes);
 		if (rr != r->r)
-			rel_destroy(rr);
+			rel_destroy(sql, rr);
 	}
 
 	if (!check_projection_on_foreignside(r, gcols, fk_left))
@@ -3489,7 +3492,7 @@ rel_simplify_fk_joins(visitor *v, sql_rel *rel)
 		r = rel_simplify_project_fk_join(v->sql, r, rel->exps, rel->r, &v->changes);
 		if (r == or)
 			return rel;
-		rel_destroy(rel->l);
+		rel_destroy(v->sql, rel->l);
 		rel->l = r;
 	}
 
@@ -3508,7 +3511,7 @@ rel_simplify_fk_joins(visitor *v, sql_rel *rel)
 		r = rel_simplify_count_fk_join(v->sql, r, rel->exps, rel->r, &v->changes);
 		if (r == or)
 			return rel;
-		rel_destroy(rel->l);
+		rel_destroy(v->sql, rel->l);
 		rel->l = r;
 	}
 	return rel;
@@ -3656,9 +3659,9 @@ rel_push_select_down(visitor *v, sql_rel *rel)
 	/* merge 2 selects */
 	r = rel->l;
 	if (is_select(rel->op) && r && r->exps && is_select(r->op) && !(rel_is_ref(r)) && !exps_have_func(rel->exps)) {
-		(void)list_merge(r->exps, rel->exps, (fdup)NULL);
+		r->exps = list_join(r->exps, exps_copy(v->sql, rel->exps));
 		rel->l = NULL;
-		rel_destroy(rel);
+		rel_destroy(v->sql, rel);
 		v->changes++;
 		return try_remove_empty_select(v, r);
 	}
@@ -3684,7 +3687,7 @@ rel_push_select_down(visitor *v, sql_rel *rel)
 					is_join(rx->op)))
 						rx = rx->l;
 				/* probably we need to introduce a project */
-				rel_destroy(rel->l);
+				rel_destroy(v->sql, rel->l);
 				lx = rel_project(v->sql->sa, rel, rel_projections(v->sql, rel, NULL, 1, 1));
 				r->l = lx;
 				rx->l = rel_dup(lx);

@@ -150,6 +150,7 @@ exp_create(allocator *sa, int type)
 		return NULL;
 	*e = (sql_exp) {
 		.type = (expression_type) type,
+		.p = NULL
 	};
 	return e;
 }
@@ -580,7 +581,7 @@ exp_atom_dbl(allocator *sa, dbl f)
 sql_exp *
 exp_atom_str(allocator *sa, const char *s, sql_subtype *st)
 {
-	return exp_atom(sa, atom_string(sa, st, s?sa_strdup(sa, s):NULL));
+	return exp_atom(sa, atom_string(sa, st, s?ma_strdup(sa, s):NULL));
 }
 
 sql_exp *
@@ -589,7 +590,7 @@ exp_atom_clob(allocator *sa, const char *s)
 	sql_subtype clob;
 
 	sql_find_subtype(&clob, "varchar", 0, 0);
-	return exp_atom(sa, atom_string(sa, &clob, s?sa_strdup(sa, s):NULL));
+	return exp_atom(sa, atom_string(sa, &clob, s?ma_strdup(sa, s):NULL));
 }
 
 sql_exp *
@@ -653,7 +654,7 @@ exp_param_or_declared(allocator *sa, const char *sname, const char *name, sql_su
 	if (e == NULL)
 		return NULL;
 
-	e->r = sa_alloc(sa, sizeof(sql_var_name));
+	e->r = ma_alloc(sa, sizeof(sql_var_name));
 	vname = (sql_var_name*) e->r;
 	vname->sname = sname;
 	vname->name = name;
@@ -986,7 +987,7 @@ exp_exception(allocator *sa, sql_exp *cond, const char *error_message)
 	if (e == NULL)
 		return NULL;
 	e->l = cond;
-	e->r = sa_strdup(sa, error_message);
+	e->r = ma_strdup(sa, error_message);
 	e->flag = PSM_EXCEPTION;
 	return e;
 }
@@ -1053,7 +1054,7 @@ exp_setrelname(allocator *sa, sql_exp *e, int nr)
 
 	nme = number2name(name, sizeof(name), nr);
 	e->alias.label = 0;
-	e->alias.rname = sa_strdup(sa, nme);
+	e->alias.rname = ma_strdup(sa, nme);
 }
 
 char *
@@ -1062,7 +1063,7 @@ make_label(allocator *sa, int nr)
 	char name[16], *nme;
 
 	nme = number2name(name, sizeof(name), nr);
-	return sa_strdup(sa, nme);
+	return ma_strdup(sa, nme);
 }
 
 sql_exp*
@@ -3263,9 +3264,10 @@ exp_copy(mvc *sql, sql_exp * e)
 			list *l = exps_copy(sql, e->l);
 
 			if (e->flag == cmp_con)
-				return exp_conjunctive(sql->sa, l);
+				ne = exp_conjunctive(sql->sa, l);
 			else
-				return exp_disjunctive(sql->sa, l);
+				ne = exp_disjunctive(sql->sa, l);
+
 		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
 			sql_exp *l = exp_copy(sql, e->l);
 			list *r = exps_copy(sql, e->r);
@@ -3302,6 +3304,7 @@ exp_copy(mvc *sql, sql_exp * e)
 			else
 				ne->r = list_append(sa_list(sql->sa), exps_copy(sql, er->h->data));
 		}
+		ne->flag = e->flag;
 		break;
 	}
 	case e_atom:
@@ -3332,7 +3335,10 @@ exp_copy(mvc *sql, sql_exp * e)
 		} else if (e->flag & PSM_REL) {
 			if (!e->alias.label)
 				exp_label(sql->sa, e, ++sql->label);
-			return exp_ref(sql, e);
+			ne = exp_rel(sql, rel_dup(e->l));
+			//if (!e->alias.label)
+			//	exp_label(sql->sa, e, ++sql->label);
+			//return exp_ref(sql, e);
 		} else if (e->flag & PSM_EXCEPTION) {
 			ne = exp_exception(sql->sa, exp_copy(sql, e->l), (const char *) e->r);
 		}
@@ -3740,7 +3746,7 @@ rel_set_type_param(mvc *sql, sql_subtype *type, sql_rel *rel, sql_exp *exp, int 
  * interface.
  */
 static sql_exp *
-exp_convert_inplace(sql_subtype *t, sql_exp *exp)
+exp_convert_inplace(allocator *sa, sql_subtype *t, sql_exp *exp)
 {
 	atom *a, *na;
 
@@ -3752,7 +3758,7 @@ exp_convert_inplace(sql_subtype *t, sql_exp *exp)
 	if (!a->isnull && t->scale && t->type->eclass != EC_FLT)
 		return NULL;
 
-	if ((na = atom_cast_inplace(a, t))) {
+	if ((na = atom_cast_inplace(sa, a, t))) {
 		exp->l = na;
 		return exp;
 	}
@@ -3792,7 +3798,7 @@ exp_check_type(mvc *sql, sql_subtype *t, sql_rel *rel, sql_exp *exp, check_type 
 		return exp;
 
 	/* first try cheap internal (in-place) conversions ! */
-	if ((nexp = exp_convert_inplace(t, exp)) != NULL)
+	if ((nexp = exp_convert_inplace(sql->sa, t, exp)) != NULL)
 		return nexp;
 
 	if (fromtype && subtype_cmp(t, fromtype) != 0) {
@@ -4004,4 +4010,96 @@ list_find_exp( list *exps, sql_exp *e)
 	if (e->type != e_column)
 		return NULL;
 	return exps_bind_nid(exps, e->nid);
+}
+
+void
+free_exps(allocator *sa, list *exps)
+{
+	if (!list_empty(exps)) {
+		for (node *n=exps->h; n ; n=n->next) {
+			if (n->data)
+				free_exp(sa, n->data);
+			n->data = NULL;
+		}
+	}
+}
+
+
+static void
+_free_exp_internal(allocator *sa, sql_exp *e)
+{
+	if (!e)
+		return;
+	if (e->p) {
+		// free_props(sa, e->p);
+		e->p = NULL;
+	}
+	e->type = -1;
+	ma_free(sa, e);
+}
+
+
+void
+free_exp(allocator *sa, sql_exp *e)
+{
+	if (!e)
+		return;
+	switch(e->type) {
+		case e_atom:
+			if (e->f) {
+				free_exps(sa, e->f);
+				e->f = NULL;
+			}
+			break;
+		case e_cmp:
+			if (e->flag < cmp_filter) {
+				// l and r are exp
+				if (e->l)
+					free_exp(sa, e->l);
+				if (e->r)
+					free_exp(sa, e->r);
+				if (e->f)
+					free_exp(sa, e->f);
+			}
+			if (e->flag == cmp_filter) {
+				// l and r are list
+				if (e->l)
+					free_exps(sa, e->l);
+				if (e->r)
+					free_exps(sa, e->r);
+			}
+			break;
+		case e_func:
+		case e_aggr:
+			if (e->l)
+				free_exps(sa, e->l);
+			break;
+		case e_convert:
+			if (e->l)
+				free_exp(sa, e->l);
+			break;
+		case e_psm:
+			if ((e->flag & PSM_SET) && e->l)
+				free_exp(sa, e->l);
+			if ((e->flag & PSM_RETURN) && e->l)
+				free_exp(sa, e->l);
+			if (e->flag & PSM_WHILE) {
+				if (e->l)
+					free_exp(sa, e->l);
+				if (e->r)
+					free_exps(sa, e->r);
+			}
+			if (e->flag & PSM_IF) {
+				if (e->l)
+					free_exp(sa, e->l);
+				if (e->r)
+					free_exps(sa, e->r);
+				if (e->f)
+					free_exps(sa, e->f);
+			}
+			break;
+		case e_column:
+			break;
+	}
+	_free_exp_internal(sa, e);
 }

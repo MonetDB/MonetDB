@@ -22,7 +22,7 @@
 #include "monetdb_config.h"
 #include "mal.h"
 #include "mal_exception.h"
-#include "mal.h"
+#include "mal_client.h"
 
 static gdk_return
 BATrandom(BAT **bn, const oid *base, const lng *size, const int *domain, int seed)
@@ -340,8 +340,9 @@ MBMrandom(bat *ret, const oid *base, const lng *size, const int *domain)
 }
 
 static str
-MBMuniform(bat *ret, const oid *base, const lng *size, const int *domain)
+MBMuniform(Client ctx, bat *ret, const oid *base, const lng *size, const int *domain)
 {
+	(void) ctx;
 	BAT *bn = NULL;
 
 	BATuniform(&bn, base, size, domain);
@@ -354,8 +355,9 @@ MBMuniform(bat *ret, const oid *base, const lng *size, const int *domain)
 }
 
 static str
-MBMnormal(bat *ret, const oid *base, const lng *size, const int *domain, const int *stddev, const int *mean)
+MBMnormal(Client ctx, bat *ret, const oid *base, const lng *size, const int *domain, const int *stddev, const int *mean)
 {
+	(void) ctx;
 	BAT *bn = NULL;
 	BATnormal(&bn, base, size, domain, stddev, mean);
 	if (bn) {
@@ -368,8 +370,9 @@ MBMnormal(bat *ret, const oid *base, const lng *size, const int *domain, const i
 
 
 static str
-MBMmix(bat *bn, const bat *batid)
+MBMmix(Client ctx, bat *bn, const bat *batid)
 {
+	(void) ctx;
 	BUN n, r, i;
 	BAT *b;
 
@@ -395,8 +398,9 @@ MBMmix(bat *bn, const bat *batid)
 }
 
 static str
-MBMskewed(bat *ret, const oid *base, const lng *size, const int *domain, const int *skew)
+MBMskewed(Client ctx, bat *ret, const oid *base, const lng *size, const int *domain, const int *skew)
 {
+	(void) ctx;
 	BAT *bn = NULL;
 
 	BATskewed(&bn, base, size, domain, skew);

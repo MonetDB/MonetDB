@@ -676,7 +676,7 @@ file_loader_add_table_column_types(mvc *sql, sql_subfunc *f, list *exps, list *r
 
 	if (ext) {
 		ext = ext + 1;
-		ext = mkLower(sa_strdup(sql->sa, ext));
+		ext = mkLower(ma_strdup(sql->sa, ext));
 	}
 	if (!ext)
 		return "Filename extension missing";
@@ -689,7 +689,7 @@ file_loader_add_table_column_types(mvc *sql, sql_subfunc *f, list *exps, list *r
 			p--;
 		if (p != filename) {
 			ext = p + 1;
-			ext = sa_strdup(sql->sa, ext);
+			ext = ma_strdup(sql->sa, ext);
 			char *d = strchr(ext, '.');
 			assert(d);
 			*d = 0;
@@ -755,7 +755,7 @@ proto_loader_add_table_column_types(mvc *sql, sql_subfunc *f, list *exps, list *
 	char *ep = strchr(uristr, ':');
 	if (ep) {
 		*ep = 0;
-		proto = mkLower(sa_strdup(sql->sa, proto));
+		proto = mkLower(ma_strdup(sql->sa, proto));
 		*ep = ':';
 	} else {
 		return "Missing ':' separator to determine the URI scheme";
@@ -1384,9 +1384,9 @@ rel_exp_variable_on_scope(mvc *sql, const char *sname, const char *vname)
 
 	if (find_variable_on_scope(sql, sname, vname, &var, &a, &tpe, &level, "SELECT")) {
 		if (var) /* if variable is known from the stack or a global var */
-			return exp_param_or_declared(sql->sa, var->sname ? sa_strdup(sql->sa, var->sname) : NULL, sa_strdup(sql->sa, var->name), &(var->var.tpe), level);
+			return exp_param_or_declared(sql->sa, var->sname ? ma_strdup(sql->sa, var->sname) : NULL, ma_strdup(sql->sa, var->name), &(var->var.tpe), level);
 		if (a) /* if variable is a parameter */
-			return exp_param_or_declared(sql->sa, NULL, sa_strdup(sql->sa, vname), &(a->type), level);
+			return exp_param_or_declared(sql->sa, NULL, ma_strdup(sql->sa, vname), &(a->type), level);
 	}
 	return NULL;
 }
@@ -1712,7 +1712,7 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 
 			if (find_variable_on_scope(sql, tname, cname, &var, &a, &tpe, &level, "SELECT")) { /* search schema with table name, ugh */
 				assert(level == 0);
-				exp = exp_param_or_declared(sql->sa, sa_strdup(sql->sa, var->sname), sa_strdup(sql->sa, var->name), &(var->var.tpe), 0);
+				exp = exp_param_or_declared(sql->sa, ma_strdup(sql->sa, var->sname), ma_strdup(sql->sa, var->name), &(var->var.tpe), 0);
 			}
 		}
 		if (!exp) {
@@ -1888,7 +1888,7 @@ rel_filter(mvc *sql, sql_rel *rel, list *l, list *r, char *sname, char *filter_o
 			e = exp_check_type(sql, &a->type, rel, e, type_equal);
 			if (!e)
 				return NULL;
-			list_append(nexps, e);
+			list_append(nexps, exp_copy(sql, e));
 		}
 		l = nexps;
 		nexps = sa_list(sql->sa);
@@ -1899,7 +1899,7 @@ rel_filter(mvc *sql, sql_rel *rel, list *l, list *r, char *sname, char *filter_o
 			e = exp_check_type(sql, &a->type, rel, e, type_equal);
 			if (!e)
 				return NULL;
-			list_append(nexps, e);
+			list_append(nexps, exp_copy(sql, e));
 		}
 		r = nexps;
 	}
@@ -2678,9 +2678,9 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f, exp_ki
 		/* Do we need to escape ? */
 		if (dlist_length(ro->data.lval) == 2) {
 			char *escape = ro->data.lval->h->next->data.sval;
-			ee = exp_atom(sql->sa, atom_string(sql->sa, st, sa_strdup(sql->sa, escape)));
+			ee = exp_atom(sql->sa, atom_string(sql->sa, st, ma_strdup(sql->sa, escape)));
 		} else {
-			ee = exp_atom(sql->sa, atom_string(sql->sa, st, sa_strdup(sql->sa, "")));
+			ee = exp_atom(sql->sa, atom_string(sql->sa, st, ma_strdup(sql->sa, "")));
 		}
 		return rel_nop_(sql, rel ? *rel : NULL, le, re, ee, ie, "sys", anti ? "not_like" : "like", card_value);
 	}
@@ -2939,9 +2939,9 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 		/* Do we need to escape ? */
 		if (dlist_length(ro->data.lval) == 2) {
 			char *escape = ro->data.lval->h->next->data.sval;
-			ee = exp_atom(sql->sa, atom_string(sql->sa, st, sa_strdup(sql->sa, escape)));
+			ee = exp_atom(sql->sa, atom_string(sql->sa, st, ma_strdup(sql->sa, escape)));
 		} else {
-			ee = exp_atom(sql->sa, atom_string(sql->sa, st, sa_strdup(sql->sa, "")));
+			ee = exp_atom(sql->sa, atom_string(sql->sa, st, ma_strdup(sql->sa, "")));
 		}
 		ro = ro->data.lval->h->data.sym;
 		re = rel_value_exp(query, &rel, ro, f|sql_farg, ek);
@@ -3809,16 +3809,16 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, char *sname, char *anam
 	} else {
 		a = sql_bind_func_(sql, sname, aname, exp_types(sql->sa, exps), F_AGGR, false, false);
 		if (!a && obe && list_length(obe) == 1) { /* try to find aggregation function with requires order by column */
-			list *nexps = append(sa_list(sql->sa), obe->h->data);
-			nexps = list_merge(nexps, exps, (fdup) NULL);
-			a = sql_bind_func_(sql, sname, aname, exp_types(sql->sa, nexps), F_AGGR, false, false);
+			list_prepend(exps, obe->h->data);
+			a = sql_bind_func_(sql, sname, aname, exp_types(sql->sa, exps), F_AGGR, false, false);
 			if (a && a->func->order_required) {
 				/* reset error */
 				handled_order = true;
 				sql->session->status = 0;
 				sql->errstr[0] = '\0';
-				exps = nexps;
 				obe = NULL;
+			} else {
+				a = NULL;
 			}
 		}
 	}
@@ -4174,7 +4174,7 @@ rel_selection_ref(sql_query *query, sql_rel **rel, char *name, dlist *selection)
 					nl = dlist_create(sa);
 					exp_setname(query->sql, ve, NULL, name);
 					/* now we should rewrite the selection such that it uses the new group by column */
-					dlist_append_string(sa, nl, sa_strdup(sa, name));
+					dlist_append_string(sa, nl, ma_strdup(sa, name));
 					nsym = symbol_create_list(sa, to, nl);
 					nl = dlist_create(sa);
 					dlist_append_symbol(sa, nl, nsym);
@@ -4755,12 +4755,12 @@ calculate_window_bound(sql_query *query, sql_rel *p, tokens token, symbol *bound
 				return NULL;
 			if ((iet_class == EC_TIME || iet_class == EC_TIME_TZ) && bt->type->eclass != EC_SEC) {
 				(void) sql_error(sql, 02, SQLSTATE(42000) "For %s input the %s boundary must be an interval type up to the day", subtype2string2(sql->ta, iet), bound_desc);
-				sa_reset(sql->ta);
+				ma_reset(sql->ta);
 				return NULL;
 			}
 			if (EC_TEMP(iet->type->eclass) && !EC_INTERVAL(bt->type->eclass)) {
 				(void) sql_error(sql, 02, SQLSTATE(42000) "For %s input the %s boundary must be an interval type", subtype2string2(sql->ta, iet), bound_desc);
-				sa_reset(sql->ta);
+				ma_reset(sql->ta);
 				return NULL;
 			}
 		}
@@ -5442,8 +5442,9 @@ group_merge_exps(mvc *sql, list *gexps, list *exps)
 		}
 		hash_add(ht, key, e);
 		if (!duplicates) {
-			list_append(gexps, e);
-			n->data = exp_ref(sql, e);
+			sql_exp *e_copy = exp_copy(sql, e);
+			list_append(gexps, e_copy);
+			n->data = exp_ref(sql, e_copy);
 		}
 	}
 	return gexps;
@@ -5736,12 +5737,12 @@ join_on_column_name(sql_query *query, sql_rel *rel, sql_rel *t1, sql_rel *t2, in
 			}
 			exp_setname(sql, le, rname, name);
 			set_not_unique(le);
-			append(outexps, le);
+			append(outexps, exp_copy(sql, le));
 		} else {
 			if (l_nil)
 				set_has_nil(le);
 			set_not_unique(le);
-			append(outexps, le);
+			append(outexps, exp_copy(sql, le));
 		}
 	}
 	if (!found)
@@ -5751,7 +5752,7 @@ join_on_column_name(sql_query *query, sql_rel *rel, sql_rel *t1, sql_rel *t2, in
 		if (r_nil)
 			set_has_nil(re);
 		set_not_unique(re);
-		append(outexps, re);
+		append(outexps, exp_copy(sql, re));
 	}
 	rel = rel_project(sql->sa, rel, outexps);
 	return rel;
@@ -5836,7 +5837,8 @@ rel_select_exp(sql_query *query, sql_rel *rel, SelectNode *sn, exp_kind ek)
 		 * obtained so far with the table expression, ie
 		 * t1.* or a subquery.
 		 */
-		pexps = list_merge(pexps, te, (fdup)NULL);
+		// ss:FIX implement fdup with sa
+		pexps = list_merge(pexps, exps_copy(sql, te), (fdup)NULL);
 	}
 	if (rel && is_groupby(rel->op) && rel->flag) {
 		list *gbe = rel->r;
@@ -5946,7 +5948,7 @@ rel_query(sql_query *query, symbol *sq, exp_kind ek)
 		}
 		if (!fnd) {
 			if (res)
-				rel_destroy(res);
+				rel_destroy(sql, res);
 			return NULL;
 		}
 	} else if (!query_has_outer(query) || !res) {/* only on top level query */
@@ -5957,7 +5959,7 @@ rel_query(sql_query *query, symbol *sq, exp_kind ek)
 	if (res)
 		rel = rel_select_exp(query, res, sn, ek);
 	if (!rel && res)
-		rel_destroy(res);
+		rel_destroy(sql, res);
 	return rel;
 }
 
@@ -6129,8 +6131,8 @@ rel_setquery(sql_query *query, symbol *q)
 			op = "EXCEPT";
 		else if (q->token == SQL_INTERSECT)
 			op = "INTERSECT";
-		rel_destroy(t1);
-		rel_destroy(t2);
+		rel_destroy(sql, t1);
+		rel_destroy(sql, t2);
 		return sql_error(sql, 02, SQLSTATE(42000) "%s: column counts (%d and %d) do not match", op, t1nrcols, t2nrcols);
 	}
 	if ( q->token == SQL_UNION) {
@@ -6220,7 +6222,7 @@ rel_joinquery_(sql_query *query, symbol *tab1, int natural, jt jointype, symbol 
 		list *outexps = new_exp_list(sql->sa), *exps;
 		node *m;
 
-		rnme = sa_strdup(sql->sa, number2name(rname, sizeof(rname), ++sql->label));
+		rnme = ma_strdup(sql->sa, number2name(rname, sizeof(rname), ++sql->label));
 		for (; n; n = n->next) {
 			char *nm = n->data.sval;
 			sql_exp *cond, *ls, *rs;
@@ -6243,7 +6245,7 @@ rel_joinquery_(sql_query *query, symbol *tab1, int natural, jt jointype, symbol 
 					return NULL;
 			}
 			exp_setname(sql, ls, rnme, nm);
-			append(outexps, ls);
+			append(outexps, exp_copy(sql, ls));
 			if (!rel)
 				return NULL;
 		}
@@ -6263,7 +6265,7 @@ rel_joinquery_(sql_query *query, symbol *tab1, int natural, jt jointype, symbol 
 				if (l_nil)
 					set_has_nil(ls);
 				set_not_unique(ls);
-				append(outexps, ls);
+				append(outexps, exp_copy(sql, ls));
 			}
 		}
 		exps = rel_projections(sql, t2, NULL, 1, 1);
@@ -6282,7 +6284,7 @@ rel_joinquery_(sql_query *query, symbol *tab1, int natural, jt jointype, symbol 
 				if (r_nil)
 					set_has_nil(rs);
 				set_not_unique(rs);
-				append(outexps, rs);
+				append(outexps, exp_copy(sql, rs));
 			}
 		}
 		rel = rel_project(sql->sa, rel, outexps);

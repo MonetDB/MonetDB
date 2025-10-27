@@ -737,7 +737,7 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 			if (sql_mtype == NULL)
 				continue;	/* skip this column */
 
-			colname = sa_strdup(sql->sa, cname);
+			colname = ma_strdup(sql->sa, cname);
 			list_append(nameslist, colname);
 			list_append(typelist, sql_mtype);
 
@@ -750,7 +750,7 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 					strcpy(tname, "");
 					ret = SQL_SUCCESS;	// needed to continue processing without reporting this error
 				}
-				tblname = sa_strdup(sql->sa, tname);
+				tblname = ma_strdup(sql->sa, tname);
 				sql_exp *ne = exp_column(sql->sa, tblname, colname, sql_mtype, CARD_MULTI, 1, 0, 0);
 				set_basecol(ne);
 				ne->alias.label = -(sql->nid++);
@@ -758,7 +758,7 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 			}
 		}
 
-		f->tname = sa_strdup(sql->sa, tname);
+		f->tname = ma_strdup(sql->sa, tname);
 		f->colnames = nameslist;
 		f->coltypes = typelist;
 		f->res = typelist;
@@ -1585,8 +1585,9 @@ ODBCprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 static str
-ODBCepilogue(void *ret)
+ODBCepilogue(Client cntxt, void *ret)
 {
+	(void) cntxt;
 	(void)ret;
 	pl_unregister("odbc");
 	return MAL_SUCCEED;

@@ -117,7 +117,7 @@ IOprintBoth(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int indx,
 			if (tl)
 				mnstr_printf(fp, "%s", tl);
 		} else {
-			BATprint(cntxt->fdout, b);
+			BATprint(mb->ma, cntxt->fdout, b);
 		}
 		BBPunfix(b->batCacheid);
 		return MAL_SUCCEED;
@@ -126,9 +126,9 @@ IOprintBoth(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int indx,
 		mnstr_printf(fp, "%s", hd);
 
 	if (ATOMextern(tpe))
-		ATOMprint(tpe, *(ptr *) val, fp);
+		ATOMprint(mb->ma, tpe, *(ptr *) val, fp);
 	else
-		ATOMprint(tpe, val, fp);
+		ATOMprint(mb->ma, tpe, val, fp);
 
 	if (tl)
 		mnstr_printf(fp, "%s", tl);
@@ -609,7 +609,7 @@ IOtable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			BBPunfix(piv[i]->batCacheid);
 		throw(MAL, "io.table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
-	BATprintcolumns(cntxt->fdout, pci->argc, piv);
+	BATprintcolumns(mb->ma, cntxt->fdout, pci->argc, piv);
 	for (i = 0; i < pci->argc; i++)
 		BBPunfix(piv[i]->batCacheid);
 	return MAL_SUCCEED;

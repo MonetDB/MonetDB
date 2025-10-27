@@ -273,7 +273,7 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 
 		qtpe = getVarType(mb, getArg(p, 0));
 
-		matq = newInstructionArgs(NULL, matRef, newRef, pieces + 1);
+		matq = newInstructionArgs(mb, matRef, newRef, pieces + 1);
 		if (matq == NULL) {
 			msg = createException(MAL, "optimizer.mitosis",
 								  SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -282,9 +282,9 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 		getArg(matq, 0) = getArg(p, 0);
 
 		if (upd) {
-			matr = newInstructionArgs(NULL, matRef, newRef, pieces + 1);
+			matr = newInstructionArgs(mb, matRef, newRef, pieces + 1);
 			if (matr == NULL) {
-				freeInstruction(matq);
+				freeInstruction(mb, matq);
 				msg = createException(MAL, "optimizer.mitosis",
 									  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				break;
@@ -294,14 +294,14 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 		}
 
 		for (j = 0; j < pieces; j++) {
-			q = copyInstruction(p);
+			q = copyInstruction(mb, p);
 			if (q == NULL) {
-				freeInstruction(matr);
-				freeInstruction(matq);
+				freeInstruction(mb, matr);
+				freeInstruction(mb, matq);
 				for (; i < limit; i++)
 					if (old[i])
 						pushInstruction(mb, old[i]);
-				GDKfree(old);
+				//GDKfree(old);
 				throw(MAL, "optimizer.mitosis",
 					  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
@@ -320,12 +320,12 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 		pushInstruction(mb, matq);
 		if (upd)
 			pushInstruction(mb, matr);
-		freeInstruction(p);
+		freeInstruction(mb, p);
 	}
 	for (; i < slimit; i++)
 		if (old[i])
 			pushInstruction(mb, old[i]);
-	GDKfree(old);
+	//GDKfree(old);
 
 	/* Defense line against incorrect plans */
 	if (msg == MAL_SUCCEED) {
