@@ -935,54 +935,14 @@ ALGstdevp
 Gives the standard deviation of all tail values
 aggr
 str_group_concat
-command aggr.str_group_concat(X_0:bat[:str], X_1:bat[:oid], X_2:bat[:any_1]):bat[:str]
+command aggr.str_group_concat(X_0:bat[:str]):str
 AGGRstr_group_concat
-Grouped string tail concat
+Ungrouped string tail concat
 aggr
 str_group_concat
-command aggr.str_group_concat(X_0:bat[:str], X_1:bat[:str], X_2:bat[:oid], X_3:bat[:any_1]):bat[:str]
+command aggr.str_group_concat(X_0:bat[:str], X_1:bat[:str]):str
 AGGRstr_group_concat_sep
-Grouped string tail concat with custom separator
-aggr
-str_group_concat
-pattern aggr.str_group_concat(X_0:bat[:str]):str
-CMDBATstr_group_concat
-Calculate aggregate string concatenate of B.
-aggr
-str_group_concat
-pattern aggr.str_group_concat(X_0:bat[:str], X_1:bat[:oid]):str
-CMDBATstr_group_concat
-Calculate aggregate string concatenate of B with candidate list.
-aggr
-str_group_concat
-pattern aggr.str_group_concat(X_0:bat[:str], X_1:bat[:oid], X_2:bit):str
-CMDBATstr_group_concat
-Calculate aggregate string concatenate of B with candidate list.
-aggr
-str_group_concat
-pattern aggr.str_group_concat(X_0:bat[:str], X_1:bat[:str]):str
-CMDBATstr_group_concat
-Calculate aggregate string concatenate of B with separator SEP.
-aggr
-str_group_concat
-pattern aggr.str_group_concat(X_0:bat[:str], X_1:bat[:str], X_2:bat[:oid]):str
-CMDBATstr_group_concat
-Calculate aggregate string concatenate of B with candidate list and separator SEP.
-aggr
-str_group_concat
-pattern aggr.str_group_concat(X_0:bat[:str], X_1:bat[:str], X_2:bat[:oid], X_3:bit):str
-CMDBATstr_group_concat
-Calculate aggregate string concatenate of B with candidate list and separator SEP.
-aggr
-str_group_concat
-pattern aggr.str_group_concat(X_0:bat[:str], X_1:bat[:str], X_2:bit):str
-CMDBATstr_group_concat
-Calculate aggregate string concatenate of B with separator SEP.
-aggr
-str_group_concat
-pattern aggr.str_group_concat(X_0:bat[:str], X_1:bit):str
-CMDBATstr_group_concat
-Calculate aggregate string concatenate of B.
+Ungrouped string tail concat with custom separator
 aggr
 subCollect
 command aggr.subCollect(X_0:bat[:wkb], X_1:bat[:oid], X_2:bat[:oid], X_3:bit):bat[:wkb]
@@ -1903,16 +1863,6 @@ substr_group_concat
 command aggr.substr_group_concat(X_0:bat[:str], X_1:bat[:str], X_2:bat[:oid], X_3:bat[:any_1], X_4:bit):bat[:str]
 AGGRsubstr_group_concat_sep
 Grouped string concat with custom separator
-aggr
-substr_group_concat
-command aggr.substr_group_concat(X_0:bat[:str], X_1:bat[:oid], X_2:bat[:any_1], X_3:bat[:oid], X_4:bit):bat[:str]
-AGGRsubstr_group_concatcand
-Grouped string concat with candidates list
-aggr
-substr_group_concat
-command aggr.substr_group_concat(X_0:bat[:str], X_1:bat[:str], X_2:bat[:oid], X_3:bat[:any_1], X_4:bat[:oid], X_5:bit):bat[:str]
-AGGRsubstr_group_concatcand_sep
-Grouped string concat with candidates list with custom separator
 aggr
 subsum
 command aggr.subsum(X_0:bat[:bte], X_1:bat[:oid], X_2:bat[:any_1], X_3:bit):bat[:bte]
