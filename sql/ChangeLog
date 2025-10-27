@@ -1,6 +1,14 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Mon Oct 27 2025 Sjoerd Mullender <sjoerd@acm.org>
+- Implemented aggregates sha1, sha224, sha256, sha384, sha512, and
+  ripemd160 which calculate a checksum (digest) over a column of strings.
+  It only makes sense to use these with an ordering, as `SELECT sha256(name
+  ORDER BY id) FROM table`, since the ordering in which the values are
+  fed into the digest algorithm is important and cannot otherwise be
+  guaranteed.
+
 * Fri Oct  3 2025 Lucas Pereira <lucas.pereira@monetdbsolutions.com>
   - EXPLAIN now supports a BEFORE/AFTER REL_UNNEST/REL_REWRITE/PHYSICAL
   clause to indicate which phase of query compilation to show.  A plain

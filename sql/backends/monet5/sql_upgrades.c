@@ -5174,6 +5174,37 @@ sql_update_default(Client c, mvc *sql, sql_schema *s)
 		sql->errstr[0] = '\0';
 	}
 
+	sql_subtype tp;
+	sql_find_subtype(&tp, "varchar", 0, 0);
+	if (!sql_bind_func(sql, "sys", "sha256", &tp, NULL, F_AGGR, true, true)) {
+		sql->session->status = 0;
+		sql->errstr[0] = '\0';
+		static const char query[] = "create aggregate sha1(val string)\n"
+			"returns string with order external name aggr.sha1;\n"
+			"grant execute on aggregate sha1 to public;\n"
+			"create aggregate sha224(val string)\n"
+			"returns string with order external name aggr.sha224;\n"
+			"grant execute on aggregate sha224 to public;\n"
+			"create aggregate sha256(val string)\n"
+			"returns string with order external name aggr.sha256;\n"
+			"grant execute on aggregate sha256 to public;\n"
+			"create aggregate sha384(val string)\n"
+			"returns string with order external name aggr.sha384;\n"
+			"grant execute on aggregate sha384 to public;\n"
+			"create aggregate sha512(val string)\n"
+			"returns string with order external name aggr.sha512;\n"
+			"grant execute on aggregate sha512 to public;\n"
+			"create aggregate ripemd160(val string)\n"
+			"returns string with order external name aggr.ripemd160;\n"
+			"grant execute on aggregate ripemd160 to public;\n"
+			"update sys.functions set system = true where not system and schema_id = 2000 and name in ('sha1', 'sha224', 'sha256', 'sha384', 'sha512', 'ripemd160') and type = 3;\n"; /* F_AGGR == 3 */
+		printf("Running database upgrade commands:\n%s\n", query);
+		fflush(stdout);
+		err = SQLstatementIntern(c, query, "update", true, false, NULL);
+		if (err)
+			return err;
+	}
+
 	if ((err = SQLstatementIntern(c, "select keyword from sys.keywords where keyword = 'PLAN';\n", "update", true, false, &output)))
 		return err;
 	if ((b = BBPquickdesc(output->cols[0].b)) && BATcount(b) > 0) {

@@ -1271,6 +1271,145 @@ AGGRsubstr_group_concat_sep(Client ctx, bat *retval, const bat *bid, const bat *
 }
 
 static str
+grpdigest(Client ctx,
+		  bat *retval1, str *retval2, /* one or the other! */
+		  const bat *bid, const bat *gid,
+		  const bat *eid, bool skip_nils,
+		  const char *digest,
+		  const char *malfunc)
+{
+#ifdef HAVE_OPENSSL
+	BAT *b = BATdescriptor(*bid);
+	BAT *g = gid ? BATdescriptor(*gid) : NULL;
+	BAT *e = eid ? BATdescriptor(*eid) : NULL;
+	BAT *bn = NULL;
+
+	/* one or the other, not both */
+	assert(retval1 == NULL || retval2 == NULL);
+	assert(retval1 != NULL || retval2 != NULL);
+
+	if (b == NULL || (gid != NULL && g == NULL) || (eid != NULL && e == NULL)) {
+		BBPreclaim(b);
+		BBPreclaim(g);
+		BBPreclaim(e);
+		throw(MAL, malfunc, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	}
+	if (BATaggrdigest(ctx->curprg->def->ma,
+					  retval1 ? &bn : NULL, retval2,
+					  digest,
+					  b, g, e, NULL, skip_nils) != GDK_SUCCEED) {
+		BBPreclaim(b);
+		BBPreclaim(g);
+		BBPreclaim(e);
+		throw(MAL, malfunc, GDK_EXCEPTION);
+	}
+	if (retval1) {
+		*retval1 = bn->batCacheid;
+		BBPkeepref(bn);
+	}
+	BBPreclaim(b);
+	BBPreclaim(g);
+	BBPreclaim(e);
+	return MAL_SUCCEED;
+#else
+	(void) ctx;
+	(void) retval1;
+	(void) retval2;
+	(void) bid;
+	(void) gid;
+	(void) eid;
+	(void) skip_nils;
+	(void) digest;
+	throw(MAL, malfunc,
+		  SQLSTATE(0A000) PROGRAM_NYI ": no OpenSSL library available");
+#endif
+}
+
+static str
+AGGRsha1(Client ctx, str *retval, const bat *bid)
+{
+	return grpdigest(ctx, NULL, retval, bid, NULL, NULL, true, "sha1", "aggr.sha1");
+}
+
+static str
+AGGRsha1grouped(Client ctx, bat *retval, const bat *bid, const bat *gid,
+				  const bat *eid, const bit *skip_nils)
+{
+	return grpdigest(ctx, retval, NULL, bid, gid, eid, *skip_nils, "sha1",
+					 "aggr.subsha1");
+}
+
+static str
+AGGRsha224(Client ctx, str *retval, const bat *bid)
+{
+	return grpdigest(ctx, NULL, retval, bid, NULL, NULL, true, "sha224", "aggr.sha224");
+}
+
+static str
+AGGRsha224grouped(Client ctx, bat *retval, const bat *bid, const bat *gid,
+				  const bat *eid, const bit *skip_nils)
+{
+	return grpdigest(ctx, retval, NULL, bid, gid, eid, *skip_nils, "sha224",
+					 "aggr.subsha224");
+}
+
+static str
+AGGRsha256(Client ctx, str *retval, const bat *bid)
+{
+	return grpdigest(ctx, NULL, retval, bid, NULL, NULL, true, "sha256", "aggr.sha256");
+}
+
+static str
+AGGRsha256grouped(Client ctx, bat *retval, const bat *bid, const bat *gid,
+				  const bat *eid, const bit *skip_nils)
+{
+	return grpdigest(ctx, retval, NULL, bid, gid, eid, *skip_nils, "sha256",
+					 "aggr.subsha256");
+}
+
+static str
+AGGRsha384(Client ctx, str *retval, const bat *bid)
+{
+	return grpdigest(ctx, NULL, retval, bid, NULL, NULL, true, "sha384", "aggr.sha384");
+}
+
+static str
+AGGRsha384grouped(Client ctx, bat *retval, const bat *bid, const bat *gid,
+				  const bat *eid, const bit *skip_nils)
+{
+	return grpdigest(ctx, retval, NULL, bid, gid, eid, *skip_nils, "sha384",
+					 "aggr.subsha384");
+}
+
+static str
+AGGRsha512(Client ctx, str *retval, const bat *bid)
+{
+	return grpdigest(ctx, NULL, retval, bid, NULL, NULL, true, "sha512", "aggr.sha512");
+}
+
+static str
+AGGRsha512grouped(Client ctx, bat *retval, const bat *bid, const bat *gid,
+				  const bat *eid, const bit *skip_nils)
+{
+	return grpdigest(ctx, retval, NULL, bid, gid, eid, *skip_nils, "sha512",
+					 "aggr.subsha512");
+}
+
+static str
+AGGRripemd160(Client ctx, str *retval, const bat *bid)
+{
+	return grpdigest(ctx, NULL, retval, bid, NULL, NULL, true, "ripemd160", "aggr.ripemd160");
+}
+
+static str
+AGGRripemd160grouped(Client ctx, bat *retval, const bat *bid, const bat *gid,
+				  const bat *eid, const bit *skip_nils)
+{
+	return grpdigest(ctx, retval, NULL, bid, gid, eid, *skip_nils, "ripemd160",
+					 "aggr.subripemd160");
+}
+
+static str
 AGGRgrouped2(bat *retval, const bat *bid1, const bat *bid2, const bat *gid,
 			 const bat *eid, const bat *sid, bool skip_nils, int tp,
 			 BAT *(*func)(BAT *, BAT *, BAT *, BAT *, BAT *, int tp,
@@ -1793,6 +1932,18 @@ mel_func aggr_init_funcs[] = {
  command("aggr", "subcorr", AGGRsubcorr, false, "Grouped correlation aggregate", args(1,6, batarg("",dbl),batarg("b1",hge),batarg("b2",hge),batarg("g",oid),batargany("e",1),arg("skip_nils",bit))),
  command("aggr", "subcorr", AGGRsubcorrcand, false, "Grouped correlation aggregate with candidate list", args(1,7, batarg("",dbl),batarg("b1",hge),batarg("b2",hge),batarg("g",oid),batargany("e",1),batarg("s",oid),arg("skip_nils",bit))),
 #endif
+ command("aggr", "sha1", AGGRsha1, false, "Ungrouped SHA1", args(1,2, arg("",str),batarg("b",str))),
+ command("aggr", "subsha1", AGGRsha1grouped, false, "Grouped SHA1", args(1,5, batarg("",str),batarg("b",str),batarg("g",oid),batargany("e",1),arg("skip_nils",bit))),
+ command("aggr", "sha224", AGGRsha224, false, "Ungrouped SHA224", args(1,2, arg("",str),batarg("b",str))),
+ command("aggr", "subsha224", AGGRsha224grouped, false, "Grouped SHA224", args(1,5, batarg("",str),batarg("b",str),batarg("g",oid),batargany("e",1),arg("skip_nils",bit))),
+ command("aggr", "sha256", AGGRsha256, false, "Ungrouped SHA256", args(1,2, arg("",str),batarg("b",str))),
+ command("aggr", "subsha256", AGGRsha256grouped, false, "Grouped SHA256", args(1,5, batarg("",str),batarg("b",str),batarg("g",oid),batargany("e",1),arg("skip_nils",bit))),
+ command("aggr", "sha384", AGGRsha384, false, "Ungrouped SHA384", args(1,2, arg("",str),batarg("b",str))),
+ command("aggr", "subsha384", AGGRsha384grouped, false, "Grouped SHA384", args(1,5, batarg("",str),batarg("b",str),batarg("g",oid),batargany("e",1),arg("skip_nils",bit))),
+ command("aggr", "sha512", AGGRsha512, false, "Ungrouped SHA512", args(1,2, arg("",str),batarg("b",str))),
+ command("aggr", "subsha512", AGGRsha512grouped, false, "Grouped SHA512", args(1,5, batarg("",str),batarg("b",str),batarg("g",oid),batargany("e",1),arg("skip_nils",bit))),
+ command("aggr", "ripemd160", AGGRripemd160, false, "Ungrouped RIPEMD160", args(1,2, arg("",str),batarg("b",str))),
+ command("aggr", "subripemd160", AGGRripemd160grouped, false, "Grouped RIPEMD160", args(1,5, batarg("",str),batarg("b",str),batarg("g",oid),batargany("e",1),arg("skip_nils",bit))),
  { .imp=NULL }
 };
 #include "mal_import.h"

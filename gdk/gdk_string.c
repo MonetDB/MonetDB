@@ -9688,3 +9688,122 @@ BATasciify(BAT *b, BAT *s)
 	BBPreclaim(bn);
 	return NULL;
 }
+
+#ifdef HAVE_OPENSSL
+
+#include <openssl/evp.h>
+
+gdk_return
+BATaggrdigest(allocator *ma, BAT **bnp, char **shap, const char *digest,
+	      BAT *b, BAT *g, BAT *e, BAT *s, bool skip_nils)
+{
+	oid min, max;
+	BUN ngrp;
+	struct canditer ci;
+	const char *err;
+	const oid *gids = g ? (const oid *) Tloc(g, 0) : NULL;
+	oid gid = 0;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	BAT *bn = NULL;
+
+	/* exactly one of bnp and shap should be non-NULL */
+	assert(bnp == NULL || shap == NULL);
+	assert(bnp != NULL || shap != NULL);
+
+	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp, &ci)) != NULL) {
+		GDKerror("%s\n", err);
+		return GDK_FAIL;
+	}
+
+	if (bnp) {
+		if ((bn = COLnew(min, TYPE_str, ngrp, TRANSIENT)) == NULL)
+			return GDK_FAIL;
+		*bnp = bn;
+	}
+
+	BATiter bi = bat_iterator(b);
+
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
+
+	const EVP_MD *md;
+	md = EVP_get_digestbyname(digest);
+	EVP_MD_CTX **mdctx = ma_zalloc(ta, ngrp * sizeof(*mdctx));
+	if (mdctx == NULL)
+		goto bailout;
+
+	TIMEOUT_LOOP_IDX_DECL(i, ci.ncand, qry_ctx) {
+		oid p = canditer_next(&ci) - b->hseqbase;
+		if (gids)
+			gid = gids[p];
+		else if (g)
+			gid = p;
+		const char *s = BUNtvar(bi, p);
+		if (strNil(s)) {
+			if (!skip_nils) {
+				EVP_MD_CTX_free(mdctx[gid]);
+				mdctx[gid] = (EVP_MD_CTX *) -1;
+			}
+			continue;
+		}
+		if (mdctx[gid] == NULL) {
+			mdctx[gid] = EVP_MD_CTX_new();
+			if (mdctx[gid] == NULL || !EVP_DigestInit_ex2(mdctx[gid], md, NULL)) {
+				goto bailout;
+			}
+		} else if (mdctx[gid] == (EVP_MD_CTX *) -1) {
+			continue;
+		}
+		/* calculate digest including terminating NUL byte */
+		if (!EVP_DigestUpdate(mdctx[gid], s, strlen(s) + 1)) {
+			goto bailout;
+		}
+	}
+	TIMEOUT_CHECK(qry_ctx,
+		      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
+
+	unsigned char md_value[EVP_MAX_MD_SIZE];
+	unsigned int md_len;
+	char digestbuf[EVP_MAX_MD_SIZE * 2 + 1];
+
+	for (gid = 0; gid < ngrp; gid++) {
+		if (mdctx[gid] == NULL || mdctx[gid] == (EVP_MD_CTX *) -1) {
+			strcpy_len(digestbuf, str_nil, sizeof(digestbuf));
+		} else {
+			if (!EVP_DigestFinal_ex(mdctx[gid], md_value, &md_len)) {
+				goto bailout;
+			}
+			for (unsigned int x = 0; x < md_len; x++) {
+				digestbuf[x * 2] = "0123456789abcdef"[md_value[x] >> 4];
+				digestbuf[x * 2 + 1] = "0123456789abcdef"[md_value[x] & 0xF];
+			}
+			digestbuf[2 * md_len] = 0;
+			EVP_MD_CTX_free(mdctx[gid]);
+		}
+		if (bnp) {
+			if (BUNappend(bn, digestbuf, false) != GDK_SUCCEED) {
+				goto bailout;
+			}
+		} else {
+			if ((*shap = ma_strdup(ma, digestbuf)) == NULL) {
+				goto bailout;
+			}
+		}
+	}
+	bat_iterator_end(&bi);
+	ma_close(ta, &ta_state);
+	return GDK_SUCCEED;
+
+  bailout:
+	bat_iterator_end(&bi);
+	if (mdctx) {
+		for (gid = 0; gid < ngrp; gid++)
+			if (mdctx[gid] != (EVP_MD_CTX *) -1)
+				EVP_MD_CTX_free(mdctx[gid]);
+	}
+	ma_close(ta, &ta_state);
+	BBPreclaim(bn);
+	return GDK_FAIL;
+}
+
+#endif
