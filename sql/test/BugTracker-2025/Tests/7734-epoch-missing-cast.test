@@ -1,3 +1,6 @@
+statement ok
+set time zone interval '+02:00' hour to minute
+
 query T
 select epoch(1234567890.456)
 ----

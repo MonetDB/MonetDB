@@ -1,4 +1,7 @@
 statement ok
+set time zone interval '+02:00' hour to minute
+
+statement ok
 create table test(doc_num string, doc_type string, inserted timestamp)
 
 statement ok
