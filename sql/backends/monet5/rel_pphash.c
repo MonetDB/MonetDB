@@ -151,9 +151,7 @@ oahash_probe(backend *be, sql_rel *rel, list *jexps, list *exps_cmp_prb, const s
 		bool eq = (e2->flag == cmp_equal) && !anti;
 		bool grpjoin = groupjoin && is_any(e2);
 
-		stmt *hsh = stmt_oahash_hash(be, key, prb_res, m->data);
-		if (hsh == NULL) return NULL;
-		prb_res = stmt_oahash_probe(be, key, hsh, prb_res, m->data, stmts_ht->op3, outerm, single, e2->semantics, eq, outer, grpjoin, pp);
+		prb_res = stmt_oahash_probe(be, key, prb_res, m->data, stmts_ht->op3, outerm, single, e2->semantics, eq, outer, grpjoin, pp);
 		if (prb_res == NULL) return NULL;
 
 		if (outer || grpjoin) {

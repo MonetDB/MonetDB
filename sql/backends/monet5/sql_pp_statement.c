@@ -552,7 +552,7 @@ stmt_oahash_hash(backend *be, stmt *key, stmt *prev, stmt *ht)
 }
 
 stmt *
-stmt_oahash_probe(backend *be, stmt *key, stmt *hsh, stmt *prev, stmt *rhs_ht, stmt *freq, stmt *outer, bool single, bool semantics, bool eq, bool outerjoin, bool groupedjoin, const stmt *pp)
+stmt_oahash_probe(backend *be, stmt *key, stmt *prev, stmt *rhs_ht, stmt *freq, stmt *outer, bool single, bool semantics, bool eq, bool outerjoin, bool groupedjoin, const stmt *pp)
 {
 	InstrPtr q = newStmt(be->mb, putName("oahash"), prev == NULL?
 									groupedjoin?putName("mprobe")         :outerjoin?putName("oprobe")         :eq?putName("probe"):putName("nprobe"):
@@ -566,7 +566,6 @@ stmt_oahash_probe(backend *be, stmt *key, stmt *hsh, stmt *prev, stmt *rhs_ht, s
 		q->inout = 2;
 	}
 	q = pushArgument(be->mb, q, key->nr);
-	q = pushArgument(be->mb, q, hsh->nr);
 	if (prev) {
 		q = pushArgument(be->mb, q, getArg(prev->q, 0));
 		q = pushArgument(be->mb, q, getArg(prev->q, 1));
