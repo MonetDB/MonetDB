@@ -866,7 +866,7 @@ rel_setop_n_ary_set_exps(mvc *sql, sql_rel *rel, list *exps, bool keep_props)
 		for (node *m = exps->h, *o = rexps->h; m && o; m = m->next, o = o->next) {
 			sql_exp *e = m->data, *f = o->data;
 			/* for multi-union if any operand has nil then set the nil prop for the op exp */
-			if (is_munion(rel->op) && has_nil(f))
+			if (is_munion(rel->op) && (f && has_nil(f)))
 				set_has_nil(e);
 			e->card = CARD_MULTI;
 		}

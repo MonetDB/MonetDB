@@ -524,7 +524,7 @@ BATXMLoptions(Client ctx, bat *ret, const char *const *name, const char *const *
 		snprintf(buf, size, "nil");
 	else {
 		/*if(strcmp(*options,"niloncontent")==0) */
-		err = SQLSTATE(0 A000) PROGRAM_NYI;
+		err = SQLSTATE(0A000) PROGRAM_NYI;
 		goto bunins_failed;
 	}
 
@@ -1527,7 +1527,7 @@ BATXMLxquery(Client ctx, bat *ret, const bat *bid, const char *const *expr)
 	(void) bid;
 	(void) expr;
 	/* use external library to solve this */
-	throw(MAL, "xml.xquery", SQLSTATE(0 A000) PROGRAM_NYI);
+	throw(MAL, "xml.xquery", SQLSTATE(0A000) PROGRAM_NYI);
 }
 
 #else
