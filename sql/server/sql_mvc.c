@@ -164,7 +164,7 @@ mvc_init(int debug, store_type store_tpe, int ro, int su, const char *initpasswd
 	}
 
 	assert(m->sa == NULL);
-	m->sa = create_allocator(m->pa, NULL, false);
+	m->sa = create_allocator(m->pa, "MA_mvc", false);
 	if (!m->sa) {
 		mvc_destroy(m);
 		mvc_exit(store);

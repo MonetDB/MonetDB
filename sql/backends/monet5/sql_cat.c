@@ -595,7 +595,7 @@ create_trigger(mvc *sql, char *sname, char *tname, char *triggername, int time, 
 			sql_rel *r = NULL;
 			allocator *sa = sql->sa;
 
-			if (!(sql->sa = create_allocator(sql->pa, NULL, false))) {
+			if (!(sql->sa = create_allocator(sql->pa, "MA_mvc", false))) {
 				sql->sa = sa;
 				throw(SQL, "sql.create_trigger", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
@@ -1091,7 +1091,7 @@ create_func(mvc *sql, char *sname, char *fname, sql_func *f, int replace)
 		allocator *sa = sql->sa;
 
 		assert(nf->query);
-		if (!(sql->sa = create_allocator(sql->pa, NULL, false))) {
+		if (!(sql->sa = create_allocator(sql->pa, "MA_mvc", false))) {
 			sql->sa = sa;
 			throw(SQL, "sql.create_func", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}

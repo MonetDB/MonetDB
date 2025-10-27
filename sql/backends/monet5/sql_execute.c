@@ -240,7 +240,7 @@ SQLstatementIntern(Client c, const char *expr, const char *nme, bit execute, bit
 	m->params = NULL;
 	m->session->auto_commit = 0;
 	if (!m->sa) {
-		if (!(m->sa = create_allocator(m->pa, NULL, false)) ) {
+		if (!(m->sa = create_allocator(m->pa, "MA_mvc", false)) ) {
 			msg = createException(SQL,"sql.statement",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto endofcompile;
 		}
@@ -436,7 +436,7 @@ RAstatement(Client c, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ((msg = SQLtrans(m)) != MAL_SUCCEED)
 		return msg;
 	if (!m->sa)
-		m->sa = create_allocator(m->pa, NULL, false);
+		m->sa = create_allocator(m->pa, "MA_mvc", false);
 	if (!m->sa)
 		return RAcommit_statement(be, createException(SQL,"RAstatement",SQLSTATE(HY013) MAL_MALLOC_FAIL));
 	refs = sa_list(m->sa);
@@ -551,7 +551,7 @@ RAstatement2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ((msg = SQLtrans(m)) != MAL_SUCCEED)
 		return msg;
 	if (!m->sa)
-		m->sa = create_allocator(m->pa, NULL, false);
+		m->sa = create_allocator(m->pa, "MA_mvc", false);
 	if (!m->sa)
 		return RAstatement2_return(be, m, nlevels, gvars, gentries, createException(SQL,"RAstatement2",SQLSTATE(HY013) MAL_MALLOC_FAIL));
 

@@ -332,7 +332,7 @@ create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp,
 			break;
 	}
 	osa = sql->sa;
-	allocator *nsa = sql->sa = create_allocator(ma_get_parent(osa), NULL, false);
+	allocator *nsa = sql->sa = create_allocator(ma_get_parent(osa), "MA_mvc", false);
 	/* first check default values */
 	for (n = ol_first_node(t->columns); n; n = n->next) {
 		sql_column *c = n->data;
@@ -5251,7 +5251,7 @@ str_vacuum_callback(int argc, void *argv[])
 
 	(void) argc;
 
-	if ((sa = create_allocator(NULL, NULL, false)) == NULL) {
+	if ((sa = create_allocator(NULL, "MA_str_vacuum", false)) == NULL) {
 		TRC_ERROR(SQL_EXECUTION, "[str_vacuum_callback] -- Failed to create allocator!");
 		return GDK_FAIL;
 	}
