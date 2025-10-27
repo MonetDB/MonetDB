@@ -2655,7 +2655,8 @@ mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		s = cntxt->fdout;
 	} else {
 		if (onclient) {
-			s = mapi_request_download(filename, false, m->scanner.rs, m->scanner.ws);
+			bool binary = (onclient > 1);
+			s = mapi_request_download(filename, binary, m->scanner.rs, m->scanner.ws);
 		} else {
 			s = open_wastream(filename);
 		}
@@ -3191,7 +3192,8 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		msg = mvc_import_table(cntxt, &b, be->mvc, be->mvc->scanner.rs, t, tsep, rsep, ssep, ns, sz, offset, besteffort, true, escape, decsep, decskip);
 	} else {
 		if (onclient) {
-			ss = mapi_request_upload(fname, false, be->mvc->scanner.rs, be->mvc->scanner.ws);
+			bool binary = onclient > 1;
+			ss = mapi_request_upload(fname, binary, be->mvc->scanner.rs, be->mvc->scanner.ws);
 		} else {
 			ss = open_rastream(fname);
 		}
