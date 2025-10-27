@@ -518,16 +518,18 @@ printBATproperties(stream *f, BAT *b)
 }
 
 static void
-printBATelm(allocator *ma, stream *f, bat i, BUN cnt, BUN first)
+printBATelm(stream *f, bat i, BUN cnt, BUN first)
 {
 	BAT *b, *bs = NULL;
 	str tpe;
 
 	b = BATdescriptor(i);
 	if (b) {
-		tpe = getTypeName(ma, newBatType(b->ttype));
+		allocator *ta = MT_thread_getallocator();
+		allocator_state ta_state = ma_open(ta);
+		tpe = getTypeName(ta, newBatType(b->ttype));
 		mnstr_printf(f, ":%s ", tpe);
-		//GDKfree(tpe);
+		ma_close(ta, &ta_state);
 		printBATproperties(f, b);
 		/* perform property checking */
 		BATassertProps(b);
@@ -543,7 +545,7 @@ printBATelm(allocator *ma, stream *f, bat i, BUN cnt, BUN first)
 			if (bs == NULL)
 				mnstr_printf(f, "Failed to take chunk\n");
 			else {
-				if (BATprint(ma, f, bs) != GDK_SUCCEED)
+				if (BATprint(f, bs) != GDK_SUCCEED)
 					 mnstr_printf(f, "Failed to print chunk\n");
 				BBPunfix(bs->batCacheid);
 			}
@@ -588,7 +590,7 @@ printStackElm(stream *f, MalBlkPtr mb, const ValRecord *v, int index, BUN cnt, B
 	//GDKfree(nmeOnStk);
 
 	if (cnt && v && (isaBatType(n->type) || v->bat) && !is_bat_nil(v->val.bval)) {
-		printBATelm(mb->ma, f, v->val.bval, cnt, first);
+		printBATelm(f, v->val.bval, cnt, first);
 	}
 }
 

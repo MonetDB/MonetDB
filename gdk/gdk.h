@@ -881,8 +881,8 @@ gdk_export gdk_return GDKcreatedir(const char *nme);
 
 gdk_export void OIDXdestroy(BAT *b);
 
-gdk_export gdk_return BATprintcolumns(allocator *ma, stream *s, int argc, BAT *argv[]);
-gdk_export gdk_return BATprint(allocator *ma, stream *s, BAT *b);
+gdk_export gdk_return BATprintcolumns(stream *s, int argc, BAT *argv[]);
+gdk_export gdk_return BATprint(stream *s, BAT *b);
 
 gdk_export bool BATordered(BAT *b);
 gdk_export bool BATordered_rev(BAT *b);
