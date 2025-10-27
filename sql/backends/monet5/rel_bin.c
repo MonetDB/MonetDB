@@ -8714,7 +8714,7 @@ subrel_bin(backend *be, sql_rel *rel, list *refs)
 		list_append(refs, s);
 	} else if (rel->spb && neededpp) {
 		if (be->pp) {
-			printf("# needed pipeline allready started below subrel\n");
+			printf("# needed pipeline already started below subrel\n");
 		} else {
 			assert(!is_groupby(rel->op) && !is_join(rel->op));
 

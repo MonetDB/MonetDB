@@ -22,7 +22,7 @@ extern stmt *stmt_oahash_build_ht(backend *be, stmt *ht, stmt *key, stmt *prnt, 
 extern stmt *stmt_oahash_frequency(backend *be, stmt *freq, stmt *prnt, bool occ_cnt, const stmt *pp);
 
 extern stmt *stmt_oahash_hash(backend *be, stmt *key, stmt *prev, stmt *ht);
-extern stmt *stmt_oahash_probe(backend *be, stmt *key, stmt *hsh, stmt *prev, stmt *rhs_ht, stmt *freq, stmt *outer, bool single, bool semantics, bool eq, bool outerjoin, bool groupedjoin, const stmt *pp);
+extern stmt *stmt_oahash_probe(backend *be, stmt *key, stmt *prev, stmt *rhs_ht, stmt *freq, stmt *outer, bool single, bool semantics, bool eq, bool outerjoin, bool groupedjoin, const stmt *pp);
 
 extern stmt *stmt_algebra_project(backend *be, stmt *inout, stmt *pos, stmt *val, const stmt *pp);
 extern stmt *stmt_oahash_project(backend *be, stmt *col, const stmt *prb_res, const stmt *pp);
