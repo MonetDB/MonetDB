@@ -4,6 +4,7 @@ CREATE TABLE v0 ( v1 INT PRIMARY KEY, v2 FLOAT)
 statement ok rowcount 5
 INSERT INTO v0 VALUES (-1, 24), (51 , 43), (16 , 48901402.000000), (255, 64438998.000000), (17, 20304169.000000)
 
-query R
+query R nosort
 SELECT v2 FROM v0 WHERE v2 IN ( SELECT v1 )
 ----
+
