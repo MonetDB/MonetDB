@@ -382,7 +382,7 @@ SYSMONpause(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	return paused ? MAL_SUCCEED :
 			i == qsize ? createException(MAL, "SYSMONpause",
-										 SQLSTATE(42 S12) "Tag " OIDFMT
+										 SQLSTATE(42S12) "Tag " OIDFMT
 										 " unknown.",
 										 tag) : createException(MAL,
 																"SYSMONpause",
@@ -441,7 +441,7 @@ SYSMONresume(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	return paused ? MAL_SUCCEED :
 			i == qsize ? createException(MAL, "SYSMONresume",
-										 SQLSTATE(42 S12) "Tag " OIDFMT
+										 SQLSTATE(42S12) "Tag " OIDFMT
 										 " unknown.",
 										 tag) : createException(MAL,
 																"SYSMONresume",
@@ -500,7 +500,7 @@ SYSMONstop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	return paused ? MAL_SUCCEED :
 			i == qsize ? createException(MAL, "SYSMONstop",
-										 SQLSTATE(42 S12) "Tag " OIDFMT
+										 SQLSTATE(42S12) "Tag " OIDFMT
 										 " unknown.",
 										 tag) : createException(MAL,
 																"SYSMONstop",

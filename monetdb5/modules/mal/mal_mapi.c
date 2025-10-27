@@ -1442,7 +1442,7 @@ SERVERquery_array(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc)
 	(void) cntxt, (void) mb;
 	(void) stk;
 	(void) pc;
-	throw(MAL, "mapi.query_array", SQLSTATE(0 A000) PROGRAM_NYI);
+	throw(MAL, "mapi.query_array", SQLSTATE(0A000) PROGRAM_NYI);
 }
 
 static str
