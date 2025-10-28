@@ -864,6 +864,36 @@ command aggr.quantile_avg(X_0:bat[:any_1], X_1:dbl):dbl
 AGGRquantile_avg_cst
 Quantile aggregate
 aggr
+ripemd160
+command aggr.ripemd160(X_0:bat[:str]):str
+AGGRripemd160
+Ungrouped RIPEMD160
+aggr
+sha1
+command aggr.sha1(X_0:bat[:str]):str
+AGGRsha1
+Ungrouped SHA1
+aggr
+sha224
+command aggr.sha224(X_0:bat[:str]):str
+AGGRsha224
+Ungrouped SHA224
+aggr
+sha256
+command aggr.sha256(X_0:bat[:str]):str
+AGGRsha256
+Ungrouped SHA256
+aggr
+sha384
+command aggr.sha384(X_0:bat[:str]):str
+AGGRsha384
+Ungrouped SHA384
+aggr
+sha512
+command aggr.sha512(X_0:bat[:str]):str
+AGGRsha512
+Ungrouped SHA512
+aggr
 stdev
 command aggr.stdev(X_0:bat[:bte], X_1:bat[:oid], X_2:bat[:any_1]):bat[:dbl]
 AGGRstdev3_dbl
@@ -1733,6 +1763,36 @@ subquantile_avg
 command aggr.subquantile_avg(X_0:bat[:any_1], X_1:bat[:dbl], X_2:bat[:oid], X_3:bat[:any_2], X_4:bat[:oid], X_5:bit):bat[:dbl]
 AGGRsubquantilecand_avg
 Grouped quantile aggregate with candidate list
+aggr
+subripemd160
+command aggr.subripemd160(X_0:bat[:str], X_1:bat[:oid], X_2:bat[:any_1], X_3:bit):bat[:str]
+AGGRripemd160grouped
+Grouped RIPEMD160
+aggr
+subsha1
+command aggr.subsha1(X_0:bat[:str], X_1:bat[:oid], X_2:bat[:any_1], X_3:bit):bat[:str]
+AGGRsha1grouped
+Grouped SHA1
+aggr
+subsha224
+command aggr.subsha224(X_0:bat[:str], X_1:bat[:oid], X_2:bat[:any_1], X_3:bit):bat[:str]
+AGGRsha224grouped
+Grouped SHA224
+aggr
+subsha256
+command aggr.subsha256(X_0:bat[:str], X_1:bat[:oid], X_2:bat[:any_1], X_3:bit):bat[:str]
+AGGRsha256grouped
+Grouped SHA256
+aggr
+subsha384
+command aggr.subsha384(X_0:bat[:str], X_1:bat[:oid], X_2:bat[:any_1], X_3:bit):bat[:str]
+AGGRsha384grouped
+Grouped SHA384
+aggr
+subsha512
+command aggr.subsha512(X_0:bat[:str], X_1:bat[:oid], X_2:bat[:any_1], X_3:bit):bat[:str]
+AGGRsha512grouped
+Grouped SHA512
 aggr
 substdev
 command aggr.substdev(X_0:bat[:bte], X_1:bat[:oid], X_2:bat[:any_1], X_3:bit):bat[:dbl]

@@ -10,6 +10,7 @@ size_t ATOMlen(int id, const void *v);
 const char *ATOMname(int id);
 void *ATOMnil(int id) __attribute__((__malloc__));
 int ATOMprint(allocator *ma, int id, const void *val, stream *fd);
+gdk_return BATaggrdigest(allocator *ma, BAT **bnp, char **shap, const char *digest, BAT *b, BAT *g, BAT *e, BAT *s, bool skip_nils);
 BAT *BATall_grp(BAT *l, BAT *g, BAT *e, BAT *s);
 BAT *BATallnotequal_grp(BAT *l, BAT *r, BAT *g, BAT *e, BAT *s);
 BAT *BATallnotequal_grp2(BAT *l, BAT *r, BAT *rid, BAT *g, BAT *e, BAT *s);
