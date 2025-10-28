@@ -27,12 +27,13 @@ unshare_varsized_heap(BAT *b)
 {
 	if (ATOMvarsized(b->ttype) &&
 	    b->tvheap->parentid != b->batCacheid) {
+		var_t (*atomput) (BAT *, var_t *off, const void *src) = BATatoms[b->ttype].atomPut;
 		Heap *h = GDKmalloc(sizeof(Heap));
 		if (h == NULL)
 			return GDK_FAIL;
 		*h = (Heap) {
 			.parentid = b->batCacheid,
-			.farmid = BBPselectfarm(b->batRole, TYPE_str, varheap),
+			.farmid = BBPselectfarm(b->batRole, b->ttype, varheap),
 			.refs = ATOMIC_VAR_INIT(1),
 		};
 		strconcat_len(h->filename, sizeof(h->filename),
@@ -49,7 +50,7 @@ unshare_varsized_heap(BAT *b)
 		    BATcount(BBP_desc(b->tvheap->parentid)) > 2 * BATcount(b)) {
 			MT_thread_setalgorithm("unshare vheap reinsert strings");
 			MT_lock_set(&b->theaplock);
-			strHeap(h, b->batCapacity);
+			BATatoms[b->ttype].atomHeap(h, b->batCapacity);
 			Heap *oh = b->tvheap;
 			b->tvheap = h;
 			var_t o;
@@ -57,7 +58,7 @@ unshare_varsized_heap(BAT *b)
 			case 1:
 				for (BUN i = 0; i < b->batCount; i++) {
 					o = (var_t) ((uint8_t *) b->theap->base)[i] + GDK_VAROFFSET;
-					if (strPut(b, &o, oh->base + o) == (var_t) -1)
+					if (atomput(b, &o, oh->base + o) == (var_t) -1)
 						goto bailout;
 					((uint8_t *) b->theap->base)[i] = (uint8_t) (o - GDK_VAROFFSET);
 				}
@@ -65,7 +66,7 @@ unshare_varsized_heap(BAT *b)
 			case 2:
 				for (BUN i = 0; i < b->batCount; i++) {
 					o = (var_t) ((uint16_t *) b->theap->base)[i] + GDK_VAROFFSET;
-					if (strPut(b, &o, oh->base + o) == (var_t) -1)
+					if (atomput(b, &o, oh->base + o) == (var_t) -1)
 						goto bailout;
 					((uint16_t *) b->theap->base)[i] = (uint16_t) (o - GDK_VAROFFSET);
 				}
@@ -74,7 +75,7 @@ unshare_varsized_heap(BAT *b)
 			case 4:
 				for (BUN i = 0; i < b->batCount; i++) {
 					o = (var_t) ((uint32_t *) b->theap->base)[i];
-					if (strPut(b, &o, oh->base + o) == (var_t) -1)
+					if (atomput(b, &o, oh->base + o) == (var_t) -1)
 						goto bailout;
 					((uint32_t *) b->theap->base)[i] = (uint32_t) o;
 				}
@@ -83,7 +84,7 @@ unshare_varsized_heap(BAT *b)
 			case SIZEOF_VAR_T:
 				for (BUN i = 0; i < b->batCount; i++) {
 					o = ((var_t *) b->theap->base)[i];
-					if (strPut(b, &o, oh->base + o) == (var_t) -1)
+					if (atomput(b, &o, oh->base + o) == (var_t) -1)
 						goto bailout;
 					((var_t *) b->theap->base)[i] = o;
 				}
