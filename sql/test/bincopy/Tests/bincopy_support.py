@@ -98,7 +98,8 @@ def run_test(side, testcase):
     massage = lambda s: re.sub(r'@(>?(\w|!)+)@', data_maker.substitute_match, s)
     code = massage(code)
     code = f"START TRANSACTION;\n{code}\nROLLBACK;\n"
-    open(os.path.join(BINCOPY_FILES, 'test.sql'), "w").write(code)
+    with open(os.path.join(BINCOPY_FILES, 'test.sql'), "w") as fil:
+        fil.write(code)
 
     # generate the required data files
     data_maker.generate_files()
@@ -118,8 +119,10 @@ def run_test(side, testcase):
         for outfile, expected in data_maker.outfiles():
             if not os.path.exists(outfile):
                 tr.fail(f'Output file {outfile} was not created')
-            expected_content = open(expected, 'rb').read()
-            content = open(outfile, 'rb').read()
+            with open(expected, 'rb') as fil:
+                expected_content = fil.read()
+            with open(outfile, 'rb') as fil:
+                content = fil.read()
             if len(content) != len(expected_content):
                 tr.fail(f'Outfile {outfile} has wrong length: {len(content)}, expected {len(expected_content)}')
             elif content != expected_content:

@@ -20,7 +20,8 @@ SRCDIR = os.environ.get(
 # The functions we pass this to will pick their own default if None:
 TMPDIR = os.environ.get('TSTTRGDIR')
 
-SHERLOCK = gzip.open(os.path.join(SRCDIR, '1661-0.txt.gz'), 'rb').read().replace(CRLF, LF)
+with gzip.open(os.path.join(SRCDIR, '1661-0.txt.gz'), 'rb') as fil:
+    SHERLOCK = fil.read().replace(CRLF, LF)
 
 COMPRESSIONS = [None, "gz", "bz2", "xz", "lz4"]
 
@@ -198,32 +199,30 @@ class TestFile:
 
     def write(self, content):
         filename = self.path()
-        fileobj = open(filename, 'wb')
-
-        if not self.compression:
-            f = fileobj
-        elif self.compression == 'gz':
-            f = gzip.GzipFile(filename, 'wb', fileobj=fileobj, mtime=131875200, compresslevel=1)
-        elif self.compression == 'bz2':
-            import bz2
-            f = bz2.BZ2File(fileobj, 'wb', compresslevel=1)
-        elif self.compression == 'xz':
-            import lzma
-            f = lzma.LZMAFile(fileobj, 'wb', preset=1)
-        elif self.compression == 'lz4': # ok
-            import lz4.frame
-            f = lz4.frame.LZ4FrameFile(fileobj, 'wb', compression_level=1)
-        else:
-            raise Exception("Unknown compression scheme: " + self.compression)
-        f.write(content)
-        f.close()
+        with open(filename, 'wb') as fileobj:
+            if not self.compression:
+                f = fileobj
+            elif self.compression == 'gz':
+                f = gzip.GzipFile(filename, 'wb', fileobj=fileobj, mtime=131875200, compresslevel=1)
+            elif self.compression == 'bz2':
+                import bz2
+                f = bz2.BZ2File(fileobj, 'wb', compresslevel=1)
+            elif self.compression == 'xz':
+                import lzma
+                f = lzma.LZMAFile(fileobj, 'wb', preset=1)
+            elif self.compression == 'lz4': # ok
+                import lz4.frame
+                f = lz4.frame.LZ4FrameFile(fileobj, 'wb', compression_level=1)
+            else:
+                raise Exception("Unknown compression scheme: " + self.compression)
+            f.write(content)
+            f.close()
         return filename
-
 
     def write_raw(self, content):
         filename = self.path()
-        f = open(filename, 'wb')
-        f.write(content)
+        with open(filename, 'wb') as f:
+            f.write(content)
         return filename
 
     def read(self):
@@ -244,7 +243,9 @@ class TestFile:
         else:
             raise Exception("Unknown compression scheme: " + self.compression)
 
-        return f.read()
+        data = f.read()
+        f.close()
+        return data
 
 
 

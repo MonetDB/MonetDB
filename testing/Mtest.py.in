@@ -731,7 +731,8 @@ def CreateTstWhatXhtml(env, TST, stableWHAT, EXT, result, TSTDIR, TSTTRGDIR, TST
         d = urlpref
         if os.path.isfile(TST + stableWHAT + '.src'):
             # there's only one file like this...
-            fl = openutf8(os.path.join(TSTTRGDIR, TST + stableWHAT + '.src')).readline().strip()
+            with openutf8(os.path.join(TSTTRGDIR, TST + stableWHAT + '.src')) as fil:
+                fl = fil.readline().strip()
             if fl.startswith('$RELSRCDIR/'):
                 fl = fl[11:]
                 while fl.startswith('../'):
@@ -756,7 +757,8 @@ def CreateTstWhatXhtml(env, TST, stableWHAT, EXT, result, TSTDIR, TSTTRGDIR, TST
     if REV:
         d = urlpref
         if os.path.isfile(TST + EXT + '.src'):
-            fl = openutf8(os.path.join(TSTTRGDIR, TST + EXT + '.src')).readline().strip()
+            with openutf8(os.path.join(TSTTRGDIR, TST + EXT + '.src')) as fil:
+                fl = fil.readline().strip()
             if fl.startswith('$RELSRCDIR/'):
                 fl = fl[11:]
                 while fl.startswith('../'):
@@ -1334,37 +1336,38 @@ def PerformDir(env, testdir, testlist, total_tests):
                         nfree = 0
                         nused = 0
                         ntotal = 0
-                        for line in openutf8(os.path.join(TSTTRGDIR, f'SingleServer.{ext}')):
-                            if empty:
-                                o.write('<pre>\n')
-                            empty = False
-                            if 'SIGUSR1 info start' in line:
-                                sigusr1 = True
-                                line = '#' + line
-                            elif 'SIGUSR1 info end' in line:
-                                sigusr1 = False
-                                line = '#' + line
-                            elif sigusr1:
-                                res = fbre.search(line)
-                                if res is not None:
-                                    nfree += int(res.group('bats'))
-                                res = ubre.search(line)
-                                if res is not None:
-                                    nused += int(res.group('bats'))
-                                res = tbre.search(line)
-                                if res is not None:
-                                    ntotal = int(res.group('bats'))
-                                line = '#' + line
-                            span1 = span2 = ''
-                            if line != '\n' and not line.startswith('#'):
-                                if ext == 'out':
-                                    ssout = F_ERROR
-                                else:
-                                    sserr = F_ERROR
-                                span1 = '<span style="background-color: rgb(100%,0%,0%);">'
-                                span2 = '</span>\n'
-                                line = line.rstrip('\n')
-                            o.write(span1 + line.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;') + span2)
+                        with openutf8(os.path.join(TSTTRGDIR, f'SingleServer.{ext}')) as fil:
+                            for line in fil:
+                                if empty:
+                                    o.write('<pre>\n')
+                                empty = False
+                                if 'SIGUSR1 info start' in line:
+                                    sigusr1 = True
+                                    line = '#' + line
+                                elif 'SIGUSR1 info end' in line:
+                                    sigusr1 = False
+                                    line = '#' + line
+                                elif sigusr1:
+                                    res = fbre.search(line)
+                                    if res is not None:
+                                        nfree += int(res.group('bats'))
+                                    res = ubre.search(line)
+                                    if res is not None:
+                                        nused += int(res.group('bats'))
+                                    res = tbre.search(line)
+                                    if res is not None:
+                                        ntotal = int(res.group('bats'))
+                                    line = '#' + line
+                                span1 = span2 = ''
+                                if line != '\n' and not line.startswith('#'):
+                                    if ext == 'out':
+                                        ssout = F_ERROR
+                                    else:
+                                        sserr = F_ERROR
+                                    span1 = '<span style="background-color: rgb(100%,0%,0%);">'
+                                    span2 = '</span>\n'
+                                    line = line.rstrip('\n')
+                                o.write(span1 + line.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;') + span2)
                         if nused + nfree != ntotal:
                             o.write(f'<span style="background-color: rgb(100%,0%,0%);">Mismatch in free bats: total bats = {ntotal}, #free = {nfree}, #used = {nused}</span>\n')
                         o.write(f'{"<p>(nothing to see here)</p>" if empty else "</pre>"}\n</body>\n</html>\n')
@@ -1372,19 +1375,20 @@ def PerformDir(env, testdir, testlist, total_tests):
                 else:
                     for ext in ['out', 'err']:
                         sigusr1 = False
-                        for line in openutf8(os.path.join(TSTTRGDIR, f'SingleServer.{ext}')):
-                            if 'SIGUSR1 info start' in line:
-                                sigusr1 = True
-                                continue
-                            elif 'SIGUSR1 info end' in line:
-                                sigusr1 = False
-                                continue
-                            if (sigusr1 is False) and (line != '\n') and (not line.startswith('#')):
-                                if ext == 'out':
-                                    ssout = F_ERROR
-                                else:
-                                    sserr = F_ERROR
-                                break
+                        with openutf8(os.path.join(TSTTRGDIR, f'SingleServer.{ext}')) as fil:
+                            for line in fil:
+                                if 'SIGUSR1 info start' in line:
+                                    sigusr1 = True
+                                    continue
+                                elif 'SIGUSR1 info end' in line:
+                                    sigusr1 = False
+                                    continue
+                                if (sigusr1 is False) and (line != '\n') and (not line.startswith('#')):
+                                    if ext == 'out':
+                                        ssout = F_ERROR
+                                    else:
+                                        sserr = F_ERROR
+                                    break
 
         TIMES.append((TSTDIR, '', '%7.3f' % td, td, FdOut, FdErr, None))
         if testweb:
@@ -1508,7 +1512,8 @@ def coredumpctl(pid):
     for l in out.split('\n'):
         if not l.startswith('                '):
             s.append(l)
-    out = '\n'.join(s) + open(name2).read()
+    with open(name2) as fil:
+        out = '\n'.join(s) + fil.read()
     os.unlink(name2)
     return out, err
 
@@ -1616,7 +1621,8 @@ def GetBitsAndModsAndThreads(env):
                     break
                 time.sleep(0.1)
             if proc.returncode is None:
-                connurl = open(os.path.join(dbpath, '.conn')).read()
+                with open(os.path.join(dbpath, '.conn')) as fil:
+                    connurl = fil.read()
                 res = mapiportre.search(connurl)
                 try:
                     with pymonetdb.connect(username='monetdb',
@@ -1727,10 +1733,11 @@ def GetBitsAndModsAndThreads(env):
 def CheckMods(env, TST, SERVER, CALL):
     missing = []
     if os.path.isfile(TST + '.modules'):
-        for m in openutf8(TST + '.modules'):
-            m = m.strip()
-            if m  and  m[0] != '#'  and  m not in env['TST_MODS']:
-                missing.append(m)
+        with openutf8(TST + '.modules') as fil:
+            for m in fil:
+                m = m.strip()
+                if m  and  m[0] != '#'  and  m not in env['TST_MODS']:
+                    missing.append(m)
     if SERVER == 'SQL':
         sql_mods = ['sql']
         for m in sql_mods:
@@ -1748,12 +1755,13 @@ def CheckTests(env, TST, oktests):
         # we didn't clean up from a previous run, assume tests were done
         return missing
 
-    for test in openutf8(TST + '.reqtests'):
-        test = test.strip()
-        if not test or test.startswith('#'):
-            continue
-        if test not in oktests:
-            missing.append(test)
+    with openutf8(TST + '.reqtests') as fil:
+        for test in fil:
+            test = test.strip()
+            if not test or test.startswith('#'):
+                continue
+            if test not in oktests:
+                missing.append(test)
     return missing
 
 
@@ -2125,8 +2133,9 @@ def RunTest(env, TST, COND, oktests, length, pSrvr, total_tests, options, enviro
         for ff in listdir(TSTTRGDIR):
             fff = ff[:-3]
             if test.match(ff) and not os.path.isfile(os.path.join(TSTTRGDIR, fff)) and not ff.endswith('.test.in'):
-                with openutf8(os.path.join(TSTTRGDIR, fff),'w') as f:
-                    for l in openutf8(os.path.join(TSTTRGDIR, ff)):
+                with openutf8(os.path.join(TSTTRGDIR, fff),'w') as f, \
+                     openutf8(os.path.join(TSTTRGDIR, ff)) as fil:
+                    for l in fil:
                         f.write(expandvars(l, myenv))
 
         if odbc:
@@ -2167,12 +2176,13 @@ Password = {passwd or "monetdb"}-Wrong
         STABLEout,STABLEerr = StableOutErr(env,par,TST,SYST,RELEASE,DIST,VERSION,TSTTRGDIR)
         TIMEOUT = par['TIMEOUT']
         if os.path.isfile(os.path.join(TSTTRGDIR, TST+'.timeout')):
-            for f in openutf8(os.path.join(TSTTRGDIR, TST+'.timeout')):
-                TOf = float(f.strip())
-                if TOf > 0:
-                    TIMEOUT = int(TIMEOUT * TOf)
-                if TIMEOUT < 1 and par['TIMEOUT'] > 0:
-                    TIMEOUT = 1
+            with openutf8(os.path.join(TSTTRGDIR, TST+'.timeout')) as fil:
+                for f in fil:
+                    TOf = float(f.strip())
+                    if TOf > 0:
+                        TIMEOUT = int(TIMEOUT * TOf)
+                    if TIMEOUT < 1 and par['TIMEOUT'] > 0:
+                        TIMEOUT = 1
 
         ME = ''
 
@@ -2273,7 +2283,8 @@ Password = {passwd or "monetdb"}-Wrong
         if REV:
             d = '%s%s/%s' % (URLPREFIX, url(TSTDIR), TSTSUFF)
             if os.path.isfile(os.path.join(TSTTRGDIR, TST + EXT + '.src')):
-                f = openutf8(os.path.join(TSTTRGDIR, TST + EXT + '.src')).readline().strip()
+                with openutf8(os.path.join(TSTTRGDIR, TST + EXT + '.src')) as fil:
+                    f = fil.readline().strip()
                 if f.startswith('$RELSRCDIR/'):
                     f = f[11:]
                     while f.startswith('../'):
@@ -2293,12 +2304,14 @@ Password = {passwd or "monetdb"}-Wrong
                     tst = '%s<a target="_blank" href="https://github.com/MonetDB/MonetDB/issues/%s">%s</a>%s' % (TST[:res.start(0)+1], bugno, res.group(0)[1:], TST[res.end(0):])
                 else:
                     tst = TST
-        out = openutf8(os.path.join(TSTTRGDIR, '%s.test.out' % TST)).read()
+        with openutf8(os.path.join(TSTTRGDIR, '%s.test.out' % TST)) as fil:
+            out = fil.read()
         if out and [x for x in out.splitlines() if not x.startswith('#')]:
             FailedOut = F_ERROR
         else:
             FailedOut = F_OK
-        err = openutf8(os.path.join(TSTTRGDIR, '%s.test.err' % TST)).read()
+        with openutf8(os.path.join(TSTTRGDIR, '%s.test.err' % TST)) as fil:
+            err = fil.read()
         if err and [x for x in err.splitlines() if not x.startswith('#')]:
             if max(sockerr, errcode) in (F_SOCK, F_TIME, F_RECU, F_ABRT, F_SEGV):
                 FailedErr = max(sockerr, errcode)
@@ -2505,7 +2518,7 @@ def stacktrace(proc, outfile):
             pass
     else:
         try:
-            with process.Popen(['gdb', '-p', str(proc.pid), '-batch', '-ex', 'thread apply all bt full'], stdout=process.PIPE,
+            with process.Popen(['gdb', '-n', '-p', str(proc.pid), '-batch', '-ex', 'thread apply all bt full'], stdout=process.PIPE,
                                text=True) as p:
                 try:
                     out, err = p.communicate(timeout=60)
@@ -2777,6 +2790,8 @@ class ServerClass:
         return self.proc.poll()
 
     def terminate(self):
+        if self.proc.stdin is not None:
+            self.proc.stdin.close()
         if os.name == 'nt':
             self.proc.send_signal(signal.CTRL_BREAK_EVENT)
         else:
@@ -2893,7 +2908,7 @@ class ServerClass:
         cmd = self.cmd
         if procdebug:
             print('LaunchIt: starting process "%s" (inpipe)\n' % '" "'.join(cmd))
-        stdin = open(os.devnull)
+        stdin = process.DEVNULL
         stdout = self.outfile
         stderr = self.errfile
         if self.inmem:
@@ -2955,7 +2970,8 @@ class ServerClass:
                         proc.wait()
                     return
                 time.sleep(0.1)
-            connurl = open(os.path.join(os.path.split(self.pollfile)[0], '.conn')).read()
+            with open(os.path.join(os.path.split(self.pollfile)[0], '.conn')) as fil:
+                connurl = fil.read()
             res = mapiportre.search(connurl)
             port = res.group('port')
         else:
@@ -3140,7 +3156,8 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, len
                 elif env.get('TRANS_INMEM'):
                     Srvr.append('--dbextra=in-memory')
                 if os.path.isfile(os.path.join(TSTTRGDIR, TST + '.options5')):
-                    Srvr.extend(openutf8(os.path.join(TSTTRGDIR, TST + '.options5')).read().split())
+                    with openutf8(os.path.join(TSTTRGDIR, TST + '.options5')) as fil:
+                        Srvr.extend(fil.read().split())
                 Srvr.extend(mserver5_opts)
                 Srvr.extend(options)
                 pSrvr = ServerClass(Srvr, SrvrOut, SrvrErr, TIMEOUT, os.path.join(dbpath, '.started'), TSTDB, dbg=env.get('DBG'))
@@ -3392,9 +3409,10 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, len
         # FIXME: this begs for a much nicer solution (100% copy of below)
         for f in (TestErrFile, TestOutFile):
             if os.path.isfile(os.path.join(TSTTRGDIR, f)):
-                for l in openutf8(os.path.join(TSTTRGDIR, f)):
-                    if TO.search(l):
-                        return msg
+                with openutf8(os.path.join(TSTTRGDIR, f)) as fil:
+                    for l in fil:
+                        if TO.search(l):
+                            return msg
 
     return None
 
@@ -3575,7 +3593,8 @@ if SYST == 'Linux':
     #  Please keep this aligned / in sync with configure.ag !
     LINUX_DIST=''
     if os.path.isfile('/etc/os-release'):
-        l = open('/etc/os-release').read()
+        with open('/etc/os-release') as fil:
+            l = fil.read()
         x0 = re.search('^NAME=[\'"]?([^\'"\n]*)[\'"]?$', l, re.MULTILINE)
         if x0:
             x0 = x0.group(1)
@@ -3584,22 +3603,26 @@ if SYST == 'Linux':
             x1 = x1.group(1)
         LINUX_DIST = '%s:%s' % (x0 or 'Linux', x1 or '')
     elif os.path.isfile('/etc/fedora-release'):
-        l = open('/etc/fedora-release').readline()
+        with open('/etc/fedora-release') as fil:
+            l = fil.readline()
         x = re.match('^.*(Fedora).* release ([0-9][^ \n]*)( .*)*$', l)
         if x:
             LINUX_DIST = '%s:%s' % (x.group(1),x.group(2))
     elif os.path.isfile('/etc/centos-release'):
-        l = open('/etc/centos-release').readline()
+        with open('/etc/centos-release') as fil:
+            l = fil.readline()
         x = re.match('^(CentOS).* release ([0-9][^ \n]*)( .*)*$', l)
         if x:
             LINUX_DIST = '%s:%s' % (x.group(1),x.group(2))
     elif os.path.isfile('/etc/yellowdog-release'):
-        l = open('/etc/yellowdog-release').readline()
+        with open('/etc/yellowdog-release') as fil:
+            l = fil.readline()
         x = re.match('^(Yellow) Dog Linux release ([0-9][^ \n]*)( .*)*$', l)
         if x:
             LINUX_DIST = '%s:%s' % (x.group(1),x.group(2))
     elif os.path.isfile('/etc/redhat-release'):
-        l = open('/etc/redhat-release').readline()
+        with open('/etc/redhat-release') as fil:
+            l = fil.readline()
         x0 = re.match('^.*(Red) (Hat).* Linux *([A-Z]*) release ([0-9][^ \n]*)( .*)*$', l)
         x1 = re.match('^Red Hat Enterprise Linux ([AW]S) release ([0-9][^ \n]*)( .*)*$', l)
         x2 = re.match('^(CentOS).* release ([0-9][^ \n]*)( .*)*$', l)
@@ -3613,7 +3636,8 @@ if SYST == 'Linux':
         elif x3:
             LINUX_DIST = '%s:%s' % (x3.group(1),x3.group(2))
     elif os.path.isfile('/etc/SuSE-release'):
-        l = open('/etc/SuSE-release').readline()
+        with open('/etc/SuSE-release') as fil:
+            l = fil.readline()
         x0 = re.match('^.*(S[Uu]SE) LINUX Enterprise ([SD])[ervsktop]* ([0-9][^ \n]*)( .*)*$', l)
         x1 = re.match('^S[Uu]SE LINUX Enterprise ([SD])[ervsktop]* ([0-9][^ \n]*)( .*)*$', l)
         x2 = re.match('^.*(S[Uu]SE) [Ll][Ii][Nn][Uu][Xx].* ([0-9][^ \n]*)( .*)*$', l)
@@ -3627,26 +3651,30 @@ if SYST == 'Linux':
         elif x3:
             LINUX_DIST = '%s:%s' % (x3.group(1),x3.group(2))
     elif os.path.isfile('/etc/gentoo-release'):
-        l = open('/etc/gentoo-release').readline()
+        with open('/etc/gentoo-release') as fil:
+            l = fil.readline()
         x = re.match('^.*(Gentoo) Base System.* [versionrelease]* ([0-9][^ \n]*)( .*)*$', l)
         if x:
             LINUX_DIST = '%s:%s' % (x.group(1),x.group(2))
     elif os.path.isfile('/etc/lsb-release'):
         x0 = x1 = None
-        for l in open('/etc/lsb-release'):
-            if not x0:
-                x0 = re.match('^DISTRIB_ID=([^ \n]*)( .*)*$', l)
-            if not x1:
-                x1 = re.match('^DISTRIB_RELEASE=([^ \n]*)( .*)*$', l)
+        with open('/etc/lsb-release') as fil:
+            for l in fil:
+                if not x0:
+                    x0 = re.match('^DISTRIB_ID=([^ \n]*)( .*)*$', l)
+                if not x1:
+                    x1 = re.match('^DISTRIB_RELEASE=([^ \n]*)( .*)*$', l)
         if x0 and x1:
             LINUX_DIST = '%s:%s' % (x0.group(1),x1.group(1))
     elif os.path.isfile('/etc/debian_version'):
-        LINUX_DIST = 'Debian:'+open('/etc/debian_version').readline().strip()
+        with open('/etc/debian_version') as fil:
+            LINUX_DIST = 'Debian:'+fil.readline().strip()
     if not LINUX_DIST:
         LINUX_DIST = SYST+':'+re.match(r'^([0-9.]*)([^0-9.].*)$', RELEASE).group(1)
     DIST,VERSION = LINUX_DIST.split(':', 1)
 elif SYST == 'SunOS' and os.path.isfile('/etc/release'):
-    (DIST,VERSION,rest) = open('/etc/release').readline().strip().split(' ',2)
+    with open('/etc/release') as fil:
+        (DIST,VERSION,rest) = fil.readline().strip().split(' ',2)
 else:
     DIST = SYST
     VERSION = RELEASE
@@ -4273,14 +4301,15 @@ def main(argv):
                 i = 0
                 while i < len(testlist):
                     if os.path.exists(os.path.join(testdirs[0], 'Tests', testlist[i] + '.reqtests')):
-                        for t in openutf8(os.path.join(testdirs[0], 'Tests', testlist[i] + '.reqtests')):
-                            t = t[:-1] # remove newline
-                            if t not in testlist[:i]:
-                                testlist.insert(i, t)
-                                i = i + 1
-                                added = True
-                            #elif t in testlist:
-                                # WARNING: tests in wrong order
+                        with openutf8(os.path.join(testdirs[0], 'Tests', testlist[i] + '.reqtests')) as fil:
+                            for t in fil:
+                                t = t[:-1] # remove newline
+                                if t not in testlist[:i]:
+                                    testlist.insert(i, t)
+                                    i = i + 1
+                                    added = True
+                                #elif t in testlist:
+                                    # WARNING: tests in wrong order
                     i = i + 1
             test_count = len(testlist)
 
