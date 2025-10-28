@@ -530,7 +530,7 @@ rel_buildhash(visitor *v, sql_rel *rel, sql_rel **iprj, bool crossproduct)
 	}
 	/* Inplace for hash sharing */
 	sql_rel *r = rel_create(v->sql->sa);
-	if (rel_is_ref(rel)) {
+	if (0 && rel_is_ref(rel)) {
 		sql_rel *l = r;
 		*l = *rel;
 		l->ref.refcnt = 1;
@@ -866,6 +866,7 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 					need_all = true;
 				rel_hsh = rel_buildhash(v, rel_hsh, &iprj, list_empty(eq_exps));
 			   	rel_hsh->flag = (!list_empty(other) || list_empty(rel->attr))?op_join:op_semi;
+				rel_hsh->single = rel->single;
 			} else {
 				found_exps_cmp_hsh = rel_hsh->attr;
 				found_exps_prj_hsh = rel_hsh->exps;
@@ -888,7 +889,7 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 				find_cmp_exps(&exps_cmp_hsh, &exps_cmp_prb, eq_exps, rel_hsh, rel_prb);
 
 				if (found_exps_cmp_hsh) { /* if not the same ?? */
-					printf("# todo need to check \n");
+					printf("# todo need to check hsh\n");
 				} else {
 					rel_hsh->attr = cross?NULL:exps_cmp_hsh;
 				}
@@ -899,7 +900,7 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 			find_payload_exps(v->sql, &exps_hsh, &exps_prb, p->exps, rel_hsh, rel_prb, rel->attr);
 
 			if (found_exps_prj_hsh) {
-				printf("# todo need to check \n");
+				printf("# todo need to check prj\n");
 			} else if (!list_empty(exps_hsh) && !is_base(rel_hsh->op)) {
 				rel_hsh->exps = exps_hsh;
 			}

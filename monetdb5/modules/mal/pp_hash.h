@@ -35,6 +35,8 @@
 #define _hash_sht(X)  ((unsigned int)X)
 #define _hash_int_(X) ((((unsigned int)X)>>7)^(((unsigned int)X)>>13)^(((unsigned int)X)>>21)^((unsigned int)X))
 #define _hash_int(X)  (_hash_int_((X)*98317))
+//#define _hash_int(X)  (_hash_int_((X)*25165843))
+//#define _hash_int(X)  (_hash_int_((X)*hash_prime_nr[21]))
 
 #define _hash_date(X) _hash_int(X)
 #define _hash_lng(X)  ((((ulng)X)>>7)^(((ulng)X)>>13)^(((ulng)X)>>21)^(((ulng)X)>>31)^(((ulng)X)>>38)^(((ulng)X)>>46)^(((ulng)X)>>56)^((ulng)X))

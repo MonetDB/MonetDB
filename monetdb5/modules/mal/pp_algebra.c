@@ -870,7 +870,7 @@ LALGprojection(bat *result, const ptr *h, const bat *lid, const bat *rid)
 				if (!g) { \
 					if (slots == 0) { \
 						slots = HT_PRE_CLAIM; \
-						slot = ATOMIC_ADD(&h->last, HT_PRE_CLAIM); \
+						slot = ATOMIC_ADD(&h->last, slots); \
 						if (((slot*100)/70) >= (gid)h->size) { \
 							hash_rehash(h, p, err); \
 							vals = h->vals; \
@@ -916,7 +916,7 @@ LALGprojection(bat *result, const ptr *h, const bat *lid, const bat *rid)
 				if (!g) { \
 					if (slots == 0) { \
 						slots = HT_PRE_CLAIM; \
-						slot = ATOMIC_ADD(&h->last, HT_PRE_CLAIM); \
+						slot = ATOMIC_ADD(&h->last, slots); \
 						if (((slot*100)/70) >= (gid)h->size) { \
 							hash_rehash(h, p, err); \
 							vals = h->vals; \
@@ -962,7 +962,7 @@ LALGprojection(bat *result, const ptr *h, const bat *lid, const bat *rid)
 				if (!g) { \
 					if (slots == 0) { \
 						slots = HT_PRE_CLAIM; \
-						slot = ATOMIC_ADD(&h->last, HT_PRE_CLAIM); \
+						slot = ATOMIC_ADD(&h->last, slots); \
 						if (((slot*100)/70) >= (gid)h->size) { \
 							hash_rehash(h, p, err); \
 							vals = h->vals; \
@@ -1011,7 +1011,7 @@ LALGprojection(bat *result, const ptr *h, const bat *lid, const bat *rid)
 				if (!g) { \
 					if (slots == 0) { \
 						slots = HT_PRE_CLAIM; \
-						slot = ATOMIC_ADD(&h->last, HT_PRE_CLAIM); \
+						slot = ATOMIC_ADD(&h->last, slots); \
 						if (((slot*100)/70) >= (gid)h->size) {\
 							hash_rehash(h, p, err); \
 							vals = h->vals; \
@@ -1059,7 +1059,7 @@ LALGprojection(bat *result, const ptr *h, const bat *lid, const bat *rid)
 				if (!g) { \
 					if (slots == 0) { \
 						slots = HT_PRE_CLAIM; \
-						slot = ATOMIC_ADD(&h->last, HT_PRE_CLAIM); \
+						slot = ATOMIC_ADD(&h->last, slots); \
 						if (((slot*100)/70) >= (gid)h->size) { \
 							hash_rehash(h, p, err); \
 							vals = h->vals; \
@@ -1106,7 +1106,7 @@ LALGunique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid)
 	assert(h && h->s.type == OA_HASH_TABLE_SINK);
 	MT_lock_set(&u->theaplock);
 	MT_lock_set(&b->theaplock);
-	if (ATOMvarsized(u->ttype) && !VIEWvtparent(b)) {
+	if (ATOMvarsized(u->ttype) /*&& !VIEWvtparent(b)*/) {
 		local_storage = true;
 		MT_lock_unset(&b->theaplock);
 		MT_lock_unset(&u->theaplock);
@@ -1238,7 +1238,7 @@ LALGunique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid)
 				if (!g) { \
 					if (slots == 0) { \
 						slots = HT_PRE_CLAIM; \
-						slot = ATOMIC_ADD(&h->last, HT_PRE_CLAIM); \
+						slot = ATOMIC_ADD(&h->last, slots); \
 						if (((slot*100)/70) >= (gid)h->size) { \
 							hash_rehash(h, p, err); \
 							vals = h->vals; \
@@ -1287,7 +1287,7 @@ LALGunique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid)
 				if (!g) { \
 					if (slots == 0) { \
 						slots = HT_PRE_CLAIM; \
-						slot = ATOMIC_ADD(&h->last, HT_PRE_CLAIM); \
+						slot = ATOMIC_ADD(&h->last, slots); \
 						if (((slot*100)/70) >= (gid)h->size) { \
 							hash_rehash(h, p, err); \
 							vals = h->vals; \
@@ -1336,7 +1336,7 @@ LALGunique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid)
 				if (!g) { \
 					if (slots == 0) { \
 						slots = HT_PRE_CLAIM; \
-						slot = ATOMIC_ADD(&h->last, HT_PRE_CLAIM); \
+						slot = ATOMIC_ADD(&h->last, slots); \
 						if (((slot*100)/70) >= (gid)h->size) { \
 							hash_rehash(h, p, err); \
 							vals = h->vals; \
@@ -1388,7 +1388,7 @@ LALGunique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid)
 				if (!g) { \
 					if (slots == 0) { \
 						slots = HT_PRE_CLAIM; \
-						slot = ATOMIC_ADD(&h->last, HT_PRE_CLAIM); \
+						slot = ATOMIC_ADD(&h->last, slots); \
 						if (((slot*100)/70) >= (gid)h->size) { \
 							hash_rehash(h, p, err); \
 							vals = h->vals; \
@@ -1439,7 +1439,7 @@ LALGunique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid)
 				if (!g) { \
 					if (slots == 0) { \
 						slots = HT_PRE_CLAIM; \
-						slot = ATOMIC_ADD(&h->last, HT_PRE_CLAIM); \
+						slot = ATOMIC_ADD(&h->last, slots); \
 						if (((slot*100)/70) >= (gid)h->size) { \
 							hash_rehash(h, p, err); \
 							vals = h->vals; \
@@ -1626,7 +1626,7 @@ LALGgroup_unique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid, bat *Gid)
 				if (!g) { \
 					if (slots == 0) { \
 						slots = private?1:HT_PRE_CLAIM; \
-						slot = ATOMIC_ADD(&h->last, private?1:HT_PRE_CLAIM); \
+						slot = ATOMIC_ADD(&h->last, slots); \
 						if (((slot*100)/70) >= (gid)h->size) { \
 							hash_rehash(h, p, err); \
 							vals = h->vals; \
@@ -1670,7 +1670,7 @@ LALGgroup_unique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid, bat *Gid)
 				if (!g) { \
 					if (slots == 0) { \
 						slots = private?1:HT_PRE_CLAIM; \
-						slot = ATOMIC_ADD(&h->last, private?1:HT_PRE_CLAIM); \
+						slot = ATOMIC_ADD(&h->last, slots); \
 						if (((slot*100)/70) >= (gid)h->size) { \
 							hash_rehash(h, p, err); \
 							vals = h->vals; \
@@ -1712,7 +1712,7 @@ LALGgroup_unique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid, bat *Gid)
 					if (!g) { \
 						if (slots == 0) { \
 							slots = private?1:HT_PRE_CLAIM; \
-							slot = ATOMIC_ADD(&h->last, private?1:HT_PRE_CLAIM); \
+							slot = ATOMIC_ADD(&h->last, slots); \
 							if (((slot*100)/70) >= (gid)h->size) { \
 								hash_rehash(h, p, err); \
 								vals = h->vals; \
@@ -1756,7 +1756,7 @@ LALGgroup_unique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid, bat *Gid)
 				if (!g) { \
 					if (slots == 0) { \
 						slots = private?1:HT_PRE_CLAIM; \
-						slot = ATOMIC_ADD(&h->last, private?1:HT_PRE_CLAIM); \
+						slot = ATOMIC_ADD(&h->last, slots); \
 						if (((slot*100)/70) >= (gid)h->size) { \
 							hash_rehash(h, p, err); \
 							vals = h->vals; \
@@ -1800,7 +1800,7 @@ LALGgroup_unique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid, bat *Gid)
 				if (!g) { \
 					if (slots == 0) { \
 						slots = private?1:HT_PRE_CLAIM; \
-						slot = ATOMIC_ADD(&h->last, private?1:HT_PRE_CLAIM); \
+						slot = ATOMIC_ADD(&h->last, slots); \
 						if (((slot*100)/70) >= (gid)h->size) { \
 							hash_rehash(h, p, err); \
 							vals = h->vals; \
@@ -1846,7 +1846,7 @@ LALGgroup_unique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid, bat *Gid)
 				if (!g) { \
 					if (slots == 0) { \
 						slots = private?1:HT_PRE_CLAIM; \
-						slot = ATOMIC_ADD(&h->last, private?1:HT_PRE_CLAIM); \
+						slot = ATOMIC_ADD(&h->last, slots); \
 						if (((slot*100)/70) >= (gid)h->size) { \
 							hash_rehash(h, p, err); \
 							vals = h->vals; \
@@ -1889,7 +1889,7 @@ LALGgroup_unique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid, bat *Gid)
 				if (!g) { \
 					if (slots == 0) { \
 						slots = private?1:HT_PRE_CLAIM; \
-						slot = ATOMIC_ADD(&h->last, private?1:HT_PRE_CLAIM); \
+						slot = ATOMIC_ADD(&h->last, slots); \
 						if (((slot*100)/70) >= (gid)h->size) { \
 							hash_rehash(h, p, err); \
 							vals = h->vals; \
@@ -1933,7 +1933,7 @@ LALGgroup_unique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid, bat *Gid)
 				if (!g) { \
 					if (slots == 0) { \
 						slots = private?1:HT_PRE_CLAIM; \
-						slot = ATOMIC_ADD(&h->last, private?1:HT_PRE_CLAIM); \
+						slot = ATOMIC_ADD(&h->last, slots); \
 						if (((slot*100)/70) >= (gid)h->size) { \
 							hash_rehash(h, p, err); \
 							vals = h->vals; \
@@ -1997,7 +1997,7 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 	MT_lock_set(&b->theaplock);
 	if ((ATOMvarsized(u->ttype) && !VIEWvtparent(b)) ||
 	    (ATOMvarsized(u->ttype) && BATcount(b) && u->tvheap->parentid != u->batCacheid && u->tvheap->parentid != b->tvheap->parentid) ||
-		u->twidth != b->twidth) {
+		(ATOMvarsized(u->ttype) && u->twidth != b->twidth)) {
 		local_storage = true;
 		MT_lock_unset(&b->theaplock);
 		MT_lock_unset(&u->theaplock);
@@ -2037,7 +2037,6 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 			err = createException(MAL, "pp group.group", MAL_MALLOC_FAIL);
 			goto error;
 		}
-
 		if (cnt && !err) {
 			ht_activate(h);
 			int tt = b->ttype;
@@ -2123,7 +2122,7 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 				if (!g) { \
 					if (slots == 0) { \
 						slots = private?1:HT_PRE_CLAIM; \
-						slot = ATOMIC_ADD(&h->last, private?1:HT_PRE_CLAIM); \
+						slot = ATOMIC_ADD(&h->last, slots); \
 						if (((slot*100)/70) >= (gid)h->size) \
 							hash_rehash(h, p, err); { \
 							vals = h->vals; \
@@ -2169,7 +2168,7 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 				if (!g) { \
 					if (slots == 0) { \
 						slots = private?1:HT_PRE_CLAIM; \
-						slot = ATOMIC_ADD(&h->last, private?1:HT_PRE_CLAIM); \
+						slot = ATOMIC_ADD(&h->last, slots); \
 						if (((slot*100)/70) >= (gid)h->size) { \
 							hash_rehash(h, p, err); \
 							vals = h->vals; \
@@ -2215,7 +2214,7 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 				if (!g) { \
 					if (slots == 0) { \
 						slots = private?1:HT_PRE_CLAIM; \
-						slot = ATOMIC_ADD(&h->last, private?1:HT_PRE_CLAIM); \
+						slot = ATOMIC_ADD(&h->last, slots); \
 						if (((slot*100)/70) >= (gid)h->size) { \
 							hash_rehash(h, p, err); \
 							vals = h->vals; \
@@ -2262,7 +2261,7 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 				if (!g) { \
 					if (slots == 0) { \
 						slots = private?1:HT_PRE_CLAIM; \
-						slot = ATOMIC_ADD(&h->last, private?1:HT_PRE_CLAIM); \
+						slot = ATOMIC_ADD(&h->last, slots); \
 						if (((slot*100)/70) >= (gid)h->size) { \
 							hash_rehash(h, p, err); \
 							vals = h->vals; \
@@ -2311,7 +2310,7 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 				if (!g) { \
 					if (slots == 0) { \
 						slots = private?1:HT_PRE_CLAIM; \
-						slot = ATOMIC_ADD(&h->last, private?1:HT_PRE_CLAIM); \
+						slot = ATOMIC_ADD(&h->last, slots); \
 						if (((slot*100)/70) >= (gid)h->size) { \
 							hash_rehash(h, p, err); \
 							vals = h->vals; \
@@ -2357,7 +2356,7 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 				if (!g) { \
 					if (slots == 0) { \
 						slots = private?1:HT_PRE_CLAIM; \
-						slot = ATOMIC_ADD(&h->last, private?1:HT_PRE_CLAIM); \
+						slot = ATOMIC_ADD(&h->last, slots); \
 						if (((slot*100)/70) >= (gid)h->size) { \
 							hash_rehash(h, p, err); \
 							vals = h->vals; \
@@ -2433,7 +2432,6 @@ LALGderive(bat *rid, bat *uid, const ptr *H, bat *Gid, bat *Ph, bat *bid /*, bat
 	assert(h && h->s.type == OA_HASH_TABLE_SINK);
 	MT_lock_set(&u->theaplock);
 	MT_lock_set(&b->theaplock);
-
 	if ((ATOMvarsized(u->ttype) && !VIEWvtparent(b)) ||
 	    (ATOMvarsized(u->ttype) && BATcount(b) && u->tvheap->parentid != u->batCacheid && u->tvheap->parentid != b->tvheap->parentid) ||
 		(ATOMvarsized(u->ttype) && u->twidth != b->twidth)) {
@@ -2470,6 +2468,7 @@ LALGderive(bat *rid, bat *uid, const ptr *H, bat *Gid, bat *Ph, bat *bid /*, bat
 	if (h) {
 		BUN cnt = BATcount(b);
 
+		ATOMIC_BASE_TYPE expected = 0;
 		BAT *g = COLnew(b->hseqbase, TYPE_oid, cnt, TRANSIENT);
 		if (g == NULL) {
 			err = createException(MAL, "pp group.group(derive)", MAL_MALLOC_FAIL);
@@ -2477,7 +2476,6 @@ LALGderive(bat *rid, bat *uid, const ptr *H, bat *Gid, bat *Ph, bat *bid /*, bat
 		}
 		if (cnt && !err) {
 			ht_activate(h);
-			ATOMIC_BASE_TYPE expected = 0;
 			int tt = b->ttype;
 			oid *gp = Tloc(g, 0);
 			gid *gi = Tloc(G, 0);
@@ -2575,6 +2573,7 @@ LALGderive(bat *rid, bat *uid, const ptr *H, bat *Gid, bat *Ph, bat *bid /*, bat
 
 #define aproject(Type,w,Toff) \
 	if ((ATOMvarsized(tt) || ATOMstorage(tt) == TYPE_##Type) && b->twidth == w) { \
+		assert(b->twidth == r->twidth);\
 		Toff *v = Tloc(b, 0); \
 		Toff *o = Tloc(r, 0); \
 		if (g->ttype == TYPE_void) { \
@@ -2613,10 +2612,6 @@ LALGderive(bat *rid, bat *uid, const ptr *H, bat *Gid, bat *Ph, bat *bid /*, bat
 					err = createException(MAL, "pp algebra.projection", MAL_MALLOC_FAIL);\
 					goto error; \
 				} \
-				if (w < r->twidth) { \
-					BUN sz = BATcapacity(r); \
-					memset(Tloc(r, max), 0, r->twidth*(sz-max)); \
-				} \
 				if (err) \
 					TIMEOUT_LOOP_BREAK; \
 			} \
@@ -2639,10 +2634,6 @@ LALGderive(bat *rid, bat *uid, const ptr *H, bat *Gid, bat *Ph, bat *bid /*, bat
 				if (ins && tfastins_nocheckVAR( r, gp[i], BUNtvar(bi, i)) != GDK_SUCCEED) { \
 					err = createException(MAL, "pp algebra.projection", MAL_MALLOC_FAIL);\
 					goto error; \
-				} \
-				if (w < r->twidth) { \
-					BUN sz = BATcapacity(r); \
-					memset(Tloc(r, max), 0, r->twidth*(sz-max)); \
 				} \
 				if (err) \
 					TIMEOUT_LOOP_BREAK; \
@@ -2687,6 +2678,7 @@ LALGproject(bat *rid, bat *gid, bat *bid, const ptr *H)
 		locked = true;
 	}
 
+	assert(b->hseqbase == g->hseqbase);
 	if (r && BATcount(b)) {
 		MT_lock_set(&r->theaplock);
 		MT_lock_set(&b->theaplock);
@@ -2695,12 +2687,12 @@ LALGproject(bat *rid, bat *gid, bat *bid, const ptr *H)
 			MT_lock_unset(&r->theaplock);
 			err = createException(MAL, "pp algebra.projection", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto error;
-		} else if (ATOMvarsized(r->ttype) && ((BATcount(r) && r->tvheap->parentid == r->batCacheid) ||
+		} else if (ATOMvarsized(r->ttype) && r->tvheap->parentid == r->batCacheid && (BATcount(r) ||
 				(!VIEWvtparent(b) || BBP_desc(VIEWvtparent(b))->batRestricted != BAT_READ))) {
 			MT_lock_unset(&b->theaplock);
 			MT_lock_unset(&r->theaplock);
 			local_storage = true;
-		} else if (ATOMvarsized(r->ttype) && BATcount(r) && r->tvheap->parentid != r->batCacheid &&
+		} else if (ATOMvarsized(r->ttype) && r->tvheap->parentid != r->batCacheid &&
 				r->tvheap->parentid != b->tvheap->parentid) {
 			MT_lock_unset(&b->theaplock);
 			MT_lock_unset(&r->theaplock);
@@ -2713,8 +2705,7 @@ LALGproject(bat *rid, bat *gid, bat *bid, const ptr *H)
 			MT_lock_unset(&b->theaplock);
 			MT_lock_unset(&r->theaplock);
 			BATswap_heaps(r, b, p);
-			r->twidth = b->twidth;
-			r->tshift = b->tshift;
+			assert(r->twidth == b->twidth);
 		} else {
 			MT_lock_unset(&b->theaplock);
 			MT_lock_unset(&r->theaplock);
@@ -2722,9 +2713,8 @@ LALGproject(bat *rid, bat *gid, bat *bid, const ptr *H)
 	} else if (!r) {
 		MT_lock_set(&b->theaplock);
 		if (ATOMvarsized(tt) && VIEWvtparent(b) && BBP_desc(VIEWvtparent(b))->batRestricted == BAT_READ) {
-			uint16_t width = b->twidth;
 			MT_lock_unset(&b->theaplock);
-			r = COLnew2(0, tt, max, TRANSIENT, width);
+			r = COLnew2(0, tt, max, TRANSIENT, b->twidth);
 			if (r == NULL) {
 				err = createException(MAL, "pp algebra.projection", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto error;
@@ -2758,7 +2748,7 @@ LALGproject(bat *rid, bat *gid, bat *bid, const ptr *H)
 	}
 
 	/* get max id from gid */
-	if (cnt < max)
+	if (ATOMvarsized(r->ttype) && cnt < max)
 		memset(Tloc(r, cnt), 0, r->twidth*(max-cnt));
 	cnt = BATcount(b);
 	if (cnt) {
@@ -2797,7 +2787,7 @@ LALGproject(bat *rid, bat *gid, bat *bid, const ptr *H)
 
 	if (!private)
 		pipeline_lock2(r);
-	if (BATcount(r) < max)
+	if (cnt && BATcount(r) < max)
 		BATsetcount(r, max);
 	BATnegateprops(r);
 	if (!private)
@@ -2805,13 +2795,15 @@ LALGproject(bat *rid, bat *gid, bat *bid, const ptr *H)
 	*rid = r->batCacheid;
 	BBPkeepref(r);
 
-	if (!private)
+	if (locked)
 		pipeline_unlock1(r);
+
 	BBPunfix(b->batCacheid);
 	BBPunfix(g->batCacheid);
 	return MAL_SUCCEED;
   error:
-	if (locked) pipeline_unlock1(r);
+	if (locked)
+		pipeline_unlock1(r);
 	if (g) BBPunfix(g->batCacheid);
 	if (b) BBPunfix(b->batCacheid);
 	if (r) BBPunfix(r->batCacheid);

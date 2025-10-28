@@ -25,9 +25,9 @@ extern stmt *stmt_oahash_hash(backend *be, stmt *key, stmt *prev, stmt *ht);
 extern stmt *stmt_oahash_probe(backend *be, stmt *key, stmt *prev, stmt *rhs_ht, stmt *freq, stmt *outer, bool single, bool semantics, bool eq, bool outerjoin, bool groupedjoin, const stmt *pp);
 
 extern stmt *stmt_algebra_project(backend *be, stmt *inout, stmt *pos, stmt *val, const stmt *pp);
-extern stmt *stmt_oahash_project(backend *be, stmt *col, const stmt *prb_res, const stmt *pp);
-extern stmt * stmt_oahash_project_cart(backend *be, stmt *col, stmt *repeat, str fname, bool LRouter, const stmt *pp);
-extern stmt *stmt_oahash_expand(backend *be, stmt *col, const stmt *prb_res, const stmt *freq, bit append_vals, const stmt *pp);
+extern stmt * stmt_oahash_project_cart(backend *be, stmt *col, stmt *repeat, bool outer, bool expand);
+
+extern stmt *stmt_oahash_expand(backend *be, const stmt *prb_res, const stmt *freq, bit outer);
 extern stmt *stmt_oahash_explode(backend *be, const stmt *prb_res, const stmt *freq, const stmt *ht_sink, bit outer, sql_subtype *st);
 
 extern InstrPtr stmt_part_new(backend *be, int nr_parts);

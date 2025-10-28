@@ -1331,13 +1331,12 @@ HEAPproject(bat *rid, bat *pos, bat *sel, bat *in, const ptr *H)
 			MT_lock_unset(&b->theaplock);
 			MT_lock_unset(&r->theaplock);
 			err = 1;
-		} else if (ATOMvarsized(r->ttype) && ((BATcount(r) && r->tvheap->parentid == r->batCacheid) ||
+		} else if (ATOMvarsized(r->ttype) && r->tvheap->parentid == r->batCacheid && (BATcount(r) ||
 				(!VIEWvtparent(b) || BBP_desc(VIEWvtparent(b))->batRestricted != BAT_READ))) {
-			assert(r->tvheap->parentid == r->batCacheid);
 			MT_lock_unset(&b->theaplock);
 			MT_lock_unset(&r->theaplock);
 			local_storage = true;
-		} else if (!private && ATOMvarsized(r->ttype) && BATcount(r) && r->tvheap->parentid != r->batCacheid &&
+		} else if (ATOMvarsized(r->ttype) && r->tvheap->parentid != r->batCacheid &&
 				r->tvheap->parentid != b->tvheap->parentid) {
 			MT_lock_unset(&b->theaplock);
 			MT_lock_unset(&r->theaplock);
@@ -1348,6 +1347,7 @@ HEAPproject(bat *rid, bat *pos, bat *sel, bat *in, const ptr *H)
 			MT_lock_unset(&b->theaplock);
 			MT_lock_unset(&r->theaplock);
 			BATswap_heaps(r, b, p);
+			assert(r->twidth == b->twidth);
 		} else {
 			MT_lock_unset(&b->theaplock);
 			MT_lock_unset(&r->theaplock);
@@ -1355,23 +1355,26 @@ HEAPproject(bat *rid, bat *pos, bat *sel, bat *in, const ptr *H)
 	} else if (!err && !r) {
 		MT_lock_set(&b->theaplock);
 		if (ATOMvarsized(tt) && VIEWvtparent(b) && BBP_desc(VIEWvtparent(b))->batRestricted == BAT_READ) {
-			uint16_t width = b->twidth;
 			MT_lock_unset(&b->theaplock);
-			r = COLnew2(0, tt, size, TRANSIENT, width);
+			r = COLnew2(0, tt, size, TRANSIENT, b->twidth);
+			if (r == NULL) {
+				err = 1;
+				goto error;
+			}
 			BATswap_heaps(r, b, p);
 		} else {
 			MT_lock_unset(&b->theaplock);
 			local_storage = true;
-			/* Calling COLnew2 with width==0 to have a varheap
-			 * created (with a width > 0, no varheap is created),
-			 * but in pipeline, we want to have varheaps of the
-			 * same width for all workers, hence the call to
-			 * ATOMheap afterwards.
-			 */
 			r = COLnew2(0, tt, size, TRANSIENT, b->twidth);
-			if (r->tvheap && r->tvheap->base == NULL &&
-				ATOMheap(r->ttype, r->tvheap, r->batCapacity) != GDK_SUCCEED)
+			if (r == NULL) {
 				err = 1;
+				goto error;
+			}
+			if (r->tvheap && r->tvheap->base == NULL &&
+				ATOMheap(r->ttype, r->tvheap, r->batCapacity) != GDK_SUCCEED) {
+				err = 1;
+				goto error;
+			}
 		}
 		assert(private);
 		r->tprivate_bat = 1;

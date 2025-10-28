@@ -49,32 +49,39 @@ unshare_varsized_heap(BAT *b)
 		    BATcount(BBP_desc(b->tvheap->parentid)) > 2 * BATcount(b)) {
 			MT_thread_setalgorithm("unshare vheap reinsert strings");
 			MT_lock_set(&b->theaplock);
-			strHeap(h, b->batCapacity);
+			gdk_return rc;
+			if ((rc=ATOMheap(b->ttype, h, b->batCapacity)) != GDK_SUCCEED)
+				return rc;
+
 			Heap *oh = b->tvheap;
 			b->tvheap = h;
 			var_t o;
 			switch (b->twidth) {
 			case 1:
 				for (BUN i = 0; i < b->batCount; i++) {
-					o = (var_t) ((uint8_t *) b->theap->base)[i] + GDK_VAROFFSET;
+					o = (var_t) ((uint8_t *) b->theap->base)[i];
+				       	if (o)
+					       o += GDK_VAROFFSET;
 					if (strPut(b, &o, oh->base + o) == (var_t) -1)
 						goto bailout;
-					((uint8_t *) b->theap->base)[i] = (uint8_t) (o - GDK_VAROFFSET);
+					((uint8_t *) b->theap->base)[i] = (uint8_t) o?(o - GDK_VAROFFSET):0;
 				}
 				break;
 			case 2:
 				for (BUN i = 0; i < b->batCount; i++) {
-					o = (var_t) ((uint16_t *) b->theap->base)[i] + GDK_VAROFFSET;
+					o = (var_t) ((uint16_t *) b->theap->base)[i];
+				       	if (o)
+					       o += GDK_VAROFFSET;
 					if (strPut(b, &o, oh->base + o) == (var_t) -1)
 						goto bailout;
-					((uint16_t *) b->theap->base)[i] = (uint16_t) (o - GDK_VAROFFSET);
+					((uint16_t *) b->theap->base)[i] = (uint16_t) o?(o - GDK_VAROFFSET):0;
 				}
 				break;
 #if SIZEOF_VAR_T == 8
 			case 4:
 				for (BUN i = 0; i < b->batCount; i++) {
 					o = (var_t) ((uint32_t *) b->theap->base)[i];
-					if (strPut(b, &o, oh->base + o) == (var_t) -1)
+					if (o && strPut(b, &o, oh->base + o) == (var_t) -1)
 						goto bailout;
 					((uint32_t *) b->theap->base)[i] = (uint32_t) o;
 				}
@@ -83,7 +90,7 @@ unshare_varsized_heap(BAT *b)
 			case SIZEOF_VAR_T:
 				for (BUN i = 0; i < b->batCount; i++) {
 					o = ((var_t *) b->theap->base)[i];
-					if (strPut(b, &o, oh->base + o) == (var_t) -1)
+					if (o && ATOMputVAR(b, &o, oh->base + o) != GDK_SUCCEED)
 						goto bailout;
 					((var_t *) b->theap->base)[i] = o;
 				}
@@ -508,7 +515,7 @@ append_varsized_bat(BAT *b, BATiter *ni, struct canditer *ci, bool mayshare)
 			BBPrelease(oh->parentid);
 		HEAPdecref(oh, false);
 	}
-	if (BATcount(b) == 0 &&
+	if (BATcount(b) == 0 && b->tvheap->free == 0 &&
 	    ci->tpe == cand_dense && ci->ncand == ni->count) {
 		/* just copy the heaps */
 		MT_lock_set(&b->theaplock);

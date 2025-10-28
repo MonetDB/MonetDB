@@ -109,6 +109,7 @@ HEAPgrow(Heap **hp, size_t size, bool mayshare)
 		};
 		memcpy(new->filename, old->filename, sizeof(new->filename));
 		if (HEAPalloc(new, size, 1) == GDK_SUCCEED) {
+			assert(old->free < size);
 			new->free = old->free;
 			new->cleanhash = old->cleanhash;
 			if (old->free > 0 &&
@@ -527,12 +528,12 @@ GDKupgradevarheap(BAT *b, var_t v, BUN cap, BUN ncopy)
 		case 1:
 			pc = (uint8_t *) old->base;
 			for (i = 0; i < n; i++)
-				pi[i] = pc[i] + GDK_VAROFFSET;
+				pi[i] = pc[i] ? pc[i] + GDK_VAROFFSET : 0;
 			break;
 		case 2:
 			ps = (uint16_t *) old->base;
 			for (i = 0; i < n; i++)
-				pi[i] = ps[i] + GDK_VAROFFSET;
+				pi[i] = ps[i] ? ps[i] + GDK_VAROFFSET : 0;
 			break;
 		default:
 			MT_UNREACHABLE();
@@ -549,12 +550,13 @@ GDKupgradevarheap(BAT *b, var_t v, BUN cap, BUN ncopy)
 		case 1:
 			pc = (uint8_t *) old->base;
 			for (i = 0; i < n; i++)
-				pl[i] = pc[i] + GDK_VAROFFSET;
+				pl[i] = pc[i] ? pc[i] + GDK_VAROFFSET :
+					0;
 			break;
 		case 2:
 			ps = (uint16_t *) old->base;
 			for (i = 0; i < n; i++)
-				pl[i] = ps[i] + GDK_VAROFFSET;
+				pl[i] = ps[i] ? ps[i] + GDK_VAROFFSET : 0;
 			break;
 		case 4:
 			pi = (uint32_t *) old->base;

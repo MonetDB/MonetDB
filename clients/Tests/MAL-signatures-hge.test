@@ -49362,12 +49362,12 @@ oahash
 build_combined_table
 command oahash.build_combined_table(X_0:bat[:any_1], X_1:bat[:oid], X_2:ptr) (X_3:bat[:oid], X_4:bat[:any_1])
 OAHASHbuild_tbl_cmbd
-Build a hash table for the keys with a parent column. Returns the slot ID per key and the hash table sink
+Add the `key`-s with a `parent_slotid` to the hash table. Returns the `slot_id` per `key` and the updated `ht_sink`
 oahash
 build_table
 command oahash.build_table(X_0:bat[:any_1], X_1:ptr) (X_2:bat[:oid], X_3:bat[:any_1])
 BAT_OAHASHbuild_tbl
-Build a hash table for the keys. Returns the slot ID per key and the hash table sink
+Add the `key`-s to the hash table. Returns the `slot_id` per `key` and the updated `ht_sink`
 oahash
 combined_hash
 command oahash.combined_hash(X_0:bat[:any_1], X_1:bat[:oid], X_2:bat[:oid], X_3:bat[:any_2]):bat[:lng]
@@ -49405,12 +49405,12 @@ BAT_OAHASHprobe_cmbd_single
 Probe the selected (key, hash) pairs in the hash table. For a matched item, return its OID in the 'key' column and the slot ID in the hash table
 oahash
 expand
-command oahash.expand(X_0:bat[:any_1], X_1:bat[:oid], X_2:bat[:oid], X_3:bat[:lng], X_4:bit, X_5:ptr):bat[:any_1]
+command oahash.expand(X_0:bat[:oid], X_1:bat[:oid], X_2:bat[:lng], X_3:bit):bat[:oid]
 BAT_OAHASHexpand
-Expand the selected keys according to their frequencies in the hash table. If 'leftouter' is true, append the not 'selected' keys
+Expand the selected ids according to their frequencies in the hash table. If 'leftouter' is true, append the not 'selected' keys
 oahash
 expand_cartesian
-command oahash.expand_cartesian(X_0:bat[:any_1], X_1:bat[:any_2], X_2:bit, X_3:ptr):bat[:any_1]
+command oahash.expand_cartesian(X_0:bat[:any_1], X_1:bat[:any_2], X_2:bit):bat[:oid]
 BAT_OAHASHexpand_cart
 Duplicate each value in 'col' the number of times as the count of 'rowrepeat'. For a left/right-outer join, if 'rowrepeat' is empty, output the values in 'col' once.
 oahash
@@ -49419,23 +49419,23 @@ command oahash.explode(X_0:bat[:oid], X_1:bat[:lng], X_2:bat[:any_2], X_3:bit):b
 BAT_OAHASHexplode
 Explode the result vector 'frequency' times and return payload heap slot ids. If 'leftouter' is true, fill the not 'selected' slot with oid_nil
 oahash
-fetch_payload_cartesian
-command oahash.fetch_payload_cartesian(X_0:bat[:any_1], X_1:bat[:2], X_2:bit, X_3:ptr):bat[:any_1]
-BAT_OAHASHfetch_pld_cart
+explode_cartesian
+command oahash.explode_cartesian(X_0:bat[:any_1], X_1:bat[:any_2], X_2:bit):bat[:oid]
+BAT_OAHASHexplode_cart
 Duplicate the whole 'col' the number of times as the count of 'setrepeat'.  For a left/right-ourter join, if 'col' is empty, output NULLs.
 oahash
 frequency
 pattern oahash.frequency(X_0:bat[:oid], X_1:ptr) (X_2:bat[:oid], X_3:bat[:lng])
 OAHASHadd_freq
-Add the frequencies of the slot IDs to the shared frequency BAT and return combined_hash(slot_id, freq) for payload_pos
+Add `slot_id` to the shared `frequencies` BAT. Returns the occurrence index for each `slot_id` (i.e. it is the n-th time the `slot_id` is seen so far) and the updated `frequencies`
 oahash
 frequency
 pattern oahash.frequency(X_0:bat[:oid], X_1:ptr):bat[:lng]
 OAHASHadd_freq
-Add the frequencies of the slot IDs to the shared frequency BAT
+Add `slot_id` to the shared `frequencies` BAT. Returns the updated `frequencies`
 oahash
 hash
-command oahash.hash(X_0:bat[:any_1], X_1:ptr):bat[:lng]
+command oahash.hash(X_0:bat[:any_1]):bat[:lng]
 BAT_OAHASHhash
 Compute the hashs for the keys
 oahash
@@ -49498,11 +49498,6 @@ probe
 command oahash.probe(X_0:bat[:any_1], X_1:bat[:lng], X_2:bat[:any_2], X_3:bat[:lng], X_4:bit, X_5:bit, X_6:ptr) (X_7:bat[:oid], X_8:bat[:oid])
 BAT_OAHASHprobe_single
 Probe the (key, hash) pairs in the hash table. For a matched key, return its OID in the 'key' column and the slot ID in the hash table
-oahash
-project
-command oahash.project(X_0:bat[:any_1], X_1:bat[:oid], X_2:ptr):bat[:any_1]
-OAHASHproject
-Project the selected OIDs onto the keys
 optimizer
 aliases
 pattern optimizer.aliases():str
