@@ -86,7 +86,8 @@ def process(line, funmac, macros, infunmac=False):
     return nline
 
 def readfile(f, funmac=None, macros=None, files=None, printdef=False, include=False):
-    data = open(f).read()
+    with open(f) as fil:
+        data = fil.read()
     dirname, f = os.path.split(f)
     data = commentre.sub(' ', data)
     data = data.replace('\\\n', '')
