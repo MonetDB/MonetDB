@@ -231,6 +231,7 @@ PIPELINEworker(void *T)
 					freeException(error);
 				GDKerrbuf[0] = 0;
 			}
+			freeStack(stk);
 			ma_close(ma, &ma_state);
 			if (p->wls)
 				GDKfree(p->wls);
