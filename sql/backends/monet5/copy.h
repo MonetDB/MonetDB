@@ -91,8 +91,8 @@ str copy_check_too_many_errors(struct error_handling *admin, const char *fname);
 const char *copy_error_message(struct error_handling *admin);
 void copy_destroy_error_handling(struct error_handling *admin);
 
-extern str COPYset_blocksize(int *dummy, int *blocksize);
-extern str COPYget_blocksize(int *blocksize);
+extern str COPYset_blocksize(Client ctx, int *dummy, int *blocksize);
+extern str COPYget_blocksize(Client ctx, int *blocksize);
 
 void dump_block(const char *msg, BAT *b);
 

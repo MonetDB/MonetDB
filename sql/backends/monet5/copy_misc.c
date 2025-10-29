@@ -289,8 +289,9 @@ copy_error_message(struct error_handling *admin)
 
 
 str
-COPYset_blocksize(int *dummy, int *blocksize)
+COPYset_blocksize(Client ctx, int *dummy, int *blocksize)
 {
+	(void)ctx;
 	(void)dummy;
 	char buffer[128];
 	sprintf(buffer, "%d", *blocksize);
@@ -299,8 +300,9 @@ COPYset_blocksize(int *dummy, int *blocksize)
 }
 
 str
-COPYget_blocksize(int *blocksize)
+COPYget_blocksize(Client ctx, int *blocksize)
 {
+	(void)ctx;
 	int size = GDKgetenv_int(COPY_BLOCKSIZE_SETTING, -1);
 	*blocksize = size > 0 ? size : DEFAULT_COPY_BLOCKSIZE;
 	return MAL_SUCCEED;

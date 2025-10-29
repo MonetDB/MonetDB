@@ -1295,8 +1295,9 @@ extern void BATswap_heaps(BAT *u, BAT *b, Pipeline *p);
 	}
 
 static str
-HEAPproject(bat *rid, bat *pos, bat *sel, bat *in, const ptr *H)
+HEAPproject(Client ctx, bat *rid, bat *pos, bat *sel, bat *in, const ptr *H)
 {
+	(void)ctx;
 	Pipeline *p = (Pipeline*)*H; /* last arg should move to first argument .. */
 	BAT *r = NULL, *P = BATdescriptor(*pos), *S = BATdescriptor(*sel), *b = BATdescriptor(*in);
 	int err = 0;
@@ -1817,8 +1818,9 @@ HEAPtopn(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr pci)
 	}
 
 static str
-HEAPorder(bat *rid, bat *hb)
+HEAPorder(Client ctx, bat *rid, bat *hb)
 {
+	(void)ctx;
 	BAT *r = NULL, *hpb = BATdescriptor(*hb);
 
 	if (!hpb)
@@ -1892,8 +1894,9 @@ HEAPorder(bat *rid, bat *hb)
 }
 
 static str
-HEAPgroups(bat *rid, bat *pid, bat *gid)
+HEAPgroups(Client ctx, bat *rid, bat *pid, bat *gid)
 {
+	(void)ctx;
 	BAT *r = NULL, *p = BATdescriptor(*pid), *g = BATdescriptor(*gid);
 
 	if (!p || !g) {
