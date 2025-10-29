@@ -104,7 +104,6 @@ COPYparse_generic(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	ret->tsorted = false;
 	ret->trevsorted = false;
 end:
-	GDKfree(buffer);
 	if (errors.init)
 		copy_destroy_error_handling(&errors);
 	if (ret) {
@@ -247,7 +246,6 @@ COPYparse_float(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	ret->tsorted = false;
 	ret->trevsorted = false;
 end:
-	GDKfree(buffer);
 	if (errors.init)
 		copy_destroy_error_handling(&errors);
 	if (ret) {
