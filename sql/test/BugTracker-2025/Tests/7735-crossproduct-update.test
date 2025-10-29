@@ -13,6 +13,6 @@ INSERT INTO v0 VALUES ( 18 , 'x' )
 statement ok rowcount 1
 INSERT INTO v0 VALUES ( 90 , NULL )
 
-statement error GDK reported error: BATsubcross: more than one match
+statement error /more than one match/
 UPDATE v0 SET ( v2 , v1 ) = ( SELECT v1 + 90 , v1 FROM v0 )
 
