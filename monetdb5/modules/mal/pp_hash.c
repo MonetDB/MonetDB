@@ -1644,6 +1644,7 @@ OAHASHprobe1(Client ctx, bat *PRB_oid, bat *HSH_slotid, const bat *PRB_key, cons
 			goto error;
 	}
 
+	BBPreclaim(k);
 	BBPunfix(t->batCacheid);
 	BBPreclaim(f);
 	BATsetcount(o, mtdcnt);
@@ -2793,11 +2794,9 @@ OAHASHexpand(Client ctx, bat *expanded, const bat *selected, const bat *slotid, 
 	e->trevsorted = s->trevsorted;
 	*expanded = e->batCacheid;
 	BBPkeepref(e);
-
 	BBPunfix(s->batCacheid);
 	BBPunfix(l->batCacheid);
 	BBPreclaim(f);
-
 	return MAL_SUCCEED;
 error:
 	BBPreclaim(e);
@@ -2964,8 +2963,8 @@ OAHASHexplode(Client ctx, bat *fetched, const bat *slotid, const bat *frequency,
 		assert(idx == fchcnt);
 	}
 
-	BBPunfix(l->batCacheid);
 	BBPunfix(f->batCacheid);
+	BBPunfix(l->batCacheid);
 	BBPunfix(h->batCacheid);
 
 	r->tseqbase = 0;
