@@ -50,6 +50,18 @@ rel_getcount(mvc *sql, sql_rel *rel)
 		if (rel->l && rel->r)
 			return rel_getcount(sql, rel->l);
 		return 1; /* Global GROUP BY always returns 1 row. */
+	case op_munion:
+		if (rel->l) {
+			BUN cnt = 0;
+			list *l = rel->l;
+			for (node *n = l->h; n; n = n->next) {
+				BUN ncnt = rel_getcount(sql, n->data);
+				if (ncnt != BUN_NONE)
+					cnt += ncnt;
+			}
+			return cnt;
+		}
+		return 1;
 	default:
 		if (rel->l)
 			return rel_getcount(sql, rel->l);
