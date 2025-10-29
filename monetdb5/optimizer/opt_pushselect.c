@@ -110,8 +110,10 @@ OPTpushselectImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 	str msg = MAL_SUCCEED;
 	allocator *ta = mb->ta;
 
-	if (MB_LARGE(mb))
-			return msg;
+	if (MB_LARGE(mb)) {
+		(void) pushInt(mb, pci, actions);
+		return msg;
+	}
 	if (mb->errors)
 		throw(MAL, "optimizer.pushselect", "%s", mb->errors);
 
@@ -416,7 +418,6 @@ OPTpushselectImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 		for (; i < slimit; i++)
 			if (old[i])
 				freeInstruction(mb, old[i]);
-		//GDKfree(old);
 		if (msg != MAL_SUCCEED || !push_down_delta) {
 			goto wrapup;
 		}
@@ -431,10 +432,8 @@ OPTpushselectImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 	slices = (int *) ma_zalloc(ta, sizeof(int) * mb->vtop);
 	rslices = (bool *) ma_zalloc(ta, sizeof(bool) * mb->vtop);
 	oclean = (bool *) ma_zalloc(ta, sizeof(bool) * mb->vtop);
-	if (!nvars || !slices || !rslices || !oclean
-		|| newMalBlkStmt(mb,
-						 mb->stop + (5 * push_down_delta) + (2 * nr_topn)) <
-		0) {
+	if (!nvars || !slices || !rslices || !oclean ||
+		newMalBlkStmt(mb, mb->stop + (5 * push_down_delta) + (2 * nr_topn)) < 0) {
 		mb->stmt = old;
 		goto wrapup;
 	}
@@ -796,7 +795,6 @@ OPTpushselectImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 	for (; i < slimit; i++)
 		if (old[i])
 			pushInstruction(mb, old[i]);
-	//GDKfree(old);
 
 	/* Defense line against incorrect plans */
 	if (msg == MAL_SUCCEED && actions > 0) {
