@@ -461,6 +461,11 @@ rel_bind_column2( mvc *sql, sql_rel *rel, const char *tname, const char *cname, 
 			if (multi)
 				return sql_error(sql, ERR_AMBIGUOUS, SQLSTATE(42000) "SELECT: identifier '%s.%s' ambiguous",
 								 tname, cname);
+			if (e) {
+				e = exp_ref(sql, e);
+				e->card = rel->card;
+				return e;
+			}
 		}
 		if (e)
 			set_not_unique(e);
