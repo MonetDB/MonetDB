@@ -163,18 +163,10 @@ gdk_return BATleftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, b
 gdk_return BATmarkjoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches, BUN estimate) __attribute__((__access__(write_only, 1))) __attribute__((__access__(write_only, 2))) __attribute__((__access__(write_only, 3))) __attribute__((__warn_unused_result__));
 BAT *BATmaskedcands(oid hseq, BUN nr, BAT *masked, bool selected);
 void *BATmax(BAT *b, void *aggr);
-<<<<<<< working copy
-void *BATmax_skipnil(BAT *b, void *aggr, bit skipnil, bool inout);
-=======
-void *BATmax_skipnil(allocator *alloc, BAT *b, void *aggr, bit skipnil);
->>>>>>> merge rev
+void *BATmax_skipnil(allocator *alloc, BAT *b, void *aggr, bit skipnil, bool inout);
 BAT *BATmergecand(BAT *a, BAT *b);
 void *BATmin(BAT *b, void *aggr);
-<<<<<<< working copy
-void *BATmin_skipnil(BAT *b, void *aggr, bit skipnil, bool inout);
-=======
-void *BATmin_skipnil(allocator *alloc, BAT *b, void *aggr, bit skipnil);
->>>>>>> merge rev
+void *BATmin_skipnil(allocator *alloc, BAT *b, void *aggr, bit skipnil, bool inout);
 gdk_return BATmode(BAT *b, bool transient);
 BAT *BATnegcands(oid tseq, BUN nr, BAT *odels);
 BAT *BATnil_grp(BAT *l, BAT *g, BAT *e, BAT *s);
@@ -791,14 +783,9 @@ str BKCnewBAT(bat *res, const int *tt, const BUN *cap, role_t role);
 str CLTshutdown(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 str COPYrejects(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 str COPYrejects_clear(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-<<<<<<< working copy
 void COPYrejects_create(Client cntxt);
-str GRPgroup1(bat *ngid, bat *next, bat *nhis, const bat *bid);
-str GRPsubgroup5(bat *ngid, bat *next, bat *nhis, const bat *bid, const bat *sid, const bat *gid, const bat *eid, const bat *hid);
-=======
 str GRPgroup1(Client ctx, bat *ngid, bat *next, bat *nhis, const bat *bid);
 str GRPsubgroup5(Client ctx, bat *ngid, bat *next, bat *nhis, const bat *bid, const bat *sid, const bat *gid, const bat *eid, const bat *hid);
->>>>>>> merge rev
 int MAL_MAXCLIENTS;
 int MALcommentsOnly(MalBlkPtr mb);
 lng MALdebug;
@@ -1606,28 +1593,8 @@ str flt_num2dec_lng(Client ctx, lng *res, const flt *v, const int *d2, const int
 str flt_num2dec_sht(Client ctx, sht *res, const flt *v, const int *d2, const int *s2);
 str getBackendContext(Client cntxt, backend **be);
 str getSQLContext(Client cntxt, MalBlkPtr mb, mvc **c, backend **b);
-<<<<<<< working copy
 u_int32_t get_le_uint32(unsigned char *c);
 u_int32_t get_uint32(unsigned char *c);
-str hge_dec2_bte(bte *res, const int *s1, const hge *v);
-str hge_dec2_dbl(dbl *res, const int *s1, const hge *v);
-str hge_dec2_flt(flt *res, const int *s1, const hge *v);
-str hge_dec2_int(int *res, const int *s1, const hge *v);
-str hge_dec2_lng(lng *res, const int *s1, const hge *v);
-str hge_dec2_sht(sht *res, const int *s1, const hge *v);
-str hge_dec2dec_bte(bte *res, const int *S1, const hge *v, const int *d2, const int *S2);
-str hge_dec2dec_dbl(dbl *res, const int *S1, const hge *v, const int *d2, const int *S2);
-str hge_dec2dec_flt(flt *res, const int *S1, const hge *v, const int *d2, const int *S2);
-str hge_dec2dec_int(int *res, const int *S1, const hge *v, const int *d2, const int *S2);
-str hge_dec2dec_lng(lng *res, const int *S1, const hge *v, const int *d2, const int *S2);
-str hge_dec2dec_sht(sht *res, const int *S1, const hge *v, const int *d2, const int *S2);
-str hge_num2dec_bte(bte *res, const hge *v, const int *d2, const int *s2);
-str hge_num2dec_dbl(dbl *res, const hge *v, const int *d2, const int *s2);
-str hge_num2dec_flt(flt *res, const hge *v, const int *d2, const int *s2);
-str hge_num2dec_int(int *res, const hge *v, const int *d2, const int *s2);
-str hge_num2dec_lng(lng *res, const hge *v, const int *d2, const int *s2);
-str hge_num2dec_sht(sht *res, const hge *v, const int *d2, const int *s2);
-=======
 str hge_dec2_bte(Client ctx, bte *res, const int *s1, const hge *v);
 str hge_dec2_dbl(Client ctx, dbl *res, const int *s1, const hge *v);
 str hge_dec2_flt(Client ctx, flt *res, const int *s1, const hge *v);
@@ -1646,7 +1613,6 @@ str hge_num2dec_flt(Client ctx, flt *res, const hge *v, const int *d2, const int
 str hge_num2dec_int(Client ctx, int *res, const hge *v, const int *d2, const int *s2);
 str hge_num2dec_lng(Client ctx, lng *res, const hge *v, const int *d2, const int *s2);
 str hge_num2dec_sht(Client ctx, sht *res, const hge *v, const int *d2, const int *s2);
->>>>>>> merge rev
 sql_table *insert_allowed(mvc *sql, sql_table *t, char *tname, char *op, char *opname);
 str int_dec2_bte(Client ctx, bte *res, const int *s1, const int *v);
 str int_dec2_dbl(Client ctx, dbl *res, const int *s1, const int *v);
@@ -1668,28 +1634,7 @@ str int_num2dec_lng(Client ctx, lng *res, const int *v, const int *d2, const int
 str int_num2dec_sht(Client ctx, sht *res, const int *v, const int *d2, const int *s2);
 list *list_append(list *l, void *data);
 void *list_fetch(list *l, int pos);
-<<<<<<< working copy
 int list_length(const list *l);
-str lng_dec2_bte(bte *res, const int *s1, const lng *v);
-str lng_dec2_dbl(dbl *res, const int *s1, const lng *v);
-str lng_dec2_flt(flt *res, const int *s1, const lng *v);
-str lng_dec2_int(int *res, const int *s1, const lng *v);
-str lng_dec2_lng(lng *res, const int *s1, const lng *v);
-str lng_dec2_sht(sht *res, const int *s1, const lng *v);
-str lng_dec2dec_bte(bte *res, const int *S1, const lng *v, const int *d2, const int *S2);
-str lng_dec2dec_dbl(dbl *res, const int *S1, const lng *v, const int *d2, const int *S2);
-str lng_dec2dec_flt(flt *res, const int *S1, const lng *v, const int *d2, const int *S2);
-str lng_dec2dec_int(int *res, const int *S1, const lng *v, const int *d2, const int *S2);
-str lng_dec2dec_lng(lng *res, const int *S1, const lng *v, const int *d2, const int *S2);
-str lng_dec2dec_sht(sht *res, const int *S1, const lng *v, const int *d2, const int *S2);
-str lng_num2dec_bte(bte *res, const lng *v, const int *d2, const int *s2);
-str lng_num2dec_dbl(dbl *res, const lng *v, const int *d2, const int *s2);
-str lng_num2dec_flt(flt *res, const lng *v, const int *d2, const int *s2);
-str lng_num2dec_int(int *res, const lng *v, const int *d2, const int *s2);
-str lng_num2dec_lng(lng *res, const lng *v, const int *d2, const int *s2);
-str lng_num2dec_sht(sht *res, const lng *v, const int *d2, const int *s2);
-=======
-int list_length(list *l);
 str lng_dec2_bte(Client ctx, bte *res, const int *s1, const lng *v);
 str lng_dec2_dbl(Client ctx, dbl *res, const int *s1, const lng *v);
 str lng_dec2_flt(Client ctx, flt *res, const int *s1, const lng *v);
@@ -1708,7 +1653,6 @@ str lng_num2dec_flt(Client ctx, flt *res, const lng *v, const int *d2, const int
 str lng_num2dec_int(Client ctx, int *res, const lng *v, const int *d2, const int *s2);
 str lng_num2dec_lng(Client ctx, lng *res, const lng *v, const int *d2, const int *s2);
 str lng_num2dec_sht(Client ctx, sht *res, const lng *v, const int *d2, const int *s2);
->>>>>>> merge rev
 const char *mapiuri_uri(const char *uri, allocator *sa);
 int mapiuri_valid(const char *uri, allocator *sa);
 sql_schema *mvc_bind_schema(mvc *c, const char *sname);
