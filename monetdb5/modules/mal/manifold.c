@@ -377,14 +377,12 @@ MANIFOLDevaluate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	mat[0].first = (void *) Tloc(mat[0].b, 0);
 	mat[0].last = (void *) Tloc(mat[0].b, BATcount(mat[0].b));
 
-	/*
 	mut.pci = copyInstruction(mb, pci);
 	if (mut.pci == NULL) {
 		msg = createException(MAL, "mal.manifold",
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto wrapup;
 	}
-	*/
 	mut.pci->fcn = fcn;
 	msg = MANIFOLDjob(mb->ma, &mut);
 	//freeInstruction(mut.pci);
