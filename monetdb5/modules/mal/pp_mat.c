@@ -160,8 +160,9 @@ PARTnew(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 }
 
 static str
-PARTprefixsum( bat *pos, const bat *gid, lng *max )
+PARTprefixsum(Client ctx, bat *pos, const bat *gid, lng *max )
 {
+	(void)ctx;
 	BAT *g = BATdescriptor(*gid);
 	if (!g)
 		throw(MAL, "part.prefixsum", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
@@ -196,8 +197,9 @@ PARTprefixsum( bat *pos, const bat *gid, lng *max )
 }
 
 static str
-PARTpartition( bat *pos, const bat *part, const bat *glen )
+PARTpartition(Client ctx, bat *pos, const bat *part, const bat *glen )
 {
+	(void)ctx;
 	BAT *p = BATdescriptor(*part);
 	BAT *g = BATdescriptor(*glen);
 	if (!p || !g) {
@@ -308,8 +310,9 @@ PARTpartition( bat *pos, const bat *part, const bat *glen )
 	}
 
 static str
-MATproject( bat *mat, const bat *pos, const bat *lid, const bat *gid, const bat *data )
+MATproject(Client ctx, bat *mat, const bat *pos, const bat *lid, const bat *gid, const bat *data )
 {
+	(void)ctx;
 	str err = NULL;
 	BAT *m = BATdescriptor(*mat);
 	BAT *p = BATdescriptor(*pos);
@@ -418,8 +421,9 @@ error:
 }
 
 static str
-MATfetch( bat *res, const bat *mat, const int *i )
+MATfetch(Client ctx, bat *res, const bat *mat, const int *i )
 {
+	(void)ctx;
 	BAT *m = BATdescriptor(*mat);
 	if (!m)
 		throw(MAL, "mat.fetch", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
@@ -434,8 +438,9 @@ MATfetch( bat *res, const bat *mat, const int *i )
 }
 
 static str
-MATadd( bat *mat, const bat *bid, const int *i )
+MATadd(Client ctx, bat *mat, const bat *bid, const int *i )
 {
+	(void)ctx;
 	BAT *b = BATdescriptor(*bid);
 	BAT *m = BATdescriptor(*mat);
 	if (!b || !m) {

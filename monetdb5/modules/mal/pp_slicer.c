@@ -41,8 +41,9 @@ topn_create(void)
 }
 
 static str
-LALGsubslice(bat *gid, bat *rid, bat *tid, bat *bid, /*bat *sid,*/ lng *start, lng *end, const ptr *H)
+LALGsubslice(Client ctx, bat *gid, bat *rid, bat *tid, bat *bid, /*bat *sid,*/ lng *start, lng *end, const ptr *H)
 {
+	(void)ctx;
 	str msg = MAL_SUCCEED;
 	Pipeline *p = (Pipeline*)*H;
 	BAT *g = NULL, *r = NULL, *t = NULL, *b = NULL;

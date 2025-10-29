@@ -41,7 +41,6 @@ target_sources(malmodules
   projectionpath.c
   tablet.c tablet.h
   batcalc.c calc.c
-  #pp_mem.c pp_mem.h
   pp_hash.c pp_hash.h
   pp_slicer.c
   pp_algebra.c
