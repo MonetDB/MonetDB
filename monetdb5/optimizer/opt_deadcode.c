@@ -16,7 +16,7 @@
 #include "opt_deadcode.h"
 
 str
-OPTdeadcodeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
+OPTdeadcodeImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 						  InstrPtr pci)
 {
 	int i, k, se, limit, slimit;
@@ -24,14 +24,16 @@ OPTdeadcodeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	int actions = 0;
 	int *varused = 0;
 	str msg = MAL_SUCCEED;
+	allocator *ta = mb->ta;
 
-	(void) cntxt;
+	(void) ctx;
 	(void) stk;
 
-	if (mb->inlineProp)
-		goto wrapup;
+	if (mb->inlineProp || MB_LARGE(mb))
+		goto wrapup1;
 
-	varused = GDKzalloc(mb->vtop * sizeof(int));
+	allocator_state ta_state = ma_open(ta);
+	varused = ma_zalloc(ta, mb->vtop * sizeof(int));
 	if (varused == NULL)
 		goto wrapup;
 
@@ -39,10 +41,10 @@ OPTdeadcodeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	limit = mb->stop;
 	slimit = mb->ssize;
 	if (newMalBlkStmt(mb, mb->ssize) < 0) {
-		GDKfree(varused);
+		ma_close( ta , &ta_state);
 		throw(MAL, "optimizer.deadcode", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
-	//mnstr_printf(cntxt->fdout,"deadcode limit %d ssize %d vtop %d vsize %d\n", limit, (int)(mb->ssize), mb->vtop, (int)(mb->vsize));
+	//mnstr_printf(ctx->fdout,"deadcode limit %d ssize %d vtop %d vsize %d\n", limit, (int)(mb->ssize), mb->vtop, (int)(mb->vsize));
 
 	// Calculate the instructions in which a variable is used.
 	// Variables can be used multiple times in an instruction.
@@ -103,7 +105,7 @@ OPTdeadcodeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 			if (se)
 				pushInstruction(mb, p);
 			else {
-				freeInstruction(p);
+				freeInstruction(mb, p);
 				actions++;
 			}
 		}
@@ -115,19 +117,21 @@ OPTdeadcodeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 		}
 	/* Defense line against incorrect plans */
 	/* we don't create or change existing structures */
-	// no type change msg = chkTypes(cntxt->usermodule, mb, FALSE);
+	// no type change msg = chkTypes(ctx->usermodule, mb, FALSE);
 	if (actions > 0) {
 		msg = chkFlow(mb);
 		if (!msg)
 			msg = chkDeclarations(mb);
 	}
   wrapup:
+	ma_close( ta , &ta_state);
+  wrapup1:
 	/* keep actions taken as a fake argument */
 	(void) pushInt(mb, pci, actions);
 
+	/*
 	if (old)
-		GDKfree(old);
-	if (varused)
-		GDKfree(varused);
+		//GDKfree(old);
+		*/
 	return msg;
 }

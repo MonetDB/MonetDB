@@ -19,7 +19,7 @@
 
 #include "sql_mem.h"
 
-#define HASH_MIN_SIZE 4
+#define HASH_MIN_SIZE 2
 
 typedef int (*fkeyvalue) (void *data);
 

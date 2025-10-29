@@ -277,8 +277,9 @@ QLOGenable(void *ret)
 }
 
 str
-QLOGenableThreshold(void *ret, const int *threshold)
+QLOGenableThreshold(Client ctx, void *ret, const int *threshold)
 {
+	(void) ctx;
 	(void) ret;
 	QLOGtrace = true;
 	QLOGthreshold = *threshold * LL_CONSTANT(1000);
@@ -300,8 +301,9 @@ QLOGisset(void)
 }
 
 static str
-QLOGissetFcn(int *ret)
+QLOGissetFcn(Client ctx, int *ret)
 {
+	(void) ctx;
 	*ret = QLOGtrace;
 	return MAL_SUCCEED;
 }
@@ -380,8 +382,9 @@ QLOGappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 static str
-QLOGdefineNaive(void *ret, const char *const *qry, const char *const *opt, const int *nr)
+QLOGdefineNaive(Client ctx, void *ret, const char *const *qry, const char *const *opt, const int *nr)
 {
+	(void) ctx;
 	// Nothing else to be done.
 	(void) ret;
 	(void) qry;
@@ -391,8 +394,9 @@ QLOGdefineNaive(void *ret, const char *const *qry, const char *const *opt, const
 }
 
 static str
-QLOGcontextNaive(void *ret, const char *const *release, const char *const *version, const char *const *revision, const char *const *uri)
+QLOGcontextNaive(Client ctx, void *ret, const char *const *release, const char *const *version, const char *const *revision, const char *const *uri)
 {
+	(void) ctx;
 	// Nothing else to be done.
 	(void) ret;
 	(void) release;

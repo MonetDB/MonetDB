@@ -84,25 +84,28 @@ UUIDgenerateUuid_internal(uuid *u)
 }
 
 static str
-UUIDgenerateUuid(uuid *retval)
+UUIDgenerateUuid(Client ctx, uuid *retval)
 {
+	(void) ctx;
 	UUIDgenerateUuid_internal(retval);
 	return MAL_SUCCEED;
 }
 
 static str
-UUIDgenerateUuidInt(uuid *retval, const int *d)
+UUIDgenerateUuidInt(Client ctx, uuid *retval, const int *d)
 {
+	(void) ctx;
 	(void) d;
-	return UUIDgenerateUuid(retval);
+	return UUIDgenerateUuid(ctx, retval);
 }
 
 static inline bit
-isaUUID(const char *s)
+isaUUID(Client ctx, const char *s)
 {
+	allocator *ma = ctx->curprg->def->ma;
 	uuid u, *pu = &u;
 	size_t l = UUID_SIZE;
-	ssize_t res = BATatoms[TYPE_uuid].atomFromStr(s, &l, (void **) &pu, false);
+	ssize_t res = BATatoms[TYPE_uuid].atomFromStr(ma, s, &l, (void **) &pu, false);
 
 	if (res > 1)
 		return true;
@@ -158,17 +161,19 @@ UUIDgenerateUuidInt_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 }
 
 static str
-UUIDisaUUID(bit *retval, const char *const *s)
+UUIDisaUUID(Client ctx, bit *retval, const char *const *s)
 {
-	*retval = isaUUID(*s);
+	(void) ctx;
+	*retval = isaUUID(ctx, *s);
 	if (*retval == false)
 		GDKclrerr();
 	return MAL_SUCCEED;
 }
 
 static str
-UUIDisaUUID_bulk(bat *ret, const bat *bid)
+UUIDisaUUID_bulk(Client ctx, bat *ret, const bat *bid)
 {
+	(void) ctx;
 	BAT *b = NULL, *bn = NULL;
 	BUN q;
 	bit *restrict dst;
@@ -189,7 +194,7 @@ UUIDisaUUID_bulk(bat *ret, const bat *bid)
 	dst = Tloc(bn, 0);
 	bi = bat_iterator(b);
 	for (BUN p = 0; p < q; p++)
-		dst[p] = isaUUID(BUNtvar(bi, p));
+		dst[p] = isaUUID(ctx, BUNtvar(bi, p));
 	GDKclrerr();				/* Not interested in atomFromStr errors */
 	BATsetcount(bn, q);
 	bn->tnonil = bi.nonil;
@@ -207,15 +212,17 @@ UUIDisaUUID_bulk(bat *ret, const bat *bid)
 }
 
 static str
-UUIDuuid2uuid(uuid *retval, const uuid *i)
+UUIDuuid2uuid(Client ctx, uuid *retval, const uuid *i)
 {
+	(void) ctx;
 	*retval = *i;
 	return MAL_SUCCEED;
 }
 
 static str
-UUIDuuid2uuid_bulk(bat *res, const bat *bid, const bat *sid)
+UUIDuuid2uuid_bulk(Client ctx, bat *res, const bat *bid, const bat *sid)
 {
+	(void) ctx;
 	BAT *b = NULL, *s = NULL, *dst = NULL;
 	uuid *restrict bv, *restrict dv;
 	str msg = NULL;
@@ -289,19 +296,21 @@ UUIDuuid2uuid_bulk(bat *res, const bat *bid, const bat *sid)
 }
 
 static str
-UUIDstr2uuid(uuid *retval, const char *const *s)
+UUIDstr2uuid(Client ctx, uuid *retval, const char *const *s)
 {
+	allocator *ma = ctx->curprg->def->ma;
 	size_t l = UUID_SIZE;
 
-	if (BATatoms[TYPE_uuid].atomFromStr(*s, &l, (void **) &retval, false) > 0) {
+	if (BATatoms[TYPE_uuid].atomFromStr(ma, *s, &l, (void **) &retval, false) > 0) {
 		return MAL_SUCCEED;
 	}
 	throw(MAL, "uuid.uuid", "Not a UUID");
 }
 
 static str
-UUIDstr2uuid_bulk(bat *res, const bat *bid, const bat *sid)
+UUIDstr2uuid_bulk(Client ctx, bat *res, const bat *bid, const bat *sid)
 {
+	allocator *ma = ctx->curprg->def->ma;
 	BAT *b = NULL, *s = NULL, *dst = NULL;
 	BATiter bi;
 	str msg = NULL;
@@ -310,7 +319,7 @@ UUIDstr2uuid_bulk(bat *res, const bat *bid, const bat *sid)
 	oid off;
 	bool nils = false, btkey = false;
 	size_t l = UUID_SIZE;
-	ssize_t (*conv)(const char *, size_t *, void **, bool) = BATatoms[TYPE_uuid].atomFromStr;
+	ssize_t (*conv)(allocator *, const char *, size_t *, void **, bool) = BATatoms[TYPE_uuid].atomFromStr;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		msg = createException(SQL, "batcalc.str2uuidbulk",
@@ -338,7 +347,7 @@ UUIDstr2uuid_bulk(bat *res, const bat *bid, const bat *sid)
 			const char *v = BUNtvar(bi, p);
 			uuid *up = &vals[i], **pp = &up;
 
-			if (conv(v, &l, (void **) pp, false) <= 0) {
+			if (conv(ma, v, &l, (void **) pp, false) <= 0) {
 				msg = createException(SQL, "batcalc.str2uuidbulk",
 									  SQLSTATE(42000) "Not a UUID");
 				goto bailout1;
@@ -351,7 +360,7 @@ UUIDstr2uuid_bulk(bat *res, const bat *bid, const bat *sid)
 			const char *v = BUNtvar(bi, p);
 			uuid *up = &vals[i], **pp = &up;
 
-			if (conv(v, &l, (void **) pp, false) <= 0) {
+			if (conv(ma, v, &l, (void **) pp, false) <= 0) {
 				msg = createException(SQL, "batcalc.str2uuidbulk",
 									  SQLSTATE(42000) "Not a UUID");
 				goto bailout1;
@@ -381,18 +390,20 @@ UUIDstr2uuid_bulk(bat *res, const bat *bid, const bat *sid)
 }
 
 static str
-UUIDuuid2str(str *retval, const uuid *u)
+UUIDuuid2str(Client ctx, str *retval, const uuid *u)
 {
+	allocator *ma = ctx->curprg->def->ma;
 	size_t l = 0;
 	*retval = NULL;
-	if (BATatoms[TYPE_uuid].atomToStr(retval, &l, u, false) < 0)
+	if (BATatoms[TYPE_uuid].atomToStr(ma, retval, &l, u, false) < 0)
 		throw(MAL, "uuid.str", GDK_EXCEPTION);
 	return MAL_SUCCEED;
 }
 
 static str
-UUIDuuid2str_bulk(bat *res, const bat *bid, const bat *sid)
+UUIDuuid2str_bulk(Client ctx, bat *res, const bat *bid, const bat *sid)
 {
+	allocator *ma = ctx->curprg->def->ma;
 	BAT *b = NULL, *s = NULL, *dst = NULL;
 	str msg = NULL;
 	uuid *restrict vals;
@@ -401,7 +412,7 @@ UUIDuuid2str_bulk(bat *res, const bat *bid, const bat *sid)
 	bool nils = false, btkey = false;
 	char buf[UUID_STRLEN + 2], *pbuf = buf;
 	size_t l = sizeof(buf);
-	ssize_t (*conv)(char **, size_t *, const void *, bool) = BATatoms[TYPE_uuid].atomToStr;
+	ssize_t (*conv)(allocator *, char **, size_t *, const void *, bool) = BATatoms[TYPE_uuid].atomToStr;
 	BATiter bi;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
@@ -429,7 +440,7 @@ UUIDuuid2str_bulk(bat *res, const bat *bid, const bat *sid)
 			oid p = (canditer_next_dense(&ci) - off);
 			uuid v = vals[p];
 
-			if (conv(&pbuf, &l, &v, false) < 0) {	/* it should never be reallocated */
+			if (conv(ma, &pbuf, &l, &v, false) < 0) {	/* it should never be reallocated */
 				msg = createException(MAL, "batcalc.uuid2strbulk",
 									  GDK_EXCEPTION);
 				goto bailout1;
@@ -446,7 +457,7 @@ UUIDuuid2str_bulk(bat *res, const bat *bid, const bat *sid)
 			oid p = (canditer_next(&ci) - off);
 			uuid v = vals[p];
 
-			if (conv(&pbuf, &l, &v, false) < 0) {	/* it should never be reallocated */
+			if (conv(ma, &pbuf, &l, &v, false) < 0) {	/* it should never be reallocated */
 				msg = createException(MAL, "batcalc.uuid2strbulk",
 									  GDK_EXCEPTION);
 				goto bailout1;

@@ -404,7 +404,7 @@ monetdbe_query_internal(monetdbe_database_internal *mdbe, char* query, monetdbe_
 	m->runs = NULL;
 	m->label = 0;
 	if (m->sa)
-		m->sa = sa_reset(m->sa);
+		m->sa = ma_reset(m->sa);
 	m->scanner.mode = LINE_N;
 	m->scanner.rs = c->fdin;
 	mvc_query_processed(m);
@@ -460,7 +460,7 @@ monetdbe_close_remote(monetdbe_database_internal *mdbe)
 		clear_error(mdbe);
 	}
 
-	if ( (mdbe->msg = RMTdisconnect(NULL, &(const char *){mdbe->mid})) != MAL_SUCCEED) {
+	if ( (mdbe->msg = RMTdisconnect(mdbe->c, NULL, &(const char *){mdbe->mid})) != MAL_SUCCEED) {
 		err = 1;
 		clear_error(mdbe);
 	}
@@ -578,11 +578,11 @@ monetdbe_open_internal(monetdbe_database_internal *mdbe, monetdbe_options *opts 
 		goto cleanup;
 	m->session->auto_commit = 1;
 	if (!m->pa)
-		m->pa = sa_create(NULL);
+		m->pa = create_allocator(NULL, NULL, false);
 	if (!m->sa)
-		m->sa = sa_create(m->pa);
+		m->sa = create_allocator(m->pa, NULL, false);
 	if (!m->ta)
-		m->ta = sa_create(m->pa);
+		m->ta = create_allocator(m->pa, NULL, false);
 	if (!m->pa || !m->sa || !m->ta) {
 		set_error(mdbe, createException(SQL, "monetdbe.monetdbe_open_internal", MAL_MALLOC_FAIL));
 		goto cleanup;
@@ -871,7 +871,7 @@ monetdbe_open_remote(monetdbe_database_internal *mdbe, monetdbe_options *opts) {
 		c->curprg = curprg;
 		return -2;
 	}
-	MalStkPtr stk = prepareMALstack(mb, mb->vsize);
+	MalStkPtr stk = prepareMALstack(mb->ma, mb, mb->vsize);
 	if (!stk) {
 		set_error(mdbe, createException(MAL, "monetdbe.monetdbe_open_remote", MAL_MALLOC_FAIL));
 		freeSymbol(c->curprg);
@@ -1408,8 +1408,8 @@ monetdbe_prepare_cb(void* context, char* tblname, columnar_result* results, size
 	insertSymbol(mdbe->c->usermodule, prg);
 
 cleanup:
-	freeInstruction(e);
-	freeInstruction(r);
+	freeInstruction(mb, e);
+	freeInstruction(mb, r);
 	if (bcolumn) {
 		bat_iterator_end(&btype_iter);
 		bat_iterator_end(&bcolumn_iter);
@@ -1722,6 +1722,7 @@ monetdbe_bind(monetdbe_statement *stmt, void *data, size_t i)
 			return stmt_internal->mdbe->msg;
 		}
 		VALset(&stmt_internal->data[i], tpe, val);
+		// FIX this leaks no free for val
 	} else {
 		VALset(&stmt_internal->data[i], tpe, data);
 	}
@@ -1775,7 +1776,6 @@ monetdbe_execute(monetdbe_statement *stmt, monetdbe_result **result, monetdbe_cn
 	}
 
 cleanup:
-	GDKfree(glb);
 	return commit_action(m, stmt_internal->mdbe, result, res_internal);
 }
 
@@ -2121,7 +2121,7 @@ append_create_remote_append_mal_program(
 			msg = createException(SQL, "monetdbe.monetdbe_append", MAL_MALLOC_FAIL);
 			goto cleanup;
 		}
-		tpe->base.name = sa_strdup(m->sa, columns[i].name);
+		tpe->base.name = ma_strdup(m->sa, columns[i].name);
 		tpe->localtype = monetdbe_2_gdk_type((monetdbe_types) columns[i].type);
 		tpe->digits = columns[i].sql_type.digits;
 		tpe->scale = columns[i].sql_type.scale;
@@ -2593,7 +2593,7 @@ remote_cleanup:
 			InstrPtr p = newFcnCall(mb, remoteRef, putRef);
 			if (p == NULL) {
 				set_error(mdbe, createException(MAL, "monetdbe.monetdbe_append", MAL_MALLOC_FAIL));
-				freeInstruction(e);
+				freeInstruction(mb, e);
 				freeSymbol(prg);
 				goto cleanup;
 			}
@@ -2869,7 +2869,7 @@ monetdbe_result_fetch(monetdbe_result* mres, monetdbe_column** res, size_t colum
 			} else {
 				char *sresult = NULL;
 				size_t length = 0;
-				if (BATatoms[bat_type].atomToStr(&sresult, &length, t, true) == 0) {
+				if (BATatoms[bat_type].atomToStr(m->sa, &sresult, &length, t, true) == 0) {
 					bat_iterator_end(&li);
 					set_error(mdbe, createException(MAL, "monetdbe.monetdbe_result_fetch", "Failed to convert element to string"));
 					goto cleanup;

@@ -13,7 +13,6 @@
 #include "mal_exception.h"
 #include "mal_interpreter.h"
 #include "mal_pipelines.h"
-#include "pp_mem.h"
 #include "pp_hash.h"
 #include "pipeline.h"
 

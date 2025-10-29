@@ -70,3 +70,27 @@ GRANT EXECUTE ON AGGREGATE sys.group_concat(string, string) TO PUBLIC;
 create function sys.normalize_monetdb_url(u string)
 returns string external name sql.normalize_monetdb_url;
 grant execute on function sys.normalize_monetdb_url(string) to public;
+
+create aggregate sha1(val string)
+returns string with order external name aggr.sha1;
+grant execute on aggregate sha1 to public;
+
+create aggregate sha224(val string)
+returns string with order external name aggr.sha224;
+grant execute on aggregate sha224 to public;
+
+create aggregate sha256(val string)
+returns string with order external name aggr.sha256;
+grant execute on aggregate sha256 to public;
+
+create aggregate sha384(val string)
+returns string with order external name aggr.sha384;
+grant execute on aggregate sha384 to public;
+
+create aggregate sha512(val string)
+returns string with order external name aggr.sha512;
+grant execute on aggregate sha512 to public;
+
+create aggregate ripemd160(val string)
+returns string with order external name aggr.ripemd160;
+grant execute on aggregate ripemd160 to public;

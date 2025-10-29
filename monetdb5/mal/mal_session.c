@@ -85,12 +85,12 @@ malBootstrap(char *modules[], bool embedded, const char *initpasswd)
  * BATs introduced.
  */
 static str
-MSresetClientPrg(Client cntxt, const char *mod, const char *fcn)
+MSresetClientPrg(Client ctx, const char *mod, const char *fcn)
 {
 	MalBlkPtr mb;
 	InstrPtr p;
 
-	mb = cntxt->curprg->def;
+	mb = ctx->curprg->def;
 	mb->stop = 1;
 	mb->errors = MAL_SUCCEED;
 	p = mb->stmt[0];
@@ -115,25 +115,25 @@ MSresetClientPrg(Client cntxt, const char *mod, const char *fcn)
  */
 
 str
-MSinitClientPrg(Client cntxt, const char *mod, const char *nme)
+MSinitClientPrg(Client ctx, const char *mod, const char *nme)
 {
 	int idx;
 
-	if (cntxt->curprg && strcmp(nme, cntxt->curprg->name) == 0)
-		return MSresetClientPrg(cntxt, putName(mod), putName(nme));
-	cntxt->curprg = newFunction(putName(mod), putName(nme), FUNCTIONsymbol);
-	if (cntxt->curprg == 0)
+	if (ctx->curprg && strcmp(nme, ctx->curprg->name) == 0)
+		return MSresetClientPrg(ctx, putName(mod), putName(nme));
+	ctx->curprg = newFunction(putName(mod), putName(nme), FUNCTIONsymbol);
+	if (ctx->curprg == 0)
 		throw(MAL, "initClientPrg", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	if ((idx = findVariable(cntxt->curprg->def, mainRef)) >= 0)
-		setVarType(cntxt->curprg->def, idx, TYPE_void);
-	insertSymbol(cntxt->usermodule, cntxt->curprg);
+	if ((idx = findVariable(ctx->curprg->def, mainRef)) >= 0)
+		setVarType(ctx->curprg->def, idx, TYPE_void);
+	insertSymbol(ctx->usermodule, ctx->curprg);
 
-	if (cntxt->glb == NULL)
-		cntxt->glb = newGlobalStack(MAXGLOBALS + cntxt->curprg->def->vsize);
-	if (cntxt->glb == NULL)
+	if (ctx->glb == NULL)
+		ctx->glb = newGlobalStack(ctx->ma, MAXGLOBALS + ctx->curprg->def->vsize);
+	if (ctx->glb == NULL)
 		throw(MAL, "initClientPrg", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	assert(cntxt->curprg->def != NULL);
-	assert(cntxt->curprg->def->vtop > 0);
+	assert(ctx->curprg->def != NULL);
+	assert(ctx->curprg->def->vtop > 0);
 	return MAL_SUCCEED;
 }
 
@@ -167,7 +167,7 @@ MSresetInstructions(MalBlkPtr mb, int start)
 	for (i = start; i < mb->ssize; i++) {
 		p = getInstrPtr(mb, i);
 		if (p)
-			freeInstruction(p);
+			freeInstruction(mb, p);
 		mb->stmt[i] = NULL;
 	}
 	mb->stop = start;
@@ -188,8 +188,10 @@ MSresetStack(Client cntxt, MalBlkPtr mb, MalStkPtr glb)
 	if (mb->errors == MAL_SUCCEED) {
 		for (i = sig->argc; i < mb->vtop; i++) {
 			if (glb && i < glb->stktop && isTmpVar(mb, i) && !glb->keepTmps) {
+				/*
 				if (mb->var[i].name)
 					GDKfree(mb->var[i].name);
+					*/
 				/* clean stack entry */
 				garbageElement(cntxt, &glb->stk[i]);
 				glb->stk[i].vtype = TYPE_int;
@@ -434,7 +436,7 @@ MALengine_(Client c)
 		return 0;				/* empty block */
 	if (c->glb) {
 		if (prg->def && c->glb->stksize < prg->def->vsize) {
-			c->glb = reallocGlobalStack(c->glb, prg->def->vsize);
+			c->glb = reallocGlobalStack(c->ma, c->glb, prg->def->vsize);
 			if (c->glb == NULL)
 				throw(MAL, "mal.engine", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
@@ -524,7 +526,7 @@ optimizeMALBlock(Client cntxt, MalBlkPtr mb)
 
 	// strong defense line, assure that MAL plan is initially correct
 	if (mb->errors == 0 && mb->stop > 1) {
-		resetMalTypes(mb, mb->stop);
+		//resetMalTypes(mb, mb->stop);
 		msg = chkTypes(cntxt->usermodule, mb, FALSE);
 		if (!msg)
 			msg = chkFlow(mb);
@@ -551,12 +553,12 @@ optimizeMALBlock(Client cntxt, MalBlkPtr mb)
 				mb->errors = NULL;
 			}
 			if (msg) {
-				str place = getExceptionPlace(msg);
+				str place = getExceptionPlace(mb->ma, msg);
 				str nmsg = NULL;
 				if (place) {
 					nmsg = createException(getExceptionType(msg), place, "%s",
 										   getExceptionMessageAndState(msg));
-					GDKfree(place);
+					//GDKfree(place);
 				}
 				if (nmsg) {
 					freeException(msg);

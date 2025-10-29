@@ -587,7 +587,8 @@ with process.client('sql', interactive=True, echo=False, format='test',
 if check:
     output = ''.join(output).splitlines(keepends=True)
     stableout = 'check.stable.out.32bit' if os.getenv('TST_BITS', '') == '32bit' else 'check.stable.out.int128' if os.getenv('HAVE_HGE') else 'check.stable.out'
-    stable = open(stableout).readlines()
+    with open(stableout) as fil:
+        stable = fil.readlines()
     import difflib
     for line in difflib.unified_diff([x for x in stable if not x.startswith('%')], [x for x in output if not x.startswith('%')], fromfile='test', tofile=stableout):
         sys.stderr.write(line)

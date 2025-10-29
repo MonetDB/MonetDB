@@ -367,7 +367,7 @@ pqc_relation(mvc *sql, sql_subfunc *f, char *filename, list *res_exps, char *tna
 		if (glob(filename, GLOB_ERR, NULL, &pglob) < 0)
 			throw(SQL, SQLSTATE(42000), "parquet" "Could not open parquet file %s", filename);
 		if (pglob.gl_pathc)
-			filename = sa_strdup(sql->sa, pglob.gl_pathv[0]);
+			filename = ma_strdup(sql->sa, pglob.gl_pathv[0]);
 		if (est)
 			*est = pglob.gl_pathc;
 		globfree(&pglob);
@@ -397,7 +397,7 @@ pqc_relation(mvc *sql, sql_subfunc *f, char *filename, list *res_exps, char *tna
 			const pqc_schema_element *e = pse+i;
 
 			if (e->nchildren || e->repetition == 2) {
-				char *nme = e->name?sa_strdup(sql->ta, e->name):NULL;
+				char *nme = e->name?ma_strdup(sql->ta, e->name):NULL;
 				pqc_close(pq);
 				throw(SQL, SQLSTATE(42000), "parquet" "Data in file %s is not tabular (column %s has repetition)", filename, nme);
 			}
@@ -409,7 +409,7 @@ pqc_relation(mvc *sql, sql_subfunc *f, char *filename, list *res_exps, char *tna
 
 			if (e->type != LT_UNKNOWN && !t) {
 				int tpe = e->type;
-				char *nme = e->name?sa_strdup(sql->ta, e->name):NULL;
+				char *nme = e->name?ma_strdup(sql->ta, e->name):NULL;
 				pqc_close(pq);
 				throw(SQL, SQLSTATE(42000), "parquet: " "Data type (%s) not supported for column %s", str_logical_type(tpe), nme);
 			}
@@ -419,13 +419,13 @@ pqc_relation(mvc *sql, sql_subfunc *f, char *filename, list *res_exps, char *tna
 			char *name = NULL;
 			if (e->name) {
 				if (i == 14)
-				name = mkLower(sa_strdup(sql->sa, "e1"));
+				name = mkLower(ma_strdup(sql->sa, "e1"));
 				else
-				name = mkLower(sa_strdup(sql->sa, e->name));
+				name = mkLower(ma_strdup(sql->sa, e->name));
 			} else {
 				char buff[25];
 				snprintf(buff, 25, "name_%i", i);
-				name = sa_strdup(sql->sa, buff);
+				name = ma_strdup(sql->sa, buff);
 			}
 			list_append(names, name);
 			sql_exp *ne = exp_column(sql->sa, tname, name, t, CARD_MULTI, 1, 0, 0);

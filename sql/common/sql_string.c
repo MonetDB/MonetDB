@@ -148,5 +148,5 @@ char *sa_message( allocator *sa, const char *format, ... )
 	va_start (ap,format);
 	(void) vsnprintf( buf, BUFSIZ, format, ap);
 	va_end (ap);
-	return sa_strdup(sa, buf);
+	return ma_strdup(sa, buf);
 }

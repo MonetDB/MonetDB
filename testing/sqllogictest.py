@@ -461,8 +461,9 @@ class SQLLogic:
         return ndata
 
     def raise_error(self, message):
-        print(f'Syntax error in test file, line {self.qline}:', file=self.out)
-        print(message, file=self.out)
+        if self.out:
+            print(f'Syntax error in test file, line {self.qline}:', file=self.out)
+            print(message, file=self.out)
         raise SQLLogicSyntaxError(message)
 
     def query_error(self, query, message, exception=None, data=None):
@@ -470,15 +471,16 @@ class SQLLogic:
             self.timedout = True
         elif not self.timedout:
             self.seenerr = True
-        if self.rpt:
-            print(self.rpt, file=self.out)
-        print(message, file=self.out)
-        if exception:
-            print(exception.rstrip('\n'), file=self.out)
-        print("query started on line %d of file %s" % (self.qline, self.name),
-              file=self.out)
-        print("query text:", file=self.out)
-        print(query, file=self.out)
+        if self.out:
+            if self.rpt:
+                print(self.rpt, file=self.out)
+            print(message, file=self.out)
+            if exception:
+                print(exception.rstrip('\n'), file=self.out)
+            print("query started on line %d of file %s" % (self.qline, self.name),
+                  file=self.out)
+            print("query text:", file=self.out)
+            print(query, file=self.out)
 
     def exec_query(self, query, columns, sorting, pyscript, hashlabel, nresult, hash, expected, conn=None, verbose=False) -> bool:
         err = False
@@ -604,7 +606,7 @@ class SQLLogic:
                 m.update(bytes(col, encoding='utf-8'))
                 m.update(b'\n')
                 result.append(col)
-            if err and expected is not None:
+            if err and expected is not None and self.out:
                 print('Differences:', file=self.out)
                 self.out.writelines(list(difflib.ndiff([x + '\n' for x in expected], [x + '\n' for x in ndata])))
             if resdata is not None:
@@ -677,8 +679,9 @@ class SQLLogic:
                 for row in ndata:
                     for col in row:
                         recv.append(col)
-                print('Differences:', file=self.out)
-                self.out.writelines(list(difflib.ndiff([x + '\n' for x in expected], [x + '\n' for x in recv])))
+                if self.out:
+                    print('Differences:', file=self.out)
+                    self.out.writelines(list(difflib.ndiff([x + '\n' for x in expected], [x + '\n' for x in recv])))
             if resdata is not None:
                 result = []
                 for row in resdata:
@@ -708,8 +711,9 @@ class SQLLogic:
                 for row in ndata:
                     for col in row:
                         recv.append(col + '\n')
-                print('Differences:', file=self.out)
-                self.out.writelines(list(difflib.ndiff([x + '\n' for x in expected], recv)))
+                if self.out:
+                    print('Differences:', file=self.out)
+                    self.out.writelines(list(difflib.ndiff([x + '\n' for x in expected], recv)))
             if resdata is not None:
                 if sorting == 'rowsort':
                     resdata.sort()
@@ -719,7 +723,7 @@ class SQLLogic:
                         resm.update(bytes(col, encoding='utf-8'))
                         resm.update(b'\n')
                         result.append(col)
-        if err:
+        if err and self.out:
             if data is not None:
                 if len(data) < 100:
                     print('Query result:', file=self.out)
@@ -779,10 +783,16 @@ class SQLLogic:
         self.lines = []
 
     def readline(self):
+        if self.file is None:
+            return ''
         self.line += 1
         if self.run_until and self.line >= self.run_until:
             return ''
         origline = line = self.file.readline()
+        if not line:
+            self.file.close()
+            self.file = None
+            return line
         for reg, val, key in self.defines:
             line = reg.sub(val.replace('\\', r'\\'), line)
         if self.approve:

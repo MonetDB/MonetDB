@@ -1,2 +1,3 @@
 statement error
 SELECT ( WITH RECURSIVE x AS ( SELECT 1 UNION SELECT str_to_date ( 'int' , 'X2014-10-25 UTC' ) ) SELECT ( 3 ) )
+

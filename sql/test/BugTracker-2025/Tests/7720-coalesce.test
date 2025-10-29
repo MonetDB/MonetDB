@@ -1,10 +1,11 @@
-query I
+query I nosort
 SELECT COALESCE ( 75 )
 ----
 75
 
 # bug 7721
-query I
+query I nosort
 SELECT ( coalesce ( ( SELECT 1 ) ) )
 ----
 1
+

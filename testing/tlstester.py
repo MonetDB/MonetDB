@@ -11,7 +11,7 @@
 # Copyright 1997 - July 2008 CWI.
 
 from argparse import ArgumentParser
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 import hashlib
 import http.server
 import io
@@ -238,7 +238,7 @@ class Certs:
             issuer_name = subject_name
             issuer_key = key
 
-        now = datetime.utcnow()
+        now = datetime.now(UTC)
         builder = (
             x509.CertificateBuilder()
             .issuer_name(issuer_name)

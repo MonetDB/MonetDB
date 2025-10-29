@@ -236,6 +236,8 @@ extern list *exps_check_type(mvc *sql, sql_subtype *t, list *exps);
 extern int rel_set_type_param(mvc *sql, sql_subtype *type, sql_rel *rel, sql_exp *rel_exp, int upcast);
 extern sql_exp *exp_numeric_supertype(mvc *sql, sql_exp *e);
 extern sql_exp *exp_values_set_supertype(mvc *sql, sql_exp *values, sql_subtype *opt_super);
+extern void free_exp(allocator *sa, sql_exp *e);
+extern void free_exps(allocator *sa, list *exps);
 
 extern sql_subtype* first_arg_subtype(sql_exp *e);
 

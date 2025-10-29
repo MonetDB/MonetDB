@@ -31,7 +31,7 @@ with process.server(stdin=process.PIPE,
                     stderr=process.PIPE,
                     mapiport='0') as s1:
     # load data into the first server's database
-    with sqllogictest.SQLLogic(out=open(os.devnull, 'w')) as sql:
+    with sqllogictest.SQLLogic(out=None) as sql:
         sql.connect(hostname='localhost',
                     port=s1.dbport,
                     database=s1.dbname)
@@ -84,7 +84,8 @@ if len(sys.argv) == 2 and sys.argv[1] == 'reload':
     while len(output) > 0 and output[0].startswith('--'):
         del output[0]
     stableout = os.path.join(tstsrcdir, '..', '..', 'testdb', 'Tests', 'dump-nogeom.stable.out')
-    stable = open(stableout, encoding='utf-8').readlines()
+    with open(stableout, encoding='utf-8') as fil:
+        stable = fil.readlines()
     import difflib
     for line in difflib.unified_diff(stable, output, fromfile='test', tofile=stableout):
         sys.stderr.write(line)

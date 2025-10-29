@@ -7,6 +7,7 @@ nr_clients = 16
 db = os.getenv("TSTDB")
 port = os.getenv("MAPIPORT")
 
+
 def client(id):
     conn = pymonetdb.connect(
                     database=db,
@@ -34,6 +35,8 @@ def client(id):
     nr_queries = 1600
     for x in range(0, nr_queries):
         cursor.execute(truncate_and_insert_queries)
+    conn.close()
+
 
 with ThreadPoolExecutor(nr_clients) as pool:
     pool.map(client, range(nr_clients))

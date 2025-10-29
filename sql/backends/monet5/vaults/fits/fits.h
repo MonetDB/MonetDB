@@ -25,7 +25,7 @@
 #define fits_export extern
 #endif
 
-fits_export str FITStest(int *res, str *fname);
+fits_export str FITStest(Client ctx, int *res, str *fname);
 fits_export str FITSdir(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 fits_export str FITSdirpat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 fits_export str FITSattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);

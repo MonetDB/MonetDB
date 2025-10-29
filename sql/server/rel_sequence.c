@@ -24,7 +24,7 @@ sql_next_seq_name(mvc *m)
 {
 	sqlid id = store_next_oid(m->session->tr->store);
 	size_t len = 5 + 10;	/* max nr of digits of (4 bytes) int is 10 */
-	char *msg = sa_alloc(m->sa, len);
+	char *msg = ma_alloc(m->sa, len);
 
 	snprintf(msg, len, "seq_%d", id);
 	return msg;

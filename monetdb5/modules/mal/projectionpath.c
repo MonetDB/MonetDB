@@ -16,19 +16,18 @@
 #include "mal_exception.h"
 
 static str
-ALGprojectionpath(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+ALGprojectionpath(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i;
 	bat bid;
 	bat *r = getArgReference_bat(stk, pci, 0);
 	BAT *b, **joins = NULL;
 
-	(void) mb;
-	(void) cntxt;
+	(void) ctx;
 
 	if (pci->argc <= 1)
 		throw(MAL, "algebra.projectionpath", SQLSTATE(HY013) "INTERNAL ERROR");
-	joins = (BAT **) GDKzalloc(pci->argc * sizeof(BAT *));
+	joins = (BAT **) ma_zalloc(mb->ma, pci->argc * sizeof(BAT *));
 	if (joins == NULL)
 		throw(MAL, "algebra.projectionpath", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	for (i = pci->retc; i < pci->argc; i++) {
@@ -39,7 +38,7 @@ ALGprojectionpath(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				&& b->ttype != TYPE_msk)) {
 			while (--i >= pci->retc)
 				BBPunfix(joins[i - pci->retc]->batCacheid);
-			GDKfree(joins);
+			//GDKfree(joins);
 			BBPreclaim(b);
 			throw(MAL, "algebra.projectionpath", "%s",
 				  b ? SEMANTIC_TYPE_MISMATCH : INTERNAL_BAT_ACCESS);
@@ -50,7 +49,7 @@ ALGprojectionpath(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	b = BATprojectchain(joins);
 	for (i = pci->retc; i < pci->argc; i++)
 		BBPunfix(joins[i - pci->retc]->batCacheid);
-	GDKfree(joins);
+	//GDKfree(joins);
 	if (b) {
 		*r = b->batCacheid;
 		BBPkeepref(b);

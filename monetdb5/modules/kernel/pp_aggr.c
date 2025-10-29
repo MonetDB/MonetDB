@@ -15,26 +15,26 @@
 #include "aggr.h"
 
 static str
-LAGGRsum3_lng(bat *retval, const ptr *h, const bat *bid, const bat *gid, const bat *eid)
+LAGGRsum3_lng(Client ctx, bat *retval, const ptr *h, const bat *bid, const bat *gid, const bat *eid)
 {
 	Pipeline *p = (Pipeline*)*h;
 	str res;
 
 	MT_lock_set(&p->p->l);
-	res = AGGRsum3_lng(retval, bid, gid, eid);
+	res = AGGRsum3_lng(ctx, retval, bid, gid, eid);
 	MT_lock_unset(&p->p->l);
 	return res;
 }
 
 #ifdef HAVE_HGE
 static str
-LAGGRsum3_hge(bat *retval, const ptr *h, const bat *bid, const bat *gid, const bat *eid)
+LAGGRsum3_hge(Client ctx, bat *retval, const ptr *h, const bat *bid, const bat *gid, const bat *eid)
 {
 	Pipeline *p = (Pipeline*)*h;
 	str res;
 
 	MT_lock_set(&p->p->l);
-	res = AGGRsum3_hge(retval, bid, gid, eid);
+	res = AGGRsum3_hge(ctx, retval, bid, gid, eid);
 	MT_lock_unset(&p->p->l);
 	return res;
 }

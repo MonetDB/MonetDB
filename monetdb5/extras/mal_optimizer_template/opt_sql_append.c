@@ -195,8 +195,8 @@ OPTsql_appendImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 				 * q1 = newStmt(mb, algebraRef,sliceRef); */
 				q2 = newInstruction(mb,algebraRef, sliceRef);
 				if (q1 == NULL || q2 == NULL || (getArg(q2,0) = newTmpVariable(mb, TYPE_any)) < 0) {
-					freeInstruction(q1);
-					freeInstruction(q2);
+					freeInstruction(mb, q1);
+					freeInstruction(mb, q2);
 					i--;
 					break;
 				}
@@ -204,8 +204,8 @@ OPTsql_appendImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 				q2 = pushLng(mb, q2, 0);
 				q2 = pushArgument(mb, q2, getArg(q1, 0));
 				if (mb->errors) {
-					freeInstruction(q1);
-					freeInstruction(q2);
+					freeInstruction(mb, q1);
+					freeInstruction(mb, q2);
 					i--;
 					break;
 				}
@@ -235,7 +235,7 @@ OPTsql_appendImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	/* any remaining MAL instruction records are removed */
 	for(; i<slimit; i++)
 		if (old[i])
-			freeInstruction(old[i]);
+			freeInstruction(mb, old[i]);
 
 	GDKfree(old);
 

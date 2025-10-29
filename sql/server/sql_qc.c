@@ -38,7 +38,7 @@ cq_delete(int clientid, cq *q)
 		backend_freecode(NULL, clientid, q->name);
 	/* q, params and name are allocated using sa, ie need to be delete last */
 	if (q->sa)
-		sa_destroy(q->sa);
+		ma_destroy(q->sa);
 }
 
 static void
@@ -148,7 +148,7 @@ qc_insert(qc *cache, allocator *sa, sql_rel *r, symbol *s, list *params, mapi_qu
 	n->type = type;
 	n->count = 1;
 	namelen = 5 + ((n->id+7)>>3) + ((cache->clientid+7)>>3);
-	char *name = sa_alloc(sa, namelen);
+	char *name = ma_alloc(sa, namelen);
 	n->no_mitosis = no_mitosis;
 	n->created = timestamp_current();
 	if (!name)

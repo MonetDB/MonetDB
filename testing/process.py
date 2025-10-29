@@ -125,6 +125,7 @@ class _BufferedPipe:
             c = c.replace(self._cr, self._empty)
             if c:
                 q.put(c)
+        fh.close()
 
     def close(self):
         if verbose:
@@ -440,7 +441,7 @@ class client(Popen):
             print('Executing: ' + ' '.join(cmd +  args), flush=True)
         if stdin is None:
             # if no input provided, use /dev/null as input
-            stdin = open(os.devnull)
+            stdin = DEVNULL
         if stdout == 'PIPE':
             out = PIPE
         else:
@@ -600,7 +601,8 @@ class server(Popen):
             if os.path.exists(started):
                 # server is ready
                 try:
-                    conn = open(os.path.join(dbpath, '.conn')).read()
+                    with open(os.path.join(dbpath, '.conn')) as fil:
+                        conn = fil.read()
                 except:
                     if verbose:
                         print('failed to open {}'.format(os.path.join(dbpath, '.conn')))

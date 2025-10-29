@@ -1,2 +1,3 @@
 statement error 42000!STDDEV_SAMP: window function 'stddev_samp' not allowed in check constraints
-CREATE TABLE v0 ( v1 INT , v2 VARCHAR ( 77 ) NOT NULL CHECK ( CAST ( STDDEV_SAMP ( v1 / -1 ) OVER ( ORDER BY 15933342.000000 DESC ) AS INTEGER ))) 
+CREATE TABLE v0 ( v1 INT , v2 VARCHAR ( 77 ) NOT NULL CHECK ( CAST ( STDDEV_SAMP ( v1 / -1 ) OVER ( ORDER BY 15933342.000000 DESC ) AS INTEGER )))
+

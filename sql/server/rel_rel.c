@@ -41,12 +41,12 @@ project_unsafe(sql_rel *rel, bool allow_identity)
 	if (!sub || sub->op == op_ddl)
 		return 1;
 	for(node *n = rel->exps->h; n; n = n->next) {
-		sql_exp *e = n->data, *ne;
+		sql_exp *e = n->data;//, *ne;
 
 		/* aggr func in project ! */
 		if (exp_unsafe(e, allow_identity, false))
 			return 1;
-		if ((ne = rel_find_exp(rel, e)) && ne != e)
+		if (is_selfref(e))
 			return 1; /* no self referencing */
 	}
 	return 0;
@@ -91,7 +91,7 @@ rel_dup(sql_rel *r)
 }
 
 static void
-rel_destroy_(sql_rel *rel)
+rel_destroy_(mvc *sql, sql_rel *rel)
 {
 	if (!rel)
 		return;
@@ -100,7 +100,7 @@ rel_destroy_(sql_rel *rel)
 		break;
 	case op_table:
 		if ((IS_TABLE_PROD_FUNC(rel->flag) || rel->flag == TABLE_FROM_RELATION) && rel->l)
-			rel_destroy(rel->l);
+			rel_destroy(sql, rel->l);
 		break;
 	case op_join:
 	case op_left:
@@ -111,21 +111,21 @@ rel_destroy_(sql_rel *rel)
 	case op_inter:
 	case op_except:
 		if (rel->l)
-			rel_destroy(rel->l);
+			rel_destroy(sql, rel->l);
 		if (rel->r)
-			rel_destroy(rel->r);
+			rel_destroy(sql, rel->r);
 		break;
 	case op_insert:
 	case op_update:
 	case op_delete:
 		if (rel->r)
-			rel_destroy(rel->r);
+			rel_destroy(sql, rel->r);
 		break;
 	case op_munion:
 		/* the rel->l might be in purpose NULL see rel_merge_table_rewrite_() */
 		if (rel->l)
 			for (node *n = ((list*)rel->l)->h; n; n = n->next)
-				rel_destroy(n->data);
+				rel_destroy(sql, n->data);
 		break;
 	case op_project:
 	case op_groupby:
@@ -136,30 +136,42 @@ rel_destroy_(sql_rel *rel)
 	case op_buildhash:
 	case op_probehash:
 		if (rel->l)
-			rel_destroy(rel->l);
+			rel_destroy(sql, rel->l);
 		break;
 	case op_ddl:
 		if (rel->flag == ddl_output || rel->flag == ddl_create_seq || rel->flag == ddl_alter_seq || rel->flag == ddl_alter_table || rel->flag == ddl_create_table || rel->flag == ddl_create_view) {
 			if (rel->l)
-				rel_destroy(rel->l);
+				rel_destroy(sql, rel->l);
 		} else if (rel->flag == ddl_list || rel->flag == ddl_exception) {
 			if (rel->l)
-				rel_destroy(rel->l);
+				rel_destroy(sql, rel->l);
 			if (rel->r)
-				rel_destroy(rel->r);
+				rel_destroy(sql, rel->r);
 		}
 		break;
 	}
 }
 
 void
-rel_destroy(sql_rel *rel)
+rel_destroy(mvc *sql, sql_rel *rel)
 {
 	if (!rel)
 		return;
 	if (sql_ref_dec(&rel->ref) > 0)
 		return;
-	rel_destroy_(rel);
+	rel_destroy_(sql, rel);
+	if (!list_empty(rel->exps) && sql && (!rel->l) && (!rel->r)) {
+		// perhaps separate allocator for exps
+		// for later
+		free_exps(sql->sa, rel->exps);
+		rel->exps = NULL;
+		/*
+		if (rel->r && is_project(rel->op))
+			free_exps(sql->sa, rel->r);
+		if (rel->attr)
+			free_exps(sql->sa, rel->attr);
+			*/
+	}
 }
 
 sql_rel*
@@ -542,7 +554,7 @@ rel_inplace_basetable(sql_rel *rel, sql_rel *bt)
 {
 	assert(is_basetable(bt->op));
 
-	rel_destroy_(rel);
+	rel_destroy_(NULL, rel);
 	rel_inplace_reset_props(rel);
 	rel->l = bt->l;
 	rel->r = bt->r;
@@ -556,7 +568,7 @@ rel_inplace_basetable(sql_rel *rel, sql_rel *bt)
 sql_rel *
 rel_inplace_setop(mvc *sql, sql_rel *rel, sql_rel *l, sql_rel *r, operator_type setop, list *exps)
 {
-	rel_destroy_(rel);
+	rel_destroy_(sql, rel);
 	rel_inplace_reset_props(rel);
 	rel->l = l;
 	rel->r = r;
@@ -571,7 +583,7 @@ rel_inplace_setop_n_ary(mvc *sql, sql_rel *rel, list *rl, operator_type setop, l
 {
 	// TODO: for now we only deal with munion
 	assert(setop == op_munion);
-	rel_destroy_(rel);
+	rel_destroy_(sql, rel);
 	rel_inplace_reset_props(rel);
 	/* rl should be a list of relations */
 	rel->l = rl;
@@ -593,7 +605,7 @@ rel_inplace_project(allocator *sa, sql_rel *rel, sql_rel *l, list *e)
 		*l = *rel;
 		l->ref.refcnt = 1;
 	} else {
-		rel_destroy_(rel);
+		rel_destroy_(NULL, rel);
 	}
 	rel_inplace_reset_props(rel);
 	rel->l = l;
@@ -611,7 +623,7 @@ rel_inplace_project(allocator *sa, sql_rel *rel, sql_rel *l, list *e)
 sql_rel *
 rel_inplace_select(sql_rel *rel, sql_rel *l, list *exps)
 {
-	rel_destroy_(rel);
+	rel_destroy_(NULL, rel);
 	rel_inplace_reset_props(rel);
 	rel->l = l;
 	rel->r = NULL;
@@ -630,7 +642,7 @@ rel_inplace_select(sql_rel *rel, sql_rel *l, list *exps)
 sql_rel *
 rel_inplace_groupby(sql_rel *rel, sql_rel *l, list *groupbyexps, list *exps )
 {
-	rel_destroy_(rel);
+	rel_destroy_(NULL, rel);
 	rel_inplace_reset_props(rel);
 	rel->card = CARD_ATOM;
 	if (groupbyexps)
@@ -867,7 +879,7 @@ rel_setop_n_ary_set_exps(mvc *sql, sql_rel *rel, list *exps, bool keep_props)
 		for (node *m = exps->h, *o = rexps->h; m && o; m = m->next, o = o->next) {
 			sql_exp *e = m->data, *f = o->data;
 			/* for multi-union if any operand has nil then set the nil prop for the op exp */
-			if (is_munion(rel->op) && has_nil(f))
+			if (is_munion(rel->op) && (f && has_nil(f)))
 				set_has_nil(e);
 			e->card = CARD_MULTI;
 		}
@@ -904,7 +916,7 @@ rel_is_constant(sql_rel **R, sql_exp *e)
 	    !rel->l && !rel->r && !rel_is_ref(rel) && e->type == e_column) {
 		sql_exp *ne = rel_find_exp(rel, e);
 		if (ne) {
-			rel_destroy(rel);
+			rel_destroy(NULL, rel);
 			*R = NULL;
 			return ne;
 		}
@@ -951,7 +963,7 @@ rel_label( mvc *sql, sql_rel *r, int all)
 	char tname[16], *tnme;
 	char cname[16], *cnme = NULL;
 
-	tnme = sa_strdup(sql->sa, number2name(tname, sizeof(tname), nr));
+	tnme = ma_strdup(sql->sa, number2name(tname, sizeof(tname), nr));
 	if (!is_simple_project(r->op))
 		r = rel_project(sql->sa, r, rel_projections(sql, r, NULL, 1, 1));
 	if (!list_empty(r->exps)) {
@@ -962,7 +974,7 @@ rel_label( mvc *sql, sql_rel *r, int all)
 			if (!is_freevar(e)) {
 				if (all) {
 					nr = ++sql->label;
-					cnme = sa_strdup(sql->sa, number2name(cname, sizeof(cname), nr));
+					cnme = ma_strdup(sql->sa, number2name(cname, sizeof(cname), nr));
 				}
 				exp_setname(sql, e, tnme, cnme );
 			}
@@ -973,7 +985,7 @@ rel_label( mvc *sql, sql_rel *r, int all)
 		for (node *ne = ((list*)r->r)->h; ne; ne = ne->next) {
 			if (all) {
 				nr = ++sql->label;
-				cnme = sa_strdup(sql->sa, number2name(cname, sizeof(cname), nr));
+				cnme = ma_strdup(sql->sa, number2name(cname, sizeof(cname), nr));
 			}
 			exp_setname(sql, ne->data, tnme, cnme );
 		}
@@ -1100,7 +1112,7 @@ rel_groupby(mvc *sql, sql_rel *l, list *groupbyexps )
 	list *aggrs = new_exp_list(sql->sa);
 	node *en;
 	if(!rel || !aggrs) {
-		rel_destroy(rel);
+		rel_destroy(sql, rel);
 		return NULL;
 	}
 
@@ -1310,7 +1322,7 @@ _rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int in
 			rexps = _rel_projections(sql, rel->r, tname, settname, intern, basecol);
 		exps_reset_props(rexps, is_left(rel->op) || is_full(rel->op));
 		if (rexps)
-			lexps = list_merge(lexps, rexps, (fdup)NULL);
+			lexps = list_join(lexps, rexps);
 		if (rel->attr)
 			append(lexps, exp_ref(sql, rel->attr->h->data));
 		return lexps;
@@ -1358,7 +1370,7 @@ _rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int in
 				if (basecol && !is_basecol(e))
 					continue;
 				if (intern || !is_intern(e)) {
-					if (!e->alias.label)
+					if (!e->alias.label || (exp_is_rel(e) && e->alias.name == NULL))
 						en->data = e = exp_label(sql->sa, e, ++sql->label);
 					sql_exp *ne = exp_ref(sql, e);
 					if (settname && tname)

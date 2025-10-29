@@ -75,7 +75,7 @@ pqc_string( pqc_file *pq, char *in, char **s)
 	int pos = pqc_get_string(in, &t, &len);
 
 	if (len > 0) {
-		*s = sa_alloc(pq->pa, len+1);
+		*s = ma_alloc(pq->pa, len+1);
 		memcpy(*s, t, len);
 		(*s)[len] = 0;
 		if (!(*s))
@@ -92,7 +92,7 @@ pqc_create(void)
 		return pq;
 	pq->refcnt = 1;
 	pq->fd = -1;
-	pq->pa = sa_create(NULL);
+	pq->pa = create_allocator(NULL, "pqc_create", false);
 	if (!pq->pa) {
 		_DELETE(pq);
 		pq = NULL;
@@ -108,7 +108,7 @@ pqc_destroy(pqc_file *pq)
 		return;
 	MT_lock_destroy(&pq->lock);
 	if (pq->pa)
-		sa_destroy(pq->pa);
+		ma_destroy(pq->pa);
 	if (pq->fd >= 0)
 		close(pq->fd);
 	pq->fmd = NULL;
@@ -132,7 +132,7 @@ pqc_copy(pqc_file *opq)
 	pq->refcnt = 1;
 	pq->filename = opq->filename;
 	pq->fd = open(opq->filename, O_RDONLY);
-	pq->pa = sa_create(NULL);
+	pq->pa = create_allocator(NULL, "pqc_copy", false);
 	if (!pq->pa) {
 		_DELETE(pq);
 		pq = NULL;
@@ -857,7 +857,7 @@ pqc_column_metadata( pqc_file *pq, pqc_columnchunk *cc, int pos )
 			TRC_INFO(PARQUET, "encodings list size %d type %d\n", size, type);
 			assert(type == T_I32);
 			u_int32_t encoding;
-			cc->encodings = sa_alloc(pq->pa, size * sizeof(u_int32_t));
+			cc->encodings = ma_alloc(pq->pa, size * sizeof(u_int32_t));
 			for(int i = 0; i < size; i++) {
 				pos += pqc_get_zint32(pq->buffer+pos, &encoding);
 				cc->encodings[i] = encoding;
@@ -876,9 +876,9 @@ pqc_column_metadata( pqc_file *pq, pqc_columnchunk *cc, int pos )
 				if (res < 0)
 					return -1;
 				if (cname) {
-					path_in_schema_str = sa_strconcat(pq->pa, path_in_schema_str, cname);
+					path_in_schema_str = ma_strconcat(pq->pa, path_in_schema_str, cname);
 					if (i < size - 1)
-						path_in_schema_str = sa_strconcat(pq->pa, path_in_schema_str, ", ");
+						path_in_schema_str = ma_strconcat(pq->pa, path_in_schema_str, ", ");
 				}
 				pos += res;
 			}

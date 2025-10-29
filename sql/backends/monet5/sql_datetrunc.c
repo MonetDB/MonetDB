@@ -50,8 +50,9 @@ truncate_check(const char *scale)
 }
 
 str
-bat_date_trunc(bat *res, const str *scale, const bat *bid)
+bat_date_trunc(Client ctx, bat *res, const str *scale, const bat *bid)
 {
+	(void) ctx;
 	BAT *b, *bn;
 	oid lo, hi;
 	const timestamp *bt;
@@ -193,8 +194,9 @@ bat_date_trunc(bat *res, const str *scale, const bat *bid)
 	} while (0)
 
 str
-date_trunc(timestamp *dt, const str *scale, const timestamp *bt)
+date_trunc(Client ctx, timestamp *dt, const str *scale, const timestamp *bt)
 {
+	(void) ctx;
 	str msg = MAL_SUCCEED;
 	date days;
 

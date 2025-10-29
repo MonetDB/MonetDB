@@ -14,6 +14,7 @@
 #define _REMOTE_DEF
 
 #include "mal.h"
+#include "mal_client.h"
 
 typedef struct {
 	bat id;
@@ -29,6 +30,6 @@ typedef struct {
 				size_t nrcolumns);
 } columnar_result_callback;
 
-mal_export str RMTdisconnect(void *ret, const char *const *conn);
+mal_export str RMTdisconnect(Client cntxt, void *ret, const char *const *conn);
 
 #endif /* _REMOTE_DEF */

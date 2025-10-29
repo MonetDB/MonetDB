@@ -42,7 +42,7 @@ newFunctionArgs(const char *mod, const char *nme, int kind, int args)
 		}
 
 		if (args > 0) {
-			InstrPtr p = newInstructionArgs(NULL, mod, nme, args);
+			InstrPtr p = newInstructionArgs(s->def, mod, nme, args);
 			if (p == NULL) {
 				freeSymbol(s);
 				return NULL;
@@ -189,14 +189,14 @@ chkFlow(MalBlkPtr mb)
 			} else if (ps->typeresolved)
 				for (e = 0; e < p->retc; e++) {
 					if (resolvedType(getArgType(mb, ps, e), getArgType(mb, p, e)) < 0) {
-						str tpname = getTypeName(getArgType(mb, p, e));
+						str tpname = getTypeName(mb->ma, getArgType(mb, p, e));
 						msg = createException(MAL, "chkFlow",
 											  "%s.%s RETURN type mismatch at type '%s'\n",
 											  getModuleId(p) ? getModuleId(p) :
 											  "",
 											  getFunctionId(p) ?
 											  getFunctionId(p) : "", tpname);
-						GDKfree(tpname);
+						// GDKfree(tpname);
 						return msg;
 					}
 				}
@@ -220,7 +220,7 @@ chkFlow(MalBlkPtr mb)
 					msg = createException(MAL, "chkFlow",
 										  "%s.%s signature misplaced\n!%s",
 										  getModuleId(p), getFunctionId(p), l);
-					GDKfree(l);
+					//GDKfree(l);
 					return msg;
 				}
 			}
@@ -437,7 +437,7 @@ debugFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg, int first,
 				}
 				mnstr_printf(fd, "\n");
 			}
-			GDKfree(ps);
+			//GDKfree(ps);
 		} else
 			mnstr_printf(fd, "#failed instruction2str()\n");
 	}
@@ -473,7 +473,7 @@ listFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg, int first,
 				size_t l = strlen(ps);
 				if (l > len)
 					len = l;
-				GDKfree(ps);
+				//GDKfree(ps);
 			} else
 				mnstr_printf(fd, "#failed instruction2str()\n");
 		}
@@ -693,7 +693,7 @@ chkDeclarations(MalBlkPtr mb)
 	char name[IDLENGTH];
 
 	if (mb->errors)
-		return GDKstrdup(mb->errors);
+		return MA_STRDUP(mb->ma, mb->errors);
 	blks[top] = blkId;
 
 	/* initialize the scope */

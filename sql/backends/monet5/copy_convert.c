@@ -64,6 +64,7 @@ COPYparse_generic(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	buffer_len = 0;
 	const char *start = (char*)r->bs->buf[p->wid];
 	const int *offsetp = (int*)Tloc(indices, 0);
+	allocator *ma = cntxt->curprg->def->ma;
 	for (int i = 0; i < n; i++) {
 		gdk_return ok = GDK_SUCCEED;
 		int offset = offsetp[i];
@@ -76,7 +77,7 @@ COPYparse_generic(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			ok = copy_report_error(&errors, i, -1, "incorrectly encoded UTF-8");
 			to_insert = nil_ptr;
 		} else {
-			ssize_t len = BATatoms[tpe].atomFromStr(src, &buffer_len, &buffer, false);
+			ssize_t len = BATatoms[tpe].atomFromStr(ma, src, &buffer_len, &buffer, false);
 			if (len >= 0) {
 				to_insert = buffer;
 			} else {
@@ -201,6 +202,7 @@ COPYparse_float(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	const char *start = (char*)r->bs->buf[p->wid];
 	const int *offsetp = (int*)Tloc(indices, 0);
+	allocator *ma = cntxt->curprg->def->ma;
 	for (int i = 0; i < n; i++) {
 		gdk_return ok = GDK_SUCCEED;
 		int offset = offsetp[i];
@@ -215,7 +217,7 @@ COPYparse_float(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			src = fltdbl_sepskip(src, sep, skip);
 			if (src) {
 				buffer_len = 0;
-				len = BATatoms[tpe].atomFromStr(src, &buffer_len, &buffer, false);
+				len = BATatoms[tpe].atomFromStr(ma, src, &buffer_len, &buffer, false);
 				(void)buffer_len;
 			}
 			if (len >= 0) {

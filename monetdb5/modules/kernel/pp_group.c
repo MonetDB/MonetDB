@@ -15,37 +15,37 @@
 #include "group.h"
 
 static str
-LGRPsubgroup2(bat *ngid, bat *next, bat *nhis, const ptr *h, const bat *bid, const bat *gid)
+LGRPsubgroup2(Client ctx, bat *ngid, bat *next, bat *nhis, const ptr *h, const bat *bid, const bat *gid)
 {
 	Pipeline *p = (Pipeline*)*h;
 	str res;
 
 	MT_lock_set(&p->p->l);
-	res = GRPsubgroup2(ngid, next, nhis, bid, gid);
+	res = GRPsubgroup2(ctx, ngid, next, nhis, bid, gid);
 	MT_lock_unset(&p->p->l);
 	return res;
 }
 
 static str
-LGRPgroup3(bat *ngid, bat *next, const ptr *h, const bat *bid)
+LGRPgroup3(Client ctx, bat *ngid, bat *next, const ptr *h, const bat *bid)
 {
 	Pipeline *p = (Pipeline*)*h;
 	str res;
 
 	MT_lock_set(&p->p->l);
-	res = GRPgroup3(ngid, next, bid);
+	res = GRPgroup3(ctx, ngid, next, bid);
 	MT_lock_unset(&p->p->l);
 	return res;
 }
 
 static str
-LGRPgroup1(bat *ngid, bat *next, bat *nhis, const ptr *h, const bat *bid)
+LGRPgroup1(Client ctx, bat *ngid, bat *next, bat *nhis, const ptr *h, const bat *bid)
 {
 	Pipeline *p = (Pipeline*)*h;
 	str res;
 
 	MT_lock_set(&p->p->l);
-	res = GRPgroup1(ngid, next, nhis, bid);
+	res = GRPgroup1(ctx, ngid, next, nhis, bid);
 	MT_lock_unset(&p->p->l);
 	return res;
 }

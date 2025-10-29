@@ -31,8 +31,9 @@ dec_round_body(TYPE v, TYPE r)
 }
 
 str
-dec_round_wrap(TYPE *res, const TYPE *v, const TYPE *r)
+dec_round_wrap(Client ctx, TYPE *res, const TYPE *v, const TYPE *r)
 {
+	(void) ctx;
 	/* basic sanity checks */
 	assert(res && v);
 	TYPE rr = *r;
@@ -353,8 +354,9 @@ round_body(TYPE v, int r)
 }
 
 str
-round_wrap(TYPE *res, const TYPE *v, const bte *r)
+round_wrap(Client ctx, TYPE *res, const TYPE *v, const bte *r)
 {
+	(void) ctx;
 	/* basic sanity checks */
 	assert(res && v && r);
 	bte rr = *r;
@@ -660,8 +662,9 @@ bailout:
 }
 
 str
-trunc_wrap(TYPE *res, const TYPE *v, const int *r)
+trunc_wrap(Client ctx, TYPE *res, const TYPE *v, const int *r)
 {
+	(void) ctx;
 	int rr = *r;
 
 	if (is_int_nil(rr))

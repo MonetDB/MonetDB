@@ -11,6 +11,8 @@
  */
 
 #include "geom_atoms.h"
+#include "gdk.h"
+#include "gdk_system.h"
 
 /***********************************************/
 /************* wkb type functions **************/
@@ -19,8 +21,9 @@
 /* Creates the string representation (WKT) of a WKB */
 /* return length of resulting string. */
 ssize_t
-wkbTOSTR(char **geomWKT, size_t *len, const void *GEOMWKB, bool external)
+wkbTOSTR(allocator *ma, char **geomWKT, size_t *len, const void *GEOMWKB, bool external)
 {
+	assert(ma);
 	const wkb *geomWKB = GEOMWKB;
 	char *wkt = NULL;
 	size_t dstStrLen = 5;	/* "nil" */
@@ -49,8 +52,9 @@ wkbTOSTR(char **geomWKT, size_t *len, const void *GEOMWKB, bool external)
 			dstStrLen += 2;	/* add quotes */
 		if (*len < dstStrLen + 1 || *geomWKT == NULL) {
 			*len = dstStrLen + 1;
-			GDKfree(*geomWKT);
-			if ((*geomWKT = GDKmalloc(*len)) == NULL) {
+			////GDKfree(*geomWKT);
+			assert(ma);
+			if ((*geomWKT = ma_alloc(ma, *len)) == NULL) {
 				GEOSFree_r(geoshandle, wkt);
 				return -1;
 			}
@@ -66,8 +70,8 @@ wkbTOSTR(char **geomWKT, size_t *len, const void *GEOMWKB, bool external)
 
 	/* geosGeometry == NULL */
 	if (*len < 4 || *geomWKT == NULL) {
-		GDKfree(*geomWKT);
-		if ((*geomWKT = GDKmalloc(*len = 4)) == NULL)
+		////GDKfree(*geomWKT);
+		if ((*geomWKT = ma_alloc(ma, *len = 4)) == NULL)
 			return -1;
 	}
 	if (external) {
@@ -79,19 +83,20 @@ wkbTOSTR(char **geomWKT, size_t *len, const void *GEOMWKB, bool external)
 }
 
 ssize_t
-wkbFROMSTR(const char *geomWKT, size_t *len, void **GEOMWKB, bool external)
+wkbFROMSTR(allocator *ma, const char *geomWKT, size_t *len, void **GEOMWKB, bool external)
 {
+	assert(ma);
 	wkb **geomWKB = (wkb **) GEOMWKB;
 	size_t parsedBytes;
 	str err;
 
 	if (external && strncmp(geomWKT, "nil", 3) == 0) {
-		*geomWKB = wkbNULLcopy();
+		*geomWKB = wkbNULLcopy(ma);
 		if (*geomWKB == NULL)
 			return -1;
 		return 3;
 	}
-	err = wkbFROMSTR_withSRID(geomWKT, len, geomWKB, 0, &parsedBytes);
+	err = wkbFROMSTR_withSRID(ma, geomWKT, len, geomWKB, 0, &parsedBytes);
 	if (err != MAL_SUCCEED) {
 		GDKerror("%s", getExceptionMessageAndState(err));
 		freeException(err);
@@ -169,7 +174,7 @@ wkbEQ(const void *L, const void *R)
 
 /* read wkb from log */
 void *
-wkbREAD(void *A, size_t *dstlen, stream *s, size_t cnt)
+wkbREAD(allocator *ma, void *A, size_t *dstlen, stream *s, size_t cnt)
 {
 	wkb *a = A;
 	int len;
@@ -183,14 +188,20 @@ wkbREAD(void *A, size_t *dstlen, stream *s, size_t cnt)
 		return NULL;
 	size_t wkblen = (size_t) wkb_size(len);
 	if (a == NULL || *dstlen < wkblen) {
-		if ((a = GDKrealloc(a, wkblen)) == NULL)
+		if (ma) {
+			a = ma_realloc(ma, a, wkblen, *dstlen);
+		} else {
+			GDKfree(a);
+			a = GDKmalloc(wkblen);
+		}
+		if (a == NULL)
 			return NULL;
 		*dstlen = wkblen;
 	}
 	a->len = len;
 	a->srid = srid;
 	if (len > 0 && mnstr_read(s, (char *) a->data, len, 1) != 1) {
-		GDKfree(a);
+		//GDKfree(a);
 		return NULL;
 	}
 	return a;
@@ -254,18 +265,20 @@ wkbHEAP(Heap *heap, size_t capacity)
 
 /* Non-atom WKB functions */
 wkb *
-wkbNULLcopy(void)
+wkbNULLcopy(allocator *ma)
 {
-	wkb *n = GDKmalloc(sizeof(wkb_nil));
+	assert(ma);
+	wkb *n = ma_alloc(ma, sizeof(wkb_nil));
 	if (n)
 		*n = wkb_nil;
 	return n;
 }
 
 wkb *
-wkbCopy(const wkb* src)
+wkbCopy(allocator *ma, const wkb* src)
 {
-	wkb *n = GDKmalloc(wkb_size(src->len));
+	assert(ma);
+	wkb *n = ma_alloc(ma, wkb_size(src->len));
 	if (n) {
 		n->len = src->len;
 		n->srid = src->srid;
@@ -287,8 +300,9 @@ wkb_size(size_t len)
 /* Creates WKB representation (including srid) from WKT representation */
 /* return number of parsed characters. */
 str
-wkbFROMSTR_withSRID(const char *geomWKT, size_t *len, wkb **geomWKB, int srid, size_t *nread)
+wkbFROMSTR_withSRID(allocator *ma, const char *geomWKT, size_t *len, wkb **geomWKB, int srid, size_t *nread)
 {
+	assert(ma);
 	GEOSGeom geosGeometry = NULL;	/* The geometry object that is parsed from the src string. */
 	GEOSWKTReader *WKT_reader;
 	static const char polyhedralSurface[] = "POLYHEDRALSURFACE";
@@ -298,21 +312,19 @@ wkbFROMSTR_withSRID(const char *geomWKT, size_t *len, wkb **geomWKB, int srid, s
 
 	*nread = 0;
 
-	/* we always allocate new memory */
-	GDKfree(*geomWKB);
-	*len = 0;
-	*geomWKB = NULL;
-
 	if (strNil(geomWKT)) {
-		*geomWKB = wkbNULLcopy();
+		if (*len < sizeof(wkb_nil)) {
+			*len = sizeof(wkb_nil);
+			*geomWKB = ma_alloc(ma, *len);
+		}
 		if (*geomWKB == NULL)
 			throw(MAL, "wkb.FromText", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		*len = sizeof(wkb_nil);
+		**geomWKB = wkb_nil;
 		return MAL_SUCCEED;
 	}
 	//check whether the representation is binary (hex)
 	if (geomWKT[0] == '0') {
-		str ret = wkbFromBinary(geomWKB, &geomWKT);
+		str ret = wkbFromBinaryWithBuffer(ma, geomWKB, len, &geomWKT);
 
 		if (ret != MAL_SUCCEED)
 			return ret;
@@ -325,9 +337,11 @@ wkbFROMSTR_withSRID(const char *geomWKT, size_t *len, wkb **geomWKB, int srid, s
 	//a special type of multipolygon I just change the type before
 	//continuing. Of course this means that isValid for example does
 	//not work correctly.
+	allocator *ta = MT_thread_getallocator();
+	allocator_state state = ma_open(ta);
 	if (strncasecmp(geomWKT, polyhedralSurface, strlen(polyhedralSurface)) == 0) {
 		size_t sizeOfInfo = strlen(geomWKT) - strlen(polyhedralSurface) + strlen(multiPolygon) + 1;
-		geomWKT_new = GDKmalloc(sizeOfInfo);
+		geomWKT_new = ma_alloc(ta, sizeOfInfo);
 		if (geomWKT_new == NULL)
 			throw(MAL, "wkb.FromText", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		snprintf(geomWKT_new, sizeOfInfo, "%s%s", multiPolygon, geomWKT + strlen(polyhedralSurface));
@@ -337,23 +351,20 @@ wkbFROMSTR_withSRID(const char *geomWKT, size_t *len, wkb **geomWKB, int srid, s
 
 	WKT_reader = GEOSWKTReader_create_r(geoshandle);
 	if (WKT_reader == NULL) {
-		if (geomWKT_new)
-			GDKfree(geomWKT_new);
+		ma_close(ta, &state);
 		throw(MAL, "wkb.FromText", SQLSTATE(38000) "Geos operation GEOSWKTReader_create failed");
 	}
 	geosGeometry = GEOSWKTReader_read_r(geoshandle, WKT_reader, geomWKT);
 	GEOSWKTReader_destroy_r(geoshandle, WKT_reader);
 
 	if (geosGeometry == NULL) {
-		if (geomWKT_new)
-			GDKfree(geomWKT_new);
+		ma_close(ta, &state);
 		throw(MAL, "wkb.FromText", SQLSTATE(38000) "Geos operation GEOSWKTReader_read failed");
 	}
 
 	if (GEOSGeomTypeId_r(geoshandle, geosGeometry) == -1) {
-		if (geomWKT_new)
-			GDKfree(geomWKT_new);
 		GEOSGeom_destroy_r(geoshandle, geosGeometry);
+		ma_close(ta, &state);
 		throw(MAL, "wkb.FromText", SQLSTATE(38000) "Geos operation GEOSGeomTypeId failed");
 	}
 
@@ -363,11 +374,10 @@ wkbFROMSTR_withSRID(const char *geomWKT, size_t *len, wkb **geomWKB, int srid, s
 
 	/* we have a GEOSGeometry with number of coordinates and SRID and we
 	 * want to get the wkb out of it */
-	*geomWKB = geos2wkb(geosGeometry);
+	*geomWKB = geos2wkb(ma, geomWKB, len, geosGeometry);
 	GEOSGeom_destroy_r(geoshandle, geosGeometry);
 	if (*geomWKB == NULL) {
-		if (geomWKT_new)
-			GDKfree(geomWKT_new);
+		ma_close(ta, &state);
 		throw(MAL, "wkb.FromText", SQLSTATE(38000) "Geos operation geos2wkb failed");
 	}
 
@@ -375,8 +385,7 @@ wkbFROMSTR_withSRID(const char *geomWKT, size_t *len, wkb **geomWKB, int srid, s
 	parsedCharacters = strlen(geomWKT);
 	assert(parsedCharacters <= GDK_int_max);
 
-	GDKfree(geomWKT_new);
-
+	ma_close(ta, &state);
 	*nread = parsedCharacters;
 	return MAL_SUCCEED;
 }
@@ -390,8 +399,9 @@ wkbFROMSTR_withSRID(const char *geomWKT, size_t *len, wkb **geomWKB, int srid, s
 /* TOSTR: print atom in a string. */
 /* return length of resulting string. */
 ssize_t
-mbrTOSTR(char **dst, size_t *len, const void *ATOM, bool external)
+mbrTOSTR(allocator *ma, char **dst, size_t *len, const void *ATOM, bool external)
 {
+	assert(ma);
 	const mbr *atom = ATOM;
 	char tempWkt[MBR_WKTLEN];
 	size_t dstStrLen;
@@ -407,8 +417,8 @@ mbrTOSTR(char **dst, size_t *len, const void *ATOM, bool external)
 	}
 
 	if (*len < dstStrLen + 4 || *dst == NULL) {
-		GDKfree(*dst);
-		if ((*dst = GDKmalloc(*len = dstStrLen + 4)) == NULL)
+		////GDKfree(*dst);
+		if ((*dst = ma_alloc(ma, *len = dstStrLen + 4)) == NULL)
 			return -1;
 	}
 
@@ -432,8 +442,9 @@ mbrTOSTR(char **dst, size_t *len, const void *ATOM, bool external)
 /* FROMSTR: parse string to mbr. */
 /* return number of parsed characters. */
 ssize_t
-mbrFROMSTR(const char *src, size_t *len, void **ATOM, bool external)
+mbrFROMSTR(allocator *ma, const char *src, size_t *len, void **ATOM, bool external)
 {
+	assert(ma);
 	mbr **atom = (mbr **) ATOM;
 	size_t nchars = 0;	/* The number of characters parsed; the return value. */
 	GEOSGeom geosMbr = NULL;	/* The geometry object that is parsed from the src string. */
@@ -441,8 +452,8 @@ mbrFROMSTR(const char *src, size_t *len, void **ATOM, bool external)
 	const char *c;
 
 	if (*len < sizeof(mbr) || *atom == NULL) {
-		GDKfree(*atom);
-		if ((*atom = GDKmalloc(*len = sizeof(mbr))) == NULL)
+		// //GDKfree(*atom);
+		if ((*atom = ma_alloc(ma, *len = sizeof(mbr))) == NULL)
 			return -1;
 	}
 	if (external && strncmp(src, "nil", 3) == 0) {
@@ -543,7 +554,7 @@ mbrEQ(const void *L, const void *R)
 
 /* read mbr from log */
 void *
-mbrREAD(void *A, size_t *dstlen, stream *s, size_t cnt)
+mbrREAD(allocator *ma, void *A, size_t *dstlen, stream *s, size_t cnt)
 {
 	mbr *a = A;
 	mbr *c;
@@ -552,14 +563,20 @@ mbrREAD(void *A, size_t *dstlen, stream *s, size_t cnt)
 	flt vals[4];
 
 	if (a == NULL || *dstlen < cnt * sizeof(mbr)) {
-		if ((a = GDKrealloc(a, cnt * sizeof(mbr))) == NULL)
+		if (ma) {
+			a = ma_realloc(ma, a, cnt * sizeof(mbr), *dstlen);
+		} else {
+			GDKfree(a);
+			a = GDKmalloc(cnt * sizeof(mbr));
+		}
+		if (a == NULL)
 			return NULL;
 		*dstlen = cnt * sizeof(mbr);
 	}
 	for (i = 0, c = a; i < cnt; i++, c++) {
 		if (!mnstr_readIntArray(s, v, 4)) {
 			if (a != A)
-				GDKfree(a);
+				//GDKfree(a);
 			return NULL;
 		}
 		memcpy(vals, v, 4 * sizeof(int));
@@ -605,25 +622,27 @@ is_mbr_nil(const mbr *m)
 
 /* Creates the mbr for the given geom_geometry. */
 str
-wkbMBR(mbr **geomMBR, wkb **geomWKB)
+wkbMBR(Client ctx, mbr **geomMBR, wkb **geomWKB)
 {
 	GEOSGeom geosGeometry;
 	str ret = MAL_SUCCEED;
 	bit empty;
+	allocator *ma = ctx->ma;
+	assert(ma);
 
 	//check if the geometry is nil
 	if (is_wkb_nil(*geomWKB)) {
-		if ((*geomMBR = GDKmalloc(sizeof(mbr))) == NULL)
+		if ((*geomMBR = ma_alloc(ma, sizeof(mbr))) == NULL)
 			throw(MAL, "geom.MBR", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		**geomMBR = mbrNIL;
 		return MAL_SUCCEED;
 	}
 	//check if the geometry is empty
-	if ((ret = wkbIsEmpty(&empty, geomWKB)) != MAL_SUCCEED) {
+	if ((ret = wkbIsEmpty(ctx, &empty, geomWKB)) != MAL_SUCCEED) {
 		return ret;
 	}
 	if (empty) {
-		if ((*geomMBR = GDKmalloc(sizeof(mbr))) == NULL)
+		if ((*geomMBR = ma_alloc(ma, sizeof(mbr))) == NULL)
 			throw(MAL, "geom.MBR", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		**geomMBR = mbrNIL;
 		return MAL_SUCCEED;
@@ -640,7 +659,7 @@ wkbMBR(mbr **geomMBR, wkb **geomWKB)
 	GEOSGeom_destroy_r(geoshandle, geosGeometry);
 
 	if (*geomMBR == NULL || is_mbr_nil(*geomMBR)) {
-		GDKfree(*geomMBR);
+		//GDKfree(*geomMBR);
 		*geomMBR = NULL;
 		throw(MAL, "wkb.mbr", SQLSTATE(38000) "Geos failed to create mbr");
 	}
@@ -649,15 +668,18 @@ wkbMBR(mbr **geomMBR, wkb **geomWKB)
 }
 
 str
-wkbBox2D(mbr **box, wkb **point1, wkb **point2)
+wkbBox2D(Client ctx, mbr **box, wkb **point1, wkb **point2)
 {
+	(void) ctx;
 	GEOSGeom point1_geom, point2_geom;
 	double xmin = 0.0, ymin = 0.0, xmax = 0.0, ymax = 0.0;
 	str err = MAL_SUCCEED;
+	allocator *ma = ctx->curprg->def->ma;
+	assert(ma);
 
 	//check null input
 	if (is_wkb_nil(*point1) || is_wkb_nil(*point2)) {
-		if ((*box = GDKmalloc(sizeof(mbr))) == NULL)
+		if ((*box = ma_alloc(ma, sizeof(mbr))) == NULL)
 			throw(MAL, "geom.MakeBox2D", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		**box = mbrNIL;
 		return MAL_SUCCEED;
@@ -683,7 +705,7 @@ wkbBox2D(mbr **box, wkb **point1, wkb **point2)
 		err = createException(MAL, "geom.MakeBox2D", SQLSTATE(38000) "Geos error in reading the points' coordinates");
 	} else {
 		//Assign the coordinates. Ensure that they are in correct order
-		*box = GDKmalloc(sizeof(mbr));
+		*box = ma_alloc(ma, sizeof(mbr));
 		if (*box == NULL) {
 			err = createException(MAL, "geom.MakeBox2D", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		} else {
@@ -700,7 +722,7 @@ wkbBox2D(mbr **box, wkb **point1, wkb **point2)
 }
 
 static str
-mbrrelation_wkb(bit *out, wkb **geom1WKB, wkb **geom2WKB, str (*func)(bit *, mbr **, mbr **))
+mbrrelation_wkb(Client ctx, bit *out, wkb **geom1WKB, wkb **geom2WKB, str (*func)(Client, bit *, mbr **, mbr **))
 {
 	mbr *geom1MBR = NULL, *geom2MBR = NULL;
 	str ret = MAL_SUCCEED;
@@ -710,29 +732,30 @@ mbrrelation_wkb(bit *out, wkb **geom1WKB, wkb **geom2WKB, str (*func)(bit *, mbr
 		return MAL_SUCCEED;
 	}
 
-	ret = wkbMBR(&geom1MBR, geom1WKB);
+	ret = wkbMBR(ctx, &geom1MBR, geom1WKB);
 	if (ret != MAL_SUCCEED) {
 		return ret;
 	}
 
-	ret = wkbMBR(&geom2MBR, geom2WKB);
+	ret = wkbMBR(ctx, &geom2MBR, geom2WKB);
 	if (ret != MAL_SUCCEED) {
-		GDKfree(geom1MBR);
+		//GDKfree(geom1MBR);
 		return ret;
 	}
 
-	ret = (*func) (out, &geom1MBR, &geom2MBR);
+	ret = (*func) (ctx, out, &geom1MBR, &geom2MBR);
 
-	GDKfree(geom1MBR);
-	GDKfree(geom2MBR);
+	//GDKfree(geom1MBR);
+	//GDKfree(geom2MBR);
 
 	return ret;
 }
 
 /*returns true if the two mbrs overlap */
 str
-mbrOverlaps(bit *out, mbr **b1, mbr **b2)
+mbrOverlaps(Client ctx, bit *out, mbr **b1, mbr **b2)
 {
+	(void) ctx;
 	if (is_mbr_nil(*b1) || is_mbr_nil(*b2))
 		*out = bit_nil;
 	else			//they cannot overlap if b2 is left, right, above or below b1
@@ -745,15 +768,17 @@ mbrOverlaps(bit *out, mbr **b1, mbr **b2)
 
 /*returns true if the mbrs of the two geometries overlap */
 str
-mbrOverlaps_wkb(bit *out, wkb **geom1WKB, wkb **geom2WKB)
+mbrOverlaps_wkb(Client ctx, bit *out, wkb **geom1WKB, wkb **geom2WKB)
 {
-	return mbrrelation_wkb(out, geom1WKB, geom2WKB, mbrOverlaps);
+	(void) ctx;
+	return mbrrelation_wkb(ctx, out, geom1WKB, geom2WKB, mbrOverlaps);
 }
 
 /* returns true if b1 is above b2 */
 str
-mbrAbove(bit *out, mbr **b1, mbr **b2)
+mbrAbove(Client ctx, bit *out, mbr **b1, mbr **b2)
 {
+	(void) ctx;
 	if (is_mbr_nil(*b1) || is_mbr_nil(*b2))
 		*out = bit_nil;
 	else
@@ -763,15 +788,17 @@ mbrAbove(bit *out, mbr **b1, mbr **b2)
 
 /*returns true if the mbrs of geom1 is above the mbr of geom2 */
 str
-mbrAbove_wkb(bit *out, wkb **geom1WKB, wkb **geom2WKB)
+mbrAbove_wkb(Client ctx, bit *out, wkb **geom1WKB, wkb **geom2WKB)
 {
-	return mbrrelation_wkb(out, geom1WKB, geom2WKB, mbrAbove);
+	(void) ctx;
+	return mbrrelation_wkb(ctx, out, geom1WKB, geom2WKB, mbrAbove);
 }
 
 /* returns true if b1 is below b2 */
 str
-mbrBelow(bit *out, mbr **b1, mbr **b2)
+mbrBelow(Client ctx, bit *out, mbr **b1, mbr **b2)
 {
+	(void) ctx;
 	if (is_mbr_nil(*b1) || is_mbr_nil(*b2))
 		*out = bit_nil;
 	else
@@ -781,15 +808,17 @@ mbrBelow(bit *out, mbr **b1, mbr **b2)
 
 /*returns true if the mbrs of geom1 is below the mbr of geom2 */
 str
-mbrBelow_wkb(bit *out, wkb **geom1WKB, wkb **geom2WKB)
+mbrBelow_wkb(Client ctx, bit *out, wkb **geom1WKB, wkb **geom2WKB)
 {
-	return mbrrelation_wkb(out, geom1WKB, geom2WKB, mbrBelow);
+	(void) ctx;
+	return mbrrelation_wkb(ctx, out, geom1WKB, geom2WKB, mbrBelow);
 }
 
 /* returns true if box1 is left of box2 */
 str
-mbrLeft(bit *out, mbr **b1, mbr **b2)
+mbrLeft(Client ctx, bit *out, mbr **b1, mbr **b2)
 {
+	(void) ctx;
 	if (is_mbr_nil(*b1) || is_mbr_nil(*b2))
 		*out = bit_nil;
 	else
@@ -799,15 +828,17 @@ mbrLeft(bit *out, mbr **b1, mbr **b2)
 
 /*returns true if the mbrs of geom1 is on the left of the mbr of geom2 */
 str
-mbrLeft_wkb(bit *out, wkb **geom1WKB, wkb **geom2WKB)
+mbrLeft_wkb(Client ctx, bit *out, wkb **geom1WKB, wkb **geom2WKB)
 {
-	return mbrrelation_wkb(out, geom1WKB, geom2WKB, mbrLeft);
+	(void) ctx;
+	return mbrrelation_wkb(ctx, out, geom1WKB, geom2WKB, mbrLeft);
 }
 
 /* returns true if box1 is right of box2 */
 str
-mbrRight(bit *out, mbr **b1, mbr **b2)
+mbrRight(Client ctx, bit *out, mbr **b1, mbr **b2)
 {
+	(void) ctx;
 	if (is_mbr_nil(*b1) || is_mbr_nil(*b2))
 		*out = bit_nil;
 	else
@@ -817,15 +848,17 @@ mbrRight(bit *out, mbr **b1, mbr **b2)
 
 /*returns true if the mbrs of geom1 is on the right of the mbr of geom2 */
 str
-mbrRight_wkb(bit *out, wkb **geom1WKB, wkb **geom2WKB)
+mbrRight_wkb(Client ctx, bit *out, wkb **geom1WKB, wkb **geom2WKB)
 {
-	return mbrrelation_wkb(out, geom1WKB, geom2WKB, mbrRight);
+	(void) ctx;
+	return mbrrelation_wkb(ctx, out, geom1WKB, geom2WKB, mbrRight);
 }
 
 /* returns true if box1 overlaps or is above box2 when only the Y coordinate is considered*/
 str
-mbrOverlapOrAbove(bit *out, mbr **b1, mbr **b2)
+mbrOverlapOrAbove(Client ctx, bit *out, mbr **b1, mbr **b2)
 {
+	(void) ctx;
 	if (is_mbr_nil(*b1) || is_mbr_nil(*b2))
 		*out = bit_nil;
 	else
@@ -835,15 +868,17 @@ mbrOverlapOrAbove(bit *out, mbr **b1, mbr **b2)
 
 /*returns true if the mbrs of geom1 overlaps or is above the mbr of geom2 */
 str
-mbrOverlapOrAbove_wkb(bit *out, wkb **geom1WKB, wkb **geom2WKB)
+mbrOverlapOrAbove_wkb(Client ctx, bit *out, wkb **geom1WKB, wkb **geom2WKB)
 {
-	return mbrrelation_wkb(out, geom1WKB, geom2WKB, mbrOverlapOrAbove);
+	(void) ctx;
+	return mbrrelation_wkb(ctx, out, geom1WKB, geom2WKB, mbrOverlapOrAbove);
 }
 
 /* returns true if box1 overlaps or is below box2 when only the Y coordinate is considered*/
 str
-mbrOverlapOrBelow(bit *out, mbr **b1, mbr **b2)
+mbrOverlapOrBelow(Client ctx, bit *out, mbr **b1, mbr **b2)
 {
+	(void) ctx;
 	if (is_mbr_nil(*b1) || is_mbr_nil(*b2))
 		*out = bit_nil;
 	else
@@ -853,15 +888,17 @@ mbrOverlapOrBelow(bit *out, mbr **b1, mbr **b2)
 
 /*returns true if the mbrs of geom1 overlaps or is below the mbr of geom2 */
 str
-mbrOverlapOrBelow_wkb(bit *out, wkb **geom1WKB, wkb **geom2WKB)
+mbrOverlapOrBelow_wkb(Client ctx, bit *out, wkb **geom1WKB, wkb **geom2WKB)
 {
-	return mbrrelation_wkb(out, geom1WKB, geom2WKB, mbrOverlapOrBelow);
+	(void) ctx;
+	return mbrrelation_wkb(ctx, out, geom1WKB, geom2WKB, mbrOverlapOrBelow);
 }
 
 /* returns true if box1 overlaps or is left of box2 when only the X coordinate is considered*/
 str
-mbrOverlapOrLeft(bit *out, mbr **b1, mbr **b2)
+mbrOverlapOrLeft(Client ctx, bit *out, mbr **b1, mbr **b2)
 {
+	(void) ctx;
 	if (is_mbr_nil(*b1) || is_mbr_nil(*b2))
 		*out = bit_nil;
 	else
@@ -871,15 +908,17 @@ mbrOverlapOrLeft(bit *out, mbr **b1, mbr **b2)
 
 /*returns true if the mbrs of geom1 overlaps or is on the left of the mbr of geom2 */
 str
-mbrOverlapOrLeft_wkb(bit *out, wkb **geom1WKB, wkb **geom2WKB)
+mbrOverlapOrLeft_wkb(Client ctx, bit *out, wkb **geom1WKB, wkb **geom2WKB)
 {
-	return mbrrelation_wkb(out, geom1WKB, geom2WKB, mbrOverlapOrLeft);
+	(void) ctx;
+	return mbrrelation_wkb(ctx, out, geom1WKB, geom2WKB, mbrOverlapOrLeft);
 }
 
 /* returns true if box1 overlaps or is right of box2 when only the X coordinate is considered*/
 str
-mbrOverlapOrRight(bit *out, mbr **b1, mbr **b2)
+mbrOverlapOrRight(Client ctx, bit *out, mbr **b1, mbr **b2)
 {
+	(void) ctx;
 	if (is_mbr_nil(*b1) || is_mbr_nil(*b2))
 		*out = bit_nil;
 	else
@@ -889,15 +928,17 @@ mbrOverlapOrRight(bit *out, mbr **b1, mbr **b2)
 
 /*returns true if the mbrs of geom1 overlaps or is on the right of the mbr of geom2 */
 str
-mbrOverlapOrRight_wkb(bit *out, wkb **geom1WKB, wkb **geom2WKB)
+mbrOverlapOrRight_wkb(Client ctx, bit *out, wkb **geom1WKB, wkb **geom2WKB)
 {
-	return mbrrelation_wkb(out, geom1WKB, geom2WKB, mbrOverlapOrRight);
+	(void) ctx;
+	return mbrrelation_wkb(ctx, out, geom1WKB, geom2WKB, mbrOverlapOrRight);
 }
 
 /* returns true if b1 is contained in b2 */
 str
-mbrContained(bit *out, mbr **b1, mbr **b2)
+mbrContained(Client ctx, bit *out, mbr **b1, mbr **b2)
 {
+	(void) ctx;
 	if (is_mbr_nil(*b1) || is_mbr_nil(*b2))
 		*out = bit_nil;
 	else
@@ -907,29 +948,33 @@ mbrContained(bit *out, mbr **b1, mbr **b2)
 
 /*returns true if the mbrs of geom1 is contained in the mbr of geom2 */
 str
-mbrContained_wkb(bit *out, wkb **geom1WKB, wkb **geom2WKB)
+mbrContained_wkb(Client ctx, bit *out, wkb **geom1WKB, wkb **geom2WKB)
 {
-	return mbrrelation_wkb(out, geom1WKB, geom2WKB, mbrContained);
+	(void) ctx;
+	return mbrrelation_wkb(ctx, out, geom1WKB, geom2WKB, mbrContained);
 }
 
 /*returns true if b1 contains b2 */
 str
-mbrContains(bit *out, mbr **b1, mbr **b2)
+mbrContains(Client ctx, bit *out, mbr **b1, mbr **b2)
 {
-	return mbrContained(out, b2, b1);
+	(void) ctx;
+	return mbrContained(ctx, out, b2, b1);
 }
 
 /*returns true if the mbrs of geom1 contains the mbr of geom2 */
 str
-mbrContains_wkb(bit *out, wkb **geom1WKB, wkb **geom2WKB)
+mbrContains_wkb(Client ctx, bit *out, wkb **geom1WKB, wkb **geom2WKB)
 {
-	return mbrrelation_wkb(out, geom1WKB, geom2WKB, mbrContains);
+	(void) ctx;
+	return mbrrelation_wkb(ctx, out, geom1WKB, geom2WKB, mbrContains);
 }
 
 /* returns true if the boxes are the same */
 str
-mbrEqual(bit *out, mbr **b1, mbr **b2)
+mbrEqual(Client ctx, bit *out, mbr **b1, mbr **b2)
 {
+	(void) ctx;
 	if (is_mbr_nil(*b1) && is_mbr_nil(*b2))
 		*out = 1;
 	else if (is_mbr_nil(*b1) || is_mbr_nil(*b2))
@@ -941,9 +986,10 @@ mbrEqual(bit *out, mbr **b1, mbr **b2)
 
 /*returns true if the mbrs of geom1 and the mbr of geom2 are the same */
 str
-mbrEqual_wkb(bit *out, wkb **geom1WKB, wkb **geom2WKB)
+mbrEqual_wkb(Client ctx, bit *out, wkb **geom1WKB, wkb **geom2WKB)
 {
-	return mbrrelation_wkb(out, geom1WKB, geom2WKB, mbrEqual);
+	(void) ctx;
+	return mbrrelation_wkb(ctx, out, geom1WKB, geom2WKB, mbrEqual);
 }
 
 str
@@ -966,8 +1012,9 @@ mbrDiagonal(dbl *out, mbr **b)
 
 /* returns the Euclidean distance of the centroids of the boxes */
 str
-mbrDistance(dbl *out, mbr **b1, mbr **b2)
+mbrDistance(Client ctx, dbl *out, mbr **b1, mbr **b2)
 {
+	(void) ctx;
 	double b1_Cx = 0.0, b1_Cy = 0.0, b2_Cx = 0.0, b2_Cy = 0.0;
 
 	if (is_mbr_nil(*b1) || is_mbr_nil(*b2)) {
@@ -988,8 +1035,9 @@ mbrDistance(dbl *out, mbr **b1, mbr **b2)
 
 /*returns the Euclidean distance of the centroids of the mbrs of the two geometries */
 str
-mbrDistance_wkb(dbl *out, wkb **geom1WKB, wkb **geom2WKB)
+mbrDistance_wkb(Client ctx, dbl *out, wkb **geom1WKB, wkb **geom2WKB)
 {
+	(void) ctx;
 	mbr *geom1MBR = NULL, *geom2MBR = NULL;
 	str ret = MAL_SUCCEED;
 
@@ -998,29 +1046,30 @@ mbrDistance_wkb(dbl *out, wkb **geom1WKB, wkb **geom2WKB)
 		return MAL_SUCCEED;
 	}
 
-	ret = wkbMBR(&geom1MBR, geom1WKB);
+	ret = wkbMBR(ctx, &geom1MBR, geom1WKB);
 	if (ret != MAL_SUCCEED) {
 		return ret;
 	}
 
-	ret = wkbMBR(&geom2MBR, geom2WKB);
+	ret = wkbMBR(ctx, &geom2MBR, geom2WKB);
 	if (ret != MAL_SUCCEED) {
-		GDKfree(geom1MBR);
+		//GDKfree(geom1MBR);
 		return ret;
 	}
 
-	ret = mbrDistance(out, &geom1MBR, &geom2MBR);
+	ret = mbrDistance(ctx, out, &geom1MBR, &geom2MBR);
 
-	GDKfree(geom1MBR);
-	GDKfree(geom2MBR);
+	//GDKfree(geom1MBR);
+	//GDKfree(geom2MBR);
 
 	return ret;
 }
 
 /* get Xmin, Ymin, Xmax, Ymax coordinates of mbr */
 str
-wkbCoordinateFromMBR(dbl *coordinateValue, mbr **geomMBR, int *coordinateIdx)
+wkbCoordinateFromMBR(Client ctx, dbl *coordinateValue, mbr **geomMBR, int *coordinateIdx)
 {
+	(void) ctx;
 	//check if the MBR is null
 	if (is_mbr_nil(*geomMBR) || is_int_nil(*coordinateIdx)) {
 		*coordinateValue = dbl_nil;
@@ -1048,8 +1097,9 @@ wkbCoordinateFromMBR(dbl *coordinateValue, mbr **geomMBR, int *coordinateIdx)
 }
 
 str
-wkbCoordinateFromWKB(dbl *coordinateValue, wkb **geomWKB, int *coordinateIdx)
+wkbCoordinateFromWKB(Client ctx, dbl *coordinateValue, wkb **geomWKB, int *coordinateIdx)
 {
+	(void) ctx;
 	mbr *geomMBR;
 	str ret = MAL_SUCCEED;
 	bit empty;
@@ -1060,7 +1110,7 @@ wkbCoordinateFromWKB(dbl *coordinateValue, wkb **geomWKB, int *coordinateIdx)
 	}
 
 	//check if the geometry is empty
-	if ((ret = wkbIsEmpty(&empty, geomWKB)) != MAL_SUCCEED) {
+	if ((ret = wkbIsEmpty(ctx, &empty, geomWKB)) != MAL_SUCCEED) {
 		return ret;
 	}
 
@@ -1069,26 +1119,27 @@ wkbCoordinateFromWKB(dbl *coordinateValue, wkb **geomWKB, int *coordinateIdx)
 		return MAL_SUCCEED;
 	}
 
-	if ((ret = wkbMBR(&geomMBR, geomWKB)) != MAL_SUCCEED)
+	if ((ret = wkbMBR(ctx, &geomMBR, geomWKB)) != MAL_SUCCEED)
 		return ret;
 
-	ret = wkbCoordinateFromMBR(coordinateValue, &geomMBR, coordinateIdx);
+	ret = wkbCoordinateFromMBR(ctx, coordinateValue, &geomMBR, coordinateIdx);
 
-	GDKfree(geomMBR);
+	//GDKfree(geomMBR);
 
 	return ret;
 }
 
 str
-mbrFromString(mbr **w, const char **src)
+mbrFromString(Client ctx, mbr **w, const char **src)
 {
+	allocator *ma = ctx->curprg->def->ma;
 	size_t len = *w ? sizeof(mbr) : 0;
 	char *errbuf;
 	str ex;
 
-	if (mbrFROMSTR(*src, &len, (void **) w, false) >= 0)
+	if (mbrFROMSTR(ma, *src, &len, (void **) w, false) >= 0)
 		return MAL_SUCCEED;
-	GDKfree(*w);
+	//GDKfree(*w);
 	*w = NULL;
 	errbuf = GDKerrbuf;
 	if (errbuf) {
@@ -1110,23 +1161,8 @@ mbrFromString(mbr **w, const char **src)
  */
 
 str
-ordinatesMBR(mbr **res, flt *minX, flt *minY, flt *maxX, flt *maxY)
-{
-	if ((*res = GDKmalloc(sizeof(mbr))) == NULL)
-		throw(MAL, "geom.mbr", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	if (is_flt_nil(*minX) || is_flt_nil(*minY) || is_flt_nil(*maxX) || is_flt_nil(*maxY))
-		**res = mbrNIL;
-	else {
-		(*res)->xmin = *minX;
-		(*res)->ymin = *minY;
-		(*res)->xmax = *maxX;
-		(*res)->ymax = *maxY;
-	}
-	return MAL_SUCCEED;
-}
-
-str
-mbrIntersects(bit *out, mbr** mbr1, mbr** mbr2) {
+mbrIntersects(Client ctx, bit *out, mbr** mbr1, mbr** mbr2) {
+	(void) ctx;
 	if (((*mbr1)->ymax < (*mbr2)->ymin) || ((*mbr1)->ymin > (*mbr2)->ymax))
 		(*out) = false;
 	else if (((*mbr1)->xmax < (*mbr2)->xmin) || ((*mbr1)->xmin > (*mbr2)->xmax))

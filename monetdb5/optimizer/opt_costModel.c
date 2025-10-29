@@ -38,8 +38,7 @@
  * row count becomes non-deterministic.
  */
 str
-OPTcostModelImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
-						   InstrPtr pci)
+OPTcostModelImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i;
 	BUN c1, c2;

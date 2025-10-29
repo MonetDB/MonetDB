@@ -392,7 +392,7 @@ empty_return(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, size_t retcols, oid seqb
 		} else { // single value return, only for non-grouped aggregations
 			// return NULL to conform to SQL aggregates
 			int tpe = getArgType(mb, pci, i);
-			if (!VALinit(&stk->stk[pci->argv[i]], tpe, ATOMnilptr(tpe))) {
+			if (!VALinit(NULL, &stk->stk[pci->argv[i]], tpe, ATOMnilptr(tpe))) {
 				msg = createException(MAL, "capi.eval", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto bailout;
 			}
@@ -1225,12 +1225,12 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 			bat_data->count = BATcount(input_bats[index]);
 			bat_data->null_value = NULL;
 			bat_data->data = bat_data->count == 0 ? NULL :
-				GDKzalloc(sizeof(char *) * bat_data->count);
+				ma_zalloc(mb->ma, sizeof(char *) * bat_data->count);
 			if (bat_data->count > 0 && !bat_data->data) {
 				msg = createException(MAL, "cudf.eval", MAL_MALLOC_FAIL);
 				goto wrapup;
 			}
-			bat_data->alloced = true;
+			bat_data->alloced = false;
 			j = 0;
 
 			li = bat_iterator(input_bats[index]);
@@ -1244,7 +1244,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 				} else {
 					char *result = NULL;
 					size_t length = 0;
-					if (BATatoms[bat_type].atomToStr(&result, &length, t, false) ==
+					if (BATatoms[bat_type].atomToStr(mb->ma, &result, &length, t, false) ==
 						0) {
 						bat_iterator_end(&li);
 						msg = createException(
@@ -1535,7 +1535,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 					if (strNil(ptr)) {
 						appended_element = (void *)BATatoms[bat_type].atomNull;
 					} else {
-						if (BATatoms[bat_type].atomFromStr(ptr, &len, &element, false) ==
+						if (BATatoms[bat_type].atomFromStr(mb->ma, ptr, &len, &element, false) ==
 							0) {
 							msg = createException(MAL, "cudf.eval",
 												  "Failed to convert output "
@@ -1546,16 +1546,16 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 						appended_element = element;
 					}
 					if (BUNappend(b, appended_element, false) != GDK_SUCCEED) {
-						if (element) {
-							GDKfree(element);
-						}
+						//if (element) {
+						//	GDKfree(element);
+						//}
 						msg = createException(MAL, "cudf.eval", MAL_MALLOC_FAIL);
 						goto wrapup;
 					}
 				}
-				if (element) {
-					GDKfree(element);
-				}
+				//if (element) {
+				//	GDKfree(element);
+				//}
 				GDKfree(data);
 			}
 		}
@@ -1577,7 +1577,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 			BBPkeepref(b);
 		} else {
 			BATiter li = bat_iterator(b);
-			if (VALinit(&stk->stk[pci->argv[i]], bat_type,
+			if (VALinit(NULL, &stk->stk[pci->argv[i]], bat_type,
 						BUNtail(li, 0)) == NULL) {
 				msg = createException(MAL, "cudf.eval", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}

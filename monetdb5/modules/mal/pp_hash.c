@@ -468,7 +468,7 @@ UHASHext(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 			local_storage = true; \
 			pipeline_lock(p); \
 			if (!SK->allocators) { \
-				SK->allocators = (mallocator**)GDKzalloc(p->p->nr_workers*sizeof(mallocator*)); \
+				SK->allocators = (allocator**)GDKzalloc(p->p->nr_workers*sizeof(allocator*)); \
 				if (!SK->allocators) { \
 					pipeline_unlock(p); \
 					err = createException(MAL, FName, SQLSTATE(HY013) MAL_MALLOC_FAIL); \
@@ -480,7 +480,9 @@ UHASHext(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 			pipeline_unlock(p); \
 			assert(p->wid < p->p->nr_workers); \
 			if (!SK->allocators[p->wid]) { \
-				SK->allocators[p->wid] = ma_create(); \
+				char name[8]; \
+				snprintf(name, sizeof(name), "pp%d", p->wid); \
+				SK->allocators[p->wid] = create_allocator(NULL, name, false); \
 				if (!SK->allocators[p->wid]) { \
 					err = createException(MAL, FName, SQLSTATE(HY013) MAL_MALLOC_FAIL); \
 					goto error; \
@@ -686,7 +688,7 @@ UHASHext(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 	do { \
 		BATiter bi = bat_iterator(b); \
 		char **vals = h->vals; \
-		mallocator *ma = h->allocators[P->wid]; \
+		allocator *ma = h->allocators[P->wid]; \
 		\
 		if (ATOMstorage(tt) == TYPE_str) { \
 			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
@@ -766,8 +768,9 @@ UHASHext(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 	} while (0)
 
 static str
-OAHASHbuild_tbl(bat *slot_id, bat *ht_sink, const bat *key, const ptr *H)
+OAHASHbuild_tbl(Client ctx, bat *slot_id, bat *ht_sink, const bat *key, const ptr *H)
 {
+	(void)ctx;
 	Pipeline *p = (Pipeline*)*H;
 	bool private = 0, local_storage = false;
 	str err = NULL;
@@ -1075,7 +1078,7 @@ error:
 	do { \
 		BATiter bi = bat_iterator(b); \
 		char **vals = h->vals; \
-		mallocator *ma = h->allocators[P->wid]; \
+		allocator *ma = h->allocators[P->wid]; \
 		\
 		if (ATOMstorage(tt) == TYPE_str) { \
 			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
@@ -1161,8 +1164,9 @@ error:
 	} while (0)
 
 static str
-OAHASHbuild_tbl_cmbd(bat *slot_id, bat *ht_sink, const bat *key, const bat *parent_slotid, const ptr *H)
+OAHASHbuild_tbl_cmbd(Client ctx, bat *slot_id, bat *ht_sink, const bat *key, const bat *parent_slotid, const ptr *H)
 {
+	(void)ctx;
 	Pipeline *p = (Pipeline*)*H;
 	bool private = 0, local_storage = false;
 	str err = NULL;
@@ -1537,8 +1541,9 @@ error:
 	} while (0)
 
 static str
-OAHASHprobe1(bat *PRB_oid, bat *HSH_slotid, const bat *PRB_key, const bat *HSH_ht, const bat *frequency, const bit *single, const bit *semantics, const ptr *H, bit match)
+OAHASHprobe1(Client ctx, bat *PRB_oid, bat *HSH_slotid, const bat *PRB_key, const bat *HSH_ht, const bat *frequency, const bit *single, const bit *semantics, const ptr *H, bit match)
 {
+	(void)ctx;
 	BAT *o = NULL, *s = NULL, *k = NULL, *t = NULL, *f = NULL;
 	BUN keycnt, mtdcnt = 0;
 	lng *freq = NULL;
@@ -1664,27 +1669,27 @@ error:
 }
 
 static str
-OAHASHprobe_single(bat *PRB_oid, bat *HSH_slotid, const bat *PRB_key, const bat *HSH_ht, const bat *frequency, const bit *single, const bit *semantics, const ptr *H)
+OAHASHprobe_single(Client ctx, bat *PRB_oid, bat *HSH_slotid, const bat *PRB_key, const bat *HSH_ht, const bat *frequency, const bit *single, const bit *semantics, const ptr *H)
 {
-	return OAHASHprobe1(PRB_oid, HSH_slotid, PRB_key, HSH_ht, frequency, single, semantics, H, true);
+	return OAHASHprobe1(ctx, PRB_oid, HSH_slotid, PRB_key, HSH_ht, frequency, single, semantics, H, true);
 }
 
 static str
-OAHASHprobe(bat *PRB_oid, bat *HSH_slotid, const bat *PRB_key, const bat *HSH_ht, const bit *single, const bit *semantics, const ptr *H)
+OAHASHprobe(Client ctx, bat *PRB_oid, bat *HSH_slotid, const bat *PRB_key, const bat *HSH_ht, const bit *single, const bit *semantics, const ptr *H)
 {
-	return OAHASHprobe1(PRB_oid, HSH_slotid, PRB_key, HSH_ht, NULL, single, semantics, H, true);
+	return OAHASHprobe1(ctx, PRB_oid, HSH_slotid, PRB_key, HSH_ht, NULL, single, semantics, H, true);
 }
 
 static str
-OAHASHnprobe_single(bat *PRB_oid, bat *HSH_slotid, const bat *PRB_key, const bat *HSH_ht, const bat *frequency, const bit *single, const bit *semantics, const ptr *H)
+OAHASHnprobe_single(Client ctx, bat *PRB_oid, bat *HSH_slotid, const bat *PRB_key, const bat *HSH_ht, const bat *frequency, const bit *single, const bit *semantics, const ptr *H)
 {
-	return OAHASHprobe1(PRB_oid, HSH_slotid, PRB_key, HSH_ht, frequency, single, semantics, H, false);
+	return OAHASHprobe1(ctx, PRB_oid, HSH_slotid, PRB_key, HSH_ht, frequency, single, semantics, H, false);
 }
 
 static str
-OAHASHnprobe(bat *PRB_oid, bat *HSH_slotid, const bat *PRB_key, const bat *HSH_ht, const bit *single, const bit *semantics, const ptr *H)
+OAHASHnprobe(Client ctx, bat *PRB_oid, bat *HSH_slotid, const bat *PRB_key, const bat *HSH_ht, const bit *single, const bit *semantics, const ptr *H)
 {
-	return OAHASHprobe1(PRB_oid, HSH_slotid, PRB_key, HSH_ht, NULL, single, semantics, H, false);
+	return OAHASHprobe1(ctx, PRB_oid, HSH_slotid, PRB_key, HSH_ht, NULL, single, semantics, H, false);
 }
 
 #define BATvoprobe() \
@@ -1885,8 +1890,9 @@ OAHASHnprobe(bat *PRB_oid, bat *HSH_slotid, const bat *PRB_key, const bat *HSH_h
 	} while (0)
 
 static str
-OAHASHomprobe(bat *PRB_oid, bat *HSH_slotid, bat *PRB_mark, const bat *PRB_key, const bat *HSH_ht, const bat *frequency, const bit *single, const bit *semantics, const ptr *H, bool any)
+OAHASHomprobe(Client ctx, bat *PRB_oid, bat *HSH_slotid, bat *PRB_mark, const bat *PRB_key, const bat *HSH_ht, const bat *frequency, const bit *single, const bit *semantics, const ptr *H, bool any)
 {
+	(void)ctx;
 	BAT *o = NULL, *s = NULL, *m = NULL, *k = NULL, *t = NULL, *f = NULL;
 	BUN keycnt, mtdcnt = 0;
 	lng *freq = NULL;
@@ -2020,27 +2026,27 @@ error:
 }
 
 static str
-OAHASHoprobe_single(bat *PRB_oid, bat *HSH_slotid, bat *PRB_mark, const bat *PRB_key, const bat *HSH_ht, const bat *frequency, const bit *single, const bit *semantics, const ptr *H)
+OAHASHoprobe_single(Client ctx, bat *PRB_oid, bat *HSH_slotid, bat *PRB_mark, const bat *PRB_key, const bat *HSH_ht, const bat *frequency, const bit *single, const bit *semantics, const ptr *H)
 {
-	return OAHASHomprobe(PRB_oid, HSH_slotid, PRB_mark, PRB_key, HSH_ht, frequency, single, semantics, H, false);
+	return OAHASHomprobe(ctx, PRB_oid, HSH_slotid, PRB_mark, PRB_key, HSH_ht, frequency, single, semantics, H, false);
 }
 
 static str
-OAHASHoprobe(bat *PRB_oid, bat *HSH_slotid, bat *PRB_mark, const bat *PRB_key, const bat *HSH_ht, const bit *single, const bit *semantics, const ptr *H)
+OAHASHoprobe(Client ctx, bat *PRB_oid, bat *HSH_slotid, bat *PRB_mark, const bat *PRB_key, const bat *HSH_ht, const bit *single, const bit *semantics, const ptr *H)
 {
-	return OAHASHomprobe(PRB_oid, HSH_slotid, PRB_mark, PRB_key, HSH_ht, NULL, single, semantics, H, false);
+	return OAHASHomprobe(ctx, PRB_oid, HSH_slotid, PRB_mark, PRB_key, HSH_ht, NULL, single, semantics, H, false);
 }
 
 static str
-OAHASHmprobe_single(bat *PRB_oid, bat *HSH_slotid, bat *PRB_mark, const bat *PRB_key, const bat *HSH_ht, const bat *frequency, const bit *single, const bit *semantics, const ptr *H)
+OAHASHmprobe_single(Client ctx, bat *PRB_oid, bat *HSH_slotid, bat *PRB_mark, const bat *PRB_key, const bat *HSH_ht, const bat *frequency, const bit *single, const bit *semantics, const ptr *H)
 {
-	return OAHASHomprobe(PRB_oid, HSH_slotid, PRB_mark, PRB_key, HSH_ht, frequency, single, semantics, H, true);
+	return OAHASHomprobe(ctx, PRB_oid, HSH_slotid, PRB_mark, PRB_key, HSH_ht, frequency, single, semantics, H, true);
 }
 
 static str
-OAHASHmprobe(bat *PRB_oid, bat *HSH_slotid, bat *PRB_mark, const bat *PRB_key, const bat *HSH_ht, const bit *single, const bit *semantics, const ptr *H)
+OAHASHmprobe(Client ctx, bat *PRB_oid, bat *HSH_slotid, bat *PRB_mark, const bat *PRB_key, const bat *HSH_ht, const bit *single, const bit *semantics, const ptr *H)
 {
-	return OAHASHomprobe(PRB_oid, HSH_slotid, PRB_mark, PRB_key, HSH_ht, NULL, single, semantics, H, true);
+	return OAHASHomprobe(ctx, PRB_oid, HSH_slotid, PRB_mark, PRB_key, HSH_ht, NULL, single, semantics, H, true);
 }
 
 #define BATvprobe_cmbd() \
@@ -2166,8 +2172,9 @@ OAHASHmprobe(bat *PRB_oid, bat *HSH_slotid, bat *PRB_mark, const bat *PRB_key, c
 	} while (0)
 
 static str
-OAHASHprobe_cmbd_single(bat *PRB_oid, bat *HSH_slotid, const bat *PRB_key, const bat *PRB_selected, const bat *HSH_gid, const bat *HSH_ht, const bat *frequency, const bit *single, const bit *semantics, const ptr *H)
+OAHASHprobe_cmbd_single(Client ctx, bat *PRB_oid, bat *HSH_slotid, const bat *PRB_key, const bat *PRB_selected, const bat *HSH_gid, const bat *HSH_ht, const bat *frequency, const bit *single, const bit *semantics, const ptr *H)
 {
+	(void)ctx;
 	BAT *res_o = NULL, *res_s = NULL, *k = NULL, *s = NULL, *t = NULL, *p = NULL, *f = NULL;
 	BUN mtdcnt, mtdcnt2 = 0;
 	lng *freq = NULL;
@@ -2306,9 +2313,9 @@ error:
 }
 
 static str
-OAHASHprobe_cmbd(bat *PRB_oid, bat *HSH_slotid, const bat *PRB_key, const bat *PRB_selected, const bat *HSH_gid, const bat *HSH_ht, const bit *single, const bit *semantics, const ptr *H)
+OAHASHprobe_cmbd(Client ctx, bat *PRB_oid, bat *HSH_slotid, const bat *PRB_key, const bat *PRB_selected, const bat *HSH_gid, const bat *HSH_ht, const bit *single, const bit *semantics, const ptr *H)
 {
-	return OAHASHprobe_cmbd_single(PRB_oid, HSH_slotid, PRB_key, PRB_selected, HSH_gid, HSH_ht, NULL, single, semantics, H);
+	return OAHASHprobe_cmbd_single(ctx, PRB_oid, HSH_slotid, PRB_key, PRB_selected, HSH_gid, HSH_ht, NULL, single, semantics, H);
 }
 
 #define BATvoprobe_cmbd() \
@@ -2522,8 +2529,9 @@ OAHASHprobe_cmbd(bat *PRB_oid, bat *HSH_slotid, const bat *PRB_key, const bat *P
 	} while (0)
 
 static str
-OAHASHomprobe_cmbd(bat *PRB_oid, bat *HSH_slotid, bat *PRB_mark, const bat *PRB_key, const bat *PRB_selected, const bat *HSH_gid, const bat *HSH_ht, const bat *frequency, const bit *single, const bit *semantics, const ptr *H, bool any)
+OAHASHomprobe_cmbd(Client ctx, bat *PRB_oid, bat *HSH_slotid, bat *PRB_mark, const bat *PRB_key, const bat *PRB_selected, const bat *HSH_gid, const bat *HSH_ht, const bat *frequency, const bit *single, const bit *semantics, const ptr *H, bool any)
 {
+	(void)ctx;
 	BAT *res_o = NULL, *res_s = NULL, *res_m = NULL, *k = NULL, *s = NULL, *t = NULL, *p = NULL, *f = NULL;
 	BUN mtdcnt, mtdcnt2 = 0;
 	lng *freq = NULL;
@@ -2667,32 +2675,33 @@ error:
 }
 
 static str
-OAHASHoprobe_cmbd_single(bat *PRB_oid, bat *HSH_slotid, bat *PRB_mark, const bat *PRB_key, const bat *PRB_selected, const bat *HSH_gid, const bat *HSH_ht, const bat *frequency, const bit *single, const bit *semantics, const ptr *H)
+OAHASHoprobe_cmbd_single(Client ctx, bat *PRB_oid, bat *HSH_slotid, bat *PRB_mark, const bat *PRB_key, const bat *PRB_selected, const bat *HSH_gid, const bat *HSH_ht, const bat *frequency, const bit *single, const bit *semantics, const ptr *H)
 {
-	return OAHASHomprobe_cmbd( PRB_oid, HSH_slotid, PRB_mark, PRB_key, PRB_selected, HSH_gid, HSH_ht, frequency, single, semantics, H, false);
+	return OAHASHomprobe_cmbd(ctx, PRB_oid, HSH_slotid, PRB_mark, PRB_key, PRB_selected, HSH_gid, HSH_ht, frequency, single, semantics, H, false);
 }
 
 static str
-OAHASHoprobe_cmbd(bat *PRB_oid, bat *HSH_slotid, bat *PRB_mark, const bat *PRB_key, const bat *PRB_selected, const bat *HSH_gid, const bat *HSH_ht, const bit *single, const bit *semantics, const ptr *H)
+OAHASHoprobe_cmbd(Client ctx, bat *PRB_oid, bat *HSH_slotid, bat *PRB_mark, const bat *PRB_key, const bat *PRB_selected, const bat *HSH_gid, const bat *HSH_ht, const bit *single, const bit *semantics, const ptr *H)
 {
-	return OAHASHomprobe_cmbd( PRB_oid, HSH_slotid, PRB_mark, PRB_key, PRB_selected, HSH_gid, HSH_ht, NULL, single, semantics, H, false);
+	return OAHASHomprobe_cmbd(ctx, PRB_oid, HSH_slotid, PRB_mark, PRB_key, PRB_selected, HSH_gid, HSH_ht, NULL, single, semantics, H, false);
 }
 
 static str
-OAHASHmprobe_cmbd_single(bat *PRB_oid, bat *HSH_slotid, bat *PRB_mark, const bat *PRB_key, const bat *PRB_selected, const bat *HSH_gid, const bat *HSH_ht, const bat *frequency, const bit *single, const bit *semantics, const ptr *H)
+OAHASHmprobe_cmbd_single(Client ctx, bat *PRB_oid, bat *HSH_slotid, bat *PRB_mark, const bat *PRB_key, const bat *PRB_selected, const bat *HSH_gid, const bat *HSH_ht, const bat *frequency, const bit *single, const bit *semantics, const ptr *H)
 {
-	return OAHASHomprobe_cmbd( PRB_oid, HSH_slotid, PRB_mark, PRB_key, PRB_selected, HSH_gid, HSH_ht, frequency, single, semantics, H, true);
+	return OAHASHomprobe_cmbd(ctx, PRB_oid, HSH_slotid, PRB_mark, PRB_key, PRB_selected, HSH_gid, HSH_ht, frequency, single, semantics, H, true);
 }
 
 static str
-OAHASHmprobe_cmbd(bat *PRB_oid, bat *HSH_slotid, bat *PRB_mark, const bat *PRB_key, const bat *PRB_selected, const bat *HSH_gid, const bat *HSH_ht, const bit *single, const bit *semantics, const ptr *H)
+OAHASHmprobe_cmbd(Client ctx, bat *PRB_oid, bat *HSH_slotid, bat *PRB_mark, const bat *PRB_key, const bat *PRB_selected, const bat *HSH_gid, const bat *HSH_ht, const bit *single, const bit *semantics, const ptr *H)
 {
-	return OAHASHomprobe_cmbd( PRB_oid, HSH_slotid, PRB_mark, PRB_key, PRB_selected, HSH_gid, HSH_ht, NULL, single, semantics, H, true);
+	return OAHASHomprobe_cmbd(ctx, PRB_oid, HSH_slotid, PRB_mark, PRB_key, PRB_selected, HSH_gid, HSH_ht, NULL, single, semantics, H, true);
 }
 
 static str
-OAHASHexpand(bat *expanded, const bat *selected, const bat *slotid, const bat *frequency, const bit *leftouter)
+OAHASHexpand(Client ctx, bat *expanded, const bat *selected, const bat *slotid, const bat *frequency, const bit *leftouter)
 {
+	(void)ctx;
 	BAT *e = NULL, *s = NULL, *l = NULL, *f = NULL;
 	BUN selcnt, ttlcnt = 0, xpdcnt = 0;
 	lng *freq = NULL;
@@ -2799,8 +2808,9 @@ error:
 }
 
 static str
-OAHASHexpand_cart(bat *expanded, const bat *col, const bat *rowrepeat, const bit *left_outer)
+OAHASHexpand_cart(Client ctx, bat *expanded, const bat *col, const bat *rowrepeat, const bit *left_outer)
 {
+	(void)ctx;
 	BAT *e = NULL, *k = NULL, *d;
 	BUN keycnt, ttlcnt, repcnt;
 	str err = NULL;
@@ -2858,8 +2868,9 @@ error:
 }
 
 static str
-OAHASHexplode(bat *fetched, const bat *slotid, const bat *frequency, const bat *ht_sink, const bit *leftouter)
+OAHASHexplode(Client ctx, bat *fetched, const bat *slotid, const bat *frequency, const bat *ht_sink, const bit *leftouter)
 {
+	(void)ctx;
 	BAT *f = NULL, *l = NULL, *h = NULL, *r = NULL;
 	BUN selcnt, fchcnt = 0;
 	str err = NULL;
@@ -2972,8 +2983,9 @@ error:
 }
 
 static str
-OAHASHexplode_cart(bat *fetched, const bat *col, const bat *setrepeat, const bit *outer)
+OAHASHexplode_cart(Client ctx, bat *fetched, const bat *col, const bat *setrepeat, const bit *outer)
 {
+	(void)ctx;
 	BAT *f = NULL, *k = NULL, *d = NULL;
 	BUN ttlcnt, keycnt, repcnt;
 	bool append_nulls = false;
@@ -3045,8 +3057,9 @@ error:
 #define SLICE_SIZE 100000
 
 static str
-OAHASHno_slices(int *no_slices, bat *ht_sink)
+OAHASHno_slices(Client ctx, int *no_slices, bat *ht_sink)
 {
+	(void)ctx;
 	/* return nr of slices */
 	assert(*ht_sink && !is_bat_nil(*ht_sink));
 	BAT *b = BATdescriptor(*ht_sink);
@@ -3067,8 +3080,9 @@ OAHASHno_slices(int *no_slices, bat *ht_sink)
 }
 
 static str
-OAHASHnth_slice(bat *slice, bat *ht_sink, int *slice_nr)
+OAHASHnth_slice(Client ctx, bat *slice, bat *ht_sink, int *slice_nr)
 {
+	(void)ctx;
 	/* return the nth slice */
 	assert(*ht_sink && !is_bat_nil(*ht_sink));
 	BAT *b = BATdescriptor(*ht_sink);

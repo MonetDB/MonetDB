@@ -24,6 +24,7 @@
 #include "monetdb_config.h"
 #include "mal.h"
 #include "mal_exception.h"
+#include "mal_client.h"
 #include <fenv.h>
 #include "mmath_private.h"
 
@@ -85,8 +86,9 @@ logbsf(float base, float x)
 
 #define unopbaseM5(NAME, FUNC, TYPE)								\
 static str															\
-MATHunary##NAME##TYPE(TYPE *res, const TYPE *a)						\
+MATHunary##NAME##TYPE(Client ctx, TYPE *res, const TYPE *a)			\
 {																	\
+	(void) ctx;														\
 	if (is_##TYPE##_nil(*a)) {										\
 		*res = TYPE##_nil;											\
 	} else {														\
@@ -119,8 +121,9 @@ MATHunary##NAME##TYPE(TYPE *res, const TYPE *a)						\
 
 #define binopbaseM5(NAME, FUNC, TYPE)								\
 static str															\
-MATHbinary##NAME##TYPE(TYPE *res, const TYPE *a, const TYPE *b)		\
+MATHbinary##NAME##TYPE(Client ctx, TYPE *res, const TYPE *a, const TYPE *b)	\
 {																	\
+	(void) ctx;														\
 	if (is_##TYPE##_nil(*a) || is_##TYPE##_nil(*b)) {				\
 		*res = TYPE##_nil;											\
 	} else {														\
@@ -153,8 +156,9 @@ MATHbinary##NAME##TYPE(TYPE *res, const TYPE *a, const TYPE *b)		\
 
 #define roundM5(TYPE)											\
 static str														\
-MATHbinary_ROUND##TYPE(TYPE *res, const TYPE *x, const int *y)	\
+MATHbinary_ROUND##TYPE(Client ctx, TYPE *res, const TYPE *x, const int *y) \
 {																\
+	(void) ctx;													\
 	if (is_##TYPE##_nil(*x) || is_int_nil(*y)) {				\
 		*res = TYPE##_nil;										\
 	} else {													\
@@ -203,8 +207,9 @@ unopM5(_ACOS, acos)
 		binopM5(_NEXTAFTER, nextafter)
 
 static str
-MATHunary_FABSdbl(dbl *res, const dbl *a)
+MATHunary_FABSdbl(Client ctx, dbl *res, const dbl *a)
 {
+	(void) ctx;
 	*res = is_dbl_nil(*a) ? dbl_nil : fabs(*a);
 	return MAL_SUCCEED;
 }
@@ -212,8 +217,9 @@ MATHunary_FABSdbl(dbl *res, const dbl *a)
 roundM5(dbl)
 roundM5(flt)
 static str
-MATHunary_ISNAN(bit *res, const dbl *a)
+MATHunary_ISNAN(Client ctx, bit *res, const dbl *a)
 {
+	(void) ctx;
 	if (is_dbl_nil(*a)) {
 		*res = bit_nil;
 	} else {
@@ -223,8 +229,9 @@ MATHunary_ISNAN(bit *res, const dbl *a)
 }
 
 static str
-MATHunary_ISINF(int *res, const dbl *a)
+MATHunary_ISINF(Client ctx, int *res, const dbl *a)
 {
+	(void) ctx;
 	if (is_dbl_nil(*a)) {
 		*res = int_nil;
 	} else {
@@ -238,8 +245,9 @@ MATHunary_ISINF(int *res, const dbl *a)
 }
 
 static str
-MATHunary_FINITE(bit *res, const dbl *a)
+MATHunary_FINITE(Client ctx, bit *res, const dbl *a)
 {
+	(void) ctx;
 	if (is_dbl_nil(*a)) {
 		*res = bit_nil;
 	} else {
@@ -261,8 +269,9 @@ MATHprelude(void)
 }
 
 static str
-MATHrandint(int *res)
+MATHrandint(Client ctx, int *res)
 {
+	(void) ctx;
 #ifdef __COVERITY__
 	*res = 0;
 #else
@@ -274,8 +283,9 @@ MATHrandint(int *res)
 }
 
 static str
-MATHrandintarg(int *res, const int *dummy)
+MATHrandintarg(Client ctx, int *res, const int *dummy)
 {
+	(void) ctx;
 	(void) dummy;
 #ifdef __COVERITY__
 	*res = 0;
@@ -288,8 +298,9 @@ MATHrandintarg(int *res, const int *dummy)
 }
 
 static str
-MATHsrandint(void *ret, const int *seed)
+MATHsrandint(Client ctx, void *ret, const int *seed)
 {
+	(void) ctx;
 	(void) ret;
 	MT_lock_set(&mmath_rse_lock);
 	init_random_state_engine(mmath_rse, (uint64_t) * seed);
@@ -298,8 +309,9 @@ MATHsrandint(void *ret, const int *seed)
 }
 
 static str
-MATHsqlrandint(int *res, const int *seed)
+MATHsqlrandint(Client ctx, int *res, const int *seed)
 {
+	(void) ctx;
 #ifdef __COVERITY__
 	(void) seed;
 	*res = 0;
@@ -313,8 +325,9 @@ MATHsqlrandint(int *res, const int *seed)
 }
 
 static str
-MATHpi(dbl *pi)
+MATHpi(Client ctx, dbl *pi)
 {
+	(void) ctx;
 	*pi = M_PI;
 	return MAL_SUCCEED;
 }

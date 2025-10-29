@@ -50,7 +50,7 @@ stmt_heapn_projection(backend *be, int pos, int sel, stmt *c)
 	if (q) {
 		stmt *s = stmt_create(be->mvc->sa, st_join);
 		if (s == NULL) {
-			freeInstruction(q);
+			freeInstruction(be->mb, q);
 			return NULL;
 		}
 
@@ -80,7 +80,7 @@ stmt_heapn_order(backend *be, int heap)
 	if (q) {
 		stmt *s = stmt_create(be->mvc->sa, st_order);
 		if (s == NULL) {
-			freeInstruction(q);
+			freeInstruction(be->mb, q);
 			return NULL;
 		}
 

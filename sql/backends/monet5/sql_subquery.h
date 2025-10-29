@@ -15,13 +15,13 @@
 
 #include "sql.h"
 
-extern str zero_or_one_error(ptr ret, const bat *bid, const bit *err );
-extern str zero_or_one_error_bat(ptr ret, const bat *bid, const bat *err );
-extern str zero_or_one(ptr ret, const bat *bid);
-extern str SQLsubzero_or_one(bat *ret, const bat *b, const bat *gp, const bat *gpe, bit *no_nil);
-extern str SQLall(ptr ret, const bat *bid);
+extern str zero_or_one_error(Client ctx, ptr ret, const bat *bid, const bit *err );
+extern str zero_or_one_error_bat(Client ctx, ptr ret, const bat *bid, const bat *err );
+extern str zero_or_one(Client ctx, ptr ret, const bat *bid);
+extern str SQLsubzero_or_one(Client ctx, bat *ret, const bat *b, const bat *gp, const bat *gpe, bit *no_nil);
+extern str SQLall(Client ctx, ptr ret, const bat *bid);
 extern str SQLall_grp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str SQLnil(bit *ret, const bat *bid);
+extern str SQLnil(Client ctx, bit *ret, const bat *bid);
 extern str SQLnil_grp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 extern str SQLany_cmp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 extern str SQLall_cmp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);

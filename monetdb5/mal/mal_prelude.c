@@ -89,7 +89,7 @@ initModule(Client c, const char *name, const char *initpasswd)
 				int ret = 0;
 
 				assert(s->func != NULL);
-				msg = (*(str (*)(int *)) s->func->imp) (&ret);
+				msg = (*(str (*)(Client, int *)) s->func->imp) (c, &ret);
 				(void) ret;
 			} else if (s && s->kind == PATTERNsymbol) {
 				void *mb = NULL;

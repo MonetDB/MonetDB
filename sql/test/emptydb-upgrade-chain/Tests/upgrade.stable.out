@@ -217,6 +217,27 @@ drop function profiler.getlimit cascade;
 drop procedure profiler.setheartbeat cascade;
 
 Running database upgrade commands:
+create aggregate sha1(val string)
+returns string with order external name aggr.sha1;
+grant execute on aggregate sha1 to public;
+create aggregate sha224(val string)
+returns string with order external name aggr.sha224;
+grant execute on aggregate sha224 to public;
+create aggregate sha256(val string)
+returns string with order external name aggr.sha256;
+grant execute on aggregate sha256 to public;
+create aggregate sha384(val string)
+returns string with order external name aggr.sha384;
+grant execute on aggregate sha384 to public;
+create aggregate sha512(val string)
+returns string with order external name aggr.sha512;
+grant execute on aggregate sha512 to public;
+create aggregate ripemd160(val string)
+returns string with order external name aggr.ripemd160;
+grant execute on aggregate ripemd160 to public;
+update sys.functions set system = true where not system and schema_id = 2000 and name in ('sha1', 'sha224', 'sha256', 'sha384', 'sha512', 'ripemd160') and type = 3;
+
+Running database upgrade commands:
 ALTER TABLE sys.keywords SET READ WRITE;
 DELETE FROM sys.keywords WHERE keyword = 'PLAN';
 

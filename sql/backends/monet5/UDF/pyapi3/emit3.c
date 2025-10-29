@@ -22,7 +22,7 @@
 #define scalar_convert(tpe)                                                    \
 	{                                                                          \
 		tpe val = tpe##_nil;                                                   \
-		msg = pyobject_to_##tpe(&dictEntry, 42, &val);                         \
+		msg = pyobject_to_##tpe(ma, &dictEntry, 42, &val);                         \
 		if (msg != MAL_SUCCEED ||                                              \
 			BUNappend(self->cols[i].b, &val, false) != GDK_SUCCEED) {          \
 			if (msg == MAL_SUCCEED)                                            \
@@ -39,6 +39,8 @@ PyObject *PyEmit_Emit(PyEmitObject *self, PyObject *args)
 	size_t dict_elements, matched_elements;
 	str msg = MAL_SUCCEED; // return message
 	bool error = false;
+	allocator *ma = self->ma;
+	assert(ma);
 
 	if (!PyDict_Check(args)) {
 		PyErr_SetString(PyExc_TypeError, "need dict");
@@ -107,7 +109,7 @@ PyObject *PyEmit_Emit(PyEmitObject *self, PyObject *args)
 				char *val = NULL;
 				bool found = false;
 
-				msg = pyobject_to_str(&key, 42, &val);
+				msg = pyobject_to_str(ma, &key, 42, &val);
 				if (msg != MAL_SUCCEED) {
 					// one of the keys in the dictionary was not a string
 					PyErr_Format(
@@ -164,7 +166,7 @@ PyObject *PyEmit_Emit(PyEmitObject *self, PyObject *args)
 			char *val = NULL;
 			bool found = false;
 
-			msg = pyobject_to_str(&key, 42, &val);
+			msg = pyobject_to_str(ma, &key, 42, &val);
 			if (msg != MAL_SUCCEED) {
 				// one of the keys in the dictionary was not a string
 				PyErr_Format(
@@ -245,7 +247,7 @@ PyObject *PyEmit_Emit(PyEmitObject *self, PyObject *args)
 					blob s;
 					blob* val = &s;
 					val->nitems = ~(size_t) 0;
-					msg = pyobject_to_blob(&dictEntry, 42, &val);
+					msg = pyobject_to_blob(ma, &dictEntry, 42, &val);
 					if (msg != MAL_SUCCEED ||
 						BUNappend(self->cols[i].b, val, false) != GDK_SUCCEED) {
 						if (msg == MAL_SUCCEED)
@@ -287,13 +289,13 @@ PyObject *PyEmit_Emit(PyEmitObject *self, PyObject *args)
 						default: {
 							str val = NULL;
 							gdk_return retval;
-							msg = pyobject_to_str(&dictEntry, 42, &val);
+							msg = pyobject_to_str(ma, &dictEntry, 42, &val);
 							if (msg != MAL_SUCCEED) {
 								free(val);
 								goto wrapup;
 							}
 							assert(val);
-							retval = convert_and_append(self->cols[i].b, val, 0);
+							retval = convert_and_append(ma, self->cols[i].b, val, 0);
 							free(val);
 							if (retval != GDK_SUCCEED) {
 								msg = createException(MAL, "pyapi3.emit", SQLSTATE(HY013) "BUNappend failed.");
@@ -430,7 +432,7 @@ PyTypeObject PyEmitType = {
 	.tp_free = PyObject_Del,
 };
 
-PyObject *PyEmit_Create(sql_emit_col *cols, size_t ncols)
+PyObject *PyEmit_Create(allocator *ma, sql_emit_col *cols, size_t ncols)
 {
 	register PyEmitObject *op;
 
@@ -443,6 +445,7 @@ PyObject *PyEmit_Create(sql_emit_col *cols, size_t ncols)
 	op->maxcols = ncols;
 	op->nvals = 0;
 	op->create_table = cols == NULL;
+	op->ma = ma;
 	return (PyObject *)op;
 }
 

@@ -24,7 +24,7 @@ msettings_sa_allocator(void *state, void *old, size_t size)
 		return NULL;
 	} else if (old == NULL) {
 		// This is really a malloc()
-		return sa_alloc(sa, size);
+		return ma_alloc(sa, size);
 	} else {
 		// We can't handle generic realloc because we don't know how large the
 		// previous allocation was, so we don't know how much to copy.
@@ -46,7 +46,7 @@ sa_msettings_to_string(const msettings *mp, allocator *sa, size_t size_hint)
 {
 	size_t buffer_size = size_hint ? size_hint + 1 : 80;
 	do {
-		char *buffer = sa_alloc(sa, buffer_size);
+		char *buffer = ma_alloc(sa, buffer_size);
 		if (!buffer)
 			return NULL;
 		size_t needed = msettings_write_url(mp, buffer, buffer_size);

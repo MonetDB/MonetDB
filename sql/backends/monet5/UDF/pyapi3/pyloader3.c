@@ -144,7 +144,7 @@ PYAPI3PyAPIevalLoader(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 			inp.bat_type = getBatType(getArgType(mb, pci, i));
 			inp.bat = b;
 
-			val = PyMaskedArray_FromBAT(
+			val = PyMaskedArray_FromBAT(mb->ma, cntxt,
 				&inp, 0, inp.count, &msg,
 				false);
 			BBPunfix(inp.bat->batCacheid);
@@ -209,7 +209,7 @@ PYAPI3PyAPIevalLoader(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	}
 
 	pConnection = Py_Connection_Create(cntxt, 0, 0);
-	pEmit = PyEmit_Create(cols, ncols);
+	pEmit = PyEmit_Create(mb->ma, cols, ncols);
 	if (!pConnection || !pEmit) {
 		msg = createException(MAL, "pyapi3.eval_loader",
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL "python object");

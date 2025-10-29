@@ -485,7 +485,7 @@ sql_subtype_string(allocator *sa, sql_subtype *t)
 		snprintf(buf, sizeof(buf), "%s(%u)", t->type->base.name, t->digits);
 	else
 		snprintf(buf, sizeof(buf), "%s", t->type->base.name);
-	return sa_strdup(sa, buf);
+	return ma_strdup(sa, buf);
 }
 
 char *
@@ -507,7 +507,7 @@ subtype2string2(allocator *sa, sql_subtype *tpe) /* distinguish char(n), decimal
 		default:
 			snprintf(buf, sizeof(buf), "%s", tpe->type->base.name);
 	}
-	return sa_strdup(sa, buf);
+	return ma_strdup(sa, buf);
 }
 
 int
@@ -786,7 +786,7 @@ create_arg(allocator *sa, const char *name, sql_subtype *t, char inout)
 	sql_arg *a = (sa)?SA_ZNEW(sa, sql_arg):ZNEW(sql_arg);
 
 	if(a) {
-		a->name = name?sa_strdup(sa, name):NULL;
+		a->name = name?ma_strdup(sa, name):NULL;
 		a->type = *t;
 		a->inout = inout;
 	}

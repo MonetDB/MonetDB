@@ -73,7 +73,8 @@ if len(sys.argv) == 2 and sys.argv[1] == 'upgrade':
                 break
         if found:
             break
-    stable = open(f).readlines()
+    with open(f) as fil:
+        stable = fil.readlines()
     if not os.getenv('HAVE_SHP'):
         for i in range(len(stable)):
             if 'create procedure SHPLoad' in stable[i]:

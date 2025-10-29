@@ -820,7 +820,7 @@ mvc_set_schema(mvc *m, char *schema)
 {
 	int ret = 0;
 	sql_schema *s = find_sql_schema(m->session->tr, schema);
-	char* new_schema_name = sa_strdup(m->session->sa, schema);
+	char* new_schema_name = ma_strdup(m->session->sa, schema);
 
 	if (s && new_schema_name) {
 		m->session->schema_name = new_schema_name;
@@ -884,7 +884,7 @@ sql_create_user(mvc *sql, char *user, char *passwd, bool enc, char *fullname, ch
 			e++;
 		}
 		r = createException(SQL,"sql.create_user", SQLSTATE(M0M27) "CREATE USER: %s", e);
-		_DELETE(err);
+		//_DELETE(err);
 		return r;
 	}
 

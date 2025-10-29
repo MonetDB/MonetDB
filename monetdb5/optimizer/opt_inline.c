@@ -16,20 +16,25 @@
 #define MAXEXPANSION 256
 
 int
-inlineMALblock(MalBlkPtr mb, int pc, MalBlkPtr mc)
+inlineMALblock(Client ctx, MalBlkPtr mb, int pc, MalBlkPtr mc)
 {
 	int i, k, l, n;
 	InstrPtr *ns, p, q;
 	int *nv;
+	allocator *ta = mb->ta;
+
+	(void) ctx;
 
 	p = getInstrPtr(mb, pc);
 	q = getInstrPtr(mc, 0);
-	ns = GDKzalloc((l = (mb->ssize + mc->ssize + p->retc - 3)) * sizeof(InstrPtr));
+	ns = (InstrPtr*)MA_ZNEW_ARRAY(mb->instr_allocator, char, (l = (mb->ssize + mc->ssize + p->retc - 3)) * sizeof(InstrPtr));
 	if (ns == NULL)
 		return -1;
-	nv = (int *) GDKmalloc(mc->vtop * sizeof(int));
+	allocator_state ta_state = ma_open(ta);
+	nv = (int *) ma_alloc(ta, mc->vtop * sizeof(int));
 	if (nv == 0) {
-		GDKfree(ns);
+		//GDKfree(ns);
+		ma_close(ta, &ta_state);
 		return -1;
 	}
 
@@ -46,8 +51,8 @@ inlineMALblock(MalBlkPtr mb, int pc, MalBlkPtr mc)
 			nv[n] = newTmpVariable(mb, getVarType(mc, n));
 		}
 		if (nv[n] < 0) {
-			GDKfree(nv);
-			GDKfree(ns);
+			ma_close(ta, &ta_state);
+			//GDKfree(ns);
 			return -1;
 		}
 	}
@@ -77,10 +82,10 @@ inlineMALblock(MalBlkPtr mb, int pc, MalBlkPtr mc)
 			break;
 
 		/* copy the instruction and fix variable references */
-		ns[k] = copyInstruction(q);
+		ns[k] = copyInstruction(mb, q);
 		if (ns[k] == NULL) {
-			GDKfree(nv);
-			GDKfree(ns);
+			ma_close(ta, &ta_state);
+			//GDKfree(ns);
 			return -1;
 		}
 
@@ -100,22 +105,22 @@ inlineMALblock(MalBlkPtr mb, int pc, MalBlkPtr mc)
 	}
 
 	/* copy the remainder of the stable part */
-	freeInstruction(p);
+	freeInstruction(mb, p);
 	for (i = pc + 1; i < mb->stop; i++) {
 		ns[k++] = mb->stmt[i];
 	}
 	/* remove any free instruction */
 	for (; i < mb->ssize; i++)
 		if (mb->stmt[i]) {
-			freeInstruction(mb->stmt[i]);
+			freeInstruction(mb, mb->stmt[i]);
 			mb->stmt[i] = 0;
 		}
-	GDKfree(mb->stmt);
+	//GDKfree(mb->stmt);
 	mb->stmt = ns;
 
 	mb->ssize = l;
 	mb->stop = k;
-	GDKfree(nv);
+	ma_close(ta, &ta_state);
 	return pc;
 }
 
@@ -151,7 +156,7 @@ OPTinlineMultiplex(MalBlkPtr mb, InstrPtr p)
 
 
 str
-OPTinlineImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+OPTinlineImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i;
 	InstrPtr q, sig;
@@ -176,17 +181,17 @@ OPTinlineImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				 */
 			if (sig->token == FUNCTIONsymbol && q->blk->inlineProp
 					&& isCorrectInline(q->blk)) {
-				(void) inlineMALblock(mb, i, q->blk);
+				(void) inlineMALblock(ctx, mb, i, q->blk);
 				i--;
 				actions++;
 			}
 		}
 	}
 
-	//mnstr_printf(cntxt->fdout,"inline limit %d ssize %d vtop %d vsize %d\n", mb->stop, (int)(mb->ssize), mb->vtop, (int)(mb->vsize));
+	//mnstr_printf(ctx->fdout,"inline limit %d ssize %d vtop %d vsize %d\n", mb->stop, (int)(mb->ssize), mb->vtop, (int)(mb->vsize));
 	/* Defense line against incorrect plans */
 	if (actions > 0) {
-		msg = chkTypes(cntxt->usermodule, mb, FALSE);
+		msg = chkTypes(ctx->usermodule, mb, FALSE);
 		if (!msg)
 			msg = chkFlow(mb);
 		if (!msg)

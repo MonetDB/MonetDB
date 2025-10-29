@@ -65,8 +65,8 @@ add_to_rowcount_accumulator(backend *be, int nr)
 
 	InstrPtr q = newStmt(be->mb, calcRef, plusRef);
 	if (q == NULL) {
-		if (sa_get_eb(be->mvc->sa)->enabled)
-			eb_error(sa_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : be->mb->errors ? be->mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+		if (ma_get_eb(be->mvc->sa)->enabled)
+			eb_error(ma_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : be->mb->errors ? be->mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 		return -1;
 	}
 	q = pushArgument(be->mb, q, be->rowcount);
@@ -1330,8 +1330,8 @@ emit_loadcolumn(backend *be, stmt *onclient_stmt, stmt *bswap_stmt,  int *count_
 		pushInstruction(mb, p);
 	}
 	if (p == NULL || mb->errors) {
-		if (sa_get_eb(be->mvc->sa)->enabled)
-			eb_error(sa_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+		if (ma_get_eb(be->mvc->sa)->enabled)
+			eb_error(ma_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 		return sql_error(be->mvc, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
@@ -1631,7 +1631,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 		} else if (e->r) {		/* parameters and declared variables */
 			sql_var_name *vname = (sql_var_name*) e->r;
 			assert(vname->name);
-			s = stmt_var(be, vname->sname ? sa_strdup(sql->sa, vname->sname) : NULL, sa_strdup(sql->sa, vname->name), e->tpe.type?&e->tpe:NULL, 0, e->flag);
+			s = stmt_var(be, vname->sname ? ma_strdup(sql->sa, vname->sname) : NULL, ma_strdup(sql->sa, vname->name), e->tpe.type?&e->tpe:NULL, 0, e->flag);
 		} else if (e->f) {		/* values */
 			s = value_list(be, e->f, left, sel);
 		} else {			/* arguments */
@@ -2285,7 +2285,7 @@ rel2bin_sql_table(backend *be, sql_table *t, list *aliases)
 					const char *rnme = t->base.name;
 
 					/* index names are prefixed, to make them independent */
-					sc = stmt_alias(be, sc, e->alias.label, rnme, sa_strconcat(sql->sa, "%", i->base.name));
+					sc = stmt_alias(be, sc, e->alias.label, rnme, ma_strconcat(sql->sa, "%", i->base.name));
 					list_append(l, sc);
 				}
 			} else {
@@ -2323,7 +2323,7 @@ rel2bin_sql_table(backend *be, sql_table *t, list *aliases)
 				const char *rnme = t->base.name;
 
 				/* index names are prefixed, to make them independent */
-				sc = stmt_alias(be, sc, e->alias.label, rnme, sa_strconcat(sql->sa, "%", i->base.name));
+				sc = stmt_alias(be, sc, e->alias.label, rnme, ma_strconcat(sql->sa, "%", i->base.name));
 				list_append(l, sc);
 			}
 		}
@@ -2490,7 +2490,7 @@ exp2bin_args(backend *be, sql_exp *e, list *args)
 
 				if (!e->alias.label)
 					exp_label(be->mvc->sa, e, ++be->mvc->label);
-				s = stmt_alias(be, s, e->alias.label, NULL, sa_strdup(sql->sa, buf));
+				s = stmt_alias(be, s, e->alias.label, NULL, ma_strdup(sql->sa, buf));
 				list_append(args, s);
 			}
 		}
@@ -2697,8 +2697,8 @@ rel2bin_table(backend *be, sql_rel *rel, list *refs)
 						narg += list_length(ops);
 					InstrPtr q = newStmtArgs(be->mb, sqlRef, "unionfunc", narg);
 					if (q == NULL) {
-						if (sa_get_eb(be->mvc->sa)->enabled)
-							eb_error(sa_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : be->mb->errors ? be->mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+						if (ma_get_eb(be->mvc->sa)->enabled)
+							eb_error(ma_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : be->mb->errors ? be->mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 						return sql_error(sql, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					}
 					/* Generate output rowid column and output of function f */
@@ -2713,7 +2713,7 @@ rel2bin_table(backend *be, sql_rel *rel, list *refs)
 							getArg(q, 0) = newTmpVariable(be->mb, type);
 					}
 					if (backend_create_subfunc(be, f, ops) < 0) {
-						freeInstruction(q);
+						freeInstruction(be->mb, q);
 						return NULL;
 					}
 					str mod = sql_func_mod(f->func);
@@ -2722,7 +2722,7 @@ rel2bin_table(backend *be, sql_rel *rel, list *refs)
 					q = pushStr(be->mb, q, fcn);
 					psub = stmt_direct_func(be, q);
 					if (psub == NULL) {
-						freeInstruction(q);
+						freeInstruction(be->mb, q);
 						return NULL;
 					}
 
@@ -2774,7 +2774,7 @@ rel2bin_table(backend *be, sql_rel *rel, list *refs)
 		if (!l)
 			return NULL;
 		sub = stmt_list(be, l);
-		if (!(sub = stmt_func(be, sub, sa_strdup(sql->sa, nme), rel->l, 0)))
+		if (!(sub = stmt_func(be, sub, ma_strdup(sql->sa, nme), rel->l, 0)))
 			return NULL;
 		rel->l = sub->op4.rel; /* rel->l may get rewritten */
 		l = sa_list(sql->sa);
@@ -2811,7 +2811,7 @@ rel2bin_table(backend *be, sql_rel *rel, list *refs)
 		list_append(l, s);
 	}
 	if (osub && osub->nrcols)
-		list_merge(l, osub->op4.lval, NULL);
+		list_join(l, osub->op4.lval);
 	sub = stmt_list(be, l);
 	return sub;
 }
@@ -2827,25 +2827,25 @@ rel2bin_hash_lookup(backend *be, sql_rel *rel, stmt *left, stmt *right, sql_idx 
 	stmt *bits = stmt_atom_int(be, 1 + ((sizeof(lng)*8)-1)/(list_length(i->columns)+1));
 	sql_exp *e = en->data;
 	sql_exp *l = e->l;
-	stmt *idx = bin_find_column(be, left, l->l, sa_strconcat(sql->sa, "%", i->base.name));
+	stmt *idx = bin_find_column(be, left, l->l, ma_strconcat(sql->sa, "%", i->base.name));
 	int swap_exp = 0, swap_rel = 0, semantics = 0;
 
 	if (!idx) {
 		swap_exp = 1;
 		l = e->r;
-		idx = bin_find_column(be, left, l->l, sa_strconcat(sql->sa, "%", i->base.name));
+		idx = bin_find_column(be, left, l->l, ma_strconcat(sql->sa, "%", i->base.name));
 	}
 	if (!idx && right) {
 		swap_exp = 0;
 		swap_rel = 1;
 		l = e->l;
-		idx = bin_find_column(be, right, l->l, sa_strconcat(sql->sa, "%", i->base.name));
+		idx = bin_find_column(be, right, l->l, ma_strconcat(sql->sa, "%", i->base.name));
 	}
 	if (!idx && right) {
 		swap_exp = 1;
 		swap_rel = 1;
 		l = e->r;
-		idx = bin_find_column(be, right, l->l, sa_strconcat(sql->sa, "%", i->base.name));
+		idx = bin_find_column(be, right, l->l, ma_strconcat(sql->sa, "%", i->base.name));
 	}
 	if (!idx)
 		return NULL;
@@ -3687,7 +3687,7 @@ rel2bin_antijoin(backend *be, sql_rel *rel, list *refs)
 		en = jexps->h;
 	} else {
 		if (list_length(sexps))
-			list_merge(jexps, sexps, NULL);
+			jexps = list_join(jexps, sexps);
 		en = jexps->h;
 		sql_exp *e = en->data;
 		if (e->type == e_cmp && (e->flag == cmp_equal || e->flag == cmp_notequal)) {
@@ -6272,7 +6272,7 @@ sql_insert_check(backend *be, sql_key *key, list *inserts)
 	mvc *sql = be->mvc;
 	int pos = 0;
 	sql_rel *rel = rel_basetable(sql, key->t, key->t->base.name);
-	sql_exp *exp = exp_read(sql, rel, NULL, NULL, sa_strdup(sql->sa, key->check), &pos, 0);
+	sql_exp *exp = exp_read(sql, rel, NULL, NULL, ma_strdup(sql->sa, key->check), &pos, 0);
 	rel->exps = rel_base_projection(sql, rel, 0);
 
 	/* create new sub stmt with needed inserts */
@@ -7314,7 +7314,7 @@ sql_update_check(backend *be, stmt **updates, sql_key *key, stmt *u_tids)
 	mvc *sql = be->mvc;
 	int pos = 0;
 	sql_rel *rel = rel_basetable(sql, key->t, key->t->base.name);
-	sql_exp *exp = exp_read(sql, rel, NULL, NULL, sa_strdup(sql->sa, key->check), &pos, 0);
+	sql_exp *exp = exp_read(sql, rel, NULL, NULL, ma_strdup(sql->sa, key->check), &pos, 0);
 	rel->exps = rel_base_projection(sql, rel, 0);
 
 	/* create sub stmt with needed updates (or projected col from to be updated table) */
@@ -7978,7 +7978,7 @@ sql_truncate(backend *be, sql_table *t, int restart_sequences, int cascade)
 	}
 
 finalize:
-	sa_reset(sql->ta);
+	ma_reset(sql->ta);
 	return ret;
 }
 
@@ -8044,19 +8044,19 @@ rel2bin_output(backend *be, sql_rel *rel, list *refs)
 	 * With COPY INTO BINARY, it is an int. */
 	if (tpe == TYPE_str) {
 		atom *tatom = ((sql_exp*) argnode->data)->l;
-		const char *tsep  = sa_strdup(sql->sa, tatom->isnull ? "" : tatom->data.val.sval);
+		const char *tsep  = ma_strdup(sql->sa, tatom->isnull ? "" : tatom->data.val.sval);
 		atom *ratom = ((sql_exp*) argnode->next->data)->l;
-		const char *rsep  = sa_strdup(sql->sa, ratom->isnull ? "" : ratom->data.val.sval);
+		const char *rsep  = ma_strdup(sql->sa, ratom->isnull ? "" : ratom->data.val.sval);
 		atom *satom = ((sql_exp*) argnode->next->next->data)->l;
-		const char *ssep  = sa_strdup(sql->sa, satom->isnull ? "" : satom->data.val.sval);
+		const char *ssep  = ma_strdup(sql->sa, satom->isnull ? "" : satom->data.val.sval);
 		atom *natom = ((sql_exp*) argnode->next->next->next->data)->l;
-		const char *ns = sa_strdup(sql->sa, natom->isnull ? "" : natom->data.val.sval);
+		const char *ns = ma_strdup(sql->sa, natom->isnull ? "" : natom->data.val.sval);
 
 		const char *fn = NULL;
 		int onclient = 0;
 		if (argnode->next->next->next->next) {
 			fn = E_ATOM_STRING(argnode->next->next->next->next->data);
-			fns = stmt_atom_string(be, sa_strdup(sql->sa, fn));
+			fns = stmt_atom_string(be, ma_strdup(sql->sa, fn));
 			onclient = E_ATOM_INT(argnode->next->next->next->next->next->data);
 		}
 		stmt *export = stmt_export(be, sub, tsep, rsep, ssep, ns, onclient, fns);
@@ -8759,8 +8759,8 @@ rel_bin(backend *be, sql_rel *rel)
 		sql->type = sqltype;  /* reset */
 
 	if (be->mb->errors) {
-		if (sa_get_eb(be->mvc->sa)->enabled)
-			eb_error(sa_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : be->mb->errors, 1000);
+		if (ma_get_eb(be->mvc->sa)->enabled)
+			eb_error(ma_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : be->mb->errors, 1000);
 		return NULL;
 	}
 	return s;

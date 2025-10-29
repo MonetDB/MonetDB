@@ -33,12 +33,12 @@
 
 /* export MAL wrapper functions */
 
-udf_export str UDFreverse(str *ret, const str *arg);
-udf_export str UDFBATreverse(bat *ret, const bat *arg);
+udf_export str UDFreverse(Client ctx, str *ret, const str *arg);
+udf_export str UDFBATreverse(Client ctx, bat *ret, const bat *arg);
 
 /* using C macro for convenient type-expansion */
 #define UDFfuse_scalar_decl(in,out) \
-		udf_export char * UDFfuse_##in##_##out(out *ret, const in *one, const in *two)
+	udf_export char * UDFfuse_##in##_##out(Client ctx, out *ret, const in *one, const in *two)
 UDFfuse_scalar_decl(bte, sht);
 UDFfuse_scalar_decl(sht, int);
 UDFfuse_scalar_decl(int, lng);
@@ -46,6 +46,6 @@ UDFfuse_scalar_decl(int, lng);
 UDFfuse_scalar_decl(lng, hge);
 #endif
 
-udf_export char * UDFBATfuse(bat *ret, const bat *one, const bat *two);
+udf_export char * UDFBATfuse(Client ctx, bat *ret, const bat *one, const bat *two);
 
 #endif /* _SQL_UDF_H_ */

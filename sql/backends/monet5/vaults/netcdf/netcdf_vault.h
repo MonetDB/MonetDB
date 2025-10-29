@@ -25,8 +25,8 @@
 #define netcdf_export extern
 #endif
 
-netcdf_export str NCDFtest(int *vars, str *fname);
+netcdf_export str NCDFtest(Client ctx, int *vars, str *fname);
 netcdf_export str NCDFattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-netcdf_export str NCDFimportVarStmt(str *sciqlstmt, str *fname, int *varid);
+netcdf_export str NCDFimportVarStmt(Client ctx, str *sciqlstmt, str *fname, int *varid);
 netcdf_export str NCDFimportVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 #endif

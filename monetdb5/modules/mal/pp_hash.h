@@ -9,7 +9,7 @@
 #ifndef _PP_HASH_H_
 #define _PP_HASH_H_
 
-#include "pp_mem.h"
+//#include "pp_mem.h"
 
 #define GIDBITS 63
 
@@ -131,7 +131,7 @@ typedef struct hash_table {
 	gid mask;
 	Heap **pinned;		/* sharing variable objects means keep reference to varheaps */
 	int pinned_nr;
-	mallocator **allocators;
+	allocator **allocators;
 	int nr_allocators;
 	int processed;
 

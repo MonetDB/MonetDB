@@ -1,17 +1,18 @@
 statement ok
 CREATE TABLE v0 (v1 INT , v2 VARCHAR(71))
 
-query IITT
+query IITT nosort
 SELECT v1, v1, v2, LAST_VALUE(v2) OVER (PARTITION BY v1 RANGE BETWEEN CURRENT ROW AND UNBOUNDED FOLLOWING) FROM v0
 ----
 
 statement ok rowcount 1
 insert into v0 values(1,1)
 
-query IITT
+query IITT nosort
 SELECT v1, v1, v2, LAST_VALUE(v2) OVER (PARTITION BY v1 RANGE BETWEEN CURRENT ROW AND UNBOUNDED FOLLOWING) FROM v0
 ----
 1
 1
 1
 NULL
+

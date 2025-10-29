@@ -1292,7 +1292,7 @@ rel_avg_rewrite(visitor *v, sql_rel *rel)
 		nrel->partition = rel->partition;
 		nrel->spb = rel->spb;
 		set_count_prop(v->sql->sa, nrel, get_rel_count(rel));
-		rel_destroy(rel);
+		rel_destroy(v->sql, rel);
 		nrel->exps = nexps;
 		rel = rel_project(sql->sa, nrel, pexps);
 		set_count_prop(v->sql->sa, rel, get_rel_count(rel->l));
@@ -1340,7 +1340,7 @@ rel_simplify_project(visitor *v, sql_rel *rel)
 			l->exps = nexps;
 			if (l->l) /* constants don't need order by */
 				l->r = rel->r;
-			rel_destroy(rel);
+			rel_destroy(v->sql, rel);
 			v->changes++;
 			return l;
 	}

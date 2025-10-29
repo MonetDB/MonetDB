@@ -381,11 +381,11 @@ bind_simplify_math(visitor *v, global_props *gp)
  * types).
  */
 
-#define reduce_scale_tpe(tpe, uval) \
+#define reduce_scale_tpe(tpe, uval, scale) \
 	do { \
 		tpe v = uval; \
 		if (v != 0) { \
-			while( (v/10)*10 == v ) { \
+			while(i < (int)scale && (v/10)*10 == v ) { \
 				i++; \
 				v /= 10; \
 			} \
@@ -406,17 +406,17 @@ reduce_scale(mvc *sql, atom *a)
 
 #ifdef HAVE_HGE
 	if (a->data.vtype == TYPE_hge) {
-		reduce_scale_tpe(hge, a->data.val.hval);
+		reduce_scale_tpe(hge, a->data.val.hval, a->tpe.scale);
 	} else
 #endif
 	if (a->data.vtype == TYPE_lng) {
-		reduce_scale_tpe(lng, a->data.val.lval);
+		reduce_scale_tpe(lng, a->data.val.lval, a->tpe.scale);
 	} else if (a->data.vtype == TYPE_int) {
-		reduce_scale_tpe(int, a->data.val.ival);
+		reduce_scale_tpe(int, a->data.val.ival, a->tpe.scale);
 	} else if (a->data.vtype == TYPE_sht) {
-		reduce_scale_tpe(sht, a->data.val.shval);
+		reduce_scale_tpe(sht, a->data.val.shval, a->tpe.scale);
 	} else if (a->data.vtype == TYPE_bte) {
-		reduce_scale_tpe(bte, a->data.val.btval);
+		reduce_scale_tpe(bte, a->data.val.btval, a->tpe.scale);
 	}
 	if (i) {
 		na = atom_int(sql->sa, &a->tpe, nval);

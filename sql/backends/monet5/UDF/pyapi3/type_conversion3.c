@@ -36,10 +36,10 @@ bool pyapi3_string_copy(const char *source, char *dest, size_t max_size, bool al
 }
 
 #ifdef HAVE_HGE
-int hge_to_string(char *str, hge x)
+int hge_to_string(allocator *ma, char *str, hge x)
 {
 	size_t len = 256; /* assume str is large enough */
-	hgeToStr(&str, &len, &x, false);
+	hgeToStr(ma, &str, &len, &x, false);
 	return TRUE;
 }
 
@@ -93,7 +93,8 @@ size_t pyobject_get_size(PyObject *obj)
 	return size;
 }
 
-str pyobject_to_date(PyObject **ptr, size_t maxsize, date *value) {
+str pyobject_to_date(allocator *ma, PyObject **ptr, size_t maxsize, date *value) {
+	(void)ma;
 	str msg = MAL_SUCCEED;
 
 	if (ptr == NULL || *ptr == NULL) {
@@ -117,7 +118,8 @@ str pyobject_to_date(PyObject **ptr, size_t maxsize, date *value) {
 	return msg;
 }
 
-str pyobject_to_daytime(PyObject **ptr, size_t maxsize, daytime *value) {
+str pyobject_to_daytime(allocator *ma, PyObject **ptr, size_t maxsize, daytime *value) {
+	(void)ma;
 	str msg = MAL_SUCCEED;
 
 	if (ptr == NULL || *ptr == NULL) {
@@ -142,7 +144,8 @@ str pyobject_to_daytime(PyObject **ptr, size_t maxsize, daytime *value) {
 	return msg;
 }
 
-str pyobject_to_timestamp(PyObject **ptr, size_t maxsize, timestamp *value) {
+str pyobject_to_timestamp(allocator *ma, PyObject **ptr, size_t maxsize, timestamp *value) {
+	(void)ma;
 	str msg = MAL_SUCCEED;
 
 	if (ptr == NULL || *ptr == NULL) {
@@ -171,7 +174,8 @@ str pyobject_to_timestamp(PyObject **ptr, size_t maxsize, timestamp *value) {
 	return msg;
 }
 
-str pyobject_to_blob(PyObject **ptr, size_t maxsize, blob **value) {
+str pyobject_to_blob(allocator *ma, PyObject **ptr, size_t maxsize, blob **value) {
+	(void)ma;
 	size_t size;
 	char* bytes_data;
 	PyObject *obj;
@@ -204,8 +208,9 @@ wrapup:
 	return msg;
 }
 
-str pyobject_to_str(PyObject **ptr, size_t maxsize, str *value)
+str pyobject_to_str(allocator *ma, PyObject **ptr, size_t maxsize, str *value)
 {
+	(void)ma;
 	PyObject *obj;
 	str msg = MAL_SUCCEED;
 	str utf8_string = NULL;
@@ -251,11 +256,11 @@ str pyobject_to_str(PyObject **ptr, size_t maxsize, str *value)
 	} else if (PyBool_Check(obj) || PyLong_Check(obj) || PyFloat_Check(obj)) {
 #ifdef HAVE_HGE
 		hge h;
-		pyobject_to_hge(&obj, 0, &h);
-		hge_to_string(utf8_string, h);
+		pyobject_to_hge(ma, &obj, 0, &h);
+		hge_to_string(ma, utf8_string, h);
 #else
 		lng h;
-		pyobject_to_lng(&obj, 0, &h);
+		pyobject_to_lng(ma, &obj, 0, &h);
 		snprintf(utf8_string, utf8string_minlength, LLFMT, h);
 #endif
 	} else {
@@ -269,7 +274,7 @@ wrapup:
 }
 
 #define STRING_TO_NUMBER_FACTORY(tpe)									\
-	str str_to_##tpe(const char *ptr, size_t maxsize, tpe *value)		\
+	str str_to_##tpe(allocator *ma, const char *ptr, size_t maxsize, tpe *value)		\
 	{																	\
 		size_t len = sizeof(tpe);										\
 		char buf[256];													\
@@ -282,61 +287,67 @@ wrapup:
 				return GDKstrdup("string too long to convert.");		\
 			ptr = buf;													\
 		}																\
-		if (BATatoms[TYPE_##tpe].atomFromStr(ptr, &len, (void **)&value, false) < 0) \
+		if (BATatoms[TYPE_##tpe].atomFromStr(ma, ptr, &len, (void **)&value, false) < 0) \
 			return GDKstrdup("Error converting string.");				\
 		return MAL_SUCCEED;												\
 	}
 
-str str_to_date(const char *ptr, size_t maxsize, date *value)
+str str_to_date(allocator *ma, const char *ptr, size_t maxsize, date *value)
 {
 	(void)ptr;
 	(void)maxsize;
 	(void)value;
+	(void)ma;
 
 	return GDKstrdup("Implicit conversion of string to date is not allowed.");
 }
 
-str unicode_to_date(wchar_t *ptr, size_t maxsize, date *value)
+str unicode_to_date(allocator *ma, wchar_t *ptr, size_t maxsize, date *value)
 {
 	(void)ptr;
 	(void)maxsize;
 	(void)value;
+	(void)ma;
 
 	return GDKstrdup("Implicit conversion of string to date is not allowed.");
 }
 
-str str_to_daytime(const char *ptr, size_t maxsize, daytime *value)
+str str_to_daytime(allocator *ma, const char *ptr, size_t maxsize, daytime *value)
 {
 	(void)ptr;
 	(void)maxsize;
 	(void)value;
+	(void)ma;
 
 	return GDKstrdup("Implicit conversion of string to daytime is not allowed.");
 }
 
-str unicode_to_daytime(wchar_t *ptr, size_t maxsize, daytime *value)
+str unicode_to_daytime(allocator *ma, wchar_t *ptr, size_t maxsize, daytime *value)
 {
 	(void)ptr;
 	(void)maxsize;
 	(void)value;
+	(void)ma;
 
 	return GDKstrdup("Implicit conversion of string to daytime is not allowed.");
 }
 
-str str_to_timestamp(const char *ptr, size_t maxsize, timestamp *value)
+str str_to_timestamp(allocator *ma, const char *ptr, size_t maxsize, timestamp *value)
 {
 	(void)ptr;
 	(void)maxsize;
 	(void)value;
+	(void)ma;
 
 	return GDKstrdup("Implicit conversion of string to timestamp is not allowed.");
 }
 
-str unicode_to_timestamp(wchar_t *ptr, size_t maxsize, timestamp *value)
+str unicode_to_timestamp(allocator *ma, wchar_t *ptr, size_t maxsize, timestamp *value)
 {
 	(void)ptr;
 	(void)maxsize;
 	(void)value;
+	(void)ma;
 
 	return GDKstrdup("Implicit conversion of string to timestamp is not allowed.");
 }
@@ -344,7 +355,7 @@ str unicode_to_timestamp(wchar_t *ptr, size_t maxsize, timestamp *value)
 
 #if PY_MAJOR_VERSION == 3 && PY_MINOR_VERSION < 10
 #define PY_TO_(type, inttpe)											\
-str pyobject_to_##type(PyObject **pyobj, size_t maxsize, type *value)	\
+str pyobject_to_##type(allocator *ma, PyObject **pyobj, size_t maxsize, type *value)	\
 {																		\
 	PyObject *ptr = *pyobj;												\
 	str retval = MAL_SUCCEED;											\
@@ -369,9 +380,9 @@ str pyobject_to_##type(PyObject **pyobj, size_t maxsize, type *value)	\
 	} else if (PyFloat_CheckExact(ptr)) {								\
 		*value = isnan(((PyFloatObject*)ptr)->ob_fval) ? type##_nil : (type) ((PyFloatObject*)ptr)->ob_fval; \
 	} else if (PyUnicode_CheckExact(ptr)) {								\
-		return str_to_##type(PyUnicode_AsUTF8(ptr), 0, value);			\
+		return str_to_##type(ma, PyUnicode_AsUTF8(ptr), 0, value);			\
 	} else if (PyByteArray_CheckExact(ptr)) {							\
-		return str_to_##type(((PyByteArrayObject*)ptr)->ob_bytes, 0, value); \
+		return str_to_##type(ma, ((PyByteArrayObject*)ptr)->ob_bytes, 0, value); \
 	} else if (ptr == Py_None) {										\
 		*value = type##_nil;											\
 	}																	\
@@ -384,7 +395,7 @@ str pyobject_to_##type(PyObject **pyobj, size_t maxsize, type *value)	\
 #define ENDIAN "little"
 #endif
 #define PY_TO_(type, inttpe)											\
-str pyobject_to_##type(PyObject **pyobj, size_t maxsize, type *value)	\
+str pyobject_to_##type(allocator *ma, PyObject **pyobj, size_t maxsize, type *value)	\
 {																		\
 	PyObject *ptr = *pyobj;												\
 	str retval = MAL_SUCCEED;											\
@@ -432,9 +443,9 @@ str pyobject_to_##type(PyObject **pyobj, size_t maxsize, type *value)	\
 	} else if (PyFloat_CheckExact(ptr)) {								\
 		*value = isnan(((PyFloatObject*)ptr)->ob_fval) ? type##_nil : (type) ((PyFloatObject*)ptr)->ob_fval; \
 	} else if (PyUnicode_CheckExact(ptr)) {								\
-		return str_to_##type(PyUnicode_AsUTF8(ptr), 0, value);			\
+		return str_to_##type(ma, PyUnicode_AsUTF8(ptr), 0, value);			\
 	} else if (PyByteArray_CheckExact(ptr)) {							\
-		return str_to_##type(((PyByteArrayObject*)ptr)->ob_bytes, 0, value); \
+		return str_to_##type(ma, ((PyByteArrayObject*)ptr)->ob_bytes, 0, value); \
 	} else if (ptr == Py_None) {										\
 		*value = type##_nil;											\
 	}																	\
@@ -444,7 +455,7 @@ str pyobject_to_##type(PyObject **pyobj, size_t maxsize, type *value)	\
 
 #define CONVERSION_FUNCTION_FACTORY(tpe, inttpe)						\
 	STRING_TO_NUMBER_FACTORY(tpe)										\
-	str unicode_to_##tpe(wchar_t *ptr, size_t maxsize, tpe *value)   \
+	str unicode_to_##tpe(allocator *ma, wchar_t *ptr, size_t maxsize, tpe *value)   \
 	{																	\
 		char utf8[1024];												\
 	if (maxsize == 0)													\
@@ -452,7 +463,7 @@ str pyobject_to_##type(PyObject **pyobj, size_t maxsize, type *value)	\
 	if (maxsize > 255)													\
 			maxsize = 255;												\
 		unicode_to_utf8(0, maxsize, utf8, ptr);							\
-		return str_to_##tpe(utf8, 0, value);							\
+		return str_to_##tpe(ma, utf8, 0, value);							\
 	}																	\
 	PY_TO_(tpe, inttpe);
 

@@ -128,9 +128,9 @@ mal_pipelines_reset(void)
 }
 
 static MalStkPtr
-stack_copy(MalStkPtr stk, int start)
+stack_copy(allocator *ma, MalStkPtr stk, int start)
 {
-	MalStkPtr n = newGlobalStack(stk->stktop);
+	MalStkPtr n = newGlobalStack(ma, stk->stktop);
 	ValPtr lhs, rhs;
 
 	n->stktop = stk->stktop;
@@ -143,7 +143,7 @@ stack_copy(MalStkPtr stk, int start)
 		if (isVarConstant(stk->blk, i) > 0) {
 			if (!isVarDisabled(stk->blk, i)) {
 				rhs = &getVarConstant(stk->blk, i);
-				if(VALcopy(lhs, rhs) == NULL)
+				if(VALcopy(ma, lhs, rhs) == NULL)
 					break;
 				if (rhs->bat && rhs->val.bval)
 					BBPretain(rhs->val.bval);
@@ -151,7 +151,7 @@ stack_copy(MalStkPtr stk, int start)
 		} else {
 			rhs = &stk->stk[i];
 			if (/*getVarScope(stk->blk, i) < stk->calldepth ||*/ ((getVarDeclared(stk->blk, i) <= start && getVarEolife(stk->blk, i) > start)) || !rhs->vtype) {
-				if(VALcopy(lhs, rhs) == NULL)
+				if(VALcopy(ma, lhs, rhs) == NULL)
 					break;
 			} else if (rhs->bat) {
                 lhs->bat = rhs->bat;
@@ -159,7 +159,7 @@ stack_copy(MalStkPtr stk, int start)
                 lhs->len = 0;
                 lhs->val.bval = bat_nil;
 			} else {
-				VALinit(lhs, rhs->vtype, ATOMnilptr(rhs->vtype));
+				VALinit(ma, lhs, rhs->vtype, ATOMnilptr(rhs->vtype));
 			}
 			if (lhs->bat && lhs->val.bval)
 				BBPretain(lhs->val.bval);
@@ -207,7 +207,9 @@ PIPELINEworker(void *T)
 			}
 			t->flag = RUNNING;
 
-			MalStkPtr stk = stack_copy(s->stk, s->start);
+			allocator *ma = MT_thread_getallocator();
+			allocator_state ma_state = ma_open(ma);
+			MalStkPtr stk = stack_copy(ma, s->stk, s->start);
 
 			MT_thread_set_qry_ctx(&s->cntxt->qryctx);
 
@@ -229,7 +231,7 @@ PIPELINEworker(void *T)
 					freeException(error);
 				GDKerrbuf[0] = 0;
 			}
-			freeStack(stk);
+			ma_close(ma, &ma_state);
 			if (p->wls)
 				GDKfree(p->wls);
 			MT_sema_up(&s->s);

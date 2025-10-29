@@ -20,6 +20,7 @@ static PyObject *
 _connection_execute(Py_ConnectionObject *self, PyObject *args)
 {
 	char *query = NULL;
+	allocator *ma = self->cntxt->curprg->def->ma;
 	if (PyUnicode_CheckExact(args)) {
 		query = GDKstrdup(PyUnicode_AsUTF8(args));
 	} else {
@@ -67,7 +68,7 @@ _connection_execute(Py_ConnectionObject *self, PyObject *args)
 			input.scalar = false;
 			input.sql_subtype = &col.type;
 
-			numpy_array = PyMaskedArray_FromBAT(&input, 0, input.count, &res, true);
+			numpy_array = PyMaskedArray_FromBAT(ma, self->cntxt, &input, 0, input.count, &res, true);
 			if (!numpy_array) {
 				_connection_cleanup_result(output);
 				BBPunfix(b->batCacheid);

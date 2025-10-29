@@ -40,7 +40,7 @@ static str vaultKey = NULL;
 /* lock to protect the above */
 static MT_RWLock rt_lock = MT_RWLOCK_INITIALIZER(rt_lock);
 
-static str AUTHdecypherValueLocked(str *ret, const char *value);
+static str AUTHdecypherValueLocked(allocator *, str *ret, const char *value);
 
 void
 AUTHreset(void)
@@ -103,7 +103,7 @@ AUTHunlockVault(const char *password)
  * by the caller.
  */
 static str
-AUTHdecypherValueLocked(str *ret, const char *value)
+AUTHdecypherValueLocked(allocator *ma, str *ret, const char *value)
 {
 	/* Cyphering and decyphering can be done using many algorithms.
 	 * Future requirements might want a stronger cypher than the XOR
@@ -116,6 +116,7 @@ AUTHdecypherValueLocked(str *ret, const char *value)
 	 */
 
 	/* this is the XOR decypher implementation */
+	assert(ma);
 	str r, w;
 	const char *s = value;
 	char t = '\0';
@@ -126,7 +127,7 @@ AUTHdecypherValueLocked(str *ret, const char *value)
 
 	if (vaultKey == NULL)
 		throw(MAL, "decypherValue", "The vault is still locked!");
-	w = r = GDKmalloc(sizeof(char) * (strlen(value) + 1));
+	w = r = ma_alloc(ma, sizeof(char) * (strlen(value) + 1));
 	if (r == NULL)
 		throw(MAL, "decypherValue", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
@@ -157,10 +158,10 @@ AUTHdecypherValueLocked(str *ret, const char *value)
 }
 
 str
-AUTHdecypherValue(str *ret, const char *value)
+AUTHdecypherValue(allocator *ma, str *ret, const char *value)
 {
 	MT_rwlock_rdlock(&rt_lock);
-	str err = AUTHdecypherValueLocked(ret, value);
+	str err = AUTHdecypherValueLocked(ma, ret, value);
 	MT_rwlock_rdunlock(&rt_lock);
 	return err;
 }

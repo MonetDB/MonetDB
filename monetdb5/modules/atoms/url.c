@@ -50,6 +50,7 @@
 #include "gdk.h"
 #include <ctype.h>
 #include "mal_exception.h"
+#include "mal_client.h"
 #include "str.h"
 
 typedef str url;
@@ -230,8 +231,7 @@ escape_str(str *retval, const char *s)
 	if (!s)
 		throw(ILLARG, "url.escape", "url missing");
 
-	size_t reslen = strlen(s) * 3;
-	if (!(res = (str) GDKmalloc(reslen)))
+	if (!(res = (str) ma_alloc(ma, strlen(s) * 3)))
 		throw(MAL, "url.escape", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	for (x = 0, y = 0; s[x]; ++x, ++y) {
 		if (needEscape(s[x])) {
@@ -266,7 +266,7 @@ unescape_str(str *retval, const char *s)
 	if (!s)
 		throw(ILLARG, "url.escape", "url missing");
 
-	res = (str) GDKmalloc(strlen(s));
+	res = (str) ma_alloc(ma, strlen(s));
 	if (!res)
 		throw(MAL, "url.unescape", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
@@ -294,14 +294,14 @@ unescape_str(str *retval, const char *s)
  */
 
 static ssize_t
-URLfromString(const char *src, size_t *len, void **U, bool external)
+URLfromString(allocator *ma, const char *src, size_t *len, void **U, bool external)
 {
 	char **u = (char **) U;
 	size_t l = strlen(src) + 1;
 
 	if (*len < l || *u == NULL) {
-		GDKfree(*u);
-		*u = GDKmalloc(l);
+		// GDKfree(*u);
+		*u = ma_alloc(ma, l);
 		if (*u == NULL)
 			return -1;
 		*len = l;
@@ -317,7 +317,7 @@ URLfromString(const char *src, size_t *len, void **U, bool external)
 }
 
 static ssize_t
-URLtoString(str *s, size_t *len, const void *SRC, bool external)
+URLtoString(allocator *ma, str *s, size_t *len, const void *SRC, bool external)
 {
 	const char *src = SRC;
 	size_t l = strlen(src);
@@ -325,8 +325,8 @@ URLtoString(str *s, size_t *len, const void *SRC, bool external)
 	if (external)
 		l += 2;
 	if (l >= *len || *s == NULL) {
-		GDKfree(*s);
-		*s = GDKmalloc(l + 1);
+		// GDKfree(*s);
+		*s = ma_alloc(ma, l + 1);
 		if (*s == NULL)
 			return -1;
 		*len = l + 1;
@@ -347,8 +347,9 @@ URLtoString(str *s, size_t *len, const void *SRC, bool external)
 /* COMMAND "getAnchor": Extract an anchor (reference) from the URL
  * SIGNATURE: getAnchor(url) : str; */
 static str
-URLgetAnchor(str *retval, const url *val)
+URLgetAnchor(Client ctx, str *retval, const url *val)
 {
+	allocator *ma = ctx->curprg->def->ma;
 	const char *s;
 
 	if (val == NULL || *val == NULL)
@@ -368,7 +369,7 @@ URLgetAnchor(str *retval, const url *val)
 			s = str_nil;
 	}
 
-	if ((*retval = GDKstrdup(s)) == NULL)
+	if ((*retval = MA_STRDUP(ma, s)) == NULL)
 		throw(MAL, "url.getAnchor", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
@@ -377,8 +378,9 @@ URLgetAnchor(str *retval, const url *val)
  *                        thus, excluding the file extension.
  * SIGNATURE: getBasename(str) : str; */
 static str
-URLgetBasename(str *retval, const url *val)
+URLgetBasename(Client ctx, str *retval, const url *val)
 {
+	allocator *ma = ctx->curprg->def->ma;
 	const char *s;
 	const char *b = NULL;
 	const char *e = NULL;
@@ -387,14 +389,14 @@ URLgetBasename(str *retval, const url *val)
 		throw(ILLARG, "url.getBasename", "url missing");
 
 	if (strNil(*val)) {
-		*retval = GDKstrdup(str_nil);
+		*retval = MA_STRDUP(ma, str_nil);
 	} else {
 		if ((s = skip_scheme(*val)) == NULL
 			|| (s = skip_authority(s, NULL, NULL, NULL, NULL)) == NULL
 			|| (s = skip_path(s, &b, &e)) == NULL)
 			throw(ILLARG, "url.getBasename", "bad url");
 		if (b == NULL) {
-			*retval = GDKstrdup(str_nil);
+			*retval = MA_STRDUP(ma, str_nil);
 		} else {
 			size_t l;
 
@@ -403,7 +405,7 @@ URLgetBasename(str *retval, const url *val)
 			} else {
 				l = s - b;
 			}
-			if ((*retval = GDKmalloc(l + 1)) != NULL) {
+			if ((*retval = ma_alloc(ma, l + 1)) != NULL) {
 				strcpy_len(*retval, b, l + 1);
 			}
 		}
@@ -417,8 +419,9 @@ URLgetBasename(str *retval, const url *val)
 /* COMMAND "getContext": Extract the path context from the URL
  * SIGNATURE: getContext(str) : str; */
 static str
-URLgetContext(str *retval, const url *val)
+URLgetContext(Client ctx, str *retval, const url *val)
 {
+	allocator *ma = ctx->curprg->def->ma;
 	const char *s;
 	const char *p;
 
@@ -426,15 +429,15 @@ URLgetContext(str *retval, const url *val)
 		throw(ILLARG, "url.getContext", "url missing");
 
 	if (strNil(*val)) {
-		*retval = GDKstrdup(str_nil);
+		*retval = MA_STRDUP(ma, str_nil);
 	} else {
 		if ((s = skip_scheme(*val)) == NULL
 			|| (p = skip_authority(s, NULL, NULL, NULL, NULL)) == NULL
 			|| (s = skip_path(p, NULL, NULL)) == NULL)
 			throw(ILLARG, "url.getContext", "bad url");
 		if (p == s) {
-			*retval = GDKstrdup(str_nil);
-		} else if ((*retval = GDKmalloc(s - p + 1)) != NULL) {
+			*retval = MA_STRDUP(ma, str_nil);
+		} else if ((*retval = ma_alloc(ma, s - p + 1)) != NULL) {
 			strcpy_len(*retval, p, s - p + 1);
 		}
 	}
@@ -447,8 +450,9 @@ URLgetContext(str *retval, const url *val)
 /* COMMAND "getExtension": Extract the file extension of the URL
  * SIGNATURE: getExtension(str) : str; */
 static str
-URLgetExtension(str *retval, const url *val)
+URLgetExtension(Client ctx, str *retval, const url *val)
 {
+	allocator *ma = ctx->curprg->def->ma;
 	const char *s;
 	const char *e = NULL;
 
@@ -456,19 +460,19 @@ URLgetExtension(str *retval, const url *val)
 		throw(ILLARG, "url.getExtension", "url missing");
 
 	if (strNil(*val)) {
-		*retval = GDKstrdup(str_nil);
+		*retval = MA_STRDUP(ma, str_nil);
 	} else {
 		if ((s = skip_scheme(*val)) == NULL
 			|| (s = skip_authority(s, NULL, NULL, NULL, NULL)) == NULL
 			|| (s = skip_path(s, NULL, &e)) == NULL)
 			throw(ILLARG, "url.getExtension", "bad url");
 		if (e == NULL) {
-			*retval = GDKstrdup(str_nil);
+			*retval = MA_STRDUP(ma, str_nil);
 		} else {
 			size_t l = s - e;
 
 			assert(*e == '.');
-			if ((*retval = GDKmalloc(l)) != NULL) {
+			if ((*retval = ma_alloc(ma, l)) != NULL) {
 				strcpy_len(*retval, e + 1, l);
 			}
 		}
@@ -482,8 +486,9 @@ URLgetExtension(str *retval, const url *val)
 /* COMMAND "getFile": Extract the last file name of the URL
  * SIGNATURE: getFile(str) : str; */
 static str
-URLgetFile(str *retval, const url *val)
+URLgetFile(Client ctx, str *retval, const url *val)
 {
+	allocator *ma = ctx->curprg->def->ma;
 	const char *s;
 	const char *b = NULL;
 
@@ -491,19 +496,19 @@ URLgetFile(str *retval, const url *val)
 		throw(ILLARG, "url.getFile", "url missing");
 
 	if (strNil(*val)) {
-		*retval = GDKstrdup(str_nil);
+		*retval = MA_STRDUP(ma, str_nil);
 	} else {
 		if ((s = skip_scheme(*val)) == NULL
 			|| (s = skip_authority(s, NULL, NULL, NULL, NULL)) == NULL
 			|| (s = skip_path(s, &b, NULL)) == NULL)
 			throw(ILLARG, "url.getFile", "bad url");
 		if (b == NULL) {
-			*retval = GDKstrdup(str_nil);
+			*retval = MA_STRDUP(ma, str_nil);
 		} else {
 			size_t l;
 
 			l = s - b;
-			if ((*retval = GDKmalloc(l + 1)) != NULL) {
+			if ((*retval = ma_alloc(ma, l + 1)) != NULL) {
 				strcpy_len(*retval, b, l + 1);
 			}
 		}
@@ -517,8 +522,9 @@ URLgetFile(str *retval, const url *val)
 /* COMMAND "getHost": Extract the server identity from the URL */
 /* SIGNATURE: getHost(str) : str; */
 static str
-URLgetHost(str *retval, const url *val)
+URLgetHost(Client ctx, str *retval, const url *val)
 {
+	allocator *ma = ctx->curprg->def->ma;
 	const char *s;
 	const char *h = NULL;
 	const char *p = NULL;
@@ -527,13 +533,13 @@ URLgetHost(str *retval, const url *val)
 		throw(ILLARG, "url.getHost", "url missing");
 
 	if (strNil(*val)) {
-		*retval = GDKstrdup(str_nil);
+		*retval = MA_STRDUP(ma, str_nil);
 	} else {
 		if ((s = skip_scheme(*val)) == NULL
 			|| (s = skip_authority(s, NULL, NULL, &h, &p)) == NULL)
 			throw(ILLARG, "url.getHost", "bad url");
 		if (h == NULL) {
-			*retval = GDKstrdup(str_nil);
+			*retval = MA_STRDUP(ma, str_nil);
 		} else {
 			size_t l;
 
@@ -542,7 +548,7 @@ URLgetHost(str *retval, const url *val)
 			} else {
 				l = s - h;
 			}
-			if ((*retval = GDKmalloc(l + 1)) != NULL) {
+			if ((*retval = ma_alloc(ma, l + 1)) != NULL) {
 				strcpy_len(*retval, h, l + 1);
 			}
 		}
@@ -556,8 +562,9 @@ URLgetHost(str *retval, const url *val)
 /* COMMAND "getDomain": Extract the Internet domain from the URL
  * SIGNATURE: getDomain(str) : str; */
 static str
-URLgetDomain(str *retval, const url *val)
+URLgetDomain(Client ctx, str *retval, const url *val)
 {
+	allocator *ma = ctx->curprg->def->ma;
 	const char *s;
 	const char *h = NULL;
 	const char *p = NULL;
@@ -566,13 +573,13 @@ URLgetDomain(str *retval, const url *val)
 		throw(ILLARG, "url.getDomain", "url missing");
 
 	if (strNil(*val)) {
-		*retval = GDKstrdup(str_nil);
+		*retval = MA_STRDUP(ma, str_nil);
 	} else {
 		if ((s = skip_scheme(*val)) == NULL
 			|| (s = skip_authority(s, NULL, NULL, &h, &p)) == NULL)
 			throw(ILLARG, "url.getDomain", "bad url");
 		if (h == NULL) {
-			*retval = GDKstrdup(str_nil);
+			*retval = MA_STRDUP(ma, str_nil);
 		} else {
 			size_t l;
 
@@ -585,7 +592,7 @@ URLgetDomain(str *retval, const url *val)
 				p--;
 				l++;
 			}
-			if ((*retval = GDKmalloc(l + 1)) != NULL) {
+			if ((*retval = ma_alloc(ma, l + 1)) != NULL) {
 				strcpy_len(*retval, p, l + 1);
 			}
 		}
@@ -599,8 +606,9 @@ URLgetDomain(str *retval, const url *val)
 /* COMMAND "getPort": Extract the port id from the URL
  * SIGNATURE: getPort(str) : str; */
 static str
-URLgetPort(str *retval, const url *val)
+URLgetPort(Client ctx, str *retval, const url *val)
 {
+	allocator *ma = ctx->curprg->def->ma;
 	const char *s;
 	const char *p = NULL;
 
@@ -608,17 +616,17 @@ URLgetPort(str *retval, const url *val)
 		throw(ILLARG, "url.getPort", "url missing");
 
 	if (strNil(*val)) {
-		*retval = GDKstrdup(str_nil);
+		*retval = MA_STRDUP(ma, str_nil);
 	} else {
 		if ((s = skip_scheme(*val)) == NULL
 			|| (s = skip_authority(s, NULL, NULL, NULL, &p)) == NULL)
 			throw(ILLARG, "url.getPort", "bad url");
 		if (p == NULL) {
-			*retval = GDKstrdup(str_nil);
+			*retval = MA_STRDUP(ma, str_nil);
 		} else {
 			size_t l = s - p;
 
-			if ((*retval = GDKmalloc(l + 1)) != NULL) {
+			if ((*retval = ma_alloc(ma, l + 1)) != NULL) {
 				strcpy_len(*retval, p, l + 1);
 			}
 		}
@@ -632,21 +640,22 @@ URLgetPort(str *retval, const url *val)
 /* COMMAND "getProtocol": Extract the protocol from the URL
  * SIGNATURE: getProtocol(str) : str; */
 static str
-URLgetProtocol(str *retval, const url *val)
+URLgetProtocol(Client ctx, str *retval, const url *val)
 {
+	allocator *ma = ctx->curprg->def->ma;
 	const char *s;
 
 	if (val == NULL || *val == NULL)
 		throw(ILLARG, "url.getProtocol", "url missing");
 
 	if (strNil(*val)) {
-		*retval = GDKstrdup(str_nil);
+		*retval = MA_STRDUP(ma, str_nil);
 	} else {
 		if ((s = skip_scheme(*val)) == NULL)
 			throw(ILLARG, "url.getProtocol", "bad url");
 		size_t l = s - *val;
 
-		if ((*retval = GDKmalloc(l)) != NULL) {
+		if ((*retval = ma_alloc(ma, l)) != NULL) {
 			strcpy_len(*retval, *val, l);
 		}
 	}
@@ -659,8 +668,9 @@ URLgetProtocol(str *retval, const url *val)
 /* COMMAND "getQuery": Extract the query part from the URL
  * SIGNATURE: getQuery(str) : str; */
 static str
-URLgetQuery(str *retval, const url *val)
+URLgetQuery(Client ctx, str *retval, const url *val)
 {
+	allocator *ma = ctx->curprg->def->ma;
 	const char *s;
 	const char *q;
 
@@ -668,7 +678,7 @@ URLgetQuery(str *retval, const url *val)
 		throw(ILLARG, "url.getQuery", "url missing");
 
 	if (strNil(*val)) {
-		*retval = GDKstrdup(str_nil);
+		*retval = MA_STRDUP(ma, str_nil);
 	} else {
 		if ((s = skip_scheme(*val)) == NULL
 			|| (s = skip_authority(s, NULL, NULL, NULL, NULL)) == NULL
@@ -680,11 +690,11 @@ URLgetQuery(str *retval, const url *val)
 
 			q++;
 			l = s - q;
-			if ((*retval = GDKmalloc(l + 1)) != NULL) {
+			if ((*retval = ma_alloc(ma, l + 1)) != NULL) {
 				strcpy_len(*retval, q, l + 1);
 			}
 		} else {
-			*retval = GDKstrdup(str_nil);
+			*retval = MA_STRDUP(ma, str_nil);
 		}
 	}
 
@@ -696,8 +706,9 @@ URLgetQuery(str *retval, const url *val)
 /* COMMAND "getRobotURL": Extract the location of the robot control file
  * SIGNATURE: getRobotURL(str) : str; */
 static str
-URLgetRobotURL(str *retval, const url *val)
+URLgetRobotURL(Client ctx, str *retval, const url *val)
 {
+	allocator *ma = ctx->curprg->def->ma;
 	const char *s;
 	size_t l;
 
@@ -705,7 +716,7 @@ URLgetRobotURL(str *retval, const url *val)
 		throw(ILLARG, "url.getQuery", "url missing");
 
 	if (strNil(*val)) {
-		*retval = GDKstrdup(str_nil);
+		*retval = MA_STRDUP(ma, str_nil);
 	} else {
 		if ((s = skip_scheme(*val)) == NULL
 			|| (s = skip_authority(s, NULL, NULL, NULL, NULL)) == NULL)
@@ -713,7 +724,7 @@ URLgetRobotURL(str *retval, const url *val)
 		l = s - *val;
 
 		size_t retlen = l + sizeof("/robots.txt");
-		if ((*retval = GDKmalloc(retlen)) != NULL) {
+		if ((*retval = ma_alloc(ma, retlen)) != NULL) {
 			snprintf(*retval, retlen, "%.*s/robots.txt", (int) l, *val);
 		}
 	}
@@ -726,21 +737,22 @@ URLgetRobotURL(str *retval, const url *val)
 /* COMMAND "getUser": Extract the user identity from the URL
  * SIGNATURE: getUser(str) : str; */
 static str
-URLgetUser(str *retval, const url *val)
+URLgetUser(Client ctx, str *retval, const url *val)
 {
+	allocator *ma = ctx->curprg->def->ma;
 	const char *s, *h, *u, *p;
 
 	if (val == NULL || *val == NULL)
 		throw(ILLARG, "url.getUser", "url missing");
 
 	if (strNil(*val)) {
-		*retval = GDKstrdup(str_nil);
+		*retval = MA_STRDUP(ma, str_nil);
 	} else {
 		if ((s = skip_scheme(*val)) == NULL
 			|| (s = skip_authority(s, &u, &p, &h, NULL)) == NULL)
 			throw(ILLARG, "url.getHost", "bad url");
 		if (u == NULL || h == NULL) {
-			*retval = GDKstrdup(str_nil);
+			*retval = MA_STRDUP(ma, str_nil);
 		} else {
 			size_t l;
 
@@ -749,7 +761,7 @@ URLgetUser(str *retval, const url *val)
 			} else {
 				l = h - u - 1;
 			}
-			if ((*retval = GDKmalloc(l + 1)) != NULL) {
+			if ((*retval = ma_alloc(ma, l + 1)) != NULL) {
 				strcpy_len(*retval, u, l + 1);
 			}
 		}
@@ -763,8 +775,9 @@ URLgetUser(str *retval, const url *val)
 /* COMMAND "isaURL": Check conformity of the URL syntax
  * SIGNATURE: isaURL(str) : bit; */
 static str
-URLisaURL(bit *retval, const char *const *val)
+URLisaURL(Client ctx, bit *retval, const char *const *val)
 {
+	(void) ctx;
 	if (val == NULL || *val == NULL)
 		throw(ILLARG, "url.isaURL", "url missing");
 	if (strNil(*val))
@@ -775,17 +788,19 @@ URLisaURL(bit *retval, const char *const *val)
 }
 
 static str
-URLnew(url *u, const char *const *val)
+URLnew(Client ctx, url *u, const char *const *val)
 {
-	*u = GDKstrdup(*val);
+	allocator *ma = ctx->curprg->def->ma;
+	*u = MA_STRDUP(ma, *val);
 	if (*u == NULL)
 		throw(MAL, "url.new", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
 static str
-URLnew3(url *u, const char *const *protocol, const char *const *server, const char *const *file)
+URLnew3(Client ctx, url *u, const char *const *protocol, const char *const *server, const char *const *file)
 {
+	allocator *ma = ctx->curprg->def->ma;
 	const char *Protocol = *protocol;
 	const char *Server = *server;
 	const char *File = *file;
@@ -800,7 +815,7 @@ URLnew3(url *u, const char *const *protocol, const char *const *server, const ch
 	if (strNil(Protocol))
 		Protocol = "";
 	l = strlen(File) + strlen(Server) + strlen(Protocol) + 10;
-	*u = GDKmalloc(l);
+	*u = ma_alloc(ma, l);
 	if (*u == NULL)
 		throw(MAL, "url.newurl", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	snprintf(*u, l, "%s://%s/%s", Protocol, Server, File);
@@ -808,8 +823,9 @@ URLnew3(url *u, const char *const *protocol, const char *const *server, const ch
 }
 
 static str
-URLnew4(url *u, const char *const *protocol, const char *const *server, const int *port, const char *const *file)
+URLnew4(Client ctx, url *u, const char *const *protocol, const char *const *server, const int *port, const char *const *file)
 {
+	allocator *ma = ctx->curprg->def->ma;
 	const char *Protocol = *protocol;
 	const char *Server = *server;
 	int Port = *port;
@@ -827,7 +843,7 @@ URLnew4(url *u, const char *const *protocol, const char *const *server, const in
 	if (strNil(Protocol))
 		Protocol = "";
 	l = strlen(File) + strlen(Server) + strlen(Protocol) + 20;
-	*u = GDKmalloc(l);
+	*u = ma_alloc(ma, l);
 	if (*u == NULL)
 		throw(MAL, "url.newurl", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	snprintf(*u, l, "%s://%s:%d/%s", Protocol, Server, Port, File);
@@ -835,9 +851,10 @@ URLnew4(url *u, const char *const *protocol, const char *const *server, const in
 }
 
 static str
-URLnoop(url *u, const url *val)
+URLnoop(Client ctx, url *u, const url *val)
 {
-	*u = GDKstrdup(*val);
+	allocator *ma = ctx->curprg->def->ma;
+	*u = MA_STRDUP(ma, *val);
 	if (*u == NULL)
 		throw(MAL, "url.noop", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
@@ -849,8 +866,9 @@ URLnoop(url *u, const url *val)
  * and empty string is returned instead.
  * */
 static str
-extractURLHost(str *retval, const char *const *url, const bit *no_www)
+extractURLHost(Client ctx, str *retval, const char *const *url, const bit *no_www)
 {
+	allocator *ma = ctx->curprg->def->ma;
 	const char *s;
 	const char *h = NULL;
 	const char *p = NULL;
@@ -880,16 +898,16 @@ extractURLHost(str *retval, const char *const *url, const bit *no_www)
 				l -= 4;
 			}
 			if (domain && l > 3) {
-				if ((*retval = GDKmalloc(l + 1)) != NULL)
+				if ((*retval = ma_alloc(ma, l + 1)) != NULL)
 					strcpy_len(*retval, h, l + 1);
 			} else {
-				*retval = GDKstrdup(str_nil);
+				*retval = MA_STRDUP(ma, str_nil);
 			}
 		} else {
-			*retval = GDKstrdup(str_nil);
+			*retval = MA_STRDUP(ma, str_nil);
 		}
 	} else {
-		*retval = GDKstrdup(str_nil);
+		*retval = MA_STRDUP(ma, str_nil);
 	}
 	if (!*retval)
 		throw(MAL, "url.getURLHost", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -909,15 +927,16 @@ str_buf_copy(str *buf, size_t *buflen, const char *s, size_t l)
 
 // bulk version
 static str
-BATextractURLHost(bat *res, const bat *bid, const bit *no_www)
+BATextractURLHost(Client ctx, bat *res, const bat *bid, const bit *no_www)
 {
+	allocator *ma = ctx->curprg->def->ma;
 	const char *s;
 	const char *host = NULL;
 	const char *port = NULL;
 	BAT *bn = NULL, *b = NULL;
 	BUN p, q;
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
-	str buf = GDKmalloc(buflen);
+	str buf = ma_alloc(ma, buflen);
 	str msg = MAL_SUCCEED;
 	bool nils = false;
 
@@ -925,12 +944,12 @@ BATextractURLHost(bat *res, const bat *bid, const bit *no_www)
 		throw(MAL, "baturl.extractURLHost", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	if (!(b = BATdescriptor(*bid))) {
-		GDKfree(buf);
+		// GDKfree(buf);
 		throw(MAL, "baturl.extractURLHost",
 			  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	if ((bn = COLnew(b->hseqbase, TYPE_str, BATcount(b), TRANSIENT)) == NULL) {
-		GDKfree(buf);
+		// GDKfree(buf);
 		BBPunfix(b->batCacheid);
 		throw(MAL, "baturl.extractURLHost", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
@@ -997,7 +1016,7 @@ BATextractURLHost(bat *res, const bat *bid, const bit *no_www)
 	}
 	bat_iterator_end(&bi);
 
-	GDKfree(buf);
+	// GDKfree(buf);
 	if (msg == MAL_SUCCEED) {
 		BATsetcount(bn, q);
 		bn->tnil = nils;

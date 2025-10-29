@@ -15,10 +15,10 @@
 #include "opt_aliases.h"
 
 static bool
-OPTallConstant(Client cntxt, MalBlkPtr mb, InstrPtr p)
+OPTallConstant(Client ctx, MalBlkPtr mb, InstrPtr p)
 {
 	int i;
-	(void) cntxt;
+	(void) ctx;
 
 	if (p->token != ASSIGNsymbol
 		&& getModuleId(p) != calcRef
@@ -65,7 +65,7 @@ OPTsimpleflow(MalBlkPtr mb, int pc)
 
 /* barrier blocks can only be dropped when they are fully excluded.  */
 static str
-OPTremoveUnusedBlocks(Client cntxt, MalBlkPtr mb)
+OPTremoveUnusedBlocks(Client ctx, MalBlkPtr mb)
 {
 	/* catch and remove constant bounded blocks */
 	int i, j = 0, action = 0, block = -1, skip = 0, multipass = 1;
@@ -81,7 +81,7 @@ OPTremoveUnusedBlocks(Client cntxt, MalBlkPtr mb)
 			if (blockExit(p) && block == getArg(p, 0)) {
 				block = -1;
 				skip = 0;
-				freeInstruction(p);
+				freeInstruction(mb, p);
 				mb->stmt[i] = 0;
 				continue;
 			}
@@ -99,7 +99,7 @@ OPTremoveUnusedBlocks(Client cntxt, MalBlkPtr mb)
 					block = getArg(p, 0);
 					skip = 0;
 					action++;
-					freeInstruction(p);
+					freeInstruction(mb, p);
 					mb->stmt[i] = 0;
 					continue;
 				}
@@ -108,7 +108,7 @@ OPTremoveUnusedBlocks(Client cntxt, MalBlkPtr mb)
 					   && getArgType(mb, p, 1) == TYPE_bit && multipass == 0)
 				multipass++;
 			if (skip) {
-				freeInstruction(p);
+				freeInstruction(mb, p);
 				mb->stmt[i] = 0;
 			} else
 				mb->stmt[j++] = p;
@@ -118,12 +118,12 @@ OPTremoveUnusedBlocks(Client cntxt, MalBlkPtr mb)
 			mb->stmt[j] = NULL;
 	}
 	if (action)
-		msg = chkTypes(cntxt->usermodule, mb, TRUE);
+		msg = chkTypes(ctx->usermodule, mb, TRUE);
 	return msg;
 }
 
 str
-OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
+OPTevaluateImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 						  InstrPtr pci)
 {
 	InstrPtr p;
@@ -132,19 +132,18 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	int actions = 0, constantblock = 0;
 	int *assigned = 0, use;
 	str msg = MAL_SUCCEED;
+	allocator *ta = mb->ta;
 
 	(void) stk;
 
-	if (mb->inlineProp)
+	if (mb->inlineProp || MB_LARGE(mb))
 		return MAL_SUCCEED;
 
-	assigned = (int *) GDKzalloc(sizeof(int) * mb->vtop);
-	if (assigned == NULL)
-		throw(MAL, "optimizer.evaluate", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-
-	alias = (int *) GDKzalloc(mb->vsize * sizeof(int) * 2);	/* we introduce more */
-	if (alias == NULL) {
-		GDKfree(assigned);
+	allocator_state ta_state = ma_open(ta);
+	assigned = (int *) ma_zalloc(ta, sizeof(int) * mb->vtop);
+	alias = (int *) ma_zalloc(ta, mb->vtop * sizeof(int) * 2);	/* we introduce more */
+	if (assigned == NULL || alias == NULL) {
+		ma_close(ta, &ta_state);
 		throw(MAL, "optimizer.evaluate", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	// arguments are implicitly assigned by context
@@ -165,7 +164,7 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 				}
 	}
 
-	for (i = 1; i < limit && cntxt->mode != FINISHCLIENT; i++) {
+	for (i = 1; i < limit && ctx->mode != FINISHCLIENT; i++) {
 		p = getInstrPtr(mb, i);
 		// to avoid management of duplicate assignments over multiple blocks
 		// we limit ourselves to evaluation of the first assignment only.
@@ -177,11 +176,11 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 				getArg(p, k) = alias[getArg(p, k)];
 		/* be aware that you only assign once to a variable */
 		if (use && p->retc == 1 && getFunctionId(p)
-			&& OPTallConstant(cntxt, mb, p) && !isUnsafeFunction(p)) {
+			&& OPTallConstant(ctx, mb, p) && !isUnsafeFunction(p)) {
 			barrier = p->barrier;
 			p->barrier = 0;
 			if (env == NULL) {
-				env = prepareMALstack(mb, 2 * mb->vsize);
+				env = prepareMALstack(mb->ma, mb, 2 * mb->vsize);
 				if (!env) {
 					msg = createException(MAL, "optimizer.evaluate",
 										  SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -190,7 +189,7 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 				}
 				env->keepAlive = TRUE;
 			}
-			msg = reenterMAL(cntxt, mb, i, i + 1, env);
+			msg = reenterMAL(ctx, mb, i, i + 1, env);
 			p->barrier = barrier;
 			if (msg == MAL_SUCCEED) {
 				int nvar;
@@ -198,7 +197,7 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 
 				actions++;
 				cst.vtype = 0;
-				if (VALcopy(&cst, &env->stk[getArg(p, 0)]) == NULL) {
+				if (VALcopy(mb->ma, &cst, &env->stk[getArg(p, 0)]) == NULL) {
 					msg = createException(MAL, "optimizer.evaluate",
 										  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					goto wrapup;
@@ -209,7 +208,7 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 				if (nvar >= 0)
 					getArg(p, 1) = nvar;
 				if (nvar >= env->stktop) {
-					if (VALcopy(&env->stk[getArg(p, 1)],
+					if (VALcopy(mb->ma, &env->stk[getArg(p, 1)],
 								&getVarConstant(mb, getArg(p, 1))) == NULL) {
 						msg = createException(MAL, "optimizer.evaluate",
 											  SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -232,16 +231,16 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 				mb->errors = 0;
 			}
 		}
-		constantblock += blockStart(p) && OPTallConstant(cntxt, mb, p);	/* default */
+		constantblock += blockStart(p) && OPTallConstant(ctx, mb, p);	/* default */
 	}
 	// produces errors in SQL when enabled
 	if (constantblock)
-		msg = OPTremoveUnusedBlocks(cntxt, mb);
+		msg = OPTremoveUnusedBlocks(ctx, mb);
 
 	/* Defense line against incorrect plans */
 	/* Plan is unaffected */
 	if (!msg)
-		msg = chkTypes(cntxt->usermodule, mb, FALSE);
+		msg = chkTypes(ctx->usermodule, mb, FALSE);
 	if (!msg)
 		msg = chkFlow(mb);
 	if (!msg)
@@ -249,6 +248,8 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	/* keep all actions taken as a post block comment */
 
   wrapup:
+	ma_close(ta, &ta_state);
+
 	/* keep actions taken as a fake argument */
 	(void) pushInt(mb, pci, actions);
 
@@ -256,9 +257,5 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 		assert(env->stktop < env->stksize);
 		freeStack(env);
 	}
-	if (assigned)
-		GDKfree(assigned);
-	if (alias)
-		GDKfree(alias);
 	return msg;
 }

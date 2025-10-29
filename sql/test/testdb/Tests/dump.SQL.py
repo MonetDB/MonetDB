@@ -38,7 +38,8 @@ if len(sys.argv) == 2 and sys.argv[1] in ('dump', 'dump-nogeom'):
                 output[i] = line[:strt] + vals + line[end:]
 
     stableout = '{}.stable.out'.format(sys.argv[1])
-    stable = open(stableout, encoding='utf-8').readlines()
+    with open(stableout, encoding='utf-8') as fil:
+        stable = fil.readlines()
     import difflib
     for line in difflib.unified_diff(sorted(stable), sorted(output), fromfile='test', tofile=stableout):
         sys.stderr.write(line)

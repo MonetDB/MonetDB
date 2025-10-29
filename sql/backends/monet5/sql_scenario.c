@@ -164,7 +164,18 @@ CLIENTprintinfo(void)
 				snprintf(cpbuf, sizeof(cpbuf), ", client pid: %ld", c->client_pid);
 			else
 				cpbuf[0] = 0;
-			printf("client %d, user %s, thread %s, using %"PRIu64" bytes of transient space%s%s%s%s%s%s%s%s%s\n", c->idx, c->username, c->mythread ? c->mythread : "?", (uint64_t) ATOMIC_GET(&c->qryctx.datasize), mmbuf, tmbuf, trbuf, chbuf, cabuf, clbuf, cpbuf, crbuf, qybuf);
+			char mabuf1[300] = "";
+			char mabuf2[300] = "";
+			char mabuf3[300] = "";
+			ma_info(c->ma, mabuf1, sizeof(mabuf1));
+			if (c->curprg && c->curprg->def)
+				ma_info(c->curprg->def->ma, mabuf2, sizeof(mabuf2));
+			if (c->sqlcontext) {
+				backend *be = (backend*) c->sqlcontext;
+				if (be->mvc)
+					ma_info(be->mvc->pa, mabuf3, sizeof(mabuf3));
+			}
+			printf("client %d, user %s, thread %s, using %"PRIu64" bytes of transient space%s%s%s%s%s%s%s%s%s%s%s%s\n", c->idx, c->username, c->mythread ? c->mythread : "?", (uint64_t) ATOMIC_GET(&c->qryctx.datasize), mmbuf, mabuf1, mabuf2, mabuf3, tmbuf, trbuf, chbuf, cabuf, clbuf, cpbuf, crbuf, qybuf);
 			break;
 		case FINISHCLIENT:
 			/* finishing */
@@ -295,11 +306,12 @@ SQLexit(Client c)
 }
 
 str
-SQLepilogue(void *ret)
+SQLepilogue(Client cntxt, void *ret)
 {
 	static const char s[] = "sql", m[] = "msql";
 	char *msg;
 
+	(void) cntxt;
 	(void) ret;
 	msg = SQLexit(NULL);
 	freeException(msg);
@@ -351,7 +363,7 @@ SQLexecPostLoginTriggers(Client c)
 					Symbol curprg = c->curprg;
 					allocator *sa = m->sa;
 
-					if (!(m->sa = sa_create(m->pa))) {
+					if (!(m->sa = create_allocator(m->pa, "MA_mvc", false))) {
 						m->sa = sa;
 						throw(SQL, "sql.SQLexecPostLoginTriggers", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					}
@@ -359,7 +371,7 @@ SQLexecPostLoginTriggers(Client c)
 					if (r)
 						r = sql_processrelation(m, r, 0, 0, 0, 0);
 					if (!r) {
-						sa_destroy(m->sa);
+						ma_destroy(m->sa);
 						m->sa = sa;
 						if (strlen(m->errstr) > 6 && m->errstr[5] == '!')
 							throw(SQL, "sql.SQLexecPostLoginTriggers", "%s", m->errstr);
@@ -371,7 +383,7 @@ SQLexecPostLoginTriggers(Client c)
 					if (backend_dumpstmt(be, c->curprg->def, r, 1, 1, NULL) < 0) {
 						freeVariables(c, c->curprg->def, NULL, oldvtop);
 						c->curprg = curprg;
-						sa_destroy(m->sa);
+						ma_destroy(m->sa);
 						m->sa = sa;
 						throw(SQL, "sql.SQLexecPostLoginTriggers", SQLSTATE(4200) "%s", "generating MAL failed");
 					}
@@ -381,7 +393,7 @@ SQLexecPostLoginTriggers(Client c)
 					stream *out = be->out;
 					be->out = NULL;	/* no output stream */
 					if (!msg)
-						msg = SQLrun(c, m);
+						msg = SQLrun(c, be);
 
 					// restore previous state
 					be->out = out;
@@ -389,7 +401,7 @@ SQLexecPostLoginTriggers(Client c)
 					freeVariables(c, c->curprg->def, NULL, oldvtop);
 					sqlcleanup(be, 0);
 					c->curprg = curprg;
-					sa_destroy(m->sa);
+					ma_destroy(m->sa);
 					m->sa = sa;
 				}
 			}
@@ -414,14 +426,14 @@ userCheckCredentials( mvc *m, Client c, const char *pwhash, const char *challeng
 	    /* find the corresponding password to the user */
 
 	str pwd = NULL;
-	str msg = AUTHdecypherValue(&pwd, passValue);
+	str msg = AUTHdecypherValue(c->ma, &pwd, passValue);
 	GDKfree(passValue);
 	if (msg)
 		return msg;
 
 	/* generate the hash as the client should have done */
 	str hash = mcrypt_hashPassword(algo, pwd, challenge);
-	GDKfree(pwd);
+	//GDKfree(pwd);
 	if(!hash)
 		throw(MAL, "checkCredentials", "hash '%s' backend not found", algo);
 
@@ -467,7 +479,7 @@ SQLprepareClient(Client c, const char *pwhash, const char *challenge, const char
 	if (msg)
 		return msg;
 	if (c->sqlcontext == 0) {
-		allocator *sa = sa_create(NULL);
+		allocator *sa = create_allocator(NULL, "PA_mvc", false);
 		if (sa == NULL) {
 			msg = createException(SQL,"sql.initClient", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto bailout2;
@@ -571,10 +583,10 @@ SQLprepareClient(Client c, const char *pwhash, const char *challenge, const char
 				sql_schema *s = mvc_bind_schema(m, "sys");
 				sql_var *var = find_global_var(m, s, "current_timezone");
 				ValRecord val;
-				VALinit(&val, TYPE_lng, &(lng){1000 * value});
+				VALinit(m->sa, &val, TYPE_lng, &(lng){1000 * value});
 				if ((msg = sql_update_var(m, s, "current_timezone", &val)))
 					goto bailout1;
-				sqlvar_set(var, &val);
+				sqlvar_set(m->sa, var, &val);
 			} else {
 				msg = createException(SQL, "SQLprepareClient", SQLSTATE(42000) "unexpected handshake option: %s", tok);
 				goto bailout1;
@@ -628,7 +640,7 @@ SQLresetClient(Client c)
 		backend_destroy(be);
 		c->sqlcontext = NULL;
 		c->query = NULL;
-		sa_destroy(pa);
+		ma_destroy(pa);
 	}
 	if (other && !msg)
 		msg = other;
@@ -762,8 +774,10 @@ SQLinit(Client c, const char *initpasswd)
 			const char *createdb_inline = (const char*)sql_module[i].code;
 
 			msg = SQLstatementIntern(c, createdb_inline, "sql.init", TRUE, FALSE, NULL);
-			if (m->sa)
-				sa_destroy(m->sa);
+			if (m->sa) {
+				assert(0);
+				ma_destroy(m->sa);
+			}
 			m->sa = NULL;
 		}
 		/* 99_system.sql */
@@ -784,8 +798,10 @@ SQLinit(Client c, const char *initpasswd)
 				"update sys.functions set system = true where schema_id in (select id from sys.schemas s where s.system);\n"
 				"update sys._tables set system = true where schema_id in (select id from sys.schemas s where s.system);\n";
 			msg = SQLstatementIntern(c, createdb_inline, "sql.init", TRUE, FALSE, NULL);
-			if (m->sa)
-				sa_destroy(m->sa);
+			if (m->sa) {
+				assert(0);
+				ma_destroy(m->sa);
+			}
 			m->sa = NULL;
 		}
 		/* Commit after all the startup scripts have been processed */
@@ -802,11 +818,12 @@ SQLinit(Client c, const char *initpasswd)
 		if (msg)
 			TRC_INFO(SQL_PARSER, "%s\n", msg);
 	} else {		/* handle upgrades */
-		if (!m->sa)
-			m->sa = sa_create(m->pa);
 		if (!m->sa) {
-			msg = createException(MAL, "createdb", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		} else if (maybeupgrade) {
+			m->sa = create_allocator(m->pa, "MA_mvc", false);
+			if (!m->sa)
+				msg = createException(MAL, "createdb", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		}
+		if (!msg && maybeupgrade) {
 			if ((msg = SQLtrans(m)) == MAL_SUCCEED) {
 				int res = SQLupgrades(c, m);
 				/* Commit at the end of the upgrade */
@@ -870,20 +887,20 @@ handle_error(mvc *m, int pstatus, str msg)
 		freeException(msg);
 		return createException(SQL,"sql.execute",TRANS_ABORTED);
 	} else if ( GDKerrbuf && GDKerrbuf[0]){
-		new = GDKstrdup(GDKerrbuf);
+		new = ma_strdup(m->sa, GDKerrbuf);
 		GDKerrbuf[0] = 0;
 	} else if ( *m->errstr){
-		new = GDKstrdup(m->errstr);
+		new = ma_strdup(m->sa, m->errstr);
 		m->errstr[0] = 0;
 	}
 	if ( new && msg){
-		newmsg = concatErrors(msg, new);
-		GDKfree(new);
+		newmsg = concatErrors(m->sa, msg, new);
+		//GDKfree(new);
 	} else if (msg)
 		newmsg = msg;
 	else if (new) {
 		newmsg = createException(SQL, "sql.execute", "%s", new);
-		GDKfree(new);
+		//GDKfree(new);
 	} else {
 		newmsg = createException(SQL, "sql.execute", MAL_MALLOC_FAIL);
 	}
@@ -1097,8 +1114,10 @@ SQLinclude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	msg = SQLstatementIntern(cntxt, bfd->buf, "sql.include", TRUE, FALSE, NULL);
 	bstream_destroy(bfd);
 	m = ((backend *) cntxt->sqlcontext)->mvc;
-	if (m->sa)
-		sa_destroy(m->sa);
+	if (m->sa) {
+		assert(0);
+		ma_destroy(m->sa);
+	}
 	m->sa = NULL;
 	(void) mb;
 	return msg;
@@ -1584,7 +1603,7 @@ SQLparser_body(Client c, backend *be)
 				}
 			}
 		} else {
-			char *q_copy = sa_strdup(m->sa, c->query);
+			char *q_copy = ma_strdup(m->sa, c->query);
 
 			be->q = NULL;
 			if (!q_copy) {
@@ -1621,11 +1640,12 @@ SQLparser_body(Client c, backend *be)
 					msg = createException(PARSE, "SQLparser", SQLSTATE(45000) "Export operation failed: %s", mvc_export_error(be, c->fdout, res));
 					err = 1;
 				}
+				int qc_id = be->q->id;
 				if (err) {
 					be->q->name = NULL; /* later remove cleanup from mal from qc code */
 					qc_delete(m->qc, be->q);
 				}
-				be->result_id = be->q->id;
+				be->result_id = qc_id;
 				be->q = NULL;
 			}
 			if (err)
@@ -1637,7 +1657,7 @@ SQLparser_body(Client c, backend *be)
 	}
 finalize:
 	if (m->sa)
-		eb_init(sa_get_eb(m->sa)); /* exiting the scope where the exception buffer can be used */
+		eb_init(ma_get_eb(m->sa)); /* exiting the scope where the exception buffer can be used */
 	if (msg) {
 		sqlcleanup(be, 0);
 		c->query = NULL;
@@ -1663,16 +1683,17 @@ SQLparser(Client c, backend *be)
 
 	/* sqlparse needs sql allocator to be available.  It can be NULL at
 	 * this point if this is a recursive call. */
-	if (m->sa == NULL)
-		m->sa = sa_create(m->pa);
 	if (m->sa == NULL) {
-		c->mode = FINISHCLIENT;
-		throw(SQL, "SQLparser", SQLSTATE(HY013) MAL_MALLOC_FAIL " for SQL allocator");
+		m->sa = create_allocator(m->pa, "MA_mvc", false);
+		if (m->sa == NULL) {
+			c->mode = FINISHCLIENT;
+			throw(SQL, "SQLparser", SQLSTATE(HY013) MAL_MALLOC_FAIL " for SQL allocator");
+		}
 	}
-	if (eb_savepoint(sa_get_eb(m->sa))) {
-		msg = createException(SQL, "SQLparser", "%s", sa_get_eb(m->sa)->msg);
-		eb_init(sa_get_eb(m->sa));
-		sa_reset(m->sa);
+	if (eb_savepoint(ma_get_eb(m->sa))) {
+		msg = createException(SQL, "SQLparser", "%s", ma_get_eb(m->sa)->msg);
+		eb_init(ma_get_eb(m->sa));
+		// ma_reset(m->sa);
 		if (c && c->curprg && c->curprg->def && c->curprg->def->errors) {
 			freeException(c->curprg->def->errors);
 			c->curprg->def->errors = NULL;
@@ -1728,7 +1749,7 @@ SQLengine_(Client c)
 	assert (m->emode != m_deallocate && m->emode != m_prepare);
 	assert (c->curprg->def->stop > 2);
 
-	msg = SQLrun(c, m);
+	msg = SQLrun(c, be);
 
 	if (m->type == Q_SCHEMA && m->qc != NULL)
 		qc_clean(m->qc);

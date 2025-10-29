@@ -15,7 +15,8 @@
 
 #include "mal.h"
 #include "gdk.h"
+#include "mal_client.h"
 
 mal_export str BKCnewBAT(bat *res, const int *tt, const BUN *cap, role_t role);
-mal_export str BKCmirror(bat *ret, const bat *bid);
+mal_export str BKCmirror(Client ctx, bat *ret, const bat *bid);
 #endif /*_BAT_H_*/

@@ -802,8 +802,9 @@ LOCKEDAGGRmax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 static str
-LOCKEDAGGRnull(bat *result, const ptr *h, const bit *hadnull)
+LOCKEDAGGRnull(Client ctx, bat *result, const ptr *h, const bit *hadnull)
 {
+	(void)ctx;
 	Pipeline *p = (Pipeline*)*h;
 	str err = MAL_SUCCEED;
 
@@ -837,13 +838,13 @@ LOCKEDAGGRnull(bat *result, const ptr *h, const bit *hadnull)
 }
 
 static str
-LALGprojection(bat *result, const ptr *h, const bat *lid, const bat *rid)
+LALGprojection(Client ctx, bat *result, const ptr *h, const bat *lid, const bat *rid)
 {
 	Pipeline *p = (Pipeline*)*h;
 	str res;
 
 	pipeline_lock(p);
-	res = ALGprojection(result, lid, rid);
+	res = ALGprojection(ctx, result, lid, rid);
 	pipeline_unlock(p);
 	return res;
 }
@@ -994,7 +995,7 @@ LALGprojection(bat *result, const ptr *h, const bat *lid, const bat *rid)
 		gid slot = 0; \
 		BATiter bi = bat_iterator(b); \
 		Type *vals = h->vals; \
-		mallocator *ma = h->allocators[p->wid]; \
+		allocator *ma = h->allocators[p->wid]; \
 		\
 		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
 			bool new = 0, fnd = 0; \
@@ -1086,8 +1087,9 @@ LALGprojection(bat *result, const ptr *h, const bat *lid, const bat *rid)
 	}
 
 static str
-LALGunique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid)
+LALGunique(Client ctx, bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid)
 {
+	(void)ctx;
 	Pipeline *p = (Pipeline*)*H;
 	assert(!is_bat_nil(*uid));
 	str err = NULL;
@@ -1112,7 +1114,7 @@ LALGunique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid)
 		MT_lock_unset(&u->theaplock);
 		pipeline_lock(p);
 		if (!h->allocators) {
-			h->allocators = (mallocator**)GDKzalloc(p->p->nr_workers*sizeof(mallocator*));
+			h->allocators = (allocator**)GDKzalloc(p->p->nr_workers*sizeof(allocator*));
 			if (!h->allocators) {
 				pipeline_unlock(p);
 				err = createException(MAL, "pp algebra.(group )unique", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -1123,7 +1125,9 @@ LALGunique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid)
 		pipeline_unlock(p);
 		assert(p->wid < p->p->nr_workers);
 		if (!h->allocators[p->wid]) {
-			h->allocators[p->wid] = ma_create();
+			char name[8];
+			snprintf(name, sizeof(name), "pp%d", p->wid);
+			h->allocators[p->wid] = create_allocator(NULL, name, false);
 			if (!h->allocators[p->wid]) {
 				err = createException(MAL, "pp algebra.(group )unique", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto error;
@@ -1371,7 +1375,7 @@ LALGunique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid)
 		gid slot = 0; \
 		BATiter bi = bat_iterator(b); \
 		Type *vals = h->vals; \
-		mallocator *ma = h->allocators[p->wid]; \
+		allocator *ma = h->allocators[p->wid]; \
 		\
 		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
 			bool new = 0, fnd = 0; \
@@ -1469,8 +1473,9 @@ LALGunique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid)
 	}
 
 static str
-LALGgroup_unique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid, bat *Gid)
+LALGgroup_unique(Client ctx, bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid, bat *Gid)
 {
+	(void)ctx;
 	Pipeline *p = (Pipeline*)*H;
 	assert(!is_bat_nil(*uid));
 	str err = NULL;
@@ -1496,7 +1501,7 @@ LALGgroup_unique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid, bat *Gid)
 		MT_lock_unset(&u->theaplock);
 		pipeline_lock(p);
 		if (!h->allocators) {
-			h->allocators = (mallocator**)GDKzalloc(p->p->nr_workers*sizeof(mallocator*));
+			h->allocators = (allocator**)GDKzalloc(p->p->nr_workers*sizeof(allocator*));
 			if (!h->allocators) {
 				pipeline_unlock(p);
 				err = createException(MAL, "pp algebra.(group )unique", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -1507,7 +1512,9 @@ LALGgroup_unique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid, bat *Gid)
 		pipeline_unlock(p);
 		assert(p->wid < p->p->nr_workers);
 		if (!h->allocators[p->wid]) {
-			h->allocators[p->wid] = ma_create();
+			char name[8];
+			snprintf(name, sizeof(name), "pp%d", p->wid);
+			h->allocators[p->wid] = create_allocator(NULL, name, false);
 			if (!h->allocators[p->wid]) {
 				err = createException(MAL, "pp algebra.(group )unique", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto error;
@@ -1829,7 +1836,7 @@ LALGgroup_unique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid, bat *Gid)
 		gid slot = 0; \
 		BATiter bi = bat_iterator(b); \
 		Type *vals = h->vals; \
-		mallocator *ma = h->allocators[P->wid]; \
+		allocator *ma = h->allocators[P->wid]; \
 		\
 		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
 			bool fnd = 0; \
@@ -1872,7 +1879,7 @@ LALGgroup_unique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid, bat *Gid)
 		gid slot = 0; \
 		BATiter bi = bat_iterator(b); \
 		char **vals = h->vals; \
-		mallocator *ma = h->allocators[P->wid]; \
+		allocator *ma = h->allocators[P->wid]; \
 		\
 		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
 			bool fnd = 0; \
@@ -1955,8 +1962,9 @@ LALGgroup_unique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid, bat *Gid)
 		} \
 
 static str
-LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
+LALGgroup(Client ctx, bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 {
+	(void)ctx;
 	Pipeline *p = (Pipeline*)*H;
 	/* private or not */
 	bool private = (!*uid || is_bat_nil(*uid)), local_storage = false;
@@ -2003,7 +2011,7 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 		MT_lock_unset(&u->theaplock);
 		pipeline_lock(p);
 		if (!h->allocators) {
-			h->allocators = (mallocator**)GDKzalloc(p->p->nr_workers*sizeof(mallocator*));
+			h->allocators = (allocator**)GDKzalloc(p->p->nr_workers*sizeof(allocator*));
 			if (!h->allocators) {
 				pipeline_unlock(p);
 				err = createException(MAL, "pp group.group", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -2014,7 +2022,9 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 		pipeline_unlock(p);
 		assert(p->wid < p->p->nr_workers);
 		if (!h->allocators[p->wid]) {
-			h->allocators[p->wid] = ma_create();
+			char name[8];
+			snprintf(name, sizeof(name), "pp%d", p->wid);
+			h->allocators[p->wid] = create_allocator(NULL, name, false);
 			if (!h->allocators[p->wid]) {
 				err = createException(MAL, "pp group.group", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto error;
@@ -2293,7 +2303,7 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 		gid slot = 0; \
 		BATiter bi = bat_iterator(b); \
 		Type *vals = h->vals; \
-		mallocator *ma = h->allocators[P->wid]; \
+		allocator *ma = h->allocators[P->wid]; \
 		\
 		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
 			bool fnd = 0; \
@@ -2339,7 +2349,7 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 		gid slot = 0; \
 		BATiter bi = bat_iterator(b); \
 		Type *vals = h->vals; \
-		mallocator *ma = h->allocators[P->wid]; \
+		allocator *ma = h->allocators[P->wid]; \
 		\
 		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
 			bool fnd = 0; \
@@ -2383,8 +2393,9 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 	} \
 
 static str
-LALGderive(bat *rid, bat *uid, const ptr *H, bat *Gid, bat *Ph, bat *bid /*, bat *sid*/)
+LALGderive(Client ctx, bat *rid, bat *uid, const ptr *H, bat *Gid, bat *Ph, bat *bid /*, bat *sid*/)
 {
+	(void)ctx;
 	Pipeline *p = (Pipeline*)*H;
 	bool private = (!*uid || is_bat_nil(*uid)), local_storage = false;
 	str err = NULL;
@@ -2440,7 +2451,7 @@ LALGderive(bat *rid, bat *uid, const ptr *H, bat *Gid, bat *Ph, bat *bid /*, bat
 		MT_lock_unset(&u->theaplock);
 		pipeline_lock(p);
 		if (!h->allocators) {
-			h->allocators = (mallocator**)GDKzalloc(p->p->nr_workers*sizeof(mallocator*));
+			h->allocators = (allocator**)GDKzalloc(p->p->nr_workers*sizeof(allocator*));
 			if (!h->allocators) {
 				pipeline_unlock(p);
 				err = createException(MAL, "pp group.group(derive)", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -2451,7 +2462,9 @@ LALGderive(bat *rid, bat *uid, const ptr *H, bat *Gid, bat *Ph, bat *bid /*, bat
 		pipeline_unlock(p);
 		assert(p->wid < p->p->nr_workers);
 		if (!h->allocators[p->wid]) {
-			h->allocators[p->wid] = ma_create();
+			char name[8];
+			snprintf(name, sizeof(name), "pp%d", p->wid);
+			h->allocators[p->wid] = create_allocator(NULL, name, false);
 			if (!h->allocators[p->wid]) {
 				err = createException(MAL, "pp group.group(derive)", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto error;
@@ -2646,8 +2659,9 @@ LALGderive(bat *rid, bat *uid, const ptr *H, bat *Gid, bat *Ph, bat *bid /*, bat
 /* this (possibly) overwrites the values, therefor for expensive (var) types we
  * only write offsets (ie use the heap from the parent) */
 static str
-LALGproject(bat *rid, bat *gid, bat *bid, const ptr *H)
+LALGproject(Client ctx, bat *rid, bat *gid, bat *bid, const ptr *H)
 {
+	(void)ctx;
 	Pipeline *p = (Pipeline*)*H; /* last arg should move to first argument .. */
 	BAT *g = NULL, *b = NULL, *r = NULL;
 	str err = NULL;
@@ -2811,8 +2825,9 @@ LALGproject(bat *rid, bat *gid, bat *bid, const ptr *H)
 }
 
 static str
-LALGcountstar(bat *rid, bat *gid, const ptr *H, bat *pid)
+LALGcountstar(Client ctx, bat *rid, bat *gid, const ptr *H, bat *pid)
 {
+	(void)ctx;
 	//Pipeline *p = (Pipeline*)*H; /* last arg should move to first argument .. */
 	(void)H;
 	BAT *r = NULL, *g = NULL;
@@ -2931,11 +2946,11 @@ LALGcountstar(bat *rid, bat *gid, const ptr *H, bat *pid)
 	}
 
 static str
-LALGcount(bat *rid, bat *gid, bat *bid, bit *nonil, const ptr *H, bat *pid)
+LALGcount(Client ctx, bat *rid, bat *gid, bat *bid, bit *nonil, const ptr *H, bat *pid)
 {
 	//Pipeline *p = (Pipeline*)*H; /* last arg should move to first argument .. */
 	if (!(*nonil))
-		return LALGcountstar(rid, gid, H, pid);
+		return LALGcountstar(ctx, rid, gid, H, pid);
 
 	/* use bid to check for null values */
 	BAT *g = NULL, *b = NULL, *r = NULL;
@@ -4157,8 +4172,9 @@ getoffset(const void *b, BUN p, int w)
 	}
 
 static str
-LALGmin(bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
+LALGmin(Client ctx, bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 {
+	(void)ctx;
 	Pipeline *p = (Pipeline*)*H; /* last arg should move to first argument .. */
 	BAT *g = NULL, *b = NULL, *r = NULL;
 	str err = NULL;
@@ -4315,8 +4331,9 @@ LALGmin(bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 }
 
 static str
-LALGmax(bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
+LALGmax(Client ctx, bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 {
+	(void)ctx;
 	Pipeline *p = (Pipeline*)*H; /* last arg should move to first argument .. */
 	BAT *g = NULL, *b = NULL, *r = NULL;
 	str err = NULL;
@@ -4477,8 +4494,9 @@ LALGmax(bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 		} \
 	} while (0)
 static str
-LALGnull(bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
+LALGnull(Client ctx, bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 {
+	(void)ctx;
 	(void) H; /* last arg should move to first argument .. */
 	BAT *g = NULL, *b = NULL, *r = NULL;
 	str err = NULL;
@@ -4608,8 +4626,9 @@ LALGnull(bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 }
 
 static str
-LALGcnull(bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
+LALGcnull(Client ctx, bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 {
+	(void)ctx;
 	(void) H; /* last arg should move to first argument .. */
 	BAT *g = NULL, *b = NULL, *r = NULL;
 	str err = NULL;
@@ -4717,8 +4736,9 @@ LALGcnull(bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 	}
 
 static str
-LALGquantile(bat *rid, bat *gid, bat *bid, bte *perc)
+LALGquantile(Client ctx, bat *rid, bat *gid, bat *bid, bte *perc)
 {
+	(void)ctx;
 	BAT *g = NULL, *b = NULL, *r = NULL;
 	str err = NULL;
 	bte p = *perc;
@@ -4805,8 +4825,9 @@ LALGquantile(bat *rid, bat *gid, bat *bid, bte *perc)
 }
 
 static str
-ALGcountCND_nil(lng *result, const bat *bid, const bat *cnd, const bit *ignore_nils)
+ALGcountCND_nil(Client ctx, lng *result, const bat *bid, const bat *cnd, const bit *ignore_nils)
 {
+	(void)ctx;
 	BAT *b = NULL, *s = NULL;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
@@ -4837,37 +4858,37 @@ ALGcountCND_nil(lng *result, const bat *bid, const bat *cnd, const bit *ignore_n
 }
 
 static str
-ALGcount_nil(lng *result, const bat *bid, const bit *ignore_nils)
+ALGcount_nil(Client ctx, lng *result, const bat *bid, const bit *ignore_nils)
 {
-	return ALGcountCND_nil(result, bid, NULL, ignore_nils);
+	return ALGcountCND_nil(ctx, result, bid, NULL, ignore_nils);
 }
 
 static str
-ALGcountCND_bat(lng *result, const bat *bid, const bat *cnd)
+ALGcountCND_bat(Client ctx, lng *result, const bat *bid, const bat *cnd)
 {
-	return ALGcountCND_nil(result, bid, cnd, &(bit){0});
+	return ALGcountCND_nil(ctx, result, bid, cnd, &(bit){0});
 }
 
 static str
-ALGcount_bat(lng *result, const bat *bid)
+ALGcount_bat(Client ctx, lng *result, const bat *bid)
 {
-	return ALGcountCND_nil(result, bid, NULL, &(bit){0});
+	return ALGcountCND_nil(ctx, result, bid, NULL, &(bit){0});
 }
 
 static str
-ALGcountCND_no_nil(lng *result, const bat *bid, const bat *cnd)
+ALGcountCND_no_nil(Client ctx, lng *result, const bat *bid, const bat *cnd)
 {
-	return ALGcountCND_nil(result, bid, cnd, &(bit){1});
+	return ALGcountCND_nil(ctx, result, bid, cnd, &(bit){1});
 }
 
 static str
-ALGcount_no_nil(lng *result, const bat *bid)
+ALGcount_no_nil(Client ctx, lng *result, const bat *bid)
 {
-	return ALGcountCND_nil(result, bid, NULL, &(bit){1});
+	return ALGcountCND_nil(ctx, result, bid, NULL, &(bit){1});
 }
 
 static str
-ALGminany_skipnil(ptr result, const bat *bid, const bit *skipnil)
+ALGminany_skipnil(Client ctx, ptr result, const bat *bid, const bit *skipnil)
 {
 	BAT *b;
 	ptr p;
@@ -4879,18 +4900,17 @@ ALGminany_skipnil(ptr result, const bat *bid, const bit *skipnil)
 	if (!ATOMlinear(b->ttype)) {
 		msg = createException(MAL, "iaggr.min", "atom '%s' cannot be ordered linearly", ATOMname(b->ttype));
 	} else {
+		allocator *ma = ctx->curprg->def->ma;
 		if (ATOMextern(b->ttype)) {
 			const void *nil = ATOMnilptr(b->ttype);
 			int (*cmp)(const void *v1,const void *v2) = ATOMcompare(b->ttype);
 
-			p = BATmin_skipnil(b, NULL, *skipnil, false);
+			p = BATmin_skipnil(ma, b, NULL, *skipnil, false);
 			if (cmp(*(ptr*)result, nil) == 0 || (cmp(p, nil) != 0 && cmp(p, *(ptr*)result) < 0))
 				* (ptr *) result = p;
-			else
-				GDKfree(p);
 		} else {
-			p = BATmin_skipnil(b, result, *skipnil, true);
-			if ( p != result )
+			p = BATmin_skipnil(ma, b, result, *skipnil, true);
+			if (p != result )
 				msg = createException(MAL, "iaggr.min", SQLSTATE(HY002) "INTERNAL ERROR");
 		}
 		if (msg == MAL_SUCCEED && p == NULL)
@@ -4901,14 +4921,14 @@ ALGminany_skipnil(ptr result, const bat *bid, const bit *skipnil)
 }
 
 static str
-ALGminany(ptr result, const bat *bid)
+ALGminany(Client ctx, ptr result, const bat *bid)
 {
 	bit skipnil = TRUE;
-	return ALGminany_skipnil(result, bid, &skipnil);
+	return ALGminany_skipnil(ctx, result, bid, &skipnil);
 }
 
 static str
-ALGmaxany_skipnil(ptr result, const bat *bid, const bit *skipnil)
+ALGmaxany_skipnil(Client ctx, ptr result, const bat *bid, const bit *skipnil)
 {
 	BAT *b;
 	ptr p;
@@ -4920,18 +4940,17 @@ ALGmaxany_skipnil(ptr result, const bat *bid, const bit *skipnil)
 	if (!ATOMlinear(b->ttype)) {
 		msg = createException(MAL, "iaggr.max", "atom '%s' cannot be ordered linearly", ATOMname(b->ttype));
 	} else {
+		allocator *ma = ctx->curprg->def->ma;
 		if (ATOMextern(b->ttype)) {
 			const void *nil = ATOMnilptr(b->ttype);
 			int (*cmp)(const void *v1,const void *v2) = ATOMcompare(b->ttype);
 
-			p = BATmax_skipnil(b, NULL, *skipnil, false);
+			p = BATmax_skipnil(ma, b, NULL, *skipnil, false);
 			if (cmp(*(ptr*)result, nil) == 0 || (cmp(p, nil) != 0 && cmp(p, *(ptr*)result) > 0))
 				* (ptr *) result = p;
-			else
-				GDKfree(p);
 		} else {
-			p = BATmax_skipnil(b, result, *skipnil, true);
-			if ( p != result )
+			p = BATmax_skipnil(ma, b, result, *skipnil, true);
+			if (p != result )
 				msg = createException(MAL, "iaggr.max", SQLSTATE(HY002) "INTERNAL ERROR");
 		}
 		if ( msg == MAL_SUCCEED && p == NULL)
@@ -4942,10 +4961,10 @@ ALGmaxany_skipnil(ptr result, const bat *bid, const bit *skipnil)
 }
 
 static str
-ALGmaxany(ptr result, const bat *bid)
+ALGmaxany(Client ctx, ptr result, const bat *bid)
 {
 	bit skipnil = TRUE;
-	return ALGmaxany_skipnil(result, bid, &skipnil);
+	return ALGmaxany_skipnil(ctx, result, bid, &skipnil);
 }
 
 #define ALGnull_impl(TPE) \
@@ -4960,8 +4979,9 @@ ALGmaxany(ptr result, const bat *bid)
 	} while (0)
 
 static str
-ALGnull(bit *result, const bat *bid)
+ALGnull(Client ctx, bit *result, const bat *bid)
 {
+	(void)ctx;
 	BAT *b = NULL;
 	bit hasnull = false;
 	str msg = MAL_SUCCEED;
@@ -5027,8 +5047,9 @@ ALGnull(bit *result, const bat *bid)
 }
 
 static str
-ALGfsum_skipnil_flt(flt *result, flt *rcom, lng *rcnt, const bat *bid, const bit *skipnil)
+ALGfsum_skipnil_flt(Client ctx, flt *result, flt *rcom, lng *rcnt, const bat *bid, const bit *skipnil)
 {
+	(void)ctx;
 	BAT *b;
 	str err = MAL_SUCCEED;
 
@@ -5074,15 +5095,16 @@ ALGfsum_skipnil_flt(flt *result, flt *rcom, lng *rcnt, const bat *bid, const bit
 }
 
 static str
-ALGfsum_flt(flt *result, flt *com, lng *cnt, const bat *bid)
+ALGfsum_flt(Client ctx, flt *result, flt *com, lng *cnt, const bat *bid)
 {
 	bit skipnil = TRUE;
-	return ALGfsum_skipnil_flt(result, com, cnt, bid, &skipnil);
+	return ALGfsum_skipnil_flt(ctx, result, com, cnt, bid, &skipnil);
 }
 
 static str
-ALGfsum_skipnil(dbl *result, dbl *rcom, lng *rcnt, const bat *bid, const bit *skipnil)
+ALGfsum_skipnil(Client ctx, dbl *result, dbl *rcom, lng *rcnt, const bat *bid, const bit *skipnil)
 {
+	(void)ctx;
 	BAT *b;
 	str err = MAL_SUCCEED;
 
@@ -5151,10 +5173,10 @@ ALGfsum_skipnil(dbl *result, dbl *rcom, lng *rcnt, const bat *bid, const bit *sk
 }
 
 static str
-ALGfsum(dbl *result, dbl *com, lng *cnt, const bat *bid)
+ALGfsum(Client ctx, dbl *result, dbl *com, lng *cnt, const bat *bid)
 {
 	bit skipnil = TRUE;
-	return ALGfsum_skipnil(result, com, cnt, bid, &skipnil);
+	return ALGfsum_skipnil(ctx, result, com, cnt, bid, &skipnil);
 }
 
 #include "mel.h"

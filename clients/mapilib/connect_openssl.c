@@ -139,7 +139,7 @@ verify_server_certificate_hash(Mapi mid, X509 *x509, const char *required_prefix
 	}
 	assert(buf);
 
-	// Compute the has of the DER using the deprecated API so we stay
+	// Compute the hash of the DER using the deprecated API so we stay
 	// compatible with OpenSSL 1.1.1.
 	SHA256_CTX sha256;
 	if (1 != SHA256_Init(&sha256)) {

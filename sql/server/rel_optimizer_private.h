@@ -25,7 +25,8 @@ typedef struct global_props {
 		needs_distinct:1,
 		opt_level:1, /* 0 run necessary rewriters, 1 run all optimizers */
 		recursive:1,
-		complex_modify:1;	/* modify with cascades and/or triggers */
+		complex_modify:1,	/* modify with cascades and/or triggers */
+		has_pkey:1; /* any table has a pkey */
 	uint8_t opt_cycle; /* the optimization cycle number */
 } global_props;
 

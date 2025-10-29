@@ -76,11 +76,11 @@ extern str mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 extern str mvc_clear_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 extern str mvc_delete_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 extern str SQLtid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str DELTAbat(bat *result, const bat *col, const bat *uid, const bat *uval);
-extern str DELTAsub(bat *result, const bat *col, const bat *cid, const bat *uid, const bat *uval);
-extern str DELTAproject(bat *result, const bat *select, const bat *col, const bat *uid, const bat *uval);
+extern str DELTAbat(Client ctx, bat *result, const bat *col, const bat *uid, const bat *uval);
+extern str DELTAsub(Client ctx, bat *result, const bat *col, const bat *cid, const bat *uid, const bat *uval);
+extern str DELTAproject(Client ctx, bat *result, const bat *select, const bat *col, const bat *uid, const bat *uval);
 
-extern str BATleftproject(bat *result, const bat *col, const bat *l, const bat *r);
+extern str BATleftproject(Client ctx, bat *result, const bat *col, const bat *l, const bat *r);
 
 extern str mvc_table_result_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
@@ -105,9 +105,9 @@ extern str mvc_next_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 extern str mvc_next_value_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 extern str mvc_get_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 extern str mvc_peak_next_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str mvc_getVersion(lng *r, const int *clientid);
+extern str mvc_getVersion(Client ctx, lng *r, const int *clientid);
 extern str mvc_restart_seq(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str not_unique(bit *ret, const bat *bid);
+extern str not_unique(Client ctx, bit *ret, const bat *bid);
 extern str SQLdrop_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 extern str SQLargRecord(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 extern str SQLoptimizersUpdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -126,144 +126,144 @@ extern str sql_rank_grp(bat *rid, const bat *bid, const bat *gid, const bat *gpe
 extern str sql_rank(bat *rid, const bat *bid);
 extern str sql_dense_rank_grp(bat *rid, const bat *bid, const bat *gid, const bat *gpe);
 extern str sql_dense_rank(bat *rid, const bat *bid);
-extern str SQLidentity(oid *rid, const void *i);
-extern str BATSQLidentity(bat *rid, const bat *bid);
+extern str SQLidentity(Client ctx, oid *rid, const void *i);
+extern str BATSQLidentity(Client ctx, bat *rid, const bat *bid);
 extern str PBATSQLidentity(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 extern str create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp, int replace);
 sql5_export str create_table_from_emit(Client cntxt, char *sname, char *tname, sql_emit_col *columns, size_t ncols);
 sql5_export str append_to_table_from_emit(Client cntxt, char *sname, char *tname, sql_emit_col *columns, size_t ncols);
 
-extern str bte_dec_round_wrap(bte *res, const bte *v, const bte *r);
+extern str bte_dec_round_wrap(Client ctx, bte *res, const bte *v, const bte *r);
 extern str bte_bat_dec_round_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 extern str bte_bat_dec_round_wrap_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 extern str bte_bat_dec_round_wrap_nocst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str bte_round_wrap(bte *res, const bte *v, const bte *r, const int *d, const int *s);
+extern str bte_round_wrap(Client ctx, bte *res, const bte *v, const bte *r, const int *d, const int *s);
 extern str bte_bat_round_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 extern str bte_bat_round_wrap_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 extern str bte_bat_round_wrap_nocst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 
-extern str str_2dec_bte(bte *res, const str *val, const int *d, const int *sc);
+extern str str_2dec_bte(Client ctx, bte *res, const str *val, const int *d, const int *sc);
 extern str batstr_2dec_bte(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str bte_dec2second_interval(lng *res, const int *sc, const bte *dec, const int *ek, const int *sk);
+extern str bte_dec2second_interval(Client ctx, lng *res, const int *sc, const bte *dec, const int *ek, const int *sk);
 extern str bte_batdec2second_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
-extern str nil_2dec_bte(bte *res, const void *val, const int *d, const int *sc);
-extern str batnil_2dec_bte(bat *res, const bat *val, const int *d, const int *sc);
+extern str nil_2dec_bte(Client ctx, bte *res, const void *val, const int *d, const int *sc);
+extern str batnil_2dec_bte(Client ctx, bat *res, const bat *val, const int *d, const int *sc);
 
-extern str sht_dec_round_wrap(sht *res, const sht *v, const sht *r);
+extern str sht_dec_round_wrap(Client ctx, sht *res, const sht *v, const sht *r);
 extern str sht_bat_dec_round_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 extern str sht_bat_dec_round_wrap_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 extern str sht_bat_dec_round_wrap_nocst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str sht_round_wrap(sht *res, const sht *v, const bte *r, const int *d, const int *s);
+extern str sht_round_wrap(Client ctx, sht *res, const sht *v, const bte *r, const int *d, const int *s);
 extern str sht_bat_round_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 extern str sht_bat_round_wrap_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 extern str sht_bat_round_wrap_nocst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str str_2dec_sht(sht *res, const str *val, const int *d, const int *sc);
+extern str str_2dec_sht(Client ctx, sht *res, const str *val, const int *d, const int *sc);
 extern str batstr_2dec_sht(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str sht_dec2second_interval(lng *res, const int *sc, const sht *dec, const int *ek, const int *sk);
+extern str sht_dec2second_interval(Client ctx, lng *res, const int *sc, const sht *dec, const int *ek, const int *sk);
 extern str sht_batdec2second_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
-extern str nil_2dec_sht(sht *res, const void *val, const int *d, const int *sc);
-extern str batnil_2dec_sht(bat *res, const bat *val, const int *d, const int *sc);
+extern str nil_2dec_sht(Client ctx, sht *res, const void *val, const int *d, const int *sc);
+extern str batnil_2dec_sht(Client ctx, bat *res, const bat *val, const int *d, const int *sc);
 
-extern str int_dec_round_wrap(int *res, const int *v, const int *r);
+extern str int_dec_round_wrap(Client ctx, int *res, const int *v, const int *r);
 extern str int_bat_dec_round_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 extern str int_bat_dec_round_wrap_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 extern str int_bat_dec_round_wrap_nocst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str int_round_wrap(int *res, const int *v, const bte *r, const int *d, const int *s);
+extern str int_round_wrap(Client ctx, int *res, const int *v, const bte *r, const int *d, const int *s);
 extern str int_bat_round_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 extern str int_bat_round_wrap_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 extern str int_bat_round_wrap_nocst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str str_2dec_int(int *res, const str *val, const int *d, const int *sc);
+extern str str_2dec_int(Client ctx, int *res, const str *val, const int *d, const int *sc);
 extern str batstr_2dec_int(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str int_dec2second_interval(lng *res, const int *sc, const int *dec, const int *ek, const int *sk);
+extern str int_dec2second_interval(Client ctx, lng *res, const int *sc, const int *dec, const int *ek, const int *sk);
 extern str int_batdec2second_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
-extern str nil_2dec_int(int *res, const void *val, const int *d, const int *sc);
-extern str batnil_2dec_int(bat *res, const bat *val, const int *d, const int *sc);
+extern str nil_2dec_int(Client ctx, int *res, const void *val, const int *d, const int *sc);
+extern str batnil_2dec_int(Client ctx, bat *res, const bat *val, const int *d, const int *sc);
 
-extern str lng_dec_round_wrap(lng *res, const lng *v, const lng *r);
+extern str lng_dec_round_wrap(Client ctx, lng *res, const lng *v, const lng *r);
 extern str lng_bat_dec_round_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 extern str lng_bat_dec_round_wrap_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 extern str lng_bat_dec_round_wrap_nocst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str lng_round_wrap(lng *res, const lng *v, const bte *r, const int *d, const int *s);
+extern str lng_round_wrap(Client ctx, lng *res, const lng *v, const bte *r, const int *d, const int *s);
 extern str lng_bat_round_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 extern str lng_bat_round_wrap_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 extern str lng_bat_round_wrap_nocst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str str_2dec_lng(lng *res, const str *val, const int *d, const int *sc);
+extern str str_2dec_lng(Client ctx, lng *res, const str *val, const int *d, const int *sc);
 extern str batstr_2dec_lng(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str lng_dec2second_interval(lng *res, const int *sc, const lng *dec, const int *ek, const int *sk);
+extern str lng_dec2second_interval(Client ctx, lng *res, const int *sc, const lng *dec, const int *ek, const int *sk);
 extern str lng_batdec2second_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
-extern str nil_2dec_lng(lng *res, const void *val, const int *d, const int *sc);
-extern str batnil_2dec_lng(bat *res, const bat *val, const int *d, const int *sc);
+extern str nil_2dec_lng(Client ctx, lng *res, const void *val, const int *d, const int *sc);
+extern str batnil_2dec_lng(Client ctx, bat *res, const bat *val, const int *d, const int *sc);
 
 #ifdef HAVE_HGE
-extern str hge_dec_round_wrap(hge *res, const hge *v, const hge *r);
+extern str hge_dec_round_wrap(Client ctx, hge *res, const hge *v, const hge *r);
 extern str hge_bat_dec_round_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 extern str hge_bat_dec_round_wrap_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 extern str hge_bat_dec_round_wrap_nocst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str hge_round_wrap(hge *res, const hge *v, const bte *r, const int *d, const int *s);
+extern str hge_round_wrap(Client ctx, hge *res, const hge *v, const bte *r, const int *d, const int *s);
 extern str hge_bat_round_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 extern str hge_bat_round_wrap_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 extern str hge_bat_round_wrap_nocst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str str_2dec_hge(hge *res, const str *val, const int *d, const int *sc);
+extern str str_2dec_hge(Client ctx, hge *res, const str *val, const int *d, const int *sc);
 extern str batstr_2dec_hge(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str hge_dec2second_interval(lng *res, const int *sc, const hge *dec, const int *ek, const int *sk);
+extern str hge_dec2second_interval(Client ctx, lng *res, const int *sc, const hge *dec, const int *ek, const int *sk);
 extern str hge_batdec2second_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
-extern str nil_2dec_hge(hge *res, const void *val, const int *d, const int *sc);
-extern str batnil_2dec_hge(bat *res, const bat *val, const int *d, const int *sc);
+extern str nil_2dec_hge(Client ctx, hge *res, const void *val, const int *d, const int *sc);
+extern str batnil_2dec_hge(Client ctx, bat *res, const bat *val, const int *d, const int *sc);
 #endif
 
 extern str nil_2time_timestamp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 extern str str_2time_timestamp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 extern str str_2time_timestamptz(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-sql5_export str batstr_2time_timestamp(bat *res, const bat *v, const bat *s, const int *len);
-extern str batstr_2time_timestamptz(bat *res, const bat *v, const bat *s, const int *len, const lng *tz);
+sql5_export str batstr_2time_timestamp(Client ctx, bat *res, const bat *v, const bat *s, const int *len);
+extern str batstr_2time_timestamptz(Client ctx, bat *res, const bat *v, const bat *s, const int *len, const lng *tz);
 extern str timestamp_2time_timestamp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 extern str nil_2time_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 extern str str_2time_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 extern str str_2time_daytimetz(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-sql5_export str batstr_2time_daytime(bat *res, const bat *v, const bat *s, const int *len);
+sql5_export str batstr_2time_daytime(Client ctx, bat *res, const bat *v, const bat *s, const int *len);
 extern str daytime_2time_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
-extern str bat_date_trunc(bat *res, const str *scale, const bat *v);
-extern str date_trunc(timestamp *res, const str *scale, const timestamp *v);
+extern str bat_date_trunc(Client ctx, bat *res, const str *scale, const bat *v);
+extern str date_trunc(Client ctx, timestamp *res, const str *scale, const timestamp *v);
 
 extern str nil_2_date(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 extern str SQLstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 extern str SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
-extern str flt_dec_round_wrap(flt *res, const flt *v, const flt *r);
+extern str flt_dec_round_wrap(Client ctx, flt *res, const flt *v, const flt *r);
 extern str flt_bat_dec_round_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 extern str flt_bat_dec_round_wrap_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 extern str flt_bat_dec_round_wrap_nocst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str flt_round_wrap(flt *res, const flt *v, const bte *r);
+extern str flt_round_wrap(Client ctx, flt *res, const flt *v, const bte *r);
 extern str flt_bat_round_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 extern str flt_bat_round_wrap_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 extern str flt_bat_round_wrap_nocst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str flt_trunc_wrap(flt *res, const flt *v, const int *r);
+extern str flt_trunc_wrap(Client ctx, flt *res, const flt *v, const int *r);
 
-extern str dbl_dec_round_wrap(dbl *res, const dbl *v, const dbl *r);
+extern str dbl_dec_round_wrap(Client ctx, dbl *res, const dbl *v, const dbl *r);
 extern str dbl_bat_dec_round_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 extern str dbl_bat_dec_round_wrap_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 extern str dbl_bat_dec_round_wrap_nocst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str dbl_round_wrap(dbl *res, const dbl *v, const bte *r);
+extern str dbl_round_wrap(Client ctx, dbl *res, const dbl *v, const bte *r);
 extern str dbl_bat_round_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 extern str dbl_bat_round_wrap_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 extern str dbl_bat_round_wrap_nocst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str dbl_trunc_wrap(dbl *res, const dbl *v, const int *r);
+extern str dbl_trunc_wrap(Client ctx, dbl *res, const dbl *v, const int *r);
 
 #define radians(x)	((x) * (3.14159265358979323846 / 180.0))
 #define degrees(x)	((x) * (180.0 / 3.14159265358979323846))
 
-extern str SQLcst_alpha_cst(dbl *res, const dbl *decl, const dbl *theta);
-extern str SQLbat_alpha_cst(bat *res, const bat *decl, const dbl *theta);
-extern str SQLcst_alpha_bat(bat *res, const dbl *decl, const bat *theta);
+extern str SQLcst_alpha_cst(Client ctx, dbl *res, const dbl *decl, const dbl *theta);
+extern str SQLbat_alpha_cst(Client ctx, bat *res, const bat *decl, const dbl *theta);
+extern str SQLcst_alpha_bat(Client ctx, bat *res, const dbl *decl, const bat *theta);
 extern str month_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 extern str second_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 extern str second_interval_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);

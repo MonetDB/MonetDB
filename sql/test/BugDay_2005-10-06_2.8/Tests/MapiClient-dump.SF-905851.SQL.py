@@ -26,7 +26,8 @@ def main():
                         'JdbcClient_inserts_selects.sql'))
     out = client('sqldump')
     output = out.splitlines(keepends=True)
-    stable = open('MapiClient-dump.SF-905851.stable.out').readlines()
+    with open('MapiClient-dump.SF-905851.stable.out') as fil:
+        stable = fil.readlines()
     for line in difflib.unified_diff(stable, output):
         sys.stderr.write(line)
 

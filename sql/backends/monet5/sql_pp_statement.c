@@ -194,7 +194,7 @@ stmt_pp_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int 
 	if (q) {
 		stmt *s = stmt_create(be->mvc->sa, st_aggr);
 		if(!s) {
-			freeInstruction(q);
+			freeInstruction(mb, q);
 			return NULL;
 		}
 		s->op1 = op1;
@@ -242,7 +242,7 @@ stmt_group_locked(backend *be, stmt *s, stmt *grp, stmt *ext, stmt *cnt, stmt *p
 	if (q) {
 		stmt *ns = stmt_create(be->mvc->sa, st_group);
 		if (ns == NULL) {
-			freeInstruction(q);
+			freeInstruction(mb, q);
 			return NULL;
 		}
 
@@ -291,7 +291,7 @@ stmt_group_partitioned(backend *be, stmt *s, stmt *grp, stmt *ext, stmt *cnt)
 	if (q) {
 		stmt *ns = stmt_create(be->mvc->sa, st_group);
 		if (ns == NULL) {
-			freeInstruction(q);
+			freeInstruction(mb, q);
 			return NULL;
 		}
 
@@ -394,7 +394,7 @@ stmt_limit_partitioned(backend *be, stmt *col, stmt *piv, stmt *gid, stmt *offse
 
 	stmt *ns = stmt_create(be->mvc->sa, piv?st_limit2:st_limit);
 	if (ns == NULL) {
-		freeInstruction(q);
+		freeInstruction(mb, q);
 		return NULL;
 	}
 
@@ -433,7 +433,7 @@ stmt_unique_sharedout(backend *be, stmt *s, int output)
 	if (q) {
 		stmt *ns = stmt_create(be->mvc->sa, st_unique);
 		if (ns == NULL) {
-			freeInstruction(q);
+			freeInstruction(mb, q);
 			return NULL;
 		}
 
@@ -741,7 +741,7 @@ stmt_nth_slice(backend *be, stmt *col, int slicer, bool hash)
 	pushInstruction(be->mb, q);
 	stmt *ns = stmt_create(be->mvc->sa, st_temp);
 	if (ns == NULL) {
-		freeInstruction(q);
+		freeInstruction(be->mb, q);
 		return NULL;
 	}
 
@@ -768,7 +768,7 @@ stmt_no_slices(backend *be, stmt *col, bool hash)
 	pushInstruction(be->mb, q);
 	stmt *ns = stmt_create(be->mvc->sa, st_result); /* ?? */
 	if (ns == NULL) {
-		freeInstruction(q);
+		freeInstruction(be->mb, q);
 		return NULL;
 	}
 
@@ -801,7 +801,7 @@ stmt_slice(backend *be, stmt *col, stmt *limit)
 
 	stmt *ns = stmt_create(be->mvc->sa, st_temp);
 	if (ns == NULL) {
-		freeInstruction(q);
+		freeInstruction(be->mb, q);
 		return NULL;
 	}
 
@@ -1090,8 +1090,8 @@ stmt_merge(backend *be, stmt *lobc, stmt *robc, bool asc, bool nlast, stmt *zl, 
 		s->label = lobc->label;
 		return s;
 	}
-	if (sa_get_eb(be->mvc->sa)->enabled)
-		eb_error(sa_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : be->mb->errors ? be->mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (ma_get_eb(be->mvc->sa)->enabled)
+		eb_error(ma_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : be->mb->errors ? be->mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 
@@ -1127,8 +1127,8 @@ stmt_mproject(backend *be, stmt *zl, stmt *lc, stmt *rc, int pipeline)
 		s->label = lc->label;
 		return s;
 	}
-	if (sa_get_eb(be->mvc->sa)->enabled)
-		eb_error(sa_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : be->mb->errors ? be->mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (ma_get_eb(be->mvc->sa)->enabled)
+		eb_error(ma_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : be->mb->errors ? be->mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 

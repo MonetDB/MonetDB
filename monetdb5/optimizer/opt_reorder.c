@@ -44,7 +44,7 @@
  * Be aware of side-effect instructions, they may not be skipped.
  */
 str
-OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
+OPTreorderImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 						 InstrPtr pci)
 {
 	int i, j, k, blkcnt = 1, pc = 0, actions = 0;
@@ -57,20 +57,21 @@ OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 
 	for (i = 0; i < MAXSLICES; i++)
 		top[i] = 0;
-	(void) cntxt;
+	if (MB_LARGE(mb)) {
+		goto wrapup;
+	}
 	(void) stk;
 
 	limit = mb->stop;
 	slimit = mb->ssize;
 	old = mb->stmt;
 
-	depth = (int *) GDKzalloc(mb->vtop * sizeof(int));
-	if (depth == NULL) {
-		throw(MAL, "optimizer.reorder", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	}
+	allocator *ta = mb->ta;
 
-	if (newMalBlkStmt(mb, mb->ssize) < 0) {
-		GDKfree(depth);
+	allocator_state ta_state = ma_open(ta);
+	depth = (int *) ma_zalloc(ta, mb->vtop * sizeof(int));
+	if (depth == NULL || newMalBlkStmt(mb, mb->ssize) < 0) {
+		ma_close(ta, &ta_state);
 		throw(MAL, "optimizer.reorder", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
@@ -79,7 +80,7 @@ OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	for (i = 0; i < limit; i++) {
 		p = old[i];
 		if (!p) {
-			//mnstr_printf(cntxt->fdout, "empty stmt:pc %d \n", i);
+			//mnstr_printf(ctx->fdout, "empty stmt:pc %d \n", i);
 			continue;
 		}
 		if (p->token == ENDsymbol)
@@ -125,13 +126,10 @@ OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 		}
 
 		if (top[k] == 0) {
-			blocks[k] = GDKzalloc(limit * sizeof(InstrPtr));
+			blocks[k] = ma_zalloc(ta, limit * sizeof(InstrPtr));
 			if (blocks[k] == NULL) {
-				for (i = 0; i < blkcnt; i++)
-					if (top[i])
-						GDKfree(blocks[i]);
-				GDKfree(depth);
-				GDKfree(mb->stmt);
+				ma_close(ta, &ta_state);
+				//GDKfree(mb->stmt);
 				mb->stop = limit;
 				mb->ssize = slimit;
 				mb->stmt = old;
@@ -141,8 +139,8 @@ OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 		}
 		blocks[k][top[k]] = p;
 		top[k] = top[k] + 1;
-		//mnstr_printf(cntxt->fdout, "block[%d] :%d:",i, k);
-		//printInstruction(cntxt->fdout, mb, stk, p, LIST_MAL_DEBUG);
+		//mnstr_printf(ctx->fdout, "block[%d] :%d:",i, k);
+		//printInstruction(ctx->fdout, mb, stk, p, LIST_MAL_DEBUG);
 		if (k > blkcnt)
 			blkcnt = k;
 	}
@@ -162,21 +160,18 @@ OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 			pushInstruction(mb, old[i]);
 
 	/* Defense line against incorrect plans */
-	msg = chkTypes(cntxt->usermodule, mb, FALSE);
+	msg = chkTypes(ctx->usermodule, mb, FALSE);
 	if (!msg)
 		msg = chkFlow(mb);
 	if (!msg)
 		msg = chkDeclarations(mb);
 	/* keep all actions taken as a post block comment */
-	//mnstr_printf(cntxt->fdout,"REORDER RESULT ");
-	//printFunction(cntxt->fdout, mb, 0, LIST_MAL_ALL);
-	for (i = 0; i <= blkcnt; i++)
-		if (top[i])
-			GDKfree(blocks[i]);
-
+	//mnstr_printf(ctx->fdout,"REORDER RESULT ");
+	//printFunction(ctx->fdout, mb, 0, LIST_MAL_ALL);
+	ma_close(ta, &ta_state);
+  wrapup:
 	/* keep actions taken as a fake argument */
 	(void) pushInt(mb, pci, actions);
-	GDKfree(depth);
-	GDKfree(old);
+	//GDKfree(old);
 	return msg;
 }

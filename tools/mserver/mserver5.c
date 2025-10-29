@@ -924,16 +924,20 @@ main(int argc, char **av)
 			*secretp = '\0';
 		}
 	}
-
+	assert(MT_thread_getallocator() != NULL);
 	modules[mods++] = 0;
 	if (mal_init(modules, false, readpwdxit ? secret : NULL, mercurial_revision())) {
 		/* don't show this as a crash */
 		if (!GDKinmemory(0))
 			msab_registerStop();
+		ma_destroy(MT_thread_getallocator());
+		MT_thread_setallocator(NULL);
 		return 1;
 	}
 	if (readpwdxit) {
 		msab_registerStop();
+		ma_destroy(MT_thread_getallocator());
+		MT_thread_setallocator(NULL);
 		return 0;
 	}
 
@@ -977,6 +981,8 @@ main(int argc, char **av)
 		}
 		MT_sleep_ms(100);		/* pause(), except for sys.shutdown() */
 	}
+	ma_destroy(MT_thread_getallocator());
+	MT_thread_setallocator(NULL);
 
 	/* mal_exit calls exit, so statements after this call will
 	 * never get reached */

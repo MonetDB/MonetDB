@@ -984,8 +984,10 @@ bl_destroy(sqlstore *store)
 static int
 bl_flush(sqlstore *store, lng save_id)
 {
-	if (store->logger)
-		return log_flush(store->logger, save_id) == GDK_SUCCEED ? LOG_OK : LOG_ERR;
+	if (store->logger) {
+		int res = log_flush(store->logger, save_id) == GDK_SUCCEED ? LOG_OK : LOG_ERR;
+		return res;
+	}
 	return LOG_OK;
 }
 

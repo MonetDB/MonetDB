@@ -26,7 +26,7 @@
  * to be passed by a handle.
  */
 
-mal_export MalStkPtr prepareMALstack(MalBlkPtr mb, int size);
+mal_export MalStkPtr prepareMALstack(allocator *pa, MalBlkPtr mb, int size);
 mal_export str runMAL(Client c, MalBlkPtr mb, MalBlkPtr mbcaller,
 					  MalStkPtr env);
 mal_export str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,

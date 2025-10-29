@@ -2304,7 +2304,7 @@ sql_update_jun2023(Client c, mvc *sql, sql_schema *s)
 
 	/* new function sys.regexp_replace */
 	allocator *old_sa = sql->sa;
-	if ((sql->sa = sa_create(sql->pa)) != NULL) {
+	if ((sql->sa = create_allocator(sql->pa, "MA_mvc", false)) != NULL) {
 		list *l;
 		if ((l = sa_list(sql->sa)) != NULL) {
 			sql_subtype tp;
@@ -2333,7 +2333,7 @@ sql_update_jun2023(Client c, mvc *sql, sql_schema *s)
 				fflush(stdout);
 				err = SQLstatementIntern(c, buf, "update", true, false, NULL);
 			}
-			sa_destroy(sql->sa);
+			ma_destroy(sql->sa);
 		}
 	}
 	sql->sa = old_sa;
@@ -3127,7 +3127,7 @@ sql_update_dec2023(Client c, mvc *sql, sql_schema *s)
 
 	/* 52_describe.sql New function sys.sql_datatype(mtype varchar(999), digits integer, tscale integer, nameonly boolean, shortname boolean) */
 	allocator *old_sa = sql->sa;
-	if ((sql->sa = sa_create(sql->pa)) != NULL) {
+	if ((sql->sa = create_allocator(sql->pa, "MA_mvc", false)) != NULL) {
 		list *l;
 		if ((l = sa_list(sql->sa)) != NULL) {
 			sql_subtype t1, t2;
@@ -3207,7 +3207,7 @@ sql_update_dec2023(Client c, mvc *sql, sql_schema *s)
 				err = SQLstatementIntern(c, cmds, "update", true, false, NULL);
 			}
 		}
-		sa_destroy(sql->sa);
+		ma_destroy(sql->sa);
 	}
 	sql->sa = old_sa;
 
@@ -5172,6 +5172,37 @@ sql_update_default(Client c, mvc *sql, sql_schema *s)
 	} else {
 		sql->session->status = 0; /* if the function was not found clean the error */
 		sql->errstr[0] = '\0';
+	}
+
+	sql_subtype tp;
+	sql_find_subtype(&tp, "varchar", 0, 0);
+	if (!sql_bind_func(sql, "sys", "sha256", &tp, NULL, F_AGGR, true, true)) {
+		sql->session->status = 0;
+		sql->errstr[0] = '\0';
+		static const char query[] = "create aggregate sha1(val string)\n"
+			"returns string with order external name aggr.sha1;\n"
+			"grant execute on aggregate sha1 to public;\n"
+			"create aggregate sha224(val string)\n"
+			"returns string with order external name aggr.sha224;\n"
+			"grant execute on aggregate sha224 to public;\n"
+			"create aggregate sha256(val string)\n"
+			"returns string with order external name aggr.sha256;\n"
+			"grant execute on aggregate sha256 to public;\n"
+			"create aggregate sha384(val string)\n"
+			"returns string with order external name aggr.sha384;\n"
+			"grant execute on aggregate sha384 to public;\n"
+			"create aggregate sha512(val string)\n"
+			"returns string with order external name aggr.sha512;\n"
+			"grant execute on aggregate sha512 to public;\n"
+			"create aggregate ripemd160(val string)\n"
+			"returns string with order external name aggr.ripemd160;\n"
+			"grant execute on aggregate ripemd160 to public;\n"
+			"update sys.functions set system = true where not system and schema_id = 2000 and name in ('sha1', 'sha224', 'sha256', 'sha384', 'sha512', 'ripemd160') and type = 3;\n"; /* F_AGGR == 3 */
+		printf("Running database upgrade commands:\n%s\n", query);
+		fflush(stdout);
+		err = SQLstatementIntern(c, query, "update", true, false, NULL);
+		if (err)
+			return err;
 	}
 
 	if ((err = SQLstatementIntern(c, "select keyword from sys.keywords where keyword = 'PLAN';\n", "update", true, false, &output)))

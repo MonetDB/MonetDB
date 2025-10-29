@@ -165,7 +165,7 @@ struct challengedata {
 	char challenge[13];
 };
 
-static str SERVERsetAlias(void *ret, const int *key, const char *const *dbalias);
+static str SERVERsetAlias(Client ctx, void *ret, const int *key, const char *const *dbalias);
 
 /*
  * The default method to interact with the database server is to connect
@@ -366,7 +366,7 @@ MSscheduleClient(str command, str peer, str challenge, bstream *fin, stream *fou
 			return;
 		}
 		c->filetrans = filetrans;
-		c->handshake_options = handshake_opts ? strdup(handshake_opts) : NULL;
+		c->handshake_options = handshake_opts ? MA_STRDUP(c->ma, handshake_opts) : NULL;
 		/* move this back !! */
 		if (c->usermodule == 0) {
 			c->curmodule = c->usermodule = userModule();
@@ -396,9 +396,9 @@ MSscheduleClient(str command, str peer, str challenge, bstream *fin, stream *fou
 	}
 
 	// at this point username should have being verified
-	c->username = GDKstrdup(user);
+	c->username = MA_STRDUP(c->ma, user);
 	if (peer)
-		c->peer = GDKstrdup(peer);
+		c->peer = MA_STRDUP(c->ma, peer);
 
 	/* NOTE ABOUT STARTING NEW THREADS
 	 * At this point we have conducted experiments (Jun 2012) with
@@ -1216,22 +1216,25 @@ MAPIprelude(void)
 }
 
 static str
-SERVERlisten_default(int *ret)
+SERVERlisten_default(Client ctx, int *ret)
 {
+	(void) ctx;
 	(void) ret;
 	return MAPIprelude();
 }
 
 static str
-SERVERlisten_usock(int *ret, const char *const *usock)
+SERVERlisten_usock(Client ctx, int *ret, const char *const *usock)
 {
+	(void) ctx;
 	(void) ret;
 	return SERVERlisten(-1, usock ? *usock : NULL, SERVERMAXUSERS);
 }
 
 static str
-SERVERlisten_port(int *ret, const int *pid)
+SERVERlisten_port(Client ctx, int *ret, const int *pid)
 {
+	(void) ctx;
 	(void) ret;
 	return SERVERlisten(*pid, NULL, SERVERMAXUSERS);
 }
@@ -1246,8 +1249,9 @@ SERVERlisten_port(int *ret, const int *pid)
  */
 
 static str
-SERVERstop(void *ret)
+SERVERstop(Client ctx, void *ret)
 {
+	(void) ctx;
 	TRC_INFO(MAL_SERVER, "Server stop\n");
 	ATOMIC_SET(&serverexiting, 1);
 	/* wait until they all exited, but skip the wait if the whole
@@ -1260,24 +1264,27 @@ SERVERstop(void *ret)
 
 
 static str
-SERVERsuspend(void *res)
+SERVERsuspend(Client ctx, void *res)
 {
+	(void) ctx;
 	(void) res;
 	ATOMIC_SET(&serveractive, 0);
 	return MAL_SUCCEED;
 }
 
 static str
-SERVERresume(void *res)
+SERVERresume(Client ctx, void *res)
 {
+	(void) ctx;
 	ATOMIC_SET(&serveractive, 1);
 	(void) res;
 	return MAL_SUCCEED;
 }
 
 static str
-SERVERclient(void *res, const Stream *In, const Stream *Out)
+SERVERclient(Client ctx, void *res, const Stream *In, const Stream *Out)
 {
+	(void) ctx;
 	struct challengedata *data;
 	MT_Id tid;
 
@@ -1391,7 +1398,7 @@ static int sessionkey = 0;
 /* #define MAPI_TEST*/
 
 static str
-SERVERconnectAll(Client cntxt, int *key, const char *host, int port, const char *username,
+SERVERconnectAll(Client ctx, int *key, const char *host, int port, const char *username,
 				 const char *password, const char *lang)
 {
 	Mapi mid;
@@ -1406,7 +1413,7 @@ SERVERconnectAll(Client cntxt, int *key, const char *host, int port, const char 
 		MT_lock_unset(&mal_contextLock);
 		throw(IO, "mapi.connect", OPERATION_FAILED ": too many sessions");
 	}
-	SERVERsessions[i].c = cntxt;
+	SERVERsessions[i].c = ctx;
 	SERVERsessions[i].key = ++sessionkey;
 	MT_lock_unset(&mal_contextLock);
 
@@ -1438,8 +1445,9 @@ SERVERconnectAll(Client cntxt, int *key, const char *host, int port, const char 
 }
 
 static str
-SERVERdisconnectALL(int *key)
+SERVERdisconnectALL(Client ctx, int *key)
 {
+	(void) ctx;
 	int i;
 
 	MT_lock_set(&mal_contextLock);
@@ -1466,8 +1474,9 @@ SERVERdisconnectALL(int *key)
 }
 
 static str
-SERVERdisconnectWithAlias(int *key, const char *const *dbalias)
+SERVERdisconnectWithAlias(Client ctx, int *key, const char *const *dbalias)
 {
+	(void) ctx;
 	int i;
 
 	MT_lock_set(&mal_contextLock);
@@ -1498,7 +1507,7 @@ SERVERdisconnectWithAlias(int *key, const char *const *dbalias)
 }
 
 static str
-SERVERconnect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+SERVERconnect(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int *key = getArgReference_int(stk, pci, 0);
 	const char *host = *getArgReference_str(stk, pci, 1);
@@ -1508,12 +1517,12 @@ SERVERconnect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	const char *lang = *getArgReference_str(stk, pci, 5);
 
 	(void) mb;
-	return SERVERconnectAll(cntxt, key, host, port, username, password, lang);
+	return SERVERconnectAll(ctx, key, host, port, username, password, lang);
 }
 
 
 static str
-SERVERreconnectAlias(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+SERVERreconnectAlias(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int *key = getArgReference_int(stk, pci, 0);
 	const char *host = *getArgReference_str(stk, pci, 1);
@@ -1535,14 +1544,14 @@ SERVERreconnectAlias(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			return msg;
 		}
 
-	msg = SERVERconnectAll(cntxt, key, host, port, username, password, lang);
+	msg = SERVERconnectAll(ctx, key, host, port, username, password, lang);
 	if (msg == MAL_SUCCEED)
-		msg = SERVERsetAlias(NULL, key, &dbalias);
+		msg = SERVERsetAlias(ctx, NULL, key, &dbalias);
 	return msg;
 }
 
 static str
-SERVERreconnectWithoutAlias(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
+SERVERreconnectWithoutAlias(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 							InstrPtr pci)
 {
 	int *key = getArgReference_int(stk, pci, 0);
@@ -1563,9 +1572,9 @@ SERVERreconnectWithoutAlias(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 			return msg;
 		}
 
-	msg = SERVERconnectAll(cntxt, key, host, port, username, password, lang);
+	msg = SERVERconnectAll(ctx, key, host, port, username, password, lang);
 	if (msg == MAL_SUCCEED)
-		msg = SERVERsetAlias(NULL, key, &nme);
+		msg = SERVERsetAlias(ctx, NULL, key, &nme);
 	return msg;
 }
 
@@ -1582,8 +1591,9 @@ SERVERreconnectWithoutAlias(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	} while (0)
 
 static str
-SERVERsetAlias(void *ret, const int *key, const char *const *dbalias)
+SERVERsetAlias(Client ctx, void *ret, const int *key, const char *const *dbalias)
 {
+	(void) ctx;
 	int i;
 	Mapi mid;
 	accessTest(*key, "setAlias");
@@ -1595,8 +1605,9 @@ SERVERsetAlias(void *ret, const int *key, const char *const *dbalias)
 }
 
 static str
-SERVERlookup(int *ret, const char *const *dbalias)
+SERVERlookup(Client ctx, int *ret, const char *const *dbalias)
 {
+	(void) ctx;
 	int i;
 	for (i = 0; i < MAXSESSIONS; i++)
 		if (SERVERsessions[i].dbalias &&
@@ -1608,16 +1619,18 @@ SERVERlookup(int *ret, const char *const *dbalias)
 }
 
 static str
-SERVERtrace(void *ret, const int *key, const int *flag)
+SERVERtrace(Client ctx, void *ret, const int *key, const int *flag)
 {
+	(void) ctx;
 	(void) ret;
 	mapi_trace(SERVERsessions[*key].mid, (bool) *flag);
 	return MAL_SUCCEED;
 }
 
 static str
-SERVERdisconnect(void *ret, const int *key)
+SERVERdisconnect(Client ctx, void *ret, const int *key)
 {
+	(void) ctx;
 	int i;
 	Mapi mid;
 	(void) ret;
@@ -1634,8 +1647,9 @@ SERVERdisconnect(void *ret, const int *key)
 }
 
 static str
-SERVERdestroy(void *ret, const int *key)
+SERVERdestroy(Client ctx, void *ret, const int *key)
 {
+	(void) ctx;
 	int i;
 	Mapi mid;
 	(void) ret;
@@ -1653,8 +1667,9 @@ SERVERdestroy(void *ret, const int *key)
 }
 
 static str
-SERVERreconnect(void *ret, const int *key)
+SERVERreconnect(Client ctx, void *ret, const int *key)
 {
+	(void) ctx;
 	int i;
 	Mapi mid;
 	(void) ret;
@@ -1667,8 +1682,9 @@ SERVERreconnect(void *ret, const int *key)
 }
 
 static str
-SERVERping(int *ret, const int *key)
+SERVERping(Client ctx, int *ret, const int *key)
 {
+	(void) ctx;
 	int i;
 	Mapi mid;
 	accessTest(*key, "destroy");
@@ -1677,8 +1693,9 @@ SERVERping(int *ret, const int *key)
 }
 
 static str
-SERVERquery(int *ret, const int *key, const char *const *qry)
+SERVERquery(Client ctx, int *ret, const int *key, const char *const *qry)
 {
+	(void) ctx;
 	Mapi mid;
 	MapiHdl hdl = 0;
 	int i;
@@ -1692,8 +1709,9 @@ SERVERquery(int *ret, const int *key, const char *const *qry)
 }
 
 static str
-SERVERquery_handle(int *ret, const int *key, const char *const *qry)
+SERVERquery_handle(Client ctx, int *ret, const int *key, const char *const *qry)
 {
+	(void) ctx;
 	Mapi mid;
 	MapiHdl hdl = 0;
 	int i;
@@ -1705,17 +1723,18 @@ SERVERquery_handle(int *ret, const int *key, const char *const *qry)
 }
 
 static str
-SERVERquery_array(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc)
+SERVERquery_array(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc)
 {
-	(void) cntxt, (void) mb;
+	(void) ctx, (void) mb;
 	(void) stk;
 	(void) pc;
-	throw(MAL, "mapi.query_array", SQLSTATE(0 A000) PROGRAM_NYI);
+	throw(MAL, "mapi.query_array", SQLSTATE(0A000) PROGRAM_NYI);
 }
 
 static str
-SERVERprepare(int *ret, const int *key, const char *const *qry)
+SERVERprepare(Client ctx, int *ret, const int *key, const char *const *qry)
 {
+	(void) ctx;
 	Mapi mid;
 	int i;
 	accessTest(*key, "prepare");
@@ -1730,8 +1749,9 @@ SERVERprepare(int *ret, const int *key, const char *const *qry)
 }
 
 static str
-SERVERfinish(int *ret, const int *key)
+SERVERfinish(Client ctx, int *ret, const int *key)
 {
+	(void) ctx;
 	Mapi mid;
 	int i;
 	accessTest(*key, "finish");
@@ -1744,8 +1764,9 @@ SERVERfinish(int *ret, const int *key)
 }
 
 static str
-SERVERget_row_count(lng *ret, const int *key)
+SERVERget_row_count(Client ctx, lng *ret, const int *key)
 {
+	(void) ctx;
 	Mapi mid;
 	int i;
 	accessTest(*key, "get_row_count");
@@ -1757,8 +1778,9 @@ SERVERget_row_count(lng *ret, const int *key)
 }
 
 static str
-SERVERget_field_count(int *ret, const int *key)
+SERVERget_field_count(Client ctx, int *ret, const int *key)
 {
+	(void) ctx;
 	Mapi mid;
 	int i;
 	accessTest(*key, "get_field_count");
@@ -1770,8 +1792,9 @@ SERVERget_field_count(int *ret, const int *key)
 }
 
 static str
-SERVERrows_affected(lng *ret, const int *key)
+SERVERrows_affected(Client ctx, lng *ret, const int *key)
 {
+	(void) ctx;
 	Mapi mid;
 	int i;
 	accessTest(*key, "rows_affected");
@@ -1780,8 +1803,9 @@ SERVERrows_affected(lng *ret, const int *key)
 }
 
 static str
-SERVERfetch_row(int *ret, const int *key)
+SERVERfetch_row(Client ctx, int *ret, const int *key)
 {
+	(void) ctx;
 	Mapi mid;
 	int i;
 	accessTest(*key, "fetch_row");
@@ -1790,8 +1814,9 @@ SERVERfetch_row(int *ret, const int *key)
 }
 
 static str
-SERVERfetch_all_rows(lng *ret, const int *key)
+SERVERfetch_all_rows(Client ctx, lng *ret, const int *key)
 {
+	(void) ctx;
 	Mapi mid;
 	int i;
 	accessTest(*key, "fetch_all_rows");
@@ -1800,14 +1825,16 @@ SERVERfetch_all_rows(lng *ret, const int *key)
 }
 
 static str
-SERVERfetch_field_str(str *ret, const int *key, const int *fnr)
+SERVERfetch_field_str(Client ctx, str *ret, const int *key, const int *fnr)
 {
+	allocator *ma = ctx->curprg->def->ma;
+	assert(ma);
 	Mapi mid;
 	int i;
 	str fld;
 	accessTest(*key, "fetch_field");
 	fld = mapi_fetch_field(SERVERsessions[i].hdl, *fnr);
-	*ret = GDKstrdup(fld ? fld : str_nil);
+	*ret = MA_STRDUP(ma, fld ? fld : str_nil);
 	if (*ret == NULL)
 		throw(MAL, "mapi.fetch_field_str", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	if (mapi_error(mid))
@@ -1817,8 +1844,9 @@ SERVERfetch_field_str(str *ret, const int *key, const int *fnr)
 }
 
 static str
-SERVERfetch_field_int(int *ret, const int *key, const int *fnr)
+SERVERfetch_field_int(Client ctx, int *ret, const int *key, const int *fnr)
 {
+	(void) ctx;
 	Mapi mid;
 	int i;
 	str fld;
@@ -1832,8 +1860,9 @@ SERVERfetch_field_int(int *ret, const int *key, const int *fnr)
 }
 
 static str
-SERVERfetch_field_lng(lng *ret, const int *key, const int *fnr)
+SERVERfetch_field_lng(Client ctx, lng *ret, const int *key, const int *fnr)
 {
+	(void) ctx;
 	Mapi mid;
 	int i;
 	str fld;
@@ -1848,8 +1877,9 @@ SERVERfetch_field_lng(lng *ret, const int *key, const int *fnr)
 
 #ifdef HAVE_HGE
 static str
-SERVERfetch_field_hge(hge *ret, const int *key, const int *fnr)
+SERVERfetch_field_hge(Client ctx, hge *ret, const int *key, const int *fnr)
 {
+	(void) ctx;
 	Mapi mid;
 	int i;
 	str fld;
@@ -1864,8 +1894,9 @@ SERVERfetch_field_hge(hge *ret, const int *key, const int *fnr)
 #endif
 
 static str
-SERVERfetch_field_sht(sht *ret, const int *key, const int *fnr)
+SERVERfetch_field_sht(Client ctx, sht *ret, const int *key, const int *fnr)
 {
+	(void) ctx;
 	Mapi mid;
 	int i;
 	str fld;
@@ -1879,8 +1910,9 @@ SERVERfetch_field_sht(sht *ret, const int *key, const int *fnr)
 }
 
 static str
-SERVERfetch_field_void(void *ret, const int *key, const int *fnr)
+SERVERfetch_field_void(Client ctx, void *ret, const int *key, const int *fnr)
 {
+	(void) ctx;
 	Mapi mid;
 	int i;
 	(void) ret;
@@ -1890,8 +1922,9 @@ SERVERfetch_field_void(void *ret, const int *key, const int *fnr)
 }
 
 static str
-SERVERfetch_field_oid(oid *ret, const int *key, const int *fnr)
+SERVERfetch_field_oid(Client ctx, oid *ret, const int *key, const int *fnr)
 {
+	(void) ctx;
 	Mapi mid;
 	int i;
 	str fld;
@@ -1908,8 +1941,9 @@ SERVERfetch_field_oid(oid *ret, const int *key, const int *fnr)
 }
 
 static str
-SERVERfetch_field_bte(bte *ret, const int *key, const int *fnr)
+SERVERfetch_field_bte(Client ctx, bte *ret, const int *key, const int *fnr)
 {
+	(void) ctx;
 	Mapi mid;
 	int i;
 	str fld;
@@ -1926,8 +1960,10 @@ SERVERfetch_field_bte(bte *ret, const int *key, const int *fnr)
 }
 
 static str
-SERVERfetch_line(str *ret, const int *key)
+SERVERfetch_line(Client ctx, str *ret, const int *key)
 {
+	allocator *ma = ctx->curprg->def->ma;
+	assert(ma);
 	Mapi mid;
 	int i;
 	str fld;
@@ -1936,15 +1972,16 @@ SERVERfetch_line(str *ret, const int *key)
 	if (mapi_error(mid))
 		throw(MAL, "mapi.fetch_line", "%s",
 			  mapi_result_error(SERVERsessions[i].hdl));
-	*ret = GDKstrdup(fld ? fld : str_nil);
+	*ret = MA_STRDUP(ma, fld ? fld : str_nil);
 	if (*ret == NULL)
 		throw(MAL, "mapi.fetch_line", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
 static str
-SERVERnext_result(int *ret, const int *key)
+SERVERnext_result(Client ctx, int *ret, const int *key)
 {
+	(void) ctx;
 	Mapi mid;
 	int i;
 	accessTest(*key, "next_result");
@@ -1957,8 +1994,9 @@ SERVERnext_result(int *ret, const int *key)
 }
 
 static str
-SERVERfetch_reset(int *ret, const int *key)
+SERVERfetch_reset(Client ctx, int *ret, const int *key)
 {
+	(void) ctx;
 	Mapi mid;
 	int i;
 	accessTest(*key, "fetch_reset");
@@ -1971,8 +2009,9 @@ SERVERfetch_reset(int *ret, const int *key)
 }
 
 static str
-SERVERfetch_field_bat(bat *bid, const int *key)
+SERVERfetch_field_bat(Client ctx, bat *bid, const int *key)
 {
+	(void) ctx;
 	int i, j, cnt;
 	Mapi mid;
 	char *fld;
@@ -2001,8 +2040,9 @@ SERVERfetch_field_bat(bat *bid, const int *key)
 }
 
 static str
-SERVERerror(int *ret, const int *key)
+SERVERerror(Client ctx, int *ret, const int *key)
 {
+	(void) ctx;
 	Mapi mid;
 	int i;
 	accessTest(*key, "error");
@@ -2011,25 +2051,29 @@ SERVERerror(int *ret, const int *key)
 }
 
 static str
-SERVERgetError(str *ret, const int *key)
+SERVERgetError(Client ctx, str *ret, const int *key)
 {
+	allocator *ma = ctx->curprg->def->ma;
+	assert(ma);
 	Mapi mid;
 	int i;
 	accessTest(*key, "getError");
-	*ret = GDKstrdup(mapi_error_str(mid));
+	*ret = MA_STRDUP(ma, mapi_error_str(mid));
 	if (*ret == NULL)
 		throw(MAL, "mapi.get_error", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
 static str
-SERVERexplain(str *ret, const int *key)
+SERVERexplain(Client ctx, str *ret, const int *key)
 {
+	allocator *ma = ctx->curprg->def->ma;
+	assert(ma);
 	Mapi mid;
 	int i;
 
 	accessTest(*key, "explain");
-	*ret = GDKstrdup(mapi_error_str(mid));
+	*ret = MA_STRDUP(ma, mapi_error_str(mid));
 	if (*ret == NULL)
 		throw(MAL, "mapi.explain", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
@@ -2051,6 +2095,7 @@ static int
 SERVERfieldAnalysis(str fld, int tpe, ValPtr v)
 {
 	v->bat = false;
+	v->allocated = false;
 	v->vtype = tpe;
 	switch (tpe) {
 	case TYPE_void:
@@ -2116,10 +2161,10 @@ SERVERfieldAnalysis(str fld, int tpe, ValPtr v)
 		break;
 	case TYPE_str:
 		if (fld == 0 || strcmp(fld, "nil") == 0) {
-			if (VALinit(v, TYPE_str, str_nil) == NULL)
+			if (VALinit(NULL, v, TYPE_str, str_nil) == NULL)
 				return -1;
 		} else {
-			if (VALinit(v, TYPE_str, fld) == NULL)
+			if (VALinit(NULL, v, TYPE_str, fld) == NULL)
 				return -1;
 		}
 		break;
@@ -2128,40 +2173,42 @@ SERVERfieldAnalysis(str fld, int tpe, ValPtr v)
 }
 
 static str
-SERVERmapi_rpc_single_row(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
+SERVERmapi_rpc_single_row(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 						  InstrPtr pci)
 {
+	(void) ctx;
 	int key, i, j;
 	Mapi mid;
 	MapiHdl hdl;
 	char *s, *fld, *qry = 0;
 
-	(void) cntxt;
+	allocator *ta = mb->ta;
+	allocator_state ta_state = ma_open(ta);
 	key = *getArgReference_int(stk, pci, pci->retc);
 	accessTest(key, "rpc");
 #ifdef MAPI_TEST
-	mnstr_printf(cntxt->fdout, "about to send: %s\n", qry);
+	mnstr_printf(ctx->fdout, "about to send: %s\n", qry);
 #endif
 	/* glue all strings together */
 	for (i = pci->retc + 1; i < pci->argc; i++) {
 		fld = *getArgReference_str(stk, pci, i);
 		if (qry == 0) {
-			qry = GDKstrdup(fld);
+			qry = MA_STRDUP(ta, fld);
 			if (qry == NULL)
 				throw(MAL, "mapi.rpc", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		} else {
-			s = (char *) GDKmalloc(strlen(qry) + strlen(fld) + 1);
+			s = (char *) ma_alloc(ta, strlen(qry) + strlen(fld) + 1);
 			if (s == NULL) {
-				GDKfree(qry);
+				//GDKfree(qry);
 				throw(MAL, "mapi.rpc", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 			stpcpy(stpcpy(s, qry), fld);
-			GDKfree(qry);
+			//GDKfree(qry);
 			qry = s;
 		}
 	}
 	hdl = mapi_query(mid, qry);
-	GDKfree(qry);
+	//GDKfree(qry);
 	catchErrors("mapi.rpc");
 
 	i = 0;
@@ -2169,7 +2216,7 @@ SERVERmapi_rpc_single_row(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 		for (j = 0; j < pci->retc; j++) {
 			fld = mapi_fetch_field(hdl, j);
 #ifdef MAPI_TEST
-			mnstr_printf(cntxt->fdout, "Got: %s\n", fld);
+			mnstr_printf(ctx->fdout, "Got: %s\n", fld);
 #endif
 			switch (getVarType(mb, getArg(pci, j))) {
 			case TYPE_void:
@@ -2200,6 +2247,7 @@ SERVERmapi_rpc_single_row(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 		i++;
 	}
 	mapi_close_handle(hdl);
+	ma_close(ta, &ta_state);
 	if (i > 1)
 		throw(MAL, "mapi.rpc", "Too many answers");
 	return MAL_SUCCEED;
@@ -2211,7 +2259,7 @@ SERVERmapi_rpc_single_row(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
  * step.
  */
 static str
-SERVERmapi_rpc_bat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+SERVERmapi_rpc_bat(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bat *ret;
 	const int *key;
@@ -2223,7 +2271,7 @@ SERVERmapi_rpc_bat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	ValRecord tval;
 	int i = 0, tt;
 
-	(void) cntxt;
+	(void) ctx;
 	ret = getArgReference_bat(stk, pci, 0);
 	key = getArgReference_int(stk, pci, pci->retc);
 	qry = getArgReference_str(stk, pci, pci->retc + 1);
@@ -2259,7 +2307,7 @@ SERVERmapi_rpc_bat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 static str
-SERVERput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+SERVERput(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	const int *key;
 	str *nme;
@@ -2269,7 +2317,7 @@ SERVERput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	MapiHdl hdl = 0;
 	char *w = 0, buf[BUFSIZ];
 
-	(void) cntxt;
+	(void) ctx;
 	key = getArgReference_int(stk, pci, pci->retc);
 	nme = getArgReference_str(stk, pci, pci->retc + 1);
 	val = getArgReference(stk, pci, pci->retc + 2);
@@ -2285,11 +2333,11 @@ SERVERput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (BBPindex(*nme) == 0)
 			throw(MAL, "mapi.put", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		/* reconstruct the object */
-		ht = getTypeName(TYPE_oid);
-		tt = getTypeName(getBatType(tpe));
+		ht = getTypeName(mb->ma, TYPE_oid);
+		tt = getTypeName(mb->ma, getBatType(tpe));
 		snprintf(buf, sizeof(buf), "%s:= bat.new(:%s,%s);", *nme, ht, tt);
 		len = strlen(buf);
-		snprintf(buf + len, BUFSIZ - len, "%s:= io.import(%s,tuples);", *nme,
+		snprintf(buf + len, sizeof(buf) - len, "%s:= io.import(%s,tuples);", *nme,
 				 *nme);
 
 		/* and execute the request */
@@ -2297,8 +2345,8 @@ SERVERput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			mapi_close_handle(SERVERsessions[i].hdl);
 		SERVERsessions[i].hdl = mapi_query(mid, buf);
 
-		GDKfree(ht);
-		GDKfree(tt);
+		//GDKfree(ht);
+		//GDKfree(tt);
 	} else {
 		switch (tpe) {
 		case TYPE_str:
@@ -2308,10 +2356,10 @@ SERVERput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			SERVERsessions[i].hdl = mapi_query(mid, buf);
 			break;
 		default:
-			if ((w = ATOMformat(tpe, val)) == NULL)
+			if ((w = ATOMformat(mb->ma, tpe, val)) == NULL)
 				throw(MAL, "mapi.put", GDK_EXCEPTION);
 			snprintf(buf, sizeof(buf), "%s:=%s;", *nme, w);
-			GDKfree(w);
+			// GDKfree(w);
 			if (SERVERsessions[i].hdl)
 				mapi_close_handle(SERVERsessions[i].hdl);
 			SERVERsessions[i].hdl = mapi_query(mid, buf);
@@ -2323,14 +2371,14 @@ SERVERput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 static str
-SERVERputLocal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+SERVERputLocal(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str *ret, *nme;
 	ptr val;
 	int tpe;
 	char *w = 0, buf[BUFSIZ];
 
-	(void) cntxt;
+	(void) ctx;
 	ret = getArgReference_str(stk, pci, 0);
 	nme = getArgReference_str(stk, pci, pci->retc);
 	val = getArgReference(stk, pci, pci->retc + 1);
@@ -2344,20 +2392,20 @@ SERVERputLocal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		snprintf(buf, sizeof(buf), "%s:=%s;", *nme, *(char **) val);
 		break;
 	default:
-		if ((w = ATOMformat(tpe, val)) == NULL)
+		if ((w = ATOMformat(mb->ma, tpe, val)) == NULL)
 			throw(MAL, "mapi.glue", GDK_EXCEPTION);
 		snprintf(buf, sizeof(buf), "%s:=%s;", *nme, w);
-		GDKfree(w);
+		// GDKfree(w);
 		break;
 	}
-	*ret = GDKstrdup(buf);
+	*ret = MA_STRDUP(mb->ma, buf);
 	if (*ret == NULL)
 		throw(MAL, "mapi.glue", GDK_EXCEPTION);
 	return MAL_SUCCEED;
 }
 
 static str
-SERVERbindBAT(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+SERVERbindBAT(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	const int *key;
 	str *nme, *tab, *col;
@@ -2367,7 +2415,7 @@ SERVERbindBAT(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	char buf[BUFSIZ];
 	char name[IDLENGTH];
 
-	(void) cntxt;
+	(void) ctx;
 	key = getArgReference_int(stk, pci, pci->retc);
 	nme = getArgReference_str(stk, pci, pci->retc + 1);
 	accessTest(*key, "bind");
@@ -2376,10 +2424,10 @@ SERVERbindBAT(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		tab = getArgReference_str(stk, pci, pci->retc + 2);
 		col = getArgReference_str(stk, pci, pci->retc + 3);
 		i = *getArgReference_int(stk, pci, pci->retc + 4);
-		tn = getTypeName(getBatType(getVarType(mb, getDestVar(pci))));
+		tn = getTypeName(mb->ma, getBatType(getVarType(mb, getDestVar(pci))));
 		snprintf(buf, sizeof(buf), "%s:bat[:%s]:=sql.bind(\"%s\",\"%s\",\"%s\",%d);",
 				 getVarNameIntoBuffer(mb, getDestVar(pci), name), tn, *nme, *tab, *col, i);
-		GDKfree(tn);
+		//GDKfree(tn);
 	} else if (pci->argc == 5) {
 		tab = getArgReference_str(stk, pci, pci->retc + 2);
 		i = *getArgReference_int(stk, pci, pci->retc + 3);
@@ -2387,13 +2435,14 @@ SERVERbindBAT(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				 getVarNameIntoBuffer(mb, getDestVar(pci), name), *nme, *tab, i);
 	} else {
 		str hn, tn;
+		(void) hn;
 		int target = getArgType(mb, pci, 0);
-		hn = getTypeName(TYPE_oid);
-		tn = getTypeName(getBatType(target));
+		//hn = getTypeName(mb->ma, TYPE_oid);
+		tn = getTypeName(mb->ma, getBatType(target));
 		snprintf(buf, sizeof(buf), "%s:bat[:%s]:=bbp.bind(\"%s\");",
 				 getVarNameIntoBuffer(mb, getDestVar(pci), name), tn, *nme);
-		GDKfree(hn);
-		GDKfree(tn);
+		//GDKfree(hn);
+		//GDKfree(tn);
 	}
 	if (SERVERsessions[i].hdl)
 		mapi_close_handle(SERVERsessions[i].hdl);

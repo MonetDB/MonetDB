@@ -17,7 +17,7 @@
 extern int SQLrunning; // dev. debug var, 2 remove once the code is ~stable
 extern int SQLdebug;
 extern str SQLprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str SQLepilogue(void *ret);
+extern str SQLepilogue(Client cntxt, void *ret);
 
 sql5_export str SQLautocommit(mvc *m);
 sql5_export str SQLtrans(mvc *m);
