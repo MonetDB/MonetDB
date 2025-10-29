@@ -443,7 +443,6 @@ BATTXTSIMmaxlevenshtein(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			goto exit;
 		}
 	}
-	ma_close(ma, &ma_state);
 	bat_iterator_end(&li);
 	bat_iterator_end(&ri);
 
