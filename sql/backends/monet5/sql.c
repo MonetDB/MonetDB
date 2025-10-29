@@ -2522,10 +2522,10 @@ mvc_result_set_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 
 str
-wrap_onclient_compression(stream **inner, str context, int nr)
+wrap_onclient_compression(stream **inner, str context, int nr, bool binary)
 {
 	if (nr <= 1)
-	return MAL_SUCCEED;
+		return MAL_SUCCEED;
 
 	// these number match those in sql_parser.y's opt_on_location.
 	stream *s = *inner;
@@ -2550,6 +2550,15 @@ wrap_onclient_compression(stream **inner, str context, int nr)
 		str msg = createException(IO, context, SQLSTATE(42000) "%s", mnstr_peek_error(NULL));
 		close_stream(cs);
 		return msg;
+	}
+	if (!binary) {
+		stream *t = create_text_stream(cs);
+		if (t == NULL) {
+			str msg = createException(IO, context, SQLSTATE(42000) "%s", mnstr_peek_error(NULL));
+			close_stream(cs);
+			return msg;
+		}
+		cs = t;
 	}
 	*inner = cs;
 	return MAL_SUCCEED;
@@ -2665,7 +2674,7 @@ mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			close_stream(s);
 			goto wrapup_result_set1;
 		}
-		msg = wrap_onclient_compression(&s, "sql.copy_from", onclient);
+		msg = wrap_onclient_compression(&s, "sql.copy_from", onclient, false);
 		if (msg != NULL) {
 			close_stream(s);
 			return msg;
@@ -3202,7 +3211,7 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			close_stream(ss);
 			return msg;
 		}
-		msg = wrap_onclient_compression(&ss, "sql.copy_from", onclient);
+		msg = wrap_onclient_compression(&ss, "sql.copy_from", onclient, false);
 		if (msg != NULL) {
 			close_stream(ss);
 			return msg;

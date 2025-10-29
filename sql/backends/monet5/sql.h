@@ -93,7 +93,7 @@ extern str mvc_export_chunk_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Inst
 extern str mvc_export_operation_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 extern str mvc_scalar_value_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 extern str mvc_row_result_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str wrap_onclient_compression(stream **s, str context, int nr);
+extern str wrap_onclient_compression(stream **s, str context, int nr, bool binary);
 extern str mvc_export_row_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 extern str mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 extern str mvc_bin_import_column_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);

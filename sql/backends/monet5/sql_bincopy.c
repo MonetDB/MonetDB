@@ -272,7 +272,7 @@ import_column(backend *be, bat *ret, BUN *retcnt, str method, int width, bool by
 	if (s == NULL || mnstr_errnr(s) != MNSTR_NO__ERROR) {
 		bailout("%s", mnstr_peek_error(NULL));
 	}
-	msg = wrap_onclient_compression(&s, "sql.copy_from", onclient);
+	msg = wrap_onclient_compression(&s, "sql.copy_from", onclient, true);
 	if (msg != NULL)
 		goto end;
 
@@ -567,7 +567,7 @@ export_column(backend *be, BAT *b, bool byteswap, str filename, int onclient)
 	}
 	if (s == NULL || mnstr_errnr(s) != MNSTR_NO__ERROR) {
 	}
-	msg = wrap_onclient_compression(&s, "sql.copy_from", onclient);
+	msg = wrap_onclient_compression(&s, "sql.copy_from", onclient, true);
 	if (msg != NULL)
 		goto end;
 
