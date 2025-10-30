@@ -9748,7 +9748,7 @@ BATaggrdigest(allocator *ma, BAT **bnp, char **shap, const char *digest,
 		}
 		if (mdctx[gid] == NULL) {
 			mdctx[gid] = EVP_MD_CTX_new();
-			if (mdctx[gid] == NULL || !EVP_DigestInit_ex2(mdctx[gid], md, NULL)) {
+			if (mdctx[gid] == NULL || !EVP_DigestInit(mdctx[gid], md)) {
 				goto bailout;
 			}
 		} else if (mdctx[gid] == (EVP_MD_CTX *) -1) {
