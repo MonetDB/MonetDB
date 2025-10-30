@@ -824,8 +824,8 @@ BATproject2(BAT *restrict l, BAT *restrict r1, BAT *restrict r2)
 	}
 
 	bn->tunique_est =
-		MIN(li.unique_est ? li.unique_est : BATcount(li.b),
-		    r1i.unique_est ? r1i.unique_est : BATcount(r1i.b));
+		MIN(li.unique_est ? li.unique_est : li.count,
+		    r1i.unique_est ? r1i.unique_est : r1i.count);
 	if (!BATtdensebi(&r1i) || (r2 && !BATtdensebi(&r2i)))
 		BATtseqbase(bn, oid_nil);
 
