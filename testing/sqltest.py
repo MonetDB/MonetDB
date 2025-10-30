@@ -10,29 +10,32 @@
 
 import os
 import sys
-import unittest
 import pymonetdb
 import difflib
 from abc import ABCMeta, abstractmethod
 import MonetDBtesting.process as process
 import inspect
-
-TSTDB=os.getenv("TSTDB")
-MAPIPORT=os.getenv("MAPIPORT")
-TIMEOUT=int(os.getenv("TIMEOUT", "0"))
-
 from pathlib import Path
 from typing import Optional
+
+TSTDB = os.getenv("TSTDB")
+MAPIPORT = os.getenv("MAPIPORT")
+TIMEOUT = int(os.getenv("TIMEOUT", "0"))
+
+
 class UnsafeDirectoryHandler(pymonetdb.SafeDirectoryHandler):
     def secure_resolve(self, filename: str) -> Optional[Path]:
         return Path(filename).resolve()
 
+
 transfer_handler = UnsafeDirectoryHandler('.')
+
 
 def equals(a, b) -> bool:
     if type(a) is type(b):
-        return a==b
+        return a == b
     return False
+
 
 def sequence_match(left=[], right=[], index=0):
     right = right[index:]
@@ -47,6 +50,7 @@ def sequence_match(left=[], right=[], index=0):
             return False
     return True
 
+
 def get_index_mismatch(left=[], right=[]):
     ll = len(left)
     rl = len(right)
@@ -56,6 +60,7 @@ def get_index_mismatch(left=[], right=[]):
             index = i
             break
     return index
+
 
 def piped_representation(data=[]):
     def mapfn(next):
@@ -69,15 +74,19 @@ def piped_representation(data=[]):
     res = list(map(mapfn, data))
     return '\n'.join(res)
 
+
 def filter_junk(s: str):
     """filters empty strings and comments
     """
     s = s.strip()
-    if s.startswith('--') or s.startswith('#') or s.startswith('stdout of test'):
+    if s.startswith('--') \
+       or s.startswith('#') \
+       or s.startswith('stdout of test'):
         return False
     if s == '':
         return False
     return True
+
 
 def filter_headers(s: str):
     """filter lines prefixed with % (MAPI headers)"""
@@ -87,6 +96,7 @@ def filter_headers(s: str):
     if s == '':
         return False
     return True
+
 
 def filter_lines_starting_with(predicates=[]):
     def _fn(line:str):
@@ -115,15 +125,17 @@ def filter_matching_blocks(a: [str] = [], b: [str] = [], ratio=0.95):
             red_a.append(a[i])
             red_b.append(b[i])
             # keep track of last mismatch to add some ctx in between
-            ptr = i
+#            ptr = i
     # add trailing data if len(a) != len(b)
-    red_a+=a[min_size:]
-    red_b+=b[min_size:]
+    red_a += a[min_size:]
+    red_b += b[min_size:]
     return red_a, red_b
+
 
 def diff(stable_file, test_file, ratio=0.95):
     diff = None
-    filter_fn = filter_lines_starting_with(['--', '#', 'stdout of test', 'stderr of test', 'MAPI'])
+    filter_fn = filter_lines_starting_with(['--', '#', 'stdout of test',
+                                            'stderr of test', 'MAPI'])
     with open(stable_file) as fstable:
         stable = list(filter(filter_fn, fstable.read().split('\n')))
         with open(test_file) as ftest:
@@ -135,6 +147,7 @@ def diff(stable_file, test_file, ratio=0.95):
             else:
                 diff = None
     return diff
+
 
 class PyMonetDBConnectionContext(object):
     def __init__(self,
@@ -203,14 +216,16 @@ class PyMonetDBConnectionContext(object):
             self.dbh.close()
             self.dbh = None
 
+
 class RunnableTestResult(metaclass=ABCMeta):
     """Abstract class for sql result"""
     did_run = False
 
     @abstractmethod
-    def run(self, query:str, *args, stdin=None, lineno=None):
+    def run(self, query: str, *args, stdin=None, lineno=None):
         """Run query with specific client"""
         pass
+
 
 class TestCaseResult(object):
     """TestCase connected result"""
@@ -218,7 +233,7 @@ class TestCaseResult(object):
 
     def __init__(self, test_case, **kwargs):
         self.test_case = test_case
-        self.assertion_errors = [] # holds assertion errors
+        self.assertion_errors = []  # holds assertion errors
         self.query = None
         self.test_run_error = None
         self.err_code = None

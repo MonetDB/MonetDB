@@ -2487,19 +2487,21 @@ def stacktrace(proc, outfile):
     out = ''
     if os.name == 'nt':
         sym = ''
-        if os.path.exists(r'c:\Program Files\Debugging Tools for Windows (x64)\cdb.exe'):
-            cdb = r'c:\Program Files\Debugging Tools for Windows (x64)\cdb.exe'
+        cdb = r'c:\Program Files\Debugging Tools for Windows (x64)\cdb.exe'
+        if os.path.exists(cdb):
             if os.path.exists(r'c:\Symbols'):
                 sym = r'c:\Symbols;'
-        elif os.path.exists(r'c:\Program Files\Debugging Tools for Windows (x86)\cdb.exe'):
-            cdb = r'c:\Program Files\Debugging Tools for Windows (x86)\cdb.exe'
-            if os.path.exists(r'c:\WINDOWS\Symbols'):
-                sym = r'c:\WINDOWS\Symbols;'
         else:
-            cdb = None
-        if cdb:
+            cdb = r'c:\Program Files\Debugging Tools for Windows (x86)\cdb.exe'
+            if os.path.exists(cdb):
+                if os.path.exists(r'c:\WINDOWS\Symbols'):
+                    sym = r'c:\WINDOWS\Symbols;'
+            else:
+                cdb = None
+        if cdb is not None:
             with process.Popen([cdb, '-pv', '-p', str(proc.pid),
-                                '-y', f'{sym}cache*;srv*http://msdl.microsoft.com/download/symbols', '-lines', '-c', '~*kP;!locks;q'],
+                                '-y', f'{sym}cache*;srv*http://msdl.microsoft.com/download/symbols',
+                                '-lines', '-c', '~*kP;!locks;q'],
                                stdout=process.PIPE, text=True) as p:
                 try:
                     out, err = p.communicate(timeout=60)
@@ -2507,7 +2509,9 @@ def stacktrace(proc, outfile):
                     p.kill()
     elif platform.system() == 'Darwin':
         try:
-            with process.Popen(['lldb', '--attach-pid', str(proc.pid), '--batch', '--one-line', 'bt all'], stdout=process.PIPE, text=True) as p:
+            with process.Popen(['lldb', '--attach-pid', str(proc.pid),
+                                '--batch', '--one-line', 'bt all'],
+                               stdout=process.PIPE, text=True) as p:
                 try:
                     out, err = p.communicate(timeout=60)
                 except process.TimeoutExpired:
@@ -2518,18 +2522,17 @@ def stacktrace(proc, outfile):
             pass
     else:
         try:
-            with process.Popen(['gdb', '-n', '-p', str(proc.pid), '-batch', '-ex', 'thread apply all bt full'], stdout=process.PIPE,
-                               text=True) as p:
+            with process.Popen(['gdb', '-n', '-p', str(proc.pid),
+                                '-batch', '-ex', 'thread apply all bt full'],
+                               stdout=process.PIPE, text=True) as p:
                 try:
-                    out, err = p.communicate(timeout=60)
+                    out, err = p.communicate(timeout=600)
                 except process.TimeoutExpired:
                     # gdb sometimes hangs when trying to get the stack
                     # trace: kill it mercilessly if it does
                     p.kill()
                     p.wait()
-                    out = err = ''
-            if t is not None:
-                t.cancel()
+                    out = ''
         except KeyboardInterrupt:
             raise
         except:
