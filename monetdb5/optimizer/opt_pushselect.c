@@ -110,8 +110,10 @@ OPTpushselectImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 	str msg = MAL_SUCCEED;
 	allocator *ta = mb->ta;
 
-	if (MB_LARGE(mb))
-			return msg;
+	if (MB_LARGE(mb)) {
+		(void) pushInt(mb, pci, actions);
+		return msg;
+	}
 	if (mb->errors)
 		throw(MAL, "optimizer.pushselect", "%s", mb->errors);
 
