@@ -136,8 +136,10 @@ OPTevaluateImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 
 	(void) stk;
 
-	if (mb->inlineProp || MB_LARGE(mb))
+	if (mb->inlineProp || MB_LARGE(mb)) {
+		(void) pushInt(mb, pci, actions);
 		return MAL_SUCCEED;
+	}
 
 	allocator_state ta_state = ma_open(ta);
 	assigned = (int *) ma_zalloc(ta, sizeof(int) * mb->vtop);
