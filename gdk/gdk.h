@@ -1694,7 +1694,7 @@ TIMEOUT_TEST(QryCtx *qc)
 #define TIMEOUT_LOOP_BREAK			\
 	{					\
 		END1 = END2 = 0;		\
-		continue;			\
+		break;				\
 	}
 
 /* check whether a timeout occurred, and execute the CALLBACK argument

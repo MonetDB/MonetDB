@@ -665,7 +665,8 @@ BAThashsave(BAT *b, bool dosync)
 #define starthash(TYPE)							\
 	do {								\
 		const TYPE *restrict v = (const TYPE *) BUNtloc(bi, 0);	\
-		TIMEOUT_LOOP(p, qry_ctx) {				\
+		TIMEOUT_LOOP_IDX(p, cnt1, qry_ctx) {			\
+			c = hash_##TYPE(h, v + o - b->hseqbase);	\
 			hget = HASHget(h, c);				\
 			if (hget == BUN_NONE) {				\
 				if (h->nheads == maxslots)		\
@@ -802,7 +803,13 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 		 * adjusting the hash mask */
 		mask = HASHmask(ci->ncand);
 	} else if (!hascand && bi.unique_est != 0) {
-		mask = (BUN) (bi.unique_est * 1.15); /* about 8/7 */
+		maxmask = HASHmask(ci->ncand);
+		mask = HASHmask(bi.unique_est);
+		if (mask < maxmask) {
+			/* it's only an estimate: try out on first 25%
+			 * of b */
+			cnt1 = ci->ncand >> 2;
+		}
 	} else {
 		/* dynamic hash: we start with HASHmask(ci->ncand)/64, or,
 		 * if ci->ncand large enough, HASHmask(ci->ncand)/256; if there
@@ -814,6 +821,8 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 		mask = maxmask >> 6;
 		while (mask > 4096)
 			mask >>= 2;
+		if (mask < BATTINY)
+			mask = BATTINY;
 		/* try out on first 25% of b */
 		cnt1 = ci->ncand >> 2;
 	}
@@ -872,7 +881,7 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 			break;
 		default: {
 			bool (*atomeq)(const void *, const void *) = ATOMequal(h->type);
-			TIMEOUT_LOOP(p, qry_ctx) {
+			TIMEOUT_LOOP_IDX(p, cnt1, qry_ctx) {
 				const void *restrict v = BUNtail(bi, o - b->hseqbase);
 				c = hash_any(h, v);
 				hget = HASHget(h, c);
