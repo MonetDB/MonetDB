@@ -1666,8 +1666,8 @@ rel_has_complete_exp(sql_rel *rel, sql_exp *e, bool subexp)
 		if (is_basetable(rel->op) && !rel->exps) {
 			assert(e->nid);
 			return (rel_base_has_nid(rel, e->nid));
-		} else if ((!list_empty(rel->exps) && (is_project(rel->op) || is_base(rel->op))) ||
-					(!list_empty(rel->attr) && is_join(rel->op))) {
+		} else if ((!list_empty(rel->exps) && (is_project(rel->op) || is_base(rel->op) || is_physical(rel->op))) ||
+					(!list_empty(rel->attr) && (is_join(rel->op) || is_physical(rel->op)))) {
 			list *l = rel->attr ? rel->attr : rel->exps;
 			assert(e->nid);
 			ne = exps_bind_nid(l, e->nid);
