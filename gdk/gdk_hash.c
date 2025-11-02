@@ -804,7 +804,7 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 		mask = HASHmask(ci->ncand);
 	} else if (!hascand && bi.unique_est != 0) {
 		maxmask = HASHmask(ci->ncand);
-		mask = HASHmask(bi.unique_est);
+		mask = HASHmask((BUN) bi.unique_est);
 		if (mask < maxmask) {
 			/* it's only an estimate: try out on first 25%
 			 * of b */
