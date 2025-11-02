@@ -787,9 +787,6 @@ maxlevenshteinjoin(BAT **r1, BAT **r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int k)
 	allocator *ma = MT_thread_getallocator();
 	allocator_state ma_state = ma_open(ma);
 
-	if (lci.ncand == 0 || rci.ncand == 0)
-		goto exit;
-
 	lvals = (const char *) Tloc(l, 0);
 	rvals = (const char *) Tloc(r, 0);
 	lvars = l->tvheap->base;
@@ -804,6 +801,9 @@ maxlevenshteinjoin(BAT **r1, BAT **r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int k)
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto exit;
 	}
+
+	if (lci.ncand == 0 || rci.ncand == 0)
+		goto exit1;
 
 	r1t->tsorted = r1t->trevsorted = false;
 	r2t->tsorted = r2t->trevsorted = false;
@@ -867,6 +867,7 @@ maxlevenshteinjoin(BAT **r1, BAT **r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int k)
 	}
 
 	FINALIZE_BATS(r1t, r2t, lci, rci, lsi, rsi);
+  exit1:
 	*r1 = r1t;
 	*r2 = r2t;
 
@@ -971,9 +972,6 @@ minjarowinklerjoin(BAT **r1, BAT **r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	canditer_init(&lci, l, sl);
 	canditer_init(&rci, r, sr);
 
-	if (lci.ncand == 0 || rci.ncand == 0)
-		goto exit;
-
 	lvals = (const char *) Tloc(l, 0);
 	rvals = (const char *) Tloc(r, 0);
 	assert(r->ttype);
@@ -989,6 +987,9 @@ minjarowinklerjoin(BAT **r1, BAT **r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto exit;
 	}
+
+	if (lci.ncand == 0 || rci.ncand == 0)
+		goto exit1;
 
 	r1t->tsorted = r1t->trevsorted = false;
 	r2t->tsorted = r2t->trevsorted = false;
@@ -1067,6 +1068,7 @@ minjarowinklerjoin(BAT **r1, BAT **r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	}
 
 	FINALIZE_BATS(r1t, r2t, lci, rci, ssl, ssr);
+  exit1:
 	*r1 = r1t;
 	*r2 = r2t;
 
