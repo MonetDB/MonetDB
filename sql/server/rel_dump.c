@@ -148,7 +148,6 @@ exp_or_print(mvc *sql, stream *fout, node *n, int anti, int depth, list *refs, i
 void
 exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, int alias, int decorate)
 {
-	(void)sql;
 	if (!e)
 		return;
 	// mnstr_printf(fout, "%p ", e);
