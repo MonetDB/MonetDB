@@ -11,7 +11,13 @@
 # Copyright 1997 - July 2008 CWI.
 
 from argparse import ArgumentParser
-from datetime import datetime, timedelta, UTC
+from datetime import datetime, timedelta
+try:
+    from datetime import UTC
+except ImportError:
+    # Python 3.10 and older
+    from datetime import timezone
+    UTC = timezone.utc
 import hashlib
 import http.server
 import io
