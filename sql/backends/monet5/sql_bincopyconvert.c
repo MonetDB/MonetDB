@@ -418,8 +418,8 @@ insert_single_char(struct insert_state *st, int ch)
 		if (msg != MAL_SUCCEED)
 			return msg;
 	} else {
-		char value[2] = {ch, 0};
-		if (bunfastapp(st->bat, value) != GDK_SUCCEED)
+		char value[] = {ch, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+		if (bunfastapp(st->bat, (char*)value) != GDK_SUCCEED)
 			throw(SQL, "insert_nul_terminated_values", GDK_EXCEPTION);
 	}
 	// Prefer to remember the latest occurrence so we can use short backrefs
