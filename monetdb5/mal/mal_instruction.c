@@ -118,16 +118,16 @@ newMalBlk(int elements)
 {
 	MalBlkPtr mb;
 	VarRecord *v;
-	allocator *ma = create_allocator(NULL, "MA_MalBlk", true);
+	allocator *ma = create_allocator(NULL, "MA_MALBlk", true);
 
 	if (!ma)
 		return NULL;
-	allocator *ta = create_allocator(ma, "TA_MalBlk", true);
+	allocator *ta = create_allocator(ma, "TA_MALBlk", true);
 	if (ta == NULL) {
 		ma_destroy(ma);
 		return NULL;
 	}
-	allocator *instr_allocator = create_allocator(ma, "MA_MalInstructions", false);
+	allocator *instr_allocator = create_allocator(ma, "MA_MALInstructions", false);
 	if (instr_allocator == NULL) {
 		ma_destroy(ma);
 		return NULL;
