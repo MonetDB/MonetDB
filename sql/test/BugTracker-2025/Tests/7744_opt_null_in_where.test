@@ -1,0 +1,6 @@
+statement ok
+CREATE TABLE IF NOT EXISTS t0(c0 INT);
+
+query II
+SELECT * FROM t0 JOIN (VALUES (1)) AS subQuery0(c0) ON NOT EXISTS (SELECT 1 WHERE subQuery0.c0 > NULL);
+----
