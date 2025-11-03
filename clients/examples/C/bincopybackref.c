@@ -36,9 +36,9 @@ typedef struct input_string {
 } input_string;
 
 typedef struct my_hash_table {
-	uint32_t offsets[HASH_SLOTS];
-	item_index indices[HASH_SLOTS];
-	size_t len;
+	uint32_t offsets[HASH_SLOTS];   // maps hash to to potential matching string
+	item_index indices[HASH_SLOTS]; // last time that string was seen
+	size_t len;                     // portion of .buffer used so far
 	char buffer[HASH_BUFFER_SIZE];
 } my_hash_table;
 
@@ -46,7 +46,7 @@ struct backref_memory {
 	my_hash_table hashtabs[HASHES_PER_MEM];
 	int active;
 	item_index last_nil;
-	unsigned char encoded[20];
+	uint8_t encoded[20];
 };
 
 static void
@@ -81,6 +81,7 @@ prepare_string(input_string *hs, const char *str, item_index cur_index)
 backref_memory*
 backref_create(void)
 {
+	assert((uint64_t)HASH_BUFFER_SIZE < (uint64_t)UINT32_MAX);
 	backref_memory *mem = malloc(sizeof(*mem));
 	if (mem == NULL)
 		return NULL;
@@ -125,7 +126,7 @@ insert_hash(my_hash_table *htab, size_t slot, input_string *istr)
 {
 	assert(istr->size <= HASH_BUFFER_SIZE - htab->len);
 	memcpy(htab->buffer + htab->len, istr->s, istr->size);
-	htab->offsets[slot] = htab->len;
+	htab->offsets[slot] = (uint32_t)htab->len;
 	htab->indices[slot] = istr->idx;
 	htab->len += istr->size;
 }
