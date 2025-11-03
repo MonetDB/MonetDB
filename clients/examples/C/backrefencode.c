@@ -258,8 +258,8 @@ main(int argc, char **argv)
 	}
 
 	#ifdef _WIN32
-	_setmode(fileno(stdout),O_BINARY);
-	_setmode(fileno(stdin),O_BINARY);
+	_setmode(_fileno(stdout),O_BINARY);
+	_setmode(_fileno(stdin),O_BINARY);
 	#endif
 
 	if (setvbuf(stdout, NULL, _IOFBF, 128 * 1024) < 0) {

@@ -188,7 +188,7 @@ backref_encode(backref_memory *mem, const char *input, item_index cur_index, siz
 		mem->last_nil = cur_index;
 		if (delta < 64) {
 			// we've recently seen a nil, referring to it saves one byte
-			mem->encoded[0] = 0x80 + delta;
+			mem->encoded[0] = 0x80 + (uint8_t) delta;
 			*output_len = 1;
 			return (char*) mem->encoded;
 		} else {
@@ -213,7 +213,7 @@ backref_encode(backref_memory *mem, const char *input, item_index cur_index, siz
 
 	if (delta < 64) {
 		// short encoding
-		mem->encoded[0] = 0x80 + delta;
+		mem->encoded[0] = 0x80 + (uint8_t) delta;
 		*output_len = 1;
 		return (char*) mem->encoded;
 	}
