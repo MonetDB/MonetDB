@@ -195,7 +195,7 @@ oahash_project_hsh(backend *be, list *exps_prj_hsh, stmt *stmts_ht, stmt *prb_re
 }
 
 static list *
-oahash_project_prb(backend *be, list *exps_prj_prb, stmt *prb_res, const stmt *freq, bit outer, bit groupedjoin, stmt *sub, stmt **probed_rowids, stmt **mrk /* returns outer match or not */)
+oahash_project_prb(backend *be, list *exps_prj_prb, stmt *prb_res, const stmt *freq, bit outer, stmt *sub, stmt **probed_rowids)
 {
 	list *l = sa_list(be->mvc->sa);
 
@@ -219,14 +219,6 @@ oahash_project_prb(backend *be, list *exps_prj_prb, stmt *prb_res, const stmt *f
 	}
 	if (probed_rowids) /* the rowids are needed for post processing semi/anti joins based on the probe side row ids */
 		*probed_rowids = expand;
-	if (outer && mrk && !*mrk) /* ToDo some how expand the mrk */
-		assert(0);
-	if ((outer || groupedjoin) && mrk && *mrk) {
-		stmt *s = stmt_project(be, expand, *mrk);
-		if (s == NULL) return NULL;
-		*mrk = s;
-	}
-
 	return l;
 }
 
@@ -423,8 +415,17 @@ rel2bin_oahash_equi_join(backend *be, sql_rel *rel, list *refs, list *jexps, stm
 
 	/*** PROJECT RESULT PHASE ***/
 	bit outer = is_outerjoin(rel->op);
-	list *lp = oahash_project_prb(be, exps_prj_prb, prb_res, stmts_ht->op3, outer, groupedjoin, sub, probed_rowids, mrk);
+	list *lp = oahash_project_prb(be, exps_prj_prb, prb_res, stmts_ht->op3, outer, sub, probed_rowids);
 	list *lh = oahash_project_hsh(be, exps_prj_hsh, stmts_ht, prb_res, outer);
+
+	if (outer && mrk && !*mrk) /* ToDo some how expand the mrk */
+		assert(0);
+	if ((outer || groupedjoin) && mrk && *mrk) {
+		stmt *s = stmt_project(be, *probed_rowids, *mrk);
+		if (s == NULL) return NULL;
+		*mrk = s;
+	}
+
 	assert(lh->cnt || lp->cnt || mrk);
 
 	if (probe_side)
@@ -893,7 +894,7 @@ rel2bin_oahash_semi(backend *be, sql_rel *rel, list *refs)
 		if (prb_res == NULL) return NULL;
 
 		/*** PROJECT RESULT PHASE ***/
-		list *lp = oahash_project_prb(be, exps_prj_prb, prb_res, NULL, false, false, sub, &probed_ids, NULL);
+		list *lp = oahash_project_prb(be, exps_prj_prb, prb_res, NULL, false, sub, &probed_ids);
 		sub = stmt_list(be, lp);
 	}
 	if (!sub)
