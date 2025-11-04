@@ -676,7 +676,7 @@ process_blobs(bstream *bs, BAT *bat, bool byteswap, char **scratch, size_t *scra
 		} else {
 			// Copy it to scratch.
 			// We can't use it in-place because it's probably misaligned.
-			size = header;
+			size = (size_t) header;
 			size_t needed = size + sizeof(empty_value);
 			if (*scratch == NULL || *scratch_len < needed) {
 				// Reallocate the buffer. Do not use realloc, we don't
