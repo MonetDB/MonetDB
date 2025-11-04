@@ -99,7 +99,7 @@ if __name__ == '__main__':
         p = run(cmd, stdout=PIPE, stderr=PIPE, check=True, encoding='utf-8')
         pout = str(p.stdout)
         perr = str(p.stderr)
-        verify_output('stderr', perr, "Error on line 12: [22000] Missing file name\nError on line 30: [22000] Specified file compression format .bz2 is not supported. Only .gz is supported.\nError on line 32: [22000] Specified file compression format .lz4 is not supported. Only .gz is supported.\nError on line 34: [22000] Specified file compression format .xz is not supported. Only .gz is supported.\nError on line 36: [22000] Specified file compression format .zip is not supported. Only .gz is supported.\n")
+        verify_output('stderr', perr, "Error on line 12: [42000] when opening : ON CLIENT: Missing file name\nError on line 30: [42000] when opening sys_tables_by_id.csv.bz2: ON CLIENT: Specified file compression format .bz2 is not supported. Only .gz is supported.\nError on line 32: [42000] when opening sys_tables_by_id.csv.lz4: ON CLIENT: Specified file compression format .lz4 is not supported. Only .gz is supported.\nError on line 34: [42000] when opening sys_tables_by_id.csv.xz: ON CLIENT: Specified file compression format .xz is not supported. Only .gz is supported.\nError on line 36: [42000] when opening sys_tables_by_id.csv.zip: ON CLIENT: Specified file compression format .zip is not supported. Only .gz is supported.\n")
         verify_output('stdout', pout, "121 affected rows\n122 affected rows\n123 affected rows\n124 affected rows\n120 affected rows\n")
 
         # test the ON CLIENT upload/import functionality via JdbcClient with --csvdir argument (to enable the ON CLIENT functionality)
