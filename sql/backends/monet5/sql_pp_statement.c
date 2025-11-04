@@ -633,12 +633,13 @@ stmt_oahash_expand(backend *be, const stmt *prb_res, const stmt *freq, bit outer
 }
 
 stmt *
-stmt_oahash_explode(backend *be, const stmt *prb_res, const stmt *freq, const stmt *ht_sink, bit outer, sql_subtype *st)
+stmt_oahash_explode(backend *be, const stmt *prb_res, const stmt *freq, const stmt *ht_sink, bit outer)
 {
+	sql_subtype *st = sql_fetch_localtype(TYPE_oid);
 	InstrPtr q = newStmtArgs(be->mb, putName("oahash"), putName("explode"), 5);
 	if (q == NULL)
 		return NULL;
-	setVarType(be->mb, getArg(q, 0), newBatType(TYPE_oid));
+	setVarType(be->mb, getArg(q, 0), newBatType(st->type->localtype));
 	q = pushArgument(be->mb, q, getArg(prb_res->q, 1));
 	q = pushArgument(be->mb, q, freq->nr);
 	q = pushArgument(be->mb, q, ht_sink->nr);

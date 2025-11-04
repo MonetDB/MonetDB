@@ -28,7 +28,7 @@ extern stmt *stmt_algebra_project(backend *be, stmt *inout, stmt *pos, stmt *val
 extern stmt * stmt_oahash_project_cart(backend *be, stmt *col, stmt *repeat, bool outer, bool expand);
 
 extern stmt *stmt_oahash_expand(backend *be, const stmt *prb_res, const stmt *freq, bit outer);
-extern stmt *stmt_oahash_explode(backend *be, const stmt *prb_res, const stmt *freq, const stmt *ht_sink, bit outer, sql_subtype *st);
+extern stmt *stmt_oahash_explode(backend *be, const stmt *prb_res, const stmt *freq, const stmt *ht_sink, bit outer);
 
 extern InstrPtr stmt_part_new(backend *be, int nr_parts);
 extern InstrPtr stmt_mat_new(backend *be, int tt, int nr_parts);
