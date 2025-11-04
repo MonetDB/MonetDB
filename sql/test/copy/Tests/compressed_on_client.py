@@ -47,11 +47,11 @@ def run_the_tests(algo_name, compress, decompress):
     print('#')
     print('# self-test')
     x = b'foo'
-    print(f'# {x=}')
+    print(f'# x={x}')
     y = compress(x)
-    print(f'# {y=}')
+    print(f'# y={y}')
     z = decompress(y)
-    print(f'# {z=}')
+    print(f'# z={z}')
     print('#')
 
     test_data = [(1, 'one'), (2, 'two'), (3, 'three')]
