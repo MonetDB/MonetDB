@@ -148,8 +148,8 @@ gdk_export gdk_return BATsum(void *res, int tp, BAT *b, BAT *s, bool skip_nils, 
 gdk_export gdk_return BATprod(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool nil_if_empty);
 gdk_export void *BATmax(BAT *b, void *aggr);
 gdk_export void *BATmin(BAT *b, void *aggr);
-gdk_export void *BATmax_skipnil(allocator *alloc, BAT *b, void *aggr, bit skipnil);
-gdk_export void *BATmin_skipnil(allocator *alloc, BAT *b, void *aggr, bit skipnil);
+gdk_export void *BATmax_skipnil(allocator *, BAT *b, void *aggr, bit skipnil);
+gdk_export void *BATmin_skipnil(allocator *, BAT *b, void *aggr, bit skipnil);
 
 gdk_export dbl BATcalcstdev_population(dbl *avgp, BAT *b);
 gdk_export dbl BATcalcstdev_sample(dbl *avgp, BAT *b);
