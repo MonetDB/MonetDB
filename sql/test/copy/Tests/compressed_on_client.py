@@ -55,7 +55,7 @@ def run_the_tests(algo_name, compress, decompress):
     print('#')
 
     test_data = [(1, 'one'), (2, 'two'), (3, 'three')]
-    csv_data = ''.join(f'{i}|{s}\n' for i, s in test_data)
+    csv_data = ''.join(f'{i}|{s}{os.linesep}' for i, s in test_data)
     bin_data = bytes(csv_data, 'utf-8')
     compressed_data = compress(bin_data)
 
