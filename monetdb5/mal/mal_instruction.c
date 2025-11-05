@@ -331,7 +331,7 @@ copyMalBlk(MalBlkPtr old)
 {
 	MalBlkPtr mb;
 	int i;
-	allocator *ma = create_allocator(NULL, NULL, true);
+	allocator *ma = create_allocator(NULL, ma_name(old->ma), true);
 
 	if (!ma)
 		return NULL;
@@ -342,8 +342,8 @@ copyMalBlk(MalBlkPtr old)
 	}
 
 	mb->ma = ma;
-	mb->ta = create_allocator(ma, NULL, true);
-	mb->instr_allocator = create_allocator(ma, NULL, true);
+	mb->ta = create_allocator(ma, ma_name(old->ta), true);
+	mb->instr_allocator = create_allocator(ma, ma_name(old->instr_allocator), true);
 	mb->var = MA_ZNEW_ARRAY(ma, VarRecord, old->vsize);
 	if (mb->var == NULL) {
 		ma_destroy(ma);
