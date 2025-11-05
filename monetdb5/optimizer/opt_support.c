@@ -324,6 +324,10 @@ hasSideEffects(MalBlkPtr mb, InstrPtr p, int strict)
 			return FALSE;
 		if (getFunctionId(p) == importColumnRef)
 			return FALSE;
+		if (getFunctionId(p) == importRawRef)
+			return FALSE;
+		if (getFunctionId(p) == importNulTerminatedRef)
+			return FALSE;
 		return TRUE;
 	}
 	if (getModuleId(p) == mapiRef) {
