@@ -10,7 +10,7 @@
   guaranteed.
 
 * Fri Oct  3 2025 Lucas Pereira <lucas.pereira@monetdbsolutions.com>
-  - EXPLAIN now supports a BEFORE/AFTER REL_UNNEST/REL_REWRITE/PHYSICAL
+- EXPLAIN now supports a BEFORE/AFTER REL_UNNEST/REL_REWRITE/PHYSICAL
   clause to indicate which phase of query compilation to show.  A plain
   EXPLAIN is equivalent to EXPLAIN BEFORE PHYSICAL, which is what PLAN
   used to do. The old EXPLAIN is now EXPLAIN PHYSICAL. SHOW DETAILS
