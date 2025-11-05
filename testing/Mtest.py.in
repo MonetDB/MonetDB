@@ -3425,10 +3425,6 @@ def CheckClassPath():
 
 
 def SetExecEnv(exe,port,verbose,environ):
-    if os.name == 'nt':
-        CALL = 'call '
-    else:
-        CALL = ''
     if verbose:
         print(file=sys.stderr, end='', flush=True)
     for v in exe.keys():
@@ -3436,7 +3432,7 @@ def SetExecEnv(exe,port,verbose,environ):
             V = 'MSERVER'
         else:
             V = v.upper()
-        environ[V] = CALL + ' '.join(exe[v]).replace('${PORT}', port)
+        environ[V] = ' '.join(exe[v]).replace('${PORT}', port)
         if verbose:
             print('%s = %s' % (V, environ[V]))
     if verbose:
