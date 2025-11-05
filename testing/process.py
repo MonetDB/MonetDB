@@ -12,13 +12,13 @@ import subprocess
 import os
 import sys
 import time
-import string
 import tempfile
 import copy
 import atexit
 import threading
 import signal
 import queue
+import shlex
 
 from subprocess import PIPE, TimeoutExpired
 try:
@@ -36,35 +36,11 @@ else:
 
 verbose = False
 
-def splitcommand(cmd):
-    '''Like string.split, except take quotes into account.'''
-    q = None
-    w = []
-    command = []
-    for c in cmd:
-        if q:
-            if c == q:
-                q = None
-            else:
-                w.append(c)
-        elif c in string.whitespace:
-            if w:
-                command.append(''.join(w))
-            w = []
-        elif c == '"' or c == "'":
-            q = c
-        else:
-            w.append(c)
-    if w:
-        command.append(''.join(w))
-    if len(command) > 1 and command[0] == 'call':
-        del command[0]
-    return command
 
-_mal_client = splitcommand(os.getenv('MAL_CLIENT', 'mclient -lmal'))
-_sql_client = splitcommand(os.getenv('SQL_CLIENT', 'mclient -lsql'))
-_sql_dump = splitcommand(os.getenv('SQL_DUMP', 'msqldump -q'))
-_server = splitcommand(os.getenv('MSERVER', ''))
+_mal_client = shlex.split(os.getenv('MAL_CLIENT', 'mclient -lmal'))
+_sql_client = shlex.split(os.getenv('SQL_CLIENT', 'mclient -lsql'))
+_sql_dump = shlex.split(os.getenv('SQL_DUMP', 'msqldump -q'))
+_server = shlex.split(os.getenv('MSERVER', ''))
 _dbfarm = os.getenv('GDK_DBFARM', None)
 
 _dotmonetdbfile = []

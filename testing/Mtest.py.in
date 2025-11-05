@@ -13,12 +13,12 @@
 import os
 import sys
 import shutil
+import shlex
 import platform
 import re
 import secrets
 import time
 import socket
-import string                   # for whitespace
 import struct
 import signal
 import fnmatch
@@ -183,32 +183,6 @@ else:
         ttywidth -= 1           # don't go to the edge
 
 
-def splitcommand(cmd):
-    '''Like string.split, except take quotes into account.'''
-    q = None
-    w = []
-    command = []
-    for c in cmd:
-        if q:
-            if c == q:
-                q = None
-            else:
-                w.append(c)
-        elif c in string.whitespace:
-            if w:
-                command.append(''.join(w))
-            w = []
-        elif c == '"' or c == "'":
-            q = c
-        else:
-            w.append(c)
-    if w:
-        command.append(''.join(w))
-    if len(command) > 1 and command[0] == 'call':
-        del command[0]
-    return command
-
-
 def remove(file):
     try:
         os.remove(file)
@@ -227,7 +201,7 @@ def remove(file):
         Warn(f'could not remove {file}')
 
 
-def isexecutable(TST, ext = '.sh'):
+def isexecutable(TST, ext='.sh'):
     if   os.name == 'nt':
         for ext in '.exe', '.com', '.bat', '.cmd':
             if TST.lower().endswith(ext):
@@ -244,7 +218,7 @@ def isexecutable(TST, ext = '.sh'):
 
 def CheckExec(cmd):
     for p in os.environ['PATH'].split(os.pathsep):
-        x = isexecutable(os.path.join(p,cmd),'')
+        x = isexecutable(os.path.join(p,cmd), ext='')
         if x[0]:
             return os.path.join(p, cmd + x[1])
     return ''
@@ -362,7 +336,7 @@ class Element(_Encode):
              'input', 'col', 'frame', 'isindex', 'base', 'meta', ]
     xml = True                          # write XHTML instead of HTML
 
-    def __init__(self, tag, attrdict = None, *children):
+    def __init__(self, tag, attrdict=None, *children):
         self.tag = tag
         if attrdict is None:
             attrdict = {}
@@ -393,7 +367,7 @@ class Element(_Encode):
             s.append('>')               # empty HTML element
         return ''.join(s)
 
-    def write(self, f, newline = False):
+    def write(self, f, newline=False):
         # write the element with its children to a file
         # if newline is set, add newlines at strategic points
         if self.tag.lower() == 'html':
@@ -445,7 +419,7 @@ class Element(_Encode):
 
 class Text(_Encode):
     # class to represent text in (X)HTML
-    def __init__(self, text = '', raw = False):
+    def __init__(self, text='', raw=False):
         self.text = text
         self.raw = raw
 
@@ -454,7 +428,7 @@ class Text(_Encode):
             return self.text
         return self.encode(self.text, False)
 
-    def write(self, f, newline = False):
+    def write(self, f, newline=False):
         f.write(str(self))
         if newline and not self.raw:
             f.write('\n')
@@ -468,7 +442,7 @@ class Comment:
     def __str__(self):
         return '<!--%s-->' % self.text
 
-    def write(self, f, newline = False):
+    def write(self, f, newline=False):
         f.write(str(self))
 
 
@@ -958,7 +932,7 @@ def AddTstToHtmlIndex(env, TST, STABLEout, STABLEerr, EXT, o, e, TSTDIR,
     td.addchildren(AddHref('.%s%s.html' % (TST, '.out'),
                            '%s_%s_body' % (DISTVER, TSTDIR),
                            'out', o))
-    td.addchild(Text('&nbsp;|&nbsp;', raw = True))
+    td.addchild(Text('&nbsp;|&nbsp;', raw=True))
     td.addchildren(AddHref('.%s%s.html' % (TST, '.err'),
                            '%s_%s_body' % (DISTVER, TSTDIR),
                            'err', e))
@@ -1107,14 +1081,13 @@ def PerformDir(env, testdir, testlist, total_tests):
                     alltests.append((tst,cond))
             allf.close()
         try:
-            f = openutf8(os.path.join(TSTSRCDIR, 'SingleServer'))
+            with openutf8(os.path.join(TSTSRCDIR, 'SingleServer')) as f:
+                options = shlex.split(f.read())
         except IOError:
             oneserver = False
             options = []            # not used
         else:
             oneserver = not restart
-            options = splitcommand(f.read())
-            f.close()
 
         if testlist:
             tl = []
@@ -1448,7 +1421,7 @@ def PerformDir(env, testdir, testlist, total_tests):
 # the environment; and the addition of an extra parameter with default
 # so that the environment which is used to expand can be replace.
 _varprog = re.compile(r'\$(\w+|\{[^}]*\})')
-def expandvars(path, environ = os.environ):
+def expandvars(path, environ=os.environ):
     '''Expand shell variables of form $var and ${var}.  Unknown variables
     are left unchanged.'''
     if '$' not in path:
@@ -1513,7 +1486,7 @@ def coredumpctl(pid):
     return out, err
 
 
-def returnCode(proc, f = None):
+def returnCode(proc, f=None):
     '''Interpret the return code of a process.
     If second arg specified, write a message to it.'''
     if proc.killed:
@@ -1720,6 +1693,9 @@ def GetBitsAndModsAndThreads(env):
             print(file=sys.stderr)
             print(qErr, file=sys.stderr, flush=True)
             rtrn = 1
+        if 'sql' not in mods:
+            ErrMsg('No sql module available!')
+            rtrn = 1
     else:
         rtrn = 1
         ErrMsg('No output from mserver5 when checking for Bits, Modules & Threads!?')
@@ -1730,7 +1706,7 @@ def GetBitsAndModsAndThreads(env):
     return rtrn
 
 
-def CheckMods(env, TST, SERVER, CALL):
+def CheckMods(env, TST):
     missing = []
     if os.path.isfile(TST + '.modules'):
         with openutf8(TST + '.modules') as fil:
@@ -1738,11 +1714,6 @@ def CheckMods(env, TST, SERVER, CALL):
                 m = m.strip()
                 if m  and  m[0] != '#'  and  m not in env['TST_MODS']:
                     missing.append(m)
-    if SERVER == 'SQL':
-        sql_mods = ['sql']
-        for m in sql_mods:
-            if m not in env['TST_MODS']:
-                missing.append(m)
     return missing
 
 
@@ -1826,8 +1797,6 @@ tests = (
     ('.maltest',      '.maltest','maltest','SQL'),
     ('.py',           '.py',     'python', ''),
     ('.SQL.py',       '.SQL.py', 'python', 'SQL'),
-    ('.sql',          '.sql',    'sql',    'SQL'),
-    ('.R',            '.R',      'R',      'SQL'),
     ('.rb',           '.rb',     'ruby',   'SQL'),
 )
 
@@ -1844,10 +1813,8 @@ def RunTest(env, TST, COND, oktests, length, pSrvr, total_tests, options, enviro
     TX = -1
     EXT = CALL = SERVER = ''
     x  = isexecutable(os.path.join(TSTSRCDIR, TST))
-    if not x[0]:
-        x  = isexecutable(os.path.join(TSTSRCDIR, TST),'')
     xS = isexecutable(os.path.join(TSTSRCDIR, TST) + '.SQL')
-    if   x[0]:
+    if x[0]:
         EXT = x[1]
         CALL = 'other'
     elif xS[0]:
@@ -1867,7 +1834,7 @@ def RunTest(env, TST, COND, oktests, length, pSrvr, total_tests, options, enviro
             if os.name == 'nt':
                 reason = "test missing: '"+os.path.join(TSTSRCDIR,TST)+".(exe|com|bat|cmd|py|sql)`"
             else:
-                reason = "test missing: '"+os.path.join(TSTSRCDIR,TST)+"[.py|.sql|.R|.rb]`"
+                reason = "test missing: '"+os.path.join(TSTSRCDIR,TST)+"[.py|.sql|.rb]`"
             if verbosity > 1:
                 print('%s%s  ' %
                       (prompt(), os.path.join(TSTDIR, TST + EXT)), end='')
@@ -1893,7 +1860,7 @@ def RunTest(env, TST, COND, oktests, length, pSrvr, total_tests, options, enviro
 
             return TX,Failed,Failed,elem,reason,links
 
-    MissingMods = CheckMods(env, os.path.join(TSTSRCDIR, TST), SERVER, CALL)
+    MissingMods = CheckMods(env, os.path.join(TSTSRCDIR, TST))
     MissingTests = CheckTests(env, os.path.join(TSTSRCDIR, TST), oktests)
     nomito = os.path.isfile(os.path.join(TSTSRCDIR, TST + '.nomito'))
     user = None
@@ -2055,23 +2022,8 @@ def RunTest(env, TST, COND, oktests, length, pSrvr, total_tests, options, enviro
     elif MissingTests:
         reason = "as required test%s '%s' failed." % ('s' if len(MissingTests) != 1 else '', "', '".join(MissingTests))
         elem = SkipTest(env, TST, EXT, reason, length, TSTDIR, TSTTRGDIR, TSTSRCDIR)
-    elif EXT == ".sql" and 'SQL_Client' not in env['exe']:
-        reason = f"as {env['SQLCLIENT'].split(None, 1)[0]} is not available."
-        elem = SkipTest(env, TST, EXT, reason, length, TSTDIR, TSTTRGDIR, TSTSRCDIR)
-    elif EXT == ".sql" and 'SQL_Dump' not in env['exe']:
-        reason = f"as {env['SQLDUMP'].split(None, 1)[0]} is not available."
-        elem = SkipTest(env, TST, EXT, reason, length, TSTDIR, TSTTRGDIR, TSTSRCDIR)
     elif CALL == 'ruby' and 'ruby_client' not in env['exe']:
         reason = 'as ruby is not available.'
-        elem = SkipTest(env, TST, EXT, reason, length, TSTDIR, TSTTRGDIR, TSTSRCDIR)
-    elif CALL == 'R' and 'R_client' not in env['exe']:
-        reason = f"as {env['RCLIENT'].split(None, 1)[0]} is not available."
-        elem = SkipTest(env, TST, EXT, reason, length, TSTDIR, TSTTRGDIR, TSTSRCDIR)
-    elif SERVER == 'SQL' and 'mserver5' not in env['exe']:
-        reason = f"as {env['MSERVER'].split(None, 1)[0]} is not available."
-        elem = SkipTest(env, TST, EXT, reason, length, TSTDIR, TSTTRGDIR, TSTSRCDIR)
-    elif EXT == '.malS' and 'mserver5' not in env['exe']:
-        reason = f"as {env['MSERVER'].split(None, 1)[0]} is not available."
         elem = SkipTest(env, TST, EXT, reason, length, TSTDIR, TSTTRGDIR, TSTSRCDIR)
     elif MissingMods:
         reason = f"as modules '{MissingMods}` are missing."
@@ -2080,10 +2032,9 @@ def RunTest(env, TST, COND, oktests, length, pSrvr, total_tests, options, enviro
         reason = 'test with timeout'
         elem = SkipTest(env, TST, EXT, reason, length, TSTDIR, TSTTRGDIR, TSTSRCDIR)
     else:
-        test = re.compile('^'+TST+r'((_[sp][0-9][0-9])?\..*)?$', re.MULTILINE)
         srcdir = os.path.join(TSTTRGDIR, RELSRCDIR)
         for f in listdir(srcdir):
-            if test.match(f):
+            if f.startswith(TST+'.'):
                 try:
                     SymlinkOrCopy(os.path.join(RELSRCDIR, f), f, TSTTRGDIR)
                     links.append(os.path.join(TSTTRGDIR, f))
@@ -2101,42 +2052,29 @@ def RunTest(env, TST, COND, oktests, length, pSrvr, total_tests, options, enviro
         myenv['TSTSRCDIR'] = TSTSRCDIR
         myenv['RELSRCDIR'] = RELSRCDIR
         myenv['TSTTRGDIR'] = TSTTRGDIR
-        if os.path.isfile(os.path.join(TSTTRGDIR, TST+EXT+'.src')) and not os.path.isfile(os.path.join(TSTTRGDIR, TST+EXT)):
-            with openutf8(os.path.join(TSTTRGDIR, TST+EXT+'.src'),'r') as f:
-                TSTSRC = expandvars(path(f.readline().strip()), myenv)
-            if os.path.isfile(os.path.join(TSTTRGDIR, TSTSRC)):
-                try:
-                    SymlinkOrCopy(TSTSRC, TST + EXT, TSTTRGDIR)
-                    links.append(TST + EXT)
-                except IOError as err:
-                    ErrMsg("SymlinkOrCopy('%s','%s') in '%s' failed with #%d: '%s'."
-                           % (TSTSRC, TST + EXT, TSTTRGDIR, err.errno, err.strerror))
-            else:
-                reason = "as source file '%s` is missing." % TSTSRC
-                elem = SkipTest(env, TST, EXT+'.src', reason, length, TSTDIR, TSTTRGDIR, TSTSRCDIR)
-                return TX,Failed,Failed,elem,reason,links
-        test = re.compile('^'+TST+r'((_[sp][0-9][0-9])?\..*)?\.src$', re.MULTILINE)
         for ff in listdir(TSTTRGDIR):
-            if test.match(ff) and not os.path.isfile(os.path.join(TSTTRGDIR, ff[:-4])):
-                with openutf8(os.path.join(TSTTRGDIR, ff),'r') as f:
-                    TSTSRC = expandvars(path(f.readline().strip()), myenv)
-                if os.path.isfile(os.path.join(TSTTRGDIR, TSTSRC)):
-                    try:
-                        SymlinkOrCopy(TSTSRC, ff[:-4], TSTTRGDIR)
-                        links.append(ff[:-4])
-                    except IOError as err:
-                        ErrMsg("SymlinkOrCopy('%s','%s') in '%s' failed with #%d: '%s'."
-                               % (TSTSRC, ff[:-4], TSTTRGDIR, err.errno, err.strerror))
-                else:
-                    Warn("source file '"+TSTSRC+"` is missing.")
-        test = re.compile('^'+TST+r'(_[sp][0-9][0-9])?\..*\.in$', re.MULTILINE)
-        for ff in listdir(TSTTRGDIR):
-            fff = ff[:-3]
-            if test.match(ff) and not os.path.isfile(os.path.join(TSTTRGDIR, fff)) and not ff.endswith('.test.in'):
-                with openutf8(os.path.join(TSTTRGDIR, fff),'w') as f, \
-                     openutf8(os.path.join(TSTTRGDIR, ff)) as fil:
-                    for l in fil:
-                        f.write(expandvars(l, myenv))
+            if ff.startswith(TST+'.'):
+                if ff.endswith('.src') and not os.path.isfile(os.path.join(TSTTRGDIR, ff[:-4])):
+                    with openutf8(os.path.join(TSTTRGDIR, ff),'r') as f:
+                        TSTSRC = expandvars(path(f.readline().strip()), myenv)
+                    if os.path.isfile(os.path.join(TSTTRGDIR, TSTSRC)):
+                        try:
+                            SymlinkOrCopy(TSTSRC, ff[:-4], TSTTRGDIR)
+                            links.append(ff[:-4])
+                        except IOError as err:
+                            ErrMsg("SymlinkOrCopy('%s','%s') in '%s' failed with #%d: '%s'."
+                                   % (TSTSRC, ff[:-4], TSTTRGDIR, err.errno, err.strerror))
+                    elif ff == TST+EXT+'.src':
+                        reason = "as source file '%s` is missing." % TSTSRC
+                        elem = SkipTest(env, TST, EXT+'.src', reason, length, TSTDIR, TSTTRGDIR, TSTSRCDIR)
+                        return TX,Failed,Failed,elem,reason,links
+                    else:
+                        Warn("source file '"+TSTSRC+"` is missing.")
+                elif ff.endswith('.in') and not ff.endswith('.test.in') and not os.path.isfile(os.path.join(TSTTRGDIR, ff[:-3])):
+                    with openutf8(os.path.join(TSTTRGDIR, ff[:-3]),'w') as f, \
+                         openutf8(os.path.join(TSTTRGDIR, ff)) as fil:
+                        for l in fil:
+                            f.write(expandvars(l, myenv))
 
         if odbc:
             with openutf8(os.path.join(TSTTRGDIR, 'odbcinst.ini'), 'w') as f:
@@ -2188,13 +2126,14 @@ Password = {passwd or "monetdb"}-Wrong
 
         TestOutFile = TST+'.test.out'
         TestErrFile = TST+'.test.err'
-        TestOut = openutf8(os.path.join(TSTTRGDIR, TestOutFile),'w')
-        TestErr = openutf8(os.path.join(TSTTRGDIR, TestErrFile),'w')
-        TestOut.close()
-        TestErr.close()
+        openutf8(os.path.join(TSTTRGDIR, TestOutFile), 'w').close()
+        openutf8(os.path.join(TSTTRGDIR, TestErrFile), 'w').close()
 
         t0 = time.time()
-        tres = DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, length, nomito, threads, user, passwd, COND, pSrvr, total_tests, options, TSTDB, TSTDIR, TSTTRGDIR, TSTSRCDIR, environ)
+        tres = DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile,
+                    TIMEOUT, ME, length, nomito, threads, user, passwd, COND,
+                    pSrvr, total_tests, options, TSTDB, TSTDIR, TSTTRGDIR,
+                    TSTSRCDIR, environ)
         t1 = time.time()
         TX = t1 - t0
         if verbosity > 0:
@@ -2456,7 +2395,7 @@ def getkids():
     return procs
 
 
-def killchildren(pid, procs = None):
+def killchildren(pid, procs=None):
     # not called on Windows
     # kill the specified process ID and all its children
     if procs is None:
@@ -2925,9 +2864,9 @@ class ServerClass:
             if self.dbg:
                 stdin = stdout = stderr = None
                 if 'gdb' in self.dbg:
-                    cmd = splitcommand(self.dbg) + ['--args'] + cmd
+                    cmd = shlex.split(self.dbg) + ['--args'] + cmd
                 else:
-                    cmd = splitcommand(self.dbg) + cmd
+                    cmd = shlex.split(self.dbg) + cmd
 
         else:
             stdout = process.PIPE
@@ -3316,11 +3255,6 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, len
                     returncode = RunIt(Clnt, True, openutf8(os.path.join(TSTTRGDIR, f)), ClntOut, ClntErr, TIMEOUT, pSrvr, TSTTRGDIR, environ)
                     if returncode:
                         break
-            elif CALL == 'R':
-                Clnt = exe['R_Client'].copy()
-                for i in range(len(Clnt)):
-                    Clnt[i] = Clnt[i].replace('${PORT}', pSrvr.port)
-                RunIt(Clnt, False, openutf8(os.path.join(TSTTRGDIR, TST+EXT)), ClntOut, ClntErr, TIMEOUT, pSrvr, TSTTRGDIR, environ)
             elif CALL == 'ruby':
                 Clnt = exe['ruby_client'].copy()
                 for i in range(len(Clnt)):
@@ -3525,7 +3459,7 @@ def StartTlsTester():
     hostnames = ['localhost']
     certs = tlstester.Certs(hostnames)
     server = tlstester.TLSTester(
-        certs = certs,
+        certs=certs,
         listen_addr='localhost',
         preassigned={},
         sequential=False,
@@ -3721,7 +3655,7 @@ class OrAction(argparse.Action):
 def main(argv):
     global global_timeout
 
-    VARS = ['TSTSRCBASE', 'TSTTRGBASE', 'MALCLIENT', 'SQLCLIENT', 'SQLDUMP', 'RCLIENT']    #, 'MONETDB_MOD_PATH' ]
+    VARS = ['TSTSRCBASE', 'TSTTRGBASE', 'MALCLIENT', 'SQLCLIENT', 'SQLDUMP']    #, 'MONETDB_MOD_PATH' ]
 
     env = {}
 
@@ -3755,7 +3689,6 @@ def main(argv):
             if res is not None:
                 rdir = os.path.expanduser(res.group('dir'))
                 os.makedirs(rdir, exist_ok=True)
-    dft['RCLIENT'] = f"'R --vanilla {r_noecho}'"
 
     CONDITIONALS['HAVE_SQLITE3ODBC'] = os.path.exists('/usr/lib64/libsqlite3odbc.so')
 
@@ -3785,7 +3718,6 @@ def main(argv):
     parser.add_argument('--MALCLIENT', action='store', dest='MALCLIENT', metavar='<mal-client program>', help='default: %s' % dft['MALCLIENT'])
     parser.add_argument('--SQLCLIENT', action='store', dest='SQLCLIENT', metavar='<sql-client program>', help='default: %s' % dft['SQLCLIENT'])
     parser.add_argument('--SQLDUMP', action='store', dest='SQLDUMP', metavar='<sql-dump program>', help='default: %s' % dft['SQLDUMP'])
-    parser.add_argument('--RCLIENT', action='store', dest='RCLIENT', metavar='<R program>', help='default: %s' % dft['RCLIENT'])
     parser.add_argument('--dbg', action='store', dest='dbg', metavar='<debugger/valgrind>', help='debugger to start before each server')
     parser.add_argument('--mserver_set', action='append', dest='mserver_set', metavar='<mserver5_option>', help='This passes a single set to the server')
     parser.add_argument('--loadmodule', action='append', dest='loadmodule', metavar='<module_name>', help='Pass on loadmodule to mserver5')
@@ -4199,19 +4131,19 @@ def main(argv):
 
         exe = {}
         if CheckExec('mserver5'):
-            exe['mserver5'] = ['mserver5', f'--debug={env["GDK_DEBUG"]}', '--debug=256', '--set', f'gdk_nr_threads={env["GDK_NR_THREADS"]}'] + splitcommand(env['setMONETDB_MOD_PATH']) + ['--set', 'mapi_listenaddr=all', '--set', 'mapi_port=0'] + splitcommand(SOCK)
+            exe['mserver5'] = ['mserver5', f'--debug={env["GDK_DEBUG"]}', '--debug=256', '--set', f'gdk_nr_threads={env["GDK_NR_THREADS"]}'] + shlex.split(env['setMONETDB_MOD_PATH']) + ['--set', 'mapi_listenaddr=all', '--set', 'mapi_port=0'] + shlex.split(SOCK)
             if not nomito:
                 exe['mserver5'].append('--forcemito')
+        else:
+            ErrXit('cannot find mserver5 executable')
         if CheckExec('ruby'):
             exe['ruby_client'] = ['ruby', '${PORT}']
         if CheckExec(env['MALCLIENT'].split(None, 1)[0]):
-            exe['MAL_Client'] = splitcommand(env['MALCLIENT']) + [f'--host={HOST}', '--port=${PORT}']
+            exe['MAL_Client'] = shlex.split(env['MALCLIENT']) + [f'--host={HOST}', '--port=${PORT}']
         if CheckExec(env['SQLCLIENT'].split(None, 1)[0]):
-            exe['SQL_Client'] = splitcommand(env['SQLCLIENT']) + ['-i', '-e', f'--host={HOST}', '--port=${PORT}']
+            exe['SQL_Client'] = shlex.split(env['SQLCLIENT']) + ['-i', '-e', f'--host={HOST}', '--port=${PORT}']
         if CheckExec(env['SQLDUMP'].split(None, 1)[0]):
-            exe['SQL_Dump'] = splitcommand(env['SQLDUMP']) + [f'--host={HOST}', '--port=${PORT}']
-        if CheckExec(env['RCLIENT'].split(None, 1)[0]):
-            exe['R_Client'] = splitcommand(env['RCLIENT']) + ['--args', '${PORT}']
+            exe['SQL_Dump'] = shlex.split(env['SQLDUMP']) + [f'--host={HOST}', '--port=${PORT}']
         env['exe'] = exe
 
         # parse commandline arguments
@@ -4227,8 +4159,7 @@ def main(argv):
                     ErrXit('%s: not a valid test name' % args[0])
                 args = [head]
                 if tail != 'All':
-                    for ext in ('.test', '.maltest', '.SQL.py',
-                                '.sql', '.py', '.R', '.rb', ''):
+                    for ext in [x[0] for x in tests] + ['']:
                         # extensions .in and .src are never combined
                         if tail.endswith(ext + '.in'):
                             args.append(tail[:-len(ext + '.in')])
