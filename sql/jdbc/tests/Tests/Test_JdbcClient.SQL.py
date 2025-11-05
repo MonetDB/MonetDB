@@ -11,6 +11,12 @@ CLIENT='org.monetdb.client.JdbcClient'
 USER='monetdb'
 PASSWORD='monetdb'
 
+try:
+    shlexjoin = shlex.join
+except AttributeError:
+    # for old Python (pre 3.8)
+    shlexjoin = ' '.join
+
 def verify_output(stream, actual, expected):
     diff = list(difflib.unified_diff(
         expected.splitlines(),
@@ -32,7 +38,7 @@ if __name__ == '__main__':
 
     cmd = ['java', CLIENT, '-h', HOST, '-p', MAPIPORT, '-d', TSTDB, '--help']
     try:
-        print('# Running:', shlex.join(cmd), file=sys.stderr)
+        print('# Running:', shlexjoin(cmd), file=sys.stderr)
         p = run(cmd, stdout=PIPE, stderr=PIPE, check=True, encoding='utf-8')
         pout = str(p.stdout)
         perr = str(p.stderr)
@@ -44,7 +50,7 @@ if __name__ == '__main__':
 
     cmd = ['java', CLIENT, '-h', HOST, '-p', MAPIPORT, '-d', TSTDB, '-f', os.path.join(TSTSRCBASE, TSTDIR, 'Tests', 'JdbcClient_create_tables.sql')]
     try:
-        print('# Running:', shlex.join(cmd), file=sys.stderr)
+        print('# Running:', shlexjoin(cmd), file=sys.stderr)
         p = run(cmd, stdout=PIPE, stderr=PIPE, check=True, encoding='utf-8')
         pout = str(p.stdout)
         perr = str(p.stderr)
@@ -57,7 +63,7 @@ if __name__ == '__main__':
 
     cmd = ['java', CLIENT, '-h', HOST, '-p', MAPIPORT, '-d', TSTDB, '-f', os.path.join(TSTSRCBASE, TSTDIR, 'Tests', 'JdbcClient_inserts_selects.sql')]
     try:
-        print('# Running:', shlex.join(cmd), file=sys.stderr)
+        print('# Running:', shlexjoin(cmd), file=sys.stderr)
         p = run(cmd, stdout=PIPE, stderr=PIPE, check=True, encoding='utf-8')
         pout = str(p.stdout)
         perr = str(p.stderr)
@@ -70,7 +76,7 @@ if __name__ == '__main__':
 
     cmd = ['java', CLIENT, '-h', HOST, '-p', MAPIPORT, '-d', TSTDB, '-D']
     try:
-        print('# Running:', shlex.join(cmd), file=sys.stderr)
+        print('# Running:', shlexjoin(cmd), file=sys.stderr)
         p = run(cmd, stdout=PIPE, stderr=PIPE, check=True, encoding='utf-8')
         pout = str(p.stdout)
         perr = str(p.stderr)
@@ -82,7 +88,7 @@ if __name__ == '__main__':
 
     cmd = ['java', CLIENT, '-h', HOST, '-p', MAPIPORT, '-d', TSTDB, '-f', os.path.join(TSTSRCBASE, TSTDIR, 'Tests', 'JdbcClient_drop_tables.sql')]
     try:
-        print('# Running:', shlex.join(cmd), file=sys.stderr)
+        print('# Running:', shlexjoin(cmd), file=sys.stderr)
         p = run(cmd, stdout=PIPE, stderr=PIPE, check=True, encoding='utf-8')
         pout = str(p.stdout)
         perr = str(p.stderr)
@@ -95,7 +101,7 @@ if __name__ == '__main__':
     try:
         # test the ON CLIENT download/export functionality via JdbcClient with --csvdir argument (to enable the ON CLIENT functionality)
         cmd = ['java', CLIENT, '-h', HOST, '-p', MAPIPORT, '-d', TSTDB, '--csvdir', os.path.join(TSTSRCBASE, TSTDIR, 'Tests'), '-f', os.path.join(TSTSRCBASE, TSTDIR, 'Tests', 'OnClientDownloadData.sql')]
-        print('# Running:', shlex.join(cmd), file=sys.stderr)
+        print('# Running:', shlexjoin(cmd), file=sys.stderr)
         p = run(cmd, stdout=PIPE, stderr=PIPE, check=True, encoding='utf-8')
         pout = str(p.stdout)
         perr = str(p.stderr)
@@ -104,7 +110,7 @@ if __name__ == '__main__':
 
         # test the ON CLIENT upload/import functionality via JdbcClient with --csvdir argument (to enable the ON CLIENT functionality)
         cmd = ['java', CLIENT, '-h', HOST, '-p', MAPIPORT, '-d', TSTDB, '--csvdir', os.path.join(TSTSRCBASE, TSTDIR, 'Tests'), '-f', os.path.join(TSTSRCBASE, TSTDIR, 'Tests', 'OnClientUploadData.sql')]
-        print('# Running:', shlex.join(cmd), file=sys.stderr)
+        print('# Running:', shlexjoin(cmd), file=sys.stderr)
         p = run(cmd, stdout=PIPE, stderr=PIPE, check=True, encoding='utf-8')
         pout = str(p.stdout)
         perr = str(p.stderr)
