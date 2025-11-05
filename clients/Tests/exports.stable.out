@@ -1030,6 +1030,8 @@ const char hgeRef[];
 const char identityRef[];
 const char ifthenelseRef[];
 const char importColumnRef[];
+const char importNulTerminatedRef[];
+const char importRawRef[];
 void initNamespace(void);
 void insertSymbol(Module scope, Symbol prg);
 str instruction2str(MalBlkPtr mb, MalStkPtr stl, InstrPtr p, int hidden);

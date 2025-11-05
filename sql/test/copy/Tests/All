@@ -19,3 +19,7 @@ no_escape2
 crlf_normalization
 select-from-file
 flexible-order
+HAVE_LIBZ?compressed-on-client-gz
+HAVE_LIBBZ2?compressed-on-client-bz2
+HAVE_LIBLZMA?compressed-on-client-xz
+HAVE_LIBLZ4&HAVE_PYTHON_LZ4?compressed-on-client-lz4

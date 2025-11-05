@@ -50064,6 +50064,16 @@ pattern sql.importColumn(X_0:str, X_1:int, X_2:bit, X_3:str, X_4:int, X_5:oid) (
 mvc_bin_import_column_wrap
 Import a column from the given file
 sql
+importNulTerminated
+pattern sql.importNulTerminated(X_0:str, X_1:int, X_2:bat[:bte], X_3:oid) (X_4:bat[:any], X_5:oid)
+mvc_bin_import_nul_terminated_wrap
+Import a column from the bytes in the given bat
+sql
+importRaw
+pattern sql.importRaw(X_0:str, X_1:int, X_2:oid) (X_3:bat[:any], X_4:oid)
+mvc_bin_import_bytes_wrap
+Import the raw bytes from the given file
+sql
 include
 unsafe pattern sql.include(X_0:str):void
 SQLinclude

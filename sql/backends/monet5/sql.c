@@ -2520,6 +2520,52 @@ mvc_result_set_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return msg;
 }
 
+
+str
+wrap_onclient_compression(stream **inner, str context, int nr, bool binary)
+{
+	if (nr <= 1)
+		return MAL_SUCCEED;
+
+	// these number match those in sql_parser.y's opt_on_location.
+	stream *s = *inner;
+	stream *cs;
+	switch (nr) {
+		case 11:
+			cs = gz_stream(s, 0);
+			break;
+		case 12:
+			cs = bz2_stream(s, 0);
+			break;
+		case 13:
+			cs = xz_stream(s, 0);
+			break;
+		case 14:
+			cs = lz4_stream(s, 0);
+			break;
+		default:
+			throw(IO, context, SQLSTATE(42000) "compression algo id not found");
+	}
+	if (cs == NULL || mnstr_errnr(cs) != MNSTR_NO__ERROR) {
+		str msg = createException(IO, context, SQLSTATE(42000) "%s", mnstr_peek_error(NULL));
+		close_stream(cs);
+		return msg;
+	}
+	if (!binary) {
+		stream *t = create_text_stream(cs);
+		if (t == NULL) {
+			str msg = createException(IO, context, SQLSTATE(42000) "%s", mnstr_peek_error(NULL));
+			close_stream(cs);
+			return msg;
+		}
+		cs = t;
+	}
+	*inner = cs;
+	return MAL_SUCCEED;
+}
+
+
+
 /* Copy the result set into a CSV file */
 str
 mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -2551,8 +2597,6 @@ mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT *b = NULL, *tbl = NULL, *atr = NULL, *tpe = NULL,*len = NULL,*scale = NULL;
 	res_table *t = NULL;
 	bool tostdout;
-	char buf[80];
-	ssize_t sz;
 
 	(void) format;
 
@@ -2618,33 +2662,24 @@ mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/* now select the file channel */
 	if ((tostdout = strcmp(filename,"stdout") == 0)) {
 		s = cntxt->fdout;
-	} else if (!onclient) {
-		if ((s = open_wastream(filename)) == NULL || mnstr_errnr(s) != MNSTR_NO__ERROR) {
+	} else {
+		if (onclient) {
+			bool binary = (onclient > 1);
+			s = mapi_request_download(filename, binary, m->scanner.rs, m->scanner.ws);
+		} else {
+			s = open_wastream(filename);
+		}
+		if (s == NULL || mnstr_errnr(s) != MNSTR_NO__ERROR) {
 			msg=  createException(IO, "streams.open", SQLSTATE(42000) "%s", mnstr_peek_error(NULL));
 			close_stream(s);
 			goto wrapup_result_set1;
 		}
+		msg = wrap_onclient_compression(&s, "sql.copy_from", onclient, false);
+		if (msg != NULL) {
+			close_stream(s);
+			return msg;
+		}
 		be->output_format = OFMT_CSV;
-	} else {
-		while (!m->scanner.rs->eof) {
-			if (bstream_next(m->scanner.rs) < 0) {
-				msg = createException(IO, "streams.open", "interrupted");
-				goto wrapup_result_set1;
-			}
-		}
-		s = m->scanner.ws;
-		mnstr_write(s, PROMPT3, sizeof(PROMPT3) - 1, 1);
-		mnstr_printf(s, "w %s\n", filename);
-		mnstr_flush(s, MNSTR_FLUSH_DATA);
-		if ((sz = mnstr_readline(m->scanner.rs->s, buf, sizeof(buf))) > 1) {
-			/* non-empty line indicates failure on client */
-			msg = createException(IO, "streams.open", "%s", buf);
-			/* discard until client flushes */
-			while (mnstr_read(m->scanner.rs->s, buf, 1, sizeof(buf)) > 0) {
-				/* ignore remainder of error message */
-			}
-			goto wrapup_result_set1;
-		}
 	}
 	if ((ok = mvc_export_result(cntxt->sqlcontext, s, res, tostdout, cntxt->qryctx.starttime, mb->optimize)) < 0) {
 		msg = createException(SQL, "sql.resultSet", SQLSTATE(45000) "Result set construction failed: %s", mvc_export_error(cntxt->sqlcontext, s, ok));
@@ -2653,14 +2688,7 @@ mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (ok != -5)
 			goto wrapup_result_set1;
 	}
-	if (onclient) {
-		mnstr_flush(s, MNSTR_FLUSH_DATA);
-		if ((sz = mnstr_readline(m->scanner.rs->s, buf, sizeof(buf))) > 1) {
-			msg = createException(IO, "streams.open", "%s", buf);
-		}
-		while (sz > 0)
-			sz = mnstr_readline(m->scanner.rs->s, buf, sizeof(buf));
-	} else if (!tostdout) {
+	if (!tostdout) {
 		close_stream(s);
 	}
   wrapup_result_set1:
@@ -3173,12 +3201,18 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		msg = mvc_import_table(cntxt, &b, be->mvc, be->mvc->scanner.rs, t, tsep, rsep, ssep, ns, sz, offset, besteffort, true, escape, decsep, decskip);
 	} else {
 		if (onclient) {
-			ss = mapi_request_upload(fname, false, be->mvc->scanner.rs, be->mvc->scanner.ws);
+			bool binary = onclient > 1;
+			ss = mapi_request_upload(fname, binary, be->mvc->scanner.rs, be->mvc->scanner.ws);
 		} else {
 			ss = open_rastream(fname);
 		}
 		if (ss == NULL || mnstr_errnr(ss) != MNSTR_NO__ERROR) {
 			msg = createException(IO, "sql.copy_from", SQLSTATE(42000) "%s", mnstr_peek_error(NULL));
+			close_stream(ss);
+			return msg;
+		}
+		msg = wrap_onclient_compression(&ss, "sql.copy_from", onclient, false);
+		if (msg != NULL) {
 			close_stream(ss);
 			return msg;
 		}
@@ -5741,7 +5775,10 @@ static mel_func sql_init_funcs[] = {
  pattern("sql", "copy_from", mvc_import_table_wrap, true, "Import a table from bstream s with the \ngiven tuple and separators (sep/rsep)", args(1,15, batvarargany("",0),arg("t",ptr),arg("sep",str),arg("rsep",str),arg("ssep",str),arg("ns",str),arg("fname",str),arg("nr",lng),arg("offset",lng),arg("best",int),arg("fwf",str),arg("onclient",int),arg("escape",int),arg("decsep",str),arg("decskip",str))),
  //we use bat.single now
  //pattern("sql", "single", CMDBATsingle, false, "", args(1,2, batargany("",2),argany("x",2))),
+
  pattern("sql", "importColumn", mvc_bin_import_column_wrap, false, "Import a column from the given file", args(2, 8, batargany("", 0),arg("", oid), arg("method",str),arg("width",int),arg("bswap",bit),arg("path",str),arg("onclient",int),arg("nrows",oid))),
+ pattern("sql", "importNulTerminated", mvc_bin_import_nul_terminated_wrap, false, "Import a column from the bytes in the given bat", args(2, 6, batargany("", 0),arg("", oid), arg("method",str),arg("width",int),batarg("bytes",bte),arg("nrows",oid))),
+ pattern("sql", "importRaw", mvc_bin_import_bytes_wrap, false, "Import the raw bytes from the given file", args(2, 5, batargany("", 0),arg("", oid), arg("path",str),arg("onclient",int),arg("nrows",oid))),
  command("aggr", "not_unique", not_unique, false, "check if the tail sorted bat b doesn't have unique tail values", args(1,2, arg("",bit),batarg("b",oid))),
  command("sql", "optimizers", getPipeCatalog, false, "", args(3,3, batarg("",str),batarg("",str),batarg("",str))),
  pattern("sql", "optimizer_updates", SQLoptimizersUpdate, false, "", noargs),

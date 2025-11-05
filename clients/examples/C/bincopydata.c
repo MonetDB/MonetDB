@@ -164,7 +164,8 @@ gen_strings(FILE *f, bool byteswap, long nrecs, char *arg)
 	(void)arg;
 	(void)byteswap;
 	for (long i = 0; i < nrecs; i++) {
-		fprintf(f, "int%ld", i);
+		long ii = i % 987;
+		fprintf(f, "int%ld", ii);
 		fputc(0, f);
 	}
 }
@@ -177,7 +178,8 @@ gen_large_strings(FILE *f, bool byteswap, long nrecs, char *arg)
 	char *buf = malloc(n);
 	memset(buf, 'a', n);
 	for (long i = 0; i < nrecs; i++) {
-		fprintf(f, "int%06ld", i);
+		long ii = i % 987;
+		fprintf(f, "int%06ld", ii);
 		if (i % 10000 == 0)
 			fwrite(buf, n, 1, f);
 		fputc(0, f);
@@ -209,7 +211,8 @@ gen_newline_strings(FILE *f, bool byteswap, long nrecs, char *arg)
 	(void)arg;
 	(void)byteswap;
 	for (long i = 0; i < nrecs; i++) {
-		fprintf(f, "RN\r\nR\r%ld", i);
+		long ii = i % 987;
+		fprintf(f, "RN\r\nR\r%ld", ii);
 		fputc(0, f);
 	}
 }
