@@ -15,7 +15,8 @@ try:
     shlexjoin = shlex.join
 except AttributeError:
     # for old Python (pre 3.8)
-    shlexjoin = ' '.join
+    def shlexjoin(cmd):
+        return ' '.join(shlex.quote(a) for a in cmd)
 
 def verify_output(stream, actual, expected):
     diff = list(difflib.unified_diff(
