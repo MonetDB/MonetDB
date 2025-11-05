@@ -376,10 +376,13 @@ class client(Popen):
         # if server instance is specified, it provides defaults for
         # database name and port
         if server is not None:
-            if port is None:
-                port = server.dbport
-            if dbname is None:
-                dbname = server.dbname
+            if port is None and dbname is None and hasattr(server, 'usock') and server.usock is not None:
+                dbname = server.usock
+            else:
+                if port is None:
+                    port = server.dbport
+                if dbname is None:
+                    dbname = server.dbname
 
         if port is not None:
             for i in range(len(cmd)):
@@ -392,7 +395,11 @@ class client(Popen):
                 if port:
                     raise
         if dbname is None:
-            dbname = os.getenv('TSTDB')
+            usock = os.getenv('MAPIUSOCK')
+            if usock is None:
+                dbname = os.getenv('TSTDB')
+            else:
+                dbname = usock
         if dbname is not None and dbname:
             cmd.append('--database=%s' % dbname)
         if user is not None or passwd is not None:
