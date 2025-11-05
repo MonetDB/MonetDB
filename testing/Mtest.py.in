@@ -1258,6 +1258,8 @@ def PerformDir(env, testdir, testlist, total_tests):
                     except:
                         pass
                     environ['MAPIPORT'] = pSrvr.port
+                    if pSrvr.usock is not None:
+                        environ['MAPIUSOCK'] = pSrvr.usock
                     SetExecEnv(env['exe'], pSrvr.port, verbosity > 1, environ)
                 if global_timeout and start_time + global_timeout < time.time():
                     if not testweb:
@@ -2885,6 +2887,7 @@ class ServerClass:
 
         port = None
         self.port = None
+        self.usock = None
         if self.pollfile:
             while True:
                 proc.poll()
@@ -2913,9 +2916,14 @@ class ServerClass:
                     return
                 time.sleep(0.1)
             with open(os.path.join(os.path.split(self.pollfile)[0], '.conn')) as fil:
-                connurl = fil.read()
-            res = mapiportre.search(connurl)
-            port = res.group('port')
+                connurls = fil.readlines()
+            for connurl in connurls:
+                connurl = connurl.strip()
+                res = mapiportre.search(connurl)
+                if res is not None:
+                    port = res.group('port')
+                elif 'monetdb:///' in connurl:
+                    self.usock = connurl
         else:
             loadedseen = False
             endtime = time.time() + 30
@@ -3130,7 +3138,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, len
                                         password=passwd or 'monetdb',
                                         hostname=HOST,
                                         port=int(pSrvr.port),
-                                        database=TSTDB,
+                                        database=TSTDB if pSrvr.usock is None else pSrvr.usock,
                                         language='sql',
                                         timeout=TIMEOUT,
                                         alltests=CONDITIONALS['KNOWNFAIL'])
@@ -3165,7 +3173,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, len
                                     password=passwd or 'monetdb',
                                     hostname=HOST,
                                     port=int(pSrvr.port),
-                                    database=TSTDB,
+                                    database=TSTDB if pSrvr.usock is None else pSrvr.usock,
                                     language=lang,
                                     timeout=TIMEOUT,
                                     alltests=CONDITIONALS['KNOWNFAIL'])
@@ -3202,6 +3210,8 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, len
                                 defines.append(f'TSTSRCBASE={TSTSRCBASE}')
                                 defines.append(f'TSTDB={TSTDB}')
                                 defines.append(f'MAPIPORT={pSrvr.port}')
+                                if pSrvr.usock is not None:
+                                    defines.append(f'MAPIUSOCK={pSrvr.usock}')
                             try:
                                 sql.parse(os.path.join(TSTTRGDIR, testfile), approve=open(os.path.join(TSTTRGDIR, TST+'.newtest'),'w') if approve else None, defines=defines)
                             except KeyboardInterrupt:
@@ -3244,9 +3254,11 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, len
                 for i in range(len(Clnt)):
                     Clnt[i] = Clnt[i].replace('${PORT}', pSrvr.port)
                 if user:
-                    Clnt.append('-u%s' % user)
+                    Clnt.append(f'-u{user}')
                 if passwd:
-                    Clnt.append('-P%s' % passwd)
+                    Clnt.append(f'-P{passwd}')
+                if pSrvr.usock:
+                    Clnt.append(f'-d{pSrvr.usock}')
                 for f in TSTs:
                     returncode = RunIt(Clnt, True, openutf8(os.path.join(TSTTRGDIR, f)), ClntOut, ClntErr, TIMEOUT, pSrvr, TSTTRGDIR, environ)
                     if returncode:
