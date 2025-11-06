@@ -51,7 +51,7 @@
 - Removed table returning function sys.optimizer_stats().
 
 * Tue Aug 26 2025 Sjoerd Mullender <sjoerd@acm.org>
-- There are new types "inet4" and "inet6" which can hold respecitvely
+- There are new types "inet4" and "inet6" which can hold respectively
   IPv4 and IPv6 internet addresses without CIDR network mask
   information.  Netmask information can be held in a separate column if
   they are needed.  The 0 address (0.0.0.0 and ::) are used as NULL
