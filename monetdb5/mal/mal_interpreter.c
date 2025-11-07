@@ -317,10 +317,6 @@ runMAL(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr env)
 	ValPtr lhs, rhs;
 	str ret;
 	(void) mbcaller;
-	allocator *ta = MT_thread_getallocator();
-	if(!ta)
-		ta = mb->ta;
-	assert(ta);
 
 	/* Prepare a new interpreter call. This involves two steps, (1)
 	 * allocate the minimum amount of stack space needed, some slack

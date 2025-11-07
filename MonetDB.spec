@@ -95,7 +95,7 @@ Group: Applications/Databases
 License: MPL-2.0
 URL: https://www.monetdb.org/
 BugURL: https://github.com/MonetDB/MonetDB/issues
-Source: https://www.monetdb.org/downloads/sources/Mar2025-SP2/MonetDB-%{version}.tar.bz2
+Source: https://www.monetdb.org/downloads/sources/Mar2025-SP3/MonetDB-%{version}.tar.bz2
 
 # The Fedora packaging document says we need systemd-rpm-macros for
 # the _unitdir and _tmpfilesdir macros to exist; however on RHEL 7
@@ -1057,6 +1057,48 @@ rm "${RPM_BUILD_ROOT}"%{_unitdir}/monetdbd.service
 %endif
 
 %changelog
+* Tue Nov 04 2025 Sjoerd Mullender <sjoerd@acm.org> - 11.53.15-20251104
+- Rebuilt.
+- GH#7662: Privilege Issue: MonetDB Mar2025-SP1 does not check the
+  permission of 'DROP ROLE' and 'DROP USER' statements
+- GH#7663: Privilege Issue: the `ALTER USER ... DEFAULT ROLE` statement
+  misses permission checks, which can cause privilege escalation to get
+  other users' privileges
+- GH#7664: Privilege Issue: the `SET SESSION AUTHORIZATION` statement will
+  enable any user to alter other users' MAX_WORKERS
+- GH#7665: MonetDB dev-builds crashes at `sql_trans_drop_trigger()`
+- GH#7666: MonetDB Mar2025-SP1 unexpectly shutdown with crafted `GLOBAL
+  TEMPORARY TABLE` and `ALTER TABLE` statements
+- GH#7668: MonetDB Mar2025-SP1 crashes at `key_dup()`
+- GH#7669: MonetDB Mar2025-SP1 crashes at `AUTHdecypherValue()`
+- GH#7670: MonetDB Mar2025-SP1 crashes at `exp_subtype()`
+- GH#7672: MonetDB Mar2025-SP1 crashes at `find_name()`
+- GH#7673: MonetDB Mar2025-SP1 crashes at `rel_value_exp2()`
+- GH#7674: MonetDB Mar2025-SP1 crashes at `rel_schemas()`
+- GH#7689: Empty SQL result (no rows, no columns)
+- GH#7699: The OPTIMIZER string value in CREATE USER statement is not
+  checked on validity.
+- GH#7702: Invalid handling of WHERE conditions
+- GH#7706: Role (bob) missing
+- GH#7710: Monetdb crash when using char datatype
+- GH#7730: Incorrect arithmetic in generate_series with month-based
+  intervals
+- GH#7732: Missing column name in select expands to all columns in table
+- GH#7733: mserver5 assertion failure when started with -d2 --in-memory
+- GH#7734: 'epoch' function doesn't handle fractions with leading zeros
+  correctly
+- GH#7735: crash in Monetdb
+- GH#7736: crash in  MonetDB
+- GH#7737: SQL Query Optimizer / Performance Regression with Merge Tables
+  in MonetDB 11.53
+- GH#7742: crash in MonetDB
+
+* Thu Sep 11 2025 Sjoerd Mullender <sjoerd@acm.org> - 11.53.15-20251104
+- clients: Changed the --describe (-D) option of msqldump to really mean (as it
+  says in the manual) do a dump without the data.  Before, the output
+  looked like a dump, but could not necessarily be fed back into an
+  mserver5, i.e. it wasn't really a dump without data.
+
 * Mon Sep 01 2025 Sjoerd Mullender <sjoerd@acm.org> - 11.53.13-20250901
 - Rebuilt.
 - GH#7692: Illegal argument on range select with equality

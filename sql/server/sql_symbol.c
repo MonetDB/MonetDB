@@ -302,7 +302,7 @@ newCopyFromNode(allocator *sa, struct dlist *qname, struct dlist *column_list, s
 			.null_string = NULL,
 			.best_effort = false,
 			.fwf_widths = NULL,
-			.on_client = false,
+			.on_client = 0,
 			.escape = true,
 			.decsep = ".",
 			.decskip = NULL,

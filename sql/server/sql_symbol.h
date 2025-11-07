@@ -105,7 +105,7 @@ typedef struct CopyFromNode {
 	char *null_string; /* default NULL, not "NULL"! */
 	bool best_effort; /* default false */
 	struct dlist *fwf_widths; /* must be NULL for FROM STDIN */
-	bool on_client; /* must be false for FROM STDIN */
+	int on_client; /* 1 is yes, >1 is compressed, always 0 for FROM STDIN */
 	bool escape; /* default true */
 	char *decsep; /* default "." */
 	char *decskip; /* default NULL */

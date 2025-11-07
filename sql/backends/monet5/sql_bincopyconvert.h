@@ -69,5 +69,19 @@ extern bool can_dump_binary_column(type_record_t *rec);
 
 extern str dump_binary_column(type_record_t *rec, BAT *b, BUN start, BUN length, bool byteswap, stream *s);
 
+extern bool is_nul_terminated_text(type_record_t *rec);
+
+struct insert_state {
+	allocator *ma;
+	BAT *bat;
+	int width;
+	void *scratch;
+	size_t schratch_len;
+	size_t resume;
+	BUN singlechar[129]; // 0, ascii characters and 0x80=nil
+};
+extern void init_insert_state(struct insert_state *st, allocator *ma, BAT *bat, int width);
+extern void release_insert_state(struct insert_state *st);
+extern str insert_nul_terminated_values(struct insert_state *st, const char *data, size_t total_len, size_t *consumed);
 
 #endif

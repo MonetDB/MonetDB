@@ -185,7 +185,6 @@ static str
 load_column(type_record_t *rec, const char *name, BAT *bat, stream *s, int width, bool byteswap, BUN rows_estimate, int *eof_reached)
 {
 	static const char mal_operator[] = "sql.importColumn";
-	BUN orig_count, new_count;
 	str msg = MAL_SUCCEED;
 	BUN rows_added;
 
@@ -195,11 +194,10 @@ load_column(type_record_t *rec, const char *name, BAT *bat, stream *s, int width
 
 	// sanity check
 	assert( (loader != NULL) + (decoder != NULL) + trivial == 1); (void)trivial;
+	assert(BATcount(bat) == 0);
 
 	if (rec->trivial_if_no_byteswap && !byteswap)
 		decoder = NULL;
-
-	orig_count = BATcount(bat);
 
 	if (loader) {
 		msg = loader(bat, s, eof_reached, width, byteswap);
@@ -210,8 +208,16 @@ load_column(type_record_t *rec, const char *name, BAT *bat, stream *s, int width
 		msg = load_trivial(bat, s, name, rec->validate, width, rows_estimate, eof_reached);
 	}
 
-	new_count = BATcount(bat);
-	rows_added = new_count - orig_count;
+	rows_added = BATcount(bat);
+
+	if (rows_added > 0) {
+		// We don't know anything about the data we just loaded
+		bat->tkey = false;
+		bat->tnonil = false;
+		bat->tsorted = false;
+		bat->trevsorted = false;
+		bat->tascii = false;
+	}
 
 	if (msg == MAL_SUCCEED && rows_estimate != 0 && rows_estimate != rows_added)
 		bailout(
@@ -263,9 +269,12 @@ import_column(backend *be, bat *ret, BUN *retcnt, str method, int width, bool by
 	} else {
 		s = open_rstream(path);
 	}
-	if (!s) {
+	if (s == NULL || mnstr_errnr(s) != MNSTR_NO__ERROR) {
 		bailout("%s", mnstr_peek_error(NULL));
 	}
+	msg = wrap_onclient_compression(&s, "sql.copy_from", onclient, true);
+	if (msg != NULL)
+		goto end;
 
 	// Do the work
 	msg = load_column(rec, path, bat, s, width, byteswap, nrows, &eof_reached);
@@ -323,7 +332,123 @@ mvc_bin_import_column_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	return import_column(be, ret, retcnt, method, width, byteswap, path, onclient, nrows);
 }
 
+static str
+import_nul_terminated(backend *be, bat *ret, BUN *retcnt, str method, int width, bat bytes, BUN nrows)
+{
+	(void)be;
+	const str mal_operator = "sql.importNulTerminated";
+	str msg = MAL_SUCCEED;
+	BAT *input = NULL;
+	BAT *result = NULL;
+	int gdk_type;
+	allocator *ma = MT_thread_getallocator();
+	allocator_state ma_state = ma_open(ma);
+	struct insert_state state = { NULL };
+	BATiter bi;
+	const char *data;
+	size_t size;
+	size_t consumed;
 
+	*ret = 0;
+	*retcnt = 0;
+	type_record_t *rec = find_type_rec(method);
+	if (rec == NULL)
+		bailout("COPY BINARY FROM not implemented for '%s'", method);
+	if (!is_nul_terminated_text(rec))
+		bailout("'%s' does not import as zero-terminated text", method);
+
+	input = BATdescriptor(bytes);
+	if (input == NULL)
+		bailout("%s", GDK_EXCEPTION);
+
+	gdk_type = ATOMindex(rec->gdk_type);
+	if (gdk_type < 0)
+		bailout("cannot load data as %s: unknown atom type %s", method, rec->gdk_type);
+	result = COLnew(0, gdk_type, nrows, PERSISTENT);
+	if (result == NULL)
+		bailout("%s", GDK_EXCEPTION);
+
+	init_insert_state(&state, ma, result, width);
+	bi = bat_iterator(input);
+	data = BUNtloc(bi, 0);
+	size = BATcount(input);
+	msg = insert_nul_terminated_values(&state, data, size, &consumed);
+	bat_iterator_end(&bi);
+	if (msg != MAL_SUCCEED)
+		goto end;
+	if (consumed < size)
+		bailout("unterminated string at end");
+
+	// Maintain bookkeeping
+	BATsetcount(result, result->batCount);
+	result->tkey = false;
+	result->tnonil = false;
+	result->tsorted = false;
+	result->trevsorted = false;
+	result->tascii = false;
+
+	*ret = result->batCacheid;
+	*retcnt = BATcount(result);
+	msg = MAL_SUCCEED;
+
+end:
+	release_insert_state(&state);
+	ma_close(ma, &ma_state);
+	if (input != NULL)
+		BBPunfix(input->batCacheid);
+	if (result != NULL) {
+		if (msg == MAL_SUCCEED)
+			BBPkeepref(result);
+		else
+			BBPunfix(result->batCacheid);
+	}
+	return msg;
+}
+
+
+str
+mvc_bin_import_nul_terminated_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void)mb;
+
+	assert(pci->retc == 2);
+	bat *ret = getArgReference_bat(stk, pci, 0);
+	BUN *retcnt = getArgReference_oid(stk, pci, 1);
+
+	assert(pci->argc == 6);
+	str method = *getArgReference_str(stk, pci, 2);
+	int width = *getArgReference_int(stk, pci, 3);
+	bat bytes = *getArgReference_bat(stk, pci, 4);
+	BUN nrows = *getArgReference_oid(stk, pci, 5);
+
+	backend *be = cntxt->sqlcontext;
+
+	return import_nul_terminated(be, ret, retcnt, method, width, bytes, nrows);
+}
+
+
+str
+mvc_bin_import_bytes_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void)mb;
+
+	assert(pci->retc == 2);
+	bat *ret = getArgReference_bat(stk, pci, 0);
+	BUN *retcnt = getArgReference_oid(stk, pci, 1);
+
+	assert(pci->argc == 5);
+	str path = *getArgReference_str(stk, pci, 2);
+	int onclient = *getArgReference_int(stk, pci, 3);
+	// we don't use it ourselves but we MUST pass it on because
+	// we use it to sequence the loads
+	BUN ignored_nrows = *getArgReference_oid(stk, pci, 4);
+
+	backend *be = cntxt->sqlcontext;
+	str retval = import_column(be, ret, retcnt, "bte", 0, false, path, onclient, 0);
+
+	*retcnt = ignored_nrows; // just pass the value we got
+	return retval;
+}
 
 static str
 write_out(const char *start, const char *end, stream *s)
@@ -422,7 +547,7 @@ dump_binary_column(const struct type_record_t *rec, BAT *b, BUN start, BUN lengt
 
 
 static str
-export_column(backend *be, BAT *b, bool byteswap, str filename, bool onclient)
+export_column(backend *be, BAT *b, bool byteswap, str filename, int onclient)
 {
 	static const char mal_operator[] = "sql.export_bin_column";
 	str msg = MAL_SUCCEED;
@@ -436,14 +561,15 @@ export_column(backend *be, BAT *b, bool byteswap, str filename, bool onclient)
 		bailout("COPY INTO BINARY not implemented for '%s'", gdk_name);
 
 	if (onclient) {
-		(void)be;
 		s = mapi_request_download(filename, true, be->mvc->scanner.rs, be->mvc->scanner.ws);
 	} else {
 		s = open_wstream(filename);
 	}
-	if (!s) {
-		bailout("%s", mnstr_peek_error(NULL));
+	if (s == NULL || mnstr_errnr(s) != MNSTR_NO__ERROR) {
 	}
+	msg = wrap_onclient_compression(&s, "sql.copy_from", onclient, true);
+	if (msg != NULL)
+		goto end;
 
 	msg = dump_binary_column(rec, b, 0, BATcount(b), byteswap, s);
 
@@ -472,7 +598,7 @@ mvc_bin_export_column_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	// arg 1 handled below
 	bool byteswap = *getArgReference_bit(stk, pci, 2);
 	str filename = *getArgReference_str(stk, pci, 3);
-	bool onclient = (bool) *getArgReference_int(stk, pci, 4);
+	int onclient = *getArgReference_int(stk, pci, 4);
 
 	// Usually we are called with a BAT argument but if the user types
 	// something like

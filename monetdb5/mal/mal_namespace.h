@@ -129,6 +129,8 @@
 	FUNC(identity); \
 	FUNC(ifthenelse); \
 	FUNC(importColumn); \
+	FUNC(importNulTerminated); \
+	FUNC(importRaw); \
 	FUNC(int); \
 	FUNC(intersect); \
 	FUNC(intersectcand); \

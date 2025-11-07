@@ -104,6 +104,12 @@ class Connection(object):
         unix_socket is used if hostname is not defined.
         """
 
+        if database.startswith('monetdb:///'):
+            unix_socket = database[10:]
+            hostname = database = None
+        elif database.startswith('mapi:monetdb:///'):
+            unix_socket = database[15:]
+            hostname = database = None
         if hostname and hostname.startswith('/') and not unix_socket:
             unix_socket = '%s/.s.monetdb.%d' % (hostname, port)
             hostname = None

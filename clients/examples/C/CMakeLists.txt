@@ -79,6 +79,17 @@ target_link_libraries(bincopydata
   copybinary
   )
 
+add_executable(backrefencode
+  backrefencode.c
+  bincopybackref.h
+  bincopybackref.c
+  )
+
+target_link_libraries(backrefencode
+  PRIVATE
+  monetdb_config_header
+  )
+
 add_executable(bincopyloops
   bincopyloops.c
   )
@@ -111,6 +122,7 @@ install(TARGETS
   streamcat
   testcondvar
   bincopydata
+  backrefencode
   murltest
   RUNTIME
   DESTINATION

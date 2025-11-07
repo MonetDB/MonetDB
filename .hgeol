@@ -21,4 +21,4 @@
 **.zip = BIN
 
 # all the rest is text
-** = native
+** = LF

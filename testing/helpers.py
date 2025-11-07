@@ -10,33 +10,8 @@
 
 import os
 import sys
+import shlex
 
-
-import string                   # for whitespace
-def splitcommand(cmd):
-    '''Like string.split, except take quotes into account.'''
-    q = None
-    w = []
-    command = []
-    for c in cmd:
-        if q:
-            if c == q:
-                q = None
-            else:
-                w.append(c)
-        elif c in string.whitespace:
-            if w:
-                command.append(''.join(w))
-            w = []
-        elif c == '"' or c == "'":
-            q = c
-        else:
-            w.append(c)
-    if w:
-        command.append(''.join(w))
-    if len(command) > 1 and command[0] == 'call':
-        del command[0]
-    return command
 
 def get_tests_from_all_file(fpath:str):
     res = []
@@ -75,7 +50,7 @@ def process_test_dir(dir_path:str, ctx={}, **kwargs):
     if os.path.isfile(os.path.join(dir_path, 'SingleServer')):
         folder['single_server'] = True
         with open(os.path.join(dir_path, 'SingleServer'), 'r') as f:
-            folder['server_options'] = splitcommand(f.read())
+            folder['server_options'] = shlex.split(f.read())
     allf = os.path.join(real_dir_path, 'All')
     tests = get_tests_from_all_file(allf) if os.path.isfile(allf) else []
     test_names = kwargs.get('test_names')

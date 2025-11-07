@@ -12,8 +12,10 @@ NRECS = 1_000_000
 # location generated test data files.
 BINCOPY_FILES = os.environ.get('BINCOPY_FILES', None) or os.environ['TSTTRGDIR']
 
+
 class DataMaker:
-    def __init__(self):
+    def __init__(self, nrecs):
+        self.nrecs = nrecs
         self.fixed_substitutions = dict()
         self.work_list = set()
         self.outfile_to_expected = dict()
@@ -59,11 +61,11 @@ class DataMaker:
             var = var[3:]
             ext = '.ne'
             flags.append('--native-endian')
-        base = f'bincopy_{var}{ext}.bin'
+        base = f'bincopy_{var}_{self.nrecs}{ext}.bin'
         dst_filename = os.path.join(BINCOPY_FILES, base)
         tmp_filename = os.path.join(BINCOPY_FILES, 'tmp_' + base)
         if not os.path.isfile(dst_filename):
-            cmd = ("bincopydata", *flags, var, str(NRECS), tmp_filename)
+            cmd = ("bincopydata", *flags, var, str(self.nrecs), tmp_filename)
             self.work_list.add( (cmd, tmp_filename, dst_filename))
         return dst_filename
 
@@ -85,16 +87,14 @@ class DataMaker:
         return self.outfile_to_expected.items()
 
 
-
-def run_test(side, testcase):
+def run_test(side, testcase, nrecs=NRECS):
     code, expected_result = testcase
     assert len(re.findall('@ON@', code)) == len(re.findall('COPY', code))
     assert '@ON@' in code
     # generate the query
-    data_maker = DataMaker()
+    data_maker = DataMaker(nrecs)
     data_maker.additionally('ON', 'ON ' + side.upper())
-    data_maker.additionally('NRECS', NRECS)
-    data_maker.additionally('NRECS_DIV_4', NRECS / 4)
+    data_maker.additionally('NRECS', nrecs)
     massage = lambda s: re.sub(r'@(>?(\w|!)+)@', data_maker.substitute_match, s)
     code = massage(code)
     code = f"START TRANSACTION;\n{code}\nROLLBACK;\n"
@@ -116,18 +116,26 @@ def run_test(side, testcase):
             if err_msg:
                 err_msg = massage(err_msg)
             tr.assertFailed(err_code, err_msg)
-        for outfile, expected in data_maker.outfiles():
+        for outfile, expectedfile in data_maker.outfiles():
             if not os.path.exists(outfile):
                 tr.fail(f'Output file {outfile} was not created')
-            with open(expected, 'rb') as fil:
-                expected_content = fil.read()
-            with open(outfile, 'rb') as fil:
-                content = fil.read()
-            if len(content) != len(expected_content):
-                tr.fail(f'Outfile {outfile} has wrong length: {len(content)}, expected {len(expected_content)}')
-            elif content != expected_content:
-                tr.fail(f'Content of outfile {outfile} differs from {expected}')
+            decoded_expected_filename, expected_content = read_decode(expectedfile)
+            decoded_actual_filename, actual_content = read_decode(outfile)
+            if len(actual_content) != len(expected_content):
+                tr.fail(f'Outfile {decoded_actual_filename} has wrong length: {len(actual_content)}, expected {len(expected_content)}')
+            elif actual_content != expected_content:
+                tr.fail(f'Content of outfile {decoded_actual_filename} differs from {decoded_expected_filename}')
 
+
+def read_decode(filename):
+    if 'string' in os.path.basename(filename):
+        # must be decoded
+        outfile = filename + '.decoded'
+        with open(filename, 'rb') as rd, open(outfile, 'wb') as wr:
+                subprocess.check_call(['backrefencode', '-d'], stdin=rd, stdout=wr)
+        filename = outfile
+    with open(filename, 'rb') as f:
+        return filename, f.read()
 
 
 INTS = ("""
@@ -148,7 +156,7 @@ STRINGS = ("""
 CREATE TABLE foo(id INT NOT NULL, s VARCHAR(20));
 COPY BINARY INTO foo(id, s) FROM @ints@, @strings@ @ON@;
 COPY SELECT id, s FROM foo INTO BINARY @>ints@, @>strings@ @ON@;
-SELECT COUNT(id) FROM foo WHERE s = ('int' || id);
+SELECT COUNT(id) FROM foo WHERE s = ('int' || id % 987);
 """, [f"{NRECS}"])
 
 NULL_INTS = ("""
@@ -179,7 +187,7 @@ COPY BINARY INTO foo(id, s) FROM @ints@, @broken_strings@ @ON@;
 NEWLINE_STRINGS = (r"""
 CREATE TABLE foo(id INT NOT NULL, s TEXT);
 COPY BINARY INTO foo(id, s) FROM @ints@, @newline_strings@ @ON@;
-SELECT COUNT(id) FROM foo WHERE s = (E'RN\r\nR\r' || id);
+SELECT COUNT(id) FROM foo WHERE s = (E'RN\r\nR\r' || id % 987);
 """, [f"{NRECS}"])
 
 NULL_STRINGS = ("""
