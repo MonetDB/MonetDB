@@ -803,7 +803,7 @@ static mel_func copy_init_funcs[] = {
  pattern("copy", "request_upload", COPYrequest_upload, true, "request MAPI file upload",
 	args(1, 3,
 		arg("", streams),
-		arg("filename", str), arg("binary", bit)
+		arg("filename", str), arg("on_client", int)
  )),
  pattern("copy", "from_stdin", COPYfrom_stdin, true, "read FROM STDIN",
  	args(1, 7,

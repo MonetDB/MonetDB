@@ -14,6 +14,7 @@
 #include "mel.h"
 #include "pipeline.h"
 
+#include "sql.h"
 #include "mapi_prompt.h"
 #include "copy.h"
 #include "rel_copy.h"
@@ -24,12 +25,19 @@ COPYrequest_upload(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void)mb;
 	Stream *upload = getArgReference(stk, pci, 0);
 	str filename = *getArgReference_str(stk, pci, 1);
-	bit binary = *getArgReference_bit(stk, pci, 2);
+	int on_client = *getArgReference_int(stk, pci, 2);
 	backend *be = cntxt->sqlcontext;
 	mvc *mvc = be->mvc;
-	*upload = mapi_request_upload(filename, binary, mvc->scanner.rs, mvc->scanner.ws);
+	*upload = mapi_request_upload(filename, on_client>1, mvc->scanner.rs, mvc->scanner.ws);
 	if (*upload == NULL)
 		throw(IO, "streams.request_upload", "%s", mnstr_peek_error(NULL));
+	if (on_client > 1) {
+		str msg = wrap_onclient_compression((stream**)upload, "sql.copy_from", on_client, false);
+		if (msg != NULL) {
+			close_stream(*upload);
+			return msg;
+		}
+	}
 	return MAL_SUCCEED;
 }
 

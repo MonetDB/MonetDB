@@ -83,7 +83,7 @@ take_parameter(node **n, int type)
 static int
 emit_pipelined_loop(
 	backend *be, MalBlkPtr mb,
-	str fname, bool onclient, int block_size,
+	str fname, int onclient, int block_size,
 	int var_col_sep, int var_line_sep, int var_quote_char, str null_representation,
 	bool escape, str fixed_width, bool best_effort, lng offset, lng nrecords_or_minusone)
 {
@@ -101,7 +101,7 @@ emit_pipelined_loop(
 		q = newStmt(mb, "copy", "request_upload");
 		setDestVar(q, var_stream);
 		q = pushStr(mb, q, fname);
-		q = pushBit(mb, q, false);
+		q = pushInt(mb, q, onclient);
 	} else if (fname != NULL) {
 		// ON SERVER
 		q = newStmt(mb, "streams", "openRead");
