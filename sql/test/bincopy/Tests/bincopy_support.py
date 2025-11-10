@@ -732,3 +732,36 @@ SELECT
 FROM foo;
 """, [f"{NRECS},{42*NRECS},{(10 + NRECS+9) * NRECS // 2}"]
 )
+
+INET4 = (f"""
+CREATE TABLE foo(id INT NOT NULL, i4 inet4);
+COPY BINARY INTO foo(id, i4) FROM @ints@, @inet4@ @ON@;
+COPY SELECT id, i4 FROM foo INTO BINARY @>ints@, @>inet4@ @ON@;
+--
+WITH
+    seeds AS (
+        SELECT
+            value AS id,
+            ifthenelse(value = 3, NULL, value) AS value
+        FROM sys.generate_series(0, {NRECS})
+    ),
+    numbers AS (
+        SELECT
+            id,
+            (value+1) * 1_001_001_001 AS i
+        FROM seeds
+    ),
+    strings AS (
+        SELECT
+            id,
+            '' || (i>>24) % 256 || '.' || (i>>16) % 256 || '.' || (i>>8) % 256 || '.' || i % 256 AS i4s
+        FROM numbers
+    ),
+    refdata AS (
+        SELECT id, CAST(i4s AS inet4) AS i4 FROM strings
+    )
+SELECT COUNT(*)
+FROM foo FULL OUTER JOIN refdata ON foo.id = refdata.id
+WHERE foo.i4 = refdata.i4 OR (foo.i4 IS NULL AND refdata.i4 IS NULL);
+""", [f"{NRECS}"])
+

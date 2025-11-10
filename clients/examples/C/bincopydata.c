@@ -276,6 +276,21 @@ gen_json(FILE *f, bool byteswap, long nrecs, char *arg)
 	}
 }
 
+static void
+gen_inet4(FILE *f, bool byteswap, long nrecs, char *arg)
+{
+	(void)arg;
+	(void)byteswap;
+	for (int v = 0; v < nrecs; v++) {
+		uint64_t i = (v == 3) ? 0x00000000 : (v + 1) * 1001001001;
+		// always big endian
+		fputc((i >> 24) % 256, f);
+		fputc((i >> 16) % 256, f);
+		fputc((i >>  8) % 256, f);
+		fputc(i         % 256, f);
+	}
+}
+
 #define FUNCNAME gen_decimal_tinyints
 #define STYP int8_t
 #define UTYP uint8_t
@@ -354,6 +369,8 @@ static struct gen {
 	{ "timestamp_days", gen_timestamp_days },
 	{ "timestamp_months", gen_timestamp_months },
 	{ "timestamp_years", gen_timestamp_years },
+
+	{ "inet4", gen_inet4 },
 
 	{ "json_objects", gen_json },
 
