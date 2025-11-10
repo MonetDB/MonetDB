@@ -70,5 +70,5 @@ struct allocator {
 	exception_buffer eb;
 	MT_Lock lock;    /* lock for thread-safe allocations */
 	bool use_lock;
-	char name [MT_NAME_LEN]; /* Name (only for display!) */
+	char name[MT_NAME_LEN]; /* Name (only for display!) */
 };
