@@ -355,14 +355,19 @@ sql_trans_add_dependency(sql_trans* tr, sqlid id, sql_dependency_change_type tp)
 		.objid = id,
 		.type = tp
 	};
+	sqlstore *store = tr->store;
+	store_lock(store);
 	if (!tr->dependencies && !(tr->dependencies = list_create((fdestroy) &dep_destroy))) {
+		store_unlock(store);
 		_DELETE(dep);
 		return LOG_ERR;
 	}
 	if (!list_append(tr->dependencies, dep)) {
+		store_unlock(store);
 		_DELETE(dep);
 		return LOG_ERR;
 	}
+	store_unlock(store);
 	return LOG_OK;
 }
 
@@ -377,14 +382,19 @@ sql_trans_add_dependency_change(sql_trans *tr, sqlid id, sql_dependency_change_t
 		.objid = id,
 		.type = tp
 	};
+	sqlstore *store = tr->store;
+	store_lock(store);
 	if (!tr->depchanges && !(tr->depchanges = list_create((fdestroy) &dep_destroy))) {
+		store_unlock(store);
 		_DELETE(dep);
 		return LOG_ERR;
 	}
 	if (!list_append(tr->depchanges, dep)) {
+		store_unlock(store);
 		_DELETE(dep);
 		return LOG_ERR;
 	}
+	store_unlock(store);
 	return LOG_OK;
 }
 
