@@ -101,7 +101,6 @@ createExceptionInternal(enum malexception type, const char *fcn,
 							 exceptionNames[type], ":", fcn, ":", NULL);
 		if (len > 0)
 			(void) vsnprintf(msg + msglen, len + 1, format, ap2);
-		va_end(ap2);
 		char *q = msg + strlen(msg);
 		if (q[-1] != '\n') {
 			/* make sure message ends with newline, we already have the space */
