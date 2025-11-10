@@ -291,6 +291,40 @@ gen_inet4(FILE *f, bool byteswap, long nrecs, char *arg)
 	}
 }
 
+static void
+gen_inet6(FILE *f, bool byteswap, long nrecs, char *arg)
+{
+	(void)arg;
+	(void)byteswap;
+	for (int v = 0; v < nrecs; v++) {
+		long i0 = (v + 1) * 2142970729L;
+		long i1 = (v + 1) * 2011938419L;
+		long i2 = (v + 1) * 1616437157L;
+		long i3 = (v + 1) * 1271098355L;
+		uint8_t rec[16] = {
+			(uint8_t)(i0 >> 24),
+			(uint8_t)(i0 >> 16),
+			(uint8_t)(i0 >> 8),
+			(uint8_t)(i0),
+			(uint8_t)(i1 >> 24),
+			(uint8_t)(i1 >> 16),
+			(uint8_t)(i1 >> 8),
+			(uint8_t)(i1),
+			(uint8_t)(i2 >> 24),
+			(uint8_t)(i2 >> 16),
+			(uint8_t)(i2 >> 8),
+			(uint8_t)(i2),
+			(uint8_t)(i3 >> 24),
+			(uint8_t)(i3 >> 16),
+			(uint8_t)(i3 >> 8),
+			(uint8_t)(i3),
+		};
+		if (v == 3)
+			memset(rec, 0, sizeof(rec));
+		fwrite(rec, 16, 1, f);
+	}
+}
+
 #define FUNCNAME gen_decimal_tinyints
 #define STYP int8_t
 #define UTYP uint8_t
@@ -371,6 +405,7 @@ static struct gen {
 	{ "timestamp_years", gen_timestamp_years },
 
 	{ "inet4", gen_inet4 },
+	{ "inet6", gen_inet6 },
 
 	{ "json_objects", gen_json },
 

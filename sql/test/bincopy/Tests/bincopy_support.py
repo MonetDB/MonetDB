@@ -765,3 +765,47 @@ FROM foo FULL OUTER JOIN refdata ON foo.id = refdata.id
 WHERE foo.i4 = refdata.i4 OR (foo.i4 IS NULL AND refdata.i4 IS NULL);
 """, [f"{NRECS}"])
 
+INET6 = (f"""
+CREATE TABLE foo(id INT NOT NULL, i6 inet6);
+COPY BINARY INTO foo(id, i6) FROM @ints@, @inet6@ @ON@;
+COPY SELECT id, i6 FROM foo INTO BINARY @>ints@, @>inet6@ @ON@;
+--
+WITH
+    seeds AS (
+        SELECT
+            value AS id,
+            ifthenelse(value = 3, NULL, value) AS value
+        FROM sys.generate_series(0, 1_000_000)
+    ),
+    numbers AS (
+        SELECT
+            id,
+            (value + 1) * 2_142_970_729 AS i0,
+            (value + 1) * 2_011_938_419 AS i1,
+            (value + 1) * 1_616_437_157 AS i2,
+            (value + 1) * 1_271_098_355 AS i3
+        FROM seeds
+    ),
+    strings AS (
+        SELECT
+            id,
+            (
+                to_hex((i0 >> 16) & 0xFFFF) || ':' ||
+                to_hex( i0         & 0xFFFF) || ':' ||
+                to_hex((i1 >> 16) & 0xFFFF) || ':' ||
+                to_hex( i1         & 0xFFFF) || ':' ||
+                to_hex((i2 >> 16) & 0xFFFF) || ':' ||
+                to_hex( i2         & 0xFFFF) || ':' ||
+                to_hex((i3 >> 16) & 0xFFFF) || ':' ||
+                to_hex( i3         & 0xFFFF)
+            ) AS i6s
+        FROM numbers
+    ),
+    refdata AS (
+        SELECT id, CAST(i6s AS inet6) AS i6 FROM strings
+    )
+SELECT COUNT(*)
+FROM foo FULL OUTER JOIN refdata ON foo.id = refdata.id
+WHERE foo.i6 = refdata.i6 OR (foo.i6 IS NULL AND refdata.i6 IS NULL);
+""", [f"{NRECS}"])
+
