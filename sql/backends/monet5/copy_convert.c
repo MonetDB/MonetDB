@@ -176,8 +176,9 @@ COPYparse_float(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str dec_sep = *getArgReference_str(stk, pci, 8);
 	str dec_skip = *getArgReference_str(stk, pci, 9);
 	int n;
-	void *buffer = NULL;
-	size_t buffer_len;
+	dbl localdbl;
+	void *buffer = &localdbl;
+	size_t buffer_len = sizeof(dbl);
 	const void *nil_ptr;
 	struct error_handling errors;
 	int nils = 0;
@@ -214,11 +215,8 @@ COPYparse_float(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		} else {
 			ssize_t len = -1;
 			src = fltdbl_sepskip(src, sep, skip);
-			if (src) {
-				buffer_len = 0;
+			if (src)
 				len = BATatoms[tpe].atomFromStr(ma, src, &buffer_len, &buffer, false);
-				(void)buffer_len;
-			}
 			if (len >= 0) {
 				to_insert = buffer;
 			} else {
