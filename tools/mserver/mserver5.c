@@ -239,6 +239,7 @@ static void
 usr1trigger(void)
 {
 	usr1_interrupted = 1;
+	MT_sleep_ms(150); /* sleep slightly longer than delay for handling usr1 */
 }
 
 #ifdef _MSC_VER

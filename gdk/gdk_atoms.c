@@ -1776,62 +1776,81 @@ INET6toString(allocator *ma, str *retval, size_t *len, const void *VALUE, bool e
 	(void) ma;
 	const inet6 *value = VALUE;
 	(void) external;
-	/* max size: strlen("1234:1234:1234:1234:1234:1234:1234:1234")+1 */
+
+	/* ensure buffer capacity. */
+	/* max size: 8 * (digit digit digit digit colon-or-nul) == 40 */
 	if (*len < 40 || *retval == NULL) {
 		if ((*retval = ma_alloc(ma, 40)) == NULL)
 			return -1;
 		*len = 40;
 	}
+
 	/* find longest stretch of zeroes */
-	int rl = 0;		/* length of current stretch of zeros */
-	int rl1 = -1;		/* start of current stretch of zeros */
-	int mrl = 0;		/* length of longest stretch of zeros */
-	int mrl1 = -1;		/* start of longest stretch of zeros */
+	int run_len = 0;	/* length of current stretch of zeros */
+	int best_start = 16;	/* start of longest stretch of zeros */
+	int best_len = 0;	/* length of longest stretch of zeros */
 	for (int i = 0; i < 16; i += 2) {
 		if (value->hex[i] == 0 && value->hex[i + 1] == 0) {
-			if (rl++ == 0)
-				rl1 = i;
-		} else {
-			if (rl > 1 && rl > mrl) {
-				mrl = rl;
-				mrl1 = rl1;
-			}
-			rl = 0;
+			/* record it as part of a stretch of zeroes */
+			run_len += 2;
+			continue;
 		}
+		if (run_len > best_len) {
+			/* record new longest stretch */
+			best_start = i - run_len;
+			best_len = run_len;
+		}
+		/* definitely not part of a stretch of zeroes */
+		run_len = 0;
 	}
-	if (rl > 1 && rl > mrl) {
-		mrl = rl;
-		mrl1 = rl1;
+	if (run_len > best_len) {
+		/* longest stretch is at the end */
+		best_start = 16 - run_len;
+		best_len = run_len;
 	}
-	if (mrl1 < 0)
-		mrl1 = 16;
-	int pos = 0;
-	if (mrl1 == 0 && mrl == 10
-	    && value->hex[10] == 0xFF && value->hex[11] == 0xFF) {
-		/* IPv4 address disguised as IPv6 */
-		pos += snprintf(*retval + pos, *len - pos,
+
+	/* nils should never reach us here */
+	assert(best_len < 8);
+
+	/* Special case: IPv4-mapped IPv6 address 	*/
+	if (best_start == 0 && best_len == 10 && value->hex[10] == 0xFF && value->hex[11] == 0xFF) {
+		return snprintf(*retval, *len,
 				"::ffff:%d.%d.%d.%d",
 				value->hex[12], value->hex[13],
 				value->hex[14], value->hex[15]);
-		return pos;
 	}
-	for (int i = 0; i < mrl1; i += 2) {
-		if (i > 0)
-			(*retval)[pos++] = ':';
-		pos += snprintf(*retval + pos, *len - pos, "%x",
-				(unsigned) ((value->hex[i] << 8) | value->hex[i + 1]));
+
+	/* render it as colon-separated quads */
+	char *p = *retval;
+	for (int i = 0; i < 16; i += 2) {
+		/* In principle, each iteration prints a hex quad followed by a
+		 * colon, but the stretch is treated specially. */
+		if (i != best_start) {
+			unsigned int quad = value->hex[i] * 256 + value->hex[i + 1];
+			static const char hexdigits[17] = "0123456789abcdef";
+			*p = hexdigits[value->hex[i] >> 4];
+			p += quad >= 0x1000;
+			*p = hexdigits[value->hex[i] & 0xF];
+			p += quad >= 0x0100;
+			*p = hexdigits[value->hex[i + 1] >> 4];
+			p += quad >= 0x0010;
+			*p++ = hexdigits[value->hex[i + 1] & 0xF];
+			if (i < 14)
+				*p++ = ':';
+		} else {
+			/* the stretch */
+			if (i == 0)
+				*p++ = ':';
+			*p++ = ':';
+			i += best_len - 2;
+		}
 	}
-	if (mrl1 < 8) {
-		(*retval)[pos++] = ':';
-		(*retval)[pos++] = ':';
-	}
-	for (int i = mrl1 + mrl; i < 16; i += 2) {
-		pos += snprintf(*retval + pos, *len - pos, "%x",
-				(unsigned) ((value->hex[i] << 8) | value->hex[i + 1]));
-		if (i < 15)
-			(*retval)[pos++] = ':';
-	}
-	return pos;
+	*p = '\0';
+
+	/* we must have written at least 3 characters followed by a NUL */
+	assert(p - *retval >= 3);
+
+	return p - *retval;
 }
 
 static const blob blob_nil = {
