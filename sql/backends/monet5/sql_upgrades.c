@@ -4906,7 +4906,7 @@ sql_update_snapshot(Client c, mvc *sql, sql_schema *s)
 }
 
 static str
-sql_update_default(Client c, mvc *sql, sql_schema *s)
+sql_update_dec2025(Client c, mvc *sql, sql_schema *s)
 {
 	char *err;
 	res_table *output;
@@ -5305,7 +5305,7 @@ SQLupgrades(Client c, mvc *m)
 		goto handle_error;
 	}
 
-	if ((err = sql_update_default(c, m, s)) != NULL) {
+	if ((err = sql_update_dec2025(c, m, s)) != NULL) {
 		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 		goto handle_error;
 	}
