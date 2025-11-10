@@ -2414,14 +2414,6 @@ GDKmalloc_internal(size_t size, bool clear)
 	size_t nsize;
 
 	assert(size != 0);
-#ifndef SIZE_CHECK_IN_HEAPS_ONLY
-	if (size > SMALL_MALLOC &&
-	    GDKvm_cursize() + size >= GDK_vm_maxsize &&
-	    !MT_thread_override_limits()) {
-		GDKerror("allocating too much memory\n");
-		return NULL;
-	}
-#endif
 
 	/* pad to multiple of eight bytes and add some extra space to
 	 * write real size in front; when debugging, also allocate
@@ -2556,15 +2548,6 @@ GDKrealloc(void *s, size_t size)
 	nsize = (size + 7) & ~7;
 	asize = os[-1];		/* how much allocated last */
 
-#ifndef SIZE_CHECK_IN_HEAPS_ONLY
-	if (size > SMALL_MALLOC &&
-	    nsize > asize &&
-	    GDKvm_cursize() + nsize - asize >= GDK_vm_maxsize &&
-	    !MT_thread_override_limits()) {
-		GDKerror("allocating too much memory\n");
-		return NULL;
-	}
-#endif
 #if !defined(NDEBUG) && !defined(SANITIZER)
 	assert((asize & 2) == 0);   /* check against duplicate free */
 	/* check for out-of-bounds writes */
@@ -2627,13 +2610,6 @@ GDKmmap(const char *path, int mode, size_t len)
 {
 	void *ret;
 
-#ifndef SIZE_CHECK_IN_HEAPS_ONLY
-	if (GDKvm_cursize() + len >= GDK_vm_maxsize &&
-	    !MT_thread_override_limits()) {
-		GDKerror("requested too much virtual memory; memory requested: %zu, memory in use: %zu, virtual memory in use: %zu\n", len, GDKmem_cursize(), GDKvm_cursize());
-		return NULL;
-	}
-#endif
 	ret = MT_mmap(path, mode, len);
 	if (ret != NULL) {
 		if (mode & MMAP_COPY)
@@ -2667,14 +2643,6 @@ GDKmremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 {
 	void *ret;
 
-#ifndef SIZE_CHECK_IN_HEAPS_ONLY
-	if (*new_size > old_size &&
-	    GDKvm_cursize() + *new_size - old_size >= GDK_vm_maxsize &&
-	    !MT_thread_override_limits()) {
-		GDKerror("requested too much virtual memory; memory requested: %zu, memory in use: %zu, virtual memory in use: %zu\n", *new_size, GDKmem_cursize(), GDKvm_cursize());
-		return NULL;
-	}
-#endif
 	ret = MT_mremap(path, mode, old_address, old_size, new_size);
 	if (ret != NULL) {
 		if (mode & MMAP_COPY) {
