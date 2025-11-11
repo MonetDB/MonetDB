@@ -329,3 +329,12 @@ DELETE FROM sys.keywords WHERE keyword = 'PLAN';
 Running database upgrade commands:
 ALTER TABLE sys.keywords SET READ ONLY;
 
+Running database upgrade commands:
+create function to_hex(n int)
+returns text external name "calc"."to_hex";
+grant execute on function to_hex(int) to public;
+create function to_hex(n bigint)
+returns text external name "calc"."to_hex";
+grant execute on function to_hex(bigint) to public;
+update sys.functions set system = true where not system and schema_id = 2000 and name = 'to_hex' and type = 1;
+

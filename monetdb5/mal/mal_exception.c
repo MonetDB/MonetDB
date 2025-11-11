@@ -48,7 +48,7 @@ isExceptionVariable(const char *nme)
 	return false;
 }
 
-static char *M5OutOfMemory = MAL_MALLOC_FAIL;
+static char M5OutOfMemory[] = MAL_MALLOC_FAIL;
 
 char *
 concatErrors(allocator *ma, char *err1, const char *err2)

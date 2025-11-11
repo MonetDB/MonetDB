@@ -94,3 +94,14 @@ grant execute on aggregate sha512 to public;
 create aggregate ripemd160(val string)
 returns string with order external name aggr.ripemd160;
 grant execute on aggregate ripemd160 to public;
+
+-- to_hex returns the unsigned hexadecimal representation of the given number.
+-- Compatible with Postgres.
+
+create function to_hex(n int)
+returns text external name "calc"."to_hex";
+grant execute on function to_hex(int) to public;
+
+create function to_hex(n bigint)
+returns text external name "calc"."to_hex";
+grant execute on function to_hex(bigint) to public;

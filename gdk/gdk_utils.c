@@ -2092,7 +2092,7 @@ ma_alloc(allocator *sa, size_t sz)
 {
 	assert(sa);
 	size_t nsize = sz + MA_HEADER_SIZE;
-	char* r = (char*) _ma_alloc_internal(sa, nsize);
+	char *r = _ma_alloc_internal(sa, nsize);
 	return ma_fill_in_header(r, sz);
 }
 

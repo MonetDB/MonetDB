@@ -106,10 +106,6 @@
 #endif
 #endif
 
-/* also see gdk.h for these */
-#define THRDMASK	(1U)
-#define TEMMASK		(1U<<10)
-
 /*
  * @- pthreads Includes and Definitions
  */

@@ -1810,7 +1810,11 @@ INET6toString(allocator *ma, str *retval, size_t *len, const void *VALUE, bool e
 	}
 
 	/* nils should never reach us here */
-	assert(best_len < 8);
+	assert(best_len < 16);
+	if (best_len <= 2) {
+		best_len = 0;
+		best_start = 16;
+	}
 
 	/* Special case: IPv4-mapped IPv6 address 	*/
 	if (best_start == 0 && best_len == 10 && value->hex[10] == 0xFF && value->hex[11] == 0xFF) {

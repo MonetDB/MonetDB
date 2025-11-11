@@ -1,0 +1,93 @@
+# INT TESTS
+
+query T
+select to_hex(0)
+----
+0
+
+query T
+select to_hex(1)
+----
+1
+
+query T
+select to_hex(15)
+----
+f
+
+query T
+select to_hex(0x7fff_ffff)
+----
+7fffffff
+
+query T
+select to_hex(-1)
+----
+ffffffff
+
+query T
+select to_hex(-2_147_483_647)
+----
+80000001
+
+
+
+
+
+# BIGINT TESTS
+
+query T
+select to_hex(cast(0 as bigint))
+----
+0
+
+query T
+select to_hex(cast(1 as bigint))
+----
+1
+
+query T
+select to_hex(cast(15 as bigint))
+----
+f
+
+query T
+select to_hex(cast(0x7fff_ffff as bigint))
+----
+7fffffff
+
+query T
+select to_hex(cast(0x7fff_ffff_ffff_ffff as bigint))
+----
+7fffffffffffffff
+
+
+query T
+select to_hex(cast(-1 as bigint))
+----
+ffffffffffffffff
+
+query T
+select to_hex(-9_223_372_036_854_775_807)
+----
+8000000000000001
+
+
+
+
+# OTHER
+
+query T
+select to_hex(cast(-1 as tinyint))
+----
+ffffffff
+
+query T
+select to_hex(null)
+----
+NULL
+
+query T
+select to_hex(cast(null as bigint))
+----
+NULL

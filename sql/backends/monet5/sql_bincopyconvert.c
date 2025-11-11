@@ -811,6 +811,9 @@ static struct type_record_t type_recs[] = {
 	{ "hge", "hge", .trivial_if_no_byteswap=true, .decoder=byteswap_hge, .encoder=byteswap_hge, .validate=validate_hge },
 #endif
 
+	{ "inet4", "inet4", .encoder_trivial=true, .decoder_trivial=true, },
+	{ "inet6", "inet6", .encoder_trivial=true, .decoder_trivial=true, },
+
 	{ "blob", "blob", .loader=load_blobs, .dumper=dump_blob },
 
 	// \0-terminated text records
