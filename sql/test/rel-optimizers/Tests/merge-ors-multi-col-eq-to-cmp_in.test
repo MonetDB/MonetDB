@@ -152,3 +152,51 @@ project (
 | ) [ (("b"."m" NOT NULL) in (int(8) "40", int(8) "0", int(8) "180")) or (( [ "b"."m" NOT NULL, "b"."k" NOT NULL ]) in ( [ int(8) "20", int(11) "200" ],  [ int(8) "60", int(11) "600" ])) ]
 ) [ "b"."m" NOT NULL, "b"."k" NOT NULL ]
 
+query III rowsort incompatible
+select n, m, k from b where ((n = 1) AND (m = 20)) OR ((n = 3) AND (m = 60) AND (k=600))
+----
+1
+20
+200
+3
+60
+600
+
+query T nosort
+plan select n, m, k from b where ((n = 1) AND (m = 20)) OR ((n = 3) AND (m = 60) AND (k=600))
+----
+project (
+| select (
+| | table("sys"."b") [ "b"."n" NOT NULL, "b"."m" NOT NULL, "b"."k" NOT NULL ]
+| ) [ (("b"."n" NOT NULL) = (int(4) "1"), ("b"."m" NOT NULL) = (int(8) "20")) or (("b"."n" NOT NULL) = (int(4) "3"), ("b"."m" NOT NULL) = (int(8) "60"), ("b"."k" NOT NULL) = (int(11) "600")), ("b"."n" NOT NULL) in (int(4) "1", int(4) "3"), ("b"."m" NOT NULL) in (int(8) "20", int(8) "60") ]
+) [ "b"."n" NOT NULL, "b"."m" NOT NULL, "b"."k" NOT NULL ]
+
+query III rowsort
+select n, m, k from b where ((n = 1) AND (m = 20)) OR ((n = 2) AND (m = 40) AND (k=400)) OR ((n = 9) AND (m = 180)) OR ((n = 3) AND (m = 60) AND (k=600))
+----
+1
+20
+200
+2
+40
+400
+3
+60
+600
+9
+180
+1800
+
+query T nosort
+plan select * from b where ((n = 1) AND (m = 20)) OR ((n = 2) AND (m = 40) AND (k=400)) OR ((n = 9) AND (m = 180)) OR ((n = 3) AND (m = 60) AND (k=600))
+----
+project (
+| select (
+| | table("sys"."b") [ "b"."n" NOT NULL, "b"."m" NOT NULL, "b"."k" NOT NULL ]
+| ) [ (( [ "b"."n" NOT NULL, "b"."m" NOT NULL, "b"."k" NOT NULL ]) in ( [ int(4) "2", int(8) "40", int(11) "400" ],  [ int(4) "3", int(8) "60", int(11) "600" ])) or (( [ "b"."n" NOT NULL, "b"."m" NOT NULL ]) in ( [ int(4) "1", int(8) "20" ],  [ int(4) "9", int(8) "180" ])) ]
+) [ "b"."n" NOT NULL, "b"."m" NOT NULL, "b"."k" NOT NULL ]
+
+query I rowsort
+select sum(k) from dupv where ((n = 2) AND (m = 40)) OR ((n = 1) AND (m = 20) AND (k=200))
+----
+500
