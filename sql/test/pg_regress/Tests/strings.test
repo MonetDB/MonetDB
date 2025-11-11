@@ -660,11 +660,15 @@ select split_part('@joeuser@mydatabase@','@',2) AS "joeuser"
 ----
 joeuser
 
-statement error
+query T
 select to_hex(256*256*256 - 1) AS "ffffff"
+----
+ffffff
 
-statement error
-select to_hex(cast(256 as bigint)*cast(256 as bigint)*cast(256 as bigint)*cast(256 as bigint) - 1) AS "ffffffff"
+query T
+select to_hex(cast(256 * 256 * 256 * 256 - 1 as bigint)) AS "ffffffff"
+----
+ffffffff
 
 query I rowsort
 select md5('') = 'd41d8cd98f00b204e9800998ecf8427e' AS "TRUE"

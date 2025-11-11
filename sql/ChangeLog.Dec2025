@@ -1,6 +1,10 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Mon Nov 10 2025 Joeri van Ruth <joeri.van.ruth@monetdbsolutions.com>
+- Add functions to_hex(int) and to_hex(bigint). They return the
+  unsigned hexadecimal string representation of their argument.
+
 * Wed Nov  5 2025 Joeri van Ruth <joeri.van.ruth@monetdbsolutions.com>
 - COPY BINARY has been optimized to be much faster when many string columns
   are involved.

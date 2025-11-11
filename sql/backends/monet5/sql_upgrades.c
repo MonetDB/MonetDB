@@ -5223,6 +5223,24 @@ sql_update_dec2025(Client c, mvc *sql, sql_schema *s)
 	}
 	res_table_destroy(output);
 	output = NULL;
+	if (err)
+		return err;
+
+	sql_find_subtype(&tp, "bigint", 64, 0);
+	if (!sql_bind_func(sql, "sys", "to_hex", &tp, NULL, F_FUNC, true, true)) {
+		sql->session->status = 0; /* if the function was not found clean the error */
+		sql->errstr[0] = '\0';
+		const char query[] = "create function to_hex(n int)\n"
+			"returns text external name \"calc\".\"to_hex\";\n"
+			"grant execute on function to_hex(int) to public;\n"
+			"create function to_hex(n bigint)\n"
+			"returns text external name \"calc\".\"to_hex\";\n"
+			"grant execute on function to_hex(bigint) to public;\n"
+			"update sys.functions set system = true where not system and schema_id = 2000 and name = 'to_hex' and type = 1;\n"; /* F_FUNC == 1 */
+		printf("Running database upgrade commands:\n%s\n", query);
+		fflush(stdout);
+		err = SQLstatementIntern(c, query, "update", true, false, NULL);
+	}
 
 	return err;
 }
