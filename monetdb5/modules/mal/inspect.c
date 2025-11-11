@@ -513,7 +513,7 @@ INSPECTgetEnvironmentKey(Client ctx, str *ret, const char *const *key)
 	if (s == 0)
 		throw(MAL, "inspect.getEnvironment",
 			  "environment variable '%s' not found", *key);
-	*ret = MA_STRDUP(ma, s);
+	*ret = ma_strdup(ma, s);
 	if (*ret == NULL)
 		throw(MAL, "inspect.getEnvironment", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;

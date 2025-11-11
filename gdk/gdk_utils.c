@@ -1903,6 +1903,7 @@ _ma_free_blks(allocator *sa, size_t start_idx)
 /*
  * Reset allocator to initial state
  */
+#undef ma_reset
 allocator *
 ma_reset(allocator *sa)
 {
@@ -2156,6 +2157,7 @@ ma_zalloc(allocator *sa, size_t sz)
 	return r;
 }
 
+#undef ma_destroy
 void
 ma_destroy(allocator *sa)
 {
@@ -2210,6 +2212,7 @@ ma_strdup(allocator *sa, const char *s)
 	return ma_strndup(sa, s, strlen(s));
 }
 
+#undef ma_strconcat
 char *
 ma_strconcat(allocator *sa, const char *s1, const char *s2)
 {
@@ -2243,6 +2246,7 @@ ma_get_eb(allocator *sa)
 	return &sa->eb;
 }
 
+#undef ma_open
 allocator_state
 ma_open(allocator *sa)
 {
@@ -2264,6 +2268,7 @@ ma_open(allocator *sa)
 	return st;
 }
 
+#undef ma_close
 void
 ma_close(allocator *sa, const allocator_state *state)
 {
@@ -2303,6 +2308,7 @@ ma_tmp_active(const allocator *a)
     return a && (a->tmp_used > 0);
 }
 
+#undef ma_free
 void
 ma_free(allocator *sa, void *obj)
 {

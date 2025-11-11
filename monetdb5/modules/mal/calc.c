@@ -74,7 +74,7 @@ CMDvarADDstr(Client ctx, str *ret, const char *const *s1, const char *const *s2)
 	size_t l1;
 
 	if (strNil(*s1) || strNil(*s2)) {
-		*ret = MA_STRDUP(ma, str_nil);
+		*ret = ma_strdup(ma, str_nil);
 		if (*ret == NULL)
 			return mythrow(MAL, "calc.+", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
@@ -97,7 +97,7 @@ CMDvarADDstrint(Client ctx, str *ret, const char *const *s1, const int *i)
 	size_t len;
 
 	if (strNil(*s1) || is_int_nil(*i)) {
-		*ret = MA_STRDUP(ma, str_nil);
+		*ret = ma_strdup(ma, str_nil);
 		if (*ret == NULL)
 			return mythrow(MAL, "calc.+", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
@@ -658,7 +658,7 @@ CALCto_hex_int(Client ctx, str *res, const int *n)
 {
 	allocator *ma = ctx->curprg->def->ma;
 	if (is_int_nil(*n)) {
-		*res = MA_STRDUP(ma, str_nil);
+		*res = ma_strdup(ma, str_nil);
 		return MAL_SUCCEED;
 	}
 	const size_t size = 9;    // 32 bits -> 8 hex digits + 1 NUL
@@ -675,7 +675,7 @@ CALCto_hex_lng(Client ctx, str *res, const lng *n)
 {
 	allocator *ma = ctx->curprg->def->ma;
 	if (is_lng_nil(*n)) {
-		*res = MA_STRDUP(ma, str_nil);
+		*res = ma_strdup(ma, str_nil);
 		return MAL_SUCCEED;
 	}
 	const size_t size = 17;    // 64 bits -> 16 hex digits + 1 NUL

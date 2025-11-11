@@ -35,7 +35,7 @@ addMalException(MalBlkPtr mb, str msg)
 	if (mb->errors) {
 		mb->errors = concatErrors(mb->ma, mb->errors, msg);
 	} else {
-		mb->errors = MA_STRDUP(mb->ma, msg);
+		mb->errors = ma_strdup(mb->ma, msg);
 	}
 }
 
@@ -355,7 +355,7 @@ copyMalBlk(MalBlkPtr old)
 	for (i = 0; i < old->vtop; i++) {
 		mb->var[i] = old->var[i];
 		if (mb->var[i].name) {
-			mb->var[i].name = MA_STRDUP(ma, mb->var[i].name);
+			mb->var[i].name = ma_strdup(ma, mb->var[i].name);
 			if (!mb->var[i].name)
 				goto bailout;
 		}
@@ -381,12 +381,12 @@ copyMalBlk(MalBlkPtr old)
 		}
 	}
 	mb->stop = old->stop;
-	if (old->help && (mb->help = MA_STRDUP(mb->ma, old->help)) == NULL) {
+	if (old->help && (mb->help = ma_strdup(mb->ma, old->help)) == NULL) {
 		goto bailout;
 	}
 
 	strcpy_len(mb->binding, old->binding, sizeof(mb->binding));
-	mb->errors = old->errors ? MA_STRDUP(mb->ma, old->errors) : 0;
+	mb->errors = old->errors ? ma_strdup(mb->ma, old->errors) : 0;
 	mb->tag = old->tag;
 	mb->runtime = old->runtime;
 	mb->calls = old->calls;
@@ -704,7 +704,7 @@ cloneVariable(MalBlkPtr tm, MalBlkPtr mb, int x)
 	else {
 		res = newTmpVariable(tm, getVarType(mb, x));
 		if (mb->var[x].name)
-			tm->var[x].name = MA_STRDUP(tm->ma, mb->var[x].name);
+			tm->var[x].name = ma_strdup(tm->ma, mb->var[x].name);
 	}
 	if (res < 0)
 		return res;

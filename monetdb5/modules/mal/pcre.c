@@ -250,7 +250,7 @@ mnre_create(allocator *ma, const char *pat, bool caseignore, uint32_t esc)
 			break;
 		}
 	}
-	if ((p = MA_STRDUP(ma, pat)) == NULL) {
+	if ((p = ma_strdup(ma, pat)) == NULL) {
 		//GDKfree(r);
 		return NULL;
 	}
@@ -735,7 +735,7 @@ sql2pcre(allocator *ma, str *r, const char *pat, const char *esc_str)
 			throw(MAL, "pcre.sql2pcre",
 				  SQLSTATE(22019) ILLEGAL_ARGUMENT
 				  ": (I)LIKE pattern must not end with escape character");
-		*r = MA_STRDUP(ma, str_nil);
+		*r = ma_strdup(ma, str_nil);
 		if (*r == NULL)
 			throw(MAL, "pcre.sql2pcre", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	} else {
