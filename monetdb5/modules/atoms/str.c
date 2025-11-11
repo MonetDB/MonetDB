@@ -2562,12 +2562,19 @@ sorted_strjoin(BAT **rl_ptr, BAT **rr_ptr, BATiter *li, BATiter *ri,
 	if (!BATordered(r)) {
 		if (BATsort(&sorted_r, &ord_sorted_r, NULL,
 					r, NULL, NULL, false, false, false) != GDK_SUCCEED) {
-			BBPreclaim_n(3, sorted_l, ord_sorted_l, sorted_cl);
+			if (!BATordered(l)) {
+				BBPreclaim_n(3, sorted_l, ord_sorted_l, sorted_cl);
+				bat_iterator_end(sorted_li);
+			}
 			throw(MAL, fname, GDK_EXCEPTION);
 		}
 		if (cr && BATsort(&sorted_cr, NULL, NULL,
 						  cr, ord_sorted_r, NULL, false, false, false)) {
-			BBPreclaim_n(5, sorted_l, ord_sorted_l, sorted_cl, sorted_r, ord_sorted_r);
+			if (!BATordered(l)) {
+				bat_iterator_end(sorted_li);
+				BBPreclaim_n(3, sorted_l, ord_sorted_l, sorted_cl);
+			}
+			BBPreclaim_n(2, sorted_r, ord_sorted_r);
 			throw(MAL, fname, GDK_EXCEPTION);
 		}
 		tmp_ri = bat_iterator(sorted_r);
@@ -2618,12 +2625,14 @@ sorted_strjoin(BAT **rl_ptr, BAT **rr_ptr, BATiter *li, BATiter *ri,
 				new_cap = BATgrows(rl);
 				if (BATextend(rl, new_cap) != GDK_SUCCEED ||
 					(rr && BATextend(rr, new_cap) != GDK_SUCCEED)) {
-					if (!BATordered(l))
+					if (!BATordered(l)) {
 						bat_iterator_end(sorted_li);
-					if (!BATordered(r))
+						BBPreclaim_n(3, sorted_l, ord_sorted_l, sorted_cl);
+					}
+					if (!BATordered(r)) {
 						bat_iterator_end(sorted_ri);
-					BBPreclaim_n(6, sorted_l, ord_sorted_l, sorted_cl,
-								 sorted_r, ord_sorted_r, sorted_cr);
+						BBPreclaim_n(3, sorted_r, ord_sorted_r, sorted_cr);
+					}
 					throw(MAL, fname, GDK_EXCEPTION);
 				}
 			}
@@ -2768,7 +2777,9 @@ STRjoin(allocator *ma, MalStkPtr stk, InstrPtr pci, const str fname,
 		if (icase) {
 			BAT *l_low = NULL, *r_low = NULL;
 			if (!(l_low = BATcasefold(l, NULL)) || !(r_low = BATcasefold(r, NULL))) {
-				BBPreclaim_n(5, l, r, cl, cr, l_low);
+				bat_iterator_end(&li);
+				bat_iterator_end(&ri);
+				BBPreclaim_n(7, rl, rr, l, r, cl, cr, l_low);
 				throw(MAL, fname, "Failed string lowering input bats");
 			}
 			bat_iterator_end(&li);
@@ -2785,7 +2796,9 @@ STRjoin(allocator *ma, MalStkPtr stk, InstrPtr pci, const str fname,
 			if (str_cmp == str_is_suffix || str_cmp == str_is_isuffix) {
 				BAT *l_rev = NULL, *r_rev = NULL;
 				if (!(l_rev = strbat_reverse(ma, l)) || !(r_rev = strbat_reverse(ma, r))) {
-					BBPreclaim_n(5, l, r, cl, cr, l_rev);
+					bat_iterator_end(&li);
+					bat_iterator_end(&ri);
+					BBPreclaim_n(7, rl, rr, l, r, cl, cr, l_rev);
 					throw(MAL, fname, "Failed string reversing input bats");
 				}
 				bat_iterator_end(&li);
