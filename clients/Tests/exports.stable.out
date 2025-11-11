@@ -381,6 +381,7 @@ int MT_join_thread(MT_Id t);
 bool MT_path_absolute(const char *path);
 void MT_sleep_ms(unsigned int ms);
 void MT_thread_deregister(void);
+char *MT_thread_get_exceptbuf(void);
 QryCtx *MT_thread_get_qry_ctx(void);
 const char *MT_thread_getalgorithm(void);
 allocator *MT_thread_getallocator(void);

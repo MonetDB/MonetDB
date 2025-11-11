@@ -1023,7 +1023,7 @@ BATnegateprops(BAT *b)
 	b->tmaxpos = b->tminpos = BUN_NONE;
 }
 
-#define GDKMAXERRLEN	10240
+#define GDKMAXERRLEN	5120
 #define GDKERROR	"!ERROR: "
 #define GDKFATAL	"!FATAL: "
 

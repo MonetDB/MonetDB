@@ -74,33 +74,35 @@ static str
 createExceptionInternal(enum malexception type, const char *fcn,
 						const char *format, va_list ap)
 {
-	size_t msglen;
 	int len;
 	char *msg;
 	va_list ap2;
 
 	va_copy(ap2, ap);			/* we need to use it twice */
-	msglen = strlen(exceptionNames[type]) + strlen(fcn) + 2;
 	len = vsnprintf(NULL, 0, format, ap);	/* count necessary length */
 	if (len < 0) {
 		TRC_CRITICAL(MAL_SERVER, "called with bad arguments");
 		len = 0;
 	}
-	allocator *ma = MT_thread_getallocator();
-	assert(ma);
-	msg = ma_alloc(ma, msglen + len + 2);
+	msg = MT_thread_get_exceptbuf();
 	if (msg != NULL) {
 		/* the calls below succeed: the arguments have already been checked */
-		(void) strconcat_len(msg, msglen + 1,
-							 exceptionNames[type], ":", fcn, ":", NULL);
-		if (len > 0)
-			(void) vsnprintf(msg + msglen, len + 1, format, ap2);
-		va_end(ap2);
+		size_t msglen = strconcat_len(msg, GDKMAXERRLEN, exceptionNames[type],
+									  ":", fcn, ":", NULL);
+		if (len > 0 && msglen < GDKMAXERRLEN) {
+			int prlen = vsnprintf(msg + msglen, GDKMAXERRLEN - msglen, format, ap2);
+			if (msglen + prlen >= GDKMAXERRLEN)
+				strcpy(msg + GDKMAXERRLEN - 5, "...\n");
+		}
 		char *q = msg + strlen(msg);
 		if (q[-1] != '\n') {
-			/* make sure message ends with newline, we already have the space */
-			*q++ = '\n';
-			*q = '\0';
+			/* make sure message ends with newline */
+			if (q >= msg + GDKMAXERRLEN - 1) {
+				strcpy(msg + GDKMAXERRLEN - 5, "...\n");
+			} else {
+				*q++ = '\n';
+				*q = '\0';
+			}
 		}
 		q = msg;
 		for (char *p = strchr(msg, '\n'); p; q = p + 1, p = strchr(q, '\n'))
