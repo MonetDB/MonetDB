@@ -320,7 +320,6 @@ void GDKqsort(void *restrict h, void *restrict t, const void *restrict base, siz
 void *GDKrealloc(void *pold, size_t size) __attribute__((__alloc_size__(2))) __attribute__((__warn_unused_result__));
 gdk_return GDKrebuild_segment_tree(oid ncount, oid data_size, BAT *st, void **segment_tree, oid **levels_offset, oid *nlevels);
 void GDKreset(int status);
-void GDKsetbuf(char *);
 void GDKsetdebug(unsigned debug);
 gdk_return GDKsetenv(const char *name, const char *value);
 stream *GDKstdin;

@@ -572,7 +572,6 @@ typedef struct {
 	MT_Sema sema;				/* threads wait for work , negative next implies exit */
 	MT_Sema reply;				/* let reader continue */
 	Tablet *as;
-	char *errbuf;
 	const char *csep, *rsep;
 	size_t seplen, rseplen;
 
@@ -1100,9 +1099,7 @@ SQLworker(void *arg)
 	int j, piece;
 	lng t0;
 
-	GDKsetbuf(GDKmalloc(GDKMAXERRLEN));	/* where to leave errors */
 	GDKclrerr();
-	task->errbuf = GDKerrbuf;
 	MT_thread_set_qry_ctx(task->set_qry_ctx ? &task->cntxt->qryctx : NULL);
 	allocator *ma = task->cntxt->curprg->def->ma;
 	assert(ma);
@@ -1157,8 +1154,6 @@ SQLworker(void *arg)
 	MT_sema_up(&task->reply);
 
   do_return:
-	GDKfree(GDKerrbuf);
-	GDKsetbuf(NULL);
 	MT_thread_set_qry_ctx(NULL);
 }
 
@@ -1322,14 +1317,12 @@ SQLproducer(void *p)
 			goto reportlackofinput;
 		}
 
-		if (task->errbuf && task->errbuf[0]) {
-			if (unlikely(GDKerrbuf && GDKerrbuf[0])) {
-				tablet_error(task, rowno, lineno, int_nil, GDKerrbuf,
-							 "SQLload_file");
+		if (GDKerrbuf[0]) {
+			tablet_error(task, rowno, lineno, int_nil, GDKerrbuf,
+						 "SQLload_file");
 /*				TRC_DEBUG(MAL_SERVER, "Bailout on SQLload\n");*/
-				ateof[cur] = true;
-				break;
-			}
+			ateof[cur] = true;
+			break;
 		}
 
   parseSTDIN:
@@ -1663,7 +1656,6 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out,
 	task.seplen = strlen(csep);
 	task.rsep = rsep;
 	task.rseplen = strlen(rsep);
-	task.errbuf = cntxt->errbuf;
 
 	MT_sema_init(&task.producer, 0, "task.producer");
 	MT_sema_init(&task.consumer, 0, "task.consumer");

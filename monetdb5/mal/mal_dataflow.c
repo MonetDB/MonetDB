@@ -88,7 +88,6 @@ struct worker {
 	ATOMIC_PTR_TYPE cntxt;		/* client we do work for (NULL -> any) */
 	MT_Sema s;
 	struct worker *next;
-	char errbuf[GDKMAXERRLEN];	/* GDKerrbuf so that we can allocate before fork */
 };
 /* heads of three mutually exclusive linked lists, all using the .next
  * field in the worker struct */
@@ -251,7 +250,6 @@ DFLOWworker(void *T)
 #ifdef _MSC_VER
 	srand((unsigned int) GDKusec());
 #endif
-	GDKsetbuf(t->errbuf);		/* where to leave errors */
 	snprintf(t->s.name, sizeof(t->s.name), "DFLOWsema%04zu", MT_getpid());
 	allocator *ma = MT_thread_getallocator();
 
@@ -450,7 +448,6 @@ DFLOWworker(void *T)
 		exited_workers = t;
 	}
 	MT_lock_unset(&dataflowLock);
-	GDKsetbuf(NULL);
 }
 
 /*

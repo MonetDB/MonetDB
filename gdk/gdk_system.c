@@ -228,7 +228,7 @@ struct mtthread {
 #endif
 	MT_Id tid;
 	uintptr_t sp;
-	char *errbuf;
+	char gdkerrbuf[GDKMAXERRLEN];
 	struct freebats freebats;
 };
 static struct mtthread mainthread = {
@@ -552,20 +552,6 @@ MT_thread_getname(void)
 	return self ? self->threadname : UNKNOWN_THREAD;
 }
 
-void
-GDKsetbuf(char *errbuf)
-{
-	struct mtthread *self;
-
-	self = thread_self();
-	if (self == NULL)
-		self = &mainthread;
-	assert(errbuf == NULL || self->errbuf == NULL);
-	self->errbuf = errbuf;
-	if (errbuf)
-		*errbuf = 0;		/* start clean */
-}
-
 char *
 GDKgetbuf(void)
 {
@@ -574,7 +560,7 @@ GDKgetbuf(void)
 	self = thread_self();
 	if (self == NULL)
 		self = &mainthread;
-	return self->errbuf;
+	return self->gdkerrbuf;
 }
 
 struct freebats *

@@ -254,7 +254,6 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 	ATOMIC_SET(&c->qryctx.datasize, 0);
 	c->qryctx.maxmem = 0;
 	c->maxmem = 0;
-	c->errbuf = 0;
 
 	c->prompt = PROMPT1;
 	c->promptlength = strlen(c->prompt);
@@ -306,16 +305,7 @@ MCinitClientThread(Client c)
 	 * the proper IO descriptors.
 	 */
 	c->mythread = MT_thread_getname();
-	c->errbuf = GDKerrbuf;
-	if (c->errbuf == NULL) {
-		char *n = ma_zalloc(c->ma, GDKMAXERRLEN);
-		if (n == NULL) {
-			return -1;
-		}
-		GDKsetbuf(n);
-		c->errbuf = GDKerrbuf;
-	} else
-		c->errbuf[0] = 0;
+	GDKclrerr();
 	return 0;
 }
 
@@ -361,13 +351,6 @@ MCcloseClient(Client c)
 	c->scenario = NULL;
 	c->prompt = NULL;
 	c->promptlength = -1;
-	if (c->errbuf) {
-		/* no client threads in embedded mode */
-		GDKsetbuf(NULL);
-		//if (c->father == NULL)
-		//	GDKfree(c->errbuf);
-		c->errbuf = NULL;
-	}
 	if (c->usermodule)
 		freeModule(c->usermodule);
 	c->usermodule = c->curmodule = 0;
