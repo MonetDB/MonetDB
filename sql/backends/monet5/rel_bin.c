@@ -8639,7 +8639,7 @@ subrel_bin(backend *be, sql_rel *rel, list *refs)
 		/* needs a proper fix!! */
 		if (s) {
 			if (neededpp) {
-				printf("# needs pipeline, started from subrel (referenced rel)\n");
+				//printf("# needs pipeline, started from subrel (referenced rel)\n");
 				be->need_pipeline = false;
 				int source = pp_counter(be, -1, pp_dynamic_slices(be, s));
 
@@ -8758,9 +8758,12 @@ subrel_bin(backend *be, sql_rel *rel, list *refs)
 		list_append(refs, rel);
 		list_append(refs, s);
 	} else if (rel->spb && neededpp) {
+		/*
 		if (be->pp) {
 			printf("# needed pipeline already started below subrel\n");
 		} else {
+		*/
+		if (!be->pp) {
 			assert(!is_groupby(rel->op) && !is_join(rel->op));
 
 			int source = pp_counter(be, -1, pp_dynamic_slices(be, s));
@@ -8775,7 +8778,7 @@ subrel_bin(backend *be, sql_rel *rel, list *refs)
 		}
 	} else if (be->need_pipeline && !be->pp) {
 		assert(!is_groupby(rel->op) && !is_join(rel->op) && !is_semi(rel->op));
-		printf("# needs pipeline, started from subrel\n");
+		//printf("# needs pipeline, started from subrel\n");
 		be->need_pipeline = false;
 
 		int source = pp_counter(be, -1, pp_dynamic_slices(be, s));

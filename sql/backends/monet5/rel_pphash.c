@@ -175,9 +175,9 @@ oahash_project_hsh(backend *be, list *exps_prj_hsh, stmt *stmts_ht, stmt *prb_re
 
 	if (!list_empty(exps_prj_hsh)) {
 		stmt *stmts_hp = stmts_ht->op1, *pld_sltid = stmts_ht->op2, *freq = stmts_ht->op3;
-		assert(stmts_hp && pld_sltid && freq);
+		assert(stmts_hp && (!freq || pld_sltid));
 
-		stmt *sel = stmt_oahash_explode(be, prb_res, freq, pld_sltid, outer);
+		stmt *sel = freq?stmt_oahash_explode(be, prb_res, freq, pld_sltid, outer):stmt_blackbox_result(be, prb_res->q, 1, sql_fetch_localtype(TYPE_oid));
 
 		for (node *o = exps_prj_hsh->h; o; o = o->next) {
 			sql_exp *e = o->data;
@@ -283,7 +283,7 @@ rel2bin_oahash_build(backend *be, sql_rel *rel, list *refs)
 	}
 
 	bool need_freq = (rel->flag != (int)op_semi || rel->ref.refcnt > 2 || !list_empty(exps_prj_hsh));
-	if (need_freq && list_empty(exps_prj_hsh) && list_length(exps_cmp_hsh) == 1 && !is_single(rel)) {
+	if (need_freq && list_length(exps_cmp_hsh) == 1 && !is_single(rel)) {
 		sql_exp *e = exps_cmp_hsh->h->data;
 		if (e->unique)
 			need_freq = false;
