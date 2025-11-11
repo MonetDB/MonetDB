@@ -1809,6 +1809,15 @@ gdk_export void ma_info(const allocator *sa, char *buf, size_t buflen);
 			  _sa, ma_name(_sa), _ptr, _sz, _osz, _res);	\
 		_res;							\
 	})
+#define ma_free(sa, p)					\
+	({						\
+		allocator *_sa = (sa);			\
+		void *_p = (p);				\
+		TRC_DEBUG(ALLOC,			\
+			  "ma_free(%p(%s),%p)\n",	\
+			  _sa, ma_name(_sa), _p);	\
+		ma_free(_sa, _p);			\
+	})
 #define ma_strdup(sa, s)						\
 	({								\
 		allocator *_sa = (sa);					\
@@ -1830,7 +1839,18 @@ gdk_export void ma_info(const allocator *sa, char *buf, size_t buflen);
 			  _sa, ma_name(_sa), _l, _res);			\
 		_res;							\
 	})
-#define create_allocator(sa, nm, lk)						\
+#define ma_strconcat(sa, s1, s2)					\
+	({								\
+		allocator *_sa = (sa);					\
+		const char *_s1 = (s1);					\
+		const char *_s2 = (s2);					\
+		char *_res = ma_strconcat(_sa, _s1, _s2);		\
+		TRC_DEBUG(ALLOC,					\
+			  "ma_strconcat(%p(%s),len1=%zu,len2=%zu) -> %p\n", \
+			  _sa, ma_name(_sa), strlen(_s1), strlen(_s2), _res); \
+		_res;							\
+	})
+#define create_allocator(sa, nm, lk)					\
 	({								\
 		allocator *_sa = (sa);					\
 		const char *_nm = (nm);					\
@@ -1840,6 +1860,41 @@ gdk_export void ma_info(const allocator *sa, char *buf, size_t buflen);
 			  "create_allocator(%p(%s)) -> %p(%s)\n",	\
 			  _sa, ma_name(_sa), _res, ma_name(_res));	\
 		_res;							\
+	})
+#define ma_open(sa)							\
+	({								\
+		allocator *_sa = (sa);					\
+		allocator_state _as = ma_open(_sa);			\
+		TRC_DEBUG(ALLOC,					\
+			  "ma_open(%p(%s)) -> tmp_used = %zu\n",	\
+			  _sa, ma_name(_sa), _as.tmp_used);		\
+		_as;							\
+	})
+#define ma_close(sa, as)					\
+	({							\
+		allocator *_sa = (sa);				\
+		allocator_state *_as = (as);			\
+		TRC_DEBUG(ALLOC,				\
+			  "ma_close(%p(%s), tmp_used = %zu)\n",	\
+			  _sa, ma_name(_sa), _as->tmp_used);	\
+		ma_close(_sa, _as);				\
+	})
+#define ma_reset(sa)							\
+	({								\
+		allocator *_sa = (sa);					\
+		allocator *_sa2 = ma_reset(_sa);			\
+		TRC_DEBUG(ALLOC,					\
+			  "ma_reset(%p(%s)) -> %p\n",			\
+			  _sa, ma_name(_sa), _sa2);			\
+		_sa2;							\
+	})
+#define ma_destroy(sa)					\
+	({						\
+		allocator *_sa = (sa);			\
+		TRC_DEBUG(ALLOC,			\
+			  "ma_destroy(%p(%s))\n",	\
+			  _sa, ma_name(_sa));		\
+		ma_destroy(_sa);			\
 	})
 #endif
 
