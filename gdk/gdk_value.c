@@ -290,7 +290,7 @@ VALformat(allocator *ma, const ValRecord *res)
 {
 	if (res->bat) {
 		if (is_bat_nil(res->val.bval)) {
-			return MA_STRDUP(ma, "nil");
+			return ma_strdup(ma, "nil");
 		}
 		else
 			return ATOMformat(ma, TYPE_int, (const void *) &res->val.ival);

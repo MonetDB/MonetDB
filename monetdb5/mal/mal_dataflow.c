@@ -338,7 +338,7 @@ DFLOWworker(void *T)
 			error = runMALsequence(flow->cntxt, flow->mb, fe->pc, fe->pc + 1,
 								   flow->stk, 0, 0);
 			if (error)
-				error = MA_STRDUP(flow->mb->ma, error);
+				error = ma_strdup(flow->mb->ma, error);
 			ma_reset(ma);
 
 			ATOMIC_DEC(&flow->cntxt->workers);

@@ -110,7 +110,7 @@ MTIMEcurrent_timestamp(Client ctx, timestamp *ret)
 #define FINISH_BUFFER_SINGLE(MALFUNC) \
 bailout: \
 	*ret = NULL; \
-	if (!msg && res && !(*ret = MA_STRDUP(ma, res))) \
+	if (!msg && res && !(*ret = ma_strdup(ma, res))) \
 		msg = createException(MAL, "batmtime." MALFUNC, SQLSTATE(HY013) MAL_MALLOC_FAIL); \
 	/*GDKfree(res)*/
 

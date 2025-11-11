@@ -323,7 +323,7 @@ getExceptionPlace(allocator *ma, const char *exception)
 			break;
 		}
 	}
-	return MA_STRDUP(ma, "(unknown)");
+	return ma_strdup(ma, "(unknown)");
 }
 
 /**
@@ -374,6 +374,6 @@ inline str
 copyException(allocator *ma, const char *exception)
 {
 	if (exception)
-		return ma ? MA_STRDUP(ma, exception) : (char *)exception;
+		return ma ? ma_strdup(ma, exception) : (char *)exception;
 	return NULL;
 }

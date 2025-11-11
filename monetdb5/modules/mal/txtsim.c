@@ -1201,7 +1201,7 @@ soundex(Client ctx, str *res, const char *const *Name)
 
 	////GDKfree(*res);
 	if (strNil(*Name)) {
-		*res = MA_STRDUP(ma, str_nil);
+		*res = ma_strdup(ma, str_nil);
 		if (*res == NULL)
 			throw(MAL, "soundex", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
@@ -1262,7 +1262,7 @@ qgram_normalize(Client ctx, str *res, const char *const *Input)
 
 	// //GDKfree(*res);
 	if (strNil(*Input)) {
-		*res = MA_STRDUP(ma, str_nil);
+		*res = ma_strdup(ma, str_nil);
 		if (*res == NULL)
 			throw(MAL, "txtsim.qgramnormalize", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;

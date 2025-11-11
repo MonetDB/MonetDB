@@ -1774,8 +1774,6 @@ gdk_export void ma_info(const allocator *sa, char *buf, size_t buflen);
 #define MA_NEW_ARRAY( sa, type, size )			(type*)ma_alloc( sa, ((size)*sizeof(type)))
 #define MA_ZNEW_ARRAY( sa, type, size )			(type*)ma_zalloc( sa, ((size)*sizeof(type)))
 #define MA_RENEW_ARRAY( sa, type, ptr, sz, osz )	(type*)ma_realloc( sa, ptr, ((sz)*sizeof(type)), ((osz)*sizeof(type)))
-#define MA_STRDUP( sa, s)				ma_strdup(sa, s)
-#define MA_STRNDUP( sa, s, l)				ma_strndup(sa, s, l)
 
 
 #if !defined(NDEBUG) && !defined(__COVERITY__) && defined(__GNUC__) && !defined(_CLANGD)

@@ -1536,7 +1536,7 @@ SQLproducer(void *p)
 	if (unlikely(cnt < task->maxrow && task->maxrow != BUN_NONE)) {
 		char msg[256];
 		snprintf(msg, sizeof(msg), "incomplete record at end of file:%s\n", s);
-		task->as->error = MA_STRDUP(ma, msg);
+		task->as->error = ma_strdup(ma, msg);
 		tablet_error(task, rowno, startlineno, int_nil,
 					 "incomplete record at end of file", s);
 		task->b->pos += partial;

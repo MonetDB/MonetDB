@@ -492,7 +492,7 @@ JSONjson2str(Client ctx, str *ret, json *j)
 
 	if (*s == '"')
 		s++;
-	if ((s = MA_STRDUP(ma, s)) == NULL)
+	if ((s = ma_strdup(ma, s)) == NULL)
 		throw(MAL, "json.str", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	c = s + strlen(s) - 1;
 	if (*c == '"')
@@ -505,7 +505,7 @@ static str
 JSON2json(Client ctx, json *ret, const json *j)
 {
 	allocator *ma = ctx->curprg->def->ma;
-	*ret = MA_STRDUP(ma, *j);
+	*ret = ma_strdup(ma, *j);
 	if (*ret == NULL)
 		throw(MAL, "json.json", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
@@ -852,7 +852,7 @@ JSONgetValue(allocator *ma, const JSON *jt, int idx)
 	str s;
 
 	if (jt->elm[idx].valuelen == 0)
-		return MA_STRDUP(ma, str_nil);
+		return ma_strdup(ma, str_nil);
 	s = ma_alloc(ma, jt->elm[idx].valuelen + 1);
 	if (s)
 		strcpy_len(s, jt->elm[idx].value, jt->elm[idx].valuelen + 1);
@@ -1014,7 +1014,7 @@ JSONfilterInternal(Client ctx, json *ret, const json *js, const char *const *exp
 
 	(void) other;
 	if (strNil(j)) {
-		*ret = MA_STRDUP(ma, j);
+		*ret = ma_strdup(ma, j);
 		if (*ret == NULL)
 			throw(MAL, "JSONfilterInternal", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
@@ -1087,7 +1087,7 @@ JSONfilterInternal(Client ctx, json *ret, const json *js, const char *const *exp
 			snprintf(s, l + 3, "[%s]", (result ? result : ""));
 	}
 	else if (result == NULL || *result == 0) {
-		s = MA_STRDUP(ma, "[]");
+		s = ma_strdup(ma, "[]");
 	}
 	else {
 		s = ma_alloc(ma, l + 1);
@@ -1583,7 +1583,7 @@ JSONfilterArray_bte(Client ctx, json *ret, const json *js, const bte *index)
 {
 	allocator *ma = ctx->curprg->def->ma;
 	if (strNil(*js) || is_bte_nil(*index)) {
-		if (!(*ret = MA_STRDUP(ma, str_nil)))
+		if (!(*ret = ma_strdup(ma, str_nil)))
 			throw(MAL, "json.filter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
@@ -1595,7 +1595,7 @@ JSONfilterArrayDefault_bte(Client ctx, json *ret, const json *js, const bte *ind
 {
 	allocator *ma = ctx->curprg->def->ma;
 	if (strNil(*js) || is_bte_nil(*index) || strNil(*other)) {
-		if (!(*ret = MA_STRDUP(ma, str_nil)))
+		if (!(*ret = ma_strdup(ma, str_nil)))
 			throw(MAL, "json.filter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
@@ -1607,7 +1607,7 @@ JSONfilterArray_sht(Client ctx, json *ret, const json *js, const sht *index)
 {
 	allocator *ma = ctx->curprg->def->ma;
 	if (strNil(*js) || is_sht_nil(*index)) {
-		if (!(*ret = MA_STRDUP(ma, str_nil)))
+		if (!(*ret = ma_strdup(ma, str_nil)))
 			throw(MAL, "json.filter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
@@ -1619,7 +1619,7 @@ JSONfilterArrayDefault_sht(Client ctx, json *ret, const json *js, const sht *ind
 {
 	allocator *ma = ctx->curprg->def->ma;
 	if (strNil(*js) || is_sht_nil(*index) || strNil(*other)) {
-		if (!(*ret = MA_STRDUP(ma, str_nil)))
+		if (!(*ret = ma_strdup(ma, str_nil)))
 			throw(MAL, "json.filter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
@@ -1631,7 +1631,7 @@ JSONfilterArray_int(Client ctx, json *ret, const json *js, const int *index)
 {
 	allocator *ma = ctx->curprg->def->ma;
 	if (strNil(*js) || is_int_nil(*index)) {
-		if (!(*ret = MA_STRDUP(ma, str_nil)))
+		if (!(*ret = ma_strdup(ma, str_nil)))
 			throw(MAL, "json.filter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
@@ -1643,7 +1643,7 @@ JSONfilterArrayDefault_int(Client ctx, json *ret, const json *js, const int *ind
 {
 	allocator *ma = ctx->curprg->def->ma;
 	if (strNil(*js) || is_int_nil(*index) || strNil(*other)) {
-		if (!(*ret = MA_STRDUP(ma, str_nil)))
+		if (!(*ret = ma_strdup(ma, str_nil)))
 			throw(MAL, "json.filter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
@@ -1655,7 +1655,7 @@ JSONfilterArray_lng(Client ctx, json *ret, const json *js, const lng *index)
 {
 	allocator *ma = ctx->curprg->def->ma;
 	if (strNil(*js) || is_lng_nil(*index)) {
-		if (!(*ret = MA_STRDUP(ma, str_nil)))
+		if (!(*ret = ma_strdup(ma, str_nil)))
 			throw(MAL, "json.filter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
@@ -1667,7 +1667,7 @@ JSONfilterArrayDefault_lng(Client ctx, json *ret, const json *js, const lng *ind
 {
 	allocator *ma = ctx->curprg->def->ma;
 	if (strNil(*js) || is_lng_nil(*index) || strNil(*other)) {
-		if (!(*ret = MA_STRDUP(ma, str_nil)))
+		if (!(*ret = ma_strdup(ma, str_nil)))
 			throw(MAL, "json.filter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
@@ -1680,7 +1680,7 @@ JSONfilterArray_hge(Client ctx, json *ret, const json *js, const hge *index)
 {
 	allocator *ma = ctx->curprg->def->ma;
 	if (strNil(*js) || is_hge_nil(*index)) {
-		if (!(*ret = MA_STRDUP(ma, str_nil)))
+		if (!(*ret = ma_strdup(ma, str_nil)))
 			throw(MAL, "json.filter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
@@ -1694,7 +1694,7 @@ JSONfilterArrayDefault_hge(Client ctx, json *ret, const json *js, const hge *ind
 {
 	allocator *ma = ctx->curprg->def->ma;
 	if (strNil(*js) || is_hge_nil(*index) || strNil(*other)) {
-		if (!(*ret = MA_STRDUP(ma, str_nil)))
+		if (!(*ret = ma_strdup(ma, str_nil)))
 			throw(MAL, "json.filter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
@@ -1709,7 +1709,7 @@ JSONfilter(Client ctx, json *ret, const json *js, const char *const *expr)
 {
 	allocator *ma = ctx->curprg->def->ma;
 	if (strNil(*js) || strNil(*expr)) {
-		if (!(*ret = MA_STRDUP(ma, str_nil)))
+		if (!(*ret = ma_strdup(ma, str_nil)))
 			throw(MAL, "json.filter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
@@ -1885,7 +1885,7 @@ JSONjson2textSeparator(Client ctx, str *ret, const json *js, const char *const *
 	JSON *jt;
 
 	if (strNil(*js) || strNil(*sep)) {
-		if (!(*ret = MA_STRDUP(ma, str_nil)))
+		if (!(*ret = ma_strdup(ma, str_nil)))
 			throw(MAL, "json2txt", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
@@ -2211,7 +2211,7 @@ JSONkeyArray(Client ctx, json *ret, const json *js)
 	JSON *jt;
 
 	if (strNil(*js)) {
-		if (!(*ret = MA_STRDUP(ma, str_nil)))
+		if (!(*ret = ma_strdup(ma, str_nil)))
 			throw(MAL, "json.keyarray", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
@@ -2231,7 +2231,7 @@ JSONkeyArray(Client ctx, json *ret, const json *js)
 				}
 				strcpy_len(r, jt->elm[i].value - 1, jt->elm[i].valuelen + 3);
 			} else {
-				r = MA_STRDUP(ma, "\"\"");
+				r = ma_strdup(ma, "\"\"");
 				if (r == NULL) {
 					JSONfree(jt);
 					ma_close(ta, &ta_state);
@@ -2252,13 +2252,13 @@ JSONkeyArray(Client ctx, json *ret, const json *js)
 		ma_close(ta, &ta_state);
 		throw(MAL, "json.keyarray", "Object expected");
 	}
-	r = MA_STRDUP(ma, "[");
+	r = ma_strdup(ma, "[");
 	if (r == NULL)
 		goto memfail;
 	result = JSONglue(ma, r, result, 0);
 	if (result == NULL)
 		goto memfail;
-	r = MA_STRDUP(ma, "]");
+	r = ma_strdup(ma, "]");
 	if (r == NULL)
 		goto memfail;
 	result = JSONglue(ma, result, r, 0);
@@ -2325,7 +2325,7 @@ JSONvalueArray(Client ctx, json *ret, const json *js)
 	JSON *jt;
 
 	if (strNil(*js)) {
-		if (!(*ret = MA_STRDUP(ma, str_nil)))
+		if (!(*ret = ma_strdup(ma, str_nil)))
 			throw(MAL, "json.valuearray", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
@@ -2354,13 +2354,13 @@ JSONvalueArray(Client ctx, json *ret, const json *js)
 		ma_close(ta, &ta_state);
 		throw(MAL, "json.valuearray", "Object expected");
 	}
-	r = MA_STRDUP(ma, "[");
+	r = ma_strdup(ma, "[");
 	if (r == NULL)
 		goto memfail;
 	result = JSONglue(ma, r, result, 0);
 	if (result == NULL)
 		goto memfail;
-	r = MA_STRDUP(ma, "]");
+	r = ma_strdup(ma, "]");
 	if (r == NULL)
 		goto memfail;
 	result = JSONglue(ma, result, r, 0);
@@ -2952,7 +2952,7 @@ JSONgroupStr(Client ctx, str *ret, const bat *bid)
 		strcpy(buf + buflen, " ]");
 	else
 		strcpy(buf, str_nil);
-	*ret = MA_STRDUP(ctx->curprg->def->ma, buf);
+	*ret = ma_strdup(ctx->curprg->def->ma, buf);
 	//GDKfree(buf);
 	ma_close(ma, &ma_state);
 	if (!*ret)					/* Don't return a too large string */
