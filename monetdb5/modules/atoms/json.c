@@ -503,8 +503,7 @@ JSONstr2json_intern(allocator *ma, json *ret, size_t *len, const char *const*j)
 	}
 
 	allocator *ta = MT_thread_getallocator();
-	allocator_state ta_state = {0};
-	ta_state = ma_open(ta);
+	allocator_state ta_state = ma_open(ta);
 
 	if (strNil(*j)) {
 		strcpy(buf, *j);
