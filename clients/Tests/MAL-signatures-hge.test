@@ -45109,6 +45109,16 @@ pattern calc.timestamptz(X_0:str, X_1:int, X_2:lng):timestamp
 str_2time_timestamptz
 cast to timestamp and check for overflow
 calc
+to_hex
+command calc.to_hex(X_0:int):str
+CALCto_hex_int
+convert to unsigned hexadecimal number representation
+calc
+to_hex
+command calc.to_hex(X_0:lng):str
+CALCto_hex_lng
+convert to unsigned hexadecimal number representation
+calc
 url
 command calc.url(X_0:str):url
 URLnew
