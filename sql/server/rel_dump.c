@@ -744,7 +744,7 @@ rel_print_rel(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int 
 	}
 	if (sql->show_details && decorate && rel->p) {
 		for (prop *p = rel->p; p; p = p->p) {
-			if (p->kind != PROP_COUNT || (ATOMIC_GET(&GDKdebug) & TESTINGMASK) == 0) {
+			if ((p->kind != PROP_COUNT && p->kind != PROP_UKEY) || (ATOMIC_GET(&GDKdebug) & TESTINGMASK) == 0) {
 				char *pv = propvalue2string(sql->ta, p);
 				mnstr_printf(fout, " %s %s", propkind2string(p), pv);
 			}
