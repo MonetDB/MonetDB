@@ -48,17 +48,19 @@ RQcall2str(str msg, MalBlkPtr mb, InstrPtr p)
 		s++;
 		*s = 0;
 		len = strlen(msg);
+		allocator *ta = MT_thread_getallocator();
 		for (k = p->retc; k < p->argc; k++) {
 			VarPtr v = getVar(mb, getArg(p, k));
 			if (isVarConstant(mb, getArg(p, k))) {
 				if (v->type == TYPE_void) {
 					snprintf(msg + len, BUFSIZ - len, "nil");
 				} else {
-					if ((cv = VALformat(mb->ma, &v->value)) == NULL) {
+					allocator_state ta_state = ma_open(ta);
+					if ((cv = VALformat(ta, &v->value)) == NULL) {
 						return NULL;
 					}
 					snprintf(msg + len, BUFSIZ - len, "%s:%s", cv, ATOMname(v->type));
-					// GDKfree(cv);
+					ma_close(ta, &ta_state);
 				}
 
 			} else

@@ -892,7 +892,7 @@ handle_error(mvc *m, int pstatus, str msg)
 		m->errstr[0] = 0;
 	}
 	if ( new && msg){
-		newmsg = concatErrors(m->sa, msg, new);
+		newmsg = concatErrors(msg, new);
 		//GDKfree(new);
 	} else if (msg)
 		newmsg = msg;

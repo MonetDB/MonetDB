@@ -435,10 +435,9 @@ pcre_replace(allocator *ma, str *res, const char *origin_str, const char *patter
 }
 
 static str
-pcre_replace_bat(allocator *ma, BAT **res, BAT *origin_strs, const char *pattern,
+pcre_replace_bat(BAT **res, BAT *origin_strs, const char *pattern,
 				 const char *replacement, const char *flags, bool global)
 {
-	(void) ma;
 #ifdef HAVE_LIBPCRE
 	int err = 0;
 	PCRE2_UCHAR *tmpres;
@@ -452,6 +451,8 @@ pcre_replace_bat(allocator *ma, BAT **res, BAT *origin_strs, const char *pattern
 	PCRE2_SIZE len_replacement = (PCRE2_SIZE) strlen(replacement);
 	PCRE2_SPTR origin_str;
 	PCRE2_SIZE max_dest_size = 0, init_size = 0;
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
 
 	while (*flags) {
 		switch (*flags) {
@@ -471,6 +472,7 @@ pcre_replace_bat(allocator *ma, BAT **res, BAT *origin_strs, const char *pattern
 			compile_options |= PCRE2_EXTENDED;
 			break;
 		default:
+			ma_close(ta, &ta_state);
 			throw(MAL, global ? "batpcre.replace" : "batpcre.replace_first",
 				  ILLEGAL_ARGUMENT ": unsupported flag character '%c'\n",
 				  *flags);
@@ -485,6 +487,7 @@ pcre_replace_bat(allocator *ma, BAT **res, BAT *origin_strs, const char *pattern
 	if (pcre_code == NULL) {
 		PCRE2_UCHAR errbuf[256];
 		pcre2_get_error_message(err, errbuf, sizeof(errbuf));
+		ma_close(ta, &ta_state);
 		throw(MAL, global ? "pcre.replace" : "pcre.replace_first",
 			  OPERATION_FAILED
 			  ": pcre compile of pattern (%s) failed at %d with\n'%s'.\n",
@@ -493,6 +496,7 @@ pcre_replace_bat(allocator *ma, BAT **res, BAT *origin_strs, const char *pattern
 	match_data = pcre2_match_data_create_from_pattern(pcre_code, NULL);
 	if (match_data == NULL) {
 		pcre2_code_free(pcre_code);
+		ma_close(ta, &ta_state);
 		throw(MAL, "regexp.rematch", MAL_MALLOC_FAIL);
 	}
 
@@ -502,19 +506,20 @@ pcre_replace_bat(allocator *ma, BAT **res, BAT *origin_strs, const char *pattern
 	/* the buffer for all destination strings is allocated only once,
 	 * and extended when needed */
 	init_size = max_dest_size = 64*1024;
-	tmpres = ma_alloc(ma, max_dest_size);
+	tmpres = ma_alloc(ta, max_dest_size);
 	if (tmpbat == NULL || tmpres == NULL) {
 		pcre2_match_data_free(match_data);
 		pcre2_code_free(pcre_code);
 		BBPreclaim(tmpbat);
 		//GDKfree(tmpres);
+		ma_close(ta, &ta_state);
 		throw(MAL, global ? "batpcre.replace" : "batpcre.replace_first",
 			  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	BATiter origin_strsi = bat_iterator(origin_strs);
 	BATloop(origin_strs, p, q) {
 		origin_str = BUNtvar(origin_strsi, p);
-		tmpres = single_replace(ma, pcre_code, match_data, origin_str,
+		tmpres = single_replace(ta, pcre_code, match_data, origin_str,
 								(PCRE2_SIZE) strlen((char *) origin_str), exec_options,
 								(PCRE2_SPTR) replacement, len_replacement,
 								tmpres, &max_dest_size);
@@ -524,6 +529,7 @@ pcre_replace_bat(allocator *ma, BAT **res, BAT *origin_strs, const char *pattern
 			pcre2_code_free(pcre_code);
 			//GDKfree(tmpres);
 			BBPreclaim(tmpbat);
+			ma_close(ta, &ta_state);
 			throw(MAL, global ? "batpcre.replace" : "batpcre.replace_first",
 				  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
@@ -536,6 +542,7 @@ pcre_replace_bat(allocator *ma, BAT **res, BAT *origin_strs, const char *pattern
 	pcre2_match_data_free(match_data);
 	pcre2_code_free(pcre_code);
 	//GDKfree(tmpres);
+	ma_close(ta, &ta_state);
 	*res = tmpbat;
 	return MAL_SUCCEED;
 #else
@@ -804,13 +811,13 @@ static str
 PCREreplace_bat_wrap(Client ctx, bat *res, const bat *bid, const char *const *pat,
 					 const char *const *repl, const char *const *flags)
 {
-	allocator *ma = ctx->curprg->def->ma;
 	BAT *b, *bn = NULL;
 	str msg;
+	(void) ctx;
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "batpcre.replace", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
-	msg = pcre_replace_bat(ma, &bn, b, *pat, *repl, *flags, true);
+	msg = pcre_replace_bat(&bn, b, *pat, *repl, *flags, true);
 	if (msg == MAL_SUCCEED) {
 		*res = bn->batCacheid;
 		BBPkeepref(bn);
@@ -823,13 +830,13 @@ static str
 PCREreplacefirst_bat_wrap(Client ctx, bat *res, const bat *bid, const char *const *pat,
 						  const char *const *repl, const char *const *flags)
 {
-	allocator *ma = ctx->curprg->def->ma;
 	BAT *b, *bn = NULL;
 	str msg;
+	(void) ctx;
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "batpcre.replace_first", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
-	msg = pcre_replace_bat(ma, &bn, b, *pat, *repl, *flags, false);
+	msg = pcre_replace_bat(&bn, b, *pat, *repl, *flags, false);
 	if (msg == MAL_SUCCEED) {
 		*res = bn->batCacheid;
 		BBPkeepref(bn);
@@ -855,8 +862,7 @@ PCREimatch(Client ctx, bit *ret, const char *const *val, const char *const *pat)
 static str
 PCREpatindex(Client ctx, int *ret, const char *const *pat, const char *const *val)
 {
-	allocator *ma = ctx->curprg->def->ma;
-	(void) ma;
+	(void) ctx;
 #ifdef HAVE_LIBPCRE
 	pcre2_code *re;
 	pcre2_match_data *match_data;
@@ -870,8 +876,13 @@ PCREpatindex(Client ctx, int *ret, const char *const *pat, const char *const *va
 		return MAL_SUCCEED;
 	}
 
-	if ((msg = pat2pcre(ma, &ppat, *pat)) != MAL_SUCCEED)
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
+
+	if ((msg = pat2pcre(ta, &ppat, *pat)) != MAL_SUCCEED) {
+		ma_close(ta, &ta_state);
 		return msg;
+	}
 	re = pcre2_compile((PCRE2_SPTR) ppat, PCRE2_ZERO_TERMINATED, PCRE2_UTF | PCRE2_NO_UTF_CHECK | PCRE2_MULTILINE, &errcode, &errpos, NULL);
 	if (re == NULL) {
 		PCRE2_UCHAR errbuf[256];
@@ -880,8 +891,10 @@ PCREpatindex(Client ctx, int *ret, const char *const *pat, const char *const *va
 							  "compilation of regular expression (%s) failed at %d with %s",
 							  ppat, (int) errpos, (char *) errbuf);
 		//GDKfree(ppat);
+		ma_close(ta, &ta_state);
 		return msg;
 	}
+	ma_close(ta, &ta_state);
 	//GDKfree(ppat);
 	match_data = pcre2_match_data_create_from_pattern(re, NULL);
 	if (match_data == NULL) {
@@ -966,7 +979,7 @@ choose_like_path(bool *use_re, bool *use_strcmp, bool *empty,
 }
 
 static str
-PCRElike_imp(allocator *ma, bit *ret, const char *const *s, const char *const *pat,
+PCRElike_imp(bit *ret, const char *const *s, const char *const *pat,
 			 const char *const *esc, const bit *isens)
 {
 	str res = MAL_SUCCEED;
@@ -989,11 +1002,14 @@ PCRElike_imp(allocator *ma, bit *ret, const char *const *s, const char *const *p
 			*ret = *isens ? GDKstrcasecmp(*s, *pat) == 0
 				: strcmp(*s, *pat) == 0;
 		} else {
-			if (!(re = mnre_create(ma, *pat, *isens, (unsigned char) **esc)))
+			allocator *ta = MT_thread_getallocator();
+			allocator_state ta_state = ma_open(ta);
+			if (!(re = mnre_create(ta, *pat, *isens, (unsigned char) **esc)))
 				res = createException(MAL, "pcre.like4",
 									  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			else
 				*ret = mnre_match(*s, re);
+			ma_close(ta, &ta_state);
 		}
 	}
 
@@ -1006,8 +1022,8 @@ static str
 PCRElike(Client ctx, bit *ret, const char *const *s, const char *const *pat,
 		 const char *const *esc, const bit *isens)
 {
-	allocator *ma = ctx->curprg->def->ma;
-	return PCRElike_imp(ma, ret, s, pat, esc, isens);
+	(void) ctx;
+	return PCRElike_imp(ret, s, pat, esc, isens);
 }
 
 static str
@@ -1092,7 +1108,7 @@ BATPCRElike_imp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	struct RE *mnre_simple = NULL;
 	BATiter bi = { 0 }, pi;
 
-	allocator *ma = cntxt->curprg->def->ma;
+	(void) cntxt;
 	if (input_is_a_bat) {
 		bat *bid = getArgReference_bat(stk, pci, 1);
 		if (!(b = BATdescriptor(*bid))) {
@@ -1142,16 +1158,20 @@ BATPCRElike_imp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 			if (empty) {
 				ret[p] = bit_nil;
 			} else {
-				if ((msg = mnre_like_build(ma, &mnre_simple, np, isensitive,
+				allocator *ta = MT_thread_getallocator();
+				allocator_state ta_state = ma_open(ta);
+				if ((msg = mnre_like_build(ta, &mnre_simple, np, isensitive,
 										 use_strcmp,
 										 (unsigned char) **esc)) != MAL_SUCCEED) {
 					bat_iterator_end(&pi);
 					if (b)
 						bat_iterator_end(&bi);
+					ma_close(ta, &ta_state);
 					goto bailout;
 				}
 				ret[p] = mnre_like_proj_apply(next_input, mnre_simple, np,
 											isensitive, anti, use_strcmp);
+				ma_close(ta, &ta_state);
 				//mnre_like_clean(&mnre_simple);
 			}
 			has_nil |= is_bit_nil(ret[p]);
@@ -1176,9 +1196,12 @@ BATPCRElike_imp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 				ret[p] = bit_nil;
 			has_nil = true;
 		} else {
-			if ((msg = mnre_like_build(ma, &mnre_simple, pat, isensitive, use_strcmp,
+			allocator *ta = MT_thread_getallocator();
+			allocator_state ta_state = ma_open(ta);
+			if ((msg = mnre_like_build(ta, &mnre_simple, pat, isensitive, use_strcmp,
 									 (unsigned char) **esc)) != MAL_SUCCEED) {
 				bat_iterator_end(&bi);
+				ma_close(ta, &ta_state);
 				goto bailout;
 			}
 			for (BUN p = 0; p < q; p++) {
@@ -1187,6 +1210,7 @@ BATPCRElike_imp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 											anti, use_strcmp);
 				has_nil |= is_bit_nil(ret[p]);
 			}
+			ma_close(ta, &ta_state);
 		}
 		bat_iterator_end(&bi);
 	}
@@ -1257,7 +1281,7 @@ BATPCREnotlike(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	} while (0)
 
 static str
-mnre_likeselect(allocator *ma, BAT *bn, BAT *b, BAT *s, struct canditer *ci, BUN p, BUN q,
+mnre_likeselect(BAT *bn, BAT *b, BAT *s, struct canditer *ci, BUN p, BUN q,
 			  BUN *rcnt, const char *pat, bool caseignore, bool anti,
 			  bool use_strcmp, uint32_t esc, bool keep_nulls)
 {
@@ -1266,11 +1290,13 @@ mnre_likeselect(allocator *ma, BAT *bn, BAT *b, BAT *s, struct canditer *ci, BUN
 	oid off = b->hseqbase, *restrict vals = Tloc(bn, 0);
 	struct RE *re = NULL;
 	str msg = MAL_SUCCEED;
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
 
 	size_t counter = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 
-	if ((msg = mnre_like_build(ma, &re, pat, caseignore, use_strcmp,
+	if ((msg = mnre_like_build(ta, &re, pat, caseignore, use_strcmp,
 							 esc)) != MAL_SUCCEED)
 		goto bailout;
 
@@ -1309,6 +1335,7 @@ mnre_likeselect(allocator *ma, BAT *bn, BAT *b, BAT *s, struct canditer *ci, BUN
 
   bailout:
 	bat_iterator_end(&bi);
+	ma_close(ta, &ta_state);
 	//mnre_like_clean(&re);
 	*rcnt = cnt;
 	return msg;
@@ -1328,7 +1355,6 @@ PCRElikeselect(Client ctx, bat *ret, const bat *bid, const bat *sid, const char 
 	bool with_strimps_anti = false;
 	BUN p = 0, q = 0, rcnt = 0;
 	struct canditer ci;
-	allocator *ma = ctx->curprg->def->ma;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		msg = createException(MAL, "algebra.likeselect",
@@ -1418,7 +1444,7 @@ PCRElikeselect(Client ctx, bat *ret, const bat *bid, const bat *sid, const char 
 		}
 	}
 
-	msg = mnre_likeselect(ma, bn, b, s, &ci, p, q, &rcnt, *pat, *caseignore, *anti
+	msg = mnre_likeselect(bn, b, s, &ci, p, q, &rcnt, *pat, *caseignore, *anti
 						&& !with_strimps_anti, use_strcmp,
 						(unsigned char) **esc, with_strimps_anti);
 
@@ -1481,7 +1507,7 @@ PCRElikeselect(Client ctx, bat *ret, const bat *bid, const bat *sid, const char 
 			if ((msg = choose_like_path(&use_re, &use_strcmp, &empty, vr, esc))) \
 				goto bailout;											\
 			if (!empty) {												\
-				if ((msg = mnre_like_build(ma, &re, vr, false, use_strcmp, (unsigned char) *esc)) != MAL_SUCCEED) \
+				if ((msg = mnre_like_build(ta, &re, vr, false, use_strcmp, (unsigned char) *esc)) != MAL_SUCCEED) \
 					goto bailout;										\
 				canditer_reset(&lci);									\
 				TIMEOUT_LOOP_IDX_DECL(lidx, lci.ncand, qry_ctx) {		\
@@ -1553,7 +1579,7 @@ PCRElikeselect(Client ctx, bat *ret, const bat *bid, const bat *sid, const char 
 	} while (0)
 
 static char *
-pcrejoin(allocator *ma, BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, const char *esc,
+pcrejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, const char *esc,
 		 bit caseignore, bit anti)
 {
 	struct canditer lci, rci;
@@ -1614,11 +1640,15 @@ pcrejoin(allocator *ma, BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, cons
 		r2->tnonil = true;
 	}
 
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
+
 	if (anti) {
 		pcre_join_loop(strcmp(vl, vr) == 0, mnre_match(vl, re));
 	} else {
 		pcre_join_loop(strcmp(vl, vr) != 0, !mnre_match(vl, re));
 	}
+	ma_close(ta, &ta_state);
 	bat_iterator_end(&li);
 	bat_iterator_end(&ri);
 	if (ol) {
@@ -1700,7 +1730,7 @@ pcrejoin(allocator *ma, BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, cons
 }
 
 static str
-PCREjoin(allocator *ma, bat *r1, bat *r2, bat lid, bat rid, bat slid, bat srid, bat elid,
+PCREjoin(bat *r1, bat *r2, bat lid, bat rid, bat slid, bat srid, bat elid,
 		 bat ciid, bit anti)
 {
 	BAT *left = NULL, *right = NULL, *escape = NULL, *caseignore = NULL,
@@ -1762,7 +1792,7 @@ PCREjoin(allocator *ma, bat *r1, bat *r2, bat lid, bat rid, bat slid, bat srid, 
 	bat_iterator_end(&bi);
 	bi = bat_iterator(escape);
 	esc = BUNtvar(bi, 0);
-	msg = pcrejoin(ma, result1, result2, left, right, candleft, candright, esc, ci,
+	msg = pcrejoin(result1, result2, left, right, candleft, candright, esc, ci,
 				   anti);
 	bat_iterator_end(&bi);
 	if (msg)
@@ -1800,10 +1830,10 @@ LIKEjoin(Client ctx, bat *r1, bat *r2, const bat *lid, const bat *rid, const bat
 		 const bat *cid, const bat *slid, const bat *srid,
 		 const bit *nil_matches, const lng *estimate, const bit *anti)
 {
-	allocator *ma = ctx->curprg->def->ma;
+	(void) ctx;
 	(void) nil_matches;
 	(void) estimate;
-	return PCREjoin(ma, r1, r2, *lid, *rid, slid ? *slid : 0, srid ? *srid : 0,
+	return PCREjoin(r1, r2, *lid, *rid, slid ? *slid : 0, srid ? *srid : 0,
 					*elid, *cid, *anti);
 }
 
@@ -1812,10 +1842,10 @@ LIKEjoin1(Client ctx, bat *r1, const bat *lid, const bat *rid, const bat *elid,
 		  const bat *cid, const bat *slid, const bat *srid,
 		  const bit *nil_matches, const lng *estimate, const bit *anti)
 {
-	allocator *ma = ctx->curprg->def->ma;
+	(void) ctx;
 	(void) nil_matches;
 	(void) estimate;
-	return PCREjoin(ma, r1, NULL, *lid, *rid, slid ? *slid : 0, srid ? *srid : 0,
+	return PCREjoin(r1, NULL, *lid, *rid, slid ? *slid : 0, srid ? *srid : 0,
 					*elid, *cid, *anti);
 }
 

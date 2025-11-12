@@ -397,17 +397,20 @@ output_line_lookup(allocator *ma, char **buf, size_t *len, Column *fmt, stream *
  */
 
 static int
-output_file_default(allocator *ma, Tablet *as, BAT *order, stream *fd, bstream *in)
+output_file_default(Tablet *as, BAT *order, stream *fd, bstream *in)
 {
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
 	size_t len = BUFSIZ, locallen = BUFSIZ;
 	int res = 0;
-	char *buf = ma_alloc(ma, len);
-	char *localbuf = ma_alloc(ma, len);
+	char *buf = ma_alloc(ta, len);
+	char *localbuf = ma_alloc(ta, len);
 	BUN p, q;
 	oid id;
 	BUN offset = as->offset;
 
 	if (buf == NULL || localbuf == NULL) {
+		ma_close(ta, &ta_state);
 		//GDKfree(buf);
 		//GDKfree(localbuf);
 		return -1;
@@ -418,26 +421,29 @@ output_file_default(allocator *ma, Tablet *as, BAT *order, stream *fd, bstream *
 			res = -5;
 			break;
 		}
-		if ((res = output_line(ma, &buf, &len, &localbuf, &locallen, as->format, fd, as->nr_attrs, id)) < 0) {
+		if ((res = output_line(ta, &buf, &len, &localbuf, &locallen, as->format, fd, as->nr_attrs, id)) < 0) {
 			break;
 		}
 	}
+	ma_close(ta, &ta_state);
 	//GDKfree(localbuf);
 	//GDKfree(buf);
 	return res;
 }
 
 static int
-output_file_dense(allocator *ma, Tablet *as, stream *fd, bstream *in)
+output_file_dense(Tablet *as, stream *fd, bstream *in)
 {
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
 	size_t len = BUFSIZ, locallen = BUFSIZ;
 	int res = 0;
-	assert(ma);
-	char *buf = ma_alloc(ma, len);
-	char *localbuf = ma_alloc(ma, len);
+	char *buf = ma_alloc(ta, len);
+	char *localbuf = ma_alloc(ta, len);
 	BUN i = 0;
 
 	if (buf == NULL || localbuf == NULL) {
+		ma_close(ta, &ta_state);
 		//GDKfree(buf);
 		//GDKfree(localbuf);
 		return -1;
@@ -447,27 +453,32 @@ output_file_dense(allocator *ma, Tablet *as, stream *fd, bstream *in)
 			res = -5;			/* "Query aborted" */
 			break;
 		}
-		if ((res = output_line_dense(ma, &buf, &len, &localbuf, &locallen, as->format, fd, as->nr_attrs)) < 0) {
+		if ((res = output_line_dense(ta, &buf, &len, &localbuf, &locallen, as->format, fd, as->nr_attrs)) < 0) {
 			break;
 		}
 	}
+	ma_close(ta, &ta_state);
 	//GDKfree(localbuf);
 	//GDKfree(buf);
 	return res;
 }
 
 static int
-output_file_ordered(allocator *ma, Tablet *as, BAT *order, stream *fd, bstream *in)
+output_file_ordered(Tablet *as, BAT *order, stream *fd, bstream *in)
 {
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
 	size_t len = BUFSIZ;
 	int res = 0;
-	char *buf = ma_alloc(ma, len);
+	char *buf = ma_alloc(ta, len);
 	BUN p, q;
 	BUN i = 0;
 	BUN offset = as->offset;
 
-	if (buf == NULL)
+	if (buf == NULL) {
+		ma_close(ta, &ta_state);
 		return -1;
+	}
 	for (q = offset + as->nr, p = offset; p < q; p++, i++) {
 		oid h = order->hseqbase + p;
 
@@ -475,17 +486,19 @@ output_file_ordered(allocator *ma, Tablet *as, BAT *order, stream *fd, bstream *
 			res = -5;
 			break;
 		}
-		if ((res = output_line_lookup(ma, &buf, &len, as->format, fd, as->nr_attrs, h)) < 0) {
+		if ((res = output_line_lookup(ta, &buf, &len, as->format, fd, as->nr_attrs, h)) < 0) {
+			ma_close(ta, &ta_state);
 			//GDKfree(buf);
 			return res;
 		}
 	}
+	ma_close(ta, &ta_state);
 	//GDKfree(buf);
 	return res;
 }
 
 int
-TABLEToutput_file(allocator *ma, Tablet *as, BAT *order, stream *s, bstream *in)
+TABLEToutput_file(Tablet *as, BAT *order, stream *s, bstream *in)
 {
 	oid base = oid_nil;
 	int ret = 0;
@@ -505,11 +518,11 @@ TABLEToutput_file(allocator *ma, Tablet *as, BAT *order, stream *s, bstream *in)
 	base = check_BATs(as);
 	if (!order || !is_oid_nil(base)) {
 		if (!order || order->hseqbase == base)
-			ret = output_file_dense(ma, as, s, in);
+			ret = output_file_dense(as, s, in);
 		else
-			ret = output_file_ordered(ma, as, order, s, in);
+			ret = output_file_ordered(as, order, s, in);
 	} else {
-		ret = output_file_default(ma, as, order, s, in);
+		ret = output_file_default(as, order, s, in);
 	}
 	return ret;
 }
@@ -664,28 +677,28 @@ tablet_error(READERtask *task, lng idx, lng lineno, int col, const char *msg,
 		} else if (!is_lng_nil(lineno)) {
 			if (!is_int_nil(col)) {
 				if (colnam)
-					task->as->error = copyException(ma, createException(MAL, "sql.copy_from",
+					task->as->error = createException(MAL, "sql.copy_from",
 													  "line " LLFMT ": column %d %s: %s",
-													  lineno, col + 1, colnam, msg));
+													  lineno, col + 1, colnam, msg);
 				else
-					task->as->error = copyException(ma, createException(MAL, "sql.copy_from",
+					task->as->error = createException(MAL, "sql.copy_from",
 													  "line " LLFMT ": column %d: %s",
-													  lineno, col + 1, msg));
+													  lineno, col + 1, msg);
 			} else {
-				task->as->error = copyException(ma, createException(MAL, "sql.copy_from",
-												  "line " LLFMT ": %s", lineno, msg));
+				task->as->error = createException(MAL, "sql.copy_from",
+												  "line " LLFMT ": %s", lineno, msg);
 			}
 		} else {
 			if (!is_int_nil(col)) {
 				if (colnam)
-					task->as->error = copyException(ma, createException(MAL, "sql.copy_from",
+					task->as->error = createException(MAL, "sql.copy_from",
 													  "column %d %s: %s", col + 1, colnam,
-													  msg));
+													  msg);
 				else
-					task->as->error = copyException(ma, createException(MAL, "sql.copy_from",
-													  "column %d: %s", col + 1, msg));
+					task->as->error = createException(MAL, "sql.copy_from",
+													  "column %d: %s", col + 1, msg);
 			} else {
-				task->as->error = copyException(ma, createException(MAL, "sql.copy_from", "%s", msg));
+				task->as->error = createException(MAL, "sql.copy_from", "%s", msg);
 			}
 		}
 	}
@@ -1603,7 +1616,6 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out,
 	int threads = 1;
 	lng tio, t1 = 0;
 	char name[MT_NAME_LEN];
-	allocator *ma = cntxt->curprg->def->ma;
 	allocator *ta = MT_thread_getallocator();
 	allocator_state ta_state = ma_open(ta);
 
@@ -1692,8 +1704,8 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out,
 		task.fields[i] = ma_alloc(ta, sizeof(char *) * task.limit);
 		if (task.fields[i] == NULL) {
 			if (task.as->error == NULL)
-				as->error = copyException(ma, createException(MAL, "sql.copy_from",
-															  SQLSTATE(HY013) MAL_MALLOC_FAIL));
+				as->error = createException(MAL, "sql.copy_from",
+											SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto bailout;
 		}
 		task.cols[i] = (int) (i + 1);	/* to distinguish non initialized later with zero */
@@ -1934,7 +1946,6 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out,
 /*		TRC_DEBUG(MAL_SERVER, "Shut down reader\n");*/
 		MT_sema_up(&task.producer);
 	}
-	MT_join_thread(task.tid);
 
 /*	TRC_DEBUG(MAL_SERVER, "Activate endofcopy\n");*/
 
@@ -1946,8 +1957,21 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out,
 	for (j = 0; j < threads; j++)
 		MT_sema_down(&ptask[j].reply);
 
+	/* it may be that there was an error which may have been produced by
+	 * one of the worker threads; if so, copy the error message to our
+	 * own exception buffer since the worker thread's exception buffer
+	 * will be destroyed when we join the thread */
+	if (as->error) {
+		char *msg = MT_thread_get_exceptbuf();
+		if (as->error != msg) {
+			strcpy_len(msg, as->error, GDKMAXERRLEN);
+			as->error = msg;
+		}
+	}
+
 /*	TRC_DEBUG(MAL_SERVER, "Kill the workers\n");*/
 
+	MT_join_thread(task.tid);
 	for (j = 0; j < threads; j++) {
 		MT_join_thread(ptask[j].tid);
 		// GDKfree(ptask[j].cols);

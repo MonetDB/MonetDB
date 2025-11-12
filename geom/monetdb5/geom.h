@@ -176,11 +176,11 @@ str transformLine(GEOSCoordSeq *gcs_new, const GEOSGeometry *geosGeometry, PJ *P
 str transformLineString(GEOSGeometry **transformedGeometry, const GEOSGeometry *geosGeometry, PJ *P);
 str transformLinearRing(GEOSGeometry **transformedGeometry, const GEOSGeometry *geosGeometry, PJ *P);
 str transformPolygon(GEOSGeometry **transformedGeometry, const GEOSGeometry *geosGeometry, PJ *P, int srid);
-str transformMultiGeometry(allocator *, GEOSGeometry **transformedGeometry, const GEOSGeometry *geosGeometry, PJ *P, int srid, int geometryType);
+str transformMultiGeometry(GEOSGeometry **transformedGeometry, const GEOSGeometry *geosGeometry, PJ *P, int srid, int geometryType);
 #endif
 geom_export str wkbTransform(Client ctx, wkb**, wkb**, int*, int*, char**, char**);
 geom_export str wkbTransform_bat(Client ctx, bat *outBAT_id, bat *inBAT_id, int *srid_src, int *srid_dst, char **proj4_src_str, char **proj4_dst_str);
-geom_export str wkbTransform_bat_cand(allocator *, bat *outBAT_id, bat *inBAT_id, bat *s_id, int *srid_src, int *srid_dst, char **proj4_src_str, char **proj4_dst_str);
+geom_export str wkbTransform_bat_cand(bat *outBAT_id, bat *inBAT_id, bat *s_id, int *srid_src, int *srid_dst, char **proj4_src_str, char **proj4_dst_str);
 geom_export str wkbTranslate(Client ctx, wkb**, wkb**, dbl*, dbl*, dbl*);
 geom_export str wkbDelaunayTriangles(Client ctx, wkb**, wkb**, dbl*, int*);
 geom_export str wkbPointOnSurface(Client ctx, wkb**, wkb**);
