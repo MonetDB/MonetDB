@@ -459,7 +459,7 @@ log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, BAT **cands, bo
 			}
 		}
 
-		if (!lg->flushing && !skip_entry) {
+		if (!lg->flushing && !skip_entry && l->flag != LOG_UPDATE_CONST) {
 			r = COLnew(0, tpe, (BUN) nr, PERSISTENT);
 			if (r == NULL) {
 				if (uid)
@@ -477,12 +477,11 @@ log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, BAT **cands, bo
 			} else {
 				lg->rbuf = t;
 				lg->rbufsize = tlen;
-				if (r) {
-					for (BUN p = 0; p < (BUN) nr; p++) {
-						if (BUNappend(r, t, true) != GDK_SUCCEED) {
-							TRC_CRITICAL(GDK, "append to bat failed\n");
-							res = LOG_ERR;
-						}
+				if (!lg->flushing && !skip_entry) {
+					r = BATconstant(0, tpe, t, nr, PERSISTENT);
+					if (r == NULL) {
+						TRC_CRITICAL(GDK, "create const bat failed\n");
+						res = LOG_ERR;
 					}
 				}
 			}
