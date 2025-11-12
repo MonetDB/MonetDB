@@ -596,11 +596,14 @@ PyDict_CheckForConversion(PyObject *pResult, int expected_columns, char **retcol
 		Py_INCREF(object);
 		object = PyObject_CheckForConversion(object, 1, NULL, return_message);
 		if (object == NULL) {
+			allocator *ma = MT_thread_getallocator();
+			allocator_state ma_state = ma_open(ma);
+			msg = ma_strdup(ma, getExceptionMessage(*return_message));
 			msg = createException(
 				MAL, "pyapi3.eval",
 				SQLSTATE(PY000) "Error converting dict return value \"%s\": %s",
-				retcol_names[i], getExceptionMessage(*return_message));
-			freeException(*return_message);
+				retcol_names[i], msg);
+			ma_close(ma, &ma_state);
 			goto wrapup;
 		}
 		if (PyList_CheckExact(object)) {

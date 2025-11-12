@@ -2372,11 +2372,11 @@ geoGetType(Client ctx, char **res, int *info, int *flag)
 {
 	allocator *ma = ctx->curprg->def->ma;
 	if (is_int_nil(*info) || is_int_nil(*flag)) {
-		if ((*res = MA_STRDUP(ma, str_nil)) == NULL)
+		if ((*res = ma_strdup(ma, str_nil)) == NULL)
 			throw(MAL, "geom.getType", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
-	if ((*res = MA_STRDUP(ma, geom_type2str(*info >> 2, *flag))) == NULL)
+	if ((*res = ma_strdup(ma, geom_type2str(*info >> 2, *flag))) == NULL)
 		throw(MAL, "geom.getType", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
@@ -2525,7 +2525,7 @@ wkbAsBinary(Client ctx, char **toStr, wkb **geomWKB)
 	int i;
 
 	if (is_wkb_nil(*geomWKB)) {
-		if ((*toStr = MA_STRDUP(ma, str_nil)) == NULL)
+		if ((*toStr = ma_strdup(ma, str_nil)) == NULL)
 			throw(MAL, "geom.AsBinary", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
@@ -2721,7 +2721,7 @@ wkbAsText(Client ctx, char **txt, wkb **geomWKB, int *withSRID)
 	const char sridTxt[] = "SRID:";
 
 	if (is_wkb_nil(*geomWKB) || (withSRID && is_int_nil(*withSRID))) {
-		if ((*txt = MA_STRDUP(ma, str_nil)) == NULL)
+		if ((*txt = ma_strdup(ma, str_nil)) == NULL)
 			throw(MAL, "geom.AsText", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
@@ -4301,7 +4301,7 @@ wkbIsValidReason(Client ctx, char **reason, wkb **geomWKB)
 	char *GEOSReason = NULL;
 
 	if (is_wkb_nil(*geomWKB)) {
-		if ((*reason = MA_STRDUP(ma, str_nil)) == NULL)
+		if ((*reason = ma_strdup(ma, str_nil)) == NULL)
 			throw(MAL, "geom.IsValidReason", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
@@ -4317,7 +4317,7 @@ wkbIsValidReason(Client ctx, char **reason, wkb **geomWKB)
 	if (GEOSReason == NULL)
 		throw(MAL, "geom.IsValidReason", SQLSTATE(38000) "Geos operation GEOSisValidReason failed");
 
-	*reason = MA_STRDUP(ma, GEOSReason);
+	*reason = ma_strdup(ma, GEOSReason);
 	GEOSFree_r(geoshandle, GEOSReason);
 	if (*reason == NULL)
 		throw(MAL, "geom.IsValidReason", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -4336,7 +4336,7 @@ wkbIsValidDetail(Client ctx, char **out, wkb **geom)
 	GEOSGeom geosGeometry;
 
 	if (is_wkb_nil(*geom)) {
-		if ((*out = MA_STRDUP(ma, str_nil)) == NULL)
+		if ((*out = ma_strdup(ma, str_nil)) == NULL)
 			throw(MAL, "geom.IsValidReason", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
@@ -4354,7 +4354,7 @@ wkbIsValidDetail(Client ctx, char **out, wkb **geom)
 		throw(MAL, "geom.IsValidDetail", SQLSTATE(38000) "Geos operation GEOSisValidDetail failed");
 	}
 
-	*out = MA_STRDUP(ma, GEOSreason);
+	*out = ma_strdup(ma, GEOSreason);
 
 	GEOSFree_r(geoshandle, GEOSreason);
 	GEOSGeom_destroy_r(geoshandle, GEOSlocation);

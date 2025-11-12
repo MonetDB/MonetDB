@@ -311,7 +311,7 @@ RMTconnectScen(Client ctx, str *ret,
 #endif
 	MT_lock_unset(&mal_remoteLock);
 
-	*ret = MA_STRDUP(ma, conn);
+	*ret = ma_strdup(ma, conn);
 	if (*ret == NULL)
 		throw(MAL, "remote.connect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return (MAL_SUCCEED);

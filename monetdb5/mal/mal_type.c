@@ -42,7 +42,7 @@ getTypeName(allocator *ma, malType tpe)
 	int k;
 
 	if (tpe == TYPE_any)
-		return MA_STRDUP(ma, "any");
+		return ma_strdup(ma, "any");
 	if (isaBatType(tpe)) {
 		k = getTypeIndex(tpe);
 		if (k)
@@ -51,13 +51,13 @@ getTypeName(allocator *ma, malType tpe)
 			snprintf(buf, sizeof(buf), "bat[:any]");
 		else
 			snprintf(buf, sizeof(buf), "bat[:%s]", ATOMname(getBatType(tpe)));
-		return MA_STRDUP(ma, buf);
+		return ma_strdup(ma, buf);
 	}
 	if (isAnyExpression(tpe)) {
 		snprintf(buf, sizeof(buf), "any_%d", getTypeIndex(tpe));
-		return MA_STRDUP(ma, buf);
+		return ma_strdup(ma, buf);
 	}
-	return MA_STRDUP(ma, ATOMname(tpe));
+	return ma_strdup(ma, ATOMname(tpe));
 }
 
 /*

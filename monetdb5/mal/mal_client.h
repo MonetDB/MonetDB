@@ -148,7 +148,6 @@ typedef struct CLIENT {
 	 */
 	MT_Sema s;					/* sema to (de)activate thread */
 	const char *mythread;
-	char *errbuf;					/* location of GDK exceptions */
 	struct CLIENT *father;
 	/*
 	 * Each client has a private entry point into the namespace and

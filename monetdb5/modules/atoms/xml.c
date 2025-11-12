@@ -173,11 +173,11 @@ XMLxml2str(Client ctx, str *s, const xml *x)
 {
 	allocator *ma = ctx->curprg->def->ma;
 	if (strNil(*x)) {
-		*s = MA_STRDUP(ma, str_nil);
+		*s = ma_strdup(ma, str_nil);
 		return MAL_SUCCEED;
 	}
 	assert(**x == 'A' || **x == 'C' || **x == 'D');
-	*s = MA_STRDUP(ma, *x + 1);
+	*s = ma_strdup(ma, *x + 1);
 	return MAL_SUCCEED;
 }
 
@@ -190,7 +190,7 @@ XMLstr2xml(Client ctx, xml *x, const char *const*val)
 	size_t len;
 
 	if (strNil(t)) {
-		*x = (xml) MA_STRDUP(ma, str_nil);
+		*x = (xml) ma_strdup(ma, str_nil);
 		if (*x == NULL)
 			throw(MAL, "xml.xml", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
@@ -214,7 +214,7 @@ XMLxmltext(Client ctx, str *s, const xml *x)
 	str content = NULL;
 
 	if (strNil(*x)) {
-		*s = MA_STRDUP(ma, str_nil);
+		*s = ma_strdup(ma, str_nil);
 		if (*s == NULL)
 			throw(MAL, "xml.text", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
@@ -224,7 +224,7 @@ XMLxmltext(Client ctx, str *s, const xml *x)
 		elem = xmlDocGetRootElement(doc);
 		xmlChar *cont = xmlNodeGetContent(elem);
 		xmlFreeDoc(doc);
-		content = MA_STRDUP(ma, (const char *) cont);
+		content = ma_strdup(ma, (const char *) cont);
 		xmlFree(cont);
 	} else if (**x == 'C') {
 		doc = xmlParseMemory("<doc/>", 6);
@@ -233,7 +233,7 @@ XMLxmltext(Client ctx, str *s, const xml *x)
 		xmlChar *cont = xmlNodeGetContent(elem);
 		xmlFreeNodeList(elem);
 		xmlFreeDoc(doc);
-		content = MA_STRDUP(ma, (const char *) cont);
+		content = ma_strdup(ma, (const char *) cont);
 		xmlFree(cont);
 	} else if (**x == 'A') {
 		const char *t = *x + 1;
@@ -252,7 +252,7 @@ XMLxmltext(Client ctx, str *s, const xml *x)
 			*p = 0;
 		}
 	} else {
-		content = MA_STRDUP(ma, "");
+		content = ma_strdup(ma, "");
 	}
 	if (content == NULL)
 		throw(MAL, "xml.text", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -265,7 +265,7 @@ str
 XMLxml2xml(Client ctx, xml *s, const xml *x)
 {
 	allocator *ma = ctx->curprg->def->ma;
-	*s = MA_STRDUP(ma, *x);
+	*s = ma_strdup(ma, *x);
 	if (*s == NULL)
 		throw(MAL, "xml.xml", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
@@ -278,7 +278,7 @@ XMLdocument(Client ctx, xml *x, const char * const *val)
 	xmlDocPtr doc;
 
 	if (strNil(*val)) {
-		*x = (xml) MA_STRDUP(ma, str_nil);
+		*x = (xml) ma_strdup(ma, str_nil);
 		if (*x == NULL)
 			throw(MAL, "xml.document", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
@@ -313,7 +313,7 @@ XMLcontent(Client ctx, xml *x, const char * const *val)
 	size_t len;
 
 	if (strNil(*val)) {
-		*x = (xml) MA_STRDUP(ma, str_nil);
+		*x = (xml) ma_strdup(ma, str_nil);
 		if (*x == NULL)
 			throw(MAL, "xml.content", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
@@ -366,7 +366,7 @@ XMLcomment(Client ctx, xml *x, const char * const *s)
 	str buf;
 
 	if (strNil(*s)) {
-		*x = (xml) MA_STRDUP(ma, str_nil);
+		*x = (xml) ma_strdup(ma, str_nil);
 		if (*x == NULL)
 			throw(MAL, "xml.comment", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
@@ -403,7 +403,7 @@ XMLpi(Client ctx, xml *ret, const char * const *target, const char * const *valu
 	str val = NULL;
 
 	if (strNil(*target)) {
-		*ret = MA_STRDUP(ma, str_nil);
+		*ret = ma_strdup(ma, str_nil);
 		if (*ret == NULL)
 			throw(MAL, "xml.attribute", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
@@ -442,7 +442,7 @@ XMLroot(Client ctx, xml *ret, const xml *val, const char * const *version, const
 	bit isdoc = 0;
 
 	if (strNil(*val)) {
-		*ret = MA_STRDUP(ma, str_nil);
+		*ret = ma_strdup(ma, str_nil);
 		if (*ret == NULL)
 			throw(MAL, "xml.root", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
@@ -488,7 +488,7 @@ XMLattribute(Client ctx, xml *x, const char * const *name, const char * const *v
 	size_t len;
 
 	if (strNil(t) || strNil(*name)) {
-		*x = (xml) MA_STRDUP(ma, str_nil);
+		*x = (xml) ma_strdup(ma, str_nil);
 		if (*x == NULL)
 			throw(MAL, "xml.attribute", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
@@ -576,9 +576,9 @@ XMLconcat(Client ctx, xml *ret, const xml *left, const xml *right)
 
 	/* if either side is nil, return the other, otherwise concatenate */
 	if (strNil(*left))
-		buf = MA_STRDUP(ma, *right);
+		buf = ma_strdup(ma, *right);
 	else if (strNil(*right))
-		buf = MA_STRDUP(ma, *left);
+		buf = ma_strdup(ma, *left);
 	else if (**left != **right)
 		throw(MAL, "xml.concat", "arguments not compatible");
 	else if (**left == 'A') {
@@ -667,12 +667,12 @@ XMLfromString(allocator *ma, const char *src, size_t *len, void **X, bool extern
 		*x = NULL;
 	}
 	if (external && strcmp(src, "nil") == 0) {
-		*x = MA_STRDUP(ma, str_nil);
+		*x = ma_strdup(ma, str_nil);
 		if (*x == NULL)
 			return -1;
 		return 3;
 	} else if (strNil(src)) {
-		*x = MA_STRDUP(ma, str_nil);
+		*x = ma_strdup(ma, str_nil);
 		if (*x == NULL)
 			return -1;
 		return 1;

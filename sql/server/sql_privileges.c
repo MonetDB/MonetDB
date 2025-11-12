@@ -871,20 +871,13 @@ sql_create_user(mvc *sql, char *user, char *passwd, bool enc, char *fullname, ch
 		throw(SQL, "sql.create_user", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	if ((err = backend_create_user(sql, user, passwd, enc, fullname, schema_id, schema_path, sql->user_id, max_memory,
-					max_workers, optimizer, role_id)) != NULL)
-	{
+					max_workers, optimizer, role_id)) != NULL) {
 		/* strip off MAL exception decorations */
-		char *r;
-		char *e = err;
-		if ((e = strchr(e, ':')) == NULL) {
-			e = err;
-		} else if ((e = strchr(++e, ':')) == NULL) {
-			e = err;
-		} else {
-			e++;
-		}
-		r = createException(SQL,"sql.create_user", SQLSTATE(M0M27) "CREATE USER: %s", e);
-		//_DELETE(err);
+		allocator *ma = MT_thread_getallocator();
+		allocator_state ma_state = ma_open(ma);
+		char *r = ma_strdup(ma, getExceptionMessageAndState(err));
+		r = createException(SQL,"sql.create_user", SQLSTATE(M0M27) "CREATE USER: %s", r);
+		ma_close(ma, &ma_state);
 		return r;
 	}
 

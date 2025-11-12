@@ -91,7 +91,7 @@ ALARMctime(Client ctx, str *res)
 		throw(MAL, "alarm.ctime", "failed to format time");
 
 	base[24] = 0;				/* squash final newline */
-	*res = MA_STRDUP(ma, base);
+	*res = ma_strdup(ma, base);
 	if (*res == NULL)
 		throw(MAL, "alarm.ctime", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;

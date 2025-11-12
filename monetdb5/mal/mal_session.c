@@ -553,13 +553,17 @@ optimizeMALBlock(Client cntxt, MalBlkPtr mb)
 				mb->errors = NULL;
 			}
 			if (msg) {
-				str place = getExceptionPlace(mb->ma, msg);
+				allocator *ma = MT_thread_getallocator();
+				allocator_state ma_state = ma_open(ma);
+				str place = getExceptionPlace(ma, msg);
 				str nmsg = NULL;
 				if (place) {
+					nmsg = ma_strdup(ma, getExceptionMessageAndState(msg));
 					nmsg = createException(getExceptionType(msg), place, "%s",
-										   getExceptionMessageAndState(msg));
+										   nmsg);
 					//GDKfree(place);
 				}
+				ma_close(ma, &ma_state);
 				if (nmsg) {
 					freeException(msg);
 					msg = nmsg;

@@ -366,7 +366,7 @@ MSscheduleClient(str command, str peer, str challenge, bstream *fin, stream *fou
 			return;
 		}
 		c->filetrans = filetrans;
-		c->handshake_options = handshake_opts ? MA_STRDUP(c->ma, handshake_opts) : NULL;
+		c->handshake_options = handshake_opts ? ma_strdup(c->ma, handshake_opts) : NULL;
 		/* move this back !! */
 		if (c->usermodule == 0) {
 			c->curmodule = c->usermodule = userModule();
@@ -396,9 +396,9 @@ MSscheduleClient(str command, str peer, str challenge, bstream *fin, stream *fou
 	}
 
 	// at this point username should have being verified
-	c->username = MA_STRDUP(c->ma, user);
+	c->username = ma_strdup(c->ma, user);
 	if (peer)
-		c->peer = MA_STRDUP(c->ma, peer);
+		c->peer = ma_strdup(c->ma, peer);
 
 	/* NOTE ABOUT STARTING NEW THREADS
 	 * At this point we have conducted experiments (Jun 2012) with
@@ -1834,7 +1834,7 @@ SERVERfetch_field_str(Client ctx, str *ret, const int *key, const int *fnr)
 	str fld;
 	accessTest(*key, "fetch_field");
 	fld = mapi_fetch_field(SERVERsessions[i].hdl, *fnr);
-	*ret = MA_STRDUP(ma, fld ? fld : str_nil);
+	*ret = ma_strdup(ma, fld ? fld : str_nil);
 	if (*ret == NULL)
 		throw(MAL, "mapi.fetch_field_str", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	if (mapi_error(mid))
@@ -1972,7 +1972,7 @@ SERVERfetch_line(Client ctx, str *ret, const int *key)
 	if (mapi_error(mid))
 		throw(MAL, "mapi.fetch_line", "%s",
 			  mapi_result_error(SERVERsessions[i].hdl));
-	*ret = MA_STRDUP(ma, fld ? fld : str_nil);
+	*ret = ma_strdup(ma, fld ? fld : str_nil);
 	if (*ret == NULL)
 		throw(MAL, "mapi.fetch_line", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
@@ -2058,7 +2058,7 @@ SERVERgetError(Client ctx, str *ret, const int *key)
 	Mapi mid;
 	int i;
 	accessTest(*key, "getError");
-	*ret = MA_STRDUP(ma, mapi_error_str(mid));
+	*ret = ma_strdup(ma, mapi_error_str(mid));
 	if (*ret == NULL)
 		throw(MAL, "mapi.get_error", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
@@ -2073,7 +2073,7 @@ SERVERexplain(Client ctx, str *ret, const int *key)
 	int i;
 
 	accessTest(*key, "explain");
-	*ret = MA_STRDUP(ma, mapi_error_str(mid));
+	*ret = ma_strdup(ma, mapi_error_str(mid));
 	if (*ret == NULL)
 		throw(MAL, "mapi.explain", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
@@ -2193,7 +2193,7 @@ SERVERmapi_rpc_single_row(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 	for (i = pci->retc + 1; i < pci->argc; i++) {
 		fld = *getArgReference_str(stk, pci, i);
 		if (qry == 0) {
-			qry = MA_STRDUP(ta, fld);
+			qry = ma_strdup(ta, fld);
 			if (qry == NULL)
 				throw(MAL, "mapi.rpc", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		} else {
@@ -2398,7 +2398,7 @@ SERVERputLocal(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		// GDKfree(w);
 		break;
 	}
-	*ret = MA_STRDUP(mb->ma, buf);
+	*ret = ma_strdup(mb->ma, buf);
 	if (*ret == NULL)
 		throw(MAL, "mapi.glue", GDK_EXCEPTION);
 	return MAL_SUCCEED;

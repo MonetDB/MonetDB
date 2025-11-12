@@ -579,7 +579,7 @@ printStackElm(stream *f, MalBlkPtr mb, const ValRecord *v, int index, BUN cnt, B
 		nme = getTypeName(mb->ma, n->type);
 		mnstr_printf(f, " :%s", nme);
 	}
-	nmeOnStk = v ? getTypeName(mb->ma, v->vtype) : MA_STRDUP(mb->ma, nme);
+	nmeOnStk = v ? getTypeName(mb->ma, v->vtype) : ma_strdup(mb->ma, nme);
 	/* check for type errors */
 	if (nmeOnStk && strcmp(nmeOnStk, nme) && strncmp(nmeOnStk, "BAT", 3))
 		mnstr_printf(f, "!%s ", nmeOnStk);
@@ -684,7 +684,7 @@ MDBgetExceptionVariable(Client ctx, str *ret, const char *const *msg)
 			  OPERATION_FAILED " ':'<name> missing");
 
 	*tail = 0;
-	*ret = MA_STRDUP(ma, *msg);
+	*ret = ma_strdup(ma, *msg);
 	if (*ret == NULL)
 		throw(MAL, "mdb.getExceptionVariable", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	*tail = ':';
@@ -707,7 +707,7 @@ MDBgetExceptionContext(Client ctx, str *ret, const char *const *msg)
 			  OPERATION_FAILED " <name> missing");
 
 	*tail2 = 0;
-	*ret = MA_STRDUP(ma, tail + 1);
+	*ret = ma_strdup(ma, tail + 1);
 	if (*ret == NULL)
 		throw(MAL, "mdb.getExceptionContext", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	*tail2 = ':';
@@ -727,7 +727,7 @@ MDBgetExceptionReason(Client ctx, str *ret, const char *const *msg)
 	if (tail == 0)
 		throw(MAL, "mdb.getExceptionReason", OPERATION_FAILED " ':' missing");
 
-	*ret = MA_STRDUP(ma, tail + 1);
+	*ret = ma_strdup(ma, tail + 1);
 	if (*ret == NULL)
 		throw(MAL, "mdb.getExceptionReason", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
