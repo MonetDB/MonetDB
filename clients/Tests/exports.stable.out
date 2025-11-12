@@ -819,7 +819,7 @@ BUN SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *
 str TABLETcollect(BAT **bats, Tablet *as);
 str TABLETcreate_bats(Tablet *as, BUN est);
 void TABLETdestroy_format(Tablet *as);
-int TABLEToutput_file(allocator *ma, Tablet *as, BAT *order, stream *s, bstream *in);
+int TABLEToutput_file(Tablet *as, BAT *order, stream *s, bstream *in);
 int TRACEtable(Client cntxt, BAT **r);
 int TYPE_xml;
 int UTF8_strlen(const char *s);

@@ -1374,7 +1374,7 @@ mvc_export_table_(allocator *sa, mvc *m, int output_format, stream *s, res_table
 		}
 	}
 	if (i == t->nr_cols + 1)
-		ok = TABLEToutput_file(sa, &as, NULL, s, m->scanner.rs);
+		ok = TABLEToutput_file(&as, NULL, s, m->scanner.rs);
 	for (i = 0; i <= t->nr_cols; i++) {
 		fmt[i].sep = NULL;
 		fmt[i].rsep = NULL;
