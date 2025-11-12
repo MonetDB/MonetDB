@@ -18,6 +18,7 @@ typedef struct Pipelines {
 	MalStkPtr stk;
 	int start, stop;    /* guarded block under consideration*/
 	ATOMIC_PTR_TYPE error;		/* error encountered */
+	char *errbuf;		/* parent errbuf */
 	MT_Sema s;	/* threads wait on empty queues */
 	MT_Lock l;
 	int maxparts;

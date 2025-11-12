@@ -30,7 +30,6 @@ static struct worker {
 	MT_Id id;
 	enum {IDLE, WAITING, RUNNING, FREE, EXITED } flag;
 	ATOMIC_PTR_TYPE cntxt;  /* client we do work for (NULL -> any) */
-	char *errbuf;		    /* GDKerrbuf so that we can allocate before fork */
 	Queue *q;				/* pipeline tasks to execute */
 	int self;
 } workers[THREADS];
@@ -188,11 +187,6 @@ PIPELINEworker(void *T)
 #ifdef _MSC_VER
 	srand((unsigned int) GDKusec());
 #endif
-	assert(t->errbuf != NULL);
-	t->errbuf[0] = 0;
-	GDKsetbuf(t->errbuf);		/* where to leave errors */
-	t->errbuf = NULL;
-
 	Pipeline *p = (Pipeline*)GDKmalloc(sizeof(Pipeline));
 #ifdef CPU_ZERO
 	thread_runoncpu(t->self);
@@ -227,9 +221,10 @@ PIPELINEworker(void *T)
 			if (error) {
 				void *null = NULL;
 				/* only collect one error (from one thread, needed for stable testing) */
-				if (!ATOMIC_PTR_CAS(&s->error, &null, error))
-					freeException(error);
-				GDKerrbuf[0] = 0;
+				if (ATOMIC_PTR_CAS(&s->error, &null, error)) {
+					strcpy(s->errbuf, error);
+					ATOMIC_PTR_CAS(&s->error, &error, s->errbuf);
+				}
 			}
 			freeStack(stk);
 			ma_close(ma, &ma_state);
@@ -239,8 +234,6 @@ PIPELINEworker(void *T)
 		}
 		GDKfree(p);
 	}
-	GDKfree(GDKerrbuf);
-	GDKsetbuf(0);
 }
 
 static int
@@ -266,15 +259,8 @@ PIPELINESinitialize(void)
 		workers[i].q = q_create(256, name);
 		if (first)				/* only initialize once */
 			ATOMIC_PTR_INIT(&workers[i].cntxt, NULL);
-		workers[i].errbuf = GDKmalloc(GDKMAXERRLEN);
-		if (workers[i].errbuf == NULL) {
-			TRC_CRITICAL(MAL_SERVER, "cannot allocate error buffer for worker");
-			break;
-		}
 		snprintf(name, sizeof(name), "PIPELINEworker%d", i);
 		if (MT_create_thread(&workers[i].id, PIPELINEworker, (void *) &workers[i], MT_THR_JOINABLE, name) < 0) {
-			GDKfree(workers[i].errbuf);
-			workers[i].errbuf = NULL;
 			workers[i].flag = IDLE;
 		} else {
 			created++;
@@ -315,6 +301,7 @@ runMALpipelines(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, int maxpart
 	/* initialize with direct increment of all threads at once */
 	ATOMIC_INIT(&s->workers, -1);
 	ATOMIC_PTR_INIT(&s->error, NULL);
+	s->errbuf = MT_thread_get_exceptbuf();
 
 	char name[MT_NAME_LEN];
 	snprintf(name, sizeof(name), "PIPELINE%d", cntxt->idx);
