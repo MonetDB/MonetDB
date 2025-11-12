@@ -893,7 +893,7 @@ BATprintcolumns(stream *s, int argc, BAT *argv[])
 	int i;
 	BUN n, cnt;
 	struct colinfo {
-		ssize_t (*s) (str *, size_t *, const void *, bool);
+		ssize_t (*s) (allocator *ma, str *, size_t *, const void *, bool);
 		BATiter i;
 	} *colinfo;
 	char *buf;
@@ -913,7 +913,9 @@ BATprintcolumns(stream *s, int argc, BAT *argv[])
 		}
 	}
 
-	if ((colinfo = GDKmalloc(argc * sizeof(*colinfo))) == NULL) {
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
+	if ((colinfo = ma_alloc(ta, argc * sizeof(*colinfo))) == NULL) {
 		GDKerror("Cannot allocate memory\n");
 		return GDK_FAIL;
 	}
@@ -938,7 +940,7 @@ BATprintcolumns(stream *s, int argc, BAT *argv[])
 	for (n = 0, cnt = BATcount(argv[0]); n < cnt; n++) {
 		mnstr_write(s, "[ ", 1, 2);
 		for (i = 0; i < argc; i++) {
-			len = colinfo[i].s(&buf, &buflen, BUNtail(colinfo[i].i, n), true);
+			len = colinfo[i].s(ta, &buf, &buflen, BUNtail(colinfo[i].i, n), true);
 			if (len < 0) {
 				rc = GDK_FAIL;
 				goto bailout;
@@ -954,8 +956,7 @@ BATprintcolumns(stream *s, int argc, BAT *argv[])
 	for (i = 0; i < argc; i++) {
 		bat_iterator_end(&colinfo[i].i);
 	}
-	GDKfree(buf);
-	GDKfree(colinfo);
+	ma_close(ta, &ta_state);
 
 	return rc;
 }

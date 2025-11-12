@@ -3,3 +3,4 @@ create table test (id integer primary key, value string)
 
 statement error 42S22!SELECT: no such column 'test.some_column_that_does_not_exist'
 select id, test."some_column_that_does_not_exist" from test order by id
+

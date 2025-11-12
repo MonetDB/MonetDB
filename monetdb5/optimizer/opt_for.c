@@ -35,19 +35,19 @@ allConstExcept(MalBlkPtr mb, InstrPtr p, int except)
 }
 
 str
-OPTforImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+OPTforImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i, j, k, limit, slimit;
 	InstrPtr p = 0, *old = NULL;
 	int actions = 0;
 	int *varisfor = NULL, *varforvalue = NULL;
 	str msg = MAL_SUCCEED;
+	allocator *ta = mb->ta;
 
-	(void) cntxt;
 	(void) stk;
 
 	if (mb->inlineProp)
-		goto wrapup;
+		goto wrapup1;
 
 	limit = mb->stop;
 
@@ -59,18 +59,18 @@ OPTforImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 	}
 	if (i == limit)
-		goto wrapup;			/* nothing to do */
+		goto wrapup1;			/* nothing to do */
 
-	varisfor = GDKzalloc(2 * mb->vtop * sizeof(int));
-	varforvalue = GDKzalloc(2 * mb->vtop * sizeof(int));
+	allocator_state ta_state = ma_open(ta);
+	varisfor = ma_zalloc(ta, 2 * mb->vtop * sizeof(int));
+	varforvalue = ma_zalloc(ta, 2 * mb->vtop * sizeof(int));
 	if (varisfor == NULL || varforvalue == NULL)
 		goto wrapup;
 
 	slimit = mb->ssize;
 	old = mb->stmt;
 	if (newMalBlkStmt(mb, mb->ssize) < 0) {
-		GDKfree(varisfor);
-		GDKfree(varforvalue);
+		ma_close(ta, &ta_state);
 		throw(MAL, "optimizer.for", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	// Consolidate the actual need for variables
@@ -84,7 +84,7 @@ OPTforImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			k = getArg(p, 0);
 			varisfor[k] = getArg(p, 1);
 			varforvalue[k] = getArg(p, 2);
-			freeInstruction(p);
+			freeInstruction(mb, p);
 			continue;
 		}
 		int done = 0;
@@ -96,7 +96,7 @@ OPTforImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					/* projection(cand, col) with col = for.decompress(o,min_val)
 					 * v1 = projection(cand, o)
 					 * for.decompress(v1, min_val) */
-					InstrPtr r = copyInstruction(p);
+					InstrPtr r = copyInstruction(mb, p);
 					if (r == NULL) {
 						msg = createException(MAL, "optimizer.for",
 											  SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -109,7 +109,7 @@ OPTforImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					varisfor[l] = getArg(r, 0);
 					varforvalue[l] = varforvalue[k];
 					pushInstruction(mb, r);
-					freeInstruction(p);
+					freeInstruction(mb, p);
 					done = 1;
 					break;
 				} else if (p->argc == 2 && p->retc == 1
@@ -118,14 +118,14 @@ OPTforImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					int l = getArg(p, 0);
 					varisfor[l] = varisfor[k];
 					varforvalue[l] = varforvalue[k];
-					freeInstruction(p);
+					freeInstruction(mb, p);
 					done = 1;
 					break;
 				} else if (getModuleId(p) == algebraRef
 						   && getFunctionId(p) == subsliceRef) {
 					/* pos = subslice(col, l, h) with col = for.decompress(o,min_val)
 					 * pos = subslice(o, l, h) */
-					InstrPtr r = copyInstruction(p);
+					InstrPtr r = copyInstruction(mb, p);
 					if (r == NULL) {
 						msg = createException(MAL, "optimizer.for",
 											  SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -133,7 +133,7 @@ OPTforImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					}
 					getArg(r, j) = varisfor[k];
 					pushInstruction(mb, r);
-					freeInstruction(p);
+					freeInstruction(mb, p);
 					done = 1;
 					break;
 				} else if ((getModuleId(p) == batRef
@@ -142,7 +142,7 @@ OPTforImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							   && getFunctionId(p) == identityRef)) {
 					/* id = mirror/identity(col) with col = for.decompress(o,min_val)
 					 * id = mirror/identity(o) */
-					InstrPtr r = copyInstruction(p);
+					InstrPtr r = copyInstruction(mb, p);
 					if (r == NULL) {
 						msg = createException(MAL, "optimizer.for",
 											  SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -150,7 +150,7 @@ OPTforImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					}
 					getArg(r, j) = varisfor[k];
 					pushInstruction(mb, r);
-					freeInstruction(p);
+					freeInstruction(mb, p);
 					done = 1;
 					break;
 				} else if (getFunctionId(p) == thetaselectRef) {
@@ -188,7 +188,7 @@ OPTforImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					r = pushArgument(mb, r, getArg(q, 0));
 					pushInstruction(mb, r);
 
-					q = copyInstruction(p);
+					q = copyInstruction(mb, p);
 					if (q == NULL) {
 						msg = createException(MAL, "optimizer.for",
 											  SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -197,7 +197,7 @@ OPTforImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					getArg(q, j) = varisfor[k];
 					getArg(q, 3) = getArg(r, 0);
 					pushInstruction(mb, q);
-					freeInstruction(p);
+					freeInstruction(mb, p);
 					done = 1;
 					break;
 #if 0
@@ -221,7 +221,7 @@ OPTforImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					r = pushArgument(mb, r, getArg(p, 7));	/* anti */
 					r = pushArgument(mb, r, getArg(p, 8));	/* unknown */
 					pushInstruction(mb, r);
-					freeInstruction(p);
+					freeInstruction(mb, p);
 					done = 1;
 					break;
 				} else if (isSelect(p)) {
@@ -231,7 +231,7 @@ OPTforImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					 * pos = intersect(o, tp2, cand, nil) */
 
 					int cand = getArg(p, j + 1);
-					InstrPtr r = copyInstruction(p);
+					InstrPtr r = copyInstruction(mb, p);
 					if (r == NULL) {
 						msg = createException(MAL, "optimizer.for",
 											  SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -268,7 +268,7 @@ OPTforImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					t = pushBit(mb, t, TRUE);	/* max_one */
 					t = pushNil(mb, t, TYPE_lng);	/* estimate */
 					pushInstruction(mb, t);
-					freeInstruction(p);
+					freeInstruction(mb, p);
 					done = 1;
 					break;
 #endif
@@ -299,7 +299,7 @@ OPTforImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					varisfor[l] = varisfor[m] = varisfor[k];
 					varforvalue[l] = varforvalue[m] = getArg(r, 0);
 					pushInstruction(mb, r);
-					freeInstruction(p);
+					freeInstruction(mb, p);
 					done = 1;
 					break;
 				} else if (getModuleId(p) == groupRef
@@ -310,7 +310,7 @@ OPTforImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					/* group.group[done](col) | group.subgroup[done](col, grp) with col = for.decompress(o,min_val)
 					 * v1 = group.group[done](o) | group.subgroup[done](o, grp) */
 					int input = varisfor[k];
-					InstrPtr r = copyInstruction(p);
+					InstrPtr r = copyInstruction(mb, p);
 					if (r == NULL) {
 						msg = createException(MAL, "optimizer.for",
 											  SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -318,7 +318,7 @@ OPTforImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					}
 					getArg(r, j) = input;
 					pushInstruction(mb, r);
-					freeInstruction(p);
+					freeInstruction(mb, p);
 					done = 1;
 					break;
 				} else {
@@ -350,10 +350,10 @@ OPTforImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	for (; i < slimit; i++)
 		if (old[i])
-			freeInstruction(old[i]);
+			freeInstruction(mb, old[i]);
 	/* Defense line against incorrect plans */
 	if (msg == MAL_SUCCEED && actions > 0) {
-		msg = chkTypes(cntxt->usermodule, mb, FALSE);
+		msg = chkTypes(ctx->usermodule, mb, FALSE);
 		if (!msg)
 			msg = chkFlow(mb);
 		if (!msg)
@@ -361,11 +361,11 @@ OPTforImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	/* keep all actions taken as a post block comment */
   wrapup:
+	ma_close(ta, &ta_state);
+  wrapup1:
 	/* keep actions taken as a fake argument */
 	(void) pushInt(mb, pci, actions);
 
-	GDKfree(old);
-	GDKfree(varisfor);
-	GDKfree(varforvalue);
+	//GDKfree(old);
 	return msg;
 }

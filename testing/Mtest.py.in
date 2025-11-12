@@ -13,12 +13,12 @@
 import os
 import sys
 import shutil
+import shlex
 import platform
 import re
 import secrets
 import time
 import socket
-import string                   # for whitespace
 import struct
 import signal
 import fnmatch
@@ -183,32 +183,6 @@ else:
         ttywidth -= 1           # don't go to the edge
 
 
-def splitcommand(cmd):
-    '''Like string.split, except take quotes into account.'''
-    q = None
-    w = []
-    command = []
-    for c in cmd:
-        if q:
-            if c == q:
-                q = None
-            else:
-                w.append(c)
-        elif c in string.whitespace:
-            if w:
-                command.append(''.join(w))
-            w = []
-        elif c == '"' or c == "'":
-            q = c
-        else:
-            w.append(c)
-    if w:
-        command.append(''.join(w))
-    if len(command) > 1 and command[0] == 'call':
-        del command[0]
-    return command
-
-
 def remove(file):
     try:
         os.remove(file)
@@ -227,7 +201,7 @@ def remove(file):
         Warn(f'could not remove {file}')
 
 
-def isexecutable(TST, ext = '.sh'):
+def isexecutable(TST, ext='.sh'):
     if   os.name == 'nt':
         for ext in '.exe', '.com', '.bat', '.cmd':
             if TST.lower().endswith(ext):
@@ -244,7 +218,7 @@ def isexecutable(TST, ext = '.sh'):
 
 def CheckExec(cmd):
     for p in os.environ['PATH'].split(os.pathsep):
-        x = isexecutable(os.path.join(p,cmd),'')
+        x = isexecutable(os.path.join(p,cmd), ext='')
         if x[0]:
             return os.path.join(p, cmd + x[1])
     return ''
@@ -362,7 +336,7 @@ class Element(_Encode):
              'input', 'col', 'frame', 'isindex', 'base', 'meta', ]
     xml = True                          # write XHTML instead of HTML
 
-    def __init__(self, tag, attrdict = None, *children):
+    def __init__(self, tag, attrdict=None, *children):
         self.tag = tag
         if attrdict is None:
             attrdict = {}
@@ -393,7 +367,7 @@ class Element(_Encode):
             s.append('>')               # empty HTML element
         return ''.join(s)
 
-    def write(self, f, newline = False):
+    def write(self, f, newline=False):
         # write the element with its children to a file
         # if newline is set, add newlines at strategic points
         if self.tag.lower() == 'html':
@@ -445,7 +419,7 @@ class Element(_Encode):
 
 class Text(_Encode):
     # class to represent text in (X)HTML
-    def __init__(self, text = '', raw = False):
+    def __init__(self, text='', raw=False):
         self.text = text
         self.raw = raw
 
@@ -454,7 +428,7 @@ class Text(_Encode):
             return self.text
         return self.encode(self.text, False)
 
-    def write(self, f, newline = False):
+    def write(self, f, newline=False):
         f.write(str(self))
         if newline and not self.raw:
             f.write('\n')
@@ -468,7 +442,7 @@ class Comment:
     def __str__(self):
         return '<!--%s-->' % self.text
 
-    def write(self, f, newline = False):
+    def write(self, f, newline=False):
         f.write(str(self))
 
 
@@ -731,7 +705,8 @@ def CreateTstWhatXhtml(env, TST, stableWHAT, EXT, result, TSTDIR, TSTTRGDIR, TST
         d = urlpref
         if os.path.isfile(TST + stableWHAT + '.src'):
             # there's only one file like this...
-            fl = openutf8(os.path.join(TSTTRGDIR, TST + stableWHAT + '.src')).readline().strip()
+            with openutf8(os.path.join(TSTTRGDIR, TST + stableWHAT + '.src')) as fil:
+                fl = fil.readline().strip()
             if fl.startswith('$RELSRCDIR/'):
                 fl = fl[11:]
                 while fl.startswith('../'):
@@ -756,7 +731,8 @@ def CreateTstWhatXhtml(env, TST, stableWHAT, EXT, result, TSTDIR, TSTTRGDIR, TST
     if REV:
         d = urlpref
         if os.path.isfile(TST + EXT + '.src'):
-            fl = openutf8(os.path.join(TSTTRGDIR, TST + EXT + '.src')).readline().strip()
+            with openutf8(os.path.join(TSTTRGDIR, TST + EXT + '.src')) as fil:
+                fl = fil.readline().strip()
             if fl.startswith('$RELSRCDIR/'):
                 fl = fl[11:]
                 while fl.startswith('../'):
@@ -956,7 +932,7 @@ def AddTstToHtmlIndex(env, TST, STABLEout, STABLEerr, EXT, o, e, TSTDIR,
     td.addchildren(AddHref('.%s%s.html' % (TST, '.out'),
                            '%s_%s_body' % (DISTVER, TSTDIR),
                            'out', o))
-    td.addchild(Text('&nbsp;|&nbsp;', raw = True))
+    td.addchild(Text('&nbsp;|&nbsp;', raw=True))
     td.addchildren(AddHref('.%s%s.html' % (TST, '.err'),
                            '%s_%s_body' % (DISTVER, TSTDIR),
                            'err', e))
@@ -1105,14 +1081,13 @@ def PerformDir(env, testdir, testlist, total_tests):
                     alltests.append((tst,cond))
             allf.close()
         try:
-            f = openutf8(os.path.join(TSTSRCDIR, 'SingleServer'))
+            with openutf8(os.path.join(TSTSRCDIR, 'SingleServer')) as f:
+                options = shlex.split(f.read())
         except IOError:
             oneserver = False
             options = []            # not used
         else:
             oneserver = not restart
-            options = splitcommand(f.read())
-            f.close()
 
         if testlist:
             tl = []
@@ -1128,7 +1103,7 @@ def PerformDir(env, testdir, testlist, total_tests):
             testlist = alltests
         if not testlist:
             Warn("No tests found in '%s`; skipping directory!" % TSTSRCDIR)
-            return elem, max(FdOut, FdErr), interrupted
+            return TSTDIR, elem, max(FdOut, FdErr), interrupted
 
         # find length of longest test name
         length = max([len(tst[0]) for tst in testlist])
@@ -1160,14 +1135,14 @@ def PerformDir(env, testdir, testlist, total_tests):
                     raise
                 except:
                     Warn("database '%s` exists, but destroying it failed; skipping tests in '%s`!" % (TSTDB, TSTSRCDIR))
-                    return elem, max(FdOut, FdErr), interrupted
+                    return TSTDIR, elem, max(FdOut, FdErr), interrupted
             keyfile = os.path.join(LogDBdir, '.vaultkey')
             if os.path.isabs(LogDBdir):
                 try:
                     os.makedirs(LogDBdir, exist_ok=True)
                 except:
                     Warn("creating database '%s` failed; skipping tests in '%s`!" % (TSTDB, TSTSRCDIR))
-                    return elem, max(FdOut, FdErr), interrupted
+                    return TSTDIR, elem, max(FdOut, FdErr), interrupted
                 else:
                     if not initdb:
                         vaultkey = secrets.token_urlsafe(32).encode('ascii')
@@ -1180,14 +1155,14 @@ def PerformDir(env, testdir, testlist, total_tests):
                     z = zipfile.ZipFile(initdb)
                 except IOError:
                     Warn("initial database '%s` cannot be opened; skipping tests in '%s`!" % (initdb, TSTSRCDIR))
-                    return elem, max(FdOut, FdErr), interrupted
+                    return TSTDIR, elem, max(FdOut, FdErr), interrupted
                 try:
                     z.extractall(LogDBdir)
                 except KeyboardInterrupt:
                     raise
                 except:
                     Warn("initial database '%s` cannot be extracted; skipping tests in '%s`!" % (initdb, TSTSRCDIR))
-                    return elem, max(FdOut, FdErr), interrupted
+                    return TSTDIR, elem, max(FdOut, FdErr), interrupted
                 z.close()
                 if os.path.exists(keyfile):
                     vaultopt = ['--set', f'monet_vault_key={keyfile}']
@@ -1283,6 +1258,8 @@ def PerformDir(env, testdir, testlist, total_tests):
                     except:
                         pass
                     environ['MAPIPORT'] = pSrvr.port
+                    if pSrvr.usock is not None:
+                        environ['MAPIUSOCK'] = pSrvr.usock
                     SetExecEnv(env['exe'], pSrvr.port, verbosity > 1, environ)
                 if global_timeout and start_time + global_timeout < time.time():
                     if not testweb:
@@ -1328,37 +1305,38 @@ def PerformDir(env, testdir, testlist, total_tests):
                         nfree = 0
                         nused = 0
                         ntotal = 0
-                        for line in openutf8(os.path.join(TSTTRGDIR, f'SingleServer.{ext}')):
-                            if empty:
-                                o.write('<pre>\n')
-                            empty = False
-                            if 'SIGUSR1 info start' in line:
-                                sigusr1 = True
-                                line = '#' + line
-                            elif 'SIGUSR1 info end' in line:
-                                sigusr1 = False
-                                line = '#' + line
-                            elif sigusr1:
-                                res = fbre.search(line)
-                                if res is not None:
-                                    nfree += int(res.group('bats'))
-                                res = ubre.search(line)
-                                if res is not None:
-                                    nused += int(res.group('bats'))
-                                res = tbre.search(line)
-                                if res is not None:
-                                    ntotal = int(res.group('bats'))
-                                line = '#' + line
-                            span1 = span2 = ''
-                            if line != '\n' and not line.startswith('#'):
-                                if ext == 'out':
-                                    ssout = F_ERROR
-                                else:
-                                    sserr = F_ERROR
-                                span1 = '<span style="background-color: rgb(100%,0%,0%);">'
-                                span2 = '</span>\n'
-                                line = line.rstrip('\n')
-                            o.write(span1 + line.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;') + span2)
+                        with openutf8(os.path.join(TSTTRGDIR, f'SingleServer.{ext}')) as fil:
+                            for line in fil:
+                                if empty:
+                                    o.write('<pre>\n')
+                                empty = False
+                                if 'SIGUSR1 info start' in line:
+                                    sigusr1 = True
+                                    line = '#' + line
+                                elif 'SIGUSR1 info end' in line:
+                                    sigusr1 = False
+                                    line = '#' + line
+                                elif sigusr1:
+                                    res = fbre.search(line)
+                                    if res is not None:
+                                        nfree += int(res.group('bats'))
+                                    res = ubre.search(line)
+                                    if res is not None:
+                                        nused += int(res.group('bats'))
+                                    res = tbre.search(line)
+                                    if res is not None:
+                                        ntotal = int(res.group('bats'))
+                                    line = '#' + line
+                                span1 = span2 = ''
+                                if line != '\n' and not line.startswith('#'):
+                                    if ext == 'out':
+                                        ssout = F_ERROR
+                                    else:
+                                        sserr = F_ERROR
+                                    span1 = '<span style="background-color: rgb(100%,0%,0%);">'
+                                    span2 = '</span>\n'
+                                    line = line.rstrip('\n')
+                                o.write(span1 + line.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;') + span2)
                         if nused + nfree != ntotal:
                             o.write(f'<span style="background-color: rgb(100%,0%,0%);">Mismatch in free bats: total bats = {ntotal}, #free = {nfree}, #used = {nused}</span>\n')
                         o.write(f'{"<p>(nothing to see here)</p>" if empty else "</pre>"}\n</body>\n</html>\n')
@@ -1366,19 +1344,20 @@ def PerformDir(env, testdir, testlist, total_tests):
                 else:
                     for ext in ['out', 'err']:
                         sigusr1 = False
-                        for line in openutf8(os.path.join(TSTTRGDIR, f'SingleServer.{ext}')):
-                            if 'SIGUSR1 info start' in line:
-                                sigusr1 = True
-                                continue
-                            elif 'SIGUSR1 info end' in line:
-                                sigusr1 = False
-                                continue
-                            if (sigusr1 is False) and (line != '\n') and (not line.startswith('#')):
-                                if ext == 'out':
-                                    ssout = F_ERROR
-                                else:
-                                    sserr = F_ERROR
-                                break
+                        with openutf8(os.path.join(TSTTRGDIR, f'SingleServer.{ext}')) as fil:
+                            for line in fil:
+                                if 'SIGUSR1 info start' in line:
+                                    sigusr1 = True
+                                    continue
+                                elif 'SIGUSR1 info end' in line:
+                                    sigusr1 = False
+                                    continue
+                                if (sigusr1 is False) and (line != '\n') and (not line.startswith('#')):
+                                    if ext == 'out':
+                                        ssout = F_ERROR
+                                    else:
+                                        sserr = F_ERROR
+                                    break
 
         td = time.time() - td
         TIMES.append((TSTDIR, '', td, FdOut, FdErr, None))
@@ -1430,7 +1409,7 @@ def PerformDir(env, testdir, testlist, total_tests):
             except:
                 pass
 
-        return elem, max(FdOut, FdErr, ssout, sserr), interrupted
+        return TSTDIR, elem, max(FdOut, FdErr, ssout, sserr), interrupted
     finally:
         # del sys.path[0]
         pass
@@ -1444,7 +1423,7 @@ def PerformDir(env, testdir, testlist, total_tests):
 # the environment; and the addition of an extra parameter with default
 # so that the environment which is used to expand can be replace.
 _varprog = re.compile(r'\$(\w+|\{[^}]*\})')
-def expandvars(path, environ = os.environ):
+def expandvars(path, environ=os.environ):
     '''Expand shell variables of form $var and ${var}.  Unknown variables
     are left unchanged.'''
     if '$' not in path:
@@ -1503,12 +1482,13 @@ def coredumpctl(pid):
     for l in out.split('\n'):
         if not l.startswith('                '):
             s.append(l)
-    out = '\n'.join(s) + open(name2).read()
+    with open(name2) as fil:
+        out = '\n'.join(s) + fil.read()
     os.unlink(name2)
     return out, err
 
 
-def returnCode(proc, f = None):
+def returnCode(proc, f=None):
     '''Interpret the return code of a process.
     If second arg specified, write a message to it.'''
     if proc.killed:
@@ -1611,7 +1591,8 @@ def GetBitsAndModsAndThreads(env):
                     break
                 time.sleep(0.1)
             if proc.returncode is None:
-                connurl = open(os.path.join(dbpath, '.conn')).read()
+                with open(os.path.join(dbpath, '.conn')) as fil:
+                    connurl = fil.read()
                 res = mapiportre.search(connurl)
                 try:
                     with pymonetdb.connect(username='monetdb',
@@ -1714,6 +1695,9 @@ def GetBitsAndModsAndThreads(env):
             print(file=sys.stderr)
             print(qErr, file=sys.stderr, flush=True)
             rtrn = 1
+        if 'sql' not in mods:
+            ErrMsg('No sql module available!')
+            rtrn = 1
     else:
         rtrn = 1
         ErrMsg('No output from mserver5 when checking for Bits, Modules & Threads!?')
@@ -1724,18 +1708,14 @@ def GetBitsAndModsAndThreads(env):
     return rtrn
 
 
-def CheckMods(env, TST, SERVER, CALL):
+def CheckMods(env, TST):
     missing = []
     if os.path.isfile(TST + '.modules'):
-        for m in openutf8(TST + '.modules'):
-            m = m.strip()
-            if m  and  m[0] != '#'  and  m not in env['TST_MODS']:
-                missing.append(m)
-    if SERVER == 'SQL':
-        sql_mods = ['sql']
-        for m in sql_mods:
-            if m not in env['TST_MODS']:
-                missing.append(m)
+        with openutf8(TST + '.modules') as fil:
+            for m in fil:
+                m = m.strip()
+                if m  and  m[0] != '#'  and  m not in env['TST_MODS']:
+                    missing.append(m)
     return missing
 
 
@@ -1748,12 +1728,13 @@ def CheckTests(env, TST, oktests):
         # we didn't clean up from a previous run, assume tests were done
         return missing
 
-    for test in openutf8(TST + '.reqtests'):
-        test = test.strip()
-        if not test or test.startswith('#'):
-            continue
-        if test not in oktests:
-            missing.append(test)
+    with openutf8(TST + '.reqtests') as fil:
+        for test in fil:
+            test = test.strip()
+            if not test or test.startswith('#'):
+                continue
+            if test not in oktests:
+                missing.append(test)
     return missing
 
 
@@ -1818,8 +1799,6 @@ tests = (
     ('.maltest',      '.maltest','maltest','SQL'),
     ('.py',           '.py',     'python', ''),
     ('.SQL.py',       '.SQL.py', 'python', 'SQL'),
-    ('.sql',          '.sql',    'sql',    'SQL'),
-    ('.R',            '.R',      'R',      'SQL'),
     ('.rb',           '.rb',     'ruby',   'SQL'),
 )
 
@@ -1836,10 +1815,8 @@ def RunTest(env, TST, COND, oktests, length, pSrvr, total_tests, options, enviro
     TX = -1
     EXT = CALL = SERVER = ''
     x  = isexecutable(os.path.join(TSTSRCDIR, TST))
-    if not x[0]:
-        x  = isexecutable(os.path.join(TSTSRCDIR, TST),'')
     xS = isexecutable(os.path.join(TSTSRCDIR, TST) + '.SQL')
-    if   x[0]:
+    if x[0]:
         EXT = x[1]
         CALL = 'other'
     elif xS[0]:
@@ -1859,7 +1836,7 @@ def RunTest(env, TST, COND, oktests, length, pSrvr, total_tests, options, enviro
             if os.name == 'nt':
                 reason = "test missing: '"+os.path.join(TSTSRCDIR,TST)+".(exe|com|bat|cmd|py|sql)`"
             else:
-                reason = "test missing: '"+os.path.join(TSTSRCDIR,TST)+"[.py|.sql|.R|.rb]`"
+                reason = "test missing: '"+os.path.join(TSTSRCDIR,TST)+"[.py|.sql|.rb]`"
             if verbosity > 1:
                 print('%s%s  ' %
                       (prompt(), os.path.join(TSTDIR, TST + EXT)), end='')
@@ -1885,7 +1862,7 @@ def RunTest(env, TST, COND, oktests, length, pSrvr, total_tests, options, enviro
 
             return TX,Failed,Failed,elem,reason,links
 
-    MissingMods = CheckMods(env, os.path.join(TSTSRCDIR, TST), SERVER, CALL)
+    MissingMods = CheckMods(env, os.path.join(TSTSRCDIR, TST))
     MissingTests = CheckTests(env, os.path.join(TSTSRCDIR, TST), oktests)
     nomito = os.path.isfile(os.path.join(TSTSRCDIR, TST + '.nomito'))
     user = None
@@ -2047,23 +2024,8 @@ def RunTest(env, TST, COND, oktests, length, pSrvr, total_tests, options, enviro
     elif MissingTests:
         reason = "as required test%s '%s' failed." % ('s' if len(MissingTests) != 1 else '', "', '".join(MissingTests))
         elem = SkipTest(env, TST, EXT, reason, length, TSTDIR, TSTTRGDIR, TSTSRCDIR)
-    elif EXT == ".sql" and 'SQL_Client' not in env['exe']:
-        reason = f"as {env['SQLCLIENT'].split(None, 1)[0]} is not available."
-        elem = SkipTest(env, TST, EXT, reason, length, TSTDIR, TSTTRGDIR, TSTSRCDIR)
-    elif EXT == ".sql" and 'SQL_Dump' not in env['exe']:
-        reason = f"as {env['SQLDUMP'].split(None, 1)[0]} is not available."
-        elem = SkipTest(env, TST, EXT, reason, length, TSTDIR, TSTTRGDIR, TSTSRCDIR)
     elif CALL == 'ruby' and 'ruby_client' not in env['exe']:
         reason = 'as ruby is not available.'
-        elem = SkipTest(env, TST, EXT, reason, length, TSTDIR, TSTTRGDIR, TSTSRCDIR)
-    elif CALL == 'R' and 'R_client' not in env['exe']:
-        reason = f"as {env['RCLIENT'].split(None, 1)[0]} is not available."
-        elem = SkipTest(env, TST, EXT, reason, length, TSTDIR, TSTTRGDIR, TSTSRCDIR)
-    elif SERVER == 'SQL' and 'mserver5' not in env['exe']:
-        reason = f"as {env['MSERVER'].split(None, 1)[0]} is not available."
-        elem = SkipTest(env, TST, EXT, reason, length, TSTDIR, TSTTRGDIR, TSTSRCDIR)
-    elif EXT == '.malS' and 'mserver5' not in env['exe']:
-        reason = f"as {env['MSERVER'].split(None, 1)[0]} is not available."
         elem = SkipTest(env, TST, EXT, reason, length, TSTDIR, TSTTRGDIR, TSTSRCDIR)
     elif MissingMods:
         reason = f"as modules '{MissingMods}` are missing."
@@ -2072,10 +2034,9 @@ def RunTest(env, TST, COND, oktests, length, pSrvr, total_tests, options, enviro
         reason = 'test with timeout'
         elem = SkipTest(env, TST, EXT, reason, length, TSTDIR, TSTTRGDIR, TSTSRCDIR)
     else:
-        test = re.compile('^'+TST+r'((_[sp][0-9][0-9])?\..*)?$', re.MULTILINE)
         srcdir = os.path.join(TSTTRGDIR, RELSRCDIR)
         for f in listdir(srcdir):
-            if test.match(f):
+            if f.startswith(TST+'.'):
                 try:
                     SymlinkOrCopy(os.path.join(RELSRCDIR, f), f, TSTTRGDIR)
                     links.append(os.path.join(TSTTRGDIR, f))
@@ -2093,41 +2054,29 @@ def RunTest(env, TST, COND, oktests, length, pSrvr, total_tests, options, enviro
         myenv['TSTSRCDIR'] = TSTSRCDIR
         myenv['RELSRCDIR'] = RELSRCDIR
         myenv['TSTTRGDIR'] = TSTTRGDIR
-        if os.path.isfile(os.path.join(TSTTRGDIR, TST+EXT+'.src')) and not os.path.isfile(os.path.join(TSTTRGDIR, TST+EXT)):
-            with openutf8(os.path.join(TSTTRGDIR, TST+EXT+'.src'),'r') as f:
-                TSTSRC = expandvars(path(f.readline().strip()), myenv)
-            if os.path.isfile(os.path.join(TSTTRGDIR, TSTSRC)):
-                try:
-                    SymlinkOrCopy(TSTSRC, TST + EXT, TSTTRGDIR)
-                    links.append(TST + EXT)
-                except IOError as err:
-                    ErrMsg("SymlinkOrCopy('%s','%s') in '%s' failed with #%d: '%s'."
-                           % (TSTSRC, TST + EXT, TSTTRGDIR, err.errno, err.strerror))
-            else:
-                reason = "as source file '%s` is missing." % TSTSRC
-                elem = SkipTest(env, TST, EXT+'.src', reason, length, TSTDIR, TSTTRGDIR, TSTSRCDIR)
-                return TX,Failed,Failed,elem,reason,links
-        test = re.compile('^'+TST+r'((_[sp][0-9][0-9])?\..*)?\.src$', re.MULTILINE)
         for ff in listdir(TSTTRGDIR):
-            if test.match(ff) and not os.path.isfile(os.path.join(TSTTRGDIR, ff[:-4])):
-                with openutf8(os.path.join(TSTTRGDIR, ff),'r') as f:
-                    TSTSRC = expandvars(path(f.readline().strip()), myenv)
-                if os.path.isfile(os.path.join(TSTTRGDIR, TSTSRC)):
-                    try:
-                        SymlinkOrCopy(TSTSRC, ff[:-4], TSTTRGDIR)
-                        links.append(ff[:-4])
-                    except IOError as err:
-                        ErrMsg("SymlinkOrCopy('%s','%s') in '%s' failed with #%d: '%s'."
-                               % (TSTSRC, ff[:-4], TSTTRGDIR, err.errno, err.strerror))
-                else:
-                    Warn("source file '"+TSTSRC+"` is missing.")
-        test = re.compile('^'+TST+r'(_[sp][0-9][0-9])?\..*\.in$', re.MULTILINE)
-        for ff in listdir(TSTTRGDIR):
-            fff = ff[:-3]
-            if test.match(ff) and not os.path.isfile(os.path.join(TSTTRGDIR, fff)) and not ff.endswith('.test.in'):
-                with openutf8(os.path.join(TSTTRGDIR, fff),'w') as f:
-                    for l in openutf8(os.path.join(TSTTRGDIR, ff)):
-                        f.write(expandvars(l, myenv))
+            if ff.startswith(TST+'.'):
+                if ff.endswith('.src') and not os.path.isfile(os.path.join(TSTTRGDIR, ff[:-4])):
+                    with openutf8(os.path.join(TSTTRGDIR, ff),'r') as f:
+                        TSTSRC = expandvars(path(f.readline().strip()), myenv)
+                    if os.path.isfile(os.path.join(TSTTRGDIR, TSTSRC)):
+                        try:
+                            SymlinkOrCopy(TSTSRC, ff[:-4], TSTTRGDIR)
+                            links.append(ff[:-4])
+                        except IOError as err:
+                            ErrMsg("SymlinkOrCopy('%s','%s') in '%s' failed with #%d: '%s'."
+                                   % (TSTSRC, ff[:-4], TSTTRGDIR, err.errno, err.strerror))
+                    elif ff == TST+EXT+'.src':
+                        reason = "as source file '%s` is missing." % TSTSRC
+                        elem = SkipTest(env, TST, EXT+'.src', reason, length, TSTDIR, TSTTRGDIR, TSTSRCDIR)
+                        return TX,Failed,Failed,elem,reason,links
+                    else:
+                        Warn("source file '"+TSTSRC+"` is missing.")
+                elif ff.endswith('.in') and not ff.endswith('.test.in') and not os.path.isfile(os.path.join(TSTTRGDIR, ff[:-3])):
+                    with openutf8(os.path.join(TSTTRGDIR, ff[:-3]),'w') as f, \
+                         openutf8(os.path.join(TSTTRGDIR, ff)) as fil:
+                        for l in fil:
+                            f.write(expandvars(l, myenv))
 
         if odbc:
             with openutf8(os.path.join(TSTTRGDIR, 'odbcinst.ini'), 'w') as f:
@@ -2167,24 +2116,26 @@ Password = {passwd or "monetdb"}-Wrong
         STABLEout,STABLEerr = StableOutErr(env,par,TST,SYST,RELEASE,DIST,VERSION,TSTTRGDIR)
         TIMEOUT = par['TIMEOUT']
         if os.path.isfile(os.path.join(TSTTRGDIR, TST+'.timeout')):
-            for f in openutf8(os.path.join(TSTTRGDIR, TST+'.timeout')):
-                TOf = float(f.strip())
-                if TOf > 0:
-                    TIMEOUT = int(TIMEOUT * TOf)
-                if TIMEOUT < 1 and par['TIMEOUT'] > 0:
-                    TIMEOUT = 1
+            with openutf8(os.path.join(TSTTRGDIR, TST+'.timeout')) as fil:
+                for f in fil:
+                    TOf = float(f.strip())
+                    if TOf > 0:
+                        TIMEOUT = int(TIMEOUT * TOf)
+                    if TIMEOUT < 1 and par['TIMEOUT'] > 0:
+                        TIMEOUT = 1
 
         ME = ''
 
         TestOutFile = TST+'.test.out'
         TestErrFile = TST+'.test.err'
-        TestOut = openutf8(os.path.join(TSTTRGDIR, TestOutFile),'w')
-        TestErr = openutf8(os.path.join(TSTTRGDIR, TestErrFile),'w')
-        TestOut.close()
-        TestErr.close()
+        openutf8(os.path.join(TSTTRGDIR, TestOutFile), 'w').close()
+        openutf8(os.path.join(TSTTRGDIR, TestErrFile), 'w').close()
 
         t0 = time.time()
-        tres = DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, length, nomito, threads, user, passwd, COND, pSrvr, total_tests, options, TSTDB, TSTDIR, TSTTRGDIR, TSTSRCDIR, environ)
+        tres = DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile,
+                    TIMEOUT, ME, length, nomito, threads, user, passwd, COND,
+                    pSrvr, total_tests, options, TSTDB, TSTDIR, TSTTRGDIR,
+                    TSTSRCDIR, environ)
         t1 = time.time()
         TX = t1 - t0
         if verbosity > 0:
@@ -2273,7 +2224,8 @@ Password = {passwd or "monetdb"}-Wrong
         if REV:
             d = '%s%s/%s' % (URLPREFIX, url(TSTDIR), TSTSUFF)
             if os.path.isfile(os.path.join(TSTTRGDIR, TST + EXT + '.src')):
-                f = openutf8(os.path.join(TSTTRGDIR, TST + EXT + '.src')).readline().strip()
+                with openutf8(os.path.join(TSTTRGDIR, TST + EXT + '.src')) as fil:
+                    f = fil.readline().strip()
                 if f.startswith('$RELSRCDIR/'):
                     f = f[11:]
                     while f.startswith('../'):
@@ -2293,12 +2245,14 @@ Password = {passwd or "monetdb"}-Wrong
                     tst = '%s<a target="_blank" href="https://github.com/MonetDB/MonetDB/issues/%s">%s</a>%s' % (TST[:res.start(0)+1], bugno, res.group(0)[1:], TST[res.end(0):])
                 else:
                     tst = TST
-        out = openutf8(os.path.join(TSTTRGDIR, '%s.test.out' % TST)).read()
+        with openutf8(os.path.join(TSTTRGDIR, '%s.test.out' % TST)) as fil:
+            out = fil.read()
         if out and [x for x in out.splitlines() if not x.startswith('#')]:
             FailedOut = F_ERROR
         else:
             FailedOut = F_OK
-        err = openutf8(os.path.join(TSTTRGDIR, '%s.test.err' % TST)).read()
+        with openutf8(os.path.join(TSTTRGDIR, '%s.test.err' % TST)) as fil:
+            err = fil.read()
         if err and [x for x in err.splitlines() if not x.startswith('#')]:
             if max(sockerr, errcode) in (F_SOCK, F_TIME, F_RECU, F_ABRT, F_SEGV):
                 FailedErr = max(sockerr, errcode)
@@ -2443,7 +2397,7 @@ def getkids():
     return procs
 
 
-def killchildren(pid, procs = None):
+def killchildren(pid, procs=None):
     # not called on Windows
     # kill the specified process ID and all its children
     if procs is None:
@@ -2474,19 +2428,21 @@ def stacktrace(proc, outfile):
     out = ''
     if os.name == 'nt':
         sym = ''
-        if os.path.exists(r'c:\Program Files\Debugging Tools for Windows (x64)\cdb.exe'):
-            cdb = r'c:\Program Files\Debugging Tools for Windows (x64)\cdb.exe'
+        cdb = r'c:\Program Files\Debugging Tools for Windows (x64)\cdb.exe'
+        if os.path.exists(cdb):
             if os.path.exists(r'c:\Symbols'):
                 sym = r'c:\Symbols;'
-        elif os.path.exists(r'c:\Program Files\Debugging Tools for Windows (x86)\cdb.exe'):
-            cdb = r'c:\Program Files\Debugging Tools for Windows (x86)\cdb.exe'
-            if os.path.exists(r'c:\WINDOWS\Symbols'):
-                sym = r'c:\WINDOWS\Symbols;'
         else:
-            cdb = None
-        if cdb:
+            cdb = r'c:\Program Files\Debugging Tools for Windows (x86)\cdb.exe'
+            if os.path.exists(cdb):
+                if os.path.exists(r'c:\WINDOWS\Symbols'):
+                    sym = r'c:\WINDOWS\Symbols;'
+            else:
+                cdb = None
+        if cdb is not None:
             with process.Popen([cdb, '-pv', '-p', str(proc.pid),
-                                '-y', f'{sym}cache*;srv*http://msdl.microsoft.com/download/symbols', '-lines', '-c', '~*kP;!locks;q'],
+                                '-y', f'{sym}cache*;srv*http://msdl.microsoft.com/download/symbols',
+                                '-lines', '-c', '~*kP;!locks;q'],
                                stdout=process.PIPE, text=True) as p:
                 try:
                     out, err = p.communicate(timeout=60)
@@ -2494,7 +2450,9 @@ def stacktrace(proc, outfile):
                     p.kill()
     elif platform.system() == 'Darwin':
         try:
-            with process.Popen(['lldb', '--attach-pid', str(proc.pid), '--batch', '--one-line', 'bt all'], stdout=process.PIPE, text=True) as p:
+            with process.Popen(['lldb', '--attach-pid', str(proc.pid),
+                                '--batch', '--one-line', 'bt all'],
+                               stdout=process.PIPE, text=True) as p:
                 try:
                     out, err = p.communicate(timeout=60)
                 except process.TimeoutExpired:
@@ -2505,18 +2463,17 @@ def stacktrace(proc, outfile):
             pass
     else:
         try:
-            with process.Popen(['gdb', '-p', str(proc.pid), '-batch', '-ex', 'thread apply all bt full'], stdout=process.PIPE,
-                               text=True) as p:
+            with process.Popen(['gdb', '-n', '-p', str(proc.pid),
+                                '-batch', '-ex', 'thread apply all bt full'],
+                               stdout=process.PIPE, text=True) as p:
                 try:
-                    out, err = p.communicate(timeout=60)
+                    out, err = p.communicate(timeout=600)
                 except process.TimeoutExpired:
                     # gdb sometimes hangs when trying to get the stack
                     # trace: kill it mercilessly if it does
                     p.kill()
                     p.wait()
-                    out = err = ''
-            if t is not None:
-                t.cancel()
+                    out = ''
         except KeyboardInterrupt:
             raise
         except:
@@ -2777,6 +2734,8 @@ class ServerClass:
         return self.proc.poll()
 
     def terminate(self):
+        if self.proc.stdin is not None:
+            self.proc.stdin.close()
         if os.name == 'nt':
             self.proc.send_signal(signal.CTRL_BREAK_EVENT)
         else:
@@ -2893,7 +2852,7 @@ class ServerClass:
         cmd = self.cmd
         if procdebug:
             print('LaunchIt: starting process "%s" (inpipe)\n' % '" "'.join(cmd))
-        stdin = open(os.devnull)
+        stdin = process.DEVNULL
         stdout = self.outfile
         stderr = self.errfile
         if self.inmem:
@@ -2906,7 +2865,11 @@ class ServerClass:
                 pass
             if self.dbg:
                 stdin = stdout = stderr = None
-                cmd = splitcommand(self.dbg) + cmd
+                if 'gdb' in self.dbg:
+                    cmd = shlex.split(self.dbg) + ['--args'] + cmd
+                else:
+                    cmd = shlex.split(self.dbg) + cmd
+
         else:
             stdout = process.PIPE
         if os.name == 'nt':
@@ -2928,6 +2891,7 @@ class ServerClass:
 
         port = None
         self.port = None
+        self.usock = None
         if self.pollfile:
             while True:
                 proc.poll()
@@ -2955,9 +2919,15 @@ class ServerClass:
                         proc.wait()
                     return
                 time.sleep(0.1)
-            connurl = open(os.path.join(os.path.split(self.pollfile)[0], '.conn')).read()
-            res = mapiportre.search(connurl)
-            port = res.group('port')
+            with open(os.path.join(os.path.split(self.pollfile)[0], '.conn')) as fil:
+                connurls = fil.readlines()
+            for connurl in connurls:
+                connurl = connurl.strip()
+                res = mapiportre.search(connurl)
+                if res is not None:
+                    port = res.group('port')
+                elif 'monetdb:///' in connurl:
+                    self.usock = connurl
         else:
             loadedseen = False
             endtime = time.time() + 30
@@ -3140,7 +3110,8 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, len
                 elif env.get('TRANS_INMEM'):
                     Srvr.append('--dbextra=in-memory')
                 if os.path.isfile(os.path.join(TSTTRGDIR, TST + '.options5')):
-                    Srvr.extend(openutf8(os.path.join(TSTTRGDIR, TST + '.options5')).read().split())
+                    with openutf8(os.path.join(TSTTRGDIR, TST + '.options5')) as fil:
+                        Srvr.extend(fil.read().split())
                 Srvr.extend(mserver5_opts)
                 Srvr.extend(options)
                 pSrvr = ServerClass(Srvr, SrvrOut, SrvrErr, TIMEOUT, os.path.join(dbpath, '.started'), TSTDB, dbg=env.get('DBG'))
@@ -3171,7 +3142,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, len
                                         password=passwd or 'monetdb',
                                         hostname=HOST,
                                         port=int(pSrvr.port),
-                                        database=TSTDB,
+                                        database=TSTDB if pSrvr.usock is None else pSrvr.usock,
                                         language='sql',
                                         timeout=TIMEOUT,
                                         alltests=CONDITIONALS['KNOWNFAIL'])
@@ -3206,7 +3177,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, len
                                     password=passwd or 'monetdb',
                                     hostname=HOST,
                                     port=int(pSrvr.port),
-                                    database=TSTDB,
+                                    database=TSTDB if pSrvr.usock is None else pSrvr.usock,
                                     language=lang,
                                     timeout=TIMEOUT,
                                     alltests=CONDITIONALS['KNOWNFAIL'])
@@ -3243,6 +3214,8 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, len
                                 defines.append(f'TSTSRCBASE={TSTSRCBASE}')
                                 defines.append(f'TSTDB={TSTDB}')
                                 defines.append(f'MAPIPORT={pSrvr.port}')
+                                if pSrvr.usock is not None:
+                                    defines.append(f'MAPIUSOCK={pSrvr.usock}')
                             try:
                                 sql.parse(os.path.join(TSTTRGDIR, testfile), approve=open(os.path.join(TSTTRGDIR, TST+'.newtest'),'w') if approve else None, defines=defines)
                             except KeyboardInterrupt:
@@ -3285,18 +3258,15 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, len
                 for i in range(len(Clnt)):
                     Clnt[i] = Clnt[i].replace('${PORT}', pSrvr.port)
                 if user:
-                    Clnt.append('-u%s' % user)
+                    Clnt.append(f'-u{user}')
                 if passwd:
-                    Clnt.append('-P%s' % passwd)
+                    Clnt.append(f'-P{passwd}')
+                if pSrvr.usock:
+                    Clnt.append(f'-d{pSrvr.usock}')
                 for f in TSTs:
                     returncode = RunIt(Clnt, True, openutf8(os.path.join(TSTTRGDIR, f)), ClntOut, ClntErr, TIMEOUT, pSrvr, TSTTRGDIR, environ)
                     if returncode:
                         break
-            elif CALL == 'R':
-                Clnt = exe['R_Client'].copy()
-                for i in range(len(Clnt)):
-                    Clnt[i] = Clnt[i].replace('${PORT}', pSrvr.port)
-                RunIt(Clnt, False, openutf8(os.path.join(TSTTRGDIR, TST+EXT)), ClntOut, ClntErr, TIMEOUT, pSrvr, TSTTRGDIR, environ)
             elif CALL == 'ruby':
                 Clnt = exe['ruby_client'].copy()
                 for i in range(len(Clnt)):
@@ -3392,9 +3362,10 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, len
         # FIXME: this begs for a much nicer solution (100% copy of below)
         for f in (TestErrFile, TestOutFile):
             if os.path.isfile(os.path.join(TSTTRGDIR, f)):
-                for l in openutf8(os.path.join(TSTTRGDIR, f)):
-                    if TO.search(l):
-                        return msg
+                with openutf8(os.path.join(TSTTRGDIR, f)) as fil:
+                    for l in fil:
+                        if TO.search(l):
+                            return msg
 
     return None
 
@@ -3458,10 +3429,6 @@ def CheckClassPath():
 
 
 def SetExecEnv(exe,port,verbose,environ):
-    if os.name == 'nt':
-        CALL = 'call '
-    else:
-        CALL = ''
     if verbose:
         print(file=sys.stderr, end='', flush=True)
     for v in exe.keys():
@@ -3469,7 +3436,7 @@ def SetExecEnv(exe,port,verbose,environ):
             V = 'MSERVER'
         else:
             V = v.upper()
-        environ[V] = CALL + ' '.join(exe[v]).replace('${PORT}', port)
+        environ[V] = ' '.join(exe[v]).replace('${PORT}', port)
         if verbose:
             print('%s = %s' % (V, environ[V]))
     if verbose:
@@ -3500,7 +3467,7 @@ def StartTlsTester():
     hostnames = ['localhost']
     certs = tlstester.Certs(hostnames)
     server = tlstester.TLSTester(
-        certs = certs,
+        certs=certs,
         listen_addr='localhost',
         preassigned={},
         sequential=False,
@@ -3575,7 +3542,8 @@ if SYST == 'Linux':
     #  Please keep this aligned / in sync with configure.ag !
     LINUX_DIST=''
     if os.path.isfile('/etc/os-release'):
-        l = open('/etc/os-release').read()
+        with open('/etc/os-release') as fil:
+            l = fil.read()
         x0 = re.search('^NAME=[\'"]?([^\'"\n]*)[\'"]?$', l, re.MULTILINE)
         if x0:
             x0 = x0.group(1)
@@ -3584,22 +3552,26 @@ if SYST == 'Linux':
             x1 = x1.group(1)
         LINUX_DIST = '%s:%s' % (x0 or 'Linux', x1 or '')
     elif os.path.isfile('/etc/fedora-release'):
-        l = open('/etc/fedora-release').readline()
+        with open('/etc/fedora-release') as fil:
+            l = fil.readline()
         x = re.match('^.*(Fedora).* release ([0-9][^ \n]*)( .*)*$', l)
         if x:
             LINUX_DIST = '%s:%s' % (x.group(1),x.group(2))
     elif os.path.isfile('/etc/centos-release'):
-        l = open('/etc/centos-release').readline()
+        with open('/etc/centos-release') as fil:
+            l = fil.readline()
         x = re.match('^(CentOS).* release ([0-9][^ \n]*)( .*)*$', l)
         if x:
             LINUX_DIST = '%s:%s' % (x.group(1),x.group(2))
     elif os.path.isfile('/etc/yellowdog-release'):
-        l = open('/etc/yellowdog-release').readline()
+        with open('/etc/yellowdog-release') as fil:
+            l = fil.readline()
         x = re.match('^(Yellow) Dog Linux release ([0-9][^ \n]*)( .*)*$', l)
         if x:
             LINUX_DIST = '%s:%s' % (x.group(1),x.group(2))
     elif os.path.isfile('/etc/redhat-release'):
-        l = open('/etc/redhat-release').readline()
+        with open('/etc/redhat-release') as fil:
+            l = fil.readline()
         x0 = re.match('^.*(Red) (Hat).* Linux *([A-Z]*) release ([0-9][^ \n]*)( .*)*$', l)
         x1 = re.match('^Red Hat Enterprise Linux ([AW]S) release ([0-9][^ \n]*)( .*)*$', l)
         x2 = re.match('^(CentOS).* release ([0-9][^ \n]*)( .*)*$', l)
@@ -3613,7 +3585,8 @@ if SYST == 'Linux':
         elif x3:
             LINUX_DIST = '%s:%s' % (x3.group(1),x3.group(2))
     elif os.path.isfile('/etc/SuSE-release'):
-        l = open('/etc/SuSE-release').readline()
+        with open('/etc/SuSE-release') as fil:
+            l = fil.readline()
         x0 = re.match('^.*(S[Uu]SE) LINUX Enterprise ([SD])[ervsktop]* ([0-9][^ \n]*)( .*)*$', l)
         x1 = re.match('^S[Uu]SE LINUX Enterprise ([SD])[ervsktop]* ([0-9][^ \n]*)( .*)*$', l)
         x2 = re.match('^.*(S[Uu]SE) [Ll][Ii][Nn][Uu][Xx].* ([0-9][^ \n]*)( .*)*$', l)
@@ -3627,26 +3600,30 @@ if SYST == 'Linux':
         elif x3:
             LINUX_DIST = '%s:%s' % (x3.group(1),x3.group(2))
     elif os.path.isfile('/etc/gentoo-release'):
-        l = open('/etc/gentoo-release').readline()
+        with open('/etc/gentoo-release') as fil:
+            l = fil.readline()
         x = re.match('^.*(Gentoo) Base System.* [versionrelease]* ([0-9][^ \n]*)( .*)*$', l)
         if x:
             LINUX_DIST = '%s:%s' % (x.group(1),x.group(2))
     elif os.path.isfile('/etc/lsb-release'):
         x0 = x1 = None
-        for l in open('/etc/lsb-release'):
-            if not x0:
-                x0 = re.match('^DISTRIB_ID=([^ \n]*)( .*)*$', l)
-            if not x1:
-                x1 = re.match('^DISTRIB_RELEASE=([^ \n]*)( .*)*$', l)
+        with open('/etc/lsb-release') as fil:
+            for l in fil:
+                if not x0:
+                    x0 = re.match('^DISTRIB_ID=([^ \n]*)( .*)*$', l)
+                if not x1:
+                    x1 = re.match('^DISTRIB_RELEASE=([^ \n]*)( .*)*$', l)
         if x0 and x1:
             LINUX_DIST = '%s:%s' % (x0.group(1),x1.group(1))
     elif os.path.isfile('/etc/debian_version'):
-        LINUX_DIST = 'Debian:'+open('/etc/debian_version').readline().strip()
+        with open('/etc/debian_version') as fil:
+            LINUX_DIST = 'Debian:'+fil.readline().strip()
     if not LINUX_DIST:
         LINUX_DIST = SYST+':'+re.match(r'^([0-9.]*)([^0-9.].*)$', RELEASE).group(1)
     DIST,VERSION = LINUX_DIST.split(':', 1)
 elif SYST == 'SunOS' and os.path.isfile('/etc/release'):
-    (DIST,VERSION,rest) = open('/etc/release').readline().strip().split(' ',2)
+    with open('/etc/release') as fil:
+        (DIST,VERSION,rest) = fil.readline().strip().split(' ',2)
 else:
     DIST = SYST
     VERSION = RELEASE
@@ -3686,7 +3663,7 @@ class OrAction(argparse.Action):
 def main(argv):
     global global_timeout
 
-    VARS = ['TSTSRCBASE', 'TSTTRGBASE', 'MALCLIENT', 'SQLCLIENT', 'SQLDUMP', 'RCLIENT']    #, 'MONETDB_MOD_PATH' ]
+    VARS = ['TSTSRCBASE', 'TSTTRGBASE', 'MALCLIENT', 'SQLCLIENT', 'SQLDUMP']    #, 'MONETDB_MOD_PATH' ]
 
     env = {}
 
@@ -3720,7 +3697,6 @@ def main(argv):
             if res is not None:
                 rdir = os.path.expanduser(res.group('dir'))
                 os.makedirs(rdir, exist_ok=True)
-    dft['RCLIENT'] = f"'R --vanilla {r_noecho}'"
 
     CONDITIONALS['HAVE_SQLITE3ODBC'] = os.path.exists('/usr/lib64/libsqlite3odbc.so')
 
@@ -3750,7 +3726,6 @@ def main(argv):
     parser.add_argument('--MALCLIENT', action='store', dest='MALCLIENT', metavar='<mal-client program>', help='default: %s' % dft['MALCLIENT'])
     parser.add_argument('--SQLCLIENT', action='store', dest='SQLCLIENT', metavar='<sql-client program>', help='default: %s' % dft['SQLCLIENT'])
     parser.add_argument('--SQLDUMP', action='store', dest='SQLDUMP', metavar='<sql-dump program>', help='default: %s' % dft['SQLDUMP'])
-    parser.add_argument('--RCLIENT', action='store', dest='RCLIENT', metavar='<R program>', help='default: %s' % dft['RCLIENT'])
     parser.add_argument('--dbg', action='store', dest='dbg', metavar='<debugger/valgrind>', help='debugger to start before each server')
     parser.add_argument('--mserver_set', action='append', dest='mserver_set', metavar='<mserver5_option>', help='This passes a single set to the server')
     parser.add_argument('--loadmodule', action='append', dest='loadmodule', metavar='<module_name>', help='Pass on loadmodule to mserver5')
@@ -4164,19 +4139,19 @@ def main(argv):
 
         exe = {}
         if CheckExec('mserver5'):
-            exe['mserver5'] = ['mserver5', f'--debug={env["GDK_DEBUG"]}', '--debug=256', '--set', f'gdk_nr_threads={env["GDK_NR_THREADS"]}'] + splitcommand(env['setMONETDB_MOD_PATH']) + ['--set', 'mapi_listenaddr=all', '--set', 'mapi_port=0'] + splitcommand(SOCK)
+            exe['mserver5'] = ['mserver5', f'--debug={env["GDK_DEBUG"]}', '--debug=256', '--set', f'gdk_nr_threads={env["GDK_NR_THREADS"]}'] + shlex.split(env['setMONETDB_MOD_PATH']) + ['--set', 'mapi_listenaddr=all', '--set', 'mapi_port=0'] + shlex.split(SOCK)
             if not nomito:
                 exe['mserver5'].append('--forcemito')
+        else:
+            ErrXit('cannot find mserver5 executable')
         if CheckExec('ruby'):
             exe['ruby_client'] = ['ruby', '${PORT}']
         if CheckExec(env['MALCLIENT'].split(None, 1)[0]):
-            exe['MAL_Client'] = splitcommand(env['MALCLIENT']) + [f'--host={HOST}', '--port=${PORT}']
+            exe['MAL_Client'] = shlex.split(env['MALCLIENT']) + [f'--host={HOST}', '--port=${PORT}']
         if CheckExec(env['SQLCLIENT'].split(None, 1)[0]):
-            exe['SQL_Client'] = splitcommand(env['SQLCLIENT']) + ['-i', '-e', f'--host={HOST}', '--port=${PORT}']
+            exe['SQL_Client'] = shlex.split(env['SQLCLIENT']) + ['-i', '-e', f'--host={HOST}', '--port=${PORT}']
         if CheckExec(env['SQLDUMP'].split(None, 1)[0]):
-            exe['SQL_Dump'] = splitcommand(env['SQLDUMP']) + [f'--host={HOST}', '--port=${PORT}']
-        if CheckExec(env['RCLIENT'].split(None, 1)[0]):
-            exe['R_Client'] = splitcommand(env['RCLIENT']) + ['--args', '${PORT}']
+            exe['SQL_Dump'] = shlex.split(env['SQLDUMP']) + [f'--host={HOST}', '--port=${PORT}']
         env['exe'] = exe
 
         # parse commandline arguments
@@ -4192,8 +4167,7 @@ def main(argv):
                     ErrXit('%s: not a valid test name' % args[0])
                 args = [head]
                 if tail != 'All':
-                    for ext in ('.test', '.maltest', '.SQL.py',
-                                '.sql', '.py', '.R', '.rb', ''):
+                    for ext in [x[0] for x in tests] + ['']:
                         # extensions .in and .src are never combined
                         if tail.endswith(ext + '.in'):
                             args.append(tail[:-len(ext + '.in')])
@@ -4273,14 +4247,15 @@ def main(argv):
                 i = 0
                 while i < len(testlist):
                     if os.path.exists(os.path.join(testdirs[0], 'Tests', testlist[i] + '.reqtests')):
-                        for t in openutf8(os.path.join(testdirs[0], 'Tests', testlist[i] + '.reqtests')):
-                            t = t[:-1] # remove newline
-                            if t not in testlist[:i]:
-                                testlist.insert(i, t)
-                                i = i + 1
-                                added = True
-                            #elif t in testlist:
-                                # WARNING: tests in wrong order
+                        with openutf8(os.path.join(testdirs[0], 'Tests', testlist[i] + '.reqtests')) as fil:
+                            for t in fil:
+                                t = t[:-1] # remove newline
+                                if t not in testlist[:i]:
+                                    testlist.insert(i, t)
+                                    i = i + 1
+                                    added = True
+                                #elif t in testlist:
+                                    # WARNING: tests in wrong order
                     i = i + 1
             test_count = len(testlist)
 
@@ -4361,12 +4336,12 @@ def main(argv):
                     tsts = 'all tests'
                 if verbosity > 1:
                     print('\nRunning %s in directory %s.\n' % (tsts , testdirs[0]))
-                elem, diff, interrupted = PerformDir(env, testdirs[0], testlist, test_count)
+                tdir, elem, diff, interrupted = PerformDir(env, testdirs[0], testlist, test_count)
                 if elem is not None:
                     if diff <= F_OK:
-                        body_good.append(elem)
+                        body_good.append((tdir, elem))
                     else:
-                        body_bad.append(elem)
+                        body_bad.append((tdir, elem))
                 if not errseen and diff > F_WARN:
                     errseen = True
             else:
@@ -4393,14 +4368,14 @@ def main(argv):
                         if tp is not None:
                             future = d
                             d = futures[future]
-                            elem, diff, interrupted = future.result()
+                            tdir, elem, diff, interrupted = future.result()
                         else:
-                            elem, diff, interrupted = PerformDir(env, d, [], test_count)
+                            tdir, elem, diff, interrupted = PerformDir(env, d, [], test_count)
                         if elem is not None:
                             if diff <= F_OK:
-                                body_good.append(elem)
+                                body_good.append((tdir, elem))
                             else:
-                                body_bad.append(elem)
+                                body_bad.append((tdir, elem))
                         if not errseen and diff > F_WARN:
                             errseen = True
                         if interrupted:
@@ -4413,7 +4388,7 @@ def main(argv):
                                 # after a directory has been tested, create
                                 # the index file so that we can look at test
                                 # results while the tests are running
-                                body = body_bad + body_good
+                                body = [elem for (tdir, elem) in sorted(body_bad)] + [elem for (tdir, elem) in sorted(body_good)]
                                 CreateHtmlIndex(env, '', os.path.join(TSTTRGBASE, TSTPREF), F_SKIP, F_SKIP, *body)
                 except KeyboardInterrupt:
                     if tp is not None:
@@ -4430,7 +4405,7 @@ def main(argv):
             # if we get interrupted between directories, we still want output
             pass
         t_ = time.time() - t0
-        body = body_bad + body_good
+        body = [elem for (tdir, elem) in sorted(body_bad)] + [elem for (tdir, elem) in sorted(body_good)]
 
         if not os.path.exists(os.path.join(TSTTRGBASE, TSTPREF)):
             os.mkdir(os.path.join(TSTTRGBASE, TSTPREF))

@@ -53,9 +53,9 @@ open_urlstream(const char *url, char *errbuf)
 	if ((ret = curl_easy_setopt(handle, CURLOPT_ERRORBUFFER, errbuf)) != CURLE_OK ||
 	    (ret = curl_easy_setopt(handle, CURLOPT_URL, url)) != CURLE_OK ||
 	    (ret = curl_easy_setopt(handle, CURLOPT_WRITEDATA, s)) != CURLE_OK ||
-	    (ret = curl_easy_setopt(handle, CURLOPT_VERBOSE, (long)0)) != CURLE_OK ||
-	    (ret = curl_easy_setopt(handle, CURLOPT_NOSIGNAL, (long)1)) != CURLE_OK ||
-	    (ret = curl_easy_setopt(handle, CURLOPT_FAILONERROR, (long)1)) != CURLE_OK ||
+	    (ret = curl_easy_setopt(handle, CURLOPT_VERBOSE, 0L)) != CURLE_OK ||
+	    (ret = curl_easy_setopt(handle, CURLOPT_NOSIGNAL, 1L)) != CURLE_OK ||
+	    (ret = curl_easy_setopt(handle, CURLOPT_FAILONERROR, 1L)) != CURLE_OK ||
 	    (ret = curl_easy_setopt(handle, CURLOPT_WRITEFUNCTION, write_callback)) != CURLE_OK ||
 	    (ret = curl_easy_perform(handle)) != CURLE_OK) {
 		curl_easy_cleanup(handle);

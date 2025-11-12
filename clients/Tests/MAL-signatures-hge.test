@@ -1044,6 +1044,36 @@ command aggr.quantile_avg(X_0:bat[:any_1], X_1:dbl):dbl
 AGGRquantile_avg_cst
 Quantile aggregate
 aggr
+ripemd160
+command aggr.ripemd160(X_0:bat[:str]):str
+AGGRripemd160
+Ungrouped RIPEMD160
+aggr
+sha1
+command aggr.sha1(X_0:bat[:str]):str
+AGGRsha1
+Ungrouped SHA1
+aggr
+sha224
+command aggr.sha224(X_0:bat[:str]):str
+AGGRsha224
+Ungrouped SHA224
+aggr
+sha256
+command aggr.sha256(X_0:bat[:str]):str
+AGGRsha256
+Ungrouped SHA256
+aggr
+sha384
+command aggr.sha384(X_0:bat[:str]):str
+AGGRsha384
+Ungrouped SHA384
+aggr
+sha512
+command aggr.sha512(X_0:bat[:str]):str
+AGGRsha512
+Ungrouped SHA512
+aggr
 stdev
 command aggr.stdev(X_0:bat[:bte], X_1:bat[:oid], X_2:bat[:any_1]):bat[:dbl]
 AGGRstdev3_dbl
@@ -1125,54 +1155,14 @@ ALGstdevp
 Gives the standard deviation of all tail values
 aggr
 str_group_concat
-command aggr.str_group_concat(X_0:bat[:str], X_1:bat[:oid], X_2:bat[:any_1]):bat[:str]
+command aggr.str_group_concat(X_0:bat[:str]):str
 AGGRstr_group_concat
-Grouped string tail concat
+Ungrouped string tail concat
 aggr
 str_group_concat
-command aggr.str_group_concat(X_0:bat[:str], X_1:bat[:str], X_2:bat[:oid], X_3:bat[:any_1]):bat[:str]
+command aggr.str_group_concat(X_0:bat[:str], X_1:bat[:str]):str
 AGGRstr_group_concat_sep
-Grouped string tail concat with custom separator
-aggr
-str_group_concat
-pattern aggr.str_group_concat(X_0:bat[:str]):str
-CMDBATstr_group_concat
-Calculate aggregate string concatenate of B.
-aggr
-str_group_concat
-pattern aggr.str_group_concat(X_0:bat[:str], X_1:bat[:oid]):str
-CMDBATstr_group_concat
-Calculate aggregate string concatenate of B with candidate list.
-aggr
-str_group_concat
-pattern aggr.str_group_concat(X_0:bat[:str], X_1:bat[:oid], X_2:bit):str
-CMDBATstr_group_concat
-Calculate aggregate string concatenate of B with candidate list.
-aggr
-str_group_concat
-pattern aggr.str_group_concat(X_0:bat[:str], X_1:bat[:str]):str
-CMDBATstr_group_concat
-Calculate aggregate string concatenate of B with separator SEP.
-aggr
-str_group_concat
-pattern aggr.str_group_concat(X_0:bat[:str], X_1:bat[:str], X_2:bat[:oid]):str
-CMDBATstr_group_concat
-Calculate aggregate string concatenate of B with candidate list and separator SEP.
-aggr
-str_group_concat
-pattern aggr.str_group_concat(X_0:bat[:str], X_1:bat[:str], X_2:bat[:oid], X_3:bit):str
-CMDBATstr_group_concat
-Calculate aggregate string concatenate of B with candidate list and separator SEP.
-aggr
-str_group_concat
-pattern aggr.str_group_concat(X_0:bat[:str], X_1:bat[:str], X_2:bit):str
-CMDBATstr_group_concat
-Calculate aggregate string concatenate of B with separator SEP.
-aggr
-str_group_concat
-pattern aggr.str_group_concat(X_0:bat[:str], X_1:bit):str
-CMDBATstr_group_concat
-Calculate aggregate string concatenate of B.
+Ungrouped string tail concat with custom separator
 aggr
 subCollect
 command aggr.subCollect(X_0:bat[:wkb], X_1:bat[:oid], X_2:bat[:oid], X_3:bit):bat[:wkb]
@@ -2074,6 +2064,36 @@ command aggr.subquantile_avg(X_0:bat[:any_1], X_1:bat[:dbl], X_2:bat[:oid], X_3:
 AGGRsubquantilecand_avg
 Grouped quantile aggregate with candidate list
 aggr
+subripemd160
+command aggr.subripemd160(X_0:bat[:str], X_1:bat[:oid], X_2:bat[:any_1], X_3:bit):bat[:str]
+AGGRripemd160grouped
+Grouped RIPEMD160
+aggr
+subsha1
+command aggr.subsha1(X_0:bat[:str], X_1:bat[:oid], X_2:bat[:any_1], X_3:bit):bat[:str]
+AGGRsha1grouped
+Grouped SHA1
+aggr
+subsha224
+command aggr.subsha224(X_0:bat[:str], X_1:bat[:oid], X_2:bat[:any_1], X_3:bit):bat[:str]
+AGGRsha224grouped
+Grouped SHA224
+aggr
+subsha256
+command aggr.subsha256(X_0:bat[:str], X_1:bat[:oid], X_2:bat[:any_1], X_3:bit):bat[:str]
+AGGRsha256grouped
+Grouped SHA256
+aggr
+subsha384
+command aggr.subsha384(X_0:bat[:str], X_1:bat[:oid], X_2:bat[:any_1], X_3:bit):bat[:str]
+AGGRsha384grouped
+Grouped SHA384
+aggr
+subsha512
+command aggr.subsha512(X_0:bat[:str], X_1:bat[:oid], X_2:bat[:any_1], X_3:bit):bat[:str]
+AGGRsha512grouped
+Grouped SHA512
+aggr
 substdev
 command aggr.substdev(X_0:bat[:bte], X_1:bat[:oid], X_2:bat[:any_1], X_3:bit):bat[:dbl]
 AGGRsubstdev_dbl
@@ -2223,16 +2243,6 @@ substr_group_concat
 command aggr.substr_group_concat(X_0:bat[:str], X_1:bat[:str], X_2:bat[:oid], X_3:bat[:any_1], X_4:bit):bat[:str]
 AGGRsubstr_group_concat_sep
 Grouped string concat with custom separator
-aggr
-substr_group_concat
-command aggr.substr_group_concat(X_0:bat[:str], X_1:bat[:oid], X_2:bat[:any_1], X_3:bat[:oid], X_4:bit):bat[:str]
-AGGRsubstr_group_concatcand
-Grouped string concat with candidates list
-aggr
-substr_group_concat
-command aggr.substr_group_concat(X_0:bat[:str], X_1:bat[:str], X_2:bat[:oid], X_3:bat[:any_1], X_4:bat[:oid], X_5:bit):bat[:str]
-AGGRsubstr_group_concatcand_sep
-Grouped string concat with candidates list with custom separator
 aggr
 subsum
 command aggr.subsum(X_0:bat[:bte], X_1:bat[:oid], X_2:bat[:any_1], X_3:bit):bat[:bte]
@@ -50148,6 +50158,16 @@ importColumn
 pattern sql.importColumn(X_0:str, X_1:int, X_2:bit, X_3:str, X_4:int, X_5:oid) (X_6:bat[:any], X_7:oid)
 mvc_bin_import_column_wrap
 Import a column from the given file
+sql
+importNulTerminated
+pattern sql.importNulTerminated(X_0:str, X_1:int, X_2:bat[:bte], X_3:oid) (X_4:bat[:any], X_5:oid)
+mvc_bin_import_nul_terminated_wrap
+Import a column from the bytes in the given bat
+sql
+importRaw
+pattern sql.importRaw(X_0:str, X_1:int, X_2:oid) (X_3:bat[:any], X_4:oid)
+mvc_bin_import_bytes_wrap
+Import the raw bytes from the given file
 sql
 include
 unsafe pattern sql.include(X_0:str):void

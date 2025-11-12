@@ -57,30 +57,30 @@ typedef struct {
 
 // Loop through the first BAT
 // keep the last error message received
-#define MALfcn1 (str (*) (void *, void *))
-#define MALfcn2 (str (*) (void *, void *, void *))
-#define MALfcn3 (str (*) (void *, void *, void *, void *))
-#define MALfcn4 (str (*) (void *, void *, void *, void *, void *))
-#define MALfcn5 (str (*) (void *, void *, void *, void *, void *, void *))
-#define MALfcn1ptr (str (*) (void **, void *))
-#define MALfcn2ptr (str (*) (void **, void *, void *))
-#define MALfcn3ptr (str (*) (void **, void *, void *, void *))
-#define MALfcn4ptr (str (*) (void **, void *, void *, void *, void *))
-#define MALfcn5ptr (str (*) (void **, void *, void *, void *, void *, void *))
+#define MALfcn1 (str (*) (Client, void *, void *))
+#define MALfcn2 (str (*) (Client, void *, void *, void *))
+#define MALfcn3 (str (*) (Client, void *, void *, void *, void *))
+#define MALfcn4 (str (*) (Client, void *, void *, void *, void *, void *))
+#define MALfcn5 (str (*) (Client, void *, void *, void *, void *, void *, void *))
+#define MALfcn1ptr (str (*) (Client, void **, void *))
+#define MALfcn2ptr (str (*) (Client, void **, void *, void *))
+#define MALfcn3ptr (str (*) (Client, void **, void *, void *, void *))
+#define MALfcn4ptr (str (*) (Client, void **, void *, void *, void *, void *))
+#define MALfcn5ptr (str (*) (Client, void **, void *, void *, void *, void *, void *))
 
-#define Manifoldbody(N, ...)											\
+#define Manifoldbody(N,...)												\
 	do {																\
 		if (ATOMextern(mut->args[0].b->ttype)) {						\
 			for (;;) {													\
 				void *v = NULL;											\
-				msg = (*(MALfcn##N##ptr mut->pci->fcn))(&v, __VA_ARGS__); \
+				msg = (*(MALfcn##N##ptr mut->pci->fcn))(mut->cntxt, &v, __VA_ARGS__); \
 				if (msg)												\
 					goto bunins_failed;									\
 				if (bunfastapp(mut->args[0].b, v) != GDK_SUCCEED) {		\
-					GDKfree(v);											\
+					/*GDKfree(v);*/											\
 					goto bunins_failed;									\
 				}														\
-				GDKfree(v);												\
+				/*GDKfree(v);*/											\
 				if (++oo == olimit)										\
 					break;												\
 				for (i = mut->fvar; i <= mut->lvar; i++) {				\
@@ -106,7 +106,7 @@ typedef struct {
 			void *v = mut->args[0].first;								\
 			size_t w = mut->args[0].b->twidth;							\
 			for (;;) {													\
-				msg = (*(MALfcn##N mut->pci->fcn))(v, __VA_ARGS__);		\
+				msg = (*(MALfcn##N mut->pci->fcn))(mut->cntxt, v, __VA_ARGS__);		\
 				if (msg)												\
 					goto bunins_failed;									\
 				if (++oo == olimit)										\
@@ -117,7 +117,7 @@ typedef struct {
 						mut->args[i].o++;								\
 					} else if(mut->args[i].size == 0) {					\
 						;												\
-					} else if (ATOMstorage(mut->args[i].type) < TYPE_str) {	\
+					} else if (ATOMstorage(mut->args[i].type) < TYPE_str) { \
 						args[i] += mut->args[i].size;					\
 					} else if (ATOMvarsized(mut->args[i].type)) {		\
 						mut->args[i].o++;								\
@@ -138,17 +138,18 @@ typedef struct {
 // Only the last error message is returned, the value of
 // an erroneous call depends on the operator itself.
 static str
-MANIFOLDjob(MULTItask *mut)
+MANIFOLDjob(allocator *ma, MULTItask *mut)
 {
 	int i;
 	char **args;
+	//str y = NULL;
 	str msg = MAL_SUCCEED;
 	oid oo = 0, olimit = mut->args[mut->fvar].cnt;
 
 	if (olimit == 0)
 		return msg;				/* nothing to do */
 
-	args = (char **) GDKzalloc(sizeof(char *) * mut->pci->argc);
+	args = (char **) ma_zalloc(ma, sizeof(char *) * mut->pci->argc);
 	if (args == NULL)
 		throw(MAL, "mal.manifold", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
@@ -191,8 +192,10 @@ MANIFOLDjob(MULTItask *mut)
 	default:
 		msg = createException(MAL, "mal.manifold", "manifold call limitation ");
 	}
+	//if (ATOMextern(mut->args[0].type) && y)
+	//	GDKfree(y);
   bunins_failed:
-	GDKfree(args);
+	//GDKfree(args);
 	return msg;
 }
 
@@ -241,7 +244,7 @@ MANIFOLDtypecheck(Client cntxt, MalBlkPtr mb, InstrPtr pci, int checkprops)
 		tpe = getBatType(getArgType(mb, pci, i));
 		k = newTmpVariable(nmb, tpe);
 		if (k < 0) {
-			freeInstruction(q);
+			freeInstruction(nmb, q);
 			goto bailout;
 		}
 		q = pushArgument(nmb, q, k);
@@ -302,7 +305,7 @@ MANIFOLDevaluate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "mal.manifold", "Illegal manifold function call");
 	}
 
-	mat = (MULTIarg *) GDKzalloc(sizeof(MULTIarg) * pci->argc);
+	mat = (MULTIarg *) ma_zalloc(mb->ma, sizeof(MULTIarg) * pci->argc);
 	if (mat == NULL)
 		throw(MAL, "mal.manifold", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
@@ -374,15 +377,17 @@ MANIFOLDevaluate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	mat[0].first = (void *) Tloc(mat[0].b, 0);
 	mat[0].last = (void *) Tloc(mat[0].b, BATcount(mat[0].b));
 
-	mut.pci = copyInstruction(pci);
+	/*
+	mut.pci = copyInstruction(mb, pci);
 	if (mut.pci == NULL) {
 		msg = createException(MAL, "mal.manifold",
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto wrapup;
 	}
+	*/
 	mut.pci->fcn = fcn;
-	msg = MANIFOLDjob(&mut);
-	freeInstruction(mut.pci);
+	msg = MANIFOLDjob(mb->ma, &mut);
+	//freeInstruction(mut.pci);
 
   wrapup:
 	// restore the argument types
@@ -402,7 +407,7 @@ MANIFOLDevaluate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		*getArgReference_bat(stk, pci, 0) = mat[0].b->batCacheid;
 		BBPkeepref(mat[0].b);
 	}
-	GDKfree(mat);
+	//GDKfree(mat);
 	return msg;
 }
 

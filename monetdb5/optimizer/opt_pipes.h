@@ -14,7 +14,7 @@
 #define _OPT_PIPES_
 #include "opt_support.h"
 
-mal_export str getPipeCatalog(bat *nme, bat *def, bat *stat);
+mal_export str getPipeCatalog(Client ctx, bat *nme, bat *def, bat *stat);
 mal_export str addPipeDefinition(Client cntxt, const char *name,
 								 const char *pipe);
 mal_export bool isOptimizerPipe(const char *name);

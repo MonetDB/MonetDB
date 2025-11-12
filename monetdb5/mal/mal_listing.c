@@ -91,7 +91,7 @@ renderTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx, int flg, char *buf,
 		} else if (stk) {
 			val = &stk->stk[varid];
 		}
-		cv = VALformat(val);
+		cv = VALformat(mb->ma, val);
 		if (cv == NULL) {
 			bufend = stpcpy(bufend, "<alloc failed...>");
 		} else if (!val->bat && strcmp(cv, "nil") == 0) {
@@ -135,17 +135,17 @@ renderTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx, int flg, char *buf,
 					bufend += snprintf(bufend, (buf + max_len) - bufend, "[" BUNFMT "]", BATcount(d));
 			}
 		}
-		GDKfree(cv);
+		// GDKfree(cv);
 	}
 	*bufend = 0;
 	// show the type when required or frozen by the user
 	// special care should be taken with constants, they may have been casted
 	if ((flg & LIST_MAL_TYPE) || (idx < p->retc) || isVarTypedef(mb, varid)
 		|| showtype) {
-		tpe = getTypeName(getVarType(mb, varid));
+		tpe = getTypeName(mb->ma, getVarType(mb, varid));
 		if (tpe) {
 			strconcat_len(bufend, (buf + max_len) - bufend, ":", tpe, NULL);
-			GDKfree(tpe);
+			//GDKfree(tpe);
 		}
 	}
 }
@@ -291,12 +291,12 @@ fcnDefinition(MalBlkPtr mb, InstrPtr p, str t, int flg, str base, size_t len)
 	if (p->retc == 1) {
 		if (!copystring(&t, "):", &len))
 			return base;
-		tpe = getTypeName(getVarType(mb, getArg(p, 0)));
+		tpe = getTypeName(mb->ma, getVarType(mb, getArg(p, 0)));
 		if (!copystring(&t, tpe, &len)) {
-			GDKfree(tpe);
+			//GDKfree(tpe);
 			return base;
 		}
-		GDKfree(tpe);
+		//GDKfree(tpe);
 		if (p->varargs & VARRETS && !copystring(&t, "...", &len))
 			return base;
 	} else {
@@ -445,7 +445,7 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int flg)
 	str base, t;
 	size_t len = 512 + (p->argc * 128);	/* max realistic line length estimate */
 
-	t = base = GDKmalloc(len);
+	t = base = ma_alloc(mb->ma, len);
 	if (base == NULL)
 		return NULL;
 	if (!flg) {
@@ -621,16 +621,16 @@ str
 mal2str(MalBlkPtr mb, int first, int last)
 {
 	str ps = NULL, *txt;
-	int i, j;
+	int i;
 	size_t *len, totlen = 0;
 
-	txt = GDKmalloc(sizeof(str) * mb->stop);
-	len = GDKmalloc(sizeof(size_t) * mb->stop);
+	txt = ma_alloc(mb->ma, sizeof(str) * mb->stop);
+	len = ma_alloc(mb->ma, sizeof(size_t) * mb->stop);
 
 	if (txt == NULL || len == NULL) {
 		addMalException(mb, "mal2str: " MAL_MALLOC_FAIL);
-		GDKfree(txt);
-		GDKfree(len);
+		//GDKfree(txt);
+		//GDKfree(len);
 		return NULL;
 	}
 	for (i = first; i < last; i++) {
@@ -647,20 +647,20 @@ mal2str(MalBlkPtr mb, int first, int last)
 			totlen += len[i] = strlen(txt[i]);
 		else {
 			addMalException(mb, "mal2str: " MAL_MALLOC_FAIL);
-			GDKfree(len);
-			for (j = first; j < i; j++)
-				GDKfree(txt[j]);
-			GDKfree(txt);
+			//GDKfree(len);
+			//for (j = first; j < i; j++)
+			//	GDKfree(txt[j]);
+			//GDKfree(txt);
 			return NULL;
 		}
 	}
-	ps = GDKmalloc(totlen + mb->stop + 1);
+	ps = ma_alloc(mb->ma, totlen + mb->stop + 1);
 	if (ps == NULL) {
 		addMalException(mb, "mal2str: " MAL_MALLOC_FAIL);
-		GDKfree(len);
-		for (i = first; i < last; i++)
-			GDKfree(txt[i]);
-		GDKfree(txt);
+		//GDKfree(len);
+		//for (i = first; i < last; i++)
+		//	GDKfree(txt[i]);
+		//GDKfree(txt);
 		return NULL;
 	}
 
@@ -671,11 +671,11 @@ mal2str(MalBlkPtr mb, int first, int last)
 			ps[totlen + len[i]] = '\n';
 			ps[totlen + len[i] + 1] = 0;
 			totlen += len[i] + 1;
-			GDKfree(txt[i]);
+			//GDKfree(txt[i]);
 		}
 	}
-	GDKfree(len);
-	GDKfree(txt);
+	//GDKfree(len);
+	//GDKfree(txt);
 	return ps;
 }
 
@@ -690,7 +690,7 @@ printInstruction(stream *fd, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int flg)
 	/* ps[strlen(ps)-1] = 0; remove '\n' */
 	if (ps) {
 		mnstr_printf(fd, "%s%s", (flg & LIST_MAL_MAPI ? "=" : ""), ps);
-		GDKfree(ps);
+		//GDKfree(ps);
 	} else {
 		mnstr_printf(fd, "#failed instruction2str()");
 	}
@@ -707,7 +707,7 @@ traceInstruction(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int flg)
 		if (ps) {
 			TRC_DEBUG_ENDIF(MAL_OPTIMIZER, "%s%s\n",
 							(flg & LIST_MAL_MAPI ? "=" : ""), ps);
-			GDKfree(ps);
+			//GDKfree(ps);
 		} else {
 			TRC_DEBUG_ENDIF(MAL_OPTIMIZER, "Failed instruction2str()\n");
 		}
@@ -724,12 +724,13 @@ printSignature(stream *fd, Symbol s, int flg)
 		mnstr_printf(fd, "missing definition of %s\n", s->name);
 		return;
 	}
-	txt = GDKzalloc(MAXLISTING);	/* some slack for large blocks */
+	allocator *ma = s->def->ma;
+	txt = ma_zalloc(ma, MAXLISTING);	/* some slack for large blocks */
 	if (txt) {
 		p = getSignature(s);
 		(void) fcnDefinition(s->def, p, txt, flg, txt, MAXLISTING);
 		mnstr_printf(fd, "%s\n", txt);
-		GDKfree(txt);
+		//GDKfree(txt);
 	} else
 		mnstr_printf(fd, "printSignature: " MAL_MALLOC_FAIL);
 }

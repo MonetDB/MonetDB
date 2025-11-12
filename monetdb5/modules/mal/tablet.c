@@ -86,10 +86,10 @@ TABLETdestroy_format(Tablet *as)
 
 	for (p = 0; p < as->nr_attrs; p++) {
 		BBPreclaim(fmt[p].c);
-		if (fmt[p].data)
-			GDKfree(fmt[p].data);
+		//if (fmt[p].data)
+		//	GDKfree(fmt[p].data);
 	}
-	GDKfree(fmt);
+	// GDKfree(fmt);
 }
 
 static oid
@@ -224,7 +224,7 @@ TABLET_error(stream *s)
 */
 
 static inline int
-output_line(char **buf, size_t *len, char **localbuf, size_t *locallen,
+output_line(allocator *ma, char **buf, size_t *len, char **localbuf, size_t *locallen,
 			Column *fmt, stream *fd, BUN nr_attrs, oid id)
 {
 	BUN i;
@@ -251,7 +251,7 @@ output_line(char **buf, size_t *len, char **localbuf, size_t *locallen,
 					p = f->nullstr;
 					l = (ssize_t) strlen(f->nullstr);
 				} else {
-					l = f->tostr(f->extra, localbuf, locallen, f->adt, p);
+					l = f->tostr(ma, f->extra, localbuf, locallen, f->adt, p);
 					if (l < 0)
 						return -1;
 					p = *localbuf;
@@ -277,11 +277,11 @@ output_line(char **buf, size_t *len, char **localbuf, size_t *locallen,
 	return 0;
 }
 
-static ssize_t output_multiset_dense(char **buf, size_t *len, ssize_t fill, char **localbuf, size_t *locallen, Column *fmt, BUN nr_attrs, int multiset, int composite, bool quoted, int id);
-static ssize_t output_multiset_sorted(char **buf, size_t *len, ssize_t fill, char **localbuf, size_t *locallen, Column *fmt, BUN nr_attrs, int multiset, int composite, bool quoted, int id);
+static ssize_t output_multiset_dense(allocator *ma, char **buf, size_t *len, ssize_t fill, char **localbuf, size_t *locallen, Column *fmt, BUN nr_attrs, int multiset, int composite, bool quoted, int id);
+static ssize_t output_multiset_sorted(allocator *ma, char **buf, size_t *len, ssize_t fill, char **localbuf, size_t *locallen, Column *fmt, BUN nr_attrs, int multiset, int composite, bool quoted, int id);
 
 static inline ssize_t
-output_value(char **buf, size_t *len, ssize_t fill, char **localbuf, size_t *locallen, Column *f)
+output_value(allocator*ma, char **buf, size_t *len, ssize_t fill, char **localbuf, size_t *locallen, Column *f)
 {
 	assert (!f->virt && !f->composite && !f->multiset);
 
@@ -292,7 +292,7 @@ output_value(char **buf, size_t *len, ssize_t fill, char **localbuf, size_t *loc
 		p = f->nullstr;
 		l = (ssize_t) strlen(p);
 	} else {
-		l = f->tostr(f->extra, localbuf, locallen, f->adt, p);
+		l = f->tostr(ma, f->extra, localbuf, locallen, f->adt, p);
 		if (l < 0)
 			return -1;
 		p = *localbuf;
@@ -315,7 +315,7 @@ output_value(char **buf, size_t *len, ssize_t fill, char **localbuf, size_t *loc
 }
 
 static ssize_t
-output_composite(char **buf, size_t *len, ssize_t fill, char **localbuf, size_t *locallen, Column *fmt, BUN nr_attrs, int composite, bool quoted)
+output_composite(allocator *ma, char **buf, size_t *len, ssize_t fill, char **localbuf, size_t *locallen, Column *fmt, BUN nr_attrs, int composite, bool quoted)
 {
 	if (!quoted)
 		(*buf)[fill++] = '\'';
@@ -348,19 +348,19 @@ output_composite(char **buf, size_t *len, ssize_t fill, char **localbuf, size_t 
 			 *	else
 			 */
 			if (rowid->c->tkey)
-				fill = output_multiset_dense(buf, len, fill, localbuf, locallen, fmt + j + 1, nr_attrs-1, f->multiset, f->composite, true, *(int*)p);
+				fill = output_multiset_dense(ma, buf, len, fill, localbuf, locallen, fmt + j + 1, nr_attrs-1, f->multiset, f->composite, true, *(int*)p);
 			else
-				fill = output_multiset_sorted(buf, len, fill, localbuf, locallen, fmt + j + 1, nr_attrs-1, f->multiset, f->composite, true, *(int*)p);
+				fill = output_multiset_sorted(ma, buf, len, fill, localbuf, locallen, fmt + j + 1, nr_attrs-1, f->multiset, f->composite, true, *(int*)p);
 			fmt[j+nr_attrs].p++;
 			f = fmt + j + nr_attrs; /* closing bracket */
 			j += nr_attrs + 1;
 		} else if (f->composite) {
 			int nr_attrs = f->nrfields - 1;
-			fill = output_composite(buf, len, fill, localbuf, locallen, fmt + j + 1, nr_attrs-j-1, f->composite, true);
+			fill = output_composite(ma, buf, len, fill, localbuf, locallen, fmt + j + 1, nr_attrs-j-1, f->composite, true);
 			f = fmt + j + nr_attrs; /* closing bracket */
 			j += nr_attrs + 1;
 		} else if (f->c) {
-			fill = output_value(buf, len, fill, localbuf, locallen, f);
+			fill = output_value(ma, buf, len, fill, localbuf, locallen, f);
 			j++;
 		}
 		first = 0;
@@ -375,7 +375,7 @@ output_composite(char **buf, size_t *len, ssize_t fill, char **localbuf, size_t 
 #define MS_ARRAY 2
 /* id is prev id + 1 */
 static ssize_t
-output_multiset_dense(char **buf, size_t *len, ssize_t fill, char **localbuf, size_t *locallen,
+output_multiset_dense(allocator *ma, char **buf, size_t *len, ssize_t fill, char **localbuf, size_t *locallen,
 				  Column *fmt, BUN nr_attrs, int multiset, int composite, bool quoted, int id)
 {
 	nr_attrs -= (multiset == MS_ARRAY)?2:1;
@@ -391,9 +391,9 @@ output_multiset_dense(char **buf, size_t *len, ssize_t fill, char **localbuf, si
 		if (!first)
 			(*buf)[fill++] = ',';
 		if (composite) {
-			fill = output_composite(buf, len, fill, localbuf, locallen, fmt, nr_attrs, composite, true);
+			fill = output_composite(ma, buf, len, fill, localbuf, locallen, fmt, nr_attrs, composite, true);
 		} else {
-			fill = output_value(buf, len, fill, localbuf, locallen, fmt);
+			fill = output_value(ma, buf, len, fill, localbuf, locallen, fmt);
 		}
 		first = 0;
 	}
@@ -408,7 +408,7 @@ output_multiset_dense(char **buf, size_t *len, ssize_t fill, char **localbuf, si
 
 /* id >= prev id */
 static ssize_t
-output_multiset_sorted(char **buf, size_t *len, ssize_t fill, char **localbuf, size_t *locallen,
+output_multiset_sorted(allocator *ma, char **buf, size_t *len, ssize_t fill, char **localbuf, size_t *locallen,
 				  Column *fmt, BUN nr_attrs, int multiset, int composite, bool quoted, int id)
 {
 	nr_attrs -= (multiset == MS_ARRAY)?2:1;
@@ -435,10 +435,10 @@ output_multiset_sorted(char **buf, size_t *len, ssize_t fill, char **localbuf, s
 		if (!first)
 			(*buf)[fill++] = ',';
 		if (composite) {
-			fill = output_composite(buf, len, fill, localbuf, locallen, fmt, nr_attrs, composite, true);
+			fill = output_composite(ma, buf, len, fill, localbuf, locallen, fmt, nr_attrs, composite, true);
 		} else {
 			fmt->p = pos;
-			fill = output_value(buf, len, fill, localbuf, locallen, fmt);
+			fill = output_value(ma, buf, len, fill, localbuf, locallen, fmt);
 		}
 		first = 0;
 	}
@@ -452,7 +452,7 @@ output_multiset_sorted(char **buf, size_t *len, ssize_t fill, char **localbuf, s
 }
 
 static ssize_t
-output_multiset(char **buf, size_t *len, ssize_t fill, char **localbuf, size_t *locallen,
+output_multiset(allocator *ma, char **buf, size_t *len, ssize_t fill, char **localbuf, size_t *locallen,
 				  Column *fmt, BUN nr_attrs, int multiset, int composite, bool quoted, int id)
 {
 	nr_attrs -= (multiset == MS_ARRAY)?2:1;
@@ -479,10 +479,10 @@ output_multiset(char **buf, size_t *len, ssize_t fill, char **localbuf, size_t *
 		if (!first)
 			(*buf)[fill++] = ',';
 		if (composite) {
-			fill = output_composite(buf, len, fill, localbuf, locallen, fmt, nr_attrs, composite, true);
+			fill = output_composite(ma, buf, len, fill, localbuf, locallen, fmt, nr_attrs, composite, true);
 		} else {
 			fmt->p = pos;
-			fill = output_value(buf, len, fill, localbuf, locallen, fmt);
+			fill = output_value(ma, buf, len, fill, localbuf, locallen, fmt);
 		}
 		first = 0;
 	}
@@ -496,7 +496,7 @@ output_multiset(char **buf, size_t *len, ssize_t fill, char **localbuf, size_t *
 }
 
 static ssize_t
-output_line_complex(char **buf, size_t *len, ssize_t fill, char **localbuf, size_t *locallen,
+output_line_complex(allocator *ma, char **buf, size_t *len, ssize_t fill, char **localbuf, size_t *locallen,
 				  Column *fmt, BUN nr_attrs)
 {
 	BUN j;
@@ -511,21 +511,21 @@ output_line_complex(char **buf, size_t *len, ssize_t fill, char **localbuf, size
 			p = BUNtail(rowid->ci, rowid->p);
 
 			if (rowid->c->tsorted && rowid->c->tkey)
-			    fill = output_multiset_dense(buf, len, fill, localbuf, locallen, fmt + j + 1, nr_attrs-1, f->multiset, f->composite, false, *(int*)p);
+			    fill = output_multiset_dense(ma, buf, len, fill, localbuf, locallen, fmt + j + 1, nr_attrs-1, f->multiset, f->composite, false, *(int*)p);
 			else if (rowid->c->tsorted)
-			    fill = output_multiset_sorted(buf, len, fill, localbuf, locallen, fmt + j + 1, nr_attrs-1, f->multiset, f->composite, false, *(int*)p);
+			    fill = output_multiset_sorted(ma, buf, len, fill, localbuf, locallen, fmt + j + 1, nr_attrs-1, f->multiset, f->composite, false, *(int*)p);
 			else
-			    fill = output_multiset(buf, len, fill, localbuf, locallen, fmt + j + 1, nr_attrs-1, f->multiset, f->composite, false, *(int*)p);
+			    fill = output_multiset(ma, buf, len, fill, localbuf, locallen, fmt + j + 1, nr_attrs-1, f->multiset, f->composite, false, *(int*)p);
 			fmt[j+nr_attrs].p++;
 			f = fmt + j + nr_attrs; /* closing bracket */
 			j += nr_attrs + 1;
 		} else if (f->composite) {
 			int nr_attrs = f->nrfields - 1;
-			fill = output_composite(buf, len, fill, localbuf, locallen, fmt + j + 1, nr_attrs-j, f->composite, false);
+			fill = output_composite(ma, buf, len, fill, localbuf, locallen, fmt + j + 1, nr_attrs-j, f->composite, false);
 			f = fmt + j + nr_attrs; /* closing bracket */
 			j += nr_attrs + 1;
 		} else if (f->c) {
-			fill = output_value(buf, len, fill, localbuf, locallen, f);
+			fill = output_value(ma, buf, len, fill, localbuf, locallen, f);
 			j++;
 		} else {
 			j++;
@@ -537,7 +537,7 @@ output_line_complex(char **buf, size_t *len, ssize_t fill, char **localbuf, size
 }
 
 static inline int
-output_line_dense(char **buf, size_t *len, char **localbuf, size_t *locallen,
+output_line_dense(allocator *ma, char **buf, size_t *len, char **localbuf, size_t *locallen,
 				  Column *fmt, stream *fd, BUN nr_attrs)
 {
 	BUN i;
@@ -557,7 +557,7 @@ output_line_dense(char **buf, size_t *len, char **localbuf, size_t *locallen,
 				p = f->nullstr;
 				l = (ssize_t) strlen(p);
 			} else {
-				l = f->tostr(f->extra, localbuf, locallen, f->adt, p);
+				l = f->tostr(ma, f->extra, localbuf, locallen, f->adt, p);
 				if (l < 0)
 					return -1;
 				p = *localbuf;
@@ -565,7 +565,7 @@ output_line_dense(char **buf, size_t *len, char **localbuf, size_t *locallen,
 			if (fill + l + f->seplen >= (ssize_t) * len) {
 				/* extend the buffer */
 				char *nbuf;
-				nbuf = GDKrealloc(*buf, fill + l + f->seplen + BUFSIZ);
+				nbuf = ma_realloc(ma, *buf, fill + l + f->seplen + BUFSIZ, *len);
 				if (nbuf == NULL)
 					return -1;	/* *buf freed by caller */
 				*buf = nbuf;
@@ -584,7 +584,7 @@ output_line_dense(char **buf, size_t *len, char **localbuf, size_t *locallen,
 }
 
 static inline int
-output_line_lookup(char **buf, size_t *len, Column *fmt, stream *fd,
+output_line_lookup(allocator *ma, char **buf, size_t *len, Column *fmt, stream *fd,
 				   BUN nr_attrs, oid id)
 {
 	BUN i;
@@ -602,7 +602,7 @@ output_line_lookup(char **buf, size_t *len, Column *fmt, stream *fd,
 				if (mnstr_write(fd, f->nullstr, 1, l) != (ssize_t) l)
 					return TABLET_error(fd);
 			} else {
-				ssize_t l = f->tostr(f->extra, buf, len, f->adt, p);
+				ssize_t l = f->tostr(ma, f->extra, buf, len, f->adt, p);
 
 				if (l < 0 || mnstr_write(fd, *buf, 1, l) != l)
 					return TABLET_error(fd);
@@ -661,19 +661,19 @@ output_line_lookup(char **buf, size_t *len, Column *fmt, stream *fd,
  */
 
 static int
-output_file_default(Tablet *as, BAT *order, stream *fd, bstream *in)
+output_file_default(allocator *ma, Tablet *as, BAT *order, stream *fd, bstream *in)
 {
 	size_t len = BUFSIZ, locallen = BUFSIZ;
 	int res = 0;
-	char *buf = GDKmalloc(len);
-	char *localbuf = GDKmalloc(len);
+	char *buf = ma_alloc(ma, len);
+	char *localbuf = ma_alloc(ma, len);
 	BUN p, q;
 	oid id;
 	BUN offset = as->offset;
 
 	if (buf == NULL || localbuf == NULL) {
-		GDKfree(buf);
-		GDKfree(localbuf);
+		//GDKfree(buf);
+		//GDKfree(localbuf);
 		return -1;
 	}
 	for (q = offset + as->nr, p = offset, id = order->hseqbase + offset; p < q;
@@ -682,27 +682,27 @@ output_file_default(Tablet *as, BAT *order, stream *fd, bstream *in)
 			res = -5;
 			break;
 		}
-		if ((res = output_line(&buf, &len, &localbuf, &locallen, as->format, fd, as->nr_attrs, id)) < 0) {
+		if ((res = output_line(ma, &buf, &len, &localbuf, &locallen, as->format, fd, as->nr_attrs, id)) < 0) {
 			break;
 		}
 	}
-	GDKfree(localbuf);
-	GDKfree(buf);
+	//GDKfree(localbuf);
+	//GDKfree(buf);
 	return res;
 }
 
 static int
-output_complex(Tablet *as, stream *fd, bstream *in)
+output_complex(allocator *ma, Tablet *as, stream *fd, bstream *in)
 {
 	size_t len = BUFSIZ, locallen = BUFSIZ;
 	ssize_t res = 0;
-	char *buf = GDKmalloc(len);
-	char *localbuf = GDKmalloc(len);
+	char *buf = ma_alloc(ma, len);
+	char *localbuf = ma_alloc(ma, len);
 	BUN i = 0;
 
 	if (buf == NULL || localbuf == NULL) {
-		GDKfree(buf);
-		GDKfree(localbuf);
+		//GDKfree(buf);
+		//GDKfree(localbuf);
 		return -1;
 	}
 	for (i = 0; i < as->nr; i++) {
@@ -710,31 +710,32 @@ output_complex(Tablet *as, stream *fd, bstream *in)
 			res = -5;			/* "Query aborted" */
 			break;
 		}
-		if ((res = output_line_complex(&buf, &len, 0, &localbuf, &locallen, as->format, as->nr_attrs)) < 0) {
+		if ((res = output_line_complex(ma, &buf, &len, 0, &localbuf, &locallen, as->format, as->nr_attrs)) < 0) {
 			break;
 		}
 		if (fd && mnstr_write(fd, buf, 1, res) != res)
 			return TABLET_error(fd);
 	}
-	GDKfree(localbuf);
-	GDKfree(buf);
+	//GDKfree(localbuf);
+	//GDKfree(buf);
 	if (res < 0)
 		return (int)res;
 	return 0;
 }
 
 static int
-output_file_dense(Tablet *as, stream *fd, bstream *in)
+output_file_dense(allocator *ma, Tablet *as, stream *fd, bstream *in)
 {
 	size_t len = BUFSIZ, locallen = BUFSIZ;
 	int res = 0;
-	char *buf = GDKmalloc(len);
-	char *localbuf = GDKmalloc(len);
+	assert(ma);
+	char *buf = ma_alloc(ma, len);
+	char *localbuf = ma_alloc(ma, len);
 	BUN i = 0;
 
 	if (buf == NULL || localbuf == NULL) {
-		GDKfree(buf);
-		GDKfree(localbuf);
+		//GDKfree(buf);
+		//GDKfree(localbuf);
 		return -1;
 	}
 	for (i = 0; i < as->nr; i++) {
@@ -742,21 +743,21 @@ output_file_dense(Tablet *as, stream *fd, bstream *in)
 			res = -5;			/* "Query aborted" */
 			break;
 		}
-		if ((res = output_line_dense(&buf, &len, &localbuf, &locallen, as->format, fd, as->nr_attrs)) < 0) {
+		if ((res = output_line_dense(ma, &buf, &len, &localbuf, &locallen, as->format, fd, as->nr_attrs)) < 0) {
 			break;
 		}
 	}
-	GDKfree(localbuf);
-	GDKfree(buf);
+	//GDKfree(localbuf);
+	//GDKfree(buf);
 	return res;
 }
 
 static int
-output_file_ordered(Tablet *as, BAT *order, stream *fd, bstream *in)
+output_file_ordered(allocator *ma, Tablet *as, BAT *order, stream *fd, bstream *in)
 {
 	size_t len = BUFSIZ;
 	int res = 0;
-	char *buf = GDKmalloc(len);
+	char *buf = ma_alloc(ma, len);
 	BUN p, q;
 	BUN i = 0;
 	BUN offset = as->offset;
@@ -770,17 +771,17 @@ output_file_ordered(Tablet *as, BAT *order, stream *fd, bstream *in)
 			res = -5;
 			break;
 		}
-		if ((res = output_line_lookup(&buf, &len, as->format, fd, as->nr_attrs, h)) < 0) {
-			GDKfree(buf);
+		if ((res = output_line_lookup(ma, &buf, &len, as->format, fd, as->nr_attrs, h)) < 0) {
+			//GDKfree(buf);
 			return res;
 		}
 	}
-	GDKfree(buf);
+	//GDKfree(buf);
 	return res;
 }
 
 int
-TABLEToutput_file(Tablet *as, BAT *order, stream *s, bstream *in)
+TABLEToutput_file(allocator *ma, Tablet *as, BAT *order, stream *s, bstream *in)
 {
 	oid base = oid_nil;
 	int ret = 0;
@@ -802,16 +803,16 @@ TABLEToutput_file(Tablet *as, BAT *order, stream *s, bstream *in)
 
 	if (complex) {
 		assert(!order);
-		return output_complex(as, s, in);
+		return output_complex(ma, as, s, in);
 	}
 	base = check_BATs(as);
 	if (!order || !is_oid_nil(base)) {
 		if (!order || order->hseqbase == base)
-			ret = output_file_dense(as, s, in);
+			ret = output_file_dense(ma, as, s, in);
 		else
-			ret = output_file_ordered(as, order, s, in);
+			ret = output_file_ordered(ma, as, order, s, in);
 	} else {
-		ret = output_file_default(as, order, s, in);
+		ret = output_file_default(ma, as, order, s, in);
 	}
 	return ret;
 }
@@ -945,6 +946,8 @@ tablet_error(READERtask *task, lng idx, lng lineno, int col, const char *msg,
 {
 	assert(is_int_nil(col) || col >= 0);
 	assert(is_lng_nil(lineno) || lineno >= 1);
+	allocator *ma = task->cntxt->curprg->def->ma;
+	assert(ma);
 	MT_lock_set(&errorlock);
 	if (task->cntxt->error_row != NULL
 		&& (BUNappend(task->cntxt->error_row, &lineno, false) != GDK_SUCCEED
@@ -965,28 +968,28 @@ tablet_error(READERtask *task, lng idx, lng lineno, int col, const char *msg,
 		} else if (!is_lng_nil(lineno)) {
 			if (!is_int_nil(col)) {
 				if (colnam)
-					task->as->error = createException(MAL, "sql.copy_from",
+					task->as->error = copyException(ma, createException(MAL, "sql.copy_from",
 													  "line " LLFMT ": column %d %s: %s",
-													  lineno, col + 1, colnam, msg);
+													  lineno, col + 1, colnam, msg));
 				else
-					task->as->error = createException(MAL, "sql.copy_from",
+					task->as->error = copyException(ma, createException(MAL, "sql.copy_from",
 													  "line " LLFMT ": column %d: %s",
-													  lineno, col + 1, msg);
+													  lineno, col + 1, msg));
 			} else {
-				task->as->error = createException(MAL, "sql.copy_from",
-												  "line " LLFMT ": %s", lineno, msg);
+				task->as->error = copyException(ma, createException(MAL, "sql.copy_from",
+												  "line " LLFMT ": %s", lineno, msg));
 			}
 		} else {
 			if (!is_int_nil(col)) {
 				if (colnam)
-					task->as->error = createException(MAL, "sql.copy_from",
+					task->as->error = copyException(ma, createException(MAL, "sql.copy_from",
 													  "column %d %s: %s", col + 1, colnam,
-													  msg);
+													  msg));
 				else
-					task->as->error = createException(MAL, "sql.copy_from",
-													  "column %d: %s", col + 1, msg);
+					task->as->error = copyException(ma, createException(MAL, "sql.copy_from",
+													  "column %d: %s", col + 1, msg));
 			} else {
-				task->as->error = createException(MAL, "sql.copy_from", "%s", msg);
+				task->as->error = copyException(ma, createException(MAL, "sql.copy_from", "%s", msg));
 			}
 		}
 	}
@@ -1109,7 +1112,7 @@ mycpstr(char *t, const char *s, size_t l)
 }
 
 static str
-SQLload_error(READERtask *task, lng idx, BUN attrs)
+SQLload_error(allocator *ma, READERtask *task, lng idx, BUN attrs)
 {
 	str line;
 	char *s;
@@ -1123,7 +1126,7 @@ SQLload_error(READERtask *task, lng idx, BUN attrs)
 	}
 
 	sz += task->rseplen + 1;
-	s = line = GDKmalloc(sz);
+	s = line = ma_alloc(ma, sz);
 	if (line == NULL) {
 		tablet_error(task, idx, lng_nil, int_nil, "SQLload malloc error",
 					 "SQLload_error");
@@ -1150,7 +1153,7 @@ SQLload_error(READERtask *task, lng idx, BUN attrs)
  * either case an entry is added to the error table.
  */
 static inline int
-SQLinsert_val(READERtask *task, int col, int idx)
+SQLinsert_val(allocator *ma, READERtask *task, int col, int idx)
 {
 	Column *fmt = task->as->format + col;
 	const void *adt;
@@ -1166,31 +1169,33 @@ SQLinsert_val(READERtask *task, int col, int idx)
 	} else {
 		if (task->escape) {
 			size_t slen = strlen(s) + 1;
-			char *data = slen <= sizeof(buf) ? buf : GDKmalloc(strlen(s) + 1);
+			char *data = slen <= sizeof(buf) ? buf : ma_alloc(ma, strlen(s) + 1);
 			if (data == NULL
 				|| GDKstrFromStr((unsigned char *) data, (unsigned char *) s,
 								 strlen(s), '\0') < 0)
 				adt = NULL;
-			else
-				adt = fmt->frstr(fmt, fmt->adt, data);
-			if (data != buf)
-				GDKfree(data);
-		} else
-			adt = fmt->frstr(fmt, fmt->adt, s);
+			else {
+				adt = fmt->frstr(ma, fmt, fmt->adt, data);
+			}
+			//if (data != buf)
+			//	GDKfree(data);
+		} else {
+			adt = fmt->frstr(ma, fmt, fmt->adt, s);
+		}
 	}
 
 	lng row = task->cnt + idx + 1;
 	if (adt == NULL) {
 		if (task->rowerror) {
-			err = SQLload_error(task, idx, task->as->nr_attrs);
+			err = SQLload_error(ma, task, idx, task->as->nr_attrs);
 			if (s) {
 				size_t slen = mystrlen(s);
-				char *scpy = GDKmalloc(slen + 1);
+				char *scpy = ma_alloc(ma, slen + 1);
 				if (scpy == NULL) {
 					tablet_error(task, idx, row, col,
 								 SQLSTATE(HY013) MAL_MALLOC_FAIL, err);
 					task->besteffort = false;	/* no longer best effort */
-					GDKfree(err);
+					//GDKfree(err);
 					return -1;
 				}
 				mycpstr(scpy, s, slen + 1);
@@ -1198,9 +1203,9 @@ SQLinsert_val(READERtask *task, int col, int idx)
 			}
 			snprintf(buf, sizeof(buf), "'%s' expected%s%s%s", fmt->type,
 					 s ? " in '" : "", s ? s : "", s ? "'" : "");
-			GDKfree(s);
+			//GDKfree(s);
 			tablet_error(task, idx, row, col, buf, err);
-			GDKfree(err);
+			//GDKfree(err);
 			if (!task->besteffort)
 				return -1;
 		}
@@ -1215,18 +1220,19 @@ SQLinsert_val(READERtask *task, int col, int idx)
 	/* failure */
 	if (task->rowerror) {
 		char *msg = GDKerrbuf;
-		err = SQLload_error(task, idx, task->as->nr_attrs);
+		err = SQLload_error(ma, task, idx, task->as->nr_attrs);
 		tablet_error(task, idx, row, col, msg
 					 && *msg ? msg : "insert failed", err);
-		GDKfree(err);
+		//GDKfree(err);
 	}
 	task->besteffort = false;	/* no longer best effort */
 	return -1;
 }
 
 static int
-SQLworker_column(READERtask *task, int col)
+SQLworker_column(allocator *ma, READERtask *task, int col)
 {
+	assert(ma);
 	int i;
 	Column *fmt = task->as->format;
 
@@ -1247,7 +1253,7 @@ SQLworker_column(READERtask *task, int col)
 	MT_lock_unset(&mal_copyLock);
 
 	for (i = 0; i < task->top[task->cur]; i++) {
-		if (!fmt[col].skip && SQLinsert_val(task, col, i) < 0) {
+		if (!fmt[col].skip && SQLinsert_val(ma, task, col, i) < 0) {
 			BATsetcount(fmt[col].c, BATcount(fmt[col].c));
 			return -1;
 		}
@@ -1265,7 +1271,7 @@ SQLworker_column(READERtask *task, int col)
  * We also trim the quotes around strings.
  */
 static int
-SQLload_parse_row(READERtask *task, int idx)
+SQLload_parse_row(allocator *ma, READERtask *task, int idx)
 {
 	BUN i;
 	char errmsg[BUFSIZ];
@@ -1292,11 +1298,11 @@ SQLload_parse_row(READERtask *task, int idx)
 				row = tablet_skip_string(row + 1, task->quote, task->escape);
 
 				if (!row) {
-					errline = SQLload_error(task, idx, i + 1);
+					errline = SQLload_error(ma, task, idx, i + 1);
 					snprintf(errmsg, sizeof(errmsg), "Quote (%c) missing", task->quote);
 					tablet_error(task, idx, startlineno, (int) i, errmsg,
 								 errline);
-					GDKfree(errline);
+					//GDKfree(errline);
 					error = true;
 					goto errors1;
 				} else
@@ -1319,11 +1325,11 @@ SQLload_parse_row(READERtask *task, int idx)
 
 			/* not enough fields */
 			if (i < as->nr_attrs - 1) {
-				errline = SQLload_error(task, idx, i + 1);
+				errline = SQLload_error(ma, task, idx, i + 1);
 				/* it's the next value that is missing */
 				tablet_error(task, idx, startlineno, (int) i + 1,
 							 "Column value missing", errline);
-				GDKfree(errline);
+				//GDKfree(errline);
 				error = true;
   errors1:
 				/* we save all errors detected  as NULL values */
@@ -1358,11 +1364,11 @@ SQLload_parse_row(READERtask *task, int idx)
 
 			/* not enough fields */
 			if (i < as->nr_attrs - 1) {
-				errline = SQLload_error(task, idx, i + 1);
+				errline = SQLload_error(ma, task, idx, i + 1);
 				/* it's the next value that is missing */
 				tablet_error(task, idx, startlineno, (int) i + 1,
 							 "Column value missing", errline);
-				GDKfree(errline);
+				//GDKfree(errline);
 				error = true;
 				/* we save all errors detected */
 				for (; i < as->nr_attrs; i++)
@@ -1380,10 +1386,10 @@ SQLload_parse_row(READERtask *task, int idx)
 	}
 	/* check for too many values as well */
 	if (row && *row && i == as->nr_attrs) {
-		errline = SQLload_error(task, idx, task->as->nr_attrs);
+		errline = SQLload_error(ma, task, idx, task->as->nr_attrs);
 		snprintf(errmsg, sizeof(errmsg), "Leftover data '%s'", row);
 		tablet_error(task, idx, startlineno, (int) i, errmsg, errline);
-		GDKfree(errline);
+		//GDKfree(errline);
 		error = true;
 	}
 	return error ? -1 : 0;
@@ -1401,6 +1407,8 @@ SQLworker(void *arg)
 	GDKclrerr();
 	task->errbuf = GDKerrbuf;
 	MT_thread_set_qry_ctx(task->set_qry_ctx ? &task->cntxt->qryctx : NULL);
+	allocator *ma = task->cntxt->curprg->def->ma;
+	assert(ma);
 
 	MT_sema_down(&task->sema);
 	while (task->top[task->cur] >= 0) {
@@ -1413,7 +1421,7 @@ SQLworker(void *arg)
 			for (j = piece * task->id;
 				 j < task->top[task->cur] && j < piece * (task->id + 1); j++)
 				if (task->rows[task->cur][j]) {
-					if (SQLload_parse_row(task, j) < 0) {
+					if (SQLload_parse_row(ma, task, j) < 0) {
 						task->errorcnt++;
 						// early break unless best effort
 						if (!task->besteffort) {
@@ -1435,7 +1443,7 @@ SQLworker(void *arg)
 			for (i = 0; i < task->as->nr_attrs; i++)
 				if (task->cols[i]) {
 					t0 = GDKusec();
-					if (SQLworker_column(task, task->cols[i] - 1) < 0)
+					if (SQLworker_column(ma, task, task->cols[i] - 1) < 0)
 						break;
 					t0 = GDKusec() - t0;
 					task->time[i] += t0;
@@ -1504,12 +1512,12 @@ SQLworkdivider(READERtask *task, READERtask *ptask, int nr_attrs, int threads)
 typedef unsigned char (*dfa_t)[256];
 
 static dfa_t
-mkdfa(const unsigned char *sep, size_t seplen)
+mkdfa(allocator *ma, const unsigned char *sep, size_t seplen)
 {
 	dfa_t dfa;
 	size_t i, j, k;
 
-	dfa = GDKzalloc(seplen * sizeof(*dfa));
+	dfa = ma_zalloc(ma, seplen * sizeof(*dfa));
 	if (dfa == NULL)
 		return NULL;
 	/* Each character in the separator string advances the state by
@@ -1570,6 +1578,7 @@ SQLproducer(void *p)
 	lng lineno = 1;
 	lng startlineno = 1;
 	int more = 0;
+	allocator *ma = task->cntxt->curprg->def->ma;
 
 	MT_sema_down(&task->producer);
 	if (task->id < 0) {
@@ -1577,7 +1586,7 @@ SQLproducer(void *p)
 	}
 
 	MT_thread_set_qry_ctx(task->set_qry_ctx ? &task->cntxt->qryctx : NULL);
-	rdfa = mkdfa((const unsigned char *) rsep, rseplen);
+	rdfa = mkdfa(ma, (const unsigned char *) rsep, rseplen);
 	if (rdfa == NULL) {
 		tablet_error(task, lng_nil, lng_nil, int_nil, "cannot allocate memory",
 					 "");
@@ -1774,7 +1783,7 @@ SQLproducer(void *p)
 			/* then wait until it is done */
 			MT_sema_down(&task->producer);
 			if (cnt == task->maxrow) {
-				GDKfree(rdfa);
+				//GDKfree(rdfa);
 				MT_thread_set_qry_ctx(NULL);
 				return;
 			}
@@ -1787,7 +1796,7 @@ SQLproducer(void *p)
 				MT_sema_down(&task->producer);
 				blocked[(cur + 1) % MAXBUFFERS] = false;
 				if (task->state == ENDOFCOPY) {
-					GDKfree(rdfa);
+					//GDKfree(rdfa);
 					MT_thread_set_qry_ctx(NULL);
 					return;
 				}
@@ -1810,7 +1819,7 @@ SQLproducer(void *p)
 			if (cnt == task->maxrow) {
 				MT_sema_down(&task->producer);
 /*				TRC_DEBUG(MAL_SERVER, "Producer delivered all\n");*/
-				GDKfree(rdfa);
+				//GDKfree(rdfa);
 				MT_thread_set_qry_ctx(NULL);
 				return;
 			}
@@ -1820,13 +1829,13 @@ SQLproducer(void *p)
 		/* we ran out of input? */
 		if (task->ateof && !more) {
 /*			TRC_DEBUG(MAL_SERVER, "Producer encountered eof\n");*/
-			GDKfree(rdfa);
+			//GDKfree(rdfa);
 			MT_thread_set_qry_ctx(NULL);
 			return;
 		}
 		/* consumers ask us to stop? */
 		if (task->state == ENDOFCOPY) {
-			GDKfree(rdfa);
+			//GDKfree(rdfa);
 			MT_thread_set_qry_ctx(NULL);
 			return;
 		}
@@ -1837,12 +1846,12 @@ SQLproducer(void *p)
 	if (unlikely(cnt < task->maxrow && task->maxrow != BUN_NONE)) {
 		char msg[256];
 		snprintf(msg, sizeof(msg), "incomplete record at end of file:%s\n", s);
-		task->as->error = GDKstrdup(msg);
+		task->as->error = MA_STRDUP(ma, msg);
 		tablet_error(task, rowno, startlineno, int_nil,
 					 "incomplete record at end of file", s);
 		task->b->pos += partial;
 	}
-	GDKfree(rdfa);
+	//GDKfree(rdfa);
 	MT_thread_set_qry_ctx(NULL);
 
 	return;
@@ -1890,6 +1899,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out,
 	int threads = 1;
 	lng tio, t1 = 0;
 	char name[MT_NAME_LEN];
+	allocator *ma = cntxt->curprg->def->ma;
 
 	if (maxrow < 0 || maxrow > (LL_CONSTANT(1) << 16)) {
 		threads = GDKgetenv_int("tablet_threads", GDKnr_threads);
@@ -1923,9 +1933,9 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out,
 	assert(rsep);
 	assert(csep);
 	assert(maxrow < 0 || maxrow <= (lng) BUN_MAX);
-	task.fields = (char ***) GDKzalloc(as->nr_attrs * sizeof(char **));
-	task.cols = (int *) GDKzalloc(as->nr_attrs * sizeof(int));
-	task.time = (lng *) GDKzalloc(as->nr_attrs * sizeof(lng));
+	task.fields = (char ***) ma_zalloc(ma, as->nr_attrs * sizeof(char **));
+	task.cols = (int *) ma_zalloc(ma, as->nr_attrs * sizeof(int));
+	task.time = (lng *) ma_zalloc(ma, as->nr_attrs * sizeof(lng));
 	if (task.fields == NULL || task.cols == NULL || task.time == NULL) {
 		tablet_error(&task, lng_nil, lng_nil, int_nil,
 					 "memory allocation failed", "SQLload_file");
@@ -1933,7 +1943,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out,
 	}
 	task.cur = 0;
 	for (i = 0; i < MAXBUFFERS; i++) {
-		task.base[i] = GDKmalloc(MAXROWSIZE(2 * b->size) + 2);
+		task.base[i] = ma_alloc(ma, MAXROWSIZE(2 * b->size) + 2);
 		task.rowlimit[i] = MAXROWSIZE(2 * b->size);
 		if (task.base[i] == NULL) {
 			tablet_error(&task, lng_nil, lng_nil, int_nil,
@@ -1974,28 +1984,28 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out,
 	/* the record separator is considered a column */
 	task.limit = (int) (b->size / as->nr_attrs + as->nr_attrs);
 	for (i = 0; i < as->nr_attrs; i++) {
-		task.fields[i] = GDKmalloc(sizeof(char *) * task.limit);
+		task.fields[i] = ma_alloc(ma, sizeof(char *) * task.limit);
 		if (task.fields[i] == NULL) {
 			if (task.as->error == NULL)
-				as->error = createException(MAL, "sql.copy_from",
-											SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				as->error = copyException(ma, createException(MAL, "sql.copy_from",
+											SQLSTATE(HY013) MAL_MALLOC_FAIL));
 			goto bailout;
 		}
 		task.cols[i] = (int) (i + 1);	/* to distinguish non initialized later with zero */
 	}
 	for (i = 0; i < MAXBUFFERS; i++) {
-		task.rows[i] = GDKzalloc(sizeof(char *) * task.limit);
-		task.startlineno[i] = GDKzalloc(sizeof(lng) * task.limit);
+		task.rows[i] = ma_zalloc(ma, sizeof(char *) * task.limit);
+		task.startlineno[i] = ma_zalloc(ma, sizeof(lng) * task.limit);
 		if (task.rows[i] == NULL || task.startlineno[i] == NULL) {
-			GDKfree(task.rows[i]);
-			GDKfree(task.startlineno[i]);
+			//GDKfree(task.rows[i]);
+			//GDKfree(task.startlineno[i]);
 			tablet_error(&task, lng_nil, lng_nil, int_nil,
 						 SQLSTATE(HY013) MAL_MALLOC_FAIL,
 						 "SQLload_file:failed to alloc buffers");
 			goto bailout;
 		}
 	}
-	task.rowerror = (bte *) GDKzalloc(sizeof(bte) * task.limit);
+	task.rowerror = (bte *) ma_zalloc(ma, sizeof(bte) * task.limit);
 	if (task.rowerror == NULL) {
 		tablet_error(&task, lng_nil, lng_nil, int_nil,
 					 SQLSTATE(HY013) MAL_MALLOC_FAIL,
@@ -2017,7 +2027,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out,
 	for (j = 0; j < threads; j++) {
 		ptask[j] = task;
 		ptask[j].id = j;
-		ptask[j].cols = (int *) GDKzalloc(as->nr_attrs * sizeof(int));
+		ptask[j].cols = (int *) ma_zalloc(ma, as->nr_attrs * sizeof(int));
 		if (ptask[j].cols == NULL) {
 			tablet_error(&task, lng_nil, lng_nil, int_nil,
 						 SQLSTATE(HY013) MAL_MALLOC_FAIL, "SQLload_file");
@@ -2235,7 +2245,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out,
 
 	for (j = 0; j < threads; j++) {
 		MT_join_thread(ptask[j].tid);
-		GDKfree(ptask[j].cols);
+		// GDKfree(ptask[j].cols);
 		MT_sema_destroy(&ptask[j].sema);
 		MT_sema_destroy(&ptask[j].reply);
 	}
@@ -2247,35 +2257,35 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out,
 		BAT *b = task.as->format[i].c;
 		if (b)
 			BATsettrivprop(b);
-		GDKfree(task.fields[i]);
+		// GDKfree(task.fields[i]);
 	}
-	GDKfree(task.fields);
-	GDKfree(task.cols);
-	GDKfree(task.time);
-	for (i = 0; i < MAXBUFFERS; i++) {
-		GDKfree(task.base[i]);
-		GDKfree(task.rows[i]);
-		GDKfree(task.startlineno[i]);
-	}
-	if (task.rowerror)
-		GDKfree(task.rowerror);
+	// GDKfree(task.fields);
+	// GDKfree(task.cols);
+	// GDKfree(task.time);
+	// for (i = 0; i < MAXBUFFERS; i++) {
+	// 	GDKfree(task.base[i]);
+	// 	GDKfree(task.rows[i]);
+	// 	GDKfree(task.startlineno[i]);
+	// }
+	// if (task.rowerror)
+	// 	GDKfree(task.rowerror);
 	MT_sema_destroy(&task.producer);
 	MT_sema_destroy(&task.consumer);
 
 	return res < 0 ? BUN_NONE : cnt;
 
   bailout:
-	if (task.fields) {
-		for (i = 0; i < as->nr_attrs; i++)
-			GDKfree(task.fields[i]);
-		GDKfree(task.fields);
-	}
-	GDKfree(task.time);
-	GDKfree(task.cols);
-	GDKfree(task.base[task.cur]);
-	GDKfree(task.rowerror);
-	for (i = 0; i < MAXWORKERS; i++)
-		GDKfree(ptask[i].cols);
+	// if (task.fields) {
+	// 	for (i = 0; i < as->nr_attrs; i++)
+	// 		GDKfree(task.fields[i]);
+	// 	GDKfree(task.fields);
+	// }
+	// GDKfree(task.time);
+	// GDKfree(task.cols);
+	// GDKfree(task.base[task.cur]);
+	// GDKfree(task.rowerror);
+	// for (i = 0; i < MAXWORKERS; i++)
+	// 	GDKfree(ptask[i].cols);
 	return BUN_NONE;
 }
 

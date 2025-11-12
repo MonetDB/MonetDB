@@ -162,7 +162,6 @@ rewrite_simplify_exp(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 		return e;
 
 	v->changes = 0;
-	(void)rel; (void)depth;
 
 	sql_subfunc *sf = e->f;
 	if (is_func(e->type) && list_length(e->l) == 1 && is_not_func(sf)) {
@@ -232,6 +231,12 @@ rewrite_simplify_exp(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 			return l;
 		}
 	}
+
+	if (is_select(rel->op) && is_compare(e->type) && (depth == 0 && exp_is_null(e))) {
+		v->changes++;
+		return exp_atom_bool(v->sql->sa, 0);
+	}
+
 	return e;
 }
 
@@ -256,9 +261,9 @@ rewrite_simplify(visitor *v, uint8_t cycle, bool value_based_opt, sql_rel *rel)
 				exp_prop_alias(v->sql->sa, a, e);
 				list_append(nexps, a);
 			}
-			rel_destroy(rel->l);
+			rel_destroy(v->sql, rel->l);
 			if (is_innerjoin(rel->op)) {
-				rel_destroy(rel->r);
+				rel_destroy(v->sql, rel->r);
 				rel->r = NULL;
 				rel->op = op_select;
 			}

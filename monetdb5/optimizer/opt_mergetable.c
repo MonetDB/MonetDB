@@ -98,16 +98,16 @@ nr_of_nilbats(MalBlkPtr mb, InstrPtr p)
 /* some mat's have intermediates (with intermediate result variables),
  * therefore we pass the old output mat variable */
 inline static int
-mat_add_var(matlist_t *ml, InstrPtr q, InstrPtr p, int var, mat_type_t type,
+mat_add_var(allocator *ma, matlist_t *ml, InstrPtr q, InstrPtr p, int var, mat_type_t type,
 			int inputmat, int parentmat, int pushed)
 {
 	if (ml->top == ml->size) {
 		int s = ml->size * 2;
-		mat_t *v = (mat_t *) GDKzalloc(s * sizeof(mat_t));
+		mat_t *v = (mat_t *) ma_zalloc(ma, s * sizeof(mat_t));
 		if (!v)
 			return -1;
 		memcpy(v, ml->v, ml->top * sizeof(mat_t));
-		GDKfree(ml->v);
+		// GDKfree(ml->v);
 		ml->size = s;
 		ml->v = v;
 	}
@@ -131,11 +131,11 @@ mat_add_var(matlist_t *ml, InstrPtr q, InstrPtr p, int var, mat_type_t type,
 }
 
 inline static int
-mat_add(matlist_t *ml, InstrPtr q, mat_type_t type, const char *func)
+mat_add(allocator *ma, matlist_t *ml, InstrPtr q, mat_type_t type, const char *func)
 {
 	(void) func;
 	//printf (" ml.top %d %s\n", ml.top, func);
-	return mat_add_var(ml, q, NULL, getArg(q, 0), type, -1, -1, 0);
+	return mat_add_var(ma, ml, q, NULL, getArg(q, 0), type, -1, -1, 0);
 }
 
 static void
@@ -183,7 +183,7 @@ mat_pack(MalBlkPtr mb, matlist_t *ml, int m)
 		for (l = ml->v[m].mi->retc; l < ml->v[m].mi->argc; l++)
 			r = pushArgument(mb, r, getArg(ml->v[m].mi, l));
 		if (mb->errors) {
-			freeInstruction(r);
+			freeInstruction(mb, r);
 			char *msg = mb->errors;
 			mb->errors = NULL;
 			return msg;
@@ -195,7 +195,7 @@ mat_pack(MalBlkPtr mb, matlist_t *ml, int m)
 }
 
 static int
-checksize(matlist_t *ml, int v)
+checksize(allocator *ma, matlist_t *ml, int v)
 {
 	if (v >= ml->vsize) {
 		int sz = ml->vsize, i, *nhorigin, *ntorigin, *nvars;
@@ -204,15 +204,15 @@ checksize(matlist_t *ml, int v)
 		assert(v < nvsize);
 		if (v >= nvsize)
 			nvsize = v + 10;
-		nhorigin = (int *) GDKrealloc(ml->horigin, sizeof(int) * nvsize);
+		nhorigin = (int *) MA_RENEW_ARRAY(ma, int, ml->horigin, nvsize, sz);
 		if (nhorigin == NULL)
 			return -1;
 		ml->horigin = nhorigin;
-		ntorigin = (int *) GDKrealloc(ml->torigin, sizeof(int) * nvsize);
+		ntorigin = (int *) MA_RENEW_ARRAY(ma, int, ml->torigin, nvsize, sz);
 		if (ntorigin == NULL)
 			return -1;
 		ml->torigin = ntorigin;
-		nvars = (int *) GDKrealloc(ml->vars, sizeof(int) * nvsize);
+		nvars = (int *) MA_RENEW_ARRAY(ma, int, ml->vars, nvsize, sz);
 		if (nvars == NULL)
 			return -1;
 		ml->vars = nvars;
@@ -227,11 +227,11 @@ checksize(matlist_t *ml, int v)
 }
 
 static int
-setPartnr(matlist_t *ml, int ivar, int ovar, int pnr)
+setPartnr(allocator *ma, matlist_t *ml, int ivar, int ovar, int pnr)
 {
 	int tpnr = -1;
 
-	if (checksize(ml, ivar) || checksize(ml, ovar))
+	if (checksize(ma, ml, ivar) || checksize(ma, ml, ovar))
 		return -1;
 	if (ivar >= 0)
 		tpnr = ml->torigin[ivar];
@@ -244,12 +244,12 @@ setPartnr(matlist_t *ml, int ivar, int ovar, int pnr)
 }
 
 static int
-propagatePartnr(matlist_t *ml, int ivar, int ovar, int pnr)
+propagatePartnr(allocator *ma, matlist_t *ml, int ivar, int ovar, int pnr)
 {
 	/* prop head ids to tail */
 	int tpnr = -1;
 
-	if (checksize(ml, ivar) || checksize(ml, ovar))
+	if (checksize(ma, ml, ivar) || checksize(ma, ml, ovar))
 		return -1;
 	if (ivar >= 0)
 		tpnr = ml->horigin[ivar];
@@ -262,12 +262,12 @@ propagatePartnr(matlist_t *ml, int ivar, int ovar, int pnr)
 }
 
 static int
-propagateMirror(matlist_t *ml, int ivar, int ovar)
+propagateMirror(allocator *ma, matlist_t *ml, int ivar, int ovar)
 {
 	/* prop head ids to head and tail */
 	int tpnr;
 
-	if (checksize(ml, ivar) || checksize(ml, ovar))
+	if (checksize(ma, ml, ivar) || checksize(ma, ml, ovar))
 		return -1;
 	tpnr = ml->horigin[ivar];
 	if (tpnr >= 0) {
@@ -279,11 +279,11 @@ propagateMirror(matlist_t *ml, int ivar, int ovar)
 }
 
 static int
-overlap(matlist_t *ml, int lv, int rv, int lnr, int rnr, int ontails)
+overlap(allocator *ma, matlist_t *ml, int lv, int rv, int lnr, int rnr, int ontails)
 {
 	int lpnr, rpnr;
 
-	if (checksize(ml, lv) || checksize(ml, rv))
+	if (checksize(ma, ml, lv) || checksize(ma, ml, rv))
 		return -1;
 	lpnr = ml->torigin[lv];
 	rpnr = (ontails) ? ml->torigin[rv] : ml->horigin[rv];
@@ -304,9 +304,9 @@ mat_set_prop(matlist_t *ml, MalBlkPtr mb, InstrPtr p)
 
 	tpe = getBatType(tpe);
 	for (k = 1; k < p->argc; k++) {
-		if (setPartnr(ml, -1, getArg(p, k), k))
+		if (setPartnr(mb->ta, ml, -1, getArg(p, k), k))
 			return -1;
-		if (tpe == TYPE_oid && propagateMirror(ml, getArg(p, k), getArg(p, k)))
+		if (tpe == TYPE_oid && propagateMirror(mb->ta, ml, getArg(p, k), getArg(p, k)))
 			return -1;
 	}
 	return 0;
@@ -334,15 +334,15 @@ mat_delta(matlist_t *ml, MalBlkPtr mb, InstrPtr p, mat_t *mat, int m, int n,
 		for (k = 1; k < mat[e].mi->argc; k++) {
 			for (j = 1; j < mat[m].mi->argc; j++) {
 				InstrPtr q;
-				switch (overlap(ml, getArg(mat[e].mi, k), getArg(mat[m].mi, j), k, j, 0)) {
+				switch (overlap(mb->ta, ml, getArg(mat[e].mi, k), getArg(mat[m].mi, j), k, j, 0)) {
 				case 0:
 					continue;
 				case -1:
 					return NULL;
 				case 1:
-					q = copyInstruction(p);
+					q = copyInstruction(mb, p);
 					if (!q) {
-						freeInstruction(r);
+						freeInstruction(mb, r);
 						return NULL;
 					}
 					getArg(q, 0) = newTmpVariable(mb, tpe);
@@ -352,11 +352,11 @@ mat_delta(matlist_t *ml, MalBlkPtr mb, InstrPtr p, mat_t *mat, int m, int n,
 					getArg(q, evar) = getArg(mat[e].mi, k);
 					pushInstruction(mb, q);
 					if (mb->errors) {
-						freeInstruction(r);
+						freeInstruction(mb, r);
 						return NULL;
 					}
-					if (setPartnr(ml, getArg(mat[m].mi, j), getArg(q, 0), nr)) {
-						freeInstruction(r);
+					if (setPartnr(mb->ta, ml, getArg(mat[m].mi, j), getArg(q, 0), nr)) {
+						freeInstruction(mb, r);
 						return NULL;
 					}
 					r = pushArgument(mb, r, getArg(q, 0));
@@ -368,9 +368,9 @@ mat_delta(matlist_t *ml, MalBlkPtr mb, InstrPtr p, mat_t *mat, int m, int n,
 		}
 	} else {
 		for (k = 1; k < mat[m].mi->argc; k++) {
-			InstrPtr q = copyInstruction(p);
+			InstrPtr q = copyInstruction(mb, p);
 			if (!q) {
-				freeInstruction(r);
+				freeInstruction(mb, r);
 				return NULL;
 			}
 			getArg(q, 0) = newTmpVariable(mb, tpe);
@@ -381,11 +381,11 @@ mat_delta(matlist_t *ml, MalBlkPtr mb, InstrPtr p, mat_t *mat, int m, int n,
 				getArg(q, evar) = getArg(mat[e].mi, k);
 			pushInstruction(mb, q);
 			if (mb->errors) {
-				freeInstruction(r);
+				freeInstruction(mb, r);
 				return NULL;
 			}
-			if (setPartnr(ml, is_subdelta ? getArg(mat[m].mi, k) : -1, getArg(q, 0), k)) {
-				freeInstruction(r);
+			if (setPartnr(mb->ta, ml, is_subdelta ? getArg(mat[m].mi, k) : -1, getArg(q, 0), k)) {
+				freeInstruction(mb, r);
 				return NULL;
 			}
 			r = pushArgument(mb, r, getArg(q, 0));
@@ -393,7 +393,7 @@ mat_delta(matlist_t *ml, MalBlkPtr mb, InstrPtr p, mat_t *mat, int m, int n,
 		if (evar == 1 && e >= 0 && mat[e].type == mat_slc && is_projectdelta) {
 			InstrPtr q = newInstruction(mb, algebraRef, projectionRef);
 			if (q == NULL) {
-				freeInstruction(r);
+				freeInstruction(mb, r);
 				return NULL;
 			}
 			getArg(q, 0) = getArg(r, 0);
@@ -408,8 +408,8 @@ mat_delta(matlist_t *ml, MalBlkPtr mb, InstrPtr p, mat_t *mat, int m, int n,
 			r = q;
 		}
 	}
-	if (mat_add_var(ml, r, NULL, getArg(r, 0), mat_type(mat, m), -1, -1, pushed)) {
-		freeInstruction(r);
+	if (mat_add_var(mb->ta, ml, r, NULL, getArg(r, 0), mat_type(mat, m), -1, -1, pushed)) {
+		freeInstruction(mb, r);
 		return NULL;
 	}
 	if (pushed)
@@ -433,13 +433,13 @@ mat_assign(MalBlkPtr mb, InstrPtr p, matlist_t *ml)
 		for (int k = 1; k < mat[m].mi->argc; k++) {
 			/* reuse inputs of old mat */
 			r = pushArgument(mb, r, getArg(mat[m].mi, k));
-			if (setPartnr(ml, -1, getArg(mat[m].mi, k), k)) {
-				freeInstruction(r);
+			if (setPartnr(mb->ta, ml, -1, getArg(mat[m].mi, k), k)) {
+				freeInstruction(mb, r);
 				return NULL;
 			}
 		}
-		if (mat_add(ml, r, mat_none, getFunctionId(p))) {
-			freeInstruction(r);
+		if (mat_add(mb->ma, ml, r, mat_none, getFunctionId(p))) {
+			freeInstruction(mb, r);
 			return NULL;
 		}
 	}
@@ -475,7 +475,7 @@ mat_apply1(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int var)
 
 	if (is_identity) {
 		if ((q = newInstruction(mb, NULL, NULL)) == NULL) {
-			freeInstruction(r);
+			freeInstruction(mb, r);
 			return -1;
 		}
 		getArg(q, 0) = newTmpVariable(mb, TYPE_oid);
@@ -485,14 +485,14 @@ mat_apply1(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int var)
 		ident_var = getArg(q, 0);
 		pushInstruction(mb, q);
 		if (mb->errors) {
-			freeInstruction(r);
+			freeInstruction(mb, r);
 			return -1;
 		}
 	}
 	for (k = 1; k < mat[m].mi->argc; k++) {
 		int res = 0;
-		if ((q = copyInstruction(p)) == NULL) {
-			freeInstruction(r);
+		if ((q = copyInstruction(mb, p)) == NULL) {
+			freeInstruction(mb, r);
 			return -1;
 		}
 
@@ -516,27 +516,27 @@ mat_apply1(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int var)
 		ident_var = getArg(q, 1);
 		pushInstruction(mb, q);
 		if (mb->errors) {
-			freeInstruction(r);
+			freeInstruction(mb, r);
 			return -1;
 		}
 		if (is_mirror || is_identity) {
-			res = propagateMirror(ml, getArg(mat[m].mi, k), getArg(q, 0));
+			res = propagateMirror(mb->ta, ml, getArg(mat[m].mi, k), getArg(q, 0));
 		} else if (is_select)
-			res = propagatePartnr(ml, getArg(mat[m].mi, k), getArg(q, 0), k);
+			res = propagatePartnr(mb->ta, ml, getArg(mat[m].mi, k), getArg(q, 0), k);
 		else
-			res = setPartnr(ml, -1, getArg(q, 0), k);
+			res = setPartnr(mb->ta, ml, -1, getArg(q, 0), k);
 		if (res) {
-			freeInstruction(r);
+			freeInstruction(mb, r);
 			return -1;
 		}
 		r = pushArgument(mb, r, getArg(q, 0));
 	}
 	if (mb->errors) {
-		freeInstruction(r);
+		freeInstruction(mb, r);
 		return -1;
 	}
-	if (!r || mat_add(ml, r, mat_type(ml->v, m), getFunctionId(p))) {
-		freeInstruction(r);
+	if (!r || mat_add(mb->ta, ml, r, mat_type(ml->v, m), getFunctionId(p))) {
+		freeInstruction(mb, r);
 		return -1;
 	}
 	return 0;
@@ -567,14 +567,13 @@ mat_apply(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int nrmats)
 		}
 	}
 
-	InstrPtr *r = (InstrPtr *) GDKmalloc(sizeof(InstrPtr) * p->retc);
+	InstrPtr *r = (InstrPtr *) ma_alloc(mb->instr_allocator, sizeof(InstrPtr) * p->retc);
 	if (!r)
 		return -1;
 	for (k = 0; k < p->retc; k++) {
 		if ((r[k] = newInstructionArgs(mb, matRef, packRef, parts)) == NULL) {
 			while (k > 0)
-				freeInstruction(r[--k]);
-			GDKfree(r);
+				freeInstruction(mb, r[--k]);
 			return -1;
 		}
 		getArg(r[k], 0) = getArg(p, k);
@@ -582,11 +581,10 @@ mat_apply(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int nrmats)
 
 	for (k = 1; k < ml->v[matvar[0]].mi->argc; k++) {
 		int tpe;
-		InstrPtr q = copyInstruction(p);
+		InstrPtr q = copyInstruction(mb, p);
 		if (q == NULL) {
 			for (k = 0; k < p->retc; k++)
-				freeInstruction(r[k]);
-			GDKfree(r);
+				freeInstruction(mb, r[k]);
 			return -1;
 		}
 
@@ -598,31 +596,27 @@ mat_apply(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int nrmats)
 			getArg(q, fargument[l]) = getArg(ml->v[matvar[l]].mi, k);
 		pushInstruction(mb, q);
 		for (l = 0; l < p->retc; l++) {
-			if (setPartnr(ml, -1, getArg(q, l), k)) {
+			if (setPartnr(mb->ta, ml, -1, getArg(q, l), k)) {
 				for (k = 0; k < p->retc; k++)
-					freeInstruction(r[k]);
-				GDKfree(r);
+					freeInstruction(mb, r[k]);
 				return -1;
 			}
 			r[l] = pushArgument(mb, r[l], getArg(q, l));
 		}
 		if (mb->errors) {
 			for (k = 0; k < p->retc; k++)
-				freeInstruction(r[k]);
-			GDKfree(r);
+				freeInstruction(mb, r[k]);
 			return -1;
 		}
 	}
 	for (k = 0; k < p->retc; k++) {
-		if (mat_add_var(ml, r[k], NULL, getArg(r[k], 0),
+		if (mat_add_var(mb->ta, ml, r[k], NULL, getArg(r[k], 0),
 						mat_type(ml->v, matvar[0]), -1, -1, 0)) {
 			for (l = k; l < p->retc; l++)
-				freeInstruction(r[l]);
-			GDKfree(r);
+				freeInstruction(mb, r[l]);
 			return -1;
 		}
 	}
-	GDKfree(r);
 	return 0;
 }
 
@@ -647,7 +641,7 @@ mat_setop(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n, int o)
 		assert(o < 0 || mat[m].mi->argc == mat[o].mi->argc);
 
 		for (k = 1; mb->errors == NULL && k < mat[m].mi->argc; k++) {
-			InstrPtr q = copyInstruction(p);
+			InstrPtr q = copyInstruction(mb, p);
 			InstrPtr s = newInstructionArgs(mb, matRef, packRef,
 											mat[n].mi->argc);
 			int ttpe = 0;
@@ -655,9 +649,9 @@ mat_setop(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n, int o)
 			if (q == NULL
 				|| s == NULL
 				|| (getArg(s, 0) = newTmpVariable(mb, getArgType(mb, mat[n].mi, k))) < 0) {
-				freeInstruction(q);
-				freeInstruction(s);
-				freeInstruction(r);
+				freeInstruction(mb, q);
+				freeInstruction(mb, s);
+				freeInstruction(mb, r);
 				return -1;
 			}
 
@@ -665,14 +659,14 @@ mat_setop(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n, int o)
 			for (j = 1; j < mat[n].mi->argc; j++) {
 				int ov = 0;
 				if (getBatType(ttpe) != TYPE_oid
-					|| (ov = overlap(ml, getArg(mat[m].mi, k),
+					|| (ov = overlap(mb->ta, ml, getArg(mat[m].mi, k),
 									 getArg(mat[n].mi, j), k, j, 1)) == 1) {
 					s = pushArgument(mb, s, getArg(mat[n].mi, j));
 				}
 				if (ov == -1) {
-					freeInstruction(q);
-					freeInstruction(s);
-					freeInstruction(r);
+					freeInstruction(mb, q);
+					freeInstruction(mb, s);
+					freeInstruction(mb, r);
 					return -1;
 				}
 			}
@@ -691,9 +685,9 @@ mat_setop(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n, int o)
 			getArg(q, 2) = getArg(s, 0);
 			if (o >= 0)
 				getArg(q, 3) = getArg(mat[o].mi, k);
-			if (setPartnr(ml, getArg(mat[m].mi, k), getArg(q, 0), nr)) {
-				freeInstruction(q);
-				freeInstruction(r);
+			if (setPartnr(mb->ta, ml, getArg(mat[m].mi, k), getArg(q, 0), nr)) {
+				freeInstruction(mb, q);
+				freeInstruction(mb, r);
 				return -1;
 			}
 			pushInstruction(mb, q);
@@ -706,9 +700,9 @@ mat_setop(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n, int o)
 		assert(o < 0 || mat[m].mi->argc == mat[o].mi->argc);
 
 		for (k = 1; mb->errors == NULL && k < mat[m].mi->argc; k++) {
-			InstrPtr q = copyInstruction(p);
+			InstrPtr q = copyInstruction(mb, p);
 			if (!q) {
-				freeInstruction(r);
+				freeInstruction(mb, r);
 				return -1;
 			}
 
@@ -718,16 +712,16 @@ mat_setop(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n, int o)
 				getArg(q, 3) = getArg(mat[o].mi, k);
 			pushInstruction(mb, q);
 
-			if (setPartnr(ml, getArg(q, 2), getArg(q, 0), k)) {
-				freeInstruction(r);
+			if (setPartnr(mb->ta, ml, getArg(q, 2), getArg(q, 0), k)) {
+				freeInstruction(mb, r);
 				return -1;
 			}
 			r = pushArgument(mb, r, getArg(q, 0));
 		}
 	}
 
-	if (mb->errors || mat_add(ml, r, mat_none, getFunctionId(p))) {
-		freeInstruction(r);
+	if (mb->errors || mat_add(mb->ta, ml, r, mat_none, getFunctionId(p))) {
+		freeInstruction(mb, r);
 		return -1;
 	}
 	return 0;
@@ -755,18 +749,18 @@ mat_projection(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n)
 		for (k = 1; mb->errors == NULL && k < mat[m].mi->argc; k++) {
 			for (j = 1; j < mat[n].mi->argc; j++) {
 				InstrPtr q;
-				switch (overlap(ml, getArg(mat[m].mi, k),
+				switch (overlap(mb->ta, ml, getArg(mat[m].mi, k),
 								getArg(mat[n].mi, j), k, j, 0)) {
 				case 0:
 					continue;
 				case -1:
-					freeInstruction(r);
+					freeInstruction(mb, r);
 					return -1;
 				case 1:
-					q = copyInstruction(p);
+					q = copyInstruction(mb, p);
 
 					if (!q) {
-						freeInstruction(r);
+						freeInstruction(mb, r);
 						return -1;
 					}
 
@@ -775,8 +769,8 @@ mat_projection(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n)
 					getArg(q, 2) = getArg(mat[n].mi, j);
 					pushInstruction(mb, q);
 
-					if (mb->errors || setPartnr(ml, getArg(mat[n].mi, j), getArg(q, 0), nr)) {
-						freeInstruction(r);
+					if (mb->errors || setPartnr(mb->ta, ml, getArg(mat[n].mi, j), getArg(q, 0), nr)) {
+						freeInstruction(mb, r);
 						return -1;
 					}
 					r = pushArgument(mb, r, getArg(q, 0));
@@ -797,10 +791,10 @@ mat_projection(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n)
 		getArg(r, 0) = getArg(p, 0);
 
 		for (k = 1; mb->errors == NULL && k < mat[m].mi->argc; k++) {
-			InstrPtr q = copyInstruction(p);
+			InstrPtr q = copyInstruction(mb, p);
 
 			if (!q) {
-				freeInstruction(r);
+				freeInstruction(mb, r);
 				return -1;
 			}
 
@@ -808,16 +802,16 @@ mat_projection(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n)
 			getArg(q, 1) = getArg(mat[m].mi, k);
 			pushInstruction(mb, q);
 
-			if (mb->errors || setPartnr(ml, getArg(q, 2), getArg(q, 0), k)) {
-				freeInstruction(r);
+			if (mb->errors || setPartnr(mb->ta, ml, getArg(q, 2), getArg(q, 0), k)) {
+				freeInstruction(mb, r);
 				return -1;
 			}
 			r = pushArgument(mb, r, getArg(q, 0));
 		}
 	}
 
-	if (mb->errors || mat_add(ml, r, mat_none, getFunctionId(p))) {
-		freeInstruction(r);
+	if (mb->errors || mat_add(mb->ta, ml, r, mat_none, getFunctionId(p))) {
+		freeInstruction(mb, r);
 		return -1;
 	}
 	return 0;
@@ -840,8 +834,8 @@ mat_join2(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n, int lc, int rc)
 		r = newInstructionArgs(mb, matRef, packRef,
 							   mat[m].mi->argc * mat[n].mi->argc);
 		if (!l || !r) {
-			freeInstruction(l);
-			freeInstruction(r);
+			freeInstruction(mb, l);
+			freeInstruction(mb, r);
 			return -1;
 		}
 
@@ -850,11 +844,11 @@ mat_join2(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n, int lc, int rc)
 
 		for (k = 1; k < mat[m].mi->argc; k++) {
 			for (j = 1; j < mat[n].mi->argc; j++) {
-				InstrPtr q = copyInstruction(p);
+				InstrPtr q = copyInstruction(mb, p);
 
 				if (!q) {
-					freeInstruction(l);
-					freeInstruction(r);
+					freeInstruction(mb, l);
+					freeInstruction(mb, r);
 					return -1;
 				}
 
@@ -869,12 +863,12 @@ mat_join2(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n, int lc, int rc)
 				pushInstruction(mb, q);
 
 				if (mb->errors
-					|| propagatePartnr(ml, getArg(mat[m].mi, k), getArg(q, 0),
+					|| propagatePartnr(mb->ta, ml, getArg(mat[m].mi, k), getArg(q, 0),
 									   nr)
-					|| propagatePartnr(ml, getArg(mat[n].mi, j), getArg(q, 1),
+					|| propagatePartnr(mb->ta, ml, getArg(mat[n].mi, j), getArg(q, 1),
 									   nr)) {
-					freeInstruction(r);
-					freeInstruction(l);
+					freeInstruction(mb, r);
+					freeInstruction(mb, l);
 					return -1;
 				}
 
@@ -893,8 +887,8 @@ mat_join2(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n, int lc, int rc)
 		l = newInstructionArgs(mb, matRef, packRef, mat[mv].mi->argc);
 		r = newInstructionArgs(mb, matRef, packRef, mat[mv].mi->argc);
 		if (!l || !r) {
-			freeInstruction(l);
-			freeInstruction(r);
+			freeInstruction(mb, l);
+			freeInstruction(mb, r);
 			return -1;
 		}
 
@@ -902,11 +896,11 @@ mat_join2(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n, int lc, int rc)
 		getArg(r, 0) = getArg(p, 1);
 
 		for (k = 1; k < mat[mv].mi->argc; k++) {
-			InstrPtr q = copyInstruction(p);
+			InstrPtr q = copyInstruction(mb, p);
 
 			if (!q) {
-				freeInstruction(l);
-				freeInstruction(r);
+				freeInstruction(mb, l);
+				freeInstruction(mb, r);
 				return -1;
 			}
 
@@ -918,11 +912,11 @@ mat_join2(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n, int lc, int rc)
 			pushInstruction(mb, q);
 
 			if (mb->errors
-				|| propagatePartnr(ml, getArg(mat[mv].mi, k), getArg(q, av), k)
-				|| propagatePartnr(ml, getArg(p, p->retc + bv), getArg(q, bv),
+				|| propagatePartnr(mb->ta, ml, getArg(mat[mv].mi, k), getArg(q, av), k)
+				|| propagatePartnr(mb->ta, ml, getArg(p, p->retc + bv), getArg(q, bv),
 								   k)) {
-				freeInstruction(l);
-				freeInstruction(r);
+				freeInstruction(mb, l);
+				freeInstruction(mb, r);
 				return -1;
 			}
 
@@ -931,13 +925,13 @@ mat_join2(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n, int lc, int rc)
 			r = pushArgument(mb, r, getArg(q, 1));
 		}
 	}
-	if (mb->errors || mat_add(ml, l, mat_none, getFunctionId(p))) {
-		freeInstruction(l);
-		freeInstruction(r);
+	if (mb->errors || mat_add(mb->ta, ml, l, mat_none, getFunctionId(p))) {
+		freeInstruction(mb, l);
+		freeInstruction(mb, r);
 		return -1;
 	}
-	if (mat_add(ml, r, mat_none, getFunctionId(p))) {
-		freeInstruction(r);
+	if (mat_add(mb->ta, ml, r, mat_none, getFunctionId(p))) {
+		freeInstruction(mb, r);
 		return -1;
 	}
 	return 0;
@@ -957,8 +951,8 @@ mat_rangejoin(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n)
 	l = newInstructionArgs(mb, matRef, packRef, mat[m].mi->argc * mat[n].mi->argc);
 	r = newInstructionArgs(mb, matRef, packRef, mat[m].mi->argc * mat[n].mi->argc);
 	if (!l || !r) {
-		freeInstruction(l);
-		freeInstruction(r);
+		freeInstruction(mb, l);
+		freeInstruction(mb, r);
 		return -1;
 	}
 
@@ -966,11 +960,11 @@ mat_rangejoin(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n)
 	getArg(r, 0) = getArg(p, 1);
 
 	for (k = 1; k < mat[m].mi->argc; k++) {
-		InstrPtr q = copyInstruction(p);
+		InstrPtr q = copyInstruction(mb, p);
 
 		if (!q) {
-			freeInstruction(l);
-			freeInstruction(r);
+			freeInstruction(mb, l);
+			freeInstruction(mb, r);
 			return -1;
 		}
 
@@ -981,10 +975,10 @@ mat_rangejoin(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n)
 		getArg(q, 4) = getArg(mat[n].mi, k);
 		pushInstruction(mb, q);
 
-		if (mb->errors || propagatePartnr(ml, getArg(mat[m].mi, k), getArg(q, 0), nr)
-				       || propagatePartnr(ml, getArg(mat[n].mi, k), getArg(q, 1), nr)) {
-			freeInstruction(r);
-			freeInstruction(l);
+		if (mb->errors || propagatePartnr(mb->ta, ml, getArg(mat[m].mi, k), getArg(q, 0), nr)
+				       || propagatePartnr(mb->ta, ml, getArg(mat[n].mi, k), getArg(q, 1), nr)) {
+			freeInstruction(mb, r);
+			freeInstruction(mb, l);
 			return -1;
 		}
 
@@ -993,20 +987,20 @@ mat_rangejoin(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n)
 		r = pushArgument(mb, r, getArg(q, 1));
 		nr++;
 	}
-	if (mb->errors || mat_add(ml, l, mat_none, getFunctionId(p))) {
-		freeInstruction(l);
-		freeInstruction(r);
+	if (mb->errors || mat_add(mb->ta, ml, l, mat_none, getFunctionId(p))) {
+		freeInstruction(mb, l);
+		freeInstruction(mb, r);
 		return -1;
 	}
-	if (mat_add(ml, r, mat_none, getFunctionId(p))) {
-		freeInstruction(r);
+	if (mat_add(mb->ta, ml, r, mat_none, getFunctionId(p))) {
+		freeInstruction(mb, r);
 		return -1;
 	}
 	return 0;
 }
 
 static int
-join_split(Client cntxt, InstrPtr p, int args)
+join_split(allocator *ma, Client ctx, InstrPtr p, int args)
 {
 	char *name = NULL;
 	size_t len;
@@ -1019,13 +1013,13 @@ join_split(Client cntxt, InstrPtr p, int args)
 		return 1;
 
 	len = strlen(getFunctionId(p));
-	name = GDKmalloc(len + 3);
+	name = ma_alloc(ma, len + 3);
 	if (!name)
 		return -2;
 	strncpy(name, getFunctionId(p), len - 7);
 	strcpy(name + len - 7, "join");
 
-	sym = findSymbol(cntxt->usermodule, getModuleId(p), name);
+	sym = findSymbol(ctx->usermodule, getModuleId(p), name);
 	assert(sym);
 	mb = sym->def;
 
@@ -1037,7 +1031,6 @@ join_split(Client cntxt, InstrPtr p, int args)
 		else
 			break;
 	}
-	GDKfree(name);
 	return res - 1;
 }
 
@@ -1048,13 +1041,13 @@ join_split(Client cntxt, InstrPtr p, int args)
  * input is one list of arguments (just total length of mats)
  */
 static int
-mat_joinNxM(Client cntxt, MalBlkPtr mb, InstrPtr p, matlist_t *ml, int args)
+mat_joinNxM(Client ctx, MalBlkPtr mb, InstrPtr p, matlist_t *ml, int args)
 {
 	int tpe1 = getArgType(mb, p, 0), tpe2 = getArgType(mb, p, 1), j, k, nr = 1;
 	InstrPtr l;
 	InstrPtr r;
 	mat_t *mat = ml->v;
-	int *mats = (int *) GDKzalloc(sizeof(int) * args);
+	int *mats = (int *) ma_zalloc(mb->ta, sizeof(int) * args);
 	int nr_mats = 0, first = -1, res = 0;
 
 	if (!mats) {
@@ -1075,15 +1068,13 @@ mat_joinNxM(Client cntxt, MalBlkPtr mb, InstrPtr p, matlist_t *ml, int args)
 	if (args == nr_mats) {
 		int mv1 = mats[0], i;
 		int mv2 = mats[args - 1];
-		int split = join_split(cntxt, p, args);
+		int split = join_split(mb->ta, ctx, p, args);
 		int nr_mv1 = split;
 
 		if (split == -2) {
-			GDKfree(mats);
 			return -1;
 		}
 		if (split < 0) {
-			GDKfree(mats);
 			mb->errors = createException(MAL, "mergetable.join",
 										 SQLSTATE(42000) " incorrect split level");
 			return 0;
@@ -1094,9 +1085,8 @@ mat_joinNxM(Client cntxt, MalBlkPtr mb, InstrPtr p, matlist_t *ml, int args)
 		r = newInstructionArgs(mb, matRef, packRef,
 							   mat[mv1].mi->argc * mat[mv2].mi->argc);
 		if (l == NULL || r == NULL) {
-			freeInstruction(l);
-			freeInstruction(r);
-			GDKfree(mats);
+			freeInstruction(mb, l);
+			freeInstruction(mb, r);
 			return -1;
 		}
 		getArg(l, 0) = getArg(p, 0);
@@ -1105,11 +1095,10 @@ mat_joinNxM(Client cntxt, MalBlkPtr mb, InstrPtr p, matlist_t *ml, int args)
 		/* now detect split point */
 		for (k = 1; k < mat[mv1].mi->argc; k++) {
 			for (j = 1; j < mat[mv2].mi->argc; j++) {
-				InstrPtr q = copyInstruction(p);
+				InstrPtr q = copyInstruction(mb, p);
 				if (!q) {
-					freeInstruction(r);
-					freeInstruction(l);
-					GDKfree(mats);
+					freeInstruction(mb, r);
+					freeInstruction(mb, l);
 					return -1;
 				}
 
@@ -1122,13 +1111,12 @@ mat_joinNxM(Client cntxt, MalBlkPtr mb, InstrPtr p, matlist_t *ml, int args)
 				pushInstruction(mb, q);
 
 				if (mb->errors
-					|| propagatePartnr(ml, getArg(mat[mv1].mi, k), getArg(q, 0),
+					|| propagatePartnr(mb->ta, ml, getArg(mat[mv1].mi, k), getArg(q, 0),
 									   nr)
-					|| propagatePartnr(ml, getArg(mat[mv2].mi, j), getArg(q, 1),
+					|| propagatePartnr(mb->ta, ml, getArg(mat[mv2].mi, j), getArg(q, 1),
 									   nr)) {
-					freeInstruction(r);
-					freeInstruction(l);
-					GDKfree(mats);
+					freeInstruction(mb, r);
+					freeInstruction(mb, l);
 					return -1;
 				}
 
@@ -1147,20 +1135,18 @@ mat_joinNxM(Client cntxt, MalBlkPtr mb, InstrPtr p, matlist_t *ml, int args)
 		l = newInstructionArgs(mb, matRef, packRef, mat[mv].mi->argc);
 		r = newInstructionArgs(mb, matRef, packRef, mat[mv].mi->argc);
 		if (l == NULL || r == NULL) {
-			freeInstruction(l);
-			freeInstruction(r);
-			GDKfree(mats);
+			freeInstruction(mb, l);
+			freeInstruction(mb, r);
 			return -1;
 		}
 		getArg(l, 0) = getArg(p, 0);
 		getArg(r, 0) = getArg(p, 1);
 
 		for (k = 1; k < mat[mv].mi->argc; k++) {
-			InstrPtr q = copyInstruction(p);
+			InstrPtr q = copyInstruction(mb, p);
 			if (!q) {
-				freeInstruction(r);
-				freeInstruction(l);
-				GDKfree(mats);
+				freeInstruction(mb, r);
+				freeInstruction(mb, l);
 				return -1;
 			}
 
@@ -1171,15 +1157,14 @@ mat_joinNxM(Client cntxt, MalBlkPtr mb, InstrPtr p, matlist_t *ml, int args)
 				getArg(q, p->retc + first + j) = getArg(mat[mats[first + j]].mi, k);
 			}
 			if (mb->errors
-				|| propagatePartnr(ml, getArg(mat[mv].mi, k),
+				|| propagatePartnr(mb->ta, ml, getArg(mat[mv].mi, k),
 								   getArg(q, (first != 0)), k)
-				|| propagatePartnr(ml,
+				|| propagatePartnr(mb->ta, ml,
 								   getArg(p, p->retc + (first) ? nr_mats : 0),
 								   getArg(q, (first == 0)), k)) {
-				freeInstruction(q);
-				freeInstruction(r);
-				freeInstruction(l);
-				GDKfree(mats);
+				freeInstruction(mb, q);
+				freeInstruction(mb, r);
+				freeInstruction(mb, l);
 				return -1;
 			}
 			pushInstruction(mb, q);
@@ -1189,15 +1174,14 @@ mat_joinNxM(Client cntxt, MalBlkPtr mb, InstrPtr p, matlist_t *ml, int args)
 			r = pushArgument(mb, r, getArg(q, 1));
 		}
 	}
-	if (mb->errors || mat_add(ml, l, mat_none, getFunctionId(p))) {
-		freeInstruction(l);
-		freeInstruction(r);
+	if (mb->errors || mat_add(mb->ta, ml, l, mat_none, getFunctionId(p))) {
+		freeInstruction(mb, l);
+		freeInstruction(mb, r);
 		res = -1;
-	} else if (mat_add(ml, r, mat_none, getFunctionId(p))) {
-		freeInstruction(r);
+	} else if (mat_add(mb->ta, ml, r, mat_none, getFunctionId(p))) {
+		freeInstruction(mb, r);
 		res = -1;
 	}
-	GDKfree(mats);
 	return res;
 }
 
@@ -1232,7 +1216,7 @@ mat_aggr(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m)
 		battp2 = newBatType(tp2);
 		u = newInstructionArgs(mb, matRef, packRef, mat[m].mi->argc);
 		if (u == NULL) {
-			freeInstruction(r);
+			freeInstruction(mb, r);
 			throw(MAL, "optimizer.mergetable", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		getArg(u, 0) = newTmpVariable(mb, battp2);
@@ -1241,8 +1225,8 @@ mat_aggr(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m)
 		battp2 = newBatType(tp2);
 		v = newInstructionArgs(mb, matRef, packRef, mat[m].mi->argc);
 		if (v == NULL) {
-			freeInstruction(r);
-			freeInstruction(u);
+			freeInstruction(mb, r);
+			freeInstruction(mb, u);
 			throw(MAL, "optimizer.mergetable", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		getArg(v, 0) = newTmpVariable(mb, battp2);
@@ -1250,9 +1234,9 @@ mat_aggr(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m)
 	for (k = 1; mb->errors == NULL && k < mat[m].mi->argc; k++) {
 		q = newInstruction(mb, NULL, NULL);
 		if (q == NULL) {
-			freeInstruction(r);
-			freeInstruction(u);
-			freeInstruction(v);
+			freeInstruction(mb, r);
+			freeInstruction(mb, u);
+			freeInstruction(mb, v);
 			throw(MAL, "optimizer.mergetable", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		if (isAvg && tp == TYPE_dbl)
@@ -1448,15 +1432,15 @@ mat_group_project(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int e, int a)
 
 	getArg(ai1, 0) = newTmpVariable(mb, tp);
 	if (mb->errors) {
-		freeInstruction(ai1);
+		freeInstruction(mb, ai1);
 		return -1;
 	}
 
 	assert(mat[e].mi->argc == mat[a].mi->argc);
 	for (k = 1; k < mat[a].mi->argc; k++) {
-		InstrPtr q = copyInstruction(p);
+		InstrPtr q = copyInstruction(mb, p);
 		if (!q) {
-			freeInstruction(ai1);
+			freeInstruction(mb, ai1);
 			return -1;
 		}
 
@@ -1465,11 +1449,11 @@ mat_group_project(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int e, int a)
 		getArg(q, 2) = getArg(mat[a].mi, k);
 		pushInstruction(mb, q);
 		if (mb->errors) {
-			freeInstruction(ai1);
+			freeInstruction(mb, ai1);
 			return -1;
 		}
-		if (setPartnr(ml, getArg(mat[a].mi, k), getArg(q, 0), k)) {
-			freeInstruction(ai1);
+		if (setPartnr(mb->ta, ml, getArg(mat[a].mi, k), getArg(q, 0), k)) {
+			freeInstruction(mb, ai1);
 			return -1;
 		}
 
@@ -1481,7 +1465,7 @@ mat_group_project(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int e, int a)
 		return -1;
 	}
 
-	if ((r = copyInstruction(p)) == NULL)
+	if ((r = copyInstruction(mb, p)) == NULL)
 		return -1;
 	getArg(r, 1) = mat[e].mv;
 	getArg(r, 2) = getArg(ai1, 0);
@@ -1510,7 +1494,7 @@ mat_group_aggr(MalBlkPtr mb, InstrPtr p, mat_t *mat, int b, int g, int e)
 		tp2 = newBatType(TYPE_lng);
 		ai10 = newInstructionArgs(mb, matRef, packRef, mat[b].mi->argc);
 		if (!ai10) {
-			freeInstruction(ai1);
+			freeInstruction(mb, ai1);
 			return -1;
 		}
 		getArg(ai10, 0) = newTmpVariable(mb, tp2);
@@ -1519,8 +1503,8 @@ mat_group_aggr(MalBlkPtr mb, InstrPtr p, mat_t *mat, int b, int g, int e)
 		tp2 = newBatType(TYPE_lng);
 		ai11 = newInstructionArgs(mb, matRef, packRef, mat[b].mi->argc);
 		if (!ai11) {
-			freeInstruction(ai1);
-			freeInstruction(ai10);
+			freeInstruction(mb, ai1);
+			freeInstruction(mb, ai10);
 			return -1;
 		}
 		getArg(ai11, 0) = newTmpVariable(mb, tp2);
@@ -1528,10 +1512,10 @@ mat_group_aggr(MalBlkPtr mb, InstrPtr p, mat_t *mat, int b, int g, int e)
 
 	for (k = 1; mb->errors == NULL && k < mat[b].mi->argc; k++) {
 		int off = 0;
-		InstrPtr q = copyInstructionArgs(p, p->argc + (isAvg && tpe == TYPE_dbl));
+		InstrPtr q = copyInstructionArgs(mb, p, p->argc + (isAvg && tpe == TYPE_dbl));
 		if (!q) {
-			freeInstruction(ai1);
-			freeInstruction(ai10);
+			freeInstruction(mb, ai1);
+			freeInstruction(mb, ai10);
 			return -1;
 		}
 
@@ -1732,9 +1716,9 @@ mat_group_attr(MalBlkPtr mb, matlist_t *ml, int g, InstrPtr cext, int push)
 			InstrPtr r = newInstruction(mb, algebraRef, projectionRef);
 			InstrPtr q = newInstruction(mb, algebraRef, projectionRef);
 			if (r == NULL || q == NULL) {
-				freeInstruction(attr);
-				freeInstruction(r);
-				freeInstruction(q);
+				freeInstruction(mb, attr);
+				freeInstruction(mb, r);
+				freeInstruction(mb, q);
 				return -1;
 			}
 
@@ -1752,10 +1736,10 @@ mat_group_attr(MalBlkPtr mb, matlist_t *ml, int g, InstrPtr cext, int push)
 		}
 		if (push)
 			pushInstruction(mb, attr);
-		if (mb->errors || mat_add_var(ml, attr, NULL, getArg(attr, 0), mat_ext,
+		if (mb->errors || mat_add_var(mb->ta, ml, attr, NULL, getArg(attr, 0), mat_ext,
 									  -1, -1, push)) {
 			if (!push)
-				freeInstruction(attr);
+				freeInstruction(mb, attr);
 			return -1;
 		}
 		/* keep new attribute with the group extend */
@@ -1783,15 +1767,15 @@ mat_group_new(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int b)
 
 	r1 = newInstructionArgs(mb, matRef, packRef, ml->v[b].mi->argc);
 	if (r1 == NULL) {
-		freeInstruction(r0);
+		freeInstruction(mb, r0);
 		return -1;
 	}
 	getArg(r1, 0) = newTmpVariable(mb, tp1);
 
 	r2 = newInstructionArgs(mb, matRef, packRef, ml->v[b].mi->argc);
 	if (r2 == NULL) {
-		freeInstruction(r0);
-		freeInstruction(r1);
+		freeInstruction(mb, r0);
+		freeInstruction(mb, r1);
 		return -1;
 	}
 	getArg(r2, 0) = newTmpVariable(mb, tp2);
@@ -1800,20 +1784,20 @@ mat_group_new(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int b)
 	 * when we pack the group result */
 	attr = newInstructionArgs(mb, matRef, packRef, ml->v[b].mi->argc);
 	if (attr == NULL) {
-		freeInstruction(r0);
-		freeInstruction(r1);
-		freeInstruction(r2);
+		freeInstruction(mb, r0);
+		freeInstruction(mb, r1);
+		freeInstruction(mb, r2);
 		return -1;
 	}
 	getArg(attr, 0) = getArg(ml->v[b].mi, 0);
 
 	for (i = 1; mb->errors == NULL && i < ml->v[b].mi->argc; i++) {
-		InstrPtr q = copyInstruction(p), r;
+		InstrPtr q = copyInstruction(mb, p), r;
 		if (!q) {
-			freeInstruction(r0);
-			freeInstruction(r1);
-			freeInstruction(r2);
-			freeInstruction(attr);
+			freeInstruction(mb, r0);
+			freeInstruction(mb, r1);
+			freeInstruction(mb, r2);
+			freeInstruction(mb, attr);
 			return -1;
 		}
 
@@ -1822,13 +1806,13 @@ mat_group_new(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int b)
 		getArg(q, 2) = newTmpVariable(mb, tp2);
 		getArg(q, 3) = getArg(ml->v[b].mi, i);
 		pushInstruction(mb, q);
-		if (setPartnr(ml, getArg(ml->v[b].mi, i), getArg(q, 0), i)
-			|| setPartnr(ml, getArg(ml->v[b].mi, i), getArg(q, 1), i)
-			|| setPartnr(ml, getArg(ml->v[b].mi, i), getArg(q, 2), i)) {
-			freeInstruction(r0);
-			freeInstruction(r1);
-			freeInstruction(r2);
-			freeInstruction(attr);
+		if (setPartnr(mb->ta, ml, getArg(ml->v[b].mi, i), getArg(q, 0), i)
+			|| setPartnr(mb->ta, ml, getArg(ml->v[b].mi, i), getArg(q, 1), i)
+			|| setPartnr(mb->ta, ml, getArg(ml->v[b].mi, i), getArg(q, 2), i)) {
+			freeInstruction(mb, r0);
+			freeInstruction(mb, r1);
+			freeInstruction(mb, r2);
+			freeInstruction(mb, attr);
 			return -1;
 		}
 
@@ -1839,21 +1823,21 @@ mat_group_new(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int b)
 
 		r = newInstruction(mb, algebraRef, projectionRef);
 		if (r == NULL) {
-			freeInstruction(r0);
-			freeInstruction(r1);
-			freeInstruction(r2);
-			freeInstruction(attr);
+			freeInstruction(mb, r0);
+			freeInstruction(mb, r1);
+			freeInstruction(mb, r2);
+			freeInstruction(mb, attr);
 			return -1;
 		}
 		getArg(r, 0) = newTmpVariable(mb, atp);
 		r = pushArgument(mb, r, getArg(q, 1));
 		r = pushArgument(mb, r, getArg(ml->v[b].mi, i));
-		if (setPartnr(ml, getArg(ml->v[b].mi, i), getArg(r, 0), i)) {
-			freeInstruction(r0);
-			freeInstruction(r1);
-			freeInstruction(r2);
-			freeInstruction(attr);
-			freeInstruction(r);
+		if (setPartnr(mb->ta, ml, getArg(ml->v[b].mi, i), getArg(r, 0), i)) {
+			freeInstruction(mb, r0);
+			freeInstruction(mb, r1);
+			freeInstruction(mb, r2);
+			freeInstruction(mb, attr);
+			freeInstruction(mb, r);
 			return -1;
 		}
 		pushInstruction(mb, r);
@@ -1868,16 +1852,16 @@ mat_group_new(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int b)
 
 	/* create mat's for the intermediates */
 	a = ml->top;
-	if (mb->errors || mat_add_var(ml, attr, NULL, getArg(attr, 0), mat_ext,
+	if (mb->errors || mat_add_var(mb->ta, ml, attr, NULL, getArg(attr, 0), mat_ext,
 								  -1, -1, push)) {
 		if (!push)
-			freeInstruction(attr);
+			freeInstruction(mb, attr);
 		return -1;
 	}
 	g = ml->top;
-	if (mat_add_var(ml, r0, p, getArg(p, 0), mat_grp, b, -1, 1)
-		|| mat_add_var(ml, r1, p, getArg(p, 1), mat_ext, a, ml->top - 1, 1)	/* point back at group */
-		|| mat_add_var(ml, r2, p, getArg(p, 2), mat_cnt, -1, ml->top - 1, 1)) /* point back at ext */
+	if (mat_add_var(mb->ta, ml, r0, p, getArg(p, 0), mat_grp, b, -1, 1)
+		|| mat_add_var(mb->ta, ml, r1, p, getArg(p, 1), mat_ext, a, ml->top - 1, 1)	/* point back at group */
+		|| mat_add_var(mb->ta, ml, r2, p, getArg(p, 2), mat_cnt, -1, ml->top - 1, 1)) /* point back at ext */
 		return -1;
 	if (push)
 		return mat_pack_group(mb, ml, g);
@@ -1897,7 +1881,7 @@ mat_group_derive(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int b, int g)
 		push = 1;
 
 	if (ml->v[g].im == -1) {	/* already packed */
-		InstrPtr q = copyInstruction(p);
+		InstrPtr q = copyInstruction(mb, p);
 		if (!q)
 			return -1;
 		pushInstruction(mb, q);
@@ -1911,15 +1895,15 @@ mat_group_derive(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int b, int g)
 
 	r1 = newInstructionArgs(mb, matRef, packRef, ml->v[b].mi->argc);
 	if (r1 == NULL) {
-		freeInstruction(r0);
+		freeInstruction(mb, r0);
 		return -1;
 	}
 	getArg(r1, 0) = newTmpVariable(mb, tp1);
 
 	r2 = newInstructionArgs(mb, matRef, packRef, ml->v[b].mi->argc);
 	if (r2 == NULL) {
-		freeInstruction(r0);
-		freeInstruction(r1);
+		freeInstruction(mb, r0);
+		freeInstruction(mb, r1);
 		return -1;
 	}
 	getArg(r2, 0) = newTmpVariable(mb, tp2);
@@ -1928,21 +1912,21 @@ mat_group_derive(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int b, int g)
 	 * when we pack the group result */
 	attr = newInstructionArgs(mb, matRef, packRef, ml->v[b].mi->argc);
 	if (attr == NULL) {
-		freeInstruction(r0);
-		freeInstruction(r1);
-		freeInstruction(r2);
+		freeInstruction(mb, r0);
+		freeInstruction(mb, r1);
+		freeInstruction(mb, r2);
 		return -1;
 	}
 	getArg(attr, 0) = getArg(ml->v[b].mi, 0);
 
 	/* we need overlapping ranges */
 	for (i = 1; mb->errors == NULL && i < ml->v[b].mi->argc; i++) {
-		InstrPtr q = copyInstruction(p), r;
+		InstrPtr q = copyInstruction(mb, p), r;
 		if (!q) {
-			freeInstruction(r0);
-			freeInstruction(r1);
-			freeInstruction(r2);
-			freeInstruction(attr);
+			freeInstruction(mb, r0);
+			freeInstruction(mb, r1);
+			freeInstruction(mb, r2);
+			freeInstruction(mb, attr);
 			return -1;
 		}
 
@@ -1952,13 +1936,13 @@ mat_group_derive(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int b, int g)
 		getArg(q, 3) = getArg(ml->v[b].mi, i);
 		getArg(q, 4) = getArg(ml->v[g].mi, i);
 		pushInstruction(mb, q);
-		if (setPartnr(ml, getArg(ml->v[b].mi, i), getArg(q, 0), i)
-			|| setPartnr(ml, getArg(ml->v[b].mi, i), getArg(q, 1), i)
-			|| setPartnr(ml, getArg(ml->v[b].mi, i), getArg(q, 2), i)) {
-			freeInstruction(r0);
-			freeInstruction(r1);
-			freeInstruction(r2);
-			freeInstruction(attr);
+		if (setPartnr(mb->ta, ml, getArg(ml->v[b].mi, i), getArg(q, 0), i)
+			|| setPartnr(mb->ta, ml, getArg(ml->v[b].mi, i), getArg(q, 1), i)
+			|| setPartnr(mb->ta, ml, getArg(ml->v[b].mi, i), getArg(q, 2), i)) {
+			freeInstruction(mb, r0);
+			freeInstruction(mb, r1);
+			freeInstruction(mb, r2);
+			freeInstruction(mb, attr);
 			return -1;
 		}
 
@@ -1969,21 +1953,21 @@ mat_group_derive(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int b, int g)
 
 		r = newInstruction(mb, algebraRef, projectionRef);
 		if (r == NULL) {
-			freeInstruction(r0);
-			freeInstruction(r1);
-			freeInstruction(r2);
-			freeInstruction(attr);
+			freeInstruction(mb, r0);
+			freeInstruction(mb, r1);
+			freeInstruction(mb, r2);
+			freeInstruction(mb, attr);
 			return -1;
 		}
 		getArg(r, 0) = newTmpVariable(mb, atp);
 		r = pushArgument(mb, r, getArg(q, 1));
 		r = pushArgument(mb, r, getArg(ml->v[b].mi, i));
-		if (setPartnr(ml, getArg(ml->v[b].mi, i), getArg(r, 0), i)) {
-			freeInstruction(r0);
-			freeInstruction(r1);
-			freeInstruction(r2);
-			freeInstruction(attr);
-			freeInstruction(r);
+		if (setPartnr(mb->ta, ml, getArg(ml->v[b].mi, i), getArg(r, 0), i)) {
+			freeInstruction(mb, r0);
+			freeInstruction(mb, r1);
+			freeInstruction(mb, r2);
+			freeInstruction(mb, attr);
+			freeInstruction(mb, r);
 			return -1;
 		}
 		pushInstruction(mb, r);
@@ -2001,16 +1985,16 @@ mat_group_derive(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int b, int g)
 
 	/* create mat's for the intermediates */
 	a = ml->top;
-	if (mat_add_var(ml, attr, NULL, getArg(attr, 0), mat_ext, -1, -1, push)) {
+	if (mat_add_var(mb->ta, ml, attr, NULL, getArg(attr, 0), mat_ext, -1, -1, push)) {
 		if (!push)
-			freeInstruction(attr);
+			freeInstruction(mb, attr);
 		return -1;
 	}
-	if (mat_add_var(ml, r0, p, getArg(p, 0), mat_grp, b, g, 1))
+	if (mat_add_var(mb->ta, ml, r0, p, getArg(p, 0), mat_grp, b, g, 1))
 		return -1;
 	g = ml->top - 1;
-	if (mat_add_var(ml, r1, p, getArg(p, 1), mat_ext, a, ml->top - 1, 1) ||	/* point back at group */
-		mat_add_var(ml, r2, p, getArg(p, 2), mat_cnt, -1, ml->top - 1, 1))	/* point back at ext */
+	if (mat_add_var(mb->ta, ml, r1, p, getArg(p, 1), mat_ext, a, ml->top - 1, 1) ||	/* point back at group */
+		mat_add_var(mb->ta, ml, r2, p, getArg(p, 2), mat_cnt, -1, ml->top - 1, 1))	/* point back at ext */
 		return -1;
 	if (push)
 		return mat_pack_group(mb, ml, g);
@@ -2029,9 +2013,9 @@ mat_topn_project(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m, int n)
 	getArg(pck, 0) = newTmpVariable(mb, tpe);
 
 	for (k = 1; mb->errors == NULL && k < mat[m].mi->argc; k++) {
-		InstrPtr q = copyInstruction(p);
+		InstrPtr q = copyInstruction(mb, p);
 		if (!q) {
-			freeInstruction(pck);
+			freeInstruction(mb, pck);
 			return -1;
 		}
 
@@ -2044,7 +2028,7 @@ mat_topn_project(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m, int n)
 	}
 	pushInstruction(mb, pck);
 
-	if (mb->errors || (q = copyInstruction(p)) == NULL)
+	if (mb->errors || (q = copyInstruction(mb, p)) == NULL)
 		return -1;
 	getArg(q, 2) = getArg(pck, 0);
 	pushInstruction(mb, q);
@@ -2075,7 +2059,7 @@ mat_pack_topn(MalBlkPtr mb, InstrPtr slc, mat_t *mat, int m)
 		for (k = 1; mb->errors == NULL && k < mat[attr].mi->argc; k++) {
 			InstrPtr q = newInstruction(mb, algebraRef, projectionRef);
 			if (q == NULL) {
-				freeInstruction(pck);
+				freeInstruction(mb, pck);
 				return -1;
 			}
 			getArg(q, 0) = newTmpVariable(mb, tpe);
@@ -2090,7 +2074,7 @@ mat_pack_topn(MalBlkPtr mb, InstrPtr slc, mat_t *mat, int m)
 
 		a = pck;
 
-		if (mb->errors || (tpn = copyInstruction(otopn)) == NULL)
+		if (mb->errors || (tpn = copyInstruction(mb, otopn)) == NULL)
 			return -1;
 		var = 1;
 		if (cur) {
@@ -2127,7 +2111,7 @@ mat_topn(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n, int o)
 	if (with_groups) {
 		gpck = newInstructionArgs(mb, matRef, packRef, ml->v[m].mi->argc);
 		if (gpck == NULL) {
-			freeInstruction(pck);
+			freeInstruction(mb, pck);
 			return -1;
 		}
 		getArg(gpck, 0) = getArg(p, 1);
@@ -2140,7 +2124,7 @@ mat_topn(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n, int o)
 		cst.len = 0;
 		zero = defConstant(mb, cst.vtype, &cst);
 		if (zero < 0) {
-			freeInstruction(pck);
+			freeInstruction(mb, pck);
 			return -1;
 		}
 	}
@@ -2149,9 +2133,9 @@ mat_topn(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n, int o)
 			   && ml->v[m].mi->argc == ml->v[o].mi->argc));
 
 	for (k = 1; mb->errors == NULL && k < ml->v[m].mi->argc; k++) {
-		if ((q = copyInstruction(p)) == NULL) {
-			freeInstruction(gpck);
-			freeInstruction(pck);
+		if ((q = copyInstruction(mb, p)) == NULL) {
+			freeInstruction(mb, gpck);
+			freeInstruction(mb, pck);
 			return -1;
 		}
 		getArg(q, 0) = newTmpVariable(mb, tpe);
@@ -2172,15 +2156,15 @@ mat_topn(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n, int o)
 	}
 
 	piv = ml->top;
-	if (mb->errors || mat_add_var(ml, pck, p, getArg(p, 0), is_slice ? mat_slc : mat_tpn, m, n, 0)) {
-		freeInstruction(pck);
-		freeInstruction(gpck);
+	if (mb->errors || mat_add_var(mb->ta, ml, pck, p, getArg(p, 0), is_slice ? mat_slc : mat_tpn, m, n, 0)) {
+		freeInstruction(mb, pck);
+		freeInstruction(mb, gpck);
 		return -1;
 	}
 	if (with_groups
-		&& mat_add_var(ml, gpck, p, getArg(p, 1), is_slice ? mat_slc : mat_tpn,
+		&& mat_add_var(mb->ta, ml, gpck, p, getArg(p, 1), is_slice ? mat_slc : mat_tpn,
 					   m, piv, 0)) {
-		freeInstruction(gpck);
+		freeInstruction(mb, gpck);
 		return -1;
 	}
 
@@ -2202,7 +2186,7 @@ mat_topn(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n, int o)
 				r = pushArgument(mb, r, getArg(pck, k));
 			pushInstruction(mb, r);
 
-			if ((q = copyInstruction(p)) == NULL)
+			if ((q = copyInstruction(mb, p)) == NULL)
 				return -1;
 			setFunctionId(q, subsliceRef);
 			if (ml->v[m].type != mat_tpn || is_slice)
@@ -2243,8 +2227,8 @@ mat_sample(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m)
 	getArg(pck, 0) = newTmpVariable(mb, tpe);
 
 	for (k = 1; mb->errors == NULL && k < ml->v[m].mi->argc; k++) {
-		if ((q = copyInstruction(p)) == NULL) {
-			freeInstruction(pck);
+		if ((q = copyInstruction(mb, p)) == NULL) {
+			freeInstruction(mb, pck);
 			return -1;
 		}
 		getArg(q, 0) = newTmpVariable(mb, tpe);
@@ -2254,13 +2238,13 @@ mat_sample(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m)
 	}
 
 	piv = ml->top;
-	if (mb->errors || mat_add_var(ml, pck, p, getArg(p, 0), mat_slc, m, -1, 1)) {
-		freeInstruction(pck);
+	if (mb->errors || mat_add_var(mb->ta, ml, pck, p, getArg(p, 0), mat_slc, m, -1, 1)) {
+		freeInstruction(mb, pck);
 		return -1;
 	}
 	pushInstruction(mb, pck);
 
-	if ((q = copyInstruction(p)) == NULL)
+	if ((q = copyInstruction(mb, p)) == NULL)
 		return -1;
 	getArg(q, 0) = newTmpVariable(mb, tpe);
 	getArg(q, q->retc) = getArg(pck, 0);
@@ -2282,7 +2266,7 @@ mat_sample(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m)
 }
 
 str
-OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
+OPTmergetableImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 							InstrPtr pci)
 {
 	InstrPtr p, *old;
@@ -2291,16 +2275,18 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	int size = 0, match, actions = 0, distinct_topn = 0, /*topn_res = 0, */ groupdone = 0, *vars;	//, maxvars;
 	char *group_input;
 	str msg = MAL_SUCCEED;
+	allocator *ta = mb->ta;
+
+	allocator_state ta_state = ma_open(ta);
 
 	old = mb->stmt;
 	oldtop = mb->stop;
 
-	vars = (int *) GDKmalloc(sizeof(int) * mb->vtop);
+	vars = (int *) ma_alloc(ta, sizeof(int) * mb->vtop);
 	//maxvars = mb->vtop;
-	group_input = (char *) GDKzalloc(sizeof(char) * mb->vtop);
+	group_input = (char *) ma_zalloc(ta, sizeof(char) * mb->vtop);
 	if (vars == NULL || group_input == NULL) {
-		if (vars)
-			GDKfree(vars);
+		ma_close(ta, &ta_state);
 		throw(MAL, "optimizer.mergetable", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	/* check for bailout conditions */
@@ -2372,7 +2358,6 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 		/* not idea how to detect this yet */
 		//distinct_topn = 1;
 	}
-	GDKfree(group_input);
 
 	ml.horigin = 0;
 	ml.torigin = 0;
@@ -2384,11 +2369,11 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	/* the number of MATs is limited to the variable stack */
 	ml.size = mb->vtop;
 	ml.top = 0;
-	ml.v = (mat_t *) GDKzalloc(ml.size * sizeof(mat_t));
+	ml.v = (mat_t *) ma_zalloc(ta, ml.size * sizeof(mat_t));
 	ml.vsize = mb->vsize;
-	ml.horigin = (int *) GDKmalloc(sizeof(int) * ml.vsize);
-	ml.torigin = (int *) GDKmalloc(sizeof(int) * ml.vsize);
-	ml.vars = (int *) GDKmalloc(sizeof(int) * ml.vsize);
+	ml.horigin = (int *) ma_alloc(ta, sizeof(int) * ml.vsize);
+	ml.torigin = (int *) ma_alloc(ta, sizeof(int) * ml.vsize);
+	ml.vars = (int *) ma_alloc(ta, sizeof(int) * ml.vsize);
 	if (ml.v == NULL || ml.horigin == NULL || ml.torigin == NULL
 		|| ml.vars == NULL) {
 		goto cleanup;
@@ -2400,15 +2385,11 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 
 	slimit = mb->ssize;
 	size = (mb->stop * 1.2 < mb->ssize) ? mb->ssize : (int) (mb->stop * 1.2);
-	mb->stmt = (InstrPtr *) GDKzalloc(size * sizeof(InstrPtr));
-	if (mb->stmt == NULL) {
-		mb->stmt = old;
+	if (newMalBlkStmt(mb, size) < 0) {
 		msg = createException(MAL, "optimizer.mergetable",
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto cleanup;
 	}
-	mb->ssize = size;
-	mb->stop = 0;
 
 	for (i = 0; i < oldtop; i++) {
 		int bats = 0, nilbats = 0;
@@ -2421,7 +2402,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 		if (getModuleId(p) == matRef
 			&& (getFunctionId(p) == newRef || getFunctionId(p) == packRef)) {
 			if (mat_set_prop(&ml, mb, p)
-				|| mat_add_var(&ml, p, NULL, getArg(p, 0), mat_none, -1, -1,
+				|| mat_add_var(mb->ta, &ml, p, NULL, getArg(p, 0), mat_none, -1, -1,
 							   1)) {
 				msg = createException(MAL, "optimizer.mergetable",
 									  SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -2435,7 +2416,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 		 * Otherwise we have to decide on either packing them or replacement.
 		 */
 		if ((match = nr_of_mats(p, &ml)) == 0) {
-			cp = copyInstruction(p);
+			cp = copyInstruction(mb, p);
 			if (!cp) {
 				msg = createException(MAL, "optimizer.mergetable",
 									  SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -2491,7 +2472,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 						goto cleanup;
 					}
 				} else
-				if (mat_joinNxM(cntxt, mb, p, &ml, bats)) {
+				if (mat_joinNxM(ctx, mb, p, &ml, bats)) {
 					msg = createException(MAL, "optimizer.mergetable",
 										  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					goto cleanup;
@@ -2648,7 +2629,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 					goto cleanup;
 				}
 			} else {
-				cp = copyInstruction(p);
+				cp = copyInstruction(mb, p);
 				if (!cp) {
 					msg = createException(MAL, "optimizer.mergetable",
 										  SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -2663,7 +2644,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 			&& (m = is_a_mat(getArg(p, 1), &ml)) >= 0
 			&& (ml.v[m].type == mat_ext)) {
 			assert(ml.v[m].pushed);
-			cp = copyInstruction(p);
+			cp = copyInstruction(mb, p);
 			if (!cp) {
 				msg = createException(MAL, "optimizer.mergetable",
 									  SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -2783,7 +2764,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 		if (match == 1 && fm == 2 && isSelect(p) && p->retc == 1 && (m = is_a_mat(getArg(p, fm), &ml)) >= 0 && !ml.v[m].packed &&	/* not packed yet */
 			(getArg(p, fm - 1) > maxvars
 			 || getModuleId(old[vars[getArg(p, fm - 1)]]) == sqlRef)) {
-			if ((r = copyInstruction(p)) == NULL) {
+			if ((r = copyInstruction(mb, p)) == NULL) {
 				msg = createException(MAL, "optimizer.mergetable",
 									  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto cleanup;
@@ -2860,7 +2841,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 		if (msg)
 			break;
 
-		cp = copyInstruction(p);
+		cp = copyInstruction(mb, p);
 		if (!cp) {
 			msg = createException(MAL, "optimizer.mergetable",
 								  SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -2878,25 +2859,25 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 		for (i = 0; i < slimit; i++) {
 			if (old[i] && old[i]->token == ENDsymbol)	/* don't free optimizer calls */
 				break;
-			freeInstruction(old[i]);
+			freeInstruction(mb, old[i]);
 		}
-		GDKfree(old);
+		//GDKfree(old);
 	}
 	for (i = 0; i < ml.top; i++) {
 		if (ml.v[i].mi && !ml.v[i].pushed)
-			freeInstruction(ml.v[i].mi);
+			freeInstruction(mb, ml.v[i].mi);
 	}
   cleanup:
-	if (vars)
-		GDKfree(vars);
-	if (ml.v)
-		GDKfree(ml.v);
-	if (ml.horigin)
-		GDKfree(ml.horigin);
-	if (ml.torigin)
-		GDKfree(ml.torigin);
-	if (ml.vars)
-		GDKfree(ml.vars);
+	//if (vars)
+	//	GDKfree(vars);
+	//if (ml.v)
+	//	GDKfree(ml.v);
+	//if (ml.horigin)
+	//	GDKfree(ml.horigin);
+	//if (ml.torigin)
+	//	GDKfree(ml.torigin);
+	//if (ml.vars)
+	//	GDKfree(ml.vars);
 	if (mb->errors) {
 		freeException(msg);
 		msg = mb->errors;
@@ -2904,7 +2885,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	}
 	/* Defense line against incorrect plans */
 	if (actions > 0 && msg == MAL_SUCCEED) {
-		msg = chkTypes(cntxt->usermodule, mb, FALSE);
+		msg = chkTypes(ctx->usermodule, mb, FALSE);
 		if (!msg)
 			msg = chkFlow(mb);
 		if (!msg)
@@ -2921,5 +2902,6 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	if (bailout)
 		TRC_INFO(MAL_OPTIMIZER, "Merge table bailout\n");
 #endif
+	ma_close(ta, &ta_state);
 	return msg;
 }

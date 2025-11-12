@@ -64,7 +64,7 @@ mvc_init_create_view(mvc *m, sql_schema *s, const char *name, const char *query)
 		char *buf;
 		sql_rel *r = NULL;
 
-		if (!(buf = sa_strdup(m->ta, t->query))) {
+		if (!(buf = ma_strdup(m->ta, t->query))) {
 			(void) sql_error(m, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			return NULL;
 		}
@@ -75,12 +75,12 @@ mvc_init_create_view(mvc *m, sql_schema *s, const char *name, const char *query)
 		if (r) {
 			list *blist = rel_dependencies(m, r);
 			if (mvc_create_dependencies(m, blist, t->base.id, VIEW_DEPENDENCY)) {
-				sa_reset(m->ta);
+				ma_reset(m->ta);
 				(void) sql_error(m, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				return NULL;
 			}
 		}
-		sa_reset(m->ta);
+		ma_reset(m->ta);
 		assert(r);
 	}
 	return t;
@@ -164,7 +164,7 @@ mvc_init(int debug, store_type store_tpe, int ro, int su, const char *initpasswd
 	}
 
 	assert(m->sa == NULL);
-	m->sa = sa_create(m->pa);
+	m->sa = create_allocator(m->pa, "MA_mvc", false);
 	if (!m->sa) {
 		mvc_destroy(m);
 		mvc_exit(store);
@@ -405,7 +405,7 @@ mvc_init(int debug, store_type store_tpe, int ro, int su, const char *initpasswd
 			}
 		}
 	}
-	if (sql_trans_convert_partitions(m->session->tr) < 0) {
+	if (sql_trans_convert_partitions(m->sa, m->session->tr) < 0) {
 		TRC_CRITICAL(SQL_TRANS, "Unable to start partitioned tables\n");
 		mvc_destroy(m);
 		mvc_exit(store);
@@ -769,7 +769,7 @@ mvc_create(sql_store *store, allocator *pa, int clientid, int debug, bstream *rs
 	}
 	m->pa = pa;
 	m->sa = NULL;
-	m->ta = sa_create(m->pa);
+	m->ta = create_allocator(m->pa, "TA_mvc", false);
 #ifdef __has_builtin
 #if __has_builtin(__builtin_frame_address)
 	m->sp = (uintptr_t) __builtin_frame_address(0);
@@ -1265,7 +1265,7 @@ mvc_create_view(sql_table **t, mvc *m, sql_schema *s, const char *name, int pers
 	if (persistence == SQL_DECLARED_TABLE) {
 		*t = create_sql_table(m->store, m->sa, name, tt_view, system, persistence, 0, 0);
 		(*t)->s = s;
-		(*t)->query = sa_strdup(m->sa, sql);
+		(*t)->query = ma_strdup(m->sa, sql);
 	} else {
 		res = sql_trans_create_table(t, m->session->tr, s, name, sql, tt_view, system, SQL_PERSIST, 0, 0, 0);
 	}
@@ -1426,9 +1426,7 @@ mvc_check_dependency(mvc *m, sqlid id, sql_dependency type, list *ignore_ids)
 			dep_list = sql_trans_owner_schema_dependencies(m->session->tr, id);
 			break;
 		case SCHEMA_DEPENDENCY:
-			dep_list = sql_trans_schema_user_dependencies(m->session->tr, id);
-			if (!dep_list)
-				dep_list = sql_trans_get_dependents(m->session->tr, id, SCHEMA_DEPENDENCY, NULL);
+			dep_list = sql_trans_get_dependents(m->session->tr, id, SCHEMA_DEPENDENCY, NULL);
 			break;
 		case TABLE_DEPENDENCY:
 			dep_list = sql_trans_get_dependents(m->session->tr, id, TABLE_DEPENDENCY, NULL);
@@ -1472,7 +1470,7 @@ mvc_default(mvc *m, sql_column *col, char *val)
 {
 	TRC_DEBUG(SQL_TRANS, "Default: %s %s\n", col->base.name, val);
 	if (col->t->persistence == SQL_DECLARED_TABLE) {
-		col->def = val?sa_strdup(m->sa, val):NULL;
+		col->def = val?ma_strdup(m->sa, val):NULL;
 		return 0;
 	} else {
 		return sql_trans_alter_default(m->session->tr, col, val);
@@ -1496,7 +1494,7 @@ mvc_storage(mvc *m, sql_column *col, char *storage)
 {
 	TRC_DEBUG(SQL_TRANS, "Storage: %s %s\n", col->base.name, storage);
 	if (col->t->persistence == SQL_DECLARED_TABLE) {
-		col->storage_type = storage?sa_strdup(m->sa, storage):NULL;
+		col->storage_type = storage?ma_strdup(m->sa, storage):NULL;
 		return 0;
 	} else {
 		return sql_trans_alter_storage(m->session->tr, col, storage);

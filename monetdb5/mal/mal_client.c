@@ -104,7 +104,7 @@ MCinit(void)
 int
 MCpushClientInput(Client c, bstream *new_input, int listing, const char *prompt)
 {
-	ClientInput *x = (ClientInput *) GDKmalloc(sizeof(ClientInput));
+	ClientInput *x = (ClientInput *) ma_alloc(c->ma, sizeof(ClientInput));
 	if (x == 0)
 		return -1;
 	*x = (ClientInput) {
@@ -139,7 +139,7 @@ MCpopClientInput(Client c)
 	c->prompt = x->prompt;
 	c->promptlength = strlen(c->prompt);
 	c->bak = x->next;
-	GDKfree(x);
+	//GDKfree(x);
 }
 
 static Client
@@ -185,8 +185,11 @@ static void
 MCexitClient(Client c)
 {
 	// Remove any left over constant symbols
-	if (c->curprg)
-		resetMalBlk(c->curprg->def);
+	if (c->curprg) {
+		//resetMalBlk(&c->curprg->def);
+		freeMalBlk(c->curprg->def);
+		c->curprg->def = NULL;
+	}
 	if (c->father == NULL) {	/* normal client */
 		if (c->fdout && c->fdout != GDKstdout)
 			close_stream(c->fdout);
@@ -265,6 +268,7 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 	c->filetrans = false;
 	c->handshake_options = NULL;
 	c->query = NULL;
+	c->ma = create_allocator(NULL, "MA_Client", false);
 
 	char name[MT_NAME_LEN];
 	snprintf(name, sizeof(name), "Client%d->s", (int) (c - mal_clients));
@@ -281,6 +285,7 @@ MCinitClient(oid user, bstream *fin, stream *fout)
 	c = MCnewClient();
 	if (c) {
 		c = MCinitClientRecord(c, user, fin, fout);
+		//MT_thread_setallocator(c->ma);
 		MT_thread_set_qry_ctx(&c->qryctx);
 	}
 	MT_lock_unset(&mal_contextLock);
@@ -303,7 +308,7 @@ MCinitClientThread(Client c)
 	c->mythread = MT_thread_getname();
 	c->errbuf = GDKerrbuf;
 	if (c->errbuf == NULL) {
-		char *n = GDKzalloc(GDKMAXERRLEN);
+		char *n = ma_zalloc(c->ma, GDKMAXERRLEN);
 		if (n == NULL) {
 			return -1;
 		}
@@ -359,8 +364,8 @@ MCcloseClient(Client c)
 	if (c->errbuf) {
 		/* no client threads in embedded mode */
 		GDKsetbuf(NULL);
-		if (c->father == NULL)
-			GDKfree(c->errbuf);
+		//if (c->father == NULL)
+		//	GDKfree(c->errbuf);
 		c->errbuf = NULL;
 	}
 	if (c->usermodule)
@@ -377,27 +382,27 @@ MCcloseClient(Client c)
 	c->idletimeout = 0;
 	c->user = oid_nil;
 	if (c->username) {
-		GDKfree(c->username);
+		//GDKfree(c->username);
 		c->username = 0;
 	}
 	if (c->peer) {
-		GDKfree(c->peer);
+		//GDKfree(c->peer);
 		c->peer = 0;
 	}
 	if (c->client_hostname) {
-		GDKfree(c->client_hostname);
+		//GDKfree(c->client_hostname);
 		c->client_hostname = 0;
 	}
 	if (c->client_application) {
-		GDKfree(c->client_application);
+		//GDKfree(c->client_application);
 		c->client_application = 0;
 	}
 	if (c->client_library) {
-		GDKfree(c->client_library);
+		//GDKfree(c->client_library);
 		c->client_library = 0;
 	}
 	if (c->client_remark) {
-		GDKfree(c->client_remark);
+		//GDKfree(c->client_remark);
 		c->client_remark = 0;
 	}
 	c->client_pid = 0;
@@ -420,7 +425,7 @@ MCcloseClient(Client c)
 		c->error_row = c->error_fld = c->error_msg = c->error_input = NULL;
 	}
 	c->sqlprofiler = false;
-	free(c->handshake_options);
+	//free(c->handshake_options);
 	c->handshake_options = NULL;
 	MT_thread_set_qry_ctx(NULL);
 	assert(c->qryctx.datasize == 0);
@@ -433,6 +438,8 @@ MCcloseClient(Client c)
 		c->mode = FREECLIENT;
 		c->idx = -1;
 	}
+	ma_destroy(c->ma);
+	c->ma = NULL;
 	MT_lock_unset(&mal_contextLock);
 }
 
@@ -609,26 +616,26 @@ MCsetClientInfo(Client c, const char *property, const char *value)
 	switch (discriminant) {
 		case 'H':
 			if (strcasecmp(property, "ClientHostname") == 0) {
-				GDKfree(c->client_hostname);
-				c->client_hostname = value ? GDKstrdup(value) : NULL;
+				//GDKfree(c->client_hostname);
+				c->client_hostname = value ? MA_STRDUP(c->ma, value) : NULL;
 			}
 			break;
 		case 'A':
 			if (strcasecmp(property, "ApplicationName") == 0) {
-				GDKfree(c->client_application);
-				c->client_application = value ? GDKstrdup(value) : NULL;
+				//GDKfree(c->client_application);
+				c->client_application = value ? MA_STRDUP(c->ma, value) : NULL;
 			}
 			break;
 		case 'L':
 			if (strcasecmp(property, "ClientLibrary") == 0) {
-				GDKfree(c->client_library);
-				c->client_library = value ? GDKstrdup(value) : NULL;
+				//GDKfree(c->client_library);
+				c->client_library = value ? MA_STRDUP(c->ma, value) : NULL;
 			}
 			break;
 		case 'R':
 			if (strcasecmp(property, "ClientRemark") == 0) {
-				GDKfree(c->client_remark);
-				c->client_remark = value ? GDKstrdup(value) : NULL;
+				//GDKfree(c->client_remark);
+				c->client_remark = value ? MA_STRDUP(c->ma, value) : NULL;
 			}
 			break;
 		case 'P':

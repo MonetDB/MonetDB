@@ -173,9 +173,9 @@ sqlcleanup(backend *be, int err)
 	be->mvc->sym = NULL;
 	be->mvc->runs = NULL;
 	if (be->mvc->ta)
-		be->mvc->ta = sa_reset(be->mvc->ta);
+		be->mvc->ta = ma_reset(be->mvc->ta);
 	if (be->mvc->sa)
-		be->mvc->sa = sa_reset(be->mvc->sa);
+		be->mvc->sa = ma_reset(be->mvc->sa);
 	if (err >0)
 		be->mvc->session->status = -err;
 	if (err <0)
@@ -333,7 +333,7 @@ create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp,
 			break;
 	}
 	osa = sql->sa;
-	allocator *nsa = sql->sa = sa_create(NULL);
+	allocator *nsa = sql->sa = create_allocator(ma_get_parent(osa), "MA_mvc", false);
 	/* first check default values */
 	for (n = ol_first_node(t->columns); n; n = n->next) {
 		sql_column *c = n->data;
@@ -343,14 +343,12 @@ create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp,
 			static const char next_value_for[] = "next value for \"sys\".\"seq_";
 			sql_rel *r = NULL;
 
-			sa_reset(nsa);
-			sql->sa = nsa;
 			r = rel_parse(sql, s, sa_message(sql->ta, "select %s;", c->def), m_deps);
 			if (!r || !is_project(r->op) || !r->exps || list_length(r->exps) != 1 ||
 				exp_check_type(sql, &c->type, r, r->exps->h->data, type_equal) == NULL) {
 				if (r)
-					rel_destroy(r);
-				sa_destroy(nsa);
+					rel_destroy(sql, r);
+				ma_destroy(nsa);
 				sql->sa = osa;
 				if (strlen(sql->errstr) > 6 && sql->errstr[5] == '!')
 					throw(SQL, "sql.catalog", "%s", sql->errstr);
@@ -362,12 +360,12 @@ create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp,
 			if (strncmp(c->def, next_value_for, strlen(next_value_for)) != 0) {
 				list *blist = rel_dependencies(sql, r);
 				if (mvc_create_dependencies(sql, blist, nt->base.id, FUNC_DEPENDENCY)) {
-					sa_destroy(nsa);
+					ma_destroy(nsa);
 					sql->sa = osa;
 					throw(SQL, "sql.catalog", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				}
 			}
-			sa_reset(sql->sa);
+			ma_reset(sql->sa);
 		}
 	}
 
@@ -376,12 +374,12 @@ create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp,
 
 		switch (mvc_copy_column(sql, nt, c, &copied)) {
 			case -1:
-				sa_destroy(nsa);
+				ma_destroy(nsa);
 				sql->sa = osa;
 				throw(SQL, "sql.catalog", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			case -2:
 			case -3:
-				sa_destroy(nsa);
+				ma_destroy(nsa);
 				sql->sa = osa;
 				throw(SQL, "sql.catalog", SQLSTATE(42000) "CREATE TABLE: %s_%s_%s conflicts", s->base.name, t->base.name, c->base.name);
 			default:
@@ -397,19 +395,19 @@ create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp,
 		nt->part.pexp->exp = _STRDUP(t->part.pexp->exp);
 		err = bootstrap_partition_expression(sql, nt, 1);
 		if (err) {
-			sa_destroy(nsa);
+			ma_destroy(nsa);
 			sql->sa = osa;
 			return err;
 		}
-		sa_reset(nsa);
+		ma_reset(nsa);
 	}
 	check = sql_trans_set_partition_table(sql->session->tr, nt);
 	if (check == -4) {
-		sa_destroy(nsa);
+		ma_destroy(nsa);
 		sql->sa = osa;
 		throw(SQL, "sql.catalog", SQLSTATE(42000) "CREATE TABLE: %s_%s: the partition's expression is too long", s->base.name, t->base.name);
 	} else if (check) {
-		sa_destroy(nsa);
+		ma_destroy(nsa);
 		sql->sa = osa;
 		throw(SQL, "sql.catalog", SQLSTATE(42000) "CREATE TABLE: %s_%s: an internal error occurred", s->base.name, t->base.name);
 	}
@@ -420,12 +418,12 @@ create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp,
 
 			switch (mvc_copy_idx(sql, nt, i, NULL)) {
 				case -1:
-					sa_destroy(nsa);
+					ma_destroy(nsa);
 					sql->sa = osa;
 					throw(SQL, "sql.catalog", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				case -2:
 				case -3:
-					sa_destroy(nsa);
+					ma_destroy(nsa);
 					sql->sa = osa;
 					throw(SQL, "sql.catalog", SQLSTATE(42000) "CREATE TABLE: %s_%s_%s index conflicts", s->base.name, t->base.name, i->base.name);
 				default:
@@ -440,25 +438,25 @@ create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp,
 
 			err = sql_partition_validate_key(sql, nt, k, "CREATE");
 			if (err) {
-				sa_destroy(nsa);
+				ma_destroy(nsa);
 				sql->sa = osa;
 				return err;
 			}
-			sa_reset(sql->sa);
+			ma_reset(sql->sa);
 			switch (mvc_copy_key(sql, nt, k, NULL)) {
 				case -1:
-					sa_destroy(nsa);
+					ma_destroy(nsa);
 					sql->sa = osa;
 					throw(SQL, "sql.catalog", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				case -2:
 				case -3:
-					sa_destroy(nsa);
+					ma_destroy(nsa);
 					sql->sa = osa;
 					throw(SQL, "sql.catalog", SQLSTATE(42000) "CREATE TABLE: %s_%s_%s constraint conflicts", s->base.name, t->base.name, k->base.name);
 				default:
 					break;
 			}
-			sa_reset(sql->sa);
+			ma_reset(sql->sa);
 		}
 	}
 	if (t->triggers) {
@@ -467,12 +465,12 @@ create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp,
 
 			switch (mvc_copy_trigger(sql, nt, tr, NULL)) {
 				case -1:
-					sa_destroy(nsa);
+					ma_destroy(nsa);
 					sql->sa = osa;
 					throw(SQL, "sql.catalog", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				case -2:
 				case -3:
-					sa_destroy(nsa);
+					ma_destroy(nsa);
 					sql->sa = osa;
 					throw(SQL, "sql.catalog", SQLSTATE(42000) "CREATE TABLE: %s_%s_%s trigger conflicts", s->base.name, t->base.name, nt->base.name);
 				default:
@@ -484,28 +482,28 @@ create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp,
 	if (nt->query && isView(nt)) {
 		sql_rel *r = NULL;
 
-		sa_reset(nsa);
+		ma_reset(nsa);
 		r = rel_parse(sql, s, nt->query, m_deps);
 		if (r)
 			r = sql_processrelation(sql, r, 0, 0, 0, 0);
 		if (r) {
 			list *blist = rel_dependencies(sql, r);
 			if (mvc_create_dependencies(sql, blist, nt->base.id, VIEW_DEPENDENCY)) {
-				sa_destroy(nsa);
+				ma_destroy(nsa);
 				sql->sa = osa;
 				throw(SQL, "sql.catalog", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 		}
 		sql->sa = osa;
 		if (!r) {
-			sa_destroy(nsa);
+			ma_destroy(nsa);
 			if (strlen(sql->errstr) > 6 && sql->errstr[5] == '!')
 				throw(SQL, "sql.catalog", "%s", sql->errstr);
 			else
 				throw(SQL, "sql.catalog", SQLSTATE(42000) "%s", sql->errstr);
 		}
 	}
-	sa_destroy(nsa);
+	ma_destroy(nsa);
 	sql->sa = osa;
 	return MAL_SUCCEED;
 }
@@ -806,16 +804,16 @@ setVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			if (!isOptimizerPipe(newopt) || strcmp(buf, newopt) == 0) {
 				if ((msg = addPipeDefinition(cntxt, buf, newopt)))
 					return msg;
-				if (!sqlvar_set_string(find_global_var(m, s, varname), buf))
+				if (!sqlvar_set_string(m->session->sa, find_global_var(m, s, varname), buf))
 					throw(SQL, "sql.setVariable", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			} else if (!sqlvar_set_string(find_global_var(m, s, varname), newopt))
+			} else if (!sqlvar_set_string(m->session->sa, find_global_var(m, s, varname), newopt))
 				throw(SQL, "sql.setVariable", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		} else {
 			ValPtr ptr = &stk->stk[getArg(pci, 4)];
 
 			if ((msg = sql_update_var(m, s, varname, ptr)))
 				return msg;
-			if (!sqlvar_set(var, ptr))
+			if (!sqlvar_set(m->session->sa, var, ptr))
 				throw(SQL, "sql.setVariable", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		return MAL_SUCCEED;
@@ -849,7 +847,7 @@ getVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL, "sql.getVariable", SQLSTATE(42100) "Variable '%s.%s' unknown", sname, varname);
 	src = &(var->var.data);
 	dst = &stk->stk[getArg(pci, 0)];
-	if (VALcopy(dst, src) == NULL)
+	if (VALcopy(mb->ma, dst, src) == NULL)
 		throw(MAL, "sql.getVariable", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
@@ -890,9 +888,9 @@ sql_variables(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			gdk_return res;
 
 			if (value.tpe.type->localtype != TYPE_str) {
-				ptr ok = VALcopy(&val, myptr);
+				ptr ok = VALcopy(mb->ma, &val, myptr);
 				if (ok)
-					ok = VALconvert(TYPE_str, &val);
+					ok = VALconvert(mb->ma, TYPE_str, &val);
 				if (!ok) {
 					VALclear(&val);
 					msg = createException(SQL, "sql.variables", SQLSTATE(HY013) "Failed to convert variable '%s.%s' into a string", var->sname, var->name);
@@ -1342,8 +1340,9 @@ bailout:
 }
 
 str
-mvc_getVersion(lng *version, const int *clientid)
+mvc_getVersion(Client ctx, lng *version, const int *clientid)
 {
+	(void) ctx;
 	mvc *m = NULL;
 	Client cntxt = MCgetClient(*clientid);
 	str msg;
@@ -2275,8 +2274,9 @@ setwritable(BAT *b)
 }
 
 str
-DELTAbat(bat *result, const bat *col, const bat *uid, const bat *uval)
+DELTAbat(Client ctx, bat *result, const bat *col, const bat *uid, const bat *uval)
 {
+	(void) ctx;
 	BAT *c, *u_id, *u_val, *res;
 
 	if ((u_id = BBPquickdesc(*uid)) == NULL)
@@ -2323,8 +2323,9 @@ DELTAbat(bat *result, const bat *col, const bat *uid, const bat *uval)
 }
 
 str
-DELTAsub(bat *result, const bat *col, const bat *cid, const bat *uid, const bat *uval)
+DELTAsub(Client ctx, bat *result, const bat *col, const bat *cid, const bat *uid, const bat *uval)
 {
+	(void) ctx;
 	BAT *c, *cminu = NULL, *u_id, *u_val, *u, *res;
 	gdk_return ret;
 
@@ -2429,8 +2430,9 @@ DELTAsub(bat *result, const bat *col, const bat *cid, const bat *uid, const bat 
 }
 
 str
-DELTAproject(bat *result, const bat *sub, const bat *col, const bat *uid, const bat *uval)
+DELTAproject(Client ctx, bat *result, const bat *sub, const bat *col, const bat *uid, const bat *uval)
 {
+	(void) ctx;
 	BAT *s, *c, *u_id, *u_val, *res, *tres;
 
 	if ((s = BATdescriptor(*sub)) == NULL)
@@ -2518,8 +2520,9 @@ DELTAproject(bat *result, const bat *sub, const bat *col, const bat *uid, const 
 }
 
 str
-BATleftproject(bat *Res, const bat *Col, const bat *L, const bat *R)
+BATleftproject(Client ctx, bat *Res, const bat *Col, const bat *L, const bat *R)
 {
+	(void) ctx;
 	BAT *c, *l, *r, *res;
 	oid *p, *lp, *rp;
 	BUN cnt = 0, i;
@@ -2724,6 +2727,52 @@ mvc_result_set_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return msg;
 }
 
+
+str
+wrap_onclient_compression(stream **inner, str context, int nr, bool binary)
+{
+	if (nr <= 1)
+		return MAL_SUCCEED;
+
+	// these number match those in sql_parser.y's opt_on_location.
+	stream *s = *inner;
+	stream *cs;
+	switch (nr) {
+		case 11:
+			cs = gz_stream(s, 0);
+			break;
+		case 12:
+			cs = bz2_stream(s, 0);
+			break;
+		case 13:
+			cs = xz_stream(s, 0);
+			break;
+		case 14:
+			cs = lz4_stream(s, 0);
+			break;
+		default:
+			throw(IO, context, SQLSTATE(42000) "compression algo id not found");
+	}
+	if (cs == NULL || mnstr_errnr(cs) != MNSTR_NO__ERROR) {
+		str msg = createException(IO, context, SQLSTATE(42000) "%s", mnstr_peek_error(NULL));
+		close_stream(cs);
+		return msg;
+	}
+	if (!binary) {
+		stream *t = create_text_stream(cs);
+		if (t == NULL) {
+			str msg = createException(IO, context, SQLSTATE(42000) "%s", mnstr_peek_error(NULL));
+			close_stream(cs);
+			return msg;
+		}
+		cs = t;
+	}
+	*inner = cs;
+	return MAL_SUCCEED;
+}
+
+
+
 /* Copy the result set into a CSV file */
 str
 mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -2755,8 +2804,6 @@ mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT *b = NULL, *tbl = NULL, *atr = NULL, *tpe = NULL,*len = NULL,*scale = NULL;
 	res_table *t = NULL;
 	bool tostdout;
-	char buf[80];
-	ssize_t sz;
 
 	(void) format;
 
@@ -2822,33 +2869,24 @@ mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/* now select the file channel */
 	if ((tostdout = strcmp(filename,"stdout") == 0)) {
 		s = cntxt->fdout;
-	} else if (!onclient) {
-		if ((s = open_wastream(filename)) == NULL || mnstr_errnr(s) != MNSTR_NO__ERROR) {
+	} else {
+		if (onclient) {
+			bool binary = (onclient > 1);
+			s = mapi_request_download(filename, binary, m->scanner.rs, m->scanner.ws);
+		} else {
+			s = open_wastream(filename);
+		}
+		if (s == NULL || mnstr_errnr(s) != MNSTR_NO__ERROR) {
 			msg=  createException(IO, "streams.open", SQLSTATE(42000) "%s", mnstr_peek_error(NULL));
 			close_stream(s);
 			goto wrapup_result_set1;
 		}
+		msg = wrap_onclient_compression(&s, "sql.copy_from", onclient, false);
+		if (msg != NULL) {
+			close_stream(s);
+			return msg;
+		}
 		be->output_format = OFMT_CSV;
-	} else {
-		while (!m->scanner.rs->eof) {
-			if (bstream_next(m->scanner.rs) < 0) {
-				msg = createException(IO, "streams.open", "interrupted");
-				goto wrapup_result_set1;
-			}
-		}
-		s = m->scanner.ws;
-		mnstr_write(s, PROMPT3, sizeof(PROMPT3) - 1, 1);
-		mnstr_printf(s, "w %s\n", filename);
-		mnstr_flush(s, MNSTR_FLUSH_DATA);
-		if ((sz = mnstr_readline(m->scanner.rs->s, buf, sizeof(buf))) > 1) {
-			/* non-empty line indicates failure on client */
-			msg = createException(IO, "streams.open", "%s", buf);
-			/* discard until client flushes */
-			while (mnstr_read(m->scanner.rs->s, buf, 1, sizeof(buf)) > 0) {
-				/* ignore remainder of error message */
-			}
-			goto wrapup_result_set1;
-		}
 	}
 	if ((ok = mvc_export_result(cntxt->sqlcontext, s, res, tostdout, cntxt->qryctx.starttime, mb->optimize)) < 0) {
 		msg = createException(SQL, "sql.resultSet", SQLSTATE(45000) "Result set construction failed: %s", mvc_export_error(cntxt->sqlcontext, s, ok));
@@ -2857,14 +2895,7 @@ mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (ok != -5)
 			goto wrapup_result_set1;
 	}
-	if (onclient) {
-		mnstr_flush(s, MNSTR_FLUSH_DATA);
-		if ((sz = mnstr_readline(m->scanner.rs->s, buf, sizeof(buf))) > 1) {
-			msg = createException(IO, "streams.open", "%s", buf);
-		}
-		while (sz > 0)
-			sz = mnstr_readline(m->scanner.rs->s, buf, sizeof(buf));
-	} else if (!tostdout) {
+	if (!tostdout) {
 		close_stream(s);
 	}
   wrapup_result_set1:
@@ -3356,12 +3387,18 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		msg = mvc_import_table(cntxt, &b, be->mvc, be->mvc->scanner.rs, t, tsep, rsep, ssep, ns, sz, offset, besteffort, true, escape, decsep, decskip);
 	} else {
 		if (onclient) {
-			ss = mapi_request_upload(fname, false, be->mvc->scanner.rs, be->mvc->scanner.ws);
+			bool binary = onclient > 1;
+			ss = mapi_request_upload(fname, binary, be->mvc->scanner.rs, be->mvc->scanner.ws);
 		} else {
 			ss = open_rastream(fname);
 		}
 		if (ss == NULL || mnstr_errnr(ss) != MNSTR_NO__ERROR) {
 			msg = createException(IO, "sql.copy_from", SQLSTATE(42000) "%s", mnstr_peek_error(NULL));
+			close_stream(ss);
+			return msg;
+		}
+		msg = wrap_onclient_compression(&ss, "sql.copy_from", onclient, false);
+		if (msg != NULL) {
 			close_stream(ss);
 			return msg;
 		}
@@ -3417,13 +3454,14 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	if (b && !msg)
 		bat2return(stk, pci, b);
-	GDKfree(b);
+	// GDKfree(b);
 	return msg;
 }
 
 str
-not_unique(bit *ret, const bat *bid)
+not_unique(Client ctx, bit *ret, const bat *bid)
 {
+	(void) ctx;
 	BAT *b;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
@@ -3460,17 +3498,19 @@ not_unique(bit *ret, const bat *bid)
 
 /* row case */
 str
-SQLidentity(oid *ret, const void *i)
+SQLidentity(Client ctx, oid *ret, const void *i)
 {
+	(void) ctx;
 	(void)i;
 	*ret = 0;
 	return MAL_SUCCEED;
 }
 
 str
-BATSQLidentity(bat *ret, const bat *bid)
+BATSQLidentity(Client ctx, bat *ret, const bat *bid)
 {
-	return BKCmirror(ret, bid);
+	(void) ctx;
+	return BKCmirror(ctx, ret, bid);
 }
 
 str
@@ -3502,8 +3542,9 @@ PBATSQLidentity(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
  */
 
 str
-SQLcst_alpha_cst(dbl *res, const dbl *decl, const dbl *theta)
+SQLcst_alpha_cst(Client ctx, dbl *res, const dbl *decl, const dbl *theta)
 {
+	(void) ctx;
 	dbl s, c1, c2;
 	char *msg = MAL_SUCCEED;
 	if (is_dbl_nil(*decl) || is_dbl_nil(*theta)) {
@@ -3520,13 +3561,14 @@ SQLcst_alpha_cst(dbl *res, const dbl *decl, const dbl *theta)
 }
 
 /*
-  sql5_export str SQLcst_alpha_cst(dbl *res, dbl *decl, dbl *theta);
-  sql5_export str SQLbat_alpha_cst(bat *res, bat *decl, dbl *theta);
-  sql5_export str SQLcst_alpha_bat(bat *res, dbl *decl, bat *theta);
+  sql5_export str SQLcst_alpha_cst(Client ctx, dbl *res, dbl *decl, dbl *theta);
+  sql5_export str SQLbat_alpha_cst(Client ctx, bat *res, bat *decl, dbl *theta);
+  sql5_export str SQLcst_alpha_bat(Client ctx, bat *res, dbl *decl, bat *theta);
 */
 str
-SQLbat_alpha_cst(bat *res, const bat *decl, const dbl *theta)
+SQLbat_alpha_cst(Client ctx, bat *res, const bat *decl, const dbl *theta)
 {
+	(void) ctx;
 	BAT *b, *bn;
 	BUN p, q;
 	dbl s, c1, c2, r;
@@ -3572,8 +3614,9 @@ SQLbat_alpha_cst(bat *res, const bat *decl, const dbl *theta)
 }
 
 str
-SQLcst_alpha_bat(bat *res, const dbl *decl, const bat *thetabid)
+SQLcst_alpha_bat(Client ctx, bat *res, const dbl *decl, const bat *thetabid)
 {
+	(void) ctx;
 	BAT *b, *bn;
 	BUN p, q;
 	dbl s, c1, c2, r;
@@ -4241,8 +4284,8 @@ SQLargRecord(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	t = strchr(s, ' ');
 	if( ! t)
 		t = strchr(s, '\t');
-	*ret = GDKstrdup(t ? t + 1 : s);
-	GDKfree(s);
+	*ret = SA_STRDUP(mb->ma, t ? t + 1 : s);
+	// GDKfree(s);
 	if(*ret == NULL)
 		throw(SQL, "sql.argRecord", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
@@ -5182,11 +5225,11 @@ SQLunionfunc(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		MalStkPtr env = NULL;
 		InstrPtr q = NULL;
 
-		if (!(input = GDKzalloc(sizeof(BAT*) * nrinput))) {
+		if (!(input = ma_zalloc(nmb->ma, sizeof(BAT*) * nrinput))) {
 			ret = createException(MAL, "sql.unionfunc", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto finalize;
 		}
-		if (!(bi = GDKmalloc(sizeof(BATiter) * nrinput))) {
+		if (!(bi = ma_alloc(nmb->ma, sizeof(BATiter) * nrinput))) {
 			ret = createException(MAL, "sql.unionfunc", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto finalize;
 		}
@@ -5200,7 +5243,7 @@ SQLunionfunc(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					bat_iterator_end(&bi[i]);
 					BBPunfix(input[i]->batCacheid);
 				}
-				GDKfree(input);
+				//GDKfree(input);
 				input = NULL;
 				goto finalize;
 			}
@@ -5209,7 +5252,7 @@ SQLunionfunc(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 
 		/* create result bats */
-		if (!(res = GDKzalloc(sizeof(BAT*) * pci->retc))) {
+		if (!(res = ma_zalloc(nmb->ma, sizeof(BAT*) * pci->retc))) {
 			ret = createException(MAL, "sql.unionfunc", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto finalize;
 		}
@@ -5229,7 +5272,7 @@ SQLunionfunc(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				goto finalize;
 			}
 		}
-		if (!(env = prepareMALstack(nmb, nmb->vsize))) { /* needed for result */
+		if (!(env = prepareMALstack(nmb->ma, nmb, nmb->vsize))) { /* needed for result */
 			ret = createException(MAL, "sql.unionfunc", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto finalize;
 		}
@@ -5238,16 +5281,16 @@ SQLunionfunc(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		int start = 1;
 		if (nmb->stop == 1 && (omb || !npci->fcn || npci->token != PATcall)) {
 			InstrPtr *stmt = nmb->stmt;
-			nmb->stmt = (InstrPtr*)GDKmalloc(sizeof(InstrPtr*)*3);
+			nmb->stmt = (InstrPtr*)ma_alloc(nmb->instr_allocator, sizeof(InstrPtr*)*3);
 			nmb->stmt[0] = NULL; /* no main() */
 			nmb->stmt[1] = NULL; /* no profiling */
 			nmb->stmt[2] = stmt[0];
 			nmb->stop = nmb->ssize = 3;
-			GDKfree(stmt);
+			//GDKfree(stmt);
 			start = 2;
 		}
 		for (BUN cur = 0; cur<cnt && !ret; cur++ ) {
-			MalStkPtr nstk = prepareMALstack(nmb, nmb->vsize);
+			MalStkPtr nstk = prepareMALstack(nmb->ma, nmb, nmb->vsize);
 			int i,ii;
 
 			if (!nstk) { /* needed for result */
@@ -5305,10 +5348,6 @@ SQLunionfunc(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 finalize:
 		freeStack(env);
-		if (nmb)
-			freeMalBlk(nmb);
-		if (omb)
-			freeMalBlk(omb);
 		if (res)
 			for (int i = 0; i<pci->retc; i++) {
 				bat *b = getArgReference_bat(stk, pci, i);
@@ -5320,7 +5359,7 @@ finalize:
 						BBPkeepref(res[i]);
 				}
 			}
-		GDKfree(res);
+		//GDKfree(res);
 		if (input) {
 			for (int i = 0; i<nrinput; i++) {
 				if (input[i]) {
@@ -5328,9 +5367,13 @@ finalize:
 					BBPunfix(input[i]->batCacheid);
 				}
 			}
-			GDKfree(input);
+			//GDKfree(input);
 		}
-		GDKfree(bi);
+		//GDKfree(bi);
+		if (nmb)
+			freeMalBlk(nmb);
+		if (omb)
+			freeMalBlk(omb);
 	}
 	return ret;
 }
@@ -5436,21 +5479,21 @@ str_vacuum_callback(int argc, void *argv[])
 
 	(void) argc;
 
-	if ((sa = sa_create(NULL)) == NULL) {
+	if ((sa = create_allocator(NULL, "MA_str_vacuum", false)) == NULL) {
 		TRC_ERROR(SQL_EXECUTION, "[str_vacuum_callback] -- Failed to create allocator!");
 		return GDK_FAIL;
 	}
 
 	if ((session = sql_session_create(store, sa, 0)) == NULL) {
 		TRC_ERROR(SQL_EXECUTION, "[str_vacuum_callback] -- Failed to create session!");
-		sa_destroy(sa);
+		ma_destroy(sa);
 		return GDK_FAIL;
 	}
 
 	if (sql_trans_begin(session) < 0) {
 		TRC_ERROR(SQL_EXECUTION, "[str_vacuum_callback] -- Failed to begin transaction!");
 		sql_session_destroy(session);
-		sa_destroy(sa);
+		ma_destroy(sa);
 		return GDK_FAIL;
 	}
 
@@ -5504,7 +5547,7 @@ str_vacuum_callback(int argc, void *argv[])
 	}
 
 	sql_session_destroy(session);
-	sa_destroy(sa);
+	ma_destroy(sa);
 	return res;
 }
 
@@ -5565,10 +5608,10 @@ SQLstr_auto_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (c && c->storage_type)
 		throw(SQL, "sql.str_auto_vacuum", SQLSTATE(42000) "Cannot vacuum compressed column");
 
-	if (!(sname_copy = GDKstrdup(sname)) || !(tname_copy = GDKstrdup(tname)) || (cname && !(cname_copy = GDKstrdup(cname)))) {
-		GDKfree(sname_copy);
-		GDKfree(tname_copy);
-		GDKfree(cname_copy);
+	if (!(sname_copy = SA_STRDUP(mb->ma, sname)) || !(tname_copy = SA_STRDUP(mb->ma, tname)) || (cname && !(cname_copy = SA_STRDUP(mb->ma, cname)))) {
+		//GDKfree(sname_copy);
+		//GDKfree(tname_copy);
+		//GDKfree(cname_copy);
 		throw(SQL, "sql.str_auto_vacuum", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	void *argv[4] = {m->store, sname_copy, tname_copy, cname_copy};
@@ -5680,7 +5723,7 @@ SQLdecypher(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	if ((msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
-	return AUTHdecypherValue(pwhash, cypher);
+	return AUTHdecypherValue(mb->ma, pwhash, cypher);
 }
 
 static str
@@ -5717,15 +5760,15 @@ SQLcheck(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			sql_exp *exp = NULL;
 			if (rel) {
 				rel_base_use_all(m, rel);
-				exp = exp_read(m, rel, NULL, NULL, sa_strdup(m->sa, k->check), &pos, 0);
+				exp = exp_read(m, rel, NULL, NULL, ma_strdup(m->sa, k->check), &pos, 0);
 			}
 			assert(exp);
 			if (!exp)
 				throw(SQL, "SQLcheck", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			if (exp->comment)
-				*r = GDKstrdup(exp->comment);
+				*r = SA_STRDUP(mb->ma, exp->comment);
 			else
-				*r = GDKstrdup(exp2sql(m, exp));
+				*r = SA_STRDUP(mb->ma, exp2sql(m, exp));
 			if (*r == NULL)
 				throw(SQL, "SQLcheck", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			m->sp = sp;
@@ -5733,7 +5776,7 @@ SQLcheck(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 		m->sp = sp;
 	}
-	if (!(*r = GDKstrdup(str_nil)))
+	if (!(*r = SA_STRDUP(mb->ma, str_nil)))
 		throw(SQL, "SQLcheck", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
@@ -5784,7 +5827,7 @@ SQLread_dump_rel(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if (res == NULL)
 		goto bailout;
-	if (!(*r = GDKstrdup(res)))
+	if (!(*r = SA_STRDUP(mb->ma, res)))
 		goto bailout;
 
 	free(res);
@@ -5857,7 +5900,7 @@ static int insert_json_object(char **msg, JSON *js, BAT **bats, int *BO, int nr,
 static int insert_json_array(char **msg, JSON *js, BAT **bats, int *BO, int nr, int elm, sql_subtype *t);
 
 static ValPtr
-jsonv2local(const ValPtr t, char *v)
+jsonv2local(allocator *ma, const ValPtr t, char *v)
 {
 	// TODO add remaining types
 	switch (t->vtype) {
@@ -5874,10 +5917,10 @@ jsonv2local(const ValPtr t, char *v)
 			t->val.dval = strtod(v, NULL);
 			break;
 		case TYPE_str:
-			t->val.sval = _STRDUP(v);
+			t->val.sval = ma_strdup(ma, v);
 			break;
 		case TYPE_timestamp:
-			sql_timestamp_fromstr(v, &t->val.lval, 0, 0);
+			sql_timestamp_fromstr(ma, v, &t->val.lval, 0, 0);
 			break;
 		default:
 			return NULL;
@@ -5899,7 +5942,9 @@ insert_json_value(JSONterm *jt, sql_subtype *t, BAT *b)
 			vr.vtype = TYPE_str;
 		char eos = val[vsize];
 		val[vsize] = '\0';
-		v = jsonv2local(&vr, val);
+		allocator *ta = MT_thread_getallocator();
+		allocator_state ta_state = ma_open(ta);
+		v = jsonv2local(ta, &vr, val);
 		val[vsize] = eos;
 		if (v) {
 			if (BUNappend(b, VALget(v), false) != GDK_SUCCEED)
@@ -5907,8 +5952,9 @@ insert_json_value(JSONterm *jt, sql_subtype *t, BAT *b)
 		} else {
 			msg = createException(SQL, "sql.insert_json_value", "jsonv2local failed");
 		}
-		if (v->vtype == TYPE_str)
-			GDKfree(v->val.sval);
+		ma_close(ta, &ta_state);
+		//if (v->vtype == TYPE_str)
+		//	GDKfree(v->val.sval);
 	} else {
 		if (BUNappend(b, ATOMnilptr(t->type->localtype), false) != GDK_SUCCEED)
 			msg = createException(SQL, "sql.insert_json_value", "Error appending NULL for  %d", t->type->localtype);
@@ -6207,10 +6253,10 @@ insert_json_array(char **msg, JSON *js, BAT **bats, int *BO, int nr, int elm, sq
 }
 
 static str
-insert_json_str(const char *jstr, BAT **bats, int cnt, sql_subtype *t)
+insert_json_str(allocator *ma, const char *jstr, BAT **bats, int cnt, sql_subtype *t)
 {
 	char *res = MAL_SUCCEED;
-	JSON *js = JSONparse(jstr);
+	JSON *js = JSONparse(ma, jstr);
 	if (!js)
 		throw(SQL, "insert_json_str", "JSONparse error");
 	int bat_offset = 0;
@@ -6222,7 +6268,7 @@ insert_json_str(const char *jstr, BAT **bats, int cnt, sql_subtype *t)
 	if (elm < 0)
 		throw(SQL, "insert_json_str", SQLSTATE(HY013) "%s", res);
 	assert(bat_offset == cnt);
-	JSONfree(js);
+	//JSONfree(js);
 	return res;
 }
 
@@ -6232,6 +6278,8 @@ SQLfrom_json(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg = NULL;
 	mvc *m = NULL;
 	char *sqlstate = NULL;
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		return msg;
@@ -6240,7 +6288,7 @@ SQLfrom_json(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int mtype = getArgType(mb, pci, pci->retc);
 	sql_subtype *t = *(sql_subtype**)getArgReference(stk, pci, pci->retc+1);
 
-	BAT **bats = (BAT**)GDKzalloc(sizeof(BAT*) * pci->retc);
+	BAT **bats = (BAT**)ma_zalloc(ta, sizeof(BAT*) * pci->retc);
 	if (!bats)
 		throw(SQL, "SQLfrom_json", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	for(int i = 0; i < pci->retc; i++) {
@@ -6263,7 +6311,7 @@ SQLfrom_json(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BUN p, q;
 		BATloop(b, p, q) {
 			const char *json = (const char *) BUNtail(bi, p);
-			if ((msg = insert_json_str(json, bats, pci->retc, t)) != MAL_SUCCEED) {
+			if ((msg = insert_json_str(ta, json, bats, pci->retc, t)) != MAL_SUCCEED) {
 				bat_iterator_end(&bi);
 				BBPreclaim(b);
 				goto bailout;
@@ -6278,7 +6326,7 @@ SQLfrom_json(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			goto bailout;
 		}
 		str json = *(str*)getArgReference(stk, pci, pci->retc);
-		if ((msg = insert_json_str(json, bats, pci->retc, t)) != MAL_SUCCEED)
+		if ((msg = insert_json_str(ta, json, bats, pci->retc, t)) != MAL_SUCCEED)
 			goto bailout;
 	}
 
@@ -6286,13 +6334,15 @@ SQLfrom_json(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		*getArgReference_bat(stk, pci, i) = bats[i]->batCacheid;
 		BBPkeepref(bats[i]);
 	}
-	GDKfree(bats);
+	//GDKfree(bats);
+	ma_close(ta, &ta_state);
 	return MAL_SUCCEED;
 bailout:
 	for(int i = 0; i < pci->retc; i++)
 		if (bats[i])
 			BBPreclaim(bats[i]);
-	GDKfree(bats);
+	//GDKfree(bats);
+	ma_close(ta, &ta_state);
 	if (msg) {
 		if (sqlstate)
 			throw(SQL, "SQLfrom_json", SQLSTATE(HY013) "%s", msg);
@@ -6448,7 +6498,10 @@ static mel_func sql_init_funcs[] = {
  pattern("sql", "copy_from", mvc_import_table_wrap, true, "Import a table from bstream s with the \ngiven tuple and separators (sep/rsep)", args(1,15, batvarargany("",0),arg("t",ptr),arg("sep",str),arg("rsep",str),arg("ssep",str),arg("ns",str),arg("fname",str),arg("nr",lng),arg("offset",lng),arg("best",int),arg("fwf",str),arg("onclient",int),arg("escape",int),arg("decsep",str),arg("decskip",str))),
  //we use bat.single now
  //pattern("sql", "single", CMDBATsingle, false, "", args(1,2, batargany("",2),argany("x",2))),
+
  pattern("sql", "importColumn", mvc_bin_import_column_wrap, false, "Import a column from the given file", args(2, 8, batargany("", 0),arg("", oid), arg("method",str),arg("width",int),arg("bswap",bit),arg("path",str),arg("onclient",int),arg("nrows",oid))),
+ pattern("sql", "importNulTerminated", mvc_bin_import_nul_terminated_wrap, false, "Import a column from the bytes in the given bat", args(2, 6, batargany("", 0),arg("", oid), arg("method",str),arg("width",int),batarg("bytes",bte),arg("nrows",oid))),
+ pattern("sql", "importRaw", mvc_bin_import_bytes_wrap, false, "Import the raw bytes from the given file", args(2, 5, batargany("", 0),arg("", oid), arg("path",str),arg("onclient",int),arg("nrows",oid))),
  command("aggr", "not_unique", not_unique, false, "check if the tail sorted bat b doesn't have unique tail values", args(1,2, arg("",bit),batarg("b",oid))),
  command("sql", "optimizers", getPipeCatalog, false, "", args(3,3, batarg("",str),batarg("",str),batarg("",str))),
  pattern("sql", "optimizer_updates", SQLoptimizersUpdate, false, "", noargs),

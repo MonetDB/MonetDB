@@ -253,6 +253,7 @@ DFLOWworker(void *T)
 #endif
 	GDKsetbuf(t->errbuf);		/* where to leave errors */
 	snprintf(t->s.name, sizeof(t->s.name), "DFLOWsema%04zu", MT_getpid());
+	allocator *ma = MT_thread_getallocator();
 
 	for (;;) {
 		DataFlow flow;
@@ -335,8 +336,13 @@ DFLOWworker(void *T)
 				if (ATOMIC_CAS(&flow->mb->workers, &mwrks, wrks))
 					break;
 			}
+
 			error = runMALsequence(flow->cntxt, flow->mb, fe->pc, fe->pc + 1,
 								   flow->stk, 0, 0);
+			if (error)
+				error = MA_STRDUP(flow->mb->ma, error);
+			ma_reset(ma);
+
 			ATOMIC_DEC(&flow->cntxt->workers);
 			/* release the memory claim */
 			MALadmission_release(flow->cntxt, flow->mb, flow->stk, p, claim);
@@ -529,14 +535,14 @@ DFLOWinitBlk(DataFlow flow, MalBlkPtr mb, int size)
 		throw(MAL, "dataflow", "DFLOWinitBlk(): Called with flow == NULL");
 	if (mb == NULL)
 		throw(MAL, "dataflow", "DFLOWinitBlk(): Called with mb == NULL");
-	assign = (int *) GDKzalloc(mb->vtop * sizeof(int));
+	assign = (int *) ma_zalloc(mb->ma, mb->vtop * sizeof(int));
 	if (assign == NULL)
 		throw(MAL, "dataflow", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	etop = flow->stop - flow->start;
 	for (n = 0, pc = flow->start; pc < flow->stop; pc++, n++) {
 		p = getInstrPtr(mb, pc);
 		if (p == NULL) {
-			GDKfree(assign);
+			//GDKfree(assign);
 			throw(MAL, "dataflow",
 				  "DFLOWinitBlk(): getInstrPtr() returned NULL");
 		}
@@ -565,25 +571,24 @@ DFLOWinitBlk(DataFlow flow, MalBlkPtr mb, int size)
 					etop++;
 					(void) size;
 					if (etop == size) {
-						int *tmp;
+						//int *tmp;
 						/* in case of realloc failure, the original
 						 * pointers will be freed by the caller */
-						tmp = (int *) GDKrealloc(flow->nodes,
-												 sizeof(int) * 2 * size);
-						if (tmp == NULL) {
-							GDKfree(assign);
+						size_t nsz = sizeof(int) * 2 * size;
+						flow->nodes = (int *) ma_realloc(mb->ma, flow->nodes, nsz, sizeof(int) * size);
+						if (flow->nodes == NULL) {
+							// GDKfree(assign);
 							throw(MAL, "dataflow",
 								  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 						}
-						flow->nodes = tmp;
-						tmp = (int *) GDKrealloc(flow->edges,
-												 sizeof(int) * 2 * size);
-						if (tmp == NULL) {
-							GDKfree(assign);
+						//flow->nodes = tmp;
+						flow->edges = (int *) ma_realloc(mb->ma, flow->edges, nsz, sizeof(int) * size);
+						if (flow->edges == NULL) {
+							// GDKfree(assign);
 							throw(MAL, "dataflow",
 								  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 						}
-						flow->edges = tmp;
+						//flow->edges = tmp;
 						size *= 2;
 					}
 				} else {
@@ -612,25 +617,24 @@ DFLOWinitBlk(DataFlow flow, MalBlkPtr mb, int size)
 						flow->edges[i] = etop;
 						etop++;
 						if (etop == size) {
-							int *tmp;
+							//int *tmp;
+							size_t nsz = sizeof(int) * 2 * size;
 							/* in case of realloc failure, the original
 							 * pointers will be freed by the caller */
-							tmp = (int *) GDKrealloc(flow->nodes,
-													 sizeof(int) * 2 * size);
-							if (tmp == NULL) {
-								GDKfree(assign);
+							flow->nodes = (int *) ma_realloc(mb->ma, flow->nodes, nsz, sizeof(int) * size);
+							if (flow->nodes == NULL) {
+								//GDKfree(assign);
 								throw(MAL, "dataflow",
 									  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 							}
-							flow->nodes = tmp;
-							tmp = (int *) GDKrealloc(flow->edges,
-													 sizeof(int) * 2 * size);
-							if (tmp == NULL) {
-								GDKfree(assign);
+							//flow->nodes = tmp;
+							flow->edges = (int *) ma_realloc(mb->ma, flow->edges, nsz, sizeof(int) * size);
+							if (flow->edges == NULL) {
+								//GDKfree(assign);
 								throw(MAL, "dataflow",
 									  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 							}
-							flow->edges = tmp;
+							//flow->edges = tmp;
 							size *= 2;
 						}
 					} else {
@@ -645,7 +649,7 @@ DFLOWinitBlk(DataFlow flow, MalBlkPtr mb, int size)
 		for (j = 0; j < p->retc; j++)
 			assign[getArg(p, j)] = pc;	/* ensure recognition of dependency on first instruction and constant */
 	}
-	GDKfree(assign);
+	//GDKfree(assign);
 
 	return MAL_SUCCEED;
 }
@@ -814,7 +818,7 @@ runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc, int stoppc,
 		assert(t->flag == FREE);
 		assert(free_count > 0);
 		free_count--;
-		free_workers = t->next;
+		free_workers = free_workers->next;
 		t->next = workers;
 		workers = t;
 		t->flag = WAITING;
@@ -847,7 +851,8 @@ runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc, int stoppc,
 	}
 	MT_lock_unset(&dataflowLock);
 
-	flow = (DataFlow) GDKzalloc(sizeof(DataFlowRec));
+	flow = (DataFlow) ma_zalloc(mb->ma, sizeof(DataFlowRec));
+
 	if (flow == NULL)
 		throw(MAL, "dataflow", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
@@ -863,28 +868,28 @@ runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc, int stoppc,
 		.start = startpc + 1,
 		.stop = stoppc,
 		.done = q_create("flow->done"),
-		.status = (FlowEvent) GDKzalloc((stoppc - startpc + 1) *
+		.status = (FlowEvent) ma_zalloc(mb->ma, (stoppc - startpc + 1) *
 										sizeof(FlowEventRec)),
 		.error = ATOMIC_PTR_VAR_INIT(NULL),
-		.nodes = (int *) GDKzalloc(sizeof(int) * size),
-		.edges = (int *) GDKzalloc(sizeof(int) * size),
+		.nodes = (int *) ma_zalloc(mb->ma, sizeof(int) * size),
+		.edges = (int *) ma_zalloc(mb->ma, sizeof(int) * size),
 	};
 
 	if (flow->done == NULL) {
-		GDKfree(flow->status);
-		GDKfree(flow->nodes);
-		GDKfree(flow->edges);
-		GDKfree(flow);
+		//GDKfree(flow->status);
+		//GDKfree(flow->nodes);
+		//GDKfree(flow->edges);
+		//GDKfree(flow);
 		throw(MAL, "dataflow",
 			  "runMALdataflow(): Failed to create flow->done queue");
 	}
 
 	if (flow->status == NULL || flow->nodes == NULL || flow->edges == NULL) {
 		q_destroy(flow->done);
-		GDKfree(flow->status);
-		GDKfree(flow->nodes);
-		GDKfree(flow->edges);
-		GDKfree(flow);
+		//GDKfree(flow->status);
+		//GDKfree(flow->nodes);
+		//GDKfree(flow->edges);
+		//GDKfree(flow);
 		throw(MAL, "dataflow", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
@@ -894,12 +899,12 @@ runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc, int stoppc,
 	if (msg == MAL_SUCCEED)
 		msg = DFLOWscheduler(flow, t);
 
-	GDKfree(flow->status);
-	GDKfree(flow->edges);
-	GDKfree(flow->nodes);
+	//GDKfree(flow->status);
+	//GDKfree(flow->edges);
+	//GDKfree(flow->nodes);
 	q_destroy(flow->done);
 	MT_lock_destroy(&flow->flowlock);
-	GDKfree(flow);
+	//GDKfree(flow);
 
 	/* we created one worker, now tell one worker to exit again */
 	MT_lock_set(&todo->l);

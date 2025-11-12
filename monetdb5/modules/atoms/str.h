@@ -129,11 +129,13 @@
 #define CHECK_STR_BUFFER_LENGTH(BUFFER, BUFFER_LEN, NEXT_LEN, OP)		\
 	do {																\
 		if ((NEXT_LEN) > *BUFFER_LEN) {									\
+			allocator *ma = MT_thread_getallocator();\
+			assert(ma);\
 			size_t newlen = (((NEXT_LEN) + 1023) & ~1023); /* align to a multiple of 1024 bytes */ \
-			str newbuf = GDKmalloc(newlen);								\
+			str newbuf = ma_alloc(ma, newlen);								\
 			if (!newbuf)												\
 				throw(MAL, OP, SQLSTATE(HY013) MAL_MALLOC_FAIL);		\
-			GDKfree(*BUFFER);											\
+			/*GDKfree(*BUFFER);*/											\
 			*BUFFER = newbuf;											\
 			*BUFFER_LEN = newlen;										\
 		}																\

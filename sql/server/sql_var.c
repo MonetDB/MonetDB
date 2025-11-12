@@ -11,6 +11,7 @@
  */
 
 #include "monetdb_config.h"
+#include "sql_mem.h"
 #include "sql_mvc.h"
 #include "sql_scan.h"
 #include "sql_list.h"
@@ -32,9 +33,9 @@ destroy_sql_var(void *gdata, void *data)
 	_DELETE(svar);
 }
 
-#define SQL_GLOBAL(sname, name, val)									\
+#define SQL_GLOBAL(sa, sname, name, val)									\
 	if (!(var = push_global_var(sql, sname, name, &ctype)) ||			\
-		!sqlvar_set(var, VALset(&src, ctype.type->localtype, (char*)(val)))) \
+		!sqlvar_set(sa, var, VALset(&src, ctype.type->localtype, (char*)(val)))) \
 		return -1;
 
 static int
@@ -51,6 +52,8 @@ init_global_variables(mvc *sql)
 	ValRecord src;
 	const char *mal_optimizer, *sname = "sys";
 	sql_var *var;
+	//allocator *sa = sql->sa? sql->sa : sql->pa;
+	allocator *sa = NULL;
 
 	if (!(sql->global_vars = list_create(destroy_sql_var)))
 		return -1;
@@ -58,28 +61,28 @@ init_global_variables(mvc *sql)
 		return -1;
 
 	sql_find_subtype(&ctype, "int", 0, 0);
-	SQL_GLOBAL(sname, "debug", &sql->debug);
-	SQL_GLOBAL(sname, "sql_optimizer", &sql->sql_optimizer);
-	SQL_GLOBAL(sname, "division_min_scale", &sql->div_min_scale);
+	SQL_GLOBAL(sa, sname, "debug", &sql->debug);
+	SQL_GLOBAL(sa, sname, "sql_optimizer", &sql->sql_optimizer);
+	SQL_GLOBAL(sa, sname, "division_min_scale", &sql->div_min_scale);
 
 	sql_find_subtype(&ctype, "varchar", 1024, 0);
-	SQL_GLOBAL(sname, "current_schema", sname);
-	SQL_GLOBAL(sname, "current_user", "monetdb");
-	SQL_GLOBAL(sname, "current_role", "monetdb");
+	SQL_GLOBAL(sa, sname, "current_schema", sname);
+	SQL_GLOBAL(sa, sname, "current_user", "monetdb");
+	SQL_GLOBAL(sa, sname, "current_role", "monetdb");
 
 	/* TODO: GDKenv var sql_optimizer change to mal_optimizer */
 	mal_optimizer = GDKgetenv("sql_optimizer");
 	if (!mal_optimizer)
 		mal_optimizer = "default_pipe";
 	/* TODO: Change optimizer to mal_optimizer */
-	SQL_GLOBAL(sname, "optimizer", mal_optimizer);
+	SQL_GLOBAL(sa, sname, "optimizer", mal_optimizer);
 
 	sql_find_subtype(&ctype, "sec_interval", inttype2digits(ihour, isec), 0);
-	SQL_GLOBAL(sname, "current_timezone", &sec);
+	SQL_GLOBAL(sa, sname, "current_timezone", &sec);
 
 	sql_find_subtype(&ctype, "bigint", 0, 0);
-	SQL_GLOBAL(sname, "last_id", &sec);
-	SQL_GLOBAL(sname, "rowcnt", &sec);
+	SQL_GLOBAL(sa, sname, "last_id", &sec);
+	SQL_GLOBAL(sa, sname, "rowcnt", &sec);
 
 	return 0;
 }
@@ -195,7 +198,7 @@ destroy_sql_rel_view(void *gdata, void *data)
 {
 	(void)gdata;
 	sql_rel_view *srv = (sql_rel_view*) data;
-	rel_destroy(srv->rel_view);
+	rel_destroy(NULL, srv->rel_view);
 	_DELETE(srv->name);
 	_DELETE(srv);
 }
@@ -379,10 +382,16 @@ frame_clear_visited_flag(mvc *sql)
 }
 
 atom *
-sqlvar_set(sql_var *var, ValRecord *v)
+sqlvar_set(allocator *sa, sql_var *var, ValRecord *v)
 {
-	VALclear(&(var->var.data));
-	if (VALcopy(&(var->var.data), v) == NULL)
+	ValPtr dst = &(var->var.data);
+	// self assignment nothing to do
+	if (dst == v) {
+		var->var.isnull = VALisnil(v);
+		return &(var->var);
+	}
+	VALclear(dst);
+	if (VALcopy(sa, dst, v) == NULL)
 		return NULL;
 	var->var.isnull = VALisnil(v);
 	return &(var->var);
@@ -542,7 +551,7 @@ stack_update_rel_view(mvc *sql, const char *name, sql_rel *view)
 				sql_rel_view *var = (sql_rel_view*) n->data;
 				assert(var->name);
 				if (!strcmp(var->name, name)) {
-					rel_destroy(var->rel_view);
+					rel_destroy(sql, var->rel_view);
 					var->rel_view = view;
 					return;
 				}
@@ -645,20 +654,22 @@ stack_nr_of_declared_tables(mvc *sql)
 }
 
 str
-sqlvar_set_string(sql_var *var, const char *val)
+sqlvar_set_string(allocator *sa, sql_var *var, const char *val)
 {
 	atom *a = &var->var;
-	str new_val = _STRDUP(val);
 
-	if (a != NULL && new_val != NULL) {
-		ValRecord *v = &a->data;
+	if (a != NULL) {
+		assert(sa);
+		str new_val = SA_STRDUP(sa, val);
+		if (new_val) {
+			ValRecord *v = &a->data;
 
-		if (v->val.sval)
-			_DELETE(v->val.sval);
-		v->val.sval = new_val;
-		return new_val;
-	} else if (new_val) {
-		_DELETE(new_val);
+			if (v->val.sval && v->allocated)
+				_DELETE(v->val.sval);
+			v->val.sval = new_val;
+			v->allocated = false;
+			return new_val;
+		}
 	}
 	return NULL;
 }

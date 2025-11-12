@@ -1,8 +1,36 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Wed Nov  5 2025 Joeri van Ruth <joeri.van.ruth@monetdbsolutions.com>
+- COPY BINARY has been optimized to be much faster when many string columns
+  are involved.
+- The performance of COPY BINARY of blob column has also been improved.
+- The performance of COPY BINARY ON CLIENT has been much improved. It used
+  to be much slower than ON SERVER, now it's only a little slower.
+- The file format for COPY BINARY strings has been extended. If the same
+  string occurs multiple times, later occurrences can refer back to
+  earlier occurrences instead of including another copy of the string.
+  This improves both file size and processing time.
+- A new tool 'backrefencode' has been added that can introduce these
+  back references or remove them again.
+- Rudimentary support for compressed ON CLIENT transfers has been added.
+  If you write ON 'algo' CLIENT, with algo=lz4/gz/xz/b2, the server compresses
+  downloaded data and decompresses uploaded data server-side using the given
+  algorithm. It is up to the user to ensure that the uploaded data has indeed
+  been compressed. This is not always easy because many clients automatically
+  compress or decompress data when the file name contains .gz, .lz4, etc.,
+  which would lead to double compression and decompression.
+
+* Mon Oct 27 2025 Sjoerd Mullender <sjoerd@acm.org>
+- Implemented aggregates sha1, sha224, sha256, sha384, sha512, and
+  ripemd160 which calculate a checksum (digest) over a column of strings.
+  It only makes sense to use these with an ordering, as `SELECT sha256(name
+  ORDER BY id) FROM table`, since the ordering in which the values are
+  fed into the digest algorithm is important and cannot otherwise be
+  guaranteed.
+
 * Fri Oct  3 2025 Lucas Pereira <lucas.pereira@monetdbsolutions.com>
-  - EXPLAIN now supports a BEFORE/AFTER REL_UNNEST/REL_REWRITE/PHYSICAL
+- EXPLAIN now supports a BEFORE/AFTER REL_UNNEST/REL_REWRITE/PHYSICAL
   clause to indicate which phase of query compilation to show.  A plain
   EXPLAIN is equivalent to EXPLAIN BEFORE PHYSICAL, which is what PLAN
   used to do. The old EXPLAIN is now EXPLAIN PHYSICAL. SHOW DETAILS

@@ -47,14 +47,14 @@ OPTmatpackImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 		p = old[i];
 		if (getModuleId(p) == matRef && getFunctionId(p) == packRef
 			&& isaBatType(getArgType(mb, p, 1))) {
-			q = newInstruction(0, matRef, packIncrementRef);
+			q = newInstruction(mb, matRef, packIncrementRef);
 			if (q == NULL) {
 				msg = createException(MAL, "optimizer.matpack",
 									  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				break;
 			}
 			if (setDestVar(q, newTmpVariable(mb, getArgType(mb, p, 1))) < 0) {
-				freeInstruction(q);
+				freeInstruction(mb, q);
 				msg = createException(MAL, "optimizer.matpack",
 									  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				break;
@@ -66,7 +66,7 @@ OPTmatpackImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 			typeChecker(cntxt->usermodule, mb, q, mb->stop - 1, TRUE);
 
 			for (j = 2; j < p->argc; j++) {
-				q = newInstruction(0, matRef, packIncrementRef);
+				q = newInstruction(mb, matRef, packIncrementRef);
 				if (q == NULL) {
 					msg = createException(MAL, "optimizer.matpack",
 										  SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -75,7 +75,7 @@ OPTmatpackImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 				q = pushArgument(mb, q, v);
 				q = pushArgument(mb, q, getArg(p, j));
 				if (setDestVar(q, newTmpVariable(mb, getVarType(mb, v))) < 0) {
-					freeInstruction(q);
+					freeInstruction(mb, q);
 					msg = createException(MAL, "optimizer.matpack",
 										  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					break;
@@ -87,7 +87,7 @@ OPTmatpackImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 			if (msg)
 				break;
 			getArg(q, 0) = getArg(p, 0);
-			freeInstruction(p);
+			freeInstruction(mb, p);
 			actions++;
 			continue;
 		}
@@ -97,7 +97,7 @@ OPTmatpackImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	for (; i < slimit; i++)
 		if (old[i])
 			pushInstruction(mb, old[i]);
-	GDKfree(old);
+	//GDKfree(old);
 
 	/* Defense line against incorrect plans */
 	if (msg == MAL_SUCCEED && actions > 0) {

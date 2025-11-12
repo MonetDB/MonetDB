@@ -116,18 +116,18 @@ gdk_export lng timestamp_diff(timestamp t1, timestamp t2)
 	__attribute__((__const__));
 
 /* interfaces for GDK level atoms date, daytime, and timestamp */
-gdk_export ssize_t date_fromstr(const char *buf, size_t *len, date **d, bool external);
-gdk_export ssize_t date_tostr(str *buf, size_t *len, const date *val, bool external);
-gdk_export ssize_t daytime_tz_fromstr(const char *buf, size_t *len, daytime **d, bool external);
-gdk_export ssize_t daytime_fromstr(const char *buf, size_t *len, daytime **d, bool external);
-gdk_export ssize_t daytime_precision_tostr(str *buf, size_t *len, const daytime dt, int precision, bool external);
-gdk_export ssize_t daytime_tostr(str *buf, size_t *len, const daytime *val, bool external);
-gdk_export ssize_t timestamp_fromstr(const char *buf, size_t *len, timestamp **d, bool external);
-gdk_export ssize_t timestamp_tz_fromstr(const char *buf, size_t *len, timestamp **ret, bool external);
-gdk_export ssize_t timestamp_tostr(str *buf, size_t *len, const timestamp *val, bool external);
-gdk_export ssize_t timestamp_precision_tostr(str *buf, size_t *len, timestamp val, int precision, bool external);
+gdk_export ssize_t date_fromstr(allocator *ma, const char *buf, size_t *len, date **d, bool external);
+gdk_export ssize_t date_tostr(allocator *ma, str *buf, size_t *len, const date *val, bool external);
+gdk_export ssize_t daytime_tz_fromstr(allocator *ma, const char *buf, size_t *len, daytime **d, bool external);
+gdk_export ssize_t daytime_fromstr(allocator *ma, const char *buf, size_t *len, daytime **d, bool external);
+gdk_export ssize_t daytime_precision_tostr(allocator *ma, str *buf, size_t *len, const daytime dt, int precision, bool external);
+gdk_export ssize_t daytime_tostr(allocator *ma, str *buf, size_t *len, const daytime *val, bool external);
+gdk_export ssize_t timestamp_fromstr(allocator *ma, const char *buf, size_t *len, timestamp **d, bool external);
+gdk_export ssize_t timestamp_tz_fromstr(allocator *ma, const char *buf, size_t *len, timestamp **ret, bool external);
+gdk_export ssize_t timestamp_tostr(allocator *ma, str *buf, size_t *len, const timestamp *val, bool external);
+gdk_export ssize_t timestamp_precision_tostr(allocator *ma, str *buf, size_t *len, timestamp val, int precision, bool external);
 
-gdk_export ssize_t sql_daytime_fromstr(const char *buf, daytime *d, long tz_sec, bool tzlocal);
-gdk_export ssize_t sql_timestamp_fromstr(const char *buf, timestamp *d, long tz_sec, bool tzlocal);
+gdk_export ssize_t sql_daytime_fromstr(allocator *ma, const char *buf, daytime *d, long tz_sec, bool tzlocal);
+gdk_export ssize_t sql_timestamp_fromstr(allocator *ma, const char *buf, timestamp *d, long tz_sec, bool tzlocal);
 
 #endif	/* _GDK_TIME_H_ */

@@ -77,23 +77,25 @@ UDFreverse_(str *buf, size_t *buflen, const char *src)
 
 /* MAL wrapper */
 str
-UDFreverse(str *res, const str *arg)
+UDFreverse(Client ctx, str *res, const str *arg)
 {
+	(void) ctx;
+	allocator *ma = ctx->curprg->def->ma;
 	str msg = MAL_SUCCEED, s;
 
 	/* assert calling sanity */
 	assert(res && arg);
 	s = *arg;
 	if (strNil(s)) {
-		if (!(*res = GDKstrdup(str_nil)))
+		if (!(*res = SA_STRDUP(ma, str_nil)))
 			throw(MAL, "udf.reverse", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	} else {
 		size_t buflen = strlen(s) + 1;
 
-		if (!(*res = GDKmalloc(buflen)))
+		if (!(*res = ma_alloc(ma, buflen)))
 			throw(MAL, "udf.reverse", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		if ((msg = UDFreverse_(res, &buflen, s)) != MAL_SUCCEED) {
-			GDKfree(*res);
+			//GDKfree(*res);
 			*res = NULL;
 			return msg;
 		}
@@ -189,8 +191,9 @@ bailout:
 
 /* MAL wrapper */
 char *
-UDFBATreverse(bat *ret, const bat *arg)
+UDFBATreverse(Client ctx, bat *ret, const bat *arg)
 {
+	(void) ctx;
 	BAT *res = NULL, *src = NULL;
 	char *msg = NULL;
 
@@ -258,7 +261,7 @@ UDFBATreverse(bat *ret, const bat *arg)
 
 /* actual implementation */
 static char *
-UDFBATfuse_(BAT **ret, BAT *bone, BAT *btwo)
+UDFBATfuse_(Client ctx, BAT **ret, BAT *bone, BAT *btwo)
 {
 	BAT *bres = NULL;
 	bit two_tail_sorted_unsigned = FALSE;
@@ -317,20 +320,20 @@ UDFBATfuse_(BAT **ret, BAT *bone, BAT *btwo)
 	/* call type-specific core algorithm */
 	switch (bone->ttype) {
 	case TYPE_bte:
-		msg = UDFBATfuse_bte_sht ( bres, bone, btwo, n,
+		msg = UDFBATfuse_bte_sht ( ctx, bres, bone, btwo, n,
 			&two_tail_sorted_unsigned, &two_tail_revsorted_unsigned );
 		break;
 	case TYPE_sht:
-		msg = UDFBATfuse_sht_int ( bres, bone, btwo, n,
+		msg = UDFBATfuse_sht_int ( ctx, bres, bone, btwo, n,
 			&two_tail_sorted_unsigned, &two_tail_revsorted_unsigned );
 		break;
 	case TYPE_int:
-		msg = UDFBATfuse_int_lng ( bres, bone, btwo, n,
+		msg = UDFBATfuse_int_lng ( ctx, bres, bone, btwo, n,
 			&two_tail_sorted_unsigned, &two_tail_revsorted_unsigned );
 		break;
 #ifdef HAVE_HGE
 	case TYPE_lng:
-		msg = UDFBATfuse_lng_hge ( bres, bone, btwo, n,
+		msg = UDFBATfuse_lng_hge ( ctx, bres, bone, btwo, n,
 			&two_tail_sorted_unsigned, &two_tail_revsorted_unsigned );
 		break;
 #endif
@@ -377,8 +380,9 @@ UDFBATfuse_(BAT **ret, BAT *bone, BAT *btwo)
 
 /* MAL wrapper */
 char *
-UDFBATfuse(bat *ires, const bat *ione, const bat *itwo)
+UDFBATfuse(Client ctx, bat *ires, const bat *ione, const bat *itwo)
 {
+	(void) ctx;
 	BAT *bres = NULL, *bone = NULL, *btwo = NULL;
 	char *msg = NULL;
 
@@ -396,7 +400,7 @@ UDFBATfuse(bat *ires, const bat *ione, const bat *itwo)
 	}
 
 	/* do the work */
-	msg = UDFBATfuse_ ( &bres, bone, btwo );
+	msg = UDFBATfuse_ ( ctx, &bres, bone, btwo );
 
 	/* release input BAT-descriptors */
 	BBPunfix(bone->batCacheid);

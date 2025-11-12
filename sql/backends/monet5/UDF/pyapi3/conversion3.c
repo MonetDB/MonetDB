@@ -116,11 +116,11 @@ wrapup:
 }
 
 PyObject *
-PyMaskedArray_FromBAT(PyInput *inp, size_t t_start, size_t t_end, char **return_message, bool copy)
+PyMaskedArray_FromBAT(allocator *ma, Client ctx, PyInput *inp, size_t t_start, size_t t_end, char **return_message, bool copy)
 {
 	BAT *b;
 	char *msg;
-	PyObject *vararray = PyArrayObject_FromBAT(inp, t_start, t_end, return_message, copy);
+	PyObject *vararray = PyArrayObject_FromBAT(ma, ctx, inp, t_start, t_end, return_message, copy);
 
 	if (vararray == NULL)
 		return NULL;
@@ -171,7 +171,7 @@ wrapup:
 }
 
 PyObject *
-PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end, char **return_message, bool copy)
+PyArrayObject_FromBAT(allocator *ma, Client ctx, PyInput *inp, size_t t_start, size_t t_end, char **return_message, bool copy)
 {
 	// This variable will hold the converted Python object
 	PyObject *vararray = NULL;
@@ -202,7 +202,7 @@ PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end, char **return_
 			goto wrapup;
 		} else {
 			BAT *ret_bat = NULL;
-			msg = ConvertFromSQLType(b, inp->sql_subtype, &ret_bat, &inp->bat_type);
+			msg = ConvertFromSQLType(ma, ctx, b, inp->sql_subtype, &ret_bat, &inp->bat_type);
 			if (msg != MAL_SUCCEED) {
 				freeException(msg);
 				msg = createException(MAL, "pyapi3.eval",
@@ -909,7 +909,7 @@ wrapup:
 }
 
 BAT *
-PyObject_ConvertToBAT(PyReturn *ret, sql_subtype *type, int bat_type, int i, oid seqbase, char **return_message, bool copy)
+PyObject_ConvertToBAT(allocator *ma, Client ctx, PyReturn *ret, sql_subtype *type, int bat_type, int i, oid seqbase, char **return_message, bool copy)
 {
 	BAT *b = NULL;
 	size_t index_offset = 0;
@@ -1141,7 +1141,7 @@ PyObject_ConvertToBAT(PyReturn *ret, sql_subtype *type, int bat_type, int i, oid
 	}
 	if (ConvertableSQLType(type)) {
 		BAT *result;
-		msg = ConvertToSQLType(NULL, b, type, &result, &bat_type);
+		msg = ConvertToSQLType(ctx, b, type, &result, &bat_type);
 		BBPunfix(b->batCacheid);
 		if (msg != MAL_SUCCEED) {
 			goto wrapup;
@@ -1175,7 +1175,7 @@ int GetSQLType(sql_subtype *sql_subtype)
 }
 
 str
-ConvertFromSQLType(BAT *b, sql_subtype *sql_subtype, BAT **ret_bat, int *ret_type)
+ConvertFromSQLType(allocator *ma, Client ctx, BAT *b, sql_subtype *sql_subtype, BAT **ret_bat, int *ret_type)
 {
 	str res = MAL_SUCCEED;
 	int conv_type;
@@ -1195,7 +1195,7 @@ ConvertFromSQLType(BAT *b, sql_subtype *sql_subtype, BAT **ret_bat, int *ret_typ
 		BUN p = 0, q = 0;
 		char *result = NULL;
 		size_t length = 0;
-		ssize_t (*strConversion)(str *, size_t *, const void *, bool) =
+		ssize_t (*strConversion)(allocator *, str *, size_t *, const void *, bool) =
 			BATatoms[b->ttype].atomToStr;
 		*ret_bat = COLnew(0, TYPE_str, 0, TRANSIENT);
 		*ret_type = conv_type;
@@ -1207,7 +1207,7 @@ ConvertFromSQLType(BAT *b, sql_subtype *sql_subtype, BAT **ret_bat, int *ret_typ
 		BATloop(b, p, q)
 		{
 			const void *element = (const void*)BUNtail(li, p);
-			if (strConversion(&result, &length, element, false) < 0) {
+			if (strConversion(ma, &result, &length, element, false) < 0) {
 				bat_iterator_end(&li);
 				BBPunfix((*ret_bat)->batCacheid);
 				return createException(MAL, "pyapi3.eval",
@@ -1220,9 +1220,9 @@ ConvertFromSQLType(BAT *b, sql_subtype *sql_subtype, BAT **ret_bat, int *ret_typ
 			}
 		}
 		bat_iterator_end(&li);
-		if (result) {
-			GDKfree(result);
-		}
+		//if (result) {
+		//	GDKfree(result);
+		//}
 		return res;
 	} else if (conv_type == TYPE_dbl) {
 		int bat_type = ATOMstorage(b->ttype);
@@ -1232,20 +1232,20 @@ ConvertFromSQLType(BAT *b, sql_subtype *sql_subtype, BAT **ret_bat, int *ret_typ
 		// numeric field and convert the one it's actually stored in
 		switch (bat_type) {
 			case TYPE_bte:
-				res = batbte_dec2_dbl(&result, &hpos, &b->batCacheid, NULL);
+				res = batbte_dec2_dbl(ctx, &result, &hpos, &b->batCacheid, NULL);
 				break;
 			case TYPE_sht:
-				res = batsht_dec2_dbl(&result, &hpos, &b->batCacheid, NULL);
+				res = batsht_dec2_dbl(ctx, &result, &hpos, &b->batCacheid, NULL);
 				break;
 			case TYPE_int:
-				res = batint_dec2_dbl(&result, &hpos, &b->batCacheid, NULL);
+				res = batint_dec2_dbl(ctx, &result, &hpos, &b->batCacheid, NULL);
 				break;
 			case TYPE_lng:
-				res = batlng_dec2_dbl(&result, &hpos, &b->batCacheid, NULL);
+				res = batlng_dec2_dbl(ctx, &result, &hpos, &b->batCacheid, NULL);
 				break;
 #ifdef HAVE_HGE
 			case TYPE_hge:
-				res = bathge_dec2_dbl(&result, &hpos, &b->batCacheid, NULL);
+				res = bathge_dec2_dbl(ctx, &result, &hpos, &b->batCacheid, NULL);
 				break;
 #endif
 			default:
@@ -1271,17 +1271,16 @@ str ConvertToSQLType(Client cntxt, BAT *b, sql_subtype *sql_subtype,
 	bat result_bat = 0;
 	int digits = sql_subtype->digits;
 	int scale = sql_subtype->scale;
-	(void)cntxt;
 
 	assert(sql_subtype);
 	assert(sql_subtype->type);
 
 	switch (sql_subtype->type->eclass) {
 		case EC_TIMESTAMP:
-			res = batstr_2time_timestamp(&result_bat, &b->batCacheid, NULL, &digits);
+			res = batstr_2time_timestamp(cntxt, &result_bat, &b->batCacheid, NULL, &digits);
 			break;
 		case EC_TIME:
-			res = batstr_2time_daytime(&result_bat, &b->batCacheid, NULL, &digits);
+			res = batstr_2time_daytime(cntxt, &result_bat, &b->batCacheid, NULL, &digits);
 			break;
 		case EC_DATE:
 			if ((*ret_bat = BATconvert(b, NULL, TYPE_date, 0, 0, 0)) == NULL)
@@ -1289,7 +1288,7 @@ str ConvertToSQLType(Client cntxt, BAT *b, sql_subtype *sql_subtype,
 			*ret_type = TYPE_date;
 			return MAL_SUCCEED;
 		case EC_DEC:
-			res = batdbl_num2dec_lng(&result_bat, &b->batCacheid, NULL,
+			res = batdbl_num2dec_lng(cntxt, &result_bat, &b->batCacheid, NULL,
 									 &digits, &scale);
 			break;
 		default:

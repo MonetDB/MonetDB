@@ -387,7 +387,7 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bo
 				&pyinput_values[i - (pci->retc + 2 + has_card_arg)], &msg);
 		} else {
 			int type = pyinput_values[i - (pci->retc + 2 + has_card_arg)].bat_type;
-			result_array = PyMaskedArray_FromBAT(
+			result_array = PyMaskedArray_FromBAT(mb->ma, cntxt,
 				&pyinput_values[i - (pci->retc + 2 + has_card_arg)], t_start, t_end, &msg,
 				!enable_zerocopy_input && type != TYPE_void);
 		}
@@ -573,7 +573,7 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bo
 			bat_type = PyType_ToBat(ret->result_type);
 		}
 
-		b = PyObject_ConvertToBAT(ret, sql_subtype, bat_type, i, seqbase, &msg,
+		b = PyObject_ConvertToBAT(mb->ma, cntxt, ret, sql_subtype, bat_type, i, seqbase, &msg,
 								  !enable_zerocopy_output);
 		if (b == NULL) {
 			goto wrapup;
@@ -586,11 +586,11 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bo
 		} else { // single value return, only for non-grouped aggregations
 			BATiter li = bat_iterator(b);
 			if (bat_type != TYPE_str) {
-				if (VALinit(&stk->stk[pci->argv[i]], bat_type, li.base) ==
+				if (VALinit(NULL, &stk->stk[pci->argv[i]], bat_type, li.base) ==
 					NULL)
 					msg = createException(MAL, "pyapi3.eval", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			} else {
-				if (VALinit(&stk->stk[pci->argv[i]], bat_type,
+				if (VALinit(NULL, &stk->stk[pci->argv[i]], bat_type,
 							BUNtail(li, 0)) == NULL)
 					msg = createException(MAL, "pyapi3.eval", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
@@ -847,7 +847,7 @@ static str CreateEmptyReturn(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		} else { // single value return, only for non-grouped aggregations
 			// return NULL to conform to SQL aggregates
 			int tpe = getArgType(mb, pci, i);
-			if (!VALinit(&stk->stk[pci->argv[i]], tpe, ATOMnilptr(tpe))) {
+			if (!VALinit(NULL, &stk->stk[pci->argv[i]], tpe, ATOMnilptr(tpe))) {
 				msg = createException(MAL, "pyapi3.eval", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto bailout;
 			}
@@ -887,8 +887,9 @@ PyAPI3prelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 static str
-PyAPI3epilogue(void *ret)
+PyAPI3epilogue(Client cntxt, void *ret)
 {
+	(void)cntxt;
     (void)ret;
 	MT_lock_set(&pyapiLock);
 	if (pyapiInitialized) {

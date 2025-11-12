@@ -68,3 +68,8 @@ HAVE_HGE?7637_str_to_decimal
 7722-recusive-cte-with-error-crash
 7730-generate-series-month-int
 7732-table-exp-issue
+7734-epoch-missing-cast
+7735-crossproduct-update
+7736-scale-reduction-crash
+7737-join-order
+7744_opt_null_in_where

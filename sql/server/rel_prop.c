@@ -54,15 +54,20 @@ prop_copy( allocator *sa, prop *p )
 }
 
 prop *
-prop_remove( prop *plist, prop *p )
+prop_remove(allocator *sa, prop *plist, prop *p)
 {
 	prop *op = plist;
+	(void) sa;
 
-	if (plist == p)
-		return p->p;
+	if (plist == p) {
+		plist = p->p;
+		// ma_free(sa, p);
+		return plist;
+	}
 	for(; op; op = op->p) {
 		if (op->p == p) {
 			op->p = p->p;
+			// ma_free(sa, p);
 			break;
 		}
 	}
@@ -70,7 +75,7 @@ prop_remove( prop *plist, prop *p )
 }
 
 prop *
-find_prop( prop *p, rel_prop kind)
+find_prop(prop *p, rel_prop kind)
 {
 	while(p) {
 		if (p->kind == kind)
@@ -127,11 +132,11 @@ propvalue2string(allocator *sa, prop *p)
 	switch(p->kind) {
 	case PROP_COUNT: {
 		snprintf(buf, sizeof(buf), BUNFMT, p->value.lval);
-		return sa_strdup(sa, buf);
+		return ma_strdup(sa, buf);
 	}
 	case PROP_NUNIQUES: {
 		snprintf(buf, sizeof(buf), "%f", p->value.dval);
-		return sa_strdup(sa, buf);
+		return ma_strdup(sa, buf);
 	}
 	case PROP_JOINIDX: {
 		sql_idx *i = p->value.pval;
@@ -139,7 +144,7 @@ propvalue2string(allocator *sa, prop *p)
 		if (i) {
 			snprintf(buf, sizeof(buf), "\"%s\".\"%s\".\"%s\"", sql_escape_ident(sa, i->t->s->base.name),
 					 sql_escape_ident(sa, i->t->base.name), sql_escape_ident(sa, i->base.name));
-			return sa_strdup(sa, buf);
+			return ma_strdup(sa, buf);
 		}
 	} break;
 	case PROP_REMOTE: {
@@ -153,7 +158,7 @@ propvalue2string(allocator *sa, prop *p)
 					                   sql_escape_ident(sa, offset?" ":""),
 					                   sql_escape_ident(sa, tu->uri));
 			}
-			return sa_strdup(sa, buf);
+			return ma_strdup(sa, buf);
 		}
 	} break;
 	case PROP_MIN:
@@ -162,27 +167,38 @@ propvalue2string(allocator *sa, prop *p)
 		char *res = NULL;
 
 		if (a->isnull) {
-			res = sa_strdup(sa, "\"NULL\"");
+			res = ma_strdup(sa, "\"NULL\"");
 		} else {
-			char *s = ATOMformat(a->data.vtype, VALptr(&a->data));
+			char *s = ATOMformat(sa, a->data.vtype, VALptr(&a->data));
 			if (s && *s == '"') {
-				res = sa_strdup(sa, s);
+				res = ma_strdup(sa, s);
 			} else if (s) {
-				res = sa_alloc(sa, strlen(s) + 3);
+				res = ma_alloc(sa, strlen(s) + 3);
 				stpcpy(stpcpy(stpcpy(res, "\""), s), "\"");
 			}
-			GDKfree(s);
+			// GDKfree(s);
 		}
 		return res;
 	}
 	case PROP_UNNEST:
-		return sa_strdup(sa, exp_name((sql_exp*)p->value.pval));
+		return ma_strdup(sa, exp_name((sql_exp*)p->value.pval));
 	case PROP_NESTED: {
 		sql_column *c = p->value.pval;
-		return sa_strdup(sa, c->storage_type);
+		return ma_strdup(sa, c->storage_type);
 	}
 	default:
 		break;
 	}
-	return sa_strdup(sa, "");
+	return ma_strdup(sa, "");
+}
+
+
+void
+free_props( allocator *sa, prop *p )
+{
+	while(p) {
+		prop* tmp = p;
+		p = p->p;
+		ma_free(sa, tmp);
+	}
 }

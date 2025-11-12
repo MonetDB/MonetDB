@@ -43,38 +43,38 @@ getArgReference(MalStkPtr stk, InstrPtr pci, int k)
 }
 
 static str
-malCommandCall(MalStkPtr stk, InstrPtr pci)
+malCommandCall(Client cntxt, MalStkPtr stk, InstrPtr pci)
 {
 	str ret = MAL_SUCCEED;
 
 	switch (pci->argc) {
 	case 0:
-		ret = (*(str (*) (void)) pci->fcn)();
+		ret = (*(str (*) (Client)) pci->fcn)(cntxt);
 		break;
 	case 1:
-		ret = (*(str (*) (void *)) pci->fcn)(
+		ret = (*(str (*) (Client, void *)) pci->fcn)(cntxt,
 			getArgReference(stk, pci, 0));
 		break;
 	case 2:
-		ret = (*(str (*) (void *, void *)) pci->fcn)(
+		ret = (*(str (*) (Client, void *, void *)) pci->fcn)(cntxt,
 			getArgReference(stk, pci, 0),
 			getArgReference(stk, pci, 1));
 		break;
 	case 3:
-		ret = (*(str (*) (void *, void *, void *)) pci->fcn)(
+		ret = (*(str (*) (Client, void *, void *, void *)) pci->fcn)(cntxt,
 			getArgReference(stk, pci, 0),
 			getArgReference(stk, pci, 1),
 			getArgReference(stk, pci, 2));
 		break;
 	case 4:
-		ret = (*(str (*) (void *, void *, void *, void *)) pci-> fcn)(
+		ret = (*(str (*) (Client, void *, void *, void *, void *)) pci-> fcn)(cntxt,
 			getArgReference(stk, pci, 0),
 			getArgReference(stk, pci, 1),
 			getArgReference(stk, pci, 2),
 			getArgReference(stk, pci, 3));
 		break;
 	case 5:
-		ret = (*(str (*) (void *, void *, void *, void *, void *)) pci->fcn)(
+		ret = (*(str (*) (Client, void *, void *, void *, void *, void *)) pci->fcn)(cntxt,
 			getArgReference(stk, pci, 0),
 			getArgReference(stk, pci, 1),
 			getArgReference(stk, pci, 2),
@@ -82,8 +82,8 @@ malCommandCall(MalStkPtr stk, InstrPtr pci)
 			getArgReference(stk, pci, 4));
 		break;
 	case 6:
-		ret = (*(str (*) (void *, void *, void *, void *, void *,
-						  void *)) pci->fcn)(
+		ret = (*(str (*) (Client, void *, void *, void *, void *, void *,
+						  void *)) pci->fcn)(cntxt,
 			getArgReference(stk, pci, 0),
 			getArgReference(stk, pci, 1),
 			getArgReference(stk, pci, 2),
@@ -92,8 +92,8 @@ malCommandCall(MalStkPtr stk, InstrPtr pci)
 			getArgReference(stk, pci, 5));
 		break;
 	case 7:
-		ret = (* (str (*) (void *, void *, void *, void *, void *, void *,
-						   void *)) pci->fcn)(
+		ret = (* (str (*) (Client, void *, void *, void *, void *, void *, void *,
+						   void *)) pci->fcn)(cntxt,
 			getArgReference(stk, pci, 0),
 			getArgReference(stk, pci, 1),
 			getArgReference(stk, pci, 2),
@@ -103,8 +103,8 @@ malCommandCall(MalStkPtr stk, InstrPtr pci)
 			getArgReference(stk, pci, 6));
 		break;
 	case 8:
-		ret = (* (str (*) (void *, void *, void *, void *, void *, void *,
-						   void *, void *)) pci->fcn)(
+		ret = (* (str (*) (Client, void *, void *, void *, void *, void *, void *,
+						   void *, void *)) pci->fcn)(cntxt,
 			getArgReference(stk, pci, 0),
 			getArgReference(stk, pci, 1),
 			getArgReference(stk, pci, 2),
@@ -115,8 +115,8 @@ malCommandCall(MalStkPtr stk, InstrPtr pci)
 			getArgReference(stk, pci, 7));
 		break;
 	case 9:
-		ret = (* (str (*) (void *, void *, void *, void *, void *, void *,
-						   void *, void *, void *)) pci->fcn)(
+		ret = (* (str (*) (Client, void *, void *, void *, void *, void *, void *,
+						   void *, void *, void *)) pci->fcn)(cntxt,
 			getArgReference(stk, pci, 0),
 			getArgReference(stk, pci, 1),
 			getArgReference(stk, pci, 2),
@@ -128,8 +128,8 @@ malCommandCall(MalStkPtr stk, InstrPtr pci)
 			getArgReference(stk, pci, 8));
 		break;
 	case 10:
-		ret = (* (str (*) (void *, void *, void *, void *, void *, void *,
-						   void *, void *, void *, void *)) pci->fcn)(
+		ret = (* (str (*) (Client, void *, void *, void *, void *, void *, void *,
+						   void *, void *, void *, void *)) pci->fcn)(cntxt,
 			getArgReference(stk, pci, 0),
 			getArgReference(stk, pci, 1),
 			getArgReference(stk, pci, 2),
@@ -142,8 +142,8 @@ malCommandCall(MalStkPtr stk, InstrPtr pci)
 			getArgReference(stk, pci, 9));
 		break;
 	case 11:
-		ret = (* (str (*) (void *, void *, void *, void *, void *, void *,
-						   void *, void *, void *, void *, void *)) pci->fcn)(
+		ret = (* (str (*) (Client, void *, void *, void *, void *, void *, void *,
+						   void *, void *, void *, void *, void *)) pci->fcn)(cntxt,
 			getArgReference(stk, pci, 0),
 			getArgReference(stk, pci, 1),
 			getArgReference(stk, pci, 2),
@@ -157,9 +157,9 @@ malCommandCall(MalStkPtr stk, InstrPtr pci)
 			getArgReference(stk, pci, 10));
 		break;
 	case 12:
-		ret = (* (str (*) (void *, void *, void *, void *, void *, void *,
+		ret = (* (str (*) (Client, void *, void *, void *, void *, void *, void *,
 						   void *, void *, void *, void *, void *,
-						   void *)) pci->fcn)(
+						   void *)) pci->fcn)(cntxt,
 			getArgReference(stk, pci, 0),
 			getArgReference(stk, pci, 1),
 			getArgReference(stk, pci, 2),
@@ -174,9 +174,9 @@ malCommandCall(MalStkPtr stk, InstrPtr pci)
 			getArgReference(stk, pci, 11));
 		break;
 	case 13:
-		ret = (* (str (*) (void *, void *, void *, void *, void *, void *,
+		ret = (* (str (*) (Client, void *, void *, void *, void *, void *, void *,
 						   void *, void *, void *, void *, void *, void *,
-						   void *)) pci->fcn)(
+						   void *)) pci->fcn)(cntxt,
 			getArgReference(stk, pci, 0),
 			getArgReference(stk, pci, 1),
 			getArgReference(stk, pci, 2),
@@ -192,9 +192,9 @@ malCommandCall(MalStkPtr stk, InstrPtr pci)
 			getArgReference(stk, pci, 12));
 		break;
 	case 14:
-		ret = (* (str (*) (void *, void *, void *, void *, void *, void *,
+		ret = (* (str (*) (Client, void *, void *, void *, void *, void *, void *,
 						   void *, void *, void *, void *, void *, void *,
-						   void *, void *)) pci->fcn)(
+						   void *, void *)) pci->fcn)(cntxt,
 			getArgReference(stk, pci, 0),
 			getArgReference(stk, pci, 1),
 			getArgReference(stk, pci, 2),
@@ -211,9 +211,9 @@ malCommandCall(MalStkPtr stk, InstrPtr pci)
 			getArgReference(stk, pci, 13));
 		break;
 	case 15:
-		ret = (* (str (*) (void *, void *, void *, void *, void *, void *,
+		ret = (* (str (*) (Client, void *, void *, void *, void *, void *, void *,
 						   void *, void *, void *, void *, void *, void *,
-						   void *, void *, void *)) pci->fcn)(
+						   void *, void *, void *)) pci->fcn)(cntxt,
 			getArgReference(stk, pci, 0),
 			getArgReference(stk, pci, 1),
 			getArgReference(stk, pci, 2),
@@ -231,9 +231,9 @@ malCommandCall(MalStkPtr stk, InstrPtr pci)
 			getArgReference(stk, pci, 14));
 		break;
 	case 16:
-		ret = (* (str (*) (void *, void *, void *, void *, void *, void *,
+		ret = (* (str (*) (Client, void *, void *, void *, void *, void *, void *,
 						   void *, void *, void *, void *, void *, void *,
-						   void *, void *, void *, void *)) pci->fcn)(
+						   void *, void *, void *, void *)) pci->fcn)(cntxt,
 			getArgReference(stk, pci, 0),
 			getArgReference(stk, pci, 1),
 			getArgReference(stk, pci, 2),
@@ -260,14 +260,14 @@ malCommandCall(MalStkPtr stk, InstrPtr pci)
 /*
  * Copy the constant values onto the stack frame
  */
-#define initStack(S, R)								\
+#define initStack(A, S, R)								\
 	do {											\
 		for (int i = (S); i < mb->vtop; i++) {		\
 			lhs = &stk->stk[i];						\
 			if (isVarConstant(mb, i) > 0) {			\
 				if (!isVarDisabled(mb, i)) {		\
 					rhs = &getVarConstant(mb, i);	\
-					if(VALcopy(lhs, rhs) == NULL)	\
+					if(VALcopy(A, lhs, rhs) == NULL)	\
 						R = 0;						\
 				}									\
 			} else {								\
@@ -275,6 +275,7 @@ malCommandCall(MalStkPtr stk, InstrPtr pci)
 				lhs->val.pval = 0;					\
 				lhs->len = 0;						\
 				lhs->bat = isaBatType(getVarType(mb, i));		\
+				lhs->allocated = false; \
 			}										\
 		}											\
 	} while (0)
@@ -289,19 +290,19 @@ isNotUsedIn(InstrPtr p, int start, int a)
 }
 
 MalStkPtr
-prepareMALstack(MalBlkPtr mb, int size)
+prepareMALstack(allocator *pa, MalBlkPtr mb, int size)
 {
 	MalStkPtr stk = NULL;
 	int res = 1;
 	ValPtr lhs, rhs;
 
-	stk = newGlobalStack(size);
+	stk = newGlobalStack(pa, size);
 	if (!stk)
 		return NULL;
 	stk->stktop = mb->vtop;
 	stk->blk = mb;
 	stk->memory = 0;
-	initStack(0, res);
+	initStack(pa, 0, res);
 	if (!res) {
 		freeStack(stk);
 		return NULL;
@@ -340,11 +341,11 @@ runMAL(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr env)
 			throw(MAL, "mal.interpreter", "misalignment of symbols");
 		if (mb->vtop > stk->stksize)
 			throw(MAL, "mal.interpreter", "stack too small");
-		initStack(env->stkbot, res);
+		initStack(mb->ma, env->stkbot, res);
 		if (!res)
 			throw(MAL, "mal.interpreter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	} else {
-		stk = prepareMALstack(mb, mb->vsize);
+		stk = prepareMALstack(mb->ma, mb, mb->vsize);
 		if (stk == 0)
 			throw(MAL, "mal.interpreter", MAL_STACK_FAIL);
 		stk->blk = mb;
@@ -365,7 +366,7 @@ runMAL(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr env)
 		 * been observed due the small size of the function).
 		 */
 	}
-	ret = runMALsequence(cntxt, mb, 1, 0, stk, env, 0);
+	ret = copyException(mb->ma, runMALsequence(cntxt, mb, 1, 0, stk, env, 0));
 
 	if (!stk->keepAlive && garbageControl(getInstrPtr(mb, 0)))
 		garbageCollector(cntxt, mb, stk, env != stk);
@@ -402,7 +403,7 @@ reenterMAL(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr stk)
 	if (stk == NULL)
 		throw(MAL, "mal.interpreter", MAL_STACK_FAIL);
 	keepAlive = stk->keepAlive;
-	ret = runMALsequence(cntxt, mb, startpc, stoppc, stk, 0, 0);
+	ret = copyException(mb->ma, runMALsequence(cntxt, mb, startpc, stoppc, stk, 0, 0));
 
 	if (keepAlive == 0 && garbageControl(getInstrPtr(mb, 0)))
 		garbageCollector(cntxt, mb, stk, stk != 0);
@@ -436,7 +437,7 @@ callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *env, ValPtr argv[])
 		 * all arguments and return values.
 		 */
 		if (*env == NULL) {
-			stk = prepareMALstack(mb, mb->vsize);
+			stk = prepareMALstack(mb->ma, mb, mb->vsize);
 			if (stk == NULL)
 				throw(MAL, "mal.interpreter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			stk->up = 0;
@@ -446,19 +447,19 @@ callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *env, ValPtr argv[])
 			int res = 1;
 
 			stk = *env;
-			initStack(0, res);
+			initStack(mb->ma, 0, res);
 			if (!res)
 				throw(MAL, "mal.interpreter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		assert(stk);
 		for (int i = pci->retc; i < pci->argc; i++) {
 			lhs = &stk->stk[pci->argv[i]];
-			if (VALcopy(lhs, argv[i]) == NULL)
+			if (VALcopy(mb->ma, lhs, argv[i]) == NULL)
 				throw(MAL, "mal.interpreter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			if (lhs->bat)
 				BBPretain(lhs->val.bval);
 		}
-		ret = runMALsequence(cntxt, mb, 1, 0, stk, 0, 0);
+		ret = copyException(mb->ma, runMALsequence(cntxt, mb, 1, 0, stk, 0, 0));
 		break;
 	case PATcall:
 	case CMDcall:
@@ -508,15 +509,17 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 	if (stk == NULL)
 		throw(MAL, "mal.interpreter", MAL_STACK_FAIL);
 
+	allocator *ma = MT_thread_getallocator();
+	allocator_state ma_state = ma_open(ma);
+
 	/* prepare extended backup and garbage structures */
 	if (startpc + 1 == stoppc) {
 		pci = getInstrPtr(mb, startpc);
 		if (pci->argc > 16) {
-			backup = GDKmalloc(pci->retc * sizeof(ValRecord));
-			garbage = (int *) GDKzalloc(pci->argc * sizeof(int));
+			backup = ma_alloc(ma, pci->retc * sizeof(ValRecord));
+			garbage = (int *) ma_zalloc(ma, pci->argc * sizeof(int));
 			if (backup == NULL || garbage == NULL) {
-				GDKfree(backup);
-				GDKfree(garbage);
+				ma_close(ma, &ma_state);
 				throw(MAL, "mal.interpreter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 		} else {
@@ -525,11 +528,10 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			memset(garbages, 0, sizeof(garbages));
 		}
 	} else if (mb->maxarg > 16) {
-		backup = GDKmalloc(mb->maxarg * sizeof(ValRecord));
-		garbage = (int *) GDKzalloc(mb->maxarg * sizeof(int));
+		backup = ma_alloc(ma, mb->maxarg * sizeof(ValRecord));
+		garbage = (int *) ma_zalloc(ma, mb->maxarg * sizeof(int));
 		if (backup == NULL || garbage == NULL) {
-			GDKfree(backup);
-			GDKfree(garbage);
+			ma_close(ma, &ma_state);
 			throw(MAL, "mal.interpreter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 	} else {
@@ -548,10 +550,7 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			&& cntxt->qryctx.starttime - cntxt->session >
 			cntxt->sessiontimeout) {
 			runtimeProfileFinish(cntxt, mb, stk);
-			if (backup != backups)
-				GDKfree(backup);
-			if (garbage != garbages)
-				GDKfree(garbage);
+			ma_close(ma, &ma_state);
 			throw(MAL, "mal.interpreter",
 				  SQLSTATE(HYT00) RUNTIME_SESSION_TIMEOUT);
 		}
@@ -687,7 +686,7 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				assert(lhs->bat == isaBatType(getArgType(mb, pci, k)));
 				rhs = &stk->stk[pci->argv[i]];
 				assert(rhs->bat == isaBatType(getArgType(mb, pci, i)));
-				if (VALcopy(lhs, rhs) == NULL) {
+				if (VALcopy(mb->ma, lhs, rhs) == NULL) {
 					ret = createException(MAL, "mal.interpreter",
 										  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					break;
@@ -735,7 +734,7 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			TRC_DEBUG(ALGO, "calling %s.%s\n",
 					  pci->modname ? pci->modname : "<null>",
 					  pci->fcnname ? pci->fcnname : "<null>");
-			ret = malCommandCall(stk, pci);
+			ret = malCommandCall(cntxt, stk, pci);
 #ifndef NDEBUG
 			if (ret == MAL_SUCCEED) {
 				/* check that the types of actual results match
@@ -769,7 +768,9 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			InstrPtr q;
 			int ii, arg;
 
-			nstk = prepareMALstack(pci->blk, pci->blk->vsize);
+			allocator_state ma_state2 = ma_open(ma);
+
+			nstk = prepareMALstack(ma, pci->blk, pci->blk->vsize);
 			if (nstk == 0) {
 				ret = createException(MAL, "mal.interpreter", MAL_STACK_FAIL);
 				break;
@@ -783,14 +784,14 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			if (nstk->calldepth > 256) {
 				ret = createException(MAL, "mal.interpreter",
 									  MAL_CALLDEPTH_FAIL);
-				GDKfree(nstk);
+				ma_close(ma, &ma_state2);
 				break;
 			}
 			if ((unsigned) nstk->stkdepth >
 				THREAD_STACK_SIZE / sizeof(mb->var[0]) / 4 && THRhighwater()) {
 				/* we are running low on stack space */
 				ret = createException(MAL, "mal.interpreter", MAL_STACK_FAIL);
-				GDKfree(nstk);
+				ma_close(ma, &ma_state2);
 				break;
 			}
 
@@ -800,8 +801,8 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			for (ii = pci->retc; ii < pci->argc; ii++, arg++) {
 				lhs = &nstk->stk[q->argv[arg]];
 				rhs = &stk->stk[pci->argv[ii]];
-				if (VALcopy(lhs, rhs) == NULL) {
-					GDKfree(nstk);
+				if (VALcopy(ma, lhs, rhs) == NULL) {
+					ma_close(ma, &ma_state2);
 					ret = createException(MAL, "mal.interpreter",
 										  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					break;
@@ -818,8 +819,8 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 					if (lhs->bat)
 						BBPrelease(lhs->val.bval);
 				}
-				GDKfree(nstk);
 			}
+			ma_close(ma, &ma_state2);
 			break;
 		}
 		case REMsymbol:
@@ -851,7 +852,7 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			if (w) {
 				ret = createException(MAL, "interpreter", "unknown operation:%s",
 									  w);
-				GDKfree(w);
+				//GDKfree(w);
 			} else {
 				ret = createException(MAL, "interpreter",
 									  "failed instruction2str");
@@ -889,8 +890,10 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				} else if (ATOMextern(lhs->vtype) &&
 					lhs->val.pval &&
 					lhs->val.pval != ATOMnilptr(lhs->vtype) &&
-					lhs->val.pval != stk->stk[getArg(pci, i)].val.pval)
-					GDKfree(lhs->val.pval);
+					lhs->val.pval != stk->stk[getArg(pci, i)].val.pval) {
+					if (lhs->allocated)
+						GDKfree(lhs->val.pval);
+				}
 			}
 			if (ATOMIC_GET(&GDKdebug) & CHECKMASK && exceptionVar < 0) {
 				BAT *b;
@@ -983,7 +986,7 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				/* watch out for concurrent access */
 				MT_lock_set(&mal_contextLock);
 				v = &stk->stk[exceptionVar];
-				if (v->val.sval)
+				if (v->val.sval && v->allocated)
 					freeException(v->val.sval);	/* old exception */
 				VALset(v, TYPE_str, ret);
 				ret = MAL_SUCCEED;
@@ -1213,7 +1216,7 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				for (int i = 0; i < pci->retc; i++) {
 					rhs = &stk->stk[pp->argv[i]];
 					lhs = &env->stk[pci->argv[i]];
-					if (VALcopy(lhs, rhs) == NULL) {
+					if (VALcopy(ma, lhs, rhs) == NULL) {
 						ret = createException(MAL, "mal.interpreter",
 											  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 						break;
@@ -1274,10 +1277,7 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 	}
 	if (startedProfileQueue)
 		runtimeProfileFinish(cntxt, mb, stk);
-	if (backup != backups)
-		GDKfree(backup);
-	if (garbage != garbages)
-		GDKfree(garbage);
+	ma_close(ma, &ma_state);
 	return ret;
 }
 
@@ -1420,15 +1420,16 @@ garbageElement(Client cntxt, ValPtr v)
 			return;
 		BBPcold(bid);
 		BBPrelease(bid);
-	} else if (ATOMstorage(v->vtype) == TYPE_str) {
+	} else if (v->allocated && !v->bat && ATOMstorage(v->vtype) == TYPE_str) {
 		GDKfree(v->val.sval);
 		v->val.sval = NULL;
 		v->len = 0;
-	} else if (0 < v->vtype && v->vtype < MAXATOMS && ATOMextern(v->vtype)) {
+	} else if (v->allocated && 0 < v->vtype && v->vtype < MAXATOMS && ATOMextern(v->vtype)) {
 		GDKfree(v->val.pval);
 		v->val.pval = 0;
 		v->len = 0;
 	}
+	v->allocated = false;
 }
 
 /*

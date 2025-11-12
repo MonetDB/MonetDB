@@ -93,7 +93,7 @@ get_basetable(sql_rel *t)
 static sql_rel *
 rel_insert_hash_idx(mvc *sql, sql_alias* alias, sql_idx *i, sql_rel *inserts)
 {
-	char *iname = sa_strconcat( sql->sa, "%", i->base.name);
+	char *iname = ma_strconcat( sql->sa, "%", i->base.name);
 	node *m;
 	sql_subtype *it, *lng;
 	int bits = 1 + ((sizeof(lng)*8)-1)/(list_length(i->columns)+1);
@@ -154,7 +154,7 @@ rel_insert_hash_idx(mvc *sql, sql_alias* alias, sql_idx *i, sql_rel *inserts)
 static sql_rel *
 rel_insert_join_idx(mvc *sql, sql_alias* alias, sql_idx *i, sql_rel *inserts)
 {
-	char *iname = sa_strconcat( sql->sa, "%", i->base.name);
+	char *iname = ma_strconcat( sql->sa, "%", i->base.name);
 	node *m, *o;
 	sql_trans *tr = sql->session->tr;
 	sql_key *rk = (sql_key*)os_find_id(tr->cat->objects, tr, ((sql_fkey*)i->key)->rkey);
@@ -572,13 +572,13 @@ sql_table_type(mvc *sql, sql_table *t, list *collist)
 		sql_type *it = SA_ZNEW(sql->sa, sql_type);
 		tt->type = it;
 		it->d.fields = list_create((fdestroy) &arg_destroy);
-		it->base.name = sa_strdup(sql->sa, t->base.name);
+		it->base.name = ma_strdup(sql->sa, t->base.name);
 		it->composite = true;
 		for(node *n = collist->h; n; n = n->next) {
 			sql_column *c = n->data;
 
 			sql_arg *a = SA_ZNEW(sql->sa, sql_arg);
-			a->name = sa_strdup(sql->sa, c->base.name);
+			a->name = ma_strdup(sql->sa, c->base.name);
 			a->type = c->type;
 			append(it->d.fields, a);
 		}
@@ -813,7 +813,7 @@ is_idx_updated(sql_idx * i, list *exps)
 static sql_rel *
 rel_update_hash_idx(mvc *sql, sql_alias* alias, sql_idx *i, sql_rel *updates)
 {
-	char *iname = sa_strconcat( sql->sa, "%", i->base.name);
+	char *iname = ma_strconcat( sql->sa, "%", i->base.name);
 	node *m;
 	sql_subtype *it, *lng = 0; /* is not set in first if below */
 	int bits = 1 + ((sizeof(lng)*8)-1)/(list_length(i->columns)+1);
@@ -900,12 +900,12 @@ rel_update_join_idx(mvc *sql, sql_alias* alias, sql_idx *i, sql_rel *updates)
 {
 	int nr = ++sql->label;
 	char name[16], *nme = number2name(name, sizeof(name), nr);
-	char *iname = sa_strconcat( sql->sa, "%", i->base.name);
+	char *iname = ma_strconcat( sql->sa, "%", i->base.name);
 
 	node *m, *o;
 	sql_trans *tr = sql->session->tr;
 	sql_key *rk = (sql_key*)os_find_id(tr->cat->objects, tr, ((sql_fkey*)i->key)->rkey);
-	sql_rel *rt = rel_basetable(sql, rk->t, a_create(sql->sa, sa_strdup(sql->sa, nme))), *brt = rt;
+	sql_rel *rt = rel_basetable(sql, rk->t, a_create(sql->sa, ma_strdup(sql->sa, nme))), *brt = rt;
 
 	sql_rel *ups = updates->r;
 	sql_exp *e;
@@ -1126,6 +1126,7 @@ update_generate_assignments(sql_query *query, sql_table *t, sql_rel *r, sql_rel 
 				r = rel_crossproduct(sql->sa, r, rel_val, op_left);
 				set_dependent(r);
 				set_processed(r);
+				set_single(r);
 				if (single) {
 					v = exp_column(sql->sa, NULL, exp_name(v), exp_subtype(v), v->card, has_nil(v), is_unique(v), is_intern(v));
 					rel_val = NULL;
@@ -1685,7 +1686,7 @@ rel_import(mvc *sql, sql_table *t, const char *tsep, const char *rsep, const cha
 		dnode *dn;
 		int ncol = 0;
 		size_t fwf_len = 20 * dlist_length(fwf_widths) + 1;
-		char *fwf_string_cur = fwf_string = sa_alloc(sql->sa, fwf_len); /* a 64 bit int needs 19 characters in decimal representation plus the separator */
+		char *fwf_string_cur = fwf_string = ma_alloc(sql->sa, fwf_len); /* a 64 bit int needs 19 characters in decimal representation plus the separator */
 
 		if (!fwf_string)
 			return NULL;
@@ -1826,7 +1827,7 @@ copyfrom(sql_query *query, CopyFromNode *copy)
 				size_t len = strlen(cname) + 2;
 				sql_subtype *ctype = sql_fetch_localtype(TYPE_oid);
 
-				name = sa_alloc(sql->sa, len);
+				name = ma_alloc(sql->sa, len);
 				snprintf(name, len, "%%cname");
 				res = mvc_create_column(&cs, sql, nt, name, ctype);
 			} else if (!format) {
@@ -1866,10 +1867,10 @@ copyfrom(sql_query *query, CopyFromNode *copy)
 			sql_rel *nrel;
 
 			if (!copy->on_client && fname && !MT_path_absolute(fname)) {
-				char *fn = ATOMformat(TYPE_str, fname);
+				char *fn = ATOMformat(sql->ta, TYPE_str, fname);
 				sql_error(sql, 02, SQLSTATE(42000) "COPY INTO: filename must "
 					  "have absolute path: %s", fn);
-				GDKfree(fn);
+				// GDKfree(fn);
 				return NULL;
 			}
 
@@ -1911,7 +1912,7 @@ copyfrom(sql_query *query, CopyFromNode *copy)
 				sql_subfunc *f;
 				list *args = sa_list(sql->sa);
 				size_t l = strlen(cs->type.type->base.name);
-				char *fname = sa_alloc(sql->sa, l+8);
+				char *fname = ma_alloc(sql->sa, l+8);
 
 				snprintf(fname, l+8, "str_to_%s", strcmp(cs->type.type->base.name, "timestamptz") == 0 ? "timestamp" : cs->type.type->base.name);
 				sql_find_subtype(&st, "varchar", 0, 0);
@@ -2067,8 +2068,8 @@ copyfromloader(sql_query *query, dlist *qname, symbol *fcall)
 	if (!rel || !loader)
 		return NULL;
 
-	loader->sname = t->s ? sa_strdup(sql->sa, t->s->base.name) : NULL;
-	loader->tname = tname ? sa_strdup(sql->sa, tname) : NULL;
+	loader->sname = t->s ? ma_strdup(sql->sa, t->s->base.name) : NULL;
+	loader->tname = tname ? ma_strdup(sql->sa, tname) : NULL;
 	loader->coltypes = table_column_types(sql->sa, t);
 	loader->colnames = table_column_names_and_defaults(sql->sa, t);
 

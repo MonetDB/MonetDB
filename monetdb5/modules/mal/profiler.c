@@ -52,16 +52,18 @@
  */
 
 static str
-CMDcpustats(lng *user, lng *nice, lng *sys, lng *idle, lng *iowait)
+CMDcpustats(Client ctx, lng *user, lng *nice, lng *sys, lng *idle, lng *iowait)
 {
+	(void) ctx;
 	profilerGetCPUStat(user, nice, sys, idle, iowait);
 	return MAL_SUCCEED;
 }
 
 static str
-CMDcpuloadPercentage(int *cycles, int *io, const lng *user, const lng *nice,
+CMDcpuloadPercentage(Client ctx, int *cycles, int *io, const lng *user, const lng *nice,
 					 const lng *sys, const lng *idle, const lng *iowait)
 {
+	(void) ctx;
 	lng userN, niceN, sysN, idleN, iowaitN, N;
 	*cycles = 0;
 	*io = 0;

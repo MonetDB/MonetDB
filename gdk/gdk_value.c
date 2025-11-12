@@ -50,8 +50,10 @@ ValPtr
 VALset(ValPtr v, int t, ptr p)
 {
 	assert(t < TYPE_any);
-	v->bat = false;
-	switch (ATOMstorage(v->vtype = t)) {
+	*v = (ValRecord) {
+		.vtype = t,
+	};
+	switch (ATOMstorage(t)) {
 	case TYPE_void:
 		v->val.oval = *(oid *) p;
 		break;
@@ -137,11 +139,18 @@ VALget(ValPtr v)
 void
 VALclear(ValPtr v)
 {
-	if (!v->bat && ATOMextern(v->vtype)) {
-		if (v->val.pval && v->val.pval != ATOMnilptr(v->vtype))
-			GDKfree(v->val.pval);
-	}
-	VALempty(v);
+    if (v->allocated && !v->bat && ATOMextern(v->vtype)) {
+        if (v->vtype == TYPE_str) {
+            if (v->val.sval && v->val.sval != ATOMnilptr(v->vtype)) {
+                GDKfree(v->val.sval);
+            }
+        } else {
+            if (v->val.pval && v->val.pval != ATOMnilptr(v->vtype)) {
+                GDKfree(v->val.pval);
+            }
+        }
+    }
+    VALempty(v);
 }
 
 /* Initialize V to an empty value (type void, value nil).  See
@@ -151,6 +160,7 @@ VALempty(ValPtr v)
 {
 	*v = (ValRecord) {
 		.bat = false,
+		.allocated = false,
 		.val.oval = oid_nil,
 		.vtype = TYPE_void,
 	};
@@ -162,31 +172,35 @@ VALempty(ValPtr v)
  *
  * Returns NULL In case of (malloc) failure. */
 ValPtr
-VALcopy(ValPtr d, const ValRecord *s)
+VALcopy(allocator *ma, ValPtr d, const ValRecord *s)
 {
-	if (d == s)
+	if (d == s) {
 		return d;
-	d->bat = false;
+	}
+	*d = *s;
 	if (s->bat || !ATOMextern(s->vtype)) {
-		*d = *s;
+		//*d = *s;
+		d->allocated = false;
 	} else if (s->val.pval == NULL) {
-		return VALinit(d, s->vtype, ATOMnilptr(s->vtype));
+		return VALinit(ma, d, s->vtype, ATOMnilptr(s->vtype));
 	} else if (s->vtype == TYPE_str) {
 		const char *p = s->val.sval;
 		d->vtype = TYPE_str;
 		d->len = strLen(p);
-		d->val.sval = GDKmalloc(d->len);
+		d->val.sval = ma? ma_alloc(ma, d->len) : GDKmalloc(d->len);
 		if (d->val.sval == NULL)
 			return NULL;
 		memcpy(d->val.sval, p, d->len);
+		d->allocated = !ma;
 	} else {
 		const void *p = s->val.pval;
 		d->vtype = s->vtype;
 		d->len = ATOMlen(d->vtype, p);
-		d->val.pval = GDKmalloc(d->len);
+		d->val.pval = ma? ma_alloc(ma, d->len) : GDKmalloc(d->len);
 		if (d->val.pval == NULL)
 			return NULL;
 		memcpy(d->val.pval, p, d->len);
+		d->allocated = !ma;
 	}
 	return d;
 }
@@ -198,9 +212,10 @@ VALcopy(ValPtr d, const ValRecord *s)
  *
  * Returns NULL in case of (malloc) failure. */
 ValPtr
-VALinit(ValPtr d, int tpe, const void *s)
+VALinit(allocator *ma, ValPtr d, int tpe, const void *s)
 {
 	d->bat = false;
+	d->allocated = false;
 	switch (ATOMstorage(d->vtype = tpe)) {
 	case TYPE_void:
 		d->val.oval = *(const oid *) s;
@@ -242,10 +257,12 @@ VALinit(ValPtr d, int tpe, const void *s)
 		break;
 	case TYPE_str:
 		d->len = strLen(s);
-		d->val.sval = GDKmalloc(d->len);
+		d->val.sval = ma? ma_alloc(ma, d->len) :
+			GDKmalloc(d->len);
 		if (d->val.sval == NULL)
 			return NULL;
 		memcpy(d->val.sval, s, d->len);
+		d->allocated = !ma;
 		return d;
 	case TYPE_ptr:
 		d->val.pval = *(const ptr *) s;
@@ -254,10 +271,12 @@ VALinit(ValPtr d, int tpe, const void *s)
 	default:
 		assert(ATOMextern(ATOMstorage(tpe)));
 		d->len = ATOMlen(tpe, s);
-		d->val.pval = GDKmalloc(d->len);
+		d->val.pval = ma? ma_alloc(ma, d->len) :
+			GDKmalloc(d->len);
 		if (d->val.pval == NULL)
 			return NULL;
 		memcpy(d->val.pval, s, d->len);
+		d->allocated = !ma;
 		return d;
 	}
 	d->len = ATOMsize(d->vtype);
@@ -267,15 +286,16 @@ VALinit(ValPtr d, int tpe, const void *s)
 /* Format the value in RES in the standard way for the type of RES
  * into a newly allocated buffer.  Also see ATOMformat. */
 char *
-VALformat(const ValRecord *res)
+VALformat(allocator *ma, const ValRecord *res)
 {
 	if (res->bat) {
-		if (is_bat_nil(res->val.bval))
-			return GDKstrdup("nil");
+		if (is_bat_nil(res->val.bval)) {
+			return MA_STRDUP(ma, "nil");
+		}
 		else
-			return ATOMformat(TYPE_int, (const void *) &res->val.ival);
+			return ATOMformat(ma, TYPE_int, (const void *) &res->val.ival);
 	} else
-		return ATOMformat(res->vtype, VALptr(res));
+		return ATOMformat(ma, res->vtype, VALptr(res));
 }
 
 /* Convert (cast) the value in T to the type TYP, do this in place.
@@ -283,13 +303,13 @@ VALformat(const ValRecord *res)
  * didn't succeed.  If the conversion didn't succeed, the original
  * value is not modified.  Also see VARconvert. */
 ptr
-VALconvert(int typ, ValPtr t)
+VALconvert(allocator *ma, int typ, ValPtr t)
 {
 	int src_tpe = t->vtype;
 	ValRecord dst = { .vtype = typ };
 
 	/* first convert into a new location */
-	if (VARconvert(&dst, t, 0, 0, 0) != GDK_SUCCEED)
+	if (VARconvert(ma, &dst, t, 0, 0, 0) != GDK_SUCCEED)
 		return NULL;
 
 	/* then maybe free the old */

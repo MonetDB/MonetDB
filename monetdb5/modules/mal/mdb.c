@@ -251,16 +251,16 @@ MDBgetFrame(BAT *b, BAT *bn, MalBlkPtr mb, MalStkPtr s, int depth, const char *n
 		char namebuf[IDLENGTH];
 		for (i = 0; i < s->stktop; i++, v++) {
 			v = &s->stk[i];
-			if ((v->bat && (buf = ATOMformat(TYPE_int, &v->val.ival)) == NULL) ||
-			    (!v->bat && (buf = ATOMformat(v->vtype, VALptr(v))) == NULL) ||
+			if ((v->bat && (buf = ATOMformat(mb->ma, TYPE_int, &v->val.ival)) == NULL) ||
+			    (!v->bat && (buf = ATOMformat(mb->ma, v->vtype, VALptr(v))) == NULL) ||
 				BUNappend(b, getVarNameIntoBuffer(mb, i, namebuf), false) != GDK_SUCCEED ||
 				BUNappend(bn, buf, false) != GDK_SUCCEED) {
 				BBPunfix(b->batCacheid);
 				BBPunfix(bn->batCacheid);
-				GDKfree(buf);
+				// GDKfree(buf);
 				throw(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
-			GDKfree(buf);
+			// GDKfree(buf);
 			buf = NULL;
 		}
 	}
@@ -356,9 +356,9 @@ MDBStkTrace(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 		throw(MAL, "mdb.getStackTrace", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	len = strlen(msg);
-	buf = (char *) GDKmalloc(len + 1024);
+	buf = (char *) ma_alloc(m->ma, len + 1024);
 	if (buf == NULL) {
-		GDKfree(msg);
+		//GDKfree(msg);
 		BBPreclaim(b);
 		BBPreclaim(bn);
 		throw(MAL, "mdb.setTrace", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -368,13 +368,13 @@ MDBStkTrace(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 			 getFunctionId(getInstrPtr(m, 0)), getPC(m, p));
 	if (BUNappend(b, &k, false) != GDK_SUCCEED ||
 		BUNappend(bn, buf, false) != GDK_SUCCEED) {
-		GDKfree(msg);
-		GDKfree(buf);
+		//GDKfree(msg);
+		//GDKfree(buf);
 		BBPreclaim(b);
 		BBPreclaim(bn);
 		throw(MAL, "mdb.setTrace", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
-	GDKfree(msg);
+	//GDKfree(msg);
 
 	for (pcup = s->pcup, s = s->up, k++; s != NULL;
 		 pcup = s->pcup, s = s->up, k++) {
@@ -386,11 +386,11 @@ MDBStkTrace(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 		}
 		l = strlen(msg);
 		if (l > len) {
-			GDKfree(buf);
+			//GDKfree(buf);
 			len = l;
-			buf = (char *) GDKmalloc(len + 1024);
+			buf = (char *) ma_alloc(m->ma, len + 1024);
 			if (buf == NULL) {
-				GDKfree(msg);
+				//GDKfree(msg);
 				BBPunfix(b->batCacheid);
 				BBPunfix(bn->batCacheid);
 				throw(MAL, "mdb.setTrace", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -401,15 +401,15 @@ MDBStkTrace(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 				 getFunctionId(getInstrPtr(s->blk, 0)), pcup);
 		if (BUNappend(b, &k, false) != GDK_SUCCEED ||
 			BUNappend(bn, buf, false) != GDK_SUCCEED) {
-			GDKfree(buf);
-			GDKfree(msg);
+			//GDKfree(buf);
+			//GDKfree(msg);
 			BBPunfix(b->batCacheid);
 			BBPunfix(bn->batCacheid);
 			throw(MAL, "mdb.setTrace", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
-		GDKfree(msg);
+		//GDKfree(msg);
 	}
-	GDKfree(buf);
+	//GDKfree(buf);
 	*ret = b->batCacheid;
 	BBPkeepref(b);
 	*ret2 = bn->batCacheid;
@@ -497,7 +497,7 @@ printStackHdr(stream *f, MalBlkPtr mb, const ValRecord *v, int index)
 	mnstr_printf(f, " (%d,%d,%d) = ", getBeginScope(mb, index),
 				 getLastUpdate(mb, index), getEndScope(mb, index));
 	if (v)
-		ATOMprint(v->vtype, VALptr(v), f);
+		ATOMprint(mb->ma, v->vtype, VALptr(v), f);
 }
 
 static void
@@ -525,9 +525,11 @@ printBATelm(stream *f, bat i, BUN cnt, BUN first)
 
 	b = BATdescriptor(i);
 	if (b) {
-		tpe = getTypeName(newBatType(b->ttype));
+		allocator *ta = MT_thread_getallocator();
+		allocator_state ta_state = ma_open(ta);
+		tpe = getTypeName(ta, newBatType(b->ttype));
 		mnstr_printf(f, ":%s ", tpe);
-		GDKfree(tpe);
+		ma_close(ta, &ta_state);
 		printBATproperties(f, b);
 		/* perform property checking */
 		BATassertProps(b);
@@ -567,25 +569,25 @@ printStackElm(stream *f, MalBlkPtr mb, const ValRecord *v, int index, BUN cnt, B
 		BAT *b = BBPquickdesc(i);
 
 		if (b) {
-			nme = getTypeName(newBatType(b->ttype));
+			nme = getTypeName(mb->ma, newBatType(b->ttype));
 			mnstr_printf(f, " :%s rows=" BUNFMT, nme, BATcount(b));
 		} else {
-			nme = getTypeName(n->type);
+			nme = getTypeName(mb->ma, n->type);
 			mnstr_printf(f, " :%s", nme);
 		}
 	} else {
-		nme = getTypeName(n->type);
+		nme = getTypeName(mb->ma, n->type);
 		mnstr_printf(f, " :%s", nme);
 	}
-	nmeOnStk = v ? getTypeName(v->vtype) : GDKstrdup(nme);
+	nmeOnStk = v ? getTypeName(mb->ma, v->vtype) : MA_STRDUP(mb->ma, nme);
 	/* check for type errors */
 	if (nmeOnStk && strcmp(nmeOnStk, nme) && strncmp(nmeOnStk, "BAT", 3))
 		mnstr_printf(f, "!%s ", nmeOnStk);
 	mnstr_printf(f, " %s", (isVarConstant(mb, index) ? " constant" : ""));
 	mnstr_printf(f, " %s", (isVarTypedef(mb, index) ? " type variable" : ""));
-	GDKfree(nme);
+	//GDKfree(nme);
 	mnstr_printf(f, "\n");
-	GDKfree(nmeOnStk);
+	//GDKfree(nmeOnStk);
 
 	if (cnt && v && (isaBatType(n->type) || v->bat) && !is_bat_nil(v->val.bval)) {
 		printBATelm(f, v->val.bval, cnt, first);
@@ -658,11 +660,11 @@ MDBgetDefinition(Client cntxt, MalBlkPtr m, MalStkPtr stk, InstrPtr p)
 			throw(MAL, "mdb.getDefinition", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		if (BUNappend(b, ps, false) != GDK_SUCCEED) {
-			GDKfree(ps);
+			//GDKfree(ps);
 			BBPreclaim(b);
 			throw(MAL, "mdb.getDefinition", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
-		GDKfree(ps);
+		//GDKfree(ps);
 	}
 	*ret = b->batCacheid;
 	BBPkeepref(b);
@@ -671,8 +673,9 @@ MDBgetDefinition(Client cntxt, MalBlkPtr m, MalStkPtr stk, InstrPtr p)
 }
 
 static str
-MDBgetExceptionVariable(str *ret, const char *const *msg)
+MDBgetExceptionVariable(Client ctx, str *ret, const char *const *msg)
 {
+	allocator *ma = ctx->curprg->def->ma;
 	str tail;
 
 	tail = strchr(*msg, ':');
@@ -681,7 +684,7 @@ MDBgetExceptionVariable(str *ret, const char *const *msg)
 			  OPERATION_FAILED " ':'<name> missing");
 
 	*tail = 0;
-	*ret = GDKstrdup(*msg);
+	*ret = MA_STRDUP(ma, *msg);
 	if (*ret == NULL)
 		throw(MAL, "mdb.getExceptionVariable", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	*tail = ':';
@@ -689,8 +692,9 @@ MDBgetExceptionVariable(str *ret, const char *const *msg)
 }
 
 static str
-MDBgetExceptionContext(str *ret, const char *const *msg)
+MDBgetExceptionContext(Client ctx, str *ret, const char *const *msg)
 {
+	allocator *ma = ctx->curprg->def->ma;
 	str tail, tail2;
 
 	tail = strchr(*msg, ':');
@@ -703,7 +707,7 @@ MDBgetExceptionContext(str *ret, const char *const *msg)
 			  OPERATION_FAILED " <name> missing");
 
 	*tail2 = 0;
-	*ret = GDKstrdup(tail + 1);
+	*ret = MA_STRDUP(ma, tail + 1);
 	if (*ret == NULL)
 		throw(MAL, "mdb.getExceptionContext", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	*tail2 = ':';
@@ -711,8 +715,9 @@ MDBgetExceptionContext(str *ret, const char *const *msg)
 }
 
 static str
-MDBgetExceptionReason(str *ret, const char *const *msg)
+MDBgetExceptionReason(Client ctx, str *ret, const char *const *msg)
 {
+	allocator *ma = ctx->curprg->def->ma;
 	str tail;
 
 	tail = strchr(*msg, ':');
@@ -722,23 +727,25 @@ MDBgetExceptionReason(str *ret, const char *const *msg)
 	if (tail == 0)
 		throw(MAL, "mdb.getExceptionReason", OPERATION_FAILED " ':' missing");
 
-	*ret = GDKstrdup(tail + 1);
+	*ret = MA_STRDUP(ma, tail + 1);
 	if (*ret == NULL)
 		throw(MAL, "mdb.getExceptionReason", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
 static str
-MDBdummy(void *ret)
+MDBdummy(Client ctx, void *ret)
 {
+	(void) ctx;
 	(void) ret;
 	throw(MAL, "mdb.dummy", OPERATION_FAILED);
 }
 
 
 static str
-CMDmodules(bat *bid)
+CMDmodules(Client ctx, bat *bid)
 {
+	(void) ctx;
 	BAT *b = getModules();
 
 	if (b == NULL)

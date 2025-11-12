@@ -11,14 +11,16 @@
  */
 
 static inline str
-FUN(do_,TP1,_dec2dec_,TP2) (TP2 *restrict res, int s1, TP1 val, int p, int s2)
+FUN(do_,TP1,_dec2dec_,TP2) (Client ctx, TP2 *restrict res, int s1, TP1 val, int p, int s2)
 {
+	allocator *ma = ctx->curprg->def->ma;
 	ValRecord v1, v2;
 
 	VALset(&v1, TPE(TP1), &val);
-	v2.bat = false;
-	v2.vtype = TPE(TP2);
-	if (VARconvert(&v2, &v1, s1, s2, p) != GDK_SUCCEED)
+	v2 = (ValRecord) {
+		.vtype = TPE(TP2),
+	};
+	if (VARconvert(ma, &v2, &v1, s1, s2, p) != GDK_SUCCEED)
 		throw(SQL, STRNG(FUN(,TP1,_2_,TP2)), GDK_EXCEPTION);
 	*res = *(TP2 *) VALptr(&v2);
 	return MAL_SUCCEED;
@@ -26,28 +28,30 @@ FUN(do_,TP1,_dec2dec_,TP2) (TP2 *restrict res, int s1, TP1 val, int p, int s2)
 
 #if IS_NUMERIC(TP1)
 str
-FUN(,TP1,_dec2_,TP2) (TP2 *res, const int *s1, const TP1 *v)
+FUN(,TP1,_dec2_,TP2) (Client ctx, TP2 *res, const int *s1, const TP1 *v)
 {
-	return FUN(do_,TP1,_dec2dec_,TP2) (res, *s1, *v, 0, 0);
+	return FUN(do_,TP1,_dec2dec_,TP2) (ctx, res, *s1, *v, 0, 0);
 }
 
 str
-FUN(,TP1,_dec2dec_,TP2) (TP2 *res, const int *S1, const TP1 *v, const int *d2, const int *S2)
+FUN(,TP1,_dec2dec_,TP2) (Client ctx, TP2 *res, const int *S1, const TP1 *v, const int *d2, const int *S2)
 {
-	return FUN(do_,TP1,_dec2dec_,TP2) (res, *S1, *v, *d2, *S2);
+	return FUN(do_,TP1,_dec2dec_,TP2) (ctx, res, *S1, *v, *d2, *S2);
 }
 #endif
 
 str
-FUN(,TP1,_num2dec_,TP2) (TP2 *res, const TP1 *v, const int *d2, const int *s2)
+FUN(,TP1,_num2dec_,TP2) (Client ctx, TP2 *res, const TP1 *v, const int *d2, const int *s2)
 {
-	return FUN(do_,TP1,_dec2dec_,TP2)(res, 0, *v, *d2, *s2);
+	(void) ctx;
+	return FUN(do_,TP1,_dec2dec_,TP2)(ctx, res, 0, *v, *d2, *s2);
 }
 
 #if IS_NUMERIC(TP1)
 str
-FUN(bat,TP1,_dec2_,TP2) (bat *res, const int *s1, const bat *bid, const bat *sid)
+FUN(bat,TP1,_dec2_,TP2) (Client ctx, bat *res, const int *s1, const bat *bid, const bat *sid)
 {
+	(void) ctx;
 	BAT *b, *s = NULL, *bn;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
@@ -68,8 +72,9 @@ FUN(bat,TP1,_dec2_,TP2) (bat *res, const int *s1, const bat *bid, const bat *sid
 }
 
 str
-FUN(bat,TP1,_dec2dec_,TP2) (bat *res, const int *S1, const bat *bid, const bat *sid, const int *d2, const int *S2)
+FUN(bat,TP1,_dec2dec_,TP2) (Client ctx, bat *res, const int *S1, const bat *bid, const bat *sid, const int *d2, const int *S2)
 {
+	(void) ctx;
 	BAT *b, *s = NULL, *bn;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
@@ -92,8 +97,9 @@ FUN(bat,TP1,_dec2dec_,TP2) (bat *res, const int *S1, const bat *bid, const bat *
 #endif
 
 str
-FUN(bat,TP1,_num2dec_,TP2) (bat *res, const bat *bid, const bat *sid, const int *d2, const int *s2)
+FUN(bat,TP1,_num2dec_,TP2) (Client ctx, bat *res, const bat *bid, const bat *sid, const int *d2, const int *s2)
 {
+	(void) ctx;
 	BAT *b, *s = NULL, *bn;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {

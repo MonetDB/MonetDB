@@ -25,6 +25,7 @@
 #include "gdk.h"
 #include "mal.h"
 #include "mal_exception.h"
+#include "mal_client.h"
 
 /*
  * @* Implementation Code
@@ -74,7 +75,7 @@ static const inet inet_nil = {.isnil = 1};
  * Returns the number of chars read
  */
 static ssize_t
-INETfromString(const char *src, size_t *len, void **RETVAL, bool external)
+INETfromString(allocator *ma, const char *src, size_t *len, void **RETVAL, bool external)
 {
 	inet **retval = (inet **) RETVAL;
 	int i, last, type;
@@ -86,8 +87,8 @@ INETfromString(const char *src, size_t *len, void **RETVAL, bool external)
 	type = 0;
 
 	if (*len < sizeof(inet) || *retval == NULL) {
-		GDKfree(*retval);
-		*retval = GDKzalloc(sizeof(inet));
+		// GDKfree(*retval);
+		*retval = ma_zalloc(ma, sizeof(inet));
 		if (*retval == NULL) {
 			*len = 0;
 			return -1;
@@ -199,13 +200,13 @@ INETfromString(const char *src, size_t *len, void **RETVAL, bool external)
  * Returns the length of the string
  */
 static ssize_t
-INETtoString(str *retval, size_t *len, const void *handle, bool external)
+INETtoString(allocator *ma, str *retval, size_t *len, const void *handle, bool external)
 {
 	const inet *value = (const inet *) handle;
 
 	if (*len < 20 || *retval == NULL) {
-		GDKfree(*retval);
-		*retval = GDKmalloc(sizeof(char) * (*len = 20));
+		// GDKfree(*retval);
+		*retval = ma_alloc(ma, sizeof(char) * (*len = 20));
 		if (*retval == NULL)
 			return -1;
 	}
@@ -229,12 +230,13 @@ INETtoString(str *retval, size_t *len, const void *handle, bool external)
  * to parse the string.
  */
 static str
-INETnew(inet *retval, const char *const *in)
+INETnew(Client ctx, inet *retval, const char *const *in)
 {
+	allocator *ma = ctx->curprg->def->ma;
 	ssize_t pos;
 	size_t len = sizeof(inet);
 
-	pos = INETfromString(*in, &len, (void **) &retval, false);
+	pos = INETfromString(ma, *in, &len, (void **) &retval, false);
 	if (pos < 0)
 		throw(PARSE, "inet.new", GDK_EXCEPTION);
 
@@ -246,8 +248,9 @@ INETnew(inet *retval, const char *const *in)
  * Returns whether val represents a nil inet value
  */
 static str
-INET_isnil(bit *retval, const inet *val)
+INET_isnil(Client ctx, bit *retval, const inet *val)
 {
+	(void) ctx;
 	*retval = is_inet_nil(val);
 
 	return (MAL_SUCCEED);
@@ -257,8 +260,9 @@ INET_isnil(bit *retval, const inet *val)
  * Returns whether val1 and val2 are equal.
  */
 static str
-INET_comp_EQ(bit *retval, const inet *val1, const inet *val2)
+INET_comp_EQ(Client ctx, bit *retval, const inet *val1, const inet *val2)
 {
+	(void) ctx;
 	if (is_inet_nil(val1) || is_inet_nil(val2)) {
 		*retval = bit_nil;
 	} else if (val1->q1 == val2->q1 && val1->q2 == val2->q2 &&
@@ -276,8 +280,9 @@ INET_comp_EQ(bit *retval, const inet *val1, const inet *val2)
  * Returns whether val1 and val2 are not equal.
  */
 static str
-INET_comp_NEQ(bit *retval, const inet *val1, const inet *val2)
+INET_comp_NEQ(Client ctx, bit *retval, const inet *val1, const inet *val2)
 {
+	(void) ctx;
 	if (is_inet_nil(val1) || is_inet_nil(val2)) {
 		*retval = bit_nil;
 	} else if (val1->q1 == val2->q1 && val1->q2 == val2->q2 &&
@@ -295,8 +300,9 @@ INET_comp_NEQ(bit *retval, const inet *val1, const inet *val2)
  * Returns whether val1 is smaller than val2.
  */
 static str
-INET_comp_LT(bit *retval, const inet *val1, const inet *val2)
+INET_comp_LT(Client ctx, bit *retval, const inet *val1, const inet *val2)
 {
+	(void) ctx;
 	if (is_inet_nil(val1) || is_inet_nil(val2)) {
 		*retval = bit_nil;
 	} else if (val1->q1 < val2->q1) {
@@ -328,22 +334,22 @@ INET_comp_LT(bit *retval, const inet *val1, const inet *val2)
  * Returns whether val1 is greater than val2.
  */
 static str
-INET_comp_GT(bit *retval, const inet *val1, const inet *val2)
+INET_comp_GT(Client ctx, bit *retval, const inet *val1, const inet *val2)
 {
-	return (INET_comp_LT(retval, val2, val1));
+	return (INET_comp_LT(ctx, retval, val2, val1));
 }
 
 /**
  * Returns whether val1 is smaller than or equal to val2.
  */
 static str
-INET_comp_LE(bit *retval, const inet *val1, const inet *val2)
+INET_comp_LE(Client ctx, bit *retval, const inet *val1, const inet *val2)
 {
 	bit ret;
 
-	INET_comp_LT(&ret, val1, val2);
+	INET_comp_LT(ctx, &ret, val1, val2);
 	if (ret == 0)
-		INET_comp_EQ(&ret, val1, val2);
+		INET_comp_EQ(ctx, &ret, val1, val2);
 
 	*retval = ret;
 	return (MAL_SUCCEED);
@@ -353,15 +359,15 @@ INET_comp_LE(bit *retval, const inet *val1, const inet *val2)
  * Returns whether val1 is smaller than or equal to val2.
  */
 static str
-INET_comp_GE(bit *retval, const inet *val1, const inet *val2)
+INET_comp_GE(Client ctx, bit *retval, const inet *val1, const inet *val2)
 {
 	bit ret;
 
 	/* warning: we use LT here with swapped arguments to avoid one
 	 * method invocation, since inet_comp_GT does the same */
-	INET_comp_LT(&ret, val2, val1);
+	INET_comp_LT(ctx, &ret, val2, val1);
 	if (ret == 0)
-		INET_comp_EQ(&ret, val1, val2);
+		INET_comp_EQ(ctx, &ret, val1, val2);
 
 	*retval = ret;
 	return (MAL_SUCCEED);
@@ -371,8 +377,9 @@ INET_comp_GE(bit *retval, const inet *val1, const inet *val2)
  * Returns whether val1 is contained within val2
  */
 static str
-INET_comp_CW(bit *retval, const inet *val1, const inet *val2)
+INET_comp_CW(Client ctx, bit *retval, const inet *val1, const inet *val2)
 {
+	(void) ctx;
 	if (is_inet_nil(val1) || is_inet_nil(val2)) {
 		*retval = bit_nil;
 	} else if (val1->mask <= val2->mask) {
@@ -431,14 +438,14 @@ INET_comp_CW(bit *retval, const inet *val1, const inet *val2)
  * Returns whether val1 is contained within or equal to val2
  */
 static str
-INET_comp_CWE(bit *retval, const inet *val1, const inet *val2)
+INET_comp_CWE(Client ctx, bit *retval, const inet *val1, const inet *val2)
 {
 	bit ret;
 
 	/* use existing code, not fully optimal, but cheap enough */
-	INET_comp_CW(&ret, val1, val2);
+	INET_comp_CW(ctx, &ret, val1, val2);
 	if (!ret)
-		INET_comp_EQ(&ret, val1, val2);
+		INET_comp_EQ(ctx, &ret, val1, val2);
 
 	*retval = ret;
 	return (MAL_SUCCEED);
@@ -448,20 +455,20 @@ INET_comp_CWE(bit *retval, const inet *val1, const inet *val2)
  * Returns whether val1 is contains val2
  */
 static str
-INET_comp_CS(bit *retval, const inet *val1, const inet *val2)
+INET_comp_CS(Client ctx, bit *retval, const inet *val1, const inet *val2)
 {
 	/* swap the input arguments and call the contained within function */
-	return (INET_comp_CW(retval, val2, val1));
+	return (INET_comp_CW(ctx, retval, val2, val1));
 }
 
 /**
  * Returns whether val1 contains or is equal to val2
  */
 static str
-INET_comp_CSE(bit *retval, const inet *val1, const inet *val2)
+INET_comp_CSE(Client ctx, bit *retval, const inet *val1, const inet *val2)
 {
 	/* swap the input arguments and call the contained within function */
-	return (INET_comp_CWE(retval, val2, val1));
+	return (INET_comp_CWE(ctx, retval, val2, val1));
 }
 
 
@@ -474,10 +481,10 @@ INETcompare(const void *L, const void *R)
 		return is_inet_nil(r) ? 0 : -1;
 	if (is_inet_nil(r))
 		return 1;
-	INET_comp_EQ(&res, l, r);
+	INET_comp_EQ(/*ctx*/NULL, &res, l, r);
 	if (res)
 		return 0;
-	INET_comp_LT(&res, l, r);
+	INET_comp_LT(/*ctx*/NULL, &res, l, r);
 	if (res)
 		return -1;
 	return 1;
@@ -502,8 +509,9 @@ INETequal(const void *L, const void *R)
  * If the subnet mask is 32, the given input inet is returned.
  */
 static str
-INETbroadcast(inet *retval, const inet *val)
+INETbroadcast(Client ctx, inet *retval, const inet *val)
 {
+	(void) ctx;
 	*retval = *val;
 	if (!is_inet_nil(val) && val->mask != 32) {
 		unsigned int mask;
@@ -549,19 +557,20 @@ INETbroadcast(inet *retval, const inet *val)
  * this function never returns the netmask length.
  */
 static str
-INEThost(str *retval, const inet *val)
+INEThost(Client ctx, str *retval, const inet *val)
 {
+	allocator *ma = ctx->curprg->def->ma;
 	str ip;
 
 	if (is_inet_nil(val)) {
-		*retval = GDKstrdup(str_nil);
+		*retval = MA_STRDUP(ma, str_nil);
 		if (*retval == NULL)
 			throw(MAL, "INEThost", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	} else {
-		ip = GDKmalloc(16);
+		ip = ma_alloc(ma, sizeof(char) * 16);
 		if (ip == NULL)
 			throw(MAL, "INEThost", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		snprintf(ip, 16, "%d.%d.%d.%d", val->q1, val->q2, val->q3, val->q4);
+		sprintf(ip, "%d.%d.%d.%d", val->q1, val->q2, val->q3, val->q4);
 		*retval = ip;
 	}
 	return (MAL_SUCCEED);
@@ -571,8 +580,9 @@ INEThost(str *retval, const inet *val)
  * Extract netmask length.
  */
 static str
-INETmasklen(int *retval, const inet *val)
+INETmasklen(Client ctx, int *retval, const inet *val)
 {
+	(void) ctx;
 	if (is_inet_nil(val)) {
 		*retval = int_nil;
 	} else {
@@ -585,8 +595,9 @@ INETmasklen(int *retval, const inet *val)
  * Set netmask length for inet value.
  */
 static str
-INETsetmasklen(inet *retval, const inet *val, const int *mask)
+INETsetmasklen(Client ctx, inet *retval, const inet *val, const int *mask)
 {
+	(void) ctx;
 	if (*mask < 0 || *mask > 32)
 		throw(ILLARG, "inet.setmask", "Illegal netmask length value: %d",
 			  *mask);
@@ -602,8 +613,9 @@ INETsetmasklen(inet *retval, const inet *val, const int *mask)
  * Construct netmask for network.
  */
 static str
-INETnetmask(inet *retval, const inet *val)
+INETnetmask(Client ctx, inet *retval, const inet *val)
 {
+	(void) ctx;
 	*retval = *val;
 	if (!is_inet_nil(val)) {
 		unsigned int mask;
@@ -638,9 +650,9 @@ INETnetmask(inet *retval, const inet *val)
  * Construct host mask for network.
  */
 static str
-INEThostmask(inet *retval, const inet *val)
+INEThostmask(Client ctx, inet *retval, const inet *val)
 {
-	INETnetmask(retval, val);
+	INETnetmask(ctx, retval, val);
 	/* invert the netmask to obtain the host mask */
 	if (!is_inet_nil(retval)) {
 		retval->q1 = ~retval->q1;
@@ -665,8 +677,9 @@ INEThostmask(inet *retval, const inet *val)
  * not covered by the netmask.
  */
 static str
-INETnetwork(inet *retval, const inet *val)
+INETnetwork(Client ctx, inet *retval, const inet *val)
 {
+	(void) ctx;
 	*retval = *val;
 	if (!is_inet_nil(val)) {
 		unsigned int mask;
@@ -703,16 +716,17 @@ INETnetwork(inet *retval, const inet *val)
  * function, this function always prints the netmask length.
  */
 static str
-INETtext(str *retval, const inet *val)
+INETtext(Client ctx, str *retval, const inet *val)
 {
+	allocator *ma = ctx->curprg->def->ma;
 	str ip;
 
 	if (is_inet_nil(val)) {
-		*retval = GDKstrdup(str_nil);
+		*retval = MA_STRDUP(ma, str_nil);
 		if (*retval == NULL)
 			throw(MAL, "INETtext", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	} else {
-		ip = GDKmalloc(sizeof(char) * 20);
+		ip = ma_alloc(ma, sizeof(char) * 20);
 		if (ip == NULL)
 			throw(MAL, "INETtext", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
@@ -729,12 +743,13 @@ INETtext(str *retval, const inet *val)
  * this function is equal to the function text.
  */
 static str
-INETabbrev(str *retval, const inet *val)
+INETabbrev(Client ctx, str *retval, const inet *val)
 {
+	allocator *ma = ctx->curprg->def->ma;
 	str ip;
 
 	if (is_inet_nil(val)) {
-		*retval = GDKstrdup(str_nil);
+		*retval = MA_STRDUP(ma, str_nil);
 		if (*retval == NULL)
 			throw(MAL, "inet.abbrev", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	} else {
@@ -768,7 +783,7 @@ INETabbrev(str *retval, const inet *val)
 		 * all zero, thus no bits on the right side of the mask
 		 */
 
-		ip = GDKmalloc(sizeof(char) * 20);
+		ip = ma_alloc(ma, sizeof(char) * 20);
 		if (ip == NULL)
 			throw(MAL, "inet.abbrev", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
@@ -793,17 +808,19 @@ INETabbrev(str *retval, const inet *val)
 }
 
 static str
-INET_inet(inet *d, const inet *s)
+INET_inet(Client ctx, inet *d, const inet *s)
 {
+	(void) ctx;
 	*d = *s;
 	return MAL_SUCCEED;
 }
 
 static str
-INET_fromstr(inet *ret, const char *const *s)
+INET_fromstr(Client ctx, inet *ret, const char *const *s)
 {
+	allocator *ma = ctx->curprg->def->ma;
 	size_t len = sizeof(inet);
-	if (INETfromString(*s, &len, (void **) &ret, false) < 0)
+	if (INETfromString(ma, *s, &len, (void **) &ret, false) < 0)
 		throw(MAL, "inet.inet", GDK_EXCEPTION);
 	return MAL_SUCCEED;
 }

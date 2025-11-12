@@ -50,9 +50,9 @@ typedef struct Column_t {
 	int fieldstart;				/* Fixed character field load positions */
 	int fieldwidth;
 	int scale, precision;
-	ssize_t (*tostr)(void *extra, char **buf, size_t *len, int type,
+	ssize_t (*tostr)(allocator *, void *extra, char **buf, size_t *len, int type,
 					 const void *a);
-	void *(*frstr)(struct Column_t *fmt, int type, const char *s);
+	void *(*frstr)(allocator *, struct Column_t *fmt, int type, const char *s);
 	void *extra;
 	void *data;
 	int skip;					/* only skip to the next field */
@@ -87,7 +87,7 @@ mal_export BUN SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out,
 mal_export str TABLETcreate_bats(Tablet *as, BUN est);
 mal_export str TABLETcollect(BAT **bats, Tablet *as);
 mal_export void TABLETdestroy_format(Tablet *as);
-mal_export int TABLEToutput_file(Tablet *as, BAT *order, stream *s, bstream *in);
+mal_export int TABLEToutput_file(allocator *ma, Tablet *as, BAT *order, stream *s, bstream *in);
 mal_export str COPYrejects(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 						   InstrPtr pci);
 mal_export str COPYrejects_clear(Client cntxt, MalBlkPtr mb, MalStkPtr stk,

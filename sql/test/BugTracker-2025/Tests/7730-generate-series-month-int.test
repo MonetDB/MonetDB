@@ -1,11 +1,12 @@
-query T 
-SELECT * FROM generate_series( '2025-03-01', '2025-04-25', INTERVAL '1' MONTH);
+query T nosort
+SELECT * FROM generate_series( '2025-03-01', '2025-04-25', INTERVAL '1' MONTH)
 ----
 2025-03-01
 2025-04-01
 
-query T 
-SELECT * FROM generate_series( '2025-03-01', '2025-04-26', INTERVAL '1' MONTH);
+query T nosort
+SELECT * FROM generate_series( '2025-03-01', '2025-04-26', INTERVAL '1' MONTH)
 ----
 2025-03-01
 2025-04-01
+

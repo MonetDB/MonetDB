@@ -50,8 +50,9 @@
 */
 
 str
-SQLrun(Client c, mvc *m)
+SQLrun(Client c, backend *be)
 {
+	mvc *m = be->mvc;
 	str msg = MAL_SUCCEED;
 	MalBlkPtr mb = c->curprg->def;
 
@@ -80,7 +81,10 @@ SQLrun(Client c, mvc *m)
 			MT_lock_unset(&mal_contextLock);
 			msg = runMAL(c, mb, 0, 0);
 		}
-		resetMalBlk(mb);
+		if (msg == MAL_SUCCEED) {
+			msg = resetMalBlk(&c->curprg->def);
+			be->mb = NULL;
+		}
 	}
 	/* after the query has been finished we enter the idle state */
 	MT_lock_set(&mal_contextLock);
@@ -235,9 +239,11 @@ SQLstatementIntern(Client c, const char *expr, const char *nme, bit execute, bit
 
 	m->params = NULL;
 	m->session->auto_commit = 0;
-	if (!m->sa && !(m->sa = sa_create(m->pa)) ) {
-		msg = createException(SQL,"sql.statement",SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		goto endofcompile;
+	if (!m->sa) {
+		if (!(m->sa = create_allocator(m->pa, "MA_mvc", false)) ) {
+			msg = createException(SQL,"sql.statement",SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			goto endofcompile;
+		}
 	}
 
 	/*
@@ -334,7 +340,7 @@ SQLstatementIntern(Client c, const char *expr, const char *nme, bit execute, bit
 				sql->out = NULL;	/* no output stream */
 			be->depth++;
 			c->query = (char *) expr;
-			msg = SQLrun(c, m);
+			msg = SQLrun(c, sql);
 			be->depth--;
 			assert (c->curprg->def->stop <= 1);
 			sqlcleanup(sql, 0);
@@ -367,7 +373,7 @@ endofcompile:
 	buffer_destroy(b);
 	bstream_destroy(m->scanner.rs);
 	if (m->sa)
-		sa_destroy(m->sa);
+		ma_destroy(m->sa);
 	m->sa = NULL;
 	m->sym = NULL;
 	m->runs = NULL;
@@ -430,7 +436,7 @@ RAstatement(Client c, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ((msg = SQLtrans(m)) != MAL_SUCCEED)
 		return msg;
 	if (!m->sa)
-		m->sa = sa_create(m->pa);
+		m->sa = create_allocator(m->pa, "MA_mvc", false);
 	if (!m->sa)
 		return RAcommit_statement(be, createException(SQL,"RAstatement",SQLSTATE(HY013) MAL_MALLOC_FAIL));
 	refs = sa_list(m->sa);
@@ -453,10 +459,11 @@ RAstatement(Client c, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		} else {
 			msg = SQLoptimizeFunction(c, c->curprg->def);
 			if (msg == MAL_SUCCEED)
-				msg = SQLrun(c,m);
-			resetMalBlk(c->curprg->def);
+				msg = SQLrun(c, be);
+			if (msg == MAL_SUCCEED)
+				msg = resetMalBlk(&c->curprg->def);
 		}
-		rel_destroy(rel);
+		rel_destroy(m, rel);
 	}
 	return RAcommit_statement(be, msg);
 }
@@ -497,7 +504,7 @@ RAstatement2_return(backend *be, mvc *m, int nlevels, struct global_var_entry *g
 		struct global_var_entry gv = gvars[i];
 		(void) remove_global_var(m, gv.s, gv.vname);
 	}
-	sa_reset(m->ta);
+	ma_reset(m->ta);
 	return RAcommit_statement(be, msg);
 }
 
@@ -544,7 +551,7 @@ RAstatement2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ((msg = SQLtrans(m)) != MAL_SUCCEED)
 		return msg;
 	if (!m->sa)
-		m->sa = sa_create(m->pa);
+		m->sa = create_allocator(m->pa, "MA_mvc", false);
 	if (!m->sa)
 		return RAstatement2_return(be, m, nlevels, gvars, gentries, createException(SQL,"RAstatement2",SQLSTATE(HY013) MAL_MALLOC_FAIL));
 
@@ -605,7 +612,7 @@ RAstatement2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					gvars[gentries++] = (struct global_var_entry) {.s = sh, .vname = var,};
 				}
 			}
-			list_append(ops, exp_var(m->sa, sa_strdup(m->sa, sch), sa_strdup(m->sa, var), &tpe, 0));
+			list_append(ops, exp_var(m->sa, ma_strdup(m->sa, sch), ma_strdup(m->sa, var), &tpe, 0));
 		} else {
 			char opname[BUFSIZ];
 
@@ -626,7 +633,7 @@ RAstatement2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			lentries++;
 
 			snprintf(opname, sizeof(opname), "%d%%%s", level, var); /* engineering trick */
-			list_append(ops, exp_var(m->sa, NULL, sa_strdup(m->sa, opname), &tpe, level));
+			list_append(ops, exp_var(m->sa, NULL, ma_strdup(m->sa, opname), &tpe, level));
 		}
 	}
 	if (lentries) {
@@ -689,7 +696,7 @@ RAstatement2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	if (!msg && monet5_create_relational_function(m, mod, nme, rel, NULL, ops, 0) < 0)
 		msg = createException(SQL, "RAstatement2", "%s", m->errstr);
-	rel_destroy(rel);
+	rel_destroy(m, rel);
 	return RAstatement2_return(be, m, nlevels, gvars, gentries, msg);
 }
 

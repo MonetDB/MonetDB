@@ -42,7 +42,7 @@ sql_add_param(mvc *sql, const char *name, sql_subtype *st)
 	sql_arg *a = SA_ZNEW(sql->sa, sql_arg);
 
 	if (name)
-		a->name = sa_strdup(sql->sa, name);
+		a->name = ma_strdup(sql->sa, name);
 	if (st && st->type)
 		a->type = *st;
 	a->inout = ARG_IN;
@@ -1078,7 +1078,7 @@ dlist2string(mvc *sql, dlist *l, int expression, char **err)
 		char *s = NULL;
 
 		if (n->type == type_string && n->data.sval)
-			s = sa_strdup(sql->ta, n->data.sval);
+			s = ma_strdup(sql->ta, n->data.sval);
 		else if (n->type == type_symbol)
 			s = _symbol2string(sql, n->data.sym, expression, err);
 
@@ -1163,15 +1163,15 @@ _symbol2string(mvc *sql, symbol *se, int expression, char **err)
 		return res;
 	}
 	case SQL_PARAMETER:
-		return sa_strdup(sql->ta, "?");
+		return ma_strdup(sql->ta, "?");
 	case SQL_NULL:
-		return sa_strdup(sql->ta, "NULL");
+		return ma_strdup(sql->ta, "NULL");
 	case SQL_ATOM:{
 		AtomNode *an = (AtomNode *) se;
 		if (an && an->a)
 			return atom2sql(sql->ta, an->a, sql->timezone);
 		else
-			return sa_strdup(sql->ta, "NULL");
+			return ma_strdup(sql->ta, "NULL");
 	}
 	case SQL_NEXT: {
 		const char *seq = symbol_escape_ident(sql->ta, qname_schema_object(se->data.lval)),
@@ -1242,9 +1242,9 @@ symbol2string(mvc *sql, symbol *se, int expression, char **err)
 	char *res = _symbol2string(sql, se, expression, err);
 
 	if (res)
-		res = sa_strdup(sql->sa, res);
+		res = ma_strdup(sql->sa, res);
 	if (*err)
-		*err = sa_strdup(sql->sa, *err);
-	sa_reset(sql->ta);
+		*err = ma_strdup(sql->sa, *err);
+	ma_reset(sql->ta);
 	return res;
 }

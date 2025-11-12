@@ -36,7 +36,6 @@
 
 
 typedef struct JSONFileHandle {
-	allocator *sa;
 	char *filename;
 	int fd;
 	size_t size;
@@ -66,9 +65,8 @@ json_open(const char *fname, allocator *sa)
 		return NULL;
 	}
 
-	JSONFileHandle *res = sa_alloc(sa, sizeof(JSONFileHandle));
-	res->sa = sa;
-	res->filename = sa_strdup(sa, fname);
+	JSONFileHandle *res = ma_alloc(sa, sizeof(JSONFileHandle));
+	res->filename = ma_strdup(sa, fname);
 	res->fd = fd;
 	res->size = (size_t)stb.st_size;
 	return res;
@@ -84,12 +82,12 @@ json_close(JSONFileHandle *jfh)
 
 
 static char *
-read_json_file(JSONFileHandle *jfh)
+read_json_file(allocator *ma, JSONFileHandle *jfh)
 {
 	char *content = NULL;
 	if (jfh) {
 		unsigned int length = (unsigned int)jfh->size;
-		content = sa_zalloc(jfh->sa, length + 1);
+		content = ma_zalloc(ma, length + 1);
 		if (content) {
 			ssize_t nbytes = read(jfh->fd, content, length);
 			if (nbytes < 0)
@@ -117,7 +115,7 @@ append_terms(allocator *sa, JSON *jt, BAT *b)
 			case JSON_ARRAY:
 			case JSON_OBJECT:
 				if ((root->kind == JSON_ARRAY && depth == 1) || root->kind == JSON_OBJECT) {
-					v = sa_strndup(sa, t->value, t->valuelen);
+					v = ma_strndup(sa, t->value, t->valuelen);
 					if (v) {
 						if (BUNappend(b, v, false) != GDK_SUCCEED) {
 							error = createException(SQL, "json.append_terms", "BUNappend failed!");
@@ -154,7 +152,7 @@ json_relation(mvc *sql, sql_subfunc *f, char *filename, list *res_exps, char *tn
 	list *types = sa_list(sql->sa);
 	list *names = sa_list(sql->sa);
 	// use file name as columnn name ?
-	char *cname = sa_strdup(sql->sa, "json");
+	char *cname = ma_strdup(sql->sa, "json");
 	list_append(names, cname);
 	sql_schema *jsons = mvc_bind_schema(sql, "sys");
 	if (!jsons)
@@ -252,38 +250,39 @@ JSONread_json(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) cntxt; (void) mb;
 	char *msg = MAL_SUCCEED;
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
 	char *fname = *(str*)getArgReference(stk, pci, pci->retc);
-	allocator *sa = sa_create(NULL);
-	JSONFileHandle *jfh = json_open(fname, sa);
+	JSONFileHandle *jfh = json_open(fname, ta);
 	const char* json_str = NULL;
 	JSON *jt = NULL;
 	BAT *b = NULL;
 	if (!jfh) {
-		sa_destroy(sa);
 		msg = createException(SQL, "json.read_json", "Failed to open file %s", fname);
+		ma_close(ta, &ta_state);
 		return msg;
 	}
-	json_str = read_json_file(jfh);
+	json_str = read_json_file(ta, jfh);
 	json_close(jfh);
 	if (json_str)
-		jt = JSONparse(json_str);
+		jt = JSONparse(ta, json_str);
 	if (jt) {
 		if (jt->error == NULL) {
 			b = COLnew(0, TYPE_json, 0, TRANSIENT);
-			if ((msg = append_terms(sa, jt, b)) == MAL_SUCCEED) {
+			if ((msg = append_terms(ta, jt, b)) == MAL_SUCCEED) {
 				bat *res = getArgReference_bat(stk, pci, 0);
 				*res = b->batCacheid;
 				BBPkeepref(b);
 			} else
 				BBPreclaim(b);
 		} else {
-			msg = GDKstrdup(jt->error);
+			msg = ma_strdup(mb->ma, jt->error);
 		}
-		JSONfree(jt);
+		//JSONfree(jt);
 	} else {
 		msg = createException(SQL, "json.read_json", "JSONparse error");
 	}
-	sa_destroy(sa);
+	ma_close(ta, &ta_state);
 	return msg;
 }
 
@@ -293,15 +292,16 @@ JSONread_ndjson(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) cntxt; (void) mb;
 	char *msg = MAL_SUCCEED;
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
 	char *fname = *(str*)getArgReference(stk, pci, pci->retc);
-	allocator *sa = sa_create(NULL);
-	JSONFileHandle *jfh = json_open(fname, sa);
+	JSONFileHandle *jfh = json_open(fname, ta);
 	if (!jfh) {
-		sa_destroy(sa);
 		msg = createException(SQL, "json.read_ndjson", "Failed to open file %s", fname);
+		ma_close(ta, &ta_state);
 		return msg;
 	}
-	char *content = read_json_file(jfh);
+	char *content = read_json_file(ta, jfh);
 	json_close(jfh);
 	BAT *b = COLnew(0, TYPE_json, 0, TRANSIENT);
 	if (content) {
@@ -316,7 +316,7 @@ JSONread_ndjson(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						if (head[0] == '\r' && head[1] == '\n')
 							skip = 2;
 						head[0] = '\0';
-						JSON *jt = JSONparse(tail);
+						JSON *jt = JSONparse(ta, tail);
 						if (jt) {
 							// must be valid json obj str
 							if (BUNappend(b, tail, false) != GDK_SUCCEED) {
@@ -327,7 +327,7 @@ JSONread_ndjson(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 								msg = createException(SQL, "json.read_ndjson", "Invalid json object, JSONparse failed!");
 								break;
 						}
-						JSONfree(jt);
+						//JSONfree(jt);
 						tail = head + skip;
 						while (tail[0] == '\n') // multiple newlines e.g. \n\n
 							tail ++;
@@ -350,8 +350,7 @@ JSONread_ndjson(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	} else {
 		BBPreclaim(b);
 	}
-
-	sa_destroy(sa);
+	ma_close(ta, &ta_state);
 	return msg;
 }
 

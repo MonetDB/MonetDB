@@ -28,7 +28,8 @@ if len(sys.argv) == 2 and sys.argv[1] in ('dump', 'dump-nogeom'):
             points = ptsre.sub(r'(\g<0>)', res.group('points'))
             output[i] = line[:res.start('points')] + points + line[res.end('points'):]
     stableout = '{}.stable.out'.format(sys.argv[1])
-    stable = open(stableout, encoding='utf-8').readlines()
+    with open(stableout, encoding='utf-8') as fil:
+        stable = fil.readlines()
     import difflib
     for line in difflib.unified_diff(stable, output, fromfile='test', tofile=stableout):
         sys.stderr.write(line)

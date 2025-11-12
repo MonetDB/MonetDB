@@ -123,7 +123,7 @@ changeUserPassword(mvc *m, oid rid, str oldpass, str newpass)
 	}
 	if (oldpass) {
 		// validate old password match
-		if ((err = AUTHdecypherValue(&hash, passValue=getUserPassword(m, rid))) != MAL_SUCCEED) {
+		if ((err = AUTHdecypherValue(m->sa, &hash, passValue=getUserPassword(m, rid))) != MAL_SUCCEED) {
 			(void) sql_error(m, 02, SQLSTATE(42000) "changeUserPassword: %s", getExceptionMessage(err));
 			freeException(err);
 			GDKfree(passValue);
@@ -132,10 +132,10 @@ changeUserPassword(mvc *m, oid rid, str oldpass, str newpass)
 		GDKfree(passValue);
 		if (strcmp(oldpass, hash) != 0) {
 			(void) sql_error(m, 02, SQLSTATE(42000) "changeUserPassword: password mismatch");
-			GDKfree(hash);
+			//GDKfree(hash);
 			return LOG_ERR;
 		}
-		GDKfree(hash);
+		//GDKfree(hash);
 	}
 	return setUserPassword(m, rid, newpass);
 }
@@ -389,7 +389,7 @@ monet5_password_hash(mvc *m, const char *username)
 	oid rid = getUserOIDByName(m, username);
 	str password = getUserPassword(m, rid);
 	if (password) {
-		msg = AUTHdecypherValue(&hash, password);
+		msg = AUTHdecypherValue(m->sa, &hash, password);
 		GDKfree(password);
 		if (msg) {
 			(void) sql_error(m, 02, SQLSTATE(42000) "monet5_password_hash: %s", getExceptionMessage(msg));
@@ -763,7 +763,7 @@ monet5_user_get_def_schema(mvc *m, int user, str *schema)
 
 	if (!(sname = store->table_api.column_find_value(m->session->tr, find_sql_column(schemas, "name"), rid)))
 		return -1;
-	*schema = sa_strdup(m->session->sa, sname);
+	*schema = ma_strdup(m->session->sa, sname);
 	_DELETE(sname);
 	return *schema ? 0 : -1;
 }
@@ -834,7 +834,7 @@ monet5_user_set_def_schema(mvc *m, oid user, str username)
 		return -1;
 	}
 	schema_cpy = schema;
-	schema = sa_strdup(m->session->sa, schema);
+	schema = ma_strdup(m->session->sa, schema);
 	_DELETE(schema_cpy);
 
 	/* check if username exists */
@@ -878,9 +878,9 @@ monet5_user_set_def_schema(mvc *m, oid user, str username)
 
 
 	/* reset the user and schema names */
-	if (!sqlvar_set_string(find_global_var(m, sys, "current_schema"), schema) ||
-		!sqlvar_set_string(find_global_var(m, sys, "current_user"), username) ||
-		!sqlvar_set_string(find_global_var(m, sys, "current_role"), userrole)) {
+	if (!sqlvar_set_string(m->session->sa, find_global_var(m, sys, "current_schema"), schema) ||
+		!sqlvar_set_string(m->session->sa, find_global_var(m, sys, "current_user"), username) ||
+		!sqlvar_set_string(m->session->sa, find_global_var(m, sys, "current_role"), userrole)) {
 		res = -1;
 	}
 	_DELETE(schema_path);
@@ -943,7 +943,7 @@ remote_create(mvc *m, sqlid id, const char *username, const char *password, int 
 	if (strNil(password)) {
 		oid rid = getUserOIDByName(m, username);
 		str cypher = getUserPassword(m, rid);
-		str err = AUTHdecypherValue(&pwhash, cypher);
+		str err = AUTHdecypherValue(m->sa, &pwhash, cypher);
 		GDKfree(cypher);
 		if (err) {
 			GDKfree(err);
@@ -954,8 +954,8 @@ remote_create(mvc *m, sqlid id, const char *username, const char *password, int 
 	if (pwhash != NULL) {
 		if (!pw_encrypted)
 			free(pwhash);
-		else
-			GDKfree(pwhash);
+		//else
+		//	GDKfree(pwhash);
 	}
 	if (msg != MAL_SUCCEED)
 		return msg;
@@ -984,7 +984,7 @@ remote_get(mvc *m, sqlid id, str *username, str *pwhash)
 		*username = GDKstrdup("");
 	}
 	str cypher = store->table_api.column_find_value(tr, find_sql_column(remote_user_info, "password"), rid);
-	str err = AUTHdecypherValue(pwhash, cypher);
+	str err = AUTHdecypherValue(m->sa, pwhash, cypher);
 	GDKfree(cypher);
 	if (err)
 		return err;

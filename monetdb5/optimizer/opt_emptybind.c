@@ -39,7 +39,7 @@
 
 
 str
-OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
+OPTemptybindImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 						   InstrPtr pci)
 {
 	int i, j, actions = 0, extras = 0;
@@ -49,9 +49,10 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	str sch, tbl;
 	int etop = 0, esize = 256;
 	str msg = MAL_SUCCEED;
+	allocator *ta = mb->ta;
 
 	(void) stk;
-	(void) cntxt;
+	(void) ctx;
 
 	// use an instruction reference table to keep
 
@@ -68,20 +69,28 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	}
 	// track of where 'emptybind' results are produced
 	// reserve space for maximal number of emptybat variables created
-	empty = (int *) GDKzalloc((mb->vsize + extras) * sizeof(int));
-	if (empty == NULL)
+	// empty = (int *) GDKzalloc((mb->vsize + extras) * sizeof(int));
+	allocator_state ta_state = ma_open(ta);
+	empty = (int *) ma_zalloc(ta, (mb->vsize + extras) * sizeof(int));
+	if (empty == NULL) {
+		ma_close(ta, &ta_state);
 		throw(MAL, "optimizer.emptybind", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
 
-	updated = (InstrPtr *) GDKzalloc(esize * sizeof(InstrPtr));
+	// updated = (InstrPtr *) GDKzalloc(esize * sizeof(InstrPtr));
+	size_t updated_size = esize * sizeof(InstrPtr);
+	updated = (InstrPtr *) ma_zalloc(ta, updated_size);
 	if (updated == 0) {
-		GDKfree(empty);
+		// GDKfree(empty);
+		ma_close(ta, &ta_state);
 		throw(MAL, "optimizer.emptybind", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
 	old = mb->stmt;
 	if (newMalBlkStmt(mb, mb->ssize) < 0) {
-		GDKfree(empty);
-		GDKfree(updated);
+		// GDKfree(empty);
+		 // GDKfree(updated);
+		ma_close(ta, &ta_state);
 		throw(MAL, "optimizer.emptybind", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
@@ -110,10 +119,15 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 		if (getModuleId(p) == sqlRef && isUpdateInstruction(p)) {
 			if (etop == esize) {
 				InstrPtr *tmp = updated;
-				updated = GDKrealloc(updated,
-									 (esize += 256) * sizeof(InstrPtr));
+				//updated = GDKrealloc(updated,
+				//					 (esize += 256) * sizeof(InstrPtr));
+				size_t osz = esize;
+				esize += 256;
+				updated = MA_RENEW_ARRAY(ta, InstrPtr, updated,
+									 esize, osz);
 				if (updated == NULL) {
-					GDKfree(tmp);
+					// GDKfree(tmp);
+					updated = tmp;
 					msg = createException(MAL, "optimizer.emptybind",
 										  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					goto wrapup;
@@ -178,10 +192,8 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 				if (q && getModuleId(q) == sqlRef
 					&& (getFunctionId(q) == appendRef
 						|| getFunctionId(q) == updateRef)) {
-					if (strcmp(getVarConstant(mb, getArg(q, 2)).val.sval, sch)
-						== 0
-						&& strcmp(getVarConstant(mb, getArg(q, 3)).val.sval,
-								  tbl) == 0) {
+					if (strcmp(getVarConstant(mb, getArg(q, 2)).val.sval, sch) == 0
+						&& strcmp(getVarConstant(mb, getArg(q, 3)).val.sval, tbl) == 0) {
 						empty[getArg(p, 0)] = 0;
 						if (p->retc == 2) {
 							empty[getArg(p, 1)] = 0;
@@ -284,12 +296,13 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	for (; i < slimit; i++)
 		if (old[i])
 			pushInstruction(mb, old[i]);
-	GDKfree(old);
-	GDKfree(empty);
-	GDKfree(updated);
+	//GDKfree(old);
+	// GDKfree(empty);
+	// GDKfree(updated);
+	ma_close(ta, &ta_state);
 	/* Defense line against incorrect plans */
 	if (msg == MAL_SUCCEED)
-		msg = chkTypes(cntxt->usermodule, mb, FALSE);
+		msg = chkTypes(ctx->usermodule, mb, FALSE);
 	if (msg == MAL_SUCCEED)
 		msg = chkFlow(mb);
 	if (msg == MAL_SUCCEED)

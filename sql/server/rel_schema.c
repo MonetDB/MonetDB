@@ -424,7 +424,7 @@ create_check_plan(sql_query *query, symbol *s, sql_table *t)
 
 	if (!e || !rel || !is_basetable(rel->op))
 		return NULL;
-	e->comment = sa_strdup(sql->sa, s->data.lval->h->next->data.sval);
+	e->comment = ma_strdup(sql->sa, s->data.lval->h->next->data.sval);
 	rel->exps = rel_base_projection(sql, rel, 0);
 	list *pexps = sa_list(sql->sa);
 	pexps = append(pexps, e);
@@ -1648,12 +1648,12 @@ rel_create_table(sql_query *query, int temp, const char *sname, const char *name
 			if (!mapiuri_valid(loc, sql->sa))
 				return sql_error(sql, 02, SQLSTATE(42000) "%s TABLE: incorrect uri '%s' for remote table '%s'", action, loc, name);
 			if ((t = mvc_create_remote_as_subquery(sql, sq, s, name, column_spec, loc, (temp == SQL_DECLARED_TABLE)?"DECLARE TABLE":"CREATE TABLE")) == NULL) {
-				rel_destroy(sq);
+				rel_destroy(sql, sq);
 				return NULL;
 			}
 		} else {
 			if ((t = mvc_create_table_as_subquery(sql, sq, s, name, column_spec, temp, commit_action, (temp == SQL_DECLARED_TABLE)?"DECLARE TABLE":"CREATE TABLE")) == NULL) {
-				rel_destroy(sq);
+				rel_destroy(sql, sq);
 				return NULL;
 			}
 		}
@@ -1662,13 +1662,13 @@ rel_create_table(sql_query *query, int temp, const char *sname, const char *name
 		if (tt == tt_remote) {
 			res = rel_create_remote(sql, ddl_create_table, s->base.name, t, pw_encrypted, username, password);
 			/* we cannot insert in remote so just remove the subquery */
-			rel_destroy(sq);
+			rel_destroy(sql, sq);
 		} else {
 			res = rel_table(sql, ddl_create_table, s->base.name, t, (tt == tt_table)?temp:SQL_PERSIST);
 			if (with_data) {
 				res = rel_insert(query->sql, res, sq);
 			} else {
-				rel_destroy(sq);
+				rel_destroy(sql, sq);
 			}
 		}
 		return res;
@@ -1751,7 +1751,7 @@ rel_create_view(sql_query *query, int temp, dlist *qname, dlist *column_spec, sy
 					;
 				if (n || m) {
 					sql_error(sql, 01, SQLSTATE(21S02) "WITH CLAUSE: number of columns does not match");
-					rel_destroy(sq);
+					rel_destroy(sql, sq);
 					return NULL;
 				}
 			}
@@ -1769,7 +1769,7 @@ rel_create_view(sql_query *query, int temp, dlist *qname, dlist *column_spec, sy
 					break;
 			}
 			if (as_subquery(sql, t, tt_view, sq, column_spec, base) != 0) {
-				rel_destroy(sq);
+				rel_destroy(sql, sq);
 				return NULL;
 			}
 			return rel_create_view_ddl(sql, ddl_create_view, s->base.name, t, temp, replace);
@@ -1992,7 +1992,7 @@ rel_create_schema(sql_query *query, dlist *auth_name, dlist *schema_elements, in
 		while (n) {
 			sql_rel *res = rel_semantic(query, n->data.sym);
 			if (!res) {
-				rel_destroy(ret);
+				rel_destroy(sql, ret);
 				sql->session->schema = os;
 				return NULL;
 			}
@@ -2235,7 +2235,7 @@ sql_alter_table(sql_query *query, dlist *dl, dlist *qname, symbol *te, int if_ex
 			e = exp_atom(sql->sa, atom_general(sql->sa, &c->type, NULL, 0));
 		}
 		if (!e || (e = exp_check_type(sql, &c->type, r, e, type_equal)) == NULL) {
-			rel_destroy(r);
+			rel_destroy(sql, r);
 			return NULL;
 		}
 		list_append(cols, ne=exp_column(sql->sa, ta, c->base.name, &c->type, CARD_MULTI, 0, 0, 0));
@@ -2286,7 +2286,7 @@ rel_grant_or_revoke_roles(mvc *sql, dlist *roles, dlist *grantees, int grant, in
 			char *grantee = g->data.sval;
 
 			if ((res = rel_list(sql->sa, res, rel_role(sql->sa, grantee, role, grantor, grant, action))) == NULL) {
-				rel_destroy(res);
+				rel_destroy(sql, res);
 				return NULL;
 			}
 		}
@@ -2363,7 +2363,7 @@ rel_grant_or_revoke_global(mvc *sql, dlist *privs, dlist *grantees, int grant, i
 			int priv = opn->data.i_val;
 
 			if ((res = rel_list(sql->sa, res, rel_priv(sql->sa, sname, NULL, grantee, priv, NULL, grant, grantor, action))) == NULL) {
-				rel_destroy(res);
+				rel_destroy(sql, res);
 				return NULL;
 			}
 		}
@@ -2392,7 +2392,7 @@ rel_grant_or_revoke_table(mvc *sql, dlist *privs, dlist *qname, dlist *grantees,
 
 		if (!privs) {
 			if ((res = rel_list(sql->sa, res, rel_priv(sql->sa, t->s->base.name, tname, grantee, all, NULL, grant, grantor, action))) == NULL) {
-				rel_destroy(res);
+				rel_destroy(sql, res);
 				return NULL;
 			}
 			continue;
@@ -2426,12 +2426,12 @@ rel_grant_or_revoke_table(mvc *sql, dlist *privs, dlist *qname, dlist *grantees,
 				for (dnode *cn = op->data.lval->h; cn; cn = cn->next) {
 					char *cname = cn->data.sval;
 					if ((res = rel_list(sql->sa, res, rel_priv(sql->sa, t->s->base.name, tname, grantee, priv, cname, grant, grantor, action))) == NULL) {
-						rel_destroy(res);
+						rel_destroy(sql, res);
 						return NULL;
 					}
 				}
 			} else if ((res = rel_list(sql->sa, res, rel_priv(sql->sa, t->s->base.name, tname, grantee, priv, NULL, grant, grantor, action))) == NULL) {
-				rel_destroy(res);
+				rel_destroy(sql, res);
 				return NULL;
 			}
 		}
@@ -2459,7 +2459,7 @@ rel_grant_or_revoke_func(mvc *sql, dlist *privs, dlist *qname, dlist *typelist, 
 
 		if (!privs) {
 			if ((res = rel_list(sql->sa, res, rel_func_priv(sql->sa, func->s->base.name, func->base.id, grantee, PRIV_EXECUTE, grant, grantor, action))) == NULL) {
-				rel_destroy(res);
+				rel_destroy(sql, res);
 				return NULL;
 			}
 			continue;
@@ -2470,7 +2470,7 @@ rel_grant_or_revoke_func(mvc *sql, dlist *privs, dlist *qname, dlist *typelist, 
 			if (op->token != SQL_EXECUTE)
 				return sql_error(sql, 02, SQLSTATE(42000) "Can only %s 'EXECUTE' on function '%s'", err, fname);
 			if ((res = rel_list(sql->sa, res, rel_func_priv(sql->sa, func->s->base.name, func->base.id, grantee, PRIV_EXECUTE, grant, grantor, action))) == NULL) {
-				rel_destroy(res);
+				rel_destroy(sql, res);
 				return NULL;
 			}
 		}
@@ -2925,8 +2925,11 @@ rel_rename_schema(mvc *sql, char *old_name, char *new_name, int if_exists)
 	if (mvc_bind_schema(sql, new_name))
 		return sql_error(sql, 02, SQLSTATE(3F000) "ALTER SCHEMA: there is a schema named '%s' in the database", new_name);
 
-	if (mvc_check_dependency(sql, s->base.id, SCHEMA_DEPENDENCY, NULL) != NO_DEPENDENCY) {
-		return sql_error(sql, 02, SQLSTATE(2BM37) "ALTER SCHEMA: unable to rename schema '%s', there are database objects which depend on it", old_name);
+	if (mvc_check_dependency(sql, s->base.id, SCHEMA_DEPENDENCY, NULL)) {
+		return sql_error(sql, 02,
+						 SQLSTATE(2BM37) "ALTER SCHEMA: unable to"
+						 " rename schema '%s', there are database objects"
+						 " which depend on it", old_name);
 	}
 
 	rel = rel_create(sql->sa);

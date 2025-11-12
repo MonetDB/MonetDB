@@ -21,8 +21,7 @@
 #include "opt_profiler.h"
 
 str
-OPTprofilerImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
-						  InstrPtr pci)
+OPTprofilerImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) stk;
 	(void) cntxt;

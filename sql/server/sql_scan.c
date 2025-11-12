@@ -1584,11 +1584,11 @@ sql_get_next_token(YYSTYPE *yylval, void *parm)
 
 	if (token == IDENT || token == COMPARISON ||
 	    token == RANK || token == aTYPE || token == MARGFUNC || token == OPERATORS) {
-		yylval->sval = sa_strndup(c->sa, yylval->sval, lc->yycur-lc->yysval);
+		yylval->sval = ma_strndup(c->sa, yylval->sval, lc->yycur-lc->yysval);
 		lc->next_string_is_raw = false;
 	} else if (token == STRING) {
 		char quote = *yylval->sval;
-		char *str = sa_alloc( c->sa, (lc->yycur-lc->yysval-2)*2 + 1 );
+		char *str = ma_alloc( c->sa, (lc->yycur-lc->yysval-2)*2 + 1 );
 		char *dst;
 
 		assert(quote == '"' || quote == '\'' || quote == 'E' || quote == 'e' || quote == 'U' || quote == 'u' || quote == 'X' || quote == 'x' || quote == 'R' || quote == 'r');
@@ -1706,9 +1706,9 @@ scanner(YYSTYPE * yylval, void *parm, bool log)
 		int next = sql_get_next_token(yylval, parm);
 
 		if (token == -STRING && next == STRING) {
-			sval = sa_strconcat(c->sa, sval, yylval->sval);
+			sval = ma_strconcat(c->sa, sval, yylval->sval);
 			while((next = sql_get_next_token(yylval, parm)) == STRING)
-				sval = sa_strconcat(c->sa, sval, yylval->sval);
+				sval = ma_strconcat(c->sa, sval, yylval->sval);
 		}
 
 		char *uescape = "\\";
@@ -1760,7 +1760,7 @@ scanner(YYSTYPE * yylval, void *parm, bool log)
 				else if (sval[0] == '-')
 						yylval->sval++;
 				else
-					yylval->sval = sa_strconcat(c->sa, token=='-'?"-":"+", sval);
+					yylval->sval = ma_strconcat(c->sa, token=='-'?"-":"+", sval);
 			}
 			token = next;
 			next = 0;

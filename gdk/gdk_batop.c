@@ -27,12 +27,13 @@ unshare_varsized_heap(BAT *b)
 {
 	if (ATOMvarsized(b->ttype) &&
 	    b->tvheap->parentid != b->batCacheid) {
+		var_t (*atomput) (BAT *, var_t *off, const void *src) = BATatoms[b->ttype].atomPut;
 		Heap *h = GDKmalloc(sizeof(Heap));
 		if (h == NULL)
 			return GDK_FAIL;
 		*h = (Heap) {
 			.parentid = b->batCacheid,
-			.farmid = BBPselectfarm(b->batRole, TYPE_str, varheap),
+			.farmid = BBPselectfarm(b->batRole, b->ttype, varheap),
 			.refs = ATOMIC_VAR_INIT(1),
 		};
 		strconcat_len(h->filename, sizeof(h->filename),
@@ -49,7 +50,7 @@ unshare_varsized_heap(BAT *b)
 		    BATcount(BBP_desc(b->tvheap->parentid)) > 2 * BATcount(b)) {
 			MT_thread_setalgorithm("unshare vheap reinsert strings");
 			MT_lock_set(&b->theaplock);
-			strHeap(h, b->batCapacity);
+			BATatoms[b->ttype].atomHeap(h, b->batCapacity);
 			Heap *oh = b->tvheap;
 			b->tvheap = h;
 			var_t o;
@@ -57,7 +58,7 @@ unshare_varsized_heap(BAT *b)
 			case 1:
 				for (BUN i = 0; i < b->batCount; i++) {
 					o = (var_t) ((uint8_t *) b->theap->base)[i] + GDK_VAROFFSET;
-					if (strPut(b, &o, oh->base + o) == (var_t) -1)
+					if (atomput(b, &o, oh->base + o) == (var_t) -1)
 						goto bailout;
 					((uint8_t *) b->theap->base)[i] = (uint8_t) (o - GDK_VAROFFSET);
 				}
@@ -65,7 +66,7 @@ unshare_varsized_heap(BAT *b)
 			case 2:
 				for (BUN i = 0; i < b->batCount; i++) {
 					o = (var_t) ((uint16_t *) b->theap->base)[i] + GDK_VAROFFSET;
-					if (strPut(b, &o, oh->base + o) == (var_t) -1)
+					if (atomput(b, &o, oh->base + o) == (var_t) -1)
 						goto bailout;
 					((uint16_t *) b->theap->base)[i] = (uint16_t) (o - GDK_VAROFFSET);
 				}
@@ -74,7 +75,7 @@ unshare_varsized_heap(BAT *b)
 			case 4:
 				for (BUN i = 0; i < b->batCount; i++) {
 					o = (var_t) ((uint32_t *) b->theap->base)[i];
-					if (strPut(b, &o, oh->base + o) == (var_t) -1)
+					if (atomput(b, &o, oh->base + o) == (var_t) -1)
 						goto bailout;
 					((uint32_t *) b->theap->base)[i] = (uint32_t) o;
 				}
@@ -83,7 +84,7 @@ unshare_varsized_heap(BAT *b)
 			case SIZEOF_VAR_T:
 				for (BUN i = 0; i < b->batCount; i++) {
 					o = ((var_t *) b->theap->base)[i];
-					if (strPut(b, &o, oh->base + o) == (var_t) -1)
+					if (atomput(b, &o, oh->base + o) == (var_t) -1)
 						goto bailout;
 					((var_t *) b->theap->base)[i] = o;
 				}
@@ -804,7 +805,7 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 	MT_lock_set(&b->theaplock);
 	const bool notnull = BATgetprop_nolock(b, GDK_NOT_NULL) != NULL;
 	if ((prop = BATgetprop_nolock(b, GDK_MIN_BOUND)) != NULL &&
-	    VALcopy(&minprop, prop) != NULL) {
+	    VALcopy(NULL, &minprop, prop) != NULL) {
 		minbound = VALptr(&minprop);
 		if (ci.ncand == BATcount(n) &&
 		    ni.minpos != BUN_NONE &&
@@ -816,7 +817,7 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 		}
 	}
 	if ((prop = BATgetprop_nolock(b, GDK_MAX_BOUND)) != NULL &&
-	    VALcopy(&maxprop, prop) != NULL) {
+	    VALcopy(NULL, &maxprop, prop) != NULL) {
 		maxbound = VALptr(&maxprop);
 		if (ci.ncand == BATcount(n) &&
 		    ni.maxpos != BUN_NONE &&
@@ -2703,7 +2704,7 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 		if (bn == NULL)
 			goto error;
 		if (bn->ttype == TYPE_void || isVIEW(bn)) {
-			BAT *b2 = COLcopy(bn, ATOMtype(bn->ttype), true, TRANSIENT);
+			BAT *b2 = COLcopy2(bn, ATOMtype(bn->ttype), true, true, TRANSIENT);
 			BBPunfix(bn->batCacheid);
 			bn = b2;
 		}
@@ -2715,7 +2716,7 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 			pb = NULL;
 		}
 	} else {
-		bn = COLcopy(b, b->ttype, true, TRANSIENT);
+		bn = COLcopy2(b, b->ttype, true, true, TRANSIENT);
 	}
 	if (bn == NULL)
 		goto error;
@@ -3166,7 +3167,7 @@ BATsetprop_nolock(BAT *b, enum prop_t idx, int type, const void *v)
 	} else {
 		VALclear(&p->v);
 	}
-	if (VALinit(&p->v, type, v) == NULL) {
+	if (VALinit(NULL, &p->v, type, v) == NULL) {
 		/* failed to initialize, so remove property */
 		BATrmprop_nolock(b, idx);
 		GDKclrerr();

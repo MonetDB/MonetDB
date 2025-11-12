@@ -3078,10 +3078,12 @@ decref(bat i, bool logical, bool lock, const char *func)
 			BATdelete(BBP_desc(i));
 			BBPclear(i);
 		} else {
-			MT_lock_set(&GDKswapLock(i));
+			if (lock)
+				MT_lock_set(&GDKswapLock(i));
 			BBP_status_off(i, BBPUNLOADING);
 			MT_cond_broadcast(&GDKswapCond(i));
-			MT_lock_unset(&GDKswapLock(i));
+			if (lock)
+				MT_lock_unset(&GDKswapLock(i));
 		}
 	}
 	return refs;

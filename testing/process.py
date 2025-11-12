@@ -12,13 +12,13 @@ import subprocess
 import os
 import sys
 import time
-import string
 import tempfile
 import copy
 import atexit
 import threading
 import signal
 import queue
+import shlex
 
 from subprocess import PIPE, TimeoutExpired
 try:
@@ -36,35 +36,11 @@ else:
 
 verbose = False
 
-def splitcommand(cmd):
-    '''Like string.split, except take quotes into account.'''
-    q = None
-    w = []
-    command = []
-    for c in cmd:
-        if q:
-            if c == q:
-                q = None
-            else:
-                w.append(c)
-        elif c in string.whitespace:
-            if w:
-                command.append(''.join(w))
-            w = []
-        elif c == '"' or c == "'":
-            q = c
-        else:
-            w.append(c)
-    if w:
-        command.append(''.join(w))
-    if len(command) > 1 and command[0] == 'call':
-        del command[0]
-    return command
 
-_mal_client = splitcommand(os.getenv('MAL_CLIENT', 'mclient -lmal'))
-_sql_client = splitcommand(os.getenv('SQL_CLIENT', 'mclient -lsql'))
-_sql_dump = splitcommand(os.getenv('SQL_DUMP', 'msqldump -q'))
-_server = splitcommand(os.getenv('MSERVER', ''))
+_mal_client = shlex.split(os.getenv('MAL_CLIENT', 'mclient -lmal'))
+_sql_client = shlex.split(os.getenv('SQL_CLIENT', 'mclient -lsql'))
+_sql_dump = shlex.split(os.getenv('SQL_DUMP', 'msqldump -q'))
+_server = shlex.split(os.getenv('MSERVER', ''))
 _dbfarm = os.getenv('GDK_DBFARM', None)
 
 _dotmonetdbfile = []
@@ -125,6 +101,7 @@ class _BufferedPipe:
             c = c.replace(self._cr, self._empty)
             if c:
                 q.put(c)
+        fh.close()
 
     def close(self):
         if verbose:
@@ -399,10 +376,13 @@ class client(Popen):
         # if server instance is specified, it provides defaults for
         # database name and port
         if server is not None:
-            if port is None:
-                port = server.dbport
-            if dbname is None:
-                dbname = server.dbname
+            if port is None and dbname is None and hasattr(server, 'usock') and server.usock is not None:
+                dbname = server.usock
+            else:
+                if port is None:
+                    port = server.dbport
+                if dbname is None:
+                    dbname = server.dbname
 
         if port is not None:
             for i in range(len(cmd)):
@@ -415,7 +395,11 @@ class client(Popen):
                 if port:
                     raise
         if dbname is None:
-            dbname = os.getenv('TSTDB')
+            usock = os.getenv('MAPIUSOCK')
+            if usock is None:
+                dbname = os.getenv('TSTDB')
+            else:
+                dbname = usock
         if dbname is not None and dbname:
             cmd.append('--database=%s' % dbname)
         if user is not None or passwd is not None:
@@ -440,7 +424,7 @@ class client(Popen):
             print('Executing: ' + ' '.join(cmd +  args), flush=True)
         if stdin is None:
             # if no input provided, use /dev/null as input
-            stdin = open(os.devnull)
+            stdin = DEVNULL
         if stdout == 'PIPE':
             out = PIPE
         else:
@@ -600,7 +584,8 @@ class server(Popen):
             if os.path.exists(started):
                 # server is ready
                 try:
-                    conn = open(os.path.join(dbpath, '.conn')).read()
+                    with open(os.path.join(dbpath, '.conn')) as fil:
+                        conn = fil.read()
                 except:
                     if verbose:
                         print('failed to open {}'.format(os.path.join(dbpath, '.conn')))

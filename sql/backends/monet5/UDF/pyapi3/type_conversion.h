@@ -31,13 +31,13 @@
 bool pyapi3_string_copy(const char *source, char *dest, size_t max_size, bool allow_unicode);
 #ifdef HAVE_HGE
 //! Converts a hge to a string and writes it into the string "str"
-int hge_to_string(char *str, hge);
+int hge_to_string(allocator *, char *str, hge);
 //! Converts a base-10 string to a hge value
-str str_to_hge(const char *ptr, size_t maxsize, hge *value);
+str str_to_hge(allocator *, const char *ptr, size_t maxsize, hge *value);
 //! Converts a base-10 utf32-encoded string to a hge value
-str unicode_to_hge(wchar_t *utf32, size_t maxsize, hge *value);
+str unicode_to_hge(allocator *, wchar_t *utf32, size_t maxsize, hge *value);
 //! Converts a PyObject to a hge value
-str pyobject_to_hge(PyObject **ptr, size_t maxsize, hge *value);
+str pyobject_to_hge(allocator *, PyObject **ptr, size_t maxsize, hge *value);
 //! Create a PyLongObject from a hge integer
 PyObject *PyLong_FromHge(hge h);
 #endif
@@ -46,28 +46,28 @@ PyObject *PyLong_FromHge(hge h);
 size_t pyobject_get_size(PyObject *obj);
 //! Converts a PyObject to a str; the output string will be a newly allocated
 //! string (if *value == NULL) or stored in *value (if *value != NULL)
-str pyobject_to_str(PyObject **ptr, size_t maxsize, str *value);
+str pyobject_to_str(allocator *, PyObject **ptr, size_t maxsize, str *value);
 //! Converts a PyObject to a blob
-str pyobject_to_blob(PyObject **ptr, size_t maxsize, blob **value);
+str pyobject_to_blob(allocator *, PyObject **ptr, size_t maxsize, blob **value);
 
-str pyobject_to_date(PyObject **ptr, size_t maxsize, date *value);
-str str_to_date(const char *ptr, size_t maxsize, date *value);
-str unicode_to_date(wchar_t *ptr, size_t maxsize, date *value);
+str pyobject_to_date(allocator *, PyObject **ptr, size_t maxsize, date *value);
+str str_to_date(allocator *, const char *ptr, size_t maxsize, date *value);
+str unicode_to_date(allocator *, wchar_t *ptr, size_t maxsize, date *value);
 
-str pyobject_to_daytime(PyObject **ptr, size_t maxsize, daytime *value);
-str str_to_daytime(const char *ptr, size_t maxsize, daytime *value);
-str unicode_to_daytime(wchar_t *ptr, size_t maxsize, daytime *value);
+str pyobject_to_daytime(allocator *, PyObject **ptr, size_t maxsize, daytime *value);
+str str_to_daytime(allocator *, const char *ptr, size_t maxsize, daytime *value);
+str unicode_to_daytime(allocator *, wchar_t *ptr, size_t maxsize, daytime *value);
 
-str pyobject_to_timestamp(PyObject **ptr, size_t maxsize, timestamp *value);
-str str_to_timestamp(const char *ptr, size_t maxsize, timestamp *value);
-str unicode_to_timestamp(wchar_t *ptr, size_t maxsize, timestamp *value);
+str pyobject_to_timestamp(allocator *, PyObject **ptr, size_t maxsize, timestamp *value);
+str str_to_timestamp(allocator *, const char *ptr, size_t maxsize, timestamp *value);
+str unicode_to_timestamp(allocator *, wchar_t *ptr, size_t maxsize, timestamp *value);
 
 
 //using macros, create a number of str_to_<type>, unicode_to_<type> and pyobject_to_<type> functions (we are Java now)
 #define CONVERSION_FUNCTION_HEADER_FACTORY(tpe)          \
-    str str_to_##tpe(const char *ptr, size_t maxsize, tpe *value);          \
-    str unicode_to_##tpe(wchar_t *ptr, size_t maxsize, tpe *value);                  \
-    str pyobject_to_##tpe(PyObject **ptr, size_t maxsize, tpe *value);
+    str str_to_##tpe(allocator *, const char *ptr, size_t maxsize, tpe *value);          \
+    str unicode_to_##tpe(allocator *, wchar_t *ptr, size_t maxsize, tpe *value);                  \
+    str pyobject_to_##tpe(allocator *, PyObject **ptr, size_t maxsize, tpe *value);
 
 CONVERSION_FUNCTION_HEADER_FACTORY(bte)
 CONVERSION_FUNCTION_HEADER_FACTORY(oid)

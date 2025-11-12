@@ -37,6 +37,7 @@
 #include "gdk.h"
 #include "gdk_system_private.h"
 
+#include <stdio.h>
 #include <time.h>
 
 #ifdef HAVE_FTIME
@@ -194,6 +195,7 @@ struct thread_funcs {
 };
 
 struct mtthread {
+	allocator *ma;
 	struct mtthread *next;
 	void (*func) (void *);	/* function to be called */
 	void *data;		/* and its data */
@@ -321,6 +323,9 @@ dump_threads(void)
 		MT_Cond *cn = t->condwait;
 		struct mtthread *jn = t->joinwait;
 		const char *working = ATOMIC_PTR_GET(&t->working);
+		char mabuf[300];
+		ma_info(t->ma, mabuf, sizeof(mabuf));
+
 		int pos = snprintf(buf, sizeof(buf),
 				   "%s, tid %zu, "
 #ifdef HAVE_PTHREAD_H
@@ -329,7 +334,7 @@ dump_threads(void)
 #ifdef HAVE_GETTID
 				   "LWP %ld, "
 #endif
-				   "%"PRIu32" free bats, waiting for %s%s, working on %.200s",
+				   "%"PRIu32" free bats, waiting for %s%s%s, working on %.200s",
 				   t->threadname,
 				   t->tid,
 #ifdef HAVE_PTHREAD_H
@@ -341,6 +346,7 @@ dump_threads(void)
 				   t->freebats.nfreebats,
 				   lk ? "lock " : sm ? "semaphore " : cn ? "condvar " : jn ? "thread " : "",
 				   lk ? lk->name : sm ? sm->name : cn ? cn->name : jn ? jn->threadname : "nothing",
+				   mabuf,
 				   ATOMIC_GET(&t->exited) ? "exiting" :
 				   working ? working : "nothing");
 #ifdef LOCK_OWNER
@@ -366,12 +372,15 @@ rm_mtthread(struct mtthread *t)
 
 	assert(t != &mainthread);
 	thread_lock();
+	allocator *ta = t->ma;
+	t->ma = NULL;
 	for (pt = &mtthreads; *pt && *pt != t; pt = &(*pt)->next)
 		;
 	if (*pt)
 		*pt = t->next;
 	free(t);
 	thread_unlock();
+	ma_destroy(ta);
 }
 
 bool
@@ -409,6 +418,11 @@ MT_thread_init(void)
 	}
 	InitializeCriticalSection(&winthread_cs);
 #endif
+	mainthread.ma = create_allocator(NULL, mainthread.threadname, false);
+	if (mainthread.ma == NULL) {
+		GDKerror("Creating thread-local allocator failed");
+		return false;
+	}
 	thread_initialized = true;
 	return true;
 }
@@ -448,6 +462,11 @@ MT_thread_register(void)
 		.semawait = ATOMIC_PTR_VAR_INIT(NULL),
 	};
 	snprintf(self->threadname, sizeof(self->threadname), "foreign %zu", self->tid);
+	self->ma = create_allocator(NULL, self->threadname, false);
+	if (self->ma == NULL) {
+		free(self);
+		return false;
+	}
 	thread_setself(self);
 	thread_lock();
 	self->next = mtthreads;
@@ -567,6 +586,27 @@ MT_thread_getfreebats(void)
 	if (self == NULL)
 		self = &mainthread;
 	return &self->freebats;
+}
+
+void
+MT_thread_setallocator(allocator *ma)
+{
+	if (!thread_initialized)
+		return;
+	struct mtthread *self = thread_self();
+
+	if (self)
+		self->ma = ma;
+}
+
+allocator *
+MT_thread_getallocator(void)
+{
+	if (!thread_initialized)
+		return NULL;
+	struct mtthread *self = thread_self();
+
+	return self ? self->ma : NULL;
 }
 
 void
@@ -945,7 +985,13 @@ MT_create_thread(MT_Id *t, void (*f) (void *), void *arg, enum MT_thr_detach d, 
 		.exited = ATOMIC_VAR_INIT(0),
 		.working = ATOMIC_PTR_VAR_INIT(NULL),
 		.semawait = ATOMIC_PTR_VAR_INIT(NULL),
+		.ma = create_allocator(NULL, threadname, false),
 	};
+	if (self->ma == NULL) {
+		free(self);
+		GDKerror("Creating thread allocator failed\n");
+		return -1;
+	}
 	MT_lock_set(&thread_init_lock);
 	/* remember the list of callback functions we need to call for
 	 * this thread (i.e. anything registered so far) */
@@ -976,6 +1022,13 @@ MT_create_thread(MT_Id *t, void (*f) (void *), void *arg, enum MT_thr_detach d, 
 	strcpy_len(self->threadname, threadname, sizeof(self->threadname));
 	char *p;
 	if ((p = strstr(self->threadname, "XXXX")) != NULL) {
+		/* overwrite XXXX with thread ID; bottom three bits are
+		 * likely 0, so skip those */
+		char buf[5];
+		snprintf(buf, sizeof(buf), "%04zu", self->tid % 9999);
+		memcpy(p, buf, 4);
+	}
+	if ((p = strstr(self->ma->name, "XXXX")) != NULL) {
 		/* overwrite XXXX with thread ID; bottom three bits are
 		 * likely 0, so skip those */
 		char buf[5];

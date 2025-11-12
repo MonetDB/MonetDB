@@ -277,7 +277,7 @@ alter_table_add_range_partition(mvc *sql, char *msname, char *mtname, char *psna
 		}
 	}
 
-	errcode = sql_trans_add_range_partition(sql->session->tr, mt, pt, tpe, min, max, with_nills, update, &err);
+	errcode = sql_trans_add_range_partition(sql->sa, sql->session->tr, mt, pt, tpe, min, max, with_nills, update, &err);
 	switch (errcode) {
 		case 0:
 			break;
@@ -307,7 +307,7 @@ alter_table_add_range_partition(mvc *sql, char *msname, char *mtname, char *psna
 										"ALTER TABLE: conflicting partitions: table %s.%s stores null values and only "
 										"one partition can store null values at the time", err->t->s->base.name, err->base.name);
 			} else {
-				ssize_t (*atomtostr)(str *, size_t *, const void *, bool) = BATatoms[tp1].atomToStr;
+				ssize_t (*atomtostr)(allocator *, str *, size_t *, const void *, bool) = BATatoms[tp1].atomToStr;
 				const void *nil = ATOMnilptr(tp1);
 				sql_table *errt = mvc_bind_table(sql, mt->s, err->base.name);
 
@@ -317,36 +317,36 @@ alter_table_add_range_partition(mvc *sql, char *msname, char *mtname, char *psna
 					goto finish;
 				}
 				if (ATOMeq(tp1, nil, err->part.range.minvalue)) {
-					if (!(conflict_err_min = GDKstrdup("absolute min value")))
+					if (!(conflict_err_min = SA_STRDUP(sql->sa, "absolute min value")))
 						msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(HY013) MAL_MALLOC_FAIL);
-				} else if (atomtostr(&conflict_err_min, &length, err->part.range.minvalue, true) < 0) {
+				} else if (atomtostr(sql->sa, &conflict_err_min, &length, err->part.range.minvalue, true) < 0) {
 					msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				}
 				if (msg)
 					goto finish;
 
 				if (ATOMeq(tp1, nil, err->part.range.maxvalue)) {
-					if (!(conflict_err_max = GDKstrdup("absolute max value")))
+					if (!(conflict_err_max = SA_STRDUP(sql->sa, "absolute max value")))
 						msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(HY013) MAL_MALLOC_FAIL);
-				} else if (atomtostr(&conflict_err_max, &length, err->part.range.maxvalue, true) < 0) {
+				} else if (atomtostr(sql->sa, &conflict_err_max, &length, err->part.range.maxvalue, true) < 0) {
 					msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				}
 				if (msg)
 					goto finish;
 
 				if (ATOMeq(tp1, nil, min)) {
-					if (!(err_min = GDKstrdup("absolute min value")))
+					if (!(err_min = SA_STRDUP(sql->sa, "absolute min value")))
 						msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(HY013) MAL_MALLOC_FAIL);
-				} else if (atomtostr(&err_min, &length, min, true) < 0) {
+				} else if (atomtostr(sql->sa, &err_min, &length, min, true) < 0) {
 					msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				}
 				if (msg)
 					goto finish;
 
 				if (ATOMeq(tp1, nil, max)) {
-					if (!(err_max = GDKstrdup("absolute max value")))
+					if (!(err_max = SA_STRDUP(sql->sa, "absolute max value")))
 						msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(HY013) MAL_MALLOC_FAIL);
-				} else if (atomtostr(&err_max, &length, max, true) < 0) {
+				} else if (atomtostr(sql->sa, &err_max, &length, max, true) < 0) {
 					msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				}
 				if (msg)
@@ -362,14 +362,14 @@ alter_table_add_range_partition(mvc *sql, char *msname, char *mtname, char *psna
 	}
 
 finish:
-	if (err_min)
-		GDKfree(err_min);
-	if (err_max)
-		GDKfree(err_max);
-	if (conflict_err_min)
-		GDKfree(conflict_err_min);
-	if (conflict_err_max)
-		GDKfree(conflict_err_max);
+	//if (err_min)
+	//	GDKfree(err_min);
+	//if (err_max)
+	//	GDKfree(err_max);
+	//if (conflict_err_min)
+	//	GDKfree(conflict_err_min);
+	//if (conflict_err_max)
+	//	GDKfree(conflict_err_max);
 	return msg;
 }
 
@@ -446,7 +446,7 @@ alter_table_add_value_partition(mvc *sql, MalStkPtr stk, InstrPtr pci, char *msn
 		}
 	}
 
-	errcode = sql_trans_add_value_partition(sql->session->tr, mt, pt, tpe, values, with_nills, update, &err);
+	errcode = sql_trans_add_value_partition(sql->sa, sql->session->tr, mt, pt, tpe, values, with_nills, update, &err);
 	if (errcode <= -10) {
 		msg = createException(SQL,"sql.alter_table_add_value_partition",SQLSTATE(42000)
 								  "ALTER TABLE: value at position %d length is higher than %d",
@@ -595,12 +595,12 @@ create_trigger(mvc *sql, char *sname, char *tname, char *triggername, int time, 
 			sql_rel *r = NULL;
 			allocator *sa = sql->sa;
 
-			if (!(sql->sa = sa_create(sql->pa))) {
+			if (!(sql->sa = create_allocator(sql->pa, "MA_mvc", false))) {
 				sql->sa = sa;
 				throw(SQL, "sql.create_trigger", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
-			if (!(buf = sa_strdup(sql->sa, query))) {
-				sa_destroy(sql->sa);
+			if (!(buf = ma_strdup(sql->sa, query))) {
+				ma_destroy(sql->sa);
 				sql->sa = sa;
 				throw(SQL, "sql.create_trigger", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
@@ -610,12 +610,12 @@ create_trigger(mvc *sql, char *sname, char *tname, char *triggername, int time, 
 			if (r) {
 				list *blist = rel_dependencies(sql, r);
 				if (mvc_create_dependencies(sql, blist, tri->base.id, TRIGGER_DEPENDENCY)) {
-					sa_destroy(sql->sa);
+					ma_destroy(sql->sa);
 					sql->sa = sa;
 					throw(SQL, "sql.create_trigger", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				}
 			}
-			sa_destroy(sql->sa);
+			ma_destroy(sql->sa);
 			sql->sa = sa;
 			if (!r) {
 				if (strlen(sql->errstr) > 6 && sql->errstr[5] == '!')
@@ -1091,12 +1091,12 @@ create_func(mvc *sql, char *sname, char *fname, sql_func *f, int replace)
 		allocator *sa = sql->sa;
 
 		assert(nf->query);
-		if (!(sql->sa = sa_create(sql->pa))) {
+		if (!(sql->sa = create_allocator(sql->pa, "MA_mvc", false))) {
 			sql->sa = sa;
 			throw(SQL, "sql.create_func", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
-		if (!(buf = sa_strdup(sql->sa, nf->query))) {
-			sa_destroy(sql->sa);
+		if (!(buf = ma_strdup(sql->sa, nf->query))) {
+			ma_destroy(sql->sa);
 			sql->sa = sa;
 			throw(SQL, "sql.create_func", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
@@ -1112,7 +1112,7 @@ create_func(mvc *sql, char *sname, char *fname, sql_func *f, int replace)
 					sql_arg *a = n->data;
 
 					if (a->type.type->s && mvc_create_dependency(sql, &a->type.type->base, nf->base.id, TYPE_DEPENDENCY)) {
-						sa_destroy(sql->sa);
+						ma_destroy(sql->sa);
 						sql->sa = sa;
 						throw(SQL, "sql.create_func", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					}
@@ -1123,19 +1123,19 @@ create_func(mvc *sql, char *sname, char *fname, sql_func *f, int replace)
 					sql_arg *a = n->data;
 
 					if (a->type.type->s && mvc_create_dependency(sql, &a->type.type->base, nf->base.id, TYPE_DEPENDENCY)) {
-						sa_destroy(sql->sa);
+						ma_destroy(sql->sa);
 						sql->sa = sa;
 						throw(SQL, "sql.create_func", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					}
 				}
 			}
 			if (mvc_create_dependencies(sql, blist, nf->base.id, !IS_PROC(f) ? FUNC_DEPENDENCY : PROC_DEPENDENCY)) {
-				sa_destroy(sql->sa);
+				ma_destroy(sql->sa);
 				sql->sa = sa;
 				throw(SQL, "sql.create_func", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 		}
-		sa_destroy(sql->sa);
+		ma_destroy(sql->sa);
 		sql->sa = sa;
 		if (!r) {
 			if (strlen(sql->errstr) > 6 && sql->errstr[5] == '!')
@@ -2202,7 +2202,7 @@ SQLrename_schema(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL, "sql.rename_schema", SQLSTATE(3F000)
 			  "ALTER SCHEMA: there is a schema named '%s' in the database", new_name);
 
-	if (mvc_check_dependency(sql, s->base.id, SCHEMA_DEPENDENCY, NULL) == HAS_DEPENDENCY) {
+	if (mvc_check_dependency(sql, s->base.id, SCHEMA_DEPENDENCY, NULL)) {
 		throw(SQL, "sql.rename_schema", "ALTER SCHEMA: unable to"
 			  " rename schema '%s', there are database objects"
 			  " which depend on it", old_name);
@@ -2226,7 +2226,7 @@ SQLrename_schema(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		s = mvc_bind_schema(sql, "sys");
 		assert(s);
 
-		if (!sqlvar_set_string(find_global_var(sql, s, "current_schema"), new_name))
+		if (!sqlvar_set_string(sql->sa, find_global_var(sql, s, "current_schema"), new_name))
 			throw(SQL, "sql.setVariable", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 

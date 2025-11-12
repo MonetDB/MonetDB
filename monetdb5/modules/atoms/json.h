@@ -46,7 +46,7 @@ typedef struct JSON {
 	int free;
 } JSON;
 
-mal_export JSON *JSONparse(const char *j);
+mal_export JSON *JSONparse(allocator *ma, const char *j);
 mal_export void JSONfree(JSON *jt);
 
 #endif /* __JSON_H__ */

@@ -17,7 +17,7 @@
 #include "mal_namespace.h"
 #include "opt_support.h"
 
-extern str optimizer_epilogue(void *ret);
+extern str optimizer_epilogue(Client ctx, void *ret);
 extern str QOToptimize(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 #endif /* _OPTIMIZER_H */

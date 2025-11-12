@@ -18,15 +18,19 @@
 #define OPTisAlias(X) (X->argc == 2 && X->token == ASSIGNsymbol && X->barrier == 0 )
 
 str
-OPTaliasesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+OPTaliasesImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i, j, k = 1, limit, actions = 0;
 	int *alias = 0;
 	str msg = MAL_SUCCEED;
 	InstrPtr p;
+	allocator *ta = mb->ta;
 
 	(void) stk;
-	(void) cntxt;
+	(void) ctx;
+
+	if (MB_LARGE(mb))
+		goto wrapup;
 
 	limit = mb->stop;
 	for (i = 1; i < limit; i++) {
@@ -39,12 +43,15 @@ OPTaliasesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 		goto wrapup;
 	}
 	k = i;
+	allocator_state ta_state = ma_open(ta);
 	if (i < limit) {
-		alias = GDKzalloc(sizeof(int) * mb->vtop);
-		if (alias == NULL)
+		alias = ma_alloc(ta, sizeof(int) * mb->vtop);
+		if (alias == NULL) {
+			ma_close(ta, &ta_state);
 			throw(MAL, "optimizer.aliases", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		}
 		setVariableScope(mb);
-		for (j = 1; j < mb->vtop; j++)
+		for (j = 0; j < mb->vtop; j++)
 			alias[j] = j;
 	}
 	for (; i < limit; i++) {
@@ -54,7 +61,7 @@ OPTaliasesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 			&& getBeginScope(mb, getArg(p, 0)) == i
 			&& getLastUpdate(mb, getArg(p, 1)) <= i) {
 			alias[getArg(p, 0)] = alias[getArg(p, 1)];
-			freeInstruction(p);
+			freeInstruction(mb, p);
 			actions++;
 			k--;
 			mb->stmt[k] = 0;
@@ -68,11 +75,11 @@ OPTaliasesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 		mb->stmt[i] = NULL;
 
 	mb->stop = k;
-	GDKfree(alias);
+	ma_close(ta, &ta_state);
 
 	/* Defense line against incorrect plans */
 	/* Plan is unaffected */
-	// msg = chkTypes(cntxt->usermodule, mb, FALSE);
+	// msg = chkTypes(ctx->usermodule, mb, FALSE);
 	// if ( msg == MAL_SUCCEED)
 	//      msg = chkFlow(mb);
 	// if ( msg == MAL_SUCCEED)

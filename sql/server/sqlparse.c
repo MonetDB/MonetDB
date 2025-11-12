@@ -79,7 +79,7 @@ static mvc *
 mvc_new( bstream *rs, stream *ws) {
 	mvc *m;
 
-	allocator *pa = sa_create(NULL);
+	allocator *pa = create_allocator(NULL, "PA_mvc", false);
 	m = SA_ZNEW(pa, mvc);
 	if (!m)
 		return NULL;
@@ -92,8 +92,8 @@ mvc_new( bstream *rs, stream *ws) {
 
 	m->qc = NULL;
 	m->pa = pa;
-	m->sa = sa_create(m->pa);
-	m->ta = sa_create(m->pa);
+	m->sa = create_allocator(m->pa, "MA_mvc", false);
+	m->ta = create_allocator(m->pa, "TA_mvc", false);
 #ifdef __has_builtin
 #if __has_builtin(__builtin_frame_address)
 	m->sp = (uintptr_t) __builtin_frame_address(0);
@@ -182,17 +182,17 @@ dnode2string(mvc *sql, dnode *n, int expression, char **err, int depth, bool ind
 	char *s = NULL;
 	if (n->type == type_string) {
 		if (n->data.sval)
-			s = sa_strdup(sql->ta, n->data.sval);
+			s = ma_strdup(sql->ta, n->data.sval);
 		else
 			s = "";
 	} else if (n->type == type_int) {
 		char buf[10];
 		snprintf(buf, sizeof(buf), "%d", n->data.i_val);
-		s = sa_strdup(sql->ta, buf);
+		s = ma_strdup(sql->ta, buf);
 	} else if (n->type == type_lng) {
 		char buf[16];
 		snprintf(buf, sizeof(buf), LLFMT, n->data.l_val);
-		s = sa_strdup(sql->ta, buf);
+		s = ma_strdup(sql->ta, buf);
 	} else if (n->type == type_symbol) {
 		s = sp_symbol2string(sql, n->data.sym, expression, err, depth, indent);
 	} else if (n->type == type_list) {
@@ -366,15 +366,15 @@ sp_symbol2string(mvc *sql, symbol *se, int expression, char **err, int depth, bo
 		return res;
 	}
 	case SQL_PARAMETER:
-		return sa_strdup(sql->ta, "?");
+		return ma_strdup(sql->ta, "?");
 	case SQL_NULL:
-		return sa_strdup(sql->ta, "NULL");
+		return ma_strdup(sql->ta, "NULL");
 	case SQL_ATOM:{
 		AtomNode *an = (AtomNode *) se;
 		if (an && an->a)
 			return atom2sql(sql->ta, an->a, sql->timezone);
 		else
-			return sa_strdup(sql->ta, "NULL");
+			return ma_strdup(sql->ta, "NULL");
 	}
 	case SQL_NEXT: {
 		const char *seq = symbol_escape_ident(sql->ta, qname_schema_object(se->data.lval)),
