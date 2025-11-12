@@ -5897,36 +5897,35 @@ literal:
 			sql_subtype t;
 #ifdef HAVE_HGE
 			hge res = 0;
+			hge mask = ((hge) 0xF) << 123;
 #else
 			lng res = 0;
+			lng mask = ((lng) 0xF) << 59;
 #endif
-			/* skip leading '0' */
-			while (i < len && hexa[i] == '0')
-				i++;
-
 			/* we only support positive values that fit in a signed 128-bit type,
 			 * i.e., max. 63/127 bit => < 2^63/2^127 => < 0x800...
 			 * (leading sign (-0x...) is handled separately elsewhere)
 			 */
-			if (len - i < MAX_HEX_DIGITS || (len - i == MAX_HEX_DIGITS && hexa[i] < '8'))
-				while (err == 0 && i < len) {
-					if (hexa[i] == '_') {
-						i++;
-						continue;
-					}
-					res <<= 4;
-					if (isdigit((unsigned char) hexa[i]))
-						res = res + (hexa[i] - '0');
-					else if ('A' <= hexa[i] && hexa[i] <= 'F')
-						res = res + (hexa[i] - 'A' + 10);
-					else if ('a' <= hexa[i] && hexa[i] <= 'f')
-						res = res + (hexa[i] - 'a' + 10);
-					else
-						err = 1;
+			while (err == 0 && i < len) {
+				if (hexa[i] == '_') {
 					i++;
+					continue;
 				}
-			else
-				err = 1;
+				if ((res & mask) != 0) {
+					err = 1;
+					break;
+				}
+				res <<= 4;
+				if (isdigit((unsigned char) hexa[i]))
+					res = res + (hexa[i] - '0');
+				else if ('A' <= hexa[i] && hexa[i] <= 'F')
+					res = res + (hexa[i] - 'A' + 10);
+				else if ('a' <= hexa[i] && hexa[i] <= 'f')
+					res = res + (hexa[i] - 'a' + 10);
+				else
+					err = 1;
+				i++;
+			}
 
 			if (err == 0) {
 				assert(res >= 0);
