@@ -371,11 +371,3 @@ getExceptionMessage(const char *exception)
 		msg += 6;
 	return msg;
 }
-
-inline str
-copyException(allocator *ma, const char *exception)
-{
-	if (exception)
-		return ma ? ma_strdup(ma, exception) : (char *)exception;
-	return NULL;
-}

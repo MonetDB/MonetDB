@@ -664,28 +664,28 @@ tablet_error(READERtask *task, lng idx, lng lineno, int col, const char *msg,
 		} else if (!is_lng_nil(lineno)) {
 			if (!is_int_nil(col)) {
 				if (colnam)
-					task->as->error = copyException(ma, createException(MAL, "sql.copy_from",
+					task->as->error = createException(MAL, "sql.copy_from",
 													  "line " LLFMT ": column %d %s: %s",
-													  lineno, col + 1, colnam, msg));
+													  lineno, col + 1, colnam, msg);
 				else
-					task->as->error = copyException(ma, createException(MAL, "sql.copy_from",
+					task->as->error = createException(MAL, "sql.copy_from",
 													  "line " LLFMT ": column %d: %s",
-													  lineno, col + 1, msg));
+													  lineno, col + 1, msg);
 			} else {
-				task->as->error = copyException(ma, createException(MAL, "sql.copy_from",
-												  "line " LLFMT ": %s", lineno, msg));
+				task->as->error = createException(MAL, "sql.copy_from",
+												  "line " LLFMT ": %s", lineno, msg);
 			}
 		} else {
 			if (!is_int_nil(col)) {
 				if (colnam)
-					task->as->error = copyException(ma, createException(MAL, "sql.copy_from",
+					task->as->error = createException(MAL, "sql.copy_from",
 													  "column %d %s: %s", col + 1, colnam,
-													  msg));
+													  msg);
 				else
-					task->as->error = copyException(ma, createException(MAL, "sql.copy_from",
-													  "column %d: %s", col + 1, msg));
+					task->as->error = createException(MAL, "sql.copy_from",
+													  "column %d: %s", col + 1, msg);
 			} else {
-				task->as->error = copyException(ma, createException(MAL, "sql.copy_from", "%s", msg));
+				task->as->error = createException(MAL, "sql.copy_from", "%s", msg);
 			}
 		}
 	}
@@ -1603,7 +1603,6 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out,
 	int threads = 1;
 	lng tio, t1 = 0;
 	char name[MT_NAME_LEN];
-	allocator *ma = cntxt->curprg->def->ma;
 	allocator *ta = MT_thread_getallocator();
 	allocator_state ta_state = ma_open(ta);
 
@@ -1692,8 +1691,8 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out,
 		task.fields[i] = ma_alloc(ta, sizeof(char *) * task.limit);
 		if (task.fields[i] == NULL) {
 			if (task.as->error == NULL)
-				as->error = copyException(ma, createException(MAL, "sql.copy_from",
-															  SQLSTATE(HY013) MAL_MALLOC_FAIL));
+				as->error = createException(MAL, "sql.copy_from",
+											SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto bailout;
 		}
 		task.cols[i] = (int) (i + 1);	/* to distinguish non initialized later with zero */
@@ -1934,7 +1933,6 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out,
 /*		TRC_DEBUG(MAL_SERVER, "Shut down reader\n");*/
 		MT_sema_up(&task.producer);
 	}
-	MT_join_thread(task.tid);
 
 /*	TRC_DEBUG(MAL_SERVER, "Activate endofcopy\n");*/
 
@@ -1946,8 +1944,21 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out,
 	for (j = 0; j < threads; j++)
 		MT_sema_down(&ptask[j].reply);
 
+	/* it may be that there was an error which may have been produced by
+	 * one of the worker threads; if so, copy the error message to our
+	 * own exception buffer since the worker thread's exception buffer
+	 * will be destroyed when we join the thread */
+	if (as->error) {
+		char *msg = MT_thread_get_exceptbuf();
+		if (as->error != msg) {
+			strcpy_len(msg, as->error, GDKMAXERRLEN);
+			as->error = msg;
+		}
+	}
+
 /*	TRC_DEBUG(MAL_SERVER, "Kill the workers\n");*/
 
+	MT_join_thread(task.tid);
 	for (j = 0; j < threads; j++) {
 		MT_join_thread(ptask[j].tid);
 		// GDKfree(ptask[j].cols);

@@ -707,7 +707,12 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 			}
 		}
 		if (as.error) {
-			if( !best) msg = createException(SQL, "sql.copy_from", SQLSTATE(42000) "Failed to import table '%s', %s", t->base.name, getExceptionMessage(as.error));
+			if (!best) {
+				allocator *ta = MT_thread_getallocator();
+				allocator_state ta_state = ma_open(ta);
+				msg = createException(SQL, "sql.copy_from", SQLSTATE(42000) "Failed to import table '%s', %s", t->base.name, ma_strdup(ta, getExceptionMessage(as.error)));
+				ma_close(ta, &ta_state);
+			}
 			freeException(as.error);
 			as.error = NULL;
 		}
