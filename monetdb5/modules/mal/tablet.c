@@ -655,8 +655,6 @@ tablet_error(READERtask *task, lng idx, lng lineno, int col, const char *msg,
 {
 	assert(is_int_nil(col) || col >= 0);
 	assert(is_lng_nil(lineno) || lineno >= 1);
-	allocator *ma = task->cntxt->curprg->def->ma;
-	assert(ma);
 	MT_lock_set(&errorlock);
 	if (task->cntxt->error_row != NULL
 		&& (BUNappend(task->cntxt->error_row, &lineno, false) != GDK_SUCCEED
