@@ -60,7 +60,7 @@ mal_export str createMalException(MalBlkPtr, int, enum malexception,
 	__attribute__((__malloc__(freeException, 1)))
 	__attribute__((__format__(__printf__, 4, 5)))
 	__attribute__((__returns_nonnull__));
-mal_export char *concatErrors(allocator *ma, char *err1, const char *err2)
+mal_export char *concatErrors(const char *err1, const char *err2)
 	__attribute__((__nonnull__(1, 2)))
 	__attribute__((__returns_nonnull__));
 mal_export bool isExceptionVariable(const char *nme);

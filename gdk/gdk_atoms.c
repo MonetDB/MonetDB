@@ -380,30 +380,32 @@ ATOMheap(int t, Heap *hp, size_t cap)
 #define LINE_LEN	60
 
 int
-ATOMprint(allocator *ma, int t, const void *p, stream *s)
+ATOMprint(int t, const void *p, stream *s)
 {
 	ssize_t (*tostr) (allocator *ma, char **, size_t *, const void *, bool);
 	ssize_t res;
 
 	if (p && t >= 0 && t < GDKatomcnt && (tostr = BATatoms[t].atomToStr)) {
 		size_t sz;
+		allocator *ta = MT_thread_getallocator();
+		allocator_state ta_state = ma_open(ta);
 
 		if (t < TYPE_date) {
 			char buf[dblStrlen], *addr = buf;	/* use memory from stack */
 
 			sz = dblStrlen;
-			res = (*tostr) (ma, &addr, &sz, p, true);
+			res = (*tostr) (ta, &addr, &sz, p, true);
 			if (res > 0)
 				res = mnstr_write(s, buf, (size_t) res, 1);
 		} else {
 			str buf = NULL;
 
 			sz = 0;
-			res = (*tostr) (ma, &buf, &sz, p, true);
+			res = (*tostr) (ta, &buf, &sz, p, true);
 			if (res > 0)
 				res = mnstr_write(s, buf, (size_t) res, 1);
-			// GDKfree(buf);
 		}
+		ma_close(ta, &ta_state);
 	} else {
 		res = mnstr_write(s, "nil", 1, 3);
 	}

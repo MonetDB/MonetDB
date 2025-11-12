@@ -51,16 +51,18 @@ isExceptionVariable(const char *nme)
 static char M5OutOfMemory[] = MAL_MALLOC_FAIL;
 
 char *
-concatErrors(allocator *ma, char *err1, const char *err2)
+concatErrors(const char *err1, const char *err2)
 {
-	size_t len = strlen(err1);
-	bool addnl = err1[len - 1] != '\n';
-	len += strlen(err2) + 1 + addnl;
-	char *new = ma_alloc(ma, len);
-	if (new == NULL)
-		return err1;
-	strconcat_len(new, len, err1, addnl ? "\n" : "", err2, NULL);
-	freeException(err1);
+	/* in case either one of the input errors comes from the exception
+	 * buffer, we make temporary copies of both */
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
+	char *err1cp = ma_strdup(ta, err1);
+	char *err2cp = ma_strdup(ta, err2);
+	bool addnl = err1[strlen(err1cp) - 1] != '\n';
+	char *new = MT_thread_get_exceptbuf();
+	strconcat_len(new, GDKMAXERRLEN, err1cp, addnl ? "\n" : "", err2cp, NULL);
+	ma_close(ta, &ta_state);
 	return new;
 }
 
