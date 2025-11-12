@@ -4473,12 +4473,13 @@ sql_trans_commit(sql_trans *tr)
 				MT_lock_unset(&store->commit); /* release the commit log when flushing to disk */
 			if (ok == LOG_OK)
 				ok = store->logger_api.log_tflush(store, log_file_id, commit_ts); /* flush/sync */
-			if (!flush)
-				MT_lock_set(&store->commit); /* release the commit log when flushing to disk */
-			if (flush)
+			if (flush) {
 				MT_lock_unset(&store->flush);
+				MT_lock_unset(&store->commit);
+			}
+		} else {
+			MT_lock_unset(&store->commit);
 		}
-		MT_lock_unset(&store->commit);
 		if (ok == LOG_OK) {
 			list_destroy(tr->changes);
 			tr->changes = NULL;
