@@ -594,20 +594,23 @@ transformPolygon(GEOSGeometry **transformedGeometry, const GEOSGeometry *geosGeo
 }
 
 str
-transformMultiGeometry(allocator *ma, GEOSGeometry **transformedGeometry, const GEOSGeometry *geosGeometry, PJ *P, int srid, int geometryType)
+transformMultiGeometry(GEOSGeometry **transformedGeometry, const GEOSGeometry *geosGeometry, PJ *P, int srid, int geometryType)
 {
-	assert(ma);
 	int geometriesNum, subGeometryType, i;
 	GEOSGeometry **transformedMultiGeometries = NULL;
 	const GEOSGeometry *multiGeometry = NULL;
 	str ret = MAL_SUCCEED;
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
 
 	geometriesNum = GEOSGetNumGeometries_r(geoshandle, geosGeometry);
 	if (geometriesNum == -1)
 		throw(MAL, "geom.Transform", SQLSTATE(38000) "Geos operation GEOSGetNumGeometries failed");
-	transformedMultiGeometries = ma_alloc(ma, geometriesNum * sizeof(GEOSGeometry *));
-	if (transformedMultiGeometries == NULL)
+	transformedMultiGeometries = ma_alloc(ta, geometriesNum * sizeof(GEOSGeometry *));
+	if (transformedMultiGeometries == NULL) {
+		ma_close(ta, &ta_state);
 		throw(MAL, "geom.Transform", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
 
 	for (i = 0; i < geometriesNum; i++) {
 		if ((multiGeometry = GEOSGetGeometryN_r(geoshandle, geosGeometry, i)) == NULL)
@@ -637,7 +640,7 @@ transformMultiGeometry(allocator *ma, GEOSGeometry **transformedGeometry, const 
 		if (ret != MAL_SUCCEED) {
 			while (--i >= 0)
 				GEOSGeom_destroy_r(geoshandle, transformedMultiGeometries[i]);
-			//GDKfree(transformedMultiGeometries);
+			ma_close(ta, &ta_state);
 			*transformedGeometry = NULL;
 			return ret;
 		}
@@ -651,7 +654,7 @@ transformMultiGeometry(allocator *ma, GEOSGeometry **transformedGeometry, const 
 			GEOSGeom_destroy_r(geoshandle, transformedMultiGeometries[i]);
 		ret = createException(MAL, "geom.Transform", SQLSTATE(38000) "Geos operation GEOSGeom_createCollection failed");
 	}
-	//GDKfree(transformedMultiGeometries);
+	ma_close(ta, &ta_state);
 
 	return ret;
 }
@@ -730,7 +733,7 @@ wkbTransform(Client ctx, wkb **transformedWKB, wkb **geomWKB, int *srid_src, int
 	case wkbMultiPoint_mdb:
 	case wkbMultiLineString_mdb:
 	case wkbMultiPolygon_mdb:
-		ret = transformMultiGeometry(ma, &transformedGeosGeometry, geosGeometry, P, *srid_dst, geometryType);
+		ret = transformMultiGeometry(&transformedGeosGeometry, geosGeometry, P, *srid_dst, geometryType);
 		break;
 	default:
 		transformedGeosGeometry = NULL;
@@ -973,29 +976,32 @@ forceDimPolygon(GEOSGeometry **outGeometry, const GEOSGeometry *geosGeometry, in
 	return ret;
 }
 
-static str forceDimGeometry(allocator *, GEOSGeometry **outGeometry, const GEOSGeometry *geosGeometry, int dim);
+static str forceDimGeometry(GEOSGeometry **outGeometry, const GEOSGeometry *geosGeometry, int dim);
 static str
-forceDimMultiGeometry(allocator *ma, GEOSGeometry **outGeometry, const GEOSGeometry *geosGeometry, int dim)
+forceDimMultiGeometry(GEOSGeometry **outGeometry, const GEOSGeometry *geosGeometry, int dim)
 {
-	assert(ma);
 	int geometriesNum, i;
 	GEOSGeometry **transformedMultiGeometries = NULL;
 	str err = MAL_SUCCEED;
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
 
 	geometriesNum = GEOSGetNumGeometries_r(geoshandle, geosGeometry);
-	transformedMultiGeometries = ma_alloc(ma, geometriesNum * sizeof(GEOSGeometry *));
-	if (transformedMultiGeometries == NULL)
+	transformedMultiGeometries = ma_alloc(ta, geometriesNum * sizeof(GEOSGeometry *));
+	if (transformedMultiGeometries == NULL) {
+		ma_close(ta, &ta_state);
 		throw(MAL, "geom.ForceDim", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
 
 	//In order to have the geometries in the output in the same order as in the input
 	//we should read them and put them in the area in reverse order
 	for (i = geometriesNum - 1; i >= 0; i--) {
 		const GEOSGeometry *multiGeometry = GEOSGetGeometryN_r(geoshandle, geosGeometry, i);
 
-		if ((err = forceDimGeometry(ma, &transformedMultiGeometries[i], multiGeometry, dim)) != MAL_SUCCEED) {
+		if ((err = forceDimGeometry(&transformedMultiGeometries[i], multiGeometry, dim)) != MAL_SUCCEED) {
 			while (++i < geometriesNum)
 				GEOSGeom_destroy_r(geoshandle, transformedMultiGeometries[i]);
-			//GDKfree(transformedMultiGeometries);
+			ma_close(ta, &ta_state);
 			*outGeometry = NULL;
 			return err;
 		}
@@ -1007,13 +1013,13 @@ forceDimMultiGeometry(allocator *ma, GEOSGeometry **outGeometry, const GEOSGeome
 			GEOSGeom_destroy_r(geoshandle, transformedMultiGeometries[i]);
 		err = createException(MAL, "geom.ForceDim", SQLSTATE(38000) "Geos operation GEOSGeom_createCollection failed");
 	}
-	//GDKfree(transformedMultiGeometries);
+	ma_close(ta, &ta_state);
 
 	return err;
 }
 
 static str
-forceDimGeometry(allocator *ma, GEOSGeometry **outGeometry, const GEOSGeometry *geosGeometry, int dim)
+forceDimGeometry(GEOSGeometry **outGeometry, const GEOSGeometry *geosGeometry, int dim)
 {
 	int geometryType = GEOSGeomTypeId_r(geoshandle, geosGeometry) + 1;
 
@@ -1030,7 +1036,7 @@ forceDimGeometry(allocator *ma, GEOSGeometry **outGeometry, const GEOSGeometry *
 	case wkbMultiLineString_mdb:
 	case wkbMultiPolygon_mdb:
 	case wkbGeometryCollection_mdb:
-		return forceDimMultiGeometry(ma, outGeometry, geosGeometry, dim);
+		return forceDimMultiGeometry(outGeometry, geosGeometry, dim);
 	default:
 		throw(MAL, "geom.ForceDim", SQLSTATE(38000) "Geos operation %s unknown geometry type", geom_type2str(geometryType, 0));
 	}
@@ -1056,7 +1062,7 @@ wkbForceDim(Client ctx, wkb **outWKB, wkb **geomWKB, int *dim)
 		throw(MAL, "geom.ForceDim", SQLSTATE(38000) "Geos operation wkb2geos failed");
 	}
 
-	if ((err = forceDimGeometry(ma, &outGeometry, geosGeometry, *dim)) != MAL_SUCCEED) {
+	if ((err = forceDimGeometry(&outGeometry, geosGeometry, *dim)) != MAL_SUCCEED) {
 		GEOSGeom_destroy_r(geoshandle, geosGeometry);
 		*outWKB = NULL;
 		return err;
@@ -2044,22 +2050,26 @@ wkbDump(Client ctx, bat *idBAT_id, bat *geomBAT_id, wkb **geomWKB)
 }
 
 static str
-dumpPointsPoint(allocator *ma, BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry, unsigned int *lvl, const char *path)
+dumpPointsPoint(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry, unsigned int *lvl, const char *path)
 {
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
 	char *newPath = NULL;
 	size_t pathLength = strlen(path);
-	wkb *pointWKB = geos2wkb(ma, &(wkb*){NULL}, &(size_t){0}, geosGeometry);
+	wkb *pointWKB = geos2wkb(ta, &(wkb*){NULL}, &(size_t){0}, geosGeometry);
 	const int lvlDigitsNum = 10;	//MAX_UNIT = 4,294,967,295
 	str err = MAL_SUCCEED;
 
-	if (pointWKB == NULL)
+	if (pointWKB == NULL) {
+		ma_close(ta, &ta_state);
 		throw(MAL, "geom.Dump", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
 
 	(*lvl)++;
 	size_t newLen = pathLength + lvlDigitsNum + 1;
-	newPath = ma_alloc(ma, newLen);
+	newPath = ma_alloc(ta, newLen);
 	if (newPath == NULL) {
-		////GDKfree(pointWKB);
+		ma_close(ta, &ta_state);
 		throw(MAL, "geom.Dump", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	snprintf(newPath, newLen, "%s%u", path, *lvl);
@@ -2068,8 +2078,7 @@ dumpPointsPoint(allocator *ma, BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geo
 	    BUNappend(geomBAT, pointWKB, false) != GDK_SUCCEED)
 		err = createException(MAL, "geom.Dump", SQLSTATE(38000) "Geos operation BUNappend failed");
 
-	//GDKfree(newPath);
-	////GDKfree(pointWKB);
+	ma_close(ta, &ta_state);
 
 	return err;
 }
@@ -2096,7 +2105,7 @@ dumpPointsLineString(Client ctx, BAT *idBAT, BAT *geomBAT, const GEOSGeometry *g
 		if (pointGeometry == NULL)
 			throw(MAL, "geom.DumpPoints", SQLSTATE(38000) "Geos operation GEOSGeomGetPointN failed");
 
-		err = dumpPointsPoint(ma, idBAT, geomBAT, pointGeometry, &lvl, path);
+		err = dumpPointsPoint(idBAT, geomBAT, pointGeometry, &lvl, path);
 		GEOSGeom_destroy_r(geoshandle, pointGeometry);
 	}
 
@@ -2203,12 +2212,11 @@ dumpPointsGeometry(Client ctx, BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geo
 {
 	int geometryType = GEOSGeomTypeId_r(geoshandle, geosGeometry) + 1;
 	unsigned int lvl = 0;
-	allocator *ma = ctx->curprg->def->ma;
 
 	//check the type of the geometry
 	switch (geometryType) {
 	case wkbPoint_mdb:
-		return dumpPointsPoint(ma, idBAT, geomBAT, geosGeometry, &lvl, path);
+		return dumpPointsPoint(idBAT, geomBAT, geosGeometry, &lvl, path);
 	case wkbLineString_mdb:
 	case wkbLinearRing_mdb:
 		return dumpPointsLineString(ctx, idBAT, geomBAT, geosGeometry, path);

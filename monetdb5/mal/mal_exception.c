@@ -51,16 +51,18 @@ isExceptionVariable(const char *nme)
 static char M5OutOfMemory[] = MAL_MALLOC_FAIL;
 
 char *
-concatErrors(allocator *ma, char *err1, const char *err2)
+concatErrors(const char *err1, const char *err2)
 {
-	size_t len = strlen(err1);
-	bool addnl = err1[len - 1] != '\n';
-	len += strlen(err2) + 1 + addnl;
-	char *new = ma_alloc(ma, len);
-	if (new == NULL)
-		return err1;
-	strconcat_len(new, len, err1, addnl ? "\n" : "", err2, NULL);
-	freeException(err1);
+	/* in case either one of the input errors comes from the exception
+	 * buffer, we make temporary copies of both */
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
+	char *err1cp = ma_strdup(ta, err1);
+	char *err2cp = ma_strdup(ta, err2);
+	bool addnl = err1[strlen(err1cp) - 1] != '\n';
+	char *new = MT_thread_get_exceptbuf();
+	strconcat_len(new, GDKMAXERRLEN, err1cp, addnl ? "\n" : "", err2cp, NULL);
+	ma_close(ta, &ta_state);
 	return new;
 }
 
@@ -71,12 +73,13 @@ concatErrors(allocator *ma, char *err1, const char *err2)
  */
 __attribute__((__format__(__printf__, 3, 0), __returns_nonnull__))
 static str
-createExceptionInternal(enum malexception type, const char *fcn,
+createExceptionInternal(bool append, enum malexception type, const char *fcn,
 						const char *format, va_list ap)
 {
 	int len;
 	char *msg;
 	va_list ap2;
+	size_t buflen = GDKMAXERRLEN;
 
 	va_copy(ap2, ap);			/* we need to use it twice */
 	len = vsnprintf(NULL, 0, format, ap);	/* count necessary length */
@@ -86,19 +89,26 @@ createExceptionInternal(enum malexception type, const char *fcn,
 	}
 	msg = MT_thread_get_exceptbuf();
 	if (msg != NULL) {
+		if (append) {
+			size_t mlen = strlen(msg);
+			msg += mlen;
+			buflen -= mlen;
+			if (buflen < 64)
+				return MT_thread_get_exceptbuf();
+		}
 		/* the calls below succeed: the arguments have already been checked */
-		size_t msglen = strconcat_len(msg, GDKMAXERRLEN, exceptionNames[type],
+		size_t msglen = strconcat_len(msg, buflen, exceptionNames[type],
 									  ":", fcn, ":", NULL);
-		if (len > 0 && msglen < GDKMAXERRLEN) {
-			int prlen = vsnprintf(msg + msglen, GDKMAXERRLEN - msglen, format, ap2);
-			if (msglen + prlen >= GDKMAXERRLEN)
-				strcpy(msg + GDKMAXERRLEN - 5, "...\n");
+		if (len > 0 && msglen < buflen) {
+			int prlen = vsnprintf(msg + msglen, buflen - msglen, format, ap2);
+			if (msglen + prlen >= buflen)
+				strcpy(msg + buflen - 5, "...\n");
 		}
 		char *q = msg + strlen(msg);
 		if (q[-1] != '\n') {
 			/* make sure message ends with newline */
-			if (q >= msg + GDKMAXERRLEN - 1) {
-				strcpy(msg + GDKMAXERRLEN - 5, "...\n");
+			if (q >= msg + buflen - 1) {
+				strcpy(msg + buflen - 5, "...\n");
 			} else {
 				*q++ = '\n';
 				*q = '\0';
@@ -109,6 +119,7 @@ createExceptionInternal(enum malexception type, const char *fcn,
 			TRC_ERROR(MAL_SERVER, "%.*s\n", (int) (p - q), q);
 		if (*q)
 			TRC_ERROR(MAL_SERVER, "%s\n", q);
+		msg = MT_thread_get_exceptbuf();
 	} else {
 		msg = M5OutOfMemory;
 	}
@@ -169,7 +180,21 @@ createException(enum malexception type, const char *fcn, const char *format,
 		return ret;
 	}
 	va_start(ap, format);
-	ret = createExceptionInternal(type, fcn, format, ap);
+	ret = createExceptionInternal(false, type, fcn, format, ap);
+	va_end(ap);
+	GDKclrerr();
+
+	assert(ret);
+	return ret;
+}
+
+str
+appendException(enum malexception type, const char *fcn, const char *format,
+				...)
+{
+	va_list ap;
+	va_start(ap, format);
+	str ret = createExceptionInternal(true, type, fcn, format, ap);
 	va_end(ap);
 	GDKclrerr();
 
@@ -368,12 +393,4 @@ getExceptionMessage(const char *exception)
 		(isdigit((unsigned char) msg[4]) || (msg[4] >= 'A' && msg[4] <= 'Z')))
 		msg += 6;
 	return msg;
-}
-
-inline str
-copyException(allocator *ma, const char *exception)
-{
-	if (exception)
-		return ma ? ma_strdup(ma, exception) : (char *)exception;
-	return NULL;
 }

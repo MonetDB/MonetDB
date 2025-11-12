@@ -580,7 +580,7 @@ typedef struct _binbat_v1 {
 } binbat;
 
 static str
-RMTinternalcopyfrom(allocator *ma, BAT **ret, char *hdr, stream *in, bool must_flush, int *typemap)
+RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in, bool must_flush, int *typemap)
 {
 	binbat bb = { 0, 0, 0, false, false, false, false, false, 0, 0, 0 };
 	char *nme = NULL;
@@ -599,6 +599,8 @@ RMTinternalcopyfrom(allocator *ma, BAT **ret, char *hdr, stream *in, bool must_f
 	if (*hdr++ != '{')
 		throw(MAL, "remote.bincopyfrom",
 			  "illegal input, not a JSON header (got '%s')", hdr - 1);
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
 	while (*hdr != '\0') {
 		switch (*hdr) {
 		case '"':
@@ -615,9 +617,11 @@ RMTinternalcopyfrom(allocator *ma, BAT **ret, char *hdr, stream *in, bool must_f
 			break;
 		case ',':
 		case '}':
-			if (val == NULL)
+			if (val == NULL) {
+				ma_close(ta, &ta_state);
 				throw(MAL, "remote.bincopyfrom",
 					  "illegal input, JSON value missing");
+			}
 			*hdr = '\0';
 
 			lvp = &lv;
@@ -635,40 +639,52 @@ RMTinternalcopyfrom(allocator *ma, BAT **ret, char *hdr, stream *in, bool must_f
 			} else {
 				/* all values should be non-negative, so we check that
 				 * here as well */
-				if (lngFromStr(ma, val, &len, &lvp, true) < 0 ||
-					lv < 0 /* includes lng_nil */ )
+				if (lngFromStr(ta, val, &len, &lvp, true) < 0 ||
+					lv < 0 /* includes lng_nil */ ) {
+					ma_close(ta, &ta_state);
 					throw(MAL, "remote.bincopyfrom",
 						  "bad %s value: %s", nme, val);
+				}
 
 				/* deal with nme and val */
 				if (strcmp(nme, "version") == 0) {
-					if (lv != 1)
+					if (lv != 1) {
+						ma_close(ta, &ta_state);
 						throw(MAL, "remote.bincopyfrom",
 							  "unsupported version: %s", val);
+					}
 				} else if (strcmp(nme, "hseqbase") == 0) {
 #if SIZEOF_OID < SIZEOF_LNG
-					if (lv > GDK_oid_max)
+					if (lv > GDK_oid_max) {
+						ma_close(ta, &ta_state);
 						throw(MAL, "remote.bincopyfrom",
 							  "bad %s value: %s", nme, val);
+					}
 #endif
 					bb.Hseqbase = (oid) lv;
 				} else if (strcmp(nme, "ttype") == 0) {
-					if (lv < 0 || lv >= MAXTYPE)
+					if (lv < 0 || lv >= MAXTYPE) {
+						ma_close(ta, &ta_state);
 						throw(MAL, "remote.bincopyfrom",
 							  "bad %s value: GDK atom number %s doesn't exist",
 							  nme, val);
+					}
 					if (lv >= 0 && typemap)
 						lv = typemap[lv];
-					if (lv < 0)
+					if (lv < 0) {
+						ma_close(ta, &ta_state);
 						throw(MAL, "remote.bincopyfrom",
 							  "bad %s value: GDK atom number %s doesn't exist",
 							  nme, val);
+					}
 					bb.Ttype = (int) lv;
 				} else if (strcmp(nme, "tseqbase") == 0) {
 #if SIZEOF_OID < SIZEOF_LNG
-					if (lv > GDK_oid_max)
+					if (lv > GDK_oid_max) {
+						ma_close(ta, &ta_state);
 						throw(MAL, "remote.bincopyfrom",
 							  "bad %s value: %s", nme, val);
+					}
 #endif
 					bb.Tseqbase = (oid) lv;
 				} else if (strcmp(nme, "tsorted") == 0) {
@@ -682,15 +698,18 @@ RMTinternalcopyfrom(allocator *ma, BAT **ret, char *hdr, stream *in, bool must_f
 				} else if (strcmp(nme, "tdense") == 0) {
 					bb.Tdense = lv != 0;
 				} else if (strcmp(nme, "size") == 0) {
-					if (lv > (lng) BUN_MAX)
+					if (lv > (lng) BUN_MAX) {
+						ma_close(ta, &ta_state);
 						throw(MAL, "remote.bincopyfrom",
 							  "bad %s value: %s", nme, val);
+					}
 					bb.size = (BUN) lv;
 				} else if (strcmp(nme, "tailsize") == 0) {
 					bb.tailsize = (size_t) lv;
 				} else if (strcmp(nme, "theapsize") == 0) {
 					bb.theapsize = (size_t) lv;
 				} else {
+					ma_close(ta, &ta_state);
 					throw(MAL, "remote.bincopyfrom",
 						  "unknown element: %s", nme);
 				}
@@ -700,6 +719,7 @@ RMTinternalcopyfrom(allocator *ma, BAT **ret, char *hdr, stream *in, bool must_f
 		}
 		hdr++;
 	}
+	ma_close(ta, &ta_state);
 
 	b = COLnew2(bb.Hseqbase, bb.Ttype, bb.size, TRANSIENT,
 				bb.size > 0 ? (uint16_t) (bb.tailsize / bb.size) : 0);
@@ -899,7 +919,7 @@ RMTget(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			return tmp;
 		}
 
-		if ((tmp = RMTinternalcopyfrom(mb->ma, &b, buf, sin, true, c->typemap)) != MAL_SUCCEED) {
+		if ((tmp = RMTinternalcopyfrom(&b, buf, sin, true, c->typemap)) != MAL_SUCCEED) {
 			MT_lock_unset(&c->lock);
 			return (tmp);
 		}
@@ -1401,7 +1421,7 @@ RMTexec(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				BAT *b = NULL;
 
 				if ((tmp = RMTreadbatheader(sin, buf)) != MAL_SUCCEED ||
-					(tmp = RMTinternalcopyfrom(mb->ma, &b, buf, sin, i == fields - 1, c->typemap)) != MAL_SUCCEED) {
+					(tmp = RMTinternalcopyfrom(&b, buf, sin, i == fields - 1, c->typemap)) != MAL_SUCCEED) {
 					break;
 				}
 
@@ -1614,7 +1634,7 @@ RMTbincopyfrom(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "remote.bincopyfrom", "expected JSON header");
 
 	ctx->fdin->buf[ctx->fdin->len] = '\0';
-	err = RMTinternalcopyfrom(mb->ma, &b,
+	err = RMTinternalcopyfrom(&b,
 			&ctx->fdin->buf[ctx->fdin->pos], ctx->fdin->s, true, NULL /* library should be compatible */);
 	/* skip the JSON line */
 	ctx->fdin->pos = ++ctx->fdin->len;

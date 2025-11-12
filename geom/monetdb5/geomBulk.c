@@ -720,14 +720,13 @@ wkbMBR_bat(Client ctx, bat *outBAT_id, bat *inBAT_id)
 str
 wkbTransform_bat(Client ctx, bat *outBAT_id, bat *inBAT_id, int *srid_src, int *srid_dst, char **proj4_src_str, char **proj4_dst_str)
 {
-	allocator *ma = ctx->curprg->def->ma;;
-	return wkbTransform_bat_cand(ma, outBAT_id,inBAT_id,NULL,srid_src,srid_dst,proj4_src_str,proj4_dst_str);
+	(void) ctx;
+	return wkbTransform_bat_cand(outBAT_id,inBAT_id,NULL,srid_src,srid_dst,proj4_src_str,proj4_dst_str);
 }
 
 str
-wkbTransform_bat_cand(allocator *ma, bat *outBAT_id, bat *inBAT_id, bat *s_id, int *srid_src, int *srid_dst, char **proj4_src_str, char **proj4_dst_str)
+wkbTransform_bat_cand(bat *outBAT_id, bat *inBAT_id, bat *s_id, int *srid_src, int *srid_dst, char **proj4_src_str, char **proj4_dst_str)
 {
-	(void) ma;
 #ifndef HAVE_PROJ
 	*outBAT_id = 0;
 	(void) inBAT_id;
@@ -824,7 +823,7 @@ wkbTransform_bat_cand(allocator *ma, bat *outBAT_id, bat *inBAT_id, bat *s_id, i
 		case wkbMultiPoint_mdb:
 		case wkbMultiLineString_mdb:
 		case wkbMultiPolygon_mdb:
-			err = transformMultiGeometry(ma, &transformedGeosGeometry, geosGeometry, P, *srid_dst, geometryType);
+			err = transformMultiGeometry(&transformedGeosGeometry, geosGeometry, P, *srid_dst, geometryType);
 			break;
 		default:
 			transformedGeosGeometry = NULL;
@@ -832,16 +831,19 @@ wkbTransform_bat_cand(allocator *ma, bat *outBAT_id, bat *inBAT_id, bat *s_id, i
 		}
 
 		if (err == MAL_SUCCEED && transformedGeosGeometry) {
+			allocator *ta = MT_thread_getallocator();
+			allocator_state ta_state = ma_open(ta);
 			/* set the new srid */
 			GEOSSetSRID_r(geoshandle, transformedGeosGeometry, *srid_dst);
 			/* get the wkb */
-			if ((transformedWKB = geos2wkb(ma, &(wkb*){NULL}, &(size_t){0}, transformedGeosGeometry)) == NULL)
+			if ((transformedWKB = geos2wkb(ta, &(wkb*){NULL}, &(size_t){0}, transformedGeosGeometry)) == NULL)
 				err = createException(MAL, "batgeom.Transform", SQLSTATE(38000) "Geos operation geos2wkb failed");
 			else {
 				if (BUNappend(outBAT, transformedWKB, false) != GDK_SUCCEED) {
 					err = createException(MAL, "batgeom.Transform", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				}
 			}
+			ma_close(ta, &ta_state);
 
 			/* destroy the geos geometries */
 			GEOSGeom_destroy_r(geoshandle, transformedGeosGeometry);

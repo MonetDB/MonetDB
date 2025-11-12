@@ -661,7 +661,7 @@ convertimpl_msk(flt)
 convertimpl_msk(dbl)
 
 static BUN
-convert_any_str(allocator *ma, BATiter *bi, BAT *bn, struct canditer *restrict ci)
+convert_any_str(BATiter *bi, BAT *bn, struct canditer *restrict ci)
 {
 	int tp = bi->type;
 	oid candoff = bi->b->hseqbase;
@@ -674,6 +674,8 @@ convert_any_str(allocator *ma, BATiter *bi, BAT *bn, struct canditer *restrict c
 	ssize_t (*atomtostr)(allocator *ma, str *, size_t *, const void *, bool) = BATatoms[tp].atomToStr;
 	bool (*atomeq)(const void *, const void *) = ATOMequal(tp);
 	oid x;
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
 
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 
@@ -700,7 +702,7 @@ convert_any_str(allocator *ma, BATiter *bi, BAT *bn, struct canditer *restrict c
 					goto bailout;
 				}
 			} else {
-				if ((*atomtostr)(ma, &dst, &len, src, false) < 0 ||
+				if ((*atomtostr)(ta, &dst, &len, src, false) < 0 ||
 				    tfastins_nocheckVAR(bn, i, dst) != GDK_SUCCEED) {
 					goto bailout;
 				}
@@ -723,24 +725,24 @@ convert_any_str(allocator *ma, BATiter *bi, BAT *bn, struct canditer *restrict c
 				if (tfastins_nocheckVAR(bn, i, str_nil) != GDK_SUCCEED)
 					goto bailout;
 			} else {
-				if ((*atomtostr)(ma, &dst, &len, src, false) < 0)
+				if ((*atomtostr)(ta, &dst, &len, src, false) < 0)
 					goto bailout;
 				if (tfastins_nocheckVAR(bn, i, dst) != GDK_SUCCEED)
 					goto bailout;
 			}
 		}
 	}
-	// GDKfree(dst);
+	ma_close(ta, &ta_state);
 	TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx));
 	BATsetcount(bn, ci->ncand);
 	return nils;
   bailout:
-	// GDKfree(dst);
+	ma_close(ta, &ta_state);
 	return BUN_NONE + 2;
 }
 
 static BUN
-convert_str_var(allocator *ma, BATiter *bi, BAT *bn, struct canditer *restrict ci)
+convert_str_var(BATiter *bi, BAT *bn, struct canditer *restrict ci)
 {
 	int tp = bn->ttype;
 	oid candoff = bi->b->hseqbase;
@@ -752,6 +754,8 @@ convert_str_var(allocator *ma, BATiter *bi, BAT *bn, struct canditer *restrict c
 	const char *restrict src;
 	ssize_t (*atomfromstr)(allocator *ma, const char *, size_t *, ptr *, bool) = BATatoms[tp].atomFromStr;
 	oid x;
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
 
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 
@@ -765,24 +769,24 @@ convert_str_var(allocator *ma, BATiter *bi, BAT *bn, struct canditer *restrict c
 			}
 		} else {
 			ssize_t l;
-			if ((l = (*atomfromstr)(ma, src, &len, &dst, false)) < 0 ||
+			if ((l = (*atomfromstr)(ta, src, &len, &dst, false)) < 0 ||
 			    l < (ssize_t) strlen(src) ||
 			    tfastins_nocheckVAR(bn, i, dst) != GDK_SUCCEED) {
 				goto bailout;
 			}
 		}
 	}
-	// GDKfree(dst);
+	ma_close(ta, &ta_state);
 	TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx));
 	BATsetcount(bn, ci->ncand);
 	return nils;
   bailout:
-	// GDKfree(dst);
+	ma_close(ta, &ta_state);
 	return BUN_NONE + 2;
 }
 
 static BUN
-convert_str_fix(allocator *ma, BATiter *bi, int tp, void *restrict dst,
+convert_str_fix(BATiter *bi, int tp, void *restrict dst,
 		struct canditer *restrict ci, oid candoff)
 {
 	BUN nils = 0;
@@ -822,6 +826,8 @@ convert_str_fix(allocator *ma, BATiter *bi, int tp, void *restrict dst,
 	}
 
 	bool (*atomeq)(const void *, const void *) = ATOMequal(tp);
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
 	TIMEOUT_LOOP(ci->ncand, qry_ctx) {
 		oid x = canditer_next(ci) - candoff;
 		const char *s = BUNtvar(*bi, x);
@@ -830,7 +836,7 @@ convert_str_fix(allocator *ma, BATiter *bi, int tp, void *restrict dst,
 			nils++;
 		} else {
 			void *d = dst;
-			if ((l = (*atomfromstr)(ma, s, &len, &d, false)) < 0 ||
+			if ((l = (*atomfromstr)(ta, s, &len, &d, false)) < 0 ||
 			    l < (ssize_t) strlen(s)) {
 				goto conversion_failed;
 			}
@@ -840,6 +846,7 @@ convert_str_fix(allocator *ma, BATiter *bi, int tp, void *restrict dst,
 		}
 		dst = (void *) ((char *) dst + len);
 	}
+	ma_close(ta, &ta_state);
 	TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx));
 	return nils;
 
@@ -867,7 +874,7 @@ convert_str_fix(allocator *ma, BATiter *bi, int tp, void *restrict dst,
 }
 
 static BUN
-convert_void_any(allocator *ma, oid seq, BAT *bn,
+convert_void_any(oid seq, BAT *bn,
 		 struct canditer *restrict ci,
 		 oid candoff, bool *reduce)
 {
@@ -876,8 +883,6 @@ convert_void_any(allocator *ma, oid seq, BAT *bn,
 	int tp = bn->ttype;
 	void *restrict dst = Tloc(bn, 0);
 	ssize_t (*atomtostr)(allocator *ma, str *, size_t *, const void *, bool) = BATatoms[TYPE_oid].atomToStr;
-	char *s = NULL;
-	size_t len = 0;
 	oid x;
 
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
@@ -953,17 +958,22 @@ convert_void_any(allocator *ma, oid seq, BAT *bn,
 			((dbl *) dst)[i] = (dbl) (seq + x);
 		}
 		break;
-	case TYPE_str:
+	case TYPE_str: {
+		allocator *ta = MT_thread_getallocator();
+		allocator_state ta_state = ma_open(ta);
+		char *s = NULL;
+		size_t len = 0;
 		TIMEOUT_LOOP_IDX(i, ci->ncand, qry_ctx) {
 			x = canditer_next(ci) - candoff;
-			if ((*atomtostr)(ma, &s, &len, &(oid){seq + x}, false) < 0)
+			if ((*atomtostr)(ta, &s, &len, &(oid){seq + x}, false) < 0 ||
+			    tfastins_nocheckVAR(bn, i, s) != GDK_SUCCEED) {
+				ma_close(ta, &ta_state);
 				goto bailout;
-			if (tfastins_nocheckVAR(bn, i, s) != GDK_SUCCEED)
-				goto bailout;
+			}
 		}
-		GDKfree(s);
-		s = NULL;
+		ma_close(ta, &ta_state);
 		break;
+	}
 	default:
 		return BUN_NONE + 1;
 	}
@@ -973,12 +983,11 @@ convert_void_any(allocator *ma, oid seq, BAT *bn,
 	return nils;
 
   bailout:
-	GDKfree(s);
 	return BUN_NONE + 2;
 }
 
 static BUN
-convert_inet6_inet4(allocator *ma, const inet6 *src, inet4 *restrict dst,
+convert_inet6_inet4(const inet6 *src, inet4 *restrict dst,
 		    struct canditer *restrict ci,
 		    oid candoff)
 {
@@ -1015,11 +1024,14 @@ convert_inet6_inet4(allocator *ma, const inet6 *src, inet4 *restrict dst,
 					.quad[3] = src[x].hex[15],
 				};
 			} else {
+				allocator *ta = MT_thread_getallocator();
+				allocator_state ta_state = ma_open(ta);
 				char buf[40], *s = buf;
 				size_t l = sizeof(buf);
-				BATatoms[TYPE_inet6].atomToStr(ma, &s, &l, &src[x], false);
+				BATatoms[TYPE_inet6].atomToStr(ta, &s, &l, &src[x], false);
 				assert(buf == s);
 				GDKerror("22003!overflow in conversion of %s to inet4.\n", buf);
+				ma_close(ta, &ta_state);
 				return BUN_NONE;
 			}
 		}
@@ -1053,11 +1065,14 @@ convert_inet6_inet4(allocator *ma, const inet6 *src, inet4 *restrict dst,
 					.quad[3] = src[x].hex[15],
 				};
 			} else {
+				allocator *ta = MT_thread_getallocator();
+				allocator_state ta_state = ma_open(ta);
 				char buf[40], *s = buf;
 				size_t l = sizeof(buf);
-				BATatoms[TYPE_inet6].atomToStr(ma, &s, &l, &src[x], false);
+				BATatoms[TYPE_inet6].atomToStr(ta, &s, &l, &src[x], false);
 				assert(buf == s);
 				GDKerror("22003!overflow in conversion of %s to inet4.\n", buf);
+				ma_close(ta, &ta_state);
 				return BUN_NONE;
 			}
 		}
@@ -1116,7 +1131,7 @@ convert_inet4_inet6(const inet4 *src, inet6 *restrict dst,
 }
 
 static BUN
-convert_typeswitchloop(allocator *ma, const void *src, int stp, void *restrict dst, int dtp,
+convert_typeswitchloop(const void *src, int stp, void *restrict dst, int dtp,
 		       struct canditer *restrict ci,
 		       oid candoff, bool *reduce,
 		       uint8_t scale1, uint8_t scale2, uint8_t precision)
@@ -1556,7 +1571,7 @@ convert_typeswitchloop(allocator *ma, const void *src, int stp, void *restrict d
 		switch (ATOMbasetype(dtp)) {
 		case TYPE_inet4:
 			*reduce = false;
-			return convert_inet6_inet4(ma, src, dst, ci, candoff);
+			return convert_inet6_inet4(src, dst, ci, candoff);
 		default:
 			return BUN_NONE + 1;
 		}
@@ -1638,19 +1653,17 @@ BATconvert(BAT *b, BAT *s, int tp,
 		return NULL;
 	}
 
-	allocator *ma = MT_thread_getallocator();
-	allocator_state ma_state = ma_open(ma);
 	if (bi.type == TYPE_void)
-		nils = convert_void_any(ma, b->tseqbase, bn,
+		nils = convert_void_any(b->tseqbase, bn,
 					&ci, b->hseqbase, &reduce);
 	else if (tp == TYPE_str)
-		nils = convert_any_str(ma, &bi, bn, &ci);
+		nils = convert_any_str(&bi, bn, &ci);
 	else if (bi.type == TYPE_str) {
 		reduce = true;
 		if (ATOMvarsized(tp)) {
-			nils = convert_str_var(ma, &bi, bn, &ci);
+			nils = convert_str_var(&bi, bn, &ci);
 		} else {
-			nils = convert_str_fix(ma, &bi, tp, Tloc(bn, 0),
+			nils = convert_str_fix(&bi, tp, Tloc(bn, 0),
 					       &ci, b->hseqbase);
 		}
 	} else if (ATOMstorage(bi.type) == TYPE_msk &&
@@ -1658,12 +1671,11 @@ BATconvert(BAT *b, BAT *s, int tp,
 		if (BATappend(bn, b, s, false) != GDK_SUCCEED)
 			nils = BUN_NONE + 2;
 	} else {
-		nils = convert_typeswitchloop(ma, bi.base, bi.type,
+		nils = convert_typeswitchloop(bi.base, bi.type,
 					      Tloc(bn, 0), tp,
 					      &ci, b->hseqbase, &reduce,
 					      scale1, scale2, precision);
 	}
-	ma_close(ma, &ma_state);
 
 	if (nils >= BUN_NONE) {
 		BBPunfix(bn->batCacheid);
@@ -1811,7 +1823,7 @@ VARconvert(allocator *ma, ValPtr ret, const ValRecord *v,
 			}
 		}
 	} else {
-		nils = convert_typeswitchloop(ma, VALptr(v), v->vtype,
+		nils = convert_typeswitchloop(VALptr(v), v->vtype,
 					      VALget(ret), ret->vtype,
 					      &(struct canditer){.tpe=cand_dense, .ncand=1},
 					      0, &reduce,

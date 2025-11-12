@@ -52,6 +52,12 @@ mal_export str createException(enum malexception, const char *,
 	__attribute__((__malloc__(freeException, 1)))
 	__attribute__((__format__(__printf__, 3, 4)))
 	__attribute__((__returns_nonnull__));
+/* only use immediately after createException */
+mal_export str appendException(enum malexception, const char *,
+							   _In_z_ _Printf_format_string_ const char *, ...)
+	__attribute__((__malloc__))
+	__attribute__((__format__(__printf__, 3, 4)))
+	__attribute__((__returns_nonnull__));
 /*FIXmal_export str createMalException(MalBlkPtr mb, int pc, enum malexception type, const char *prev, const char *format, ...);*/
 mal_export str createMalException(MalBlkPtr, int, enum malexception,
 								  _In_z_ _Printf_format_string_ const char *,
@@ -60,7 +66,7 @@ mal_export str createMalException(MalBlkPtr, int, enum malexception,
 	__attribute__((__malloc__(freeException, 1)))
 	__attribute__((__format__(__printf__, 4, 5)))
 	__attribute__((__returns_nonnull__));
-mal_export char *concatErrors(allocator *ma, char *err1, const char *err2)
+mal_export char *concatErrors(const char *err1, const char *err2)
 	__attribute__((__nonnull__(1, 2)))
 	__attribute__((__returns_nonnull__));
 mal_export bool isExceptionVariable(const char *nme);
@@ -69,7 +75,6 @@ mal_export enum malexception getExceptionType(const char *);
 mal_export str getExceptionPlace(allocator *ma, const char *);
 mal_export str getExceptionMessageAndState(const char *);
 mal_export str getExceptionMessage(const char *);
-mal_export str copyException(allocator *, const char *);
 
 #include "mal_errors.h"
 #endif /*  _MAL_EXCEPTION_H */

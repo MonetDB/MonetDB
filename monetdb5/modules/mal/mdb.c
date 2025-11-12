@@ -497,7 +497,7 @@ printStackHdr(stream *f, MalBlkPtr mb, const ValRecord *v, int index)
 	mnstr_printf(f, " (%d,%d,%d) = ", getBeginScope(mb, index),
 				 getLastUpdate(mb, index), getEndScope(mb, index));
 	if (v)
-		ATOMprint(mb->ma, v->vtype, VALptr(v), f);
+		ATOMprint(v->vtype, VALptr(v), f);
 }
 
 static void
