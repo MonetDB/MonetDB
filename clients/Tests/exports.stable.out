@@ -840,6 +840,7 @@ const char alter_set_tableRef[];
 const char alter_tableRef[];
 const char alter_userRef[];
 const char appendBulkRef[];
+str appendException(enum malexception, const char *, _In_z_ _Printf_format_string_ const char *, ...) __attribute__((__malloc__)) __attribute__((__format__(__printf__, 3, 4))) __attribute__((__returns_nonnull__));
 const char appendRef[];
 const char assertRef[];
 const char avgRef[];
@@ -891,7 +892,6 @@ char *concatErrors(const char *err1, const char *err2) __attribute__((__nonnull_
 const char connectRef[];
 const char containsRef[];
 str convertConstant(allocator *ma, malType type, ValPtr vr);
-str copyException(allocator *, const char *);
 InstrPtr copyInstruction(MalBlkPtr mb, const InstrRecord *p);
 InstrPtr copyInstructionArgs(MalBlkPtr mb, const InstrRecord *p, int args);
 MalBlkPtr copyMalBlk(MalBlkPtr mb);
