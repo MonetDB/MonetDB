@@ -155,13 +155,14 @@ HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 	h->free = 0;
 	h->cleanhash = false;
 
-#ifdef SIZE_CHECK_IN_HEAPS_ONLY
 	if (GDKvm_cursize() + h->size >= GDK_vm_maxsize &&
 	    !MT_thread_override_limits()) {
 		GDKerror("allocating too much memory (current: %zu, requested: %zu, limit: %zu)\n", GDKvm_cursize(), h->size, GDK_vm_maxsize);
+		if (GDKtriggerusr1 &&
+		    !(ATOMIC_GET(&GDKdebug) & TESTINGMASK))
+			(*GDKtriggerusr1)();
 		return GDK_FAIL;
 	}
-#endif
 
 	size_t allocated;
 	if (GDKinmemory(h->farmid) ||
@@ -260,13 +261,14 @@ HEAPextend(Heap *h, size_t size, bool mayshare)
 	}
 	failure = "size > h->size";
 
-#ifdef SIZE_CHECK_IN_HEAPS_ONLY
 	if (GDKvm_cursize() + size - h->size >= GDK_vm_maxsize &&
 	    !MT_thread_override_limits()) {
 		GDKerror("allocating too much memory (current: %zu, requested: %zu, limit: %zu)\n", GDKvm_cursize(), size - h->size, GDK_vm_maxsize);
+		if (GDKtriggerusr1 &&
+		    !(ATOMIC_GET(&GDKdebug) & TESTINGMASK))
+			(*GDKtriggerusr1)();
 		return GDK_FAIL;
 	}
-#endif
 
 	if (h->storage != STORE_MEM) {
 		char *p;
@@ -776,13 +778,14 @@ HEAPload(Heap *h, const char *nme, const char *ext, bool trunc)
 		  srcpath, dstpath, ret, ret < 0 ? GDKstrerror(errno, (char[128]){0}, 128) : "",
 		  GDKusec() - t0);
 
-#ifdef SIZE_CHECK_IN_HEAPS_ONLY
 	if (GDKvm_cursize() + h->size >= GDK_vm_maxsize &&
 	    !MT_thread_override_limits()) {
 		GDKerror("allocating too much memory (current: %zu, requested: %zu, limit: %zu)\n", GDKvm_cursize(), h->size, GDK_vm_maxsize);
+		if (GDKtriggerusr1 &&
+		    !(ATOMIC_GET(&GDKdebug) & TESTINGMASK))
+			(*GDKtriggerusr1)();
 		return GDK_FAIL;
 	}
-#endif
 
 	size_t size = h->size;
 	QryCtx *qc = NULL;

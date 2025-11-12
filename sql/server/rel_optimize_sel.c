@@ -588,6 +588,8 @@ detect_multicol_cmp_eqs(mvc *sql, list *mce_ands, sql_hash *meqh)
 			/* compare the values of the hash_entry with the cols under cmp_eq from the list */
 			bool same_cols = true;
 			eq_mcv *mcv = he->value;
+			if (list_length(mcv->cols) != list_length(sl))
+				continue;
 			for (node *m = sl->h, *k = mcv->cols->h; m && k && same_cols; m = m->next, k = k->next) {
 				sql_exp *col_exp = ((sql_exp*)m->data)->l;
 				if (exp_equal(col_exp, k->data))

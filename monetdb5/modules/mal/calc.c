@@ -74,7 +74,7 @@ CMDvarADDstr(Client ctx, str *ret, const char *const *s1, const char *const *s2)
 	size_t l1;
 
 	if (strNil(*s1) || strNil(*s2)) {
-		*ret = MA_STRDUP(ma, str_nil);
+		*ret = ma_strdup(ma, str_nil);
 		if (*ret == NULL)
 			return mythrow(MAL, "calc.+", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
@@ -97,7 +97,7 @@ CMDvarADDstrint(Client ctx, str *ret, const char *const *s1, const int *i)
 	size_t len;
 
 	if (strNil(*s1) || is_int_nil(*i)) {
-		*ret = MA_STRDUP(ma, str_nil);
+		*ret = ma_strdup(ma, str_nil);
 		if (*ret == NULL)
 			return mythrow(MAL, "calc.+", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
@@ -653,6 +653,39 @@ CALCmax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
+static str
+CALCto_hex_int(Client ctx, str *res, const int *n)
+{
+	allocator *ma = ctx->curprg->def->ma;
+	if (is_int_nil(*n)) {
+		*res = ma_strdup(ma, str_nil);
+		return MAL_SUCCEED;
+	}
+	const size_t size = 9;    // 32 bits -> 8 hex digits + 1 NUL
+	str buf = ma_alloc(ma, size);
+	if (buf == NULL)
+			throw(MAL, "calc.to_hex", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	snprintf(buf, size, "%" PRIx32, (uint32_t)*n);
+	*res = buf;
+	return MAL_SUCCEED;
+}
+
+static str
+CALCto_hex_lng(Client ctx, str *res, const lng *n)
+{
+	allocator *ma = ctx->curprg->def->ma;
+	if (is_lng_nil(*n)) {
+		*res = ma_strdup(ma, str_nil);
+		return MAL_SUCCEED;
+	}
+	const size_t size = 17;    // 64 bits -> 16 hex digits + 1 NUL
+	str buf = ma_alloc(ma, size);
+	if (buf == NULL)
+			throw(MAL, "calc.to_hex", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	snprintf(buf, size, "%" PRIx64, (uint64_t)*n);
+	*res = buf;
+	return MAL_SUCCEED;
+}
 
 static str
 CALCmax_no_nil(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -2580,6 +2613,8 @@ mel_func calc_init_funcs[] = {
  command("calc", "ptr", CMDvarCONVERTptr, false, "Cast VALUE to ptr", args(1,2, arg("",ptr),arg("v",ptr))),
  pattern("calc", "ifthenelse", CALCswitchbit, false, "If VALUE is true return MIDDLE else RIGHT", args(1,4, argany("",1),arg("b",bit),argany("t",1),argany("f",1))),
  command("calc", "length", CMDstrlength, false, "Length of STRING", args(1,2, arg("",int),arg("s",str))),
+ command("calc", "to_hex", CALCto_hex_int, false, "convert to unsigned hexadecimal number representation", args(1, 2, arg("", str), arg("n", int))),
+ command("calc", "to_hex", CALCto_hex_lng, false, "convert to unsigned hexadecimal number representation", args(1, 2, arg("", str), arg("n", lng))),
  pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",bte),batarg("b",msk))),
  pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",bte),batarg("b",msk),arg("nil_if_empty",bit))),
  pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",bte),batarg("b",msk),batarg("s",oid))),

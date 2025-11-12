@@ -18,3 +18,11 @@ insert into b values (1, 20,   200),
 					 (3, 60,   600),
 					 (9, 180, 1800)
 
+statement ok
+create table dupv (n int, m int, k int)
+
+statement ok
+insert into dupv values (1, 20,   100),
+                        (1, 20,   200),
+                        (2, 40,   300)
+

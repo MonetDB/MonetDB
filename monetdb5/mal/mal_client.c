@@ -254,7 +254,6 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 	ATOMIC_SET(&c->qryctx.datasize, 0);
 	c->qryctx.maxmem = 0;
 	c->maxmem = 0;
-	c->errbuf = 0;
 
 	c->prompt = PROMPT1;
 	c->promptlength = strlen(c->prompt);
@@ -306,16 +305,7 @@ MCinitClientThread(Client c)
 	 * the proper IO descriptors.
 	 */
 	c->mythread = MT_thread_getname();
-	c->errbuf = GDKerrbuf;
-	if (c->errbuf == NULL) {
-		char *n = ma_zalloc(c->ma, GDKMAXERRLEN);
-		if (n == NULL) {
-			return -1;
-		}
-		GDKsetbuf(n);
-		c->errbuf = GDKerrbuf;
-	} else
-		c->errbuf[0] = 0;
+	GDKclrerr();
 	return 0;
 }
 
@@ -361,13 +351,6 @@ MCcloseClient(Client c)
 	c->scenario = NULL;
 	c->prompt = NULL;
 	c->promptlength = -1;
-	if (c->errbuf) {
-		/* no client threads in embedded mode */
-		GDKsetbuf(NULL);
-		//if (c->father == NULL)
-		//	GDKfree(c->errbuf);
-		c->errbuf = NULL;
-	}
 	if (c->usermodule)
 		freeModule(c->usermodule);
 	c->usermodule = c->curmodule = 0;
@@ -617,25 +600,25 @@ MCsetClientInfo(Client c, const char *property, const char *value)
 		case 'H':
 			if (strcasecmp(property, "ClientHostname") == 0) {
 				//GDKfree(c->client_hostname);
-				c->client_hostname = value ? MA_STRDUP(c->ma, value) : NULL;
+				c->client_hostname = value ? ma_strdup(c->ma, value) : NULL;
 			}
 			break;
 		case 'A':
 			if (strcasecmp(property, "ApplicationName") == 0) {
 				//GDKfree(c->client_application);
-				c->client_application = value ? MA_STRDUP(c->ma, value) : NULL;
+				c->client_application = value ? ma_strdup(c->ma, value) : NULL;
 			}
 			break;
 		case 'L':
 			if (strcasecmp(property, "ClientLibrary") == 0) {
 				//GDKfree(c->client_library);
-				c->client_library = value ? MA_STRDUP(c->ma, value) : NULL;
+				c->client_library = value ? ma_strdup(c->ma, value) : NULL;
 			}
 			break;
 		case 'R':
 			if (strcasecmp(property, "ClientRemark") == 0) {
 				//GDKfree(c->client_remark);
-				c->client_remark = value ? MA_STRDUP(c->ma, value) : NULL;
+				c->client_remark = value ? ma_strdup(c->ma, value) : NULL;
 			}
 			break;
 		case 'P':

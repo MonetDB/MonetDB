@@ -138,7 +138,7 @@ static str
 CMDbbpName(Client ctx, str *ret, const bat *bid)
 {
 	allocator *ma = ctx->curprg->def->ma;
-	*ret = (str) MA_STRDUP(ma, BBP_logical(*bid));
+	*ret = (str) ma_strdup(ma, BBP_logical(*bid));
 	if (*ret == NULL)
 		throw(MAL, "catalog.bbpName", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
@@ -541,7 +541,7 @@ CMDsetName(Client ctx, str *rname, const bat *bid, const char *const *name)
 		BBPunfix(b->batCacheid);
 		throw(MAL, "bbp.setName", GDK_EXCEPTION);
 	}
-	*rname = MA_STRDUP(ma, *name);
+	*rname = ma_strdup(ma, *name);
 	BBPunfix(b->batCacheid);
 	if (*rname == NULL)
 		throw(MAL, "bbp.setName", SQLSTATE(HY013) MAL_MALLOC_FAIL);

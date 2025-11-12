@@ -320,7 +320,6 @@ void GDKqsort(void *restrict h, void *restrict t, const void *restrict base, siz
 void *GDKrealloc(void *pold, size_t size) __attribute__((__alloc_size__(2))) __attribute__((__warn_unused_result__));
 gdk_return GDKrebuild_segment_tree(oid ncount, oid data_size, BAT *st, void **segment_tree, oid **levels_offset, oid *nlevels);
 void GDKreset(int status);
-void GDKsetbuf(char *);
 void GDKsetdebug(unsigned debug);
 gdk_return GDKsetenv(const char *name, const char *value);
 stream *GDKstdin;
@@ -382,6 +381,7 @@ int MT_join_thread(MT_Id t);
 bool MT_path_absolute(const char *path);
 void MT_sleep_ms(unsigned int ms);
 void MT_thread_deregister(void);
+char *MT_thread_get_exceptbuf(void);
 QryCtx *MT_thread_get_qry_ctx(void);
 const char *MT_thread_getalgorithm(void);
 allocator *MT_thread_getallocator(void);

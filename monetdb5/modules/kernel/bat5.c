@@ -381,7 +381,7 @@ BKCgetColumnType(Client ctx, str *res, const bat *bid)
 	if (b == NULL)
 		throw(MAL, "bat.getColumnType", ILLEGAL_ARGUMENT);
 	ret = *bid < 0 ? ATOMname(TYPE_void) : ATOMname(b->ttype);
-	*res = MA_STRDUP(ma, ret);
+	*res = ma_strdup(ma, ret);
 	if (*res == NULL)
 		throw(MAL, "bat.getColumnType", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
@@ -548,13 +548,13 @@ BKCgetAccess(Client ctx, str *res, const bat *bid)
 		throw(MAL, "bat.getAccess", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	switch (BATgetaccess(b)) {
 	case BAT_READ:
-		*res = MA_STRDUP(ma, "read");
+		*res = ma_strdup(ma, "read");
 		break;
 	case BAT_APPEND:
-		*res = MA_STRDUP(ma, "append");
+		*res = ma_strdup(ma, "append");
 		break;
 	case BAT_WRITE:
-		*res = MA_STRDUP(ma, "write");
+		*res = ma_strdup(ma, "write");
 		break;
 	default:
 		MT_UNREACHABLE();
@@ -955,7 +955,7 @@ BKCgetBBPname(Client ctx, str *ret, const bat *bid)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "bat.getName", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
-	*ret = MA_STRDUP(ma, BBP_logical(b->batCacheid));
+	*ret = ma_strdup(ma, BBP_logical(b->batCacheid));
 	BBPunfix(b->batCacheid);
 	return *ret ? MAL_SUCCEED : createException(MAL, "bat.getName",
 												SQLSTATE(HY013)

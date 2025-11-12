@@ -1903,6 +1903,7 @@ _ma_free_blks(allocator *sa, size_t start_idx)
 /*
  * Reset allocator to initial state
  */
+#undef ma_reset
 allocator *
 ma_reset(allocator *sa)
 {
@@ -2092,7 +2093,7 @@ ma_alloc(allocator *sa, size_t sz)
 {
 	assert(sa);
 	size_t nsize = sz + MA_HEADER_SIZE;
-	char* r = (char*) _ma_alloc_internal(sa, nsize);
+	char *r = _ma_alloc_internal(sa, nsize);
 	return ma_fill_in_header(r, sz);
 }
 
@@ -2156,6 +2157,7 @@ ma_zalloc(allocator *sa, size_t sz)
 	return r;
 }
 
+#undef ma_destroy
 void
 ma_destroy(allocator *sa)
 {
@@ -2210,6 +2212,7 @@ ma_strdup(allocator *sa, const char *s)
 	return ma_strndup(sa, s, strlen(s));
 }
 
+#undef ma_strconcat
 char *
 ma_strconcat(allocator *sa, const char *s1, const char *s2)
 {
@@ -2243,6 +2246,7 @@ ma_get_eb(allocator *sa)
 	return &sa->eb;
 }
 
+#undef ma_open
 allocator_state
 ma_open(allocator *sa)
 {
@@ -2264,6 +2268,7 @@ ma_open(allocator *sa)
 	return st;
 }
 
+#undef ma_close
 void
 ma_close(allocator *sa, const allocator_state *state)
 {
@@ -2303,6 +2308,7 @@ ma_tmp_active(const allocator *a)
     return a && (a->tmp_used > 0);
 }
 
+#undef ma_free
 void
 ma_free(allocator *sa, void *obj)
 {
@@ -2414,14 +2420,6 @@ GDKmalloc_internal(size_t size, bool clear)
 	size_t nsize;
 
 	assert(size != 0);
-#ifndef SIZE_CHECK_IN_HEAPS_ONLY
-	if (size > SMALL_MALLOC &&
-	    GDKvm_cursize() + size >= GDK_vm_maxsize &&
-	    !MT_thread_override_limits()) {
-		GDKerror("allocating too much memory\n");
-		return NULL;
-	}
-#endif
 
 	/* pad to multiple of eight bytes and add some extra space to
 	 * write real size in front; when debugging, also allocate
@@ -2556,15 +2554,6 @@ GDKrealloc(void *s, size_t size)
 	nsize = (size + 7) & ~7;
 	asize = os[-1];		/* how much allocated last */
 
-#ifndef SIZE_CHECK_IN_HEAPS_ONLY
-	if (size > SMALL_MALLOC &&
-	    nsize > asize &&
-	    GDKvm_cursize() + nsize - asize >= GDK_vm_maxsize &&
-	    !MT_thread_override_limits()) {
-		GDKerror("allocating too much memory\n");
-		return NULL;
-	}
-#endif
 #if !defined(NDEBUG) && !defined(SANITIZER)
 	assert((asize & 2) == 0);   /* check against duplicate free */
 	/* check for out-of-bounds writes */
@@ -2627,13 +2616,6 @@ GDKmmap(const char *path, int mode, size_t len)
 {
 	void *ret;
 
-#ifndef SIZE_CHECK_IN_HEAPS_ONLY
-	if (GDKvm_cursize() + len >= GDK_vm_maxsize &&
-	    !MT_thread_override_limits()) {
-		GDKerror("requested too much virtual memory; memory requested: %zu, memory in use: %zu, virtual memory in use: %zu\n", len, GDKmem_cursize(), GDKvm_cursize());
-		return NULL;
-	}
-#endif
 	ret = MT_mmap(path, mode, len);
 	if (ret != NULL) {
 		if (mode & MMAP_COPY)
@@ -2667,14 +2649,6 @@ GDKmremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 {
 	void *ret;
 
-#ifndef SIZE_CHECK_IN_HEAPS_ONLY
-	if (*new_size > old_size &&
-	    GDKvm_cursize() + *new_size - old_size >= GDK_vm_maxsize &&
-	    !MT_thread_override_limits()) {
-		GDKerror("requested too much virtual memory; memory requested: %zu, memory in use: %zu, virtual memory in use: %zu\n", *new_size, GDKmem_cursize(), GDKvm_cursize());
-		return NULL;
-	}
-#endif
 	ret = MT_mremap(path, mode, old_address, old_size, new_size);
 	if (ret != NULL) {
 		if (mode & MMAP_COPY) {
