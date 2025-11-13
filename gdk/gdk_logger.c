@@ -478,7 +478,7 @@ log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, BAT **cands, bo
 				lg->rbuf = t;
 				lg->rbufsize = tlen;
 				if (!lg->flushing && !skip_entry) {
-					r = BATconstant(0, tpe, t, nr, PERSISTENT);
+					r = BATconstant(0, tpe, t, (BUN) nr, PERSISTENT);
 					if (r == NULL) {
 						TRC_CRITICAL(GDK, "create const bat failed\n");
 						res = LOG_ERR;
