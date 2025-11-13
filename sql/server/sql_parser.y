@@ -3550,7 +3550,7 @@ join_spec:
 
 <with column list> ::= <column name list>
 
-RECURSIVE and <search or cycle clause> are currently not supported
+The <search or cycle clause> is currently not supported
 */
 
 opt_with_clause:
