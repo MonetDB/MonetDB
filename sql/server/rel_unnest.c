@@ -82,6 +82,11 @@ is_distinct_set(mvc *sql, sql_rel *rel, list *ad)
 	distinct = need_distinct(rel);
 	if (is_project(rel->op) && rel->l && !distinct)
 		distinct = is_distinct_set(sql, rel->l, ad);
+	if (is_semi(rel->op))
+		distinct = is_distinct_set(sql, rel->l, ad);
+	prop *p = NULL;
+	if (is_base(rel->op) && (p = find_prop(rel->p, PROP_UKEY)) != NULL)
+		return exp_match_list(p->value.pval, ad);
 	return distinct;
 }
 
@@ -1726,7 +1731,8 @@ push_up_munion(mvc *sql, sql_rel *rel, list *ad)
 			ns->exps = exps_copy(sql, s->exps);
 			set_processed(ns);
 			if (single || is_single(s))
-				set_single(ns);
+				if (!need_distinct(s))
+					set_single(ns);
 			if (need_distinct || need_distinct(s))
 				set_distinct(ns);
 			if (is_recursive(s))
