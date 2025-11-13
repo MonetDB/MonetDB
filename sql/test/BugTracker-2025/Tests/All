@@ -47,3 +47,4 @@ KNOWNFAIL?7653_incorrect_join_results
 7735-crossproduct-update
 7736-scale-reduction-crash
 7737-join-order
+KNOWNFAIL?7748-update-returning-subquery-crash
