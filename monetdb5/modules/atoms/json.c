@@ -83,19 +83,21 @@ int TYPE_json;
 static JSON *JSONparse(allocator *ma, const char *j);
 
 static JSON *
-JSONnewtree(allocator *ma)
+JSONnewtree(allocator *ma, int initsize)
 {
 	JSON *js;
 
 	js = ma_zalloc(ma, sizeof(JSON));
 	if (js == NULL)
 		return NULL;
+	if (initsize < 8)
+		initsize = 8;
 	js->ma = ma;
-	js->elm = ma_zalloc(ma, sizeof(JSONterm) * 8);
+	js->elm = ma_zalloc(ma, sizeof(JSONterm) * initsize);
 	if (js->elm == NULL) {
 		return NULL;
 	}
-	js->size = 8;
+	js->size = initsize;
 	return js;
 }
 
@@ -1483,7 +1485,7 @@ JSONtoken(JSON *jt, const char *j, const char **next)
 static JSON *
 JSONparse(allocator *ma, const char *j)
 {
-	JSON *jt = JSONnewtree(ma);
+	JSON *jt = JSONnewtree(ma, (int) (strlen(j) / 10));
 
 	if (jt == NULL)
 		return NULL;
