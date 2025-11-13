@@ -2997,6 +2997,14 @@ def RunIt(cmd, onechild, TestIn, TestOut, TestErr, TimeOut, pSrvr, TSTTRGDIR, en
     return rc
 
 
+def recv_all(sock: socket.socket, nbytes):
+    data = sock.recv(nbytes)
+    while len(data) < nbytes:
+        more_data = sock.recv(nbytes - len(data))
+        data += more_data
+    return data
+
+
 def mapi_ping(port, host='localhost', tries=3):
     retry = 0
     wait = 1
@@ -3005,10 +3013,10 @@ def mapi_ping(port, host='localhost', tries=3):
         try:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
                 sock.connect((host, port))
-                flag = sock.recv(2)
+                flag = recv_all(sock, 2)
                 unpacked = struct.unpack( '<H', flag )[0]  # little endian short
                 len = ( unpacked >> 1 )     # get length
-                data = sock.recv(len)
+                data = recv_all(sock, len)
             # we don't send
             return True
         except OSError:
