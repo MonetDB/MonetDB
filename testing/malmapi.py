@@ -111,12 +111,14 @@ class Connection(object):
             unix_socket = database[15:]
             hostname = database = None
         if hostname and hostname.startswith('/') and not unix_socket:
-            unix_socket = '%s/.s.monetdb.%d' % (hostname, port)
+            unix_socket = f'{hostname}/.s.monetdb.{port}'
             hostname = None
-        if not unix_socket and os.path.exists("/tmp/.s.monetdb.%i" % port):
-            unix_socket = "/tmp/.s.monetdb.%i" % port
+        if not unix_socket and os.path.exists(f'/tmp/.s.monetdb.{port}'):
+            unix_socket = f'/tmp/.s.monetdb.{port}'
         elif not unix_socket and not hostname:
             hostname = 'localhost'
+        elif unix_socket:
+            hostname = None
 
         # None and zero are allowed values
         if connect_timeout != -1:

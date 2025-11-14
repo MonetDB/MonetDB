@@ -10,7 +10,7 @@ with tempfile.TemporaryDirectory() as farm_dir:
     os.mkdir(os.path.join(farm_dir, 'db1'))
     with process.server(mapiport='0', dbname='db1', dbfarm=os.path.join(farm_dir, 'db1'),
                         stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE) as srv:
-        conn = pymonetdb.connect(database='db1', port=srv.dbport, autocommit=True)
+        conn = pymonetdb.connect(database=srv.usock or 'db1', port=srv.dbport, autocommit=True)
         cur = conn.cursor()
         try:
             cur.execute("call sys.shutdown(1, true);")

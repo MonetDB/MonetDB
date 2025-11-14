@@ -8,7 +8,6 @@ users = ['user1', 'user2', 'user3', 'user4']
 SLEEP_TIME = "200"
 
 with SQLTestCase() as mdb:
-    mdb.connect(username="monetdb", password="monetdb")
     # we use the sleep() function to acquire determinable maxquery
     mdb.execute('create procedure sleep(i int) external name alarm.sleep;').assertSucceeded()
 
@@ -17,8 +16,7 @@ with SQLTestCase() as mdb:
         mdb.execute('create user {u} with password \'{u}\' name \'{u}\' schema sys'.format(u=u)).assertSucceeded()
         mdb.execute('grant all on procedure sys.sleep to {u}'.format(u=u)).assertSucceeded()
 
-        with SQLTestCase() as usr:
-            usr.connect(username=u, password=u)
+        with SQLTestCase(username=u, password=u) as usr:
             usr.execute('select current_user as myname').assertSucceeded()
             usr.execute(f'call sys.sleep({SLEEP_TIME})').assertSucceeded()
 

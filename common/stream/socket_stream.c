@@ -209,7 +209,7 @@ socket_write(stream *restrict s, const void *restrict buf, size_t elmsize, size_
 #ifdef _MSC_VER
 						   (int) min(size - res, 1 << 16)
 #else
-						   size
+						   size - res
 #endif
 						   , 0)) > 0)
 		       || (nr < 0 &&	/* syscall failed */

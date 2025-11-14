@@ -47,7 +47,7 @@ def test_snapshot(z_extension, expected_initial_bytes, unpack=True):
         with process.server(dbname=mydb, mapiport='0', stdin=process.PIPE) as server:
             # connection 1 creates, inserts, commits and inserts uncommitted
             conn1 = pymonetdb.connect(
-                database=server.dbname, hostname='localhost',
+                database=server.usock or server.dbname, hostname='localhost',
                 port=server.dbport,
                 username="monetdb", password="monetdb",
                 autocommit=False
@@ -124,7 +124,7 @@ def test_snapshot(z_extension, expected_initial_bytes, unpack=True):
 
             # question is, is our data still there?
             conn3 = pymonetdb.connect(
-                database=server.dbname, hostname='localhost',
+                database=server.usock or server.dbname, hostname='localhost',
                 port=server.dbport,
                 username="monetdb", password="monetdb",
                 autocommit=False

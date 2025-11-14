@@ -16,8 +16,7 @@ with tempfile.TemporaryDirectory() as farm_dir:
     os.mkdir(os.path.join(farm_dir, 'db1'))
 
     with server_start(["--set", "sql_debug=64"]) as srv:
-        with SQLTestCase() as tc:
-            tc.connect(username="monetdb", password="monetdb", port=srv.dbport, database='db1')
+        with SQLTestCase(server=srv) as tc:
             tc.execute("create table t1999354a(ra float, \"dec\" int);").assertSucceeded()
             tc.execute("""
                 CREATE FUNCTION f2(deg float, truncat int , precision int)

@@ -10,8 +10,7 @@ with tempfile.TemporaryDirectory() as farm_dir:
     os.mkdir(os.path.join(farm_dir, 'db1'))
 
     with process.server(mapiport='0', dbname='db1', dbfarm=os.path.join(farm_dir, 'db1'), stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE) as s:
-        with SQLTestCase() as tc:
-            tc.connect(username="monetdb", password="monetdb", port=s.dbport, database='db1')
+        with SQLTestCase(server=s) as tc:
             tc.execute("CREATE SCHEMA put").assertSucceeded()
             tc.execute("SET SCHEMA put").assertSucceeded()
             tc.execute("CREATE UNLOGGED TABLE foo (x INT)").assertSucceeded()
@@ -28,8 +27,7 @@ with tempfile.TemporaryDirectory() as farm_dir:
         s.communicate()
 
     with process.server(mapiport='0', dbname='db1', dbfarm=os.path.join(farm_dir, 'db1'), stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE) as s:
-        with SQLTestCase() as tc:
-            tc.connect(username="monetdb", password="monetdb", port=s.dbport, database='db1')
+        with SQLTestCase(server=s) as tc:
             tc.execute("SET SCHEMA put").assertSucceeded()
             tc.execute("SELECT COUNT(*) FROM foo").assertSucceeded().assertDataResultMatch([(500,)])
         s.communicate()

@@ -11,8 +11,7 @@ with process.server(args=[],
                     stdin=process.PIPE,
                     stdout=process.PIPE,
                     stderr=process.PIPE) as s:
-    with SQLTestCase() as tc:
-        tc.connect(username="monetdb", password="monetdb", port=str(s.dbport))
+    with SQLTestCase(server=s) as tc:
         tc.execute("create table t1 (a int);").assertSucceeded()
         tc.execute("insert into t1 (a) values ( 1 );").assertSucceeded().assertRowCount(1)
         tc.execute("select * from t1;").assertSucceeded().assertDataResultMatch([(1,)])
@@ -25,8 +24,7 @@ with process.server(args=["--readonly"],
                     stdin=process.PIPE,
                     stdout=process.PIPE,
                     stderr=process.PIPE) as s:
-    with SQLTestCase() as tc:
-        tc.connect(username="monetdb", password="monetdb", port=str(s.dbport))
+    with SQLTestCase(server=s) as tc:
         tc.execute("drop table t1;").assertFailed(err_message='Schema statements cannot be executed on a readonly database.')
         tc.execute("select * from t1;").assertSucceeded().assertDataResultMatch([(1,)])
         tc.execute("create table t2 (a int);").assertFailed(err_message='Schema statements cannot be executed on a readonly database.')

@@ -1064,22 +1064,20 @@ def PerformDir(env, testdir, testlist, total_tests):
 
         alltests = []
         try:
-            allf = openutf8(os.path.join(TSTSRCDIR, 'All'))
+            with openutf8(os.path.join(TSTSRCDIR, 'All')) as allf:
+                for tc in allf:
+                    if '#' in tc:
+                        # get rid of comment anywhere on line
+                        tc = tc[:tc.index('#')]
+                    tc = tc.strip()
+                    if tc:
+                        if '?' in tc:
+                            cond,tst = tc.split('?')
+                        else:
+                            cond,tst = None,tc
+                        alltests.append((tst,cond))
         except IOError:
             pass
-        else:
-            for tc in allf:
-                if '#' in tc:
-                    # get rid of comment anywhere on line
-                    tc = tc[:tc.index('#')]
-                tc = tc.strip()
-                if tc:
-                    if '?' in tc:
-                        cond,tst = tc.split('?')
-                    else:
-                        cond,tst = None,tc
-                    alltests.append((tst,cond))
-            allf.close()
         try:
             with openutf8(os.path.join(TSTSRCDIR, 'SingleServer')) as f:
                 options = shlex.split(f.read())
@@ -1240,7 +1238,7 @@ def PerformDir(env, testdir, testlist, total_tests):
                                                password='monetdb',
                                                hostname=HOST,
                                                port=int(pSrvr.port),
-                                               database=TSTDB,
+                                               database=pSrvr.usock or TSTDB,
                                                autocommit=True,
                                                connect_timeout=1.0) as dbh:
                             dbh.settimeout(10)
@@ -3001,6 +2999,14 @@ def RunIt(cmd, onechild, TestIn, TestOut, TestErr, TimeOut, pSrvr, TSTTRGDIR, en
     return rc
 
 
+def recv_all(sock: socket.socket, nbytes):
+    data = sock.recv(nbytes)
+    while len(data) < nbytes:
+        more_data = sock.recv(nbytes - len(data))
+        data += more_data
+    return data
+
+
 def mapi_ping(port, host='localhost', tries=3):
     retry = 0
     wait = 1
@@ -3009,10 +3015,10 @@ def mapi_ping(port, host='localhost', tries=3):
         try:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
                 sock.connect((host, port))
-                flag = sock.recv(2)
+                flag = recv_all(sock, 2)
                 unpacked = struct.unpack( '<H', flag )[0]  # little endian short
                 len = ( unpacked >> 1 )     # get length
-                data = sock.recv(len)
+                data = recv_all(sock, len)
             # we don't send
             return True
         except OSError:
@@ -3142,7 +3148,8 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, len
                                         password=passwd or 'monetdb',
                                         hostname=HOST,
                                         port=int(pSrvr.port),
-                                        database=TSTDB if pSrvr.usock is None else pSrvr.usock,
+                                        database=TSTDB,
+                                        usock=pSrvr.usock,
                                         language='sql',
                                         timeout=TIMEOUT,
                                         alltests=CONDITIONALS['KNOWNFAIL'])
@@ -3177,7 +3184,8 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, len
                                     password=passwd or 'monetdb',
                                     hostname=HOST,
                                     port=int(pSrvr.port),
-                                    database=TSTDB if pSrvr.usock is None else pSrvr.usock,
+                                    database=TSTDB,
+                                    usock=pSrvr.usock,
                                     language=lang,
                                     timeout=TIMEOUT,
                                     alltests=CONDITIONALS['KNOWNFAIL'])

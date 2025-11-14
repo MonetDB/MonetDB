@@ -24,7 +24,7 @@ with tempfile.TemporaryDirectory() as farm_dir:
                         stdin=process.PIPE, stdout=process.PIPE,
                         stderr=process.PIPE) as prc_3:
         # create foo_r2 and bar_r2 in node2
-        conn2 = pymonetdb.connect(database='node2', port=prc_2.dbport, autocommit=True)
+        conn2 = pymonetdb.connect(database=prc_2.usock or 'node2', port=prc_2.dbport, autocommit=True)
         cur2 = conn2.cursor()
 
         cur2.execute("create table foo_r2 (n int, m text)")
@@ -43,7 +43,7 @@ with tempfile.TemporaryDirectory() as farm_dir:
         conn2.close()
 
         # create foo_r3 and bar_r3 in node3
-        conn3 = pymonetdb.connect(database='node3', port=prc_3.dbport, autocommit=True)
+        conn3 = pymonetdb.connect(database=prc_3.usock or 'node3', port=prc_3.dbport, autocommit=True)
         cur3 = conn3.cursor()
 
         cur3.execute("create table foo_r3 (n int, m text)")
@@ -58,7 +58,7 @@ with tempfile.TemporaryDirectory() as farm_dir:
         conn3.close()
 
         # create foo_rpl_rmt, bar_rpl_rmt, foo_rpl_rmt_node2 and bar_rpl_rmt_node3 on master
-        conn1 = pymonetdb.connect(database='master', port=prc_1.dbport, autocommit=True)
+        conn1 = pymonetdb.connect(database=prc_1.usock or 'master', port=prc_1.dbport, autocommit=True)
         cur1 = conn1.cursor()
 
         cur1.execute("create remote table foo_r2 (n int, m text) on 'mapi:monetdb://localhost:"+str(prc_2.dbport)+"/node2'")

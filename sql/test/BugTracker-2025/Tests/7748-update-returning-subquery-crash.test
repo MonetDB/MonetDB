@@ -1,0 +1,105 @@
+-- next statement is causing Segmentation fault in update_table () from /home/dev/INSTALL/lib64/libmonetdbsql-11.53.16.so.16
+statement error 42000!UPDATE: Multiple assignments to same column 'name'
+update tmp.objects set
+  name = tmp.objects.name,
+  nr = tmp.objects.id,
+  name = tmp.objects.name,
+  sub = tmp.objects.nr
+returning
+  tmp.objects.id as c0,
+  case when ((tmp.objects.nr is NULL)
+        or (((true)
+            or (false))
+          or (((tmp.objects.nr is NULL)
+              and (tmp.objects.id is not NULL))
+            and (((EXISTS (
+                  select
+                      ref_10.col as c0
+                    from
+                      sys.describe_indices as ref_10
+                    where (true)
+                      and (ref_10.tpe is not NULL)))
+                and (false))
+              or (false)))))
+      and (true) then tmp.objects.nr else tmp.objects.nr end
+     as c1,
+  tmp.objects.id as c2,
+  tmp.objects.name as c3,
+  tmp.objects.name as c4,
+  tmp.objects.nr as c5,
+  tmp.objects.sub as c6,
+  tmp.objects.nr as c7,
+  tmp.objects.name as c8,
+  case when EXISTS (
+      select
+          ref_11.obj_id as c0,
+          tmp.objects.nr as c1,
+          ref_11.auth_id as c2,
+          ref_12.column_name as c3,
+          ref_12.depend_type as c4
+        from
+          sys.privileges as ref_11
+            inner join sys.dependency_columns_on_triggers as ref_12
+            on (tmp.objects.nr is not NULL)
+        where false
+        limit 148) then tmp.objects.name else tmp.objects.name end
+     as c9,
+  tmp.objects.sub as c10,
+  tmp.objects.name as c11,
+  tmp.objects.nr as c12,
+  tmp.objects.sub as c13,
+  tmp.objects.name as c14,
+  tmp.objects.name as c15;
+
+-- next statement has removed the duplicate asignment: name = tmp.objects.name,  This statment does not crash but gives an error.
+statement error 42000!SELECT: subquery not allowed
+update tmp.objects set
+  name = tmp.objects.name,
+  nr = tmp.objects.id,
+  sub = tmp.objects.nr
+returning
+  tmp.objects.id as c0,
+  case when ((tmp.objects.nr is NULL)
+        or (((true)
+            or (false))
+          or (((tmp.objects.nr is NULL)
+              and (tmp.objects.id is not NULL))
+            and (((EXISTS (
+                  select
+                      ref_10.col as c0
+                    from
+                      sys.describe_indices as ref_10
+                    where (true)
+                      and (ref_10.tpe is not NULL)))
+                and (false))
+              or (false)))))
+      and (true) then tmp.objects.nr else tmp.objects.nr end
+     as c1,
+  tmp.objects.id as c2,
+  tmp.objects.name as c3,
+  tmp.objects.name as c4,
+  tmp.objects.nr as c5,
+  tmp.objects.sub as c6,
+  tmp.objects.nr as c7,
+  tmp.objects.name as c8,
+  case when EXISTS (
+      select
+          ref_11.obj_id as c0,
+          tmp.objects.nr as c1,
+          ref_11.auth_id as c2,
+          ref_12.column_name as c3,
+          ref_12.depend_type as c4
+        from
+          sys.privileges as ref_11
+            inner join sys.dependency_columns_on_triggers as ref_12
+            on (tmp.objects.nr is not NULL)
+        where false
+        limit 148) then tmp.objects.name else tmp.objects.name end
+     as c9,
+  tmp.objects.sub as c10,
+  tmp.objects.name as c11,
+  tmp.objects.nr as c12,
+  tmp.objects.sub as c13,
+  tmp.objects.name as c14,
+  tmp.objects.name as c15;
+

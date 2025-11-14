@@ -164,13 +164,21 @@ class SQLLogic:
         return -1
 
     def connect(self, username='monetdb', password='monetdb',
-                hostname='localhost', port=None, database='demo',
-                language='sql', timeout: Optional[int]=0, alltests=False):
+                hostname='localhost', port=None, database=None, usock=None,
+                language='sql', timeout: Optional[int]=0, alltests=False,
+                server=None):
         self.starttime = time.time()
         self.language = language
         self.hostname = hostname
+        if server is not None:
+            if port is None:
+                port = server.dbport
+            if database is None:
+                database = server.dbname
+            if usock is None:
+                usock = server.usock
         self.port = port
-        self.database = database
+        self.database = database or 'demo'
         self.timeout = timeout
         self.alltests = alltests
         if language == 'sql':
@@ -179,7 +187,7 @@ class SQLLogic:
                                     password=password,
                                     hostname=hostname,
                                     port=port,
-                                    database=database,
+                                    database=usock or self.database,
                                     autocommit=True,
                                     connect_timeout=timeout if timeout > 0 else -1)
             self.dbh = dbh
@@ -188,12 +196,13 @@ class SQLLogic:
             self.crs = dbh.cursor()
         else:
             dbh = malmapi.Connection()
-            dbh.connect(database=database,
+            dbh.connect(database=self.database,
                         username=username,
                         password=password,
                         language=language,
                         hostname=hostname,
                         port=port,
+                        unix_socket=usock,
                         connect_timeout=timeout if timeout > 0 else -1)
             self.crs = MapiCursor(dbh)
         if timeout > 0:

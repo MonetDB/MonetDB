@@ -10,8 +10,8 @@ except ImportError:
 with tempfile.TemporaryDirectory() as farm_dir:
     os.mkdir(os.path.join(farm_dir, 'renames'))
     with process.server(mapiport='0', dbname='renames', dbfarm=os.path.join(farm_dir, 'renames'), stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE) as s:
-        client1 = pymonetdb.connect(database='renames', port=s.dbport, autocommit=True)
-        client2 = pymonetdb.connect(database='renames', port=s.dbport, autocommit=True)
+        client1 = pymonetdb.connect(database=s.usock or 'renames', port=s.dbport, autocommit=True)
+        client2 = pymonetdb.connect(database=s.usock or 'renames', port=s.dbport, autocommit=True)
         cursor1 = client1.cursor()
         cursor2 = client2.cursor()
 

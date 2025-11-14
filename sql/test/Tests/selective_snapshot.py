@@ -38,7 +38,7 @@ def runserver():
         log(f'port={port}')
 
         def do_connect(): return pymonetdb.connect(
-            mydb, port=port, username='monetdb', password='monetdb')
+            database=server.usock or mydb, port=port, username='monetdb', password='monetdb')
 
         with do_connect() as conn:
             dbpath = query_one(

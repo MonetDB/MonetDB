@@ -34,7 +34,7 @@ def worker_load(workerrec):
     c = workerrec['conn'].cursor()
     stable = shardtable + workerrec['tpf']
 
-    screateq = 'create table ' + stable + ' ' + shardedtabledefslightlydifferent;
+    screateq = f'create table {stable} {shardedtabledefslightlydifferent}'
     c.execute(screateq)
     c.execute(tabledata.replace("%SHARD%", stable))
 
@@ -45,7 +45,7 @@ with tempfile.TemporaryDirectory() as tmpdir:
     with process.server(mapiport='0', dbname="master",
                         dbfarm=os.path.join(tmpdir, 'master'),
                         stdin=process.PIPE, stdout=process.PIPE) as masterproc:
-        masterconn = pymonetdb.connect(database='', port=masterproc.dbport, autocommit=True)
+        masterconn = pymonetdb.connect(database=masterproc.usock or '', port=masterproc.dbport, autocommit=True)
 
         try:
             # setup and start workers
@@ -65,10 +65,10 @@ with tempfile.TemporaryDirectory() as tmpdir:
                                                    dbfarm=workerrec['dbfarm'],
                                                    stdin=process.PIPE,
                                                    stdout=process.PIPE)
-                workerrec['port'] = workerrec['proc'].dbport
-                workerrec['mapi'] = 'mapi:monetdb://localhost:{}/{}'.format(workerrec['port'], workerdbname)
-                workerrec['conn'] = pymonetdb.connect(database=workerrec['dbname'],
-                                                      port=workerrec['port'],
+                port = workerrec['proc'].dbport
+                workerrec['mapi'] = f'mapi:monetdb://localhost:{port}/{workerdbname}'
+                workerrec['conn'] = pymonetdb.connect(database=workerrec['proc'].usock or workerrec['dbname'],
+                                                      port=port,
                                                       autocommit=True)
                 t = threading.Thread(target=worker_load, args=[workerrec])
                 t.start()
@@ -80,17 +80,17 @@ with tempfile.TemporaryDirectory() as tmpdir:
                 workerrec['loadthread'].join()
 
             # glue everything together on the master
-            mtable = 'create merge table ' + shardtable + ' ' + shardedtabledef
+            mtable = f'create merge table {shardtable} {shardedtabledef}'
             c = masterconn.cursor()
             c.execute(mtable)
             for workerrec in workers:
-                rtable = 'create remote table ' +  shardtable + workerrec['tpf'] + ' ' + shardedtabledef + ' on \'' + workerrec['mapi'] + '\''
-                atable = 'alter table ' + shardtable + ' add table ' + shardtable + workerrec['tpf'];
+                rtable = f"create remote table {shardtable}{workerrec['tpf']} {shardedtabledef} on '{workerrec['mapi']}'"
+                atable = f'alter table {shardtable} add table {shardtable}{workerrec["tpf"]}'
                 c.execute(rtable)
                 c.execute(atable)
 
             try:
-                c.execute("select * from " + shardtable + workers[0]['tpf'] )
+                c.execute(f"select * from {shardtable}{workers[0]['tpf']}")
                 if c.fetchall() != [(42,)]:
                     sys.stderr.write('(42,) expected')
             except pymonetdb.DatabaseError as e:

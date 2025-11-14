@@ -16,7 +16,7 @@ with tempfile.TemporaryDirectory() as farm_dir:
                         dbfarm=os.path.join(farm_dir, 'db1'),
                         stdin=process.PIPE,
                         stdout=process.PIPE, stderr=process.PIPE) as s:
-        client = pymonetdb.connect(database='db1', port=s.dbport, autocommit=True)
+        client = pymonetdb.connect(database=s.usock or 'db1', port=s.dbport, autocommit=True)
         cursor = client.cursor()
         cursor.execute("""
         with describe_all_objects as (

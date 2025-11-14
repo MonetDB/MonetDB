@@ -11,7 +11,7 @@ with tempfile.TemporaryDirectory() as farm_dir:
                         dbfarm=os.path.join(farm_dir, 'db1'),
                         stdin=process.PIPE, stdout=process.PIPE,
                         stderr=process.PIPE) as s:
-        client1 = pymonetdb.connect(database='db1', port=s.dbport, autocommit=True)
+        client1 = pymonetdb.connect(database=s.usock or 'db1', port=s.dbport, autocommit=True)
         cur1 = client1.cursor()
         cur1.execute('''
         create table t (a int, b int, c int);
@@ -25,7 +25,7 @@ with tempfile.TemporaryDirectory() as farm_dir:
                         dbfarm=os.path.join(farm_dir, 'db1'),
                         stdin=process.PIPE, stdout=process.PIPE,
                         stderr=process.PIPE) as s:
-        client1 = pymonetdb.connect(database='db1', port=s.dbport, autocommit=True)
+        client1 = pymonetdb.connect(database=s.usock or 'db1', port=s.dbport, autocommit=True)
         cur1 = client1.cursor()
         cur1.execute('alter table t drop column c;')
         cur1.close()
@@ -36,7 +36,7 @@ with tempfile.TemporaryDirectory() as farm_dir:
                         dbfarm=os.path.join(farm_dir, 'db1'),
                         stdin=process.PIPE, stdout=process.PIPE,
                         stderr=process.PIPE) as s:
-        client1 = pymonetdb.connect(database='db1', port=s.dbport, autocommit=True)
+        client1 = pymonetdb.connect(database=s.usock or 'db1', port=s.dbport, autocommit=True)
         cur1 = client1.cursor()
         try:
             cur1.execute('alter table t drop column b; --error, b has a depenency')
@@ -52,7 +52,7 @@ with tempfile.TemporaryDirectory() as farm_dir:
                         dbfarm=os.path.join(farm_dir, 'db1'),
                         stdin=process.PIPE, stdout=process.PIPE,
                         stderr=process.PIPE) as s:
-        client1 = pymonetdb.connect(database='db1', port=s.dbport, autocommit=True)
+        client1 = pymonetdb.connect(database=s.usock or 'db1', port=s.dbport, autocommit=True)
         cur1 = client1.cursor()
         cur1.execute("select count(*) from sys.objects inner join sys.dependencies on objects.id = dependencies.depend_id inner join sys.columns on dependencies.id = columns.id inner join sys.tables on columns.table_id = tables.id where tables.name = 't';")
         if cur1.fetchall() != [(2,)]:
@@ -87,7 +87,7 @@ with tempfile.TemporaryDirectory() as farm_dir:
                         dbfarm=os.path.join(farm_dir, 'db1'),
                         stdin=process.PIPE, stdout=process.PIPE,
                         stderr=process.PIPE) as s:
-        client1 = pymonetdb.connect(database='db1', port=s.dbport, autocommit=True)
+        client1 = pymonetdb.connect(database=s.usock or 'db1', port=s.dbport, autocommit=True)
         cur1 = client1.cursor()
         cur1.execute('drop table t;')
         cur1.execute('''
