@@ -26,13 +26,14 @@ end
 statement ok
 call test_populate()
 
-query T python .plan.filter                                                                                                                                                                   
+query T python .plan.filter
 plan select count(*) from test_base  where item is null or not(item in ('a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z'))
 ----
 project (
 | group by (
 | | select (
 | | | table("sys"."test_base") [ "test_base"."item" NOT NULL ]
-| | ) [ (("test_base"."item" NOT NULL) in (varchar(10) "a", varchar(10) "b", varchar(10) "c", varchar(10) "d", varchar(10) "e", varchar(10) "f", varchar(10) "g", varchar(10) "h", varchar(10) "i", varchar(10) "j", varchar(10) "k", varchar(10) "l", varchar(10) "m", varchar(10) "n", varchar(10) "o", varchar(10) "p", varchar(10) "q", varchar(10) "r", varchar(10) "s", varchar(10) "t", varchar(10) "u", varchar(10) "v", varchar(10) "w", varchar(10) "x", varchar(10) "y", varchar(10) "z")) = (boolean(1) "false") ]
+| | ) [ ("test_base"."item" NOT NULL) notin (varchar(10) "a", varchar(10) "b", varchar(10) "c", varchar(10) "d", varchar(10) "e", varchar(10) "f", varchar(10) "g", varchar(10) "h", varchar(10) "i", varchar(10) "j", varchar(10) "k", varchar(10) "l", varchar(10) "m", varchar(10) "n", varchar(10) "o", varchar(10) "p", varchar(10) "q", varchar(10) "r", varchar(10) "s", varchar(10) "t", varchar(10) "u", varchar(10) "v", varchar(10) "w", varchar(10) "x", varchar(10) "y", varchar(10) "z") ]
 | ) [  ] [ "sys"."count"() NOT NULL UNIQUE as "%2"."%2" ]
 ) [ "%2"."%2" NOT NULL UNIQUE ]
+
