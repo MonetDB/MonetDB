@@ -1828,7 +1828,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 				/* insert single value into a column */
 				if (as && as->nrcols <= 0 && !left)
 					as = const_column(be, as);
-				if (as && as->key && pipeline) /* aggregate on group by col */
+				if (as && as->key && right && pipeline) /* aggregate on group by col */
 					grp = stmt_mirror(be, as);
 
 				if (!as)

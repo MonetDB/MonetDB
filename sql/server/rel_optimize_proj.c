@@ -31,11 +31,13 @@ rel_used_projections(mvc *sql, list *exps, list *users)
 		assert(e->nid && exps_bind_nid(exps, e->nid));
 		if (e->nid && (ne = exps_bind_nid(exps, e->nid))) {
 			used[list_position(exps, ne)] = 1;
+			append(nexps, ne);
 		}
 	}
+	/* add intern expressions */
 	for(node *n = exps->h; n; n = n->next, i++) {
 		sql_exp *e = n->data;
-		if (is_intern(e) || used[i])
+		if (is_intern(e) && !used[i])
 			append(nexps, e);
 	}
 	ma_close(sql->ta, &ta_state);

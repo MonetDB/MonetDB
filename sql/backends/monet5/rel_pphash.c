@@ -900,6 +900,7 @@ rel2bin_oahash_semi(backend *be, sql_rel *rel, list *refs)
 	if (!sub)
 		return NULL;
 	if (list_empty(jexps) && list_empty(sexps) && rel->op == op_anti) {
+		/* outer cross product, ie only return rows if tid is nil (ie were hash side does not exist)*/
 		assert(hash_side->h);
 		nulls = stmt_selectnil(be, hash_side->h->data, NULL);
 
