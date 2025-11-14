@@ -27,11 +27,11 @@ with tempfile.TemporaryDirectory() as farm_dir:
                                 stdin=process.PIPE, stdout=process.PIPE,
                                 stderr=process.PIPE) as node3_proc:
 
-                node1_conn = pymonetdb.connect(database='node1', port=node1_proc.dbport, autocommit=True)
+                node1_conn = pymonetdb.connect(database=node1_proc.usock or 'node1', port=node1_proc.dbport, autocommit=True)
                 node1_cur = node1_conn.cursor()
-                node2_conn = pymonetdb.connect(database='node2', port=node2_proc.dbport, autocommit=True)
+                node2_conn = pymonetdb.connect(database=node2_proc.usock or 'node2', port=node2_proc.dbport, autocommit=True)
                 node2_cur = node2_conn.cursor()
-                node3_conn = pymonetdb.connect(database='node3', port=node3_proc.dbport, autocommit=True)
+                node3_conn = pymonetdb.connect(database=node3_proc.usock or 'node3', port=node3_proc.dbport, autocommit=True)
                 node3_cur = node3_conn.cursor()
 
                 # Setup local s1 table

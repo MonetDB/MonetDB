@@ -15,7 +15,7 @@ with tempfile.TemporaryDirectory() as farm_dir:
                         dbfarm=os.path.join(farm_dir, 'node1'),
                         stdin=process.PIPE, stdout=process.PIPE,
                         stderr=process.PIPE) as node1_proc:
-        node1_conn = pymonetdb.connect(database='node1', port=node1_proc.dbport, autocommit=True)
+        node1_conn = pymonetdb.connect(database=node1_proc.usock or 'node1', port=node1_proc.dbport, autocommit=True)
         node1_cur = node1_conn.cursor()
 
         node1_cur.execute("create function mudf(sx float, sxx float, sxy float, sy float, syy float, n int) returns table(res float) begin return select 0.5; end")
@@ -37,7 +37,7 @@ with tempfile.TemporaryDirectory() as farm_dir:
                             dbfarm=os.path.join(farm_dir, 'node2'),
                             stdin=process.PIPE, stdout=process.PIPE,
                             stderr=process.PIPE) as node2_proc:
-            node2_conn = pymonetdb.connect(database='node2', port=node2_proc.dbport, autocommit=True)
+            node2_conn = pymonetdb.connect(database=node2_proc.usock or 'node2', port=node2_proc.dbport, autocommit=True)
             node2_cur = node2_conn.cursor()
 
             node2_cur.execute("create function mudf(sx float, sxx float, sxy float, sy float, syy float, n int) returns table(res float) begin return select 0.5; end")

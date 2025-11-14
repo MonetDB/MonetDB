@@ -460,7 +460,7 @@ class server(Popen):
     def __init__(self, args=[], stdin=None, stdout=None, stderr=None,
                  mapiport=None, dbname=os.getenv('TSTDB'), dbfarm=None,
                  dbextra=None, bufsize=0,
-                 notrace=False, ipv6=True):
+                 notrace=False, ipv6=True, cleandb=False):
         '''Start a server process.'''
         cmd = _server[:]
         if not cmd:
@@ -520,6 +520,11 @@ class server(Popen):
             dbfarm = _dbfarm
         dbpath = os.path.join(dbfarm, dbname)
         cmd.append('--dbpath=%s' % dbpath)
+        if cleandb:
+            import shutil
+            if verbose:
+                print(f'cleaning database {dbpath}', flush=True)
+            shutil.rmtree(dbpath, ignore_errors=True)
         if os.path.exists(os.path.join(dbpath, '.vaultkey')):
             cmd.extend(['--set',
                         'monet_vault_key={}'.format(os.path.join(dbpath, '.vaultkey'))])
@@ -576,6 +581,7 @@ class server(Popen):
         # client to pick up
         self.dbname = dbname
         self.dbport = mapiport
+        self.usock = None
         while True:
             self.poll()
             if self.returncode is not None:
@@ -593,6 +599,11 @@ class server(Popen):
                 else:
                     # retrieve mapi port if available
                     for c in conn.splitlines():
+                        if 'monetdb:///' in c:
+                            self.usock = c.strip()
+                            if verbose:
+                                print(f'usock: {self.usock}')
+                            continue
                         c = c.rstrip('/')
                         c = c.rsplit(':', maxsplit=1)
                         if len(c) == 2:
@@ -602,9 +613,8 @@ class server(Popen):
                                 pass
                             else:
                                 if verbose:
-                                    print('mapi port: {}'.format(c[1]))
-                                self.dbport = c[1]
-                                break
+                                    print(f'mapi port: {port}')
+                                self.dbport = f'{port}'
                 break
             # wait at most 30 seconds for the server to start
             if time.time() > starttime + 30:

@@ -19,7 +19,6 @@ with tempfile.TemporaryDirectory() as farm_dir:
                         args=["--set", "gdk_readonly=yes"],
                         stdin=process.PIPE,
                         stdout=process.PIPE, stderr=process.PIPE) as s:
-        with SQLTestCase() as tc:
-            tc.connect(username="monetdb", password="monetdb", port=s.dbport, database='db1')
+        with SQLTestCase(server=s) as tc:
             tc.execute("create table t2 (a int);").assertFailed(err_message="Schema statements cannot be executed on a readonly database.")
         s.communicate()

@@ -62,7 +62,7 @@ def create_workers(tmpdir, workers, fn_template, nworkers, cmovies, ratings_tabl
         workerrec['proc'] = process.server(mapiport='0', dbname=workerrec['dbname'], dbfarm=workerrec['dbfarm'], stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE)
         workerrec['port'] = workerrec['proc'].dbport
         workerrec['mapi'] = 'mapi:monetdb://localhost:{}/{}/sys/ratings'.format(workerrec['port'], workerdbname)
-        workerrec['conn'] = pymonetdb.connect(database=workerrec['dbname'], port=workerrec['port'], autocommit=True)
+        workerrec['conn'] = pymonetdb.connect(database=workerrec['proc'].usock or workerrec['dbname'], port=workerrec['port'], autocommit=True)
         filename = fn_template.format(workerrec['num'])
         t = threading.Thread(target=worker_load, args=[filename, workerrec, cmovies, ratings_table_def_fk])
         t.start()
@@ -81,7 +81,7 @@ with tempfile.TemporaryDirectory() as tmpdir:
                         stdin=process.PIPE,
                         stdout=process.PIPE,
                         stderr=process.PIPE) as supervisorproc:
-        supervisorconn = pymonetdb.connect(database='supervisor', port=supervisorproc.dbport, autocommit=True)
+        supervisorconn = pymonetdb.connect(database=supervisorproc.usock or 'supervisor', port=supervisorproc.dbport, autocommit=True)
         supervisor_uri = "mapi:monetdb://localhost:{}/supervisor".format(supervisorproc.dbport)
         c = supervisorconn.cursor()
 

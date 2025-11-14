@@ -16,7 +16,7 @@ with tempfile.TemporaryDirectory() as farm_dir:
                         dbfarm=os.path.join(farm_dir, 'node1'),
                         stdin=process.PIPE, stdout=process.PIPE,
                         stderr=process.PIPE) as prc1:
-        conn1 = pymonetdb.connect(database='node1', port=prc1.dbport, autocommit=True)
+        conn1 = pymonetdb.connect(database=prc1.usock or 'node1', port=prc1.dbport, autocommit=True)
         cur1 = conn1.cursor()
         cur1.execute("create table t1 (i int, v varchar(10))")
         cur1.execute("insert into t1 values (48, 'foo'), (29, 'bar'), (63, 'abc')")
@@ -29,7 +29,7 @@ with tempfile.TemporaryDirectory() as farm_dir:
                             dbfarm=os.path.join(farm_dir, 'node2'),
                             stdin=process.PIPE, stdout=process.PIPE,
                             stderr=process.PIPE) as prc2:
-            conn2 = pymonetdb.connect(database='node2', port=prc2.dbport, autocommit=True)
+            conn2 = pymonetdb.connect(database=prc2.usock or 'node2', port=prc2.dbport, autocommit=True)
             cur2 = conn2.cursor()
 
             cur2.execute("create remote table t1 (i int, v varchar(10)) on 'mapi:monetdb://localhost:{}/node1';".format(prc1.dbport))

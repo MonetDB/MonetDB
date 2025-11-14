@@ -20,8 +20,7 @@ with tempfile.TemporaryDirectory() as farm_dir:
                         stdin=process.PIPE,
                         stdout=process.PIPE,
                         stderr=process.PIPE) as s:
-        with SQLTestCase() as mdb:
-            mdb.connect(database='db1', port=s.dbport, username='monetdb', password='monetdb')
+        with SQLTestCase(server=s) as mdb:
             mdb.execute("""CREATE TABLE orders (
                               o_orderkey       BIGINT NOT NULL,
                               o_custkey        INTEGER NOT NULL,
@@ -43,8 +42,7 @@ with tempfile.TemporaryDirectory() as farm_dir:
                         stdin=process.PIPE,
                         stdout=process.PIPE,
                         stderr=process.PIPE) as s:
-        with SQLTestCase() as mdb:
-            mdb.connect(database='db1', port=s.dbport, username='monetdb', password='monetdb')
+        with SQLTestCase(server=s) as mdb:
             # Create strimp
             mdb.execute("ALTER TABLE orders SET READ ONLY;")
             mdb.execute("CREATE IMPRINTS INDEX o_comment_strimp ON orders(o_comment);")
@@ -55,8 +53,7 @@ with tempfile.TemporaryDirectory() as farm_dir:
     with process.server(mapiport='0', dbname='db1',
                         dbfarm=fdir,
                         stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE) as s:
-        with SQLTestCase() as mdb:
-            mdb.connect(database='db1', port=s.dbport, username='monetdb', password='monetdb')
+        with SQLTestCase(server=s) as mdb:
             mdb.execute(COUNT_QUERY).assertSucceeded().assertDataResultMatch([(12896,)])
             mdb.execute(COUNT_QUERY).assertSucceeded().assertDataResultMatch([(12896,)])
         s.communicate()
