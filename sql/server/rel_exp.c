@@ -4024,64 +4024,16 @@ free_exps(allocator *sa, list *exps)
 	}
 }
 
-
-static void
-sql_exp_reset(sql_exp *e)
-{
-	if (!e)
-		return;
-
-	e->l = e->r = e->f = e->p = NULL;
-	e->comment = NULL;
-
-	// Reset basic fields
-	e->type = -1;
-	e->alias.label = 0;
-	e->alias.name = NULL;
-	e->alias.rname = NULL;
-	e->flag = 0;
-	e->tmp = 0;
-	e->nid = 0;
-
-	// Reset bitfields
-	e->card = 0;
-	e->freevar = 0;
-	e->intern = 0;
-	e->selfref = 0;
-	e->anti = 0;
-	e->partitioning = 0;
-	e->ascending = 0;
-	e->nulls_last = 0;
-	e->zero_if_empty = 0;
-	e->distinct = 0;
-	e->semantics = 0;
-	e->any = 0;
-	e->need_no_nil = 0;
-	e->has_no_nil = 0;
-	e->unique = 0;
-	e->base = 0;
-	e->ref = 0;
-	e->used = 0;
-	e->symmetric = 0;
-
-	// Reset subtype
-	memset(&e->tpe, 0, sizeof(e->tpe));
-}
-
-
 static void
 _free_exp_internal(allocator *sa, sql_exp *e)
 {
 	if (!e)
 		return;
-	if (e->p) {
-		// free_props(sa, e->p);
-		e->p = NULL;
-	}
-	sql_exp_reset(e);
+	// Zero everything
+    *e = (sql_exp){0};
+	e->type = -1;
 	ma_free(sa, e);
 }
-
 
 void
 free_exp(allocator *sa, sql_exp *e)
