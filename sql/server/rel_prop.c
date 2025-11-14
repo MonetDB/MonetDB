@@ -11,6 +11,7 @@
  */
 
 #include "monetdb_config.h"
+#include "sql_catalog.h"
 #include "sql_relation.h"
 #include "rel_exp.h"
 #include "rel_prop.h"
@@ -110,6 +111,7 @@ propkind2string( prop *p)
 #define PT(TYPE) case PROP_##TYPE : return #TYPE
 		PT(COUNT);
 		PT(NUNIQUES);
+		PT(UKEY);
 		PT(JOINIDX);
 		PT(HASHIDX);
 		PT(HASHCOL);
@@ -138,6 +140,18 @@ propvalue2string(allocator *sa, prop *p)
 		snprintf(buf, sizeof(buf), "%f", p->value.dval);
 		return ma_strdup(sa, buf);
 	}
+	case PROP_UKEY: {
+		list *exps = p->value.pval;
+		size_t offset = 0;
+
+		offset += snprintf(buf + offset, BUFSIZ, "[ ");
+		for(node *n = exps->h; n; n = n->next) {
+			sql_exp *e = n->data;
+			offset += snprintf(buf + offset, BUFSIZ, "%s.%s ", e->alias.parent->name, e->alias.name);
+		}
+		offset += snprintf(buf + offset, BUFSIZ, "]");
+		return ma_strdup(sa, buf);
+	} break;
 	case PROP_JOINIDX: {
 		sql_idx *i = p->value.pval;
 

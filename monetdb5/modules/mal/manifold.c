@@ -138,7 +138,7 @@ typedef struct {
 // Only the last error message is returned, the value of
 // an erroneous call depends on the operator itself.
 static str
-MANIFOLDjob(allocator *ma, MULTItask *mut)
+MANIFOLDjob(MULTItask *mut)
 {
 	int i;
 	char **args;
@@ -149,9 +149,14 @@ MANIFOLDjob(allocator *ma, MULTItask *mut)
 	if (olimit == 0)
 		return msg;				/* nothing to do */
 
-	args = (char **) ma_zalloc(ma, sizeof(char *) * mut->pci->argc);
-	if (args == NULL)
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
+
+	args = (char **) ma_zalloc(ta, sizeof(char *) * mut->pci->argc);
+	if (args == NULL) {
+		ma_close(ta, &ta_state);
 		throw(MAL, "mal.manifold", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
 
 	// the mod.fcn arguments are ignored from the call
 	for (i = mut->pci->retc + 2; i < mut->pci->argc; i++) {
@@ -195,7 +200,7 @@ MANIFOLDjob(allocator *ma, MULTItask *mut)
 	//if (ATOMextern(mut->args[0].type) && y)
 	//	GDKfree(y);
   bunins_failed:
-	//GDKfree(args);
+	ma_close(ta, &ta_state);
 	return msg;
 }
 
@@ -305,9 +310,14 @@ MANIFOLDevaluate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "mal.manifold", "Illegal manifold function call");
 	}
 
-	mat = (MULTIarg *) ma_zalloc(mb->ma, sizeof(MULTIarg) * pci->argc);
-	if (mat == NULL)
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
+
+	mat = (MULTIarg *) ma_zalloc(ta, sizeof(MULTIarg) * pci->argc);
+	if (mat == NULL) {
+		ma_close(ta, &ta_state);
 		throw(MAL, "mal.manifold", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
 
 	// mr-job structure preparation
 	MULTItask mut = {
@@ -386,7 +396,7 @@ MANIFOLDevaluate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	*/
 	mut.pci->fcn = fcn;
-	msg = MANIFOLDjob(mb->ma, &mut);
+	msg = MANIFOLDjob(&mut);
 	//freeInstruction(mut.pci);
 
   wrapup:
@@ -407,7 +417,7 @@ MANIFOLDevaluate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		*getArgReference_bat(stk, pci, 0) = mat[0].b->batCacheid;
 		BBPkeepref(mat[0].b);
 	}
-	//GDKfree(mat);
+	ma_close(ta, &ta_state);
 	return msg;
 }
 

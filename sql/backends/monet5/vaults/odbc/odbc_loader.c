@@ -1539,6 +1539,9 @@ odbc_load(void *BE, sql_subfunc *f, char *url, sql_exp *topn)
 	(void)topn;
 
 	InstrPtr q = newStmtArgs(be->mb, "odbc", "loader", list_length(f->coltypes) + 2);
+	if (q == NULL)
+		return NULL;
+
 	int col = 0;
 	list *l = sa_list(be->mvc->sa);
 	for (node *n = f->coltypes->h, *nn = f->colnames->h; n && nn; col++, n = n->next, nn = nn->next) {

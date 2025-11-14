@@ -366,7 +366,7 @@ runMAL(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr env)
 		 * been observed due the small size of the function).
 		 */
 	}
-	ret = copyException(mb->ma, runMALsequence(cntxt, mb, 1, 0, stk, env, 0));
+	ret = runMALsequence(cntxt, mb, 1, 0, stk, env, 0);
 
 	if (!stk->keepAlive && garbageControl(getInstrPtr(mb, 0)))
 		garbageCollector(cntxt, mb, stk, env != stk);
@@ -403,7 +403,7 @@ reenterMAL(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr stk)
 	if (stk == NULL)
 		throw(MAL, "mal.interpreter", MAL_STACK_FAIL);
 	keepAlive = stk->keepAlive;
-	ret = copyException(mb->ma, runMALsequence(cntxt, mb, startpc, stoppc, stk, 0, 0));
+	ret = runMALsequence(cntxt, mb, startpc, stoppc, stk, 0, 0);
 
 	if (keepAlive == 0 && garbageControl(getInstrPtr(mb, 0)))
 		garbageCollector(cntxt, mb, stk, stk != 0);
@@ -459,7 +459,7 @@ callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *env, ValPtr argv[])
 			if (lhs->bat)
 				BBPretain(lhs->val.bval);
 		}
-		ret = copyException(mb->ma, runMALsequence(cntxt, mb, 1, 0, stk, 0, 0));
+		ret = runMALsequence(cntxt, mb, 1, 0, stk, 0, 0);
 		break;
 	case PATcall:
 	case CMDcall:

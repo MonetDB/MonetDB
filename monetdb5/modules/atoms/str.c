@@ -2145,7 +2145,7 @@ do_strrev(char *dst, const char *src, size_t len)
 }
 
 static BAT *
-strbat_reverse(allocator *ma, BAT *b)
+strbat_reverse(BAT *b)
 {
 	BAT *bn = NULL;
 	BATiter bi;
@@ -2154,9 +2154,11 @@ strbat_reverse(allocator *ma, BAT *b)
 	size_t len;
 	char *dst;
 	size_t dstlen;
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
 
 	dstlen = 1024;
-	dst = ma_alloc(ma, dstlen);
+	dst = ma_alloc(ta, dstlen);
 	if (dst == NULL)
 		return NULL;
 
@@ -2176,11 +2178,11 @@ strbat_reverse(allocator *ma, BAT *b)
 			char *ndst;
 			size_t osz = dstlen;
 			dstlen = len + 1024;
-			ndst = ma_realloc(ma, dst, dstlen, osz);
+			ndst = ma_realloc(ta, dst, dstlen, osz);
 			if (ndst == NULL) {
 				bat_iterator_end(&bi);
 				BBPreclaim(bn);
-				//GDKfree(dst);
+				ma_close(ta, &ta_state);
 				return NULL;
 			}
 			dst = ndst;
@@ -2189,13 +2191,13 @@ strbat_reverse(allocator *ma, BAT *b)
 		if (BUNappend(bn, dst, false) != GDK_SUCCEED) {
 			bat_iterator_end(&bi);
 			BBPreclaim(bn);
-			//GDKfree(dst);
+			ma_close(ta, &ta_state);
 			return NULL;
 		}
 	}
 
 	bat_iterator_end(&bi);
-	//GDKfree(dst);
+	ma_close(ta, &ta_state);
 	return bn;
 }
 
@@ -2273,19 +2275,6 @@ nested_loop_strjoin(BAT *rl, BAT *rr, BATiter *li, BATiter *ri,
 	return MAL_SUCCEED;
 }
 
-static void
-ng_destroy(NGrams *ng)
-{
-	if (ng) {
-		//GDKfree(ng->idx);
-		//GDKfree(ng->sigs);
-		//GDKfree(ng->histogram);
-		//GDKfree(ng->lists);
-		//GDKfree(ng->rids);
-	}
-	//GDKfree(ng);
-}
-
 static NGrams *
 ng_create(allocator *ma, size_t cnt, size_t ng_sz)
 {
@@ -2298,7 +2287,6 @@ ng_create(allocator *ma, size_t cnt, size_t ng_sz)
 		ng->rids = ma_alloc(ma, NG_MULTIPLE * cnt * sizeof(oid));
 	}
 	if (!ng || !ng->idx || !ng->sigs || !ng->histogram || !ng->lists || !ng->rids) {
-		ng_destroy(ng);
 		return NULL;
 	}
 	return ng;
@@ -2391,16 +2379,20 @@ init_bigram_idx(NGrams *ng, BATiter *bi, struct canditer *bci, QryCtx *qry_ctx)
 }
 
 static str
-bigram_strjoin(allocator *ma, BAT *rl, BAT *rr, BATiter *li, BATiter *ri,
+bigram_strjoin(BAT *rl, BAT *rr, BATiter *li, BATiter *ri,
 			   struct canditer *lci, struct canditer *rci,
 			   int (*str_cmp)(const char *, const char *, size_t),
 			   const char *fname, QryCtx *qry_ctx)
 {
 	str msg = MAL_SUCCEED;
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
 
-	NGrams *ng = ng_create(ma, lci->ncand, BIGRAM_SZ);
-	if (!ng)
+	NGrams *ng = ng_create(ta, lci->ncand, BIGRAM_SZ);
+	if (!ng) {
+		ma_close(ta, &ta_state);
 		throw(MAL, fname, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
 
 	NG_TYPE *idx = ng->idx;
 	NG_TYPE *sigs = ng->sigs;
@@ -2411,7 +2403,7 @@ bigram_strjoin(allocator *ma, BAT *rl, BAT *rr, BATiter *li, BATiter *ri,
 
 	msg = init_bigram_idx(ng, li, lci, qry_ctx);
 	if (msg) {
-		ng_destroy(ng);
+		ma_close(ta, &ta_state);
 		return msg;
 	}
 
@@ -2440,7 +2432,7 @@ bigram_strjoin(allocator *ma, BAT *rl, BAT *rr, BATiter *li, BATiter *ri,
 						new_cap = BATgrows(rl);
 						if (BATextend(rl, new_cap) != GDK_SUCCEED ||
 							(rr && BATextend(rr, new_cap) != GDK_SUCCEED)) {
-							ng_destroy(ng);
+							ma_close(ta, &ta_state);
 							throw(MAL, fname, GDK_EXCEPTION);
 						}
 					}
@@ -2470,7 +2462,7 @@ bigram_strjoin(allocator *ma, BAT *rl, BAT *rr, BATiter *li, BATiter *ri,
 								new_cap = BATgrows(rl);
 								if (BATextend(rl, new_cap) != GDK_SUCCEED ||
 									(rr && BATextend(rr, new_cap) != GDK_SUCCEED)) {
-									ng_destroy(ng);
+									ma_close(ta, &ta_state);
 									throw(MAL, fname, GDK_EXCEPTION);
 								}
 							}
@@ -2490,7 +2482,7 @@ bigram_strjoin(allocator *ma, BAT *rl, BAT *rr, BATiter *li, BATiter *ri,
 								new_cap = BATgrows(rl);
 								if (BATextend(rl, new_cap) != GDK_SUCCEED ||
 									(rr && BATextend(rr, new_cap) != GDK_SUCCEED)) {
-									ng_destroy(ng);
+									ma_close(ta, &ta_state);
 									throw(MAL, fname, GDK_EXCEPTION);
 								}
 							}
@@ -2502,14 +2494,16 @@ bigram_strjoin(allocator *ma, BAT *rl, BAT *rr, BATiter *li, BATiter *ri,
 	}
 
 	BATsetcount(rl, BATcount(rl));
-	if (rr) BATsetcount(rr, BATcount(rr));
+	if (rr)
+		BATsetcount(rr, BATcount(rr));
 
 	if (BATcount(rl) > 0) {
 		BATnegateprops(rl);
-		if (rr) BATnegateprops(rr);
+		if (rr)
+			BATnegateprops(rr);
 	}
 
-	ng_destroy(ng);
+	ma_close(ta, &ta_state);
 
 	TRC_DEBUG(ALGO, "(%s, %s, l=%s #%zu [%s], r=%s #%zu [%s], cl=%s #%zu, cr=%s #%zu, time="LLFMT"usecs)\n",
 			  fname, "bigram_strjoin",
@@ -2710,7 +2704,7 @@ ignorecase(const bat IC, bool *icase, const str fname)
 }
 
 static str
-STRjoin(allocator *ma, MalStkPtr stk, InstrPtr pci, const str fname,
+STRjoin(MalStkPtr stk, InstrPtr pci, const str fname,
 		int (*str_cmp)(const char *, const char *, size_t))
 {
 	str msg = MAL_SUCCEED;
@@ -2791,11 +2785,11 @@ STRjoin(allocator *ma, MalStkPtr stk, InstrPtr pci, const str fname,
 			ri = bat_iterator(r);
 		}
 		if (str_cmp == str_contains || str_cmp == str_icontains) {
-			msg = bigram_strjoin(ma, rl, rr, &li, &ri, &lci, &rci, str_cmp, fname, qry_ctx);
+			msg = bigram_strjoin(rl, rr, &li, &ri, &lci, &rci, str_cmp, fname, qry_ctx);
 		} else {
 			if (str_cmp == str_is_suffix || str_cmp == str_is_isuffix) {
 				BAT *l_rev = NULL, *r_rev = NULL;
-				if (!(l_rev = strbat_reverse(ma, l)) || !(r_rev = strbat_reverse(ma, r))) {
+				if (!(l_rev = strbat_reverse(l)) || !(r_rev = strbat_reverse(r))) {
 					bat_iterator_end(&li);
 					bat_iterator_end(&ri);
 					BBPreclaim_n(7, rl, rr, l, r, cl, cr, l_rev);
@@ -2836,7 +2830,7 @@ STRstartswithjoin(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void)ctx;
 	(void)mb;
-	return STRjoin(mb->ma, stk, pci, "str.startswithjoin", str_is_prefix);
+	return STRjoin(stk, pci, "str.startswithjoin", str_is_prefix);
 }
 
 static str
@@ -2844,7 +2838,7 @@ STRendswithjoin(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void)ctx;
 	(void)mb;
-	return STRjoin(mb->ma, stk, pci, "str.endswithjoin", str_is_suffix);
+	return STRjoin(stk, pci, "str.endswithjoin", str_is_suffix);
 }
 
 static str
@@ -2852,7 +2846,7 @@ STRcontainsjoin(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void)ctx;
 	(void)mb;
-	return STRjoin(mb->ma, stk, pci, "str.containsjoin", str_contains);
+	return STRjoin(stk, pci, "str.containsjoin", str_contains);
 }
 
 #include "mel.h"

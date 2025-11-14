@@ -66,8 +66,6 @@ renderTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx, int flg, char *buf,
 {
 	char *bufend = buf;
 	int nameused = 0;
-	ValRecord *val = 0;
-	char *cv = 0;
 	str tpe;
 	int showtype = 0, closequote = 0;
 	int varid = getArg(p, idx);
@@ -80,7 +78,8 @@ renderTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx, int flg, char *buf,
 		nameused = 1;
 	}
 	// show the value when required or being a constant
-	if (((flg & LIST_MAL_VALUE) && stk != 0) || isVarConstant(mb, varid)) {
+	if (((flg & LIST_MAL_VALUE) && stk != NULL) || isVarConstant(mb, varid)) {
+		ValRecord *val = NULL;
 		if (nameused)
 			bufend = stpcpy(bufend, "=");
 		// locate value record
@@ -88,10 +87,13 @@ renderTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx, int flg, char *buf,
 			val = &getVarConstant(mb, varid);
 			showtype = getVarType(mb, varid) != TYPE_str
 					&& getVarType(mb, varid) != TYPE_bit;
-		} else if (stk) {
+		} else {
+			assert(stk != NULL);
 			val = &stk->stk[varid];
 		}
-		cv = VALformat(mb->ma, val);
+		allocator *ta = MT_thread_getallocator();
+		allocator_state ta_state = ma_open(ta);
+		char *cv = VALformat(ta, val);
 		if (cv == NULL) {
 			bufend = stpcpy(bufend, "<alloc failed...>");
 		} else if (!val->bat && strcmp(cv, "nil") == 0) {
@@ -135,7 +137,7 @@ renderTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx, int flg, char *buf,
 					bufend += snprintf(bufend, (buf + max_len) - bufend, "[" BUNFMT "]", BATcount(d));
 			}
 		}
-		// GDKfree(cv);
+		ma_close(ta, &ta_state);
 	}
 	*bufend = 0;
 	// show the type when required or frozen by the user

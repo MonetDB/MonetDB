@@ -40,6 +40,7 @@ typedef struct JSONterm {
 } JSONterm;
 
 typedef struct JSON {
+	allocator *ma;
 	JSONterm *elm;
 	str error;
 	int size;

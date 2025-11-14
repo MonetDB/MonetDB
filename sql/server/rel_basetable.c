@@ -771,6 +771,21 @@ rewrite_basetable(mvc *sql, sql_rel *rel, bool stats)
 			e->alias.label = e->nid;
 			append(rel->exps, e);
 		}
+		if (t->pkey) {
+			p = prop_create(sql->sa, PROP_UKEY, rel->p);
+			list *exps = p->value.pval = sa_list(sql->sa);
+			for(node *n = t->pkey->k.columns->h; n; n = n->next) {
+				sql_kc *c = n->data;
+				sql_exp *e = exps_bind_column2(rel->exps, atname, c->c->base.name, NULL);
+				if (!e) {
+					p = NULL;
+					break;
+				}
+				append(exps, e);
+			}
+			if (p)
+				rel->p = p;
+		}
 	}
 	return rel;
 }
