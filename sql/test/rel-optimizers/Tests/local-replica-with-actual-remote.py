@@ -20,7 +20,7 @@ with tempfile.TemporaryDirectory() as farm_dir:
                         stdin=process.PIPE, stdout=process.PIPE,
                         stderr=process.PIPE) as prc_2:
         # create buz_rmt in node2
-        conn2 = pymonetdb.connect(database='node2', port=prc_2.dbport, autocommit=True)
+        conn2 = pymonetdb.connect(database=prc_2.usock or 'node2', port=prc_2.dbport, autocommit=True)
         cur2 = conn2.cursor()
 
         cur2.execute("create table buz_rmt (l int)")
@@ -31,7 +31,7 @@ with tempfile.TemporaryDirectory() as farm_dir:
         conn2.close()
 
         # create foo_rpl_loc and remote buz_rmt on master
-        conn1 = pymonetdb.connect(database='master', port=prc_1.dbport, autocommit=True)
+        conn1 = pymonetdb.connect(database=prc_1.usock or 'master', port=prc_1.dbport, autocommit=True)
         cur1 = conn1.cursor()
 
         cur1.execute("create table foo_local (n int, m text)")

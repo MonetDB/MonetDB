@@ -11,7 +11,7 @@ with tempfile.TemporaryDirectory() as farm_dir:
     os.mkdir(os.path.join(farm_dir, 'db1'))
 
     with process.server(args = server_args, mapiport='0', dbname='db1', dbfarm=os.path.join(farm_dir, 'db1'), stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE) as s:
-        client1 = pymonetdb.connect(database='db1', port=s.dbport, autocommit=True)
+        client1 = pymonetdb.connect(database=s.usock or 'db1', port=s.dbport, autocommit=True)
         cursor1 = client1.cursor()
         cursor1.execute("""
         CREATE FUNCTION myfunc1(input1 INT, input2 INT) RETURNS INT BEGIN RETURN input1 + input2; END;
@@ -35,7 +35,7 @@ with tempfile.TemporaryDirectory() as farm_dir:
         s.communicate()
 
     with process.server(args = server_args, mapiport='0', dbname='db1', dbfarm=os.path.join(farm_dir, 'db1'), stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE) as s:
-        client1 = pymonetdb.connect(database='db1', port=s.dbport, autocommit=True)
+        client1 = pymonetdb.connect(database=s.usock or 'db1', port=s.dbport, autocommit=True)
         cursor1 = client1.cursor()
         cursor1.execute("SELECT CAST(myfunc1(1, 1) + myfunc2(1, 1) + myfunc3(1, 1) + myfunc4(1, 1) + myfunc5(1, 1) + myfunc6(1, 1) + myfunc7(1, 1) AS BIGINT);")
         result = cursor1.fetchall()[0][0]

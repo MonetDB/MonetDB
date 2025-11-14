@@ -73,3 +73,4 @@ HAVE_HGE?7637_str_to_decimal
 7736-scale-reduction-crash
 7737-join-order
 7744_opt_null_in_where
+KNOWNFAIL?7748-update-returning-subquery-crash
