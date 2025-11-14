@@ -3993,9 +3993,9 @@ exp_check_type(mvc *sql, sql_subtype *t, sql_rel *rel, sql_exp *exp, check_type 
 		if (t->type->composite && (is_row(exp) || is_values(exp)))
 			return exp_check_composite_type(sql, t, rel, exp, tpe);
 		if (strcmp(fromtype->type->base.name, "json") == 0)
-			return exp_convert(sql, exp, fromtype, t);
+			return exp_convert(sql, exp_copy(sql, exp), fromtype, t);
 		if (EC_VARCHAR(fromtype->type->eclass))
-			return exp_convert(sql, exp, fromtype, t);
+			return exp_convert(sql, exp_copy(sql, exp), fromtype, t);
 		if (is_values(exp))
 			return NULL;
 	}
