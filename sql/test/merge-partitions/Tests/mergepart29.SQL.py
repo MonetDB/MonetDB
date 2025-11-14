@@ -13,7 +13,7 @@ with tempfile.TemporaryDirectory() as farm_dir:
                         dbfarm=os.path.join(farm_dir, 'db1'),
                         stdin=process.PIPE, stdout=process.PIPE,
                         stderr=process.PIPE) as node1_proc:
-        node1_conn = pymonetdb.connect(database='db1', port=node1_proc.dbport,
+        node1_conn = pymonetdb.connect(database=node1_proc.usock or 'db1', port=node1_proc.dbport,
                                        autocommit=True)
         node1_cur = node1_conn.cursor()
 
@@ -22,7 +22,7 @@ with tempfile.TemporaryDirectory() as farm_dir:
                             dbfarm=os.path.join(farm_dir, 'db2'),
                             stdin=process.PIPE, stdout=process.PIPE,
                             stderr=process.PIPE) as node2_proc:
-            node2_conn = pymonetdb.connect(database='db2', port=node2_proc.dbport,
+            node2_conn = pymonetdb.connect(database=node2_proc.usock or 'db2', port=node2_proc.dbport,
                                            autocommit=True)
             node2_cur = node2_conn.cursor()
 

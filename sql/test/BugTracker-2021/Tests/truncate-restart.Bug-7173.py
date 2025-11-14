@@ -11,8 +11,7 @@ with tempfile.TemporaryDirectory() as farm_dir:
 
     with process.server(mapiport='0', dbname='mydb', dbfarm=os.path.join(farm_dir, 'mydb'),
                         stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE) as s:
-        with SQLTestCase() as mdb:
-            mdb.connect(username="monetdb", password="monetdb", database='mydb', port=s.dbport)
+        with SQLTestCase(server=s) as mdb:
             mdb.execute("create table test (col int);").assertSucceeded()
             mdb.execute("insert into test values (1), (2), (3);").assertSucceeded().assertRowCount(3)
 
@@ -32,8 +31,7 @@ with tempfile.TemporaryDirectory() as farm_dir:
 
     with process.server(mapiport='0', dbname='mydb', dbfarm=os.path.join(farm_dir, 'mydb'),
                         stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE) as s:
-        with SQLTestCase() as mdb:
-            mdb.connect(username="monetdb", password="monetdb", database='mydb', port=s.dbport)
+        with SQLTestCase(server=s) as mdb:
             mdb.execute("select * from test;").assertSucceeded().assertDataResultMatch([(1,),(2,),(3,)])
             mdb.execute("drop table test;").assertSucceeded()
         s.communicate()

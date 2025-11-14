@@ -16,8 +16,7 @@ with tempfile.TemporaryDirectory() as farm_dir:
     os.mkdir(os.path.join(farm_dir, 'db1'))
 
     with server_start() as srv:
-        with SQLTestCase() as tc:
-            tc.connect(username="monetdb", password="monetdb", port=srv.dbport, database='db1')
+        with SQLTestCase(server=srv) as tc:
             tc.execute("""
             CREATE USER "voc2" WITH PASSWORD 'voc2' NAME 'VOC_EXPLORER' SCHEMA "sys";
             CREATE SCHEMA "voc2" AUTHORIZATION "voc2";
@@ -27,16 +26,14 @@ with tempfile.TemporaryDirectory() as farm_dir:
         srv.communicate()
 
     with server_start() as srv:
-        with SQLTestCase() as tc:
-            tc.connect(username="voc2", password="new", port=srv.dbport, database='db1')
+        with SQLTestCase(server=srv, username="voc2", password="new") as tc:
             tc.execute("""
             select 1;
             """).assertSucceeded().assertRowCount(1).assertDataResultMatch([(1,)])
         srv.communicate()
 
     with server_start() as srv:
-        with SQLTestCase() as tc:
-            tc.connect(username="monetdb", password="monetdb", port=srv.dbport, database='db1')
+        with SQLTestCase(server=srv) as tc:
             tc.execute("DROP SCHEMA \"voc2\";").assertFailed(err_message='DROP SCHEMA: unable to drop schema \'voc2\' (there are database users using it as session\'s default schema)')
             tc.execute("""
             ALTER user "voc2" SET SCHEMA "sys";

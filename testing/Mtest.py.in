@@ -1064,22 +1064,20 @@ def PerformDir(env, testdir, testlist, total_tests):
 
         alltests = []
         try:
-            allf = openutf8(os.path.join(TSTSRCDIR, 'All'))
+            with openutf8(os.path.join(TSTSRCDIR, 'All')) as allf:
+                for tc in allf:
+                    if '#' in tc:
+                        # get rid of comment anywhere on line
+                        tc = tc[:tc.index('#')]
+                    tc = tc.strip()
+                    if tc:
+                        if '?' in tc:
+                            cond,tst = tc.split('?')
+                        else:
+                            cond,tst = None,tc
+                        alltests.append((tst,cond))
         except IOError:
             pass
-        else:
-            for tc in allf:
-                if '#' in tc:
-                    # get rid of comment anywhere on line
-                    tc = tc[:tc.index('#')]
-                tc = tc.strip()
-                if tc:
-                    if '?' in tc:
-                        cond,tst = tc.split('?')
-                    else:
-                        cond,tst = None,tc
-                    alltests.append((tst,cond))
-            allf.close()
         try:
             with openutf8(os.path.join(TSTSRCDIR, 'SingleServer')) as f:
                 options = shlex.split(f.read())
@@ -1240,7 +1238,7 @@ def PerformDir(env, testdir, testlist, total_tests):
                                                password='monetdb',
                                                hostname=HOST,
                                                port=int(pSrvr.port),
-                                               database=TSTDB,
+                                               database=pSrvr.usock or TSTDB,
                                                autocommit=True,
                                                connect_timeout=1.0) as dbh:
                             dbh.settimeout(10)
@@ -3146,7 +3144,8 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, len
                                         password=passwd or 'monetdb',
                                         hostname=HOST,
                                         port=int(pSrvr.port),
-                                        database=TSTDB if pSrvr.usock is None else pSrvr.usock,
+                                        database=TSTDB,
+                                        usock=pSrvr.usock,
                                         language='sql',
                                         timeout=TIMEOUT,
                                         alltests=CONDITIONALS['KNOWNFAIL'])
@@ -3181,7 +3180,8 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, len
                                     password=passwd or 'monetdb',
                                     hostname=HOST,
                                     port=int(pSrvr.port),
-                                    database=TSTDB if pSrvr.usock is None else pSrvr.usock,
+                                    database=TSTDB,
+                                    usock=pSrvr.usock,
                                     language=lang,
                                     timeout=TIMEOUT,
                                     alltests=CONDITIONALS['KNOWNFAIL'])

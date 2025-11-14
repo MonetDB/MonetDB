@@ -20,6 +20,7 @@ from typing import Optional
 
 TSTDB = os.getenv("TSTDB")
 MAPIPORT = os.getenv("MAPIPORT")
+MAPIUSOCK = os.getenv("MAPIUSOCK")
 TIMEOUT = int(os.getenv("TIMEOUT", "0"))
 
 
@@ -153,7 +154,7 @@ class PyMonetDBConnectionContext(object):
     def __init__(self,
                  username='monetdb', password='monetdb',
                  hostname='localhost', port=MAPIPORT, database=TSTDB,
-                 language='sql', timeout=TIMEOUT):
+                 language='sql', timeout=TIMEOUT, usock=MAPIUSOCK):
         self.username = username
         self.password = password
         self.hostname = hostname
@@ -163,6 +164,7 @@ class PyMonetDBConnectionContext(object):
         self.dbh = None
         self.language = language
         self.timeout = timeout
+        self.usock = usock
 
     def connect(self):
         if self.dbh is None:
@@ -172,7 +174,7 @@ class PyMonetDBConnectionContext(object):
                                          password=self.password,
                                          hostname=self.hostname,
                                          port=self.port,
-                                         database=self.database,
+                                         database=self.database if self.database == 'in-memory' or self.usock is None else self.usock,
                                          autocommit=True,
                                          connect_timeout=1.0 if self.timeout > 0 else None)
                 if self.timeout > 0:
@@ -414,7 +416,7 @@ class MclientTestResult(TestCaseResult, RunnableTestResult):
             kwargs = dict(
                 host = conn_ctx.hostname,
                 port = conn_ctx.port,
-                dbname = conn_ctx.database,
+                dbname = conn_ctx.usock or conn_ctx.database,
                 user = conn_ctx.username,
                 passwd = conn_ctx.password)
             try:
@@ -619,7 +621,8 @@ class SQLDump():
                 f.write(self.data or '')
 
 class SQLTestCase():
-    def __init__(self, out_file=sys.stdout, err_file=sys.stderr):
+    def __init__(self, out_file=sys.stdout, err_file=sys.stderr, server=None,
+                 username='monetdb', password='monetdb', timeout=TIMEOUT):
         self.out_file = out_file
         self.err_file = err_file
         self.test_results = []
@@ -627,6 +630,10 @@ class SQLTestCase():
         self._conn_trash = []
         self.in_memory = False
         self.client = 'pymonetdb'
+        self.server = server
+        self.username = username
+        self.password = password
+        self.timeout = timeout
 
     def __enter__(self):
         self.connect()
@@ -658,9 +665,23 @@ class SQLTestCase():
         print('', file=self.err_file)
 
     def connect(self,
-            username='monetdb', password='monetdb', port=MAPIPORT,
-            hostname='localhost', database=TSTDB, language='sql',
-            timeout=TIMEOUT):
+            username=None, password=None, port=None,
+            hostname='localhost', database=None, language='sql',
+            usock=None, timeout=None, server=None):
+        if server is None:
+            server = self.server  # can still be None
+        if username is None:
+            username = self.username
+        if password is None:
+            password = self.password
+        if timeout is None:
+            timeout = self.timeout
+        if port is None:
+            port = MAPIPORT if server is None or not server.dbport else server.dbport
+        if database is None:
+            database = TSTDB if server is None or not server.dbname else server.dbname
+        if usock is None:
+            usock = MAPIUSOCK if server is None or not server.usock else server.usock
         old = self._conn_ctx
         if old:
             self._conn_trash.append(old)
@@ -679,6 +700,7 @@ class SQLTestCase():
                                  port=port,
                                  database=database or 'in-memory',
                                  language=language,
+                                 usock=usock,
                                  timeout=timeout)
 
     @property
