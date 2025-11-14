@@ -4029,9 +4029,8 @@ _free_exp_internal(allocator *sa, sql_exp *e)
 {
 	if (!e)
 		return;
-	// Zero everything
-    *e = (sql_exp){0};
-	e->type = -1;
+	// Zero almost everything
+	*e = (sql_exp){.type = -1};
 	ma_free(sa, e);
 }
 
