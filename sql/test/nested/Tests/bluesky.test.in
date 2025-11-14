@@ -1,4 +1,7 @@
 statement ok
+set time zone interval '+00:00' hour to minute
+
+statement ok
 create type "subject" as ("cid" varchar, "uri" varchar)
 
 statement ok
@@ -14,15 +17,15 @@ create type event as ("did" varchar, "time_us" bigint, "kind" varchar, "commit" 
 statement ok
 create table bluesky (data event)
 
-query I
+query I nosort
 select count(*) from r'$TSTSRCDIR/bluesky.ndjson'
 ----
 10
 
 statement ok
-insert into bluesky select * from read_ndjson(r'$TSTSRCDIR/bluesky.ndjson') 
+insert into bluesky select * from read_ndjson(r'$TSTSRCDIR/bluesky.ndjson')
 
-query T
+query T nosort
 SELECT data."commit"."collection" AS event FROM bluesky
 ----
 app.bsky.feed.post
@@ -36,9 +39,8 @@ app.bsky.feed.repost
 app.bsky.feed.post
 app.bsky.feed.like
 
-
 # Q1 bluesky benchmark
-query TI
+query TI nosort
 SELECT data."commit"."collection" AS event, count(*) AS cnt FROM bluesky GROUP BY event ORDER BY cnt DESC
 ----
 app.bsky.feed.post
@@ -50,9 +52,8 @@ app.bsky.graph.follow
 app.bsky.feed.repost
 1
 
-
 # Q2 bluesky benchmark
-query TII
+query TII nosort
 SELECT data."commit"."collection" AS event, count(*) AS cnt, count(distinct data.did) AS users FROM bluesky WHERE data.kind = 'commit' AND data."commit"."operation" = 'create' GROUP BY event ORDER BY cnt DESC
 ----
 app.bsky.feed.post
@@ -68,35 +69,33 @@ app.bsky.feed.repost
 1
 1
 
-
 # Q3 bluesky benchmark
-query TII
+query TII nosort
 SELECT data."commit"."collection" AS event, "hour"(epoch(cast(data.time_us as bigint)/(1000*1000))) as hour_of_day, count(*) AS cnt FROM bluesky WHERE data.kind = 'commit' AND data."commit"."operation" = 'create' AND data."commit"."collection" in ('app.bsky.feed.post', 'app.bsky.feed.repost', 'app.bsky.feed.like') GROUP BY event, hour_of_day ORDER BY hour_of_day, event
 ----
 app.bsky.feed.like
-18
+16
 3
 app.bsky.feed.post
-18
+16
 3
 app.bsky.feed.repost
-18
+16
 1
 
-
 # Q4
-query TT
+query TT nosort
 SELECT data.did as user_id, epoch(cast(min(data.time_us) as bigint)/1000000) as first_post_ts FROM bluesky WHERE data.kind = 'commit' AND data."commit"."operation" = 'create' AND data."commit"."collection" = 'app.bsky.feed.post' GROUP BY user_id ORDER BY first_post_ts ASC LIMIT 3
 ----
 did:plc:yj3sjq3blzpynh27cumnp5ks
-2024-11-21 18:25:49+02:00
+2024-11-21 16:25:49+00:00
 did:plc:l5o3qjrmfztir54cpwlv2eme
-2024-11-21 18:25:49+02:00
+2024-11-21 16:25:49+00:00
 did:plc:s4bwqchfzm6gjqfeb6mexgbu
-2024-11-21 18:25:49+02:00
+2024-11-21 16:25:49+00:00
 
 # Q5
-query TT
+query TT nosort
 SELECT data.did as user_id, timestampdiff(epoch(cast(min(data.time_us) as bigint)/1000000),  epoch(cast(max(data.time_us) as bigint)/1000000))*1000 AS activity_span FROM bluesky WHERE data.kind = 'commit' AND data."commit"."operation" = 'create' AND data."commit"."collection" = 'app.bsky.feed.post' GROUP BY user_id ORDER BY activity_span DESC LIMIT 3
 ----
 did:plc:yj3sjq3blzpynh27cumnp5ks
@@ -117,3 +116,4 @@ drop type "commit"
 
 statement ok
 drop type "record"
+

@@ -50,6 +50,10 @@ CREATE TABLE events(
     device kv[]
 )
 
+
+statement ok
+set time zone interval '+00:00' hour to minute
+
 statement ok
 insert into events select * from read_ndjson(r'$TSTSRCDIR/events.ndjson')
 
@@ -202,6 +206,6 @@ SELECT distinct event, TIMESTAMP_TRUNC(timestamp_processed, 'hour') t FROM event
 WHERE NOT REGEXP_CONTAINS(user_agent, r'(AdsBot|Googlebot|bingbot|spider|crawler|AhrefsBot)')
 ----
 link_click
-2023-03-31 14:00:00
+2023-03-31 12:00:00
 link_click
-2023-03-31 13:00:00
+2023-03-31 11:00:00
