@@ -11,8 +11,7 @@ with ss as
        and d_date between cast('2000-08-23' as date)
                   and (cast('2000-08-23' as date) +  interval '30' day)
        and ss_store_sk = s_store_sk
- group by s_store_sk)
- ,
+ group by s_store_sk),
  sr as
  (select s_store_sk,
          sum(sr_return_amt) as "returns",
@@ -45,8 +44,7 @@ with ss as
  where cr_returned_date_sk = d_date_sk
        and d_date between cast('2000-08-23' as date)
                   and (cast('2000-08-23' as date) +  interval '30' day)
- group by cr_call_center_sk
- ),
+ group by cr_call_center_sk),
  ws as
  ( select wp_web_page_sk,
         sum(ws_ext_sales_price) as sales,
@@ -90,8 +88,8 @@ with ss as
         , sales
         , "returns"
         , (profit - profit_loss) as profit
- from  cs
-       , cr
+ from  cs left join cr
+	on cs.cs_call_center_sk = cr.cr_call_center_sk
  union all
  select 'web channel' as channel
         , ws.wp_web_page_sk as id
@@ -102,9 +100,8 @@ with ss as
         on  ws.wp_web_page_sk = wr.wp_web_page_sk
  ) x
  group by rollup (channel, id)
- order by channel
-         ,id
+ order by channel, id, sales desc
  limit 100
 ----
-220 values hashing to 085a0ea92d942b50cbed1f1da1ed15f5
+220 values hashing to 31ccc48df63f8d7d4c95bc40e3121a69
 
