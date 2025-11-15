@@ -8658,6 +8658,8 @@ subrel_bin(backend *be, sql_rel *rel, list *refs)
 				return s->op1;
 			return s;
 		}
+		if (neededpp)
+			set_need_pipeline(be);
 		/*
 		if (neededpp) {
 			s = rel2bin_materialize(be, rel, refs, false);

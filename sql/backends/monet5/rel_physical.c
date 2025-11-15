@@ -780,6 +780,7 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 		if (is_recursive(rel) || need_distinct(rel) || is_single(rel)) {
 			res = 0;
 		} else {
+			int started_pb = 0;
 			if (rel_is_ref(rel))
 				pb = 0;
 			else
@@ -792,8 +793,13 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 					if (pb)
 						rel_dup(n->data); // nested
 				}
+				if (lres == SPB)
+					started_pb = 1;
 			}
 			if (pb) {
+				rel->parallel = 1;
+				rel->spb = 1;
+			} else if (started_pb) {
 				rel->parallel = 1;
 				rel->spb = 1;
 			}
