@@ -4224,7 +4224,7 @@ stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *f, stmt* rows)
 	InstrPtr q = NULL;
 	const char *mod = sql_func_mod(f->func), *fimp = backend_function_imp(be, f->func);
 	sql_subtype *tpe = NULL;
-	int push_cands = 0, default_nargs;
+	int push_cands = 0, default_nargs, identity = -1;
 	stmt *o = NULL, *card = NULL;
 
 	if (ops == NULL)
@@ -4242,6 +4242,14 @@ stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *f, stmt* rows)
 			if (c && o->nrcols < c->nrcols)
 				o = c;
 		}
+	}
+
+	/* handle identity */
+	if (be->pipeline && list_length(ops->op4.lval) == 1 && strcmp(f->func->base.name, "identity") == 0) {
+		InstrPtr q = newStmt(be->mb, "pipeline", "resultset");
+		pushInstruction(be->mb, q);
+		identity = getDestVar(q);
+		moveInstruction(be->mb, be->mb->stop-1, be->pp_pc++);
 	}
 
 	/* handle nullif */
@@ -4278,8 +4286,8 @@ stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *f, stmt* rows)
 	if (q == NULL) {
 		if (backend_create_subfunc(be, f, ops->op4.lval) < 0)
 			goto bailout;
-		mod = sql_func_mod(f->func);
-		fimp = convertMultiplexFcn(backend_function_imp(be, f->func));
+		mod = (identity<0)? sql_func_mod(f->func) : "pipeline";
+		fimp = (identity<0)? convertMultiplexFcn(backend_function_imp(be, f->func)) : "identity";
 		push_cands = f->func->type == F_FUNC && can_push_cands(sel, mod, fimp);
 		default_nargs = (f->res && list_length(f->res) ? list_length(f->res) : 1) + list_length(ops->op4.lval) + (o && o->nrcols > 0 ? 6 : 4);
 		if (rows) {
@@ -4287,7 +4295,7 @@ stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *f, stmt* rows)
 			default_nargs++;
 		}
 
-		if (o && o->nrcols > 0 && f->func->type != F_LOADER && f->func->type != F_PROC) {
+		if (identity < 0 && o && o->nrcols > 0 && f->func->type != F_LOADER && f->func->type != F_PROC) {
 			sql_subtype *res = f->res->h->data;
 
 			q = newStmtArgs(mb, f->func->type == F_UNION ? batmalRef : malRef, multiplexRef, default_nargs);
@@ -4303,12 +4311,17 @@ stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *f, stmt* rows)
 			if (q == NULL)
 				goto bailout;
 
+			if (identity >= 0)
+				pushArgument(mb, q, identity);
 			if (rows)
 				q = pushArgument(mb, q, card->nr);
 			if (f->res && list_length(f->res)) {
 				sql_subtype *res = f->res->h->data;
 
-				setVarType(mb, getArg(q, 0), res->type->localtype);
+				if (identity >= 0)
+					setVarType(mb, getArg(q, 0), newBatType(res->type->localtype));
+				else
+					setVarType(mb, getArg(q, 0), res->type->localtype);
 			}
 		}
 		if (LANG_EXT(f->func->lang)) {

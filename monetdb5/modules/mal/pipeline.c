@@ -591,6 +591,36 @@ PPclaim(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 static str
+PPidentity(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void)cntxt; (void)mb;
+	bat *res = getArgReference_bat(stk, pci, 0);
+	bat rb = *getArgReference_bat(stk, pci, 1);
+	bat ib = *getArgReference_bat(stk, pci, 2);
+
+	BAT *b = BATdescriptor(ib), *bn = NULL;
+
+	if (!b)
+		throw(MAL, "pipeline.identity", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+
+	BUN cnt = BATcount(b), offset = 0;
+	BUN seq = b->hseqbase;
+	BBPreclaim(b);
+	b = BATdescriptor(rb);
+	if (b) {
+		pp_resultset *rs = (pp_resultset*)b->tsink;
+		offset = ATOMIC_ADD(&rs->claimed, cnt);
+		BBPreclaim(b);
+
+		if (!(bn = BATdense(seq, offset, cnt)))
+			throw(MAL, "pipeline.identity", GDK_EXCEPTION);
+		*res = bn->batCacheid;
+		BBPkeepref(bn);
+	}
+	return MAL_SUCCEED;
+}
+
+static str
 PPappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void)cntxt; (void)mb;
@@ -690,6 +720,11 @@ static mel_func pipeline_init_funcs[] = {
 	 arg("", lng),
 	 batarg("sink", bte),
 	 arg("cnt", lng)
+ )),
+ pattern("pipeline", "identity", PPidentity, false, "Return next set of unique object identifiers", args(1,3,
+	 batarg("res", oid),
+	 batarg("sink", bte),
+	 batargany("b", 1)
  )),
  pattern("bat", "append", PPappend, true, "Append bat at offset", args(1,6,
 	 //batargany("res", 1),
