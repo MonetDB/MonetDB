@@ -1002,9 +1002,6 @@ id
 get_merge_table_partition_expressions
 DEP_FUNC
 id
-get_merge_table_partition_expressions
-DEP_FUNC
-id
 get_remote_table_expressions
 DEP_FUNC
 id

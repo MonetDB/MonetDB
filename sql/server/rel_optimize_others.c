@@ -1047,15 +1047,6 @@ rel_dce_sub(mvc *sql, sql_rel *rel)
 	return rel;
 }
 
-/*
-sql_rel *
-rel_deadcode_elimination(mvc *sql, sql_rel *rel)
-{
-	rel_used(rel);
-	return rel_dce_sub(sql, rel);
-}
-*/
-
 /* add projects under set ops */
 static sql_rel *
 rel_add_projects(mvc *sql, sql_rel *rel)
@@ -1151,19 +1142,17 @@ rel_dce_(mvc *sql, sql_rel *rel)
 	list *refs = sa_list(sql->sa);
 
 	rel_dce_refs(sql, rel, refs);
+	rel = rel_add_projects(sql, rel);
+	rel_used(rel);
+	rel_dce_sub(sql, rel);
 	if (refs) {
 		for(node *n = refs->h; n; n = n->next) {
 			sql_rel *i = n->data;
 
-			while (!rel_is_ref(i) && i->l && !is_base(i->op))
-				i = i->l;
 			if (i)
-				rel_used(i);
+				rel_dce_sub(sql, i);
 		}
 	}
-	rel = rel_add_projects(sql, rel);
-	rel_used(rel);
-	rel_dce_sub(sql, rel);
 	return rel;
 }
 
