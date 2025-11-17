@@ -1476,7 +1476,7 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 				if (opt_search && !(sel_rel = rel_logical_exp(query, sel_rel, opt_search, sql_where | sql_merge)))
 					return NULL;
 				extra_project = rel_project(sql->sa, sel_rel, rel_projections(sql, join_rel, NULL, 1, 1));
-				upd_del = update_generate_assignments(query, t, extra_project, rel_dup(bt)/*rel_basetable(sql, t, bt_name)*/, sts->h->data.lval, "MERGE");
+				upd_del = update_generate_assignments(query, t, extra_project, rel_dup(bt), sts->h->data.lval, "MERGE");
 			} else if (uptdel == SQL_DELETE) {
 				if (!update_allowed(sql, t, tname, "MERGE", "delete", 1))
 					return NULL;
@@ -1487,7 +1487,7 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 				if (opt_search && !(sel_rel = rel_logical_exp(query, sel_rel, opt_search, sql_where | sql_merge)))
 					return NULL;
 				extra_project = rel_project(sql->sa, sel_rel, list_append(new_exp_list(sql->sa), ne));
-				upd_del = rel_delete(sql->sa, rel_dup(bt)/*rel_basetable(sql, t, bt_name)*/, extra_project);
+				upd_del = rel_delete(sql->sa, rel_dup(bt), extra_project);
 			} else {
 				assert(0);
 			}
