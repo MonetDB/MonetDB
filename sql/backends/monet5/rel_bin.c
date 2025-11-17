@@ -4057,7 +4057,7 @@ rel2bin_antijoin(backend *be, sql_rel *rel, list *refs)
 		en = jexps->h;
 	} else {
 		if (list_length(sexps))
-			list_merge(jexps, sexps, NULL);
+			jexps = list_join(jexps, sexps);
 		en = jexps->h;
 		sql_exp *e = en->data;
 		if (e->type == e_cmp && (e->flag == cmp_equal || e->flag == cmp_notequal)) {

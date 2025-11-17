@@ -13,6 +13,7 @@
 #include "monetdb_config.h"
 #include "rel_optimizer.h"
 #include "rel_optimizer_private.h"
+#include "rel_optimizer.h"
 #include "rel_exp.h"
 #include "rel_select.h"
 
@@ -247,7 +248,7 @@ exp_range_overlap(atom *min, atom *max, atom *emin, atom *emax, bool min_exclusi
 }
 
 
-/* if local_proj is > -1, the current expression is from the same projection
+/* if local_proj is >= -1, the current expression is from the same projection
    if local_proj is -1, then we don't care about self references (eg used to check for order by exps) */
 static int exp_mark_used(sql_rel *subrel, sql_exp *e, int local_proj);
 
@@ -705,7 +706,7 @@ rel_mark_used(mvc *sql, sql_rel *rel, int proj)
 	}
 }
 
-static sql_rel * rel_dce_sub(mvc *sql, sql_rel *rel);
+static sql_rel *rel_dce_sub(mvc *sql, sql_rel *rel);
 
 static sql_rel *
 rel_remove_unused(mvc *sql, sql_rel *rel)
