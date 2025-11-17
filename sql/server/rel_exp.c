@@ -1087,25 +1087,6 @@ noninternexp_setname(mvc *sql, sql_exp *e, sql_alias *rname, const char *name )
 }
 
 void
-noninternexp_settname(mvc *sql, sql_exp *e, sql_alias *rname)
-{
-	char *name = NULL;
-
-	if (!e->alias.label && e->type == e_psm && e->l) {
-		sql_rel *r = e->l;
-		if (is_project(r->op)) {
-			sql_exp *ie = r->exps->t->data;
-			e->alias = ie->alias;
-			e->alias.parent = rname;
-			return;
-		}
-	}
-	if (!exp_name(e))
-		name = make_label(sql->sa, ++sql->label);
-	noninternexp_setname(sql, e, rname, name);
-}
-
-void
 exp_setalias(sql_exp *e, int label, sql_alias *p, const char *name )
 {
 	e->alias.label = label;

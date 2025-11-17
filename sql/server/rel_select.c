@@ -209,9 +209,12 @@ rel_table_optname(mvc *sql, sql_rel *sq, symbol *optname, list *refs)
 			list_hash_clear(sq->exps);
 			for (; ne; ne = ne->next) {
 				sql_exp *e = ne->data;
+				char *name = NULL;
 
 				if (!is_intern(e)) {
-					noninternexp_settname(sql, e, ta);
+					if (!exp_name(e))
+						name = make_label(sql->sa, ++sql->label);
+					noninternexp_setname(sql, e, ta, name);
 					set_basecol(e);
 				}
 			}
