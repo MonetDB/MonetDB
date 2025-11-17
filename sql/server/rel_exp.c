@@ -3058,30 +3058,6 @@ exps_bind_column2(list *exps, const char *rname, const char *cname, int *multipl
 	return res;
 }
 
-/* find an column based on the original name, not the alias it got */
-sql_exp *
-exps_bind_alias( list *exps, const char *rname, const char *cname )
-{
-	if (exps) {
-		node *en;
-
-		for (en = exps->h; en; en = en->next ) {
-			sql_exp *e = en->data;
-
-			if (e && is_column(e->type) && !rname && e->r && strcmp(e->r, cname) == 0)
-			{
-				assert(0);
-				return e;
-			}
-			if (e && e->type == e_column && rname && e->l && e->r && strcmp(e->r, cname) == 0 && strcmp(e->l, rname) == 0) {
-				assert(0);
-				return e;
-			}
-		}
-	}
-	return NULL;
-}
-
 unsigned int
 exps_card( list *l )
 {

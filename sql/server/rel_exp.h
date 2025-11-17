@@ -206,7 +206,6 @@ extern sql_exp *exps_bind_nid(list *exps, int nid); /* get first expression to w
 extern sql_exp *exps_uses_nid(list *exps, int nid); /* get first expression which references back to nid */
 extern sql_exp *exps_bind_column(list *exps, const char *cname, int *ambiguous, int *multiple, int no_tname /* set if expressions should be without a tname */);
 extern sql_exp *exps_bind_column2(list *exps, const char *rname, const char *cname, int *multiple);
-extern sql_exp *exps_bind_alias(list *exps, const char *rname, const char *cname);
 extern sql_exp * list_find_exp( list *exps, sql_exp *e);
 
 extern unsigned int exps_card( list *l );
