@@ -838,7 +838,6 @@ rel_named_table_function(sql_query *query, sql_rel *rel, symbol *ast, int latera
 	sql_subfunc *sf = NULL;
 	symbol *sym = ast->data.lval->h->data.sym, *subquery = NULL;
 	dnode *l = sym->data.lval->h, *n;
-	char *tname = NULL;
 	char *fname = qname_schema_object(l->data.lval);
 	char *sname = qname_schema(l->data.lval);
 
@@ -849,7 +848,6 @@ rel_named_table_function(sql_query *query, sql_rel *rel, symbol *ast, int latera
 	if (l->next) { /* table call with subquery */
 		int is_value = 1;
 		if (l->next->type == type_symbol || l->next->type == type_list) {
-			exp_kind iek = {type_value, card_set, TRUE};
 			int count = 0;
 
 			if (l->next->type == type_symbol)
@@ -871,6 +869,7 @@ rel_named_table_function(sql_query *query, sql_rel *rel, symbol *ast, int latera
 					return NULL;
 				is_value = 0;
 			} else {
+				exp_kind iek = {type_value, card_set, TRUE};
 				for ( ; n; n = n->next) {
 					sql_exp *e = rel_value_exp(query, &outer, n->data.sym, sql_sel | sql_from, iek);
 
@@ -901,7 +900,7 @@ rel_named_table_function(sql_query *query, sql_rel *rel, symbol *ast, int latera
 				sql_exp *ne = exp_ref(sql, e);
 				/* allow for table functions with table input */
 				ne->card = CARD_ATOM;
-				exp_setname(sql, ne, tname, exp_name(e));
+				exp_setname(sql, ne, NULL, exp_name(e));
 				append(exps, ne);
 				append(tl, exp_subtype(e));
 			}
@@ -912,6 +911,7 @@ rel_named_table_function(sql_query *query, sql_rel *rel, symbol *ast, int latera
 	}
 
 	rel = NULL;
+	char *tname = NULL;
 	if (ast->data.lval->t->type == type_symbol && ast->data.lval->t->data.sym)
 		tname = ast->data.lval->t->data.sym->data.lval->h->data.sval;
 	else
@@ -1724,9 +1724,9 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 					sql->errstr[0] = 0;
 					exp->card = CARD_AGGR;
 					list_append(inner->exps, exp);
-				}
-				else
+				} else {
 					return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column '%s.%s' in query results without an aggregate function", tname, cname);
+				}
 			}
 		}
 
