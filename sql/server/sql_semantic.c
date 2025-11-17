@@ -413,7 +413,7 @@ sql_find_func(mvc *sql, const char *sname, const char *name, int nrargs, sql_fty
 
 	assert(nrargs >= -1);
 
-	search_object_on_path(res = os_find_func_internal(sql, next->funcs, name, nrargs, type, private, prev), functions_without_schema, find_func_extra, "", false); //SQLSTATE(42000), true);
+	search_object_on_path(res = os_find_func_internal(sql, next->funcs, name, nrargs, type, private, prev), functions_without_schema, find_func_extra, "", false);
 	return res;
 }
 
