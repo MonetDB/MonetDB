@@ -36,6 +36,7 @@ else:
 
 verbose = False
 
+no_unix_sockets = False
 
 _mal_client = shlex.split(os.getenv('MAL_CLIENT', 'mclient -lmal'))
 _sql_client = shlex.split(os.getenv('SQL_CLIENT', 'mclient -lsql'))
@@ -600,6 +601,8 @@ class server(Popen):
                     # retrieve mapi port if available
                     for c in conn.splitlines():
                         if 'monetdb:///' in c:
+                            if no_unix_sockets:
+                                continue
                             self.usock = c.strip()
                             if verbose:
                                 print(f'usock: {self.usock}')
