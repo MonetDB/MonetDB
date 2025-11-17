@@ -199,36 +199,6 @@ exps_share_expensive_exp(list *exps, list *shared )
 	return false;
 }
 
-static bool ambigious_ref( list *exps, sql_exp *e);
-static bool
-ambigious_refs( list *exps, list *refs)
-{
-	if (list_empty(refs))
-		return false;
-	for(node *n=refs->h; n; n = n->next) {
-		if (ambigious_ref(exps, n->data))
-			return true;
-	}
-	return false;
-}
-
-static bool
-ambigious_ref( list *exps, sql_exp *e)
-{
-	sql_exp *ne = NULL;
-
-	if (e->type == e_column) {
-		assert(e->nid);
-		if (e->nid)
-			ne = exps_bind_nid(exps, e->nid);
-		if (ne && e != ne)
-			return true;
-	}
-	if (e->type == e_func)
-		return ambigious_refs(exps, e->l);
-	return false;
-}
-
 /* merge 2 projects into the lower one */
 static sql_rel *
 rel_merge_projects_(visitor *v, sql_rel *rel)
@@ -250,21 +220,7 @@ rel_merge_projects_(visitor *v, sql_rel *rel)
 		for (n = exps->h; n && all; n = n->next) {
 			sql_exp *e = n->data, *ne = NULL;
 
-			/* We do not handle expressions pointing back in the list */
-			/*
-			if (ambigious_ref(exps, e)) {
-				all = 0;
-				break;
-			}
-			*/
 			ne = exp_push_down_prj(v->sql, e, prj, prj->l);
-			/* check if the referred alias name isn't used twice */
-			/*
-			if (ne && ambigious_ref(nexps, ne)) {
-				all = 0;
-				break;
-			}
-			*/
 			if (ne) {
 				if (exp_name(e))
 					exp_prop_alias(v->sql->sa, ne, e);
