@@ -43,6 +43,7 @@ restart = False
 produce_html = True
 ignore_conditions = False
 skip_timeout = False
+usetcp = False                  # use UNIX domain socket if available
 
 # extra mserver5 options
 mserver5_opts = []
@@ -2924,7 +2925,7 @@ class ServerClass:
                 res = mapiportre.search(connurl)
                 if res is not None:
                     port = res.group('port')
-                elif 'monetdb:///' in connurl:
+                elif 'monetdb:///' in connurl and not usetcp:
                     self.usock = connurl
         else:
             loadedseen = False
@@ -3758,6 +3759,7 @@ def main(argv):
     parser.add_argument('--ci', action='store_true', dest='ci', help='special handling for continuous integration (no error return unless serious problem)')
     parser.add_argument('--parallel', action='store', type=int, default=1, metavar='<directories>', help='run multiple directories in parallel')
     parser.add_argument('--checkkeys', action='store_true', help='at end of directory check all system keys')
+    parser.add_argument('--use-tcp', action='store_true', help='do not use UNIX domain sockets')
     global produce_html
     if produce_html:
         parser.add_argument('--no-html', action='store_false', dest='produce_html', help='do not produce HTML files')
@@ -3813,6 +3815,9 @@ def main(argv):
         CONDITIONALS['KNOWNFAIL'] = True
     global checkkeys
     checkkeys = opts.checkkeys
+    global usetcp
+    usetcp = opts.use_tcp
+    process.no_unix_sockets = opts.use_tcp
     par['TIMEOUT'] = opts.timeout
     env['GDK_DEBUG'] = str(opts.debug)
     env['GDK_NR_THREADS'] = str(opts.nr_threads)
