@@ -1183,8 +1183,9 @@ mvc_next_value_ms(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 static str
-mvc_next_value_ms_cntr(bat *res, int *rcntr, bat *in, int *icntr)
+mvc_next_value_ms_cntr(Client ctx, bat *res, int *rcntr, bat *in, int *icntr)
 {
+	(void)ctx;
 	BAT *b = BATdescriptor(*in);
 	if (!b)
 		return createException(SQL, "sql.next_value", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
