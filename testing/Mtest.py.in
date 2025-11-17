@@ -55,7 +55,7 @@ test_progress = 0
 # whether output goes to a tty
 isatty = os.isatty(sys.stdout.fileno())
 
-mapiportre = re.compile(r'mapi:monetdb://[-.a-zA-Z0-9_]+:(?P<port>\d+)/')
+mapiportre = re.compile(r'(mapi:)?monetdb://[-.a-zA-Z0-9_]+:(?P<port>\d+)/')
 
 geos_version = '@GEOS_VERSION@'.split('.')
 
@@ -2925,8 +2925,10 @@ class ServerClass:
                 res = mapiportre.search(connurl)
                 if res is not None:
                     port = res.group('port')
-                elif 'monetdb:///' in connurl and not usetcp:
-                    self.usock = connurl
+                elif not usetcp:
+                    if connurl.startswith('mapi:monetdb:///') or \
+                       (connurl.startswith('monetdb://') and 'sock=' in connurl):
+                        self.usock = connurl
         else:
             loadedseen = False
             endtime = time.time() + 30

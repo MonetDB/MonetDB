@@ -420,8 +420,10 @@ msab_marchConnection(const char *host, const int port)
 	if ((f = MT_fopen(pathbuf, "a")) != NULL) {
 		/* append to the file */
 		if (port > 0) {
+//			fprintf(f, "monetdb://%s:%d/%s\n", host, port, _sabaoth_internal_dbname);
 			fprintf(f, "mapi:monetdb://%s:%i/\n", host, port);
 		} else {
+//			fprintf(f, "monetdb:///%s?sock=%s\n", _sabaoth_internal_dbname, host);
 			fprintf(f, "mapi:monetdb://%s\n", host);
 		}
 		(void)fflush(f);
