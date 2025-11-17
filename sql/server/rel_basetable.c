@@ -290,7 +290,7 @@ rel_nested_basetable(mvc *sql, sql_table *t, sql_alias *atname)
 	ba->basenr = sql->nid;
 	sql->nid += end;
 	if (isTable(t) && t->s && !isDeclaredTable(t)) /* count active rows only */
-		set_count_prop(sql->sa, rel, (BUN)store->storage_api.count_del(sql->session->tr, t, CNT_ACTIVE));
+		set_count_prop(sql->sa, rel, (BUN)store->storage_api.count_col(sql->session->tr, ol_last_node(t->columns)->data, CNT_ACTIVE));
 	assert(atname);
 	if (!a_cmp_obj_name(atname, t->base.name))
 		ba->name = atname;
@@ -381,7 +381,7 @@ rel_basetable(mvc *sql, sql_table *t, sql_alias *atname)
 	ba->basenr = sql->nid;
 	sql->nid += end;
 	if (isTable(t) && t->s && !isDeclaredTable(t)) /* count active rows only */
-		set_count_prop(sql->sa, rel, (BUN)store->storage_api.count_del(sql->session->tr, t, CNT_ACTIVE));
+		set_count_prop(sql->sa, rel, (BUN)store->storage_api.count_col(sql->session->tr, ol_last_node(t->columns)->data, CNT_ACTIVE));
 	assert(atname);
 	if (!a_cmp_obj_name(atname, t->base.name))
 		ba->name = atname;

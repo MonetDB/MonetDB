@@ -2836,8 +2836,16 @@ count_del(sql_trans *tr, sql_table *t, int access)
 		return d->cs.ucnt;
 	if (access == RD_INS)
 		return count_inserts(d->segs->h, tr);
-	if (access == CNT_ACTIVE) /* special case for counting the number of segments */
+	assert(access != CNT_ACTIVE);
+	if (access == CNT_SEGS) /* special case for counting the number of segments */
 		return count_segs(d->segs->h);
+	if (access == CNT_RDONLY) {
+		size_t cnt = segs_end(d->segs, tr, t);
+		lock_table(tr->store, t);
+		cnt -= count_deletes_in_range(d->segs->h, tr, 0, cnt);
+		unlock_table(tr->store, t);
+		return cnt;
+	}
 	return count_deletes(d->segs->h, tr);
 }
 
