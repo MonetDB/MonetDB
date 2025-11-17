@@ -91,8 +91,8 @@ with ss as
         , sales
         , "returns"
         , (profit - profit_loss) as profit
- from  cs
-       , cr
+ from  cs left join cr
+	on cs.cs_call_center_sk = cr.cr_call_center_sk
  union all
  select 'web channel' as channel
         , ws.wp_web_page_sk as id
@@ -114,5 +114,5 @@ with ss as
 order by channel, id
  limit 100
 ----
-220 values hashing to 085a0ea92d942b50cbed1f1da1ed15f5
+220 values hashing to 31ccc48df63f8d7d4c95bc40e3121a69
 

@@ -16,7 +16,7 @@ with tempfile.TemporaryDirectory() as farm_dir:
                     stdout=process.PIPE,
                     stderr=process.PIPE,
                     mapiport='0') as node1_proc:
-            node1_conn = pymonetdb.connect(database='node1', port=node1_proc.dbport, autocommit=True)
+            node1_conn = pymonetdb.connect(database=node1_proc.usock or 'node1', port=node1_proc.dbport, autocommit=True)
             node1_cur = node1_conn.cursor()
 
             node1_cur.execute("CREATE unlogged TABLE foo (i INT)")
@@ -40,7 +40,7 @@ with tempfile.TemporaryDirectory() as farm_dir:
                     stdout=process.PIPE,
                     stderr=process.PIPE,
                     mapiport='0') as node1_proc:
-            node1_conn = pymonetdb.connect(database='node1', port=node1_proc.dbport, autocommit=True)
+            node1_conn = pymonetdb.connect(database=node1_proc.usock or 'node1', port=node1_proc.dbport, autocommit=True)
             node1_cur = node1_conn.cursor()
 
             node1_cur.execute("SELECT i FROM foo ORDER BY i")
@@ -60,7 +60,7 @@ with tempfile.TemporaryDirectory() as farm_dir:
                     stdout=process.PIPE,
                     stderr=process.PIPE,
                     mapiport='0') as node1_proc:
-            node1_conn = pymonetdb.connect(database='node1', port=node1_proc.dbport, autocommit=True)
+            node1_conn = pymonetdb.connect(database=node1_proc.usock or 'node1', port=node1_proc.dbport, autocommit=True)
             node1_cur = node1_conn.cursor()
 
             node1_cur.execute("CREATE unlogged TABLE foo (i) AS VALUES (10), (20)")
@@ -84,7 +84,7 @@ with tempfile.TemporaryDirectory() as farm_dir:
                     stdout=process.PIPE,
                     stderr=process.PIPE,
                     mapiport='0') as node1_proc:
-            node1_conn = pymonetdb.connect(database='node1', port=node1_proc.dbport, autocommit=True)
+            node1_conn = pymonetdb.connect(database=node1_proc.usock or 'node1', port=node1_proc.dbport, autocommit=True)
             node1_cur = node1_conn.cursor()
 
             node1_cur.execute("SELECT i FROM foo ORDER BY i")

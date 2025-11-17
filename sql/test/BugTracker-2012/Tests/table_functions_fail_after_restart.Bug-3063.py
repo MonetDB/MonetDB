@@ -13,7 +13,7 @@ with tempfile.TemporaryDirectory() as farm_dir:
                         dbfarm=os.path.join(farm_dir, 'db'),
                         stdin=process.PIPE, stdout=process.PIPE,
                         stderr=process.PIPE) as dproc:
-        client1 = pymonetdb.connect(database='db', port=dproc.dbport, autocommit=True)
+        client1 = pymonetdb.connect(database=dproc.usock or 'db', port=dproc.dbport, autocommit=True)
         cur1 = client1.cursor()
         cur1.execute("""
         CREATE schema ft;
@@ -31,7 +31,7 @@ with tempfile.TemporaryDirectory() as farm_dir:
                         dbfarm=os.path.join(farm_dir, 'db'),
                         stdin=process.PIPE, stdout=process.PIPE,
                         stderr=process.PIPE) as dproc:
-        client1 = pymonetdb.connect(database='db', port=dproc.dbport, autocommit=True)
+        client1 = pymonetdb.connect(database=dproc.usock or 'db', port=dproc.dbport, autocommit=True)
         cur1 = client1.cursor()
         cur1.execute("select * from ft.func() as ftf;")
         if cur1.fetchall() != [('1',)]:

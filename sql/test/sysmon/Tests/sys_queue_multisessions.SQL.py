@@ -4,7 +4,6 @@
 from MonetDBtesting.sqltest import SQLTestCase
 
 with SQLTestCase() as mdb:
-    mdb.connect(username="monetdb", password="monetdb")
     mdb.execute('create role r1;').assertSucceeded()
     mdb.execute('create schema s1 authorization r1;').assertSucceeded()
     mdb.execute('create user u1 with password \'u1\' name \'u1\' schema s1;').assertSucceeded()
@@ -13,12 +12,8 @@ with SQLTestCase() as mdb:
     mdb.execute('grant r1 to u2;').assertSucceeded()
 
     # Let the user establish several connections to the server
-    with SQLTestCase() as tc1:
-        tc1.connect(username="u1", password="u1")
-
-        with SQLTestCase() as tc2:
-            tc2.connect(username="u2", password="u2")
-
+    with SQLTestCase(username="u1", password="u1") as tc1:
+        with SQLTestCase(username="u2", password="u2") as tc2:
             # NB, we only have 4-1 slots in sys.queue to use because of the
             # SingleServer config in this test
             tc1.execute('select \'u1 session_1\';').assertSucceeded()\

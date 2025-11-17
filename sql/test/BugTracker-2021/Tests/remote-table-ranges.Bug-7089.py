@@ -15,7 +15,7 @@ with tempfile.TemporaryDirectory() as farm_dir:
                         dbfarm=os.path.join(farm_dir, 'node1'),
                         stdin=process.PIPE, stdout=process.PIPE,
                         stderr=process.PIPE) as node1_proc:
-        node1_conn = pymonetdb.connect(database='node1', port=node1_proc.dbport, autocommit=True)
+        node1_conn = pymonetdb.connect(database=node1_proc.usock or 'node1', port=node1_proc.dbport, autocommit=True)
         node1_cur = node1_conn.cursor()
 
         node1_cur.execute("CREATE TABLE mytest (toc_no String null,mesure_de int null)")
@@ -46,7 +46,7 @@ with tempfile.TemporaryDirectory() as farm_dir:
                             dbfarm=os.path.join(farm_dir, 'node2'),
                             stdin=process.PIPE, stdout=process.PIPE,
                             stderr=process.PIPE) as node2_proc:
-            node2_conn = pymonetdb.connect(database='node2', port=node2_proc.dbport, autocommit=True)
+            node2_conn = pymonetdb.connect(database=node2_proc.usock or 'node2', port=node2_proc.dbport, autocommit=True)
             node2_cur = node2_conn.cursor()
 
             node2_cur.execute("CREATE REMOTE TABLE mytest (toc_no String null,mesure_de int null) on 'mapi:monetdb://localhost:{}/node1/sys/mytest'".format(node1_proc.dbport))

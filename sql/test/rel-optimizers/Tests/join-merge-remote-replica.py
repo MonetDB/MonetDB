@@ -24,7 +24,7 @@ with tempfile.TemporaryDirectory() as farm_dir:
                         stdin=process.PIPE, stdout=process.PIPE,
                         stderr=process.PIPE) as prc_3:
         # create foo_p2 and members_n2 in node2
-        conn2 = pymonetdb.connect(database='node2', port=prc_2.dbport, autocommit=True)
+        conn2 = pymonetdb.connect(database=prc_2.usock or 'node2', port=prc_2.dbport, autocommit=True)
         cur2 = conn2.cursor()
 
         cur2.execute("create table foo_p2 (n int, m text)")
@@ -39,7 +39,7 @@ with tempfile.TemporaryDirectory() as farm_dir:
         conn2.close()
 
         # create foo_p2 and members_n2 in node2
-        conn3 = pymonetdb.connect(database='node3', port=prc_3.dbport, autocommit=True)
+        conn3 = pymonetdb.connect(database=prc_3.usock or 'node3', port=prc_3.dbport, autocommit=True)
         cur3 = conn3.cursor()
 
         cur3.execute("create table foo_p3 (n int, m text)")
@@ -54,7 +54,7 @@ with tempfile.TemporaryDirectory() as farm_dir:
         conn3.close()
 
         # create foo_merge and member_rpl on master
-        conn1 = pymonetdb.connect(database='master', port=prc_1.dbport, autocommit=True)
+        conn1 = pymonetdb.connect(database=prc_1.usock or 'master', port=prc_1.dbport, autocommit=True)
         cur1 = conn1.cursor()
 
         cur1.execute("create table foo_p1 (n int, m text)")

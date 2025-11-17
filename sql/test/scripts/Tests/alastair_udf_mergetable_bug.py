@@ -15,8 +15,7 @@ with tempfile.TemporaryDirectory() as farm_dir:
                         stdin=process.PIPE,
                         stdout=process.PIPE,
                         stderr=process.PIPE) as s:
-        with SQLTestCase() as tc:
-            tc.connect(username="monetdb", password="monetdb", port=s.dbport, database='db1')
+        with SQLTestCase(server=s) as tc:
             tc.execute("create table tab1 (group_by_col int, index_col int, f float);").assertSucceeded()
             tc.execute("create table tab2 (index_col int, f float);").assertSucceeded()
             tc.execute("insert into tab1 values (1,1,1),(1,2,2),(2,1,3),(2,2,4),(3,1,5),(3,2,6);").assertSucceeded().assertRowCount(6)

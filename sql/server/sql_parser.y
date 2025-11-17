@@ -3819,7 +3819,7 @@ join_spec:
                 <query name> [ <left paren> <with column list> <right paren> ]
                 AS <left paren> <query expression> <right paren> [ <search or cycle clause> ]
 <with column list> ::= <column name list>
-RECURSIVE and <search or cycle clause> are currently not supported
+The <search or cycle clause> is currently not supported
 */
 
 opt_with_clause:

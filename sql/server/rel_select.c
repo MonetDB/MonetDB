@@ -3266,7 +3266,13 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 		sql_find_subtype(&bt, "boolean", 0, 0);
 		if (!le || !(le = exp_check_type(sql, &bt, rel, le, type_equal)))
 			return NULL;
-		le = exp_compare(sql->sa, le, exp_atom_bool(sql->sa, 0), cmp_equal);
+		/* in case of cmp_in/cmp_notin push NOT down */
+		if (le->flag == cmp_in)
+			le->flag = cmp_notin;
+		else if (le->flag == cmp_notin)
+			le->flag = cmp_in;
+		else
+			le = exp_compare(sql->sa, le, exp_atom_bool(sql->sa, 0), cmp_equal);
 		return rel_select_push_compare_exp_down(sql, rel, le, le->l, le->r, NULL, f);
 	}
 	case SQL_ATOM: {
@@ -6471,10 +6477,12 @@ rel_joinquery_(sql_query *query, symbol *tab1, int natural, jt jointype, symbol 
 		return NULL;
 
 	query_processed(query);
+
 	if (a_match(rel_name(t1), rel_name(t2))) {
 		if (rel_name(t1) || rel_name(t2))
 			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: ERROR:  table name '%s' specified more than once", rel_name(t1)->name);
 	}
+
 	inner = rel = rel_crossproduct(sql->sa, t1, t2, op);
 	if (!rel)
 		return NULL;
