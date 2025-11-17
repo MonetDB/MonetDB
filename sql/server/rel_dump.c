@@ -409,7 +409,7 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 		mnstr_printf(fout, "\"%s\"", dump_escape_ident(sql->ta, exp_name(e)));
 	}
 
-	if (sql->show_details && is_intern(e))
+	if (sql->show_details && mvc_debug_on(sql, 4) && is_intern(e))
 		mnstr_printf(fout, " INTERN ");
 
 	if (e->comment) {
