@@ -104,8 +104,8 @@ class Connection(object):
         unix_socket is used if hostname is not defined.
         """
 
-        if database.startswith('monetdb:///'):
-            unix_socket = database[10:]
+        if database.startswith('monetdb://') and 'sock=' in database:
+            unix_socket = database[database.index('sock=')+5:]
             hostname = database = None
         elif database.startswith('mapi:monetdb:///'):
             unix_socket = database[15:]

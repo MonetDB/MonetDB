@@ -612,7 +612,7 @@ mnstr_isalive(const stream *s)
 }
 
 int
-mnstr_getoob(const stream *s)
+mnstr_getoob(stream *s)
 {
 	if (s->getoob)
 		return s->getoob(s);
@@ -620,7 +620,7 @@ mnstr_getoob(const stream *s)
 }
 
 int
-mnstr_putoob(const stream *s, char val)
+mnstr_putoob(stream *s, char val)
 {
 	if (s->putoob)
 		return s->putoob(s, val);
@@ -875,14 +875,14 @@ wrapper_isalive(const stream *s)
 
 
 static int
-wrapper_getoob(const stream *s)
+wrapper_getoob(stream *s)
 {
 	return s->inner->getoob(s->inner);
 }
 
 
 static int
-wrapper_putoob(const stream *s, char val)
+wrapper_putoob(stream *s, char val)
 {
 	return s->inner->putoob(s->inner, val);
 }

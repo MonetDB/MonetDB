@@ -19,6 +19,7 @@ import threading
 import signal
 import queue
 import shlex
+import re
 
 from subprocess import PIPE, TimeoutExpired
 try:
@@ -36,6 +37,7 @@ else:
 
 verbose = False
 
+no_unix_sockets = False
 
 _mal_client = shlex.split(os.getenv('MAL_CLIENT', 'mclient -lmal'))
 _sql_client = shlex.split(os.getenv('SQL_CLIENT', 'mclient -lsql'))
@@ -44,6 +46,9 @@ _server = shlex.split(os.getenv('MSERVER', ''))
 _dbfarm = os.getenv('GDK_DBFARM', None)
 
 _dotmonetdbfile = []
+
+_mapiportre = re.compile(r'^(mapi:)?monetdb://(\[[0-9a-fA-F:]*\]|[^:/]*):(?P<port>[0-9]+)(/.*$)?', re.M)
+
 
 def _delfiles():
     for f in _dotmonetdbfile:
@@ -599,22 +604,20 @@ class server(Popen):
                 else:
                     # retrieve mapi port if available
                     for c in conn.splitlines():
-                        if 'monetdb:///' in c:
+                        if c.startswith('mapi:monetdb:///') or \
+                           (c.startswith('monetdb://') and 'sock=' in c):
+                            if no_unix_sockets:
+                                continue
                             self.usock = c.strip()
                             if verbose:
                                 print(f'usock: {self.usock}')
                             continue
-                        c = c.rstrip('/')
-                        c = c.rsplit(':', maxsplit=1)
-                        if len(c) == 2:
-                            try:
-                                port = int(c[1])
-                            except ValueError:
-                                pass
-                            else:
-                                if verbose:
-                                    print(f'mapi port: {port}')
-                                self.dbport = f'{port}'
+                        res = _mapiportre.match(c)
+                        if res is not None:
+                            port = int(res.group('port'))
+                            if verbose:
+                                print(f'mapi port: {port}')
+                            self.dbport = f'{port}'
                 break
             # wait at most 30 seconds for the server to start
             if time.time() > starttime + 30:

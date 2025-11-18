@@ -3001,7 +3001,7 @@ rel_push_semijoin_down_or_up(visitor *v, sql_rel *rel)
 {
 	uint8_t cycle = *(uint8_t*) v->data;
 
-	if (rel->op == op_join && rel->exps && rel->l) {
+	if (rel->op == op_join && rel->exps && rel->l && !rel_is_ref(rel)) {
 		sql_rel *l = rel->l, *r = rel->r;
 
 		if (is_semi(l->op) && !rel_is_ref(l) && is_select(r->op) && !rel_is_ref(r)) {
@@ -3014,7 +3014,7 @@ rel_push_semijoin_down_or_up(visitor *v, sql_rel *rel)
 	}
 	/* also case with 2 joins */
 	/* join ( join ( semijoin(), table), select (table)); */
-	if (rel->op == op_join && rel->exps && rel->l) {
+	if (rel->op == op_join && rel->exps && rel->l && !rel_is_ref(rel)) {
 		sql_rel *l = rel->l, *r = rel->r;
 		sql_rel *ll;
 
@@ -3030,7 +3030,7 @@ rel_push_semijoin_down_or_up(visitor *v, sql_rel *rel)
 		}
 	}
 	/* first push down the expressions involving only A */
-	if (rel->op == op_semi && rel->exps && rel->l) {
+	if (rel->op == op_semi && rel->exps && rel->l && !rel_is_ref(rel)) {
 		sql_rel *jl = rel->l, *ojl = jl;
 
 		set_processed(jl);
@@ -3051,7 +3051,7 @@ rel_push_semijoin_down_or_up(visitor *v, sql_rel *rel)
 		if (ojl != jl)
 			set_processed(jl);
 	}
-	if (rel->op == op_semi && rel->exps && rel->l) {
+	if (rel->op == op_semi && rel->exps && rel->l && !rel_is_ref(rel)) {
 		operator_type op = rel->op, lop;
 		node *n;
 		sql_rel *l = rel->l, *ll = NULL, *lr = NULL;
