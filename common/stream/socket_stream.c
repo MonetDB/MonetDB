@@ -27,7 +27,7 @@
 /* streams working on a socket */
 
 static int
-socket_getoob(const stream *s)
+socket_getoob(stream *s)
 {
 	SOCKET fd = s->stream_data.s;
 #ifdef HAVE_POLL
@@ -108,7 +108,7 @@ socket_getoob(const stream *s)
 }
 
 static int
-socket_putoob(const stream *s, char val)
+socket_putoob(stream *s, char val)
 {
 	SOCKET fd = s->stream_data.s;
 	if (send(fd, &val, 1, MSG_OOB) == -1) {
@@ -125,7 +125,7 @@ socket_putoob(const stream *s, char val)
 #define OOBMSG1	'\377'
 
 static int
-socket_getoob_unix(const stream *s)
+socket_getoob_unix(stream *s)
 {
 	SOCKET fd = s->stream_data.s;
 #ifdef HAVE_POLL
@@ -170,7 +170,7 @@ socket_getoob_unix(const stream *s)
 }
 
 static int
-socket_putoob_unix(const stream *s, char val)
+socket_putoob_unix(stream *s, char val)
 {
 	char buf[3] = {
 		OOBMSG0,
