@@ -61,7 +61,7 @@ bs_write(stream *restrict ss, const void *restrict buf, size_t elmsize, size_t c
 		if (todo < n)
 			n = todo;
 		memcpy(s->buf + s->nr, buf, n);
-		s->nr += (unsigned) n;
+		s->nr += (uint16_t) n;
 		todo -= n;
 		buf = ((const char *) buf + n);
 		if (s->nr == sizeof(s->buf)) {
