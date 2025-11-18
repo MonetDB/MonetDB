@@ -61,7 +61,7 @@ SQLrun(Client c, backend *be)
 	TRC_INFO(SQL_EXECUTION, "Executing: %s", c->query);
 	MT_thread_setworking(c->query);
 
-	if (m->emod == mod_explain) {
+	if (m->emod == mod_explain_phys) {
 		if (c->curprg->def)
 			printFunction(c->fdout, mb, 0, LIST_MAL_NAME | LIST_MAL_VALUE  | LIST_MAL_TYPE |  LIST_MAL_MAPI);
 	} else {

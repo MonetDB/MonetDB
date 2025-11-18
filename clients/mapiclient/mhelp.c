@@ -412,12 +412,15 @@ SQLhelp sqlhelp1[] = {
 	{"EXPLAIN",
 	 "Display logical or physical execution plan for the SQL statement.",
 	 "EXPLAIN [BEFORE|AFTER] [step] [SHOW DETAILS] statement\n"
-	 "\twhere step is REL_UNNEST|REL_REWRITE|PHYSICAL",
+	 "\twhere step is LOGICAL UNNEST | LOGICAL REWRITE [posint] [posint] | PHYSICAL",
 	 NULL,
 	 "Plain EXPLAIN defaults to logical plan.\n"
-	 "Use REL_UNNEST|REL_REWRITE|PHYSICAL to specify compilation step to show.\n"
+	 "Use LOGICAL UNNEST|LOGICAL REWRITE|PHYSICAL to specify compilation step to show.\n"
 	 "Use BEFORE|AFTER to specify moment of compilation step to output.\n"
 	 "The default is AFTER.\n"
+	 "Two positive numbers can be passed to LOGICAL REWRITE to stop at specific\n"
+	 "rewriter index or rewrite loop cycle, respectively.\n"
+	 "If only one positive number is passed to LOGICAL REWRITE, rewrite stop cycle defaults to 0.\n"
 	 "SHOW DETAILS displays column properties, rewriter number of changes\n"
 	 "and time spent.\n"
 	 "See also https://www.monetdb.org/documentation/admin-guide/debugging-features/explain-sql-stmt/"},

@@ -138,7 +138,7 @@ sql_symbol2relation(backend *be, symbol *sym)
 	sql_rel *rel;
 	sql_query *query = query_create(be->mvc);
 	int value_based_opt = be->mvc->emode != m_prepare, storage_based_opt;
-	int profile = be->mvc->emode == m_plan;
+	int profile = be->mvc->emode == m_explain;
 
 	rel = rel_semantic(query, sym);
 
@@ -5623,8 +5623,6 @@ SQLread_dump_rel(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (refs == NULL)
 		goto bailout;
 
-	m->step = S_REL_REWRITE;
-	m->temporal = T_AFTER;
 	m->show_details = true;
 
 	rel_print_refs(m, s, rel, 0, refs, 0);
