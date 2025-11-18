@@ -223,7 +223,7 @@ bs_read(stream *restrict ss, void *restrict buf, size_t elmsize, size_t cnt)
 			n = todo;
 		memcpy(buf, s->buf + s->nr, n);
 		buf = (void *) ((char *) buf + n);
-		s->nr += n;
+		s->nr += (uint16_t) n;
 		todo -= n;
 		cnt += n;
 		if (s->nr == s->itotal)
@@ -270,7 +270,7 @@ bs_read(stream *restrict ss, void *restrict buf, size_t elmsize, size_t cnt)
 			n = todo;
 		memcpy(buf, s->buf, n);
 		buf = (void *) ((char *) buf + n);
-		s->nr += n;
+		s->nr += (uint16_t) n;
 		todo -= n;
 		cnt += n;
 		if (s->nr == s->itotal)
