@@ -30,6 +30,11 @@ bs_create(void)
 	if ((ns = malloc(sizeof(*ns))) == NULL)
 		return NULL;
 	*ns = (bs) {0};
+#if !defined(HAVE_PTHREAD_H) && defined(WIN32)
+	InitializeCriticalSection(&ns->lock);
+#else
+	pthread_mutex_init(&ns->lock, NULL);
+#endif
 	return ns;
 }
 
@@ -178,16 +183,28 @@ bs_putoob(stream *ss, char val)
 static int
 bs_getoob(stream *ss)
 {
+	int oobval;
 	bs *s = (bs *) ss->stream_data.p;
 	if (s == NULL || ss->inner->getoob == NULL)
 		return 0;
+#if !defined(HAVE_PTHREAD_H) && defined(WIN32)
+	EnterCriticalSection(&s->lock);
+#else
+	pthread_mutex_lock(&s->lock);
+#endif
 	if (s->seenoob) {
 		s->seenoob = false;
-		return s->oobval;
-	}
-	if (ss->readonly && s->itotal == 0)
-		return ss->inner->getoob(ss->inner);
-	return 0;
+		oobval = s->oobval;
+	} else if (ss->readonly && s->itotal == 0)
+		oobval = ss->inner->getoob(ss->inner);
+	else
+		oobval = 0;
+#if !defined(HAVE_PTHREAD_H) && defined(WIN32)
+	LeaveCriticalSection(&s->lock);
+#else
+	pthread_mutex_unlock(&s->lock);
+#endif
+	return oobval;
 }
 
 /* Read buffered data and return the number of items read.  At the
@@ -306,6 +323,11 @@ bs_destroy(stream *ss)
 	if (s) {
 		if (ss->inner)
 			ss->inner->destroy(ss->inner);
+#if !defined(HAVE_PTHREAD_H) && defined(WIN32)
+		DeleteCriticalSection(&s->lock);
+#else
+		pthread_mutex_destroy(&s->lock);
+#endif
 		free(s);
 	}
 	destroy_stream(ss);
