@@ -15,6 +15,6 @@
 
 #include "merovingian.h"
 
-err startProxy(int psock, stream *cfdin, stream *cfout, char *url, char *client);
+err startProxy(int psock, stream *cfdin, stream *cfout, const char *url, const char *client);
 
 #endif

@@ -165,8 +165,8 @@ struct stream {
 	int (*fsetpos)(stream *restrict s, fpos_t *restrict p);
 	void (*update_timeout)(stream *s);
 	int (*isalive)(const stream *s);
-	int (*getoob)(const stream *s);
-	int (*putoob)(const stream *s, char val);
+	int (*getoob)(stream *s);
+	int (*putoob)(stream *s, char val);
 	mnstr_error_kind errkind;
 	char errmsg[1024]; // avoid allocation on error. We don't have THAT many streams..
 };
@@ -259,12 +259,15 @@ stream *open_lz4wastream(const char *restrict filename, const char *restrict mod
  * bs2.c should be dropped.*/
 typedef struct bs bs;
 struct bs {
-	unsigned nr;		/* how far we got in buf */
-	unsigned itotal;	/* amount available in current read block */
+	uint16_t nr;		/* how far we got in buf */
+	uint16_t itotal;	/* amount available in current read block */
+	bool seenflush;
+	bool seenoob;
+	char oobval;
 	int64_t blks;		/* read/written blocks (possibly partial) */
 	int64_t bytes;		/* read/written bytes */
 	char buf[BLOCK];	/* the buffered data (minus the size of
-				 * size-short */
+						 * size-short */
 };
 ssize_t bs_read(stream *restrict ss, void *restrict buf, size_t elmsize, size_t cnt)
 	__attribute__((__visibility__("hidden")));
