@@ -3165,8 +3165,6 @@ store_hot_snapshot(sql_trans *tx, str tarfile, bool omitunlogged, const char *om
 	int do_remove = 0;
 	int dir_fd = -1;
 	stream *tar_stream = NULL;
-	buffer *plan_buf = NULL;
-	stream *plan_stream = NULL;
 	sqlstore *store = tx->store;
 
 	if (!store->logger_api.get_snapshot_files) {
@@ -3262,10 +3260,6 @@ end:
 		close(dir_fd);
 	if (tar_stream)
 		close_stream(tar_stream);
-	if (plan_stream)
-		close_stream(plan_stream);
-	if (plan_buf)
-		buffer_destroy(plan_buf);
 	if (do_remove)
 		(void) MT_remove(tmppath);	// Best effort, ignore the result
 	GDKfree(tmppath);
