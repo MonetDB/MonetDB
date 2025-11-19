@@ -2724,9 +2724,6 @@ STRjoin(MalStkPtr stk, InstrPtr pci, const str fname,
 
 	bool icase = false;
 
-	if (in_argc == 8 && (msg = ignorecase(IC, &icase, fname)))
-		return msg;
-
 	if (!(l = BATdescriptor(L)) || !(r = BATdescriptor(R))) {
 		BBPreclaim_n(2, l, r);
 		throw(MAL, fname, RUNTIME_OBJECT_MISSING);
@@ -2745,6 +2742,13 @@ STRjoin(MalStkPtr stk, InstrPtr pci, const str fname,
 	size_t l_cnt = lci.ncand, r_cnt = rci.ncand;
 	size_t nested_cost = lci.ncand * rci.ncand,
 		sorted_cost = (size_t)floor(0.8 * (l_cnt * log2((double)l_cnt) + r_cnt * log2((double)r_cnt)));
+
+	if (l_cnt && in_argc == 8 && (msg = ignorecase(IC, &icase, fname))) {
+		bat_iterator_end(&li);
+		bat_iterator_end(&ri);
+		BBPreclaim_n(4, l, r, cl, cr);
+		return msg;
+	}
 
 	rl = COLnew(0, TYPE_oid, l_cnt, TRANSIENT);
 	if (RR)
