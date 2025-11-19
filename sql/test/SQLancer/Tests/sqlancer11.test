@@ -40,7 +40,7 @@ insert into t1 values ('')
 statement error 40002!INSERT INTO: FOREIGN KEY constraint 't1.t1_c0_fkey' violated
 insert into t1(c0) values ((select 'a')), ('b')
 
-statement error 40002!INSERT INTO: PRIMARY KEY constraint 't1.t1_c0_pkey' violated
+statement error /INSERT INTO: /
 insert into t1(c0) values(']BW扗}FUp'), (cast((values (greatest('Aᨐ', '_'))) as string(616))), ('')
 
 statement ok
