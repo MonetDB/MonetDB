@@ -1509,7 +1509,7 @@ rel_rewrite_physical(visitor *v, sql_rel *rel)
 		rel = rel_count_gt_zero(v, rel);
 		ATOMIC_TYPE oahash_enabled = (1U<<19);
 		if (SQLrunning && (GDKdebug & oahash_enabled)) {
-			if (rel)	/* After a projection after each join, needed for limited number of columns in hash tables */
+			if (rel)	/* Add a projection after each join, needed for limited number of columns in hash tables */
 				rel = rel_add_project(v, rel);
 		}
 	}

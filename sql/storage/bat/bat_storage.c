@@ -2056,7 +2056,7 @@ destroy_delta(sql_delta *b, bool recursive)
 }
 
 static sql_delta *
-bind_col_data(sql_trans *tr, sql_column *c, bool *update_conflict)
+bind_col_data(sql_trans *tr, sql_column *c, bool *update_conflict, bool *new)
 {
 	lock_column(tr->store, c);
 	sql_delta *obat = ATOMIC_PTR_GET(&c->data);
@@ -2102,6 +2102,8 @@ bind_col_data(sql_trans *tr, sql_column *c, bool *update_conflict)
 			*update_conflict = true;
 		return NULL;
 	}
+	if (new)
+		*new = true;
 	unlock_column(tr->store, c);
 	return bat;
 }
@@ -2127,8 +2129,8 @@ static int
 update_col(sql_trans *tr, sql_column *c, void *tids, void *upd, bool isbat)
 {
 	int res = LOG_OK;
-	bool update_conflict = false;
-	sql_delta *delta, *odelta = ATOMIC_PTR_GET(&c->data);
+	bool update_conflict = false, new = false;
+	sql_delta *delta;
 
 	if (isbat) {
 		BAT *t = tids;
@@ -2139,43 +2141,50 @@ update_col(sql_trans *tr, sql_column *c, void *tids, void *upd, bool isbat)
 	if (c == NULL)
 		return LOG_ERR;
 
-	if ((delta = bind_col_data(tr, c, &update_conflict)) == NULL)
+	if ((delta = bind_col_data(tr, c, &update_conflict, &new)) == NULL)
 		return update_conflict ? LOG_CONFLICT : LOG_ERR;
 
 	assert(delta && delta->cs.ts == tr->tid);
 	assert(c->t->persistence != SQL_DECLARED_TABLE);
-	if (odelta != delta)
+	if (new)
 		trans_add_table(tr, &c->base, c->t, delta, &tc_gc_upd_col, &commit_update_col, NOT_TO_BE_LOGGED(c->t) ? NULL : &log_update_col);
 
-	odelta = delta;
 	if ((res = update_col_execute(tr, &delta, c->t, isNew(c), tids, upd, isbat)) != LOG_OK)
 		return res;
-	assert(delta == odelta);
 	if (delta->cs.st == ST_DEFAULT && c->storage_type)
 		res = sql_trans_alter_storage(tr, c, NULL);
 	return res;
 }
 
 static sql_delta *
-bind_idx_data(sql_trans *tr, sql_idx *i, bool *update_conflict)
+bind_idx_data(sql_trans *tr, sql_idx *i, bool *update_conflict, bool *new)
 {
+	lock_idx(tr->store, i);
 	sql_delta *obat = ATOMIC_PTR_GET(&i->data);
 
-	if (obat->cs.ts == tr->tid || ((obat->cs.ts < TRANSACTION_ID_BASE || tr_version_of_parent(tr, obat->cs.ts)) && !update_conflict)) /* on append there are no conflicts */
+	if (obat->cs.ts == tr->tid || ((obat->cs.ts < TRANSACTION_ID_BASE || tr_version_of_parent(tr, obat->cs.ts)) && !update_conflict)) { /* on append there are no conflicts */
+		unlock_idx(tr->store, i);
 		return obat;
+	}
 	if ((!tr->parent || !tr_version_of_parent(tr, obat->cs.ts)) && obat->cs.ts >= TRANSACTION_ID_BASE) {
+		unlock_idx(tr->store, i);
 		/* abort */
 		if (update_conflict)
 			*update_conflict = true;
 		return NULL;
 	}
-	if (!(obat = timestamp_delta(tr, ATOMIC_PTR_GET(&i->data))))
+	if (!(obat = timestamp_delta(tr, ATOMIC_PTR_GET(&i->data)))) {
+		unlock_idx(tr->store, i);
 		return NULL;
+	}
 	sql_delta* bat = ZNEW(sql_delta);
-	if (!bat)
+	if (!bat) {
+		unlock_idx(tr->store, i);
 		return NULL;
+	}
 	ATOMIC_INIT(&bat->cs.refcnt, 1);
 	if (dup_cs(tr, &obat->cs, &bat->cs, (oid_index(i->type))?TYPE_oid:TYPE_lng, 0) != LOG_OK) {
+		unlock_idx(tr->store, i);
 		destroy_delta(bat, false);
 		return NULL;
 	}
@@ -2183,12 +2192,16 @@ bind_idx_data(sql_trans *tr, sql_idx *i, bool *update_conflict)
 	/* only one writer else abort */
 	bat->next = obat;
 	if (!ATOMIC_PTR_CAS(&i->data, (void**)&bat->next, bat)) {
+		unlock_idx(tr->store, i);
 		bat->next = NULL;
 		destroy_delta(bat, false);
 		if (update_conflict)
 			*update_conflict = true;
 		return NULL;
 	}
+	if (new)
+		*new = true;
+	unlock_idx(tr->store, i);
 	return bat;
 }
 
@@ -2196,8 +2209,8 @@ static int
 update_idx(sql_trans *tr, sql_idx * i, void *tids, void *upd, bool isbat)
 {
 	int res = LOG_OK;
-	bool update_conflict = false;
-	sql_delta *delta, *odelta = ATOMIC_PTR_GET(&i->data);
+	bool update_conflict = false, new = false;
+	sql_delta *delta;
 
 	if (isbat) {
 		BAT *t = tids;
@@ -2208,16 +2221,14 @@ update_idx(sql_trans *tr, sql_idx * i, void *tids, void *upd, bool isbat)
 	if (i == NULL)
 		return LOG_ERR;
 
-	if ((delta = bind_idx_data(tr, i, &update_conflict)) == NULL)
+	if ((delta = bind_idx_data(tr, i, &update_conflict, &new)) == NULL)
 		return update_conflict ? LOG_CONFLICT : LOG_ERR;
 
 	assert(delta && delta->cs.ts == tr->tid);
-	if (odelta != delta)
+	if (new)
 		trans_add_table(tr, &i->base, i->t, delta, &tc_gc_upd_idx, &commit_update_idx, NOT_TO_BE_LOGGED(i->t) ? NULL : &log_update_idx);
 
-	odelta = delta;
 	res = update_col_execute(tr, &delta, i->t, isNew(i), tids, upd, isbat);
-	assert(delta == odelta);
 	return res;
 }
 
@@ -2424,7 +2435,7 @@ static int
 append_col(sql_trans *tr, sql_column *c, BUN offset, BAT *offsets, void *data, BUN cnt, bool isbat, int tpe)
 {
 	int res = LOG_OK;
-	sql_delta *delta, *odelta = ATOMIC_PTR_GET(&c->data);
+	sql_delta *delta;
 
 	if (isbat) {
 		BAT *t = data;
@@ -2432,22 +2443,13 @@ append_col(sql_trans *tr, sql_column *c, BUN offset, BAT *offsets, void *data, B
 			return LOG_OK;
 	}
 
-	if ((delta = bind_col_data(tr, c, NULL)) == NULL)
+	if ((delta = bind_col_data(tr, c, NULL, NULL)) == NULL)
 		return LOG_ERR;
 
 	assert(delta->cs.st == ST_DEFAULT || delta->cs.st == ST_DICT || delta->cs.st == ST_FOR);
 
-	odelta = delta;
 	if ((res = append_col_execute(tr, &delta, c, offset, offsets, data, cnt, isbat, tpe, c->storage_type)) != LOG_OK)
 		return res;
-	if (odelta != delta) {
-		delta->next = odelta;
-		if (!ATOMIC_PTR_CAS(&c->data, (void**)&delta->next, delta)) {
-			delta->next = NULL;
-			destroy_delta(delta, false);
-			return LOG_CONFLICT;
-		}
-	}
 	if (delta->cs.st == ST_DEFAULT && c->storage_type)
 		res = sql_trans_alter_storage(tr, c, NULL);
 	return res;
@@ -2485,7 +2487,7 @@ append_idx(sql_trans *tr, sql_idx *i, BUN offset, BAT *offsets, void *data, BUN 
 			return LOG_OK;
 	}
 
-	if ((delta = bind_idx_data(tr, i, NULL)) == NULL)
+	if ((delta = bind_idx_data(tr, i, NULL, NULL)) == NULL)
 		return LOG_ERR;
 
 	assert(delta->cs.st == ST_DEFAULT);
@@ -3115,17 +3117,17 @@ col_not_null(sql_trans *tr, sql_column *col, bool not_null)
 static int
 swap_bats(sql_trans *tr, sql_column *col, BAT *bn)
 {
-	bool update_conflict = false;
+	bool update_conflict = false, new = false;
 
 	if (segments_in_transaction(tr, col->t))
 		return LOG_CONFLICT;
 
-	sql_delta *d = NULL, *odelta = ATOMIC_PTR_GET(&col->data);
+	sql_delta *d = NULL;
 
-	if ((d = bind_col_data(tr, col, &update_conflict)) == NULL)
+	if ((d = bind_col_data(tr, col, &update_conflict, &new)) == NULL)
 		return update_conflict ? LOG_CONFLICT : LOG_ERR;
 	assert(d && d->cs.ts == tr->tid);
-	if (odelta != d)
+	if (new)
 		trans_add_obj(tr, &col->base, d, &tc_gc_col, &commit_update_col, NOT_TO_BE_LOGGED(col->t)?NULL:&log_update_col);
 	if (d->cs.bid)
 		temp_destroy(d->cs.bid);
@@ -3957,13 +3959,13 @@ clear_cs(sql_trans *tr, column_storage *cs, bool renew, bool temp)
 static BUN
 clear_col(sql_trans *tr, sql_column *c, bool renew)
 {
-	bool update_conflict = false;
-	sql_delta *delta, *odelta = ATOMIC_PTR_GET(&c->data);
+	bool update_conflict = false, new = false;
+	sql_delta *delta;
 
-	if ((delta = bind_col_data(tr, c, renew?&update_conflict:NULL)) == NULL)
+	if ((delta = bind_col_data(tr, c, renew?&update_conflict:NULL, &new)) == NULL)
 		return update_conflict ? BUN_NONE - 1 : BUN_NONE;
 	assert(c->t->persistence != SQL_DECLARED_TABLE);
-	if (odelta != delta)
+	if (new)
 		trans_add_table(tr, &c->base, c->t, delta, &tc_gc_upd_col, &commit_update_col, NOT_TO_BE_LOGGED(c->t) ? NULL : &log_update_col);
 	if (delta)
 		return clear_cs(tr, &delta->cs, renew, isTempTable(c->t));
@@ -3973,15 +3975,15 @@ clear_col(sql_trans *tr, sql_column *c, bool renew)
 static BUN
 clear_idx(sql_trans *tr, sql_idx *i, bool renew)
 {
-	bool update_conflict = false;
-	sql_delta *delta, *odelta = ATOMIC_PTR_GET(&i->data);
+	bool update_conflict = false, new = false;
+	sql_delta *delta;
 
 	if (!isTable(i->t) || (hash_index(i->type) && list_length(i->columns) <= 1) || !idx_has_column(i->type))
 		return 0;
-	if ((delta = bind_idx_data(tr, i, renew?&update_conflict:NULL)) == NULL)
+	if ((delta = bind_idx_data(tr, i, renew?&update_conflict:NULL, &new)) == NULL)
 		return update_conflict ? BUN_NONE - 1 : BUN_NONE;
 	assert(i->t->persistence != SQL_DECLARED_TABLE);
-	if (odelta != delta)
+	if (new)
 		trans_add_table(tr, &i->base, i->t, delta, &tc_gc_upd_idx, &commit_update_idx, NOT_TO_BE_LOGGED(i->t) ? NULL : &log_update_idx);
 	if (delta)
 		return clear_cs(tr, &delta->cs, renew, isTempTable(i->t));
@@ -5177,7 +5179,7 @@ vacuum_col(sql_trans *tr, sql_column *c, bool force)
 	sql_delta *d = NULL;
 
 	/* do we have enough to clean */
-	if ((d = bind_col_data(tr, c, NULL)) == NULL)
+	if ((d = bind_col_data(tr, c, NULL, NULL)) == NULL)
 		return LOG_CONFLICT;
 
 	/* do we have enough to clean */
@@ -5216,7 +5218,7 @@ vacuum_tab(sql_trans *tr, sql_table *t, bool force)
 		sql_delta *d = NULL;
 
 		/* do we have enough to clean */
-		if ((d = bind_col_data(tr, c, NULL)) == NULL)
+		if ((d = bind_col_data(tr, c, NULL, NULL)) == NULL)
 			return LOG_CONFLICT;
 
 		/* do we have enough to clean */
@@ -5246,18 +5248,18 @@ vacuum_tab(sql_trans *tr, sql_table *t, bool force)
 static int
 col_compress(sql_trans *tr, sql_column *col, storage_type st, BAT *o, BAT *u)
 {
-	bool update_conflict = false;
+	bool update_conflict = false, new = false;
 
 	if (segments_in_transaction(tr, col->t))
 		return LOG_CONFLICT;
 
-	sql_delta *d = NULL, *odelta = ATOMIC_PTR_GET(&col->data);
+	sql_delta *d = NULL;
 
-	if ((d = bind_col_data(tr, col, &update_conflict)) == NULL)
+	if ((d = bind_col_data(tr, col, &update_conflict, &new)) == NULL)
 		return update_conflict ? LOG_CONFLICT : LOG_ERR;
 	assert(d && d->cs.ts == tr->tid);
 	assert(col->t->persistence != SQL_DECLARED_TABLE);
-	if (odelta != d)
+	if (new)
 		trans_add_obj(tr, &col->base, d, &tc_gc_col, &commit_update_col, NOT_TO_BE_LOGGED(col->t) ? NULL : &log_update_col);
 
 	d->cs.st = st;
