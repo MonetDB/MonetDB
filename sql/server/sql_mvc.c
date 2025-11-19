@@ -805,6 +805,8 @@ mvc_create(sql_store *store, allocator *pa, int clientid, int debug, bstream *rs
 	m->emod = mod_none;
 	m->temporal = T_NONE;
 	m->step = S_NONE;
+	m->rewriter_stop_idx = -1;
+	m->rewriter_stop_cycle = -1;
 	m->show_details = false;
 	m->trace = false;
 	m->reply_size = 100;
@@ -1582,11 +1584,14 @@ sql_processrelation(mvc *sql, sql_rel *rel, int profile, int instantiate, int va
 	int emode = sql->emode;
 	if (!instantiate)
 		sql->emode = m_deps;
-	if (emode == m_plan && BEFORE_REL_UNNEST(sql))
+	if (emode == m_explain && BEFORE_LOGICAL_UNNEST(sql))
 		return rel;
 	if (rel)
 		rel = rel_unnest(sql, rel);
-	if (emode == m_plan && (AFTER_REL_UNNEST(sql) || BEFORE_REL_REWRITE(sql)))
+	if (emode == m_explain &&
+		(AFTER_LOGICAL_UNNEST(sql) ||
+		 (BEFORE_LOGICAL_REWRITE(sql) &&
+		  sql->rewriter_stop_idx == -1 && sql->rewriter_stop_cycle == -1)))
 		return rel;
 	sql->emode = emode;
 	if (rel)

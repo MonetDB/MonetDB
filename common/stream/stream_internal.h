@@ -62,6 +62,9 @@
 #include <lz4.h>
 #include <lz4frame.h>
 #endif
+#ifdef HAVE_PTHREAD_H
+#include <pthread.h>
+#endif
 
 #ifndef SHUT_RD
 #define SHUT_RD		0
@@ -259,11 +262,16 @@ stream *open_lz4wastream(const char *restrict filename, const char *restrict mod
  * bs2.c should be dropped.*/
 typedef struct bs bs;
 struct bs {
+#if !defined(HAVE_PTHREAD_H) && defined(WIN32)
+	CRITICAL_SECTION lock;
+#else
+	pthread_mutex_t lock;
+#endif
 	uint16_t nr;		/* how far we got in buf */
 	uint16_t itotal;	/* amount available in current read block */
 	bool seenflush;
 	bool seenoob;
-	char oobval;
+	unsigned char oobval;
 	int64_t blks;		/* read/written blocks (possibly partial) */
 	int64_t bytes;		/* read/written bytes */
 	char buf[BLOCK];	/* the buffered data (minus the size of

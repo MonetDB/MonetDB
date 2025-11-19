@@ -140,7 +140,7 @@ sql_symbol2relation(backend *be, symbol *sym)
 	sql_rel *rel;
 	sql_query *query = query_create(be->mvc);
 	int value_based_opt = be->mvc->emode != m_prepare, storage_based_opt;
-	int profile = be->mvc->emode == m_plan;
+	int profile = be->mvc->emode == m_explain;
 
 	rel = rel_semantic(query, sym);
 
@@ -152,7 +152,7 @@ sql_symbol2relation(backend *be, symbol *sym)
 			rel = sql_processrelation(be->mvc, rel, profile, 1, value_based_opt, storage_based_opt);
 		if (rel && (rel_no_mitosis(be->mvc, rel) || rel_need_distinct_query(rel)))
 			be->no_mitosis = 1;
-		if (rel && (be->mvc->emode != m_plan || AFTER_REL_PHYSICAL(be->mvc) ||
+		if (rel && (be->mvc->emode != m_explain || AFTER_LOGICAL_PHYSICAL(be->mvc) ||
 					BEFORE_PHYSICAL(be->mvc) || AFTER_PHYSICAL(be->mvc)))
 			rel = rel_physical(be->mvc, rel);
 	}
@@ -5591,8 +5591,6 @@ SQLread_dump_rel(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (refs == NULL)
 		goto bailout;
 
-	m->step = S_REL_REWRITE;
-	m->temporal = T_AFTER;
 	m->show_details = true;
 
 	rel_print_refs(m, s, rel, 0, refs, 0);
