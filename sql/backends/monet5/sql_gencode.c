@@ -988,7 +988,7 @@ sql_relation2stmt(backend *be, sql_rel *r, int top)
 		sql_error(c, 003, SQLSTATE(42000) "Missing relation to convert into statements");
 		return NULL;
 	} else {
-		if (c->emode == m_plan) {
+		if (c->emode == m_explain) {
 			rel_print(c, r, 0);
 		} else {
 			s = output_rel_bin(be, r, top);

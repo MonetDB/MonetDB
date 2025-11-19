@@ -92,7 +92,7 @@ socket_getoob(stream *s)
 			}
 		}
 #endif
-		char b = 0;
+		unsigned char b = 0;
 		switch (recv(fd, &b, 1, MSG_OOB)) {
 		case 0:
 			/* unexpectedly didn't receive a byte */
@@ -163,7 +163,7 @@ socket_getoob_unix(stream *s)
 			if (nr == 2 && buf[0] == OOBMSG0 && buf[1] == OOBMSG1) {
 				nr = recv(fd, buf, 3, 0);
 				if (nr == 3)
-					return buf[2];
+					return (unsigned char) buf[2];
 			}
 		}
 	return 0;
