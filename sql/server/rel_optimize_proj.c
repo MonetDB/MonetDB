@@ -20,7 +20,6 @@
 static list *
 rel_used_projections(mvc *sql, list *exps, list *users)
 {
-	/* todo check if we keep the right order of expressions (users defines the order) */
 	list *nexps = sa_list(sql->sa);
 	allocator_state ta_state = ma_open(sql->ta);
 	bool *used = SA_ZNEW_ARRAY(sql->ta, bool, list_length(exps));
