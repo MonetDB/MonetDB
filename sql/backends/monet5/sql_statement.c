@@ -3941,7 +3941,6 @@ stmt_convert(backend *be, stmt *v, stmt *sel, sql_subtype *f, sql_subtype *t)
 	InstrPtr q = NULL;
 	const char *convert = t->type->impl, *mod = calcRef;
 	int pushed = (v->cand && v->cand == sel), no_candidates = 0;
-	bool add_tz = false;
 	/* convert types and make sure they are rounded up correctly */
 
 	if (v->nr < 0)
@@ -4025,15 +4024,13 @@ stmt_convert(backend *be, stmt *v, stmt *sel, sql_subtype *f, sql_subtype *t)
 		q = pushInt(mb, q, 3);
 	}
 	q = pushArgument(mb, q, v->nr);
-	if (add_tz)
-			q = pushLng(mb, q, be->mvc->timezone);
 	if (sel && !pushed && !v->cand) {
 		q = pushArgument(mb, q, sel->nr);
 		pushed = 1;
 	} else if (v->nrcols > 0 && !no_candidates) {
 		q = pushNilBat(mb, q);
 	}
-	if (!add_tz && (t->type->eclass == EC_DEC || EC_TEMP_FRAC(t->type->eclass) || EC_INTERVAL(t->type->eclass))) {
+	if (t->type->eclass == EC_DEC || EC_TEMP_FRAC(t->type->eclass) || EC_INTERVAL(t->type->eclass)) {
 		/* digits, scale of the result decimal */
 		q = pushInt(mb, q, t->digits);
 		if (!EC_TEMP_FRAC(t->type->eclass))
