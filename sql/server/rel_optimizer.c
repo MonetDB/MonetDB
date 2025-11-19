@@ -621,9 +621,21 @@ run_optimizer_set(visitor *v, sql_optimizer_run *runs, sql_rel *rel, global_prop
 				run->name = set[i].name;
 				int changes = v->changes;
 				lng clk = GDKusec();
+
+				if (BEFORE_LOGICAL_REWRITE(v->sql) &&
+					v->sql->rewriter_stop_idx >= 0 &&
+					set[i].index == v->sql->rewriter_stop_idx)
+					return rel;
+
 				rel = opt(v, gp, rel);
 				run->time += (GDKusec() - clk);
 				run->nchanges += (v->changes - changes);
+
+				if (AFTER_LOGICAL_REWRITE(v->sql) &&
+					v->sql->rewriter_stop_idx >= 0 &&
+					set[i].index == v->sql->rewriter_stop_idx)
+					return rel;
+
 			} else {
 				rel = opt(v, gp, rel);
 			}
@@ -637,38 +649,64 @@ run_optimizer_set(visitor *v, sql_optimizer_run *runs, sql_rel *rel, global_prop
 static sql_rel *
 rel_optimizer_one(mvc *sql, sql_rel *rel, int profile, int instantiate, int value_based_opt, int storage_based_opt)
 {
-	global_props gp = {.cnt = {0}, .instantiate = (uint8_t)instantiate, .opt_cycle = 0 };
-	visitor v = { .sql = sql, .value_based_opt = value_based_opt, .storage_based_opt = storage_based_opt, .changes = 1, .data = &gp };
+	global_props gp = {
+		.cnt = {0},
+		.instantiate = (uint8_t)instantiate,
+		.opt_cycle = 0
+	};
 
-	sql->runs = !(ATOMIC_GET(&GDKdebug) & TESTINGMASK) && profile ? ma_zalloc(sql->sa, NSQLREWRITERS * sizeof(sql_optimizer_run)) : NULL;
-	for ( ;rel && gp.opt_cycle < 20 && v.changes; gp.opt_cycle++) {
+	visitor v = {
+		.sql = sql,
+		.value_based_opt = value_based_opt,
+		.storage_based_opt = storage_based_opt,
+		.changes = 1,
+		.data = &gp
+	};
+
+	sql->runs = !(ATOMIC_GET(&GDKdebug) & TESTINGMASK) && profile ?
+		ma_zalloc(sql->sa, NSQLREWRITERS * sizeof(sql_optimizer_run)) :
+		NULL;
+
+	for ( ; rel && gp.opt_cycle < 20 && v.changes; gp.opt_cycle++) {
 		v.changes = 0;
-		gp = (global_props) {.cnt = {0}, .instantiate = (uint8_t)instantiate, .opt_cycle = gp.opt_cycle};
-		rel = rel_visitor_topdown(&v, rel, &rel_properties); /* collect relational tree properties */
+		gp = (global_props) {
+			.cnt = {0},
+			.instantiate = (uint8_t)instantiate,
+			.opt_cycle = gp.opt_cycle
+		};
+		/* collect relational tree properties */
+		rel = rel_visitor_topdown(&v, rel, &rel_properties);
 		gp.opt_level = calculate_opt_level(sql, rel);
 		if (gp.opt_level == 0 && !gp.needs_mergetable_rewrite)
 			break;
 		sql->recursive = gp.recursive;
 		rel = run_optimizer_set(&v, sql->runs, rel, &gp, pre_sql_optimizers);
+
+		if (sql->step == S_LOGICAL_REWRITE &&
+			sql->rewriter_stop_cycle >= 0 &&
+			gp.opt_cycle == sql->rewriter_stop_cycle)
+			return rel;
 	}
+
 #ifndef NDEBUG
 	assert(gp.opt_cycle < 20);
 #endif
 
-	/* these optimizers run statistics gathered by the last optimization cycle */
+	/* these opts run statistics gathered by the last optimization cycle */
 	rel = run_optimizer_set(&v, sql->runs, rel, &gp, post_sql_optimizers);
+
 	return rel;
 }
 
 static sql_exp *
 exp_optimize_one(visitor *v, sql_rel *rel, sql_exp *e, int depth )
 {
-       (void)rel;
-       (void)depth;
-       if (e->type == e_psm && e->flag == PSM_REL && e->l) {
-               e->l = rel_optimizer_one(v->sql, e->l, 0, v->changes, v->value_based_opt, v->storage_based_opt);
-       }
-       return e;
+	(void)rel;
+	(void)depth;
+	if (e->type == e_psm && e->flag == PSM_REL && e->l) {
+		e->l = rel_optimizer_one(v->sql, e->l, 0, v->changes, v->value_based_opt, v->storage_based_opt);
+	}
+	return e;
 }
 
 sql_rel *
@@ -677,8 +715,13 @@ rel_optimizer(mvc *sql, sql_rel *rel, int profile, int instantiate, int value_ba
 	if (rel && rel->op == op_ddl && rel->flag == ddl_psm) {
 		if (!list_empty(rel->exps)) {
 			bool changed = 0;
-			visitor v = { .sql = sql, .value_based_opt = value_based_opt, .storage_based_opt = storage_based_opt, .changes = instantiate };
-			for(node *n = rel->exps->h; n; n = n->next) {
+			visitor v = {
+				.sql = sql,
+				.value_based_opt = value_based_opt,
+				.storage_based_opt = storage_based_opt,
+				.changes = instantiate
+			};
+			for (node *n = rel->exps->h; n; n = n->next) {
 				sql_exp *e = n->data;
 				n->data = exp_visitor(&v, rel, e, 1, exp_optimize_one, true, true, true, &changed);
 			}

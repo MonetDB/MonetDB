@@ -1423,6 +1423,8 @@ SQLparser_body(Client c, backend *be)
 	m->temporal = T_NONE;
 	m->step = S_NONE;
 	m->show_details = false;
+	m->rewriter_stop_idx = -1;
+	m->rewriter_stop_cycle = -1;
 	m->trace = false;
 	c->query = NULL;
 	c->qryctx.starttime = GDKusec();
@@ -1552,7 +1554,9 @@ SQLparser_body(Client c, backend *be)
 				opt = ((m->emod == mod_exec) == 0); /* no need to optimize prepare - execute */
 			}
 
-			if (be->mvc->emod == mod_explain && be->mvc->step == S_PHYSICAL && be->mvc->temporal == T_BEFORE)
+			if (be->mvc->emod == mod_explain_phys &&
+				be->mvc->step == S_PHYSICAL &&
+				be->mvc->temporal == T_BEFORE)
 				opt = 0;
 
 			if (err)

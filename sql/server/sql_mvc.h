@@ -55,36 +55,36 @@
 /* allowed to reduce (in the where and having parts we can reduce) */
 
 /* different query execution modes (emode) */
-#define m_normal    0
+#define m_normal     0
 #define m_deallocate 1
-#define m_prepare   2
-#define m_plan      3
+#define m_prepare    2
+#define m_explain    3
 
 /* special modes for function/procedure and view instantiation and
    dependency generation */
 #define m_instantiate 5
-#define m_deps      6
+#define m_deps        6
 
 /* different query execution modifiers (emod) */
-#define mod_none    0
-#define mod_explain 1
-#define mod_exec    2
+#define mod_none         0
+#define mod_explain_phys 1
+#define mod_exec         2
 
-#define S_NONE        0
-#define S_REL_UNNEST  1
-#define S_REL_REWRITE 2
-#define S_PHYSICAL    3
+#define S_NONE            0
+#define S_LOGICAL_UNNEST  1
+#define S_LOGICAL_REWRITE 2
+#define S_PHYSICAL        3
 
-#define T_NONE      0
-#define T_BEFORE    1
-#define T_AFTER     2
+#define T_NONE   0
+#define T_BEFORE 1
+#define T_AFTER  2
 
-#define BEFORE_REL_UNNEST(m)  (m->step == S_REL_UNNEST  && m->temporal == T_BEFORE)
-#define AFTER_REL_UNNEST(m)   (m->step == S_REL_UNNEST  && m->temporal == T_AFTER)
-#define BEFORE_REL_REWRITE(m) (m->step == S_REL_REWRITE && m->temporal == T_BEFORE)
-#define AFTER_REL_REWRITE(m)  (m->step == S_REL_REWRITE && m->temporal == T_AFTER)
-#define BEFORE_PHYSICAL(m)    (m->step == S_PHYSICAL    && m->temporal == T_BEFORE)
-#define AFTER_PHYSICAL(m)     (m->step == S_PHYSICAL    && m->temporal == T_AFTER)
+#define BEFORE_LOGICAL_UNNEST(m)  (m->step == S_LOGICAL_UNNEST  && m->temporal == T_BEFORE)
+#define AFTER_LOGICAL_UNNEST(m)   (m->step == S_LOGICAL_UNNEST  && m->temporal == T_AFTER)
+#define BEFORE_LOGICAL_REWRITE(m) (m->step == S_LOGICAL_REWRITE && m->temporal == T_BEFORE)
+#define AFTER_LOGICAL_REWRITE(m)  (m->step == S_LOGICAL_REWRITE && m->temporal == T_AFTER)
+#define BEFORE_PHYSICAL(m)        (m->step == S_PHYSICAL        && m->temporal == T_BEFORE)
+#define AFTER_PHYSICAL(m)         (m->step == S_PHYSICAL        && m->temporal == T_AFTER)
 
 typedef struct sql_groupby_expression {
 	symbol *sdef;
@@ -168,6 +168,8 @@ typedef struct mvc {
 	char emod;                  /* execution modifier */
 	unsigned temporal;          /* temporal modifier for explain */
 	unsigned step;              /* step modifier for explain */
+	int rewriter_stop_idx;      /* index of pre_sql_optimizers/post_sql_optimizers */
+	int rewriter_stop_cycle;    /* rel_optimizer_one stop cycle */
 	bool show_details;          /* show details in explain */
 	bool trace;                 /* trace query execution */
 	sql_session *session;

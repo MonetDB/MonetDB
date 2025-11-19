@@ -20,6 +20,7 @@
 #include "sql_semantic.h"	/* for sql_add_param() */
 #include "sql_env.h"
 #include "rel_sequence.h"	/* for sql_next_seq_name() */
+#include "rel_optimizer.h"
 
 static int sqlerror(mvc *sql, const char *err);
 
@@ -687,7 +688,8 @@ SQLCODE SQLERROR UNDER WHENEVER
 %token TYPE PROCEDURE FUNCTION sqlLOADER AGGREGATE RETURNS EXTERNAL sqlNAME DECLARE
 %token CALL LANGUAGE
 %token ANALYZE SQL_EXPLAIN SQL_TRACE PREP PREPARE EXEC EXECUTE DEALLOCATE
-%token REL_UNNEST REL_REWRITE PHYSICAL SHOW DETAILS
+%token LOGICAL PHYSICAL SHOW DETAILS
+%token UNNEST REWRITE
 %token DEFAULT DISTINCT DROP TRUNCATE
 %token FOREIGN
 %token RENAME ENCRYPTED UNENCRYPTED PASSWORD GRANT REVOKE ROLE ADMIN INTO
@@ -909,42 +911,84 @@ sqlstmt:
 	;
 
 explain:
-		SQL_EXPLAIN temporal relational_step opt_show_properties
+		SQL_EXPLAIN temporal logical_step opt_show_properties
 		{
-			m->emode = m_plan;
+			m->emode = m_explain;
 			m->scanner.as = m->scanner.yycur;
 		}
 	|	SQL_EXPLAIN temporal physical_step opt_show_properties
 		{
-			m->emod = mod_explain;
+			m->emod = mod_explain_phys;
 			m->scanner.as = m->scanner.yycur;
 		}
 	|	SQL_EXPLAIN opt_show_properties
 		{
-			m->emode = m_plan;
-			m->step = S_REL_REWRITE;
+			m->emode = m_explain;
+			m->step = S_LOGICAL_REWRITE;
 			m->temporal = T_AFTER;
 			m->scanner.as = m->scanner.yycur;
 		}
 	;
 
-relational_step:
-		REL_UNNEST  { m->step = S_REL_UNNEST; }
-	|	REL_REWRITE { m->step = S_REL_REWRITE; }
+logical_step:
+		LOGICAL UNNEST
+		{
+			m->step = S_LOGICAL_UNNEST;
+		}
+	|	LOGICAL REWRITE
+		{
+			m->step = S_LOGICAL_REWRITE;
+		}
+	|	LOGICAL REWRITE posint
+		{
+			m->step = S_LOGICAL_REWRITE;
+			m->rewriter_stop_cycle = 0;
+			if ($3 < NSQLREWRITERS) {
+				m->rewriter_stop_idx = $3;
+			} else {
+				sqlformaterror(m, SQLSTATE(HY009)
+							   "EXPLAIN LOGICAL REWRITE posint:"
+							   " rewriter_stop_idx >= %d",
+							   NSQLREWRITERS);
+				YYERROR;
+			}
+		}
+	|	LOGICAL REWRITE posint posint
+		{
+			m->step = S_LOGICAL_REWRITE;
+			if ($3 < NSQLREWRITERS) {
+				m->rewriter_stop_idx = $3;
+				if ($4 < 20) {
+					m->rewriter_stop_cycle = $4;
+				} else {
+					sqlformaterror(m, SQLSTATE(HY009)
+								   "EXPLAIN LOGICAL REWRITE intval:"
+								   " rewriter_stop_cycle >= %d",
+								   20);
+					YYERROR;
+				}
+			} else {
+				sqlformaterror(m, SQLSTATE(HY009)
+							   "EXPLAIN LOGICAL REWRITE intval:"
+							   " rewriter_stop_idx >= %d",
+							   NSQLREWRITERS);
+				YYERROR;
+			}
+		}
 	;
 
 physical_step:
-		PHYSICAL { m->step = S_PHYSICAL; }
+		PHYSICAL     { m->step = S_PHYSICAL; }
 	;
 
 temporal:
-		BEFORE      { m->temporal = T_BEFORE; }
-	|	AFTER       { m->temporal = T_AFTER; }
-	|	/* empty */ { m->temporal = T_AFTER; }
+		BEFORE       { m->temporal = T_BEFORE; }
+	|	AFTER        { m->temporal = T_AFTER; }
+	|	/* empty */  { m->temporal = T_AFTER; }
 	;
 
 opt_show_properties:
-		SHOW DETAILS   { m->show_details = true; }
+		SHOW DETAILS { m->show_details = true; }
 	|	/* empty */
 	;
 

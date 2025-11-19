@@ -473,11 +473,12 @@ scanner_init_keywords(void)
 
 	failed += keywords_insert("ANALYZE", ANALYZE);
 	failed += keywords_insert("EXPLAIN", SQL_EXPLAIN);
-	failed += keywords_insert("REL_UNNEST", REL_UNNEST);
-	failed += keywords_insert("REL_REWRITE", REL_REWRITE);
+	failed += keywords_insert("LOGICAL", LOGICAL);
 	failed += keywords_insert("PHYSICAL", PHYSICAL);
 	failed += keywords_insert("SHOW", SHOW);
 	failed += keywords_insert("DETAILS", DETAILS);
+	failed += keywords_insert("UNNEST", UNNEST);
+	failed += keywords_insert("REWRITE", REWRITE);
 	failed += keywords_insert("TRACE", SQL_TRACE);
 	failed += keywords_insert("PREPARE", PREPARE);
 	failed += keywords_insert("PREP", PREP);
