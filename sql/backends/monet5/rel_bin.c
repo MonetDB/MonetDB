@@ -445,7 +445,6 @@ subrel_project(backend *be, stmt *s, list *refs, sql_rel *rel)
 		if (c->type != st_alias || c->flag) {
 			c = stmt_project(be, cand, c);
 		} else if (c->op1->type == st_mirror && is_tid_chain(cand)) { /* alias with mirror (ie full row ids) */
-			//c = stmt_alias(be, cand, 0, c->tname, c->cname);
 			c = stmt_as(be, cand, c);
 		} else { /* st_alias */
 			stmt *s = c->op1;
@@ -453,7 +452,6 @@ subrel_project(backend *be, stmt *s, list *refs, sql_rel *rel)
 				s = stmt_const(be, cand, s);
 			else
 				s = stmt_project(be, cand, s);
-			//c = stmt_alias(be, s, c->flag, c->tname, c->cname);
 			c = stmt_as(be, s, c);
 		}
 		append(l, c);
@@ -1884,7 +1882,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 				}
 				if (!s)
 					return s;
-				if (s->nrcols == 0 && first && left)
+				if (s->nrcols == 0 && first && left && left->nrcols)
 					s = stmt_const(be, bin_find_smallest_column(be, swapped?right:left), s);
 				list_append(ops, s);
 				first = 0;
@@ -2311,7 +2309,6 @@ rel2bin_basetable(backend *be, sql_rel *rel)
 		assert(!is_func(exp->type));
 		if (oname[0] == '%' && strcmp(oname, TID) == 0) {
 			/* tid function  sql.tid(t) */
-			//const char *rnme = t->base.name;
 
 			if (col)
 				s = stmt_mirror(be, col);
@@ -2319,7 +2316,6 @@ rel2bin_basetable(backend *be, sql_rel *rel)
 				s = dels?dels:stmt_tid(be, t, 0);
 				dels = NULL;
 			}
-			//s = stmt_alias(be, s, exp->alias.label, rnme, TID);
 		} else if (oname[0] == '%') {
 			sql_idx *i = find_sql_idx(t, oname+1);
 
@@ -2327,17 +2323,12 @@ rel2bin_basetable(backend *be, sql_rel *rel)
 			if ((hash_index(i->type) && list_length(i->columns) <= 1) || !idx_has_column(i->type))
 				continue;
 			s = (i == fi) ? col : stmt_idx(be, i, NULL/*dels*/, dels->partition);
-			//s = stmt_alias(be, s, exp->alias.label, rname, exp_name(exp));
 		} else {
 			sql_column *c = find_sql_column(t, oname);
 
 			s = (c == fcol) ? col : stmt_col(be, c, NULL/*dels*/, dels->partition);
-			//s = stmt_alias(be, s, exp->alias.label, rname, exp_name(exp));
 		}
 		s = stmt_alias(be, s, exp->alias.label, rname, exp_name(exp));
-		//s->tname = rname;
-		//s->cname = exp_name(exp);
-		//s->flag = exp->alias.label;
 		list_append(l, s);
 	}
 	stmt *res = stmt_list(be, l);
@@ -4706,6 +4697,7 @@ rel2bin_project(backend *be, sql_rel *rel, list *refs, sql_rel *topn)
 	psub = stmt_list(be, pl);
 	if (psub == NULL)
 		return NULL;
+	int nrcols = 0;
 	for (en = rel->exps->h; en; en = en->next) {
 		sql_exp *exp = en->data;
 		int oldvtop = be->mb->vtop, oldstop = be->mb->stop;
@@ -4722,14 +4714,20 @@ rel2bin_project(backend *be, sql_rel *rel, list *refs, sql_rel *topn)
 			s = const_column(be, s);
 		else if (sub && sub->nrcols >= 1 && s->nrcols == 0)
 			s = stmt_const(be, bin_find_smallest_column(be, sub), s);
+		else if (nrcols && s->nrcols == 0)
+			s = stmt_const(be, pl->h->data, s);
 
 		if (!exp_name(exp))
 			exp_label(sql->sa, exp, ++sql->label);
 		if (exp_name(exp)) {
 			s = stmt_rename(be, exp, s);
-			//column_name(sql->sa, s); /* save column name */
 			s->label = exp->alias.label;
 		}
+		if (!nrcols && s->nrcols && !list_empty(pl)) {
+			for (node *n = pl->h; n; n=n->next)
+				n->data = stmt_const(be, s, n->data);
+		}
+		nrcols = s->nrcols;
 		list_append(pl, s);
 	}
 	stmt_set_nrcols(psub);

@@ -1109,6 +1109,7 @@ stmt_const(backend *be, stmt *s, stmt *val)
 		ns->nr = getDestVar(q);
 		ns->tname = val->tname;
 		ns->cname = val->cname;
+		ns->label = val->label;
 		return ns;
 	}
   bailout:
@@ -3228,13 +3229,11 @@ stmt_catalog(backend *be, int type, stmt *args)
 void
 stmt_set_nrcols(stmt *s)
 {
-	unsigned nrcols = 0;
-	int key = 1;
-	node *n;
-	list *l = s->op4.lval;
+	unsigned int nrcols = 0;
+	unsigned int key = 1;
 
 	assert(s->type == st_list);
-	for (n = l->h; n; n = n->next) {
+	for (node *n = s->op4.lval->h; n; n = n->next) {
 		stmt *f = n->data;
 
 		if (!f)
@@ -3254,9 +3253,8 @@ stmt_list(backend *be, list *l)
 	if (l == NULL)
 		return NULL;
 	stmt *s = stmt_create(be->mvc->sa, st_list);
-	if(!s) {
+	if(!s)
 		return NULL;
-	}
 	s->op4.lval = l;
 	stmt_set_nrcols(s);
 	return s;
