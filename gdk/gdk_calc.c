@@ -4218,7 +4218,7 @@ BATcalcbetweenbatcst(BAT *b, BAT *lo, const ValRecord *hi, BAT *s, BAT *slo,
 	BATcheck(b, NULL);
 	BATcheck(lo, NULL);
 
-	if (ATOMbasetype(b->ttype) != ATOMbasetype(hi->vtype)) {
+	if (ATOMtype(b->ttype) != ATOMtype(hi->vtype)) {
 		GDKerror("incompatible input types.\n");
 		return NULL;
 	}
@@ -4298,7 +4298,7 @@ BATcalcbetweencstbat(BAT *b, const ValRecord *lo, BAT *hi, BAT *s, BAT *shi,
 	BATcheck(b, NULL);
 	BATcheck(hi, NULL);
 
-	if (ATOMbasetype(b->ttype) != ATOMbasetype(lo->vtype)) {
+	if (ATOMtype(b->ttype) != ATOMtype(lo->vtype)) {
 		GDKerror("incompatible input types.\n");
 		return NULL;
 	}
