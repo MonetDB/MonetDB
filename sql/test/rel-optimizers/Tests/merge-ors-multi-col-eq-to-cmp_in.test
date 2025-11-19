@@ -202,7 +202,7 @@ explain show details select n, m, k from b where ((n = 1) AND (m = 20)) OR ((n =
 project (
 | select (
 | | table("sys"."b") [ "b"."n" NOT NULL, "b"."m" NOT NULL, "b"."k" NOT NULL ]
-| ) [ (("b"."n" NOT NULL) = (int(4) "1"), ("b"."m" NOT NULL) = (int(8) "20")) or (("b"."n" NOT NULL) = (int(4) "3"), ("b"."m" NOT NULL) = (int(8) "60"), ("b"."k" NOT NULL) = (int(11) "600")) ]
+| ) [ (("b"."n" NOT NULL) = (int(31) "1"), ("b"."m" NOT NULL) = (int(31) "20")) or (("b"."n" NOT NULL) = (int(31) "3"), ("b"."m" NOT NULL) = (int(31) "60"), ("b"."k" NOT NULL) = (int(31) "600")) ]
 ) [ "b"."n" NOT NULL, "b"."m" NOT NULL, "b"."k" NOT NULL ]
 
 query III rowsort
@@ -227,10 +227,11 @@ explain show details select * from b where ((n = 1) AND (m = 20)) OR ((n = 2) AN
 project (
 | select (
 | | table("sys"."b") [ "b"."n" NOT NULL, "b"."m" NOT NULL, "b"."k" NOT NULL ]
-| ) [ (( [ "b"."n" NOT NULL, "b"."m" NOT NULL, "b"."k" NOT NULL ]) in ( [ int(4) "2", int(8) "40", int(11) "400" ],  [ int(4) "3", int(8) "60", int(11) "600" ])) or (( [ "b"."n" NOT NULL, "b"."m" NOT NULL ]) in ( [ int(4) "1", int(8) "20" ],  [ int(4) "9", int(8) "180" ])) ]
+| ) [ (( [ "b"."n" NOT NULL, "b"."m" NOT NULL, "b"."k" NOT NULL ]) in ( [ int(31) "2", int(31) "40", int(31) "400" ],  [ int(31) "3", int(31) "60", int(31) "600" ])) or (( [ "b"."n" NOT NULL, "b"."m" NOT NULL ]) in ( [ int(31) "1", int(31) "20" ],  [ int(31) "9", int(31) "180" ])) ]
 ) [ "b"."n" NOT NULL, "b"."m" NOT NULL, "b"."k" NOT NULL ]
 
 query I rowsort
 select sum(k) from dupv where ((n = 2) AND (m = 40)) OR ((n = 1) AND (m = 20) AND (k=200))
 ----
 500
+
