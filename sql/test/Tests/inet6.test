@@ -1,31 +1,311 @@
 
 query T
-select inet6 '::1'
+select cast(inet6 '::1' as text)
 ----
 ::1
 
 query T
-select inet6 '::1:0'
+select cast(inet6 '::1:0' as text)
 ----
 ::1:0
 
 query T
-select inet6 '1111:2222:3333:4444:5555:6666:7777:8888'
+select cast(inet6 '1111:2222:3333:4444:5555:6666:7777:8888' as text)
 ----
 1111:2222:3333:4444:5555:6666:7777:8888
 
 query T
-select inet6 '1111:0:0:4444:5555:0:0:8888'
+select cast(inet6 '1111:0:0:4444:5555:0:0:8888' as text)
 ----
 1111::4444:5555:0:0:8888
 
 query T
-select inet6 '1111:2222:3333:4444:5555:0:0:0'
+select cast(inet6 '1111:2222:3333:4444:5555:0:0:0' as text)
 ----
 1111:2222:3333:4444:5555::
 
+statement error
+select cast(inet6 '1111:222:3333:4444:5555:0:g:0' as text)
+
 query T
-select inet6 'ffee:ddcc:bbaa:9988:7766:5544:3322:1100'
+select cast(inet6 'ffee:ddcc:bbaa:9988:7766:5544:3322:1100' as text)
 ----
 ffee:ddcc:bbaa:9988:7766:5544:3322:1100
 
+query T
+select cast(inet6 '00001111222233334444555566667777' as text)
+----
+0:1111:2222:3333:4444:5555:6666:7777
+
+query T
+select cast(inet6 'd3ed:fdb8:6016:f68:7:97d8:98e:2368' as text)
+----
+d3ed:fdb8:6016:f68:7:97d8:98e:2368
+
+statement error
+select cast(inet6 '00g01111222233334444555566667777' as text)
+
+-- do we really want whitespace? the older parser supported it..
+query T
+select cast(inet6 '   1111:2222:3333:4444:5555:6666:7777:8888   ' as text)
+----
+1111:2222:3333:4444:5555:6666:7777:8888
+
+statement error
+select cast(inet6 '[::1]' as text)
+
+statement error
+select cast(inet6 '1:::2' as text)
+
+statement error
+select cast(inet6 '1::2::3' as text)
+
+statement error
+select cast(inet6 '0:0:0:0::0:0:0:0' as text)
+
+statement error
+select cast(inet6 '0:1:2:3:4:5:6:7:8' as text)
+
+statement error
+select cast(inet6 '0:1:2:3:4:5:6:7:' as text)
+
+statement error
+select cast(inet6 ':1:2:3:4:5:6:7' as text)
+
+statement error
+select cast(inet6 '0:1:2:3:4:5:6:' as text)
+
+statement error
+select cast(inet6 '0:1:2:3:4:5:6' as text)
+
+statement error
+select cast(inet6 ':' as text)
+
+
+-- Examples from RFC4291
+
+query T
+select cast(inet6 'ABCD:EF01:2345:6789:ABCD:EF01:2345:6789' as text)
+----
+abcd:ef01:2345:6789:abcd:ef01:2345:6789
+
+query T
+select cast(inet6 '2001:DB8:0:0:8:800:200C:417A' as text)
+----
+2001:db8::8:800:200c:417a
+
+query T
+select cast(inet6 '2001:DB8:0:0:8:800:200C:417A' as text)
+----
+2001:db8::8:800:200c:417a
+
+query T
+select cast(inet6 'FF01:0:0:0:0:0:0:101' as text)
+----
+ff01::101
+
+query T
+select cast(inet6 '0:0:0:0:0:0:0:1' as text)
+----
+::1
+
+query T
+select cast(inet6 '0:0:0:0:0:ffff:129.144.52.38' as text)
+----
+::ffff:129.144.52.38
+
+query T
+select cast(inet6 '::ffff:129.144.52.38' as text)
+----
+::ffff:129.144.52.38
+
+query T
+select cast(inet6 '0:0:0:0:0:0:13.1.68.3' as text)
+----
+::d01:4403
+
+query T
+select cast(inet6 '::13.1.68.3' as text)
+----
+::d01:4403
+
+
+
+-- Examples from RFC5952
+
+query T
+select cast(inet6 '2001:db8:0:0:1:0:0:1' as text)
+----
+2001:db8::1:0:0:1
+
+query T
+select cast(inet6 '2001:0db8:0:0:1:0:0:1' as text)
+----
+2001:db8::1:0:0:1
+
+query T
+select cast(inet6 '2001:db8::1:0:0:1' as text)
+----
+2001:db8::1:0:0:1
+
+query T
+select cast(inet6 '2001:db8::0:1:0:0:1' as text)
+----
+2001:db8::1:0:0:1
+
+query T
+select cast(inet6 '2001:0db8::1:0:0:1' as text)
+----
+2001:db8::1:0:0:1
+
+query T
+select cast(inet6 '2001:db8:0:0:1::1' as text)
+----
+2001:db8::1:0:0:1
+
+query T
+select cast(inet6 '2001:db8:0000:0:1::1' as text)
+----
+2001:db8::1:0:0:1
+
+query T
+select cast(inet6 '2001:DB8:0:0:1::1' as text)
+----
+2001:db8::1:0:0:1
+
+query T
+select cast(inet6 '2001:db8:aaaa:bbbb:cccc:dddd:eeee:0001' as text)
+----
+2001:db8:aaaa:bbbb:cccc:dddd:eeee:1
+
+query T
+select cast(inet6 '2001:db8:aaaa:bbbb:cccc:dddd:eeee:001' as text)
+----
+2001:db8:aaaa:bbbb:cccc:dddd:eeee:1
+
+query T
+select cast(inet6 '2001:db8:aaaa:bbbb:cccc:dddd:eeee:01' as text)
+----
+2001:db8:aaaa:bbbb:cccc:dddd:eeee:1
+
+query T
+select cast(inet6 '2001:db8:aaaa:bbbb:cccc:dddd:eeee:1' as text)
+----
+2001:db8:aaaa:bbbb:cccc:dddd:eeee:1
+
+query T
+select cast(inet6 '2001:db8:aaaa:bbbb:cccc:dddd::1' as text)
+----
+2001:db8:aaaa:bbbb:cccc:dddd:0:1
+
+query T
+select cast(inet6 '2001:db8:aaaa:bbbb:cccc:dddd:0:1' as text)
+----
+2001:db8:aaaa:bbbb:cccc:dddd:0:1
+
+query T
+select cast(inet6 '2001:db8:0:0:0::1' as text)
+----
+2001:db8::1
+
+query T
+select cast(inet6 '2001:db8:0:0::1' as text)
+----
+2001:db8::1
+
+query T
+select cast(inet6 '2001:db8:0::1' as text)
+----
+2001:db8::1
+
+query T
+select cast(inet6 '2001:db8::1' as text)
+----
+2001:db8::1
+
+query T
+select cast(inet6 '2001:db8::aaaa:0:0:1' as text)
+----
+2001:db8::aaaa:0:0:1
+
+query T
+select cast(inet6 '2001:db8:0:0:aaaa::1' as text)
+----
+2001:db8::aaaa:0:0:1
+
+query T
+select cast(inet6 '2001:db8:aaaa:bbbb:cccc:dddd:eeee:aaaa' as text)
+----
+2001:db8:aaaa:bbbb:cccc:dddd:eeee:aaaa
+
+query T
+select cast(inet6 '2001:db8:aaaa:bbbb:cccc:dddd:eeee:AAAA' as text)
+----
+2001:db8:aaaa:bbbb:cccc:dddd:eeee:aaaa
+
+query T
+select cast(inet6 '2001:db8:aaaa:bbbb:cccc:dddd:eeee:AaAa' as text)
+----
+2001:db8:aaaa:bbbb:cccc:dddd:eeee:aaaa
+
+query T
+select cast(inet6 '2001:db8:0:0:0:0:2:1' as text)
+----
+2001:db8::2:1
+
+query T
+select cast(inet6 '2001:db8::0:1' as text)
+----
+2001:db8::1
+
+query T
+select cast(inet6 '2001:db8:0:1:1:1:1:1' as text)
+----
+2001:db8:0:1:1:1:1:1
+
+query T
+select cast(inet6 '2001:db8::1:1:1:1:1' as text)
+----
+2001:db8:0:1:1:1:1:1
+
+query T
+select cast(inet6 '2001:0:0:1:0:0:0:1' as text)
+----
+2001:0:0:1::1
+
+query T
+select cast(inet6 '2001:db8:0:0:1:0:0:1' as text)
+----
+2001:db8::1:0:0:1
+
+query T
+select cast(inet6 '0:0:0:0:0:ffff:192.0.2.1' as text)
+----
+::ffff:192.0.2.1
+
+
+query T
+select cast(inet6 '::ffff:1.2.3.4' as text)
+----
+::ffff:1.2.3.4
+
+statement error
+select cast(inet6 '::ffff:1.2.3.x' as text)
+
+statement error
+select cast(inet6 '::ffff:1.2.3.0x' as text)
+
+statement error
+select cast(inet6 '::ffff:256.2.3.4' as text)
+
+statement error
+select cast(inet6 '::ffff:1.2.3.4.5' as text)
+
+statement error
+select cast(inet6 '::ffff:1.2.3.4.' as text)
+
+statement error
+select cast(inet6 '::ffff:1.2.3.' as text)
+
+statement error
+select cast(inet6 '::ffff:1.2.3' as text)

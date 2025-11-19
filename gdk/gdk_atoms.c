@@ -1564,154 +1564,256 @@ INET6equal(const void *L, const void *R)
 	return memcmp(l->hex, r->hex, sizeof(l->hex)) == 0;
 }
 
-static ssize_t
-INET6fromString(allocator *ma, const char *svalue, size_t *len, void **RETVAL, bool external)
+static uint8_t
+inet6_classify(char c)
 {
-	(void) ma;
-	inet6 **retval = (inet6 **) RETVAL;
-	const char *s = svalue;
+	/* The values in this table are all one too high so the invalid
+	 * ones can be left at 0. */
+	static uint8_t table[256] = {
+		['0'] = 0 + 1, ['1'] = 1 + 1, ['2'] = 2 + 1,
+		['3'] = 3 + 1, ['4'] = 4 + 1, ['5'] = 5 + 1,
+		['6'] = 6 + 1, ['7'] = 7 + 1, ['8'] = 8 + 1,
+		['9'] = 9 + 1,
+		['A'] = 0xA + 1, ['B'] = 0xB + 1, ['C'] = 0xC + 1,
+		['D'] = 0xD + 1, ['E'] = 0xE + 1, ['F'] = 0xF + 1,
+		['a'] = 0xa + 1, ['b'] = 0xb + 1, ['c'] = 0xc + 1,
+		['d'] = 0xd + 1, ['e'] = 0xe + 1, ['f'] = 0xf + 1,
+		/* not hex digits but valid as terminators */
+		['\0'] = 16 + 1, [':'] = 16 + 1, ['.'] = 16 + 1,
+	};
+	return table[(uint8_t)c] - 1;
+}
 
+static int
+inet6_scan_hexdigits(const char **pos)
+{
+	const char *p = *pos;
+	int acc;
+
+	acc = inet6_classify(*p++);
+	if (acc >= 16) {
+		/* must have at least one digit */
+		return -1;
+	}
+
+	for (int i = 0; i < 3; i++) {
+		uint8_t d = inet6_classify(*p);
+		if (d >= 16)
+			break;
+		acc = 16 * acc + d;
+		p++;
+	}
+
+	*pos = p;    /* points to the terminator */
+	return acc;
+}
+
+/* move the part after the :: to the correct position */
+static bool
+inet6_expand_gap(uint8_t *bytes, int gap_start, int groups, int max_groups)
+{
+	assert(gap_start <= groups);
+	assert(groups <= max_groups);
+	assert(max_groups == 6 || max_groups == 8);
+
+	int gap_len = max_groups - groups;
+	assert(gap_len >= 0);
+
+	if (gap_start == -1 && gap_len > 0) {
+		/* no :: found but not all groups are present */
+		return false;
+	}
+	if (gap_start != -1 && gap_len == 0) {
+		/* :: found but all groups are present */
+		return false;
+	}
+
+	if (gap_len == 0) {
+		/* nothing to do */
+		return true;
+	}
+
+	void *src = &bytes[ 2 * gap_start ];
+	void *dst = &bytes[ 2 * (gap_start + gap_len)];
+	size_t len = 2 * (groups - gap_start);
+	memmove(dst, src, len);
+	memset(src, '\0', 2 * gap_len);
+	return true;
+}
+
+/* scan an address written as 32 hexdigits without any punctuation */
+static bool
+inet6_scan_big_hexnumber(uint8_t *bytes, const char *s, const char *end)
+{
+	if (end - s != 32)
+		return false;
+
+	for (int i = 0; i < 16; i++) {
+		int hi = inet6_classify(s[2 * i]);
+		int lo = inet6_classify(s[2 * i + 1]);
+		if (hi >= 16 || lo >= 16)
+			return false;
+		bytes[i] = 16 * hi + lo;
+	}
+	return true;
+
+}
+
+/* scan the optional decimal bytes at the end of for example ::ffff:127.0.0.1 */
+static bool
+inet6_scan_embedded_inet4(uint8_t *bytes, const char *start, const char *end)
+{
+	/* We cannot use sscanf because its behavior is undefined for invalid inputs.
+	 * Strtol and friends accept whitespace etc which we don't want	.
+	 * We'll just do it by hand */
+
+	int fields[4] = { 0 };
+	int n = 0;
+	bool need_digit = true;
+	for (const char *s = start; s < end; s++) {
+		if (isdigit(*s)) {
+			fields[n] = 10 * fields[n] + *s - '0';
+			if (fields[n] > 255)
+				return false;
+			need_digit = false;
+		} else if (*s == '.') {
+			n++;
+			if (n == 4)
+				return false;
+			need_digit = true;
+		} else {
+			return false;
+		}
+	}
+	if (n != 3 || need_digit)
+		return false;
+
+	for (int i = 0; i < 4; i++)
+		bytes[12 + i] = (uint8_t) fields[i];
+
+	return true;
+}
+
+static bool
+inet6_scan_address(uint8_t *bytes, const char *s, const char *end)
+{
+	if (inet6_scan_big_hexnumber(bytes, s, end))
+		return true;
+
+	int groups = 0;         /* nr of groups seen */
+	int gap = -1;           /* position of gap, -1 means not seen */
+
+	if (end - s < 3) {
+		/* The smallest legal addresses are ::n and n::.
+		 * :: is legal as an IP address but not in MonetDB because it's
+		 * our nil representation. */
+		return false;
+	}
+
+	/* Colons at the start are tricky. Two means the gap is at the start,
+	 * one is forbidden. */
+	if (s[0] == ':') {
+		if (s[1] == ':') {
+			s += 2;
+			gap = 0;
+		} else {
+			return false;
+		}
+	}
+
+	/* with the leading colons out of the way, read hex groups terminated by
+	 * :, . or END */
+	while (s < end) {
+		if (groups >= 8) {
+			/* too many! */
+			return false;
+		}
+		if (*s == ':') {
+			if (gap == -1) {
+				/* found the gap */
+				gap = groups;
+				s++;
+				continue;
+			} else {
+				/* there can only be one gap */
+				return false;
+			}
+		}
+
+		const char *group_start = s;
+		int group = inet6_scan_hexdigits(&s);
+		if (group < 0)
+			return false;
+
+		/* check the terminator */
+		char terminator = s < end ? *s : '\0';
+		if (groups == 7) {
+			if (terminator != '\0')
+				return false;
+		} else {
+			if (inet6_classify(terminator) != 16)
+				return false;
+		}
+
+		/* check for trailing decimal bytes */
+		if (terminator == '.') {
+			if (!inet6_expand_gap(bytes, gap, groups, 6))
+				return false;
+			return inet6_scan_embedded_inet4(bytes, group_start, end);
+		}
+
+		/* record the group, skip the separator and move on */
+		bytes[2 * groups] = (uint8_t)(group >> 8);
+		bytes[2 * groups + 1] = (uint8_t)group;
+		groups++;
+		s++;
+	}
+
+	return inet6_expand_gap(bytes, gap, groups, 8);
+}
+
+
+static ssize_t
+INET6fromString(allocator *ma, const char *svalue, size_t *len, void **retval, bool external)
+{
+	/* make room for return value */
 	if (*len < 16 || *retval == NULL) {
 		if ((*retval = ma_alloc(ma, 16)) == NULL)
 			return -1;
 		*len = 16;
 	}
+	inet6 *addr = (inet6*)*retval;
+	uint8_t *bytes = &addr->hex[0];
+
+	/* handle nils */
 	if (external && strcmp(svalue, "nil") == 0) {
-		**retval = inet6_nil;
+		*addr = inet6_nil;
 		return 3;
 	}
 	if (strNil(svalue)) {
-		**retval = inet6_nil;
+		*addr = inet6_nil;
 		return 1;
 	}
-	while (GDKisspace(*s))
-		s++;
-	inet6 i6 = {0};
-	bool brkt = *s == '[';
-	if (brkt) {
-		s++;
-		if (!GDKisxdigit(*s) && *s != ':') {
-			GDKerror("Invalid IPv6 address.");
-			goto bailout;
-		}
-	} else if (strlen(s) == 32 && strspn(s, "0123456789abcdefABCDEF") == 32) {
-		/* special case: 32 hex digits without [ ] */
-		for (int i = 0; i < 16; i++) {
-			uint8_t val = 0;
-			for (int j = 4; j >= 0; j -= 4) {
-				if ('0' <= *s && *s <= '9')
-					val |= (*s - '0') << j;
-				else if ('a' <= *s && *s <= 'f')
-					val |= (*s - 'a' + 10) << j;
-				else if ('A' <= *s && *s <= 'F')
-					val |= (*s - 'A' + 10) << j;
-				s++;
-			}
-			i6.hex[i] = val;
-		}
-		**retval = i6;
-		return (ssize_t) (s - svalue);
-	}
-	int dcolpos = -1;
-	int i;
-	int maybeip4 = 0;
-	for (i = 0; i < 16; i += 2) {
-		if (s[0] == ':' && s[1] == ':') {
-			if (dcolpos >= 0) {
-				GDKerror("Invalid IPv6 address: multiple ::.");
-				goto bailout;
-			}
-			dcolpos = i;
-			s += 2;
-		} else if (i > 0 && s[0] == ':') {
-			s++;
-		}
-		if (*s == 0 || (brkt && *s == ']'))
-			break;
-		char *e;
-		unsigned long ul;
-		if (maybeip4 == 1 && (dcolpos == -1 ? i == 6 : i < 6)) {
-			ul = strtoul(s, &e, 10);
-			if (e > s && *e == '.') {
-				/* address such as ::ffff:192.0.2.128
-				 * i.e. an IPv4 address inside an
-				 * IPv6 */
-				if (ul > 255) {
-					GDKerror("Invalid IPv6 address.");
-					goto bailout;
-				}
-				i6.hex[i++] = (uint8_t) ul;
-				s = e + 1;
-				ul = strtoul(s, &e, 10);
-				if (e == s || *e != '.' || ul > 255) {
-					GDKerror("Invalid IPv6 address.");
-					goto bailout;
-				}
-				i6.hex[i++] = (uint8_t) ul;
-				s = e + 1;
-				ul = strtoul(s, &e, 10);
-				if (e == s || *e != '.' || ul > 255) {
-					GDKerror("Invalid IPv6 address.");
-					goto bailout;
-				}
-				i6.hex[i++] = (uint8_t) ul;
-				s = e + 1;
-				ul = strtoul(s, &e, 10);
-				if (e == s || ul > 255) {
-					GDKerror("Invalid IPv6 address.");
-					goto bailout;
-				}
-				i6.hex[i++] = (uint8_t) ul;
-				s = e;
-				break;
-			}
-		}
-		ul = strtoul(s, &e, 16);
-		if (e == s || ul > 65535) {
-			GDKerror("Invalid IPv6 address.");
-			goto bailout;
-		}
-		i6.hex[i] = (uint8_t) (ul >> 8);
-		i6.hex[i + 1] = (uint8_t) (ul & 0xFF);
-		s = e;
-		if (maybeip4 == 0) {
-			if (ul == 0xFFFF)
-				maybeip4 = 1;
-			else if (ul != 0)
-				maybeip4 = -1;
-		}
-	}
-	if (brkt) {
-		if (*s != ']') {
-			GDKerror("Invalid IPv6 address.");
-			goto bailout;
-		}
-		s++;
-	}
-	if ((dcolpos < 0 && i < 16) || (dcolpos >= 0 && i == 16)) {
-		GDKerror("Invalid IPv6 address.");
-		goto bailout;
-	}
-	if (dcolpos >= 0) {
-		int j;
-		for (j = 15; i > dcolpos; j--) {
-			i6.hex[j] = i6.hex[--i];
-			i6.hex[i] = 0;
-		}
-	}
-	while (GDKisspace(*s))
-		s++;
-	if (*s) {
-		GDKerror("Garbage at end of IPv6 address.");
-		goto bailout;
+
+	/* find start and end */
+	const char *start = svalue;
+	ssize_t svalue_len = strlen(svalue);
+	const char *end = start + svalue_len;
+	while (GDKisspace(*start))
+		start++;
+	while (end > start && GDKisspace(end[-1]))
+		end--;
+
+	if (!inet6_scan_address(bytes, start, end))
+		return -1;
+
+	uint8_t zeroes[16] = { 0 };
+	if (memcmp(bytes, zeroes, 16) == 0) {
+		/* that's our nil representation! cannot use it */
+		return -1;
 	}
 
-	**retval = i6;
-	return (ssize_t) (s - svalue);
-
-  bailout:
-	**retval = inet6_nil;
-	return -1;
+	return svalue_len;
 }
 
 static BUN
