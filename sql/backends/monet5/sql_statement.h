@@ -206,6 +206,7 @@ extern stmt *stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, 
        */
 extern stmt *stmt_uselect2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt *sub, int anti, int symmetric, int reduce);
 extern stmt *stmt_genselect(backend *be, stmt *lops, stmt *rops, sql_subfunc *f, stmt *sub, int anti);
+extern stmt *stmt_single(backend *be, stmt *c, stmt *i);
 extern stmt *stmt_outerselect(backend *be, stmt *g, stmt *m, stmt *p, bool any, bool single);
 extern stmt *stmt_markselect(backend *be, stmt *g, stmt *m, stmt *p, bool any);
 extern stmt *stmt_markjoin(backend *be, stmt *l, stmt *r, bool nil_matches, bool final);

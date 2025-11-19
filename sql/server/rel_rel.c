@@ -839,8 +839,8 @@ rel_setop_n_ary_check_types(mvc *sql, sql_rel *l, sql_rel *r, list *ls, list *rs
 		append(nls, le);
 		append(nrs, re);
 	}
-	l = rel_project_newexps(sql->sa, l, nls);
-	r = rel_project_newexps(sql->sa, r, nrs);
+	l = rel_project(sql->sa, l, nls);
+	r = rel_project(sql->sa, r, nrs);
 	set_processed(l);
 	set_processed(r);
 
@@ -1194,23 +1194,6 @@ rel_project(allocator *sa, sql_rel *l, list *e)
 		rel->nrcols = list_length(e);
 	}
 	return rel;
-}
-
-sql_rel *
-rel_project_newexps(allocator *sa, sql_rel *l, list *e)
-{
-	if (list_length(l->exps) == list_length(e)) {
-		node *n, *m;
-		for(n = l->exps->h, m = e->h; n && m; n = n->next, m = m->next) {
-			sql_exp *oe = n->data;
-			sql_exp *ne = m->data;
-			if (exp_equal(oe, ne) != 0)
-				break;
-		}
-		if (!n && !m)
-			return l;
-	}
-	return rel_project(sa, l, e);
 }
 
 sql_rel *

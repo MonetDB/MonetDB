@@ -3789,6 +3789,11 @@ command algebra.semijoin(X_0:bat[:any_1], X_1:bat[:any_1], X_2:bat[:oid], X_3:ba
 ALGsemijoin
 Semi join with candidate lists
 algebra
+single
+command algebra.single(X_0:bat[:oid], X_1:bat[:oid]):bat[:oid]
+ALGsingle
+Check for single result ids.
+algebra
 slice
 command algebra.slice(X_0:bat[:any_1], X_1:int, X_2:int):bat[:any_1]
 ALGslice_int

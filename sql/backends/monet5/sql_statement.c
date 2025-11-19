@@ -2163,6 +2163,34 @@ select2_join2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt **Sub,
 }
 
 stmt *
+stmt_single(backend *be, stmt *c, stmt *i)
+{
+	MalBlkPtr mb = be->mb;
+	InstrPtr q;
+
+	q = newStmtArgs(mb, algebraRef, "single", 6);
+	q = pushArgument(mb, q, c->nr); /* cands ids */
+	q = pushArgument(mb, q, i->nr); /* left ids (to be check for single) */
+	pushInstruction(mb, q);
+
+	if (!q)
+		return NULL;
+	stmt *s = stmt_create(be->mvc->sa, st_uselect2);
+	if (s == NULL) {
+		freeInstruction(be->mb, q);
+		return NULL;
+	}
+
+	s->op1 = c;
+	s->op2 = i;
+	s->key = 0;
+	s->nrcols = c->nrcols;
+	s->nr = getDestVar(q);
+	s->q = q;
+	return s;
+}
+
+stmt *
 stmt_outerselect(backend *be, stmt *g, stmt *m, stmt *p, bool any, bool single)
 {
 	MalBlkPtr mb = be->mb;

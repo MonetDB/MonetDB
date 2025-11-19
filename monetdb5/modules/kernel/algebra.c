@@ -471,6 +471,33 @@ ALGmarkselect(Client ctx, bat *r1, bat *r2, const bat *gid, const bat *mid, cons
 }
 
 static str
+ALGsingle(Client ctx, bat *r, bat *cands, bat *ids)
+{
+	(void)ctx;
+	BAT *i = BATdescriptor(*ids); /* bit */
+
+	if (!i)
+		throw(MAL, "algebra.single", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	BUN nr = BATcount(i);
+	if (i->ttype == TYPE_oid && nr > 0) {
+		oid *ii = Tloc(i, 0);
+		oid cur = ii[0];
+
+		for (BUN n = 1; n < nr; n++) {
+			if (cur == ii[n]) {
+				BBPreclaim(i);
+				throw(MAL, "algebra.single", SQLSTATE(HY002) "more than one match");
+			}
+			cur = ii[n];
+		}
+	}
+	BBPreclaim(i);
+	*r = *cands;
+	BBPretain(*r);
+	return MAL_SUCCEED;
+}
+
+static str
 ALGouterselect(Client ctx, bat *r1, bat *r2, const bat *gid, const bat *mid, const bat *pid, const bit *Any, const bit *Single)
 {
 	(void) ctx;
@@ -1924,6 +1951,7 @@ mel_func algebra_init_funcs[] = {
  command("algebra", "select", ALGselect2nil, false, "With unknown set, each nil != nil", args(1,9, batarg("",oid),batargany("b",1),batarg("s",oid),argany("low",1),argany("high",1),arg("li",bit),arg("hi",bit),arg("anti",bit),arg("unknown",bit))),
  command("algebra", "thetaselect", ALGthetaselect2, false, "Select all head values of the first input BAT for which the tail value\nobeys the relation value OP VAL and for which the head value occurs in\nthe tail of the second input BAT.\nInput is a dense-headed BAT, output is a dense-headed BAT with in\nthe tail the head value of the input BAT for which the\nrelationship holds.  The output BAT is sorted on the tail value.", args(1,5, batarg("",oid),batargany("b",1),batarg("s",oid),argany("val",1),arg("op",str))),
  command("algebra", "markselect", ALGmarkselect, false, "Group on group-ids, return aggregated anyequal or allnotequal", args(2,6, batarg("",oid), batarg("", bit), batarg("gid",oid), batarg("m", bit), batarg("p", bit), arg("any", bit))),
+ command("algebra", "single", ALGsingle, false, "Check for single result ids.", args(1,3, batarg("r",oid), batarg("cands", oid), batarg("i", oid))),
  command("algebra", "outerselect", ALGouterselect, false, "Per input lid return at least one row, if none of the predicates (p) hold, return a nil, else 'all' true cases.", args(2,7, batarg("",oid), batarg("", bit), batarg("lid", oid), batarg("rid", bit), batarg("predicate", bit), arg("any", bit), arg("single", bit))),
  command("algebra", "selectNotNil", ALGselectNotNil, false, "Select all not-nil values", args(1,2, batargany("",1),batargany("b",1))),
  command("algebra", "sort", ALGsort11, false, "Returns a copy of the BAT sorted on tail values.\nThe order is descending if the reverse bit is set.\nThis is a stable sort if the stable bit is set.", args(1,5, batargany("",1),batargany("b",1),arg("reverse",bit),arg("nilslast",bit),arg("stable",bit))),

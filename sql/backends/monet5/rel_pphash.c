@@ -795,18 +795,24 @@ rel2bin_oahash_join(backend *be, sql_rel *rel, list *refs)
 	bool hf = false;
 	if (!list_empty(rel->attr))
 		return rel2bin_oahash_groupjoin(be, rel, refs);
-	stmt *sub = NULL;
+	stmt *sub = NULL, *probed_ids = NULL;
 	list *jexps = sa_list(be->mvc->sa), *sexps = sa_list(be->mvc->sa), *probe_side = NULL, *hash_side = NULL;
 	split_join_exps_pp(rel, jexps, sexps, false);
+	bool single = rel->single && !list_empty(sexps);
 
 	assert(rel->op == op_join);
 	if (list_empty(jexps)) { /* cartesian */
-		sub = rel2bin_oahash_cart(be, rel, refs, NULL, NULL, &probe_side, &hash_side, NULL, &hf);
+		sub = rel2bin_oahash_cart(be, rel, refs, single?&probed_ids:NULL, NULL, &probe_side, &hash_side, NULL, &hf);
 	} else {
-		sub = rel2bin_oahash_equi_join(be, rel, refs, jexps, NULL, NULL, NULL, NULL, &probe_side, &hash_side, !list_empty(sexps));
+		sub = rel2bin_oahash_equi_join(be, rel, refs, jexps, single?&probed_ids:NULL, NULL, NULL, NULL, &probe_side, &hash_side, !list_empty(sexps));
 	}
 	if (!list_empty(sexps)) {
 		sub->cand = rel2bin_oahash_select(be, sub, sexps, rel, hf);
+		if (single && sub->cand) {
+			assert(probed_ids);
+			stmt *ps = stmt_project(be, sub->cand, probed_ids);
+			sub->cand = stmt_single(be, sub->cand, ps);
+		}
 		sub = subrel_project(be, sub, refs, rel);
 	}
 	return sub;
