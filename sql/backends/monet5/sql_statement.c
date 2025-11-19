@@ -2002,7 +2002,7 @@ select2_join2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt **Sub,
 
 		int r1 = op2->nr;
 		int r2 = op3->nr;
-		int rs = 0;
+		/* int rs = 0; */
 		q = newStmtArgs(mb, algebraRef, cmd, 12);
 		if (q == NULL)
 			goto bailout;
@@ -2020,12 +2020,12 @@ select2_join2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt **Sub,
 		}
 		if (sub) /* only for uselect2 */
 			q = pushArgument(mb, q, sub->nr);
-		if (rs) {
-			q = pushArgument(mb, q, rs);
-		} else {
-			q = pushArgument(mb, q, r1);
-			q = pushArgument(mb, q, r2);
-		}
+		/* if (rs) { */
+			/* q = pushArgument(mb, q, rs); */
+		/* } else { */
+		q = pushArgument(mb, q, r1);
+		q = pushArgument(mb, q, r2);
+		/* } */
 		if (type == st_join2) {
 			q = pushNilBat(mb, q);
 			q = pushNilBat(mb, q);
