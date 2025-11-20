@@ -93,8 +93,14 @@ bs_write(stream *restrict ss, const void *restrict buf, size_t elmsize, size_t c
 			 * to the left */
 			blksize <<= 1;
 			if (!mnstr_writeSht(ss->inner, (int16_t) blksize) ||
-			    ss->inner->write(ss->inner, s->buf, 1, s->nr) != (ssize_t) s->nr) {
-				mnstr_copy_error(ss, ss->inner);
+			    ss->inner->write(ss->inner, s->buf, 1, s->nr) != (ssize_t) s->nr
+			) {
+				if (mnstr_errnr(ss->inner) != MNSTR_NO__ERROR) {
+					mnstr_copy_error(ss, ss->inner);
+				} else {
+					mnstr_set_error(ss, MNSTR_WRITE_ERROR, "connection closed unexpectedly");
+				}
+
 				s->nr = 0; /* data is lost due to error */
 				return -1;
 			}

@@ -253,3 +253,6 @@ returns text external name "calc"."to_hex";
 grant execute on function to_hex(bigint) to public;
 update sys.functions set system = true where not system and schema_id = 2000 and name = 'to_hex' and type = 1;
 
+Running database upgrade commands:
+delete from sys.dependencies where id = 2048 and depend_id = (select f.id from sys.functions f where name = 'get_merge_table_partition_expressions');
+
