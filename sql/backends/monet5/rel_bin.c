@@ -1930,7 +1930,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 				}
 				if (!s)
 					return s;
-				if (s->nrcols == 0 && first && left)
+				if (s->nrcols == 0 && first && left && left->nrcols)
 					s = stmt_const(be, bin_find_smallest_column(be, swapped?right:left), s);
 				list_append(ops, s);
 				first = 0;
@@ -4708,6 +4708,7 @@ rel2bin_project(backend *be, sql_rel *rel, list *refs, sql_rel *topn)
 	psub = stmt_list(be, pl);
 	if (psub == NULL)
 		return NULL;
+	int nrcols = 0;
 	for (en = rel->exps->h; en; en = en->next) {
 		sql_exp *exp = en->data;
 		int oldvtop = be->mb->vtop, oldstop = be->mb->stop;
@@ -4724,6 +4725,8 @@ rel2bin_project(backend *be, sql_rel *rel, list *refs, sql_rel *topn)
 			s = const_column(be, s);
 		else if (sub && sub->nrcols >= 1 && s->nrcols == 0)
 			s = stmt_const(be, bin_find_smallest_column(be, sub), s);
+		else if (nrcols && s->nrcols == 0)
+			s = stmt_const(be, pl->h->data, s);
 
 		if (!exp_name(exp))
 			exp_label(sql->sa, exp, ++sql->label);
@@ -4731,6 +4734,11 @@ rel2bin_project(backend *be, sql_rel *rel, list *refs, sql_rel *topn)
 			s = stmt_rename(be, exp, s);
 			s->label = exp->alias.label;
 		}
+		if (!nrcols && s->nrcols && !list_empty(pl)) {
+			for (node *n = pl->h; n; n=n->next)
+				n->data = stmt_const(be, s, n->data);
+		}
+		nrcols = s->nrcols;
 		list_append(pl, s);
 	}
 	stmt_set_nrcols(psub);
