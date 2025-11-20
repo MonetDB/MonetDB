@@ -1245,7 +1245,7 @@ grantor:
 	;
 
 grant:
-    	GRANT privileges TO grantee_commalist opt_with_grant opt_from_grantor
+	GRANT privileges TO grantee_commalist opt_with_grant opt_from_grantor
 		{
 			dlist *l = L();
 			append_list(l, $2);
@@ -1791,13 +1791,13 @@ CREATE [ UNIQUE ] INDEX index_name
 [ ON filegroup ]
 < index_option > :: =
     {
-		PAD_INDEX |
-        FILLFACTOR = fillfactor |
-        IGNORE_DUP_KEY |
-        DROP_EXISTING |
-    	STATISTICS_NORECOMPUTE |
-    	SORT_IN_TEMPDB
-	}
+	PAD_INDEX |
+	FILLFACTOR = fillfactor |
+	IGNORE_DUP_KEY |
+	DROP_EXISTING |
+	STATISTICS_NORECOMPUTE |
+	SORT_IN_TEMPDB
+    }
 */
 
 role_def:
@@ -1907,7 +1907,7 @@ table_def:
 			$$ = _symbol_create_list( SQL_CREATE_TABLE, l );
 		}
 	|	table_if_not_exists qname FROM sqlLOADER func_ref
-    	{
+		{
 			dlist *l = L();
 			append_list(l, $2);
 			append_symbol(l, $5);
@@ -2381,7 +2381,7 @@ table_constraint:
 
 opt_constraint_name:
 		/* empty */			{ $$ = NULL; }
-	|  	CONSTRAINT ident		{ $$ = $2; }
+	|	CONSTRAINT ident		{ $$ = $2; }
 	;
 
 ref_action:
@@ -2402,22 +2402,22 @@ ref_on_delete:
 
 opt_ref_action:
 		/* empty */                          { $$ = (2 << 8) + 2; /* defaults are RESTRICT */ }
-	| 	ref_on_update                        { $$ = $1; }
-	| 	ref_on_delete                        { $$ = $1; }
-	| 	ref_on_delete ref_on_update          { $$ = $1 + $2; }
-	| 	ref_on_update ref_on_delete          { $$ = $1 + $2; }
+	|	ref_on_update                        { $$ = $1; }
+	|	ref_on_delete                        { $$ = $1; }
+	|	ref_on_delete ref_on_update          { $$ = $1 + $2; }
+	|	ref_on_update ref_on_delete          { $$ = $1 + $2; }
 	;
 
 opt_match_type:
 		/* empty */			{ $$ = 0; }
-	| 	FULL				{ $$ = 1; }
-	| 	PARTIAL			{ $$ = 2; }
-	| 	SIMPLE			{ $$ = 0; }
+	|	FULL				{ $$ = 1; }
+	|	PARTIAL			{ $$ = 2; }
+	|	SIMPLE			{ $$ = 0; }
 	;
 
 opt_match:
 		/* empty */			{ $$ = 0; }
-	| 	MATCH opt_match_type		{ $$ = $2; }
+	|	MATCH opt_match_type		{ $$ = $2; }
 	;
 
 check_parenthesis_open:
@@ -2462,7 +2462,7 @@ column_constraint_type:
 			append_int(l, $5 );
 			$$ = _symbol_create_list( SQL_FOREIGN_KEY, l);
 		}
-	|  	CHECK check_search_condition { $$ = $2; }
+	|	CHECK check_search_condition { $$ = $2; }
 	;
 
 table_constraint_type:
@@ -2505,7 +2505,7 @@ view_def:
 			append_int(l, $1);
 			$$ = _symbol_create_list( SQL_CREATE_VIEW, l );
 		}
-	| 	CREATE OR REPLACE local_temp VIEW qname opt_column_list AS SelectStmt
+	|	CREATE OR REPLACE local_temp VIEW qname opt_column_list AS SelectStmt
 		{
 			dlist *l = L();
 			append_int(l, $4);
@@ -2812,7 +2812,7 @@ when_statements:
 
 case_opt_else_statement:
 		/* empty */                   { $$ = NULL; }
-	|  	ELSE procedure_statement_list { $$ = $2; }
+	|	ELSE procedure_statement_list { $$ = $2; }
 	;
 
 if_statement:
@@ -2907,7 +2907,7 @@ paramlist:
 			append_type(p, &$4);
 			$$ = append_list($1, p);
 		}
-	|  	column_id data_type
+	|	column_id data_type
 		{
 			dlist *l = L();
 			dlist *p = L();
@@ -3424,7 +3424,7 @@ opt_header_list:
 
 header_list:
 		header                 { $$ = append_list(L(), $1); }
-	| 	header_list ',' header { $$ = append_list($1, $3); }
+	|	header_list ',' header { $$ = append_list($1, $3); }
 	;
 
 header:
@@ -3924,7 +3924,7 @@ simple_select:
 								$5->h->next->next->next->next->data.sym,
 								$5->h->next->next->next->next->next->data.sym);
 		}
-	|	values_clause 		{ $$ = $1; }
+	|	values_clause		{ $$ = $1; }
 	|	select_clause UNION set_distinct opt_corresponding select_clause
 		{
 			dlist *l = L();
@@ -4140,7 +4140,7 @@ select_clause:
 
 set_distinct:
 		ALL        { $$ = FALSE; }
-	| 	DISTINCT   { $$ = TRUE; }
+	|	DISTINCT   { $$ = TRUE; }
 	|	/*empty */ { $$ = TRUE; }
 	;
 
@@ -4392,13 +4392,13 @@ opt_having_clause:
 	;
 
 opt_order_by_clause:
-		/* empty */			  	{ $$ = NULL; }
+		/* empty */				{ $$ = NULL; }
 	|	order_by_clause			{ $$ = $1; }
 	;
 
 order_by_clause:
-		ORDER BY all		  	{ $$ = _symbol_create_list( SQL_ORDERBY, NULL); }
-	|	ORDER BY sort_specification_list 	{ $$ = _symbol_create_list( SQL_ORDERBY, $3); }
+		ORDER BY all			{ $$ = _symbol_create_list( SQL_ORDERBY, NULL); }
+	|	ORDER BY sort_specification_list	{ $$ = _symbol_create_list( SQL_ORDERBY, $3); }
 	;
 
 first_next:
@@ -5342,7 +5342,7 @@ window_frame_start:
 
 window_bound:
 		window_frame_start
-	| 	window_following_bound
+	|	window_following_bound
 	;
 
 window_frame_between:
@@ -5413,7 +5413,7 @@ datetime_funcs:
 			append_list(l, NULL);
 			$$ = _symbol_create_list( SQL_NOP, l );
 		}
-	|  	CURRENT_TIME opt_brackets
+	|	CURRENT_TIME opt_brackets
 		{
 			dlist *l = L();
 			append_list(l, append_string(L(), ma_strdup(SA, "current_time")));
@@ -5421,7 +5421,7 @@ datetime_funcs:
 			append_list(l, NULL);
 			$$ = _symbol_create_list( SQL_NOP, l );
 		}
-	|  	CURRENT_TIMESTAMP opt_brackets
+	|	CURRENT_TIMESTAMP opt_brackets
 		{
 			dlist *l = L();
 			append_list(l, append_string(L(), ma_strdup(SA, "current_timestamp")));
@@ -5429,7 +5429,7 @@ datetime_funcs:
 			append_list(l, NULL);
 			$$ = _symbol_create_list( SQL_NOP, l );
 		}
-	|  	LOCALTIME opt_brackets
+	|	LOCALTIME opt_brackets
 		{
 			dlist *l = L();
 			append_list(l, append_string(L(), ma_strdup(SA, "localtime")));
@@ -5437,7 +5437,7 @@ datetime_funcs:
 			append_list(l, NULL);
 			$$ = _symbol_create_list( SQL_NOP, l );
 		}
-	|  	LOCALTIMESTAMP opt_brackets
+	|	LOCALTIMESTAMP opt_brackets
 		{
 			dlist *l = L();
 			append_list(l, append_string(L(), ma_strdup(SA, "localtimestamp")));
@@ -5454,7 +5454,7 @@ opt_brackets:
 
 trim_list:
 		scalar_exp FROM expr_list { $$ = append_symbol($3, $1); }
-	| 	FROM expr_list            { $$ = $2; }
+	|	FROM expr_list            { $$ = $2; }
 	|	expr_list                 { $$ = $$; }
 	;
 
@@ -6745,7 +6745,7 @@ non_reserved_keyword:
 	|	VALUE         { $$ = ma_strdup(SA, "value"); }         /* sloppy: officially reserved */
 	|	WITHOUT       { $$ = ma_strdup(SA, "without"); }       /* sloppy: officially reserved */
 
-	 	/* SQL/XML non reserved words */
+		/* SQL/XML non reserved words */
 	|	ABSENT        { $$ = ma_strdup(SA, "absent"); }
 	|	ACCORDING     { $$ = ma_strdup(SA, "according"); }
 	|	CONTENT       { $$ = ma_strdup(SA, "content"); }
@@ -6819,7 +6819,7 @@ non_reserved_keyword:
 	|	WEEK          { $$ = ma_strdup(SA, "week"); }
 	|	ZONE          { $$ = ma_strdup(SA, "zone"); }
 
-	 	/* odbc escape sequence non reserved words */
+		/* odbc escape sequence non reserved words */
 	|	ODBC_DATE_ESCAPE_PREFIX      { $$ = ma_strdup(SA, "d"); }
 	|	ODBC_TIME_ESCAPE_PREFIX      { $$ = ma_strdup(SA, "t"); }
 	|	ODBC_TIMESTAMP_ESCAPE_PREFIX { $$ = ma_strdup(SA, "ts"); }
@@ -6839,30 +6839,30 @@ non_reserved_keyword:
 /* column identifiers */
 column_name_keyword:
 		BETWEEN       { $$ = ma_strdup(SA, "between"); }
-	| 	CHARACTER     { $$ = ma_strdup(SA, "character"); }
-	| 	COALESCE      { $$ = ma_strdup(SA, "coalesce"); }
-	| 	EXISTS        { $$ = ma_strdup(SA, "exists"); }
-	| 	EXTRACT       { $$ = ma_strdup(SA, "extract"); }
-	| 	GROUPING      { $$ = ma_strdup(SA, "grouping"); }
-	| 	INTERVAL      { $$ = ma_strdup(SA, "interval"); }
-	| 	NULLIF        { $$ = ma_strdup(SA, "nullif"); }
-	| 	POSITION      { $$ = ma_strdup(SA, "position"); }
-	| 	PRECISION     { $$ = ma_strdup(SA, "precision"); }     /* sloppy: officially reserved */
-	| 	sqlREAL
-	| 	ROW           { $$ = ma_strdup(SA, "row"); }           /* sloppy: officially reserved */
-	| 	SUBSTRING     { $$ = ma_strdup(SA, "substring"); }
-	| 	TIME          { $$ = ma_strdup(SA, "time"); }
-	| 	TIMESTAMP     { $$ = ma_strdup(SA, "timestamp"); }
-	| 	TRIM          { $$ = ma_strdup(SA, "trim"); }
-	| 	VALUES        { $$ = ma_strdup(SA, "values"); }
-	| 	XMLATTRIBUTES { $$ = ma_strdup(SA, "xmlatributes"); }
-	| 	XMLCONCAT     { $$ = ma_strdup(SA, "xmlconcat"); }
-	| 	XMLELEMENT    { $$ = ma_strdup(SA, "xmlelement"); }
-	| 	XMLFOREST     { $$ = ma_strdup(SA, "xmlforest"); }
-	| 	XMLPARSE      { $$ = ma_strdup(SA, "xmlparse"); }
-	| 	XMLPI         { $$ = ma_strdup(SA, "xmlpi"); }
+	|	CHARACTER     { $$ = ma_strdup(SA, "character"); }
+	|	COALESCE      { $$ = ma_strdup(SA, "coalesce"); }
+	|	EXISTS        { $$ = ma_strdup(SA, "exists"); }
+	|	EXTRACT       { $$ = ma_strdup(SA, "extract"); }
+	|	GROUPING      { $$ = ma_strdup(SA, "grouping"); }
+	|	INTERVAL      { $$ = ma_strdup(SA, "interval"); }
+	|	NULLIF        { $$ = ma_strdup(SA, "nullif"); }
+	|	POSITION      { $$ = ma_strdup(SA, "position"); }
+	|	PRECISION     { $$ = ma_strdup(SA, "precision"); }     /* sloppy: officially reserved */
+	|	sqlREAL
+	|	ROW           { $$ = ma_strdup(SA, "row"); }           /* sloppy: officially reserved */
+	|	SUBSTRING     { $$ = ma_strdup(SA, "substring"); }
+	|	TIME          { $$ = ma_strdup(SA, "time"); }
+	|	TIMESTAMP     { $$ = ma_strdup(SA, "timestamp"); }
+	|	TRIM          { $$ = ma_strdup(SA, "trim"); }
+	|	VALUES        { $$ = ma_strdup(SA, "values"); }
+	|	XMLATTRIBUTES { $$ = ma_strdup(SA, "xmlatributes"); }
+	|	XMLCONCAT     { $$ = ma_strdup(SA, "xmlconcat"); }
+	|	XMLELEMENT    { $$ = ma_strdup(SA, "xmlelement"); }
+	|	XMLFOREST     { $$ = ma_strdup(SA, "xmlforest"); }
+	|	XMLPARSE      { $$ = ma_strdup(SA, "xmlparse"); }
+	|	XMLPI         { $$ = ma_strdup(SA, "xmlpi"); }
 		/* odbc */
-	| 	IFNULL        { $$ = ma_strdup(SA, "ifnull"); }
+	|	IFNULL        { $$ = ma_strdup(SA, "ifnull"); }
 	;
 
 function_name_keyword:
@@ -6873,21 +6873,21 @@ function_name_keyword:
 
 reserved_keyword:
 		ALL          { $$ = ma_strdup(SA, "all"); }
-	| 	AND          { $$ = ma_strdup(SA, "and"); }
-	| 	ANY          { $$ = ma_strdup(SA, "ANY"); }
-	| 	AS           { $$ = ma_strdup(SA, "as"); }
-	| 	ASC          { $$ = ma_strdup(SA, "asc"); }
-	| 	ASYMMETRIC   { $$ = ma_strdup(SA, "asymmetric"); }
-	| 	BOTH         { $$ = ma_strdup(SA, "both"); }
-	| 	CASE         { $$ = ma_strdup(SA, "case"); }
-	| 	CAST         { $$ = ma_strdup(SA, "cast"); }
-	| 	CURRENT_ROLE { $$ = ma_strdup(SA, "current_role"); }
-	| 	COLUMN       { $$ = ma_strdup(SA, "column"); }
-	| 	DISTINCT     { $$ = ma_strdup(SA, "distinct"); }
-	| 	EXEC         { $$ = ma_strdup(SA, "exec"); }
-	| 	EXECUTE      { $$ = ma_strdup(SA, "execute"); }
-	| 	TABLE        { $$ = ma_strdup(SA, "table"); }
-	| 	FROM         { $$ = ma_strdup(SA, "from"); }
+	|	AND          { $$ = ma_strdup(SA, "and"); }
+	|	ANY          { $$ = ma_strdup(SA, "ANY"); }
+	|	AS           { $$ = ma_strdup(SA, "as"); }
+	|	ASC          { $$ = ma_strdup(SA, "asc"); }
+	|	ASYMMETRIC   { $$ = ma_strdup(SA, "asymmetric"); }
+	|	BOTH         { $$ = ma_strdup(SA, "both"); }
+	|	CASE         { $$ = ma_strdup(SA, "case"); }
+	|	CAST         { $$ = ma_strdup(SA, "cast"); }
+	|	CURRENT_ROLE { $$ = ma_strdup(SA, "current_role"); }
+	|	COLUMN       { $$ = ma_strdup(SA, "column"); }
+	|	DISTINCT     { $$ = ma_strdup(SA, "distinct"); }
+	|	EXEC         { $$ = ma_strdup(SA, "exec"); }
+	|	EXECUTE      { $$ = ma_strdup(SA, "execute"); }
+	|	TABLE        { $$ = ma_strdup(SA, "table"); }
+	|	FROM         { $$ = ma_strdup(SA, "from"); }
 	;
 
 reduced_keywords:
@@ -6899,7 +6899,7 @@ reduced_keywords:
 	|	PRECISION    { $$ = ma_strdup(SA, "precision"); }
 	|	ROW          { $$ = ma_strdup(SA, "row"); }
 	|	CACHE        { $$ = ma_strdup(SA, "cache"); }
-	 	/* SQL/XML non reserved words */
+		/* SQL/XML non reserved words */
 	|	ABSENT       { $$ = ma_strdup(SA, "absent"); }
 	|	ACCORDING    { $$ = ma_strdup(SA, "according"); }
 	|	CONTENT      { $$ = ma_strdup(SA, "content"); }
@@ -6921,7 +6921,7 @@ reduced_keywords:
 	|	UESCAPE      { $$ = ma_strdup(SA, "uescape"); }
 	|	URI          { $$ = ma_strdup(SA, "uri"); }
 	|	WHITESPACE   { $$ = ma_strdup(SA, "whitespace"); }
-	 	/* odbc */
+		/* odbc */
 	|	IFNULL       { $$ = ma_strdup(SA, "ifnull"); }
 
 	|	ODBC_DATE_ESCAPE_PREFIX      { $$ = ma_strdup(SA, "d"); }
@@ -7009,7 +7009,7 @@ exec:
 
 dealloc_ref:
 		posint { $$ = $1; }
-	| 	ALL    { $$ = -1; } /* prepared statements numbers cannot be negative, so set -1 to deallocate all */
+	|	ALL    { $$ = -1; } /* prepared statements numbers cannot be negative, so set -1 to deallocate all */
 	;
 
 dealloc:
@@ -7099,16 +7099,16 @@ comment_on_statement:
 
 catalog_object:
 		SCHEMA ident       { $$ = _symbol_create( SQL_SCHEMA, $2 ); }
-	| 	TABLE qname        { $$ = _symbol_create_list( SQL_TABLE, $2 ); }
-	| 	VIEW qname         { $$ = _symbol_create_list( SQL_VIEW, $2 ); }
-	| 	COLUMN column_id '.' ident
+	|	TABLE qname        { $$ = _symbol_create_list( SQL_TABLE, $2 ); }
+	|	VIEW qname         { $$ = _symbol_create_list( SQL_VIEW, $2 ); }
+	|	COLUMN column_id '.' ident
 		{
 			dlist *l = L();
 			append_string(l, $2);
 			append_string(l, $4);
 			$$ = _symbol_create_list( SQL_COLUMN, l );
 		}
-	| 	COLUMN column_id '.' ident '.' ident
+	|	COLUMN column_id '.' ident '.' ident
 		{
 			dlist *l = L();
 			append_string(l, $2);
@@ -7116,9 +7116,9 @@ catalog_object:
 			append_string(l, $6);
 			$$ = _symbol_create_list( SQL_COLUMN, l );
 		}
-	| 	INDEX qname        { $$ = _symbol_create_list( SQL_INDEX, $2 ); }
-	| 	SEQUENCE qname     { $$ = _symbol_create_list( SQL_SEQUENCE, $2 ); }
-	| 	routine_designator { $$ = _symbol_create_list( SQL_ROUTINE, $1 ); }
+	|	INDEX qname        { $$ = _symbol_create_list( SQL_INDEX, $2 ); }
+	|	SEQUENCE qname     { $$ = _symbol_create_list( SQL_SEQUENCE, $2 ); }
+	|	routine_designator { $$ = _symbol_create_list( SQL_ROUTINE, $1 ); }
 	;
 
 XML_value_expression:
@@ -7245,7 +7245,7 @@ XML_attributes:
 
 XML_attribute_list:
 		XML_attribute                        { $$ = $1; }
-	| 	XML_attribute_list ',' XML_attribute
+	|	XML_attribute_list ',' XML_attribute
 		{
 			dlist *l = L();
 			append_list(l, append_string(L(), ma_strdup(SA, "concat")));
@@ -7291,7 +7291,7 @@ XML_element_content_and_option:
 
 XML_element_content_list:
 		XML_element_content                              { $$ = append_symbol(L(), $1); }
-	| 	XML_element_content_list ',' XML_element_content { $$ = append_symbol($1, $3); }
+	|	XML_element_content_list ',' XML_element_content { $$ = append_symbol($1, $3); }
 	;
 
 XML_element_content:
@@ -7430,17 +7430,17 @@ XML_query_argument:
 
 opt_XML_query_returning_mechanism:
 		/* empty */
-	| 	XML_passing_mechanism
+	|	XML_passing_mechanism
 	;
 
 opt_XML_returning_clause_query_returning_mechanism:
 		/* empty */
-	| 	XML_returning_clause opt_XML_query_returning_mechanism
+	|	XML_returning_clause opt_XML_query_returning_mechanism
 	;
 
 XML_query_empty_handling_option:
 		sqlNULL ON EMPTY
-	| 	EMPTY ON EMPTY
+	|	EMPTY ON EMPTY
 	;
 
 XML_text:
@@ -7475,7 +7475,7 @@ opt_XML_returning_clause:
 
 XML_returning_clause:
 		RETURNING CONTENT		{ $$ = 0; }
-	| 	RETURNING SEQUENCE		{ $$ = 1; }
+	|	RETURNING SEQUENCE		{ $$ = 1; }
 	;
 
 /*
@@ -7508,7 +7508,7 @@ XML_namespace_declaration_item_list:
 
 XML_namespace_declaration_item:
 		XML_regular_namespace_declaration_item
-	| 	XML_default_namespace_declaration_item
+	|	XML_default_namespace_declaration_item
 	;
 
 XML_namespace_prefix:
@@ -7537,17 +7537,17 @@ XML_default_namespace_declaration_item:
 			append_symbol(l, $2);
 			$$ = _symbol_create_list( SQL_XMLATTRIBUTE, l );
 		}
-	| 	NO DEFAULT { $$ = NULL; }
+	|	NO DEFAULT { $$ = NULL; }
 	;
 
 XML_passing_mechanism:
 		BY REF
-	| 	BY VALUE
+	|	BY VALUE
 	;
 
 opt_XML_valid_according_to_clause:
 		/* empty */
-	| 	XML_valid_according_to_clause
+	|	XML_valid_according_to_clause
 	;
 
 XML_valid_according_to_clause:
@@ -7557,12 +7557,12 @@ XML_valid_according_to_clause:
 
 XML_valid_according_to_what:
 		XML_valid_according_to_URI
-	| 	XML_valid_according_to_identifier
+	|	XML_valid_according_to_identifier
 	;
 
 XML_valid_according_to_URI:
 		URI XML_valid_target_namespace_URI opt_XML_valid_schema_location
-	| 	NO NAMESPACE opt_XML_valid_schema_location
+	|	NO NAMESPACE opt_XML_valid_schema_location
 	;
 
 XML_valid_target_namespace_URI:
@@ -7575,7 +7575,7 @@ XML_URI:
 
 opt_XML_valid_schema_location:
 		/* empty */
-	| 	LOCATION XML_valid_schema_location_URI
+	|	LOCATION XML_valid_schema_location_URI
 	;
 
 XML_valid_schema_location_URI:
@@ -7592,18 +7592,18 @@ registered_XML_Schema_name:
 
 opt_XML_valid_element_clause:
 		/* empty */
-	|  	XML_valid_element_clause
+	|	XML_valid_element_clause
 	;
 
 XML_valid_element_clause:
 		XML_valid_element_name_specification
-	| 	XML_valid_element_namespace_specification
+	|	XML_valid_element_namespace_specification
 		opt_XML_valid_element_name_specification
 	;
 
 opt_XML_valid_element_name_specification:
 		/* empty */
-	|  	XML_valid_element_name_specification
+	|	XML_valid_element_name_specification
 	;
 
 XML_valid_element_name_specification:
@@ -7612,7 +7612,7 @@ XML_valid_element_name_specification:
 
 XML_valid_element_namespace_specification:
 		NO NAMESPACE
-	| 	NAMESPACE XML_valid_element_namespace_URI
+	|	NAMESPACE XML_valid_element_namespace_URI
 	;
 
 XML_valid_element_namespace_URI:
