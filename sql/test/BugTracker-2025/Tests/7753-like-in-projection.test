@@ -1,0 +1,2 @@
+statement ok
+select 'Salvador' like '%alva%', 1
