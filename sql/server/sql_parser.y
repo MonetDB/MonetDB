@@ -1245,7 +1245,7 @@ grantor:
 	;
 
 grant:
-	GRANT privileges TO grantee_commalist opt_with_grant opt_from_grantor
+		GRANT privileges TO grantee_commalist opt_with_grant opt_from_grantor
 		{
 			dlist *l = L();
 			append_list(l, $2);
@@ -1786,18 +1786,18 @@ opt_index_type:
 
 /* sql-server def
 CREATE [ UNIQUE ] INDEX index_name
-    ON { table | view } ( column [ ASC | DESC ] [ ,...n ] )
+	ON { table | view } ( column [ ASC | DESC ] [ ,...n ] )
 [ WITH < index_option > [ ,...n] ]
 [ ON filegroup ]
 < index_option > :: =
-    {
+	{
 	PAD_INDEX |
 	FILLFACTOR = fillfactor |
 	IGNORE_DUP_KEY |
 	DROP_EXISTING |
 	STATISTICS_NORECOMPUTE |
 	SORT_IN_TEMPDB
-    }
+	}
 */
 
 role_def:
