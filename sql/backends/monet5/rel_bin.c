@@ -2800,6 +2800,8 @@ rel2bin_basetable(backend *be, sql_rel *rel)
 			s = (i == fi) ? col : stmt_idx(be, i, complex?dels:NULL, dels->partition);
 		} else {
 			cn = find_next_sql_column(t, cn, oname);
+			if (!cn)
+				cn = find_next_sql_column(t, ol_first_node(t->columns), oname);
 			assert(cn);
 			sql_column *c = cn->data;
 			if (exp->f && (c->type.multiset || c->type.type->composite)) {

@@ -6928,6 +6928,7 @@ non_reserved_keyword:
 	|	SQL_TRACE     { $$ = ma_strdup(SA, "trace"); }
 	|	TYPE          { $$ = ma_strdup(SA, "type"); }
 	|	UNLOGGED      { $$ = ma_strdup(SA, "unlogged"); }
+	|	UNNEST        { $$ = ma_strdup(SA, "unnest"); }
 	|	WEEK          { $$ = ma_strdup(SA, "week"); }
 	|	ZONE          { $$ = ma_strdup(SA, "zone"); }
 
