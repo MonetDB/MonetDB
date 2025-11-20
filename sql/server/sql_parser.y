@@ -39,7 +39,7 @@ makeAtomNode(mvc *m, const char* type, const char* val, unsigned int digits, uns
 #define _symbol_create_lng(t,d)     symbol_create_lng( SA, t, d)
 #define _symbol_create_symbol(t,d)  symbol_create_symbol( SA, t, d)
 #define _symbol_create_hexa(t,d)    symbol_create_hexa( SA, t, d)
-#define _newAtomNode(d)		    newAtomNode( SA, d)
+#define _newAtomNode(d)             newAtomNode( SA, d)
 
 #define L()                  dlist_create( SA )
 
@@ -754,27 +754,27 @@ SQLCODE SQLERROR UNDER WHENEVER
 	odbc_data_type
 
 %type <i_val>
-    odbc_tsi_qualifier
+	odbc_tsi_qualifier
 
 /* odbc escape prefix tokens */
 %token <sval>
-    ODBC_DATE_ESCAPE_PREFIX
-    ODBC_TIME_ESCAPE_PREFIX
-    ODBC_TIMESTAMP_ESCAPE_PREFIX
-    ODBC_GUID_ESCAPE_PREFIX
-    ODBC_FUNC_ESCAPE_PREFIX
-    ODBC_OJ_ESCAPE_PREFIX
+	ODBC_DATE_ESCAPE_PREFIX
+	ODBC_TIME_ESCAPE_PREFIX
+	ODBC_TIMESTAMP_ESCAPE_PREFIX
+	ODBC_GUID_ESCAPE_PREFIX
+	ODBC_FUNC_ESCAPE_PREFIX
+	ODBC_OJ_ESCAPE_PREFIX
 
 /* odbc symbolic types */
 %type <sym>
-    odbc_date_escape
-    odbc_time_escape
-    odbc_timestamp_escape
-    odbc_guid_escape
-    odbc_interval_escape
-    odbc_scalar_func_escape
-    odbc_scalar_func
-    odbc_datetime_func
+	odbc_date_escape
+	odbc_time_escape
+	odbc_timestamp_escape
+	odbc_guid_escape
+	odbc_interval_escape
+	odbc_scalar_func_escape
+	odbc_scalar_func
+	odbc_datetime_func
 
 %token <sval> POSITION SUBSTRING TRIM SPLIT_PART
 
@@ -933,9 +933,9 @@ logical_step:
 				m->rewriter_stop_idx = $3;
 			} else {
 				sqlformaterror(m, SQLSTATE(HY009)
-							   "EXPLAIN LOGICAL REWRITE posint:"
-							   " rewriter_stop_idx >= %d",
-							   NSQLREWRITERS);
+							"EXPLAIN LOGICAL REWRITE posint:"
+							" rewriter_stop_idx >= %d",
+							NSQLREWRITERS);
 				YYERROR;
 			}
 		}
@@ -948,16 +948,16 @@ logical_step:
 					m->rewriter_stop_cycle = $4;
 				} else {
 					sqlformaterror(m, SQLSTATE(HY009)
-								   "EXPLAIN LOGICAL REWRITE intval:"
-								   " rewriter_stop_cycle >= %d",
-								   20);
+								"EXPLAIN LOGICAL REWRITE intval:"
+								" rewriter_stop_cycle >= %d",
+								20);
 					YYERROR;
 				}
 			} else {
 				sqlformaterror(m, SQLSTATE(HY009)
-							   "EXPLAIN LOGICAL REWRITE intval:"
-							   " rewriter_stop_idx >= %d",
-							   NSQLREWRITERS);
+							"EXPLAIN LOGICAL REWRITE intval:"
+							" rewriter_stop_idx >= %d",
+							NSQLREWRITERS);
 				YYERROR;
 			}
 		}
@@ -1073,7 +1073,7 @@ variable_list:
 			append_type(l, &$2 );
 			$$ = append_symbol(L(), _symbol_create_list( SQL_DECLARE, l));
 		}
-    |	variable_list ',' variable_ref_commalist data_type
+	|	variable_list ',' variable_ref_commalist data_type
 		{
 			dlist *l = L();
 			append_list(l, $3 );
@@ -1647,7 +1647,7 @@ opt_column:
 
 column:
 		column_id
-	|	COLUMN column_id	 { $$ = $2; }
+	|	COLUMN column_id	{ $$ = $2; }
 	;
 
 create_statement:
@@ -1728,7 +1728,7 @@ opt_seq_params:
 	;
 
 params_list:
-		opt_seq_param			  { $$ = append_symbol(L(), $1); }
+		opt_seq_param             { $$ = append_symbol(L(), $1); }
 	|	params_list opt_seq_param { $$ = append_symbol($1, $2); }
 	;
 
@@ -2088,8 +2088,8 @@ opt_partition_spec:
 	;
 
 opt_as_partition:
-		/* empty */						 { $$ = NULL; }
-	|	AS PARTITION opt_partition_spec	 { $$ = $3; }
+		/* empty */						{ $$ = NULL; }
+	|	AS PARTITION opt_partition_spec { $$ = $3; }
 	;
 
 with_opt_credentials:
@@ -2974,7 +2974,7 @@ trigger_def:
 
 opt_qname:
 		/* empty */ { $$ = NULL; }
-    |	ON qname    { $$ = $2; }
+	|	ON qname    { $$ = $2; }
 	;
 
 trigger_action_time:
@@ -3259,27 +3259,27 @@ import_stmt:
 	;
 
 copyfrom_stmt:
-    /*  1    2      3    4     5               6    7                8               9 */
+		/* 1 2      3    4     5               6    7                8               9 */
 		COPY opt_nr INTO qname opt_column_list FROM string_commalist opt_header_list opt_on_location
 		{
 			CopyFromNode *copy = newCopyFromNode(SA,
-												 $4, /* qname */
-												 $5, /* column_list */
-												 $7, /* sources */
-												 $8, /* header_list */
-												 $2  /* nr_offset */);
+												$4, /* qname */
+												$5, /* column_list */
+												$7, /* sources */
+												$8, /* header_list */
+												$2  /* nr_offset */);
 			copy->on_client = $9;
 			$$ = (symbol*)copy;
 		}
-    /*  1    2      3    4     5               6    7     8 */
+		/* 1 2      3    4     5               6    7     8 */
 	|	COPY opt_nr INTO qname opt_column_list FROM STDIN opt_header_list
 		{
 			CopyFromNode *copy = newCopyFromNode(SA,
-												 $4,   /* qname */
-												 $5,   /* column_list */
-												 NULL, /* sources */
-												 $8,   /* header_list */
-												 $2    /* nr_offset */);
+												$4,   /* qname */
+												$5,   /* column_list */
+												NULL, /* sources */
+												$8,   /* header_list */
+												$2    /* nr_offset */);
 			$$ = (symbol*)copy;
 		}
 	|	copyfrom_stmt opt_using DELIMITERS string
@@ -3353,7 +3353,7 @@ copyfrom_stmt:
 	;
 
 load_stmt:
-    /*  1    2         3    4     5    6 */
+		/* 1 2         3    4     5    6 */
 		COPY sqlLOADER INTO qname FROM func_ref
 		{
 			dlist *l = L();
@@ -3364,7 +3364,7 @@ load_stmt:
 	;
 
 copybinfrom_stmt:
-    /*  1    2              3      4    5     6               7    8                9 */
+		/* 1 2              3      4    5     6               7    8                9 */
 		COPY opt_endianness BINARY INTO qname opt_column_list FROM string_commalist opt_on_location
 		{
 			dlist *l = L();
@@ -3378,7 +3378,7 @@ copybinfrom_stmt:
 	;
 
 copyto_stmt:
-    /*  1    2          3       4      5               6        7 */
+		/* 1 2          3       4      5               6        7 */
 		COPY SelectStmt INTO_LA string opt_on_location opt_seps opt_null_string
 		{
 			dlist *l = L();
@@ -3389,7 +3389,7 @@ copyto_stmt:
 			append_int(l, $5);
 			$$ = _symbol_create_list( SQL_COPYINTO, l );
 		}
-    /*  1    2          3       4      5        6 */
+		/* 1 2          3       4      5        6 */
 	|	COPY SelectStmt INTO_LA STDOUT opt_seps opt_null_string
 		{
 			dlist *l = L();
@@ -3400,7 +3400,7 @@ copyto_stmt:
 			append_int(l, 0);
 			$$ = _symbol_create_list( SQL_COPYINTO, l );
 		}
-    /*  1    2          3       4              5      6                7 */
+		/* 1 2          3       4              5      6                7 */
 	|	COPY SelectStmt INTO_LA opt_endianness BINARY string_commalist opt_on_location
 		{
 			dlist *l = L();
@@ -4442,7 +4442,7 @@ poslng_or_param_rows:
 
 limit_clause:
 		LIMIT poslng_or_param                                             { $$ = append_symbol(append_symbol(L(), $2), NULL); }
-	|	LIMIT poslng_or_param OFFSET poslng_or_param	                  { $$ = append_symbol(append_symbol(L(), $2), $4); }
+	|	LIMIT poslng_or_param OFFSET poslng_or_param                      { $$ = append_symbol(append_symbol(L(), $2), $4); }
 	|	OFFSET poslng_or_param opt_rows                                   { $$ = append_symbol(append_symbol(L(), NULL), $2); }
 	|	OFFSET poslng_or_param FETCH first_next poslng_or_param_rows      { $$ = append_symbol(append_symbol(L(), $5), $2); }
 	|	OFFSET poslng_or_param rows FETCH first_next poslng_or_param_rows { $$ = append_symbol(append_symbol(L(), $6), $2); }
@@ -7033,7 +7033,7 @@ arg_list_ref:
 			append_list(l, NULL);
 			$$ = _symbol_create_list( SQL_NOP, l );
 		}
-	|  '('expr_list ')'
+	|  '(' expr_list ')'
 		{
 			dlist *l = L();
 			append_int(l, -1);
@@ -7044,7 +7044,7 @@ arg_list_ref:
 	;
 
 named_arg_list_ref:
-    '(' ')'
+		'(' ')'
 		{
 			dlist *l = L();
 			append_int(l, -1);
@@ -7052,7 +7052,7 @@ named_arg_list_ref:
 			append_list(l, NULL);
 			$$ = _symbol_create_list( SQL_NOP, l );
 		}
-	|  '('named_value_commalist ')'
+	|  '(' named_value_commalist ')'
 		{
 			dlist *l = L();
 			append_int(l, -1);
@@ -7889,38 +7889,38 @@ odbc_data_type:
 
 odbc_tsi_qualifier:
 		SQL_TSI_FRAC_SECOND { $$ = insec; }
-    |	SQL_TSI_SECOND      { $$ = isec; }
-    |	SQL_TSI_MINUTE      { $$ = imin; }
-    |	SQL_TSI_HOUR        { $$ = ihour; }
-    |	SQL_TSI_DAY         { $$ = iday; }
-    |	SQL_TSI_WEEK        { $$ = iweek; }
-    |	SQL_TSI_MONTH       { $$ = imonth; }
-    |	SQL_TSI_QUARTER     { $$ = iquarter; }
-    |	SQL_TSI_YEAR        { $$ = iyear; }
+	|	SQL_TSI_SECOND      { $$ = isec; }
+	|	SQL_TSI_MINUTE      { $$ = imin; }
+	|	SQL_TSI_HOUR        { $$ = ihour; }
+	|	SQL_TSI_DAY         { $$ = iday; }
+	|	SQL_TSI_WEEK        { $$ = iweek; }
+	|	SQL_TSI_MONTH       { $$ = imonth; }
+	|	SQL_TSI_QUARTER     { $$ = iquarter; }
+	|	SQL_TSI_YEAR        { $$ = iyear; }
 	;
 
 %%
 
 static inline symbol*
 makeAtomNode(mvc *m, const char* typename, const char* val, unsigned int digits, unsigned int scale, bool bind) {
-    sql_subtype sub_t;
-    atom *a;
-    int sub_t_found = 0;
-    if (bind) {
-        sql_type* t = NULL;
-        if (!(t = mvc_bind_type(m, typename))) {
-            sqlformaterror(m, SQLSTATE(22000) "Type (%s) unknown", typename);
-            return NULL;
-        }
-        sql_init_subtype(&sub_t, t, 0, 0);
-    } else {
-        sub_t_found = sql_find_subtype(&sub_t, typename, digits, scale);
-    }
-    if ((!bind && !sub_t_found) || (a = atom_general(m->sa, &sub_t, val, m->timezone)) == NULL) {
-        sqlformaterror(m, SQLSTATE(22007) "Incorrect %s value (%s)", typename, val);
-        return NULL;
-    }
-    return _newAtomNode(a);
+	sql_subtype sub_t;
+	atom *a;
+	int sub_t_found = 0;
+	if (bind) {
+		sql_type* t = mvc_bind_type(m, typename);
+		if (!t) {
+			sqlformaterror(m, SQLSTATE(22000) "Type (%s) unknown", typename);
+			return NULL;
+		}
+		sql_init_subtype(&sub_t, t, 0, 0);
+	} else {
+		sub_t_found = sql_find_subtype(&sub_t, typename, digits, scale);
+	}
+	if ((!bind && !sub_t_found) || (a = atom_general(m->sa, &sub_t, val, m->timezone)) == NULL) {
+		sqlformaterror(m, SQLSTATE(22007) "Incorrect %s value (%s)", typename, val);
+		return NULL;
+	}
+	return _newAtomNode(a);
 }
 
 int find_subgeometry_type(mvc *m, char* geoSubType) {
