@@ -3225,10 +3225,6 @@ rel2bin_table(backend *be, sql_rel *rel, list *refs)
 		s = stmt_alias(be, s, exp->alias.label, rnme, exp_name(exp));
 		list_append(l, s);
 	}
-	/*
-	if (osub && osub->nrcols)
-		list_join(l, osub->op4.lval);
-		*/
 	sub = stmt_list(be, l);
 	return sub;
 }
