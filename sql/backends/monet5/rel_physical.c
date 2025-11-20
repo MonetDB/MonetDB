@@ -571,18 +571,24 @@ rel_buildhash(visitor *v, sql_rel *rel, sql_rel **iprj, bool crossproduct)
 }
 
 static list *
-clean_exp_list(list *exps, list *nl)
+clean_exp_list(list *exps, list *nl, sql_rel *inner)
 {
 	if (list_empty(exps))
 		return nl;
 	for(node *n = exps->h; n; n = n->next) {
 		sql_exp *e = n->data;
-		if (e->type == e_convert)
-			append(nl, e->l);
+		if (e->type == e_convert) {
+			sql_exp *i = e->l;
+			if (i->alias.label != i->nid) {
+				i = rel_find_exp(inner, i);
+				append(nl, i);
+			} else
+				append(nl, i);
+		}
 		if (e->type == e_column)
 			append(nl, e);
 		if (e->type == e_func)
-			(void)clean_exp_list(exps, e->l);
+			(void)clean_exp_list(exps, e->l, inner);
 	}
 	return nl;
 }
@@ -949,7 +955,7 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 				}
 			}
 			if (iprj) {
-				list *n = clean_exp_list(rel_hsh->attr, sa_list(v->sql->sa));
+				list *n = clean_exp_list(rel_hsh->attr, sa_list(v->sql->sa), iprj->l);
 				n = list_merge(n, rel_hsh->exps, NULL);
 				if (!list_empty(n))
 					iprj->exps = n;
