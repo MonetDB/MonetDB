@@ -160,9 +160,20 @@ exp_push_down_prj(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 			return NULL;
 		return exp_propagate(sql->sa, ne, e);
 	case e_convert:
-		if (!(l = exp_push_down_prj(sql, e->l, f, t)))
-			return NULL;
-		ne = exp_convert(sql, l, exp_fromtype(e), exp_totype(e));
+		{
+			sql_exp *l = e->l;
+			if (l->type == e_column) {
+				sql_exp *ne = exps_bind_nid(f->exps, l->nid);
+				if (!ne || !ne->nid)
+					return NULL;
+				sql_exp *nne = exps_bind_nid(t->exps, ne->nid);
+				if (!nne)
+					return NULL;
+				l = exp_ref(sql, nne);
+			} else if (!(l = exp_push_down_prj(sql, e->l, f, t)))
+				return NULL;
+			ne = exp_convert(sql, l, exp_fromtype(e), exp_totype(e));
+		}
 		return exp_propagate(sql->sa, ne, e);
 	case e_aggr:
 	case e_func: {

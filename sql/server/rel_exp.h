@@ -197,16 +197,16 @@ extern int rel_has_exp(sql_rel *rel, sql_exp *e, bool subexp);
 /* return 0 when the relation contain at least one of the passed expressions (or sub expressions if subexp is set) else < 0 */
 extern int rel_has_exps(sql_rel *rel, list *e, bool subexp);
 /* return 1 when the relation contains all of the passed expressions else 0 */
-extern int rel_has_all_exps(sql_rel *rel, list *e);
+extern bool rel_has_all_exps(sql_rel *rel, list *e, bool subexp);
 
 extern sql_rel *find_rel(list *rels, sql_exp *e);
 extern sql_rel *find_one_rel(list *rels, sql_exp *e);
 
-extern sql_exp *exps_bind_nid(list *exps, int nid); /* get first expression to which this nid points */
+extern sql_exp *exps_bind_nid(const list *exps, int nid); /* get first expression to which this nid points */
 extern sql_exp *exps_uses_nid(list *exps, int nid); /* get first expression which references back to nid */
 extern sql_exp *exps_bind_column(list *exps, const char *cname, int *ambiguous, int *multiple, int no_tname /* set if expressions should be without a tname */);
 extern sql_exp *exps_bind_column2(list *exps, const char *rname, const char *cname, int *multiple);
-extern sql_exp * list_find_exp( list *exps, sql_exp *e);
+extern sql_exp * list_find_exp(const list *exps, sql_exp *e);
 
 extern unsigned int exps_card( list *l );
 extern void exps_fix_card( list *exps, unsigned int card);
@@ -235,5 +235,8 @@ extern sql_exp *exp_numeric_supertype(mvc *sql, sql_exp *e);
 extern sql_exp *exp_values_set_supertype(mvc *sql, sql_exp *values, sql_subtype *opt_super);
 extern void free_exp(allocator *sa, sql_exp *e);
 extern void free_exps(allocator *sa, list *exps);
+
+extern int exp_is_rename(sql_exp *e);
+extern int exp_is_useless_rename(sql_exp *e);
 
 #endif /* _REL_EXP_H_ */

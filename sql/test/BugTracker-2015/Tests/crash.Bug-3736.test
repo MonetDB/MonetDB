@@ -132,9 +132,7 @@ single project (
 | | | | | | join (
 | | | | | | | table("sys"."bidder") [ "bidder"."id" NOT NULL UNIQUE HASHCOL  as "b3a"."id", "bidder"."open_auction_id" NOT NULL as "b3a"."open_auction_id" ],
 | | | | | | | group by (
-| | | | | | | | project (
-| | | | | | | | | & REF 1 
-| | | | | | | | ) [ "o"."open_auction_id" NOT NULL ]
+| | | | | | | | & REF 1 
 | | | | | | | ) [ "o"."open_auction_id" NOT NULL ] [ "o"."open_auction_id" NOT NULL ]
 | | | | | | ) [ ("b3a"."open_auction_id" NOT NULL) = ("o"."open_auction_id" NOT NULL UNIQUE) ]
 | | | | | ) [ "o"."open_auction_id" NOT NULL ] [ "sys"."min" no nil ("b3a"."id" NOT NULL HASHCOL ) NOT NULL as "%1"."%1", "o"."open_auction_id" NOT NULL ]
@@ -158,9 +156,7 @@ project (
 | | | | | | | | join (
 | | | | | | | | | table("sys"."bidder") [ "bidder"."id" NOT NULL UNIQUE HASHCOL  as "b2a"."id", "bidder"."open_auction_id" NOT NULL as "b2a"."open_auction_id" ],
 | | | | | | | | | single group by (
-| | | | | | | | | | single project (
-| | | | | | | | | | | & REF 2 
-| | | | | | | | | | ) [ "o"."open_auction_id" NOT NULL ]
+| | | | | | | | | | & REF 2 
 | | | | | | | | | ) [ "o"."open_auction_id" NOT NULL ] [ "o"."open_auction_id" NOT NULL ]
 | | | | | | | | ) [ ("b2a"."open_auction_id" NOT NULL) = ("o"."open_auction_id" NOT NULL UNIQUE) ]
 | | | | | | | ) [ "o"."open_auction_id" NOT NULL ] [ "sys"."max" no nil ("b2a"."id" NOT NULL HASHCOL ) NOT NULL as "%4"."%4", "o"."open_auction_id" NOT NULL ]

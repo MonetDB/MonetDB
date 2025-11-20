@@ -1643,7 +1643,7 @@ rel_join2semijoin(visitor *v, sql_rel *rel)
 	if (!rel_is_ref(rel) && is_simple_project(rel->op) && need_distinct(rel) && rel->l) {
 		sql_rel *l = rel->l;
 
-		if (!rel_is_ref(l) && l->op == op_join && rel_has_all_exps(l->l, rel->exps)) {
+		if (!rel_is_ref(l) && l->op == op_join && rel_has_all_exps(l->l, rel->exps, true)) {
 			l->op = op_semi;
 			v->changes++;
 			return rel;

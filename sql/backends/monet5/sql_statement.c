@@ -1109,6 +1109,7 @@ stmt_const(backend *be, stmt *s, stmt *val)
 		ns->nr = getDestVar(q);
 		ns->tname = val->tname;
 		ns->cname = val->cname;
+		ns->label = val->label;
 		return ns;
 	}
   bailout:
