@@ -380,6 +380,8 @@ bat_create(int adt, BUN nr)
 	b->tkey = false;
 	b->tnokey[0] = 0;
 	b->tnokey[1] = 0;
+	b->tnil = false;
+	b->tnonil = false;
 	return b;
 }
 
@@ -1103,13 +1105,19 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 						GDKfree(ODBCmsg);
 
 					/* as all bats need to be the same length, append NULL value */
-					if (bunfastapp(b, ATOMnilptr(b->ttype)) != GDK_SUCCEED)
+					gdkret = bunfastapp(b, ATOMnilptr(b->ttype));
+					if (gdkret != GDK_SUCCEED)
 						TRC_ERROR(LOADER, "bunfastapp(b, ATOMnilptr(b->ttype)) failed after SQLGetData failed\n");
+					else
+						b->tnil = true;
 				} else {
 					if (strLen == SQL_NULL_DATA) {
 						TRC_DEBUG(LOADER, "Data row %lu col %u: NULL\n", row, (unsigned) col+1);
-						if (bunfastapp(b, ATOMnilptr(b->ttype)) != GDK_SUCCEED)
+						gdkret = bunfastapp(b, ATOMnilptr(b->ttype));
+						if (gdkret != GDK_SUCCEED)
 							TRC_ERROR(LOADER, "bunfastapp(b, ATOMnilptr(b->ttype)) failed for setting SQL_NULL_DATA\n");
+						else
+							b->tnil = true;
 					} else {
 						switch(sqltype) {
 							case SQL_CHAR:
@@ -1143,6 +1151,7 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 #endif
 									default:
 										gdkret = bunfastapp(b, ATOMnilptr(b->ttype));
+										b->tnil = true;
 										break;
 								}
 								break;
@@ -1152,6 +1161,7 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 									gdkret = bunfastapp(b, (void *) &bit_val);
 								} else {
 									gdkret = bunfastapp(b, ATOMnilptr(b->ttype));
+									b->tnil = true;
 								}
 								break;
 							case SQL_TINYINT:
@@ -1160,6 +1170,7 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 									gdkret = bunfastapp(b, (void *) &bte_val);
 								} else {
 									gdkret = bunfastapp(b, ATOMnilptr(b->ttype));
+									b->tnil = true;
 								}
 								break;
 							case SQL_SMALLINT:
@@ -1168,6 +1179,7 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 									gdkret = bunfastapp(b, (void *) &sht_val);
 								} else {
 									gdkret = bunfastapp(b, ATOMnilptr(b->ttype));
+									b->tnil = true;
 								}
 								break;
 							case SQL_INTEGER:
@@ -1176,6 +1188,7 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 									gdkret = bunfastapp(b, (void *) &int_val);
 								} else {
 									gdkret = bunfastapp(b, ATOMnilptr(b->ttype));
+									b->tnil = true;
 								}
 								break;
 							case SQL_BIGINT:
@@ -1184,6 +1197,7 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 									gdkret = bunfastapp(b, (void *) &lng_val);
 								} else {
 									gdkret = bunfastapp(b, ATOMnilptr(b->ttype));
+									b->tnil = true;
 								}
 								break;
 							case SQL_DECIMAL:
@@ -1232,6 +1246,7 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 										break;
 									default:
 										gdkret = bunfastapp(b, ATOMnilptr(b->ttype));
+										b->tnil = true;
 										break;
 								}
 								break;
@@ -1241,6 +1256,7 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 									gdkret = bunfastapp(b, (void *) &flt_val);
 								} else {
 									gdkret = bunfastapp(b, ATOMnilptr(b->ttype));
+									b->tnil = true;
 								}
 								break;
 							case SQL_DOUBLE:
@@ -1249,6 +1265,7 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 									gdkret = bunfastapp(b, (void *) &dbl_val);
 								} else {
 									gdkret = bunfastapp(b, ATOMnilptr(b->ttype));
+									b->tnil = true;
 								}
 								break;
 							case SQL_FLOAT:
@@ -1261,6 +1278,7 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 									gdkret = bunfastapp(b, (void *) &flt_val);
 								} else {
 									gdkret = bunfastapp(b, ATOMnilptr(b->ttype));
+									b->tnil = true;
 								}
 								break;
 							case SQL_TYPE_DATE:
@@ -1271,6 +1289,7 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 									gdkret = bunfastapp(b, (void *) &mdate_val);
 								} else {
 									gdkret = bunfastapp(b, ATOMnilptr(b->ttype));
+									b->tnil = true;
 								}
 								break;
 							case SQL_TYPE_TIME:
@@ -1281,6 +1300,7 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 									gdkret = bunfastapp(b, (void *) &daytime_val);
 								} else {
 									gdkret = bunfastapp(b, ATOMnilptr(b->ttype));
+									b->tnil = true;
 								}
 								break;
 							case SQL_DATETIME:
@@ -1294,6 +1314,7 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 									gdkret = bunfastapp(b, (void *) &timestamp_val);
 								} else {
 									gdkret = bunfastapp(b, ATOMnilptr(b->ttype));
+									b->tnil = true;
 								}
 								break;
 							case SQL_INTERVAL_YEAR:
@@ -1321,6 +1342,7 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 									gdkret = bunfastapp(b, (void *) &int_val);
 								} else {
 									gdkret = bunfastapp(b, ATOMnilptr(b->ttype));
+									b->tnil = true;
 								}
 								break;
 							case SQL_INTERVAL_DAY:
@@ -1390,6 +1412,7 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 									gdkret = bunfastapp(b, (void *) &lng_val);
 								} else {
 									gdkret = bunfastapp(b, ATOMnilptr(b->ttype));
+									b->tnil = true;
 								}
 								break;
 							case SQL_GUID:
@@ -1409,6 +1432,7 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 									gdkret = bunfastapp(b, (void *) &u_val.uuid_val);
 								} else {
 									gdkret = bunfastapp(b, ATOMnilptr(b->ttype));
+									b->tnil = true;
 								}
 								break;
 							case SQL_BINARY:
@@ -1430,9 +1454,11 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 										GDKfree(blb);
 									} else {
 										gdkret = bunfastapp(b, ATOMnilptr(b->ttype));
+										b->tnil = true;
 									}
 								} else {
 									gdkret = bunfastapp(b, ATOMnilptr(b->ttype));
+									b->tnil = true;
 								}
 								break;
 						}
@@ -1446,14 +1472,6 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 		/* update the properties for each BAT */
 		for (SQLUSMALLINT col = 0; col < (SQLUSMALLINT) nr_cols; col++) {
 			BAT * b = colmetadata[col].bat;
-			b->tkey = false;
-			b->tnonil = false;
-			b->tnil = false;
-			b->tsorted = false;
-			b->trevsorted = false;
-			b->tascii = false;
-			b->tminpos = BUN_NONE;
-			b->tmaxpos = BUN_NONE;
 			BATsettrivprop(b);
 		}
 
