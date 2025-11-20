@@ -1172,7 +1172,7 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 						sql_exp *e = n->data;
 						if (!e->p) {
 							prop *p = e->p = prop_create(v->sql->sa, PROP_NUNIQUES, e->p);
-							p->value.dval = uniques;
+							p->value.dval = (dbl)uniques;
 						}
 					}
 				}
