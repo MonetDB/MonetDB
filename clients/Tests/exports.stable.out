@@ -886,7 +886,6 @@ void clrFunction(InstrPtr p);
 void clrInstruction(InstrPtr p);
 const char columnBindRef[];
 const char comment_onRef[];
-str compileString(Symbol *fcn, Client c, str s);
 const char compressRef[];
 char *concatErrors(const char *err1, const char *err2) __attribute__((__nonnull__(1, 2))) __attribute__((__returns_nonnull__));
 const char connectRef[];
