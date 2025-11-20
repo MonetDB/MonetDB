@@ -3673,7 +3673,7 @@ rewrite_join2semi(visitor *v, sql_rel *rel)
 			sql_subfunc *sf = e->f;
 
 			if (is_func(e->type) && is_anyequal_func(sf)) {
-				if (exp_card(e) > CARD_ATOM && rel_has_all_exps(jl, e->l)) {
+				if (exp_card(e) > CARD_ATOM && rel_has_all_exps(jl, e->l, false)) {
 					if (!is_select(jl->op) || rel_is_ref(jl))
 						j->l = jl = rel_select(v->sql->sa, jl, NULL);
 					rel_select_add_exp(v->sql->sa, jl, e);

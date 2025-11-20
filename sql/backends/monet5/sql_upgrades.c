@@ -5246,6 +5246,36 @@ sql_update_dec2025(Client c, mvc *sql, sql_schema *s)
 	return err;
 }
 
+static str
+sql_update_default(Client c, mvc *sql, sql_schema *s)
+{
+	char *err;
+	res_table *output;
+	BAT *b;
+
+	(void) sql;
+	(void) s;
+
+	/* 2048 is id of column sys.table_partitions.id */
+	err = SQLstatementIntern(c, "select * from sys.dependencies where id = 2048 and depend_id = (select f.id from sys.functions f where name = 'get_merge_table_partition_expressions');\n", "update", true, false, &output);
+	if (err)
+		return err;
+	b = BATdescriptor(output->cols[0].b);
+	if (b != NULL) {
+		if (BATcount(b) != 0) {
+			const char query[] =
+				"delete from sys.dependencies where id = 2048 and depend_id = (select f.id from sys.functions f where name = 'get_merge_table_partition_expressions');\n";
+			printf("Running database upgrade commands:\n%s\n", query);
+			fflush(stdout);
+			err = SQLstatementIntern(c, query, "update", true, false, NULL);
+		}
+		BBPreclaim(b);
+	}
+	res_table_destroy(output);
+
+	return err;
+}
+
 int
 SQLupgrades(Client c, mvc *m)
 {
@@ -5325,6 +5355,11 @@ SQLupgrades(Client c, mvc *m)
 	}
 
 	if ((err = sql_update_dec2025(c, m, s)) != NULL) {
+		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
+		goto handle_error;
+	}
+
+	if ((err = sql_update_default(c, m, s)) != NULL) {
 		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 		goto handle_error;
 	}

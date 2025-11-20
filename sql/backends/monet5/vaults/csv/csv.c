@@ -418,7 +418,7 @@ typedef struct csv_t {
  * Fill the list res_exps, with one result expressions per resulting column.
  */
 static str
-csv_relation(mvc *sql, sql_subfunc *f, char *filename, list *res_exps, char *tname)
+csv_relation(mvc *sql, sql_subfunc *f, char *filename, list *res_exps, char *tname, lng *est)
 {
 	stream *file = csv_open_file(filename);
 	if (file == NULL)
@@ -430,6 +430,8 @@ csv_relation(mvc *sql, sql_subfunc *f, char *filename, list *res_exps, char *tna
 	 * detect header
 	 */
 	char buf[8196+1];
+	*est = 0;
+	size_t fs = getFileSize(file);
 	ssize_t l = mnstr_read(file, buf, 1, 8196);
 	mnstr_close(file);
 	mnstr_destroy(file);
@@ -478,6 +480,8 @@ csv_relation(mvc *sql, sql_subfunc *f, char *filename, list *res_exps, char *tna
 			return sa_message(sql->sa, "csv" "type unknown\n");
 		}
 	}
+	if (p)
+		*est = fs * (p-buf)/2;
 	GDKfree(types);
 	f->res = typelist;
 	f->coltypes = typelist;
@@ -490,7 +494,7 @@ csv_relation(mvc *sql, sql_subfunc *f, char *filename, list *res_exps, char *tna
 	r->extra_tsep = extra_tsep;
 	r->has_header = has_header;
 	f->sname = (char*)r; /* pass schema++ */
-	return NULL;
+	return MAL_SUCCEED;
 }
 
 static void *

@@ -1715,15 +1715,67 @@ rel_has_exps(sql_rel *rel, list *exps, bool subexp)
 	return -1;
 }
 
-int
-rel_has_all_exps(sql_rel *rel, list *exps)
+static bool
+rel_has_complete_exp(sql_rel *rel, sql_exp *e, bool subexp)
+{
+	sql_exp *ne = NULL;
+
+	if (!rel)
+		return false;
+	switch(e->type) {
+	case e_column:
+		if (is_basetable(rel->op) && !rel->exps) {
+			assert(e->nid);
+			return (rel_base_has_nid(rel, e->nid));
+		} else if ((!list_empty(rel->exps) && (is_project(rel->op) || is_base(rel->op))) ||
+					(!list_empty(rel->attr) && is_join(rel->op))) {
+			list *l = rel->attr ? rel->attr : rel->exps;
+			assert(e->nid);
+			ne = exps_bind_nid(l, e->nid);
+		}
+		return ne;
+	case e_convert:
+		return rel_has_complete_exp(rel, e->l, subexp);
+	case e_aggr:
+	case e_func:
+		return (rel_has_all_exps(rel, e->l, subexp));
+	case e_cmp:
+		if (!subexp)
+			return false;
+
+		if (e->flag == cmp_filter) {
+			if (rel_has_all_exps(rel, e->l, subexp))
+			    return rel_has_all_exps(rel, e->r, subexp);
+		} else if (e->flag == cmp_con || e->flag == cmp_dis) {
+			return rel_has_all_exps(rel, e->l, subexp);
+		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
+			if (rel_has_complete_exp(rel, e->l, subexp))
+			    return rel_has_all_exps(rel, e->r, subexp);
+		} else if (rel_has_complete_exp(rel, e->l, subexp) &&
+				   rel_has_complete_exp(rel, e->r, subexp) &&
+			       (!e->f || rel_has_complete_exp(rel, e->f, subexp))) {
+			return true;
+		}
+		return false;
+	case e_psm:
+		return false;
+	case e_atom:
+		if (e->f) /* values */
+			return rel_has_all_exps(rel, e->f, subexp);
+		return true;
+	}
+	return true;
+}
+
+bool
+rel_has_all_exps(sql_rel *rel, list *exps, bool subexp)
 {
 	if (list_empty(exps))
-		return 1;
+		return true;
 	for (node *n = exps->h; n; n = n->next)
-		if (rel_has_exp(rel, n->data, false) < 0)
-			return 0;
-	return 1;
+		if (!rel_has_complete_exp(rel, n->data, subexp))
+			return false;
+	return true;
 }
 
 static int
@@ -1994,7 +2046,6 @@ rel_find_nid(sql_rel *rel, int nid)
 		case op_ddl:
 		case op_truncate:
 			return false;
-
 		}
 	}
 	return false;
@@ -2452,7 +2503,7 @@ exps_rel_get_rel(allocator *sa, list *exps )
 			if (!(r = exp_rel_get_rel(sa, e)))
 				return NULL;
 			if (xp) {
-				xp = rel_crossproduct(sa, xp, r, op_full);
+				xp = rel_crossproduct(sa, xp, r, op_join);
 				set_processed(xp);
 			} else {
 				xp = r;
@@ -2994,7 +3045,7 @@ exps_uses_nid(list *exps, int nid)
 }
 
 sql_exp *
-exps_bind_nid(list *exps, int nid)
+exps_bind_nid(const list *exps, int nid)
 {
 	if (exps) {
 		for (node *en = exps->h; en; en = en->next ) {
@@ -4196,11 +4247,23 @@ rel_find_parameter(mvc *sql, sql_subtype *type, sql_rel *rel, int nid, sql_alias
 }
 
 sql_exp *
-list_find_exp( list *exps, sql_exp *e)
+list_find_exp(const list *exps, sql_exp *e)
 {
 	if (e->type != e_column)
 		return NULL;
 	return exps_bind_nid(exps, e->nid);
+}
+
+int
+exp_is_rename(sql_exp *e)
+{
+	return (e->type == e_column);
+}
+
+int
+exp_is_useless_rename(sql_exp *e)
+{
+	return (e->type == e_column && e->alias.label == e->nid);
 }
 
 sql_alias *

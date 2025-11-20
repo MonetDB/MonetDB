@@ -709,7 +709,7 @@ rel_calc_nuniques(mvc *sql, sql_rel *l, list *exps)
 	if (lv == 0)
 		return 0;
 	if (!list_empty(exps)) {
-		BUN nuniques = 0;
+		BUN nuniques = 1;
 		/* compute the highest number of unique values */
 		for (node *n = exps->h ; n && nuniques != BUN_NONE ; n = n->next) {
 			sql_exp *e = n->data;
@@ -734,12 +734,15 @@ rel_calc_nuniques(mvc *sql, sql_rel *l, list *exps)
 					euniques = MIN(euniques, (BUN) sub->data.val.oval);
 			}
 			if (euniques != BUN_NONE)
-				nuniques = MAX(nuniques, euniques); /* the highest cardinality sets the estimation */
+				nuniques = nuniques * euniques; /* the highest cardinality sets the estimation */
 			else
 				nuniques = BUN_NONE;
 		}
-		if (nuniques != BUN_NONE)
+		if (nuniques != BUN_NONE) {
+			if (nuniques > lv)
+				return lv;
 			return nuniques;
+		}
 	}
 	return lv;
 }
@@ -966,6 +969,7 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 		case op_right:
 		case op_full: {
 			BUN lv = get_rel_count(l), rv = get_rel_count(r), uniques_estimate = BUN_MAX, join_idx_estimate = BUN_MAX;
+			BUN lu = 0, ru = 0;
 
 			if (!list_empty(rel->exps) && !is_single(rel)) {
 				for (node *n = rel->exps->h ; n ; n = n->next) {
@@ -976,7 +980,6 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 					} else if (e->type == e_cmp && e->flag == cmp_equal) {
 						/* if one of the sides is unique, the cardinality will be that exact number, but look for nulls */
 						if (!is_semantics(e) || !has_nil(el) || !has_nil(er)) {
-							BUN lu = 0, ru = 0;
 							prop *p = NULL;
 							if ((p = find_prop(el->p, PROP_NUNIQUES)))
 								lu = (BUN) p->value.dval;
@@ -1014,6 +1017,9 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 				set_count_prop(v->sql->sa, rel, (is_right(rel->op) || is_full(rel->op)) ? rv : 0);
 			} else if (rv == 0) {
 				set_count_prop(v->sql->sa, rel, (is_left(rel->op) || is_full(rel->op)) ? lv : 0);
+			} else if (lu != 0 && ru != 0) {
+				lv = lv/lu;
+				set_count_prop(v->sql->sa, rel, (rv > (BUN_MAX / lv)) ? BUN_MAX : (lv * rv)); /* overflow check */
 			} else if (lv != BUN_NONE && rv != BUN_NONE) {
 				set_count_prop(v->sql->sa, rel, (rv > (BUN_MAX / lv)) ? BUN_MAX : (lv * rv)); /* overflow check */
 			}
@@ -1041,10 +1047,19 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 								u = (BUN) p->value.dval;
 								break;
 							}
+						} else if (e->type == e_cmp && e->flag == cmp_in) {
+							int nr = list_length((list*)er);
+							/* use selectivity */
+							prop *p;
+							if ((p = find_prop(el->p, PROP_NUNIQUES))) {
+								u = (BUN) p->value.dval;
+								u *= nr;
+								break;
+							}
 						}
 					}
 					/* u is an *estimate*, so don't set count_prop to 0 unless cnt is 0 */
-					set_count_prop(v->sql->sa, rel, cnt == 0 ? 0 : u == 0 || u > cnt ? 1 : cnt/u);
+					set_count_prop(v->sql->sa, rel, cnt == 0 ? 0 : u == 0 || u > cnt ? 2 : cnt/u +1);
 				} else {
 					set_count_prop(v->sql->sa, rel, get_rel_count(l));
 				}
@@ -1133,17 +1148,34 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 				set_count_prop(v->sql->sa, rel, 1000 /* TODO get size of users */);
 			} else if (f->func->lang == FUNC_LANG_MAL && strncmp(f->func->base.name, "querylog", 8) == 0) {
 				set_count_prop(v->sql->sa, rel, 1000 /* TODO get size of querylog */);
+			} else if (f->func->lang == FUNC_LANG_MAL && strncmp(f->func->base.name, "generate_series", 15) == 0) {
+				set_count_prop(v->sql->sa, rel, 1000 /* TODO get size of (limit - start + 1) */);
 			} else if (f->func->lang == FUNC_LANG_MAL &&
-					   (strcmp(f->func->base.name, "queue") == 0 ||
-						strcmp(f->func->base.name, "optimizers") == 0 ||
-						strcmp(f->func->base.name, "env") == 0 ||
+					   (strcmp(f->func->base.name, "env") == 0 ||
 						strcmp(f->func->base.name, "keywords") == 0 ||
-						strcmp(f->func->base.name, "statistics") == 0 ||
+					    strcmp(f->func->base.name, "malfunctions") == 0 ||
+						strcmp(f->func->base.name, "optimizers") == 0 ||
+					    strcmp(f->func->base.name, "queue") == 0 ||
 						strcmp(f->func->base.name, "rejects") == 0 ||
 						strcmp(f->func->base.name, "schemastorage") == 0 ||
-						strncmp(f->func->base.name, "storage", 7) == 0 ||
-						strcmp(f->func->base.name, "sessions") == 0) ) {
+						strcmp(f->func->base.name, "sessions") == 0 ||
+						strcmp(f->func->base.name, "statistics") == 0 ||
+						strncmp(f->func->base.name, "storage", 7) == 0)
+					   ) {
 				set_count_prop(v->sql->sa, rel, 1000 /* TODO get size of queue */);
+			}
+			if (rel->p && !list_empty(rel->exps)) {
+				prop *p = find_prop(rel->p, PROP_COUNT);
+				if (p) {
+					BUN uniques = (BUN) p->value.lval;
+					for(node *n = rel->exps->h; n; n = n->next) {
+						sql_exp *e = n->data;
+						if (!e->p) {
+							prop *p = e->p = prop_create(v->sql->sa, PROP_NUNIQUES, e->p);
+							p->value.dval = (dbl)uniques;
+						}
+					}
+				}
 			}
 			/* else {
 				printf("%%func needs stats : %s\n", f->func->base.name);

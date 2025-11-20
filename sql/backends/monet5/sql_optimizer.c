@@ -58,7 +58,6 @@ SQLgetSpace(mvc *m, MalBlkPtr mb, int prepare)
 {
 	sql_trans *tr = m->session->tr;
 	lng size,space = 0, i;
-	str lasttable = 0;
 
 	for (i = 0; i < mb->stop; i++) {
 		InstrPtr p = mb->stmt[i];
@@ -84,11 +83,10 @@ SQLgetSpace(mvc *m, MalBlkPtr mb, int prepare)
 				continue;
 
 			/* we have to sum the cost of all three components of a BAT */
-			if (c && isTable(c->t) && (lasttable == 0 || strcmp(lasttable,tname)==0)) {
+			if (c && isTable(c->t)) {
 				size = SQLgetColumnSize(tr, c, access);
 				space += size;	// accumulate once per table
-				//lasttable = tname;	 invalidate this attempt
-				if (!prepare && size == 0 && !t->system)
+				if (!prepare && size == 0  && !t->system)
 					setFunctionId(p, emptybindRef);
 			}
 		}

@@ -151,7 +151,6 @@ exp_or_print(mvc *sql, stream *fout, node *n, int anti, int depth, list *refs, i
 void
 exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, int alias, int decorate)
 {
-	(void)sql;
 	if (!e)
 		return;
 	/*mnstr_printf(fout, "%p ", e);*/
@@ -690,7 +689,7 @@ rel_print_rel(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int 
 		if (rel->op == op_groupby)
 			r = "group by";
 		if (rel->op == op_topn)
-			r = "top N";
+			r = rel->grouped?"grouped top N":"top N";
 		if (rel->op == op_sample)
 			r = "sample";
 

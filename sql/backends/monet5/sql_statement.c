@@ -1113,6 +1113,7 @@ stmt_const(backend *be, stmt *s, stmt *val)
 		ns->nr = getDestVar(q);
 		ns->tname = val->tname;
 		ns->cname = val->cname;
+		ns->label = val->label;
 		return ns;
 	}
   bailout:
@@ -2053,7 +2054,7 @@ select2_join2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt **Sub,
 
 		int r1 = op2->nr;
 		int r2 = op3->nr;
-		int rs = 0;
+		/* int rs = 0; */
 		q = newStmtArgs(mb, algebraRef, cmd, 12);
 		if (q == NULL)
 			goto bailout;
@@ -2071,12 +2072,12 @@ select2_join2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt **Sub,
 		}
 		if (sub) /* only for uselect2 */
 			q = pushArgument(mb, q, sub->nr);
-		if (rs) {
-			q = pushArgument(mb, q, rs);
-		} else {
-			q = pushArgument(mb, q, r1);
-			q = pushArgument(mb, q, r2);
-		}
+		/* if (rs) { */
+			/* q = pushArgument(mb, q, rs); */
+		/* } else { */
+		q = pushArgument(mb, q, r1);
+		q = pushArgument(mb, q, r2);
+		/* } */
 		if (type == st_join2) {
 			q = pushNilBat(mb, q);
 			q = pushNilBat(mb, q);
@@ -3407,13 +3408,11 @@ stmt_catalog(backend *be, int type, stmt *args)
 void
 stmt_set_nrcols(stmt *s)
 {
-	unsigned nrcols = 0;
-	int key = 1;
-	node *n;
-	list *l = s->op4.lval;
+	unsigned int nrcols = 0;
+	unsigned int key = 1;
 
 	assert(s->type == st_list);
-	for (n = l->h; n; n = n->next) {
+	for (node *n = s->op4.lval->h; n; n = n->next) {
 		stmt *f = n->data;
 
 		if (!f)
@@ -3433,9 +3432,8 @@ stmt_list(backend *be, list *l)
 	if (l == NULL)
 		return NULL;
 	stmt *s = stmt_create(be->mvc->sa, st_list);
-	if(!s) {
+	if(!s)
 		return NULL;
-	}
 	s->op4.lval = l;
 	stmt_set_nrcols(s);
 	return s;
@@ -4509,7 +4507,6 @@ stmt_convert(backend *be, stmt *v, stmt *sel, sql_subtype *f, sql_subtype *t)
 	InstrPtr q = NULL;
 	const char *convert = t->type->d.impl, *mod = calcRef;
 	int pushed = (v->cand && v->cand == sel), no_candidates = 0;
-	bool add_tz = false;
 	/* convert types and make sure they are rounded up correctly */
 
 	if (v->nr < 0)
@@ -4601,15 +4598,13 @@ stmt_convert(backend *be, stmt *v, stmt *sel, sql_subtype *f, sql_subtype *t)
 		q = pushInt(mb, q, 3);
 	}
 	q = pushArgument(mb, q, v->nr);
-	if (add_tz)
-			q = pushLng(mb, q, be->mvc->timezone);
 	if (sel && !pushed && !v->cand) {
 		q = pushArgument(mb, q, sel->nr);
 		pushed = 1;
 	} else if (v->nrcols > 0 && !no_candidates) {
 		q = pushNilBat(mb, q);
 	}
-	if (!add_tz && (t->type->eclass == EC_DEC || EC_TEMP_FRAC(t->type->eclass) || EC_INTERVAL(t->type->eclass))) {
+	if (t->type->eclass == EC_DEC || EC_TEMP_FRAC(t->type->eclass) || EC_INTERVAL(t->type->eclass)) {
 		/* digits, scale of the result decimal */
 		q = pushInt(mb, q, t->digits);
 		if (!EC_TEMP_FRAC(t->type->eclass))

@@ -31,14 +31,14 @@ query T nosort
 explain show details select col2 from myy order by col1 ASC, col1 DESC
 ----
 project (
-| table("sys"."myy") [ "myy"."col1" NOT NULL UNIQUE, "myy"."col2" NOT NULL ]
+| table("sys"."myy") [ "myy"."col2" NOT NULL, "myy"."col1" NOT NULL UNIQUE ]
 ) [ "myy"."col2" NOT NULL ] [ "myy"."col1" ASC NOT NULL UNIQUE, "myy"."col1" NULLS LAST NOT NULL UNIQUE ]
 
 query T nosort
 explain show details select col2 from myy order by col1 DESC, col1 DESC
 ----
 project (
-| table("sys"."myy") [ "myy"."col1" NOT NULL UNIQUE, "myy"."col2" NOT NULL ]
+| table("sys"."myy") [ "myy"."col2" NOT NULL, "myy"."col1" NOT NULL UNIQUE ]
 ) [ "myy"."col2" NOT NULL ] [ "myy"."col1" NULLS LAST NOT NULL UNIQUE, "myy"."col1" NULLS LAST NOT NULL UNIQUE ]
 
 statement ok
@@ -554,26 +554,28 @@ query T nosort
 explain show details select x, y from (select a as b, a / 3 as c from t1 union distinct select a as z, a / 5 as d from t2) x(x,y) where x > 2
 ----
 project (
-| distinct munion (
-| | project (
+| group by (
+| | munion (
 | | | group by (
 | | | | project (
-| | | | | select (
-| | | | | | table("sys"."t1") [ "t1"."a" NOT NULL UNIQUE ]
-| | | | | ) [ ("t1"."a" NOT NULL UNIQUE) > (int(3) "2") ]
-| | | | ) [ "t1"."a" NOT NULL UNIQUE as "b", "sys"."sql_div"("t1"."a" NOT NULL UNIQUE, tinyint(2) "3") NOT NULL as "c" ]
-| | | ) [ "b" NOT NULL UNIQUE, "c" NOT NULL ] [ "b" NOT NULL UNIQUE, "c" NOT NULL ]
-| | ) [ "b" NOT NULL UNIQUE as "x"."x", "c" NOT NULL as "x"."y" ],
-| | project (
+| | | | | project (
+| | | | | | select (
+| | | | | | | table("sys"."t1") [ "t1"."a" NOT NULL UNIQUE ]
+| | | | | | ) [ ("t1"."a" NOT NULL UNIQUE) > (int(3) "2") ]
+| | | | | ) [ "t1"."a" NOT NULL UNIQUE as "b", "sys"."sql_div"("t1"."a" NOT NULL UNIQUE, tinyint(2) "3") NOT NULL as "c" ]
+| | | | ) [ "b" NOT NULL UNIQUE as "x"."x", "c" NOT NULL as "x"."y" ]
+| | | ) [ "x"."x" NOT NULL UNIQUE, "x"."y" NOT NULL ] [ "x"."x" NOT NULL UNIQUE, "x"."y" NOT NULL ],
 | | | group by (
 | | | | project (
-| | | | | select (
-| | | | | | table("sys"."t2") [ "t2"."a" NOT NULL UNIQUE ]
-| | | | | ) [ ("t2"."a" NOT NULL UNIQUE) > (int(3) "2") ]
-| | | | ) [ "t2"."a" NOT NULL UNIQUE as "z", "sys"."sql_div"("t2"."a" NOT NULL UNIQUE, tinyint(3) "5") NOT NULL as "d" ]
-| | | ) [ "z" NOT NULL UNIQUE, "d" NOT NULL ] [ "z" NOT NULL UNIQUE, "d" NOT NULL ]
-| | ) [ "z" NOT NULL UNIQUE as "x"."x", "d" NOT NULL as "x"."y" ]
-| ) [ "x"."x" NOT NULL, "x"."y" NOT NULL ]
+| | | | | project (
+| | | | | | select (
+| | | | | | | table("sys"."t2") [ "t2"."a" NOT NULL UNIQUE ]
+| | | | | | ) [ ("t2"."a" NOT NULL UNIQUE) > (int(3) "2") ]
+| | | | | ) [ "t2"."a" NOT NULL UNIQUE as "z", "sys"."sql_div"("t2"."a" NOT NULL UNIQUE, tinyint(3) "5") NOT NULL as "d" ]
+| | | | ) [ "z" NOT NULL UNIQUE as "x"."x", "d" NOT NULL as "x"."y" ]
+| | | ) [ "x"."x" NOT NULL UNIQUE, "x"."y" NOT NULL ] [ "x"."x" NOT NULL UNIQUE, "x"."y" NOT NULL ]
+| | ) [ "x"."x" NOT NULL, "x"."y" NOT NULL ]
+| ) [ "x"."x" NOT NULL, "x"."y" NOT NULL ] [ "x"."x" NOT NULL, "x"."y" NOT NULL ]
 ) [ "x"."x" NOT NULL, "x"."y" NOT NULL ]
 
 statement ok

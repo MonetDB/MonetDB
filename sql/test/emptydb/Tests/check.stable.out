@@ -3062,7 +3062,6 @@ select 'null in fkeys.delete_action', delete_action, * from sys.fkeys where dele
 [ "column used by function",	"sys",	"columns",	"name",	"sys",	"get_merge_table_partition_expressions",	"FUNCTION"	]
 [ "column used by function",	"sys",	"table_partitions",	"column_id",	"sys",	"get_merge_table_partition_expressions",	"FUNCTION"	]
 [ "column used by function",	"sys",	"table_partitions",	"expression",	"sys",	"get_merge_table_partition_expressions",	"FUNCTION"	]
-[ "column used by function",	"sys",	"table_partitions",	"id",	"sys",	"get_merge_table_partition_expressions",	"FUNCTION"	]
 [ "column used by function",	"sys",	"table_partitions",	"table_id",	"sys",	"get_merge_table_partition_expressions",	"FUNCTION"	]
 [ "column used by function",	"sys",	"table_partitions",	"type",	"sys",	"get_merge_table_partition_expressions",	"FUNCTION"	]
 [ "column used by function",	"sys",	"_tables",	"id",	"sys",	"get_remote_table_expressions",	"FUNCTION"	]

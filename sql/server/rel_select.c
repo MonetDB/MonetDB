@@ -22,6 +22,7 @@
 #include "rel_prop.h"
 #include "rel_psm.h"
 #include "rel_unnest.h"
+#include "rel_rewriter.h"
 #include "rel_file_loader.h"
 #include "rel_proto_loader.h"
 #include "rel_optimizer_private.h"
@@ -659,7 +660,7 @@ nary_function_arg_types_2str(mvc *sql, list* types, int N)
 }
 
 static char *
-file_loader_add_table_column_types(mvc *sql, sql_subfunc *f, list *exps, list *res_exps, char *tname)
+file_loader_add_table_column_types(mvc *sql, sql_subfunc *f, list *exps, list *res_exps, char *tname, lng *est)
 {
 	sql_exp *file = exps->h->data;
 	if (!exp_is_atom(file))
@@ -701,7 +702,7 @@ file_loader_add_table_column_types(mvc *sql, sql_subfunc *f, list *exps, list *r
 		if (!fl) /* not expected */
 			return sa_message(sql->ta, "Filename extension '%s' missing", ext?ext:"");
 	}
-	str err = fl->add_types(sql, f, filename, res_exps, tname);
+	str err = fl->add_types(sql, f, filename, res_exps, tname, est);
 	if (err)
 		return err;
 	sql_subtype *st = sql_fetch_localtype(TYPE_str);
@@ -846,13 +847,16 @@ rel_file_loader(mvc *sql, list *exps, list *tl, char *tname)
 		list *nexps = exps;
 		if (list_empty(tl) || (nexps = check_arguments_and_find_largest_any_type(sql, NULL, exps, f, 1, false))) {
 			list *res_exps = sa_list(sql->sa);
+			lng est = 0;
 			if (list_length(exps) == 1 && f && f->func->varres && strlen(f->func->mod) == 0 && strlen(f->func->imp) == 0) {
-				char *err = file_loader_add_table_column_types(sql, f, nexps, res_exps, tname);
+				char *err = file_loader_add_table_column_types(sql, f, nexps, res_exps, tname, &est);
 				if (err)
 					return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "SELECT: file_loader function failed '%s'", err);
 			}
 			sql_exp *e = exp_op(sql->sa, nexps, f);
 			sql_rel *rel = rel_table_func(sql->sa, NULL, e, res_exps, TABLE_PROD_FUNC);
+			if (rel && est)
+				set_count_prop(sql->sa, rel, est);
 			if (rel)
 				rel = rel_project(sql->sa, rel, exps_alias(sql, res_exps));
 			return rel;
@@ -3497,20 +3501,20 @@ inplace_func(mvc *sql)
 {
 	sql_func *f = SA_NEW(sql->sa, sql_func);
 
-    *f = (sql_func) {
-        .mod = "",
-        .imp = "",
-        .type = F_PROC,
-        .lang = FUNC_LANG_INT,
-        .query = NULL,
-        .ops = sql->params,
-        .res = NULL,
-    };
-    base_init(sql->sa, &f->base, 0, true, NULL);
-    f->base.new = 1;
-    f->base.id = -1;
-    f->base.name = "-1";
-    f->instantiated = TRUE;
+	*f = (sql_func) {
+		.mod = "",
+		.imp = "",
+		.type = F_PROC,
+		.lang = FUNC_LANG_INT,
+		.query = NULL,
+		.ops = sql->params,
+		.res = NULL,
+	};
+	base_init(sql->sa, &f->base, 0, true, NULL);
+	f->base.new = 1;
+	f->base.id = -1;
+	f->base.name = "-1";
+	f->instantiated = TRUE;
 	return f;
 }
 
@@ -5666,9 +5670,8 @@ column_exp(sql_query *query, sql_rel **rel, symbol *column_e, int f)
 }
 
 static int
-exp_is_not_intern(sql_exp *e, void *dummy)
+exp_is_not_intern(sql_exp *e)
 {
-	(void) dummy;
 	return is_intern(e)?-1:0;
 }
 
@@ -6417,11 +6420,6 @@ rel_setquery(sql_query *query, symbol *q)
 	if ( q->token == SQL_UNION) {
 		int outer = n->next->next->next->next->data.i_val;
 		/* For EXCEPT/INTERSECT the group by is always done within the implementation */
-		/* TODO add those later in an optimizer ! */
-		if (t1 && distinct)
-			t1 = rel_distinct(t1);
-		if (t2 && distinct)
-			t2 = rel_distinct(t2);
 		res = rel_setquery_n_ary_(query, t1, t2, corresponding, op_munion, outer);
 	} else if ( q->token == SQL_EXCEPT)
 		res = rel_setquery_(query, t1, t2, corresponding, op_except, 0);

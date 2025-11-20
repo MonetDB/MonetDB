@@ -145,9 +145,10 @@ append_terms(allocator *sa, JSON *jt, BAT *b)
 
 
 static str
-json_relation(mvc *sql, sql_subfunc *f, char *filename, list *res_exps, char *tname)
+json_relation(mvc *sql, sql_subfunc *f, char *filename, list *res_exps, char *tname, lng *est)
 {
 	(void) filename;
+	(void) est;
 	char *res = MAL_SUCCEED;
 	list *types = sa_list(sql->sa);
 	list *names = sa_list(sql->sa);
