@@ -109,6 +109,7 @@ select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(9876543210.12345678 as de
 9876543210.12345678
 -9876543210.12345678
 
+
 onlyif has-hugeint
 query D nosort
 select cast(923456789012345678.123456789 as decimal(27,9)) as dec16_val
@@ -141,10 +142,11 @@ select cast(-923456789012345678901234567890.12345678 as decimal(38,8)) as dec16_
 ----
 -923456789012345678901234567890.12345678
 
---query T
---select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(-923456789012345678901234567890.12345678 as decimal(38,8)) as dec16_val'
+onlyif has-hugeint
+query D nosort
+select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(-923456789012345678901234567890.12345678 as decimal(38,8)) as dec16_val'
 ----
--- -923456789012345678901234567890.12345678
+-923456789012345678901234567890.12345678
 
 ---- REAL ----
 
