@@ -690,6 +690,9 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	canditer_init(&ci, b, s);
 	bi = bat_iterator(b);
 
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
+
 	/* g is NULL or [oid(dense),oid] and same size as b or s */
 	assert(g == NULL || BATttype(g) == TYPE_oid || BATcount(g) == 0);
 	assert(g == NULL || BATcount(g) == ci.ncand);
@@ -1000,7 +1003,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			j = (BUN) m + 1;
 		}
 		/* array to maintain last time we saw each old group */
-		pgrp = GDKmalloc(sizeof(BUN) * j);
+		pgrp = ma_alloc(ta, sizeof(BUN) * j);
 		if (pgrp == NULL)
 			goto error;
 		/* initialize to impossible position */
@@ -1037,7 +1040,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			break;
 		}
 
-		GDKfree(pgrp);
+		ma_close(ta, &ta_state);
 	} else if (g == NULL &&
 		   (BATcheckhash(b) ||
 		    ((!bi.transient ||
@@ -1280,6 +1283,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		HEAPfree(&hs->heaplink, true);
 		GDKfree(hs);
 	}
+	ma_close(ta, &ta_state);
 	bat_iterator_end(&bi);
 	if (extents) {
 		BATsetcount(en, (BUN) ngrp);
@@ -1329,6 +1333,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		  ALGOOPTBATPAR(hn), algomsg, GDKusec() - t0);
 	return GDK_SUCCEED;
   error:
+	ma_close(ta, &ta_state);
 	bat_iterator_end(&bi);
 	if (hs != NULL && hs != b->thash) {
 		HEAPfree(&hs->heaplink, true);

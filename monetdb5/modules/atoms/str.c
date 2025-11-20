@@ -497,7 +497,7 @@ STRWChrAt(Client ctx, int *res, const char *const *arg1, const int *at)
 }
 
 static inline str
-doStrConvert(allocator *ma, str *res, const char *arg1, gdk_return (*func)(char **restrict, size_t *restrict, const char *restrict))
+doStrConvert(allocator *ma, str *res, const char *arg1, gdk_return (*func)(allocator *, char **restrict, size_t *restrict, const char *restrict))
 {
 	str buf = NULL, msg = MAL_SUCCEED;
 
@@ -511,7 +511,7 @@ doStrConvert(allocator *ma, str *res, const char *arg1, gdk_return (*func)(char 
 		*res = NULL;
 		if (!(buf = ma_alloc(ta, buflen)))
 			throw(MAL, "str.lower", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		if ((*func)(&buf, &buflen, arg1) != GDK_SUCCEED) {
+		if ((*func)(ta, &buf, &buflen, arg1) != GDK_SUCCEED) {
 			//GDKfree(buf);
 			throw(MAL, "str.lower", GDK_EXCEPTION);
 		}
@@ -1953,10 +1953,9 @@ STRasciify(Client ctx, str *r, const char *const *s)
 	allocator *ma = ctx->curprg->def->ma;
 	char *buf = NULL;
 	size_t buflen = 0;
-	if (GDKasciify(&buf, &buflen, *s) != GDK_SUCCEED)
+	if (GDKasciify(ma, &buf, &buflen, *s) != GDK_SUCCEED)
 		throw(MAL, "str.asciify", GDK_EXCEPTION);
-	*r = ma_strdup(ma, buf);
-	GDKfree(buf);
+	*r = buf;
 	return MAL_SUCCEED;
 }
 

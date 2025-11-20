@@ -99,8 +99,7 @@ AUTHunlockVault(const char *password)
  * Decyphers a given value, using the vaultKey.  The returned value
  * might be incorrect if the vaultKey is incorrect or unset.  If the
  * cypher algorithm fails or detects an invalid password, it might throw
- * an exception.  The ret string is GDKmalloced, and should be GDKfreed
- * by the caller.
+ * an exception.  The ret string is allocated using the passed allocator.
  */
 static str
 AUTHdecypherValueLocked(allocator *ma, str *ret, const char *value)
