@@ -28,15 +28,18 @@
  * for the upper layers to abandon the track
  */
 void
-addMalException(MalBlkPtr mb, str msg)
+addMalException(MalBlkPtr mb, const char *msg)
 {
 	if (msg == NULL)
 		return;
+	size_t len;
 	if (mb->errors) {
-		mb->errors = concatErrors(mb->errors, msg);
+		len = strlen(mb->errors);
 	} else {
-		mb->errors = ma_strdup(mb->ma, msg);
+		mb->errors = MT_thread_get_exceptbuf();
+		len = 0;
 	}
+	strcpy_len(mb->errors + len, msg, GDKMAXERRLEN - len);
 }
 
 Symbol
@@ -386,7 +389,7 @@ copyMalBlk(MalBlkPtr old)
 	}
 
 	strcpy_len(mb->binding, old->binding, sizeof(mb->binding));
-	mb->errors = old->errors ? ma_strdup(mb->ma, old->errors) : 0;
+	mb->errors = old->errors;	/* WHY copy errors? */
 	mb->tag = old->tag;
 	mb->runtime = old->runtime;
 	mb->calls = old->calls;

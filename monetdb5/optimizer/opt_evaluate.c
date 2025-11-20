@@ -230,7 +230,7 @@ OPTevaluateImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 				   as the actual error (eg. division by zero ) may not happen) */
 				freeException(msg);
 				msg = MAL_SUCCEED;
-				mb->errors = 0;
+				mb->errors = NULL;
 			}
 		}
 		constantblock += blockStart(p) && OPTallConstant(ctx, mb, p);	/* default */

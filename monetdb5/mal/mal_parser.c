@@ -76,7 +76,7 @@ skipToEnd(Client ctx)
  * Keep on syntax error for reflection and correction.
  */
 static void
-parseError(Client ctx, str msg)
+parseError(Client ctx, const char *msg)
 {
 	MalBlkPtr mb;
 	char buf[1028] = { 0 };
@@ -97,10 +97,11 @@ parseError(Client ctx, str msg)
 	}
 	*s++ = '\n';
 	*s = 0;
-	if (mb->errors == MT_thread_get_exceptbuf()) /* implies != NULL */
-		mb->errors = appendException(SYNTAX, "parseError", "%s", buf);
+	assert(mb->errors == NULL || mb->errors == MT_thread_get_exceptbuf());
+	if (mb->errors)
+		(void) appendException(SYNTAX, "parseError", "%s", buf);
 	else
-		mb->errors = createException(SYNTAX, "parseError", "%s", buf);
+		(void) createException(SYNTAX, "parseError", "%s", buf);
 
 	/* produce the position marker */
 	s = buf;
@@ -1111,8 +1112,6 @@ parseAtom(Client ctx)
 	else
 		tpe = parseTypeId(ctx);
 	if (ATOMindex(modnme) < 0) {
-		if (ctx->curprg->def->errors)
-			freeException(ctx->curprg->def->errors);
 		ctx->curprg->def->errors = malAtomDefinition(modnme, tpe);
 	}
 	if (modnme != userRef)
@@ -1680,7 +1679,7 @@ fcnHeader(Client ctx, int kind)
 		return 0;
 	}
 	ctx->curprg->def->errors = ctx->backup->def->errors;
-	ctx->backup->def->errors = 0;
+	ctx->backup->def->errors = NULL;
 	curPrg = ctx->curprg;
 	curBlk = curPrg->def;
 	curInstr = getInstrPtr(curBlk, 0);
@@ -1842,8 +1841,10 @@ parseEnd(Client ctx)
 	Symbol curPrg = 0;
 	size_t l;
 	InstrPtr sig;
-	str errors = MAL_SUCCEED, msg = MAL_SUCCEED;
+	str errors = MAL_SUCCEED;
 
+	if (ctx->curprg->def->errors)
+		return 1;
 	if (MALkeyword(ctx, "end", 3)) {
 		curPrg = ctx->curprg;
 		l = idLength(ctx);
@@ -1873,36 +1874,10 @@ parseEnd(Client ctx)
 		else
 			insertSymbol(getModule(getModuleId(sig)), ctx->curprg);
 
-		if (ctx->curprg->def->errors) {
-			errors = ctx->curprg->def->errors;
-			ctx->curprg->def->errors = 0;
-		}
-		// check for newly identified errors
-		msg = chkProgram(ctx->usermodule, ctx->curprg->def);
-		if (errors == NULL)
-			errors = msg;
-		else
-			freeException(msg);
-		if (errors == NULL) {
-			errors = ctx->curprg->def->errors;
-			ctx->curprg->def->errors = 0;
-		} else if (ctx->curprg->def->errors) {
-			//collect all errors for reporting
-			str new = GDKmalloc(strlen(errors) +
-								strlen(ctx->curprg->def->errors) + 16);
-			if (new) {
-				char *p = stpcpy(new, errors);
-				if (p[-1] != '\n')
-					*p++ = '\n';
-				*p++ = '!';
-				strcpy(p, ctx->curprg->def->errors);
-
-				freeException(errors);
-				freeException(ctx->curprg->def->errors);
-
-				ctx->curprg->def->errors = 0;
-				errors = new;
-			}
+		errors = chkProgram(ctx->usermodule, ctx->curprg->def);
+		if (errors) {
+			ctx->curprg->def->errors = errors;
+			return 1;
 		}
 
 		if (ctx->backup) {
@@ -1912,28 +1887,9 @@ parseEnd(Client ctx)
 			str msg;
 			if ((msg = MSinitClientPrg(ctx, ctx->curmodule->name,
 									   mainRef)) != MAL_SUCCEED) {
-				if (errors) {
-					str new = GDKmalloc(strlen(errors) + strlen(msg) + 3);
-					if (new) {
-						char *p = stpcpy(new, msg);
-						if (p[-1] != '\n')
-							*p++ = '\n';
-						strcpy(p, errors);
-						freeException(errors);
-						ctx->curprg->def->errors = new;
-					} else {
-						ctx->curprg->def->errors = errors;
-					}
-					freeException(msg);
-				} else {
-					ctx->curprg->def->errors = msg;
-				}
-				return 1;
+				ctx->curprg->def->errors = msg;
 			}
 		}
-		// pass collected errors to context
-		assert(ctx->curprg->def->errors == NULL);
-		ctx->curprg->def->errors = errors;
 		return 1;
 	}
 	return 0;
@@ -2314,20 +2270,20 @@ parseMAL(Client ctx, Symbol curPrg, int skipcomments, int lines,
 				pushInstruction(curBlk, curInstr);
 			}
 			echoInput(ctx);
-		}
 			continue;
+		}
 		case 'A':
 		case 'a':
 			if (MALkeyword(ctx, "atom", 4) && parseAtom(ctx) == 0)
-				break;
-			goto allLeft;
+				continue;
+			break;
 		case 'b':
 		case 'B':
 			if (MALkeyword(ctx, "barrier", 7)) {
 				ctx->blkmode++;
 				cntrl = BARRIERsymbol;
 			}
-			goto allLeft;
+			break;
 		case 'C':
 		case 'c':
 			if (MALkeyword(ctx, "command", 7)) {
@@ -2344,9 +2300,8 @@ parseMAL(Client ctx, Symbol curPrg, int skipcomments, int lines,
 			if (MALkeyword(ctx, "catch", 5)) {
 				ctx->blkmode++;
 				cntrl = CATCHsymbol;
-				goto allLeft;
 			}
-			goto allLeft;
+			break;
 		case 'E':
 		case 'e':
 			if (MALkeyword(ctx, "exit", 4)) {
@@ -2354,9 +2309,9 @@ parseMAL(Client ctx, Symbol curPrg, int skipcomments, int lines,
 					ctx->blkmode--;
 				cntrl = EXITsymbol;
 			} else if (parseEnd(ctx)) {
-				break;
+				continue;
 			}
-			goto allLeft;
+			break;
 		case 'F':
 		case 'f':
 			if (MALkeyword(ctx, "function", 8)) {
@@ -2368,10 +2323,10 @@ parseMAL(Client ctx, Symbol curPrg, int skipcomments, int lines,
 					ctx->curprg->def->unsafeProp = unsafeProp;
 					inlineProp = 0;
 					unsafeProp = 0;
-					break;
+					continue;
 				}
 			}
-			goto allLeft;
+			break;
 		case 'I':
 		case 'i':
 			if (MALkeyword(ctx, "inline", 6)) {
@@ -2380,19 +2335,19 @@ parseMAL(Client ctx, Symbol curPrg, int skipcomments, int lines,
 				continue;
 			} else if (MALkeyword(ctx, "include", 7)) {
 				parseInclude(ctx);
-				break;
+				continue;
 			}
-			goto allLeft;
+			break;
 		case 'L':
 		case 'l':
 			if (MALkeyword(ctx, "leave", 5))
 				cntrl = LEAVEsymbol;
-			goto allLeft;
+			break;
 		case 'M':
 		case 'm':
 			if (MALkeyword(ctx, "module", 6) && parseModule(ctx) == 0)
-				break;
-			goto allLeft;
+				continue;
+			break;
 		case 'P':
 		case 'p':
 			if (MALkeyword(ctx, "pattern", 7)) {
@@ -2406,21 +2361,21 @@ parseMAL(Client ctx, Symbol curPrg, int skipcomments, int lines,
 				unsafeProp = 0;
 				continue;
 			}
-			goto allLeft;
+			break;
 		case 'R':
 		case 'r':
 			if (MALkeyword(ctx, "redo", 4)) {
 				cntrl = REDOsymbol;
-				goto allLeft;
+				break;
 			}
 			if (MALkeyword(ctx, "raise", 5)) {
 				cntrl = RAISEsymbol;
-				goto allLeft;
+				break;
 			}
 			if (MALkeyword(ctx, "return", 6)) {
 				cntrl = RETURNsymbol;
 			}
-			goto allLeft;
+			break;
 		case 'U':
 		case 'u':
 			if (MALkeyword(ctx, "unsafe", 6)) {
@@ -2428,12 +2383,12 @@ parseMAL(Client ctx, Symbol curPrg, int skipcomments, int lines,
 				skipSpace(ctx);
 				continue;
 			}
-			/* fall through */
+			break;
 		default:
-  allLeft:
-			parseAssign(ma, ctx, cntrl);
-			cntrl = 0;
+			break;
 		}
+		parseAssign(ma, ctx, cntrl);
+		cntrl = 0;
 	}
 	skipSpace(ctx);
 }

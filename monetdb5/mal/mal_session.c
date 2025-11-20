@@ -92,7 +92,7 @@ MSresetClientPrg(Client ctx, const char *mod, const char *fcn)
 
 	mb = ctx->curprg->def;
 	mb->stop = 1;
-	mb->errors = MAL_SUCCEED;
+	mb->errors = NULL;
 	p = mb->stmt[0];
 
 	p->gc = 0;
@@ -322,7 +322,7 @@ MALparser(Client c)
 	str msg = MAL_SUCCEED;
 
 	assert(c->curprg->def->errors == NULL);
-	c->curprg->def->errors = 0;
+	c->curprg->def->errors = NULL;
 
 	if (prepareMalBlk(c->curprg->def, CURRENT(c)) < 0)
 		throw(MAL, "mal.parser", "Failed to prepare");
@@ -340,14 +340,14 @@ MALparser(Client c)
 	/* empty files should be skipped as well */
 	if (c->curprg->def->stop == 1) {
 		if ((msg = c->curprg->def->errors))
-			c->curprg->def->errors = 0;
+			c->curprg->def->errors = NULL;
 		return msg;
 	}
 
 	p = getInstrPtr(c->curprg->def, 0);
 	if (p->token != FUNCTIONsymbol) {
 		msg = c->curprg->def->errors;
-		c->curprg->def->errors = 0;
+		c->curprg->def->errors = NULL;
 		MSresetStack(c, c->curprg->def, c->glb);
 		resetMalTypes(c->curprg->def, 1);
 		return msg;
@@ -355,7 +355,7 @@ MALparser(Client c)
 	pushEndInstruction(c->curprg->def);
 	msg = chkProgram(c->usermodule, c->curprg->def);
 	if (msg != MAL_SUCCEED || (msg = c->curprg->def->errors)) {
-		c->curprg->def->errors = 0;
+		c->curprg->def->errors = NULL;
 		MSresetStack(c, c->curprg->def, c->glb);
 		resetMalTypes(c->curprg->def, 1);
 		return msg;
@@ -534,9 +534,9 @@ optimizeMALBlock(Client cntxt, MalBlkPtr mb)
 			msg = chkDeclarations(mb);
 		if (msg)
 			return msg;
-		if (mb->errors != MAL_SUCCEED) {
+		if (mb->errors != NULL) {
 			msg = mb->errors;
-			mb->errors = MAL_SUCCEED;
+			mb->errors = NULL;
 			return msg;
 		}
 	}

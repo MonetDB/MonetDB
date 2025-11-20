@@ -824,7 +824,7 @@ int TRACEtable(Client cntxt, BAT **r);
 int TYPE_xml;
 int UTF8_strlen(const char *s);
 int UTF8_strwidth(const char *s);
-void addMalException(MalBlkPtr mb, str msg);
+void addMalException(MalBlkPtr mb, const char *msg);
 str addOptimizerPipe(Client cntxt, MalBlkPtr mb, const char *name);
 str addPipeDefinition(Client cntxt, const char *name, const char *pipe);
 const char affectedRowsRef[];
