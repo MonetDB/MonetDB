@@ -520,9 +520,11 @@ static char *RAPIinstalladdons(void) {
 
 	// run rapi.R environment setup script
 	{
-		char *f = locate_file("rapi", ".R", 0);
+		allocator *ta = MT_thread_getallocator();
+		allocator_state ta_state = ma_open(ta);
+		char *f = locate_file(ta, "rapi", ".R");
 		snprintf(rapiinclude, sizeof(rapiinclude), "source(\"%s\")", f);
-		GDKfree(f);
+		ma_close(ta, &ta_state);
 	}
 #if DIR_SEP != '/'
 	{

@@ -319,8 +319,7 @@ getExceptionType(const char *exception)
 /**
  * Returns the location the exception was raised, if known.  It
  * depends on how the exception was created, what the location looks
- * like.  The returned string is mallocced with GDKmalloc, and hence
- * needs to be GDKfreed.
+ * like.  The returned string is allocated using the passed allocator.
  */
 str
 getExceptionPlace(allocator *ma, const char *exception)

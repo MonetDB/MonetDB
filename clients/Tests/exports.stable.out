@@ -769,8 +769,8 @@ size_t msettings_write_url(const msettings *mp, char *buffer, size_t);
 const char *wsaerror(int);
 
 # monetdb5
-str AUTHGeneratePasswordHash(str *res, const char *value);
-str AUTHcypherValue(str *ret, const char *value);
+str AUTHGeneratePasswordHash(allocator *, str *res, const char *value);
+str AUTHcypherValue(allocator *, str *ret, const char *value);
 str AUTHdecypherValue(allocator *, str *ret, const char *value);
 str AUTHrequireAdmin(Client c);
 str AUTHunlockVault(const char *password);
@@ -800,7 +800,7 @@ void MCsetClientInfo(Client c, const char *property, const char *value);
 void MCstopClients(Client c);
 str MCsuspendClient(int id);
 int MCvalid(Client c);
-char *MSP_locate_sqlscript(const char *mod_name, bit recurse);
+char *MSP_locate_sqlscript(allocator *ma, const char *mod_name);
 str MSinitClientPrg(Client cntxt, const char *mod, const char *nme);
 void MSresetInstructions(MalBlkPtr mb, int start);
 void MSresetStack(Client cntxt, MalBlkPtr mb, MalStkPtr glb);
@@ -1056,7 +1056,7 @@ const char likeselectRef[];
 const char likeuselectRef[];
 const char lngRef[];
 str loadLibrary(const char *modulename, int flag);
-char *locate_file(const char *basename, const char *ext, bit recurse);
+char *locate_file(allocator *ma, const char *basename, const char *ext);
 const char lockRef[];
 const char lookupRef[];
 const char mainRef[];

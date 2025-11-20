@@ -51,7 +51,7 @@ slash_2_dir_sep(str fname)
 }
 
 static str
-malResolveFile(const char *fname)
+malResolveFile(allocator *ma, const char *fname)
 {
 	char path[FILENAME_MAX];
 	str script;
@@ -61,7 +61,7 @@ malResolveFile(const char *fname)
 	if (written == -1 || written >= FILENAME_MAX)
 		return NULL;
 	slash_2_dir_sep(path);
-	if ((script = MSP_locate_script(path)) == NULL) {
+	if ((script = MSP_locate_script(ma, path)) == NULL) {
 		/* this function is also called for scripts that are not located
 		 * in the modpath, so if we can't find it, just default to
 		 * whatever was given, as it can be in current dir, or an
@@ -178,11 +178,15 @@ malIncludeString(Client c, const char *name, str mal, int listing,
 	size_t mal_len = strlen(mal);
 	buffer *mal_buf;
 	stream *mal_stream;
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
 
-	if ((mal_buf = GDKmalloc(sizeof(buffer))) == NULL)
+	if ((mal_buf = ma_alloc(ta, sizeof(buffer))) == NULL) {
+		ma_close(ta, &ta_state);
 		throw(MAL, "malIncludeString", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
 	if ((mal_stream = buffer_rastream(mal_buf, name)) == NULL) {
-		GDKfree(mal_buf);
+		ma_close(ta, &ta_state);
 		throw(MAL, "malIncludeString", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	buffer_init(mal_buf, mal, mal_len);
@@ -191,7 +195,7 @@ malIncludeString(Client c, const char *name, str mal, int listing,
 	c->bak = NULL;
 	if ((c->fdin = bstream_create(mal_stream, mal_len)) == NULL) {
 		mnstr_destroy(mal_stream);
-		GDKfree(mal_buf);
+		ma_close(ta, &ta_state);
 		throw(MAL, "malIncludeString", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	c->qryctx.bs = c->fdin;
@@ -200,7 +204,7 @@ malIncludeString(Client c, const char *name, str mal, int listing,
 	bstream_destroy(c->fdin);
 	c->fdin = NULL;
 	c->qryctx.bs = NULL;
-	GDKfree(mal_buf);
+	ma_close(ta, &ta_state);
 
 	restoreClient;
 	return msg;
@@ -230,6 +234,8 @@ malInclude(Client c, const char *name, int listing)
 	Module oldusermodule = c->usermodule;
 	Module oldcurmodule = c->curmodule;
 	Symbol oldprg = c->curprg;
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
 
 	c->prompt = "";				/* do not produce visible prompts */
 	c->promptlength = 0;
@@ -237,7 +243,7 @@ malInclude(Client c, const char *name, int listing)
 	c->fdin = NULL;
 	c->qryctx.bs = NULL;
 
-	if ((filename = malResolveFile(name)) != NULL) {
+	if ((filename = malResolveFile(ta, name)) != NULL) {
 		char *fname = filename;
 		do {
 			p = strchr(filename, PATH_SEP);
@@ -257,10 +263,12 @@ malInclude(Client c, const char *name, int listing)
 			if (p)
 				filename = p + 1;
 		} while (p);
+		c->srcFile = NULL;
 		GDKfree(fname);
 		c->fdin = NULL;
 		c->qryctx.bs = NULL;
 	}
+	ma_close(ta, &ta_state);
 	restoreClient;
 	return msg;
 }

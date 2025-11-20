@@ -91,10 +91,12 @@ setUserPassword(mvc *m, oid rid, str value)
 		freeException(err);
 		return LOG_ERR;
 	}
-	if ((err = AUTHcypherValue(&hash, value)) != MAL_SUCCEED) {
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
+	if ((err = AUTHcypherValue(ta, &hash, value)) != MAL_SUCCEED) {
 		(void) sql_error(m, 02, SQLSTATE(42000) "setUserPassword: %s", getExceptionMessage(err));
 		freeException(err);
-		GDKfree(hash);
+		ma_close(ta, &ta_state);
 		return LOG_ERR;
 	}
 
@@ -102,7 +104,7 @@ setUserPassword(mvc *m, oid rid, str value)
 	sqlstore *store = m->session->tr->store;
 	sql_table *users = getUsersTbl(m);
 	res = store->table_api.column_update_value(tr, find_sql_column(users, USER_PASSWORD_COLUMN), rid, hash);
-	GDKfree(hash);
+	ma_close(ta, &ta_state);
 	return res;
 }
 
@@ -267,7 +269,8 @@ monet5_create_user(ptr _mvc, str user, str passwd, bool enc, str fullname, sqlid
 {
 	mvc *m = (mvc *) _mvc;
 	oid rid;
-	str ret, err, pwd, hash, schema_buf = NULL;
+	str ret, err, pwd, hash;
+//	str schema_buf = NULL;
 	sqlid user_id;
 	sql_schema *s = find_sql_schema(m->session->tr, "sys");
 	sql_table *db_user_info = find_sql_table(m->session->tr, s, "db_user_info"),
@@ -316,45 +319,48 @@ monet5_create_user(ptr _mvc, str user, str passwd, bool enc, str fullname, sqlid
 	}
 
 	if ((ret = parse_schema_path_str(m, schema_path, false)) != MAL_SUCCEED) {
-		GDKfree(schema_buf);
+//		GDKfree(schema_buf);
 		return ret;
 	}
 
 	if (!optimizer)
 		optimizer = default_optimizer;
 	if (!isOptimizerPipe(optimizer)) {
-		GDKfree(schema_buf);
+//		GDKfree(schema_buf);
 		throw(MAL, "sql.create_user", SQLSTATE(42000) "Optimizer pipe %s unknown", optimizer);
 	}
 
 
 	if (!enc) {
 		if (!(pwd = mcrypt_BackendSum(passwd, strlen(passwd)))) {
-			GDKfree(schema_buf);
+//			GDKfree(schema_buf);
 			throw(MAL, "sql.create_user", SQLSTATE(42000) "Crypt backend hash not found");
 		}
 	} else {
 		pwd = passwd;
 	}
 
-	err = AUTHGeneratePasswordHash(&hash, pwd);
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
+	err = AUTHGeneratePasswordHash(ta, &hash, pwd);
 	if (!enc)
 		free(pwd);
 	if (err != MAL_SUCCEED) {
-		GDKfree(schema_buf);
+		ma_close(ta, &ta_state);
+//		GDKfree(schema_buf);
 		throw(MAL, "sql.create_user", SQLSTATE(42000) "create backend hash failure");
 	}
 
 	user_id = store_next_oid(m->session->tr->store);
 	sqlid default_role_id = role_id > 0 ? role_id : user_id;
 	if ((log_res = store->table_api.table_insert(m->session->tr, db_user_info, &user, &fullname, &schema_id, &schema_path, &max_memory, &max_workers, &optimizer, &default_role_id, &hash))) {
-		GDKfree(schema_buf);
-		GDKfree(hash);
+//		GDKfree(schema_buf);
+		ma_close(ta, &ta_state);
 		throw(SQL, "sql.create_user", SQLSTATE(42000) "Create user failed%s", log_res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
 	}
 	// clean up
-	GDKfree(schema_buf);
-	GDKfree(hash);
+//	GDKfree(schema_buf);
+	ma_close(ta, &ta_state);
 
 	if ((log_res = store->table_api.table_insert(m->session->tr, auths, &user_id, &user, &grantorid))) {
 		throw(SQL, "sql.create_user", SQLSTATE(42000) "Create user failed%s", log_res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
@@ -432,15 +438,18 @@ monet5_create_privileges(ptr _mvc, sql_schema *s, const char *initpasswd)
 	schema_id = sys->base.id;
 	assert(schema_id == 2000);
 
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
 	sqlstore *store = m->session->tr->store;
 	const char *username = "monetdb";
 	char *password = initpasswd ? mcrypt_BackendSum(initpasswd, strlen(initpasswd)) : mcrypt_BackendSum("monetdb", strlen("monetdb"));
 	char *hash = NULL;
 	if (password == NULL ||
-		(err = AUTHGeneratePasswordHash(&hash, password)) != MAL_SUCCEED) {
+		(err = AUTHGeneratePasswordHash(ta, &hash, password)) != MAL_SUCCEED) {
 		TRC_CRITICAL(SQL_TRANS, "generate password hash failure");
 		freeException(err);
 		free(password);
+		ma_close(ta, &ta_state);
 		return ;
 	}
 	free(password);
@@ -455,7 +464,7 @@ monet5_create_privileges(ptr _mvc, sql_schema *s, const char *initpasswd)
 
 	store->table_api.table_insert(m->session->tr, uinfo, &username, &fullname, &schema_id, &schema_path, &max_memory,
 		&max_workers, &optimizer, &default_role_id, &hash);
-	GDKfree(hash);
+	ma_close(ta, &ta_state);
 }
 
 static int
@@ -950,17 +959,21 @@ remote_create(mvc *m, sqlid id, const char *username, const char *password, int 
 			throw(MAL, "addRemoteTableCredentials", SQLSTATE(42000) "Crypt backend hash not found");
 		}
 	}
-	str msg = AUTHcypherValue(&cypher, pwhash ? pwhash : password);
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
+	str msg = AUTHcypherValue(ta, &cypher, pwhash ? pwhash : password);
 	if (pwhash != NULL) {
 		if (!pw_encrypted)
 			free(pwhash);
 		//else
 		//	GDKfree(pwhash);
 	}
-	if (msg != MAL_SUCCEED)
+	if (msg != MAL_SUCCEED) {
+		ma_close(ta, &ta_state);
 		return msg;
+	}
 	log_res = store->table_api.table_insert(m->session->tr, remote_user_info, &id, &username, &cypher, NULL);
-	GDKfree(cypher);
+	ma_close(ta, &ta_state);
 	if (log_res != 0)
 		throw(SQL, "sql.create_table", SQLSTATE(42000) "Create table failed%s", log_res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
 	return MAL_SUCCEED;

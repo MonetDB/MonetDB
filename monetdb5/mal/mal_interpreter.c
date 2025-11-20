@@ -1253,24 +1253,7 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 		snprintf(nme, sizeof(nme), "%s.%s[%d]", getModuleId(getInstrPtr(mb, 0)),
 				 getFunctionId(getInstrPtr(mb, 0)), stkpc);
 		if (ret != MAL_SUCCEED) {
-			str new, n;
-			n = createException(MAL, nme, "exception not caught");
-			if (n) {
-				new = GDKmalloc(strlen(ret) + strlen(n) + 16);
-				if (new) {
-					char *p = stpcpy(new, ret);
-					if (p[-1] != '\n')
-						*p++ = '\n';
-					*p++ = '!';
-					p = stpcpy(p, n);
-					freeException(n);
-					freeException(ret);
-					ret = new;
-				} else {
-					freeException(ret);
-					ret = n;
-				}
-			}
+			ret = appendException(MAL, nme, "exception not caught");
 		} else {
 			ret = createException(MAL, nme, "Exception not caught");
 		}
