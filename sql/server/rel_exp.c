@@ -1647,7 +1647,7 @@ rel_has_complete_exp(sql_rel *rel, sql_exp *e, bool subexp)
 	sql_exp *ne = NULL;
 
 	if (!rel)
-		return NULL;
+		return false;
 	switch(e->type) {
 	case e_column:
 		if (is_basetable(rel->op) && !rel->exps) {
