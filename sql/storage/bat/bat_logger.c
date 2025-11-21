@@ -1232,14 +1232,15 @@ snapshot_immediate_copy_file(stream *plan, const char *path, const char *name)
 	}
 	to_copy = (size_t) statbuf.st_size;
 
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
+
 	s = open_rstream(path);
 	if (!s) {
 		GDKerror("%s", mnstr_peek_error(NULL));
 		goto end;
 	}
 
-	allocator *ta = MT_thread_getallocator();
-	allocator_state ta_state = ma_open(ta);
 	buf = ma_alloc(ta, bufsize);
 	if (!buf) {
 		GDKerror("GDKmalloc failed");
