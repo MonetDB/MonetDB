@@ -1039,8 +1039,6 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			GRP_subscan_old_groups_any();
 			break;
 		}
-
-		ma_close(ta, &ta_state);
 	} else if (g == NULL &&
 		   (BATcheckhash(b) ||
 		    ((!bi.transient ||
