@@ -99,8 +99,7 @@ AUTHunlockVault(const char *password)
  * Decyphers a given value, using the vaultKey.  The returned value
  * might be incorrect if the vaultKey is incorrect or unset.  If the
  * cypher algorithm fails or detects an invalid password, it might throw
- * an exception.  The ret string is GDKmalloced, and should be GDKfreed
- * by the caller.
+ * an exception.  The ret string is allocated using the passed allocator.
  */
 static str
 AUTHdecypherValueLocked(allocator *ma, str *ret, const char *value)
@@ -169,10 +168,10 @@ AUTHdecypherValue(allocator *ma, str *ret, const char *value)
 /**
  * Cyphers the given string using the vaultKey.  If the cypher algorithm
  * fails or detects an invalid password, it might throw an exception.
- * The ret string is GDKmalloced, and should be GDKfreed by the caller.
+ * The ret string is allocated using the passed allocator.
  */
 static str
-AUTHcypherValueLocked(str *ret, const char *value)
+AUTHcypherValueLocked(allocator *ma, str *ret, const char *value)
 {
 	/* this is the XOR cypher implementation */
 	str r, w;
@@ -183,7 +182,7 @@ AUTHcypherValueLocked(str *ret, const char *value)
 
 	if (vaultKey == NULL)
 		throw(MAL, "cypherValue", "The vault is still locked!");
-	w = r = GDKmalloc(sizeof(char) * (strlen(value) * 2 + 1));
+	w = r = ma_alloc(ma, sizeof(char) * (strlen(value) * 2 + 1));
 	if (r == NULL)
 		throw(MAL, "cypherValue", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
@@ -214,10 +213,10 @@ AUTHcypherValueLocked(str *ret, const char *value)
 }
 
 str
-AUTHcypherValue(str *ret, const char *value)
+AUTHcypherValue(allocator *ma, str *ret, const char *value)
 {
 	MT_rwlock_rdlock(&rt_lock);
-	str err = AUTHcypherValueLocked(ret, value);
+	str err = AUTHcypherValueLocked(ma, ret, value);
 	MT_rwlock_rdunlock(&rt_lock);
 	return err;
 }
@@ -254,7 +253,7 @@ AUTHverifyPassword(const char *passwd)
 }
 
 str
-AUTHGeneratePasswordHash(str *res, const char *value)
+AUTHGeneratePasswordHash(allocator *ma, str *res, const char *value)
 {
-	return AUTHcypherValue(res, value);
+	return AUTHcypherValue(ma, res, value);
 }

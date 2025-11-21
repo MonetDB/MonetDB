@@ -797,6 +797,8 @@ convert_str_fix(BATiter *bi, int tp, void *restrict dst,
 	const char *s = NULL;
 
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
 
 	if (ATOMstorage(tp) == TYPE_msk) {
 		uint32_t mask = 0;
@@ -822,12 +824,11 @@ convert_str_fix(BATiter *bi, int tp, void *restrict dst,
 		TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx));
 		if (j > 0)
 			*d = mask;
+		ma_close(ta, &ta_state);
 		return 0;
 	}
 
 	bool (*atomeq)(const void *, const void *) = ATOMequal(tp);
-	allocator *ta = MT_thread_getallocator();
-	allocator_state ta_state = ma_open(ta);
 	TIMEOUT_LOOP(ci->ncand, qry_ctx) {
 		oid x = canditer_next(ci) - candoff;
 		const char *s = BUNtvar(*bi, x);
@@ -857,19 +858,19 @@ convert_str_fix(BATiter *bi, int tp, void *restrict dst,
 
 	if (s) {
 		sz = escapedStrlen(s, NULL, NULL, '\'');
-		bf = GDKmalloc(sz + 1);
+		bf = ma_alloc(ta, sz + 1);
 	}
 	if (bf) {
 		escapedStr(bf, s, sz + 1, NULL, NULL, '\'');
 		GDKerror("22018!conversion of string "
 			 "'%s' to type %s failed.\n",
 			 bf, ATOMname(tp));
-		GDKfree(bf);
 	} else {
 		GDKerror("22018!conversion of string "
 			 "to type %s failed.\n",
 			 ATOMname(tp));
 	}
+	ma_close(ta, &ta_state);
 	return BUN_NONE;
 }
 
@@ -1797,19 +1798,21 @@ VARconvert(allocator *ma, ValPtr ret, const ValRecord *v,
 				//if (ATOMextern(ret->vtype))
 				//	GDKfree(p);
 				GDKclrerr();
+				allocator *ta = MT_thread_getallocator();
+				allocator_state ta_state = ma_open(ta);
 				size_t sz = escapedStrlen(v->val.sval, NULL, NULL, '\'');
-				char *bf = GDKmalloc(sz + 1);
+				char *bf = ma_alloc(ta, sz + 1);
 				if (bf) {
 					escapedStr(bf, v->val.sval, sz + 1, NULL, NULL, '\'');
 					GDKerror("22018!conversion of string "
 						 "'%s' to type %s failed.\n",
 						 bf, ATOMname(ret->vtype));
-					GDKfree(bf);
 				} else {
 					GDKerror("22018!conversion of string "
 						 "to type %s failed.\n",
 						 ATOMname(ret->vtype));
 				}
+				ma_close(ta, &ta_state);
 				return GDK_FAIL;
 			} else {
 				/* now give value obtained to ret */

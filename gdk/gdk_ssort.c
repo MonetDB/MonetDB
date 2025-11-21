@@ -88,6 +88,9 @@ typedef struct {
 	 * with malloc. */
 	char temparrayh[MERGESTATE_TEMP_SIZE];
 	char temparrayt[MERGESTATE_TEMP_SIZE];
+
+	allocator *ma;
+	allocator_state ma_state;
 } MergeState;
 
 /* Free all the temp memory owned by the MergeState.  This must be
@@ -97,14 +100,11 @@ static void
 merge_freemem(MergeState *ms)
 {
 	assert(ms != NULL);
-	if (ms->ah != (void *) ms->temparrayh)
-		GDKfree(ms->ah);
 	ms->ah = (void *) ms->temparrayh;
 	ms->allocedh = MERGESTATE_TEMP_SIZE;
-	if (ms->at != (void *) ms->temparrayt)
-		GDKfree(ms->at);
 	ms->at = (void *) ms->temparrayt;
 	ms->allocedt = MERGESTATE_TEMP_SIZE;
+	ma_close(ms->ma, &ms->ma_state);
 }
 
 /* Ensure enough temp memory for 'need' array slots is available.
@@ -119,9 +119,8 @@ merge_getmem(MergeState *ms, ssize_t need, void **ap,
 		return 0;
 	/* Don't realloc!  That can cost cycles to copy the old data,
 	 * but we don't care what's in the block. */
-	if (*ap != (void *) temparray)
-		GDKfree(*ap);
-	*ap = GDKmalloc(need);
+	(void) temparray;
+	*ap = ma_alloc(ms->ma, need);
 	if (*ap) {
 		*allocedp = need;
 		return 0;

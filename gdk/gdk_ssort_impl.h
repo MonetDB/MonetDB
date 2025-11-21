@@ -830,6 +830,8 @@ GDKssortimpl(void *restrict h, void *restrict t, const void *restrict heap,
 	ms.bt = t;
 	ms.th = ms.tempstorageh;
 	ms.tt = ms.tempstoraget;
+	ms.ma = MT_thread_getallocator();
+	ms.ma_state = ma_open(ms.ma);
 	assert((size_t) hs <= sizeof(ms.tempstorageh));
 	assert((size_t) ts <= sizeof(ms.tempstoraget));
 	nremaining = (ssize_t) nitems;

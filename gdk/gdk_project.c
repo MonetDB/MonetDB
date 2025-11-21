@@ -924,12 +924,13 @@ BATprojectchain(BAT **bats)
 		return bn;
 	}
 
-	if (ndelete > 0 &&
-	    (tobedeleted = GDKmalloc(sizeof(BAT *) * ndelete)) == NULL)
-		return NULL;
-	ba = GDKmalloc(sizeof(*ba) * n);
-	if (ba == NULL) {
-		GDKfree(tobedeleted);
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
+
+	if ((ndelete > 0 &&
+	     (tobedeleted = ma_alloc(ta, sizeof(BAT *) * ndelete)) == NULL) ||
+	    (ba = ma_alloc(ta, sizeof(*ba) * n)) == NULL) {
+		ma_close(ta, &ta_state);
 		return NULL;
 	}
 
@@ -971,8 +972,7 @@ BATprojectchain(BAT **bats)
 		}
 		while (ndelete-- > 0)
 			BBPunfix(tobedeleted[ndelete]->batCacheid);
-		GDKfree(tobedeleted);
-		GDKfree(ba);
+		ma_close(ta, &ta_state);
 		return bn;
 	}
 	/* b is last BAT in bats array */
@@ -983,8 +983,7 @@ BATprojectchain(BAT **bats)
 				 nil, ba[0].cnt, TRANSIENT);
 		while (ndelete-- > 0)
 			BBPreclaim(tobedeleted[ndelete]);
-		GDKfree(tobedeleted);
-		GDKfree(ba);
+		ma_close(ta, &ta_state);
 		TRC_DEBUG(ALGO, "with %d bats: nil/empty -> " ALGOOPTBATFMT
 			  " " LLFMT " usec\n",
 			  n, ALGOOPTBATPAR(bn), GDKusec() - t0);
@@ -1157,8 +1156,7 @@ BATprojectchain(BAT **bats)
 	 * reclaim after the last use of b */
 	while (ndelete-- > 0)
 		BBPreclaim(tobedeleted[ndelete]);
-	GDKfree(tobedeleted);
-	GDKfree(ba);
+	ma_close(ta, &ta_state);
 	TRC_DEBUG(ALGO, "with %d bats: " ALGOOPTBATFMT " " LLFMT " usec\n",
 		  n, ALGOOPTBATPAR(bn), GDKusec() - t0);
 	return bn;
@@ -1166,8 +1164,7 @@ BATprojectchain(BAT **bats)
   bunins_failed:
 	while (ndelete-- > 0)
 		BBPreclaim(tobedeleted[ndelete]);
-	GDKfree(tobedeleted);
-	GDKfree(ba);
+	ma_close(ta, &ta_state);
 	BBPreclaim(bn);
 	TRC_DEBUG(ALGO, "failed " LLFMT "usec\n", GDKusec() - t0);
 	return NULL;

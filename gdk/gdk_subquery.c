@@ -73,6 +73,8 @@ BATall_grp(BAT *l, BAT *g, BAT *e, BAT *s)
 		return NULL;
 	}
 
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
 	if (BATcount(l) == 0 || ngrp == 0) {
 		const void *nilp = ATOMnilptr(l->ttype);
 		if ((res = BATconstant(ngrp == 0 ? 0 : min, l->ttype, nilp, ngrp, TRANSIENT)) == NULL)
@@ -82,7 +84,7 @@ BATall_grp(BAT *l, BAT *g, BAT *e, BAT *s)
 
 		if ((res = COLnew(min, l->ttype, ngrp, TRANSIENT)) == NULL)
 			goto alloc_fail;
-		if ((oids = GDKmalloc(ngrp * sizeof(oid))) == NULL)
+		if ((oids = ma_alloc(ta, ngrp * sizeof(oid))) == NULL)
 			goto alloc_fail;
 
 		for (i = 0; i < ngrp; i++)
@@ -186,7 +188,7 @@ BATall_grp(BAT *l, BAT *g, BAT *e, BAT *s)
 		res->trevsorted = BATcount(res) <= 1;
 	}
 
-	GDKfree(oids);
+	ma_close(ta, &ta_state);
 
 	TRC_DEBUG(ALGO, "l=" ALGOBATFMT ",g=" ALGOBATFMT
 		  ",e=" ALGOOPTBATFMT ",s=" ALGOOPTBATFMT
@@ -199,7 +201,7 @@ BATall_grp(BAT *l, BAT *g, BAT *e, BAT *s)
 	return res;
 alloc_fail:
 	BBPreclaim(res);
-	GDKfree(oids);
+	ma_close(ta, &ta_state);
 	return NULL;
 }
 

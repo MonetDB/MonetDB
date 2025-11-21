@@ -72,6 +72,7 @@ HAVE_HGE?7637_str_to_decimal
 7735-crossproduct-update
 7736-scale-reduction-crash
 7737-join-order
+7741_missing_rel_name
 7744_opt_null_in_where
 KNOWNFAIL?7748-update-returning-subquery-crash
 7753-like-in-projection

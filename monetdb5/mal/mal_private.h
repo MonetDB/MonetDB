@@ -44,7 +44,7 @@ MALfcn findFunctionImplementation(const char *cname)
 	__attribute__((__visibility__("hidden")));
 
 /* mal_linker.h */
-char *MSP_locate_script(const char *mod_name)
+char *MSP_locate_script(allocator *ma, const char *mod_name)
 	__attribute__((__visibility__("hidden")));
 
 /* Reset primitives */

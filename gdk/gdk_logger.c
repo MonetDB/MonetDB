@@ -1995,6 +1995,8 @@ cleanup_and_swap(logger *lg, int *r, const log_bid *bids, lng *lids, lng *cnts,
 static gdk_return
 bm_subcommit(logger *lg, logged_range *pending, uint32_t *updated, BUN maxupdated)
 {
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
 	BUN cnt = pending ? pending->cnt : BATcount(lg->catalog_bid);
 	BUN dcnt = BATcount(lg->dcatalog);
 	BUN p, q;
@@ -2002,9 +2004,9 @@ bm_subcommit(logger *lg, logged_range *pending, uint32_t *updated, BUN maxupdate
 	BAT *catalog_id = lg->catalog_id;
 	BAT *dcatalog = lg->dcatalog;
 	BUN nn = 13 + cnt;
-	bat *n = GDKmalloc(sizeof(bat) * nn);
-	bat *r = GDKmalloc(sizeof(bat) * nn);
-	BUN *sizes = GDKmalloc(sizeof(BUN) * nn);
+	bat *n = ma_alloc(ta, sizeof(bat) * nn);
+	bat *r = ma_alloc(ta, sizeof(bat) * nn);
+	BUN *sizes = ma_alloc(ta, sizeof(BUN) * nn);
 	int i = 0, rcnt = 0;
 	gdk_return res;
 	const log_bid *bids;
@@ -2013,9 +2015,7 @@ bm_subcommit(logger *lg, logged_range *pending, uint32_t *updated, BUN maxupdate
 	lng t0 = 0;
 
 	if (n == NULL || r == NULL || sizes == NULL) {
-		GDKfree(n);
-		GDKfree(r);
-		GDKfree(sizes);
+		ma_close(ta, &ta_state);
 		log_unlock(lg);
 		return GDK_FAIL;
 	}
@@ -2040,9 +2040,7 @@ bm_subcommit(logger *lg, logged_range *pending, uint32_t *updated, BUN maxupdate
 						break;
 					}
 				}
-				GDKfree(n);
-				GDKfree(r);
-				GDKfree(sizes);
+				ma_close(ta, &ta_state);
 				log_unlock(lg);
 				return GDK_FAIL;
 			}
@@ -2069,9 +2067,7 @@ bm_subcommit(logger *lg, logged_range *pending, uint32_t *updated, BUN maxupdate
 		if ((rcnt = cleanup_and_swap(lg, r, bids, lids, cnts,
 					     catalog_bid, catalog_id, dcatalog,
 					     cleanup)) < 0) {
-			GDKfree(n);
-			GDKfree(r);
-			GDKfree(sizes);
+			ma_close(ta, &ta_state);
 			log_unlock(lg);
 			return GDK_FAIL;
 		}
@@ -2093,9 +2089,7 @@ bm_subcommit(logger *lg, logged_range *pending, uint32_t *updated, BUN maxupdate
 
 		tids = bm_tids(lg->seqs_id, lg->dseqs);
 		if (tids == NULL) {
-			GDKfree(n);
-			GDKfree(r);
-			GDKfree(sizes);
+			ma_close(ta, &ta_state);
 			log_unlock(lg);
 			return GDK_FAIL;
 		}
@@ -2106,9 +2100,7 @@ bm_subcommit(logger *lg, logged_range *pending, uint32_t *updated, BUN maxupdate
 			logbat_destroy(tids);
 			logbat_destroy(ids);
 			logbat_destroy(vals);
-			GDKfree(n);
-			GDKfree(r);
-			GDKfree(sizes);
+			ma_close(ta, &ta_state);
 			log_unlock(lg);
 			return GDK_FAIL;
 		}
@@ -2118,9 +2110,7 @@ bm_subcommit(logger *lg, logged_range *pending, uint32_t *updated, BUN maxupdate
 			logbat_destroy(tids);
 			logbat_destroy(ids);
 			logbat_destroy(vals);
-			GDKfree(n);
-			GDKfree(r);
-			GDKfree(sizes);
+			ma_close(ta, &ta_state);
 			log_unlock(lg);
 			return GDK_FAIL;
 		}
@@ -2131,9 +2121,7 @@ bm_subcommit(logger *lg, logged_range *pending, uint32_t *updated, BUN maxupdate
 		    log_switch_bat(lg->seqs_val, vals, lg->fn, "seqs_val") != GDK_SUCCEED) {
 			logbat_destroy(ids);
 			logbat_destroy(vals);
-			GDKfree(n);
-			GDKfree(r);
-			GDKfree(sizes);
+			ma_close(ta, &ta_state);
 			log_unlock(lg);
 			return GDK_FAIL;
 		}
@@ -2172,9 +2160,7 @@ bm_subcommit(logger *lg, logged_range *pending, uint32_t *updated, BUN maxupdate
 			BBPrelease(r[i]);
 		}
 	}
-	GDKfree(n);
-	GDKfree(r);
-	GDKfree(sizes);
+	ma_close(ta, &ta_state);
 	if (res != GDK_SUCCEED)
 		TRC_CRITICAL(GDK, "commit failed\n");
 	return res;

@@ -1,0 +1,62 @@
+statement ok
+CREATE TABLE v0 ( v1 INT , v2 DOUBLE )
+
+statement ok rowcount 5
+ INSERT INTO v0 VALUES ( 127 , 75766173.000000 ) , ( -1 , 59557838.000000 ) , ( 16 , 98271205.000000 ) , ( 35 , NULL ) , ( 13 , 93747801.000000 )
+
+statement error 42000!JOIN: tables '' and 'v0' do not have a matching column 'v1'
+ SELECT 0 FROM ( SELECT v1 AS v4 FROM v0 AS v3 ORDER BY v1 NULLS LAST , v1 ) JOIN v0 USING ( v1 , v2 ) GROUP BY v1 HAVING v2 > 'x'
+
+statement ok
+ CREATE TABLE v5 ( v6 INT , v7 FLOAT )
+
+statement ok rowcount 5
+ INSERT INTO v0 VALUES ( 127 , 76594699.000000 ) , ( -32768 , 70257697.000000 ) , ( 36 , 65888462.000000 ) , ( 62 , NULL ) , ( 2147483647 , 55975338.000000 )
+
+statement error
+ SELECT LAST_VALUE ( DISTINCT v1 ) FROM v0 WHERE v1 = -1
+
+statement error
+ SELECT LEAD ( DISTINCT v6 ) FROM WHERE FIRST_VALUE IN ( -1 , 31 )
+
+statement ok
+ CREATE TABLE v8 ( v9 DOUBLE )
+
+statement error 21S01!INSERT INTO: number of values doesn't match number of columns of table 'v0'
+ INSERT INTO v0 VALUES ( NULL ) , ( 787917.000000 ) , ( 11605603.000000 ) , ( 76476943.000000 ) , ( 90397286.000000 )
+
+statement error
+ SELECT ROW_NUMBER ( DISTINCT v7 ) FROM v5
+
+statement ok
+ CREATE TABLE v10 ( v11 INT , v12 DOUBLE )
+
+statement error 21S01!INSERT INTO: number of values doesn't match number of columns of table 'v8'
+ INSERT INTO v8 VALUES ( 0 , 22401506.000000 ) , ( -1 , 56890781.000000 ) , ( 29 , 19124422.000000 ) , ( 7 , 19886850.000000 ) 
+
+statement error 42000!SELECT: no such operator 'json_arrayagg'(int)
+ SELECT ( SELECT JSON_ARRAYAGG ( DISTINCT v1 ) FROM v0 ) + 10 AS v13 
+
+statement error 42000!SELECT: identifier 'v7' unknown
+ SELECT CUME_DIST ( DISTINCT v7 ) FROM ( SELECT v11 FROM v10 WHERE v12 > 49 ) AS v14
+
+statement ok
+ CREATE TABLE v15 ( v16 INT , v17 FLOAT )
+
+statement ok
+ CREATE TABLE v18 ( v19 INT , v20 FLOAT )
+
+statement error 42000!syntax error, unexpected '(' in: " select json_objectagg ( -1 ) , max ( 12 ) , bit_or ( 127 ) from stddev values ( ("
+ SELECT JSON_OBJECTAGG ( -1 ) , MAX ( 12 ) , BIT_OR ( 127 ) FROM STDDEV VALUES ( ( SELECT 9 FROM v10 WHERE ( v12 = 67 AND v12 = 127 ) OR ( 'x' - 'x' >= v12 AND v11 = -128 ) ) , 'x' )
+
+statement ok rowcount 2
+ INSERT INTO v10 VALUES ( -128 , 52486128.000000 ) , ( 91 , NULL ) ;
+
+statement error 42S22!SELECT: no such column 'v8.v9'
+ SELECT NTH_VALUE ( DISTINCT v5 . v19 ) FROM v0 t1 JOIN v10 t2 ON v8 . v9 = v18 . v7 WHERE v18 . v6 IS NOT NULL 
+
+statement error
+ SELECT DENSE_RANK ( DISTINCT v9 + 82 ) FROM v8
+
+statement error 42000!SELECT: no such operator 'lag'(tinyint, tinyint)
+ SELECT JSON_OBJECTAGG ( DISTINCT 87 + v17 % -1 ) FROM ( SELECT LAG ( 41 , 0 ) AS v22 ) AS v21

@@ -338,7 +338,7 @@ f(rtree_id_t id, void *context)
 }
 
 BUN*
-RTREEsearch(BAT *b, const void *inMBRptr, int result_limit)
+RTREEsearch(allocator *ma, BAT *b, const void *inMBRptr, int result_limit)
 {
 	BAT *pb;
 	const mbr *inMBR = inMBRptr;
@@ -362,7 +362,7 @@ RTREEsearch(BAT *b, const void *inMBRptr, int result_limit)
 	if (rtree != NULL) {
 		//Increase ref, we're gonna use the index
 		RTREEincref(pb);
-		BUN *candidates = GDKmalloc((result_limit + 1) * SIZEOF_BUN);
+		BUN *candidates = ma_alloc(ma, (result_limit + 1) * SIZEOF_BUN);
 		memset(candidates, 0, (result_limit + 1) * SIZEOF_BUN);
 
 		rtree_coord_t rect[4];
