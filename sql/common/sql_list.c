@@ -550,18 +550,18 @@ list_sort(list *l, fkeyvalue key, fdup dup)
 	node *n = NULL;
 	int i, *keys, cnt = list_length(l);
 	void **data;
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
 
-	keys = GDKmalloc(cnt*sizeof(int));
-	data = GDKmalloc(cnt*sizeof(void *));
+	keys = ma_alloc(ta, cnt*sizeof(int));
+	data = ma_alloc(ta, cnt*sizeof(void *));
 	if (keys == NULL || data == NULL) {
-		GDKfree(keys);
-		GDKfree(data);
+		ma_close(ta, &ta_state);
 		return NULL;
 	}
 	res = list_new_(l);
 	if (res == NULL) {
-		GDKfree(keys);
-		GDKfree(data);
+		ma_close(ta, &ta_state);
 		return NULL;
 	}
 	for (n = l->h, i = 0; n; n = n->next, i++) {
@@ -573,8 +573,7 @@ list_sort(list *l, fkeyvalue key, fdup dup)
 	for(i=0; i<cnt; i++) {
 		list_append(res, dup?dup(data[i]):data[i]);
 	}
-	GDKfree(keys);
-	GDKfree(data);
+	ma_close(ta, &ta_state);
 	return res;
 }
 

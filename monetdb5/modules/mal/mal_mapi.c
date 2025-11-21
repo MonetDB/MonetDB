@@ -1026,6 +1026,8 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
 	}
 
 #ifdef HAVE_SYS_UN_H
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
 	if (usockfile) {
 		/* prevent silent truncation, sun_path is typically around 108
 		 * chars long :/ */
@@ -1035,6 +1037,7 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
 				closesocket(socks[0]);
 			if (socks[1] != INVALID_SOCKET)
 				closesocket(socks[1]);
+			ma_close(ta, &ta_state);
 			throw(MAL, "mal_mapi.listen",
 				  OPERATION_FAILED ": UNIX socket path too long: %s",
 				  usockfile);
@@ -1055,6 +1058,7 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
 				closesocket(socks[0]);
 			if (socks[1] != INVALID_SOCKET)
 				closesocket(socks[1]);
+			ma_close(ta, &ta_state);
 			throw(IO, "mal_mapi.listen",
 				  OPERATION_FAILED ": creation of UNIX socket failed: %s", err);
 		}
@@ -1065,7 +1069,7 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
 		userver.sun_family = AF_UNIX;
 		const char *p;
 		if ((p = strstr(usockfile, "${PORT}")) != NULL) {
-			usockfilenew = GDKmalloc(ulen + 1);
+			usockfilenew = ma_alloc(ta, ulen + 1);
 			/* note, "${PORT}" is longer than the longest possible decimal
 			 * representation of a port number ("65535") */
 			if (usockfilenew) {
@@ -1088,8 +1092,7 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
 			if (socks[1] != INVALID_SOCKET)
 				closesocket(socks[1]);
 			closesocket(socks[2]);
-			if (usockfilenew)
-				GDKfree(usockfilenew);
+			ma_close(ta, &ta_state);
 			return e;
 		}
 		if (bind(socks[2], (struct sockaddr *) &userver, length) == SOCKET_ERROR) {
@@ -1108,8 +1111,7 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
 								  OPERATION_FAILED
 								  ": binding to UNIX socket file %s failed: %s",
 								  usockfile, err);
-			if (usockfilenew)
-				GDKfree(usockfilenew);
+			ma_close(ta, &ta_state);
 			return buf;
 		}
 		if (listen(socks[2], maxusers) == SOCKET_ERROR) {
@@ -1128,8 +1130,7 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
 								  OPERATION_FAILED
 								  ": setting UNIX socket file %s to listen failed: %s",
 								  usockfile, err);
-			if (usockfilenew)
-				GDKfree(usockfilenew);
+			ma_close(ta, &ta_state);
 			return buf;
 		}
 		if (GDKsetenv("mapi_usock", usockfile) != GDK_SUCCEED) {
@@ -1137,6 +1138,7 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
 				if (socks[i] != INVALID_SOCKET)
 					closesocket(socks[i]);
 			}
+			ma_close(ta, &ta_state);
 			throw(MAL, "mal_mapi.listen", GDK_EXCEPTION);
 		}
 	}
@@ -1152,6 +1154,9 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
 			if (socks[i] != INVALID_SOCKET)
 				closesocket(socks[i]);
 		}
+#ifdef HAVE_SYS_UN_H
+		ma_close(ta, &ta_state);
+#endif
 		throw(MAL, "mal_mapi.listen", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	memcpy(psock, socks, sizeof(socks));
@@ -1162,6 +1167,9 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
 				closesocket(socks[i]);
 		}
 		GDKfree(psock);
+#ifdef HAVE_SYS_UN_H
+		ma_close(ta, &ta_state);
+#endif
 		throw(MAL, "mal_mapi.listen",
 			  OPERATION_FAILED ": starting thread failed");
 	}
@@ -1187,8 +1195,7 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
 			printf("# Listening for UNIX domain connection requests on "
 				   "mapi:monetdb://%s\n", usockfile);
 	}
-	if (usockfilenew)
-		GDKfree(usockfilenew);
+	ma_close(ta, &ta_state);
 #endif
 
 	fflush(stdout);
@@ -1346,7 +1353,9 @@ SERVERclient(Client ctx, void *res, const Stream *In, const Stream *Out)
 			str ret;													\
 			size_t l;													\
 			char *f;													\
-																		\
+			allocator *ta = MT_thread_getallocator();					\
+			allocator_state ta_state = ma_open(ta);						\
+															\
 			if (hdl && mapi_result_error(hdl))							\
 				err = mapi_result_error(hdl);							\
 			else														\
@@ -1356,8 +1365,10 @@ SERVERclient(Client ctx, void *res, const Stream *In, const Stream *Out)
 				err = "(no additional error message)";					\
 																		\
 			l = 2 * strlen(err) + 8192;									\
-			newerr = (str) GDKmalloc(l);								\
-			if(newerr == NULL) { err = SQLSTATE(HY013) MAL_MALLOC_FAIL; break;}	\
+			newerr = ma_alloc(ta, l);									\
+			if (newerr == NULL) {										\
+				newerr = SQLSTATE(HY013) MAL_MALLOC_FAIL;				\
+			}															\
 																		\
 			f = newerr;													\
 			/* I think this code tries to deal with multiple errors, this \
@@ -1379,7 +1390,7 @@ SERVERclient(Client ctx, void *res, const Stream *In, const Stream *Out)
 			ret = createException(MAL, fcn,								\
 								  OPERATION_FAILED ": remote error: %s", \
 								  newerr);								\
-			GDKfree(newerr);											\
+			ma_close(ta, &ta_state);									\
 			return ret;													\
 		}																\
 	} while (0)

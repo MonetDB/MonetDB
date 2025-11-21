@@ -339,18 +339,6 @@ const uuid uuid_nil = {0};
 const inet4 inet4_nil = {0};
 const inet6 inet6_nil = {0};
 
-ptr
-ATOMnil(int t)
-{
-	const void *src = ATOMnilptr(t);
-	size_t len = ATOMlen(ATOMtype(t), src);
-	ptr dst = GDKmalloc(len);
-
-	if (dst)
-		memcpy(dst, src, len);
-	return dst;
-}
-
 /*
  * @- Atomic ADT functions
  */
@@ -431,17 +419,6 @@ ATOMformat(allocator *ma, int t, const void *p)
 		return buf;
 	}
 	return ma_strdup(ma, "nil");
-}
-
-ptr
-ATOMdup(int t, const void *p)
-{
-	size_t len = ATOMlen(t, p);
-	ptr n = GDKmalloc(len);
-
-	if (n)
-		memcpy(n, p, len);
-	return n;
 }
 
 /*

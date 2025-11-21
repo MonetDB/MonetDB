@@ -1689,17 +1689,17 @@ GDKprintinforegister(void (*func)(void))
 #define round16(sz) ((sz+15)&~15)
 #define round_block_size(sz) ((sz + (MA_BLOCK_SIZE - 1))&~(MA_BLOCK_SIZE - 1))
 
-#define COND_LOCK_ALLOCATOR(a)    \
-    bool __alloc_locked = false;  \
-    if ((a)->use_lock) { \
-        MT_lock_set(&(a)->lock);         \
-        __alloc_locked = true;           \
-    }
+#define COND_LOCK_ALLOCATOR(a)			\
+	bool __alloc_locked = false;		\
+	if ((a)->use_lock) {			\
+		MT_lock_set(&(a)->lock);	\
+		__alloc_locked = true;		\
+	}
 
-#define COND_UNLOCK_ALLOCATOR(a) \
-    if (__alloc_locked) {        \
-        MT_lock_unset(&(a)->lock); \
-    }
+#define COND_UNLOCK_ALLOCATOR(a)		\
+	if (__alloc_locked) {			\
+		MT_lock_unset(&(a)->lock);	\
+	}
 
 
 typedef struct freed_t {
