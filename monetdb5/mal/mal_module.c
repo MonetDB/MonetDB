@@ -177,7 +177,7 @@ getModule(const char *name)
 }
 
 void
-getModuleList(Module **out, int *length)
+getModuleList(allocator *ma, Module **out, int *length)
 {
 	int i;
 	int moduleCount = 0;
@@ -189,7 +189,7 @@ getModuleList(Module **out, int *length)
 			m = m->link;
 		}
 	}
-	*out = GDKzalloc(moduleCount * sizeof(Module));
+	*out = ma_zalloc(ma, moduleCount * sizeof(Module));
 	if (*out == NULL) {
 		return;
 	}
@@ -202,12 +202,6 @@ getModuleList(Module **out, int *length)
 			m = m->link;
 		}
 	}
-}
-
-void
-freeModuleList(Module *list)
-{
-	GDKfree(list);
 }
 
 /*

@@ -36,7 +36,6 @@ BATunique(BAT *b, BAT *s)
 	int width;
 	oid i, o, hseq;
 	const char *nme;
-	Hash *hs = NULL;
 	BUN hb;
 	bool (*eq)(const void *, const void *);
 	struct canditer ci;
@@ -182,7 +181,7 @@ BATunique(BAT *b, BAT *s)
 		 * persistent and we could create a hash table */
 		algomsg = "unique: existing hash";
 		MT_rwlock_rdlock(&b->thashlock);
-		hs = b->thash;
+		Hash *hs = b->thash;
 		if (hs == NULL) {
 			MT_rwlock_rdunlock(&b->thashlock);
 			goto lost_hash;
@@ -207,7 +206,6 @@ BATunique(BAT *b, BAT *s)
 			if (hb == BUN_NONE) {
 				if (bunfastappOID(bn, o) != GDK_SUCCEED) {
 					MT_rwlock_rdunlock(&b->thashlock);
-					hs = NULL;
 					goto bunins_failed;
 				}
 			}
@@ -235,46 +233,49 @@ BATunique(BAT *b, BAT *s)
 			if (mask < ((BUN) 1 << 16))
 				mask = (BUN) 1 << 16;
 		}
-		if ((hs = GDKzalloc(sizeof(Hash))) == NULL) {
+		Hash hsh = {
+			.heaplink.parentid = b->batCacheid,
+			.heaplink.farmid = BBPselectfarm(TRANSIENT, bi.type, hashheap),
+			.heapbckt.parentid = b->batCacheid,
+			.heapbckt.farmid = BBPselectfarm(TRANSIENT, bi.type, hashheap),
+		};
+
+		if (hsh.heaplink.farmid < 0 ||
+		    hsh.heapbckt.farmid < 0 ||
+		    snprintf(hsh.heaplink.filename, sizeof(hsh.heaplink.filename), "%s.thshunil%x", nme, (unsigned) MT_getpid()) >= (int) sizeof(hsh.heaplink.filename) ||
+		    snprintf(hsh.heapbckt.filename, sizeof(hsh.heapbckt.filename), "%s.thshunib%x", nme, (unsigned) MT_getpid()) >= (int) sizeof(hsh.heapbckt.filename) ||
+		    HASHnew(&hsh, bi.type, BATcount(b), mask, BUN_NONE, false) != GDK_SUCCEED) {
 			GDKerror("cannot allocate hash table\n");
-			goto bunins_failed;
-		}
-		hs->heapbckt.parentid = b->batCacheid;
-		hs->heaplink.parentid = b->batCacheid;
-		if ((hs->heaplink.farmid = BBPselectfarm(TRANSIENT, bi.type, hashheap)) < 0 ||
-		    (hs->heapbckt.farmid = BBPselectfarm(TRANSIENT, bi.type, hashheap)) < 0 ||
-		    snprintf(hs->heaplink.filename, sizeof(hs->heaplink.filename), "%s.thshunil%x", nme, (unsigned) MT_getpid()) >= (int) sizeof(hs->heaplink.filename) ||
-		    snprintf(hs->heapbckt.filename, sizeof(hs->heapbckt.filename), "%s.thshunib%x", nme, (unsigned) MT_getpid()) >= (int) sizeof(hs->heapbckt.filename) ||
-		    HASHnew(hs, bi.type, BATcount(b), mask, BUN_NONE, false) != GDK_SUCCEED) {
-			GDKfree(hs);
-			hs = NULL;
-			GDKerror("cannot allocate hash table\n");
+			HEAPfree(&hsh.heaplink, true);
+			HEAPfree(&hsh.heapbckt, true);
 			goto bunins_failed;
 		}
 		TIMEOUT_LOOP_IDX(i, ci.ncand, qry_ctx) {
 			o = canditer_next(&ci);
 			v = VALUE(o - hseq);
-			prb = HASHprobe(hs, v);
-			for (hb = HASHget(hs, prb);
+			prb = HASHprobe(&hsh, v);
+			for (hb = HASHget(&hsh, prb);
 			     hb != BUN_NONE;
-			     hb = HASHgetlink(hs, hb)) {
+			     hb = HASHgetlink(&hsh, hb)) {
 				if (eq == NULL || eq(v, BUNtail(bi, hb)))
 					break;
 			}
 			if (hb == BUN_NONE) {
 				p = o - hseq;
-				if (bunfastappOID(bn, o) != GDK_SUCCEED)
+				if (bunfastappOID(bn, o) != GDK_SUCCEED) {
+					HEAPfree(&hsh.heaplink, true);
+					HEAPfree(&hsh.heapbckt, true);
 					goto bunins_failed;
+				}
 				/* enter into hash table */
-				HASHputlink(hs, p, HASHget(hs, prb));
-				HASHput(hs, prb, p);
+				HASHputlink(&hsh, p, HASHget(&hsh, prb));
+				HASHput(&hsh, prb, p);
 			}
 		}
+		HEAPfree(&hsh.heaplink, true);
+		HEAPfree(&hsh.heapbckt, true);
 		TIMEOUT_CHECK(qry_ctx,
 			      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed, qry_ctx));
-		HEAPfree(&hs->heaplink, true);
-		HEAPfree(&hs->heapbckt, true);
-		GDKfree(hs);
 	}
 	if (BATcount(bn) == bi.count) {
 		/* it turns out all values are distinct */
@@ -309,11 +310,6 @@ BATunique(BAT *b, BAT *s)
 
   bunins_failed:
 	bat_iterator_end(&bi);
-	if (hs != NULL) {
-		HEAPfree(&hs->heaplink, true);
-		HEAPfree(&hs->heapbckt, true);
-		GDKfree(hs);
-	}
 	BBPreclaim(bn);
 	return NULL;
 }

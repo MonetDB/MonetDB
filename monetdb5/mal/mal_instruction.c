@@ -788,9 +788,13 @@ trimMalVariables_(MalBlkPtr mb, MalStkPtr glb)
 	InstrPtr q;
 	if (mb->vtop == 0)
 		return;
-	alias = (int *) GDKzalloc(mb->vtop * sizeof(int));
-	if (alias == NULL)
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
+	alias = ma_zalloc(ta, mb->vtop * sizeof(int));
+	if (alias == NULL) {
+		ma_close(ta, &ta_state);
 		return;					/* forget it if we run out of memory *//* build the alias table */
+	}
 	for (i = 0; i < mb->vtop; i++) {
 		if (isVarUsed(mb, i) == 0) {
 			if (glb && i < glb->stktop && isVarConstant(mb, i))
@@ -819,7 +823,7 @@ trimMalVariables_(MalBlkPtr mb, MalStkPtr glb)
 		}
 		mb->vtop = cnt;
 	}
-	GDKfree(alias);
+	ma_close(ta, &ta_state);
 }
 
 void

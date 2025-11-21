@@ -3447,14 +3447,17 @@ count_unique(BAT *b, BAT *s, BUN *cnt1, BUN *cnt2)
 	} else if (ATOMbasetype(bi.type) == TYPE_sht) {
 		unsigned short val;
 		uint32_t *seen = NULL;
+		allocator *ta = MT_thread_getallocator();
+		allocator_state ta_state = ma_open(ta);
 
 		algomsg = "short-sized atoms";
 		assert(bvars == NULL);
-		seen = GDKzalloc((65536 / 32) * sizeof(seen[0]));
+		seen = ma_zalloc(ta, (65536 / 32) * sizeof(seen[0]));
 		if (seen == NULL) {
 			MT_rwlock_rdunlock(&pb->thashlock);
 			BBPreclaim(pb);
 			bat_iterator_end(&bi);
+			ma_close(ta, &ta_state);
 			return GDK_FAIL;
 		}
 		for (i = 0; i < ci.ncand; i++) {
@@ -3474,7 +3477,7 @@ count_unique(BAT *b, BAT *s, BUN *cnt1, BUN *cnt2)
 		for (int j = 0; j < 65536 / 32; j++)
 			cnt += candmask_pop(seen[j]);
 		*cnt2 = cnt;
-		GDKfree(seen);
+		ma_close(ta, &ta_state);
 		seen = NULL;
 	} else {
 		BUN prb;
@@ -3606,6 +3609,8 @@ guess_uniques(BAT *b, struct canditer *ci)
 	double B = cnt1 - n1 * A;
 
 	B += A * ci->ncand;
+	if (B > (double) max)
+		B = (double) max;
 	MT_lock_set(&b->theaplock);
 	if (ci->s == NULL ||
 	    (ci->tpe == cand_dense && ci->ncand == BATcount(b) && ci->ncand == batcount)) {
@@ -3613,8 +3618,6 @@ guess_uniques(BAT *b, struct canditer *ci)
 			b->tunique_est = B;
 	}
 	MT_lock_unset(&b->theaplock);
-	if (B > (double) max)
-		B = (double) max;
 	return B;
 }
 
@@ -4016,12 +4019,16 @@ bitmaskjoin(BAT *l, BAT *r,
 {
 	BAT *r1;
 	size_t nmsk = (lci->ncand + 31) / 32;
-	uint32_t *mask = GDKzalloc(nmsk * sizeof(uint32_t));
 	BUN cnt = 0;
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
+	uint32_t *mask = ma_zalloc(ta, nmsk * sizeof(uint32_t));
 
 	MT_thread_setalgorithm(__func__);
-	if (mask == NULL)
+	if (mask == NULL) {
+		ma_close(ta, &ta_state);
 		return NULL;
+	}
 
 	for (BUN n = 0; n < rci->ncand; n++) {
 		oid o = canditer_next(rci) - r->hseqbase;
@@ -4042,7 +4049,7 @@ bitmaskjoin(BAT *l, BAT *r,
 	if (only_misses)
 		cnt = lci->ncand - cnt;
 	if (cnt == 0 || cnt == lci->ncand) {
-		GDKfree(mask);
+		ma_close(ta, &ta_state);
 		if (cnt == 0)
 			return BATdense(0, 0, 0);
 		return BATdense(0, lci->seq, lci->ncand);
@@ -4088,7 +4095,7 @@ bitmaskjoin(BAT *l, BAT *r,
 			  ALGOBATPAR(r1),
 			  GDKusec() - t0);
 	}
-	GDKfree(mask);
+	ma_close(ta, &ta_state);
 	return r1;
 }
 

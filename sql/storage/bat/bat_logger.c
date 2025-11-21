@@ -1238,7 +1238,9 @@ snapshot_immediate_copy_file(stream *plan, const char *path, const char *name)
 		goto end;
 	}
 
-	buf = GDKmalloc(bufsize);
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
+	buf = ma_alloc(ta, bufsize);
 	if (!buf) {
 		GDKerror("GDKmalloc failed");
 		goto end;
@@ -1273,7 +1275,7 @@ snapshot_immediate_copy_file(stream *plan, const char *path, const char *name)
 
 	ret = GDK_SUCCEED;
 end:
-	GDKfree(buf);
+	ma_close(ta, &ta_state);
 	if (s)
 		close_stream(s);
 	return ret;

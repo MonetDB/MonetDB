@@ -3016,13 +3016,15 @@ hot_snapshot_write_tar(stream *out, const char *prefix, const char *plan)
 	const char *bufsize_env_var = "hot_snapshot_buffer_size";
 	int bufsize = GDKgetenv_int(bufsize_env_var, 1024 * 1024);
 	char *buffer = NULL;
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
 
 	if (bufsize < TAR_BLOCK_SIZE || (bufsize % TAR_BLOCK_SIZE) != 0) {
 		GDKerror("invalid value for setting %s=%d: must be a multiple of %d",
 			bufsize_env_var, bufsize, TAR_BLOCK_SIZE);
 		goto end;
 	}
-	buffer = GDKmalloc(bufsize);
+	buffer = ma_alloc(ta, bufsize);
 	if (!buffer) {
 		GDKerror("could not allocate buffer");
 		goto end;
@@ -3084,7 +3086,7 @@ hot_snapshot_write_tar(stream *out, const char *prefix, const char *plan)
 
 end:
 	free((char*)plan);
-	GDKfree(buffer);
+	ma_close(ta, &ta_state);
 	if (infile)
 		close_stream(infile);
 	return ret;
