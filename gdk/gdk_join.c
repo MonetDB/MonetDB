@@ -3606,6 +3606,8 @@ guess_uniques(BAT *b, struct canditer *ci)
 	double B = cnt1 - n1 * A;
 
 	B += A * ci->ncand;
+	if (B > (double) max)
+		B = (double) max;
 	MT_lock_set(&b->theaplock);
 	if (ci->s == NULL ||
 	    (ci->tpe == cand_dense && ci->ncand == BATcount(b) && ci->ncand == batcount)) {
@@ -3613,8 +3615,6 @@ guess_uniques(BAT *b, struct canditer *ci)
 			b->tunique_est = B;
 	}
 	MT_lock_unset(&b->theaplock);
-	if (B > (double) max)
-		B = (double) max;
 	return B;
 }
 
