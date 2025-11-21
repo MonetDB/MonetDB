@@ -255,10 +255,10 @@ output_line(allocator *ma, char **buf, size_t *len, char **localbuf, size_t *loc
 						return -1;
 					p = *localbuf;
 				}
-				if (fill + l + f->seplen >= (ssize_t) * len) {
+				if (fill + l + f->seplen >= (ssize_t) *len) {
 					/* extend the buffer */
 					char *nbuf;
-					nbuf = GDKrealloc(*buf, fill + l + f->seplen + BUFSIZ);
+					nbuf = ma_realloc(ma, *buf, fill + l + f->seplen + BUFSIZ, *len);
 					if (nbuf == NULL)
 						return -1;	/* *buf freed by caller */
 					*buf = nbuf;

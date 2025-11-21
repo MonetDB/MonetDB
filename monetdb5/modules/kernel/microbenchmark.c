@@ -259,9 +259,12 @@ BATnormal(BAT **bn, const oid *base, const lng *size, const int *domain, const i
 	}
 	val = (int *) Tloc(b, 0);
 
-	abs = (unsigned int *) GDKmalloc(d * sizeof(unsigned int));
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
+	abs = ma_alloc(ta, d * sizeof(unsigned int));
 	if (abs == NULL) {
 		BBPreclaim(b);
+		ma_close(ta, &ta_state);
 		return GDK_FAIL;
 	}
 	rel = (flt *) abs;
@@ -302,7 +305,7 @@ BATnormal(BAT **bn, const oid *base, const lng *size, const int *domain, const i
 	while (j < d && abs[j] == 0)
 		j++;
 	assert(j == d);
-	GDKfree(abs);
+	ma_close(ta, &ta_state);
 
 
 	BATsetcount(b, n);

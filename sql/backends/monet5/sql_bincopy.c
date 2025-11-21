@@ -496,8 +496,10 @@ dump_fixed_width(BAT *b, stream *s, BUN start, BUN length, bool byteswap, bincop
 	BUN batch_size = buffer_size / record_size;
 	if (batch_size > length)
 		batch_size = length;
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
 	buffer_size = batch_size * record_size;
-	buffer = GDKmalloc(buffer_size);
+	buffer = ma_alloc(ta, buffer_size);
 	if (buffer == NULL)
 		bailout(MAL_MALLOC_FAIL);
 
@@ -515,7 +517,7 @@ dump_fixed_width(BAT *b, stream *s, BUN start, BUN length, bool byteswap, bincop
 	}
 
 end:
-	GDKfree(buffer);
+	ma_close(ta, &ta_state);
 	return msg;
 }
 

@@ -1578,8 +1578,10 @@ BBPjson_upgrade(json_storage_conversion fixJSONStorage)
 	bat bid;
 	int JSON_type = ATOMindex("json");
 	bat nbat = (bat) ATOMIC_GET(&BBPsize);
-	bat *upd = GDKmalloc(sizeof(bat) * (size_t) nbat);
 	int nupd = 0;
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
+	bat *upd = ma_alloc(ta, sizeof(bat) * (size_t) nbat);
 
 	if (upd == NULL) {
 		TRC_CRITICAL(GDK, "could not create bat\n");
@@ -1611,7 +1613,7 @@ BBPjson_upgrade(json_storage_conversion fixJSONStorage)
 		fprintf(stderr, "Upgrading json bat %d\n", bid);
 		if (jsonupgradebat(b, fixJSONStorage) != GDK_SUCCEED) {
 			BBPunlock();
-			GDKfree(upd);
+			ma_close(ta, &ta_state);
 			return GDK_FAIL;
 		}
 		upd[nupd++] = bid;
@@ -1620,10 +1622,10 @@ BBPjson_upgrade(json_storage_conversion fixJSONStorage)
 	if (nupd > 1 &&
 	    TMsubcommit_list(upd, NULL, nupd, -1) != GDK_SUCCEED) {
 		TRC_CRITICAL(GDK, "failed to commit changes\n");
-		GDKfree(upd);
+		ma_close(ta, &ta_state);
 		return GDK_FAIL;
 	}
-	GDKfree(upd);
+	ma_close(ta, &ta_state);
 	return GDK_SUCCEED;
 }
 #endif
