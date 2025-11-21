@@ -11,7 +11,7 @@
  */
 
 #include "monetdb_config.h"
-#include "gdk.h"	// COLnew(), BUNappend()
+#include "gdk.h"	// COLnew(), bunfastapp()
 #include "gdk_time.h"	// date_create(), daytime_create(), timestamp_create()
 #include "mal_exception.h"
 #include "mal_builder.h"
@@ -380,6 +380,8 @@ bat_create(int adt, BUN nr)
 	b->tkey = false;
 	b->tnokey[0] = 0;
 	b->tnokey[1] = 0;
+	b->tnil = false;
+	b->tnonil = false;
 	return b;
 }
 
@@ -1102,13 +1104,19 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 						GDKfree(ODBCmsg);
 
 					/* as all bats need to be the same length, append NULL value */
-					if (BUNappend(b, ATOMnilptr(b->ttype), false) != GDK_SUCCEED)
-						TRC_ERROR(LOADER, "BUNappend(b, ATOMnilptr(b->ttype), false) failed after SQLGetData failed\n");
+					gdkret = bunfastapp(b, ATOMnilptr(b->ttype));
+					if (gdkret != GDK_SUCCEED)
+						TRC_ERROR(LOADER, "bunfastapp(b, ATOMnilptr(b->ttype)) failed after SQLGetData failed\n");
+					else
+						b->tnil = true;
 				} else {
 					if (strLen == SQL_NULL_DATA) {
 						TRC_DEBUG(LOADER, "Data row %lu col %u: NULL\n", row, (unsigned) col+1);
-						if (BUNappend(b, ATOMnilptr(b->ttype), false) != GDK_SUCCEED)
-							TRC_ERROR(LOADER, "BUNappend(b, ATOMnilptr(b->ttype), false) failed for setting SQL_NULL_DATA\n");
+						gdkret = bunfastapp(b, ATOMnilptr(b->ttype));
+						if (gdkret != GDK_SUCCEED)
+							TRC_ERROR(LOADER, "bunfastapp(b, ATOMnilptr(b->ttype)) failed for setting SQL_NULL_DATA\n");
+						else
+							b->tnil = true;
 					} else {
 						switch(sqltype) {
 							case SQL_CHAR:
@@ -1131,58 +1139,64 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 								TRC_DEBUG(LOADER, "Data row %lu col %u: %s\n", row, (unsigned) col+1, str_val);
 								switch (colmetadata[col].battype) {
 									case TYPE_str:
-										gdkret = BUNappend(b, (void *) str_val, false);
+										gdkret = bunfastapp(b, (void *) str_val);
 										break;
 #ifdef HAVE_HGE
 									case TYPE_hge:
 										/* HUGEINT values are passed as string, need to convert to hge */
 										hge_val = str_to_hge(str_val);
-										gdkret = BUNappend(b, (void *) &hge_val, false);
+										gdkret = bunfastapp(b, (void *) &hge_val);
 										break;
 #endif
 									default:
-										gdkret = BUNappend(b, ATOMnilptr(b->ttype), false);
+										gdkret = bunfastapp(b, ATOMnilptr(b->ttype));
+										b->tnil = true;
 										break;
 								}
 								break;
 							case SQL_BIT:
 								if (colmetadata[col].battype == TYPE_bit) {
 									TRC_DEBUG(LOADER, "Data row %lu col %u: %x\n", row, (unsigned) col+1, (unsigned) bit_val);
-									gdkret = BUNappend(b, (void *) &bit_val, false);
+									gdkret = bunfastapp(b, (void *) &bit_val);
 								} else {
-									gdkret = BUNappend(b, ATOMnilptr(b->ttype), false);
+									gdkret = bunfastapp(b, ATOMnilptr(b->ttype));
+									b->tnil = true;
 								}
 								break;
 							case SQL_TINYINT:
 								if (colmetadata[col].battype == TYPE_bte) {
 									TRC_DEBUG(LOADER, "Data row %lu col %u: %hd\n", row, (unsigned) col+1, (sht) bte_val);
-									gdkret = BUNappend(b, (void *) &bte_val, false);
+									gdkret = bunfastapp(b, (void *) &bte_val);
 								} else {
-									gdkret = BUNappend(b, ATOMnilptr(b->ttype), false);
+									gdkret = bunfastapp(b, ATOMnilptr(b->ttype));
+									b->tnil = true;
 								}
 								break;
 							case SQL_SMALLINT:
 								if (colmetadata[col].battype == TYPE_sht) {
 									TRC_DEBUG(LOADER, "Data row %lu col %u: %hd\n", row, (unsigned) col+1, sht_val);
-									gdkret = BUNappend(b, (void *) &sht_val, false);
+									gdkret = bunfastapp(b, (void *) &sht_val);
 								} else {
-									gdkret = BUNappend(b, ATOMnilptr(b->ttype), false);
+									gdkret = bunfastapp(b, ATOMnilptr(b->ttype));
+									b->tnil = true;
 								}
 								break;
 							case SQL_INTEGER:
 								if (colmetadata[col].battype == TYPE_int) {
 									TRC_DEBUG(LOADER, "Data row %lu col %u: %d\n", row, (unsigned) col+1, int_val);
-									gdkret = BUNappend(b, (void *) &int_val, false);
+									gdkret = bunfastapp(b, (void *) &int_val);
 								} else {
-									gdkret = BUNappend(b, ATOMnilptr(b->ttype), false);
+									gdkret = bunfastapp(b, ATOMnilptr(b->ttype));
+									b->tnil = true;
 								}
 								break;
 							case SQL_BIGINT:
 								if (colmetadata[col].battype == TYPE_lng) {
 									TRC_DEBUG(LOADER, "Data row %lu col %u: %" PRId64 "\n", row, (unsigned) col+1, lng_val);
-									gdkret = BUNappend(b, (void *) &lng_val, false);
+									gdkret = bunfastapp(b, (void *) &lng_val);
 								} else {
-									gdkret = BUNappend(b, ATOMnilptr(b->ttype), false);
+									gdkret = bunfastapp(b, ATOMnilptr(b->ttype));
+									b->tnil = true;
 								}
 								break;
 							case SQL_DECIMAL:
@@ -1204,62 +1218,66 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 #ifdef HAVE_HGE
 									case TYPE_hge:
 										hge_val = decstr_to_hge(str_val, (int)colmetadata[col].columnSize, colmetadata[col].decimalDigits);
-										gdkret = BUNappend(b, (void *) &hge_val, false);
+										gdkret = bunfastapp(b, (void *) &hge_val);
 										break;
 #endif
 									case TYPE_lng:
 										lng_val = decstr_to_lng(str_val, (int)colmetadata[col].columnSize, colmetadata[col].decimalDigits);
-										gdkret = BUNappend(b, (void *) &lng_val, false);
+										gdkret = bunfastapp(b, (void *) &lng_val);
 										break;
 									case TYPE_int:
 										lng_val = decstr_to_lng(str_val, (int)colmetadata[col].columnSize, colmetadata[col].decimalDigits);
 										int_val = (int)lng_val;
-										gdkret = BUNappend(b, (void *) &int_val, false);
+										gdkret = bunfastapp(b, (void *) &int_val);
 										break;
 									case TYPE_sht:
 										lng_val = decstr_to_lng(str_val, (int)colmetadata[col].columnSize, colmetadata[col].decimalDigits);
 										sht_val = (sht)lng_val;
-										gdkret = BUNappend(b, (void *) &sht_val, false);
+										gdkret = bunfastapp(b, (void *) &sht_val);
 										break;
 									case TYPE_bte:
 										lng_val = decstr_to_lng(str_val, (int)colmetadata[col].columnSize, colmetadata[col].decimalDigits);
 										bte_val = (bte)lng_val;
-										gdkret = BUNappend(b, (void *) &bte_val, false);
+										gdkret = bunfastapp(b, (void *) &bte_val);
 										break;
 									case TYPE_str:
-										gdkret = BUNappend(b, (void *) str_val, false);
+										gdkret = bunfastapp(b, (void *) str_val);
 										break;
 									default:
-										gdkret = BUNappend(b, ATOMnilptr(b->ttype), false);
+										gdkret = bunfastapp(b, ATOMnilptr(b->ttype));
+										b->tnil = true;
 										break;
 								}
 								break;
 							case SQL_REAL:
 								if (colmetadata[col].battype == TYPE_flt) {
 									TRC_DEBUG(LOADER, "Data row %lu col %u: %f\n", row, (unsigned) col+1, flt_val);
-									gdkret = BUNappend(b, (void *) &flt_val, false);
+									gdkret = bunfastapp(b, (void *) &flt_val);
 								} else {
-									gdkret = BUNappend(b, ATOMnilptr(b->ttype), false);
+									gdkret = bunfastapp(b, ATOMnilptr(b->ttype));
+									b->tnil = true;
 								}
 								break;
 							case SQL_DOUBLE:
 								if (colmetadata[col].battype == TYPE_dbl) {
 									TRC_DEBUG(LOADER, "Data row %lu col %u: %f\n", row, (unsigned) col+1, dbl_val);
-									gdkret = BUNappend(b, (void *) &dbl_val, false);
+									gdkret = bunfastapp(b, (void *) &dbl_val);
 								} else {
-									gdkret = BUNappend(b, ATOMnilptr(b->ttype), false);
+									gdkret = bunfastapp(b, ATOMnilptr(b->ttype));
+									b->tnil = true;
 								}
 								break;
 							case SQL_FLOAT:
 								if (colmetadata[col].battype == TYPE_dbl) {
 									TRC_DEBUG(LOADER, "Data row %lu col %u: %f\n", row, (unsigned) col+1, dbl_val);
-									gdkret = BUNappend(b, (void *) &dbl_val, false);
+									gdkret = bunfastapp(b, (void *) &dbl_val);
 								} else
 								if (colmetadata[col].battype == TYPE_flt) {
 									TRC_DEBUG(LOADER, "Data row %lu col %u: %f\n", row, (unsigned) col+1, flt_val);
-									gdkret = BUNappend(b, (void *) &flt_val, false);
+									gdkret = bunfastapp(b, (void *) &flt_val);
 								} else {
-									gdkret = BUNappend(b, ATOMnilptr(b->ttype), false);
+									gdkret = bunfastapp(b, ATOMnilptr(b->ttype));
+									b->tnil = true;
 								}
 								break;
 							case SQL_TYPE_DATE:
@@ -1267,9 +1285,10 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 									date mdate_val = date_create(date_val.year, date_val.month, date_val.day);
 									TRC_DEBUG(LOADER, "Data row %lu col %u: date(%04d-%02u-%02u)\n",
 										row, (unsigned) col+1, date_val.year, date_val.month, date_val.day);
-									gdkret = BUNappend(b, (void *) &mdate_val, false);
+									gdkret = bunfastapp(b, (void *) &mdate_val);
 								} else {
-									gdkret = BUNappend(b, ATOMnilptr(b->ttype), false);
+									gdkret = bunfastapp(b, ATOMnilptr(b->ttype));
+									b->tnil = true;
 								}
 								break;
 							case SQL_TYPE_TIME:
@@ -1277,9 +1296,10 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 									daytime daytime_val = daytime_create(time_val.hour, time_val.minute, time_val.second, 0);
 									TRC_DEBUG(LOADER, "Data row %lu col %u: daytime(%02u:%02u:%02u)\n",
 										row, (unsigned) col+1, time_val.hour, time_val.minute, time_val.second);
-									gdkret = BUNappend(b, (void *) &daytime_val, false);
+									gdkret = bunfastapp(b, (void *) &daytime_val);
 								} else {
-									gdkret = BUNappend(b, ATOMnilptr(b->ttype), false);
+									gdkret = bunfastapp(b, ATOMnilptr(b->ttype));
+									b->tnil = true;
 								}
 								break;
 							case SQL_DATETIME:
@@ -1290,9 +1310,10 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 									timestamp timestamp_val = timestamp_create(mdate_val, daytime_val);
 									TRC_DEBUG(LOADER, "Data row %lu col %u: timestamp(%04d-%02u-%02u %02u:%02u:%02u.%06lu)\n", row, (unsigned) col+1,
 											  ts_val.year, ts_val.month, ts_val.day, ts_val.hour, ts_val.minute, ts_val.second, (unsigned long) ts_val.fraction);
-									gdkret = BUNappend(b, (void *) &timestamp_val, false);
+									gdkret = bunfastapp(b, (void *) &timestamp_val);
 								} else {
-									gdkret = BUNappend(b, ATOMnilptr(b->ttype), false);
+									gdkret = bunfastapp(b, ATOMnilptr(b->ttype));
+									b->tnil = true;
 								}
 								break;
 							case SQL_INTERVAL_YEAR:
@@ -1317,9 +1338,10 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 									if (itv_val.interval_sign == SQL_TRUE)
 										int_val = -int_val;
 									TRC_DEBUG(LOADER, "Data row %lu col %u: %d\n", row, (unsigned) col+1, int_val);
-									gdkret = BUNappend(b, (void *) &int_val, false);
+									gdkret = bunfastapp(b, (void *) &int_val);
 								} else {
-									gdkret = BUNappend(b, ATOMnilptr(b->ttype), false);
+									gdkret = bunfastapp(b, ATOMnilptr(b->ttype));
+									b->tnil = true;
 								}
 								break;
 							case SQL_INTERVAL_DAY:
@@ -1386,9 +1408,10 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 									if (itv_val.interval_sign == SQL_TRUE)
 										lng_val = -lng_val;
 									TRC_DEBUG(LOADER, "Data row %lu col %u: %" PRId64 "\n", row, (unsigned) col+1, lng_val);
-									gdkret = BUNappend(b, (void *) &lng_val, false);
+									gdkret = bunfastapp(b, (void *) &lng_val);
 								} else {
-									gdkret = BUNappend(b, ATOMnilptr(b->ttype), false);
+									gdkret = bunfastapp(b, ATOMnilptr(b->ttype));
+									b->tnil = true;
 								}
 								break;
 							case SQL_GUID:
@@ -1405,9 +1428,10 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 									u_val.u[6] = (guid_val.Data3 >> 8) & 0xFF;
 									u_val.u[7] = guid_val.Data3 & 0xFF;
 									memcpy(&u_val.u[8], &guid_val.Data4[0], 8);
-									gdkret = BUNappend(b, (void *) &u_val.uuid_val, false);
+									gdkret = bunfastapp(b, (void *) &u_val.uuid_val);
 								} else {
-									gdkret = BUNappend(b, ATOMnilptr(b->ttype), false);
+									gdkret = bunfastapp(b, ATOMnilptr(b->ttype));
+									b->tnil = true;
 								}
 								break;
 							case SQL_BINARY:
@@ -1425,23 +1449,31 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 									if (blb) {
 										blb->nitems = bin_size;
 										memcpy(blb->data, bin_data, bin_size);
-										gdkret = BUNappend(b, (void *) blb, false);
+										gdkret = bunfastapp(b, (void *) blb);
 										GDKfree(blb);
 									} else {
-										gdkret = BUNappend(b, ATOMnilptr(b->ttype), false);
+										gdkret = bunfastapp(b, ATOMnilptr(b->ttype));
+										b->tnil = true;
 									}
 								} else {
-									gdkret = BUNappend(b, ATOMnilptr(b->ttype), false);
+									gdkret = bunfastapp(b, ATOMnilptr(b->ttype));
+									b->tnil = true;
 								}
 								break;
 						}
 						if (gdkret != GDK_SUCCEED)
-							TRC_ERROR(LOADER, "BUNappend(b, val, false) failed!\n");
+							TRC_ERROR(LOADER, "bunfastapp(b, val) failed!\n");
 					}
 				}
 			}
 			ret = SQLFetch(stmt);	// get data of next row
 		}
+		/* update the properties for each BAT */
+		for (SQLUSMALLINT col = 0; col < (SQLUSMALLINT) nr_cols; col++) {
+			BAT * b = colmetadata[col].bat;
+			BATsettrivprop(b);
+		}
+
 		/* the last SQLFetch() will return SQL_NO_DATA at end, treat it as success */
 		if (ret == SQL_NO_DATA)
 			ret = SQL_SUCCESS;	// we retrieved all rows

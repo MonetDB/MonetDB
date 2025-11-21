@@ -142,7 +142,7 @@ mal_export char *getVarNameIntoBuffer(MalBlkPtr mb, int idx, char *buf)
 #define getArgGDKType(M,P,I) getVarGDKType((M),(P)->argv[I])
 #define getGDKType(T)		((T) <= TYPE_str ? (T) : ((T) == TYPE_any ? TYPE_void : findGDKtype(T)))
 
-mal_export void addMalException(MalBlkPtr mb, str msg);
+mal_export void addMalException(MalBlkPtr mb, const char *msg);
 mal_export void mal_instruction_reset(void);
 mal_export InstrPtr newInstruction(MalBlkPtr mb, const char *modnme,
 								   const char *fcnnme);

@@ -23,8 +23,8 @@
 mal_export str AUTHunlockVault(const char *password);
 mal_export str AUTHverifyPassword(const char *passwd);
 mal_export str AUTHdecypherValue(allocator *, str *ret, const char *value);
-mal_export str AUTHcypherValue(str *ret, const char *value);
+mal_export str AUTHcypherValue(allocator *, str *ret, const char *value);
 mal_export str AUTHrequireAdmin(Client c);
-mal_export str AUTHGeneratePasswordHash(str *res, const char *value);
+mal_export str AUTHGeneratePasswordHash(allocator *, str *res, const char *value);
 
 #endif /* _MAL_AUTHORIZE_H */

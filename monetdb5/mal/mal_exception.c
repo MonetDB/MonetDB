@@ -218,54 +218,50 @@ freeException(str msg)
 __attribute__((__format__(__printf__, 5, 0), __returns_nonnull__))
 static str
 createMalExceptionInternal(MalBlkPtr mb, int pc, enum malexception type,
-						   char *prev, const char *format, va_list ap)
+						   const char *prev, const char *format, va_list ap)
 {
 	bool addnl = false;
-	const char *s = mb && getInstrPtr(mb, 0) ? getModName(mb) : "unknown";
-	const char *fcn = mb && getInstrPtr(mb, 0) ? getFcnName(mb) : "unknown";
-	size_t msglen;
+	const char *mod = getInstrPtr(mb, 0) ? getModName(mb) : "unknown";
+	const char *fcn = getInstrPtr(mb, 0) ? getFcnName(mb) : "unknown";
+	char *buf = MT_thread_get_exceptbuf();
+	size_t buflen = GDKMAXERRLEN;
 
 	if (prev) {
-		msglen = strlen(prev);
+		size_t msglen = strlen(prev);
+		assert(msglen < buflen);
+		if (prev != buf) {
+			strcpy_len(buf, prev, buflen);
+		}
+		buf += msglen;
+		buflen -= msglen;
 		if (msglen > 0 && prev[msglen - 1] != '\n') {
 			addnl = true;
 			msglen++;
 		}
-		msglen += snprintf(NULL, 0, "!%s:%s.%s[%d]:",
-						   exceptionNames[type], s, fcn, pc);
-	} else if (type == SYNTAX) {
-		msglen = strlen(exceptionNames[type]) + 1;
-	} else {
-		msglen = snprintf(NULL, 0, "%s:%s.%s[%d]:",
-						  exceptionNames[type], s, fcn, pc);
 	}
-	va_list ap2;
-	va_copy(ap2, ap);
-	int len = vsnprintf(NULL, 0, format, ap);
-	if (len < 0)
-		len = 0;
-	char *msg = ma_alloc(mb->ma, msglen + len + 1);
-	if (msg != NULL) {
-		/* the calls below succeed: the arguments have already been checked */
-		if (prev) {
-			(void) snprintf(msg, msglen + 1, "%s%s!%s:%s.%s[%d]:",
-							prev, addnl ? "\n" : "",
-							exceptionNames[type], s, fcn, pc);
-		} else if (type == SYNTAX) {
-			(void) strconcat_len(msg, msglen + 1,
-								 exceptionNames[type], ":", NULL);
+	if (type == SYNTAX) {
+		size_t msglen = strconcat_len(buf, buflen,
+									  exceptionNames[type], ":", NULL);
+		if (msglen < buflen) {
+			buf += msglen;
+			buflen -= msglen;
 		} else {
-			(void) snprintf(msg, msglen + 1, "%s:%s.%s[%d]:",
-							exceptionNames[type], s, fcn, pc);
+			buflen = 0;
 		}
-		if (len > 0)
-			(void) vsnprintf(msg + msglen, len + 1, format, ap2);
 	} else {
-		msg = M5OutOfMemory;
+		int msglen = snprintf(buf, buflen, "%s!%s:%s.%s[%d]:",
+							  addnl ? "\n" : "",
+							  exceptionNames[type], mod, fcn, pc);
+		if ((size_t) msglen < buflen) {
+			buf += msglen;
+			buflen -= (size_t) msglen;
+		} else {
+			buflen = 0;
+		}
 	}
-	va_end(ap2);
-	freeException(prev);
-	return msg;
+	if (buflen > 0)
+		(void) vsnprintf(buf, buflen, format, ap);
+	return MT_thread_get_exceptbuf();
 }
 
 /**
@@ -323,8 +319,7 @@ getExceptionType(const char *exception)
 /**
  * Returns the location the exception was raised, if known.  It
  * depends on how the exception was created, what the location looks
- * like.  The returned string is mallocced with GDKmalloc, and hence
- * needs to be GDKfreed.
+ * like.  The returned string is allocated using the passed allocator.
  */
 str
 getExceptionPlace(allocator *ma, const char *exception)

@@ -389,27 +389,12 @@ mal_linker_reset(void)
  * The plausible locations of the modules can be designated by
  * an environment variable.
  */
-static int
-cmpstr(const void *_p1, const void *_p2)
-{
-	const char *p1 = *(char *const *) _p1;
-	const char *p2 = *(char *const *) _p2;
-	const char *f1 = strrchr(p1, (int) DIR_SEP);
-	const char *f2 = strrchr(p2, (int) DIR_SEP);
-	return strcmp(f1 ? f1 : p1, f2 ? f2 : p2);
-}
-
-
-#define MAXMULTISCRIPT 48
 char *
-locate_file(const char *basename, const char *ext, bit recurse)
+locate_file(allocator *ma, const char *basename, const char *ext)
 {
 	const char *mod_path = GDKgetenv("monet_mod_path");
 	char *fullname;
-	size_t fullnamelen;
 	size_t filelen = strlen(basename) + strlen(ext);
-	str strs[MAXMULTISCRIPT];	/* hardwired limit */
-	int lasts = 0;
 
 	if (mod_path == NULL)
 		return NULL;
@@ -418,131 +403,52 @@ locate_file(const char *basename, const char *ext, bit recurse)
 		mod_path++;
 	if (*mod_path == 0)
 		return NULL;
-	fullnamelen = 512;
-	fullname = GDKmalloc(fullnamelen);
+	fullname = ma_alloc(ma, PATH_MAX);
 	if (fullname == NULL)
 		return NULL;
 	while (*mod_path) {
 		size_t i;
 		const char *p;
 		int fd;
-		DIR *rdir;
 
 		if ((p = strchr(mod_path, PATH_SEP)) != NULL) {
 			i = p - mod_path;
 		} else {
 			i = strlen(mod_path);
 		}
-		while (i + filelen + 2 > fullnamelen) {
-			char *tmp;
-			fullnamelen += 512;
-			tmp = GDKrealloc(fullname, fullnamelen);
-			if (tmp == NULL) {
-				GDKfree(fullname);
-				return NULL;
-			}
-			fullname = tmp;
-		}
+		if (i + filelen + 2 > PATH_MAX)
+			return NULL;
 		/* we are now sure the directory name, file
 		   base name, extension, and separator fit
 		   into fullname, so we don't need to do any
 		   extra checks */
 		strncpy(fullname, mod_path, i);
 		fullname[i] = DIR_SEP;
-		char *nameend = stpcpy(fullname + i + 1, basename);
-		/* see if this is a directory, if so, recurse */
-		if (recurse == 1 && (rdir = opendir(fullname)) != NULL) {
-			struct dirent *e;
-			/* list *ext, sort, return */
-			while ((e = readdir(rdir)) != NULL) {
-				if (strcmp(e->d_name, "..") == 0 || strcmp(e->d_name, ".") == 0)
-					continue;
-				if (strcmp(e->d_name + strlen(e->d_name) - strlen(ext), ext) == 0) {
-					int len;
-					size_t strslen = strlen(fullname) + sizeof(DIR_SEP)
-						+ strlen(e->d_name) +
-						sizeof(PATH_SEP) + 1;
-					strs[lasts] = GDKmalloc(strslen);
-					if (strs[lasts] == NULL) {
-						while (lasts >= 0)
-							GDKfree(strs[lasts--]);
-						GDKfree(fullname);
-						(void) closedir(rdir);
-						return NULL;
-					}
-					len = snprintf(strs[lasts], strslen,
-								   "%s%c%s%c", fullname, DIR_SEP,
-								  e->d_name, PATH_SEP);
-					if (len == -1 || len >= FILENAME_MAX) {
-						while (lasts >= 0)
-							GDKfree(strs[lasts--]);
-						GDKfree(fullname);
-						(void) closedir(rdir);
-						return NULL;
-					}
-					lasts++;
-				}
-				if (lasts >= MAXMULTISCRIPT)
-					break;
-			}
-			(void) closedir(rdir);
-		} else {
-			strcpy(nameend, ext);
-			if ((fd = MT_open(fullname, O_RDONLY | O_CLOEXEC)) >= 0) {
-				char *tmp;
-				close(fd);
-				tmp = GDKrealloc(fullname, strlen(fullname) + 1);
-				if (tmp == NULL)
-					return fullname;
-				return tmp;
-			}
+		strcpy(stpcpy(fullname + i + 1, basename), ext);
+		if ((fd = MT_open(fullname, O_RDONLY | O_CLOEXEC)) >= 0) {
+			close(fd);
+			return fullname;
 		}
 		if ((mod_path = p) == NULL)
 			break;
 		while (*mod_path == PATH_SEP)
 			mod_path++;
 	}
-	if (lasts > 0) {
-		size_t i = 0;
-		int c;
-		char *tmp;
-		/* assure that an ordering such as 10_first, 20_second works */
-		qsort(strs, lasts, sizeof(char *), cmpstr);
-		for (c = 0; c < lasts; c++)
-			i += strlen(strs[c]) + 1;	/* PATH_SEP or \0 */
-		tmp = GDKrealloc(fullname, i);
-		if (tmp == NULL) {
-			GDKfree(fullname);
-			return NULL;
-		}
-		fullname = tmp;
-		i = 0;
-		for (c = 0; c < lasts; c++) {
-			if (strstr(fullname, strs[c]) == NULL) {
-				strcpy(fullname + i, strs[c]);
-				i += strlen(strs[c]);
-			}
-			GDKfree(strs[c]);
-		}
-		fullname[i - 1] = '\0';
-		return fullname;
-	}
 	/* not found */
-	GDKfree(fullname);
 	return NULL;
 }
 
 char *
-MSP_locate_script(const char *filename)
+MSP_locate_script(allocator *ma, const char *filename)
 {
-	return locate_file(filename, MAL_EXT, 1);
+	return locate_file(ma, filename, MAL_EXT);
 }
 
 char *
-MSP_locate_sqlscript(const char *filename, bit recurse)
+MSP_locate_sqlscript(allocator *ma, const char *filename)
 {
 	/* no directory semantics (yet) */
-	return locate_file(filename, SQL_EXT, recurse);
+	return locate_file(ma, filename, SQL_EXT);
 }
 
 int

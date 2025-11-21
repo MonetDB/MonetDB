@@ -109,6 +109,7 @@ select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(9876543210.12345678 as de
 9876543210.12345678
 -9876543210.12345678
 
+
 onlyif has-hugeint
 query D nosort
 select cast(923456789012345678.123456789 as decimal(27,9)) as dec16_val
@@ -141,10 +142,11 @@ select cast(-923456789012345678901234567890.12345678 as decimal(38,8)) as dec16_
 ----
 -923456789012345678901234567890.12345678
 
---query T
---select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(-923456789012345678901234567890.12345678 as decimal(38,8)) as dec16_val'
+onlyif has-hugeint
+query D nosort
+select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(-923456789012345678901234567890.12345678 as decimal(38,8)) as dec16_val'
 ----
--- -923456789012345678901234567890.12345678
+-923456789012345678901234567890.12345678
 
 ---- REAL ----
 
@@ -556,5 +558,59 @@ select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(''{"a":"abc", "b":"def", 
 ----
 {"a":"abc","b":"def","c":["abc2","def2"]}
 {"track":{"segments":[{"location":[47.763,13.4034],"start time":"2018-10-14 10:05:14","HR":73},{"location":[47.706,13.2635],"start time":"2018-10-14 10:39:21","HR":135}]}}
+NULL
+
+---- INET ----
+
+query TTTT nosort
+select cast('0.0.0.1/8' as inet) as val1, cast('255.255.255.255/16' as inet) as val2, cast('172.5.5.5/24' as inet) as val3, cast(NULL as inet) as valnil
+----
+0.0.0.1/8
+255.255.255.255/16
+172.5.5.5/24
+NULL
+
+query TTTT nosort
+select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(''0.0.0.1/8'' as inet) as val1, cast(''255.255.255.255/16'' as inet) as val2, cast(''172.5.5.5/24'' as inet) as val3, cast(NULL as inet) as valnil'
+----
+0.0.0.1/8
+255.255.255.255/16
+172.5.5.5/24
+NULL
+
+---- INET4 ----
+
+query TTTT nosort
+select cast('0.0.0.1' as inet4) as val1, cast('255.255.255.255' as inet4) as val2, cast('172.5.5.5' as inet4) as val3, cast(NULL as inet4) as valnil
+----
+0.0.0.1
+255.255.255.255
+172.5.5.5
+NULL
+
+query TTTT nosort
+select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(''0.0.0.1'' as inet4) as val1, cast(''255.255.255.255'' as inet4) as val2, cast(''172.5.5.5'' as inet4) as val3, cast(NULL as inet4) as valnil'
+----
+0.0.0.1
+255.255.255.255
+172.5.5.5
+NULL
+
+---- INET6 ----
+
+query TTTT nosort
+select cast('0:8:800:200C:417a:1081:a0:f0' as inet6) as val1, cast('01:23:45:68:AB:CD:0C20:7A41' as inet6) as val2, cast('4B0C:200C:417a:0C20:880C:99A8:4B0:4411' as inet6) as val3, cast(NULL as inet6) as valnil
+----
+0:8:800:200c:417a:1081:a0:f0
+1:23:45:68:ab:cd:c20:7a41
+4b0c:200c:417a:c20:880c:99a8:4b0:4411
+NULL
+
+query TTTT nosort
+select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(''0:8:800:200C:417a:1081:a0:f0'' as inet6) as val1, cast(''01:23:45:68:AB:CD:0C20:7A41'' as inet6) as val2, cast(''4B0C:200C:417a:0C20:880C:99A8:4B0:4411'' as inet6) as val3, cast(NULL as inet6) as valnil'
+----
+0:8:800:200c:417a:1081:a0:f0
+1:23:45:68:ab:cd:c20:7a41
+4b0c:200c:417a:c20:880c:99a8:4b0:4411
 NULL
 

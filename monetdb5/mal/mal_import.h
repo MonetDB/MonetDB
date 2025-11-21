@@ -22,5 +22,5 @@ mal_export str malIncludeString(Client c, const char *name, str mal,
 
 mal_export str malInclude(Client c, const char *name, int listing);
 mal_export void slash_2_dir_sep(str fname);
-mal_export str compileString(Symbol *fcn, Client c, str s);
+
 #endif /*  _MAL_IMPORT_H */
