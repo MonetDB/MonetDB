@@ -3543,6 +3543,7 @@ static double
 guess_uniques(BAT *b, struct canditer *ci)
 {
 	BUN cnt1 = 0, cnt2;
+	BUN max = b->twidth < SIZEOF_BUN ? (BUN) 1 << (8*b->twidth) : BUN_MAX;
 	BAT *s1;
 
 	MT_lock_set(&b->theaplock);
@@ -3558,8 +3559,10 @@ guess_uniques(BAT *b, struct canditer *ci)
 		}
 	}
 	MT_lock_unset(&b->theaplock);
-	if (key || ci->ncand <= 1)
+	if (key || ci->ncand <= 1) {
+		assert(ci->ncand <= max);
 		return (double) ci->ncand;
+	}
 
 	if (cnt1 > 0) {
 		if (cnt1 >= batcount) {
@@ -3568,6 +3571,11 @@ guess_uniques(BAT *b, struct canditer *ci)
 		}
 		return (double) (cnt1 < ci->ncand ? cnt1 : ci->ncand);
 	}
+
+	if (unique_est > (double) max)
+		unique_est = (double) max;
+	if (unique_est > (double) batcount)
+		unique_est = (double) batcount;
 
 	if (ci->s == NULL ||
 	    (ci->tpe == cand_dense && ci->ncand == batcount)) {
@@ -3605,6 +3613,8 @@ guess_uniques(BAT *b, struct canditer *ci)
 			b->tunique_est = B;
 	}
 	MT_lock_unset(&b->theaplock);
+	if (B > (double) max)
+		B = (double) max;
 	return B;
 }
 
