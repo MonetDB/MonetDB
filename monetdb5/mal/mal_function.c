@@ -373,7 +373,7 @@ cloneFunction(Module scope, Symbol proc, MalBlkPtr mb, InstrPtr p)
 
 	/* check for errors after fixation , TODO */
 	/* beware, we should now ignore any cloning */
-	if (proc->def->errors == 0) {
+	if (proc->def->errors == NULL) {
 		msg = chkProgram(scope, new->def);
 		if (msg)
 			mb->errors = msg;
@@ -381,7 +381,7 @@ cloneFunction(Module scope, Symbol proc, MalBlkPtr mb, InstrPtr p)
 			assert(mb->errors == NULL);
 			mb->errors = new->def->errors;
 			mb->errors = createMalException(mb, 0, TYPE, "Error in cloned function");
-			new->def->errors = 0;
+			new->def->errors = NULL;
 		}
 	}
 

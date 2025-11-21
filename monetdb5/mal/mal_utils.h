@@ -19,7 +19,6 @@
 
 #include "gdk.h"
 
-extern str mal_quote(const char *msg, size_t size);
 extern void mal_unquote(char *msg);
 
 #endif /* MAL_UTILS_H */

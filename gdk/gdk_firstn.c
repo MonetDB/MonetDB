@@ -775,9 +775,12 @@ BATfirstn_unique_with_groups(BATiter *bi, BAT *s, BAT *g, BUN n, bool asc, bool 
 	BATsetcount(bn, n);
 	oids = (oid *) Tloc(bn, 0);
 	gv = (const oid *) Tloc(g, 0);
-	goids = GDKmalloc(n * sizeof(oid));
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
+	goids = ma_alloc(ta, n * sizeof(oid));
 	if (goids == NULL) {
 		BBPreclaim(bn);
+		ma_close(ta, &ta_state);
 		return NULL;
 	}
 
@@ -1000,7 +1003,7 @@ BATfirstn_unique_with_groups(BATiter *bi, BAT *s, BAT *g, BUN n, bool asc, bool 
 		*lastp = oids[0];
 	if (lastgp)
 		*lastgp = goids[0];
-	GDKfree(goids);
+	ma_close(ta, &ta_state);
 	/* output must be sorted since it's a candidate list */
 	GDKqsort(oids, NULL, NULL, (size_t) n, sizeof(oid), 0, TYPE_oid, false, false);
 	bn->tsorted = true;
@@ -1017,7 +1020,7 @@ BATfirstn_unique_with_groups(BATiter *bi, BAT *s, BAT *g, BUN n, bool asc, bool 
 	return bn;
 
   bailout:
-	GDKfree(goids);
+	ma_close(ta, &ta_state);
 	BBPreclaim(bn);
 	return NULL;
 }
@@ -1382,13 +1385,17 @@ BATgroupedfirstn(BUN n, BAT *s, BAT *g, int nbats, BAT **bats, bool *asc, bool *
 		return NULL;
 	}
 
-	batinfo = GDKmalloc(nbats * sizeof(struct batinfo));
-	if (batinfo == NULL)
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
+	batinfo = ma_alloc(ta, nbats * sizeof(struct batinfo));
+	if (batinfo == NULL) {
+		ma_close(ta, &ta_state);
 		return NULL;
+	}
 
 	BAT *bn = BATconstant(0, TYPE_oid, &oid_nil, ngrp * n, TRANSIENT);
 	if (bn == NULL) {
-		GDKfree(batinfo);
+		ma_close(ta, &ta_state);
 		return NULL;
 	}
 	/* result is unlikely to be sorted, and there may be nils if
@@ -1522,7 +1529,7 @@ BATgroupedfirstn(BUN n, BAT *s, BAT *g, int nbats, BAT **bats, bool *asc, bool *
 		bat_iterator_end(&batinfo[i].bi1);
 		bat_iterator_end(&batinfo[i].bi2);
 	}
-	GDKfree(batinfo);
+	ma_close(ta, &ta_state);
 	TIMEOUT_CHECK(qry_ctx, GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
 	return bn;
 

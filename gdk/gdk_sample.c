@@ -118,6 +118,8 @@ do_batsample(oid hseq, BUN cnt, BUN n, random_state_engine rse, MT_Lock *lock)
 	} else {
 		oid minoid = hseq;
 		oid maxoid = hseq + cnt;
+		allocator *ta = MT_thread_getallocator();
+		allocator_state ta_state = ma_open(ta);
 
 		/* if someone samples more than half of our tree, we
 		 * do the antiset */
@@ -126,13 +128,14 @@ do_batsample(oid hseq, BUN cnt, BUN n, random_state_engine rse, MT_Lock *lock)
 		if (antiset)
 			n = cnt - n;
 
-		tree = GDKmalloc(n * sizeof(struct oidtreenode));
+		tree = ma_alloc(ta, n * sizeof(struct oidtreenode));
 		if (tree == NULL) {
+			ma_close(ta, &ta_state);
 			return NULL;
 		}
 		bn = COLnew(0, TYPE_oid, slen, TRANSIENT);
 		if (bn == NULL) {
-			GDKfree(tree);
+			ma_close(ta, &ta_state);
 			return NULL;
 		}
 
@@ -169,7 +172,7 @@ do_batsample(oid hseq, BUN cnt, BUN n, random_state_engine rse, MT_Lock *lock)
 		} else {
 			OIDTreeToBATAntiset(tree, bn, minoid, maxoid);
 		}
-		GDKfree(tree);
+		ma_close(ta, &ta_state);
 
 		BATsetcount(bn, slen);
 		bn->trevsorted = bn->batCount <= 1;

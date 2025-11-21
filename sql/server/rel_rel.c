@@ -68,10 +68,8 @@ rel_name( sql_rel *r )
 		sql_exp *e = r->exps->h->data;
 		if (exp_relname(e))
 			return exp_relname(e);
-		if (e->type == e_column) {
-			assert(0);
+		if (e->type == e_column)
 			return e->l;
-		}
 	}
 	return NULL;
 }

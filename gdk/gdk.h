@@ -44,6 +44,10 @@
 #include <limits.h>		/* for *_MIN and *_MAX */
 #include <float.h>		/* for FLT_MAX and DBL_MAX */
 
+#ifndef PATH_MAX
+#define PATH_MAX	1024
+#endif
+
 #ifdef WIN32
 #ifndef LIBGDK
 #define gdk_export extern __declspec(dllimport)
@@ -1235,7 +1239,7 @@ gdk_export bool RTREEexists_bid(bat bid);
 gdk_export gdk_return BATrtree(BAT *wkb, BAT* mbr);
 /* inMBR is really a struct mbr * from geom module, but that is not
  * available here */
-gdk_export BUN* RTREEsearch(BAT *b, const void *inMBR, int result_limit);
+gdk_export BUN* RTREEsearch(allocator *ma, BAT *b, const void *inMBR, int result_limit);
 #endif
 
 gdk_export void RTREEdestroy(BAT *b);
@@ -1532,22 +1536,22 @@ gdk_export BAT *BATgroupedfirstn(BUN n, BAT *s, BAT *g, int nbats, BAT **bats, b
 	__attribute__((__warn_unused_result__));
 
 
-gdk_export gdk_return GDKtoupper(char **restrict buf, size_t *restrict buflen, const char *restrict s)
-	__attribute__((__access__(read_write, 1)))
-	__attribute__((__access__(read_write, 2)));
-gdk_export gdk_return GDKtolower(char **restrict buf, size_t *restrict buflen, const char *restrict s)
-	__attribute__((__access__(read_write, 1)))
-	__attribute__((__access__(read_write, 2)));
-gdk_export gdk_return GDKcasefold(char **restrict buf, size_t *restrict buflen, const char *restrict s)
-	__attribute__((__access__(read_write, 1)))
-	__attribute__((__access__(read_write, 2)));
+gdk_export gdk_return GDKtoupper(allocator *ma, char **restrict buf, size_t *restrict buflen, const char *restrict s)
+	__attribute__((__access__(read_write, 2)))
+	__attribute__((__access__(read_write, 3)));
+gdk_export gdk_return GDKtolower(allocator *ma, char **restrict buf, size_t *restrict buflen, const char *restrict s)
+	__attribute__((__access__(read_write, 2)))
+	__attribute__((__access__(read_write, 3)));
+gdk_export gdk_return GDKcasefold(allocator *ma, char **restrict buf, size_t *restrict buflen, const char *restrict s)
+	__attribute__((__access__(read_write, 2)))
+	__attribute__((__access__(read_write, 3)));
 gdk_export int GDKstrncasecmp(const char *str1, const char *str2, size_t l1, size_t l2);
 gdk_export int GDKstrcasecmp(const char *s1, const char *s2);
 gdk_export char *GDKstrcasestr(const char *haystack, const char *needle);
 gdk_export BAT *BATtoupper(BAT *b, BAT *s);
 gdk_export BAT *BATtolower(BAT *b, BAT *s);
 gdk_export BAT *BATcasefold(BAT *b, BAT *s);
-gdk_export gdk_return GDKasciify(char **restrict buf, size_t *restrict buflen, const char *restrict s);
+gdk_export gdk_return GDKasciify(allocator *ma, char **restrict buf, size_t *restrict buflen, const char *restrict s);
 gdk_export BAT *BATasciify(BAT *b, BAT *s);
 #ifdef HAVE_OPENSSL
 gdk_export gdk_return BATaggrdigest(allocator *ma, BAT **bnp, char **shap, const char *digest, BAT *b, BAT *g, BAT *e, BAT *s, bool skip_nils);
