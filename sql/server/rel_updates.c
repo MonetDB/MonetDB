@@ -1267,7 +1267,7 @@ update_table(sql_query *query, dlist *qname, str alias, dlist *assignmentlist, s
 			r = res;
 		}
 		r = update_generate_assignments(query, t, r, bt, assignmentlist, "UPDATE");
-		if (opt_returning) {
+		if (r && opt_returning) {
 			query_processed(query);
 			r->returning = 1;
 			list *pexps = sa_list(sql->sa);
