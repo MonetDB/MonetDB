@@ -1789,7 +1789,11 @@ INET6toString(allocator *ma, str *retval, size_t *len, const void *VALUE, bool e
 	}
 
 	/* nils should never reach us here */
-	assert(best_len < 16);
+	if (best_len == 16) {
+		assert(external);
+		strcpy(*retval, "nil");
+		return 3;
+	}
 	if (best_len <= 2) {
 		best_len = 0;
 		best_start = 16;
