@@ -1073,15 +1073,14 @@ snapshot_immediate_copy_file(stream *plan, const char *path, const char *name)
 	char *buf = NULL;
 	stream *s = NULL;
 	size_t to_copy;
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
 
 	if (MT_stat(path, &statbuf) < 0) {
 		GDKsyserror("stat failed on %s", path);
 		goto end;
 	}
 	to_copy = (size_t) statbuf.st_size;
-
-	allocator *ta = MT_thread_getallocator();
-	allocator_state ta_state = ma_open(ta);
 
 	s = open_rstream(path);
 	if (!s) {
