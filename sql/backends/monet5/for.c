@@ -145,7 +145,7 @@ FORcompress_(BAT *b, lng min_val, lng max_val, role_t role)
 }
 
 static str
-FORcompress_intern(char **comp_min_val, BAT **r, BAT *b)
+FORcompress_intern(allocator *ma, char **comp_min_val, BAT **r, BAT *b)
 {
 	BAT *o = NULL;
 	char buf[64];
@@ -190,7 +190,7 @@ FORcompress_intern(char **comp_min_val, BAT **r, BAT *b)
 		GDKfree(mx);
 		throw(SQL, "for.compress", SQLSTATE(3F000) "for compress: type %s not yet implemented", ATOMname(tt));
 	}
-	if (!(*comp_min_val = GDKstrdup(buf))) {
+	if (!(*comp_min_val = ma_strdup(ma, buf))) {
 		bat_destroy(o);
 		throw(SQL, "for.compress", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
@@ -248,8 +248,10 @@ FORcompress_col(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if( b == NULL)
 		throw(SQL,"for.compress", SQLSTATE(HY005) "Cannot access column descriptor");
 
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
 	char *comp_min_val = NULL;
-	msg = FORcompress_intern(&comp_min_val, &o, b);
+	msg = FORcompress_intern(ta, &comp_min_val, &o, b);
 	bat_destroy(b);
 	if (msg == MAL_SUCCEED) {
 		switch (sql_trans_alter_storage(tr, c, comp_min_val)) {
@@ -278,9 +280,9 @@ FORcompress_col(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					break;
 			}
 		}
-		GDKfree(comp_min_val);
 		bat_destroy(o);
 	}
+	ma_close(ta, &ta_state);
 	return msg;
 }
 

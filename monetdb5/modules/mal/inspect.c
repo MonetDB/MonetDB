@@ -57,7 +57,9 @@ INSPECTgetAllFunctions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (b == 0)
 		throw(MAL, "inspect.getgetFunctionId", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
-	getModuleList(&moduleList, &length);
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
+	getModuleList(ta, &moduleList, &length);
 	if (moduleList == NULL)
 		goto bailout;
 	for (j = -1; j < length; j++) {
@@ -74,12 +76,12 @@ INSPECTgetAllFunctions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	*ret = b->batCacheid;
 	BBPkeepref(b);
-	freeModuleList(moduleList);
+	ma_close(ta, &ta_state);
 
 	return MAL_SUCCEED;
   bailout:
 	BBPreclaim(b);
-	freeModuleList(moduleList);
+	ma_close(ta, &ta_state);
 	throw(MAL, "inspect.getgetFunctionId", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 }
 
@@ -98,7 +100,9 @@ INSPECTgetAllModules(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (b == 0)
 		throw(MAL, "inspect.getmodule", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
-	getModuleList(&moduleList, &length);
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
+	getModuleList(ta, &moduleList, &length);
 	if (moduleList == NULL)
 		goto bailout;
 	for (j = -1; j < length; j++) {
@@ -116,11 +120,11 @@ INSPECTgetAllModules(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	*ret = b->batCacheid;
 	BBPkeepref(b);
-	freeModuleList(moduleList);
+	ma_close(ta, &ta_state);
 
 	return MAL_SUCCEED;
   bailout:
-	freeModuleList(moduleList);
+	ma_close(ta, &ta_state);
 	BBPreclaim(b);
 	throw(MAL, "inspect.getmodule", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 }
@@ -140,7 +144,9 @@ INSPECTgetkind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (b == 0)
 		throw(MAL, "inspect.get", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
-	getModuleList(&moduleList, &length);
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
+	getModuleList(ta, &moduleList, &length);
 	if (moduleList == NULL)
 		goto bailout;
 	for (j = -1; j < length; j++) {
@@ -158,12 +164,12 @@ INSPECTgetkind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	*ret = b->batCacheid;
 	BBPkeepref(b);
-	freeModuleList(moduleList);
+	ma_close(ta, &ta_state);
 
 	return MAL_SUCCEED;
   bailout:
 	BBPreclaim(b);
-	freeModuleList(moduleList);
+	ma_close(ta, &ta_state);
 	throw(MAL, "inspect.get", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 }
 
@@ -183,7 +189,9 @@ INSPECTgetAllSignatures(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (b == 0)
 		throw(MAL, "inspect.get", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
-	getModuleList(&moduleList, &length);
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
+	getModuleList(ta, &moduleList, &length);
 	if (moduleList == NULL)
 		goto bailout;
 	for (j = -1; j < length; j++) {
@@ -202,12 +210,12 @@ INSPECTgetAllSignatures(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	*ret = b->batCacheid;
 	BBPkeepref(b);
-	freeModuleList(moduleList);
+	ma_close(ta, &ta_state);
 
 	return MAL_SUCCEED;
   bailout:
 	BBPreclaim(b);
-	freeModuleList(moduleList);
+	ma_close(ta, &ta_state);
 	throw(MAL, "inspect.get", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 }
 
@@ -229,7 +237,9 @@ INSPECTgetAllAddresses(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (b == 0)
 		throw(MAL, "inspect.get", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
-	getModuleList(&moduleList, &length);
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
+	getModuleList(ta, &moduleList, &length);
 	if (moduleList == NULL)
 		goto bailout;
 	for (j = -1; j < length; j++) {
@@ -248,12 +258,12 @@ INSPECTgetAllAddresses(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	*ret = b->batCacheid;
 	BBPkeepref(b);
-	freeModuleList(moduleList);
+	ma_close(ta, &ta_state);
 
 	return MAL_SUCCEED;
   bailout:
 	BBPreclaim(b);
-	freeModuleList(moduleList);
+	ma_close(ta, &ta_state);
 	throw(MAL, "inspect.get", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 }
 #endif

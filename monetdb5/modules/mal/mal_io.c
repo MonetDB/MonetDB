@@ -169,16 +169,15 @@ IOprint_val(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 #define writemem(X1)													\
 	do {																\
 		if (dst+X1 > buf+size) {										\
+			size_t osize = size;										\
 			ptrdiff_t offset = dst - buf;								\
 			char *tmp;													\
 			do {														\
 				size *= 2;												\
 			} while (dst+X1 > buf+size);								\
-			tmp = GDKrealloc(buf, size);								\
+			tmp = ma_realloc(ma, buf, size, osize);						\
 			if (tmp == NULL) {											\
 				va_end(ap);												\
-				GDKfree(buf);											\
-				GDKfree(add);											\
 				throw(MAL, "io.printf", SQLSTATE(HY013) MAL_MALLOC_FAIL); \
 			}															\
 			buf = tmp;													\
@@ -186,59 +185,52 @@ IOprint_val(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		}																\
 	} while (0)
 
-#define m5sprintf(X1)\
-	if (width > adds) {\
-		str newadd;\
-		newadd = GDKrealloc(add, width + 10);\
-		if (newadd != NULL) {\
-			adds = width + 10;\
-			add = newadd;\
-		}\
-	}\
-	n = snprintf(add, adds, meta, X1);\
-	while (n < 0 || (size_t) n >= adds) {\
-		size_t newadds;\
-		str newadd;\
-\
-		if (n >= 0)     /* glibc 2.1 */\
-			newadds = n + 1;   /* precisely what is needed */\
-		else            /* glibc 2.0 */\
-			newadds = n * 2;     /* twice the old size */\
-\
-		newadd = GDKrealloc(add, newadds);\
-		if (newadd == NULL)\
-			break;\
-\
-		adds = newadds;\
-		add = newadd;\
-		n = snprintf(add, adds, meta, X1);\
+#define m5sprintf(X1)											\
+	if (width > adds) {											\
+		str newadd;												\
+		newadd = ma_realloc(ma, add, width + 10, adds);			\
+		if (newadd != NULL) {									\
+			adds = width + 10;									\
+			add = newadd;										\
+		}														\
+	}															\
+	n = snprintf(add, adds, meta, X1);							\
+	while (n < 0 || (size_t) n >= adds) {						\
+		size_t newadds;											\
+		str newadd;												\
+																\
+		if (n >= 0)     /* glibc 2.1 */							\
+			newadds = n + 1;   /* precisely what is needed */	\
+		else            /* glibc 2.0 */							\
+			newadds = n * 2;     /* twice the old size */		\
+																\
+		newadd = ma_realloc(ma, add, newadds, adds);			\
+		if (newadd == NULL)										\
+			break;												\
+																\
+		adds = newadds;											\
+		add = newadd;											\
+		n = snprintf(add, adds, meta, X1);						\
 	}
 
 
-static const char toofew_error[80] =
+static const char toofew_error[] =
 		OPERATION_FAILED " At least %d parameter(s) expected.\n";
-static const char format_error[80] =
+static const char format_error[] =
 		OPERATION_FAILED " Error in format before param %d.\n";
-static const char type_error[80] =
+static const char type_error[] =
 		OPERATION_FAILED " Illegal type in param %d.\n";
 
-#define return_error(x)							\
-	do {										\
-		GDKfree(buf);							\
-		GDKfree(add);							\
-		throw(MAL,"io.printf", x,argc);			\
-	} while (0)
-
-static const char niltext[4] = "nil";
+static const char niltext[] = "nil";
 
 static str
-IOprintf_(str *res, const char *format, ...)
+IOprintf_(allocator *ma, str *res, const char *format, ...)
 {
 	va_list ap;
 	int n;
 
-	int prec = 0, dotseen = 0, escaped = 0, type, size, argc = 1;
-	size_t adds = 100, width = 0;
+	int prec = 0, dotseen = 0, escaped = 0, type, argc = 1;
+	size_t size = 80, adds = 100, width = 0;
 	char *add, *dst, *buf;
 	const char *paramseen = NULL;
 	char *p;
@@ -247,19 +239,18 @@ IOprintf_(str *res, const char *format, ...)
 		throw(MAL, "io.printf",
 			  ILLEGAL_ARGUMENT " NULL pointer passed as format.\n");
 	} else if (strchr(format, '%') == NULL) {
-		*res = GDKstrdup(format);
+		*res = ma_strdup(ma, format);
 		if (*res == NULL)
 			throw(MAL, "io.printf", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
-	buf = dst = (str) GDKmalloc(size = 80);
+	buf = dst = ma_alloc(ma, size);
 	if (buf == NULL)
 		throw(MAL, "io.printf", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	*res = NULL;
 
-	add = GDKmalloc(adds);
+	add = ma_alloc(ma, adds);
 	if (add == NULL) {
-		GDKfree(buf);
 		throw(MAL, "io.printf", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
@@ -293,7 +284,7 @@ IOprintf_(str *res, const char *format, ...)
 			}
 			if ((p = va_arg(ap, char *)) == NULL) {
 				va_end(ap);
-				return_error(toofew_error);
+				throw(MAL, "io.printf", toofew_error, argc);
 			}
 			type = va_arg(ap, int);
 			type = ATOMbasetype(type);
@@ -320,7 +311,7 @@ IOprintf_(str *res, const char *format, ...)
 
 				if (dotseen) {
 					va_end(ap);
-					return_error(format_error);
+					throw(MAL, "io.printf", format_error, argc);
 				} else if (type == TYPE_bte) {
 					ival = (int) *(bte *) p;
 				} else if (type == TYPE_sht) {
@@ -334,13 +325,13 @@ IOprintf_(str *res, const char *format, ...)
 					/* Does this happen?
 					 * If so, what do we have TODO ? */
 					va_end(ap);
-					return_error(type_error);
+					throw(MAL, "io.printf", type_error, argc);
 #endif
 				} else if (type == TYPE_int) {
 					ival = *(int *) p;
 				} else {
 					va_end(ap);
-					return_error(type_error);
+					throw(MAL, "io.printf", type_error, argc);
 				}
 				m5sprintf(ival);
 			} else if (strchr("diouxX", *cur)) {
@@ -351,7 +342,7 @@ IOprintf_(str *res, const char *format, ...)
 
 				if (dotseen) {
 					va_end(ap);
-					return_error(format_error);
+					throw(MAL, "io.printf", format_error, argc);
 				}
   largetypes:
 				if (type == TYPE_bte) {
@@ -371,11 +362,11 @@ IOprintf_(str *res, const char *format, ...)
 					/* Does this happen?
 					 * If so, what do we have TODO ? */
 					va_end(ap);
-					return_error(type_error);
+					throw(MAL, "io.printf", type_error, argc);
 #endif
 				} else {
 					va_end(ap);
-					return_error(type_error);
+					throw(MAL, "io.printf", type_error, argc);
 				}
 				if (!extra) {
 					meta[len + 2] = meta[len];
@@ -403,7 +394,7 @@ IOprintf_(str *res, const char *format, ...)
 					dval = *(dbl *) p;
 				} else {
 					va_end(ap);
-					return_error(type_error);
+					throw(MAL, "io.printf", type_error, argc);
 				}
 				width += (1 + prec);
 				m5sprintf(dval);
@@ -412,10 +403,10 @@ IOprintf_(str *res, const char *format, ...)
 
 				if (extra) {
 					va_end(ap);
-					return_error(format_error);
+					throw(MAL, "io.printf", format_error, argc);
 				} else if (type != TYPE_str) {
 					va_end(ap);
-					return_error(type_error);
+					throw(MAL, "io.printf", type_error, argc);
 				}
 				length = strLen(p);
 				width++;
@@ -427,7 +418,7 @@ IOprintf_(str *res, const char *format, ...)
 				m5sprintf(p);
 			} else {
 				va_end(ap);
-				return_error(format_error);
+				throw(MAL, "io.printf", format_error, argc);
 			}
 			width = strlen(add);
 			writemem(width);
@@ -455,7 +446,6 @@ IOprintf_(str *res, const char *format, ...)
 
 /*
 	if ( va_arg(ap, char *) != NULL){
-		GDKfree(buf);
 		throw(MAL,"io.printf", "params %d and beyond ignored %s.\n",argc);
 	}
 */
@@ -464,7 +454,6 @@ IOprintf_(str *res, const char *format, ...)
 	va_end(ap);
 	*dst = 0;
 	*res = buf;
-	GDKfree(add);
 	return MAL_SUCCEED;
 }
 
@@ -478,45 +467,48 @@ IOprintf(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str *fmt = getArgReference_str(stk, pci, 1);
 	str fmt2 = NULL;
 	str msg = MAL_SUCCEED;
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
 
 	(void) cntxt;
 	(void) mb;
 	switch (pci->argc) {
 	case 2:
-		msg = IOprintf_(&fmt2, *fmt);
+		msg = IOprintf_(ta, &fmt2, *fmt);
 		break;
 	case 3:
-		msg = IOprintf_(&fmt2, *fmt, G(2));
+		msg = IOprintf_(ta, &fmt2, *fmt, G(2));
 		break;
 	case 4:
-		msg = IOprintf_(&fmt2, *fmt, G(2), G(3));
+		msg = IOprintf_(ta, &fmt2, *fmt, G(2), G(3));
 		break;
 	case 5:
-		msg = IOprintf_(&fmt2, *fmt, G(2), G(3), G(4));
+		msg = IOprintf_(ta, &fmt2, *fmt, G(2), G(3), G(4));
 		break;
 	case 6:
-		msg = IOprintf_(&fmt2, *fmt, G(2), G(3), G(4), G(5));
+		msg = IOprintf_(ta, &fmt2, *fmt, G(2), G(3), G(4), G(5));
 		break;
 	case 7:
-		msg = IOprintf_(&fmt2, *fmt, G(2), G(3), G(4), G(5), G(6));
+		msg = IOprintf_(ta, &fmt2, *fmt, G(2), G(3), G(4), G(5), G(6));
 		break;
 	case 8:
-		msg = IOprintf_(&fmt2, *fmt, G(2), G(3), G(4), G(5), G(6), G(7));
+		msg = IOprintf_(ta, &fmt2, *fmt, G(2), G(3), G(4), G(5), G(6), G(7));
 		break;
 	case 9:
-		msg = IOprintf_(&fmt2, *fmt, G(2), G(3), G(4), G(5), G(6), G(7), G(8));
+		msg = IOprintf_(ta, &fmt2, *fmt, G(2), G(3), G(4), G(5), G(6), G(7), G(8));
 		break;
 	case 10:
-		msg = IOprintf_(&fmt2, *fmt, G(2), G(3), G(4), G(5), G(6), G(7), G(8),
+		msg = IOprintf_(ta, &fmt2, *fmt, G(2), G(3), G(4), G(5), G(6), G(7), G(8),
 						G(9));
 		break;
 	default:
-		throw(MAL, "io.printf", "Too many arguments to io.printf");
+		msg = createException(MAL, "io.printf", "Too many arguments to io.printf");
+		break;
 	}
 	if (msg == MAL_SUCCEED) {
 		mnstr_printf(cntxt->fdout, "%s", fmt2);
-		GDKfree(fmt2);
 	}
+	ma_close(ta, &ta_state);
 	return msg;
 }
 
@@ -527,45 +519,48 @@ IOprintfStream(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str fmt2 = NULL;
 	stream *f = (stream *) getArgReference(stk, pci, 1);
 	str msg = MAL_SUCCEED;
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
 
 	(void) cntxt;
 	(void) mb;
 	switch (pci->argc) {
 	case 3:
-		msg = IOprintf_(&fmt2, *fmt);
+		msg = IOprintf_(ta, &fmt2, *fmt);
 		break;
 	case 4:
-		msg = IOprintf_(&fmt2, *fmt, G(3));
+		msg = IOprintf_(ta, &fmt2, *fmt, G(3));
 		break;
 	case 5:
-		msg = IOprintf_(&fmt2, *fmt, G(3), G(4));
+		msg = IOprintf_(ta, &fmt2, *fmt, G(3), G(4));
 		break;
 	case 6:
-		msg = IOprintf_(&fmt2, *fmt, G(3), G(4), G(5));
+		msg = IOprintf_(ta, &fmt2, *fmt, G(3), G(4), G(5));
 		break;
 	case 7:
-		msg = IOprintf_(&fmt2, *fmt, G(3), G(4), G(5), G(6));
+		msg = IOprintf_(ta, &fmt2, *fmt, G(3), G(4), G(5), G(6));
 		break;
 	case 8:
-		msg = IOprintf_(&fmt2, *fmt, G(3), G(4), G(5), G(6), G(7));
+		msg = IOprintf_(ta, &fmt2, *fmt, G(3), G(4), G(5), G(6), G(7));
 		break;
 	case 9:
-		msg = IOprintf_(&fmt2, *fmt, G(3), G(4), G(5), G(6), G(7), G(8));
+		msg = IOprintf_(ta, &fmt2, *fmt, G(3), G(4), G(5), G(6), G(7), G(8));
 		break;
 	case 10:
-		msg = IOprintf_(&fmt2, *fmt, G(3), G(4), G(5), G(6), G(7), G(8), G(9));
+		msg = IOprintf_(ta, &fmt2, *fmt, G(3), G(4), G(5), G(6), G(7), G(8), G(9));
 		break;
 	case 11:
-		msg = IOprintf_(&fmt2, *fmt, G(3), G(4), G(5), G(6), G(7), G(8), G(9),
+		msg = IOprintf_(ta, &fmt2, *fmt, G(3), G(4), G(5), G(6), G(7), G(8), G(9),
 						G(10));
 		break;
 	default:
-		throw(MAL, "io.printf", "Too many arguments to io.printf");
+		msg = createException(MAL, "io.printf", "Too many arguments to io.printf");
+		break;
 	}
 	if (msg == MAL_SUCCEED) {
 		mnstr_printf(f, "%s", fmt2);
-		GDKfree(fmt2);
 	}
+	ma_close(ta, &ta_state);
 	return msg;
 }
 

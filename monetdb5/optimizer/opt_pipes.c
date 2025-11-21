@@ -279,7 +279,9 @@ getPipeCatalog(Client ctx, bat *nme, bat *def, bat *stat)
 	BAT *b, *bn, *bs;
 	int i;
 	size_t l = 2048;
-	char *buf = GDKmalloc(l);
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
+	char *buf = ma_alloc(ta, l);
 
 	b = COLnew(0, TYPE_str, 20, TRANSIENT);
 	bn = COLnew(0, TYPE_str, 20, TRANSIENT);
@@ -288,7 +290,7 @@ getPipeCatalog(Client ctx, bat *nme, bat *def, bat *stat)
 		BBPreclaim(b);
 		BBPreclaim(bn);
 		BBPreclaim(bs);
-		GDKfree(buf);
+		ma_close(ta, &ta_state);
 		throw(MAL, "optimizer.getpipeDefinition",
 			  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
@@ -298,14 +300,13 @@ getPipeCatalog(Client ctx, bat *nme, bat *def, bat *stat)
 		for (int j = 0; pipes[i].def[j]; j++)
 			n += strlen(pipes[i].def[j]) + 13;
 		if (n > l) {
-			GDKfree(buf);
-			buf = GDKmalloc(n);
+			buf = ma_alloc(ta, n);
 			l = n;
 			if (buf == NULL) {
 				BBPreclaim(b);
 				BBPreclaim(bn);
 				BBPreclaim(bs);
-				GDKfree(buf);
+				ma_close(ta, &ta_state);
 				throw(MAL, "optimizer.getpipeDefinition",
 					  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
@@ -323,12 +324,12 @@ getPipeCatalog(Client ctx, bat *nme, bat *def, bat *stat)
 			BBPreclaim(b);
 			BBPreclaim(bn);
 			BBPreclaim(bs);
-			GDKfree(buf);
+			ma_close(ta, &ta_state);
 			throw(MAL, "optimizer.getpipeDefinition",
 				  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 	}
-	GDKfree(buf);
+	ma_close(ta, &ta_state);
 
 	*nme = b->batCacheid;
 	BBPkeepref(b);

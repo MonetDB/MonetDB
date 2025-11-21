@@ -66,7 +66,7 @@ malResolveFile(allocator *ma, const char *fname)
 		 * in the modpath, so if we can't find it, just default to
 		 * whatever was given, as it can be in current dir, or an
 		 * absolute location to somewhere */
-		script = GDKstrdup(fname);
+		script = ma_strdup(ma, fname);
 	}
 	return script;
 }
@@ -244,7 +244,6 @@ malInclude(Client c, const char *name, int listing)
 	c->qryctx.bs = NULL;
 
 	if ((filename = malResolveFile(ta, name)) != NULL) {
-		char *fname = filename;
 		do {
 			p = strchr(filename, PATH_SEP);
 			if (p)
@@ -264,7 +263,6 @@ malInclude(Client c, const char *name, int listing)
 				filename = p + 1;
 		} while (p);
 		c->srcFile = NULL;
-		GDKfree(fname);
 		c->fdin = NULL;
 		c->qryctx.bs = NULL;
 	}

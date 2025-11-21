@@ -50,7 +50,9 @@ MANUALcreateOverview(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "manual.functions", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
-	getModuleList(&moduleList, &length);
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
+	getModuleList(ta, &moduleList, &length);
 	if (moduleList == NULL)
 		goto bailout;
 
@@ -89,7 +91,7 @@ MANUALcreateOverview(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 		}
 	}
-	freeModuleList(moduleList);
+	ma_close(ta, &ta_state);
 
 	*mx = mod->batCacheid;
 	BBPkeepref(mod);
@@ -105,7 +107,7 @@ MANUALcreateOverview(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 
   bailout:
-	freeModuleList(moduleList);
+	ma_close(ta, &ta_state);
 	BBPreclaim(mod);
 	BBPreclaim(fcn);
 	BBPreclaim(sig);

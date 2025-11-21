@@ -557,9 +557,8 @@ RMTreadbatheader(stream *sin, char *buf)
 		throw(MAL, "remote.get", "could not read BAT JSON header");
 	}
 	if (buf[0] == '!') {
-		char *result;
-		if ((result = GDKstrdup(buf)) == NULL)
-			throw(MAL, "remote.get", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		char *result = MT_thread_get_exceptbuf();
+		strcpy_len(result, buf, GDKMAXERRLEN);
 		return result;
 	}
 
@@ -1161,7 +1160,7 @@ RMTput(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
  * followed by remote parsing.
  */
 static str
-RMTregisterInternal(Client ctx, char **fcn_id, const char *conn,
+RMTregisterInternal(allocator *ma, Client ctx, char **fcn_id, const char *conn,
 					const char *mod, const char *fcn)
 {
 	str tmp, qry, msg;
@@ -1221,7 +1220,7 @@ RMTregisterInternal(Client ctx, char **fcn_id, const char *conn,
 		return msg;
 	}
 
-	*fcn_id = GDKstrdup(ident);
+	*fcn_id = ma_strdup(ma, ident);
 	if (*fcn_id == NULL) {
 		MT_lock_unset(&c->lock);
 		throw(MAL, "Remote register", MAL_MALLOC_FAIL);
@@ -1275,7 +1274,7 @@ RMTregister(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	const char *mod = *getArgReference_str(stk, pci, 2);
 	const char *fcn = *getArgReference_str(stk, pci, 3);
 	(void) mb;
-	return RMTregisterInternal(ctx, fcn_id, conn, mod, fcn);
+	return RMTregisterInternal(mb->ma, ctx, fcn_id, conn, mod, fcn);
 }
 
 /**

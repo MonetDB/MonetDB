@@ -673,7 +673,8 @@ log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, BAT **cands, bo
 			}
 		} else {
 			void *(*rh)(allocator *ma, ptr, size_t *, stream *, size_t) = BATatoms[TYPE_oid].atomRead;
-			void *hv = ATOMnil(TYPE_oid);
+			oid nil = oid_nil;
+			void *hv = &nil;
 			offset = 0;
 
 			if (hv == NULL) {
@@ -747,7 +748,6 @@ log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, BAT **cands, bo
 					}
 				}
 			}
-			GDKfree(hv);
 		}
 
 		if (res == LOG_OK && !skip_entry) {

@@ -72,13 +72,9 @@ gdk_export int ATOMindex(const char *nme);
 
 gdk_export const char *ATOMname(int id);
 gdk_export size_t ATOMlen(int id, const void *v);
-gdk_export void *ATOMnil(int id)
-	__attribute__((__malloc__));
 gdk_export int ATOMprint(int id, const void *val, stream *fd);
 gdk_export char *ATOMformat(allocator *ma, int id, const void *val)
 	__attribute__((__warn_unused_result__));
-
-gdk_export void *ATOMdup(int id, const void *val);
 
 /*
  * @- maximum atomic string lengths
