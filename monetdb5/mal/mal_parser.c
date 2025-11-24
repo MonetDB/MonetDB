@@ -1843,8 +1843,6 @@ parseEnd(Client ctx)
 	InstrPtr sig;
 	str errors = MAL_SUCCEED;
 
-	if (ctx->curprg->def->errors)
-		return 1;
 	if (MALkeyword(ctx, "end", 3)) {
 		curPrg = ctx->curprg;
 		l = idLength(ctx);
@@ -1874,22 +1872,20 @@ parseEnd(Client ctx)
 		else
 			insertSymbol(getModule(getModuleId(sig)), ctx->curprg);
 
+		// check for newly identified errors
 		errors = chkProgram(ctx->usermodule, ctx->curprg->def);
-		if (errors) {
-			ctx->curprg->def->errors = errors;
-			return 1;
-		}
 
 		if (ctx->backup) {
 			ctx->curprg = ctx->backup;
-			ctx->backup = 0;
+			ctx->backup = NULL;
 		} else {
 			str msg;
 			if ((msg = MSinitClientPrg(ctx, ctx->curmodule->name,
 									   mainRef)) != MAL_SUCCEED) {
-				ctx->curprg->def->errors = msg;
+				errors = msg;
 			}
 		}
+		ctx->curprg->def->errors = errors;
 		return 1;
 	}
 	return 0;
@@ -2146,11 +2142,6 @@ parseAssign(allocator *ma, Client ctx, int cntrl)
 		}
 		advance(ctx, i);
 		curInstr->modname = calcRef;
-		if (curInstr->modname == NULL) {
-			freeInstruction(curBlk, curInstr);
-			parseError(ctx, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			return;
-		}
 		if ((l = idLength(ctx))
 			&& !(l == 3 && strncmp(CURRENT(ctx), "nil", 3) == 0)) {
 			GETvariable(freeInstruction(curBlk, curInstr));
