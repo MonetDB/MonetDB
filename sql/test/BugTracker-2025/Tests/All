@@ -49,3 +49,4 @@ KNOWNFAIL?7653_incorrect_join_results
 7737-join-order
 7748-update-returning-subquery-crash
 7753-like-in-projection
+7725-crash-find-rel-ref
