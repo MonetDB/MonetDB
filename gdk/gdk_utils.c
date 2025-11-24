@@ -1378,6 +1378,9 @@ GDKreset(int status)
 
 	/* stop GDKtracer */
 	GDKtracer_stop();
+
+	ma_destroy(MT_thread_getallocator());
+	MT_thread_setallocator(NULL);
 }
 
 /*

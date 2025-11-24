@@ -982,8 +982,6 @@ main(int argc, char **av)
 		}
 		MT_sleep_ms(100);		/* pause(), except for sys.shutdown() */
 	}
-	ma_destroy(MT_thread_getallocator());
-	MT_thread_setallocator(NULL);
 
 	/* mal_exit calls exit, so statements after this call will
 	 * never get reached */
