@@ -731,7 +731,7 @@ rel_file_loader(mvc *sql, list *exps, list *tl, char *tname)
 			sql_exp *e = exp_op(sql->sa, nexps, f);
 			sql_rel *rel = rel_table_func(sql->sa, NULL, e, res_exps, TABLE_PROD_FUNC);
 			if (rel && est)
-				set_count_prop(sql->sa, rel, est);
+				set_count_prop(sql->sa, rel, (BUN) est);
 			if (rel)
 				rel = rel_project(sql->sa, rel, exps_alias(sql, res_exps));
 			return rel;
