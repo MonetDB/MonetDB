@@ -1,0 +1,15 @@
+statement ok
+CREATE TABLE t0(c1 INT)
+
+statement ok
+CREATE TABLE t1(c1 INT)
+
+statement ok
+INSERT INTO t1(c1) VALUES (1)
+
+statement ok
+INSERT INTO t0(c1) VALUES (-10)
+
+query I
+SELECT * FROM t1 WHERE NOT EXISTS (SELECT 1 FROM t0 WHERE ((t1.c1)!=(t0.c1)));
+----
