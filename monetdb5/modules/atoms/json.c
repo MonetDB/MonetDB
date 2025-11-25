@@ -238,7 +238,6 @@ JSONfromString(allocator *ma, const char *src, size_t *len, void **J, bool exter
 		str msg = JSONstr2json_intern(ma, buf, len, &src);
 		if (msg != MAL_SUCCEED) {
 			GDKerror("%s", getExceptionMessageAndState(msg));
-			freeException(msg);
 			return -1;
 		}
 	}
@@ -605,7 +604,6 @@ upgradeJSONStorage(char **out, const char **in)
 	str msg;
 	allocator *ma = MT_thread_getallocator();
 	if ((msg = JSONstr2json_intern(ma, out, &(size_t){0}, in)) != MAL_SUCCEED) {
-		freeException(msg);
 		return GDK_FAIL;
 	}
 	return GDK_SUCCEED;
@@ -624,7 +622,6 @@ jsonRead(allocator *ma, str a, size_t *dstlen, stream *s, size_t cnt)
 	if (ma == NULL)
 		GDKfree(a);
 	if (msg != MAL_SUCCEED) {
-		freeException(msg);
 		return NULL;
 	}
 	*dstlen = strlen(out) + 1;

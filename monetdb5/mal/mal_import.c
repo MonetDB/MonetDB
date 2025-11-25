@@ -256,7 +256,6 @@ malInclude(Client c, const char *name, int listing)
 				bstream_destroy(c->fdin);
 			} else {
 				/* TODO output msg ? */
-				freeException(msg);
 				msg = MAL_SUCCEED;
 			}
 			if (p)

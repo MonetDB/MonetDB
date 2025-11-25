@@ -209,11 +209,9 @@ SQLoptimizeQuery(Client c, MalBlkPtr mb)
 		if (c->listing)
 			printFunction(c->fdout, mb, 0, c->listing);
 		if (mb->errors && msg && msg != mb->errors) { /* if both set, throw mb->errors as the earliest one */
-			freeException(msg);
 			msg = MAL_SUCCEED;
 		}
 		str nmsg = createException(MAL, "optimizer.optimizeQuery", "%s", mb->errors ? mb->errors : msg);
-		freeException(msg);
 		return nmsg;
 	}
 

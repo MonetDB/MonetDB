@@ -3478,11 +3478,7 @@ wkbMakeLineAggr(Client ctx, wkb **outWKB, bat *bid)
 		bat_iterator_end(&inBAT_iter);
 		err = wkbFromWKB(ctx, outWKB, &aWKB);
 		BBPunfix(inBAT->batCacheid);
-		if (err) {
-			freeException(err);
-			throw(MAL, "geom.MakeLine", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		}
-		return MAL_SUCCEED;
+		return err;
 	}
 	bWKB = (wkb *) BUNtvar(inBAT_iter, 1);
 	//create the first line using the first two geometries
@@ -4611,11 +4607,7 @@ wkbUnionAggr(Client ctx, wkb **outWKB, bat *inBAT_id)
 		bat_iterator_end(&inBAT_iter);
 		err = wkbFromWKB(ctx, outWKB, &aWKB);
 		BBPunfix(inBAT->batCacheid);
-		if (err) {
-			freeException(err);
-			throw(MAL, "geom.Union", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		}
-		return MAL_SUCCEED;
+		return err;
 	}
 	bWKB = (wkb *) BUNtvar(inBAT_iter, 1);
 	//create the first union using the first two geometries

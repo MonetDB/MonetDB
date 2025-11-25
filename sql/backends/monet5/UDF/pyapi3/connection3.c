@@ -43,7 +43,6 @@ _connection_execute(Py_ConnectionObject *self, PyObject *args)
 	if (res != MAL_SUCCEED) {
 		PyErr_Format(PyExc_Exception, "SQL Query Failed: %s",
 					 (res ? getExceptionMessage(res) : "<no error>"));
-		freeException(res);
 		return NULL;
 	}
 

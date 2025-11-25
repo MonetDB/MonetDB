@@ -254,7 +254,6 @@ SQLprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (tmp != MAL_SUCCEED) {
 		TRC_CRITICAL(SQL_PARSER, "Fatal error during initialization: %s\n", tmp);
 		if (!GDKembedded()) {
-			freeException(tmp);
 			if ((tmp = GDKerrbuf) && *tmp)
 				TRC_CRITICAL(SQL_PARSER, SQLSTATE(42000) "GDK reported: %s\n", tmp);
 			fflush(stderr);
@@ -308,12 +307,10 @@ str
 SQLepilogue(Client cntxt, void *ret)
 {
 	static const char s[] = "sql", m[] = "msql";
-	char *msg;
 
 	(void) cntxt;
 	(void) ret;
-	msg = SQLexit(NULL);
-	freeException(msg);
+	(void) SQLexit(NULL);
 	/* this function is never called, but for the style of it, we clean
 	 * up our own mess */
 	if (!GDKinmemory(0) && !GDKembedded()) {
@@ -643,8 +640,6 @@ SQLresetClient(Client c)
 	}
 	if (other && !msg)
 		msg = other;
-	else if (other && msg)
-		freeException(other);
 	return msg;
 }
 
@@ -760,7 +755,6 @@ SQLinit(Client c, const char *initpasswd)
 			msg = mvc_rollback(m, 0, NULL, false);
 		}
 		if (msg) {
-			freeException(msg);
 			msg = MAL_SUCCEED;
 		}
 	}
@@ -812,8 +806,6 @@ SQLinit(Client c, const char *initpasswd)
 
 		if (other && !msg) /* 'msg' variable might be set or not, as well as 'other'. Throw the earliest one */
 			msg = other;
-		else if (other)
-			freeException(other);
 		if (msg)
 			TRC_INFO(SQL_PARSER, "%s\n", msg);
 	} else {		/* handle upgrades */
@@ -848,8 +840,6 @@ SQLinit(Client c, const char *initpasswd)
 	other = SQLresetClient(c);
 	if (other && !msg) /* 'msg' variable might be set or not, as well as 'other'. Throw the earliest one */
 		msg = other;
-	else if (other)
-		freeException(other);
 	if (msg != MAL_SUCCEED) {
 		mvc_exit(SQLstore);
 		SQLstore = NULL;
@@ -882,7 +872,6 @@ handle_error(mvc *m, int pstatus, str msg)
 
 	/* transaction already broken */
 	if (m->type != Q_TRANS && pstatus < 0) {
-		freeException(msg);
 		return createException(SQL,"sql.execute",TRANS_ABORTED);
 	} else if ( GDKerrbuf && GDKerrbuf[0]){
 		new = ma_strdup(m->sa, GDKerrbuf);
@@ -1553,7 +1542,6 @@ SQLparser_body(Client c, backend *be)
 				err = 1;
 				MSresetInstructions(c->curprg->def, oldstop);
 				freeVariables(c, c->curprg->def, NULL, oldvtop);
-				freeException(c->curprg->def->errors);
 				c->curprg->def->errors = NULL;
 			} else {
 				opt = ((m->emod == mod_exec) == 0); /* no need to optimize prepare - execute */
@@ -1577,12 +1565,9 @@ SQLparser_body(Client c, backend *be)
 				if (msg == MAL_SUCCEED && opt) {
 					msg = SQLoptimizeQuery(c, c->curprg->def);
 					if (msg != MAL_SUCCEED) {
-						str other = c->curprg->def->errors;
-						c->curprg->def->errors = 0;
+						c->curprg->def->errors = NULL;
 						MSresetInstructions(c->curprg->def, oldstop);
 						freeVariables(c, c->curprg->def, NULL, oldvtop);
-						if (other != msg)
-							freeException(other);
 						goto finalize;
 					}
 				} else if (msg == MAL_SUCCEED && !opt) {
@@ -1604,7 +1589,6 @@ SQLparser_body(Client c, backend *be)
 						*m->errstr = 0;
 					} else if (msg) {
 						str newmsg = createException(PARSE, "SQLparser", SQLSTATE(M0M27) "Semantic errors %s", msg);
-						freeException(msg);
 						msg = newmsg;
 					}
 				}
@@ -1699,7 +1683,6 @@ SQLparser(Client c, backend *be)
 		eb_init(ma_get_eb(m->sa));
 		// ma_reset(m->sa);
 		if (c && c->curprg && c->curprg->def && c->curprg->def->errors) {
-			freeException(c->curprg->def->errors);
 			c->curprg->def->errors = NULL;
 		}
 		sqlcleanup(be, 0);
@@ -1785,8 +1768,8 @@ SQLengine(Client c)
 				m++; /* include newline */
 			}
 		}
-		freeException(msg);
 	}
+	ma_reset(c->qryctx.errorallocator);
 }
 
 str

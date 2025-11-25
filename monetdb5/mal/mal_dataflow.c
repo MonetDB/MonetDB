@@ -351,8 +351,7 @@ DFLOWworker(void *T)
 			if (error) {
 				void *null = NULL;
 				/* only collect one error (from one thread, needed for stable testing) */
-				if (!ATOMIC_PTR_CAS(&flow->error, &null, error))
-					freeException(error);
+				(void) ATOMIC_PTR_CAS(&flow->error, &null, error);
 				/* after an error we skip the rest of the block */
 				q_enqueue(flow->done, fe);
 				continue;

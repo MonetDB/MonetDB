@@ -2879,7 +2879,6 @@ OPTmergetableImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 	//if (ml.vars)
 	//	GDKfree(ml.vars);
 	if (mb->errors) {
-		freeException(msg);
 		msg = mb->errors;
 		mb->errors = NULL;
 	}

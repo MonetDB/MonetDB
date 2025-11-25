@@ -44,6 +44,11 @@ bincopy_json_objects_on_server
 bincopy_uuids_on_client
 bincopy_uuids_on_server
 
+bincopy_inet4_on_client
+bincopy_inet4_on_server
+bincopy_inet6_on_client
+bincopy_inet6_on_server
+
 bincopy_nulls
 
 bincopy_invalid_json

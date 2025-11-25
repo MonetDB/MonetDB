@@ -3633,7 +3633,8 @@ rel2bin_antijoin(backend *be, sql_rel *rel, list *refs)
 			if (!li)
 				li = ls;
 
-			if (!en->next && (constval || stmt_has_null(ls) /*|| stmt_has_null(rs) (change into check for fk)*/)) {
+			if (!en->next && !is_anti(e) && e->flag != cmp_notequal &&
+				(constval || stmt_has_null(ls))) {
 				join = stmt_tdiff2(be, ls, rs, NULL, is_semantics(e), is_any(e));
 				jexps = NULL;
 			} else {

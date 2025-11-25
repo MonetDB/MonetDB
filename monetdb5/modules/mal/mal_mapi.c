@@ -212,8 +212,7 @@ MSserveClient(Client c)
 	do {
 		do {
 			MT_thread_setworking("running scenario");
-			str msg = runScenario(c);
-			freeException(msg);
+			(void) runScenario(c);
 			if (c->mode == FINISHCLIENT)
 				break;
 			resetScenario(c);
@@ -242,7 +241,6 @@ cleanUpScheduleClient(Client c, str *command, str *err)
 		*command = NULL;
 	}
 	if (err) {
-		freeException(*err);
 		*err = NULL;
 	}
 }
@@ -429,10 +427,7 @@ MSscheduleClient(str command, str peer, str challenge, bstream *fin, stream *fou
 	}
 	GDKfree(command);
 
-	msg = MSserveClient(c);
-	if (msg != MAL_SUCCEED) {
-		freeException(msg);
-	}
+	(void) MSserveClient(c);
 }
 
 static void

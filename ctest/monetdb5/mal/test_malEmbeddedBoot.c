@@ -22,16 +22,18 @@ main(void)
 
 	if (BBPaddfarm(NULL, (1U << PERSISTENT) | (1U << TRANSIENT), false) != GDK_SUCCEED) {
 		/* set in memory dbfarm */
-		createException(MAL, "embedded.monetdb_startup", "BBPaddfarm() failed");
+		fprintf(stderr, "BBPaddfarm() failed\n");
 		return 1;
 	}
 
     gdk_res = GDKinit(NULL, 0, true, NULL);
     if (gdk_res != GDK_SUCCEED) {
-		msg = createException(MAL, "embedded.monetdb_startup", "GDKinit() failed");
+		fprintf(stderr, "GDKinit() failed\n");
 		return 1;
     }
-    if ((msg = malEmbeddedBoot(0, 0, 0, 0, false)) != MAL_SUCCEED)
+    if ((msg = malEmbeddedBoot(0, 0, 0, 0, false)) != MAL_SUCCEED) {
+		fprintf(stderr, "%s\n", msg);
 		return 1;
+	}
     return 0;
 }

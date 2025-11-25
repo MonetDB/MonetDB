@@ -22159,6 +22159,16 @@ command batcalc.timestamptz(X_0:bat[:str], X_1:bat[:oid], X_2:int, X_3:lng):bat[
 batstr_2time_timestamptz
 cast to timestamp and check for overflow
 batcalc
+to_hex
+command batcalc.to_hex(X_0:bat[:int]):bat[:str]
+CALCbat_to_hex_int
+convert to unsigned hexadecimal number representation
+batcalc
+to_hex
+command batcalc.to_hex(X_0:bat[:lng]):bat[:str]
+CALCbat_to_hex_lng
+convert to unsigned hexadecimal number representation
+batcalc
 uuid
 command batcalc.uuid(X_0:bat[:str], X_1:bat[:oid]):bat[:uuid]
 UUIDstr2uuid_bulk

@@ -570,7 +570,6 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			break;
 		}
 
-		freeException(ret);
 		ret = MAL_SUCCEED;
 
 		if (stk->status) {
@@ -832,11 +831,11 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			if (pcicaller && garbageControl(getInstrPtr(mb, 0)))
 				garbageCollector(cntxt, mb, stk, TRUE);
 			if (cntxt->qryctx.endtime == QRY_TIMEOUT) {
-				freeException(ret);	/* overrule exception */
+				/* overrule exception */
 				ret = createException(MAL, "mal.interpreter", SQLSTATE(HYT00) RUNTIME_QRY_TIMEOUT);
 				break;
 			} else if (cntxt->qryctx.endtime == QRY_INTERRUPT) {
-				freeException(ret);	/* overrule exception */
+				/* overrule exception */
 				ret = createException(MAL, "mal.interpreter", SQLSTATE(HYT00) RUNTIME_QRY_INTERRUPT);
 				break;
 			}
@@ -859,11 +858,11 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			}
 			// runtimeProfileBegin already sets the time in the instruction
 			if (cntxt->qryctx.endtime == QRY_TIMEOUT) {
-				freeException(ret);	/* overrule exception */
+				/* overrule exception */
 				ret = createException(MAL, "mal.interpreter", SQLSTATE(HYT00) RUNTIME_QRY_TIMEOUT);
 				break;
 			} else if (cntxt->qryctx.endtime == QRY_INTERRUPT) {
-				freeException(ret);	/* overrule exception */
+				/* overrule exception */
 				ret = createException(MAL, "mal.interpreter", SQLSTATE(HYT00) RUNTIME_QRY_INTERRUPT);
 				break;
 			}
@@ -952,7 +951,6 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			/* Detect any exception received from the implementation. */
 			/* The first identifier is an optional exception name */
 			if (strstr(ret, "!skip-to-end")) {
-				freeException(ret);
 				ret = MAL_SUCCEED;
 				stkpc = mb->stop;
 				continue;
@@ -972,10 +970,10 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			/* unknown exceptions lead to propagation */
 			if (exceptionVar == -1) {
 				if (cntxt->qryctx.endtime == QRY_TIMEOUT) {
-					freeException(ret);	/* overrule exception */
+					/* overrule exception */
 					ret = createException(MAL, "mal.interpreter", SQLSTATE(HYT00) RUNTIME_QRY_TIMEOUT);
 				} else if (cntxt->qryctx.endtime == QRY_INTERRUPT) {
-					freeException(ret);	/* overrule exception */
+					/* overrule exception */
 					ret = createException(MAL, "mal.interpreter", SQLSTATE(HYT00) RUNTIME_QRY_INTERRUPT);
 				}
 				stkpc = mb->stop;
@@ -986,14 +984,11 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				/* watch out for concurrent access */
 				MT_lock_set(&mal_contextLock);
 				v = &stk->stk[exceptionVar];
-				if (v->val.sval && v->allocated)
-					freeException(v->val.sval);	/* old exception */
 				VALset(v, TYPE_str, ret);
 				ret = MAL_SUCCEED;
 				MT_lock_unset(&mal_contextLock);
 			} else {
 				mnstr_printf(cntxt->fdout, "%s", ret);
-				freeException(ret);
 				ret = MAL_SUCCEED;
 			}
 			/* position yourself at the catch instruction for further decisions */
@@ -1014,11 +1009,11 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			}
 			if (stkpc == mb->stop) {
 				if (cntxt->qryctx.endtime == QRY_TIMEOUT) {
-					freeException(ret);	/* overrule exception */
+					/* overrule exception */
 					ret = createException(MAL, "mal.interpreter", SQLSTATE(HYT00) RUNTIME_QRY_TIMEOUT);
 					stkpc = mb->stop;
 				} else if (cntxt->qryctx.endtime == QRY_INTERRUPT) {
-					freeException(ret);	/* overrule exception */
+					/* overrule exception */
 					ret = createException(MAL, "mal.interpreter", SQLSTATE(HYT00) RUNTIME_QRY_INTERRUPT);
 					stkpc = mb->stop;
 				}
@@ -1177,7 +1172,6 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			break;
 		case RAISEsymbol:
 			exceptionVar = getDestVar(pci);
-			//freeException(ret);
 			ret = MAL_SUCCEED;
 			if (getVarType(mb, getDestVar(pci)) == TYPE_str) {
 				char nme[256];
@@ -1253,7 +1247,23 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 		snprintf(nme, sizeof(nme), "%s.%s[%d]", getModuleId(getInstrPtr(mb, 0)),
 				 getFunctionId(getInstrPtr(mb, 0)), stkpc);
 		if (ret != MAL_SUCCEED) {
-			ret = appendException(MAL, nme, "exception not caught");
+			str new, n;
+			n = createException(MAL, nme, "exception not caught");
+			if (n) {
+				QryCtx *qc = MT_thread_get_qry_ctx();
+				allocator *ma = qc->errorallocator;
+				new = ma_alloc(ma, strlen(ret) + strlen(n) + 16);
+				if (new) {
+					char *p = stpcpy(new, ret);
+					if (p[-1] != '\n')
+						*p++ = '\n';
+					*p++ = '!';
+					p = stpcpy(p, n);
+					ret = new;
+				} else {
+					ret = n;
+				}
+			}
 		} else {
 			ret = createException(MAL, nme, "Exception not caught");
 		}

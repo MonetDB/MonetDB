@@ -160,7 +160,6 @@ SQLstatementIntern(Client c, const char *expr, const char *nme, bit execute, bit
 		sql = (backend *) c->sqlcontext;
 	}
 	if (msg){
-		freeException(msg);
 		throw(SQL, "sql.statement", SQLSTATE(HY002) "Catalogue not available");
 	}
 
@@ -170,7 +169,6 @@ SQLstatementIntern(Client c, const char *expr, const char *nme, bit execute, bit
 	if (!o) {
 		if (inited) {
 			msg = SQLresetClient(c);
-			freeException(msg);
 		}
 		throw(SQL, "sql.statement", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
@@ -394,8 +392,7 @@ endofcompile:
 	m->session->status = status;
 	m->session->auto_commit = ac;
 	if (inited) {
-		str other = SQLresetClient(c);
-		freeException(other);
+		(void) SQLresetClient(c);
 	}
 	return msg;
 }

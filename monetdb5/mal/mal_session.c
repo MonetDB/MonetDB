@@ -42,7 +42,6 @@ malBootstrap(char *modules[], bool embedded, const char *initpasswd)
 	if (c == NULL) {
 		throw(MAL, "malBootstrap", "Failed to initialize client");
 	}
-	MT_thread_set_qry_ctx(NULL);
 	assert(c != NULL);
 	c->curmodule = c->usermodule = userModule();
 	if (c->usermodule == NULL) {
@@ -67,6 +66,7 @@ malBootstrap(char *modules[], bool embedded, const char *initpasswd)
 		return msg;
 	}
 	MCcloseClient(c);
+	MT_thread_set_qry_ctx(NULL);
 	return msg;
 }
 
@@ -458,7 +458,6 @@ MALengine_(Client c)
 	if (msg) {
 		/* ignore "internal" exceptions */
 		if (strstr(msg, "client.quit")) {
-			freeException(msg);
 			msg = MAL_SUCCEED;
 		}
 	}
@@ -469,8 +468,6 @@ MALengine_(Client c)
 		c->glb->stkbot = prg->def->vtop;
 	}
 
-	if (prg->def->errors)
-		freeException(prg->def->errors);
 	prg->def->errors = NULL;
 	return msg;
 }
@@ -494,8 +491,8 @@ MALengine(Client c)
 				o++;
 			mnstr_printf(c->fdout, "!%s\n", o);
 		}
-		freeException(msg);
 	}
+	ma_reset(c->qryctx.errorallocator);
 }
 
 /* Hypothetical, optimizers may massage the plan in such a way
@@ -548,7 +545,6 @@ optimizeMALBlock(Client cntxt, MalBlkPtr mb)
 			actions++;
 			msg = (*(str (*)(Client, MalBlkPtr, MalStkPtr, InstrPtr)) p->fcn) (cntxt, mb, 0, p);
 			if (mb->errors) {
-				freeException(msg);
 				msg = mb->errors;
 				mb->errors = NULL;
 			}
@@ -565,7 +561,6 @@ optimizeMALBlock(Client cntxt, MalBlkPtr mb)
 				}
 				ma_close(ma, &ma_state);
 				if (nmsg) {
-					freeException(msg);
 					msg = nmsg;
 				}
 				goto wrapup;

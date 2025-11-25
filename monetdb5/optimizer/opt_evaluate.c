@@ -228,7 +228,6 @@ OPTevaluateImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 			} else {
 				/* if there is an error, we should postpone message handling,
 				   as the actual error (eg. division by zero ) may not happen) */
-				freeException(msg);
 				msg = MAL_SUCCEED;
 				mb->errors = NULL;
 			}

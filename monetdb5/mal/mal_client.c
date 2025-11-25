@@ -148,6 +148,10 @@ MCnewClient(void)
 	for (Client c = mal_clients; c < mal_clients + MAL_MAXCLIENTS; c++) {
 		if (c->idx == -1) {
 			assert(c->mode == FREECLIENT);
+			assert(c->qryctx.errorallocator == NULL);
+			c->qryctx.errorallocator = create_allocator(NULL, "error allocator", true);
+			if (c->qryctx.errorallocator == NULL)
+				return NULL;
 			c->mode = RUNCLIENT;
 			c->idx = (int) (c - mal_clients);
 			return c;
@@ -219,6 +223,8 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 
 	c->fdin = fin ? fin : bstream_create(GDKstdin, 0);
 	if (c->fdin == NULL) {
+		ma_destroy(c->qryctx.errorallocator);
+		c->qryctx.errorallocator = NULL;
 		c->mode = FREECLIENT;
 		c->idx = -1;
 		TRC_ERROR(MAL_SERVER, "No stdin channel available\n");
@@ -411,10 +417,13 @@ MCcloseClient(Client c)
 	//free(c->handshake_options);
 	c->handshake_options = NULL;
 	MT_thread_set_qry_ctx(NULL);
-	assert(c->qryctx.datasize == 0);
+	assert(strcmp(MT_thread_getname(), "main-thread") == 0 ||
+		   c->qryctx.datasize == 0);
 	MT_sema_destroy(&c->s);
 	MT_lock_set(&mal_contextLock);
 	c->idle = c->login = c->lastcmd = 0;
+	ma_destroy(c->qryctx.errorallocator);
+	c->qryctx.errorallocator = NULL;
 	if (shutdowninprogress) {
 		c->mode = BLOCKCLIENT;
 	} else {
