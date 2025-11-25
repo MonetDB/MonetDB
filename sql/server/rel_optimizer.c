@@ -619,12 +619,13 @@ run_optimizer_set(visitor *v, sql_optimizer_run *runs, sql_rel *rel, global_prop
 			if (runs) {
 				sql_optimizer_run *run = &(runs[set[i].index]);
 				run->name = set[i].name;
+				run->index = set[i].index;
 				int changes = v->changes;
 				lng clk = GDKusec();
 
 				if (BEFORE_LOGICAL_REWRITE(v->sql) &&
 					v->sql->rewriter_stop_idx >= 0 &&
-					set[i].index == v->sql->rewriter_stop_idx)
+					set[i].index >= v->sql->rewriter_stop_idx)
 					return rel;
 
 				rel = opt(v, gp, rel);
