@@ -88,14 +88,12 @@ setUserPassword(mvc *m, oid rid, str value)
 	}
 	if ((err = AUTHverifyPassword(value)) != MAL_SUCCEED) {
 		(void) sql_error(m, 02, SQLSTATE(42000) "setUserPassword: %s", getExceptionMessage(err));
-		freeException(err);
 		return LOG_ERR;
 	}
 	allocator *ta = MT_thread_getallocator();
 	allocator_state ta_state = ma_open(ta);
 	if ((err = AUTHcypherValue(ta, &hash, value)) != MAL_SUCCEED) {
 		(void) sql_error(m, 02, SQLSTATE(42000) "setUserPassword: %s", getExceptionMessage(err));
-		freeException(err);
 		ma_close(ta, &ta_state);
 		return LOG_ERR;
 	}
@@ -127,7 +125,6 @@ changeUserPassword(mvc *m, oid rid, str oldpass, str newpass)
 		// validate old password match
 		if ((err = AUTHdecypherValue(m->sa, &hash, passValue=getUserPassword(m, rid))) != MAL_SUCCEED) {
 			(void) sql_error(m, 02, SQLSTATE(42000) "changeUserPassword: %s", getExceptionMessage(err));
-			freeException(err);
 			GDKfree(passValue);
 			return LOG_ERR;
 		}
@@ -399,7 +396,6 @@ monet5_password_hash(mvc *m, const char *username)
 		GDKfree(password);
 		if (msg) {
 			(void) sql_error(m, 02, SQLSTATE(42000) "monet5_password_hash: %s", getExceptionMessage(msg));
-			freeException(msg);
 		}
 	}
 	return hash;
@@ -447,7 +443,6 @@ monet5_create_privileges(ptr _mvc, sql_schema *s, const char *initpasswd)
 	if (password == NULL ||
 		(err = AUTHGeneratePasswordHash(ta, &hash, password)) != MAL_SUCCEED) {
 		TRC_CRITICAL(SQL_TRANS, "generate password hash failure");
-		freeException(err);
 		free(password);
 		ma_close(ta, &ta_state);
 		return ;
@@ -559,7 +554,6 @@ monet5_alter_user(ptr _mvc, str user, str passwd, bool enc, sqlid schema_id, str
 			// verify current user is MAL_ADMIN ?
 			if ((err = AUTHrequireAdmin(c)) != MAL_SUCCEED) {
 				(void) sql_error(m, 02, "ALTER USER: %s", getExceptionMessage(err));
-				freeException(err);
 				if (!enc) {
 					free(pwd);
 					free(opwd);
@@ -604,7 +598,6 @@ monet5_alter_user(ptr _mvc, str user, str passwd, bool enc, sqlid schema_id, str
 
 		if ((err = parse_schema_path_str(m, schema_path, false)) != MAL_SUCCEED) {
 			(void) sql_error(m, 02, "ALTER USER: %s", getExceptionMessage(err));
-			freeException(err);
 			return (FALSE);
 		}
 
@@ -794,7 +787,7 @@ monet5_user_set_def_schema(mvc *m, oid user, str username)
 	sql_table *auths = NULL;
 	sql_column *auths_id = NULL;
 	sql_column *auths_name = NULL;
-	str path_err = NULL, other = NULL, schema = NULL, schema_cpy, schema_path = NULL, userrole = NULL;
+	str path_err = NULL, schema = NULL, schema_cpy, schema_path = NULL, userrole = NULL;
 	int ok = 1, res = 0;
 
 	TRC_DEBUG(SQL_TRANS, OIDFMT "\n", user);
@@ -809,14 +802,14 @@ monet5_user_set_def_schema(mvc *m, oid user, str username)
 	sqlstore *store = m->session->tr->store;
 	rid = store->table_api.column_find_row(m->session->tr, users_name, username, NULL);
 	if (is_oid_nil(rid)) {
-		if (m->session->tr->active && (other = mvc_rollback(m, 0, NULL, false)) != MAL_SUCCEED)
-			freeException(other);
+		if (m->session->tr->active)
+			(void) mvc_rollback(m, 0, NULL, false);
 		return -2;
 	}
 	schema_id = store->table_api.column_find_sqlid(m->session->tr, users_schema, rid);
 	if (!(schema_path = store->table_api.column_find_value(m->session->tr, users_schema_path, rid))) {
-		if (m->session->tr->active && (other = mvc_rollback(m, 0, NULL, false)) != MAL_SUCCEED)
-			freeException(other);
+		if (m->session->tr->active)
+			(void) mvc_rollback(m, 0, NULL, false);
 		return -1;
 	}
 
@@ -831,14 +824,14 @@ monet5_user_set_def_schema(mvc *m, oid user, str username)
 
 	rid = store->table_api.column_find_row(m->session->tr, schemas_id, &schema_id, NULL);
 	if (is_oid_nil(rid)) {
-		if (m->session->tr->active && (other = mvc_rollback(m, 0, NULL, false)) != MAL_SUCCEED)
-			freeException(other);
+		if (m->session->tr->active)
+			(void) mvc_rollback(m, 0, NULL, false);
 		_DELETE(schema_path);
 		return -3;
 	}
 	if (!(schema = store->table_api.column_find_value(m->session->tr, schemas_name, rid))) {
-		if (m->session->tr->active && (other = mvc_rollback(m, 0, NULL, false)) != MAL_SUCCEED)
-			freeException(other);
+		if (m->session->tr->active)
+			(void) mvc_rollback(m, 0, NULL, false);
 		_DELETE(schema_path);
 		return -1;
 	}
@@ -849,8 +842,8 @@ monet5_user_set_def_schema(mvc *m, oid user, str username)
 	/* check if username exists */
 	rid = store->table_api.column_find_row(m->session->tr, auths_name, username, NULL);
 	if (is_oid_nil(rid)) {
-		if (m->session->tr->active && (other = mvc_rollback(m, 0, NULL, false)) != MAL_SUCCEED)
-			freeException(other);
+		if (m->session->tr->active)
+			(void) mvc_rollback(m, 0, NULL, false);
 		_DELETE(schema_path);
 		return -2;
 	}
@@ -860,15 +853,15 @@ monet5_user_set_def_schema(mvc *m, oid user, str username)
 	/* check if role exists */
 	rid = store->table_api.column_find_row(m->session->tr, auths_id, &default_role_id, NULL);
 	if (is_oid_nil(rid)) {
-		if (m->session->tr->active && (other = mvc_rollback(m, 0, NULL, false)) != MAL_SUCCEED)
-			freeException(other);
+		if (m->session->tr->active)
+			(void) mvc_rollback(m, 0, NULL, false);
 		_DELETE(schema_path);
 		return -4;
 	}
 	m->role_id = default_role_id;
 	if (!(userrole = store->table_api.column_find_value(m->session->tr, auths_name, rid))) {
-		if (m->session->tr->active && (other = mvc_rollback(m, 0, NULL, false)) != MAL_SUCCEED)
-			freeException(other);
+		if (m->session->tr->active)
+			(void) mvc_rollback(m, 0, NULL, false);
 		_DELETE(schema_path);
 		return -1;
 	}
@@ -877,11 +870,10 @@ monet5_user_set_def_schema(mvc *m, oid user, str username)
 	/* new default schema */
 	m->session->def_schema_name = schema;
 	if (!(ok = mvc_set_schema(m, schema)) || (path_err = parse_schema_path_str(m, schema_path, true)) != MAL_SUCCEED) {
-		if (m->session->tr->active && (other = mvc_rollback(m, 0, NULL, false)) != MAL_SUCCEED)
-			freeException(other);
+		if (m->session->tr->active)
+			(void) mvc_rollback(m, 0, NULL, false);
 		_DELETE(schema_path);
 		_DELETE(userrole);
-		freeException(path_err);
 		return ok == 0 ? -3 : -1;
 	}
 

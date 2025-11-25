@@ -94,8 +94,6 @@ sql_add_propagate_statistics(mvc *sql, sql_exp *e)
 				set_minmax_property(sql, e, PROP_MIN, res1);
 			}
 		}
-		freeException(msg1);
-		freeException(msg2);
 	}
 	/* propagate estimate */
 	if (!exp_is_atom(first) && exp_is_atom(second) && (est = find_prop(first->p, PROP_NUNIQUES))) {
@@ -204,8 +202,6 @@ sql_sub_propagate_statistics(mvc *sql, sql_exp *e)
 				set_minmax_property(sql, e, PROP_MIN, res1);
 			}
 		}
-		freeException(msg1);
-		freeException(msg2);
 	}
 	/* propagate estimate */
 	if (!exp_is_atom(first) && exp_is_atom(second) && (est = find_prop(first->p, PROP_NUNIQUES))) {

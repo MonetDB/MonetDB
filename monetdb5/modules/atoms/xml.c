@@ -680,7 +680,6 @@ XMLfromString(allocator *ma, const char *src, size_t *len, void **X, bool extern
 		char *err = XMLstr2xml(/*ctx*/NULL, x, &src);
 		if (err !=MAL_SUCCEED) {
 			GDKerror("%s", getExceptionMessageAndState(err));
-			freeException(err);
 			return -1;
 		}
 	}

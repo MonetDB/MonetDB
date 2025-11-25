@@ -406,7 +406,6 @@ PyObject *PyEmit_Emit(PyEmitObject *self, PyObject *args)
 wrapup:
 	if (msg != MAL_SUCCEED) {
 		PyErr_Format(PyExc_TypeError, "Failed conversion: %s", msg);
-		freeException(msg);
 	} else if (!error) {
 		Py_RETURN_NONE;
 	}

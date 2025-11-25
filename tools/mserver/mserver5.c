@@ -909,7 +909,6 @@ main(int argc, char **av)
 			if (!GDKinmemory(0))
 				msab_registerStop();
 			fprintf(stderr, "%s\n", err);
-			freeException(err);
 			exit(1);
 		}
 		if (readpwdxit) {

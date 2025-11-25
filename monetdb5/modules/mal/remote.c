@@ -557,8 +557,11 @@ RMTreadbatheader(stream *sin, char *buf)
 		throw(MAL, "remote.get", "could not read BAT JSON header");
 	}
 	if (buf[0] == '!') {
-		char *result = MT_thread_get_exceptbuf();
-		strcpy_len(result, buf, GDKMAXERRLEN);
+		QryCtx *qc = MT_thread_get_qry_ctx();
+		allocator *ma = qc->errorallocator;
+		char *result;
+		if ((result = ma_strdup(ma, buf)) == NULL)
+			throw(MAL, "remote.get", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return result;
 	}
 
@@ -842,7 +845,6 @@ RMTget(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			TRC_ERROR(MAL_REMOTE, "Remote get: %s\n%s\n", qbuf, tmp);
 			MT_lock_unset(&c->lock);
 			var = createException(MAL, "remote.get", "%s", tmp);
-			freeException(tmp);
 			return var;
 		}
 		t = getBatType(rtype);
