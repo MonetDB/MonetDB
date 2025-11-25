@@ -281,7 +281,7 @@ gen_inet4(FILE *f, bool byteswap, long nrecs, char *arg)
 {
 	(void)arg;
 	(void)byteswap;
-	for (int v = 0; v < nrecs; v++) {
+	for (uint64_t v = 0; v < (uint64_t) nrecs; v++) {
 		uint64_t i = (v == 3) ? 0x00000000 : (v + 1) * 1001001001;
 		// always big endian
 		fputc((i >> 24) % 256, f);
@@ -296,11 +296,11 @@ gen_inet6(FILE *f, bool byteswap, long nrecs, char *arg)
 {
 	(void)arg;
 	(void)byteswap;
-	for (int v = 0; v < nrecs; v++) {
-		long i0 = (v + 1) * 2142970729L;
-		long i1 = (v + 1) * 2011938419L;
-		long i2 = (v + 1) * 1616437157L;
-		long i3 = (v + 1) * 1271098355L;
+	for (uint64_t v = 0; v < (uint64_t) nrecs; v++) {
+		uint64_t i0 = (v + 1) * 2142970729L;
+		uint64_t i1 = (v + 1) * 2011938419L;
+		uint64_t i2 = (v + 1) * 1616437157L;
+		uint64_t i3 = (v + 1) * 1271098355L;
 		uint8_t rec[16] = {
 			(uint8_t)(i0 >> 24),
 			(uint8_t)(i0 >> 16),
