@@ -44,7 +44,7 @@ OPTexpandMultiplex(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	InstrPtr q;
 	int tt;
 	int bat = (getModuleId(pci) == batmalRef);
-	allocator *ta = mb->ta;
+	allocator *ta = MT_thread_getallocator();
 
 	(void) ctx;
 	(void) stk;

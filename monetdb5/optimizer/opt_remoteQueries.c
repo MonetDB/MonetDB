@@ -187,7 +187,7 @@ OPTremoteQueriesImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 	limit = mb->stop;
 	slimit = mb->ssize;
 	old = mb->stmt;
-	allocator *ta = mb->ta;
+	allocator *ta = MT_thread_getallocator();
 
 	allocator_state ta_state = ma_open(ta);
 	location = (int *) ma_zalloc(ta, mb->vsize * sizeof(int));

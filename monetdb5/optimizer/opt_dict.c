@@ -41,7 +41,7 @@ OPTdictImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int *varisdict = NULL, *vardictvalue = NULL;
 	bit *dictunique = NULL;
 	str msg = MAL_SUCCEED;
-	allocator *ta = mb->ta;
+	allocator *ta = MT_thread_getallocator();
 
 	(void) stk;
 

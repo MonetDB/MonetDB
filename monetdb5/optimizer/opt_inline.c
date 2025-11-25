@@ -21,7 +21,7 @@ inlineMALblock(Client ctx, MalBlkPtr mb, int pc, MalBlkPtr mc)
 	int i, k, l, n;
 	InstrPtr *ns, p, q;
 	int *nv;
-	allocator *ta = mb->ta;
+	allocator *ta = MT_thread_getallocator();
 
 	(void) ctx;
 

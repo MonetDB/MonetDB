@@ -99,7 +99,7 @@ OPTcoercionImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 	InstrPtr p;
 	int actions = 0;
 	str msg = MAL_SUCCEED;
-	allocator *ta = mb->ta;
+	allocator *ta = MT_thread_getallocator();
 
 	if (MB_LARGE(mb))
 		goto wrapup;

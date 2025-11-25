@@ -24,7 +24,7 @@ OPTaliasesImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int *alias = 0;
 	str msg = MAL_SUCCEED;
 	InstrPtr p;
-	allocator *ta = mb->ta;
+	allocator *ta = MT_thread_getallocator();
 
 	(void) stk;
 	(void) ctx;

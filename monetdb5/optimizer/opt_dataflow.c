@@ -346,7 +346,7 @@ OPTdataflowImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	States states = NULL;
 	region_state state = { singleton_region };
 	str msg = MAL_SUCCEED;
-	allocator *ta = mb->ta;
+	allocator *ta = MT_thread_getallocator();
 
 	/* don't use dataflow on single processor systems */
 	if (GDKnr_threads <= 1 || ctx->workerlimit == 1 || MB_LARGE(mb))

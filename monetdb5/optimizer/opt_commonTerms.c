@@ -61,7 +61,7 @@ OPTcommonTermsImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 	str msg = MAL_SUCCEED;
 
 	InstrPtr *old = NULL;
-	allocator *ta = mb->ta;
+	allocator *ta = MT_thread_getallocator();
 
 	/* catch simple insert operations */
 	if (isSimpleSQL(mb) || MB_LARGE(mb)) {

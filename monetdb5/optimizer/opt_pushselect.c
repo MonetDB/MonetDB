@@ -108,7 +108,7 @@ OPTpushselectImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 	InstrPtr p, *old = NULL;
 	subselect_t subselects = { 0 };
 	str msg = MAL_SUCCEED;
-	allocator *ta = mb->ta;
+	allocator *ta = MT_thread_getallocator();
 
 	if (MB_LARGE(mb)) {
 		(void) pushInt(mb, pci, actions);

@@ -103,7 +103,7 @@ OPTgeneratorImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 	//const char *dblRef = getName("dbl");
 	str msg = MAL_SUCCEED;
 	int needed = 0;
-	allocator *ta = mb->ta;
+	allocator *ta = MT_thread_getallocator();
 
 	(void) stk;
 

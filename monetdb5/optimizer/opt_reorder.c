@@ -66,7 +66,7 @@ OPTreorderImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 	slimit = mb->ssize;
 	old = mb->stmt;
 
-	allocator *ta = mb->ta;
+	allocator *ta = MT_thread_getallocator();
 
 	allocator_state ta_state = ma_open(ta);
 	depth = (int *) ma_zalloc(ta, mb->vtop * sizeof(int));

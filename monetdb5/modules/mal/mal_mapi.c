@@ -1350,7 +1350,7 @@ SERVERclient(Client ctx, void *res, const Stream *In, const Stream *Out)
 			char *f;													\
 			allocator *ta = MT_thread_getallocator();					\
 			allocator_state ta_state = ma_open(ta);						\
-															\
+																		\
 			if (hdl && mapi_result_error(hdl))							\
 				err = mapi_result_error(hdl);							\
 			else														\
@@ -1366,9 +1366,9 @@ SERVERclient(Client ctx, void *res, const Stream *In, const Stream *Out)
 			}															\
 																		\
 			f = newerr;													\
-			/* I think this code tries to deal with multiple errors, this \
-			 * will fail this way if it does, since no ! is in the error \
-			 * string, only newlines to separate them */				\
+			/* I think this code tries to deal with multiple errors, */	\
+			/* this will fail this way if it does, since no ! is in the */ \
+			/* error string, only newlines to separate them */			\
 			for (e = err; *e && l > 1; e++) {							\
 				if (*e == '!' && *(e - 1) == '\n') {					\
 					snprintf(f, l, "MALException:" fcn ":remote error:"); \
@@ -2186,9 +2186,9 @@ SERVERmapi_rpc_single_row(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 	int key, i, j;
 	Mapi mid;
 	MapiHdl hdl;
-	char *s, *fld, *qry = 0;
+	char *s, *fld, *qry = NULL;
 
-	allocator *ta = mb->ta;
+	allocator *ta = MT_thread_getallocator();
 	allocator_state ta_state = ma_open(ta);
 	key = *getArgReference_int(stk, pci, pci->retc);
 	accessTest(key, "rpc");
@@ -2198,23 +2198,24 @@ SERVERmapi_rpc_single_row(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 	/* glue all strings together */
 	for (i = pci->retc + 1; i < pci->argc; i++) {
 		fld = *getArgReference_str(stk, pci, i);
-		if (qry == 0) {
+		if (qry == NULL) {
 			qry = ma_strdup(ta, fld);
-			if (qry == NULL)
+			if (qry == NULL) {
+				ma_close(ta, &ta_state);
 				throw(MAL, "mapi.rpc", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			}
 		} else {
 			s = (char *) ma_alloc(ta, strlen(qry) + strlen(fld) + 1);
 			if (s == NULL) {
-				//GDKfree(qry);
+				ma_close(ta, &ta_state);
 				throw(MAL, "mapi.rpc", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 			stpcpy(stpcpy(s, qry), fld);
-			//GDKfree(qry);
 			qry = s;
 		}
 	}
 	hdl = mapi_query(mid, qry);
-	//GDKfree(qry);
+	ma_close(ta, &ta_state);
 	catchErrors("mapi.rpc");
 
 	i = 0;
@@ -2253,7 +2254,6 @@ SERVERmapi_rpc_single_row(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 		i++;
 	}
 	mapi_close_handle(hdl);
-	ma_close(ta, &ta_state);
 	if (i > 1)
 		throw(MAL, "mapi.rpc", "Too many answers");
 	return MAL_SUCCEED;

@@ -154,7 +154,7 @@ OPTmultiplexInline(Client ctx, MalBlkPtr mb, InstrPtr p, int pc)
 	int i, j, k, m;
 	int refbat = 0, retc = p->retc;
 	bit *upgrade;
-	allocator *ta = mb->ta;
+	allocator *ta = MT_thread_getallocator();
 
 
 	str mod = VALget(&getVar(mb, getArg(p, retc + 0))->value);

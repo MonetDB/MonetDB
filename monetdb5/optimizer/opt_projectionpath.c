@@ -29,7 +29,7 @@ OPTprojectionpathImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 	int limit, slimit;
 	str msg = MAL_SUCCEED;
 	int vtop = mb->vtop;
-	allocator *ta = mb->ta;
+	allocator *ta = MT_thread_getallocator();
 
 	(void) ctx;
 	(void) stk;

@@ -41,7 +41,7 @@ OPTconstantsImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 	VarPtr x, y, *cst = NULL;
 	str msg = MAL_SUCCEED;
 	InstrPtr p, q;
-	allocator *ta = mb->ta;
+	allocator *ta = MT_thread_getallocator();
 
 	if (isSimpleSQL(mb) || MB_LARGE(mb)) {
 		goto wrapup1;

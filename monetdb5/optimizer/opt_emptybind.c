@@ -49,7 +49,7 @@ OPTemptybindImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 	str sch, tbl;
 	int etop = 0, esize = 256;
 	str msg = MAL_SUCCEED;
-	allocator *ta = mb->ta;
+	allocator *ta = MT_thread_getallocator();
 
 	(void) stk;
 	(void) ctx;
