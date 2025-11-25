@@ -10,5 +10,4 @@
 # Copyright 1997 - July 2008 CWI.
 #]]
 
-add_subdirectory(mal_optimizer_template)
 add_subdirectory(rapi)
