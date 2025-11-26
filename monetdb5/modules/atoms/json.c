@@ -551,10 +551,10 @@ static str
 JSONisvalid(Client ctx, bit *ret, const char *const *j)
 {
 	(void) ctx;
-	allocator *ta = MT_thread_getallocator();
 	if (strNil(*j)) {
 		*ret = bit_nil;
 	} else {
+		allocator *ta = MT_thread_getallocator();
 		allocator_state ta_state = ma_open(ta);
 		JSON *jt = JSONparse(ta, *j);
 		if (jt == NULL) {
