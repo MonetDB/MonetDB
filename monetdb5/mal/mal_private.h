@@ -72,6 +72,9 @@ void mal_resource_reset(void)
 void mal_runtime_reset(void)
 	__attribute__((__visibility__("hidden")));
 
+char *dupError(const char *err)
+	__attribute__((__visibility__("hidden"), __returns_nonnull__));
+
 void
 setPoly(mel_func *f, malType tpe)
 	__attribute__((__visibility__("hidden")));

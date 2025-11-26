@@ -713,7 +713,6 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 				msg = createException(SQL, "sql.copy_from", SQLSTATE(42000) "Failed to import table '%s', %s", t->base.name, ma_strdup(ta, getExceptionMessage(as.error)));
 				ma_close(ta, &ta_state);
 			}
-			freeException(as.error);
 			as.error = NULL;
 		}
 		for (n = ol_first_node(t->columns), i = 0; n; n = n->next, i++) {

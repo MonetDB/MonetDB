@@ -38,7 +38,6 @@ newAssignmentArgs(MalBlkPtr mb, int args)
 		str msg = createException(MAL, "newAssignment",
 								  "Can not allocate variable");
 		addMalException(mb, msg);
-		freeException(msg);
 		freeInstruction(mb, q);
 		return NULL;
 	}
@@ -76,7 +75,6 @@ newStmtArgs(MalBlkPtr mb, const char *module, const char *name, int args)
 		str msg = createException(MAL, "newStmtArgs",
 								  "Can not allocate variable");
 		addMalException(mb, msg);
-		freeException(msg);
 		freeInstruction(mb, q);
 		return NULL;
 	}
@@ -131,7 +129,6 @@ newComment(MalBlkPtr mb, const char *val)
 	if (VALinit(mb->ma, &cst, TYPE_str, val) == NULL) {
 		str msg = createException(MAL, "newComment", "Can not allocate comment");
 		addMalException(mb, msg);
-		freeException(msg);
 		freeInstruction(mb, q);
 		return NULL;
 	}
@@ -161,7 +158,6 @@ newCatchStmt(MalBlkPtr mb, const char *nme)
 			str msg = createException(MAL, "newCatchStmt",
 									  "Can not allocate variable");
 			addMalException(mb, msg);
-			freeException(msg);
 			freeInstruction(mb, q);
 			return NULL;
 		}
@@ -185,7 +181,6 @@ newRaiseStmt(MalBlkPtr mb, const char *nme)
 			str msg = createException(MAL, "newRaiseStmt",
 									  "Can not allocate variable");
 			addMalException(mb, msg);
-			freeException(msg);
 			freeInstruction(mb, q);
 			return NULL;
 		}
@@ -209,7 +204,6 @@ newExitStmt(MalBlkPtr mb, const char *nme)
 			str msg = createException(MAL, "newExitStmt",
 									  "Can not allocate variable");
 			addMalException(mb, msg);
-			freeException(msg);
 			freeInstruction(mb, q);
 			return NULL;
 		}
@@ -491,7 +485,6 @@ pushStr(MalBlkPtr mb, InstrPtr q, const char *Val)
 		str msg = createException(MAL, "pushStr",
 								  "Can not allocate string variable");
 		addMalException(mb, msg);
-		freeException(msg);
 	} else {
 		_t = defConstant(mb, TYPE_str, &cst);
 		if (_t >= 0)
@@ -544,7 +537,6 @@ pushNil(MalBlkPtr mb, InstrPtr q, int tpe)
 				str msg = createException(MAL, "pushNil",
 										  "Can not allocate nil variable");
 				addMalException(mb, msg);
-				freeException(msg);
 			}
 		}
 		_t = defConstant(mb, tpe, &cst);
@@ -603,7 +595,6 @@ pushNilType(MalBlkPtr mb, InstrPtr q, char *tpe)
 	}
 	if (msg) {
 		addMalException(mb, msg);
-		freeException(msg);
 	}
 	return q;
 }
@@ -620,7 +611,6 @@ pushType(MalBlkPtr mb, InstrPtr q, int tpe)
 	msg = convertConstant(mb->ma, tpe, &cst);
 	if (msg != MAL_SUCCEED) {
 		addMalException(mb, msg);
-		freeException(msg);
 	} else {
 		_t = defConstant(mb, tpe, &cst);
 		if (_t >= 0) {
@@ -642,7 +632,6 @@ pushZero(MalBlkPtr mb, InstrPtr q, int tpe)
 	msg = convertConstant(mb->ma, tpe, &cst);
 	if (msg != MAL_SUCCEED) {
 		addMalException(mb, msg);
-		freeException(msg);
 	} else {
 		_t = defConstant(mb, tpe, &cst);
 		if (_t >= 0)
@@ -662,7 +651,6 @@ pushValue(MalBlkPtr mb, InstrPtr q, const ValRecord *vr)
 	if (VALcopy(mb->ma, &cst, vr) == NULL) {
 		str msg = createException(MAL, "pushValue", "Can not allocate variable");
 		addMalException(mb, msg);
-		freeException(msg);
 	} else {
 		int type = cst.bat?newBatType(cst.vtype):cst.vtype;
 		_t = defConstant(mb, type, &cst);

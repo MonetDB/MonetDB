@@ -176,9 +176,8 @@ monetdbe_version(void)
 static void
 clear_error( monetdbe_database_internal *mdbe)
 {
-	if (mdbe->msg)
-		freeException(mdbe->msg);
 	mdbe->msg = NULL;
+	ma_reset(mdbe->c->qryctx.errorallocator);
 }
 
 static char*
@@ -186,9 +185,7 @@ set_error( monetdbe_database_internal *mdbe, char *err)
 {
 	if (!err)
 		return err;
-	if (mdbe->msg) /* keep first error */
-		freeException(err);
-	else
+	if (mdbe->msg == NULL) /* keep first error */
 		mdbe->msg = err;
 	return mdbe->msg;
 }
@@ -205,9 +202,7 @@ commit_action(mvc* m, monetdbe_database_internal *mdbe, monetdbe_result **result
 
 	if (mdbe->msg != MAL_SUCCEED || commit_msg != MAL_SUCCEED) {
 		if (res_internal) {
-			char* other = monetdbe_cleanup_result_internal(mdbe, res_internal);
-			if (other)
-				freeException(other);
+			(void) monetdbe_cleanup_result_internal(mdbe, res_internal);
 		}
 		if (result)
 			*result = NULL;
@@ -478,9 +473,7 @@ monetdbe_close_internal(monetdbe_database_internal *mdbe)
 
 	if (validate_database_handle_noerror(mdbe)) {
 		open_dbs--;
-		char *msg = SQLexitClient(mdbe->c);
-		if (msg)
-			freeException(msg);
+		(void) SQLexitClient(mdbe->c);
 		MCcloseClient(mdbe->c);
 	}
 	GDKfree(mdbe);

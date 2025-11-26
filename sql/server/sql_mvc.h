@@ -126,6 +126,7 @@ typedef struct sql_frame {
 /* a single SQL optimizer run */
 typedef struct {
 	const char *name; /* the optimizer name itself */
+	int index;        /* optimizer index */
 	int nchanges;     /* how many changes it did */
 	lng time;         /* how long it did take (all runs) */
 } sql_optimizer_run;

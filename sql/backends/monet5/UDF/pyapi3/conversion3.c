@@ -204,7 +204,6 @@ PyArrayObject_FromBAT(allocator *ma, Client ctx, PyInput *inp, size_t t_start, s
 			BAT *ret_bat = NULL;
 			msg = ConvertFromSQLType(ma, ctx, b, inp->sql_subtype, &ret_bat, &inp->bat_type);
 			if (msg != MAL_SUCCEED) {
-				freeException(msg);
 				msg = createException(MAL, "pyapi3.eval",
 									  SQLSTATE(PY000) "Failed to convert BAT.");
 				goto wrapup;

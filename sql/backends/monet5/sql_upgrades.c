@@ -5368,6 +5368,5 @@ SQLupgrades(Client c, mvc *m)
 
 handle_error:
 	GDKfatal("%s\n", err);
-	freeException(err);
 	return -1;
 }

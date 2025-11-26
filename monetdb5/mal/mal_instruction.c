@@ -32,14 +32,11 @@ addMalException(MalBlkPtr mb, const char *msg)
 {
 	if (msg == NULL)
 		return;
-	size_t len;
 	if (mb->errors) {
-		len = strlen(mb->errors);
+		mb->errors = concatErrors(mb->errors, msg);
 	} else {
-		mb->errors = MT_thread_get_exceptbuf();
-		len = 0;
+		mb->errors = dupError(msg);
 	}
-	strcpy_len(mb->errors + len, msg, GDKMAXERRLEN - len);
 }
 
 Symbol
@@ -305,7 +302,6 @@ freeMalBlk(MalBlkPtr mb)
 	//	if (isVarConstant(mb, i))
 	//		VALclear(&getVarConstant(mb, i));
 	//}
-	freeException(mb->errors);
 	ma_destroy(mb->ma);
 #if 0
 	mb->vtop = 0;
@@ -322,7 +318,6 @@ freeMalBlk(MalBlkPtr mb)
 	mb->help = 0;
 	mb->inlineProp = 0;
 	mb->unsafeProp = 0;
-	freeException(mb->errors);
 	GDKfree(mb);
 #endif
 }
@@ -987,7 +982,6 @@ defConstant(MalBlkPtr mb, int type, ValPtr cst)
 												"constant coercion error");
 			//GDKfree(ft);
 			//GDKfree(tt);
-			freeException(msg);
 			VALclear(cst);		/* it could contain allocated space */
 			return -1;
 		} else {

@@ -1948,8 +1948,6 @@ argumentZero(MalBlkPtr mb, int tpe)
 	cst.vtype = TYPE_int;
 	cst.val.ival = 0;
 	msg = convertConstant(tpe, &cst);
-	if( msg)
-		freeException(msg); // will not be called
 	return defConstant(mb, tpe, &cst);
 }
 */

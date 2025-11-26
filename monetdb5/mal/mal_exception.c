@@ -51,18 +51,27 @@ isExceptionVariable(const char *nme)
 static char M5OutOfMemory[] = MAL_MALLOC_FAIL;
 
 char *
-concatErrors(const char *err1, const char *err2)
+dupError(const char *err)
 {
-	/* in case either one of the input errors comes from the exception
-	 * buffer, we make temporary copies of both */
-	allocator *ta = MT_thread_getallocator();
-	allocator_state ta_state = ma_open(ta);
-	char *err1cp = ma_strdup(ta, err1);
-	char *err2cp = ma_strdup(ta, err2);
-	bool addnl = err1[strlen(err1cp) - 1] != '\n';
-	char *new = MT_thread_get_exceptbuf();
-	strconcat_len(new, GDKMAXERRLEN, err1cp, addnl ? "\n" : "", err2cp, NULL);
-	ma_close(ta, &ta_state);
+	QryCtx *qc = MT_thread_get_qry_ctx();
+	allocator *ma = qc->errorallocator;
+	char *msg = ma_strdup(ma, err);
+
+	return msg ? msg : M5OutOfMemory;
+}
+
+char *
+concatErrors(char *err1, const char *err2)
+{
+	QryCtx *qc = MT_thread_get_qry_ctx();
+	allocator *ma = qc->errorallocator;
+	size_t len = strlen(err1);
+	bool addnl = err1[len - 1] != '\n';
+	len += strlen(err2) + 1 + addnl;
+	char *new = ma_alloc(ma, len);
+	if (new == NULL)
+		return err1;
+	strconcat_len(new, len, err1, addnl ? "\n" : "", err2, NULL);
 	return new;
 }
 
@@ -73,53 +82,41 @@ concatErrors(const char *err1, const char *err2)
  */
 __attribute__((__format__(__printf__, 3, 0), __returns_nonnull__))
 static str
-createExceptionInternal(bool append, enum malexception type, const char *fcn,
+createExceptionInternal(enum malexception type, const char *fcn,
 						const char *format, va_list ap)
 {
+	size_t msglen;
 	int len;
 	char *msg;
 	va_list ap2;
-	size_t buflen = GDKMAXERRLEN;
+	QryCtx *qc = MT_thread_get_qry_ctx();
+	allocator *ma = qc->errorallocator;
 
 	va_copy(ap2, ap);			/* we need to use it twice */
+	msglen = strlen(exceptionNames[type]) + strlen(fcn) + 2;
 	len = vsnprintf(NULL, 0, format, ap);	/* count necessary length */
 	if (len < 0) {
 		TRC_CRITICAL(MAL_SERVER, "called with bad arguments");
 		len = 0;
 	}
-	msg = MT_thread_get_exceptbuf();
+	msg = ma_alloc(ma, msglen + len + 2);
 	if (msg != NULL) {
-		if (append) {
-			size_t mlen = strlen(msg);
-			msg += mlen;
-			buflen -= mlen;
-			if (buflen < 64)
-				return MT_thread_get_exceptbuf();
-		}
 		/* the calls below succeed: the arguments have already been checked */
-		size_t msglen = strconcat_len(msg, buflen, exceptionNames[type],
-									  ":", fcn, ":", NULL);
-		if (len > 0 && msglen < buflen) {
-			int prlen = vsnprintf(msg + msglen, buflen - msglen, format, ap2);
-			if (msglen + prlen >= buflen)
-				strcpy(msg + buflen - 5, "...\n");
-		}
+		(void) strconcat_len(msg, msglen + 1,
+							 exceptionNames[type], ":", fcn, ":", NULL);
+		if (len > 0)
+			(void) vsnprintf(msg + msglen, len + 1, format, ap2);
 		char *q = msg + strlen(msg);
 		if (q[-1] != '\n') {
-			/* make sure message ends with newline */
-			if (q >= msg + buflen - 1) {
-				strcpy(msg + buflen - 5, "...\n");
-			} else {
-				*q++ = '\n';
-				*q = '\0';
-			}
+			/* make sure message ends with newline, we already have the space */
+			*q++ = '\n';
+			*q = '\0';
 		}
 		q = msg;
 		for (char *p = strchr(msg, '\n'); p; q = p + 1, p = strchr(q, '\n'))
 			TRC_ERROR(MAL_SERVER, "%.*s\n", (int) (p - q), q);
 		if (*q)
 			TRC_ERROR(MAL_SERVER, "%s\n", q);
-		msg = MT_thread_get_exceptbuf();
 	} else {
 		msg = M5OutOfMemory;
 	}
@@ -180,34 +177,12 @@ createException(enum malexception type, const char *fcn, const char *format,
 		return ret;
 	}
 	va_start(ap, format);
-	ret = createExceptionInternal(false, type, fcn, format, ap);
+	ret = createExceptionInternal(type, fcn, format, ap);
 	va_end(ap);
 	GDKclrerr();
 
 	assert(ret);
 	return ret;
-}
-
-str
-appendException(enum malexception type, const char *fcn, const char *format,
-				...)
-{
-	va_list ap;
-	va_start(ap, format);
-	str ret = createExceptionInternal(true, type, fcn, format, ap);
-	va_end(ap);
-	GDKclrerr();
-
-	assert(ret);
-	return ret;
-}
-
-void
-freeException(str msg)
-{
-	(void)msg;
-	//if (msg != MAL_SUCCEED && msg != M5OutOfMemory)
-	//	GDKfree(msg);
 }
 
 /**
@@ -221,47 +196,52 @@ createMalExceptionInternal(MalBlkPtr mb, int pc, enum malexception type,
 						   const char *prev, const char *format, va_list ap)
 {
 	bool addnl = false;
-	const char *mod = getInstrPtr(mb, 0) ? getModName(mb) : "unknown";
+	const char *s = getInstrPtr(mb, 0) ? getModName(mb) : "unknown";
 	const char *fcn = getInstrPtr(mb, 0) ? getFcnName(mb) : "unknown";
-	char *buf = MT_thread_get_exceptbuf();
-	size_t buflen = GDKMAXERRLEN;
+	size_t msglen;
+	QryCtx *qc = MT_thread_get_qry_ctx();
+	allocator *ma = qc->errorallocator;
 
 	if (prev) {
-		size_t msglen = strlen(prev);
-		assert(msglen < buflen);
-		if (prev != buf) {
-			strcpy_len(buf, prev, buflen);
-		}
-		buf += msglen;
-		buflen -= msglen;
+		msglen = strlen(prev);
 		if (msglen > 0 && prev[msglen - 1] != '\n') {
 			addnl = true;
 			msglen++;
 		}
-	}
-	if (type == SYNTAX) {
-		size_t msglen = strconcat_len(buf, buflen,
-									  exceptionNames[type], ":", NULL);
-		if (msglen < buflen) {
-			buf += msglen;
-			buflen -= msglen;
-		} else {
-			buflen = 0;
-		}
+		msglen += snprintf(NULL, 0, "!%s:%s.%s[%d]:",
+						   exceptionNames[type], s, fcn, pc);
+	} else if (type == SYNTAX) {
+		msglen = strlen(exceptionNames[type]) + 1;
 	} else {
-		int msglen = snprintf(buf, buflen, "%s!%s:%s.%s[%d]:",
-							  addnl ? "\n" : "",
-							  exceptionNames[type], mod, fcn, pc);
-		if ((size_t) msglen < buflen) {
-			buf += msglen;
-			buflen -= (size_t) msglen;
-		} else {
-			buflen = 0;
-		}
+		msglen = snprintf(NULL, 0, "%s:%s.%s[%d]:",
+						  exceptionNames[type], s, fcn, pc);
 	}
-	if (buflen > 0)
-		(void) vsnprintf(buf, buflen, format, ap);
-	return MT_thread_get_exceptbuf();
+	va_list ap2;
+	va_copy(ap2, ap);
+	int len = vsnprintf(NULL, 0, format, ap);
+	if (len < 0)
+		len = 0;
+	char *msg = ma_alloc(ma, msglen + len + 1);
+	if (msg != NULL) {
+		/* the calls below succeed: the arguments have already been checked */
+		if (prev) {
+			(void) snprintf(msg, msglen + 1, "%s%s!%s:%s.%s[%d]:",
+							prev, addnl ? "\n" : "",
+							exceptionNames[type], s, fcn, pc);
+		} else if (type == SYNTAX) {
+			(void) strconcat_len(msg, msglen + 1,
+								 exceptionNames[type], ":", NULL);
+		} else {
+			(void) snprintf(msg, msglen + 1, "%s:%s.%s[%d]:",
+							exceptionNames[type], s, fcn, pc);
+		}
+		if (len > 0)
+			(void) vsnprintf(msg + msglen, len + 1, format, ap2);
+	} else {
+		msg = M5OutOfMemory;
+	}
+	va_end(ap2);
+	return msg;
 }
 
 /**

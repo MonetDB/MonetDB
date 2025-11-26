@@ -107,7 +107,6 @@ getAddress(const char *modname, const char *fcnname)
 	if (lastfile == 0) {
 		char *msg = loadLibrary("monetdb5", 1);
 		if (msg) {
-			freeException(msg);
 			return NULL;
 		}
 	}

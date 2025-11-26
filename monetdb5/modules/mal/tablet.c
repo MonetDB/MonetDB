@@ -907,7 +907,6 @@ typedef struct {
 	bte *rowerror;
 	int errorcnt;
 	bool aborted;
-	bool set_qry_ctx;
 } READERtask;
 
 /* returns TRUE if there is/might be more */
@@ -1426,7 +1425,7 @@ SQLworker(void *arg)
 	lng t0;
 
 	GDKclrerr();
-	MT_thread_set_qry_ctx(task->set_qry_ctx ? &task->cntxt->qryctx : NULL);
+	MT_thread_set_qry_ctx(&task->cntxt->qryctx);
 
 	MT_sema_down(&task->sema);
 	while (task->top[task->cur] >= 0) {
@@ -1603,7 +1602,7 @@ SQLproducer(void *p)
 
 	allocator *ta = MT_thread_getallocator();
 	allocator_state ta_state = ma_open(ta);
-	MT_thread_set_qry_ctx(task->set_qry_ctx ? &task->cntxt->qryctx : NULL);
+	MT_thread_set_qry_ctx(&task->cntxt->qryctx);
 	rdfa = mkdfa(ta, (const unsigned char *) rsep, rseplen);
 	if (rdfa == NULL) {
 		tablet_error(task, lng_nil, lng_nil, int_nil, "cannot allocate memory",
@@ -1940,7 +1939,6 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out,
 		.from_stdin = from_stdin,
 		.as = as,
 		.escape = escape,	/* TODO: implement feature!!! */
-		.set_qry_ctx = MT_thread_get_qry_ctx() != NULL,
 	};
 
 	/* create the reject tables */
@@ -2261,18 +2259,6 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out,
 	/* wait for their death */
 	for (j = 0; j < threads; j++)
 		MT_sema_down(&ptask[j].reply);
-
-	/* it may be that there was an error which may have been produced by
-	 * one of the worker threads; if so, copy the error message to our
-	 * own exception buffer since the worker thread's exception buffer
-	 * will be destroyed when we join the thread */
-	if (as->error) {
-		char *msg = MT_thread_get_exceptbuf();
-		if (as->error != msg) {
-			strcpy_len(msg, as->error, GDKMAXERRLEN);
-			as->error = msg;
-		}
-	}
 
 /*	TRC_DEBUG(MAL_SERVER, "Kill the workers\n");*/
 

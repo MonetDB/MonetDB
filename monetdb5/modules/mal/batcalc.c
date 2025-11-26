@@ -1915,6 +1915,117 @@ batcalc_init(void)
 	return MAL_SUCCEED;
 }
 
+static str
+CALCbat_to_hex_int(Client ctx, bat *resbat, bat *valuesbat)
+{
+	(void)ctx;
+	str msg;
+	BAT *values = NULL;
+	BATiter valiter = {0};
+	BAT *res = NULL;
+
+	values = BATdescriptor(*valuesbat);
+	if (values == NULL) {
+		msg = createException(MAL, "CALCbat_to_hex_int", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		goto end;
+	}
+	valiter = bat_iterator(values);
+
+	res = COLnew(values->hseqbase, TYPE_str, BATcount(values), TRANSIENT);
+	if (values == NULL) {
+		msg = createException(MAL, "CALCbat_to_hex_int", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto end;
+	}
+
+	assert(BATttype(values) == TYPE_int);
+	int *p = Tloc(values, 0); // always 0 regardless of hseqbase, is that correct?
+	for (BUN i = 0; i < BATcount(values); i++) {
+		char buf[50];
+		int n = *p++;
+		const char *s;
+		if (is_int_nil(n))
+			s = str_nil;
+		else {
+			snprintf(buf, sizeof(buf), "%" PRIx32, (uint32_t)n);
+			s = buf;
+		}
+		if (BUNappend(res, s, false) != GDK_SUCCEED) {
+			msg = createException(MAL, "CALCbat_to_hex_int", GDK_EXCEPTION);
+			goto end;
+		}
+	}
+
+	msg = MAL_SUCCEED;
+end:
+	if (values != NULL) {
+		bat_iterator_end(&valiter);
+		BBPunfix(*valuesbat);
+	}
+	if (msg == MAL_SUCCEED) {
+		BBPkeepref(res);
+		*resbat = res->batCacheid;
+	} else {
+		BBPreclaim(res);
+	}
+	return msg;
+}
+
+
+static str
+CALCbat_to_hex_lng(Client ctx, bat *resbat, bat *valuesbat)
+{
+	(void)ctx;
+	str msg;
+	BAT *values = NULL;
+	BATiter valiter = {0};
+	BAT *res = NULL;
+
+	values = BATdescriptor(*valuesbat);
+	if (values == NULL) {
+		msg = createException(MAL, "CALCbat_to_hex_lng", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		goto end;
+	}
+	valiter = bat_iterator(values);
+
+	res = COLnew(values->hseqbase, TYPE_str, BATcount(values), TRANSIENT);
+	if (values == NULL) {
+		msg = createException(MAL, "CALCbat_to_hex_lng", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto end;
+	}
+
+	assert(BATttype(values) == TYPE_lng);
+	lng *p = Tloc(values, 0); // always 0 regardless of hseqbase, is that correct?
+	for (BUN i = 0; i < BATcount(values); i++) {
+		char buf[50];
+		lng n = *p++;
+		const char *s;
+		if (is_lng_nil(n))
+			s = str_nil;
+		else {
+			snprintf(buf, sizeof(buf), "%" PRIx64, (uint64_t)n);
+			s = buf;
+		}
+		if (BUNappend(res, s, false) != GDK_SUCCEED) {
+			msg = createException(MAL, "CALCbat_to_hex_lng", GDK_EXCEPTION);
+			goto end;
+		}
+	}
+
+	msg = MAL_SUCCEED;
+end:
+	if (values != NULL) {
+		bat_iterator_end(&valiter);
+		BBPunfix(*valuesbat);
+	}
+	if (msg == MAL_SUCCEED) {
+		BBPkeepref(res);
+		*resbat = res->batCacheid;
+	} else {
+		BBPreclaim(res);
+	}
+	return msg;
+}
+
 static mel_func batcalc_init_funcs[] = {
  /* batcalc */
  pattern("batcalc", "isnil", CMDbatISNIL, false, "Unary check for nil over the tail of the bat", args(1,2, batarg("",bit),batargany("b",0))),
@@ -1974,6 +2085,9 @@ static mel_func batcalc_init_funcs[] = {
  pattern("batcalc", "ifthenelse", CMDifthen, false, "If-then-else operation to assemble a conditional result", args(1,4, batargany("",1),batarg("b",bit),batargany("b1",1),argany("v2",1))),
  pattern("batcalc", "ifthenelse", CMDifthen, false, "If-then-else operation to assemble a conditional result", args(1,4, batargany("",1),batarg("b",bit),argany("v1",1),batargany("b2",1))),
  pattern("batcalc", "ifthenelse", CMDifthen, false, "If-then-else operation to assemble a conditional result", args(1,4, batargany("",1),batarg("b",bit),batargany("b1",1),batargany("b2",1))),
+
+ command("batcalc", "to_hex", CALCbat_to_hex_int, false, "convert to unsigned hexadecimal number representation", args(1, 2, batarg("", str), batarg("n", int))),
+ command("batcalc", "to_hex", CALCbat_to_hex_lng, false, "convert to unsigned hexadecimal number representation", args(1, 2, batarg("", str), batarg("n", lng))),
 
  { .imp=NULL }
 

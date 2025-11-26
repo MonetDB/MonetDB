@@ -289,11 +289,9 @@ freeModule(Module m)
 	if ((s = findSymbolInModule(m, "epilogue")) != NULL) {
 		if (s->kind == COMMANDsymbol && s->func->argc <= 1 /* zero or one arg */) {
 			int status = 0;
-			str ret;
 
 			TRC_INFO(MAL_LOADER, "Unloading module %s\n", m->name);
-			ret = (*(str (*)(Client, int *)) s->func->imp) (NULL, &status);
-			freeException(ret);
+			(void) (*(str (*)(Client, int *)) s->func->imp) (NULL, &status);
 			(void) status;
 		}
 	}

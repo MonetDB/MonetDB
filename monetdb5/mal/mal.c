@@ -95,7 +95,6 @@ mal_init(char *modules[], bool embedded, const char *initpasswd,
 	if (err != MAL_SUCCEED) {
 		mal_client_reset();
 		TRC_CRITICAL(MAL_SERVER, "%s\n", err);
-		freeException(err);
 		return -1;
 	}
 	initProfiler();

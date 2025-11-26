@@ -154,7 +154,6 @@ OPTmultiplexInline(Client ctx, MalBlkPtr mb, InstrPtr p, int pc)
 	int i, j, k, m;
 	int refbat = 0, retc = p->retc;
 	bit *upgrade;
-	str msg;
 	allocator *ta = mb->ta;
 
 
@@ -358,9 +357,7 @@ OPTmultiplexInline(Client ctx, MalBlkPtr mb, InstrPtr p, int pc)
 		freeMalBlk(mq);
 
 		/* ugh ugh, fallback to non inline, but optimized code */
-		msg = OPTmultiplexSimple(ctx, s->def);
-		if (msg)
-			freeException(msg);
+		(void) OPTmultiplexSimple(ctx, s->def);
 		if (s->kind == FUNCTIONsymbol)
 			s->def->inlineProp = 0;
 		return 0;

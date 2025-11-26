@@ -79,10 +79,13 @@ static void
 parseError(Client ctx, const char *msg)
 {
 	MalBlkPtr mb;
+	char *old, *new;
 	char buf[1028] = { 0 };
-	char *s = buf, *t;
+	char *s = buf, *t, *line = "", *marker = "";
 	char *l = lastline(ctx);
 	ssize_t i;
+	QryCtx *qc = MT_thread_get_qry_ctx();
+	allocator *ma = qc->errorallocator;
 
 	if (ctx->backup) {
 		freeSymbol(ctx->curprg);
@@ -97,11 +100,7 @@ parseError(Client ctx, const char *msg)
 	}
 	*s++ = '\n';
 	*s = 0;
-	assert(mb->errors == NULL || mb->errors == MT_thread_get_exceptbuf());
-	if (mb->errors)
-		(void) appendException(SYNTAX, "parseError", "%s", buf);
-	else
-		(void) createException(SYNTAX, "parseError", "%s", buf);
+	line = createException(SYNTAX, "parseError", "%s", buf);
 
 	/* produce the position marker */
 	s = buf;
@@ -111,7 +110,20 @@ parseError(Client ctx, const char *msg)
 	}
 	*s++ = '^';
 	*s = 0;
-	mb->errors = appendException(SYNTAX, "parseError", "%s%s", buf, msg);
+	marker = createException(SYNTAX, "parseError", "%s%s", buf, msg);
+
+	old = mb->errors;
+	new = ma_alloc(ma, (old ? strlen(old) : 0) + strlen(line) + strlen(marker) + 64);
+	if (new == NULL) {
+		skipToEnd(ctx);
+		return;					// just stick to old error message
+	}
+	mb->errors = new;
+	if (old) {
+		new = stpcpy(new, old);
+	}
+	new = stpcpy(new, line);
+	new = stpcpy(new, marker);
 
 	skipToEnd(ctx);
 }
@@ -1205,13 +1217,11 @@ parseInclude(Client ctx)
 		s = loadLibrary(modnme, FALSE);
 		if (s) {
 			parseError(ctx, s);
-			freeException(s);
 			return 0;
 		}
 	}
 	if ((s = malInclude(ctx, modnme, 0))) {
 		parseError(ctx, s);
-		freeException(s);
 		return 0;
 	}
 	return 0;
@@ -1843,8 +1853,6 @@ parseEnd(Client ctx)
 	InstrPtr sig;
 	str errors = MAL_SUCCEED;
 
-	if (ctx->curprg->def->errors)
-		return 1;
 	if (MALkeyword(ctx, "end", 3)) {
 		curPrg = ctx->curprg;
 		l = idLength(ctx);
@@ -1874,22 +1882,20 @@ parseEnd(Client ctx)
 		else
 			insertSymbol(getModule(getModuleId(sig)), ctx->curprg);
 
+		// check for newly identified errors
 		errors = chkProgram(ctx->usermodule, ctx->curprg->def);
-		if (errors) {
-			ctx->curprg->def->errors = errors;
-			return 1;
-		}
 
 		if (ctx->backup) {
 			ctx->curprg = ctx->backup;
-			ctx->backup = 0;
+			ctx->backup = NULL;
 		} else {
 			str msg;
 			if ((msg = MSinitClientPrg(ctx, ctx->curmodule->name,
 									   mainRef)) != MAL_SUCCEED) {
-				ctx->curprg->def->errors = msg;
+				errors = msg;
 			}
 		}
+		ctx->curprg->def->errors = errors;
 		return 1;
 	}
 	return 0;
@@ -2146,11 +2152,6 @@ parseAssign(allocator *ma, Client ctx, int cntrl)
 		}
 		advance(ctx, i);
 		curInstr->modname = calcRef;
-		if (curInstr->modname == NULL) {
-			freeInstruction(curBlk, curInstr);
-			parseError(ctx, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			return;
-		}
 		if ((l = idLength(ctx))
 			&& !(l == 3 && strncmp(CURRENT(ctx), "nil", 3) == 0)) {
 			GETvariable(freeInstruction(curBlk, curInstr));

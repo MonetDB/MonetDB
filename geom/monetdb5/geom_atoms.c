@@ -99,7 +99,6 @@ wkbFROMSTR(allocator *ma, const char *geomWKT, size_t *len, void **GEOMWKB, bool
 	err = wkbFROMSTR_withSRID(ma, geomWKT, len, geomWKB, 0, &parsedBytes);
 	if (err != MAL_SUCCEED) {
 		GDKerror("%s", getExceptionMessageAndState(err));
-		freeException(err);
 		return -1;
 	}
 	return (ssize_t) parsedBytes;
