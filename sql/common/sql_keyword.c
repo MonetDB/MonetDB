@@ -39,12 +39,19 @@ keyword_key(char *k, int *l)
 }
 
 int
-keywords_insert(char *k, int token)
+keywords_insert(const char *oldk, int token)
 {
 	keyword *kw = MNEW(keyword);
-	if(kw) {
+	char *k = NULL;
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
+	if (GDKtolower(ta, &k, &(size_t){0}, oldk) != GDK_SUCCEED)
+		return -1;
+	k = GDKstrdup(k);
+	ma_close(&ta_state);
+	if (kw != NULL && k != NULL) {
 		int len = 0;
-		int bucket = keyword_key(k = toLower(k), &len) & HASH_MASK;
+		int bucket = keyword_key(k, &len) & HASH_MASK;
 #ifndef NDEBUG
 		/* no duplicate keywords */
 		keyword *kw2;
