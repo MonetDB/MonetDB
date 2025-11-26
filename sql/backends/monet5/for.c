@@ -282,7 +282,7 @@ FORcompress_col(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 		bat_destroy(o);
 	}
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 	return msg;
 }
 

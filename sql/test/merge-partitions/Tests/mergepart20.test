@@ -206,7 +206,7 @@ DROP TABLE subtable1
 statement ok
 DROP FUNCTION iamdummy
 
-statement error 42000!SUM: aggregate functions not allowed on an unique value
+statement error 42000!SUM: aggregate functions not allowed on a unique value
 CREATE MERGE TABLE testme(a int) PARTITION BY RANGE USING (SUM(a))
 
 statement error 42000!CREATE MERGE TABLE: error compiling expression 'SQL feature not yet available for expressions and default values: WINDOW'

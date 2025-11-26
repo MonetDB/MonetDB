@@ -104,7 +104,7 @@ merge_freemem(MergeState *ms)
 	ms->allocedh = MERGESTATE_TEMP_SIZE;
 	ms->at = (void *) ms->temparrayt;
 	ms->allocedt = MERGESTATE_TEMP_SIZE;
-	ma_close(ms->ma, &ms->ma_state);
+	ma_close(&ms->ma_state);
 }
 
 /* Ensure enough temp memory for 'need' array slots is available.

@@ -182,11 +182,11 @@ malIncludeString(Client c, const char *name, str mal, int listing,
 	allocator_state ta_state = ma_open(ta);
 
 	if ((mal_buf = ma_alloc(ta, sizeof(buffer))) == NULL) {
-		ma_close(ta, &ta_state);
+		ma_close(&ta_state);
 		throw(MAL, "malIncludeString", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	if ((mal_stream = buffer_rastream(mal_buf, name)) == NULL) {
-		ma_close(ta, &ta_state);
+		ma_close(&ta_state);
 		throw(MAL, "malIncludeString", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	buffer_init(mal_buf, mal, mal_len);
@@ -195,7 +195,7 @@ malIncludeString(Client c, const char *name, str mal, int listing,
 	c->bak = NULL;
 	if ((c->fdin = bstream_create(mal_stream, mal_len)) == NULL) {
 		mnstr_destroy(mal_stream);
-		ma_close(ta, &ta_state);
+		ma_close(&ta_state);
 		throw(MAL, "malIncludeString", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	c->qryctx.bs = c->fdin;
@@ -204,7 +204,7 @@ malIncludeString(Client c, const char *name, str mal, int listing,
 	bstream_destroy(c->fdin);
 	c->fdin = NULL;
 	c->qryctx.bs = NULL;
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 
 	restoreClient;
 	return msg;
@@ -265,7 +265,7 @@ malInclude(Client c, const char *name, int listing)
 		c->fdin = NULL;
 		c->qryctx.bs = NULL;
 	}
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 	restoreClient;
 	return msg;
 }

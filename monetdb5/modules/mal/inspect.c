@@ -76,12 +76,12 @@ INSPECTgetAllFunctions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	*ret = b->batCacheid;
 	BBPkeepref(b);
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 
 	return MAL_SUCCEED;
   bailout:
 	BBPreclaim(b);
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 	throw(MAL, "inspect.getgetFunctionId", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 }
 
@@ -120,11 +120,11 @@ INSPECTgetAllModules(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	*ret = b->batCacheid;
 	BBPkeepref(b);
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 
 	return MAL_SUCCEED;
   bailout:
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 	BBPreclaim(b);
 	throw(MAL, "inspect.getmodule", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 }
@@ -164,12 +164,12 @@ INSPECTgetkind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	*ret = b->batCacheid;
 	BBPkeepref(b);
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 
 	return MAL_SUCCEED;
   bailout:
 	BBPreclaim(b);
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 	throw(MAL, "inspect.get", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 }
 
@@ -210,12 +210,12 @@ INSPECTgetAllSignatures(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	*ret = b->batCacheid;
 	BBPkeepref(b);
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 
 	return MAL_SUCCEED;
   bailout:
 	BBPreclaim(b);
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 	throw(MAL, "inspect.get", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 }
 
@@ -258,12 +258,12 @@ INSPECTgetAllAddresses(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	*ret = b->batCacheid;
 	BBPkeepref(b);
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 
 	return MAL_SUCCEED;
   bailout:
 	BBPreclaim(b);
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 	throw(MAL, "inspect.get", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 }
 #endif

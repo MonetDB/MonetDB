@@ -710,7 +710,7 @@ geoDistanceSingle(GEOSGeom aGeom, GEOSGeom bGeom, double distance_min_limit)
 		GeoPolygon b = geoPolygonFromGeom(ta, bGeom);
 		distance = geoDistancePolygonPolygon(a, b, distance_min_limit);
 	}
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 	return distance;
 }
 
@@ -868,7 +868,7 @@ geoCoversSingle(GEOSGeom a, GEOSGeom b)
 			//If every point in the exterior ring of B is covered, polygon B is covered by polygon A
 			res = geoPolygonCoversLine(polygonA, polygonB.exteriorRing);
 		}
-		ma_close(ta, &ta_state);
+		ma_close(&ta_state);
 		return res;
 	} else
 		return false;
@@ -1112,7 +1112,7 @@ filterJoinGeomGeomDoubleToBit(bat *lres_id, bat *rres_id, const bat *l_id, const
 			GEOSGeom_destroy_r(geoshandle, r_geoms[i]);
 		}
 	}
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 	bat_iterator_end(&l_iter);
 	bat_iterator_end(&r_iter);
 	BBPunfix(l->batCacheid);
@@ -1137,7 +1137,7 @@ free:
 			GEOSGeom_destroy_r(geoshandle, r_geoms[i]);
 		}
 	}
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 	BBPunfix(l->batCacheid);
 	BBPunfix(r->batCacheid);
 	if (ls)

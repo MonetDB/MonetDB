@@ -602,7 +602,7 @@ PyDict_CheckForConversion(PyObject *pResult, int expected_columns, char **retcol
 				MAL, "pyapi3.eval",
 				SQLSTATE(PY000) "Error converting dict return value \"%s\": %s",
 				retcol_names[i], msg);
-			ma_close(ma, &ma_state);
+			ma_close(&ma_state);
 			goto wrapup;
 		}
 		if (PyList_CheckExact(object)) {

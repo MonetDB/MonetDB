@@ -393,7 +393,7 @@ import_nul_terminated(backend *be, bat *ret, BUN *retcnt, str method, int width,
 
 end:
 	release_insert_state(&state);
-	ma_close(ma, &ma_state);
+	ma_close(&ma_state);
 	if (input != NULL)
 		BBPunfix(input->batCacheid);
 	if (result != NULL) {
@@ -517,7 +517,7 @@ dump_fixed_width(BAT *b, stream *s, BUN start, BUN length, bool byteswap, bincop
 	}
 
 end:
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 	return msg;
 }
 

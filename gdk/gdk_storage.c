@@ -956,7 +956,7 @@ BATprintcolumns(stream *s, int argc, BAT *argv[])
 	for (i = 0; i < argc; i++) {
 		bat_iterator_end(&colinfo[i].i);
 	}
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 
 	return rc;
 }

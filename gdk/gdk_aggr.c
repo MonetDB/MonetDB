@@ -226,7 +226,7 @@ dofsum(const void *restrict values, oid seqb,
 	}
 	pergroup = ma_alloc(ma, ngrp * sizeof(*pergroup));
 	if (pergroup == NULL) {
-		ma_close(ma, &ma_state);
+		ma_close(&ma_state);
 		return BUN_NONE;
 	}
 	for (grp = 0; grp < ngrp; grp++) {
@@ -235,7 +235,7 @@ dofsum(const void *restrict values, oid seqb,
 			.partials = ma_alloc(ma, 2 * sizeof(double)),
 		};
 		if (pergroup[grp].partials == NULL) {
-			ma_close(ma, &ma_state);
+			ma_close(&ma_state);
 			return BUN_NONE;
 		}
 	}
@@ -408,13 +408,13 @@ dofsum(const void *restrict values, oid seqb,
 			((dbl *) results)[grp] = hi;
 		}
 	}
-	ma_close(ma, &ma_state);
+	ma_close(&ma_state);
 	return nils;
 
   overflow:
 	GDKerror("22003!overflow in sum aggregate.\n");
   bailout:
-	ma_close(ma, &ma_state);
+	ma_close(&ma_state);
 	return BUN_NONE;
 }
 
@@ -731,7 +731,7 @@ dosum(const void *restrict values, bool nonil, oid seqb,
 	/* allocate bitmap for seen group ids */
 	seen = ma_zalloc(ma, ((ngrp + 31) / 32) * sizeof(int));
 	if (seen == NULL) {
-		ma_close(ma, &ma_state);
+		ma_close(&ma_state);
 		return BUN_NONE;
 	}
 
@@ -871,23 +871,23 @@ dosum(const void *restrict values, bool nonil, oid seqb,
 			}
 		}
 	}
-	ma_close(ma, &ma_state);
+	ma_close(&ma_state);
 
 	return nils;
 
   unsupported:
 	GDKerror("%s: type combination (sum(%s)->%s) not supported.\n",
 		 func, ATOMname(tp1), ATOMname(tp2));
-	ma_close(ma, &ma_state);
+	ma_close(&ma_state);
 	return BUN_NONE;
 
   overflow:
 	GDKerror("22003!overflow in sum aggregate.\n");
-	ma_close(ma, &ma_state);
+	ma_close(&ma_state);
 	return BUN_NONE;
 
   bailout:
-	ma_close(ma, &ma_state);
+	ma_close(&ma_state);
 	return BUN_NONE;
 }
 
@@ -1360,7 +1360,7 @@ doprod(const void *restrict values, oid seqb, struct canditer *restrict ci,
 	/* allocate bitmap for seen group ids */
 	seen = ma_zalloc(ma, ((ngrp + 31) / 32) * sizeof(int));
 	if (seen == NULL) {
-		ma_close(ma, &ma_state);
+		ma_close(&ma_state);
 		return BUN_NONE;
 	}
 
@@ -1550,23 +1550,23 @@ doprod(const void *restrict values, oid seqb, struct canditer *restrict ci,
 			}
 		}
 	}
-	ma_close(ma, &ma_state);
+	ma_close(&ma_state);
 
 	return nils;
 
   unsupported:
-	ma_close(ma, &ma_state);
+	ma_close(&ma_state);
 	GDKerror("%s: type combination (mul(%s)->%s) not supported.\n",
 		 func, ATOMname(tp1), ATOMname(tp2));
 	return BUN_NONE;
 
   overflow:
-	ma_close(ma, &ma_state);
+	ma_close(&ma_state);
 	GDKerror("22003!overflow in product aggregate.\n");
 	return BUN_NONE;
 
   bailout:
-	ma_close(ma, &ma_state);
+	ma_close(&ma_state);
 	return BUN_NONE;
 }
 
@@ -1825,12 +1825,12 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool
 
 	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp, &ci)) != NULL) {
 		GDKerror("%s\n", err);
-		ma_close(ma, &ma_state);
+		ma_close(&ma_state);
 		return GDK_FAIL;
 	}
 	if (g == NULL) {
 		GDKerror("b and g must be aligned\n");
-		ma_close(ma, &ma_state);
+		ma_close(&ma_state);
 		return GDK_FAIL;
 	}
 
@@ -1839,20 +1839,20 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool
 		 * with nil in the tail */
 		bn = BATconstant(ngrp == 0 ? 0 : min, TYPE_dbl, &dbl_nil, ngrp, TRANSIENT);
 		if (bn == NULL) {
-			ma_close(ma, &ma_state);
+			ma_close(&ma_state);
 			return GDK_FAIL;
 		}
 		if (cntsp) {
 			lng zero = 0;
 			if ((cn = BATconstant(ngrp == 0 ? 0 : min, TYPE_lng, &zero, ngrp, TRANSIENT)) == NULL) {
 				BBPreclaim(bn);
-				ma_close(ma, &ma_state);
+				ma_close(&ma_state);
 				return GDK_FAIL;
 			}
 			*cntsp = cn;
 		}
 		*bnp = bn;
-		ma_close(ma, &ma_state);
+		ma_close(&ma_state);
 		return GDK_SUCCEED;
 	}
 
@@ -1863,20 +1863,20 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool
 		/* trivial: singleton groups, so all results are equal
 		 * to the inputs (but possibly a different type) */
 		if ((bn = BATconvert(b, s, TYPE_dbl, 0, 0, 0)) == NULL) {
-			ma_close(ma, &ma_state);
+			ma_close(&ma_state);
 			return GDK_FAIL;
 		}
 		if (cntsp) {
 			lng one = 1;
 			if ((cn = BATconstant(ngrp == 0 ? 0 : min, TYPE_lng, &one, ngrp, TRANSIENT)) == NULL) {
 				BBPreclaim(bn);
-				ma_close(ma, &ma_state);
+				ma_close(&ma_state);
 				return GDK_FAIL;
 			}
 			*cntsp = cn;
 		}
 		*bnp = bn;
-		ma_close(ma, &ma_state);
+		ma_close(&ma_state);
 		return GDK_SUCCEED;
 	}
 
@@ -1976,7 +1976,7 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool
 		  ALGOBATPAR(b), ALGOOPTBATPAR(g), ALGOOPTBATPAR(e),
 		  ALGOOPTBATPAR(s), ALGOOPTBATPAR(bn),
 		  ci.seq, ci.ncand, GDKusec() - t0);
-	ma_close(ma, &ma_state);
+	ma_close(&ma_state);
 	return GDK_SUCCEED;
   bailout:
 	bat_iterator_end(&bi);
@@ -1986,7 +1986,7 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool
 		BBPreclaim(*cntsp);
 		*cntsp = NULL;
 	}
-	ma_close(ma, &ma_state);
+	ma_close(&ma_state);
 	return GDK_FAIL;
 }
 
@@ -2039,7 +2039,7 @@ BATgroupavg3(BAT **avgp, BAT **remp, BAT **cntp, BAT *b, BAT *g, BAT *e, BAT *s,
 	(void) VALinit(ma, &zero, TYPE_bte, &(bte){0});
 	bn = BATconstant(min, b->ttype, VALconvert(ma, b->ttype, &zero),
 			 ngrp, TRANSIENT);
-	ma_close(ma, &ma_state);
+	ma_close(&ma_state);
 	rn = BATconstant(min, TYPE_lng, &(lng){0}, ngrp, TRANSIENT);
 	cn = BATconstant(min, TYPE_lng, &(lng){0}, ngrp, TRANSIENT);
 	if (bn == NULL || rn == NULL || cn == NULL) {
@@ -2671,7 +2671,7 @@ BATgroupavg3combine(BAT *avg, BAT *rem, BAT *cnt, BAT *g, BAT *e, bool skip_nils
 	bn = BATconstant(min, avg->ttype,
 			VALconvert(ma, avg->ttype, &zero),
 			 ngrp, TRANSIENT);
-	ma_close(ma, &ma_state);
+	ma_close(&ma_state);
 	/* rn and cn are temporary storage of intermediates */
 	rn = BATconstant(min, TYPE_lng, &(lng){0}, ngrp, TRANSIENT);
 	cn = BATconstant(min, TYPE_lng, &(lng){0}, ngrp, TRANSIENT);
@@ -4659,12 +4659,12 @@ dogroupstdev(BAT **avgb, BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 				 * functions) argument */
 
 	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp, &ci)) != NULL) {
-		ma_close(ma, &ma_state);
+		ma_close(&ma_state);
 		GDKerror("%s: %s\n", func, err);
 		return NULL;
 	}
 	if (g == NULL) {
-		ma_close(ma, &ma_state);
+		ma_close(&ma_state);
 		GDKerror("%s: b and g must be aligned\n", func);
 		return NULL;
 	}
@@ -4779,7 +4779,7 @@ dogroupstdev(BAT **avgb, BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 		  variance ? "true" : "false",
 		  ALGOOPTBATPAR(bn), ALGOOPTBATPAR(an),
 		  func, GDKusec() - t0);
-	ma_close(ma, &ma_state);
+	ma_close(&ma_state);
 	return bn;
   overflow:
 	GDKerror("22003!overflow in calculation.\n");
@@ -4789,7 +4789,7 @@ dogroupstdev(BAT **avgb, BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 	if (an)
 		BBPreclaim(an);
 	BBPreclaim(bn);
-	ma_close(ma, &ma_state);
+	ma_close(&ma_state);
 	return NULL;
 }
 
@@ -4892,12 +4892,12 @@ dogroupcovariance(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT *s, int tp,
 	(void) tp;
 
 	if ((err = BATgroupaggrinit(b1, g, e, s, &min, &max, &ngrp, &ci)) != NULL) {
-		ma_close(ma, &ma_state);
+		ma_close(&ma_state);
 		GDKerror("%s: %s\n", func, err);
 		return NULL;
 	}
 	if (g == NULL) {
-		ma_close(ma, &ma_state);
+		ma_close(&ma_state);
 		GDKerror("%s: b1, b2 and g must be aligned\n", func);
 		return NULL;
 	}
@@ -4996,7 +4996,7 @@ dogroupcovariance(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT *s, int tp,
 		  issample ? "true" : "false",
 		  ALGOOPTBATPAR(bn),
 		  func, GDKusec() - t0);
-	ma_close(ma, &ma_state);
+	ma_close(&ma_state);
 	return bn;
   overflow:
 	GDKerror("22003!overflow in calculation.\n");
@@ -5005,7 +5005,7 @@ dogroupcovariance(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT *s, int tp,
 	bat_iterator_end(&b2i);
   alloc_fail:
 	BBPreclaim(bn);
-	ma_close(ma, &ma_state);
+	ma_close(&ma_state);
 	return NULL;
 }
 
@@ -5092,12 +5092,12 @@ BATgroupcorrelation(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT *s, int tp, bool skip_
 
 	if ((err = BATgroupaggrinit(b1, g, e, s, &min, &max, &ngrp, &ci)) != NULL) {
 		GDKerror("%s\n", err);
-		ma_close(ma, &ma_state);
+		ma_close(&ma_state);
 		return NULL;
 	}
 	if (g == NULL) {
 		GDKerror("b1, b2 and g must be aligned\n");
-		ma_close(ma, &ma_state);
+		ma_close(&ma_state);
 		return NULL;
 	}
 
@@ -5192,7 +5192,7 @@ BATgroupcorrelation(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT *s, int tp, bool skip_
 		  skip_nils ? "true" : "false",
 		  ALGOOPTBATPAR(bn),
 		  GDKusec() - t0);
-	ma_close(ma, &ma_state);
+	ma_close(&ma_state);
 	return bn;
   overflow:
 	GDKerror("22003!overflow in calculation.\n");
@@ -5201,6 +5201,6 @@ BATgroupcorrelation(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT *s, int tp, bool skip_
 	bat_iterator_end(&b2i);
   alloc_fail:
 	BBPreclaim(bn);
-	ma_close(ma, &ma_state);
+	ma_close(&ma_state);
 	return NULL;
 }

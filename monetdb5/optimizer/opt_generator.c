@@ -103,7 +103,7 @@ OPTgeneratorImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 	//const char *dblRef = getName("dbl");
 	str msg = MAL_SUCCEED;
 	int needed = 0;
-	allocator *ta = mb->ta;
+	allocator *ta = MT_thread_getallocator();
 
 	(void) stk;
 
@@ -128,7 +128,7 @@ OPTgeneratorImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 	allocator_state ta_state = ma_open(ta);
 	series = (InstrPtr *) ma_zalloc(ta, sizeof(InstrPtr) * mb->vtop);
 	if (series == NULL || newMalBlkStmt(mb, mb->ssize) < 0) {
-		ma_close(ta, &ta_state);
+		ma_close(&ta_state);
 		throw(MAL, "optimizer.generator", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
@@ -215,7 +215,7 @@ OPTgeneratorImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 		if (old[i])
 			pushInstruction(mb, old[i]);
 	}
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 	//GDKfree(old);
 
 	/* Defense line against incorrect plans */

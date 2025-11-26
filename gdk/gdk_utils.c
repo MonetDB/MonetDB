@@ -2264,6 +2264,7 @@ ma_open(allocator *sa)
 			.objects = sa->objects,
 			.inuse = sa->inuse,
 			.tmp_used = sa->tmp_used,
+			.ma = sa,
 		};
 		sa->tmp_used += 1;
 		COND_UNLOCK_ALLOCATOR(sa);
@@ -2273,8 +2274,9 @@ ma_open(allocator *sa)
 
 #undef ma_close
 void
-ma_close(allocator *sa, const allocator_state *state)
+ma_close(const allocator_state *state)
 {
+	allocator *sa = state->ma;
 	assert(sa);
 	if (sa) {
 		COND_LOCK_ALLOCATOR(sa);
@@ -2351,7 +2353,17 @@ ma_info(const allocator *a, char *buf, size_t bufsize)
 {
 	buf[0] = 0;
 	if (a != NULL)
-		snprintf(buf, bufsize, ", allocator %s, size %zu, nr %zu, used %zu, usedmem %zu, blk_size %zu, objects %zu, inuse %zu, free_obj_hits %zu, frees %zu, free_blk_hits %zu, tmp_used %zu, refcount %d", a->name, a->size, a->nr, a->used, a->usedmem, a->blk_size, a->objects, a->inuse, a->free_obj_hits, a->frees, a->free_blk_hits, a->tmp_used, a->refcount);
+		snprintf(buf, bufsize,
+			 ", allocator %s, size %zu, nr %zu, used %zu%s"
+			 ", usedmem %zu%s, blk_size %zu, objects %zu"
+			 ", inuse %zu, free_obj_hits %zu, frees %zu"
+			 ", free_blk_hits %zu, tmp_used %zu, refcount %d",
+			 a->name, a->size, a->nr,
+			 a->used, humansize(a->used, (char[24]){0}, 24),
+			 a->usedmem, humansize(a->usedmem, (char[24]){0}, 24),
+			 a->blk_size, a->objects,
+			 a->inuse, a->free_obj_hits, a->frees,
+			 a->free_blk_hits, a->tmp_used, a->refcount);
 }
 
 inline size_t

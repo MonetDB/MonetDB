@@ -1088,10 +1088,10 @@ SQLinclude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (sz > (size_t) 1 << 29) {
 		close_stream(fd);
 		msg = createException(MAL, "sql.include", SQLSTATE(42000) "file %s too large to process", fullname);
-		ma_close(ta, &ta_state);
+		ma_close(&ta_state);
 		return msg;
 	}
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 	if ((bfd = bstream_create(fd, sz == 0 ? (size_t) (128 * BLOCK) : sz)) == NULL) {
 		close_stream(fd);
 		throw(MAL, "sql.include", SQLSTATE(HY013) MAL_MALLOC_FAIL);

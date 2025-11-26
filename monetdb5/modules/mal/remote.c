@@ -620,7 +620,7 @@ RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in, bool must_flush, int *type
 		case ',':
 		case '}':
 			if (val == NULL) {
-				ma_close(ta, &ta_state);
+				ma_close(&ta_state);
 				throw(MAL, "remote.bincopyfrom",
 					  "illegal input, JSON value missing");
 			}
@@ -643,7 +643,7 @@ RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in, bool must_flush, int *type
 				 * here as well */
 				if (lngFromStr(ta, val, &len, &lvp, true) < 0 ||
 					lv < 0 /* includes lng_nil */ ) {
-					ma_close(ta, &ta_state);
+					ma_close(&ta_state);
 					throw(MAL, "remote.bincopyfrom",
 						  "bad %s value: %s", nme, val);
 				}
@@ -651,14 +651,14 @@ RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in, bool must_flush, int *type
 				/* deal with nme and val */
 				if (strcmp(nme, "version") == 0) {
 					if (lv != 1) {
-						ma_close(ta, &ta_state);
+						ma_close(&ta_state);
 						throw(MAL, "remote.bincopyfrom",
 							  "unsupported version: %s", val);
 					}
 				} else if (strcmp(nme, "hseqbase") == 0) {
 #if SIZEOF_OID < SIZEOF_LNG
 					if (lv > GDK_oid_max) {
-						ma_close(ta, &ta_state);
+						ma_close(&ta_state);
 						throw(MAL, "remote.bincopyfrom",
 							  "bad %s value: %s", nme, val);
 					}
@@ -666,7 +666,7 @@ RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in, bool must_flush, int *type
 					bb.Hseqbase = (oid) lv;
 				} else if (strcmp(nme, "ttype") == 0) {
 					if (lv < 0 || lv >= MAXTYPE) {
-						ma_close(ta, &ta_state);
+						ma_close(&ta_state);
 						throw(MAL, "remote.bincopyfrom",
 							  "bad %s value: GDK atom number %s doesn't exist",
 							  nme, val);
@@ -674,7 +674,7 @@ RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in, bool must_flush, int *type
 					if (lv >= 0 && typemap)
 						lv = typemap[lv];
 					if (lv < 0) {
-						ma_close(ta, &ta_state);
+						ma_close(&ta_state);
 						throw(MAL, "remote.bincopyfrom",
 							  "bad %s value: GDK atom number %s doesn't exist",
 							  nme, val);
@@ -683,7 +683,7 @@ RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in, bool must_flush, int *type
 				} else if (strcmp(nme, "tseqbase") == 0) {
 #if SIZEOF_OID < SIZEOF_LNG
 					if (lv > GDK_oid_max) {
-						ma_close(ta, &ta_state);
+						ma_close(&ta_state);
 						throw(MAL, "remote.bincopyfrom",
 							  "bad %s value: %s", nme, val);
 					}
@@ -701,7 +701,7 @@ RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in, bool must_flush, int *type
 					bb.Tdense = lv != 0;
 				} else if (strcmp(nme, "size") == 0) {
 					if (lv > (lng) BUN_MAX) {
-						ma_close(ta, &ta_state);
+						ma_close(&ta_state);
 						throw(MAL, "remote.bincopyfrom",
 							  "bad %s value: %s", nme, val);
 					}
@@ -711,7 +711,7 @@ RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in, bool must_flush, int *type
 				} else if (strcmp(nme, "theapsize") == 0) {
 					bb.theapsize = (size_t) lv;
 				} else {
-					ma_close(ta, &ta_state);
+					ma_close(&ta_state);
 					throw(MAL, "remote.bincopyfrom",
 						  "unknown element: %s", nme);
 				}
@@ -721,7 +721,7 @@ RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in, bool must_flush, int *type
 		}
 		hdr++;
 	}
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 
 	b = COLnew2(bb.Hseqbase, bb.Ttype, bb.size, TRANSIENT,
 				bb.size > 0 ? (uint16_t) (bb.tailsize / bb.size) : 0);

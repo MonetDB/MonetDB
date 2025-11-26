@@ -74,6 +74,4 @@ extern sql_arg *sql_find_param(mvc *sql, char *name);
 extern char *symbol2string(mvc *sql, symbol *s, int expression, char **err);
 //extern char *dlist2string(mvc *sql, dlist *s, int expression, char **err);
 
-extern char * toUpperCopy(char *dest, const char *src);
-
 #endif /*_SQL_SEMANTIC_H_*/
