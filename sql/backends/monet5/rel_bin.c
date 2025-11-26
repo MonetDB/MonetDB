@@ -6174,8 +6174,8 @@ insert_ms(backend *be, sql_table *st, sql_subtype *ct, stmt *ms)
 		pos = stmt_claim(be, st, cnt);
 
 	int mvc_var = be->mvc_var;
-	stmt *rowids = m->data;
 	stmt *msid = updates[len-1 -((ct->multiset == MS_ARRAY)?1:0)];
+	stmt *rowids = m ? m->data : msid;
 
 	/* nrowids = next_value_for(rowids, "schema?", st->base.name) */
 	InstrPtr r = newStmt(be->mb, batsqlRef, "next_value_ms");

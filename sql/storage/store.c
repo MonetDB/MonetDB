@@ -4194,6 +4194,20 @@ sql_trans_copy_column( sql_trans *tr, sql_table *t, sql_column *c, sql_column **
 				if (sql_trans_create_column_intern( &ic, tr, tt, f->name, &f->type, column_intern) < 0)
 					return -2;
 			}
+		} else if (c->type.multiset == MS_VECTOR) {
+			uint8_t localtype = c->type.type->localtype;
+			// should be flt or dbl
+			assert(localtype==TYPE_flt || localtype==TYPE_dbl);
+			size_t ncols = c->type.digits;
+			sql_subtype tp = *sql_fetch_localtype(localtype);
+			for (size_t idx=0; idx < ncols; idx++) {
+				char buf[24];
+				snprintf(buf, 24, "vec_idx_%zu", idx);
+				sql_column *ic = NULL;
+				if (sql_trans_create_column_intern( &ic, tr, tt, buf, &tp, column_intern) < 0)
+					return -2;
+			}
+
 		} else {
 			sql_column *ic = NULL;
 			sql_subtype lt = c->type;
@@ -4201,7 +4215,7 @@ sql_trans_copy_column( sql_trans *tr, sql_table *t, sql_column *c, sql_column **
 			if (sql_trans_create_column_intern( &ic, tr, tt, MSEL_NAME, &lt, column_intern) < 0)
 				return -2;
 		}
-		if (c->type.multiset == MS_SETOF || c->type.multiset == MS_ARRAY) { /* sets and arrays need oid col */
+		if (c->type.multiset > MS_VALUE) { /* sets, arrays, vectors need oid col */
 			char *name = MSID_NAME;
 			sql_subtype tp = *sql_fetch_localtype(MSID_TYPE);
 			sql_column *ic = NULL;

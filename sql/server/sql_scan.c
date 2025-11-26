@@ -661,6 +661,7 @@ scanner_init_keywords(void)
 
 	failed += keywords_insert("SETOF", SETOF);
 	failed += keywords_insert("ARRAY", ARRAY);
+	failed += keywords_insert("VECTOR", VECTOR);
 	return failed;
 }
 

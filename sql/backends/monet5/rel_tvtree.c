@@ -23,6 +23,8 @@ tv_get_type(sql_subtype *st)
 	if (st->multiset) {
 		if (st->multiset == MS_ARRAY)
 			return TV_MSET;
+		if (st->multiset == MS_VECTOR)
+			return TV_VECTOR;
 		if (st->multiset == MS_SETOF)
 			return TV_SETOF;
 	} else if (st->type->composite)
@@ -41,6 +43,7 @@ tv_node(allocator *sa, sql_subtype *st, tv_type tvt)
 	n->tvt = tvt;
 	n->rid_idx = 0;
 	n->ctl = n->rid = n->msid = n->msnr = n->vals = NULL;
+	tv_tree *sn = NULL;
 
 	/* allocate only the lists that we need based on the tv-tree type */
 	switch (n->tvt) {
@@ -54,6 +57,14 @@ tv_node(allocator *sa, sql_subtype *st, tv_type tvt)
 				append(n->ctl, tv_node(sa, &sfa->type, tv_get_type(&sfa->type)));
 			}
         	return n;
+        case TV_VECTOR:
+			n->rid = sa_list(sa);
+			n->msid = sa_list(sa);
+			n->ctl = sa_list(sa);
+			sn = tv_node(sa, st, TV_BASIC);
+			sn->st = st;
+			append(n->ctl, sn);
+			return n;
         case TV_MSET:
 			n->msnr = sa_list(sa);
 			/* fall through */
@@ -65,7 +76,6 @@ tv_node(allocator *sa, sql_subtype *st, tv_type tvt)
 			/* For MSET/SETOF we make a new child node for the values
 			 * NOTE: the ->st of the child is the same as this node so
 			 * we need to **EXPLICITLY** specify the tv_type */
-			tv_tree *sn;
 			if (st->type->composite)
 				sn = tv_node(sa, st, TV_COMP);
 			else
@@ -251,6 +261,7 @@ tv_parse_values_(backend *be, tv_tree *t, sql_exp *value, stmt *left, stmt *sel)
 			break;
 		case TV_MSET:
 		case TV_SETOF:
+		case TV_VECTOR:
 			//assert(is_convert(value->type));
 			assert(value->f);
 			uc = value;
@@ -306,7 +317,7 @@ tv_parse_values(backend *be, tv_tree *t, sql_exp *col_vals, stmt *left, stmt *se
 	 */
 	bool single_row_val = false;
 	single_row_val |= col_vals->row;
-	if ((t->tvt == TV_MSET) || (t->tvt == TV_SETOF)) {
+	if ((t->tvt == TV_MSET) || (t->tvt == TV_SETOF) || (t->tvt == TV_VECTOR)) {
 		// single value MSET/SETOF of basic type
 		single_row_val |= !((sql_exp*)vals->h->data)->f;
 		// single value MSET/SETOF of composite type
@@ -334,15 +345,34 @@ tv_generate_stmts(backend *be, tv_tree *t)
 {
 	stmt *ap, *tmp, *s;
 	list *sl;
+	tv_tree *ct = NULL;
 
 	switch (t->tvt) {
 		case TV_BASIC:
 			return stmt_append_bulk(be, stmt_temp(be, t->st), t->vals);
+		case TV_VECTOR:
+			/* vals (in the child tree) */
+			assert(list_length(t->ctl) == 1);
+			s = stmt_list(be, sa_list(be->mvc->sa));
+			ct = t->ctl->h->data;
+			for (node *n = ct->vals->h; n; n = n->next) {
+				tmp = stmt_temp(be, tail_type(n->data));
+				ap = stmt_append(be, tmp, n->data);
+				append(s->op4.lval, ap);
+			}
+			/* msid */
+			tmp = stmt_temp(be, tail_type(t->msid->h->data));
+			ap = stmt_append(be, tmp, t->msid->h->data);
+			append(s->op4.lval, ap);
+			/* we've appended in the stmt_list so update nrcols */
+			stmt_set_nrcols(s);
+			s->subtype = *t->st;
+			return s;
 		case TV_MSET:
 		case TV_SETOF:
 			/* vals (in the child tree) */
 			assert(list_length(t->ctl) == 1);
-			tv_tree *ct = t->ctl->h->data;
+			ct = t->ctl->h->data;
 			tmp = tv_generate_stmts(be, ct);
 
 			/* if the lower tv node does NOT returns a list (e.g. because
