@@ -1613,7 +1613,7 @@ BBPjson_upgrade(json_storage_conversion fixJSONStorage)
 		fprintf(stderr, "Upgrading json bat %d\n", bid);
 		if (jsonupgradebat(b, fixJSONStorage) != GDK_SUCCEED) {
 			BBPunlock();
-			ma_close(ta, &ta_state);
+			ma_close(&ta_state);
 			return GDK_FAIL;
 		}
 		upd[nupd++] = bid;
@@ -1622,10 +1622,10 @@ BBPjson_upgrade(json_storage_conversion fixJSONStorage)
 	if (nupd > 1 &&
 	    TMsubcommit_list(upd, NULL, nupd, -1) != GDK_SUCCEED) {
 		TRC_CRITICAL(GDK, "failed to commit changes\n");
-		ma_close(ta, &ta_state);
+		ma_close(&ta_state);
 		return GDK_FAIL;
 	}
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 	return GDK_SUCCEED;
 }
 #endif

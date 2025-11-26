@@ -410,7 +410,7 @@ output_file_default(Tablet *as, BAT *order, stream *fd, bstream *in)
 	BUN offset = as->offset;
 
 	if (buf == NULL || localbuf == NULL) {
-		ma_close(ta, &ta_state);
+		ma_close(&ta_state);
 		//GDKfree(buf);
 		//GDKfree(localbuf);
 		return -1;
@@ -425,7 +425,7 @@ output_file_default(Tablet *as, BAT *order, stream *fd, bstream *in)
 			break;
 		}
 	}
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 	//GDKfree(localbuf);
 	//GDKfree(buf);
 	return res;
@@ -443,7 +443,7 @@ output_file_dense(Tablet *as, stream *fd, bstream *in)
 	BUN i = 0;
 
 	if (buf == NULL || localbuf == NULL) {
-		ma_close(ta, &ta_state);
+		ma_close(&ta_state);
 		//GDKfree(buf);
 		//GDKfree(localbuf);
 		return -1;
@@ -457,7 +457,7 @@ output_file_dense(Tablet *as, stream *fd, bstream *in)
 			break;
 		}
 	}
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 	//GDKfree(localbuf);
 	//GDKfree(buf);
 	return res;
@@ -476,7 +476,7 @@ output_file_ordered(Tablet *as, BAT *order, stream *fd, bstream *in)
 	BUN offset = as->offset;
 
 	if (buf == NULL) {
-		ma_close(ta, &ta_state);
+		ma_close(&ta_state);
 		return -1;
 	}
 	for (q = offset + as->nr, p = offset; p < q; p++, i++) {
@@ -487,12 +487,12 @@ output_file_ordered(Tablet *as, BAT *order, stream *fd, bstream *in)
 			break;
 		}
 		if ((res = output_line_lookup(ta, &buf, &len, as->format, fd, as->nr_attrs, h)) < 0) {
-			ma_close(ta, &ta_state);
+			ma_close(&ta_state);
 			//GDKfree(buf);
 			return res;
 		}
 	}
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 	//GDKfree(buf);
 	return res;
 }
@@ -905,7 +905,7 @@ SQLinsert_val(READERtask *task, int col, int idx)
 					tablet_error(task, idx, row, col,
 								 SQLSTATE(HY013) MAL_MALLOC_FAIL, err);
 					task->besteffort = false;	/* no longer best effort */
-					ma_close(ta, &ta_state);
+					ma_close(&ta_state);
 					return -1;
 				}
 				mycpstr(scpy, s, slen + 1);
@@ -917,7 +917,7 @@ SQLinsert_val(READERtask *task, int col, int idx)
 			tablet_error(task, idx, row, col, buf, err);
 			//GDKfree(err);
 			if (!task->besteffort) {
-				ma_close(ta, &ta_state);
+				ma_close(&ta_state);
 				return -1;
 			}
 		}
@@ -927,7 +927,7 @@ SQLinsert_val(READERtask *task, int col, int idx)
 		fmt->c->tnonil = false;
 	}
 	if (bunfastapp(fmt->c, adt) == GDK_SUCCEED) {
-		ma_close(ta, &ta_state);
+		ma_close(&ta_state);
 		return ret;
 	}
 
@@ -940,7 +940,7 @@ SQLinsert_val(READERtask *task, int col, int idx)
 		//GDKfree(err);
 	}
 	task->besteffort = false;	/* no longer best effort */
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 	return -1;
 }
 
@@ -1493,7 +1493,7 @@ SQLproducer(void *p)
 			if (cnt == task->maxrow) {
 				//GDKfree(rdfa);
 				MT_thread_set_qry_ctx(NULL);
-				ma_close(ta, &ta_state);
+				ma_close(&ta_state);
 				return;
 			}
 		} else {
@@ -1507,7 +1507,7 @@ SQLproducer(void *p)
 				if (task->state == ENDOFCOPY) {
 					//GDKfree(rdfa);
 					MT_thread_set_qry_ctx(NULL);
-					ma_close(ta, &ta_state);
+					ma_close(&ta_state);
 					return;
 				}
 			}
@@ -1531,7 +1531,7 @@ SQLproducer(void *p)
 /*				TRC_DEBUG(MAL_SERVER, "Producer delivered all\n");*/
 				//GDKfree(rdfa);
 				MT_thread_set_qry_ctx(NULL);
-				ma_close(ta, &ta_state);
+				ma_close(&ta_state);
 				return;
 			}
 		}
@@ -1542,14 +1542,14 @@ SQLproducer(void *p)
 /*			TRC_DEBUG(MAL_SERVER, "Producer encountered eof\n");*/
 			//GDKfree(rdfa);
 			MT_thread_set_qry_ctx(NULL);
-			ma_close(ta, &ta_state);
+			ma_close(&ta_state);
 			return;
 		}
 		/* consumers ask us to stop? */
 		if (task->state == ENDOFCOPY) {
 			//GDKfree(rdfa);
 			MT_thread_set_qry_ctx(NULL);
-			ma_close(ta, &ta_state);
+			ma_close(&ta_state);
 			return;
 		}
 		bufcnt[cur] = cnt;
@@ -1566,7 +1566,7 @@ SQLproducer(void *p)
 	}
 	//GDKfree(rdfa);
 	MT_thread_set_qry_ctx(NULL);
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 
 	return;
 
@@ -1984,7 +1984,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out,
 	// 	GDKfree(task.rowerror);
 	MT_sema_destroy(&task.producer);
 	MT_sema_destroy(&task.consumer);
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 
 	return res < 0 ? BUN_NONE : cnt;
 
@@ -2000,7 +2000,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out,
 	// GDKfree(task.rowerror);
 	// for (i = 0; i < MAXWORKERS; i++)
 	// 	GDKfree(ptask[i].cols);
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 	return BUN_NONE;
 }
 

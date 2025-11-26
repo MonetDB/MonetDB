@@ -2015,7 +2015,7 @@ bm_subcommit(logger *lg, logged_range *pending, uint32_t *updated, BUN maxupdate
 	lng t0 = 0;
 
 	if (n == NULL || r == NULL || sizes == NULL) {
-		ma_close(ta, &ta_state);
+		ma_close(&ta_state);
 		log_unlock(lg);
 		return GDK_FAIL;
 	}
@@ -2040,7 +2040,7 @@ bm_subcommit(logger *lg, logged_range *pending, uint32_t *updated, BUN maxupdate
 						break;
 					}
 				}
-				ma_close(ta, &ta_state);
+				ma_close(&ta_state);
 				log_unlock(lg);
 				return GDK_FAIL;
 			}
@@ -2067,7 +2067,7 @@ bm_subcommit(logger *lg, logged_range *pending, uint32_t *updated, BUN maxupdate
 		if ((rcnt = cleanup_and_swap(lg, r, bids, lids, cnts,
 					     catalog_bid, catalog_id, dcatalog,
 					     cleanup)) < 0) {
-			ma_close(ta, &ta_state);
+			ma_close(&ta_state);
 			log_unlock(lg);
 			return GDK_FAIL;
 		}
@@ -2089,7 +2089,7 @@ bm_subcommit(logger *lg, logged_range *pending, uint32_t *updated, BUN maxupdate
 
 		tids = bm_tids(lg->seqs_id, lg->dseqs);
 		if (tids == NULL) {
-			ma_close(ta, &ta_state);
+			ma_close(&ta_state);
 			log_unlock(lg);
 			return GDK_FAIL;
 		}
@@ -2100,7 +2100,7 @@ bm_subcommit(logger *lg, logged_range *pending, uint32_t *updated, BUN maxupdate
 			logbat_destroy(tids);
 			logbat_destroy(ids);
 			logbat_destroy(vals);
-			ma_close(ta, &ta_state);
+			ma_close(&ta_state);
 			log_unlock(lg);
 			return GDK_FAIL;
 		}
@@ -2110,7 +2110,7 @@ bm_subcommit(logger *lg, logged_range *pending, uint32_t *updated, BUN maxupdate
 			logbat_destroy(tids);
 			logbat_destroy(ids);
 			logbat_destroy(vals);
-			ma_close(ta, &ta_state);
+			ma_close(&ta_state);
 			log_unlock(lg);
 			return GDK_FAIL;
 		}
@@ -2121,7 +2121,7 @@ bm_subcommit(logger *lg, logged_range *pending, uint32_t *updated, BUN maxupdate
 		    log_switch_bat(lg->seqs_val, vals, lg->fn, "seqs_val") != GDK_SUCCEED) {
 			logbat_destroy(ids);
 			logbat_destroy(vals);
-			ma_close(ta, &ta_state);
+			ma_close(&ta_state);
 			log_unlock(lg);
 			return GDK_FAIL;
 		}
@@ -2160,7 +2160,7 @@ bm_subcommit(logger *lg, logged_range *pending, uint32_t *updated, BUN maxupdate
 			BBPrelease(r[i]);
 		}
 	}
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 	if (res != GDK_SUCCEED)
 		TRC_CRITICAL(GDK, "commit failed\n");
 	return res;

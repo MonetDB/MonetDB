@@ -829,7 +829,7 @@ concat_strings(allocator *ma, BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 
 	if (bnp) {
 		if ((bn = COLnew(min, TYPE_str, ngrp, TRANSIENT)) == NULL) {
-			ma_close(ta, &ta_state);
+			ma_close(&ta_state);
 			return GDK_FAIL;
 		}
 		*bnp = bn;
@@ -897,7 +897,7 @@ concat_strings(allocator *ma, BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 				bat_iterator_end(&bi);
 				bat_iterator_end(&bis);
 				BBPreclaim(bn);
-				ma_close(ta, &ta_state);
+				ma_close(&ta_state);
 				return GDK_FAIL;
 			}
 			empty = true;
@@ -940,7 +940,7 @@ concat_strings(allocator *ma, BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 			TIMEOUT_CHECK(qry_ctx, GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
 			if (bn) {
 				if (BUNappend(bn, single_str, false) != GDK_SUCCEED) {
-					ma_close(ta, &ta_state);
+					ma_close(&ta_state);
 					bat_iterator_end(&bi);
 					bat_iterator_end(&bis);
 					BBPreclaim(bn);
@@ -956,20 +956,20 @@ concat_strings(allocator *ma, BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 				bat_iterator_end(&bi);
 				bat_iterator_end(&bis);
 				BBPreclaim(bn);
-				ma_close(ta, &ta_state);
+				ma_close(&ta_state);
 				return GDK_FAIL;
 			}
 		} else {
 			if (VALinit(ma, pt, TYPE_str, str_nil) == NULL) {
 				bat_iterator_end(&bi);
 				bat_iterator_end(&bis);
-				ma_close(ta, &ta_state);
+				ma_close(&ta_state);
 				return GDK_FAIL;
 			}
 		}
 		bat_iterator_end(&bi);
 		bat_iterator_end(&bis);
-		ma_close(ta, &ta_state);
+		ma_close(&ta_state);
 		return GDK_SUCCEED;
 	} else {
 		/* first used to calculated the total length of
@@ -1120,7 +1120,7 @@ concat_strings(allocator *ma, BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 	bat_iterator_end(&bis);
 	if (has_nils)
 		*has_nils = nils;
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 	// GDKfree(lengths);
 	//if (astrings) {
 	//	for (i = 0; i < ngrp; i++) {
@@ -1138,7 +1138,7 @@ concat_strings(allocator *ma, BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 	bat_iterator_end(&bi);
 	bat_iterator_end(&bis);
 	BBPreclaim(bn);
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 	return GDK_FAIL;
 }
 
@@ -1164,7 +1164,7 @@ BATstr_group_concat(allocator *ma, ValPtr res, BAT *b, BAT *s, BAT *sep, bool sk
 		nseparator = ma_strdup(ta, BUNtvar(bi, 0));
 		bat_iterator_end(&bi);
 		if (!nseparator) {
-			ma_close(ta, &ta_state);
+			ma_close(&ta_state);
 			return GDK_FAIL;
 		}
 		//free_nseparator = true;
@@ -1174,13 +1174,13 @@ BATstr_group_concat(allocator *ma, ValPtr res, BAT *b, BAT *s, BAT *sep, bool sk
 	if (ci.ncand == 0 || (nseparator && strNil(nseparator))) {
 		if (VALinit(ta, res, TYPE_str, nil_if_empty ? str_nil : "") == NULL)
 			r = GDK_FAIL;
-		ma_close(ta, &ta_state);
+		ma_close(&ta_state);
 		return r;
 	}
 
 	r = concat_strings(ma, NULL, res, b, b->hseqbase, 1, &ci, NULL, 0, 0,
 			      skip_nils, sep, nseparator, NULL);
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 	return r;
 }
 
@@ -1218,7 +1218,7 @@ BATgroupstr_group_concat(BAT *b, BAT *g, BAT *e, BAT *s, BAT *sep, bool skip_nil
 		nseparator = ma_strdup(ma, BUNtvar(bi, 0));
 		bat_iterator_end(&bi);
 		if (!nseparator) {
-			ma_close(ma, &ma_state);
+			ma_close(&ma_state);
 			return NULL;
 		}
 		//free_nseparator = true;
@@ -1248,7 +1248,7 @@ BATgroupstr_group_concat(BAT *b, BAT *g, BAT *e, BAT *s, BAT *sep, bool skip_nil
 		bn = NULL;
 
 done:
-	ma_close(ma, &ma_state);
+	ma_close(&ma_state);
 	return bn;
 }
 
@@ -6866,7 +6866,7 @@ BATcaseconvert(BAT *b, BAT *s, int direction, const char *restrict func)
 			goto bailout;
 		}
 	}
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 	BATsetcount(bn, ci.ncand);
 	bat_iterator_end(&bi);
 	TIMEOUT_CHECK(qry_ctx,
@@ -6885,7 +6885,7 @@ BATcaseconvert(BAT *b, BAT *s, int direction, const char *restrict func)
 	return bn;
 
   bailout:
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 	bat_iterator_end(&bi);
 	BBPreclaim(bn);
 	return NULL;
@@ -9671,7 +9671,7 @@ BATasciify(BAT *b, BAT *s)
 			goto bailout;
 		}
 	}
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 	BATsetcount(bn, ci.ncand);
 	bat_iterator_end(&bi);
 	TIMEOUT_CHECK(qry_ctx,
@@ -9689,7 +9689,7 @@ BATasciify(BAT *b, BAT *s)
 	return bn;
 
   bailout:
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 	bat_iterator_end(&bi);
 	BBPreclaim(bn);
 	return NULL;
@@ -9797,7 +9797,7 @@ BATaggrdigest(allocator *ma, BAT **bnp, char **shap, const char *digest,
 		}
 	}
 	bat_iterator_end(&bi);
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 	return GDK_SUCCEED;
 
   bailout:
@@ -9807,7 +9807,7 @@ BATaggrdigest(allocator *ma, BAT **bnp, char **shap, const char *digest,
 			if (mdctx[gid] != (EVP_MD_CTX *) -1)
 				EVP_MD_CTX_free(mdctx[gid]);
 	}
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 	BBPreclaim(bn);
 	return GDK_FAIL;
 }

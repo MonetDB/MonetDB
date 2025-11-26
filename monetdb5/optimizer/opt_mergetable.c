@@ -2286,7 +2286,7 @@ OPTmergetableImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 	//maxvars = mb->vtop;
 	group_input = (char *) ma_zalloc(ta, sizeof(char) * mb->vtop);
 	if (vars == NULL || group_input == NULL) {
-		ma_close(ta, &ta_state);
+		ma_close(&ta_state);
 		throw(MAL, "optimizer.mergetable", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	/* check for bailout conditions */
@@ -2900,6 +2900,6 @@ OPTmergetableImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 	if (bailout)
 		TRC_INFO(MAL_OPTIMIZER, "Merge table bailout\n");
 #endif
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 	return msg;
 }

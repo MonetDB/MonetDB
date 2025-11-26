@@ -393,7 +393,7 @@ ATOMprint(int t, const void *p, stream *s)
 			if (res > 0)
 				res = mnstr_write(s, buf, (size_t) res, 1);
 		}
-		ma_close(ta, &ta_state);
+		ma_close(&ta_state);
 	} else {
 		res = mnstr_write(s, "nil", 1, 3);
 	}

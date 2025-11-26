@@ -47,7 +47,7 @@ OPTaliasesImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (i < limit) {
 		alias = ma_alloc(ta, sizeof(int) * mb->vtop);
 		if (alias == NULL) {
-			ma_close(ta, &ta_state);
+			ma_close(&ta_state);
 			throw(MAL, "optimizer.aliases", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		setVariableScope(mb);
@@ -75,7 +75,7 @@ OPTaliasesImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		mb->stmt[i] = NULL;
 
 	mb->stop = k;
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 
 	/* Defense line against incorrect plans */
 	/* Plan is unaffected */

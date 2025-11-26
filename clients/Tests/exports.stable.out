@@ -564,7 +564,7 @@ gdk_return log_tsequence(logger *lg, int seq, lng id);
 gdk_return log_tstart(logger *lg, bool flushnow, ulng *log_file_id);
 ATOMIC_TYPE lvl_per_component[];
 void *ma_alloc(allocator *sa, size_t sz);
-void ma_close(allocator *sa, const allocator_state *);
+void ma_close(const allocator_state *);
 void ma_destroy(allocator *sa);
 void ma_free(allocator *sa, void *);
 exception_buffer *ma_get_eb(allocator *sa) __attribute__((__pure__));

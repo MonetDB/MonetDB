@@ -221,11 +221,11 @@ OPTexpandMultiplex(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		q = pushArgument(mb, q, resB[i]);
 		pushInstruction(mb, q);
 	}
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 	return MAL_SUCCEED;
 
   nomem:
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 	throw(MAL, "optimizer.multiplex", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 }
 

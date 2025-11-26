@@ -1032,7 +1032,7 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
 				closesocket(socks[0]);
 			if (socks[1] != INVALID_SOCKET)
 				closesocket(socks[1]);
-			ma_close(ta, &ta_state);
+			ma_close(&ta_state);
 			throw(MAL, "mal_mapi.listen",
 				  OPERATION_FAILED ": UNIX socket path too long: %s",
 				  usockfile);
@@ -1053,7 +1053,7 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
 				closesocket(socks[0]);
 			if (socks[1] != INVALID_SOCKET)
 				closesocket(socks[1]);
-			ma_close(ta, &ta_state);
+			ma_close(&ta_state);
 			throw(IO, "mal_mapi.listen",
 				  OPERATION_FAILED ": creation of UNIX socket failed: %s", err);
 		}
@@ -1087,7 +1087,7 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
 			if (socks[1] != INVALID_SOCKET)
 				closesocket(socks[1]);
 			closesocket(socks[2]);
-			ma_close(ta, &ta_state);
+			ma_close(&ta_state);
 			return e;
 		}
 		if (bind(socks[2], (struct sockaddr *) &userver, length) == SOCKET_ERROR) {
@@ -1106,7 +1106,7 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
 								  OPERATION_FAILED
 								  ": binding to UNIX socket file %s failed: %s",
 								  usockfile, err);
-			ma_close(ta, &ta_state);
+			ma_close(&ta_state);
 			return buf;
 		}
 		if (listen(socks[2], maxusers) == SOCKET_ERROR) {
@@ -1125,7 +1125,7 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
 								  OPERATION_FAILED
 								  ": setting UNIX socket file %s to listen failed: %s",
 								  usockfile, err);
-			ma_close(ta, &ta_state);
+			ma_close(&ta_state);
 			return buf;
 		}
 		if (GDKsetenv("mapi_usock", usockfile) != GDK_SUCCEED) {
@@ -1133,7 +1133,7 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
 				if (socks[i] != INVALID_SOCKET)
 					closesocket(socks[i]);
 			}
-			ma_close(ta, &ta_state);
+			ma_close(&ta_state);
 			throw(MAL, "mal_mapi.listen", GDK_EXCEPTION);
 		}
 	}
@@ -1150,7 +1150,7 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
 				closesocket(socks[i]);
 		}
 #ifdef HAVE_SYS_UN_H
-		ma_close(ta, &ta_state);
+		ma_close(&ta_state);
 #endif
 		throw(MAL, "mal_mapi.listen", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
@@ -1163,7 +1163,7 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
 		}
 		GDKfree(psock);
 #ifdef HAVE_SYS_UN_H
-		ma_close(ta, &ta_state);
+		ma_close(&ta_state);
 #endif
 		throw(MAL, "mal_mapi.listen",
 			  OPERATION_FAILED ": starting thread failed");
@@ -1190,7 +1190,7 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
 			printf("# Listening for UNIX domain connection requests on "
 				   "mapi:monetdb://%s\n", usockfile);
 	}
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 #endif
 
 	fflush(stdout);
@@ -1385,7 +1385,7 @@ SERVERclient(Client ctx, void *res, const Stream *In, const Stream *Out)
 			ret = createException(MAL, fcn,								\
 								  OPERATION_FAILED ": remote error: %s", \
 								  newerr);								\
-			ma_close(ta, &ta_state);									\
+			ma_close(&ta_state);										\
 			return ret;													\
 		}																\
 	} while (0)
@@ -2201,13 +2201,13 @@ SERVERmapi_rpc_single_row(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 		if (qry == NULL) {
 			qry = ma_strdup(ta, fld);
 			if (qry == NULL) {
-				ma_close(ta, &ta_state);
+				ma_close(&ta_state);
 				throw(MAL, "mapi.rpc", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 		} else {
 			s = (char *) ma_alloc(ta, strlen(qry) + strlen(fld) + 1);
 			if (s == NULL) {
-				ma_close(ta, &ta_state);
+				ma_close(&ta_state);
 				throw(MAL, "mapi.rpc", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 			stpcpy(stpcpy(s, qry), fld);
@@ -2215,7 +2215,7 @@ SERVERmapi_rpc_single_row(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 		}
 	}
 	hdl = mapi_query(mid, qry);
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 	catchErrors("mapi.rpc");
 
 	i = 0;

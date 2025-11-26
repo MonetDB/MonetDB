@@ -350,20 +350,20 @@ wkbFROMSTR_withSRID(allocator *ma, const char *geomWKT, size_t *len, wkb **geomW
 
 	WKT_reader = GEOSWKTReader_create_r(geoshandle);
 	if (WKT_reader == NULL) {
-		ma_close(ta, &state);
+		ma_close(&state);
 		throw(MAL, "wkb.FromText", SQLSTATE(38000) "Geos operation GEOSWKTReader_create failed");
 	}
 	geosGeometry = GEOSWKTReader_read_r(geoshandle, WKT_reader, geomWKT);
 	GEOSWKTReader_destroy_r(geoshandle, WKT_reader);
 
 	if (geosGeometry == NULL) {
-		ma_close(ta, &state);
+		ma_close(&state);
 		throw(MAL, "wkb.FromText", SQLSTATE(38000) "Geos operation GEOSWKTReader_read failed");
 	}
 
 	if (GEOSGeomTypeId_r(geoshandle, geosGeometry) == -1) {
 		GEOSGeom_destroy_r(geoshandle, geosGeometry);
-		ma_close(ta, &state);
+		ma_close(&state);
 		throw(MAL, "wkb.FromText", SQLSTATE(38000) "Geos operation GEOSGeomTypeId failed");
 	}
 
@@ -376,7 +376,7 @@ wkbFROMSTR_withSRID(allocator *ma, const char *geomWKT, size_t *len, wkb **geomW
 	*geomWKB = geos2wkb(ma, geomWKB, len, geosGeometry);
 	GEOSGeom_destroy_r(geoshandle, geosGeometry);
 	if (*geomWKB == NULL) {
-		ma_close(ta, &state);
+		ma_close(&state);
 		throw(MAL, "wkb.FromText", SQLSTATE(38000) "Geos operation geos2wkb failed");
 	}
 
@@ -384,7 +384,7 @@ wkbFROMSTR_withSRID(allocator *ma, const char *geomWKT, size_t *len, wkb **geomW
 	parsedCharacters = strlen(geomWKT);
 	assert(parsedCharacters <= GDK_int_max);
 
-	ma_close(ta, &state);
+	ma_close(&state);
 	*nread = parsedCharacters;
 	return MAL_SUCCEED;
 }

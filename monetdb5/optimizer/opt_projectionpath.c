@@ -59,7 +59,7 @@ OPTprojectionpathImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 	pc = (int *) ma_zalloc(ta, sizeof(int) * /*mb->*/vtop/* * 2*/);	/* to find last assignment */
 	varcnt = (int *) ma_zalloc(ta, sizeof(int) * /*mb->*/vtop/* * 2*/);
 	if (pc == NULL || varcnt == NULL) {
-		ma_close(ta, &ta_state);
+		ma_close(&ta_state);
 		throw(MAL, "optimizer.projectionpath", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
@@ -184,7 +184,7 @@ OPTprojectionpathImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 	}
 	assert(vtop == mb->vtop);
   wrapupall:
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
   wrapupall1:
 	/* keep actions taken as a fake argument */
 	(void) pushInt(mb, pci, actions);

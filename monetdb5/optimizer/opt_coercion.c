@@ -107,7 +107,7 @@ OPTcoercionImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 	allocator_state ta_state = ma_open(ta);
 	Coercion *coerce = ma_zalloc(ta, sizeof(Coercion) * mb->vtop);
 	if (coerce == NULL) {
-		ma_close(ta, &ta_state);
+		ma_close(&ta_state);
 		throw(MAL, "optimizer.coercion", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	(void) stk;
@@ -167,7 +167,7 @@ OPTcoercionImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 	 * This optimizer affects the flow, but not the type and declaration
 	 * structure. A cheaper optimizer is sufficient.
 	 */
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 
 	/* Defense line against incorrect plans */
 	if (actions > 0) {

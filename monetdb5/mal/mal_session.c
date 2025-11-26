@@ -559,7 +559,7 @@ optimizeMALBlock(Client cntxt, MalBlkPtr mb)
 										   nmsg);
 					//GDKfree(place);
 				}
-				ma_close(ma, &ma_state);
+				ma_close(&ma_state);
 				if (nmsg) {
 					msg = nmsg;
 				}

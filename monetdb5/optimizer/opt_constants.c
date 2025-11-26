@@ -126,7 +126,7 @@ OPTconstantsImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 	//      msg = chkDeclarations(mb);
 	/* keep all actions taken as a post block comment */
   wrapup:
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
   wrapup1:
 	/* keep actions taken as a fake argument */
 	(void) pushInt(mb, pci, actions);

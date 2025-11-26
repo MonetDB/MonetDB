@@ -1123,7 +1123,7 @@ snapshot_immediate_copy_file(stream *plan, const char *path, const char *name)
 
 	ret = GDK_SUCCEED;
 end:
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 	if (s)
 		close_stream(s);
 	return ret;

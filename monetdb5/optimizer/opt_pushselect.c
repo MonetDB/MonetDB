@@ -122,7 +122,7 @@ OPTpushselectImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 	allocator_state ta_state = ma_open(ta);
 	vars = (int *) ma_zalloc(ta, sizeof(int) * mb->vtop);
 	if (vars == NULL) {
-		ma_close(ta, &ta_state);
+		ma_close(&ta_state);
 		throw(MAL, "optimizer.pushselect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
@@ -809,7 +809,7 @@ OPTpushselectImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 			msg = chkDeclarations(mb);
 	}
   wrapup:
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 	/* keep actions taken as a fake argument */
 	(void) pushInt(mb, pci, actions);
 	return msg;

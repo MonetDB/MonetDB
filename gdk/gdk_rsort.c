@@ -33,7 +33,7 @@ GDKrsort(void *restrict h, void *restrict t, size_t n, size_t hs, size_t ts, boo
 	Heap tmph, tmpt;
 
 	if (counts == NULL) {
-		ma_close(ta, &ta_state);
+		ma_close(&ta_state);
 		return GDK_FAIL;
 	}
 
@@ -44,7 +44,7 @@ GDKrsort(void *restrict h, void *restrict t, size_t n, size_t hs, size_t ts, boo
 	snprintf(tmph.filename, sizeof(tmph.filename), "%s%crsort%zuh",
 		 TEMPDIR_NAME, DIR_SEP, (size_t) MT_getpid());
 	if (HEAPalloc(&tmph, n, hs) != GDK_SUCCEED) {
-		ma_close(ta, &ta_state);
+		ma_close(&ta_state);
 		return GDK_FAIL;
 	}
 	h2 = (uint8_t *) tmph.base;
@@ -53,7 +53,7 @@ GDKrsort(void *restrict h, void *restrict t, size_t n, size_t hs, size_t ts, boo
 		snprintf(tmpt.filename, sizeof(tmpt.filename), "%s%crsort%zut",
 			 TEMPDIR_NAME, DIR_SEP, (size_t) MT_getpid());
 		if (HEAPalloc(&tmpt, n, ts) != GDK_SUCCEED) {
-			ma_close(ta, &ta_state);
+			ma_close(&ta_state);
 			HEAPfree(&tmph, true);
 			return GDK_FAIL;
 		}
@@ -137,7 +137,7 @@ GDKrsort(void *restrict h, void *restrict t, size_t n, size_t hs, size_t ts, boo
 		t1 = t2;
 		t2 = t;
 	}
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 
 	if (h1 != (uint8_t *) h) {
 		/* we need to copy the data back to the correct heap */

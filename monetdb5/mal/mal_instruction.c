@@ -780,7 +780,7 @@ trimMalVariables_(MalBlkPtr mb, MalStkPtr glb)
 	allocator_state ta_state = ma_open(ta);
 	alias = ma_zalloc(ta, mb->vtop * sizeof(int));
 	if (alias == NULL) {
-		ma_close(ta, &ta_state);
+		ma_close(&ta_state);
 		return;					/* forget it if we run out of memory *//* build the alias table */
 	}
 	for (i = 0; i < mb->vtop; i++) {
@@ -811,7 +811,7 @@ trimMalVariables_(MalBlkPtr mb, MalStkPtr glb)
 		}
 		mb->vtop = cnt;
 	}
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 }
 
 void

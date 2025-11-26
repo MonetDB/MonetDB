@@ -332,7 +332,7 @@ JSONdumpInternal(Client ctx, const JSON *jt, int depth)
 
 	if (!buffer || !bn) {
 		BBPreclaim(bn);
-		ma_close(ta, &ta_state);
+		ma_close(&ta_state);
 		return NULL;
 	}
 
@@ -348,7 +348,7 @@ JSONdumpInternal(Client ctx, const JSON *jt, int depth)
 			char *newbuf = ma_realloc(ta, buffer, buflen, osz);
 			if (newbuf == NULL) {
 				BBPreclaim(bn);
-				ma_close(ta, &ta_state);
+				ma_close(&ta_state);
 				return NULL;
 			}
 			buffer = newbuf;
@@ -394,7 +394,7 @@ JSONdumpInternal(Client ctx, const JSON *jt, int depth)
 				char *newbuf = ma_realloc(ta, buffer, buflen, osz);
 				if (newbuf == NULL) {
 					BBPreclaim(bn);
-					ma_close(ta, &ta_state);
+					ma_close(&ta_state);
 					return NULL;
 				}
 				buffer = newbuf;
@@ -410,7 +410,7 @@ JSONdumpInternal(Client ctx, const JSON *jt, int depth)
 				char *newbuf = ma_realloc(ta, buffer, buflen, osz);
 				if (newbuf == NULL) {
 					BBPreclaim(bn);
-					ma_close(ta, &ta_state);
+					ma_close(&ta_state);
 					return NULL;
 				}
 				buffer = newbuf;
@@ -427,7 +427,7 @@ JSONdumpInternal(Client ctx, const JSON *jt, int depth)
 				char *newbuf = ma_realloc(ta, buffer, buflen, osz);
 				if (newbuf == NULL) {
 					BBPreclaim(bn);
-					ma_close(ta, &ta_state);
+					ma_close(&ta_state);
 					return NULL;
 				}
 				buffer = newbuf;
@@ -437,11 +437,11 @@ JSONdumpInternal(Client ctx, const JSON *jt, int depth)
 		}
 		if (BUNappend(bn, buffer, false) != GDK_SUCCEED) {
 			BBPreclaim(bn);
-			ma_close(ta, &ta_state);
+			ma_close(&ta_state);
 			return NULL;
 		}
 	}
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 	return bn;
 }
 
@@ -458,7 +458,7 @@ JSONdump(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	CHECK_JSON(jt);
 	BAT *bn = JSONdumpInternal(ctx, jt, 0);
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 	if (bn == NULL)
 		throw(MAL, "json.dump", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	*ret = bn->batCacheid;
@@ -536,7 +536,7 @@ JSONstr2json_intern(allocator *ma, json *ret, size_t *len, const char *const*j)
 	}
 	*ret = buf;
  bailout:
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 	return msg;
 }
 
@@ -558,11 +558,11 @@ JSONisvalid(Client ctx, bit *ret, const char *const *j)
 		allocator_state ta_state = ma_open(ta);
 		JSON *jt = JSONparse(ta, *j);
 		if (jt == NULL) {
-			ma_close(ta, &ta_state);
+			ma_close(&ta_state);
 			throw(MAL, "json.isvalid", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		*ret = jt->error == MAL_SUCCEED;
-		ma_close(ta, &ta_state);
+		ma_close(&ta_state);
 	}
 	return MAL_SUCCEED;
 }
@@ -652,7 +652,7 @@ JSONprelude(void)
 		if (BBPjson_upgrade(upgradeJSONStorage) != GDK_SUCCEED) {
 			throw(MAL, "json.prelude", "JSON storage upgrade failed");
 		}
-		ma_close(ta, &ta_state);
+		ma_close(&ta_state);
 		/* Change the read function of the json atom so that any values in the WAL
 		 * will also be upgraded.
 		 */
@@ -1059,7 +1059,7 @@ JSONfilterInternal(Client ctx, json *ret, const json *js, const char *const *exp
 	*ret = s;
 
   bailout:
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 	return msg;
 }
 
@@ -1514,7 +1514,7 @@ JSONlength(Client ctx, int *ret, const json *j)
 	for (i = jt->elm[0].next; i; i = jt->elm[i].next)
 		cnt++;
 	*ret = cnt;
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 	return MAL_SUCCEED;
 }
 
@@ -1847,11 +1847,11 @@ JSONjson2textSeparator(Client ctx, str *ret, const json *js, const char *const *
 	sep_len = strlen(*sep);
 	ilen = l = strlen(*js) + 1;
 	if (!(s = ma_alloc(ma, l))) {
-		ma_close(ta, &ta_state);
+		ma_close(&ta_state);
 		throw(MAL, "json2txt", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	msg = JSONplaintext(ma, &s, &l, &ilen, jt, 0, *sep, sep_len);
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 	if (msg) {
 		return msg;
 	}
@@ -1903,7 +1903,7 @@ JSONjson2numberInternal(Client ctx, void **ret, const json *js,
 	default:
 		*ret = NULL;
 	}
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 
 	return MAL_SUCCEED;
 }
@@ -2052,7 +2052,7 @@ JSONunfoldInternal(Client ctx, bat *od, bat *key, bat *val, const json *js)
 	CHECK_JSON(jt);
 	bk = COLnew(0, TYPE_str, 64, TRANSIENT);
 	if (bk == NULL) {
-		ma_close(ta, &ta_state);
+		ma_close(&ta_state);
 		throw(MAL, "json.unfold", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
@@ -2060,14 +2060,14 @@ JSONunfoldInternal(Client ctx, bat *od, bat *key, bat *val, const json *js)
 		bo = COLnew(0, TYPE_oid, 64, TRANSIENT);
 		if (bo == NULL) {
 			BBPreclaim(bk);
-			ma_close(ta, &ta_state);
+			ma_close(&ta_state);
 			throw(MAL, "json.unfold", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 	}
 
 	bv = COLnew(0, TYPE_json, 64, TRANSIENT);
 	if (bv == NULL) {
-		ma_close(ta, &ta_state);
+		ma_close(&ta_state);
 		BBPreclaim(bo);
 		BBPreclaim(bk);
 		throw(MAL, "json.unfold", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -2078,7 +2078,7 @@ JSONunfoldInternal(Client ctx, bat *od, bat *key, bat *val, const json *js)
 	else
 		msg = createException(MAL, "json.unfold",
 							  "JSON object or array expected");
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 	if (msg) {
 		BBPreclaim(bk);
 		BBPreclaim(bo);
@@ -2114,19 +2114,19 @@ JSONkeyTable(Client ctx, bat *ret, const json *js)
 	CHECK_JSON(jt);
 	bn = COLnew(0, TYPE_str, 64, TRANSIENT);
 	if (bn == NULL) {
-		ma_close(ta, &ta_state);
+		ma_close(&ta_state);
 		throw(MAL, "json.keys", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
 	for (i = jt->elm[0].next; i; i = jt->elm[i].next) {
 		r = JSONgetValue(ta, jt, i);
 		if (r == NULL || BUNappend(bn, r, false) != GDK_SUCCEED) {
-			ma_close(ta, &ta_state);
+			ma_close(&ta_state);
 			BBPreclaim(bn);
 			throw(MAL, "json.keys", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 	}
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 	*ret = bn->batCacheid;
 	BBPkeepref(bn);
 	return MAL_SUCCEED;
@@ -2158,26 +2158,26 @@ JSONkeyArray(Client ctx, json *ret, const json *js)
 			if (jt->elm[i].valuelen) {
 				r = ma_alloc(ma, jt->elm[i].valuelen + 3);
 				if (r == NULL) {
-					ma_close(ta, &ta_state);
+					ma_close(&ta_state);
 					goto memfail;
 				}
 				strcpy_len(r, jt->elm[i].value - 1, jt->elm[i].valuelen + 3);
 			} else {
 				r = ma_strdup(ma, "\"\"");
 				if (r == NULL) {
-					ma_close(ta, &ta_state);
+					ma_close(&ta_state);
 					goto memfail;
 				}
 			}
 			result = JSONglue(ma, result, r, ',');
 			if (result == NULL) {
-				ma_close(ta, &ta_state);
+				ma_close(&ta_state);
 				goto memfail;
 			}
 		}
-		ma_close(ta, &ta_state);
+		ma_close(&ta_state);
 	} else {
-		ma_close(ta, &ta_state);
+		ma_close(&ta_state);
 		throw(MAL, "json.keyarray", "Object expected");
 	}
 	r = ma_strdup(ma, "[");
@@ -2215,7 +2215,7 @@ JSONvalueTable(Client ctx, bat *ret, const json *js)
 	CHECK_JSON(jt);
 	bn = COLnew(0, TYPE_json, 64, TRANSIENT);
 	if (bn == NULL) {
-		ma_close(ta, &ta_state);
+		ma_close(&ta_state);
 		throw(MAL, "json.values", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
@@ -2226,11 +2226,11 @@ JSONvalueTable(Client ctx, bat *ret, const json *js)
 			r = JSONgetValue(ta, jt, i);
 		if (r == NULL || BUNappend(bn, r, false) != GDK_SUCCEED) {
 			BBPreclaim(bn);
-			ma_close(ta, &ta_state);
+			ma_close(&ta_state);
 			throw(MAL, "json.values", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 	}
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 	*ret = bn->batCacheid;
 	BBPkeepref(bn);
 	return MAL_SUCCEED;
@@ -2267,9 +2267,9 @@ JSONvalueArray(Client ctx, json *ret, const json *js)
 				goto memfail;
 			}
 		}
-		ma_close(ta, &ta_state);
+		ma_close(&ta_state);
 	} else {
-		ma_close(ta, &ta_state);
+		ma_close(&ta_state);
 		throw(MAL, "json.valuearray", "Object expected");
 	}
 	r = ma_strdup(ma, "[");
@@ -2432,7 +2432,7 @@ JSONrenderobject(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		result[len++] = ',';
 		result[len] = 0;
 	}
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 	result[len - 1] = ']';
 	ret = getArgReference_TYPE(stk, pci, 0, json);
 	*ret = result;
@@ -2789,7 +2789,7 @@ JSONgroupStr(Client ctx, str *ret, const bat *bid)
 	if (buf == NULL)
 		throw(MAL, "json.group", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		ma_close(ta, &ta_state);
+		ma_close(&ta_state);
 		throw(MAL, "json.group", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	assert(maxlen > 256);		/* make sure every floating point fits on the dense case */
@@ -2846,14 +2846,14 @@ JSONgroupStr(Client ctx, str *ret, const bat *bid)
 	else
 		strcpy(buf, str_nil);
 	*ret = ma_strdup(ctx->curprg->def->ma, buf);
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 	if (!*ret)					/* Don't return a too large string */
 		throw(MAL, "json.group", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
   bunins_failed:
 	bat_iterator_end(&bi);
 	BBPunfix(b->batCacheid);
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 	throw(MAL, "json.group", "%s", err);
 }
 
@@ -3156,7 +3156,7 @@ JSONjsonaggr(Client ctx, BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nil
 		BBPunfix(b->batCacheid);
 	if (freeg)
 		BBPunfix(g->batCacheid);
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 	if (err && bn) {
 		BBPreclaim(bn);
 		bn = NULL;
@@ -3165,7 +3165,7 @@ JSONjsonaggr(Client ctx, BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nil
 	return err;
 
   bunins_failed:
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 	bat_iterator_end(&bi);
 	if (err == NULL)
 		err = SQLSTATE(HY013) MAL_MALLOC_FAIL;	/* insertion into result BAT failed */

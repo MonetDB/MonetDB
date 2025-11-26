@@ -2887,7 +2887,7 @@ rewrite_split_select_exps(visitor *v, sql_rel *rel)
 			set_processed(nsel);
 			v->changes++;
 		}
-		ma_close(v->sql->ta, &ta_state);
+		ma_close(&ta_state);
 	}
 	return rel;
 }
@@ -3115,7 +3115,7 @@ rewrite_rank(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 				}
 			}
 		}
-		ma_close(v->sql->ta, &ta_state);
+		ma_close(&ta_state);
 
 		/* move rank down add ref */
 		if (!exp_name(e))

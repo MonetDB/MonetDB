@@ -49,7 +49,7 @@ rel_used_projections(mvc *sql, list *exps, list *users)
 		if (is_intern(e) || used[i])
 			append(nexps, e);
 	}
-	ma_close(sql->ta, &ta_state);
+	ma_close(&ta_state);
 	return nexps;
 }
 
@@ -2452,13 +2452,13 @@ rel_reduce_groupby_exps(visitor *v, sql_rel *rel)
 					/* only one reduction at a time */
 					list_hash_clear(rel->exps);
 					v->changes++;
-					ma_close(v->sql->ta, &ta_state);
+					ma_close(&ta_state);
 					return rel;
 				}
 				gbe = rel->r;
 			}
 		}
-		ma_close(v->sql->ta, &ta_state);
+		ma_close(&ta_state);
 	}
 	/* remove constants from group by list */
 	if (is_groupby(rel->op) && rel->r && !rel_is_ref(rel)) {

@@ -2264,6 +2264,7 @@ ma_open(allocator *sa)
 			.objects = sa->objects,
 			.inuse = sa->inuse,
 			.tmp_used = sa->tmp_used,
+			.ma = sa,
 		};
 		sa->tmp_used += 1;
 		COND_UNLOCK_ALLOCATOR(sa);
@@ -2273,8 +2274,9 @@ ma_open(allocator *sa)
 
 #undef ma_close
 void
-ma_close(allocator *sa, const allocator_state *state)
+ma_close(const allocator_state *state)
 {
+	allocator *sa = state->ma;
 	assert(sa);
 	if (sa) {
 		COND_LOCK_ALLOCATOR(sa);

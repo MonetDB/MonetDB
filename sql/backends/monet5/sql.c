@@ -4684,7 +4684,7 @@ SQLpersist_unlogged(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			if (commit_list == NULL || sizes == NULL) {
 				bat_iterator_end(&d_bi);
 				MT_lock_unset(&lock_persist_unlogged);
-				ma_close(ta, &ta_state);
+				ma_close(&ta_state);
 				BBPreclaim(d);
 				throw(SQL, "sql.persist_unlogged", SQLSTATE(HY001));
 			}
@@ -4701,7 +4701,7 @@ SQLpersist_unlogged(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				if (b == NULL) {
 					bat_iterator_end(&d_bi);
 					MT_lock_unset(&lock_persist_unlogged);
-					ma_close(ta, &ta_state);
+					ma_close(&ta_state);
 					BBPreclaim(d);
 					throw(SQL, "sql.persist_unlogged", "Cannot access column descriptor.");
 				}
@@ -4718,12 +4718,12 @@ SQLpersist_unlogged(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			if (TMsubcommit_list(commit_list, sizes, i, -1) != GDK_SUCCEED) {
 				bat_iterator_end(&d_bi);
 				MT_lock_unset(&lock_persist_unlogged);
-				ma_close(ta, &ta_state);
+				ma_close(&ta_state);
 				BBPreclaim(d);
 				throw(SQL, "sql.persist_unlogged", "Lower level commit operation failed");
 			}
 
-			ma_close(ta, &ta_state);
+			ma_close(&ta_state);
 		}
 		count = d_bi.count;
 	} else {

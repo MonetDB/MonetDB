@@ -60,7 +60,7 @@ RQcall2str(str msg, MalBlkPtr mb, InstrPtr p)
 						return NULL;
 					}
 					snprintf(msg + len, BUFSIZ - len, "%s:%s", cv, ATOMname(v->type));
-					ma_close(ta, &ta_state);
+					ma_close(&ta_state);
 				}
 
 			} else
@@ -193,7 +193,7 @@ OPTremoteQueriesImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 	location = (int *) ma_zalloc(ta, mb->vsize * sizeof(int));
 	dbalias = (DBalias *) ma_zalloc(ta, 128 * sizeof(DBalias));
 	if (location == NULL || dbalias == NULL || newMalBlkStmt(mb, mb->ssize) < 0) {
-		ma_close(ta, &ta_state);
+		ma_close(&ta_state);
 		throw(MAL, "optimizer.remote", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	dbtop = 0;
@@ -378,7 +378,7 @@ OPTremoteQueriesImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 		}
 	}
   bailout:
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 	for (; i < slimit; i++)
 		if (old[i])
 			pushInstruction(mb, old[i]);

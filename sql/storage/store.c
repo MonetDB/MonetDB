@@ -3000,7 +3000,7 @@ hot_snapshot_write_tar(stream *out, const char *prefix, const char *plan)
 
 end:
 	free((char*)plan);
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 	if (infile)
 		close_stream(infile);
 	return ret;
