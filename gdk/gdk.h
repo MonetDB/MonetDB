@@ -1877,7 +1877,7 @@ gdk_export void ma_info(const allocator *sa, char *buf, size_t buflen);
 	})
 #define ma_close(as)							\
 	({								\
-		allocator_state *_as = (as);				\
+		const allocator_state *_as = (as);			\
 		TRC_DEBUG(ALLOC,					\
 			  "ma_close(%p(%s), tmp_used = %zu)\n",		\
 			  _as->ma, ma_name(_as->ma), _as->tmp_used);	\
