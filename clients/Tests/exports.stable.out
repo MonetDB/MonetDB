@@ -271,7 +271,7 @@ BAT *GDKanalyticalntile(BAT *b, BAT *p, BAT *n, int tpe, const void *restrict nt
 BAT *GDKanalyticalprod(BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tp1, int tp2, int frame_type) __attribute__((__warn_unused_result__));
 BAT *GDKanalyticalsum(BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tp1, int tp2, int frame_type) __attribute__((__warn_unused_result__));
 BAT *GDKanalyticalwindowbounds(BAT *b, BAT *p, BAT *l, const void *restrict bound, int tp1, int tp2, int unit, bool preceding, oid first_half) __attribute__((__warn_unused_result__));
-gdk_return GDKasciify(allocator *ma, char **restrict buf, size_t *restrict buflen, const char *restrict s);
+gdk_return GDKasciify(allocator *ma, char **restrict buf, size_t *restrict buflen, const char *restrict s) __attribute__((__access__(read_write, 2))) __attribute__((__access__(read_write, 3)));
 int GDKatomcnt;
 gdk_return GDKcasefold(allocator *ma, char **restrict buf, size_t *restrict buflen, const char *restrict s) __attribute__((__access__(read_write, 2))) __attribute__((__access__(read_write, 3)));
 void GDKclrerr(void);
@@ -418,11 +418,11 @@ gdk_return TMsubcommit_list(bat *restrict subcommit, BUN *restrict sizes, int cn
 void VALclear(ValPtr v);
 int VALcmp(const ValRecord *p, const ValRecord *q);
 void *VALconvert(allocator *ma, int typ, ValPtr t);
-ValPtr VALcopy(allocator *va, ValPtr dst, const ValRecord *src) __attribute__((__access__(write_only, 1)));
+ValPtr VALcopy(allocator *va, ValPtr dst, const ValRecord *src) __attribute__((__access__(write_only, 2)));
 void VALempty(ValPtr v) __attribute__((__access__(write_only, 1)));
 char *VALformat(allocator *ma, const ValRecord *res) __attribute__((__warn_unused_result__));
 void *VALget(ValPtr v);
-ValPtr VALinit(allocator *va, ValPtr d, int tpe, const void *s) __attribute__((__access__(write_only, 1)));
+ValPtr VALinit(allocator *va, ValPtr d, int tpe, const void *s) __attribute__((__access__(write_only, 2)));
 bool VALisnil(const ValRecord *v);
 ValPtr VALset(ValPtr v, int t, void *p);
 gdk_return VARcalcabsolute(ValPtr ret, const ValRecord *v);

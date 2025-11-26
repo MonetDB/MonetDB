@@ -1552,7 +1552,9 @@ gdk_export char *GDKstrcasestr(const char *haystack, const char *needle);
 gdk_export BAT *BATtoupper(BAT *b, BAT *s);
 gdk_export BAT *BATtolower(BAT *b, BAT *s);
 gdk_export BAT *BATcasefold(BAT *b, BAT *s);
-gdk_export gdk_return GDKasciify(allocator *ma, char **restrict buf, size_t *restrict buflen, const char *restrict s);
+gdk_export gdk_return GDKasciify(allocator *ma, char **restrict buf, size_t *restrict buflen, const char *restrict s)
+	__attribute__((__access__(read_write, 2)))
+	__attribute__((__access__(read_write, 3)));
 gdk_export BAT *BATasciify(BAT *b, BAT *s);
 #ifdef HAVE_OPENSSL
 gdk_export gdk_return BATaggrdigest(allocator *ma, BAT **bnp, char **shap, const char *digest, BAT *b, BAT *g, BAT *e, BAT *s, bool skip_nils);
@@ -1749,9 +1751,9 @@ gdk_export _Noreturn void eb_error(exception_buffer *eb, const char *msg, int va
 #include "gdk_calc.h"
 
 gdk_export ValPtr VALcopy(allocator *va, ValPtr dst, const ValRecord *src)
-	__attribute__((__access__(write_only, 1)));
+	__attribute__((__access__(write_only, 2)));
 gdk_export ValPtr VALinit(allocator *va, ValPtr d, int tpe, const void *s)
-	__attribute__((__access__(write_only, 1)));
+	__attribute__((__access__(write_only, 2)));
 
 gdk_export allocator *create_allocator(allocator *pa, const char *, bool use_lock);
 gdk_export allocator *ma_get_parent(const allocator *sa);
