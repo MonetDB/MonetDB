@@ -324,7 +324,7 @@ dump_threads(void)
 		struct mtthread *jn = t->joinwait;
 		const char *working = ATOMIC_PTR_GET(&t->working);
 		char mabuf[300];
-		ma_info(t->ma, mabuf, sizeof(mabuf));
+		ma_info(t->ma, mabuf, sizeof(mabuf), ", allocator ");
 
 		int pos = snprintf(buf, sizeof(buf),
 				   "%s, tid %zu, "
