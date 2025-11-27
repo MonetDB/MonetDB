@@ -709,7 +709,7 @@ output_complex(Tablet *as, stream *fd, bstream *in)
 	if (buf == NULL || localbuf == NULL) {
 		//GDKfree(buf);
 		//GDKfree(localbuf);
-		ma_close(ta, &ta_state);
+		ma_close(&ta_state);
 		return -1;
 	}
 	for (i = 0; i < as->nr; i++) {
@@ -725,7 +725,7 @@ output_complex(Tablet *as, stream *fd, bstream *in)
 	}
 	//GDKfree(localbuf);
 	//GDKfree(buf);
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 	if (res < 0)
 		return (int)res;
 	return 0;

@@ -2446,7 +2446,7 @@ mvc_from_string(mvc *m, BAT **bats, int nr, char *s, sql_subtype *t)
 	allocator_state ta_state = ma_open(ta);
 	Column *fmt = (Column *) ma_zalloc(ta, sizeof(Column) * nr);
 	if (!fmt) {
-		ma_close(ta, &ta_state);
+		ma_close(&ta_state);
 		throw(SQL, "sql.from_varchar", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	(void)m;
@@ -2454,7 +2454,7 @@ mvc_from_string(mvc *m, BAT **bats, int nr, char *s, sql_subtype *t)
 
 	if (from_string_cols(fmt, bats, nr, 0, t) < 0) {
 		//GDKfree(fmt);
-		ma_close(ta, &ta_state);
+		ma_close(&ta_state);
 		throw(SQL, "sql.from_varchar", SQLSTATE(HY013) "Multiset and/or composite type expected");
 	}
 
@@ -2465,7 +2465,7 @@ mvc_from_string(mvc *m, BAT **bats, int nr, char *s, sql_subtype *t)
 	else
 		msg = TUPLEparser(ta, &s, fmt, nr, &elm, t);
 	//GDKfree(fmt);
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 	return msg;
 }
 

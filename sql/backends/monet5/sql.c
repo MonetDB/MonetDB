@@ -5949,7 +5949,7 @@ insert_json_value(JSONterm *jt, sql_subtype *t, BAT *b)
 		} else {
 			msg = createException(SQL, "sql.insert_json_value", "jsonv2local failed");
 		}
-		ma_close(ta, &ta_state);
+		ma_close(&ta_state);
 		//if (v->vtype == TYPE_str)
 		//	GDKfree(v->val.sval);
 	} else {
@@ -6332,14 +6332,14 @@ SQLfrom_json(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BBPkeepref(bats[i]);
 	}
 	//GDKfree(bats);
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 	return MAL_SUCCEED;
 bailout:
 	for(int i = 0; i < pci->retc; i++)
 		if (bats[i])
 			BBPreclaim(bats[i]);
 	//GDKfree(bats);
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 	if (msg) {
 		if (sqlstate)
 			throw(SQL, "SQLfrom_json", SQLSTATE(HY013) "%s", msg);

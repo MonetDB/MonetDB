@@ -260,7 +260,7 @@ JSONread_json(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT *b = NULL;
 	if (!jfh) {
 		msg = createException(SQL, "json.read_json", "Failed to open file %s", fname);
-		ma_close(ta, &ta_state);
+		ma_close(&ta_state);
 		return msg;
 	}
 	json_str = read_json_file(ta, jfh);
@@ -283,7 +283,7 @@ JSONread_json(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	} else {
 		msg = createException(SQL, "json.read_json", "JSONparse error");
 	}
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 	return msg;
 }
 
@@ -299,7 +299,7 @@ JSONread_ndjson(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	JSONFileHandle *jfh = json_open(fname, ta);
 	if (!jfh) {
 		msg = createException(SQL, "json.read_ndjson", "Failed to open file %s", fname);
-		ma_close(ta, &ta_state);
+		ma_close(&ta_state);
 		return msg;
 	}
 	char *content = read_json_file(ta, jfh);
@@ -351,7 +351,7 @@ JSONread_ndjson(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	} else {
 		BBPreclaim(b);
 	}
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 	return msg;
 }
 
