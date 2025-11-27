@@ -94,7 +94,7 @@ setUserPassword(mvc *m, oid rid, str value)
 	allocator_state ta_state = ma_open(ta);
 	if ((err = AUTHcypherValue(ta, &hash, value)) != MAL_SUCCEED) {
 		(void) sql_error(m, 02, SQLSTATE(42000) "setUserPassword: %s", getExceptionMessage(err));
-		ma_close(ta, &ta_state);
+		ma_close(&ta_state);
 		return LOG_ERR;
 	}
 
@@ -102,7 +102,7 @@ setUserPassword(mvc *m, oid rid, str value)
 	sqlstore *store = m->session->tr->store;
 	sql_table *users = getUsersTbl(m);
 	res = store->table_api.column_update_value(tr, find_sql_column(users, USER_PASSWORD_COLUMN), rid, hash);
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 	return res;
 }
 
@@ -343,7 +343,7 @@ monet5_create_user(ptr _mvc, str user, str passwd, bool enc, str fullname, sqlid
 	if (!enc)
 		free(pwd);
 	if (err != MAL_SUCCEED) {
-		ma_close(ta, &ta_state);
+		ma_close(&ta_state);
 //		GDKfree(schema_buf);
 		throw(MAL, "sql.create_user", SQLSTATE(42000) "create backend hash failure");
 	}
@@ -352,12 +352,12 @@ monet5_create_user(ptr _mvc, str user, str passwd, bool enc, str fullname, sqlid
 	sqlid default_role_id = role_id > 0 ? role_id : user_id;
 	if ((log_res = store->table_api.table_insert(m->session->tr, db_user_info, &user, &fullname, &schema_id, &schema_path, &max_memory, &max_workers, &optimizer, &default_role_id, &hash))) {
 //		GDKfree(schema_buf);
-		ma_close(ta, &ta_state);
+		ma_close(&ta_state);
 		throw(SQL, "sql.create_user", SQLSTATE(42000) "Create user failed%s", log_res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
 	}
 	// clean up
 //	GDKfree(schema_buf);
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 
 	if ((log_res = store->table_api.table_insert(m->session->tr, auths, &user_id, &user, &grantorid))) {
 		throw(SQL, "sql.create_user", SQLSTATE(42000) "Create user failed%s", log_res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
@@ -444,7 +444,7 @@ monet5_create_privileges(ptr _mvc, sql_schema *s, const char *initpasswd)
 		(err = AUTHGeneratePasswordHash(ta, &hash, password)) != MAL_SUCCEED) {
 		TRC_CRITICAL(SQL_TRANS, "generate password hash failure");
 		free(password);
-		ma_close(ta, &ta_state);
+		ma_close(&ta_state);
 		return ;
 	}
 	free(password);
@@ -459,7 +459,7 @@ monet5_create_privileges(ptr _mvc, sql_schema *s, const char *initpasswd)
 
 	store->table_api.table_insert(m->session->tr, uinfo, &username, &fullname, &schema_id, &schema_path, &max_memory,
 		&max_workers, &optimizer, &default_role_id, &hash);
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 }
 
 static int
@@ -961,11 +961,11 @@ remote_create(mvc *m, sqlid id, const char *username, const char *password, int 
 		//	GDKfree(pwhash);
 	}
 	if (msg != MAL_SUCCEED) {
-		ma_close(ta, &ta_state);
+		ma_close(&ta_state);
 		return msg;
 	}
 	log_res = store->table_api.table_insert(m->session->tr, remote_user_info, &id, &username, &cypher, NULL);
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 	if (log_res != 0)
 		throw(SQL, "sql.create_table", SQLSTATE(42000) "Create table failed%s", log_res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
 	return MAL_SUCCEED;

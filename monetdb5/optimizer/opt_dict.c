@@ -41,7 +41,7 @@ OPTdictImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int *varisdict = NULL, *vardictvalue = NULL;
 	bit *dictunique = NULL;
 	str msg = MAL_SUCCEED;
-	allocator *ta = mb->ta;
+	allocator *ta = MT_thread_getallocator();
 
 	(void) stk;
 
@@ -59,7 +59,7 @@ OPTdictImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	slimit = mb->ssize;
 	old = mb->stmt;
 	if (newMalBlkStmt(mb, mb->ssize) < 0) {
-		ma_close(ta, &ta_state);
+		ma_close(&ta_state);
 		throw(MAL, "optimizer.dict", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	/* Consolidate the actual need for variables */
@@ -408,7 +408,7 @@ OPTdictImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	/* keep all actions taken as a post block comment */
   wrapup:
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 	//GDKfree(old);
   wrapup1:
 	/* keep actions taken as a fake argument */

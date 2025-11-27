@@ -75,6 +75,7 @@ typedef struct {
 	size_t objects;
 	size_t inuse;
 	size_t tmp_used;
+	allocator *ma;
 } allocator_state;
 
 #include "gdk_system.h"
@@ -1551,7 +1552,9 @@ gdk_export char *GDKstrcasestr(const char *haystack, const char *needle);
 gdk_export BAT *BATtoupper(BAT *b, BAT *s);
 gdk_export BAT *BATtolower(BAT *b, BAT *s);
 gdk_export BAT *BATcasefold(BAT *b, BAT *s);
-gdk_export gdk_return GDKasciify(allocator *ma, char **restrict buf, size_t *restrict buflen, const char *restrict s);
+gdk_export gdk_return GDKasciify(allocator *ma, char **restrict buf, size_t *restrict buflen, const char *restrict s)
+	__attribute__((__access__(read_write, 2)))
+	__attribute__((__access__(read_write, 3)));
 gdk_export BAT *BATasciify(BAT *b, BAT *s);
 #ifdef HAVE_OPENSSL
 gdk_export gdk_return BATaggrdigest(allocator *ma, BAT **bnp, char **shap, const char *digest, BAT *b, BAT *g, BAT *e, BAT *s, bool skip_nils);
@@ -1748,9 +1751,9 @@ gdk_export _Noreturn void eb_error(exception_buffer *eb, const char *msg, int va
 #include "gdk_calc.h"
 
 gdk_export ValPtr VALcopy(allocator *va, ValPtr dst, const ValRecord *src)
-	__attribute__((__access__(write_only, 1)));
+	__attribute__((__access__(write_only, 2)));
 gdk_export ValPtr VALinit(allocator *va, ValPtr d, int tpe, const void *s)
-	__attribute__((__access__(write_only, 1)));
+	__attribute__((__access__(write_only, 2)));
 
 gdk_export allocator *create_allocator(allocator *pa, const char *, bool use_lock);
 gdk_export allocator *ma_get_parent(const allocator *sa);
@@ -1766,7 +1769,7 @@ gdk_export char *ma_strconcat(allocator *sa, const char *s1, const char *s2);
 gdk_export size_t ma_size(allocator *sa);
 gdk_export const char *ma_name(allocator *sa);
 gdk_export allocator_state ma_open(allocator *sa);  /* open new frame of tempory allocations */
-gdk_export void ma_close(allocator *sa, const allocator_state *); /* close temporary frame, reset to old state */
+gdk_export void ma_close(const allocator_state *); /* close temporary frame, reset to old state */
 gdk_export void ma_free(allocator *sa, void *);
 gdk_export exception_buffer *ma_get_eb(allocator *sa)
        __attribute__((__pure__));
@@ -1874,14 +1877,13 @@ gdk_export void ma_info(const allocator *sa, char *buf, size_t buflen);
 			  _sa, ma_name(_sa), _as.tmp_used);		\
 		_as;							\
 	})
-#define ma_close(sa, as)					\
-	({							\
-		allocator *_sa = (sa);				\
-		allocator_state *_as = (as);			\
-		TRC_DEBUG(ALLOC,				\
-			  "ma_close(%p(%s), tmp_used = %zu)\n",	\
-			  _sa, ma_name(_sa), _as->tmp_used);	\
-		ma_close(_sa, _as);				\
+#define ma_close(as)							\
+	({								\
+		const allocator_state *_as = (as);			\
+		TRC_DEBUG(ALLOC,					\
+			  "ma_close(%p(%s), tmp_used = %zu)\n",		\
+			  _as->ma, ma_name(_as->ma), _as->tmp_used);	\
+		ma_close(_as);						\
 	})
 #define ma_reset(sa)							\
 	({								\

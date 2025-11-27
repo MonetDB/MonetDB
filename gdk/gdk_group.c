@@ -1281,7 +1281,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		HEAPfree(&hs->heaplink, true);
 		GDKfree(hs);
 	}
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 	bat_iterator_end(&bi);
 	if (extents) {
 		BATsetcount(en, (BUN) ngrp);
@@ -1331,7 +1331,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		  ALGOOPTBATPAR(hn), algomsg, GDKusec() - t0);
 	return GDK_SUCCEED;
   error:
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 	bat_iterator_end(&bi);
 	if (hs != NULL && hs != b->thash) {
 		HEAPfree(&hs->heaplink, true);

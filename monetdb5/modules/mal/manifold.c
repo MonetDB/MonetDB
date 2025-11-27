@@ -154,7 +154,7 @@ MANIFOLDjob(MULTItask *mut)
 
 	args = (char **) ma_zalloc(ta, sizeof(char *) * mut->pci->argc);
 	if (args == NULL) {
-		ma_close(ta, &ta_state);
+		ma_close(&ta_state);
 		throw(MAL, "mal.manifold", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
@@ -200,7 +200,7 @@ MANIFOLDjob(MULTItask *mut)
 	//if (ATOMextern(mut->args[0].type) && y)
 	//	GDKfree(y);
   bunins_failed:
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 	return msg;
 }
 
@@ -315,7 +315,7 @@ MANIFOLDevaluate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	mat = (MULTIarg *) ma_zalloc(ta, sizeof(MULTIarg) * pci->argc);
 	if (mat == NULL) {
-		ma_close(ta, &ta_state);
+		ma_close(&ta_state);
 		throw(MAL, "mal.manifold", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
@@ -417,7 +417,7 @@ MANIFOLDevaluate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		*getArgReference_bat(stk, pci, 0) = mat[0].b->batCacheid;
 		BBPkeepref(mat[0].b);
 	}
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 	return msg;
 }
 

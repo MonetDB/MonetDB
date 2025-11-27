@@ -608,7 +608,7 @@ transformMultiGeometry(GEOSGeometry **transformedGeometry, const GEOSGeometry *g
 		throw(MAL, "geom.Transform", SQLSTATE(38000) "Geos operation GEOSGetNumGeometries failed");
 	transformedMultiGeometries = ma_alloc(ta, geometriesNum * sizeof(GEOSGeometry *));
 	if (transformedMultiGeometries == NULL) {
-		ma_close(ta, &ta_state);
+		ma_close(&ta_state);
 		throw(MAL, "geom.Transform", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
@@ -640,7 +640,7 @@ transformMultiGeometry(GEOSGeometry **transformedGeometry, const GEOSGeometry *g
 		if (ret != MAL_SUCCEED) {
 			while (--i >= 0)
 				GEOSGeom_destroy_r(geoshandle, transformedMultiGeometries[i]);
-			ma_close(ta, &ta_state);
+			ma_close(&ta_state);
 			*transformedGeometry = NULL;
 			return ret;
 		}
@@ -654,7 +654,7 @@ transformMultiGeometry(GEOSGeometry **transformedGeometry, const GEOSGeometry *g
 			GEOSGeom_destroy_r(geoshandle, transformedMultiGeometries[i]);
 		ret = createException(MAL, "geom.Transform", SQLSTATE(38000) "Geos operation GEOSGeom_createCollection failed");
 	}
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 
 	return ret;
 }
@@ -989,7 +989,7 @@ forceDimMultiGeometry(GEOSGeometry **outGeometry, const GEOSGeometry *geosGeomet
 	geometriesNum = GEOSGetNumGeometries_r(geoshandle, geosGeometry);
 	transformedMultiGeometries = ma_alloc(ta, geometriesNum * sizeof(GEOSGeometry *));
 	if (transformedMultiGeometries == NULL) {
-		ma_close(ta, &ta_state);
+		ma_close(&ta_state);
 		throw(MAL, "geom.ForceDim", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
@@ -1001,7 +1001,7 @@ forceDimMultiGeometry(GEOSGeometry **outGeometry, const GEOSGeometry *geosGeomet
 		if ((err = forceDimGeometry(&transformedMultiGeometries[i], multiGeometry, dim)) != MAL_SUCCEED) {
 			while (++i < geometriesNum)
 				GEOSGeom_destroy_r(geoshandle, transformedMultiGeometries[i]);
-			ma_close(ta, &ta_state);
+			ma_close(&ta_state);
 			*outGeometry = NULL;
 			return err;
 		}
@@ -1013,7 +1013,7 @@ forceDimMultiGeometry(GEOSGeometry **outGeometry, const GEOSGeometry *geosGeomet
 			GEOSGeom_destroy_r(geoshandle, transformedMultiGeometries[i]);
 		err = createException(MAL, "geom.ForceDim", SQLSTATE(38000) "Geos operation GEOSGeom_createCollection failed");
 	}
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 
 	return err;
 }
@@ -2061,7 +2061,7 @@ dumpPointsPoint(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry, unsi
 	str err = MAL_SUCCEED;
 
 	if (pointWKB == NULL) {
-		ma_close(ta, &ta_state);
+		ma_close(&ta_state);
 		throw(MAL, "geom.Dump", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
@@ -2069,7 +2069,7 @@ dumpPointsPoint(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry, unsi
 	size_t newLen = pathLength + lvlDigitsNum + 1;
 	newPath = ma_alloc(ta, newLen);
 	if (newPath == NULL) {
-		ma_close(ta, &ta_state);
+		ma_close(&ta_state);
 		throw(MAL, "geom.Dump", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	snprintf(newPath, newLen, "%s%u", path, *lvl);
@@ -2078,7 +2078,7 @@ dumpPointsPoint(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry, unsi
 	    BUNappend(geomBAT, pointWKB, false) != GDK_SUCCEED)
 		err = createException(MAL, "geom.Dump", SQLSTATE(38000) "Geos operation BUNappend failed");
 
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 
 	return err;
 }

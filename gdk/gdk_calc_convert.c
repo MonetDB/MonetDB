@@ -732,12 +732,12 @@ convert_any_str(BATiter *bi, BAT *bn, struct canditer *restrict ci)
 			}
 		}
 	}
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 	TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx));
 	BATsetcount(bn, ci->ncand);
 	return nils;
   bailout:
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 	return BUN_NONE + 2;
 }
 
@@ -776,12 +776,12 @@ convert_str_var(BATiter *bi, BAT *bn, struct canditer *restrict ci)
 			}
 		}
 	}
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 	TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx));
 	BATsetcount(bn, ci->ncand);
 	return nils;
   bailout:
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 	return BUN_NONE + 2;
 }
 
@@ -824,7 +824,7 @@ convert_str_fix(BATiter *bi, int tp, void *restrict dst,
 		TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx));
 		if (j > 0)
 			*d = mask;
-		ma_close(ta, &ta_state);
+		ma_close(&ta_state);
 		return 0;
 	}
 
@@ -847,7 +847,7 @@ convert_str_fix(BATiter *bi, int tp, void *restrict dst,
 		}
 		dst = (void *) ((char *) dst + len);
 	}
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 	TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx));
 	return nils;
 
@@ -870,7 +870,7 @@ convert_str_fix(BATiter *bi, int tp, void *restrict dst,
 			 "to type %s failed.\n",
 			 ATOMname(tp));
 	}
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 	return BUN_NONE;
 }
 
@@ -968,11 +968,11 @@ convert_void_any(oid seq, BAT *bn,
 			x = canditer_next(ci) - candoff;
 			if ((*atomtostr)(ta, &s, &len, &(oid){seq + x}, false) < 0 ||
 			    tfastins_nocheckVAR(bn, i, s) != GDK_SUCCEED) {
-				ma_close(ta, &ta_state);
+				ma_close(&ta_state);
 				goto bailout;
 			}
 		}
-		ma_close(ta, &ta_state);
+		ma_close(&ta_state);
 		break;
 	}
 	default:
@@ -1032,7 +1032,7 @@ convert_inet6_inet4(const inet6 *src, inet4 *restrict dst,
 				BATatoms[TYPE_inet6].atomToStr(ta, &s, &l, &src[x], false);
 				assert(buf == s);
 				GDKerror("22003!overflow in conversion of %s to inet4.\n", buf);
-				ma_close(ta, &ta_state);
+				ma_close(&ta_state);
 				return BUN_NONE;
 			}
 		}
@@ -1073,7 +1073,7 @@ convert_inet6_inet4(const inet6 *src, inet4 *restrict dst,
 				BATatoms[TYPE_inet6].atomToStr(ta, &s, &l, &src[x], false);
 				assert(buf == s);
 				GDKerror("22003!overflow in conversion of %s to inet4.\n", buf);
-				ma_close(ta, &ta_state);
+				ma_close(&ta_state);
 				return BUN_NONE;
 			}
 		}
@@ -1812,7 +1812,7 @@ VARconvert(allocator *ma, ValPtr ret, const ValRecord *v,
 						 "to type %s failed.\n",
 						 ATOMname(ret->vtype));
 				}
-				ma_close(ta, &ta_state);
+				ma_close(&ta_state);
 				return GDK_FAIL;
 			} else {
 				/* now give value obtained to ret */

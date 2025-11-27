@@ -556,12 +556,12 @@ list_sort(list *l, fkeyvalue key, fdup dup)
 	keys = ma_alloc(ta, cnt*sizeof(int));
 	data = ma_alloc(ta, cnt*sizeof(void *));
 	if (keys == NULL || data == NULL) {
-		ma_close(ta, &ta_state);
+		ma_close(&ta_state);
 		return NULL;
 	}
 	res = list_new_(l);
 	if (res == NULL) {
-		ma_close(ta, &ta_state);
+		ma_close(&ta_state);
 		return NULL;
 	}
 	for (n = l->h, i = 0; n; n = n->next, i++) {
@@ -573,7 +573,7 @@ list_sort(list *l, fkeyvalue key, fdup dup)
 	for(i=0; i<cnt; i++) {
 		list_append(res, dup?dup(data[i]):data[i]);
 	}
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 	return res;
 }
 

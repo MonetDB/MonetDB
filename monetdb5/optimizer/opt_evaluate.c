@@ -132,7 +132,7 @@ OPTevaluateImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 	int actions = 0, constantblock = 0;
 	int *assigned = 0, use;
 	str msg = MAL_SUCCEED;
-	allocator *ta = mb->ta;
+	allocator *ta = MT_thread_getallocator();
 
 	(void) stk;
 
@@ -145,7 +145,7 @@ OPTevaluateImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 	assigned = (int *) ma_zalloc(ta, sizeof(int) * mb->vtop);
 	alias = (int *) ma_zalloc(ta, mb->vtop * sizeof(int) * 2);	/* we introduce more */
 	if (assigned == NULL || alias == NULL) {
-		ma_close(ta, &ta_state);
+		ma_close(&ta_state);
 		throw(MAL, "optimizer.evaluate", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	// arguments are implicitly assigned by context
@@ -249,7 +249,7 @@ OPTevaluateImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 	/* keep all actions taken as a post block comment */
 
   wrapup:
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 
 	/* keep actions taken as a fake argument */
 	(void) pushInt(mb, pci, actions);

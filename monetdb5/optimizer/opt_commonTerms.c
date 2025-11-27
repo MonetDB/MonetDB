@@ -61,7 +61,7 @@ OPTcommonTermsImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 	str msg = MAL_SUCCEED;
 
 	InstrPtr *old = NULL;
-	allocator *ta = mb->ta;
+	allocator *ta = MT_thread_getallocator();
 
 	/* catch simple insert operations */
 	if (isSimpleSQL(mb) || MB_LARGE(mb)) {
@@ -255,7 +255,7 @@ OPTcommonTermsImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 			msg = chkDeclarations(mb);
 	}
   wrapup:
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
   wrapup1:
 	/* keep actions taken as a fake argument */
 	(void) pushInt(mb, pci, actions);

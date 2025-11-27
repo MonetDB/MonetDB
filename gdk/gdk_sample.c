@@ -130,12 +130,12 @@ do_batsample(oid hseq, BUN cnt, BUN n, random_state_engine rse, MT_Lock *lock)
 
 		tree = ma_alloc(ta, n * sizeof(struct oidtreenode));
 		if (tree == NULL) {
-			ma_close(ta, &ta_state);
+			ma_close(&ta_state);
 			return NULL;
 		}
 		bn = COLnew(0, TYPE_oid, slen, TRANSIENT);
 		if (bn == NULL) {
-			ma_close(ta, &ta_state);
+			ma_close(&ta_state);
 			return NULL;
 		}
 
@@ -172,7 +172,7 @@ do_batsample(oid hseq, BUN cnt, BUN n, random_state_engine rse, MT_Lock *lock)
 		} else {
 			OIDTreeToBATAntiset(tree, bn, minoid, maxoid);
 		}
-		ma_close(ta, &ta_state);
+		ma_close(&ta_state);
 
 		BATsetcount(bn, slen);
 		bn->trevsorted = bn->batCount <= 1;

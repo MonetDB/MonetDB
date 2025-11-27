@@ -1131,7 +1131,7 @@ rel_optimize_select_and_joins_bottomup(visitor *v, global_props *gp, sql_rel *re
 	v->data = &gp->opt_cycle;
 	allocator_state ta_state = ma_open(v->sql->ta);
 	rel = rel_visitor_bottomup(v, rel, &rel_optimize_select_and_joins_bottomup_);
-	ma_close(v->sql->ta, &ta_state);
+	ma_close(&ta_state);
 	v->data = gp;
 	return rel;
 }

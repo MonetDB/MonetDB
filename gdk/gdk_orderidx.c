@@ -299,7 +299,7 @@ BATorderidx(BAT *b, bool stable)
 		allocator *ta = MT_thread_getallocator();		\
 		allocator_state ta_state = ma_open(ta);			\
 		if ((minhp = ma_alloc(ta, sizeof(TYPE)*n_ar)) == NULL) { \
-			ma_close(ta, &ta_state);			\
+			ma_close(&ta_state);				\
 			goto bailout;					\
 		}							\
 		/* init min heap */					\
@@ -337,7 +337,7 @@ BATorderidx(BAT *b, bool stable)
 		while (p[0] < q[0]) {					\
 			*mv++ = *(p[0])++;				\
 		}							\
-		ma_close(ta, &ta_state);				\
+		ma_close(&ta_state);					\
 	} while (0)
 
 gdk_return
@@ -460,7 +460,7 @@ GDKmergeidx(BAT *b, BAT**a, int n_ar)
 		q = ma_alloc(ta, n_ar*sizeof(oid *));
 		if (p == NULL || q == NULL) {
 		  bailout:
-			ma_close(ta, &ta_state);
+			ma_close(&ta_state);
 			HEAPfree(m, true);
 			GDKfree(m);
 			MT_lock_unset(&b->batIdxLock);
@@ -493,7 +493,7 @@ GDKmergeidx(BAT *b, BAT**a, int n_ar)
 			assert(0);
 			goto bailout;
 		}
-		ma_close(ta, &ta_state);
+		ma_close(&ta_state);
 	}
 
 	b->torderidx = m;

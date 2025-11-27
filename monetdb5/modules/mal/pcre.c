@@ -472,7 +472,7 @@ pcre_replace_bat(BAT **res, BAT *origin_strs, const char *pattern,
 			compile_options |= PCRE2_EXTENDED;
 			break;
 		default:
-			ma_close(ta, &ta_state);
+			ma_close(&ta_state);
 			throw(MAL, global ? "batpcre.replace" : "batpcre.replace_first",
 				  ILLEGAL_ARGUMENT ": unsupported flag character '%c'\n",
 				  *flags);
@@ -487,7 +487,7 @@ pcre_replace_bat(BAT **res, BAT *origin_strs, const char *pattern,
 	if (pcre_code == NULL) {
 		PCRE2_UCHAR errbuf[256];
 		pcre2_get_error_message(err, errbuf, sizeof(errbuf));
-		ma_close(ta, &ta_state);
+		ma_close(&ta_state);
 		throw(MAL, global ? "pcre.replace" : "pcre.replace_first",
 			  OPERATION_FAILED
 			  ": pcre compile of pattern (%s) failed at %d with\n'%s'.\n",
@@ -496,7 +496,7 @@ pcre_replace_bat(BAT **res, BAT *origin_strs, const char *pattern,
 	match_data = pcre2_match_data_create_from_pattern(pcre_code, NULL);
 	if (match_data == NULL) {
 		pcre2_code_free(pcre_code);
-		ma_close(ta, &ta_state);
+		ma_close(&ta_state);
 		throw(MAL, "regexp.rematch", MAL_MALLOC_FAIL);
 	}
 
@@ -512,7 +512,7 @@ pcre_replace_bat(BAT **res, BAT *origin_strs, const char *pattern,
 		pcre2_code_free(pcre_code);
 		BBPreclaim(tmpbat);
 		//GDKfree(tmpres);
-		ma_close(ta, &ta_state);
+		ma_close(&ta_state);
 		throw(MAL, global ? "batpcre.replace" : "batpcre.replace_first",
 			  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
@@ -529,7 +529,7 @@ pcre_replace_bat(BAT **res, BAT *origin_strs, const char *pattern,
 			pcre2_code_free(pcre_code);
 			//GDKfree(tmpres);
 			BBPreclaim(tmpbat);
-			ma_close(ta, &ta_state);
+			ma_close(&ta_state);
 			throw(MAL, global ? "batpcre.replace" : "batpcre.replace_first",
 				  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
@@ -542,7 +542,7 @@ pcre_replace_bat(BAT **res, BAT *origin_strs, const char *pattern,
 	pcre2_match_data_free(match_data);
 	pcre2_code_free(pcre_code);
 	//GDKfree(tmpres);
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 	*res = tmpbat;
 	return MAL_SUCCEED;
 #else
@@ -880,7 +880,7 @@ PCREpatindex(Client ctx, int *ret, const char *const *pat, const char *const *va
 	allocator_state ta_state = ma_open(ta);
 
 	if ((msg = pat2pcre(ta, &ppat, *pat)) != MAL_SUCCEED) {
-		ma_close(ta, &ta_state);
+		ma_close(&ta_state);
 		return msg;
 	}
 	re = pcre2_compile((PCRE2_SPTR) ppat, PCRE2_ZERO_TERMINATED, PCRE2_UTF | PCRE2_NO_UTF_CHECK | PCRE2_MULTILINE, &errcode, &errpos, NULL);
@@ -891,10 +891,10 @@ PCREpatindex(Client ctx, int *ret, const char *const *pat, const char *const *va
 							  "compilation of regular expression (%s) failed at %d with %s",
 							  ppat, (int) errpos, (char *) errbuf);
 		//GDKfree(ppat);
-		ma_close(ta, &ta_state);
+		ma_close(&ta_state);
 		return msg;
 	}
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 	//GDKfree(ppat);
 	match_data = pcre2_match_data_create_from_pattern(re, NULL);
 	if (match_data == NULL) {
@@ -1009,7 +1009,7 @@ PCRElike_imp(bit *ret, const char *const *s, const char *const *pat,
 									  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			else
 				*ret = mnre_match(*s, re);
-			ma_close(ta, &ta_state);
+			ma_close(&ta_state);
 		}
 	}
 
@@ -1166,12 +1166,12 @@ BATPCRElike_imp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 					bat_iterator_end(&pi);
 					if (b)
 						bat_iterator_end(&bi);
-					ma_close(ta, &ta_state);
+					ma_close(&ta_state);
 					goto bailout;
 				}
 				ret[p] = mnre_like_proj_apply(next_input, mnre_simple, np,
 											isensitive, anti, use_strcmp);
-				ma_close(ta, &ta_state);
+				ma_close(&ta_state);
 				//mnre_like_clean(&mnre_simple);
 			}
 			has_nil |= is_bit_nil(ret[p]);
@@ -1201,7 +1201,7 @@ BATPCRElike_imp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 			if ((msg = mnre_like_build(ta, &mnre_simple, pat, isensitive, use_strcmp,
 									 (unsigned char) **esc)) != MAL_SUCCEED) {
 				bat_iterator_end(&bi);
-				ma_close(ta, &ta_state);
+				ma_close(&ta_state);
 				goto bailout;
 			}
 			for (BUN p = 0; p < q; p++) {
@@ -1210,7 +1210,7 @@ BATPCRElike_imp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 											anti, use_strcmp);
 				has_nil |= is_bit_nil(ret[p]);
 			}
-			ma_close(ta, &ta_state);
+			ma_close(&ta_state);
 		}
 		bat_iterator_end(&bi);
 	}
@@ -1335,7 +1335,7 @@ mnre_likeselect(BAT *bn, BAT *b, BAT *s, struct canditer *ci, BUN p, BUN q,
 
   bailout:
 	bat_iterator_end(&bi);
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 	//mnre_like_clean(&re);
 	*rcnt = cnt;
 	return msg;
@@ -1648,7 +1648,7 @@ pcrejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, const char *esc,
 	} else {
 		pcre_join_loop(strcmp(vl, vr) != 0, !mnre_match(vl, re));
 	}
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 	bat_iterator_end(&li);
 	bat_iterator_end(&ri);
 	if (ol) {

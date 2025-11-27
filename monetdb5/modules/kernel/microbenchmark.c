@@ -264,7 +264,7 @@ BATnormal(BAT **bn, const oid *base, const lng *size, const int *domain, const i
 	abs = ma_alloc(ta, d * sizeof(unsigned int));
 	if (abs == NULL) {
 		BBPreclaim(b);
-		ma_close(ta, &ta_state);
+		ma_close(&ta_state);
 		return GDK_FAIL;
 	}
 	rel = (flt *) abs;
@@ -305,7 +305,7 @@ BATnormal(BAT **bn, const oid *base, const lng *size, const int *domain, const i
 	while (j < d && abs[j] == 0)
 		j++;
 	assert(j == d);
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 
 
 	BATsetcount(b, n);

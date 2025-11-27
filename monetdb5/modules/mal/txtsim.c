@@ -104,7 +104,7 @@ dameraulevenshtein(int *res, const char *s, const char *t, int insdel_cost,
 
 	d = (int *) ma_alloc(ma, (size_t)sz);
 	if (d == NULL) {
-		ma_close(ma, &ma_state);
+		ma_close(&ma_state);
 		throw(MAL, "dameraulevenshtein", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
@@ -150,7 +150,7 @@ dameraulevenshtein(int *res, const char *s, const char *t, int insdel_cost,
 	}
 	/* Step 7 */
 	*res = damerau_getat(d, n, m, n);
-	ma_close(ma, &ma_state);
+	ma_close(&ma_state);
 	return MAL_SUCCEED;
 }
 
@@ -222,7 +222,7 @@ levenshtein(int *res, const char *x, const char *y, int insdel_cost,
 
 	column = ma_alloc(ma, (xlen + 1) * sizeof(unsigned int));
 	if (column == NULL) {
-		ma_close(ma, &ma_state);
+		ma_close(&ma_state);
 		throw(MAL, "levenshtein", MAL_MALLOC_FAIL);
 	}
 
@@ -250,16 +250,16 @@ levenshtein(int *res, const char *x, const char *y, int insdel_cost,
 		}
 		if (max != -1 && min > (unsigned int) max) {
 			*res = INT_MAX;
-			ma_close(ma, &ma_state);
+			ma_close(&ma_state);
 			return MAL_SUCCEED;
 		}
 	}
 
 	*res = column[xlen];
-	ma_close(ma, &ma_state);
+	ma_close(&ma_state);
 	return MAL_SUCCEED;
   illegal:
-	ma_close(ma, &ma_state);
+	ma_close(&ma_state);
 	throw(MAL, "txtsim.levenshtein", "Illegal unicode code point");
 }
 
@@ -450,7 +450,7 @@ BATTXTSIMmaxlevenshtein(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BBPkeepref(bn);
   exit:
 	if (ma)
-		ma_close(ma, &ma_state);
+		ma_close(&ma_state);
 	BBPreclaim(left);
 	BBPreclaim(right);
 	if (msg != MAL_SUCCEED)
@@ -661,7 +661,7 @@ TXTSIMjarowinkler(Client ctx, dbl *res, const char *const *x, const char *const 
 	*res = jarowinkler(&xi, &yi, -1, x_flags, y_flags);
 
   bailout:
-	ma_close(ma, &ma_state);
+	ma_close(&ma_state);
 	return msg;
 }
 
@@ -872,7 +872,7 @@ maxlevenshteinjoin(BAT **r1, BAT **r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int k)
 	*r2 = r2t;
 
   exit:
-	ma_close(ma, &ma_state);
+	ma_close(&ma_state);
 	return msg;
 }
 
@@ -1072,7 +1072,7 @@ minjarowinklerjoin(BAT **r1, BAT **r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	*r2 = r2t;
 
   exit:
-	ma_close(ma, &ma_state);
+	ma_close(&ma_state);
 	return msg;
 }
 
@@ -1501,7 +1501,7 @@ str_2_qgrams(Client ctx, bat *ret, const char *const *val)
 	strcpy(s + len - 3, "$$");
 	bn = COLnew(0, TYPE_str, (BUN) strlen(*val), TRANSIENT);
 	if (bn == NULL) {
-		ma_close(ma, &ma_state);
+		ma_close(&ma_state);
 		throw(MAL, "txtsim.str2qgram", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
@@ -1511,7 +1511,7 @@ str_2_qgrams(Client ctx, bat *ret, const char *const *val)
 			break;
 		if (BUNappend(bn, qgram, false) != GDK_SUCCEED) {
 			BBPreclaim(bn);
-			ma_close(ma, &ma_state);
+			ma_close(&ma_state);
 			throw(MAL, "txtsim.str2qgram", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		if ((s[i++] & 0xC0) == 0xC0) {
@@ -1521,7 +1521,7 @@ str_2_qgrams(Client ctx, bat *ret, const char *const *val)
 	}
 	*ret = bn->batCacheid;
 	BBPkeepref(bn);
-	ma_close(ma, &ma_state);
+	ma_close(&ma_state);
 	return MAL_SUCCEED;
 }
 

@@ -1048,24 +1048,6 @@ result_datatype(sql_subtype *super, sql_subtype *l, sql_subtype *r)
 	return super;
 }
 
-char *
-toUpperCopy(char *dest, const char *src)
-{
-	size_t i, len;
-
-	if (src == NULL) {
-		*dest = '\0';
-		return(dest);
-	}
-
-	len = _strlen(src);
-	for (i = 0; i < len; i++)
-		dest[i] = (char)toupper((int)src[i]);
-
-	dest[i] = '\0';
-	return(dest);
-}
-
 static char * _symbol2string(mvc *sql, symbol *se, int expression, char **err);
 
 static char *

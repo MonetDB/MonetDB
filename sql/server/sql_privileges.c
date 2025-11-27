@@ -877,7 +877,7 @@ sql_create_user(mvc *sql, char *user, char *passwd, bool enc, char *fullname, ch
 		allocator_state ma_state = ma_open(ma);
 		char *r = ma_strdup(ma, getExceptionMessageAndState(err));
 		r = createException(SQL,"sql.create_user", SQLSTATE(M0M27) "CREATE USER: %s", r);
-		ma_close(ma, &ma_state);
+		ma_close(&ma_state);
 		return r;
 	}
 

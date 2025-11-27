@@ -519,7 +519,7 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			backup = ma_alloc(ma, pci->retc * sizeof(ValRecord));
 			garbage = (int *) ma_zalloc(ma, pci->argc * sizeof(int));
 			if (backup == NULL || garbage == NULL) {
-				ma_close(ma, &ma_state);
+				ma_close(&ma_state);
 				throw(MAL, "mal.interpreter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 		} else {
@@ -531,7 +531,7 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 		backup = ma_alloc(ma, mb->maxarg * sizeof(ValRecord));
 		garbage = (int *) ma_zalloc(ma, mb->maxarg * sizeof(int));
 		if (backup == NULL || garbage == NULL) {
-			ma_close(ma, &ma_state);
+			ma_close(&ma_state);
 			throw(MAL, "mal.interpreter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 	} else {
@@ -550,7 +550,7 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			&& cntxt->qryctx.starttime - cntxt->session >
 			cntxt->sessiontimeout) {
 			runtimeProfileFinish(cntxt, mb, stk);
-			ma_close(ma, &ma_state);
+			ma_close(&ma_state);
 			throw(MAL, "mal.interpreter",
 				  SQLSTATE(HYT00) RUNTIME_SESSION_TIMEOUT);
 		}
@@ -783,14 +783,14 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			if (nstk->calldepth > 256) {
 				ret = createException(MAL, "mal.interpreter",
 									  MAL_CALLDEPTH_FAIL);
-				ma_close(ma, &ma_state2);
+				ma_close(&ma_state2);
 				break;
 			}
 			if ((unsigned) nstk->stkdepth >
 				THREAD_STACK_SIZE / sizeof(mb->var[0]) / 4 && THRhighwater()) {
 				/* we are running low on stack space */
 				ret = createException(MAL, "mal.interpreter", MAL_STACK_FAIL);
-				ma_close(ma, &ma_state2);
+				ma_close(&ma_state2);
 				break;
 			}
 
@@ -801,7 +801,7 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				lhs = &nstk->stk[q->argv[arg]];
 				rhs = &stk->stk[pci->argv[ii]];
 				if (VALcopy(ma, lhs, rhs) == NULL) {
-					ma_close(ma, &ma_state2);
+					ma_close(&ma_state2);
 					ret = createException(MAL, "mal.interpreter",
 										  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					break;
@@ -819,7 +819,7 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 						BBPrelease(lhs->val.bval);
 				}
 			}
-			ma_close(ma, &ma_state2);
+			ma_close(&ma_state2);
 			break;
 		}
 		case REMsymbol:
@@ -1270,7 +1270,7 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 	}
 	if (startedProfileQueue)
 		runtimeProfileFinish(cntxt, mb, stk);
-	ma_close(ma, &ma_state);
+	ma_close(&ma_state);
 	return ret;
 }
 
