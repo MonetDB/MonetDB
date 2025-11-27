@@ -5273,7 +5273,8 @@ str_vacuum_callback(int argc, void *argv[])
 	char *sname = (char *) argv[1];
 	char *tname = (char *) argv[2];
 	char *cname = (char *) argv[3];
-	allocator *sa = NULL;
+	allocator *sa = MT_thread_getallocator();
+	allocator_state sa_state = ma_open(sa);
 	sql_session *session = NULL;
 	sql_schema *s = NULL;
 	sql_table *t = NULL;
@@ -5283,21 +5284,16 @@ str_vacuum_callback(int argc, void *argv[])
 
 	(void) argc;
 
-	if ((sa = create_allocator(NULL, "MA_str_vacuum", false)) == NULL) {
-		TRC_ERROR(SQL_EXECUTION, "[str_vacuum_callback] -- Failed to create allocator!");
-		return GDK_FAIL;
-	}
-
 	if ((session = sql_session_create(store, sa, 0)) == NULL) {
 		TRC_ERROR(SQL_EXECUTION, "[str_vacuum_callback] -- Failed to create session!");
-		ma_destroy(sa);
+		ma_close(&sa_state);
 		return GDK_FAIL;
 	}
 
 	if (sql_trans_begin(session) < 0) {
 		TRC_ERROR(SQL_EXECUTION, "[str_vacuum_callback] -- Failed to begin transaction!");
 		sql_session_destroy(session);
-		ma_destroy(sa);
+		ma_close(&sa_state);
 		return GDK_FAIL;
 	}
 
@@ -5351,7 +5347,7 @@ str_vacuum_callback(int argc, void *argv[])
 	}
 
 	sql_session_destroy(session);
-	ma_destroy(sa);
+	ma_close(&sa_state);
 	return res;
 }
 
