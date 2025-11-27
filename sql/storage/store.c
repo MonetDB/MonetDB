@@ -4201,8 +4201,8 @@ sql_trans_copy_column( sql_trans *tr, sql_table *t, sql_column *c, sql_column **
 			size_t ncols = c->type.digits;
 			sql_subtype tp = *sql_fetch_localtype(localtype);
 			for (size_t idx=0; idx < ncols; idx++) {
-				char buf[24];
-				snprintf(buf, 24, "vec_idx_%zu", idx);
+				char buf[32];
+				snprintf(buf, 32, "vec_idx_%zu", idx);
 				sql_column *ic = NULL;
 				if (sql_trans_create_column_intern( &ic, tr, tt, buf, &tp, column_intern) < 0)
 					return -2;
