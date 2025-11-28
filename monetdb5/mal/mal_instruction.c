@@ -32,14 +32,11 @@ addMalException(MalBlkPtr mb, const char *msg)
 {
 	if (msg == NULL)
 		return;
-	size_t len;
 	if (mb->errors) {
-		len = strlen(mb->errors);
+		mb->errors = concatErrors(mb->errors, msg);
 	} else {
-		mb->errors = MT_thread_get_exceptbuf();
-		len = 0;
+		mb->errors = dupError(msg);
 	}
-	strcpy_len(mb->errors + len, msg, GDKMAXERRLEN - len);
 }
 
 Symbol
@@ -125,11 +122,6 @@ newMalBlk(int elements)
 
 	if (!ma)
 		return NULL;
-	allocator *ta = create_allocator(ma, "TA_MALBlk", true);
-	if (ta == NULL) {
-		ma_destroy(ma);
-		return NULL;
-	}
 	allocator *instr_allocator = create_allocator(ma, "MA_MALInstructions", false);
 	if (instr_allocator == NULL) {
 		ma_destroy(ma);
@@ -159,7 +151,6 @@ newMalBlk(int elements)
 		.maxarg = MAXARG,		/* the minimum for each instruction */
 		.workers = ATOMIC_VAR_INIT(1),
 		.ma = ma,
-		.ta = ta,
 		.instr_allocator = instr_allocator
 	};
 	if (newMalBlkStmt(mb, elements) < 0) {
@@ -305,7 +296,6 @@ freeMalBlk(MalBlkPtr mb)
 	//	if (isVarConstant(mb, i))
 	//		VALclear(&getVarConstant(mb, i));
 	//}
-	freeException(mb->errors);
 	ma_destroy(mb->ma);
 #if 0
 	mb->vtop = 0;
@@ -322,7 +312,6 @@ freeMalBlk(MalBlkPtr mb)
 	mb->help = 0;
 	mb->inlineProp = 0;
 	mb->unsafeProp = 0;
-	freeException(mb->errors);
 	GDKfree(mb);
 #endif
 }
@@ -345,7 +334,6 @@ copyMalBlk(MalBlkPtr old)
 	}
 
 	mb->ma = ma;
-	mb->ta = create_allocator(ma, ma_name(old->ta), true);
 	mb->instr_allocator = create_allocator(ma, ma_name(old->instr_allocator), true);
 	mb->var = MA_ZNEW_ARRAY(ma, VarRecord, old->vsize);
 	if (mb->var == NULL) {
@@ -793,7 +781,7 @@ trimMalVariables_(MalBlkPtr mb, MalStkPtr glb)
 	allocator_state ta_state = ma_open(ta);
 	alias = ma_zalloc(ta, mb->vtop * sizeof(int));
 	if (alias == NULL) {
-		ma_close(ta, &ta_state);
+		ma_close(&ta_state);
 		return;					/* forget it if we run out of memory *//* build the alias table */
 	}
 	for (i = 0; i < mb->vtop; i++) {
@@ -824,7 +812,7 @@ trimMalVariables_(MalBlkPtr mb, MalStkPtr glb)
 		}
 		mb->vtop = cnt;
 	}
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 }
 
 void
@@ -988,7 +976,6 @@ defConstant(MalBlkPtr mb, int type, ValPtr cst)
 												"constant coercion error");
 			//GDKfree(ft);
 			//GDKfree(tt);
-			freeException(msg);
 			VALclear(cst);		/* it could contain allocated space */
 			return -1;
 		} else {

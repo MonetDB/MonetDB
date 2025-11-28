@@ -55,7 +55,7 @@ filterSelectRTree(bat* outid, const bat *bid , const bat *sid, GEOSGeom const_ge
 		if (s)
 			BBPunfix(s->batCacheid);
 		BBPreclaim(out);
-		ma_close(ta, &ta_state);
+		ma_close(&ta_state);
 		throw(MAL, name, "RTreesearch failed, returned NULL candidates");
 	}
 
@@ -72,7 +72,7 @@ filterSelectRTree(bat* outid, const bat *bid , const bat *sid, GEOSGeom const_ge
 		}
 		const wkb *col_wkb = BUNtvar(b_iter, cand - b->hseqbase);
 		if ((col_geom = wkb2geos(col_wkb)) == NULL) {
-			ma_close(ta, &ta_state);
+			ma_close(&ta_state);
 			throw(MAL, name, SQLSTATE(38000) "WKB2Geos operation failed");
 		}
 		if (GEOSGetSRID_r(geoshandle, col_geom) != GEOSGetSRID_r(geoshandle, const_geom)) {
@@ -83,7 +83,7 @@ filterSelectRTree(bat* outid, const bat *bid , const bat *sid, GEOSGeom const_ge
 			if (s)
 				BBPunfix(s->batCacheid);
 			BBPreclaim(out);
-			ma_close(ta, &ta_state);
+			ma_close(&ta_state);
 			throw(MAL, name, SQLSTATE(38000) "Geometries of different SRID");
 		}
 		//GEOS function returns 1 on true, 0 on false and 2 on exception
@@ -97,7 +97,7 @@ filterSelectRTree(bat* outid, const bat *bid , const bat *sid, GEOSGeom const_ge
 				if (s)
 					BBPunfix(s->batCacheid);
 				BBPreclaim(out);
-				ma_close(ta, &ta_state);
+				ma_close(&ta_state);
 				throw(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 		}
@@ -110,7 +110,7 @@ filterSelectRTree(bat* outid, const bat *bid , const bat *sid, GEOSGeom const_ge
 		BBPunfix(s->batCacheid);
 	*outid = out->batCacheid;
 	BBPkeepref(out);
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 	return MAL_SUCCEED;
 }
 #endif
@@ -455,7 +455,7 @@ filterJoinRTree(bat *lres_id, bat *rres_id, const bat *l_id, const bat *r_id, do
 			BBPunfix(l->batCacheid);
 		if (r)
 			BBPunfix(r->batCacheid);
-		ma_close(ta, &ta_state);
+		ma_close(&ta_state);
 		throw(MAL, name, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	//get the candidate lists
@@ -604,7 +604,7 @@ filterJoinRTree(bat *lres_id, bat *rres_id, const bat *l_id, const bat *r_id, do
 	BBPkeepref(lres);
 	*rres_id = rres->batCacheid;
 	BBPkeepref(rres);
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 	return MAL_SUCCEED;
 free:
 	if (l_geoms) {
@@ -629,7 +629,7 @@ free:
 		BBPreclaim(lres);
 	if (rres)
 		BBPreclaim(rres);
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 	return msg;
 }
 #endif
@@ -855,7 +855,7 @@ wkbTransform_bat_cand(bat *outBAT_id, bat *inBAT_id, bat *s_id, int *srid_src, i
 					err = createException(MAL, "batgeom.Transform", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				}
 			}
-			ma_close(ta, &ta_state);
+			ma_close(&ta_state);
 
 			/* destroy the geos geometries */
 			GEOSGeom_destroy_r(geoshandle, transformedGeosGeometry);

@@ -524,7 +524,7 @@ static char *RAPIinstalladdons(void) {
 		allocator_state ta_state = ma_open(ta);
 		char *f = locate_file(ta, "rapi", ".R");
 		snprintf(rapiinclude, sizeof(rapiinclude), "source(\"%s\")", f);
-		ma_close(ta, &ta_state);
+		ma_close(&ta_state);
 	}
 #if DIR_SEP != '/'
 	{

@@ -100,7 +100,6 @@ mvc_init_create_view(mvc *m, sql_schema *s, const char *name, const char *query)
 			mvc_exit(store);	\
 			TRC_CRITICAL(SQL_TRANS,				\
 				     "Initialization error: %s\n", output);	\
-			freeException(output);				\
 			return NULL;					\
 		}							\
 	} while (0)
@@ -369,7 +368,6 @@ mvc_init(int debug, store_type store_tpe, int ro, int su, const char *initpasswd
 
 		if ((msg = mvc_commit(m, 0, NULL, false)) != MAL_SUCCEED) {
 			TRC_CRITICAL(SQL_TRANS, "Unable to commit system tables: %s\n", (msg + 6));
-			freeException(msg);
 			mvc_destroy(m);
 			mvc_exit(store);
 			return NULL;
@@ -397,7 +395,6 @@ mvc_init(int debug, store_type store_tpe, int ro, int su, const char *initpasswd
 				char *err;
 				if ((err = parse_sql_parts(m, tt)) != NULL) {
 					TRC_CRITICAL(SQL_TRANS, "Unable to start partitioned table: %s.%s: %s\n", ss->base.name, tt->base.name, err);
-					freeException(err);
 					mvc_destroy(m);
 					mvc_exit(store);
 					return NULL;
@@ -414,7 +411,6 @@ mvc_init(int debug, store_type store_tpe, int ro, int su, const char *initpasswd
 
 	if ((msg = mvc_commit(m, 0, NULL, false)) != MAL_SUCCEED) {
 		TRC_CRITICAL(SQL_TRANS, "Unable to commit system tables: %s\n", (msg + 6));
-		freeException(msg);
 		mvc_destroy(m);
 		mvc_exit(store);
 		return NULL;
@@ -504,7 +500,7 @@ mvc_commit(mvc *m, int chain, const char *name, bool enabling_auto_commit)
 {
 	sql_trans *tr = m->session->tr;
 	int ok = SQL_OK;
-	str msg = MAL_SUCCEED, other;
+	str msg = MAL_SUCCEED;
 	char operation[BUFSIZ];
 
 	assert(tr);
@@ -519,8 +515,7 @@ mvc_commit(mvc *m, int chain, const char *name, bool enabling_auto_commit)
 
 	if (m->session->status < 0) {
 		msg = createException(SQL, "sql.commit", SQLSTATE(40000) "%s transaction is aborted, will ROLLBACK instead", operation);
-		if ((other = mvc_rollback(m, chain, name, false)) != MAL_SUCCEED)
-			freeException(other);
+		(void) mvc_rollback(m, chain, name, false);
 		return msg;
 	}
 

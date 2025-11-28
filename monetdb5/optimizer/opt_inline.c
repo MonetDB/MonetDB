@@ -21,7 +21,7 @@ inlineMALblock(Client ctx, MalBlkPtr mb, int pc, MalBlkPtr mc)
 	int i, k, l, n;
 	InstrPtr *ns, p, q;
 	int *nv;
-	allocator *ta = mb->ta;
+	allocator *ta = MT_thread_getallocator();
 
 	(void) ctx;
 
@@ -34,7 +34,7 @@ inlineMALblock(Client ctx, MalBlkPtr mb, int pc, MalBlkPtr mc)
 	nv = (int *) ma_alloc(ta, mc->vtop * sizeof(int));
 	if (nv == 0) {
 		//GDKfree(ns);
-		ma_close(ta, &ta_state);
+		ma_close(&ta_state);
 		return -1;
 	}
 
@@ -51,7 +51,7 @@ inlineMALblock(Client ctx, MalBlkPtr mb, int pc, MalBlkPtr mc)
 			nv[n] = newTmpVariable(mb, getVarType(mc, n));
 		}
 		if (nv[n] < 0) {
-			ma_close(ta, &ta_state);
+			ma_close(&ta_state);
 			//GDKfree(ns);
 			return -1;
 		}
@@ -84,7 +84,7 @@ inlineMALblock(Client ctx, MalBlkPtr mb, int pc, MalBlkPtr mc)
 		/* copy the instruction and fix variable references */
 		ns[k] = copyInstruction(mb, q);
 		if (ns[k] == NULL) {
-			ma_close(ta, &ta_state);
+			ma_close(&ta_state);
 			//GDKfree(ns);
 			return -1;
 		}
@@ -120,7 +120,7 @@ inlineMALblock(Client ctx, MalBlkPtr mb, int pc, MalBlkPtr mc)
 
 	mb->ssize = l;
 	mb->stop = k;
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 	return pc;
 }
 

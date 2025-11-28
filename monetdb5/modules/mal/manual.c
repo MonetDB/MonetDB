@@ -91,7 +91,7 @@ MANUALcreateOverview(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 		}
 	}
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 
 	*mx = mod->batCacheid;
 	BBPkeepref(mod);
@@ -107,7 +107,7 @@ MANUALcreateOverview(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 
   bailout:
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 	BBPreclaim(mod);
 	BBPreclaim(fcn);
 	BBPreclaim(sig);

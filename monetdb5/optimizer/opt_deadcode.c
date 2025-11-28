@@ -24,7 +24,7 @@ OPTdeadcodeImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 	int actions = 0;
 	int *varused = 0;
 	str msg = MAL_SUCCEED;
-	allocator *ta = mb->ta;
+	allocator *ta = MT_thread_getallocator();
 
 	(void) ctx;
 	(void) stk;
@@ -41,7 +41,7 @@ OPTdeadcodeImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 	limit = mb->stop;
 	slimit = mb->ssize;
 	if (newMalBlkStmt(mb, mb->ssize) < 0) {
-		ma_close( ta , &ta_state);
+		ma_close(&ta_state);
 		throw(MAL, "optimizer.deadcode", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	//mnstr_printf(ctx->fdout,"deadcode limit %d ssize %d vtop %d vsize %d\n", limit, (int)(mb->ssize), mb->vtop, (int)(mb->vsize));
@@ -124,7 +124,7 @@ OPTdeadcodeImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 			msg = chkDeclarations(mb);
 	}
   wrapup:
-	ma_close( ta , &ta_state);
+	ma_close(&ta_state);
   wrapup1:
 	/* keep actions taken as a fake argument */
 	(void) pushInt(mb, pci, actions);

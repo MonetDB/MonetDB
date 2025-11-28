@@ -290,7 +290,7 @@ getPipeCatalog(Client ctx, bat *nme, bat *def, bat *stat)
 		BBPreclaim(b);
 		BBPreclaim(bn);
 		BBPreclaim(bs);
-		ma_close(ta, &ta_state);
+		ma_close(&ta_state);
 		throw(MAL, "optimizer.getpipeDefinition",
 			  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
@@ -306,7 +306,7 @@ getPipeCatalog(Client ctx, bat *nme, bat *def, bat *stat)
 				BBPreclaim(b);
 				BBPreclaim(bn);
 				BBPreclaim(bs);
-				ma_close(ta, &ta_state);
+				ma_close(&ta_state);
 				throw(MAL, "optimizer.getpipeDefinition",
 					  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
@@ -324,12 +324,12 @@ getPipeCatalog(Client ctx, bat *nme, bat *def, bat *stat)
 			BBPreclaim(b);
 			BBPreclaim(bn);
 			BBPreclaim(bs);
-			ma_close(ta, &ta_state);
+			ma_close(&ta_state);
 			throw(MAL, "optimizer.getpipeDefinition",
 				  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 	}
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 
 	*nme = b->batCacheid;
 	BBPkeepref(b);

@@ -588,7 +588,7 @@ load_zero_terminated_text(BAT *bat, stream *s, int *eof_reached, int width, bool
 	msg = MAL_SUCCEED;
 end:
 	release_insert_state(&state);
-	ma_close(ma, &ma_state);
+	ma_close(&ma_state);
 	if (bs != NULL) {
 		*eof_reached = bs->eof;
 		bs->s = NULL;

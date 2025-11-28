@@ -157,16 +157,13 @@ OPTwrapper(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			msg = (*codes[i].fcn) (cntxt, mb, stk, p);
 			if (msg || mb->errors) {
 				/* we can only return one or the other */
-				if (msg)
-					freeException(mb->errors);
-				else
+				if (msg == NULL)
 					msg = mb->errors;
 				mb->errors = NULL;
 				str newmsg = createException(MAL, getFunctionId(p),
 											 SQLSTATE(42000)
 											 "Error in optimizer %s: %s",
 											 getFunctionId(p), msg);
-				freeException(msg);
 				return newmsg;
 			}
 			break;

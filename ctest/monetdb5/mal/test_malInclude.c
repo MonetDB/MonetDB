@@ -22,13 +22,13 @@ main(void)
 
 	if (BBPaddfarm(NULL, (1U << PERSISTENT) | (1U << TRANSIENT), false) != GDK_SUCCEED) {
 		/* set in memory dbfarm */
-		createException(MAL, "embedded.monetdb_startup", "BBPaddfarm() failed");
+		fprintf(stderr, "BBPaddfarm() failed\n");
 		return 1;
 	}
 
     gdk_res = GDKinit(NULL, 0, true, NULL);
     if (gdk_res != GDK_SUCCEED) {
-		createException(MAL, "embedded.monetdb_startup", "GDKinit() failed");
+		fprintf(stderr, "GDKinit() failed\n");
 		return 1;
     }
     char *modules[2];

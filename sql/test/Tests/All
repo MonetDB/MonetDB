@@ -150,3 +150,6 @@ as3ap
 orderby-nulls-first-last
 
 blob_query
+
+inet4
+inet6

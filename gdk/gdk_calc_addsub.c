@@ -1440,7 +1440,7 @@ addstr_loop(BAT *b1, const char *l, BAT *b2, const char *r, BAT *bn,
 	allocator_state ta_state = ma_open(ta);
 	s = ma_alloc(ta, slen);
 	if (s == NULL) {
-		ma_close(ta, &ta_state);
+		ma_close(&ta_state);
 		return BUN_NONE;
 	}
 	TIMEOUT_LOOP_IDX_DECL(i, ncand, qry_ctx) {
@@ -1458,7 +1458,7 @@ addstr_loop(BAT *b1, const char *l, BAT *b2, const char *r, BAT *bn,
 			llen = strlen(l);
 			rlen = strlen(r);
 			if (llen + rlen >= slen) {
-				/* ma_close(ta, &ta_state); */
+				/* ma_close(&ta_state); */
 				/* ta_state = ma_open(ta); */
 				slen = llen + rlen + 1024;
 				s = ma_alloc(ta, slen);
@@ -1472,12 +1472,12 @@ addstr_loop(BAT *b1, const char *l, BAT *b2, const char *r, BAT *bn,
 	}
 	TIMEOUT_CHECK(qry_ctx,
 		      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 	bn->theap->dirty = true;
 	return nils;
 
   bailout:
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 	return BUN_NONE;
 }
 

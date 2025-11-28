@@ -343,7 +343,7 @@ STRTail(Client ctx, str *res, const char *const *arg1, const int *offset)
 			return msg;
 		}
 		*res = ma_strdup(ma, buf);
-		ma_close(ta, &ta_state);
+		ma_close(&ta_state);
 	}
 
 	//GDKfree(buf);
@@ -403,7 +403,7 @@ STRSubString(Client ctx, str *res, const char *const *arg1, const int *offset, c
 			return msg;
 		}
 		*res = ma_strdup(ma, buf);
-		ma_close(ta, &ta_state);
+		ma_close(&ta_state);
 	}
 
 	//GDKfree(buf);
@@ -447,7 +447,7 @@ STRFromWChr(Client ctx, str *res, const int *c)
 			return msg;
 		}
 		*res = ma_strdup(ma, buf);
-		ma_close(ta, &ta_state);
+		ma_close(&ta_state);
 	}
 
 	//GDKfree(buf);
@@ -516,7 +516,7 @@ doStrConvert(allocator *ma, str *res, const char *arg1, gdk_return (*func)(alloc
 			throw(MAL, "str.lower", GDK_EXCEPTION);
 		}
 		*res = ma_strdup(ma, buf);
-		ma_close(ta, &ta_state);
+		ma_close(&ta_state);
 	}
 
 	//GDKfree(buf);
@@ -831,7 +831,7 @@ STRsplitpart(Client ctx, str *res, const char *const *haystack, const char *cons
 			return msg;
 		}
 		*res = ma_strdup(ma, buf);
-		ma_close(ta, &ta_state);
+		ma_close(&ta_state);
 	}
 
 	//GDKfree(buf);
@@ -958,7 +958,7 @@ STRStrip(Client ctx, str *res, const char *const *arg1)
 			return msg;
 		}
 		*res = ma_strdup(ma, buf);
-		ma_close(ta, &ta_state);
+		ma_close(&ta_state);
 	}
 
 	//GDKfree(buf);
@@ -1003,7 +1003,7 @@ STRLtrim(Client ctx, str *res, const char *const *arg1)
 			return msg;
 		}
 		*res = ma_strdup(ma, buf);
-		ma_close(ta, &ta_state);
+		ma_close(&ta_state);
 	}
 
 	//GDKfree(buf);
@@ -1048,7 +1048,7 @@ STRRtrim(Client ctx, str *res, const char *const *arg1)
 			return msg;
 		}
 		*res = ma_strdup(ma, buf);
-		ma_close(ta, &ta_state);
+		ma_close(&ta_state);
 	}
 
 	//GDKfree(buf);
@@ -1135,7 +1135,7 @@ STRStrip2(Client ctx, str *res, const char *const *arg1, const char *const *arg2
 			return msg;
 		}
 		*res = ma_strdup(ma, buf);
-		ma_close(ta, &ta_state);
+		ma_close(&ta_state);
 	}
 
 	//GDKfree(buf);
@@ -1193,7 +1193,7 @@ STRLtrim2(Client ctx, str *res, const char *const *arg1, const char *const *arg2
 			return msg;
 		}
 		*res = ma_strdup(ma, buf);
-		ma_close(ta, &ta_state);
+		ma_close(&ta_state);
 	}
 
 	//GDKfree(buf);
@@ -1251,7 +1251,7 @@ STRRtrim2(Client ctx, str *res, const char *const *arg1, const char *const *arg2
 			return msg;
 		}
 		*res = ma_strdup(ma, buf);
-		ma_close(ta, &ta_state);
+		ma_close(&ta_state);
 	}
 
 	//GDKfree(buf);
@@ -1356,7 +1356,7 @@ STRLpad(Client ctx, str *res, const char *const *arg1, const int *len)
 			return msg;
 		}
 		*res = ma_strdup(ma, buf);
-		ma_close(ta, &ta_state);
+		ma_close(&ta_state);
 	}
 
 	//GDKfree(buf);
@@ -1401,7 +1401,7 @@ STRRpad(Client ctx, str *res, const char *const *arg1, const int *len)
 			return msg;
 		}
 		*res = ma_strdup(ma, buf);
-		ma_close(ta, &ta_state);
+		ma_close(&ta_state);
 	}
 
 	//GDKfree(buf);
@@ -1446,7 +1446,7 @@ STRLpad3(Client ctx, str *res, const char *const *arg1, const int *len, const ch
 			return msg;
 		}
 		*res = ma_strdup(ma, buf);
-		ma_close(ta, &ta_state);
+		ma_close(&ta_state);
 	}
 
 	//GDKfree(buf);
@@ -1492,7 +1492,7 @@ STRRpad3(Client ctx, str *res, const char *const *arg1, const int *len, const ch
 			return msg;
 		}
 		*res = ma_strdup(ma, buf);
-		ma_close(ta, &ta_state);
+		ma_close(&ta_state);
 	}
 
 	//GDKfree(buf);
@@ -1569,7 +1569,7 @@ STRSubstitute(Client ctx, str *res, const char *const *arg1, const char *const *
 			return msg;
 		}
 		*res = ma_strdup(ma, buf);
-		ma_close(ta, &ta_state);
+		ma_close(&ta_state);
 	}
 
 	//GDKfree(buf);
@@ -1618,7 +1618,7 @@ STRsubstringTail(Client ctx, str *res, const char *const *arg1, const int *start
 			return msg;
 		}
 		*res = ma_strdup(ma, buf);
-		ma_close(ta, &ta_state);
+		ma_close(&ta_state);
 	}
 
 	//GDKfree(buf);
@@ -1660,7 +1660,7 @@ STRsubstring(Client ctx, str *res, const char *const *arg1, const int *start, co
 			return msg;
 		}
 		*res = ma_strdup(ma, buf);
-		ma_close(ta, &ta_state);
+		ma_close(&ta_state);
 	}
 
 	//GDKfree(buf);
@@ -1693,7 +1693,7 @@ STRprefix(Client ctx, str *res, const char *const *arg1, const int *ll)
 			return msg;
 		}
 		*res = ma_strdup(ma, buf);
-		ma_close(ta, &ta_state);
+		ma_close(&ta_state);
 	}
 
 	//GDKfree(buf);
@@ -1733,7 +1733,7 @@ STRsuffix(Client ctx, str *res, const char *const *arg1, const int *ll)
 			return msg;
 		}
 		*res = ma_strdup(ma, buf);
-		ma_close(ta, &ta_state);
+		ma_close(&ta_state);
 	}
 
 	//GDKfree(buf);
@@ -1834,7 +1834,7 @@ STRinsert(Client ctx, str *res, const char *const *input, const int *start, cons
 			return msg;
 		}
 		*res = ma_strdup(ma, buf);
-		ma_close(ta, &ta_state);
+		ma_close(&ta_state);
 	}
 
 	//GDKfree(buf);
@@ -1903,7 +1903,7 @@ STRrepeat(Client ctx, str *res, const char *const *arg1, const int *c)
 			return msg;
 		}
 		*res = ma_strdup(ma, buf);
-		ma_close(ta, &ta_state);
+		ma_close(&ta_state);
 	}
 
 	//GDKfree(buf);
@@ -1937,7 +1937,7 @@ STRspace(Client ctx, str *res, const int *ll)
 			return msg;
 		}
 		*res = ma_strdup(ma, buf);
-		ma_close(ta, &ta_state);
+		ma_close(&ta_state);
 	}
 
 	//GDKfree(buf);
@@ -2181,7 +2181,7 @@ strbat_reverse(BAT *b)
 			if (ndst == NULL) {
 				bat_iterator_end(&bi);
 				BBPreclaim(bn);
-				ma_close(ta, &ta_state);
+				ma_close(&ta_state);
 				return NULL;
 			}
 			dst = ndst;
@@ -2190,13 +2190,13 @@ strbat_reverse(BAT *b)
 		if (BUNappend(bn, dst, false) != GDK_SUCCEED) {
 			bat_iterator_end(&bi);
 			BBPreclaim(bn);
-			ma_close(ta, &ta_state);
+			ma_close(&ta_state);
 			return NULL;
 		}
 	}
 
 	bat_iterator_end(&bi);
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 	return bn;
 }
 
@@ -2389,7 +2389,7 @@ bigram_strjoin(BAT *rl, BAT *rr, BATiter *li, BATiter *ri,
 
 	NGrams *ng = ng_create(ta, lci->ncand, BIGRAM_SZ);
 	if (!ng) {
-		ma_close(ta, &ta_state);
+		ma_close(&ta_state);
 		throw(MAL, fname, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
@@ -2402,7 +2402,7 @@ bigram_strjoin(BAT *rl, BAT *rr, BATiter *li, BATiter *ri,
 
 	msg = init_bigram_idx(ng, li, lci, qry_ctx);
 	if (msg) {
-		ma_close(ta, &ta_state);
+		ma_close(&ta_state);
 		return msg;
 	}
 
@@ -2431,7 +2431,7 @@ bigram_strjoin(BAT *rl, BAT *rr, BATiter *li, BATiter *ri,
 						new_cap = BATgrows(rl);
 						if (BATextend(rl, new_cap) != GDK_SUCCEED ||
 							(rr && BATextend(rr, new_cap) != GDK_SUCCEED)) {
-							ma_close(ta, &ta_state);
+							ma_close(&ta_state);
 							throw(MAL, fname, GDK_EXCEPTION);
 						}
 					}
@@ -2461,7 +2461,7 @@ bigram_strjoin(BAT *rl, BAT *rr, BATiter *li, BATiter *ri,
 								new_cap = BATgrows(rl);
 								if (BATextend(rl, new_cap) != GDK_SUCCEED ||
 									(rr && BATextend(rr, new_cap) != GDK_SUCCEED)) {
-									ma_close(ta, &ta_state);
+									ma_close(&ta_state);
 									throw(MAL, fname, GDK_EXCEPTION);
 								}
 							}
@@ -2481,7 +2481,7 @@ bigram_strjoin(BAT *rl, BAT *rr, BATiter *li, BATiter *ri,
 								new_cap = BATgrows(rl);
 								if (BATextend(rl, new_cap) != GDK_SUCCEED ||
 									(rr && BATextend(rr, new_cap) != GDK_SUCCEED)) {
-									ma_close(ta, &ta_state);
+									ma_close(&ta_state);
 									throw(MAL, fname, GDK_EXCEPTION);
 								}
 							}
@@ -2502,7 +2502,7 @@ bigram_strjoin(BAT *rl, BAT *rr, BATiter *li, BATiter *ri,
 			BATnegateprops(rr);
 	}
 
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 
 	TRC_DEBUG(ALGO, "(%s, %s, l=%s #%zu [%s], r=%s #%zu [%s], cl=%s #%zu, cr=%s #%zu, time="LLFMT"usecs)\n",
 			  fname, "bigram_strjoin",

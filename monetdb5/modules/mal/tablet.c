@@ -410,7 +410,7 @@ output_file_default(Tablet *as, BAT *order, stream *fd, bstream *in)
 	BUN offset = as->offset;
 
 	if (buf == NULL || localbuf == NULL) {
-		ma_close(ta, &ta_state);
+		ma_close(&ta_state);
 		//GDKfree(buf);
 		//GDKfree(localbuf);
 		return -1;
@@ -425,7 +425,7 @@ output_file_default(Tablet *as, BAT *order, stream *fd, bstream *in)
 			break;
 		}
 	}
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 	//GDKfree(localbuf);
 	//GDKfree(buf);
 	return res;
@@ -443,7 +443,7 @@ output_file_dense(Tablet *as, stream *fd, bstream *in)
 	BUN i = 0;
 
 	if (buf == NULL || localbuf == NULL) {
-		ma_close(ta, &ta_state);
+		ma_close(&ta_state);
 		//GDKfree(buf);
 		//GDKfree(localbuf);
 		return -1;
@@ -457,7 +457,7 @@ output_file_dense(Tablet *as, stream *fd, bstream *in)
 			break;
 		}
 	}
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 	//GDKfree(localbuf);
 	//GDKfree(buf);
 	return res;
@@ -476,7 +476,7 @@ output_file_ordered(Tablet *as, BAT *order, stream *fd, bstream *in)
 	BUN offset = as->offset;
 
 	if (buf == NULL) {
-		ma_close(ta, &ta_state);
+		ma_close(&ta_state);
 		return -1;
 	}
 	for (q = offset + as->nr, p = offset; p < q; p++, i++) {
@@ -487,12 +487,12 @@ output_file_ordered(Tablet *as, BAT *order, stream *fd, bstream *in)
 			break;
 		}
 		if ((res = output_line_lookup(ta, &buf, &len, as->format, fd, as->nr_attrs, h)) < 0) {
-			ma_close(ta, &ta_state);
+			ma_close(&ta_state);
 			//GDKfree(buf);
 			return res;
 		}
 	}
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 	//GDKfree(buf);
 	return res;
 }
@@ -600,7 +600,6 @@ typedef struct {
 	bte *rowerror;
 	int errorcnt;
 	bool aborted;
-	bool set_qry_ctx;
 } READERtask;
 
 /* returns TRUE if there is/might be more */
@@ -906,7 +905,7 @@ SQLinsert_val(READERtask *task, int col, int idx)
 					tablet_error(task, idx, row, col,
 								 SQLSTATE(HY013) MAL_MALLOC_FAIL, err);
 					task->besteffort = false;	/* no longer best effort */
-					ma_close(ta, &ta_state);
+					ma_close(&ta_state);
 					return -1;
 				}
 				mycpstr(scpy, s, slen + 1);
@@ -918,7 +917,7 @@ SQLinsert_val(READERtask *task, int col, int idx)
 			tablet_error(task, idx, row, col, buf, err);
 			//GDKfree(err);
 			if (!task->besteffort) {
-				ma_close(ta, &ta_state);
+				ma_close(&ta_state);
 				return -1;
 			}
 		}
@@ -928,7 +927,7 @@ SQLinsert_val(READERtask *task, int col, int idx)
 		fmt->c->tnonil = false;
 	}
 	if (bunfastapp(fmt->c, adt) == GDK_SUCCEED) {
-		ma_close(ta, &ta_state);
+		ma_close(&ta_state);
 		return ret;
 	}
 
@@ -941,7 +940,7 @@ SQLinsert_val(READERtask *task, int col, int idx)
 		//GDKfree(err);
 	}
 	task->besteffort = false;	/* no longer best effort */
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 	return -1;
 }
 
@@ -1119,7 +1118,7 @@ SQLworker(void *arg)
 	lng t0;
 
 	GDKclrerr();
-	MT_thread_set_qry_ctx(task->set_qry_ctx ? &task->cntxt->qryctx : NULL);
+	MT_thread_set_qry_ctx(&task->cntxt->qryctx);
 
 	MT_sema_down(&task->sema);
 	while (task->top[task->cur] >= 0) {
@@ -1296,7 +1295,7 @@ SQLproducer(void *p)
 
 	allocator *ta = MT_thread_getallocator();
 	allocator_state ta_state = ma_open(ta);
-	MT_thread_set_qry_ctx(task->set_qry_ctx ? &task->cntxt->qryctx : NULL);
+	MT_thread_set_qry_ctx(&task->cntxt->qryctx);
 	rdfa = mkdfa(ta, (const unsigned char *) rsep, rseplen);
 	if (rdfa == NULL) {
 		tablet_error(task, lng_nil, lng_nil, int_nil, "cannot allocate memory",
@@ -1494,7 +1493,7 @@ SQLproducer(void *p)
 			if (cnt == task->maxrow) {
 				//GDKfree(rdfa);
 				MT_thread_set_qry_ctx(NULL);
-				ma_close(ta, &ta_state);
+				ma_close(&ta_state);
 				return;
 			}
 		} else {
@@ -1508,7 +1507,7 @@ SQLproducer(void *p)
 				if (task->state == ENDOFCOPY) {
 					//GDKfree(rdfa);
 					MT_thread_set_qry_ctx(NULL);
-					ma_close(ta, &ta_state);
+					ma_close(&ta_state);
 					return;
 				}
 			}
@@ -1532,7 +1531,7 @@ SQLproducer(void *p)
 /*				TRC_DEBUG(MAL_SERVER, "Producer delivered all\n");*/
 				//GDKfree(rdfa);
 				MT_thread_set_qry_ctx(NULL);
-				ma_close(ta, &ta_state);
+				ma_close(&ta_state);
 				return;
 			}
 		}
@@ -1543,14 +1542,14 @@ SQLproducer(void *p)
 /*			TRC_DEBUG(MAL_SERVER, "Producer encountered eof\n");*/
 			//GDKfree(rdfa);
 			MT_thread_set_qry_ctx(NULL);
-			ma_close(ta, &ta_state);
+			ma_close(&ta_state);
 			return;
 		}
 		/* consumers ask us to stop? */
 		if (task->state == ENDOFCOPY) {
 			//GDKfree(rdfa);
 			MT_thread_set_qry_ctx(NULL);
-			ma_close(ta, &ta_state);
+			ma_close(&ta_state);
 			return;
 		}
 		bufcnt[cur] = cnt;
@@ -1567,7 +1566,7 @@ SQLproducer(void *p)
 	}
 	//GDKfree(rdfa);
 	MT_thread_set_qry_ctx(NULL);
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 
 	return;
 
@@ -1633,7 +1632,6 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out,
 		.from_stdin = from_stdin,
 		.as = as,
 		.escape = escape,	/* TODO: implement feature!!! */
-		.set_qry_ctx = MT_thread_get_qry_ctx() != NULL,
 	};
 
 	/* create the reject tables */
@@ -1955,18 +1953,6 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out,
 	for (j = 0; j < threads; j++)
 		MT_sema_down(&ptask[j].reply);
 
-	/* it may be that there was an error which may have been produced by
-	 * one of the worker threads; if so, copy the error message to our
-	 * own exception buffer since the worker thread's exception buffer
-	 * will be destroyed when we join the thread */
-	if (as->error) {
-		char *msg = MT_thread_get_exceptbuf();
-		if (as->error != msg) {
-			strcpy_len(msg, as->error, GDKMAXERRLEN);
-			as->error = msg;
-		}
-	}
-
 /*	TRC_DEBUG(MAL_SERVER, "Kill the workers\n");*/
 
 	MT_join_thread(task.tid);
@@ -1998,7 +1984,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out,
 	// 	GDKfree(task.rowerror);
 	MT_sema_destroy(&task.producer);
 	MT_sema_destroy(&task.consumer);
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 
 	return res < 0 ? BUN_NONE : cnt;
 
@@ -2014,7 +2000,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out,
 	// GDKfree(task.rowerror);
 	// for (i = 0; i < MAXWORKERS; i++)
 	// 	GDKfree(ptask[i].cols);
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 	return BUN_NONE;
 }
 

@@ -346,7 +346,7 @@ OPTdataflowImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	States states = NULL;
 	region_state state = { singleton_region };
 	str msg = MAL_SUCCEED;
-	allocator *ta = mb->ta;
+	allocator *ta = MT_thread_getallocator();
 
 	/* don't use dataflow on single processor systems */
 	if (GDKnr_threads <= 1 || ctx->workerlimit == 1 || MB_LARGE(mb))
@@ -363,7 +363,7 @@ OPTdataflowImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	allocator_state ta_state = ma_open( ta );
 	states = (States) ma_zalloc(ta, vlimit * sizeof(char));
 	if (states == NULL) {
-		ma_close(ta, &ta_state);
+		ma_close(&ta_state);
 		throw(MAL, "optimizer.dataflow", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
@@ -373,7 +373,7 @@ OPTdataflowImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	slimit = mb->ssize;
 	old = mb->stmt;
 	if (newMalBlkStmt(mb, mb->ssize) < 0) {
-		ma_close(ta, &ta_state);
+		ma_close(&ta_state);
 		throw(MAL, "optimizer.dataflow", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
@@ -486,7 +486,7 @@ OPTdataflowImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 	}
 
-	ma_close( ta , &ta_state);
+	ma_close(&ta_state);
   wrapup:
 	/* keep actions taken as a fake argument */
 	(void) pushInt(mb, pci, actions);

@@ -41,7 +41,7 @@ OPTconstantsImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 	VarPtr x, y, *cst = NULL;
 	str msg = MAL_SUCCEED;
 	InstrPtr p, q;
-	allocator *ta = mb->ta;
+	allocator *ta = MT_thread_getallocator();
 
 	if (isSimpleSQL(mb) || MB_LARGE(mb)) {
 		goto wrapup1;
@@ -126,7 +126,7 @@ OPTconstantsImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 	//      msg = chkDeclarations(mb);
 	/* keep all actions taken as a post block comment */
   wrapup:
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
   wrapup1:
 	/* keep actions taken as a fake argument */
 	(void) pushInt(mb, pci, actions);

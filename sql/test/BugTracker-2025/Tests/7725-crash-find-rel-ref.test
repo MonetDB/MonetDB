@@ -1,0 +1,6 @@
+statement error 22018!conversion of string 'EUROPE' to type bte failed.
+SELECT ( WITH x ( x ) AS ( SELECT DISTINCT 1 ) SELECT ( SELECT x FROM x WHERE x = ( SELECT ( SELECT x FROM x WHERE EXISTS ( SELECT - x , x FROM x ) ) WHERE ( WITH x AS ( SELECT * FROM generate_series ( 8888 , 8100 ) EXCEPT SELECT * FROM generate_series ( 44 , 3 ) ) SELECT 2 WHERE FALSE ) > ANY ( 'EUROPE' ) GROUP BY 1 ) ) FROM x )
+
+statement ok
+SELECT (SELECT * FROM (select 1))
+GROUP BY 1;

@@ -204,7 +204,6 @@ PyArrayObject_FromBAT(allocator *ma, Client ctx, PyInput *inp, size_t t_start, s
 			BAT *ret_bat = NULL;
 			msg = ConvertFromSQLType(ma, ctx, b, inp->sql_subtype, &ret_bat, &inp->bat_type);
 			if (msg != MAL_SUCCEED) {
-				freeException(msg);
 				msg = createException(MAL, "pyapi3.eval",
 									  SQLSTATE(PY000) "Failed to convert BAT.");
 				goto wrapup;
@@ -603,7 +602,7 @@ PyDict_CheckForConversion(PyObject *pResult, int expected_columns, char **retcol
 				MAL, "pyapi3.eval",
 				SQLSTATE(PY000) "Error converting dict return value \"%s\": %s",
 				retcol_names[i], msg);
-			ma_close(ma, &ma_state);
+			ma_close(&ma_state);
 			goto wrapup;
 		}
 		if (PyList_CheckExact(object)) {

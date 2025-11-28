@@ -248,14 +248,14 @@ resetScenario(Client c)
 
 	scen = findScenario(c->scenario);
 	if (scen != NULL && scen->exitClientCmd) {
-		str msg = (*scen->exitClientCmd) (c);
-		freeException(msg);
+		(void) (*scen->exitClientCmd) (c);
 	}
 
 	c->scenario = NULL;
 	c->initClient = NULL;
 	c->exitClient = NULL;
 	c->engine = NULL;
+	ma_destroy(c->qryctx.errorallocator);
 }
 
 /*

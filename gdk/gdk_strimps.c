@@ -325,7 +325,7 @@ STRMPbuildHeader(BAT *b, BAT *s, CharPair *hpairs)
 
 	hlen = STRIMP_HISTSIZE;
 	if ((hist = (PairHistogramElem *)ma_zalloc(ta, hlen*sizeof(PairHistogramElem))) == NULL) {
-		ma_close(ta, &ta_state);
+		ma_close(&ta_state);
 		return false;
 	}
 
@@ -385,7 +385,7 @@ STRMPbuildHeader(BAT *b, BAT *s, CharPair *hpairs)
 		STRMPchoosePairs(hist, hlen, hpairs);
 	}
 
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 
 	TRC_DEBUG(ACCELERATOR, LLFMT " usec\n", GDKusec() - t0);
 	if (!(res = values >= STRIMP_HEADER_SIZE))
@@ -712,7 +712,7 @@ STRMPcreateStrimpHeap(BAT *b, BAT *s)
 	const char *nme;
 
 	if (!hpairs) {
-		ma_close(ta, &ta_state);
+		ma_close(&ta_state);
 		return NULL;
 	}
 
@@ -746,14 +746,14 @@ STRMPcreateStrimpHeap(BAT *b, BAT *s)
 		    HEAPalloc(&r->strimps, BATcount(b) * sizeof(uint64_t) + sz,
 			      sizeof(uint8_t)) != GDK_SUCCEED) {
 			GDKfree(r);
-			ma_close(ta, &ta_state);
+			ma_close(&ta_state);
 			return NULL;
 		}
 
 		if ((r->masks = (strimp_masks_t *)GDKzalloc(STRIMP_HISTSIZE*sizeof(strimp_masks_t))) == NULL) {
 			HEAPfree(&r->strimps, true);
 			GDKfree(r);
-			ma_close(ta, &ta_state);
+			ma_close(&ta_state);
 			return NULL;
 		}
 
@@ -779,7 +779,7 @@ STRMPcreateStrimpHeap(BAT *b, BAT *s)
 		r->rec_cnt = 0;
 		ATOMIC_INIT(&r->strimps.refs, 1);
 	}
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 	return r;
 }
 

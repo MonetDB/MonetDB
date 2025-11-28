@@ -154,8 +154,7 @@ OPTmultiplexInline(Client ctx, MalBlkPtr mb, InstrPtr p, int pc)
 	int i, j, k, m;
 	int refbat = 0, retc = p->retc;
 	bit *upgrade;
-	str msg;
-	allocator *ta = mb->ta;
+	allocator *ta = MT_thread_getallocator();
 
 
 	str mod = VALget(&getVar(mb, getArg(p, retc + 0))->value);
@@ -178,7 +177,7 @@ OPTmultiplexInline(Client ctx, MalBlkPtr mb, InstrPtr p, int pc)
 	allocator_state ta_state = ma_open(ta);
 	upgrade = (bit *) ma_zalloc(ta, sizeof(bit) * mq->vtop);
 	if (upgrade == NULL) {
-		ma_close(ta, &ta_state);
+		ma_close(&ta_state);
 		freeMalBlk(mq);
 		return 0;
 	}
@@ -354,18 +353,16 @@ OPTmultiplexInline(Client ctx, MalBlkPtr mb, InstrPtr p, int pc)
 	if (mq->errors) {
   terminateMX:
 
-		ma_close(ta, &ta_state);
+		ma_close(&ta_state);
 		freeMalBlk(mq);
 
 		/* ugh ugh, fallback to non inline, but optimized code */
-		msg = OPTmultiplexSimple(ctx, s->def);
-		if (msg)
-			freeException(msg);
+		(void) OPTmultiplexSimple(ctx, s->def);
 		if (s->kind == FUNCTIONsymbol)
 			s->def->inlineProp = 0;
 		return 0;
 	}
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 	/*
 	 * We have successfully constructed a variant
 	 * of the to-be-inlined function. Put it in place

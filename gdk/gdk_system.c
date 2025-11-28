@@ -229,7 +229,6 @@ struct mtthread {
 	MT_Id tid;
 	uintptr_t sp;
 	char gdkerrbuf[GDKMAXERRLEN];
-	char malexcept[GDKMAXERRLEN];
 	struct freebats freebats;
 };
 static struct mtthread mainthread = {
@@ -636,16 +635,6 @@ MT_thread_get_qry_ctx(void)
 	struct mtthread *self = thread_self();
 
 	return self ? self->qry_ctx : NULL;
-}
-
-char *
-MT_thread_get_exceptbuf(void)
-{
-	if (!thread_initialized)
-		return NULL;
-	struct mtthread *self = thread_self();
-
-	return self ? self->malexcept : NULL;
 }
 
 void

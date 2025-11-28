@@ -42,7 +42,6 @@ static void* monetdb_connect(void) {
 	conn->curmodule = conn->usermodule = userModule();
 	str msg;
 	if ((msg = SQLinitClient(conn, NULL, NULL, NULL)) != MAL_SUCCEED) {
-		freeException(msg);
 		return NULL;
 	}
 	((backend *) conn->sqlcontext)->mvc->session->auto_commit = 1;
@@ -59,7 +58,6 @@ static str monetdb_query(Client c, str query) {
 		retval = SQLautocommit(m);
 	if (retval != MAL_SUCCEED) {
 		printf("Failed to execute SQL query: %s\n", query);
-		freeException(retval);
 		exit(1);
 		return MAL_SUCCEED;
 	}
@@ -79,8 +77,7 @@ static void monetdb_disconnect(void* conn) {
 	if (!MCvalid((Client) conn)) {
 		return;
 	}
-	str msg = SQLexitClient((Client) conn);
-	freeException(msg);
+	(void) SQLexitClient((Client) conn);
 	MCcloseClient((Client) conn);
 }
 

@@ -529,7 +529,7 @@ printBATelm(stream *f, bat i, BUN cnt, BUN first)
 		allocator_state ta_state = ma_open(ta);
 		tpe = getTypeName(ta, newBatType(b->ttype));
 		mnstr_printf(f, ":%s ", tpe);
-		ma_close(ta, &ta_state);
+		ma_close(&ta_state);
 		printBATproperties(f, b);
 		/* perform property checking */
 		BATassertProps(b);

@@ -75,7 +75,7 @@ struct logger {
 	uint32_t *updated;
 	bool flushing;		/* log_flush only */
 	int max_pending, cur_max_pending;
-				/* iff log files pending is larger then
+				/* iff log files pending is larger than
 				   this number, throw a warning */
 	logged_range *pending;	/* log_flush only */
 	stream *input_log;	/* log_flush only: current stream to flush */

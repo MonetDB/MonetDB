@@ -137,7 +137,7 @@ renderTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx, int flg, char *buf,
 					bufend += snprintf(bufend, (buf + max_len) - bufend, "[" BUNFMT "]", BATcount(d));
 			}
 		}
-		ma_close(ta, &ta_state);
+		ma_close(&ta_state);
 	}
 	*bufend = 0;
 	// show the type when required or frozen by the user

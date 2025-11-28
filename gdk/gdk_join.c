@@ -3457,7 +3457,7 @@ count_unique(BAT *b, BAT *s, BUN *cnt1, BUN *cnt2)
 			MT_rwlock_rdunlock(&pb->thashlock);
 			BBPreclaim(pb);
 			bat_iterator_end(&bi);
-			ma_close(ta, &ta_state);
+			ma_close(&ta_state);
 			return GDK_FAIL;
 		}
 		for (i = 0; i < ci.ncand; i++) {
@@ -3477,7 +3477,7 @@ count_unique(BAT *b, BAT *s, BUN *cnt1, BUN *cnt2)
 		for (int j = 0; j < 65536 / 32; j++)
 			cnt += candmask_pop(seen[j]);
 		*cnt2 = cnt;
-		ma_close(ta, &ta_state);
+		ma_close(&ta_state);
 		seen = NULL;
 	} else {
 		BUN prb;
@@ -4026,7 +4026,7 @@ bitmaskjoin(BAT *l, BAT *r,
 
 	MT_thread_setalgorithm(__func__);
 	if (mask == NULL) {
-		ma_close(ta, &ta_state);
+		ma_close(&ta_state);
 		return NULL;
 	}
 
@@ -4049,7 +4049,7 @@ bitmaskjoin(BAT *l, BAT *r,
 	if (only_misses)
 		cnt = lci->ncand - cnt;
 	if (cnt == 0 || cnt == lci->ncand) {
-		ma_close(ta, &ta_state);
+		ma_close(&ta_state);
 		if (cnt == 0)
 			return BATdense(0, 0, 0);
 		return BATdense(0, lci->seq, lci->ncand);
@@ -4095,7 +4095,7 @@ bitmaskjoin(BAT *l, BAT *r,
 			  ALGOBATPAR(r1),
 			  GDKusec() - t0);
 	}
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 	return r1;
 }
 

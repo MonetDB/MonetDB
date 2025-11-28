@@ -2888,7 +2888,7 @@ rewrite_split_select_exps(visitor *v, sql_rel *rel)
 			set_processed(nsel);
 			v->changes++;
 		}
-		ma_close(v->sql->ta, &ta_state);
+		ma_close(&ta_state);
 	}
 	return rel;
 }
@@ -3116,7 +3116,7 @@ rewrite_rank(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 				}
 			}
 		}
-		ma_close(v->sql->ta, &ta_state);
+		ma_close(&ta_state);
 
 		/* move rank down add ref */
 		if (!exp_name(e))
@@ -3553,7 +3553,11 @@ rewrite_compare(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 				}
 				if (quantifier) {
 					sql_subfunc *a;
-
+					if (rsq == NULL) {
+						rsq = rel_project(v->sql->sa, NULL, sa_list(v->sql->sa));
+						append(rsq->exps, re);
+						re = exp_ref(v->sql, re);
+					}
 					rsq = rel_groupby(v->sql, rsq, NULL);
 					a = sql_bind_func(v->sql, "sys", "null", exp_subtype(re), NULL, F_AGGR, true, true);
 					rnull = exp_aggr1(v->sql->sa, re, a, 0, 1, CARD_AGGR, has_nil(re));

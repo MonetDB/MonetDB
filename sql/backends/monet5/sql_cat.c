@@ -1345,7 +1345,6 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 				BBPunfix(b->batCacheid);
 				if (msg != MAL_SUCCEED) {
 					char *smsg = createException(SQL,"sql.alter_table", SQLSTATE(40002) "CREATE ORDERED INDEX: %s", msg);
-					freeException(msg);
 					return smsg;
 				}
 			} else if (i->type == imprints_idx) {

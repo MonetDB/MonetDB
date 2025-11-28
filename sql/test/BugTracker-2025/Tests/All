@@ -76,3 +76,5 @@ HAVE_HGE?7637_str_to_decimal
 7744_opt_null_in_where
 7748-update-returning-subquery-crash
 7753-like-in-projection
+7725-crash-find-rel-ref
+7745-antijoin-bad-mal-gen

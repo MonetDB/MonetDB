@@ -89,7 +89,7 @@ AUTHunlockVault(const char *password)
 	vaultKey = GDKstrdup(password);
 	if (vaultKey == NULL) {
 		MT_rwlock_wrunlock(&rt_lock);
-		throw(MAL, "unlockVault", SQLSTATE(HY013) MAL_MALLOC_FAIL " vault key");
+		return "unlockVault:" SQLSTATE(HY013) MAL_MALLOC_FAIL " vault key";
 	}
 	MT_rwlock_wrunlock(&rt_lock);
 	return (MAL_SUCCEED);

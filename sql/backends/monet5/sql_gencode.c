@@ -233,9 +233,7 @@ _create_relational_function_body(mvc *m, sql_rel *r, stmt *call, list *rel_ops, 
 			msg = SQLoptimizeFunction(c,c->curprg->def);
 	}
 	if (msg) {
-		if (c->curprg->def->errors)
-			freeException(msg);
-		else
+		if (c->curprg->def->errors == NULL)
 			c->curprg->def->errors = msg;
 	}
 	if (c->curprg->def->errors) {
@@ -418,7 +416,6 @@ _create_relational_remote_body(mvc *m, const char *mod, const char *name, sql_re
 		msg = remote_get(m, table_id, &username, &password);
 		if (msg) {
 			sql_error(m, 10, "%s", msg);
-			freeException(msg);
 			msg = NULL;
 			goto cleanup;
 		}
@@ -1241,7 +1238,6 @@ void
 monet5_freecode(const char *mod, int clientid, const char *name)
 {
 	Module m = NULL;
-	str msg = MAL_SUCCEED;
 
 	if (mod) {
 		m = getModule(putName(mod));
@@ -1253,10 +1249,9 @@ monet5_freecode(const char *mod, int clientid, const char *name)
 	if (m) {
 		if (mod)
 			MT_lock_set(&sql_gencodeLock);
-		msg = monet5_cache_remove(m, name);
+		(void) monet5_cache_remove(m, name);
 		if (mod)
 			MT_lock_unset(&sql_gencodeLock);
-		freeException(msg); /* do something with error? */
 	}
 }
 
@@ -1604,9 +1599,7 @@ backend_create_sql_func_body(backend *be, sql_func *f, list *restypes, list *ops
 				msg = SQLoptimizeFunction(c,c->curprg->def);
 		}
 		if (msg) {
-			if (c->curprg->def->errors)
-				freeException(msg);
-			else
+			if (c->curprg->def->errors == NULL)
 				c->curprg->def->errors = msg;
 		}
 		if (c->curprg->def->errors) {

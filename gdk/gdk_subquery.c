@@ -188,7 +188,7 @@ BATall_grp(BAT *l, BAT *g, BAT *e, BAT *s)
 		res->trevsorted = BATcount(res) <= 1;
 	}
 
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 
 	TRC_DEBUG(ALGO, "l=" ALGOBATFMT ",g=" ALGOBATFMT
 		  ",e=" ALGOOPTBATFMT ",s=" ALGOOPTBATFMT
@@ -201,7 +201,7 @@ BATall_grp(BAT *l, BAT *g, BAT *e, BAT *s)
 	return res;
 alloc_fail:
 	BBPreclaim(res);
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 	return NULL;
 }
 

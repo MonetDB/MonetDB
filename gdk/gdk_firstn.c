@@ -780,7 +780,7 @@ BATfirstn_unique_with_groups(BATiter *bi, BAT *s, BAT *g, BUN n, bool asc, bool 
 	goids = ma_alloc(ta, n * sizeof(oid));
 	if (goids == NULL) {
 		BBPreclaim(bn);
-		ma_close(ta, &ta_state);
+		ma_close(&ta_state);
 		return NULL;
 	}
 
@@ -1003,7 +1003,7 @@ BATfirstn_unique_with_groups(BATiter *bi, BAT *s, BAT *g, BUN n, bool asc, bool 
 		*lastp = oids[0];
 	if (lastgp)
 		*lastgp = goids[0];
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 	/* output must be sorted since it's a candidate list */
 	GDKqsort(oids, NULL, NULL, (size_t) n, sizeof(oid), 0, TYPE_oid, false, false);
 	bn->tsorted = true;
@@ -1020,7 +1020,7 @@ BATfirstn_unique_with_groups(BATiter *bi, BAT *s, BAT *g, BUN n, bool asc, bool 
 	return bn;
 
   bailout:
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 	BBPreclaim(bn);
 	return NULL;
 }
@@ -1389,13 +1389,13 @@ BATgroupedfirstn(BUN n, BAT *s, BAT *g, int nbats, BAT **bats, bool *asc, bool *
 	allocator_state ta_state = ma_open(ta);
 	batinfo = ma_alloc(ta, nbats * sizeof(struct batinfo));
 	if (batinfo == NULL) {
-		ma_close(ta, &ta_state);
+		ma_close(&ta_state);
 		return NULL;
 	}
 
 	BAT *bn = BATconstant(0, TYPE_oid, &oid_nil, ngrp * n, TRANSIENT);
 	if (bn == NULL) {
-		ma_close(ta, &ta_state);
+		ma_close(&ta_state);
 		return NULL;
 	}
 	/* result is unlikely to be sorted, and there may be nils if
@@ -1529,7 +1529,7 @@ BATgroupedfirstn(BUN n, BAT *s, BAT *g, int nbats, BAT **bats, bool *asc, bool *
 		bat_iterator_end(&batinfo[i].bi1);
 		bat_iterator_end(&batinfo[i].bi2);
 	}
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 	TIMEOUT_CHECK(qry_ctx, GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
 	return bn;
 

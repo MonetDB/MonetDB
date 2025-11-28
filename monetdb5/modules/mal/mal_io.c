@@ -508,7 +508,7 @@ IOprintf(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (msg == MAL_SUCCEED) {
 		mnstr_printf(cntxt->fdout, "%s", fmt2);
 	}
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 	return msg;
 }
 
@@ -560,7 +560,7 @@ IOprintfStream(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (msg == MAL_SUCCEED) {
 		mnstr_printf(f, "%s", fmt2);
 	}
-	ma_close(ta, &ta_state);
+	ma_close(&ta_state);
 	return msg;
 }
 
