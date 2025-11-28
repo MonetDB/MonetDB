@@ -1360,19 +1360,24 @@ rel_select_order(visitor *v, sql_rel *rel)
 	if (is_select(rel->op) && list_length(rel->exps) > 1) {
 		node *n;
 		int i, nexps = list_length(rel->exps);
-		scores = SA_NEW_ARRAY(v->sql->ta, int, nexps);
-		exps = SA_NEW_ARRAY(v->sql->ta, sql_exp*, nexps);
+		allocator *ta = MT_thread_getallocator();
+		allocator_state ta_state = ma_open(ta);
+		scores = SA_NEW_ARRAY(ta, int, nexps);
+		exps = SA_NEW_ARRAY(ta, sql_exp*, nexps);
 
 		for (i = 0, n = rel->exps->h; n; i++, n = n->next) {
 			exps[i] = n->data;
-			if (find_prop(exps[i]->p, PROP_HASHCOL))
+			if (find_prop(exps[i]->p, PROP_HASHCOL)) {
+				ma_close(&ta_state);
 				return rel;
+			}
 			scores[i] = score_se(v, rel, n->data);
 		}
 		GDKqsort(scores, exps, NULL, nexps, sizeof(int), sizeof(void *), TYPE_int, true, true);
 
 		for (i = 0, n = rel->exps->h; n; i++, n = n->next)
 			n->data = exps[i];
+		ma_close(&ta_state);
 	}
 
 	return rel;
@@ -1429,8 +1434,10 @@ rel_groupby_order(visitor *v, sql_rel *rel)
 		node *n;
 		list *gbe = rel->r;
 		int i, ngbe = list_length(gbe);
-		scores = SA_NEW_ARRAY(v->sql->ta, int, ngbe);
-		exps = SA_NEW_ARRAY(v->sql->ta, sql_exp*, ngbe);
+		allocator *ta = MT_thread_getallocator();
+		allocator_state ta_state = ma_open(ta);
+		scores = SA_NEW_ARRAY(ta, int, ngbe);
+		exps = SA_NEW_ARRAY(ta, sql_exp*, ngbe);
 
 		/* first sorting step, give priority for integers and sorted columns */
 		for (i = 0, n = gbe->h; n; i++, n = n->next) {
@@ -1454,6 +1461,7 @@ rel_groupby_order(visitor *v, sql_rel *rel)
 
 		for (i = 0, n = gbe->h; n; i++, n = n->next)
 			n->data = exps[i];
+		ma_close(&ta_state);
 	}
 
 	return rel;

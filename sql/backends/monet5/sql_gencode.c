@@ -306,6 +306,7 @@ _create_relational_function(mvc *m, const char *mod, const char *name, sql_rel *
 static int
 _create_relational_remote_body(mvc *m, const char *mod, const char *name, sql_rel *rel, sql_rel *rel2, stmt *call, prop *prp)
 {
+	allocator *ta = MT_thread_getallocator();
 	Client c = MCgetClient(m->clientid);
 	MalBlkPtr curBlk = 0;
 	InstrPtr curInstr = 0, p, o;
@@ -320,7 +321,7 @@ _create_relational_remote_body(mvc *m, const char *mod, const char *name, sql_re
 	sql_rel *r = rel;
 	bool temp = 0;
 
-	lname = ma_strdup(m->ta, name);
+	lname = ma_strdup(ta, name);
 	if (lname == NULL) {
 		sql_error(m, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto cleanup;
@@ -438,7 +439,7 @@ _create_relational_remote_body(mvc *m, const char *mod, const char *name, sql_re
 	if (!temp)
 		GDKfree(username);
 	pwlen = strlen(password);
-    pwhash = (char*)ma_alloc(m->ta, pwlen + 2);
+    pwhash = (char*)ma_alloc(ta, pwlen + 2);
 	if (pwhash == NULL) {
 		//if (!temp)
 		//	GDKfree(password);
@@ -515,7 +516,7 @@ _create_relational_remote_body(mvc *m, const char *mod, const char *name, sql_re
 	pushInstruction(curBlk, o);
 	p = pushArgument(curBlk, p, getArg(o,0));
 
-	if (!(buf = ma_alloc(m->ta, len))) {
+	if (!(buf = ma_alloc(ta, len))) {
 		freeInstruction(curBlk, p);
 		sql_error(m, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto cleanup;
@@ -536,7 +537,7 @@ _create_relational_remote_body(mvc *m, const char *mod, const char *name, sql_re
 			size_t nlen = strlen(nme) + strlen(t->type->base.name) + strlen(dbuf) + strlen(sbuf) + 6;
 
 			if ((nr + nlen) > len) {
-				buf = ma_realloc(m->ta, buf, (len + nlen) * 2, len);
+				buf = ma_realloc(ta, buf, (len + nlen) * 2, len);
 				if (buf == NULL) {
 					freeInstruction(curBlk, p);
 					sql_error(m, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -565,7 +566,7 @@ _create_relational_remote_body(mvc *m, const char *mod, const char *name, sql_re
 		for (n = r->exps->h; n; n = n->next) { /* Send SQL types of the projection's expressions */
 			sql_exp *e = n->data;
 			sql_subtype *t = exp_subtype(e);
-			str next = sql_subtype_string(m->ta, t);
+			str next = sql_subtype_string(ta, t);
 
 			if (!next) {
 				freeInstruction(curBlk, p);
@@ -575,7 +576,7 @@ _create_relational_remote_body(mvc *m, const char *mod, const char *name, sql_re
 
 			size_t nlen = strlen(next) + 2;
 			if ((nr + nlen) > len) {
-				buf = ma_realloc(m->ta, buf, (len + nlen) * 2, len);
+				buf = ma_realloc(ta, buf, (len + nlen) * 2, len);
 				if (buf == NULL) {
 					freeInstruction(curBlk, p);
 					sql_error(m, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -906,6 +907,7 @@ cleanup:
 static int
 _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *rel, stmt *call, prop *prp)
 {
+	allocator_state ta_state = ma_open(MT_thread_getallocator());
 	Client c = MCgetClient(m->clientid);
 	backend *be = (backend *) c->sqlcontext;
 	Symbol symbackup = c->curprg;
@@ -946,12 +948,12 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 	} else if (_create_relational_remote_body(m, mod, name, rel, rel2, call, prp) < 0) {
 		goto bailout;
 	}
-	ma_reset(m->ta);
+	ma_close(&ta_state);
 	c->curprg = symbackup;
 	*ma_get_eb(m->sa) = ebsave;
 	return 0;
   bailout:
-	ma_reset(m->ta);
+	ma_close(&ta_state);
 	c->curprg = symbackup;
 	*ma_get_eb(m->sa) = ebsave;
 	if (ma_get_eb(m->sa)->enabled)
@@ -1396,7 +1398,9 @@ mal_function_find_implementation_address(mvc *m, sql_func *f)
 	m->sym = NULL;
 	m->errstr[0] = '\0';
 	m->session->status = 0;
+	allocator_state ta_state = ma_open(MT_thread_getallocator());
 	(void) sqlparse(m);
+	ma_close(&ta_state);
 	if (m->session->status || m->errstr[0] || !m->sym || m->sym->token != SQL_CREATE_FUNC) {
 		if (m->errstr[0] == '\0')
 			(void) sql_error(m, 10, SQLSTATE(42000) "Could not parse CREATE SQL MAL function statement");

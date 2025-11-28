@@ -93,7 +93,6 @@ mvc_new( bstream *rs, stream *ws) {
 	m->qc = NULL;
 	m->pa = pa;
 	m->sa = create_allocator(m->pa, "MA_mvc", false);
-	m->ta = create_allocator(m->pa, "TA_mvc", false);
 #ifdef __has_builtin
 #if __has_builtin(__builtin_frame_address)
 	m->sp = (uintptr_t) __builtin_frame_address(0);
@@ -175,38 +174,38 @@ qname_schema_object(dlist *qname)
 }
 
 
-static char * sp_symbol2string(mvc *sql, symbol *se, int expression, char **err, int depth, bool indent);
-static char * dlist2string(mvc *sql, dlist *l, char *sep, char *lb, char *rb, int expression, char **err, int depth, bool indent);
+static char * sp_symbol2string(allocator *ta, mvc *sql, symbol *se, int expression, char **err, int depth, bool indent);
+static char * dlist2string(allocator *ta, mvc *sql, dlist *l, char *sep, char *lb, char *rb, int expression, char **err, int depth, bool indent);
 
 static char *
-dnode2string(mvc *sql, dnode *n, int expression, char **err, int depth, bool indent)
+dnode2string(allocator *ta, mvc *sql, dnode *n, int expression, char **err, int depth, bool indent)
 {
 	char *s = NULL;
 	if (n->type == type_string) {
 		if (n->data.sval)
-			s = ma_strdup(sql->ta, n->data.sval);
+			s = ma_strdup(ta, n->data.sval);
 		else
 			s = "";
 	} else if (n->type == type_int) {
 		char buf[10];
 		snprintf(buf, sizeof(buf), "%d", n->data.i_val);
-		s = ma_strdup(sql->ta, buf);
+		s = ma_strdup(ta, buf);
 	} else if (n->type == type_lng) {
 		char buf[16];
 		snprintf(buf, sizeof(buf), LLFMT, n->data.l_val);
-		s = ma_strdup(sql->ta, buf);
+		s = ma_strdup(ta, buf);
 	} else if (n->type == type_symbol) {
-		s = sp_symbol2string(sql, n->data.sym, expression, err, depth, indent);
+		s = sp_symbol2string(ta, sql, n->data.sym, expression, err, depth, indent);
 	} else if (n->type == type_list) {
-		s = dlist2string(sql, n->data.lval, ", ", "( ", " )", expression, err, depth, indent);
+		s = dlist2string(ta, sql, n->data.lval, ", ", "( ", " )", expression, err, depth, indent);
 	} else if (n->type == type_type) {
-		s = sql_subtype_string(sql->ta, &n->data.typeval);
+		s = sql_subtype_string(ta, &n->data.typeval);
 	}
 	return s;
 }
 
 static char *
-dlist2string(mvc *sql, dlist *l, char *sep, char *lb, char *rb, int expression, char **err, int depth, bool indent)
+dlist2string(allocator *ta, mvc *sql, dlist *l, char *sep, char *lb, char *rb, int expression, char **err, int depth, bool indent)
 {
 	if (!l)
 		return " EMPTY_LIST";
@@ -217,13 +216,13 @@ dlist2string(mvc *sql, dlist *l, char *sep, char *lb, char *rb, int expression, 
 
 	bool first_el = lb;
 	for (n=l->h; n; n = n->next) {
-		char *s = dnode2string(sql, n, expression, err, depth, indent);
+		char *s = dnode2string(ta, sql, n, expression, err, depth, indent);
 
 		if (!s)
 			return NULL;
 		if (b) {
 			size_t depth_chars = indent ? depth + 1 : 0;
-			char *o = SA_NEW_ARRAY(sql->ta, char, depth_chars + strlen(b) + strlen(s) + seplen + 1);
+			char *o = SA_NEW_ARRAY(ta, char, depth_chars + strlen(b) + strlen(s) + seplen + 1);
 			if (o) {
 				char *tmp;
 				tmp = stpcpy(o, b);
@@ -249,7 +248,7 @@ dlist2string(mvc *sql, dlist *l, char *sep, char *lb, char *rb, int expression, 
 		/* here we do (depth - 1) * tab + 1 * newline to align with the parent op */
 		size_t depth_chars = indent ? (depth > 0 ? depth : 1) : 0;
 
-		char *o = SA_NEW_ARRAY(sql->ta, char, depth_chars + strlen(b) + strlen(rb) + 1);
+		char *o = SA_NEW_ARRAY(ta, char, depth_chars + strlen(b) + strlen(rb) + 1);
 		if (o) {
 			char *tmp;
 			tmp = stpcpy(o, b);
@@ -304,7 +303,7 @@ sa_concat(allocator *sa, char *prefix, char *a, char *infix, char *b, char *post
 }
 
 static char *
-sp_symbol2string(mvc *sql, symbol *se, int expression, char **err, int depth, bool indent)
+sp_symbol2string(allocator *ta, mvc *sql, symbol *se, int expression, char **err, int depth, bool indent)
 {
 	if (!se)
 		return "EMPTY SYMBOL";
@@ -314,23 +313,23 @@ sp_symbol2string(mvc *sql, symbol *se, int expression, char **err, int depth, bo
 		SelectNode *s = (SelectNode*)se;
 		char *res = s->distinct?"SELECT DISTINCT (\n":"SELECT (\n";
 		if (s->from)
-			res = sa_concat(sql->ta, "", res, NULL, sp_symbol2string(sql, s->from, expression, err, depth, indent), "\n");
+			res = sa_concat(ta, "", res, NULL, sp_symbol2string(ta, sql, s->from, expression, err, depth, indent), "\n");
 		if (s->where)
-			res = sa_concat(sql->ta, "", res, "WHERE ", sp_symbol2string(sql, s->where, expression, err, depth + 1, indent), "\n");
+			res = sa_concat(ta, "", res, "WHERE ", sp_symbol2string(ta, sql, s->where, expression, err, depth + 1, indent), "\n");
 		if (s->groupby)
-			res = sa_concat(sql->ta, "", res, NULL, sp_symbol2string(sql, s->groupby, expression, err, depth, indent), "\n");
+			res = sa_concat(ta, "", res, NULL, sp_symbol2string(ta, sql, s->groupby, expression, err, depth, indent), "\n");
 		if (s->having)
-			res = sa_concat(sql->ta, "", res, "HAVING ", sp_symbol2string(sql, s->having, expression, err, depth, indent), "\n");
+			res = sa_concat(ta, "", res, "HAVING ", sp_symbol2string(ta, sql, s->having, expression, err, depth, indent), "\n");
 		if (s->orderby)
-			res = sa_concat(sql->ta, "", res, NULL, sp_symbol2string(sql, s->orderby, expression, err, depth, indent), "\n");
+			res = sa_concat(ta, "", res, NULL, sp_symbol2string(ta, sql, s->orderby, expression, err, depth, indent), "\n");
 		if (s->selection)
-			res = sa_concat(sql->ta, "", res, "SELECTION ", dlist2string(sql, s->selection, ", ", "(", ")", expression, err, depth, indent), "\n");
+			res = sa_concat(ta, "", res, "SELECTION ", dlist2string(ta, sql, s->selection, ", ", "(", ")", expression, err, depth, indent), "\n");
 		return res;
 	}
 	case SQL_NOP: {
 		dnode *lst = se->data.lval->h, *ops = NULL, *aux;
-		const char *op = symbol_escape_ident(sql->ta, qname_schema_object(lst->data.lval)),
-				*sname = symbol_escape_ident(sql->ta, qname_schema(lst->data.lval));
+		const char *op = symbol_escape_ident(ta, qname_schema_object(lst->data.lval)),
+				*sname = symbol_escape_ident(ta, qname_schema(lst->data.lval));
 		int i = 0, nargs = 0;
 		char** inputs = NULL, *res;
 		size_t inputs_length = 0, extra = sname ? strlen(sname) + 3 : 0;
@@ -340,18 +339,18 @@ sp_symbol2string(mvc *sql, symbol *se, int expression, char **err, int depth, bo
 
 		for (aux = ops; aux; aux = aux->next)
 			nargs++;
-		if (!(inputs = SA_ZNEW_ARRAY(sql->ta, char*, nargs)))
+		if (!(inputs = SA_ZNEW_ARRAY(ta, char*, nargs)))
 			return NULL;
 
 		for (aux = ops; aux; aux = aux->next) {
-			if (!(inputs[i] = sp_symbol2string(sql, aux->data.sym, expression, err, depth, false))) {
+			if (!(inputs[i] = sp_symbol2string(ta, sql, aux->data.sym, expression, err, depth, false))) {
 				return NULL;
 			}
 			inputs_length += strlen(inputs[i]);
 			i++;
 		}
 
-		if ((res = SA_NEW_ARRAY(sql->ta, char, extra + strlen(op) + inputs_length + 3 + (nargs - 1 /* commas */) + 2))) {
+		if ((res = SA_NEW_ARRAY(ta, char, extra + strlen(op) + inputs_length + 3 + (nargs - 1 /* commas */) + 2))) {
 			char *concat = res;
 			if (sname)
 				concat = stpcpy(stpcpy(stpcpy(res, "\""), sname), "\".");
@@ -368,29 +367,29 @@ sp_symbol2string(mvc *sql, symbol *se, int expression, char **err, int depth, bo
 		return res;
 	}
 	case SQL_PARAMETER:
-		return ma_strdup(sql->ta, "?");
+		return ma_strdup(ta, "?");
 	case SQL_NULL:
-		return ma_strdup(sql->ta, "NULL");
+		return ma_strdup(ta, "NULL");
 	case SQL_ATOM:{
 		AtomNode *an = (AtomNode *) se;
 		if (an && an->a)
-			return atom2sql(sql->ta, an->a, sql->timezone);
+			return atom2sql(ta, an->a, sql->timezone);
 		else
-			return ma_strdup(sql->ta, "NULL");
+			return ma_strdup(ta, "NULL");
 	}
 	case SQL_NEXT: {
-		const char *seq = symbol_escape_ident(sql->ta, qname_schema_object(se->data.lval)),
+		const char *seq = symbol_escape_ident(ta, qname_schema_object(se->data.lval)),
 				*sname = qname_schema(se->data.lval);
 		char *res;
 
 		if (!sname)
 			sname = "";
 		else
-			sname = symbol_escape_ident(sql->ta, sname);
+			sname = symbol_escape_ident(ta, sname);
 		if (!seq)
 			seq = "";
 
-		if ((res = SA_NEW_ARRAY(sql->ta, char, strlen("next value for \"") + strlen(sname) + strlen(seq) + 5)))
+		if ((res = SA_NEW_ARRAY(ta, char, strlen("next value for \"") + strlen(sname) + strlen(seq) + 5)))
 			stpcpy(stpcpy(stpcpy(stpcpy(stpcpy(res, "next value for \""), sname), "\".\""), seq), "\"");
 		return res;
 	}	break;
@@ -401,56 +400,56 @@ sp_symbol2string(mvc *sql, symbol *se, int expression, char **err, int depth, bo
 		assert(l->h->type != type_lng);
 		if (expression && dlist_length(l) == 1 && l->h->type == type_string) {
 			/* when compiling an expression, a column of a table might be present in the symbol, so we need this case */
-			const char *op = symbol_escape_ident(sql->ta, l->h->data.sval);
+			const char *op = symbol_escape_ident(ta, l->h->data.sval);
 			char *res;
 
-			if ((res = SA_NEW_ARRAY(sql->ta, char, strlen(op) + 3)))
+			if ((res = SA_NEW_ARRAY(ta, char, strlen(op) + 3)))
 				stpcpy(stpcpy(stpcpy(res, "\""), op), "\"");
 			return res;
 		} else if (expression && dlist_length(l) == 2 && l->h->type == type_string && l->h->next->type == type_string) {
-			const char *first = symbol_escape_ident(sql->ta, l->h->data.sval),
-					*second = symbol_escape_ident(sql->ta, l->h->next->data.sval);
+			const char *first = symbol_escape_ident(ta, l->h->data.sval),
+					*second = symbol_escape_ident(ta, l->h->next->data.sval);
 			char *res;
 
 			if (!first || !second)
 				return NULL;
-			if ((res = SA_NEW_ARRAY(sql->ta, char, strlen(first) + strlen(second) + 6)))
+			if ((res = SA_NEW_ARRAY(ta, char, strlen(first) + strlen(second) + 6)))
 				stpcpy(stpcpy(stpcpy(stpcpy(stpcpy(res, "\""), first), "\".\""), second), "\"");
 			return res;
 		} else {
-			return dlist2string(sql, l, ".", NULL, NULL, expression, err, depth, false);
+			return dlist2string(ta, sql, l, ".", NULL, NULL, expression, err, depth, false);
 		}
 	}
 	case SQL_CAST: {
 		dlist *dl = se->data.lval;
 		char *val = NULL, *tpe = NULL, *res;
 
-		if (!(val = sp_symbol2string(sql, dl->h->data.sym, expression, err, depth, false), 0) ||
-			!(tpe = subtype2string2(sql->ta, &dl->h->next->data.typeval)))
+		if (!(val = sp_symbol2string(ta, sql, dl->h->data.sym, expression, err, depth, false), 0) ||
+			!(tpe = subtype2string2(ta, &dl->h->next->data.typeval)))
 			return NULL;
-		if ((res = SA_NEW_ARRAY(sql->ta, char, strlen(val) + strlen(tpe) + 11)))
+		if ((res = SA_NEW_ARRAY(ta, char, strlen(val) + strlen(tpe) + 11)))
 			stpcpy(stpcpy(stpcpy(stpcpy(stpcpy(res, "cast("), val), " as "), tpe), ")");
 		return res;
 	}
 	case SQL_SET: { /* dlist(ident-list, expression) */
 		dlist *set = se->data.lval;
-		char *ident = dlist2string(sql, set->h->data.lval, ".", NULL, NULL, expression, err, depth, false);
-		char *exp = dnode2string(sql, set->h->next, expression, err, depth, indent);
+		char *ident = dlist2string(ta, sql, set->h->data.lval, ".", NULL, NULL, expression, err, depth, false);
+		char *exp = dnode2string(ta, sql, set->h->next, expression, err, depth, indent);
 		size_t len = strlen(ident) + strlen(exp);
 		char *res;
-		if ((res = SA_NEW_ARRAY(sql->ta, char, len + 6)))
+		if ((res = SA_NEW_ARRAY(ta, char, len + 6)))
 			stpcpy(stpcpy(stpcpy(stpcpy(res, "SET "), ident), " "), exp);
 		return res;
 	}
 	case SQL_AND:
 	case SQL_OR: {
 		char *tok_str = token2string(se->token);
-		char *args = dlist2string(sql, se->data.lval, ", ", " (", " )", expression, err, depth + 1, indent);
+		char *args = dlist2string(ta, sql, se->data.lval, ", ", " (", " )", expression, err, depth + 1, indent);
 		char *res;
 
 		if (!args)
 			args = "";
-		if ((res = SA_NEW_ARRAY(sql->ta, char, strlen(tok_str) + strlen(args) + 1)))
+		if ((res = SA_NEW_ARRAY(ta, char, strlen(tok_str) + strlen(args) + 1)))
 			stpcpy(stpcpy(res, tok_str), args);
 		return res;
 	}
@@ -458,27 +457,27 @@ sp_symbol2string(mvc *sql, symbol *se, int expression, char **err, int depth, bo
 		/* generic */
 		if (se->type == type_list) {
 			char *tok_str = token2string(se->token);
-			char *args = dlist2string(sql, se->data.lval, ", ", " (", " )", expression, err, depth, false);
+			char *args = dlist2string(ta, sql, se->data.lval, ", ", " (", " )", expression, err, depth, false);
 			char *res;
 
 			if (!args)
 				args = "";
-			if ((res = SA_NEW_ARRAY(sql->ta, char, strlen(tok_str) + strlen(args) + 1)))
+			if ((res = SA_NEW_ARRAY(ta, char, strlen(tok_str) + strlen(args) + 1)))
 				stpcpy(stpcpy(res, tok_str), args);
 			return res;
 		} else if (se->type == type_symbol) {
 			char *tok_str = token2string(se->token);
-			char *sym = sp_symbol2string(sql, se->data.sym, expression, err, depth, false);
+			char *sym = sp_symbol2string(ta, sql, se->data.sym, expression, err, depth, false);
 			char *res;
 
-			if ((res = SA_NEW_ARRAY(sql->ta, char, strlen(tok_str) + strlen(sym) + 5)))
+			if ((res = SA_NEW_ARRAY(ta, char, strlen(tok_str) + strlen(sym) + 5)))
 				stpcpy(stpcpy(stpcpy(stpcpy(res, tok_str), " "), sym), " ");
 			return res;
 		} else if (se->type == type_string) {
 			char *tok_str = token2string(se->token);
 			char *res = NULL;
 
-			if (se->data.sval && ((res = SA_NEW_ARRAY(sql->ta, char, strlen(tok_str) + strlen(se->data.sval) + 2)))) {
+			if (se->data.sval && ((res = SA_NEW_ARRAY(ta, char, strlen(tok_str) + strlen(se->data.sval) + 2)))) {
 				stpcpy(stpcpy(stpcpy(res, tok_str), " "), se->data.sval);
 				return res;
 			} else
@@ -489,7 +488,7 @@ sp_symbol2string(mvc *sql, symbol *se, int expression, char **err, int depth, bo
 			char buf[10];
 			snprintf(buf, sizeof(buf), "%d", se->data.i_val);
 
-			if ((res = SA_NEW_ARRAY(sql->ta, char, strlen(tok_str) + strlen(buf) + 2))) {
+			if ((res = SA_NEW_ARRAY(ta, char, strlen(tok_str) + strlen(buf) + 2))) {
 				stpcpy(stpcpy(stpcpy(res, tok_str), " "), buf);
 			}
 			return res;
@@ -498,14 +497,14 @@ sp_symbol2string(mvc *sql, symbol *se, int expression, char **err, int depth, bo
 			char buf[10];
 			snprintf(buf, sizeof(buf), LLFMT, se->data.l_val);
 
-			if ((res = SA_NEW_ARRAY(sql->ta, char, strlen(tok_str) + strlen(buf) + 2))) {
+			if ((res = SA_NEW_ARRAY(ta, char, strlen(tok_str) + strlen(buf) + 2))) {
 				stpcpy(stpcpy(stpcpy(res, tok_str), " "), buf);
 			}
 			return res;
 		} else {
 			static const char msg[] = "SQL feature not yet available for expressions and default values: ";
 			char *tok_str = token2string(se->token);
-			if ((*err = SA_NEW_ARRAY(sql->ta, char, strlen(msg) + strlen(tok_str) + 1)))
+			if ((*err = SA_NEW_ARRAY(ta, char, strlen(msg) + strlen(tok_str) + 1)))
 				stpcpy(stpcpy(*err, msg), tok_str);
 		}
 	}
@@ -558,10 +557,14 @@ main(int argc, char *argv[])
 	/* read some data */
 	if (bstream_next(rs) < 0)
 		return -4;
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
 	while ((err = sqlparse(m)) == 0 && m->scanner.rs->pos < m->scanner.rs->len) {
+		ma_close(&ta_state);
+		ta_state = ma_open(ta);
 		if (m->sym) {
 			char *err = NULL;
-			char *res = sp_symbol2string(m, m->sym, 1, &err, 0, beautify);
+			char *res = sp_symbol2string(ta, m, m->sym, 1, &err, 0, beautify);
 
 			if (err)
 				printf("ERROR:\n%s\n", err);
@@ -573,6 +576,9 @@ main(int argc, char *argv[])
 		}
 		scanner_query_processed(&m->scanner);
 		m->sym = NULL;
+		ma_close(&ta_state);
+		ta_state = ma_open(ta);
 	}
+	ma_close(&ta_state);
 	return 0;
 }

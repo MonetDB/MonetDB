@@ -574,9 +574,7 @@ monetdbe_open_internal(monetdbe_database_internal *mdbe, monetdbe_options *opts 
 		m->pa = create_allocator(NULL, NULL, false);
 	if (!m->sa)
 		m->sa = create_allocator(m->pa, NULL, false);
-	if (!m->ta)
-		m->ta = create_allocator(m->pa, NULL, false);
-	if (!m->pa || !m->sa || !m->ta) {
+	if (!m->pa || !m->sa) {
 		set_error(mdbe, createException(SQL, "monetdbe.monetdbe_open_internal", MAL_MALLOC_FAIL));
 		goto cleanup;
 	}

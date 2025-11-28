@@ -121,20 +121,26 @@ generate_partition_limits(sql_query *query, sql_rel **r, symbol *s, sql_subtype 
 	} else if (s->token == SQL_MINVALUE) {
 		atom *amin = atom_general(sql->sa, &tpe, NULL, 0);
 		if (!amin) {
-			char *err = sql_subtype_string(sql->ta, &tpe);
+			allocator *ta = MT_thread_getallocator();
+			allocator_state ta_state = ma_open(ta);
+			char *err = sql_subtype_string(ta, &tpe);
 			if (!err)
 				return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: absolute minimum value not available for %s type", err);
+			ma_close(&ta_state);
 			return NULL;
 		}
 		return exp_atom(sql->sa, amin);
 	} else if (s->token == SQL_MAXVALUE) {
 		atom *amax = atom_general(sql->sa, &tpe, NULL, 0);
 		if (!amax) {
-			char *err = sql_subtype_string(sql->ta, &tpe);
+			allocator *ta = MT_thread_getallocator();
+			allocator_state ta_state = ma_open(ta);
+			char *err = sql_subtype_string(ta, &tpe);
 			if (!err)
 				return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: absolute maximum value not available for %s type", err);
+			ma_close(&ta_state);
 			return NULL;
 		}
 		return exp_atom(sql->sa, amax);

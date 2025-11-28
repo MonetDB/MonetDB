@@ -45,8 +45,10 @@ keywords_insert(const char *oldk, int token)
 	char *k = NULL;
 	allocator *ta = MT_thread_getallocator();
 	allocator_state ta_state = ma_open(ta);
-	if (GDKtolower(ta, &k, &(size_t){0}, oldk) != GDK_SUCCEED)
+	if (GDKtolower(ta, &k, &(size_t){0}, oldk) != GDK_SUCCEED) {
+		ma_close(&ta_state);
 		return -1;
+	}
 	k = GDKstrdup(k);
 	ma_close(&ta_state);
 	if (kw != NULL && k != NULL) {

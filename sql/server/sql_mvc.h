@@ -136,7 +136,7 @@ typedef struct {
 typedef struct mvc {
 	char errstr[ERRSIZE];
 
-	allocator *sa, *ta, *pa;
+	allocator *sa, *pa;
 
 	struct scanner scanner;
 

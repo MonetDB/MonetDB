@@ -1798,7 +1798,7 @@ gdk_export exception_buffer *ma_get_eb(allocator *sa)
        __attribute__((__pure__));
 gdk_export char *ma_copy(allocator *sa, char *s, int l);
 
-gdk_export void ma_info(const allocator *sa, char *buf, size_t buflen);
+gdk_export int ma_info(const allocator *sa, char *buf, size_t buflen, const char *pref);
 
 #define MA_NEW( sa, type )				((type*)ma_alloc( sa, sizeof(type)))
 #define MA_ZNEW( sa, type )				((type*)ma_zalloc( sa, sizeof(type)))

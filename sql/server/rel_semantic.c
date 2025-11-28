@@ -74,7 +74,9 @@ rel_parse(mvc *m, sql_schema *s, const char *query, char emode)
 	assert(emode == m_instantiate || emode == m_deps || emode == m_prepare);
 	m->user_id = USER_MONETDB;
 
+	allocator_state ta_state = ma_open(MT_thread_getallocator());
 	(void) sqlparse(m);     /* blindly ignore errors */
+	ma_close(&ta_state);
 	qc = query_create(m);
 	rel = rel_semantic(qc, m->sym);
 
