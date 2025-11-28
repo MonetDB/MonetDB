@@ -64,6 +64,9 @@ fbre = re.compile(r' (?P<bats>\d+) free bats')
 ubre = re.compile(r' (?P<bats>\d+) in use')
 tbre = re.compile(r'^(?P<bats>\d+) bats total')
 
+# collect errors if verbosity == 0
+errors = []
+
 
 # default is no color (these three functions may get redefined)
 def prred(str):
@@ -1370,9 +1373,10 @@ def PerformDir(env, testdir, testlist, total_tests):
             elem = AddSubToHtmlIndex(env, TSTDIR, max(FdOut, FdErr, ssout, sserr))
         if ssout == F_ERROR or sserr == F_ERROR:
             if verbosity == 0:
-                print('\r', ' '*(ttywidth or 100), '\r', end='', sep='')
-            prred('ERROR')
-            print(f' in directory {TSTDIR}')
+                errors.append(('ERROR', f'in directory {TSTDIR}'))
+            else:
+                prred('ERROR')
+                print(f' in directory {TSTDIR}')
 
         # remove extra files created by tests
         for f in listdir(TSTTRGDIR):
@@ -1856,8 +1860,7 @@ def RunTest(env, TST, COND, oktests, length, pSrvr, total_tests, options, enviro
                 prred('TEST MISSING')
                 print()
             else:
-                prred('MISSING')
-                print(':', os.path.join(TSTDIR, TSTSUFF, TST + EXT))
+                errors.append(('MISSING', os.path.join(TSTDIR, TSTSUFF, TST + EXT)))
 
             return TX,Failed,Failed,elem,reason,links
 
@@ -2184,31 +2187,31 @@ Password = {passwd or "monetdb"}-Wrong
 
         if tres == 'socket':
             if verbosity == 0 and not produce_html:
-                print('\n%s : Socket!' % TST)
+                errors.append(('SOCKET', TST))
             elif verbosity > 1:
                 print('(Socket!) ', end='')
 
         if tres == 'timeout':
             if verbosity == 0 and not produce_html:
-                print('\n%s : Timeout!' % TST)
+                errors.append(('TIMEOUT', TST))
             elif verbosity > 1:
                 print('(Timeout!) ', end='')
 
         if tres == 'recursion':
             if verbosity == 0 and not produce_html:
-                print('\n%s : Recursion!' % TST)
+                errors.append(('RECURSION', TST))
             elif verbosity > 1:
                 print('(Recursion!) ', end='')
 
         if tres == 'segfault':
             if verbosity == 0 and not produce_html:
-                print('\n%s : Crashed!' % TST)
+                errors.append(('CRASHED', TST))
             elif verbosity > 1:
                 print('(Crashed!) ', end='')
 
         if tres == 'signal':
             if verbosity == 0 and not produce_html:
-                print('\n%s : Signaled!' % TST)
+                errors.append(('SIGNALED', TST))
             elif verbosity > 1:
                 print('(Signaled!) ', end='')
 
@@ -2293,10 +2296,15 @@ Password = {passwd or "monetdb"}-Wrong
                 else:
                     diff_html.write('<!--NoDiffs-->\n')
 
-            if verbosity <= 1:
-                if verbosity == 0 and (FailedOut > F_WARN or FailedErr > F_WARN):
-                    print('\r', ' '*(ttywidth or 100), end='', sep='')
-                    print('\r', end='', sep='')
+            if verbosity == 0 and (FailedOut > F_WARN or FailedErr > F_WARN):
+                errors.append(({'socket':'SOCKET',
+                                'timeout':'TIMEOUT',
+                                'recursion':'RECURSION',
+                                'segfault':'CRASHED',
+                                'abort':'ABORTED',
+                                'signal':'SIGNALED'}.get(tres, 'ERROR'),
+                               os.path.join(TSTDIR, TSTSUFF, TST + EXT)))
+            elif verbosity == 1:
                 if tres == 'socket':
                     prpurple('SOCKET')
                 elif tres == 'timeout':
@@ -2309,9 +2317,7 @@ Password = {passwd or "monetdb"}-Wrong
                     prpurple('ABORTED')
                 elif tres == 'signal':
                     prpurple('SIGNALED')
-                elif verbosity == 0 and (FailedOut > F_WARN or FailedErr > F_WARN):
-                    prred('ERROR')
-                elif verbosity == 1:
+                else:
                     if FailedOut == F_OK:
                         prgreen('OK   ')
                     elif FailedOut == F_WARN:
@@ -2325,10 +2331,7 @@ Password = {passwd or "monetdb"}-Wrong
                         prgreen('minor')
                     else:
                         prred('ERROR')
-                if verbosity == 0 and (FailedOut > F_WARN or FailedErr > F_WARN):
-                    print(':', os.path.join(TSTDIR, TSTSUFF, TST + EXT))
-                elif verbosity == 1:
-                    print()
+                print()
         elif FailedOut > F_WARN or FailedErr > F_WARN:
             print()
             print('========================================')
@@ -3032,13 +3035,26 @@ def mapi_ping(port, host='localhost', tries=3):
     return False
 
 
+threadids = {}
+up = '\033[A'
+down = '\033[B'
 def progress(count, total, test, spaces=' '*(ttywidth or 100)):
+    if os.name == 'nt':
+        nl = ''
+        line = 0
+    else:
+        tid = threading.get_ident()
+        nl = ''
+        if tid not in threadids:
+            threadids[tid] = len(threadids)
+            nl = '\n'
+        line = len(threadids) - threadids[tid] - 1
     perc = round((count/total) * 100) if total and count else 0
     s = f'[{count}/{total}] ({perc}%)    {test}'
     if len(s) > ttywidth:
         test = test[len(s)-ttywidth:]
         s = f'[{count}/{total}] ({perc}%)    {test}'
-    sys.stdout.write('\r' + spaces + '\r' + s)
+    sys.stdout.write(nl + '\r' + up*line + spaces + '\r' + s + down*line)
 
 
 def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, length, nomito, threads, user, passwd, COND, PSRVR, total_tests, options, TSTDB, TSTDIR, TSTTRGDIR, TSTSRCDIR, environ):
@@ -4416,6 +4432,12 @@ def main(argv):
                         tp = None
             if verbosity == 0:
                 print()
+                for (err, msg) in errors:
+                    if err in ('ERROR', 'MISSING'):
+                        prred(err)
+                    else:
+                        prpurple(err)
+                    print(':', msg)
         except KeyboardInterrupt:
             # if we get interrupted between directories, we still want output
             pass
@@ -4517,11 +4539,16 @@ def main(argv):
         print(file=sys.stderr, end='', flush=True)
         if not testweb and (verbosity == 0 or verbosity == 1):
             if Failed or errseen:
-                prred('ERROR')
+                if verbosity != 0:
+                    prred('ERROR')
             else:
                 prgreen('OK')
             print()
-            print(f'failed={Failed}, skipped={len(Failure[F_SKIP])}')
+            if Failed:
+                prred('failed')
+            else:
+                print('failed', end='')
+            print(f'={Failed}, skipped={len(Failure[F_SKIP])}')
             if produce_html and (Failed or errseen):
                 f = os.path.join(TSTTRGBASE, TSTPREF, "index.html")
                 if sys.version_info[1] >= 14:
