@@ -223,13 +223,6 @@ PIPELINEworker(void *T)
 				/* only collect one error (from one thread, needed for stable testing) */
 				if (ATOMIC_PTR_CAS(&s->error, &null, error)) {
 					strcpy(s->errbuf, error);
-					if (s->sink) {
-						BAT *sb = BATdescriptor(s->sink);
-						assert(sb);
-						Sink *sink = sb->tsink;
-						sink->error = error;
-						BBPreclaim(sb);
-					}
 					ATOMIC_PTR_CAS(&s->error, &error, s->errbuf);
 				}
 			}
@@ -327,8 +320,26 @@ runMALpipelines(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, int maxpart
 		MT_sema_down(&s->s);
 	MT_sema_destroy(&s->s);
 	MT_lock_destroy(&s->l);
-	str err = ATOMIC_PTR_GET(&s->error);
 	bool has_sink = (s->sink != 0);
+	str err = ATOMIC_PTR_GET(&s->error);
+	if (err) {
+		QryCtx *qc = MT_thread_get_qry_ctx();
+		allocator *ma = qc->errorallocator;
+		char *nerr = ma_copy(ma, err, strlen(err)+1);
+		err[0] = 0;
+		err = nerr;
+		if (has_sink) {
+			BAT *sb = BATdescriptor(s->sink);
+
+			if (!sb) {
+				err = createException(SQL, "language.pipeline", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+			} else {
+				Sink *sink = sb->tsink;
+				sink->error = err;
+				BBPreclaim(sb);
+			}
+		}
+	}
 	MT_cond_destroy(&s->cond);
 	restart = (!err && s->status);
 	if (!restart && profiler && s->nr_workers > 1) {
