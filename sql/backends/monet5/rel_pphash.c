@@ -44,7 +44,7 @@ _estimate(mvc *sql, sql_rel *rel)
 }
 
 static stmt *
-_start_pp(backend *be, sql_rel *rel, bit buildphase, list *refs)
+_start_pp(backend *be, sql_rel *rel, bit buildphase, list *refs, stmt *shared_ht)
 {
 	stmt *sub = NULL, *pp = NULL;
 
@@ -52,8 +52,13 @@ _start_pp(backend *be, sql_rel *rel, bit buildphase, list *refs)
         sql_error(be->mvc, 10, SQLSTATE(42000) "Internal error: hash-join cannot start within a pipelines block");
 		return NULL;
 	}
-	if (!be->pp)
+	if (!be->pp) {
 		set_need_pipeline(be);
+		if (shared_ht) {
+			stmt *ht = shared_ht->op4.lval->h->data;
+			be->sink = ht->nr;
+		}
+	}
 
 	/* first construct the sub-relation */
 	sub = subrel_bin(be, rel, refs);
@@ -305,7 +310,7 @@ rel2bin_oahash_build(backend *be, sql_rel *rel, list *refs)
 		shared_hp = oahash_prepare_bld_hp(be, exps_prj_hsh, bld_sz);
 	}
 
-	stmt *sub = _start_pp(be, rel->l, true, refs);
+	stmt *sub = _start_pp(be, rel->l, true, refs, shared_ht);
 	if (!sub) return NULL;
 
 	stmt *pp = get_pipeline(be);
@@ -404,7 +409,7 @@ rel2bin_oahash_equi_join(backend *be, sql_rel *rel, list *refs, list *jexps, stm
 	bool groupedjoin = (!list_empty(rel->attr)), mark = groupjoin_mark(rel->attr);
 
 	/*** PROBE PHASE ***/
-	stmt *sub = _start_pp(be, rel_prb->l, false, refs);
+	stmt *sub = _start_pp(be, rel_prb->l, false, refs, NULL);
 	if (!sub) return NULL;
 	if (probe_sub)
 		*probe_sub = sub;
@@ -555,7 +560,7 @@ rel2bin_oahash_cart(backend *be, sql_rel *rel, list *refs, stmt **probed_rowids,
 	stmts_ht = subrel_project(be, stmts_ht, refs, rel);
 
 	/*** (pseudo) PROBE PHASE ***/
-	stmt *stmts_prb_res = _start_pp(be, rel_prb->l, false, refs);
+	stmt *stmts_prb_res = _start_pp(be, rel_prb->l, false, refs, NULL);
 	if (!stmts_prb_res) return NULL;
 	if (probe_sub)
 		*probe_sub = stmts_prb_res;
@@ -892,7 +897,7 @@ rel2bin_oahash_semi(backend *be, sql_rel *rel, list *refs)
 		assert(stmts_ht);
 
 		/*** PROBE PHASE ***/
-		probe_sub = sub = _start_pp(be, rel_prb->l, false, refs);
+		probe_sub = sub = _start_pp(be, rel_prb->l, false, refs, NULL);
 		if (!sub) return NULL;
 
 		pp = get_pipeline(be);

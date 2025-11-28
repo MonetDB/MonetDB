@@ -824,7 +824,7 @@ stmt_slice(backend *be, stmt *col, stmt *limit)
  *     # slicer.no_slices(X_24:bat[:...]);
  */
 static stmt *
-pipeline_start(backend *be, int nrparts, int input)
+pipeline_start(backend *be, int nrparts, int input, int sink)
 {
 	assert(!be->pp);
 	be->pp_pc = be->mb->stop;
@@ -835,7 +835,9 @@ pipeline_start(backend *be, int nrparts, int input)
 	setArgType(be->mb, q, 0, TYPE_bit);
 	q = pushReturn(be->mb, q, newTmpVariable(be->mb, TYPE_int));
 	q = pushReturn(be->mb, q, newTmpVariable(be->mb, TYPE_ptr));
-	if (input >= 0 && nrparts == 0)
+	if (sink > 0)  /* TODO handle case for both a sink and input/nrparts */
+		q = pushArgument(be->mb, q, sink);
+	else if (input >= 0 && nrparts == 0)
 		q = pushArgument(be->mb, q, input);
 	else
 		q = pushInt(be->mb, q, nrparts);
@@ -907,9 +909,9 @@ pipeline_leave(backend *be, stmt *pp)
 }
 
 static stmt *
-stmt_pp_create_nrparts_or_dynamic(backend *be, int nrparts, int input, int source, bool leave)
+stmt_pp_create_nrparts_or_dynamic(backend *be, int nrparts, int input, int source, bool leave, int sink)
 {
-	stmt *s = pipeline_start(be, nrparts, input);
+	stmt *s = pipeline_start(be, nrparts, input, sink);
 
 	be->source = source;
 	if ((nrparts >= 0 || leave) && pipeline_leave(be, s))
@@ -932,7 +934,9 @@ stmt_pp_create_nrparts_or_dynamic(backend *be, int nrparts, int input, int sourc
 stmt *
 stmt_pp_start_nrparts(backend *be, int nrparts)
 {
-	return stmt_pp_create_nrparts_or_dynamic(be, nrparts, -1, 0, false);
+	int sink = be->sink;
+	be->sink = 0;
+	return stmt_pp_create_nrparts_or_dynamic(be, nrparts, -1, 0, false, sink);
 }
 
 /* Generates:
@@ -942,7 +946,9 @@ stmt_pp_start_nrparts(backend *be, int nrparts)
 stmt *
 stmt_pp_start_dynamic(backend *be, int input)
 {
-	return stmt_pp_create_nrparts_or_dynamic(be, 0, input, 0, false);
+	int sink = be->sink;
+	be->sink = 0;
+	return stmt_pp_create_nrparts_or_dynamic(be, 0, input, 0, false, sink);
 }
 
 /* Generates:
@@ -952,7 +958,9 @@ stmt_pp_start_dynamic(backend *be, int input)
 stmt *
 stmt_pp_start_generator(backend *be, int source, bool leave)
 {
-	return stmt_pp_create_nrparts_or_dynamic(be, -1, -1, source, leave);
+	int sink = be->sink;
+	be->sink = 0;
+	return stmt_pp_create_nrparts_or_dynamic(be, -1, -1, source, leave, sink);
 }
 
 int

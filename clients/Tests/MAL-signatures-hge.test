@@ -34273,6 +34273,11 @@ year
 pattern batmtime.year(X_0:bat[:timestamp], X_1:bat[:oid]):bat[:int]
 MTIMEtimestamp_year_bulk
 (empty)
+batoahash
+hash
+pattern batoahash.hash(X_0:bat[:any_1]):bat[:lng]
+OAHASHhash
+Compute hash.
 batpcre
 replace
 command batpcre.replace(X_0:bat[:str], X_1:str, X_2:str, X_3:str):bat[:str]
@@ -48015,6 +48020,11 @@ MALpass
 Cheap instruction to discard storage while retaining the dataflow dependency
 language
 pipelines
+pattern language.pipelines(X_0:bat[:any_1]) (X_1:bit, X_2:int, X_3:ptr)
+MALpipelines
+The current guarded block in Parallel Pipelines
+language
+pipelines
 pattern language.pipelines(X_0:int) (X_1:bit, X_2:int, X_3:ptr)
 MALpipelines
 The current guarded block in Parallel Pipelines
@@ -49453,6 +49463,11 @@ frequency
 pattern oahash.frequency(X_0:bat[:oid], X_1:ptr):bat[:lng]
 OAHASHadd_freq
 Add `slot_id` to the shared `frequencies` BAT. Returns the updated `frequencies`
+oahash
+hash
+pattern oahash.hash(X_0:any_1):lng
+OAHASHhash
+Compute hash.
 oahash
 mprobe
 command oahash.mprobe(X_0:bat[:any_1], X_1:bat[:any_1], X_2:bit, X_3:bit, X_4:ptr) (X_5:bat[:oid], X_6:bat[:oid], X_7:bat[:bit])

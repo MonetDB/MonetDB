@@ -34,12 +34,32 @@
 #define _hash_bte(X)  ((unsigned int)X)
 #define _hash_sht(X)  ((unsigned int)X)
 #define _hash_int_(X) ((((unsigned int)X)>>7)^(((unsigned int)X)>>13)^(((unsigned int)X)>>21)^((unsigned int)X))
-#define _hash_int(X)  (_hash_int_((X)*98317))
-//#define _hash_int(X)  (_hash_int_((X)*25165843))
+//#define _hash_int(X)  (_hash_int_((X)*98317))
+#define _hash_int(X)  (_hash_int_((X)*25165843))
 //#define _hash_int(X)  (_hash_int_((X)*hash_prime_nr[21]))
 
+#if 0
+  static inline ulng _hash_int(unsigned int x) { /* murmur finishing */
+      x ^= x >> 16;
+      x *= 0x85ebca6bU;
+      x ^= x >> 13;
+      x *= 0xc2b2ae35U;
+      x ^= x >> 16;
+      return (ulng)x;
+  }
+#endif
+
+  static inline ulng _hash_lng(ulng x) { /* splitmix64; see https://nullprogram.com/blog/2018/07/31/ for inversion */
+      x ^= x >> 30;
+      x *= 0xbf58476d1ce4e5b9ULL;
+      x ^= x >> 27;
+      x *= 0x94d049bb133111ebULL;
+      x ^= x >> 31;
+      return x<<1;
+  }
+
 #define _hash_date(X) _hash_int(X)
-#define _hash_lng(X)  ((((ulng)X)>>7)^(((ulng)X)>>13)^(((ulng)X)>>21)^(((ulng)X)>>31)^(((ulng)X)>>38)^(((ulng)X)>>46)^(((ulng)X)>>56)^((ulng)X))
+//#define _hash_lng(X)  ((((ulng)X)>>7)^(((ulng)X)>>13)^(((ulng)X)>>21)^(((ulng)X)>>31)^(((ulng)X)>>38)^(((ulng)X)>>46)^(((ulng)X)>>56)^((ulng)X))
 #define _hash_oid(X)  _hash_lng((X*98317))
 #define _hash_daytime(X) _hash_lng(X)
 #define _hash_timestamp(X) _hash_lng(X)

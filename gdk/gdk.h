@@ -347,6 +347,7 @@ typedef struct Sink {
 	sink_destroy destroy;
 	sink_done done;
 	int type;		/* sink/source type */
+	char *error;
 } Sink;
 #define TSKdestroy(b) if (b->tsink && b->tsink->destroy) { b->tsink->destroy(b->tsink); b->tsink = NULL; }
 #define TSKfree(b)    TSKdestroy(b)

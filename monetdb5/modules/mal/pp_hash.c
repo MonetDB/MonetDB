@@ -1577,8 +1577,12 @@ OAHASHprobe1(Client ctx, bat *PRB_oid, bat *HSH_slotid, const bat *PRB_key, cons
 	}
 
 	if (keycnt) {
-		hash_table *ht = (hash_table*)t->tsink;
+		if (t->tsink->error) {
+			err = t->tsink->error;
+			goto error;
+		}
 
+		hash_table *ht = (hash_table*)t->tsink;
 		bool empty = (ht->last == 0);
 		int tt = k->ttype;
 		QryCtx *qry_ctx = MT_thread_get_qry_ctx();
@@ -1928,8 +1932,12 @@ OAHASHomprobe(Client ctx, bat *PRB_oid, bat *HSH_slotid, bat *PRB_mark, const ba
 	}
 
 	if (keycnt) {
-		hash_table *ht = (hash_table*)t->tsink;
+		if (t->tsink->error) {
+			err = t->tsink->error;
+			goto error;
+		}
 
+		hash_table *ht = (hash_table*)t->tsink;
 		int tt = k->ttype;
 		QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 		qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
@@ -2211,9 +2219,13 @@ OAHASHprobe_cmbd_single(Client ctx, bat *PRB_oid, bat *HSH_slotid, const bat *PR
 	}
 
 	if (mtdcnt) {
+		if (t->tsink->error) {
+			err = t->tsink->error;
+			goto error;
+		}
+
 		hash_table *ht = (hash_table*)t->tsink;
 		unsigned int prime = hash_prime_nr[ht->bits-5];
-
 		int tt = k->ttype;
 		QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 		qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
@@ -2569,13 +2581,17 @@ OAHASHomprobe_cmbd(Client ctx, bat *PRB_oid, bat *HSH_slotid, bat *PRB_mark, con
 	}
 
 	if (mtdcnt) {
-		hash_table *ht = (hash_table*)t->tsink;
+		if (t->tsink->error) {
+			err = t->tsink->error;
+			goto error;
+		}
 
+		hash_table *ht = (hash_table*)t->tsink;
+		unsigned int prime = hash_prime_nr[ht->bits-5];
 		int tt = k->ttype;
 		QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 		qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
-		unsigned int prime = hash_prime_nr[ht->bits-5];
 		oid *sltd = Tloc(s, 0);
 		oid *oid_mtd = Tloc(res_o, 0);
 		oid *slt = Tloc(res_s, 0);
@@ -3119,6 +3135,69 @@ OAHASHnth_slice(Client ctx, bat *slice, bat *ht_sink, int *slice_nr)
 	return MAL_SUCCEED;
 }
 
+#define hashloop(T) { \
+	T *v = Tloc(i, 0); \
+	for (BUN j = 0; j<cnt; j++) \
+		h[j] = _hash_##T((T)v[j]); \
+} break;
+
+static str
+OAHASHhash(Client cntxt, MalBlkPtr m, MalStkPtr stk, InstrPtr p)
+{
+	(void)cntxt;
+	/* value case skipped for now */
+	int tt = getArgType(m, p, 1);
+	assert(isaBatType(tt));
+
+	bat *rb = getArgReference_bat(stk, p, 0);
+	bat ib = *getArgReference_bat(stk, p, 1);
+
+	BAT *r, *i = BATdescriptor(ib);
+
+	if (!i)
+		return createException(MAL, "oahash.hash", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	BUN cnt = BATcount(i);
+	r = COLnew(i->hseqbase, TYPE_lng, cnt, TRANSIENT);
+	if (!r) {
+		BBPreclaim(i);
+		return createException(MAL, "oahash.hash", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
+	lng *h = Tloc(r, 0);
+	tt = getBatType(tt);
+	switch(tt) {
+	case TYPE_bit:
+	case TYPE_bte:
+		hashloop(bte);
+	case TYPE_sht:
+		hashloop(sht);
+	case TYPE_int:
+	case TYPE_date:
+		hashloop(int);
+	case TYPE_oid:
+	case TYPE_lng:
+	case TYPE_daytime:
+	case TYPE_timestamp:
+		hashloop(lng);
+#ifdef HAVE_HGE
+	case TYPE_hge:
+	case TYPE_uuid:
+		hashloop(hge);
+#endif
+	case TYPE_flt:
+		hashloop(flt);
+	case TYPE_dbl:
+		hashloop(dbl);
+	default:
+		printf("todo\n");
+	}
+	BBPreclaim(i);
+	BATsetcount(r, cnt);
+	BATnegateprops(r);
+	*rb = r->batCacheid;
+	BBPkeepref(r);
+	return MAL_SUCCEED;
+}
+
 #include "mel.h"
 static mel_func oa_hash_init_funcs[] = {
  pattern("oahash", "new", OAHASHnew, false, "", args(1,3, batargany("ht_sink",1),argany("tt",1),arg("size",int))),
@@ -3163,6 +3242,9 @@ static mel_func oa_hash_init_funcs[] = {
 
  command("oahash", "no_slices", OAHASHno_slices, false, "Get the number of slices for this hashtable.", args(1,2, arg("slices",int),batargany("ht_sink",1))),
  command("oahash", "nth_slice", OAHASHnth_slice, false, "Get the nth slice of this hashtable.", args(2,3, batarg("slice",oid),batargany("ht_sink",1),arg("slice_nr",int))),
+
+ pattern("oahash", "hash", OAHASHhash, false, "Compute hash.", args(1,2, arg("hash", lng), argany("in",1))),
+ pattern("batoahash", "hash", OAHASHhash, false, "Compute hash.", args(1,2, batarg("hash", lng), batargany("in",1))),
 
  { .imp=NULL }
 };

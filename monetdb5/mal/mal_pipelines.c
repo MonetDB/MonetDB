@@ -223,6 +223,13 @@ PIPELINEworker(void *T)
 				/* only collect one error (from one thread, needed for stable testing) */
 				if (ATOMIC_PTR_CAS(&s->error, &null, error)) {
 					strcpy(s->errbuf, error);
+					if (s->sink) {
+						BAT *sb = BATdescriptor(s->sink);
+						assert(sb);
+						Sink *sink = sb->tsink;
+						sink->error = error;
+						BBPreclaim(sb);
+					}
 					ATOMIC_PTR_CAS(&s->error, &error, s->errbuf);
 				}
 			}
@@ -276,7 +283,7 @@ PIPELINESinitialize(void)
 }
 
 str
-runMALpipelines(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, int maxparts, MalStkPtr stk)
+runMALpipelines(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, int maxparts, bat sink, MalStkPtr stk)
 {
 	int restart = 0;
 	if (!pipelines_initialized)
@@ -291,6 +298,7 @@ runMALpipelines(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, int maxpart
 	s->stop = stoppc;
 	s->stk = stk;
 	s->maxparts = maxparts;
+	s->sink = sink;
 	s->master_counter = 0;
 	s->nr_workers = GDKnr_threads;
 	s->status = 0;
@@ -320,6 +328,7 @@ runMALpipelines(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, int maxpart
 	MT_sema_destroy(&s->s);
 	MT_lock_destroy(&s->l);
 	str err = ATOMIC_PTR_GET(&s->error);
+	bool has_sink = (s->sink != 0);
 	MT_cond_destroy(&s->cond);
 	restart = (!err && s->status);
 	if (!restart && profiler && s->nr_workers > 1) {
@@ -333,8 +342,8 @@ runMALpipelines(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, int maxpart
 	GDKfree(s);
 	cntxt->sqlprofiler = profiler;
 	if (restart) /* TODO move into new loop around pipeline */
-		return runMALpipelines(cntxt, mb, startpc, stoppc, maxparts, stk);
-	return err;
+		return runMALpipelines(cntxt, mb, startpc, stoppc, maxparts, sink, stk);
+	return has_sink ? NULL : err;
 }
 
 static void

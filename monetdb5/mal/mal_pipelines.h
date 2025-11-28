@@ -28,6 +28,7 @@ typedef struct Pipelines {
 	int counters[THREADS];
 	int status;
 	MT_Cond cond;
+	bat sink;
 } Pipelines;
 
 typedef struct Pipeline {
@@ -37,7 +38,7 @@ typedef struct Pipeline {
 	void *wls;	/* worker local storage */
 } Pipeline;
 
-mal_export str runMALpipelines(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, int maxparts, MalStkPtr stk);
+mal_export str runMALpipelines(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, int maxparts, bat sink, MalStkPtr stk);
 mal_export int PIPELINEnext_counter(Pipeline *p);
 mal_export void PIPELINEclear_counter(Pipeline *p);
 
