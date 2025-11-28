@@ -21,8 +21,9 @@ static list *
 rel_used_projections(mvc *sql, list *exps, list *users)
 {
 	list *nexps = sa_list(sql->sa);
-	allocator_state ta_state = ma_open(sql->ta);
-	bool *used = SA_ZNEW_ARRAY(sql->ta, bool, list_length(exps));
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
+	bool *used = SA_ZNEW_ARRAY(ta, bool, list_length(exps));
 	int i = 0;
 
 	for(node *n = users->h; n; n = n->next) {
@@ -2296,12 +2297,13 @@ rel_reduce_groupby_exps(visitor *v, sql_rel *rel)
 	global_props *gp = v->data;
 
 	if (gp->has_pkey && is_groupby(rel->op) && rel->r && !rel_is_ref(rel) && list_length(gbe)) {
-		allocator_state ta_state = ma_open(v->sql->ta);
+		allocator *ta = MT_thread_getallocator();
+		allocator_state ta_state = ma_open(ta);
 		node *n, *m;
 		int k, j, i, ngbe = list_length(gbe);
 		sql_column *c;
-		sql_table **tbls = SA_NEW_ARRAY(v->sql->ta, sql_table*, ngbe);
-		sql_rel **bts = SA_NEW_ARRAY(v->sql->ta, sql_rel*, ngbe), *bt = NULL;
+		sql_table **tbls = SA_NEW_ARRAY(ta, sql_table*, ngbe);
+		sql_rel **bts = SA_NEW_ARRAY(ta, sql_rel*, ngbe), *bt = NULL;
 
 		gbe = rel->r;
 		for (k = 0, i = 0, n = gbe->h; n; n = n->next, k++) {
@@ -2323,7 +2325,7 @@ rel_reduce_groupby_exps(visitor *v, sql_rel *rel)
 			 * the other columns using a foreign-key join (n->1), ie 1
 			 * on the to be removed side.
 			 */
-			int8_t *scores = SA_NEW_ARRAY(v->sql->ta, int8_t, ngbe);
+			int8_t *scores = SA_NEW_ARRAY(ta, int8_t, ngbe);
 			for(j = 0; j < i; j++) {
 				int l, nr = 0, cnr = 0;
 

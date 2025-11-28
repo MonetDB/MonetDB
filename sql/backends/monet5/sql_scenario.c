@@ -93,16 +93,9 @@ static void
 CLIENTprintinfo(void)
 {
 	int nrun = 0, nfinish = 0, nblock = 0;
-	char mmbuf[64];
-	char tmbuf[64];
-	char trbuf[128];
-	char chbuf[64];
-	char cabuf[64];
-	char clbuf[64];
-	char crbuf[64];
-	char cpbuf[64];
-	char qybuf[200];
 	struct tm tm;
+	char buf[2048];
+	int pos;
 
 	if (!MT_lock_trytime(&mal_contextLock, 1000)) {
 		printf("Clients are currently locked, so no client information\n");
@@ -113,68 +106,81 @@ CLIENTprintinfo(void)
 		switch (c->mode) {
 		case RUNCLIENT:
 			/* running */
+			pos = snprintf(buf, sizeof(buf),
+						   "client %d, user %s, thread %s"
+						   ", using %"PRIu64" bytes of transient space",
+						   c->idx, c->username, c->mythread ? c->mythread : "?",
+						   (uint64_t) ATOMIC_GET(&c->qryctx.datasize));
 			nrun++;
 			if (c->qryctx.maxmem)
-				snprintf(mmbuf, sizeof(mmbuf), " (max %"PRIu64")", (uint64_t) c->qryctx.maxmem);
-			else
-				mmbuf[0] = 0;
+				pos += snprintf(buf, sizeof(buf) - pos,
+								" (max %"PRIu64")",
+								(uint64_t) c->qryctx.maxmem);
 			if (c->idle) {
 				localtime_r(&c->idle, &tm);
-				strftime(tmbuf, sizeof(tmbuf), ", idle since %F %H:%M:%S%z", &tm);
+				pos += (int) strftime(buf + pos, sizeof(buf) - pos,
+									  ", idle since %F %H:%M:%S%z", &tm);
 			} else if (c->lastcmd) {
 				localtime_r(&c->lastcmd, &tm);
-				strftime(tmbuf, sizeof(tmbuf), ", busy since %F %H:%M:%S%z", &tm);
-			} else
-				tmbuf[0] = 0;
-			if (c->query)
-				strconcat_len(qybuf, sizeof(qybuf), ", query: ", c->query, NULL);
-			else
-				qybuf[0] = 0;
-			if (c->sqlcontext && ((backend *) c->sqlcontext)->mvc &&
-				((backend *) c->sqlcontext)->mvc->session &&
-				((backend *) c->sqlcontext)->mvc->session->tr) {
-				int i = 0;
-				if (((backend *) c->sqlcontext)->mvc->session->tr->active)
-					i = snprintf(trbuf, sizeof(trbuf), ", active transaction, ts: "ULLFMT, ((backend *) c->sqlcontext)->mvc->session->tr->ts);
-				if (i < (int) sizeof(trbuf))
-					i += snprintf(trbuf + i, sizeof(trbuf) - i, ", prepared queries: %d", qc_size(((backend *) c->sqlcontext)->mvc->qc));
-				if (i < (int) sizeof(trbuf))
-					snprintf(trbuf + i, sizeof(trbuf) - i, ", open resultsets: %d", res_tables_count(((backend *) c->sqlcontext)->results));
+				pos += (int) strftime(buf + pos, sizeof(buf) - pos,
+									  ", busy since %F %H:%M:%S%z", &tm);
 			}
-			else
-				trbuf[0] = 0;
-			if (c->client_hostname)
-				snprintf(chbuf, sizeof(chbuf), ", client host: %s", c->client_hostname);
-			else
-				chbuf[0] = 0;
-			if (c->client_application)
-				snprintf(cabuf, sizeof(cabuf), ", client app: %s", c->client_application);
-			else
-				cabuf[0] = 0;
-			if (c->client_library)
-				snprintf(clbuf, sizeof(clbuf), ", client lib: %s", c->client_library);
-			else
-				clbuf[0] = 0;
-			if (c->client_remark)
-				snprintf(crbuf, sizeof(crbuf), ", client remark: %s", c->client_remark);
-			else
-				crbuf[0] = 0;
+			pos += ma_info(c->ma, buf + pos, sizeof(buf) - pos, ", allocator ");
+			pos += ma_info(c->qryctx.errorallocator, buf + pos, sizeof(buf) - pos, ", allocator ");
+			Symbol prg = c->curprg;
+			if (prg) {
+				MalBlkPtr def = prg->def;
+				if (def) {
+					pos += ma_info(def->ma, buf + pos, sizeof(buf) - pos, ", allocator ");
+					pos += ma_info(def->instr_allocator, buf + pos, sizeof(buf) - pos, ", allocator ");
+				}
+			}
+			backend *be = c->sqlcontext;
+			if (be) {
+				mvc *sql = be->mvc;
+				if (sql) {
+					sql_session *s = sql->session;
+					if (s) {
+						sql_trans *tr = s->tr;
+						if (tr && tr->active)
+							pos += snprintf(buf + pos, sizeof(buf) - pos,
+											", active transaction, ts: "ULLFMT,
+											tr->ts);
+					}
+					pos += ma_info(sql->pa, buf + pos, sizeof(buf) - pos, ", allocator ");
+					pos += ma_info(sql->sa, buf + pos, sizeof(buf) - pos, ", allocator ");
+					pos += snprintf(buf + pos, sizeof(buf) - pos,
+									", prepared queries: %d",
+									qc_size(sql->qc));
+				}
+				pos += snprintf(buf + pos, sizeof(buf) - pos,
+								", open resultsets: %d",
+								res_tables_count(be->results));
+			}
+			const char *s = c->client_hostname;
+			if (s)
+				pos += snprintf(buf + pos, sizeof(buf) - pos,
+								", client host: %s", s);
+			s = c->client_application;
+			if (s)
+				pos += snprintf(buf + pos, sizeof(buf) - pos,
+								", client app: %s", s);
+			s = c->client_library;
+			if (s)
+				pos += snprintf(buf + pos, sizeof(buf) - pos,
+								", client lib: %s", s);
+			s = c->client_remark;
+			if (s)
+				pos += snprintf(buf + pos, sizeof(buf) - pos,
+								", client remark: %s", s);
 			if (c->client_pid)
-				snprintf(cpbuf, sizeof(cpbuf), ", client pid: %ld", c->client_pid);
-			else
-				cpbuf[0] = 0;
-			char mabuf1[300] = "";
-			char mabuf2[300] = "";
-			char mabuf3[300] = "";
-			ma_info(c->ma, mabuf1, sizeof(mabuf1));
-			if (c->curprg && c->curprg->def)
-				ma_info(c->curprg->def->ma, mabuf2, sizeof(mabuf2));
-			if (c->sqlcontext) {
-				backend *be = (backend*) c->sqlcontext;
-				if (be->mvc)
-					ma_info(be->mvc->pa, mabuf3, sizeof(mabuf3));
-			}
-			printf("client %d, user %s, thread %s, using %"PRIu64" bytes of transient space%s%s%s%s%s%s%s%s%s%s%s%s\n", c->idx, c->username, c->mythread ? c->mythread : "?", (uint64_t) ATOMIC_GET(&c->qryctx.datasize), mmbuf, mabuf1, mabuf2, mabuf3, tmbuf, trbuf, chbuf, cabuf, clbuf, cpbuf, crbuf, qybuf);
+				pos += snprintf(buf + pos, sizeof(buf) - pos,
+								", client pid: %ld", c->client_pid);
+			s = c->query;
+			if (s)
+				pos += snprintf(buf + pos, sizeof(buf) - pos,
+								", query: %s", s);
+			printf("%s\n", buf);
 			break;
 		case FINISHCLIENT:
 			/* finishing */
@@ -1424,6 +1430,7 @@ SQLparser_body(Client c, backend *be)
 	c->qryctx.starttime = GDKusec();
 	c->qryctx.endtime = c->querytimeout ? c->qryctx.starttime + c->querytimeout : 0;
 
+	allocator_state ta_state = ma_open(MT_thread_getallocator());
 	if ((err = sqlparse(m)) ||
 		m->scanner.aborted ||
 		((m->scanner.aborted |= bstream_getoob(m->scanner.rs) != 0) != false) ||
@@ -1446,8 +1453,10 @@ SQLparser_body(Client c, backend *be)
 		if (!m->sym) /* skip empty input */
 			m->emode = m_deallocate;
 		sqlcleanup(be, err);
+		ma_close(&ta_state);
 		goto finalize;
 	}
+	ma_close(&ta_state);
 	/*
 	 * We have dealt with the first parsing step and advanced the input reader
 	 * to the next statement (if any).

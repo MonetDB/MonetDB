@@ -3680,12 +3680,15 @@ check_distinct_exp_names(mvc *sql, list *exps)
 	list *distinct_exps = NULL;
 	bool duplicates = false;
 
+	(void) sql;
 	if (list_length(exps) < 2) {
 		return exps; /* always true */
 	} else if (list_length(exps) < 5) {
 		distinct_exps = list_distinct(exps, (fcmp) exp_equal, (fdup) NULL);
 	} else { /* for longer lists, use hashing */
-		sql_hash *ht = hash_new(sql->ta, list_length(exps), (fkeyvalue)&exp_key);
+		allocator *ta = MT_thread_getallocator();
+		allocator_state ta_state = ma_open(ta);
+		sql_hash *ht = hash_new(ta, list_length(exps), (fkeyvalue)&exp_key);
 
 		for (node *n = exps->h; n && !duplicates; n = n->next) {
 			sql_exp *e = n->data;
@@ -3700,6 +3703,7 @@ check_distinct_exp_names(mvc *sql, list *exps)
 			}
 			hash_add(ht, key, e);
 		}
+		ma_close(&ta_state);
 	}
 	if ((distinct_exps && list_length(distinct_exps) != list_length(exps)) || duplicates)
 		return NULL;

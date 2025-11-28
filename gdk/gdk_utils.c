@@ -1714,19 +1714,15 @@ typedef struct freed_t {
 static inline size_t
 ma_get_blk_idx(allocator *sa, void *blk, size_t offset)
 {
-	size_t i;
-	for(i = offset; i < sa->nr; i++) {
+	for (size_t i = offset; i < sa->nr; i++) {
 		if (sa->blks[i] == blk)
-			break;
+			return i;
 	}
-	if (i >= sa->nr) {
-		assert(0 && "allocator block not found");
-		if (sa->eb.enabled) {
-			eb_error(&sa->eb, "allocator block not found", 1000);
-		}
-
+	assert(0 && "allocator block not found");
+	if (sa->eb.enabled) {
+		eb_error(&sa->eb, "allocator block not found", 1000);
 	}
-	return i;
+	return sa->nr;
 }
 
 
@@ -2082,7 +2078,7 @@ _ma_alloc_internal(allocator *sa, size_t sz)
 		sa->used += sz;
 	}
 	if (sz < MA_BLOCK_SIZE) {
-		// countig object only
+		// counting object only
 		sa->objects += 1;
 		sa->inuse += 1;
 	}
@@ -2348,22 +2344,30 @@ ma_get_parent(const allocator *a)
     return a ? a->pa : NULL;
 }
 
-void
-ma_info(const allocator *a, char *buf, size_t bufsize)
+int
+ma_info(const allocator *a, char *buf, size_t bufsize, const char *pref)
 {
+	int pos = 0;
 	buf[0] = 0;
-	if (a != NULL)
-		snprintf(buf, bufsize,
-			 ", allocator %s, size %zu, nr %zu, used %zu%s"
-			 ", usedmem %zu%s, blk_size %zu, objects %zu"
-			 ", inuse %zu, free_obj_hits %zu, frees %zu"
-			 ", free_blk_hits %zu, tmp_used %zu, refcount %d",
-			 a->name, a->size, a->nr,
-			 a->used, humansize(a->used, (char[24]){0}, 24),
-			 a->usedmem, humansize(a->usedmem, (char[24]){0}, 24),
-			 a->blk_size, a->objects,
-			 a->inuse, a->free_obj_hits, a->frees,
-			 a->free_blk_hits, a->tmp_used, a->refcount);
+	if (a != NULL) {
+		pos = snprintf(buf, bufsize, "%s%s: used %zu%s, usedmem %zu%s",
+			       pref ? pref : "", a->name,
+			       a->used, humansize(a->used, (char[24]){0}, 24),
+			       a->usedmem, humansize(a->usedmem, (char[24]){0}, 24));
+		if (a->objects > 0 && (size_t) pos < bufsize)
+			pos += snprintf(buf + pos, bufsize - pos,
+					", objects %zu", a->objects);
+		if (a->inuse > 0 && (size_t) pos < bufsize)
+			pos += snprintf(buf + pos, bufsize - pos,
+					", inuse %zu", a->inuse);
+		if (a->tmp_used > 0 && (size_t) pos < bufsize)
+			pos += snprintf(buf + pos, bufsize - pos,
+					", tmp_used %zu", a->tmp_used);
+		if (a->refcount > 0 && (size_t) pos < bufsize)
+			pos += snprintf(buf + pos, bufsize - pos,
+					", refcount %d", a->refcount);
+	}
+	return pos;
 }
 
 inline size_t

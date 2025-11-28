@@ -24,7 +24,7 @@
 
 static int sqlerror(mvc *sql, const char *err);
 
-static void *sql_alloc(allocator *sa, size_t sz);
+static void *sql_alloc(size_t sz);
 static void sql_free(void *p);
 static inline symbol*
 makeAtomNode(mvc *m, const char* type, const char* val, unsigned int digits, unsigned int scale, bool bind);
@@ -52,7 +52,7 @@ makeAtomNode(mvc *m, const char* type, const char* val, unsigned int digits, uns
 
 #define _atom_string(t, v)   atom_string(SA, t, v)
 
-#define Malloc(sz) sql_alloc(m->ta,sz)
+#define Malloc(sz) sql_alloc(sz)
 #define YYMALLOC Malloc
 #define YYFREE sql_free
 
@@ -7942,7 +7942,8 @@ int find_subgeometry_type(mvc *m, char* geoSubType) {
 	else {
 		size_t strLength = strlen(geoSubType);
 		if(strLength > 0 ) {
-			char *typeSubStr = SA_NEW_ARRAY(m->ta, char, strLength);
+			char *typeSubStr = SA_NEW_ARRAY(MT_thread_getallocator(),
+											char, strLength);
 			char flag = geoSubType[strLength-1];
 
 			if (typeSubStr == NULL) {
@@ -8193,9 +8194,9 @@ sqlerror(mvc *sql, const char *err)
 	return sqlformaterror(sql, "%s", sql->scanner.errstr ? sql->scanner.errstr : err);
 }
 
-static void *sql_alloc(allocator *sa, size_t sz)
+static void *sql_alloc(size_t sz)
 {
-	return ma_alloc(sa, sz);
+	return ma_alloc(MT_thread_getallocator(), sz);
 }
 
 static void sql_free(void *p)

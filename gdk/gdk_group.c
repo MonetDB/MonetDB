@@ -741,6 +741,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			  ALGOOPTBATPAR(e), ALGOOPTBATPAR(h),
 			  subsorted ? "true" : "false", ALGOOPTBATPAR(gn),
 			  ALGOOPTBATPAR(en), ALGOOPTBATPAR(hn), GDKusec() - t0);
+		ma_close(&ta_state);
 		return GDK_SUCCEED;
 	}
 	assert(!BATtdense(b));
@@ -801,6 +802,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 				  subsorted ? "true" : "false",
 				  ALGOOPTBATPAR(gn), ALGOOPTBATPAR(en),
 				  ALGOOPTBATPAR(hn), GDKusec() - t0);
+			ma_close(&ta_state);
 			return GDK_SUCCEED;
 		}
 		if ((extents == NULL || e != NULL) &&
@@ -841,6 +843,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 				  subsorted ? "true" : "false",
 				  ALGOOPTBATPAR(gn), ALGOOPTBATPAR(en),
 				  ALGOOPTBATPAR(hn), GDKusec() - t0);
+			ma_close(&ta_state);
 			return GDK_SUCCEED;
 		}
 	}
