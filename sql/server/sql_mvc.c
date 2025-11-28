@@ -63,8 +63,10 @@ mvc_init_create_view(mvc *m, sql_schema *s, const char *name, const char *query)
 	if (t) {
 		char *buf;
 		sql_rel *r = NULL;
+		allocator *ta = MT_thread_getallocator();
+		allocator_state ta_state = ma_open(ta);
 
-		if (!(buf = ma_strdup(m->ta, t->query))) {
+		if (!(buf = ma_strdup(ta, t->query))) {
 			(void) sql_error(m, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			return NULL;
 		}
@@ -75,12 +77,12 @@ mvc_init_create_view(mvc *m, sql_schema *s, const char *name, const char *query)
 		if (r) {
 			list *blist = rel_dependencies(m, r);
 			if (mvc_create_dependencies(m, blist, t->base.id, VIEW_DEPENDENCY)) {
-				ma_reset(m->ta);
+				ma_close(&ta_state);
 				(void) sql_error(m, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				return NULL;
 			}
 		}
-		ma_reset(m->ta);
+		ma_close(&ta_state);
 		assert(r);
 	}
 	return t;
@@ -764,7 +766,6 @@ mvc_create(sql_store *store, allocator *pa, int clientid, int debug, bstream *rs
 	}
 	m->pa = pa;
 	m->sa = NULL;
-	m->ta = create_allocator(m->pa, "TA_mvc", false);
 #ifdef __has_builtin
 #if __has_builtin(__builtin_frame_address)
 	m->sp = (uintptr_t) __builtin_frame_address(0);
@@ -872,7 +873,6 @@ mvc_destroy(mvc *m)
 		close_stream(m->scanner.log);
 
 	m->sa = NULL;
-	m->ta = NULL;
 	if (m->qc)
 		qc_destroy(m->qc);
 	m->qc = NULL;

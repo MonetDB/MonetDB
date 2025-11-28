@@ -149,7 +149,6 @@ CLIENTprintinfo(void)
 					}
 					pos += ma_info(sql->pa, buf + pos, sizeof(buf) - pos, ", allocator ");
 					pos += ma_info(sql->sa, buf + pos, sizeof(buf) - pos, ", allocator ");
-					pos += ma_info(sql->ta, buf + pos, sizeof(buf) - pos, ", allocator ");
 					pos += snprintf(buf + pos, sizeof(buf) - pos,
 									", prepared queries: %d",
 									qc_size(sql->qc));
@@ -1431,6 +1430,7 @@ SQLparser_body(Client c, backend *be)
 	c->qryctx.starttime = GDKusec();
 	c->qryctx.endtime = c->querytimeout ? c->qryctx.starttime + c->querytimeout : 0;
 
+	allocator_state ta_state = ma_open(MT_thread_getallocator());
 	if ((err = sqlparse(m)) ||
 		m->scanner.aborted ||
 		((m->scanner.aborted |= bstream_getoob(m->scanner.rs) != 0) != false) ||
@@ -1453,8 +1453,10 @@ SQLparser_body(Client c, backend *be)
 		if (!m->sym) /* skip empty input */
 			m->emode = m_deallocate;
 		sqlcleanup(be, err);
+		ma_close(&ta_state);
 		goto finalize;
 	}
+	ma_close(&ta_state);
 	/*
 	 * We have dealt with the first parsing step and advanced the input reader
 	 * to the next statement (if any).

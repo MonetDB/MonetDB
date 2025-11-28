@@ -426,7 +426,8 @@ exps_cse_dis( visitor *v, list *oexps, sql_exp *de)
 	}
 
 	int matches = 0, lpos = 0, rc = 1, rpos = 0, changes = 0;
-	int *matchedpos = SA_ZNEW_ARRAY(v->sql->ta, int, list_length(dis));
+	allocator *ta = MT_thread_getallocator();
+	int *matchedpos = SA_ZNEW_ARRAY(ta, int, list_length(dis));
 	sql_exp *fe = dis->h->data;
 	if (fe->type != e_cmp || fe->flag != cmp_con) {
 		append(oexps, de);
@@ -1130,7 +1131,8 @@ static sql_rel *
 rel_optimize_select_and_joins_bottomup(visitor *v, global_props *gp, sql_rel *rel)
 {
 	v->data = &gp->opt_cycle;
-	allocator_state ta_state = ma_open(v->sql->ta);
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
 	rel = rel_visitor_bottomup(v, rel, &rel_optimize_select_and_joins_bottomup_);
 	ma_close(&ta_state);
 	v->data = gp;
@@ -2013,9 +2015,10 @@ order_join_expressions(mvc *sql, list *dje, list *rels)
 	if (cnt <= 1)
 		return dje;
 
+	allocator *ta = MT_thread_getallocator();
 	list *res = sa_list(sql->sa);
-	int i, *keys = SA_NEW_ARRAY(sql->ta, int, cnt);
-	void **data = SA_NEW_ARRAY(sql->ta, void*, cnt);
+	int i, *keys = SA_NEW_ARRAY(ta, int, cnt);
+	void **data = SA_NEW_ARRAY(ta, void*, cnt);
 
 	for (n = dje->h, i = 0; n; n = n->next, i++) {
 		sql_exp *e = n->data;
@@ -2292,21 +2295,22 @@ order_joins(visitor *v, list *rels, list *exps)
 		return top;
 	}
 
+	allocator *ta = MT_thread_getallocator();
 	int nr_exps = list_length(sdje), nr_rels = list_length(rels), ci = 1;
 	if (nr_rels > 64) {
 		direct = 0;
-		n_rels = sa_list(v->sql->ta);
+		n_rels = sa_list(ta);
 	}
-	sql_rel **rels_a = SA_NEW_ARRAY(v->sql->ta, sql_rel*, nr_rels+1); /* don't use slot 0 */
+	sql_rel **rels_a = SA_NEW_ARRAY(ta, sql_rel*, nr_rels+1); /* don't use slot 0 */
 	rels_a[0] = NULL;
 	for (node *n = rels->h; n; n = n->next, ci++) {
 		rels_a[ci] = n->data;
 	}
-	ulng *h = SA_NEW_ARRAY(v->sql->ta, ulng, nr_exps), rel_mask = 0;	/* bit field (for > 64 its an imprint) */
-	uint16_t *r1 = SA_NEW_ARRAY(v->sql->ta, uint16_t, nr_exps);
-	uint16_t *r2 = SA_NEW_ARRAY(v->sql->ta, uint16_t, nr_exps);
+	ulng *h = SA_NEW_ARRAY(ta, ulng, nr_exps), rel_mask = 0;	/* bit field (for > 64 its an imprint) */
+	uint16_t *r1 = SA_NEW_ARRAY(ta, uint16_t, nr_exps);
+	uint16_t *r2 = SA_NEW_ARRAY(ta, uint16_t, nr_exps);
 	/* change r3 into rest list's */
-	int *r3 = SA_NEW_ARRAY(v->sql->ta, int, nr_exps);
+	int *r3 = SA_NEW_ARRAY(ta, int, nr_exps);
 
 	ci = 0;
 	for (node *n = sdje->h; n; n = n->next, ci++) {
@@ -2715,6 +2719,7 @@ static sql_rel *
 reorder_join(visitor *v, sql_rel *rel)
 {
 	list *exps, *rels;
+	allocator *ta = MT_thread_getallocator();
 
 	if (is_innerjoin(rel->op) && !is_single(rel) && !rel_is_ref(rel) && list_empty(rel->attr)) {
 		if (list_empty(rel->exps)) {
@@ -2732,7 +2737,7 @@ reorder_join(visitor *v, sql_rel *rel)
 		if (!list_empty(rel->exps)) { /* cannot add join idxs to cross products */
 			exps = rel->exps;
 			rel->exps = NULL; /* should be all crosstables by now */
-			rels = sa_list(v->sql->ta);
+			rels = sa_list(ta);
 			/* try to use an join index also for outer joins */
 			get_inner_relations(v->sql, rel, rels);
 			int cnt = list_length(exps);
@@ -2745,7 +2750,7 @@ reorder_join(visitor *v, sql_rel *rel)
 	} else {
 		exps = rel->exps;
 		rel->exps = NULL; /* should be all crosstables by now */
-		rels = sa_list(v->sql->ta);
+		rels = sa_list(ta);
 		get_relations(v, rel, rels);
 		if (list_length(rels) > 1) {
 			rels = push_in_join_down(v->sql, rels, exps);
@@ -2821,8 +2826,10 @@ static sql_rel *
 rel_join_order(visitor *v, global_props *gp, sql_rel *rel)
 {
 	(void) gp;
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
 	sql_rel *r = rel_join_order_(v, rel);
-	ma_reset(v->sql->ta);
+	ma_close(&ta_state);
 	return r;
 }
 

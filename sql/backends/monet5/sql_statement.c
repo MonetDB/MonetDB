@@ -3020,6 +3020,8 @@ dump_export_header(mvc *sql, MalBlkPtr mb, list *l, int file, const char * forma
 	if(tblPtr == NULL || nmePtr == NULL || tpePtr == NULL || lenPtr == NULL || scalePtr == NULL)
 		return -1;
 
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
 	for (n = l->h; n; n = n->next) {
 		stmt *c = n->data;
 		sql_subtype *t = tail_type(c);
@@ -3029,15 +3031,17 @@ dump_export_header(mvc *sql, MalBlkPtr mb, list *l, int file, const char * forma
 		const char *tn = (tname) ? tname : _empty;
 		const char *sn = (sname) ? sname : _empty;
 		const char *cn = column_name(sql->sa, c);
-		const char *ntn = sql_escape_ident(sql->ta, tn);
-		const char *nsn = sql_escape_ident(sql->ta, sn);
+		const char *ntn = sql_escape_ident(ta, tn);
+		const char *nsn = sql_escape_ident(ta, sn);
 		size_t fqtnl;
 		char *fqtn = NULL;
 
 		if (ntn && nsn && (fqtnl = strlen(ntn) + 1 + strlen(nsn) + 1) ){
-			fqtn = SA_NEW_ARRAY(sql->ta, char, fqtnl);
-			if (fqtn == NULL)
+			fqtn = SA_NEW_ARRAY(ta, char, fqtnl);
+			if (fqtn == NULL) {
+				ma_close(&ta_state);
 				return -1;
+			}
 			snprintf(fqtn, fqtnl, "%s.%s", nsn, ntn);
 			tblPtr = pushStr(mb, tblPtr, fqtn);
 			nmePtr = pushStr(mb, nmePtr, cn);
@@ -3045,10 +3049,12 @@ dump_export_header(mvc *sql, MalBlkPtr mb, list *l, int file, const char * forma
 			lenPtr = pushInt(mb, lenPtr, t->digits);
 			scalePtr = pushInt(mb, scalePtr, t->scale);
 			list = pushArgument(mb, list, c->nr);
-		} else
+		} else {
+			ma_close(&ta_state);
 			return -1;
+		}
 	}
-	ma_reset(sql->ta);
+	ma_close(&ta_state);
 	ret = getArg(list,0);
 	pushInstruction(mb,list);
 	return ret;
@@ -3336,6 +3342,8 @@ dump_header(mvc *sql, MalBlkPtr mb, list *l)
 	if(tblPtr == NULL || nmePtr == NULL || tpePtr == NULL || lenPtr == NULL || scalePtr == NULL)
 		return NULL;
 
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
 	for (n = l->h; n; n = n->next) {
 		stmt *c = n->data;
 		sql_subtype *t = tail_type(c);
@@ -3345,14 +3353,16 @@ dump_header(mvc *sql, MalBlkPtr mb, list *l)
 		const char *tn = (tname) ? tname : _empty;
 		const char *sn = (sname) ? sname : _empty;
 		const char *cn = column_name(sql->sa, c);
-		const char *ntn = sql_escape_ident(sql->ta, tn);
-		const char *nsn = sql_escape_ident(sql->ta, sn);
+		const char *ntn = sql_escape_ident(ta, tn);
+		const char *nsn = sql_escape_ident(ta, sn);
 		size_t fqtnl;
 
 		if (ntn && nsn && (fqtnl = strlen(ntn) + 1 + strlen(nsn) + 1) ){
-			char *fqtn = SA_NEW_ARRAY(sql->ta, char, fqtnl);
-			if (fqtn == NULL)
+			char *fqtn = SA_NEW_ARRAY(ta, char, fqtnl);
+			if (fqtn == NULL) {
+				ma_close(&ta_state);
 				return NULL;
+			}
 			snprintf(fqtn, fqtnl, "%s.%s", nsn, ntn);
 			tblPtr = pushStr(mb, tblPtr, fqtn);
 			nmePtr = pushStr(mb, nmePtr, cn);
@@ -3360,10 +3370,12 @@ dump_header(mvc *sql, MalBlkPtr mb, list *l)
 			lenPtr = pushInt(mb, lenPtr, t->digits);
 			scalePtr = pushInt(mb, scalePtr, t->scale);
 			list = pushArgument(mb,list,c->nr);
-		} else
+		} else {
+			ma_close(&ta_state);
 			return NULL;
+		}
 	}
-	ma_reset(sql->ta);
+	ma_close(&ta_state);
 	pushInstruction(mb,list);
 	return list;
 }
@@ -3380,6 +3392,8 @@ stmt_output(backend *be, stmt *lst)
 
 	/* single value result, has a fast exit */
 	if (cnt == 1 && first->nrcols <= 0 ){
+		allocator *ta = MT_thread_getallocator();
+		allocator_state ta_state = ma_open(ta);
 		stmt *c = n->data;
 		sql_subtype *t = tail_type(c);
 		const char *tname = table_name(be->mvc->sa, c);
@@ -3388,20 +3402,24 @@ stmt_output(backend *be, stmt *lst)
 		const char *tn = (tname) ? tname : _empty;
 		const char *sn = (sname) ? sname : _empty;
 		const char *cn = column_name(be->mvc->sa, c);
-		const char *ntn = sql_escape_ident(be->mvc->ta, tn);
-		const char *nsn = sql_escape_ident(be->mvc->ta, sn);
+		const char *ntn = sql_escape_ident(ta, tn);
+		const char *nsn = sql_escape_ident(ta, sn);
 
 		if (ntn && nsn) {
 			size_t fqtnl = strlen(ntn) + 1 + strlen(nsn) + 1;
-			char *fqtn = SA_NEW_ARRAY(be->mvc->ta, char, fqtnl);
-			if (fqtn == NULL)
+			char *fqtn = SA_NEW_ARRAY(ta, char, fqtnl);
+			if (fqtn == NULL) {
+				ma_close(&ta_state);
 				return -1;
+			}
 			ok = 1;
 			snprintf(fqtn, fqtnl, "%s.%s", nsn, ntn);
 
 			q = newStmt(mb, sqlRef, resultSetRef);
-			if (q == NULL)
+			if (q == NULL) {
+				ma_close(&ta_state);
 				return -1;
+			}
 			getArg(q,0) = newTmpVariable(mb,TYPE_int);
 			q = pushStr(mb, q, fqtn);
 			q = pushStr(mb, q, cn);
@@ -3412,7 +3430,7 @@ stmt_output(backend *be, stmt *lst)
 			q = pushArgument(mb, q, c->nr);
 			pushInstruction(mb, q);
 		}
-		ma_reset(be->mvc->ta);
+		ma_close(&ta_state);
 		if (!ok)
 			return -1;
 	} else {

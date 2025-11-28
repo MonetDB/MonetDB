@@ -2852,9 +2852,10 @@ static inline sql_rel *
 rewrite_split_select_exps(visitor *v, sql_rel *rel)
 {
 	if (is_select(rel->op) && !list_empty(rel->exps)) {
-		allocator_state ta_state = ma_open(v->sql->ta);
+		allocator *ta = MT_thread_getallocator();
+		allocator_state ta_state = ma_open(ta);
 		int i = 0;
-		bool has_complex_exps = false, has_simple_exps = false, *complex_exps = SA_NEW_ARRAY(v->sql->ta, bool, list_length(rel->exps));
+		bool has_complex_exps = false, has_simple_exps = false, *complex_exps = SA_NEW_ARRAY(ta, bool, list_length(rel->exps));
 
 		for (node *n = rel->exps->h ; n ; n = n->next) {
 			sql_exp *e = n->data;
@@ -2953,9 +2954,10 @@ rewrite_rank(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 
 	/* The following array remembers the original positions of gbe and obe expressions to replace them in order later at diff_replace_arguments */
 	if (gbe || obe) {
-		allocator_state ta_state = ma_open(v->sql->ta);
+		allocator *ta = MT_thread_getallocator();
+		allocator_state ta_state = ma_open(ta);
 		int gbeoffset = list_length(gbe), i = 0, added = 0;
-		int *pos = SA_NEW_ARRAY(v->sql->ta, int, gbeoffset + list_length(obe));
+		int *pos = SA_NEW_ARRAY(ta, int, gbeoffset + list_length(obe));
 		if (gbe) {
 			for (i = 0 ; i < gbeoffset ; i++)
 				pos[i] = i;
