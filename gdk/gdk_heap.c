@@ -160,7 +160,7 @@ HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 	    !MT_thread_override_limits()) {
 		GDKerror("allocating too much memory (current: %zu, requested: %zu, limit: %zu)\n", GDKvm_cursize(), h->size, GDK_vm_maxsize);
 		if (GDKtriggerusr1 &&
-		    !(ATOMIC_GET(&GDKdebug) & TESTINGMASK))
+		    (ATOMIC_GET(&GDKdebug) & TESTINGMASK))
 			(*GDKtriggerusr1)();
 		return GDK_FAIL;
 	}
@@ -266,7 +266,7 @@ HEAPextend(Heap *h, size_t size, bool mayshare)
 	    !MT_thread_override_limits()) {
 		GDKerror("allocating too much memory (current: %zu, requested: %zu, limit: %zu)\n", GDKvm_cursize(), size - h->size, GDK_vm_maxsize);
 		if (GDKtriggerusr1 &&
-		    !(ATOMIC_GET(&GDKdebug) & TESTINGMASK))
+		    (ATOMIC_GET(&GDKdebug) & TESTINGMASK))
 			(*GDKtriggerusr1)();
 		return GDK_FAIL;
 	}
@@ -784,7 +784,7 @@ HEAPload(Heap *h, const char *nme, const char *ext, bool trunc)
 	    !MT_thread_override_limits()) {
 		GDKerror("allocating too much memory (current: %zu, requested: %zu, limit: %zu)\n", GDKvm_cursize(), h->size, GDK_vm_maxsize);
 		if (GDKtriggerusr1 &&
-		    !(ATOMIC_GET(&GDKdebug) & TESTINGMASK))
+		    (ATOMIC_GET(&GDKdebug) & TESTINGMASK))
 			(*GDKtriggerusr1)();
 		return GDK_FAIL;
 	}

@@ -236,9 +236,16 @@ static volatile sig_atomic_t usr1_interrupted = 0;
 static volatile sig_atomic_t usr2_interrupted = 0;
 
 static void
+handler_usr1(int sig)
+{
+	(void) sig;
+	usr1_interrupted = 1;
+}
+
+static void
 usr1trigger(void)
 {
-	usr1_interrupted = 1;
+	handler_usr1(0);
 	MT_sleep_ms(150); /* sleep slightly longer than delay for handling usr1 */
 }
 
@@ -256,12 +263,6 @@ handler(int sig)
 {
 	(void) sig;
 	interrupted = 1;
-}
-static void
-handler_usr1(int sig)
-{
-	(void) sig;
-	usr1trigger();
 }
 static void
 handler_usr2(int sig)
