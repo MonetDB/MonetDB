@@ -495,6 +495,28 @@ output_multiset(allocator *ma, char **buf, size_t *len, ssize_t fill, char **loc
 	return fill;
 }
 
+static inline ssize_t
+output_vector(allocator*ma, char **buf, size_t *len, ssize_t fill, char **localbuf, size_t *locallen,
+	   	Column *fmt, BUN nr_attrs)
+{
+	int first = 1;
+	(*buf)[fill++] = '\'';
+	(*buf)[fill++] = '{';
+	(*buf)[fill] = 0;
+	for (size_t i = 0; fill > 0 && i < nr_attrs; i++) {
+		if (!first)
+			(*buf)[fill++] = ',';
+		fill = output_value(ma, buf, len, fill, localbuf, locallen, fmt + i);
+		first = 0;
+	}
+	if (fill < 0)
+		return fill;
+	(*buf)[fill++] = '}';
+	(*buf)[fill++] = '\'';
+	(*buf)[fill] = 0;
+	return fill;
+}
+
 static ssize_t
 output_line_complex(allocator *ma, char **buf, size_t *len, ssize_t fill, char **localbuf, size_t *locallen,
 				  Column *fmt, BUN nr_attrs)
@@ -505,7 +527,12 @@ output_line_complex(allocator *ma, char **buf, size_t *len, ssize_t fill, char *
 		Column *f = fmt + j;
 		const char *p;
 
-		if (f->multiset) {
+		if (f->ms_vector) {
+			int nr_attrs = f->nrfields - 1;
+			fill = output_vector(ma, buf, len, fill, localbuf, locallen, fmt + j + 1, nr_attrs-2);
+			f = fmt + j + nr_attrs; /* closing bracket */
+			j += nr_attrs + 1;
+		} else if (f->multiset) {
 			int nr_attrs = f->nrfields - 1;
 			Column *rowid = fmt+j+nr_attrs;
 			p = BUNtail(rowid->ci, rowid->p);

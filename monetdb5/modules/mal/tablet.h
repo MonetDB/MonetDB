@@ -44,7 +44,10 @@ typedef struct Column_t {
 	unsigned int width;			/* actual column width */
 	unsigned int maxwidth;		/* permissible width */
 	int composite;				/* number of composite fields */
-	int multiset;				/* type of multiset */
+	uint8_t multiset:3,
+			ms_array:1,
+			ms_vector:1,
+			ms_setof:1;
 	int nrfields;				/* nr columns which together form an output column */
 	bool virt;					/* not part of output */
 	int fieldstart;				/* Fixed character field load positions */

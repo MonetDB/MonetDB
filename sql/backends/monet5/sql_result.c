@@ -1346,6 +1346,7 @@ mvc_export_table_(allocator *sa, mvc *m, int output_format, stream *s, res_table
 			fmt[i].rsep = rsep;
 		}
 		fmt[i].multiset = c->type.multiset;
+		fmt[i].ms_vector = c->type.multiset == MS_VECTOR;
 		fmt[i].composite = c->type.type->composite?list_length(c->type.type->d.fields):0;
 		fmt[i].virt = c->virt;
 
@@ -1715,7 +1716,21 @@ mvc_export_affrows(backend *b, stream *s, lng val, str w, oid query_id, lng star
 static inline int
 next_col(res_col *c)
 {
-	int res = (c->type.multiset==MS_VALUE)?0:(c->type.multiset==MS_ARRAY)?3:2;
+	//int res = (c->type.multiset==MS_VALUE)?0:(c->type.multiset==MS_ARRAY)?3:2;
+	int res = 0;
+	switch(c->type.multiset) {
+		case MS_VALUE:
+			res = 0;
+			break;
+		case MS_ARRAY:
+			res = 3;
+			break;
+		case MS_VECTOR:
+			res = c->type.digits + 1; // all the dimensions + ms_id
+			break;
+		default:
+			res = 2; // MS_SETOF?
+	}
 	if (c->virt)
 		res++;
 	if (c->type.type && c->type.type->composite) {
