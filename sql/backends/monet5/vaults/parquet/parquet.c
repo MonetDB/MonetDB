@@ -385,6 +385,7 @@ pqc_relation(mvc *sql, sql_subfunc *f, char *filename, list *res_exps, char *tna
 		*est *= fmd->nrows;
 	int nr = 0;
 	const pqc_schema_element *pse = pqc_get_schema_elements(pq, &nr);
+	allocator *ma = MT_thread_getallocator();
 	if (pse) {
 		if (0)
 		if (pse->nchildren != (nr-1)) {
@@ -397,7 +398,7 @@ pqc_relation(mvc *sql, sql_subfunc *f, char *filename, list *res_exps, char *tna
 			const pqc_schema_element *e = pse+i;
 
 			if (e->nchildren || e->repetition == 2) {
-				char *nme = e->name?ma_strdup(sql->ta, e->name):NULL;
+				char *nme = e->name?ma_strdup(ma, e->name):NULL;
 				pqc_close(pq);
 				throw(SQL, SQLSTATE(42000), "parquet" "Data in file %s is not tabular (column %s has repetition)", filename, nme);
 			}
@@ -409,7 +410,7 @@ pqc_relation(mvc *sql, sql_subfunc *f, char *filename, list *res_exps, char *tna
 
 			if (e->type != LT_UNKNOWN && !t) {
 				int tpe = e->type;
-				char *nme = e->name?ma_strdup(sql->ta, e->name):NULL;
+				char *nme = e->name?ma_strdup(ma, e->name):NULL;
 				pqc_close(pq);
 				throw(SQL, SQLSTATE(42000), "parquet: " "Data type (%s) not supported for column %s", str_logical_type(tpe), nme);
 			}
