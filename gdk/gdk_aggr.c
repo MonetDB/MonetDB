@@ -2331,7 +2331,7 @@ BATgroupavg3(BAT **avgp, BAT **remp, BAT **cntp, BAT *b, BAT *g, BAT *e, BAT *s,
 		(void) VALinit(ma, &zero, TYPE_bte, &(bte){0});
 		bn = BATconstant(min, b->ttype, VALconvert(ma, b->ttype, &zero),
 				ngrp, TRANSIENT);
-		ma_close(ma, &ma_state);
+		ma_close(&ma_state);
 		rn = BATconstant(min, TYPE_lng, &(lng){0}, ngrp, TRANSIENT);
 		cn = BATconstant(min, TYPE_lng, &(lng){0}, ngrp, TRANSIENT);
 		if (bn == NULL || rn == NULL || cn == NULL) {
@@ -2342,25 +2342,6 @@ BATgroupavg3(BAT **avgp, BAT **remp, BAT **cntp, BAT *b, BAT *g, BAT *e, BAT *s,
 		}
 		rems = Tloc(rn, 0);
 		cnts = Tloc(cn, 0);
-	}
-	if (0) {
-	ValRecord zero;
-	allocator *ma = MT_thread_getallocator();
-	allocator_state ma_state = ma_open(ma);
-	(void) VALinit(ma, &zero, TYPE_bte, &(bte){0});
-	bn = BATconstant(min, b->ttype, VALconvert(ma, b->ttype, &zero),
-			 ngrp, TRANSIENT);
-	ma_close(&ma_state);
-	rn = BATconstant(min, TYPE_lng, &(lng){0}, ngrp, TRANSIENT);
-	cn = BATconstant(min, TYPE_lng, &(lng){0}, ngrp, TRANSIENT);
-	if (bn == NULL || rn == NULL || cn == NULL) {
-		BBPreclaim(bn);
-		BBPreclaim(rn);
-		BBPreclaim(cn);
-		return GDK_FAIL;
-	}
-	lng *rems = Tloc(rn, 0);
-	lng *cnts = Tloc(cn, 0);
 	}
 	const oid *gids = g && !BATtdense(g) ? Tloc(g, 0) : NULL;
 	oid gid = ngrp == 1 && gids ? gids[0] - min : g ? g->tseqbase - min : 0;

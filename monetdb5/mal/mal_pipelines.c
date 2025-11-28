@@ -234,7 +234,7 @@ PIPELINEworker(void *T)
 				}
 			}
 			freeStack(stk);
-			ma_close(ma, &ma_state);
+			ma_close(&ma_state);
 			if (p->wls)
 				GDKfree(p->wls);
 			MT_sema_up(&s->s);
@@ -309,7 +309,7 @@ runMALpipelines(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, int maxpart
 	/* initialize with direct increment of all threads at once */
 	ATOMIC_INIT(&s->workers, -1);
 	ATOMIC_PTR_INIT(&s->error, NULL);
-	s->errbuf = MT_thread_get_exceptbuf();
+	s->errbuf = GDKgetbuf();
 
 	char name[MT_NAME_LEN];
 	snprintf(name, sizeof(name), "PIPELINE%d", cntxt->idx);
