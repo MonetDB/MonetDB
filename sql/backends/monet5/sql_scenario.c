@@ -118,12 +118,12 @@ CLIENTprintinfo(void)
 								(uint64_t) c->qryctx.maxmem);
 			if (c->idle) {
 				localtime_r(&c->idle, &tm);
-				pos += strftime(buf + pos, sizeof(buf) - pos,
-								", idle since %F %H:%M:%S%z", &tm);
+				pos += (int) strftime(buf + pos, sizeof(buf) - pos,
+									  ", idle since %F %H:%M:%S%z", &tm);
 			} else if (c->lastcmd) {
 				localtime_r(&c->lastcmd, &tm);
-				pos += strftime(buf + pos, sizeof(buf) - pos,
-								", busy since %F %H:%M:%S%z", &tm);
+				pos += (int) strftime(buf + pos, sizeof(buf) - pos,
+									  ", busy since %F %H:%M:%S%z", &tm);
 			}
 			pos += ma_info(c->ma, buf + pos, sizeof(buf) - pos, ", allocator ");
 			pos += ma_info(c->qryctx.errorallocator, buf + pos, sizeof(buf) - pos, ", allocator ");
