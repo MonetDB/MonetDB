@@ -1,0 +1,10 @@
+statement ok
+CREATE OR REPLACE FUNCTION pcre_replace(s string, pattern string, repl string, flags string) RETURNS string EXTERNAL NAME pcre."replace"
+
+query T
+select pcre_replace('abcd','(bc)','$1','')
+----
+abcd
+
+statement error: operation failed: pcre replace of pattern (bc) failed with 'unknown substring'.
+select pcre_replace('abcd','bc','$1','')
