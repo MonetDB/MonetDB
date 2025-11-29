@@ -317,7 +317,6 @@ single_replace(allocator *ma, pcre2_code *pcre_code, pcre2_match_data *match_dat
 	}
 	if (j < 0) {
 		(void)pcre2_get_error_message(j, errbuf, errlen);
-		GDKfree(result);
 		return NULL;
 	}
 	return result;
