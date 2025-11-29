@@ -78,5 +78,6 @@ HAVE_HGE?7637_str_to_decimal
 7753-like-in-projection
 7725-crash-find-rel-ref
 7745-antijoin-bad-mal-gen
+7752-union-sum
 7756-anti-join-null
 7759-replace-wrong-error
