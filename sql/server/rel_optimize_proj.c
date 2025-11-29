@@ -96,6 +96,24 @@ rel_push_project_down_(visitor *v, sql_rel *rel)
 			}
 		}
 	}
+	if (v->depth > 1 && is_simple_project(rel->op) && !need_distinct(rel) && !rel_is_ref(rel) && rel->l && !rel->r &&
+			is_munion(l->op) && !rel_is_ref(l) &&
+			list_length(rel->exps) == list_length(l->exps) &&
+			list_check_prop_all(rel->exps, (prop_check_func)&exp_is_useless_rename)) {
+		bool all = true;
+
+		for (node *n = rel->exps->h, *m = l->exps->h; n && m && all; n = n->next, m = m->next) {
+			sql_exp *eo = n->data, *ei = m->data;
+			if (eo->nid != eo->alias.label || ei->alias.label != eo->nid)
+				all = false;
+		}
+		if (all) {
+			rel->l = NULL;
+			rel_destroy(v->sql, rel);
+			v->changes++;
+			return l;
+		}
+	}
 	/* ToDo handle useful renames, ie new relation name and unique set of attribute names (could reduce set of * attributes) */
 	/* handle both useless and useful with project [ group by ] */
 	return rel;
