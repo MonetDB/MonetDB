@@ -50,7 +50,6 @@ rel_used_projections(mvc *sql, list *exps, list *users)
 static sql_rel *
 rel_push_project_down_(visitor *v, sql_rel *rel)
 {
-	sql_rel *l = rel->l;
 	/* for now only push down renames */
 	sql_rel *l = rel->l;
 	if (v->depth > 1 && is_simple_project(rel->op) && !need_distinct(rel) && !rel_is_ref(rel) && rel->l && rel->r &&
