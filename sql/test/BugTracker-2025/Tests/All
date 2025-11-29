@@ -51,3 +51,4 @@ KNOWNFAIL?7653_incorrect_join_results
 7753-like-in-projection
 7725-crash-find-rel-ref
 7745-antijoin-bad-mal-gen
+7759-replace-wrong-error

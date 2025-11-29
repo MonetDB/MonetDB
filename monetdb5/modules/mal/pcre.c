@@ -322,7 +322,7 @@ single_replace(pcre2_code *pcre_code, pcre2_match_data *match_data,
 			   PCRE2_SPTR origin_str, PCRE2_SIZE len_origin_str,
 			   uint32_t exec_options,
 			   PCRE2_SPTR replacement, PCRE2_SIZE len_replacement,
-			   PCRE2_UCHAR *result, PCRE2_SIZE *max_result)
+			   PCRE2_UCHAR *result, PCRE2_SIZE *max_result, PCRE2_UCHAR *errbuf, size_t errlen)
 {
 	int j = pcre2_substitute(pcre_code, origin_str, len_origin_str, 0, exec_options | PCRE2_SUBSTITUTE_OVERFLOW_LENGTH, match_data, NULL, replacement, len_replacement, result, max_result);
 	if (j == PCRE2_ERROR_NOMEMORY) {
@@ -334,6 +334,7 @@ single_replace(pcre2_code *pcre_code, pcre2_match_data *match_data,
 		j = pcre2_substitute(pcre_code, origin_str, len_origin_str, 0, exec_options, match_data, NULL, replacement, len_replacement, result, max_result);
 	}
 	if (j < 0) {
+		(void)pcre2_get_error_message(j, errbuf, errlen);
 		GDKfree(result);
 		return NULL;
 	}
@@ -356,7 +357,9 @@ pcre_replace(str *res, const char *origin_str, const char *pattern,
 	uint32_t exec_options = PCRE2_NOTEMPTY | PCRE2_NO_UTF_CHECK;
 	PCRE2_SIZE len_origin_str = (PCRE2_SIZE) strlen(origin_str);
 	PCRE2_SIZE len_replacement = (PCRE2_SIZE) strlen(replacement);
+	PCRE2_UCHAR errbuf[256];
 
+	errbuf[0] = 0;
 	while (*flags) {
 		switch (*flags) {
 		case 'e':
@@ -387,7 +390,6 @@ pcre_replace(str *res, const char *origin_str, const char *pattern,
 	pcre_code = pcre2_compile((PCRE2_SPTR) pattern, PCRE2_ZERO_TERMINATED,
 							  compile_options, &err, &errpos, NULL);
 	if (pcre_code == NULL) {
-		PCRE2_UCHAR errbuf[256];
 		pcre2_get_error_message(err, errbuf, sizeof(errbuf));
 		throw(MAL, global ? "pcre.replace" : "pcre.replace_first",
 			  OPERATION_FAILED
@@ -412,13 +414,20 @@ pcre_replace(str *res, const char *origin_str, const char *pattern,
 	tmpres = single_replace(pcre_code, match_data, (PCRE2_SPTR) origin_str,
 							len_origin_str, exec_options,
 							(PCRE2_SPTR) replacement, len_replacement,
-							tmpres, &max_result);
+							tmpres, &max_result, errbuf, sizeof(errbuf));
 	pcre2_match_data_free(match_data);
 	pcre2_code_free(pcre_code);
-	if (tmpres == NULL)
-		throw(MAL, global ? "pcre.replace" : "pcre.replace_first",
-			  SQLSTATE(HY013) MAL_MALLOC_FAIL);
-
+	if (tmpres == NULL) {
+		if (errbuf[0]) {
+			throw(MAL, global ? "pcre.replace" : "pcre.replace_first",
+				OPERATION_FAILED
+				": pcre replace of pattern (%s) failed with '%s'.",
+				pattern, (char *) errbuf);
+		} else {
+			throw(MAL, global ? "pcre.replace" : "pcre.replace_first",
+				SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		}
+	}
 	*res = (char *) tmpres;
 	return MAL_SUCCEED;
 #else
@@ -450,7 +459,9 @@ pcre_replace_bat(BAT **res, BAT *origin_strs, const char *pattern,
 	PCRE2_SIZE len_replacement = (PCRE2_SIZE) strlen(replacement);
 	PCRE2_SPTR origin_str;
 	PCRE2_SIZE max_dest_size = 0;
+	PCRE2_UCHAR errbuf[256];
 
+	errbuf[0] = 0;
 	while (*flags) {
 		switch (*flags) {
 		case 'e':
@@ -481,7 +492,6 @@ pcre_replace_bat(BAT **res, BAT *origin_strs, const char *pattern,
 	pcre_code = pcre2_compile((PCRE2_SPTR) pattern, PCRE2_ZERO_TERMINATED,
 							  compile_options, &err, &errpos, NULL);
 	if (pcre_code == NULL) {
-		PCRE2_UCHAR errbuf[256];
 		pcre2_get_error_message(err, errbuf, sizeof(errbuf));
 		throw(MAL, global ? "pcre.replace" : "pcre.replace_first",
 			  OPERATION_FAILED
@@ -515,15 +525,22 @@ pcre_replace_bat(BAT **res, BAT *origin_strs, const char *pattern,
 		tmpres = single_replace(pcre_code, match_data, origin_str,
 								(PCRE2_SIZE) strlen((char *) origin_str), exec_options,
 								(PCRE2_SPTR) replacement, len_replacement,
-								tmpres, &max_dest_size);
+								tmpres, &max_dest_size, errbuf, sizeof(errbuf));
 		if (tmpres == NULL || BUNappend(tmpbat, tmpres, false) != GDK_SUCCEED) {
 			bat_iterator_end(&origin_strsi);
 			pcre2_match_data_free(match_data);
 			pcre2_code_free(pcre_code);
 			GDKfree(tmpres);
 			BBPreclaim(tmpbat);
-			throw(MAL, global ? "batpcre.replace" : "batpcre.replace_first",
-				  SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			if (errbuf[0]) {
+				throw(MAL, global ? "batpcre.replace" : "batpcre.replace_first",
+					OPERATION_FAILED
+					": pcre replace of pattern (%s) failed with '%s'.",
+					pattern, (char *) errbuf);
+			} else {
+				throw(MAL, global ? "batpcre.replace" : "batpcre.replace_first",
+					SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			}
 		}
 	}
 	bat_iterator_end(&origin_strsi);
