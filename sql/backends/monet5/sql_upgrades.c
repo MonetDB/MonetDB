@@ -5240,7 +5240,27 @@ sql_update_dec2025(Client c, mvc *sql, sql_schema *s)
 		printf("Running database upgrade commands:\n%s\n", query);
 		fflush(stdout);
 		err = SQLstatementIntern(c, query, "update", true, false, NULL);
+		if (err)
+			return err;
 	}
+
+	/* better optimizations lead to fewer (bogus) dependencies, so we
+	 * need to remove those bogus dependencies during upgrade */
+	err = SQLstatementIntern(c, "select * from sys.dependencies where id in (2004, 2005, 2006) and depend_id in (select id from sys._tables where name in ('check_constraints', 'table_constraints') and schema_id = (select id from sys.schemas where name = 'information_schema'));\n", "update", true, false, &output);
+	if (err)
+		return err;
+	b = BATdescriptor(output->cols[0].b);
+	if (b != NULL) {
+		if (BATcount(b) != 0) {
+			const char query[] =
+				"delete from sys.dependencies where id in (2004, 2005, 2006) and depend_id in (select id from sys._tables where name in ('check_constraints', 'table_constraints') and schema_id = (select id from sys.schemas where name = 'information_schema'));\n";
+			printf("Running database upgrade commands:\n%s\n", query);
+			fflush(stdout);
+			err = SQLstatementIntern(c, query, "update", true, false, NULL);
+		}
+		BBPreclaim(b);
+	}
+	res_table_destroy(output);
 
 	return err;
 }
