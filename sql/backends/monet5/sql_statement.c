@@ -4278,8 +4278,13 @@ composite_type_resultsize(sql_subtype *t)
 {
 	int nr = 0;
 
-	if (t->multiset)
-		nr += 2 + (t->multiset == MS_ARRAY);
+	if (t->multiset) {
+		if (t->multiset == MS_VECTOR) {
+			return 1 + t->digits;
+		} else {
+			nr += 2 + (t->multiset == MS_ARRAY);
+		}
+	}
 	if (t->type->composite) {
 		for (node *n = t->type->d.fields->h; n; n = n->next) {
 			sql_arg *a = n->data;
@@ -4300,7 +4305,7 @@ typedef struct result_subtype {
 static int
 composite_type_result(backend *be, InstrPtr q, sql_subtype *t, result_subtype *tps)
 {
-	int i = 0;
+	unsigned int i = 0;
 	if (t->multiset || t->type->composite) {
 		if (t->type->composite) {
 			for (node *n = t->type->d.fields->h; n; n = n->next) {
@@ -4309,6 +4314,12 @@ composite_type_result(backend *be, InstrPtr q, sql_subtype *t, result_subtype *t
 				if ((r = composite_type_result(be, q, &a->type, tps+i)) < 0)
 					return -1;
 				i += r;
+			}
+		} else if (t->multiset == MS_VECTOR) {
+			for (; i < t->digits; i++) {
+				q = pushReturn(be->mb, q, newTmpVariable(be->mb, newBatType(t->type->localtype)));
+				tps[i].st = *t;
+				tps[i].multiset = false;
 			}
 		} else {
 			q = pushReturn(be->mb, q, newTmpVariable(be->mb, newBatType(t->type->localtype)));
@@ -4326,7 +4337,7 @@ composite_type_result(backend *be, InstrPtr q, sql_subtype *t, result_subtype *t
 			tps[i++].multiset = false;
 		}
 		/* end with the rowid */
-		if (t->multiset) { /* id col : rowid */
+		if (t->multiset == MS_ARRAY || t->multiset == MS_SETOF) { /* id col : rowid */
 			q = pushReturn(be->mb, q, newTmpVariable(be->mb, newBatType(TYPE_int)));
 			tps[i].st = *sql_fetch_localtype(TYPE_int);
 			tps[i++].multiset = true;

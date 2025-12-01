@@ -2347,13 +2347,27 @@ ARRAYparser(allocator *ma, char **S, Column *cols, int nr, int *elm, sql_subtype
 		/* insert values */
 		if (t->type->composite) {
 			msg = TUPLEparser(ma, &s, cols, nr, &i, t);
+		} else if (t->multiset == MS_VECTOR) {
+			for (size_t j=0; j < t->digits; j++) {
+				msg = VALUEparser(ma, &s, cols, i, t, ',', '}');
+				i++;
+				skipspace(s);
+				/* handle optinal ',' */
+				if (*s && s[0] != ',')
+					break;
+				s++;
+				skipspace(s);
+			}
 		} else {
 			msg = VALUEparser(ma, &s, cols, i, t, ',', '}');
 			i++;
 		}
 		/* insert msid */
 		if (t->multiset) {
-			id = (int)BATcount(cols[i + (t->multiset == MS_ARRAY?2:1)].c);
+			if (t->multiset == MS_VECTOR)
+				id = (int)BATcount(cols[i].c);
+			else
+				id = (int)BATcount(cols[i + (t->multiset == MS_ARRAY?2:1)].c);
 			if (i < 0 || BUNappend(cols[i].c, &id, false) != GDK_SUCCEED)
 				throw(SQL, "SQLfrom_varchar", SQLSTATE(42000) "append failed");
 			i++;
@@ -2374,7 +2388,7 @@ ARRAYparser(allocator *ma, char **S, Column *cols, int nr, int *elm, sql_subtype
 		anr++;
 	}
 	/* insert row-id */
-	if (t->multiset) {
+	if (t->multiset == MS_ARRAY || t->multiset == MS_SETOF) {
 	   	if (i < 0 || BUNappend(cols[i].c, &id, false) != GDK_SUCCEED)
 			throw(SQL, "SQLfrom_varchar", SQLSTATE(42000) "append failed");
 		i++;
@@ -2410,12 +2424,23 @@ from_string_cols(Column *fmt, BAT **bats, int nr, int cur, sql_subtype *t)
 	} else {
 		if (i < 0 || i >= nr)
 			return -10;
-		fmt[i].frstr = &_ASCIIadt_frStr;
-		fmt[i].extra = t;
-		fmt[i].adt = t->type->localtype;
-		fmt[i].len = ATOMlen(fmt[i].adt, ATOMnilptr(fmt[i].adt));
-		fmt[i].c = bats[i];
-		i++;
+		if (t->multiset == MS_VECTOR) {
+			for (size_t j=0; j<t->digits; j++) {
+				fmt[i].frstr = &_ASCIIadt_frStr;
+				fmt[i].extra = t;
+				fmt[i].adt = t->type->localtype;
+				fmt[i].len = ATOMlen(fmt[i].adt, ATOMnilptr(fmt[i].adt));
+				fmt[i].c = bats[i];
+				i++;
+			}
+		} else {
+			fmt[i].frstr = &_ASCIIadt_frStr;
+			fmt[i].extra = t;
+			fmt[i].adt = t->type->localtype;
+			fmt[i].len = ATOMlen(fmt[i].adt, ATOMnilptr(fmt[i].adt));
+			fmt[i].c = bats[i];
+			i++;
+		}
 	}
 	if (t->multiset) {
 		/* msid */
@@ -2438,14 +2463,16 @@ from_string_cols(Column *fmt, BAT **bats, int nr, int cur, sql_subtype *t)
 			fmt[i].c = bats[i];
 			i++;
 		}
-		if (i < 0 || i >= nr)
-			return -10;
-		fmt[i].frstr = &_ASCIIadt_frStr;
-		fmt[i].extra = sql_fetch_localtype(TYPE_int);
-		fmt[i].adt = TYPE_int;
-		fmt[i].len = ATOMlen(fmt[i].adt, ATOMnilptr(fmt[i].adt));
-		fmt[i].c = bats[i];
-		i++;
+		if (t->multiset == MS_ARRAY || t->multiset == MS_SETOF) {
+			if (i < 0 || i >= nr)
+				return -10;
+			fmt[i].frstr = &_ASCIIadt_frStr;
+			fmt[i].extra = sql_fetch_localtype(TYPE_int);
+			fmt[i].adt = TYPE_int;
+			fmt[i].len = ATOMlen(fmt[i].adt, ATOMnilptr(fmt[i].adt));
+			fmt[i].c = bats[i];
+			i++;
+		}
 	}
 	return i;
 }
