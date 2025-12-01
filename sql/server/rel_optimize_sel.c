@@ -656,10 +656,12 @@ exp_or_chain_groups(list *exps, list **gen_ands, list **mce_ands, list **eqs, li
     }
 
 	if (list_length(exps) > 1) {
-		if (eq_only)
-			*mce_ands = append(*mce_ands, exps);
-		else
-			*gen_ands = append(*gen_ands, exps);
+		/*if (eq_only)*/
+			/**mce_ands = append(*mce_ands, exps);*/
+		/*else*/
+			/**gen_ands = append(*gen_ands, exps);*/
+		(void) mce_ands;
+		*gen_ands = append(*gen_ands, exps);
 	} else if (list_length(exps) == 1) {
 		sql_exp *se = exps->h->data;
 
