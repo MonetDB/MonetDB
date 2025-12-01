@@ -1844,7 +1844,6 @@ ma_use_freed_blk(allocator *sa, size_t sz)
 		}
 		freed_t *f = sa->freelist_blks;
 		sa->freelist_blks = f->n;
-		sa->blk_size = MA_BLOCK_SIZE;
 		sa->used = MA_BLOCK_SIZE;
 		sa->blks[sa->nr] = (char*)f;
 		sa->nr ++;
@@ -1938,7 +1937,6 @@ ma_reset(allocator *sa)
 	// it may have blocks we can re-use
 	sa->freelist = NULL;
 	sa->usedmem = MA_BLOCK_SIZE;
-	sa->blk_size = MA_BLOCK_SIZE;
 	sa->objects = 0;
 	sa->inuse = 0;
 	sa->tmp_used = 0;
@@ -1956,7 +1954,7 @@ ma_realloc(allocator *sa, void *p, size_t sz, size_t oldsz)
 
 	if (r)
 		memcpy(r, p, oldsz);
-	if (oldsz >= sa->blk_size && !ma_tmp_active(sa)) {
+	if (oldsz >= MA_BLOCK_SIZE && !ma_tmp_active(sa)) {
 		char* ptr = (char *) p - MA_HEADER_SIZE;
 		COND_LOCK_ALLOCATOR(sa);
 		ma_free_blk(sa, ptr);
@@ -2016,7 +2014,7 @@ _ma_alloc_internal(allocator *sa, size_t sz)
 	if (r)
 		return r;
 	COND_LOCK_ALLOCATOR(sa);
-	if (sz > (sa->blk_size - sa->used)) {
+	if (sz > (MA_BLOCK_SIZE - sa->used)) {
 		// out of space need new blk
 		size_t blk_size = MA_BLOCK_SIZE;
 		if (sz > blk_size){
@@ -2048,10 +2046,8 @@ _ma_alloc_internal(allocator *sa, size_t sz)
 			sa->blks[sa->nr] = sa->blks[sa->nr-1];
 			sa->blks[sa->nr-1] = r;
 		} else {
-			//sa->blk_size = blk_size;
 			sa->blks[sa->nr] = r;
 			sa->used = sz;
-			//sa->usedmem += sa->blk_size;
 		}
 		sa->nr ++;
 		sa->usedmem += blk_size;
@@ -2122,7 +2118,6 @@ create_allocator(allocator *pa, const char *name, bool use_lock)
 		.pa = pa,
 		.nr = 1,
 		.usedmem = MA_BLOCK_SIZE,
-		.blk_size = MA_BLOCK_SIZE,
 		.freelist = NULL,
 		.freelist_blks = NULL,
 		.frees = 0,
