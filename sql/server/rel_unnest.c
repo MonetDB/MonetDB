@@ -4071,6 +4071,8 @@ rewrite_fix_count(visitor *v, sql_rel *rel)
 				}
 			}
 			exps = list_join(rel_projections(v->sql, rel->l, NULL, 1, 1), rexps);
+			if (!list_empty(rel->attr))
+				exps = append(exps, exp_ref(v->sql, rel->attr->h->data));
 			rel = rel_project(v->sql->sa, rel, exps);
 			set_processed(rel);
 			r->used |= rewrite_fix_count_used;
