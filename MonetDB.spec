@@ -60,7 +60,7 @@
 # derivatives (CentOS, Scientific Linux), the geos library is not
 # available.  However, the geos library is available in the Extra
 # Packages for Enterprise Linux (EPEL).
-%if %{fedpkgs} && (0%{?rhel} != 7) && (0%{?rhel} != 8)
+%if %{fedpkgs} && (0%{?rhel} != 7) && (0%{?rhel} != 8) && (0%{?rhel} != 9)
 # By default create the MonetDB-geom package on Fedora and RHEL 7
 %bcond_without geos
 %endif
