@@ -711,3 +711,6 @@ returns text external name "calc"."to_hex";
 grant execute on function to_hex(bigint) to public;
 update sys.functions set system = true where not system and schema_id = 2000 and name = 'to_hex' and type = 1;
 
+Running database upgrade commands:
+delete from sys.dependencies where id in (2004, 2005, 2006) and depend_id in (select id from sys._tables where name in ('check_constraints', 'table_constraints') and schema_id = (select id from sys.schemas where name = 'information_schema'));
+
