@@ -732,8 +732,8 @@ merge_ors(mvc *sql, list *exps, int *changes)
 			 *       between expressions is expressed with a list
 			 *       e.g. [[e1, e2], [e3, e4, e5]] semantically translates
 			 *         to [(e1 AND e2), (e3 AND  e4 AND e5)]
-			 *       those (internal) AND list can be then used to
-			 *       reconstructed an OR tree [[e1, e2], [e3, e4, e5]] =>
+			 *       those (inner) AND list can be then used to
+			 *       reconstruct an OR tree [[e1, e2], [e3, e4, e5]] =>
 			 *       (([e1, e2] OR [e3, e4, e5]) OR <whatever-else> )
 			 *       gen_ands includes general expressions associated with AND
 			 *       mce_ands includes only cmp_eq expressions associated with AND
