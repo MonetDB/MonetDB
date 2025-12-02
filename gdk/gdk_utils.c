@@ -2333,7 +2333,7 @@ _ma_alloc_internal(allocator *sa, size_t sz)
 	if (r)
 		return r;
 	COND_LOCK_ALLOCATOR(sa);
-	if (sz > (MA_BLOCK_SIZE - sa->used)) {
+	if (sa->used + sz > MA_BLOCK_SIZE) {
 		// out of space need new blk
 		size_t blk_size = MA_BLOCK_SIZE;
 		if (sz > blk_size) {
@@ -2360,8 +2360,8 @@ _ma_alloc_internal(allocator *sa, size_t sz)
 				GDKfree(r);
 			return NULL;
 		}
-		if (sz >= MA_BLOCK_SIZE && sa->nr > 1) {
-			/* don't move blk 0 as thats us! */
+		if (sz >= MA_BLOCK_SIZE && sa->nr > 1 && !ma_tmp_active(sa)) {
+			/* don't move blk 0 as that's us! */
 			sa->blks[sa->nr] = sa->blks[sa->nr-1];
 			sa->blks[sa->nr-1] = r;
 		} else {
@@ -2370,24 +2370,6 @@ _ma_alloc_internal(allocator *sa, size_t sz)
 		}
 		sa->nr ++;
 		sa->usedmem += blk_size;
-		if (sz >= MA_BLOCK_SIZE && sa->nr == 2) {
-			void *r;
-			if (sa->pa) {
-				r = _ma_alloc_internal(sa->pa, blk_size);
-			} else {
-				r = GDKmalloc(blk_size);
-			}
-			if (r == NULL) {
-				COND_UNLOCK_ALLOCATOR(sa);
-				if (sa->eb.enabled)
-					eb_error(&sa->eb, "out of memory", 1000);
-				return NULL;
-			}
-			sa->blks[sa->nr] = r;
-			sa->used = 0;
-			sa->nr ++;
-			sa->usedmem += blk_size;
-		}
 	} else {
 		r = (char *) sa->blks[sa->nr-1] + sa->used;
 		sa->used += sz;
@@ -2603,7 +2585,6 @@ ma_close(const allocator_state *state)
 		}
 		if (!ma_has_dependencies(sa)) {
 			assert((state->nr > 0) && (state->nr <= sa->nr));
-			assert(state->used <= MA_BLOCK_SIZE);
 			if (state->nr != sa->nr || state->used != sa->used) {
 				_ma_free_blks(sa, state->nr);
 				sa->nr = state->nr;
