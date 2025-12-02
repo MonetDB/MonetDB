@@ -2659,11 +2659,12 @@ ma_get_parent(const allocator *a)
 }
 
 int
-ma_info(const allocator *a, char *buf, size_t bufsize, const char *pref)
+ma_info(allocator *a, char *buf, size_t bufsize, const char *pref)
 {
 	int pos = 0;
 	buf[0] = 0;
 	if (a != NULL) {
+		COND_LOCK_ALLOCATOR(a);
 		pos = snprintf(buf, bufsize, "%s%s: used %zu%s, usedmem %zu%s",
 			       pref ? pref : "", a->name,
 			       a->used, humansize(a->used, (char[24]){0}, 24),
@@ -2680,6 +2681,7 @@ ma_info(const allocator *a, char *buf, size_t bufsize, const char *pref)
 		if (a->refcount > 0 && (size_t) pos < bufsize)
 			pos += snprintf(buf + pos, bufsize - pos,
 					", refcount %d", a->refcount);
+		COND_UNLOCK_ALLOCATOR(a);
 	}
 	return pos;
 }
