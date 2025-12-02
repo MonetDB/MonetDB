@@ -2661,11 +2661,7 @@ rel_set_type(visitor *v, sql_rel *rel)
 						}
 					} else if (te->type == e_atom && !te->f) {
 						sql_subtype *t = exp_subtype(te);
-						if (t && !t->type->localtype) {
-							te->tpe = *sql_fetch_localtype(TYPE_bte);
-							if (te->l)
-								te->l = atom_set_type(v->sql->sa, te->l, &te->tpe);
-						} else if (!t && !te->l && !te->r) { /* parameter, set type, or return ERR?? */
+						if (!t && !te->l && !te->r) { /* parameter, set type, or return ERR?? */
 							sql_arg *a = sql_bind_paramnr(v->sql, te->flag);
 							if (!a->type.type)
 								return sql_error(v->sql, 10, SQLSTATE(42000) "Could not determine type for argument number %d", te->flag+1);
