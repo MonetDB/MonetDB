@@ -55,7 +55,7 @@
       x ^= x >> 27;
       x *= 0x94d049bb133111ebULL;
       x ^= x >> 31;
-      return x<<1;
+      return x;
   }
 
 #define _hash_date(X) _hash_int(X)
