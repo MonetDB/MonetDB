@@ -2651,12 +2651,12 @@ ma_info(allocator *a, char *buf, size_t bufsize, const char *pref)
 			       pref ? pref : "", a->name,
 			       a->used, humansize(a->used, (char[24]){0}, 24),
 			       a->usedmem, humansize(a->usedmem, (char[24]){0}, 24));
-		if (a->objects > 0 && (size_t) pos < bufsize)
-			pos += snprintf(buf + pos, bufsize - pos,
-					", objects %zu", a->objects);
 		if (a->inuse > 0 && (size_t) pos < bufsize)
 			pos += snprintf(buf + pos, bufsize - pos,
 					", inuse %zu", a->inuse);
+		if (a->objects > a->inuse && (size_t) pos < bufsize)
+			pos += snprintf(buf + pos, bufsize - pos,
+					", free %zu", a->objects - a->inuse);
 		if (a->tmp_used > 0 && (size_t) pos < bufsize)
 			pos += snprintf(buf + pos, bufsize - pos,
 					", tmp_used %zu", a->tmp_used);
