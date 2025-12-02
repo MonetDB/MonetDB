@@ -2663,6 +2663,13 @@ ma_info(allocator *a, char *buf, size_t bufsize, const char *pref)
 		if (a->refcount > 0 && (size_t) pos < bufsize)
 			pos += snprintf(buf + pos, bufsize - pos,
 					", refcount %d", a->refcount);
+		size_t nfree = 0;
+		for (freed_t *f = a->freelist_blks; f; f = f->n)
+			nfree++;
+		if (nfree > 0)
+			pos += snprintf(buf + pos, bufsize - pos,
+					", %zu block%s in freelist",
+					nfree, nfree == 1 ? "" : "s");
 		COND_UNLOCK_ALLOCATOR(a);
 	}
 	return pos;
