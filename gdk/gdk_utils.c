@@ -2225,6 +2225,7 @@ ma_reset(allocator *sa)
 	COND_LOCK_ALLOCATOR(sa);
 	assert(!ma_has_dependencies(sa));
 	if (ma_has_dependencies(sa)) {
+		COND_UNLOCK_ALLOCATOR(sa);
 		if (sa->eb.enabled)
 			eb_error(&sa->eb, "reset failed, allocator has dependencies", 1000);
 		return sa;
@@ -2240,8 +2241,8 @@ ma_reset(allocator *sa)
 		void **old_blks = sa->blks;
 		sa->blks = (void **) sa->first_blk;
 		if (!sa->pa) {
-		    GDKfree(old_blks);
-		    sa->usedmem -= sizeof(void *) * sa->size;
+			GDKfree(old_blks);
+			sa->usedmem -= sizeof(void *) * sa->size;
 		}
 	}
 
@@ -2335,7 +2336,7 @@ _ma_alloc_internal(allocator *sa, size_t sz)
 	if (sz > (MA_BLOCK_SIZE - sa->used)) {
 		// out of space need new blk
 		size_t blk_size = MA_BLOCK_SIZE;
-		if (sz > blk_size){
+		if (sz > blk_size) {
 			blk_size = sz;
 		}
 		if (sa->pa) {
