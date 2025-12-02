@@ -315,8 +315,6 @@ stmt_bat_new(backend *be, sql_subtype *tpe, lng estimate)
 
 	if (q == NULL)
 		return NULL;
-	if (tt == TYPE_void)
-		tt = TYPE_bte;
 	setVarType(be->mb, getArg(q, 0), newBatType(tt));
 	q = pushType(be->mb, q, tt);
 	if (estimate > 0)
@@ -1547,6 +1545,12 @@ stmt_atom(backend *be, atom *a)
 		goto bailout;
 	if (atom_null(a)) {
 		q = pushNil(mb, q, atom_type(a)->type->localtype);
+		/*
+		int localtype = TYPE_bte;
+		if (atom_type(a)->type->localtype != TYPE_void)
+			localtype = atom_type(a)->type->localtype;
+		q = pushNil(mb, q, localtype);
+		*/
 	} else {
 		int k;
 		if ((k = constantAtom(be, mb, a)) == -1) {
