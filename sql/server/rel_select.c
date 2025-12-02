@@ -3576,14 +3576,6 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, char *sname, char *anam
 					uaname = aname;
 				return sql_error(sql, 02, SQLSTATE(42000) "%s: parameters not allowed as arguments to aggregate functions", uaname);
 			}
-			if (!t->type->localtype) {
-				if (e->type == e_atom && !e->f) {
-					t = sql_fetch_localtype(TYPE_bte);
-					e->tpe = *t;
-					if (e->l)
-						e->l = atom_set_type(sql->sa, e->l, t);
-				}
-			}
 
 			all_aggr &= (exp_card(e) <= CARD_AGGR && !exp_is_atom(e) && is_aggr(e->type) && !is_func(e->type) && (!groupby || !is_groupby(groupby->op) || !groupby->r || !exps_find_exp(groupby->r, e)));
 			exp_only_freevar(query, e, &arguments_correlated, &found_one_freevar, &ungrouped_cols);

@@ -109,7 +109,6 @@ gdk_export str GDKstrndup(const char *s, size_t n)
 	__attribute__((__malloc__))
 	__attribute__((__malloc__(GDKfree, 1)))
 	__attribute__((__warn_unused_result__));
-gdk_export size_t GDKmallocated(const void *s);
 gdk_export char *humansize(size_t val, char *buf, size_t buflen)
 	__attribute__((__access__(write_only, 2, 3)));
 
