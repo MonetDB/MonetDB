@@ -52,8 +52,8 @@ struct allocator {
 	struct allocator *pa;
 	size_t size;	 /* size of the allocator in terms of blocks */
 	size_t nr;	 /* number of blocks allocated */
-	char **blks;
-	char *first_blk;
+	void **blks;
+	void *first_blk;
 	size_t used; 	 /* memory used in last block */
 	size_t usedmem;	 /* total used memory */
 	size_t objects;  /* number of objects */
