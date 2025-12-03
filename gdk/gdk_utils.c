@@ -2096,9 +2096,11 @@ ma_free_blk(allocator *sa, void *blk)
 {
 	size_t i = ma_get_blk_idx(sa, blk, 0);
 	if (i < sa->nr) {
-		if (sa->pa)
+		if (sa->pa) {
+			COND_LOCK_ALLOCATOR(sa->pa);
 			ma_free_blk(sa->pa, blk);
-		else
+			COND_UNLOCK_ALLOCATOR(sa->pa);
+		} else
 			ma_free_blk_memory(sa, blk);
 		// compact
 		for (; i < sa->nr-1; i++)
@@ -2205,7 +2207,9 @@ _ma_free_blks(allocator *sa, size_t start_idx)
 		void *blk = sa->blks[i];
 		if (blk) {
 			if (sa->pa) {
+				COND_LOCK_ALLOCATOR(sa->pa);
 				ma_free_blk(sa->pa, blk);
+				COND_UNLOCK_ALLOCATOR(sa->pa);
 			} else {
 				ma_free_blk_memory(sa, blk);
 			}
@@ -2300,7 +2304,7 @@ ma_double_num_blks(allocator *sa)
 {
 	void **tmp;
 	size_t osz = sa->size;
-	sa->size *=2;
+	sa->size *= 2;
 	if (sa->pa)
 		tmp = _ma_alloc_internal(sa->pa, sizeof(void *) * sa->size);
 	else {
@@ -2466,7 +2470,9 @@ ma_destroy(allocator *sa)
 			if (root_allocator) {
 				GDKfree(next);
 			} else {
+				COND_LOCK_ALLOCATOR(sa->pa);
 				ma_free_blk(sa->pa, next);
+				COND_UNLOCK_ALLOCATOR(sa->pa);
 			}
 		}
 		if (sa->pa)
@@ -2482,7 +2488,9 @@ ma_destroy(allocator *sa)
 			}
 			GDKfree(sa->first_blk);
 		} else {
+			COND_LOCK_ALLOCATOR(sa->pa);
 			ma_free_blk(sa->pa, sa->first_blk);
+			COND_UNLOCK_ALLOCATOR(sa->pa);
 		}
 	}
 }
