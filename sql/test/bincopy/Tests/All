@@ -68,3 +68,5 @@ bincopycollist-prepare
 bincopycollist
 bincopy_decimal_range
 bincopy_string_width
+
+!NOT_WIN32?very_large_file
