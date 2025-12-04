@@ -2183,7 +2183,7 @@ _ma_free_blks(allocator *sa, size_t start_idx)
  * Reset allocator to initial state
  */
 #undef ma_reset
-allocator *
+void
 ma_reset(allocator *sa)
 {
 	COND_LOCK_ALLOCATOR(sa);
@@ -2192,7 +2192,7 @@ ma_reset(allocator *sa)
 		COND_UNLOCK_ALLOCATOR(sa);
 		if (sa->eb.enabled)
 			eb_error(&sa->eb, "reset failed, allocator has dependencies", 1000);
-		return sa;
+		return;
 	}
 	// 1st block is where we live, free the rest
 	_ma_free_blks(sa, 1);
@@ -2221,7 +2221,6 @@ ma_reset(allocator *sa)
 	sa->inuse = 0;
 	sa->tmp_used = 0;
 	COND_UNLOCK_ALLOCATOR(sa);
-	return sa;
 }
 
 static void * _ma_alloc_internal(allocator* sa, size_t sz);

@@ -172,7 +172,7 @@ sqlcleanup(backend *be, int err)
 	be->mvc->sym = NULL;
 	be->mvc->runs = NULL;
 	if (be->mvc->sa)
-		be->mvc->sa = ma_reset(be->mvc->sa);
+		ma_reset(be->mvc->sa);
 	if (err >0)
 		be->mvc->session->status = -err;
 	if (err <0)

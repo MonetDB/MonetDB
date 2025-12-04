@@ -1758,7 +1758,7 @@ gdk_export ValPtr VALinit(allocator *va, ValPtr d, int tpe, const void *s)
 gdk_export allocator *create_allocator(allocator *pa, const char *, bool use_lock);
 gdk_export allocator *ma_get_parent(const allocator *sa);
 gdk_export bool ma_tmp_active(const allocator *sa);
-gdk_export allocator *ma_reset(allocator *sa);
+gdk_export void ma_reset(allocator *sa);
 gdk_export void *ma_alloc(allocator *sa,  size_t sz);
 gdk_export void *ma_zalloc(allocator *sa,  size_t sz);
 gdk_export void *ma_realloc(allocator *sa,  void *ptr, size_t sz, size_t osz);
@@ -1888,19 +1888,16 @@ gdk_export int ma_info(allocator *sa, char *buf, size_t buflen, const char *pref
 #define ma_reset(sa)							\
 	({								\
 		allocator *_sa = (sa);					\
-		allocator *_sa2 = ma_reset(_sa);			\
+		ma_reset(_sa);						\
 		TRC_DEBUG(ALLOC,					\
-			  "ma_reset(%p(%s)) -> %p\n",			\
-			  _sa, ma_name(_sa), _sa2);			\
-		_sa2;							\
+			  "ma_reset(%p(%s))\n",	_sa, ma_name(_sa));	\
 	})
-#define ma_destroy(sa)					\
-	({						\
-		allocator *_sa = (sa);			\
-		TRC_DEBUG(ALLOC,			\
-			  "ma_destroy(%p(%s))\n",	\
-			  _sa, ma_name(_sa));		\
-		ma_destroy(_sa);			\
+#define ma_destroy(sa)							\
+	({								\
+		allocator *_sa = (sa);					\
+		TRC_DEBUG(ALLOC,					\
+			  "ma_destroy(%p(%s))\n", _sa, ma_name(_sa));	\
+		ma_destroy(_sa);					\
 	})
 #endif
 

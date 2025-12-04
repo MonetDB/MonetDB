@@ -399,7 +399,7 @@ monetdbe_query_internal(monetdbe_database_internal *mdbe, char* query, monetdbe_
 	m->runs = NULL;
 	m->label = 0;
 	if (m->sa)
-		m->sa = ma_reset(m->sa);
+		ma_reset(m->sa);
 	m->scanner.mode = LINE_N;
 	m->scanner.rs = c->fdin;
 	mvc_query_processed(m);
