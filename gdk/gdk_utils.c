@@ -2067,10 +2067,7 @@ ma_free_obj(allocator *sa, void *obj, size_t sz)
 		sa->inuse -= 1;
 }
 
-/*
- * Put regular blks of size MA_BLOCK_SIZE on freelist_blks
- * all others are GDKfree
- */
+
 static void
 ma_free_blk_memory(allocator *sa, void *blk)
 {
@@ -2078,15 +2075,8 @@ ma_free_blk_memory(allocator *sa, void *blk)
 		// all blks are GDKmalloc
 		size_t sz = GDKmallocated(blk) - (MALLOC_EXTRA_SPACE + DEBUG_SPACE);
 		assert(sz > 0);
-		if (sz == MA_BLOCK_SIZE) {
-			freed_t *f = blk;
-			f->sz = sz;
-			f->n = sa->freelist_blks;
-			sa->freelist_blks = f;
-		} else {
-			GDKfree(blk);
-			sa->usedmem -= sz;
-		}
+		GDKfree(blk);
+		sa->usedmem -= sz;
 	}
 }
 
@@ -2149,40 +2139,10 @@ static int ma_double_num_blks(allocator *sa);
  * Free blocks are maintained at top level
  */
 static void *
-ma_use_freed_blk(allocator *sa, size_t sz)
-{
-	if (sa->pa)
-		return ma_use_freed_blk(sa->pa, sz);
-	COND_LOCK_ALLOCATOR(sa);
-	if (sa->freelist_blks && (sz == MA_BLOCK_SIZE)) {
-		if (sa->nr >= sa->size && ma_double_num_blks(sa) < 0) {
-			COND_UNLOCK_ALLOCATOR(sa);
-			if (sa->eb.enabled)
-				eb_error(&sa->eb, "out of memory", 1000);
-			return NULL;
-		}
-		freed_t *f = sa->freelist_blks;
-		sa->freelist_blks = f->n;
-		sa->used = MA_BLOCK_SIZE;
-		sa->blks[sa->nr] = (void *) f;
-		sa->nr ++;
-		sa->free_blk_hits += 1;
-		COND_UNLOCK_ALLOCATOR(sa);
-		return f;
-	}
-	COND_UNLOCK_ALLOCATOR(sa);
-	return NULL;
-}
-
-
-static void *
 ma_use_freed(allocator *sa, size_t sz)
 {
 	if (sz < MA_BLOCK_SIZE) {
 		return ma_use_freed_obj(sa, sz);
-	}
-	if (sz == MA_BLOCK_SIZE) {
-		return ma_use_freed_blk(sa, sz);
 	}
 	return NULL;
 }
@@ -2255,8 +2215,6 @@ ma_reset(allocator *sa)
 	sa->used = offset;
 	sa->frees = 0;
 	sa->nr = 1;
-	// reset freelist only i.e. leave freelist_blks alone as
-	// it may have blocks we can re-use
 	sa->freelist = NULL;
 	sa->usedmem = MA_BLOCK_SIZE;
 	sa->objects = 0;
@@ -2424,13 +2382,11 @@ create_allocator(allocator *pa, const char *name, bool use_lock)
 		.nr = 1,
 		.usedmem = MA_BLOCK_SIZE,
 		.freelist = NULL,
-		.freelist_blks = NULL,
 		.frees = 0,
 		.used = offset,
 		.objects = 0,
 		.inuse = 0,
 		.free_obj_hits = 0,
-		.free_blk_hits = 0,
 		.tmp_used = 0,
 		.refcount = 0,
 		.use_lock = use_lock,
@@ -2481,11 +2437,6 @@ ma_destroy(allocator *sa)
 		if (root_allocator) {
 			if (blks_relocated)
 				GDKfree(sa->blks);
-			while (sa->freelist_blks) {
-				freed_t *f = sa->freelist_blks;
-				sa->freelist_blks = f->n;
-				GDKfree(f);
-			}
 			GDKfree(sa->first_blk);
 		} else {
 			COND_LOCK_ALLOCATOR(sa->pa);
@@ -2671,13 +2622,6 @@ ma_info(allocator *a, char *buf, size_t bufsize, const char *pref)
 		if (a->refcount > 0 && (size_t) pos < bufsize)
 			pos += snprintf(buf + pos, bufsize - pos,
 					", refcount %d", a->refcount);
-		size_t nfree = 0;
-		for (freed_t *f = a->freelist_blks; f; f = f->n)
-			nfree++;
-		if (nfree > 0)
-			pos += snprintf(buf + pos, bufsize - pos,
-					", %zu block%s in freelist",
-					nfree, nfree == 1 ? "" : "s");
 		COND_UNLOCK_ALLOCATOR(a);
 	}
 	return pos;

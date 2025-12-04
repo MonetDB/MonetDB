@@ -60,9 +60,7 @@ struct allocator {
 	size_t inuse;    /* number of objects in use*/
 	size_t free_obj_hits; /* number of object reuse*/
 	void *freelist;	/* first free object */
-	void *freelist_blks;	/* first free blk */
 	size_t frees;
-	size_t free_blk_hits;
 	size_t tmp_used; /* counter for temp usage */
 
 	int refcount;
