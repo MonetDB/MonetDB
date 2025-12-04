@@ -49,9 +49,9 @@ str_buf_initial_capacity(sql_class eclass, int digits)
 }
 
 static inline str
-SQLstr_cast_any_type(str *r, size_t *rlen, mvc *m, sql_class eclass, int d, int s, int has_tz, const void *p, int tpe, int len)
+SQLstr_cast_any_type(allocator *ma, str *r, size_t *rlen, mvc *m, sql_class eclass, int d, int s, int has_tz, const void *p, int tpe, int len)
 {
-	ssize_t sz = convert2str(m, eclass, d, s, has_tz, p, tpe, r, rlen);
+	ssize_t sz = convert2str(ma, m, eclass, d, s, has_tz, p, tpe, r, rlen);
 	if ((len > 0 && sz > (ssize_t) len) || sz < 0)
 		throw(SQL, "str_cast", SQLSTATE(22001) "value too long for type (var)char(%d)", len);
 	return MAL_SUCCEED;
@@ -83,7 +83,7 @@ SQLstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		size_t rlen = MAX(str_buf_initial_capacity(eclass, digits), strlen(str_nil) + 1); /* don't reallocate on str_nil */
 		if (!(r = ma_alloc(mb->ma, rlen)))
 			throw(SQL, "calc.str_cast", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		if ((msg = SQLstr_cast_any_type(&r, &rlen, m, eclass, d, s, has_tz, p, tpe, digits)) != MAL_SUCCEED) {
+		if ((msg = SQLstr_cast_any_type(mb->ma, &r, &rlen, m, eclass, d, s, has_tz, p, tpe, digits)) != MAL_SUCCEED) {
 			// GDKfree(r);
 			return msg;
 		}
@@ -207,7 +207,7 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				oid p = (canditer_next_dense(&ci) - off);
 				const void *v = BUNtail(bi, p);
 
-				if ((msg = SQLstr_cast_any_type(&r, &rlen, m, eclass, d1, s1, has_tz, v, tpe, digits)) != MAL_SUCCEED)
+				if ((msg = SQLstr_cast_any_type(mb->ma, &r, &rlen, m, eclass, d1, s1, has_tz, v, tpe, digits)) != MAL_SUCCEED)
 					goto bailout1;
 				if (tfastins_nocheckVAR(dst, i, r) != GDK_SUCCEED) {
 					msg = createException(SQL, "batcalc.str_cast", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -241,7 +241,7 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				oid p = (canditer_next(&ci) - off);
 				const void *v = BUNtail(bi, p);
 
-				if ((msg = SQLstr_cast_any_type(&r, &rlen, m, eclass, d1, s1, has_tz, v, tpe, digits)) != MAL_SUCCEED)
+				if ((msg = SQLstr_cast_any_type(mb->ma, &r, &rlen, m, eclass, d1, s1, has_tz, v, tpe, digits)) != MAL_SUCCEED)
 					goto bailout1;
 				if (tfastins_nocheckVAR(dst, i, r) != GDK_SUCCEED) {
 					msg = createException(SQL, "batcalc.str_cast", SQLSTATE(HY013) MAL_MALLOC_FAIL);

@@ -978,6 +978,9 @@ MT_create_thread(MT_Id *t, void (*f) (void *), void *arg, enum MT_thr_detach d, 
 		GDKerror("Creating thread allocator failed\n");
 		return -1;
 	}
+#ifndef NDEBUG
+	self->ma->self = self->tid;
+#endif
 	MT_lock_set(&thread_init_lock);
 	/* remember the list of callback functions we need to call for
 	 * this thread (i.e. anything registered so far) */

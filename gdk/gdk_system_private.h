@@ -57,13 +57,16 @@ struct allocator {
 	size_t usedmem;	 /* total used memory */
 	size_t objects;  /* number of objects */
 	size_t inuse;    /* number of objects in use*/
-	size_t free_obj_hits; /* number of object reuse*/
 	void *freelist;	/* first free object */
-	size_t frees;
 	size_t tmp_used; /* counter for temp usage */
 
 	exception_buffer eb;
 	MT_Lock lock;    /* lock for thread-safe allocations */
 	bool use_lock;
+#ifndef NDEBUG
+	MT_Id self;
+	size_t free_obj_hits; /* number of objects reused */
+	size_t frees;	      /* number of objects freed */
+#endif
 	char name[MT_NAME_LEN]; /* Name (only for display!) */
 };

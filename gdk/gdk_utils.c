@@ -2014,7 +2014,7 @@ GDKmremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 	if ((a)->use_lock) {			\
 		MT_lock_set(&(a)->lock);	\
 		__alloc_locked = true;		\
-	}
+	} else assert((a)->self == MT_getpid());
 
 #define COND_UNLOCK_ALLOCATOR(a)		\
 	if (__alloc_locked) {			\
@@ -2111,7 +2111,9 @@ ma_use_freed_obj(allocator *sa, size_t sz)
 			} else {
 				sa->freelist = curr->n;
 			}
+#ifndef NDEBUG
 			sa->free_obj_hits += 1;
+#endif
 			sa->inuse += 1;
 			COND_UNLOCK_ALLOCATOR(sa);
 			return curr;
@@ -2184,7 +2186,9 @@ ma_reset(allocator *sa)
 	sa->size = MA_NUM_BLOCKS;
 	sa->blks[0] = sa->first_blk;
 	sa->used = offset;
+#ifndef NDEBUG
 	sa->frees = 0;
+#endif
 	sa->nr = 1;
 	sa->freelist = NULL;
 	sa->objects = 0;
@@ -2337,13 +2341,16 @@ create_allocator(const char *name, bool use_lock)
 		.nr = 1,
 		.usedmem = MA_BLOCK_SIZE,
 		.freelist = NULL,
-		.frees = 0,
 		.used = offset,
 		.objects = 0,
 		.inuse = 0,
-		.free_obj_hits = 0,
 		.tmp_used = 0,
 		.use_lock = use_lock,
+#ifndef NDEBUG
+		.frees = 0,
+		.free_obj_hits = 0,
+		.self = MT_getpid(),
+#endif
 	};
 	sa->blks[0] = first_blk;
 	eb_init(&sa->eb);
@@ -2521,7 +2528,9 @@ ma_free(allocator *sa, void *obj)
 		ma_free_obj(sa, ptr, sz);
 	else
 		ma_free_blk(sa, ptr);
+#ifndef NDEBUG
 	sa->frees++;
+#endif
 	COND_UNLOCK_ALLOCATOR(sa);
 }
 
@@ -2532,7 +2541,7 @@ ma_info(allocator *a, char *buf, size_t bufsize, const char *pref)
 	int pos = 0;
 	buf[0] = 0;
 	if (a != NULL) {
-		COND_LOCK_ALLOCATOR(a);
+		MT_lock_set(&a->lock);
 		pos = snprintf(buf, bufsize, "%s%s: used %zu%s, nr %zu, usedmem %zu%s",
 			       pref ? pref : "", a->name,
 			       a->used, humansize(a->used, (char[24]){0}, 24),
@@ -2547,7 +2556,7 @@ ma_info(allocator *a, char *buf, size_t bufsize, const char *pref)
 		if (a->tmp_used > 0 && (size_t) pos < bufsize)
 			pos += snprintf(buf + pos, bufsize - pos,
 					", tmp_used %zu", a->tmp_used);
-		COND_UNLOCK_ALLOCATOR(a);
+		MT_lock_unset(&a->lock);
 	}
 	return pos;
 }
