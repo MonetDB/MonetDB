@@ -2304,7 +2304,7 @@ sql_update_jun2023(Client c, mvc *sql, sql_schema *s)
 
 	/* new function sys.regexp_replace */
 	allocator *old_sa = sql->sa;
-	if ((sql->sa = create_allocator(sql->pa, "MA_mvc", false)) != NULL) {
+	if ((sql->sa = create_allocator("MA_mvc", false)) != NULL) {
 		list *l;
 		if ((l = sa_list(sql->sa)) != NULL) {
 			sql_subtype tp;
@@ -3127,7 +3127,7 @@ sql_update_dec2023(Client c, mvc *sql, sql_schema *s)
 
 	/* 52_describe.sql New function sys.sql_datatype(mtype varchar(999), digits integer, tscale integer, nameonly boolean, shortname boolean) */
 	allocator *old_sa = sql->sa;
-	if ((sql->sa = create_allocator(sql->pa, "MA_mvc", false)) != NULL) {
+	if ((sql->sa = create_allocator("MA_mvc", false)) != NULL) {
 		list *l;
 		if ((l = sa_list(sql->sa)) != NULL) {
 			sql_subtype t1, t2;

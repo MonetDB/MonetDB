@@ -118,11 +118,11 @@ newMalBlk(int elements)
 {
 	MalBlkPtr mb;
 	VarRecord *v;
-	allocator *ma = create_allocator(NULL, "MA_MALBlk", true);
+	allocator *ma = create_allocator("MA_MALBlk", true);
 
 	if (!ma)
 		return NULL;
-	allocator *instr_allocator = create_allocator(ma, "MA_MALInstructions", false);
+	allocator *instr_allocator = create_allocator("MA_MALInstructions", false);
 	if (instr_allocator == NULL) {
 		ma_destroy(ma);
 		return NULL;
@@ -171,7 +171,7 @@ resizeMalBlk(MalBlkPtr mb, int elements)
 
 	if (elements > mb->ssize) {
 		InstrPtr *ostmt = mb->stmt;
-		mb->stmt = MA_RENEW_ARRAY(mb->ma, InstrPtr, mb->stmt, elements, mb->ssize);
+		mb->stmt = MA_RENEW_ARRAY(mb->instr_allocator, InstrPtr, mb->stmt, elements, mb->ssize);
 		if (mb->stmt) {
 			for (i = mb->ssize; i < elements; i++)
 				mb->stmt[i] = 0;
@@ -323,7 +323,7 @@ copyMalBlk(MalBlkPtr old)
 {
 	MalBlkPtr mb;
 	int i;
-	allocator *ma = create_allocator(NULL, ma_name(old->ma), true);
+	allocator *ma = create_allocator(ma_name(old->ma), true);
 
 	if (!ma)
 		return NULL;
@@ -334,7 +334,7 @@ copyMalBlk(MalBlkPtr old)
 	}
 
 	mb->ma = ma;
-	mb->instr_allocator = create_allocator(ma, ma_name(old->instr_allocator), true);
+	mb->instr_allocator = create_allocator(ma_name(old->instr_allocator), true);
 	mb->var = MA_ZNEW_ARRAY(ma, VarRecord, old->vsize);
 	if (mb->var == NULL) {
 		ma_destroy(ma);

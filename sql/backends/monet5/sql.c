@@ -172,7 +172,7 @@ sqlcleanup(backend *be, int err)
 	be->mvc->sym = NULL;
 	be->mvc->runs = NULL;
 	if (be->mvc->sa)
-		be->mvc->sa = ma_reset(be->mvc->sa);
+		ma_reset(be->mvc->sa);
 	if (err >0)
 		be->mvc->session->status = -err;
 	if (err <0)
@@ -330,7 +330,7 @@ create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp,
 			break;
 	}
 	osa = sql->sa;
-	allocator *nsa = sql->sa = create_allocator(ma_get_parent(osa), "MA_mvc", false);
+	allocator *nsa = sql->sa = create_allocator("MA_mvc", false);
 	/* first check default values */
 	allocator *ta = MT_thread_getallocator();
 	for (n = ol_first_node(t->columns); n; n = n->next) {

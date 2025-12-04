@@ -71,7 +71,6 @@ typedef struct allocator allocator;
 typedef struct {
 	size_t nr;
 	size_t used;
-	size_t usedmem;	 /* total used memory */
 	size_t objects;
 	size_t inuse;
 	size_t tmp_used;
@@ -1755,10 +1754,9 @@ gdk_export ValPtr VALcopy(allocator *va, ValPtr dst, const ValRecord *src)
 gdk_export ValPtr VALinit(allocator *va, ValPtr d, int tpe, const void *s)
 	__attribute__((__access__(write_only, 2)));
 
-gdk_export allocator *create_allocator(allocator *pa, const char *, bool use_lock);
-gdk_export allocator *ma_get_parent(const allocator *sa);
+gdk_export allocator *create_allocator(const char *, bool use_lock);
 gdk_export bool ma_tmp_active(const allocator *sa);
-gdk_export allocator *ma_reset(allocator *sa);
+gdk_export void ma_reset(allocator *sa);
 gdk_export void *ma_alloc(allocator *sa,  size_t sz);
 gdk_export void *ma_zalloc(allocator *sa,  size_t sz);
 gdk_export void *ma_realloc(allocator *sa,  void *ptr, size_t sz, size_t osz);
@@ -1774,7 +1772,7 @@ gdk_export void ma_free(allocator *sa, void *);
 gdk_export exception_buffer *ma_get_eb(allocator *sa)
        __attribute__((__pure__));
 
-gdk_export int ma_info(const allocator *sa, char *buf, size_t buflen, const char *pref);
+gdk_export int ma_info(allocator *sa, char *buf, size_t buflen, const char *pref);
 
 #define MA_NEW( sa, type )				((type*)ma_alloc( sa, sizeof(type)))
 #define MA_ZNEW( sa, type )				((type*)ma_zalloc( sa, sizeof(type)))
@@ -1857,16 +1855,15 @@ gdk_export int ma_info(const allocator *sa, char *buf, size_t buflen, const char
 			  _sa, ma_name(_sa), strlen(_s1), strlen(_s2), _res); \
 		_res;							\
 	})
-#define create_allocator(sa, nm, lk)					\
-	({								\
-		allocator *_sa = (sa);					\
-		const char *_nm = (nm);					\
-		bool _lk = (lk);					\
-		allocator *_res = create_allocator(_sa, _nm, _lk);	\
-		TRC_DEBUG(ALLOC,					\
-			  "create_allocator(%p(%s)) -> %p(%s)\n",	\
-			  _sa, ma_name(_sa), _res, ma_name(_res));	\
-		_res;							\
+#define create_allocator(nm, lk)				\
+	({							\
+		const char *_nm = (nm);				\
+		bool _lk = (lk);				\
+		allocator *_res = create_allocator(_nm, _lk);	\
+		TRC_DEBUG(ALLOC,				\
+			  "create_allocator() -> %p(%s)\n",	\
+			  _res, ma_name(_res));			\
+		_res;						\
 	})
 #define ma_open(sa)							\
 	({								\
@@ -1888,19 +1885,16 @@ gdk_export int ma_info(const allocator *sa, char *buf, size_t buflen, const char
 #define ma_reset(sa)							\
 	({								\
 		allocator *_sa = (sa);					\
-		allocator *_sa2 = ma_reset(_sa);			\
+		ma_reset(_sa);						\
 		TRC_DEBUG(ALLOC,					\
-			  "ma_reset(%p(%s)) -> %p\n",			\
-			  _sa, ma_name(_sa), _sa2);			\
-		_sa2;							\
+			  "ma_reset(%p(%s))\n",	_sa, ma_name(_sa));	\
 	})
-#define ma_destroy(sa)					\
-	({						\
-		allocator *_sa = (sa);			\
-		TRC_DEBUG(ALLOC,			\
-			  "ma_destroy(%p(%s))\n",	\
-			  _sa, ma_name(_sa));		\
-		ma_destroy(_sa);			\
+#define ma_destroy(sa)							\
+	({								\
+		allocator *_sa = (sa);					\
+		TRC_DEBUG(ALLOC,					\
+			  "ma_destroy(%p(%s))\n", _sa, ma_name(_sa));	\
+		ma_destroy(_sa);					\
 	})
 #endif
 

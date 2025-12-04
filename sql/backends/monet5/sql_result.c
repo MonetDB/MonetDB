@@ -1069,7 +1069,7 @@ mvc_send_hge(stream *s, hge cnt)
 #endif
 
 ssize_t
-convert2str(mvc *m, sql_class eclass, int d, int sc, int has_tz, const void *p, int mtype, char **buf, size_t *len)
+convert2str(allocator *ma, mvc *m, sql_class eclass, int d, int sc, int has_tz, const void *p, int mtype, char **buf, size_t *len)
 {
 	ssize_t l = 0;
 
@@ -1077,21 +1077,21 @@ convert2str(mvc *m, sql_class eclass, int d, int sc, int has_tz, const void *p, 
 		(*buf)[0] = '\200';
 		(*buf)[1] = 0;
 	} else if (eclass == EC_DEC) {
-		l = dec_tostr(m->sa, (void *) (ptrdiff_t) sc, buf, len, mtype, p);
+		l = dec_tostr(ma, (void *) (ptrdiff_t) sc, buf, len, mtype, p);
 	} else if (eclass == EC_TIME || eclass == EC_TIME_TZ) {
 		struct time_res ts_res;
 		ts_res.has_tz = has_tz;
 		ts_res.fraction = d ? d - 1 : 0;
 		ts_res.timezone = m->timezone;
-		l = sql_time_tostr(m->sa, (void *) &ts_res, buf, len, mtype, p);
+		l = sql_time_tostr(ma, (void *) &ts_res, buf, len, mtype, p);
 	} else if (eclass == EC_TIMESTAMP || eclass == EC_TIMESTAMP_TZ) {
 		struct time_res ts_res;
 		ts_res.has_tz = has_tz;
 		ts_res.fraction = d ? d - 1 : 0;
 		ts_res.timezone = m->timezone;
-		l = sql_timestamp_tostr(m->sa, (void *) &ts_res, buf, len, mtype, p);
+		l = sql_timestamp_tostr(ma, (void *) &ts_res, buf, len, mtype, p);
 	} else if (eclass == EC_SEC) {
-		l = dec_tostr(m->sa, (void *) (ptrdiff_t) 3, buf, len, mtype, p);
+		l = dec_tostr(ma, (void *) (ptrdiff_t) 3, buf, len, mtype, p);
 	} else if (eclass == EC_BIT) {
 		bit b = *(bit *) p;
 		if (*len == 0 || *len > 5) {
@@ -1108,7 +1108,7 @@ convert2str(mvc *m, sql_class eclass, int d, int sc, int has_tz, const void *p, 
 			l = 1;
 		}
 	} else {
-		l = (*BATatoms[mtype].atomToStr) (m->sa, buf, len, p, false);
+		l = (*BATatoms[mtype].atomToStr) (ma, buf, len, p, false);
 	}
 	return l;
 }

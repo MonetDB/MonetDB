@@ -626,7 +626,7 @@ wkbMBR(Client ctx, mbr **geomMBR, wkb **geomWKB)
 	GEOSGeom geosGeometry;
 	str ret = MAL_SUCCEED;
 	bit empty;
-	allocator *ma = ctx->ma;
+	allocator *ma = ctx->curprg->def->ma;
 	assert(ma);
 
 	//check if the geometry is nil
