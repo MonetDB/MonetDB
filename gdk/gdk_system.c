@@ -418,7 +418,7 @@ MT_thread_init(void)
 	}
 	InitializeCriticalSection(&winthread_cs);
 #endif
-	mainthread.ma = create_allocator(NULL, mainthread.threadname, false);
+	mainthread.ma = create_allocator(mainthread.threadname, false);
 	if (mainthread.ma == NULL) {
 		GDKerror("Creating thread-local allocator failed");
 		return false;
@@ -462,7 +462,7 @@ MT_thread_register(void)
 		.semawait = ATOMIC_PTR_VAR_INIT(NULL),
 	};
 	snprintf(self->threadname, sizeof(self->threadname), "foreign %zu", self->tid);
-	self->ma = create_allocator(NULL, self->threadname, false);
+	self->ma = create_allocator(self->threadname, false);
 	if (self->ma == NULL) {
 		free(self);
 		return false;
@@ -971,7 +971,7 @@ MT_create_thread(MT_Id *t, void (*f) (void *), void *arg, enum MT_thr_detach d, 
 		.exited = ATOMIC_VAR_INIT(0),
 		.working = ATOMIC_PTR_VAR_INIT(NULL),
 		.semawait = ATOMIC_PTR_VAR_INIT(NULL),
-		.ma = create_allocator(NULL, threadname, false),
+		.ma = create_allocator(threadname, false),
 	};
 	if (self->ma == NULL) {
 		free(self);

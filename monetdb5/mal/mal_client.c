@@ -149,7 +149,7 @@ MCnewClient(void)
 		if (c->idx == -1) {
 			assert(c->mode == FREECLIENT);
 			assert(c->qryctx.errorallocator == NULL);
-			c->qryctx.errorallocator = create_allocator(NULL, "error allocator", true);
+			c->qryctx.errorallocator = create_allocator("error allocator", true);
 			if (c->qryctx.errorallocator == NULL)
 				return NULL;
 			c->mode = RUNCLIENT;
@@ -273,7 +273,7 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 	c->filetrans = false;
 	c->handshake_options = NULL;
 	c->query = NULL;
-	c->ma = create_allocator(NULL, "MA_Client", false);
+	c->ma = create_allocator("MA_Client", false);
 
 	char name[MT_NAME_LEN];
 	snprintf(name, sizeof(name), "Client%d->s", (int) (c - mal_clients));
@@ -290,7 +290,6 @@ MCinitClient(oid user, bstream *fin, stream *fout)
 	c = MCnewClient();
 	if (c) {
 		c = MCinitClientRecord(c, user, fin, fout);
-		//MT_thread_setallocator(c->ma);
 		MT_thread_set_qry_ctx(&c->qryctx);
 	}
 	MT_lock_unset(&mal_contextLock);

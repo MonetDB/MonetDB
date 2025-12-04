@@ -49,7 +49,6 @@ struct freebats *MT_thread_getfreebats(void)
 	__attribute__((__visibility__("hidden")));
 
 struct allocator {
-	struct allocator *pa;
 	size_t size;	 /* size of the allocator in terms of blocks */
 	size_t nr;	 /* number of blocks allocated */
 	void **blks;
@@ -63,7 +62,6 @@ struct allocator {
 	size_t frees;
 	size_t tmp_used; /* counter for temp usage */
 
-	int refcount;
 	exception_buffer eb;
 	MT_Lock lock;    /* lock for thread-safe allocations */
 	bool use_lock;

@@ -2234,7 +2234,7 @@ store_init(int debug, store_type store_tpe, int readonly, int singleuser)
 		return NULL;
 	}
 
-	if (!(pa = create_allocator(NULL, "MA_SQLstore", false))) {
+	if (!(pa = create_allocator("MA_SQLstore", false))) {
 		TRC_CRITICAL(SQL_STORE, "Allocation failure while initializing store\n");
 		_DELETE(store);
 		return NULL;
