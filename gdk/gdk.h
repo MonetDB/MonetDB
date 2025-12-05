@@ -1764,7 +1764,6 @@ gdk_export void ma_destroy(allocator *sa);
 gdk_export char *ma_strndup(allocator *sa, const char *s, size_t l);
 gdk_export char *ma_strdup(allocator *sa, const char *s);
 gdk_export char *ma_strconcat(allocator *sa, const char *s1, const char *s2);
-gdk_export size_t ma_size(allocator *sa);
 gdk_export const char *ma_name(allocator *sa);
 gdk_export allocator_state ma_open(allocator *sa);  /* open new frame of tempory allocations */
 gdk_export void ma_close(const allocator_state *); /* close temporary frame, reset to old state */

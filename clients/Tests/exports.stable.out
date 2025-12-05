@@ -572,7 +572,6 @@ const char *ma_name(allocator *sa);
 allocator_state ma_open(allocator *sa);
 void *ma_realloc(allocator *sa, void *ptr, size_t sz, size_t osz);
 void ma_reset(allocator *sa);
-size_t ma_size(allocator *sa);
 char *ma_strconcat(allocator *sa, const char *s1, const char *s2);
 char *ma_strdup(allocator *sa, const char *s);
 char *ma_strndup(allocator *sa, const char *s, size_t l);
