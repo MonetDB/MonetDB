@@ -25,7 +25,8 @@ def mktab(input):
             # ? is default replacement
             continue
         if 0x0370 <= codepoint <= 0x1CFF or \
-           0x1F00 <= codepoint <= 0x1FFF:
+           0x1F00 <= codepoint <= 0x1FFF or \
+           0x10000 <= codepoint:
             # skip lots of non-Latin based scripts
             continue
         if not val in valdict:
