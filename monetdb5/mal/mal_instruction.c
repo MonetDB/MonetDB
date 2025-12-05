@@ -296,6 +296,8 @@ freeMalBlk(MalBlkPtr mb)
 	//	if (isVarConstant(mb, i))
 	//		VALclear(&getVarConstant(mb, i));
 	//}
+	/* destrou instr_allocator first since *mb is allocated on mb->ma */
+	ma_destroy(mb->instr_allocator);
 	ma_destroy(mb->ma);
 #if 0
 	mb->vtop = 0;
