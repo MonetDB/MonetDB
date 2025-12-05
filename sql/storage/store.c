@@ -7867,8 +7867,6 @@ store_printinfo(sqlstore *store)
 	}
 	printf("WAL:\n");
 	printf("SQL store oldest pending "ULLFMT"\n", store->oldest_pending);
-	size_t sz = ma_size(store->sa);
-	printf("SQL store allocator: %zu%s\n", sz, humansize(sz, (char[24]){0}, 24));
 	log_printinfo(store->logger);
 	MT_lock_unset(&store->commit);
 }
