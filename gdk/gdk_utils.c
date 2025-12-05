@@ -448,7 +448,7 @@ size_t GDK_mmap_pagesize = MMAP_PAGESIZE; /* mmap granularity */
 size_t GDK_mem_maxsize = GDK_VM_MAXSIZE;
 size_t GDK_vm_maxsize = GDK_VM_MAXSIZE;
 
-#define SEG_SIZE(x)	((ssize_t) (((x) + _MT_pagesize - 1) & ~(_MT_pagesize - 1)))
+#define SEG_SIZE(x)	(((x) + _MT_pagesize - 1) & ~(_MT_pagesize - 1))
 
 /* This block is to provide atomic addition and subtraction to select
  * variables.  We use intrinsic functions (recognized and inlined by
@@ -1699,32 +1699,34 @@ GDKvm_cursize(void)
 	return (size_t) ATOMIC_GET(&GDK_vm_cursize) + GDKmem_cursize();
 }
 
-#define heapinc(_memdelta)						\
-	ATOMIC_ADD(&GDK_mallocedbytes_estimate, _memdelta)
-#ifndef NDEBUG
-#define heapdec(_memdelta)							\
-	do {								\
-		ATOMIC_BASE_TYPE old = ATOMIC_SUB(&GDK_mallocedbytes_estimate, _memdelta); \
-		assert(old >= (ATOMIC_BASE_TYPE) _memdelta);		\
-	} while (0)
-#else
-#define heapdec(_memdelta)						\
-	ATOMIC_SUB(&GDK_mallocedbytes_estimate, _memdelta)
-#endif
+static inline void
+heapinc(size_t memdelta)
+{
+	ATOMIC_ADD(&GDK_mallocedbytes_estimate, memdelta);
+}
 
-#define meminc(vmdelta)							\
-	ATOMIC_ADD(&GDK_vm_cursize, SEG_SIZE(vmdelta))
-#ifndef NDEBUG
-#define memdec(vmdelta)							\
-	do {								\
-		ssize_t diff = SEG_SIZE(vmdelta);			\
-		ATOMIC_BASE_TYPE old = ATOMIC_SUB(&GDK_vm_cursize, diff); \
-		assert(old >= (ATOMIC_BASE_TYPE) diff);			\
-	} while (0)
-#else
-#define memdec(vmdelta)							\
-	ATOMIC_SUB(&GDK_vm_cursize, SEG_SIZE(vmdelta))
-#endif
+static inline void
+heapdec(size_t memdelta)
+{
+	size_t old = (size_t) ATOMIC_SUB(&GDK_mallocedbytes_estimate, memdelta);
+	(void) old;
+	assert(old >= memdelta);
+}
+
+static inline void
+meminc(size_t vmdelta)
+{
+	ATOMIC_ADD(&GDK_vm_cursize, SEG_SIZE(vmdelta));
+}
+
+static inline void
+memdec(size_t vmdelta)
+{
+	size_t diff = SEG_SIZE(vmdelta);
+	size_t old = (size_t) ATOMIC_SUB(&GDK_vm_cursize, diff);
+	(void) old;
+	assert(old >= diff);
+}
 
 /* Memory allocation
  *
@@ -1743,9 +1745,6 @@ GDKvm_cursize(void)
  * make sure that we don't write outside of the allocated arena.  This
  * is also where the extra space at the end comes in.
  */
-
-/* malloc smaller than this aren't subject to the GDK_vm_maxsize test */
-#define SMALL_MALLOC	256
 
 static void *
 GDKmalloc_internal(size_t size, bool clear)
@@ -1867,7 +1866,7 @@ GDKfree(void *s)
 #endif
 
 	free((char *) s - MALLOC_EXTRA_SPACE);
-	heapdec((ssize_t) asize);
+	heapdec(asize);
 }
 
 #undef GDKrealloc
@@ -1926,7 +1925,7 @@ GDKrealloc(void *s, size_t size)
 #endif
 
 	heapinc(nsize + MALLOC_EXTRA_SPACE + DEBUG_SPACE);
-	heapdec((ssize_t) asize);
+	heapdec(asize);
 
 	return s;
 }
@@ -2068,7 +2067,7 @@ ma_free_obj(allocator *sa, void *obj, size_t sz)
 }
 
 
-static void
+static inline void
 ma_free_blk_memory(allocator *sa, void *blk)
 {
 	// all blks are GDKmalloc
@@ -2126,9 +2125,6 @@ ma_use_freed_obj(allocator *sa, size_t sz)
 	COND_UNLOCK_ALLOCATOR(sa);
 	return NULL;
 }
-
-static int ma_double_num_blks(allocator *sa);
-
 
 /*
  * Free blocks are maintained at top level
@@ -2214,7 +2210,7 @@ ma_realloc(allocator *sa, void *p, size_t sz, size_t oldsz)
 	return r;
 }
 
-static void *
+static inline void *
 ma_fill_in_header(void *r, size_t sz)
 {
 	if (r) {
@@ -2426,12 +2422,6 @@ ma_strconcat(allocator *sa, const char *s1, const char *s2)
 	return r;
 }
 
-size_t
-ma_size(allocator *sa)
-{
-	return sa->usedmem;
-}
-
 const char *
 ma_name(allocator *sa)
 {
@@ -2452,7 +2442,6 @@ ma_open(allocator *sa)
 	assert(sa);
 	if (sa) {
 		assert(sa == MT_thread_getallocator());
-		COND_LOCK_ALLOCATOR(sa);
 		st = (allocator_state) {
 			.nr = sa->nr,
 			.used = sa->used,
@@ -2462,7 +2451,6 @@ ma_open(allocator *sa)
 			.ma = sa,
 		};
 		sa->tmp_used += 1;
-		COND_UNLOCK_ALLOCATOR(sa);
 	}
 	return st;
 }
@@ -2474,19 +2462,17 @@ ma_close(const allocator_state *state)
 	allocator *sa = state->ma;
 	assert(sa);
 	if (sa) {
-		COND_LOCK_ALLOCATOR(sa);
 		assert(ma_tmp_active(sa));
 		if (sa->tmp_used > 0) {
 			sa->tmp_used -= 1;
 		}
-		// check if we can reset to the initial state
-		if (state->tmp_used == 0) {
-			COND_UNLOCK_ALLOCATOR(sa);
-			ma_reset(sa);
-			return;
-		}
-		assert((state->nr > 0) && (state->nr <= sa->nr));
 		if (state->nr != sa->nr || state->used != sa->used) {
+			// check if we can reset to the initial state
+			if (state->tmp_used == 0) {
+				ma_reset(sa);
+				return;
+			}
+			assert((state->nr > 0) && (state->nr <= sa->nr));
 			_ma_free_blks(sa, state->nr);
 			sa->nr = state->nr;
 			sa->used = state->used;
@@ -2494,7 +2480,6 @@ ma_close(const allocator_state *state)
 			sa->inuse = state->inuse;
 			sa->tmp_used = state->tmp_used;
 		}
-		COND_UNLOCK_ALLOCATOR(sa);
 	}
 }
 

@@ -864,7 +864,7 @@ package.  You probably don't need this, unless you are a developer.
 Summary: MonetDB - Monet Database Management System
 Group: Applications/Databases
 Requires: %{name}-client-tests = %{version}-%{release}
-Requires: python3dist(pymonetdb)
+Requires: python3dist(pymonetdb) >= 1.9
 BuildArch: noarch
 %endif
 

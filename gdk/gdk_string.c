@@ -7338,9 +7338,9 @@ GDKstrcasestr(const char *haystack, const char *needle)
 /* The asciify table uses the same technique as the case conversion
  * tables, except that the value that is calculated is not a codepoint.
  * Instead it is the index into the valtab table which contains the
- * string that is to be used to replace the asciified character.
- * This combination of tables is derived from the command
- * ``iconv -futf-8 -tASCII//TRANSLIT`` */
+ * string that is to be used to replace the asciified character. */
+
+/* These tables were created using the code in uniiconvtab.py */
 static const char *const valtab[] = {
 	NULL,
 	[1] = " ",

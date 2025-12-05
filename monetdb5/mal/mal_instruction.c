@@ -506,60 +506,6 @@ freeInstruction(MalBlkPtr mb, InstrPtr p)
 }
 
 
-/* Query optimizers walk their way through a MAL program block. They
- * require some primitives to move instructions around and to remove
- * superfluous instructions. The removal is based on the assumption
- * that indeed the instruction belonged to the block. */
-void
-removeInstruction(MalBlkPtr mb, InstrPtr p)
-{
-	int i;
-	for (i = 0; i < mb->stop - 1; i++)
-		if (mb->stmt[i] == p)
-			break;
-	if (i == mb->stop)
-		return;
-	for (; i < mb->stop - 1; i++)
-		mb->stmt[i] = mb->stmt[i + 1];
-	mb->stmt[i] = 0;
-	mb->stop--;
-	assert(i == mb->stop);		/* move statement after stop */
-	mb->stmt[i] = p;
-}
-
-void
-removeInstructionBlock(MalBlkPtr mb, int pc, int cnt)
-{
-	int i;
-	InstrPtr p;
-	for (i = pc; i < pc + cnt; i++) {
-		p = getInstrPtr(mb, i);
-		freeInstruction(mb, p);
-		mb->stmt[i] = NULL;
-	} for (i = pc; i < mb->stop - cnt; i++)
-		mb->stmt[i] = mb->stmt[i + cnt];
-	mb->stop -= cnt;
-	for (; i < mb->stop; i++)
-		mb->stmt[i] = 0;
-}
-
-void
-moveInstruction(MalBlkPtr mb, int pc, int target)
-{
-	InstrPtr p;
-	int i;
-	p = getInstrPtr(mb, pc);
-	if (pc > target) {
-		for (i = pc; i > target; i--)
-			mb->stmt[i] = mb->stmt[i - 1];
-		mb->stmt[i] = p;
-	} else {
-		for (i = target; i > pc; i--)
-			mb->stmt[i] = mb->stmt[i - 1];
-		mb->stmt[i] = p;
-	}
-}
-
 /* Beware that the first argument of a signature is reserved for the
  * function return type , which should be equal to the destination
  * variable type.

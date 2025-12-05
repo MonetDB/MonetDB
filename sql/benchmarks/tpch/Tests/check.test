@@ -1,0 +1,114 @@
+query T nosort
+select sha1(r_name order by r_regionkey) from region
+----
+f2a112b3f5f32d16352f08ec424251dab9a7923f
+
+query IT nosort
+select n_regionkey, sha1(n_name order by n_nationkey) from nation group by n_regionkey order by n_regionkey
+----
+0
+75ee9902a79a864d624dff008481072f6ca4bc14
+1
+78780d889c8018fd8c287c6a507300df10d49354
+2
+05eedc0f28b2a6e69f4d85b1c574b7d8e79e205d
+3
+1b11c10d7f7ea09daf0beefcd7f201ad6565c6ab
+4
+9eb67e6c7288ed13da7a00735876c2c658e07faa
+
+query T nosort
+select sha224(r_name order by r_regionkey) from region
+----
+09acd252b469b8d42ba3ab688e0a9afd822e02d4f74cc0ea63030ddc
+
+query IT nosort
+select n_regionkey, sha224(n_name order by n_nationkey) from nation group by n_regionkey order by n_regionkey
+----
+0
+35a39567a24bae222ebe1d9fd2508b175232dbad4d81df47899e58ad
+1
+1d3075016117750b26814661482faa5fd3a4204dbf1dfb8abe1bc7d4
+2
+52754770f445fdb7edb1f55b1785a77f3b3dd4535634e3f0c3268833
+3
+4fdfe6c8ce40c7c612d3a23540e319c7a972b15a4347b764b3589173
+4
+ee24664a85aaeb7ba670a4a2a89c253351050a9273615a1dc82ae83d
+
+query T nosort
+select sha256(r_name order by r_regionkey) from region
+----
+a875e39ac8e185f54454d09759b5d34b817cae8086733904dbaa2702f4de004c
+
+query IT nosort
+select n_regionkey, sha256(n_name order by n_nationkey) from nation group by n_regionkey order by n_regionkey
+----
+0
+6ceaa4ef457957602658c1beb90cafb509e39336cca3f004e3bd55233cf0a54c
+1
+6f2807ce406b59f25209f790d7043ae50e680d44feaa04523793dd7599505438
+2
+d148067bf3a424ea4d3137a3f64c9b99f7dea58a1fbabb6e28f1b2c682a5dcb9
+3
+4c913c3120e3cc0985f29a80c2df7bf451f26bfdfb48fc4634fc707eb21a2133
+4
+94188650c9211e2f5bf4520fb6811d585ee79c15b6907a85071eb6d8f8f85a00
+
+query T nosort
+select sha384(r_name order by r_regionkey) from region
+----
+ed3c12042b4b01d0252855f7d1830287d3b1592e284cc361727b661ed9b3b5b0ebba399ef23dc02b4461d3e7cb77b984
+
+query IT nosort
+select n_regionkey, sha384(n_name order by n_nationkey) from nation group by n_regionkey order by n_regionkey
+----
+0
+ddc49a348ad1695592d57440dc5d3e48c6d10e53641e2eba2ef36f6e0f5bd912e663ab9afcba683d1f734ea689d2b335
+1
+0b8c327227907b6ae789bd70ae3e9aafdd76f19f7e5d51d0d6cbb05a9d4166c9ebd1f7e3d0a72b5ad6a5eff960dbc75a
+2
+bc60a98ef2c1f508a9096ac7764f5abe1689cf972df29a199683ac763fa27b971a909f4dec43373db729dc7a154502a3
+3
+03ce5dc077e640764dd47df01ffd6f0f7ceca77fd0d790bff902558ece11236c215e7c50cf02532d4684c139c875e2c4
+4
+a5b5739a82a667deba41f73026ff91d631109d8174a0c7138e278214c7194466385c9b4f9b24e21208af7a4ba808c227
+
+query T nosort
+select sha512(r_name order by r_regionkey) from region
+----
+a797118d7b002a55b34c770da9c5f6e4f594e205be25ef73d020df4a4b9abfdeb00109d2520a120afceb5fe073503d10731a47d30ca790878084ff5666abe0b0
+
+query IT nosort
+select n_regionkey, sha512(n_name order by n_nationkey) from nation group by n_regionkey order by n_regionkey
+----
+0
+4bb1ce55fcbd3b6361868d85b118360571cc4ee6cc22383ecaceb8dcdd71b1e00423bbc029b1faf870179b4181c54b3cf850f0c46b5cacf2630072f0d8664c25
+1
+cfcbfcf57a8553e11e30a620dc976bf481c3726d1fef2091da42326f962750e0648628843051466402fe26cbc12405bb27f54b241e3626cf129339e0d1104068
+2
+8afbe019243290e8ed2f1faaa91c808f9e8bfd90e8a1181cc04d4d6f00259328fe5b32779ccb1e382c09edb8c3cdbc2e041d5448d375d830875e802635a8d430
+3
+ece7264b795cc5adaa2e65e06fa018ac40f55eb44536a4e274052ed4da4928c54fc7e9436ba8ac5a677a65f4924c7a55b689c7fab73814eea2b7c3e78bfacd01
+4
+43137a57ce5ce77dc37d39125006fc06e2185dc0c0001ee1ce50c72b177a22bacca496fdac25fc789e04ac9c8d43edcb65c51dc51aba207fb9cbe97966d5bd6e
+
+query T nosort
+select ripemd160(r_name order by r_regionkey) from region
+----
+6d056c6710deecd7749610a2d2b3cacec6893c13
+
+query IT nosort
+select n_regionkey, ripemd160(n_name order by n_nationkey) from nation group by n_regionkey order by n_regionkey
+----
+0
+563860f91aa5822f9608e379228debedcb12cff5
+1
+443632c58e80458b4af824415541dbba84687edc
+2
+8cadd25fbcd92d4b805683e30848e5805f2d1c49
+3
+a57a61b19ae35aa45f9645f08b7210898179bc3d
+4
+026253ae5d85a6b070315d5a34ef0035f79235a8
+
