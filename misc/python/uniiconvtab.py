@@ -10,6 +10,11 @@
 # Copyright August 2008 - 2023 MonetDB B.V.;
 # Copyright 1997 - July 2008 CWI.
 
+# This script is used to create tables for gdk/gdk_string.c to support
+# the asciify conversion (i.e. GDKasciify and BATasciify).
+# Usage: run the script and replace the appropriate tables in
+# gdk_string.c with the output produced.
+
 import subprocess
 
 def mktab(input):
