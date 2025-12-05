@@ -872,7 +872,10 @@ mvc_destroy(mvc *m)
 	if (m->scanner.log) /* close and destroy stream */
 		close_stream(m->scanner.log);
 
-	m->sa = NULL;
+	if (m->sa) {
+		ma_destroy(m->sa);
+		m->sa = NULL;
+	}
 	if (m->qc)
 		qc_destroy(m->qc);
 	m->qc = NULL;
