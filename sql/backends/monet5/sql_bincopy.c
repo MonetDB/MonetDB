@@ -38,7 +38,8 @@ load_trivial(BAT *bat, stream *s, const char *filename, bincopy_validate_t valid
 	str msg = MAL_SUCCEED;
 	int tt = BATttype(bat);
 	const size_t asz = (size_t) ATOMsize(tt);
-	const size_t chunk_size = 1<<20;
+	const size_t max_chunk_size = 1<<27;
+	size_t chunk_size = 1<<20;
 
 	if (rows_estimate == 0) {
 		int64_t file_size = getFileSize(s);
@@ -60,6 +61,9 @@ load_trivial(BAT *bat, stream *s, const char *filename, bincopy_validate_t valid
 			rows_estimate = 0;
 		} else {
 			n = chunk_size / asz;
+			chunk_size += chunk_size / 2;
+			if (chunk_size > max_chunk_size)
+				chunk_size = max_chunk_size;
 		}
 
 		// First make some room
