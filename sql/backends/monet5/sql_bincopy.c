@@ -40,6 +40,14 @@ load_trivial(BAT *bat, stream *s, const char *filename, bincopy_validate_t valid
 	const size_t asz = (size_t) ATOMsize(tt);
 	const size_t chunk_size = 1<<20;
 
+	if (rows_estimate == 0) {
+		int64_t file_size = getFileSize(s);
+		rows_estimate = (BUN)file_size / asz;
+		// getFileSize returns 0 if the underlying file could not be stat'ed, so
+		// rows_estimate will just still be 0 if anything went wrong (io error,
+		// s not a file stream)
+	}
+
 	bool eof = false;
 	while (!eof) {
 		assert(chunk_size % asz == 0);
