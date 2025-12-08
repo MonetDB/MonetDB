@@ -92,7 +92,7 @@ pqc_create(void)
 		return pq;
 	pq->refcnt = 1;
 	pq->fd = -1;
-	pq->pa = create_allocator(NULL, "pqc_create", false);
+	pq->pa = create_allocator("pqc_create", false);
 	if (!pq->pa) {
 		_DELETE(pq);
 		pq = NULL;
@@ -132,7 +132,7 @@ pqc_copy(pqc_file *opq)
 	pq->refcnt = 1;
 	pq->filename = opq->filename;
 	pq->fd = open(opq->filename, O_RDONLY);
-	pq->pa = create_allocator(NULL, "pqc_copy", false);
+	pq->pa = create_allocator("pqc_copy", false);
 	if (!pq->pa) {
 		_DELETE(pq);
 		pq = NULL;

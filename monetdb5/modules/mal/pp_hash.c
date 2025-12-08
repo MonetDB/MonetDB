@@ -482,7 +482,7 @@ UHASHext(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 			if (!SK->allocators[p->wid]) { \
 				char name[8]; \
 				snprintf(name, sizeof(name), "pp%d", p->wid); \
-				SK->allocators[p->wid] = create_allocator(NULL, name, false); \
+				SK->allocators[p->wid] = create_allocator(name, false); \
 				if (!SK->allocators[p->wid]) { \
 					err = createException(MAL, FName, SQLSTATE(HY013) MAL_MALLOC_FAIL); \
 					goto error; \

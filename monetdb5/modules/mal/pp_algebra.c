@@ -1008,7 +1008,7 @@ LALGunique(Client ctx, bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid)
 		if (!h->allocators[p->wid]) {
 			char name[8];
 			snprintf(name, sizeof(name), "pp%d", p->wid);
-			h->allocators[p->wid] = create_allocator(NULL, name, false);
+			h->allocators[p->wid] = create_allocator(name, false);
 			if (!h->allocators[p->wid]) {
 				err = createException(MAL, "pp algebra.(group )unique", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto error;
@@ -1258,7 +1258,7 @@ LALGgroup_unique(Client ctx, bat *rid, bat *uid, const ptr *H, bat *bid, bat *si
 		if (!h->allocators[p->wid]) {
 			char name[8];
 			snprintf(name, sizeof(name), "pp%d", p->wid);
-			h->allocators[p->wid] = create_allocator(NULL, name, false);
+			h->allocators[p->wid] = create_allocator(name, false);
 			if (!h->allocators[p->wid]) {
 				err = createException(MAL, "pp algebra.(group )unique", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto error;
@@ -1608,7 +1608,7 @@ LALGgroup(Client ctx, bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 		if (!h->allocators[p->wid]) {
 			char name[8];
 			snprintf(name, sizeof(name), "pp%d", p->wid);
-			h->allocators[p->wid] = create_allocator(NULL, name, false);
+			h->allocators[p->wid] = create_allocator(name, false);
 			if (!h->allocators[p->wid]) {
 				err = createException(MAL, "pp group.group", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto error;
@@ -1902,7 +1902,7 @@ LALGderive(Client ctx, bat *rid, bat *uid, const ptr *H, bat *Gid, bat *Ph, bat 
 		if (!h->allocators[p->wid]) {
 			char name[8];
 			snprintf(name, sizeof(name), "pp%d", p->wid);
-			h->allocators[p->wid] = create_allocator(NULL, name, false);
+			h->allocators[p->wid] = create_allocator(name, false);
 			if (!h->allocators[p->wid]) {
 				err = createException(MAL, "pp group.group(derive)", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto error;
