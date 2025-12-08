@@ -1078,7 +1078,7 @@ SQLinclude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str *name = getArgReference_str(stk, pci, 1);
 	str msg = MAL_SUCCEED, fullname;
 	mvc *m;
-	size_t sz;
+	int64_t sz;
 	allocator *ta = MT_thread_getallocator();
 	allocator_state ta_state = ma_open(ta);
 
@@ -1091,14 +1091,14 @@ SQLinclude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "sql.include", SQLSTATE(42000) "%s\n", mnstr_peek_error(NULL));
 	}
 	sz = getFileSize(fd);
-	if (sz > (size_t) 1 << 29) {
+	if (sz > (1 << 29)) {
 		close_stream(fd);
 		msg = createException(MAL, "sql.include", SQLSTATE(42000) "file %s too large to process", fullname);
 		ma_close(&ta_state);
 		return msg;
 	}
 	ma_close(&ta_state);
-	if ((bfd = bstream_create(fd, sz == 0 ? (size_t) (128 * BLOCK) : sz)) == NULL) {
+	if ((bfd = bstream_create(fd, sz == 0 ? (size_t) (128 * BLOCK) : (size_t)sz)) == NULL) {
 		close_stream(fd);
 		throw(MAL, "sql.include", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}

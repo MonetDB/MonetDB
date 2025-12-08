@@ -1714,7 +1714,7 @@ stream *file_rstream(FILE *restrict fp, bool binary, const char *restrict name);
 stream *file_wstream(FILE *restrict fp, bool binary, const char *restrict name);
 FILE *getFile(stream *s);
 int getFileNo(stream *s);
-size_t getFileSize(stream *s);
+int64_t getFileSize(stream *s);
 stream *gz_stream(stream *inner, int preset);
 bool isa_block_stream(const stream *s);
 stream *lz4_stream(stream *inner, int preset);

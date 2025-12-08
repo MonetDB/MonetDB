@@ -1408,7 +1408,7 @@ log_read_transaction(logger *lg, BAT *ids_to_omit, uint32_t *updated, BUN maxupd
 	bool skip_entry = false;
 	ATOMIC_BASE_TYPE dbg = ATOMIC_GET(&GDKdebug);
 	time_t t0 = 0;
-	size_t fs = 0;
+	int64_t fs = 0;
 
 	(void) maxupdated;	/* only used inside assert() */
 
