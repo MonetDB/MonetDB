@@ -10,6 +10,11 @@
 # Copyright August 2008 - 2023 MonetDB B.V.;
 # Copyright 1997 - July 2008 CWI.
 
+# This script is used to create tables for gdk/gdk_string.c to support
+# case conversion.
+# Usage: run the script and replace the appropriate tables in
+# gdk_string.c with the output produced.
+
 def init():
     strs = [None]
     strdict = {}

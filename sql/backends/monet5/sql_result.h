@@ -47,7 +47,7 @@ extern int mvc_result_value(backend *be, const char *tn, const char *name, const
 */
 extern const char *mvc_export_error(backend *be, stream *s, int err_code);
 
-extern ssize_t convert2str(mvc *m, sql_class eclass, int d, int sc, int has_tz, const void *p, int mtype, char **buf, size_t *len);
+extern ssize_t convert2str(allocator *ma, mvc *m, sql_class eclass, int d, int sc, int has_tz, const void *p, int mtype, char **buf, size_t *len);
 extern int mvc_export(mvc *m, stream *s, res_table *t, BUN nr);
 
 #endif /* sql_result_H */

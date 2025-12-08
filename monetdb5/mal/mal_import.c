@@ -92,7 +92,7 @@ static str
 malLoadScript(str name, bstream **fdin)
 {
 	stream *fd;
-	size_t sz;
+	int64_t sz;
 
 	fd = malOpenSource(name);
 	if (fd == NULL || mnstr_errnr(fd) == MNSTR_OPEN_ERROR) {
@@ -101,11 +101,11 @@ malLoadScript(str name, bstream **fdin)
 			  mnstr_peek_error(NULL));
 	}
 	sz = getFileSize(fd);
-	if (sz > (size_t) 1 << 29) {
+	if (sz > (1 << 29)) {
 		close_stream(fd);
 		throw(MAL, "malInclude", "file %s too large to process", name);
 	}
-	*fdin = bstream_create(fd, sz == 0 ? (size_t) (2 * 128 * BLOCK) : sz);
+	*fdin = bstream_create(fd, sz == 0 ? (size_t) (2 * 128 * BLOCK) : (size_t)sz);
 	if (*fdin == NULL) {
 		close_stream(fd);
 		throw(MAL, "malInclude", SQLSTATE(HY013) MAL_MALLOC_FAIL);

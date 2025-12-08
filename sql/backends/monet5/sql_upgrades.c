@@ -2304,7 +2304,7 @@ sql_update_jun2023(Client c, mvc *sql, sql_schema *s)
 
 	/* new function sys.regexp_replace */
 	allocator *old_sa = sql->sa;
-	if ((sql->sa = create_allocator(sql->pa, "MA_mvc", false)) != NULL) {
+	if ((sql->sa = create_allocator("MA_mvc", false)) != NULL) {
 		list *l;
 		if ((l = sa_list(sql->sa)) != NULL) {
 			sql_subtype tp;
@@ -3127,7 +3127,7 @@ sql_update_dec2023(Client c, mvc *sql, sql_schema *s)
 
 	/* 52_describe.sql New function sys.sql_datatype(mtype varchar(999), digits integer, tscale integer, nameonly boolean, shortname boolean) */
 	allocator *old_sa = sql->sa;
-	if ((sql->sa = create_allocator(sql->pa, "MA_mvc", false)) != NULL) {
+	if ((sql->sa = create_allocator("MA_mvc", false)) != NULL) {
 		list *l;
 		if ((l = sa_list(sql->sa)) != NULL) {
 			sql_subtype t1, t2;
@@ -5240,7 +5240,27 @@ sql_update_dec2025(Client c, mvc *sql, sql_schema *s)
 		printf("Running database upgrade commands:\n%s\n", query);
 		fflush(stdout);
 		err = SQLstatementIntern(c, query, "update", true, false, NULL);
+		if (err)
+			return err;
 	}
+
+	/* better optimizations lead to fewer (bogus) dependencies, so we
+	 * need to remove those bogus dependencies during upgrade */
+	err = SQLstatementIntern(c, "select * from sys.dependencies where id in (2004, 2005, 2006) and depend_id in (select id from sys._tables where name in ('check_constraints', 'table_constraints') and schema_id = (select id from sys.schemas where name = 'information_schema'));\n", "update", true, false, &output);
+	if (err)
+		return err;
+	b = BATdescriptor(output->cols[0].b);
+	if (b != NULL) {
+		if (BATcount(b) != 0) {
+			const char query[] =
+				"delete from sys.dependencies where id in (2004, 2005, 2006) and depend_id in (select id from sys._tables where name in ('check_constraints', 'table_constraints') and schema_id = (select id from sys.schemas where name = 'information_schema'));\n";
+			printf("Running database upgrade commands:\n%s\n", query);
+			fflush(stdout);
+			err = SQLstatementIntern(c, query, "update", true, false, NULL);
+		}
+		BBPreclaim(b);
+	}
+	res_table_destroy(output);
 
 	return err;
 }

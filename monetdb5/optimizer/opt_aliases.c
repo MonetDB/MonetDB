@@ -39,7 +39,7 @@ OPTaliasesImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			break;
 	}
 	if (i == limit) {
-		// we didn't found a simple assignment that warrants a rewrite
+		// we didn't find a simple assignment that warrants a rewrite
 		goto wrapup;
 	}
 	k = i;

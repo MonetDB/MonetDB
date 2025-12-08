@@ -79,7 +79,7 @@ static mvc *
 mvc_new( bstream *rs, stream *ws) {
 	mvc *m;
 
-	allocator *pa = create_allocator(NULL, "PA_mvc", false);
+	allocator *pa = create_allocator("PA_mvc", false);
 	m = SA_ZNEW(pa, mvc);
 	if (!m)
 		return NULL;
@@ -92,7 +92,7 @@ mvc_new( bstream *rs, stream *ws) {
 
 	m->qc = NULL;
 	m->pa = pa;
-	m->sa = create_allocator(m->pa, "MA_mvc", false);
+	m->sa = create_allocator("MA_mvc", false);
 #ifdef __has_builtin
 #if __has_builtin(__builtin_frame_address)
 	m->sp = (uintptr_t) __builtin_frame_address(0);

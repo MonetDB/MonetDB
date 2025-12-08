@@ -366,7 +366,7 @@ SQLexecPostLoginTriggers(Client c)
 					Symbol curprg = c->curprg;
 					allocator *sa = m->sa;
 
-					if (!(m->sa = create_allocator(m->pa, "MA_mvc", false))) {
+					if (!(m->sa = create_allocator("MA_mvc", false))) {
 						m->sa = sa;
 						throw(SQL, "sql.SQLexecPostLoginTriggers", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					}
@@ -482,7 +482,7 @@ SQLprepareClient(Client c, const char *pwhash, const char *challenge, const char
 	if (msg)
 		return msg;
 	if (c->sqlcontext == 0) {
-		allocator *sa = create_allocator(NULL, "PA_mvc", false);
+		allocator *sa = create_allocator("PA_mvc", false);
 		if (sa == NULL) {
 			msg = createException(SQL,"sql.initClient", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto bailout2;
@@ -817,7 +817,7 @@ SQLinit(Client c, const char *initpasswd)
 			TRC_INFO(SQL_PARSER, "%s\n", msg);
 	} else {		/* handle upgrades */
 		if (!m->sa) {
-			m->sa = create_allocator(m->pa, "MA_mvc", false);
+			m->sa = create_allocator("MA_mvc", false);
 			if (!m->sa)
 				msg = createException(MAL, "createdb", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
@@ -1082,7 +1082,7 @@ SQLinclude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str *name = getArgReference_str(stk, pci, 1);
 	str msg = MAL_SUCCEED, fullname;
 	mvc *m;
-	size_t sz;
+	int64_t sz;
 	allocator *ta = MT_thread_getallocator();
 	allocator_state ta_state = ma_open(ta);
 
@@ -1095,14 +1095,14 @@ SQLinclude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "sql.include", SQLSTATE(42000) "%s\n", mnstr_peek_error(NULL));
 	}
 	sz = getFileSize(fd);
-	if (sz > (size_t) 1 << 29) {
+	if (sz > (1 << 29)) {
 		close_stream(fd);
 		msg = createException(MAL, "sql.include", SQLSTATE(42000) "file %s too large to process", fullname);
 		ma_close(&ta_state);
 		return msg;
 	}
 	ma_close(&ta_state);
-	if ((bfd = bstream_create(fd, sz == 0 ? (size_t) (128 * BLOCK) : sz)) == NULL) {
+	if ((bfd = bstream_create(fd, sz == 0 ? (size_t) (128 * BLOCK) : (size_t)sz)) == NULL) {
 		close_stream(fd);
 		throw(MAL, "sql.include", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
@@ -1686,7 +1686,7 @@ SQLparser(Client c, backend *be)
 	/* sqlparse needs sql allocator to be available.  It can be NULL at
 	 * this point if this is a recursive call. */
 	if (m->sa == NULL) {
-		m->sa = create_allocator(m->pa, "MA_mvc", false);
+		m->sa = create_allocator("MA_mvc", false);
 		if (m->sa == NULL) {
 			c->mode = FINISHCLIENT;
 			throw(SQL, "SQLparser", SQLSTATE(HY013) MAL_MALLOC_FAIL " for SQL allocator");

@@ -165,7 +165,7 @@ mvc_init(int debug, store_type store_tpe, int ro, int su, const char *initpasswd
 	}
 
 	assert(m->sa == NULL);
-	m->sa = create_allocator(m->pa, "MA_mvc", false);
+	m->sa = create_allocator("MA_mvc", false);
 	if (!m->sa) {
 		mvc_destroy(m);
 		mvc_exit(store);
@@ -872,7 +872,10 @@ mvc_destroy(mvc *m)
 	if (m->scanner.log) /* close and destroy stream */
 		close_stream(m->scanner.log);
 
-	m->sa = NULL;
+	if (m->sa) {
+		ma_destroy(m->sa);
+		m->sa = NULL;
+	}
 	if (m->qc)
 		qc_destroy(m->qc);
 	m->qc = NULL;

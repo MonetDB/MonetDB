@@ -1,0 +1,17 @@
+statement ok
+CREATE TABLE t0(c0 DOUBLE)
+
+statement ok
+CREATE TABLE t1(c0 DOUBLE)
+
+statement ok rowcount 1
+INSERT INTO t0(c0) VALUES(0.9)
+
+statement ok rowcount 1
+INSERT INTO t1(c0) VALUES(0.2);
+
+query RR
+SELECT * FROM t0 LEFT JOIN LATERAL (VALUES ((((t0.c0))))) ON (EXISTS (SELECT count(*) FROM t1))
+----
+0.900
+0.900

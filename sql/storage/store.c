@@ -2245,7 +2245,7 @@ store_init(int debug, store_type store_tpe, int readonly, int singleuser)
 		return NULL;
 	}
 
-	if (!(pa = create_allocator(NULL, "MA_SQLstore", false))) {
+	if (!(pa = create_allocator("MA_SQLstore", false))) {
 		TRC_CRITICAL(SQL_STORE, "Allocation failure while initializing store\n");
 		_DELETE(store);
 		return NULL;
@@ -7880,8 +7880,6 @@ store_printinfo(sqlstore *store)
 	}
 	printf("WAL:\n");
 	printf("SQL store oldest pending "ULLFMT"\n", store->oldest_pending);
-	size_t sz = ma_size(store->sa);
-	printf("SQL store allocator: %zu%s\n", sz, humansize(sz, (char[24]){0}, 24));
 	log_printinfo(store->logger);
 	MT_lock_unset(&store->commit);
 }

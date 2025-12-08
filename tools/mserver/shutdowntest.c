@@ -248,7 +248,7 @@ static str monetdb_initialize(void) {
 
 	ma = MT_thread_getallocator();
 	if (!ma) {
-		if ((ma = create_allocator(NULL, "MA_tls_main_shutdowntest", false)) == NULL) {
+		if ((ma = create_allocator("MA_tls_main_shutdowntest", false)) == NULL) {
 			retval = GDKstrdup("Failed to create allocator");
 			goto cleanup;
 		}

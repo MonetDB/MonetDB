@@ -167,9 +167,6 @@ mal_export void freeMalBlk(MalBlkPtr mb);
 mal_export MalBlkPtr copyMalBlk(MalBlkPtr mb);
 mal_export void trimMalVariables(MalBlkPtr mb, MalStkPtr stk);
 mal_export void trimMalVariables_(MalBlkPtr mb, MalStkPtr glb);
-mal_export void moveInstruction(MalBlkPtr mb, int pc, int target);
-mal_export void removeInstruction(MalBlkPtr mb, InstrPtr p);
-mal_export void removeInstructionBlock(MalBlkPtr mb, int pc, int cnt);
 mal_export str operatorName(int i);
 
 mal_export int findVariable(MalBlkPtr mb, const char *name);

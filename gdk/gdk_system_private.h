@@ -49,26 +49,24 @@ struct freebats *MT_thread_getfreebats(void)
 	__attribute__((__visibility__("hidden")));
 
 struct allocator {
-	struct allocator *pa;
 	size_t size;	 /* size of the allocator in terms of blocks */
 	size_t nr;	 /* number of blocks allocated */
-	char **blks;
-	char *first_blk;
+	void **blks;
+	void *first_blk;
 	size_t used; 	 /* memory used in last block */
 	size_t usedmem;	 /* total used memory */
-	size_t blk_size; /* size of the last allocated block */
 	size_t objects;  /* number of objects */
 	size_t inuse;    /* number of objects in use*/
-	size_t free_obj_hits; /* number of object reuse*/
 	void *freelist;	/* first free object */
-	void *freelist_blks;	/* first free blk */
-	size_t frees;
-	size_t free_blk_hits;
 	size_t tmp_used; /* counter for temp usage */
 
-	int refcount;
 	exception_buffer eb;
 	MT_Lock lock;    /* lock for thread-safe allocations */
 	bool use_lock;
+#ifndef NDEBUG
+	MT_Id self;
+	size_t free_obj_hits; /* number of objects reused */
+	size_t frees;	      /* number of objects freed */
+#endif
 	char name[MT_NAME_LEN]; /* Name (only for display!) */
 };

@@ -137,7 +137,6 @@ OPTwrapper(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			modnme = getArgDefault(mb, p, 1);
 			fcnnme = getArgDefault(mb, p, 2);
 		}
-		//removeInstruction(mb, p);
 		p->token = REMsymbol;
 		s = findSymbol(cntxt->usermodule, putName(modnme), putName(fcnnme));
 

@@ -368,14 +368,14 @@ getFileNo(stream *s)
 	return fileno(f);
 }
 
-size_t
+int64_t
 getFileSize(stream *s)
 {
 	struct stat stb;
 	int fd = getFileNo(s);
 
 	if (fd >= 0 && fstat(fd, &stb) == 0)
-		return (size_t) stb.st_size;
+		return (int64_t) stb.st_size;
 	return 0;		/* unknown */
 }
 

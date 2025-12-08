@@ -60,7 +60,7 @@
 # derivatives (CentOS, Scientific Linux), the geos library is not
 # available.  However, the geos library is available in the Extra
 # Packages for Enterprise Linux (EPEL).
-%if %{fedpkgs} && (0%{?rhel} != 7) && (0%{?rhel} != 8)
+%if %{fedpkgs} && (0%{?rhel} != 7) && (0%{?rhel} != 8) && (0%{?rhel} != 9)
 # By default create the MonetDB-geom package on Fedora and RHEL 7
 %bcond_without geos
 %endif
@@ -462,26 +462,27 @@ developer.
 
 %files client-tests
 %defattr(-,root,root)
-%{_bindir}/ODBCStmtAttr
-%{_bindir}/ODBCgetInfo
-%{_bindir}/ODBCmetadata
-%{_bindir}/ODBCtester
 %{_bindir}/arraytest
+%{_bindir}/backrefencode
 %{_bindir}/bincopydata
+%{_bindir}/malsample.pl
 %{_bindir}/murltest
 %{_bindir}/odbcconnect
+%{_bindir}/ODBCgetInfo
+%{_bindir}/ODBCmetadata
 %{_bindir}/odbcsample1
+%{_bindir}/ODBCStmtAttr
+%{_bindir}/ODBCtester
 %{_bindir}/sample0
 %{_bindir}/sample1
 %{_bindir}/sample4
 %{_bindir}/shutdowntest
 %{_bindir}/smack00
 %{_bindir}/smack01
-%{_bindir}/streamcat
-%{_bindir}/testcondvar
-%{_bindir}/malsample.pl
 %{_bindir}/sqlsample.php
 %{_bindir}/sqlsample.pl
+%{_bindir}/streamcat
+%{_bindir}/testcondvar
 %endif
 
 %if %{with geos}
@@ -863,7 +864,7 @@ package.  You probably don't need this, unless you are a developer.
 Summary: MonetDB - Monet Database Management System
 Group: Applications/Databases
 Requires: %{name}-client-tests = %{version}-%{release}
-Requires: python3dist(pymonetdb)
+Requires: python3dist(pymonetdb) >= 1.9
 BuildArch: noarch
 %endif
 
