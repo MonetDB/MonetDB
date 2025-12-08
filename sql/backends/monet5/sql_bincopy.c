@@ -147,6 +147,14 @@ load_fixed_width(BAT *bat, stream *s, const char *filename, int width, bool byte
 		goto end;
 	}
 
+	if (rows_estimate == 0) {
+		int64_t file_size = getFileSize(s);
+		rows_estimate = (BUN)file_size / record_size;
+		// getFileSize returns 0 if the underlying file could not be stat'ed, so
+		// rows_estimate will just still be 0 if anything went wrong (io error,
+		// s not a file stream)
+	}
+
 	BUN next_increase = rows_estimate;
 	BUN max_increase = (1<<27) / record_size;
 
