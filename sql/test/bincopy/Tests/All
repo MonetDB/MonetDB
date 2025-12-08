@@ -69,4 +69,4 @@ bincopycollist
 bincopy_decimal_range
 bincopy_string_width
 
-# !ARCH_BITS32&!NOT_WIN32?very_large_file
+!ARCH_BITS32&!NOT_WIN32?very_large_file
