@@ -3657,35 +3657,6 @@ def main(argv):
     dft['SQLCLIENT']      = "'mclient -lsql -ftest -tnone -Eutf-8'"
     dft['SQLDUMP']        = "'msqldump -q'"
 
-    r_noecho = '--no-echo'
-    if CheckExec('R'):
-        with process.Popen(['R', '--version'],
-                           stdout=process.PIPE, stderr=process.PIPE,
-                           text=True) as proc:
-            r_out, r_err = proc.communicate()
-        res = re.search(r'R version (?P<major>\d+)\.', r_out)
-        if res is not None and int(res.group('major')) < 4:
-            r_noecho = '--slave'
-        if CONDITIONALS['HAVE_LIBR']:
-            with process.Popen(['R', r_noecho, '--no-save', '--no-restore',
-                                '-e', 'print(Sys.getenv("R_LIBS_USER"))'],
-                               stdout=process.PIPE, stderr=process.PIPE,
-                               text=True) as proc:
-                r_out, r_err = proc.communicate()
-            res = re.search(r'\[\d+\] "(?P<dir>.*)"', r_out)
-            if res is not None:
-                rdir = os.path.expanduser(res.group('dir'))
-                os.makedirs(rdir, exist_ok=True)
-
-    CONDITIONALS['HAVE_SQLITE3ODBC'] = os.path.exists('/usr/lib64/libsqlite3odbc.so')
-
-    #par = {}
-    # get current environment
-    env['HOST'] = os.environ['HOST']
-    for v in VARS:
-        if v in os.environ:
-            env[v] = os.environ[v]
-
     # commandline options overrule environment
     parser = argparse.ArgumentParser(usage='%(prog)s [options] ( [<dir>] [<tests>] | [<dirs>] )', epilog='See %s for details about %s.' % (os.path.join('@QXSOURCE@','testing','README'), THISFILE))
     parser.add_argument('--version', action='version', version='@VERSION@')
@@ -3740,6 +3711,35 @@ def main(argv):
     parser.add_argument('tests', nargs='*', help='The positional arguments are either a list of one or more directories to be tested, or a single directory followed by a list of tests within that directory.')
     opts = parser.parse_args()
     args = opts.tests
+
+    r_noecho = '--no-echo'
+    if CheckExec('R'):
+        with process.Popen(['R', '--version'],
+                           stdout=process.PIPE, stderr=process.PIPE,
+                           text=True) as proc:
+            r_out, r_err = proc.communicate()
+        res = re.search(r'R version (?P<major>\d+)\.', r_out)
+        if res is not None and int(res.group('major')) < 4:
+            r_noecho = '--slave'
+        if CONDITIONALS['HAVE_LIBR']:
+            with process.Popen(['R', r_noecho, '--no-save', '--no-restore',
+                                '-e', 'print(Sys.getenv("R_LIBS_USER"))'],
+                               stdout=process.PIPE, stderr=process.PIPE,
+                               text=True) as proc:
+                r_out, r_err = proc.communicate()
+            res = re.search(r'\[\d+\] "(?P<dir>.*)"', r_out)
+            if res is not None:
+                rdir = os.path.expanduser(res.group('dir'))
+                os.makedirs(rdir, exist_ok=True)
+
+    CONDITIONALS['HAVE_SQLITE3ODBC'] = os.path.exists('/usr/lib64/libsqlite3odbc.so')
+
+    #par = {}
+    # get current environment
+    env['HOST'] = os.environ['HOST']
+    for v in VARS:
+        if v in os.environ:
+            env[v] = os.environ[v]
 
     if opts.loglevel:
         import logging
