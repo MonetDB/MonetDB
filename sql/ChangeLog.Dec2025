@@ -15,9 +15,9 @@
   string occurs multiple times, later occurrences can refer back to
   earlier occurrences instead of including another copy of the string.
   This improves both file size and processing time.
-- A new tool 'backrefencode' has been added that can introduce these
+- A new example tool 'backrefencode' has been added that can introduce these
   back references or remove them again.
-- Rudimentary support for compressed ON CLIENT transfers has been added.
+- Experimental support for compressed ON CLIENT transfers has been added.
   If you write ON 'algo' CLIENT, with algo=lz4/gz/xz/b2, the server compresses
   downloaded data and decompresses uploaded data server-side using the given
   algorithm. It is up to the user to ensure that the uploaded data has indeed
@@ -48,7 +48,7 @@
   Before, the first result set was the result of the query, and the
   second result set was timing information of the query execution.
   This second result set is no longer produced.  Instead, use the
-  (already existing) function sys.tracelog() of view sys.tracelog to
+  (already existing) function sys.tracelog() or the view sys.tracelog to
   retrieve this information.  As before, the table that is produced by the
   function/view is reset whenever a new TRACE prefixed query is executed.
 
