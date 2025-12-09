@@ -35,7 +35,6 @@ op_typeswitchloop(const void *lft, int tp1, bool incr1, const char *hp1, int wd1
 	switch (tp1) {
 	case TYPE_void: {
 		assert(incr1);
-		assert(tp2 == TYPE_oid || incr2); /* if void, incr2==1 */
 		oid v = lft ? * (const oid *) lft : oid_nil;
 		TIMEOUT_LOOP_IDX(k, ncand, qry_ctx) {
 			TPE res;
