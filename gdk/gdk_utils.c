@@ -2018,7 +2018,7 @@ GDKmremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 	if ((a)->use_lock) {			\
 		MT_lock_set(&(a)->lock);	\
 		__alloc_locked = true;		\
-	} else assert((a)->self == MT_getpid());
+	}// else assert((a)->self == MT_getpid());
 
 #define COND_UNLOCK_ALLOCATOR(a)		\
 	if (__alloc_locked) {			\

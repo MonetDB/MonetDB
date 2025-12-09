@@ -109,8 +109,6 @@ fetch(backend *be, InstrPtr sop, sql_rel *rel, list *oexps, bool skip_oexps )
 		sql_exp *e = n->data;
 		sql_subtype *t = exp_subtype(e);
 		int tt = t->type->localtype;
-		if (tt == TYPE_void)
-			tt = TYPE_bte;
 		if (i)
 			q = pushReturn(be->mb, q, newTmpVariable(be->mb, newBatType(tt)));
 		else
@@ -122,8 +120,6 @@ fetch(backend *be, InstrPtr sop, sql_rel *rel, list *oexps, bool skip_oexps )
 		sql_exp *e = n->data;
 		sql_subtype *t = exp_subtype(e);
 		int tt = t->type->localtype;
-		if (tt == TYPE_void)
-			tt = TYPE_bte;
 		if (i)
 			q = pushReturn(be->mb, q, newTmpVariable(be->mb, newBatType(tt)));
 		else

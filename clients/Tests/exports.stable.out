@@ -1102,6 +1102,7 @@ const char mitosisRef[];
 const char mmathRef[];
 const char modRef[];
 char monet_cwd[FILENAME_MAX];
+void moveInstruction(MalBlkPtr mb, int pc, int target);
 const char mtimeRef[];
 const char mulRef[];
 const char multiplexRef[];

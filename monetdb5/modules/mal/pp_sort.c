@@ -615,6 +615,20 @@ PPmproject(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "sort.mproject", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	BUN sz = BATcount(cl) + BATcount(cr);
+	if (cl->ttype == TYPE_void && cr->ttype == TYPE_void &&
+			(!BATtdense(cl) || !BATcount(cl)) && (!BATtdense(cr) || !BATcount(cr))) { /* const void */
+		res = COLnew(0, TYPE_void, sz, TRANSIENT);
+		BBPreclaim(cl);
+		BBPreclaim(cr);
+		BBPreclaim(zzl);
+		if (!res)
+			throw(MAL, "sort.mproject", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		res->tseqbase = oid_nil;
+		BATsetcount(res, sz);
+		*R = res->batCacheid;
+		BBPkeepref(res);
+		return MAL_SUCCEED;
+	}
 	if (ATOMvarsized(cl->ttype)) {
 		res = COLnew2(0, cl->ttype, sz, TRANSIENT, cl->ttype==TYPE_str?cl->twidth:0);
 		if (res == NULL) {

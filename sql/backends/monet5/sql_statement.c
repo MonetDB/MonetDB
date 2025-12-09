@@ -314,8 +314,6 @@ stmt_bat_declare(backend *be, sql_subtype *tpe)
 
 	if (q == NULL)
 		return NULL;
-	if (tt == TYPE_void)
-		tt = TYPE_bte;
 	setVarType(be->mb, getArg(q, 0), newBatType(tt));
 	q = pushNil(be->mb, q, newBatType(tt));
 	pushInstruction(be->mb, q);

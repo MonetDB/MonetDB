@@ -1559,7 +1559,7 @@ LALGgroup(Client ctx, bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 	if (!b)
 		return createException(MAL, "pp group.group", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
-	if (private && *uid && is_bat_nil(*uid)) { /* TODO ... create but how big ??? */
+	if (private) { /* TODO ... create but how big ??? */
 		u = COLnew(b->hseqbase, b->ttype?b->ttype:TYPE_oid, 0, TRANSIENT);
 		if (!u) {
 			err = createException(MAL, "pp group.group", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -1845,7 +1845,7 @@ LALGderive(Client ctx, bat *rid, bat *uid, const ptr *H, bat *Gid, bat *Ph, bat 
 		err = createException(MAL, "pp group.group(derive)", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto error;
 	}
-	if (private && *uid && is_bat_nil(*uid)) { /* TODO ... create but how big ??? */
+	if (private) { /* TODO ... create but how big ??? */
 		BAT *H = BATdescriptor(*Ph);
 		if (!H) {
 			err = createException(MAL, "pp group.group(derive)", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
@@ -2123,7 +2123,18 @@ LALGproject(Client ctx, bat *rid, bat *gid, bat *bid, const ptr *H)
 	/* probably need bat resize and create hash */
 	private = (!r || r->tprivate_bat);
 
-	if (!tt)
+	if (b && (b->ttype == TYPE_msk || mask_cand(b))) {
+		/* todo check all pp functions on msk/mask_cand (next too TYPE_void) */
+		BAT *t = BATunmask(b);
+		if (!t) {
+			err = createException(MAL, "pp algebra.projection", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+			goto error;
+		}
+		BBPreclaim(b);
+		b = t;
+		tt = b->ttype;
+	}
+	if (!tt && BATtdense(b))
 		tt = TYPE_oid;
 	if (!private) {
 		pipeline_lock1(r);
@@ -2203,7 +2214,9 @@ LALGproject(Client ctx, bat *rid, bat *gid, bat *bid, const ptr *H)
 	if (ATOMvarsized(r->ttype) && cnt < max)
 		memset(Tloc(r, cnt), 0, r->twidth*(max-cnt));
 	cnt = BATcount(b);
-	if (cnt) {
+	if (!tt)
+		r->tseqbase = b->tseqbase;
+	if (tt && cnt) {
 		oid *gp = Tloc(g, 0);
 		tt = b->ttype;
 		QryCtx *qry_ctx = MT_thread_get_qry_ctx();
@@ -2228,9 +2241,9 @@ LALGproject(Client ctx, bat *rid, bat *gid, bat *bid, const ptr *H)
 				aproject_(str)
 			} else {
 				aproject(str,1,uint8_t)
-				aproject(str,2,uint16_t)
-				aproject(str,4,uint32_t)
-				aproject(str,8,var_t)
+					aproject(str,2,uint16_t)
+					aproject(str,4,uint32_t)
+					aproject(str,8,var_t)
 			}
 		TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "pp algebra.projection", RUNTIME_QRY_TIMEOUT));
 	}
