@@ -14,7 +14,7 @@ Build-Depends: debhelper-compat (= 12), cmake (>= 3.12), bison,
  libcfitsio-dev, libssl-dev (>= 1.1.1)
 Standards-Version: 4.6.2
 
-Package: libmonetdb30
+Package: libmonetdb31
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends},
  libmonetdb-stream28 (= ${source:Version})
@@ -33,7 +33,7 @@ Description: MonetDB core library
 Package: libmonetdb-dev
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends},
- libmonetdb30 (= ${source:Version}),
+ libmonetdb31 (= ${source:Version}),
  libmonetdb-stream-dev (= ${source:Version})
 Description: MonetDB development files
  MonetDB is a database management system that is developed from a
@@ -156,7 +156,7 @@ Architecture: any
 Depends: ${shlibs:Depends}, libmonetdb-client-odbc (= ${source:Version}),
  libmonetdb-client28 (= ${source:Version}),
  libmonetdb-stream28 (= ${source:Version}),
- libmonetdb30 (= ${source:Version}),
+ libmonetdb31 (= ${source:Version}),
  monetdb-server (= ${source:Version}),
  libdbd-monetdb-perl (>= 1.0),
  php-monetdb (>= 1.0),
@@ -182,7 +182,7 @@ Section: libs
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends},
  libmonetdb-stream28 (= ${source:Version}),
- libmonetdb30 (= ${source:Version}),
+ libmonetdb31 (= ${source:Version}),
  monetdb-server (= ${source:Version})
 Replaces: libmonetdb5-server-geom (<< 11.50.0)
 Breaks: libmonetdb5-server-geom (<< 11.50.0)
@@ -221,7 +221,7 @@ Package: monetdb-cfitsio
 Section: libs
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends},
- libmonetdb30 (= ${source:Version}),
+ libmonetdb31 (= ${source:Version}),
  monetdb-server (= ${source:Version})
 Replaces: libmonetdb5-server-cfitsio (<< 11.50.0)
 Breaks: libmonetdb5-server-cfitsio (<< 11.50.0)
@@ -245,7 +245,7 @@ Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, adduser,
  libmonetdb-client28 (= ${source:Version}),
  libmonetdb-stream28 (= ${source:Version}),
- libmonetdb30 (= ${source:Version}),
+ libmonetdb31 (= ${source:Version}),
 Recommends: monetdb-sql (= ${source:Version})
 Suggests: monetdb-client (= ${source:Version})
 Replaces: monetdb5-server (<< 11.50.0)
@@ -331,7 +331,7 @@ Description: MonetDB SQL support
 Package: monetdb-python3
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends},
- libmonetdb30 (= ${source:Version}),
+ libmonetdb31 (= ${source:Version}),
  monetdb-server (= ${source:Version}), python3-numpy
 Description: Integration of MonetDB and Python, allowing use of Python from within SQL
  MonetDB is a database management system that is developed from a
@@ -349,7 +349,7 @@ Description: Integration of MonetDB and Python, allowing use of Python from with
 Package: monetdb-r
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends},
- libmonetdb30 (= ${source:Version}),
+ libmonetdb31 (= ${source:Version}),
  monetdb-server (= ${source:Version}), r-base-core
 Description: Integration of MonetDB and R, allowing use of R from within SQL
  MonetDB is a database management system that is developed from a
@@ -368,7 +368,7 @@ Package: libmonetdbe27
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends},
  libmonetdb-stream28 (= ${source:Version}),
- libmonetdb30 (= ${source:Version}),
+ libmonetdb31 (= ${source:Version}),
  monetdb-server (= ${source:Version})
 Description: MonetDB as an embedded library
  MonetDB is a database management system that is developed from a
