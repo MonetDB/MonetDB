@@ -777,7 +777,7 @@ merge_ors(mvc *sql, list *exps, int *changes)
 
 				if (ins) {
 					for (int c = 0; c < list_length(ins); c++)
-						++changes;
+						(*changes)++;
 					list_merge(new, ins, NULL);
 				}
 
