@@ -187,20 +187,30 @@ VALcopy(allocator *ma, ValPtr d, const ValRecord *s)
 		const char *p = s->val.sval;
 		d->vtype = TYPE_str;
 		d->len = strLen(p);
-		d->val.sval = ma? ma_alloc(ma, d->len) : GDKmalloc(d->len);
-		if (d->val.sval == NULL)
-			return NULL;
-		memcpy(d->val.sval, p, d->len);
-		d->allocated = !ma;
+		if (strNil(p)) {
+			d->val.sval = (char *) str_nil;
+			d->allocated = false;
+		} else {
+			d->val.sval = ma? ma_alloc(ma, d->len) : GDKmalloc(d->len);
+			if (d->val.sval == NULL)
+				return NULL;
+			memcpy(d->val.sval, p, d->len);
+			d->allocated = !ma;
+		}
 	} else {
 		const void *p = s->val.pval;
 		d->vtype = s->vtype;
 		d->len = ATOMlen(d->vtype, p);
-		d->val.pval = ma? ma_alloc(ma, d->len) : GDKmalloc(d->len);
-		if (d->val.pval == NULL)
-			return NULL;
-		memcpy(d->val.pval, p, d->len);
-		d->allocated = !ma;
+		if (ATOMeq(d->vtype, ATOMnilptr(d->vtype), p)) {
+			d->val.pval = (void *) ATOMnilptr(d->vtype);
+			d->allocated = false;
+		} else {
+			d->val.pval = ma? ma_alloc(ma, d->len) : GDKmalloc(d->len);
+			if (d->val.pval == NULL)
+				return NULL;
+			memcpy(d->val.pval, p, d->len);
+			d->allocated = !ma;
+		}
 	}
 	return d;
 }
@@ -257,12 +267,17 @@ VALinit(allocator *ma, ValPtr d, int tpe, const void *s)
 		break;
 	case TYPE_str:
 		d->len = strLen(s);
-		d->val.sval = ma? ma_alloc(ma, d->len) :
-			GDKmalloc(d->len);
-		if (d->val.sval == NULL)
-			return NULL;
-		memcpy(d->val.sval, s, d->len);
-		d->allocated = !ma;
+		if (strNil(s)) {
+			d->val.sval = (char *) str_nil;
+			d->allocated = false;
+		} else {
+			d->val.sval = ma? ma_alloc(ma, d->len) :
+				GDKmalloc(d->len);
+			if (d->val.sval == NULL)
+				return NULL;
+			memcpy(d->val.sval, s, d->len);
+			d->allocated = !ma;
+		}
 		return d;
 	case TYPE_ptr:
 		d->val.pval = *(const ptr *) s;
@@ -271,12 +286,17 @@ VALinit(allocator *ma, ValPtr d, int tpe, const void *s)
 	default:
 		assert(ATOMextern(ATOMstorage(tpe)));
 		d->len = ATOMlen(tpe, s);
-		d->val.pval = ma? ma_alloc(ma, d->len) :
-			GDKmalloc(d->len);
-		if (d->val.pval == NULL)
-			return NULL;
-		memcpy(d->val.pval, s, d->len);
-		d->allocated = !ma;
+		if (ATOMeq(tpe, ATOMnilptr(tpe), s)) {
+			d->val.pval = (void *) ATOMnilptr(tpe);
+			d->allocated = false;
+		} else {
+			d->val.pval = ma? ma_alloc(ma, d->len) :
+				GDKmalloc(d->len);
+			if (d->val.pval == NULL)
+				return NULL;
+			memcpy(d->val.pval, s, d->len);
+			d->allocated = !ma;
+		}
 		return d;
 	}
 	d->len = ATOMsize(d->vtype);
