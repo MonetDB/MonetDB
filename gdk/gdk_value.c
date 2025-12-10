@@ -139,18 +139,11 @@ VALget(ValPtr v)
 void
 VALclear(ValPtr v)
 {
-    if (v->allocated && !v->bat && ATOMextern(v->vtype)) {
-        if (v->vtype == TYPE_str) {
-            if (v->val.sval && v->val.sval != ATOMnilptr(v->vtype)) {
-                GDKfree(v->val.sval);
-            }
-        } else {
-            if (v->val.pval && v->val.pval != ATOMnilptr(v->vtype)) {
-                GDKfree(v->val.pval);
-            }
-        }
-    }
-    VALempty(v);
+	if (v->allocated && !v->bat && ATOMextern(v->vtype)) {
+		assert(v->val.pval != ATOMnilptr(v->vtype));
+		GDKfree(v->val.pval);
+	}
+	VALempty(v);
 }
 
 /* Initialize V to an empty value (type void, value nil).  See
