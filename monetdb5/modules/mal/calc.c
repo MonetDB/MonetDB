@@ -584,7 +584,7 @@ CALCmin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		p1 = nil;
 	else if (ATOMcmp(t, p1, p2) > 0)
 		p1 = p2;
-	if (VALinit(NULL, &stk->stk[getArg(pci, 0)], t, p1) == NULL)
+	if (VALinit(mb->ma, &stk->stk[getArg(pci, 0)], t, p1) == NULL)
 		return mythrow(MAL, "calc.min", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
@@ -621,7 +621,7 @@ CALCmin_no_nil(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				p1 = p2;
 		}
 	}
-	if (VALinit(NULL, &stk->stk[getArg(pci, 0)], t, p1) == NULL)
+	if (VALinit(mb->ma, &stk->stk[getArg(pci, 0)], t, p1) == NULL)
 		return mythrow(MAL, "calc.min", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
@@ -647,7 +647,7 @@ CALCmax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		p1 = nil;
 	else if (ATOMcmp(t, p1, p2) < 0)
 		p1 = p2;
-	if (VALinit(NULL, &stk->stk[getArg(pci, 0)], t, p1) == NULL)
+	if (VALinit(mb->ma, &stk->stk[getArg(pci, 0)], t, p1) == NULL)
 		return mythrow(MAL, "calc.max", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
@@ -717,7 +717,7 @@ CALCmax_no_nil(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				p1 = p2;
 		}
 	}
-	if (VALinit(NULL, &stk->stk[getArg(pci, 0)], t, p1) == NULL)
+	if (VALinit(mb->ma, &stk->stk[getArg(pci, 0)], t, p1) == NULL)
 		return mythrow(MAL, "calc.max", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
