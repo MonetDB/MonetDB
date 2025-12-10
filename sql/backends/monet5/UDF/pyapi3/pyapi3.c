@@ -160,7 +160,7 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bo
 	bool freeexprStr = false;
 	int argcount = pci->argc;
 
-	char *eval_additional_args[] = {"_columns", "_column_types", "_conn"};
+	static /*const*/ char *eval_additional_args[] = {"_columns", "_column_types", "_conn"};
 
 	if (!pyapiInitialized) {
 		throw(MAL, "pyapi3.eval", SQLSTATE(PY000) "Embedded Python is enabled but an error was "
