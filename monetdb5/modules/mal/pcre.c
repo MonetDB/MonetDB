@@ -738,9 +738,7 @@ sql2pcre(allocator *ma, str *r, const char *pat, const char *esc_str)
 			throw(MAL, "pcre.sql2pcre",
 				  SQLSTATE(22019) ILLEGAL_ARGUMENT
 				  ": (I)LIKE pattern must not end with escape character");
-		*r = ma_strdup(ma, str_nil);
-		if (*r == NULL)
-			throw(MAL, "pcre.sql2pcre", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		*r = (char *) str_nil;
 	} else {
 		*ppat++ = '$';
 		*ppat = 0;

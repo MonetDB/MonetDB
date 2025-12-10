@@ -42,7 +42,7 @@ getTypeName(allocator *ma, malType tpe)
 	int k;
 
 	if (tpe == TYPE_any)
-		return ma_strdup(ma, "any");
+		return "any";
 	if (isaBatType(tpe)) {
 		k = getTypeIndex(tpe);
 		if (k)

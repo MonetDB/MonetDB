@@ -4846,8 +4846,6 @@ _column_name(allocator *sa, stmt *st)
 	case st_var:
 	case st_temp:
 	case st_single:
-		if (sa)
-			return ma_strdup(sa, "single_value");
 		return "single_value";
 
 	case st_list:
@@ -5269,7 +5267,7 @@ stmt_rename(backend *be, sql_exp *exp, stmt *s )
 	stmt *o = s;
 
 	if (!name && exp_is_atom(exp))
-		name = ma_strdup(be->mvc->sa, "single_value");
+		name = "single_value";
 	assert(name);
 	s = stmt_alias(be, s, label, rname, name);
 	if (o->flag & OUTER_ZERO)

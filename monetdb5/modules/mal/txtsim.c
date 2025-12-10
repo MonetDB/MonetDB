@@ -1201,7 +1201,7 @@ soundex(Client ctx, str *res, const char *const *Name)
 
 	////GDKfree(*res);
 	if (strNil(*Name)) {
-		*res = ma_strdup(ma, str_nil);
+		*res = (char *) str_nil;
 		if (*res == NULL)
 			throw(MAL, "soundex", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
@@ -1262,9 +1262,7 @@ qgram_normalize(Client ctx, str *res, const char *const *Input)
 
 	// //GDKfree(*res);
 	if (strNil(*Input)) {
-		*res = ma_strdup(ma, str_nil);
-		if (*res == NULL)
-			throw(MAL, "txtsim.qgramnormalize", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		*res = (char *) str_nil;
 		return MAL_SUCCEED;
 	}
 	*res = (str) ma_alloc(ma, sizeof(char) * (strlen(input) + 1));	/* normalized strings are never longer than original */

@@ -541,20 +541,20 @@ BKCsetAccess(Client ctx, bat *res, const bat *bid, const char *const *param)
 static str
 BKCgetAccess(Client ctx, str *res, const bat *bid)
 {
-	allocator *ma = ctx->curprg->def->ma;
 	BAT *b;
 
+	(void) ctx;
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "bat.getAccess", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	switch (BATgetaccess(b)) {
 	case BAT_READ:
-		*res = ma_strdup(ma, "read");
+		*res = "read";
 		break;
 	case BAT_APPEND:
-		*res = ma_strdup(ma, "append");
+		*res = "append";
 		break;
 	case BAT_WRITE:
-		*res = ma_strdup(ma, "write");
+		*res = "write";
 		break;
 	default:
 		MT_UNREACHABLE();
