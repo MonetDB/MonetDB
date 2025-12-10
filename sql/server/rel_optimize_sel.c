@@ -512,7 +512,6 @@ typedef struct exp_eq_multi_col_values {
 	/* we need ->first in order to remove it from the list of multi col
 	 * cmp_eq exps in case that we find another occurrence (with different values)
 	 */
-	list *first;
 	list *cols;  /* list of col exps */
 	list *lvs;   /* list of lists of values */
 } eq_mcv;
@@ -605,20 +604,11 @@ detect_multicol_cmp_eqs(mvc *sql, list *mce_ands, sql_hash *meqh)
 				for (node *m = sl->h; m; m = m->next)
 					atms = append(atms, ((sql_exp*)m->data)->r);
 				mcv->lvs = append(mcv->lvs, atms);
-				/* remove this and the previous occurrence (which means that's the first time
-				 * that we found the *same* multi cmp_eq exp)
-				 */
-				if (mcv->first) {
-					list_remove_data(mce_ands, NULL, mcv->first);
-					mcv->first = NULL;
-				}
-				list_remove_data(mce_ands, NULL, sl);
 			}
 		}
 
 		if (!found) {
 			eq_mcv *mcv = SA_NEW(sql->sa, eq_mcv);
-			mcv->first = sl;
 			mcv->cols = sa_list(sql->sa);
 			for (node *m = sl->h; m; m = m->next)
 				mcv->cols = append(mcv->cols, ((sql_exp*)m->data)->l);
@@ -656,12 +646,10 @@ exp_or_chain_groups(list *exps, list **gen_ands, list **mce_ands, list **eqs, li
     }
 
 	if (list_length(exps) > 1) {
-		/*if (eq_only)*/
-			/**mce_ands = append(*mce_ands, exps);*/
-		/*else*/
-			/**gen_ands = append(*gen_ands, exps);*/
-		(void) mce_ands;
-		*gen_ands = append(*gen_ands, exps);
+		if (eq_only)
+			*mce_ands = append(*mce_ands, exps);
+		else
+			*gen_ands = append(*gen_ands, exps);
 	} else if (list_length(exps) == 1) {
 		sql_exp *se = exps->h->data;
 
@@ -694,6 +682,7 @@ generate_single_col_cmp_in(mvc *sql, sql_hash *eqh)
 	return ins;
 }
 
+#if 0
 static list *
 generate_multi_col_cmp_in(mvc *sql, sql_hash *meqh)
 {
@@ -718,12 +707,13 @@ generate_multi_col_cmp_in(mvc *sql, sql_hash *meqh)
 	}
 	return ins;
 }
+#endif
 
 static list *
 merge_ors(mvc *sql, list *exps, int *changes)
 {
 	sql_hash *eqh = NULL, *meqh = NULL;
-	list *eqs = NULL, *neq = NULL, *gen_ands = NULL, *mce_ands = NULL, *ins = NULL, *mins = NULL;
+	list *eqs = NULL, *neq = NULL, *gen_ands = NULL, *mce_ands = NULL, *ins = NULL;//, *mins = NULL;
 	for (node *n = exps->h; n; n = n->next) {
 		sql_exp *e = n->data;
 
@@ -779,40 +769,47 @@ merge_ors(mvc *sql, list *exps, int *changes)
 			if (!col_multival && !multicol_multival)
 				continue;
 
-			if (col_multival)
+			if (col_multival) {
 				ins = generate_single_col_cmp_in(sql, eqh);
 
-			if (multicol_multival)
-				mins = generate_multi_col_cmp_in(sql, meqh);
+				/* create the new OR (disjunctive) expression */
+				list *new = sa_list(sql->sa);
 
-			/* create the new OR (disjunctive) expression */
-			list *new = sa_list(sql->sa);
-
-			if (ins)
-				list_merge(new, ins, NULL);
-			if (mins)
-				list_merge(new, mins, NULL);
-
-			if (list_length(eqs))
-				list_merge(new, eqs, NULL);
-			if (list_length(neq))
-				list_merge(new, neq, NULL);
-
-			if (list_length(mce_ands)) {
-				for (node *i = mce_ands->h; i; i = i->next, (*changes)++) {
-					list *cl = append(sa_list(sql->sa), exp_conjunctive(sql->sa, i->data));
-					list_merge(new, cl, NULL);
+				if (ins) {
+					for (int c = 0; c < list_length(ins); c++)
+						++changes;
+					list_merge(new, ins, NULL);
 				}
-			}
-			if (list_length(gen_ands)) {
-				for (node *a = gen_ands->h; a; a = a->next, (*changes)++) {
-					list *gl = append(sa_list(sql->sa), exp_conjunctive(sql->sa, a->data));
-					list_merge(new, gl, NULL);
+
+				/* put everything back together */
+				if (list_length(eqs))
+					list_merge(new, eqs, NULL);
+				if (list_length(neq))
+					list_merge(new, neq, NULL);
+				if (list_length(mce_ands)) {
+					for (node *i = mce_ands->h; i; i = i->next) {
+						list *cl = append(sa_list(sql->sa),
+								exp_conjunctive(sql->sa, i->data));
+						list_merge(new, cl, NULL);
+					}
 				}
+				if (list_length(gen_ands)) {
+					for (node *a = gen_ands->h; a; a = a->next) {
+						list *gl = append(sa_list(sql->sa),
+								exp_conjunctive(sql->sa, a->data));
+						list_merge(new, gl, NULL);
+					}
+				}
+
+				/* replace the old OR exp with the new */
+				list_remove_node(exps, NULL, n);
+				exps = append(exps, exp_disjunctive(sql->sa, new));
 			}
 
-			list_remove_node(exps, NULL, n);
-			exps = append(exps, exp_disjunctive(sql->sa, new));
+			/*if (multicol_multival) {*/
+				/*mins = generate_multi_col_cmp_in(sql, meqh);*/
+				/*list_merge(new, mins, NULL);*/
+			/*}*/
 		}
 	}
 	return exps;
