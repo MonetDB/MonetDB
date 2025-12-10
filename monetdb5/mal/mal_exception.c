@@ -323,7 +323,7 @@ getExceptionPlace(allocator *ma, const char *exception)
 			break;
 		}
 	}
-	return ma_strdup(ma, "(unknown)");
+	return "(unknown)";
 }
 
 /**

@@ -1132,15 +1132,15 @@ _symbol2string(allocator *ta, mvc *sql, symbol *se, int expression, char **err)
 		return res;
 	}
 	case SQL_PARAMETER:
-		return ma_strdup(ta, "?");
+		return "?";
 	case SQL_NULL:
-		return ma_strdup(ta, "NULL");
+		return "NULL";
 	case SQL_ATOM:{
 		AtomNode *an = (AtomNode *) se;
 		if (an && an->a)
 			return atom2sql(ta, an->a, sql->timezone);
 		else
-			return ma_strdup(ta, "NULL");
+			return "NULL";
 	}
 	case SQL_NEXT: {
 		const char *seq = symbol_escape_ident(ta, qname_schema_object(se->data.lval)),

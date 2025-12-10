@@ -2403,6 +2403,8 @@ ma_strndup(allocator *sa, const char *s, size_t l)
 char *
 ma_strdup(allocator *sa, const char *s)
 {
+	if (strNil(s))
+		return (char *) str_nil;
 	return ma_strndup(sa, s, strlen(s));
 }
 

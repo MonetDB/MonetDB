@@ -2093,7 +2093,7 @@ SQLstrgroup_concat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		str in = *getArgReference_str(stk, pci, 1);
 
 		if (strNil(in)) {
-			*res = ma_strdup(ma, str_nil);
+			*res = (char *) str_nil;
 		} else if (separator_offset) {
 			str sep = *getArgReference_str(stk, pci, 2);
 			size_t l1 = strlen(in), l2 = strNil(sep) ? 0 : strlen(sep);

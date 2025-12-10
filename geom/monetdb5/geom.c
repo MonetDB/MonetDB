@@ -2380,8 +2380,7 @@ geoGetType(Client ctx, char **res, int *info, int *flag)
 {
 	allocator *ma = ctx->curprg->def->ma;
 	if (is_int_nil(*info) || is_int_nil(*flag)) {
-		if ((*res = ma_strdup(ma, str_nil)) == NULL)
-			throw(MAL, "geom.getType", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		*res = (char *) str_nil;
 		return MAL_SUCCEED;
 	}
 	if ((*res = ma_strdup(ma, geom_type2str(*info >> 2, *flag))) == NULL)
@@ -2533,8 +2532,7 @@ wkbAsBinary(Client ctx, char **toStr, wkb **geomWKB)
 	int i;
 
 	if (is_wkb_nil(*geomWKB)) {
-		if ((*toStr = ma_strdup(ma, str_nil)) == NULL)
-			throw(MAL, "geom.AsBinary", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		*toStr = (char *) str_nil;
 		return MAL_SUCCEED;
 	}
 	if ((*toStr = ma_alloc(ma, 1 + (*geomWKB)->len * 2)) == NULL)
@@ -2729,8 +2727,7 @@ wkbAsText(Client ctx, char **txt, wkb **geomWKB, int *withSRID)
 	const char sridTxt[] = "SRID:";
 
 	if (is_wkb_nil(*geomWKB) || (withSRID && is_int_nil(*withSRID))) {
-		if ((*txt = ma_strdup(ma, str_nil)) == NULL)
-			throw(MAL, "geom.AsText", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		*txt = (char *) str_nil;
 		return MAL_SUCCEED;
 	}
 
@@ -4305,8 +4302,7 @@ wkbIsValidReason(Client ctx, char **reason, wkb **geomWKB)
 	char *GEOSReason = NULL;
 
 	if (is_wkb_nil(*geomWKB)) {
-		if ((*reason = ma_strdup(ma, str_nil)) == NULL)
-			throw(MAL, "geom.IsValidReason", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		*reason = (char *) str_nil;
 		return MAL_SUCCEED;
 	}
 
@@ -4340,8 +4336,7 @@ wkbIsValidDetail(Client ctx, char **out, wkb **geom)
 	GEOSGeom geosGeometry;
 
 	if (is_wkb_nil(*geom)) {
-		if ((*out = ma_strdup(ma, str_nil)) == NULL)
-			throw(MAL, "geom.IsValidReason", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		*out = (char *) str_nil;
 		return MAL_SUCCEED;
 	}
 

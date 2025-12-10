@@ -418,7 +418,7 @@ ATOMformat(allocator *ma, int t, const void *p)
 		}
 		return buf;
 	}
-	return ma_strdup(ma, "nil");
+	return "nil";
 }
 
 /*

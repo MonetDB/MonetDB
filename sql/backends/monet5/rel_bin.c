@@ -7325,13 +7325,13 @@ rel2bin_output(backend *be, sql_rel *rel, list *refs)
 	 * With COPY INTO BINARY, it is an int. */
 	if (tpe == TYPE_str) {
 		atom *tatom = ((sql_exp*) argnode->data)->l;
-		const char *tsep  = ma_strdup(sql->sa, tatom->isnull ? "" : tatom->data.val.sval);
+		const char *tsep  = tatom->isnull ? "" : ma_strdup(sql->sa, tatom->data.val.sval);
 		atom *ratom = ((sql_exp*) argnode->next->data)->l;
-		const char *rsep  = ma_strdup(sql->sa, ratom->isnull ? "" : ratom->data.val.sval);
+		const char *rsep  = ratom->isnull ? "" : ma_strdup(sql->sa, ratom->data.val.sval);
 		atom *satom = ((sql_exp*) argnode->next->next->data)->l;
-		const char *ssep  = ma_strdup(sql->sa, satom->isnull ? "" : satom->data.val.sval);
+		const char *ssep  = satom->isnull ? "" : ma_strdup(sql->sa, satom->data.val.sval);
 		atom *natom = ((sql_exp*) argnode->next->next->next->data)->l;
-		const char *ns = ma_strdup(sql->sa, natom->isnull ? "" : natom->data.val.sval);
+		const char *ns = natom->isnull ? "" : ma_strdup(sql->sa, natom->data.val.sval);
 
 		const char *fn = NULL;
 		int onclient = 0;

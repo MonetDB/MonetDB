@@ -369,7 +369,7 @@ atom2string(allocator *sa, atom *a)
 	char buf[BUFSIZ], *p = NULL;
 
 	if (a->isnull)
-		return ma_strdup(sa, "NULL");
+		return "NULL";
 	switch (a->data.vtype) {
 #ifdef HAVE_HGE
 	case TYPE_hge: {
@@ -396,8 +396,8 @@ atom2string(allocator *sa, atom *a)
 		break;
 	case TYPE_bit:
 		if (a->data.val.btval)
-			return ma_strdup(sa, "true");
-		return ma_strdup(sa, "false");
+			return "true";
+		return "false";
 	case TYPE_flt:
 		snprintf(buf, sizeof(buf), "%f", a->data.val.fval);
 		break;
