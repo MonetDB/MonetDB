@@ -254,7 +254,7 @@ SQLhelp sqlhelp1[] = {
 	 "Add user defined type to the type system ",
 	 "CREATE TYPE [ IF NOT EXISTS ] qname EXTERNAL NAME ident",
 	 NULL,
-	 NULL},
+	 "See also https://www.monetdb.org/documentation/user-guide/sql-manual/data-types/udf-types/"},
 	{"CREATE UNLOGGED TABLE",
 	 "Create a new unlogged table",
 	 "CREATE UNLOGGED TABLE [ IF NOT EXISTS ] qname table_source [STORAGE ident string]\n"
