@@ -306,14 +306,12 @@ melFunction(bool command, const char *mod, const char *fcn, MALfcn imp,
 	fcn = s->name;
 	s->allocated = true;
 
-	f = (mel_func*)GDKmalloc(sizeof(mel_func));
-	mel_arg *args = (mel_arg*)GDKmalloc(sizeof(mel_arg)*argc);
-	if (!f || !args) {
-		GDKfree(f);
-		GDKfree(args);
+	f = GDKmalloc(sizeof(mel_func) + sizeof(mel_arg [argc]));
+	if (f == NULL) {
 		freeSymbol(s);
 		return MEL_ERR;
 	}
+	mel_arg *args = (mel_arg *) (f + 1);
 	*f = (mel_func) {
 		.mod = mod,
 		.fcn = fcn,
@@ -326,8 +324,8 @@ melFunction(bool command, const char *mod, const char *fcn, MALfcn imp,
 		.argc = argc,
 		.args = args,
 		.imp = imp,
-		.comment = comment ? GDKstrdup(comment) : NULL,
-		.cname = fname ? GDKstrdup(fname) : NULL,
+		.comment = comment,
+		.cname = fname,
 	};
 	s->def = NULL;
 	s->func = f;

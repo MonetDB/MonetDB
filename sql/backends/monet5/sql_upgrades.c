@@ -152,7 +152,7 @@ sql_fix_system_tables(Client c, mvc *sql)
 static str
 check_sys_tables(Client c, mvc *m, sql_schema *s)
 {
-	struct {
+	static const struct {
 		const char *name;
 		const char *func;
 		const char *type;
@@ -4495,7 +4495,7 @@ sql_update_mar2025(Client c, mvc *sql, sql_schema *s)
 			sql_schema *is = mvc_bind_schema(sql, "information_schema");
 			t = mvc_bind_table(sql, is, "parameters");
 			t->system = 0;
-			char query[] = "update sys.functions set func = replace(func, E'\\n external', E' ordered\\n external') where name in ('quantile','quantile_avg','median','median_avg') and schema_id = 2000 and language = (select language_id from sys.function_languages where language_name = 'MAL') and type = (select function_type_id from sys.function_types where function_type_keyword = 'AGGREGATE') and not contains(func, 'ordered');\n"
+			static const char query[] = "update sys.functions set func = replace(func, E'\\n external', E' ordered\\n external') where name in ('quantile','quantile_avg','median','median_avg') and schema_id = 2000 and language = (select language_id from sys.function_languages where language_name = 'MAL') and type = (select function_type_id from sys.function_types where function_type_keyword = 'AGGREGATE') and not contains(func, 'ordered');\n"
 				"update sys.functions set func = replace(func, E'\\n\\texternal', E' ordered\\n external') where name in ('quantile','quantile_avg','median','median_avg') and schema_id = 2000 and language = (select language_id from sys.function_languages where language_name = 'MAL') and type = (select function_type_id from sys.function_types where function_type_keyword = 'AGGREGATE') and not contains(func, 'ordered');\n"
 				"update sys.functions set func = replace(func, E'\\nexternal', E' ordered\\n external') where name in ('quantile','quantile_avg','median','median_avg') and schema_id = 2000 and language = (select language_id from sys.function_languages where language_name = 'MAL') and type = (select function_type_id from sys.function_types where function_type_keyword = 'AGGREGATE') and not contains(func, 'ordered');\n"
 				"update sys.functions set func = replace(func, E' external', E' with order\\n external') where name = 'group_concat' and schema_id = 2000 and language = (select language_id from sys.function_languages where language_name = 'MAL') and type = (select function_type_id from sys.function_types where function_type_keyword = 'AGGREGATE');\n"
@@ -5149,7 +5149,7 @@ sql_update_dec2025(Client c, mvc *sql, sql_schema *s)
 		return err;
 
 	if (sql_bind_func(sql, "sys", "optimizer_stats", NULL, NULL, F_UNION, true, true)) {
-		const char query[] = "drop function sys.optimizer_stats cascade;\n";
+		static const char query[] = "drop function sys.optimizer_stats cascade;\n";
 		printf("Running database upgrade commands:\n%s\n", query);
 		err = SQLstatementIntern(c, query, "update", true, false, NULL);
 		if (err)
@@ -5160,7 +5160,7 @@ sql_update_dec2025(Client c, mvc *sql, sql_schema *s)
 	}
 
 	if (sql_bind_func(sql, "profiler", "start", NULL, NULL, F_PROC, true, true)) {
-		const char query[] = "drop procedure profiler.start cascade;\n"
+		static const char query[] = "drop procedure profiler.start cascade;\n"
 			"drop procedure profiler.stop cascade;\n"
 			"drop procedure profiler.setlimit cascade;\n"
 			"drop function profiler.getlimit cascade;\n"
@@ -5215,7 +5215,7 @@ sql_update_dec2025(Client c, mvc *sql, sql_schema *s)
 		fflush(stdout);
 		err = SQLstatementIntern(c, query, "update", true, false, NULL);
 		if (err == MAL_SUCCEED) {
-			const char query2[] = "ALTER TABLE sys.keywords SET READ ONLY;\n";
+			static const char query2[] = "ALTER TABLE sys.keywords SET READ ONLY;\n";
 			printf("Running database upgrade commands:\n%s\n", query2);
 			fflush(stdout);
 			err = SQLstatementIntern(c, query2, "update", true, false, NULL);
@@ -5230,7 +5230,7 @@ sql_update_dec2025(Client c, mvc *sql, sql_schema *s)
 	if (!sql_bind_func(sql, "sys", "to_hex", &tp, NULL, F_FUNC, true, true)) {
 		sql->session->status = 0; /* if the function was not found clean the error */
 		sql->errstr[0] = '\0';
-		const char query[] = "create function to_hex(n int)\n"
+		static const char query[] = "create function to_hex(n int)\n"
 			"returns text external name \"calc\".\"to_hex\";\n"
 			"grant execute on function to_hex(int) to public;\n"
 			"create function to_hex(n bigint)\n"

@@ -826,10 +826,10 @@ INETnull(void)
 }
 
 #include "mel.h"
-mel_atom inet_init_atoms[] = {
+static mel_atom inet_init_atoms[] = {
  { .name="inet", .basetype="lng", .size=sizeof(inet), .null=INETnull, .cmp=INETcompare, .equal=INETequal, .fromstr=INETfromString, .tostr=INETtoString, },  { .cmp=NULL }
 };
-mel_func inet_init_funcs[] = {
+static mel_func inet_init_funcs[] = {
  command("inet", "new", INETnew, false, "Create an inet from a string literal", args(1,2, arg("",inet),arg("s",str))),
  command("inet", "isnil", INET_isnil, false, "Nil test for inet value", args(1,2, arg("",bit),arg("v",inet))),
  command("inet", "=", INET_comp_EQ, false, "Equality of two inets", args(1,3, arg("",bit),arg("v",inet),arg("w",inet))),

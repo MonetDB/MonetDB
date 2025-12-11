@@ -175,7 +175,7 @@ mvc_init(int debug, store_type store_tpe, int ro, int su, const char *initpasswd
 
 	if (store->first || store->catalog_version) {
 		sqlid tid = 0, cid = 0;
-		struct view_t tview[10] = {
+		static /*const*/ struct view_t tview[10] = {
 			{
 				.name = "id",
 				.type = "int",

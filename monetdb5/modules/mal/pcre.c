@@ -1844,7 +1844,7 @@ LIKEjoin1(Client ctx, bat *r1, const bat *lid, const bat *rid, const bat *elid,
 }
 
 #include "mel.h"
-mel_func pcre_init_funcs[] = {
+static mel_func pcre_init_funcs[] = {
  command("pcre", "match", PCREmatch, false, "Perl Compatible Regular Expression pattern matching against a string", args(1,3, arg("",bit),arg("s",str),arg("pat",str))),
  command("pcre", "imatch", PCREimatch, false, "Caseless Perl Compatible Regular Expression pattern matching against a string", args(1,3, arg("",bit),arg("s",str),arg("pat",str))),
  command("pcre", "patindex", PCREpatindex, false, "Location of the first POSIX pattern matching against a string", args(1,3, arg("",int),arg("pat",str),arg("s",str))),

@@ -198,7 +198,7 @@ control_setup(
 				char *algos = NULL;
 				char *shash = NULL;
 				char *phash = NULL;
-				char *algsv[] = {
+				static const char *algsv[] = {
 					"RIPEMD160",
 					"SHA512",
 					"SHA384",
@@ -302,7 +302,7 @@ control_setup(
 
 				/* now hash the password hash with the provided
 				 * challenge */
-				char **algs = algsv;
+				const char **algs = algsv;
 				for (; *algs != NULL; algs++) {
 					/* TODO: make this actually obey the separation by
 					 * commas, and only allow full matches */

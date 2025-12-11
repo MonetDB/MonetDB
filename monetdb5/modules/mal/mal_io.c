@@ -611,7 +611,7 @@ IOtable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 #include "mel.h"
-mel_func mal_io_init_funcs[] = {
+static mel_func mal_io_init_funcs[] = {
  pattern("io", "stdin", io_stdin, false, "return the input stream to the database client", args(1,1, arg("",bstream))),
  pattern("io", "stdout", io_stdout, false, "return the output stream for the database client", args(1,1, arg("",streams))),
  pattern("io", "print", IOprint_val, false, "Print a MAL value tuple .", args(1,3, arg("",void),argany("val",1),varargany("lst",0))),

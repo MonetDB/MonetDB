@@ -1896,7 +1896,7 @@ ALGcorr(Client ctx, dbl *res, const bat *bid1, const bat *bid2)
 }
 
 #include "mel.h"
-mel_func algebra_init_funcs[] = {
+static mel_func algebra_init_funcs[] = {
  command("algebra", "groupby", ALGgroupby, false, "Produces a new BAT with groups identified by the head column. The result contains tail times the head value, ie the tail contains the result group sizes.", args(1,3, batarg("",oid),batarg("gids",oid),batarg("cnts",lng))),
  command("algebra", "find", ALGfind, false, "Returns the index position of a value.  If no such BUN exists return OID-nil.", args(1,3, arg("",oid),batargany("b",1),argany("t",1))),
  command("algebra", "fetch", ALGfetchoid, false, "Returns the value of the BUN at x-th position with 0 <= x < b.count", args(1,3, argany("",1),batargany("b",1),arg("x",oid))),

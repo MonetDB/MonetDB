@@ -423,7 +423,7 @@ static char *RAPIinitialize(void) {
 	// set some command line arguments
 	{
 		structRstart rp;
-		char *rargv[] = { "R",
+		static /*const*/ char *rargv[] = { "R",
 #if R_VERSION >= R_Version(4,0,0)
 						  "--no-echo",
 #else

@@ -167,7 +167,7 @@ TRACERcomp_info(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 #include "mel.h"
-mel_func tracer_init_funcs[] = {
+static mel_func tracer_init_funcs[] = {
  command("logging", "flush", TRACERflush_buffer, true, "Flush the buffer", args(1,1, arg("",void))),
  command("logging", "setcomplevel", TRACERset_component_level, true, "Sets the log level for a specific component", args(1,3, arg("",void),arg("comp",str),arg("lvl",str))),
  command("logging", "resetcomplevel", TRACERreset_component_level, true, "Resets the log level for a specific component back to the default", args(1,2, arg("",void),arg("comp",str))),

@@ -896,7 +896,7 @@ CMDBATavg3comb(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 #include "mel.h"
-mel_func calc_init_funcs[] = {
+static mel_func calc_init_funcs[] = {
 #ifdef HAVE_HGE
  pattern("calc", "iszero", CMDvarISZERO, false, "Unary check for zero of V", args(1,2, arg("",bit),arg("v",hge))),
  pattern("calc", "not", CMDvarNOT, false, "Unary bitwise not of V", args(1,2, arg("",hge),arg("v",hge))),

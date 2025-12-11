@@ -261,7 +261,7 @@ MATpackValues(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 }
 
 #include "mel.h"
-mel_func mat_init_funcs[] = {
+static mel_func mat_init_funcs[] = {
  pattern("mat", "new", MATpack, false, "Define a Merge Association Table (MAT). Fall back to the pack operation\nwhen this is called ", args(1,2, batargany("",1),batvarargany("b",1))),
  pattern("bat", "pack", MATpackValues, false, "Materialize the values into a BAT. Avoiding a clash with mat.pack() in mergetable", args(1,2, batargany("",1),varargany("",1))),
  pattern("mat", "pack", MATpackValues, false, "Materialize the MAT (of values) into a BAT", args(1,2, batargany("",1),varargany("",1))),

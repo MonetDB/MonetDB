@@ -1033,10 +1033,10 @@ BATextractURLHost(Client ctx, bat *res, const bat *bid, const bit *no_www)
 
 
 #include "mel.h"
-mel_atom url_init_atoms[] = {
+static mel_atom url_init_atoms[] = {
  { .name="url", .basetype="str", .fromstr=URLfromString, .tostr=URLtoString, },  { .cmp=NULL }
 };
-mel_func url_init_funcs[] = {
+static mel_func url_init_funcs[] = {
  command("url", "url", URLnew, false, "Create an URL from a string literal", args(1,2, arg("",url),arg("s",str))),
  command("url", "url", URLnoop, false, "Create an URL from a string literal", args(1,2, arg("",url),arg("s",url))),
  command("calc", "url", URLnew, false, "Create an URL from a string literal", args(1,2, arg("",url),arg("s",str))),

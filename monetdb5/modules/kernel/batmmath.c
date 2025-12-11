@@ -451,7 +451,7 @@ scienceBinaryImpl(pow)
 scienceBinaryImpl(logbs)
 
 #include "mel.h"
-mel_func batmmath_init_funcs[] = {
+static mel_func batmmath_init_funcs[] = {
  pattern("batmmath", "asin", CMDscience_bat_asin, false, "", args(1,2, batarg("",dbl),batarg("x",dbl))),
  pattern("batmmath", "asin", CMDscience_bat_asin, false, "", args(1,3, batarg("",dbl),batarg("x",dbl),batarg("s",oid))),
  pattern("batmmath", "asin", CMDscience_bat_asin, false, "", args(1,2, batarg("",flt),batarg("x",flt))),

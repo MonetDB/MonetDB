@@ -172,7 +172,7 @@ socket_getoob_unix(stream *s)
 static int
 socket_putoob_unix(stream *s, char val)
 {
-	char buf[3] = {
+	const char buf[3] = {
 		OOBMSG0,
 		OOBMSG1,
 		val,
