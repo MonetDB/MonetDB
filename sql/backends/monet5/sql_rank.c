@@ -955,24 +955,6 @@ SQLlast_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return do_limit_value(cntxt, mb, stk, pci, "sql.last_value", GDKanalyticallast);
 }
 
-#define NTH_VALUE_SINGLE_IMP(TPE)										\
-	do {																\
-		TPE val = *(TPE*) VALget(nth);									\
-		if (!VALisnil(nth) && val < 1)									\
-			throw(SQL, "sql.nth_value", SQLSTATE(42000) "nth_value must be greater than zero"); \
-		if (VALisnil(nth) || val > 1) {									\
-			ValRecord def = {.vtype = TYPE_void,};						\
-			if (!VALinit(NULL, &def, tp1, ATOMnilptr(tp1)) || !VALcopy(NULL, res, &def)) { \
-				VALclear(&def);											\
-				throw(SQL, "sql.nth_value", SQLSTATE(HY013) MAL_MALLOC_FAIL); \
-			}															\
-			VALclear(&def);												\
-		} else {														\
-			if (!VALcopy(NULL, res, in))										\
-				throw(SQL, "sql.nth_value", SQLSTATE(HY013) MAL_MALLOC_FAIL); \
-		}																\
-	} while(0)
-
 str
 SQLnth_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -2111,7 +2093,7 @@ SQLstrgroup_concat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		str in = *getArgReference_str(stk, pci, 1);
 
 		if (strNil(in)) {
-			*res = ma_strdup(ma, str_nil);
+			*res = (char *) str_nil;
 		} else if (separator_offset) {
 			str sep = *getArgReference_str(stk, pci, 2);
 			size_t l1 = strlen(in), l2 = strNil(sep) ? 0 : strlen(sep);

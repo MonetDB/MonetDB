@@ -563,9 +563,7 @@ INEThost(Client ctx, str *retval, const inet *val)
 	str ip;
 
 	if (is_inet_nil(val)) {
-		*retval = ma_strdup(ma, str_nil);
-		if (*retval == NULL)
-			throw(MAL, "INEThost", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		*retval = (char *) str_nil;
 	} else {
 		ip = ma_alloc(ma, sizeof(char) * 16);
 		if (ip == NULL)
@@ -722,9 +720,7 @@ INETtext(Client ctx, str *retval, const inet *val)
 	str ip;
 
 	if (is_inet_nil(val)) {
-		*retval = ma_strdup(ma, str_nil);
-		if (*retval == NULL)
-			throw(MAL, "INETtext", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		*retval = (char *) str_nil;
 	} else {
 		ip = ma_alloc(ma, sizeof(char) * 20);
 		if (ip == NULL)
@@ -749,9 +745,7 @@ INETabbrev(Client ctx, str *retval, const inet *val)
 	str ip;
 
 	if (is_inet_nil(val)) {
-		*retval = ma_strdup(ma, str_nil);
-		if (*retval == NULL)
-			throw(MAL, "inet.abbrev", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		*retval = (char *) str_nil;
 	} else {
 		unsigned int mask;
 		unsigned char m[4];

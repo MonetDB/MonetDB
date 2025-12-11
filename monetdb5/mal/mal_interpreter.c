@@ -260,24 +260,24 @@ malCommandCall(Client cntxt, MalStkPtr stk, InstrPtr pci)
 /*
  * Copy the constant values onto the stack frame
  */
-#define initStack(A, S, R)								\
-	do {											\
-		for (int i = (S); i < mb->vtop; i++) {		\
-			lhs = &stk->stk[i];						\
-			if (isVarConstant(mb, i) > 0) {			\
-				if (!isVarDisabled(mb, i)) {		\
-					rhs = &getVarConstant(mb, i);	\
-					if(VALcopy(A, lhs, rhs) == NULL)	\
-						R = 0;						\
-				}									\
-			} else {								\
-				lhs->vtype = getVarGDKType(mb, i);	\
-				lhs->val.pval = 0;					\
-				lhs->len = 0;						\
-				lhs->bat = isaBatType(getVarType(mb, i));		\
-				lhs->allocated = false; \
-			}										\
-		}											\
+#define initStack(A, S, R)									\
+	do {													\
+		for (int i = (S); i < mb->vtop; i++) {				\
+			lhs = &stk->stk[i];								\
+			if (isVarConstant(mb, i) > 0) {					\
+				if (!isVarDisabled(mb, i)) {				\
+					rhs = &getVarConstant(mb, i);			\
+					if (VALcopy(A, lhs, rhs) == NULL)		\
+						R = 0;								\
+				}											\
+			} else {										\
+				*lhs = (ValRecord) {						\
+					.vtype = getVarGDKType(mb, i),			\
+					.bat = isaBatType(getVarType(mb, i)),	\
+					.allocated = false,						\
+				};											\
+			}												\
+		}													\
 	} while (0)
 
 static inline bool

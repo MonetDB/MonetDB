@@ -1840,7 +1840,7 @@ SERVERfetch_field_str(Client ctx, str *ret, const int *key, const int *fnr)
 	str fld;
 	accessTest(*key, "fetch_field");
 	fld = mapi_fetch_field(SERVERsessions[i].hdl, *fnr);
-	*ret = ma_strdup(ma, fld ? fld : str_nil);
+	*ret = fld ? ma_strdup(ma, fld) : (char *) str_nil;
 	if (*ret == NULL)
 		throw(MAL, "mapi.fetch_field_str", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	if (mapi_error(mid))
@@ -1978,7 +1978,7 @@ SERVERfetch_line(Client ctx, str *ret, const int *key)
 	if (mapi_error(mid))
 		throw(MAL, "mapi.fetch_line", "%s",
 			  mapi_result_error(SERVERsessions[i].hdl));
-	*ret = ma_strdup(ma, fld ? fld : str_nil);
+	*ret = fld ? ma_strdup(ma, fld) : (char *) str_nil;
 	if (*ret == NULL)
 		throw(MAL, "mapi.fetch_line", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
