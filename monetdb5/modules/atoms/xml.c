@@ -912,10 +912,10 @@ XMLepilogue(Client ctx, void *ret)
 #endif /* HAVE_LIBXML */
 
 #include "mel.h"
-mel_atom xml_init_atoms[] = {
+static mel_atom xml_init_atoms[] = {
  { .name="xml", .basetype="str", .fromstr=XMLfromString, .tostr=XMLtoString, },  { .cmp=NULL }
 };
-mel_func xml_init_funcs[] = {
+static mel_func xml_init_funcs[] = {
  command("xml", "xml", XMLstr2xml, false, "Cast the string to an xml compliant string", args(1,2, arg("",xml),arg("src",str))),
  command("xml", "str", XMLxml2str, false, "Cast the string to an xml compliant string", args(1,2, arg("",str),arg("src",xml))),
  command("xml", "text", XMLxmltext, false, "Extract text from an xml atom", args(1,2, arg("",str),arg("src",xml))),

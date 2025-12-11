@@ -284,7 +284,7 @@ ITRnext_dbl(Client ctx, dbl *i, const dbl *step, const dbl *last)
 }
 
 #include "mel.h"
-mel_func iterator_init_funcs[] = {
+static mel_func iterator_init_funcs[] = {
  command("iterator", "new", ITRnewChunk, false, "Create an iterator with fixed granule size.\nThe result is a view.", args(2,4, arg("",lng),batargany("",1),batargany("b",1),arg("size",lng))),
  command("iterator", "next", ITRnextChunk, false, "Produce the next chunk for processing.", args(2,4, arg("",lng),batargany("",1),batargany("b",1),arg("size",lng))),
  pattern("iterator", "new", ITRbunIterator, false, "Process the buns one by one extracted from a void table.", args(2,3, arg("h",oid),argany("t",1),batargany("b",1))),

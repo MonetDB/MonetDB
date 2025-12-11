@@ -416,7 +416,7 @@ MBMskewed(Client ctx, bat *ret, const oid *base, const lng *size, const int *dom
 }
 
 #include "mel.h"
-mel_func microbenchmark_init_funcs[] = {
+static mel_func microbenchmark_init_funcs[] = {
  command("microbenchmark", "random", MBMrandom, false, "Create a BAT with random integer distribution; domain == nil:int ? [0:RAND_MAX] : [0,domain)", args(1,4, batarg("",int),arg("base",oid),arg("size",lng),arg("domain",int))),
  command("microbenchmark", "random", MBMrandom_seed, false, "Create a BAT with random integer distribution,\nusing given seed (seed == nil:int -> no seed used);\ndomain == nil:int ? [0:RAND_MAX] : [0,domain)", args(1,5, batarg("",int),arg("base",oid),arg("size",lng),arg("domain",int),arg("seed",int))),
  command("microbenchmark", "uniform", MBMuniform, false, "Create a BAT with uniform integer distribution", args(1,4, batarg("",int),arg("base",oid),arg("size",lng),arg("domain",int))),

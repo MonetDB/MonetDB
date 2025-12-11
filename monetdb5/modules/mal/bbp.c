@@ -549,7 +549,7 @@ CMDsetName(Client ctx, str *rname, const bat *bid, const char *const *name)
 }
 
 #include "mel.h"
-mel_func bbp_init_funcs[] = {
+static mel_func bbp_init_funcs[] = {
  pattern("bbp", "bind", CMDbbpbind, false, "Locate the BAT using its logical name", args(1,2, batargany("",1),arg("name",str))),
  command("bbp", "getIndex", CMDbbpgetIndex, false, "Retrieve the index in the BBP", args(1,2, arg("",int),batargany("b",1))),
  command("bbp", "getNames", CMDbbpNames, false, "Map BAT into its bbp name", args(1,1, batarg("",str))),

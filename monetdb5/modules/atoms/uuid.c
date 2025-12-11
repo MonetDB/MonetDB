@@ -492,7 +492,7 @@ UUIDuuid2str_bulk(Client ctx, bat *res, const bat *bid, const bat *sid)
 }
 
 #include "mel.h"
-mel_func uuid_init_funcs[] = {
+static mel_func uuid_init_funcs[] = {
  command("uuid", "new", UUIDgenerateUuid, true, "Generate a new uuid", args(1,1, arg("",uuid))),
  command("uuid", "new", UUIDgenerateUuidInt, false, "Generate a new uuid (dummy version for side effect free multiplex loop)", args(1,2, arg("",uuid),arg("d",int))),
  pattern("batuuid", "new", UUIDgenerateUuidInt_bulk, false, "Generate a new uuid (dummy version for side effect free multiplex loop)", args(1,2, batarg("",uuid),batarg("d",int))),

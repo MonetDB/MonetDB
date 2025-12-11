@@ -433,7 +433,7 @@ MANIFOLDremapMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 }
 
 #include "mel.h"
-mel_func manifold_init_funcs[] = {
+static mel_func manifold_init_funcs[] = {
  pattern("mal", "multiplex", MANIFOLDremapMultiplex, false, "", args(1,4, varargany("",0),arg("mod",str),arg("fcn",str),varargany("a",0))),
  pattern("mal", "multiplex", MANIFOLDremapMultiplex, false, "", args(1,4, varargany("",0),arg("card", lng), arg("mod",str),arg("fcn",str))),
  pattern("mal", "multiplex", MANIFOLDremapMultiplex, false, "", args(1,5, varargany("",0),arg("card", lng), arg("mod",str),arg("fcn",str),varargany("a",0))),

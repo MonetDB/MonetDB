@@ -2849,7 +2849,7 @@ STRcontainsjoin(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 #include "mel.h"
-mel_func str_init_funcs[] = {
+static mel_func str_init_funcs[] = {
 	command("str", "str", STRtostr, false, "Noop routine.", args(1,2, arg("",str),arg("s",str))),
 	command("str", "string", STRTail, false, "Return the tail s[offset..n]\nof a string s[0..n].", args(1,3, arg("",str),arg("s",str),arg("offset",int))),
 	command("str", "string3", STRSubString, false, "Return substring s[offset..offset+count] of a string s[0..n]", args(1,4, arg("",str),arg("s",str),arg("offset",int),arg("count",int))),

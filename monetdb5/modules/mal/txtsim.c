@@ -1524,7 +1524,7 @@ str_2_qgrams(Client ctx, bat *ret, const char *const *val)
 }
 
 #include "mel.h"
-mel_func txtsim_init_funcs[] = {
+static mel_func txtsim_init_funcs[] = {
 	pattern("txtsim", "dameraulevenshtein", TXTSIMdameraulevenshtein, false, "Calculates Damerau-Levenshtein distance between two strings, operation costs (ins/del = 1, replacement = 1, transposition = 2)", args(1,3,arg("",int),arg("x",str),arg("y",str))),
 	pattern("txtsim", "dameraulevenshtein", TXTSIMdameraulevenshtein, false, "Calculates Damerau-Levenshtein distance between two strings, variable operation costs (ins/del, replacement, transposition)", args(1,6,arg("",int),arg("x",str),arg("y",str),arg("insdel_cost",int),arg("replace_cost",int),arg("transpose_cost",int))),
 	command("txtsim", "editdistance", TXTSIMdameraulevenshtein1, false, "Alias for Damerau-Levenshtein(str,str), insdel cost = 1, replace cost = 1 and transpose = 2", args(1,3, arg("",int),arg("s",str),arg("t",str))),

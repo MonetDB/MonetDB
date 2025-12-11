@@ -444,7 +444,7 @@ QLOGcall(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 #include "mel.h"
-mel_func querylog_init_funcs[] = {
+static mel_func querylog_init_funcs[] = {
  command("querylog", "enable", QLOGenableThreshold, false, "Turn on the query logger", args(0,1, arg("threshold",int))),
  command("querylog", "enable", QLOGenable, false, "Turn on the query logger", noargs),
  command("querylog", "disable", QLOGdisable, false, "Turn off the query logger", noargs),

@@ -59,7 +59,7 @@ MALpass(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 #include "mel.h"
-mel_func language_init_funcs[] = {
+static mel_func language_init_funcs[] = {
  pattern("language", "dataflow", MALstartDataflow, false, "The current guarded block is executed using dataflow control. ", args(1,1, arg("",bit))),
  pattern("language", "pass", MALpass, false, "Cheap instruction to discard storage while retaining the dataflow dependency", args(0,1, argany("v",1))),
  pattern("language", "block", deblockdataflow, false, "Block on availability of all variables w, and then pass on v", args(1,3, arg("",int),arg("v",int),varargany("w",0))),

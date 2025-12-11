@@ -219,7 +219,7 @@ GROUPmulticolumngroup(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 #include "mel.h"
-mel_func groupby_init_funcs[] = {
+static mel_func groupby_init_funcs[] = {
  pattern("group", "multicolumn", GROUPmulticolumngroup, false, "Derivation of a group index over multiple columns.", args(3,4, batarg("ref",oid),batarg("grp",oid),batargany("hist",0),batvarargany("b",0))),
  { .imp=NULL }
 };
