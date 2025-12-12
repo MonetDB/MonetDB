@@ -306,7 +306,7 @@ melFunction(bool command, const char *mod, const char *fcn, MALfcn imp,
 	fcn = s->name;
 	s->allocated = true;
 
-	f = GDKmalloc(sizeof(mel_func) + sizeof(mel_arg [argc]));
+	f = GDKmalloc(sizeof(mel_func) + argc * sizeof(mel_arg));
 	if (f == NULL) {
 		freeSymbol(s);
 		return MEL_ERR;

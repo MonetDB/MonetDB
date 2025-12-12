@@ -49,11 +49,11 @@ SQLhelp sqlhelp1[] = {
 	// major commands
 	{"ALTER MERGE TABLE",
 	 "",
-	 "ALTER TABLE [ IF EXISTS ] qname ADD TABLE qname [ AS PARTITION partition_spec ]\n"
-	 "ALTER TABLE [ IF EXISTS ] qname DROP TABLE qname [ RESTRICT | CASCADE ]\n"
-	 "ALTER TABLE [ IF EXISTS ] qname SET TABLE qname AS PARTITION partition_spec",
+	 "ALTER TABLE [ IF EXISTS ] qname ADD  TABLE qname [ AS PARTITION partition_spec ]\n"
+	 "ALTER TABLE [ IF EXISTS ] qname SET  TABLE qname   AS PARTITION partition_spec\n"
+	 "ALTER TABLE [ IF EXISTS ] qname DROP TABLE qname [ RESTRICT | CASCADE ]",
 	 "qname,partition_spec",
-	 "See also https://www.monetdb.org/documentation/admin-guide/distributed-query-processing/"},
+	 "See also https://www.monetdb.org/documentation/user-guide/sql-manual/data-definition/merge-tables/"},
 	{"ALTER SCHEMA",
 	 "",
 	 "ALTER SCHEMA [ IF EXISTS ] ident RENAME TO ident",
@@ -61,16 +61,22 @@ SQLhelp sqlhelp1[] = {
 	 "See also https://www.monetdb.org/documentation/user-guide/sql-manual/data-definition/schema-definitions/"},
 	{"ALTER SEQUENCE",
 	 "",
-	 "ALTER SEQUENCE [ IF EXISTS ] qname [AS seq_int_datatype] [RESTART [WITH {bigint|subquery}] ] [INCREMENT BY bigint]\n"
-	 "  [MINVALUE bigint | NO MINVALUE] [MAXVALUE bigint | NO MAXVALUE] [CACHE bigint] [[NO] CYCLE]",
+	 "ALTER SEQUENCE [ IF EXISTS ] qname [AS seq_int_datatype]\n"
+	 "  [RESTART [WITH {bigint|subquery}] ]\n"
+	 "  [INCREMENT BY bigint]\n"
+	 "  [MINVALUE bigint | NO MINVALUE]\n"
+	 "  [MAXVALUE bigint | NO MAXVALUE]\n"
+	 "  [CACHE bigint]\n"
+	 "  [[NO] CYCLE]",
 	 "seq_int_datatype",
-	 "See also https://www.monetdb.org/documentation/user-guide/sql-manual/data-types/serial-types/"},
+	 "See also https://www.monetdb.org/documentation/user-guide/sql-manual/data-definition/sequence-definition/"},
 	{"ALTER TABLE",
 	 "",
 	 "ALTER TABLE [ IF EXISTS ] qname ADD [ COLUMN ] column_def\n"
 	 "ALTER TABLE [ IF EXISTS ] qname ADD [ CONSTRAINT ident ] table_constraint\n"
-	 "ALTER TABLE [ IF EXISTS ] qname ALTER [ COLUMN ] ident SET DEFAULT value\n"
+	 "ALTER TABLE [ IF EXISTS ] qname ALTER [ COLUMN ] ident data_type\n"
 	 "ALTER TABLE [ IF EXISTS ] qname ALTER [ COLUMN ] ident SET [NOT] NULL\n"
+	 "ALTER TABLE [ IF EXISTS ] qname ALTER [ COLUMN ] ident SET DEFAULT value\n"
 	 "ALTER TABLE [ IF EXISTS ] qname ALTER [ COLUMN ] ident DROP DEFAULT\n"
 	 "ALTER TABLE [ IF EXISTS ] qname ALTER [ COLUMN ] ident SET STORAGE {string | NULL}\n"
 	 "ALTER TABLE [ IF EXISTS ] qname DROP [ COLUMN ] ident [ RESTRICT | CASCADE ]\n"
@@ -221,10 +227,15 @@ SQLhelp sqlhelp1[] = {
 	 "See also https://www.monetdb.org/documentation/user-guide/sql-manual/data-definition/schema-definitions/"},
 	{"CREATE SEQUENCE",
 	 "Define a new integer number sequence generator",
-	 "CREATE SEQUENCE [ IF NOT EXISTS ] qname [AS seq_int_datatype] [START WITH bigint] [INCREMENT BY bigint]\n"
-	 "  [MINVALUE bigint | NO MINVALUE] [MAXVALUE bigint | NO MAXVALUE] [CACHE bigint] [[NO] CYCLE]",
+	 "CREATE SEQUENCE [ IF NOT EXISTS ] qname [AS seq_int_datatype]\n"
+	 "  [START WITH bigint]\n"
+	 "  [INCREMENT BY bigint]\n"
+	 "  [MINVALUE bigint | NO MINVALUE]\n"
+	 "  [MAXVALUE bigint | NO MAXVALUE]\n"
+	 "  [CACHE bigint]\n"
+	 "  [[NO] CYCLE]",
 	 "seq_int_datatype",
-	 "See also https://www.monetdb.org/documentation/user-guide/sql-manual/data-types/serial-types/"},
+	 "See also https://www.monetdb.org/documentation/user-guide/sql-manual/data-definition/sequence-definition/"},
 	{"CREATE TABLE",
 	 "Create a new table",
 	 "CREATE TABLE [ IF NOT EXISTS ] qname table_source [STORAGE ident string]\n"
@@ -243,7 +254,7 @@ SQLhelp sqlhelp1[] = {
 	 "Add user defined type to the type system ",
 	 "CREATE TYPE [ IF NOT EXISTS ] qname EXTERNAL NAME ident",
 	 NULL,
-	 NULL},
+	 "See also https://www.monetdb.org/documentation/user-guide/sql-manual/data-types/udf-types/"},
 	{"CREATE UNLOGGED TABLE",
 	 "Create a new unlogged table",
 	 "CREATE UNLOGGED TABLE [ IF NOT EXISTS ] qname table_source [STORAGE ident string]\n"
@@ -410,19 +421,17 @@ SQLhelp sqlhelp1[] = {
 	 NULL,
 	 "See also https://www.monetdb.org/documentation/user-guide/sql-manual/data-manipulation/prepare-statement/"},
 	{"EXPLAIN",
-	 "Display logical or physical execution plan for the SQL statement.",
-	 "EXPLAIN [BEFORE|AFTER] [step] [SHOW DETAILS] statement\n"
-	 "\twhere step is LOGICAL UNNEST | LOGICAL REWRITE [posint] [posint] | PHYSICAL",
+	 "Display logical or physical execution plan for an SQL statement.",
+	 "EXPLAIN [ [BEFORE|AFTER] {LOGICAL UNNEST | LOGICAL REWRITE [posint] [posint] | PHYSICAL} ]\n"
+	 "        [SHOW DETAILS] sql-statement",
 	 NULL,
-	 "Plain EXPLAIN defaults to logical plan.\n"
-	 "Use LOGICAL UNNEST|LOGICAL REWRITE|PHYSICAL to specify compilation step to show.\n"
-	 "Use BEFORE|AFTER to specify moment of compilation step to output.\n"
-	 "The default is AFTER.\n"
+	 "Plain EXPLAIN sql-statement returns the logical plan.\n"
+	 "Use LOGICAL UNNEST or LOGICAL REWRITE or PHYSICAL to specify the compilation step to show.\n"
+	 "Optionally add BEFORE or AFTER to specify moment of compilation step to output. The default is AFTER.\n"
 	 "Two positive numbers can be passed to LOGICAL REWRITE to stop at specific\n"
 	 "rewriter index or rewrite loop cycle, respectively.\n"
 	 "If only one positive number is passed to LOGICAL REWRITE, rewrite stop cycle defaults to 0.\n"
-	 "SHOW DETAILS displays column properties, rewriter number of changes\n"
-	 "and time spent.\n"
+	 "SHOW DETAILS displays column properties, rewriter number of changes and time spent.\n"
 	 "See also https://www.monetdb.org/documentation/admin-guide/debugging-features/explain-sql-stmt/"},
 	{"EXTRACT",
 	 "Built-in function",
@@ -669,7 +678,7 @@ SQLhelp sqlhelp2[] = {
 	 " { VARCHAR | CHARACTER VARYING } '(' nonzero ')' |\n"
 	 " { CHAR | CHARACTER [ LARGE OBJECT ] | CLOB | TEXT | STRING | JSON | URL } [ '(' nonzero ')' ] |\n"
 	 " { BINARY LARGE OBJECT | BLOB } [ '(' nonzero ')' ] |\n"
-	 " UUID | INET | datetime_type | interval_type | geometry_type",
+	 " UUID | INET | INET4 | INET6 | datetime_type | interval_type | geometry_type",
 	 "datetime_type,interval_type,geometry_type",
 	 "See also https://www.monetdb.org/documentation/user-guide/sql-manual/data-types/"},
 	{"default_char_set",
