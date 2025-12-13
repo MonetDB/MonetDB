@@ -174,7 +174,7 @@ GRPsubgroup21(Client ctx, bat *ngid, const bat *bid, const bat *gid)
 }
 
 #include "mel.h"
-mel_func group_init_funcs[] = {
+static mel_func group_init_funcs[] = {
  command("group", "group", GRPgroup1, false, "", args(3,4, batarg("groups",oid),batarg("extents",oid),batarg("histo",lng),batargany("b",1))),
  command("group", "group", GRPgroup2, false, "", args(3,5, batarg("groups",oid),batarg("extents",oid),batarg("histo",lng),batargany("b",1),batarg("s",oid))),
  command("group", "group", GRPgroup3, false, "", args(2,3, batarg("groups",oid),batarg("extents",oid),batargany("b",1))),

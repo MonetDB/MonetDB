@@ -108,8 +108,8 @@ char *FormatCode(char *code, char **args, size_t argcount, size_t tabwidth,
 	bool multiline_statement = false;
 	int multiline_quotes = 0;
 
-	char base_start[] = "def pyfun(";
-	char base_end[] = "):\n";
+	static const char base_start[] = "def pyfun(";
+	static const char base_end[] = "):\n";
 	*msg = NULL;
 	(void)code_object;
 

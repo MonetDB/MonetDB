@@ -135,7 +135,7 @@ static str monetdb_initialize(void) {
 		 * bin/mserver5 -> ../
 		 * libX/monetdb5/lib/
 		 * probe libX = lib, lib32, lib64, lib/64 */
-		const char *libdirs[] = { "lib", "lib64", "lib/64", "lib32", NULL };
+		static const char *libdirs[] = { "lib", "lib64", "lib/64", "lib32", NULL };
 		size_t i;
 		struct stat sb;
 		if (binpath != NULL) {

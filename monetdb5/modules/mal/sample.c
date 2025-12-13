@@ -124,7 +124,7 @@ SAMPLEuniform(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 #include "mel.h"
-mel_func sample_init_funcs[] = {
+static mel_func sample_init_funcs[] = {
  pattern("sample", "subuniform", SAMPLEuniform, false, "Returns the oids of a uniform sample of size s", args(1,3, batarg("",oid),batargany("b",0),arg("sample_size",lng))),
  pattern("sample", "subuniform", SAMPLEuniform, false, "Returns the oids of a uniform sample of size s and where the prg is seeded with sample_seed", args(1,4, batarg("",oid),batargany("b",0),arg("sample_size",lng),arg("sample_seed",int))),
  pattern("sample", "subuniform", SAMPLEuniform, false, "Returns the oids of a uniform sample of size = (p x count(b)), where 0 <= p <= 1.0", args(1,3, batarg("",oid),batargany("b",0),arg("p",dbl))),

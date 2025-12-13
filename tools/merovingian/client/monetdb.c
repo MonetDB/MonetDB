@@ -1892,8 +1892,8 @@ snapshot_list(int nglobs, char *globs[]) {
 		strftime(tm_buf, sizeof(tm_buf), "%a %Y-%m-%d %H:%M:%S", &tm);
 		// format size
 		double size = snap->size;
-		char *units[] = {"B", "KiB", "MiB", "GiB", "TiB", NULL};
-		char **unit = &units[0];
+		static const char *units[] = {"B", "KiB", "MiB", "GiB", "TiB", NULL};
+		const char **unit = &units[0];
 		while (size >= 1024 && unit[1] != NULL) {
 			size /= 1024;
 			unit++;
@@ -2048,7 +2048,7 @@ command_snapshot_list(int argc, char *argv[])
 	}
 
 	if (argc == 1) {
-		char *args[] = {"*"};
+		static /*const*/ char *args[] = {"*"};
 		snapshot_list(1, args);
 	}
 	else

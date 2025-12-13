@@ -1543,7 +1543,7 @@ AGGRsubcorrcand(Client ctx, bat *retval, const bat *b1, const bat *b2, const bat
 }
 
 #include "mel.h"
-mel_func aggr_init_funcs[] = {
+static mel_func aggr_init_funcs[] = {
  command("aggr", "sum", AGGRsum3_dbl, false, "Grouped tail sum on bte", args(1,4, batarg("",dbl),batarg("b",bte),batarg("g",oid),batargany("e",1))),
  command("aggr", "sum", AGGRsum3_bte, false, "Grouped tail sum on bte", args(1,4, batarg("",bte),batarg("b",bte),batarg("g",oid),batargany("e",1))),
  command("aggr", "subsum", AGGRsubsum_bte, false, "Grouped sum aggregate", args(1,5, batarg("",bte),batarg("b",bte),batarg("g",oid),batargany("e",1),arg("skip_nils",bit))),

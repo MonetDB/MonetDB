@@ -1763,7 +1763,7 @@ AGGRsubxml(Client ctx, bat *retval, const bat *bid, const bat *gid, const bat *e
 #endif /* HAVE_LIBXML */
 
 #include "mel.h"
-mel_func batxml_init_funcs[] = {
+static mel_func batxml_init_funcs[] = {
  command("batxml", "xml", BATXMLstr2xml, false, "Cast the string to an xml compliant string.", args(1,2, batarg("",xml),batarg("src",str))),
  command("batxml", "str", BATXMLxml2str, false, "Cast the xml to a string.", args(1,2, batarg("",str),batarg("src",xml))),
  command("batxml", "document", BATXMLdocument, false, "Parse the string as an XML document.", args(1,2, batarg("",xml),batarg("src",str))),

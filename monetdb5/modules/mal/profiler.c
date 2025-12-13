@@ -78,7 +78,7 @@ CMDcpuloadPercentage(Client ctx, int *cycles, int *io, const lng *user, const ln
 }
 
 #include "mel.h"
-mel_func profiler_init_funcs[] = {
+static mel_func profiler_init_funcs[] = {
  command("profiler", "cpustats", CMDcpustats, false, "Extract cpu statistics from the kernel", args(5,5, arg("user",lng),arg("nice",lng),arg("sys",lng),arg("idle",lng),arg("iowait",lng))),
  command("profiler", "cpuload", CMDcpuloadPercentage, false, "Calculate the average cpu load percentage and io waiting times", args(2,7, arg("cycles",int),arg("io",int),arg("user",lng),arg("nice",lng),arg("sys",lng),arg("idle",lng),arg("iowait",lng))),
  { .imp=NULL }

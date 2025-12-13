@@ -114,7 +114,7 @@ ALARMtime(Client ctx, int *res)
 }
 
 #include "mel.h"
-mel_func alarm_init_funcs[] = {
+static mel_func alarm_init_funcs[] = {
  pattern("alarm", "sleep", ALARMsleep, true, "Sleep a few milliseconds", args(1,2, arg("",void),argany("msecs",1))),
  pattern("alarm", "sleep", ALARMsleep, true, "Sleep a few milliseconds and return the slept value", args(1,2, argany("",1),argany("msecs",1))),
  command("alarm", "usec", ALARMusec, true, "Return time since Jan 1, 1970 in microseconds.", args(1,1, arg("",lng))),

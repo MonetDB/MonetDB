@@ -735,7 +735,7 @@ MKEYconstbulk_rotate_xor_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 }
 
 #include "mel.h"
-mel_func mkey_init_funcs[] = {
+static mel_func mkey_init_funcs[] = {
  pattern("mkey", "hash", MKEYhash, false, "calculate a hash value", args(1,2, arg("",lng),argany("v",0))),
  pattern("batmkey", "hash", MKEYbathash, false, "calculate a hash value", args(1,2, batarg("",lng),batargany("b",0))),
  pattern("batmkey", "hash", MKEYbathash, false, "calculate a hash value, with a candidate list", args(1,3, batarg("",lng),batargany("b",0),batarg("s",oid))),

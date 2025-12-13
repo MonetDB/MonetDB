@@ -1350,7 +1350,7 @@ batcalc_init(void)
 	}
 	/* possibly add the min/max + _no_nil */
 	/* binops on numeric types */
-	struct {
+	static const struct {
 		char *op;
 		char *fname;
 		char *fname_el;
@@ -1454,7 +1454,7 @@ batcalc_init(void)
 			}
 		}
 	}
-	struct {
+	static const struct {
 		char *op;
 		char *fname;
 		char *fname_el;
@@ -1506,7 +1506,7 @@ batcalc_init(void)
 			}
 	    }
 	}
-	struct {
+	static const struct {
 		char *op;
 		char *fname;
 		MALfcn fcn;
@@ -1548,7 +1548,7 @@ batcalc_init(void)
 			}
 	    }
 	}
-	struct {
+	static const struct {
 		char *op;
 		char *fname;
 		MALfcn fcn;
@@ -1593,7 +1593,7 @@ batcalc_init(void)
 			err += melFunction(false, "batcalc", logops[f].op, logops[f].fcn, logops[f].fname, false, logops[f].comment_v_, 1, 4, ret, varg, arg, cand);
 		}
 	}
-	struct {
+	static const struct {
 		char *op;
 		char *fname;
 		MALfcn fcn;
@@ -1637,7 +1637,7 @@ batcalc_init(void)
 		}
 	}
 
-	struct {
+	static const struct {
 		char *op;
 		char *fname;
 		MALfcn fcn;
@@ -1689,7 +1689,7 @@ batcalc_init(void)
 			.comment_v_ = "Return B != V",
 		}
 	};
-	int newtypes[] = {
+	const int newtypes[] = {
 		ATOMindex("json"),
 		ATOMindex("inet"),
 		ATOMindex("uuid"),
@@ -1780,7 +1780,7 @@ batcalc_init(void)
 		}
 	}
 
-	struct {
+	static const struct {
 		char *op;
 		char *fname;
 		MALfcn fcn;
@@ -1840,7 +1840,7 @@ batcalc_init(void)
 		err += melFunction(false, "batcalc", "avg", (MALfcn)&CMDcalcavg, "CMDcalcavg", false, "average and number of non-nil values of B with candidates list", 2, 5, ret, nr, arg, cand, scale);
 	}
 
-	struct {
+	static const struct {
 		int type;
 		char *name;
 		char *fname;

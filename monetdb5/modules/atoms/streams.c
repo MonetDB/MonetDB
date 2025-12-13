@@ -239,11 +239,11 @@ bstream_read_wrapwrap(Client ctx, int *res, const Bstream *BS, const int *size)
 }
 
 #include "mel.h"
-mel_atom streams_init_atoms[] = {
+static mel_atom streams_init_atoms[] = {
  { .name="streams", .basetype="ptr", },
  { .name="bstream", .basetype="ptr", },  { .cmp=NULL }
 };
-mel_func streams_init_funcs[] = {
+static mel_func streams_init_funcs[] = {
  command("streams", "openReadBytes", mnstr_open_rstreamwrap, true, "open a file stream for reading", args(1,2, arg("",streams),arg("filename",str))),
  command("streams", "openWriteBytes", mnstr_open_wstreamwrap, true, "open a file stream for writing", args(1,2, arg("",streams),arg("filename",str))),
  command("streams", "openRead", mnstr_open_rastreamwrap, true, "open ascii file stream for reading", args(1,2, arg("",streams),arg("filename",str))),

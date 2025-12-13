@@ -1219,7 +1219,7 @@ rm "${RPM_BUILD_ROOT}"%{_unitdir}/monetdbd.service
     ALTER USER IF EXISTS user_name ...
   With IF EXISTS specified these statements will not return an error
   when the object does not exists.  See doc:
-  https://www.monetdb.org/documentation/user-guide/sql-manual/data-types/serial-types/
+  https://www.monetdb.org/documentation/user-guide/sql-manual/data-definition/sequence-definition/
   and
   https://www.monetdb.org/documentation/user-guide/sql-manual/data-definition/privileges/
 

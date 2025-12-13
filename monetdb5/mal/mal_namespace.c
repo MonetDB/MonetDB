@@ -19,35 +19,19 @@
 #include "mal_exception.h"
 #include "mal_private.h"
 
-#define MAXIDENTIFIERS 4096
-#define HASHMASK  4095
+#define HASHSIZE	(1 << 12)		/* power of two */
+#define HASHMASK	(HASHSIZE - 1)
 
 MT_Lock mal_namespaceLock = MT_LOCK_INITIALIZER(mal_namespaceLock);
 
-/* taken from gdk_atoms */
-__attribute__((__pure__))
-static inline size_t
-nme_hash(const char *key, size_t len)
-{
-	size_t y = 0;
-
-	for (size_t i = 0; i < len && key[i]; i++) {
-		y += key[i];
-		y += (y << 10);
-		y ^= (y >> 6);
-	}
-	y += (y << 3);
-	y ^= (y >> 11);
-	y += (y << 15);
-	return y & HASHMASK;
-}
+#define nme_hash(key)	((size_t) (strHash(key) & HASHMASK))
 
 typedef struct NAME {
 	struct NAME *next;
 	char nme[IDLENGTH + 1];
 } *NamePtr;
 
-static NamePtr hash[MAXIDENTIFIERS];
+static NamePtr hash[HASHSIZE];
 
 static struct namespace {
 	struct namespace *next;
@@ -63,19 +47,17 @@ static struct fixnamespace {
 	int count;
 	struct fixname data[1024];
 } fixnamespace;
-static struct fixname *fixhash[4096];
+static struct fixname *fixhash[HASHSIZE];
 
 static void
 fixName(const char *name)
 {
-	size_t key = nme_hash(name, 1024 /* something large */);
-	MT_lock_set(&mal_namespaceLock);
+	size_t key = nme_hash(name);
 	struct fixname **n;
 	for (n = &fixhash[key]; *n; n = &(*n)->next) {
 		if ((*n)->name == name || strcmp((*n)->name, name) == 0) {
 			/* name is already there; this can happen when
 			 * reinitializing */
-			MT_lock_unset(&mal_namespaceLock);
 			return;
 		}
 	}
@@ -85,7 +67,6 @@ fixName(const char *name)
 		.name = name,
 	};
 	*n = new;
-	MT_lock_unset(&mal_namespaceLock);
 }
 
 #define NAME_DEFINE(NAME) const char NAME##Ref[] = #NAME
@@ -102,6 +83,7 @@ const char plusRef[] = "+";
 void
 initNamespace(void)
 {
+	MT_lock_set(&mal_namespaceLock);
 	FOREACH_NAME(NAME_FIX);
 	fixName(divRef);
 	fixName(eqRef);
@@ -109,6 +91,7 @@ initNamespace(void)
 	fixName(modRef);
 	fixName(mulRef);
 	fixName(plusRef);
+	MT_lock_unset(&mal_namespaceLock);
 }
 
 void
@@ -133,27 +116,23 @@ mal_namespace_reset(void)
 }
 
 static const char *
-findName(const char *nme, size_t len, bool allocate)
+findName(const char *nme, bool allocate)
 {
 	NamePtr *n, m;
 	size_t key;
 
-	assert(len == 0 || nme != NULL);
-	if (len == 0 || nme == NULL)
+	if (nme == NULL)
 		return NULL;
-	if (len > IDLENGTH) {
-		len = IDLENGTH;
-	}
-	key = nme_hash(nme, len);
+	key = nme_hash(nme);
 	MT_lock_set(&mal_namespaceLock);
 	for (struct fixname *p = fixhash[key]; p; p = p->next) {
-		if (p->name == nme || (strncmp(p->name, nme, len) == 0 && p->name[len] == 0)) {
+		if (p->name == nme || (strcmp(p->name, nme) == 0)) {
 			MT_lock_unset(&mal_namespaceLock);
 			return p->name;
 		}
 	}
 	for (n = &hash[key]; *n; n = &(*n)->next) {
-		if (strncmp(nme, (*n)->nme, len) == 0 && (*n)->nme[len] == 0) {
+		if (strcmp(nme, (*n)->nme) == 0) {
 			MT_lock_unset(&mal_namespaceLock);
 			return (*n)->nme;
 		}
@@ -175,8 +154,7 @@ findName(const char *nme, size_t len, bool allocate)
 	}
 	m = &namespace->data[namespace->count++];
 	assert(m->nme != nme);
-	strncpy(m->nme, nme, len);
-	m->nme[len] = 0;
+	strcpy_len(m->nme, nme, sizeof(m->nme));
 	m->next = *n;
 	*n = m;
 	MT_lock_unset(&mal_namespaceLock);
@@ -187,26 +165,34 @@ const char *
 getName(const char *nme)
 {
 	if (nme != NULL)
-		nme = findName(nme, strlen(nme), false);
+		nme = findName(nme, false);
 	return nme;
 }
 
 const char *
 getNameLen(const char *nme, size_t len)
 {
-	return findName(nme, len, false);
+	char name[IDLENGTH + 1];
+	if (len > IDLENGTH)
+		len = IDLENGTH;
+	strcpy_len(name, nme, len + 1);
+	return findName(name, false);
 }
 
 const char *
 putName(const char *nme)
 {
 	if (nme != NULL)
-		nme = findName(nme, strlen(nme), true);
+		nme = findName(nme, true);
 	return nme;
 }
 
 const char *
 putNameLen(const char *nme, size_t len)
 {
-	return findName(nme, len, true);
+	char name[IDLENGTH + 1];
+	if (len > IDLENGTH)
+		len = IDLENGTH;
+	strcpy_len(name, nme, len + 1);
+	return findName(name, true);
 }

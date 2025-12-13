@@ -1707,7 +1707,7 @@ RMTregisterSupervisor(Client ctx, int *ret, const char *const *sup_uuid, const c
 }
 
 #include "mel.h"
-mel_func remote_init_funcs[] = {
+static mel_func remote_init_funcs[] = {
  command("remote", "epilogue", RMTepilogue, false, "release the resources held by the remote module", args(1,1, arg("",void))),
  command("remote", "resolve", RMTresolve, false, "resolve a pattern against Merovingian and return the URIs", args(1,2, batarg("",str),arg("pattern",str))),
  pattern("remote", "connect", RMTconnect, false, "returns a newly created connection for uri, using user name and password", args(1,5, arg("",str),arg("uri",str),arg("user",str),arg("passwd",str),arg("scen",str))),

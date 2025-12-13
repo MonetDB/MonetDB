@@ -69,7 +69,7 @@ PYAPI3PyAPIevalLoader(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	BUN nval = 0;
 	int ncols = 0;
 
-	char *loader_additional_args[] = {"_emit", "_conn"};
+	static /*const*/ char *loader_additional_args[] = {"_emit", "_conn"};
 
 	if (!PYAPI3PyAPIInitialized()) {
 		throw(MAL, "pyapi3.eval",

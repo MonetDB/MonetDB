@@ -40,7 +40,7 @@ msettings_malloc_failed(msettings_error err)
 
 int msetting_parse_bool(const char *text)
 {
-	static struct { const char *word; bool value; } variants[] = {
+	static const struct { const char *word; bool value; } variants[] = {
 		{ "true", true },
 		{ "false", false },
 		{ "yes", true },

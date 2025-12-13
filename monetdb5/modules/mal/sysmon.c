@@ -511,7 +511,7 @@ SYSMONstop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 #include "mel.h"
-mel_func sysmon_init_funcs[] = {
+static mel_func sysmon_init_funcs[] = {
 	pattern("sysmon", "pause", SYSMONpause, true, "Suspend query execution with OID id", args(0, 1, arg("id", lng))),
 	pattern("sysmon", "pause", SYSMONpause, true, "Sysadmin call, suspend query execution with OID id belonging to user", args(0, 2, arg("id", lng), arg("user", str))),
 	pattern("sysmon", "resume", SYSMONresume, true, "Resume query execution with OID id", args(0, 1, arg("id", lng))),

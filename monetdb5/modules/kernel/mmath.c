@@ -333,7 +333,7 @@ MATHpi(Client ctx, dbl *pi)
 }
 
 #include "mel.h"
-mel_func mmath_init_funcs[] = {
+static mel_func mmath_init_funcs[] = {
  command("mmath", "acos", MATHunary_ACOSflt, false, "", args(1,2, arg("",flt),arg("x",flt))),
  command("mmath", "acos", MATHunary_ACOSdbl, false, "The acos(x) function calculates the arc cosine of x, that is the \nvalue whose cosine is x. The value is returned in radians and is \nmathematically defined to be between 0 and PI (inclusive).", args(1,2, arg("",dbl),arg("x",dbl))),
  command("mmath", "asin", MATHunary_ASINflt, false, "", args(1,2, arg("",flt),arg("x",flt))),

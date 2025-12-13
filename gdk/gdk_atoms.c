@@ -1569,7 +1569,7 @@ inet6_classify(char c)
 {
 	/* The values in this table are all one too high so the invalid
 	 * ones can be left at 0. */
-	static uint8_t table[256] = {
+	static const uint8_t table[256] = {
 		['0'] = 0 + 1, ['1'] = 1 + 1, ['2'] = 2 + 1,
 		['3'] = 3 + 1, ['4'] = 4 + 1, ['5'] = 5 + 1,
 		['6'] = 6 + 1, ['7'] = 7 + 1, ['8'] = 8 + 1,

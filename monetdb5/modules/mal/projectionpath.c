@@ -59,7 +59,7 @@ ALGprojectionpath(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 #include "mel.h"
-mel_func projectionpath_init_funcs[] = {
+static mel_func projectionpath_init_funcs[] = {
  pattern("algebra", "projectionpath", ALGprojectionpath, false, "Routine to handle join paths.  The type analysis is rather tricky.", args(1,2, batargany("",0),batvarargany("l",0))),
  { .imp=NULL }
 };
