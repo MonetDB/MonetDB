@@ -15,8 +15,9 @@
 extern int pp_dynamic_slices(backend *be, stmt *sub);
 extern stmt *rel2bin_slicer(backend *be, stmt *sub, int slicer);
 
-extern bool rel_groupby_partition(backend *be, sql_rel *rel);
+extern bool rel_groupby_partition(sql_rel *rel);
 
+extern stmt *rel2bin_partition(backend *be, sql_rel *rel, list *refs);
 extern stmt *rel2bin_groupby_partition(backend *be, sql_rel *rel, list *refs, bool neededpp);
 
 #endif /*_BIN_VALUE_PARTITION_H_*/

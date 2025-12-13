@@ -102,8 +102,6 @@ _ht_create( int type, size_t size, hash_table *p)
 		bits = GIDBITS-1;
 	h->bits = bits;
 	h->size = (gid)1<<bits;
-	if (h->size > 64*1024*1024)
-		h->size -= 1024;
 	h->mask = h->size-1;
 	h->type = type;
 	h->width = ATOMsize(type);

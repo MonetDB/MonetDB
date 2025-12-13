@@ -17,7 +17,7 @@ extern bool get_need_pipeline(backend *be);
 extern void set_pipeline(backend *be, stmt *pp);
 extern stmt * get_pipeline(backend *be);
 
-extern stmt *stmt_oahash_new(backend *be, sql_subtype *tpe, int estimate, int parent);
+extern stmt *stmt_oahash_new(backend *be, sql_subtype *tpe, int estimate, int parent, int nrparts);
 extern stmt *stmt_oahash_build_ht(backend *be, stmt *ht, stmt *key, stmt *prnt, const stmt *pp);
 extern stmt *stmt_oahash_frequency(backend *be, stmt *freq, stmt *prnt, bool occ_cnt, const stmt *pp);
 
@@ -31,7 +31,7 @@ extern stmt *stmt_oahash_expand(backend *be, const stmt *prb_res, const stmt *fr
 extern stmt *stmt_oahash_explode(backend *be, const stmt *prb_res, const stmt *freq, const stmt *ht_sink, bit outer);
 
 extern InstrPtr stmt_part_new(backend *be, int nr_parts);
-extern InstrPtr stmt_mat_new(backend *be, int tt, int nr_parts);
+extern stmt *stmt_mat_new(backend *be, sql_subtype *t, int nr_parts);
 extern InstrPtr stmt_sop_new(backend *be, int nr_workers);
 
 extern stmt *stmt_pp_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int reduce, int no_nil, int nil_if_empty);
@@ -66,5 +66,7 @@ extern int stmt_concat_add_subconcat(backend *be, int p_source, int p_concatcnt 
 
 extern int pp_counter(backend *be, int nr_slices, int var_nr_slices);
 extern int pp_counter_get(backend *be, int counter);
+
+extern int pp_claim(backend *be, int resultset, int nrrows);
 
 #endif /* _SQL_PP_STATEMENT_H_ */

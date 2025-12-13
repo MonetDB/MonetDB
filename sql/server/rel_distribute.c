@@ -88,6 +88,7 @@ has_remote_or_replica( sql_rel *rel )
 	case op_select:
 	case op_buildhash:
 	case op_probehash:
+	case op_partition:
 	case op_groupby:
 	case op_topn:
 	case op_sample:
@@ -444,6 +445,7 @@ rel_rewrite_remote_(visitor *v, sql_rel *rel)
 	case op_select:
 	case op_buildhash:
 	case op_probehash:
+	case op_partition:
 	case op_groupby:
 	case op_topn:
 	case op_sample:

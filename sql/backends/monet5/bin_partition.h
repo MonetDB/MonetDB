@@ -9,7 +9,6 @@
 #ifndef _BIN_PARTITION_H_
 #define _BIN_PARTITION_H_
 
-#include "sql_statement.h"
 #include "mal_backend.h"
 
 extern bool pp_can_not_start(mvc *sql, sql_rel *rel);

@@ -28,10 +28,12 @@ extern stmt *rel2bin_sql_table(backend *be, sql_table *t, list *aliases);
 /* private */
 #define is_equi_exp_(e) ((e)->flag == cmp_equal)
 
+extern int add_to_rowcount_accumulator(backend *be, int nr);
 extern stmt* stmt_selectnil(backend *be, stmt *col, stmt *sel);
 
 extern stmt* bin_find_smallest_column(backend *be, stmt *sub);
 extern stmt* list_find_column(backend *be, list *l, const char *rname, const char *name);
+extern stmt* list_find_column_nid(backend *be, list *l, int label);
 
 extern stmt *subrel_bin(backend *be, sql_rel *rel, list *refs);
 extern stmt *subrel_project( backend *be, stmt *s, list *refs, sql_rel *rel);

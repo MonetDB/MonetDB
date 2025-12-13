@@ -985,10 +985,10 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 	const ValRecord *prop;
 	ValRecord minprop, maxprop;
 	const void *minbound = NULL, *maxbound = NULL;
-	if ((prop = BATgetprop_nolock(b, GDK_MIN_BOUND)) != NULL &&
+	if (b->tprops && (prop = BATgetprop_nolock(b, GDK_MIN_BOUND)) != NULL &&
 	    VALcopy(NULL, &minprop, prop) != NULL)
 		minbound = VALptr(&minprop);
-	if ((prop = BATgetprop_nolock(b, GDK_MAX_BOUND)) != NULL &&
+	if (b->tprops && (prop = BATgetprop_nolock(b, GDK_MAX_BOUND)) != NULL &&
 	    VALcopy(NULL, &maxprop, prop) != NULL)
 		maxbound = VALptr(&maxprop);
 	const bool notnull = BATgetprop_nolock(b, GDK_NOT_NULL) != NULL;
@@ -1424,10 +1424,10 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 	const ValRecord *prop;
 	ValRecord minprop, maxprop;
 	const void *minbound = NULL, *maxbound = NULL;
-	if ((prop = BATgetprop_nolock(b, GDK_MIN_BOUND)) != NULL &&
+	if (b->tprops &&(prop = BATgetprop_nolock(b, GDK_MIN_BOUND)) != NULL &&
 	    VALcopy(NULL, &minprop, prop) != NULL)
 		minbound = VALptr(&minprop);
-	if ((prop = BATgetprop_nolock(b, GDK_MAX_BOUND)) != NULL &&
+	if (b->tprops &&(prop = BATgetprop_nolock(b, GDK_MAX_BOUND)) != NULL &&
 	    VALcopy(NULL, &maxprop, prop) != NULL)
 		maxbound = VALptr(&maxprop);
 	const bool notnull = BATgetprop_nolock(b, GDK_NOT_NULL) != NULL;

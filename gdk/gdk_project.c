@@ -677,7 +677,7 @@ BATproject2(BAT *restrict l, BAT *restrict r1, BAT *restrict r2)
 		    r2 == NULL &&
 		    (r1i.count == 0 ||
 		     lcount > (r1i.count >> 3) ||
-		     r1i.restricted == BAT_READ)) {
+		    (r1i.restricted == BAT_READ || VIEWvtparent(r1)))) {
 			/* insert strings as ints, we need to copy the
 			 * string heap whole sale; we can't do this if
 			 * there are nils in the left column, and we
@@ -707,7 +707,7 @@ BATproject2(BAT *restrict l, BAT *restrict r1, BAT *restrict r2)
 		   r2 == NULL &&
 		   (r1i.count == 0 ||
 		    lcount > (r1i.count >> 3) ||
-		    r1i.restricted == BAT_READ)) {
+		    (r1i.restricted == BAT_READ || VIEWvtparent(r1)))) {
 		tpe = r1i.width == 4 ? TYPE_int : TYPE_lng;
 		stringtrick = true;
 	} else if (tpe == TYPE_msk || mask_cand(r1)) {

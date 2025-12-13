@@ -3625,6 +3625,7 @@ has_no_selectivity(mvc *sql, sql_rel *rel)
 	case op_select:
 	case op_buildhash:
 	case op_probehash:
+	case op_partition:
 		return false;
 	}
 	return true;

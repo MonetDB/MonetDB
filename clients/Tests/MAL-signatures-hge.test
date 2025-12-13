@@ -48469,9 +48469,19 @@ command mat.add(X_0:bat[:any_1], X_1:int):bat[:any_1]
 MATadd
 add i-th bat to mat
 mat
+counters_get
+command mat.counters_get(X_0:bat[:any_1], X_1:int) (X_2:int, X_3:int)
+MATcounters_get
+Return part and slice id
+mat
 fetch
 command mat.fetch(X_0:bat[:any_1], X_1:int):bat[:any_1]
 MATfetch
+return i-th bat from mat
+mat
+fetch
+command mat.fetch(X_0:bat[:any_1], X_1:int, X_2:int):bat[:any_1]
+MATfetch_slices
 return i-th bat from mat
 mat
 new
@@ -48480,9 +48490,24 @@ MATnew
 Create mat for partitioning
 mat
 new
+pattern mat.new(X_0:any_1, X_1:int, X_2:int):bat[:any_1]
+MATnew
+Create mat for partitioning
+mat
+new
+pattern mat.new(X_0:any_1, X_1:int, X_2:int, X_3:bat[:any_2]):bat[:any_1]
+MATnew
+Create mat for partitioning
+mat
+new
 pattern mat.new(X_0:bat[:any_1]...):bat[:any_1]
 MATpack
 Define a Merge Association Table (MAT). Fall back to the pack operation@when this is called 
+mat
+nr_parts
+command mat.nr_parts(X_0:bat[:any_1], X_1:int):int
+MATnr_parts
+Return number of mat parts, where each mat element could be sliced in parts
 mat
 pack
 pattern mat.pack(X_0:bat[:any_1]...):bat[:any_1]

@@ -578,6 +578,7 @@ rel_change_base_table(mvc* sql, sql_rel* rel, sql_table* oldt, sql_table* newt)
 		case op_select:
 		case op_buildhash:
 		case op_probehash:
+		case op_partition:
 		case op_topn:
 		case op_sample:
 		case op_truncate:

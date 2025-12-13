@@ -141,16 +141,8 @@ rel2bin_orderby(backend *be, sql_rel *rel, list *refs)
 	//list *shared = rel2bin_project_prepare(be, rel);
 	stmt *pp = NULL;
 
-	//if (!rel->spb || pp_can_not_start(be->mvc, rel->l)) {
-		set_need_pipeline(be);
-		/*
-	} else {
-		pp = stmt_pp_start_nrparts(be, pp_nr_slices(rel->l));
-		set_pipeline(be, pp);
-	}
-	*/
+	set_need_pipeline(be);
 
-	//assert(rel->spb || pp == NULL);
 	stmt *sub = NULL;
 	if (rel->l) { /* first construct the sub relation */
 		sub = subrel_bin(be, rel->l, refs);

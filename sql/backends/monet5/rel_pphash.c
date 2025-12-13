@@ -88,7 +88,7 @@ oahash_prepare_bld_ht(backend *be, const list *exps, lng sz)
 	list *l = sa_list(be->mvc->sa);
 	int curhash = 0;
 	for (node *n = exps->h; n; n = n->next) {
-		stmt *s = stmt_oahash_new(be, exp_subtype((sql_exp*)n->data), sz, curhash);
+		stmt *s = stmt_oahash_new(be, exp_subtype((sql_exp*)n->data), sz, curhash, 0);
 		if (s == NULL) return NULL;
 		curhash = s->nr;
 		append(l, s);
@@ -301,7 +301,7 @@ rel2bin_oahash_build(backend *be, sql_rel *rel, list *refs)
 		if (!list_empty(exps_prj_hsh)) {
 			list *l = shared_ht->op4.lval;
 			stmt *prnt = (stmt*)l->t->data;
-			pld_sltid = stmt_oahash_new(be, sql_fetch_localtype(TYPE_oid), bld_sz, prnt->nr);
+			pld_sltid = stmt_oahash_new(be, sql_fetch_localtype(TYPE_oid), bld_sz, prnt->nr, 0);
 			if (pld_sltid == NULL) return NULL;
 		}
 	}

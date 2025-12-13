@@ -386,6 +386,7 @@ name_find_column( sql_rel *rel, const char *rname, const char *name, int pnr, sq
 	case op_select:
 	case op_buildhash:
 	case op_probehash:
+	case op_partition:
 	case op_topn:
 	case op_sample:
 		return name_find_column( rel->l, rname, name, pnr, bt);
@@ -555,9 +556,7 @@ exps_unique(mvc *sql, sql_rel *rel, list *exps)
 BUN
 get_rel_count(sql_rel *rel)
 {
-	if (rel && rel->op == op_buildhash && rel->l)
-		return get_rel_count(rel->l);
-	if (rel && rel->op == op_probehash && rel->l)
+	if (rel && is_physical(rel->op) && rel->l)
 		return get_rel_count(rel->l);
 	prop *found = find_prop(rel->p, PROP_COUNT);
 	if (!found && rel && is_simple_project(rel->op) && rel->l)

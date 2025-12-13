@@ -1988,6 +1988,7 @@ rel_find_nid(sql_rel *rel, int nid)
 		case op_truncate:
 		case op_buildhash:
 		case op_probehash:
+		case op_partition:
 			return false;
 		}
 	}

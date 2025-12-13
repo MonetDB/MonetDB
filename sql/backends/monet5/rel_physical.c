@@ -19,6 +19,7 @@
 #include "sql_storage.h"
 #include "sql_scenario.h"
 #include "rel_bin.h"
+#include "bin_partition_by_value.h"
 
 #define IS_ORDER_BASED_AGGR(fname, argc) (\
 				(argc == 2 && (strcmp((fname), "quantile") == 0 || strcmp((fname), "quantile_avg") == 0)) || \
@@ -137,6 +138,7 @@ find_basetables(mvc *sql, sql_rel *rel, list *tables )
 		break;
 	case op_buildhash:
 	case op_probehash:
+	case op_partition:
 		return ;
 	}
 }
@@ -202,6 +204,7 @@ has_groupby(sql_rel *rel)
 		case op_sample:
 		case op_buildhash:
 		case op_probehash:
+		case op_partition:
 			return has_groupby(rel->l);
 		case op_insert:
 		case op_update:
@@ -503,6 +506,21 @@ find_cmp_exps(list **exps_hsh, list **exps_prb, const list *exps, sql_rel *rel_h
 }
 
 static sql_rel *
+rel_build_partition(visitor *v, sql_rel *rel)
+{
+	sql_rel *r = rel_create(v->sql->sa);
+	if (is_select(rel->op)) {
+		list *exps = rel_projections(v->sql, rel, NULL, 1, 1);
+		assert(!list_empty(exps));
+		rel = rel_project(v->sql->sa, rel, exps);
+	}
+	r->exps = rel_projections(v->sql, rel, NULL, 1, 1);
+	r->op = op_partition;
+	r->l = rel;
+	return r;
+}
+
+static sql_rel *
 rel_probehash(visitor *v, sql_rel *rel, sql_rel **iprj)
 {
 	/* todo inplace for hash sharing */
@@ -620,6 +638,10 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 		}
 	} else if (is_groupby(rel->op)) {
 		bool safe = rel_groupby_partition_safe(rel);
+		if (safe && rel_groupby_partition(rel)) {
+			sql_rel *p = rel->l = rel_build_partition(v, rel->l);
+			p->attr = exps_copy(v->sql, rel->r);
+		}
 		if (rel->l)
 			/* if `safe`, process this GROUP BY + subtree in a `pb`. */
 			res = rel_pipeline(v, rel->l, !safe, safe?SPB:0);
@@ -1482,7 +1504,7 @@ rel_add_project(visitor *v, sql_rel *rel)
 		return rel;
 
 	v->parent = rel;
-	if (is_join(rel->op) || is_semi(rel->op)) {
+	if ((is_join(rel->op) || is_semi(rel->op) || is_select(rel->op)) && p && p->op != op_table) {
 		list *exps = rel_projections(v->sql, rel, NULL, 1, 1);
 		if (!rel_is_ref(rel))
 			rel = rel_project(v->sql->sa, rel, exps);

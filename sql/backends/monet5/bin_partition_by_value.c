@@ -64,16 +64,11 @@ rel2bin_slicer(backend *be, stmt *sub, int slicer)
 }
 
 bool
-rel_groupby_partition(backend *be, sql_rel *rel)
+rel_groupby_partition(sql_rel *rel)
 {
-	/* For now we assume partitioning into disjoint sets which are later grouped by independent workers */
-	/* So we could/need to partition on high cardinality group by results and for complex cases (ie where the second
-	 * pipeline will be single step per grouped result) stddev */
-	(void)be;
-	bool partition = false;
+	bool partition = true;
 
-#if 0
-	for(node *n = rel->exps->h; n && !partition; n = n->next ) {
+	for(node *n = rel->exps->h; n && partition; n = n->next ) {
 		sql_exp *e = n->data;
 
 		if (is_aggr(e->type)) {
@@ -83,20 +78,24 @@ rel_groupby_partition(backend *be, sql_rel *rel)
 			if (!(strcmp(sf->func->base.name, "min") == 0 || strcmp(sf->func->base.name, "max") == 0 ||
 			    strcmp(sf->func->base.name, "avg") == 0 || strcmp(sf->func->base.name, "count") == 0 ||
 			    strcmp(sf->func->base.name, "sum") == 0 || strcmp(sf->func->base.name, "prod") == 0)) {
-				partition = true;
+				partition = false;
 			}
 		}
 	}
-#endif
+	if (!partition)
+		return false;
+	if (list_empty(rel->r))
+		return false;
 	/* check size */
 	BUN est = get_rel_count(rel);
 	if (est == BUN_NONE)
-		return partition;
+		return false;
 	if (est >= GDKL3_size)
 		return true;
-	return partition;
+	return false;
 }
 
+#define PARTITION_NRPARTS 256
 /* part := part.new(nr_parts);
  * mat := mat.new(type:nil, nr_parts);
  */
@@ -104,14 +103,16 @@ static list *
 partition_groupby_prepare(backend *be, sql_rel *rel, InstrPtr *part)
 {
 	/* prepare mat's for each input column */
-	assert(is_groupby(rel->op) && !list_empty(rel->r) && !list_empty(rel->exps));
+	assert(((is_groupby(rel->op) && !list_empty(rel->r)) || rel->op == op_partition) && !list_empty(rel->exps));
 
-	int nr_parts = 256; /* later dynamic like hash size/ nr_parts pp */
+	int nr_parts = PARTITION_NRPARTS; /* later dynamic like hash size/ nr_parts pp */
 	list *mats = sa_list(be->mvc->sa); /* list of ints (variable numbers* */
 	*part = stmt_part_new(be, nr_parts);
 	if (!*part || !mats)
 		return NULL;
-	sql_rel *p = rel->l;
+	sql_rel *p = rel;
+	if (rel->op == op_groupby)
+		p = rel->l;
 	if (!is_project(p->op) && !is_basetable(p->op)) {
 		rel->l = p = rel_project(be->mvc->sa, p,
 			rel_projections(be->mvc, p, NULL, 1, 1));
@@ -120,10 +121,10 @@ partition_groupby_prepare(backend *be, sql_rel *rel, InstrPtr *part)
 	for(node *n = p->exps->h; n; n = n->next) {
 			sql_exp *e = n->data;
 			sql_subtype *t = exp_subtype(e);
-			InstrPtr q = stmt_mat_new(be, t->type->localtype, nr_parts);
-			if (q == NULL)
+			stmt *mat = stmt_mat_new(be, t, nr_parts);
+			if (mat == NULL)
 				return NULL;
-			append(mats, q->argv);
+			append(mats, mat);
 	}
 	return mats;
 }
@@ -138,7 +139,7 @@ partition_groupby_prepare(backend *be, sql_rel *rel, InstrPtr *part)
 static list *
 partition_groupby_part(backend *be, sql_rel *rel, InstrPtr part, list *mats, stmt *sub)
 {
-	list *gbes = rel->r;
+	list *gbes = is_groupby(rel->op)?rel->r:rel->attr;
 	list *res = sa_list(be->mvc->sa);
 	stmt *h = NULL;
 	sql_subtype *lng = sql_fetch_localtype(TYPE_lng);
@@ -168,21 +169,20 @@ partition_groupby_part(backend *be, sql_rel *rel, InstrPtr part, list *mats, stm
 		}
 	}
 	sql_subfunc *hf = sql_bind_func_result(be->mvc, "sys", "bit_and", F_FUNC, true, lng, 2, lng, lng);
-	stmt *g = stmt_binop(be, h, stmt_atom_lng(be, 256-1), NULL, hf);
+	stmt *g = stmt_binop(be, h, stmt_atom_lng(be, PARTITION_NRPARTS-1), NULL, hf);
 	InstrPtr l = newStmt(be->mb, "part", "prefixsum");
 	l = pushArgument(be->mb, l, g->nr);
-	l = pushLng(be->mb, l, 256);
+	l = pushLng(be->mb, l, PARTITION_NRPARTS);
 	pushInstruction(be->mb, l);
 	InstrPtr p = newStmt(be->mb, "part", "partition");
 	p = pushArgument(be->mb, p, getArg(part, 0));
 	p = pushArgument(be->mb, p, getArg(l, 0));
 	pushInstruction(be->mb, p);
 	for(node *n = mats->h, *m = sub->op4.lval->h; n && m; n = n->next, m = m->next) {
-		int *mat = (int*)n->data;
+		stmt *mat = n->data;
 		stmt *s = m->data;
 		InstrPtr mp = newStmt(be->mb, "mat", "project");
-		//mp = pushArgument(be->mb, mp, *mat);
-		getArg(mp, 0) = *mat;
+		getArg(mp, 0) = mat->nr;
 		mp = pushArgument(be->mb, mp, getArg(p, 0));
 		mp = pushArgument(be->mb, mp, getArg(l, 0));
 		mp = pushArgument(be->mb, mp, g->nr);
@@ -195,17 +195,17 @@ partition_groupby_part(backend *be, sql_rel *rel, InstrPtr part, list *mats, stm
 }
 
 static stmt *
-partition_groupby_fetch(backend *be, stmt *sub, list *mats)
+partition_groupby_fetch(backend *be, stmt *sub)
 {
 	/* update output variable, to be used */
-	for (node *n = sub->op4.lval->h, *m = mats->h; n && m; n = n->next, m = m->next) {
-		stmt *s = n->data;
+	for (node *n = sub->op4.lval->h; n; n = n->next) {
+		stmt *mat = n->data;
 		/* call mat.fetch(m, i) */
 		InstrPtr mp = newStmt(be->mb, "mat", "fetch");
-		mp = pushArgument(be->mb, mp, *(int*)m->data);
+		mp = pushArgument(be->mb, mp, mat->nr);
 		mp = pushArgument(be->mb, mp, be->pp);
 		pushInstruction(be->mb, mp);
-		s->nr = getArg(mp, 0);
+		mat->nr = getArg(mp, 0);
 	}
 	return sub;
 }
@@ -219,23 +219,23 @@ partition_groupby_results(backend *be, sql_rel *rel)
 	/* prepare mat's for each result column */
 	assert(is_groupby(rel->op) && !list_empty(rel->r) && !list_empty(rel->exps));
 
-	int nr_parts = 256; /* later dynamic like hash size/ nr_parts pp */
+	int nr_parts = PARTITION_NRPARTS; /* later dynamic like hash size/ nr_parts pp */
 	list *mats = sa_list(be->mvc->sa); /* list of ints (variable numbers* */
 	if (!mats)
 		return NULL;
 	for(node *n = rel->exps->h; n; n = n->next) {
 			sql_exp *e = n->data;
 			sql_subtype *t = exp_subtype(e);
-			InstrPtr q = stmt_mat_new(be, t->type->localtype, nr_parts);
-			if (q == NULL)
+			stmt *mat = stmt_mat_new(be, t, nr_parts);
+			if (mat == NULL)
 				return NULL;
-			append(mats, q->argv);
+			append(mats, mat);
 	}
 	return mats;
 }
 
 static stmt *
-partition_groupby(backend *be, sql_rel *rel, list *mats, stmt *sub, bool neededpp)
+partition_groupby(backend *be, sql_rel *rel, stmt *mats, bool neededpp)
 {
 	//sql_rel *p = rel->l;
 	//int is_base = (p && is_basetable(p->op));
@@ -257,8 +257,7 @@ partition_groupby(backend *be, sql_rel *rel, list *mats, stmt *sub, bool neededp
 	list *results = partition_groupby_results(be, rel);
 	if (!results)
 		return NULL;
-	//stmt *pp = stmt_pp_start_nrparts(be, 256);//be->nrparts);
-	int source = pp_counter(be, 256, -1);
+	int source = pp_counter(be, PARTITION_NRPARTS, -1);
 	stmt *pp = stmt_pp_start_generator(be, source, true);
 	set_pipeline(be, pp);
 	(void)pp_counter_get(be, source);
@@ -266,7 +265,7 @@ partition_groupby(backend *be, sql_rel *rel, list *mats, stmt *sub, bool neededp
 	int ppnr = be->pipeline;
 	be->pipeline = 0;
 
-	sub = partition_groupby_fetch(be, sub, mats);
+	stmt *sub = partition_groupby_fetch(be, mats);
 	/* Keep groupby columns, sub that they can be lookup in the aggr list */
 	list *exps = rel->r;
 
@@ -296,6 +295,7 @@ partition_groupby(backend *be, sql_rel *rel, list *mats, stmt *sub, bool neededp
 	for(node *n = aggrs->h, *m = results->h; n && m; n = n->next, m = m->next ) {
 		sql_exp *aggrexp = n->data;
 		stmt *aggrstmt = NULL;
+		stmt *mat = m->data;
 		/* fetch next part of the mat, push into the update_sub above */
 		/* also keep nr */
 
@@ -329,7 +329,7 @@ partition_groupby(backend *be, sql_rel *rel, list *mats, stmt *sub, bool neededp
 		}
 
 		InstrPtr mp = newStmt(be->mb, "mat", "add");
-		getArg(mp, 0) = *(int*)m->data;
+		getArg(mp, 0) = mat->nr;
 		mp = pushArgument(be->mb, mp, aggrstmt->nr);
 		mp = pushArgument(be->mb, mp, be->pp);
 		mp->inout = 0;
@@ -340,12 +340,6 @@ partition_groupby(backend *be, sql_rel *rel, list *mats, stmt *sub, bool neededp
 		list_append(l, aggrstmt);
 	}
 	stmt_set_nrcols(cursub);
-	/*
-	if (neededpp) {
-		set_pipeline(be, stmt_pp_start_dynamic(be, pp_dynamic_slices(be, cursub)));
-		cursub = rel2bin_slicer(be, cursub, 1);
-	}
-	*/
 	be->pipeline = ppnr;
 	(void)stmt_pp_jump(be, pp, be->nrparts);
 	(void)stmt_pp_end(be, pp);
@@ -355,9 +349,10 @@ partition_groupby(backend *be, sql_rel *rel, list *mats, stmt *sub, bool neededp
 		list *nl = sa_list(be->mvc->sa);
 		for(node *n = l->h, *m = results->h; n && m; n = n->next, m = m->next ) {
 			stmt *aggrstmt = n->data;
+			stmt *mat = m->data;
 
 			InstrPtr mp = newStmt(be->mb, "mat", "pack");
-			mp = pushArgument(be->mb, mp, *(int*)m->data);
+			mp = pushArgument(be->mb, mp, mat->nr);
 			pushInstruction(be->mb, mp);
 			/* keep names from aggrstmt */
 			aggrstmt = stmt_instruction(be, mp, aggrstmt);
@@ -366,7 +361,7 @@ partition_groupby(backend *be, sql_rel *rel, list *mats, stmt *sub, bool neededp
 		}
 		return stmt_list(be, nl);
 	} else {
-		stmt *pp = stmt_pp_start_nrparts(be, 256);//be->nrparts);
+		stmt *pp = stmt_pp_start_nrparts(be, PARTITION_NRPARTS);
 		set_pipeline(be, pp);
 		int ppnr = be->pipeline;
 		be->pipeline = 0;
@@ -374,9 +369,10 @@ partition_groupby(backend *be, sql_rel *rel, list *mats, stmt *sub, bool neededp
 		list *nl = sa_list(be->mvc->sa);
 		for(node *n = l->h, *m = results->h; n && m; n = n->next, m = m->next ) {
 			stmt *aggrstmt = n->data;
+			stmt *mat = m->data;
 
 			InstrPtr mp = newStmt(be->mb, "mat", "fetch");
-			mp = pushArgument(be->mb, mp, *(int*)m->data);
+			mp = pushArgument(be->mb, mp, mat->nr);
 			mp = pushArgument(be->mb, mp, be->pp);
 			pushInstruction(be->mb, mp);
 			/* keep names from aggrstmt */
@@ -390,8 +386,13 @@ partition_groupby(backend *be, sql_rel *rel, list *mats, stmt *sub, bool neededp
 }
 
 stmt *
-rel2bin_groupby_partition(backend *be, sql_rel *rel, list *refs, bool neededpp)
+rel2bin_partition(backend *be, sql_rel *rel, list *refs)
 {
+	sql_rel *inner = rel->l, *part_rel = rel;
+
+	if (inner && inner->op == op_partition)
+		part_rel = inner;
+
 	(void)refs;
 
 	list *mats = NULL;
@@ -400,18 +401,18 @@ rel2bin_groupby_partition(backend *be, sql_rel *rel, list *refs, bool neededpp)
 	stmt *pp = NULL;
 	InstrPtr part = NULL;
 
-	mats = partition_groupby_prepare(be, rel, &part);
+	mats = partition_groupby_prepare(be, part_rel, &part);
 	if (!mats)
 		return NULL;
 	if (!rel->spb && !be->need_pipeline) {
 		set_need_pipeline(be);
 	} else {
-		pp = stmt_pp_start_nrparts(be, pp_nr_slices(rel->l));
+		pp = stmt_pp_start_nrparts(be, pp_nr_slices(part_rel->l));
 		set_pipeline(be, pp);
 	}
 	if (rel->l) { /* first construct the sub relation */
-		sub = subrel_bin(be, rel->l, refs);
-		sub = subrel_project(be, sub, refs, rel->l);
+		sub = subrel_bin(be, part_rel->l, refs);
+		sub = subrel_project(be, sub, refs, part_rel->l);
 		if (!sub)
 			return NULL;
 	}
@@ -421,13 +422,23 @@ rel2bin_groupby_partition(backend *be, sql_rel *rel, list *refs, bool neededpp)
 		set_pipeline(be, pp = stmt_pp_start_dynamic(be, pp_dynamic_slices(be, sub)));
 		sub = rel2bin_slicer(be, sub, 1);
 	}
-	mats = partition_groupby_part(be, rel, part, mats, sub);
+	mats = partition_groupby_part(be, part_rel, part, mats, sub);
 	(void)stmt_pp_jump(be, pp, be->nrparts);
 	(void)stmt_pp_end(be, pp);
 	if (!mats)
 		return NULL;
-
-	sub = partition_groupby(be, rel, mats, sub, neededpp);
+	for (node *n = sub->op4.lval->h, *m = mats->h; n && m; n = n->next, m = m->next) {
+		stmt *s = n->data;
+		int *mat = m->data;
+		s->nr = *mat;
+	}
 	return sub;
+}
+
+stmt *
+rel2bin_groupby_partition(backend *be, sql_rel *rel, list *refs, bool neededpp)
+{
+	stmt *mats = rel2bin_partition(be, rel, refs);
+	return partition_groupby(be, rel, mats, neededpp);
 }
 

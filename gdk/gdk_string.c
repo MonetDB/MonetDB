@@ -9868,6 +9868,78 @@ BATasciify(BAT *b, BAT *s)
 	return NULL;
 }
 
+var_t
+fstrPut(BAT *b, var_t *dst, const void *V)
+{
+	const char *v = V;
+	Heap *h = b->tvheap;
+	size_t pos, len = strlen(v) + 1;
+
+	if (h->free == 0) {
+		if (h->size < GDK_STRHASHTABLE * sizeof(stridx_t) + BATTINY * GDK_VARALIGN) {
+			if (HEAPgrow(&b->tvheap, GDK_STRHASHTABLE * sizeof(stridx_t) + BATTINY * GDK_VARALIGN, true) != GDK_SUCCEED) {
+				return (var_t) -1;
+			}
+			h = b->tvheap;
+		}
+		h->free = GDK_STRHASHTABLE * sizeof(stridx_t);
+		memset(h->base, 0, h->free);
+		h->dirty = true;
+		b->tascii = true;
+	}
+
+#ifndef NDEBUG
+	if (!checkUTF8(v)) {
+		GDKerror("incorrectly encoded UTF-8\n");
+		return (var_t) -1;
+	}
+#endif
+
+	/* check heap for space (limited to a certain maximum after
+	 * which nils are inserted) */
+	if (h->free + len >= h->size) {
+		size_t newsize = MAX(h->size, 4096);
+
+		/* double the heap size until we have enough space */
+		do {
+			if (newsize < 4 * 1024 * 1024)
+				newsize <<= 1;
+			else
+				newsize += 4 * 1024 * 1024;
+		} while (newsize <= h->free + len);
+
+		assert(newsize);
+
+		if (h->free + len >= (size_t) VAR_MAX) {
+			GDKerror("string heap gets larger than %zuGiB.\n", (size_t) VAR_MAX >> 30);
+			return (var_t) -1;
+		}
+		TRC_DEBUG(HEAP, "HEAPextend in strPut %s %zu %zu\n", h->filename, h->size, newsize);
+		if (HEAPgrow(&b->tvheap, newsize, true) != GDK_SUCCEED) {
+			return (var_t) -1;
+		}
+		h = b->tvheap;
+	}
+
+	/* insert string */
+	pos = h->free;
+	*dst = (var_t) pos;
+	memcpy(h->base + pos, v, len);
+	h->free += len;
+	h->dirty = true;
+
+	if (b->tascii && !strNil(v)) {
+		for (const uint8_t *p = (const uint8_t *) v; *p; p++) {
+			if (*p >= 128) {
+				b->tascii = false;
+				break;
+			}
+		}
+	}
+	return *dst;
+}
+
+
 #ifdef HAVE_OPENSSL
 
 #include <openssl/evp.h>

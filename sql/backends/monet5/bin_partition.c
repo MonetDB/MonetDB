@@ -24,8 +24,10 @@ rel_is_not_pp_safe(visitor *v, sql_rel *rel)
 	    rel->op == op_table ||
 		rel->op == op_topn ||
 		rel->oahash ||
-		((is_join(rel->op) || is_semi(rel->op)) && rel->spb))
+		((is_join(rel->op) || is_semi(rel->op)) && rel->spb)) {
+		assert(0);
 		*((int*)v->data) = 1;
+	}
 	return rel;
 }
 

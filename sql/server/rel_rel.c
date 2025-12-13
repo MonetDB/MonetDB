@@ -133,6 +133,7 @@ rel_destroy_(mvc *sql, sql_rel *rel)
 	case op_truncate:
 	case op_buildhash:
 	case op_probehash:
+	case op_partition:
 		if (rel->l)
 			rel_destroy(sql, rel->l);
 		break;
@@ -241,6 +242,7 @@ rel_copy(mvc *sql, sql_rel *i, int deep)
 	case op_truncate:
 	case op_buildhash:
 	case op_probehash:
+	case op_partition:
 		if (i->l)
 			rel->l = rel_copy(sql, i->l, deep);
 		break;
@@ -700,6 +702,7 @@ rel_dup_copy(allocator *sa, sql_rel *rel)
 	case op_truncate:
 	case op_buildhash:
 	case op_probehash:
+	case op_partition:
 		if (nrel->l)
 			rel_dup(nrel->l);
 		break;
@@ -1339,6 +1342,7 @@ _rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int in
 
 	case op_buildhash:
 	case op_probehash:
+	case op_partition:
 	case op_project:
 	case op_basetable:
 	case op_table:
@@ -1469,6 +1473,7 @@ rel_bind_path_(mvc *sql, sql_rel *rel, sql_exp *e, list *path )
 	case op_sample:
 	case op_buildhash:
 	case op_probehash:
+	case op_partition:
 		found = rel_bind_path_(sql, rel->l, e, path);
 		break;
 	case op_basetable:
@@ -2155,6 +2160,7 @@ rel_deps(mvc *sql, sql_rel *r, list *refs, list *l)
 	case op_truncate:
 	case op_buildhash:
 	case op_probehash:
+	case op_partition:
 		if (rel_deps(sql, r->l, refs, l) != 0)
 			return -1;
 		break;
@@ -2394,6 +2400,7 @@ rel_exp_visitor(visitor *v, sql_rel *rel, exp_rewrite_fptr exp_rewriter, bool to
 	case op_truncate:
 	case op_buildhash:
 	case op_probehash:
+	case op_partition:
 		if (rel->l)
 			if ((rel->l = rel_exp_visitor(v, rel->l, exp_rewriter, topdown, relations_topdown)) == NULL)
 				return NULL;
@@ -2647,6 +2654,7 @@ rel_visitor(visitor *v, sql_rel *rel, rel_rewrite_fptr rel_rewriter, bool topdow
 	case op_truncate:
 	case op_buildhash:
 	case op_probehash:
+	case op_partition:
 		if (rel->l)
 			if ((rel->l = func(v, rel->l, rel_rewriter)) == NULL)
 				return NULL;

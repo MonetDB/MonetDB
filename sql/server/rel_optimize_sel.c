@@ -2816,6 +2816,7 @@ rel_join_order_(visitor *v, sql_rel *rel)
 	case op_truncate:
 	case op_buildhash:
 	case op_probehash:
+	case op_partition:
 		break;
 	}
 	if (is_join(rel->op))

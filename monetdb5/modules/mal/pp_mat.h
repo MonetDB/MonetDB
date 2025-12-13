@@ -12,6 +12,9 @@
 typedef struct mat_t {
 	Sink s;
 	int nr;
+	int nr_parts;
+	int *part;
+	int *subpart;
 	BAT **bat;
 	MT_RWLock rwlock;	/* needed for save resizing */
 } mat_t;

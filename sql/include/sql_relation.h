@@ -171,7 +171,8 @@ typedef enum operator_type {
 	op_delete,	/* delete(l=table, r delete expression) */
 	op_truncate, /* truncate(l=table) */
 	op_buildhash,
-	op_probehash
+	op_probehash,
+	op_partition
 } operator_type;
 
 #define is_atom(et) 		(et == e_atom)
@@ -205,7 +206,7 @@ typedef enum operator_type {
 #define is_except(op) 		(op == op_except)
 #define is_munion(op) 		(op == op_munion)
 #define is_simple_project(op) 	(op == op_project)
-#define is_project(op) 		(op == op_project || op == op_groupby || is_set(op) || is_munion(op))
+#define is_project(op) 		((op) == op_project || (op) == op_groupby || is_set(op) || is_munion(op) || (op) == op_partition)
 #define is_groupby(op) 		(op == op_groupby)
 #define is_topn(op) 		(op == op_topn)
 #define is_modify(op) 	 	(op == op_insert || op == op_update || op == op_delete || op == op_truncate)
@@ -214,7 +215,7 @@ typedef enum operator_type {
 #define is_update(op) 		(op == op_update)
 #define is_delete(op) 		(op == op_delete)
 #define is_truncate(op) 	(op == op_truncate)
-#define is_physical(op) 	((op) == op_buildhash || (op) == op_probehash)
+#define is_physical(op) 	((op) == op_buildhash || (op) == op_probehash || (op) == op_partition)
 
 /* ZERO on empty sets, needed for sum (of counts)). */
 #define zero_if_empty(e) 	((e)->zero_if_empty)

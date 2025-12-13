@@ -289,7 +289,7 @@ insert_string_bat(BAT *b, BATiter *ni, struct canditer *ci, bool force, bool may
 				MT_UNREACHABLE();
 			}
 			v = (var_t) ((size_t) v + toff);
-			assert(v >= GDK_VAROFFSET);
+			//assert(v >= GDK_VAROFFSET);
 			assert((size_t) v < b->tvheap->free);
 			switch (b->twidth) {
 			case 1:

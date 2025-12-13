@@ -15,14 +15,7 @@
 extern lng exp_getcard(mvc *sql, sql_rel *rel, sql_exp *e);
 extern bool rel_groupby_2_phases(mvc *sql, sql_rel *rel);
 extern bool rel_groupby_can_pp(sql_rel *rel, bool _2phases);
-extern bool exp_need_serialize(sql_exp *e);
-extern bool rel_groupby_serialize(sql_rel *rel);
 
-extern list *rel_groupby_prepare_pp(list **aggrresults, list **serializedresults, backend *be, sql_rel *rel, bool _2phases, bool need_serialize);
-//todo remove from rel_bin
-//extern stmt *rel_groupby_core_pp(backend *be, sql_rel *rel, list *gbstmts, stmt *grp, stmt *ext, stmt *cnt, stmt *cursub, stmt *pp, list *sub, bool _2phases);
-extern stmt *rel_groupby_combine_pp(backend *be, sql_rel *rel, list *gbstmts, stmt *grp, stmt *ext, stmt *cnt, stmt *cursub, stmt *pp, list *sub, stmt **cnt_aggr);
-extern stmt *rel_groupby_finish_pp(backend *be, sql_rel *rel, stmt *cursub, bool _2phases);
-extern stmt *rel_groupby_count_gt_0(backend *be, stmt *cursub, stmt *cnt, int *ext);
+extern stmt *rel2bin_groupby_pp(backend *be, sql_rel *rel, list *refs);
 
 #endif /*_BIN_SLICE_PARTITION_H_*/

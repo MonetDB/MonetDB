@@ -1302,7 +1302,7 @@ sql_class_base_score(visitor *v, sql_column *c, sql_subtype *t, bool equality_ba
 	case TYPE_dbl:
 		return 75 - 53;
 	default:
-		if (equality_based && c && v->storage_based_opt && (de = mvc_is_duplicate_eliminated(v->sql, c)) < 1200)
+		if (equality_based && c && v->storage_based_opt && (de = mvc_is_duplicate_eliminated(v->sql, c)) < 1200/* && de*/)
 			return 150 - (de / 8);
 		/* strings and blobs not duplicate eliminated don't get any points here */
 		return 0;
@@ -1403,6 +1403,9 @@ score_gbe(visitor *v, sql_rel *rel, sql_exp *e)
 
 	/* prefer the shorter var types over the longer ones */
 	res += sql_class_base_score(v, c, t, true); /* smaller the type, better */
+	prop *p = find_prop(e->p, PROP_NUNIQUES);
+	if (p && res)
+		res += (int)p->value.dval;
 	return res;
 }
 

@@ -448,9 +448,9 @@ stmt_unique_sharedout(backend *be, stmt *s, int output)
 }
 
 stmt *
-stmt_oahash_new(backend *be, sql_subtype *tpe, int estimate, int parent)
+stmt_oahash_new(backend *be, sql_subtype *tpe, int estimate, int parent, int nrparts)
 {
-	InstrPtr q = newStmt(be->mb, putName("oahash"), newRef);
+	InstrPtr q = newStmt(be->mb, nrparts?putName("mat"):putName("oahash"), newRef);
 	if (q == NULL)
 		return NULL;
 
@@ -460,6 +460,8 @@ stmt_oahash_new(backend *be, sql_subtype *tpe, int estimate, int parent)
 	setVarType(be->mb, getArg(q, 0), newBatType(tt)); /* ht_sink */
 	q = pushType(be->mb, q, tt);
 	q = pushInt(be->mb, q, estimate);
+	if (nrparts)
+		q = pushArgument(be->mb, q, nrparts);
 	if (parent)
 		q = pushArgument(be->mb, q, parent);
 	pushInstruction(be->mb, q);
@@ -689,9 +691,10 @@ stmt_part_new(backend *be, int nr_parts)
 	return q;
 }
 
-InstrPtr
-stmt_mat_new(backend *be, int tt, int nr_parts)
+stmt *
+stmt_mat_new(backend *be, sql_subtype *tpe, int nr_parts)
 {
+	int tt = tpe->type->localtype;
 	InstrPtr q = newStmt(be->mb, putName("mat"), newRef);
 
 	if (q == NULL)
@@ -700,7 +703,13 @@ stmt_mat_new(backend *be, int tt, int nr_parts)
 	q = pushType(be->mb, q, tt);
 	q = pushInt(be->mb, q, nr_parts);
 	pushInstruction(be->mb, q);
-	return q;
+
+	stmt *s = stmt_create(be->mvc->sa, st_alias);
+	s->op4.typeval = *tpe;
+	s->q = q;
+	s->nr = q->argv[0];
+	s->nrcols = 2;
+	return s;
 }
 
 InstrPtr
@@ -1261,4 +1270,14 @@ pp_counter_get(backend *be, int counter)
     q = pushArgument(be->mb, q, be->pipeline);
 	pushInstruction(be->mb, q);
 	return getArg(q, 0);
+}
+
+int
+pp_claim(backend *be, int resultset, int nrrows)
+{
+	InstrPtr q = newStmt(be->mb, "pipeline", "claim");
+	q = pushArgument(be->mb, q, resultset);
+	q = pushArgument(be->mb, q, nrrows);
+	pushInstruction(be->mb, q);
+	return getDestVar(q);
 }
