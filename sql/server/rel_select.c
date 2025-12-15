@@ -1669,8 +1669,11 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 			if (!(exp = rel_bind_column3(sql, inner, sname, tname, cname, f)) &&
 				sql->session->status == -ERR_AMBIGUOUS)
 				return NULL;
+		if (!exp && inner && is_groupby(inner->op) && inner->flag)
+			if (!(exp = rel_bind_column3(sql, inner->l, sname, tname, cname, f)) &&
+				sql->session->status == -ERR_AMBIGUOUS)
+				return NULL;
 		if (!exp && inner && is_sql_aggr(f) && (is_groupby(inner->op) || is_select(inner->op))) {
-			/* if inner is selection, ie having clause, get the left relation to reach group by */
 			sql_rel *gp = inner;
 			while (gp && is_select(gp->op))
 				gp = gp->l;
@@ -1787,7 +1790,8 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 		if (!exp)
 			return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42S22) "SELECT: no such column '%s.%s'", tname, cname);
 		if (exp && inner && inner->card <= CARD_AGGR && exp->card > CARD_AGGR &&
-			(is_sql_sel(f) || is_sql_having(f)) && !is_sql_aggr(f))
+			(is_sql_sel(f) || is_sql_having(f)) &&
+			 (!is_sql_aggr(f) && !(inner->flag)))
 			return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000)
 							 "SELECT: cannot use non GROUP BY column '%s.%s' in query"
 							 " results without an aggregate function", tname, cname);
