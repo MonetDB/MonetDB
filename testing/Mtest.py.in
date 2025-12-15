@@ -3020,11 +3020,12 @@ def progress(count, total, test, spaces=' '*(ttywidth or 100)):
             threadids[tid] = len(threadids)
             nl = '\n'
         line = len(threadids) - threadids[tid] - 1
-    perc = round((count/total) * 100) if total and count else 0
-    s = f'[{count}/{total}] ({perc}%)    {test}'
+    perc = int(count*100/total) if total and count else 0
+    width = len(str(total))
+    s = f'[{count:{width}}/{total}] ({perc:2}%)    {test}'
     if len(s) > ttywidth:
         test = test[len(s)-ttywidth:]
-        s = f'[{count}/{total}] ({perc}%)    {test}'
+        s = f'[{count:{width}}/{total}] ({perc:2}%)    {test}'
     sys.stdout.write(nl + '\r' + up*line + spaces + '\r' + s + down*line)
 
 
