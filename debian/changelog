@@ -1,5 +1,24 @@
 monetdb (11.55.1) unstable; urgency=low
 
+  * sql: New implementation for the CONTAINS filter function for string data
+    types using a much faster algorithm based on the knowledge of the
+    bigram occurrences of the to-be-filtered column.
+
+ -- Lucas Pereira <lucas.pereira@monetdbsolutions.com>  Tue, 16 Dec 2025 17:00:00 +0100
+
+  * Extended MonetDB’s memory allocator framework from the SQL layer to all
+    layers of the database server. The new memory allocator replaces all
+    malloc() and free() function calls in the MonetDB (server) code base.
+    The main features of the allocator framework include i) efficient
+    processing of large numbers of memory allocation calls, and ii) efficient
+    management of memory to avoid fragmentation. This update also enables
+    fine-grained configuration and monitoring of memory usage per thread,
+    per query, per client, etc.
+
+ -- svetlin <svetlin.stalinov@monetdbsolutions.com>  Tue, 16 Dec 2025 17:00:00 +0100
+
+monetdb (11.55.1) unstable; urgency=low
+
   * Rebuilt.
   * GH#7635: Unexpected Inner Join Crash
   * GH#7645: Unexpected Internal Error in Inner Join

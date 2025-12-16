@@ -1057,6 +1057,21 @@ rm "${RPM_BUILD_ROOT}"%{_unitdir}/monetdbd.service
 %endif
 
 %changelog
+* Tue Dec 16 2025 Lucas Pereira <lucas.pereira@monetdbsolutions.com> - 11.55.1-20251209
+- sql: New implementation for the CONTAINS filter function for string data
+  types using a much faster algorithm based on the knowledge of the
+  bigram occurrences of the to-be-filtered column.
+
+* Tue Dec 16 2025 svetlin <svetlin.stalinov@monetdbsolutions.com> - 11.55.1-20251209
+- Extended MonetDB’s memory allocator framework from the SQL layer to all
+  layers of the database server. The new memory allocator replaces all
+  malloc() and free() function calls in the MonetDB (server) code base.
+  The main features of the allocator framework include i) efficient
+  processing of large numbers of memory allocation calls, and ii) efficient
+  management of memory to avoid fragmentation. This update also enables
+  fine-grained configuration and monitoring of memory usage per thread,
+  per query, per client, etc.
+
 * Tue Dec 09 2025 Sjoerd Mullender <sjoerd@acm.org> - 11.55.1-20251209
 - Rebuilt.
 - GH#7635: Unexpected Inner Join Crash
