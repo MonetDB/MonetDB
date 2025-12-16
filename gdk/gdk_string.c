@@ -9928,6 +9928,7 @@ BATaggrdigest(allocator *ma, BAT **bnp, char **shap, const char *digest,
 		if (mdctx[gid] == NULL) {
 			mdctx[gid] = EVP_MD_CTX_new();
 			if (mdctx[gid] == NULL || !EVP_DigestInit(mdctx[gid], md)) {
+				GDKerror("Could not initialize digest method %s\n", digest);
 				goto bailout;
 			}
 		} else if (mdctx[gid] == (EVP_MD_CTX *) -1) {
@@ -9935,6 +9936,7 @@ BATaggrdigest(allocator *ma, BAT **bnp, char **shap, const char *digest,
 		}
 		/* calculate digest including terminating NUL byte */
 		if (!EVP_DigestUpdate(mdctx[gid], s, strlen(s) + 1)) {
+			GDKerror("Could not update digest value.\n");
 			goto bailout;
 		}
 	}
