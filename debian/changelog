@@ -7,13 +7,11 @@ monetdb (11.55.1) unstable; urgency=low
  -- Lucas Pereira <lucas.pereira@monetdbsolutions.com>  Tue, 16 Dec 2025 17:00:00 +0100
 
   * Extended MonetDB’s memory allocator framework from the SQL layer to all
-    layers of the database server. The new memory allocator replaces all
-    malloc() and free() function calls in the MonetDB (server) code base.
-    The main features of the allocator framework include i) efficient
-    processing of large numbers of memory allocation calls, and ii) efficient
-    management of memory to avoid fragmentation. This update also enables
-    fine-grained configuration and monitoring of memory usage per thread,
-    per query, per client, etc.
+    layers of the database server.  The main features of the allocator
+    framework include i) efficient processing of large numbers of memory
+    allocation calls, and ii) efficient management of memory to avoid
+    fragmentation. This update also enables fine-grained configuration and
+    monitoring of memory usage per thread, query, etc.
 
  -- svetlin <svetlin.stalinov@monetdbsolutions.com>  Tue, 16 Dec 2025 17:00:00 +0100
 

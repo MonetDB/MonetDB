@@ -1064,13 +1064,11 @@ rm "${RPM_BUILD_ROOT}"%{_unitdir}/monetdbd.service
 
 * Tue Dec 16 2025 svetlin <svetlin.stalinov@monetdbsolutions.com> - 11.55.1-20251209
 - Extended MonetDB’s memory allocator framework from the SQL layer to all
-  layers of the database server. The new memory allocator replaces all
-  malloc() and free() function calls in the MonetDB (server) code base.
-  The main features of the allocator framework include i) efficient
-  processing of large numbers of memory allocation calls, and ii) efficient
-  management of memory to avoid fragmentation. This update also enables
-  fine-grained configuration and monitoring of memory usage per thread,
-  per query, per client, etc.
+  layers of the database server.  The main features of the allocator framework
+  include i) efficient processing of large numbers of memory allocation calls,
+  and ii) efficient management of memory to avoid fragmentation. This update
+  also enables fine-grained configuration and monitoring of memory usage per
+  thread, query, etc.
 
 * Tue Dec 09 2025 Sjoerd Mullender <sjoerd@acm.org> - 11.55.1-20251209
 - Rebuilt.
