@@ -1,0 +1,10 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Open a discussion on a feature request
+	url: https://github.com/MonetDB/MonetDB/discussions/new?category=ideas
+  - name: Open a discussion on a general issue
+	url: https://github.com/MonetDB/MonetDB/discussions/new?category=general
+	about: Ask and answer general questions here. (documentation bug, how to, etc)
+  - name: Q&A
+	url: https://github.com/MonetDB/MonetDB/discussions/new?category=q-a
+	about: Help wanted
