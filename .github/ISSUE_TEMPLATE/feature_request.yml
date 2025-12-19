@@ -1,5 +1,5 @@
 name: Feature request
-description:
+description: Template for feature request
 labels: ["needs triage"]
 body:
   - type: textarea
