@@ -1996,7 +1996,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 			return s;
 		}
 		if (e->flag == cmp_in || e->flag == cmp_notin)
-			return handle_in_exps(be, e->l, e->r, left, right, grp, ext, cnt, sel, (e->flag == cmp_in), depth, reduce, push);
+			return handle_in_exps(be, e->l, e->r, left, right, grp, ext, cnt, sel, (e->flag == cmp_in)^is_anti(e), depth, reduce, push);
 		if (e->flag == cmp_con)
 			return exp_bin_conjunctive(be, e, left, right, grp, ext, cnt, sel, depth, reduce, push);
 		if (e->flag == cmp_dis)

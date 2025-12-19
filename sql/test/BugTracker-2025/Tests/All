@@ -67,6 +67,7 @@ HAVE_HGE?7637_str_to_decimal
 7720-coalesce
 7722-recusive-cte-with-error-crash
 7725-crash-find-rel-ref
+7726-commonterms
 7730-generate-series-month-int
 7732-table-exp-issue
 7734-epoch-missing-cast
@@ -84,3 +85,4 @@ HAVE_HGE?7637_str_to_decimal
 7759-replace-wrong-error
 7763-exits-with-null
 7760-groupby_posarg_CP
+7768-not-in

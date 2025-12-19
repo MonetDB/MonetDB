@@ -1,0 +1,29 @@
+statement ok
+create table test (test_col varchar(1))
+
+statement ok rowcount 4
+insert into test values('a'),('b'),('c'),('d');
+
+query T
+select * from test where not (test_col in ('a','b'))
+----
+c
+d
+
+query T
+select * from test where (1 = 1) and not (test_col in ('a','b'))
+----
+c
+d
+
+query T
+select * from test where (1 <> 1) or not (test_col in ('a','b'))
+----
+c
+d
+
+query T
+select * from test where (1 <> 1) or (not (test_col in ('a','b')));
+----
+c
+d
