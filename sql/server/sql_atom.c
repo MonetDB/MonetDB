@@ -822,8 +822,9 @@ atom_cast_inplace(allocator *sa, atom *a, sql_subtype *tp)
 			  tp->type->eclass == EC_NUM ||
 			  tp->type->eclass == EC_FLT)) ||
 			(EC_VARCHAR(at->type->eclass) &&
-			 (tp->type->eclass == EC_DATE ||
-			  EC_TEMP_NOFRAC(tp->type->eclass)))) {
+			 (
+			 /*(tp->type->eclass == EC_DATE ||*/
+			  EC_TEMP_NOFRAC(tp->type->eclass)) && !ATOMextern(tp->type->localtype))) {
 			ValRecord v = { .vtype = tp->type->localtype };
 			if (VARconvert(sa, &v, &a->data, at->scale, tp->scale, tp->type->eclass == EC_DEC ? tp->digits : 0) != GDK_SUCCEED) {
 				GDKclrerr();

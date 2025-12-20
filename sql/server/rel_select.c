@@ -1052,7 +1052,7 @@ exp_tuples_set_supertype(mvc *sql, list *tuple_values, sql_exp *tuples)
 				if (!tpe)
 					return NULL;
 				if (has_type[i] && tpe) {
-					cmp_supertype(types+i, types+i, tpe);
+					cmp_supertype(types+i, types+i, tpe, false);
 				} else {
 					has_type[i] = 1;
 					types[i] = *tpe;
@@ -1853,7 +1853,7 @@ rel_convert_types(mvc *sql, sql_rel *ll, sql_rel *rr, sql_exp **L, sql_exp **R, 
 		if (subtype_cmp(lt, rt) != 0 || (tpe == type_equal_no_any && (lt->type->localtype==0 || rt->type->localtype==0))) {
 			sql_subtype super;
 
-			cmp_supertype(&super, r, i);
+			cmp_supertype(&super, r, i, tpe != type_equal_no_any);
 			if (scale_fixing) {
 				/* convert ls to super type */
 				ls = exp_check_type(sql, &super, ll, ls, tpe);
@@ -2420,7 +2420,7 @@ rel_in_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 				sql_subtype *tpe = exp_subtype(e);
 
 				if (values_tpe && tpe) {
-					cmp_supertype(&super, values_tpe, tpe);
+					cmp_supertype(&super, values_tpe, tpe, false);
 					*values_tpe = super;
 				} else if (!values_tpe && tpe) {
 					super = *tpe;
@@ -2433,7 +2433,7 @@ rel_in_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 				values_tpe = le_tpe;
 			if (!le_tpe || !values_tpe)
 				return sql_error(sql, 01, SQLSTATE(42000) "For the IN operator, both sides must have a type defined");
-			cmp_supertype(&super, values_tpe, le_tpe); /* compute supertype */
+			cmp_supertype(&super, values_tpe, le_tpe, false); /* compute supertype */
 
 			/* on selection/join cases we can generate cmp expressions instead of anyequal for trivial cases */
 			if ((is_sql_where(f) || is_sql_having(f)) && !is_sql_farg(f) && !exp_has_rel(le) && exps_are_atoms(vals)) {
@@ -2514,7 +2514,7 @@ exp_between_check_types(sql_subtype *res, sql_subtype *t1, sql_subtype *t2, sql_
 	sql_subtype super;
 
 	if (t1 && t2) {
-		cmp_supertype(&super, t2, t1);
+		cmp_supertype(&super, t2, t1, false);
 		type_found = true;
 	} else if (t1) {
 		super = *t1;
@@ -2525,7 +2525,7 @@ exp_between_check_types(sql_subtype *res, sql_subtype *t1, sql_subtype *t2, sql_
 	}
 	if (t3) {
 		if (type_found)
-			cmp_supertype(&super, t3, &super);
+			cmp_supertype(&super, t3, &super, false);
 		else
 			super = *t3;
 		type_found = true;

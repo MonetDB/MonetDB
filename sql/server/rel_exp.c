@@ -3820,8 +3820,8 @@ exp_numeric_supertype(mvc *sql, sql_exp *e )
 	return e;
 }
 
-sql_exp *
-exp_check_type(mvc *sql, sql_subtype *t, sql_rel *rel, sql_exp *exp, check_type tpe)
+static sql_exp *
+exp_check_type_intern(mvc *sql, sql_subtype *t, sql_rel *rel, sql_exp *exp, check_type tpe, bool atom_inplace)
 {
 	int c, err = 0;
 	sql_exp* nexp = NULL;
@@ -3831,8 +3831,12 @@ exp_check_type(mvc *sql, sql_subtype *t, sql_rel *rel, sql_exp *exp, check_type 
 		return exp;
 
 	/* first try cheap internal (in-place) conversions ! */
-	if ((nexp = exp_convert_inplace(sql->sa, t, exp)) != NULL)
-		return nexp;
+	if (exp && exp->type == e_atom) {
+		if ((nexp = exp_convert_inplace(sql->sa, t, exp)) != NULL)
+			return nexp;
+	}
+	if (atom_inplace) /* error ? */
+		return NULL;
 
 	if (fromtype && subtype_cmp(t, fromtype) != 0) {
 		if (EC_INTERVAL(fromtype->type->eclass) && (t->type->eclass == EC_NUM || t->type->eclass == EC_POS) && t->digits < fromtype->digits) {
@@ -3864,6 +3868,12 @@ exp_check_type(mvc *sql, sql_subtype *t, sql_rel *rel, sql_exp *exp, check_type 
 	return exp;
 }
 
+sql_exp *
+exp_check_type(mvc *sql, sql_subtype *t, sql_rel *rel, sql_exp *exp, check_type tpe)
+{
+	return exp_check_type_intern(sql, t, rel, exp, tpe, false);
+}
+
 list*
 exps_check_type(mvc *sql, sql_subtype *t, list *exps)
 {
@@ -3883,6 +3893,7 @@ exp_values_set_supertype(mvc *sql, sql_exp *values, sql_subtype *opt_super)
 	assert(is_values(values));
 	list *vals = exp_get_values(values), *nexps;
 	sql_subtype *tpe = opt_super?opt_super:exp_subtype(vals->h->data);
+	bool mixing_types = false;
 
 	if (!opt_super && tpe)
 		values->tpe = *tpe;
@@ -3900,7 +3911,11 @@ exp_values_set_supertype(mvc *sql, sql_exp *values, sql_subtype *opt_super)
 		}
 		ttpe = exp_subtype(e);
 		if (tpe && ttpe) {
-			supertype(&super, ttpe, tpe);
+			bool is_str = EC_VARCHAR(tpe->type->eclass) || EC_VARCHAR(ttpe->type->eclass);
+			cmp_supertype(&super, ttpe, tpe, false);
+			if (is_str && !EC_VARCHAR(super.type->eclass)) {
+				mixing_types = true;
+			}
 			values->tpe = super;
 			tpe = &values->tpe;
 		} else {
@@ -3908,6 +3923,7 @@ exp_values_set_supertype(mvc *sql, sql_exp *values, sql_subtype *opt_super)
 		}
 	}
 
+	(void)mixing_types;
 	if (tpe) {
 		/* if the expression is a parameter set its type */
 		for (node *m = vals->h; m; m = m->next) {
@@ -3923,9 +3939,11 @@ exp_values_set_supertype(mvc *sql, sql_exp *values, sql_subtype *opt_super)
 		nexps = sa_list(sql->sa);
 		for (node *m = vals->h; m; m = m->next) {
 			sql_exp *e = m->data;
-			e = exp_check_type(sql, &values->tpe, NULL, e, type_equal);
-			if (!e)
+			e = exp_check_type_intern(sql, &values->tpe, NULL, e, type_equal, mixing_types);
+			if (!e) {
+				(void) sql_error(sql, 10, SQLSTATE(42000) "mixing types varchar and %s", values->tpe.type->base.name);
 				return NULL;
+			}
 			exp_label(sql->sa, e, ++sql->label);
 			append(nexps, e);
 		}

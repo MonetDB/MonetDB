@@ -1650,7 +1650,7 @@ SELECT loc.code
     AND f.book_code = 'G2FIN'
     AND ( cat.subcategory_code = 200 OR cat.subcategory_code = 301 OR cat.subcategory_code >= 221 )
     AND ( cat.subcategory_code = 200 OR cat.subcategory_code = 301 OR cat.subcategory_code <= 290 )
-    AND ( s1.code = '03' OR cat.subcategory_code = 25 )
+    AND ( s1.code = '03' OR cast(cat.subcategory_code as SMALLINT) = 25 )
     AND d.month_code BETWEEN '2016.01' AND '2016.10'
  ORDER BY d.d_date
 ----
