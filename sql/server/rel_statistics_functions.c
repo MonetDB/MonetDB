@@ -596,8 +596,8 @@ sql_day_propagate_statistics(mvc *sql, sql_exp *e)
 			nmin = sql_day(omin->data.val.lval);
 			nmax = sql_day(omax->data.val.lval);
 		} else if (tp->type->eclass == EC_MONTH) {
-			nmin = sql_day(omin->data.val.ival);
-			nmax = sql_day(omax->data.val.ival);
+			nmin = omin->data.val.ival;
+			nmax = omax->data.val.ival;
 		}
 	} else if (tp->type->eclass == EC_SEC || tp->type->eclass == EC_MONTH) {
 		return;
