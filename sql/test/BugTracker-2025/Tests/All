@@ -83,6 +83,7 @@ HAVE_HGE?7637_str_to_decimal
 7752-union-sum
 7756-anti-join-null
 7759-replace-wrong-error
+7761-semijoin-string-comparison
 7763-exits-with-null
 7760-groupby_posarg_CP
 7768-not-in
