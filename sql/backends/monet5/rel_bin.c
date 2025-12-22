@@ -3694,8 +3694,10 @@ rel2bin_antijoin(backend *be, sql_rel *rel, list *refs)
 	stmt *left = NULL, *right = NULL, *join = NULL, *sel = NULL, *sub = NULL;
 	bool any = false;
 
-	if (rel->oahash > 0)
+	if (rel->oahash > 0) {
+		assert(rel->parallel);
 		return rel2bin_oahash(be, rel, refs);
+	}
 
 	int neededpp = get_need_pipeline(be);
 	if (rel->exps)

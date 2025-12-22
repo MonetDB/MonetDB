@@ -148,7 +148,7 @@ _rel_partition(mvc *sql, sql_rel *rel)
 {
 	list *tables = sa_list(sql->sa);
 	/* find basetable relations */
-	/* mark one (largest) with REL_PARTITION */
+	/* mark one (largest) with rel->partition */
 	find_basetables(sql, rel, tables);
 	if (list_length(tables)) {
 		sql_rel *r;
@@ -230,17 +230,13 @@ has_groupby(sql_rel *rel)
 /* To start parallel processing within a (query plan) graph, we need to mark
  * the places where partitioning is needed, and where to start or end a
  * parallel block.
- * REL_PARTITION: partition the table via bind (needed)
  * SPB: Start Parallel Block
  * EPB: End Parallel Block
- * CPB: continue Parallel block (ie streaming, internal can't be blocking)
  * A nested parallel blocks is lifted by an extra reference, making sure the inner
  * block is executed before the outer block.
  */
-#define REL_PARTITION 1
 #define SPB 2
 #define EPB 3
-#define CPB 4
 
 static sql_rel *
 rel_partition(mvc *sql, sql_rel *rel)
@@ -251,7 +247,6 @@ rel_partition(mvc *sql, sql_rel *rel)
 	switch (rel->op) {
 	case op_basetable:
 	case op_sample:
-		rel->flag = REL_PARTITION;
 		break;
 	case op_project:
 	case op_select:
@@ -486,7 +481,6 @@ find_cmp_exps(list **exps_hsh, list **exps_prb, const list *exps, sql_rel *rel_h
 		sql_exp *e = n->data;
 
 		assert(e->type == e_cmp);
-		//assert(e->type == e_cmp && (e->flag == cmp_equal || e->flag == cmp_notequal));
 
 		/* search first for the not-atom exp, otherwise rel_find_exp()
 		 * incorrectly returns TRUE for an atom-typed exp */
@@ -647,11 +641,8 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 			res = rel_pipeline(v, rel->l, !safe, safe?SPB:0);
 		if (safe) {
 			rel->parallel = 1;
-			if (res == REL_PARTITION)
-				/* partition via bind (still) needed in the subtree, let's start one at this `rel`. */
-				rel->spb = 1; // spb + parallel means, the pb for the blocking operator is started here
 			if (pb) {
-				rel_dup(rel); // inc-ref nested parallel block
+				rel_dup(rel);
 				res = 0;
 			} else {
 				/* GROUP BY is a blocking operation, so it always ends a `pb`
@@ -670,18 +661,12 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 		res = rel_pipeline(v, rel->l, pp_useful, pp_useful?SPB/*:rel->grouped?0*/:0);
 		if (pp_useful && res) { /* topn is blocking */
 			rel->parallel = 1;
-			if (res == REL_PARTITION)
-				/* partition via bind (still) needed in the subtree,
-				 * let's start on at this `rel`. */
-				rel->spb = 1; // spb + parallel means, the pb for the blocking operator is started here
 			if (pb) { /* nested */
 				rel_dup(rel);
 				res = 0;
-				rel->partition = 1; // ??
-				//if (res)
-					//res = SPB;
-			} //else
-				res = EPB;
+				rel->partition = 1;
+			}
+			res = EPB;
 		} else if (pb) {
 			rel->spb = 1;
 		}
@@ -693,11 +678,11 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 	} else if (is_simple_project(rel->op) || is_select(rel->op) || is_sample(rel->op)) {
 		if (pb && (is_simple_project(rel->op) || is_select(rel->op)) && exps_have_unsafe(rel->exps, 1, false)) {
 			if (p && (p->op != op_topn || !topn_limit(p)))
-				rel_dup(rel); // inc-ref unsafe exps (ie order dependent)
+				rel_dup(rel);
 			if (rel->l)
 				res = rel_pipeline(v, rel->l, materialize, 0);
 			if (pb && !rel_is_ref(rel)) {
-				rel->spb = 1; // ? after ?
+				rel->spb = 1;
 				res = SPB;
 			}
 		} else {
@@ -710,22 +695,24 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 					res = 0;
 				} else
 				if (pb) {
-					rel->spb = (res == REL_PARTITION);
+					sql_rel *l = rel->l;
+					if (!res && l && is_groupby(l->op) && l->l) {
+						sql_rel *p = l->l;
+						if (p->op == op_partition) {
+							rel->parallel = 1;
+						}
+					}
 					if (rel->spb)
 						res = SPB;
-				} else {
-					if (res == REL_PARTITION)
-						rel->partition = 1;
 				}
 			} else {
 				rel->parallel = 1;
-				rel->spb = (res == REL_PARTITION);
 				if (pb || (p && p->op == op_topn && !topn_limit(p))
 					   || (p && p->op == op_project && exps_have_unsafe(p->exps, 1, false))
 					   || !list_empty(rel->r)) { /* nested */
 					rel_dup(rel);
 					res = 0;
-					rel->partition = 1; // ??
+					rel->partition = 1;
 				} else {
 					res = EPB;
 				}
@@ -796,10 +783,6 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 			(void) rel_pipeline(v, rel_hsh, true, 1);
 
 		rel->parallel = 1;
-		if (pb == CPB) {
-			assert(0);
-			rel_dup(rel);
-		}
 		if (pb)
 			rel->spb = 1;
 		res = SPB;
@@ -814,12 +797,11 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 			else
 				pb |= materialize;
 			for(node *n = rels->h; n; n = n->next) {
-				//int lres = rel_pipeline(v, n->data, false, pb?CPB:0);
 				int lres = rel_pipeline(v, n->data, false, pb?SPB:0);
 				if (lres == EPB) {
 					rel->partition = 1;
 					if (pb)
-						rel_dup(n->data); // nested
+						rel_dup(n->data);
 				}
 				if (lres == SPB)
 					started_pb = 1;
@@ -837,24 +819,17 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 		if (pb) { /* somewhat simplified */
 			rel->spb = 1;
 			res = SPB;
-		//} else {
 			if (rel->l)
 				lres = rel_pipeline(v, rel->l, true, 0);
 			if (rel->r)
 				rres = rel_pipeline(v, rel->r, true, 0);
-			/*
-			if (lres == EPB)
-				rel->partition = 1;
-			if (rres == EPB)
-				rel->partition = 1;
-				*/
 			if (pb)
 				rel->spb = 1;
 			else {
-			if (!lres || !rres)
-				res = 0;
-			else
-				res = pb;
+				if (!lres || !rres)
+					res = 0;
+				else
+					res = pb;
 			}
 		}
 	} else if (is_insert(rel->op) || is_update(rel->op) || is_delete(rel->op) || is_truncate(rel->op)) {
@@ -988,10 +963,6 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 				(void) rel_pipeline(v, rel_hsh, true, 1);
 
 			rel->parallel = 1;
-			if (pb == CPB) {
-				assert(0);
-				rel_dup(rel);
-			}
 			if (pb)
 				rel->spb = 1;
 			res = SPB;
