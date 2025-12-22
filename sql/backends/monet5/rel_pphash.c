@@ -1003,7 +1003,7 @@ rel2bin_oahash_fullouterjoin(backend *be, sql_rel *rel, list *refs)
 	(void)pp_counter_get(be, source); /* use source else statement gets garbage collected */
 
 	//output the unmatched rows with NULLs for the LHS columns
-	stmt *slice = stmt_nth_slice(be, hp_mrk, 1, false);
+	stmt *slice = stmt_nth_slice(be, hp_mrk, false);
 	stmt *unmatched = stmt_thetaselect(be, slice, NULL, stmt_bool(be, 1), "ne", tpe_oid);
 	list *res2 = sa_list(sql->sa);
 	if (!list_empty(shared_hp)) {
