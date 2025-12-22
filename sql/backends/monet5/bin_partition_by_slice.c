@@ -719,44 +719,6 @@ rel_groupby_finish_pp(backend *be, sql_rel *rel, stmt *cursub, bool _2phases)
 	return cursub;
 }
 
-static int
-mat_nr_parts(backend *be, int m)
-{
-	InstrPtr mp = newStmt(be->mb, "mat", "nr_parts");
-	mp = pushArgument(be->mb, mp, m);
-	mp = pushInt(be->mb, mp, 100000);
-	pushInstruction(be->mb, mp);
-	return getArg(mp, 0);
-}
-
-static InstrPtr
-mat_counters_get(backend *be, stmt *mat, int seqnr)
-{
-	InstrPtr mp = newStmt(be->mb, "mat", "counters_get");
-	if (!mp)
-		return NULL;
-	mp = pushReturn(be->mb, mp, newTmpVariable(be->mb, TYPE_int));
-	mp = pushArgument(be->mb, mp, mat->nr);
-	mp = pushArgument(be->mb, mp, seqnr);
-	pushInstruction(be->mb, mp);
-	return mp;
-}
-
-static stmt *
-mats_fetch_slices(backend *be, stmt *mats, int mid, int sid)
-{
-	for(node *n = mats->op4.lval->h; n; n = n->next) {
-		stmt *mat = n->data;
-		InstrPtr mp = newStmt(be->mb, "mat", "fetch");
-		mp = pushArgument(be->mb, mp, mat->nr);
-		mp = pushArgument(be->mb, mp, mid);
-		mp = pushArgument(be->mb, mp, sid);
-		pushInstruction(be->mb, mp);
-		mat->nr = getArg(mp, 0);
-	}
-	return mats;
-}
-
 static list *
 mats_fetch(backend *be, list *shared, list *aggrresults, int mid)
 {
@@ -796,6 +758,7 @@ rel2bin_groupby_pp(backend *be, sql_rel *rel, list *refs)
 		if (!sub)
 			return NULL;
 		mat = sub->op4.lval->h->data;
+		sub->partition = 1;
 		nrparts = mat_nr_parts(be, mat->nr);
 	}
 
@@ -1147,7 +1110,7 @@ rel2bin_groupby_pp(backend *be, sql_rel *rel, list *refs)
 			for(node *n = l->h; n && m && o; n = n->next, m = m->next, o = o->next ) {
 				sql_exp *e = o->data;
 				stmt *aggrstmt = n->data;
-				stmt *ns = stmt_create(be->mvc->sa, st_result);
+				stmt *ns = stmt_create(be->mvc->sa, st_none);
 				ns->nrcols = 1;
 				ns->key = 1;
 				ns->aggr = 1;

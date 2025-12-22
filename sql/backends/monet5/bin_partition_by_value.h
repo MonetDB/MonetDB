@@ -21,4 +21,8 @@ extern bool rel_groupby_partition(sql_rel *rel);
 extern stmt *rel2bin_partition(backend *be, sql_rel *rel, list *refs);
 extern stmt *rel2bin_groupby_partition(backend *be, sql_rel *rel, list *refs, bool neededpp);
 
+extern int mat_nr_parts(backend *be, int m);
+extern InstrPtr mat_counters_get(backend *be, stmt *mat, int seqnr);
+extern stmt *mats_fetch_slices(backend *be, stmt *mats, int mid, int sid);
+
 #endif /*_BIN_VALUE_PARTITION_H_*/

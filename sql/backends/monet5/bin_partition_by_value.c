@@ -74,20 +74,72 @@ rel2bin_slicer(backend *be, stmt *sub)
 	return sub;
 }
 
+int
+mat_nr_parts(backend *be, int m)
+{
+	InstrPtr mp = newStmt(be->mb, "mat", "nr_parts");
+	mp = pushArgument(be->mb, mp, m);
+	mp = pushInt(be->mb, mp, 100000);
+	pushInstruction(be->mb, mp);
+	return getArg(mp, 0);
+}
+
+InstrPtr
+mat_counters_get(backend *be, stmt *mat, int seqnr)
+{
+	InstrPtr mp = newStmt(be->mb, "mat", "counters_get");
+	if (!mp)
+		return NULL;
+	mp = pushReturn(be->mb, mp, newTmpVariable(be->mb, TYPE_int));
+	mp = pushArgument(be->mb, mp, mat->nr);
+	mp = pushArgument(be->mb, mp, seqnr);
+	pushInstruction(be->mb, mp);
+	return mp;
+}
+
+stmt *
+mats_fetch_slices(backend *be, stmt *mats, int mid, int sid)
+{
+	list *nmats = sa_list(be->mvc->sa); /* list of ints (variable numbers* */
+	for(node *n = mats->op4.lval->h; n; n = n->next) {
+		stmt *mat = n->data;
+		InstrPtr mp = newStmt(be->mb, "mat", "fetch");
+		mp = pushArgument(be->mb, mp, mat->nr);
+		mp = pushArgument(be->mb, mp, mid);
+		mp = pushArgument(be->mb, mp, sid);
+		pushInstruction(be->mb, mp);
+		stmt *n = stmt_blackbox_result(be, mp, 0, tail_type(mat));
+		n = stmt_alias(be, n, mat->label, mat->tname, mat->cname);
+		append(nmats, n);
+	}
+	return stmt_list(be, nmats);
+}
+
 stmt *
 rel2bin_slicer_pp(backend *be, stmt *sub)
 {
 	(void)get_need_pipeline(be);
-	int source = pp_counter(be, -1, pp_dynamic_slices(be, sub));
-	//set_pipeline(be, stmt_pp_start_generator(be, source, true));
+	int source = 0;
+	if (sub->partition) {
+		stmt *mat = sub->op4.lval->h->data;
+		int nrparts = mat_nr_parts(be, mat->nr);
+		source = pp_counter(be, 0, nrparts);
+	} else {
+		source = pp_counter(be, -1, pp_dynamic_slices(be, sub));
+	}
 	if (be->pp) {
 		stmt_concat_add_source(be);
 	} else {
 		set_pipeline(be, stmt_pp_start_generator(be, source, true));
 	}
-	(void)pp_counter_get(be, source);
-
-	return rel2bin_slicer(be, sub);
+	int seqnr = pp_counter_get(be, source);
+	if (sub->partition) {
+		stmt *mat = sub->op4.lval->h->data;
+		InstrPtr ctr = mat_counters_get(be, mat, seqnr);
+		return mats_fetch_slices(be, sub, getArg(ctr, 0), getArg(ctr, 1));
+	} else {
+		return rel2bin_slicer(be, sub);
+	}
 }
 
 bool
