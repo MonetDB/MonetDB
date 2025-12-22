@@ -3724,6 +3724,11 @@ pattern algebra.project(X_0:bat[:any_1], X_1:any_2):bat[:any_2]
 ALGprojecttail
 Fill the tail with a constant
 algebra
+project
+pattern algebra.project(X_0:bat[:oid], X_1:any_1, X_2:ptr):bat[:any_1]
+LALGconstant
+Project a single value
+algebra
 projection
 command algebra.projection(X_0:bat[:oid], X_1:bat[:any_1]):bat[:any_1]
 ALGprojection
@@ -49468,6 +49473,11 @@ combined_probe
 command oahash.combined_probe(X_0:bat[:any_1], X_1:bat[:oid], X_2:bat[:oid], X_3:bat[:any_1], X_4:bat[:lng], X_5:bit, X_6:bit, X_7:ptr) (X_8:bat[:oid], X_9:bat[:oid])
 OAHASHprobe_cmbd_single
 Probe the selected `key`-s in the hash table. For a matched item, return its OID in the 'key' column and the slot ID in the hash table
+oahash
+count_unmatched
+command oahash.count_unmatched(X_0:bat[:any_1], X_1:bat[:oid], X_2:bat[:lng]):bat[:oid]
+OAHASHcount_unmatched
+Expand the count of 'unmatched' with 'frequency'.  Returns the count in a VOID BAT.
 oahash
 expand
 command oahash.expand(X_0:bat[:oid], X_1:bat[:oid], X_2:bat[:lng], X_3:bit):bat[:oid]
