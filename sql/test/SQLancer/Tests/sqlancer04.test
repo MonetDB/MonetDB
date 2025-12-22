@@ -645,7 +645,7 @@ case 1108638173 when 1 then 'PS	' when 0.480478635864931780119491122604813426733
 statement ok
 create view v40(vc0) as (values ((true) not in (false, false)), ("isauuid"(case 8 when 4 then 'F&' when 0 then '&' end)))
 
-statement error 42000!SELECT: cannot use non GROUP BY column 'v20.vc0' in query results without an aggregate function
+query I
 select cast(sum(count) as bigint) from (select cast(greatest(false, true) as int) as count from v37 full outer join
 (select all ((((1074663557)%(0.8367095941704169)))%(v20.vc0 * 0.25281408194923194)), 0.573499282341099
 from v20 where ((((true)or(true)))or(true)) group by 2) as sub0 on
@@ -657,6 +657,8 @@ then 0.78255921469665923329017687137820757925510406494140625 end) is null, + (ca
 then 0.8350239383024128 when '6r' then 932574625 when '[]' then 9 when '' then 5 when 'LnP/Amb9' then 2 end)
 from v40, v3 where (0.4906208915598539999081140194903127849102020263671875) not in (1654919043, 6)) as sub1
 on ((trim(v37.vc0))>=(substr(v37.vc0, 9, 8)))) as res
+----
+8
 
 statement ok
 ROLLBACK
@@ -671,7 +673,7 @@ with check option
 statement ok
 create view v7(vc0, vc1, vc2) as (values (1307331776, ((0.8065742163429374)||(0.1829829)),
 ((floor(23898.0))-(cast(16268 as double)))), (least(cast('1' as bigint), ifthenelse(true, 7769,
-0.52628413232100446084160694226738996803760528564453125)), 2092106435, case when (((((((('TRUE')or(true)))and(false)))
+0.52628413232100446084160694226738996803760528564453125)), cast(2092106435 as varchar), case when (((((((('TRUE')or(true)))and(false)))
 or(false)))and(false)) then pi() when false then sql_max(10246889, 0.038412724) else cast(1556011470 as bigint) end))
 with check option
 

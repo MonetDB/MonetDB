@@ -1,0 +1,3 @@
+
+statement error
+SELECT ( WITH x AS ( SELECT * FROM generate_series ( 32989 , 8100 ) EXCEPT SELECT * FROM generate_series ( 44 , 3 ) ) SELECT DISTINCT ( WITH x AS ( SELECT * FROM generate_series ( 32989 , 8100 ) EXCEPT SELECT * FROM generate_series ( 44 , 3 ) ) SELECT CASE WHEN NULL IN ( 69 , MAX ( CASE WHEN 97 THEN 66 END ) OVER ( ) + ( SELECT COUNT ( * ) ) ) THEN 41 WHEN 1 THEN 1 END FROM x ) FROM x ) 

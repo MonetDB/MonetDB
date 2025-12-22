@@ -27,13 +27,6 @@
 */
 
 __attribute__((__pure__))
-static inline bool
-isProjectConst(const InstrRecord *p)
-{
-	return (getModuleId(p) == algebraRef && getFunctionId(p) == projectRef);
-}
-
-__attribute__((__pure__))
 static int
 hashInstruction(const MalBlkRecord *mb, const InstrRecord *p)
 {
@@ -78,6 +71,11 @@ OPTcommonTermsImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 	if (isSimpleSQL(mb) || MB_LARGE(mb)) {
 		old = NULL;
 		goto wrapup1;
+	}
+	for (i = 0; i < mb->stop; i++) {
+		p = mb->stmt[i];
+		if (getFunctionId(p) == replaceRef)
+			goto wrapup1;
 	}
 
 	(void) stk;
@@ -202,8 +200,7 @@ OPTcommonTermsImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 					&& !hasCommonResults(p, q)
 					&& !isUnsafeFunction(q)
 					&& !isUpdateInstruction(q)
-					&& !isProjectConst(q) &&	/* disable project(x,val), as its used for the result of case statements */
-					isLinearFlow(q)) {
+					&& isLinearFlow(q)) {
 					if (safetyBarrier(p, q)) {
 						TRC_DEBUG(MAL_OPTIMIZER, "Safety barrier reached\n");
 						break;

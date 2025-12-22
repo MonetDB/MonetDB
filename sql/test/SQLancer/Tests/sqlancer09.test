@@ -267,12 +267,8 @@ least(true, false) then least(true, true) else ((true)and(false)) end) as res
 statement ok
 ROLLBACK
 
-query T rowsort
+statement error 42000!mixing types varchar and decimal
 values (0.51506835), (2), (least('a', 0.5667308))
-----
-0.51506835
-0.5667308
-2
 
 statement ok
 START TRANSACTION
@@ -312,7 +308,7 @@ create view v2(vc0, vc1, vc2) as (values (((((+ (2))&(-2)))+(13)),
 then sql_max(cast(5293 as int), ((5)-
 (5))) end),(charindex('934079707', '35305325'), not (false),
 sql_max(((+ (102))|(case 3 when 458003921 then 28118 end)), cast(least(3,
-3) as double))), (least(((((5)%(4)))||(2)),
+3) as double))), (least(((((5)%(4)))|(2)),
 5), false, 45))
 
 statement ok
@@ -383,7 +379,7 @@ statement ok
 create or replace view v84(vc0, vc1) as (values (1, 1222), (12,10), (null, 2)) with check option
 
 statement error 22003!overflow in calculation 1XOR-9223372036854775807.
-select 1 from v74 cross join v84 join (values ('b'), ('a'), (1)) as sub0 on (v84.vc0)^(-9223372036854775807) is not null
+select 1 from v74 cross join v84 join (values ('b'), ('a'), ('1')) as sub0 on (v84.vc0)^(-9223372036854775807) is not null
 
 statement ok
 ROLLBACK

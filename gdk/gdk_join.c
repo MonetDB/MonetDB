@@ -3171,8 +3171,6 @@ hashjoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 							break;
 						}
 						HASHLOOPBODY();
-						if (semi)
-							break;
 					}
 				}
 			} else if (rci->tpe != cand_dense) {

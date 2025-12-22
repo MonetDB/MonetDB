@@ -212,7 +212,7 @@ CREATE VIEW sys.describe_tables AS
 			GROUP_CONCAT(
 				sys.DQ(c.name) || ' ' ||
 				sys.describe_type(c.type, c.type_digits, c.type_scale) ||
-				ifthenelse(c."null" = 'false', ' NOT NULL', '')
+				ifthenelse(c."null" = false, ' NOT NULL', '')
 			, ', ') || ')'
 		FROM sys._columns c
 		WHERE c.table_id = t.id) col,

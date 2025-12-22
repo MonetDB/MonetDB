@@ -580,6 +580,7 @@ sql_month_propagate_statistics(mvc *sql, sql_exp *e)
 	p->value.dval = 12;
 }
 
+/* day(date), day(timestamp), day(interval_day), day(interval_sec) */
 static void
 sql_day_propagate_statistics(mvc *sql, sql_exp *e)
 {
@@ -588,13 +589,18 @@ sql_day_propagate_statistics(mvc *sql, sql_exp *e)
 	sql_subtype *tp = exp_subtype(first);
 	int localtype = tp->type->eclass == EC_SEC ? TYPE_lng : TYPE_int;
 	atom *omin, *omax;
-	lng nmin = 1, nmax = 31;
+	lng nmin = 1, nmax = 31; /* for timestamp and date the min/max is within those bounds */
 
 	if ((omin = find_prop_and_get(first->p, PROP_MIN)) && (omax = find_prop_and_get(first->p, PROP_MAX))) {
 		if (tp->type->eclass == EC_SEC) {
 			nmin = sql_day(omin->data.val.lval);
 			nmax = sql_day(omax->data.val.lval);
+		} else if (tp->type->eclass == EC_MONTH) {
+			nmin = omin->data.val.ival;
+			nmax = omax->data.val.ival;
 		}
+	} else if (tp->type->eclass == EC_SEC || tp->type->eclass == EC_MONTH) {
+		return;
 	}
 
 	set_minmax_property(sql, e, PROP_MAX, atom_int(sql->sa, sql_fetch_localtype(localtype), nmax));
