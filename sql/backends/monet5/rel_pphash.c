@@ -109,7 +109,7 @@ oahash_slicer(backend *be, stmt *sub)
 	list *newl = sa_list(be->mvc->sa);
 	stmt *ht = sub->op2?sub->op2:sub->op4.lval->t->data;
 	assert(ht);
-	stmt *slice = stmt_nth_slice(be, ht, 1, true);
+	stmt *slice = stmt_nth_slice(be, ht, true);
 	sub = sub->op1; /* need the payload */
 	for (node *n = sub->op4.lval->h; n; n = n->next) {
 		stmt *sc = n->data;

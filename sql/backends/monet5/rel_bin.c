@@ -3377,12 +3377,8 @@ rel2bin_groupjoin(backend *be, sql_rel *rel, list *refs)
 	}
 	res = stmt_list(be, l);
 
-	if (neededpp && !rel->partition) {
-		int source = pp_counter(be, -1, pp_dynamic_slices(be, res));
-		set_pipeline(be, stmt_pp_start_generator(be, source, true));
-		(void)pp_counter_get(be, source);
-		res = rel2bin_slicer(be, res, 1);
-	}
+	if (neededpp && !rel->partition)
+		res = rel2bin_slicer_pp(be, res);
 	return res;
 }
 
@@ -3676,12 +3672,8 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 	res = stmt_list(be, l);
 	res->extra = l2; /* used for merge statements, this will be cleaned out on the pushcands branch :) */
 
-	if (neededpp && !rel->partition) {
-		int source = pp_counter(be, -1, pp_dynamic_slices(be, res));
-		set_pipeline(be, stmt_pp_start_generator(be, source, true));
-		(void)pp_counter_get(be, source);
-		res = rel2bin_slicer(be, res, 1);
-	}
+	if (neededpp && !rel->partition)
+		res = rel2bin_slicer_pp(be, res);
 	return res;
 }
 
@@ -3874,12 +3866,8 @@ rel2bin_antijoin(backend *be, sql_rel *rel, list *refs)
 		list_append(l, s);
 	}
 	stmt *s = stmt_list(be, l);
-	if (neededpp && !rel->partition) {
-		int source = pp_counter(be, -1, pp_dynamic_slices(be, s));
-		set_pipeline(be, stmt_pp_start_generator(be, source, true));
-		(void)pp_counter_get(be, source);
-		s = rel2bin_slicer(be, s, 1);
-	}
+	if (neededpp && !rel->partition)
+		s = rel2bin_slicer_pp(be, s);
 	return s;
 }
 
@@ -5278,17 +5266,8 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 	if (withinpp)
 		be->pipeline = pp;
 	stmt_set_nrcols(cursub);
-	if (neededpp) {
-		int source = pp_counter(be, -1, pp_dynamic_slices(be, cursub));
-
-		if (be->pp) {
-			stmt_concat_add_source(be);
-		} else {
-			set_pipeline(be, stmt_pp_start_generator(be, source, true));
-		}
-		(void)pp_counter_get(be, source);
-		cursub = rel2bin_slicer(be, cursub, 1);
-	}
+	if (neededpp)
+		cursub = rel2bin_slicer_pp(be, cursub);
 	return cursub;
 }
 
@@ -5384,12 +5363,7 @@ rel2bin_topn(backend *be, sql_rel *rel, list *refs)
 	stmt *pp = NULL;
 	if (df2)
 		pp = get_pipeline(be);
-	if (df2 && !pp) {
-		(void)get_need_pipeline(be);
-		assert(0);
-		set_pipeline(be, pp = stmt_pp_start_dynamic(be, pp_dynamic_slices(be, sub)));
-		sub = rel2bin_slicer(be, sub, 1);
-	}
+	assert(!(df2 && !pp));
 
 	n = sub->op4.lval->h;
 	if (n) {
@@ -5429,12 +5403,8 @@ rel2bin_topn(backend *be, sql_rel *rel, list *refs)
 		if (pp)
 			sub = rel_pp_topn(be, projectresults, sub, pp, o, l);
 	}
-	if (neededpp && !get_pipeline(be)) {
-		int source = pp_counter(be, -1, pp_dynamic_slices(be, sub));
-		set_pipeline(be, stmt_pp_start_generator(be, source, true));
-		(void)pp_counter_get(be, source);
-		sub = rel2bin_slicer(be, sub, 1);
-	}
+	if (neededpp && !get_pipeline(be))
+		sub = rel2bin_slicer_pp(be, sub);
 	return sub;
 }
 
@@ -8146,18 +8116,18 @@ subrel_bin(backend *be, sql_rel *rel, list *refs)
 			if (neededpp) {
 				//printf("# needs pipeline, started from subrel (referenced rel)\n");
 				be->need_pipeline = false;
-				int source = pp_counter(be, -1, pp_dynamic_slices(be, s));
+				if (rel->op == op_buildhash && !list_empty(rel->attr)) {
+					int source = pp_counter(be, -1, pp_dynamic_slices(be, s));
 
-				if (be->pp) {
-					stmt_concat_add_source(be);
-				} else {
-					set_pipeline(be, stmt_pp_start_generator(be, source, true));
-				}
-				(void)pp_counter_get(be, source);
-				if (rel->op == op_buildhash && !list_empty(rel->attr))
+					if (be->pp) {
+						stmt_concat_add_source(be);
+					} else {
+						set_pipeline(be, stmt_pp_start_generator(be, source, true));
+					}
+					(void)pp_counter_get(be, source);
 					s = oahash_slicer(be, s);
-				else
-					s = rel2bin_slicer(be, s, 1);
+				} else
+					s = rel2bin_slicer_pp(be, s);
 			}
 			if (rel->op == op_buildhash && s->op1)
 				return s->op1;
@@ -8165,14 +8135,6 @@ subrel_bin(backend *be, sql_rel *rel, list *refs)
 		}
 		if (neededpp)
 			set_need_pipeline(be);
-		/*
-		if (neededpp) {
-			s = rel2bin_materialize(be, rel, refs, false);
-			list_append(refs, rel);
-			list_append(refs, s);
-			return s;
-		}
-		*/
 	} else if (rel->spb && !is_groupby(rel->op) && !is_join(rel->op) && !is_semi(rel->op) && !is_munion(rel->op))
 		neededpp = get_need_pipeline(be);
 
@@ -8269,31 +8231,13 @@ subrel_bin(backend *be, sql_rel *rel, list *refs)
 		*/
 		if (!be->pp) {
 			assert(!is_groupby(rel->op) && !is_join(rel->op));
-
-			int source = pp_counter(be, -1, pp_dynamic_slices(be, s));
-
-			if (be->pp) {
-				stmt_concat_add_source(be);
-			} else {
-				set_pipeline(be, stmt_pp_start_generator(be, source, true));
-			}
-			(void)pp_counter_get(be, source);
-			s = rel2bin_slicer(be, s, 1);
+			s = rel2bin_slicer_pp(be, s);
 		}
 	} else if (be->need_pipeline && !be->pp) {
 		assert(!is_groupby(rel->op) && !is_join(rel->op) && !is_semi(rel->op));
 		//printf("# needs pipeline, started from subrel\n");
 		be->need_pipeline = false;
-
-		int source = pp_counter(be, -1, pp_dynamic_slices(be, s));
-
-		if (be->pp) {
-			stmt_concat_add_source(be);
-		} else {
-			set_pipeline(be, stmt_pp_start_generator(be, source, true));
-		}
-		(void)pp_counter_get(be, source);
-		s = rel2bin_slicer(be, s, 1);
+		s = rel2bin_slicer_pp(be, s);
 	}
 	return s;
 }

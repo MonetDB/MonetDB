@@ -41,13 +41,13 @@ pp_dynamic_slices(backend *be, stmt *sub)
 /* Generate for every projection column, eg.:
  *   (X_80:bat[:str], !X_19:bat[:str]) := slicer.nth_slice(X_77:int);
  */
-stmt *
-rel2bin_slicer(backend *be, stmt *sub, int slicer)
+static stmt *
+rel2bin_slicer(backend *be, stmt *sub)
 {
-	if (slicer == 1) {
-		if (sub && sub->cand)
-			sub  = subrel_project(be, sub, NULL, NULL);
-		list *newl = sa_list(be->mvc->sa);
+	if (sub && sub->cand)
+		sub  = subrel_project(be, sub, NULL, NULL);
+	list *newl = sa_list(be->mvc->sa);
+	if (sub->partition) {
 		for (node *n = sub->op4.lval->h; n; n = n->next) {
 			stmt *sc = n->data;
 			const char *cname = column_name(be->mvc->sa, sc);
@@ -55,12 +55,39 @@ rel2bin_slicer(backend *be, stmt *sub, int slicer)
 			int label = sc->label;
 
 			sc = column(be, sc);
-			sc = stmt_nth_slice(be, sc, slicer, false);
+			sc = stmt_nth_slice(be, sc, false);
 			list_append(newl, stmt_alias(be, sc, label, tname, cname));
 		}
-		sub = stmt_list(be, newl);
+	} else {
+		for (node *n = sub->op4.lval->h; n; n = n->next) {
+			stmt *sc = n->data;
+			const char *cname = column_name(be->mvc->sa, sc);
+			const char *tname = table_name(be->mvc->sa, sc);
+			int label = sc->label;
+
+			sc = column(be, sc);
+			sc = stmt_nth_slice(be, sc, false);
+			list_append(newl, stmt_alias(be, sc, label, tname, cname));
+		}
 	}
+	sub = stmt_list(be, newl);
 	return sub;
+}
+
+stmt *
+rel2bin_slicer_pp(backend *be, stmt *sub)
+{
+	(void)get_need_pipeline(be);
+	int source = pp_counter(be, -1, pp_dynamic_slices(be, sub));
+	//set_pipeline(be, stmt_pp_start_generator(be, source, true));
+	if (be->pp) {
+		stmt_concat_add_source(be);
+	} else {
+		set_pipeline(be, stmt_pp_start_generator(be, source, true));
+	}
+	(void)pp_counter_get(be, source);
+
+	return rel2bin_slicer(be, sub);
 }
 
 bool
@@ -418,9 +445,8 @@ rel2bin_partition(backend *be, sql_rel *rel, list *refs)
 	}
 	pp = get_pipeline(be);
 	if (!pp) {
-		(void)get_need_pipeline(be);
-		set_pipeline(be, pp = stmt_pp_start_dynamic(be, pp_dynamic_slices(be, sub)));
-		sub = rel2bin_slicer(be, sub, 1);
+		sub = rel2bin_slicer_pp(be, sub);
+		pp = get_pipeline(be);
 	}
 	mats = partition_groupby_part(be, part_rel, part, mats, sub);
 	(void)stmt_pp_jump(be, pp, be->nrparts);

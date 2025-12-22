@@ -649,6 +649,7 @@ rel_groupby_finish_pp(backend *be, sql_rel *rel, stmt *cursub, bool _2phases)
 {
 	(void)_2phases;
 	list *shared = cursub->op4.lval;
+	int partition = cursub->partition;
 
 	if (shared) { /* for avg(integers) compute (dbl)avg + ((dbl)rest)/count) */
 		for(node *n = shared->h, *m = rel->exps->h; n && m; m = m->next) {
@@ -714,6 +715,7 @@ rel_groupby_finish_pp(backend *be, sql_rel *rel, stmt *cursub, bool _2phases)
 	}
 	cursub = stmt_list(be, shared);
 	stmt_set_nrcols(cursub);
+	cursub->partition = partition;
 	return cursub;
 }
 
@@ -783,7 +785,7 @@ rel2bin_groupby_pp(backend *be, sql_rel *rel, list *refs)
 	stmt *groupby = NULL, *grp = NULL, *ext = NULL, *cnt_aggr = NULL;
 	bool _2phases = rel_groupby_2_phases(be->mvc, rel);
 	bool value_partition = SQLrunning && rel->parallel && !_2phases && rel_groupby_partition(rel);
-	int neededpp = rel->spb && get_need_pipeline(be);
+	int neededpp = rel->partition && get_need_pipeline(be);
 	int need_serialize = rel_groupby_serialize(rel); /* return if some of the aggregates require serialization (or fallback implementation) */
 	sql_rel *inner = rel->l;
 	int nrparts = 0;
@@ -846,11 +848,7 @@ rel2bin_groupby_pp(backend *be, sql_rel *rel, list *refs)
 	}
 	pp = get_pipeline(be);
 	if (!pp) {
-		(void)get_need_pipeline(be);
-		int source = pp_counter(be, -1, pp_dynamic_slices(be, sub));
-		set_pipeline(be, stmt_pp_start_generator(be, source, true));
-		(void)pp_counter_get(be, source);
-		sub = rel2bin_slicer(be, sub, 1);
+		rel2bin_slicer_pp(be, sub);
 		pp = get_pipeline(be);
 	}
 
@@ -1143,6 +1141,24 @@ rel2bin_groupby_pp(backend *be, sql_rel *rel, list *refs)
 		node *m = oaggrresults->h; /* skip hash */
 		for(node *n = gbexps->h; n && m; n = n->next, m = m->next)
 			;
+		if (rel->partition) {
+			list *nl = sa_list(be->mvc->sa);
+			node *o = rel->exps->h;
+			for(node *n = l->h; n && m && o; n = n->next, m = m->next, o = o->next ) {
+				sql_exp *e = o->data;
+				stmt *aggrstmt = n->data;
+				stmt *ns = stmt_create(be->mvc->sa, st_result);
+				ns->nrcols = 1;
+				ns->key = 1;
+				ns->aggr = 1;
+				ns->nr = *(int*)m->data;
+				ns->op4.typeval = *tail_type(aggrstmt);
+				ns = stmt_alias(be, ns, e->alias.label, exp_relname(e), exp_name(e));
+				list_append(nl, ns);
+			}
+			cursub = stmt_list(be, nl);
+			cursub->partition = 1;
+		} else
 		if (!neededpp) {
 			list *nl = sa_list(be->mvc->sa);
 			for(node *n = l->h; n && m; n = n->next, m = m->next ) {
@@ -1360,17 +1376,7 @@ rel2bin_groupby_pp(backend *be, sql_rel *rel, list *refs)
 	 * block to partition the result of this GROUP BY for the upper-level
 	 * operators, e.g. topN. */
 
-	if (neededpp) {
-		int source = pp_counter(be, -1, pp_dynamic_slices(be, cursub));
-
-		if (be->pp) {
-			stmt_concat_add_source(be);
-		} else {
-			set_pipeline(be, stmt_pp_start_generator(be, source, true));
-		}
-		(void)pp_counter_get(be, source);
-		cursub = rel2bin_slicer(be, cursub, 1);
-	}
+	assert(!neededpp);
 	if (!rel->r && list_length(aggrs) == 1) {
 		sql_exp *cnt = aggrs->h->data;
 		stmt *cntstmt = l->h->data;

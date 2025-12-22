@@ -13,7 +13,8 @@
 #include "mal_backend.h"
 
 extern int pp_dynamic_slices(backend *be, stmt *sub);
-extern stmt *rel2bin_slicer(backend *be, stmt *sub, int slicer);
+//extern stmt *rel2bin_slicer(backend *be, stmt *sub);
+extern stmt *rel2bin_slicer_pp(backend *be, stmt *sub);
 
 extern bool rel_groupby_partition(sql_rel *rel);
 

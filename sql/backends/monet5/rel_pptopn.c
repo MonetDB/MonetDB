@@ -293,12 +293,7 @@ rel2bin_ordered_topn(backend *be, sql_rel *rel, list *refs, sql_rel *topn, stmt 
 			return NULL;
 	}
 	stmt *pp = get_pipeline(be);
-	if (!pp) {
-		assert(0);
-		(void)get_need_pipeline(be);
-		set_pipeline(be, pp = stmt_pp_start_dynamic(be, pp_dynamic_slices(be, sub)));
-		sub = rel2bin_slicer(be, sub, 1);
-	}
+	assert(pp);
 
 	pl = sa_list(sql->sa);
 	if (sub)

@@ -45,7 +45,7 @@ extern stmt *stmt_limit_partitioned(backend *sa, stmt *c, stmt *piv, stmt *gid, 
 extern stmt *stmt_unique_sharedout(backend *be, stmt *op1, int output);
 
 extern stmt *stmt_slice(backend *be, stmt *col, stmt *limit);
-extern stmt *stmt_nth_slice(backend *be, stmt *col, int slicer, bool hash);
+extern stmt *stmt_nth_slice(backend *be, stmt *col, bool hash);
 extern stmt *stmt_no_slices(backend *be, stmt *col, bool hash); /* call mal nr of slices */
 
 extern stmt *stmt_pp_start_nrparts(backend *ba, int nrparts); /* create barrier label := true; part := part_nr(); leave: label:= part >= nrparts; */

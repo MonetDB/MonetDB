@@ -751,12 +751,10 @@ stmt_sop_new(backend *be, int nr_workers)
  *   (X_80:bat[:str], !X_19:bat[:str]) := slicer.nth_slice(X_77:int);
  */
 stmt *
-stmt_nth_slice(backend *be, stmt *col, int slicer, bool hash)
+stmt_nth_slice(backend *be, stmt *col, bool hash)
 {
 	sql_subtype *tp = hash?NULL:tail_type(col);
 	int tt = hash?TYPE_oid:tp->type->localtype;
-	if (slicer != 1)
-		return col;
 
 	InstrPtr q = NULL;
 	q = newStmt(be->mb, hash?putName("oahash") : slicerRef, nth_sliceRef);

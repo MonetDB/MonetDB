@@ -696,10 +696,11 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 				} else
 				if (pb) {
 					sql_rel *l = rel->l;
-					if (!res && l && is_groupby(l->op) && l->l) {
+					if (0 && !res && l && is_groupby(l->op) && l->l) {
 						sql_rel *p = l->l;
 						if (p->op == op_partition) {
-							rel->parallel = 1;
+							l->partition = 1;
+							res = SPB;
 						}
 					}
 					if (rel->spb)
