@@ -46,8 +46,6 @@ _estimate(mvc *sql, sql_rel *rel)
 static stmt *
 _start_pp(backend *be, sql_rel *rel, bit buildphase, list *refs, stmt *shared_ht)
 {
-	stmt *sub = NULL, *pp = NULL;
-
 	if (buildphase && get_pipeline(be)) {
         sql_error(be->mvc, 10, SQLSTATE(42000) "Internal error: hash-join cannot start within a pipelines block");
 		return NULL;
@@ -61,19 +59,8 @@ _start_pp(backend *be, sql_rel *rel, bit buildphase, list *refs, stmt *shared_ht
 	}
 
 	/* first construct the sub-relation */
-	sub = subrel_bin(be, rel, refs);
+	stmt *sub = subrel_bin(be, rel, refs);
 	sub = subrel_project(be, sub, refs, rel);
-	if (sub) {
-		pp = get_pipeline(be);
-		if (!pp) {
-		assert(0);
-			int source = pp_counter(be, -1, pp_dynamic_slices(be, sub));
-			pp = stmt_pp_start_generator(be, source, true);
-			set_pipeline(be, pp);
-			sub = rel2bin_slicer(be, sub, 1);
-		}
-	}
-
 	(void)get_need_pipeline(be);
 	return sub;
 }
@@ -387,9 +374,6 @@ rel2bin_oahash_equi_join(backend *be, sql_rel *rel, list *refs, list *jexps, stm
 	sql_rel *rel_hsh = NULL, *rel_prb = NULL;
 
 	/* start new parallel block after join. NB get_need_pipeline has side effect! */
-	int neededpp = (rel->spb || rel->partition) && get_need_pipeline(be);
-	(void)neededpp;
-
 	assert(rel->oahash == 1 || rel->oahash == 2);
 	if (rel->oahash == 1) {
 		rel_hsh = rel->l;
@@ -540,9 +524,6 @@ rel2bin_oahash_cart(backend *be, sql_rel *rel, list *refs, stmt **probed_rowids,
 	sql_rel *rel_hsh = NULL, *rel_prb = NULL;
 
 	/* start new parallel block after join. NB get_need_pipeline has side effect! */
-	int neededpp = (rel->spb || rel->partition) && get_need_pipeline(be);
-	(void)neededpp;
-
 	assert(rel->oahash == 1 || rel->oahash == 2);
 	if (rel->oahash == 1) {
 		rel_hsh = rel->l;
@@ -735,6 +716,9 @@ rel2bin_oahash_groupjoin(backend *be, sql_rel *rel, list *refs)
             exist = false;
     }
 
+	int neededpp = (rel->spb || rel->partition) && get_need_pipeline(be);
+	(void)neededpp;
+
 	bool hf = false;
 	if (list_empty(jexps)) { /* cartesian */
 		sub = rel2bin_oahash_cart(be, rel, refs, &probed_ids, &probe_sub, &probe_side, &hash_side, &hash_ids, &hf);
@@ -805,6 +789,9 @@ rel2bin_oahash_join(backend *be, sql_rel *rel, list *refs)
 	split_join_exps_pp(rel, jexps, sexps, false);
 	bool single = rel->single && !list_empty(sexps);
 
+	int neededpp = (rel->spb || rel->partition) && get_need_pipeline(be);
+	(void)neededpp;
+
 	assert(rel->op == op_join);
 	if (list_empty(jexps)) { /* cartesian */
 		sub = rel2bin_oahash_cart(be, rel, refs, single?&probed_ids:NULL, NULL, &probe_side, &hash_side, NULL, &hf);
@@ -833,6 +820,9 @@ rel2bin_oahash_outerjoin(backend *be, sql_rel *rel, list *refs)
 	split_join_exps_pp(rel, jexps, sexps, false);
 	stmt *probed_ids = NULL, *hash_ids = NULL;
 	stmt *mrk = NULL;
+
+	int neededpp = (rel->spb || rel->partition) && get_need_pipeline(be);
+	(void)neededpp;
 
 	//assert(!(rel->single && list_empty(jexps)));
 	bool hf = false;
