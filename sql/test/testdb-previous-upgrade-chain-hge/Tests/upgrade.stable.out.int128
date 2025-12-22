@@ -259,3 +259,90 @@ delete from sys.dependencies where id in (2004, 2005, 2006) and depend_id in (se
 Running database upgrade commands:
 delete from sys.dependencies where id = 2048 and depend_id = (select f.id from sys.functions f where name = 'get_merge_table_partition_expressions');
 
+Running database upgrade commands:
+drop function sys.dump_database;
+drop view sys.dump_tables;
+drop view sys.describe_tables;
+CREATE VIEW sys.describe_tables AS
+ SELECT
+ t.id o,
+ s.name sch,
+ t.name tab,
+ ts.table_type_name typ,
+ (SELECT
+ ' (' ||
+ GROUP_CONCAT(
+ sys.DQ(c.name) || ' ' ||
+ sys.describe_type(c.type, c.type_digits, c.type_scale) ||
+ ifthenelse(c."null" = false, ' NOT NULL', '')
+ , ', ') || ')'
+ FROM sys._columns c
+ WHERE c.table_id = t.id) col,
+ CASE ts.table_type_name
+ WHEN 'REMOTE TABLE' THEN
+ sys.get_remote_table_expressions(s.name, t.name)
+ WHEN 'MERGE TABLE' THEN
+ sys.get_merge_table_partition_expressions(t.id)
+ WHEN 'VIEW' THEN
+ sys.schema_guard(s.name, t.name, t.query)
+ ELSE
+ ''
+ END opt
+ FROM sys.schemas s, sys.table_types ts, sys.tables t
+ WHERE ts.table_type_name IN ('TABLE', 'VIEW', 'MERGE TABLE', 'REMOTE TABLE', 'REPLICA TABLE', 'UNLOGGED TABLE')
+ AND t.system = FALSE
+ AND s.id = t.schema_id
+ AND ts.table_type_id = t.type
+ AND s.name <> 'tmp';
+GRANT SELECT ON sys.describe_tables TO PUBLIC;
+CREATE VIEW sys.dump_tables AS
+ SELECT
+ t.o o,
+ CASE
+ WHEN t.typ <> 'VIEW' THEN
+ 'CREATE ' || t.typ || ' ' || sys.FQN(t.sch, t.tab) || t.col || t.opt || ';'
+ ELSE
+ t.opt
+ END stmt,
+ t.sch schema_name,
+ t.tab table_name
+ FROM sys.describe_tables t;
+CREATE FUNCTION sys.dump_database(describe BOOLEAN) RETURNS TABLE(o int, stmt STRING)
+BEGIN
+ SET SCHEMA sys;
+ TRUNCATE sys.dump_statements;
+ INSERT INTO sys.dump_statements VALUES (1, 'START TRANSACTION;');
+ INSERT INTO sys.dump_statements VALUES (2, 'SET SCHEMA "sys";');
+ INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_create_roles;
+ INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_create_users;
+ INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_create_schemas;
+ INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_user_defined_types;
+ INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_add_schemas_to_users;
+ INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_grant_user_privileges;
+ INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_sequences;
+ INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(ORDER BY stmts.o), stmts.s
+ FROM (
+ SELECT f.o, f.stmt FROM sys.dump_functions f
+ UNION ALL
+ SELECT t.o, t.stmt FROM sys.dump_tables t
+ ) AS stmts(o, s);
+ IF NOT DESCRIBE THEN
+ CALL sys.dump_table_data();
+ END IF;
+ INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_start_sequences;
+ INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_column_defaults;
+ INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_table_constraint_type;
+ INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_indices;
+ INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_foreign_keys;
+ INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_partition_tables;
+ INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_triggers;
+ INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_comments;
+ INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_table_grants;
+ INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_column_grants;
+ INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_function_grants;
+ INSERT INTO sys.dump_statements VALUES ((SELECT COUNT(*) FROM sys.dump_statements) + 1, 'COMMIT;');
+ RETURN sys.dump_statements;
+END;
+update sys.functions set system = true where not system and schema_id = 2000 and name = 'dump_database' and type = 5;
+update sys._tables set system = true where not system and schema_id = 2000 and name in ('dump_tables', 'describe_tables');
+
