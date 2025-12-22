@@ -74,7 +74,7 @@ exp_getcard(mvc *sql, sql_rel *rel, sql_exp *e)
 /* return true iff groupby can (ie only simple aggregation, which allows for 2 phases)
  * and cardinality estimation is low enough for extra resources for aggregation per thread.
  */
-bool
+static bool
 rel_groupby_2_phases(mvc *sql, sql_rel *rel)
 {
 	BUN est = get_rel_count(rel);
@@ -160,7 +160,8 @@ rel_groupby_serialize(sql_rel *rel)
 	return false;
 }
 
-bool
+#ifndef NDEBUG
+static bool
 rel_groupby_can_pp(sql_rel *rel, bool _2phases)
 {
 	if (!is_groupby(rel->op))
@@ -172,6 +173,7 @@ rel_groupby_can_pp(sql_rel *rel, bool _2phases)
 	/* more checks needed */
 	return true;
 }
+#endif
 
 typedef struct pp_aggr_t {
 	bte eclass; // any or all
@@ -781,14 +783,13 @@ rel2bin_groupby_pp(backend *be, sql_rel *rel, list *refs)
 	stmt *groupby = NULL, *grp = NULL, *ext = NULL, *cnt_aggr = NULL;
 	bool _2phases = rel_groupby_2_phases(be->mvc, rel);
 	bool value_partition = SQLrunning && rel->parallel && !_2phases && rel_groupby_partition(rel);
-	int neededpp = get_need_pipeline(be);
+	int neededpp = rel->spb && get_need_pipeline(be);
 	int need_serialize = rel_groupby_serialize(rel); /* return if some of the aggregates require serialization (or fallback implementation) */
 	sql_rel *inner = rel->l;
 	int nrparts = 0;
 	stmt *mat = NULL;
 
 	if ((inner && inner->op == op_partition) || value_partition) {
-		//return rel2bin_groupby_partition(be, rel, refs, neededpp);
 		sub = rel2bin_partition(be, rel, refs);
 		if (!sub)
 			return NULL;

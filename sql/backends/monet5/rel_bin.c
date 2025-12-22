@@ -5150,8 +5150,7 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 {
 	int pp = be->pipeline;
 	bool withinpp = (be->pipeline != 0);
-	bool _2phases = rel_groupby_2_phases(be->mvc, rel);
-	if (SQLrunning && !withinpp && rel->parallel && rel_groupby_can_pp(rel, _2phases))
+	if (SQLrunning && !withinpp && rel->parallel)
 		return rel2bin_groupby_pp(be, rel, refs);
 
 	int neededpp = get_need_pipeline(be);
