@@ -24,11 +24,13 @@ extern stmt *stmt_oahash_frequency(backend *be, stmt *freq, stmt *prnt, bool occ
 extern stmt *stmt_oahash_hash(backend *be, stmt *key, stmt *prev, stmt *ht);
 extern stmt *stmt_oahash_probe(backend *be, stmt *key, stmt *prev, stmt *rhs_ht, stmt *freq, stmt *outer, bool single, bool semantics, bool eq, bool outerjoin, bool groupedjoin, const stmt *pp);
 
-extern stmt *stmt_algebra_project(backend *be, stmt *inout, stmt *pos, stmt *val, const stmt *pp);
-extern stmt * stmt_oahash_project_cart(backend *be, stmt *col, stmt *repeat, bool outer, bool expand);
+extern stmt *stmt_algebra_project(backend *be, stmt *inout, stmt *pos, stmt *val, const char *fname, const stmt *pp);
+extern stmt *stmt_oahash_project_cart(backend *be, stmt *col, stmt *repeat, bool outer, bool expand);
 
 extern stmt *stmt_oahash_expand(backend *be, const stmt *prb_res, const stmt *freq, bit outer);
 extern stmt *stmt_oahash_explode(backend *be, const stmt *prb_res, const stmt *freq, const stmt *ht_sink, bit outer);
+
+extern stmt *stmt_oahash_count_unmatched(backend *be, const stmt *ht, const stmt *mrk, const stmt *freq);
 
 extern InstrPtr stmt_part_new(backend *be, int nr_parts);
 extern stmt *stmt_mat_new(backend *be, sql_subtype *t, int nr_parts);

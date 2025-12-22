@@ -4230,7 +4230,7 @@ rel2bin_single(backend *be, stmt *s)
 	return s;
 }
 
-static stmt *
+stmt *
 rel_rename(backend *be, sql_rel *rel, stmt *sub)
 {
 	if (rel->exps) {
@@ -4279,7 +4279,7 @@ subres_assign_newresultvars(backend *be, stmt *rel_stmt)
 	return stmt_list(be, nstmt);
 }
 
-static stmt*
+stmt*
 subres_assign_resultvars(backend *be, stmt *rel_stmt, list *vars)
 {
 	if (!rel_stmt)

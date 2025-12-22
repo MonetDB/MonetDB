@@ -348,6 +348,36 @@ stmt_bat_new(backend *be, sql_subtype *tpe, lng estimate)
 	return s;
 }
 
+stmt *
+stmt_bat_new2(backend *be, sql_subtype *tpe, stmt *sz_base)
+{
+	assert(sz_base);
+	InstrPtr q = newStmt(be->mb, aggrRef, countRef);
+	if (q == NULL)
+		return NULL;
+	q = pushArgument(be->mb, q, sz_base->nr);
+	pushInstruction(be->mb, q);
+
+	InstrPtr qq = newStmt(be->mb, batRef, newRef);
+	if (qq == NULL)
+		return NULL;
+
+	int tt = tpe->type->localtype;
+	if (tt == TYPE_void)
+		tt = TYPE_bte;
+	setVarType(be->mb, getArg(qq, 0), newBatType(tt));
+	qq = pushType(be->mb, qq, tt);
+	qq = pushArgument(be->mb, qq, q->argv[0]);
+	pushInstruction(be->mb, qq);
+
+	stmt *s = stmt_create(be->mvc->sa, st_alias);
+	s->op4.typeval = *tpe;
+	s->q = qq;
+	s->nr = qq->argv[0];
+	s->nrcols = 2;
+	return s;
+}
+
 static int *
 dump_table(allocator *sa, backend *be, sql_table *t)
 {
@@ -1931,6 +1961,30 @@ stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub, in
 	if (ma_get_eb(be->mvc->sa)->enabled)
 		eb_error(ma_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
+}
+
+stmt *
+stmt_thetaselect(backend *be, stmt *op1, stmt *op2, stmt *val, const char *cmp, sql_subtype *tpe)
+{
+	MalBlkPtr mb = be->mb;
+	InstrPtr q = newStmt(mb, algebraRef, thetaselectRef);
+	if (q == NULL) return NULL;
+
+	q = pushArgument(mb, q, op1->nr);
+	if (op2)
+		q = pushArgument(mb, q, op1->nr);
+	else
+		q = pushNilBat(mb, q);
+	q = pushArgument(mb, q, val->nr);
+	q = pushStr(mb, q, cmp);
+	pushInstruction(mb, q);
+
+	stmt *s = stmt_none(be);
+	s->op4.typeval = *tpe;
+	s->q = q;
+	s->nr = getArg(q, 0);
+	s->nrcols = 1;
+	return s;
 }
 
 /*

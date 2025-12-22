@@ -43,4 +43,8 @@ extern stmt *sql_unop_(backend *be, const char *fname, stmt *rs);
 
 extern bool can_join_exp(sql_rel *rel, sql_exp *e, bool anti);
 extern list *get_simple_equi_joins_first(mvc *sql, sql_rel *rel, list *exps);
+
+extern stmt *subres_assign_resultvars(backend *be, stmt *rel_stmt, list *vars);
+extern stmt *rel_rename(backend *be, sql_rel *rel, stmt *sub);
+
 #endif /*_REL_BIN_H_*/

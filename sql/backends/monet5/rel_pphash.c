@@ -128,7 +128,7 @@ oahash_slicer(backend *be, stmt *sub)
 /* Generates the parallel block to probe the hash table
  */
 static stmt *
-oahash_probe(backend *be, sql_rel *rel, list *jexps, list *exps_cmp_prb, const stmt *stmts_ht, stmt *sub, const stmt *pp, bool anti, bool outer, bool groupjoin, bool has_outerselect, stmt **nulls, stmt **mrk)
+oahash_probe(backend *be, sql_rel *rel, list *jexps, list *exps_cmp_prb, const stmt *stmts_ht, stmt *sub, const stmt *pp, bool anti, bool outer, bool groupjoin, bool has_outerselect, stmt **nulls, stmt **prb_mrk)
 {
 	stmt *prb_res = NULL, *outerm = NULL;
 
@@ -155,13 +155,13 @@ oahash_probe(backend *be, sql_rel *rel, list *jexps, list *exps_cmp_prb, const s
 			*nulls = stmt_selectnil(be, key, *nulls);
 	}
 	if ((outer || groupjoin) && outerm)
-		*mrk = outerm;
+		*prb_mrk = outerm;
 	/* probe of last column is the final res */
 	return prb_res;
 }
 
 static list *
-oahash_project_hsh(backend *be, list *exps_prj_hsh, stmt *stmts_ht, stmt *prb_res, bool outer)
+oahash_project_hsh(backend *be, list *exps_prj_hsh, stmt *stmts_ht, stmt *prb_res, bool outer, stmt **hsh_mrk)
 {
 	list *l = sa_list(be->mvc->sa);
 
@@ -170,6 +170,9 @@ oahash_project_hsh(backend *be, list *exps_prj_hsh, stmt *stmts_ht, stmt *prb_re
 		assert(stmts_hp && (!freq || pld_sltid));
 
 		stmt *sel = freq?stmt_oahash_explode(be, prb_res, freq, pld_sltid, outer):stmt_blackbox_result(be, prb_res->q, 1, sql_fetch_localtype(TYPE_oid));
+		if (sel == NULL) return NULL;
+		if (hsh_mrk)
+			*hsh_mrk = sel;
 
 		for (node *o = exps_prj_hsh->h; o; o = o->next) {
 			sql_exp *e = o->data;
@@ -339,7 +342,7 @@ rel2bin_oahash_build(backend *be, sql_rel *rel, list *refs)
 			stmt *payload = exp_bin(be, e, sub, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
 			assert(payload); /* must find */
 			payload = column(be, payload);
-			stmt *s = stmt_algebra_project(be, res, prnt, payload, pp);
+			stmt *s = stmt_algebra_project(be, res, prnt, payload, projectionRef, pp);
 			if (e->alias.label)
 				s = stmt_alias(be, s, e->alias.label, exp_find_rel_name(e), exp_name(e));
 			append(ll, s);
@@ -369,7 +372,7 @@ groupjoin_mark( list *attr )
 }
 
 static stmt *
-rel2bin_oahash_equi_join(backend *be, sql_rel *rel, list *refs, list *jexps, stmt **probed_rowids, stmt **probe_sub, stmt **nulls, stmt **mrk, list **probe_side, list **hash_side, bool has_outerselect)
+rel2bin_oahash_equi_join(backend *be, sql_rel *rel, list *refs, list *jexps, stmt **probed_rowids, stmt **probe_sub, stmt **nulls, stmt **prb_mrk, stmt **hsh_mrk, list **probe_side, list **hash_side, bool has_outerselect)
 {
 	sql_rel *rel_hsh = NULL, *rel_prb = NULL;
 
@@ -399,34 +402,44 @@ rel2bin_oahash_equi_join(backend *be, sql_rel *rel, list *refs, list *jexps, stm
 		*probe_sub = sub;
 
 	stmt *pp = get_pipeline(be);
-	stmt *prb_res = oahash_probe(be, rel, jexps, exps_cmp_prb, stmts_ht, sub, pp, false, is_outerjoin(rel->op), mark, has_outerselect, nulls, mrk);
+	stmt *prb_res = oahash_probe(be, rel, jexps, exps_cmp_prb, stmts_ht, sub, pp, false, is_outerjoin(rel->op), mark, has_outerselect, nulls, prb_mrk);
 	if (prb_res == NULL) return NULL;
 
 	/*** PROJECT RESULT PHASE ***/
 	bit outer = is_outerjoin(rel->op);
 	list *lp = oahash_project_prb(be, exps_prj_prb, prb_res, stmts_ht->op3, outer, sub, probed_rowids);
-	list *lh = oahash_project_hsh(be, exps_prj_hsh, stmts_ht, prb_res, outer);
+	list *lh = oahash_project_hsh(be, exps_prj_hsh, stmts_ht, prb_res, outer, hsh_mrk);
 
-	if (outer && mrk && !*mrk) /* ToDo some how expand the mrk */
-		assert(0);
-	if ((outer || groupedjoin) && mrk && *mrk) {
-		stmt *s = stmt_project(be, *probed_rowids, *mrk);
+	/* !exps_prj_hsh => !shared_hp => mark the last hash-column instead of a payload column */
+	if (outer && hsh_mrk && !*hsh_mrk) {
+		assert(list_empty(exps_prj_hsh));
+		stmt *s = stmt_none(be);
 		if (s == NULL) return NULL;
-		*mrk = s;
+		s->op4.typeval = *sql_fetch_localtype(TYPE_oid);
+		s->nr = getArg(prb_res->q, 1);
+		s->nrcols = 1;
+		s->q = prb_res->q;
+		s->op1 = prb_res;
+		*hsh_mrk = s;
 	}
 
-	assert(lh->cnt || lp->cnt || mrk);
+	if (outer && prb_mrk && !*prb_mrk) /* ToDo somehow expand the prb_mrk */
+		assert(0);
+	if ((outer || groupedjoin) && prb_mrk && *prb_mrk) {
+		stmt *s = stmt_project(be, *probed_rowids, *prb_mrk);
+		if (s == NULL) return NULL;
+		*prb_mrk = s;
+	}
+
+	assert(lh->cnt || lp->cnt || prb_mrk);
 
 	if (probe_side)
 		*probe_side = lp;
 	if (hash_side)
 		*hash_side = lh;
 	list *ln = sa_list(be->mvc->sa);
-	if (rel->oahash == 1)
-		lh = list_merge(list_merge(ln, lh, NULL), lp, NULL);
-	else
-		lh = list_merge(list_merge(ln, lp, NULL), lh, NULL);
-	return stmt_list(be, lh);
+	ln = list_merge(list_merge(ln, lh, NULL), lp, NULL);
+	return stmt_list(be, ln);
 }
 
 static stmt *
@@ -475,10 +488,10 @@ rel2bin_oahash_select(backend *be, stmt *sub, list *sexps, sql_rel *rel, bool ha
 }
 
 static stmt *
-rel2bin_oahash_outerselect(backend *be, stmt *sub, list *sexps, sql_rel *rel, stmt *probed_ids, stmt *hash_ids, stmt **mrk, bool cart, bool mark)
+rel2bin_oahash_outerselect(backend *be, stmt *sub, list *sexps, sql_rel *rel, stmt *probed_ids, stmt *hash_ids, stmt **prb_mrk, bool cart, bool mark)
 {
-	assert (rel->op == op_left || rel->op == op_right || !list_empty(rel->attr));
-	stmt *sel = NULL, *m = mrk?*mrk:NULL;
+	assert (is_outerjoin(rel->op) || !list_empty(rel->attr));
+	stmt *sel = NULL, *m = prb_mrk?*prb_mrk:NULL;
 
 	if (hash_ids && cart) {
 		/* 0 == empty (no matches possible), nil - no match (but has nil), 1 match */
@@ -512,8 +525,8 @@ rel2bin_oahash_outerselect(backend *be, stmt *sub, list *sexps, sql_rel *rel, st
 			return NULL;
 		}
 		sel = s;
-		if (mrk)
-			*mrk = m;
+		if (prb_mrk)
+			*prb_mrk = m;
 	}
 	return sel;
 }
@@ -613,7 +626,7 @@ rel2bin_oahash_cart(backend *be, sql_rel *rel, list *refs, stmt **probed_rowids,
 			if (probe_side)
 				*probe_side = lp;
 			/* construct relation */
-			list *h = sa_list(be->mvc->sa);
+			list *llh = sa_list(be->mvc->sa);
 			for (node *n = rh->op4.lval->h; n; n = n->next) {
 				stmt *c = n->data;
 				assert(c->label);
@@ -622,14 +635,14 @@ rel2bin_oahash_cart(backend *be, sql_rel *rel, list *refs, stmt **probed_rowids,
 				stmt *s = stmt_project(be, jr, column(be, c));
 
 				s = stmt_alias(be, s, c->label, rnme, nme);
-				list_append(h, s);
+				list_append(llh, s);
 			}
 			if (hash_side)
-				*hash_side = h;
+				*hash_side = llh;
 			*handled_first = true;
 			list *ln = sa_list(be->mvc->sa);
-			h = list_merge(list_merge(ln, h, NULL), lp, NULL);
-			return stmt_list(be, h);
+			ln = list_merge(list_merge(ln, llh, NULL), lp, NULL);
+			return stmt_list(be, ln);
 		}
 	}
 
@@ -691,8 +704,8 @@ rel2bin_oahash_cart(backend *be, sql_rel *rel, list *refs, stmt **probed_rowids,
 	if (hash_side)
 		*hash_side = lh;
 	list *ln = sa_list(be->mvc->sa);
-	lh = list_merge(list_merge(ln, lh, NULL), lp, NULL);
-	return stmt_list(be, lh);
+	ln = list_merge(list_merge(ln, lh, NULL), lp, NULL);
+	return stmt_list(be, ln);
 }
 
 static stmt *
@@ -705,7 +718,7 @@ rel2bin_oahash_groupjoin(backend *be, sql_rel *rel, list *refs)
 	list *jexps = sa_list(be->mvc->sa), *sexps = sa_list(be->mvc->sa), *probe_side = NULL, *hash_side = NULL;
 	split_join_exps_pp(rel, jexps, sexps, false);
 	stmt *probed_ids = NULL, *hash_ids = NULL;
-	stmt *mrk = NULL;
+	stmt *prb_mrk = NULL;
 	bool mark = false, exist = true;
 
 	if (list_length(rel->attr) == 1) {
@@ -723,7 +736,7 @@ rel2bin_oahash_groupjoin(backend *be, sql_rel *rel, list *refs)
 	if (list_empty(jexps)) { /* cartesian */
 		sub = rel2bin_oahash_cart(be, rel, refs, &probed_ids, &probe_sub, &probe_side, &hash_side, &hash_ids, &hf);
 	} else {
-		sub = rel2bin_oahash_equi_join(be, rel, refs, jexps, &probed_ids, &probe_sub, NULL, &mrk, &probe_side, &hash_side, !list_empty(sexps));
+		sub = rel2bin_oahash_equi_join(be, rel, refs, jexps, &probed_ids, &probe_sub, NULL /* nulls */, &prb_mrk, NULL /* hsh_mrk */, &probe_side, &hash_side, !list_empty(sexps) /* has_outerselect */);
 	}
 	if (list_empty(jexps) && list_empty(sexps) && mark) {
 		sql_exp *e = exp_atom_bool(be->mvc->sa, true);
@@ -731,7 +744,7 @@ rel2bin_oahash_groupjoin(backend *be, sql_rel *rel, list *refs)
 		append(sexps,e);
 	}
 	if (!list_empty(sexps)) {
-		stmt *sel = rel2bin_oahash_outerselect(be, sub, sexps, rel, probed_ids, hash_ids, &mrk, list_empty(jexps), mark);
+		stmt *sel = rel2bin_oahash_outerselect(be, sub, sexps, rel, probed_ids, hash_ids, &prb_mrk, list_empty(jexps), mark);
 		list *res = sa_list(be->mvc->sa);
 		for (node *n = probe_side->h; n; n = n->next) {
 			stmt *c = stmt_project(be, sel, n->data);
@@ -746,7 +759,7 @@ rel2bin_oahash_groupjoin(backend *be, sql_rel *rel, list *refs)
 			const char *cname = column_name(be->mvc->sa, c);
 			const char *tname = table_name(be->mvc->sa, c);
 			int label = c->label;
-			c = sql_Nop_(be, "ifthenelse", mrk, c, stmt_atom(be, atom_general(be->mvc->sa, tail_type(c), NULL, 0)), NULL);
+			c = sql_Nop_(be, "ifthenelse", prb_mrk, c, stmt_atom(be, atom_general(be->mvc->sa, tail_type(c), NULL, 0)), NULL);
 			c = stmt_alias(be, c, label, tname, cname);
 			append(res, c);
 		}
@@ -757,19 +770,19 @@ rel2bin_oahash_groupjoin(backend *be, sql_rel *rel, list *refs)
 			sql_exp *e = rel->attr->h->data;
 			const char *rnme = exp_relname(e);
 			const char *nme = exp_name(e);
-			if (list_empty(jexps) && !mrk) {
-				mrk = sql_Nop_(be, "ifthenelse", sql_unop_(be, "isnull", hash_ids), stmt_bool(be, !exist), stmt_bool(be, exist), NULL);
+			if (list_empty(jexps) && !prb_mrk) {
+				prb_mrk = sql_Nop_(be, "ifthenelse", sql_unop_(be, "isnull", hash_ids), stmt_bool(be, !exist), stmt_bool(be, exist), NULL);
 			} else {
-				assert(mrk);
+				assert(prb_mrk);
 				if (exp_is_atom(e) && need_no_nil(e)) /* exclude nulls */
-					mrk = sql_Nop_(be, "ifthenelse", sql_unop_(be, "isnull", mrk), stmt_bool(be, false), mrk, NULL);
+					prb_mrk = sql_Nop_(be, "ifthenelse", sql_unop_(be, "isnull", prb_mrk), stmt_bool(be, false), prb_mrk, NULL);
 				if (!exist) {
 					sql_subtype *bt = sql_fetch_localtype(TYPE_bit);
 					sql_subfunc *not = sql_bind_func(be->mvc, "sys", "not", bt, NULL, F_FUNC, true, true);
-					mrk = stmt_unop(be, mrk, NULL, not);
+					prb_mrk = stmt_unop(be, prb_mrk, NULL, not);
 				}
 			}
-			stmt *s = stmt_alias(be, mrk, e->alias.label, rnme, nme);
+			stmt *s = stmt_alias(be, prb_mrk, e->alias.label, rnme, nme);
 			append(sub->op4.lval, s);
 		} else {
 			assert(0);
@@ -779,11 +792,9 @@ rel2bin_oahash_groupjoin(backend *be, sql_rel *rel, list *refs)
 }
 
 static stmt *
-rel2bin_oahash_join(backend *be, sql_rel *rel, list *refs)
+rel2bin_oahash_innerjoin(backend *be, sql_rel *rel, list *refs)
 {
 	bool hf = false;
-	if (!list_empty(rel->attr))
-		return rel2bin_oahash_groupjoin(be, rel, refs);
 	stmt *sub = NULL, *probed_ids = NULL;
 	list *jexps = sa_list(be->mvc->sa), *sexps = sa_list(be->mvc->sa), *probe_side = NULL, *hash_side = NULL;
 	split_join_exps_pp(rel, jexps, sexps, false);
@@ -796,7 +807,7 @@ rel2bin_oahash_join(backend *be, sql_rel *rel, list *refs)
 	if (list_empty(jexps)) { /* cartesian */
 		sub = rel2bin_oahash_cart(be, rel, refs, single?&probed_ids:NULL, NULL, &probe_side, &hash_side, NULL, &hf);
 	} else {
-		sub = rel2bin_oahash_equi_join(be, rel, refs, jexps, single?&probed_ids:NULL, NULL, NULL, NULL, &probe_side, &hash_side, !list_empty(sexps));
+		sub = rel2bin_oahash_equi_join(be, rel, refs, jexps, single?&probed_ids:NULL, NULL /* probe_sub */, NULL /* nulls */, NULL /* prb_mrk */, NULL /* hsh_mrk */, &probe_side, &hash_side, !list_empty(sexps) /* has_outerselect */);
 	}
 	if (!list_empty(sexps)) {
 		sub->cand = rel2bin_oahash_select(be, sub, sexps, rel, hf);
@@ -813,13 +824,11 @@ rel2bin_oahash_join(backend *be, sql_rel *rel, list *refs)
 static stmt *
 rel2bin_oahash_outerjoin(backend *be, sql_rel *rel, list *refs)
 {
-	if (!list_empty(rel->attr))
-		return rel2bin_oahash_groupjoin(be, rel, refs);
 	stmt *sub = NULL, *probe_sub = NULL;
 	list *jexps = sa_list(be->mvc->sa), *sexps = sa_list(be->mvc->sa), *probe_side = NULL, *hash_side = NULL;
 	split_join_exps_pp(rel, jexps, sexps, false);
 	stmt *probed_ids = NULL, *hash_ids = NULL;
-	stmt *mrk = NULL;
+	stmt *prb_mrk = NULL;
 
 	int neededpp = (rel->spb || rel->partition) && get_need_pipeline(be);
 	(void)neededpp;
@@ -829,30 +838,211 @@ rel2bin_oahash_outerjoin(backend *be, sql_rel *rel, list *refs)
 	if (list_empty(jexps)) { /* cartesian */
 		sub = rel2bin_oahash_cart(be, rel, refs, &probed_ids, &probe_sub, &probe_side, &hash_side, &hash_ids, &hf);
 	} else {
-		sub = rel2bin_oahash_equi_join(be, rel, refs, jexps, &probed_ids, &probe_sub, NULL, &mrk, &probe_side, &hash_side, !list_empty(sexps));
+		sub = rel2bin_oahash_equi_join(be, rel, refs, jexps, &probed_ids, &probe_sub, NULL /* nulls */, &prb_mrk, NULL /* hsh_mrk */, &probe_side, &hash_side, !list_empty(sexps) /* has_outerselect */);
 	}
 	if (!list_empty(sexps)) {
-		stmt *sel = rel2bin_oahash_outerselect(be, sub, sexps, rel, probed_ids, hash_ids, &mrk, list_empty(jexps), false);
-		list *res = sa_list(be->mvc->sa);
+		stmt *sel = rel2bin_oahash_outerselect(be, sub, sexps, rel, probed_ids, hash_ids, &prb_mrk, list_empty(jexps), false);
+		list *lp = sa_list(be->mvc->sa);
 		for (node *n = probe_side->h; n; n = n->next) {
 			stmt *c = stmt_project(be, sel, n->data);
 			const char *cname = column_name(be->mvc->sa, c);
 			const char *tname = table_name(be->mvc->sa, c);
 			int label = c->label;
 			c = stmt_alias(be, c, label, tname, cname);
-			append(res, c);
+			append(lp, c);
 		}
+		list *lh = sa_list(be->mvc->sa);
 		for (node *n = hash_side->h; n; n = n->next) {
 			stmt *c = stmt_project(be, sel, n->data);
 			const char *cname = column_name(be->mvc->sa, c);
 			const char *tname = table_name(be->mvc->sa, c);
 			int label = c->label;
-			c = sql_Nop_(be, "ifthenelse", mrk, c, stmt_atom(be, atom_general(be->mvc->sa, tail_type(c), NULL, 0)), NULL);
+			c = sql_Nop_(be, "ifthenelse", prb_mrk, c, stmt_atom(be, atom_general(be->mvc->sa, tail_type(c), NULL, 0)), NULL);
 			c = stmt_alias(be, c, label, tname, cname);
-			append(res, c);
+			append(lh, c);
 		}
-		sub = stmt_list(be, res);
+		sub = stmt_list(be, list_merge(lh, lp, NULL));
 	}
+	return sub;
+}
+
+static stmt *
+rel2bin_oahash_fullouterjoin(backend *be, sql_rel *rel, list *refs)
+{
+	mvc *sql = be->mvc;
+	sql_subtype *tpe_oid = sql_fetch_localtype(TYPE_oid);
+	bool hf = false;
+	//int neededpp = get_need_pipeline(be) && rel->spb && rel->parallel;
+	//stmt *pp = get_pipeline(be);
+	//assert(neededpp || pp); // FIXME: don't know what to do otherwise
+
+	sql_rel *rel_hsh = NULL, *rel_prb = NULL;
+	if (rel->oahash == 1) {
+		rel_hsh = rel->l;
+		rel_prb = rel->r;
+	} else { /* rel->oahash == 2 */
+		rel_hsh = rel->r;
+		rel_prb = rel->l;
+	}
+
+	stmt *stmts_ht = refs_find_rel(refs, rel_hsh);
+	if (!stmts_ht) { /* cartisian */
+		assert(rel_hsh->op != op_buildhash);
+
+		list *jexps = sa_list(be->mvc->sa), *sexps = sa_list(be->mvc->sa);
+		split_join_exps_pp(rel, jexps, sexps, false);
+		assert(list_empty(jexps)); /* must be empty, otherwise we would have stmts_ht */
+		assert(list_empty(sexps) && "TODO: FOJ cartisian with sexps");
+
+		return rel2bin_oahash_cart(be, rel, refs, NULL /* probed_rowids*/, NULL /* probe_sub */, NULL /* probe_side*/, NULL /* hash_side */, NULL /* hash_ids */, &hf);
+	}
+
+	list *shared_ht = stmts_ht->op4.lval;
+	list *shared_hp = stmts_ht->op1?stmts_ht->op1->op4.lval:NULL;
+	/* Mark matched payloads. If no payload column, mark the last hash column */
+	stmt *hp_mrk = stmt_bat_new2(be, sql_fetch_localtype(TYPE_bit), !list_empty(shared_hp)?shared_hp->h->data:shared_ht->t->data);
+	// X_48:int := slicer.no_slices(X_9:bat[:int]);
+	stmt *hp_mrk_slc = stmt_no_slices(be, hp_mrk, false);
+
+	/*** start pipeline.concat ***/
+	int p_source = be->source, p_concatcnt = be->concatcnt;
+	(void)stmt_concat(be, be->source, 2);
+
+	/* create all results variables, hash-side first */
+	list *vars = sa_list(sql->sa);
+	if (!list_empty(rel_hsh->exps)) {
+		for (node *n = rel_hsh->exps->h; n; n = n->next) {
+			sql_subtype *st = exp_subtype(n->data);
+			stmt *s = stmt_bat_declare(be, st);
+			append(vars, s);
+		}
+	}
+	if (!list_empty(rel_prb->exps)) {
+		for (node *n = rel_prb->exps->h; n; n = n->next) {
+			sql_subtype *st = exp_subtype(n->data);
+			stmt *s = stmt_bat_declare(be, st);
+			append(vars, s);
+		}
+	}
+
+	/*** first concat_block: the join ***/
+	int b = stmt_concat_barrier(be, be->source, 0, 0);
+
+	// existing code, extended to mark the matched payloads
+	stmt *sub = NULL, *probe_sub = NULL;
+	list *jexps = sa_list(sql->sa), *sexps = sa_list(sql->sa), *probe_side = NULL, *hash_side = NULL;
+	split_join_exps_pp(rel, jexps, sexps, false);
+	stmt *probed_ids = NULL, *hash_ids = NULL;
+	stmt *m = NULL, *hsh_mrk = NULL;
+
+	if (list_empty(jexps)) { /* cartesian */
+		assert(0 && "TODO: cartesian in 2-concat FOJ");
+		sub = rel2bin_oahash_cart(be, rel, refs, &probed_ids, &probe_sub, &probe_side, &hash_side, &hash_ids, &hf);
+	} else {
+		sub = rel2bin_oahash_equi_join(be, rel, refs, jexps, &probed_ids, &probe_sub, NULL /* nulls */, &m /* prb_mrk */, &hsh_mrk, &probe_side, &hash_side, !list_empty(sexps) /* has_outerselect */);
+	}
+	if (!list_empty(sexps)) {
+		stmt *sel = rel2bin_oahash_outerselect(be, sub, sexps, rel, probed_ids, hash_ids, &m, list_empty(jexps), false);
+		if (sel == NULL) return NULL;
+		list *lp = sa_list(sql->sa);
+		for (node *n = probe_side->h; n; n = n->next) {
+			stmt *c = stmt_project(be, sel, n->data);
+			const char *cname = column_name(sql->sa, c);
+			const char *tname = table_name(sql->sa, c);
+			int label = c->label;
+			c = stmt_alias(be, c, label, tname, cname);
+			append(lp, c);
+		}
+		list *lh = sa_list(sql->sa);
+		for (node *n = hash_side->h; n; n = n->next) {
+			stmt *c = stmt_project(be, sel, n->data);
+			const char *cname = column_name(sql->sa, c);
+			const char *tname = table_name(sql->sa, c);
+			int label = c->label;
+			c = sql_Nop_(be, "ifthenelse", m, c, stmt_atom(be, atom_general(sql->sa, tail_type(c), NULL, 0)), NULL);
+			c = stmt_alias(be, c, label, tname, cname);
+			append(lh, c);
+		}
+		sub = stmt_list(be, list_merge(lh, lp, NULL));
+
+		/* mark the matched payload */
+		assert(sel && m);
+		/*  X_nn:bat[:oid] := algebra.thetaselect(<m>, nil:bat[:any], true:bit, "=":str);*/
+		stmt *ss = stmt_thetaselect(be, m, NULL, stmt_bool(be, 1), "==", tpe_oid);
+		if (!ss) return NULL;
+		stmt *s_oids = stmt_project(be, ss, sel);
+		if (!s_oids) return NULL;
+		hsh_mrk = stmt_project(be, s_oids, hsh_mrk);
+		if (!hsh_mrk) return NULL;
+	} else {
+		atom *a_null = atom_general(sql->sa, tpe_oid, NULL, 0);
+		stmt *stmt_null = stmt_atom(be, a_null); /* we just need the count of unmatched */
+		/*  X_nn:bat[:oid] := algebra.thetaselect(<m>, nil:bat[:any], true:bit, "=":str);*/
+		hsh_mrk = stmt_thetaselect(be, hsh_mrk, NULL, stmt_null, "ne", tpe_oid);
+		if (!hsh_mrk) return NULL;
+	}
+	hp_mrk = stmt_algebra_project(be, hp_mrk, hsh_mrk, stmt_bool(be,1), projectRef, get_pipeline(be));
+	// END existing code
+
+	/* NB stmts order in sub must match that in vars, i.e. hash-side first */
+	sub = subres_assign_resultvars(be, sub, vars);
+	if (!sub) return NULL;
+
+	if (be->concatcnt == 0) {/* add dummy source */
+		int source = pp_counter(be, 1, -1);
+		stmt_concat_add_source(be);
+		(void)pp_counter_get(be, source); /* use source else statement gets garbage collected */
+	}
+	(void)stmt_concat_barrier_end(be, b);
+	assert (be->concatcnt == 1);
+
+	/*** second concat_block: add the NULLs ***/
+	b = stmt_concat_barrier(be, be->source, 1, b);
+	int source = pp_counter(be, -1, hp_mrk_slc->nr);
+	stmt_concat_add_source(be);
+	(void)pp_counter_get(be, source); /* use source else statement gets garbage collected */
+
+	//output the unmatched rows with NULLs for the LHS columns
+	stmt *slice = stmt_nth_slice(be, hp_mrk, 1, false);
+	stmt *unmatched = stmt_thetaselect(be, slice, NULL, stmt_bool(be, 1), "ne", tpe_oid);
+	list *res2 = sa_list(sql->sa);
+	if (!list_empty(shared_hp)) {
+		for (node *n = shared_hp->h; n; n = n->next) {
+			stmt *c = stmt_project(be, unmatched, n->data);
+			const char *cname = column_name(sql->sa, c);
+			const char *tname = table_name(sql->sa, c);
+			int label = c->label;
+			c = stmt_alias(be, c, label, tname, cname);
+			append(res2, c);
+		}
+	} else {
+		/* without payload, we need to expand the count of unmatched freq if exists */
+		if (stmts_ht->op3) {
+			unmatched = stmt_oahash_count_unmatched(be, shared_ht->t->data, unmatched, stmts_ht->op3);
+			if (unmatched == NULL) return NULL;
+		}
+	}
+
+	for (node *n = probe_side->h; n; n = n->next) {
+		sql_subtype *tpe = tail_type(n->data);
+		atom *a = atom_general(sql->sa, tpe, NULL, 0);
+		stmt *c = stmt_const(be, unmatched, stmt_atom(be, a)); /* we just need the count of unmatched */
+		const char *cname = column_name(sql->sa, n->data);
+		const char *tname = table_name(sql->sa, n->data);
+		int label = ((stmt*)n->data)->label;
+		c = stmt_alias(be, c, label, tname, cname);
+		append(res2, c);
+	}
+	sub = stmt_list(be, res2);
+
+	/* NB stmts order in sub must match that in vars, i.e. hash-side first */
+	sub = subres_assign_resultvars(be, sub, vars);
+	if (!sub) return NULL;
+
+	(void)stmt_concat_barrier_end(be, b);
+
+	if (p_source)
+		stmt_concat_add_subconcat(be, p_source, p_concatcnt);
 	return sub;
 }
 
@@ -879,7 +1069,7 @@ rel2bin_oahash_semi(backend *be, sql_rel *rel, list *refs)
 	if (list_empty(jexps)) { /* cartesian */
 		sub = rel2bin_oahash_cart(be, rel, refs, &probed_ids, &probe_sub, &probe_side, &hash_side, NULL, &hf);
 	} else if (!list_empty(sexps)) {
-		sub = rel2bin_oahash_equi_join(be, rel, refs, jexps, &probed_ids, &probe_sub, &nulls, NULL, &probe_side, &hash_side, true);
+		sub = rel2bin_oahash_equi_join(be, rel, refs, jexps, &probed_ids, &probe_sub, &nulls, NULL /* prb_mrk */, NULL /* hsh_mrk */, &probe_side, &hash_side, true /* has_outerselect */);
 	} else {
 		assert(!list_empty(jexps) && list_length(jexps) == list_length(exps_cmp_prb));
 		/* build-phase res: hash-table and hash-payload stmts */
@@ -943,18 +1133,16 @@ rel2bin_oahash_semi(backend *be, sql_rel *rel, list *refs)
 stmt *
 rel2bin_oahash(backend *be, sql_rel *rel, list *refs)
 {
-	switch(rel->op) {
-	case op_join:
-		return rel2bin_oahash_join(be, rel, refs);
-	case op_left:
-	case op_right:
-	case op_full:
-		return rel2bin_oahash_outerjoin(be, rel, refs);
-	case op_semi:
-	case op_anti:
-		return rel2bin_oahash_semi(be, rel, refs);
-	default:
-        sql_error(be->mvc, 10, SQLSTATE(42000) "rel2bin_oahash(): not a JOIN");
-		return NULL;
-	}
+    if (is_semi(rel->op)) {
+        return rel2bin_oahash_semi(be, rel, refs);
+    } else if (!list_empty(rel->attr)) {
+        return rel2bin_oahash_groupjoin(be, rel, refs);
+    } else if (is_outerjoin(rel->op)) {
+		if (rel->op == op_full)
+			return rel2bin_oahash_fullouterjoin(be, rel, refs);
+        return rel2bin_oahash_outerjoin(be, rel, refs);
+    } else {
+        assert(is_innerjoin(rel->op));
+        return rel2bin_oahash_innerjoin(be, rel, refs);
+    }
 }

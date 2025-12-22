@@ -428,8 +428,8 @@ do_oahash_join(sql_rel *rel)
 		return 0;
 
 	// TODO full outer join
-	if (rel->op == op_full)
-		return 0;
+	//if (rel->op == op_full)
+	//	return 0;
 
 	// TODO groupjoin other then mark/exist
     if (list_length(rel->attr) == 1) {
@@ -873,9 +873,7 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 				else
 					rel->oahash = 2;
 
-				if (rel->op == op_full) {
-					sql_error(v->sql, 10, SQLSTATE(42000) "rel2bin_oahash(): full outer-join not supported yet");
-				} else if (rel->oahash == 2) {
+				if (rel->oahash == 2) {
 					rel_hsh = rel->r;
 					rel_prb = rel->l;
 				} else {

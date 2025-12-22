@@ -3067,6 +3067,57 @@ error:
 	return err;
 }
 
+static str
+OAHASHcount_unmatched(Client ctx, bat *res, const bat *ht_sink, const bat *unmatched, const bat *frequency)
+{
+	(void)ctx;
+	(void)ht_sink;
+
+	BAT *r = NULL, /* *h = NULL,*/ *u = NULL, *f = NULL;
+	str err = NULL;
+
+	//h = BATdescriptor(*ht_sink);
+	u = BATdescriptor(*unmatched);
+	f = BATdescriptor(*frequency);
+	//if (!h || !u || !f) {
+	if (!u || !f) {
+		err = createException(SQL, "oahash.count_unmatched", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		goto error;
+	}
+
+	lng *freq = Tloc(f, 0);
+	oid *umrk = Tloc(u, 0);
+
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
+	BUN cnt = BATcount(u), ttlcnt = 0;
+	TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) {
+		ttlcnt += freq[umrk[i]];
+	}
+	TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "oahash.count_unmatched", RUNTIME_QRY_TIMEOUT));
+	if (err)
+		goto error;
+
+	r = COLnew(0, TYPE_oid, ttlcnt, TRANSIENT);
+	if (!r) {
+		err = createException(SQL, "oahash.count_unmatched", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto error;
+	}
+	BATsetcount(r, ttlcnt);
+	BATnegateprops(r);
+	r->tsorted = r->trevsorted = true;
+	*res = r->batCacheid;
+	BBPkeepref(r);
+	BBPunfix(u->batCacheid);
+	BBPunfix(f->batCacheid);
+	return MAL_SUCCEED;
+error:
+	BBPreclaim(r);
+	BBPreclaim(f);
+	BBPreclaim(u);
+	return err;
+}
+
 #define SLICE_SIZE 100000
 
 static str
@@ -3237,6 +3288,8 @@ static mel_func oa_hash_init_funcs[] = {
  command("oahash", "explode", OAHASHexplode, false, "Explode the result vector 'frequency' times and return payload heap slot ids. If 'leftouter' is true, fill the not 'selected' slot with oid_nil", args(1,5, batarg("fetched",oid),batarg("slotid",oid),batarg("frequency",lng),batargany("hash_sink",2),arg("leftouter",bit))),
 
  command("oahash", "explode_cartesian", OAHASHexplode_cart, false, "Duplicate the whole 'col' the number of times as the count of 'setrepeat'.  For a left/right-ourter join, if 'col' is empty, output NULLs.", args(1,4, batarg("fetched",oid),batargany("col",1),batarg("setrepeat",2),arg("LRouter",bit))),
+
+ command("oahash", "count_unmatched", OAHASHcount_unmatched, false, "Expand the count of 'unmatched' with 'frequency'.  Returns the count in a VOID BAT.", args(1,4, batarg("",oid),batargany("ht_sink",1),batarg("unmatched",oid),batarg("frequency",lng))),
 
  command("oahash", "no_slices", OAHASHno_slices, false, "Get the number of slices for this hashtable.", args(1,2, arg("slices",int),batargany("ht_sink",1))),
  command("oahash", "nth_slice", OAHASHnth_slice, false, "Get the nth slice of this hashtable.", args(2,3, batarg("slice",oid),batargany("ht_sink",1),arg("slice_nr",int))),

@@ -151,6 +151,7 @@ extern int stmt_key(stmt *s);
 
 extern InstrPtr pushPtr(MalBlkPtr mb, InstrPtr q, ptr val);
 extern stmt *stmt_bat_new(backend *be, sql_subtype *tpe, lng estimate);
+extern stmt *stmt_bat_new2(backend *be, sql_subtype *tpe, stmt *sz_base);
 extern stmt *stmt_bat_declare(backend *be, sql_subtype *tpe);
 
 extern stmt *stmt_none(backend *be);
@@ -208,6 +209,7 @@ extern stmt *stmt_uselect2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp
 extern stmt *stmt_genselect(backend *be, stmt *lops, stmt *rops, sql_subfunc *f, stmt *sub, int anti);
 extern stmt *stmt_single(backend *be, stmt *c, stmt *i);
 extern stmt *stmt_outerselect(backend *be, stmt *g, stmt *m, stmt *p, bool any, bool single);
+extern stmt *stmt_thetaselect(backend *be, stmt *op1, stmt *op2, stmt *val, const char *cmp, sql_subtype *tpe);
 extern stmt *stmt_markselect(backend *be, stmt *g, stmt *m, stmt *p, bool any);
 extern stmt *stmt_markjoin(backend *be, stmt *l, stmt *r, bool nil_matches, bool final);
 

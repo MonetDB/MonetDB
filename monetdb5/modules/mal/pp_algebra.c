@@ -1994,6 +1994,211 @@ LALGderive(Client ctx, bat *rid, bat *uid, const ptr *H, bat *Gid, bat *Ph, bat 
 	return err;
 }
 
+#define projectconst(Type) \
+	do { \
+		Type v = *getArgReference_##Type(stk, pci, r); \
+		Type *o = Tloc(r, 0); \
+		if (g->ttype == TYPE_void) { \
+			oid gi = g->tseqbase; \
+			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
+				o[gi + i] = v; \
+			} \
+		} else { \
+			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
+				o[gp[i]] = v; \
+			} \
+		} \
+	} while(0)
+
+#define aprojectconst(Type,w,Toff) \
+	do { \
+		if ((ATOMvarsized(tt) || ATOMstorage(tt) == TYPE_##Type) && r->twidth == w) { \
+			Toff v = *getArgReference_##Type(stk, pci, r); \
+			Toff *o = Tloc(r, 0); \
+			if (g->ttype == TYPE_void) { \
+				oid gi = g->tseqbase; \
+				TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) \
+				o[gi + i] = v; \
+			} else { \
+				TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) \
+				o[gp[i]] = v; \
+			} \
+		} \
+	} while(0)
+
+/* runs locked ie resizes should work */
+#define aprojectconst_(Type) \
+	do { \
+		if ((ATOMvarsized(tt) || ATOMstorage(tt) == TYPE_##Type)) { \
+			BATiter bi = bat_iterator(b); \
+			int ins = 0; \
+			if (g->ttype == TYPE_void) { \
+				oid gi = g->tseqbase; \
+				TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
+					int w = r->twidth; \
+					if(w == 1) { \
+						uint8_t *o = Tloc(r, 0); \
+						ins = (o[gi + i] == 0); \
+					} else if (w == 2) { \
+						uint16_t *o = Tloc(r, 0); \
+						ins = (o[gi + i] == 0); \
+					} else if (w == 4) { \
+						uint32_t *o = Tloc(r, 0); \
+						ins = (o[gi + i] == 0); \
+					} else { \
+						var_t *o = Tloc(r, 0); \
+						ins = (o[gi + i] == 0); \
+					} \
+					if (ins && tfastins_nocheckVAR( r, gi + i, BUNtvar(bi, i)) != GDK_SUCCEED) { \
+						err = createException(MAL, "pp algebra.projection", MAL_MALLOC_FAIL);\
+						goto error; \
+					} \
+					if (err) \
+					TIMEOUT_LOOP_BREAK; \
+				} \
+			} else { \
+				TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
+					int w = r->twidth; \
+					if(w == 1) { \
+						uint8_t *o = Tloc(r, 0); \
+						ins = (o[gp[i]] == 0); \
+					} else if (w == 2) { \
+						uint16_t *o = Tloc(r, 0); \
+						ins = (o[gp[i]] == 0); \
+					} else if (w == 4) { \
+						uint32_t *o = Tloc(r, 0); \
+						ins = (o[gp[i]] == 0); \
+					} else { \
+						var_t *o = Tloc(r, 0); \
+						ins = (o[gp[i]] == 0); \
+					} \
+					if (ins && tfastins_nocheckVAR( r, gp[i], BUNtvar(bi, i)) != GDK_SUCCEED) { \
+						err = createException(MAL, "pp algebra.projection", MAL_MALLOC_FAIL);\
+						goto error; \
+					} \
+					if (err) \
+					TIMEOUT_LOOP_BREAK; \
+				} \
+			} \
+			bat_iterator_end(&bi); \
+		} \
+	} while(0)
+
+/* inout := algebra.project(groupid, val, PTR)  */
+/* this (possibly) overwrites the values, therefor for expensive (var) types we
+ * only write offsets (ie use the heap from the parent) */
+static str
+//LALGconstant(bat *rid, bat *gid, void *val, const ptr *H)
+LALGconstant(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void)ctx;
+
+	bat *rid = getArgReference_bat(stk, pci, 0);
+	bat *gid = getArgReference_bat(stk, pci, 1);
+	Pipeline *p = (Pipeline*)*getArgReference_ptr(stk, pci, 3); /* last arg should move to first argument .. */
+
+	BAT *g = NULL, *r = NULL;
+	str err = NULL;
+	bool private = true, locked = false;
+
+	g = BATdescriptor(*gid);
+	if (g == NULL) {
+		err = createException(MAL, "pp algebra.project", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		goto error;
+	}
+//	if (!is_bat_nil(*rid)) {
+		if ((r = BATdescriptor(*rid)) == NULL) {
+			err = createException(MAL, "pp algebra.project", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+			goto error;
+		}
+//	}
+
+	int tt = getArgType(mb, pci, 2);
+	if (!tt) tt = TYPE_oid;
+
+	oid max = BATcount(g)?g->tmaxval:0;
+	/* probably need bat resize and create hash */
+	private = (!r || r->tprivate_bat);
+
+	if (!private) {
+		pipeline_lock1(r);
+		locked = true;
+	}
+
+#if 0
+	if (!r) {
+		r = COLnew(0, tt, max, TRANSIENT);
+		if (r == NULL) {
+			err = createException(MAL, "pp algebra.project", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			goto error;
+		}
+		assert(private);
+		r->tprivate_bat = 1;
+	}
+#endif
+
+	if (BATcapacity(r) < max) {
+		BUN sz = max*2;
+		if (BATextend(r, sz) != GDK_SUCCEED) {
+			err = createException(MAL, "pp algebra.project", MAL_MALLOC_FAIL);
+			goto error;
+		}
+	}
+
+	/* only do the expensive memset for strings, to know when there are already
+	 * values at certain locations to avoid duplicate writes */
+	BUN cnt = BATcount(r);
+	if (ATOMvarsized(r->ttype) && cnt < max)
+		memset(Tloc(r, cnt), 0, r->twidth*(max-cnt));
+
+	cnt = BATcount(g);
+	if (cnt) {
+		QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+		qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
+
+		void *val = getArgReference(stk, pci, 2);
+		BAT *v = BATconstant(0, tt, val, cnt, TRANSIENT);
+		if (v == NULL) {
+			err = createException(MAL, "pp algebra.project", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			goto error;
+		}
+		if (BATupdate(r, g, v, false) != GDK_SUCCEED) {
+			err = createException(MAL, "pp algebra.project", SQLSTATE(HY002) OPERATION_FAILED);
+			goto error;
+		}
+
+		if (!err)
+			TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "pp algebra.project", RUNTIME_QRY_TIMEOUT));
+	}
+	if (err || p->p->status) {
+		if (!err)
+			err = createException(MAL, "pp algebra.project", "pipeline execution error");
+		goto error;
+	}
+
+	if (!private)
+		pipeline_lock2(r);
+	if (cnt && BATcount(r) < max)
+		BATsetcount(r, max);
+	BATnegateprops(r);
+	if (!private)
+		pipeline_unlock2(r);
+	*rid = r->batCacheid;
+	BBPkeepref(r);
+
+	if (locked)
+		pipeline_unlock1(r);
+
+	BBPunfix(g->batCacheid);
+	return MAL_SUCCEED;
+  error:
+	if (locked)
+		pipeline_unlock1(r);
+	if (g) BBPunfix(g->batCacheid);
+	if (r) BBPunfix(r->batCacheid);
+	return err;
+}
+
 #define project(Type) \
 	if (ATOMstorage(tt) == TYPE_##Type) { \
 		Type *v = Tloc(b, 0); \
@@ -2711,7 +2916,7 @@ LALGprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (BATcapacity(r) < max) {
 		BUN sz = max*2;
 		if (BATextend(r, sz) != GDK_SUCCEED) {
-			err = createException(MAL, "pp aggr.prod", MAL_MALLOC_FAIL);
+			err = createException(MAL, "pp aggr.prod", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto error;
 		}
 	}
@@ -4648,6 +4853,7 @@ static mel_func pp_algebra_init_funcs[] = {
  command("algebra", "unique", LALGgroup_unique, false, "Unique per group rows.", args(2,6, batarg("ngid", oid), batargany("",1), arg("pipeline", ptr), batargany("b",1), batarg("s",oid), batarg("gid",oid))),
  command("group", "group", LALGgroup, false, "Group input.", args(2,4, batarg("gid", oid), batargany("sink",1), arg("pipeline", ptr), batargany("b",1))),
  command("group", "group", LALGderive, false, "Sub Group input.", args(2,6, batarg("gid", oid), batargany("sink",1), arg("pipeline", ptr), batarg("pgid", oid), batargany("phash", 2), batargany("b",1))),
+ pattern("algebra", "project", LALGconstant, false, "Project a single value", args(1,4, batargany("",1), batarg("gid", oid), argany("val",1), arg("pipeline", ptr))),
  command("algebra", "projection", LALGproject, false, "Project.", args(1,4, batargany("",1), batarg("gid", oid), batargany("b",1), arg("pipeline", ptr))),
  command("aggr", "count", LALGcount, false, "Count per group.", args(1,6, batarg("",lng), batarg("gid", oid), batargany("", 1), arg("nonil", bit), arg("pipeline", ptr), batarg("pid", oid))),
  command("aggr", "count", LALGcountstar, false, "count per group.", args(1,4, batarg("",lng), batarg("gid", oid), arg("pipeline", ptr), batarg("pid", oid))),

@@ -590,9 +590,9 @@ stmt_oahash_probe(backend *be, stmt *key, stmt *prev, stmt *rhs_ht, stmt *freq, 
 }
 
 stmt *
-stmt_algebra_project(backend *be, stmt *inout, stmt *pos, stmt *val, const stmt *pp)
+stmt_algebra_project(backend *be, stmt *inout, stmt *pos, stmt *val, const char *fname, const stmt *pp)
 {
-	InstrPtr q = newStmt(be->mb, getName("algebra"), projectionRef);
+	InstrPtr q = newStmt(be->mb, getName("algebra"), fname);
 	if (q == NULL) return NULL;
 	getArg(q, 0) = inout->nr;
 	q->inout = 0;
@@ -655,6 +655,27 @@ stmt_oahash_explode(backend *be, const stmt *prb_res, const stmt *freq, const st
 	s->nrcols = 1;
 	s->q = q;
 	return s;
+}
+
+stmt *
+stmt_oahash_count_unmatched(backend *be, const stmt *ht, const stmt *mrk, const stmt *freq)
+{
+    InstrPtr q = newStmt(be->mb, putName("oahash"), putName("count_unmatched"));
+    if (q == NULL)
+        return NULL;
+    setVarType(be->mb, getArg(q, 0), newBatType(TYPE_oid)); /* expanded */
+    q = pushArgument(be->mb, q, ht->nr);
+    q = pushArgument(be->mb, q, mrk->nr);
+    q = pushArgument(be->mb, q, freq->nr);
+    pushInstruction(be->mb, q);
+
+    stmt *s = stmt_none(be);
+    if (s == NULL) return NULL;
+    s->op4.typeval = *sql_fetch_localtype(TYPE_oid);
+    s->nr = getArg(q, 0);
+    s->nrcols = 1;
+    s->q = q;
+    return s;
 }
 
 stmt *

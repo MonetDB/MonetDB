@@ -556,7 +556,7 @@ setVariableScope(MalBlkPtr mb)
 				setVarUpdated(mb, v, pc);
 			if (pp < 0 && getVarScope(mb, v) == depth)
 				setVarEolife(mb, v, pc);
-			if (pp >= 0 && getVarEolife(mb, v) < pc && getVarScope(mb, v) == depth)
+			if (pp >= 0 && getVarEolife(mb, v) < pc && (k < p->retc || getVarScope(mb, v) == depth))
 				setVarEolife(mb, v, (((k >= p->retc && getVarDeclared(mb, v) < pp) || (k >= p->inout && k < p->retc)) && jump > 0) ? jump : pc);
 
 			if (k >= p->retc && getVarScope(mb, v) < depth)
