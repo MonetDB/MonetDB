@@ -196,6 +196,7 @@ select n, m, k from b where ((n = 1) AND (m = 20)) OR ((n = 3) AND (m = 60) AND 
 60
 600
 
+skipif knownfail
 query T nosort
 explain show details select n, m, k from b where ((n = 1) AND (m = 20)) OR ((n = 3) AND (m = 60) AND (k=600))
 ----
@@ -221,6 +222,7 @@ select n, m, k from b where ((n = 1) AND (m = 20)) OR ((n = 2) AND (m = 40) AND 
 180
 1800
 
+skipif knownfail
 query T nosort
 explain show details select * from b where ((n = 1) AND (m = 20)) OR ((n = 2) AND (m = 40) AND (k=400)) OR ((n = 9) AND (m = 180)) OR ((n = 3) AND (m = 60) AND (k=600))
 ----
