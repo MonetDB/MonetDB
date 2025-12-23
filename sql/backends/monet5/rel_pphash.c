@@ -166,10 +166,10 @@ oahash_project_hsh(backend *be, list *exps_prj_hsh, stmt *stmts_ht, stmt *prb_re
 	list *l = sa_list(be->mvc->sa);
 
 	if (!list_empty(exps_prj_hsh)) {
-		stmt *stmts_hp = stmts_ht->op1, *pld_sltid = stmts_ht->op2, *freq = stmts_ht->op3;
-		assert(stmts_hp && (!freq || pld_sltid));
+		stmt *stmts_hp = stmts_ht->op1, *hp_gid = stmts_ht->op2, *freq = stmts_ht->op3;
+		assert(stmts_hp && (!freq || hp_gid));
 
-		stmt *sel = freq?stmt_oahash_explode(be, prb_res, freq, pld_sltid, outer):stmt_blackbox_result(be, prb_res->q, 1, sql_fetch_localtype(TYPE_oid));
+		stmt *sel = freq?stmt_oahash_explode(be, prb_res, freq, hp_gid, outer):stmt_blackbox_result(be, prb_res->q, 1, sql_fetch_localtype(TYPE_oid));
 		if (sel == NULL) return NULL;
 		if (hsh_mrk)
 			*hsh_mrk = sel;
@@ -285,14 +285,14 @@ rel2bin_oahash_build(backend *be, sql_rel *rel, list *refs)
 	}
 	lng bld_sz = _estimate(be->mvc, rel); /* TODO: change into dynamic where possible ?? */
 	stmt *shared_ht = oahash_prepare_bld_ht(be, exps_cmp_hsh, bld_sz);
-	stmt *freq = NULL, *pld_sltid = NULL;
+	stmt *freq = NULL, *hp_gid = NULL;
 	if (need_freq) {
 		freq = stmt_bat_new(be, sql_fetch_localtype(TYPE_lng), bld_sz);
 		if (!list_empty(exps_prj_hsh)) {
 			list *l = shared_ht->op4.lval;
 			stmt *prnt = (stmt*)l->t->data;
-			pld_sltid = stmt_oahash_new(be, sql_fetch_localtype(TYPE_oid), bld_sz, prnt->nr, 0);
-			if (pld_sltid == NULL) return NULL;
+			hp_gid = stmt_oahash_new(be, sql_fetch_localtype(TYPE_oid), bld_sz, prnt->nr, 0);
+			if (hp_gid == NULL) return NULL;
 		}
 	}
 	stmt *shared_hp = NULL;
@@ -324,10 +324,10 @@ rel2bin_oahash_build(backend *be, sql_rel *rel, list *refs)
 	stmts_ht = stmt_list(be, l);
 
 	if (freq) {
-		stmt *s = stmt_oahash_frequency(be, freq, prnt, (pld_sltid != NULL), pp);
+		stmt *s = stmt_oahash_frequency(be, freq, prnt, (hp_gid != NULL), pp);
 
-		if (pld_sltid) {
-			prnt = stmt_oahash_build_ht(be, pld_sltid, s, prnt, pp);
+		if (hp_gid) {
+			prnt = stmt_oahash_build_ht(be, hp_gid, s, prnt, pp);
 			if (prnt == NULL) return NULL;
 		}
 	}
@@ -354,7 +354,7 @@ rel2bin_oahash_build(backend *be, sql_rel *rel, list *refs)
 	(void)stmt_pp_end(be, pp);
 
 	stmts_ht->op1 = stmts_hp;
-	stmts_ht->op2 = pld_sltid;
+	stmts_ht->op2 = hp_gid;
 	stmts_ht->op3 = freq;
 	return stmts_ht;
 }
