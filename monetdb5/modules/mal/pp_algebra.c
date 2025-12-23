@@ -2183,8 +2183,10 @@ LALGconstant(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BATnegateprops(r);
 	if (!private)
 		pipeline_unlock2(r);
-	*rid = r->batCacheid;
-	BBPkeepref(r);
+	//*rid = r->batCacheid;
+	//BBPkeepref(r);
+	//leave writable
+	BBPretain(*rid = r->batCacheid);
 
 	if (locked)
 		pipeline_unlock1(r);
