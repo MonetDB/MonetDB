@@ -27,13 +27,13 @@ project (
 | ) [  ] [ "sys"."avg" no nil (tinyint(2) "3") NOT NULL UNIQUE as "%2"."%2" ]
 ) [ "%2"."%2" NOT NULL UNIQUE ]
 
-query I rowsort
+query R rowsort
 SELECT avg(3) FROM baz GROUP BY b
 ----
-3
-3
-3
-3
+3.000
+3.000
+3.000
+3.000
 
 query T nosort
 EXPLAIN SHOW DETAILS SELECT avg(3) FROM baz GROUP BY b
@@ -42,7 +42,7 @@ project (
 | group by (
 | | table("sys"."baz") [ "baz"."b" NOT NULL ]
 | ) [ "baz"."b" NOT NULL ] [ "baz"."b" NOT NULL ]
-) [ tinyint(2) "3" as "%1"."%1" ]
+) [ double(53) "3" as "%1"."%1" ]
 
 query R rowsort
 SELECT 1 + avg(3) FROM baz GROUP BY b
@@ -59,9 +59,9 @@ project (
 | group by (
 | | table("sys"."baz") [ "baz"."b" NOT NULL ]
 | ) [ "baz"."b" NOT NULL ] [ "baz"."b" NOT NULL ]
-) [ "sys"."sql_add"(double(53) "1", tinyint(2) "3") NOT NULL ]
+) [ "sys"."sql_add"(double(53) "1", double(53) "3") NOT NULL ]
 
-query I rowsort
+query D rowsort
 SELECT avg(NULL) FROM baz GROUP BY b
 ----
 NULL
@@ -89,19 +89,19 @@ project (
 | | group by (
 | | | table("sys"."baz") [ "baz"."b" NOT NULL ]
 | | ) [ "baz"."b" NOT NULL ] [ "baz"."b" NOT NULL ]
-| ) [ tinyint(2) "3" as "%1"."%1" ]
+| ) [ double(53) "3" as "%1"."%1" ]
 ) [ "sys"."sql_add"(double(53) "1", "%1"."%1" NOT NULL) NOT NULL, "sys"."sql_mul"("%1"."%1" NOT NULL, double(53) "10") NOT NULL ]
 
-query IR rowsort
+query RR rowsort
 SELECT avg(3), avg(b) FROM baz GROUP BY b
 ----
-3
-1.000
-3
 3.000
-3
+1.000
+3.000
+3.000
+3.000
 6.000
-3
+3.000
 7.000
 
 query I rowsort
@@ -137,7 +137,7 @@ project (
 | group by (
 | | table("sys"."baz") [ "baz"."a" NOT NULL ]
 | ) [ "baz"."a" NOT NULL ] [ "baz"."a" NOT NULL ]
-) [ tinyint(1) "1" as "%1"."%1", tinyint(1) "0" as "%2"."%2" ]
+) [ hugeint(127) "1" as "%1"."%1", tinyint(4) "0" as "%2"."%2" ]
 
 query II rowsort
 select prod(1), sum(0) from baz group by a
@@ -153,7 +153,7 @@ select prod(1), sum(0) from baz group by a
 1
 0
 
-query II rowsort
+query RR rowsort
 select prod(null) + 1, sum(null) + 1 from baz group by a
 ----
 NULL
@@ -174,7 +174,7 @@ project (
 | group by (
 | | table("sys"."baz") [ "baz"."a" NOT NULL ]
 | ) [ "baz"."a" NOT NULL ] [ "baz"."a" NOT NULL ]
-) [ "sys"."sql_add"(bigint(1) "0", bigint(2) "3") NOT NULL ]
+) [ "sys"."sql_add"(bigint(63) "0", bigint(2) "3") NOT NULL ]
 
 query I rowsort
 select count(null) + 3 from baz group by a
