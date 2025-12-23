@@ -2187,6 +2187,7 @@ LALGconstant(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	//BBPkeepref(r);
 	//leave writable
 	BBPretain(*rid = r->batCacheid);
+	BBPunfix(r->batCacheid);
 
 	if (locked)
 		pipeline_unlock1(r);
