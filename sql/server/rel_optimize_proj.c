@@ -2565,20 +2565,18 @@ rel_distinct_aggregate_on_unique_values(visitor *v, sql_rel *rel)
 static inline sql_rel *
 rel_remove_const_aggr(visitor *v, sql_rel *rel)
 {
-	if(!rel) {
+	if (!rel)
 		return rel;
-	}
 
 	list *exps = rel->exps;
 
-	if(rel->op != op_groupby || list_empty(exps)) {
+	if (rel->op != op_groupby || list_empty(exps))
 		return rel;
-	}
 
-	if(!list_empty(rel->r)) {
+	if (!list_empty(rel->r)) {
 		/* in the general case in an expression of an aggregate over
 		 * a constant can be rewritten as just the const e.g.
-		 *   aggr(const) -> const
+		 *   aggr(const) -> cast(const as restype)
 		 */
 
 		for(node *n = exps->h; n; n = n->next) {
@@ -2600,40 +2598,38 @@ rel_remove_const_aggr(visitor *v, sql_rel *rel)
 				prd = strcmp(j->base.name, "prod") == 0,
 				cnt = strcmp(j->base.name, "count") == 0;
 
-			if(!j->s && j->system == 1) {
+			if (!j->s && j->system == 1) {
 				list *se = e->l;
 
 				if(se == NULL) {
 					continue;
 				}
 
-				for(node *m = se->h; m; m = m->next) {
+				for (node *m = se->h; m; m = m->next) {
 					sql_exp *w = m->data;
 
-					if(w->type == e_atom && w->card == CARD_ATOM) {
+					if (w->type == e_atom && w->card == CARD_ATOM) {
 						atom *wa = w->l;
 
-						if(sum && !(wa->isnull || atom_is_zero(wa))) {
+						if (sum && !(wa->isnull || atom_is_zero(wa)))
 							continue;
-						}
 
-						if(prd && !(wa->isnull || atom_is_one(wa))) {
+						if (prd && !(wa->isnull || atom_is_one(wa)))
 							continue;
-						}
 
-						if(cnt) {
-							if(wa->isnull) {
+						if (cnt) {
+							if (wa->isnull) {
 								list_remove_node(se, NULL, m);
 
 								w=exp_atom_lng(v->sql->sa, 0);
 								list_append(se, w);
-							}
-							else {
+							} else {
 								continue;
 							}
 						}
 
 						exp_setalias(w,e->alias.label,e->alias.rname,e->alias.name);
+						w = exp_check_type(v->sql, exp_subtype(e), NULL, w, type_equal);
 
 						n->data = w;
 						v->changes++;
