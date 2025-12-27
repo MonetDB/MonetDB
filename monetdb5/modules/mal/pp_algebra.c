@@ -849,12 +849,6 @@ LALGprojection(Client ctx, bat *result, const ptr *h, const bat *lid, const bat 
 	return res;
 }
 
-#define linear_probing k=hv+l
-#define quadratic_probing k=hv+(l*l)
-
-//#define nextk linear_probing
-#define nextk quadratic_probing
-
 #define unique_(Type, BaseType, INIT_ALLOCATOR, INIT_ITER, NEW_VAL, HASH_VAL, VAL_NOT_EQUAL, VAL_ASSIGN, ITER_NEXT, NEXTK) \
 	if (tt == TYPE_##Type) { \
 		int slots = 0; \
@@ -1076,6 +1070,7 @@ LALGunique(Client ctx, bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid)
 			} else {
 				aunique(str)
 			}
+			h->processed += cnt;
 			ht_deactivate(h);
 			TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "pp algebra.unique", RUNTIME_QRY_TIMEOUT));
 		}
@@ -1376,7 +1371,7 @@ LALGgroup_unique(Client ctx, bat *rid, bat *uid, const ptr *H, bat *bid, bat *si
 				} \
 				if (!g) { \
 					if (slots == 0) { \
-						slots = private?1:HT_PRE_CLAIM; \
+						slots = ht_preclaim(private); \
 						slot = ATOMIC_ADD(&h->last, slots); \
 						if (((slot*100)/70) >= (gid)h->size) { \
 							hash_rehash(h, p, err); \
@@ -1435,7 +1430,7 @@ LALGgroup_unique(Client ctx, bat *rid, bat *uid, const ptr *H, bat *bid, bat *si
 				} \
 				if (!g) { \
 					if (slots == 0) { \
-						slots = private?1:HT_PRE_CLAIM; \
+						slots = ht_preclaim(private); \
 						slot = ATOMIC_ADD(&h->last, slots); \
 						if (((slot*100)/70) >= (gid)h->size) { \
 							hash_rehash(h, p, err); \
@@ -1715,7 +1710,7 @@ LALGgroup(Client ctx, bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 				} \
 				if (!g) { \
 					if (slots == 0) { \
-						slots = private?1:HT_PRE_CLAIM; \
+						slots = ht_preclaim(private); \
 						slot = ATOMIC_ADD(&h->last, slots); \
 						if (((slot*100)/70) >= (gid)h->size) \
 							hash_rehash(h, p, err); { \

@@ -189,11 +189,6 @@ PARTprefixsum(Client ctx, bat *pos, const bat *gid, lng *max )
 
 	BUN n = 0, i;
 
-	/* get max from gid */
-	/*
-	if (!BATmax(g, &n))
-		throw(MAL, "part.prefixsum", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-		*/
 	n = *max;
 	BAT *p = COLnew(0, TYPE_lng, n, TRANSIENT);
 	if (!p) {
@@ -483,9 +478,8 @@ MATfetch_slices(Client ctx, bat *res, const bat *mat, const int *i, const int *S
 	mt->bat[*i] = BATsetaccess(mt->bat[*i], BAT_READ);
 	BAT *b = mt->bat[*i];
 	BATnegateprops(b);
-	BAT *v = BATslice(b, s*100000, (s+1)*100000); /* later dynamic sizes */
+	BAT *v = BATslice(b, s*mt->slicesize, (s+1)*mt->slicesize); /* later dynamic sizes */
 	BBPunfix(m->batCacheid);
-	//BBPretain(*res = v->batCacheid);
 	*res = v->batCacheid;
 	BBPkeepref(v);
 	return MAL_SUCCEED;
@@ -529,6 +523,7 @@ MATnr_parts(Client ctx, int *nr, const bat *mat, const int *slicesize)
 	mt->nr_parts = n;
 	mt->part = (int*)GDKmalloc(sizeof(int) * n);
 	mt->subpart = (int*)GDKmalloc(sizeof(int) * n);
+	mt->slicesize = *slicesize;
 	if (!mt->part || !mt->subpart)
 		throw(MAL, "mat.nr_parts", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	for(int i = 0, k = 0; i<mt->nr; i++) {

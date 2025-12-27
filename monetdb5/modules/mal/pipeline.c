@@ -114,6 +114,9 @@ typedef struct pp_counter_t {
 	MT_Lock l;
 	int nr;
 	int current;
+	bool sync;
+	int scnt;
+	MT_Cond c;
 	int *cur; /* nr per worker */
 } pp_counter;
 
@@ -124,6 +127,23 @@ counter_free(pp_counter *c)
 		GDKfree(c->cur);
 	MT_lock_destroy(&c->l);
 	GDKfree(c);
+}
+
+static int
+sync_counter_done(pp_counter *c, int wid, int nr_workers, int redo)
+{
+	(void)redo;
+	int res = 0, cur;
+    MT_lock_set(&c->l);
+	if (!c->cur)
+		c->cur = (int*)GDKzalloc(sizeof(int) * nr_workers);
+	cur = c->current++;
+	if (cur >= c->nr)
+		res = 1;
+    MT_lock_unset(&c->l);
+	assert(c->cur);
+	c->cur[wid] = cur;
+    return res;
 }
 
 static int
@@ -160,8 +180,10 @@ PPcounter_get(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BBPreclaim(b);
 		throw(MAL, "pipeline.counter_get", SQLSTATE(HY002) "Invalid source %d", c->s.type);
 	}
-	if (!c->cur)
-		counter_done(c, p->wid, p->p->nr_workers, false);
+	if (!c->cur) {
+		c->s.done(c, p->wid, p->p->nr_workers, false);
+		//counter_done(c, p->wid, p->p->nr_workers, false);
+	}
 	*cur = c->cur[p->wid];
 	BBPreclaim(b);
 	return MAL_SUCCEED;
@@ -174,6 +196,9 @@ PPcounter(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void)mb;
 	bat *rb = getArgReference_bat(stk, pci, 0);
 	int nr = *getArgReference_int(stk, pci, 1);
+	bool sync = false;
+	if (pci->argc == 3)
+		sync = *getArgReference_bit(stk, pci, 2);
 
 	pp_counter *c = (pp_counter*)GDKzalloc(sizeof(pp_counter));
 	if (!c) {
@@ -193,6 +218,12 @@ PPcounter(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	c->cur = NULL;
 	c->nr = nr;
 	MT_lock_init(&c->l, "counter");
+	if (sync) {
+		c->sync = true;
+		c->scnt = 0;
+		MT_cond_init(&c->c, "sync_counter");
+		c->s.done = (sink_done)&sync_counter_done;
+	}
 	*rb = b->batCacheid;
 	BBPkeepref(b);
 	return MAL_SUCCEED;
@@ -685,6 +716,11 @@ static mel_func pipeline_init_funcs[] = {
  pattern("pipeline", "counter", PPcounter, true, "return counter source", args(1,2,
 	 batarg("sink", bte),
 	 arg("nr", int)
+ )),
+ pattern("pipeline", "counter", PPcounter, true, "return counter source", args(1,3,
+	 batarg("sink", bte),
+	 arg("nr", int),
+	 arg("sync", bool)	/* sync (ie all workers need to call this counter once, before any can continue) */
  )),
  pattern("pipeline", "counter_get", PPcounter_get, true, "return current number from the counter", args(1,3,
 	 arg("", int),

@@ -16,10 +16,21 @@
 //#define HT_MIN_SIZE 1024*64*8
 #define HT_MIN_SIZE 1024*8
 //#define HT_MIN_SIZE 256
-#define HT_PRE_CLAIM 256
 #define HT_MAX_SIZE 1024*1024*1024
 #define HP_MIN_SIZE HT_MIN_SIZE
 #define HP_MAX_SIZE HT_MAX_SIZE
+
+#define HT_PRE_CLAIM 256
+#define ht_preclaim(private) private?1:HT_PRE_CLAIM
+//#define HT_PRE_CLAIM 1
+//#define ht_preclaim(private) HT_PRE_CLAIM
+
+#define linear_probing k=hv+l
+#define quadratic_probing k=hv+(l*l)
+
+#define nextk linear_probing
+//#define nextk quadratic_probing
+
 
 #define hash_rehash(ht, p, err)		\
 	{ 								\

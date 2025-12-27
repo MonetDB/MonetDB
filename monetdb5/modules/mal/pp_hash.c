@@ -156,10 +156,10 @@ ht_deactivate(hash_table *ht)
 			Type *vals = ht->vals;					\
 			gid og = ogids[i];						\
 			if (og) {								\
-				gid k = (gid)_hash_##Type(vals[og])&ht->mask; \
+				gid hv = (gid)_hash_##Type(vals[og])&ht->mask, k = hv; \
 				gid g = ngids[k];					\
-				while (g) {							\
-					k++;							\
+				for (gid l=1; g; l++) {				\
+					nextk;							\
 					k &= ht->mask;					\
 					g = ngids[k];					\
 				}									\
@@ -173,10 +173,10 @@ ht_deactivate(hash_table *ht)
 			Type *vals = ht->vals;					\
 			gid og = ogids[i];						\
 			if (og) {								\
-				gid k = (gid)_hash_##Type(vals[og])&ht->mask; \
+				gid hv = (gid)_hash_##Type(vals[og])&ht->mask, k = hv; \
 				gid g = ngids[k];					\
-				while (g) {							\
-					k++;							\
+				for (gid l=1; g; l++) {				\
+					nextk;							\
 					k &= ht->mask;					\
 					g = ngids[k];					\
 				}									\
@@ -190,10 +190,10 @@ ht_deactivate(hash_table *ht)
 			char **vals = ht->vals;					\
 			gid og = ogids[i];						\
 			if (og) {								\
-				gid k = (gid)ht->hsh(vals[og])&ht->mask; \
+				gid hv = (gid)ht->hsh(vals[og])&ht->mask, k = hv; \
 				gid g = ngids[k];			\
-				while (g) {							\
-					k++;							\
+				for (gid l=1; g; l++) {				\
+					nextk;							\
 					k &= ht->mask;					\
 					g = ngids[k];					\
 				}									\
@@ -207,10 +207,10 @@ ht_deactivate(hash_table *ht)
 			Type *vals = ht->vals;					\
 			gid og = ogids[i];						\
 			if (og) {								\
-				gid k = (gid)combine(pgids[og], _hash_##Type(vals[og]), prime)&ht->mask; \
+				gid hv = (gid)combine(pgids[og], _hash_##Type(vals[og]), prime)&ht->mask, k = hv; \
 				gid g = ngids[k];			\
-				while (g) {							\
-					k++;							\
+				for (gid l=1; g; l++) {				\
+					nextk;							\
 					k &= ht->mask;					\
 					g = ngids[k];					\
 				}									\
@@ -224,10 +224,10 @@ ht_deactivate(hash_table *ht)
 			Type *vals = ht->vals;					\
 			gid og = ogids[i];						\
 			if (og) {								\
-				gid k = (gid)combine(pgids[og], _hash_##Type(vals[og]), prime)&ht->mask; \
+				gid hv = (gid)combine(pgids[og], _hash_##Type(vals[og]), prime)&ht->mask, k = hv; \
 				gid g = ngids[k];			\
-				while (g) {							\
-					k++;							\
+				for (gid l=1; g; l++) {				\
+					nextk;							\
 					k &= ht->mask;					\
 					g = ngids[k];					\
 				}									\
@@ -241,10 +241,10 @@ ht_deactivate(hash_table *ht)
 			char **vals = ht->vals;					\
 			gid og = ogids[i];						\
 			if (og) {								\
-				gid k = (gid)combine(pgids[og], ht->hsh(vals[og]), prime)&ht->mask; \
+				gid hv = (gid)combine(pgids[og], ht->hsh(vals[og]), prime)&ht->mask, k = hv; \
 				gid g = ngids[k];			\
-				while (g) {							\
-					k++;							\
+				for (gid l=1; g; l++) {				\
+					nextk;							\
 					k &= ht->mask;					\
 					g = ngids[k];					\
 				}									\
@@ -261,7 +261,7 @@ ht_rehash(hash_table *ht)
 	ht_deactivate(ht);
 	MT_rwlock_wrlock(&ht->rwlock);
 	if (ht->size == size) { /* the lucky one ... */
-		//dbl ratio = (ht->processed / ht->last); /* hit ratio */
+		//dbl ratio = (ht->processed / (dbl)ht->last); /* hit ratio */
 		//
 		size_t newsize = ht->size * 4; /* later learn from growth and expected (max) number (of influx) */
 		size_t oldsize = ht->size;
@@ -529,8 +529,8 @@ UHASHext(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 				} \
 				if (!g) { \
 					if (slots == 0) { \
-						slots = private?1:HT_PRE_CLAIM; \
-						slot = ATOMIC_ADD(&h->last, private?1:HT_PRE_CLAIM); \
+						slots = ht_preclaim(private); \
+						slot = ATOMIC_ADD(&h->last, slots); \
 						if (((slot*100)/70) >= (gid)h->size) { \
 							hash_rehash(h, p, err); \
 							vals = h->vals; \
@@ -574,8 +574,8 @@ UHASHext(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 				} \
 				if (!g) { \
 					if (slots == 0) { \
-						slots = private?1:HT_PRE_CLAIM; \
-						slot = ATOMIC_ADD(&h->last, private?1:HT_PRE_CLAIM); \
+						slots = ht_preclaim(private); \
+						slot = ATOMIC_ADD(&h->last, slots); \
 						if (((slot*100)/70) >= (gid)h->size) { \
 							hash_rehash(h, p, err); \
 							vals = h->vals; \
@@ -616,8 +616,8 @@ UHASHext(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 				} \
 				if (!g) { \
 					if (slots == 0) { \
-						slots = private?1:HT_PRE_CLAIM; \
-						slot = ATOMIC_ADD(&h->last, private?1:HT_PRE_CLAIM); \
+						slots = ht_preclaim(private); \
+						slot = ATOMIC_ADD(&h->last, slots); \
 						if (((slot*100)/70) >= (gid)h->size) { \
 							hash_rehash(h, p, err); \
 							vals = h->vals; \
@@ -658,8 +658,8 @@ UHASHext(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 				} \
 				if (!g) { \
 					if (slots == 0) { \
-						slots = private?1:HT_PRE_CLAIM; \
-						slot = ATOMIC_ADD(&h->last, private?1:HT_PRE_CLAIM); \
+						slots = ht_preclaim(private); \
+						slot = ATOMIC_ADD(&h->last, slots); \
 						if (((slot*100)/70) >= (gid)h->size) { \
 							hash_rehash(h, p, err); \
 							vals = h->vals; \
@@ -703,8 +703,8 @@ UHASHext(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 					} \
 					if (!g) { \
 						if (slots == 0) { \
-							slots = private?1:HT_PRE_CLAIM; \
-							slot = ATOMIC_ADD(&h->last, private?1:HT_PRE_CLAIM); \
+							slots = ht_preclaim(private); \
+							slot = ATOMIC_ADD(&h->last, slots); \
 							if (((slot*100)/70) >= (gid)h->size) { \
 								hash_rehash(h, p, err); \
 								vals = h->vals; \
@@ -740,8 +740,8 @@ UHASHext(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 					} \
 					if (!g) { \
 						if (slots == 0) { \
-							slots = private?1:HT_PRE_CLAIM; \
-							slot = ATOMIC_ADD(&h->last, private?1:HT_PRE_CLAIM); \
+							slots = ht_preclaim(private); \
+							slot = ATOMIC_ADD(&h->last, slots); \
 							if (((slot*100)/70) >= (gid)h->size) { \
 								hash_rehash(h, p, err); \
 								vals = h->vals; \
@@ -882,6 +882,7 @@ OAHASHbuild_tbl(Client ctx, bat *slot_id, bat *ht_sink, const bat *key, const pt
 	*slot_id = g->batCacheid;
 	BBPkeepref(u);
 	BBPkeepref(g);
+	(void)private;
 	return MAL_SUCCEED;
 error:
 	BBPreclaim(b);
@@ -908,8 +909,8 @@ error:
 				} \
 				if (!g) { \
 					if (slots == 0) { \
-						slots = private?1:HT_PRE_CLAIM; \
-						slot = ATOMIC_ADD(&h->last, private?1:HT_PRE_CLAIM); \
+						slots = ht_preclaim(private); \
+						slot = ATOMIC_ADD(&h->last, slots); \
 						if (((slot*100)/70) >= (gid)h->size) { \
 							hash_rehash(h, p, err); \
 							vals = h->vals; \
@@ -956,8 +957,8 @@ error:
 				} \
 				if (!g) { \
 					if (slots == 0) { \
-						slots = private?1:HT_PRE_CLAIM; \
-						slot = ATOMIC_ADD(&h->last, private?1:HT_PRE_CLAIM); \
+						slots = ht_preclaim(private); \
+						slot = ATOMIC_ADD(&h->last, slots); \
 						if (((slot*100)/70) >= (gid)h->size) { \
 							hash_rehash(h, p, err); \
 							vals = h->vals; \
@@ -1000,8 +1001,8 @@ error:
 				} \
 				if (!g) { \
 					if (slots == 0) { \
-						slots = private?1:HT_PRE_CLAIM; \
-						slot = ATOMIC_ADD(&h->last, private?1:HT_PRE_CLAIM); \
+						slots = ht_preclaim(private); \
+						slot = ATOMIC_ADD(&h->last, slots); \
 						if (((slot*100)/70) >= (gid)h->size) { \
 							hash_rehash(h, p, err); \
 							vals = h->vals; \
@@ -1045,8 +1046,8 @@ error:
 				} \
 				if (!g) { \
 					if (slots == 0) { \
-						slots = private?1:HT_PRE_CLAIM; \
-						slot = ATOMIC_ADD(&h->last, private?1:HT_PRE_CLAIM); \
+						slots = ht_preclaim(private); \
+						slot = ATOMIC_ADD(&h->last, slots); \
 						if (((slot*100)/100) >= (gid)h->size) { \
 							hash_rehash(h, p, err); \
 							vals = h->vals; \
@@ -1093,8 +1094,8 @@ error:
 					} \
 					if (!g) { \
 						if (slots == 0) { \
-							slots = private?1:HT_PRE_CLAIM; \
-							slot = ATOMIC_ADD(&h->last, private?1:HT_PRE_CLAIM); \
+							slots = ht_preclaim(private); \
+							slot = ATOMIC_ADD(&h->last, slots); \
 							if (((slot*100)/100) >= (gid)h->size) { \
 								hash_rehash(h, p, err); \
 								vals = h->vals; \
@@ -1134,8 +1135,8 @@ error:
 					} \
 					if (!g) { \
 						if (slots == 0) { \
-							slots = private?1:HT_PRE_CLAIM; \
-							slot = ATOMIC_ADD(&h->last, private?1:HT_PRE_CLAIM); \
+							slots = ht_preclaim(private); \
+							slot = ATOMIC_ADD(&h->last, slots); \
 							if (((slot*100)/70) >= (gid)h->size) \
 								hash_rehash(h, p, err); \
 								vals = h->vals; \
@@ -1282,6 +1283,7 @@ OAHASHbuild_tbl_cmbd(Client ctx, bat *slot_id, bat *ht_sink, const bat *key, con
 	*slot_id = g->batCacheid;
 	BBPkeepref(u);
 	BBPkeepref(g);
+	(void)private;
 
 	BBPunfix(b->batCacheid);
 	BBPunfix(G->batCacheid);
