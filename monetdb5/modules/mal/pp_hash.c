@@ -428,6 +428,84 @@ OAHASHnew(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 }
 
 static str
+OAHASHhashmark_init(Client ctx, bat *res, const bat *ht_sink, const bat *payload)
+{
+	(void)ctx;
+
+	BAT *r = NULL, *ht = NULL, *hp = NULL;
+	str err = NULL;
+
+	ht = BATdescriptor(*ht_sink);
+	if (!ht) {
+		err = createException(SQL, "oahash.hashmark_init", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		goto error;
+	}
+	if (payload && !is_bat_nil(*payload)) {
+		hp = BATdescriptor(*payload);
+		if (!hp) {
+			err = createException(SQL, "oahash.hashmark_init", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+			goto error;
+		}
+	}
+
+    hash_table *h = (hash_table*)ht->tsink;
+	assert(h && h->s.type == OA_HASH_TABLE_SINK);
+	BUN sz = hp?BATcount(hp):h->size;
+
+	r = COLnew(0, TYPE_bit, sz, TRANSIENT);
+	if (!r) {
+		err = createException(SQL, "oahash.hashmark_init", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto error;
+	}
+
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
+	bit *mrk = Tloc(r, 0);
+	gid g = 0;
+	/* init unused GIDs with bit_nil, used GIDs with FALSE */
+	if (hp) {
+		TIMEOUT_LOOP_IDX_DECL(i, sz, qry_ctx) {
+			mrk[i] = bit_nil;
+		}
+		TIMEOUT_LOOP_IDX_DECL(i, h->size, qry_ctx) {
+			g = ATOMIC_GET(h->gids+i);
+			if(g) {
+				mrk[g-1] = false;
+			}
+		}
+	} else {
+		TIMEOUT_LOOP_IDX_DECL(i, h->size, qry_ctx) {
+			g = ATOMIC_GET(h->gids+i);
+			if(g) {
+				mrk[g-1] = false;
+			}
+			mrk[i] = mrk[i] == false? false:bit_nil;
+		}
+	}
+	TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "oahash.hashmark_init", RUNTIME_QRY_TIMEOUT));
+	if (err)
+		goto error;
+
+	BATsetcount(r, sz);
+	BATnegateprops(r);
+	r->tkey = FALSE;
+	r->tsorted = r->trevsorted = FALSE;
+	//*res = r->batCacheid;
+	//BBPkeepref(r);
+	//leave writable
+	BBPretain(*res = r->batCacheid);
+	BBPunfix(r->batCacheid);
+	BBPunfix(ht->batCacheid);
+	BBPreclaim(hp);
+	return MAL_SUCCEED;
+error:
+	BBPreclaim(r);
+	BBPreclaim(ht);
+	BBPreclaim(hp);
+	return err;
+}
+
+static str
 UHASHext(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 {
 	(void)cntxt;
@@ -3070,20 +3148,18 @@ error:
 }
 
 static str
-OAHASHcount_unmatched(Client ctx, bat *res, const bat *ht_sink, const bat *unmatched, const bat *frequency)
+OAHASHexplode_unmatched(Client ctx, bat *res, const bat *ht_sink, const bat *unmatched, const bat *frequency)
 {
 	(void)ctx;
 	(void)ht_sink;
 
-	BAT *r = NULL, /* *h = NULL,*/ *u = NULL, *f = NULL;
+	BAT *r = NULL, *u = NULL, *f = NULL;
 	str err = NULL;
 
-	//h = BATdescriptor(*ht_sink);
 	u = BATdescriptor(*unmatched);
 	f = BATdescriptor(*frequency);
-	//if (!h || !u || !f) {
 	if (!u || !f) {
-		err = createException(SQL, "oahash.count_unmatched", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		err = createException(SQL, "oahash.explode_unmatched", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto error;
 	}
 
@@ -3096,13 +3172,13 @@ OAHASHcount_unmatched(Client ctx, bat *res, const bat *ht_sink, const bat *unmat
 	TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) {
 		ttlcnt += freq[umrk[i]];
 	}
-	TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "oahash.count_unmatched", RUNTIME_QRY_TIMEOUT));
+	TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "oahash.explode_unmatched", RUNTIME_QRY_TIMEOUT));
 	if (err)
 		goto error;
 
 	r = COLnew(0, TYPE_oid, ttlcnt, TRANSIENT);
 	if (!r) {
-		err = createException(SQL, "oahash.count_unmatched", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		err = createException(SQL, "oahash.explode_unmatched", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto error;
 	}
 	BATsetcount(r, ttlcnt);
@@ -3253,6 +3329,7 @@ OAHASHhash(Client cntxt, MalBlkPtr m, MalStkPtr stk, InstrPtr p)
 static mel_func oa_hash_init_funcs[] = {
  pattern("oahash", "new", OAHASHnew, false, "", args(1,3, batargany("ht_sink",1),argany("tt",1),arg("size",int))),
  pattern("oahash", "new", OAHASHnew, false, "", args(1,4, batargany("ht_sink",1),argany("tt",1),arg("size",int),batargany("p",2))),
+ command("oahash", "hashmark_init", OAHASHhashmark_init, false, "", args(1,3, batarg("hashmark",bit),batargany("ht_sink",1),batargany("payload",2))),
  pattern("hash", "ext", UHASHext, false, "", args(1,2, batarg("ext",oid),batargany("in",1))),
 
  command("oahash", "build_table", OAHASHbuild_tbl, false, "Add the `key`-s to the hash table. Returns the `slot_id` per `key` and the updated `ht_sink`", args(2,4, batarg("slot_id",oid),batargany("ht_sink",1),batargany("key",1),arg("pipeline",ptr))),
@@ -3291,7 +3368,7 @@ static mel_func oa_hash_init_funcs[] = {
 
  command("oahash", "explode_cartesian", OAHASHexplode_cart, false, "Duplicate the whole 'col' the number of times as the count of 'setrepeat'.  For a left/right-ourter join, if 'col' is empty, output NULLs.", args(1,4, batarg("fetched",oid),batargany("col",1),batarg("setrepeat",2),arg("LRouter",bit))),
 
- command("oahash", "count_unmatched", OAHASHcount_unmatched, false, "Expand the count of 'unmatched' with 'frequency'.  Returns the count in a VOID BAT.", args(1,4, batarg("",oid),batargany("ht_sink",1),batarg("unmatched",oid),batarg("frequency",lng))),
+ command("oahash", "explode_unmatched", OAHASHexplode_unmatched, false, "Expand the count of 'unmatched' with 'frequency'.  Returns the count in a VOID BAT.", args(1,4, batarg("",oid),batargany("ht_sink",1),batarg("unmatched",oid),batarg("frequency",lng))),
 
  command("oahash", "no_slices", OAHASHno_slices, false, "Get the number of slices for this hashtable.", args(1,2, arg("slices",int),batargany("ht_sink",1))),
  command("oahash", "nth_slice", OAHASHnth_slice, false, "Get the nth slice of this hashtable.", args(2,3, batarg("slice",oid),batargany("ht_sink",1),arg("slice_nr",int))),

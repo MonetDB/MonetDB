@@ -475,6 +475,32 @@ stmt_oahash_new(backend *be, sql_subtype *tpe, int estimate, int parent, int nrp
 }
 
 stmt *
+stmt_oahash_hshmrk_init(backend *be, stmt *stmts_ht)
+{
+	InstrPtr q = newStmt(be->mb, putName("oahash"), "hashmark_init");
+	if (q == NULL)
+		return NULL;
+
+	assert(stmts_ht->op2 || stmts_ht->op4.lval->t->data);
+	setVarType(be->mb, getArg(q, 0), newBatType(TYPE_bit));
+	/* hp_gid or the last hash-column */
+	stmt *ht = stmts_ht->op4.lval->t->data;
+	stmt *hp = stmts_ht->op2?stmts_ht->op2:NULL;
+	q = pushArgument(be->mb, q, ht->nr);
+	if (hp)
+		q = pushArgument(be->mb, q, hp->nr);
+	else
+		q = pushNilBat(be->mb, q);
+	pushInstruction(be->mb, q);
+
+	stmt *s = stmt_none(be);
+	s->op4.typeval = *sql_fetch_localtype(TYPE_bit);
+	s->q = q;
+	s->nr = getArg(q, 0);
+	s->nrcols = 1;
+	return s;
+}
+stmt *
 stmt_oahash_build_ht(backend *be, stmt *ht, stmt *key, stmt *prnt, const stmt *pp)
 {
 	InstrPtr q = newStmt(be->mb, putName("oahash"), prnt?putName("build_combined_table"):putName("build_table"));
@@ -658,9 +684,9 @@ stmt_oahash_explode(backend *be, const stmt *prb_res, const stmt *freq, const st
 }
 
 stmt *
-stmt_oahash_count_unmatched(backend *be, const stmt *ht, const stmt *mrk, const stmt *freq)
+stmt_oahash_explode_unmatched(backend *be, const stmt *ht, const stmt *mrk, const stmt *freq)
 {
-    InstrPtr q = newStmt(be->mb, putName("oahash"), putName("count_unmatched"));
+    InstrPtr q = newStmt(be->mb, putName("oahash"), putName("explode_unmatched"));
     if (q == NULL)
         return NULL;
     setVarType(be->mb, getArg(q, 0), newBatType(TYPE_oid)); /* expanded */

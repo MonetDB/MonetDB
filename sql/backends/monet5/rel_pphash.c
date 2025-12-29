@@ -899,8 +899,10 @@ rel2bin_oahash_fullouterjoin(backend *be, sql_rel *rel, list *refs)
 
 	list *shared_ht = stmts_ht->op4.lval;
 	list *shared_hp = stmts_ht->op1?stmts_ht->op1->op4.lval:NULL;
-	/* Mark matched payloads. If no payload column, mark the last hash column */
-	stmt *hp_mrk = stmt_bat_new2(be, sql_fetch_localtype(TYPE_bit), !list_empty(shared_hp)?shared_hp->h->data:shared_ht->t->data);
+	/* hash side mark if a join-match has been found.  NIL: unused; TRUE: matched; FALSE unmatched */
+	/* Mark the payloads, if exist; otherwise the last hash column */
+	//stmt *hp_mrk = stmt_bat_new2(be, sql_fetch_localtype(TYPE_bit), !list_empty(shared_hp)?shared_hp->h->data:shared_ht->t->data);
+	stmt *hp_mrk = stmt_oahash_hshmrk_init(be, stmts_ht);
 	// X_48:int := slicer.no_slices(X_9:bat[:int]);
 	stmt *hp_mrk_slc = stmt_no_slices(be, hp_mrk, false);
 
@@ -1004,7 +1006,7 @@ rel2bin_oahash_fullouterjoin(backend *be, sql_rel *rel, list *refs)
 
 	//output the unmatched rows with NULLs for the LHS columns
 	stmt *slice = stmt_nth_slice(be, hp_mrk, false);
-	stmt *unmatched = stmt_thetaselect(be, slice, NULL, stmt_bool(be, 1), "ne", tpe_oid);
+	stmt *unmatched = stmt_thetaselect(be, slice, NULL, stmt_bool(be, 0), "==", tpe_oid);
 	list *res2 = sa_list(sql->sa);
 	if (!list_empty(shared_hp)) {
 		for (node *n = shared_hp->h; n; n = n->next) {
@@ -1018,7 +1020,7 @@ rel2bin_oahash_fullouterjoin(backend *be, sql_rel *rel, list *refs)
 	} else {
 		/* without payload, we need to expand the count of unmatched freq if exists */
 		if (stmts_ht->op3) {
-			unmatched = stmt_oahash_count_unmatched(be, shared_ht->t->data, unmatched, stmts_ht->op3);
+			unmatched = stmt_oahash_explode_unmatched(be, shared_ht->t->data, unmatched, stmts_ht->op3);
 			if (unmatched == NULL) return NULL;
 		}
 	}

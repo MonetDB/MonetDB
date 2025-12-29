@@ -18,6 +18,7 @@ extern void set_pipeline(backend *be, stmt *pp);
 extern stmt * get_pipeline(backend *be);
 
 extern stmt *stmt_oahash_new(backend *be, sql_subtype *tpe, int estimate, int parent, int nrparts);
+extern stmt *stmt_oahash_hshmrk_init(backend *be, stmt *stmts_ht);
 extern stmt *stmt_oahash_build_ht(backend *be, stmt *ht, stmt *key, stmt *prnt, const stmt *pp);
 extern stmt *stmt_oahash_frequency(backend *be, stmt *freq, stmt *prnt, bool occ_cnt, const stmt *pp);
 
@@ -30,7 +31,7 @@ extern stmt *stmt_oahash_project_cart(backend *be, stmt *col, stmt *repeat, bool
 extern stmt *stmt_oahash_expand(backend *be, const stmt *prb_res, const stmt *freq, bit outer);
 extern stmt *stmt_oahash_explode(backend *be, const stmt *prb_res, const stmt *freq, const stmt *ht_sink, bit outer);
 
-extern stmt *stmt_oahash_count_unmatched(backend *be, const stmt *ht, const stmt *mrk, const stmt *freq);
+extern stmt *stmt_oahash_explode_unmatched(backend *be, const stmt *ht, const stmt *mrk, const stmt *freq);
 
 extern InstrPtr stmt_part_new(backend *be, int nr_parts);
 extern stmt *stmt_mat_new(backend *be, sql_subtype *t, int nr_parts);
