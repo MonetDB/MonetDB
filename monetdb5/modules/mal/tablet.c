@@ -501,7 +501,7 @@ output_vector(allocator*ma, char **buf, size_t *len, ssize_t fill, char **localb
 {
 	int first = 1;
 	(*buf)[fill++] = '\'';
-	(*buf)[fill++] = '{';
+	(*buf)[fill++] = '(';
 	(*buf)[fill] = 0;
 	for (size_t i = 0; fill > 0 && i < nr_attrs; i++) {
 		if (!first)
@@ -511,7 +511,7 @@ output_vector(allocator*ma, char **buf, size_t *len, ssize_t fill, char **localb
 	}
 	if (fill < 0)
 		return fill;
-	(*buf)[fill++] = '}';
+	(*buf)[fill++] = ')';
 	(*buf)[fill++] = '\'';
 	(*buf)[fill] = 0;
 	return fill;
@@ -529,7 +529,7 @@ output_line_complex(allocator *ma, char **buf, size_t *len, ssize_t fill, char *
 
 		if (f->ms_vector) {
 			int nr_attrs = f->nrfields - 1;
-			fill = output_vector(ma, buf, len, fill, localbuf, locallen, fmt + j + 1, nr_attrs-2);
+			fill = output_vector(ma, buf, len, fill, localbuf, locallen, fmt + j + 1, nr_attrs);
 			f = fmt + j + nr_attrs; /* closing bracket */
 			j += nr_attrs + 1;
 		} else if (f->multiset) {

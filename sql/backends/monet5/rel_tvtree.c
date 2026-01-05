@@ -58,12 +58,12 @@ tv_node(allocator *sa, sql_subtype *st, tv_type tvt)
 			}
         	return n;
         case TV_VECTOR:
-			n->rid = sa_list(sa);
-			n->msid = sa_list(sa);
 			n->ctl = sa_list(sa);
-			sn = tv_node(sa, st, TV_BASIC);
-			sn->st = st;
-			append(n->ctl, sn);
+			for (unsigned int i=0; i < st->digits; i++) {
+				sql_subtype *_st = sql_create_subtype(sa, st->type, 0, 0);
+				sn = tv_node(sa, _st, TV_BASIC);
+				append(n->ctl, sn);
+			}
 			return n;
         case TV_MSET:
 			n->msnr = sa_list(sa);
@@ -261,7 +261,6 @@ tv_parse_values_(backend *be, tv_tree *t, sql_exp *value, stmt *left, stmt *sel)
 			break;
 		case TV_MSET:
 		case TV_SETOF:
-		case TV_VECTOR:
 			//assert(is_convert(value->type));
 			assert(value->f);
 			uc = value;
@@ -275,6 +274,7 @@ tv_parse_values_(backend *be, tv_tree *t, sql_exp *value, stmt *left, stmt *sel)
                 return mset_value_from_array_constructor(be, t, uc, left, sel);
             break;
 		case TV_COMP:
+		case TV_VECTOR:
 			if (is_convert(value->type))
 				/* VALUES ('(1,"alice")') */
 				return comp_value_from_literal(be, t, value, left, sel);
@@ -350,24 +350,6 @@ tv_generate_stmts(backend *be, tv_tree *t)
 	switch (t->tvt) {
 		case TV_BASIC:
 			return stmt_append_bulk(be, stmt_temp(be, t->st), t->vals);
-		case TV_VECTOR:
-			/* vals (in the child tree) */
-			assert(list_length(t->ctl) == 1);
-			s = stmt_list(be, sa_list(be->mvc->sa));
-			ct = t->ctl->h->data;
-			for (node *n = ct->vals->h; n; n = n->next) {
-				tmp = stmt_temp(be, tail_type(n->data));
-				ap = stmt_append(be, tmp, n->data);
-				append(s->op4.lval, ap);
-			}
-			/* msid */
-			tmp = stmt_temp(be, tail_type(t->msid->h->data));
-			ap = stmt_append(be, tmp, t->msid->h->data);
-			append(s->op4.lval, ap);
-			/* we've appended in the stmt_list so update nrcols */
-			stmt_set_nrcols(s);
-			s->subtype = *t->st;
-			return s;
 		case TV_MSET:
 		case TV_SETOF:
 			/* vals (in the child tree) */
@@ -406,6 +388,7 @@ tv_generate_stmts(backend *be, tv_tree *t)
 			s->subtype = *t->st;
 			return s;
 		case TV_COMP:
+		case TV_VECTOR:
 			sl = sa_list(be->mvc->sa);
 			/* gather all the composite (sub)field's statements */
 			for (node *n = t->ctl->h; n; n = n->next)

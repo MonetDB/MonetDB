@@ -3955,6 +3955,28 @@ exp_check_composite_type(mvc *sql, sql_subtype *t, sql_rel *rel, sql_exp *exp, c
 }
 
 static sql_exp *
+exp_check_vector_type(mvc *sql, sql_subtype *t, sql_rel *rel, sql_exp *exp, check_type tpe)
+{
+	assert(t->multiset == MS_VECTOR);
+	if (t->multiset != MS_VECTOR || exp_is_rel(exp) || exp_is_null(exp))
+		return exp;
+	list *vals = exp_get_values(exp);
+	if (vals) {
+		for (node *m = vals->h; m; m = m->next) {
+			sql_exp *e = m->data;
+			sql_subtype st = *t;
+			st.multiset = 0;
+			e = exp_check_type(sql, &st, rel, e, tpe);
+			if (!e)
+				return NULL;
+			m->data = e;
+		}
+	}
+	exp->tpe = *t;
+	return exp;
+}
+
+static sql_exp *
 exp_check_multiset_type(mvc *sql, sql_subtype *t, sql_rel *rel, sql_exp *exp, check_type tpe)
 {
 	if (t->multiset && exp_is_null(exp))
@@ -4036,6 +4058,8 @@ exp_check_type(mvc *sql, sql_subtype *t, sql_rel *rel, sql_exp *exp, check_type 
 	if (t->type->composite || t->multiset) {
 		if (fromtype && subtype_cmp(t, fromtype) == 0)
 			return exp;
+		if (t->multiset == MS_VECTOR && (is_row(exp) || is_values(exp)))
+			return exp_check_vector_type(sql, t, rel, exp, tpe);
 		if (t->multiset && !is_row(exp))
 			return exp_check_multiset_type(sql, t, rel, exp, tpe);
 		if (t->type->composite && (is_row(exp) || is_values(exp)))

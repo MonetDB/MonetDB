@@ -149,6 +149,44 @@ rel_base_use_all( mvc *sql, sql_rel *rel)
 	}
 }
 
+
+static node *
+rel_nested_basetable_add_vector_cols(mvc *sql, rel_base_t *ba, sql_column *c, node *cn, list *exps)
+{
+	sql_alias *atname = a_create(sql->sa, c->base.name);
+	atname->parent = ba->name;
+	int i = sql->nid;
+	prop *p = NULL;
+	sql_exp *e = NULL;
+
+	unsigned int ncols = c->type.digits;
+	sql->nid += ncols;
+	for (unsigned int k = 0; k < ncols; k++, i++) {
+		sql_column *c = cn->data;
+		if (!column_privs(sql, c, PRIV_SELECT))
+			continue;
+		e = exp_alias(sql, atname, c->base.name, atname, c->base.name, &c->type, CARD_MULTI, c->null, is_column_unique(c), 1);
+		if (e == NULL)
+			return NULL;
+		e->nid = -(i);
+		e->alias.label = e->nid;
+		if (c->t->pkey && ((sql_kc*)c->t->pkey->k.columns->h->data)->c == c) {
+			p = e->p = prop_create(sql->sa, PROP_HASHCOL, e->p);
+			p->value.pval = c->t->pkey;
+		} else if (c->unique == 2) {
+			p = e->p = prop_create(sql->sa, PROP_HASHCOL, e->p);
+			p->value.pval = NULL;
+		}
+		set_intern(e);
+		set_basecol(e);
+		sql_column_get_statistics(sql, c, e);
+		append(exps, e);
+		cn = cn->next;
+	}
+	return cn;
+
+}
+
 static rel_base_t* rel_nested_basetable_add_cols(mvc *sql, rel_base_t *pba, char *colname, sql_table *t, list *exps);
 
 static node *
@@ -304,7 +342,14 @@ rel_nested_basetable(mvc *sql, sql_table *t, sql_alias *atname)
 		sql_column *c = cn->data;
 		if (!column_privs(sql, c, PRIV_SELECT))
 			continue;
-		if (c->type.multiset) {
+		if (c->type.multiset == MS_VECTOR) {
+			e = exp_alias(sql, atname, c->base.name, atname, c->base.name, &c->type, CARD_MULTI, c->null, is_column_unique(c), 0);
+			if (e)
+				e->f = sa_list(sql->sa);
+			if (!e || !e->f)
+				return NULL;
+			cn = rel_nested_basetable_add_vector_cols(sql, ba, c, cn->next, e->f);
+		} else if (c->type.multiset) {
 			e = exp_alias(sql, atname, c->base.name, atname, c->base.name, &c->type, CARD_MULTI, c->null, is_column_unique(c), 0);
 			prop *p = p = prop_create(sql->sa, PROP_NESTED, e->p);
 			p->value.pval = c;

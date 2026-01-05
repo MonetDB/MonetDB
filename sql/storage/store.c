@@ -4173,8 +4173,21 @@ sql_trans_copy_column( sql_trans *tr, sql_table *t, sql_column *c, sql_column **
 		return res;
 	if (!isNew(t) && isGlobal(t) && !isGlobalTemp(t) && (res = sql_trans_add_dependency(tr, t->base.id, dml)))
 		return res;
-
-	if (c->type.type->composite || c->type.multiset) {
+	/* flatten vector types */
+	if (c->type.multiset == MS_VECTOR) {
+		uint8_t localtype = c->type.type->localtype;
+		// should be flt or dbl
+		assert(localtype==TYPE_flt || localtype==TYPE_dbl);
+		size_t ncols = c->type.digits;
+		sql_subtype tp = *sql_fetch_localtype(localtype);
+		for (size_t i=0; i < ncols; i++) {
+			char buf[32];
+			snprintf(buf, 32, "%s.%zu", col->base.name, i);
+			sql_column *ic = NULL;
+			if (sql_trans_create_column_intern( &ic, tr, t, buf, &tp, column_intern) < 0)
+				return -2;
+		}
+	} else if (c->type.type->composite || c->type.multiset) {
 		needs_data = false;
 		sql_table *tt = t;
 		if (c->type.multiset) {
@@ -4194,20 +4207,6 @@ sql_trans_copy_column( sql_trans *tr, sql_table *t, sql_column *c, sql_column **
 				if (sql_trans_create_column_intern( &ic, tr, tt, f->name, &f->type, column_intern) < 0)
 					return -2;
 			}
-		} else if (c->type.multiset == MS_VECTOR) {
-			uint8_t localtype = c->type.type->localtype;
-			// should be flt or dbl
-			assert(localtype==TYPE_flt || localtype==TYPE_dbl);
-			size_t ncols = c->type.digits;
-			sql_subtype tp = *sql_fetch_localtype(localtype);
-			for (size_t idx=0; idx < ncols; idx++) {
-				char buf[32];
-				snprintf(buf, 32, "vec_idx_%zu", idx);
-				sql_column *ic = NULL;
-				if (sql_trans_create_column_intern( &ic, tr, tt, buf, &tp, column_intern) < 0)
-					return -2;
-			}
-
 		} else {
 			sql_column *ic = NULL;
 			sql_subtype lt = c->type;

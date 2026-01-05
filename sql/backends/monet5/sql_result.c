@@ -1726,8 +1726,9 @@ next_col(res_col *c)
 			res = 3;
 			break;
 		case MS_VECTOR:
-			res = c->type.digits + 1; // all the dimensions + ms_id
-			break;
+			res = c->type.digits + 1; // all dimensions
+			c->nrfields = res;
+			return res;
 		default:
 			res = 2; // MS_SETOF?
 	}

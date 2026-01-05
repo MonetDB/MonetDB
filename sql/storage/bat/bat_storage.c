@@ -2928,7 +2928,7 @@ col_stats(sql_trans *tr, sql_column *c, bool *nonil, bool *unique, double *uniqu
 	*nonil = false;
 	*unique = false;
 	*unique_est = 0.0;
-	if (!c || !isTable(c->t) || !c->t->s || c->type.type->composite)
+	if (!c || !isTable(c->t) || !c->t->s || c->type.type->composite || c->type.multiset == MS_VECTOR)
 		return ok;
 
 	if ((d = ATOMIC_PTR_GET(&c->data))) {
@@ -4088,7 +4088,7 @@ log_table_append(sql_trans *tr, sql_table *t, segments *segs)
 		sql_column *c = n->data;
 		column_storage *cs = ATOMIC_PTR_GET(&c->data);
 
-		if (c->type.type->composite && !c->type.multiset)
+		if (c->type.type->composite || c->type.multiset == MS_VECTOR)
 			continue;
 		if (cs->cleared) {
 			ok = (tr_log_cs(tr, t, cs, NULL, c->base.id) == LOG_OK)? GDK_SUCCEED : GDK_FAIL;

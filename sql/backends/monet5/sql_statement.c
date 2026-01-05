@@ -4280,7 +4280,7 @@ composite_type_resultsize(sql_subtype *t)
 
 	if (t->multiset) {
 		if (t->multiset == MS_VECTOR) {
-			return 1 + t->digits;
+			return t->digits;
 		} else {
 			nr += 2 + (t->multiset == MS_ARRAY);
 		}
@@ -4326,7 +4326,7 @@ composite_type_result(backend *be, InstrPtr q, sql_subtype *t, result_subtype *t
 			tps[i].st = *t;
 			tps[i++].multiset = false;
 		}
-		if (t->multiset) { /* msid */
+		if (t->multiset && (t->multiset != MS_VECTOR)) { /* msid */
 			q = pushReturn(be->mb, q, newTmpVariable(be->mb, newBatType(TYPE_int)));
 			tps[i].st = *sql_fetch_localtype(TYPE_int);
 			tps[i++].multiset = true;

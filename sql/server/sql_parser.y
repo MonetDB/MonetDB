@@ -6560,6 +6560,7 @@ $2->h->data.i_val >= 0) $$.digits = $2->h->data.i_val;*/ }
 	|	simple_data_type VECTOR '[' posint ']'      { $$ = $1; $$.multiset = MS_VECTOR; $$.digits= $4; }
 	|	SETOF simple_data_type ARRAY '[' posint ']' { $$ = $2; $$.multiset = MS_SETOF; }
 	|	simple_data_type ARRAY                      { $$ = $1; $$.multiset = MS_ARRAY; }
+	|	simple_data_type VECTOR                     { $$ = $1; $$.multiset = MS_VECTOR; }
 	|	SETOF simple_data_type ARRAY                { $$ = $2; $$.multiset = MS_SETOF; }
 	;
 

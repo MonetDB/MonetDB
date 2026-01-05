@@ -2676,7 +2676,7 @@ rel2bin_subtable(backend *be, sql_table *t, stmt *dels, sql_column *c, node *cn,
 	list *l = sa_list(sql->sa);
 	stmt *col = NULL;
 
-	if (c->type.multiset) {
+	if (c->type.multiset && (c->type.multiset != MS_VECTOR)) {
 		t = mvc_bind_table(sql, c->t->s, c->storage_type);
 		if (!t)
 			return NULL;
@@ -2715,7 +2715,9 @@ rel2bin_subtable(backend *be, sql_table *t, stmt *dels, sql_column *c, node *cn,
 				if (!s)
 					return s;
 				s->nested = true;
-				if (s && s->type == st_list && c->type.multiset) { /* keep rowid at the end */
+				if (s && s->type == st_list
+					   	&& c->type.multiset
+					   	&& (c->type.multiset != MS_VECTOR)) { /* keep rowid at the end */
 					stmt *ls = s->op4.lval->t->data;
 					stmt *ns = stmt_col(be, c, dels, dels->partition);
 					ns->subtype = ls->subtype; // TODO find correct type of rowid/msid (don't use msnr type
@@ -2723,7 +2725,8 @@ rel2bin_subtable(backend *be, sql_table *t, stmt *dels, sql_column *c, node *cn,
 					s->nr = ns->nr;
 					s->subtype = *exp_subtype(exp);
 					s->multiset = s->subtype.multiset;
-				} else if (s && s->type == st_list && c->type.type->composite) {
+				} else if (s && s->type == st_list
+					   	&& (c->type.type->composite || c->type.multiset != MS_VECTOR)) {
 					s->subtype = *exp_subtype(exp);
 				}
 			} else {
@@ -2809,7 +2812,9 @@ rel2bin_basetable(backend *be, sql_rel *rel)
 				if (!s)
 					return s;
 				s->nested = true;
-				if (s && s->type == st_list && c->type.multiset) { /* keep rowid at the end */
+				if (s && s->type == st_list
+					   	&& c->type.multiset
+					   	&& c->type.multiset != MS_VECTOR) { /* keep rowid at the end */
 					stmt *ls = s->op4.lval->t->data;
 					stmt *ns = (c == fcol) ? col : stmt_col(be, c, complex?dels:NULL, dels->partition);
 					ns->subtype = ls->subtype; // TODO find correct type of rowid/msid (don't use msnr type
@@ -2817,7 +2822,8 @@ rel2bin_basetable(backend *be, sql_rel *rel)
 					s->nr = ns->nr;
 					s->subtype = *exp_subtype(exp);
 					s->multiset = s->subtype.multiset;
-				} else if (s && s->type == st_list && c->type.type->composite) {
+				} else if (s && s->type == st_list
+					   	&& (c->type.type->composite || c->type.multiset == MS_VECTOR)) {
 					s->subtype = *exp_subtype(exp);
 				}
 			} else {
@@ -6128,6 +6134,23 @@ insert_composite(backend *be, stmt **updates, sql_table *st, sql_column *c, node
 	return n;
 }
 
+static inline node *
+insert_vector(stmt **updates, node *n, node *m)
+{
+	stmt *input_tuple = m->data;
+
+	while(input_tuple->type == st_alias)
+		input_tuple = input_tuple->op1;
+	assert(input_tuple->type == st_list);
+	if (input_tuple->type != st_list)
+		return NULL;
+	for(m = input_tuple->op4.lval->h; n && m; n = n->next, m = m->next) {
+		sql_column *c = n->data;
+		updates[c->colnr] = m->data;
+	}
+	return n;
+}
+
 static stmt *
 insert_ms(backend *be, sql_table *st, sql_subtype *ct, stmt *ms)
 {
@@ -6256,7 +6279,10 @@ rel2bin_insert_ms(backend *be, sql_rel *rel, list *refs)
 	for (n = ol_first_node(t->columns), m = inserts->op4.lval->h; n && m; ) {
 		sql_column *c = n->data;
 
-		if (c->type.multiset) {
+		if (c->type.multiset == MS_VECTOR) {
+			n = insert_vector(updates, n->next, m);
+			m = m->next;
+		} else if (c->type.multiset) {
 			sql_table *st = mvc_bind_table(sql, t->s, c->storage_type);
 			if (!st)
 				return sql_error(sql, 10, SQLSTATE(27000) "INSERT INTO: sub table '%s' missing", c->storage_type);

@@ -296,11 +296,12 @@ skip_nested_columns(mvc *sql, sql_column *ct, node *n)
 {
 	if (ct->type.multiset)
 		return n;
-	if (ct->type.multiset) { /* skip  id and optional number columns */
-		n = n->next;
-		if (ct->type.multiset == MS_ARRAY)
-			n = n->next;
-	}
+	// seems not reachable
+	//if (ct->type.multiset) { /* skip  id and optional number columns */
+	//	n = n->next;
+	//	if (ct->type.multiset == MS_ARRAY)
+	//		n = n->next;
+	//}
 	/* skip fields */
 	for(node *fn = ct->type.type->d.fields->h; fn; fn = fn->next) {
 		sql_arg *f = fn->data;
@@ -346,6 +347,16 @@ check_table_columns(mvc *sql, sql_table *t, dlist *columns, const char *op, char
 						list_append(reslist, m->data);
 				}
 				n = skip_nested_columns(sql, c, n->next);
+			} else if (c->type.multiset == MS_VECTOR) {
+				if (!reslist) {
+					reslist = sa_list(sql->sa);
+					for(node *m = collist->h; m != n; m = m->next)
+						list_append(reslist, m->data);
+				}
+				n = n->next;
+				// skip all dimensions
+				for(unsigned int i=0; i < c->type.digits; i++)
+					n = n->next;
 			} else {
 				n = n->next;
 			}
