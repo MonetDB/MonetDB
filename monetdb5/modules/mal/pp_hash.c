@@ -295,6 +295,7 @@ ht_rehash(hash_table *ht)
 				REHASH(sht);
 				break;
 			case TYPE_int:
+			case TYPE_inet4:
 				REHASH(int);
 				break;
 			case TYPE_date:
@@ -342,6 +343,7 @@ ht_rehash(hash_table *ht)
 				CREHASH(sht);
 				break;
 			case TYPE_int:
+			case TYPE_inet4:
 				CREHASH(int);
 				break;
 			case TYPE_date:
@@ -889,6 +891,7 @@ OAHASHbuild_tbl(Client ctx, bat *slot_id, bat *ht_sink, const bat *key, const pt
 				BATgroup(sht);
 				break;
 			case TYPE_int:
+			case TYPE_inet4:
 				BATgroup(int);
 				break;
 			case TYPE_date:
@@ -1290,6 +1293,7 @@ OAHASHbuild_tbl_cmbd(Client ctx, bat *slot_id, bat *ht_sink, const bat *key, con
 				derive(sht);
 				break;
 			case TYPE_int:
+			case TYPE_inet4:
 				derive(int);
 				break;
 			case TYPE_date:
@@ -1506,7 +1510,7 @@ error:
 		} \
 	} while (0)
 
-#define BATprobe(Type) \
+#define _BATprobe(Type, ne) \
 	do { \
 		Type *ky = Tloc(k, 0); \
 		Type *vals = ht->vals; \
@@ -1522,7 +1526,7 @@ error:
 			} \
 			gid k = (gid)_hash_##Type(ky[i])&ht->mask; \
 			gid slot = ht->gids[k]; \
-			while (slot && (!(is_##Type##_nil(ky[i]) && is_##Type##_nil(vals[slot])) && vals[slot] != ky[i])) { \
+			while (slot && (!(is_##Type##_nil(ky[i]) && is_##Type##_nil(vals[slot])) && (ne))) { \
 				k++; \
 				k &= ht->mask; \
 				slot = ht->gids[k]; \
@@ -1538,6 +1542,12 @@ error:
 			} \
 		} \
 	} while (0)
+
+#define BATprobe(Type) \
+	_BATprobe(Type, vals[slot] != ky[i])
+
+#define BATcprobe(Type) \
+	_BATprobe(Type, memcmp(vals+slot, ky+i, sizeof(Type))!=0)
 
 #define BATfprobe(Type, BaseType) \
 	do { \
@@ -1681,6 +1691,9 @@ OAHASHprobe1(Client ctx, bat *PRB_oid, bat *HSH_slotid, const bat *PRB_key, cons
 			case TYPE_date:
 				BATprobe(date);
 				break;
+			case TYPE_inet4:
+				BATcprobe(inet4);
+				break;
 			case TYPE_lng:
 				BATprobe(lng);
 				break;
@@ -1818,7 +1831,7 @@ OAHASHnprobe(Client ctx, bat *PRB_oid, bat *HSH_slotid, const bat *PRB_key, cons
 		} \
 	} while (0)
 
-#define BAToprobe(Type) \
+#define _BAToprobe(Type, ne) \
 	do { \
 		Type *ky = Tloc(k, 0); \
 		Type *vals = ht->vals; \
@@ -1844,7 +1857,7 @@ OAHASHnprobe(Client ctx, bat *PRB_oid, bat *HSH_slotid, const bat *PRB_key, cons
 			} \
 			gid k = (gid)_hash_##Type(ky[i])&ht->mask; \
 			gid slot = ht->gids[k]; \
-			while (slot && (!(is_##Type##_nil(ky[i]) && is_##Type##_nil(vals[slot])) && vals[slot] != ky[i])) { \
+			while (slot && (!(is_##Type##_nil(ky[i]) && is_##Type##_nil(vals[slot])) && (ne))) { \
 				k++; \
 				k &= ht->mask; \
 				slot = ht->gids[k]; \
@@ -1864,6 +1877,12 @@ OAHASHnprobe(Client ctx, bat *PRB_oid, bat *HSH_slotid, const bat *PRB_key, cons
 			mtdcnt++; \
 		} \
 	} while (0)
+
+#define BAToprobe(Type) \
+	_BAToprobe(Type, vals[slot] != ky[i])
+
+#define BATcoprobe(Type) \
+	_BAToprobe(Type, memcmp(vals+slot, ky+i, sizeof(Type))!=0)
 
 #define BATfoprobe(Type, BaseType) \
 	do { \
@@ -2037,6 +2056,9 @@ OAHASHomprobe(Client ctx, bat *PRB_oid, bat *HSH_slotid, bat *PRB_mark, const ba
 			case TYPE_date:
 				BAToprobe(date);
 				break;
+			case TYPE_inet4:
+				BATcoprobe(inet4);
+				break;
 			case TYPE_lng:
 				BAToprobe(lng);
 				break;
@@ -2159,7 +2181,7 @@ OAHASHmprobe(Client ctx, bat *PRB_oid, bat *HSH_slotid, bat *PRB_mark, const bat
 		} \
 	} while (0)
 
-#define BATprobe_cmbd(Type) \
+#define _BATprobe_cmbd(Type, ne) \
 	do { \
 		Type *ky = Tloc(k, 0); \
 		Type *vals = ht->vals; \
@@ -2171,7 +2193,7 @@ OAHASHmprobe(Client ctx, bat *PRB_oid, bat *HSH_slotid, bat *PRB_mark, const bat
 			\
 			gid hsh = (gid)combine(gi[i], _hash_##Type(val), prime)&ht->mask; \
 			gid slot = ATOMIC_GET(ht->gids+hsh); \
-			while (slot && (pgids[slot] != gi[i] || (is_##Type##_nil(vals[slot]) != is_##Type##_nil(val)) || vals[slot] != val)) { \
+			while (slot && (pgids[slot] != gi[i] || (is_##Type##_nil(vals[slot]) != is_##Type##_nil(val)) || (ne))) { \
 				hsh++; \
 				hsh &= ht->mask; \
 				slot = ATOMIC_GET(ht->gids+hsh); \
@@ -2187,6 +2209,12 @@ OAHASHmprobe(Client ctx, bat *PRB_oid, bat *HSH_slotid, bat *PRB_mark, const bat
 			} \
 		} \
 	} while (0)
+
+#define BATprobe_cmbd(Type) \
+	_BATprobe_cmbd(Type, vals[slot] != val)
+
+#define BATcprobe_cmbd(Type) \
+	_BATprobe_cmbd(Type, memcmp(vals+slot, &val, sizeof(Type))!=0)
 
 #define BATfprobe_cmbd(Type, BaseType) \
 	do { \
@@ -2326,6 +2354,9 @@ OAHASHprobe_cmbd_single(Client ctx, bat *PRB_oid, bat *HSH_slotid, const bat *PR
 			case TYPE_date:
 				BATprobe_cmbd(date);
 				break;
+			case TYPE_inet4:
+				BATcprobe_cmbd(inet4);
+				break;
 			case TYPE_lng:
 				BATprobe_cmbd(lng);
 				break;
@@ -2454,7 +2485,7 @@ OAHASHprobe_cmbd(Client ctx, bat *PRB_oid, bat *HSH_slotid, const bat *PRB_key, 
 		} \
 	} while (0)
 
-#define BAToprobe_cmbd(Type) \
+#define _BAToprobe_cmbd(Type, ne) \
 	do { \
 		Type *ky = Tloc(k, 0); \
 		Type *vals = ht->vals; \
@@ -2470,7 +2501,7 @@ OAHASHprobe_cmbd(Client ctx, bat *PRB_oid, bat *HSH_slotid, const bat *PRB_key, 
 			} \
 			gid hsh = (gid)combine(gi[i], _hash_##Type(val), prime)&ht->mask; \
 			gid slot = ATOMIC_GET(ht->gids+hsh); \
-			while (slot && (pgids[slot] != gi[i] || (is_##Type##_nil(vals[slot]) != is_##Type##_nil(val)) || vals[slot] != val)) { \
+			while (slot && (pgids[slot] != gi[i] || (is_##Type##_nil(vals[slot]) != is_##Type##_nil(val)) || (ne))) { \
 				hsh++; \
 				hsh &= ht->mask; \
 				slot = ATOMIC_GET(ht->gids+hsh); \
@@ -2504,6 +2535,12 @@ OAHASHprobe_cmbd(Client ctx, bat *PRB_oid, bat *HSH_slotid, const bat *PRB_key, 
 			} \
 		} \
 	} while (0)
+
+#define BAToprobe_cmbd(Type) \
+	_BAToprobe_cmbd(Type, vals[slot] != val)
+
+#define BATcoprobe_cmbd(Type) \
+	_BAToprobe_cmbd(Type, memcmp(vals+slot, &val, sizeof(Type))!=0);
 
 #define BATfoprobe_cmbd(Type, BaseType) \
 	do { \
@@ -2687,6 +2724,9 @@ OAHASHomprobe_cmbd(Client ctx, bat *PRB_oid, bat *HSH_slotid, bat *PRB_mark, con
 				break;
 			case TYPE_date:
 				BAToprobe_cmbd(date);
+				break;
+			case TYPE_inet4:
+				BATcoprobe_cmbd(inet4);
 				break;
 			case TYPE_lng:
 				BAToprobe_cmbd(lng);
@@ -3291,6 +3331,7 @@ OAHASHhash(Client cntxt, MalBlkPtr m, MalStkPtr stk, InstrPtr p)
 		hashloop(sht);
 	case TYPE_int:
 	case TYPE_date:
+	case TYPE_inet4:
 		hashloop(int);
 	case TYPE_oid:
 	case TYPE_lng:

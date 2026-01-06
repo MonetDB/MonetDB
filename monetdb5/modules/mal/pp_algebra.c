@@ -22,7 +22,11 @@
 #define uuid_min(a,b) ((cmp((void*)&a,(void*)&b)<0)?a:b)
 #define uuid_max(a,b) ((cmp((void*)&a,(void*)&b)>0)?a:b)
 
+#define inet4_min(a,b) ((cmp((void*)&a,(void*)&b)<0)?a:b)
+#define inet4_max(a,b) ((cmp((void*)&a,(void*)&b)>0)?a:b)
+
 #define getArgReference_date(stk, pci, nr)      (date*)getArgReference(stk, pci, nr)
+#define getArgReference_inet4(stk, pci, nr)      (inet4*)getArgReference(stk, pci, nr)
 #define getArgReference_daytime(stk, pci, nr)   (daytime*)getArgReference(stk, pci, nr)
 #define getArgReference_timestamp(stk, pci, nr) (timestamp*)getArgReference(stk, pci, nr)
 
@@ -695,7 +699,8 @@ LOCKEDAGGRmin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #endif
 		type != TYPE_lng && type != TYPE_int && type != TYPE_sht && type != TYPE_bte && type != TYPE_bit &&
 		type != TYPE_flt && type != TYPE_dbl && type != TYPE_oid &&
-		type != TYPE_date && type != TYPE_daytime && type != TYPE_timestamp && type != TYPE_uuid && type != TYPE_str)
+		type != TYPE_date && type != TYPE_daytime && type != TYPE_timestamp && type != TYPE_uuid && type != TYPE_str &&
+		type != TYPE_inet4)
 			return createException(SQL, "lockedaggr.min", "Wrong input type (%d)", type);
 
 	pipeline_lock(p);
@@ -705,6 +710,7 @@ LOCKEDAGGRmin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			err = createException(MAL, "lockedaggr.min", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		if (!err) {
 			aggr(date,min);
+			faggr(inet4,inet4_min);
 			aggr(daytime,min);
 			aggr(timestamp,min);
 			faggr(uuid,uuid_min);
@@ -755,7 +761,8 @@ LOCKEDAGGRmax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #endif
 		type != TYPE_lng && type != TYPE_int && type != TYPE_sht && type != TYPE_bte && type != TYPE_bit &&
 		type != TYPE_flt && type != TYPE_dbl && type != TYPE_oid &&
-		type != TYPE_date && type != TYPE_daytime && type != TYPE_timestamp && type != TYPE_uuid && type != TYPE_str)
+		type != TYPE_date && type != TYPE_daytime && type != TYPE_timestamp && type != TYPE_uuid && type != TYPE_str &&
+		type != TYPE_inet4)
 			return createException(SQL, "lockedaggr.max", "Wrong input type (%d)", type);
 
 	pipeline_lock(p);
@@ -765,6 +772,7 @@ LOCKEDAGGRmax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			err = createException(MAL, "lockedaggr.max", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		if (!err) {
 			aggr(date,max);
+			faggr(inet4,inet4_max);
 			aggr(daytime,max);
 			aggr(timestamp,max);
 			faggr(uuid,uuid_max);
@@ -1054,6 +1062,7 @@ LALGunique(Client ctx, bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid)
 			unique(sht)
 			unique(int)
 			unique(date)
+			cunique(inet4, int)
 			unique(lng)
 			unique(daytime)
 			unique(timestamp)
@@ -1308,6 +1317,7 @@ LALGgroup_unique(Client ctx, bat *rid, bat *uid, const ptr *H, bat *bid, bat *si
 			gunique(sht)
 			gunique(int)
 			gunique(date)
+			gcunique(inet4, int)
 			gunique(lng)
 			gunique(daytime)
 			gunique(timestamp)
@@ -2429,10 +2439,12 @@ LALGproject(Client ctx, bat *rid, bat *gid, bat *bid, const ptr *H)
 			project(bte)
 			project(sht)
 			project(int)
+			project(inet4)
 			project(lng)
 #ifdef HAVE_HGE
 			project(hge)
 #endif
+			project(inet6)
 			project(flt)
 			project(dbl)
 			if (local_storage) {
@@ -2676,6 +2688,7 @@ LALGcount(Client ctx, bat *rid, bat *gid, bat *bid, bit *nonil, const ptr *H, ba
 		gcount(sht);
 		gcount(int);
 		gcount(date);
+		gfcount(inet4);
 		gcount(lng);
 		gcount(daytime);
 		gcount(timestamp);
@@ -3943,6 +3956,7 @@ LALGmin(Client ctx, bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 	gfunc(sht,min);
 	gfunc(int,min);
 	gfunc(date,min);
+	gfunc2(inet4,inet4_min);
 	gfunc(lng,min);
 	gfunc(daytime,min);
 	gfunc(timestamp,min);
@@ -4099,6 +4113,7 @@ LALGmax(Client ctx, bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 	gfunc(sht,max);
 	gfunc(int,max);
 	gfunc(date,max);
+	gfunc2(inet4,inet4_max);
 	gfunc(lng,max);
 	gfunc(daytime,max);
 	gfunc(timestamp,max);
