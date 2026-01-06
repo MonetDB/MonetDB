@@ -980,7 +980,8 @@ rel2bin_oahash_fullouterjoin(backend *be, sql_rel *rel, list *refs)
 		atom *a_null = atom_general(sql->sa, tpe_oid, NULL, 0);
 		stmt *stmt_null = stmt_atom(be, a_null); /* we just need the count of unmatched */
 		/*  X_nn:bat[:oid] := algebra.thetaselect(<m>, nil:bat[:any], true:bit, "=":str);*/
-		hsh_mrk = stmt_thetaselect(be, hsh_mrk, NULL, stmt_null, "ne", tpe_oid);
+		stmt *sel = stmt_thetaselect(be, hsh_mrk, NULL, stmt_null, "ne", tpe_oid);
+		hsh_mrk = stmt_project(be, sel, hsh_mrk);
 		if (!hsh_mrk) return NULL;
 	}
 	hp_mrk = stmt_algebra_project(be, hp_mrk, hsh_mrk, stmt_bool(be,1), projectRef, get_pipeline(be));
