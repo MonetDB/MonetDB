@@ -872,9 +872,6 @@ rel2bin_oahash_fullouterjoin(backend *be, sql_rel *rel, list *refs)
 	mvc *sql = be->mvc;
 	sql_subtype *tpe_oid = sql_fetch_localtype(TYPE_oid);
 	bool hf = false;
-	//int neededpp = get_need_pipeline(be) && rel->spb && rel->parallel;
-	//stmt *pp = get_pipeline(be);
-	//assert(neededpp || pp); // FIXME: don't know what to do otherwise
 
 	sql_rel *rel_hsh = NULL, *rel_prb = NULL;
 	if (rel->oahash == 1) {
