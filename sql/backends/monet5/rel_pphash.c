@@ -873,6 +873,9 @@ rel2bin_oahash_fullouterjoin(backend *be, sql_rel *rel, list *refs)
 	sql_subtype *tpe_oid = sql_fetch_localtype(TYPE_oid);
 	bool hf = false;
 
+	int neededpp = (rel->spb || rel->partition) && get_need_pipeline(be);
+	(void)neededpp;
+
 	sql_rel *rel_hsh = NULL, *rel_prb = NULL;
 	if (rel->oahash == 1) {
 		rel_hsh = rel->l;
@@ -898,7 +901,6 @@ rel2bin_oahash_fullouterjoin(backend *be, sql_rel *rel, list *refs)
 	list *shared_hp = stmts_ht->op1?stmts_ht->op1->op4.lval:NULL;
 	/* hash side mark if a join-match has been found.  NIL: unused; TRUE: matched; FALSE unmatched */
 	/* Mark the payloads, if exist; otherwise the last hash column */
-	//stmt *hp_mrk = stmt_bat_new2(be, sql_fetch_localtype(TYPE_bit), !list_empty(shared_hp)?shared_hp->h->data:shared_ht->t->data);
 	stmt *hp_mrk = stmt_oahash_hshmrk_init(be, stmts_ht);
 	// X_48:int := slicer.no_slices(X_9:bat[:int]);
 	stmt *hp_mrk_slc = stmt_no_slices(be, hp_mrk, false);
