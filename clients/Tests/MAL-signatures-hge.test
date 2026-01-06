@@ -49474,11 +49474,6 @@ command oahash.combined_probe(X_0:bat[:any_1], X_1:bat[:oid], X_2:bat[:oid], X_3
 OAHASHprobe_cmbd_single
 Probe the selected `key`-s in the hash table. For a matched item, return its OID in the 'key' column and the slot ID in the hash table
 oahash
-count_unmatched
-command oahash.count_unmatched(X_0:bat[:any_1], X_1:bat[:oid], X_2:bat[:lng]):bat[:oid]
-OAHASHcount_unmatched
-Expand the count of 'unmatched' with 'frequency'.  Returns the count in a VOID BAT.
-oahash
 expand
 command oahash.expand(X_0:bat[:oid], X_1:bat[:oid], X_2:bat[:lng], X_3:bit):bat[:oid]
 OAHASHexpand
@@ -49499,6 +49494,11 @@ command oahash.explode_cartesian(X_0:bat[:any_1], X_1:bat[:2], X_2:bit):bat[:oid
 OAHASHexplode_cart
 Duplicate the whole 'col' the number of times as the count of 'setrepeat'.  For a left/right-ourter join, if 'col' is empty, output NULLs.
 oahash
+explode_unmatched
+command oahash.explode_unmatched(X_0:bat[:any_1], X_1:bat[:oid], X_2:bat[:lng]):bat[:oid]
+OAHASHexplode_unmatched
+Expand the count of 'unmatched' with 'frequency'.  Returns the count in a VOID BAT.
+oahash
 frequency
 pattern oahash.frequency(X_0:bat[:oid], X_1:ptr) (X_2:bat[:oid], X_3:bat[:lng])
 OAHASHadd_freq
@@ -49513,6 +49513,11 @@ hash
 pattern oahash.hash(X_0:any_1):lng
 OAHASHhash
 Compute hash.
+oahash
+hashmark_init
+command oahash.hashmark_init(X_0:bat[:any_1], X_1:bat[:any_2]):bat[:bit]
+OAHASHhashmark_init
+(empty)
 oahash
 mprobe
 command oahash.mprobe(X_0:bat[:any_1], X_1:bat[:any_1], X_2:bit, X_3:bit, X_4:ptr) (X_5:bat[:oid], X_6:bat[:oid], X_7:bat[:bit])
@@ -50006,6 +50011,11 @@ Add source to concat
 pipeline
 counter
 unsafe pattern pipeline.counter(X_0:int):bat[:bte]
+PPcounter
+return counter source
+pipeline
+counter
+unsafe pattern pipeline.counter(X_0:int, X_1:bool):bat[:bte]
 PPcounter
 return counter source
 pipeline
