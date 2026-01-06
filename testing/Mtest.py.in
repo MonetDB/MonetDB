@@ -32,7 +32,7 @@ import concurrent.futures
 MonetDB_VERSION = '@MONETDB_VERSION@'.split('.')
 
 procdebug = False
-verbosity = 0
+verbose = False
 approve = False
 replace = False
 stop_crash = False
@@ -63,6 +63,9 @@ geos_version = '@GEOS_VERSION@'.split('.')
 fbre = re.compile(r' (?P<bats>\d+) free bats')
 ubre = re.compile(r' (?P<bats>\d+) in use')
 tbre = re.compile(r'^(?P<bats>\d+) bats total')
+
+# collect errors if not verbose
+errors = []
 
 
 # default is no color (these three functions may get redefined)
@@ -963,10 +966,7 @@ def AddSubToHtmlIndex(env, TSTDIR, diff):
 
 
 def SkipTest(env, TST, EXT, REASON, length, TSTDIR, TSTTRGDIR, TSTSRCDIR):
-    TEXT = 'Skipping test %s%s %s' % (TST, EXT, REASON)
-    if verbosity > 1:
-        Warn(TEXT)
-    elif verbosity == 1:
+    if verbose:
         if REASON.startswith('as '):
             REASON = REASON[3:]
         if REASON.endswith('.'):
@@ -981,30 +981,30 @@ def SkipTest(env, TST, EXT, REASON, length, TSTDIR, TSTTRGDIR, TSTSRCDIR):
                 s = '%s...%s' % (TST[:l//2 - 2], TST[-(l//2 - 1):])
         else:
             s = '%-*s' % (length, TST)
-        print('%s%s skipped (%s)' % (prompt(), s, REASON))
+        print(f'{prompt()}{s} skipped ({REASON})')
 
     if testweb or not produce_html:
         return None
 
-    with openutf8(os.path.join(TSTTRGDIR, '.%s.SKIPPED.html' % TST), 'w') as f:
+    with openutf8(os.path.join(TSTTRGDIR, f'.{TST}.SKIPPED.html'), 'w') as f:
         Element('html', {},
                 Element('body', {},
                         Element('p', {},
-                                Text('%s Warning: %s' % (THISFILE, TEXT))))).write(f, newline=True)
-    target = '%s_%s_body' % (DISTVER, TSTDIR)
+                                Text(f'Skipping test {TST}{EXT} {REASON}')))).write(f, newline=True)
+    target = f'{DISTVER}_{TSTDIR}_body'
     td = Element('td', {'class': 'header'},
-                 Element('a', {'href': '.%s.src.index.html' % TST,
+                 Element('a', {'href': f'.{TST}.src.index.html',
                                'target': target,
                                'class': 'black'},
                          Text(TST)),
                  Element('br'),
-                 Element('a', {'href': '.%s.SKIPPED.html' % TST,
+                 Element('a', {'href': f'.{TST}.SKIPPED.html',
                                'target': target},
                          Text('(skipped)')))
     if f'_{TSTDIR}_BODY_' not in env  or  \
        not env[f'_{TSTDIR}_BODY_'][0]  or  \
        not env[f'_{TSTDIR}_BODY_'][1]:
-        env[f'_{TSTDIR}_BODY_'] = ['.%s.SKIPPED.html' % TST, F_SKIP]
+        env[f'_{TSTDIR}_BODY_'] = [f'.{TST}.SKIPPED.html', F_SKIP]
     CreateSrcIndex(env, TST, EXT, TSTDIR, TSTTRGDIR, TSTSRCDIR)
     return td
 
@@ -1182,7 +1182,7 @@ def PerformDir(env, testdir, testlist, total_tests):
         body_good = []
         body_bad = []
         oktests = []
-        if verbosity == 1:
+        if verbose:
             print('\nRunning in %s' % TSTDIR)
         alllinks = []
         pSrvr = None
@@ -1259,7 +1259,7 @@ def PerformDir(env, testdir, testlist, total_tests):
                     environ['MAPIPORT'] = pSrvr.port
                     if pSrvr.usock is not None:
                         environ['MAPIUSOCK'] = pSrvr.usock
-                    SetExecEnv(env['exe'], pSrvr.port, verbosity > 1, environ)
+                    SetExecEnv(env['exe'], pSrvr.port, environ)
                 if global_timeout and start_time + global_timeout < time.time():
                     if not testweb:
                         print('\nGlobal testing timeout reached\n')
@@ -1369,10 +1369,11 @@ def PerformDir(env, testdir, testlist, total_tests):
             CreateHtmlIndex(env, TSTDIR, TSTTRGDIR, ssout, sserr, *body)
             elem = AddSubToHtmlIndex(env, TSTDIR, max(FdOut, FdErr, ssout, sserr))
         if ssout == F_ERROR or sserr == F_ERROR:
-            if verbosity == 0:
-                print('\r', ' '*(ttywidth or 100), '\r', end='', sep='')
-            prred('ERROR')
-            print(f' in directory {TSTDIR}')
+            if not verbose:
+                errors.append(('ERROR', f'in directory {TSTDIR}'))
+            else:
+                prred('ERROR')
+                print(f' in directory {TSTDIR}')
 
         # remove extra files created by tests
         for f in listdir(TSTTRGDIR):
@@ -1836,12 +1837,7 @@ def RunTest(env, TST, COND, oktests, length, pSrvr, total_tests, options, enviro
                 reason = "test missing: '"+os.path.join(TSTSRCDIR,TST)+".(exe|com|bat|cmd|py|sql)`"
             else:
                 reason = "test missing: '"+os.path.join(TSTSRCDIR,TST)+"[.py|.sql|.rb]`"
-            if verbosity > 1:
-                print('%s%s  ' %
-                      (prompt(), os.path.join(TSTDIR, TST + EXT)), end='')
-                prred('TEST MISSING')
-                print()
-            elif verbosity == 1:
+            if verbose:
                 if ttywidth > 0 and length + 10 + 21 >= ttywidth:
                     # 10 - length of prompt()
                     # 21 - length of time plus result
@@ -1856,8 +1852,7 @@ def RunTest(env, TST, COND, oktests, length, pSrvr, total_tests, options, enviro
                 prred('TEST MISSING')
                 print()
             else:
-                prred('MISSING')
-                print(':', os.path.join(TSTDIR, TSTSUFF, TST + EXT))
+                errors.append(('MISSING', os.path.join(TSTDIR, TSTSUFF, TST + EXT)))
 
             return TX,Failed,Failed,elem,reason,links
 
@@ -2137,7 +2132,7 @@ Password = {passwd or "monetdb"}-Wrong
                     TSTSRCDIR, environ)
         t1 = time.time()
         TX = t1 - t0
-        if verbosity > 0:
+        if verbose:
             print(f' {TX:7.3f}s ', end='')
 
         if odbc:
@@ -2183,37 +2178,24 @@ Password = {passwd or "monetdb"}-Wrong
             sockerr = F_OK
 
         if tres == 'socket':
-            if verbosity == 0 and not produce_html:
-                print('\n%s : Socket!' % TST)
-            elif verbosity > 1:
-                print('(Socket!) ', end='')
+            if not verbose and not produce_html:
+                errors.append(('SOCKET', TST))
 
         if tres == 'timeout':
-            if verbosity == 0 and not produce_html:
-                print('\n%s : Timeout!' % TST)
-            elif verbosity > 1:
-                print('(Timeout!) ', end='')
+            if not verbose and not produce_html:
+                errors.append(('TIMEOUT', TST))
 
         if tres == 'recursion':
-            if verbosity == 0 and not produce_html:
-                print('\n%s : Recursion!' % TST)
-            elif verbosity > 1:
-                print('(Recursion!) ', end='')
+            if not verbose and not produce_html:
+                errors.append(('RECURSION', TST))
 
         if tres == 'segfault':
-            if verbosity == 0 and not produce_html:
-                print('\n%s : Crashed!' % TST)
-            elif verbosity > 1:
-                print('(Crashed!) ', end='')
+            if not verbose and not produce_html:
+                errors.append(('CRASHED', TST))
 
         if tres == 'signal':
-            if verbosity == 0 and not produce_html:
-                print('\n%s : Signaled!' % TST)
-            elif verbosity > 1:
-                print('(Signaled!) ', end='')
-
-        if verbosity > 1:
-            print()
+            if not verbose and not produce_html:
+                errors.append(('SIGNALED', TST))
 
         try:
             print('', end='', flush=True)
@@ -2293,10 +2275,15 @@ Password = {passwd or "monetdb"}-Wrong
                 else:
                     diff_html.write('<!--NoDiffs-->\n')
 
-            if verbosity <= 1:
-                if verbosity == 0 and (FailedOut > F_WARN or FailedErr > F_WARN):
-                    print('\r', ' '*(ttywidth or 100), end='', sep='')
-                    print('\r', end='', sep='')
+            if not verbose and (FailedOut > F_WARN or FailedErr > F_WARN):
+                errors.append(({'socket':'SOCKET',
+                                'timeout':'TIMEOUT',
+                                'recursion':'RECURSION',
+                                'segfault':'CRASHED',
+                                'abort':'ABORTED',
+                                'signal':'SIGNALED'}.get(tres, 'ERROR'),
+                               os.path.join(TSTDIR, TSTSUFF, TST + EXT)))
+            elif verbose:
                 if tres == 'socket':
                     prpurple('SOCKET')
                 elif tres == 'timeout':
@@ -2309,26 +2296,13 @@ Password = {passwd or "monetdb"}-Wrong
                     prpurple('ABORTED')
                 elif tres == 'signal':
                     prpurple('SIGNALED')
-                elif verbosity == 0 and (FailedOut > F_WARN or FailedErr > F_WARN):
+                elif FailedOut == F_OK and FailedErr == F_OK:
+                    prgreen('OK')
+                elif FailedOut <= F_WARN and FailedErr <= F_WARN:
+                    prgreen('minor')
+                else:
                     prred('ERROR')
-                elif verbosity == 1:
-                    if FailedOut == F_OK:
-                        prgreen('OK   ')
-                    elif FailedOut == F_WARN:
-                        prgreen('minor')
-                    else:
-                        prred('ERROR')
-                    print(' ', end='')
-                    if FailedErr == F_OK:
-                        prgreen('OK')
-                    elif FailedErr == F_WARN:
-                        prgreen('minor')
-                    else:
-                        prred('ERROR')
-                if verbosity == 0 and (FailedOut > F_WARN or FailedErr > F_WARN):
-                    print(':', os.path.join(TSTDIR, TSTSUFF, TST + EXT))
-                elif verbosity == 1:
-                    print()
+                print()
         elif FailedOut > F_WARN or FailedErr > F_WARN:
             print()
             print('========================================')
@@ -3032,24 +3006,34 @@ def mapi_ping(port, host='localhost', tries=3):
     return False
 
 
+threadids = {}
+up = '\033[A'
+down = '\033[B'
 def progress(count, total, test, spaces=' '*(ttywidth or 100)):
-    perc = round((count/total) * 100) if total and count else 0
-    s = f'[{count}/{total}] ({perc}%)    {test}'
+    if os.name == 'nt':
+        nl = ''
+        line = 0
+    else:
+        tid = threading.get_ident()
+        nl = ''
+        if tid not in threadids:
+            threadids[tid] = len(threadids)
+            nl = '\n'
+        line = len(threadids) - threadids[tid] - 1
+    perc = int(count*100/total) if total and count else 0
+    width = len(str(total))
+    s = f'[{count:{width}}/{total}] ({perc:2}%)    {test}'
     if len(s) > ttywidth:
         test = test[len(s)-ttywidth:]
-        s = f'[{count}/{total}] ({perc}%)    {test}'
-    sys.stdout.write('\r' + spaces + '\r' + s)
+        s = f'[{count:{width}}/{total}] ({perc:2}%)    {test}'
+    sys.stdout.write(nl + '\r' + up*line + spaces + '\r' + s + down*line)
 
 
 def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, length, nomito, threads, user, passwd, COND, PSRVR, total_tests, options, TSTDB, TSTDIR, TSTTRGDIR, TSTSRCDIR, environ):
     ATJOB2 = ''
     print(file=sys.stderr, end='', flush=True)
-    if verbosity == 0:
+    if not verbose:
         progress(test_progress, total_tests, os.path.join(TSTDIR, TST + EXT))
-    elif verbosity > 1:
-        print('%s%s  (<=%d) ...' %
-              (prompt(), os.path.join(TSTDIR, TST + EXT),
-               TIMEOUT), end='')
     else:
         if ttywidth > 0 and length + 10 + 21 >= ttywidth:
             # 10 - length of prompt()
@@ -3129,7 +3113,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, len
                     print('\nFailed to start server.\n')
                     return 'serverfail'
                 environ['MAPIPORT'] = pSrvr.port
-                SetExecEnv(exe,pSrvr.port,verbosity > 1, environ)
+                SetExecEnv(exe, pSrvr.port, environ)
             else:
                 PSRVR.start(TIMEOUT)
         else:
@@ -3426,32 +3410,18 @@ def CheckClassPath():
                         CONDITIONALS[C] = True
     if cp:
         os.environ['CLASSPATH'] = cp
-    if verbosity > 1:
-        miss = ''
-        for j in ['monetdbjdbc.jar', 'jdbcclient.jar', 'jdbctests.jar']:
-            C = 'HAVE_%s' % j.upper().replace('.','_')
-            if not CONDITIONALS.get(C):
-                miss += ' "%s"' % j
-        if miss:
-            Warn('Could not find%s in\nCLASSPATH="%s"' % (miss,cpx))
     if CONDITIONALS.get('HAVE_MONETDBJDBC_JAR') and \
        CONDITIONALS.get('HAVE_JDBCTESTS_JAR'):
         CONDITIONALS['HAVE_JDBCTESTS'] = True
 
 
-def SetExecEnv(exe,port,verbose,environ):
-    if verbose:
-        print(file=sys.stderr, end='', flush=True)
+def SetExecEnv(exe, port, environ):
     for v in exe.keys():
         if v == 'mserver5':
             V = 'MSERVER'
         else:
             V = v.upper()
         environ[V] = ' '.join(exe[v]).replace('${PORT}', port)
-        if verbose:
-            print('%s = %s' % (V, environ[V]))
-    if verbose:
-        print(end='', flush=True)
 
 
 def DummyTlsTester():
@@ -3491,7 +3461,6 @@ def StartTlsTester():
 THISFILE = os.path.basename(sys.argv[0])
 if THISFILE == 'Mz.py':
     produce_html = False
-    verbosity == 0
 THISPATH = os.path.realpath(os.path.dirname(sys.argv[0]))
 TSTDBG = '2'
 TSTTHREADS = '0'
@@ -3689,35 +3658,6 @@ def main(argv):
     dft['SQLCLIENT']      = "'mclient -lsql -ftest -tnone -Eutf-8'"
     dft['SQLDUMP']        = "'msqldump -q'"
 
-    r_noecho = '--no-echo'
-    if CheckExec('R'):
-        with process.Popen(['R', '--version'],
-                           stdout=process.PIPE, stderr=process.PIPE,
-                           text=True) as proc:
-            r_out, r_err = proc.communicate()
-        res = re.search(r'R version (?P<major>\d+)\.', r_out)
-        if res is not None and int(res.group('major')) < 4:
-            r_noecho = '--slave'
-        if CONDITIONALS['HAVE_LIBR']:
-            with process.Popen(['R', r_noecho, '--no-save', '--no-restore',
-                                '-e', 'print(Sys.getenv("R_LIBS_USER"))'],
-                               stdout=process.PIPE, stderr=process.PIPE,
-                               text=True) as proc:
-                r_out, r_err = proc.communicate()
-            res = re.search(r'\[\d+\] "(?P<dir>.*)"', r_out)
-            if res is not None:
-                rdir = os.path.expanduser(res.group('dir'))
-                os.makedirs(rdir, exist_ok=True)
-
-    CONDITIONALS['HAVE_SQLITE3ODBC'] = os.path.exists('/usr/lib64/libsqlite3odbc.so')
-
-    #par = {}
-    # get current environment
-    env['HOST'] = os.environ['HOST']
-    for v in VARS:
-        if v in os.environ:
-            env[v] = os.environ[v]
-
     # commandline options overrule environment
     parser = argparse.ArgumentParser(usage='%(prog)s [options] ( [<dir>] [<tests>] | [<dirs>] )', epilog='See %s for details about %s.' % (os.path.join('@QXSOURCE@','testing','README'), THISFILE))
     parser.add_argument('--version', action='version', version='@VERSION@')
@@ -3725,7 +3665,7 @@ def main(argv):
     parser.add_argument('--revision', action='store', dest='revision', metavar='<hgid>', help='use given revision as the HG short hash')
     parser.add_argument('--TSTSRCBASE', action='store', dest='TSTSRCBASE', metavar='<path>', help='default: "%s"' % '@QXSOURCE@')
     parser.add_argument('--TSTTRGBASE', action='store', dest='TSTTRGBASE', metavar='<path>', help='default: "%s"' % '@QXprefix@')
-    parser.add_argument('--verbose', '-v', action='count', dest='verbosity', default=0, help='more verbose test output (can be used twice)')
+    parser.add_argument('--verbose', '-v', action='store_true', dest='verbose', default=0, help='more verbose test output')
     parser.add_argument('--procdebug', action='store_true', dest='procdebug', help='process debugging (Mtest developers only)')
     parser.add_argument('--urlprefix', action='store', help='URL prefix to the MonetDB Mercurial repository')
 
@@ -3773,6 +3713,35 @@ def main(argv):
     opts = parser.parse_args()
     args = opts.tests
 
+    r_noecho = '--no-echo'
+    if CheckExec('R'):
+        with process.Popen(['R', '--version'],
+                           stdout=process.PIPE, stderr=process.PIPE,
+                           text=True) as proc:
+            r_out, r_err = proc.communicate()
+        res = re.search(r'R version (?P<major>\d+)\.', r_out)
+        if res is not None and int(res.group('major')) < 4:
+            r_noecho = '--slave'
+        if CONDITIONALS['HAVE_LIBR']:
+            with process.Popen(['R', r_noecho, '--no-save', '--no-restore',
+                                '-e', 'print(Sys.getenv("R_LIBS_USER"))'],
+                               stdout=process.PIPE, stderr=process.PIPE,
+                               text=True) as proc:
+                r_out, r_err = proc.communicate()
+            res = re.search(r'\[\d+\] "(?P<dir>.*)"', r_out)
+            if res is not None:
+                rdir = os.path.expanduser(res.group('dir'))
+                os.makedirs(rdir, exist_ok=True)
+
+    CONDITIONALS['HAVE_SQLITE3ODBC'] = os.path.exists('/usr/lib64/libsqlite3odbc.so')
+
+    #par = {}
+    # get current environment
+    env['HOST'] = os.environ['HOST']
+    for v in VARS:
+        if v in os.environ:
+            env[v] = os.environ[v]
+
     if opts.loglevel:
         import logging
         try:
@@ -3785,10 +3754,8 @@ def main(argv):
     if opts.parallel < 1:
         opts.parallel = 1
     recursive = opts.recursive
-    global testweb
-    testweb = False
-    global verbosity
-    verbosity = opts.verbosity
+    global verbose
+    verbose = opts.verbose
     global procdebug
     procdebug = opts.procdebug
     global approve
@@ -3806,9 +3773,8 @@ def main(argv):
     skip_timeout = opts.skip_test_with_timeout
     produce_html = opts.produce_html
     addreqs = False
+    global testweb
     testweb = opts.testweb
-    if testweb and verbosity == 0:
-        verbosity = 1
     CONDITIONALS['RELEASERUN'] = opts.releaserun
     nomito = opts.nomito
     global restart
@@ -3872,10 +3838,6 @@ def main(argv):
 
     # display par's
     print(file=sys.stderr, end='', flush=True)
-    if verbosity > 1:
-        for v in par.keys():
-            #os.environ[v] = par[v]
-            print('%s = %s' % (v, str(par[v])))
     print(end='', flush=True)
     #env['par'] = par
 
@@ -3999,8 +3961,6 @@ def main(argv):
     for p in 'TSTSRCBASE', 'TSTTRGBASE':
         if os.path.isdir(env[p]):
             rp = os.path.realpath(env[p])
-            if verbosity > 1 and os.path.normcase(rp) != os.path.normcase(env[p]):
-                Warn('%s: Replacing logical path  %s  by absolute physical path  %s' % (p, env[p], rp))
             env[p] = rp
         else:
             ErrXit('Illegal '+p+": directory '"+env[p]+"' does not exist!")
@@ -4076,22 +4036,19 @@ def main(argv):
     for v in vars_:
         if v in env:
             os.environ[v] = env[v]
-            if verbosity > 1:
-                print('%s = %s' % (v, env[v]))
-    if verbosity > 1 or testweb:
+    if testweb:
         print('%s = %s' % ('PATH', os.environ['PATH']))
         if 'PYTHONPATH' in os.environ:
             print('%s = %s' % ('PYTHONPATH', os.environ['PYTHONPATH']))
         if 'CLASSPATH' in os.environ:
             print('%s = %s' % ('CLASSPATH', os.environ['CLASSPATH']))
-    if testweb:
         for v in ['BINDIR']:
             if v in os.environ:
                 print('%s = %s' % (v, os.environ[v]))
-    print(end='', flush=True)
+        print(end='', flush=True)
 
     # add QUIET par to env
-    env['QUIET'] = verbosity == 0
+    env['QUIET'] = not verbose
 
     if not startswithpath(os.getcwd() + os.sep, TSTSRCBASE + os.sep):
         Warn('Current directory %s is no descendant of TSTSRCBASE=%s;' % (os.getcwd(), TSTSRCBASE))
@@ -4319,12 +4276,6 @@ def main(argv):
         if GetBitsAndModsAndThreads(env):
             sys.exit(1)
         print(file=sys.stderr, end='', flush=True)
-        if verbosity > 1:
-            print('Bits: ' + env['TST_BITS'])
-            print('Arch: ' + env['TST_ARCH'])
-            if env['TST_INT128']:
-                print('Integers: 128bit')
-            print('Modules: ' + str(env['TST_MODS']))
         print(end='', flush=True)
 
         env['SYST'] = os.environ['SYST']
@@ -4349,8 +4300,6 @@ def main(argv):
                     tsts = 'tests ' + ', '.join(testlist)
                 else:
                     tsts = 'all tests'
-                if verbosity > 1:
-                    print('\nRunning %s in directory %s.\n' % (tsts , testdirs[0]))
                 tdir, elem, diff, interrupted = PerformDir(env, testdirs[0], testlist, test_count)
                 if elem is not None:
                     if diff <= F_OK:
@@ -4369,8 +4318,6 @@ def main(argv):
                         prio = 1000
                     td.append((prio, d))
                 testdirs = [d for (prio, d) in sorted(td)]
-                if verbosity > 1:
-                    print('\nRunning all tests in directories %s.\n' % str(testdirs))
                 tp = None
                 try:
                     if opts.parallel > 1 and len(testdirs) > 1:
@@ -4414,8 +4361,14 @@ def main(argv):
                     if tp is not None:
                         tp.shutdown(wait=True)
                         tp = None
-            if verbosity == 0:
+            if not verbose:
                 print()
+                for (err, msg) in errors:
+                    if err in ('ERROR', 'MISSING'):
+                        prred(err)
+                    else:
+                        prpurple(err)
+                    print(':', msg)
         except KeyboardInterrupt:
             # if we get interrupted between directories, we still want output
             pass
@@ -4472,23 +4425,19 @@ def main(argv):
 
         with openutf8(os.path.join(TSTTRGBASE, TSTPREF, 'times.sql'),'w') as fl:
             for TSTDIR, TST, ms, FtOut, FtErr, reason in TIMES:
-                tms = '%d' % ms if ms >= 0 else 'NULL'
+                tms = f'{ms}' if ms >= 0 else 'NULL'
 
                 if TST != '':
                     # target is a platform and compilation options etc
-                    fl.write("""
-    INSERT INTO mtest (\"date\", \"machine\", \"os\", \"release\",
-        \"compiler\", \"compiler_opts\", \"bits\", \"oid\", \"int128\", \"single\", \"static\",
-        \"product\", \"dir\", \"test\",
-        \"time\", \"stdout\", \"stderr\")
-    VALUES (%s, '%s', '%s', '%s',
-        '%s', '%s', %s, %s, %s, %s, %s,
-        '%s', '%s', '%s',
-        %s, '%s', '%s');
-    """ % (now, host, env['SYST'], env['RELEASE'],
-           ccname, ccopts, bits, bits, isInt128, isSingle, 'false',
-           product, TSTDIR, TST,
-           tms, FAILURES[FtOut][1], FAILURES[FtErr][1]))
+                    fl.write(f"""\
+INSERT INTO mtest (\"date\", \"machine\", \"os\", \"release\", \
+\"compiler\", \"compiler_opts\", \"bits\", \"oid\", \"int128\", \"single\", \
+\"static\", \"product\", \"dir\", \"test\", \"time\", \"stdout\", \"stderr\") \
+VALUES ({now}, '{host}', '{env['SYST']}', '{env['RELEASE']}', \
+'{ccname}', '{ccopts}', {bits}, {bits}, {isInt128}, {isSingle}, false, \
+'{product}', '{TSTDIR}', '{TST}', \
+{tms}, '{FAILURES[FtOut][1]}', '{FAILURES[FtErr][1]}');
+""")
 
         if not testweb and produce_html:
             CreateHtmlIndex(env, '', os.path.join(TSTTRGBASE, TSTPREF), F_SKIP, F_SKIP, *body)
@@ -4499,29 +4448,19 @@ def main(argv):
         num_tests = 0
         for f in Failure:
             num_tests += len(f)
-        how = ''
-        what = ''
-        for x, y, z in [(F_SKIP, 'could not be executed', ''),
-                        (F_WARN, 'produced slightly different output', 'slightly'),
-                        (F_SOCK, 'did not properly release socket(s)', 'SIGNIFICANTLY'),
-                        (F_TIME, 'ran into timeout', 'SIGNIFICANTLY'),
-                        (F_ABRT, 'caused an abort (assertion failure)', 'SIGNIFICANTLY'),
-                        (F_SEGV, 'resulted in a crash', 'SIGNIFICANTLY'),
-                        (F_RECU, 'ran into too deep recursion', 'SIGNIFICANTLY'),
-                        (F_ERROR, 'produced SIGNIFICANTLY different output', 'SIGNIFICANTLY')]:
-            if Failure[x]:
-                how = z
-                what += '  %3d out of %3d tests %s\n' % (len(Failure[x]),num_tests, y)
-                for f in Failure[x]:
-                    what += '        %s\n' % f
         print(file=sys.stderr, end='', flush=True)
-        if not testweb and (verbosity == 0 or verbosity == 1):
-            if Failed or errseen:
-                prred('ERROR')
+        if not testweb:
+            nskip = len(Failure[F_SKIP])
+            print(f'Ran {num_tests - nskip} tests in {t_:.3f}s', end='')
+            if nskip > 0:
+                print(f', skipped {nskip} test{"" if nskip == 1 else "s"}',
+                      end='')
+            print(', ', end='')
+            if Failed > 0:
+                prred(f'{Failed} test{"" if Failed == 1 else "s"} failed')
             else:
-                prgreen('OK')
+                prgreen('no failures')
             print()
-            print(f'failed={Failed}, skipped={len(Failure[F_SKIP])}')
             if produce_html and (Failed or errseen):
                 f = os.path.join(TSTTRGBASE, TSTPREF, "index.html")
                 if sys.version_info[1] >= 14:
@@ -4529,51 +4468,34 @@ def main(argv):
                 else:
                     u = urllib.parse.urlunsplit(("file", "", urllib.request.pathname2url(f), "", ""))
                 print(f'see {u}')
-            print(f'Ran {num_tests - len(Failure[F_SKIP])} tests in {t_:.3f}s')
         elif Failed:
-            print('''\
+            how = ''
+            what = ''
+            for x, y, z in [(F_SKIP, 'could not be executed', ''),
+                            (F_WARN, 'produced slightly different output', 'slightly'),
+                            (F_SOCK, 'did not properly release socket(s)', 'SIGNIFICANTLY'),
+                            (F_TIME, 'ran into timeout', 'SIGNIFICANTLY'),
+                            (F_ABRT, 'caused an abort (assertion failure)', 'SIGNIFICANTLY'),
+                            (F_SEGV, 'resulted in a crash', 'SIGNIFICANTLY'),
+                            (F_RECU, 'ran into too deep recursion', 'SIGNIFICANTLY'),
+                            (F_ERROR, 'produced SIGNIFICANTLY different output', 'SIGNIFICANTLY')]:
+                if Failure[x]:
+                    how = z
+                    what += f' {len(Failure[x])} out of {num_tests} tests {y}\n'
+                    for f in Failure[x]:
+                        what += f'        {f}\n'
+            print(f'''\
 
- !ERROR:  Testing FAILED %s (%d out of %d tests failed)
+ !ERROR:  Testing FAILED {how} ({Failed} out of {num_tests} tests failed)
 
-%s
-''' % (how, Failed, num_tests, what))
-            if not testweb and produce_html:
-                print('''\
- First, check the testing results in  %s  !
-
- Then, fix the problems by:
-  - fixing sources and test scripts
-  - fixing stable output by hand
-
- After that, re-run Mtest.
-''' % os.path.join(TSTTRGBASE, TSTPREF, 'index.html'))
+{what}
+''')
         elif errseen:
-            print('''\
-
+            print('''
  !ERROR:  Testing FAILED in some directories
 ''')
-            if not testweb and produce_html:
-                print('''\
- First, check the testing results in  %s  !
-
- Then, fix the problems by:
-  - fixing sources and test scripts
-  - fixing stable output by hand
-
- After that, re-run Mtest.
-''' % os.path.join(TSTTRGBASE, TSTPREF, 'index.html'))
-        else:
-            if verbosity == 0:
-                pass
-            elif verbosity > 1:
-                print('''\
-
- No differences encountered during testing.
-
- If necessary, you can checkin your modifications, now.
-''')
-            else:
-                print('No differences encountered during testing.')
+        elif verbose:
+            print('No differences encountered during testing.')
         sys.exit(1 if not opts.ci and (Failed or errseen) else 0)
 
     finally:

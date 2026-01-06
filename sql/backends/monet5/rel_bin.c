@@ -2335,11 +2335,14 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 			return s;
 		}
 		if (e->flag == cmp_in || e->flag == cmp_notin)
-			return handle_in_exps(be, e->l, e->r, left, right, grp, ext, cnt, sel, (e->flag == cmp_in), depth, reduce, push);
+			return handle_in_exps(be, e->l, e->r, left, right, grp, ext, cnt, sel, (e->flag == cmp_in)^is_anti(e), depth, reduce, push);
 		if (e->flag == cmp_con)
 			return exp_bin_conjunctive(be, e, left, right, grp, ext, cnt, sel, depth, reduce, push);
-		if (e->flag == cmp_dis)
+		if (e->flag == cmp_dis) {
+			if (list_length(e->l) > 512)
+				be->no_mitosis = 1;
 			return exp_bin_disjunctive(be, e, left, right, grp, ext, cnt, sel, depth, reduce, push);
+		}
 
 		/* mark use of join indices */
 		if (right && find_prop(e->p, PROP_JOINIDX) != NULL)
@@ -7920,6 +7923,7 @@ check_for_foreign_key_references(mvc *sql, struct tablelist* tlist, struct table
 	struct tablelist* new_node;
 	sql_trans *tr = sql->session->tr;
 	sqlstore *store = sql->session->tr->store;
+	allocator *ta = MT_thread_getallocator();
 
 	if (mvc_highwater(sql))
 		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
@@ -7957,7 +7961,7 @@ check_for_foreign_key_references(mvc *sql, struct tablelist* tlist, struct table
 									found = 1;
 							}
 							if (!found) {
-								if ((new_node = SA_NEW(sql->ta, struct tablelist)) == NULL) {
+								if ((new_node = SA_NEW(ta, struct tablelist)) == NULL) {
 									list_destroy(keys);
 									return sql_error(sql, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 								}
@@ -7982,6 +7986,8 @@ check_for_foreign_key_references(mvc *sql, struct tablelist* tlist, struct table
 static stmt *
 sql_truncate(backend *be, sql_table *t, int restart_sequences, int cascade)
 {
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
 	mvc *sql = be->mvc;
 	list *l = sa_list(sql->sa);
 	if (t->multiset) {
@@ -8000,11 +8006,11 @@ sql_truncate(backend *be, sql_table *t, int restart_sequences, int cascade)
 		}
 	}
 	stmt *ret = NULL, *other = NULL;
-	struct tablelist *new_list = SA_NEW(sql->ta, struct tablelist);
+	struct tablelist *new_list = SA_NEW(ta, struct tablelist);
 	stmt **deleted_cols = NULL;
 
 	if (!new_list)
-		return sql_error(sql, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto finalize;
 	new_list->table = t;
 	new_list->next = NULL;
 	if (!check_for_foreign_key_references(sql, new_list, new_list, t, cascade))
@@ -8063,7 +8069,7 @@ sql_truncate(backend *be, sql_table *t, int restart_sequences, int cascade)
 	}
 
 finalize:
-	ma_reset(sql->ta);
+	ma_close(&ta_state);
 	return ret;
 }
 
@@ -8094,7 +8100,9 @@ rel2bin_truncate(backend *be, sql_rel *rel)
 	return truncate;
 }
 
-static ValPtr take_atom_arg(node **n, int expected_type) {
+static ValPtr
+take_atom_arg(node **n, int expected_type)
+{
 	sql_exp *e = (*n)->data;
 	atom *a = e->l;
 	assert(a->tpe.type->localtype == expected_type); (void) expected_type;
@@ -8128,13 +8136,13 @@ rel2bin_output(backend *be, sql_rel *rel, list *refs)
 	 * With COPY INTO BINARY, it is an int. */
 	if (tpe == TYPE_str) {
 		atom *tatom = ((sql_exp*) argnode->data)->l;
-		const char *tsep  = ma_strdup(sql->sa, tatom->isnull ? "" : tatom->data.val.sval);
+		const char *tsep  = tatom->isnull ? "" : ma_strdup(sql->sa, tatom->data.val.sval);
 		atom *ratom = ((sql_exp*) argnode->next->data)->l;
-		const char *rsep  = ma_strdup(sql->sa, ratom->isnull ? "" : ratom->data.val.sval);
+		const char *rsep  = ratom->isnull ? "" : ma_strdup(sql->sa, ratom->data.val.sval);
 		atom *satom = ((sql_exp*) argnode->next->next->data)->l;
-		const char *ssep  = ma_strdup(sql->sa, satom->isnull ? "" : satom->data.val.sval);
+		const char *ssep  = satom->isnull ? "" : ma_strdup(sql->sa, satom->data.val.sval);
 		atom *natom = ((sql_exp*) argnode->next->next->next->data)->l;
-		const char *ns = ma_strdup(sql->sa, natom->isnull ? "" : natom->data.val.sval);
+		const char *ns = natom->isnull ? "" : ma_strdup(sql->sa, natom->data.val.sval);
 
 		const char *fn = NULL;
 		int onclient = 0;
@@ -8656,6 +8664,8 @@ subrel_bin(backend *be, sql_rel *rel, list *refs)
 stmt *
 rel_bin(backend *be, sql_rel *rel)
 {
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
 	mvc *sql = be->mvc;
 	list *refs = sa_list(sql->sa);
 	mapi_query_t sqltype = sql->type;
@@ -8665,6 +8675,7 @@ rel_bin(backend *be, sql_rel *rel)
 	if (sqltype == Q_SCHEMA)
 		sql->type = sqltype;  /* reset */
 
+	ma_close(&ta_state);
 	if (be->mb->errors) {
 		if (ma_get_eb(be->mvc->sa)->enabled)
 			eb_error(ma_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : be->mb->errors, 1000);
@@ -8676,6 +8687,8 @@ rel_bin(backend *be, sql_rel *rel)
 stmt *
 output_rel_bin(backend *be, sql_rel *rel, int top)
 {
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
 	mvc *sql = be->mvc;
 	list *refs = sa_list(sql->sa);
 	mapi_query_t sqltype = sql->type;
@@ -8688,6 +8701,7 @@ output_rel_bin(backend *be, sql_rel *rel, int top)
 	s = subrel_bin(be, rel, refs);
 	s = subrel_project(be, s, refs, rel);
 
+	ma_close(&ta_state);
 	if (!s)
 		return NULL;
 	if (sqltype == Q_SCHEMA)

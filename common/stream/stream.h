@@ -189,7 +189,7 @@ stream_export stream *compressed_stream(stream *inner, int preset);
 
 stream_export FILE *getFile(stream *s); // gdk_logger.c progress messages
 stream_export int getFileNo(stream *s);	/* fileno(getFile(s)) */ // mclient.c, gdk_logger.c progress messages
-stream_export size_t getFileSize(stream *s); // mal_import.c, sql_scenario.c, store.c, bat_logger.c
+stream_export int64_t getFileSize(stream *s); // mal_import.c, sql_scenario.c, store.c, bat_logger.c
 
 typedef struct buffer {
 	char *buf;

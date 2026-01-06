@@ -519,7 +519,7 @@ mapi_handshake(Mapi mid)
 		close_connection(mid);
 		return mid->error;
 	}
-	char *algsv[] = {
+	static const char *algsv[] = {
 		"RIPEMD160",
 		"SHA512",
 		"SHA384",
@@ -528,7 +528,7 @@ mapi_handshake(Mapi mid)
 		"SHA1",
 		NULL
 	};
-	char **algs = algsv;
+	const char **algs = algsv;
 
 	/* rBuCQ9WTn3:mserver:9:RIPEMD160,SHA256,SHA1,MD5:LIT:SHA1: */
 

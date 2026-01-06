@@ -1878,10 +1878,12 @@ copyfrom(sql_query *query, CopyFromNode *copy)
 			sql_rel *nrel;
 
 			if (!copy->on_client && fname && !MT_path_absolute(fname)) {
-				char *fn = ATOMformat(sql->ta, TYPE_str, fname);
+				allocator *ta = MT_thread_getallocator();
+				allocator_state ta_state = ma_open(ta);
+				char *fn = ATOMformat(ta, TYPE_str, fname);
 				sql_error(sql, 02, SQLSTATE(42000) "COPY INTO: filename must "
 					  "have absolute path: %s", fn);
-				// GDKfree(fn);
+				ma_close(&ta_state);
 				return NULL;
 			}
 
@@ -2261,7 +2263,9 @@ rel_parse_val(mvc *m, sql_schema *sch, char *query, sql_subtype *tpe, char emode
 	/* via views we give access to protected objects */
 	m->user_id = USER_MONETDB;
 
+	allocator_state ta_state = ma_open(MT_thread_getallocator());
 	(void) sqlparse(m);
+	ma_close(&ta_state);
 
 	/* get out the single value as we don't want an enclosing projection! */
 	if (m->sym && m->sym->token == SQL_SELECT) {

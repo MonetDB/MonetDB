@@ -541,20 +541,20 @@ BKCsetAccess(Client ctx, bat *res, const bat *bid, const char *const *param)
 static str
 BKCgetAccess(Client ctx, str *res, const bat *bid)
 {
-	allocator *ma = ctx->curprg->def->ma;
 	BAT *b;
 
+	(void) ctx;
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "bat.getAccess", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	switch (BATgetaccess(b)) {
 	case BAT_READ:
-		*res = ma_strdup(ma, "read");
+		*res = "read";
 		break;
 	case BAT_APPEND:
-		*res = ma_strdup(ma, "append");
+		*res = "append";
 		break;
 	case BAT_WRITE:
-		*res = ma_strdup(ma, "write");
+		*res = "write";
 		break;
 	default:
 		MT_UNREACHABLE();
@@ -571,13 +571,6 @@ BKCgetAccess(Client ctx, str *res, const bat *bid)
  * descriptor.
  * Where necessary use the primary view to access the properties
  */
-static inline char *
-pre(const char *s1, const char *s2, char *buf)
-{
-	snprintf(buf, 64, "%s%s", s1, s2);
-	return buf;
-}
-
 static inline char *
 local_itoa(ssize_t i, char *buf)
 {
@@ -631,45 +624,15 @@ infoHeap(BAT *bk, BAT *bv, Heap *hp, const char *nme)
 	return GDK_SUCCEED;
 }
 
-#define COLLISION (8 * sizeof(size_t))
-
 static gdk_return
-HASHinfo(BAT *bk, BAT *bv, Hash *h, const char *s)
+HASHinfo(BAT *bk, BAT *bv, Hash *h)
 {
-	BUN i;
-	BUN j;
-	BUN k;
-	BUN cnt[COLLISION + 1];
-	char buf[32];
-	char prebuf[64];
-
-	if (BUNappend(bk, pre(s, "type", prebuf), false) != GDK_SUCCEED ||
+	if (BUNappend(bk, "thash->type", false) != GDK_SUCCEED ||
 		BUNappend(bv, ATOMname(h->type), false) != GDK_SUCCEED ||
-		BUNappend(bk, pre(s, "mask", prebuf), false) != GDK_SUCCEED ||
-		BUNappend(bv, local_utoa(h->nbucket, buf), false) != GDK_SUCCEED)
+		BUNappend(bk, "thash->mask", false) != GDK_SUCCEED ||
+		BUNappend(bv, local_utoa(h->nbucket, (char[32]){0}), false) != GDK_SUCCEED)
 		return GDK_FAIL;
 
-	for (i = 0; i < COLLISION + 1; i++) {
-		cnt[i] = 0;
-	}
-	for (i = 0; i < h->nbucket; i++) {
-		j = HASHlist(h, i);
-		for (k = 0; j; k++)
-			j >>= 1;
-		cnt[k]++;
-	}
-
-	for (i = 0; i < COLLISION + 1; i++)
-		if (cnt[i]) {
-			if (BUNappend(bk,
-						  pre(s, local_utoa(i ? (((size_t) 1) << (i - 1)) : 0,
-											buf),
-							  prebuf),
-						  false) != GDK_SUCCEED
-				|| BUNappend(bv, local_utoa((size_t) cnt[i], buf),
-							 false) != GDK_SUCCEED)
-				return GDK_FAIL;
-		}
 	return GDK_SUCCEED;
 }
 
@@ -804,7 +767,7 @@ BKCinfo(Client ctx, bat *ret1, bat *ret2, const bat *bid)
 	}
 	/* dump index information */
 	MT_rwlock_rdlock(&b->thashlock);
-	if (b->thash && HASHinfo(bk, bv, b->thash, "thash->") != GDK_SUCCEED) {
+	if (b->thash && HASHinfo(bk, bv, b->thash) != GDK_SUCCEED) {
 		MT_rwlock_rdunlock(&b->thashlock);
 		bat_iterator_end(&bi);
 		BBPreclaim(bk);
@@ -1111,7 +1074,7 @@ BKCdiffcand(Client ctx, bat *ret, const bat *aid, const bat *bid)
 }
 
 #include "mel.h"
-mel_func bat5_init_funcs[] = {
+static mel_func bat5_init_funcs[] = {
  command("bat", "mirror", BKCmirror, false, "Returns the head-mirror image of a BAT (two head columns).", args(1,2, batarg("",oid),batargany("b",1))),
  command("bat", "delete", BKCdelete, false, "Delete BUN indicated by head value, exchanging with last BUN", args(1,3, batargany("",1),batargany("b",1),arg("h",oid))),
  command("bat", "delete", BKCdelete_multi, false, "Delete multiple BUN, shifting BUNs up", args(1,3, batargany("",1),batargany("b",1),batarg("d",oid))),

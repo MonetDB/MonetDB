@@ -309,7 +309,7 @@ CMDBATvacuum(Client ctx, bat *r, const bat *bid)
 }
 
 #include "mel.h"
-mel_func batExtensions_init_funcs[] = {
+static mel_func batExtensions_init_funcs[] = {
  pattern("bat", "new", CMDBATnew, false, "", args(1,2, batargany("",1),argany("tt",1))),
  pattern("bat", "new", CMDBATnew, false, "", args(1,3, batargany("",1),argany("tt",1),arg("size",int))),
  pattern("bat", "new", CMDBATnew, false, "", args(1,4, batargany("",1),argany("tt",1),arg("size",lng),arg("persist",bit))),

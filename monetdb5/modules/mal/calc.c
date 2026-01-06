@@ -74,9 +74,7 @@ CMDvarADDstr(Client ctx, str *ret, const char *const *s1, const char *const *s2)
 	size_t l1;
 
 	if (strNil(*s1) || strNil(*s2)) {
-		*ret = ma_strdup(ma, str_nil);
-		if (*ret == NULL)
-			return mythrow(MAL, "calc.+", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		*ret = (char *) str_nil;
 		return MAL_SUCCEED;
 	}
 	l1 = strlen(*s1) + strlen(*s2) + 1;
@@ -97,9 +95,7 @@ CMDvarADDstrint(Client ctx, str *ret, const char *const *s1, const int *i)
 	size_t len;
 
 	if (strNil(*s1) || is_int_nil(*i)) {
-		*ret = ma_strdup(ma, str_nil);
-		if (*ret == NULL)
-			return mythrow(MAL, "calc.+", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		*ret = (char *) str_nil;
 		return MAL_SUCCEED;
 	}
 	len = strlen(*s1) + 16;		/* maxint = 2147483647 which fits easily */
@@ -584,7 +580,7 @@ CALCmin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		p1 = nil;
 	else if (ATOMcmp(t, p1, p2) > 0)
 		p1 = p2;
-	if (VALinit(NULL, &stk->stk[getArg(pci, 0)], t, p1) == NULL)
+	if (VALinit(mb->ma, &stk->stk[getArg(pci, 0)], t, p1) == NULL)
 		return mythrow(MAL, "calc.min", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
@@ -621,7 +617,7 @@ CALCmin_no_nil(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				p1 = p2;
 		}
 	}
-	if (VALinit(NULL, &stk->stk[getArg(pci, 0)], t, p1) == NULL)
+	if (VALinit(mb->ma, &stk->stk[getArg(pci, 0)], t, p1) == NULL)
 		return mythrow(MAL, "calc.min", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
@@ -647,7 +643,7 @@ CALCmax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		p1 = nil;
 	else if (ATOMcmp(t, p1, p2) < 0)
 		p1 = p2;
-	if (VALinit(NULL, &stk->stk[getArg(pci, 0)], t, p1) == NULL)
+	if (VALinit(mb->ma, &stk->stk[getArg(pci, 0)], t, p1) == NULL)
 		return mythrow(MAL, "calc.max", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
@@ -657,7 +653,7 @@ CALCto_hex_int(Client ctx, str *res, const int *n)
 {
 	allocator *ma = ctx->curprg->def->ma;
 	if (is_int_nil(*n)) {
-		*res = ma_strdup(ma, str_nil);
+		*res = (char *) str_nil;
 		return MAL_SUCCEED;
 	}
 	const size_t size = 9;    // 32 bits -> 8 hex digits + 1 NUL
@@ -674,7 +670,7 @@ CALCto_hex_lng(Client ctx, str *res, const lng *n)
 {
 	allocator *ma = ctx->curprg->def->ma;
 	if (is_lng_nil(*n)) {
-		*res = ma_strdup(ma, str_nil);
+		*res = (char *) str_nil;
 		return MAL_SUCCEED;
 	}
 	const size_t size = 17;    // 64 bits -> 16 hex digits + 1 NUL
@@ -717,7 +713,7 @@ CALCmax_no_nil(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				p1 = p2;
 		}
 	}
-	if (VALinit(NULL, &stk->stk[getArg(pci, 0)], t, p1) == NULL)
+	if (VALinit(mb->ma, &stk->stk[getArg(pci, 0)], t, p1) == NULL)
 		return mythrow(MAL, "calc.max", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
@@ -900,7 +896,7 @@ CMDBATavg3comb(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 #include "mel.h"
-mel_func calc_init_funcs[] = {
+static mel_func calc_init_funcs[] = {
 #ifdef HAVE_HGE
  pattern("calc", "iszero", CMDvarISZERO, false, "Unary check for zero of V", args(1,2, arg("",bit),arg("v",hge))),
  pattern("calc", "not", CMDvarNOT, false, "Unary bitwise not of V", args(1,2, arg("",hge),arg("v",hge))),

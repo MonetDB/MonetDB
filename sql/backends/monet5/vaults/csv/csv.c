@@ -431,7 +431,7 @@ csv_relation(mvc *sql, sql_subfunc *f, char *filename, list *res_exps, char *tna
 	 */
 	char buf[8196+1];
 	*est = 0;
-	size_t fs = getFileSize(file);
+	int64_t fs = getFileSize(file);
 	ssize_t l = mnstr_read(file, buf, 1, 8196);
 	mnstr_close(file);
 	mnstr_destroy(file);

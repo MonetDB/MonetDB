@@ -612,7 +612,10 @@ supertype_opt_string(sql_subtype *super, sql_subtype *r, sql_subtype *i, bool su
 			tpe = lsuper.type->base.name;
 			eclass = lsuper.type->eclass;
 		}
-	} else if (((!super_string || !EC_VARCHAR(r->type->eclass)) && i->type->base.id > r->type->base.id) || (EC_VARCHAR(i->type->eclass) && !EC_VARCHAR(r->type->eclass))) {
+		/* with !super_string we follow the sql specification that for value lists and compare operators all values
+		 * should be string or we cast into the non-string super type */
+	} else if ((super_string && (EC_VARCHAR(i->type->eclass) || i->type->base.id > r->type->base.id)) ||
+			   (!super_string && ((EC_VARCHAR(r->type->eclass) && i->type->eclass != EC_ANY) || i->type->base.id > r->type->base.id))) {
 		lsuper = *i;
 		radix = i->type->radix;
 		tpe = i->type->base.name;
@@ -668,9 +671,9 @@ supertype(sql_subtype *super, sql_subtype *r, sql_subtype *i)
 }
 
 sql_subtype *
-cmp_supertype(sql_subtype *super, sql_subtype *r, sql_subtype *i)
+cmp_supertype(sql_subtype *super, sql_subtype *r, sql_subtype *i, bool opt_string)
 {
-	return supertype_opt_string(super, r, i, false);
+	return supertype_opt_string(super, r, i, opt_string);
 }
 
 sql_subfunc*

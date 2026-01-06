@@ -153,6 +153,8 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 {
 	if (!e)
 		return;
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
 	/*mnstr_printf(fout, "%p ", e);*/
 	if (mvc_debug_on(sql, 4) && e->alias.label < 0)
 		mnstr_printf(fout, "%d: ", e->alias.label);
@@ -162,20 +164,20 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 			sql_alias *rname = exp_relname(e);
 			int level = GET_PSM_LEVEL(e->flag);
 			if (rname)
-				mnstr_printf(fout, "\"%s\".", dump_escape_ident(sql->ta, rname->name));
-			mnstr_printf(fout, "\"%s\" = ",  dump_escape_ident(sql->ta, exp_name(e)));
+				mnstr_printf(fout, "\"%s\".", dump_escape_ident(ta, rname->name));
+			mnstr_printf(fout, "\"%s\" = ",  dump_escape_ident(ta, exp_name(e)));
 			exp_print(sql, fout, e->l, depth, refs, 0, 0, decorate);
 			mnstr_printf(fout, " FRAME %d ", level);
 			alias = 0;
 		} else if (e->flag & PSM_VAR) {
 			// todo output table def (from e->f)
 			sql_alias *rname = exp_relname(e);
-			char *type_str = e->f ? NULL : dump_sql_subtype(sql->ta, exp_subtype(e));
+			char *type_str = e->f ? NULL : dump_sql_subtype(ta, exp_subtype(e));
 			int level = GET_PSM_LEVEL(e->flag);
 			mnstr_printf(fout, "declare ");
 			if (rname)
-				mnstr_printf(fout, "\"%s\".", dump_escape_ident(sql->ta, rname->name));
-			mnstr_printf(fout, "\"%s\" %s FRAME %d ", dump_escape_ident(sql->ta, exp_name(e)), type_str ? type_str : "", level);
+				mnstr_printf(fout, "\"%s\".", dump_escape_ident(ta, rname->name));
+			mnstr_printf(fout, "\"%s\" %s FRAME %d ", dump_escape_ident(ta, exp_name(e)), type_str ? type_str : "", level);
 			alias = 0;
 		} else if (e->flag & PSM_RETURN) {
 			int level = GET_PSM_LEVEL(e->flag);
@@ -206,7 +208,7 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 	 	break;
 	}
 	case e_convert: {
-		char *to_type = dump_sql_subtype(sql->ta, exp_subtype(e));
+		char *to_type = dump_sql_subtype(ta, exp_subtype(e));
 		mnstr_printf(fout, "%s[", to_type);
 		exp_print(sql, fout, e->l, depth, refs, 0, 0, decorate);
 		mnstr_printf(fout, "]");
@@ -222,13 +224,13 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 				mnstr_printf(fout, "%s(\"%s\")",
 					isMergeTable(t)?"merge table":
 					isReplicaTable(t)?"replica table":"table",
-					dump_escape_ident(sql->ta, t->base.name));
+					dump_escape_ident(ta, t->base.name));
 			} else {
-				char *t = dump_sql_subtype(sql->ta, atom_type(a));
+				char *t = dump_sql_subtype(ta, atom_type(a));
 				if (a->isnull)
 					mnstr_printf(fout, "%s NULL", t);
 				else {
-					char *s = ATOMformat(sql->sa, a->data.vtype, VALptr(&a->data));
+					char *s = ATOMformat(ta, a->data.vtype, VALptr(&a->data));
 					if (s && *s == '"')
 						mnstr_printf(fout, "%s %s", t, s);
 					else if (s)
@@ -240,12 +242,12 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 			if (e->r) { /* named parameters and declared variables */
 				sql_var_name *vname = (sql_var_name*) e->r;
 				if (vname->sname)
-					mnstr_printf(fout, "\"%s\".", dump_escape_ident(sql->ta, vname->sname));
-				mnstr_printf(fout, "\"%s\"", dump_escape_ident(sql->ta, vname->name));
+					mnstr_printf(fout, "\"%s\".", dump_escape_ident(ta, vname->sname));
+				mnstr_printf(fout, "\"%s\"", dump_escape_ident(ta, vname->name));
 			} else if (e->f) {	/* values list */
 				list *l = e->f;
 				if (e->tpe.type && e->tpe.type->composite) {
-					char *t = dump_sql_subtype(sql->ta, &e->tpe);
+					char *t = dump_sql_subtype(ta, &e->tpe);
 					mnstr_printf(fout, "%s ", t);
 				}
 				exps_print(sql, fout, l, depth, refs, 0, 0, decorate, 0);
@@ -257,8 +259,8 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 	case e_func: {
 		sql_subfunc *f = e->f;
 		mnstr_printf(fout, "\"%s\".\"%s\"",
-				f->func->s?dump_escape_ident(sql->ta, f->func->s->base.name):"sys",
-				dump_escape_ident(sql->ta, f->func->base.name));
+				f->func->s?dump_escape_ident(ta, f->func->s->base.name):"sys",
+				dump_escape_ident(ta, f->func->base.name));
 		exps_print(sql, fout, e->l, depth, refs, 0, 1, decorate, 0);
 		if (e->r) { /* list of optional lists */
 			list *l = e->r;
@@ -271,8 +273,8 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 	case e_aggr: {
 		sql_subfunc *a = e->f;
 		mnstr_printf(fout, "\"%s\".\"%s\"",
-				a->func->s?dump_escape_ident(sql->ta, a->func->s->base.name):"sys",
-				dump_escape_ident(sql->ta, a->func->base.name));
+				a->func->s?dump_escape_ident(ta, a->func->s->base.name):"sys",
+				dump_escape_ident(ta, a->func->base.name));
 		if (need_distinct(e))
 			mnstr_printf(fout, " unique ");
 		if (need_no_nil(e))
@@ -300,9 +302,9 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 			mnstr_printf(fout, "<%d", e->nid);
 		if (e->l) {
 			sql_alias *a = e->l;
-			mnstr_printf(fout, "\"%s\".", dump_escape_ident(sql->ta, a->name));
+			mnstr_printf(fout, "\"%s\".", dump_escape_ident(ta, a->name));
 		}
-		mnstr_printf(fout, "\"%s\"", dump_escape_ident(sql->ta, (char*)e->r));
+		mnstr_printf(fout, "\"%s\"", dump_escape_ident(ta, (char*)e->r));
 		if (exp_relname(e) && exp_name(e) && e->l && e->r &&
 			a_match_obj(exp_relname(e), e->l) &&
 			strcmp(exp_name(e), e->r) == 0)
@@ -339,8 +341,8 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 			if (is_anti(e))
 				mnstr_printf(fout, " !");
 			mnstr_printf(fout, " FILTER \"%s\".\"%s\"",
-					f->func->s?dump_escape_ident(sql->ta, f->func->s->base.name):"sys",
-					dump_escape_ident(sql->ta, f->func->base.name));
+					f->func->s?dump_escape_ident(ta, f->func->s->base.name):"sys",
+					dump_escape_ident(ta, f->func->base.name));
 			exps_print(sql, fout, e->r, depth, refs, 0, 1, decorate, 0);
 		} else if (e->f) {
 			mnstr_printf(fout, "(");
@@ -395,7 +397,7 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 		if (decorate && e->p && e->type != e_atom && !exp_is_atom(e)) {
 			for (prop *p = e->p; p; p = p->p) {
 				if (p->kind != PROP_MIN && p->kind != PROP_MAX && p->kind != PROP_NUNIQUES) {
-					char *pv = propvalue2string(sql->ta, p);
+					char *pv = propvalue2string(ta, p);
 					mnstr_printf(fout, " %s %s", propkind2string(p), pv);
 				}
 			}
@@ -404,20 +406,21 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 	if (exp_name(e) && alias) {
 		mnstr_printf(fout, " as ");
 		if (exp_relname(e))
-			mnstr_printf(fout, "\"%s\".", dump_escape_ident(sql->ta, exp_relname(e)->name));
-		mnstr_printf(fout, "\"%s\"", dump_escape_ident(sql->ta, exp_name(e)));
+			mnstr_printf(fout, "\"%s\".", dump_escape_ident(ta, exp_relname(e)->name));
+		mnstr_printf(fout, "\"%s\"", dump_escape_ident(ta, exp_name(e)));
 	}
 
 	if (sql->show_details && mvc_debug_on(sql, 4) && is_intern(e))
 		mnstr_printf(fout, " INTERN ");
 
 	if (e->comment) {
-		str s = ATOMformat(sql->sa, TYPE_str, e->comment);
+		str s = ATOMformat(ta, TYPE_str, e->comment);
 		mnstr_printf(fout,  " COMMENT %s ", s);
 		// GDKfree(s);
 	}
 	if (comma)
 		mnstr_printf(fout, ", ");
+	ma_close(&ta_state);
 }
 
 
@@ -529,6 +532,8 @@ rel_print_rel(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int 
 	if (!rel)
 		return;
 
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
 	if (rel_is_ref(rel)) {
 		int nr = list_length(refs) + 1;
 		int cnt = rel->ref.refcnt;
@@ -559,12 +564,12 @@ rel_print_rel(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int 
 			mnstr_printf(fout, "%s(\"%s\".\"%s\")",
 				isRemote(t)&&decorate?"REMOTE":
 				isReplicaTable(t)?"REPLICA":"table",
-				dump_escape_ident(sql->ta, sname), dump_escape_ident(sql->ta, tname));
+				dump_escape_ident(ta, sname), dump_escape_ident(ta, tname));
 		else
 			mnstr_printf(fout, "%s(\"%s\")",
 				isRemote(t)&&decorate?"REMOTE":
 				isReplicaTable(t)?"REPLICA":"table",
-				dump_escape_ident(sql->ta, tname));
+				dump_escape_ident(ta, tname));
 		if (rel->exps)
 			exps_print(sql, fout, rel->exps, depth, refs, 1, 0, decorate, 0);
 		else
@@ -760,11 +765,12 @@ rel_print_rel(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int 
 	if (sql->show_details && decorate && rel->p) {
 		for (prop *p = rel->p; p; p = p->p) {
 			if ((p->kind != PROP_COUNT && p->kind != PROP_UKEY) || (ATOMIC_GET(&GDKdebug) & TESTINGMASK) == 0) {
-				char *pv = propvalue2string(sql->ta, p);
+				char *pv = propvalue2string(ta, p);
 				mnstr_printf(fout, " %s %s", propkind2string(p), pv);
 			}
 		}
 	}
+	ma_close(&ta_state);
 }
 
 void
@@ -1207,22 +1213,26 @@ function_error_string(mvc *sql, const char *schema, const char *fname, list *exp
 
 	FUNC_TYPE_STR(type, F, fn)
 
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
 	(void) F;
 	if (!list_empty(exps)) {
 		for (node *n = exps->h; n ; n = n->next) {
 			sql_subtype *t = exp_subtype(n->data);
-			char *tpe = t ? sql_subtype_string(sql->ta, t) : "?";
+			char *tpe = t ? sql_subtype_string(ta, t) : "?";
 
 			if (arg_list) {
-				arg_list = sa_message(sql->ta, "%s, %s", arg_list, tpe);
+				arg_list = sa_message(ta, "%s, %s", arg_list, tpe);
 			} else {
 				arg_list = tpe;
 			}
 		}
 	}
-	return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "%s %s %s%s%s'%s'(%s)",
+	(void) sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "%s %s %s%s%s'%s'(%s)",
 					found ? "Insufficient privileges for" : "No such", fn, schema ? "'":"", schema ? schema : "",
 					schema ? "'.":"", fname, arg_list ? arg_list : "");
+	ma_close(&ta_state);
+	return NULL;
 }
 
 static unsigned int /* keep updating the label count */

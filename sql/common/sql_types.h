@@ -55,7 +55,7 @@ extern sql_arg *sql_create_arg(allocator *sa, const char *name, sql_subtype *t, 
 extern int subfunc_cmp(sql_subfunc *f1, sql_subfunc *f2);
 extern sql_subfunc *sql_dup_subfunc(allocator *sa, sql_func *f, list *ops, sql_subtype *member);
 extern sql_subtype *supertype(sql_subtype *super, sql_subtype *r, sql_subtype *i);
-extern sql_subtype *cmp_supertype(sql_subtype *super, sql_subtype *r, sql_subtype *i);
+extern sql_subtype *cmp_supertype(sql_subtype *super, sql_subtype *r, sql_subtype *i, bool opt_string);
 
 extern char *sql_func_imp(sql_func *f);
 extern char *sql_func_mod(sql_func *f);

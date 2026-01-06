@@ -756,7 +756,7 @@ CMDmodules(Client ctx, bat *bid)
 }
 
 #include "mel.h"
-mel_func mdb_init_funcs[] = {
+static mel_func mdb_init_funcs[] = {
  command("mdb", "modules", CMDmodules, false, "List available modules", args(1,1, batarg("",str))),
  pattern("mdb", "getVMsize", MDBgetVMsize, false, "Retrieve the max VM size", args(1,1, arg("",lng))),
  pattern("mdb", "setVMsize", MDBsetVMsize, false, "Manipulate the VM max size in MBs", args(1,2, arg("",lng),arg("l",lng))),

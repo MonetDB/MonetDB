@@ -57,7 +57,7 @@ CLTgetScenario(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (ctx->scenario)
 		*getArgReference_str(stk, pci, 0) = ma_strdup(mb->ma, ctx->scenario);
 	else
-		*getArgReference_str(stk, pci, 0) = ma_strdup(mb->ma, "nil");
+		*getArgReference_str(stk, pci, 0) = "nil";
 	if (*getArgReference_str(stk, pci, 0) == NULL)
 		throw(MAL, "clients.getScenario", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
@@ -593,7 +593,7 @@ CLTmd5sum(Client ctx, str *ret, const char *const *pw)
 {
 	allocator *ma = ctx->curprg->def->ma;
 	if (strNil(*pw)) {
-		*ret = ma_strdup(ma, str_nil);
+		*ret = (char *) str_nil;
 	} else {
 		char *mret = mcrypt_MD5Sum(*pw, strlen(*pw));
 
@@ -612,7 +612,7 @@ CLTsha1sum(Client ctx, str *ret, const char *const *pw)
 {
 	allocator *ma = ctx->curprg->def->ma;
 	if (strNil(*pw)) {
-		*ret = ma_strdup(ma, str_nil);
+		*ret = (char *) str_nil;
 	} else {
 		char *mret = mcrypt_SHA1Sum(*pw, strlen(*pw));
 
@@ -631,7 +631,7 @@ CLTripemd160sum(Client ctx, str *ret, const char *const *pw)
 {
 	allocator *ma = ctx->curprg->def->ma;
 	if (strNil(*pw)) {
-		*ret = ma_strdup(ma, str_nil);
+		*ret = (char *) str_nil;
 	} else {
 		char *mret = mcrypt_RIPEMD160Sum(*pw, strlen(*pw));
 
@@ -650,7 +650,7 @@ CLTsha2sum(Client ctx, str *ret, const char *const *pw, const int *bits)
 {
 	allocator *ma = ctx->curprg->def->ma;
 	if (strNil(*pw) || is_int_nil(*bits)) {
-		*ret = ma_strdup(ma, str_nil);
+		*ret = (char *) str_nil;
 	} else {
 		char *mret = 0;
 		switch (*bits) {
@@ -686,7 +686,7 @@ CLTbackendsum(Client ctx, str *ret, const char *const *pw)
 {
 	allocator *ma = ctx->curprg->def->ma;
 	if (strNil(*pw)) {
-		*ret = ma_strdup(ma, str_nil);
+		*ret = (char *) str_nil;
 	} else {
 		char *mret = mcrypt_BackendSum(*pw, strlen(*pw));
 		if (mret == NULL)
@@ -796,7 +796,7 @@ CLTsetClientInfo(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 #include "mel.h"
-mel_func clients_init_funcs[] = {
+static mel_func clients_init_funcs[] = {
  pattern("clients", "setListing", CLTsetListing, true, "Turn on/off echo of MAL instructions:\n1 - echo input,\n2 - show mal instruction,\n4 - show details of type resolutoin, \n8 - show binding information.", args(1,2, arg("",int),arg("flag",int))),
  pattern("clients", "getId", CLTgetClientId, false, "Return a number that uniquely represents the current client.", args(1,1, arg("",int))),
  pattern("clients", "getInfo", CLTInfo, false, "Pseudo bat with client attributes.", args(2,2, batarg("",str),batarg("",str))),

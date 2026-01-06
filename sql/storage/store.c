@@ -2320,7 +2320,7 @@ store_init(int debug, store_type store_tpe, int readonly, int singleuser)
 		return NULL;
 	}
 
-	if (!(pa = create_allocator(NULL, "MA_SQLstore", false))) {
+	if (!(pa = create_allocator("MA_SQLstore", false))) {
 		TRC_CRITICAL(SQL_STORE, "Allocation failure while initializing store\n");
 		_DELETE(store);
 		return NULL;
@@ -8124,14 +8124,15 @@ store_printinfo(sqlstore *store)
 {
 	printf("SQL store object id: %"PRIu64"\n",
 		   (uint64_t) ATOMIC_GET(&store->obj_id));
+	char buf[200];
+	if (ma_info(store->sa, buf, sizeof(buf), "SQL store allocator ") > 0)
+		printf("%s\n", buf);
 	if (!MT_lock_trytime(&store->commit, 1000)) {
 		printf("WAL is currently locked, so no WAL information\n");
 		return;
 	}
 	printf("WAL:\n");
 	printf("SQL store oldest pending "ULLFMT"\n", store->oldest_pending);
-	size_t sz = ma_size(store->sa);
-	printf("SQL store allocator: %zu%s\n", sz, humansize(sz, (char[24]){0}, 24));
 	log_printinfo(store->logger);
 	MT_lock_unset(&store->commit);
 }

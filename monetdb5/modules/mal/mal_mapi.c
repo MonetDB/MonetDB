@@ -1840,7 +1840,7 @@ SERVERfetch_field_str(Client ctx, str *ret, const int *key, const int *fnr)
 	str fld;
 	accessTest(*key, "fetch_field");
 	fld = mapi_fetch_field(SERVERsessions[i].hdl, *fnr);
-	*ret = ma_strdup(ma, fld ? fld : str_nil);
+	*ret = fld ? ma_strdup(ma, fld) : (char *) str_nil;
 	if (*ret == NULL)
 		throw(MAL, "mapi.fetch_field_str", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	if (mapi_error(mid))
@@ -1978,7 +1978,7 @@ SERVERfetch_line(Client ctx, str *ret, const int *key)
 	if (mapi_error(mid))
 		throw(MAL, "mapi.fetch_line", "%s",
 			  mapi_result_error(SERVERsessions[i].hdl));
-	*ret = ma_strdup(ma, fld ? fld : str_nil);
+	*ret = fld ? ma_strdup(ma, fld) : (char *) str_nil;
 	if (*ret == NULL)
 		throw(MAL, "mapi.fetch_line", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
@@ -2458,7 +2458,7 @@ SERVERbindBAT(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 #include "mel.h"
-mel_func mal_mapi_init_funcs[] = {
+static mel_func mal_mapi_init_funcs[] = {
  command("mapi", "listen", SERVERlisten_default, false, "Start a Mapi server with the default settings.", args(1,1, arg("",int))),
  command("mapi", "listen", SERVERlisten_port, false, "Start a Mapi listener on the port given.", args(1,2, arg("",int),arg("port",int))),
  command("mapi", "listen", SERVERlisten_usock, false, "Start a Mapi listener on the unix socket file given.", args(1,2, arg("",int),arg("unixsocket",str))),

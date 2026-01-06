@@ -1181,8 +1181,6 @@ push_up_select(mvc *sql, sql_rel *rel, list *ad)
 					e = exp_copy(sql, e);
 					if (exp_has_freevar(sql, e))
 						rel_bind_var(sql, rel->l, e);
-					if (rel->op == op_anti && !is_any(e))
-						set_semantics(e);
 					rel_join_add_exp(sql->sa, rel, e);
 				}
 			}
@@ -2668,11 +2666,7 @@ rel_set_type(visitor *v, sql_rel *rel)
 						}
 					} else if (te->type == e_atom && !te->f) {
 						sql_subtype *t = exp_subtype(te);
-						if (t && !t->type->localtype) {
-							te->tpe = *sql_fetch_localtype(TYPE_bte);
-							if (te->l)
-								te->l = atom_set_type(v->sql->sa, te->l, &te->tpe);
-						} else if (!t && !te->l && !te->r) { /* parameter, set type, or return ERR?? */
+						if (!t && !te->l && !te->r) { /* parameter, set type, or return ERR?? */
 							sql_arg *a = sql_bind_paramnr(v->sql, te->flag);
 							if (!a->type.type)
 								return sql_error(v->sql, 10, SQLSTATE(42000) "Could not determine type for argument number %d", te->flag+1);
@@ -2857,9 +2851,10 @@ static inline sql_rel *
 rewrite_split_select_exps(visitor *v, sql_rel *rel)
 {
 	if (is_select(rel->op) && !list_empty(rel->exps)) {
-		allocator_state ta_state = ma_open(v->sql->ta);
+		allocator *ta = MT_thread_getallocator();
+		allocator_state ta_state = ma_open(ta);
 		int i = 0;
-		bool has_complex_exps = false, has_simple_exps = false, *complex_exps = SA_NEW_ARRAY(v->sql->ta, bool, list_length(rel->exps));
+		bool has_complex_exps = false, has_simple_exps = false, *complex_exps = SA_NEW_ARRAY(ta, bool, list_length(rel->exps));
 
 		for (node *n = rel->exps->h ; n ; n = n->next) {
 			sql_exp *e = n->data;
@@ -2958,9 +2953,10 @@ rewrite_rank(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 
 	/* The following array remembers the original positions of gbe and obe expressions to replace them in order later at diff_replace_arguments */
 	if (gbe || obe) {
-		allocator_state ta_state = ma_open(v->sql->ta);
+		allocator *ta = MT_thread_getallocator();
+		allocator_state ta_state = ma_open(ta);
 		int gbeoffset = list_length(gbe), i = 0, added = 0;
-		int *pos = SA_NEW_ARRAY(v->sql->ta, int, gbeoffset + list_length(obe));
+		int *pos = SA_NEW_ARRAY(ta, int, gbeoffset + list_length(obe));
 		if (gbe) {
 			for (i = 0 ; i < gbeoffset ; i++)
 				pos[i] = i;
@@ -4076,6 +4072,8 @@ rewrite_fix_count(visitor *v, sql_rel *rel)
 				}
 			}
 			exps = list_join(rel_projections(v->sql, rel->l, NULL, 1, 1), rexps);
+			if (!list_empty(rel->attr))
+				exps = append(exps, exp_ref(v->sql, rel->attr->h->data));
 			rel = rel_project(v->sql->sa, rel, exps);
 			set_processed(rel);
 			r->used |= rewrite_fix_count_used;

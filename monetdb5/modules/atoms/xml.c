@@ -173,7 +173,7 @@ XMLxml2str(Client ctx, str *s, const xml *x)
 {
 	allocator *ma = ctx->curprg->def->ma;
 	if (strNil(*x)) {
-		*s = ma_strdup(ma, str_nil);
+		*s = (char *) str_nil;
 		return MAL_SUCCEED;
 	}
 	assert(**x == 'A' || **x == 'C' || **x == 'D');
@@ -190,9 +190,7 @@ XMLstr2xml(Client ctx, xml *x, const char *const*val)
 	size_t len;
 
 	if (strNil(t)) {
-		*x = (xml) ma_strdup(ma, str_nil);
-		if (*x == NULL)
-			throw(MAL, "xml.xml", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		*x = (xml) str_nil;
 		return MAL_SUCCEED;
 	}
 	len = 6 * strlen(t) + 1;
@@ -214,9 +212,7 @@ XMLxmltext(Client ctx, str *s, const xml *x)
 	str content = NULL;
 
 	if (strNil(*x)) {
-		*s = ma_strdup(ma, str_nil);
-		if (*s == NULL)
-			throw(MAL, "xml.text", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		*s = (char *) str_nil;
 		return MAL_SUCCEED;
 	}
 	if (**x == 'D') {
@@ -252,7 +248,7 @@ XMLxmltext(Client ctx, str *s, const xml *x)
 			*p = 0;
 		}
 	} else {
-		content = ma_strdup(ma, "");
+		content = "";
 	}
 	if (content == NULL)
 		throw(MAL, "xml.text", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -278,9 +274,7 @@ XMLdocument(Client ctx, xml *x, const char * const *val)
 	xmlDocPtr doc;
 
 	if (strNil(*val)) {
-		*x = (xml) ma_strdup(ma, str_nil);
-		if (*x == NULL)
-			throw(MAL, "xml.document", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		*x = (xml) str_nil;
 		return MAL_SUCCEED;
 	}
 	/* call the libxml2 library to perform the test */
@@ -313,9 +307,7 @@ XMLcontent(Client ctx, xml *x, const char * const *val)
 	size_t len;
 
 	if (strNil(*val)) {
-		*x = (xml) ma_strdup(ma, str_nil);
-		if (*x == NULL)
-			throw(MAL, "xml.content", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		*x = (xml) str_nil;
 		return MAL_SUCCEED;
 	}
 	/* call the libxml2 library to perform the test */
@@ -366,9 +358,7 @@ XMLcomment(Client ctx, xml *x, const char * const *s)
 	str buf;
 
 	if (strNil(*s)) {
-		*x = (xml) ma_strdup(ma, str_nil);
-		if (*x == NULL)
-			throw(MAL, "xml.comment", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		*x = (xml) str_nil;
 		return MAL_SUCCEED;
 	}
 	if (strstr(*s, "--") != NULL)
@@ -403,9 +393,7 @@ XMLpi(Client ctx, xml *ret, const char * const *target, const char * const *valu
 	str val = NULL;
 
 	if (strNil(*target)) {
-		*ret = ma_strdup(ma, str_nil);
-		if (*ret == NULL)
-			throw(MAL, "xml.attribute", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		*ret = (char *) str_nil;
 		return MAL_SUCCEED;
 	}
 	if (xmlValidateName((xmlChar *) *target, 0) != 0
@@ -442,9 +430,7 @@ XMLroot(Client ctx, xml *ret, const xml *val, const char * const *version, const
 	bit isdoc = 0;
 
 	if (strNil(*val)) {
-		*ret = ma_strdup(ma, str_nil);
-		if (*ret == NULL)
-			throw(MAL, "xml.root", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		*ret = (char *) str_nil;
 		return MAL_SUCCEED;
 	}
 	if (**val != 'C')
@@ -488,9 +474,7 @@ XMLattribute(Client ctx, xml *x, const char * const *name, const char * const *v
 	size_t len;
 
 	if (strNil(t) || strNil(*name)) {
-		*x = (xml) ma_strdup(ma, str_nil);
-		if (*x == NULL)
-			throw(MAL, "xml.attribute", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		*x = (xml) str_nil;
 		return MAL_SUCCEED;
 	}
 	if (xmlValidateName((xmlChar *) *name, 0) != 0)
@@ -662,23 +646,20 @@ XMLepilogue(Client ctx, void *ret)
 static ssize_t
 XMLfromString(allocator *ma, const char *src, size_t *len, void **X, bool external)
 {
+	(void) ma;
 	xml *x = (xml *) X;
 	if (*x) {
 		*x = NULL;
 	}
 	if (external && strcmp(src, "nil") == 0) {
-		*x = ma_strdup(ma, str_nil);
-		if (*x == NULL)
-			return -1;
+		*x = (char *) str_nil;
 		return 3;
 	} else if (strNil(src)) {
-		*x = ma_strdup(ma, str_nil);
-		if (*x == NULL)
-			return -1;
+		*x = (char *) str_nil;
 		return 1;
 	} else {
 		char *err = XMLstr2xml(/*ctx*/NULL, x, &src);
-		if (err !=MAL_SUCCEED) {
+		if (err != MAL_SUCCEED) {
 			GDKerror("%s", getExceptionMessageAndState(err));
 			return -1;
 		}
@@ -931,10 +912,10 @@ XMLepilogue(Client ctx, void *ret)
 #endif /* HAVE_LIBXML */
 
 #include "mel.h"
-mel_atom xml_init_atoms[] = {
+static mel_atom xml_init_atoms[] = {
  { .name="xml", .basetype="str", .fromstr=XMLfromString, .tostr=XMLtoString, },  { .cmp=NULL }
 };
-mel_func xml_init_funcs[] = {
+static mel_func xml_init_funcs[] = {
  command("xml", "xml", XMLstr2xml, false, "Cast the string to an xml compliant string", args(1,2, arg("",xml),arg("src",str))),
  command("xml", "str", XMLxml2str, false, "Cast the string to an xml compliant string", args(1,2, arg("",str),arg("src",xml))),
  command("xml", "text", XMLxmltext, false, "Extract text from an xml atom", args(1,2, arg("",str),arg("src",xml))),

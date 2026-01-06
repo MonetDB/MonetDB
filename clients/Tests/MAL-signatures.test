@@ -37584,11 +37584,6 @@ pattern optimizer.nomitosispipe(X_0:str, X_1:str):str
 OPTwrapper
 Fast compound optimizer pipe without mitosis
 optimizer
-optimize
-pattern optimizer.optimize(X_0:str, X_1:str):void
-QOToptimize
-Optimize a specific operation
-optimizer
 postfix
 pattern optimizer.postfix():str
 OPTwrapper

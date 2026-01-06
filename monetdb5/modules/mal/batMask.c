@@ -128,7 +128,7 @@ MSKumask(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 
 #include "mel.h"
-mel_func batMask_init_funcs[] = {
+static mel_func batMask_init_funcs[] = {
  pattern("mask", "mask", MSKmask, false, "", args(1,2, batarg("r", msk), batarg("b",oid))),
  pattern("mask", "umask", MSKumask, false, "", args(1,2, batarg("r", oid), batarg("b",msk))),
  { .imp=NULL }

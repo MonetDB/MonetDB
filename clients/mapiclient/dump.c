@@ -2946,8 +2946,8 @@ dump_database(Mapi mid, stream *sqlf, const char *ddir, const char *ext, bool de
 			   "t.name AS name, "
 			   "t.type AS type "
 		"FROM sys.schemas s, "
-			  "sys._tables t "
-		"WHERE t.type IN (0, 3, 4, 5, 6) "
+			"sys._tables t "
+		"WHERE t.type IN (0, 3, 4, 5, 6, 7) "
 		  "AND t.system = FALSE "
 		  "AND s.id = t.schema_id "
 		"ORDER BY id";

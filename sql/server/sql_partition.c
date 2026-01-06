@@ -288,13 +288,17 @@ bootstrap_partition_expression(mvc *sql, sql_table *mt, int instantiate)
 	sql_ec = mt->part.pexp->type.type->eclass;
 	if (!(sql_ec == EC_BIT || EC_VARCHAR(sql_ec) || EC_TEMP(sql_ec) || sql_ec == EC_POS || sql_ec == EC_NUM ||
 		 EC_INTERVAL(sql_ec)|| sql_ec == EC_DEC || sql_ec == EC_BLOB)) {
-		char *err = sql_subtype_string(sql->ta, &(mt->part.pexp->type));
+		allocator *ta = MT_thread_getallocator();
+		allocator_state ta_state = ma_open(ta);
+		char *err = sql_subtype_string(ta, &(mt->part.pexp->type));
 		if (!err) {
+			ma_close(&ta_state);
 			throw(SQL, "sql.partition", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		} else {
 			msg = createException(SQL, "sql.partition",
 								  SQLSTATE(42000) "Column type %s not supported for the expression return value", err);
 		}
+		ma_close(&ta_state);
 	}
 
 	if (instantiate && !msg) {

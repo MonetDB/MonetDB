@@ -269,7 +269,7 @@ wrap_tls(Mapi mid, SOCKET sock)
 		return croak_openssl(mid, __func__, "X509_VERIFY_PARAM_set1_host");
 	}
 
-	unsigned char alpn_vector[] = { 6, 'm', 'a', 'p', 'i', '/', '9' };
+	static const unsigned char alpn_vector[] = { 6, 'm', 'a', 'p', 'i', '/', '9' };
 	// NOTE: these functions return 0 on success, not 1!
 	if (0 != SSL_set_alpn_protos(ssl, alpn_vector, sizeof(alpn_vector))) {
 		BIO_free_all(bio);

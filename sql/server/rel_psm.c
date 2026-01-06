@@ -948,17 +948,20 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 		if (!replace && params) {
 			char *arg_list = NULL;
 			node *n;
+			allocator *ta = MT_thread_getallocator();
+			allocator_state ta_state = ma_open(ta);
 
 			for (n = type_list->h; n; n = n->next) {
-				char *tpe =  sql_subtype_string(sql->ta, (sql_subtype *) n->data);
+				char *tpe =  sql_subtype_string(ta, (sql_subtype *) n->data);
 
 				if (arg_list) {
-					arg_list = sa_message(sql->ta, "%s, %s", arg_list, tpe);
+					arg_list = sa_message(ta, "%s, %s", arg_list, tpe);
 				} else {
 					arg_list = tpe;
 				}
 			}
 			(void)sql_error(sql, 02, SQLSTATE(42000) "CREATE %s: name '%s' (%s) already in use", F, fname, arg_list ? arg_list : "");
+			ma_close(&ta_state);
 			list_destroy(type_list);
 			return NULL;
 		} else if (!replace) {
@@ -1075,16 +1078,21 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 
 		if (create) { /* needed for recursive functions */
 			bit side_effect = list_empty(restype) == 1; /* TODO make this more precise? */
-			q = query_cleaned(sql->ta, q);
+			allocator *ta = MT_thread_getallocator();
+			allocator_state ta_state = ma_open(ta);
+			q = query_cleaned(ta, q);
 			switch (mvc_create_func(&f, sql, sql->sa, s, fname, l, restype, type, lang, sql_shared_module_name, NULL, q, FALSE, vararg, FALSE, side_effect, order_required, opt_order)) {
 				case -1:
+					ma_close(&ta_state);
 					return sql_error(sql, 01, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				case -2:
 				case -3:
+					ma_close(&ta_state);
 					return sql_error(sql, 01, SQLSTATE(42000) "CREATE %s: transaction conflict detected", F);
 				default:
 					break;
 			}
+			ma_close(&ta_state);
 			sql->forward = f;
 		} else if (!sf) {
 			return sql_error(sql, 01, SQLSTATE(42000) "CREATE %s: SQL function %s.%s not bound", F, s->base.name, fname);
@@ -1118,16 +1126,21 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 			return sql_error(sql, 01, SQLSTATE(42000) "CREATE %s: MAL function name '%s' too large for the backend", F, fnme);
 		sql->params = NULL;
 		if (create) {
-			q = query_cleaned(sql->ta, q);
+			allocator *ta = MT_thread_getallocator();
+			allocator_state ta_state = ma_open(ta);
+			q = query_cleaned(ta, q);
 			switch (mvc_create_func(&f, sql, sql->sa, s, fname, l, restype, type, lang, fmod, fnme, q, FALSE, vararg, FALSE, FALSE, order_required, opt_order)) {
 				case -1:
+					ma_close(&ta_state);
 					return sql_error(sql, 01, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				case -2:
 				case -3:
+					ma_close(&ta_state);
 					return sql_error(sql, 01, SQLSTATE(42000) "CREATE %s: transaction conflict detected", F);
 				default:
 					break;
 			}
+			ma_close(&ta_state);
 
 			/* instantiate MAL functions while being created. This also sets the side-effects flag */
 			bool se = f->side_effect;
@@ -1212,15 +1225,18 @@ resolve_func(mvc *sql, const char *sname, const char *name, dlist *typelist, sql
 			node *n;
 
 			if (type_list->cnt > 0) {
+				allocator *ta = MT_thread_getallocator();
+				allocator_state ta_state = ma_open(ta);
 				for (n = type_list->h; n; n = n->next) {
-					char *tpe =  sql_subtype_string(sql->ta, (sql_subtype *) n->data);
+					char *tpe =  sql_subtype_string(ta, (sql_subtype *) n->data);
 
 					if (arg_list) {
-						arg_list = sa_message(sql->ta, "%s, %s", arg_list, tpe);
+						arg_list = sa_message(ta, "%s, %s", arg_list, tpe);
 					} else {
 						arg_list = tpe;
 					}
 				}
+				ma_close(&ta_state);
 				list_destroy(list_func);
 				list_destroy(type_list);
 				if (!if_exists)
@@ -1424,8 +1440,12 @@ create_trigger(sql_query *query, dlist *qname, int time, symbol *trigger_event, 
 
 		assert(triggered_action->h->type == type_int);
 		orientation = triggered_action->h->data.i_val;
-		q = query_cleaned(sql->ta, QUERY(sql->scanner));
-		return rel_create_trigger(sql, sname, tname, triggername, time, orientation, event, old_name, new_name, condition, q, replace);
+		allocator *ta = MT_thread_getallocator();
+		allocator_state ta_state = ma_open(ta);
+		q = query_cleaned(ta, QUERY(sql->scanner));
+		r = rel_create_trigger(sql, sname, tname, triggername, time, orientation, event, old_name, new_name, condition, q, replace);
+		ma_close(&ta_state);
+		return r;
 	}
 
 	if (!instantiate) {

@@ -31,6 +31,7 @@
 	} while (0)
 
 
+// Load data directly into the bat. Can only be used if the incoming data has the right size and needs no postprocessing
 static str
 load_trivial(BAT *bat, stream *s, const char *filename, bincopy_validate_t validate, int width, BUN rows_estimate, int *eof_seen)
 {
@@ -38,7 +39,16 @@ load_trivial(BAT *bat, stream *s, const char *filename, bincopy_validate_t valid
 	str msg = MAL_SUCCEED;
 	int tt = BATttype(bat);
 	const size_t asz = (size_t) ATOMsize(tt);
-	const size_t chunk_size = 1<<20;
+	const size_t max_chunk_size = 1<<27;
+	size_t chunk_size = 1<<20;
+
+	if (rows_estimate == 0) {
+		int64_t file_size = getFileSize(s);
+		rows_estimate = (BUN)file_size / asz;
+		// getFileSize returns 0 if the underlying file could not be stat'ed, so
+		// rows_estimate will just still be 0 if anything went wrong (io error,
+		// s not a file stream)
+	}
 
 	bool eof = false;
 	while (!eof) {
@@ -52,6 +62,9 @@ load_trivial(BAT *bat, stream *s, const char *filename, bincopy_validate_t valid
 			rows_estimate = 0;
 		} else {
 			n = chunk_size / asz;
+			chunk_size += chunk_size / 2;
+			if (chunk_size > max_chunk_size)
+				chunk_size = max_chunk_size;
 		}
 
 		// First make some room
@@ -112,7 +125,7 @@ end:
 }
 
 static str
-load_fixed_width(BAT *bat, stream *s, const char *filename, int width, bool byteswap, bincopy_decoder_t convert, bincopy_validate_t validate, size_t record_size, int *eof_reached)
+load_fixed_width(BAT *bat, stream *s, const char *filename, int width, bool byteswap, bincopy_decoder_t convert, bincopy_validate_t validate, size_t record_size, size_t rows_estimate, int *eof_reached)
 {
 	static const char mal_operator[] = "sql.importColumn";
 	str msg = MAL_SUCCEED;
@@ -134,6 +147,17 @@ load_fixed_width(BAT *bat, stream *s, const char *filename, int width, bool byte
 		goto end;
 	}
 
+	if (rows_estimate == 0) {
+		int64_t file_size = getFileSize(s);
+		rows_estimate = (BUN)file_size / record_size;
+		// getFileSize returns 0 if the underlying file could not be stat'ed, so
+		// rows_estimate will just still be 0 if anything went wrong (io error,
+		// s not a file stream)
+	}
+
+	BUN next_increase = rows_estimate;
+	BUN max_increase = (1<<27) / record_size;
+
 	while (1) {
 		ssize_t nread = bstream_next(bs);
 		if (nread < 0)
@@ -141,20 +165,27 @@ load_fixed_width(BAT *bat, stream *s, const char *filename, int width, bool byte
 		if (nread == 0)
 			break;
 
-		size_t n = (bs->len - bs->pos) / record_size;
-		size_t extent = n * record_size;
-		BUN count = BATcount(bat);
-		BUN newCount = count + n;
-		if (BATextend(bat, newCount) != GDK_SUCCEED)
-			bailout("%s", GDK_EXCEPTION);
+		BUN new_items = (bs->len - bs->pos) / record_size;
+		BUN free_space = BATcapacity(bat) - BATcount(bat);
+		if (new_items > free_space) {
+			if (next_increase < new_items)
+				next_increase = new_items;
+			BUN desired = BATcount(bat) + next_increase;
+			if (BATextend(bat, desired) != GDK_SUCCEED)
+				bailout("%s", GDK_EXCEPTION);
+			next_increase += next_increase / 2;
+			if (next_increase > max_increase)
+				next_increase = max_increase;
+		}
 
-		msg = convert(Tloc(bat, count), &bs->buf[bs->pos], n, byteswap);
+		void *start = Tloc(bat, BATcount(bat));
+		msg = convert(start, &bs->buf[bs->pos], new_items, byteswap);
 		if (validate != NULL && msg == MAL_SUCCEED)
-			msg = validate(Tloc(bat, count), n, width, filename);
+			msg = validate(start, new_items, width, filename);
 		if (msg != MAL_SUCCEED)
 			goto end;
-		BATsetcount(bat, newCount);
-		bs->pos += extent;
+		BATsetcount(bat, BATcount(bat) + new_items);
+		bs->pos += new_items * record_size;
 	}
 
 	bat->tseqbase = oid_nil;
@@ -202,7 +233,7 @@ load_column(type_record_t *rec, const char *name, BAT *bat, stream *s, int width
 	if (loader) {
 		msg = loader(bat, s, eof_reached, width, byteswap);
 	} else if (decoder) {
-		msg = load_fixed_width(bat, s, name, width, byteswap, rec->decoder, rec->validate, rec->record_size, eof_reached);
+		msg = load_fixed_width(bat, s, name, width, byteswap, rec->decoder, rec->validate, rec->record_size, rows_estimate, eof_reached);
 	} else {
 		// load the bytes directly into the bat, as-is
 		msg = load_trivial(bat, s, name, rec->validate, width, rows_estimate, eof_reached);

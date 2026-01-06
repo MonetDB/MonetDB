@@ -226,7 +226,7 @@ exp_merge_range(visitor *v, sql_rel *rel, list *exps)
 					    f->flag == cmp_lte))
 						continue;
 
-					cmp_supertype(&super, exp_subtype(le), exp_subtype(lf));
+					cmp_supertype(&super, exp_subtype(le), exp_subtype(lf), false);
 					if (!(rf = exp_check_type(v->sql, &super, rel, rf, type_equal)) ||
 						!(le = exp_check_type(v->sql, &super, rel, le, type_equal)) ||
 						!(re = exp_check_type(v->sql, &super, rel, re, type_equal))) {
@@ -307,7 +307,7 @@ exp_merge_range(visitor *v, sql_rel *rel, list *exps)
 					if (lt && (ff == cmp_lt || ff == cmp_lte))
 						continue;
 
-					cmp_supertype(&super, exp_subtype(le), exp_subtype(lf));
+					cmp_supertype(&super, exp_subtype(le), exp_subtype(lf), false);
 					if (!(rf = exp_check_type(v->sql, &super, rel, rf, type_equal)) ||
 						!(le = exp_check_type(v->sql, &super, rel, le, type_equal)) ||
 						!(re = exp_check_type(v->sql, &super, rel, re, type_equal))) {
@@ -425,7 +425,8 @@ exps_cse_dis( visitor *v, list *oexps, sql_exp *de)
 	}
 
 	int matches = 0, lpos = 0, rc = 1, rpos = 0, changes = 0;
-	int *matchedpos = SA_ZNEW_ARRAY(v->sql->ta, int, list_length(dis));
+	allocator *ta = MT_thread_getallocator();
+	int *matchedpos = SA_ZNEW_ARRAY(ta, int, list_length(dis));
 	sql_exp *fe = dis->h->data;
 	if (fe->type != e_cmp || fe->flag != cmp_con) {
 		append(oexps, de);
@@ -510,7 +511,6 @@ typedef struct exp_eq_multi_col_values {
 	/* we need ->first in order to remove it from the list of multi col
 	 * cmp_eq exps in case that we find another occurrence (with different values)
 	 */
-	list *first;
 	list *cols;  /* list of col exps */
 	list *lvs;   /* list of lists of values */
 } eq_mcv;
@@ -603,20 +603,11 @@ detect_multicol_cmp_eqs(mvc *sql, list *mce_ands, sql_hash *meqh)
 				for (node *m = sl->h; m; m = m->next)
 					atms = append(atms, ((sql_exp*)m->data)->r);
 				mcv->lvs = append(mcv->lvs, atms);
-				/* remove this and the previous occurrence (which means that's the first time
-				 * that we found the *same* multi cmp_eq exp)
-				 */
-				if (mcv->first) {
-					list_remove_data(mce_ands, NULL, mcv->first);
-					mcv->first = NULL;
-				}
-				list_remove_data(mce_ands, NULL, sl);
 			}
 		}
 
 		if (!found) {
 			eq_mcv *mcv = SA_NEW(sql->sa, eq_mcv);
-			mcv->first = sl;
 			mcv->cols = sa_list(sql->sa);
 			for (node *m = sl->h; m; m = m->next)
 				mcv->cols = append(mcv->cols, ((sql_exp*)m->data)->l);
@@ -690,6 +681,7 @@ generate_single_col_cmp_in(mvc *sql, sql_hash *eqh)
 	return ins;
 }
 
+#if 0
 static list *
 generate_multi_col_cmp_in(mvc *sql, sql_hash *meqh)
 {
@@ -714,12 +706,13 @@ generate_multi_col_cmp_in(mvc *sql, sql_hash *meqh)
 	}
 	return ins;
 }
+#endif
 
 static list *
 merge_ors(mvc *sql, list *exps, int *changes)
 {
 	sql_hash *eqh = NULL, *meqh = NULL;
-	list *eqs = NULL, *neq = NULL, *gen_ands = NULL, *mce_ands = NULL, *ins = NULL, *mins = NULL;
+	list *eqs = NULL, *neq = NULL, *gen_ands = NULL, *mce_ands = NULL, *ins = NULL;//, *mins = NULL;
 	for (node *n = exps->h; n; n = n->next) {
 		sql_exp *e = n->data;
 
@@ -730,8 +723,8 @@ merge_ors(mvc *sql, list *exps, int *changes)
 			 *       between expressions is expressed with a list
 			 *       e.g. [[e1, e2], [e3, e4, e5]] semantically translates
 			 *         to [(e1 AND e2), (e3 AND  e4 AND e5)]
-			 *       those (internal) AND list can be then used to
-			 *       reconstructed an OR tree [[e1, e2], [e3, e4, e5]] =>
+			 *       those (inner) AND list can be then used to
+			 *       reconstruct an OR tree [[e1, e2], [e3, e4, e5]] =>
 			 *       (([e1, e2] OR [e3, e4, e5]) OR <whatever-else> )
 			 *       gen_ands includes general expressions associated with AND
 			 *       mce_ands includes only cmp_eq expressions associated with AND
@@ -775,40 +768,47 @@ merge_ors(mvc *sql, list *exps, int *changes)
 			if (!col_multival && !multicol_multival)
 				continue;
 
-			if (col_multival)
+			if (col_multival) {
 				ins = generate_single_col_cmp_in(sql, eqh);
 
-			if (multicol_multival)
-				mins = generate_multi_col_cmp_in(sql, meqh);
+				/* create the new OR (disjunctive) expression */
+				list *new = sa_list(sql->sa);
 
-			/* create the new OR (disjunctive) expression */
-			list *new = sa_list(sql->sa);
-
-			if (ins)
-				list_merge(new, ins, NULL);
-			if (mins)
-				list_merge(new, mins, NULL);
-
-			if (list_length(eqs))
-				list_merge(new, eqs, NULL);
-			if (list_length(neq))
-				list_merge(new, neq, NULL);
-
-			if (list_length(mce_ands)) {
-				for (node *i = mce_ands->h; i; i = i->next, (*changes)++) {
-					list *cl = append(sa_list(sql->sa), exp_conjunctive(sql->sa, i->data));
-					list_merge(new, cl, NULL);
+				if (ins) {
+					for (int c = 0; c < list_length(ins); c++)
+						(*changes)++;
+					list_merge(new, ins, NULL);
 				}
-			}
-			if (list_length(gen_ands)) {
-				for (node *a = gen_ands->h; a; a = a->next, (*changes)++) {
-					list *gl = append(sa_list(sql->sa), exp_conjunctive(sql->sa, a->data));
-					list_merge(new, gl, NULL);
+
+				/* put everything back together */
+				if (list_length(eqs))
+					list_merge(new, eqs, NULL);
+				if (list_length(neq))
+					list_merge(new, neq, NULL);
+				if (list_length(mce_ands)) {
+					for (node *i = mce_ands->h; i; i = i->next) {
+						list *cl = append(sa_list(sql->sa),
+								exp_conjunctive(sql->sa, i->data));
+						list_merge(new, cl, NULL);
+					}
 				}
+				if (list_length(gen_ands)) {
+					for (node *a = gen_ands->h; a; a = a->next) {
+						list *gl = append(sa_list(sql->sa),
+								exp_conjunctive(sql->sa, a->data));
+						list_merge(new, gl, NULL);
+					}
+				}
+
+				/* replace the old OR exp with the new */
+				list_remove_node(exps, NULL, n);
+				exps = append(exps, exp_disjunctive(sql->sa, new));
 			}
 
-			list_remove_node(exps, NULL, n);
-			exps = append(exps, exp_disjunctive(sql->sa, new));
+			/*if (multicol_multival) {*/
+				/*mins = generate_multi_col_cmp_in(sql, meqh);*/
+				/*list_merge(new, mins, NULL);*/
+			/*}*/
 		}
 	}
 	return exps;
@@ -864,7 +864,7 @@ try_rewrite_equal_or_is_null(mvc *sql, sql_rel *rel, sql_exp *or, sql_exp *cmp, 
 		if (valid && first_is_null_found && second_is_null_found) {
 			sql_subtype super;
 
-			cmp_supertype(&super, exp_subtype(first), exp_subtype(second)); /* first and second must have the same type */
+			cmp_supertype(&super, exp_subtype(first), exp_subtype(second), false); /* first and second must have the same type */
 			if (!(first = exp_check_type(sql, &super, rel, first, type_equal)) ||
 					!(second = exp_check_type(sql, &super, rel, second, type_equal))) {
 				sql->session->status = 0;
@@ -1129,7 +1129,8 @@ static sql_rel *
 rel_optimize_select_and_joins_bottomup(visitor *v, global_props *gp, sql_rel *rel)
 {
 	v->data = &gp->opt_cycle;
-	allocator_state ta_state = ma_open(v->sql->ta);
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
 	rel = rel_visitor_bottomup(v, rel, &rel_optimize_select_and_joins_bottomup_);
 	ma_close(&ta_state);
 	v->data = gp;
@@ -2012,9 +2013,10 @@ order_join_expressions(mvc *sql, list *dje, list *rels)
 	if (cnt <= 1)
 		return dje;
 
+	allocator *ta = MT_thread_getallocator();
 	list *res = sa_list(sql->sa);
-	int i, *keys = SA_NEW_ARRAY(sql->ta, int, cnt);
-	void **data = SA_NEW_ARRAY(sql->ta, void*, cnt);
+	int i, *keys = SA_NEW_ARRAY(ta, int, cnt);
+	void **data = SA_NEW_ARRAY(ta, void*, cnt);
 
 	for (n = dje->h, i = 0; n; n = n->next, i++) {
 		sql_exp *e = n->data;
@@ -2287,21 +2289,22 @@ order_joins(visitor *v, list *rels, list *exps)
 		list_remove_data(exps, NULL, e);
 	}
 
+	allocator *ta = MT_thread_getallocator();
 	int nr_exps = list_length(sdje), nr_rels = list_length(rels), ci = 1;
 	if (nr_rels > 64) {
 		direct = 0;
-		n_rels = sa_list(v->sql->ta);
+		n_rels = sa_list(ta);
 	}
-	sql_rel **rels_a = SA_NEW_ARRAY(v->sql->ta, sql_rel*, nr_rels+1); /* don't use slot 0 */
+	sql_rel **rels_a = SA_NEW_ARRAY(ta, sql_rel*, nr_rels+1); /* don't use slot 0 */
 	rels_a[0] = NULL;
 	for (node *n = rels->h; n; n = n->next, ci++) {
 		rels_a[ci] = n->data;
 	}
-	ulng *h = SA_NEW_ARRAY(v->sql->ta, ulng, nr_exps), rel_mask = 0;	/* bit field (for > 64 its an imprint) */
-	uint16_t *r1 = SA_NEW_ARRAY(v->sql->ta, uint16_t, nr_exps);
-	uint16_t *r2 = SA_NEW_ARRAY(v->sql->ta, uint16_t, nr_exps);
+	ulng *h = SA_NEW_ARRAY(ta, ulng, nr_exps), rel_mask = 0;	/* bit field (for > 64 its an imprint) */
+	uint16_t *r1 = SA_NEW_ARRAY(ta, uint16_t, nr_exps);
+	uint16_t *r2 = SA_NEW_ARRAY(ta, uint16_t, nr_exps);
 	/* change r3 into rest list's */
-	int *r3 = SA_NEW_ARRAY(v->sql->ta, int, nr_exps);
+	int *r3 = SA_NEW_ARRAY(ta, int, nr_exps);
 
 	ci = 0;
 	for (node *n = sdje->h; n; n = n->next, ci++) {
@@ -2710,6 +2713,7 @@ static sql_rel *
 reorder_join(visitor *v, sql_rel *rel)
 {
 	list *exps, *rels;
+	allocator *ta = MT_thread_getallocator();
 
 	if (is_innerjoin(rel->op) && !is_single(rel) && !rel_is_ref(rel) && list_empty(rel->attr)) {
 		if (list_empty(rel->exps)) {
@@ -2727,7 +2731,7 @@ reorder_join(visitor *v, sql_rel *rel)
 		if (!list_empty(rel->exps)) { /* cannot add join idxs to cross products */
 			exps = rel->exps;
 			rel->exps = NULL; /* should be all crosstables by now */
-			rels = sa_list(v->sql->ta);
+			rels = sa_list(ta);
 			/* try to use an join index also for outer joins */
 			get_inner_relations(v->sql, rel, rels);
 			int cnt = list_length(exps);
@@ -2740,7 +2744,7 @@ reorder_join(visitor *v, sql_rel *rel)
 	} else {
 		exps = rel->exps;
 		rel->exps = NULL; /* should be all crosstables by now */
-		rels = sa_list(v->sql->ta);
+		rels = sa_list(ta);
 		get_relations(v, rel, rels);
 		if (list_length(rels) > 1) {
 			rels = push_in_join_down(v->sql, rels, exps);
@@ -2816,8 +2820,10 @@ static sql_rel *
 rel_join_order(visitor *v, global_props *gp, sql_rel *rel)
 {
 	(void) gp;
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
 	sql_rel *r = rel_join_order_(v, rel);
-	ma_reset(v->sql->ta);
+	ma_close(&ta_state);
 	return r;
 }
 

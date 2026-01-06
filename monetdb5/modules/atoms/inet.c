@@ -563,9 +563,7 @@ INEThost(Client ctx, str *retval, const inet *val)
 	str ip;
 
 	if (is_inet_nil(val)) {
-		*retval = ma_strdup(ma, str_nil);
-		if (*retval == NULL)
-			throw(MAL, "INEThost", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		*retval = (char *) str_nil;
 	} else {
 		ip = ma_alloc(ma, sizeof(char) * 16);
 		if (ip == NULL)
@@ -722,9 +720,7 @@ INETtext(Client ctx, str *retval, const inet *val)
 	str ip;
 
 	if (is_inet_nil(val)) {
-		*retval = ma_strdup(ma, str_nil);
-		if (*retval == NULL)
-			throw(MAL, "INETtext", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		*retval = (char *) str_nil;
 	} else {
 		ip = ma_alloc(ma, sizeof(char) * 20);
 		if (ip == NULL)
@@ -749,9 +745,7 @@ INETabbrev(Client ctx, str *retval, const inet *val)
 	str ip;
 
 	if (is_inet_nil(val)) {
-		*retval = ma_strdup(ma, str_nil);
-		if (*retval == NULL)
-			throw(MAL, "inet.abbrev", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		*retval = (char *) str_nil;
 	} else {
 		unsigned int mask;
 		unsigned char m[4];
@@ -832,10 +826,10 @@ INETnull(void)
 }
 
 #include "mel.h"
-mel_atom inet_init_atoms[] = {
+static mel_atom inet_init_atoms[] = {
  { .name="inet", .basetype="lng", .size=sizeof(inet), .null=INETnull, .cmp=INETcompare, .equal=INETequal, .fromstr=INETfromString, .tostr=INETtoString, },  { .cmp=NULL }
 };
-mel_func inet_init_funcs[] = {
+static mel_func inet_init_funcs[] = {
  command("inet", "new", INETnew, false, "Create an inet from a string literal", args(1,2, arg("",inet),arg("s",str))),
  command("inet", "isnil", INET_isnil, false, "Nil test for inet value", args(1,2, arg("",bit),arg("v",inet))),
  command("inet", "=", INET_comp_EQ, false, "Equality of two inets", args(1,3, arg("",bit),arg("v",inet),arg("w",inet))),

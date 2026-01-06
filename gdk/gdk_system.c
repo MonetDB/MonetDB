@@ -324,7 +324,7 @@ dump_threads(void)
 		struct mtthread *jn = t->joinwait;
 		const char *working = ATOMIC_PTR_GET(&t->working);
 		char mabuf[300];
-		ma_info(t->ma, mabuf, sizeof(mabuf));
+		ma_info(t->ma, mabuf, sizeof(mabuf), ", allocator ");
 
 		int pos = snprintf(buf, sizeof(buf),
 				   "%s, tid %zu, "
@@ -418,7 +418,7 @@ MT_thread_init(void)
 	}
 	InitializeCriticalSection(&winthread_cs);
 #endif
-	mainthread.ma = create_allocator(NULL, mainthread.threadname, false);
+	mainthread.ma = create_allocator(mainthread.threadname, false);
 	if (mainthread.ma == NULL) {
 		GDKerror("Creating thread-local allocator failed");
 		return false;
@@ -462,7 +462,7 @@ MT_thread_register(void)
 		.semawait = ATOMIC_PTR_VAR_INIT(NULL),
 	};
 	snprintf(self->threadname, sizeof(self->threadname), "foreign %zu", self->tid);
-	self->ma = create_allocator(NULL, self->threadname, false);
+	self->ma = create_allocator(self->threadname, false);
 	if (self->ma == NULL) {
 		free(self);
 		return false;
@@ -971,13 +971,16 @@ MT_create_thread(MT_Id *t, void (*f) (void *), void *arg, enum MT_thr_detach d, 
 		.exited = ATOMIC_VAR_INIT(0),
 		.working = ATOMIC_PTR_VAR_INIT(NULL),
 		.semawait = ATOMIC_PTR_VAR_INIT(NULL),
-		.ma = create_allocator(NULL, threadname, false),
+		.ma = create_allocator(threadname, false),
 	};
 	if (self->ma == NULL) {
 		free(self);
 		GDKerror("Creating thread allocator failed\n");
 		return -1;
 	}
+#ifndef NDEBUG
+	self->ma->self = self->tid;
+#endif
 	MT_lock_set(&thread_init_lock);
 	/* remember the list of callback functions we need to call for
 	 * this thread (i.e. anything registered so far) */

@@ -153,7 +153,7 @@ sql_fix_system_tables(Client c, mvc *sql)
 static str
 check_sys_tables(Client c, mvc *m, sql_schema *s)
 {
-	struct {
+	static const struct {
 		const char *name;
 		const char *func;
 		const char *type;
@@ -2305,7 +2305,7 @@ sql_update_jun2023(Client c, mvc *sql, sql_schema *s)
 
 	/* new function sys.regexp_replace */
 	allocator *old_sa = sql->sa;
-	if ((sql->sa = create_allocator(sql->pa, "MA_mvc", false)) != NULL) {
+	if ((sql->sa = create_allocator("MA_mvc", false)) != NULL) {
 		list *l;
 		if ((l = sa_list(sql->sa)) != NULL) {
 			sql_subtype tp;
@@ -3128,7 +3128,7 @@ sql_update_dec2023(Client c, mvc *sql, sql_schema *s)
 
 	/* 52_describe.sql New function sys.sql_datatype(mtype varchar(999), digits integer, tscale integer, nameonly boolean, shortname boolean) */
 	allocator *old_sa = sql->sa;
-	if ((sql->sa = create_allocator(sql->pa, "MA_mvc", false)) != NULL) {
+	if ((sql->sa = create_allocator("MA_mvc", false)) != NULL) {
 		list *l;
 		if ((l = sa_list(sql->sa)) != NULL) {
 			sql_subtype t1, t2;
@@ -4496,7 +4496,7 @@ sql_update_mar2025(Client c, mvc *sql, sql_schema *s)
 			sql_schema *is = mvc_bind_schema(sql, "information_schema");
 			t = mvc_bind_table(sql, is, "parameters");
 			t->system = 0;
-			char query[] = "update sys.functions set func = replace(func, E'\\n external', E' ordered\\n external') where name in ('quantile','quantile_avg','median','median_avg') and schema_id = 2000 and language = (select language_id from sys.function_languages where language_name = 'MAL') and type = (select function_type_id from sys.function_types where function_type_keyword = 'AGGREGATE') and not contains(func, 'ordered');\n"
+			static const char query[] = "update sys.functions set func = replace(func, E'\\n external', E' ordered\\n external') where name in ('quantile','quantile_avg','median','median_avg') and schema_id = 2000 and language = (select language_id from sys.function_languages where language_name = 'MAL') and type = (select function_type_id from sys.function_types where function_type_keyword = 'AGGREGATE') and not contains(func, 'ordered');\n"
 				"update sys.functions set func = replace(func, E'\\n\\texternal', E' ordered\\n external') where name in ('quantile','quantile_avg','median','median_avg') and schema_id = 2000 and language = (select language_id from sys.function_languages where language_name = 'MAL') and type = (select function_type_id from sys.function_types where function_type_keyword = 'AGGREGATE') and not contains(func, 'ordered');\n"
 				"update sys.functions set func = replace(func, E'\\nexternal', E' ordered\\n external') where name in ('quantile','quantile_avg','median','median_avg') and schema_id = 2000 and language = (select language_id from sys.function_languages where language_name = 'MAL') and type = (select function_type_id from sys.function_types where function_type_keyword = 'AGGREGATE') and not contains(func, 'ordered');\n"
 				"update sys.functions set func = replace(func, E' external', E' with order\\n external') where name = 'group_concat' and schema_id = 2000 and language = (select language_id from sys.function_languages where language_name = 'MAL') and type = (select function_type_id from sys.function_types where function_type_keyword = 'AGGREGATE');\n"
@@ -5150,7 +5150,7 @@ sql_update_dec2025(Client c, mvc *sql, sql_schema *s)
 		return err;
 
 	if (sql_bind_func(sql, "sys", "optimizer_stats", NULL, NULL, F_UNION, true, true)) {
-		const char query[] = "drop function sys.optimizer_stats cascade;\n";
+		static const char query[] = "drop function sys.optimizer_stats cascade;\n";
 		printf("Running database upgrade commands:\n%s\n", query);
 		err = SQLstatementIntern(c, query, "update", true, false, NULL);
 		if (err)
@@ -5161,7 +5161,7 @@ sql_update_dec2025(Client c, mvc *sql, sql_schema *s)
 	}
 
 	if (sql_bind_func(sql, "profiler", "start", NULL, NULL, F_PROC, true, true)) {
-		const char query[] = "drop procedure profiler.start cascade;\n"
+		static const char query[] = "drop procedure profiler.start cascade;\n"
 			"drop procedure profiler.stop cascade;\n"
 			"drop procedure profiler.setlimit cascade;\n"
 			"drop function profiler.getlimit cascade;\n"
@@ -5216,7 +5216,7 @@ sql_update_dec2025(Client c, mvc *sql, sql_schema *s)
 		fflush(stdout);
 		err = SQLstatementIntern(c, query, "update", true, false, NULL);
 		if (err == MAL_SUCCEED) {
-			const char query2[] = "ALTER TABLE sys.keywords SET READ ONLY;\n";
+			static const char query2[] = "ALTER TABLE sys.keywords SET READ ONLY;\n";
 			printf("Running database upgrade commands:\n%s\n", query2);
 			fflush(stdout);
 			err = SQLstatementIntern(c, query2, "update", true, false, NULL);
@@ -5231,7 +5231,7 @@ sql_update_dec2025(Client c, mvc *sql, sql_schema *s)
 	if (!sql_bind_func(sql, "sys", "to_hex", &tp, NULL, F_FUNC, true, true)) {
 		sql->session->status = 0; /* if the function was not found clean the error */
 		sql->errstr[0] = '\0';
-		const char query[] = "create function to_hex(n int)\n"
+		static const char query[] = "create function to_hex(n int)\n"
 			"returns text external name \"calc\".\"to_hex\";\n"
 			"grant execute on function to_hex(int) to public;\n"
 			"create function to_hex(n bigint)\n"
@@ -5241,7 +5241,27 @@ sql_update_dec2025(Client c, mvc *sql, sql_schema *s)
 		printf("Running database upgrade commands:\n%s\n", query);
 		fflush(stdout);
 		err = SQLstatementIntern(c, query, "update", true, false, NULL);
+		if (err)
+			return err;
 	}
+
+	/* better optimizations lead to fewer (bogus) dependencies, so we
+	 * need to remove those bogus dependencies during upgrade */
+	err = SQLstatementIntern(c, "select * from sys.dependencies where id in (2004, 2005, 2006) and depend_id in (select id from sys._tables where name in ('check_constraints', 'table_constraints') and schema_id = (select id from sys.schemas where name = 'information_schema'));\n", "update", true, false, &output);
+	if (err)
+		return err;
+	b = BATdescriptor(output->cols[0].b);
+	if (b != NULL) {
+		if (BATcount(b) != 0) {
+			const char query[] =
+				"delete from sys.dependencies where id in (2004, 2005, 2006) and depend_id in (select id from sys._tables where name in ('check_constraints', 'table_constraints') and schema_id = (select id from sys.schemas where name = 'information_schema'));\n";
+			printf("Running database upgrade commands:\n%s\n", query);
+			fflush(stdout);
+			err = SQLstatementIntern(c, query, "update", true, false, NULL);
+		}
+		BBPreclaim(b);
+	}
+	res_table_destroy(output);
 
 	return err;
 }
@@ -5265,6 +5285,114 @@ sql_update_default(Client c, mvc *sql, sql_schema *s)
 		if (BATcount(b) != 0) {
 			const char query[] =
 				"delete from sys.dependencies where id = 2048 and depend_id = (select f.id from sys.functions f where name = 'get_merge_table_partition_expressions');\n";
+			printf("Running database upgrade commands:\n%s\n", query);
+			fflush(stdout);
+			err = SQLstatementIntern(c, query, "update", true, false, NULL);
+		}
+		BBPreclaim(b);
+	}
+	res_table_destroy(output);
+
+	if (err)
+		return err;
+
+	err = SQLstatementIntern(c, "select id from sys._tables where name = 'describe_tables' and schema_id = 2000 and query like '%''false''%';\n", "update", true, false, &output);
+	if (err)
+		return err;
+	b = BATdescriptor(output->cols[0].b);
+	if (b != NULL) {
+		if (BATcount(b) != 0) {
+			sql_table *t;
+			t = mvc_bind_table(sql, s, "dump_tables");
+			t->system = 0; /* make it non-system else the drop view will fail */
+			t = mvc_bind_table(sql, s, "describe_tables");
+			t->system = 0; /* make it non-system else the drop view will fail */
+			const char query[] =
+				"drop function sys.dump_database;\n"
+				"drop view sys.dump_tables;\n"
+				"drop view sys.describe_tables;\n"
+				"CREATE VIEW sys.describe_tables AS\n"
+				" SELECT\n"
+				" t.id o,\n"
+				" s.name sch,\n"
+				" t.name tab,\n"
+				" ts.table_type_name typ,\n"
+				" (SELECT\n"
+				" ' (' ||\n"
+				" GROUP_CONCAT(\n"
+				" sys.DQ(c.name) || ' ' ||\n"
+				" sys.describe_type(c.type, c.type_digits, c.type_scale) ||\n"
+				" ifthenelse(c.\"null\" = false, ' NOT NULL', '')\n"
+				" , ', ') || ')'\n"
+				" FROM sys._columns c\n"
+				" WHERE c.table_id = t.id) col,\n"
+				" CASE ts.table_type_name\n"
+				" WHEN 'REMOTE TABLE' THEN\n"
+				" sys.get_remote_table_expressions(s.name, t.name)\n"
+				" WHEN 'MERGE TABLE' THEN\n"
+				" sys.get_merge_table_partition_expressions(t.id)\n"
+				" WHEN 'VIEW' THEN\n"
+				" sys.schema_guard(s.name, t.name, t.query)\n"
+				" ELSE\n"
+				" ''\n"
+				" END opt\n"
+				" FROM sys.schemas s, sys.table_types ts, sys.tables t\n"
+				" WHERE ts.table_type_name IN ('TABLE', 'VIEW', 'MERGE TABLE', 'REMOTE TABLE', 'REPLICA TABLE', 'UNLOGGED TABLE')\n"
+				" AND t.system = FALSE\n"
+				" AND s.id = t.schema_id\n"
+				" AND ts.table_type_id = t.type\n"
+				" AND s.name <> 'tmp';\n"
+				"GRANT SELECT ON sys.describe_tables TO PUBLIC;\n"
+				"CREATE VIEW sys.dump_tables AS\n"
+				" SELECT\n"
+				" t.o o,\n"
+				" CASE\n"
+				" WHEN t.typ <> 'VIEW' THEN\n"
+				" 'CREATE ' || t.typ || ' ' || sys.FQN(t.sch, t.tab) || t.col || t.opt || ';'\n"
+				" ELSE\n"
+				" t.opt\n"
+				" END stmt,\n"
+				" t.sch schema_name,\n"
+				" t.tab table_name\n"
+				" FROM sys.describe_tables t;\n"
+				"CREATE FUNCTION sys.dump_database(describe BOOLEAN) RETURNS TABLE(o int, stmt STRING)\n"
+				"BEGIN\n"
+				" SET SCHEMA sys;\n"
+				" TRUNCATE sys.dump_statements;\n"
+				" INSERT INTO sys.dump_statements VALUES (1, 'START TRANSACTION;');\n"
+				" INSERT INTO sys.dump_statements VALUES (2, 'SET SCHEMA \"sys\";');\n"
+				" INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_create_roles;\n"
+				" INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_create_users;\n"
+				" INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_create_schemas;\n"
+				" INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_user_defined_types;\n"
+				" INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_add_schemas_to_users;\n"
+				" INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_grant_user_privileges;\n"
+				" INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_sequences;\n"
+				" INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(ORDER BY stmts.o), stmts.s\n"
+				" FROM (\n"
+				" SELECT f.o, f.stmt FROM sys.dump_functions f\n"
+				" UNION ALL\n"
+				" SELECT t.o, t.stmt FROM sys.dump_tables t\n"
+				" ) AS stmts(o, s);\n"
+				" IF NOT DESCRIBE THEN\n"
+				" CALL sys.dump_table_data();\n"
+				" END IF;\n"
+				" INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_start_sequences;\n"
+				" INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_column_defaults;\n"
+				" INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_table_constraint_type;\n"
+				" INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_indices;\n"
+				" INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_foreign_keys;\n"
+				" INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_partition_tables;\n"
+				" INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_triggers;\n"
+				" INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_comments;\n"
+				" INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_table_grants;\n"
+				" INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_column_grants;\n"
+				" INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_function_grants;\n"
+				" INSERT INTO sys.dump_statements VALUES ((SELECT COUNT(*) FROM sys.dump_statements) + 1, 'COMMIT;');\n"
+				" RETURN sys.dump_statements;\n"
+				"END;\n"
+				"update sys.functions set system = true where not system and schema_id = 2000 and name = 'dump_database' and type = 5;\n" /* F_UNION == 5 */
+				"update sys._tables set system = true where not system and schema_id = 2000 and name in ('dump_tables', 'describe_tables');\n";
 			printf("Running database upgrade commands:\n%s\n", query);
 			fflush(stdout);
 			err = SQLstatementIntern(c, query, "update", true, false, NULL);

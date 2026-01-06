@@ -121,7 +121,7 @@ malEmbeddedBoot(int workerlimit, int memorylimit, int querytimeout,
 		MT_thread_set_qry_ctx(qc_old);
 		return msg;
 	}
-	char *modules[8] = { "embedded", "sql", "generator", "udf", "csv", "monetdb_loader", "json_loader" };
+	static /*const*/ char *modules[7] = { "embedded", "sql", "generator", "udf", "csv", "monetdb_loader" };
 	if ((msg = malIncludeModules(c, modules, 0, !with_mapi_server, NULL)) != MAL_SUCCEED) {
 		MCcloseClient(c);
 		MT_thread_set_qry_ctx(qc_old);

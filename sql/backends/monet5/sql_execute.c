@@ -140,6 +140,7 @@ SQLescapeString(str s)
 str
 SQLstatementIntern(Client c, const char *expr, const char *nme, bit execute, bit output, res_table **result)
 {
+	allocator_state ta_state = ma_open(MT_thread_getallocator());
 	int status = 0, err = 0, oldvtop, oldstop = 1, inited = 0, ac, sizeframes, topframes;
 	unsigned int label;
 	mvc *o = NULL, *m = NULL;
@@ -160,6 +161,7 @@ SQLstatementIntern(Client c, const char *expr, const char *nme, bit execute, bit
 		sql = (backend *) c->sqlcontext;
 	}
 	if (msg){
+		ma_close(&ta_state);
 		throw(SQL, "sql.statement", SQLSTATE(HY002) "Catalogue not available");
 	}
 
@@ -170,6 +172,7 @@ SQLstatementIntern(Client c, const char *expr, const char *nme, bit execute, bit
 		if (inited) {
 			msg = SQLresetClient(c);
 		}
+		ma_close(&ta_state);
 		throw(SQL, "sql.statement", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	*o = *m;
@@ -238,7 +241,7 @@ SQLstatementIntern(Client c, const char *expr, const char *nme, bit execute, bit
 	m->params = NULL;
 	m->session->auto_commit = 0;
 	if (!m->sa) {
-		if (!(m->sa = create_allocator(m->pa, "MA_mvc", false)) ) {
+		if (!(m->sa = create_allocator("MA_mvc", false)) ) {
 			msg = createException(SQL,"sql.statement",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto endofcompile;
 		}
@@ -394,6 +397,7 @@ endofcompile:
 	if (inited) {
 		(void) SQLresetClient(c);
 	}
+	ma_close(&ta_state);
 	return msg;
 }
 
@@ -433,7 +437,7 @@ RAstatement(Client c, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ((msg = SQLtrans(m)) != MAL_SUCCEED)
 		return msg;
 	if (!m->sa)
-		m->sa = create_allocator(m->pa, "MA_mvc", false);
+		m->sa = create_allocator("MA_mvc", false);
 	if (!m->sa)
 		return RAcommit_statement(be, createException(SQL,"RAstatement",SQLSTATE(HY013) MAL_MALLOC_FAIL));
 	refs = sa_list(m->sa);
@@ -491,7 +495,7 @@ struct global_var_entry {
 } global_var_entry;
 
 static str
-RAstatement2_return(backend *be, mvc *m, int nlevels, struct global_var_entry *gvars, int gentries, str msg)
+RAstatement2_return(allocator_state *ta_state, backend *be, mvc *m, int nlevels, struct global_var_entry *gvars, int gentries, str msg)
 {
 	while (nlevels) { /* clean added frames */
 		stack_pop_frame(m);
@@ -501,7 +505,7 @@ RAstatement2_return(backend *be, mvc *m, int nlevels, struct global_var_entry *g
 		struct global_var_entry gv = gvars[i];
 		(void) remove_global_var(m, gv.s, gv.vname);
 	}
-	ma_reset(m->ta);
+	ma_close(ta_state);
 	return RAcommit_statement(be, msg);
 }
 
@@ -548,9 +552,11 @@ RAstatement2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ((msg = SQLtrans(m)) != MAL_SUCCEED)
 		return msg;
 	if (!m->sa)
-		m->sa = create_allocator(m->pa, "MA_mvc", false);
+		m->sa = create_allocator("MA_mvc", false);
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
 	if (!m->sa)
-		return RAstatement2_return(be, m, nlevels, gvars, gentries, createException(SQL,"RAstatement2",SQLSTATE(HY013) MAL_MALLOC_FAIL));
+		return RAstatement2_return(&ta_state, be, m, nlevels, gvars, gentries, createException(SQL,"RAstatement2",SQLSTATE(HY013) MAL_MALLOC_FAIL));
 
 	ops = sa_list(m->sa);
 	while (sig && *sig) {
@@ -586,24 +592,24 @@ RAstatement2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 		if (!sql_find_subtype(&tpe, vtype, d, s)) {
 			if (!(t = mvc_bind_type(m, vtype))) /* try an external type */
-				return RAstatement2_return(be, m, nlevels, gvars, gentries, createException(SQL,"RAstatement2",SQLSTATE(42000) "SQL type %s(%d, %d) not found\n", vtype, d, s));
+				return RAstatement2_return(&ta_state, be, m, nlevels, gvars, gentries, createException(SQL,"RAstatement2",SQLSTATE(42000) "SQL type %s(%d, %d) not found\n", vtype, d, s));
 			sql_init_subtype(&tpe, t, d, s);
 		}
 
 		if (sch) {
 			assert(level == 0);
 			if (!(sh = mvc_bind_schema(m, sch)))
-				return RAstatement2_return(be, m, nlevels, gvars, gentries, createException(SQL,"RAstatement2",SQLSTATE(3F000) "No such schema '%s'", sch));
+				return RAstatement2_return(&ta_state, be, m, nlevels, gvars, gentries, createException(SQL,"RAstatement2",SQLSTATE(3F000) "No such schema '%s'", sch));
 			if (!find_global_var(m, sh, var)) { /* don't add the same global variable again */
 				if (!push_global_var(m, sch, var, &tpe)) /* if doesn't exist, add it, then remove it before returning */
-					return RAstatement2_return(be, m, nlevels, gvars, gentries, createException(SQL,"RAstatement2",SQLSTATE(HY013) MAL_MALLOC_FAIL));
+					return RAstatement2_return(&ta_state, be, m, nlevels, gvars, gentries, createException(SQL,"RAstatement2",SQLSTATE(HY013) MAL_MALLOC_FAIL));
 				if (gentries == gcap) {
 					if (gcap == 0) {
 						gcap = 8;
-						gvars = SA_NEW_ARRAY(m->ta, struct global_var_entry, gcap);
+						gvars = SA_NEW_ARRAY(ta, struct global_var_entry, gcap);
 					} else {
 						int ngcap = gcap * 4;
-						gvars = SA_RENEW_ARRAY(m->ta, struct global_var_entry, gvars, ngcap, gcap);
+						gvars = SA_RENEW_ARRAY(ta, struct global_var_entry, gvars, ngcap, gcap);
 						gcap = ngcap;
 					}
 					gvars[gentries++] = (struct global_var_entry) {.s = sh, .vname = var,};
@@ -616,12 +622,12 @@ RAstatement2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			if (lentries == lcap) {
 				if (lcap == 0) {
 					lcap = 8;
-					lkeys = SA_NEW_ARRAY(m->ta, int, lcap);
-					lvars = SA_NEW_ARRAY(m->ta, struct local_var_entry, lcap);
+					lkeys = SA_NEW_ARRAY(ta, int, lcap);
+					lvars = SA_NEW_ARRAY(ta, struct local_var_entry, lcap);
 				} else {
 					int nlcap = lcap * 4;
-					lkeys = SA_RENEW_ARRAY(m->ta, int, lkeys, nlcap, lcap);
-					lvars = SA_RENEW_ARRAY(m->ta, struct local_var_entry, lvars, nlcap, lcap);
+					lkeys = SA_RENEW_ARRAY(ta, int, lkeys, nlcap, lcap);
+					lvars = SA_RENEW_ARRAY(ta, struct local_var_entry, lvars, nlcap, lcap);
 					lcap = nlcap;
 				}
 			}
@@ -643,11 +649,11 @@ RAstatement2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			assert(next_level != 0); /* no global variables here */
 			while (nlevels < next_level) { /* add gap levels */
 				if (!stack_push_frame(m, NULL))
-					return RAstatement2_return(be, m, nlevels, gvars, gentries, createException(SQL,"RAstatement2",SQLSTATE(HY013) MAL_MALLOC_FAIL));
+					return RAstatement2_return(&ta_state, be, m, nlevels, gvars, gentries, createException(SQL,"RAstatement2",SQLSTATE(HY013) MAL_MALLOC_FAIL));
 				nlevels++;
 			}
 			if (!frame_push_var(m, next_val.vname, &next_val.tpe))
-				return RAstatement2_return(be, m, nlevels, gvars, gentries, createException(SQL,"RAstatement2",SQLSTATE(HY013) MAL_MALLOC_FAIL));
+				return RAstatement2_return(&ta_state, be, m, nlevels, gvars, gentries, createException(SQL,"RAstatement2",SQLSTATE(HY013) MAL_MALLOC_FAIL));
 		}
 	}
 
@@ -678,7 +684,7 @@ RAstatement2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 				subtype_from_string(be->mvc, &et, m->data);
 				if (!is_subtype(t, &et) && (ne = exp_check_type(be->mvc, &et, rel, e, type_equal)) == NULL) {
-					str got = sql_subtype_string(be->mvc->ta, t), expected = (str) m->data;
+					str got = sql_subtype_string(ta, t), expected = (str) m->data;
 					if (!got)
 						msg = createException(SQL, "RAstatement2", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					msg = createException(SQL, "RAstatement2", SQLSTATE(42000) "Parameter %d has wrong SQL type, expected %s, but got %s instead", i, expected, got);
@@ -694,7 +700,7 @@ RAstatement2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (!msg && monet5_create_relational_function(m, mod, nme, rel, NULL, ops, 0) < 0)
 		msg = createException(SQL, "RAstatement2", "%s", m->errstr);
 	rel_destroy(m, rel);
-	return RAstatement2_return(be, m, nlevels, gvars, gentries, msg);
+	return RAstatement2_return(&ta_state, be, m, nlevels, gvars, gentries, msg);
 }
 
 str

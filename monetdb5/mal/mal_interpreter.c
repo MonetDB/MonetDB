@@ -260,24 +260,24 @@ malCommandCall(Client cntxt, MalStkPtr stk, InstrPtr pci)
 /*
  * Copy the constant values onto the stack frame
  */
-#define initStack(A, S, R)								\
-	do {											\
-		for (int i = (S); i < mb->vtop; i++) {		\
-			lhs = &stk->stk[i];						\
-			if (isVarConstant(mb, i) > 0) {			\
-				if (!isVarDisabled(mb, i)) {		\
-					rhs = &getVarConstant(mb, i);	\
-					if(VALcopy(A, lhs, rhs) == NULL)	\
-						R = 0;						\
-				}									\
-			} else {								\
-				lhs->vtype = getVarGDKType(mb, i);	\
-				lhs->val.pval = 0;					\
-				lhs->len = 0;						\
-				lhs->bat = isaBatType(getVarType(mb, i));		\
-				lhs->allocated = false; \
-			}										\
-		}											\
+#define initStack(A, S, R)									\
+	do {													\
+		for (int i = (S); i < mb->vtop; i++) {				\
+			lhs = &stk->stk[i];								\
+			if (isVarConstant(mb, i) > 0) {					\
+				if (!isVarDisabled(mb, i)) {				\
+					rhs = &getVarConstant(mb, i);			\
+					if (VALcopy(A, lhs, rhs) == NULL)		\
+						R = 0;								\
+				}											\
+			} else {										\
+				*lhs = (ValRecord) {						\
+					.vtype = getVarGDKType(mb, i),			\
+					.bat = isaBatType(getVarType(mb, i)),	\
+					.allocated = false,						\
+				};											\
+			}												\
+		}													\
 	} while (0)
 
 static inline bool
@@ -509,17 +509,17 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 	if (stk == NULL)
 		throw(MAL, "mal.interpreter", MAL_STACK_FAIL);
 
-	allocator *ma = MT_thread_getallocator();
-	allocator_state ma_state = ma_open(ma);
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
 
 	/* prepare extended backup and garbage structures */
 	if (startpc + 1 == stoppc) {
 		pci = getInstrPtr(mb, startpc);
 		if (pci->argc > 16) {
-			backup = ma_alloc(ma, pci->retc * sizeof(ValRecord));
-			garbage = (int *) ma_zalloc(ma, pci->argc * sizeof(int));
+			backup = ma_alloc(ta, pci->retc * sizeof(ValRecord));
+			garbage = (int *) ma_zalloc(ta, pci->argc * sizeof(int));
 			if (backup == NULL || garbage == NULL) {
-				ma_close(&ma_state);
+				ma_close(&ta_state);
 				throw(MAL, "mal.interpreter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 		} else {
@@ -528,10 +528,10 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			memset(garbages, 0, sizeof(garbages));
 		}
 	} else if (mb->maxarg > 16) {
-		backup = ma_alloc(ma, mb->maxarg * sizeof(ValRecord));
-		garbage = (int *) ma_zalloc(ma, mb->maxarg * sizeof(int));
+		backup = ma_alloc(ta, mb->maxarg * sizeof(ValRecord));
+		garbage = (int *) ma_zalloc(ta, mb->maxarg * sizeof(int));
 		if (backup == NULL || garbage == NULL) {
-			ma_close(&ma_state);
+			ma_close(&ta_state);
 			throw(MAL, "mal.interpreter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 	} else {
@@ -550,7 +550,7 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			&& cntxt->qryctx.starttime - cntxt->session >
 			cntxt->sessiontimeout) {
 			runtimeProfileFinish(cntxt, mb, stk);
-			ma_close(&ma_state);
+			ma_close(&ta_state);
 			throw(MAL, "mal.interpreter",
 				  SQLSTATE(HYT00) RUNTIME_SESSION_TIMEOUT);
 		}
@@ -767,9 +767,9 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			InstrPtr q;
 			int ii, arg;
 
-			allocator_state ma_state2 = ma_open(ma);
+			allocator_state ta_state2 = ma_open(ta);
 
-			nstk = prepareMALstack(ma, pci->blk, pci->blk->vsize);
+			nstk = prepareMALstack(ta, pci->blk, pci->blk->vsize);
 			if (nstk == 0) {
 				ret = createException(MAL, "mal.interpreter", MAL_STACK_FAIL);
 				break;
@@ -783,14 +783,14 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			if (nstk->calldepth > 256) {
 				ret = createException(MAL, "mal.interpreter",
 									  MAL_CALLDEPTH_FAIL);
-				ma_close(&ma_state2);
+				ma_close(&ta_state2);
 				break;
 			}
 			if ((unsigned) nstk->stkdepth >
 				THREAD_STACK_SIZE / sizeof(mb->var[0]) / 4 && THRhighwater()) {
 				/* we are running low on stack space */
 				ret = createException(MAL, "mal.interpreter", MAL_STACK_FAIL);
-				ma_close(&ma_state2);
+				ma_close(&ta_state2);
 				break;
 			}
 
@@ -800,8 +800,8 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			for (ii = pci->retc; ii < pci->argc; ii++, arg++) {
 				lhs = &nstk->stk[q->argv[arg]];
 				rhs = &stk->stk[pci->argv[ii]];
-				if (VALcopy(ma, lhs, rhs) == NULL) {
-					ma_close(&ma_state2);
+				if (VALcopy(mb->ma, lhs, rhs) == NULL) {
+					ma_close(&ta_state2);
 					ret = createException(MAL, "mal.interpreter",
 										  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					break;
@@ -819,7 +819,7 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 						BBPrelease(lhs->val.bval);
 				}
 			}
-			ma_close(&ma_state2);
+			ma_close(&ta_state2);
 			break;
 		}
 		case REMsymbol:
@@ -1210,7 +1210,7 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				for (int i = 0; i < pci->retc; i++) {
 					rhs = &stk->stk[pp->argv[i]];
 					lhs = &env->stk[pci->argv[i]];
-					if (VALcopy(ma, lhs, rhs) == NULL) {
+					if (VALcopy(mb->ma, lhs, rhs) == NULL) {
 						ret = createException(MAL, "mal.interpreter",
 											  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 						break;
@@ -1270,7 +1270,7 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 	}
 	if (startedProfileQueue)
 		runtimeProfileFinish(cntxt, mb, stk);
-	ma_close(&ma_state);
+	ma_close(&ta_state);
 	return ret;
 }
 

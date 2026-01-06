@@ -790,7 +790,7 @@ JSONgetValue(allocator *ma, const JSON *jt, int idx)
 	str s;
 
 	if (jt->elm[idx].valuelen == 0)
-		return ma_strdup(ma, str_nil);
+		return (char *) str_nil;
 	s = ma_alloc(ma, jt->elm[idx].valuelen + 1);
 	if (s)
 		strcpy_len(s, jt->elm[idx].value, jt->elm[idx].valuelen + 1);
@@ -1015,7 +1015,7 @@ JSONfilterInternal(Client ctx, json *ret, const json *js, const char *const *exp
 			snprintf(s, l + 3, "[%s]", (result ? result : ""));
 	}
 	else if (result == NULL || *result == 0) {
-		s = ma_strdup(ma, "[]");
+		s = "[]";
 	}
 	else {
 		s = ma_alloc(ma, l + 1);
@@ -1503,10 +1503,8 @@ JSONfilterArrayDefault(Client ctx, json *ret, const json *js, lng index, const c
 static str
 JSONfilterArray_bte(Client ctx, json *ret, const json *js, const bte *index)
 {
-	allocator *ma = ctx->curprg->def->ma;
 	if (strNil(*js) || is_bte_nil(*index)) {
-		if (!(*ret = ma_strdup(ma, str_nil)))
-			throw(MAL, "json.filter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		*ret = (json) str_nil;
 		return MAL_SUCCEED;
 	}
 	return JSONfilterArrayDefault(ctx, ret, js, (lng) *index, 0);
@@ -1515,10 +1513,8 @@ JSONfilterArray_bte(Client ctx, json *ret, const json *js, const bte *index)
 static str
 JSONfilterArrayDefault_bte(Client ctx, json *ret, const json *js, const bte *index, const char *const *other)
 {
-	allocator *ma = ctx->curprg->def->ma;
 	if (strNil(*js) || is_bte_nil(*index) || strNil(*other)) {
-		if (!(*ret = ma_strdup(ma, str_nil)))
-			throw(MAL, "json.filter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		*ret = (json) str_nil;
 		return MAL_SUCCEED;
 	}
 	return JSONfilterArrayDefault(ctx, ret, js, (lng) *index, *other);
@@ -1527,10 +1523,8 @@ JSONfilterArrayDefault_bte(Client ctx, json *ret, const json *js, const bte *ind
 static str
 JSONfilterArray_sht(Client ctx, json *ret, const json *js, const sht *index)
 {
-	allocator *ma = ctx->curprg->def->ma;
 	if (strNil(*js) || is_sht_nil(*index)) {
-		if (!(*ret = ma_strdup(ma, str_nil)))
-			throw(MAL, "json.filter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		*ret = (json) str_nil;
 		return MAL_SUCCEED;
 	}
 	return JSONfilterArrayDefault(ctx, ret, js, (lng) *index, 0);
@@ -1539,10 +1533,8 @@ JSONfilterArray_sht(Client ctx, json *ret, const json *js, const sht *index)
 static str
 JSONfilterArrayDefault_sht(Client ctx, json *ret, const json *js, const sht *index, const char *const *other)
 {
-	allocator *ma = ctx->curprg->def->ma;
 	if (strNil(*js) || is_sht_nil(*index) || strNil(*other)) {
-		if (!(*ret = ma_strdup(ma, str_nil)))
-			throw(MAL, "json.filter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		*ret = (json) str_nil;
 		return MAL_SUCCEED;
 	}
 	return JSONfilterArrayDefault(ctx, ret, js, (lng) *index, *other);
@@ -1551,10 +1543,8 @@ JSONfilterArrayDefault_sht(Client ctx, json *ret, const json *js, const sht *ind
 static str
 JSONfilterArray_int(Client ctx, json *ret, const json *js, const int *index)
 {
-	allocator *ma = ctx->curprg->def->ma;
 	if (strNil(*js) || is_int_nil(*index)) {
-		if (!(*ret = ma_strdup(ma, str_nil)))
-			throw(MAL, "json.filter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		*ret = (json) str_nil;
 		return MAL_SUCCEED;
 	}
 	return JSONfilterArrayDefault(ctx, ret, js, (lng) *index, 0);
@@ -1563,10 +1553,8 @@ JSONfilterArray_int(Client ctx, json *ret, const json *js, const int *index)
 static str
 JSONfilterArrayDefault_int(Client ctx, json *ret, const json *js, const int *index, const char *const *other)
 {
-	allocator *ma = ctx->curprg->def->ma;
 	if (strNil(*js) || is_int_nil(*index) || strNil(*other)) {
-		if (!(*ret = ma_strdup(ma, str_nil)))
-			throw(MAL, "json.filter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		*ret = (json) str_nil;
 		return MAL_SUCCEED;
 	}
 	return JSONfilterArrayDefault(ctx, ret, js, (lng) *index, *other);
@@ -1575,10 +1563,8 @@ JSONfilterArrayDefault_int(Client ctx, json *ret, const json *js, const int *ind
 static str
 JSONfilterArray_lng(Client ctx, json *ret, const json *js, const lng *index)
 {
-	allocator *ma = ctx->curprg->def->ma;
 	if (strNil(*js) || is_lng_nil(*index)) {
-		if (!(*ret = ma_strdup(ma, str_nil)))
-			throw(MAL, "json.filter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		*ret = (json) str_nil;
 		return MAL_SUCCEED;
 	}
 	return JSONfilterArrayDefault(ctx, ret, js, (lng) *index, 0);
@@ -1587,10 +1573,8 @@ JSONfilterArray_lng(Client ctx, json *ret, const json *js, const lng *index)
 static str
 JSONfilterArrayDefault_lng(Client ctx, json *ret, const json *js, const lng *index, const char *const *other)
 {
-	allocator *ma = ctx->curprg->def->ma;
 	if (strNil(*js) || is_lng_nil(*index) || strNil(*other)) {
-		if (!(*ret = ma_strdup(ma, str_nil)))
-			throw(MAL, "json.filter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		*ret = (json) str_nil;
 		return MAL_SUCCEED;
 	}
 	return JSONfilterArrayDefault(ctx, ret, js, (lng) *index, *other);
@@ -1600,10 +1584,8 @@ JSONfilterArrayDefault_lng(Client ctx, json *ret, const json *js, const lng *ind
 static str
 JSONfilterArray_hge(Client ctx, json *ret, const json *js, const hge *index)
 {
-	allocator *ma = ctx->curprg->def->ma;
 	if (strNil(*js) || is_hge_nil(*index)) {
-		if (!(*ret = ma_strdup(ma, str_nil)))
-			throw(MAL, "json.filter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		*ret = (json) str_nil;
 		return MAL_SUCCEED;
 	}
 	if (*index < (hge) GDK_lng_min || *index > (hge) GDK_lng_max)
@@ -1614,10 +1596,8 @@ JSONfilterArray_hge(Client ctx, json *ret, const json *js, const hge *index)
 static str
 JSONfilterArrayDefault_hge(Client ctx, json *ret, const json *js, const hge *index, const char *const *other)
 {
-	allocator *ma = ctx->curprg->def->ma;
 	if (strNil(*js) || is_hge_nil(*index) || strNil(*other)) {
-		if (!(*ret = ma_strdup(ma, str_nil)))
-			throw(MAL, "json.filter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		*ret = (json) str_nil;
 		return MAL_SUCCEED;
 	}
 	if (*index < (hge) GDK_lng_min || *index > (hge) GDK_lng_max)
@@ -1629,10 +1609,8 @@ JSONfilterArrayDefault_hge(Client ctx, json *ret, const json *js, const hge *ind
 static str
 JSONfilter(Client ctx, json *ret, const json *js, const char *const *expr)
 {
-	allocator *ma = ctx->curprg->def->ma;
 	if (strNil(*js) || strNil(*expr)) {
-		if (!(*ret = ma_strdup(ma, str_nil)))
-			throw(MAL, "json.filter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		*ret = (json) str_nil;
 		return MAL_SUCCEED;
 	}
 	return JSONfilterInternal(ctx, ret, js, expr, 0);
@@ -1807,8 +1785,7 @@ JSONjson2textSeparator(Client ctx, str *ret, const json *js, const char *const *
 	JSON *jt;
 
 	if (strNil(*js) || strNil(*sep)) {
-		if (!(*ret = ma_strdup(ma, str_nil)))
-			throw(MAL, "json2txt", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		*ret = (char *) str_nil;
 		return MAL_SUCCEED;
 	}
 	allocator_state ta_state = ma_open(ta);
@@ -2114,8 +2091,7 @@ JSONkeyArray(Client ctx, json *ret, const json *js)
 	JSON *jt;
 
 	if (strNil(*js)) {
-		if (!(*ret = ma_strdup(ma, str_nil)))
-			throw(MAL, "json.keyarray", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		*ret = (json) str_nil;
 		return MAL_SUCCEED;
 	}
 
@@ -2133,11 +2109,7 @@ JSONkeyArray(Client ctx, json *ret, const json *js)
 				}
 				strcpy_len(r, jt->elm[i].value - 1, jt->elm[i].valuelen + 3);
 			} else {
-				r = ma_strdup(ma, "\"\"");
-				if (r == NULL) {
-					ma_close(&ta_state);
-					goto memfail;
-				}
+				r = "\"\"";
 			}
 			result = JSONglue(ma, result, r, ',');
 			if (result == NULL) {
@@ -2150,15 +2122,11 @@ JSONkeyArray(Client ctx, json *ret, const json *js)
 		ma_close(&ta_state);
 		throw(MAL, "json.keyarray", "Object expected");
 	}
-	r = ma_strdup(ma, "[");
-	if (r == NULL)
-		goto memfail;
+	r = "[";
 	result = JSONglue(ma, r, result, 0);
 	if (result == NULL)
 		goto memfail;
-	r = ma_strdup(ma, "]");
-	if (r == NULL)
-		goto memfail;
+	r = "]";
 	result = JSONglue(ma, result, r, 0);
 	if (result == NULL)
 		goto memfail;
@@ -2217,8 +2185,7 @@ JSONvalueArray(Client ctx, json *ret, const json *js)
 	JSON *jt;
 
 	if (strNil(*js)) {
-		if (!(*ret = ma_strdup(ma, str_nil)))
-			throw(MAL, "json.valuearray", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		*ret = (json) str_nil;
 		return MAL_SUCCEED;
 	}
 
@@ -2242,15 +2209,11 @@ JSONvalueArray(Client ctx, json *ret, const json *js)
 		ma_close(&ta_state);
 		throw(MAL, "json.valuearray", "Object expected");
 	}
-	r = ma_strdup(ma, "[");
-	if (r == NULL)
-		goto memfail;
+	r = "[";
 	result = JSONglue(ma, r, result, 0);
 	if (result == NULL)
 		goto memfail;
-	r = ma_strdup(ma, "]");
-	if (r == NULL)
-		goto memfail;
+	r = "]";
 	result = JSONglue(ma, result, r, 0);
 	if (result == NULL)
 		goto memfail;

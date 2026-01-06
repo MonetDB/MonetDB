@@ -7338,9 +7338,9 @@ GDKstrcasestr(const char *haystack, const char *needle)
 /* The asciify table uses the same technique as the case conversion
  * tables, except that the value that is calculated is not a codepoint.
  * Instead it is the index into the valtab table which contains the
- * string that is to be used to replace the asciified character.
- * This combination of tables is derived from the command
- * ``iconv -futf-8 -tASCII//TRANSLIT`` */
+ * string that is to be used to replace the asciified character. */
+
+/* These tables were created using the code in uniiconvtab.py */
 static const char *const valtab[] = {
 	NULL,
 	[1] = " ",
@@ -9872,6 +9872,13 @@ BATasciify(BAT *b, BAT *s)
 
 #include <openssl/evp.h>
 
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L &&  OPENSSL_VERSION_NUMBER < 0x30000070L
+#define NEED_LEGACY
+#include <openssl/provider.h>
+static OSSL_PROVIDER *legacy, *default_;
+static MT_Lock ssl_lock = MT_LOCK_INITIALIZER(ssl_lock);
+#endif
+
 gdk_return
 BATaggrdigest(allocator *ma, BAT **bnp, char **shap, const char *digest,
 	      BAT *b, BAT *g, BAT *e, BAT *s, bool skip_nils)
@@ -9905,8 +9912,19 @@ BATaggrdigest(allocator *ma, BAT **bnp, char **shap, const char *digest,
 	allocator *ta = MT_thread_getallocator();
 	allocator_state ta_state = ma_open(ta);
 
+#ifdef NEED_LEGACY
+	EVP_MD *md;
+	MT_lock_set(&ssl_lock);
+	if (legacy == NULL) {
+		legacy = OSSL_PROVIDER_load(NULL, "legacy");
+		default_ = OSSL_PROVIDER_load(NULL, "default");
+	}
+	MT_lock_unset(&ssl_lock);
+	md = EVP_MD_fetch(NULL, digest, NULL);
+#else
 	const EVP_MD *md;
 	md = EVP_get_digestbyname(digest);
+#endif
 	EVP_MD_CTX **mdctx = ma_zalloc(ta, ngrp * sizeof(*mdctx));
 	if (mdctx == NULL)
 		goto bailout;
@@ -9928,6 +9946,7 @@ BATaggrdigest(allocator *ma, BAT **bnp, char **shap, const char *digest,
 		if (mdctx[gid] == NULL) {
 			mdctx[gid] = EVP_MD_CTX_new();
 			if (mdctx[gid] == NULL || !EVP_DigestInit(mdctx[gid], md)) {
+				GDKerror("Could not initialize digest method %s\n", digest);
 				goto bailout;
 			}
 		} else if (mdctx[gid] == (EVP_MD_CTX *) -1) {
@@ -9935,6 +9954,7 @@ BATaggrdigest(allocator *ma, BAT **bnp, char **shap, const char *digest,
 		}
 		/* calculate digest including terminating NUL byte */
 		if (!EVP_DigestUpdate(mdctx[gid], s, strlen(s) + 1)) {
+			GDKerror("Could not update digest value.\n");
 			goto bailout;
 		}
 	}
@@ -9950,6 +9970,7 @@ BATaggrdigest(allocator *ma, BAT **bnp, char **shap, const char *digest,
 			strcpy_len(digestbuf, str_nil, sizeof(digestbuf));
 		} else {
 			if (!EVP_DigestFinal_ex(mdctx[gid], md_value, &md_len)) {
+				GDKerror("Could not update digest value.\n");
 				goto bailout;
 			}
 			for (unsigned int x = 0; x < md_len; x++) {
@@ -9969,11 +9990,17 @@ BATaggrdigest(allocator *ma, BAT **bnp, char **shap, const char *digest,
 			}
 		}
 	}
+#ifdef NEED_LEGACY
+	EVP_MD_free(md);
+#endif
 	bat_iterator_end(&bi);
 	ma_close(&ta_state);
 	return GDK_SUCCEED;
 
   bailout:
+#ifdef NEED_LEGACY
+	EVP_MD_free(md);
+#endif
 	bat_iterator_end(&bi);
 	if (mdctx) {
 		for (gid = 0; gid < ngrp; gid++)

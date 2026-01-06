@@ -1197,7 +1197,7 @@ INETinet6containssymmetricinet6_bulk(Client ctx, bat *ret, const bat *bip1, cons
 }
 
 #include "mel.h"
-mel_func inet46_init_funcs[] = {
+static mel_func inet46_init_funcs[] = {
  command("calc", "inet4", INETinet42inet4, false, "", args(1,2, arg("",inet4),arg("u",inet4))),
  command("calc", "inet4", INETstr2inet4, false, "Coerce a string to an inet4, validating its format", args(1,2, arg("",inet4),arg("s",str))),
  command("batcalc", "inet4", INETinet42inet4_bulk, false, "", args(1,3, batarg("",inet4),batarg("u",inet4),batarg("c",oid))),

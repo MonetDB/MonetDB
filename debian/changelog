@@ -1,3 +1,263 @@
+monetdb (11.55.1) unstable; urgency=low
+
+  * sql: New implementation for the CONTAINS filter function for string data
+    types using a much faster algorithm based on the knowledge of the
+    bigram occurrences of the to-be-filtered column.
+
+ -- Lucas Pereira <lucas.pereira@monetdbsolutions.com>  Tue, 16 Dec 2025 17:00:00 +0100
+
+  * Extended MonetDB’s memory allocator framework from the SQL layer to all
+    layers of the database server.  The main features of the allocator
+    framework include i) efficient processing of large numbers of memory
+    allocation calls, and ii) efficient management of memory to avoid
+    fragmentation. This update also enables fine-grained configuration and
+    monitoring of memory usage per thread, query, etc.
+
+ -- svetlin <svetlin.stalinov@monetdbsolutions.com>  Tue, 16 Dec 2025 17:00:00 +0100
+
+monetdb (11.55.1) unstable; urgency=low
+
+  * Rebuilt.
+  * GH#7635: Unexpected Inner Join Crash
+  * GH#7645: Unexpected Internal Error in Inner Join
+  * GH#7651: Incorrect Anti Join Result
+  * GH#7652: Incorrect Anti Join Result related to optimization
+  * GH#7653: Incorrect Inner Join Result
+  * GH#7667: MonetDB Mar2025-SP1 crashes at `rel_selects` with a circular
+    view
+  * GH#7677: Misleading error message "Could not allocate space"
+  * GH#7694: Unexpected execution result
+  * GH#7695: Unexpected execution result
+  * GH#7696: Unexpected execution result
+  * GH#7697: Unexpected execution result
+  * GH#7698: Unexpected Right Join Result
+  * GH#7701: Add possibility to set MAX_WORKERS to NO MAX_WORKERS in ALTER
+    USER
+  * GH#7703: Unexpected Left Join Result
+  * GH#7705: Unexpected Anti Join Result
+  * GH#7707: Unexpected Right Join Result
+  * GH#7708: Unexpected Join Result
+  * GH#7709: Monetdb crash when using field fcuntion
+  * GH#7711: Unexpected Crash
+  * GH#7712: Unexpected Out of Memory
+  * GH#7713: Monetdb crashes when using group by
+  * GH#7714: Monetdb crash when creating table using window function
+  * GH#7715: Unexpected Anti Join Result
+  * GH#7716: Unexpected Anti Join Result
+  * GH#7717: a crash when executing sql
+  * GH#7719: a crash using select
+  * GH#7720: MonetDB server (Mar2025-SP2-release) crashes at `stmt_cond`
+  * GH#7722: MonetDB server (Mar2025-SP2-release) crashes at `rel_with_query`
+  * GH#7725: MonetDB server (Mar2025-SP2-release) crashes at
+    `bin_find_smallest_column`
+  * GH#7727: MonetDB server (Mar2025-SP2-release) crashes at `exp_ref`
+  * GH#7739: Unexpected Crash in Left Join
+  * GH#7741: crash in MonetDB
+  * GH#7745: Unexpected Execution Results
+  * GH#7748: MonetDB server crashes with "unexpected end of file" on UPDATE
+    ... RETURNING with EXISTS subquery
+  * GH#7751: Continuation of Bug #7737
+  * GH#7752: Internal error when executing a simple SQL query:
+    TypeException:user.main[29]:'mat.packIncrement' undefined in:
+    X_39:any := mat.packIncrement(X_37:bat[:lng], X_38:bat[:bte]);
+  * GH#7753: mserver5.exe crashes when executing a simple query
+  * GH#7763: MALexception throw in query with EXISTS and NULL
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 09 Dec 2025 13:32:34 +0100
+
+monetdb (11.55.1) unstable; urgency=low
+
+  * sql: Add functions to_hex(int) and to_hex(bigint). They return the
+    unsigned hexadecimal string representation of their argument.
+
+ -- Joeri van Ruth <joeri.van.ruth@monetdbsolutions.com>  Mon, 10 Nov 2025 13:32:34 +0100
+
+monetdb (11.55.1) unstable; urgency=low
+
+  * sql: COPY BINARY has been optimized to be much faster when many string columns
+    are involved.
+  * sql: The performance of COPY BINARY of blob column has also been improved.
+  * sql: The performance of COPY BINARY ON CLIENT has been much improved. It used
+    to be much slower than ON SERVER, now it's only a little slower.
+  * sql: The file format for COPY BINARY strings has been extended. If the same
+    string occurs multiple times, later occurrences can refer back to
+    earlier occurrences instead of including another copy of the string.
+    This improves both file size and processing time.
+  * sql: A new example tool 'backrefencode' has been added that can introduce these
+    back references or remove them again.
+  * sql: Experimental support for compressed ON CLIENT transfers has been added.
+    If you write ON 'algo' CLIENT, with algo=lz4/gz/xz/b2, the server compresses
+    downloaded data and decompresses uploaded data server-side using the given
+    algorithm. It is up to the user to ensure that the uploaded data has indeed
+    been compressed. This is not always easy because many clients automatically
+    compress or decompress data when the file name contains .gz, .lz4, etc.,
+    which would lead to double compression and decompression.
+
+ -- Joeri van Ruth <joeri.van.ruth@monetdbsolutions.com>  Wed, 5 Nov 2025 13:32:34 +0100
+
+monetdb (11.55.1) unstable; urgency=low
+
+  * sql: Implemented aggregates sha1, sha224, sha256, sha384, sha512, and
+    ripemd160 which calculate a checksum (digest) over a column of strings.
+    It only makes sense to use these with an ordering, as `SELECT sha256(name
+    ORDER BY id) FROM table`, since the ordering in which the values are
+    fed into the digest algorithm is important and cannot otherwise be
+    guaranteed.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 4 Nov 2025 13:32:34 +0100
+
+monetdb (11.55.1) unstable; urgency=low
+
+  * sql: EXPLAIN now supports a BEFORE/AFTER LOGICAL UNNEST/LOGICAL REWRITE/PHYSICAL
+    clause to indicate which phase of query compilation to show.  A plain
+    EXPLAIN is equivalent to EXPLAIN AFTER REWRITE, which is what PLAN
+    used to do. The old EXPLAIN is now EXPLAIN PHYSICAL. LOGICAL REWRITE also
+    supports specifying two positive values, rewriter index number and
+    optimizer loop cycle stop counter. SHOW DETAILS includes more information
+    about properties, rewriters number of changes and time spent.
+  * sql: The PLAN keyword has been removed.
+
+ -- Lucas Pereira <lucas.pereira@monetdbsolutions.com>  Tue, 4 Nov 2025 13:32:34 +0100
+
+monetdb (11.55.1) unstable; urgency=low
+
+  * monetdb5: We no longer persist querylog results.  If you want to keep the data,
+    make a copy into an SQL table.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 4 Nov 2025 13:32:34 +0100
+
+monetdb (11.55.1) unstable; urgency=low
+
+  * MonetDB: This server is no longer compatible with the MonetDB Stethoscope.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 4 Nov 2025 13:32:34 +0100
+
+monetdb (11.55.1) unstable; urgency=low
+
+  * sql: The TRACE prefix for SQL queries now no longer produces two result sets.
+    Before, the first result set was the result of the query, and the
+    second result set was timing information of the query execution.
+    This second result set is no longer produced.  Instead, use the
+    (already existing) function sys.tracelog() or the view sys.tracelog to
+    retrieve this information.  As before, the table that is produced by the
+    function/view is reset whenever a new TRACE prefixed query is executed.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 4 Nov 2025 13:32:34 +0100
+
+monetdb (11.55.1) unstable; urgency=low
+
+  * monetdb5: The default_fast and minimal_fast optimizer pipelines have been
+    removed.  The default_pipe and minimal_pipe optimizers now use the
+    "fast" path always.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 4 Nov 2025 13:32:34 +0100
+
+monetdb (11.55.1) unstable; urgency=low
+
+  * sql: Removed table returning function sys.optimizer_stats().
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 4 Nov 2025 13:32:34 +0100
+
+monetdb (11.55.1) unstable; urgency=low
+
+  * gdk: log_tflush function, when flushnow flag is true, now passes bitmap array
+    that indicates which bat id's need to be sync'ed to disk, instead
+    of passing NULL which would trigger a sync of the full catalog. If
+    new bats are added to the catalog, they will be sync'ed always (see
+    maxupdated flag).
+
+ -- Lucas Pereira <lucas.pereira@monetdbsolutions.com>  Tue, 4 Nov 2025 13:32:34 +0100
+
+monetdb (11.55.1) unstable; urgency=low
+
+  * sql: There are new types "inet4" and "inet6" which can hold respectively
+    IPv4 and IPv6 internet addresses without CIDR network mask
+    information.  Netmask information can be held in a separate column if
+    they are needed.  The 0 address (0.0.0.0 and ::) are used as NULL
+    value and can therefore not be used as addresses.  Bitwise operations
+    (AND, OR, XOR, NOT) are supported on the addresses, and there are
+    various functions to check whether an address is contained in a
+    (sub)net (where an extra CIDR netmask column is also needed).
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 4 Nov 2025 13:32:34 +0100
+
+monetdb (11.55.1) unstable; urgency=low
+
+  * monetdb5: The type "pcre" has been removed.  There was no way to create a value of
+    the type, and there was only one function that used a value of the type.
+    That function (pcre.index) has also been removed.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 4 Nov 2025 13:32:34 +0100
+
+monetdb (11.55.1) unstable; urgency=low
+
+  * sql: Added the possibility to specify IF NOT EXISTS for the following
+    CREATE statements:
+      CREATE SEQUENCE IF NOT EXISTS seq_name ...
+      CREATE USER IF NOT EXISTS user_name ...
+      CREATE ROLE IF NOT EXISTS role_name ...
+      CREATE TYPE IF NOT EXISTS type_name ...
+      CREATE INDEX IF NOT EXISTS index_name ON ...
+      CREATE IMPRINTS INDEX IF NOT EXISTS index_name ON ...
+      CREATE ORDERED INDEX IF NOT EXISTS index_name ON ...
+    With IF NOT EXISTS specified these CREATE statements will not return
+    an error when an object with the same name already exists.  See doc:
+    https://www.monetdb.org/documentation/user-guide/sql-manual/data-definition/
+  * sql: Added the possibility to specify IF EXISTS for the following DROP statements:
+      DROP SEQUENCE IF EXISTS seq_name ...
+      DROP USER IF EXISTS user_name
+      DROP ROLE IF EXISTS role_name
+      DROP TYPE IF EXISTS type_name ...
+      DROP INDEX IF EXISTS index_name
+    With IF EXISTS specified these statements will not return an error
+    when the object does not exists.  See doc:
+    https://www.monetdb.org/documentation/user-guide/sql-manual/data-definition/drop-statement/
+  * sql: Added the possibility to specify IF EXISTS for two ALTER statements:
+      ALTER SEQUENCE IF EXISTS seq_name ...
+      ALTER USER IF EXISTS user_name ...
+    With IF EXISTS specified these statements will not return an error
+    when the object does not exists.  See doc:
+    https://www.monetdb.org/documentation/user-guide/sql-manual/data-definition/sequence-definition/
+    and
+    https://www.monetdb.org/documentation/user-guide/sql-manual/data-definition/privileges/
+
+ -- Martin van Dinther <martin.van.dinther@monetdbsolutions.com>  Tue, 4 Nov 2025 13:32:34 +0100
+
+monetdb (11.55.1) unstable; urgency=low
+
+  * odbc: Corrected SQLColAttribute() and SQLGetDescField() for when
+    FieldIdentifier is SQL_DESC_LITERAL_PREFIX or SQL_DESC_LITERAL_SUFFIX.
+    They will now return the correct literal prefix or suffix string
+    instead of an empty string depending on the datatype of the column.
+
+ -- Martin van Dinther <martin.van.dinther@monetdbsolutions.com>  Tue, 4 Nov 2025 13:32:34 +0100
+
+monetdb (11.55.1) unstable; urgency=low
+
+  * sql: With COPY INTO, the USING DELIMITERS, DECIMAL, ESCAPE, NULL, BEST EFFORT and
+    FWF clauses can now be given in any order. If a clause occurs multiple times,
+    the last instance wins.
+
+ -- Joeri van Ruth <joeri.van.ruth@monetdbsolutions.com>  Tue, 4 Nov 2025 13:32:34 +0100
+
+monetdb (11.55.1) unstable; urgency=low
+
+  * sql: It is now possible to change the type of a column by using a statement
+    like ALTER TABLE t ALTER COLUMN c type;.  The content of the column
+    is converted to the new type using code similar to CAST(c AS type).
+    If the conversion fails, the column type isn't changed.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 4 Nov 2025 13:32:34 +0100
+
+monetdb (11.55.1) unstable; urgency=low
+
+  * MonetDB: Changed the way complex AND and OR expressions are handled. The new
+    expression tree uses 2 new cmp flag (cmp_con/cmp_dis), both expressions
+    hold lists of expressions. This structure reduces the need for stack
+    space, allowing way larger expressions trees to be handled.
+
+ -- Niels Nes <niels@cwi.nl>  Tue, 4 Nov 2025 13:32:34 +0100
+
 monetdb (11.53.15) unstable; urgency=low
 
   * Rebuilt.

@@ -2005,8 +2005,8 @@ mergejoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 	if (BATtvoid(l)) {
 		/* l->ttype == TYPE_void && is_oid_nil(l->tseqbase) is
 		 * handled by selectjoin */
-		assert(!is_oid_nil(l->tseqbase));
-		canditer_init(&llci, NULL, l);
+		if (!is_oid_nil(l->tseqbase))
+			canditer_init(&llci, NULL, l);
 		lvals = NULL;
 	} else {
 		lvals = li.base;			      /* non NULL */
@@ -3171,8 +3171,6 @@ hashjoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 							break;
 						}
 						HASHLOOPBODY();
-						if (semi)
-							break;
 					}
 				}
 			} else if (rci->tpe != cand_dense) {

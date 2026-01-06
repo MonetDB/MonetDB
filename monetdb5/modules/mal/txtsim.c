@@ -1201,7 +1201,7 @@ soundex(Client ctx, str *res, const char *const *Name)
 
 	////GDKfree(*res);
 	if (strNil(*Name)) {
-		*res = ma_strdup(ma, str_nil);
+		*res = (char *) str_nil;
 		if (*res == NULL)
 			throw(MAL, "soundex", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
@@ -1262,9 +1262,7 @@ qgram_normalize(Client ctx, str *res, const char *const *Input)
 
 	// //GDKfree(*res);
 	if (strNil(*Input)) {
-		*res = ma_strdup(ma, str_nil);
-		if (*res == NULL)
-			throw(MAL, "txtsim.qgramnormalize", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		*res = (char *) str_nil;
 		return MAL_SUCCEED;
 	}
 	*res = (str) ma_alloc(ma, sizeof(char) * (strlen(input) + 1));	/* normalized strings are never longer than original */
@@ -1526,7 +1524,7 @@ str_2_qgrams(Client ctx, bat *ret, const char *const *val)
 }
 
 #include "mel.h"
-mel_func txtsim_init_funcs[] = {
+static mel_func txtsim_init_funcs[] = {
 	pattern("txtsim", "dameraulevenshtein", TXTSIMdameraulevenshtein, false, "Calculates Damerau-Levenshtein distance between two strings, operation costs (ins/del = 1, replacement = 1, transposition = 2)", args(1,3,arg("",int),arg("x",str),arg("y",str))),
 	pattern("txtsim", "dameraulevenshtein", TXTSIMdameraulevenshtein, false, "Calculates Damerau-Levenshtein distance between two strings, variable operation costs (ins/del, replacement, transposition)", args(1,6,arg("",int),arg("x",str),arg("y",str),arg("insdel_cost",int),arg("replace_cost",int),arg("transpose_cost",int))),
 	command("txtsim", "editdistance", TXTSIMdameraulevenshtein1, false, "Alias for Damerau-Levenshtein(str,str), insdel cost = 1, replace cost = 1 and transpose = 2", args(1,3, arg("",int),arg("s",str),arg("t",str))),

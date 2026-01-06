@@ -1,5 +1,6 @@
 create
 load
+HAVE_OPENSSL?check
 compress
 q1
 q2

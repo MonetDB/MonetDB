@@ -271,7 +271,7 @@ mvc_create_remote_as_subquery(mvc *sql, sql_rel *sq, sql_schema *s, const char *
 }
 
 static char *
-table_constraint_name(mvc *sql, symbol *s, sql_schema *ss, sql_table *t)
+table_constraint_name(allocator *ta, mvc *sql, symbol *s, sql_schema *ss, sql_table *t)
 {
 	/* create a descriptive name like table_col1_col2_pkey */
 	char *suffix;		/* stores the type of this constraint */
@@ -306,7 +306,7 @@ table_constraint_name(mvc *sql, symbol *s, sql_schema *ss, sql_table *t)
 				nme2 = name2;
 				found = ol_find_name(t->keys, nme2) || mvc_bind_key(sql, ss, nme2);
 			} while (found);
-			buf = SA_NEW_ARRAY(sql->ta, char, buflen);
+			buf = SA_NEW_ARRAY(ta, char, buflen);
 			strcpy(buf, nme2);
 			return buf;
 		default:
@@ -320,7 +320,7 @@ table_constraint_name(mvc *sql, symbol *s, sql_schema *ss, sql_table *t)
 	slen = strlen(suffix);
 	while (len + slen >= buflen)
 		buflen += BUFSIZ;
-	buf = SA_NEW_ARRAY(sql->ta, char, buflen);
+	buf = SA_NEW_ARRAY(ta, char, buflen);
 	strcpy(buf, t->base.name);
 
 	/* add column name(s) */
@@ -328,7 +328,7 @@ table_constraint_name(mvc *sql, symbol *s, sql_schema *ss, sql_table *t)
 		slen = strlen(nms->data.sval);
 		while (len + slen + 1 >= buflen) {
 			size_t nbuflen = buflen + BUFSIZ;
-			char *nbuf = SA_RENEW_ARRAY(sql->ta, char, buf, nbuflen, buflen);
+			char *nbuf = SA_RENEW_ARRAY(ta, char, buf, nbuflen, buflen);
 			buf = nbuf;
 			buflen = nbuflen;
 		}
@@ -340,7 +340,7 @@ table_constraint_name(mvc *sql, symbol *s, sql_schema *ss, sql_table *t)
 	slen = strlen(suffix);
 	while (len + 1 + slen >= buflen) {
 		size_t nbuflen = buflen + BUFSIZ;
-		char *nbuf = SA_RENEW_ARRAY(sql->ta, char, buf, nbuflen, buflen);
+		char *nbuf = SA_RENEW_ARRAY(ta, char, buf, nbuflen, buflen);
 		buf = nbuf;
 		buflen = nbuflen;
 	}
@@ -349,7 +349,7 @@ table_constraint_name(mvc *sql, symbol *s, sql_schema *ss, sql_table *t)
 }
 
 static char *
-column_constraint_name(mvc *sql, symbol *s, sql_column *sc, sql_table *t)
+column_constraint_name(allocator *ta, symbol *s, sql_column *sc, sql_table *t)
 {
 	/* create a descriptive name like table_col_pkey */
 	char *suffix /* stores the type of this constraint */, *buf;
@@ -376,7 +376,7 @@ column_constraint_name(mvc *sql, symbol *s, sql_column *sc, sql_table *t)
 	}
 
 	buflen = strlen(t->base.name) + strlen(sc->base.name) + strlen(suffix) + 3;
-	buf = SA_NEW_ARRAY(sql->ta, char, buflen);
+	buf = SA_NEW_ARRAY(ta, char, buflen);
 	snprintf(buf, buflen, "%s_%s_%s", t->base.name, sc->base.name, suffix);
 	return buf;
 }
@@ -613,9 +613,12 @@ column_constraint_type(sql_query *query, const char *name, symbol *s, sql_schema
 		}
 		kc = rk->columns->h->data;
 		if (!foreign_key_check_types(&cs->type, &kc->c->type)) {
-			str tp1 = sql_subtype_string(sql->ta, &cs->type), tp2 = sql_subtype_string(sql->ta, &kc->c->type);
+			allocator *ta = MT_thread_getallocator();
+			allocator_state ta_state = ma_open(ta);
+			str tp1 = sql_subtype_string(ta, &cs->type), tp2 = sql_subtype_string(ta, &kc->c->type);
 			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT FOREIGN KEY: the type of the FOREIGN KEY column '%s' %s is not compatible with the referenced %s KEY column type %s",
 							 cs->base.name, tp1, rk->type == pkey ? "PRIMARY" : "UNIQUE", tp2);
+			ma_close(&ta_state);
 			return res;
 		}
 		switch (mvc_create_fkey(&fk, sql, t, name, fkey, rk, ref_actions & 255, (ref_actions>>8) & 255)) {
@@ -702,11 +705,16 @@ column_options(sql_query *query, dlist *opt_list, sql_schema *ss, sql_table *t, 
 					dlist *l = s->data.lval;
 					char *opt_name = l->h->data.sval, *default_name = NULL;
 					symbol *sym = l->h->next->data.sym;
+					allocator *ta = MT_thread_getallocator();
+					allocator_state ta_state = ma_open(ta);
 
-					if (!opt_name && !(default_name = column_constraint_name(sql, sym, cs, t)))
+					if (!opt_name && !(default_name = column_constraint_name(ta, sym, cs, t))) {
+						ma_close(&ta_state);
 						return SQL_ERR;
+					}
 
 					res = column_constraint_type(query, opt_name ? opt_name : default_name, sym, ss, t, cs, isDeclared, &used);
+					ma_close(&ta_state);
 				} 	break;
 				case SQL_DEFAULT: {
 					symbol *sym = s->data.sym;
@@ -895,9 +903,12 @@ table_foreign_key(mvc *sql, const char *name, symbol *s, sql_schema *ss, sql_tab
 				return SQL_ERR;
 			}
 			if (!foreign_key_check_types(&cs->type, &kc->c->type)) {
-				str tp1 = sql_subtype_string(sql->ta, &cs->type), tp2 = sql_subtype_string(sql->ta, &kc->c->type);
+				allocator *ta = MT_thread_getallocator();
+				allocator_state ta_state = ma_open(ta);
+				str tp1 = sql_subtype_string(ta, &cs->type), tp2 = sql_subtype_string(ta, &kc->c->type);
 				(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT FOREIGN KEY: the type of the FOREIGN KEY column '%s' %s is not compatible with the referenced %s KEY column type %s",
 								 cs->base.name, tp1, rk->type == pkey ? "PRIMARY" : "UNIQUE", tp2);
+				ma_close(&ta_state);
 				return SQL_ERR;
 			}
 			switch (mvc_create_fkc(sql, fk, cs)) {
@@ -1064,13 +1075,17 @@ table_constraint(sql_query *query, symbol *s, sql_schema *ss, sql_table *t)
 		dlist *l = s->data.lval;
 		char *opt_name = l->h->data.sval;
 		symbol *sym = l->h->next->data.sym;
+		allocator *ta = MT_thread_getallocator();
+		allocator_state ta_state = ma_open(ta);
 
-		if (!opt_name)
-			opt_name = table_constraint_name(sql, sym, ss, t);
-		else if (s->token)
 		if (opt_name == NULL)
+			opt_name = table_constraint_name(ta, sql, sym, ss, t);
+		if (opt_name == NULL) {
+			ma_close(&ta_state);
 			return SQL_ERR;
+		}
 		res = table_constraint_type(query, opt_name, sym, ss, t);
+		ma_close(&ta_state);
 	}
 
 	if (res != SQL_OK) {
@@ -1517,8 +1532,11 @@ create_partition_definition(mvc *sql, sql_table *t, symbol *partition_def)
 			sql_ec = t->part.pcol->type.type->eclass;
 			if (!(sql_ec == EC_BIT || EC_VARCHAR(sql_ec) || EC_TEMP(sql_ec) || sql_ec == EC_POS || sql_ec == EC_NUM ||
 				 EC_INTERVAL(sql_ec)|| sql_ec == EC_DEC || sql_ec == EC_BLOB)) {
-				err = sql_subtype_string(sql->ta, &(t->part.pcol->type));
+				allocator *ta = MT_thread_getallocator();
+				allocator_state ta_state = ma_open(ta);
+				err = sql_subtype_string(ta, &(t->part.pcol->type));
 				sql_error(sql, 02, SQLSTATE(42000) "CREATE MERGE TABLE: column type %s not yet supported for the partition column", err);
+				ma_close(&ta_state);
 				return SQL_ERR;
 			}
 		} else if (isPartitionedByExpressionTable(t)) {
@@ -1752,16 +1770,21 @@ rel_create_view(sql_query *query, int temp, dlist *qname, dlist *column_spec, sy
 		}
 
 		if (create) {
-			q = query_cleaned(sql->ta, q);
+			allocator *ta = MT_thread_getallocator();
+			allocator_state ta_state = ma_open(ta);
+			q = query_cleaned(ta, q);
 			switch (mvc_create_view(&t, sql, s, name, SQL_DECLARED_TABLE, q, 0)) {
 				case -1:
+					ma_close(&ta_state);
 					return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				case -2:
 				case -3:
+					ma_close(&ta_state);
 					return sql_error(sql, 02, SQLSTATE(42000) "%s: transaction conflict detected", base);
 				default:
 					break;
 			}
+			ma_close(&ta_state);
 			if (as_subquery(sql, t, tt_view, sq, column_spec, base) != 0) {
 				rel_destroy(sql, sq);
 				return NULL;

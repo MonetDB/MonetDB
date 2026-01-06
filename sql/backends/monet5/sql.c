@@ -172,10 +172,8 @@ sqlcleanup(backend *be, int err)
 	/* some statements dynamically disable caching */
 	be->mvc->sym = NULL;
 	be->mvc->runs = NULL;
-	if (be->mvc->ta)
-		be->mvc->ta = ma_reset(be->mvc->ta);
 	if (be->mvc->sa)
-		be->mvc->sa = ma_reset(be->mvc->sa);
+		ma_reset(be->mvc->sa);
 	if (err >0)
 		be->mvc->session->status = -err;
 	if (err <0)
@@ -333,8 +331,9 @@ create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp,
 			break;
 	}
 	osa = sql->sa;
-	allocator *nsa = sql->sa = create_allocator(ma_get_parent(osa), "MA_mvc", false);
+	allocator *nsa = sql->sa = create_allocator("MA_mvc", false);
 	/* first check default values */
+	allocator *ta = MT_thread_getallocator();
 	for (n = ol_first_node(t->columns); n; n = n->next) {
 		sql_column *c = n->data;
 
@@ -343,7 +342,7 @@ create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp,
 			static const char next_value_for[] = "next value for \"sys\".\"seq_";
 			sql_rel *r = NULL;
 
-			r = rel_parse(sql, s, sa_message(sql->ta, "select %s;", c->def), m_deps);
+			r = rel_parse(sql, s, sa_message(ta, "select %s;", c->def), m_deps);
 			if (!r || !is_project(r->op) || !r->exps || list_length(r->exps) != 1 ||
 				exp_check_type(sql, &c->type, r, r->exps->h->data, type_equal) == NULL) {
 				if (r)
@@ -2178,6 +2177,8 @@ mvc_clear_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (restart_sequences) { /* restart the sequences if it's the case */
 		sql_trans *tr = m->session->tr;
 		static const char next_value_for[] = "next value for ";
+		allocator *ta = MT_thread_getallocator();
+		allocator_state ta_state = ma_open(ta);
 
 		for (node *n = ol_first_node(t->columns); n; n = n->next) {
 			sql_column *col = n->data;
@@ -2187,7 +2188,7 @@ mvc_clear_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				sql_sequence *seq = NULL;
 				char *schema = NULL, *seq_name = NULL;
 
-				extract_schema_and_sequence_name(m->ta, col->def + strlen(next_value_for), &schema, &seq_name);
+				extract_schema_and_sequence_name(ta, col->def + strlen(next_value_for), &schema, &seq_name);
 				if (!schema || !seq_name || !(seqs = find_sql_schema(tr, schema)))
 					continue;
 
@@ -2195,18 +2196,23 @@ mvc_clear_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				if ((seq = find_sql_sequence(tr, seqs, seq_name))) {
 					switch (sql_trans_sequence_restart(tr, seq, seq->start)) {
 						case -1:
+							ma_close(&ta_state);
 							throw(SQL, "sql.clear_table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 						case -2:
 						case -3:
+							ma_close(&ta_state);
 							throw(SQL, "sql.clear_table", SQLSTATE(HY005) "RESTART SEQUENCE: transaction conflict detected");
 						case -4:
-							throw(SQL, "sql.clear_table", SQLSTATE(HY005) "Could not restart sequence %s.%s", seqs->base.name, seq_name);
+							msg = createException(SQL, "sql.clear_table", SQLSTATE(HY005) "Could not restart sequence %s.%s", seqs->base.name, seq_name);
+							ma_close(&ta_state);
+							return msg;
 						default:
 							break;
 					}
 				}
 			}
 		}
+		ma_close(&ta_state);
 	}
 	*res = (lng) clear_res;
 	return MAL_SUCCEED;
@@ -5468,7 +5474,8 @@ str_vacuum_callback(int argc, void *argv[])
 	char *sname = (char *) argv[1];
 	char *tname = (char *) argv[2];
 	char *cname = (char *) argv[3];
-	allocator *sa = NULL;
+	allocator *sa = MT_thread_getallocator();
+	allocator_state sa_state = ma_open(sa);
 	sql_session *session = NULL;
 	sql_schema *s = NULL;
 	sql_table *t = NULL;
@@ -5478,21 +5485,16 @@ str_vacuum_callback(int argc, void *argv[])
 
 	(void) argc;
 
-	if ((sa = create_allocator(NULL, "MA_str_vacuum", false)) == NULL) {
-		TRC_ERROR(SQL_EXECUTION, "[str_vacuum_callback] -- Failed to create allocator!");
-		return GDK_FAIL;
-	}
-
 	if ((session = sql_session_create(store, sa, 0)) == NULL) {
 		TRC_ERROR(SQL_EXECUTION, "[str_vacuum_callback] -- Failed to create session!");
-		ma_destroy(sa);
+		ma_close(&sa_state);
 		return GDK_FAIL;
 	}
 
 	if (sql_trans_begin(session) < 0) {
 		TRC_ERROR(SQL_EXECUTION, "[str_vacuum_callback] -- Failed to begin transaction!");
 		sql_session_destroy(session);
-		ma_destroy(sa);
+		ma_close(&sa_state);
 		return GDK_FAIL;
 	}
 
@@ -5546,7 +5548,7 @@ str_vacuum_callback(int argc, void *argv[])
 	}
 
 	sql_session_destroy(session);
-	ma_destroy(sa);
+	ma_close(&sa_state);
 	return res;
 }
 

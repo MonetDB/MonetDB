@@ -181,7 +181,7 @@ propvalue2string(allocator *sa, prop *p)
 		char *res = NULL;
 
 		if (a->isnull) {
-			res = ma_strdup(sa, "\"NULL\"");
+			res = "\"NULL\"";
 		} else {
 			char *s = ATOMformat(sa, a->data.vtype, VALptr(&a->data));
 			if (s && *s == '"') {
@@ -203,7 +203,7 @@ propvalue2string(allocator *sa, prop *p)
 	default:
 		break;
 	}
-	return ma_strdup(sa, "");
+	return "";
 }
 
 

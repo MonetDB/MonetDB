@@ -369,7 +369,7 @@ atom2string(allocator *sa, atom *a)
 	char buf[BUFSIZ], *p = NULL;
 
 	if (a->isnull)
-		return ma_strdup(sa, "NULL");
+		return "NULL";
 	switch (a->data.vtype) {
 #ifdef HAVE_HGE
 	case TYPE_hge: {
@@ -396,8 +396,8 @@ atom2string(allocator *sa, atom *a)
 		break;
 	case TYPE_bit:
 		if (a->data.val.btval)
-			return ma_strdup(sa, "true");
-		return ma_strdup(sa, "false");
+			return "true";
+		return "false";
 	case TYPE_flt:
 		snprintf(buf, sizeof(buf), "%f", a->data.val.fval);
 		break;
@@ -822,8 +822,9 @@ atom_cast_inplace(allocator *sa, atom *a, sql_subtype *tp)
 			  tp->type->eclass == EC_NUM ||
 			  tp->type->eclass == EC_FLT)) ||
 			(EC_VARCHAR(at->type->eclass) &&
-			 (tp->type->eclass == EC_DATE ||
-			  EC_TEMP_NOFRAC(tp->type->eclass)))) {
+			 (
+			 /*(tp->type->eclass == EC_DATE ||*/
+			  EC_TEMP_NOFRAC(tp->type->eclass)) && !ATOMextern(tp->type->localtype))) {
 			ValRecord v = { .vtype = tp->type->localtype };
 			if (VARconvert(sa, &v, &a->data, at->scale, tp->scale, tp->type->eclass == EC_DEC ? tp->digits : 0) != GDK_SUCCEED) {
 				GDKclrerr();

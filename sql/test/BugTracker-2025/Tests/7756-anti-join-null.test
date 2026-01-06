@@ -1,0 +1,10 @@
+statement ok
+CREATE TABLE t0(c0 BOOLEAN)
+
+statement ok rowcount 1
+INSERT INTO t0(c0) VALUES (true)
+
+query I
+SELECT * FROM t0 WHERE NOT EXISTS (SELECT 1 FROM (SELECT NULL AS col0) AS subQuery WHERE ((subQuery.col0)!=(t0.c0)))
+----
+1

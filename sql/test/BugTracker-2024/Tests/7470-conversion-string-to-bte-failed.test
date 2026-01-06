@@ -1,7 +1,5 @@
-query I nosort
+statement error 22018!conversion of string 'a' to type bte failed.
 select 'a'>1
-----
-1
 
 statement error 22018!conversion of string 'a' to type bte failed.
 select 1>'a'

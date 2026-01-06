@@ -21,8 +21,9 @@ static list *
 rel_used_projections(mvc *sql, list *exps, list *users)
 {
 	list *nexps = sa_list(sql->sa);
-	allocator_state ta_state = ma_open(sql->ta);
-	bool *used = SA_ZNEW_ARRAY(sql->ta, bool, list_length(exps));
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
+	bool *used = SA_ZNEW_ARRAY(ta, bool, list_length(exps));
 	int i = 0;
 
 	for(node *n = users->h; n; n = n->next) {
@@ -93,6 +94,24 @@ rel_push_project_down_(visitor *v, sql_rel *rel)
 				v->changes++;
 				return l;
 			}
+		}
+	}
+	if (v->depth > 1 && is_simple_project(rel->op) && !need_distinct(rel) && !rel_is_ref(rel) && rel->l && !rel->r &&
+			is_munion(l->op) && !rel_is_ref(l) &&
+			list_length(rel->exps) == list_length(l->exps) &&
+			list_check_prop_all(rel->exps, (prop_check_func)&exp_is_useless_rename)) {
+		bool all = true;
+
+		for (node *n = rel->exps->h, *m = l->exps->h; n && m && all; n = n->next, m = m->next) {
+			sql_exp *eo = n->data, *ei = m->data;
+			if (eo->nid != eo->alias.label || ei->alias.label != eo->nid)
+				all = false;
+		}
+		if (all) {
+			rel->l = NULL;
+			rel_destroy(v->sql, rel);
+			v->changes++;
+			return l;
 		}
 	}
 	/* ToDo handle useful renames, ie new relation name and unique set of attribute names (could reduce set of * attributes) */
@@ -2297,12 +2316,13 @@ rel_reduce_groupby_exps(visitor *v, sql_rel *rel)
 	global_props *gp = v->data;
 
 	if (gp->has_pkey && is_groupby(rel->op) && rel->r && !rel_is_ref(rel) && list_length(gbe)) {
-		allocator_state ta_state = ma_open(v->sql->ta);
+		allocator *ta = MT_thread_getallocator();
+		allocator_state ta_state = ma_open(ta);
 		node *n, *m;
 		int k, j, i, ngbe = list_length(gbe);
 		sql_column *c;
-		sql_table **tbls = SA_NEW_ARRAY(v->sql->ta, sql_table*, ngbe);
-		sql_rel **bts = SA_NEW_ARRAY(v->sql->ta, sql_rel*, ngbe), *bt = NULL;
+		sql_table **tbls = SA_NEW_ARRAY(ta, sql_table*, ngbe);
+		sql_rel **bts = SA_NEW_ARRAY(ta, sql_rel*, ngbe), *bt = NULL;
 
 		gbe = rel->r;
 		for (k = 0, i = 0, n = gbe->h; n; n = n->next, k++) {
@@ -2324,7 +2344,7 @@ rel_reduce_groupby_exps(visitor *v, sql_rel *rel)
 			 * the other columns using a foreign-key join (n->1), ie 1
 			 * on the to be removed side.
 			 */
-			int8_t *scores = SA_NEW_ARRAY(v->sql->ta, int8_t, ngbe);
+			int8_t *scores = SA_NEW_ARRAY(ta, int8_t, ngbe);
 			for(j = 0; j < i; j++) {
 				int l, nr = 0, cnr = 0;
 
@@ -2506,20 +2526,18 @@ rel_distinct_aggregate_on_unique_values(visitor *v, sql_rel *rel)
 static inline sql_rel *
 rel_remove_const_aggr(visitor *v, sql_rel *rel)
 {
-	if(!rel) {
+	if (!rel)
 		return rel;
-	}
 
 	list *exps = rel->exps;
 
-	if(rel->op != op_groupby || list_empty(exps)) {
+	if(rel->op != op_groupby || list_empty(exps))
 		return rel;
-	}
 
-	if(!list_empty(rel->r)) {
+	if (!list_empty(rel->r)) {
 		/* in the general case in an expression of an aggregate over
 		 * a constant can be rewritten as just the const e.g.
-		 *   aggr(const) -> const
+		 *   aggr(const) -> cast(const as restype)
 		 */
 
 		for(node *n = exps->h; n; n = n->next) {
@@ -2541,40 +2559,38 @@ rel_remove_const_aggr(visitor *v, sql_rel *rel)
 				prd = strcmp(j->base.name, "prod") == 0,
 				cnt = strcmp(j->base.name, "count") == 0;
 
-			if(!j->s && j->system == 1) {
+			if (!j->s && j->system == 1) {
 				list *se = e->l;
 
 				if(se == NULL) {
 					continue;
 				}
 
-				for(node *m = se->h; m; m = m->next) {
+				for (node *m = se->h; m; m = m->next) {
 					sql_exp *w = m->data;
 
-					if(w->type == e_atom && w->card == CARD_ATOM) {
+					if (w->type == e_atom && w->card == CARD_ATOM) {
 						atom *wa = w->l;
 
-						if(sum && !(wa->isnull || atom_is_zero(wa))) {
+						if (sum && !(wa->isnull || atom_is_zero(wa)))
 							continue;
-						}
 
-						if(prd && !(wa->isnull || atom_is_one(wa))) {
+						if (prd && !(wa->isnull || atom_is_one(wa)))
 							continue;
-						}
 
-						if(cnt) {
-							if(wa->isnull) {
+						if (cnt) {
+							if (wa->isnull) {
 								list_remove_node(se, NULL, m);
 
 								w=exp_atom_lng(v->sql->sa, 0);
 								list_append(se, w);
-							}
-							else {
+							} else {
 								continue;
 							}
 						}
 
 						exp_setalias(w, e->alias.label, exp_relname(e) , exp_name(e));
+						w = exp_check_type(v->sql, exp_subtype(e), NULL, w, type_equal);
 
 						n->data = w;
 						v->changes++;

@@ -1408,7 +1408,7 @@ log_read_transaction(logger *lg, BAT *ids_to_omit, uint32_t *updated, BUN maxupd
 	bool skip_entry = false;
 	ATOMIC_BASE_TYPE dbg = ATOMIC_GET(&GDKdebug);
 	time_t t0 = 0;
-	size_t fs = 0;
+	int64_t fs = 0;
 
 	(void) maxupdated;	/* only used inside assert() */
 
@@ -2620,7 +2620,7 @@ log_new(int debug, const char *fn, const char *logdir, int version, preversionfi
 	int max_pending = GDKgetenv_int("wal_max_pending", 5);
 	lng max_file_size = 0;
 
-	if (GDKdebug & TESTINGMASK) {
+	if (ATOMIC_GET(&GDKdebug) & TESTINGMASK) {
 		max_file_size = 2048; /* 2 KiB */
 	} else {
 		const char *max_file_size_str = GDKgetenv("wal_max_file_size");
@@ -2932,7 +2932,7 @@ log_flush(logger *lg, ulng ts)
 			lg->cur_max_pending *= 2; /* when to warn again */
 			TRC_WARNING(GDK, "Too many pending log files " ULLFMT "\n", (lg->id - lg->saved_id));
 			if (GDKtriggerusr1 &&
-			    !(ATOMIC_GET(&GDKdebug) & TESTINGMASK))
+			    (ATOMIC_GET(&GDKdebug) & TESTINGMASK))
 				(*GDKtriggerusr1)();
 		}
 		/* log files went down, reduce cur_max_pending */

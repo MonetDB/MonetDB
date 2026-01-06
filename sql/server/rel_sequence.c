@@ -181,7 +181,7 @@ list_create_seq(
 			switch(s->token) {
 			case SQL_TYPE: {
 				bool found = false;
-				const char *valid_types[4] = {"tinyint", "smallint", "int", "bigint"};
+				static const char *valid_types[4] = {"tinyint", "smallint", "int", "bigint"};
 				size_t number_valid_types = sizeof(valid_types) / sizeof(valid_types[0]);
 
 				if ((used&(1<<SEQ_TYPE)))
