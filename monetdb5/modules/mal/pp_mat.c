@@ -97,6 +97,7 @@ MATnew(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	mat->bat = (BAT**)GDKzalloc(nr * sizeof(BAT*));
 	mat->part = NULL;
 	mat->subpart = NULL;
+	mat->slicesize = 100000; /* todo should be set from code generation */
 	MT_rwlock_init(&mat->rwlock, "mat.new");
 	if (!mat->bat) {
 		GDKfree(mat);

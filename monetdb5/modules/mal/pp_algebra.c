@@ -1796,7 +1796,7 @@ LALGgroup(Client ctx, bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 			nextk \
 		) \
 	} else { \
-		group_(Type, \
+		derive_(Type, \
 			Type, \
 			allocator *ma = h->allocators[P->wid], \
 			BATiter bi = bat_iterator(b), \
@@ -1914,6 +1914,7 @@ LALGderive(Client ctx, bat *rid, bat *uid, const ptr *H, bat *Gid, bat *Ph, bat 
 	if (h) {
 		BUN cnt = BATcount(b);
 
+		assert(cnt == BATcount(G));
 		ATOMIC_BASE_TYPE expected = 0;
 		BAT *g = COLnew(b->hseqbase, TYPE_oid, cnt, TRANSIENT);
 		if (g == NULL) {
