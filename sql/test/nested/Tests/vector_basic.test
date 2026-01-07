@@ -2,10 +2,7 @@ statement ok
 create table t(embedding float vector[3])
 
 statement ok
-insert into t values ((0.1,0.1,0.1))
-
-statement ok
-insert into t values ((0.2,0.2,0.2))
+insert into t values ((0.1,0.1,0.1)), ((0.2,0.2,0.2))
 
 query I
 select count(*) from t
