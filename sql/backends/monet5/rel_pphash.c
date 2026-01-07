@@ -573,7 +573,7 @@ rel2bin_oahash_cart(backend *be, sql_rel *rel, list *refs, stmt *stmts_ht, stmt 
 	if (probe_sub)
 		*probe_sub = stmts_prb_res;
 
-	bit outer = (is_left(rel->op) || is_right(rel->op) || (rel->op == op_anti && list_empty(rel->exps)));
+	bit outer = (is_full(rel->op) || is_left(rel->op) || is_right(rel->op) || (rel->op == op_anti && list_empty(rel->exps)));
 	if (!list_empty(rel->exps) && !outer && !is_semi(rel->op)) {
 		bool swap = false, cross = false, subexp = true;
 		sql_exp *e = rel->exps->h->data;
