@@ -9944,6 +9944,13 @@ fstrPut(BAT *b, var_t *dst, const void *V)
 
 #include <openssl/evp.h>
 
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L &&  OPENSSL_VERSION_NUMBER < 0x30000070L
+#define NEED_LEGACY
+#include <openssl/provider.h>
+static OSSL_PROVIDER *legacy, *default_;
+static MT_Lock ssl_lock = MT_LOCK_INITIALIZER(ssl_lock);
+#endif
+
 gdk_return
 BATaggrdigest(allocator *ma, BAT **bnp, char **shap, const char *digest,
 	      BAT *b, BAT *g, BAT *e, BAT *s, bool skip_nils)
@@ -9977,8 +9984,19 @@ BATaggrdigest(allocator *ma, BAT **bnp, char **shap, const char *digest,
 	allocator *ta = MT_thread_getallocator();
 	allocator_state ta_state = ma_open(ta);
 
+#ifdef NEED_LEGACY
+	EVP_MD *md;
+	MT_lock_set(&ssl_lock);
+	if (legacy == NULL) {
+		legacy = OSSL_PROVIDER_load(NULL, "legacy");
+		default_ = OSSL_PROVIDER_load(NULL, "default");
+	}
+	MT_lock_unset(&ssl_lock);
+	md = EVP_MD_fetch(NULL, digest, NULL);
+#else
 	const EVP_MD *md;
 	md = EVP_get_digestbyname(digest);
+#endif
 	EVP_MD_CTX **mdctx = ma_zalloc(ta, ngrp * sizeof(*mdctx));
 	if (mdctx == NULL)
 		goto bailout;
@@ -10024,6 +10042,7 @@ BATaggrdigest(allocator *ma, BAT **bnp, char **shap, const char *digest,
 			strcpy_len(digestbuf, str_nil, sizeof(digestbuf));
 		} else {
 			if (!EVP_DigestFinal_ex(mdctx[gid], md_value, &md_len)) {
+				GDKerror("Could not update digest value.\n");
 				goto bailout;
 			}
 			for (unsigned int x = 0; x < md_len; x++) {
@@ -10043,11 +10062,17 @@ BATaggrdigest(allocator *ma, BAT **bnp, char **shap, const char *digest,
 			}
 		}
 	}
+#ifdef NEED_LEGACY
+	EVP_MD_free(md);
+#endif
 	bat_iterator_end(&bi);
 	ma_close(&ta_state);
 	return GDK_SUCCEED;
 
   bailout:
+#ifdef NEED_LEGACY
+	EVP_MD_free(md);
+#endif
 	bat_iterator_end(&bi);
 	if (mdctx) {
 		for (gid = 0; gid < ngrp; gid++)

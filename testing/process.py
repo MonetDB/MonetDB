@@ -20,12 +20,9 @@ import signal
 import queue
 import shlex
 import re
+import pathlib
 
-from subprocess import PIPE, TimeoutExpired
-try:
-    from subprocess import DEVNULL
-except ImportError:
-    DEVNULL = os.open(os.devnull, os.O_RDWR)
+from subprocess import PIPE, TimeoutExpired, DEVNULL
 __all__ = ['PIPE', 'DEVNULL', 'Popen', 'client', 'server', 'TimeoutExpired']
 try:
     # only on Windows:
@@ -47,7 +44,8 @@ _dbfarm = os.getenv('GDK_DBFARM', None)
 
 _dotmonetdbfile = []
 
-_mapiportre = re.compile(r'^(mapi:)?monetdb://(\[[0-9a-fA-F:]*\]|[^:/]*):(?P<port>[0-9]+)(/.*$)?', re.M)
+_mapiportre = re.compile(r'^(mapi:)?monetdb://(\[[0-9a-fA-F:]*\]|[^:/]*)'
+                         r':(?P<port>[0-9]+)(/.*$)?', re.M)
 
 
 def _delfiles():
@@ -251,7 +249,7 @@ class Popen(subprocess.Popen):
         self._clean_dotmonetdbfile()
         super().__exit__(exc_type, value, traceback)
         if self.returncode and self.returncode < 0 and -self.returncode in _coresigs:
-            raise RuntimeError('process exited with coredump generating signal %r' % signal.Signals(-self.returncode))
+            raise RuntimeError(f'process exited with coredump generating signal {signal.Signals(-self.returncode)}')
 
     def __del__(self):
         if self._child_created and self.returncode is None:
@@ -395,7 +393,7 @@ class client(Popen):
                     del cmd[i]
                     break
             try:
-                cmd.append('--port=%d' % int(port))
+                cmd.append(f'--port={port}')
             except ValueError:
                 if port:
                     raise
@@ -406,16 +404,16 @@ class client(Popen):
             else:
                 dbname = usock
         if dbname is not None and dbname:
-            cmd.append('--database=%s' % dbname)
+            cmd.append(f'--database={dbname}')
         if user is not None or passwd is not None:
             env = copy.deepcopy(os.environ)
             fd, fnam = tempfile.mkstemp(text=True)
             self.dotmonetdbfile = fnam
             _dotmonetdbfile.append(fnam)
             if user is not None:
-                os.write(fd, ('user=%s\n' % user).encode('utf-8'))
+                os.write(fd, f'user={user}\n'.encode('utf-8'))
             if passwd is not None:
-                os.write(fd, ('password=%s\n' % passwd).encode('utf-8'))
+                os.write(fd, f'password={passwd}\n'.encode('utf-8'))
             os.close(fd)
             env['DOTMONETDBFILE'] = fnam
         if host is not None:
@@ -424,7 +422,7 @@ class client(Popen):
                     del cmd[i]
                     break
             if host:
-                cmd.append('--host=%s' % host)
+                cmd.append(f'--host={host}')
         if verbose:
             print('Executing: ' + ' '.join(cmd +  args), flush=True)
         if stdin is None:
@@ -480,7 +478,7 @@ class server(Popen):
             cmd.remove('--trace')
         if mapiport is not None:
             # make sure it's a string
-            mapiport = str(int(mapiport))
+            mapiport = f'{mapiport}'
             for i in range(len(cmd)):
                 if cmd[i].startswith('mapi_port='):
                     del cmd[i]
@@ -494,45 +492,48 @@ class server(Popen):
                     del cmd[i - 1]
                     break
             cmd.append('--set')
-            cmd.append('mapi_port=%s' % mapiport)
+            cmd.append(f'mapi_port={mapiport}')
             if usock is not None:
                 cmd.append('--set')
                 if mapiport == '0':
-                    cmd.append('mapi_usock=%s.${PORT}' % usock)
+                    cmd.append(f'mapi_usock={usock}.${{PORT}}')
                 else:
-                    cmd.append('mapi_usock=%s.%s' % (usock, mapiport))
+                    cmd.append(f'mapi_usock={usock}.{mapiport}')
         for i in range(len(cmd)):
             if cmd[i].startswith('--dbpath='):
-                dbpath = cmd[i][9:]
+                dbpath = pathlib.Path(cmd[i][9:])
                 del cmd[i]
                 break
             elif cmd[i] == '--dbpath':
-                dbpath = cmd[i+1]
+                dbpath = pathlib.Path(cmd[i+1])
                 del cmd[i:i+2]
                 break
         else:
             dbpath = None
+        if dbfarm is not None:
+            # make sure dbfarm is a pathlib.Path instance
+            dbfarm = pathlib.Path(dbfarm)
         if dbpath is not None:
             if dbfarm is None:
-                dbfarm = os.path.dirname(dbpath)
+                dbfarm = dbpath.parent
             if dbname is None:
-                dbname = os.path.basename(dbpath)
+                dbname = dbpath.name
         if dbname is None:
             dbname = 'demo'
         if dbfarm is None:
             if _dbfarm is None:
                 raise RuntimeError('no dbfarm known')
-            dbfarm = _dbfarm
-        dbpath = os.path.join(dbfarm, dbname)
-        cmd.append('--dbpath=%s' % dbpath)
+            dbfarm = pathlib.Path(_dbfarm)
+        dbpath = dbfarm / dbname
+        cmd.append(f'--dbpath={dbpath}')
         if cleandb:
             import shutil
             if verbose:
                 print(f'cleaning database {dbpath}', flush=True)
             shutil.rmtree(dbpath, ignore_errors=True)
-        if os.path.exists(os.path.join(dbpath, '.vaultkey')):
+        if (dbpath / '.vaultkey').exists():
             cmd.extend(['--set',
-                        'monet_vault_key={}'.format(os.path.join(dbpath, '.vaultkey'))])
+                        f'monet_vault_key={dbpath / ".vaultkey"}'])
         for i in range(len(cmd)):
             if cmd[i].startswith('--dbextra='):
                 dbextra_path = cmd[i][10:]
@@ -547,10 +548,10 @@ class server(Popen):
         if dbextra is not None:
             dbextra_path = dbextra
         if dbextra_path is not None:
-            cmd.append('--dbextra=%s' % dbextra_path)
+            cmd.append(f'--dbextra={dbextra_path}')
 
         if verbose:
-            print('Executing: ' + ' '.join(cmd +  args), flush=True)
+            print('Executing: ' + ' '.join(cmd + args), flush=True)
         for i in range(len(args)):
             if args[i] == '--set' and i+1 < len(args):
                 s = args[i+1].partition('=')[0]
@@ -558,9 +559,9 @@ class server(Popen):
                     if cmd[j] == '--set' and j+1 < len(cmd) and cmd[j+1].startswith(s + '='):
                         del cmd[j:j+2]
                         break
-        started = os.path.join(dbpath, '.started')
+        started = dbpath / '.started'
         try:
-            os.unlink(started)
+            started.unlink()
         except OSError:
             pass
         if os.name == 'nt':
@@ -592,14 +593,15 @@ class server(Popen):
             if self.returncode is not None:
                 # process exited already
                 break
-            if os.path.exists(started):
+            if started.exists():
                 # server is ready
+                connfile = dbpath / '.conn'
                 try:
-                    with open(os.path.join(dbpath, '.conn')) as fil:
+                    with connfile.open() as fil:
                         conn = fil.read()
                 except:
                     if verbose:
-                        print('failed to open {}'.format(os.path.join(dbpath, '.conn')))
+                        print(f'failed to open {connfile}')
                     pass
                 else:
                     # retrieve mapi port if available
