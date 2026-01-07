@@ -486,6 +486,8 @@ stmt_oahash_hshmrk_init(backend *be, stmt *stmts_ht)
 	/* hp_gid or the last hash-column */
 	stmt *ht = stmts_ht->op4.lval->t->data;
 	stmt *hp = stmts_ht->op2?stmts_ht->op2:NULL;
+	if (!ht->nrcols)
+		ht = const_column(be, ht);
 	q = pushArgument(be->mb, q, ht->nr);
 	if (hp)
 		q = pushArgument(be->mb, q, hp->nr);

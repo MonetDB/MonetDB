@@ -453,8 +453,8 @@ OAHASHhashmark_init(Client ctx, bat *res, const bat *ht_sink, const bat *payload
     hash_table *h = (hash_table*)ht->tsink;
 	if (hp)
 		h = (hash_table*)hp->tsink;
-	assert(h && h->s.type == OA_HASH_TABLE_SINK);
-	BUN sz = h->last;
+	//assert(h && h->s.type == OA_HASH_TABLE_SINK);
+	BUN sz = h?h->last:BATcount(ht); /* no hash ie outer cross product case */
 
 	r = COLnew(0, TYPE_bit, sz, TRANSIENT);
 	if (!r) {
@@ -467,13 +467,19 @@ OAHASHhashmark_init(Client ctx, bat *res, const bat *ht_sink, const bat *payload
 	bit *mrk = Tloc(r, 0);
 	gid g = 0;
 	/* init unused GIDs with bit_nil, used GIDs with FALSE */
-	TIMEOUT_LOOP_IDX_DECL(i, sz, qry_ctx) {
-		mrk[i] = bit_nil;
-	}
-	TIMEOUT_LOOP_IDX_DECL(i, h->size, qry_ctx) {
-		g = ATOMIC_GET(h->gids+i);
-		if(g) {
-			mrk[g-1] = false;
+	if (!h) {
+		TIMEOUT_LOOP_IDX_DECL(i, sz, qry_ctx) {
+			mrk[i] = false;
+		}
+	} else {
+		TIMEOUT_LOOP_IDX_DECL(i, sz, qry_ctx) {
+			mrk[i] = bit_nil;
+		}
+		TIMEOUT_LOOP_IDX_DECL(i, h->size, qry_ctx) {
+			g = ATOMIC_GET(h->gids+i);
+			if(g) {
+				mrk[g-1] = false;
+			}
 		}
 	}
 	TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "oahash.hashmark_init", RUNTIME_QRY_TIMEOUT));

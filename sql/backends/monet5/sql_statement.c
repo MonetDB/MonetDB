@@ -1169,9 +1169,9 @@ stmt_const(backend *be, stmt *s, stmt *val)
 		ns->aggr = s->aggr;
 		ns->q = q;
 		ns->nr = getDestVar(q);
-		ns->tname = val->tname;
-		ns->cname = val->cname;
-		ns->label = val->label;
+		ns->tname = val?val->tname:s->tname;
+		ns->cname = val?val->cname:s->cname;
+		ns->label = val?val->label:s->label;
 		return ns;
 	}
   bailout:
