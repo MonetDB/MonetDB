@@ -736,6 +736,60 @@ mats_fetch(backend *be, list *shared, list *aggrresults, int mid)
 	return nshared;
 }
 
+static void
+piggy_back(backend *be, sql_rel *rel, stmt *cursub, list *aggrs)
+{
+	if (list_empty(rel->r)) {
+		for(node *n = aggrs->h, *m = cursub->op4.lval->h; n && m; n = n->next, m = m->next ) {
+			sql_exp *aggrexp = n->data;
+			stmt *s = m->data;
+			if (is_aggr(aggrexp->type)) {
+				int min = 1;
+				sql_subfunc *sf = aggrexp->f;
+				list *l = aggrexp->l;
+				if (list_length(l) == 1) {
+					sql_exp *e = l->h->data;
+					sql_column *c = exp_find_column(rel, e, -2);
+					if (c && (strcmp(sf->func->base.name, "min") == 0 || ((min=strcmp(sf->func->base.name, "max")) == 0)) && !need_distinct(aggrexp)) {
+						/* gen sql.set_min/set_max('schema','table','column', getArg(m->nr, 0) ) */
+						char *fname = min?"set_min":"set_max";
+
+						InstrPtr q = newStmt(be->mb, sqlRef, fname);
+						q = pushStr(be->mb, q, c->t->s->base.name);
+						q = pushStr(be->mb, q, c->t->base.name);
+						q = pushStr(be->mb, q, c->base.name);
+						(void) pushArgument(be->mb, q, getArg(s->q, 0));
+						pushInstruction(be->mb, q);
+					} else if (c && (strcmp(sf->func->base.name, "count") == 0) && need_distinct(aggrexp)) {
+						InstrPtr q = newStmt(be->mb, sqlRef, "set_count_distinct");
+						q = pushStr(be->mb, q, c->t->s->base.name);
+						q = pushStr(be->mb, q, c->t->base.name);
+						q = pushStr(be->mb, q, c->base.name);
+						(void) pushArgument(be->mb, q, getArg(s->q, 0));
+						pushInstruction(be->mb, q);
+					}
+				}
+			}
+		}
+	} else if (list_length(rel->r) == 1) {
+		list *gbe = rel->r;
+		sql_exp *e = gbe->h->data;
+		sql_column *c = exp_find_column(rel, e, -2);
+		if (c) {
+			stmt *s = cursub->op4.lval->h->data;
+			sql_subfunc *cnt = sql_bind_func(be->mvc, "sys", "count", sql_fetch_localtype(TYPE_void), NULL, F_AGGR, true, true);
+			s = stmt_aggr(be, s, NULL, NULL, cnt, 1, 0, 1);
+			/* beware is over estimation because of empty rows (to be remove by the select cout > 0) later */
+			InstrPtr q = newStmt(be->mb, sqlRef, "set_count_distinct");
+			q = pushStr(be->mb, q, c->t->s->base.name);
+			q = pushStr(be->mb, q, c->t->base.name);
+			q = pushStr(be->mb, q, c->base.name);
+			(void) pushArgument(be->mb, q, getArg(s->q, 0));
+			pushInstruction(be->mb, q);
+		}
+	}
+}
+
 stmt *
 rel2bin_groupby_pp(backend *be, sql_rel *rel, list *refs)
 {
@@ -1301,39 +1355,8 @@ rel2bin_groupby_pp(backend *be, sql_rel *rel, list *refs)
 		}
 	}
 
-	if (pp && is_base && !rel->r && cursub) { /* for now just piggy back global aggregation on basetables */
-		for( n = aggrs->h, m = cursub->op4.lval->h; n && m; n = n->next, m = m->next ) {
-			sql_exp *aggrexp = n->data;
-			stmt *s = m->data;
-			if (is_aggr(aggrexp->type)) {
-				int min = 1;
-				sql_subfunc *sf = aggrexp->f;
-				list *l = aggrexp->l;
-				if (list_length(l) == 1) {
-					sql_exp *e = l->h->data;
-					sql_column *c = exp_find_column(rel, e, -2);
-					if (c && (strcmp(sf->func->base.name, "min") == 0 || ((min=strcmp(sf->func->base.name, "max")) == 0)) && !need_distinct(aggrexp)) {
-						/* gen sql.set_min/set_max('schema','table','column', getArg(m->nr, 0) ) */
-						char *fname = min?"set_min":"set_max";
-
-						InstrPtr q = newStmt(be->mb, sqlRef, fname);
-						q = pushStr(be->mb, q, c->t->s->base.name);
-						q = pushStr(be->mb, q, c->t->base.name);
-						q = pushStr(be->mb, q, c->base.name);
-						(void) pushArgument(be->mb, q, getArg(s->q, 0));
-						pushInstruction(be->mb, q);
-					} else if (c && (strcmp(sf->func->base.name, "count") == 0) && need_distinct(aggrexp)) {
-						InstrPtr q = newStmt(be->mb, sqlRef, "set_count_distinct");
-						q = pushStr(be->mb, q, c->t->s->base.name);
-						q = pushStr(be->mb, q, c->t->base.name);
-						q = pushStr(be->mb, q, c->base.name);
-						(void) pushArgument(be->mb, q, getArg(s->q, 0));
-						pushInstruction(be->mb, q);
-					}
-				}
-			}
-		}
-	}
+	if (pp && is_base && cursub) /* for now just piggy back global aggregation on basetables */
+		piggy_back(be, rel, cursub, aggrs);
 
 	/* GROUP BY ends the current pipeline() block.  If needed, start a new
 	 * block to partition the result of this GROUP BY for the upper-level
