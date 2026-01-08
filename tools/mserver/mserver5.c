@@ -5,9 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #include "monetdb_config.h"
@@ -167,7 +165,8 @@ monet_hello(void)
 	printf("# Database path:%s\n", GDKgetenv("gdk_dbpath"));
 	printf("# Module path:%s\n", GDKgetenv("monet_mod_path"));
 #endif
-	printf("# Copyright (c) 2024, 2025 MonetDB Foundation, all rights reserved\n");
+	printf("# Copyright (c) %s MonetDB Foundation, all rights reserved\n",
+		   __DATE__ + 7);
 	printf("# Visit https://www.monetdb.org/ for further information\n");
 
 	fflush(stdout);
