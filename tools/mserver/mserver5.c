@@ -166,7 +166,7 @@ monet_hello(void)
 	printf("# Module path:%s\n", GDKgetenv("monet_mod_path"));
 #endif
 	printf("# Copyright (c) %s MonetDB Foundation, all rights reserved\n",
-		   __DATE__ + 7);
+		   &__DATE__[7]);
 	printf("# Visit https://www.monetdb.org/ for further information\n");
 
 	fflush(stdout);
