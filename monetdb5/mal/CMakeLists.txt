@@ -10,6 +10,7 @@
 
 set(mal_public_headers
   ${CMAKE_CURRENT_SOURCE_DIR}/mal.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/mal_arguments.h
   ${CMAKE_CURRENT_SOURCE_DIR}/mal_authorize.h
   ${CMAKE_CURRENT_SOURCE_DIR}/mal_client.h
   ${CMAKE_CURRENT_SOURCE_DIR}/mal_errors.h
