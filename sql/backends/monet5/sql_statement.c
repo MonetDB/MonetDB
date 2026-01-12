@@ -2657,23 +2657,45 @@ stmt_project_join(backend *be, stmt *op1, stmt *op2, bool delta)
 	return q;
 }
 
+static bool
+has_nested(list *l)
+{
+	if (list_empty(l))
+		return false;
+	for(node *n = l->h; n; n = n->next) {
+		stmt *s = n->data;
+		if (s->nested)
+			return true;
+	}
+	return false;
+}
+
+static list *
+unnest_stmt_deep(stmt *o)
+{
+	while (o->type == st_alias)
+		o = o->op1;
+	assert(o && o->type == st_list);
+	if (o && o->type == st_list && o->op4.lval) {
+		list *l = sa_list(o->op4.lval->sa);
+		for (node *n = o->op4.lval->h; n; n = n->next) {
+			stmt *s = n->data;
+			if (s->nested)
+				list_join(l, unnest_stmt_deep(s));
+			else
+				list_append(l, s);
+		}
+		return l;
+	}
+	return o->op4.lval;
+}
+
 static list *
 unnest_stmt(stmt *o)
 {
 	while (o->type == st_alias)
 		o = o->op1;
 	assert(o && o->type == st_list);
-	if (o && o->nested && o->type == st_list && o->op4.lval) {
-		list *l = sa_list(o->op4.lval->sa);
-		for (node *n = o->op4.lval->h; n; n = n->next) {
-			stmt *s = n->data;
-			if (s->nested)
-				list_join(l, unnest_stmt(s));
-			else
-				list_append(l, s);
-		}
-		return l;
-	}
 	return o->op4.lval;
 }
 
@@ -3437,18 +3459,6 @@ stmt_set_nrcols(stmt *s)
 	s->key = key;
 }
 
-static bool
-has_nested(list *l)
-{
-	if (list_empty(l))
-		return false;
-	for(node *n = l->h; n; n = n->next) {
-		stmt *s = n->data;
-		if (s->nested)
-			return true;
-	}
-	return false;
-}
 
 stmt *
 stmt_list(backend *be, list *l)
@@ -4798,7 +4808,7 @@ stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *f, stmt* rows)
 		push_cands = f->func->type == F_FUNC && can_push_cands(sel, mod, fimp);
 	}
 	if (q == NULL) {
-		list *args = unnest_stmt(ops);
+		list *args = unnest_stmt_deep(ops);
 		if (backend_create_subfunc(be, f, args) < 0)
 			goto bailout;
 		mod = sql_func_mod(f->func);
