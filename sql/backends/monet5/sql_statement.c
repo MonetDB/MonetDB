@@ -2665,6 +2665,17 @@ unnest_stmt(stmt *o)
 	while (o->type == st_alias)
 		o = o->op1;
 	assert(o && o->type == st_list);
+	if (o && o->nested && o->type == st_list && o->op4.lval) {
+		list *l = sa_list(o->op4.lval->sa);
+		for (node *n = o->op4.lval->h; n; n = n->next) {
+			stmt *s = n->data;
+			if (s->nested)
+				list_join(l, unnest_stmt(s));
+			else
+				list_append(l, s);
+		}
+		return l;
+	}
 	return o->op4.lval;
 }
 
@@ -2675,7 +2686,7 @@ stmt_nest2(backend *be, stmt *op1, stmt *op2, fstmt call)
 	list *ops2 = unnest_stmt(op2);
 	list *nops = sa_list(be->mvc->sa);
 	sql_subtype *st = tail_type(op2);
-	bool propagate = !st->multiset && st->type->composite;
+	bool propagate = (st->multiset == MS_VECTOR) || (!st->multiset && st->type->composite);
 	for(node *n = ops1->h, *m = ops2->h; n && m; n = n->next, m = m->next) {
 		stmt *i1 = n->data;
 		stmt *i2 = m->data;
@@ -2711,7 +2722,7 @@ stmt_nest1(backend *be, stmt *op1, stmt *op2, fstmt call)
 	list *ops = unnest_stmt(op1);
 	list *nops = sa_list(be->mvc->sa);
 	sql_subtype *st = tail_type(op1);
-	bool propagate = !st->multiset && st->type->composite;
+	bool propagate = (st->multiset == MS_VECTOR) || (!st->multiset && st->type->composite);
 	for(node *n = ops->h; n; n = n->next) {
 		stmt *i = n->data;
 		if (propagate || (st->multiset && n == ops->t)) {
@@ -2751,7 +2762,7 @@ stmt_nest(backend *be, stmt *op1, stmt *op2, fstmt call)
 	list *ops = unnest_stmt(op2);
 	list *nops = sa_list(be->mvc->sa);
 	sql_subtype *st = tail_type(op2);
-	bool propagate = !st->multiset && st->type->composite;
+	bool propagate = (st->multiset == MS_VECTOR) || (!st->multiset && st->type->composite);
 	for(node *n = ops->h; n; n = n->next) {
 		stmt *i = n->data;
 		if (propagate || (st->multiset && n == ops->t)) {
@@ -3428,6 +3439,19 @@ stmt_set_nrcols(stmt *s)
 	s->key = key;
 }
 
+static bool
+has_nested(list *l)
+{
+	if (list_empty(l))
+		return false;
+	for(node *n = l->h; n; n = n->next) {
+		stmt *s = n->data;
+		if (s->nested)
+			return true;
+	}
+	return false;
+}
+
 stmt *
 stmt_list(backend *be, list *l)
 {
@@ -3438,6 +3462,7 @@ stmt_list(backend *be, list *l)
 		return NULL;
 	s->op4.lval = l;
 	stmt_set_nrcols(s);
+	s->nested = has_nested(l);
 	return s;
 }
 
@@ -4775,12 +4800,13 @@ stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *f, stmt* rows)
 		push_cands = f->func->type == F_FUNC && can_push_cands(sel, mod, fimp);
 	}
 	if (q == NULL) {
-		if (backend_create_subfunc(be, f, ops->op4.lval) < 0)
+		list *args = unnest_stmt(ops);
+		if (backend_create_subfunc(be, f, args) < 0)
 			goto bailout;
 		mod = sql_func_mod(f->func);
 		fimp = convertMultiplexFcn(backend_function_imp(be, f->func));
 		push_cands = f->func->type == F_FUNC && can_push_cands(sel, mod, fimp);
-		default_nargs = (f->res && list_length(f->res) ? list_length(f->res) : 1) + list_length(ops->op4.lval) + (o && o->nrcols > 0 ? 6 : 4);
+		default_nargs = (f->res && list_length(f->res) ? list_length(f->res) : 1) + list_length(args) + (o && o->nrcols > 0 ? 6 : 4);
 		if (rows) {
 			card = stmt_aggr(be, rows, NULL, NULL, sql_bind_func(be->mvc, "sys", "count", sql_fetch_localtype(TYPE_void), NULL, F_AGGR, true, true), 1, 0, 1);
 			default_nargs++;
@@ -4834,13 +4860,13 @@ stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *f, stmt* rows)
 		if (list_length(ops->op4.lval))
 			tpe = tail_type(ops->op4.lval->h->data);
 
-		for (node *n = ops->op4.lval->h; n; n = n->next) {
+		for (node *n = args->h; n; n = n->next) {
 			stmt *op = n->data;
 			q = pushArgument(mb, q, op->nr);
 		}
 		/* push candidate lists if that's the case */
 		if (push_cands) {
-			for (node *n = ops->op4.lval->h; n; n = n->next) {
+			for (node *n = args->h; n; n = n->next) {
 				stmt *op = n->data;
 
 				if (op->nrcols > 0) {
