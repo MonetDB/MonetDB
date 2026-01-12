@@ -5,9 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 /*
@@ -343,10 +341,8 @@ SQLstatementIntern(Client c, const char *expr, const char *nme, bit execute, bit
 			c->query = (char *) expr;
 			msg = SQLrun(c, sql);
 			be->depth--;
-			assert (c->curprg->def->stop <= 1);
+			assert (msg != MAL_SUCCEED || c->curprg->def->stop <= 1);
 			sqlcleanup(sql, 0);
-			if (!execute)
-				goto endofcompile;
 		}
 		if (sql->results) {
 			if (result) { /* return all results sets */

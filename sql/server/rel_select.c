@@ -5,9 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #include "monetdb_config.h"
@@ -6233,6 +6231,7 @@ rel_select_exp(sql_query *query, sql_rel *rel, SelectNode *sn, exp_kind ek)
 						ce->card = CARD_AGGR;
 						list_append(inner->exps, ce);
 						ce = exp_ref(sql, ce);
+						ce->card = CARD_MULTI;
 						found = 1;
 					}
 				} else {
@@ -6247,6 +6246,7 @@ rel_select_exp(sql_query *query, sql_rel *rel, SelectNode *sn, exp_kind ek)
 								ce->card = CARD_AGGR;
 								list_append(inner->exps, ce);
 								ce = exp_ref(sql, ce);
+								ce->card = CARD_MULTI;
 								found = 1;
 							}
 						}

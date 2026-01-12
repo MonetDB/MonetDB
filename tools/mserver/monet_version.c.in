@@ -5,9 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #include "monetdb_config.h"
@@ -65,9 +63,7 @@ monet_version(void)
 #ifndef MONETDB_RELEASE
 	printf("This is an unreleased version\n");
 #endif
-	printf("Copyright 2024, 2025 MonetDB Foundation;\n"
-		   "Copyright August 2008 - 2023 MonetDB B.V.;\n"
-		   "Copyright 1997 - July 2008 CWI.\n");
+	printf("Copyright (C) %s MonetDB Foundation.\n", &__DATE__[7]);
 	printf("Visit https://www.monetdb.org/ for further information\n");
 	printf("Found %.1fGiB available memory, %d available cpu core%s\n",
 			sz_mem_gb, cores, cores != 1 ? "s" : "");

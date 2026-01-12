@@ -5,9 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 /*
@@ -1637,6 +1635,8 @@ BBPtrim(bool aggressive, bat nbat)
 	int waitctr = 0;
 	bool changed = false;
 	unsigned flag = BBPUNLOADING | BBPSYNCING | BBPSAVING;
+	size_t mem = 0;
+
 	if (!aggressive)
 		flag |= BBPHOT;
 	lng t0 = GDKusec();
@@ -1667,6 +1667,8 @@ BBPtrim(bool aggressive, bat nbat)
 				BBP_status_on(bid, BBPUNLOADING);
 				swap = true;
 				waitctr += BATdirty(b) ? 9 : 1;
+				mem += HEAPvmsize(b->theap);
+				mem += HEAPvmsize(b->tvheap);
 			}
 			MT_lock_unset(&b->theaplock);
 		}
@@ -1686,7 +1688,7 @@ BBPtrim(bool aggressive, bat nbat)
 		}
 	}
 	if (n > 0)
-		TRC_INFO(BAT, "unloaded %d bats in "LLFMT" usec%s\n", n, GDKusec() - t0, aggressive ? " (also hot)" : "");
+		TRC_INFO(BAT, "unloaded %d bats, %zu%s bytes in "LLFMT" usec%s\n", n, mem, humansize(mem, (char[24]){0}, 24), GDKusec() - t0, aggressive ? " (also hot)" : "");
 	return changed;
 }
 
@@ -1717,7 +1719,7 @@ BBPmanager(void *dummy)
 				return;
 		}
 		MT_thread_setworking("BBPtrim");
-		changed = BBPtrim(false, nbat);
+		changed = BBPtrim(GDKvm_cursize() > (size_t) (GDK_vm_maxsize * 0.8), nbat);
 		MT_thread_setworking("BBPcallbacks");
 		BBPcallbacks();
 		if (GDKexiting())
