@@ -5954,6 +5954,7 @@ rel_select_exp(sql_query *query, sql_rel *rel, SelectNode *sn, exp_kind ek)
 						ce->card = CARD_AGGR;
 						list_append(inner->exps, ce);
 						ce = exp_ref(sql, ce);
+						ce->card = CARD_MULTI;
 						found = 1;
 					}
 				} else {
@@ -5968,6 +5969,7 @@ rel_select_exp(sql_query *query, sql_rel *rel, SelectNode *sn, exp_kind ek)
 								ce->card = CARD_AGGR;
 								list_append(inner->exps, ce);
 								ce = exp_ref(sql, ce);
+								ce->card = CARD_MULTI;
 								found = 1;
 							}
 						}
