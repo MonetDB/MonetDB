@@ -58,13 +58,11 @@ prop_remove(allocator *sa, prop *plist, prop *p)
 
 	if (plist == p) {
 		plist = p->p;
-		// ma_free(sa, p);
 		return plist;
 	}
 	for(; op; op = op->p) {
 		if (op->p == p) {
 			op->p = p->p;
-			// ma_free(sa, p);
 			break;
 		}
 	}
@@ -184,7 +182,6 @@ propvalue2string(allocator *sa, prop *p)
 				res = ma_alloc(sa, strlen(s) + 3);
 				stpcpy(stpcpy(stpcpy(res, "\""), s), "\"");
 			}
-			// GDKfree(s);
 		}
 		return res;
 	}

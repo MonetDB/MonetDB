@@ -214,56 +214,6 @@ resetMalBlk(MalBlkPtr *mbpp)
 	freeMalBlk(mb);
 	*mbpp = nmb;
 	return MAL_SUCCEED;
-
-	//int i;
-
-	//for (i = 1/*MALCHUNK*/; i < mb->ssize; i++) {
-	//	if (mb->stmt[i])
-	//		freeInstruction(mb, mb->stmt[i]);
-	//	mb->stmt[i] = NULL;
-	//}
-#if 0
-	if (mb->ssize != MALCHUNK) {
-		InstrPtr *new = GDKrealloc(mb->stmt, sizeof(InstrPtr) * MALCHUNK);
-		if (new == NULL) {
-			/* the only place to return an error signal at this stage. */
-			/* The Client context should be passed around more deeply */
-			mb->errors = createMalException(mb, 0, TYPE,
-											SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			return;
-		}
-		mb->stmt = new;
-		mb->ssize = MALCHUNK;
-	}
-#endif
-	/* Reuse the initial function statement */
-	//mb->stop = 1;
-
-	//for (i = 0; i < mb->vtop; i++) {
-	//	/*
-	//	if (mb->var[i].name)
-	//		GDKfree(mb->var[i].name);
-	//		*/
-	//	mb->var[i].name = NULL;
-	//	if (isVarConstant(mb, i))
-	//		VALclear(&getVarConstant(mb, i));
-	//}
-#if 0
-	if (mb->vsize != MALCHUNK) {
-		VarRecord *vnew = GDKrealloc(mb->var, sizeof(VarRecord) * MALCHUNK);
-		if (vnew == NULL) {
-			/* the only place to return an error signal at this stage. */
-			/* The Client context should be passed around more deeply */
-			mb->errors = createMalException(mb, 0, TYPE,
-											SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			return;
-		}
-		mb->var = vnew;
-		mb->vsize = MALCHUNK;
-	}
-#endif
-	//mb->vtop = 0;
-	//return MAL_SUCCEED;
 }
 
 
@@ -272,45 +222,8 @@ resetMalBlk(MalBlkPtr *mbpp)
 void
 freeMalBlk(MalBlkPtr mb)
 {
-	//int i;
-
-	/*
-	for (i = 0; i < mb->ssize; i++)
-		if (mb->stmt[i]) {
-			freeInstruction(mb, mb->stmt[i]);
-			mb->stmt[i] = NULL;
-		}
-	mb->stop = 0;
-	*/
-	//for (i = 0; i < mb->vtop; i++) {
-	//	/*
-	//	if (mb->var[i].name)
-	//		GDKfree(mb->var[i].name);
-	//		*/
-	//	//mb->var[i].name = NULL;
-	//	if (isVarConstant(mb, i))
-	//		VALclear(&getVarConstant(mb, i));
-	//}
-	/* destrou instr_allocator first since *mb is allocated on mb->ma */
 	ma_destroy(mb->instr_allocator);
 	ma_destroy(mb->ma);
-#if 0
-	mb->vtop = 0;
-	GDKfree(mb->stmt);
-	mb->stmt = 0;
-	GDKfree(mb->var);
-	mb->var = 0;
-
-	mb->binding[0] = 0;
-	mb->tag = 0;
-	mb->memory = 0;
-	if (mb->help)
-		GDKfree(mb->help);
-	mb->help = 0;
-	mb->inlineProp = 0;
-	mb->unsafeProp = 0;
-	GDKfree(mb);
-#endif
 }
 
 /* The routine below should assure that all referenced structures are
@@ -916,8 +829,6 @@ defConstant(MalBlkPtr mb, int type, ValPtr cst)
 			else
 				mb->errors = createMalException(mb, 0, TYPE,
 												"constant coercion error");
-			//GDKfree(ft);
-			//GDKfree(tt);
 			VALclear(cst);		/* it could contain allocated space */
 			return -1;
 		} else {

@@ -93,7 +93,6 @@ UDFreverse(Client ctx, str *res, const str *arg)
 		if (!(*res = ma_alloc(ma, buflen)))
 			throw(MAL, "udf.reverse", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		if ((msg = UDFreverse_(res, &buflen, s)) != MAL_SUCCEED) {
-			//GDKfree(*res);
 			*res = NULL;
 			return msg;
 		}

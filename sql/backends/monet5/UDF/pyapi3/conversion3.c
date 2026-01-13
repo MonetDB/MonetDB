@@ -1220,9 +1220,6 @@ ConvertFromSQLType(allocator *ma, Client ctx, BAT *b, sql_subtype *sql_subtype, 
 			}
 		}
 		bat_iterator_end(&li);
-		//if (result) {
-		//	GDKfree(result);
-		//}
 		return res;
 	} else if (conv_type == TYPE_dbl) {
 		int bat_type = ATOMstorage(b->ttype);

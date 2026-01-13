@@ -386,13 +386,11 @@ filterJoinNoIndex(bat *lres_id, bat *rres_id, const bat *l_id, const bat *r_id, 
 		for (BUN i = 0; i < l_ci.ncand; i++) {
 			GEOSGeom_destroy_r(geoshandle, l_geoms[i]);
 		}
-		//GDKfree(l_geoms);
 	}
 	if (r_geoms) {
 		for (BUN i = 0; i < r_ci.ncand; i++) {
 			GEOSGeom_destroy_r(geoshandle, r_geoms[i]);
 		}
-		//GDKfree(r_geoms);
 	}
 	bat_iterator_end(&l_iter);
 	bat_iterator_end(&r_iter);
@@ -412,13 +410,11 @@ free:
 		for (BUN i = 0; i < l_ci.ncand; i++) {
 			GEOSGeom_destroy_r(geoshandle, l_geoms[i]);
 		}
-		//GDKfree(l_geoms);
 	}
 	if (r_geoms) {
 		for (BUN i = 0; i < r_ci.ncand; i++) {
 			GEOSGeom_destroy_r(geoshandle, r_geoms[i]);
 		}
-		//GDKfree(r_geoms);
 	}
 	BBPunfix(l->batCacheid);
 	BBPunfix(r->batCacheid);
@@ -584,13 +580,11 @@ filterJoinRTree(bat *lres_id, bat *rres_id, const bat *l_id, const bat *r_id, do
 		for (BUN i = 0; i < l_ci.ncand; i++) {
 			GEOSGeom_destroy_r(geoshandle, l_geoms[i]);
 		}
-		//GDKfree(l_geoms);
 	}
 	if (r_geoms) {
 		for (BUN i = 0; i < r_ci.ncand; i++) {
 			GEOSGeom_destroy_r(geoshandle, r_geoms[i]);
 		}
-		//GDKfree(r_geoms);
 	}
 	BBPunfix(l->batCacheid);
 	BBPunfix(r->batCacheid);
@@ -609,13 +603,11 @@ free:
 		for (BUN i = 0; i < l_ci.ncand; i++) {
 			GEOSGeom_destroy_r(geoshandle, l_geoms[i]);
 		}
-		//GDKfree(l_geoms);
 	}
 	if (r_geoms) {
 		for (BUN i = 0; i < r_ci.ncand; i++) {
 			GEOSGeom_destroy_r(geoshandle, r_geoms[i]);
 		}
-		//GDKfree(r_geoms);
 	}
 	BBPunfix(l->batCacheid);
 	BBPunfix(r->batCacheid);
@@ -707,10 +699,8 @@ wkbMBR_bat(Client ctx, bat *outBAT_id, bat *inBAT_id)
 			bat_iterator_end(&inBAT_iter);
 			BBPunfix(inBAT->batCacheid);
 			BBPunfix(outBAT->batCacheid);
-			//GDKfree(outMBR);
 			throw(MAL, "batgeom.mbr", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
-		//GDKfree(outMBR);
 		outMBR = NULL;
 	}
 	bat_iterator_end(&inBAT_iter);
@@ -1007,12 +997,10 @@ geom_2_geom_bat(Client ctx, bat *outBAT_id, bat *inBAT_id, bat *cand, int *colum
 			if ((msg = geom_2_geom(ctx, &outWKB, &inWKB, columnType, columnSRID)) != MAL_SUCCEED)	//check type
 				goto bailout;
 			if (tfastins_nocheckVAR(dst, i, outWKB) != GDK_SUCCEED) {
-				////GDKfree(outWKB);
 				msg = createException(MAL, "batcalc.wkb", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto bailout;
 			}
 			nils |= is_wkb_nil(outWKB);
-			////GDKfree(outWKB);
 			outWKB = NULL;
 		}
 	} else {
@@ -1023,12 +1011,10 @@ geom_2_geom_bat(Client ctx, bat *outBAT_id, bat *inBAT_id, bat *cand, int *colum
 			if ((msg = geom_2_geom(ctx, &outWKB, &inWKB, columnType, columnSRID)) != MAL_SUCCEED)	//check type
 				goto bailout;
 			if (tfastins_nocheckVAR(dst, i, outWKB) != GDK_SUCCEED) {
-				//GDKfree(outWKB);
 				msg = createException(MAL, "batcalc.wkb", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto bailout;
 			}
 			nils |= is_wkb_nil(outWKB);
-			//GDKfree(outWKB);
 			outWKB = NULL;
 		}
 	}
@@ -1099,12 +1085,10 @@ wkbFromText_bat_cand(Client ctx, bat *outBAT_id, bat *inBAT_id, bat *cand, int *
 			if ((msg = wkbFromText(ctx, &outSingle, &inWKB, srid, tpe)) != MAL_SUCCEED)
 				goto bailout;
 			if (tfastins_nocheckVAR(dst, i, outSingle) != GDK_SUCCEED) {
-				////GDKfree(outSingle);
 				msg = createException(MAL, "batgeom.wkbFromText", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto bailout;
 			}
 			nils |= is_wkb_nil(outSingle);
-			////GDKfree(outSingle);
 			outSingle = NULL;
 		}
 	} else {
@@ -1116,12 +1100,10 @@ wkbFromText_bat_cand(Client ctx, bat *outBAT_id, bat *inBAT_id, bat *cand, int *
 			if ((msg = wkbFromText(ctx, &outSingle, &inWKB, srid, tpe)) != MAL_SUCCEED)
 				goto bailout;
 			if (tfastins_nocheckVAR(dst, i, outSingle) != GDK_SUCCEED) {
-				//GDKfree(outSingle);
 				msg = createException(MAL, "batgeom.wkbFromText", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto bailout;
 			}
 			nils |= is_wkb_nil(outSingle);
-			//GDKfree(outSingle);
 			outSingle = NULL;
 		}
 	}
@@ -1237,10 +1219,8 @@ WKBtoSTRflagINT_bat(Client ctx, bat *outBAT_id, bat *inBAT_id, int *flag, str (*
 			bat_iterator_end(&inBAT_iter);
 			BBPunfix(inBAT->batCacheid);
 			BBPunfix(outBAT->batCacheid);
-			//GDKfree(outSingle);
 			throw(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
-		//GDKfree(outSingle);
 		outSingle = NULL;
 	}
 	bat_iterator_end(&inBAT_iter);
@@ -1310,10 +1290,8 @@ WKBtoWKB_bat(Client ctx, bat *outBAT_id, bat *inBAT_id, str (*func) (Client, wkb
 			bat_iterator_end(&inBAT_iter);
 			BBPunfix(inBAT->batCacheid);
 			BBPunfix(outBAT->batCacheid);
-			////GDKfree(outSingle);
 			throw(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
-		////GDKfree(outSingle);
 		outSingle = NULL;
 	}
 	bat_iterator_end(&inBAT_iter);
@@ -1376,10 +1354,8 @@ WKBtoWKBflagINT_bat(Client ctx, bat *outBAT_id, bat *inBAT_id, const int *flag, 
 			bat_iterator_end(&inBAT_iter);
 			BBPunfix(inBAT->batCacheid);
 			BBPunfix(outBAT->batCacheid);
-			////GDKfree(outSingle);
 			throw(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
-		////GDKfree(outSingle);
 		outSingle = NULL;
 	}
 	bat_iterator_end(&inBAT_iter);
@@ -1735,11 +1711,9 @@ wkbBox2D_bat(Client ctx, bat *outBAT_id, bat *aBAT_id, bat *bBAT_id)
 		}
 		if (BUNappend(outBAT, outSingle, false) != GDK_SUCCEED) {
 			BBPreclaim(outBAT);
-			//GDKfree(outSingle);
 			ret = createException(MAL, "batgeom.wkbBox2D", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto bailout;
 		}
-		//GDKfree(outSingle);
 	}
 
 	*outBAT_id = outBAT->batCacheid;
@@ -1948,10 +1922,8 @@ wkbFromWKB_bat(bat *outBAT_id, bat *inBAT_id)
 		if (BUNappend(outBAT, outWKB, false) != GDK_SUCCEED) {
 			BBPunfix(inBAT->batCacheid);
 			BBPunfix(outBAT->batCacheid);
-			//GDKfree(outWKB);
 			throw(MAL, "batgeom.wkb", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
-		//GDKfree(outWKB);
 		outWKB = NULL;
 	}
 	bat_iterator_end(&inBATi);
@@ -2028,11 +2000,9 @@ wkbMakePoint_bat(Client ctx, bat *outBAT_id, bat *xBAT_id, bat *yBAT_id, bat *zB
 		}
 		if (BUNappend(outBAT, pointWKB, false) != GDK_SUCCEED) {
 			BBPreclaim(outBAT);
-			////GDKfree(pointWKB);
 			ret = createException(MAL, "batgeom.WkbMakePoint", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto bailout;
 		}
-		////GDKfree(pointWKB);
 	}
 
 	*outBAT_id = outBAT->batCacheid;
@@ -2093,10 +2063,8 @@ wkbSetSRID_bat(Client ctx, bat *outBAT_id, bat *inBAT_id, int *srid)
 			bat_iterator_end(&inBAT_iter);
 			BBPunfix(inBAT->batCacheid);
 			BBPunfix(outBAT->batCacheid);
-			//GDKfree(outWKB);
 			throw(MAL, "batgeom.SetSRID", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
-		//GDKfree(outWKB);
 		outWKB = NULL;
 	}
 	bat_iterator_end(&inBAT_iter);
@@ -2360,7 +2328,6 @@ wkbFilter_geom_bat(Client ctx, bat *BATfiltered_id, wkb **geomWKB, bat *BATorigi
 			bat_iterator_end(&BAToriginal_iter);
 			BBPunfix(BAToriginal->batCacheid);
 			BBPunfix(BATfiltered->batCacheid);
-			//GDKfree(geomMBR);
 			return err;
 		}
 		//check the containment of the MBRs
@@ -2368,8 +2335,6 @@ wkbFilter_geom_bat(Client ctx, bat *BATfiltered_id, wkb **geomWKB, bat *BATorigi
 			bat_iterator_end(&BAToriginal_iter);
 			BBPunfix(BAToriginal->batCacheid);
 			BBPunfix(BATfiltered->batCacheid);
-			//GDKfree(geomMBR);
-			//GDKfree(MBRoriginal);
 			return err;
 		}
 
@@ -2378,17 +2343,13 @@ wkbFilter_geom_bat(Client ctx, bat *BATfiltered_id, wkb **geomWKB, bat *BATorigi
 				bat_iterator_end(&BAToriginal_iter);
 				BBPunfix(BAToriginal->batCacheid);
 				BBPunfix(BATfiltered->batCacheid);
-				//GDKfree(geomMBR);
-				//GDKfree(MBRoriginal);
 				throw(MAL, "batgeom.MBRfilter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 		}
 
-		//GDKfree(MBRoriginal);
 	}
 	bat_iterator_end(&BAToriginal_iter);
 
-	//GDKfree(geomMBR);
 	BBPunfix(BAToriginal->batCacheid);
 	*BATfiltered_id = BATfiltered->batCacheid;
 	BBPkeepref(BATfiltered);
@@ -2475,10 +2436,8 @@ wkbMakeLine_bat(Client ctx, bat *outBAT_id, bat *aBAT_id, bat *bBAT_id)
 			BBPunfix(outBAT->batCacheid);
 			BBPunfix(aBAT->batCacheid);
 			BBPunfix(bBAT->batCacheid);
-			////GDKfree(outWKB);
 			throw(MAL, "batgeom.MakeLine", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
-		////GDKfree(outWKB);
 		outWKB = NULL;
 	}
 	bat_iterator_end(&aBAT_iter);
@@ -2546,10 +2505,8 @@ wkbUnion_bat(Client ctx, bat *outBAT_id, bat *aBAT_id, bat *bBAT_id)
 			BBPunfix(outBAT->batCacheid);
 			BBPunfix(aBAT->batCacheid);
 			BBPunfix(bBAT->batCacheid);
-			////GDKfree(outWKB);
 			throw(MAL, "batgeom.Union", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
-		////GDKfree(outWKB);
 		outWKB = NULL;
 	}
 	bat_iterator_end(&aBAT_iter);

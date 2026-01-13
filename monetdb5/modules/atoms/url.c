@@ -298,7 +298,6 @@ URLfromString(allocator *ma, const char *src, size_t *len, void **U, bool extern
 	size_t l = strlen(src) + 1;
 
 	if (*len < l || *u == NULL) {
-		// GDKfree(*u);
 		*u = ma_alloc(ma, l);
 		if (*u == NULL)
 			return -1;
@@ -323,7 +322,6 @@ URLtoString(allocator *ma, str *s, size_t *len, const void *SRC, bool external)
 	if (external)
 		l += 2;
 	if (l >= *len || *s == NULL) {
-		// GDKfree(*s);
 		*s = ma_alloc(ma, l + 1);
 		if (*s == NULL)
 			return -1;
@@ -942,12 +940,10 @@ BATextractURLHost(Client ctx, bat *res, const bat *bid, const bit *no_www)
 		throw(MAL, "baturl.extractURLHost", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	if (!(b = BATdescriptor(*bid))) {
-		// GDKfree(buf);
 		throw(MAL, "baturl.extractURLHost",
 			  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	if ((bn = COLnew(b->hseqbase, TYPE_str, BATcount(b), TRANSIENT)) == NULL) {
-		// GDKfree(buf);
 		BBPunfix(b->batCacheid);
 		throw(MAL, "baturl.extractURLHost", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
@@ -1014,7 +1010,6 @@ BATextractURLHost(Client ctx, bat *res, const bat *bid, const bit *no_www)
 	}
 	bat_iterator_end(&bi);
 
-	// GDKfree(buf);
 	if (msg == MAL_SUCCEED) {
 		BATsetcount(bn, q);
 		bn->tnil = nils;

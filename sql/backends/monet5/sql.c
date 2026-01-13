@@ -3272,7 +3272,6 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	if (b && !msg)
 		bat2return(stk, pci, b);
-	// GDKfree(b);
 	return msg;
 }
 
@@ -4103,7 +4102,6 @@ SQLargRecord(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if( ! t)
 		t = strchr(s, '\t');
 	*ret = SA_STRDUP(mb->ma, t ? t + 1 : s);
-	// GDKfree(s);
 	if(*ret == NULL)
 		throw(SQL, "sql.argRecord", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
@@ -5051,7 +5049,6 @@ SQLunionfunc(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					bat_iterator_end(&bi[i]);
 					BBPunfix(input[i]->batCacheid);
 				}
-				//GDKfree(input);
 				input = NULL;
 				goto finalize;
 			}
@@ -5094,7 +5091,6 @@ SQLunionfunc(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			nmb->stmt[1] = NULL; /* no profiling */
 			nmb->stmt[2] = stmt[0];
 			nmb->stop = nmb->ssize = 3;
-			//GDKfree(stmt);
 			start = 2;
 		}
 		for (BUN cur = 0; cur<cnt && !ret; cur++ ) {
@@ -5167,7 +5163,6 @@ finalize:
 						BBPkeepref(res[i]);
 				}
 			}
-		//GDKfree(res);
 		if (input) {
 			for (int i = 0; i<nrinput; i++) {
 				if (input[i]) {
@@ -5175,9 +5170,7 @@ finalize:
 					BBPunfix(input[i]->batCacheid);
 				}
 			}
-			//GDKfree(input);
 		}
-		//GDKfree(bi);
 		if (nmb)
 			freeMalBlk(nmb);
 		if (omb)
@@ -5413,9 +5406,6 @@ SQLstr_auto_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL, "sql.str_auto_vacuum", SQLSTATE(42000) "Cannot vacuum compressed column");
 
 	if (!(sname_copy = SA_STRDUP(mb->ma, sname)) || !(tname_copy = SA_STRDUP(mb->ma, tname)) || (cname && !(cname_copy = SA_STRDUP(mb->ma, cname)))) {
-		//GDKfree(sname_copy);
-		//GDKfree(tname_copy);
-		//GDKfree(cname_copy);
 		throw(SQL, "sql.str_auto_vacuum", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	void *argv[4] = {m->store, sname_copy, tname_copy, cname_copy};

@@ -624,7 +624,6 @@ strFromStr(allocator *ma, const char *restrict src, size_t *restrict len, char *
 
 	/* allocate new memory */
 	if (*dst == NULL || *len < l) {
-		//GDKfree(*dst);
 		*dst = ma_alloc(ma, *len = l);
 		if (*dst == NULL) {
 			*len = 0;
@@ -776,7 +775,6 @@ strRead(allocator *ma, str a, size_t *dstlen, stream *s, size_t cnt)
 		*dstlen = len + 1;
 	}
 	if (len && mnstr_read(s, a, len, 1) != 1) {
-		//GDKfree(a);
 		return NULL;
 	}
 	a[len] = 0;
@@ -1119,14 +1117,6 @@ concat_strings(allocator *ma, BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 	if (has_nils)
 		*has_nils = nils;
 	ma_close(&ta_state);
-	// GDKfree(lengths);
-	//if (astrings) {
-	//	for (i = 0; i < ngrp; i++) {
-	//		if (astrings[i] != str_nil)
-	//			GDKfree(astrings[i]);
-	//	}
-	//	GDKfree(astrings);
-	//}
 	if (rres != GDK_SUCCEED)
 		BBPreclaim(bn);
 
@@ -1146,7 +1136,6 @@ BATstr_group_concat(allocator *ma, ValPtr res, BAT *b, BAT *s, BAT *sep, bool sk
 {
 	struct canditer ci;
 	gdk_return r = GDK_SUCCEED;
-	//bool free_nseparator = false;
 	char *nseparator = (char *)separator;
 
 	assert((nseparator && !sep) || (!nseparator && sep)); /* only one of them must be set */
@@ -1165,7 +1154,6 @@ BATstr_group_concat(allocator *ma, ValPtr res, BAT *b, BAT *s, BAT *sep, bool sk
 			ma_close(&ta_state);
 			return GDK_FAIL;
 		}
-		//free_nseparator = true;
 		sep = NULL;
 	}
 
@@ -1192,7 +1180,6 @@ BATgroupstr_group_concat(BAT *b, BAT *g, BAT *e, BAT *s, BAT *sep, bool skip_nil
 	struct canditer ci;
 	const char *err;
 	gdk_return res;
-	//bool free_nseparator = false;
 	char *nseparator = (char *)separator;
 
 	assert((nseparator && !sep) || (!nseparator && sep)); /* only one of them must be set */
@@ -1219,7 +1206,6 @@ BATgroupstr_group_concat(BAT *b, BAT *g, BAT *e, BAT *s, BAT *sep, bool skip_nil
 			ma_close(&ma_state);
 			return NULL;
 		}
-		//free_nseparator = true;
 		sep = NULL;
 	}
 

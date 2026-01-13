@@ -528,8 +528,6 @@ findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 			p->blk = s->def;
 		}
 
-		//if (returntype != returns)
-		//	GDKfree(returntype);
 		return s1;
 	}							/* while */
 	/*
@@ -538,8 +536,6 @@ findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 	 * arguments, but that clashes with one of the target variables.
 	 */
   wrapup:
-	//if (returntype != returns)
-	//	GDKfree(returntype);
 	return -3;
 }
 
@@ -559,8 +555,6 @@ typeMismatch(MalBlkPtr mb, InstrPtr p, int idx, int lhs, int rhs, int silent)
 		n2 = getTypeName(mb->ma, rhs);
 		mb->errors = createMalException(mb, idx, TYPE, "type mismatch %s := %s", n1,
 										n2);
-		//GDKfree(n1);
-		//GDKfree(n2);
 	}
 	p->typeresolved = false;
 }
@@ -662,8 +656,6 @@ typeChecker(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 													errsig ? errsig :
 													"failed instruction2str()");
 					(void) free_errsig;
-					//if (free_errsig)
-					//	GDKfree(errsig);
 				}
 			}
 			p->typeresolved = false;

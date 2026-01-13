@@ -1826,7 +1826,6 @@ parseFunction(allocator *ma, Client ctx, int kind)
 			return 0;
 		}
 		curInstr->fcn = getAddress(getModuleId(curInstr), nme);
-		//GDKfree(nme);
 		if (curInstr->fcn == NULL) {
 			parseError(ctx, "<address> not found\n");
 			return 0;

@@ -326,7 +326,6 @@ STRbatFromWChr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
   bailout1:
 	bat_iterator_end(&bi);
   bailout:
-	//GDKfree(buf);
 	ma_close(&ma_state);
 	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
@@ -427,7 +426,6 @@ STRbatSpace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
   bailout1:
 	bat_iterator_end(&bi);
   bailout:
-	//GDKfree(buf);
 	ma_close(&ma_state);
 	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
@@ -523,7 +521,6 @@ do_batstr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
   bailout1:
 	bat_iterator_end(&bi);
   bailout:
-	//GDKfree(buf);
 	ma_close(&ma_state);
 	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
@@ -623,7 +620,6 @@ do_batstr_conststr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
   bailout1:
 	bat_iterator_end(&bi);
   bailout:
-	//GDKfree(buf);
 	ma_close(&ma_state);
 	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
@@ -723,7 +719,6 @@ do_batstr_str_conststr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
   bailout1:
 	bat_iterator_end(&bi);
   bailout:
-	//GDKfree(buf);
 	ma_close(&ma_state);
 	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
@@ -839,7 +834,6 @@ do_batstr_batstr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	bat_iterator_end(&lefti);
 	bat_iterator_end(&righti);
   bailout:
-	//GDKfree(buf);
 	ma_close(&ma_state);
 	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(4, left, lefts, right, rights);
@@ -940,7 +934,6 @@ do_batstr_constint_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
   bailout1:
 	bat_iterator_end(&bi);
   bailout:
-	//GDKfree(buf);
 	ma_close(&ma_state);
 	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
@@ -1043,7 +1036,6 @@ do_batstr_int_conststr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
   bailout1:
 	bat_iterator_end(&bi);
   bailout:
-	//GDKfree(buf);
 	ma_close(&ma_state);
 	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
@@ -1163,7 +1155,6 @@ do_batstr_batint_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	bat_iterator_end(&bi);
 	bat_iterator_end(&lefti);
   bailout:
-	//GDKfree(buf);
 	ma_close(&ma_state);
 	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(4, left, ls, right, rs);
@@ -1265,7 +1256,6 @@ do_batstr_constint_conststr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
   bailout1:
 	bat_iterator_end(&bi);
   bailout:
-	//GDKfree(buf);
 	ma_close(&ma_state);
 	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
@@ -1387,7 +1377,6 @@ do_batstr_batint_conststr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	bat_iterator_end(&bi);
 	bat_iterator_end(&lefti);
   bailout:
-	//GDKfree(buf);
 	ma_close(&ma_state);
 	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(4, left, ls, right, rs);
@@ -1506,7 +1495,6 @@ do_batstr_constint_batstr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	bat_iterator_end(&lefti);
 	bat_iterator_end(&righti);
   bailout:
-	//GDKfree(buf);
 	ma_close(&ma_state);
 	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(4, left, ls, right, rs);
@@ -1640,7 +1628,6 @@ do_batstr_batint_batstr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	bat_iterator_end(&arg3i);
 	bat_iterator_end(&bi);
   bailout:
-	//GDKfree(buf);
 	ma_close(&ma_state);
 	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(6, arg1, arg1s, arg2, arg2s, arg3, arg3s);
@@ -2703,7 +2690,6 @@ STRbatWChrAt(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat_iterator_end(&bi);
 	bat_iterator_end(&lefti);
   bailout:
-	//GDKfree(buf);
 	ma_close(&ma_state);
 	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(4, left, lefts, right, rights);
@@ -2778,7 +2764,6 @@ STRbatWChrAtcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
   bailout1:
 	bat_iterator_end(&bi);
   bailout:
-	//GDKfree(buf);
 	ma_close(&ma_state);
 	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
@@ -2855,7 +2840,6 @@ STRbatWChrAt_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
   bailout1:
 	bat_iterator_end(&bi);
   bailout:
-	//GDKfree(buf);
 	ma_close(&ma_state);
 	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
@@ -2953,7 +2937,6 @@ do_batstr_str_int_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
   bailout1:
 	bat_iterator_end(&bi);
   bailout:
-	//GDKfree(buf);
 	ma_close(&ma_state);
 	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
@@ -3078,7 +3061,6 @@ STRbatrepeatcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
   bailout1:
 	bat_iterator_end(&bi);
   bailout:
-	//GDKfree(buf);
 	ma_close(&ma_state);
 	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
@@ -3178,7 +3160,6 @@ do_batstr_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
   bailout1:
 	bat_iterator_end(&bi);
   bailout:
-	//GDKfree(buf);
 	ma_close(&ma_state);
 	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
@@ -3304,7 +3285,6 @@ STRbatrepeat_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
   bailout1:
 	bat_iterator_end(&bi);
   bailout:
-	//GDKfree(buf);
 	ma_close(&ma_state);
 	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
@@ -3421,7 +3401,6 @@ do_batstr_str_int(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	bat_iterator_end(&bi);
 	bat_iterator_end(&lefti);
   bailout:
-	//GDKfree(buf);
 	ma_close(&ma_state);
 	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(4, left, lefts, right, rights);
@@ -3563,7 +3542,6 @@ STRbatrepeat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat_iterator_end(&bi);
 	bat_iterator_end(&lefti);
   bailout:
-	//GDKfree(buf);
 	ma_close(&ma_state);
 	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(4, left, lefts, right, rights);
@@ -3664,7 +3642,6 @@ STRbatSubstitutecst_imp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
   bailout1:
 	bat_iterator_end(&bi);
   bailout:
-	//GDKfree(buf);
 	ma_close(&ma_state);
 	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
@@ -3815,7 +3792,6 @@ STRbatSubstitute(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat_iterator_end(&arg2i);
 	bat_iterator_end(&arg3i);
   bailout:
-	//GDKfree(buf);
 	ma_close(&ma_state);
 	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(8, arg1, arg1, arg2, arg2s, arg3, arg3s, arg4, arg4s);
@@ -3914,7 +3890,6 @@ STRbatsplitpartcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
   bailout1:
 	bat_iterator_end(&bi);
   bailout:
-	//GDKfree(buf);
 	ma_close(&ma_state);
 	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
@@ -4032,7 +4007,6 @@ STRbatsplitpart_needlecst(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	bat_iterator_end(&fi);
 	bat_iterator_end(&bi);
   bailout:
-	//GDKfree(buf);
 	ma_close(&ma_state);
 	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(4, b, bs, f, fs);
@@ -4148,7 +4122,6 @@ STRbatsplitpart_fieldcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	bat_iterator_end(&bi);
 	bat_iterator_end(&ni);
   bailout:
-	//GDKfree(buf);
 	ma_close(&ma_state);
 	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(4, b, bs, n, ns);
@@ -4280,7 +4253,6 @@ STRbatsplitpart(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat_iterator_end(&arg1i);
 	bat_iterator_end(&arg2i);
   bailout:
-	//GDKfree(buf);
 	ma_close(&ma_state);
 	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(6, arg1, arg1s, arg2, arg2s, arg3, arg3s);
@@ -4417,7 +4389,6 @@ STRbatReplace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat_iterator_end(&arg2i);
 	bat_iterator_end(&arg3i);
   bailout:
-	//GDKfree(buf);
 	ma_close(&ma_state);
 	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(6, arg1, arg1s, arg2, arg2s, arg3, arg3s);
@@ -4561,7 +4532,6 @@ STRbatInsert(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat_iterator_end(&lefti);
 	bat_iterator_end(&righti);
   bailout:
-	//GDKfree(buf);
 	ma_close(&ma_state);
 	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(8, left, ls, start, ss, nchars, ns, right, rs);
@@ -4661,7 +4631,6 @@ STRbatInsertcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
   bailout1:
 	bat_iterator_end(&bi);
   bailout:
-	//GDKfree(buf);
 	ma_close(&ma_state);
 	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
@@ -4764,7 +4733,6 @@ STRbatsubstring_2nd_3rd_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
   bailout1:
 	bat_iterator_end(&bi);
   bailout:
-	//GDKfree(buf);
 	ma_close(&ma_state);
 	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
@@ -4865,7 +4833,6 @@ STRbatsubstring_1st_2nd_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
   bailout1:
 	bat_iterator_end(&bi);
   bailout:
-	//GDKfree(buf);
 	ma_close(&ma_state);
 	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
@@ -4966,7 +4933,6 @@ STRbatsubstring_1st_3rd_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
   bailout1:
 	bat_iterator_end(&bi);
   bailout:
-	//GDKfree(buf);
 	ma_close(&ma_state);
 	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
@@ -5085,7 +5051,6 @@ STRbatsubstring_1st_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat_iterator_end(&bi);
 	bat_iterator_end(&lbi);
   bailout:
-	//GDKfree(buf);
 	ma_close(&ma_state);
 	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(4, b, bs, lb, lbs);
@@ -5202,7 +5167,6 @@ STRbatsubstring_2nd_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat_iterator_end(&lbi);
 	bat_iterator_end(&bi);
   bailout:
-	//GDKfree(buf);
 	ma_close(&ma_state);
 	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(4, b, bs, lb, lbs);
@@ -5318,7 +5282,6 @@ STRbatsubstring_3rd_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat_iterator_end(&lbi);
 	bat_iterator_end(&bi);
   bailout:
-	//GDKfree(buf);
 	ma_close(&ma_state);
 	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(4, b, bs, lb, lbs);
@@ -5449,7 +5412,6 @@ STRbatsubstring(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat_iterator_end(&starti);
 	bat_iterator_end(&lengthi);
   bailout:
-	//GDKfree(buf);
 	ma_close(&ma_state);
 	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(6, left, ls, start, ss, length, lens);

@@ -105,7 +105,6 @@ mat_add_var(allocator *ma, matlist_t *ml, InstrPtr q, InstrPtr p, int var, mat_t
 		if (!v)
 			return -1;
 		memcpy(v, ml->v, ml->top * sizeof(mat_t));
-		// GDKfree(ml->v);
 		ml->size = s;
 		ml->v = v;
 	}
@@ -2858,23 +2857,12 @@ OPTmergetableImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 				break;
 			freeInstruction(mb, old[i]);
 		}
-		//GDKfree(old);
 	}
 	for (i = 0; i < ml.top; i++) {
 		if (ml.v[i].mi && !ml.v[i].pushed)
 			freeInstruction(mb, ml.v[i].mi);
 	}
   cleanup:
-	//if (vars)
-	//	GDKfree(vars);
-	//if (ml.v)
-	//	GDKfree(ml.v);
-	//if (ml.horigin)
-	//	GDKfree(ml.horigin);
-	//if (ml.torigin)
-	//	GDKfree(ml.torigin);
-	//if (ml.vars)
-	//	GDKfree(ml.vars);
 	if (mb->errors) {
 		msg = mb->errors;
 		mb->errors = NULL;

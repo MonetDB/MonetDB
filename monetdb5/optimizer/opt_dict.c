@@ -407,7 +407,6 @@ OPTdictImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/* keep all actions taken as a post block comment */
   wrapup:
 	ma_close(&ta_state);
-	//GDKfree(old);
   wrapup1:
 	/* keep actions taken as a fake argument */
 	(void) pushInt(mb, pci, actions);

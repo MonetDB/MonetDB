@@ -1544,16 +1544,10 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 						appended_element = element;
 					}
 					if (BUNappend(b, appended_element, false) != GDK_SUCCEED) {
-						//if (element) {
-						//	GDKfree(element);
-						//}
 						msg = createException(MAL, "cudf.eval", MAL_MALLOC_FAIL);
 						goto wrapup;
 					}
 				}
-				//if (element) {
-				//	GDKfree(element);
-				//}
 				GDKfree(data);
 			}
 		}

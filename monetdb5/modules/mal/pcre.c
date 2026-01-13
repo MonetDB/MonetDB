@@ -535,7 +535,6 @@ pcre_replace_bat(BAT **res, BAT *origin_strs, const char *pattern,
 	bat_iterator_end(&origin_strsi);
 	pcre2_match_data_free(match_data);
 	pcre2_code_free(pcre_code);
-	//GDKfree(tmpres);
 	ma_close(&ta_state);
 	*res = tmpbat;
 	return MAL_SUCCEED;
@@ -730,7 +729,6 @@ sql2pcre(allocator *ma, str *r, const char *pat, const char *esc_str)
 	}
 	/* no wildcard or escape character at end of string */
 	if (!hasWildcard || escaped) {
-		//GDKfree(*r);
 		*r = NULL;
 		if (escaped)
 			throw(MAL, "pcre.sql2pcre",
@@ -882,12 +880,10 @@ PCREpatindex(Client ctx, int *ret, const char *const *pat, const char *const *va
 		msg = createException(MAL, "pcre.patindex",
 							  "compilation of regular expression (%s) failed at %d with %s",
 							  ppat, (int) errpos, (char *) errbuf);
-		//GDKfree(ppat);
 		ma_close(&ta_state);
 		return msg;
 	}
 	ma_close(&ta_state);
-	//GDKfree(ppat);
 	match_data = pcre2_match_data_create_from_pattern(re, NULL);
 	if (match_data == NULL) {
 		pcre2_code_free(re);
@@ -1005,8 +1001,6 @@ PCRElike_imp(bit *ret, const char *const *s, const char *const *pat,
 		}
 	}
 
-	//if (re)
-	//	mnre_destroy(re);
 	return res;
 }
 
@@ -1164,7 +1158,6 @@ BATPCRElike_imp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 				ret[p] = mnre_like_proj_apply(next_input, mnre_simple, np,
 											isensitive, anti, use_strcmp);
 				ma_close(&ta_state);
-				//mnre_like_clean(&mnre_simple);
 			}
 			has_nil |= is_bit_nil(ret[p]);
 		}
@@ -1208,7 +1201,6 @@ BATPCRElike_imp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	}
 
   bailout:
-	//mnre_like_clean(&mnre_simple);
 	if (bn && !msg) {
 		BATsetcount(bn, q);
 		bn->tnil = has_nil;
@@ -1328,7 +1320,6 @@ mnre_likeselect(BAT *bn, BAT *b, BAT *s, struct canditer *ci, BUN p, BUN q,
   bailout:
 	bat_iterator_end(&bi);
 	ma_close(&ta_state);
-	//mnre_like_clean(&re);
 	*rcnt = cnt;
 	return msg;
 }
@@ -1716,7 +1707,6 @@ pcrejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, const char *esc,
   bailout:
 	bat_iterator_end(&li);
 	bat_iterator_end(&ri);
-	//mnre_like_clean(&re);
 	assert(msg != MAL_SUCCEED);
 	return msg;
 }

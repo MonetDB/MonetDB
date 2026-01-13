@@ -380,7 +380,6 @@ OPTremoteQueriesImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 	for (; i < slimit; i++)
 		if (old[i])
 			pushInstruction(mb, old[i]);
-	//GDKfree(old);
 
 	/* Defense line against incorrect plans */
 	if (msg == MAL_SUCCEED && actions) {

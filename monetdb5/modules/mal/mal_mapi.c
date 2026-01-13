@@ -2348,9 +2348,6 @@ SERVERput(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (SERVERsessions[i].hdl)
 			mapi_close_handle(SERVERsessions[i].hdl);
 		SERVERsessions[i].hdl = mapi_query(mid, buf);
-
-		//GDKfree(ht);
-		//GDKfree(tt);
 	} else {
 		switch (tpe) {
 		case TYPE_str:
@@ -2363,7 +2360,6 @@ SERVERput(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			if ((w = ATOMformat(mb->ma, tpe, val)) == NULL)
 				throw(MAL, "mapi.put", GDK_EXCEPTION);
 			snprintf(buf, sizeof(buf), "%s:=%s;", *nme, w);
-			// GDKfree(w);
 			if (SERVERsessions[i].hdl)
 				mapi_close_handle(SERVERsessions[i].hdl);
 			SERVERsessions[i].hdl = mapi_query(mid, buf);
@@ -2399,7 +2395,6 @@ SERVERputLocal(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if ((w = ATOMformat(mb->ma, tpe, val)) == NULL)
 			throw(MAL, "mapi.glue", GDK_EXCEPTION);
 		snprintf(buf, sizeof(buf), "%s:=%s;", *nme, w);
-		// GDKfree(w);
 		break;
 	}
 	*ret = ma_strdup(mb->ma, buf);
@@ -2431,7 +2426,6 @@ SERVERbindBAT(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		tn = getTypeName(mb->ma, getBatType(getVarType(mb, getDestVar(pci))));
 		snprintf(buf, sizeof(buf), "%s:bat[:%s]:=sql.bind(\"%s\",\"%s\",\"%s\",%d);",
 				 getVarNameIntoBuffer(mb, getDestVar(pci), name), tn, *nme, *tab, *col, i);
-		//GDKfree(tn);
 	} else if (pci->argc == 5) {
 		tab = getArgReference_str(stk, pci, pci->retc + 2);
 		i = *getArgReference_int(stk, pci, pci->retc + 3);
@@ -2441,12 +2435,9 @@ SERVERbindBAT(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		str hn, tn;
 		(void) hn;
 		int target = getArgType(mb, pci, 0);
-		//hn = getTypeName(mb->ma, TYPE_oid);
 		tn = getTypeName(mb->ma, getBatType(target));
 		snprintf(buf, sizeof(buf), "%s:bat[:%s]:=bbp.bind(\"%s\");",
 				 getVarNameIntoBuffer(mb, getDestVar(pci), name), tn, *nme);
-		//GDKfree(hn);
-		//GDKfree(tn);
 	}
 	if (SERVERsessions[i].hdl)
 		mapi_close_handle(SERVERsessions[i].hdl);
