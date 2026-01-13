@@ -1,0 +1,29 @@
+body:
+  - type: textarea
+    id: general
+    attributes:
+      label:
+      description:
+    validations:
+      required: true
+  - type: markdown
+    attributes:
+      value: "Identity Disclosure"
+  - type: input
+    attributes:
+      label: "Full Name:"
+      placeholder: e.g., Jane Doe
+    validations:
+      required: true
+  - type: input
+    attributes:
+      label: "Affiliation:"
+      placeholder: e.g., FooBar Corp
+    validations:
+      required: true
+  - type: markdown
+    attributes:
+      value: |
+        If the above is not provided and cannot be inferred from your GitHub profile page,
+        we might close your discussion without further review. Refer to the
+        [reasoning behind this rule](https://berthub.eu/articles/posts/anonymous-help/) if you have questions.
