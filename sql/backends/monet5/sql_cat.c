@@ -360,14 +360,6 @@ alter_table_add_range_partition(mvc *sql, char *msname, char *mtname, char *psna
 	}
 
 finish:
-	//if (err_min)
-	//	GDKfree(err_min);
-	//if (err_max)
-	//	GDKfree(err_max);
-	//if (conflict_err_min)
-	//	GDKfree(conflict_err_min);
-	//if (conflict_err_max)
-	//	GDKfree(conflict_err_max);
 	return msg;
 }
 

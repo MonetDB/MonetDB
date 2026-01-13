@@ -82,14 +82,11 @@ SQLstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (!(r = ma_alloc(mb->ma, rlen)))
 			throw(SQL, "calc.str_cast", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		if ((msg = SQLstr_cast_any_type(mb->ma, &r, &rlen, m, eclass, d, s, has_tz, p, tpe, digits)) != MAL_SUCCEED) {
-			// GDKfree(r);
 			return msg;
 		}
 	}
 
 	*res = SA_STRDUP(mb->ma, r);
-	//if (!from_str)
-	//	GDKfree(r);
 	if (!*res)
 		throw(SQL, "calc.str_cast", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
@@ -256,7 +253,6 @@ bailout1:
 	bat_iterator_end(&bi);
 
 bailout:
-	//GDKfree(r);
 	BBPreclaim(b);
 	BBPreclaim(s);
 	if (dst && !msg) {

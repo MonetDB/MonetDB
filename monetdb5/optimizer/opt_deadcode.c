@@ -127,9 +127,5 @@ OPTdeadcodeImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 	/* keep actions taken as a fake argument */
 	(void) pushInt(mb, pci, actions);
 
-	/*
-	if (old)
-		//GDKfree(old);
-		*/
 	return msg;
 }

@@ -1606,7 +1606,6 @@ ODBCloader(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sql_subfunc *f = *(sql_subfunc**)getArgReference_ptr(stk, pci, pci->retc+1);
 
 	return odbc_query(ODBC_LOADER, be->mvc, f, uri, NULL, mb, stk, pci);
-	//return MAL_SUCCEED;
 }
 
 static str

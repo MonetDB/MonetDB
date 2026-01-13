@@ -433,7 +433,6 @@ userCheckCredentials( mvc *m, Client c, const char *pwhash, const char *challeng
 
 	/* generate the hash as the client should have done */
 	str hash = mcrypt_hashPassword(algo, pwd, challenge);
-	//GDKfree(pwd);
 	if(!hash)
 		throw(MAL, "checkCredentials", "hash '%s' backend not found", algo);
 
@@ -886,12 +885,10 @@ handle_error(mvc *m, int pstatus, str msg)
 	}
 	if ( new && msg){
 		newmsg = concatErrors(msg, new);
-		//GDKfree(new);
 	} else if (msg)
 		newmsg = msg;
 	else if (new) {
 		newmsg = createException(SQL, "sql.execute", "%s", new);
-		//GDKfree(new);
 	} else {
 		newmsg = createException(SQL, "sql.execute", MAL_MALLOC_FAIL);
 	}
@@ -1688,7 +1685,6 @@ SQLparser(Client c, backend *be)
 	if (eb_savepoint(ma_get_eb(m->sa))) {
 		msg = createException(SQL, "SQLparser", "%s", ma_get_eb(m->sa)->msg);
 		eb_init(ma_get_eb(m->sa));
-		// ma_reset(m->sa);
 		if (c && c->curprg && c->curprg->def && c->curprg->def->errors) {
 			c->curprg->def->errors = NULL;
 		}

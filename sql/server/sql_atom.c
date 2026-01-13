@@ -291,7 +291,6 @@ atom_general(allocator *sa, sql_subtype *tpe, const char *val, long tz_offset)
 
 			/* no result or nil means error (SQL has NULL not nil) */
 			if (res < 0 || !p || ATOMeq(type, p, ATOMnilptr(type))) {
-				// GDKfree(p);
 				GDKclrerr();
 				return NULL;
 			}
@@ -313,7 +312,6 @@ atom_general(allocator *sa, sql_subtype *tpe, const char *val, long tz_offset)
 				a->data.val.lval /= d;
 				a->data.val.lval *= d;
 			}
-			// GDKfree(p);
 		}
 	} else {
 		VALset(&a->data, a->data.vtype, (ptr) ATOMnilptr(a->data.vtype));

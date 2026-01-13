@@ -1754,7 +1754,6 @@ VARconvert(allocator *ma, ValPtr ret, const ValRecord *v,
 							    &ret->len,
 							    VALptr(v),
 							    false) < 0) {
-				//GDKfree(ret->val.sval);
 				ret->val.sval = NULL;
 				ret->len = 0;
 				return GDK_FAIL;
@@ -1793,8 +1792,6 @@ VARconvert(allocator *ma, ValPtr ret, const ValRecord *v,
 			if ((l = (*BATatoms[ret->vtype].atomFromStr)(ma,
 				     v->val.sval, &len, &p, false)) < 0 ||
 			    l < (ssize_t) strlen(v->val.sval)) {
-				//if (ATOMextern(ret->vtype))
-				//	GDKfree(p);
 				GDKclrerr();
 				allocator *ta = MT_thread_getallocator();
 				allocator_state ta_state = ma_open(ta);
@@ -1838,6 +1835,5 @@ VARconvert(allocator *ma, ValPtr ret, const ValRecord *v,
 			 ATOMname(v->vtype), ATOMname(ret->vtype));
 		return GDK_FAIL;
 	}
-	//ret->allocated = !ma;
 	return nils == BUN_NONE ? GDK_FAIL : GDK_SUCCEED;
 }

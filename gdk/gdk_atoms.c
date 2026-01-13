@@ -410,10 +410,8 @@ ATOMformat(allocator *ma, int t, const void *p)
 		size_t sz = 0;
 		char *buf = NULL;
 		ssize_t res = (*tostr) (ma, &buf, &sz, p, true);
-		if (res < 0 && buf) {
-			// GDKfree(buf);
-			buf = NULL;
-		}
+		if (res < 0)
+			return NULL;
 		return buf;
 	}
 	return "nil";
@@ -1282,7 +1280,6 @@ UUIDfromString(allocator *ma, const char *svalue, size_t *len, void **RETVAL, bo
 	const char *s = svalue;
 
 	if (*len < UUID_SIZE || *retval == NULL) {
-		//GDKfree(*retval);
 		if ((*retval = ma_alloc(ma, UUID_SIZE)) == NULL)
 			return -1;
 		*len = UUID_SIZE;
@@ -1379,8 +1376,6 @@ UUIDtoString(allocator *ma, str *retval, size_t *len, const void *VALUE, bool ex
 {
 	const uuid *value = VALUE;
 	if (*len <= UUID_STRLEN || *retval == NULL) {
-		//if (*retval)
-		//	GDKfree(*retval);
 		if ((*retval = ma_alloc(ma, UUID_STRLEN + 1)) == NULL)
 			return -1;
 		*len = UUID_STRLEN + 1;
@@ -1428,7 +1423,6 @@ INET4fromString(allocator *ma, const char *svalue, size_t *len, void **RETVAL, b
 	const char *s = svalue;
 
 	if (*len < 4 || *retval == NULL) {
-		//GDKfree(*retval);
 		if ((*retval = ma_alloc(ma, 4)) == NULL)
 			return -1;
 		*len = 4;
@@ -1534,8 +1528,6 @@ INET4toString(allocator *ma, str *retval, size_t *len, const void *VALUE, bool e
 	const inet4 *value = VALUE;
 	(void) external;
 	if (*len < 16 || *retval == NULL) {
-		//if (*retval)
-		//	GDKfree(*retval);
 		if ((*retval = ma_alloc(ma, 16)) == NULL)
 			return -1;
 		*len = 16;
@@ -2022,7 +2014,6 @@ BLOBread(allocator *ma, void *A, size_t *dstlen, stream *s, size_t cnt)
 		*dstlen = (size_t) len;
 	}
 	if (mnstr_read(s, (char *) a, (size_t) len, 1) != 1) {
-		//GDKfree(a);
 		return NULL;
 	}
 	return a;
@@ -2086,7 +2077,6 @@ BLOBtostr(allocator *ma, str *tostr, size_t *l, const void *P, bool external)
 	else
 		expectedlen = p->nitems * 2 + 1;
 	if (*l < expectedlen || *tostr == NULL) {
-		//GDKfree(*tostr);
 		*tostr = ma_alloc(ma, expectedlen);
 		if (*tostr == NULL)
 			return -1;
@@ -2125,7 +2115,6 @@ BLOBfromStr(allocator *ma, const char *instr, size_t *l, void **VAL, bool extern
 	if (strNil(instr) || (external && strncmp(instr, "nil", 3) == 0)) {
 		nbytes = blobsize(0);
 		if (*l < nbytes || *val == NULL) {
-			// GDKfree(*val);
 			if ((*val = ma_alloc(ma, nbytes)) == NULL)
 				return -1;
 		}
@@ -2150,7 +2139,6 @@ BLOBfromStr(allocator *ma, const char *instr, size_t *l, void **VAL, bool extern
 	nbytes = blobsize(nitems);
 
 	if (*l < nbytes || *val == NULL) {
-		// GDKfree(*val);
 		*val = ma_alloc(ma, nbytes);
 		if( *val == NULL)
 			return -1;

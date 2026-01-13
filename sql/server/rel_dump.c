@@ -229,7 +229,6 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 						mnstr_printf(fout, "%s %s", t, s);
 					else if (s)
 						mnstr_printf(fout, "%s \"%s\"", t, s);
-					// GDKfree(s);
 				}
 			}
 		} else { /* variables */
@@ -399,7 +398,6 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 	if (e->comment) {
 		str s = ATOMformat(ta, TYPE_str, e->comment);
 		mnstr_printf(fout,  " COMMENT %s ", s);
-		// GDKfree(s);
 	}
 	if (comma)
 		mnstr_printf(fout, ", ");
@@ -979,7 +977,6 @@ readAtomString(allocator *sa, int localtype, char *r, int *pos)
 	(*pos)++;
 
 	if (ATOMfromstr(sa, rtype, &res, &nbytes, r + firstpos, true) < 0) {
-		// GDKfree(res);
 		return NULL;
 	}
 	return res;
@@ -1093,7 +1090,6 @@ exp_read_min_or_max(mvc *sql, sql_exp *exp, char *r, int *pos, const char *prop_
 		if (!ptr)
 			return sql_error(sql, -1, SQLSTATE(42000) "Invalid atom string\n");
 		a = atom_general_ptr(sql->sa, tpe, ptr);
-		//GDKfree(ptr);
 	}
 	if (!find_prop(exp->p, kind)) {
 		prop *p = exp->p = prop_create(sql->sa, kind, exp->p);
@@ -1115,7 +1111,6 @@ exp_read_nuniques(mvc *sql, sql_exp *exp, char *r, int *pos)
 	skipWS(r, pos);
 
 	if ((res = ATOMfromstr(sql->sa, tpe->type->localtype, &ptr, &nbytes, r + *pos, true)) < 0) {
-		//GDKfree(ptr);
 		return sql_error(sql, -1, SQLSTATE(42000) "Invalid atom string\n");
 	}
 
@@ -1124,7 +1119,6 @@ exp_read_nuniques(mvc *sql, sql_exp *exp, char *r, int *pos)
 		p->value.dval = *(dbl*)ptr;
 	}
 	(*pos) += (int) res; /* it should always fit */
-	//GDKfree(ptr);
 	skipWS(r, pos);
 	return exp;
 }
@@ -1184,7 +1178,6 @@ parse_atom(mvc *sql, char *r, int *pos, sql_subtype *tpe)
 		if (!ptr)
 			return sql_error(sql, -1, SQLSTATE(42000) "Invalid atom string\n");
 		sql_exp *res = exp_atom(sql->sa, atom_general_ptr(sql->sa, tpe, ptr));
-		// GDKfree(ptr);
 		return res;
 	}
 }
@@ -1847,7 +1840,6 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 		(*pos)+= (int) strlen("COMMENT");
 		skipWS(r, pos);
 		exp->comment = readAtomString(sql->sa, TYPE_str, r, pos);
-		//GDKfree(comment);
 	}
 
 	return exp;
@@ -1900,13 +1892,11 @@ rel_read_count(mvc *sql, sql_rel *rel, char *r, int *pos)
 	skipWS(r, pos);
 
 	if ((res = ATOMfromstr(sql->sa, tpe->type->localtype, &ptr, &nbytes, r + *pos, true)) < 0) {
-		//GDKfree(ptr);
 		return sql_error(sql, -1, SQLSTATE(42000) "Invalid atom string\n");
 	}
 
 	set_count_prop(sql->sa, rel, *(BUN*)ptr);
 	(*pos) += (int) res; /* it should always fit */
-	//GDKfree(ptr);
 	skipWS(r, pos);
 	return rel;
 }

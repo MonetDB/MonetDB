@@ -148,7 +148,6 @@ sql_time_tostr(allocator *sa, void *TS_RES, char **buf, size_t *len, int type, c
 		return -1;
 	if (len1 == 3 && strcmp(s1, "nil") == 0) {
 		if (*len < 4 || *buf == NULL) {
-			//GDKfree(*buf);
 			*buf = ma_zalloc(sa, *len = 4);
 			if (*buf == NULL)
 				return -1;
@@ -158,7 +157,6 @@ sql_time_tostr(allocator *sa, void *TS_RES, char **buf, size_t *len, int type, c
 	}
 
 	if (*buf == NULL || *len < (size_t) len1 + 8) {
-		//GDKfree(*buf);
 		*buf = (str) ma_zalloc(sa, *len = len1 + 8);
 		if (*buf == NULL) {
 			return -1;
@@ -199,15 +197,12 @@ sql_timestamp_tostr(allocator *sa, void *TS_RES, char **buf, size_t *len, int ty
 	len1 = date_tostr(sa, &s1, &big, &days, true);
 	len2 = daytime_precision_tostr(sa, &s2, &big, usecs, ts_res->fraction, true);
 	if (len1 < 0 || len2 < 0) {
-		//GDKfree(s1);
-		//GDKfree(s2);
 		return -1;
 	}
 
 	if ((len1 == 3 && strcmp(s1, "nil") == 0) ||
 	    (len2 == 3 && strcmp(s2, "nil") == 0)) {
 		if (*len < 4 || *buf == NULL) {
-			//GDKfree(*buf);
 			*buf = ma_zalloc(sa, *len = 4);
 			if (*buf == NULL)
 				return -1;
@@ -217,7 +212,6 @@ sql_timestamp_tostr(allocator *sa, void *TS_RES, char **buf, size_t *len, int ty
 	}
 
 	if (*buf == NULL || *len < (size_t) len1 + (size_t) len2 + 8) {
-		//GDKfree(*buf);
 		*buf = (str) ma_zalloc(sa, *len = (size_t) (len1 + len2 + 8));
 		if (*buf == NULL) {
 			return -1;
@@ -566,7 +560,6 @@ _ASCIIadt_toStr(allocator *sa, void *extra, char **buf, size_t *len, int type, c
 		else
 			l = escapedStrlen(src, c->sep, c->rsep, 0);
 		if (l + 3 > *len) {
-			//GDKfree(*buf);
 			*len = 2 * l + 3;
 			*buf = ma_zalloc(sa, *len);
 			if (*buf == NULL) {
@@ -667,11 +660,8 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 			fmt[i].data = ma_zalloc(m->sa, fmt[i].len);
 			if(fmt[i].data == NULL || fmt[i].type == NULL) {
 				for (j = 0; j < i; j++) {
-					// GDKfree(fmt[j].data);
 					BBPunfix(fmt[j].c->batCacheid);
 				}
-				// GDKfree(fmt[i].data);
-				// GDKfree(fmt);
 				throw(IO, "sql.copy_from", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 			fmt[i].c = NULL;
@@ -1267,8 +1257,6 @@ mvc_export_table_(allocator *sa, mvc *m, int output_format, stream *s, res_table
 	fmt = as.format = (Column *) ma_zalloc(sa, sizeof(Column) * (as.nr_attrs + 1));
 	tres = ma_zalloc(sa, sizeof(struct time_res) * (as.nr_attrs));
 	if (fmt == NULL || tres == NULL) {
-		//GDKfree(fmt);
-		//GDKfree(tres);
 		return -4;
 	}
 
@@ -1291,8 +1279,6 @@ mvc_export_table_(allocator *sa, mvc *m, int output_format, stream *s, res_table
 				bat_iterator_end(&fmt[i].ci);
 				BBPunfix(fmt[i].c->batCacheid);
 			}
-			//GDKfree(fmt);
-			//GDKfree(tres);
 			return -2;
 		}
 		fmt[i].ci = bat_iterator(fmt[i].c);
@@ -1381,7 +1367,6 @@ mvc_export_table_(allocator *sa, mvc *m, int output_format, stream *s, res_table
 	for (i = 1; i <= t->nr_cols; i++)
 		bat_iterator_end(&fmt[i].ci);
 	TABLETdestroy_format(&as);
-	//GDKfree(tres);
 	if (ok < 0)
 		return ok;
 	if (mnstr_errnr(s) != MNSTR_NO__ERROR)
@@ -2071,7 +2056,6 @@ end:
 			if (colinfo[i].bat)
 				BBPunfix(colinfo[i].bat->batCacheid);
 		}
-		//GDKfree(colinfo);
 	}
 	mnstr_destroy(countstream);
 	return ret;

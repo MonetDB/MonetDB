@@ -145,7 +145,6 @@ renderTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx, int flg, char *buf,
 		tpe = getTypeName(mb->ma, getVarType(mb, varid));
 		if (tpe) {
 			strconcat_len(bufend, (buf + max_len) - bufend, ":", tpe, NULL);
-			//GDKfree(tpe);
 		}
 	}
 }
@@ -293,10 +292,8 @@ fcnDefinition(MalBlkPtr mb, InstrPtr p, str t, int flg, str base, size_t len)
 			return base;
 		tpe = getTypeName(mb->ma, getVarType(mb, getArg(p, 0)));
 		if (!copystring(&t, tpe, &len)) {
-			//GDKfree(tpe);
 			return base;
 		}
-		//GDKfree(tpe);
 		if (p->varargs & VARRETS && !copystring(&t, "...", &len))
 			return base;
 	} else {
@@ -629,8 +626,6 @@ mal2str(MalBlkPtr mb, int first, int last)
 
 	if (txt == NULL || len == NULL) {
 		addMalException(mb, "mal2str: " MAL_MALLOC_FAIL);
-		//GDKfree(txt);
-		//GDKfree(len);
 		return NULL;
 	}
 	for (i = first; i < last; i++) {
@@ -647,20 +642,12 @@ mal2str(MalBlkPtr mb, int first, int last)
 			totlen += len[i] = strlen(txt[i]);
 		else {
 			addMalException(mb, "mal2str: " MAL_MALLOC_FAIL);
-			//GDKfree(len);
-			//for (j = first; j < i; j++)
-			//	GDKfree(txt[j]);
-			//GDKfree(txt);
 			return NULL;
 		}
 	}
 	ps = ma_alloc(mb->ma, totlen + mb->stop + 1);
 	if (ps == NULL) {
 		addMalException(mb, "mal2str: " MAL_MALLOC_FAIL);
-		//GDKfree(len);
-		//for (i = first; i < last; i++)
-		//	GDKfree(txt[i]);
-		//GDKfree(txt);
 		return NULL;
 	}
 
@@ -671,11 +658,8 @@ mal2str(MalBlkPtr mb, int first, int last)
 			ps[totlen + len[i]] = '\n';
 			ps[totlen + len[i] + 1] = 0;
 			totlen += len[i] + 1;
-			//GDKfree(txt[i]);
 		}
 	}
-	//GDKfree(len);
-	//GDKfree(txt);
 	return ps;
 }
 
@@ -690,7 +674,6 @@ printInstruction(stream *fd, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int flg)
 	/* ps[strlen(ps)-1] = 0; remove '\n' */
 	if (ps) {
 		mnstr_printf(fd, "%s%s", (flg & LIST_MAL_MAPI ? "=" : ""), ps);
-		//GDKfree(ps);
 	} else {
 		mnstr_printf(fd, "#failed instruction2str()");
 	}
@@ -707,7 +690,6 @@ traceInstruction(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int flg)
 		if (ps) {
 			TRC_DEBUG_ENDIF(MAL_OPTIMIZER, "%s%s\n",
 							(flg & LIST_MAL_MAPI ? "=" : ""), ps);
-			//GDKfree(ps);
 		} else {
 			TRC_DEBUG_ENDIF(MAL_OPTIMIZER, "Failed instruction2str()\n");
 		}
@@ -730,7 +712,6 @@ printSignature(stream *fd, Symbol s, int flg)
 		p = getSignature(s);
 		(void) fcnDefinition(s->def, p, txt, flg, txt, MAXLISTING);
 		mnstr_printf(fd, "%s\n", txt);
-		//GDKfree(txt);
 	} else
 		mnstr_printf(fd, "printSignature: " MAL_MALLOC_FAIL);
 }

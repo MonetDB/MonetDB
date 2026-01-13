@@ -292,10 +292,8 @@ INSPECTgetDefinition(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			if ((ps = instruction2str(s->def, 0, getInstrPtr(s->def, i), 0)) == NULL)
 				goto bailout;
 			if (BUNappend(b, ps + 1, false) != GDK_SUCCEED) {
-				//GDKfree(ps);
 				goto bailout;
 			}
-			//GDKfree(ps);
 		}
 		s = s->peer;
 	}
@@ -353,7 +351,6 @@ INSPECTgetSignature(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 			c = strchr(ps, '(');
 			if (c == 0) {
-				//GDKfree(ps);
 				continue;
 			}
 			tail = strstr(c, "address");
@@ -362,10 +359,8 @@ INSPECTgetSignature(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			if (tail && (w = strchr(tail, ';')))
 				*w = 0;
 			if (BUNappend(b, c, false) != GDK_SUCCEED) {
-				//GDKfree(ps);
 				goto bailout;
 			}
-			//GDKfree(ps);
 		}
 		s = s->peer;
 	}
@@ -440,7 +435,6 @@ INSPECTgetSource(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		for (i = 0; i < s->def->stop; i++) {
 			if ((ps = instruction2str(s->def, 0, getInstrPtr(s->def, i),
 									  LIST_MAL_NAME)) == NULL) {
-				//GDKfree(buf);
 				throw(MAL, "inspect.getSource",
 					  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
@@ -449,8 +443,6 @@ INSPECTgetSource(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				char *bn;
 				bn = ma_realloc(mb->ma, buf, lim + BUFSIZ, lim);
 				if (bn == NULL) {
-					//GDKfree(ps);
-					//GDKfree(buf);
 					throw(MAL, "inspect.getSource",
 						  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				}
@@ -461,7 +453,6 @@ INSPECTgetSource(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			len += strlen(ps);
 			buf[len++] = '\n';
 			buf[len] = 0;
-			//GDKfree(ps);
 		}
 		s = s->peer;
 	}

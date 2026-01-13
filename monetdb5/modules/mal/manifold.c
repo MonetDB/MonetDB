@@ -140,7 +140,6 @@ MANIFOLDjob(MULTItask *mut)
 {
 	int i;
 	char **args;
-	//str y = NULL;
 	str msg = MAL_SUCCEED;
 	oid oo = 0, olimit = mut->args[mut->fvar].cnt;
 
@@ -195,8 +194,6 @@ MANIFOLDjob(MULTItask *mut)
 	default:
 		msg = createException(MAL, "mal.manifold", "manifold call limitation ");
 	}
-	//if (ATOMextern(mut->args[0].type) && y)
-	//	GDKfree(y);
   bunins_failed:
 	ma_close(&ta_state);
 	return msg;
@@ -395,7 +392,6 @@ MANIFOLDevaluate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	*/
 	mut.pci->fcn = fcn;
 	msg = MANIFOLDjob(&mut);
-	//freeInstruction(mut.pci);
 
   wrapup:
 	// restore the argument types

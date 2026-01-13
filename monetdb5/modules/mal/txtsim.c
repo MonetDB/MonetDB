@@ -1197,7 +1197,6 @@ soundex(Client ctx, str *res, const char *const *Name)
 	allocator *ma = ctx->curprg->def->ma;
 	str msg = MAL_SUCCEED;
 
-	////GDKfree(*res);
 	if (strNil(*Name)) {
 		*res = (char *) str_nil;
 		if (*res == NULL)
@@ -1211,7 +1210,6 @@ soundex(Client ctx, str *res, const char *const *Name)
 
 	/* calculate Key for Name */
 	if ((msg = soundex_code(*Name, *res))) {
-		////GDKfree(*res);
 		*res = NULL;
 		return msg;
 	}
@@ -1230,12 +1228,9 @@ stringdiff(Client ctx, int *res, const char *const *s1, const char *const *s2)
 		return r;
 	r = soundex(ctx, &S2, s2);
 	if (r != MAL_SUCCEED) {
-		////GDKfree(S1);
 		return r;
 	}
 	r = TXTSIMdameraulevenshtein1(ctx, res, &(const char *){S1}, &(const char *){S2});
-	////GDKfree(S1);
-	////GDKfree(S2);
 	return r;
 }
 
@@ -1258,7 +1253,6 @@ qgram_normalize(Client ctx, str *res, const char *const *Input)
 	int i, j = 0;
 	char c, last = ' ';
 
-	// //GDKfree(*res);
 	if (strNil(*Input)) {
 		*res = (char *) str_nil;
 		return MAL_SUCCEED;
