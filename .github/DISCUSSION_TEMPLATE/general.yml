@@ -2,9 +2,6 @@ title:
 body:
   - type: textarea
     id: question
-    attributes:
-      label:
-      description:
     validations:
       required: true
   - type: markdown
