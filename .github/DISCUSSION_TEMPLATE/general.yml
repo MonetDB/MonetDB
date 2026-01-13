@@ -1,7 +1,10 @@
-title:
+title: [GENERAL]
 body:
   - type: textarea
     id: question
+    attributes:
+      label: general topic
+      description: describe the general topic
     validations:
       required: true
   - type: markdown

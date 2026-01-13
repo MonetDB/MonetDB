@@ -1,7 +1,10 @@
-title:
+title: [QUESTION]
 body:
   - type: textarea
     id: question
+    attributes:
+      label: What is your question ?
+      description: Give all context possible. Be succinct.
     validations:
       required: true
   - type: markdown
