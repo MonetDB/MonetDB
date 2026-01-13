@@ -1,4 +1,4 @@
-title: [QUESTION]
+title: "[QUESTION] "
 body:
   - type: textarea
     id: question
