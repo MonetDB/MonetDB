@@ -706,7 +706,7 @@ rel_mark_used(mvc *sql, sql_rel *rel, int proj)
 	}
 }
 
-static sql_rel *rel_dce_sub(mvc *sql, sql_rel *rel);
+static sql_rel *rel_dce_sub(visitor *v, sql_rel *rel);
 
 static sql_rel *
 rel_remove_unused(mvc *sql, sql_rel *rel)
@@ -903,7 +903,7 @@ rel_dce_refs(mvc *sql, sql_rel *rel, list *refs)
 }
 
 static sql_rel *
-rel_dce_down(mvc *sql, sql_rel *rel, int skip_proj)
+rel_dce_down(visitor *v, sql_rel *rel, int skip_proj)
 {
 	if (!rel)
 		return rel;
@@ -916,9 +916,9 @@ rel_dce_down(mvc *sql, sql_rel *rel, int skip_proj)
 	case op_table:
 
 		if (skip_proj && rel->l && rel->op == op_table && rel->flag != TRIGGER_WRAPPER)
-			rel->l = rel_dce_down(sql, rel->l, 0);
+			rel->l = rel_dce_down(v, rel->l, 0);
 		if (!skip_proj)
-			rel_dce_sub(sql, rel);
+			rel_dce_sub(v, rel);
 		/* fall through */
 
 	case op_truncate:
@@ -926,16 +926,16 @@ rel_dce_down(mvc *sql, sql_rel *rel, int skip_proj)
 
 	case op_insert:
 		rel_used(rel->r);
-		rel_dce_sub(sql, rel->r);
+		rel_dce_sub(v, rel->r);
 		return rel;
 
 	case op_update:
 	case op_delete:
 
 		if (skip_proj && rel->r)
-			rel->r = rel_dce_down(sql, rel->r, 0);
+			rel->r = rel_dce_down(v, rel->r, 0);
 		if (!skip_proj)
-			rel_dce_sub(sql, rel);
+			rel_dce_sub(v, rel);
 		return rel;
 
 	case op_topn:
@@ -944,34 +944,34 @@ rel_dce_down(mvc *sql, sql_rel *rel, int skip_proj)
 	case op_groupby:
 
 		if (skip_proj && rel->l)
-			rel->l = rel_dce_down(sql, rel->l, is_topn(rel->op) || is_sample(rel->op));
+			rel->l = rel_dce_down(v, rel->l, is_topn(rel->op) || is_sample(rel->op));
 		if (!skip_proj)
-			rel_dce_sub(sql, rel);
+			rel_dce_sub(v, rel);
 		return rel;
 
 	case op_inter:
 	case op_except:
 		if (skip_proj) {
 			if (rel->l)
-				rel->l = rel_dce_down(sql, rel->l, 0);
+				rel->l = rel_dce_down(v, rel->l, 0);
 			if (rel->r)
-				rel->r = rel_dce_down(sql, rel->r, 0);
+				rel->r = rel_dce_down(v, rel->r, 0);
 		}
 		if (!skip_proj)
-			rel_dce_sub(sql, rel);
+			rel_dce_sub(v, rel);
 		return rel;
 
 	case op_munion:
 		if (skip_proj) {
 			for (node *n = ((list*)rel->l)->h; n; n = n->next)
-				n->data = rel_dce_down(sql, n->data, 0);
+				n->data = rel_dce_down(v, n->data, 0);
 		}
 		if (!skip_proj)
-			rel_dce_sub(sql, rel);
+			rel_dce_sub(v, rel);
 		return rel;
 	case op_select:
 		if (rel->l)
-			rel->l = rel_dce_down(sql, rel->l, 0);
+			rel->l = rel_dce_down(v, rel->l, 0);
 		return rel;
 
 	case op_join:
@@ -981,22 +981,22 @@ rel_dce_down(mvc *sql, sql_rel *rel, int skip_proj)
 	case op_semi:
 	case op_anti:
 		if (rel->l)
-			rel->l = rel_dce_down(sql, rel->l, 0);
+			rel->l = rel_dce_down(v, rel->l, 0);
 		if (rel->r)
-			rel->r = rel_dce_down(sql, rel->r, 0);
+			rel->r = rel_dce_down(v, rel->r, 0);
 		if (!skip_proj && !list_empty(rel->attr))
-			rel_dce_sub(sql, rel);
+			rel_dce_sub(v, rel);
 		return rel;
 
 	case op_ddl:
 		if (rel->flag == ddl_output || rel->flag == ddl_create_seq || rel->flag == ddl_alter_seq || rel->flag == ddl_alter_table || rel->flag == ddl_create_table || rel->flag == ddl_create_view) {
 			if (rel->l)
-				rel->l = rel_dce_down(sql, rel->l, 0);
+				rel->l = rel_dce_down(v, rel->l, 0);
 		} else if (rel->flag == ddl_list || rel->flag == ddl_exception) {
 			if (rel->l)
-				rel->l = rel_dce_down(sql, rel->l, 0);
+				rel->l = rel_dce_down(v, rel->l, 0);
 			if (rel->r)
-				rel->r = rel_dce_down(sql, rel->r, 0);
+				rel->r = rel_dce_down(v, rel->r, 0);
 		}
 		return rel;
 	}
@@ -1010,48 +1010,46 @@ rel_dce_down(mvc *sql, sql_rel *rel, int skip_proj)
  */
 
 static sql_rel *
-rel_dce_sub(mvc *sql, sql_rel *rel)
+rel_dce_sub(visitor *v, sql_rel *rel)
 {
 	if (!rel)
 		return rel;
+	if (v->opt >= 0 && rel->opt >= v->opt) /* only once */
+        return rel;
 
 	/*
 	 * Mark used up until the next project
 	 * For setops we need to first mark, then remove
 	 * because of positional dependency
 	 */
-	rel_mark_used(sql, rel, 1);
-	rel = rel_remove_unused(sql, rel);
-	rel_dce_down(sql, rel, 1);
+	rel_mark_used(v->sql, rel, 1);
+	rel = rel_remove_unused(v->sql, rel);
+	rel_dce_down(v, rel, 1);
+	if (rel && v->opt >= 0)
+        rel->opt = v->opt;
 	return rel;
 }
 
-/*
-sql_rel *
-rel_deadcode_elimination(mvc *sql, sql_rel *rel)
-{
-	rel_used(rel);
-	return rel_dce_sub(sql, rel);
-}
-*/
-
 /* add projects under set ops */
 static sql_rel *
-rel_add_projects(mvc *sql, sql_rel *rel)
+rel_add_projects(visitor *v, sql_rel *rel)
 {
 	if (!rel)
 		return rel;
 
+	if (v->opt >= 0 && rel->opt >= v->opt) /* only once */
+        return rel;
+
 	switch(rel->op) {
 	case op_basetable:
 	case op_truncate:
-		return rel;
+		break;
 	case op_insert:
 	case op_update:
 	case op_delete:
 		if (rel->r)
-			rel->r = rel_add_projects(sql, rel->r);
-		return rel;
+			rel->r = rel_add_projects(v, rel->r);
+		break;
 	case op_inter:
 	case op_except:
 		/* We can only reduce the list of expressions of an set op
@@ -1061,27 +1059,27 @@ rel_add_projects(mvc *sql, sql_rel *rel)
 			sql_rel *l = rel->l;
 
 			if (!is_project(l->op) && !need_distinct(rel))
-				l = rel_project(sql->sa, l, rel_projections(sql, l, NULL, 1, 1));
-			rel->l = rel_add_projects(sql, l);
+				l = rel_project(v->sql->sa, l, rel_projections(v->sql, l, NULL, 1, 1));
+			rel->l = rel_add_projects(v, l);
 		}
 		if (rel->r) {
 			sql_rel *r = rel->r;
 
 			if (!is_project(r->op) && !need_distinct(rel))
-				r = rel_project(sql->sa, r, rel_projections(sql, r, NULL, 1, 1));
-			rel->r = rel_add_projects(sql, r);
+				r = rel_project(v->sql->sa, r, rel_projections(v->sql, r, NULL, 1, 1));
+			rel->r = rel_add_projects(v, r);
 		}
-		return rel;
+		break;
 	case op_munion:
 		assert(rel->l);
 		for (node *n = ((list*)rel->l)->h; n; n = n->next) {
 			sql_rel* r = n->data;
 			if (!is_project(r->op) && !need_distinct(rel))
-				r = rel_project(sql->sa, r, rel_projections(sql, r, NULL, 1, 1));
-			r = rel_add_projects(sql, r);
+				r = rel_project(v->sql->sa, r, rel_projections(v->sql, r, NULL, 1, 1));
+			r = rel_add_projects(v, r);
 			n->data = r;
 		}
-		return rel;
+		break;
 	case op_topn:
 	case op_sample:
 	case op_project:
@@ -1089,8 +1087,8 @@ rel_add_projects(mvc *sql, sql_rel *rel)
 	case op_select:
 	case op_table:
 		if (rel->l && (rel->op != op_table || rel->flag != TRIGGER_WRAPPER))
-			rel->l = rel_add_projects(sql, rel->l);
-		return rel;
+			rel->l = rel_add_projects(v, rel->l);
+		break;
 	case op_join:
 	case op_left:
 	case op_right:
@@ -1098,31 +1096,35 @@ rel_add_projects(mvc *sql, sql_rel *rel)
 	case op_semi:
 	case op_anti:
 		if (rel->l)
-			rel->l = rel_add_projects(sql, rel->l);
+			rel->l = rel_add_projects(v, rel->l);
 		if (rel->r)
-			rel->r = rel_add_projects(sql, rel->r);
-		return rel;
+			rel->r = rel_add_projects(v, rel->r);
+		break;
 	case op_ddl:
 		if (rel->flag == ddl_output || rel->flag == ddl_create_seq || rel->flag == ddl_alter_seq || rel->flag == ddl_alter_table || rel->flag == ddl_create_table || rel->flag == ddl_create_view) {
 			if (rel->l)
-				rel->l = rel_add_projects(sql, rel->l);
+				rel->l = rel_add_projects(v, rel->l);
 		} else if (rel->flag == ddl_list || rel->flag == ddl_exception) {
 			if (rel->l)
-				rel->l = rel_add_projects(sql, rel->l);
+				rel->l = rel_add_projects(v, rel->l);
 			if (rel->r)
-				rel->r = rel_add_projects(sql, rel->r);
+				rel->r = rel_add_projects(v, rel->r);
 		}
-		return rel;
+		break;
 	}
+	if (rel && v->opt >= 0)
+        rel->opt = v->opt;
 	return rel;
 }
 
 static sql_rel *
-rel_dce_(mvc *sql, sql_rel *rel)
+rel_dce_(visitor *v, sql_rel *rel)
 {
-	list *refs = sa_list(sql->sa);
+	list *refs = sa_list(v->sql->sa);
 
-	rel_dce_refs(sql, rel, refs);
+	if (v->opt >= 0 && rel)
+		v->opt = rel->opt+1;
+	rel_dce_refs(v->sql, rel, refs);
 	if (refs) {
 		for(node *n = refs->h; n; n = n->next) {
 			sql_rel *i = n->data;
@@ -1133,9 +1135,11 @@ rel_dce_(mvc *sql, sql_rel *rel)
 				rel_used(i);
 		}
 	}
-	rel = rel_add_projects(sql, rel);
+	rel = rel_add_projects(v, rel);
+	if (v->opt >= 0 && rel)
+		v->opt = rel->opt+1;
 	rel_used(rel);
-	rel_dce_sub(sql, rel);
+	rel_dce_sub(v, rel);
 	return rel;
 }
 
@@ -1145,14 +1149,15 @@ static sql_rel *
 rel_dce(visitor *v, global_props *gp, sql_rel *rel)
 {
 	(void) gp;
-	return rel_dce_(v->sql, rel);
+	return rel_dce_(v, rel);
 }
 
 /* keep export for other projects */
 sql_rel *
 rel_deadcode_elimination(mvc *sql, sql_rel *rel)
 {
-	return rel_dce_(sql, rel);
+	visitor v = {.sql = sql };
+	return rel_dce_(&v, rel);
 }
 
 run_optimizer
@@ -1161,7 +1166,6 @@ bind_dce(visitor *v, global_props *gp)
 	int flag = v->sql->sql_optimizer;
 	return gp->opt_cycle == 0 && gp->opt_level == 1 && (flag & dce) ? rel_dce : NULL;
 }
-
 
 static int
 topn_sample_safe_exps( list *exps, bool nil_limit )

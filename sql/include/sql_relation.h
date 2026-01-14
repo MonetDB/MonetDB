@@ -314,7 +314,7 @@ typedef struct relation {
 	 * Used by rewriters at rel_unnest, rel_optimizer and rel_distribute so a relation is not modified twice
 	 * The list is kept at rel_optimizer_private.h Please update it accordingly
 	 */
-	uint8_t used;
+	uint16_t used;
 	int opt;
 	void *p;	/* properties for the optimizer, distribution */
 } sql_rel;
