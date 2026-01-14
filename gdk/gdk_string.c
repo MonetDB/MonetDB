@@ -1225,23 +1225,20 @@ done:
 		for (oid m = START; m < END; m++) {			\
 			const char *sb = BUNtvar(bi, m);		\
 									\
-			if (separator) {				\
-				if (!strNil(sb)) {			\
+			if (!strNil(sb)) {				\
+				if (separator) {			\
 					next_group_length += strlen(sb); \
 					if (!empty)			\
 						next_group_length += separator_length; \
-					empty = false;			\
-				}					\
-			} else { /* sep case */				\
-				assert(sep != NULL);			\
-				const char *sl = BUNtvar(sepi, m);	\
+				} else { /* sep case */			\
+					assert(sep != NULL);		\
+					const char *sl = BUNtvar(sepi, m); \
 									\
-				if (!strNil(sb)) {			\
 					next_group_length += strlen(sb); \
 					if (!empty && !strNil(sl))	\
 						next_group_length += strlen(sl); \
-					empty = false;			\
 				}					\
+				empty = false;				\
 			}						\
 		}							\
 		if (empty) {						\
@@ -1273,38 +1270,32 @@ done:
 			for (oid m = START; m < END; m++) {		\
 				const char *sb = BUNtvar(bi, m);	\
 									\
+				if (strNil(sb))				\
+					continue;			\
 				if (separator) {			\
-					if (strNil(sb))			\
-						continue;		\
 					if (!empty) {			\
 						memcpy(single_str + offset, separator, separator_length); \
 						offset += separator_length; \
 					}				\
-					next_length = strlen(sb);	\
-					memcpy(single_str + offset, sb, next_length); \
-					offset += next_length;		\
-					empty = false;			\
 				} else { /* sep case */			\
 					assert(sep != NULL);		\
 					const char *sl = BUNtvar(sepi, m); \
 									\
-					if (strNil(sb))			\
-						continue;		\
 					if (!empty && !strNil(sl)) {	\
 						next_length = strlen(sl); \
 						memcpy(single_str + offset, sl, next_length); \
 						offset += next_length;	\
 					}				\
-					next_length = strlen(sb);	\
-					memcpy(single_str + offset, sb, next_length); \
-					offset += next_length;		\
-					empty = false;			\
 				}					\
+				next_length = strlen(sb);		\
+				memcpy(single_str + offset, sb, next_length); \
+				offset += next_length;			\
+				empty = false;				\
 			}						\
 									\
 			single_str[offset] = '\0';			\
 		}							\
-} while (0)
+	} while (0)
 
 #define ANALYTICAL_STR_GROUP_CONCAT_UNBOUNDED_TILL_CURRENT_ROW		\
 	do {								\
