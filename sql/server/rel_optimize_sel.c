@@ -2765,6 +2765,9 @@ rel_join_order_(visitor *v, sql_rel *rel)
 	if (!rel)
 		return rel;
 
+	if (v->opt >= 0 && rel->opt >= v->opt) /* only once */
+        return rel;
+
 	switch (rel->op) {
 	case op_basetable:
 		break;
@@ -2816,6 +2819,8 @@ rel_join_order_(visitor *v, sql_rel *rel)
 	}
 	if (is_join(rel->op))
 		rel = reorder_join(v, rel);
+	if (rel && v->opt >= 0)
+        rel->opt = v->opt;
 	return rel;
 }
 
@@ -2823,6 +2828,8 @@ static sql_rel *
 rel_join_order(visitor *v, global_props *gp, sql_rel *rel)
 {
 	(void) gp;
+	if (v->opt >= 0 && rel)
+		v->opt = rel->opt+1;
 	allocator *ta = MT_thread_getallocator();
 	allocator_state ta_state = ma_open(ta);
 	sql_rel *r = rel_join_order_(v, rel);

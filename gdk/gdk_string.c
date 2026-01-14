@@ -1136,37 +1136,29 @@ BATstr_group_concat(allocator *ma, ValPtr res, BAT *b, BAT *s, BAT *sep, bool sk
 {
 	struct canditer ci;
 	gdk_return r = GDK_SUCCEED;
-	char *nseparator = (char *)separator;
+	const char *nseparator = separator;
 
 	assert((nseparator && !sep) || (!nseparator && sep)); /* only one of them must be set */
 	*res = (ValRecord) {.vtype = TYPE_str};
 
 	canditer_init(&ci, b, s);
 
-	allocator *ta = MT_thread_getallocator();
-	allocator_state ta_state = ma_open(ta);
-
+	BATiter bi = bat_iterator(sep);
 	if (sep && BATcount(sep) == 1) { /* Only one element in sep */
-		BATiter bi = bat_iterator(sep);
-		nseparator = ma_strdup(ta, BUNtvar(bi, 0));
-		bat_iterator_end(&bi);
-		if (!nseparator) {
-			ma_close(&ta_state);
-			return GDK_FAIL;
-		}
+		nseparator = BUNtvar(bi, 0);
 		sep = NULL;
 	}
 
 	if (ci.ncand == 0 || (nseparator && strNil(nseparator))) {
-		if (VALinit(ta, res, TYPE_str, nil_if_empty ? str_nil : "") == NULL)
+		if (VALinit(ma, res, TYPE_str, nil_if_empty ? str_nil : "") == NULL)
 			r = GDK_FAIL;
-		ma_close(&ta_state);
+		bat_iterator_end(&bi);
 		return r;
 	}
 
 	r = concat_strings(ma, NULL, res, b, b->hseqbase, 1, &ci, NULL, 0, 0,
 			      skip_nils, sep, nseparator, NULL);
-	ma_close(&ta_state);
+	bat_iterator_end(&bi);
 	return r;
 }
 
@@ -1180,7 +1172,7 @@ BATgroupstr_group_concat(BAT *b, BAT *g, BAT *e, BAT *s, BAT *sep, bool skip_nil
 	struct canditer ci;
 	const char *err;
 	gdk_return res;
-	char *nseparator = (char *)separator;
+	const char *nseparator = separator;
 
 	assert((nseparator && !sep) || (!nseparator && sep)); /* only one of them must be set */
 	(void) skip_nils;
@@ -1195,17 +1187,9 @@ BATgroupstr_group_concat(BAT *b, BAT *g, BAT *e, BAT *s, BAT *sep, bool skip_nil
 		return NULL;
 	}
 
-	allocator *ma = MT_thread_getallocator();
-	allocator_state ma_state = ma_open(ma);
-
+	BATiter bi = bat_iterator(sep);
 	if (sep && BATcount(sep) == 1) { /* Only one element in sep */
-		BATiter bi = bat_iterator(sep);
-		nseparator = ma_strdup(ma, BUNtvar(bi, 0));
-		bat_iterator_end(&bi);
-		if (!nseparator) {
-			ma_close(&ma_state);
-			return NULL;
-		}
+		nseparator = BUNtvar(bi, 0);
 		sep = NULL;
 	}
 
@@ -1232,7 +1216,7 @@ BATgroupstr_group_concat(BAT *b, BAT *g, BAT *e, BAT *s, BAT *sep, bool skip_nil
 		bn = NULL;
 
 done:
-	ma_close(&ma_state);
+	bat_iterator_end(&bi);
 	return bn;
 }
 
@@ -1241,23 +1225,20 @@ done:
 		for (oid m = START; m < END; m++) {			\
 			const char *sb = BUNtvar(bi, m);		\
 									\
-			if (separator) {				\
-				if (!strNil(sb)) {			\
+			if (!strNil(sb)) {				\
+				if (separator) {			\
 					next_group_length += strlen(sb); \
 					if (!empty)			\
 						next_group_length += separator_length; \
-					empty = false;			\
-				}					\
-			} else { /* sep case */				\
-				assert(sep != NULL);			\
-				const char *sl = BUNtvar(sepi, m);	\
+				} else { /* sep case */			\
+					assert(sep != NULL);		\
+					const char *sl = BUNtvar(sepi, m); \
 									\
-				if (!strNil(sb)) {			\
 					next_group_length += strlen(sb); \
 					if (!empty && !strNil(sl))	\
 						next_group_length += strlen(sl); \
-					empty = false;			\
 				}					\
+				empty = false;				\
 			}						\
 		}							\
 		if (empty) {						\
@@ -1289,38 +1270,32 @@ done:
 			for (oid m = START; m < END; m++) {		\
 				const char *sb = BUNtvar(bi, m);	\
 									\
+				if (strNil(sb))				\
+					continue;			\
 				if (separator) {			\
-					if (strNil(sb))			\
-						continue;		\
 					if (!empty) {			\
 						memcpy(single_str + offset, separator, separator_length); \
 						offset += separator_length; \
 					}				\
-					next_length = strlen(sb);	\
-					memcpy(single_str + offset, sb, next_length); \
-					offset += next_length;		\
-					empty = false;			\
 				} else { /* sep case */			\
 					assert(sep != NULL);		\
 					const char *sl = BUNtvar(sepi, m); \
 									\
-					if (strNil(sb))			\
-						continue;		\
 					if (!empty && !strNil(sl)) {	\
 						next_length = strlen(sl); \
 						memcpy(single_str + offset, sl, next_length); \
 						offset += next_length;	\
 					}				\
-					next_length = strlen(sb);	\
-					memcpy(single_str + offset, sb, next_length); \
-					offset += next_length;		\
-					empty = false;			\
 				}					\
+				next_length = strlen(sb);		\
+				memcpy(single_str + offset, sb, next_length); \
+				offset += next_length;			\
+				empty = false;				\
 			}						\
 									\
 			single_str[offset] = '\0';			\
 		}							\
-} while (0)
+	} while (0)
 
 #define ANALYTICAL_STR_GROUP_CONCAT_UNBOUNDED_TILL_CURRENT_ROW		\
 	do {								\
