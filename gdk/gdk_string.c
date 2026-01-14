@@ -1136,37 +1136,29 @@ BATstr_group_concat(allocator *ma, ValPtr res, BAT *b, BAT *s, BAT *sep, bool sk
 {
 	struct canditer ci;
 	gdk_return r = GDK_SUCCEED;
-	char *nseparator = (char *)separator;
+	const char *nseparator = separator;
 
 	assert((nseparator && !sep) || (!nseparator && sep)); /* only one of them must be set */
 	*res = (ValRecord) {.vtype = TYPE_str};
 
 	canditer_init(&ci, b, s);
 
-	allocator *ta = MT_thread_getallocator();
-	allocator_state ta_state = ma_open(ta);
-
+	BATiter bi = bat_iterator(sep);
 	if (sep && BATcount(sep) == 1) { /* Only one element in sep */
-		BATiter bi = bat_iterator(sep);
-		nseparator = ma_strdup(ta, BUNtvar(bi, 0));
-		bat_iterator_end(&bi);
-		if (!nseparator) {
-			ma_close(&ta_state);
-			return GDK_FAIL;
-		}
+		nseparator = BUNtvar(bi, 0);
 		sep = NULL;
 	}
 
 	if (ci.ncand == 0 || (nseparator && strNil(nseparator))) {
-		if (VALinit(ta, res, TYPE_str, nil_if_empty ? str_nil : "") == NULL)
+		if (VALinit(ma, res, TYPE_str, nil_if_empty ? str_nil : "") == NULL)
 			r = GDK_FAIL;
-		ma_close(&ta_state);
+		bat_iterator_end(&bi);
 		return r;
 	}
 
 	r = concat_strings(ma, NULL, res, b, b->hseqbase, 1, &ci, NULL, 0, 0,
 			      skip_nils, sep, nseparator, NULL);
-	ma_close(&ta_state);
+	bat_iterator_end(&bi);
 	return r;
 }
 
@@ -1180,7 +1172,7 @@ BATgroupstr_group_concat(BAT *b, BAT *g, BAT *e, BAT *s, BAT *sep, bool skip_nil
 	struct canditer ci;
 	const char *err;
 	gdk_return res;
-	char *nseparator = (char *)separator;
+	const char *nseparator = separator;
 
 	assert((nseparator && !sep) || (!nseparator && sep)); /* only one of them must be set */
 	(void) skip_nils;
@@ -1195,17 +1187,9 @@ BATgroupstr_group_concat(BAT *b, BAT *g, BAT *e, BAT *s, BAT *sep, bool skip_nil
 		return NULL;
 	}
 
-	allocator *ma = MT_thread_getallocator();
-	allocator_state ma_state = ma_open(ma);
-
+	BATiter bi = bat_iterator(sep);
 	if (sep && BATcount(sep) == 1) { /* Only one element in sep */
-		BATiter bi = bat_iterator(sep);
-		nseparator = ma_strdup(ma, BUNtvar(bi, 0));
-		bat_iterator_end(&bi);
-		if (!nseparator) {
-			ma_close(&ma_state);
-			return NULL;
-		}
+		nseparator = BUNtvar(bi, 0);
 		sep = NULL;
 	}
 
@@ -1232,7 +1216,7 @@ BATgroupstr_group_concat(BAT *b, BAT *g, BAT *e, BAT *s, BAT *sep, bool skip_nil
 		bn = NULL;
 
 done:
-	ma_close(&ma_state);
+	bat_iterator_end(&bi);
 	return bn;
 }
 
