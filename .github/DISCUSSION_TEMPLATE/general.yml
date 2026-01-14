@@ -1,12 +1,18 @@
-title: "[GENERAL] "
+title: 
 body:
   - type: textarea
     id: question
     attributes:
-      label: general topic
-      description: describe the general topic
+      label: What is the topic ?
+      description: Straight to the point. Be succinct.
     validations:
       required: true
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional context
+      description: |
+        Add any other context or screenshots here.
   - type: markdown
     attributes:
       value: "Identity Disclosure"
