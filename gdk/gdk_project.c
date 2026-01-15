@@ -309,9 +309,9 @@ project_any(BAT *restrict bn, BATiter *restrict li,
 				return GDK_FAIL;
 			}
 			if (o < r1end)
-				v = BUNtail(*r1i, o - r1seq);
+				v = BUNtail(r1i, o - r1seq);
 			else
-				v = BUNtail(*r2i, o - r2seq);
+				v = BUNtail(r2i, o - r2seq);
 			if (tfastins_nocheck(bn, lo, v) != GDK_SUCCEED) {
 				return GDK_FAIL;
 			}
@@ -324,9 +324,9 @@ project_any(BAT *restrict bn, BATiter *restrict li,
 				return GDK_FAIL;
 			}
 			if (o < r1end)
-				v = BUNtail(*r1i, o - r1seq);
+				v = BUNtail(r1i, o - r1seq);
 			else
-				v = BUNtail(*r2i, o - r2seq);
+				v = BUNtail(r2i, o - r2seq);
 			if (tfastins_nocheck(bn, lo, v) != GDK_SUCCEED) {
 				return GDK_FAIL;
 			}
@@ -343,9 +343,9 @@ project_any(BAT *restrict bn, BATiter *restrict li,
 				GDKerror("does not match always\n");
 				return GDK_FAIL;
 			} else if (o < r1end) {
-				v = BUNtail(*r1i, o - r1seq);
+				v = BUNtail(r1i, o - r1seq);
 			} else {
-				v = BUNtail(*r2i, o - r2seq);
+				v = BUNtail(r2i, o - r2seq);
 			}
 			if (tfastins_nocheck(bn, lo, v) != GDK_SUCCEED) {
 				return GDK_FAIL;
@@ -872,7 +872,7 @@ BATprojectchain(BAT **bats)
 				goto bunins_failed;
 			} else {
 				o -= ba[n].hlo;
-				v = BUNtail(bi, o);
+				v = BUNtail(&bi, o);
 			}
 			if (bunfastapp(bn, v) != GDK_SUCCEED) {
 				bat_iterator_end(&bi);

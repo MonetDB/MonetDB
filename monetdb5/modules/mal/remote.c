@@ -1053,7 +1053,7 @@ RMTput(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 			bi = bat_iterator(b);
 			BATloop(b, p, q) {
-				const void *v = BUNtail(bi, p);
+				const void *v = BUNtail(&bi, p);
 				tailv = ATOMformat(ma, tpe, v);
 				if (tailv == NULL) {
 					bat_iterator_end(&bi);

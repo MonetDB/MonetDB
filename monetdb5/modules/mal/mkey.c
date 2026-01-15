@@ -274,12 +274,12 @@ MKEYbathash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (ci.tpe == cand_dense) {
 			for (BUN i = 0; i < ci.ncand; i++) {
 				oid p = (canditer_next_dense(&ci) - off);
-				r[i] = (ulng) hash(BUNtail(bi, p));
+				r[i] = (ulng) hash(BUNtail(&bi, p));
 			}
 		} else {
 			for (BUN i = 0; i < ci.ncand; i++) {
 				oid p = (canditer_next(&ci) - off);
-				r[i] = (ulng) hash(BUNtail(bi, p));
+				r[i] = (ulng) hash(BUNtail(&bi, p));
 			}
 		}
 	}
@@ -436,7 +436,7 @@ MKEYbulk_rotate_xor_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 			oid p1 = canditer_next(&ci1) - off1;
 			oid p2 = canditer_next(&ci2) - off2;
 			r[i] = GDK_ROTATE(h[p1], lbit,
-							  rbit) ^ MKEYHASH_oid(*(oid *) Tpos(&bi, p2));
+							  rbit) ^ MKEYHASH_oid(*(oid *) BUNtpos(&bi, p2));
 		}
 	} else {
 		switch (ATOMstorage(b->ttype)) {
@@ -487,14 +487,14 @@ MKEYbulk_rotate_xor_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 					oid p1 = (canditer_next_dense(&ci1) - off1),
 						p2 = (canditer_next_dense(&ci2) - off2);
 					r[i] = GDK_ROTATE(h[p1], lbit,
-									  rbit) ^ (ulng) hash(BUNtail(bi, p2));
+									  rbit) ^ (ulng) hash(BUNtail(&bi, p2));
 				}
 			} else {
 				for (BUN i = 0; i < ci1.ncand; i++) {
 					oid p1 = (canditer_next(&ci1) - off1),
 						p2 = (canditer_next(&ci2) - off2);
 					r[i] = GDK_ROTATE(h[p1], lbit,
-									  rbit) ^ (ulng) hash(BUNtail(bi, p2));
+									  rbit) ^ (ulng) hash(BUNtail(&bi, p2));
 				}
 			}
 			break;
@@ -702,12 +702,12 @@ MKEYconstbulk_rotate_xor_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 		if (ci.tpe == cand_dense) {
 			for (BUN i = 0; i < ci.ncand; i++) {
 				oid p = (canditer_next_dense(&ci) - off);
-				r[i] = h ^ (ulng) hash(BUNtail(bi, p));
+				r[i] = h ^ (ulng) hash(BUNtail(&bi, p));
 			}
 		} else {
 			for (BUN i = 0; i < ci.ncand; i++) {
 				oid p = (canditer_next(&ci) - off);
-				r[i] = h ^ (ulng) hash(BUNtail(bi, p));
+				r[i] = h ^ (ulng) hash(BUNtail(&bi, p));
 			}
 		}
 		break;

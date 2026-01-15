@@ -223,7 +223,7 @@ bat_to_sexp(BAT* b, int type)
 				return NULL;
 			}
 			BATloop(b, p, q) {
-				const char *t = (const char *) BUNtvar(bi, p);
+				const char *t = (const char *) BUNtvar(&bi, p);
 				ptrdiff_t offset = t - b->tvheap->base;
 				if (!sexp_ptrs[offset]) {
 					if (strNil(t)) {
@@ -240,12 +240,12 @@ bat_to_sexp(BAT* b, int type)
 			if (bi.nonil) {
 				BATloop(b, p, q) {
 					SET_STRING_ELT(varvalue, j++, RSTR(
-									   (const char *) BUNtvar(bi, p)));
+									   (const char *) BUNtvar(&bi, p)));
 				}
 			}
 			else {
 				BATloop(b, p, q) {
-					const char *t = (const char *) BUNtvar(bi, p);
+					const char *t = (const char *) BUNtvar(&bi, p);
 					if (strNil(t)) {
 						SET_STRING_ELT(varvalue, j++, NA_STRING);
 					} else {
@@ -825,7 +825,7 @@ static str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit
 		} else { // single value return, only for non-grouped aggregations
 			BATiter li = bat_iterator(b);
 			if (VALinit(NULL, &stk->stk[pci->argv[i]], bat_type,
-						BUNtail(li, 0)) == NULL) { // TODO BUNtail here
+						BUNtail(&li, 0)) == NULL) { // TODO BUNtail here
 				msg = createException(MAL, "rapi.eval", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				bat_iterator_end(&li);
 				goto wrapup;

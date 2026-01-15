@@ -410,8 +410,8 @@ BATTXTSIMmaxlevenshtein(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	allocator_state ma_state = ma_open(ma);
 
 	BATloop(left, p, q) {
-		lv = BUNtail(li, p);
-		rv = BUNtail(ri, p);
+		lv = BUNtail(&li, p);
+		rv = BUNtail(&ri, p);
 		llen = UTF8_strlen(lv);
 		rlen = UTF8_strlen(rv);
 		if (abs((int) llen - (int) rlen) > (int) *k)
@@ -907,7 +907,7 @@ TXTSIMmaxlevenshteinjoin(Client ctx, bat *r1, bat *r2, const bat *lid, const bat
 
 	if (BATcount(bk) > 0) {
 		BATiter ki = bat_iterator(bk);
-		k = *(int *) BUNtloc(ki, 0);
+		k = *(int *) BUNtloc(&ki, 0);
 		bat_iterator_end(&ki);
 	}
 
@@ -1108,7 +1108,7 @@ TXTSIMminjarowinklerjoin(Client ctx, bat *r1, bat *r2, const bat *lid, const bat
 
 	if (BATcount(bthreshold) > 0) {
 		BATiter thresholdi = bat_iterator(bthreshold);
-		threshold = *(dbl *) BUNtail(thresholdi, 0);
+		threshold = *(dbl *) BUNtail(&thresholdi, 0);
 		bat_iterator_end(&thresholdi);
 	}
 

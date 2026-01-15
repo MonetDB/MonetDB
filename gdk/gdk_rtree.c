@@ -241,7 +241,7 @@ BATrtree(BAT *wkb, BAT *mbrb)
 
 		for (BUN i = 0; i < ci.ncand; i++) {
 			oid p = canditer_next(&ci) - mbrb->hseqbase;
-			const mbr *inMBR = (const mbr *)BUNtail(bi, p);
+			const mbr *inMBR = (const mbr *)BUNtail(&bi, p);
 
 			rtree_id_t rtree_id = i;
 			rtree_coord_t rect[4];

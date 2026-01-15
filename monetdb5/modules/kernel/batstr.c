@@ -110,7 +110,7 @@ do_batstr_int(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	if (ci1.tpe == cand_dense) {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1);
-			const char *restrict x = BUNtvar(bi, p1);
+			const char *restrict x = BUNtvar(&bi, p1);
 
 			if (strNil(x)) {
 				vals[i] = int_nil;
@@ -126,7 +126,7 @@ do_batstr_int(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	} else {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1);
-			const char *restrict x = BUNtvar(bi, p1);
+			const char *restrict x = BUNtvar(&bi, p1);
 
 			if (strNil(x)) {
 				vals[i] = int_nil;
@@ -206,7 +206,7 @@ STRbatAscii(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (ci1.tpe == cand_dense) {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1);
-			const char *restrict x = BUNtvar(bi, p1);
+			const char *restrict x = BUNtvar(&bi, p1);
 
 			if ((msg = str_wchr_at(&next, x, 0)) != MAL_SUCCEED)
 				goto bailout1;
@@ -216,7 +216,7 @@ STRbatAscii(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	} else {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1);
-			const char *restrict x = BUNtvar(bi, p1);
+			const char *restrict x = BUNtvar(&bi, p1);
 
 			if ((msg = str_wchr_at(&next, x, 0)) != MAL_SUCCEED)
 				goto bailout1;
@@ -476,7 +476,7 @@ do_batstr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	if (ci1.tpe == cand_dense) {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1);
-			const char *restrict x = BUNtvar(bi, p1);
+			const char *restrict x = BUNtvar(&bi, p1);
 
 			if (strNil(x)) {
 				if (tfastins_nocheckVAR(bn, i, str_nil) != GDK_SUCCEED) {
@@ -498,7 +498,7 @@ do_batstr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	} else {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1);
-			const char *restrict x = BUNtvar(bi, p1);
+			const char *restrict x = BUNtvar(&bi, p1);
 
 			if (strNil(x)) {
 				if (tfastins_nocheckVAR(bn, i, str_nil) != GDK_SUCCEED) {
@@ -575,7 +575,7 @@ do_batstr_conststr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	if (ci1.tpe == cand_dense) {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1);
-			const char *x = BUNtvar(bi, p1);
+			const char *x = BUNtvar(&bi, p1);
 
 			if (strNil(x) || strNil(y)) {
 				if (tfastins_nocheckVAR(bn, i, str_nil) != GDK_SUCCEED) {
@@ -597,7 +597,7 @@ do_batstr_conststr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	} else {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1);
-			const char *x = BUNtvar(bi, p1);
+			const char *x = BUNtvar(&bi, p1);
 
 			if (strNil(x) || strNil(y)) {
 				if (tfastins_nocheckVAR(bn, i, str_nil) != GDK_SUCCEED) {
@@ -674,7 +674,7 @@ do_batstr_str_conststr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	if (ci1.tpe == cand_dense) {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1);
-			const char *y = BUNtvar(bi, p1);
+			const char *y = BUNtvar(&bi, p1);
 
 			if (strNil(x) || strNil(y)) {
 				if (tfastins_nocheckVAR(bn, i, str_nil) != GDK_SUCCEED) {
@@ -696,7 +696,7 @@ do_batstr_str_conststr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	} else {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1);
-			const char *y = BUNtvar(bi, p1);
+			const char *y = BUNtvar(&bi, p1);
 
 			if (strNil(x) || strNil(y)) {
 				if (tfastins_nocheckVAR(bn, i, str_nil) != GDK_SUCCEED) {
@@ -785,8 +785,8 @@ do_batstr_batstr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1),
 				p2 = (canditer_next_dense(&ci2) - off2);
-			const char *x = BUNtvar(lefti, p1);
-			const char *y = BUNtvar(righti, p2);
+			const char *x = BUNtvar(&lefti, p1);
+			const char *y = BUNtvar(&righti, p2);
 
 			if (strNil(x) || strNil(y)) {
 				if (tfastins_nocheckVAR(bn, i, str_nil) != GDK_SUCCEED) {
@@ -809,8 +809,8 @@ do_batstr_batstr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1),
 				p2 = (canditer_next(&ci2) - off2);
-			const char *x = BUNtvar(lefti, p1);
-			const char *y = BUNtvar(righti, p2);
+			const char *x = BUNtvar(&lefti, p1);
+			const char *y = BUNtvar(&righti, p2);
 
 			if (strNil(x) || strNil(y)) {
 				if (tfastins_nocheckVAR(bn, i, str_nil) != GDK_SUCCEED) {
@@ -889,7 +889,7 @@ do_batstr_constint_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	if (ci1.tpe == cand_dense) {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1);
-			const char *x = BUNtvar(bi, p1);
+			const char *x = BUNtvar(&bi, p1);
 
 			if (strNil(x) || is_int_nil(y)) {
 				if (tfastins_nocheckVAR(bn, i, str_nil) != GDK_SUCCEED) {
@@ -911,7 +911,7 @@ do_batstr_constint_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	} else {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1);
-			const char *x = BUNtvar(bi, p1);
+			const char *x = BUNtvar(&bi, p1);
 
 			if (strNil(x) || is_int_nil(y)) {
 				if (tfastins_nocheckVAR(bn, i, str_nil) != GDK_SUCCEED) {
@@ -1106,7 +1106,7 @@ do_batstr_batint_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1),
 				p2 = (canditer_next_dense(&ci2) - off2);
-			const char *x = BUNtvar(lefti, p1);
+			const char *x = BUNtvar(&lefti, p1);
 			y = righti[p2];
 
 			if (strNil(x) || is_int_nil(y)) {
@@ -1130,7 +1130,7 @@ do_batstr_batint_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1),
 				p2 = (canditer_next(&ci2) - off2);
-			const char *x = BUNtvar(lefti, p1);
+			const char *x = BUNtvar(&lefti, p1);
 			y = righti[p2];
 
 			if (strNil(x) || is_int_nil(y)) {
@@ -1211,7 +1211,7 @@ do_batstr_constint_conststr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	if (ci1.tpe == cand_dense) {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1);
-			const char *x = BUNtvar(bi, p1);
+			const char *x = BUNtvar(&bi, p1);
 
 			if (strNil(x) || is_int_nil(y) || strNil(z)) {
 				if (tfastins_nocheckVAR(bn, i, str_nil) != GDK_SUCCEED) {
@@ -1233,7 +1233,7 @@ do_batstr_constint_conststr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	} else {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1);
-			const char *x = BUNtvar(bi, p1);
+			const char *x = BUNtvar(&bi, p1);
 
 			if (strNil(x) || is_int_nil(y) || strNil(z)) {
 				if (tfastins_nocheckVAR(bn, i, str_nil) != GDK_SUCCEED) {
@@ -1328,7 +1328,7 @@ do_batstr_batint_conststr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1),
 				p2 = (canditer_next_dense(&ci2) - off2);
-			const char *x = BUNtvar(lefti, p1);
+			const char *x = BUNtvar(&lefti, p1);
 			y = righti[p2];
 
 			if (strNil(x) || is_int_nil(y) || strNil(z)) {
@@ -1352,7 +1352,7 @@ do_batstr_batint_conststr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1),
 				p2 = (canditer_next(&ci2) - off2);
-			const char *x = BUNtvar(lefti, p1);
+			const char *x = BUNtvar(&lefti, p1);
 			y = righti[p2];
 
 			if (strNil(x) || is_int_nil(y) || strNil(z)) {
@@ -1446,8 +1446,8 @@ do_batstr_constint_batstr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1),
 				p2 = (canditer_next_dense(&ci2) - off2);
-			const char *x = BUNtvar(lefti, p1);
-			const char *z = BUNtvar(righti, p2);
+			const char *x = BUNtvar(&lefti, p1);
+			const char *z = BUNtvar(&righti, p2);
 
 			if (strNil(x) || is_int_nil(y) || strNil(z)) {
 				if (tfastins_nocheckVAR(bn, i, str_nil) != GDK_SUCCEED) {
@@ -1470,8 +1470,8 @@ do_batstr_constint_batstr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1),
 				p2 = (canditer_next(&ci2) - off2);
-			const char *x = BUNtvar(lefti, p1);
-			const char *z = BUNtvar(righti, p2);
+			const char *x = BUNtvar(&lefti, p1);
+			const char *z = BUNtvar(&righti, p2);
 
 			if (strNil(x) || is_int_nil(y) || strNil(z)) {
 				if (tfastins_nocheckVAR(bn, i, str_nil) != GDK_SUCCEED) {
@@ -1575,9 +1575,9 @@ do_batstr_batint_batstr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 			oid p1 = (canditer_next_dense(&ci1) - off1),
 				p2 = (canditer_next_dense(&ci2) - off2),
 				p3 = (canditer_next_dense(&ci3) - off3);
-			const char *x = BUNtvar(arg1i, p1);
+			const char *x = BUNtvar(&arg1i, p1);
 			y = arg2i[p2];
-			const char *z = BUNtvar(arg3i, p3);
+			const char *z = BUNtvar(&arg3i, p3);
 
 			if (strNil(x) || is_int_nil(y) || strNil(z)) {
 				if (tfastins_nocheckVAR(bn, i, str_nil) != GDK_SUCCEED) {
@@ -1601,9 +1601,9 @@ do_batstr_batint_batstr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 			oid p1 = (canditer_next(&ci1) - off1),
 				p2 = (canditer_next(&ci2) - off2),
 				p3 = (canditer_next(&ci3) - off3);
-			const char *x = BUNtvar(arg1i, p1);
+			const char *x = BUNtvar(&arg1i, p1);
 			y = arg2i[p2];
-			const char *z = BUNtvar(arg3i, p3);
+			const char *z = BUNtvar(&arg3i, p3);
 
 			if (strNil(x) || is_int_nil(y) || strNil(z)) {
 				if (tfastins_nocheckVAR(bn, i, str_nil) != GDK_SUCCEED) {
@@ -1920,8 +1920,8 @@ prefix_or_suffix(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1),
 				p2 = (canditer_next_dense(&ci2) - off2);
-			char *x = BUNtvar(lefti, p1);
-			char *y = BUNtvar(righti, p2);
+			char *x = BUNtvar(&lefti, p1);
+			char *y = BUNtvar(&righti, p2);
 
 			if (strNil(x) || strNil(y)) {
 				vals[i] = bit_nil;
@@ -1934,8 +1934,8 @@ prefix_or_suffix(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1),
 				p2 = (canditer_next(&ci2) - off2);
-			char *x = BUNtvar(lefti, p1);
-			char *y = BUNtvar(righti, p2);
+			char *x = BUNtvar(&lefti, p1);
+			char *y = BUNtvar(&righti, p2);
 
 			if (strNil(x) || strNil(y)) {
 				vals[i] = bit_nil;
@@ -2044,7 +2044,7 @@ prefix_or_suffix_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	if (ci1.tpe == cand_dense) {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1);
-			char *x = BUNtvar(bi, p1);
+			char *x = BUNtvar(&bi, p1);
 
 			if (ynil || strNil(x)) {
 				vals[i] = bit_nil;
@@ -2056,7 +2056,7 @@ prefix_or_suffix_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	} else {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1);
-			char *x = BUNtvar(bi, p1);
+			char *x = BUNtvar(&bi, p1);
 
 			if (ynil || strNil(x)) {
 				vals[i] = bit_nil;
@@ -2167,7 +2167,7 @@ prefix_or_suffix_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	if (ci1.tpe == cand_dense) {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1);
-			char *y = BUNtvar(bi, p1);
+			char *y = BUNtvar(&bi, p1);
 
 			if (xnil || strNil(y)) {
 				vals[i] = bit_nil;
@@ -2179,7 +2179,7 @@ prefix_or_suffix_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	} else {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1);
-			char *y = BUNtvar(bi, p1);
+			char *y = BUNtvar(&bi, p1);
 
 			if (xnil || strNil(y)) {
 				vals[i] = bit_nil;
@@ -2296,8 +2296,8 @@ search_string_bat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1),
 				p2 = (canditer_next_dense(&ci2) - off2);
-			char *x = BUNtvar(lefti, p1);
-			char *y = BUNtvar(righti, p2);
+			char *x = BUNtvar(&lefti, p1);
+			char *y = BUNtvar(&righti, p2);
 
 			if (strNil(x) || strNil(y)) {
 				vals[i] = int_nil;
@@ -2310,8 +2310,8 @@ search_string_bat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1),
 				p2 = (canditer_next(&ci2) - off2);
-			char *x = BUNtvar(lefti, p1);
-			char *y = BUNtvar(righti, p2);
+			char *x = BUNtvar(&lefti, p1);
+			char *y = BUNtvar(&righti, p2);
 
 			if (strNil(x) || strNil(y)) {
 				vals[i] = int_nil;
@@ -2417,7 +2417,7 @@ search_string_bat_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	if (ci1.tpe == cand_dense) {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1);
-			char *x = BUNtvar(bi, p1);
+			char *x = BUNtvar(&bi, p1);
 
 			if (ynil || strNil(x)) {
 				vals[i] = int_nil;
@@ -2429,7 +2429,7 @@ search_string_bat_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	} else {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1);
-			char *x = BUNtvar(bi, p1);
+			char *x = BUNtvar(&bi, p1);
 
 			if (ynil || strNil(x)) {
 				vals[i] = int_nil;
@@ -2534,7 +2534,7 @@ search_string_bat_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	if (ci1.tpe == cand_dense) {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1);
-			char *y = BUNtvar(bi, p1);
+			char *y = BUNtvar(&bi, p1);
 
 			if (xnil || strNil(y)) {
 				vals[i] = int_nil;
@@ -2546,7 +2546,7 @@ search_string_bat_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	} else {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1);
-			char *y = BUNtvar(bi, p1);
+			char *y = BUNtvar(&bi, p1);
 
 			if (xnil || strNil(y)) {
 				vals[i] = int_nil;
@@ -2665,7 +2665,7 @@ STRbatWChrAt(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1),
 				p2 = (canditer_next_dense(&ci2) - off2);
-			const char *x = BUNtvar(lefti, p1);
+			const char *x = BUNtvar(&lefti, p1);
 			y = righti[p2];
 
 			if ((msg = str_wchr_at(&next, x, y)) != MAL_SUCCEED)
@@ -2677,7 +2677,7 @@ STRbatWChrAt(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1),
 				p2 = (canditer_next(&ci2) - off2);
-			const char *x = BUNtvar(lefti, p1);
+			const char *x = BUNtvar(&lefti, p1);
 			y = righti[p2];
 
 			if ((msg = str_wchr_at(&next, x, y)) != MAL_SUCCEED)
@@ -2743,7 +2743,7 @@ STRbatWChrAtcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (ci1.tpe == cand_dense) {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1);
-			const char *x = BUNtvar(bi, p1);
+			const char *x = BUNtvar(&bi, p1);
 
 			if ((msg = str_wchr_at(&next, x, y)) != MAL_SUCCEED)
 				goto bailout1;
@@ -2753,7 +2753,7 @@ STRbatWChrAtcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	} else {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1);
-			const char *x = BUNtvar(bi, p1);
+			const char *x = BUNtvar(&bi, p1);
 
 			if ((msg = str_wchr_at(&next, x, y)) != MAL_SUCCEED)
 				goto bailout1;
@@ -2892,7 +2892,7 @@ do_batstr_str_int_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	if (ci1.tpe == cand_dense) {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1);
-			const char *x = BUNtvar(bi, p1);
+			const char *x = BUNtvar(&bi, p1);
 
 			if (strNil(x) || is_int_nil(y)) {
 				if (tfastins_nocheckVAR(bn, i, str_nil) != GDK_SUCCEED) {
@@ -2914,7 +2914,7 @@ do_batstr_str_int_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	} else {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1);
-			const char *x = BUNtvar(bi, p1);
+			const char *x = BUNtvar(&bi, p1);
 
 			if (strNil(x) || is_int_nil(y)) {
 				if (tfastins_nocheckVAR(bn, i, str_nil) != GDK_SUCCEED) {
@@ -3016,7 +3016,7 @@ STRbatrepeatcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (ci1.tpe == cand_dense) {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1);
-			const char *x = BUNtvar(bi, p1);
+			const char *x = BUNtvar(&bi, p1);
 
 			if (strNil(x) || is_int_nil(y) || y < 0) {
 				if (tfastins_nocheckVAR(bn, i, str_nil) != GDK_SUCCEED) {
@@ -3038,7 +3038,7 @@ STRbatrepeatcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	} else {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1);
-			const char *x = BUNtvar(bi, p1);
+			const char *x = BUNtvar(&bi, p1);
 
 			if (strNil(x) || is_int_nil(y) || y < 0) {
 				if (tfastins_nocheckVAR(bn, i, str_nil) != GDK_SUCCEED) {
@@ -3352,7 +3352,7 @@ do_batstr_str_int(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1),
 				p2 = (canditer_next_dense(&ci2) - off2);
-			const char *x = BUNtvar(lefti, p1);
+			const char *x = BUNtvar(&lefti, p1);
 			y = righti[p2];
 
 			if (strNil(x) || is_int_nil(y)) {
@@ -3376,7 +3376,7 @@ do_batstr_str_int(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1),
 				p2 = (canditer_next(&ci2) - off2);
-			const char *x = BUNtvar(lefti, p1);
+			const char *x = BUNtvar(&lefti, p1);
 			y = righti[p2];
 
 			if (strNil(x) || is_int_nil(y)) {
@@ -3493,7 +3493,7 @@ STRbatrepeat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1),
 				p2 = (canditer_next_dense(&ci2) - off2);
-			const char *x = BUNtvar(lefti, p1);
+			const char *x = BUNtvar(&lefti, p1);
 			y = righti[p2];
 
 			if (strNil(x) || is_int_nil(y) || y < 0) {
@@ -3517,7 +3517,7 @@ STRbatrepeat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1),
 				p2 = (canditer_next(&ci2) - off2);
-			const char *x = BUNtvar(lefti, p1);
+			const char *x = BUNtvar(&lefti, p1);
 			y = righti[p2];
 
 			if (strNil(x) || is_int_nil(y) || y < 0) {
@@ -3597,7 +3597,7 @@ STRbatSubstitutecst_imp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	if (ci1.tpe == cand_dense) {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1);
-			const char *x = BUNtvar(bi, p1);
+			const char *x = BUNtvar(&bi, p1);
 
 			if (strNil(x) || strNil(y) || strNil(z) || is_bit_nil(w)) {
 				if (tfastins_nocheckVAR(bn, i, str_nil) != GDK_SUCCEED) {
@@ -3619,7 +3619,7 @@ STRbatSubstitutecst_imp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	} else {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1);
-			const char *x = BUNtvar(bi, p1);
+			const char *x = BUNtvar(&bi, p1);
 
 			if (strNil(x) || strNil(y) || strNil(z) || is_bit_nil(w)) {
 				if (tfastins_nocheckVAR(bn, i, str_nil) != GDK_SUCCEED) {
@@ -3735,9 +3735,9 @@ STRbatSubstitute(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				p2 = (canditer_next_dense(&ci2) - off2),
 				p3 = (canditer_next_dense(&ci3) - off3),
 				p4 = (canditer_next_dense(&ci4) - off4);
-			const char *x = BUNtvar(arg1i, p1);
-			const char *y = BUNtvar(arg2i, p2);
-			const char *z = BUNtvar(arg3i, p3);
+			const char *x = BUNtvar(&arg1i, p1);
+			const char *y = BUNtvar(&arg2i, p2);
+			const char *z = BUNtvar(&arg3i, p3);
 			w = arg4i[p4];
 
 			if (strNil(x) || strNil(y) || strNil(z) || is_bit_nil(w)) {
@@ -3763,9 +3763,9 @@ STRbatSubstitute(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				p2 = (canditer_next(&ci2) - off2),
 				p3 = (canditer_next(&ci3) - off3),
 				p4 = (canditer_next(&ci4) - off4);
-			const char *x = BUNtvar(arg1i, p1);
-			const char *y = BUNtvar(arg2i, p2);
-			const char *z = BUNtvar(arg3i, p3);
+			const char *x = BUNtvar(&arg1i, p1);
+			const char *y = BUNtvar(&arg2i, p2);
+			const char *z = BUNtvar(&arg3i, p3);
 			w = arg4i[p4];
 
 			if (strNil(x) || strNil(y) || strNil(z) || is_bit_nil(w)) {
@@ -3845,7 +3845,7 @@ STRbatsplitpartcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (ci1.tpe == cand_dense) {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1);
-			const char *x = BUNtvar(bi, p1);
+			const char *x = BUNtvar(&bi, p1);
 
 			if (strNil(x) || strNil(y) || is_int_nil(z)) {
 				if (tfastins_nocheckVAR(bn, i, str_nil) != GDK_SUCCEED) {
@@ -3867,7 +3867,7 @@ STRbatsplitpartcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	} else {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1);
-			const char *x = BUNtvar(bi, p1);
+			const char *x = BUNtvar(&bi, p1);
 
 			if (strNil(x) || strNil(y) || is_int_nil(z)) {
 				if (tfastins_nocheckVAR(bn, i, str_nil) != GDK_SUCCEED) {
@@ -3958,7 +3958,7 @@ STRbatsplitpart_needlecst(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1),
 				p2 = (canditer_next_dense(&ci2) - off2);
-			const char *x = BUNtvar(bi, p1);
+			const char *x = BUNtvar(&bi, p1);
 			z = field[p2];
 
 			if (strNil(x) || strNil(y) || is_int_nil(z)) {
@@ -3982,7 +3982,7 @@ STRbatsplitpart_needlecst(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1),
 				p2 = (canditer_next(&ci2) - off2);
-			const char *x = BUNtvar(bi, p1);
+			const char *x = BUNtvar(&bi, p1);
 			z = field[p2];
 
 			if (strNil(x) || strNil(y) || is_int_nil(z)) {
@@ -4073,8 +4073,8 @@ STRbatsplitpart_fieldcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1),
 				p2 = (canditer_next_dense(&ci2) - off2);
-			const char *x = BUNtvar(bi, p1);
-			const char *y = BUNtvar(ni, p2);
+			const char *x = BUNtvar(&bi, p1);
+			const char *y = BUNtvar(&ni, p2);
 
 			if (strNil(x) || strNil(y) || is_int_nil(z)) {
 				if (tfastins_nocheckVAR(bn, i, str_nil) != GDK_SUCCEED) {
@@ -4097,8 +4097,8 @@ STRbatsplitpart_fieldcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1),
 				p2 = (canditer_next(&ci2) - off2);
-			const char *x = BUNtvar(bi, p1);
-			const char *y = BUNtvar(ni, p2);
+			const char *x = BUNtvar(&bi, p1);
+			const char *y = BUNtvar(&ni, p2);
 
 			if (strNil(x) || strNil(y) || is_int_nil(z)) {
 				if (tfastins_nocheckVAR(bn, i, str_nil) != GDK_SUCCEED) {
@@ -4200,8 +4200,8 @@ STRbatsplitpart(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			oid p1 = (canditer_next_dense(&ci1) - off1),
 				p2 = (canditer_next_dense(&ci2) - off2),
 				p3 = (canditer_next_dense(&ci3) - off3);
-			const char *x = BUNtvar(arg1i, p1);
-			const char *y = BUNtvar(arg2i, p2);
+			const char *x = BUNtvar(&arg1i, p1);
+			const char *y = BUNtvar(&arg2i, p2);
 			z = arg3i[p3];
 
 			if (strNil(x) || strNil(y) || is_int_nil(z)) {
@@ -4226,8 +4226,8 @@ STRbatsplitpart(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			oid p1 = (canditer_next(&ci1) - off1),
 				p2 = (canditer_next(&ci2) - off2),
 				p3 = (canditer_next(&ci3) - off3);
-			const char *x = BUNtvar(arg1i, p1);
-			const char *y = BUNtvar(arg2i, p2);
+			const char *x = BUNtvar(&arg1i, p1);
+			const char *y = BUNtvar(&arg2i, p2);
 			z = arg3i[p3];
 
 			if (strNil(x) || strNil(y) || is_int_nil(z)) {
@@ -4336,9 +4336,9 @@ STRbatReplace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			oid p1 = (canditer_next_dense(&ci1) - off1),
 				p2 = (canditer_next_dense(&ci2) - off2),
 				p3 = (canditer_next_dense(&ci3) - off3);
-			const char *x = BUNtvar(arg1i, p1);
-			const char *y = BUNtvar(arg2i, p2);
-			const char *z = BUNtvar(arg3i, p3);
+			const char *x = BUNtvar(&arg1i, p1);
+			const char *y = BUNtvar(&arg2i, p2);
+			const char *z = BUNtvar(&arg3i, p3);
 
 			if (strNil(x) || strNil(y) || strNil(z)) {
 				if (tfastins_nocheckVAR(bn, i, str_nil) != GDK_SUCCEED) {
@@ -4362,9 +4362,9 @@ STRbatReplace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			oid p1 = (canditer_next(&ci1) - off1),
 				p2 = (canditer_next(&ci2) - off2),
 				p3 = (canditer_next(&ci3) - off3);
-			const char *x = BUNtvar(arg1i, p1);
-			const char *y = BUNtvar(arg2i, p2);
-			const char *z = BUNtvar(arg3i, p3);
+			const char *x = BUNtvar(&arg1i, p1);
+			const char *y = BUNtvar(&arg2i, p2);
+			const char *z = BUNtvar(&arg3i, p3);
 
 			if (strNil(x) || strNil(y) || strNil(z)) {
 				if (tfastins_nocheckVAR(bn, i, str_nil) != GDK_SUCCEED) {
@@ -4475,10 +4475,10 @@ STRbatInsert(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				p2 = (canditer_next_dense(&ci2) - off2),
 				p3 = (canditer_next_dense(&ci3) - off3),
 				p4 = (canditer_next_dense(&ci4) - off4);
-			const char *x = BUNtvar(lefti, p1);
+			const char *x = BUNtvar(&lefti, p1);
 			y = sval[p2];
 			z = lval[p3];
-			const char *w = BUNtvar(righti, p4);
+			const char *w = BUNtvar(&righti, p4);
 
 			if (strNil(x) || is_int_nil(y) || is_int_nil(z) || strNil(w)) {
 				if (tfastins_nocheckVAR(bn, i, str_nil) != GDK_SUCCEED) {
@@ -4503,10 +4503,10 @@ STRbatInsert(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				p2 = (canditer_next(&ci2) - off2),
 				p3 = (canditer_next(&ci3) - off3),
 				p4 = (canditer_next(&ci4) - off4);
-			const char *x = BUNtvar(lefti, p1);
+			const char *x = BUNtvar(&lefti, p1);
 			y = sval[p2];
 			z = lval[p3];
-			const char *w = BUNtvar(righti, p4);
+			const char *w = BUNtvar(&righti, p4);
 
 			if (strNil(x) || is_int_nil(y) || is_int_nil(z) || strNil(w)) {
 				if (tfastins_nocheckVAR(bn, i, str_nil) != GDK_SUCCEED) {
@@ -4586,7 +4586,7 @@ STRbatInsertcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (ci1.tpe == cand_dense) {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1);
-			const char *x = BUNtvar(bi, p1);
+			const char *x = BUNtvar(&bi, p1);
 
 			if (strNil(x) || is_int_nil(y) || is_int_nil(z) || strNil(w)) {
 				if (tfastins_nocheckVAR(bn, i, str_nil) != GDK_SUCCEED) {
@@ -4608,7 +4608,7 @@ STRbatInsertcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	} else {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1);
-			const char *x = BUNtvar(bi, p1);
+			const char *x = BUNtvar(&bi, p1);
 
 			if (strNil(x) || is_int_nil(y) || is_int_nil(z) || strNil(w)) {
 				if (tfastins_nocheckVAR(bn, i, str_nil) != GDK_SUCCEED) {
@@ -4688,7 +4688,7 @@ STRbatsubstring_2nd_3rd_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	if (ci1.tpe == cand_dense) {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1);
-			const char *x = BUNtvar(bi, p1);
+			const char *x = BUNtvar(&bi, p1);
 
 			if (strNil(x) || is_int_nil(y) || is_int_nil(z)) {
 				if (tfastins_nocheckVAR(bn, i, str_nil) != GDK_SUCCEED) {
@@ -4710,7 +4710,7 @@ STRbatsubstring_2nd_3rd_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	} else {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1);
-			const char *x = BUNtvar(bi, p1);
+			const char *x = BUNtvar(&bi, p1);
 
 			if (strNil(x) || is_int_nil(y) || is_int_nil(z)) {
 				if (tfastins_nocheckVAR(bn, i, str_nil) != GDK_SUCCEED) {
@@ -5118,7 +5118,7 @@ STRbatsubstring_2nd_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1),
 				p2 = (canditer_next_dense(&ci2) - off2);
-			const char *x = BUNtvar(bi, p1);
+			const char *x = BUNtvar(&bi, p1);
 			z = len[p2];
 
 			if (strNil(x) || is_int_nil(y) || is_int_nil(z)) {
@@ -5142,7 +5142,7 @@ STRbatsubstring_2nd_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1),
 				p2 = (canditer_next(&ci2) - off2);
-			const char *x = BUNtvar(bi, p1);
+			const char *x = BUNtvar(&bi, p1);
 			z = len[p2];
 
 			if (strNil(x) || is_int_nil(y) || is_int_nil(z)) {
@@ -5233,7 +5233,7 @@ STRbatsubstring_3rd_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1),
 				p2 = (canditer_next_dense(&ci2) - off2);
-			const char *x = BUNtvar(bi, p1);
+			const char *x = BUNtvar(&bi, p1);
 			y = start[p2];
 
 			if (strNil(x) || is_int_nil(y) || is_int_nil(z)) {
@@ -5257,7 +5257,7 @@ STRbatsubstring_3rd_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1),
 				p2 = (canditer_next(&ci2) - off2);
-			const char *x = BUNtvar(bi, p1);
+			const char *x = BUNtvar(&bi, p1);
 			y = start[p2];
 
 			if (strNil(x) || is_int_nil(y) || is_int_nil(z)) {
@@ -5359,7 +5359,7 @@ STRbatsubstring(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			oid p1 = (canditer_next_dense(&ci1) - off1),
 				p2 = (canditer_next_dense(&ci2) - off2),
 				p3 = (canditer_next_dense(&ci3) - off3);
-			const char *x = BUNtvar(lefti, p1);
+			const char *x = BUNtvar(&lefti, p1);
 			y = svals[p2];
 			z = lvals[p3];
 
@@ -5385,7 +5385,7 @@ STRbatsubstring(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			oid p1 = (canditer_next(&ci1) - off1),
 				p2 = (canditer_next(&ci2) - off2),
 				p3 = (canditer_next(&ci3) - off3);
-			const char *x = BUNtvar(lefti, p1);
+			const char *x = BUNtvar(&lefti, p1);
 			y = svals[p2];
 			z = lvals[p3];
 
@@ -5458,7 +5458,7 @@ STRbatstrLocatecst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (ci1.tpe == cand_dense) {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1);
-			const char *x = BUNtvar(bi, p1);
+			const char *x = BUNtvar(&bi, p1);
 
 			if (strNil(x) || strNil(y)) {
 				vals[i] = int_nil;
@@ -5470,7 +5470,7 @@ STRbatstrLocatecst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	} else {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1);
-			const char *x = BUNtvar(bi, p1);
+			const char *x = BUNtvar(&bi, p1);
 
 			if (strNil(x) || strNil(y)) {
 				vals[i] = int_nil;
@@ -5527,7 +5527,7 @@ STRbatstrLocate_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (ci1.tpe == cand_dense) {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1);
-			const char *y = BUNtvar(bi, p1);
+			const char *y = BUNtvar(&bi, p1);
 
 			if (strNil(x) || strNil(y)) {
 				vals[i] = int_nil;
@@ -5539,7 +5539,7 @@ STRbatstrLocate_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	} else {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1);
-			const char *y = BUNtvar(bi, p1);
+			const char *y = BUNtvar(&bi, p1);
 
 			if (strNil(x) || strNil(y)) {
 				vals[i] = int_nil;
@@ -5608,8 +5608,8 @@ STRbatstrLocate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1),
 				p2 = (canditer_next_dense(&ci2) - off2);
-			const char *x = BUNtvar(lefti, p1);
-			const char *y = BUNtvar(righti, p2);
+			const char *x = BUNtvar(&lefti, p1);
+			const char *y = BUNtvar(&righti, p2);
 
 			if (strNil(x) || strNil(y)) {
 				vals[i] = int_nil;
@@ -5622,8 +5622,8 @@ STRbatstrLocate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1),
 				p2 = (canditer_next(&ci2) - off2);
-			const char *x = BUNtvar(lefti, p1);
-			const char *y = BUNtvar(righti, p2);
+			const char *x = BUNtvar(&lefti, p1);
+			const char *y = BUNtvar(&righti, p2);
 
 			if (strNil(x) || strNil(y)) {
 				vals[i] = int_nil;
@@ -5681,7 +5681,7 @@ STRbatstrLocate3cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (ci1.tpe == cand_dense) {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1);
-			const char *x = BUNtvar(bi, p1);
+			const char *x = BUNtvar(&bi, p1);
 
 			if (strNil(x) || strNil(y) || is_int_nil(z)) {
 				vals[i] = int_nil;
@@ -5693,7 +5693,7 @@ STRbatstrLocate3cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	} else {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1);
-			const char *x = BUNtvar(bi, p1);
+			const char *x = BUNtvar(&bi, p1);
 
 			if (strNil(x) || strNil(y) || is_int_nil(z)) {
 				vals[i] = int_nil;
@@ -5773,8 +5773,8 @@ STRbatstrLocate3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			oid p1 = (canditer_next_dense(&ci1) - off1),
 				p2 = (canditer_next_dense(&ci2) - off2),
 				p3 = (canditer_next_dense(&ci3) - off3);
-			const char *x = BUNtvar(lefti, p1);
-			const char *y = BUNtvar(righti, p2);
+			const char *x = BUNtvar(&lefti, p1);
+			const char *y = BUNtvar(&righti, p2);
 			z = svals[p3];
 
 			if (strNil(x) || strNil(y) || is_int_nil(z)) {
@@ -5789,8 +5789,8 @@ STRbatstrLocate3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			oid p1 = (canditer_next(&ci1) - off1),
 				p2 = (canditer_next(&ci2) - off2),
 				p3 = (canditer_next(&ci3) - off3);
-			const char *x = BUNtvar(lefti, p1);
-			const char *y = BUNtvar(righti, p2);
+			const char *x = BUNtvar(&lefti, p1);
+			const char *y = BUNtvar(&righti, p2);
 			z = svals[p3];
 
 			if (strNil(x) || strNil(y) || is_int_nil(z)) {

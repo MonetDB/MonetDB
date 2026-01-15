@@ -2309,7 +2309,7 @@ JSONrenderRowObject(allocator *ma, BAT **bl, MalBlkPtr mb, MalStkPtr stk, InstrP
 		name = stk->stk[getArg(pci, i)].val.sval;
 		tpe = getBatType(getArgType(mb, pci, i + 1));
 		bi = bat_iterator(bl[i + 1]);
-		p = BUNtail(bi, idx);
+		p = BUNtail(&bi, idx);
 		val = ATOMformat(mb->ma, tpe, p);
 		bat_iterator_end(&bi);
 		if (val == NULL) {
@@ -2425,7 +2425,7 @@ JSONrenderRowArray(Client ctx, BAT **bl, MalBlkPtr mb, InstrPtr pci, BUN idx)
 	for (i = pci->retc; i < pci->argc; i++) {
 		tpe = getBatType(getArgType(mb, pci, i));
 		bi = bat_iterator(bl[i]);
-		p = BUNtail(bi, idx);
+		p = BUNtail(&bi, idx);
 		val = ATOMformat(ma, tpe, p);
 		bat_iterator_end(&bi);
 		if (val == NULL)
@@ -2572,7 +2572,7 @@ JSONfoldKeyValue(Client ctx, str *ret, const bat *id, const bat *key, const bat 
 		}
 
 		if (bk) {
-			nme = (str) BUNtvar(bki, i);
+			nme = (str) BUNtvar(&bki, i);
 			l = strlen(nme);
 			size_t osz = lim;
 			while (l + 3 > lim - len)
@@ -2590,7 +2590,7 @@ JSONfoldKeyValue(Client ctx, str *ret, const bat *id, const bat *key, const bat 
 			}
 		}
 
-		p = BUNtail(bvi, i);
+		p = BUNtail(&bvi, i);
 		if (tpe == TYPE_json)
 			val = p;
 		else {
@@ -2761,7 +2761,7 @@ JSONgroupStr(Client ctx, str *ret, const bat *bid)
 	switch (b->ttype) {
 	case TYPE_str:
 		for (p = 0, q = BATcount(b); p < q; p++) {
-			const char *v = (const char *) BUNtvar(bi, p);
+			const char *v = (const char *) BUNtvar(&bi, p);
 
 			if (strNil(v))
 				continue;
@@ -2900,7 +2900,7 @@ JSONjsonaggr(Client ctx, BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nil
 			switch (b->ttype) {
 			case TYPE_str:
 				for (p = 0, q = BATcount(g); p < q; p++) {
-					const char *v = (const char *) BUNtvar(bi,
+					const char *v = (const char *) BUNtvar(&bi,
 														   (map ? (BUN) map[p] -
 															mapoff : p));
 					if (strNil(v)) {
@@ -2994,7 +2994,7 @@ JSONjsonaggr(Client ctx, BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nil
 					continue;
 				switch (b->ttype) {
 				case TYPE_str:{
-					const char *v = (const char *) BUNtvar(bi, p);
+					const char *v = (const char *) BUNtvar(&bi, p);
 					if (strNil(v)) {
 						if (skip_nils)
 							continue;
@@ -3047,7 +3047,7 @@ JSONjsonaggr(Client ctx, BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nil
 		switch (b->ttype) {
 		case TYPE_str:
 			for (p = 0, q = p + BATcount(b); p < q; p++) {
-				const char *v = (const char *) BUNtvar(bi, p);
+				const char *v = (const char *) BUNtvar(&bi, p);
 				if (strNil(v)) {
 					if (skip_nils)
 						continue;

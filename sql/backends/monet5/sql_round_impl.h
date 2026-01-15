@@ -744,7 +744,7 @@ batstr_2dec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (ci.tpe == cand_dense) {
 		for (BUN i = 0; i < ci.ncand; i++) {
 			oid p = (canditer_next_dense(&ci) - off);
-			const char *next = BUNtail(bi, p);
+			const char *next = BUNtail(&bi, p);
 
 			if (strNil(next)) {
 				ret[i] = NIL(TYPE);
@@ -755,7 +755,7 @@ batstr_2dec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	} else {
 		for (BUN i = 0; i < ci.ncand; i++) {
 			oid p = (canditer_next(&ci) - off);
-			const char *next = BUNtail(bi, p);
+			const char *next = BUNtail(&bi, p);
 
 			if (strNil(next)) {
 				ret[i] = NIL(TYPE);

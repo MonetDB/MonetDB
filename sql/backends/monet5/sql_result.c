@@ -243,7 +243,7 @@ bat_max_strlength(BAT *b)
 	BATiter bi = bat_iterator(b);
 
 	BATloop(b, p, q) {
-		l = UTF8_strwidth((const char *) BUNtvar(bi, p));
+		l = UTF8_strwidth((const char *) BUNtvar(&bi, p));
 
 		if (is_int_nil(l))
 			l = 0;

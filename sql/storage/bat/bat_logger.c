@@ -89,7 +89,7 @@ replace_bat(logger *lg, int colid, BAT *newcol)
 		BATiter cii = bat_iterator_nolock(lg->catalog_id);
 		BUN p;
 		MT_rwlock_rdlock(&cii.b->thashlock);
-		HASHloop_int(cii, cii.b->thash, p, &colid) {
+		HASHloop_int(&cii, cii.b->thash, p, &colid) {
 			if (BUNfnd(lg->dcatalog, &(oid){(oid)p}) == BUN_NONE) {
 				if (BUNappend(lg->dcatalog, &(oid){(oid)p}, true) != GDK_SUCCEED ||
 					BUNreplace(lg->catalog_lid, (oid) p, &(lng){0}, false) != GDK_SUCCEED) {
@@ -142,7 +142,7 @@ tabins(logger *lg, ...)
 		if (rc == GDK_SUCCEED) {
 			BUN p;
 			MT_rwlock_rdlock(&cni.b->thashlock);
-			HASHloop_int(cni, cni.b->thash, p, &cid) {
+			HASHloop_int(&cni, cni.b->thash, p, &cid) {
 				if (BUNfnd(lg->dcatalog, &(oid){p}) == BUN_NONE) {
 					rc = BUNreplace(lg->catalog_cnt, p, &(lng){BATcount(b)}, false);
 					break;
@@ -283,7 +283,7 @@ bl_postversion(void *Store, logger *lg)
 		BATiter ffi = bat_iterator_nolock(func_func);
 		for (BUN p = 0; p < ci.ncand; p++) {
 			oid o = canditer_next(&ci);
-			const char *f = BUNtvar(ffi, o - func_func->hseqbase);
+			const char *f = BUNtvar(&ffi, o - func_func->hseqbase);
 			const char *e;
 			if (!strNil(f) &&
 				(e = strstr(f, "external")) != NULL &&
@@ -908,7 +908,7 @@ bl_postversion(void *Store, logger *lg)
 		BATiter fni = bat_iterator_nolock(fname);
 		for(BUN b = 0; b < BATcount(ftype); b++) {
 			if (ft[b] == F_AGGR) {
-				const char *f = BUNtvar(fni, b);
+				const char *f = BUNtvar(&fni, b);
 				if (strcmp(f, "group_concat") == 0 || strcmp(f, "listagg") == 0 || strcmp(f, "xmlagg") == 0)
 					os[b] = 1;
 				else if (strcmp(f, "quantile") == 0 || strcmp(f, "quantile_avg") == 0)

@@ -506,7 +506,7 @@ pcre_replace_bat(BAT **res, BAT *origin_strs, const char *pattern,
 	}
 	BATiter origin_strsi = bat_iterator(origin_strs);
 	BATloop(origin_strs, p, q) {
-		origin_str = BUNtvar(origin_strsi, p);
+		origin_str = BUNtvar(&origin_strsi, p);
 		tmpres = single_replace(ta, pcre_code, match_data, origin_str,
 								(PCRE2_SIZE) strlen((char *) origin_str), exec_options,
 								(PCRE2_SPTR) replacement, len_replacement,
@@ -1130,8 +1130,8 @@ BATPCRElike_imp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 			input = *getArgReference_str(stk, pci, 1);
 
 		for (BUN p = 0; p < q; p++) {
-			const char *next_input = b ? BUNtvar(bi, p) : input,
-				*np = BUNtvar(pi, p);
+			const char *next_input = b ? BUNtvar(&bi, p) : input,
+				*np = BUNtvar(&pi, p);
 
 			if ((msg = choose_like_path(&use_re, &use_strcmp, &empty,
 										np, *esc)) != MAL_SUCCEED) {
@@ -1190,7 +1190,7 @@ BATPCRElike_imp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 				goto bailout;
 			}
 			for (BUN p = 0; p < q; p++) {
-				const char *s = BUNtvar(bi, p);
+				const char *s = BUNtvar(&bi, p);
 				ret[p] = mnre_like_proj_apply(s, mnre_simple, pat, isensitive,
 											anti, use_strcmp);
 				has_nil |= is_bit_nil(ret[p]);
@@ -1248,7 +1248,7 @@ BATPCREnotlike(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			for (; p < q; p++) {										\
 				GDK_CHECK_TIMEOUT(qry_ctx, counter,						\
 								  GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx)); \
-				const char *restrict v = BUNtvar(bi, p - off);			\
+				const char *restrict v = BUNtvar(&bi, p - off);			\
 				if ((TEST) || ((KEEP_NULLS) && strNil(v)))				\
 					vals[cnt++] = p;									\
 			}															\
@@ -1257,7 +1257,7 @@ BATPCREnotlike(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				GDK_CHECK_TIMEOUT(qry_ctx, counter,						\
 								  GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx)); \
 				oid o = canditer_next(ci);								\
-				const char *restrict v = BUNtvar(bi, o - off);			\
+				const char *restrict v = BUNtvar(&bi, o - off);			\
 				if ((TEST) || ((KEEP_NULLS) && strNil(v)))				\
 					vals[cnt++] = o;									\
 			}															\
@@ -1770,10 +1770,10 @@ PCREjoin(bat *r1, bat *r2, bat lid, bat rid, bat slid, bat srid, bat elid,
 		goto fail;
 	}
 	bi = bat_iterator(caseignore);
-	ci = *(bit *) BUNtloc(bi, 0);
+	ci = *(bit *) BUNtloc(&bi, 0);
 	bat_iterator_end(&bi);
 	bi = bat_iterator(escape);
-	esc = BUNtvar(bi, 0);
+	esc = BUNtvar(&bi, 0);
 	msg = pcrejoin(result1, result2, left, right, candleft, candright, esc, ci,
 				   anti);
 	bat_iterator_end(&bi);

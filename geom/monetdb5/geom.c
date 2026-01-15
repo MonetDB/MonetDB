@@ -144,7 +144,7 @@ wkbCollectAggrSubGroupedCand(Client ctx, bat *outid, const bat *bid, const bat *
 			oid o = canditer_next(&ci);
 			BUN p = o - b->hseqbase;
 			oid grp = gids ? gids[p] : g ? min + (oid)p : 0;
-			wkb *inWKB = (wkb *)BUNtvar(bi, p);
+			wkb *inWKB = (wkb *)BUNtvar(&bi, p);
 			GEOSGeom inGEOM = wkb2geos(inWKB);
 
 
@@ -241,7 +241,7 @@ wkbCollectAggr(Client ctx, wkb **out, const bat *bid) {
 	BATiter bi = bat_iterator(b);
 	for (BUN i = 0; i < count; i++) {
 		oid p = i + b->hseqbase;
-		wkb *inWKB = (wkb *)BUNtvar(bi, p);
+		wkb *inWKB = (wkb *)BUNtvar(&bi, p);
 		unionGroup[i] = wkb2geos(inWKB);
 		if (srid == -1)
 			srid = GEOSGetSRID_r(geoshandle, unionGroup[i]);
@@ -3385,21 +3385,21 @@ wkbMakeLineAggr(Client ctx, wkb **outWKB, bat *bid)
 	}
 	//iterator over the BATs
 	inBAT_iter = bat_iterator(inBAT);
-	aWKB = (wkb *) BUNtvar(inBAT_iter, 0);
+	aWKB = (wkb *) BUNtvar(&inBAT_iter, 0);
 	if (BATcount(inBAT) == 1) {
 		bat_iterator_end(&inBAT_iter);
 		err = wkbFromWKB(ctx, outWKB, &aWKB);
 		BBPunfix(inBAT->batCacheid);
 		return err;
 	}
-	bWKB = (wkb *) BUNtvar(inBAT_iter, 1);
+	bWKB = (wkb *) BUNtvar(&inBAT_iter, 1);
 	//create the first line using the first two geometries
 	err = wkbMakeLine(ctx, outWKB, &aWKB, &bWKB);
 
 	// add one more segment for each following row
 	for (i = 2; err == MAL_SUCCEED && i < BATcount(inBAT); i++) {
 		aWKB = *outWKB;
-		bWKB = (wkb *) BUNtvar(inBAT_iter, i);
+		bWKB = (wkb *) BUNtvar(&inBAT_iter, i);
 		*outWKB = NULL;
 
 		err = wkbMakeLine(ctx, outWKB, &aWKB, &bWKB);
@@ -3576,7 +3576,7 @@ wkbMakeLineAggrSubGroupedCand(Client ctx, bat *outid, const bat *bid, const bat 
 		oid o = canditer_next(&ci);
 		BUN p = o - b->hseqbase;
 		oid grp = gids ? gids[p] : g ? min + (oid)p : 0;
-		wkb *inWKB = (wkb *)BUNtvar(bi, p);
+		wkb *inWKB = (wkb *)BUNtvar(&bi, p);
 
 		if (grp != lastGrp) {
 			if (lastGrp != (oid)-1) {
@@ -4499,19 +4499,19 @@ wkbUnionAggr(Client ctx, wkb **outWKB, bat *inBAT_id)
 	//iterator over the BATs
 	inBAT_iter = bat_iterator(inBAT);
 
-	aWKB = (wkb *) BUNtvar(inBAT_iter, 0);
+	aWKB = (wkb *) BUNtvar(&inBAT_iter, 0);
 	if (BATcount(inBAT) == 1) {
 		bat_iterator_end(&inBAT_iter);
 		err = wkbFromWKB(ctx, outWKB, &aWKB);
 		BBPunfix(inBAT->batCacheid);
 		return err;
 	}
-	bWKB = (wkb *) BUNtvar(inBAT_iter, 1);
+	bWKB = (wkb *) BUNtvar(&inBAT_iter, 1);
 	//create the first union using the first two geometries
 	err = wkbUnion(ctx, outWKB, &aWKB, &bWKB);
 	for (i = 2; err == MAL_SUCCEED && i < BATcount(inBAT); i++) {
 		aWKB = *outWKB;
-		bWKB = (wkb *) BUNtvar(inBAT_iter, i);
+		bWKB = (wkb *) BUNtvar(&inBAT_iter, i);
 		*outWKB = NULL;
 
 		err = wkbUnion(ctx, outWKB, &aWKB, &bWKB);

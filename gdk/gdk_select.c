@@ -158,7 +158,7 @@ hashselect(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 	dst = (oid *) Tloc(bn, 0);
 	cnt = 0;
 	if (ci->tpe != cand_dense) {
-		HASHloop_bound(*bi, bi->b->thash, i, tl, l, h) {
+		HASHloop_bound(bi, bi->b->thash, i, tl, l, h) {
 			GDK_CHECK_TIMEOUT(qry_ctx, counter,
 					  GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
 			o = (oid) (i + seq - d);
@@ -172,7 +172,7 @@ hashselect(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 			}
 		}
 	} else {
-		HASHloop_bound(*bi, bi->b->thash, i, tl, l, h) {
+		HASHloop_bound(bi, bi->b->thash, i, tl, l, h) {
 			GDK_CHECK_TIMEOUT(qry_ctx, counter,
 					  GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
 			o = (oid) (i + seq - d);
@@ -467,7 +467,7 @@ fullscan_any(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 		if (ci->tpe == cand_dense) {
 			TIMEOUT_LOOP_IDX(p, ncand, qry_ctx) {
 				o = canditer_next_dense(ci);
-				v = BUNtail(*bi, o-hseq);
+				v = BUNtail(bi, o-hseq);
 				if ((*eq)(tl, v)) {
 					dst = buninsfix(bn, dst, cnt, o,
 							(BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
@@ -483,7 +483,7 @@ fullscan_any(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 		} else {
 			TIMEOUT_LOOP_IDX(p, ncand, qry_ctx) {
 				o = canditer_next(ci);
-				v = BUNtail(*bi, o-hseq);
+				v = BUNtail(bi, o-hseq);
 				if ((*eq)(tl, v)) {
 					dst = buninsfix(bn, dst, cnt, o,
 							(BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
@@ -502,7 +502,7 @@ fullscan_any(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 		if (ci->tpe == cand_dense) {
 			TIMEOUT_LOOP_IDX(p, ncand, qry_ctx) {
 				o = canditer_next_dense(ci);
-				v = BUNtail(*bi, o-hseq);
+				v = BUNtail(bi, o-hseq);
 				bool isnil = nil != NULL && (*eq)(v, nil);
 				if ((nil_matches && isnil) ||
 				    (!isnil &&
@@ -526,7 +526,7 @@ fullscan_any(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 		} else {
 			TIMEOUT_LOOP_IDX(p, ncand, qry_ctx) {
 				o = canditer_next(ci);
-				v = BUNtail(*bi, o-hseq);
+				v = BUNtail(bi, o-hseq);
 				bool isnil = nil != NULL && (*eq)(v, nil);
 				if ((nil_matches && isnil) ||
 				    (!isnil &&
@@ -553,7 +553,7 @@ fullscan_any(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 		if (ci->tpe == cand_dense) {
 			TIMEOUT_LOOP_IDX(p, ncand, qry_ctx) {
 				o = canditer_next_dense(ci);
-				v = BUNtail(*bi, o-hseq);
+				v = BUNtail(bi, o-hseq);
 				if ((nil == NULL || !(*eq)(v, nil)) &&
 				    ((!lval ||
 				      (c = cmp(tl, v)) < 0 ||
@@ -575,7 +575,7 @@ fullscan_any(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 		} else {
 			TIMEOUT_LOOP_IDX(p, ncand, qry_ctx) {
 				o = canditer_next(ci);
-				v = BUNtail(*bi, o-hseq);
+				v = BUNtail(bi, o-hseq);
 				if ((nil == NULL || !(*eq)(v, nil)) &&
 				    ((!lval ||
 				      (c = cmp(tl, v)) < 0 ||
@@ -1124,22 +1124,22 @@ BATrange(BATiter *bi, const void *tl, const void *th, bool li, bool hi)
 
 	/* keep locked while we look at the property values */
 	MT_lock_set(&bi->b->theaplock);
-	if (bi->sorted && (bi->nonil || !atomeq(BUNtail(*bi, 0), ATOMnilptr(bi->type))))
-		minval = BUNtail(*bi, 0);
-	else if (bi->revsorted && (bi->nonil || !atomeq(BUNtail(*bi, bi->count - 1), ATOMnilptr(bi->type))))
-		minval = BUNtail(*bi, bi->count - 1);
+	if (bi->sorted && (bi->nonil || !atomeq(BUNtail(bi, 0), ATOMnilptr(bi->type))))
+		minval = BUNtail(bi, 0);
+	else if (bi->revsorted && (bi->nonil || !atomeq(BUNtail(bi, bi->count - 1), ATOMnilptr(bi->type))))
+		minval = BUNtail(bi, bi->count - 1);
 	else if (bi->minpos != BUN_NONE)
-		minval = BUNtail(*bi, bi->minpos);
+		minval = BUNtail(bi, bi->minpos);
 	else if ((minprop = BATgetprop_nolock(bi->b, GDK_MIN_BOUND)) != NULL)
 		minval = VALptr(minprop);
-	if (bi->sorted && (bi->nonil || !atomeq(BUNtail(bi2, bi->count - 1), ATOMnilptr(bi->type)))) {
-		maxval = BUNtail(bi2, bi->count - 1);
+	if (bi->sorted && (bi->nonil || !atomeq(BUNtail(&bi2, bi->count - 1), ATOMnilptr(bi->type)))) {
+		maxval = BUNtail(&bi2, bi->count - 1);
 		maxincl = true;
-	} else if (bi->revsorted && (bi->nonil || !atomeq(BUNtail(bi2, 0), ATOMnilptr(bi->type)))) {
-		maxval = BUNtail(bi2, 0);
+	} else if (bi->revsorted && (bi->nonil || !atomeq(BUNtail(&bi2, 0), ATOMnilptr(bi->type)))) {
+		maxval = BUNtail(&bi2, 0);
 		maxincl = true;
 	} else if (bi->maxpos != BUN_NONE) {
-		maxval = BUNtail(bi2, bi->maxpos);
+		maxval = BUNtail(&bi2, bi->maxpos);
 		maxincl = true;
 	} else if ((maxprop = BATgetprop_nolock(bi->b, GDK_MAX_BOUND)) != NULL) {
 		maxval = VALptr(maxprop);

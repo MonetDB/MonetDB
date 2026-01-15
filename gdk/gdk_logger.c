@@ -128,7 +128,7 @@ log_find(BAT *b, BAT *d, int val)
 	BATiter bi = bat_iterator(b);
 	if (BAThash(b) == GDK_SUCCEED) {
 		MT_rwlock_rdlock(&b->thashlock);
-		HASHloop_int(bi, b->thash, p, &val) {
+		HASHloop_int(&bi, b->thash, p, &val) {
 			oid pos = p;
 			if (BUNfnd(d, &pos) == BUN_NONE) {
 				MT_rwlock_rdunlock(&b->thashlock);
@@ -163,7 +163,7 @@ internal_find_bat(logger *lg, log_id id, int tid)
 		BATiter cni = bat_iterator(lg->catalog_id);
 		MT_rwlock_rdlock(&cni.b->thashlock);
 		if (tid < 0) {
-			HASHloop_int(cni, cni.b->thash, p, &id) {
+			HASHloop_int(&cni, cni.b->thash, p, &id) {
 				oid pos = p;
 				if (BUNfnd(lg->dcatalog, &pos) == BUN_NONE) {
 					MT_rwlock_rdunlock(&cni.b->thashlock);
@@ -173,7 +173,7 @@ internal_find_bat(logger *lg, log_id id, int tid)
 			}
 		} else {
 			BUN cp = BUN_NONE;
-			HASHloop_int(cni, cni.b->thash, p, &id) {
+			HASHloop_int(&cni, cni.b->thash, p, &id) {
 				lng lid = *(lng *) Tloc(lg->catalog_lid, p);
 				if (lid != lng_nil && lid <= tid) {
 					break;
@@ -811,7 +811,7 @@ la_bat_update_count(logger *lg, log_id id, lng cnt, int tid)
 		MT_rwlock_rdlock(&cni.b->thashlock);
 		BUN p, cp = BUN_NONE;
 
-		HASHloop_int(cni, cni.b->thash, p, &id) {
+		HASHloop_int(&cni, cni.b->thash, p, &id) {
 			lng lid = *(lng *) Tloc(lg->catalog_lid, p);
 
 			if (lid != lng_nil && lid <= tid)
@@ -880,7 +880,7 @@ la_bat_updates(logger *lg, logaction *la, int tid)
 				BUN p, q;
 
 				for (p = 0, q = (BUN) la->offset; p < (BUN) la->nr; p++, q++) {
-					const void *t = BUNtail(vi, p);
+					const void *t = BUNtail(&vi, p);
 
 					if (q < cnt) {
 						if (b->tnosorted == q ||
@@ -1465,7 +1465,7 @@ log_read_transaction(logger *lg, BAT *ids_to_omit, uint32_t *updated, BUN maxupd
 				BUN posnew = BUN_NONE;
 				BUN posold = BUN_NONE;
 				MT_rwlock_rdlock(&cni.b->thashlock);
-				HASHloop_int(cni, cni.b->thash, p, &l.id) {
+				HASHloop_int(&cni, cni.b->thash, p, &l.id) {
 					lng lid = *(lng *) Tloc(lg->catalog_lid, p);
 					if (lid == lng_nil || lid > tr->tid)
 						posnew = p;
@@ -3197,7 +3197,7 @@ string_writer(logger *lg, BAT *b, lng offset, lng nr)
 		}
 		char *dst = buf;
 		for (; p < end && sz < bufsz; p++) {
-			const char *s = BUNtvar(bi, p);
+			const char *s = BUNtvar(&bi, p);
 			size_t len = strlen(s) + 1;
 			if ((sz + len) > bufsz) {
 				if (len > bufsz)
@@ -3292,7 +3292,7 @@ internal_log_bat(logger *lg, BAT *b, log_id id, lng offset, lng cnt, int sliced,
 			}
 		}
 	} else if (b->ttype < TYPE_str && bi.h->parentid == b->batCacheid) {
-		const void *t = BUNtail(bi, (BUN) offset);
+		const void *t = BUNtail(&bi, (BUN) offset);
 
 		ok = wt(t, lg->current->output_log, (size_t) nr);
 	} else if (b->ttype == TYPE_str) {
@@ -3301,7 +3301,7 @@ internal_log_bat(logger *lg, BAT *b, log_id id, lng offset, lng cnt, int sliced,
 	} else {
 		BUN end = (BUN) (offset + nr);
 		for (p = (BUN) offset; p < end && ok == GDK_SUCCEED; p++) {
-			const void *t = BUNtail(bi, p);
+			const void *t = BUNtail(&bi, p);
 
 			ok = wt(t, lg->current->output_log, 1);
 		}
@@ -3502,7 +3502,7 @@ log_delta(logger *lg, BAT *uid, BAT *uval, log_id id)
 					 (BATcount(uval) + 31) / 32))
 			ok = GDK_FAIL;
 	} else if (uval->ttype < TYPE_str && !isVIEW(uval)) {
-		const void *t = BUNtail(vi, 0);
+		const void *t = BUNtail(&vi, 0);
 
 		ok = wt(t, lg->current->output_log, (size_t) nr);
 	} else if (uval->ttype == TYPE_str) {
@@ -3510,7 +3510,7 @@ log_delta(logger *lg, BAT *uid, BAT *uval, log_id id)
 		ok = string_writer(lg, uval, 0, nr);
 	} else {
 		for (p = 0; p < BATcount(uid) && ok == GDK_SUCCEED; p++) {
-			const void *val = BUNtail(vi, p);
+			const void *val = BUNtail(&vi, p);
 
 			ok = wt(val, lg->current->output_log, 1);
 		}

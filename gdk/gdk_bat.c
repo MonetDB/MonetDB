@@ -466,7 +466,7 @@ BATclear(BAT *b, bool force)
 			BATiter bi = bat_iterator_nolock(b);
 
 			for (p = b->batInserted, q = BATcount(b); p < q; p++)
-				(*tatmdel)(b->tvheap, (var_t*) BUNtloc(bi,p));
+				(*tatmdel)(b->tvheap, (var_t*) BUNtloc(&bi,p));
 			b->tvheap->dirty = true;
 		}
 	}
@@ -786,7 +786,7 @@ COLcopy2(BAT *b, int tt, bool writable, bool mayshare, role_t role)
 		QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 
 		TIMEOUT_LOOP_IDX_DECL(p, bi.count, qry_ctx) {
-			const void *t = BUNtail(bi, p);
+			const void *t = BUNtail(&bi, p);
 
 			if (bunfastapp_nocheck(bn, t) != GDK_SUCCEED) {
 				goto bunins_failed;
@@ -997,9 +997,9 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 		const void *minvalp = NULL, *maxvalp = NULL;
 		if (b->tvheap) {
 			if (bi.minpos != BUN_NONE)
-				minvalp = BUNtvar(bi, bi.minpos);
+				minvalp = BUNtvar(&bi, bi.minpos);
 			if (bi.maxpos != BUN_NONE)
-				maxvalp = BUNtvar(bi, bi.maxpos);
+				maxvalp = BUNtvar(&bi, bi.maxpos);
 			const void *vbase = b->tvheap->base;
 			for (BUN i = 0; i < count; i++) {
 				t = ((void **) values)[i];
@@ -1047,9 +1047,9 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 					bi.maxpos = maxpos;
 					vbase = b->tvheap->base;
 					if (bi.minpos != BUN_NONE)
-						minvalp = BUNtvar(bi, bi.minpos);
+						minvalp = BUNtvar(&bi, bi.minpos);
 					if (bi.maxpos != BUN_NONE)
-						maxvalp = BUNtvar(bi, bi.maxpos);
+						maxvalp = BUNtvar(&bi, bi.maxpos);
 				}
 				if (!isnil) {
 					if (p == 0) {
@@ -1096,9 +1096,9 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 			}
 		} else {
 			if (bi.minpos != BUN_NONE)
-				minvalp = BUNtloc(bi, bi.minpos);
+				minvalp = BUNtloc(&bi, bi.minpos);
 			if (bi.maxpos != BUN_NONE)
-				maxvalp = BUNtloc(bi, bi.maxpos);
+				maxvalp = BUNtloc(&bi, bi.maxpos);
 			for (BUN i = 0; i < count; i++) {
 				t = (void *) ((char *) values + (i << b->tshift));
 				gdk_return rc = tfastins_nocheckFIX(b, p, t);
@@ -1274,7 +1274,7 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 			else
 				t = values;
 		}
-		int c = ATOMcmp(b->ttype, BUNtail(bi, 0), t);
+		int c = ATOMcmp(b->ttype, BUNtail(&bi, 0), t);
 		b->tsorted = c <= 0;
 		b->tnosorted = !b->tsorted;
 		b->trevsorted = c >= 0;
@@ -1338,8 +1338,8 @@ BUNdelete(BAT *b, oid o)
 	/* load hash so that we can maintain it */
 	(void) BATcheckhash(b);
 
-	BUN nunique = HASHdelete(&bi, p, BUNtail(bi, p));
-	ATOMdel(b->ttype, b->tvheap, (var_t *) BUNtloc(bi, p));
+	BUN nunique = HASHdelete(&bi, p, BUNtail(&bi, p));
+	ATOMdel(b->ttype, b->tvheap, (var_t *) BUNtloc(&bi, p));
 	bat_iterator_end(&bi);
 
 	MT_lock_set(&b->theaplock);
@@ -1456,17 +1456,17 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 		 * logger, we need to deal with offsets that point
 		 * outside of the valid vheap */
 		if (b->ttype == TYPE_void) {
-			val = BUNtpos(bi, p);
+			val = BUNtpos(&bi, p);
 		} else if (bi.type == TYPE_msk) {
-			val = BUNtmsk(bi, p);
+			val = BUNtmsk(&bi, p);
 		} else if (b->tvheap) {
-			size_t off = BUNtvaroff(bi, p);
+			size_t off = VarHeapVal(bi.base, p, bi.width);
 			if (off < bi.vhfree)
 				val = bi.vh->base + off;
 			else
 				val = NULL; /* bad offset */
 		} else {
-			val = BUNtloc(bi, p);
+			val = BUNtloc(&bi, p);
 		}
 
 		if (val) {
@@ -1485,12 +1485,12 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 			}
 			if (b->ttype != TYPE_void) {
 				if (bi.maxpos != BUN_NONE) {
-					if (!isnil && atomcmp(BUNtail(bi, bi.maxpos), t) < 0) {
+					if (!isnil && atomcmp(BUNtail(&bi, bi.maxpos), t) < 0) {
 						/* new value is larger
 						 * than previous
 						 * largest */
 						bi.maxpos = p;
-					} else if (bi.maxpos == p && !atomeq(BUNtail(bi, bi.maxpos), t)) {
+					} else if (bi.maxpos == p && !atomeq(BUNtail(&bi, bi.maxpos), t)) {
 						/* old value is equal to
 						 * largest and new value
 						 * is smaller or nil (see
@@ -1501,12 +1501,12 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 					}
 				}
 				if (bi.minpos != BUN_NONE) {
-					if (!isnil && atomcmp(BUNtail(bi, bi.minpos), t) > 0) {
+					if (!isnil && atomcmp(BUNtail(&bi, bi.minpos), t) > 0) {
 						/* new value is smaller
 						 * than previous
 						 * smallest */
 						bi.minpos = p;
-					} else if (bi.minpos == p && !atomeq(BUNtail(bi, bi.minpos), t)) {
+					} else if (bi.minpos == p && !atomeq(BUNtail(&bi, bi.minpos), t)) {
 						/* old value is equal to
 						 * smallest and new value
 						 * is larger or nil (see
@@ -1540,7 +1540,7 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 		if (b->tvheap && b->ttype) {
 			var_t _d;
 			ptr _ptr;
-			_ptr = BUNtloc(bi, p);
+			_ptr = BUNtloc(&bi, p);
 			switch (b->twidth) {
 			case 1:
 				_d = (var_t) * (uint8_t *) _ptr + GDK_VAROFFSET;
@@ -1583,7 +1583,7 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 				bi.minpos = minpos;
 				bi.maxpos = maxpos;
 			}
-			_ptr = BUNtloc(bi, p);
+			_ptr = BUNtloc(&bi, p);
 			switch (b->twidth) {
 			case 1:
 				* (uint8_t *) _ptr = (uint8_t) (_d - GDK_VAROFFSET);
@@ -1629,7 +1629,7 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 #endif
 				break;
 			default:
-				memcpy(BUNtloc(bi, p), t, ATOMsize(b->ttype));
+				memcpy(BUNtloc(&bi, p), t, ATOMsize(b->ttype));
 				break;
 			}
 		}
@@ -1642,19 +1642,19 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 		MT_lock_set(&b->theaplock);
 		if (b->tsorted) {
 			if (prv != BUN_NONE &&
-			    atomcmp(t, BUNtail(bi, prv)) < 0) {
+			    atomcmp(t, BUNtail(&bi, prv)) < 0) {
 				b->tsorted = false;
 				b->tnosorted = p;
 			} else if (nxt != BUN_NONE &&
-				   atomcmp(t, BUNtail(bi, nxt)) > 0) {
+				   atomcmp(t, BUNtail(&bi, nxt)) > 0) {
 				b->tsorted = false;
 				b->tnosorted = nxt;
 			} else if (b->ttype != TYPE_void && BATtdense(b)) {
 				if (prv != BUN_NONE &&
-				    1 + * (oid *) BUNtloc(bi, prv) != * (oid *) t) {
+				    1 + * (oid *) BUNtloc(&bi, prv) != * (oid *) t) {
 					b->tseqbase = oid_nil;
 				} else if (nxt != BUN_NONE &&
-					   * (oid *) BUNtloc(bi, nxt) != 1 + * (oid *) t) {
+					   * (oid *) BUNtloc(&bi, nxt) != 1 + * (oid *) t) {
 					b->tseqbase = oid_nil;
 				} else if (prv == BUN_NONE &&
 					   nxt == BUN_NONE) {
@@ -1665,11 +1665,11 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 			b->tnosorted = 0;
 		if (b->trevsorted) {
 			if (prv != BUN_NONE &&
-			    atomcmp(t, BUNtail(bi, prv)) > 0) {
+			    atomcmp(t, BUNtail(&bi, prv)) > 0) {
 				b->trevsorted = false;
 				b->tnorevsorted = p;
 			} else if (nxt != BUN_NONE &&
-				   atomcmp(t, BUNtail(bi, nxt)) < 0) {
+				   atomcmp(t, BUNtail(&bi, nxt)) < 0) {
 				b->trevsorted = false;
 				b->tnorevsorted = nxt;
 			}
@@ -1774,7 +1774,7 @@ slowfnd(BAT *b, const void *v)
 	bool (*atomeq)(const void *, const void *) = ATOMequal(bi.type);
 
 	BATloop(b, p, q) {
-		if ((*atomeq)(v, BUNtail(bi, p))) {
+		if ((*atomeq)(v, BUNtail(&bi, p))) {
 			bat_iterator_end(&bi);
 			return p;
 		}
@@ -1841,53 +1841,53 @@ BUNfnd(BAT *b, const void *v)
 		}
 		switch (ATOMbasetype(bi.type)) {
 		case TYPE_bte:
-			HASHloop_bte(bi, b->thash, r, v)
+			HASHloop_bte(&bi, b->thash, r, v)
 				break;
 			break;
 		case TYPE_sht:
-			HASHloop_sht(bi, b->thash, r, v)
+			HASHloop_sht(&bi, b->thash, r, v)
 				break;
 			break;
 		case TYPE_int:
-			HASHloop_int(bi, b->thash, r, v)
+			HASHloop_int(&bi, b->thash, r, v)
 				break;
 			break;
 		case TYPE_flt:
-			HASHloop_flt(bi, b->thash, r, v)
+			HASHloop_flt(&bi, b->thash, r, v)
 				break;
 			break;
 		case TYPE_dbl:
-			HASHloop_dbl(bi, b->thash, r, v)
+			HASHloop_dbl(&bi, b->thash, r, v)
 				break;
 			break;
 		case TYPE_lng:
-			HASHloop_lng(bi, b->thash, r, v)
+			HASHloop_lng(&bi, b->thash, r, v)
 				break;
 			break;
 #ifdef HAVE_HGE
 		case TYPE_hge:
-			HASHloop_hge(bi, b->thash, r, v)
+			HASHloop_hge(&bi, b->thash, r, v)
 				break;
 			break;
 #endif
 		case TYPE_uuid:
-			HASHloop_uuid(bi, b->thash, r, v)
+			HASHloop_uuid(&bi, b->thash, r, v)
 				break;
 			break;
 		case TYPE_inet4:
-			HASHloop_inet4(bi, b->thash, r, v)
+			HASHloop_inet4(&bi, b->thash, r, v)
 				break;
 			break;
 		case TYPE_inet6:
-			HASHloop_inet6(bi, b->thash, r, v)
+			HASHloop_inet6(&bi, b->thash, r, v)
 				break;
 			break;
 		case TYPE_str:
-			HASHloop_str(bi, b->thash, r, v)
+			HASHloop_str(&bi, b->thash, r, v)
 				break;
 			break;
 		default:
-			HASHloop(bi, b->thash, r, v)
+			HASHloop(&bi, b->thash, r, v)
 				break;
 			break;
 		}
@@ -2719,8 +2719,8 @@ BATassertProps(BAT *b)
 		    !b->tsorted &&
 		    b->tnosorted > 0 &&
 		    b->tnosorted < b->batCount)
-			assert(cmpf(BUNtail(bi, b->tnosorted - 1),
-				    BUNtail(bi, b->tnosorted)) > 0);
+			assert(cmpf(BUNtail(&bi, b->tnosorted - 1),
+				    BUNtail(&bi, b->tnosorted)) > 0);
 		assert(b->tnorevsorted == 0 ||
 		       (b->tnorevsorted > 0 &&
 			b->tnorevsorted < b->batCount));
@@ -2730,8 +2730,8 @@ BATassertProps(BAT *b)
 		    !b->trevsorted &&
 		    b->tnorevsorted > 0 &&
 		    b->tnorevsorted < b->batCount)
-			assert(cmpf(BUNtail(bi, b->tnorevsorted - 1),
-				    BUNtail(bi, b->tnorevsorted)) < 0);
+			assert(cmpf(BUNtail(&bi, b->tnorevsorted - 1),
+				    BUNtail(&bi, b->tnorevsorted)) < 0);
 	}
 	/* if tkey property set, both tnokey values must be 0 */
 	assert(!b->tkey || (b->tnokey[0] == 0 && b->tnokey[1] == 0));
@@ -2745,8 +2745,8 @@ BATassertProps(BAT *b)
 		assert(b->tnokey[0] != b->tnokey[1]);
 		assert(b->tnokey[0] < b->batCount);
 		assert(b->tnokey[1] < b->batCount);
-		assert(eqf(BUNtail(bi, b->tnokey[0]),
-			   BUNtail(bi, b->tnokey[1])));
+		assert(eqf(BUNtail(&bi, b->tnokey[0]),
+			   BUNtail(&bi, b->tnokey[1])));
 	}
 	/* var heaps must have sane sizes */
 	assert(b->tvheap == NULL || b->tvheap->free <= b->tvheap->size);
@@ -2775,12 +2775,12 @@ BATassertProps(BAT *b)
 			minbound = VALptr(prop);
 		if (b->tmaxpos != BUN_NONE) {
 			assert(b->tmaxpos < BATcount(b));
-			maxval = BUNtail(bi, b->tmaxpos);
+			maxval = BUNtail(&bi, b->tmaxpos);
 			assert(!eqf(maxval, nilp));
 		}
 		if (b->tminpos != BUN_NONE) {
 			assert(b->tminpos < BATcount(b));
-			minval = BUNtail(bi, b->tminpos);
+			minval = BUNtail(&bi, b->tminpos);
 			assert(!eqf(minval, nilp));
 		}
 		if (ATOMstorage(b->ttype) == TYPE_msk) {
@@ -2794,7 +2794,7 @@ BATassertProps(BAT *b)
 			bool cmpprv = b->tsorted | b->trevsorted | b->tkey;
 
 			BATloop(b, p, q) {
-				valp = BUNtail(bi, p);
+				valp = BUNtail(&bi, p);
 				bool isnil = eqf(valp, nilp);
 				assert(!isnil || !notnull);
 				assert(!b->tnonil || !isnil);
@@ -2877,7 +2877,7 @@ BATassertProps(BAT *b)
 			BATloop(b, p, q) {
 				BUN hb;
 				BUN prb;
-				valp = BUNtail(bi, p);
+				valp = BUNtail(&bi, p);
 				bool isnil = eqf(valp, nilp);
 				assert(!isnil || !notnull);
 				assert(b->ttype != TYPE_flt || !isinf(*(flt*)valp));
@@ -2906,7 +2906,7 @@ BATassertProps(BAT *b)
 				for (hb = HASHget(hs, prb);
 				     hb != BUN_NONE;
 				     hb = HASHgetlink(hs, hb))
-					if (eqf(valp, BUNtail(bi, hb)))
+					if (eqf(valp, BUNtail(&bi, hb)))
 						assert(!b->tkey);
 				HASHputlink(hs, p, HASHget(hs, prb));
 				HASHput(hs, prb, p);

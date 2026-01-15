@@ -2122,7 +2122,7 @@ strbat_reverse(BAT *b)
 
 	bi = bat_iterator(b);
 	BATloop(b, p, q) {
-		src = (const char *) BUNtail(bi, p);
+		src = (const char *) BUNtail(&bi, p);
 		len = strlen(src);
 		if (len >= dstlen) {
 			char *ndst;
@@ -2641,7 +2641,7 @@ ignorecase(const bat IC, bool *icase, const str fname)
 	BATiter bi = bat_iterator(b);
 
 	if (bi.b != NULL && bi.count == 1)
-		*icase = *(bit *) BUNtloc(bi, 0);
+		*icase = *(bit *) BUNtloc(&bi, 0);
 	else if (bi.count != 1)
 		msg = createException(MAL, fname, SQLSTATE(HY009) "Invalid case ignore. Single value expected");
 	else

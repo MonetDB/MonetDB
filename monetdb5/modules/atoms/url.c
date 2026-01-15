@@ -950,7 +950,7 @@ BATextractURLHost(Client ctx, bat *res, const bat *bid, const bit *no_www)
 
 	BATiter bi = bat_iterator(b);
 	BATloop(b, p, q) {
-		const char *url = (const char *) BUNtvar(bi, p);
+		const char *url = (const char *) BUNtvar(&bi, p);
 		if (strNil(url)) {
 			if (bunfastapp_nocheckVAR(bn, str_nil) != GDK_SUCCEED) {
 				msg = createException(MAL, "baturl.extractURLHost",

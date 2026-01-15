@@ -217,7 +217,7 @@ PyArrayObject_FromBAT(allocator *ma, Client ctx, PyInput *inp, size_t t_start, s
 		data = PyArray_DATA((PyArrayObject *)vararray);
 		BATloop(b, p, q)
 		{
-			const blob *t = (const blob *)BUNtvar(li, p);
+			const blob *t = (const blob *)BUNtvar(&li, p);
 			if (t->nitems == ~(size_t)0) {
 				data[p] = Py_None;
 				Py_INCREF(Py_None);
@@ -274,7 +274,7 @@ PyArrayObject_FromBAT(allocator *ma, Client ctx, PyInput *inp, size_t t_start, s
 					j = 0;
 					BATloop(b, p, q)
 					{
-						date dt = *(const date*)BUNtail(li, p);
+						date dt = *(const date*)BUNtail(&li, p);
 						if (is_date_nil(dt))
 							dt = date_create(1, 1, 1);
 						data[j++] = PyDate_FromDate(date_year(dt), date_month(dt), date_day(dt));
@@ -294,7 +294,7 @@ PyArrayObject_FromBAT(allocator *ma, Client ctx, PyInput *inp, size_t t_start, s
 					j = 0;
 					BATloop(b, p, q)
 					{
-						daytime dt = *(const daytime*)BUNtail(li, p);
+						daytime dt = *(const daytime*)BUNtail(&li, p);
 						if (is_daytime_nil(dt))
 							dt = daytime_create(0, 0, 0, 0);
 						data[j++] = PyTime_FromTime(daytime_hour(dt),
@@ -317,7 +317,7 @@ PyArrayObject_FromBAT(allocator *ma, Client ctx, PyInput *inp, size_t t_start, s
 					j = 0;
 					BATloop(b, p, q)
 					{
-						const timestamp ts = *(const timestamp*)BUNtail(li, p);
+						const timestamp ts = *(const timestamp*)BUNtail(&li, p);
 						const date dt = is_timestamp_nil(ts) ? date_create(1, 1, 1) : timestamp_date(ts);
 						const daytime dtm = is_timestamp_nil(ts) ? daytime_create(0, 0, 0, 0) : timestamp_daytime(ts);
 
@@ -337,7 +337,7 @@ PyArrayObject_FromBAT(allocator *ma, Client ctx, PyInput *inp, size_t t_start, s
 
 				BATloop(b, p, q)
 				{
-					const char *t = (const char *)BUNtvar(li, p);
+					const char *t = (const char *)BUNtvar(&li, p);
 					for (; *t != 0; t++) {
 						if (*t & 0x80) {
 							unicode = true;
@@ -365,7 +365,7 @@ PyArrayObject_FromBAT(allocator *ma, Client ctx, PyInput *inp, size_t t_start, s
 							}
 							BATloop(b, p, q)
 							{
-								const char *t = (const char *)BUNtvar(li, p);
+								const char *t = (const char *)BUNtvar(&li, p);
 								ptrdiff_t offset = t - b->tvheap->base;
 								if (!pyptrs[offset]) {
 									if (strNil(t)) {
@@ -394,7 +394,7 @@ PyArrayObject_FromBAT(allocator *ma, Client ctx, PyInput *inp, size_t t_start, s
 						} else {
 							BATloop(b, p, q)
 							{
-								const char *t = (const char *)BUNtvar(li, p);
+								const char *t = (const char *)BUNtvar(&li, p);
 								if (strNil(t)) {
 									// str_nil isn't a valid UTF-8 character
 									// (it's 0x80), so we can't decode it as
@@ -430,7 +430,7 @@ PyArrayObject_FromBAT(allocator *ma, Client ctx, PyInput *inp, size_t t_start, s
 							}
 							BATloop(b, p, q)
 							{
-								const char *t = (const char *)BUNtvar(li, p);
+								const char *t = (const char *)BUNtvar(&li, p);
 								ptrdiff_t offset = t - b->tvheap->base;
 								if (!pyptrs[offset]) {
 									pyptrs[offset] = PyUnicode_FromString(t);
@@ -443,7 +443,7 @@ PyArrayObject_FromBAT(allocator *ma, Client ctx, PyInput *inp, size_t t_start, s
 						} else {
 							BATloop(b, p, q)
 							{
-								const char *t = (const char *)BUNtvar(li, p);
+								const char *t = (const char *)BUNtvar(&li, p);
 								obj = PyUnicode_FromString(t);
 								if (obj == NULL) {
 									bat_iterator_end(&li);
@@ -559,7 +559,7 @@ PyNullMask_FromBAT(BAT *b, size_t t_start, size_t t_end)
 		default: {
 			bool (*atomeq)(const void *, const void *) = ATOMequal(b->ttype);
 			for (j = 0; j < count; j++) {
-				mask_data[j] = (*atomeq)(BUNtail(bi, (BUN)(j)), nil);
+				mask_data[j] = (*atomeq)(BUNtail(&bi, (BUN)(j)), nil);
 				found_nil |= mask_data[j];
 			}
 		}
@@ -1206,7 +1206,7 @@ ConvertFromSQLType(allocator *ma, Client ctx, BAT *b, sql_subtype *sql_subtype, 
 		BATiter li = bat_iterator(b);
 		BATloop(b, p, q)
 		{
-			const void *element = (const void*)BUNtail(li, p);
+			const void *element = (const void*)BUNtail(&li, p);
 			if (strConversion(ma, &result, &length, element, false) < 0) {
 				bat_iterator_end(&li);
 				BBPunfix((*ret_bat)->batCacheid);

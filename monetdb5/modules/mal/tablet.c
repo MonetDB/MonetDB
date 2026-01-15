@@ -239,7 +239,7 @@ output_line(allocator *ma, char **buf, size_t *len, char **localbuf, size_t *loc
 			ssize_t l;
 
 			if (f->c) {
-				p = BUNtail(f->ci, f->p);
+				p = BUNtail(&f->ci, f->p);
 
 				if (!p || ATOMeq(f->adt, ATOMnilptr(f->adt), p)) {
 					p = f->nullstr;
@@ -284,7 +284,7 @@ output_line_dense(allocator *ma, char **buf, size_t *len, char **localbuf, size_
 		ssize_t l;
 
 		if (f->c) {
-			p = BUNtail(f->ci, f->p);
+			p = BUNtail(&f->ci, f->p);
 
 			if (!p || ATOMeq(f->adt, ATOMnilptr(f->adt), p)) {
 				p = f->nullstr;
@@ -326,7 +326,7 @@ output_line_lookup(allocator *ma, char **buf, size_t *len, Column *fmt, stream *
 		Column *f = fmt + i;
 
 		if (f->c) {
-			const void *p = BUNtail(f->ci, id - f->c->hseqbase);
+			const void *p = BUNtail(&f->ci, id - f->c->hseqbase);
 
 			if (!p || ATOMeq(f->adt, ATOMnilptr(f->adt), p)) {
 				size_t l = strlen(f->nullstr);
@@ -1819,7 +1819,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out,
 			TYPE *src, *dst;											\
 			leftover= BATcount(task.as->format[attr].c);				\
 			limit = leftover - cntstart;								\
-			dst =src= (TYPE *) BUNtloc(task.as->format[attr].ci,cntstart); \
+			dst =src= (TYPE *) BUNtloc(&task.as->format[attr].ci,cntstart); \
 			for(j = 0; j < (int) limit; j++, src++){					\
 				if ( task.rowerror[j]){									\
 					leftover--;											\
@@ -1865,7 +1865,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out,
 					char *src, *dst;
 					leftover = BATcount(task.as->format[attr].c);
 					limit = leftover - cntstart;
-					dst = src = BUNtloc(task.as->format[attr].ci, cntstart);
+					dst = src = BUNtloc(&task.as->format[attr].ci, cntstart);
 					for (j = 0; j < (int) limit; j++, src += width) {
 						if (task.rowerror[j]) {
 							leftover--;

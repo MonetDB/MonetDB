@@ -133,7 +133,7 @@ GDKgetenv(const char *name)
 
 		if (b != BUN_NONE) {
 			BATiter GDKenvi = bat_iterator(GDKval);
-			const char *v = BUNtvar(GDKenvi, b);
+			const char *v = BUNtvar(&GDKenvi, b);
 			bat_iterator_end(&GDKenvi);
 			return v;
 		}

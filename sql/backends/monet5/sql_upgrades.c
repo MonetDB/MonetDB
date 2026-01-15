@@ -198,7 +198,7 @@ check_sys_tables(Client c, mvc *m, sql_schema *s)
 			throw(SQL, "sql.catalog", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		if (BATcount(b) > 0) {
 			BATiter bi = bat_iterator(b);
-			needsystabfix = * (int *) BUNtloc(bi, 0) != id;
+			needsystabfix = * (int *) BUNtloc(&bi, 0) != id;
 			bat_iterator_end(&bi);
 		}
 		BBPunfix(b->batCacheid);
@@ -1709,8 +1709,8 @@ sql_update_sep2022(Client c, mvc *sql, sql_schema *s)
 		BATiter pi = bat_iterator(p);
 		for (oid i = 0; i < ui.count; i++) {
 			if (BUNfnd(d, &i) == BUN_NONE) {
-				const char *user = BUNtvar(ui, i);
-				const char *pass = BUNtvar(pi, i);
+				const char *user = BUNtvar(&ui, i);
+				const char *pass = BUNtvar(&pi, i);
 				if (pos + 4 * (strlen(user) + strlen(pass)) + 64 >= bufsize) {
 					char *nbuf = GDKrealloc(buf, bufsize + 65536);
 					if (nbuf == NULL) {
@@ -2783,9 +2783,9 @@ sql_update_jun2023(Client c, mvc *sql, sql_schema *s)
 		BATiter ip = bat_iterator(rt_pwhash);
 		for (oid p = 0; p < ik.count; p++) {
 			if (BUNfnd(rt_deleted, &p) == BUN_NONE) {
-				char *key = GDKstrdup(BUNtvar(ik, p));
-				char *username = BUNtvar(iu, p);
-				char *pwhash = BUNtvar(ip, p);
+				char *key = GDKstrdup(BUNtvar(&ik, p));
+				char *username = BUNtvar(&iu, p);
+				char *pwhash = BUNtvar(&ip, p);
 
 				if (!key) {
 					bat_iterator_end(&ik);

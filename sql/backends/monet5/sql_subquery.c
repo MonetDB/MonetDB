@@ -30,7 +30,7 @@ zero_or_one_error(Client ctx, ptr ret, const bat *bid, const bit *err)
 		p = ATOMnilptr(b->ttype);
 	} else if (c == 1 || (c > 1 && *err == false)) {
 		bi = bat_iterator(b);
-		p = BUNtail(bi, 0);
+		p = BUNtail(&bi, 0);
 	} else {
 		BBPunfix(b->batCacheid);
 		throw(SQL, "sql.zero_or_one", SQLSTATE(21000) "Cardinality violation, scalar value expected");
@@ -184,15 +184,15 @@ SQLall(Client ctx, ptr ret, const bat *bid)
 
 			if (c > 0) {
 				if (c == 1 || (bi.sorted && bi.revsorted)) {
-					p = BUNtail(bi, 0);
+					p = BUNtail(&bi, 0);
 				} else {
 					for (; q < c; q++) { /* find first non nil */
-						p = BUNtail(bi, q);
+						p = BUNtail(&bi, q);
 						if (!oeq(n, p))
 							break;
 					}
 					for (; q < c; q++) {
-						const void *pp = BUNtail(bi, q);
+						const void *pp = BUNtail(&bi, q);
 						if (!oeq(p, pp) && !oeq(n, pp)) { /* values != and not nil */
 							p = n;
 							break;
@@ -315,7 +315,7 @@ SQLnil(Client ctx, bit *ret, const bat *bid)
 			const void *restrict nilp = ATOMnilptr(bi.type);
 
 			for (BUN q = 0; q < o; q++) {
-				const void *restrict c = BUNtail(bi, q);
+				const void *restrict c = BUNtail(&bi, q);
 				if (oeq(nilp, c)) {
 					*ret = TRUE;
 					break;
@@ -680,7 +680,7 @@ SQLanyequal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			const void *nilp = ATOMnilptr(li.type);
 
 			for (BUN q = 0; q < o; q++) {
-				const void *c = BUNtail(ri, q), *d = BUNtail(li, q);
+				const void *c = BUNtail(&ri, q), *d = BUNtail(&li, q);
 				res_l[q] = oeq(nilp, c) || oeq(nilp, d) ? bit_nil : oeq(c, d);
 			}
 		}
@@ -724,10 +724,10 @@ SQLanyequal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			default: {
 				bool (*oeq) (const void *, const void *) = ATOMequal(li.type);
 				const void *nilp = ATOMnilptr(li.type);
-				const void *p = BUNtail(li, 0);
+				const void *p = BUNtail(&li, 0);
 
 				for (BUN q = 0; q < o; q++) {
-					const void *c = BUNtail(ri, q);
+					const void *c = BUNtail(&ri, q);
 					if (oeq(nilp, c))
 						*ret = bit_nil;
 					else if (oeq(p, c)) {
@@ -927,7 +927,7 @@ SQLallnotequal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			const void *nilp = ATOMnilptr(li.type);
 
 			for (BUN q = 0; q < o; q++) {
-				const void *c = BUNtail(ri, q), *d = BUNtail(li, q);
+				const void *c = BUNtail(&ri, q), *d = BUNtail(&li, q);
 				res_l[q] = oeq(nilp, c) || oeq(nilp, d) ? bit_nil : !oeq(c, d);
 			}
 		}
@@ -971,10 +971,10 @@ SQLallnotequal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			default: {
 				bool (*oeq) (const void *, const void *) = ATOMequal(li.type);
 				const void *nilp = ATOMnilptr(li.type);
-				const void *p = BUNtail(li, 0);
+				const void *p = BUNtail(&li, 0);
 
 				for (BUN q = 0; q < o; q++) {
-					const void *c = BUNtail(ri, q);
+					const void *c = BUNtail(&ri, q);
 					if (oeq(nilp, c))
 						*ret = bit_nil;
 					else if (oeq(p, c)) {

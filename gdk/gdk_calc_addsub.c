@@ -1445,9 +1445,9 @@ addstr_loop(BAT *b1, const char *l, BAT *b2, const char *r, BAT *bn,
 		oid x1 = canditer_next(ci1) - candoff1;
 		oid x2 = canditer_next(ci2) - candoff2;
 		if (b1)
-			l = BUNtvar(*b1i, x1);
+			l = BUNtvar(b1i, x1);
 		if (b2)
-			r = BUNtvar(*b2i, x2);
+			r = BUNtvar(b2i, x2);
 		if (strNil(l) || strNil(r)) {
 			nils++;
 			if (tfastins_nocheckVAR(bn, i, str_nil) != GDK_SUCCEED)
