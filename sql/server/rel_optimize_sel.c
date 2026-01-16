@@ -5,9 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #include "monetdb_config.h"
@@ -2767,6 +2765,9 @@ rel_join_order_(visitor *v, sql_rel *rel)
 	if (!rel)
 		return rel;
 
+	if (v->opt >= 0 && rel->opt >= v->opt) /* only once */
+        return rel;
+
 	switch (rel->op) {
 	case op_basetable:
 		break;
@@ -2821,6 +2822,8 @@ rel_join_order_(visitor *v, sql_rel *rel)
 	}
 	if (is_join(rel->op))
 		rel = reorder_join(v, rel);
+	if (rel && v->opt >= 0)
+        rel->opt = v->opt;
 	return rel;
 }
 
@@ -2828,6 +2831,8 @@ static sql_rel *
 rel_join_order(visitor *v, global_props *gp, sql_rel *rel)
 {
 	(void) gp;
+	if (v->opt >= 0 && rel)
+		v->opt = rel->opt+1;
 	allocator *ta = MT_thread_getallocator();
 	allocator_state ta_state = ma_open(ta);
 	sql_rel *r = rel_join_order_(v, rel);

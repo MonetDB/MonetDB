@@ -5,9 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #include "monetdb_config.h"
@@ -366,7 +364,7 @@ str_2time_daytimetz_internal(allocator *sa, ptr out, ptr in, const bat *sid, int
 		if (ci.tpe == cand_dense) {
 			for (BUN i = 0 ; i < ci.ncand && !msg; i++) {
 				oid p = (canditer_next_dense(&ci) - off);
-				const char *next = BUNtvar(it, p);
+				const char *next = BUNtvar(&it, p);
 
 				if (strNil(next)) {
 					ret[i] = daytime_nil;
@@ -378,7 +376,7 @@ str_2time_daytimetz_internal(allocator *sa, ptr out, ptr in, const bat *sid, int
 		} else {
 			for (BUN i = 0 ; i < ci.ncand && !msg; i++) {
 				oid p = (canditer_next(&ci) - off);
-				const char *next = BUNtvar(it, p);
+				const char *next = BUNtvar(&it, p);
 
 				if (strNil(next)) {
 					ret[i] = daytime_nil;
@@ -869,7 +867,7 @@ str_2time_timestamptz_internal(allocator *sa, ptr out, ptr in, const bat *sid, i
 		if (ci.tpe == cand_dense) {
 			for (BUN i = 0 ; i < ci.ncand && !msg; i++) {
 				oid p = (canditer_next_dense(&ci) - off);
-				const char *next = BUNtvar(bi, p);
+				const char *next = BUNtvar(&bi, p);
 
 				if (strNil(next)) {
 					ret[i] = timestamp_nil;
@@ -881,7 +879,7 @@ str_2time_timestamptz_internal(allocator *sa, ptr out, ptr in, const bat *sid, i
 		} else {
 			for (BUN i = 0 ; i < ci.ncand && !msg; i++) {
 				oid p = (canditer_next(&ci) - off);
-				const char *next = BUNtvar(bi, p);
+				const char *next = BUNtvar(&bi, p);
 
 				if (strNil(next)) {
 					ret[i] = timestamp_nil;
@@ -1002,7 +1000,7 @@ month_interval_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (ci.tpe == cand_dense) {
 			for (BUN i = 0 ; i < ci.ncand && !msg; i++) {
 				oid p = (canditer_next_dense(&ci) - off);
-				const char *next = BUNtvar(bi, p);
+				const char *next = BUNtvar(&bi, p);
 
 				if (strNil(next)) {
 					ret[i] = int_nil;
@@ -1014,7 +1012,7 @@ month_interval_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		} else {
 			for (BUN i = 0 ; i < ci.ncand && !msg; i++) {
 				oid p = (canditer_next(&ci) - off);
-				const char *next = BUNtvar(bi, p);
+				const char *next = BUNtvar(&bi, p);
 
 				if (strNil(next)) {
 					ret[i] = int_nil;
@@ -1100,7 +1098,7 @@ second_interval_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (ci.tpe == cand_dense) {
 			for (BUN i = 0 ; i < ci.ncand && !msg; i++) {
 				oid p = (canditer_next_dense(&ci) - off);
-				const char *next = BUNtvar(bi, p);
+				const char *next = BUNtvar(&bi, p);
 
 				if (strNil(next)) {
 					ret[i] = lng_nil;
@@ -1112,7 +1110,7 @@ second_interval_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		} else {
 			for (BUN i = 0 ; i < ci.ncand && !msg; i++) {
 				oid p = (canditer_next(&ci) - off);
-				const char *next = BUNtvar(bi, p);
+				const char *next = BUNtvar(&bi, p);
 
 				if (strNil(next)) {
 					ret[i] = lng_nil;

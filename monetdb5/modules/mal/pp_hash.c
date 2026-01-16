@@ -724,7 +724,7 @@ UHASHext(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 		\
 		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
 			bool fnd = 0; \
-			void *bpi = (void *) ((bi).vh->base+BUNtvaroff(bi,i)); \
+			void *bpi = (void *) ((bi).vh->base+VarHeapVal(bi.base,i,bi.width)); \
 			gid g = 0; \
 			while (!fnd) { \
 				gid k = (gid)h->hsh(bpi)&h->mask; \
@@ -769,7 +769,7 @@ UHASHext(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 		if (ATOMstorage(tt) == TYPE_str) { \
 			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
 				bool fnd = 0; \
-				char *bpi = (char *) ((bi).vh->base+BUNtvaroff(bi,i)); \
+				char *bpi = (char *) ((bi).vh->base+VarHeapVal(bi.base,i,bi.width)); \
 				gid g = 0; \
 				while (!fnd) { \
 					gid k = (gid)str_hsh(bpi)&h->mask; \
@@ -806,7 +806,7 @@ UHASHext(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 			int (*atomcmp)(const void *, const void *) = ATOMcompare(tt); \
 			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
 				bool fnd = 0; \
-				void *bpi = (void *) ((bi).vh->base+BUNtvaroff(bi,i)); \
+				void *bpi = (void *) ((bi).vh->base+VarHeapVal(bi.base,i,bi.width)); \
 				gid g = 0; \
 				while (!fnd) { \
 					gid k = (gid)h->hsh(bpi)&h->mask; \
@@ -1113,7 +1113,7 @@ error:
 		\
 		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
 			bool fnd = 0; \
-			void *bpi = (void *) ((bi).vh->base+BUNtvaroff(bi,i)); \
+			void *bpi = (void *) ((bi).vh->base+VarHeapVal(bi.base,i,bi.width)); \
 			gid g = 0; \
 			while (!fnd) { \
 				gid k = (gid)combine(gi[i], h->hsh(bpi), prime)&h->mask; \
@@ -1161,7 +1161,7 @@ error:
 		if (ATOMstorage(tt) == TYPE_str) { \
 			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
 				bool fnd = 0; \
-				char *bpi = (char *) ((bi).vh->base+BUNtvaroff(bi,i)); \
+				char *bpi = (char *) ((bi).vh->base+VarHeapVal(bi.base,i,bi.width)); \
 				gid g = 0; \
 				while (!fnd) { \
 					gid k = (gid)combine(gi[i], str_hsh(bpi), prime)&h->mask; \
@@ -1202,7 +1202,7 @@ error:
 			int (*atomcmp)(const void *, const void *) = ATOMcompare(tt); \
 			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
 				bool fnd = 0; \
-				void *bpi = (void *) ((bi).vh->base+BUNtvaroff(bi,i)); \
+				void *bpi = (void *) ((bi).vh->base+VarHeapVal(bi.base,i,bi.width)); \
 				gid g = 0; \
 				while (!fnd) { \
 					gid k = (gid)combine(gi[i], h->hsh(bpi), prime)&h->mask; \
@@ -1596,7 +1596,7 @@ error:
 		const void *nil = ATOMnilptr(tt); \
 		\
 		TIMEOUT_LOOP_IDX_DECL(i, keycnt, qry_ctx) { \
-			char *val = (bi).vh->base+BUNtvaroff(bi,i); \
+			char *val = (bi).vh->base+VarHeapVal(bi.base,i,bi.width); \
 			if (!(*semantics) && atomcmp(val, nil) == 0) { \
 				if (!match && empty) { \
 					oid_mtd[mtdcnt] = off+i; \
@@ -1956,7 +1956,7 @@ OAHASHnprobe(Client ctx, bat *PRB_oid, bat *HSH_slotid, const bat *PRB_key, cons
 				has_nil = bit_nil; \
 		} \
 		TIMEOUT_LOOP_IDX_DECL(i, keycnt, qry_ctx) { \
-			char *val = (bi).vh->base+BUNtvaroff(bi,i); \
+			char *val = (bi).vh->base+VarHeapVal(bi.base,i,bi.width); \
 			if (!(*semantics) && atomcmp(val, nil) == 0) { \
 				oid_mtd[mtdcnt] = off+i; \
 				slt[mtdcnt] = oid_nil; \
@@ -2259,7 +2259,7 @@ OAHASHmprobe(Client ctx, bat *PRB_oid, bat *HSH_slotid, bat *PRB_mark, const bat
 		const void *nil = ATOMnilptr(tt); \
 		\
 		TIMEOUT_LOOP_IDX_DECL(i, mtdcnt, qry_ctx) { \
-			char *val = (bi).vh->base+BUNtvaroff(bi,sltd[i]-off); \
+			char *val = (bi).vh->base+VarHeapVal(bi.base,sltd[i]-off,bi.width); \
 			if (!(*semantics) && atomcmp(val, nil) == 0) \
 				continue; \
 			\
@@ -2607,7 +2607,7 @@ OAHASHprobe_cmbd(Client ctx, bat *PRB_oid, bat *HSH_slotid, const bat *PRB_key, 
 		const void *nil = ATOMnilptr(tt); \
 		\
 		TIMEOUT_LOOP_IDX_DECL(i, mtdcnt, qry_ctx) { \
-			char *val = (bi).vh->base+BUNtvaroff(bi,sltd[i]-off); \
+			char *val = (bi).vh->base+VarHeapVal(bi.base,sltd[i]-off,bi.width); \
 			if (!mark[i] || (!(*semantics) && atomcmp(val, nil) == 0)) { \
 				oid_mtd[mtdcnt2] = sltd[i]; \
 				slt[mtdcnt2] = oid_nil; \

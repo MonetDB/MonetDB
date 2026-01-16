@@ -5,9 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 /*
@@ -87,7 +85,6 @@ INETfromString(allocator *ma, const char *src, size_t *len, void **RETVAL, bool 
 	type = 0;
 
 	if (*len < sizeof(inet) || *retval == NULL) {
-		// GDKfree(*retval);
 		*retval = ma_zalloc(ma, sizeof(inet));
 		if (*retval == NULL) {
 			*len = 0;
@@ -205,7 +202,6 @@ INETtoString(allocator *ma, str *retval, size_t *len, const void *handle, bool e
 	const inet *value = (const inet *) handle;
 
 	if (*len < 20 || *retval == NULL) {
-		// GDKfree(*retval);
 		*retval = ma_alloc(ma, sizeof(char) * (*len = 20));
 		if (*retval == NULL)
 			return -1;

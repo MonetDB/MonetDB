@@ -5,9 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 /*
@@ -538,7 +536,6 @@ DFLOWinitBlk(DataFlow flow, MalBlkPtr mb, int size)
 	for (n = 0, pc = flow->start; pc < flow->stop; pc++, n++) {
 		p = getInstrPtr(mb, pc);
 		if (p == NULL) {
-			//GDKfree(assign);
 			throw(MAL, "dataflow",
 				  "DFLOWinitBlk(): getInstrPtr() returned NULL");
 		}
@@ -567,24 +564,17 @@ DFLOWinitBlk(DataFlow flow, MalBlkPtr mb, int size)
 					etop++;
 					(void) size;
 					if (etop == size) {
-						//int *tmp;
-						/* in case of realloc failure, the original
-						 * pointers will be freed by the caller */
 						size_t nsz = sizeof(int) * 2 * size;
 						flow->nodes = (int *) ma_realloc(mb->ma, flow->nodes, nsz, sizeof(int) * size);
 						if (flow->nodes == NULL) {
-							// GDKfree(assign);
 							throw(MAL, "dataflow",
 								  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 						}
-						//flow->nodes = tmp;
 						flow->edges = (int *) ma_realloc(mb->ma, flow->edges, nsz, sizeof(int) * size);
 						if (flow->edges == NULL) {
-							// GDKfree(assign);
 							throw(MAL, "dataflow",
 								  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 						}
-						//flow->edges = tmp;
 						size *= 2;
 					}
 				} else {
@@ -613,24 +603,17 @@ DFLOWinitBlk(DataFlow flow, MalBlkPtr mb, int size)
 						flow->edges[i] = etop;
 						etop++;
 						if (etop == size) {
-							//int *tmp;
 							size_t nsz = sizeof(int) * 2 * size;
-							/* in case of realloc failure, the original
-							 * pointers will be freed by the caller */
 							flow->nodes = (int *) ma_realloc(mb->ma, flow->nodes, nsz, sizeof(int) * size);
 							if (flow->nodes == NULL) {
-								//GDKfree(assign);
 								throw(MAL, "dataflow",
 									  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 							}
-							//flow->nodes = tmp;
 							flow->edges = (int *) ma_realloc(mb->ma, flow->edges, nsz, sizeof(int) * size);
 							if (flow->edges == NULL) {
-								//GDKfree(assign);
 								throw(MAL, "dataflow",
 									  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 							}
-							//flow->edges = tmp;
 							size *= 2;
 						}
 					} else {
@@ -645,7 +628,6 @@ DFLOWinitBlk(DataFlow flow, MalBlkPtr mb, int size)
 		for (j = 0; j < p->retc; j++)
 			assign[getArg(p, j)] = pc;	/* ensure recognition of dependency on first instruction and constant */
 	}
-	//GDKfree(assign);
 
 	return MAL_SUCCEED;
 }
@@ -872,20 +854,12 @@ runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc, int stoppc,
 	};
 
 	if (flow->done == NULL) {
-		//GDKfree(flow->status);
-		//GDKfree(flow->nodes);
-		//GDKfree(flow->edges);
-		//GDKfree(flow);
 		throw(MAL, "dataflow",
 			  "runMALdataflow(): Failed to create flow->done queue");
 	}
 
 	if (flow->status == NULL || flow->nodes == NULL || flow->edges == NULL) {
 		q_destroy(flow->done);
-		//GDKfree(flow->status);
-		//GDKfree(flow->nodes);
-		//GDKfree(flow->edges);
-		//GDKfree(flow);
 		throw(MAL, "dataflow", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
@@ -895,12 +869,8 @@ runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc, int stoppc,
 	if (msg == MAL_SUCCEED)
 		msg = DFLOWscheduler(flow, t);
 
-	//GDKfree(flow->status);
-	//GDKfree(flow->edges);
-	//GDKfree(flow->nodes);
 	q_destroy(flow->done);
 	MT_lock_destroy(&flow->flowlock);
-	//GDKfree(flow);
 
 	/* we created one worker, now tell one worker to exit again */
 	MT_lock_set(&todo->l);

@@ -5,9 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 /* In this file we implement three new types with supporting code.
@@ -102,7 +100,7 @@ MTIMEcurrent_timestamp(Client ctx, timestamp *ret)
 		break; \
 	}
 
-#define GET_NEXT_ITER(ARG, OFF) BUNtvar(b##ARG##i, OFF)
+#define GET_NEXT_ITER(ARG, OFF) BUNtvar(&b##ARG##i, OFF)
 
 #define DEC_NOTHING(TYPE, ARG)
 #define INIT_NOTHING(ARG)

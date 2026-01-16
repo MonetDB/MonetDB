@@ -71,14 +71,14 @@
 		}																\
 	}
 
-#define vaggr(T,f)														\
+#define vaggr(T,CT,f)														\
 	if (type == TYPE_##T) {												\
 		BATiter bi = bat_iterator(b);									\
 		T val = *getArgReference_##T(stk, pci, 2);						\
 		const void *nil = ATOMnilptr(type);								\
 		int (*cmp)(const void *v1,const void *v2) = ATOMcompare(type);	\
 		if (cmp(val,nil) != 0 && BATcount(b)) {							\
-			T t = BUNtvar(bi, 0);										\
+			CT t = BUNtvar(&bi, 0);								\
 			if (cmp(t,nil) == 0) {										\
 				if (BUNreplace(b, 0, val, true) != GDK_SUCCEED)			\
 					err = createException(MAL, "2 lockedaggr." #f,		\
@@ -725,7 +725,7 @@ LOCKEDAGGRmin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			aggr(bit,min);
 			aggr(flt,min);
 			aggr(dbl,min);
-			vaggr(str,vmin);
+			vaggr(str,const char *,vmin);
 			if (!err) {
 				pipeline_lock2(b);
 				BATnegateprops(b);
@@ -787,7 +787,7 @@ LOCKEDAGGRmax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			aggr(bit,max);
 			aggr(flt,max);
 			aggr(dbl,max);
-			vaggr(str,vmax);
+			vaggr(str,const char *,vmax);
 			if (!err) {
 				pipeline_lock2(b);
 				BATnegateprops(b);
@@ -943,12 +943,12 @@ LALGprojection(Client ctx, bat *result, const ptr *h, const bat *lid, const bat 
 			nextk \
 		)
 
-#define aunique_(Type) \
+#define aunique_(Type,CType) \
 	unique_(Type, \
 			Type, \
 			allocator *ma = h->allocators[p->wid], \
 			BATiter bi = bat_iterator(b), \
-			Type bpi = BUNtvar(bi, i), \
+			CType bpi = BUNtvar(&bi, i), \
 			(gid)h->hsh(bpi), \
 			(h->cmp(vals[g], bpi) != 0), \
 			vals[g] = ma_strdup(ma, bpi), \
@@ -956,15 +956,15 @@ LALGprojection(Client ctx, bat *result, const ptr *h, const bat *lid, const bat 
 			nextk \
 		)
 
-#define aunique(Type) \
+#define aunique(Type,CType) \
 	unique_(Type, \
 			Type, \
 			, \
 			BATiter bi = bat_iterator(b), \
-			Type bpi = BUNtvar(bi, i), \
+			CType bpi = BUNtvar(&bi, i), \
 			(gid)h->hsh(bpi), \
 			(h->cmp(vals[g], bpi) != 0), \
-			vals[g] = bpi, \
+			vals[g] = (Type)bpi, \
 			bat_iterator_end(&bi), \
 			nextk \
 		)
@@ -1075,9 +1075,9 @@ LALGunique(Client ctx, bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid)
 			cunique(uuid, hge)
 #endif
 			if (local_storage) {
-				aunique_(str)
+				aunique_(str,const char *)
 			} else {
-				aunique(str)
+				aunique(str,const char *)
 			}
 			h->processed += cnt;
 			ht_deactivate(h);
@@ -1194,12 +1194,12 @@ LALGunique(Client ctx, bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid)
 			nextk \
 		)
 
-#define gaunique_(Type) \
+#define gaunique_(Type,CType) \
 	gunique_(Type, \
 			Type, \
 			allocator *ma = h->allocators[p->wid], \
 			BATiter bi = bat_iterator(b), \
-			Type bpi = BUNtvar(bi, i), \
+			CType bpi = BUNtvar(&bi, i), \
 			(gid)h->hsh(bpi), \
 			(h->cmp(vals[g], bpi) != 0), \
 			vals[g] = ma_strdup(ma, bpi), \
@@ -1207,15 +1207,15 @@ LALGunique(Client ctx, bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid)
 			nextk \
 		)
 
-#define gaunique(Type) \
+#define gaunique(Type,CType) \
 	gunique_(Type, \
 			Type, \
 			, \
 			BATiter bi = bat_iterator(b), \
-			Type bpi = BUNtvar(bi, i), \
+			CType bpi = BUNtvar(&bi, i), \
 			(gid)h->hsh(bpi), \
 			(h->cmp(vals[g], bpi) != 0), \
-			vals[g] = bpi, \
+			vals[g] = (Type)bpi, \
 			bat_iterator_end(&bi), \
 			nextk \
 		)
@@ -1330,9 +1330,9 @@ LALGgroup_unique(Client ctx, bat *rid, bat *uid, const ptr *H, bat *bid, bat *si
 			gcunique(uuid, hge)
 #endif
 			if (local_storage) {
-				gaunique_(str)
+				gaunique_(str,const char *)
 			} else {
-				gaunique(str)
+				gaunique(str,const char *)
 			}
 			ht_deactivate(h);
 			TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "pp algebra.(group_)unique", RUNTIME_QRY_TIMEOUT));
@@ -1499,7 +1499,7 @@ LALGgroup_unique(Client ctx, bat *rid, bat *uid, const ptr *H, bat *bid, bat *si
 			Type, \
 			allocator *ma = h->allocators[p->wid], \
 			BATiter bi = bat_iterator(b), \
-			Type bpi = (void *) ((bi).vh->base+BUNtvaroff(bi,i)), \
+			Type bpi = (void *) ((bi).vh->base+VarHeapVal(bi.base,i,bi.width)), \
 			(gid)str_hsh(bpi), \
 			(h->cmp(vals[g], bpi) != 0), \
 			vals[g] = ma_strdup(ma, bpi), \
@@ -1511,7 +1511,7 @@ LALGgroup_unique(Client ctx, bat *rid, bat *uid, const ptr *H, bat *bid, bat *si
 			Type, \
 			allocator *ma = h->allocators[p->wid], \
 			BATiter bi = bat_iterator(b), \
-			void *bpi = (void *) ((bi).vh->base+BUNtvaroff(bi,i)), \
+			void *bpi = (void *) ((bi).vh->base+VarHeapVal(bi.base,i,bi.width)), \
 			(gid)h->hsh(bpi), \
 			(h->cmp(vals[g], bpi) != 0), \
 			vals[g] = ma_copy(ma, bpi, h->len(bpi)), \
@@ -1526,7 +1526,7 @@ LALGgroup_unique(Client ctx, bat *rid, bat *uid, const ptr *H, bat *bid, bat *si
 			Type, \
 			, \
 			BATiter bi = bat_iterator(b), \
-			Type bpi = (void *) ((bi).vh->base+BUNtvaroff(bi,i)), \
+			Type bpi = (void *) ((bi).vh->base+VarHeapVal(bi.base,i,bi.width)), \
 			(gid)h->hsh(bpi), \
 			(h->cmp(vals[g], bpi) != 0), \
 			vals[g] = bpi, \
@@ -1798,7 +1798,7 @@ LALGgroup(Client ctx, bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 			Type, \
 			allocator *ma = h->allocators[P->wid], \
 			BATiter bi = bat_iterator(b), \
-			Type bpi = (void *) ((bi).vh->base+BUNtvaroff(bi,i)), \
+			Type bpi = (void *) ((bi).vh->base+VarHeapVal(bi.base,i,bi.width)), \
 			(gid)str_hsh(bpi), \
 			(vals[g] && h->cmp(vals[g], bpi) != 0), \
 			vals[g] = ma_strdup(ma, bpi), \
@@ -1810,7 +1810,7 @@ LALGgroup(Client ctx, bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 			Type, \
 			allocator *ma = h->allocators[P->wid], \
 			BATiter bi = bat_iterator(b), \
-			void *bpi = (void *) ((bi).vh->base+BUNtvaroff(bi,i)), \
+			void *bpi = (void *) ((bi).vh->base+VarHeapVal(bi.base,i,bi.width)), \
 			(gid)h->hsh(bpi), \
 			(vals[g] && h->cmp(vals[g], bpi) != 0), \
 			vals[g] = ma_copy(ma, bpi, h->len(bpi)), \
@@ -1825,7 +1825,7 @@ LALGgroup(Client ctx, bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 			Type, \
 			, \
 			BATiter bi = bat_iterator(b), \
-			Type bpi = (void *) ((bi).vh->base+BUNtvaroff(bi,i)), \
+			Type bpi = (void *) ((bi).vh->base+VarHeapVal(bi.base,i,bi.width)), \
 			(gid)h->hsh(bpi), \
 			(vals[g] && h->cmp(vals[g], bpi) != 0), \
 			vals[g] = bpi, \
@@ -2055,7 +2055,7 @@ LALGderive(Client ctx, bat *rid, bat *uid, const ptr *H, bat *Gid, bat *Ph, bat 
 						var_t *o = Tloc(r, 0); \
 						ins = (o[gi + i] == 0); \
 					} \
-					if (ins && tfastins_nocheckVAR( r, gi + i, BUNtvar(bi, i)) != GDK_SUCCEED) { \
+					if (ins && tfastins_nocheckVAR( r, gi + i, BUNtvar(&bi, i)) != GDK_SUCCEED) { \
 						err = createException(MAL, "pp algebra.projection", MAL_MALLOC_FAIL);\
 						goto error; \
 					} \
@@ -2078,7 +2078,7 @@ LALGderive(Client ctx, bat *rid, bat *uid, const ptr *H, bat *Gid, bat *Ph, bat 
 						var_t *o = Tloc(r, 0); \
 						ins = (o[gp[i]] == 0); \
 					} \
-					if (ins && tfastins_nocheckVAR( r, gp[i], BUNtvar(bi, i)) != GDK_SUCCEED) { \
+					if (ins && tfastins_nocheckVAR( r, gp[i], BUNtvar(&bi, i)) != GDK_SUCCEED) { \
 						err = createException(MAL, "pp algebra.projection", MAL_MALLOC_FAIL);\
 						goto error; \
 					} \
@@ -2273,7 +2273,7 @@ LALGconstant(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					var_t *o = Tloc(r, 0); \
 					ins = (o[gi + i] == 0); \
 				} \
-				if (ins && tfastins_nocheckVAR( r, gi + i, BUNtvar(bi, i)) != GDK_SUCCEED) { \
+				if (ins && tfastins_nocheckVAR( r, gi + i, BUNtvar(&bi, i)) != GDK_SUCCEED) { \
 					err = createException(MAL, "pp algebra.projection", MAL_MALLOC_FAIL);\
 					goto error; \
 				} \
@@ -2296,7 +2296,7 @@ LALGconstant(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					var_t *o = Tloc(r, 0); \
 					ins = (o[gp[i]] == 0); \
 				} \
-				if (ins && tfastins_nocheckVAR( r, gp[i], BUNtvar(bi, i)) != GDK_SUCCEED) { \
+				if (ins && tfastins_nocheckVAR( r, gp[i], BUNtvar(&bi, i)) != GDK_SUCCEED) { \
 					err = createException(MAL, "pp algebra.projection", MAL_MALLOC_FAIL);\
 					goto error; \
 				} \
@@ -2606,8 +2606,7 @@ LALGcountstar(Client ctx, bat *rid, bat *gid, const ptr *H, bat *pid)
 			const void *nil = ATOMnilptr(tt); \
 		    int (*cmp)(const void *v1,const void *v2) = ATOMcompare(tt); \
 			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
-				Type bpi = BUNtvar(bi, i); \
-				o[v[i]]+= cmp(bpi, nil)!=0; \
+				o[v[i]]+= cmp(BUNtvar(&bi, i), nil)!=0; \
 			} \
 			bat_iterator_end(&bi); \
 	}
@@ -4259,7 +4258,7 @@ LALGnull(Client ctx, bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 
 			 TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) {
 				 if (o[grp[i]] != true) {
-					 const void *restrict c = BUNtail(bi, i);
+					 const void *restrict c = BUNtail(&bi, i);
 					 o[grp[i]] = (ocmp(nilp, c) == 0);
 				 }
 			 }
@@ -4697,7 +4696,7 @@ ALGnull(Client ctx, bit *result, const bat *bid)
 					 const void *restrict nilp = ATOMnilptr(bi.type);
 
 					 TIMEOUT_LOOP_IDX_DECL(q, o, qry_ctx) {
-						 const void *restrict c = BUNtail(bi, q);
+						 const void *restrict c = BUNtail(&bi, q);
 						 if (ocmp(nilp, c) == 0) {
 							 hasnull = true;
 							 break;

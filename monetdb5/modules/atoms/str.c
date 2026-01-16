@@ -5,9 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 /*
@@ -339,14 +337,12 @@ STRTail(Client ctx, str *res, const char *const *arg1, const int *offset)
 		if (!(buf = ma_alloc(ta, buflen)))
 			throw(MAL, "str.tail", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		if ((msg = str_tail(&buf, &buflen, s, off)) != MAL_SUCCEED) {
-			//GDKfree(buf);
 			return msg;
 		}
 		*res = ma_strdup(ma, buf);
 		ma_close(&ta_state);
 	}
 
-	//GDKfree(buf);
 	if (!*res)
 		msg = createException(MAL, "str.tail", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return msg;
@@ -399,14 +395,12 @@ STRSubString(Client ctx, str *res, const char *const *arg1, const int *offset, c
 		if (!(buf = ma_alloc(ta, buflen)))
 			throw(MAL, "str.substring", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		if ((msg = str_Sub_String(&buf, &buflen, s, off, len)) != MAL_SUCCEED) {
-			//GDKfree(buf);
 			return msg;
 		}
 		*res = ma_strdup(ma, buf);
 		ma_close(&ta_state);
 	}
 
-	//GDKfree(buf);
 	if (!*res)
 		msg = createException(MAL, "str.substring",
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -443,14 +437,12 @@ STRFromWChr(Client ctx, str *res, const int *c)
 		if (!(buf = ma_alloc(ta, buflen)))
 			throw(MAL, "str.unicode", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		if ((msg = str_from_wchr(&buf, &buflen, cc)) != MAL_SUCCEED) {
-			//GDKfree(buf);
 			return msg;
 		}
 		*res = ma_strdup(ma, buf);
 		ma_close(&ta_state);
 	}
 
-	//GDKfree(buf);
 	if (!*res)
 		msg = createException(MAL, "str.unicode",
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -512,14 +504,12 @@ doStrConvert(allocator *ma, str *res, const char *arg1, gdk_return (*func)(alloc
 		if (!(buf = ma_alloc(ta, buflen)))
 			throw(MAL, "str.lower", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		if ((*func)(ta, &buf, &buflen, arg1) != GDK_SUCCEED) {
-			//GDKfree(buf);
 			throw(MAL, "str.lower", GDK_EXCEPTION);
 		}
 		*res = ma_strdup(ma, buf);
 		ma_close(&ta_state);
 	}
 
-	//GDKfree(buf);
 	if (!*res)
 		msg = createException(MAL, "str.lower",
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -827,14 +817,12 @@ STRsplitpart(Client ctx, str *res, const char *const *haystack, const char *cons
 		if (!(buf = ma_alloc(ta, buflen)))
 			throw(MAL, "str.splitpart", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		if ((msg = str_splitpart(&buf, &buflen, s, s2, f)) != MAL_SUCCEED) {
-			//GDKfree(buf);
 			return msg;
 		}
 		*res = ma_strdup(ma, buf);
 		ma_close(&ta_state);
 	}
 
-	//GDKfree(buf);
 	if (!*res)
 		msg = createException(MAL, "str.splitpart",
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -954,14 +942,12 @@ STRStrip(Client ctx, str *res, const char *const *arg1)
 		if (!(buf = ma_alloc(ta, buflen)))
 			throw(MAL, "str.strip", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		if ((msg = str_strip(&buf, &buflen, s)) != MAL_SUCCEED) {
-			//GDKfree(buf);
 			return msg;
 		}
 		*res = ma_strdup(ma, buf);
 		ma_close(&ta_state);
 	}
 
-	//GDKfree(buf);
 	if (!*res)
 		msg = createException(MAL, "str.strip",
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -999,14 +985,12 @@ STRLtrim(Client ctx, str *res, const char *const *arg1)
 		if (!(buf = ma_alloc(ta, buflen)))
 			throw(MAL, "str.ltrim", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		if ((msg = str_ltrim(&buf, &buflen, s)) != MAL_SUCCEED) {
-			//GDKfree(buf);
 			return msg;
 		}
 		*res = ma_strdup(ma, buf);
 		ma_close(&ta_state);
 	}
 
-	//GDKfree(buf);
 	if (!*res)
 		msg = createException(MAL, "str.ltrim",
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -1044,14 +1028,12 @@ STRRtrim(Client ctx, str *res, const char *const *arg1)
 		if (!(buf = ma_alloc(ta, buflen)))
 			throw(MAL, "str.rtrim", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		if ((msg = str_rtrim(&buf, &buflen, s)) != MAL_SUCCEED) {
-			//GDKfree(buf);
 			return msg;
 		}
 		*res = ma_strdup(ma, buf);
 		ma_close(&ta_state);
 	}
 
-	//GDKfree(buf);
 	if (!*res)
 		msg = createException(MAL, "str.rtrim",
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -1131,14 +1113,12 @@ STRStrip2(Client ctx, str *res, const char *const *arg1, const char *const *arg2
 		if (!(buf = ma_alloc(ta, buflen)))
 			throw(MAL, "str.strip2", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		if ((msg = str_strip2(&buf, &buflen, s, s2)) != MAL_SUCCEED) {
-			//GDKfree(buf);
 			return msg;
 		}
 		*res = ma_strdup(ma, buf);
 		ma_close(&ta_state);
 	}
 
-	//GDKfree(buf);
 	if (!*res)
 		msg = createException(MAL, "str.strip2",
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -1189,14 +1169,12 @@ STRLtrim2(Client ctx, str *res, const char *const *arg1, const char *const *arg2
 		if (!(buf = ma_alloc(ta, buflen)))
 			throw(MAL, "str.ltrim2", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		if ((msg = str_ltrim2(&buf, &buflen, s, s2)) != MAL_SUCCEED) {
-			//GDKfree(buf);
 			return msg;
 		}
 		*res = ma_strdup(ma, buf);
 		ma_close(&ta_state);
 	}
 
-	//GDKfree(buf);
 	if (!*res)
 		msg = createException(MAL, "str.ltrim2",
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -1247,14 +1225,12 @@ STRRtrim2(Client ctx, str *res, const char *const *arg1, const char *const *arg2
 		if (!(buf = ma_alloc(ta, buflen)))
 			throw(MAL, "str.rtrim2", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		if ((msg = str_rtrim2(&buf, &buflen, s, s2)) != MAL_SUCCEED) {
-			//GDKfree(buf);
 			return msg;
 		}
 		*res = ma_strdup(ma, buf);
 		ma_close(&ta_state);
 	}
 
-	//GDKfree(buf);
 	if (!*res)
 		msg = createException(MAL, "str.rtrim2",
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -1352,14 +1328,12 @@ STRLpad(Client ctx, str *res, const char *const *arg1, const int *len)
 		if (!(buf = ma_alloc(ta, buflen)))
 			throw(MAL, "str.lpad", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		if ((msg = str_lpad(&buf, &buflen, s, l)) != MAL_SUCCEED) {
-			//GDKfree(buf);
 			return msg;
 		}
 		*res = ma_strdup(ma, buf);
 		ma_close(&ta_state);
 	}
 
-	//GDKfree(buf);
 	if (!*res)
 		msg = createException(MAL, "str.lpad", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return msg;
@@ -1397,14 +1371,12 @@ STRRpad(Client ctx, str *res, const char *const *arg1, const int *len)
 		if (!(buf = ma_alloc(ta, buflen)))
 			throw(MAL, "str.rpad", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		if ((msg = str_rpad(&buf, &buflen, s, l)) != MAL_SUCCEED) {
-			//GDKfree(buf);
 			return msg;
 		}
 		*res = ma_strdup(ma, buf);
 		ma_close(&ta_state);
 	}
 
-	//GDKfree(buf);
 	if (!*res)
 		msg = createException(MAL, "str.rpad", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return msg;
@@ -1442,14 +1414,12 @@ STRLpad3(Client ctx, str *res, const char *const *arg1, const int *len, const ch
 		if (!(buf = ma_alloc(ta, buflen)))
 			throw(MAL, "str.lpad2", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		if ((msg = str_lpad3(&buf, &buflen, s, l, s2)) != MAL_SUCCEED) {
-			//GDKfree(buf);
 			return msg;
 		}
 		*res = ma_strdup(ma, buf);
 		ma_close(&ta_state);
 	}
 
-	//GDKfree(buf);
 	if (!*res)
 		msg = createException(MAL, "str.lpad2",
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -1488,14 +1458,12 @@ STRRpad3(Client ctx, str *res, const char *const *arg1, const int *len, const ch
 		if (!(buf = ma_alloc(ta, buflen)))
 			throw(MAL, "str.rpad2", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		if ((msg = str_rpad3(&buf, &buflen, s, l, s2)) != MAL_SUCCEED) {
-			//GDKfree(buf);
 			return msg;
 		}
 		*res = ma_strdup(ma, buf);
 		ma_close(&ta_state);
 	}
 
-	//GDKfree(buf);
 	if (!*res)
 		msg = createException(MAL, "str.rpad2",
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -1565,14 +1533,12 @@ STRSubstitute(Client ctx, str *res, const char *const *arg1, const char *const *
 		if (!(buf = ma_alloc(ta, buflen)))
 			throw(MAL, "str.substitute", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		if ((msg = str_substitute(&buf, &buflen, s, s2, s3, *g)) != MAL_SUCCEED) {
-			//GDKfree(buf);
 			return msg;
 		}
 		*res = ma_strdup(ma, buf);
 		ma_close(&ta_state);
 	}
 
-	//GDKfree(buf);
 	if (!*res)
 		msg = createException(MAL, "str.substitute",
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -1614,14 +1580,12 @@ STRsubstringTail(Client ctx, str *res, const char *const *arg1, const int *start
 		if (!(buf = ma_alloc(ta, buflen)))
 			throw(MAL, "str.substringTail", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		if ((msg = str_substring_tail(&buf, &buflen, s, st)) != MAL_SUCCEED) {
-			//GDKfree(buf);
 			return msg;
 		}
 		*res = ma_strdup(ma, buf);
 		ma_close(&ta_state);
 	}
 
-	//GDKfree(buf);
 	if (!*res)
 		msg = createException(MAL, "str.substringTail",
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -1656,14 +1620,12 @@ STRsubstring(Client ctx, str *res, const char *const *arg1, const int *start, co
 		if (!(buf = ma_alloc(ta, buflen)))
 			throw(MAL, "str.substring", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		if ((msg = str_sub_string(&buf, &buflen, s, st, l)) != MAL_SUCCEED) {
-			//GDKfree(buf);
 			return msg;
 		}
 		*res = ma_strdup(ma, buf);
 		ma_close(&ta_state);
 	}
 
-	//GDKfree(buf);
 	if (!*res)
 		msg = createException(MAL, "str.substring",
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -1689,14 +1651,12 @@ STRprefix(Client ctx, str *res, const char *const *arg1, const int *ll)
 		if (!(buf = ma_alloc(ta, buflen)))
 			throw(MAL, "str.prefix", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		if ((msg = str_Sub_String(&buf, &buflen, s, 0, l)) != MAL_SUCCEED) {
-			//GDKfree(buf);
 			return msg;
 		}
 		*res = ma_strdup(ma, buf);
 		ma_close(&ta_state);
 	}
 
-	//GDKfree(buf);
 	if (!*res)
 		msg = createException(MAL, "str.prefix",
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -1729,14 +1689,12 @@ STRsuffix(Client ctx, str *res, const char *const *arg1, const int *ll)
 		if (!(buf = ma_alloc(ta, buflen)))
 			throw(MAL, "str.suffix", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		if ((msg = str_suffix(&buf, &buflen, s, l)) != MAL_SUCCEED) {
-			//GDKfree(buf);
 			return msg;
 		}
 		*res = ma_strdup(ma, buf);
 		ma_close(&ta_state);
 	}
 
-	//GDKfree(buf);
 	if (!*res)
 		msg = createException(MAL, "str.suffix",
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -1830,14 +1788,12 @@ STRinsert(Client ctx, str *res, const char *const *input, const int *start, cons
 		if (!(buf = ma_alloc(ta, buflen)))
 			throw(MAL, "str.insert", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		if ((msg = str_insert(&buf, &buflen, s, st, n, s2)) != MAL_SUCCEED) {
-			//GDKfree(buf);
 			return msg;
 		}
 		*res = ma_strdup(ma, buf);
 		ma_close(&ta_state);
 	}
 
-	//GDKfree(buf);
 	if (!*res)
 		msg = createException(MAL, "str.insert",
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -1899,14 +1855,12 @@ STRrepeat(Client ctx, str *res, const char *const *arg1, const int *c)
 		if (!(buf = ma_alloc(ta, buflen)))
 			throw(MAL, "str.repeat", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		if ((msg = str_repeat(&buf, &buflen, s, cc)) != MAL_SUCCEED) {
-			//GDKfree(buf);
 			return msg;
 		}
 		*res = ma_strdup(ma, buf);
 		ma_close(&ta_state);
 	}
 
-	//GDKfree(buf);
 	if (!*res)
 		msg = createException(MAL, "str.repeat",
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -1933,14 +1887,12 @@ STRspace(Client ctx, str *res, const int *ll)
 		if (!(buf = ma_alloc(ta, buflen)))
 			throw(MAL, "str.space", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		if ((msg = str_repeat(&buf, &buflen, s, l)) != MAL_SUCCEED) {
-			//GDKfree(buf);
 			return msg;
 		}
 		*res = ma_strdup(ma, buf);
 		ma_close(&ta_state);
 	}
 
-	//GDKfree(buf);
 	if (!*res)
 		msg = createException(MAL, "str.space",
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -2165,13 +2117,12 @@ strbat_reverse(BAT *b)
 
 	bn = COLnew(b->hseqbase, TYPE_str, BATcount(b), TRANSIENT);
 	if (bn == NULL) {
-		//GDKfree(dst);
 		return NULL;
 	}
 
 	bi = bat_iterator(b);
 	BATloop(b, p, q) {
-		src = (const char *) BUNtail(bi, p);
+		src = (const char *) BUNtail(&bi, p);
 		len = strlen(src);
 		if (len >= dstlen) {
 			char *ndst;
@@ -2260,7 +2211,6 @@ nested_loop_strjoin(BAT *rl, BAT *rr, BATiter *li, BATiter *ri,
 			rr->tsorted = ri->sorted;
 			rr->trevsorted = ri->revsorted;
 		}
-		// //GDKfree(vb_low);
 	}
 
 	TRC_DEBUG(ALGO, "(%s, %s, l=%s #%zu [%s], r=%s #%zu [%s], cl=%s #%zu, cr=%s #%zu, time="LLFMT"usecs)\n",
@@ -2691,7 +2641,7 @@ ignorecase(const bat IC, bool *icase, const str fname)
 	BATiter bi = bat_iterator(b);
 
 	if (bi.b != NULL && bi.count == 1)
-		*icase = *(bit *) BUNtloc(bi, 0);
+		*icase = *(bit *) BUNtloc(&bi, 0);
 	else if (bi.count != 1)
 		msg = createException(MAL, fname, SQLSTATE(HY009) "Invalid case ignore. Single value expected");
 	else

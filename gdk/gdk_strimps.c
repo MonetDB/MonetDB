@@ -5,9 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 /* Author: Panagiotis Koutsourakis
@@ -333,7 +331,7 @@ STRMPbuildHeader(BAT *b, BAT *s, CharPair *hpairs)
 	bi = bat_iterator(b);
 	for (i = 0; i < ci.ncand; i++) {
 		x = canditer_next(&ci) - b->hseqbase;
-		const char *cs = BUNtvar(bi, x);
+		const char *cs = BUNtvar(&bi, x);
 		if (!strNil(cs)) {
 			pi.s = cs;
 			pi.pos = 0;
@@ -967,7 +965,7 @@ STRMPcreate(BAT *b, BAT *s)
 	bi = bat_iterator(b);
 	for (i = 0; i < ci.ncand; i++) {
 		x = canditer_next(&ci) - b->hseqbase;
-		const char *cs = BUNtvar(bi, x);
+		const char *cs = BUNtvar(&bi, x);
 		if (!strNil(cs))
 			*dh++ = STRMPmakebitstring(cs, r);
 		else

@@ -5,9 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #include "monetdb_config.h"
@@ -807,14 +805,14 @@ merge_updates( BAT *ui, BAT **UV, BAT *oi, BAT *ov)
 
 		if (uiid <= oiid) {
 			if (BUNappend(ni, (ptr) &uiid, true) != GDK_SUCCEED ||
-		    	    (ov && BUNappend(nv, (ptr) BUNtail(uvi, uip), true) != GDK_SUCCEED))
+		    	    (ov && BUNappend(nv, (ptr) BUNtail(&uvi, uip), true) != GDK_SUCCEED))
 				err = 1;
 			uip++;
 			if (uiid == oiid)
 				oip++;
 		} else { /* uiid > oiid */
 			if (BUNappend(ni, (ptr) &oiid, true) != GDK_SUCCEED ||
-		    	    (ov && BUNappend(nv, (ptr) BUNtail(ovi, oip), true) != GDK_SUCCEED) )
+		    	    (ov && BUNappend(nv, (ptr) BUNtail(&ovi, oip), true) != GDK_SUCCEED) )
 				err = 1;
 			oip++;
 		}
@@ -822,14 +820,14 @@ merge_updates( BAT *ui, BAT **UV, BAT *oi, BAT *ov)
 	while (uip < uie && !err) {
 		oid uiid = (uipt)?uipt[uip]: uiseqb+uip;
 		if (BUNappend(ni, (ptr) &uiid, true) != GDK_SUCCEED ||
-	    	    (ov && BUNappend(nv, (ptr) BUNtail(uvi, uip), true) != GDK_SUCCEED))
+	    	    (ov && BUNappend(nv, (ptr) BUNtail(&uvi, uip), true) != GDK_SUCCEED))
 			err = 1;
 		uip++;
 	}
 	while (oip < oie && !err) {
 		oid oiid = (oipt)?oipt[oip]: oiseqb+oip;
 		if (BUNappend(ni, (ptr) &oiid, true) != GDK_SUCCEED ||
-	    	    (ov && BUNappend(nv, (ptr) BUNtail(ovi, oip), true) != GDK_SUCCEED) )
+	    	    (ov && BUNappend(nv, (ptr) BUNtail(&ovi, oip), true) != GDK_SUCCEED) )
 			err = 1;
 		oip++;
 	}
@@ -1437,7 +1435,7 @@ cs_update_bat( sql_trans *tr, sql_delta **batp, sql_table *t, BAT *tids, BAT *up
 							}
 						}
 						for (oid i = 0, rid = start; rid < lend && res == LOG_OK; rid++, i++) {
-							const void *upd = BUNtail(upi, rid-offset);
+							const void *upd = BUNtail(&upi, rid-offset);
 							if (void_inplace(b, rid, upd, true) != GDK_SUCCEED)
 								res = LOG_ERR;
 
@@ -1481,7 +1479,7 @@ cs_update_bat( sql_trans *tr, sql_delta **batp, sql_table *t, BAT *tids, BAT *up
 								memset(msk, 0, end * sizeof(int));
 							}
 						}
-						ptr upd = BUNtail(upi, i);
+						const void *upd = BUNtail(&upi, i);
 						if (void_inplace(b, rid, upd, true) != GDK_SUCCEED)
 							res = LOG_ERR;
 
@@ -1521,7 +1519,7 @@ cs_update_bat( sql_trans *tr, sql_delta **batp, sql_table *t, BAT *tids, BAT *up
 								memset(msk, 0, end * sizeof(int));
 							}
 						}
-						const void *upd = BUNtail(upi, i);
+						const void *upd = BUNtail(&upi, i);
 						if (void_inplace(b, rid[i], upd, true) != GDK_SUCCEED)
 							res = LOG_ERR;
 
@@ -1598,7 +1596,7 @@ cs_update_bat( sql_trans *tr, sql_delta **batp, sql_table *t, BAT *tids, BAT *up
 								oid niv = canditer_peek(&ci);
 
 								if (uiv < niv) {
-									upd = BUNtail(ovi, uip);
+									upd = BUNtail(&ovi, uip);
 									if (BUNappend(nui, (ptr) &uiv, true) != GDK_SUCCEED ||
 											BUNappend(nuv, (ptr) upd, true) != GDK_SUCCEED)
 										res = LOG_ERR;
@@ -1606,12 +1604,12 @@ cs_update_bat( sql_trans *tr, sql_delta **batp, sql_table *t, BAT *tids, BAT *up
 								} else if (uiv == niv) {
 									/* handle == */
 									if (!msk || (msk[ci.next/32] & (1U<<(ci.next%32))) == 0) {
-										upd = BUNtail(upi, ci.next);
+										upd = BUNtail(&upi, ci.next);
 										if (BUNappend(nui, (ptr) &niv, true) != GDK_SUCCEED ||
 												BUNappend(nuv, (ptr) upd, true) != GDK_SUCCEED)
 											res = LOG_ERR;
 									} else {
-										upd = BUNtail(ovi, uip);
+										upd = BUNtail(&ovi, uip);
 										if (BUNappend(nui, (ptr) &uiv, true) != GDK_SUCCEED ||
 												BUNappend(nuv, (ptr) upd, true) != GDK_SUCCEED)
 											res = LOG_ERR;
@@ -1620,7 +1618,7 @@ cs_update_bat( sql_trans *tr, sql_delta **batp, sql_table *t, BAT *tids, BAT *up
 									(void)canditer_next(&ci);
 								} else { /* uiv > niv */
 									if (!msk || (msk[ci.next/32] & (1U<<(ci.next%32))) == 0) {
-										upd = BUNtail(upi, ci.next);
+										upd = BUNtail(&upi, ci.next);
 										if (BUNappend(nui, (ptr) &niv, true) != GDK_SUCCEED ||
 												BUNappend(nuv, (ptr) upd, true) != GDK_SUCCEED)
 											res = LOG_ERR;
@@ -1630,7 +1628,7 @@ cs_update_bat( sql_trans *tr, sql_delta **batp, sql_table *t, BAT *tids, BAT *up
 							}
 							while (uip < uie && res == LOG_OK) {
 								oid uiv = (uipt)?uipt[uip]: uiseqb+uip;
-								upd = BUNtail(ovi, uip);
+								upd = BUNtail(&ovi, uip);
 								if (BUNappend(nui, (ptr) &uiv, true) != GDK_SUCCEED ||
 										BUNappend(nuv, (ptr) upd, true) != GDK_SUCCEED)
 									res = LOG_ERR;
@@ -1639,7 +1637,7 @@ cs_update_bat( sql_trans *tr, sql_delta **batp, sql_table *t, BAT *tids, BAT *up
 							while (ci.next < ci.ncand && res == LOG_OK) {
 								oid niv = canditer_peek(&ci);
 								if (!msk || (msk[ci.next/32] & (1U<<(ci.next%32))) == 0) {
-									upd = BUNtail(upi, ci.next);
+									upd = BUNtail(&upi, ci.next);
 									if (BUNappend(nui, (ptr) &niv, true) != GDK_SUCCEED ||
 											BUNappend(nuv, (ptr) upd, true) != GDK_SUCCEED)
 										res = LOG_ERR;
@@ -1668,7 +1666,7 @@ cs_update_bat( sql_trans *tr, sql_delta **batp, sql_table *t, BAT *tids, BAT *up
 								oid niv = (nipt)?nipt[nip]: niseqb+nip;
 
 								if (uiv < niv) {
-									upd = BUNtail(ovi, uip);
+									upd = BUNtail(&ovi, uip);
 									if (BUNappend(nui, (ptr) &uiv, true) != GDK_SUCCEED ||
 											BUNappend(nuv, (ptr) upd, true) != GDK_SUCCEED)
 										res = LOG_ERR;
@@ -1676,12 +1674,12 @@ cs_update_bat( sql_trans *tr, sql_delta **batp, sql_table *t, BAT *tids, BAT *up
 								} else if (uiv == niv) {
 									/* handle == */
 									if (!msk || (msk[nip/32] & (1U<<(nip%32))) == 0) {
-										upd = BUNtail(upi, nip);
+										upd = BUNtail(&upi, nip);
 										if (BUNappend(nui, (ptr) &niv, true) != GDK_SUCCEED ||
 												BUNappend(nuv, (ptr) upd, true) != GDK_SUCCEED)
 											res = LOG_ERR;
 									} else {
-										upd = BUNtail(ovi, uip);
+										upd = BUNtail(&ovi, uip);
 										if (BUNappend(nui, (ptr) &uiv, true) != GDK_SUCCEED ||
 												BUNappend(nuv, (ptr) upd, true) != GDK_SUCCEED)
 											res = LOG_ERR;
@@ -1690,7 +1688,7 @@ cs_update_bat( sql_trans *tr, sql_delta **batp, sql_table *t, BAT *tids, BAT *up
 									nip++;
 								} else { /* uiv > niv */
 									if (!msk || (msk[nip/32] & (1U<<(nip%32))) == 0) {
-										upd = BUNtail(upi, nip);
+										upd = BUNtail(&upi, nip);
 										if (BUNappend(nui, (ptr) &niv, true) != GDK_SUCCEED ||
 												BUNappend(nuv, (ptr) upd, true) != GDK_SUCCEED)
 											res = LOG_ERR;
@@ -1700,7 +1698,7 @@ cs_update_bat( sql_trans *tr, sql_delta **batp, sql_table *t, BAT *tids, BAT *up
 							}
 							while (uip < uie && res == LOG_OK) {
 								oid uiv = (uipt)?uipt[uip]: uiseqb+uip;
-								upd = BUNtail(ovi, uip);
+								upd = BUNtail(&ovi, uip);
 								if (BUNappend(nui, (ptr) &uiv, true) != GDK_SUCCEED ||
 										BUNappend(nuv, (ptr) upd, true) != GDK_SUCCEED)
 									res = LOG_ERR;
@@ -1709,7 +1707,7 @@ cs_update_bat( sql_trans *tr, sql_delta **batp, sql_table *t, BAT *tids, BAT *up
 							while (nip < nie && res == LOG_OK) {
 								oid niv = (nipt)?nipt[nip]: niseqb+nip;
 								if (!msk || (msk[nip/32] & (1U<<(nip%32))) == 0) {
-									upd = BUNtail(upi, nip);
+									upd = BUNtail(&upi, nip);
 									if (BUNappend(nui, (ptr) &niv, true) != GDK_SUCCEED ||
 											BUNappend(nuv, (ptr) upd, true) != GDK_SUCCEED)
 										res = LOG_ERR;
@@ -2882,7 +2880,7 @@ min_max_col(sql_trans *tr, sql_column *c)
 		if ((b = bind_col_no_view(tr, c, access))) {
 			BATiter bi = bat_iterator(b);
 			if (bi.minpos != BUN_NONE && bi.maxpos != BUN_NONE) {
-				const void *nmin = BUNtail(bi, bi.minpos), *nmax = BUNtail(bi, bi.maxpos);
+				const void *nmin = BUNtail(&bi, bi.minpos), *nmax = BUNtail(&bi, bi.maxpos);
 				size_t minlen = ATOMlen(bi.type, nmin), maxlen = ATOMlen(bi.type, nmax);
 
 				if (!(c->min = GDKmalloc(minlen)) || !(c->max = GDKmalloc(maxlen))) {
@@ -3030,11 +3028,11 @@ col_stats(sql_trans *tr, sql_column *c, bool *nonil, bool *unique, double *uniqu
 				d->cs.ucnt == 0 && (bi.minpos != BUN_NONE || bi.maxpos != BUN_NONE)) {
 				if (c->min && VALinit(NULL, min, bi.type, c->min))
 					ok |= 1;
-				else if (bi.minpos != BUN_NONE && VALinit(NULL, min, bi.type, BUNtail(bi, bi.minpos)))
+				else if (bi.minpos != BUN_NONE && VALinit(NULL, min, bi.type, BUNtail(&bi, bi.minpos)))
 					ok |= 1;
 				if (c->max && VALinit(NULL, max, bi.type, c->max))
 					ok |= 2;
-				else if (bi.maxpos != BUN_NONE && VALinit(NULL, max, bi.type, BUNtail(bi, bi.maxpos)))
+				else if (bi.maxpos != BUN_NONE && VALinit(NULL, max, bi.type, BUNtail(&bi, bi.maxpos)))
 					ok |= 2;
 			}
 			if (d->cs.ucnt == 0) {
@@ -3512,10 +3510,10 @@ load_storage(sql_trans *tr, sql_table *t, storage *s, sqlid id)
 			oid n;
 			segment *seg = s->segs->h;
 			if (complex_cand(b)) {
-				oid o = * (oid *) Tpos(&bi, 0);
+				oid o = * (oid *) BUNtpos(&bi, 0);
 				n = o + 1;
 				for (BUN i = 1; i < icnt; i++) {
-					o = * (oid *) Tpos(&bi, i);
+					o = * (oid *) BUNtpos(&bi, i);
 					if (o == n) {
 						lcnt++;
 						n++;

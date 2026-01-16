@@ -5,9 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 /*
@@ -378,7 +376,7 @@ HASHgrowbucket(BAT *b)
 		if ((hb = HASHget(h, old)) != BUN_NONE) {
 			h->nheads--;
 			do {
-				const void *v = BUNtail(bi, hb);
+				const void *v = BUNtail(&bi, hb);
 				BUN hsh = ATOMhash(h->type, v);
 				assert((hsh & (mask - 1)) == old);
 				if (hsh & mask) {
@@ -664,7 +662,7 @@ BAThashsave(BAT *b, bool dosync)
 
 #define starthash(TYPE)							\
 	do {								\
-		const TYPE *restrict v = (const TYPE *) BUNtloc(bi, 0);	\
+		const TYPE *restrict v = (const TYPE *) BUNtloc(&bi, 0);	\
 		TIMEOUT_LOOP_IDX(p, cnt1, qry_ctx) {			\
 			c = hash_##TYPE(h, v + o - b->hseqbase);	\
 			hget = HASHget(h, c);				\
@@ -691,7 +689,7 @@ BAThashsave(BAT *b, bool dosync)
 	} while (0)
 #define finishhash(TYPE)						\
 	do {								\
-		const TYPE *restrict v = (const TYPE *) BUNtloc(bi, 0);	\
+		const TYPE *restrict v = (const TYPE *) BUNtloc(&bi, 0);	\
 		TIMEOUT_LOOP(ci->ncand - p, qry_ctx) {			\
 			c = hash_##TYPE(h, v + o - b->hseqbase);	\
 			hget = HASHget(h, c);				\
@@ -886,7 +884,7 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 		default: {
 			bool (*atomeq)(const void *, const void *) = ATOMequal(h->type);
 			TIMEOUT_LOOP_IDX(p, cnt1, qry_ctx) {
-				const void *restrict v = BUNtail(bi, o - b->hseqbase);
+				const void *restrict v = BUNtail(&bi, o - b->hseqbase);
 				c = hash_any(h, v);
 				hget = HASHget(h, c);
 				if (hget == BUN_NONE) {
@@ -899,7 +897,7 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 					     hb != BUN_NONE;
 					     hb = HASHgetlink(h, hb)) {
 						if (atomeq(v,
-							   BUNtail(bi, hb)))
+							   BUNtail(&bi, hb)))
 							break;
 					}
 					h->nunique += hb == BUN_NONE;
@@ -969,7 +967,7 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 	default: {
 		bool (*atomeq)(const void *, const void *) = ATOMequal(h->type);
 		TIMEOUT_LOOP(ci->ncand - p, qry_ctx) {
-			const void *restrict v = BUNtail(bi, o - b->hseqbase);
+			const void *restrict v = BUNtail(&bi, o - b->hseqbase);
 			c = hash_any(h, v);
 			hget = HASHget(h, c);
 			h->nheads += hget == BUN_NONE;
@@ -977,7 +975,7 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 				for (hb = hget;
 				     hb != BUN_NONE;
 				     hb = HASHgetlink(h, hb)) {
-					if (atomeq(v, BUNtail(bi, hb)))
+					if (atomeq(v, BUNtail(&bi, hb)))
 						break;
 				}
 				h->nunique += hb == BUN_NONE;
@@ -1159,7 +1157,7 @@ HASHappend_locked(BAT *b, BUN i, const void *v)
 	for (hb2 = hb;
 	     hb2 != BUN_NONE;
 	     hb2 = HASHgetlink(h, hb2)) {
-		if (atomeq(v, BUNtail(bi, hb2)))
+		if (atomeq(v, BUNtail(&bi, hb2)))
 			break;
 	}
 	h->nheads += hb == BUN_NONE;
@@ -1223,7 +1221,7 @@ HASHinsert_locked(BATiter *bi, BUN p, const void *v)
 			h->nheads++;
 		} else {
 			do {
-				if (atomeq(v, BUNtail(*bi, hb))) {
+				if (atomeq(v, BUNtail(bi, hb))) {
 					/* found another row with the
 					 * same value, so don't
 					 * increment nunique */
@@ -1239,14 +1237,14 @@ HASHinsert_locked(BATiter *bi, BUN p, const void *v)
 	bool seen = false;
 	for (;;) {
 		if (!seen)
-			seen = atomeq(v, BUNtail(*bi, hb));
+			seen = atomeq(v, BUNtail(bi, hb));
 		BUN hb2 = HASHgetlink(h, hb);
 		if (hb2 == BUN_NONE || hb2 < p) {
 			HASHputlink(h, p, hb2);
 			HASHputlink(h, hb, p);
 			h->heaplink.dirty = true;
 			while (!seen && hb2 != BUN_NONE) {
-				seen = atomeq(v, BUNtail(*bi, hb2));
+				seen = atomeq(v, BUNtail(bi, hb2));
 				hb2 = HASHgetlink(h, hb2);
 			}
 			if (!seen)
@@ -1309,7 +1307,7 @@ HASHdelete_locked(BATiter *bi, BUN p, const void *v)
 			h->nheads--;
 		} else {
 			do {
-				if (atomeq(v, BUNtail(*bi, hb2))) {
+				if (atomeq(v, BUNtail(bi, hb2))) {
 					/* found another row with the
 					 * same value, so don't
 					 * decrement nunique below */
@@ -1327,7 +1325,7 @@ HASHdelete_locked(BATiter *bi, BUN p, const void *v)
 	BUN links = 0;
 	for (;;) {
 		if (!seen)
-			seen = atomeq(v, BUNtail(*bi, hb));
+			seen = atomeq(v, BUNtail(bi, hb));
 		BUN hb2 = HASHgetlink(h, hb);
 		assert(hb2 != BUN_NONE );
 		assert(hb2 < hb);
@@ -1335,7 +1333,7 @@ HASHdelete_locked(BATiter *bi, BUN p, const void *v)
 			for (hb2 = HASHgetlink(h, hb2);
 			     !seen && hb2 != BUN_NONE;
 			     hb2 = HASHgetlink(h, hb2))
-				seen = atomeq(v, BUNtail(*bi, hb2));
+				seen = atomeq(v, BUNtail(bi, hb2));
 			break;
 		}
 		hb = hb2;

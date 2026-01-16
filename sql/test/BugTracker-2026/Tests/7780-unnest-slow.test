@@ -1,0 +1,171 @@
+query TT rowsort
+WITH "c1" AS (
+  SELECT
+    "s"."Country",
+    "s"."Segment",
+    "s"."A/F",
+    "s"."Year",
+    "s"."Month",
+    "s"."Volume sales (kgs)",
+    "s"."Modelled price (local currency)",
+    -- padding columns to keep rowtype wide (tune count)
+    "s"."p01","s"."p02","s"."p03","s"."p04","s"."p05",
+    "s"."p06","s"."p07","s"."p08","s"."p09","s"."p10",
+    "s"."p11","s"."p12","s"."p13","s"."p14","s"."p15",
+    "s"."p16","s"."p17","s"."p18","s"."p19","s"."p20",
+    CASE
+      WHEN ("s"."Month" >= timestamp '2012-01-01 00:00:00.000'
+            AND "s"."Month" <= timestamp '2012-12-01 00:00:00.000')
+      THEN ("s"."Volume sales (kgs)" * 0.05)
+      ELSE 0.0
+    END AS "monthly_volume_increment__kgs_"
+  FROM (
+    VALUES (
+      CAST('Sweden' AS varchar(255)),
+      CAST('FictionalSegment' AS varchar(255)),
+      CAST('Forecaste' AS varchar(255)),
+      CAST(2009.0 AS double precision),
+      CAST(timestamp '2009-01-01 00:00:00.000' AS timestamp),
+      CAST(1.0 AS double precision),
+      CAST(1.0 AS double precision),
+      -- padding payload
+      CAST(0.0 AS double precision), CAST(0.0 AS double precision), CAST(0.0 AS double precision), CAST(0.0 AS double precision), CAST(0.0 AS double precision),
+      CAST(0.0 AS double precision), CAST(0.0 AS double precision), CAST(0.0 AS double precision), CAST(0.0 AS double precision), CAST(0.0 AS double precision),
+      CAST(0.0 AS double precision), CAST(0.0 AS double precision), CAST(0.0 AS double precision), CAST(0.0 AS double precision), CAST(0.0 AS double precision),
+      CAST(0.0 AS double precision), CAST(0.0 AS double precision), CAST(0.0 AS double precision), CAST(0.0 AS double precision), CAST(0.0 AS double precision)
+    )
+  ) AS "s"(
+    "Country",
+    "Segment",
+    "A/F",
+    "Year",
+    "Month",
+    "Volume sales (kgs)",
+    "Modelled price (local currency)",
+    "p01","p02","p03","p04","p05",
+    "p06","p07","p08","p09","p10",
+    "p11","p12","p13","p14","p15",
+    "p16","p17","p18","p19","p20"
+  )
+),
+-- keep c2 WIDE on purpose
+"c2" AS (
+  SELECT
+    "c1".*,
+    CASE WHEN ("c1"."A/F" = 'Forecaste')
+         THEN ("c1"."Volume sales (kgs)" + "c1"."monthly_volume_increment__kgs_")
+         ELSE 0.0
+    END AS "volume_forecast__kgs_"
+  FROM "c1"
+),
+"c3" AS (
+  SELECT
+    "c2"."Country",
+    "c2"."Segment",
+    "c2"."Year",
+    "c2"."monthly_volume_increment__kgs_",
+    ("c2"."volume_forecast__kgs_" * "c2"."Modelled price (local currency)")
+      AS "revised_turnover_forecast__loca",
+    CASE WHEN ("c2"."Year" = 2011.0) THEN (
+      SELECT sum("volume_forecast__kgs_")
+      FROM "c2" AS "c2a"
+      WHERE "c2a"."Country" = "c2"."Country"
+        AND "c2a"."Segment" = "c2"."Segment"
+        AND "c2a"."Year" = 2010.0
+    ) ELSE 0.0 END AS "2010_volumeby_segment",
+    CASE WHEN ("c2"."Year" >= 2011.0) THEN
+      CASE WHEN ("c2"."Year" < 2013.0) THEN (
+        SELECT sum("volume_forecast__kgs_")
+        FROM "c2" AS "c2b"
+        WHERE "c2b"."Country" = "c2"."Country"
+          AND "c2b"."Segment" = "c2"."Segment"
+          AND "c2b"."Year" = 2011.0
+      ) ELSE 0.0 END
+    ELSE 0.0 END AS "2011_volume_by_segment",
+    CASE WHEN ("c2"."Year" >= 2012.0) THEN (
+      SELECT sum("volume_forecast__kgs_")
+      FROM "c2" AS "c2c"
+      WHERE "c2c"."Country" = "c2"."Country"
+        AND "c2c"."Segment" = "c2"."Segment"
+        AND "c2c"."Year" = 2012.0
+    ) ELSE 0.0 END AS "2012_volume_by_segment",
+    CASE WHEN ("c2"."Year" = 2013.0) THEN (
+      SELECT sum("volume_forecast__kgs_")
+      FROM "c2" AS "c2d"
+      WHERE "c2d"."Country" = "c2"."Country"
+        AND "c2d"."Segment" = "c2"."Segment"
+        AND "c2d"."Year" = 2013.0
+    ) ELSE 0.0 END AS "2013_volume_by_segment",
+    CASE WHEN ("c2"."Year" = 2011.0) THEN (
+      SELECT sum("volume_forecast__kgs_")
+      FROM "c2" AS "c2e"
+      WHERE "c2e"."Country" = "c2"."Country"
+        AND "c2e"."Year" = 2010.0
+    ) ELSE 0.0 END AS "2010_volume_by_category",
+    CASE WHEN ("c2"."Year" >= 2011.0) THEN
+      CASE WHEN ("c2"."Year" < 2013.0) THEN (
+        SELECT sum("volume_forecast__kgs_")
+        FROM "c2" AS "c2f"
+        WHERE "c2f"."Country" = "c2"."Country"
+          AND "c2f"."Year" = 2011.0
+      ) ELSE 0.0 END
+    ELSE 0.0 END AS "2011_volume_by_category",
+    CASE WHEN ("c2"."Year" >= 2012.0) THEN (
+      SELECT sum("volume_forecast__kgs_")
+      FROM "c2" AS "c2g"
+      WHERE "c2g"."Country" = "c2"."Country"
+        AND "c2g"."Year" = 2012.0
+    ) ELSE 0.0 END AS "2012_volume_by_category",
+    CASE WHEN ("c2"."Year" = 2013.0) THEN (
+      SELECT sum("volume_forecast__kgs_")
+      FROM "c2" AS "c2h"
+      WHERE "c2h"."Country" = "c2"."Country"
+        AND "c2h"."Year" = 2013.0
+    ) ELSE 0.0 END AS "2013_volume_by_category"
+  FROM "c2"
+),
+"c4" AS (
+  SELECT
+    "c3"."monthly_volume_increment__kgs_" AS "c44_monthly_volume_increment__kgs_",
+    CASE WHEN ("c3"."Year" = 2011.0) THEN (
+      SELECT sum("revised_turnover_forecast__loca")
+      FROM "c3" AS "c3a"
+      WHERE "c3a"."Country" = "c3"."Country"
+        AND "c3a"."Year" = 2010.0
+    ) ELSE 0.0 END AS "c5m_2010_value"
+  FROM "c3"
+)
+SELECT * FROM "c4" WHERE 1=0
+----
+
+
+query RRRRRRRRR rowsort
+WITH b AS (
+  SELECT *
+  FROM (VALUES
+    ('A', 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0)
+  ) AS v(brand, a, b, c, d, e, f, g, h)
+)
+SELECT
+  (SELECT sum(b) FROM b x WHERE x.brand = t.brand)
+    / (SELECT sum(a) FROM b y WHERE y.brand = t.brand) AS s1,
+  (SELECT sum(c) FROM b x WHERE x.brand = t.brand)
+    / (SELECT sum(a) FROM b y WHERE y.brand = t.brand) AS s2,
+  (SELECT sum(d) FROM b x WHERE x.brand = t.brand)
+    / (SELECT sum(a) FROM b y WHERE y.brand = t.brand) AS s3,
+  (SELECT sum(e) FROM b x WHERE x.brand = t.brand)
+    / (SELECT sum(b) FROM b y WHERE y.brand = t.brand) AS s4,
+  (SELECT sum(f) FROM b x WHERE x.brand = t.brand)
+    / (SELECT sum(b) FROM b y WHERE y.brand = t.brand) AS s5,
+  (SELECT sum(g) FROM b x WHERE x.brand = t.brand)
+    / (SELECT sum(c) FROM b y WHERE y.brand = t.brand) AS s6,
+  (SELECT sum(h) FROM b x WHERE x.brand = t.brand)
+    / (SELECT sum(c) FROM b y WHERE y.brand = t.brand) AS s7,
+  (SELECT sum(d) FROM b x WHERE x.brand = t.brand)
+    / (SELECT sum(e) FROM b y WHERE y.brand = t.brand) AS s8,
+  -- extra correlated subquery:
+  (SELECT sum(h) FROM b x WHERE x.brand = t.brand)
+    / (SELECT sum(d) FROM b y WHERE y.brand = t.brand) AS s9
+FROM b t
+WHERE 1=0
+----

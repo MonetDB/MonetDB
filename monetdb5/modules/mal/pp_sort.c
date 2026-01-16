@@ -15,7 +15,7 @@
 #include "pipeline.h"
 
 static int
-var_atom_cmp(int type, void *l, void *r, bool nilsmallest)
+var_atom_cmp(int type, const void *l, const void *r, bool nilsmallest)
 {
 	void *nil = (void*)ATOMnilptr(type);
 	int (*cmp)(const void *v1,const void *v2) = ATOMcompare(type);
@@ -98,8 +98,8 @@ PPsubmerge_any( bat *Rzzl, bat *Rzzb, bat *Rzza, BAT *lcol, BAT *rcol, BAT *zzl,
 			p -= ob;
 			lng b = 0, a = 0;
 			for(;p < e; ) {
-				void *vc = !side?BUNtail(ri, cur):BUNtail(li, cur);
-				void *vp =  side?BUNtail(ri, p):BUNtail(li, p);
+				const void *vc = !side?BUNtail(&ri, cur):BUNtail(&li, cur);
+				const void *vp =  side?BUNtail(&ri, p):BUNtail(&li, p);
 				int c = nilsmallest?cmp(vp,vc):var_atom_cmp(rcol->ttype, vp, vc, nilsmallest);
 				if (desc)
 					c = -c;
@@ -120,9 +120,9 @@ PPsubmerge_any( bat *Rzzl, bat *Rzzb, bat *Rzza, BAT *lcol, BAT *rcol, BAT *zzl,
 					e = side?re:le;
 					if (b) {
 						a = -1;
-						void *vc = side?BUNtail(ri, p):BUNtail(li, p);
+						const void *vc = side?BUNtail(&ri, p):BUNtail(&li, p);
 						for (p++; p<e; p++, a--) {
-							void *vp = side?BUNtail(ri, p):BUNtail(li, p);
+							const void *vp = side?BUNtail(&ri, p):BUNtail(&li, p);
 							if (cmp(vp,vc) != 0)
 								break;
 						}
@@ -152,10 +152,10 @@ PPsubmerge_any( bat *Rzzl, bat *Rzzb, bat *Rzza, BAT *lcol, BAT *rcol, BAT *zzl,
 			e = side?re:le;
 			if (b) {
 				a = -1;
-				void *vc = side?BUNtail(ri, p):BUNtail(li, p);
+				const void *vc = side?BUNtail(&ri, p):BUNtail(&li, p);
 				BUN np = p;
 				for (np++; np<e; np++, a--) {
-					void *vp = side?BUNtail(ri, np):BUNtail(li, np);
+					const void *vp = side?BUNtail(&ri, np):BUNtail(&li, np);
 					if (cmp(vp,vc) != 0)
 						break;
 				}
@@ -298,8 +298,8 @@ PPmerge_any( bat *Rzzl, bat *Rzzb, bat *Rzza, BAT *lcol, BAT *rcol, bit desc, bi
 
 	int side = 0;
 	for(; p<e; ) {
-		void *vc = !side?BUNtail(ri, cur):BUNtail(li, cur);
-		void *vp =  side?BUNtail(ri, p):BUNtail(li, p);
+		const void *vc = !side?BUNtail(&ri, cur):BUNtail(&li, cur);
+		const void *vp =  side?BUNtail(&ri, p):BUNtail(&li, p);
 		int c = nilsmallest?cmp(vp,vc):var_atom_cmp(rcol->ttype, vp, vc, nilsmallest);
 		if (desc)
 			c = -c;
@@ -320,9 +320,9 @@ PPmerge_any( bat *Rzzl, bat *Rzzb, bat *Rzza, BAT *lcol, BAT *rcol, bit desc, bi
 			e = side?re:le;
 			if (b) {
 				a = -1;
-				void *vc = side?BUNtail(ri, p):BUNtail(li, p);
+				const void *vc = side?BUNtail(&ri, p):BUNtail(&li, p);
 				for (p++; p<e; p++, a--) {
-					void *vp = side?BUNtail(ri, p):BUNtail(li, p);
+					const void *vp = side?BUNtail(&ri, p):BUNtail(&li, p);
 					if (cmp(vp,vc) != 0)
 						break;
 				}
@@ -350,10 +350,10 @@ PPmerge_any( bat *Rzzl, bat *Rzzb, bat *Rzza, BAT *lcol, BAT *rcol, bit desc, bi
 	e = side?re:le;
 	if (b) {
 		a = -1;
-		void *vc = side?BUNtail(ri, p):BUNtail(li, p);
+		const void *vc = side?BUNtail(&ri, p):BUNtail(&li, p);
 		BUN np = p;
 		for (np++; np<e; np++, a--) {
-			void *vp = side?BUNtail(ri, np):BUNtail(li, np);
+			const void *vp = side?BUNtail(&ri, np):BUNtail(&li, np);
 			if (cmp(vp,vc) != 0)
 				break;
 		}
@@ -569,7 +569,7 @@ PPmproject_any( BAT *res, BAT *zzl, BAT *lcol, BAT *rcol)
 	for(BUN i = 0; i < sz; i++) {
 		BUN o = z[i];
 		for (BUN c = 0; c < o; c++, p++) {
-			void *v = side ? BUNtail(ri, p) : BUNtail(li, p);
+			const void *v = side ? BUNtail(&ri, p) : BUNtail(&li, p);
 			if (BUNappend(res, v, TRUE) != GDK_SUCCEED) {
 				bat_iterator_end(&li);
 				bat_iterator_end(&ri);

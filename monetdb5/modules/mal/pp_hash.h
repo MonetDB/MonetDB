@@ -139,9 +139,9 @@ hash_prime_nr[32] = {
 typedef lng gid;
 typedef ATOMIC_TYPE hash_key_t;
 
-typedef int (*fcmp)(void *v1, void *v2);
-typedef lng (*fhsh)(void *v);
-typedef size_t (*flen)(void *v);
+typedef int (*fcmp)(const void *v1, const void *v2);
+typedef lng (*fhsh)(const void *v);
+typedef size_t (*flen)(const void *v);
 
 typedef struct hash_table {
 	Sink s;

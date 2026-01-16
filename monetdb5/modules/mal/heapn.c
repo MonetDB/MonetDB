@@ -20,8 +20,8 @@
  * Min/Max processing using heap structure
  * ie array implementation
  */
-typedef int (*fcmp)(void *v1, void *v2, void *hp);
-typedef int (*fcmp2)(void *v1, void *v2);
+typedef int (*fcmp)(const void *v1, const void *v2, const void *hp);
+typedef int (*fcmp2)(const void *v1, const void *v2);
 typedef void *(*fnil)();
 typedef lng gid;
 
@@ -113,7 +113,7 @@ subheap_down( heapn *hp, subheap *sh, size_t q, size_t l)
 	char *vals = sh->vals;
 	int cmp = 0;
 	if (sh->var) {
- 		cmp = sh->cmp(BUNtvar(sh->vbi, hp->pos[q]), BUNtvar(sh->vbi, hp->pos[l]), sh);
+ 		cmp = sh->cmp(BUNtvar(&sh->vbi, hp->pos[q]), BUNtvar(&sh->vbi, hp->pos[l]), sh);
 	} else
 		cmp = sh->cmp(vals+(hp->pos[q]*sh->width), vals+(hp->pos[l]*sh->width), sh);
 
@@ -132,7 +132,7 @@ subheap_up( heapn *hp, subheap *sh, size_t q, size_t p)
 	int cmp = 0;
 	char *vals = sh->vals;
 	if (sh->var) {
- 		cmp = sh->cmp(BUNtvar(sh->vbi, hp->pos[q]), BUNtvar(sh->vbi, hp->pos[p]), sh);
+ 		cmp = sh->cmp(BUNtvar(&sh->vbi, hp->pos[q]), BUNtvar(&sh->vbi, hp->pos[p]), sh);
 	} else
 		cmp = sh->cmp(vals+(hp->pos[q]*sh->width), vals+(hp->pos[p]*sh->width), sh);
 
@@ -152,7 +152,7 @@ gsubheap_down( heapn *hp, subheap *sh, oid g, size_t q, size_t l)
 	int cmp = 0;
 	char *vals = sh->vals;
 	if (sh->var) {
- 		cmp = sh->cmp(BUNtvar(sh->vbi, pos[q]), BUNtvar(sh->vbi, pos[l]), sh);
+ 		cmp = sh->cmp(BUNtvar(&sh->vbi, pos[q]), BUNtvar(&sh->vbi, pos[l]), sh);
 	} else
 		cmp = sh->cmp(vals+(pos[q]*sh->width), vals+(pos[l]*sh->width), sh);
 
@@ -172,7 +172,7 @@ gsubheap_up( heapn *hp, subheap *sh, oid g, size_t q, size_t p)
 	char *vals = sh->vals;
 	int cmp = 0;
 	if (sh->var) {
- 		cmp = sh->cmp(BUNtvar(sh->vbi, pos[q]), BUNtvar(sh->vbi, pos[p]), sh);
+ 		cmp = sh->cmp(BUNtvar(&sh->vbi, pos[q]), BUNtvar(&sh->vbi, pos[p]), sh);
 	} else
 		cmp = sh->cmp(vals+(pos[q]*sh->width), vals+(pos[p]*sh->width), sh);
 
@@ -193,8 +193,8 @@ subheap_newroot( heapn *hp, subheap *sh, size_t p)
 	char *ivals = sh->ivals;
 	int cmp = 0;
 	if (sh->var) {
-		void *val = BUNtvar(sh->bi, p);
- 		cmp = sh->cmp(BUNtvar(sh->vbi, hp->pos[0]), val, sh);
+		const void *val = BUNtvar(&sh->bi, p);
+ 		cmp = sh->cmp(BUNtvar(&sh->vbi, hp->pos[0]), val, sh);
 	} else
  		cmp = sh->cmp(vals+(hp->pos[0]*sh->width), ivals+(p*sh->width), sh);
 	bool newroot = false;
@@ -212,7 +212,7 @@ static int
 subheap_ins( subheap *sh, size_t pos, size_t dst)
 {
 	if (sh->var) {
-			void *val = BUNtvar(sh->bi, pos);
+			const void *val = BUNtvar(&sh->bi, pos);
 
 			if (dst == BATcount(sh->vb)) {
 				if (BUNappend(sh->vb, val, true) != GDK_SUCCEED)
@@ -264,7 +264,7 @@ heap_down_any( heapn *hp, int p)
 	int l = p*2+1, r = p*2+2, q = p;
 
 	if (l < (int)hp->used) {
-		int cmp = sh->cmp(BUNtvar(sh->vbi, hp->pos[q]), BUNtvar(sh->vbi, hp->pos[l]), sh);
+		int cmp = sh->cmp(BUNtvar(&sh->vbi, hp->pos[q]), BUNtvar(&sh->vbi, hp->pos[l]), sh);
 
 		if (!cmp && sh->sub)
 			q = subheap_down(hp, sh->sub, q, l);
@@ -274,7 +274,7 @@ heap_down_any( heapn *hp, int p)
 			q = l;
 	}
 	if (r < (int)hp->used) {
-		int cmp = sh->cmp(BUNtvar(sh->vbi, hp->pos[q]), BUNtvar(sh->vbi, hp->pos[r]), sh);
+		int cmp = sh->cmp(BUNtvar(&sh->vbi, hp->pos[q]), BUNtvar(&sh->vbi, hp->pos[r]), sh);
 
 		if (!cmp && sh->sub)
 			q = subheap_down(hp, sh->sub, q, r);
@@ -301,7 +301,7 @@ heap_up_any( heapn *hp, size_t p)
 		return p+1;
 	size_t q = (p-1)/2;
 	/* todo get real bat var atom offsets */
-	int cmp = sh->cmp(BUNtvar(sh->vbi, hp->pos[q]), BUNtvar(sh->vbi, hp->pos[p]), sh);
+	int cmp = sh->cmp(BUNtvar(&sh->vbi, hp->pos[q]), BUNtvar(&sh->vbi, hp->pos[p]), sh);
 
 	if (!cmp && sh->sub)
 		q = subheap_up(hp, sh->sub, q, p);
@@ -339,7 +339,7 @@ static gid
 heap_ins_any( heapn *hp, size_t pos, int *err)
 {
 	subheap *sh = hp->sub;
-	void *val = BUNtvar(sh->bi, pos);
+	const void *val = BUNtvar(&sh->bi, pos);
 	size_t p = hp->used;
 	if (!hp->full)
 		hp->pos[p] = p;
@@ -368,8 +368,8 @@ gsubheap_newroot( heapn *hp, subheap *sh, gid g, size_t p)
 	char *ivals = sh->ivals;
 	int cmp = 0;
 	if (sh->var) {
-		void *val = BUNtvar(sh->bi, p);
- 		cmp = sh->cmp(BUNtvar(sh->vbi, pos[0]), val, sh);
+		const void *val = BUNtvar(&sh->bi, p);
+ 		cmp = sh->cmp(BUNtvar(&sh->vbi, pos[0]), val, sh);
 	} else
  		cmp = sh->cmp(vals+(pos[0]*sh->width), ivals+(p*sh->width), sh);
 	bool newroot = false;
@@ -392,7 +392,7 @@ gheap_up_any( heapn *hp, gid g, size_t p)
 		return p+1;
 	size_t q = (p-1)/2;
 	/* todo get real bat var atom offsets */
-	int cmp = sh->cmp(BUNtvar(sh->vbi, pos[q]), BUNtvar(sh->vbi, pos[p]), sh);
+	int cmp = sh->cmp(BUNtvar(&sh->vbi, pos[q]), BUNtvar(&sh->vbi, pos[p]), sh);
 
 	if (!cmp && sh->sub)
 		q = gsubheap_up(hp, sh->sub, g, q, p);
@@ -422,7 +422,7 @@ gheap_down_any( heapn *hp, gid g, int p)
 	int l = p*2+1, r = p*2+2, q = p;
 
 	if (l < (int)hp->used) {
-		int cmp = sh->cmp(BUNtvar(sh->vbi, pos[q]), BUNtvar(sh->vbi, pos[l]), sh);
+		int cmp = sh->cmp(BUNtvar(&sh->vbi, pos[q]), BUNtvar(&sh->vbi, pos[l]), sh);
 
 		if (!cmp && sh->sub)
 			q = gsubheap_down(hp, sh->sub, g, q, l);
@@ -432,7 +432,7 @@ gheap_down_any( heapn *hp, gid g, int p)
 			q = l;
 	}
 	if (r < (int)hp->used) {
-		int cmp = sh->cmp(BUNtvar(sh->vbi, pos[q]), BUNtvar(sh->vbi, pos[r]), sh);
+		int cmp = sh->cmp(BUNtvar(&sh->vbi, pos[q]), BUNtvar(&sh->vbi, pos[r]), sh);
 
 		if (!cmp && sh->sub)
 			q = gsubheap_down(hp, sh->sub, g, q, r);
@@ -477,7 +477,7 @@ gheap_ins_any( heapn *hp, size_t pos, int *err)
 	hp->grp[vpos] = g;
 	subheap *sh = hp->sub;
 	if (sh) {
-		void *val = BUNtvar(sh->bi, pos);
+		const void *val = BUNtvar(&sh->bi, pos);
 		/* fill in empty slots */
 		if (vpos > BATcount(sh->vb)) {
 			for(BUN j = BATcount(sh->vb); j < vpos; j++)
@@ -529,19 +529,19 @@ heap_ins_void( heapn *hp, size_t pos, oid val, int *err)
 
 #define type_cmp_nsmall(T,l,r) (is_##T##_nil(l)?(!is_##T##_nil(r)?-1:0):(is_##T##_nil(r)?1:(l<r?-1:((l==r)?0:1))))
 
-#define heap_type_cmp(T)						\
-static int										\
-T##_cmp##_nsmall( T *v1, T *v2, void *sh)		\
-{												\
-	(void)sh;									\
-	return (is_##T##_nil(*v1)?(!is_##T##_nil(*v2)?-1:0):(is_##T##_nil(*v2)?1:(*v1<*v2?-1:((*v1==*v2)?0:1))));	\
-}												\
-												\
-static int										\
-T##_cmp( T *v1, T *v2, void *sh )				\
-{												\
-	(void)sh;									\
-	return (is_##T##_nil(*v1)?(!is_##T##_nil(*v2)?1:0):(is_##T##_nil(*v2)?-1:(*v1<*v2?-1:((*v1==*v2)?0:1))));	\
+#define heap_type_cmp(T)												\
+static int																\
+T##_cmp##_nsmall( const T *v1, const T *v2, const void *sh)				\
+{																		\
+	(void)sh;															\
+	return (is_##T##_nil(*v1)?(!is_##T##_nil(*v2)?-1:0):(is_##T##_nil(*v2)?1:(*v1<*v2?-1:((*v1==*v2)?0:1)))); \
+}																		\
+																		\
+static int																\
+T##_cmp( const T *v1, const T *v2, const void *sh )						\
+{																		\
+	(void)sh;															\
+	return (is_##T##_nil(*v1)?(!is_##T##_nil(*v2)?1:0):(is_##T##_nil(*v2)?-1:(*v1<*v2?-1:((*v1==*v2)?0:1)))); \
 }
 
 heap_type_cmp(bte)
@@ -1282,7 +1282,7 @@ extern void BATswap_heaps(BAT *u, BAT *b, Pipeline *p);
 	if (ATOMstorage(tt) == TYPE_##T) { \
 		BATiter bi = bat_iterator(b); \
 		for(; i<cnt && !err; i++) {		\
-			char *v = BUNtvar(bi, si[i]); \
+			char *v = BUNtvar(&bi, si[i]); \
 			if (pi[i] > BATcount(r)) { \
 				for(BUN j = BATcount(r); j < pi[i]; j++)  \
 					if (BUNappend(r, ATOMnilptr(r->ttype), true) != GDK_SUCCEED) \
@@ -1411,7 +1411,7 @@ HEAPproject(Client ctx, bat *rid, bat *pos, bat *sel, bat *in, const ptr *H)
 	if (ATOMstorage(tt) == TYPE_str) { \
 		BATiter bi = bat_iterator(b); \
 		for(; i<cnt && !err; i++) {		\
-			char *v = BUNtvar(bi, si[i]); \
+			const char *v = BUNtvar(&bi, si[i]); \
 			if (pi[i] > BATcount(r)) { \
 				for(BUN j = BATcount(r); j < pi[i]; j++)  \
 					if (BUNappend(r, ATOMnilptr(r->ttype), true) != GDK_SUCCEED) \
@@ -1697,7 +1697,7 @@ HEAPtopn(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr pci)
 						j++;
 					} else {
 						oid *hppos = hp->pos + hp->gi[i] * hp->size;
-						int cmp = sh->cmp(BUNtvar(sh->vbi, hppos[0]), BUNtvar(sh->bi, i), sh);
+						int cmp = sh->cmp(BUNtvar(&sh->vbi, hppos[0]), BUNtvar(&sh->bi, i), sh);
 						if (cmp < 0 || (sh->sub && !cmp && gsubheap_newroot(hp, sh->sub, hp->gi[i], i))) {
 							p[j] = gheap_del_any(hp, hp->gi[i]);
 							p[j] = gheap_ins_any(hp, i, &err);
@@ -1714,7 +1714,7 @@ HEAPtopn(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr pci)
 						j++;
 					} else {
 						oid *hppos = hp->pos + hp->gi[i] * hp->size;
-						int cmp = sh->cmp(BUNtvar(sh->vbi, hppos[0]), BUNtvar(sh->bi, i), sh);
+						int cmp = sh->cmp(BUNtvar(&sh->vbi, hppos[0]), BUNtvar(&sh->bi, i), sh);
 						if (cmp > 0 || (sh->sub && !cmp && gsubheap_newroot(hp, sh->sub, hp->gi[i], i))) {
 							p[j] = gheap_del_any(hp, hp->gi[i]);
 							p[j] = gheap_ins_any(hp, i, &err);
@@ -1734,7 +1734,7 @@ HEAPtopn(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr pci)
 			}
 			if (sh->min) {
 				for(; i<cnt; i++) {
-					int cmp = sh->cmp(BUNtvar(sh->vbi, hp->pos[0]), BUNtvar(sh->bi, i), sh);
+					int cmp = sh->cmp(BUNtvar(&sh->vbi, hp->pos[0]), BUNtvar(&sh->bi, i), sh);
 					if (cmp < 0 || (sh->sub && !cmp && subheap_newroot(hp, sh->sub, i))) {
 						p[j] = heap_del_any(hp);
 						p[j] = heap_ins_any(hp, i, &err);
@@ -1744,7 +1744,7 @@ HEAPtopn(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr pci)
 				}
 			} else {
 				for(; i<cnt; i++) {
-					int cmp = sh->cmp(BUNtvar(sh->vbi, hp->pos[0]), BUNtvar(sh->bi, i), sh);
+					int cmp = sh->cmp(BUNtvar(&sh->vbi, hp->pos[0]), BUNtvar(&sh->bi, i), sh);
 					if (cmp > 0 || (sh->sub && !cmp && subheap_newroot(hp, sh->sub, i))) {
 						p[j] = heap_del_any(hp);
 						p[j] = heap_ins_any(hp, i, &err);

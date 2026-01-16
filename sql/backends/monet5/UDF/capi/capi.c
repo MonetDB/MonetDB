@@ -5,9 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #include "monetdb_config.h"
@@ -1073,7 +1071,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 			li = bat_iterator(input_bats[index]);
 			BATloop(input_bats[index], p, q)
 			{
-				char *t = (char *)BUNtvar(li, p);
+				char *t = (char *)BUNtvar(&li, p);
 				if (strNil(t)) {
 					bat_data->data[j] = NULL;
 				} else {
@@ -1180,7 +1178,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 			li = bat_iterator(input_bats[index]);
 			BATloop(input_bats[index], p, q)
 			{
-				blob *t = (blob *)BUNtvar(li, p);
+				blob *t = (blob *)BUNtvar(&li, p);
 				if (t->nitems == ~(size_t)0) {
 					bat_data->data[j].size = ~(size_t) 0;
 					bat_data->data[j].data = NULL;
@@ -1236,7 +1234,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 			li = bat_iterator(input_bats[index]);
 			BATloop(input_bats[index], p, q)
 			{
-				void *t = BUNtail(li, p);
+				const void *t = BUNtail(&li, p);
 				if (BATatoms[bat_type].atomNull &&
 					BATatoms[bat_type].atomCmp(
 						t, BATatoms[bat_type].atomNull) == 0) {
@@ -1546,16 +1544,10 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 						appended_element = element;
 					}
 					if (BUNappend(b, appended_element, false) != GDK_SUCCEED) {
-						//if (element) {
-						//	GDKfree(element);
-						//}
 						msg = createException(MAL, "cudf.eval", MAL_MALLOC_FAIL);
 						goto wrapup;
 					}
 				}
-				//if (element) {
-				//	GDKfree(element);
-				//}
 				GDKfree(data);
 			}
 		}
@@ -1578,7 +1570,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		} else {
 			BATiter li = bat_iterator(b);
 			if (VALinit(NULL, &stk->stk[pci->argv[i]], bat_type,
-						BUNtail(li, 0)) == NULL) {
+						BUNtail(&li, 0)) == NULL) {
 				msg = createException(MAL, "cudf.eval", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 			bat_iterator_end(&li);

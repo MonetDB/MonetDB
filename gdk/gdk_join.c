@@ -5,9 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #include "monetdb_config.h"
@@ -380,7 +378,7 @@ selectjoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 
 	MT_thread_setalgorithm(__func__);
 	oid o = canditer_next(lci);
-	v = BUNtail(li, o - l->hseqbase);
+	v = BUNtail(&li, o - l->hseqbase);
 
 	if (!nil_matches &&
 	    ATOMeq(li.type, v, ATOMnilptr(li.type))) {
@@ -3036,7 +3034,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 			     rb != BUN_NONE;
 			     rb = HASHgetlink(hsh, rb)) {
 				ro = canditer_idx(rci, rb);
-				if ((*eq)(nil, BUNtail(ri, ro - r->hseqbase))) {
+				if ((*eq)(nil, BUNtail(&ri, ro - r->hseqbase))) {
 					assert(!locked);
 					if (r3p) {
 						defmark = bit_nil;
@@ -3059,7 +3057,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 			     rb = HASHgetlink(hsh, rb)) {
 				if (rb >= rl && rb < rh &&
 				    (cmp == NULL ||
-				     (*eq)(nil, BUNtail(ri, rb)))) {
+				     (*eq)(nil, BUNtail(&ri, rb)))) {
 					if (r3p) {
 						defmark = bit_nil;
 						break;
@@ -3148,7 +3146,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 				     rb != BUN_NONE;
 				     rb = HASHgetlink(hsh, rb)) {
 					ro = canditer_idx(rci, rb);
-					if (!(*eq)(v, BUNtail(ri, ro - r->hseqbase)))
+					if (!(*eq)(v, BUNtail(&ri, ro - r->hseqbase)))
 						continue;
 					if (only_misses) {
 						nr++;
@@ -3178,7 +3176,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 				     rb != BUN_NONE;
 				     rb = HASHgetlink(hsh, rb)) {
 					if (rb >= rl && rb < rh &&
-					    (*eq)(v, BUNtail(ri, rb)) &&
+					    (*eq)(v, BUNtail(&ri, rb)) &&
 					    canditer_contains(rci, ro = (oid) (rb - roff + rseq))) {
 						if (only_misses) {
 							nr++;
@@ -3194,7 +3192,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 				     rb != BUN_NONE;
 				     rb = HASHgetlink(hsh, rb)) {
 					if (rb >= rl && rb < rh &&
-					    (*eq)(v, BUNtail(ri, rb))) {
+					    (*eq)(v, BUNtail(&ri, rb))) {
 						if (only_misses) {
 							nr++;
 							break;
@@ -3514,7 +3512,7 @@ count_unique(BAT *b, BAT *s, BUN *cnt1, BUN *cnt2)
 			     hb != BUN_NONE;
 			     hb = HASHgetlink(&hs, hb)) {
 				BUN p = canditer_idx(&ci, hb) - b->hseqbase;
-				if (eq(v, BUNtail(bi, p)))
+				if (eq(v, BUNtail(&bi, p)))
 					break;
 			}
 			if (hb == BUN_NONE) {

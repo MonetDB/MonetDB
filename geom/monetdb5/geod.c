@@ -5,9 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #include "geod.h"
@@ -958,7 +956,7 @@ filterSelectGeomGeomDoubleToBit(bat* outid, const bat *bid , const bat *sid, con
 	//Loop through column and compare with constant
 	for (BUN i = 0; i < ci.ncand; i++) {
 		oid c_oid = canditer_next(&ci);
-		const wkb *col_wkb = BUNtvar(b_iter, c_oid - b->hseqbase);
+		const wkb *col_wkb = BUNtvar(&b_iter, c_oid - b->hseqbase);
 		if ((col_geom = wkb2geos(col_wkb)) == NULL)
 			continue;
 		if (GEOSGetSRID_r(geoshandle, col_geom) != GEOSGetSRID_r(geoshandle, const_geom)) {
@@ -1053,11 +1051,11 @@ filterJoinGeomGeomDoubleToBit(bat *lres_id, bat *rres_id, const bat *l_id, const
 	//Convert wkb to GEOS only once
 	for (BUN i = 0; i < l_ci.ncand; i++) {
 		oid l_oid = canditer_next(&l_ci);
-		l_geoms[i] = wkb2geos((const wkb*) BUNtvar(l_iter, l_oid - l->hseqbase));
+		l_geoms[i] = wkb2geos((const wkb*) BUNtvar(&l_iter, l_oid - l->hseqbase));
 	}
 	for (BUN j = 0; j < r_ci.ncand; j++) {
 		oid r_oid = canditer_next(&r_ci);
-		r_geoms[j] = wkb2geos((const wkb*)BUNtvar(r_iter, r_oid - r->hseqbase));
+		r_geoms[j] = wkb2geos((const wkb*)BUNtvar(&r_iter, r_oid - r->hseqbase));
 	}
 
 	canditer_reset(&l_ci);

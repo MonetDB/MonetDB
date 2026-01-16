@@ -5,9 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #include "monetdb_config.h"
@@ -60,13 +58,11 @@ prop_remove(allocator *sa, prop *plist, prop *p)
 
 	if (plist == p) {
 		plist = p->p;
-		// ma_free(sa, p);
 		return plist;
 	}
 	for(; op; op = op->p) {
 		if (op->p == p) {
 			op->p = p->p;
-			// ma_free(sa, p);
 			break;
 		}
 	}
@@ -186,7 +182,6 @@ propvalue2string(allocator *sa, prop *p)
 				res = ma_alloc(sa, strlen(s) + 3);
 				stpcpy(stpcpy(stpcpy(res, "\""), s), "\"");
 			}
-			// GDKfree(s);
 		}
 		return res;
 	}

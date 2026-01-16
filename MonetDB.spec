@@ -4,9 +4,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 2024, 2025 MonetDB Foundation;
-# Copyright August 2008 - 2023 MonetDB B.V.;
-# Copyright 1997 - July 2008 CWI.
+# For copyright information, see the file debian/copyright.
 
 %global version 11.56.0
 
@@ -1522,6 +1520,20 @@ rm "${RPM_BUILD_ROOT}"%{_unitdir}/monetdbd.service
   using the arena allocator.
 - sql: Unused helper function mapiuri_database() has been removed from
   rel_remote.h.
+- mapilib: msettings can now be allocated with a custom memory allocator using
+  msettings_create_with() and msettings_clone_with().  This is used in
+  the SQL module to allocate them using the arena allocator.
+- mapilib: The msettings objects no longer keep track of 'ignored' settings.
+  Function msetting_set_ignored has been removed.
+- mapilib: Function msetting_as_string() has been changed to never return a newly
+  allocated string.  To make this possible the user now has to pass in
+  a small scratch buffer that will be used if the setting is a number.
+  (booleans and strings can use existing strings).
+- mapilib: Functions msettings_parse_url() and msettings_validate() have been
+  modified to return any error message instead of setting it through a
+  pointer parameter.
+- mapilib: Function msettings_write_url() has been added to render an msettings
+  object as a URL string.
 
 * Mon Jan 13 2025 Sjoerd Mullender <sjoerd@acm.org> - 11.53.1-20250317
 - monetdb5: Removed function bat.attach since it wasn't used.

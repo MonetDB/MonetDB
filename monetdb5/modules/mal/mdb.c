@@ -5,9 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 /*
@@ -257,10 +255,8 @@ MDBgetFrame(BAT *b, BAT *bn, MalBlkPtr mb, MalStkPtr s, int depth, const char *n
 				BUNappend(bn, buf, false) != GDK_SUCCEED) {
 				BBPunfix(b->batCacheid);
 				BBPunfix(bn->batCacheid);
-				// GDKfree(buf);
 				throw(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
-			// GDKfree(buf);
 			buf = NULL;
 		}
 	}
@@ -358,7 +354,6 @@ MDBStkTrace(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 	len = strlen(msg);
 	buf = (char *) ma_alloc(m->ma, len + 1024);
 	if (buf == NULL) {
-		//GDKfree(msg);
 		BBPreclaim(b);
 		BBPreclaim(bn);
 		throw(MAL, "mdb.setTrace", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -368,13 +363,10 @@ MDBStkTrace(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 			 getFunctionId(getInstrPtr(m, 0)), getPC(m, p));
 	if (BUNappend(b, &k, false) != GDK_SUCCEED ||
 		BUNappend(bn, buf, false) != GDK_SUCCEED) {
-		//GDKfree(msg);
-		//GDKfree(buf);
 		BBPreclaim(b);
 		BBPreclaim(bn);
 		throw(MAL, "mdb.setTrace", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
-	//GDKfree(msg);
 
 	for (pcup = s->pcup, s = s->up, k++; s != NULL;
 		 pcup = s->pcup, s = s->up, k++) {
@@ -386,11 +378,9 @@ MDBStkTrace(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 		}
 		l = strlen(msg);
 		if (l > len) {
-			//GDKfree(buf);
 			len = l;
 			buf = (char *) ma_alloc(m->ma, len + 1024);
 			if (buf == NULL) {
-				//GDKfree(msg);
 				BBPunfix(b->batCacheid);
 				BBPunfix(bn->batCacheid);
 				throw(MAL, "mdb.setTrace", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -401,15 +391,11 @@ MDBStkTrace(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 				 getFunctionId(getInstrPtr(s->blk, 0)), pcup);
 		if (BUNappend(b, &k, false) != GDK_SUCCEED ||
 			BUNappend(bn, buf, false) != GDK_SUCCEED) {
-			//GDKfree(buf);
-			//GDKfree(msg);
 			BBPunfix(b->batCacheid);
 			BBPunfix(bn->batCacheid);
 			throw(MAL, "mdb.setTrace", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
-		//GDKfree(msg);
 	}
-	//GDKfree(buf);
 	*ret = b->batCacheid;
 	BBPkeepref(b);
 	*ret2 = bn->batCacheid;
@@ -585,9 +571,7 @@ printStackElm(stream *f, MalBlkPtr mb, const ValRecord *v, int index, BUN cnt, B
 		mnstr_printf(f, "!%s ", nmeOnStk);
 	mnstr_printf(f, " %s", (isVarConstant(mb, index) ? " constant" : ""));
 	mnstr_printf(f, " %s", (isVarTypedef(mb, index) ? " type variable" : ""));
-	//GDKfree(nme);
 	mnstr_printf(f, "\n");
-	//GDKfree(nmeOnStk);
 
 	if (cnt && v && (isaBatType(n->type) || v->bat) && !is_bat_nil(v->val.bval)) {
 		printBATelm(f, v->val.bval, cnt, first);
@@ -660,11 +644,9 @@ MDBgetDefinition(Client cntxt, MalBlkPtr m, MalStkPtr stk, InstrPtr p)
 			throw(MAL, "mdb.getDefinition", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		if (BUNappend(b, ps, false) != GDK_SUCCEED) {
-			//GDKfree(ps);
 			BBPreclaim(b);
 			throw(MAL, "mdb.getDefinition", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
-		//GDKfree(ps);
 	}
 	*ret = b->batCacheid;
 	BBPkeepref(b);

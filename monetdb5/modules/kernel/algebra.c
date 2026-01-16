@@ -5,9 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 /*
@@ -1089,22 +1087,13 @@ ALGgroupedfirstn(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bool *ascs = ma_alloc(mb->ma, nbats * sizeof(bool));
 	bool *nlss = ma_alloc(mb->ma, nbats * sizeof(bool));
 	if (bats == NULL || ascs == NULL || nlss == NULL) {
-		//GDKfree(bats);
-		//GDKfree(ascs);
-		//GDKfree(nlss);
 		throw(MAL, "algebra.groupedfirstn", MAL_MALLOC_FAIL);
 	}
 	if (!is_bat_nil(sid) && (s = BATdescriptor(sid)) == NULL) {
-		//GDKfree(bats);
-		//GDKfree(ascs);
-		//GDKfree(nlss);
 		throw(MAL, "algebra.groupedfirstn", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	if (!is_bat_nil(gid) && (g = BATdescriptor(gid)) == NULL) {
 		BBPreclaim(s);
-		//GDKfree(bats);
-		//GDKfree(ascs);
-		//GDKfree(nlss);
 		throw(MAL, "algebra.groupedfirstn", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	for (int i = 0; i < nbats; i++) {
@@ -1114,9 +1103,6 @@ ALGgroupedfirstn(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				BBPreclaim(bats[--i]);
 			BBPreclaim(g);
 			BBPreclaim(s);
-			//GDKfree(bats);
-			//GDKfree(ascs);
-			//GDKfree(nlss);
 			throw(MAL, "algebra.groupedfirstn", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		}
 		ascs[i] = *getArgReference_bit(stk, pci, i * 3 + 5);
@@ -1127,9 +1113,6 @@ ALGgroupedfirstn(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BBPreclaim(g);
 	for (int i = 0; i < nbats; i++)
 		BBPreclaim(bats[i]);
-	//GDKfree(bats);
-	//GDKfree(ascs);
-	//GDKfree(nlss);
 	if (bn == NULL)
 		throw(MAL, "algebra.groupedfirstn", GDK_EXCEPTION);
 	*ret = bn->batCacheid;
@@ -1613,7 +1596,7 @@ doALGfetch(allocator *ma, ptr ret, BAT *b, BUN pos)
 	assert(pos <= BUN_MAX);
 	BATiter bi = bat_iterator(b);
 	if (ATOMextern(b->ttype)) {
-		ptr _src = BUNtail(bi, pos);
+		const void *_src = BUNtail(&bi, pos);
 		size_t _len = ATOMlen(b->ttype, _src);
 		ptr _dst = ma_alloc(ma, _len);
 		if (_dst == NULL) {

@@ -5,9 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #ifndef SQL_STORAGE_H
@@ -45,7 +43,7 @@ typedef int (*table_delete_fptr)(sql_trans *tr, sql_table *t, oid rid);
 typedef res_table *(*table_orderby_fptr)(sql_trans *tr, sql_table *t,
 		sql_column *jl, sql_column *jr,
 		sql_column *jl2, sql_column *jr2 /* optional join(jl,jr,(jl2,jr2)) */, sql_column *o, ...);
-typedef void *(*table_fetch_value_fptr)(res_table *rt, sql_column *c);
+typedef const void *(*table_fetch_value_fptr)(res_table *rt, sql_column *c);
 typedef void (*table_result_destroy_fptr)(res_table *rt);
 
 typedef struct rids {

@@ -5,9 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 /*
@@ -85,10 +83,6 @@ GROUPcollect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		.unique = ma_zalloc(ma, pci->argc * sizeof(BUN)),
 	};
 	if (a->cols == NULL || a->bid == NULL || a->unique == NULL) {
-		//GDKfree(a->cols);
-		//GDKfree(a->bid);
-		//GDKfree(a->unique);
-		//GDKfree(a);
 		return NULL;
 	}
 	for (i = pci->retc; i < pci->argc; i++, a->last++) {
@@ -97,10 +91,6 @@ GROUPcollect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (a->cols[a->last] == NULL) {
 			for (a->last--; a->last >= 0; a->last--)
 				BBPunfix(a->cols[a->last]->batCacheid);
-			//GDKfree(a->cols);
-			//GDKfree(a->bid);
-			//GDKfree(a->unique);
-			//GDKfree(a);
 			return NULL;
 		}
 		bs = BATsample(b, 1000);
@@ -211,7 +201,6 @@ GROUPmulticolumngroup(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			BBPrelease(oldext);
 			BBPrelease(oldhist);
 		} while (msg == MAL_SUCCEED && ++i < aggr->last);
-	// GROUPdelete(aggr);
 	for (aggr->last--; aggr->last >= 0; aggr->last--) {
 		BBPunfix(aggr->cols[aggr->last]->batCacheid);
 	}

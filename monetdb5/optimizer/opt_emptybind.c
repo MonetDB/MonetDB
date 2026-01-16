@@ -5,9 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 /* author M.Kersten
@@ -81,15 +79,12 @@ OPTemptybindImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 	size_t updated_size = esize * sizeof(InstrPtr);
 	updated = (InstrPtr *) ma_zalloc(ta, updated_size);
 	if (updated == 0) {
-		// GDKfree(empty);
 		ma_close(&ta_state);
 		throw(MAL, "optimizer.emptybind", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
 	old = mb->stmt;
 	if (newMalBlkStmt(mb, mb->ssize) < 0) {
-		// GDKfree(empty);
-		 // GDKfree(updated);
 		ma_close(&ta_state);
 		throw(MAL, "optimizer.emptybind", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
@@ -126,14 +121,11 @@ OPTemptybindImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 		if (getModuleId(p) == sqlRef && isUpdateInstruction(p)) {
 			if (etop == esize) {
 				InstrPtr *tmp = updated;
-				//updated = GDKrealloc(updated,
-				//					 (esize += 256) * sizeof(InstrPtr));
 				size_t osz = esize;
 				esize += 256;
 				updated = MA_RENEW_ARRAY(ta, InstrPtr, updated,
 									 esize, osz);
 				if (updated == NULL) {
-					// GDKfree(tmp);
 					updated = tmp;
 					msg = createException(MAL, "optimizer.emptybind",
 										  SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -305,9 +297,6 @@ OPTemptybindImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 	for (; i < slimit; i++)
 		if (old[i])
 			pushInstruction(mb, old[i]);
-	//GDKfree(old);
-	// GDKfree(empty);
-	// GDKfree(updated);
 	ma_close(&ta_state);
 	/* Defense line against incorrect plans */
 	if (msg == MAL_SUCCEED)

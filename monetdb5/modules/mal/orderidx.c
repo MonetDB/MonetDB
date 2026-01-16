@@ -5,9 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 /*
@@ -408,7 +406,6 @@ OIDXmerge(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			for (j = i - 1; j >= 0; j--) {
 				BBPunfix(a[j]->batCacheid);
 			}
-			//GDKfree(a);
 			BBPunfix(bid);
 			throw(MAL, "bat.orderidx", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		}
@@ -431,7 +428,6 @@ OIDXmerge(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BBPunfix(bid);
 		for (i = 0; i < n_ar; i++)
 			BBPunfix(a[i]->batCacheid);
-		//GDKfree(a);
 		throw(MAL, "bat.orderidx", "count mismatch");
 	}
 
@@ -439,7 +435,6 @@ OIDXmerge(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	for (i = 0; i < n_ar; i++)
 		BBPunfix(a[i]->batCacheid);
-	//GDKfree(a);
 	BBPunfix(bid);
 
 	if (rc != GDK_SUCCEED)

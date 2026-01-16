@@ -5,9 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 /*
@@ -155,7 +153,6 @@ mnstr_read_stringwrap(Client ctx, str *res, const Stream *S)
 		size += len;
 		tmp = ma_realloc(ma, buf, size, osz);
 		if (tmp == NULL) {
-			// GDKfree(buf);
 			throw(MAL, "mnstr_read_stringwrap",
 				  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}

@@ -5,9 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #include "monetdb_config.h"
@@ -273,7 +271,7 @@ GDKanalyticalfirst(BAT *b, BAT *s, BAT *e, int tpe)
 	default:{
 		if (ATOMvarsized(tpe)) {
 			for (; k < cnt; k++) {
-				const void *curval = (end[k] > start[k]) ? BUNtvar(bi, start[k]) : nil;
+				const void *curval = (end[k] > start[k]) ? BUNtvar(&bi, start[k]) : nil;
 				if (tfastins_nocheckVAR(r, k, curval) != GDK_SUCCEED) {
 					BBPreclaim(r);
 					bat_iterator_end(&bi);
@@ -287,7 +285,7 @@ GDKanalyticalfirst(BAT *b, BAT *s, BAT *e, int tpe)
 			uint16_t width = r->twidth;
 			uint8_t *restrict rcast = (uint8_t *) Tloc(r, 0);
 			for (; k < cnt; k++) {
-				const void *curval = (end[k] > start[k]) ? BUNtloc(bi, start[k]) : nil;
+				const void *curval = (end[k] > start[k]) ? BUNtloc(&bi, start[k]) : nil;
 				memcpy(rcast, curval, width);
 				rcast += width;
 				has_nils |= atomeq(curval, nil);
@@ -359,7 +357,7 @@ GDKanalyticallast(BAT *b, BAT *s, BAT *e, int tpe)
 	default:{
 		if (ATOMvarsized(tpe)) {
 			for (; k < cnt; k++) {
-				const void *curval = (end[k] > start[k]) ? BUNtvar(bi, end[k] - 1) : nil;
+				const void *curval = (end[k] > start[k]) ? BUNtvar(&bi, end[k] - 1) : nil;
 				if (tfastins_nocheckVAR(r, k, curval) != GDK_SUCCEED) {
 					BBPreclaim(r);
 					bat_iterator_end(&bi);
@@ -373,7 +371,7 @@ GDKanalyticallast(BAT *b, BAT *s, BAT *e, int tpe)
 			uint16_t width = r->twidth;
 			uint8_t *restrict rcast = (uint8_t *) Tloc(r, 0);
 			for (; k < cnt; k++) {
-				const void *curval = (end[k] > start[k]) ? BUNtloc(bi, end[k] - 1) : nil;
+				const void *curval = (end[k] > start[k]) ? BUNtloc(&bi, end[k] - 1) : nil;
 				memcpy(rcast, curval, width);
 				rcast += width;
 				has_nils |= atomeq(curval, nil);
@@ -485,7 +483,7 @@ GDKanalyticalnthvalue(BAT *b, BAT *s, BAT *e, BAT *t, lng nth, int tpe)
 						curval = (void *) nil;
 						has_nils = true;
 					} else {
-						curval = BUNtvar(bi, start[k] + (oid)(lnth - 1));
+						curval = BUNtvar(&bi, start[k] + (oid)(lnth - 1));
 						has_nils |= atomeq(curval, nil);
 					}
 					if (tfastins_nocheckVAR(r, k, curval) != GDK_SUCCEED) {
@@ -507,7 +505,7 @@ GDKanalyticalnthvalue(BAT *b, BAT *s, BAT *e, BAT *t, lng nth, int tpe)
 						curval = (void *) nil;
 						has_nils = true;
 					} else {
-						curval = BUNtloc(bi, start[k] + (oid)(lnth - 1));
+						curval = BUNtloc(&bi, start[k] + (oid)(lnth - 1));
 						has_nils |= atomeq(curval, nil);
 					}
 					memcpy(rcast, curval, width);
@@ -560,7 +558,7 @@ GDKanalyticalnthvalue(BAT *b, BAT *s, BAT *e, BAT *t, lng nth, int tpe)
 				} else {
 					nth--;
 					for (; k < cnt; k++) {
-						const void *curval = (end[k] > start[k] && nth < (lng)(end[k] - start[k])) ? BUNtvar(bi, start[k] + (oid) nth) : nil;
+						const void *curval = (end[k] > start[k] && nth < (lng)(end[k] - start[k])) ? BUNtvar(&bi, start[k] + (oid) nth) : nil;
 						if (tfastins_nocheckVAR(r, k, curval) != GDK_SUCCEED) {
 							bat_iterator_end(&bi);
 							bat_iterator_end(&si);
@@ -584,7 +582,7 @@ GDKanalyticalnthvalue(BAT *b, BAT *s, BAT *e, BAT *t, lng nth, int tpe)
 				} else {
 					nth--;
 					for (; k < cnt; k++) {
-						const void *curval = (end[k] > start[k] && nth < (lng)(end[k] - start[k])) ? BUNtloc(bi, start[k] + (oid) nth) : nil;
+						const void *curval = (end[k] > start[k] && nth < (lng)(end[k] - start[k])) ? BUNtloc(&bi, start[k] + (oid) nth) : nil;
 						memcpy(rcast, curval, width);
 						rcast += width;
 						has_nils |= atomeq(curval, nil);
@@ -678,7 +676,7 @@ invalidnth:
 		}							\
 		has_nils |= (lag > 0 && atomeq(default_value, nil)); \
 		for (l = k - lag; k < j; k++, l++) {			\
-			curval = BUNtail(bi, l);			\
+			curval = BUNtail(&bi, l);			\
 			if (BUNappend(r, curval, false) != GDK_SUCCEED)	{ \
 				bat_iterator_end(&bi);			\
 				bat_iterator_end(&pi);			\
@@ -825,7 +823,7 @@ GDKanalyticallag(BAT *b, BAT *p, BUN lag, const void *restrict default_value, in
 		if (lead < ncnt) {					\
 			m = ncnt - lead;				\
 			for (i = 0,n = k + lead; i < m; i++, n++) {	\
-				curval = BUNtail(bi, n);		\
+				curval = BUNtail(&bi, n);		\
 				if (BUNappend(r, curval, false) != GDK_SUCCEED)	{ \
 					bat_iterator_end(&bi);		\
 					bat_iterator_end(&pi);		\
@@ -1040,7 +1038,7 @@ GDKanalyticallead(BAT *b, BAT *p, BUN lead, const void *restrict default_value, 
 			for (; k < i;) {				\
 				j = k;					\
 				do {					\
-					const void *next = BUNtvar(bi, k); \
+					const void *next = BUNtvar(&bi, k); \
 					if (!atomeq(next, nil)) {	\
 						if (atomeq(curval, nil)) \
 							curval = next;	\
@@ -1058,7 +1056,7 @@ GDKanalyticallead(BAT *b, BAT *p, BUN lead, const void *restrict default_value, 
 			for (; k < i;) {				\
 				j = k;					\
 				do {					\
-					const void *next = BUNtloc(bi, k); \
+					const void *next = BUNtloc(&bi, k); \
 					if (!atomeq(next, nil)) {	\
 						if (atomeq(curval, nil)) \
 							curval = next;	\
@@ -1082,7 +1080,7 @@ GDKanalyticallead(BAT *b, BAT *p, BUN lead, const void *restrict default_value, 
 		l = i - 1;						\
 		if (ATOMvarsized(tpe)) {				\
 			for (j = l; ; j--) {				\
-				const void *next = BUNtvar(bi, j);	\
+				const void *next = BUNtvar(&bi, j);	\
 				if (!atomeq(next, nil)) {		\
 					if (atomeq(curval, nil))	\
 						curval = next;		\
@@ -1104,7 +1102,7 @@ GDKanalyticallead(BAT *b, BAT *p, BUN lead, const void *restrict default_value, 
 			}						\
 		} else {						\
 			for (j = l; ; j--) {				\
-				const void *next = BUNtloc(bi, j);	\
+				const void *next = BUNtloc(&bi, j);	\
 				if (!atomeq(next, nil)) {		\
 					if (atomeq(curval, nil))	\
 						curval = next;		\
@@ -1134,7 +1132,7 @@ GDKanalyticallead(BAT *b, BAT *p, BUN lead, const void *restrict default_value, 
 		const void *curval = (void*) nil;			\
 		if (ATOMvarsized(tpe)) {				\
 			for (j = k; j < i; j++) {			\
-				const void *next = BUNtvar(bi, j);	\
+				const void *next = BUNtvar(&bi, j);	\
 				if (!atomeq(next, nil)) {		\
 					if (atomeq(curval, nil))	\
 						curval = next;		\
@@ -1147,7 +1145,7 @@ GDKanalyticallead(BAT *b, BAT *p, BUN lead, const void *restrict default_value, 
 					goto cleanup;			\
 		} else {						\
 			for (j = k; j < i; j++) {			\
-				const void *next = BUNtloc(bi, j);	\
+				const void *next = BUNtloc(&bi, j);	\
 				if (!atomeq(next, nil)) {		\
 					if (atomeq(curval, nil))	\
 						curval = next;		\
@@ -1167,14 +1165,14 @@ GDKanalyticallead(BAT *b, BAT *p, BUN lead, const void *restrict default_value, 
 	do {								\
 		if (ATOMvarsized(tpe)) {				\
 			for (; k < i; k++) {				\
-				const void *next = BUNtvar(bi, k);	\
+				const void *next = BUNtvar(&bi, k);	\
 				if ((res = tfastins_nocheckVAR(r, k, next)) != GDK_SUCCEED) \
 					goto cleanup;			\
 				has_nils |= atomeq(next, nil);	\
 			}						\
 		} else {						\
 			for (; k < i; k++) {				\
-				const void *next = BUNtloc(bi, k);	\
+				const void *next = BUNtloc(&bi, k);	\
 				memcpy(rcast, next, width);		\
 				rcast += width;				\
 				has_nils |= atomeq(next, nil);	\
@@ -1188,7 +1186,7 @@ GDKanalyticallead(BAT *b, BAT *p, BUN lead, const void *restrict default_value, 
 	} while (0)
 #define COMPUTE_LEVEL0_MIN_MAX_OTHERS(X, GT_LT, NOTHING1, NOTHING2)	\
 	do {								\
-		computed = BUNtail(bi, j + X);				\
+		computed = BUNtail(&bi, j + X);				\
 	} while (0)
 #define COMPUTE_LEVELN_MIN_MAX_OTHERS(VAL, GT_LT, NOTHING1, NOTHING2)	\
 	do {								\
@@ -1215,7 +1213,7 @@ GDKanalyticallead(BAT *b, BAT *p, BUN lead, const void *restrict default_value, 
 		oid ncount = i - k;					\
 		if ((res = GDKrebuild_segment_tree(ncount, sizeof(void*), st, &segment_tree, &levels_offset, &nlevels)) != GDK_SUCCEED) \
 			goto cleanup;					\
-		populate_segment_tree(void*, ncount, INIT_AGGREGATE_MIN_MAX_OTHERS, COMPUTE_LEVEL0_MIN_MAX_OTHERS, COMPUTE_LEVELN_MIN_MAX_OTHERS, GT_LT, NOTHING, NOTHING); \
+		populate_segment_tree(const void*, ncount, INIT_AGGREGATE_MIN_MAX_OTHERS, COMPUTE_LEVEL0_MIN_MAX_OTHERS, COMPUTE_LEVELN_MIN_MAX_OTHERS, GT_LT, NOTHING, NOTHING); \
 		for (; k < i; k++)					\
 			compute_on_segment_tree(void*, start[k] - j, end[k] - j, INIT_AGGREGATE_MIN_MAX_OTHERS, COMPUTE_LEVELN_MIN_MAX_OTHERS, FINALIZE_AGGREGATE_MIN_MAX_OTHERS, GT_LT, NOTHING, NOTHING); \
 		j = k;							\
@@ -1501,7 +1499,7 @@ ANALYTICAL_MIN_MAX(max, MAX, <)
 			for (; k < i; ) {				\
 				j = k;					\
 				do {					\
-					curval += !atomeq(BUNtail(bi, k), nil); \
+					curval += !atomeq(BUNtail(&bi, k), nil); \
 					k++;				\
 				} while (k < i && !op[k]);		\
 				for (; j < k; j++)			\
@@ -1530,7 +1528,7 @@ ANALYTICAL_MIN_MAX(max, MAX, <)
 			}						\
 		} else {						\
 			for (j = l; ; j--) {				\
-				curval += !atomeq(BUNtail(bi, j), nil); \
+				curval += !atomeq(BUNtail(&bi, j), nil); \
 				if (op[j] || j == k) {			\
 					for (; ; l--) {			\
 						rb[l] = curval;		\
@@ -1553,7 +1551,7 @@ ANALYTICAL_MIN_MAX(max, MAX, <)
 			curval = (lng)(i - k);				\
 		} else {						\
 			for (; j < i; j++)				\
-				curval += !atomeq(BUNtail(bi, j), nil); \
+				curval += !atomeq(BUNtail(&bi, j), nil); \
 		}							\
 		for (; k < i; k++)					\
 			rb[k] = curval;					\
@@ -1566,13 +1564,13 @@ ANALYTICAL_MIN_MAX(max, MAX, <)
 				rb[k] = 1;				\
 		} else {						\
 			for (; k < i; k++)				\
-				rb[k] = !atomeq(BUNtail(bi, k), nil);	\
+				rb[k] = !atomeq(BUNtail(&bi, k), nil);	\
 		}							\
 	} while (0)
 
 #define COMPUTE_LEVEL0_COUNT_OTHERS(X, NOTHING1, NOTHING2, NOTHING3)	\
 	do {								\
-		computed = !atomeq(BUNtail(bi, j + X), nil);		\
+		computed = !atomeq(BUNtail(&bi, j + X), nil);		\
 	} while (0)
 #define ANALYTICAL_COUNT_OTHERS_OTHERS					\
 	do {								\

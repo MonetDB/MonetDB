@@ -5,9 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #include "monetdb_config.h"
@@ -848,6 +846,10 @@ rel_split_project_(visitor *v, sql_rel *rel, int top)
 
 	if (!rel)
 		return NULL;
+
+	if (v->opt >= 0 && rel->opt >= v->opt) /* only once */
+        return rel;
+
 	if (is_project(rel->op) && list_length(rel->exps) && (is_groupby(rel->op) || rel->l) && !need_distinct(rel) && !is_single(rel)) {
 		list *exps = rel->exps;
 		node *n;
@@ -901,6 +903,8 @@ rel_split_project_(visitor *v, sql_rel *rel, int top)
 		if (!rel->r)
 			return NULL;
 	}
+	if (rel && v->opt >= 0)
+        rel->opt = v->opt;
 	return rel;
 }
 
@@ -908,6 +912,8 @@ static sql_rel *
 rel_split_project(visitor *v, global_props *gp, sql_rel *rel)
 {
 	(void) gp;
+	if (v->opt >= 0 && rel)
+		v->opt = rel->opt+1;
 	return rel_split_project_(v, rel, 1);
 }
 

@@ -5,9 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #include "monetdb_config.h"
@@ -293,7 +291,6 @@ atom_general(allocator *sa, sql_subtype *tpe, const char *val, long tz_offset)
 
 			/* no result or nil means error (SQL has NULL not nil) */
 			if (res < 0 || !p || ATOMeq(type, p, ATOMnilptr(type))) {
-				// GDKfree(p);
 				GDKclrerr();
 				return NULL;
 			}
@@ -315,7 +312,6 @@ atom_general(allocator *sa, sql_subtype *tpe, const char *val, long tz_offset)
 				a->data.val.lval /= d;
 				a->data.val.lval *= d;
 			}
-			// GDKfree(p);
 		}
 	} else {
 		VALset(&a->data, a->data.vtype, (ptr) ATOMnilptr(a->data.vtype));

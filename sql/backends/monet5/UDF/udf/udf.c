@@ -5,9 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 /* monetdb_config.h must be the first include in each .c file */
@@ -95,7 +93,6 @@ UDFreverse(Client ctx, str *res, const str *arg)
 		if (!(*res = ma_alloc(ma, buflen)))
 			throw(MAL, "udf.reverse", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		if ((msg = UDFreverse_(res, &buflen, s)) != MAL_SUCCEED) {
-			//GDKfree(*res);
 			*res = NULL;
 			return msg;
 		}
@@ -147,7 +144,7 @@ UDFBATreverse_(BAT **ret, BAT *src)
 	li = bat_iterator(src);
 	/* the core of the algorithm */
 	for (p = 0; p < q ; p++) {
-		const char *x = BUNtvar(li, p);
+		const char *x = BUNtvar(&li, p);
 
 		if (strNil(x)) {
 			/* if the input string is null, then append directly */

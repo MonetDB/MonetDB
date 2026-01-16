@@ -5,9 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 /*
@@ -851,7 +849,6 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			if (w) {
 				ret = createException(MAL, "interpreter", "unknown operation:%s",
 									  w);
-				//GDKfree(w);
 			} else {
 				ret = createException(MAL, "interpreter",
 									  "failed instruction2str");

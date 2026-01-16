@@ -5,9 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 /*
@@ -401,7 +399,7 @@ import_nul_terminated(backend *be, bat *ret, BUN *retcnt, str method, int width,
 
 	init_insert_state(&state, ma, result, width);
 	bi = bat_iterator(input);
-	data = BUNtloc(bi, 0);
+	data = BUNtloc(&bi, 0);
 	size = BATcount(input);
 	msg = insert_nul_terminated_values(&state, data, size, &consumed);
 	bat_iterator_end(&bi);

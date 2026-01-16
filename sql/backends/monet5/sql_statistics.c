@@ -5,9 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 /* (c) M.L. Kersten
@@ -439,7 +437,7 @@ sql_statistics(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							BATiter fbi = bat_iterator(fb);
 							ssize_t (*tostr)(allocator *, str*,size_t*,const void*,bool) = BATatoms[fbi.type].atomToStr;
 							if (fbi.minpos != BUN_NONE) {
-								if (tostr(m->sa, &buf, &buflen, BUNtail(fbi, fbi.minpos), false) < 0) {
+								if (tostr(m->sa, &buf, &buflen, BUNtail(&fbi, fbi.minpos), false) < 0) {
 									bat_iterator_end(&fbi);
 									BBPunfix(fb->batCacheid);
 									msg = createException(SQL, "sql.statistics", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -456,7 +454,7 @@ sql_statistics(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							}
 
 							if (fbi.maxpos != BUN_NONE) {
-								if (tostr(m->sa, &buf, &buflen, BUNtail(fbi, fbi.maxpos), false) < 0) {
+								if (tostr(m->sa, &buf, &buflen, BUNtail(&fbi, fbi.maxpos), false) < 0) {
 									bat_iterator_end(&fbi);
 									BBPunfix(fb->batCacheid);
 									msg = createException(SQL, "sql.statistics", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -488,7 +486,6 @@ sql_statistics(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 	}
 
-	// GDKfree(buf);
 	*rcid = cid->batCacheid;
 	BBPkeepref(cid);
 	*rsch = sch->batCacheid;
@@ -517,7 +514,6 @@ sql_statistics(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BBPkeepref(revsorted);
 	return MAL_SUCCEED;
 bailout:
-	// GDKfree(buf);
 	BBPreclaim(cid);
 	BBPreclaim(sch);
 	BBPreclaim(tab);

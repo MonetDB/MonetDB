@@ -5,9 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 /*
@@ -196,7 +194,6 @@ chkFlow(MalBlkPtr mb)
 											  "",
 											  getFunctionId(p) ?
 											  getFunctionId(p) : "", tpname);
-						// GDKfree(tpname);
 						return msg;
 					}
 				}
@@ -220,7 +217,6 @@ chkFlow(MalBlkPtr mb)
 					msg = createException(MAL, "chkFlow",
 										  "%s.%s signature misplaced\n!%s",
 										  getModuleId(p), getFunctionId(p), l);
-					//GDKfree(l);
 					return msg;
 				}
 			}
@@ -437,7 +433,6 @@ debugFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg, int first,
 				}
 				mnstr_printf(fd, "\n");
 			}
-			//GDKfree(ps);
 		} else
 			mnstr_printf(fd, "#failed instruction2str()\n");
 	}
@@ -473,7 +468,6 @@ listFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg, int first,
 				size_t l = strlen(ps);
 				if (l > len)
 					len = l;
-				//GDKfree(ps);
 			} else
 				mnstr_printf(fd, "#failed instruction2str()\n");
 		}

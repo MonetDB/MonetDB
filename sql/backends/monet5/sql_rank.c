@@ -5,9 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #include "monetdb_config.h"
@@ -1126,7 +1124,7 @@ do_lead_lag(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char 
 			}
 			bpi = bat_iterator(d);
 			if (bpi.count > 0) {
-				p = BUNtail(bpi, 0);
+				p = BUNtail(&bpi, 0);
 				default_size = ATOMlen(tp3, p);
 				default_value = ma_alloc(mb->ma, default_size);
 				if (default_value)
