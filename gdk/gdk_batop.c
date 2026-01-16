@@ -185,7 +185,7 @@ insert_string_bat(BAT *b, BATiter *ni, struct canditer *ci, bool force, bool may
 			for (int i = 0; i < 1024; i++) {
 				p = (BUN) (((double) rand() / RAND_MAX) * (cnt - 1));
 				p = canditer_idx(ci, p) - ni->b->hseqbase;
-				len += strlen(BUNtvar(*ni, p)) + 1;
+				len += strlen(BUNtvar(ni, p)) + 1;
 			}
 			len = (len + 512) / 1024; /* rounded average length */
 			r = (GDK_ELIMLIMIT - GDK_STRHASHSIZE) / (len + 12);
@@ -320,7 +320,7 @@ insert_string_bat(BAT *b, BATiter *ni, struct canditer *ci, bool force, bool may
 		MT_thread_setalgorithm("insert string values");
 		TIMEOUT_LOOP(cnt, qry_ctx) {
 			p = canditer_next(ci) - hseq;
-			tp = BUNtvar(*ni, p);
+			tp = BUNtvar(ni, p);
 			if (tfastins_nocheckVAR(b, r, tp) != GDK_SUCCEED) {
 				return GDK_FAIL;
 			}
@@ -337,7 +337,7 @@ insert_string_bat(BAT *b, BATiter *ni, struct canditer *ci, bool force, bool may
 		MT_thread_setalgorithm("insert string values with check");
 		TIMEOUT_LOOP(cnt, qry_ctx) {
 			p = canditer_next(ci) - ni->b->hseqbase;
-			off = BUNtvaroff(*ni, p); /* the offset */
+			off = VarHeapVal(ni->base, p, ni->width); /* the offset */
 			tp = ni->vh->base + off; /* the string */
 			if (off < b->tvheap->free &&
 			    strcmp(b->tvheap->base + off, tp) == 0) {
@@ -538,7 +538,7 @@ append_varsized_bat(BAT *b, BATiter *ni, struct canditer *ci, bool mayshare)
 	r = BATcount(b);
 	for (BUN i = 0; i < cnt; i++) {
 		BUN p = canditer_next(ci) - hseq;
-		const void *t = BUNtvar(*ni, p);
+		const void *t = BUNtvar(ni, p);
 		if (tfastins_nocheckVAR(b, r, t) != GDK_SUCCEED) {
 			return GDK_FAIL;
 		}
@@ -549,7 +549,7 @@ append_varsized_bat(BAT *b, BATiter *ni, struct canditer *ci, bool mayshare)
 		r -= cnt;
 		BATiter bi = bat_iterator_nolock(b);
 		for (BUN i = 0; i < cnt; i++) {
-			const void *t = BUNtvar(bi, r);
+			const void *t = BUNtvar(&bi, r);
 			HASHappend_locked(b, r, t);
 			r++;
 		}
@@ -807,7 +807,7 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 		minbound = VALptr(&minprop);
 		if (ci.ncand == BATcount(n) &&
 		    ni.minpos != BUN_NONE &&
-		    atomcmp(BUNtail(ni, ni.minpos), minbound) < 0) {
+		    atomcmp(BUNtail(&ni, ni.minpos), minbound) < 0) {
 			assert(0);
 			GDKerror("value out of bounds\n");
 			MT_lock_unset(&b->theaplock);
@@ -819,7 +819,7 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 		maxbound = VALptr(&maxprop);
 		if (ci.ncand == BATcount(n) &&
 		    ni.maxpos != BUN_NONE &&
-		    atomcmp(BUNtail(ni, ni.maxpos), maxbound) >= 0) {
+		    atomcmp(BUNtail(&ni, ni.maxpos), maxbound) >= 0) {
 			assert(0);
 			GDKerror("value out of bounds\n");
 			MT_lock_unset(&b->theaplock);
@@ -830,7 +830,7 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 	if (BATcount(b) == 0 || b->tmaxpos != BUN_NONE) {
 		if (ni.maxpos != BUN_NONE) {
 			BATiter bi = bat_iterator_nolock(b);
-			if (BATcount(b) == 0 || atomcmp(BUNtail(bi, b->tmaxpos), BUNtail(ni, ni.maxpos)) < 0) {
+			if (BATcount(b) == 0 || atomcmp(BUNtail(&bi, b->tmaxpos), BUNtail(&ni, ni.maxpos)) < 0) {
 				if (s == NULL) {
 					b->tmaxpos = BATcount(b) + ni.maxpos;
 				} else {
@@ -844,7 +844,7 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 	if (BATcount(b) == 0 || b->tminpos != BUN_NONE) {
 		if (ni.minpos != BUN_NONE) {
 			BATiter bi = bat_iterator_nolock(b);
-			if (BATcount(b) == 0 || atomcmp(BUNtail(bi, b->tminpos), BUNtail(ni, ni.minpos)) > 0) {
+			if (BATcount(b) == 0 || atomcmp(BUNtail(&bi, b->tminpos), BUNtail(&ni, ni.minpos)) > 0) {
 				if (s == NULL) {
 					b->tminpos = BATcount(b) + ni.minpos;
 				} else {
@@ -944,8 +944,8 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 		BUN last = r - 1;
 		BATiter bi = bat_iterator_nolock(b);
 		int xx = ATOMcmp(b->ttype,
-				 BUNtail(ni, ci.seq - hseq),
-				 BUNtail(bi, last));
+				 BUNtail(&ni, ci.seq - hseq),
+				 BUNtail(&bi, last));
 		if (b->tsorted && !ni.sorted && ni.nosorted == 0 && xx >= 0) {
 			/* b is currently sorted; we don't know whether
 			 * n is sorted; first value of n is at least as
@@ -984,7 +984,7 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 		if (b->ttype != TYPE_void && b->tsorted && BATtdense(b) &&
 		    (!BATtdensebi(&ni) ||
 		     ci.tpe != cand_dense ||
-		     1 + *(oid *) BUNtloc(bi, last) != BUNtoid(n, ci.seq - hseq))) {
+		     1 + *(oid *) BUNtloc(&bi, last) != BUNtoid(n, ci.seq - hseq))) {
 			b->tseqbase = oid_nil;
 		}
 		b->tnonil &= ni.nonil;
@@ -1035,7 +1035,7 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 			const void *atomnil = ATOMnilptr(b->ttype);
 			TIMEOUT_LOOP(ci.ncand, qry_ctx) {
 				BUN p = canditer_next(&ci) - hseq;
-				const void *t = BUNtail(ni, p);
+				const void *t = BUNtail(&ni, p);
 				bool isnil = atomeq(t, atomnil);
 				if (notnull && isnil) {
 					assert(0);
@@ -1143,7 +1143,7 @@ BATdel(BAT *b, BAT *d)
 			BUN p = o - b->hseqbase;
 			BUN q = p + c;
 			while (p < q) {
-				(*atmdel)(b->tvheap, (var_t *) BUNtloc(bi, p));
+				(*atmdel)(b->tvheap, (var_t *) BUNtloc(&bi, p));
 				p++;
 			}
 		}
@@ -1201,7 +1201,7 @@ BATdel(BAT *b, BAT *d)
 		while (c > 0 && *o < b->hseqbase + BATcount(b)) {
 			size_t n;
 			if (atmdel)
-				(*atmdel)(b->tvheap, (var_t *) BUNtloc(bi, *o - b->hseqbase));
+				(*atmdel)(b->tvheap, (var_t *) BUNtloc(&bi, *o - b->hseqbase));
 			o++;
 			c--;
 			nd++;
@@ -1368,7 +1368,7 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 				goto bailout;
 			}
 
-			const void *new = BUNtvar(ni, i);
+			const void *new = BUNtvar(&ni, i);
 
 			if (updid >= BATcount(b)) {
 				assert(mayappend);
@@ -1400,7 +1400,7 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 			 * after an update (with a mmapped tail file)
 			 * but before that was committed, then the
 			 * offset may point outside of the vheap */
-			const void *old = BUNtvaroff(bi, updid) < bi.vhfree ? BUNtvar(bi, updid) : NULL;
+			const void *old = VarHeapVal(bi.base, updid, bi.width) < bi.vhfree ? BUNtvar(&bi, updid) : NULL;
 
 			if (old && atomeq(old, new)) {
 				/* replacing with the same value:
@@ -1433,14 +1433,14 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 				 * that check */
 				if (!isnil &&
 				    (prevnew == NULL || prevnew != new) &&
-				    atomcmp(BUNtvar(bi, bi.maxpos), new) < 0) {
+				    atomcmp(BUNtvar(&bi, bi.maxpos), new) < 0) {
 					/* new value is larger than
 					 * previous largest */
 					bi.maxpos = updid;
 					maxupdated = true;
 				} else if (old == NULL ||
 					   (!maxupdated &&
-					    atomeq(BUNtvar(bi, bi.maxpos), old) &&
+					    atomeq(BUNtvar(&bi, bi.maxpos), old) &&
 					    !atomeq(new, old))) {
 					/* old value is equal to
 					 * largest and new value is
@@ -1453,14 +1453,14 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 			if (bi.minpos != BUN_NONE) {
 				if (!isnil &&
 				    (prevnew == NULL || prevnew != new) &&
-				    atomcmp(BUNtvar(bi, bi.minpos), new) > 0) {
+				    atomcmp(BUNtvar(&bi, bi.minpos), new) > 0) {
 					/* new value is smaller than
 					 * previous smallest */
 					bi.minpos = updid;
 					minupdated = true;
 				} else if (old == NULL ||
 					   (!minupdated &&
-					    atomeq(BUNtvar(bi, bi.minpos), old) &&
+					    atomeq(BUNtvar(&bi, bi.minpos), old) &&
 					    !atomeq(new, old))) {
 					/* old value is equal to
 					 * smallest and new value is
@@ -1593,7 +1593,7 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 					bat_iterator_end(&ni);
 					return GDK_FAIL;
 				}
-				if (BUNappend(b, BUNtmsk(ni, i), force) != GDK_SUCCEED) {
+				if (BUNappend(b, BUNtmsk(&ni, i), force) != GDK_SUCCEED) {
 					bat_iterator_end(&ni);
 					return GDK_FAIL;
 				}
@@ -1671,7 +1671,7 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 				}
 				if (complex_cand(n)) {
 					for (BUN i = 0, j = ni.count; i < j; i++)
-						o[i] = *(oid *)Tpos(&ni, i);
+						o[i] = *(oid *)BUNtpos(&ni, i);
 					/* last value */
 					v = o[ni.count - 1];
 				} else {
@@ -1693,13 +1693,13 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 			 * min/max, else we don't know what b's new
 			 * min/max are*/
 			if (bi.minpos != BUN_NONE && ni.minpos != BUN_NONE &&
-			    atomcmp(BUNtloc(bi, bi.minpos), BUNtail(ni, ni.minpos)) >= 0) {
+			    atomcmp(BUNtloc(&bi, bi.minpos), BUNtail(&ni, ni.minpos)) >= 0) {
 				bi.minpos = pos + ni.minpos;
 			} else {
 				bi.minpos = BUN_NONE;
 			}
 			if (bi.maxpos != BUN_NONE && ni.maxpos != BUN_NONE &&
-			    atomcmp(BUNtloc(bi, bi.maxpos), BUNtail(ni, ni.maxpos)) <= 0) {
+			    atomcmp(BUNtloc(&bi, bi.maxpos), BUNtail(&ni, ni.maxpos)) <= 0) {
 				bi.maxpos = pos + ni.maxpos;
 			} else {
 				bi.maxpos = BUN_NONE;
@@ -1753,7 +1753,7 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 				goto bailout;
 			}
 
-			const void *new = BUNtloc(ni, i);
+			const void *new = BUNtloc(&ni, i);
 
 			if (updid >= BATcount(b)) {
 				assert(mayappend);
@@ -1780,7 +1780,7 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 				continue;
 			}
 
-			const void *old = BUNtloc(bi, updid);
+			const void *old = BUNtloc(&bi, updid);
 			bool isnil = atomeq(new, nil);
 			anynil |= isnil;
 			if (b->tnil &&
@@ -1796,11 +1796,11 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 			b->tnil |= isnil;
 			if (bi.maxpos != BUN_NONE) {
 				if (!isnil &&
-				    atomcmp(BUNtloc(bi, bi.maxpos), new) < 0) {
+				    atomcmp(BUNtloc(&bi, bi.maxpos), new) < 0) {
 					/* new value is larger than
 					 * previous largest */
 					bi.maxpos = updid;
-				} else if (atomeq(BUNtloc(bi, bi.maxpos), old) &&
+				} else if (atomeq(BUNtloc(&bi, bi.maxpos), old) &&
 					   !atomeq(new, old)) {
 					/* old value is equal to
 					 * largest and new value is
@@ -1812,11 +1812,11 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 			}
 			if (bi.minpos != BUN_NONE) {
 				if (!isnil &&
-				    atomcmp(BUNtloc(bi, bi.minpos), new) > 0) {
+				    atomcmp(BUNtloc(&bi, bi.minpos), new) > 0) {
 					/* new value is smaller than
 					 * previous smallest */
 					bi.minpos = updid;
-				} else if (atomeq(BUNtloc(bi, bi.minpos), old) &&
+				} else if (atomeq(BUNtloc(&bi, bi.minpos), old) &&
 					   !atomeq(new, old)) {
 					/* old value is equal to
 					 * smallest and new value is
@@ -1853,7 +1853,8 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 #endif
 				break;
 			default:
-				memcpy(BUNtloc(bi, updid), new, ATOMsize(b->ttype));
+				memcpy(b->theap->base + updid * b->twidth,
+				       new, ATOMsize(b->ttype));
 				break;
 			}
 			HASHinsert_locked(&bi, updid, new);
@@ -2025,7 +2026,7 @@ BATslice(BAT *b, BUN l, BUN h)
 			BATsetcount(bn, h - l);
 		} else {
 			for (; p < q; p++) {
-				if (bunfastapp(bn, BUNtail(bi, p)) != GDK_SUCCEED) {
+				if (bunfastapp(bn, BUNtail(&bi, p)) != GDK_SUCCEED) {
 					BBPreclaim(bn);
 					bn = NULL;
 					goto doreturn;
@@ -2171,8 +2172,8 @@ BATordered(BAT *b)
 		case TYPE_str:
 			for (BUN q = BATcount(b), p = 1; p < q; p++) {
 				int c;
-				const char *p1 = BUNtvar(bi, p - 1);
-				const char *p2 = BUNtvar(bi, p);
+				const char *p1 = BUNtvar(&bi, p - 1);
+				const char *p2 = BUNtvar(&bi, p);
 				if (p1 == p2)
 					c = 0;
 				else if (p1[0] == '\200') {
@@ -2206,7 +2207,7 @@ BATordered(BAT *b)
 			int (*cmpf)(const void *, const void *) = ATOMcompare(b->ttype);
 			for (BUN q = BATcount(b), p = 1; p < q; p++) {
 				int c;
-				if ((c = cmpf(BUNtail(bi, p - 1), BUNtail(bi, p))) > 0) {
+				if ((c = cmpf(BUNtail(&bi, p - 1), BUNtail(&bi, p))) > 0) {
 					b->tnosorted = bi.nosorted = p;
 					TRC_DEBUG(ALGO, "Fixed nosorted(" BUNFMT ") for " ALGOBATFMT " (" LLFMT " usec)\n", p, ALGOBATPAR(b), GDKusec() - t0);
 					goto doreturn;
@@ -2352,7 +2353,7 @@ BATordered_rev(BAT *b)
 		default: {
 			int (*cmpf)(const void *, const void *) = ATOMcompare(b->ttype);
 			for (BUN q = BATcount(b), p = 1; p < q; p++) {
-				if (cmpf(BUNtail(bi, p - 1), BUNtail(bi, p)) < 0) {
+				if (cmpf(BUNtail(&bi, p - 1), BUNtail(&bi, p)) < 0) {
 					b->tnorevsorted = p;
 					TRC_DEBUG(ALGO, "Fixed norevsorted(" BUNFMT ") for " ALGOBATFMT " (" LLFMT " usec)\n", p, ALGOBATPAR(b), GDKusec() - t0);
 					goto doreturn;
@@ -3315,7 +3316,7 @@ BATcount_no_nil(BAT *b, BAT *s)
 				cnt += !(*atomeq)(nil, base + ((const var_t *) p)[canditer_next(&ci) - hseq]);
 		} else {
 			CAND_LOOP(&ci)
-				cnt += !(*atomeq)(BUNtloc(bi, canditer_next(&ci) - hseq), nil);
+				cnt += !(*atomeq)(BUNtloc(&bi, canditer_next(&ci) - hseq), nil);
 		}
 		break;
 	}

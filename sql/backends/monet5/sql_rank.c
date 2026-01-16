@@ -1124,7 +1124,7 @@ do_lead_lag(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char 
 			}
 			bpi = bat_iterator(d);
 			if (bpi.count > 0) {
-				p = BUNtail(bpi, 0);
+				p = BUNtail(&bpi, 0);
 				default_size = ATOMlen(tp3, p);
 				default_value = ma_alloc(mb->ma, default_size);
 				if (default_value)

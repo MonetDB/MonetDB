@@ -193,7 +193,7 @@
 #define GRP_compare_consecutive_values_any()			\
 	GRP_compare_consecutive_values(				\
 	/* INIT_0 */	pv = NULL			,	\
-	/* INIT_1 */	v = BUNtail(bi, p)		,	\
+	/* INIT_1 */	v = BUNtail(&bi, p)		,	\
 	/* DIFFER */	!eq(v, pv)			,	\
 	/* KEEP   */	pv = v					\
 	)
@@ -316,7 +316,7 @@
 #define GRP_subscan_old_groups_any()				\
 	GRP_subscan_old_groups(					\
 	/* INIT_0 */	pv = NULL			,	\
-	/* INIT_1 */	v = BUNtail(bi, p)		,	\
+	/* INIT_1 */	v = BUNtail(&bi, p)		,	\
 	/* EQUAL  */	eq(v, pv)			,	\
 	/* KEEP   */	pv = v					\
 	)
@@ -425,8 +425,8 @@
 #define GRP_use_existing_hash_table_any()			\
 	GRP_use_existing_hash_table(				\
 	/* INIT_0 */					,	\
-	/* INIT_1 */	v = BUNtail(bi, p)		,	\
-	/* EQUAL  */	eq(v, BUNtail(bi, hb))			\
+	/* INIT_1 */	v = BUNtail(&bi, p)		,	\
+	/* EQUAL  */	eq(v, BUNtail(&bi, hb))			\
 	)
 
 /* reverse the bits of an OID value */
@@ -597,9 +597,9 @@ ctz(oid x)
 #define GRP_create_partial_hash_table_any()			\
 	GRP_create_partial_hash_table(				\
 	/* INIT_0 */					,	\
-	/* INIT_1 */	v = BUNtail(bi, p)		,	\
+	/* INIT_1 */	v = BUNtail(&bi, p)		,	\
 	/* HASH   */	hash_any(hs, v)			,	\
-	/* EQUAL  */	eq(v, BUNtail(bi, hb))			\
+	/* EQUAL  */	eq(v, BUNtail(&bi, hb))			\
 	)
 
 #define GRP_small_values(BG, BV, GV)					\

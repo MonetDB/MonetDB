@@ -3183,7 +3183,7 @@ BATgroupcount(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils)
 						gid = gids[i] - min;
 					else
 						gid = (oid) i;
-					if (!(*atomeq)(BUNtail(bi, i), nil)) {
+					if (!(*atomeq)(BUNtail(&bi, i), nil)) {
 						cnts[gid]++;
 					}
 				}
@@ -3337,7 +3337,7 @@ do_groupmin(oid *restrict oids, BATiter *bi, const oid *restrict gids, BUN ngrp,
 			TIMEOUT_LOOP(ci->ncand, qry_ctx) {
 				i = canditer_next(ci) - hseq;
 				if (!skip_nils ||
-				    !(*atomeq)(BUNtail(*bi, i), nil)) {
+				    !(*atomeq)(BUNtail(bi, i), nil)) {
 					oids[gid] = i + hseq;
 					nils--;
 				}
@@ -3348,7 +3348,7 @@ do_groupmin(oid *restrict oids, BATiter *bi, const oid *restrict gids, BUN ngrp,
 				i = canditer_next(ci) - hseq;
 				if (gids == NULL ||
 				    (gids[i] >= min && gids[i] <= max)) {
-					const void *v = BUNtail(*bi, i);
+					const void *v = BUNtail(bi, i);
 					if (gids)
 						gid = gids[i] - min;
 					if (!skip_nils || !(*atomeq)(v, nil)) {
@@ -3356,7 +3356,7 @@ do_groupmin(oid *restrict oids, BATiter *bi, const oid *restrict gids, BUN ngrp,
 							oids[gid] = i + hseq;
 							nils--;
 						} else if (t != TYPE_void) {
-							const void *g = BUNtail(*bi, (BUN) (oids[gid] - hseq));
+							const void *g = BUNtail(bi, (BUN) (oids[gid] - hseq));
 							if (!(*atomeq)(g, nil) &&
 							    ((*atomeq)(v, nil) ||
 							     LT((*atomcmp)(v, g), 0)))
@@ -3459,7 +3459,7 @@ do_groupmax(oid *restrict oids, BATiter *bi, const oid *restrict gids, BUN ngrp,
 			TIMEOUT_LOOP(ci->ncand, qry_ctx) {
 				i = canditer_next(ci) - hseq;
 				if (!skip_nils ||
-				    !(*atomeq)(BUNtail(*bi, i), nil)) {
+				    !(*atomeq)(BUNtail(bi, i), nil)) {
 					oids[gid] = i + hseq;
 					nils--;
 				}
@@ -3470,7 +3470,7 @@ do_groupmax(oid *restrict oids, BATiter *bi, const oid *restrict gids, BUN ngrp,
 				i = canditer_next(ci) - hseq;
 				if (gids == NULL ||
 				    (gids[i] >= min && gids[i] <= max)) {
-					const void *v = BUNtail(*bi, i);
+					const void *v = BUNtail(bi, i);
 					if (gids)
 						gid = gids[i] - min;
 					if (!skip_nils || !(*atomeq)(v, nil)) {
@@ -3478,7 +3478,7 @@ do_groupmax(oid *restrict oids, BATiter *bi, const oid *restrict gids, BUN ngrp,
 							oids[gid] = i + hseq;
 							nils--;
 						} else {
-							const void *g = BUNtail(*bi, (BUN) (oids[gid] - hseq));
+							const void *g = BUNtail(bi, (BUN) (oids[gid] - hseq));
 							if (t == TYPE_void ||
 							    (!(*atomeq)(g, nil) &&
 							     ((*atomeq)(v, nil) ||
@@ -3598,7 +3598,7 @@ BATmin_skipnil(allocator *ma, BAT *b, void *aggr, bit skipnil)
 	if (bi.count == 0) {
 		res = ATOMnilptr(bi.type);
 	} else if (bi.minpos != BUN_NONE) {
-		res = BUNtail(bi, bi.minpos);
+		res = BUNtail(&bi, bi.minpos);
 	} else {
 		oid pos;
 		BAT *pb = BATdescriptor(VIEWtparent(b));
@@ -3694,7 +3694,7 @@ BATmin_skipnil(allocator *ma, BAT *b, void *aggr, bit skipnil)
 			res = ATOMnilptr(bi.type);
 		} else {
 			bi.minpos = pos - b->hseqbase;
-			res = BUNtail(bi, bi.minpos);
+			res = BUNtail(&bi, bi.minpos);
 			MT_lock_set(&b->theaplock);
 			if (bi.count == BATcount(b) && bi.h == b->theap)
 				b->tminpos = bi.minpos;
@@ -3755,7 +3755,7 @@ BATmax_skipnil(allocator *ma, BAT *b, void *aggr, bit skipnil)
 	if (bi.count == 0) {
 		res = ATOMnilptr(bi.type);
 	} else if (bi.maxpos != BUN_NONE) {
-		res = BUNtail(bi, bi.maxpos);
+		res = BUNtail(&bi, bi.maxpos);
 	} else {
 		oid pos;
 		BAT *pb = BATdescriptor(VIEWtparent(b));
@@ -3765,13 +3765,13 @@ BATmax_skipnil(allocator *ma, BAT *b, void *aggr, bit skipnil)
 		if (BATordered(b)) {
 			pos = bi.count - 1 + b->hseqbase;
 			if (skipnil && !bi.nonil &&
-			    ATOMeq(bi.type, BUNtail(bi, bi.count - 1),
+			    ATOMeq(bi.type, BUNtail(&bi, bi.count - 1),
 				   ATOMnilptr(bi.type)))
 				pos = oid_nil; /* no non-nil values */
 		} else if (BATordered_rev(b)) {
 			pos = b->hseqbase;
 			if (skipnil && !bi.nonil &&
-			    ATOMeq(bi.type, BUNtail(bi, 0),
+			    ATOMeq(bi.type, BUNtail(&bi, 0),
 				   ATOMnilptr(bi.type)))
 				pos = oid_nil; /* no non-nil values */
 		} else {
@@ -3807,7 +3807,7 @@ BATmax_skipnil(allocator *ma, BAT *b, void *aggr, bit skipnil)
 				if (!skipnil) {
 					BUN z = ords[0];
 
-					res = BUNtail(bi, z - b->hseqbase);
+					res = BUNtail(&bi, z - b->hseqbase);
 
 					if (ATOMeq(bi.type, res, ATOMnilptr(bi.type)))
 						pos = z;
@@ -3824,7 +3824,7 @@ BATmax_skipnil(allocator *ma, BAT *b, void *aggr, bit skipnil)
 			res = ATOMnilptr(bi.type);
 		} else {
 			bi.maxpos = pos - b->hseqbase;
-			res = BUNtail(bi, bi.maxpos);
+			res = BUNtail(&bi, bi.maxpos);
 			MT_lock_set(&b->theaplock);
 			if (bi.count == BATcount(b) && bi.h == b->theap)
 				b->tmaxpos = bi.maxpos;
@@ -3880,8 +3880,8 @@ BATmax(BAT *b, void *aggr)
 			idxlo = r + (BUN) lo;				\
 			idxhi = r + (BUN) hi;				\
 		}							\
-		TPE low = *(TPE*) BUNtloc(bi, idxhi);			\
-		TPE high = *(TPE*) BUNtloc(bi, idxlo);			\
+		TPE low = *(TPE*) BUNtloc(&bi, idxhi);			\
+		TPE high = *(TPE*) BUNtloc(&bi, idxlo);			\
 		if (is_##TPE##_nil(low) || is_##TPE##_nil(high)) {	\
 			val = dbl_nil;					\
 			nils++;						\
@@ -4075,7 +4075,7 @@ doBATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 				qindex = r + p - (BUN) (p + 0.5 - f);
 				/* be a little paranoid about the index */
 				assert(qindex >= r && qindex <  p);
-				v = BUNtail(bi, qindex);
+				v = BUNtail(&bi, qindex);
 				if (!skip_nils && !bi.nonil)
 					nils += (*atomeq)(v, dnil);
 			}
@@ -4201,7 +4201,7 @@ doBATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 				index = ords[index] - b->hseqbase;
 			else
 				index = index + t1->tseqbase;
-			v = BUNtail(bi, index);
+			v = BUNtail(&bi, index);
 			nils += (*atomeq)(v, dnil);
 		}
 		if (oidxh != NULL)

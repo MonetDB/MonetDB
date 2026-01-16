@@ -88,7 +88,7 @@ BLOBnitems_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (ci1.tpe == cand_dense) {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1);
-			const blob *b = BUNtvar(bi, p1);
+			const blob *b = BUNtvar(&bi, p1);
 
 			if (is_blob_nil(b)) {
 				vals[i] = int_nil;
@@ -101,7 +101,7 @@ BLOBnitems_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	} else {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1);
-			const blob *b = BUNtvar(bi, p1);
+			const blob *b = BUNtvar(&bi, p1);
 
 			if (is_blob_nil(b)) {
 				vals[i] = int_nil;
@@ -197,7 +197,7 @@ BLOBblob_blob_bulk(Client ctx, bat *res, const bat *bid, const bat *sid)
 	if (ci.tpe == cand_dense) {
 		for (BUN i = 0; i < ci.ncand; i++) {
 			oid p = (canditer_next_dense(&ci) - off);
-			const blob *v = BUNtvar(bi, p);
+			const blob *v = BUNtvar(&bi, p);
 
 			if (tfastins_nocheckVAR(dst, i, v) != GDK_SUCCEED) {
 				msg = createException(SQL, "batcalc.blob_blob_bulk",
@@ -209,7 +209,7 @@ BLOBblob_blob_bulk(Client ctx, bat *res, const bat *bid, const bat *sid)
 	} else {
 		for (BUN i = 0; i < ci.ncand; i++) {
 			oid p = (canditer_next(&ci) - off);
-			const blob *v = BUNtvar(bi, p);
+			const blob *v = BUNtvar(&bi, p);
 
 			if (tfastins_nocheckVAR(dst, i, v) != GDK_SUCCEED) {
 				msg = createException(SQL, "batcalc.blob_blob_bulk",

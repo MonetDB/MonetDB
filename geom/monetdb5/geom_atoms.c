@@ -50,7 +50,6 @@ wkbTOSTR(allocator *ma, char **geomWKT, size_t *len, const void *GEOMWKB, bool e
 			dstStrLen += 2;	/* add quotes */
 		if (*len < dstStrLen + 1 || *geomWKT == NULL) {
 			*len = dstStrLen + 1;
-			////GDKfree(*geomWKT);
 			assert(ma);
 			if ((*geomWKT = ma_alloc(ma, *len)) == NULL) {
 				GEOSFree_r(geoshandle, wkt);
@@ -68,7 +67,6 @@ wkbTOSTR(allocator *ma, char **geomWKT, size_t *len, const void *GEOMWKB, bool e
 
 	/* geosGeometry == NULL */
 	if (*len < 4 || *geomWKT == NULL) {
-		////GDKfree(*geomWKT);
 		if ((*geomWKT = ma_alloc(ma, *len = 4)) == NULL)
 			return -1;
 	}
@@ -198,7 +196,6 @@ wkbREAD(allocator *ma, void *A, size_t *dstlen, stream *s, size_t cnt)
 	a->len = len;
 	a->srid = srid;
 	if (len > 0 && mnstr_read(s, (char *) a->data, len, 1) != 1) {
-		//GDKfree(a);
 		return NULL;
 	}
 	return a;
@@ -414,7 +411,6 @@ mbrTOSTR(allocator *ma, char **dst, size_t *len, const void *ATOM, bool external
 	}
 
 	if (*len < dstStrLen + 4 || *dst == NULL) {
-		////GDKfree(*dst);
 		if ((*dst = ma_alloc(ma, *len = dstStrLen + 4)) == NULL)
 			return -1;
 	}
@@ -449,7 +445,6 @@ mbrFROMSTR(allocator *ma, const char *src, size_t *len, void **ATOM, bool extern
 	const char *c;
 
 	if (*len < sizeof(mbr) || *atom == NULL) {
-		// //GDKfree(*atom);
 		if ((*atom = ma_alloc(ma, *len = sizeof(mbr))) == NULL)
 			return -1;
 	}
@@ -572,8 +567,6 @@ mbrREAD(allocator *ma, void *A, size_t *dstlen, stream *s, size_t cnt)
 	}
 	for (i = 0, c = a; i < cnt; i++, c++) {
 		if (!mnstr_readIntArray(s, v, 4)) {
-			if (a != A)
-				//GDKfree(a);
 			return NULL;
 		}
 		memcpy(vals, v, 4 * sizeof(int));
@@ -656,7 +649,6 @@ wkbMBR(Client ctx, mbr **geomMBR, wkb **geomWKB)
 	GEOSGeom_destroy_r(geoshandle, geosGeometry);
 
 	if (*geomMBR == NULL || is_mbr_nil(*geomMBR)) {
-		//GDKfree(*geomMBR);
 		*geomMBR = NULL;
 		throw(MAL, "wkb.mbr", SQLSTATE(38000) "Geos failed to create mbr");
 	}
@@ -736,14 +728,10 @@ mbrrelation_wkb(Client ctx, bit *out, wkb **geom1WKB, wkb **geom2WKB, str (*func
 
 	ret = wkbMBR(ctx, &geom2MBR, geom2WKB);
 	if (ret != MAL_SUCCEED) {
-		//GDKfree(geom1MBR);
 		return ret;
 	}
 
 	ret = (*func) (ctx, out, &geom1MBR, &geom2MBR);
-
-	//GDKfree(geom1MBR);
-	//GDKfree(geom2MBR);
 
 	return ret;
 }
@@ -1050,14 +1038,10 @@ mbrDistance_wkb(Client ctx, dbl *out, wkb **geom1WKB, wkb **geom2WKB)
 
 	ret = wkbMBR(ctx, &geom2MBR, geom2WKB);
 	if (ret != MAL_SUCCEED) {
-		//GDKfree(geom1MBR);
 		return ret;
 	}
 
 	ret = mbrDistance(ctx, out, &geom1MBR, &geom2MBR);
-
-	//GDKfree(geom1MBR);
-	//GDKfree(geom2MBR);
 
 	return ret;
 }
@@ -1121,8 +1105,6 @@ wkbCoordinateFromWKB(Client ctx, dbl *coordinateValue, wkb **geomWKB, int *coord
 
 	ret = wkbCoordinateFromMBR(ctx, coordinateValue, &geomMBR, coordinateIdx);
 
-	//GDKfree(geomMBR);
-
 	return ret;
 }
 
@@ -1136,7 +1118,6 @@ mbrFromString(Client ctx, mbr **w, const char **src)
 
 	if (mbrFROMSTR(ma, *src, &len, (void **) w, false) >= 0)
 		return MAL_SUCCEED;
-	//GDKfree(*w);
 	*w = NULL;
 	errbuf = GDKerrbuf;
 	if (errbuf) {

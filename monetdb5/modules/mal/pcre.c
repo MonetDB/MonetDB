@@ -506,7 +506,7 @@ pcre_replace_bat(BAT **res, BAT *origin_strs, const char *pattern,
 	}
 	BATiter origin_strsi = bat_iterator(origin_strs);
 	BATloop(origin_strs, p, q) {
-		origin_str = BUNtvar(origin_strsi, p);
+		origin_str = BUNtvar(&origin_strsi, p);
 		tmpres = single_replace(ta, pcre_code, match_data, origin_str,
 								(PCRE2_SIZE) strlen((char *) origin_str), exec_options,
 								(PCRE2_SPTR) replacement, len_replacement,
@@ -535,7 +535,6 @@ pcre_replace_bat(BAT **res, BAT *origin_strs, const char *pattern,
 	bat_iterator_end(&origin_strsi);
 	pcre2_match_data_free(match_data);
 	pcre2_code_free(pcre_code);
-	//GDKfree(tmpres);
 	ma_close(&ta_state);
 	*res = tmpbat;
 	return MAL_SUCCEED;
@@ -730,7 +729,6 @@ sql2pcre(allocator *ma, str *r, const char *pat, const char *esc_str)
 	}
 	/* no wildcard or escape character at end of string */
 	if (!hasWildcard || escaped) {
-		//GDKfree(*r);
 		*r = NULL;
 		if (escaped)
 			throw(MAL, "pcre.sql2pcre",
@@ -882,12 +880,10 @@ PCREpatindex(Client ctx, int *ret, const char *const *pat, const char *const *va
 		msg = createException(MAL, "pcre.patindex",
 							  "compilation of regular expression (%s) failed at %d with %s",
 							  ppat, (int) errpos, (char *) errbuf);
-		//GDKfree(ppat);
 		ma_close(&ta_state);
 		return msg;
 	}
 	ma_close(&ta_state);
-	//GDKfree(ppat);
 	match_data = pcre2_match_data_create_from_pattern(re, NULL);
 	if (match_data == NULL) {
 		pcre2_code_free(re);
@@ -1005,8 +1001,6 @@ PCRElike_imp(bit *ret, const char *const *s, const char *const *pat,
 		}
 	}
 
-	//if (re)
-	//	mnre_destroy(re);
 	return res;
 }
 
@@ -1136,8 +1130,8 @@ BATPCRElike_imp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 			input = *getArgReference_str(stk, pci, 1);
 
 		for (BUN p = 0; p < q; p++) {
-			const char *next_input = b ? BUNtvar(bi, p) : input,
-				*np = BUNtvar(pi, p);
+			const char *next_input = b ? BUNtvar(&bi, p) : input,
+				*np = BUNtvar(&pi, p);
 
 			if ((msg = choose_like_path(&use_re, &use_strcmp, &empty,
 										np, *esc)) != MAL_SUCCEED) {
@@ -1164,7 +1158,6 @@ BATPCRElike_imp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 				ret[p] = mnre_like_proj_apply(next_input, mnre_simple, np,
 											isensitive, anti, use_strcmp);
 				ma_close(&ta_state);
-				//mnre_like_clean(&mnre_simple);
 			}
 			has_nil |= is_bit_nil(ret[p]);
 		}
@@ -1197,7 +1190,7 @@ BATPCRElike_imp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 				goto bailout;
 			}
 			for (BUN p = 0; p < q; p++) {
-				const char *s = BUNtvar(bi, p);
+				const char *s = BUNtvar(&bi, p);
 				ret[p] = mnre_like_proj_apply(s, mnre_simple, pat, isensitive,
 											anti, use_strcmp);
 				has_nil |= is_bit_nil(ret[p]);
@@ -1208,7 +1201,6 @@ BATPCRElike_imp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	}
 
   bailout:
-	//mnre_like_clean(&mnre_simple);
 	if (bn && !msg) {
 		BATsetcount(bn, q);
 		bn->tnil = has_nil;
@@ -1256,7 +1248,7 @@ BATPCREnotlike(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			for (; p < q; p++) {										\
 				GDK_CHECK_TIMEOUT(qry_ctx, counter,						\
 								  GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx)); \
-				const char *restrict v = BUNtvar(bi, p - off);			\
+				const char *restrict v = BUNtvar(&bi, p - off);			\
 				if ((TEST) || ((KEEP_NULLS) && strNil(v)))				\
 					vals[cnt++] = p;									\
 			}															\
@@ -1265,7 +1257,7 @@ BATPCREnotlike(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				GDK_CHECK_TIMEOUT(qry_ctx, counter,						\
 								  GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx)); \
 				oid o = canditer_next(ci);								\
-				const char *restrict v = BUNtvar(bi, o - off);			\
+				const char *restrict v = BUNtvar(&bi, o - off);			\
 				if ((TEST) || ((KEEP_NULLS) && strNil(v)))				\
 					vals[cnt++] = o;									\
 			}															\
@@ -1328,7 +1320,6 @@ mnre_likeselect(BAT *bn, BAT *b, BAT *s, struct canditer *ci, BUN p, BUN q,
   bailout:
 	bat_iterator_end(&bi);
 	ma_close(&ta_state);
-	//mnre_like_clean(&re);
 	*rcnt = cnt;
 	return msg;
 }
@@ -1716,7 +1707,6 @@ pcrejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, const char *esc,
   bailout:
 	bat_iterator_end(&li);
 	bat_iterator_end(&ri);
-	//mnre_like_clean(&re);
 	assert(msg != MAL_SUCCEED);
 	return msg;
 }
@@ -1780,10 +1770,10 @@ PCREjoin(bat *r1, bat *r2, bat lid, bat rid, bat slid, bat srid, bat elid,
 		goto fail;
 	}
 	bi = bat_iterator(caseignore);
-	ci = *(bit *) BUNtloc(bi, 0);
+	ci = *(bit *) BUNtloc(&bi, 0);
 	bat_iterator_end(&bi);
 	bi = bat_iterator(escape);
-	esc = BUNtvar(bi, 0);
+	esc = BUNtvar(&bi, 0);
 	msg = pcrejoin(result1, result2, left, right, candleft, candright, esc, ci,
 				   anti);
 	bat_iterator_end(&bi);

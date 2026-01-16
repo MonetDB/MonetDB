@@ -284,7 +284,6 @@ OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	for (; i < slimit; i++)
 		if (old[i])
 			pushInstruction(mb, old[i]);
-	//GDKfree(old);
 	if (msg == MAL_SUCCEED) {
 		/* Defense line against incorrect plans */
 		msg = chkTypes(cntxt->usermodule, mb, FALSE);

@@ -214,7 +214,6 @@ OPTgeneratorImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 			pushInstruction(mb, old[i]);
 	}
 	ma_close(&ta_state);
-	//GDKfree(old);
 
 	/* Defense line against incorrect plans */
 	/* all new/modified statements are already checked */

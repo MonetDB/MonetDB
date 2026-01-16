@@ -849,7 +849,6 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			if (w) {
 				ret = createException(MAL, "interpreter", "unknown operation:%s",
 									  w);
-				//GDKfree(w);
 			} else {
 				ret = createException(MAL, "interpreter",
 									  "failed instruction2str");

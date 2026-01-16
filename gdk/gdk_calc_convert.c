@@ -682,7 +682,7 @@ convert_any_str(BATiter *bi, BAT *bn, struct canditer *restrict ci)
 		assert(bi->type != TYPE_void);
 		TIMEOUT_LOOP_IDX(i, ci->ncand, qry_ctx) {
 			x = canditer_next(ci) - candoff;
-			src = BUNtvar(*bi, x);
+			src = BUNtvar(bi, x);
 			if (strNil(src))
 				nils++;
 			if (tfastins_nocheckVAR(bn, i, src) != GDK_SUCCEED) {
@@ -693,7 +693,7 @@ convert_any_str(BATiter *bi, BAT *bn, struct canditer *restrict ci)
 		assert(bi->type != TYPE_void);
 		TIMEOUT_LOOP_IDX(i, ci->ncand, qry_ctx) {
 			x = canditer_next(ci) - candoff;
-			src = BUNtvar(*bi, x);
+			src = BUNtvar(bi, x);
 			if ((*atomeq)(src, nil)) {
 				nils++;
 				if (tfastins_nocheckVAR(bn, i, str_nil) != GDK_SUCCEED) {
@@ -717,7 +717,7 @@ convert_any_str(BATiter *bi, BAT *bn, struct canditer *restrict ci)
 	} else {
 		TIMEOUT_LOOP_IDX(i, ci->ncand, qry_ctx) {
 			x = canditer_next(ci) - candoff;
-			src = BUNtloc(*bi, x);
+			src = BUNtloc(bi, x);
 			if ((*atomeq)(src, nil)) {
 				nils++;
 				if (tfastins_nocheckVAR(bn, i, str_nil) != GDK_SUCCEED)
@@ -759,7 +759,7 @@ convert_str_var(BATiter *bi, BAT *bn, struct canditer *restrict ci)
 
 	TIMEOUT_LOOP_IDX(i, ci->ncand, qry_ctx) {
 		x = canditer_next(ci) - candoff;
-		src = BUNtvar(*bi, x);
+		src = BUNtvar(bi, x);
 		if (strNil(src)) {
 			nils++;
 			if (tfastins_nocheckVAR(bn, i, nil) != GDK_SUCCEED) {
@@ -805,7 +805,7 @@ convert_str_fix(BATiter *bi, int tp, void *restrict dst,
 		TIMEOUT_LOOP(ci->ncand, qry_ctx) {
 			oid x = canditer_next(ci) - candoff;
 			uint32_t v;
-			s = BUNtvar(*bi, x);
+			s = BUNtvar(bi, x);
 			if (strcmp(s, "0") == 0)
 				v = 0;
 			else if (strcmp(s, "1") == 0)
@@ -829,7 +829,7 @@ convert_str_fix(BATiter *bi, int tp, void *restrict dst,
 	bool (*atomeq)(const void *, const void *) = ATOMequal(tp);
 	TIMEOUT_LOOP(ci->ncand, qry_ctx) {
 		oid x = canditer_next(ci) - candoff;
-		const char *s = BUNtvar(*bi, x);
+		const char *s = BUNtvar(bi, x);
 		if (strNil(s)) {
 			memcpy(dst, nil, len);
 			nils++;
@@ -1754,7 +1754,6 @@ VARconvert(allocator *ma, ValPtr ret, const ValRecord *v,
 							    &ret->len,
 							    VALptr(v),
 							    false) < 0) {
-				//GDKfree(ret->val.sval);
 				ret->val.sval = NULL;
 				ret->len = 0;
 				return GDK_FAIL;
@@ -1793,8 +1792,6 @@ VARconvert(allocator *ma, ValPtr ret, const ValRecord *v,
 			if ((l = (*BATatoms[ret->vtype].atomFromStr)(ma,
 				     v->val.sval, &len, &p, false)) < 0 ||
 			    l < (ssize_t) strlen(v->val.sval)) {
-				//if (ATOMextern(ret->vtype))
-				//	GDKfree(p);
 				GDKclrerr();
 				allocator *ta = MT_thread_getallocator();
 				allocator_state ta_state = ma_open(ta);
@@ -1838,6 +1835,5 @@ VARconvert(allocator *ma, ValPtr ret, const ValRecord *v,
 			 ATOMname(v->vtype), ATOMname(ret->vtype));
 		return GDK_FAIL;
 	}
-	//ret->allocated = !ma;
 	return nils == BUN_NONE ? GDK_FAIL : GDK_SUCCEED;
 }

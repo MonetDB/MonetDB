@@ -40,7 +40,7 @@ typedef struct {
 	BATiter bi;
 	BUN o;
 	BUN q;
-	str *s;
+	const str *s;
 } MULTIarg;
 
 typedef struct {
@@ -91,11 +91,11 @@ typedef struct {
 						args[i] += mut->args[i].size;					\
 					} else if (ATOMvarsized(mut->args[i].type)) {		\
 						mut->args[i].o++;								\
-						mut->args[i].s = (str *) BUNtvar(mut->args[i].bi, mut->args[i].o); \
+						mut->args[i].s = (str *) BUNtvar(&mut->args[i].bi, mut->args[i].o); \
 						args[i] = (void *) &mut->args[i].s;				\
 					} else {											\
 						mut->args[i].o++;								\
-						mut->args[i].s = (str *) BUNtloc(mut->args[i].bi, mut->args[i].o); \
+						mut->args[i].s = (str *) BUNtloc(&mut->args[i].bi, mut->args[i].o); \
 						args[i] = (void*) &mut->args[i].s;				\
 					}													\
 				}														\
@@ -119,11 +119,11 @@ typedef struct {
 						args[i] += mut->args[i].size;					\
 					} else if (ATOMvarsized(mut->args[i].type)) {		\
 						mut->args[i].o++;								\
-						mut->args[i].s = (str *) BUNtvar(mut->args[i].bi, mut->args[i].o); \
+						mut->args[i].s = (str *) BUNtvar(&mut->args[i].bi, mut->args[i].o); \
 						args[i] = (void *) &mut->args[i].s;				\
 					} else {											\
 						mut->args[i].o++;								\
-						mut->args[i].s = (str *) BUNtloc(mut->args[i].bi, mut->args[i].o); \
+						mut->args[i].s = (str *) BUNtloc(&mut->args[i].bi, mut->args[i].o); \
 						args[i] = (void*) &mut->args[i].s;				\
 					}													\
 				}														\
@@ -140,7 +140,6 @@ MANIFOLDjob(MULTItask *mut)
 {
 	int i;
 	char **args;
-	//str y = NULL;
 	str msg = MAL_SUCCEED;
 	oid oo = 0, olimit = mut->args[mut->fvar].cnt;
 
@@ -162,10 +161,10 @@ MANIFOLDjob(MULTItask *mut)
 			if (ATOMstorage(mut->args[i].type) < TYPE_str) {
 				args[i] = (char *) mut->args[i].first;
 			} else if (ATOMvarsized(mut->args[i].type)) {
-				mut->args[i].s = BUNtvar(mut->args[i].bi, mut->args[i].o);
+				mut->args[i].s = BUNtvar(&mut->args[i].bi, mut->args[i].o);
 				args[i] = (void *) &mut->args[i].s;
 			} else {
-				mut->args[i].s = BUNtloc(mut->args[i].bi, mut->args[i].o);
+				mut->args[i].s = BUNtloc(&mut->args[i].bi, mut->args[i].o);
 				args[i] = (void *) &mut->args[i].s;
 			}
 		} else {
@@ -195,8 +194,6 @@ MANIFOLDjob(MULTItask *mut)
 	default:
 		msg = createException(MAL, "mal.manifold", "manifold call limitation ");
 	}
-	//if (ATOMextern(mut->args[0].type) && y)
-	//	GDKfree(y);
   bunins_failed:
 	ma_close(&ta_state);
 	return msg;
@@ -395,7 +392,6 @@ MANIFOLDevaluate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	*/
 	mut.pci->fcn = fcn;
 	msg = MANIFOLDjob(&mut);
-	//freeInstruction(mut.pci);
 
   wrapup:
 	// restore the argument types

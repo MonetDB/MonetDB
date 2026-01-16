@@ -618,7 +618,7 @@ dump_zero_terminated_text(BAT *bat, stream *s, BUN start, BUN length, bool bytes
 	assert(end <= BATcount(bat));
 	BATiter bi = bat_iterator(bat);
 	for (BUN p = start; p < end; p++) {
-		const char *v = BUNtvar(bi, p);
+		const char *v = BUNtvar(&bi, p);
 		if (mnstr_writeStr(s, v) < 0 || mnstr_writeBte(s, 0) < 0) {
 			bailout("%s", mnstr_peek_error(s));
 		}
@@ -773,7 +773,7 @@ dump_blob(BAT *bat, stream *s, BUN start, BUN length, bool byteswap)
 	BATiter bi = bat_iterator(bat);
 	uint64_t nil_header = ~(uint64_t)0;
 	for (BUN p = start; p < end; p++) {
-		const blob *b = BUNtvar(bi, p);
+		const blob *b = BUNtvar(&bi, p);
 		uint64_t header = is_blob_nil(b) ? nil_header : (uint64_t)b->nitems;
 		if (byteswap)
 			copy_binary_convert64(&header);

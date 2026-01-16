@@ -2266,7 +2266,7 @@ JSONrenderRowObject(allocator *ma, BAT **bl, MalBlkPtr mb, MalStkPtr stk, InstrP
 	int i, tpe;
 	char *row, *row2, *name = 0, *val = 0;
 	size_t len, lim, l;
-	void *p;
+	const void *p;
 	BATiter bi;
 
 	row = ma_alloc(ma, lim = BUFSIZ);
@@ -2279,7 +2279,7 @@ JSONrenderRowObject(allocator *ma, BAT **bl, MalBlkPtr mb, MalStkPtr stk, InstrP
 		name = stk->stk[getArg(pci, i)].val.sval;
 		tpe = getBatType(getArgType(mb, pci, i + 1));
 		bi = bat_iterator(bl[i + 1]);
-		p = BUNtail(bi, idx);
+		p = BUNtail(&bi, idx);
 		val = ATOMformat(mb->ma, tpe, p);
 		bat_iterator_end(&bi);
 		if (val == NULL) {
@@ -2382,7 +2382,7 @@ JSONrenderRowArray(Client ctx, BAT **bl, MalBlkPtr mb, InstrPtr pci, BUN idx)
 	int i, tpe;
 	char *row, *row2, *val = 0;
 	size_t len, lim, l;
-	void *p;
+	const void *p;
 	BATiter bi;
 	allocator *ma = mb->ma;
 
@@ -2395,7 +2395,7 @@ JSONrenderRowArray(Client ctx, BAT **bl, MalBlkPtr mb, InstrPtr pci, BUN idx)
 	for (i = pci->retc; i < pci->argc; i++) {
 		tpe = getBatType(getArgType(mb, pci, i));
 		bi = bat_iterator(bl[i]);
-		p = BUNtail(bi, idx);
+		p = BUNtail(&bi, idx);
 		val = ATOMformat(ma, tpe, p);
 		bat_iterator_end(&bi);
 		if (val == NULL)
@@ -2489,10 +2489,11 @@ JSONfoldKeyValue(Client ctx, str *ret, const bat *id, const bat *key, const bat 
 	BAT *bo = 0, *bk = 0, *bv;
 	BATiter bki, bvi;
 	int tpe;
-	char *row, *val = 0, *nme = 0;
+	char *row, *nme = NULL;
+	const char *val = NULL;
 	BUN i, cnt;
 	size_t len, lim, l;
-	void *p;
+	const void *p;
 	oid o = 0;
 	allocator *ma = ctx->curprg->def->ma;
 
@@ -2542,25 +2543,24 @@ JSONfoldKeyValue(Client ctx, str *ret, const bat *id, const bat *key, const bat 
 		}
 
 		if (bk) {
-			nme = (str) BUNtvar(bki, i);
+			nme = (str) BUNtvar(&bki, i);
 			l = strlen(nme);
 			size_t osz = lim;
 			while (l + 3 > lim - len)
 				lim = (lim / (i + 1)) * cnt + BUFSIZ + l + 3;
-			p = ma_realloc(ma, row, lim, osz);
-			if (p == NULL) {
+			row = ma_realloc(ma, row, lim, osz);
+			if (row == NULL) {
 				bat_iterator_end(&bki);
 				bat_iterator_end(&bvi);
 				goto memfail;
 			}
-			row = p;
 			if (!strNil(nme)) {
 				snprintf(row + len, lim - len, "\"%s\":", nme);
 				len += l + 3;
 			}
 		}
 
-		p = BUNtail(bvi, i);
+		p = BUNtail(&bvi, i);
 		if (tpe == TYPE_json)
 			val = p;
 		else {
@@ -2577,13 +2577,12 @@ JSONfoldKeyValue(Client ctx, str *ret, const bat *id, const bat *key, const bat 
 		size_t osz = lim;
 		while (l > lim - len)
 			lim = (lim / (i + 1)) * cnt + BUFSIZ + l + 3;
-		p = ma_realloc(ma, row, lim, osz);
-		if (p == NULL) {
+		row = ma_realloc(ma, row, lim, osz);
+		if (row == NULL) {
 			bat_iterator_end(&bki);
 			bat_iterator_end(&bvi);
 			goto memfail;
 		}
-		row = p;
 		strncpy(row + len, val ? val : "null", l);
 		len += l;
 		row[len++] = ',';
@@ -2731,7 +2730,7 @@ JSONgroupStr(Client ctx, str *ret, const bat *bid)
 	switch (b->ttype) {
 	case TYPE_str:
 		for (p = 0, q = BATcount(b); p < q; p++) {
-			const char *v = (const char *) BUNtvar(bi, p);
+			const char *v = (const char *) BUNtvar(&bi, p);
 
 			if (strNil(v))
 				continue;
@@ -2870,7 +2869,7 @@ JSONjsonaggr(Client ctx, BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nil
 			switch (b->ttype) {
 			case TYPE_str:
 				for (p = 0, q = BATcount(g); p < q; p++) {
-					const char *v = (const char *) BUNtvar(bi,
+					const char *v = (const char *) BUNtvar(&bi,
 														   (map ? (BUN) map[p] -
 															mapoff : p));
 					if (strNil(v)) {
@@ -2964,7 +2963,7 @@ JSONjsonaggr(Client ctx, BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nil
 					continue;
 				switch (b->ttype) {
 				case TYPE_str:{
-					const char *v = (const char *) BUNtvar(bi, p);
+					const char *v = (const char *) BUNtvar(&bi, p);
 					if (strNil(v)) {
 						if (skip_nils)
 							continue;
@@ -3017,7 +3016,7 @@ JSONjsonaggr(Client ctx, BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nil
 		switch (b->ttype) {
 		case TYPE_str:
 			for (p = 0, q = p + BATcount(b); p < q; p++) {
-				const char *v = (const char *) BUNtvar(bi, p);
+				const char *v = (const char *) BUNtvar(&bi, p);
 				if (strNil(v)) {
 					if (skip_nils)
 						continue;

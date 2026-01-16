@@ -1527,10 +1527,10 @@ VLTgenerator_join(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	case TYPE_flt: VLTjoin(flt,fabsf); break;
 	case TYPE_dbl: VLTjoin(dbl,fabs); break;
 	default:
-		if(tpe == TYPE_date || tpe == TYPE_timestamp){
+		//if(tpe == TYPE_date || tpe == TYPE_timestamp){
 			// it is easier to produce the date or timestamp series
-			// then to estimate the possible index
-			}
+			// than to estimate the possible index
+		//}
 		BBPunfix(bln->batCacheid);
 		BBPunfix(brn->batCacheid);
 		BBPreclaim(bl);
@@ -1695,10 +1695,10 @@ VLTgenerator_rangejoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	case TYPE_flt: VLTrangejoin(flt,fabsf,floorf); break;
 	case TYPE_dbl: VLTrangejoin(dbl,fabs,floor); break;
 	default:
-		if( tpe == TYPE_date || tpe == TYPE_timestamp){
+		//if( tpe == TYPE_date || tpe == TYPE_timestamp){
 			// it is easier to produce the date or timestamp series
 			// then to estimate the possible index
-			}
+		//}
 		BBPreclaim(bln);
 		BBPreclaim(brn);
 		BBPreclaim(blow);

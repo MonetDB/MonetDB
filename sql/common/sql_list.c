@@ -727,8 +727,6 @@ list_join(list *l, list *data)
 	assert(!l->ht);
 
 	if (!data->t) {
-		// don't free anything but expr for now
-		//ma_free(data->sa, data);
 		return l;
 	}
 	if (!l->h)
@@ -737,8 +735,6 @@ list_join(list *l, list *data)
 		l->t->next = data->h;
 	l->cnt += data->cnt;
 	l->t = data->t;
-	// don't free anything but expr for now
-	//ma_free(data->sa, data);
 	return l;
 }
 

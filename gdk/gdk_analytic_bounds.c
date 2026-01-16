@@ -134,12 +134,12 @@ GDKanalyticaldiff(BAT *b, BAT *p, const bit *restrict npbit, int tpe)
 		}
 		break;
 	default:{
-		const void *v = BUNtail(bi, 0), *next;
+		const void *v = BUNtail(&bi, 0), *next;
 		bool (*atomeq) (const void *, const void *) = ATOMequal(tpe);
 		if (np) {
 			for (i = 0; i < cnt; i++) {
 				rb[i] = np[i];
-				next = BUNtail(bi, i);
+				next = BUNtail(&bi, i);
 				if (!atomeq(v, next)) {
 					rb[i] = TRUE;
 					v = next;
@@ -148,7 +148,7 @@ GDKanalyticaldiff(BAT *b, BAT *p, const bit *restrict npbit, int tpe)
 		} else if (npbit) {
 			for (i = 0; i < cnt; i++) {
 				rb[i] = npb;
-				next = BUNtail(bi, i);
+				next = BUNtail(&bi, i);
 				if (!atomeq(v, next)) {
 					rb[i] = TRUE;
 					v = next;
@@ -156,7 +156,7 @@ GDKanalyticaldiff(BAT *b, BAT *p, const bit *restrict npbit, int tpe)
 			}
 		} else {
 			for (i = 0; i < cnt; i++) {
-				next = BUNtail(bi, i);
+				next = BUNtail(&bi, i);
 				if (!atomeq(v, next)) {
 					rb[i] = TRUE;
 					v = next;
@@ -782,10 +782,10 @@ GDKanalyticalpeers(BAT *b, BAT *p, bool preceding) /* used in range when the lim
 			if (p) {
 				for (; i < cnt; i++) {
 					if (np[i]) {
-						prev = BUNtail(bi, k);
+						prev = BUNtail(&bi, k);
 						l = j;
 						for (; k < i; k++) {
-							next = BUNtail(bi, k);
+							next = BUNtail(&bi, k);
 							if (!atomeq(prev, next)) {
 								for ( ; j < k ; j++)
 									rb[j] = l;
@@ -799,10 +799,10 @@ GDKanalyticalpeers(BAT *b, BAT *p, bool preceding) /* used in range when the lim
 				}
 			}
 			i = cnt;
-			prev = BUNtail(bi, k);
+			prev = BUNtail(&bi, k);
 			l = j;
 			for (; k < i; k++) {
-				next = BUNtail(bi, k);
+				next = BUNtail(&bi, k);
 				if (!atomeq(prev, next)) {
 					for ( ; j < k ; j++)
 						rb[j] = l;
@@ -816,9 +816,9 @@ GDKanalyticalpeers(BAT *b, BAT *p, bool preceding) /* used in range when the lim
 			if (p) {
 				for (; i < cnt; i++) {
 					if (np[i]) {
-						prev = BUNtail(bi, k);
+						prev = BUNtail(&bi, k);
 						for (; k < i; k++) {
-							next = BUNtail(bi, k);
+							next = BUNtail(&bi, k);
 							if (!atomeq(prev, next)) {
 								l += k - j;
 								for ( ; j < k ; j++)
@@ -833,9 +833,9 @@ GDKanalyticalpeers(BAT *b, BAT *p, bool preceding) /* used in range when the lim
 				}
 			}
 			i = cnt;
-			prev = BUNtail(bi, k);
+			prev = BUNtail(&bi, k);
 			for (; k < i; k++) {
-				next = BUNtail(bi, k);
+				next = BUNtail(&bi, k);
 				if (!atomeq(prev, next)) {
 					l += k - j;
 					for ( ; j < k ; j++)

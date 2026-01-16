@@ -82,14 +82,11 @@ SQLstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (!(r = ma_alloc(mb->ma, rlen)))
 			throw(SQL, "calc.str_cast", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		if ((msg = SQLstr_cast_any_type(mb->ma, &r, &rlen, m, eclass, d, s, has_tz, p, tpe, digits)) != MAL_SUCCEED) {
-			// GDKfree(r);
 			return msg;
 		}
 	}
 
 	*res = SA_STRDUP(mb->ma, r);
-	//if (!from_str)
-	//	GDKfree(r);
 	if (!*res)
 		throw(SQL, "calc.str_cast", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
@@ -156,7 +153,7 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (from_str && ci.tpe == cand_dense && ci.ncand == BATcount(b)) { /* from string case, just do validation, if right, return */
 		for (BUN i = 0; i < ci.ncand; i++) {
 			oid p = (canditer_next_dense(&ci) - off);
-			const char *v = BUNtvar(bi, p);
+			const char *v = BUNtvar(&bi, p);
 
 			if (!strNil(v))
 				SQLstr_cast_str(v, digits);
@@ -184,7 +181,7 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (from_str) { /* string to string */
 			for (BUN i = 0; i < ci.ncand; i++) {
 				oid p = (canditer_next_dense(&ci) - off);
-				const char *v = BUNtvar(bi, p);
+				const char *v = BUNtvar(&bi, p);
 
 				if (strNil(v)) {
 					if (tfastins_nocheckVAR(dst, i, str_nil) != GDK_SUCCEED) {
@@ -203,7 +200,7 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		} else { /* any other type to string */
 			for (BUN i = 0; i < ci.ncand; i++) {
 				oid p = (canditer_next_dense(&ci) - off);
-				const void *v = BUNtail(bi, p);
+				const void *v = BUNtail(&bi, p);
 
 				if ((msg = SQLstr_cast_any_type(mb->ma, &r, &rlen, m, eclass, d1, s1, has_tz, v, tpe, digits)) != MAL_SUCCEED)
 					goto bailout1;
@@ -218,7 +215,7 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (from_str) { /* string to string */
 			for (BUN i = 0; i < ci.ncand; i++) {
 				oid p = (canditer_next(&ci) - off);
-				const char *v = BUNtvar(bi, p);
+				const char *v = BUNtvar(&bi, p);
 
 				if (strNil(v)) {
 					if (tfastins_nocheckVAR(dst, i, str_nil) != GDK_SUCCEED) {
@@ -237,7 +234,7 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		} else { /* any other type to string */
 			for (BUN i = 0; i < ci.ncand; i++) {
 				oid p = (canditer_next(&ci) - off);
-				const void *v = BUNtail(bi, p);
+				const void *v = BUNtail(&bi, p);
 
 				if ((msg = SQLstr_cast_any_type(mb->ma, &r, &rlen, m, eclass, d1, s1, has_tz, v, tpe, digits)) != MAL_SUCCEED)
 					goto bailout1;
@@ -256,7 +253,6 @@ bailout1:
 	bat_iterator_end(&bi);
 
 bailout:
-	//GDKfree(r);
 	BBPreclaim(b);
 	BBPreclaim(s);
 	if (dst && !msg) {

@@ -163,7 +163,7 @@ DICTcompress_intern(BAT **O, BAT **U, BAT *b, bool ordered, bool persists, bool 
 		bool havenil = false;
 		BATloop(b, p, q) {
 			BUN up = 0;
-			HASHloop(ui, ui.b->thash, up, BUNtail(bi, p)) {
+			HASHloop(&ui, ui.b->thash, up, BUNtail(&bi, p)) {
 				op[p] = (bte)up;
 				havenil |= is_bte_nil(op[p]);
 			}
@@ -182,7 +182,7 @@ DICTcompress_intern(BAT **O, BAT **U, BAT *b, bool ordered, bool persists, bool 
 		bool havenil = false;
 		BATloop(b, p, q) {
 			BUN up = 0;
-			HASHloop(ui, ui.b->thash, up, BUNtail(bi, p)) {
+			HASHloop(&ui, ui.b->thash, up, BUNtail(&bi, p)) {
 				op[p] = (sht)up;
 				havenil |= is_sht_nil(op[p]);
 			}
@@ -201,7 +201,7 @@ DICTcompress_intern(BAT **O, BAT **U, BAT *b, bool ordered, bool persists, bool 
 		bool havenil = false;
 		BATloop(b, p, q) {
 			BUN up = 0;
-			HASHloop(ui, ui.b->thash, up, BUNtail(bi, p)) {
+			HASHloop(&ui, ui.b->thash, up, BUNtail(&bi, p)) {
 				op[p] = (int)up;
 				havenil |= is_int_nil(op[p]);
 			}
@@ -375,7 +375,7 @@ DICTdecompress_(BAT *o, BAT *u, role_t role)
 		default:
 			BATloop(o, p, q) {
 				BUN up = op[p];
-				if (BUNappend(b, BUNtail(ui, up), false) != GDK_SUCCEED) {
+				if (BUNappend(b, BUNtail(&ui, up), false) != GDK_SUCCEED) {
 					bat_iterator_end(&oi);
 					bat_destroy(b);
 					return NULL;
@@ -400,7 +400,7 @@ DICTdecompress_(BAT *o, BAT *u, role_t role)
 		default:
 			BATloop(o, p, q) {
 				BUN up = op[p];
-				if (BUNappend(b, BUNtail(ui, up), false) != GDK_SUCCEED) {
+				if (BUNappend(b, BUNtail(&ui, up), false) != GDK_SUCCEED) {
 					bat_iterator_end(&oi);
 					bat_destroy(b);
 					return NULL;
@@ -425,7 +425,7 @@ DICTdecompress_(BAT *o, BAT *u, role_t role)
 		default:
 			BATloop(o, p, q) {
 				BUN up = op[p];
-				if (BUNappend(b, BUNtail(ui, up), false) != GDK_SUCCEED) {
+				if (BUNappend(b, BUNtail(&ui, up), false) != GDK_SUCCEED) {
 					bat_iterator_end(&oi);
 					bat_destroy(b);
 					return NULL;
@@ -825,10 +825,10 @@ DICTthetaselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			} else if (op[0] == '<' || op[0] == '>') {
 				p = SORTfndfirst(lv, v);
 				if (p != BUN_NONE && op[0] == '<' && op[1] == '=') {
-					if (!ATOMeq(lvi.type, v, BUNtail(lvi, p)))
+					if (!ATOMeq(lvi.type, v, BUNtail(&lvi, p)))
 						p--;
 				} else if (p != BUN_NONE && op[0] == '>' && !op[1]) {
-					if (!ATOMeq(lvi.type, v, BUNtail(lvi, p)))
+					if (!ATOMeq(lvi.type, v, BUNtail(&lvi, p)))
 						op = ">=";
 				}
 			}
@@ -1198,7 +1198,7 @@ DICTprepare4append(BAT **noffsets, BAT *vals, BAT *dict)
 		for(BUN i = 0; i<sz; i++) {
 			BUN up = 0;
 			int f = 0;
-			HASHloop(ui, ui.b->thash, up, BUNtail(bi, i)) {
+			HASHloop(&ui, ui.b->thash, up, BUNtail(&bi, i)) {
 				op[i] = (bte)up;
 				f = 1;
 			}
@@ -1231,7 +1231,7 @@ DICTprepare4append(BAT **noffsets, BAT *vals, BAT *dict)
 					tt = TYPE_sht;
 					break;
 				} else {
-					if (BUNappend(dict, BUNtail(bi, i), true) != GDK_SUCCEED ||
+					if (BUNappend(dict, BUNtail(&bi, i), true) != GDK_SUCCEED ||
 					   (!dict->thash && BAThash(dict) != GDK_SUCCEED)) {
 						bat_destroy(n);
 						bat_iterator_end(&bi);
@@ -1250,7 +1250,7 @@ DICTprepare4append(BAT **noffsets, BAT *vals, BAT *dict)
 		for(BUN i = nf; i<sz; i++) {
 			BUN up = 0;
 			int f = 0;
-			HASHloop(ui, ui.b->thash, up, BUNtail(bi, i)) {
+			HASHloop(&ui, ui.b->thash, up, BUNtail(&bi, i)) {
 				op[i] = (sht)up;
 				f = 1;
 			}
@@ -1272,7 +1272,7 @@ DICTprepare4append(BAT **noffsets, BAT *vals, BAT *dict)
 					tt = TYPE_int;
 					break;
 				} else {
-					if (BUNappend(dict, BUNtail(bi, i), true) != GDK_SUCCEED ||
+					if (BUNappend(dict, BUNtail(&bi, i), true) != GDK_SUCCEED ||
 					   (!dict->thash && BAThash(dict) != GDK_SUCCEED)) {
 						assert(0);
 						bat_destroy(n);
@@ -1292,7 +1292,7 @@ DICTprepare4append(BAT **noffsets, BAT *vals, BAT *dict)
 		for(BUN i = nf; i<sz; i++) {
 			BUN up = 0;
 			int f = 0;
-			HASHloop(ui, ui.b->thash, up, BUNtail(bi, i)) {
+			HASHloop(&ui, ui.b->thash, up, BUNtail(&bi, i)) {
 				op[i] = (int)up;
 				f = 1;
 			}
@@ -1302,7 +1302,7 @@ DICTprepare4append(BAT **noffsets, BAT *vals, BAT *dict)
 						bat_iterator_end(&bi);
 						return -2;
 				} else {
-					if (BUNappend(dict, BUNtail(bi, i), true) != GDK_SUCCEED ||
+					if (BUNappend(dict, BUNtail(&bi, i), true) != GDK_SUCCEED ||
 					   (!dict->thash && BAThash(dict) != GDK_SUCCEED)) {
 						bat_destroy(n);
 						bat_iterator_end(&bi);
@@ -1395,7 +1395,7 @@ DICTprepare4append_vals(void **noffsets, void *vals, BUN cnt, BAT *dict)
 			void *val = (void*)vp;
 			if (varsized)
 				val = *(void**)vp;
-			HASHloop(ui, ui.b->thash, up, val) {
+			HASHloop(&ui, ui.b->thash, up, val) {
 				op[i] = (bte)up;
 				f = 1;
 			}
@@ -1442,7 +1442,7 @@ DICTprepare4append_vals(void **noffsets, void *vals, BUN cnt, BAT *dict)
 			void *val = (void*)vp;
 			if (varsized)
 				val = *(void**)vp;
-			HASHloop(ui, ui.b->thash, up, val) {
+			HASHloop(&ui, ui.b->thash, up, val) {
 				op[i] = (sht)up;
 				f = 1;
 			}
@@ -1480,7 +1480,7 @@ DICTprepare4append_vals(void **noffsets, void *vals, BUN cnt, BAT *dict)
 			void *val = (void*)vp;
 			if (varsized)
 				val = *(void**)vp;
-			HASHloop(ui, ui.b->thash, up, val) {
+			HASHloop(&ui, ui.b->thash, up, val) {
 				op[i] = (int)up;
 				f = 1;
 			}

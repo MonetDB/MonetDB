@@ -186,7 +186,6 @@ chkFlow(MalBlkPtr mb)
 											  "",
 											  getFunctionId(p) ?
 											  getFunctionId(p) : "", tpname);
-						// GDKfree(tpname);
 						return msg;
 					}
 				}
@@ -209,7 +208,6 @@ chkFlow(MalBlkPtr mb)
 					msg = createException(MAL, "chkFlow",
 										  "%s.%s signature misplaced\n!%s",
 										  getModuleId(p), getFunctionId(p), l);
-					//GDKfree(l);
 					return msg;
 				}
 			}
@@ -426,7 +424,6 @@ debugFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg, int first,
 				}
 				mnstr_printf(fd, "\n");
 			}
-			//GDKfree(ps);
 		} else
 			mnstr_printf(fd, "#failed instruction2str()\n");
 	}
@@ -462,7 +459,6 @@ listFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg, int first,
 				size_t l = strlen(ps);
 				if (l > len)
 					len = l;
-				//GDKfree(ps);
 			} else
 				mnstr_printf(fd, "#failed instruction2str()\n");
 		}

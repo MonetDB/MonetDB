@@ -132,11 +132,11 @@ BATall_grp(BAT *l, BAT *g, BAT *e, BAT *s)
 						gid = (oid) i;
 					if (oids[gid] != (BUN_NONE - 1)) {
 						if (oids[gid] == BUN_NONE) {
-							if (!atomeq(BUNtail(li, i), nilp))
+							if (!atomeq(BUNtail(&li, i), nilp))
 								oids[gid] = i;
 						} else {
-							const void *pi = BUNtail(li, oids[gid]);
-							const void *pp = BUNtail(li, i);
+							const void *pi = BUNtail(&li, oids[gid]);
+							const void *pp = BUNtail(&li, i);
 							if (!atomeq(pi, pp) && !atomeq(pp, nilp))
 								oids[gid] = BUN_NONE - 1;
 						}
@@ -152,7 +152,7 @@ BATall_grp(BAT *l, BAT *g, BAT *e, BAT *s)
 						next = nilp;
 						hasnil = 1;
 					} else {
-						next = BUNtvar(li, noid);
+						next = BUNtvar(&li, noid);
 					}
 					if (tfastins_nocheckVAR(res, i, next) != GDK_SUCCEED) {
 						bat_iterator_end(&li);
@@ -169,7 +169,7 @@ BATall_grp(BAT *l, BAT *g, BAT *e, BAT *s)
 						next = nilp;
 						hasnil = 1;
 					} else {
-						next = BUNtloc(li, noid);
+						next = BUNtloc(&li, noid);
 					}
 					memcpy(rcast, next, width);
 					rcast += width;
@@ -298,7 +298,7 @@ BATnil_grp(BAT *l, BAT *g, BAT *e, BAT *s)
 						gid = gids[i] - min;
 					else
 						gid = (oid) i;
-					const void *restrict lv = BUNtail(li, i);
+					const void *restrict lv = BUNtail(&li, i);
 					if (ret[gid] != TRUE && atomeq(lv, nilp))
 						ret[gid] = TRUE;
 				}
@@ -432,8 +432,8 @@ BATanyequal_grp(BAT *l, BAT *r, BAT *g, BAT *e, BAT *s)
 					else
 						gid = (oid) i;
 					if (ret[gid] != TRUE) {
-						const void *lv = BUNtail(li, i);
-						const void *rv = BUNtail(ri, i);
+						const void *lv = BUNtail(&li, i);
+						const void *rv = BUNtail(&ri, i);
 						if (atomeq(lv, nilp) || atomeq(rv, nilp)) {
 							ret[gid] = bit_nil;
 							hasnil = 1;
@@ -548,8 +548,8 @@ BATallnotequal_grp(BAT *l, BAT *r, BAT *g, BAT *e, BAT *s)
 					else
 						gid = (oid) i;
 					if (ret[gid] != FALSE) {
-						const void *lv = BUNtail(li, i);
-						const void *rv = BUNtail(ri, i);
+						const void *lv = BUNtail(&li, i);
+						const void *rv = BUNtail(&ri, i);
 						if (atomeq(lv, nilp) || atomeq(rv, nilp)) {
 							ret[gid] = bit_nil;
 							hasnil = 1;
@@ -597,7 +597,7 @@ alloc_fail:
 				else					\
 					gid = (oid) i;			\
 				if (ret[gid] != VAL1) {			\
-					const oid id = *(oid*)BUNtail(ii, i); \
+					const oid id = *(oid*)BUNtail(&ii, i); \
 					if (is_oid_nil(id)) {		\
 						ret[gid] = VAL2;	\
 					} else if (is_##TYPE##_nil(vals1[i]) || is_##TYPE##_nil(vals2[i])) { \
@@ -691,12 +691,12 @@ BATanyequal_grp2(BAT *l, BAT *r, BAT *rid, BAT *g, BAT *e, BAT *s)
 					else
 						gid = (oid) i;
 					if (ret[gid] != TRUE) {
-						const oid id = *(oid*)BUNtail(ii, i);
+						const oid id = *(oid*)BUNtail(&ii, i);
 						if (is_oid_nil(id)) {
 							ret[gid] = FALSE;
 						} else {
-							const void *lv = BUNtail(li, i);
-							const void *rv = BUNtail(ri, i);
+							const void *lv = BUNtail(&li, i);
+							const void *rv = BUNtail(&ri, i);
 							if (atomeq(lv, nilp) || atomeq(rv, nilp)) {
 								ret[gid] = bit_nil;
 							} else if (atomeq(lv, rv))
@@ -814,12 +814,12 @@ BATallnotequal_grp2(BAT *l, BAT *r, BAT *rid, BAT *g, BAT *e, BAT *s)
 					else
 						gid = (oid) i;
 					if (ret[gid] != FALSE) {
-						const oid id = *(oid*)BUNtail(ii, i);
+						const oid id = *(oid*)BUNtail(&ii, i);
 						if (is_oid_nil(id)) {
 							ret[gid] = TRUE;
 						} else {
-							const void *lv = BUNtail(li, i);
-							const void *rv = BUNtail(ri, i);
+							const void *lv = BUNtail(&li, i);
+							const void *rv = BUNtail(&ri, i);
 							if (atomeq(lv, nilp) || atomeq(rv, nilp)) {
 								ret[gid] = bit_nil;
 							} else if (atomeq(lv, rv))

@@ -153,7 +153,6 @@ mnstr_read_stringwrap(Client ctx, str *res, const Stream *S)
 		size += len;
 		tmp = ma_realloc(ma, buf, size, osz);
 		if (tmp == NULL) {
-			// GDKfree(buf);
 			throw(MAL, "mnstr_read_stringwrap",
 				  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}

@@ -36,7 +36,6 @@ ALGprojectionpath(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				&& b->ttype != TYPE_msk)) {
 			while (--i >= pci->retc)
 				BBPunfix(joins[i - pci->retc]->batCacheid);
-			//GDKfree(joins);
 			BBPreclaim(b);
 			throw(MAL, "algebra.projectionpath", "%s",
 				  b ? SEMANTIC_TYPE_MISMATCH : INTERNAL_BAT_ACCESS);
@@ -47,7 +46,6 @@ ALGprojectionpath(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	b = BATprojectchain(joins);
 	for (i = pci->retc; i < pci->argc; i++)
 		BBPunfix(joins[i - pci->retc]->batCacheid);
-	//GDKfree(joins);
 	if (b) {
 		*r = b->batCacheid;
 		BBPkeepref(b);

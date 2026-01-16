@@ -331,7 +331,7 @@ STRMPbuildHeader(BAT *b, BAT *s, CharPair *hpairs)
 	bi = bat_iterator(b);
 	for (i = 0; i < ci.ncand; i++) {
 		x = canditer_next(&ci) - b->hseqbase;
-		const char *cs = BUNtvar(bi, x);
+		const char *cs = BUNtvar(&bi, x);
 		if (!strNil(cs)) {
 			pi.s = cs;
 			pi.pos = 0;
@@ -965,7 +965,7 @@ STRMPcreate(BAT *b, BAT *s)
 	bi = bat_iterator(b);
 	for (i = 0; i < ci.ncand; i++) {
 		x = canditer_next(&ci) - b->hseqbase;
-		const char *cs = BUNtvar(bi, x);
+		const char *cs = BUNtvar(&bi, x);
 		if (!strNil(cs))
 			*dh++ = STRMPmakebitstring(cs, r);
 		else

@@ -364,6 +364,5 @@ OPTforImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/* keep actions taken as a fake argument */
 	(void) pushInt(mb, pci, actions);
 
-	//GDKfree(old);
 	return msg;
 }

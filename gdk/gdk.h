@@ -824,19 +824,144 @@ typedef var_t stridx_t;
 #define SIZEOF_STRIDX_T SIZEOF_VAR_T
 #define GDK_VARALIGN SIZEOF_STRIDX_T
 
-#define BUNtvaroff(bi,p) VarHeapVal((bi).base, (p), (bi).width)
-
-#define BUNtmsk(bi,p)	Tmsk(&(bi), (p))
-#define BUNtloc(bi,p)	(assert((bi).type != TYPE_msk), ((void *) ((char *) (bi).base + ((p) << (bi).shift))))
-#define BUNtpos(bi,p)	Tpos(&(bi),p)
-#define BUNtvar(bi,p)	(assert((bi).type && (bi).vh), (void *) ((bi).vh->base+BUNtvaroff(bi,p)))
-#define BUNtail(bi,p)	((bi).type?(bi).vh?BUNtvar(bi,p):(bi).type==TYPE_msk?BUNtmsk(bi,p):BUNtloc(bi,p):BUNtpos(bi,p))
+#include "gdk_atoms.h"
+#include "gdk_cand.h"
 
 #define BATcount(b)	((b)->batCount)
 
-#include "gdk_atoms.h"
+__attribute__((__pure__))
+static inline bool
+Tmskval(const BATiter *bi, BUN p)
+{
+	assert(ATOMstorage(bi->type) == TYPE_msk);
+	return ((const uint32_t *) bi->base)[p / 32] & (1U << (p % 32));
+}
 
-#include "gdk_cand.h"
+__attribute__((__pure__))
+static inline const void *
+BUNtmsk(BATiter *bi, BUN p)
+{
+	bi->tmsk = Tmskval(bi, p);
+	return &bi->tmsk;
+}
+
+__attribute__((__pure__))
+static inline const void *
+BUNtloc(BATiter *bi, BUN p)
+{
+	assert(bi->type != TYPE_msk);
+	return (const void *) ((char *) bi->base + (p << bi->shift));
+}
+
+__attribute__((__pure__))
+static inline const void *
+BUNtpos(BATiter *bi, BUN p)
+{
+	assert(bi->base == NULL);
+	if (bi->vh) {
+		oid o;
+		assert(!is_oid_nil(bi->tseq));
+		if (((ccand_t *) bi->vh)->type == CAND_NEGOID) {
+			BUN nexc = (bi->vhfree - sizeof(ccand_t)) / SIZEOF_OID;
+			o = bi->tseq + p;
+			if (nexc > 0) {
+				const oid *exc = (const oid *) (bi->vh->base + sizeof(ccand_t));
+				if (o >= exc[0]) {
+					if (o + nexc > exc[nexc - 1]) {
+						o += nexc;
+					} else {
+						BUN lo = 0;
+						BUN hi = nexc - 1;
+						while (hi - lo > 1) {
+							BUN mid = (hi + lo) / 2;
+							if (exc[mid] - mid > o)
+								hi = mid;
+							else
+								lo = mid;
+						}
+						o += hi;
+					}
+				}
+			}
+		} else {
+			const uint32_t *msk = (const uint32_t *) (bi->vh->base + sizeof(ccand_t));
+			BUN nmsk = (bi->vhfree - sizeof(ccand_t)) / sizeof(uint32_t);
+			o = 0;
+			for (BUN i = 0; i < nmsk; i++) {
+				uint32_t m = candmask_pop(msk[i]);
+				if (o + m > p) {
+					m = msk[i];
+					for (i = 0; i < 32; i++) {
+						if (m & (1U << i) && ++o == p)
+							break;
+					}
+					break;
+				}
+				o += m;
+			}
+		}
+		bi->tvid = o;
+	} else if (is_oid_nil(bi->tseq)) {
+		bi->tvid = oid_nil;
+	} else {
+		bi->tvid = bi->tseq + p;
+	}
+	return (void *) &bi->tvid;
+}
+
+__attribute__((__pure__))
+static inline const void *
+BUNtvar(BATiter *bi, BUN p)
+{
+	assert(bi->type && bi->vh);
+	return (const void *) (bi->vh->base + VarHeapVal(bi->base, p, bi->width));
+}
+
+__attribute__((__pure__))
+static inline const void *
+BUNtail(BATiter *bi, BUN p)
+{
+	if (bi->type) {
+		if (bi->vh) {
+			return BUNtvar(bi, p);
+		} else if (bi->type == TYPE_msk) {
+			return BUNtmsk(bi, p);
+		} else {
+			return BUNtloc(bi, p);
+		}
+	} else {
+		return BUNtpos(bi, p);
+	}
+}
+
+/* return the oid value at BUN position p from the (v)oid bat b
+ * works with any TYPE_void or TYPE_oid bat */
+__attribute__((__pure__))
+static inline oid
+BUNtoid(BAT *b, BUN p)
+{
+	assert(ATOMtype(b->ttype) == TYPE_oid);
+	/* BATcount is the number of valid entries, so with
+	 * exceptions, the last value can well be larger than
+	 * b->tseqbase + BATcount(b) */
+	assert(p < BATcount(b));
+	assert(b->ttype == TYPE_void || b->tvheap == NULL);
+	if (is_oid_nil(b->tseqbase)) {
+		if (b->ttype == TYPE_void)
+			return oid_nil;
+		MT_lock_set(&b->theaplock);
+		oid o = ((const oid *) b->theap->base)[p + b->tbaseoff];
+		MT_lock_unset(&b->theaplock);
+		return o;
+	}
+	if (b->ttype == TYPE_oid || b->tvheap == NULL) {
+		return b->tseqbase + p;
+	}
+	/* b->tvheap != NULL, so we know there will be no parallel
+	 * modifications (so no locking) */
+	BATiter bi = bat_iterator_nolock(b);
+	return * (const oid *) BUNtpos(&bi, p);
+}
 
 gdk_export BUN BATcount_no_nil(BAT *b, BAT *s);
 gdk_export void BATsetcapacity(BAT *b, BUN cnt);
@@ -1318,105 +1443,6 @@ BBPcheck(bat x)
 }
 
 gdk_export BAT *BATdescriptor(bat i);
-
-static inline void *
-Tpos(BATiter *bi, BUN p)
-{
-	assert(bi->base == NULL);
-	if (bi->vh) {
-		oid o;
-		assert(!is_oid_nil(bi->tseq));
-		if (((ccand_t *) bi->vh)->type == CAND_NEGOID) {
-			BUN nexc = (bi->vhfree - sizeof(ccand_t)) / SIZEOF_OID;
-			o = bi->tseq + p;
-			if (nexc > 0) {
-				const oid *exc = (const oid *) (bi->vh->base + sizeof(ccand_t));
-				if (o >= exc[0]) {
-					if (o + nexc > exc[nexc - 1]) {
-						o += nexc;
-					} else {
-						BUN lo = 0;
-						BUN hi = nexc - 1;
-						while (hi - lo > 1) {
-							BUN mid = (hi + lo) / 2;
-							if (exc[mid] - mid > o)
-								hi = mid;
-							else
-								lo = mid;
-						}
-						o += hi;
-					}
-				}
-			}
-		} else {
-			const uint32_t *msk = (const uint32_t *) (bi->vh->base + sizeof(ccand_t));
-			BUN nmsk = (bi->vhfree - sizeof(ccand_t)) / sizeof(uint32_t);
-			o = 0;
-			for (BUN i = 0; i < nmsk; i++) {
-				uint32_t m = candmask_pop(msk[i]);
-				if (o + m > p) {
-					m = msk[i];
-					for (i = 0; i < 32; i++) {
-						if (m & (1U << i) && ++o == p)
-							break;
-					}
-					break;
-				}
-				o += m;
-			}
-		}
-		bi->tvid = o;
-	} else if (is_oid_nil(bi->tseq)) {
-		bi->tvid = oid_nil;
-	} else {
-		bi->tvid = bi->tseq + p;
-	}
-	return (void *) &bi->tvid;
-}
-
-__attribute__((__pure__))
-static inline bool
-Tmskval(const BATiter *bi, BUN p)
-{
-	assert(ATOMstorage(bi->type) == TYPE_msk);
-	return ((const uint32_t *) bi->base)[p / 32] & (1U << (p % 32));
-}
-
-static inline void *
-Tmsk(BATiter *bi, BUN p)
-{
-	bi->tmsk = Tmskval(bi, p);
-	return &bi->tmsk;
-}
-
-/* return the oid value at BUN position p from the (v)oid bat b
- * works with any TYPE_void or TYPE_oid bat */
-__attribute__((__pure__))
-static inline oid
-BUNtoid(BAT *b, BUN p)
-{
-	assert(ATOMtype(b->ttype) == TYPE_oid);
-	/* BATcount is the number of valid entries, so with
-	 * exceptions, the last value can well be larger than
-	 * b->tseqbase + BATcount(b) */
-	assert(p < BATcount(b));
-	assert(b->ttype == TYPE_void || b->tvheap == NULL);
-	if (is_oid_nil(b->tseqbase)) {
-		if (b->ttype == TYPE_void)
-			return oid_nil;
-		MT_lock_set(&b->theaplock);
-		oid o = ((const oid *) b->theap->base)[p + b->tbaseoff];
-		MT_lock_unset(&b->theaplock);
-		return o;
-	}
-	if (b->ttype == TYPE_oid || b->tvheap == NULL) {
-		return b->tseqbase + p;
-	}
-	/* b->tvheap != NULL, so we know there will be no parallel
-	 * modifications (so no locking) */
-	BATiter bi = bat_iterator_nolock(b);
-	return * (oid *) Tpos(&bi, p);
-}
 
 gdk_export gdk_return TMsubcommit_list(bat *restrict subcommit, BUN *restrict sizes, int cnt, lng logno)
 	__attribute__((__warn_unused_result__));

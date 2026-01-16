@@ -100,7 +100,7 @@ MTIMEcurrent_timestamp(Client ctx, timestamp *ret)
 		break; \
 	}
 
-#define GET_NEXT_ITER(ARG, OFF) BUNtvar(b##ARG##i, OFF)
+#define GET_NEXT_ITER(ARG, OFF) BUNtvar(&b##ARG##i, OFF)
 
 #define DEC_NOTHING(TYPE, ARG)
 #define INIT_NOTHING(ARG)

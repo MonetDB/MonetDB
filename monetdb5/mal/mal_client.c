@@ -137,7 +137,6 @@ MCpopClientInput(Client c)
 	c->prompt = x->prompt;
 	c->promptlength = strlen(c->prompt);
 	c->bak = x->next;
-	//GDKfree(x);
 }
 
 static Client
@@ -188,7 +187,6 @@ MCexitClient(Client c)
 {
 	// Remove any left over constant symbols
 	if (c->curprg) {
-		//resetMalBlk(&c->curprg->def);
 		freeMalBlk(c->curprg->def);
 		c->curprg->def = NULL;
 	}
@@ -368,27 +366,21 @@ MCcloseClient(Client c)
 	c->idletimeout = 0;
 	c->user = oid_nil;
 	if (c->username) {
-		//GDKfree(c->username);
 		c->username = 0;
 	}
 	if (c->peer) {
-		//GDKfree(c->peer);
 		c->peer = 0;
 	}
 	if (c->client_hostname) {
-		//GDKfree(c->client_hostname);
 		c->client_hostname = 0;
 	}
 	if (c->client_application) {
-		//GDKfree(c->client_application);
 		c->client_application = 0;
 	}
 	if (c->client_library) {
-		//GDKfree(c->client_library);
 		c->client_library = 0;
 	}
 	if (c->client_remark) {
-		//GDKfree(c->client_remark);
 		c->client_remark = 0;
 	}
 	c->client_pid = 0;
@@ -411,7 +403,6 @@ MCcloseClient(Client c)
 		c->error_row = c->error_fld = c->error_msg = c->error_input = NULL;
 	}
 	c->sqlprofiler = false;
-	//free(c->handshake_options);
 	c->handshake_options = NULL;
 	MT_thread_set_qry_ctx(NULL);
 	assert(strcmp(MT_thread_getname(), "main-thread") == 0 ||
@@ -605,25 +596,21 @@ MCsetClientInfo(Client c, const char *property, const char *value)
 	switch (discriminant) {
 		case 'H':
 			if (strcasecmp(property, "ClientHostname") == 0) {
-				//GDKfree(c->client_hostname);
 				c->client_hostname = value ? ma_strdup(c->ma, value) : NULL;
 			}
 			break;
 		case 'A':
 			if (strcasecmp(property, "ApplicationName") == 0) {
-				//GDKfree(c->client_application);
 				c->client_application = value ? ma_strdup(c->ma, value) : NULL;
 			}
 			break;
 		case 'L':
 			if (strcasecmp(property, "ClientLibrary") == 0) {
-				//GDKfree(c->client_library);
 				c->client_library = value ? ma_strdup(c->ma, value) : NULL;
 			}
 			break;
 		case 'R':
 			if (strcasecmp(property, "ClientRemark") == 0) {
-				//GDKfree(c->client_remark);
 				c->client_remark = value ? ma_strdup(c->ma, value) : NULL;
 			}
 			break;
