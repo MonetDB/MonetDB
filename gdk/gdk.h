@@ -546,7 +546,7 @@ gdk_export BAT *BBPquickdesc(bat b);
  * Alternatively, but only for very quick access, the theaplock can be
  * taken, the data read, and the lock released.  For longer duration
  * accesses, it is better to use the iterator, even without the BUNt*
- * macros, since the theaplock is only held very briefly.
+ * functions, since the theaplock is only held very briefly.
  *
  * Note, bat_iterator must only be used for read-only access.
  *
@@ -713,7 +713,7 @@ bat_iterator(BAT *b)
 /* return a copy of a BATiter instance; needs to be released with
  * bat_iterator_end */
 static inline BATiter
-bat_iterator_copy(BATiter *bip)
+bat_iterator_copy(const BATiter *bip)
 {
 	assert(bip);
 	assert(bip->locked);
@@ -803,23 +803,6 @@ gdk_export BUN ORDERfndlast(BAT *b, Heap *oidxh, const void *v);
 
 gdk_export BUN BUNfnd(BAT *b, const void *right);
 
-#define BUNfndVOID(b, v)						\
-	(((is_oid_nil(*(const oid*)(v)) ^ is_oid_nil((b)->tseqbase)) |	\
-		(*(const oid*)(v) < (b)->tseqbase) |			\
-		(*(const oid*)(v) >= (b)->tseqbase + (b)->batCount)) ?	\
-	 BUN_NONE :							\
-	 (BUN) (*(const oid*)(v) - (b)->tseqbase))
-
-#define BATttype(b)	(BATtdense(b) ? TYPE_oid : (b)->ttype)
-
-#define tailsize(b,p)	((b)->ttype ?				\
-			 (ATOMstorage((b)->ttype) == TYPE_msk ?	\
-			  (((size_t) (p) + 31) / 32) * 4 :	\
-			  ((size_t) (p)) << (b)->tshift) :	\
-			 0)
-
-#define Tloc(b,p)	((void *)((b)->theap->base+(((size_t)(p)+(b)->tbaseoff)<<(b)->tshift)))
-
 typedef var_t stridx_t;
 #define SIZEOF_STRIDX_T SIZEOF_VAR_T
 #define GDK_VARALIGN SIZEOF_STRIDX_T
@@ -827,7 +810,43 @@ typedef var_t stridx_t;
 #include "gdk_atoms.h"
 #include "gdk_cand.h"
 
-#define BATcount(b)	((b)->batCount)
+__attribute__((__pure__))
+static inline BUN
+BUNfndVOID(const BAT *b, const oid *v)
+{
+	if ((is_oid_nil(*v) ^ is_oid_nil(b->tseqbase)) ||
+	    *v < b->tseqbase ||
+	    *v >= b->tseqbase + b->batCount)
+		return BUN_NONE;
+	return (BUN) (*v - b->tseqbase);
+}
+
+/* return required heap size in bytes for `cnt` elements */
+__attribute__((__pure__))
+static inline size_t
+tailsize(const BAT *b, BUN cnt)
+{
+	if (b->ttype != TYPE_void) {
+		if (ATOMstorage(b->ttype) == TYPE_msk)
+			return (size_t) (((cnt + 31) / 32) * 4);
+		return (size_t) cnt << b->tshift;
+	}
+	return 0;
+}
+
+__attribute__((__pure__))
+static inline void *		/* not const! */
+Tloc(const BAT *b, BUN p)
+{
+	return b->theap->base + ((p + b->tbaseoff) << b->tshift);
+}
+
+__attribute__((__pure__))
+static inline BUN
+BATcount(const BAT *b)
+{
+	return b->batCount;
+}
 
 __attribute__((__pure__))
 static inline bool
@@ -847,74 +866,22 @@ BUNtmsk(BATiter *bi, BUN p)
 
 __attribute__((__pure__))
 static inline const void *
-BUNtloc(BATiter *bi, BUN p)
+BUNtloc(const BATiter *bi, BUN p)
 {
 	assert(bi->type != TYPE_msk);
 	return (const void *) ((char *) bi->base + (p << bi->shift));
 }
 
-__attribute__((__pure__))
-static inline const void *
-BUNtpos(BATiter *bi, BUN p)
-{
-	assert(bi->base == NULL);
-	if (bi->vh) {
-		oid o;
-		assert(!is_oid_nil(bi->tseq));
-		if (((ccand_t *) bi->vh)->type == CAND_NEGOID) {
-			BUN nexc = (bi->vhfree - sizeof(ccand_t)) / SIZEOF_OID;
-			o = bi->tseq + p;
-			if (nexc > 0) {
-				const oid *exc = (const oid *) (bi->vh->base + sizeof(ccand_t));
-				if (o >= exc[0]) {
-					if (o + nexc > exc[nexc - 1]) {
-						o += nexc;
-					} else {
-						BUN lo = 0;
-						BUN hi = nexc - 1;
-						while (hi - lo > 1) {
-							BUN mid = (hi + lo) / 2;
-							if (exc[mid] - mid > o)
-								hi = mid;
-							else
-								lo = mid;
-						}
-						o += hi;
-					}
-				}
-			}
-		} else {
-			const uint32_t *msk = (const uint32_t *) (bi->vh->base + sizeof(ccand_t));
-			BUN nmsk = (bi->vhfree - sizeof(ccand_t)) / sizeof(uint32_t);
-			o = 0;
-			for (BUN i = 0; i < nmsk; i++) {
-				uint32_t m = candmask_pop(msk[i]);
-				if (o + m > p) {
-					m = msk[i];
-					for (i = 0; i < 32; i++) {
-						if (m & (1U << i) && ++o == p)
-							break;
-					}
-					break;
-				}
-				o += m;
-			}
-		}
-		bi->tvid = o;
-	} else if (is_oid_nil(bi->tseq)) {
-		bi->tvid = oid_nil;
-	} else {
-		bi->tvid = bi->tseq + p;
-	}
-	return (void *) &bi->tvid;
-}
+/* too large: not inline */
+gdk_export const void *BUNtpos(BATiter *bi, BUN p)
+	__attribute__((__pure__));
 
 __attribute__((__pure__))
 static inline const void *
-BUNtvar(BATiter *bi, BUN p)
+BUNtvar(const BATiter *bi, BUN p)
 {
 	assert(bi->type && bi->vh);
-	return (const void *) (bi->vh->base + VarHeapVal(bi->base, p, bi->width));
+	return bi->vh->base + VarHeapVal(bi->base, p, bi->width);
 }
 
 __attribute__((__pure__))
@@ -977,12 +944,23 @@ gdk_export BAT *BATsetaccess(BAT *b, restrict_t mode)
 gdk_export restrict_t BATgetaccess(BAT *b);
 
 
-#define BATdirty(b)	(!(b)->batCopiedtodisk ||			\
-			 (b)->theap->dirty ||				\
-			 ((b)->tvheap != NULL && (b)->tvheap->dirty))
+__attribute__((__pure__))
+static inline bool
+BATdirty(const BAT *b)
+{
+	return !b->batCopiedtodisk ||
+		b->theap->dirty ||
+		(b->tvheap != NULL && b->tvheap->dirty);
+}
+
 #define BATdirtybi(bi)	(!(bi).copiedtodisk || (bi).hdirty || (bi).vhdirty)
 
-#define BATcapacity(b)	(b)->batCapacity
+__attribute__((__pure__))
+static inline BUN
+BATcapacity(const BAT *b)
+{
+	return b->batCapacity;
+}
 
 gdk_export gdk_return BATclear(BAT *b, bool force);
 gdk_export BAT *COLcopy(BAT *b, int tt, bool writable, role_t role);
@@ -1023,13 +1001,44 @@ gdk_export gdk_return BATsort(BAT **sorted, BAT **order, BAT **groups, BAT *b, B
 gdk_export void GDKqsort(void *restrict h, void *restrict t, const void *restrict base, size_t n, int hs, int ts, int tpe, bool reverse, bool nilslast);
 
 /* BAT is dense (i.e., BATtvoid() is true and tseqbase is not NIL) */
-#define BATtdense(b)	(!is_oid_nil((b)->tseqbase) &&			\
-			 ((b)->tvheap == NULL || (b)->tvheap->free == 0))
-#define BATtdensebi(bi)	(!is_oid_nil((bi)->tseq) &&			\
-			 ((bi)->vh == NULL || (bi)->vhfree == 0))
+__attribute__((__pure__))
+static inline bool
+BATtdense(const BAT *b)
+{
+	return !is_oid_nil(b->tseqbase) &&
+		(b->tvheap == NULL || b->tvheap->free == 0);
+}
+__attribute__((__pure__))
+static inline bool
+BATtdensebi(const BATiter *bi)
+{
+	return !is_oid_nil(bi->tseq) &&
+		(bi->vh == NULL || bi->vhfree == 0);
+}
+
 /* BATtvoid: BAT can be (or actually is) represented by TYPE_void */
-#define BATtvoid(b)	(BATtdense(b) || (b)->ttype==TYPE_void)
-#define BATtkey(b)	((b)->tkey || BATtdense(b))
+__attribute__((__pure__))
+static inline bool
+BATtvoid(const BAT *b)
+{
+	return b->ttype == TYPE_void || BATtdense(b);
+}
+
+__attribute__((__pure__))
+static inline bool
+BATtkey(const BAT *b)
+{
+	return b->tkey || BATtdense(b);
+}
+
+__attribute__((__pure__))
+static inline int
+BATttype(const BAT *b)
+{
+	if (BATtdense(b))
+		return TYPE_oid;
+	return b->ttype;
+}
 
 /* set some properties that are trivial to deduce; called with theaplock
  * held */

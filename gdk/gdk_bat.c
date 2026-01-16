@@ -53,6 +53,61 @@
 
 #define ATOMneedheap(tpe) (BATatoms[tpe].atomHeap != NULL)
 
+const void *
+BUNtpos(BATiter *bi, BUN p)
+{
+	assert(bi->base == NULL);
+	if (bi->vh) {
+		oid o;
+		assert(!is_oid_nil(bi->tseq));
+		if (((ccand_t *) bi->vh)->type == CAND_NEGOID) {
+			BUN nexc = (bi->vhfree - sizeof(ccand_t)) / SIZEOF_OID;
+			o = bi->tseq + p;
+			if (nexc > 0) {
+				const oid *exc = (const oid *) (bi->vh->base + sizeof(ccand_t));
+				if (o >= exc[0]) {
+					if (o + nexc > exc[nexc - 1]) {
+						o += nexc;
+					} else {
+						BUN lo = 0;
+						BUN hi = nexc - 1;
+						while (hi - lo > 1) {
+							BUN mid = (hi + lo) / 2;
+							if (exc[mid] - mid > o)
+								hi = mid;
+							else
+								lo = mid;
+						}
+						o += hi;
+					}
+				}
+			}
+		} else {
+			const uint32_t *msk = (const uint32_t *) (bi->vh->base + sizeof(ccand_t));
+			BUN nmsk = (bi->vhfree - sizeof(ccand_t)) / sizeof(uint32_t);
+			o = 0;
+			for (BUN i = 0; i < nmsk; i++) {
+				uint32_t m = candmask_pop(msk[i]);
+				if (o + m > p) {
+					m = msk[i];
+					for (i = 0; i < 32; i++) {
+						if (m & (1U << i) && ++o == p)
+							break;
+					}
+					break;
+				}
+				o += m;
+			}
+		}
+		bi->tvid = o;
+	} else if (is_oid_nil(bi->tseq)) {
+		bi->tvid = oid_nil;
+	} else {
+		bi->tvid = bi->tseq + p;
+	}
+	return &bi->tvid;
+}
+
 BAT *
 BATcreatedesc(oid hseq, int tt, bool heapnames, role_t role, uint16_t width)
 {
