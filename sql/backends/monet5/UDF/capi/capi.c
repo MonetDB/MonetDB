@@ -1234,7 +1234,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 			li = bat_iterator(input_bats[index]);
 			BATloop(input_bats[index], p, q)
 			{
-				void *t = BUNtail(&li, p);
+				const void *t = BUNtail(&li, p);
 				if (BATatoms[bat_type].atomNull &&
 					BATatoms[bat_type].atomCmp(
 						t, BATatoms[bat_type].atomNull) == 0) {

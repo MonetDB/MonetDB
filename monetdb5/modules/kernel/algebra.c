@@ -1556,7 +1556,7 @@ doALGfetch(allocator *ma, ptr ret, BAT *b, BUN pos)
 	assert(pos <= BUN_MAX);
 	BATiter bi = bat_iterator(b);
 	if (ATOMextern(b->ttype)) {
-		ptr _src = BUNtail(&bi, pos);
+		const void *_src = BUNtail(&bi, pos);
 		size_t _len = ATOMlen(b->ttype, _src);
 		ptr _dst = ma_alloc(ma, _len);
 		if (_dst == NULL) {

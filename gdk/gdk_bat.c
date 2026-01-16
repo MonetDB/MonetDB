@@ -1539,8 +1539,8 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 
 		if (b->tvheap && b->ttype) {
 			var_t _d;
-			ptr _ptr;
-			_ptr = BUNtloc(&bi, p);
+			void *_ptr;
+			_ptr = b->theap->base + p * b->twidth;
 			switch (b->twidth) {
 			case 1:
 				_d = (var_t) * (uint8_t *) _ptr + GDK_VAROFFSET;
@@ -1583,7 +1583,7 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 				bi.minpos = minpos;
 				bi.maxpos = maxpos;
 			}
-			_ptr = BUNtloc(&bi, p);
+			_ptr = b->theap->base + p * b->twidth;
 			switch (b->twidth) {
 			case 1:
 				* (uint8_t *) _ptr = (uint8_t) (_d - GDK_VAROFFSET);
@@ -1629,7 +1629,8 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 #endif
 				break;
 			default:
-				memcpy(BUNtloc(&bi, p), t, ATOMsize(b->ttype));
+				memcpy(b->theap->base + p * ATOMsize(b->ttype),
+				       t, ATOMsize(b->ttype));
 				break;
 			}
 		}

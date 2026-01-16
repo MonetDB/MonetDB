@@ -40,7 +40,7 @@ typedef struct {
 	BATiter bi;
 	BUN o;
 	BUN q;
-	str *s;
+	const str *s;
 } MULTIarg;
 
 typedef struct {

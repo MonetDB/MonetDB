@@ -2784,8 +2784,8 @@ sql_update_jun2023(Client c, mvc *sql, sql_schema *s)
 		for (oid p = 0; p < ik.count; p++) {
 			if (BUNfnd(rt_deleted, &p) == BUN_NONE) {
 				char *key = GDKstrdup(BUNtvar(&ik, p));
-				char *username = BUNtvar(&iu, p);
-				char *pwhash = BUNtvar(&ip, p);
+				const char *username = BUNtvar(&iu, p);
+				const char *pwhash = BUNtvar(&ip, p);
 
 				if (!key) {
 					bat_iterator_end(&ik);

@@ -1220,7 +1220,7 @@ monetdbe_prepare_cb(void* context, char* tblname, columnar_result* results, size
 	BATiter bcolumn_iter = {0};
 	BATiter btable_iter = {0};
 	BATiter bimpl_iter = {0};
-	char* function = NULL;
+	const char* function = NULL;
 	Symbol prg = NULL;
 	MalBlkPtr mb = NULL;
 	InstrPtr o = NULL, e = NULL, r = NULL;

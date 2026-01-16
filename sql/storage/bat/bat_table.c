@@ -424,7 +424,7 @@ table_orderby(sql_trans *tr, sql_table *t, sql_column *jl, sql_column *jr, sql_c
 	return rt;
 }
 
-static void *
+static const void *
 table_fetch_value(res_table *rt, sql_column *c)
 {
 	/* this function is only ever called during startup, and therefore

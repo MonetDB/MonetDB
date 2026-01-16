@@ -1469,7 +1469,7 @@ cs_update_bat( sql_trans *tr, sql_delta **batp, sql_table *t, BAT *tids, BAT *up
 								memset(msk, 0, end * sizeof(int));
 							}
 						}
-						ptr upd = BUNtail(&upi, i);
+						const void *upd = BUNtail(&upi, i);
 						if (void_inplace(b, rid, upd, true) != GDK_SUCCEED)
 							res = LOG_ERR;
 

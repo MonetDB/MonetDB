@@ -1865,7 +1865,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out,
 					char *src, *dst;
 					leftover = BATcount(task.as->format[attr].c);
 					limit = leftover - cntstart;
-					dst = src = BUNtloc(&task.as->format[attr].ci, cntstart);
+					dst = src = (char *) BUNtloc(&task.as->format[attr].ci, cntstart);
 					for (j = 0; j < (int) limit; j++, src += width) {
 						if (task.rowerror[j]) {
 							leftover--;

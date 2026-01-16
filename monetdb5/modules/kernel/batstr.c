@@ -1920,8 +1920,8 @@ prefix_or_suffix(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1),
 				p2 = (canditer_next_dense(&ci2) - off2);
-			char *x = BUNtvar(&lefti, p1);
-			char *y = BUNtvar(&righti, p2);
+			const char *x = BUNtvar(&lefti, p1);
+			const char *y = BUNtvar(&righti, p2);
 
 			if (strNil(x) || strNil(y)) {
 				vals[i] = bit_nil;
@@ -1934,8 +1934,8 @@ prefix_or_suffix(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1),
 				p2 = (canditer_next(&ci2) - off2);
-			char *x = BUNtvar(&lefti, p1);
-			char *y = BUNtvar(&righti, p2);
+			const char *x = BUNtvar(&lefti, p1);
+			const char *y = BUNtvar(&righti, p2);
 
 			if (strNil(x) || strNil(y)) {
 				vals[i] = bit_nil;
@@ -2044,7 +2044,7 @@ prefix_or_suffix_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	if (ci1.tpe == cand_dense) {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1);
-			char *x = BUNtvar(&bi, p1);
+			const char *x = BUNtvar(&bi, p1);
 
 			if (ynil || strNil(x)) {
 				vals[i] = bit_nil;
@@ -2056,7 +2056,7 @@ prefix_or_suffix_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	} else {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1);
-			char *x = BUNtvar(&bi, p1);
+			const char *x = BUNtvar(&bi, p1);
 
 			if (ynil || strNil(x)) {
 				vals[i] = bit_nil;
@@ -2167,7 +2167,7 @@ prefix_or_suffix_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	if (ci1.tpe == cand_dense) {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1);
-			char *y = BUNtvar(&bi, p1);
+			const char *y = BUNtvar(&bi, p1);
 
 			if (xnil || strNil(y)) {
 				vals[i] = bit_nil;
@@ -2179,7 +2179,7 @@ prefix_or_suffix_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	} else {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1);
-			char *y = BUNtvar(&bi, p1);
+			const char *y = BUNtvar(&bi, p1);
 
 			if (xnil || strNil(y)) {
 				vals[i] = bit_nil;
@@ -2296,8 +2296,8 @@ search_string_bat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1),
 				p2 = (canditer_next_dense(&ci2) - off2);
-			char *x = BUNtvar(&lefti, p1);
-			char *y = BUNtvar(&righti, p2);
+			const char *x = BUNtvar(&lefti, p1);
+			const char *y = BUNtvar(&righti, p2);
 
 			if (strNil(x) || strNil(y)) {
 				vals[i] = int_nil;
@@ -2310,8 +2310,8 @@ search_string_bat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1),
 				p2 = (canditer_next(&ci2) - off2);
-			char *x = BUNtvar(&lefti, p1);
-			char *y = BUNtvar(&righti, p2);
+			const char *x = BUNtvar(&lefti, p1);
+			const char *y = BUNtvar(&righti, p2);
 
 			if (strNil(x) || strNil(y)) {
 				vals[i] = int_nil;
@@ -2417,7 +2417,7 @@ search_string_bat_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	if (ci1.tpe == cand_dense) {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1);
-			char *x = BUNtvar(&bi, p1);
+			const char *x = BUNtvar(&bi, p1);
 
 			if (ynil || strNil(x)) {
 				vals[i] = int_nil;
@@ -2429,7 +2429,7 @@ search_string_bat_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	} else {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1);
-			char *x = BUNtvar(&bi, p1);
+			const char *x = BUNtvar(&bi, p1);
 
 			if (ynil || strNil(x)) {
 				vals[i] = int_nil;
@@ -2534,7 +2534,7 @@ search_string_bat_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	if (ci1.tpe == cand_dense) {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1);
-			char *y = BUNtvar(&bi, p1);
+			const char *y = BUNtvar(&bi, p1);
 
 			if (xnil || strNil(y)) {
 				vals[i] = int_nil;
@@ -2546,7 +2546,7 @@ search_string_bat_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	} else {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1);
-			char *y = BUNtvar(&bi, p1);
+			const char *y = BUNtvar(&bi, p1);
 
 			if (xnil || strNil(y)) {
 				vals[i] = int_nil;

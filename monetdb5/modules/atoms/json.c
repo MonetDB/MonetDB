@@ -2296,7 +2296,7 @@ JSONrenderRowObject(allocator *ma, BAT **bl, MalBlkPtr mb, MalStkPtr stk, InstrP
 	int i, tpe;
 	char *row, *row2, *name = 0, *val = 0;
 	size_t len, lim, l;
-	void *p;
+	const void *p;
 	BATiter bi;
 
 	row = ma_alloc(ma, lim = BUFSIZ);
@@ -2412,7 +2412,7 @@ JSONrenderRowArray(Client ctx, BAT **bl, MalBlkPtr mb, InstrPtr pci, BUN idx)
 	int i, tpe;
 	char *row, *row2, *val = 0;
 	size_t len, lim, l;
-	void *p;
+	const void *p;
 	BATiter bi;
 	allocator *ma = mb->ma;
 
@@ -2519,10 +2519,11 @@ JSONfoldKeyValue(Client ctx, str *ret, const bat *id, const bat *key, const bat 
 	BAT *bo = 0, *bk = 0, *bv;
 	BATiter bki, bvi;
 	int tpe;
-	char *row, *val = 0, *nme = 0;
+	char *row, *nme = NULL;
+	const char *val = NULL;
 	BUN i, cnt;
 	size_t len, lim, l;
-	void *p;
+	const void *p;
 	oid o = 0;
 	allocator *ma = ctx->curprg->def->ma;
 
@@ -2577,13 +2578,12 @@ JSONfoldKeyValue(Client ctx, str *ret, const bat *id, const bat *key, const bat 
 			size_t osz = lim;
 			while (l + 3 > lim - len)
 				lim = (lim / (i + 1)) * cnt + BUFSIZ + l + 3;
-			p = ma_realloc(ma, row, lim, osz);
-			if (p == NULL) {
+			row = ma_realloc(ma, row, lim, osz);
+			if (row == NULL) {
 				bat_iterator_end(&bki);
 				bat_iterator_end(&bvi);
 				goto memfail;
 			}
-			row = p;
 			if (!strNil(nme)) {
 				snprintf(row + len, lim - len, "\"%s\":", nme);
 				len += l + 3;
@@ -2607,13 +2607,12 @@ JSONfoldKeyValue(Client ctx, str *ret, const bat *id, const bat *key, const bat 
 		size_t osz = lim;
 		while (l > lim - len)
 			lim = (lim / (i + 1)) * cnt + BUFSIZ + l + 3;
-		p = ma_realloc(ma, row, lim, osz);
-		if (p == NULL) {
+		row = ma_realloc(ma, row, lim, osz);
+		if (row == NULL) {
 			bat_iterator_end(&bki);
 			bat_iterator_end(&bvi);
 			goto memfail;
 		}
-		row = p;
 		strncpy(row + len, val ? val : "null", l);
 		len += l;
 		row[len++] = ',';

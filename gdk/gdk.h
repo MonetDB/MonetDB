@@ -838,7 +838,7 @@ Tmskval(const BATiter *bi, BUN p)
 }
 
 __attribute__((__pure__))
-static inline void *
+static inline const void *
 BUNtmsk(BATiter *bi, BUN p)
 {
 	bi->tmsk = Tmskval(bi, p);
@@ -846,15 +846,15 @@ BUNtmsk(BATiter *bi, BUN p)
 }
 
 __attribute__((__pure__))
-static inline void *
+static inline const void *
 BUNtloc(BATiter *bi, BUN p)
 {
 	assert(bi->type != TYPE_msk);
-	return (void *) ((char *) bi->base + (p << bi->shift));
+	return (const void *) ((char *) bi->base + (p << bi->shift));
 }
 
 __attribute__((__pure__))
-static inline void *
+static inline const void *
 BUNtpos(BATiter *bi, BUN p)
 {
 	assert(bi->base == NULL);
@@ -910,15 +910,15 @@ BUNtpos(BATiter *bi, BUN p)
 }
 
 __attribute__((__pure__))
-static inline void *
+static inline const void *
 BUNtvar(BATiter *bi, BUN p)
 {
 	assert(bi->type && bi->vh);
-	return (void *) (bi->vh->base + VarHeapVal(bi->base, p, bi->width));
+	return (const void *) (bi->vh->base + VarHeapVal(bi->base, p, bi->width));
 }
 
 __attribute__((__pure__))
-static inline void *
+static inline const void *
 BUNtail(BATiter *bi, BUN p)
 {
 	if (bi->type) {
@@ -960,7 +960,7 @@ BUNtoid(BAT *b, BUN p)
 	/* b->tvheap != NULL, so we know there will be no parallel
 	 * modifications (so no locking) */
 	BATiter bi = bat_iterator_nolock(b);
-	return * (oid *) BUNtpos(&bi, p);
+	return * (const oid *) BUNtpos(&bi, p);
 }
 
 gdk_export BUN BATcount_no_nil(BAT *b, BAT *s);

@@ -1853,7 +1853,8 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 #endif
 				break;
 			default:
-				memcpy(BUNtloc(&bi, updid), new, ATOMsize(b->ttype));
+				memcpy(b->theap->base + updid * b->twidth,
+				       new, ATOMsize(b->ttype));
 				break;
 			}
 			HASHinsert_locked(&bi, updid, new);
