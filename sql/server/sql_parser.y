@@ -489,6 +489,7 @@ int yydebug=1;
 	routine_designator
 	expr_list
 	array_expr
+	vector_expr
 	array_expr_list
 	schema_element_list
 	schema_name_clause
@@ -5271,6 +5272,11 @@ opt_over:
 	|   /* empty */                       { $$ = NULL; }
 	;
 
+vector_expr:
+		'[' expr_list ']'      { $$ = $2; }
+	|	'[' ']'                { $$ = NULL; }
+	;
+
 array_expr:
 		'[' expr_list ']'      { $$ = $2; }
 	|	'['array_expr_list ']' { $$ = $2; }
@@ -5300,6 +5306,7 @@ value_exp:
 	|	'('expr_list ',' scalar_exp ')'   { $$ = _symbol_create_list(SQL_ROW, append_symbol($2, $4)); }
 	|	ARRAY select_with_parens          { $$ = $2; }
 	|	ARRAY array_expr                  { $$ = _symbol_create_list(SQL_SET, $2); }
+	|	VECTOR vector_expr                { $$ = _symbol_create_list(SQL_VECTOR, $2); }
 	|	session_user     { $$ = _symbol_create_list(SQL_NAME, append_string(append_string(L(), ma_strdup(SA, "sys")), ma_strdup(SA, "current_user"))); }
 	|	CURRENT_SCHEMA   { $$ = _symbol_create_list(SQL_NAME, append_string(append_string(L(), ma_strdup(SA, "sys")), ma_strdup(SA, "current_schema"))); }
 	|	CURRENT_ROLE     { $$ = _symbol_create_list(SQL_NAME, append_string(append_string(L(), ma_strdup(SA, "sys")), ma_strdup(SA, "current_role"))); }
@@ -8230,6 +8237,7 @@ char *token2string(tokens token)
 	SQL(UPDATE);
 	SQL(USING);
 	SQL(VALUES);
+	SQL(VECTOR);
 	SQL(VIEW);
 	SQL(WHEN);
 	SQL(WHILE);

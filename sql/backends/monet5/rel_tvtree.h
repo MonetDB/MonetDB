@@ -37,7 +37,6 @@ typedef enum tv_type {
 	TV_COMP,  // composite type
 	TV_MSET,  // multiset of composite type
 	TV_SETOF,  // setof of composite type
-	TV_VECTOR
 } tv_type;
 
 typedef struct type_values_tree {

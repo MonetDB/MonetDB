@@ -1368,7 +1368,7 @@ values_list(sql_query *query, symbol *tableref)
 		values = tableref->data.lval->h->data.sym;
 	if (values->token == SQL_ROW)
 		return row(query, values);
-	if (values->token == SQL_SET)
+	if (values->token == SQL_SET || values->token == SQL_VECTOR)
 		return set_values_list(query, values);
 	//return simple_values_list(query, values);
 	mvc *sql = query->sql;
@@ -1443,6 +1443,12 @@ rel_values(sql_query *query, symbol *tableref, list *refs)
 		list *nexps = sa_list(query->sql->sa);
 		sql_exp *e = exp_values(query->sql->sa, exps);
 		if ((e = exp_check_multiset(query->sql, e)) == NULL)
+			return NULL;
+		exps = append(nexps, e);
+	} else if (tableref->token == SQL_VECTOR) {
+		list *nexps = sa_list(query->sql->sa);
+		sql_exp *e = exp_values(query->sql->sa, exps);
+		if ((e = exp_check_vector(query->sql, e)) == NULL)
 			return NULL;
 		exps = append(nexps, e);
 	}
@@ -5645,6 +5651,7 @@ rel_value_exp2(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 	case SQL_VALUES:
 	case SQL_ROW:
 	case SQL_SET:
+	case SQL_VECTOR:
 	case SQL_WITH:
 	case SQL_SELECT: {
 		sql_rel *r = NULL;
@@ -5655,7 +5662,10 @@ rel_value_exp2(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 			query_push_outer(query, *rel, f);
 		if (se->token == SQL_WITH) {
 			r = rel_with_query(query, se);
-		} else if (se->token == SQL_VALUES || se->token == SQL_ROW || se->token == SQL_SET) {
+		} else if (se->token == SQL_VALUES
+				|| se->token == SQL_ROW
+			   	|| se->token == SQL_SET
+			   	|| se->token == SQL_VECTOR) {
 			if (ek.card <= card_row && !(rel && *rel)) {
 				sql_exp *e = sql_exp_values(query, se);
 				if (!e)

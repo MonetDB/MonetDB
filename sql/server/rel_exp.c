@@ -3968,6 +3968,7 @@ exp_check_vector_type(mvc *sql, sql_subtype *t, sql_rel *rel, sql_exp *exp, chec
 			sql_exp *e = m->data;
 			sql_subtype st = *t;
 			st.multiset = 0;
+			st.digits = 0;
 			e = exp_check_type(sql, &st, rel, e, tpe);
 			if (!e)
 				return NULL;
@@ -4043,6 +4044,22 @@ exp_check_multiset(mvc *sql, sql_exp *e)
 	}
 	sql_subtype *st = exp_subtype(e);
 	if (st->multiset)
+		return e;
+	return NULL;
+}
+
+sql_exp *
+exp_check_vector(mvc *sql, sql_exp *e)
+{
+	if (is_values(e)) { /* check for single tuple type */
+		sql_subtype t = *sql_fetch_localtype(TYPE_dbl);
+		t.multiset = MS_VECTOR;
+		t.digits = list_length(e->f);
+		return exp_check_vector_type(sql, &t, NULL, e, type_equal);
+	}
+	sql_subtype *st = exp_subtype(e);
+	assert(st->multiset == MS_VECTOR);
+	if (st->multiset == MS_VECTOR)
 		return e;
 	return NULL;
 }

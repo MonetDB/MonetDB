@@ -429,6 +429,7 @@ sp_symbol2string(allocator *ta, mvc *sql, symbol *se, int expression, char **err
 			stpcpy(stpcpy(stpcpy(stpcpy(stpcpy(res, "cast("), val), " as "), tpe), ")");
 		return res;
 	}
+	case SQL_VECTOR:
 	case SQL_SET: { /* dlist(ident-list, expression) */
 		dlist *set = se->data.lval;
 		char *ident = dlist2string(ta, sql, set->h->data.lval, ".", NULL, NULL, expression, err, depth, false);

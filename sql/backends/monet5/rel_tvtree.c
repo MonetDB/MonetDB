@@ -23,8 +23,6 @@ tv_get_type(sql_subtype *st)
 	if (st->multiset) {
 		if (st->multiset == MS_ARRAY)
 			return TV_MSET;
-		if (st->multiset == MS_VECTOR)
-			return TV_VECTOR;
 		if (st->multiset == MS_SETOF)
 			return TV_SETOF;
 	} else if (st->type->composite)
@@ -57,14 +55,6 @@ tv_node(allocator *sa, sql_subtype *st, tv_type tvt)
 				append(n->ctl, tv_node(sa, &sfa->type, tv_get_type(&sfa->type)));
 			}
         	return n;
-        case TV_VECTOR:
-			n->ctl = sa_list(sa);
-			for (unsigned int i=0; i < st->digits; i++) {
-				sql_subtype *_st = sql_create_subtype(sa, st->type, 0, 0);
-				sn = tv_node(sa, _st, TV_BASIC);
-				append(n->ctl, sn);
-			}
-			return n;
         case TV_MSET:
 			n->msnr = sa_list(sa);
 			/* fall through */
@@ -274,7 +264,6 @@ tv_parse_values_(backend *be, tv_tree *t, sql_exp *value, stmt *left, stmt *sel)
                 return mset_value_from_array_constructor(be, t, uc, left, sel);
             break;
 		case TV_COMP:
-		case TV_VECTOR:
 			if (is_convert(value->type))
 				/* VALUES ('(1,"alice")') */
 				return comp_value_from_literal(be, t, value, left, sel);
@@ -388,7 +377,6 @@ tv_generate_stmts(backend *be, tv_tree *t)
 			s->subtype = *t->st;
 			return s;
 		case TV_COMP:
-		case TV_VECTOR:
 			sl = sa_list(be->mvc->sa);
 			/* gather all the composite (sub)field's statements */
 			for (node *n = t->ctl->h; n; n = n->next)

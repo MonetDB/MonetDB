@@ -157,6 +157,7 @@ typedef enum tokens {
 	SQL_UPDATE,
 	SQL_USING,
 	SQL_VALUES,
+	SQL_VECTOR,
 	SQL_VIEW,
 	SQL_WHEN,
 	SQL_WHILE,

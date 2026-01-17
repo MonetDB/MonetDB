@@ -244,6 +244,7 @@ extern int rel_set_type_param(mvc *sql, sql_subtype *type, sql_rel *rel, sql_exp
 extern sql_exp *exp_numeric_supertype(mvc *sql, sql_exp *e);
 extern sql_exp *exp_values_set_supertype(mvc *sql, sql_exp *values, sql_subtype *opt_super);
 extern sql_exp *exp_check_multiset(mvc *sql, sql_exp *exp); /* cast to any multiset */
+extern sql_exp *exp_check_vector(mvc *sql, sql_exp *exp);
 extern void free_exp(allocator *sa, sql_exp *e);
 extern void free_exps(allocator *sa, list *exps);
 

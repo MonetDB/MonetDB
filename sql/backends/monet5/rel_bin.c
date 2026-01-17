@@ -1741,6 +1741,70 @@ is_const_func(sql_subfunc *f, list *attr)
 	return false;
 }
 
+typedef struct vec_dim {
+	int index;
+	sql_subtype *t;
+	list *vals;
+} vec_dim;
+
+static vec_dim*
+vec_values(backend *be, sql_exp *exp, stmt *left, stmt *sel, vec_dim *acc, size_t dim)
+{
+	sql_subtype *t = exp_subtype(exp);
+	assert(t->multiset == MS_VECTOR);
+	list *vals = exp_get_values(exp);
+	if (!vals)
+		return acc;
+	size_t i = 0;
+	for (node *n = vals->h; n; n = n->next, i++) {
+		sql_exp *e = n->data;
+		sql_subtype *t = exp_subtype(e);
+		if (t->multiset == MS_VECTOR)
+			acc = vec_values(be, e, left, sel, acc, dim);
+		else {
+			stmt *s = exp_bin(be, e, left, NULL, NULL, NULL, NULL, sel, 0, 0, 0);
+			vec_dim d = acc[i];
+			if (!d.t)
+				d.t = t;
+			if (d.index < 0)
+				d.index = i;
+			if (i < dim && d.vals)
+				list_append(d.vals, s);
+			acc[i] = d;
+		}
+	}
+	return acc;
+}
+
+static stmt*
+exp2stmt_vector(backend *be, sql_exp *e, stmt *left, stmt *sel)
+{
+	sql_subtype *t = exp_subtype(e);
+	assert(t->multiset == MS_VECTOR);
+	unsigned int ndim = t->digits;
+	vec_dim *vals = ma_alloc(be->mvc->sa, sizeof(vec_dim) * ndim);
+	if (!vals)
+		return NULL;
+	for (size_t i=0; i < ndim; i++) {
+		list *l = sa_list(be->mvc->sa);
+		vals[i] = (vec_dim) {
+			.index = -1,
+			.vals = l
+		};
+	}
+	vals = vec_values(be, e, left, sel, vals, ndim);
+	list *l = sa_list(be->mvc->sa);
+	for (size_t i = 0; i < ndim; i++) {
+		vec_dim d = vals[i];
+		stmt *s = stmt_append_bulk(be, stmt_temp(be, d.t), d.vals);
+		list_append(l, s);
+	}
+	stmt *s = stmt_list(be, l);
+	s->nested = true;
+	s->subtype = *t;
+	return s;
+}
+
 static stmt*
 exp2bin_multiset(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *sel)
 {
@@ -1984,7 +2048,12 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 			assert(vname->name);
 			s = stmt_var(be, vname->sname ? a_create(sql->sa, ma_strdup(sql->sa, vname->sname)) : NULL, ma_strdup(sql->sa, vname->name), e->tpe.type?&e->tpe:NULL, 0, e->flag);
 		} else if (e->f) {		/* values */
-			s = value_tvtree(be, e, left, sel);
+			sql_subtype *t = exp_subtype(e);
+			if (t->multiset == MS_VECTOR) {
+				s = exp2stmt_vector(be, e, left, sel);
+			} else {
+				s = value_tvtree(be, e, left, sel);
+			}
 		} else {			/* arguments */
 			sql_subtype *t = e->tpe.type?&e->tpe:NULL;
 			if (!t && 0) {
