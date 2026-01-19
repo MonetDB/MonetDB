@@ -1101,10 +1101,14 @@ BATsettrivprop(BAT *b)
 				/* the only value is NIL */
 				b->tminpos = BUN_NONE;
 				b->tmaxpos = BUN_NONE;
+				b->tnil = true;
+				b->tnonil = false;
 			} else {
 				/* the only value is both min and max */
 				b->tminpos = 0;
 				b->tmaxpos = 0;
+				b->tnonil = true;
+				b->tnil = false;
 			}
 		} else {
 			b->tsorted = false;

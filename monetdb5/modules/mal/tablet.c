@@ -854,7 +854,8 @@ SQLinsert_val(READERtask *task, int col, int idx)
 	char *err = NULL;
 	int ret = 0;
 	allocator *ta = MT_thread_getallocator();
-	allocator_state ta_state = ma_open(ta);
+	bool opened = false;		/* whether ma_open was called */
+	allocator_state ta_state = {0};
 	allocator *ma = task->cntxt->curprg->def->ma;
 
 	/* include testing on the terminating null byte !! */
@@ -864,7 +865,14 @@ SQLinsert_val(READERtask *task, int col, int idx)
 	} else {
 		if (task->escape) {
 			size_t slen = strlen(s) + 1;
-			char *data = slen <= sizeof(buf) ? buf : ma_alloc(ta, strlen(s) + 1);
+			char *data;
+			if (slen <= sizeof(buf)) {
+				data = buf;
+			} else {
+				ta_state = ma_open(ta);
+				opened = true;
+				data = ma_alloc(ta, strlen(s) + 1);
+			}
 			if (data == NULL
 				|| GDKstrFromStr((unsigned char *) data, (unsigned char *) s,
 								 strlen(s), '\0') < 0)
@@ -882,6 +890,10 @@ SQLinsert_val(READERtask *task, int col, int idx)
 		if (task->rowerror) {
 			err = SQLload_error(task, idx, task->as->nr_attrs);
 			if (s) {
+				if (!opened) {
+					ta_state = ma_open(ta);
+					opened = true;
+				}
 				size_t slen = mystrlen(s);
 				char *scpy = ma_alloc(ta, slen + 1);
 				if (scpy == NULL) {
@@ -898,7 +910,8 @@ SQLinsert_val(READERtask *task, int col, int idx)
 					 s ? " in '" : "", s ? s : "", s ? "'" : "");
 			tablet_error(task, idx, row, col, buf, err);
 			if (!task->besteffort) {
-				ma_close(&ta_state);
+				if (opened)
+					ma_close(&ta_state);
 				return -1;
 			}
 		}
@@ -908,7 +921,8 @@ SQLinsert_val(READERtask *task, int col, int idx)
 		fmt->c->tnonil = false;
 	}
 	if (bunfastapp(fmt->c, adt) == GDK_SUCCEED) {
-		ma_close(&ta_state);
+		if (opened)
+			ma_close(&ta_state);
 		return ret;
 	}
 
@@ -920,7 +934,8 @@ SQLinsert_val(READERtask *task, int col, int idx)
 					 && *msg ? msg : "insert failed", err);
 	}
 	task->besteffort = false;	/* no longer best effort */
-	ma_close(&ta_state);
+	if (opened)
+		ma_close(&ta_state);
 	return -1;
 }
 

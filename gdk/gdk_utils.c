@@ -2182,6 +2182,24 @@ ma_reset(allocator *sa)
 void *
 ma_realloc(allocator *sa, void *p, size_t sz, size_t oldsz)
 {
+	size_t r_oldsz = round16(oldsz);
+	size_t r_sz = round16(sz);
+	if (r_oldsz <= sa->used &&
+	    (char *) sa->blks[sa->nr - 1] + sa->used - r_oldsz == (char *) p) {
+		/* trying to realloc the last allocated buffer, we may
+		 * be able to readjust it */
+		if (sz <= oldsz) {
+			/* size reduction */
+			sa->used = sa->used - r_oldsz + r_sz;
+			return p;
+		}
+		if (sa->used - r_oldsz + r_sz <= MA_BLOCK_SIZE) {
+			sa->used = sa->used - r_oldsz + r_sz;
+			return p;
+		}
+	} else if (r_sz <= r_oldsz)
+		return p;
+
 	void *r = ma_alloc(sa, sz);
 
 	if (r)
