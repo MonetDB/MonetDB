@@ -178,13 +178,13 @@ OPTpostfixImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 		}
 	}
 	/* Defense line against incorrect plans */
-	if (actions) {
+	//if (actions) {
 		// msg = chkTypes(cntxt->usermodule, mb, FALSE);
 		// if (!msg)
 		//      msg = chkFlow(mb);
 		// if (!msg)
 		//      msg = chkDeclarations(mb);
-	}
+	//}
 	/* keep actions taken as a fake argument */
 	(void) pushInt(mb, pci, actions);
 	return msg;

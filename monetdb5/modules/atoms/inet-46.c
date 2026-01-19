@@ -180,7 +180,7 @@ INETstr2inet4_bulk(Client ctx, bat *ret, const bat *bid, const bat *sid)
 	if (ci.tpe == cand_dense) {
 		for (BUN i = 0; i < ci.ncand; i++) {
 			oid p = (canditer_next_dense(&ci) - off);
-			const char *v = BUNtvar(bi, p);
+			const char *v = BUNtvar(&bi, p);
 			inet4 *up = &vals[i], **pp = &up;
 
 			if (conv(ma, v, &l, (void **) pp, false) <= 0) {
@@ -193,7 +193,7 @@ INETstr2inet4_bulk(Client ctx, bat *ret, const bat *bid, const bat *sid)
 	} else {
 		for (BUN i = 0; i < ci.ncand; i++) {
 			oid p = (canditer_next(&ci) - off);
-			const char *v = BUNtvar(bi, p);
+			const char *v = BUNtvar(&bi, p);
 			inet4 *up = &vals[i], **pp = &up;
 
 			if (conv(ma, v, &l, (void **) pp, false) <= 0) {
@@ -466,10 +466,10 @@ inet4containsinet4_bulk(bat *ret, const bat *bip1, const bat *bmsk1, const bat *
 		TIMEOUT_LOOP(c1.ncand, qry_ctx) {
 			oid o1 = canditer_next(&c1);
 			oid o2 = canditer_next(&c2);
-			bte v = inet4containsinet4(BUNtloc(ip1i, o1 - ip1->hseqbase),
-									   BUNtloc(msk1i, o1 - msk1->hseqbase),
-									   BUNtloc(ip2i, o2 - ip2->hseqbase),
-									   BUNtloc(msk2i, o2 - msk2->hseqbase),
+			bte v = inet4containsinet4(BUNtloc(&ip1i, o1 - ip1->hseqbase),
+									   BUNtloc(&msk1i, o1 - msk1->hseqbase),
+									   BUNtloc(&ip2i, o2 - ip2->hseqbase),
+									   BUNtloc(&msk2i, o2 - msk2->hseqbase),
 									   strict, symmetric);
 			if (v == -1) {
 				msg = createException(MAL, "batinet46.contains",
@@ -485,10 +485,10 @@ inet4containsinet4_bulk(bat *ret, const bat *bip1, const bat *bmsk1, const bat *
 		TIMEOUT_LOOP(c1.ncand, qry_ctx) {
 			oid o1 = canditer_next(&c1);
 			oid o2 = canditer_next(&c2);
-			bte v = inet4containsinet4(BUNtloc(ip1i, o1 - ip1->hseqbase),
+			bte v = inet4containsinet4(BUNtloc(&ip1i, o1 - ip1->hseqbase),
 									   &(bte){32},
-									   BUNtloc(ip2i, o2 - ip2->hseqbase),
-									   BUNtloc(msk2i, o2 - msk2->hseqbase),
+									   BUNtloc(&ip2i, o2 - ip2->hseqbase),
+									   BUNtloc(&msk2i, o2 - msk2->hseqbase),
 									   strict, false);
 			if (v == -1) {
 				msg = createException(MAL, "batinet46.contains",
@@ -823,7 +823,7 @@ INETstr2inet6_bulk(Client ctx, bat *ret, const bat *bid, const bat *sid)
 	if (ci.tpe == cand_dense) {
 		for (BUN i = 0; i < ci.ncand; i++) {
 			oid p = (canditer_next_dense(&ci) - off);
-			const char *v = BUNtvar(bi, p);
+			const char *v = BUNtvar(&bi, p);
 			inet6 *up = &vals[i], **pp = &up;
 
 			if (conv(ma, v, &l, (void **) pp, false) <= 0) {
@@ -836,7 +836,7 @@ INETstr2inet6_bulk(Client ctx, bat *ret, const bat *bid, const bat *sid)
 	} else {
 		for (BUN i = 0; i < ci.ncand; i++) {
 			oid p = (canditer_next(&ci) - off);
-			const char *v = BUNtvar(bi, p);
+			const char *v = BUNtvar(&bi, p);
 			inet6 *up = &vals[i], **pp = &up;
 
 			if (conv(ma, v, &l, (void **) pp, false) <= 0) {
@@ -1109,10 +1109,10 @@ inet6containsinet6_bulk(bat *ret, const bat *bip1, const bat *bmsk1, const bat *
 		TIMEOUT_LOOP(c1.ncand, qry_ctx) {
 			oid o1 = canditer_next(&c1);
 			oid o2 = canditer_next(&c2);
-			bte v = inet6containsinet6(BUNtloc(ip1i, o1 - ip1->hseqbase),
-									   BUNtloc(msk1i, o1 - msk1->hseqbase),
-									   BUNtloc(ip2i, o2 - ip2->hseqbase),
-									   BUNtloc(msk2i, o2 - msk2->hseqbase),
+			bte v = inet6containsinet6(BUNtloc(&ip1i, o1 - ip1->hseqbase),
+									   BUNtloc(&msk1i, o1 - msk1->hseqbase),
+									   BUNtloc(&ip2i, o2 - ip2->hseqbase),
+									   BUNtloc(&msk2i, o2 - msk2->hseqbase),
 									   strict, symmetric);
 			if (v == -1) {
 				msg = createException(MAL, "batinet46.contains",
@@ -1128,10 +1128,10 @@ inet6containsinet6_bulk(bat *ret, const bat *bip1, const bat *bmsk1, const bat *
 		TIMEOUT_LOOP(c1.ncand, qry_ctx) {
 			oid o1 = canditer_next(&c1);
 			oid o2 = canditer_next(&c2);
-			bte v = inet6containsinet6(BUNtloc(ip1i, o1 - ip1->hseqbase),
+			bte v = inet6containsinet6(BUNtloc(&ip1i, o1 - ip1->hseqbase),
 									   &(sht){128},
-									   BUNtloc(ip2i, o2 - ip2->hseqbase),
-									   BUNtloc(msk2i, o2 - msk2->hseqbase),
+									   BUNtloc(&ip2i, o2 - ip2->hseqbase),
+									   BUNtloc(&msk2i, o2 - msk2->hseqbase),
 									   strict, false);
 			if (v == -1) {
 				msg = createException(MAL, "batinet46.contains",

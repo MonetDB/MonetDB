@@ -84,10 +84,7 @@ TABLETdestroy_format(Tablet *as)
 
 	for (p = 0; p < as->nr_attrs; p++) {
 		BBPreclaim(fmt[p].c);
-		//if (fmt[p].data)
-		//	GDKfree(fmt[p].data);
 	}
-	// GDKfree(fmt);
 }
 
 static oid
@@ -243,7 +240,7 @@ output_line(allocator *ma, char **buf, size_t *len, char **localbuf, size_t *loc
 			ssize_t l;
 
 			if (f->c) {
-				p = BUNtail(f->ci, f->p);
+				p = BUNtail(&f->ci, f->p);
 
 				if (!p || ATOMeq(f->adt, ATOMnilptr(f->adt), p)) {
 					p = f->nullstr;
@@ -283,7 +280,7 @@ output_value(allocator*ma, char **buf, size_t *len, ssize_t fill, char **localbu
 {
 	assert (!f->virt && !f->composite && !f->multiset);
 
-	const char *p = BUNtail(f->ci, f->p);
+	const char *p = BUNtail(&f->ci, f->p);
 	ssize_t l = 0;
 
 	if (!p || ATOMcmp(f->adt, ATOMnilptr(f->adt), p) == 0) {
@@ -338,7 +335,7 @@ output_composite(allocator *ma, char **buf, size_t *len, ssize_t fill, char **lo
 		if (f->multiset) {
 			int nr_attrs = f->nrfields - 1;
 			Column *rowid = fmt+j+nr_attrs;
-			const char *p = BUNtail(rowid->ci, rowid->p);
+			const char *p = BUNtail(&rowid->ci, rowid->p);
 
 			/* various cases:
 			 *	rowid column dense (but for ints !!
@@ -533,7 +530,7 @@ output_line_complex(allocator *ma, char **buf, size_t *len, ssize_t fill, char *
 		} else if (f->multiset) {
 			int nr_attrs = f->nrfields - 1;
 			Column *rowid = fmt+j+nr_attrs;
-			p = BUNtail(rowid->ci, rowid->p);
+			p = BUNtail(&rowid->ci, rowid->p);
 
 			if (rowid->c->tsorted && rowid->c->tkey)
 			    fill = output_multiset_dense(ma, buf, len, fill, localbuf, locallen, fmt + j + 1, nr_attrs-1, f->multiset, f->composite, false, *(int*)p);
@@ -576,7 +573,7 @@ output_line_dense(allocator *ma, char **buf, size_t *len, char **localbuf, size_
 		if (f->virt)
 			continue;
 		if (f->c) {
-			p = BUNtail(f->ci, f->p);
+			p = BUNtail(&f->ci, f->p);
 
 			if (!p || ATOMeq(f->adt, ATOMnilptr(f->adt), p)) {
 				p = f->nullstr;
@@ -620,7 +617,7 @@ output_line_lookup(allocator *ma, char **buf, size_t *len, Column *fmt, stream *
 		if (f->virt)
 			continue;
 		if (f->c) {
-			const void *p = BUNtail(f->ci, id - f->c->hseqbase);
+			const void *p = BUNtail(&f->ci, id - f->c->hseqbase);
 
 			if (!p || ATOMeq(f->adt, ATOMnilptr(f->adt), p)) {
 				size_t l = strlen(f->nullstr);
@@ -700,8 +697,6 @@ output_file_default(Tablet *as, BAT *order, stream *fd, bstream *in)
 
 	if (buf == NULL || localbuf == NULL) {
 		ma_close(&ta_state);
-		//GDKfree(buf);
-		//GDKfree(localbuf);
 		return -1;
 	}
 	for (q = offset + as->nr, p = offset, id = order->hseqbase + offset; p < q;
@@ -715,8 +710,6 @@ output_file_default(Tablet *as, BAT *order, stream *fd, bstream *in)
 		}
 	}
 	ma_close(&ta_state);
-	//GDKfree(localbuf);
-	//GDKfree(buf);
 	return res;
 }
 
@@ -769,8 +762,6 @@ output_file_dense(Tablet *as, stream *fd, bstream *in)
 
 	if (buf == NULL || localbuf == NULL) {
 		ma_close(&ta_state);
-		//GDKfree(buf);
-		//GDKfree(localbuf);
 		return -1;
 	}
 	for (i = 0; i < as->nr; i++) {
@@ -783,8 +774,6 @@ output_file_dense(Tablet *as, stream *fd, bstream *in)
 		}
 	}
 	ma_close(&ta_state);
-	//GDKfree(localbuf);
-	//GDKfree(buf);
 	return res;
 }
 
@@ -813,12 +802,10 @@ output_file_ordered(Tablet *as, BAT *order, stream *fd, bstream *in)
 		}
 		if ((res = output_line_lookup(ta, &buf, &len, as->format, fd, as->nr_attrs, h)) < 0) {
 			ma_close(&ta_state);
-			//GDKfree(buf);
 			return res;
 		}
 	}
 	ma_close(&ta_state);
-	//GDKfree(buf);
 	return res;
 }
 
@@ -1219,8 +1206,6 @@ SQLinsert_val(READERtask *task, int col, int idx)
 			else {
 				adt = fmt->frstr(ma, fmt, fmt->adt, data);
 			}
-			//if (data != buf)
-			//	GDKfree(data);
 		} else {
 			adt = fmt->frstr(ma, fmt, fmt->adt, s);
 		}
@@ -1245,9 +1230,7 @@ SQLinsert_val(READERtask *task, int col, int idx)
 			}
 			snprintf(buf, sizeof(buf), "'%s' expected%s%s%s", fmt->type,
 					 s ? " in '" : "", s ? s : "", s ? "'" : "");
-			//GDKfree(s);
 			tablet_error(task, idx, row, col, buf, err);
-			//GDKfree(err);
 			if (!task->besteffort) {
 				ma_close(&ta_state);
 				return -1;
@@ -1269,7 +1252,6 @@ SQLinsert_val(READERtask *task, int col, int idx)
 		err = SQLload_error(task, idx, task->as->nr_attrs);
 		tablet_error(task, idx, row, col, msg
 					 && *msg ? msg : "insert failed", err);
-		//GDKfree(err);
 	}
 	task->besteffort = false;	/* no longer best effort */
 	ma_close(&ta_state);
@@ -1348,7 +1330,6 @@ SQLload_parse_row(READERtask *task, int idx)
 					snprintf(errmsg, sizeof(errmsg), "Quote (%c) missing", task->quote);
 					tablet_error(task, idx, startlineno, (int) i, errmsg,
 								 errline);
-					//GDKfree(errline);
 					error = true;
 					goto errors1;
 				} else
@@ -1375,7 +1356,6 @@ SQLload_parse_row(READERtask *task, int idx)
 				/* it's the next value that is missing */
 				tablet_error(task, idx, startlineno, (int) i + 1,
 							 "Column value missing", errline);
-				//GDKfree(errline);
 				error = true;
   errors1:
 				/* we save all errors detected  as NULL values */
@@ -1414,7 +1394,6 @@ SQLload_parse_row(READERtask *task, int idx)
 				/* it's the next value that is missing */
 				tablet_error(task, idx, startlineno, (int) i + 1,
 							 "Column value missing", errline);
-				//GDKfree(errline);
 				error = true;
 				/* we save all errors detected */
 				for (; i < as->nr_attrs; i++)
@@ -1435,7 +1414,6 @@ SQLload_parse_row(READERtask *task, int idx)
 		errline = SQLload_error(task, idx, task->as->nr_attrs);
 		snprintf(errmsg, sizeof(errmsg), "Leftover data '%s'", row);
 		tablet_error(task, idx, startlineno, (int) i, errmsg, errline);
-		//GDKfree(errline);
 		error = true;
 	}
 	return error ? -1 : 0;
@@ -1823,7 +1801,6 @@ SQLproducer(void *p)
 			/* then wait until it is done */
 			MT_sema_down(&task->producer);
 			if (cnt == task->maxrow) {
-				//GDKfree(rdfa);
 				MT_thread_set_qry_ctx(NULL);
 				ma_close(&ta_state);
 				return;
@@ -1837,7 +1814,6 @@ SQLproducer(void *p)
 				MT_sema_down(&task->producer);
 				blocked[(cur + 1) % MAXBUFFERS] = false;
 				if (task->state == ENDOFCOPY) {
-					//GDKfree(rdfa);
 					MT_thread_set_qry_ctx(NULL);
 					ma_close(&ta_state);
 					return;
@@ -1861,7 +1837,6 @@ SQLproducer(void *p)
 			if (cnt == task->maxrow) {
 				MT_sema_down(&task->producer);
 /*				TRC_DEBUG(MAL_SERVER, "Producer delivered all\n");*/
-				//GDKfree(rdfa);
 				MT_thread_set_qry_ctx(NULL);
 				ma_close(&ta_state);
 				return;
@@ -1872,14 +1847,12 @@ SQLproducer(void *p)
 		/* we ran out of input? */
 		if (task->ateof && !more) {
 /*			TRC_DEBUG(MAL_SERVER, "Producer encountered eof\n");*/
-			//GDKfree(rdfa);
 			MT_thread_set_qry_ctx(NULL);
 			ma_close(&ta_state);
 			return;
 		}
 		/* consumers ask us to stop? */
 		if (task->state == ENDOFCOPY) {
-			//GDKfree(rdfa);
 			MT_thread_set_qry_ctx(NULL);
 			ma_close(&ta_state);
 			return;
@@ -1896,7 +1869,6 @@ SQLproducer(void *p)
 					 "incomplete record at end of file", s);
 		task->b->pos += partial;
 	}
-	//GDKfree(rdfa);
 	MT_thread_set_qry_ctx(NULL);
 	ma_close(&ta_state);
 
@@ -2042,8 +2014,6 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out,
 		task.rows[i] = ma_zalloc(ta, sizeof(char *) * task.limit);
 		task.startlineno[i] = ma_zalloc(ta, sizeof(lng) * task.limit);
 		if (task.rows[i] == NULL || task.startlineno[i] == NULL) {
-			//GDKfree(task.rows[i]);
-			//GDKfree(task.startlineno[i]);
 			tablet_error(&task, lng_nil, lng_nil, int_nil,
 						 SQLSTATE(HY013) MAL_MALLOC_FAIL,
 						 "SQLload_file:failed to alloc buffers");
@@ -2183,7 +2153,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out,
 			TYPE *src, *dst;											\
 			leftover= BATcount(task.as->format[attr].c);				\
 			limit = leftover - cntstart;								\
-			dst =src= (TYPE *) BUNtloc(task.as->format[attr].ci,cntstart); \
+			dst =src= (TYPE *) BUNtloc(&task.as->format[attr].ci,cntstart); \
 			for(j = 0; j < (int) limit; j++, src++){					\
 				if ( task.rowerror[j]){									\
 					leftover--;											\
@@ -2229,7 +2199,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out,
 					char *src, *dst;
 					leftover = BATcount(task.as->format[attr].c);
 					limit = leftover - cntstart;
-					dst = src = BUNtloc(task.as->format[attr].ci, cntstart);
+					dst = src = (char *) BUNtloc(&task.as->format[attr].ci, cntstart);
 					for (j = 0; j < (int) limit; j++, src += width) {
 						if (task.rowerror[j]) {
 							leftover--;
@@ -2290,7 +2260,6 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out,
 	MT_join_thread(task.tid);
 	for (j = 0; j < threads; j++) {
 		MT_join_thread(ptask[j].tid);
-		// GDKfree(ptask[j].cols);
 		MT_sema_destroy(&ptask[j].sema);
 		MT_sema_destroy(&ptask[j].reply);
 	}
@@ -2302,18 +2271,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out,
 		BAT *b = task.as->format[i].c;
 		if (b)
 			BATsettrivprop(b);
-		// GDKfree(task.fields[i]);
 	}
-	// GDKfree(task.fields);
-	// GDKfree(task.cols);
-	// GDKfree(task.time);
-	// for (i = 0; i < MAXBUFFERS; i++) {
-	// 	GDKfree(task.base[i]);
-	// 	GDKfree(task.rows[i]);
-	// 	GDKfree(task.startlineno[i]);
-	// }
-	// if (task.rowerror)
-	// 	GDKfree(task.rowerror);
 	MT_sema_destroy(&task.producer);
 	MT_sema_destroy(&task.consumer);
 	ma_close(&ta_state);
@@ -2321,17 +2279,6 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out,
 	return res < 0 ? BUN_NONE : cnt;
 
   bailout:
-	// if (task.fields) {
-	// 	for (i = 0; i < as->nr_attrs; i++)
-	// 		GDKfree(task.fields[i]);
-	// 	GDKfree(task.fields);
-	// }
-	// GDKfree(task.time);
-	// GDKfree(task.cols);
-	// GDKfree(task.base[task.cur]);
-	// GDKfree(task.rowerror);
-	// for (i = 0; i < MAXWORKERS; i++)
-	// 	GDKfree(ptask[i].cols);
 	ma_close(&ta_state);
 	return BUN_NONE;
 }

@@ -93,7 +93,6 @@ UDFreverse(Client ctx, str *res, const str *arg)
 		if (!(*res = ma_alloc(ma, buflen)))
 			throw(MAL, "udf.reverse", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		if ((msg = UDFreverse_(res, &buflen, s)) != MAL_SUCCEED) {
-			//GDKfree(*res);
 			*res = NULL;
 			return msg;
 		}
@@ -145,7 +144,7 @@ UDFBATreverse_(BAT **ret, BAT *src)
 	li = bat_iterator(src);
 	/* the core of the algorithm */
 	for (p = 0; p < q ; p++) {
-		const char *x = BUNtvar(li, p);
+		const char *x = BUNtvar(&li, p);
 
 		if (strNil(x)) {
 			/* if the input string is null, then append directly */

@@ -647,7 +647,6 @@ ssize_t
 date_fromstr(allocator *ma, const char *buf, size_t *len, date **d, bool external)
 {
 	if (*len < sizeof(date) || *d == NULL) {
-		//GDKfree(*d);
 		*d = (date *) ma_alloc(ma, *len = sizeof(date));
 		if( *d == NULL)
 			return -1;
@@ -687,7 +686,6 @@ date_tostr(allocator *ma, str *buf, size_t *len, const date *val, bool external)
 {
 	/* 15 bytes is more than enough */
 	if (*len < 15 || *buf == NULL) {
-		//GDKfree(*buf);
 		*buf = ma_alloc(ma, 15);
 		if( *buf == NULL)
 			return -1;
@@ -779,7 +777,6 @@ ssize_t
 daytime_fromstr(allocator *ma, const char *buf, size_t *len, daytime **ret, bool external)
 {
 	if (*len < sizeof(daytime) || *ret == NULL) {
-		//GDKfree(*ret);
 		*ret = (daytime *) ma_alloc(ma, *len = sizeof(daytime));
 		if (*ret == NULL)
 			return -1;
@@ -911,7 +908,6 @@ daytime_precision_tostr(allocator *ma, str *buf, size_t *len, const daytime dt,
 	if (precision < 0)
 		precision = 0;
 	if (*len < 10 + (size_t) precision || *buf == NULL) {
-		//GDKfree(*buf);
 		*buf = (str) ma_alloc(ma, *len = 10 + (size_t) precision);
 		if( *buf == NULL)
 			return -1;
@@ -934,7 +930,6 @@ timestamp_fromstr_internal(allocator *ma, const char *buf, size_t *len, timestam
 	daytime tm;
 
 	if (*len < sizeof(timestamp) || *ret == NULL) {
-		//GDKfree(*ret);
 		*ret = (timestamp *) ma_alloc(ma, *len = sizeof(timestamp));
 		if (*ret == NULL)
 			return -1;
@@ -1063,7 +1058,6 @@ timestamp_precision_tostr(allocator *ma, str *buf, size_t *len, timestamp val, i
 
 	if (is_timestamp_nil(val)) {
 		if (*len < 4 || *buf == NULL) {
-			//GDKfree(*buf);
 			*buf = ma_alloc(ma, *len = 4);
 			if( *buf == NULL)
 				return -1;
@@ -1085,7 +1079,6 @@ timestamp_precision_tostr(allocator *ma, str *buf, size_t *len, timestamp val, i
 		return -1;
 
 	if (*len < 2 + (size_t) len1 + (size_t) len2 || *buf == NULL) {
-		//GDKfree(*buf);
 		*buf = ma_alloc(ma, *len = (size_t) len1 + (size_t) len2 + 2);
 		if( *buf == NULL)
 			return -1;

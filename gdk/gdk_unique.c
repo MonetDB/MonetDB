@@ -194,7 +194,7 @@ BATunique(BAT *b, BAT *s)
 			     hb != BUN_NONE;
 			     hb = HASHgetlink(hs, hb)) {
 				assert(hb < p);
-				if (eq(v, BUNtail(bi, hb)) &&
+				if (eq(v, BUNtail(&bi, hb)) &&
 				    canditer_contains(&ci, hb + hseq)) {
 					/* we've seen this value
 					 * before */
@@ -255,7 +255,7 @@ BATunique(BAT *b, BAT *s)
 			for (hb = HASHget(&hsh, prb);
 			     hb != BUN_NONE;
 			     hb = HASHgetlink(&hsh, hb)) {
-				if (eq == NULL || eq(v, BUNtail(bi, hb)))
+				if (eq == NULL || eq(v, BUNtail(&bi, hb)))
 					break;
 			}
 			if (hb == BUN_NONE) {

@@ -416,7 +416,6 @@ OPTpushselectImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 		for (; i < slimit; i++)
 			if (old[i])
 				freeInstruction(mb, old[i]);
-		//GDKfree(old);
 		if (msg != MAL_SUCCEED || !push_down_delta) {
 			goto wrapup;
 		}
@@ -796,7 +795,6 @@ OPTpushselectImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 	for (; i < slimit; i++)
 		if (old[i])
 			pushInstruction(mb, old[i]);
-	//GDKfree(old);
 
 	/* Defense line against incorrect plans */
 	if (msg == MAL_SUCCEED && actions > 0) {

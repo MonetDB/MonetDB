@@ -127,7 +127,6 @@ OPTreorderImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 			blocks[k] = ma_zalloc(ta, limit * sizeof(InstrPtr));
 			if (blocks[k] == NULL) {
 				ma_close(&ta_state);
-				//GDKfree(mb->stmt);
 				mb->stop = limit;
 				mb->ssize = slimit;
 				mb->stmt = old;
@@ -170,6 +169,5 @@ OPTreorderImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk,
   wrapup:
 	/* keep actions taken as a fake argument */
 	(void) pushInt(mb, pci, actions);
-	//GDKfree(old);
 	return msg;
 }

@@ -6219,8 +6219,6 @@ sql_trans_add_range_partition(allocator *sa, sql_trans *tr, sql_table *mt, sql_t
 	res = sql_trans_propagate_dependencies_children(tr, pt, true);
 
 finish:
-	//VALclear(&vmin);
-	//VALclear(&vmax);
 	return res;
 }
 
@@ -6290,7 +6288,6 @@ sql_trans_add_value_partition(allocator *sa, sql_trans *tr, sql_table *mt, sql_t
 			list_destroy2(vals, store);
 			return res;
 		}
-		//VALclear(&vnnil);
 	}
 
 	for (node *n = vals->h ; n ; n = n->next) {
@@ -6310,18 +6307,15 @@ sql_trans_add_value_partition(allocator *sa, sql_trans *tr, sql_table *mt, sql_t
 		if (!ok) {
 			if (!update)
 				part_destroy(store, p);
-			//VALclear(&vvalue);
 			list_destroy2(vals, store);
 			return -i - 10;
 		}
 		char *vvalue_val = VALget(&vvalue);
 		if ((res = store->table_api.table_insert(tr, values, &pt->base.id, &id, &vvalue_val))) {
-			//VALclear(&vvalue);
 			list_destroy2(vals, store);
 			return res;
 		}
 
-		//VALclear(&vvalue);
 		i++;
 	}
 
@@ -8030,7 +8024,6 @@ convert_part_values(allocator *sa, sql_trans *tr, sql_table *mt )
 							v->length = vvalue.len;
 						}
 					}
-					//VALclear(&vvalue);
 					if (!ok)
 						return -1;
 					_DELETE(ov.value);
@@ -8087,8 +8080,6 @@ convert_part_values(allocator *sa, sql_trans *tr, sql_table *mt )
 					if (ok && isPartitionedByColumnTable(p->t))
 						col_set_range(tr, p, true);
 				}
-				//VALclear(&vmin);
-				//VALclear(&vmax);
 				if (!ok)
 					return -1;
 			}

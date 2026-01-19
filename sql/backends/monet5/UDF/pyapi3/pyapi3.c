@@ -589,7 +589,7 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bo
 					msg = createException(MAL, "pyapi3.eval", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			} else {
 				if (VALinit(NULL, &stk->stk[pci->argv[i]], bat_type,
-							BUNtail(li, 0)) == NULL)
+							BUNtail(&li, 0)) == NULL)
 					msg = createException(MAL, "pyapi3.eval", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 			bat_iterator_end(&li);

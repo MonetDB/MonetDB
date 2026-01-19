@@ -25,7 +25,6 @@ sql_stack_new(allocator *sa, int size)
 		.values = SA_NEW_ARRAY(sa, void*, size),
 	};
 	if (s->values == NULL) {
-		//_DELETE(s);
 		return NULL;
 	}
 	return s;

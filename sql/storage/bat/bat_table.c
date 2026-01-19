@@ -129,7 +129,7 @@ column_find_value(sql_trans *tr, sql_column *c, oid rid)
 		const void *r;
 		size_t sz;
 
-		r = BUNtail(bi, q);
+		r = BUNtail(&bi, q);
 		sz = ATOMlen(b->ttype, r);
 		res = GDKmalloc(sz);
 		if (res)
@@ -157,7 +157,7 @@ column_find_##TPE(sql_trans *tr, sql_column *c, oid rid)			\
 	}																\
 	if (q != BUN_NONE) {											\
 		BATiter bi = bat_iterator(b);								\
-		res = *(TPE*)BUNtloc(bi, q);								\
+		res = *(TPE*)BUNtloc(&bi, q);								\
 		bat_iterator_end(&bi);										\
 	}																\
 	bat_destroy(b);													\
@@ -186,7 +186,7 @@ column_find_string_start(sql_trans *tr, sql_column *c, oid rid, ptr *cbat)
 	}
 	if (q != BUN_NONE) {
 		BATiter bi = bat_iterator(*b);
-		res = BUNtvar(bi, q);
+		res = BUNtvar(&bi, q);
 		bat_iterator_end(&bi);
 	}
 	return res;
@@ -424,7 +424,7 @@ table_orderby(sql_trans *tr, sql_table *t, sql_column *jl, sql_column *jr, sql_c
 	return rt;
 }
 
-static void *
+static const void *
 table_fetch_value(res_table *rt, sql_column *c)
 {
 	/* this function is only ever called during startup, and therefore
@@ -434,9 +434,9 @@ table_fetch_value(res_table *rt, sql_column *c)
 	BATiter bi = bat_iterator_nolock(b);
 	assert(b->ttype && b->ttype != TYPE_msk);
 	if (bi.vh)
-		return BUNtvar(bi, rt->cur_row);
-	return BUNtloc(bi, rt->cur_row);
-	//return (void*)BUNtail(bi, rt->cur_row);
+		return BUNtvar(&bi, rt->cur_row);
+	return BUNtloc(&bi, rt->cur_row);
+	//return (void*)BUNtail(&bi, rt->cur_row);
 }
 
 static void
@@ -734,7 +734,7 @@ subrids_next(subrids *r)
 {
 	if (r->pos < BATcount((BAT *) r->ids)) {
 		BATiter ii = bat_iterator((BAT *) r->ids);
-		sqlid id = *(sqlid*)BUNtloc(ii, r->pos);
+		sqlid id = *(sqlid*)BUNtloc(&ii, r->pos);
 		bat_iterator_end(&ii);
 		if (id == r->id)
 			return BUNtoid((BAT *) r->rids, r->pos++);
@@ -747,7 +747,7 @@ subrids_nextid(subrids *r)
 {
 	if (r->pos < BATcount((BAT *) r->ids)) {
 		BATiter ii = bat_iterator((BAT *) r->ids);
-		r->id = *(sqlid*)BUNtloc(ii, r->pos);
+		r->id = *(sqlid*)BUNtloc(&ii, r->pos);
 		bat_iterator_end(&ii);
 		return r->id;
 	}

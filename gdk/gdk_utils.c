@@ -133,7 +133,7 @@ GDKgetenv(const char *name)
 
 		if (b != BUN_NONE) {
 			BATiter GDKenvi = bat_iterator(GDKval);
-			const char *v = BUNtvar(GDKenvi, b);
+			const char *v = BUNtvar(&GDKenvi, b);
 			bat_iterator_end(&GDKenvi);
 			return v;
 		}
@@ -2043,19 +2043,6 @@ ma_get_blk_idx(allocator *sa, void *blk, size_t offset)
 static void
 ma_free_obj(allocator *sa, void *obj, size_t sz)
 {
-	//size_t i;
-
-	//char *obj_start = (char *) obj;
-	//char *obj_end = obj_start + sz;
-
-	//// find the block this object belongs to
-	//for(i = 0; i < sa->nr; i++) {
-	//	char * blk_start = (char *) sa->blks[i];
-	//	char * blk_end = blk_start + MA_BLOCK_SIZE;
-	//	if ((obj_start >= blk_start) && (obj_end <= blk_end))
-	//		break;
-	//}
-	//assert (i < sa->nr);
 	freed_t *f = obj;
 	f->sz = sz;
 	f->n = sa->freelist;

@@ -18,9 +18,14 @@
 #include "rel_rewriter.h"
 #include "rel_multiset.h"
 
+#define rewrite_no_freevar       (1 << 8)
+#define is_independent(X)        ((X & rewrite_no_freevar) == rewrite_no_freevar)
+#define set_has_freevar(r)		 if (r) (r->used &= ~rewrite_no_freevar)
+
 static void
 exp_set_freevar(mvc *sql, sql_exp *e, sql_rel *r)
 {
+	set_has_freevar(r);
 	switch(e->type) {
 	case e_cmp:
 		if (e->flag == cmp_filter) {
@@ -160,27 +165,30 @@ rel_has_freevar(mvc *sql, sql_rel *rel)
 		return 0;
 	}
 
-	if (is_basetable(rel->op)) {
+	if (rel && is_independent(rel->used))
 		return 0;
+	int res = 0;
+	if (is_basetable(rel->op)) {
+		res = 0;
 	} else if (is_base(rel->op)) {
-		return exps_have_freevar(sql, rel->exps) ||
-			(rel->l && rel_has_freevar(sql, rel->l));
+		res = exps_have_freevar(sql, rel->exps) || (rel->l && rel_has_freevar(sql, rel->l));
 	} else if (is_simple_project(rel->op) || is_groupby(rel->op) || is_select(rel->op) || is_topn(rel->op) || is_sample(rel->op)) {
 		if ((is_simple_project(rel->op) || is_groupby(rel->op)) && rel->r && exps_have_freevar(sql, rel->r))
 			return 1;
-		return exps_have_freevar(sql, rel->exps) ||
-			(rel->l && rel_has_freevar(sql, rel->l));
+		res = exps_have_freevar(sql, rel->exps) || (rel->l && rel_has_freevar(sql, rel->l));
 	} else if (is_join(rel->op) || is_set(rel->op) || is_semi(rel->op) || is_modify(rel->op)) {
-		return exps_have_freevar(sql, rel->exps) ||
+		res = exps_have_freevar(sql, rel->exps) ||
 			rel_has_freevar(sql, rel->l) || rel_has_freevar(sql, rel->r);
 	} else if (is_munion(rel->op)) {
 		int v = exps_have_freevar(sql, rel->exps);
 		list *l = rel->l;
 		for (node *n = l->h; n && !v; n = n->next)
 			v = rel_has_freevar(sql, n->data);
-		return v;
+		res = v;
 	}
-	return 0;
+	if (res == 0)
+		rel->used |= rewrite_no_freevar;
+	return res;
 }
 
 static void exps_only_freevar(sql_query *query, list *exps, bool *arguments_correlated, bool *found_one_freevar, list **ungrouped_cols);
@@ -405,6 +413,8 @@ rel_freevar(mvc *sql, sql_rel *rel)
 	if (mvc_highwater(sql))
 		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 	if (!rel)
+		return NULL;
+	if (is_independent(rel->used))
 		return NULL;
 	switch(rel->op) {
 	case op_join:
@@ -1715,6 +1725,7 @@ push_up_munion(mvc *sql, sql_rel *rel, list *ad)
 			}
 			if (rec) {
 				sql_rel *sl = rlist->h->data;
+				set_has_freevar(sl);
 				list *exps = exps_copy(sql, ad);
 				for(node *n = exps->h; n; n = n->next) {
 					sql_exp *e = n->data;
@@ -1853,6 +1864,9 @@ rel_unnest_dependent(mvc *sql, sql_rel *rel)
 
 	if (mvc_highwater(sql))
 		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
+
+	if (rel && is_independent(rel->used))
+		return rel;
 
 	/* current unnest only possible for equality joins, <, <> etc needs more work */
 	if (rel && (is_join(rel->op) || is_semi(rel->op)) && is_dependent(rel)) {
@@ -2165,6 +2179,8 @@ push_up_select2(visitor *v, sql_rel *rel)
 static sql_rel *
 _rel_unnest(visitor *v, sql_rel *rel)
 {
+	if (rel && is_independent(rel->used))
+		return rel;
 	sql_rel *l = rel->l;
 	sql_rel *r = rel->r;
 	/* try to push select up */
@@ -4668,7 +4684,7 @@ run_rel_rewriter(visitor *v, sql_rel *rel, rel_rewrite_fptr rewriter, const char
 	int changes = v->changes;
 	lng clk = GDKusec();
 	rel = rel_visitor_bottomup(v, rel, rewriter);
-	printf("%s %d %d %d " LLFMT "\n", name, (int)v->sql->sa->usedmem, (int)v->sql->sa->inuse, (v->changes - changes), (GDKusec() - clk));
+	printf("%s %d " LLFMT "\n", name, (v->changes - changes), (GDKusec() - clk));
 	return rel;
 #else
 */

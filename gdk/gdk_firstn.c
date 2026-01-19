@@ -108,19 +108,19 @@
 #define nGTlng(a, b)	(!is_lng_nil(b) && (is_lng_nil(a) || (a) > (b)))
 #define nGThge(a, b)	(!is_hge_nil(b) && (is_hge_nil(a) || (a) > (b)))
 
-#define LTany(p1, p2)	(cmp(BUNtail(*bi, oids[p1] - hseq),	\
-			     BUNtail(*bi, oids[p2] - hseq)) < 0)
-#define GTany(p1, p2)	(cmp(BUNtail(*bi, oids[p1] - hseq),	\
-			     BUNtail(*bi, oids[p2] - hseq)) > 0)
+#define LTany(p1, p2)	(cmp(BUNtail(bi, oids[p1] - hseq),	\
+			     BUNtail(bi, oids[p2] - hseq)) < 0)
+#define GTany(p1, p2)	(cmp(BUNtail(bi, oids[p1] - hseq),	\
+			     BUNtail(bi, oids[p2] - hseq)) > 0)
 
-#define nLTany(p1, p2)	(cmp(BUNtail(*bi, oids[p1] - hseq), nil) != 0 \
-			 && (cmp(BUNtail(*bi, oids[p2] - hseq), nil) == 0	\
-			     || cmp(BUNtail(*bi, oids[p1] - hseq), \
-				    BUNtail(*bi, oids[p2] - hseq)) < 0))
-#define nGTany(p1, p2)	(cmp(BUNtail(*bi, oids[p2] - hseq), nil) != 0 \
-			 && (cmp(BUNtail(*bi, oids[p1] - hseq), nil) == 0	\
-			     || cmp(BUNtail(*bi, oids[p1] - hseq), \
-				    BUNtail(*bi, oids[p2] - hseq)) > 0))
+#define nLTany(p1, p2)	(cmp(BUNtail(bi, oids[p1] - hseq), nil) != 0 \
+			 && (cmp(BUNtail(bi, oids[p2] - hseq), nil) == 0	\
+			     || cmp(BUNtail(bi, oids[p1] - hseq), \
+				    BUNtail(bi, oids[p2] - hseq)) < 0))
+#define nGTany(p1, p2)	(cmp(BUNtail(bi, oids[p2] - hseq), nil) != 0 \
+			 && (cmp(BUNtail(bi, oids[p1] - hseq), nil) == 0	\
+			     || cmp(BUNtail(bi, oids[p1] - hseq), \
+				    BUNtail(bi, oids[p2] - hseq)) > 0))
 
 #define LTflt(a, b)	(!is_flt_nil(b) && (is_flt_nil(a) || (a) < (b)))
 #define LTdbl(a, b)	(!is_dbl_nil(b) && (is_dbl_nil(a) || (a) < (b)))
@@ -420,10 +420,10 @@ BATfirstn_unique(BATiter *bi, BAT *s, BUN n, bool asc, bool nilslast, oid *lastp
 				heapify(nLTany, SWAP1);
 				TIMEOUT_LOOP(ci.ncand - n, qry_ctx) {
 					i = canditer_next(&ci);
-					if (!eq(BUNtail(*bi, i - hseq), nil)
-					    && (eq(BUNtail(*bi, oids[0] - hseq), nil)
-						|| cmp(BUNtail(*bi, i - hseq),
-						       BUNtail(*bi, oids[0] - hseq)) < 0)) {
+					if (!eq(BUNtail(bi, i - hseq), nil)
+					    && (eq(BUNtail(bi, oids[0] - hseq), nil)
+						|| cmp(BUNtail(bi, i - hseq),
+						       BUNtail(bi, oids[0] - hseq)) < 0)) {
 						oids[0] = i;
 						siftdown(nLTany, 0, SWAP1);
 					}
@@ -459,8 +459,8 @@ BATfirstn_unique(BATiter *bi, BAT *s, BUN n, bool asc, bool nilslast, oid *lastp
 				heapify(LTany, SWAP1);
 				TIMEOUT_LOOP(ci.ncand - n, qry_ctx) {
 					i = canditer_next(&ci);
-					if (cmp(BUNtail(*bi, i - hseq),
-						BUNtail(*bi, oids[0] - hseq)) < 0) {
+					if (cmp(BUNtail(bi, i - hseq),
+						BUNtail(bi, oids[0] - hseq)) < 0) {
 						oids[0] = i;
 						siftdown(LTany, 0, SWAP1);
 					}
@@ -498,8 +498,8 @@ BATfirstn_unique(BATiter *bi, BAT *s, BUN n, bool asc, bool nilslast, oid *lastp
 				heapify(GTany, SWAP1);
 				TIMEOUT_LOOP(ci.ncand - n, qry_ctx) {
 					i = canditer_next(&ci);
-					if (cmp(BUNtail(*bi, i - hseq),
-						BUNtail(*bi, oids[0] - hseq)) > 0) {
+					if (cmp(BUNtail(bi, i - hseq),
+						BUNtail(bi, oids[0] - hseq)) > 0) {
 						oids[0] = i;
 						siftdown(GTany, 0, SWAP1);
 					}
@@ -535,10 +535,10 @@ BATfirstn_unique(BATiter *bi, BAT *s, BUN n, bool asc, bool nilslast, oid *lastp
 				heapify(nGTany, SWAP1);
 				TIMEOUT_LOOP(ci.ncand - n, qry_ctx) {
 					i = canditer_next(&ci);
-					if (!eq(BUNtail(*bi, oids[0] - hseq), nil)
-					    && (eq(BUNtail(*bi, i - hseq), nil)
-						|| cmp(BUNtail(*bi, i - hseq),
-						       BUNtail(*bi, oids[0] - hseq)) > 0)) {
+					if (!eq(BUNtail(bi, oids[0] - hseq), nil)
+					    && (eq(BUNtail(bi, i - hseq), nil)
+						|| cmp(BUNtail(bi, i - hseq),
+						       BUNtail(bi, oids[0] - hseq)) > 0)) {
 						oids[0] = i;
 						siftdown(nGTany, 0, SWAP1);
 					}
@@ -857,10 +857,10 @@ BATfirstn_unique_with_groups(BATiter *bi, BAT *s, BAT *g, BUN n, bool asc, bool 
 					i = canditer_next(&ci);
 					if (gv[j] < goids[0]
 					    || (gv[j] == goids[0]
-						&& !eq(BUNtail(*bi, i - hseq), nil)
-						&& (eq(BUNtail(*bi, oids[0] - hseq), nil)
-						    || cmp(BUNtail(*bi, i - hseq),
-							   BUNtail(*bi, oids[0] - hseq)) < 0))) {
+						&& !eq(BUNtail(bi, i - hseq), nil)
+						&& (eq(BUNtail(bi, oids[0] - hseq), nil)
+						    || cmp(BUNtail(bi, i - hseq),
+							   BUNtail(bi, oids[0] - hseq)) < 0))) {
 						oids[0] = i;
 						goids[0] = gv[j];
 						siftdown(nLTanygrp, 0, SWAP2);
@@ -900,8 +900,8 @@ BATfirstn_unique_with_groups(BATiter *bi, BAT *s, BAT *g, BUN n, bool asc, bool 
 					i = canditer_next(&ci);
 					if (gv[j] < goids[0] ||
 					    (gv[j] == goids[0] &&
-					     cmp(BUNtail(*bi, i - hseq),
-						 BUNtail(*bi, oids[0] - hseq)) < 0)) {
+					     cmp(BUNtail(bi, i - hseq),
+						 BUNtail(bi, oids[0] - hseq)) < 0)) {
 						oids[0] = i;
 						goids[0] = gv[j];
 						siftdown(LTanygrp, 0, SWAP2);
@@ -942,8 +942,8 @@ BATfirstn_unique_with_groups(BATiter *bi, BAT *s, BAT *g, BUN n, bool asc, bool 
 				i = canditer_next(&ci);
 				if (gv[j] < goids[0] ||
 				    (gv[j] == goids[0] &&
-				     cmp(BUNtail(*bi, i - hseq),
-					 BUNtail(*bi, oids[0] - hseq)) > 0)) {
+				     cmp(BUNtail(bi, i - hseq),
+					 BUNtail(bi, oids[0] - hseq)) > 0)) {
 					oids[0] = i;
 					goids[0] = gv[j];
 					siftdown(GTanygrp, 0, SWAP2);
@@ -983,10 +983,10 @@ BATfirstn_unique_with_groups(BATiter *bi, BAT *s, BAT *g, BUN n, bool asc, bool 
 				i = canditer_next(&ci);
 				if (gv[j] < goids[0]
 				    || (gv[j] == goids[0]
-					&& !eq(BUNtail(*bi, oids[0] - hseq), nil)
-					&& (eq(BUNtail(*bi, i - hseq), nil)
-					    || cmp(BUNtail(*bi, i - hseq),
-						   BUNtail(*bi, oids[0] - hseq)) > 0))) {
+					&& !eq(BUNtail(bi, oids[0] - hseq), nil)
+					&& (eq(BUNtail(bi, i - hseq), nil)
+					    || cmp(BUNtail(bi, i - hseq),
+						   BUNtail(bi, oids[0] - hseq)) > 0))) {
 					oids[0] = i;
 					goids[0] = gv[j];
 					siftdown(nGTanygrp, 0, SWAP2);
@@ -1071,7 +1071,7 @@ BATfirstn_grouped(BAT **topn, BAT **gids, BATiter *bi, BAT *s, BUN n, bool asc, 
 			BAT *bn1, *bn2;
 
 			bn1 = bn;
-			bn2 = BATselect(bi->b, s, BUNtail(*bi, last - bi->b->hseqbase), NULL, true, false, false, false);
+			bn2 = BATselect(bi->b, s, BUNtail(bi, last - bi->b->hseqbase), NULL, true, false, false, false);
 			if (bn2 == NULL) {
 				BBPunfix(bn1->batCacheid);
 				return GDK_FAIL;
@@ -1208,7 +1208,7 @@ BATfirstn_grouped_with_groups(BAT **topn, BAT **gids, BATiter *bi, BAT *s, BAT *
 			BBPunfix(bn1->batCacheid);
 			return  GDK_FAIL;
 		}
-		bn4 = BATselect(bi->b, bn3, BUNtail(*bi, last - hseq), NULL, true, false, false, false);
+		bn4 = BATselect(bi->b, bn3, BUNtail(bi, last - hseq), NULL, true, false, false, false);
 		BBPunfix(bn3->batCacheid);
 		if (bn4 == NULL) {
 			BBPunfix(bn1->batCacheid);
@@ -1428,20 +1428,20 @@ BATgroupedfirstn(BUN n, BAT *s, BAT *g, int nbats, BAT **bats, bool *asc, bool *
 		 * keep or replace */
 		if (!is_oid_nil(oids[goff])) {
 			for (int i = 0; i < nbats; i++) {
-				comp = batinfo[i].cmp(BUNtail(batinfo[i].bi1, o - batinfo[i].hseq),
-						      BUNtail(batinfo[i].bi2, oids[goff] - batinfo[i].hseq));
+				comp = batinfo[i].cmp(BUNtail(&batinfo[i].bi1, o - batinfo[i].hseq),
+						      BUNtail(&batinfo[i].bi2, oids[goff] - batinfo[i].hseq));
 				if (comp == 0)
 					continue;
 				if (!batinfo[i].asc)
 					comp = -comp;
 				if (!batinfo[i].bi1.nonil) {
-					if (batinfo[i].cmp(BUNtail(batinfo[i].bi1, o - batinfo[i].hseq),
+					if (batinfo[i].cmp(BUNtail(&batinfo[i].bi1, o - batinfo[i].hseq),
 							   batinfo[i].nil) == 0) {
 						if (batinfo[i].nilslast)
 							comp = 1;
 						else
 							comp = -1;
-					} else if (batinfo[i].cmp(BUNtail(batinfo[i].bi1, oids[goff] - batinfo[i].hseq),
+					} else if (batinfo[i].cmp(BUNtail(&batinfo[i].bi1, oids[goff] - batinfo[i].hseq),
 								  batinfo[i].nil) == 0) {
 						if (batinfo[i].nilslast)
 							comp = -1;
@@ -1473,16 +1473,16 @@ BATgroupedfirstn(BUN n, BAT *s, BAT *g, int nbats, BAT **bats, bool *asc, bool *
 						childpos++;
 					else {
 						for (int i = 0; i < nbats; i++) {
-							if ((comp = batinfo[i].cmp(BUNtail(batinfo[i].bi1, oids[goff + childpos] - batinfo[i].hseq),
-										   BUNtail(batinfo[i].bi2, oids[goff + childpos + 1] - batinfo[i].hseq))) == 0)
+							if ((comp = batinfo[i].cmp(BUNtail(&batinfo[i].bi1, oids[goff + childpos] - batinfo[i].hseq),
+										   BUNtail(&batinfo[i].bi2, oids[goff + childpos + 1] - batinfo[i].hseq))) == 0)
 								continue;
 							if (!batinfo[i].bi1.nonil) {
-								if (batinfo[i].cmp(BUNtail(batinfo[i].bi1, oids[goff + childpos] - batinfo[i].hseq), batinfo[i].nil) == 0) {
+								if (batinfo[i].cmp(BUNtail(&batinfo[i].bi1, oids[goff + childpos] - batinfo[i].hseq), batinfo[i].nil) == 0) {
 									if (!batinfo[i].nilslast)
 										childpos++;
 									break;
 								}
-								if (batinfo[i].cmp(BUNtail(batinfo[i].bi1, oids[goff + childpos + 1] - batinfo[i].hseq), batinfo[i].nil) == 0) {
+								if (batinfo[i].cmp(BUNtail(&batinfo[i].bi1, oids[goff + childpos + 1] - batinfo[i].hseq), batinfo[i].nil) == 0) {
 									if (batinfo[i].nilslast)
 										childpos++;
 									break;
@@ -1498,15 +1498,15 @@ BATgroupedfirstn(BUN n, BAT *s, BAT *g, int nbats, BAT **bats, bool *asc, bool *
 			/* compare parent with most extreme child */
 			if (!is_oid_nil(oids[goff + childpos])) {
 				for (int i = 0; i < nbats; i++) {
-					if ((comp = batinfo[i].cmp(BUNtail(batinfo[i].bi1, oids[goff + pos] - batinfo[i].hseq),
-								   BUNtail(batinfo[i].bi2, oids[goff + childpos] - batinfo[i].hseq))) == 0)
+					if ((comp = batinfo[i].cmp(BUNtail(&batinfo[i].bi1, oids[goff + pos] - batinfo[i].hseq),
+								   BUNtail(&batinfo[i].bi2, oids[goff + childpos] - batinfo[i].hseq))) == 0)
 						continue;
 					if (batinfo[i].asc ? comp > 0 : comp < 0)
 						comp = 0;
 					if (!batinfo[i].bi1.nonil) {
-						if (batinfo[i].cmp(BUNtail(batinfo[i].bi1, oids[goff + pos] - batinfo[i].hseq), batinfo[i].nil) == 0)
+						if (batinfo[i].cmp(BUNtail(&batinfo[i].bi1, oids[goff + pos] - batinfo[i].hseq), batinfo[i].nil) == 0)
 							comp = !batinfo[i].nilslast;
-						else if (batinfo[i].cmp(BUNtail(batinfo[i].bi1, oids[goff + childpos] - batinfo[i].hseq), batinfo[i].nil) == 0)
+						else if (batinfo[i].cmp(BUNtail(&batinfo[i].bi1, oids[goff + childpos] - batinfo[i].hseq), batinfo[i].nil) == 0)
 							comp = batinfo[i].nilslast;
 					}
 					break;

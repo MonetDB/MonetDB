@@ -192,7 +192,7 @@ UUIDisaUUID_bulk(Client ctx, bat *ret, const bat *bid)
 	dst = Tloc(bn, 0);
 	bi = bat_iterator(b);
 	for (BUN p = 0; p < q; p++)
-		dst[p] = isaUUID(ctx, BUNtvar(bi, p));
+		dst[p] = isaUUID(ctx, BUNtvar(&bi, p));
 	GDKclrerr();				/* Not interested in atomFromStr errors */
 	BATsetcount(bn, q);
 	bn->tnonil = bi.nonil;
@@ -342,7 +342,7 @@ UUIDstr2uuid_bulk(Client ctx, bat *res, const bat *bid, const bat *sid)
 	if (ci.tpe == cand_dense) {
 		for (BUN i = 0; i < ci.ncand; i++) {
 			oid p = (canditer_next_dense(&ci) - off);
-			const char *v = BUNtvar(bi, p);
+			const char *v = BUNtvar(&bi, p);
 			uuid *up = &vals[i], **pp = &up;
 
 			if (conv(ma, v, &l, (void **) pp, false) <= 0) {
@@ -355,7 +355,7 @@ UUIDstr2uuid_bulk(Client ctx, bat *res, const bat *bid, const bat *sid)
 	} else {
 		for (BUN i = 0; i < ci.ncand; i++) {
 			oid p = (canditer_next(&ci) - off);
-			const char *v = BUNtvar(bi, p);
+			const char *v = BUNtvar(&bi, p);
 			uuid *up = &vals[i], **pp = &up;
 
 			if (conv(ma, v, &l, (void **) pp, false) <= 0) {

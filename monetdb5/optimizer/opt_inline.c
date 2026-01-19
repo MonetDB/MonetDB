@@ -31,7 +31,6 @@ inlineMALblock(Client ctx, MalBlkPtr mb, int pc, MalBlkPtr mc)
 	allocator_state ta_state = ma_open(ta);
 	nv = (int *) ma_alloc(ta, mc->vtop * sizeof(int));
 	if (nv == 0) {
-		//GDKfree(ns);
 		ma_close(&ta_state);
 		return -1;
 	}
@@ -50,7 +49,6 @@ inlineMALblock(Client ctx, MalBlkPtr mb, int pc, MalBlkPtr mc)
 		}
 		if (nv[n] < 0) {
 			ma_close(&ta_state);
-			//GDKfree(ns);
 			return -1;
 		}
 	}
@@ -83,7 +81,6 @@ inlineMALblock(Client ctx, MalBlkPtr mb, int pc, MalBlkPtr mc)
 		ns[k] = copyInstruction(mb, q);
 		if (ns[k] == NULL) {
 			ma_close(&ta_state);
-			//GDKfree(ns);
 			return -1;
 		}
 
@@ -113,7 +110,6 @@ inlineMALblock(Client ctx, MalBlkPtr mb, int pc, MalBlkPtr mc)
 			freeInstruction(mb, mb->stmt[i]);
 			mb->stmt[i] = 0;
 		}
-	//GDKfree(mb->stmt);
 	mb->stmt = ns;
 
 	mb->ssize = l;

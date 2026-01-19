@@ -441,7 +441,6 @@ RMTgetId(char *buf, size_t buflen, MalBlkPtr mb, InstrPtr p, int arg)
 	snprintf(buf, buflen, "rmt%u_%s_%s", (unsigned) ATOMIC_ADD(&idtag, 1), name,
 			 rt);
 
-	//GDKfree(rt);
 	return (MAL_SUCCEED);
 }
 
@@ -806,7 +805,6 @@ RMTget(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		msg = createException(MAL, "remote.get",
 							  ILLEGAL_ARGUMENT ": unsupported any type: %s",
 							  tpe);
-		//GDKfree(tpe);
 		return msg;
 	}
 	/* check if the remote type complies with what we expect.
@@ -819,10 +817,8 @@ RMTget(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		tmp = createException(MAL, "remote.get", ILLEGAL_ARGUMENT
 							  ": remote object type %s does not match expected type %s",
 							  rt, ident);
-		//GDKfree(rt);
 		return tmp;
 	}
-	//GDKfree(rt);
 
 	if (isaBatType(rtype) && (localtype == 0177 || (localtype != c->type && localtype != (c->type | RMTT_HGE)))) {
 		int t;
@@ -873,12 +869,10 @@ RMTget(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				if (ATOMfromstr(mb->ma, t, &r, &s, var, true) < 0 ||
 					BUNappend(b, r, false) != GDK_SUCCEED) {
 					BBPreclaim(b);
-					//GDKfree(r);
 					mapi_close_handle(mhdl);
 					MT_lock_unset(&c->lock);
 					throw(MAL, "remote.get", GDK_EXCEPTION);
 				}
-				//GDKfree(r);
 			}
 
 		*v = (ValRecord) {
@@ -956,12 +950,9 @@ RMTget(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 								  "unable to parse value: %s",
 								  val == NULL ? "nil" : val);
 			mapi_close_handle(mhdl);
-			//GDKfree(p);
 			return msg;
 		} else {
 			VALset(v, rtype, p);
-			//if (ATOMextern(rtype) == 0)
-			//	GDKfree(p);
 		}
 
 		mapi_close_handle(mhdl);
@@ -1017,7 +1008,6 @@ RMTput(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		MT_lock_unset(&c->lock);
 		tpe = getTypeName(ma, type);
 		msg = createException(MAL, "remote.put", "unsupported type: %s", tpe);
-		//GDKfree(tpe);
 		return msg;
 	} else if (isaBatType(type) && !is_bat_nil(*(bat *) value)) {
 		BATiter bi;
@@ -1039,7 +1029,6 @@ RMTput(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (bid != 0) {
 			if ((b = BATdescriptor(bid)) == NULL) {
 				MT_lock_unset(&c->lock);
-				//GDKfree(tail);
 				throw(MAL, "remote.put",
 					  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			}
@@ -1054,7 +1043,6 @@ RMTput(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					 "%s := remote.batload(nil:%s, " BUNFMT ");\n",
 					 ident, tail, (bid == 0 ? 0 : BATcount(b)));
 		mnstr_flush(sout, MNSTR_FLUSH_DATA);
-		//GDKfree(tail);
 
 		/* b can be NULL if bid == 0 (only type given, ugh) */
 		if (b) {
@@ -1065,7 +1053,7 @@ RMTput(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 			bi = bat_iterator(b);
 			BATloop(b, p, q) {
-				const void *v = BUNtail(bi, p);
+				const void *v = BUNtail(&bi, p);
 				tailv = ATOMformat(ma, tpe, v);
 				if (tailv == NULL) {
 					bat_iterator_end(&bi);
@@ -1077,7 +1065,6 @@ RMTput(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					mnstr_printf(sout, "%s\n", tailv);
 				else
 					mnstr_printf(sout, "\"%s\"\n", tailv);
-				// GDKfree(tailv);
 			}
 			bat_iterator_end(&bi);
 			BBPunfix(b->batCacheid);
@@ -1097,7 +1084,6 @@ RMTput(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		sout = mapi_get_to(c->mconn);
 		mnstr_printf(sout, "%s := nil:%s;\n", ident, typename);
 		mnstr_flush(sout, MNSTR_FLUSH_DATA);
-		//GDKfree(typename);
 	} else {
 		size_t l;
 		str val;
@@ -1117,14 +1103,11 @@ RMTput(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		tpe = getTypeIdentifier(ma, type);
 		if (tpe == NULL) {
 			MT_lock_unset(&c->lock);
-			// GDKfree(val);
 			throw(MAL, "remote.put", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		l = strlen(val) + strlen(tpe) + strlen(ident) + 10;
 		if (l > (ssize_t) sizeof(qbuf) && (nbuf = ma_alloc(ma, l)) == NULL) {
 			MT_lock_unset(&c->lock);
-			// GDKfree(val);
-			//GDKfree(tpe);
 			throw(MAL, "remote.put", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		if (type < TYPE_date || ATOMbasetype(type) == TYPE_str
@@ -1132,12 +1115,8 @@ RMTput(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			snprintf(nbuf, l, "%s := %s:%s;\n", ident, val, tpe);
 		else
 			snprintf(nbuf, l, "%s := \"%s\":%s;\n", ident, val, tpe);
-		// GDKfree(tpe);
-		// GDKfree(val);
 		TRC_DEBUG(MAL_REMOTE, "Remote put: %s - %s\n", c->name, nbuf);
 		tmp = RMTquery(&mhdl, "remote.put", c->mconn, nbuf);
-		if (nbuf != qbuf)
-			// GDKfree(nbuf);
 		if (tmp != MAL_SUCCEED) {
 			MT_lock_unset(&c->lock);
 			return tmp;
@@ -1256,7 +1235,6 @@ RMTregisterInternal(allocator *ma, Client ctx, char **fcn_id, const char *conn,
 	qry = mal2str(prg->def, 0, prg->def->stop);
 	TRC_DEBUG(MAL_REMOTE, "Remote register: %s - %s\n", c->name, qry);
 	msg = RMTquery(&mhdl, "remote.register", c->mconn, qry);
-	//GDKfree(qry);
 	if (mhdl)
 		mapi_close_handle(mhdl);
 
@@ -1398,7 +1376,6 @@ RMTexec(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	len += snprintf(&qbuf[len], buflen - len, ");");
 	TRC_DEBUG(MAL_REMOTE, "Remote exec: %s - %s\n", c->name, qbuf);
 	tmp = RMTquery(&mhdl, "remote.exec", c->mconn, qbuf);
-	//GDKfree(qbuf);
 
 	/* Temporary hack:
 	 * use a callback to immediately handle columnar results before hdl is destroyed. */
@@ -1442,7 +1419,6 @@ RMTexec(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				for (int j = 0; j < i; j++)
 					BBPrelease(results[j].id);
 			}
-			//GDKfree(results);
 		}
 	}
 
@@ -1517,10 +1493,8 @@ RMTbatload(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (ATOMfromstr(mb->ma, t, &r, &s, var, true) < 0 ||
 			BUNappend(b, r, false) != GDK_SUCCEED) {
 			BBPreclaim(b);
-			//GDKfree(r);
 			throw(MAL, "remote.get", GDK_EXCEPTION);
 		}
-		//GDKfree(r);
 	}
 
 	*v = (ValRecord) {

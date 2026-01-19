@@ -555,7 +555,6 @@ optimizeMALBlock(Client cntxt, MalBlkPtr mb)
 					nmsg = ma_strdup(ma, getExceptionMessageAndState(msg));
 					nmsg = createException(getExceptionType(msg), place, "%s",
 										   nmsg);
-					//GDKfree(place);
 				}
 				ma_close(&ma_state);
 				if (nmsg) {

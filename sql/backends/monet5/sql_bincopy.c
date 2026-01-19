@@ -399,7 +399,7 @@ import_nul_terminated(backend *be, bat *ret, BUN *retcnt, str method, int width,
 
 	init_insert_state(&state, ma, result, width);
 	bi = bat_iterator(input);
-	data = BUNtloc(bi, 0);
+	data = BUNtloc(&bi, 0);
 	size = BATcount(input);
 	msg = insert_nul_terminated_values(&state, data, size, &consumed);
 	bat_iterator_end(&bi);

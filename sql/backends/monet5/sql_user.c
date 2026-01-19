@@ -129,10 +129,8 @@ changeUserPassword(mvc *m, oid rid, str oldpass, str newpass)
 		GDKfree(passValue);
 		if (strcmp(oldpass, hash) != 0) {
 			(void) sql_error(m, 02, SQLSTATE(42000) "changeUserPassword: password mismatch");
-			//GDKfree(hash);
 			return LOG_ERR;
 		}
-		//GDKfree(hash);
 	}
 	return setUserPassword(m, rid, newpass);
 }
@@ -295,21 +293,6 @@ monet5_create_user(ptr _mvc, str user, str passwd, bool enc, str fullname, sqlid
 		throw(SQL,"sql.create_user",SQLSTATE(42000) "User schema not found");
 
 	if (!schema_path) {
-		// schema_name = store->table_api.column_find_value(m->session->tr, find_sql_column(schemas_tbl, "name"), rid);
-		// if (schema_name) {
-		// 	// "\"$schema_name\"\0"
-		// 	if ((strlen(schema_name) + 4) > MAX_SCHEMA_SIZE) {
-		// 		if (schema_name)
-		// 			GDKfree(schema_name);
-		// 		throw(SQL, "sql.schema_path", SQLSTATE(42000) "A schema has up to 1023 characters");
-		// 	}
-		// 	schema_buf = GDKmalloc(MAX_SCHEMA_SIZE);
-		// 	snprintf(schema_buf, MAX_SCHEMA_SIZE, "\"%s\"", schema_name);
-		// 	schema_path = schema_buf;
-		// 	GDKfree(schema_name);
-		// } else {
-		// 	schema_path = default_schema_path;
-		// }
 		schema_path = default_schema_path;
 	}
 
@@ -354,7 +337,6 @@ monet5_create_user(ptr _mvc, str user, str passwd, bool enc, str fullname, sqlid
 		throw(SQL, "sql.create_user", SQLSTATE(42000) "Create user failed%s", log_res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
 	}
 	// clean up
-//	GDKfree(schema_buf);
 	ma_close(&ta_state);
 
 	if ((log_res = store->table_api.table_insert(m->session->tr, auths, &user_id, &user, &grantorid))) {
@@ -955,8 +937,6 @@ remote_create(mvc *m, sqlid id, const char *username, const char *password, int 
 	if (pwhash != NULL) {
 		if (!pw_encrypted)
 			free(pwhash);
-		//else
-		//	GDKfree(pwhash);
 	}
 	if (msg != MAL_SUCCEED) {
 		ma_close(&ta_state);

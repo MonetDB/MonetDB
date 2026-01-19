@@ -1293,8 +1293,8 @@ mvc_get_value_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	vals = Tloc(bn, 0);
 	for (BUN i = 0; i < ci1.ncand; i++) {
 		oid p1 = canditer_next(&ci1) - off1, p2 = canditer_next(&ci2) - off2;
-		const char *sname = BUNtvar(schi, p1);
-		const char *seqname = BUNtvar(seqi, p2);
+		const char *sname = BUNtvar(&schi, p1);
+		const char *seqname = BUNtvar(&seqi, p2);
 
 		if (strNil(sname) || strNil(seqname)) {
 			vals[i] = lng_nil;
@@ -2697,9 +2697,9 @@ mvc_result_set_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	for( i = 7; msg == MAL_SUCCEED && i< pci->argc; i++, o++){
 		bid = *getArgReference_bat(stk,pci,i);
-		tblname = BUNtvar(itertbl,o);
-		colname = BUNtvar(iteratr,o);
-		tpename = BUNtvar(itertpe,o);
+		tblname = BUNtvar(&itertbl,o);
+		colname = BUNtvar(&iteratr,o);
+		tpename = BUNtvar(&itertpe,o);
 		b = BATdescriptor(bid);
 		if ( b == NULL)
 			msg = createException(SQL, "sql.resultSet", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
@@ -2852,9 +2852,9 @@ mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	for( i = 13; msg == MAL_SUCCEED && i< pci->argc; i++, o++){
 		bid = *getArgReference_bat(stk,pci,i);
-		tblname = BUNtvar(itertbl,o);
-		colname = BUNtvar(iteratr,o);
-		tpename = BUNtvar(itertpe,o);
+		tblname = BUNtvar(&itertbl,o);
+		colname = BUNtvar(&iteratr,o);
+		tpename = BUNtvar(&itertpe,o);
 		b = BATdescriptor(bid);
 		if ( b == NULL)
 			msg = createException(SQL, "sql.resultSet", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
@@ -2965,9 +2965,9 @@ mvc_row_result_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	ms = (int*) iterms.base;
 
 	for( i = 7; msg == MAL_SUCCEED && i< pci->argc; i++, o++){
-		tblname = BUNtvar(itertbl,o);
-		colname = BUNtvar(iteratr,o);
-		tpename = BUNtvar(itertpe,o);
+		tblname = BUNtvar(&itertbl,o);
+		colname = BUNtvar(&iteratr,o);
+		tpename = BUNtvar(&itertpe,o);
 
 		v = getArgReference(stk, pci, i);
 		mtype = getArgType(mb, pci, i);
@@ -3079,9 +3079,9 @@ mvc_export_row_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	scaledigits = (int*) iterscl.base;
 
 	for( i = 13; msg == MAL_SUCCEED && i< pci->argc; i++, o++){
-		tblname = BUNtvar(itertbl,o);
-		colname = BUNtvar(iteratr,o);
-		tpename = BUNtvar(itertpe,o);
+		tblname = BUNtvar(&itertbl,o);
+		colname = BUNtvar(&iteratr,o);
+		tpename = BUNtvar(&itertpe,o);
 
 		v = getArgReference(stk, pci, i);
 		mtype = getArgType(mb, pci, i);
@@ -3459,7 +3459,6 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	if (b && !msg)
 		bat2return(stk, pci, b);
-	// GDKfree(b);
 	return msg;
 }
 
@@ -4141,8 +4140,8 @@ do_sql_rank_grp(bat *rid, const bat *bid, const bat *gid, int nrank, int dense, 
 	gi = bat_iterator(g);
 	oeq = ATOMequal(b->ttype);
 	geq = ATOMequal(g->ttype);
-	oc = BUNtail(bi, 0);
-	gc = BUNtail(gi, 0);
+	oc = BUNtail(&bi, 0);
+	gc = BUNtail(&gi, 0);
 	if (!ALIGNsynced(b, g)) {
 		bat_iterator_end(&bi);
 		bat_iterator_end(&gi);
@@ -4166,8 +4165,8 @@ do_sql_rank_grp(bat *rid, const bat *bid, const bat *gid, int nrank, int dense, 
 		throw(SQL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	BATloop(b, p, q) {
-		on = BUNtail(bi, p);
-		gn = BUNtail(gi, p);
+		on = BUNtail(&bi, p);
+		gn = BUNtail(&gi, p);
 
 		if ((c = !oeq(on, oc)))
 			rank = nrank;
@@ -4214,7 +4213,7 @@ do_sql_rank(bat *rid, const bat *bid, int nrank, int dense, const char *name)
 	}
 
 	eq = ATOMequal(bi.type);
-	cur = BUNtail(bi, 0);
+	cur = BUNtail(&bi, 0);
 	r = COLnew(b->hseqbase, TYPE_int, BATcount(b), TRANSIENT);
 	if (r == NULL) {
 		bat_iterator_end(&bi);
@@ -4229,7 +4228,7 @@ do_sql_rank(bat *rid, const bat *bid, int nrank, int dense, const char *name)
 		}
 	} else {
 		BATloop(b, p, q) {
-			n = BUNtail(bi, p);
+			n = BUNtail(&bi, p);
 			if (!eq(n, cur))
 				rank = nrank;
 			cur = n;
@@ -4290,7 +4289,6 @@ SQLargRecord(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if( ! t)
 		t = strchr(s, '\t');
 	*ret = SA_STRDUP(mb->ma, t ? t + 1 : s);
-	// GDKfree(s);
 	if(*ret == NULL)
 		throw(SQL, "sql.argRecord", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
@@ -5246,7 +5244,6 @@ SQLunionfunc(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					bat_iterator_end(&bi[i]);
 					BBPunfix(input[i]->batCacheid);
 				}
-				//GDKfree(input);
 				input = NULL;
 				goto finalize;
 			}
@@ -5289,7 +5286,6 @@ SQLunionfunc(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			nmb->stmt[1] = NULL; /* no profiling */
 			nmb->stmt[2] = stmt[0];
 			nmb->stop = nmb->ssize = 3;
-			//GDKfree(stmt);
 			start = 2;
 		}
 		for (BUN cur = 0; cur<cnt && !ret; cur++ ) {
@@ -5302,7 +5298,7 @@ SQLunionfunc(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				/* copy (input) arguments onto destination stack, skipping rowid col */
 				for (i = 1, ii = q->retc; ii < q->argc && !ret; ii++, i++) {
 					ValPtr lhs = &nstk->stk[q->argv[ii]];
-					ptr rhs = (ptr)BUNtail(bi[i], cur);
+					ptr rhs = (ptr)BUNtail(&bi[i], cur);
 
 					if (VALset(lhs, input[i]->ttype, rhs) == NULL)
 						ret = createException(MAL, "sql.unionfunc", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -5319,7 +5315,7 @@ SQLunionfunc(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						if (!(fres = BBPquickdesc(omb?env->stk[q->argv[0]].val.bval:nstk->stk[q->argv[0]].val.bval))) {
 							ret = createException(MAL, "sql.unionfunc", SQLSTATE(HY005) "Cannot access column descriptor");
 						} else {
-							BAT *p = BATconstant(fres->hseqbase, res[0]->ttype, (ptr)BUNtail(bi[0], cur), BATcount(fres), TRANSIENT);
+							BAT *p = BATconstant(fres->hseqbase, res[0]->ttype, (ptr)BUNtail(&bi[0], cur), BATcount(fres), TRANSIENT);
 
 							if (p) {
 								if (BATappend(res[0], p, NULL, FALSE) != GDK_SUCCEED)
@@ -5362,7 +5358,6 @@ finalize:
 						BBPkeepref(res[i]);
 				}
 			}
-		//GDKfree(res);
 		if (input) {
 			for (int i = 0; i<nrinput; i++) {
 				if (input[i]) {
@@ -5370,9 +5365,7 @@ finalize:
 					BBPunfix(input[i]->batCacheid);
 				}
 			}
-			//GDKfree(input);
 		}
-		//GDKfree(bi);
 		if (nmb)
 			freeMalBlk(nmb);
 		if (omb)
@@ -5608,9 +5601,6 @@ SQLstr_auto_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL, "sql.str_auto_vacuum", SQLSTATE(42000) "Cannot vacuum compressed column");
 
 	if (!(sname_copy = SA_STRDUP(mb->ma, sname)) || !(tname_copy = SA_STRDUP(mb->ma, tname)) || (cname && !(cname_copy = SA_STRDUP(mb->ma, cname)))) {
-		//GDKfree(sname_copy);
-		//GDKfree(tname_copy);
-		//GDKfree(cname_copy);
 		throw(SQL, "sql.str_auto_vacuum", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	void *argv[4] = {m->store, sname_copy, tname_copy, cname_copy};
@@ -6307,7 +6297,7 @@ SQLfrom_json(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BATiter bi = bat_iterator(b);
 		BUN p, q;
 		BATloop(b, p, q) {
-			const char *json = (const char *) BUNtail(bi, p);
+			const char *json = (const char *) BUNtail(&bi, p);
 			if ((msg = insert_json_str(ta, json, bats, pci->retc, t)) != MAL_SUCCEED) {
 				bat_iterator_end(&bi);
 				BBPreclaim(b);

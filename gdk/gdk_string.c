@@ -624,7 +624,6 @@ strFromStr(allocator *ma, const char *restrict src, size_t *restrict len, char *
 
 	/* allocate new memory */
 	if (*dst == NULL || *len < l) {
-		//GDKfree(*dst);
 		*dst = ma_alloc(ma, *len = l);
 		if (*dst == NULL) {
 			*len = 0;
@@ -776,7 +775,6 @@ strRead(allocator *ma, str a, size_t *dstlen, stream *s, size_t cnt)
 		*dstlen = len + 1;
 	}
 	if (len && mnstr_read(s, a, len, 1) != 1) {
-		//GDKfree(a);
 		return NULL;
 	}
 	a[len] = 0;
@@ -846,7 +844,7 @@ concat_strings(allocator *ma, BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 			assert(sep == NULL);
 			TIMEOUT_LOOP_IDX(i, ci->ncand, qry_ctx) {
 				p = canditer_next(ci) - seqb;
-				const char *s = BUNtvar(bi, p);
+				const char *s = BUNtvar(&bi, p);
 				if (strNil(s)) {
 					if (!skip_nils) {
 						nils = 1;
@@ -863,8 +861,8 @@ concat_strings(allocator *ma, BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 			assert(sep != NULL);
 			TIMEOUT_LOOP_IDX(i, ci->ncand, qry_ctx) {
 				p = canditer_next(ci) - seqb;
-				const char *s = BUNtvar(bi, p);
-				const char *sl = BUNtvar(bis, p);
+				const char *s = BUNtvar(&bi, p);
+				const char *sl = BUNtvar(&bis, p);
 				if (strNil(s)) {
 					if (!skip_nils) {
 						nils = 1;
@@ -902,7 +900,7 @@ concat_strings(allocator *ma, BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 			if (separator) {
 				TIMEOUT_LOOP_IDX(i, ci->ncand, qry_ctx) {
 					p = canditer_next(ci) - seqb;
-					const char *s = BUNtvar(bi, p);
+					const char *s = BUNtvar(&bi, p);
 					if (strNil(s))
 						continue;
 					if (!empty) {
@@ -918,8 +916,8 @@ concat_strings(allocator *ma, BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 				assert(sep != NULL);
 				TIMEOUT_LOOP_IDX(i, ci->ncand, qry_ctx) {
 					p = canditer_next(ci) - seqb;
-					const char *s = BUNtvar(bi, p);
-					const char *sl = BUNtvar(bis, p);
+					const char *s = BUNtvar(&bi, p);
+					const char *sl = BUNtvar(&bis, p);
 					if (strNil(s))
 						continue;
 					if (!empty && !strNil(sl)) {
@@ -990,7 +988,7 @@ concat_strings(allocator *ma, BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 					gid = gids[i] - min;
 					if (lengths[gid] == (size_t) -1)
 						continue;
-					const char *s = BUNtvar(bi, i);
+					const char *s = BUNtvar(&bi, i);
 					if (!strNil(s)) {
 						lengths[gid] += strlen(s) + separator_length;
 						astrings[gid] = NULL;
@@ -1009,8 +1007,8 @@ concat_strings(allocator *ma, BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 					gid = gids[i] - min;
 					if (lengths[gid] == (size_t) -1)
 						continue;
-					const char *s = BUNtvar(bi, i);
-					const char *sl = BUNtvar(bis, i);
+					const char *s = BUNtvar(&bi, i);
+					const char *sl = BUNtvar(&bis, i);
 					if (!strNil(s)) {
 						lengths[gid] += strlen(s);
 						if (!strNil(sl)) {
@@ -1060,7 +1058,7 @@ concat_strings(allocator *ma, BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 				if (gids[i] >= min && gids[i] <= max) {
 					gid = gids[i] - min;
 					if (astrings[gid]) {
-						const char *s = BUNtvar(bi, i);
+						const char *s = BUNtvar(&bi, i);
 						if (strNil(s))
 							continue;
 						if (astrings[gid][lengths[gid]]) {
@@ -1081,8 +1079,8 @@ concat_strings(allocator *ma, BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 				if (gids[i] >= min && gids[i] <= max) {
 					gid = gids[i] - min;
 					if (astrings[gid]) {
-						const char *s = BUNtvar(bi, i);
-						const char *sl = BUNtvar(bis, i);
+						const char *s = BUNtvar(&bi, i);
+						const char *sl = BUNtvar(&bis, i);
 						if (strNil(s))
 							continue;
 						if (astrings[gid][lengths[gid]] && !strNil(sl)) {
@@ -1119,14 +1117,6 @@ concat_strings(allocator *ma, BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 	if (has_nils)
 		*has_nils = nils;
 	ma_close(&ta_state);
-	// GDKfree(lengths);
-	//if (astrings) {
-	//	for (i = 0; i < ngrp; i++) {
-	//		if (astrings[i] != str_nil)
-	//			GDKfree(astrings[i]);
-	//	}
-	//	GDKfree(astrings);
-	//}
 	if (rres != GDK_SUCCEED)
 		BBPreclaim(bn);
 
@@ -1146,39 +1136,29 @@ BATstr_group_concat(allocator *ma, ValPtr res, BAT *b, BAT *s, BAT *sep, bool sk
 {
 	struct canditer ci;
 	gdk_return r = GDK_SUCCEED;
-	//bool free_nseparator = false;
-	char *nseparator = (char *)separator;
+	const char *nseparator = separator;
 
 	assert((nseparator && !sep) || (!nseparator && sep)); /* only one of them must be set */
 	*res = (ValRecord) {.vtype = TYPE_str};
 
 	canditer_init(&ci, b, s);
 
-	allocator *ta = MT_thread_getallocator();
-	allocator_state ta_state = ma_open(ta);
-
+	BATiter bi = bat_iterator(sep);
 	if (sep && BATcount(sep) == 1) { /* Only one element in sep */
-		BATiter bi = bat_iterator(sep);
-		nseparator = ma_strdup(ta, BUNtvar(bi, 0));
-		bat_iterator_end(&bi);
-		if (!nseparator) {
-			ma_close(&ta_state);
-			return GDK_FAIL;
-		}
-		//free_nseparator = true;
+		nseparator = BUNtvar(&bi, 0);
 		sep = NULL;
 	}
 
 	if (ci.ncand == 0 || (nseparator && strNil(nseparator))) {
-		if (VALinit(ta, res, TYPE_str, nil_if_empty ? str_nil : "") == NULL)
+		if (VALinit(ma, res, TYPE_str, nil_if_empty ? str_nil : "") == NULL)
 			r = GDK_FAIL;
-		ma_close(&ta_state);
+		bat_iterator_end(&bi);
 		return r;
 	}
 
 	r = concat_strings(ma, NULL, res, b, b->hseqbase, 1, &ci, NULL, 0, 0,
 			      skip_nils, sep, nseparator, NULL);
-	ma_close(&ta_state);
+	bat_iterator_end(&bi);
 	return r;
 }
 
@@ -1192,8 +1172,7 @@ BATgroupstr_group_concat(BAT *b, BAT *g, BAT *e, BAT *s, BAT *sep, bool skip_nil
 	struct canditer ci;
 	const char *err;
 	gdk_return res;
-	//bool free_nseparator = false;
-	char *nseparator = (char *)separator;
+	const char *nseparator = separator;
 
 	assert((nseparator && !sep) || (!nseparator && sep)); /* only one of them must be set */
 	(void) skip_nils;
@@ -1208,18 +1187,9 @@ BATgroupstr_group_concat(BAT *b, BAT *g, BAT *e, BAT *s, BAT *sep, bool skip_nil
 		return NULL;
 	}
 
-	allocator *ma = MT_thread_getallocator();
-	allocator_state ma_state = ma_open(ma);
-
+	BATiter bi = bat_iterator(sep);
 	if (sep && BATcount(sep) == 1) { /* Only one element in sep */
-		BATiter bi = bat_iterator(sep);
-		nseparator = ma_strdup(ma, BUNtvar(bi, 0));
-		bat_iterator_end(&bi);
-		if (!nseparator) {
-			ma_close(&ma_state);
-			return NULL;
-		}
-		//free_nseparator = true;
+		nseparator = BUNtvar(&bi, 0);
 		sep = NULL;
 	}
 
@@ -1246,32 +1216,29 @@ BATgroupstr_group_concat(BAT *b, BAT *g, BAT *e, BAT *s, BAT *sep, bool skip_nil
 		bn = NULL;
 
 done:
-	ma_close(&ma_state);
+	bat_iterator_end(&bi);
 	return bn;
 }
 
 #define compute_next_single_str(START, END)				\
 	do {								\
 		for (oid m = START; m < END; m++) {			\
-			const char *sb = BUNtvar(bi, m);		\
+			const char *sb = BUNtvar(&bi, m);		\
 									\
-			if (separator) {				\
-				if (!strNil(sb)) {			\
+			if (!strNil(sb)) {				\
+				if (separator) {			\
 					next_group_length += strlen(sb); \
 					if (!empty)			\
 						next_group_length += separator_length; \
-					empty = false;			\
-				}					\
-			} else { /* sep case */				\
-				assert(sep != NULL);			\
-				const char *sl = BUNtvar(sepi, m);	\
+				} else { /* sep case */			\
+					assert(sep != NULL);		\
+					const char *sl = BUNtvar(&sepi, m); \
 									\
-				if (!strNil(sb)) {			\
 					next_group_length += strlen(sb); \
 					if (!empty && !strNil(sl))	\
 						next_group_length += strlen(sl); \
-					empty = false;			\
 				}					\
+				empty = false;				\
 			}						\
 		}							\
 		if (empty) {						\
@@ -1301,40 +1268,34 @@ done:
 			}						\
 									\
 			for (oid m = START; m < END; m++) {		\
-				const char *sb = BUNtvar(bi, m);	\
+				const char *sb = BUNtvar(&bi, m);	\
 									\
+				if (strNil(sb))				\
+					continue;			\
 				if (separator) {			\
-					if (strNil(sb))			\
-						continue;		\
 					if (!empty) {			\
 						memcpy(single_str + offset, separator, separator_length); \
 						offset += separator_length; \
 					}				\
-					next_length = strlen(sb);	\
-					memcpy(single_str + offset, sb, next_length); \
-					offset += next_length;		\
-					empty = false;			\
 				} else { /* sep case */			\
 					assert(sep != NULL);		\
-					const char *sl = BUNtvar(sepi, m); \
+					const char *sl = BUNtvar(&sepi, m); \
 									\
-					if (strNil(sb))			\
-						continue;		\
 					if (!empty && !strNil(sl)) {	\
 						next_length = strlen(sl); \
 						memcpy(single_str + offset, sl, next_length); \
 						offset += next_length;	\
 					}				\
-					next_length = strlen(sb);	\
-					memcpy(single_str + offset, sb, next_length); \
-					offset += next_length;		\
-					empty = false;			\
 				}					\
+				next_length = strlen(sb);		\
+				memcpy(single_str + offset, sb, next_length); \
+				offset += next_length;			\
+				empty = false;				\
 			}						\
 									\
 			single_str[offset] = '\0';			\
 		}							\
-} while (0)
+	} while (0)
 
 #define ANALYTICAL_STR_GROUP_CONCAT_UNBOUNDED_TILL_CURRENT_ROW		\
 	do {								\
@@ -1351,7 +1312,7 @@ done:
 				k++;					\
 			} while (k < i && !op[k]);			\
 			for (; j < k; j++) {				\
-				const char *nstr = BUNtvar(bi, j);	\
+				const char *nstr = BUNtvar(&bi, j);	\
 				if (!strNil(nstr)) {			\
 					slice_length += strlen(nstr);	\
 					if (!empty) {			\
@@ -1359,7 +1320,7 @@ done:
 							nsep = (const char *) separator; \
 						} else { /* sep case */	\
 							assert(sep != NULL); \
-							nsep = BUNtvar(sepi, j); \
+							nsep = BUNtvar(&sepi, j); \
 						}			\
 						if (!strNil(nsep))	\
 							slice_length += strlen(nsep); \
@@ -1396,7 +1357,7 @@ done:
 #define ANALYTICAL_STR_GROUP_CONCAT_CURRENT_ROW				\
 	do {								\
 		for (; k < i; k++) {					\
-			const char *next = BUNtvar(bi, k);		\
+			const char *next = BUNtvar(&bi, k);		\
 			if (tfastins_nocheckVAR(r, k, next) != GDK_SUCCEED) \
 				goto allocation_error;			\
 			has_nils |= strNil(next);			\
@@ -1453,7 +1414,7 @@ GDKanalytical_str_group_concat(BAT *r, BAT *p, BAT *o, BAT *b, BAT *sep, BAT *s,
 		return GDK_FAIL;
 	}
 	if (sep && sepi.count == 1) { /* Only one element in sep */
-		separator = BUNtvar(sepi, 0);
+		separator = BUNtvar(&sepi, 0);
 		sep = NULL;
 	}
 
@@ -7031,7 +6992,7 @@ BATcaseconvert(BAT *b, BAT *s, int direction, const char *restrict func)
 	size_t buflen = 0;
 	TIMEOUT_LOOP_IDX_DECL(i, ci.ncand, qry_ctx) {
 		BUN x = canditer_next(&ci) - bhseqbase;
-		if (convertcase(ta, &buf, &buflen, BUNtvar(bi, x),
+		if (convertcase(ta, &buf, &buflen, BUNtvar(&bi, x),
 				direction) != GDK_SUCCEED ||
 		    tfastins_nocheckVAR(bn, i, buf) != GDK_SUCCEED) {
 			goto bailout;
@@ -9837,7 +9798,7 @@ BATasciify(BAT *b, BAT *s)
 	size_t buflen = 0;
 	TIMEOUT_LOOP_IDX_DECL(i, ci.ncand, qry_ctx) {
 		BUN x = canditer_next(&ci) - bhseqbase;
-		if (GDKasciify(ta, &buf, &buflen, BUNtvar(bi, x)) != GDK_SUCCEED ||
+		if (GDKasciify(ta, &buf, &buflen, BUNtvar(&bi, x)) != GDK_SUCCEED ||
 		    tfastins_nocheckVAR(bn, i, buf) != GDK_SUCCEED) {
 			goto bailout;
 		}
@@ -9933,7 +9894,7 @@ BATaggrdigest(allocator *ma, BAT **bnp, char **shap, const char *digest,
 			gid = gids[p];
 		else if (g)
 			gid = p;
-		const char *s = BUNtvar(bi, p);
+		const char *s = BUNtvar(&bi, p);
 		if (strNil(s)) {
 			if (!skip_nils) {
 				EVP_MD_CTX_free(mdctx[gid]);

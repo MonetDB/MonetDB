@@ -69,7 +69,6 @@ OPTexpandMultiplex(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		TRC_WARNING_ENDIF(MAL_OPTIMIZER,
 						  "To speedup %s.%s a bulk operator implementation is needed%s%s\n",
 						  mod, fcn, ps ? " for " : "", ps ? ps : "");
-		//GDKfree(ps);
 	}
 #endif
 
@@ -310,7 +309,6 @@ OPTmultiplexImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 	for (; i < slimit; i++)
 		if (old[i])
 			pushInstruction(mb, old[i]);
-	//GDKfree(old);
 
 	/* Defense line against incorrect plans */
 	if (msg == MAL_SUCCEED && actions > 0) {
