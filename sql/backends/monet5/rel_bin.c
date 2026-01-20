@@ -1753,7 +1753,7 @@ vec_values(backend *be, sql_exp *exp, stmt *left, stmt *sel, vec_dim *acc, size_
 	sql_subtype *t = exp_subtype(exp);
 	assert(t->multiset == MS_VECTOR);
 	list *vals = exp_get_values(exp);
-	if (!vals)
+	if (!vals || t->multiset != MS_VECTOR)
 		return acc;
 	size_t i = 0;
 	for (node *n = vals->h; n; n = n->next, i++) {
