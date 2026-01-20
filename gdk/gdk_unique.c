@@ -13,7 +13,7 @@
 #include "gdk_private.h"
 #include "gdk_calc_private.h"
 
-#define VALUE(x)	(vars ? vars + VarHeapVal(vals, (x), width) : vals + (x) * width)
+#define VALUE(x)	(vars ? (off = VarHeapVal(vals, (x), width)) == 0 ? nil : vars + off : vals + (x) * width)
 /* BATunique returns a bat that indicates the unique tail values of
  * the input bat.  This is essentially the same output as the
  * "extents" output of BATgroup.  The difference is that BATunique
@@ -31,6 +31,8 @@ BATunique(BAT *b, BAT *s)
 	const void *v;
 	const char *vals;
 	const char *vars;
+	size_t off;
+	const void *nil = ATOMnilptr(b->ttype);
 	int width;
 	oid i, o, hseq;
 	const char *nme;

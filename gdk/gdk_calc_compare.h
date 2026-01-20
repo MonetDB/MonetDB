@@ -689,8 +689,9 @@ op_typeswitchloop(const void *lft, int tp1, bool incr1, const char *hp1, int wd1
 			if (incr2)
 				j = canditer_next(ci2) - candoff2;
 			const char *s1, *s2;
-			s1 = hp1 ? hp1 + VarHeapVal(lft, i, wd1) : (const char *) lft;
-			s2 = hp2 ? hp2 + VarHeapVal(rgt, j, wd2) : (const char *) rgt;
+			size_t off;
+			s1 = hp1 ? (off = VarHeapVal(lft, i, wd1)) == 0 ? str_nil : hp1 + off : (const char *) lft;
+			s2 = hp2 ? (off = VarHeapVal(rgt, j, wd2)) == 0 ? str_nil : hp2 + off : (const char *) rgt;
 			if (strNil(s1) || strNil(s2)) {
 #ifdef NIL_MATCHES_FLAG
 				if (nil_matches) {
@@ -742,11 +743,16 @@ op_typeswitchloop(const void *lft, int tp1, bool incr1, const char *hp1, int wd1
 			if (incr2)
 				j = canditer_next(ci2) - candoff2;
 			const void *p1, *p2;
+			size_t off;
 			p1 = hp1
-				? (const void *) (hp1 + VarHeapVal(lft, i, wd1))
+				? (off = VarHeapVal(lft, i, wd1)) == 0
+				? nil
+				: (const void *) (hp1 + off)
 				: (const void *) ((const char *) lft + i * wd1);
 			p2 = hp2
-				? (const void *) (hp2 + VarHeapVal(rgt, j, wd2))
+				? (off = VarHeapVal(rgt, j, wd2)) == 0
+				? nil
+				: (const void *) (hp2 + off)
 				: (const void *) ((const char *) rgt + j * wd2);
 			if (p1 == NULL || p2 == NULL ||
 			    (*atomeq)(p1, nil) ||

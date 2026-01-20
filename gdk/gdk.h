@@ -881,7 +881,10 @@ static inline const void *
 BUNtvar(const BATiter *bi, BUN p)
 {
 	assert(bi->type && bi->vh);
-	return bi->vh->base + VarHeapVal(bi->base, p, bi->width);
+	size_t off = VarHeapVal(bi->base, p, bi->width);
+	if (off == 0)
+		return ATOMnilptr(bi->type);
+	return bi->vh->base + off;
 }
 
 __attribute__((__pure__))
@@ -1092,23 +1095,27 @@ BATsettrivprop(BAT *b)
 					b->tmaxpos = 0;
 				}
 				b->tseqbase = sqbs;
-			} else if (b->tvheap
-				   ? ATOMeq(b->ttype,
-					    b->tvheap->base + VarHeapVal(Tloc(b, 0), 0, b->twidth),
-					    ATOMnilptr(b->ttype))
-				   : ATOMeq(b->ttype, Tloc(b, 0),
-					    ATOMnilptr(b->ttype))) {
-				/* the only value is NIL */
-				b->tminpos = BUN_NONE;
-				b->tmaxpos = BUN_NONE;
-				b->tnil = true;
-				b->tnonil = false;
 			} else {
-				/* the only value is both min and max */
-				b->tminpos = 0;
-				b->tmaxpos = 0;
-				b->tnonil = true;
-				b->tnil = false;
+				size_t off;
+				if (b->tvheap
+				    ? ((off = VarHeapVal(Tloc(b, 0), 0, b->twidth)) == 0 ||
+				       ATOMeq(b->ttype,
+					      b->tvheap->base + off,
+					      ATOMnilptr(b->ttype)))
+				    : ATOMeq(b->ttype, Tloc(b, 0),
+					     ATOMnilptr(b->ttype))) {
+					/* the only value is NIL */
+					b->tminpos = BUN_NONE;
+					b->tmaxpos = BUN_NONE;
+					b->tnil = true;
+					b->tnonil = false;
+				} else {
+					/* the only value is both min and max */
+					b->tminpos = 0;
+					b->tmaxpos = 0;
+					b->tnil = false;
+					b->tnonil = true;
+				}
 			}
 		} else {
 			b->tsorted = false;
@@ -1118,11 +1125,20 @@ BATsettrivprop(BAT *b)
 		}
 	} else if (b->batCount == 2 && ATOMlinear(b->ttype)) {
 		int c;
-		if (b->tvheap)
-			c = ATOMcmp(b->ttype,
-				    b->tvheap->base + VarHeapVal(Tloc(b, 0), 0, b->twidth),
-				    b->tvheap->base + VarHeapVal(Tloc(b, 0), 1, b->twidth));
-		else
+		if (b->tvheap) {
+			size_t off0 = VarHeapVal(Tloc(b, 0), 0, b->twidth);
+			size_t off1 = VarHeapVal(Tloc(b, 0), 1, b->twidth);
+			if (off0 == off1)
+				c = 0;
+			else if (off0 == 0)
+				c = -1;
+			else if (off1 == 0)
+				c = 1;
+			else
+				c = ATOMcmp(b->ttype,
+					    b->tvheap->base + off0,
+					    b->tvheap->base + off1);
+		} else
 			c = ATOMcmp(b->ttype, Tloc(b, 0), Tloc(b, 1));
 		b->tsorted = c <= 0;
 		b->tnosorted = !b->tsorted;
@@ -1208,7 +1224,7 @@ tfastins_nocheckVAR(BAT *b, BUN p, const void *v)
 	if (rc != GDK_SUCCEED)
 		return rc;
 	if (b->twidth < SIZEOF_VAR_T &&
-	    (b->twidth <= 2 ? d - GDK_VAROFFSET : d) >= ((size_t) 1 << (8 << b->tshift))) {
+	    (b->twidth <= 2 && d != 0 ? d - GDK_VAROFFSET : d) >= ((size_t) 1 << (8 << b->tshift))) {
 		/* doesn't fit in current heap, upgrade it */
 		rc = GDKupgradevarheap(b, d, 0, MAX(p, b->batCount));
 		if (rc != GDK_SUCCEED)
@@ -1216,10 +1232,14 @@ tfastins_nocheckVAR(BAT *b, BUN p, const void *v)
 	}
 	switch (b->twidth) {
 	case 1:
-		((uint8_t *) b->theap->base)[p] = (uint8_t) (d - GDK_VAROFFSET);
+		if (d != 0)
+			d -= GDK_VAROFFSET;
+		((uint8_t *) b->theap->base)[p] = (uint8_t) d;
 		break;
 	case 2:
-		((uint16_t *) b->theap->base)[p] = (uint16_t) (d - GDK_VAROFFSET);
+		if (d != 0)
+			d -= GDK_VAROFFSET;
+		((uint16_t *) b->theap->base)[p] = (uint16_t) d;
 		break;
 	case 4:
 		((uint32_t *) b->theap->base)[p] = (uint32_t) d;

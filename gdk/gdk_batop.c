@@ -55,25 +55,33 @@ unshare_varsized_heap(BAT *b)
 			switch (b->twidth) {
 			case 1:
 				for (BUN i = 0; i < b->batCount; i++) {
-					o = (var_t) ((uint8_t *) b->theap->base)[i] + GDK_VAROFFSET;
-					if (atomput(b, &o, oh->base + o) == (var_t) -1)
-						goto bailout;
-					((uint8_t *) b->theap->base)[i] = (uint8_t) (o - GDK_VAROFFSET);
+					o = (var_t) ((uint8_t *) b->theap->base)[i];
+					if (o != 0) {
+						o += GDK_VAROFFSET;
+						if (atomput(b, &o, oh->base + o) == (var_t) -1)
+							goto bailout;
+						o -= GDK_VAROFFSET;
+					}
+					((uint8_t *) b->theap->base)[i] = (uint8_t) o;
 				}
 				break;
 			case 2:
 				for (BUN i = 0; i < b->batCount; i++) {
-					o = (var_t) ((uint16_t *) b->theap->base)[i] + GDK_VAROFFSET;
-					if (atomput(b, &o, oh->base + o) == (var_t) -1)
-						goto bailout;
-					((uint16_t *) b->theap->base)[i] = (uint16_t) (o - GDK_VAROFFSET);
+					o = (var_t) ((uint16_t *) b->theap->base)[i];
+					if (o != 0) {
+						o += GDK_VAROFFSET;
+						if (atomput(b, &o, oh->base + o) == (var_t) -1)
+							goto bailout;
+						o -= GDK_VAROFFSET;
+					}
+					((uint16_t *) b->theap->base)[i] = (uint16_t) o;
 				}
 				break;
 #if SIZEOF_VAR_T == 8
 			case 4:
 				for (BUN i = 0; i < b->batCount; i++) {
 					o = (var_t) ((uint32_t *) b->theap->base)[i];
-					if (atomput(b, &o, oh->base + o) == (var_t) -1)
+					if (o != 0 && atomput(b, &o, oh->base + o) == (var_t) -1)
 						goto bailout;
 					((uint32_t *) b->theap->base)[i] = (uint32_t) o;
 				}
@@ -82,7 +90,7 @@ unshare_varsized_heap(BAT *b)
 			case SIZEOF_VAR_T:
 				for (BUN i = 0; i < b->batCount; i++) {
 					o = ((var_t *) b->theap->base)[i];
-					if (atomput(b, &o, oh->base + o) == (var_t) -1)
+					if (o != 0 && atomput(b, &o, oh->base + o) == (var_t) -1)
 						goto bailout;
 					((var_t *) b->theap->base)[i] = o;
 				}
@@ -265,10 +273,14 @@ insert_string_bat(BAT *b, BATiter *ni, struct canditer *ci, bool force, bool may
 			p = canditer_next(ci) - ni->b->hseqbase;
 			switch (ni->width) {
 			case 1:
-				v = (var_t) tbp[p] + GDK_VAROFFSET;
+				v = (var_t) tbp[p];
+				if (v != 0)
+					v += GDK_VAROFFSET;
 				break;
 			case 2:
-				v = (var_t) tsp[p] + GDK_VAROFFSET;
+				v = (var_t) tsp[p];
+				if (v != 0)
+					v += GDK_VAROFFSET;
 				break;
 			case 4:
 				v = (var_t) tip[p];
@@ -281,17 +293,23 @@ insert_string_bat(BAT *b, BATiter *ni, struct canditer *ci, bool force, bool may
 			default:
 				MT_UNREACHABLE();
 			}
-			v = (var_t) ((size_t) v + toff);
-			assert(v >= GDK_VAROFFSET);
-			assert((size_t) v < b->tvheap->free);
+			if (v != 0) {
+				v = (var_t) ((size_t) v + toff);
+				assert(v > GDK_VAROFFSET);
+				assert((size_t) v < b->tvheap->free);
+			}
 			switch (b->twidth) {
 			case 1:
-				assert(v - GDK_VAROFFSET < ((var_t) 1 << 8));
-				((uint8_t *) b->theap->base)[r++] = (uint8_t) (v - GDK_VAROFFSET);
+				assert(v == 0 || v - GDK_VAROFFSET < ((var_t) 1 << 8));
+				if (v != 0)
+					v -= GDK_VAROFFSET;
+				((uint8_t *) b->theap->base)[r++] = (uint8_t) v;
 				break;
 			case 2:
-				assert(v - GDK_VAROFFSET < ((var_t) 1 << 16));
-				((uint16_t *) b->theap->base)[r++] = (uint16_t) (v - GDK_VAROFFSET);
+				assert(v == 0 || v - GDK_VAROFFSET < ((var_t) 1 << 16));
+				if (v != 0)
+					v -= GDK_VAROFFSET;
+				((uint16_t *) b->theap->base)[r++] = (uint16_t) v;
 				break;
 			case 4:
 #if SIZEOF_VAR_T == 8
@@ -339,8 +357,9 @@ insert_string_bat(BAT *b, BATiter *ni, struct canditer *ci, bool force, bool may
 			p = canditer_next(ci) - ni->b->hseqbase;
 			off = VarHeapVal(ni->base, p, ni->width); /* the offset */
 			tp = ni->vh->base + off; /* the string */
-			if (off < b->tvheap->free &&
-			    strcmp(b->tvheap->base + off, tp) == 0) {
+			if (off == 0 ||
+			    (off < b->tvheap->free &&
+			     strcmp(b->tvheap->base + off, tp) == 0)) {
 				/* we found the string at the same
 				 * offset in b's string heap as it was
 				 * in n's string heap, so we don't
@@ -349,12 +368,16 @@ insert_string_bat(BAT *b, BATiter *ni, struct canditer *ci, bool force, bool may
 				v = (var_t) off;
 				switch (b->twidth) {
 				case 1:
-					assert(v - GDK_VAROFFSET < ((var_t) 1 << 8));
-					((uint8_t *) b->theap->base)[r] = (uint8_t) (v - GDK_VAROFFSET);
+					if (v > 0)
+						v -= GDK_VAROFFSET;
+					assert(v < ((var_t) 1 << 8));
+					((uint8_t *) b->theap->base)[r] = (uint8_t) v;
 					break;
 				case 2:
-					assert(v - GDK_VAROFFSET < ((var_t) 1 << 16));
-					((uint16_t *) b->theap->base)[r] = (uint16_t) (v - GDK_VAROFFSET);
+					if (v > 0)
+						v -= GDK_VAROFFSET;
+					assert(v < ((var_t) 1 << 16));
+					((uint16_t *) b->theap->base)[r] = (uint16_t) v;
 					break;
 				case 4:
 #if SIZEOF_VAR_T == 8
@@ -386,7 +409,8 @@ insert_string_bat(BAT *b, BATiter *ni, struct canditer *ci, bool force, bool may
 	MT_lock_unset(&b->theaplock);
 	/* maintain hash */
 	for (r = oldcnt, cnt = BATcount(b); b->thash && r < cnt; r++) {
-		HASHappend_locked(b, r, b->tvheap->base + VarHeapVal(Tloc(b, 0), r, b->twidth));
+		size_t off = VarHeapVal(Tloc(b, 0), r, b->twidth);
+		HASHappend_locked(b, r, off ? b->tvheap->base + off : str_nil);
 	}
 	BUN nunique = b->thash ? b->thash->nunique : 0;
 	MT_rwlock_wrunlock(&b->thashlock);
@@ -1400,7 +1424,8 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 			 * after an update (with a mmapped tail file)
 			 * but before that was committed, then the
 			 * offset may point outside of the vheap */
-			const void *old = VarHeapVal(bi.base, updid, bi.width) < bi.vhfree ? BUNtvar(&bi, updid) : NULL;
+			size_t off = VarHeapVal(bi.base, updid, bi.width);
+			const void *old = off == 0 ? ATOMnilptr(bi.type) : off < bi.vhfree ? bi.vh->base + off : NULL;
 
 			if (old && atomeq(old, new)) {
 				/* replacing with the same value:
@@ -1484,10 +1509,14 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 			var_t d;
 			switch (b->twidth) {
 			case 1:
-				d = (var_t) ((uint8_t *) b->theap->base)[updid] + GDK_VAROFFSET;
+				d = (var_t) ((uint8_t *) b->theap->base)[updid];
+				if (d != 0)
+					d += GDK_VAROFFSET;
 				break;
 			case 2:
-				d = (var_t) ((uint16_t *) b->theap->base)[updid] + GDK_VAROFFSET;
+				d = (var_t) ((uint16_t *) b->theap->base)[updid];
+				if (d != 0)
+					d += GDK_VAROFFSET;
 				break;
 			case 4:
 				d = (var_t) ((uint32_t *) b->theap->base)[updid];
@@ -1516,7 +1545,7 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 				goto bailout;
 			}
 			if (b->twidth < SIZEOF_VAR_T &&
-			    (b->twidth <= 2 ? d - GDK_VAROFFSET : d) >= ((size_t) 1 << (8 << b->tshift))) {
+			    (b->twidth <= 2 && d != 0 ? d - GDK_VAROFFSET : d) >= ((size_t) 1 << (8 << b->tshift))) {
 				/* doesn't fit in current heap, upgrade it */
 				if (GDKupgradevarheap(b, d, 0, MAX(updid, b->batCount)) != GDK_SUCCEED) {
 					goto bailout;
@@ -1535,10 +1564,14 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 			}
 			switch (b->twidth) {
 			case 1:
-				((uint8_t *) b->theap->base)[updid] = (uint8_t) (d - GDK_VAROFFSET);
+				if (d != 0)
+					d -= GDK_VAROFFSET;
+				((uint8_t *) b->theap->base)[updid] = (uint8_t) d;
 				break;
 			case 2:
-				((uint16_t *) b->theap->base)[updid] = (uint16_t) (d - GDK_VAROFFSET);
+				if (d != 0)
+					d -= GDK_VAROFFSET;
+				((uint16_t *) b->theap->base)[updid] = (uint16_t) d;
 				break;
 			case 4:
 				((uint32_t *) b->theap->base)[updid] = (uint32_t) d;
@@ -3284,21 +3317,29 @@ BATcount_no_nil(BAT *b, BAT *s)
 		base = bi.vh->base;
 		switch (bi.width) {
 		case 1:
-			CAND_LOOP(&ci)
-				cnt += base[(var_t) ((const uint8_t *) p)[canditer_next(&ci) - hseq] + GDK_VAROFFSET] != '\200';
+			CAND_LOOP(&ci) {
+				var_t v = (var_t) ((const uint8_t *) p)[canditer_next(&ci) - hseq];
+				cnt += v != 0 && base[v + GDK_VAROFFSET] != '\200';
+			}
 			break;
 		case 2:
-			CAND_LOOP(&ci)
-				cnt += base[(var_t) ((const uint16_t *) p)[canditer_next(&ci) - hseq] + GDK_VAROFFSET] != '\200';
+			CAND_LOOP(&ci) {
+				var_t v = (var_t) ((const uint16_t *) p)[canditer_next(&ci) - hseq];
+				cnt += v != 0 && base[v + GDK_VAROFFSET] != '\200';
+			}
 			break;
 		case 4:
-			CAND_LOOP(&ci)
-				cnt += base[(var_t) ((const uint32_t *) p)[canditer_next(&ci) - hseq]] != '\200';
+			CAND_LOOP(&ci) {
+				var_t v = (var_t) ((const uint32_t *) p)[canditer_next(&ci) - hseq];
+				cnt += v != 0 && base[v] != '\200';
+			}
 			break;
 #if SIZEOF_VAR_T == 8
 		case 8:
-			CAND_LOOP(&ci)
-				cnt += base[(var_t) ((const uint64_t *) p)[canditer_next(&ci) - hseq]] != '\200';
+			CAND_LOOP(&ci) {
+				var_t v = (var_t) ((const uint64_t *) p)[canditer_next(&ci) - hseq];
+				cnt += v != 0 && base[v] != '\200';
+			}
 			break;
 #endif
 		default:

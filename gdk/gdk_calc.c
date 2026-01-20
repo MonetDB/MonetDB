@@ -4006,14 +4006,21 @@ BATcalcbetween_intern(const void *src, bool incr1, const char *hp1, int wd1,
 			if (incr3)
 				k = canditer_next(cihi) - seqbase3;
 			const void *p1, *p2, *p3;
+			size_t off;
 			p1 = hp1
-				? (const void *) (hp1 + VarHeapVal(src, i, wd1))
+				? (off = VarHeapVal(src, i, wd1)) == 0
+				? nil
+				: (const void *) (hp1 + off)
 				: (const void *) ((const char *) src + i * wd1);
 			p2 = hp2
-				? (const void *) (hp2 + VarHeapVal(lo, j, wd2))
+				? (off = VarHeapVal(lo, j, wd2)) == 0
+				? nil
+				: (const void *) (hp2 + off)
 				: (const void *) ((const char *) lo + j * wd2);
 			p3 = hp3
-				? (const void *) (hp3 + VarHeapVal(hi, k, wd3))
+				? (off = VarHeapVal(hi, k, wd3)) == 0
+				? nil
+				: (const void *) (hp3 + off)
 				: (const void *) ((const char *) hi + k * wd3);
 			dst[l] = BETWEEN(p1, p2, p3, any);
 			nils += is_bit_nil(dst[l]);
@@ -4492,20 +4499,26 @@ BATcalcifthenelse_intern(BATiter *bi,
 		if (ATOMstorage(bi->type) == TYPE_msk) {
 			const uint32_t *src = bi->base;
 			BUN n = cnt / 32;
+			const void *nil = ATOMnilptr(bi->type);
 			TIMEOUT_LOOP_IDX(i, n + 1, qry_ctx) {
 				BUN rem = i == n ? cnt % 32 : 32;
 				uint32_t mask = rem != 0 ? src[i] : 0;
 				for (BUN j = 0; j < rem; j++) {
+					size_t off;
 					if (mask & (1U << j)) {
-						if (heap1)
-							p = heap1 + VarHeapVal(col1, k, width1);
-						else
+						if (heap1) {
+							off = VarHeapVal(col1, k, width1);
+							p = off == 0 ? nil : heap1 + off;
+						} else {
 							p = col1;
+						}
 					} else {
-						if (heap2)
-							p = heap2 + VarHeapVal(col2, l, width2);
-						else
+						if (heap2) {
+							off = VarHeapVal(col2, l, width2);
+							p = off == 0 ? nil : heap2 + off;
+						} else {
 							p = col2;
+						}
 					}
 					if (tfastins_nocheckVAR(bn, i, p) != GDK_SUCCEED) {
 						goto bailout;
@@ -4518,17 +4531,23 @@ BATcalcifthenelse_intern(BATiter *bi,
 				      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
 		} else {
 			const bit *src = bi->base;
+			const void *nil = ATOMnilptr(tpe);
 			TIMEOUT_LOOP_IDX(i, cnt, qry_ctx) {
+				size_t off;
 				if (src[i] && !is_bit_nil(src[i])) {
-					if (heap1)
-						p = heap1 + VarHeapVal(col1, k, width1);
-					else
+					if (heap1) {
+						off = VarHeapVal(col1, k, width1);
+						p = off == 0 ? nil : heap1 + off;
+					} else {
 						p = col1;
+					}
 				} else {
-					if (heap2)
-						p = heap2 + VarHeapVal(col2, l, width2);
-					else
+					if (heap2) {
+						off = VarHeapVal(col2, l, width2);
+						p = off == 0 ? nil : heap2 + off;
+					} else {
 						p = col2;
+					}
 				}
 				if (tfastins_nocheckVAR(bn, i, p) != GDK_SUCCEED) {
 					goto bailout;

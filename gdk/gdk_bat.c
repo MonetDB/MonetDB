@@ -1516,7 +1516,9 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 			val = BUNtmsk(&bi, p);
 		} else if (b->tvheap) {
 			size_t off = VarHeapVal(bi.base, p, bi.width);
-			if (off < bi.vhfree)
+			if (off == 0)
+				val = ATOMnilptr(bi.type);
+			else if (off < bi.vhfree)
 				val = bi.vh->base + off;
 			else
 				val = NULL; /* bad offset */
@@ -1598,10 +1600,14 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 			_ptr = b->theap->base + p * b->twidth;
 			switch (b->twidth) {
 			case 1:
-				_d = (var_t) * (uint8_t *) _ptr + GDK_VAROFFSET;
+				_d = (var_t) * (uint8_t *) _ptr;
+				if (_d != 0)
+					_d += GDK_VAROFFSET;
 				break;
 			case 2:
-				_d = (var_t) * (uint16_t *) _ptr + GDK_VAROFFSET;
+				_d = (var_t) * (uint16_t *) _ptr;
+				if (_d != 0)
+					_d += GDK_VAROFFSET;
 				break;
 			case 4:
 				_d = (var_t) * (uint32_t *) _ptr;
@@ -1622,7 +1628,7 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 			}
 			MT_lock_unset(&b->theaplock);
 			if (b->twidth < SIZEOF_VAR_T &&
-			    (b->twidth <= 2 ? _d - GDK_VAROFFSET : _d) >= ((size_t) 1 << (8 << b->tshift))) {
+			    (b->twidth <= 2 && _d != 0 ? _d - GDK_VAROFFSET : _d) >= ((size_t) 1 << (8 << b->tshift))) {
 				/* doesn't fit in current heap, upgrade it */
 				if (GDKupgradevarheap(b, _d, 0, bi.count) != GDK_SUCCEED) {
 					MT_rwlock_wrunlock(&b->thashlock);
@@ -1641,10 +1647,14 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 			_ptr = b->theap->base + p * b->twidth;
 			switch (b->twidth) {
 			case 1:
-				* (uint8_t *) _ptr = (uint8_t) (_d - GDK_VAROFFSET);
+				if (_d != 0)
+					_d -= GDK_VAROFFSET;
+				* (uint8_t *) _ptr = (uint8_t) _d;
 				break;
 			case 2:
-				* (uint16_t *) _ptr = (uint16_t) (_d - GDK_VAROFFSET);
+				if (_d != 0)
+					_d -= GDK_VAROFFSET;
+				* (uint16_t *) _ptr = (uint16_t) _d;
 				break;
 			case 4:
 				* (uint32_t *) _ptr = (uint32_t) _d;

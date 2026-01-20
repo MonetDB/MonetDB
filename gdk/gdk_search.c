@@ -51,8 +51,10 @@
 #include "gdk.h"
 #include "gdk_private.h"
 
-#define VALUE(x)	(vars ?					\
-			 vars + VarHeapVal(vals, (x), width) :	\
+#define VALUE(x)	(vars ?						\
+			 (off = VarHeapVal(vals, (x), width)) == 0 ?	\
+			 nil :						\
+			 vars + off :					\
 			 (const char *) vals + ((x) * width))
 
 #define bte_LT(a, b)	((a) < (b))
@@ -303,7 +305,6 @@ binsearch(const oid *restrict indir,
 {
 	BUN mid;
 	int c;
-	int (*cmp)(const void *, const void *);
 
 	assert(ordering == 1 || ordering == -1);
 	assert(lo < hi);
@@ -337,7 +338,9 @@ binsearch(const oid *restrict indir,
 				     lo, hi, *(const dbl *) v, ordering, last);
 	}
 
-	cmp = ATOMcompare(type);
+	int (*cmp)(const void *, const void *) = ATOMcompare(type);
+	size_t off;
+	const void *nil = ATOMnilptr(type);
 
 	if (last > 0) {
 		if ((c = ordering * cmp(VALUE(indir ? indir[lo] : lo), v)) > 0)

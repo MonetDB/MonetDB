@@ -653,11 +653,12 @@ fullscan_str(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 		return BUN_NONE;
 	}
 	*algo = anti ? "select: fullscan anti-equi strelim" : "select: fullscan equi strelim";
-	assert(pos >= GDK_VAROFFSET);
+	assert(pos == 0 || pos > GDK_VAROFFSET);
 	switch (bi->width) {
 	case 1: {
 		const unsigned char *ptr = (const unsigned char *) bi->base;
-		pos -= GDK_VAROFFSET;
+		if (pos != 0)
+			pos -= GDK_VAROFFSET;
 		if (ci->tpe == cand_dense) {
 			if (anti) {
 				TIMEOUT_LOOP_IDX(p, ncand, qry_ctx) {
@@ -727,7 +728,8 @@ fullscan_str(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 	}
 	case 2: {
 		const unsigned short *ptr = (const unsigned short *) bi->base;
-		pos -= GDK_VAROFFSET;
+		if (pos != 0)
+			pos -= GDK_VAROFFSET;
 		if (ci->tpe == cand_dense) {
 			if (anti) {
 				TIMEOUT_LOOP_IDX(p, ncand, qry_ctx) {

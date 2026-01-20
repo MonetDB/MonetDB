@@ -443,11 +443,14 @@ __attribute__((__pure__))
 static inline size_t
 VarHeapVal(const void *b, BUN p, int w)
 {
+	size_t off;
 	switch (w) {
 	case 1:
-		return (size_t) ((const uint8_t *) b)[p] + GDK_VAROFFSET;
+		off = (size_t) ((const uint8_t *) b)[p];
+		return off == 0 ? 0 : off + GDK_VAROFFSET;
 	case 2:
-		return (size_t) ((const uint16_t *) b)[p] + GDK_VAROFFSET;
+		off = (size_t) ((const uint16_t *) b)[p];
+		return off == 0 ? 0 : off + GDK_VAROFFSET;
 	case 4:
 		return (size_t) ((const uint32_t *) b)[p];
 #if SIZEOF_VAR_T == 8
