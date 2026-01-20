@@ -252,11 +252,9 @@ output_line(allocator *ma, char **buf, size_t *len, char **localbuf, size_t *loc
 				}
 				if (fill + l + f->seplen >= (ssize_t) *len) {
 					/* extend the buffer */
-					char *nbuf;
-					nbuf = ma_realloc(ma, *buf, fill + l + f->seplen + BUFSIZ, *len);
-					if (nbuf == NULL)
+					*buf = ma_realloc(ma, *buf, fill + l + f->seplen + BUFSIZ, *len);
+					if (*buf == NULL)
 						return -1;	/* *buf freed by caller */
-					*buf = nbuf;
 					*len = fill + l + f->seplen + BUFSIZ;
 				}
 				strncpy(*buf + fill, p, l);
@@ -297,11 +295,9 @@ output_line_dense(allocator *ma, char **buf, size_t *len, char **localbuf, size_
 			}
 			if (fill + l + f->seplen >= (ssize_t) * len) {
 				/* extend the buffer */
-				char *nbuf;
-				nbuf = ma_realloc(ma, *buf, fill + l + f->seplen + BUFSIZ, *len);
-				if (nbuf == NULL)
+				*buf = ma_realloc(ma, *buf, fill + l + f->seplen + BUFSIZ, *len);
+				if (*buf == NULL)
 					return -1;	/* *buf freed by caller */
-				*buf = nbuf;
 				*len = fill + l + f->seplen + BUFSIZ;
 			}
 			strncpy(*buf + fill, p, l);

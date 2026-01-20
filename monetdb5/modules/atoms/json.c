@@ -102,19 +102,16 @@ JSONnewtree(allocator *ma, int initsize)
 static int
 JSONnew(JSON *js)
 {
-	JSONterm *term;
-
 	size_t osz = sizeof(JSONterm) * js->size;
 	if (js->free == js->size) {
 		size_t nsz = sizeof(JSONterm) * (js->size + 8);
-		term = ma_realloc(js->ma, js->elm, nsz, osz);
-		if (term == NULL) {
+		js->elm = ma_realloc(js->ma, js->elm, nsz, osz);
+		if (js->elm == NULL) {
 			js->error = createException(MAL, "json.new",
 										SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			return js->free - 1;
 		}
-		js->elm = term;
-		memset(term + js->size, 0, 8 * sizeof(JSONterm));
+		memset(js->elm + js->size, 0, 8 * sizeof(JSONterm));
 		js->size += 8;
 	}
 	return js->free++;
@@ -343,13 +340,12 @@ JSONdumpInternal(Client ctx, const JSON *jt, int depth)
 			do {
 				buflen += 1024;
 			} while (datlen + depth * 4 + 512 > buflen);
-			char *newbuf = ma_realloc(ta, buffer, buflen, osz);
-			if (newbuf == NULL) {
+			buffer = ma_realloc(ta, buffer, buflen, osz);
+			if (buffer == NULL) {
 				BBPreclaim(bn);
 				ma_close(&ta_state);
 				return NULL;
 			}
-			buffer = newbuf;
 		}
 		datlen += snprintf(buffer + datlen, buflen - datlen, "%*s", depth * 4,
 						   "");
@@ -389,13 +385,12 @@ JSONdumpInternal(Client ctx, const JSON *jt, int depth)
 			size_t osz = buflen;
 			if (datlen + 10 > buflen) {
 				buflen += 1024;
-				char *newbuf = ma_realloc(ta, buffer, buflen, osz);
-				if (newbuf == NULL) {
+				buffer = ma_realloc(ta, buffer, buflen, osz);
+				if (buffer == NULL) {
 					BBPreclaim(bn);
 					ma_close(&ta_state);
 					return NULL;
 				}
-				buffer = newbuf;
 			}
 			datlen += snprintf(buffer + datlen, buflen - datlen, "%d ", i);
 		}
@@ -405,13 +400,12 @@ JSONdumpInternal(Client ctx, const JSON *jt, int depth)
 				do {
 					buflen += 1024;
 				} while (datlen + 10 + je->namelen > buflen);
-				char *newbuf = ma_realloc(ta, buffer, buflen, osz);
-				if (newbuf == NULL) {
+				buffer = ma_realloc(ta, buffer, buflen, osz);
+				if (buffer == NULL) {
 					BBPreclaim(bn);
 					ma_close(&ta_state);
 					return NULL;
 				}
-				buffer = newbuf;
 			}
 			datlen += snprintf(buffer + datlen, buflen - datlen, "%.*s : ",
 							   (int) je->namelen, je->name);
@@ -422,13 +416,12 @@ JSONdumpInternal(Client ctx, const JSON *jt, int depth)
 				do {
 					buflen += 1024;
 				} while (datlen + 10 + je->valuelen > buflen);
-				char *newbuf = ma_realloc(ta, buffer, buflen, osz);
-				if (newbuf == NULL) {
+				buffer = ma_realloc(ta, buffer, buflen, osz);
+				if (buffer == NULL) {
 					BBPreclaim(bn);
 					ma_close(&ta_state);
 					return NULL;
 				}
-				buffer = newbuf;
 			}
 			datlen += snprintf(buffer + datlen, buflen - datlen, "%.*s",
 							   (int) je->valuelen, je->value);
@@ -1651,6 +1644,12 @@ static str
 JSONplaintext(allocator *ma, char **r, size_t *l, size_t *ilen, const JSON *jt, int idx, const char *sep,
 			  size_t sep_len)
 {
+	/* *r point to next available position to write to;
+	 * *l is how much space is left in the buffer;
+	 * *ilen is the total size of the buffer;
+	 * hence *r + *l is the end of the buffer
+	 * and *r + *l - *ilen (or *r - (*ilen - *l)) is the start
+	 */
 	int i;
 	size_t j, next_len, next_concat_len;
 	unsigned int u;
@@ -1687,16 +1686,16 @@ JSONplaintext(allocator *ma, char **r, size_t *l, size_t *ilen, const JSON *jt, 
 		next_len = jt->elm[idx].valuelen;
 		next_concat_len = next_len - 2 + sep_len + 1;
 		if (*l < next_concat_len) {
-			size_t prev_ilen = *ilen, prev_l = *l;
-			char *p = *r - (prev_ilen - prev_l), *nr;
+			size_t prev_ilen = *ilen;
+			char *p = *r + *l - prev_ilen; /* start of buffer */
 
-			*ilen = (prev_ilen * 2) + next_concat_len;	/* make sure sep_len + 1 is always included */
-			if (!(nr = ma_realloc(ma, p, *ilen, prev_ilen))) {
-				*r = p;
+			*ilen = prev_ilen * 2 + next_concat_len;	/* make sure sep_len + 1 is always included */
+			if (!(p = ma_realloc(ma, p, *ilen, prev_ilen))) {
+				*r = NULL;
 				throw(MAL, "JSONplaintext", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
-			*r = nr + (prev_ilen - prev_l);
-			*l = *ilen - prev_ilen + prev_l;
+			*r = p + prev_ilen - *l;
+			*l += *ilen - prev_ilen;
 		}
 		assert(next_len >= 2);
 		next_len--;
@@ -1779,16 +1778,16 @@ JSONplaintext(allocator *ma, char **r, size_t *l, size_t *ilen, const JSON *jt, 
 		next_len = jt->elm[idx].valuelen;
 		next_concat_len = next_len + sep_len + 1;
 		if (*l < next_concat_len) {
-			size_t prev_ilen = *ilen, prev_l = *l;
-			char *p = *r - (prev_ilen - prev_l), *nr;
+			size_t prev_ilen = *ilen;
+			char *p = *r + *l - prev_ilen;
 
-			*ilen = (prev_ilen * 2) + next_concat_len;	/* make sure sep_len + 1 is always included */
-			if (!(nr = ma_realloc(ma, p, *ilen, prev_ilen))) {
-				*r = p;
+			*ilen = prev_ilen * 2 + next_concat_len;	/* make sure sep_len + 1 is always included */
+			if (!(p = ma_realloc(ma, p, *ilen, prev_ilen))) {
+				*r = NULL;
 				throw(MAL, "JSONplaintext", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
-			*r = nr + (prev_ilen - prev_l);
-			*l = *ilen - prev_ilen + prev_l;
+			*r = p + prev_ilen - *l;
+			*l += *ilen - prev_ilen;
 		}
 		memcpy(*r, jt->elm[idx].value, next_len);
 		*l -= next_len;
@@ -2294,7 +2293,7 @@ JSONrenderRowObject(allocator *ma, BAT **bl, MalBlkPtr mb, MalStkPtr stk, InstrP
 					BUN idx)
 {
 	int i, tpe;
-	char *row, *row2, *name = 0, *val = 0;
+	char *row, *name = 0, *val = 0;
 	size_t len, lim, l;
 	const void *p;
 	BATiter bi;
@@ -2325,11 +2324,10 @@ JSONrenderRowObject(allocator *ma, BAT **bl, MalBlkPtr mb, MalStkPtr stk, InstrP
 		size_t osz = lim;
 		while (l > lim - len)
 			lim += BUFSIZ;
-		row2 = ma_realloc(ma, row, lim, osz);
-		if (row2 == NULL) {
+		row = ma_realloc(ma, row, lim, osz);
+		if (row == NULL) {
 			return NULL;
 		}
-		row = row2;
 		snprintf(row + len, lim - len, "\"%s\":%s,", name, val ? val : "null");
 		len += l;
 	}
@@ -2376,7 +2374,6 @@ JSONrenderobject(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	allocator *ta = MT_thread_getallocator();
 	allocator_state ta_state = ma_open(ta);
 	for (j = 0; j < cnt; j++) {
-		char *result2;
 		row = JSONrenderRowObject(ta, bl, mb, stk, pci, j);
 		if (row == NULL)
 			goto memfail;
@@ -2384,10 +2381,9 @@ JSONrenderobject(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		size_t osz = lim;
 		while (l + 2 > lim - len)
 			lim = cnt * l <= lim ? cnt * l : lim + BUFSIZ;
-		result2 = ma_realloc(ma, result, lim, osz);
-		if (result2 == NULL)
+		result = ma_realloc(ma, result, lim, osz);
+		if (result == NULL)
 			goto memfail;
-		result = result2;
 		strcpy(result + len, row);
 		len += l;
 		result[len++] = ',';
@@ -2410,7 +2406,7 @@ JSONrenderRowArray(Client ctx, BAT **bl, MalBlkPtr mb, InstrPtr pci, BUN idx)
 {
 	(void) ctx;
 	int i, tpe;
-	char *row, *row2, *val = 0;
+	char *row, *val = 0;
 	size_t len, lim, l;
 	const void *p;
 	BATiter bi;
@@ -2439,10 +2435,9 @@ JSONrenderRowArray(Client ctx, BAT **bl, MalBlkPtr mb, InstrPtr pci, BUN idx)
 		size_t osz = lim;
 		while (len + l > lim)
 			lim += BUFSIZ;
-		row2 = ma_realloc(ma, row, lim, osz);
-		if (row2 == NULL)
+		row = ma_realloc(ma, row, lim, osz);
+		if (row == NULL)
 			goto memfail;
-		row = row2;
 		snprintf(row + len, lim - len, "%s,", val ? val : "null");
 		len += l + 1;
 		val = NULL;
@@ -2483,7 +2478,6 @@ JSONrenderarray(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	len = 1;
 
 	for (j = 0; j < cnt; j++) {
-		char *result2;
 		row = JSONrenderRowArray(ctx, bl, mb, pci, j);
 		if (row == NULL) {
 			goto memfail;
@@ -2492,11 +2486,10 @@ JSONrenderarray(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		size_t osz = lim;
 		while (l + 2 > lim - len)
 			lim = cnt * l <= lim ? cnt * l : lim + BUFSIZ;
-		result2 = ma_realloc(mb->ma, result, lim, osz);
-		if (result2 == NULL) {
+		result = ma_realloc(mb->ma, result, lim, osz);
+		if (result == NULL) {
 			goto memfail;
 		}
-		result = result2;
 		strcpy(result + len, row);
 		len += l;
 		result[len++] = ',';
@@ -2723,12 +2716,11 @@ JSONfold(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		size_t osz = maxlen;							\
 		if (len >= maxlen - buflen) {					\
 			maxlen = maxlen + len + BUFSIZ;				\
-			buf2 = ma_realloc(ta, buf, maxlen, osz);	\
-			if (buf2 == NULL) {							\
+			buf = ma_realloc(ta, buf, maxlen, osz);	\
+			if (buf == NULL) {							\
 				err = SQLSTATE(HY013) MAL_MALLOC_FAIL;	\
 				goto bunins_failed;						\
 			}											\
-			buf = buf2;									\
 		}												\
 	} while (0)
 
@@ -2741,7 +2733,7 @@ JSONgroupStr(Client ctx, str *ret, const bat *bid)
 	BUN p, q;
 	size_t len, maxlen = BUFSIZ, buflen = 0;
 	allocator_state ta_state = ma_open(ta);
-	char *buf = ma_alloc(ta, maxlen), *buf2;
+	char *buf = ma_alloc(ta, maxlen);
 	BATiter bi;
 	const char *err = NULL;
 	dbl *restrict vals;
@@ -2829,7 +2821,7 @@ JSONjsonaggr(Client ctx, BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nil
 	const char *err = NULL;
 	const oid *grps, *map;
 	int freeb = 0, freeg = 0, isnil = 0;
-	char *buf = NULL, *buf2;
+	char *buf = NULL;
 	size_t buflen, maxlen = BUFSIZ, len;
 	dbl *restrict vals;
 	allocator *ta = MT_thread_getallocator();
