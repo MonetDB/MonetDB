@@ -2125,17 +2125,15 @@ strbat_reverse(BAT *b)
 		src = (const char *) BUNtail(bi, p);
 		len = strlen(src);
 		if (len >= dstlen) {
-			char *ndst;
 			size_t osz = dstlen;
 			dstlen = len + 1024;
-			ndst = ma_realloc(ta, dst, dstlen, osz);
-			if (ndst == NULL) {
+			dst = ma_realloc(ta, dst, dstlen, osz);
+			if (dst == NULL) {
 				bat_iterator_end(&bi);
 				BBPreclaim(bn);
 				ma_close(&ta_state);
 				return NULL;
 			}
-			dst = ndst;
 		}
 		do_strrev(dst, src, len);
 		if (BUNappend(bn, dst, false) != GDK_SUCCEED) {

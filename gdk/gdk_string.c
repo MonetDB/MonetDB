@@ -6887,11 +6887,11 @@ convertcase(allocator *ma, char **restrict buf, size_t *restrict buflen,
 				 * terminating NUL */
 				size_t newlen = bl + 1024;
 				dst = ma_realloc(ma, *buf, newlen, bl);
+				*buf = (char *) dst;
 				if (dst == NULL) {
-					*buflen = bl;
+					*buflen = 0;
 					return GDK_FAIL;
 				}
-				*buf = (char *) dst;
 				bl = newlen;
 				bl5 = bl - 5;
 			}
@@ -6935,11 +6935,11 @@ convertcase(allocator *ma, char **restrict buf, size_t *restrict buflen,
 	if (dstoff + 1 > bl) {
 		size_t newlen = dstoff + 1;
 		dst = ma_realloc(ma, *buf, newlen, bl);
+		*buf = (char *) dst;
 		if (dst == NULL) {
-			*buflen = bl;
+			*buflen = 0;
 			return GDK_FAIL;
 		}
-		*buf = (char *) dst;
 		bl = newlen;
 	}
 	dst[dstoff] = '\0';
@@ -9726,11 +9726,11 @@ GDKasciify(allocator *ma, char **restrict buf, size_t *restrict buflen,
 				 * bytes plus terminating NUL */
 				size_t newlen = bl + 1024;
 				dst = ma_realloc(ma, *buf, newlen, bl);
+				*buf = (char *) dst;
 				if (dst == NULL) {
-					*buflen = bl;
+					*buflen = 0;
 					return GDK_FAIL;
 				}
-				*buf = (char *) dst;
 				bl = newlen;
 				bl8 = bl - 8;
 			}
@@ -9756,11 +9756,11 @@ GDKasciify(allocator *ma, char **restrict buf, size_t *restrict buflen,
 	if (dstoff + 1 > bl) {
 		size_t newlen = dstoff + 1;
 		dst = ma_realloc(ma, *buf, newlen, bl);
+		*buf = (char *) dst;
 		if (dst == NULL) {
-			*buflen = bl;
+			*buflen = 0;
 			return GDK_FAIL;
 		}
-		*buf = (char *) dst;
 		bl = newlen;
 	}
 	dst[dstoff] = '\0';

@@ -5085,17 +5085,14 @@ wkbContains_point_bat(Client ctx, bat *out, wkb **a, bat *point_x, bat *point_y)
 		sscanf(subtoken, "%lf %lf", &vert_x[nvert], &vert_y[nvert]);
 		nvert++;
 		if ((nvert % POLY_NUM_VERT) == 0) {
-			double *tmp;
-			tmp = ma_realloc(ma, vert_x, nvert * 2 * sizeof(double), nvert);
-			if (tmp == NULL) {
+			vert_x = ma_realloc(ma, vert_x, nvert * 2 * sizeof(double), nvert);
+			if (vert_x == NULL) {
 				throw(MAL, "geom.Contains", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
-			vert_x = tmp;
-			tmp = ma_realloc(ma, vert_y, nvert * 2 * sizeof(double), nvert);
-			if (tmp == NULL) {
+			vert_y = ma_realloc(ma, vert_y, nvert * 2 * sizeof(double), nvert);
+			if (vert_y == NULL) {
 				throw(MAL, "geom.Contains", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
-			vert_y = tmp;
 		}
 	}
 
@@ -5132,40 +5129,32 @@ wkbContains_point_bat(Client ctx, bat *out, wkb **a, bat *point_x, bat *point_y)
 			sscanf(subtoken, "%lf %lf", &holes_x[nholes][nhole], &holes_y[nholes][nhole]);
 			nhole++;
 			if ((nhole % POLY_NUM_VERT) == 0) {
-				double *tmp;
-				tmp = ma_realloc(ma, holes_x[nholes], nhole * 2 * sizeof(double), nhole);
-				if (tmp == NULL) {
+				holes_x[nholes] = ma_realloc(ma, holes_x[nholes], nhole * 2 * sizeof(double), nhole);
+				if (holes_x[nholes] == NULL) {
 					throw(MAL, "geom.Contains", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				}
-				holes_x[nholes] = tmp;
-				tmp = ma_realloc(ma, holes_y[nholes], nhole * 2 * sizeof(double), nhole);
-				if (tmp == NULL) {
+				holes_y[nholes] = ma_realloc(ma, holes_y[nholes], nhole * 2 * sizeof(double), nhole);
+				if (holes_y[nholes] == NULL) {
 					throw(MAL, "geom.Contains", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				}
-				holes_y[nholes] = tmp;
 			}
 		}
 
 		holes_n[nholes] = nhole;
 		nholes++;
 		if ((nholes % POLY_NUM_HOLE) == 0) {
-			double **tmp;
-			int *itmp;
-			tmp = ma_realloc(ma, holes_x, nholes * 2 * sizeof(double *), nholes);
-			if (tmp == NULL) {
+			holes_x = ma_realloc(ma, holes_x, nholes * 2 * sizeof(double *), nholes);
+			if (holes_x == NULL) {
 				throw(MAL, "geom.Contains", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
-			holes_x = tmp;
-			tmp = ma_realloc(ma, holes_y, nholes * 2 * sizeof(double *), nholes);
-			if (tmp == NULL) {
+			holes_y = ma_realloc(ma, holes_y, nholes * 2 * sizeof(double *), nholes);
+			if (holes_y == NULL) {
 				throw(MAL, "geom.Contains", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
-			holes_y = tmp;
-			itmp = ma_realloc(ma, holes_n, nholes * 2 * sizeof(int), nholes);
-			if (itmp == NULL) {
+			holes_n = ma_realloc(ma, holes_n, nholes * 2 * sizeof(int), nholes);
+			if (holes_n == NULL) {
 				throw(MAL, "geom.Contains", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
-			holes_n = itmp;
 		}
 		token = strtok_r(NULL, ")", &saveptr1);
 	}
