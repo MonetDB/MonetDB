@@ -1456,12 +1456,10 @@ addstr_loop(BAT *b1, const char *l, BAT *b2, const char *r, BAT *bn,
 			llen = strlen(l);
 			rlen = strlen(r);
 			if (llen + rlen >= slen) {
-				/* ma_close(&ta_state); */
-				/* ta_state = ma_open(ta); */
-				slen = llen + rlen + 1024;
-				s = ma_alloc(ta, slen);
+				s = ma_realloc(ta, s, llen + rlen + 1024, slen);
 				if (s == NULL)
 					goto bailout;
+				slen = llen + rlen + 1024;
 			}
 			(void) stpcpy(stpcpy(s, l), r);
 			if (tfastins_nocheckVAR(bn, i, s) != GDK_SUCCEED)

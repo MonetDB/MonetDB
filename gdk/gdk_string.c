@@ -6978,8 +6978,6 @@ BATcaseconvert(BAT *b, BAT *s, int direction, const char *restrict func)
 	oid bhseqbase = b->hseqbase;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
-	allocator *ta = MT_thread_getallocator();
-	allocator_state ta_state = ma_open(ta);
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 	BATcheck(b, NULL);
@@ -6990,6 +6988,8 @@ BATcaseconvert(BAT *b, BAT *s, int direction, const char *restrict func)
 	bi = bat_iterator(b);
 	char *buf = NULL;
 	size_t buflen = 0;
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
 	TIMEOUT_LOOP_IDX_DECL(i, ci.ncand, qry_ctx) {
 		BUN x = canditer_next(&ci) - bhseqbase;
 		if (convertcase(ta, &buf, &buflen, BUNtvar(bi, x),
@@ -9784,8 +9784,6 @@ BATasciify(BAT *b, BAT *s)
 	oid bhseqbase = b->hseqbase;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
-	allocator *ta = MT_thread_getallocator();
-	allocator_state ta_state = ma_open(ta);
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 	BATcheck(b, NULL);
@@ -9796,6 +9794,8 @@ BATasciify(BAT *b, BAT *s)
 	bi = bat_iterator(b);
 	char *buf = NULL;
 	size_t buflen = 0;
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
 	TIMEOUT_LOOP_IDX_DECL(i, ci.ncand, qry_ctx) {
 		BUN x = canditer_next(&ci) - bhseqbase;
 		if (GDKasciify(ta, &buf, &buflen, BUNtvar(bi, x)) != GDK_SUCCEED ||
