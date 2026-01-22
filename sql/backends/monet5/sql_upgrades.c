@@ -5263,6 +5263,39 @@ sql_update_dec2025(Client c, mvc *sql, sql_schema *s)
 	return err;
 }
 
+static str
+sql_update_dec2025_sp1(Client c, mvc *sql, sql_schema *s)
+{
+	char *err = NULL;
+	res_table *output = NULL;
+	BAT *b;
+
+	/* 10_sys_schema_extension.sql */
+	/* correct definition of view sys.roles */
+	static const char query1[] = "select id from sys._tables where name = 'roles' and schema_id = 2000"
+		" and query = 'create view sys.roles as select id, name, grantor from sys.auths a where a.name not in (select u.name from sys.db_user_info u);';";
+	err = SQLstatementIntern(c, query1, "update", true, false, &output);
+	if (err == MAL_SUCCEED && (b = BBPquickdesc(output->cols[0].b)) && BATcount(b) == 1) {
+		static const char stmt1[] =
+			"DROP VIEW sys.roles CASCADE;\n"
+			"CREATE VIEW sys.roles AS SELECT id, name, grantor FROM sys.auths;\n"
+			"GRANT SELECT ON sys.roles TO PUBLIC;\n"
+			"UPDATE sys._tables SET system = true WHERE not system and schema_id = 2000 and name = 'roles';\n";
+		sql_table *t;
+		if ((t = mvc_bind_table(sql, s, "roles")) != NULL)
+			t->system = 0; /* make it non-system else the drop view will fail */
+		printf("Running database upgrade commands:\n%s\n", stmt1);
+		fflush(stdout);
+		err = SQLstatementIntern(c, stmt1, "update", true, false, NULL);
+	}
+	if (output != NULL) {
+		res_table_destroy(output);
+		output = NULL;
+	}
+
+	return err;
+}
+
 int
 SQLupgrades(Client c, mvc *m)
 {
@@ -5342,6 +5375,11 @@ SQLupgrades(Client c, mvc *m)
 	}
 
 	if ((err = sql_update_dec2025(c, m, s)) != NULL) {
+		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
+		goto handle_error;
+	}
+
+	if ((err = sql_update_dec2025_sp1(c, m, s)) != NULL) {
 		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 		goto handle_error;
 	}

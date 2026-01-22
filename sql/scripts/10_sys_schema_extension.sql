@@ -505,8 +505,7 @@ GRANT SELECT ON sys.privilege_codes TO PUBLIC;
 
 
 -- Utility views to list the defined roles and users.
--- Note: sys.auths contains both users and roles as the names must be distinct.
-CREATE VIEW sys.roles AS SELECT id, name, grantor FROM sys.auths a WHERE a.name NOT IN (SELECT u.name FROM sys.db_user_info u);
+CREATE VIEW sys.roles AS SELECT id, name, grantor FROM sys.auths;
 GRANT SELECT ON sys.roles TO PUBLIC;
 CREATE VIEW sys.users AS SELECT name, fullname, default_schema, schema_path, max_memory, max_workers, optimizer, default_role FROM sys.db_user_info;
 GRANT SELECT ON sys.users TO PUBLIC;
