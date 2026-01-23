@@ -5078,7 +5078,7 @@ vacuum_col(sql_trans *tr, sql_column *c, bool force)
 	BAT *b = NULL, *bn = NULL;;
 	if ((b = bind_col(tr, c, 0)) == NULL)
 		return LOG_ERR;
-	if ((bn = COLcopy(b, b->ttype, true, PERSISTENT)) == NULL) {
+	if ((bn = COLcopy(b, b->ttype, false, PERSISTENT)) == NULL) {
 		BBPreclaim(b);
 		return LOG_ERR;
 	}
@@ -5117,7 +5117,7 @@ vacuum_tab(sql_trans *tr, sql_table *t, bool force)
 		BAT *b = NULL, *bn = NULL;;
 		if ((b = bind_col(tr, c, 0)) == NULL)
 			return LOG_ERR;
-		if ((bn = COLcopy(b, b->ttype, true, PERSISTENT)) == NULL) {
+		if ((bn = COLcopy(b, b->ttype, false, PERSISTENT)) == NULL) {
 			BBPreclaim(b);
 			return LOG_ERR;
 		}
