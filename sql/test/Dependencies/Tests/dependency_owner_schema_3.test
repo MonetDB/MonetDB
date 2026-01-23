@@ -213,9 +213,6 @@ db_user_info
 dump_create_users
 DEP_VIEW
 db_user_info
-roles
-DEP_VIEW
-db_user_info
 users
 DEP_VIEW
 dependencies

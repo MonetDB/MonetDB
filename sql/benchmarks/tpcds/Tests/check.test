@@ -1,146 +1,264 @@
+hash-threshold 1000
+
 statement ok
 start transaction
 
-query I rowsort
+query I nosort
 select count(*) from dbgen_version
 ----
 1
 
-query I rowsort
+query I nosort
 select count(*) from customer_address
 ----
 50000
 
-query I rowsort
+query I nosort
 select count(*) from customer_demographics
 ----
 1920800
 
-query I rowsort
+query I nosort
 select count(*) from date_dim
 ----
 73049
 
-query I rowsort
+query I nosort
 select count(*) from warehouse
 ----
 5
 
-query I rowsort
+query I nosort
 select count(*) from ship_mode
 ----
 20
 
-query I rowsort
+query I nosort
 select count(*) from time_dim
 ----
 86400
 
-query I rowsort
+query I nosort
 select count(*) from reason
 ----
 35
 
-query I rowsort
+query I nosort
 select count(*) from income_band
 ----
 20
 
-query I rowsort
+query I nosort
 select count(*) from item
 ----
 18000
 
-query I rowsort
+query I nosort
 select count(*) from store
 ----
 12
 
-query I rowsort
+query I nosort
 select count(*) from call_center
 ----
 6
 
-query I rowsort
+query I nosort
 select count(*) from customer
 ----
 100000
 
-query I rowsort
+query I nosort
 select count(*) from web_site
 ----
 30
 
-query I rowsort
+query I nosort
 select count(*) from store_returns
 ----
 287514
 
-query I rowsort
+query I nosort
 select count(*) from household_demographics
 ----
 7200
 
-query I rowsort
+query I nosort
 select count(*) from web_page
 ----
 60
 
-query I rowsort
+query I nosort
 select count(*) from promotion
 ----
 300
 
-query I rowsort
+query I nosort
 select count(*) from catalog_page
 ----
 11718
 
-query I rowsort
+query I nosort
 select count(*) from inventory
 ----
 11745000
 
-query I rowsort
+query I nosort
 select count(*) from catalog_returns
 ----
 144067
 
-query I rowsort
+query I nosort
 select count(*) from web_returns
 ----
 71763
 
-query I rowsort
+query I nosort
 select count(*) from web_sales
 ----
 719384
 
-query I rowsort
+query I nosort
 select count(*) from catalog_sales
 ----
 1441548
 
-query I rowsort
+query I nosort
 select count(*) from store_sales
 ----
 2880404
 
-query TTTT rowsort
-select * from dbgen_version limit 9
+query TTTT nosort
+select * from dbgen_version
 ----
 2.10.0
 2018-10-22
 17:17:42
 -DIR qual 
 
-query ITTTTTTTTTTDT rowsort
+query ITTTTTTTTTTDT nosort
 select * from customer_address limit 9
 ----
-117 values hashing to 80773b266492865dfe2a221a7fcb7ae4
+1
+AAAAAAAABAAAAAAA
+18
+Jackson 
+Parkway
+Suite 280
+Fairfield
+Maricopa County
+AZ
+86192
+United States
+-7.00
+condo
+2
+AAAAAAAACAAAAAAA
+362
+Washington 6th
+RD
+Suite 80
+Fairview
+Taos County
+NM
+85709
+United States
+-7.00
+condo
+3
+AAAAAAAADAAAAAAA
+585
+Dogwood Washington
+Circle
+Suite Q
+Pleasant Valley
+York County
+PA
+12477
+United States
+-5.00
+single family
+4
+AAAAAAAAEAAAAAAA
+111
+Smith 
+Wy
+Suite A
+Oak Ridge
+Kit Carson County
+CO
+88371
+United States
+-7.00
+condo
+5
+AAAAAAAAFAAAAAAA
+31
+College 
+Blvd
+Suite 180
+Glendale
+Barry County
+MO
+63951
+United States
+-6.00
+single family
+6
+AAAAAAAAGAAAAAAA
+59
+Williams Sixth
+Parkway
+Suite 100
+Lakeview
+Chelan County
+WA
+98579
+United States
+-8.00
+single family
+7
+AAAAAAAAHAAAAAAA
+NULL
+Hill 7th
+Road
+Suite U
+Farmington
+NULL
+NULL
+39145
+United States
+NULL
+NULL
+8
+AAAAAAAAIAAAAAAA
+875
+Lincoln 
+Ct.
+Suite Y
+Union
+Bledsoe County
+TN
+38721
+United States
+-5.00
+apartment
+9
+AAAAAAAAJAAAAAAA
+819
+1st Laurel
+Ave
+Suite 70
+New Hope
+Perry County
+AL
+39431
+United States
+-6.00
+condo
 
-query ITTTITIII rowsort
-select * from customer_demographics limit 9
+query ITTTITIII nosort
+select * from customer_demographics order by cd_demo_sk limit 9
 ----
 1
 M
@@ -224,13 +342,264 @@ Good
 0
 0
 
-query ITTIIIIIIIIIIITTTTTIIIITTTTT rowsort
-select * from date_dim limit 9
+query ITTIIIIIIIIIIITTTTTIIIITTTTT nosort
+select * from date_dim order by d_date_sk limit 9
 ----
-252 values hashing to 9a77044233e9b983225afdb7df9d48c1
+2415022
+AAAAAAAAOKJNECAA
+1900-01-02
+0
+1
+1
+1900
+1
+1
+2
+1
+1900
+1
+1
+Monday
+1900Q1
+N
+N
+Y
+2415021
+2415020
+2414657
+2414930
+N
+N
+N
+N
+N
+2415023
+AAAAAAAAPKJNECAA
+1900-01-03
+0
+1
+1
+1900
+2
+1
+3
+1
+1900
+1
+1
+Tuesday
+1900Q1
+N
+N
+N
+2415021
+2415020
+2414658
+2414931
+N
+N
+N
+N
+N
+2415024
+AAAAAAAAALJNECAA
+1900-01-04
+0
+1
+1
+1900
+3
+1
+4
+1
+1900
+1
+1
+Wednesday
+1900Q1
+N
+N
+N
+2415021
+2415020
+2414659
+2414932
+N
+N
+N
+N
+N
+2415025
+AAAAAAAABLJNECAA
+1900-01-05
+0
+1
+1
+1900
+4
+1
+5
+1
+1900
+1
+1
+Thursday
+1900Q1
+N
+N
+N
+2415021
+2415020
+2414660
+2414933
+N
+N
+N
+N
+N
+2415026
+AAAAAAAACLJNECAA
+1900-01-06
+0
+1
+1
+1900
+5
+1
+6
+1
+1900
+1
+1
+Friday
+1900Q1
+N
+Y
+N
+2415021
+2415020
+2414661
+2414934
+N
+N
+N
+N
+N
+2415027
+AAAAAAAADLJNECAA
+1900-01-07
+0
+1
+1
+1900
+6
+1
+7
+1
+1900
+1
+1
+Saturday
+1900Q1
+N
+Y
+N
+2415021
+2415020
+2414662
+2414935
+N
+N
+N
+N
+N
+2415028
+AAAAAAAAELJNECAA
+1900-01-08
+0
+1
+1
+1900
+0
+1
+8
+1
+1900
+1
+1
+Sunday
+1900Q1
+N
+N
+N
+2415021
+2415020
+2414663
+2414936
+N
+N
+N
+N
+N
+2415029
+AAAAAAAAFLJNECAA
+1900-01-09
+0
+2
+1
+1900
+1
+1
+9
+1
+1900
+1
+2
+Monday
+1900Q1
+N
+N
+N
+2415021
+2415020
+2414664
+2414937
+N
+N
+N
+N
+N
+2415030
+AAAAAAAAGLJNECAA
+1900-01-10
+0
+2
+1
+1900
+2
+1
+10
+1
+1900
+1
+2
+Tuesday
+1900Q1
+N
+N
+N
+2415021
+2415020
+2414665
+2414938
+N
+N
+N
+N
+N
 
-query ITTITTTTTTTTTD rowsort
-select * from warehouse limit 9
+query ITTITTTTTTTTTD nosort
+select * from warehouse order by w_warehouse_sk limit 9
 ----
 1
 AAAAAAAABAAAAAAA
@@ -303,8 +672,8 @@ TN
 United States
 NULL
 
-query ITTTTT rowsort
-select * from ship_mode limit 9
+query ITTTTT nosort
+select * from ship_mode order by sm_ship_mode_sk limit 9
 ----
 1
 AAAAAAAABAAAAAAA
@@ -361,8 +730,8 @@ SURFACE
 MSC
 Xjy3ZPuiDjzHlRx14Z3
 
-query ITIIIITTTT rowsort
-select * from time_dim limit 9
+query ITIIIITTTT nosort
+select * from time_dim order by t_time_sk limit 9
 ----
 0
 AAAAAAAABAAAAAAA
@@ -455,8 +824,8 @@ third
 night
 NULL
 
-query ITT rowsort
-select * from reason limit 9
+query ITT nosort
+select * from reason order by r_reason_sk limit 9
 ----
 1
 AAAAAAAABAAAAAAA
@@ -486,8 +855,8 @@ Did not like the color
 AAAAAAAAJAAAAAAA
 Did not like the model
 
-query III rowsort
-select * from income_band limit 9
+query III nosort
+select * from income_band order by ib_income_band_sk limit 9
 ----
 1
 0
@@ -517,38 +886,1253 @@ select * from income_band limit 9
 80001
 90000
 
-query ITTTTDDITITITITTTTTTIT rowsort
-select * from item limit 9
+query ITTTTDDITITITITTTTTTIT nosort
+select * from item order by i_item_sk limit 9
 ----
-198 values hashing to 34bb88cdab1b7c0344fa2aebf8d467d7
+1
+AAAAAAAABAAAAAAA
+1997-10-27
+NULL
+Powers will not get influences. Electoral ports should show low, annual chains. Now young visitors may pose now however final pages. Bitterly right children suit increasing, leading el
+27.02
+23.23
+5003002
+exportischolar #2
+3
+pop
+5
+Music
+52
+ableanti
+N/A
+3663peru009490160959
+spring
+Tsp
+Unknown
+6
+ought
+2
+AAAAAAAACAAAAAAA
+1997-10-27
+2000-10-26
+False opportunities would run alone with a views. Early approaches would show inc, european intentions; important, main passages shall know urban, 
+1.12
+0.38
+1001001
+amalgamalg #1
+1
+dresses
+1
+Women
+294
+esen stable
+petite
+516steel060826230906
+rosy
+Bunch
+Unknown
+98
+able
+3
+AAAAAAAACAAAAAAA
+2000-10-27
+NULL
+False opportunities would run alone with a views. Early approaches would show inc, european intentions; important, main passages shall know urban, 
+7.11
+0.38
+1001001
+brandbrand #4
+7
+decor
+7
+Home
+294
+esen stable
+N/A
+516steel060826230906
+sienna
+Cup
+Unknown
+18
+pri
+4
+AAAAAAAAEAAAAAAA
+1997-10-27
+1999-10-27
+Normal systems would join simply different theories. Full, new clothes may eat instead achievements. D
+1.35
+0.85
+3002001
+importoexporti #1
+2
+infants
+3
+Children
+479
+n stationese
+extra large
+610157moccasin018327
+red
+Tbl
+Unknown
+26
+ese
+5
+AAAAAAAAEAAAAAAA
+1999-10-28
+2001-10-26
+Normal systems would join simply different theories. Full, new clothes may eat instead achievements. D
+4.00
+1.76
+2002002
+importoimporto #2
+2
+shirts
+2
+Men
+220
+barableable
+petite
+42214rosy28066558020
+pink
+Cup
+Unknown
+27
+anti
+6
+AAAAAAAAEAAAAAAA
+2001-10-27
+NULL
+Normal systems would join simply different theories. Full, new clothes may eat instead achievements. D
+0.85
+1.76
+2002002
+exportiimporto #1
+3
+pants
+2
+Men
+212
+barableable
+large
+42214rosy28066558020
+moccasin
+Bundle
+Unknown
+6
+cally
+7
+AAAAAAAAHAAAAAAA
+1997-10-27
+NULL
+Anxious accounts must catch also years. Revolutionary, large directors used to embrace then mo
+9.94
+6.75
+3001002
+amalgexporti #2
+1
+newborn
+3
+Children
+214
+eseoughtable
+petite
+6moccasin24027188872
+spring
+Tsp
+Unknown
+64
+ation
+8
+AAAAAAAAIAAAAAAA
+1997-10-27
+2000-10-26
+F
+2.76
+0.85
+3003001
+exportiexporti #1
+3
+toddlers
+3
+Children
+630
+barprically
+extra large
+35123wheat3256343398
+turquoise
+Carton
+Unknown
+25
+eing
+9
+AAAAAAAAIAAAAAAA
+2000-10-27
+NULL
+F
+4.46
+0.85
+1004002
+edu packamalg #2
+3
+swimwear
+1
+Women
+630
+barprically
+medium
+35123wheat3256343398
+wheat
+Tbl
+Unknown
+3
+n st
 
-query ITTTITIITTITTTITITTTTTTTTTTDD rowsort
-select * from store limit 9
+query ITTTITIITTITTTITITTTTTTTTTTDD nosort
+select * from store order by s_store_sk limit 9
 ----
-261 values hashing to ad5a30d17b5287471ffcc73d5e0ea7e2
+1
+AAAAAAAABAAAAAAA
+1997-03-13
+NULL
+2451189
+ought
+245
+5250760
+8AM-4PM
+William Ward
+2
+Unknown
+Enough high areas stop expectations. Elaborate, local is
+Charles Bartley
+1
+Unknown
+1
+Unknown
+767
+Spring 
+Wy
+Suite 250
+Midway
+Williamson County
+TN
+31904
+United States
+-5.00
+0.03
+2
+AAAAAAAACAAAAAAA
+1997-03-13
+2000-03-12
+NULL
+able
+236
+5285950
+8AM-4PM
+Scott Smith
+8
+Unknown
+Parliamentary candidates wait then heavy, keen mil
+David Lamontagne
+1
+Unknown
+1
+Unknown
+255
+Sycamore 
+Dr.
+Suite 410
+Midway
+Williamson County
+TN
+31904
+United States
+-5.00
+0.03
+3
+AAAAAAAACAAAAAAA
+2000-03-13
+NULL
+NULL
+able
+236
+7557959
+8AM-4PM
+Scott Smith
+7
+Unknown
+Impossible, true arms can treat constant, complete w
+David Lamontagne
+1
+Unknown
+1
+Unknown
+877
+Park Laurel
+Road
+Suite T
+Midway
+Williamson County
+TN
+31904
+United States
+-5.00
+0.03
+4
+AAAAAAAAEAAAAAAA
+1997-03-13
+1999-03-13
+2451044
+ese
+218
+9341467
+8AM-4PM
+Edwin Adams
+4
+Unknown
+Events would achieve other, eastern hours. Mechanisms must not eat other, new org
+Thomas Pollack
+1
+Unknown
+1
+Unknown
+27
+Lake 
+Ln
+Suite 260
+Midway
+Williamson County
+TN
+31904
+United States
+-5.00
+0.03
+5
+AAAAAAAAEAAAAAAA
+1999-03-14
+2001-03-12
+2450910
+anti
+288
+9078805
+8AM-4PM
+Edwin Adams
+8
+Unknown
+Events would achieve other, eastern hours. Mechanisms must not eat other, new org
+Thomas Pollack
+1
+Unknown
+1
+Unknown
+27
+Lee 6th
+Court
+Suite 80
+Fairview
+Williamson County
+TN
+35709
+United States
+-5.00
+0.03
+6
+AAAAAAAAEAAAAAAA
+2001-03-13
+NULL
+NULL
+cally
+229
+9026222
+8AM-4PM
+Edwin Adams
+10
+Unknown
+Events would achieve other, eastern hours. Mechanisms must not eat other, new org
+Thomas Pollack
+1
+Unknown
+1
+Unknown
+220
+6th 
+Lane
+Suite 140
+Midway
+Williamson County
+TN
+31904
+United States
+-5.00
+0.03
+7
+AAAAAAAAHAAAAAAA
+1997-03-13
+NULL
+NULL
+ation
+297
+8954883
+8AM-4PM
+David Thomas
+9
+Unknown
+Architects coul
+Thomas Benton
+1
+Unknown
+1
+Unknown
+811
+Lee 
+Circle
+Suite T
+Midway
+Williamson County
+TN
+31904
+United States
+-5.00
+0.01
+8
+AAAAAAAAIAAAAAAA
+1997-03-13
+2000-03-12
+NULL
+eing
+278
+6995995
+8AM-4PM
+Brett Yates
+2
+Unknown
+Various bars make most. Difficult levels introduce at a boots. Buildings welcome only never el
+Dean Morrison
+1
+Unknown
+1
+Unknown
+226
+12th 
+Lane
+Suite D
+Fairview
+Williamson County
+TN
+35709
+United States
+-5.00
+0.08
+9
+AAAAAAAAIAAAAAAA
+2000-03-13
+NULL
+NULL
+eing
+271
+6995995
+8AM-4PM
+Brett Yates
+2
+Unknown
+Formal, psychological pounds relate reasonable, young principles. Black, 
+Dean Morrison
+1
+Unknown
+1
+Unknown
+226
+Hill 
+Boulevard
+Suite 190
+Midway
+Williamson County
+TN
+31904
+United States
+-5.00
+0.08
 
-query ITTTIITTIITTITTTITITTTTTTTTTTDD rowsort
-select * from call_center limit 9
+query ITTTIITTIITTITTTITITTTTTTTTTTDD nosort
+select * from call_center order by cc_call_center_sk limit 9
 ----
-186 values hashing to 0e6c1f807bdf748475f69a2de161898f
+1
+AAAAAAAABAAAAAAA
+1998-01-01
+NULL
+NULL
+2450952
+NY Metro
+large
+2
+1138
+8AM-4PM
+Bob Belcher
+6
+More than other authori
+Shared others could not count fully dollars. New members ca
+Julius Tran
+3
+pri
+6
+cally
+730
+Ash Hill
+Boulevard
+Suite 0
+Midway
+Williamson County
+TN
+31904
+United States
+-5.00
+0.11
+2
+AAAAAAAACAAAAAAA
+1998-01-01
+2000-12-31
+NULL
+2450806
+Mid Atlantic
+medium
+6
+2268
+8AM-8AM
+Felipe Perkins
+2
+A bit narrow forms matter animals. Consist
+Largely blank years put substantially deaf, new others. Question
+Julius Durham
+5
+anti
+1
+ought
+984
+Center Hill
+Way
+Suite 70
+Midway
+Williamson County
+TN
+31904
+United States
+-5.00
+0.12
+3
+AAAAAAAACAAAAAAA
+2001-01-01
+NULL
+NULL
+2450806
+Mid Atlantic
+medium
+6
+4134
+8AM-4PM
+Mark Hightower
+2
+Wrong troops shall work sometimes in a opti
+Largely blank years put substantially deaf, new others. Question
+Julius Durham
+1
+ought
+2
+able
+984
+Center Hill
+Way
+Suite 70
+Midway
+Williamson County
+TN
+31904
+United States
+-5.00
+0.01
+4
+AAAAAAAAEAAAAAAA
+1998-01-01
+2000-01-01
+NULL
+2451063
+North Midwest
+medium
+1
+649
+8AM-4PM
+Larry Mccray
+2
+Dealers make most historical, direct students
+Rich groups catch longer other fears; future,
+Matthew Clifton
+4
+ese
+3
+pri
+463
+Pine Ridge
+RD
+Suite U
+Midway
+Williamson County
+TN
+31904
+United States
+-5.00
+0.05
+5
+AAAAAAAAEAAAAAAA
+2000-01-02
+2001-12-31
+NULL
+2451063
+North Midwest
+small
+3
+795
+8AM-8AM
+Larry Mccray
+2
+Dealers make most historical, direct students
+Blue, due beds come. Politicians would not make far thoughts. Specifically new horses partic
+Gary Colburn
+4
+ese
+3
+pri
+463
+Pine Ridge
+RD
+Suite U
+Midway
+Williamson County
+TN
+31904
+United States
+-5.00
+0.12
+6
+AAAAAAAAEAAAAAAA
+2002-01-01
+NULL
+NULL
+2451063
+North Midwest
+medium
+7
+3514
+8AM-4PM
+Larry Mccray
+5
+Silly particles could pro
+Blue, due beds come. Politicians would not make far thoughts. Specifically new horses partic
+Gary Colburn
+5
+anti
+3
+pri
+463
+Pine Ridge
+RD
+Suite U
+Midway
+Williamson County
+TN
+31904
+United States
+-5.00
+0.11
 
-query ITIIIIITTTTIIITTTI rowsort
-select * from customer limit 9
+query ITIIIIITTTTIIITTTI nosort
+select * from customer order by c_customer_sk limit 9
 ----
-162 values hashing to a891ab1aab4581851c4d5bdcd66e88c7
+1
+AAAAAAAABAAAAAAA
+980124
+7135
+32946
+2452238
+2452208
+Mr.
+Javier
+Lewis
+Y
+9
+12
+1936
+CHILE
+NULL
+Javier.Lewis@VFAxlnZEvOx.org
+2452508
+2
+AAAAAAAACAAAAAAA
+819667
+1461
+31655
+2452318
+2452288
+Dr.
+Amy
+Moses
+Y
+9
+4
+1966
+TOGO
+NULL
+Amy.Moses@Ovk9KjHH.com
+2452318
+3
+AAAAAAAADAAAAAAA
+1473522
+6247
+48572
+2449130
+2449100
+Miss
+Latisha
+Hamilton
+N
+18
+9
+1979
+NIUE
+NULL
+Latisha.Hamilton@V.com
+2452313
+4
+AAAAAAAAEAAAAAAA
+1703214
+3986
+39558
+2450030
+2450000
+Dr.
+Michael
+White
+N
+7
+6
+1983
+MEXICO
+NULL
+Michael.White@i.org
+2452361
+5
+AAAAAAAAFAAAAAAA
+953372
+4470
+36368
+2449438
+2449408
+Sir
+Robert
+Moran
+N
+8
+5
+1956
+FIJI
+NULL
+Robert.Moran@Hh.edu
+2452469
+6
+AAAAAAAAGAAAAAAA
+213219
+6374
+27082
+2451883
+2451853
+Ms.
+Brunilda
+Sharp
+N
+4
+12
+1925
+SURINAME
+NULL
+Brunilda.Sharp@T3pylZEUQjm.org
+2452430
+7
+AAAAAAAAHAAAAAAA
+68377
+3219
+44814
+2451438
+2451408
+Ms.
+Fonda
+Wiles
+Y
+24
+4
+1985
+GAMBIA
+NULL
+Fonda.Wiles@S9KnyEtz9hv.org
+2452360
+8
+AAAAAAAAIAAAAAAA
+1215897
+2471
+16598
+2449406
+2449376
+Sir
+Ollie
+Shipman
+N
+26
+12
+1938
+KOREA, REPUBLIC OF
+NULL
+Ollie.Shipman@be.org
+2452334
+9
+AAAAAAAAJAAAAAAA
+1168667
+1404
+49388
+2452275
+2452245
+Sir
+Karl
+Gilbert
+N
+26
+10
+1966
+MONTSERRAT
+NULL
+Karl.Gilbert@Crg5KyP2IxX9C4d6.edu
+2452454
 
-query ITTTTIITTITTTITTTTTTTTTTDD rowsort
-select * from web_site limit 9
+query ITTTTIITTITTTITTTTTTTTTTDD nosort
+select * from web_site order by web_site_sk limit 9
 ----
-234 values hashing to fe46843edc2ae32c57cb33539a6267c5
+1
+AAAAAAAABAAAAAAA
+1997-08-16
+NULL
+site_0
+2450807
+NULL
+Unknown
+Ronald Shaffer
+4
+Grey lines ought to result indeed centres. Tod
+Well similar decisions used to keep hardly democratic, personal priorities.
+Joe George
+6
+cally
+51
+Dogwood Sunset
+Ln
+Suite 330
+Midway
+Williamson County
+TN
+31904
+United States
+-5.00
+0.10
+2
+AAAAAAAACAAAAAAA
+1997-08-16
+2000-08-15
+site_0
+2450798
+2447148
+Unknown
+Tommy Jones
+6
+Completely excellent things ought to pro
+Lucky passengers know. Red details will not hang alive, international s
+David Myers
+4
+ese
+358
+Ridge Wilson
+Cir.
+Suite 150
+Midway
+Williamson County
+TN
+31904
+United States
+-5.00
+0.00
+3
+AAAAAAAACAAAAAAA
+2000-08-16
+NULL
+site_0
+2450798
+2447148
+Unknown
+Tommy Jones
+3
+Completely excellent things ought to pro
+Particular, common seasons shall not indicate fully more single decisions; 
+David Myers
+4
+ese
+753
+7th 
+Pkwy
+Suite 210
+Midway
+Williamson County
+TN
+31904
+United States
+-5.00
+0.02
+4
+AAAAAAAAEAAAAAAA
+1997-08-16
+1999-08-16
+site_0
+2450781
+2448956
+Unknown
+Harold Wilson
+5
+As strong notes deal questions. Proud visito
+Deeply small books cannot extend all similar, clear historians. Free, new camp
+James Harris
+5
+anti
+805
+Hill Hill
+Dr.
+Suite R
+Midway
+Williamson County
+TN
+31904
+United States
+-5.00
+0.08
+5
+AAAAAAAAEAAAAAAA
+1999-08-17
+2001-08-15
+site_0
+2450781
+2448956
+Unknown
+Harold Wilson
+5
+Wide, final representat
+Deeply small books cannot extend all similar, clear historians. Free, new camp
+Edward George
+1
+ought
+805
+2nd 3rd
+Road
+Suite R
+Fairview
+Williamson County
+TN
+31904
+United States
+-5.00
+0.08
+6
+AAAAAAAAEAAAAAAA
+2001-08-16
+NULL
+site_0
+2450781
+2448956
+Unknown
+Harold Wilson
+5
+Wide, final representat
+Thin roles should run quickly. Patient parts include even in the ladies; only united trouser
+John Sheppard
+3
+ought
+63
+Hickory 3rd
+Ct.
+Suite 130
+Fairview
+Williamson County
+TN
+31904
+United States
+-5.00
+0.08
+7
+AAAAAAAAHAAAAAAA
+1997-08-16
+NULL
+site_1
+2450756
+NULL
+Unknown
+Moses Hicks
+4
+New homes comment great. Possibilities re
+Enough small animals emerge at a holidays. Managers expect only.
+William Reyes
+4
+ese
+784
+Central 
+Dr.
+Suite Q
+Fairview
+Williamson County
+TN
+35709
+United States
+-5.00
+0.12
+8
+AAAAAAAAIAAAAAAA
+1997-08-16
+2000-08-15
+site_1
+2450747
+2448922
+Unknown
+Charles Parker
+1
+Only, temporary services 
+Physical witnesses might not agree really already existing prayers. Loyal, possible m
+Gerald Craft
+5
+anti
+835
+Washington 
+Avenue
+Suite 470
+Midway
+Williamson County
+TN
+31904
+United States
+-5.00
+0.07
+9
+AAAAAAAAIAAAAAAA
+2000-08-16
+NULL
+site_1
+2450747
+2448922
+Unknown
+Marshall Conner
+6
+Labour cars withdraw big, full issues
+Physical witnesses might not agree really already existing prayers. Loyal, possible m
+Scott Bryant
+1
+anti
+835
+11th 
+Cir.
+Suite R
+Midway
+Williamson County
+TN
+31904
+United States
+-5.00
+0.07
 
-query IIIIIIIIIIIDDDDDDDDD rowsort
-select * from store_returns limit 9
+query IIIIIIIIIIIDDDDDDDDD nosort
+select * from store_returns order by sr_item_sk, sr_ticket_number limit 9
 ----
-180 values hashing to 3a5b884f9c6af1d84dc9fa19da82983c
+2451794
+40096
+1
+7157
+910283
+6421
+37312
+8
+16
+9750
+41
+72.57
+6.53
+79.10
+68.35
+526.03
+27.57
+5.40
+39.60
+600.91
+2452608
+38280
+1
+7662
+180118
+5780
+9042
+2
+31
+18318
+32
+400.96
+20.04
+421.00
+52.14
+417.92
+356.85
+6.17
+37.94
+490.10
+2452694
+30733
+1
+99300
+831597
+3094
+15391
+2
+5
+29338
+6
+266.40
+0.00
+266.40
+42.53
+2.64
+157.17
+25.12
+84.11
+45.17
+2451783
+46066
+1
+80213
+848962
+4252
+41495
+8
+23
+30766
+11
+411.62
+20.58
+432.20
+68.66
+205.81
+267.55
+37.45
+106.62
+295.05
+2452016
+33347
+1
+73040
+1524381
+1867
+42953
+10
+7
+46586
+2
+131.20
+1.31
+132.51
+44.62
+60.28
+86.59
+34.79
+9.82
+106.21
+2452502
+50303
+1
+3423
+1833624
+6647
+24023
+8
+30
+48298
+33
+822.69
+57.58
+880.27
+31.32
+179.19
+798.00
+5.92
+18.77
+268.09
+2450929
+44047
+1
+7804
+1024448
+2534
+7820
+10
+27
+50169
+12
+329.16
+13.16
+342.32
+51.80
+238.44
+108.62
+11.02
+209.52
+303.40
+2452048
+43023
+1
+49279
+132296
+4929
+38409
+7
+22
+51114
+29
+112.52
+3.37
+115.89
+32.62
+50.17
+55.13
+33.86
+23.53
+86.16
+2451629
+37147
+1
+50173
+483217
+940
+8310
+4
+1
+62428
+18
+162.00
+9.72
+171.72
+65.78
+31.32
+0.00
+34.02
+127.98
+106.82
 
-query IITII rowsort
-select * from household_demographics limit 9
+query IITII nosort
+select * from household_demographics order by hd_demo_sk limit 9
 ----
 1
 2
@@ -596,18 +2180,313 @@ select * from household_demographics limit 9
 0
 0
 
-query ITTTIITITTIIII rowsort
-select * from web_page limit 9
+query ITTTIITITTIIII nosort
+select * from web_page order by wp_web_page_sk limit 9
 ----
-126 values hashing to 0520e4b68668e115811687af6813aa53
+1
+AAAAAAAABAAAAAAA
+1997-09-03
+NULL
+2450810
+2452620
+Y
+98539
+http://www.foo.com
+welcome
+2531
+8
+3
+4
+2
+AAAAAAAACAAAAAAA
+1997-09-03
+2000-09-02
+2450814
+2452580
+N
+NULL
+http://www.foo.com
+protected
+1564
+4
+3
+1
+3
+AAAAAAAACAAAAAAA
+2000-09-03
+NULL
+2450814
+2452611
+N
+NULL
+http://www.foo.com
+feedback
+1564
+4
+3
+4
+4
+AAAAAAAAEAAAAAAA
+1997-09-03
+1999-09-03
+2450812
+2452579
+N
+NULL
+http://www.foo.com
+general
+3732
+18
+7
+1
+5
+AAAAAAAAEAAAAAAA
+1999-09-04
+2001-09-02
+2450812
+2452597
+N
+NULL
+http://www.foo.com
+welcome
+3732
+18
+3
+1
+6
+AAAAAAAAEAAAAAAA
+2001-09-03
+NULL
+2450814
+2452597
+N
+NULL
+http://www.foo.com
+ad
+3732
+18
+7
+4
+7
+AAAAAAAAHAAAAAAA
+1997-09-03
+NULL
+2450815
+2452574
+N
+NULL
+http://www.foo.com
+feedback
+3034
+18
+7
+4
+8
+AAAAAAAAIAAAAAAA
+1997-09-03
+2000-09-02
+2450815
+2452646
+Y
+1898
+http://www.foo.com
+protected
+3128
+12
+2
+4
+9
+AAAAAAAAIAAAAAAA
+2000-09-03
+NULL
+2450807
+2452579
+Y
+84146
+http://www.foo.com
+welcome
+3128
+13
+5
+3
 
-query ITIIIDITTTTTTTTTTTT rowsort
-select * from promotion limit 9
+query ITIIIDITTTTTTTTTTTT nosort
+select * from promotion order by p_promo_sk limit 9
 ----
-171 values hashing to 47e0cc19935da51c93f9a073281f4e94
+1
+AAAAAAAABAAAAAAA
+2450164
+2450185
+10022
+1000.00
+1
+ought
+Y
+N
+N
+N
+N
+N
+N
+N
+Men will not say merely. Old, available 
+Unknown
+N
+2
+AAAAAAAACAAAAAAA
+2450118
+2450150
+2410
+1000.00
+1
+able
+Y
+N
+N
+N
+N
+N
+N
+N
+So willing buildings coul
+Unknown
+N
+3
+AAAAAAAADAAAAAAA
+2450675
+2450712
+10843
+1000.00
+1
+pri
+Y
+N
+N
+N
+N
+N
+N
+N
+Companies shall not pr
+Unknown
+N
+4
+AAAAAAAAEAAAAAAA
+2450633
+2450646
+9794
+1000.00
+1
+ese
+N
+N
+N
+N
+N
+N
+N
+N
+High, good shoulders can tell on a proble
+Unknown
+N
+5
+AAAAAAAAFAAAAAAA
+2450347
+2450357
+6655
+1000.00
+1
+anti
+N
+N
+N
+N
+N
+N
+N
+N
+Huge, competent structures can remember different pat
+Unknown
+N
+6
+AAAAAAAAGAAAAAAA
+2450516
+2450561
+9464
+1000.00
+1
+cally
+N
+N
+N
+N
+N
+N
+N
+N
+Boards might not reverse up to a hopes. Now high respon
+Unknown
+N
+7
+AAAAAAAAHAAAAAAA
+2450123
+2450132
+14527
+1000.00
+1
+ation
+N
+N
+N
+N
+N
+N
+N
+N
+Effects used to prefer however new terms. Usually ava
+Unknown
+N
+8
+AAAAAAAAIAAAAAAA
+2450350
+2450409
+304
+1000.00
+1
+eing
+Y
+N
+N
+N
+N
+N
+N
+N
+Offences feel only on a fees.
+Unknown
+N
+9
+AAAAAAAAJAAAAAAA
+2450192
+2450248
+3439
+1000.00
+1
+n st
+Y
+N
+N
+N
+N
+N
+N
+N
+External forces shall comprehend ideal, disciplinary stud
+Unknown
+N
 
-query ITIITIITT rowsort
-select * from catalog_page limit 9
+query ITIITIITT nosort
+select * from catalog_page order by cp_catalog_page_sk limit 9
 ----
 1
 AAAAAAAABAAAAAAA
@@ -691,70 +2570,1343 @@ DEPARTMENT
 Intensive, economic changes resist bloody of course simple economies; 
 bi-annual
 
-query IIII rowsort
-select * from inventory limit 9
+query IIII nosort
+select * from inventory order by inv_date_sk, inv_item_sk, inv_warehouse_sk limit 9
 ----
 2450815
 1
 1
 211
 2450815
-10
 1
-834
+2
+824
 2450815
-13
 1
-591
+3
+494
 2450815
-14
 1
-579
+4
+989
 2450815
-16
 1
-622
+5
+873
 2450815
 2
 1
 235
 2450815
+2
+2
+269
+2450815
+2
+3
+58
+2450815
+2
+4
+85
+
+query IIIIIIIIIIIIIIIIIIDDDDDDDDD nosort
+select * from catalog_returns order by cr_item_sk, cr_order_number limit 9
+----
+2451206
+74269
+1
+49798
+582799
+6647
+6495
+62208
+650540
+426
+2665
+2
+180
+3
+4
+28
+12691
+6
+1.14
+0.09
+1.23
+11.66
+9.24
+0.03
+0.51
+0.60
+20.99
+2451195
+49252
+1
+77854
+1493766
+2925
+48037
+77854
+1493766
+2119
+48037
+4
+275
+14
+1
+28
+13711
+44
+51.04
+1.02
+52.06
+91.35
+239.80
+20.41
+30.01
+0.62
+332.17
+2451225
+40427
+1
+57919
+143256
+3346
+11483
+29119
+449625
+6773
+13521
+1
+197
+12
+2
+10
+20335
+33
+3532.32
+247.26
+3779.58
+63.77
+620.40
+2578.59
+886.96
+66.77
+931.43
+2451319
+18295
+1
+92852
+1080366
+4233
+12947
+12570
+1880580
+333
+16486
+2
+147
+5
+3
+16
+27207
+5
+0.90
+0.02
+0.92
+79.12
+20.65
+0.54
+0.15
+0.21
+99.79
+2451374
+66200
+1
+50457
+150397
+7137
+42724
+7289
+1133932
+6903
+24627
+2
+1952
+6
+2
+26
+37872
+14
+931.14
+74.49
+1005.63
+25.85
+232.68
+372.45
+541.92
+16.77
+333.02
+2451451
+67846
+1
+94326
+325646
+2566
+26286
+58570
+1538871
+6260
+24049
+4
+2155
+9
+3
+32
+41432
+3
+503.46
+5.03
+508.49
+53.53
+180.18
+15.10
+405.33
+83.03
+238.74
+2451701
+25042
+1
+98260
+1311487
+6314
+32341
+12173
+5480
+3206
+14085
+4
+2078
+16
+2
+18
+49718
+41
+1081.17
+86.49
+1167.66
+74.93
+427.22
+918.99
+34.05
+128.13
+588.64
+2451491
+33747
+1
+77005
+49690
+3622
+22707
+77005
+49690
+473
+22707
+1
+2074
+13
+3
+13
+52445
+45
+557.10
+11.14
+568.24
+86.52
+437.85
+445.68
+27.85
+83.57
+535.51
+2451810
+65891
+1
+30033
+1841029
+2425
+41068
+91123
+184200
+2604
+255
+2
+4182
+1
+5
+6
+79703
+16
+903.20
+45.16
+948.36
+71.54
+262.72
+605.14
+98.35
+199.71
+379.42
+
+query IIIIIIIIIIIIIIIDDDDDDDDD nosort
+select * from web_returns order by wr_item_sk, wr_order_number limit 9
+----
+2451216
+54701
+1
+64568
+912221
+7074
+20327
+64568
+912221
+7074
+20327
+31
+2
+15938
+14
+286.44
+2.86
+289.30
+37.90
+89.46
+197.64
+73.70
+15.10
+130.22
+2452528
+8056
+1
+17735
+394109
+NULL
+NULL
+17735
+394109
+NULL
+3610
+NULL
+35
+21253
+83
+2928.24
+29.28
+2957.52
+30.38
+3660.30
+NULL
+590.04
+317.72
+3719.96
+2451576
+604
+1
+84665
+1795208
+598
+28741
+84665
+1795208
+598
+28741
+26
+22
+31941
+21
+346.71
+3.46
+350.17
+41.20
+0.00
+187.22
+54.22
+105.27
+44.66
+2452881
+74618
+1
+75718
+118016
+7067
+49765
+75718
+118016
+7067
+49765
+3
+7
+40769
+4
+64.56
+1.93
+66.49
+40.62
+39.96
+22.59
+0.83
+41.14
+82.51
+2451211
+9748
+1
+2763
+1726336
+3062
+4988
+2763
+1726336
+3062
+4988
+38
+1
+42086
+18
+16.02
+0.48
+16.50
+30.50
+84.78
+0.96
+14.90
+0.16
+115.76
+2452207
+70231
+1
+53444
+162902
+6407
+1912
+53444
+162902
+6407
+1912
+26
+30
+45930
+19
+2031.48
+81.25
+2112.73
+47.59
+962.16
+1340.77
+421.33
+269.38
+1091.00
+2452405
+47754
+1
+88388
+1758259
+1730
+40001
+88388
+1758259
+1730
+40001
+59
+23
+48382
+10
+552.00
+0.00
+552.00
+91.34
+21.60
+391.92
+59.22
+100.86
+112.94
+2451443
+67624
+1
+46817
+1269885
+6553
+19174
+46817
+1269885
+6553
+19174
+52
+35
+51415
+20
+129.60
+10.36
+139.96
+9.92
+259.20
+38.88
+59.87
+30.85
+279.48
+2452532
+23282
+1
+86595
+1419445
+6695
+18792
+86595
+1419445
+6695
+18792
+15
+14
+51631
+17
+174.59
+0.00
+174.59
+67.06
+165.07
+89.04
+75.28
+10.27
+232.13
+
+query IIIIIIIIIIIIIIIIIIIDDDDDDDDDDDDDDD nosort
+select * from web_sales order by ws_item_sk, ws_order_number limit 9
+----
+2451850
+50687
+2451953
+1
+42144
+949560
+176
+25545
+69179
+824534
+146
+47962
+47
+20
+8
+2
+99
+3266
+1
+72.33
+117.89
+68.37
+49.52
+68.37
+72.33
+117.89
+2.05
+0.00
+10.61
+68.37
+70.42
+78.98
+81.03
+-3.96
+2452587
+14861
+2452628
+1
+87047
+1555333
+3619
+12258
+6384
+916331
+6716
+23755
+31
+7
+19
+2
+192
+4207
+61
+94.86
+110.98
+79.90
+1895.88
+4873.90
+5786.46
+6769.78
+292.43
+0.00
+473.36
+4873.90
+5166.33
+5347.26
+5639.69
+-912.56
+2452030
+79811
+2452106
+1
+23635
+825904
+6573
+31595
+1635
+148471
+6402
+37071
+41
+5
+2
+4
+83
+4219
+92
+9.67
+15.66
+8.45
+663.32
+777.40
+889.64
+1440.72
+7.77
+0.00
+201.48
+777.40
+785.17
+978.88
+986.65
+-112.24
+2451886
+55510
+2451958
+1
+45014
+371461
+1108
+30755
+39471
+252529
+2896
+11743
+38
+11
+19
+5
+158
+4347
+30
+96.80
+257.48
+242.03
+463.50
+7260.90
+2904.00
+7724.40
+435.65
+0.00
+2085.30
+7260.90
+7696.55
+9346.20
+9781.85
+4356.90
+2452078
+67183
+2452141
+1
+1322
+1649675
+2028
+11981
+6417
+506560
+2993
+42546
+59
+3
+14
+3
+165
+4583
+52
+51.37
+64.21
+3.21
+3172.00
+166.92
+2671.24
+3338.92
+0.00
+0.00
+1502.28
+166.92
+166.92
+1669.20
+1669.20
+-2504.32
+2452245
+62691
+2452254
+1
+3507
+253839
+171
+1703
+42267
+341237
+5852
+48984
+17
+25
+20
+2
+64
+5026
+95
+99.26
+110.17
+76.01
+3245.20
+7220.95
+9429.70
+10466.15
+144.41
+0.00
+4500.15
+7220.95
+7365.36
+11721.10
+11865.51
+-2208.75
+2451065
+6254
+2451157
+1
+97863
+1430358
+5700
+37795
+90666
+1031523
+6974
+13469
+28
+20
+17
+3
+269
+5527
+22
+74.55
+87.22
+55.82
+690.80
+1228.04
+1640.10
+1918.84
+49.12
+0.00
+172.48
+1228.04
+1277.16
+1400.52
+1449.64
+-412.06
+2451872
+33250
+2451967
+1
+75395
+1449663
+6331
+2199
+13930
+1646863
+2156
+3977
+41
+17
+17
+5
+93
+6313
+19
+68.26
+187.03
+140.27
+888.44
+2665.13
+1296.94
+3553.57
+44.77
+1918.89
+746.13
+746.24
+791.01
+1492.37
+1537.14
+-550.70
+2451111
+80593
+2451160
+1
+49640
+707520
+5047
+10927
+4986
+618694
+1014
+48094
+40
+4
+5
+5
+182
+6620
+72
+53.90
+80.31
+61.83
+1330.56
+4451.76
+3880.80
+5782.32
+222.58
+0.00
+635.76
+4451.76
+4674.34
+5087.52
+5310.10
+570.96
+
+query IIIIIIIIIIIIIIIIIIIDDDDDDDDDDDDDDD nosort
+select * from catalog_sales order by cs_item_sk, cs_order_number limit 9
+----
+2450816
+33151
+2450886
+96466
+1840163
+3060
+29157
+96466
+1840163
+3060
+29157
+4
+39
+13
 4
 1
-859
-2450815
-7
+261
+94
+45
+41.31
+85.92
+5.15
+3634.65
+231.75
+1858.95
+3866.40
+4.63
+0.00
+1353.15
+231.75
+236.38
+1584.90
+1589.53
+-1627.20
+2450819
+29066
+2450843
+49302
+236815
+2728
+4194
+49302
+236815
+2728
+4194
 1
-704
-2450815
+78
+2
+3
+1
+290
+226
+60
+70.85
+78.64
+77.85
+47.40
+4671.00
+4251.00
+4718.40
+233.55
+0.00
+46.80
+4671.00
+4904.55
+4717.80
+4951.35
+420.00
+2450866
+34648
+2450915
+25375
+892719
+2016
+20913
+25375
+892719
+2016
+20913
+1
+150
+19
+1
+1
+12
+2644
+27
+56.63
+94.57
+30.26
+1736.37
+817.02
+1529.01
+2553.39
+40.85
+0.00
+714.69
+817.02
+857.87
+1531.71
+1572.56
+-711.99
+2450889
+65714
+2450918
+82178
+87194
+4210
+4426
+82178
+87194
+4210
+4426
+4
+17
+5
+2
+1
+186
+3773
+12
+75.11
+145.71
+119.48
+314.76
+1433.76
+901.32
+1748.52
+57.35
+0.00
+874.20
+1433.76
+1491.11
+2307.96
+2365.31
+532.44
+2450912
+49518
+2450961
+57754
+467792
+6183
+31374
+57754
+467792
+6183
+31374
+2
+412
+16
+3
+1
+94
+4908
+70
+62.08
+168.23
+8.41
+11187.40
+588.70
+4345.60
+11776.10
+41.20
+0.00
+4239.20
+588.70
+629.90
+4827.90
+4869.10
+-3756.90
+2450936
+62363
+2450965
+94536
+1634399
+3509
+47372
+94536
+1634399
+3509
+47372
+1
+101
+17
+2
+1
+235
+6148
+82
+26.77
+57.02
+54.73
+187.78
+4487.86
+2195.14
+4675.64
+269.27
+0.00
+233.70
+4487.86
+4757.13
+4721.56
+4990.83
+2292.72
+2450958
+51324
+2451004
+52481
+33095
+2956
+24417
+52481
+33095
+2956
+24417
+4
+43
 8
+2
 1
-891
+262
+7250
+74
+7.43
+21.10
+20.25
+62.90
+1498.50
+549.82
+1561.40
+89.91
+0.00
+561.66
+1498.50
+1588.41
+2060.16
+2150.07
+948.68
+2450987
+53729
+2451033
+74459
+448507
+4602
+42650
+74459
+448507
+4602
+42650
+2
+91
+17
+5
+1
+58
+8757
+62
+97.09
+239.81
+213.43
+1635.56
+13232.66
+6019.58
+14868.22
+1058.61
+0.00
+5054.86
+13232.66
+14291.27
+18287.52
+19346.13
+7213.08
+2451003
+56627
+2451063
+15583
+333075
+4967
+44906
+15583
+333075
+4967
+44906
+1
+251
+17
+5
+1
+87
+9568
+59
+45.02
+62.12
+44.72
+1026.60
+2638.48
+2656.18
+3665.08
+237.46
+0.00
+1062.59
+2638.48
+2875.94
+3701.07
+3938.53
+-17.70
 
-query IIIIIIIIIIIIIIIIIIDDDDDDDDD rowsort
-select * from catalog_returns limit 9
+query IIIIIIIIIIIDDDDDDDDDDDD nosort
+select * from store_sales order by ss_item_sk, ss_ticket_number limit 9
 ----
-243 values hashing to 83fc585bf8ae1e3475c9d3bc6acb3baa
-
-query IIIIIIIIIIIIIIIDDDDDDDDD rowsort
-select * from web_returns limit 9
-----
-216 values hashing to 58e12ed10dae560e5f3fb33fd4dd2340
-
-query IIIIIIIIIIIIIIIIIIIDDDDDDDDDDDDDDD rowsort
-select * from web_sales limit 9
-----
-306 values hashing to 3d21e844caaaec0912809d5a78d80419
-
-query IIIIIIIIIIIIIIIIIIIDDDDDDDDDDDDDDD rowsort
-select * from catalog_sales limit 9
-----
-306 values hashing to 3dc0529699fa57637a279e6995f6eccc
-
-query IIIIIIIIIIIDDDDDDDDDDDD rowsort
-select * from store_sales limit 9
-----
-207 values hashing to 4be2923b90c105f3ff961dcd3ade1324
+2451514
+54881
+1
+37221
+1406751
+1881
+7811
+8
+48
+554
+35
+5.40
+9.34
+3.64
+78.98
+127.40
+189.00
+326.90
+1.93
+78.98
+48.42
+50.35
+-140.58
+2451426
+62784
+1
+874
+1534265
+4456
+27800
+8
+187
+1081
+97
+19.83
+21.21
+16.11
+0.00
+1562.67
+1923.51
+2057.37
+140.64
+0.00
+1562.67
+1703.31
+-360.84
+2451880
+61720
+1
+52546
+1166646
+1546
+32046
+7
+151
+1795
+42
+50.33
+58.88
+56.52
+878.32
+2373.84
+2113.86
+2472.96
+44.86
+878.32
+1495.52
+1540.38
+-618.34
+2452610
+68146
+1
+7880
+1603272
+3017
+38809
+8
+31
+1956
+34
+79.93
+112.70
+27.04
+0.00
+919.36
+2717.62
+3831.80
+0.00
+0.00
+919.36
+919.36
+-1798.26
+2452250
+46089
+1
+63101
+356561
+4421
+30281
+7
+116
+3426
+40
+18.02
+18.92
+11.54
+0.00
+461.60
+720.80
+756.80
+32.31
+0.00
+461.60
+493.91
+-259.20
+2451296
+68320
+1
+73520
+599554
+3635
+19669
+4
+196
+3940
+86
+85.99
+102.32
+74.69
+0.00
+6423.34
+7395.14
+8799.52
+128.46
+0.00
+6423.34
+6551.80
+-971.80
+2451062
+39133
+1
+74297
+1291353
+7162
+31771
+10
+291
+5918
+4
+25.21
+38.57
+33.94
+0.00
+135.76
+100.84
+154.28
+4.07
+0.00
+135.76
+139.83
+34.92
+2451671
+NULL
+1
+41382
+NULL
+1170
+NULL
+NULL
+NULL
+6287
+NULL
+61.19
+NULL
+NULL
+0.00
+NULL
+NULL
+6789.00
+446.03
+0.00
+4955.97
+5402.00
+NULL
+2452554
+70131
+1
+64758
+1545832
+2906
+29627
+4
+9
+8332
+6
+67.23
+70.59
+63.53
+221.08
+381.18
+403.38
+423.54
+9.60
+221.08
+160.10
+169.70
+-243.28
 
 statement ok
 rollback
