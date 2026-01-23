@@ -5277,12 +5277,30 @@ sql_update_dec2025_sp1(Client c, mvc *sql, sql_schema *s)
 	err = SQLstatementIntern(c, query1, "update", true, false, &output);
 	if (err == MAL_SUCCEED && (b = BBPquickdesc(output->cols[0].b)) && BATcount(b) == 1) {
 		static const char stmt1[] =
+			"DROP VIEW sys.describe_accessible_tables CASCADE;\n"
 			"DROP VIEW sys.roles CASCADE;\n"
 			"CREATE VIEW sys.roles AS SELECT id, name, grantor FROM sys.auths;\n"
 			"GRANT SELECT ON sys.roles TO PUBLIC;\n"
-			"UPDATE sys._tables SET system = true WHERE not system and schema_id = 2000 and name = 'roles';\n";
+			"CREATE VIEW sys.describe_accessible_tables AS\n"
+			"    SELECT\n"
+			"        schemas.name AS schema,\n"
+			"        tables.name  AS table,\n"
+			"        tt.table_type_name AS table_type,\n"
+			"        pc.privilege_code_name AS privs,\n"
+			"        p.privileges AS privs_code\n"
+			"    FROM privileges p\n"
+			"    JOIN sys.roles ON p.auth_id = roles.id\n"
+			"    JOIN sys.tables ON p.obj_id = tables.id\n"
+			"    JOIN sys.table_types tt ON tables.type = tt.table_type_id\n"
+			"    JOIN sys.schemas ON tables.schema_id = schemas.id\n"
+			"    JOIN sys.privilege_codes pc ON p.privileges = pc.privilege_code_id\n"
+			"    WHERE roles.name = current_role;\n"
+			"GRANT SELECT ON sys.describe_accessible_tables TO PUBLIC;\n"
+			"UPDATE sys._tables SET system = true WHERE not system and schema_id = 2000 and name in ('roles', 'describe_accessible_tables');\n";
 		sql_table *t;
 		if ((t = mvc_bind_table(sql, s, "roles")) != NULL)
+			t->system = 0; /* make it non-system else the drop view will fail */
+		if ((t = mvc_bind_table(sql, s, "describe_accessible_tables")) != NULL)
 			t->system = 0; /* make it non-system else the drop view will fail */
 		printf("Running database upgrade commands:\n%s\n", stmt1);
 		fflush(stdout);
