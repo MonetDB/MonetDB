@@ -2507,8 +2507,10 @@ void
 ma_free(allocator *sa, void *obj)
 {
 	COND_LOCK_ALLOCATOR(sa);
-	if (!obj || ma_tmp_active(sa))
+	if (!obj || ma_tmp_active(sa)) {
+		COND_UNLOCK_ALLOCATOR(sa);
 		return; // nothing to do
+	}
 	// retrieve size from header
 	void *ptr = (char *) obj - MA_HEADER_SIZE;
 	size_t sz = *((size_t *) ptr);

@@ -786,6 +786,13 @@ COLcopy2(BAT *b, int tt, bool writable, bool mayshare, role_t role)
 			 * offset heap is only (less than) half the size
 			 * of the parent's offset heap */
 			slowcopy = true;
+		} else if (bi.vh && role == PERSISTENT && !writable) {
+			/* writable usually means no view, but
+			 * role==PERSISTENT already implies that, so we
+			 * use it to decide whether we can do a faster
+			 * memcpy (if true) or must do a slower
+			 * individual insert (if false) */
+			slowcopy = true;
 		}
 	}
 
