@@ -2746,7 +2746,7 @@ class ServerClass:
         self.sendusr1()
 
     def checkkeys(self):
-        if not checkkeys:
+        if not checkkeys or self.port is None:
             return
         self.outfile.flush()
         try:
