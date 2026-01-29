@@ -1675,6 +1675,7 @@ BBPtrim(bool aggressive, bat nbat)
 		MT_lock_unset(&GDKswapLock(bid));
 		if (swap) {
 			TRC_DEBUG(BAT, "unload and free bat %d\n", bid);
+			MT_thread_set_qry_ctx(b->qc);
 			if (BBPfree(b) != GDK_SUCCEED)
 				GDKerror("unload failed for bat %d", bid);
 			n++;
@@ -1687,6 +1688,7 @@ BBPtrim(bool aggressive, bat nbat)
 			MT_sleep_ms(2);
 		}
 	}
+	MT_thread_set_qry_ctx(NULL);
 	if (n > 0)
 		TRC_INFO(BAT, "unloaded %d bats, %zu%s bytes in "LLFMT" usec%s\n", n, mem, humansize(mem, (char[24]){0}, 24), GDKusec() - t0, aggressive ? " (also hot)" : "");
 	return changed;
