@@ -1,4 +1,4 @@
 7780-unnest-slow
 7782-roles-view
 7783-deleted-row
-KNOWNFAIL?7804-querylog-catalog-orderby-bug
+7804-querylog-catalog-orderby-bug
