@@ -428,6 +428,7 @@ typedef struct BAT {
 	MT_RWLock thashlock;	/* lock specifically for hash management */
 	MT_Lock batIdxLock;	/* lock to manipulate other indexes/properties */
 	Heap *oldtail;		/* old tail heap, to be destroyed after commit */
+	QryCtx *qc;		/* query context of owner if transient */
 } BAT;
 
 /* some access functions for the bitmask type */
