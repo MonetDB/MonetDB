@@ -1,0 +1,129 @@
+statement ok
+CREATE TABLE t7805 (name VARCHAR(99))
+
+statement ok
+INSERT INTO t7805 SELECT CAST(value%3 AS VARCHAR(10)) FROM generate_series(1, 12)
+
+-- BUG next query returned data in reverse order
+query T nosort
+SELECT name FROM t7805 ORDER BY ALL
+----
+0
+0
+0
+1
+1
+1
+1
+2
+2
+2
+2
+
+-- BUG next query returned data in reverse order
+query T nosort
+SELECT DISTINCT name FROM t7805 ORDER BY ALL
+----
+0
+1
+2
+
+-- compare with equivalent queries:
+query T nosort
+SELECT name FROM t7805 ORDER BY name;
+----
+0
+0
+0
+1
+1
+1
+1
+2
+2
+2
+2
+
+query T nosort
+SELECT name FROM t7805 ORDER BY 1
+----
+0
+0
+0
+1
+1
+1
+1
+2
+2
+2
+2
+
+-- idem behavior if we add a GROUP BY clause
+-- BUG next query returned data in reverse order
+query TI nosort
+SELECT name, count(*) as count FROM t7805 GROUP BY name ORDER BY ALL
+----
+0
+3
+1
+4
+2
+4
+
+-- BUG next query returned data in reverse order
+query TI nosort
+SELECT name, count(*) as count FROM t7805 GROUP BY ALL ORDER BY ALL
+----
+0
+3
+1
+4
+2
+4
+
+-- compare with equivalent queries:
+query TI nosort
+SELECT name, count(*) as count FROM t7805 GROUP BY name ORDER BY name
+----
+0
+3
+1
+4
+2
+4
+
+query TI nosort
+SELECT name, count(*) as count FROM t7805 GROUP BY name ORDER BY 1
+----
+0
+3
+1
+4
+2
+4
+
+-- next query fails Error: SELECT: cannot use non GROUP BY column 'name' in query results without an aggregate function
+query TI nosort
+SELECT name, count(*) as count FROM t7805 GROUP BY ALL ORDER BY name
+----
+0
+3
+1
+4
+2
+4
+
+query TI nosort
+SELECT name, count(*) as count FROM t7805 GROUP BY ALL ORDER BY 1
+----
+0
+3
+1
+4
+2
+4
+
+statement ok
+DROP TABLE IF EXISTS t7805
+
