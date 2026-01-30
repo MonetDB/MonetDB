@@ -466,10 +466,26 @@ gdk_export size_t HEAPmemsize(Heap *h);
 gdk_export void HEAPdecref(Heap *h, bool remove);
 gdk_export void HEAPincref(Heap *h);
 
-#define VIEWtparent(x)	((x)->theap == NULL || (x)->theap->parentid == (x)->batCacheid ? 0 : (x)->theap->parentid)
-#define VIEWvtparent(x)	((x)->tvheap == NULL || (x)->tvheap->parentid == (x)->batCacheid ? 0 : (x)->tvheap->parentid)
+__attribute__((__pure__))
+static inline bat
+VIEWtparent(const BAT *b)
+{
+	return b->theap == NULL || b->theap->parentid == b->batCacheid ? 0 : b->theap->parentid;
+}
 
-#define isVIEW(x)	(VIEWtparent(x) != 0 || VIEWvtparent(x) != 0)
+__attribute__((__pure__))
+static inline bat
+VIEWvtparent(const BAT *b)
+{
+	return b->tvheap == NULL || b->tvheap->parentid == b->batCacheid ? 0 : b->tvheap->parentid;
+}
+
+__attribute__((__pure__))
+static inline bool
+isVIEW(const BAT *b)
+{
+	return VIEWtparent(b) != 0 || VIEWvtparent(b) != 0;
+}
 
 typedef struct {
 	char *logical;		/* logical name (may point at bak) */
