@@ -2635,8 +2635,8 @@ exp_set_type(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 		if (el->type == e_atom && !el->f && !el->l && !el->r) {
 			el = exp_atom_set_type_null(v, el, t);
 			if (el) {
-				e->l = el;
-				return e;
+				exp_prop_alias(v->sql->sa, el, e);
+				return el;
 			}
 		}
 	}
