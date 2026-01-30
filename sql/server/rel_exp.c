@@ -411,7 +411,8 @@ nested_exps(mvc *sql, sql_subtype *t, sql_alias *p, const char *name)
 				append(nested, e);
 			}
 		} else {
-			sql_exp *e = exp_alias(sql, atname, MSEL_NAME, atname, MSEL_NAME, t, CARD_MULTI, true, false, 1);
+			sql_exp *e = exp_alias(sql, atname, MSEL_NAME, atname, MSEL_NAME, t,
+					CARD_MULTI, true, false, 1);
 			append(nested, e);
 		}
 	}

@@ -1269,7 +1269,7 @@ _rel_projections(mvc *sql, sql_rel *rel, sql_alias *tname, int settname, int int
 			rexps = _rel_projections(sql, rel->r, tname, settname, intern, basecol);
 		exps_reset_props(rexps, is_left(rel->op) || is_full(rel->op));
 		if (rexps)
-			lexps = list_merge(lexps, rexps, (fdup)NULL);
+			lexps = list_join(lexps, rexps);
 		if (rel->attr)
 			append(lexps, exp_ref(sql, rel->attr->h->data));
 		return lexps;

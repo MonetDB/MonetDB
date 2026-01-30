@@ -812,9 +812,11 @@ rel_unnest_func(sql_query *query, list *exps, char *tname)
 					sql_exp *e = n->data;
 					sql_exp *ne = exp_ref(query->sql, e);
 					sql_subtype *tt = exp_subtype(ne);
-
-					if (first)
+					if (first) {
+						reset_intern(ne);
+						set_basecol(ne);
 						tt->multiset = MS_VALUE;
+					}
 					exp_setname(query->sql, ne, ta, exp_name(e));
 					append(nexps, ne);
 					first = false;
@@ -1081,6 +1083,8 @@ rel_named_table_function(sql_query *query, sql_rel *rel, symbol *ast, int latera
 		tname = NULL;
 		if (ast->data.lval->t->type == type_symbol && ast->data.lval->t->data.sym)
 			tname = ast->data.lval->t->data.sym->data.lval->h->data.sval;
+		else
+			tname = make_label(sql->sa, ++sql->label);
 		rel = rel_unnest_func(query, exps, tname);
 		if (!rel)
 			return NULL;
@@ -1377,6 +1381,8 @@ values_list(sql_query *query, symbol *tableref)
 	list *exps = sa_list(sql->sa);
 	exp_kind ek = {type_value, card_value, TRUE};
 
+	bool check_multiset = false;
+
 	for (dnode *o = rowlist->h; o; o = o->next) {
 		dlist *values = o->data.lval;
 
@@ -1397,7 +1403,10 @@ values_list(sql_query *query, symbol *tableref)
 				sql_exp *vals = m->data;
 				list *vals_list = vals->f;
 				sql_rel *r = NULL;
-				sql_exp *e = rel_value_exp(query, &r, n->data.sym, sql_sel | sql_values, ek);
+				symbol *s = n->data.sym;
+				sql_exp *e = rel_value_exp(query, &r, s, sql_sel | sql_values, ek);
+				if (s->token == SQL_SET && e && e->f)
+					check_multiset = true;
 				if (!e)
 					return NULL;
 				if (r) {
@@ -1416,6 +1425,9 @@ values_list(sql_query *query, symbol *tableref)
 		if (!(e = exp_values_set_supertype(sql, e, NULL)))
 			return NULL;
 		e->card = card;
+		if (check_multiset)
+			if ((e = exp_check_multiset(query->sql, e)) == NULL)
+				return NULL;
 		m->data = e;
 	}
 	return exps;

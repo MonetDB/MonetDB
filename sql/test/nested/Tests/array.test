@@ -33,13 +33,13 @@ select u.elements from (select array[10, 11] a) sq, unnest(sq.a) u
 10
 11
 
-query III nosort 
+query I nosort 
 select u.* from (select array[10, 11] a) sq, unnest(sq.a) u
 ----
 10
 11
 
-query TIII nosort unnest_all
+query TI nosort unnest_all
 select * from (select array[10, 11] a) sq, unnest(sq.a) u
 ----
 {10,11}
@@ -47,7 +47,7 @@ select * from (select array[10, 11] a) sq, unnest(sq.a) u
 {10,11}
 11
 
-query TIII nosort unnest_all
+query TI nosort unnest_all
 select sq.*, u.* from (select array[10, 11] a) sq, unnest(sq.a) u
 ----
 {10,11}
@@ -194,7 +194,7 @@ select elements from amb, unnest(elements) u
 {20,21}
 {20,21}
 
-query T nosort 
+query TI nosort 
 select elements, u.elements from amb, unnest(elements) u
 ----
 {10,11}
