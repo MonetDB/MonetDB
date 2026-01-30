@@ -2423,7 +2423,7 @@ BBPdump(void)
 			MT_rwlock_rdunlock(&b->thashlock);
 		}
 		printf(" role: %s\n",
-		       b->batRole == PERSISTENT ? "persistent" : "transient");
+		       b->batRole == PERSISTENT ? "persistent" : b->batRole == SYSTRANS ? "systrans" : "transient");
 	}
 	printf("# %d bats: mem=%zu, vm=%zu\n", n, mem, vm);
 	fflush(stdout);
