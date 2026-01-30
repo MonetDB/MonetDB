@@ -932,9 +932,10 @@ exp2bin_named_placeholders(backend *be, sql_exp *fe)
 
 	if (list_empty(args))
 		return NULL;
-	for (node *n = args->h; n; n = n->next, argc++) {
+	for (node *n = args->h, *m = be->mvc->params->h; n && m; n = n->next, m = m->next, argc++) {
 		sql_exp *a = n->data;
-		sql_subtype *t = exp_subtype(a);
+		sql_arg *p = m->data;
+		sql_subtype *t = &p->type;
 		stmt *s = exp_bin(be, a, NULL, NULL, NULL, NULL, NULL, NULL, 1, 0, 1);
 		InstrPtr q = newAssignment(be->mb);
 

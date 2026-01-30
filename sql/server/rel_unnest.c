@@ -2385,6 +2385,32 @@ rewrite_empty_project(visitor *v, sql_rel *rel)
 #define is_division(sf) (strcmp(sf->func->base.name, "sql_div") == 0)
 #define is_multiplication(sf) (strcmp(sf->func->base.name, "sql_mul") == 0)
 
+static sql_exp *
+exp_atom_set_type_null(visitor *v, sql_exp *el, sql_subtype *t)
+{
+	if (el->type == e_atom && !el->f && !el->r) {
+		sql_subtype *f = exp_subtype(el);
+		if ((!f || f->type->eclass == EC_ANY) && !el->l) { /* parameter, set type, or return ERR?? */
+			sql_arg *a = sql_bind_paramnr(v->sql, el->flag);
+			if (!a->type.type || a->type.type->eclass == EC_ANY) {
+				a->type = *t;
+				el->tpe = a->type;
+				v->changes++;
+				return el;
+			}
+		} else if ((!f || f->type->eclass == EC_ANY) && el->l) { /* NULL? */
+			atom *a = el->l;
+			if (atom_null(a)) {
+				atom_cast_inplace(v->sql->sa, a, t);
+				el->tpe = *t;
+				v->changes++;
+				return el;
+			}
+		}
+	}
+	return NULL;
+}
+
 static inline sql_exp *
 exp_physical_types(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 {
@@ -2571,7 +2597,54 @@ exp_reset_card_and_freevar_set_physical_type(visitor *v, sql_rel *rel, sql_exp *
 }
 
 static sql_exp *
-exp_set_type(mvc *sql, sql_exp *te, sql_exp *e)
+exp_set_type(visitor *v, sql_rel *rel, sql_exp *e, int depth)
+{
+	(void)rel;
+	(void)depth;
+	if (!e)
+		return e;
+
+	if (e->type == e_atom && !e->f && !e->l && !e->r) {
+		sql_subtype *t = exp_subtype(e);
+		if ((!t || t->type->eclass == EC_ANY)) { /* parameter, set type, or return ERR?? */
+			sql_arg *a = sql_bind_paramnr(v->sql, e->flag);
+			if (!a->type.type)
+				return sql_error(v->sql, 10, SQLSTATE(42000) "Could not determine type for argument number %d", e->flag+1);
+			e->tpe = a->type;
+		}
+	} else if (e->type == e_cmp && !e->f) {
+		if (e->flag == cmp_in || e->flag == cmp_notin) {
+			sql_subtype *lt = exp_subtype(e->l);
+			e->r = exps_check_type(v->sql, lt, e->r);
+		} else if (e->flag == cmp_equal || e->flag == cmp_notequal) {
+			sql_subtype *lt = exp_subtype(e->l);
+			sql_subtype *rt = exp_subtype(e->r);
+			if (!lt || lt->type->eclass == EC_ANY) {
+				sql_exp *ne = exp_atom_set_type_null(v, e->l, rt);
+				if (ne)
+					e->l = ne;
+			} else if (!rt || rt->type->eclass == EC_ANY) {
+				sql_exp *ne = exp_atom_set_type_null(v, e->r, lt);
+				if (ne)
+					e->r = ne;
+			}
+		}
+	} else if (e->type == e_convert && !e->f) {
+		sql_exp *el = e->l;
+		sql_subtype *t = exp_totype(e);
+		if (el->type == e_atom && !el->f && !el->l && !el->r) {
+			el = exp_atom_set_type_null(v, el, t);
+			if (el) {
+				e->l = el;
+				return e;
+			}
+		}
+	}
+	return e;
+}
+
+static sql_exp *
+exp_set_type_as(mvc *sql, sql_exp *te, sql_exp *e)
 {
 	if (te->type == e_convert) {
 		if (e->type == e_column)  {
@@ -2603,7 +2676,7 @@ rel_set_type(visitor *v, sql_rel *rel)
 					sql_subtype *t = exp_subtype(e);
 
 					if (t && !t->type->localtype) {
-						n->data = exp_set_type(v->sql, m->data, e);
+						n->data = exp_set_type_as(v->sql, m->data, e);
 						clear_hash = true;
 					}
 				}
@@ -2625,7 +2698,7 @@ rel_set_type(visitor *v, sql_rel *rel)
 					sql_subtype *t = exp_subtype(e);
 
 					if (t && !t->type->localtype) {
-						n->data = exp_set_type(v->sql, m->data, e);
+						n->data = exp_set_type_as(v->sql, m->data, e);
 						clear_hash = true;
 					}
 				}
@@ -2676,6 +2749,7 @@ rel_set_type(visitor *v, sql_rel *rel)
 					} else if (te->type == e_atom && !te->f) {
 						sql_subtype *t = exp_subtype(te);
 						if (!t && !te->l && !te->r) { /* parameter, set type, or return ERR?? */
+						assert(0);
 							sql_arg *a = sql_bind_paramnr(v->sql, te->flag);
 							if (!a->type.type)
 								return sql_error(v->sql, 10, SQLSTATE(42000) "Could not determine type for argument number %d", te->flag+1);
@@ -4652,7 +4726,7 @@ rel_simplify_exp_and_rank(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 }
 
 static inline sql_rel *
-run_exp_rewriter(visitor *v, sql_rel *rel, exp_rewrite_fptr rewriter, bool direction, const char *name)
+run_exp_rewriter(visitor *v, sql_rel *rel, exp_rewrite_fptr rewriter, bool direction, const char *name, bool continue_on_changes)
 {
 	(void)name;
 	v->changes = 0;
@@ -4665,8 +4739,13 @@ run_exp_rewriter(visitor *v, sql_rel *rel, exp_rewrite_fptr rewriter, bool direc
 	return rel;
 #else
 */
-	return rel_exp_visitor_bottomup(v, rel, rewriter, direction);
+	rel = rel_exp_visitor_bottomup(v, rel, rewriter, direction);
+	if (continue_on_changes) {
+		v->changes = 0;
+		rel = rel_exp_visitor_bottomup(v, rel, rewriter, direction);
+	}
 //#endif
+	return rel;
 }
 
 static inline sql_rel *
@@ -4692,17 +4771,18 @@ rel_unnest(mvc *sql, sql_rel *rel)
 {
 	visitor v = { .sql = sql };
 
-	rel = run_exp_rewriter(&v, rel, &rel_simplify_exp_and_rank, false, "simplify_exp_and_rank");
+	rel = run_exp_rewriter(&v, rel, &rel_simplify_exp_and_rank, false, "simplify_exp_and_rank", false);
 	rel = run_rel_rewriter(&v, rel, &rel_unnest_simplify, "unnest_simplify");
-	rel = run_exp_rewriter(&v, rel, &rewrite_complex, true, "rewrite_complex");
-	rel = run_exp_rewriter(&v, rel, &rewrite_ifthenelse, false, "rewrite_ifthenelse"); /* add isnull handling */
-	rel = run_exp_rewriter(&v, rel, &rewrite_exp_rel, true, "rewrite_exp_rel");
+	rel = run_exp_rewriter(&v, rel, &rewrite_complex, true, "rewrite_complex", false);
+	rel = run_exp_rewriter(&v, rel, &rewrite_ifthenelse, false, "rewrite_ifthenelse", false); /* add isnull handling */
+	rel = run_exp_rewriter(&v, rel, &rewrite_exp_rel, true, "rewrite_exp_rel", false);
 
 	rel = run_rel_rewriter(&v, rel, &rel_unnest_comparison_rewriters, "unnest_comparison_rewriters");
 	rel = run_rel_rewriter(&v, rel, &_rel_unnest, "unnest");
 	rel = run_rel_rewriter(&v, rel, &rewrite_fix_count, "fix_count");	/* fix count inside a left join (adds a project (if (cnt IS null) then (0) else (cnt)) */
 	rel = run_rel_rewriter(&v, rel, &rel_unnest_projects, "unnest_projects");
-	rel = run_exp_rewriter(&v, rel, &exp_reset_card_and_freevar_set_physical_type, false, "exp_reset_card_and_freevar_set_physical_type");
+	rel = run_exp_rewriter(&v, rel, &exp_reset_card_and_freevar_set_physical_type, false, "exp_reset_card_and_freevar_set_physical_type", false);
+	rel = run_exp_rewriter(&v, rel, &exp_set_type, false, "exp_set_type", true);
 	rel = rel_visitor_topdown(&v, rel, &rel_set_type);
 	return rel;
 }
