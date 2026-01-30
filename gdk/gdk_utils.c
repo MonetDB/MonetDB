@@ -2006,17 +2006,19 @@ GDKmremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 #define round16(sz) ((sz+15)&~15)
 #define round_block_size(sz) ((sz + (MA_BLOCK_SIZE - 1))&~(MA_BLOCK_SIZE - 1))
 
-#define COND_LOCK_ALLOCATOR(a)			\
-	bool __alloc_locked = false;		\
-	if ((a)->use_lock) {			\
-		MT_lock_set(&(a)->lock);	\
-		__alloc_locked = true;		\
-	} else assert((a)->self == MT_getpid());
+#define COND_LOCK_ALLOCATOR(a)					\
+	do {							\
+		if ((a)->use_lock) {				\
+			MT_lock_set(&(a)->lock);		\
+		} else assert((a)->self == MT_getpid());	\
+	} while (0)
 
-#define COND_UNLOCK_ALLOCATOR(a)		\
-	if (__alloc_locked) {			\
-		MT_lock_unset(&(a)->lock);	\
-	}
+#define COND_UNLOCK_ALLOCATOR(a)			\
+	do {						\
+		if ((a)->use_lock) {			\
+			MT_lock_unset(&(a)->lock);	\
+		}					\
+	} while (0)
 
 
 typedef struct freed_t {
@@ -2182,6 +2184,30 @@ ma_reset(allocator *sa)
 void *
 ma_realloc(allocator *sa, void *p, size_t sz, size_t oldsz)
 {
+	size_t r_oldsz = round16(oldsz);
+	size_t r_sz = round16(sz);
+	COND_LOCK_ALLOCATOR(sa);
+	if (r_oldsz <= sa->used &&
+	    (char *) sa->blks[sa->nr - 1] + sa->used - r_oldsz == (char *) p) {
+		/* trying to realloc the last allocated buffer, we may
+		 * be able to readjust it */
+		if (sz <= oldsz) {
+			/* size reduction */
+			sa->used = sa->used - r_oldsz + r_sz;
+			COND_UNLOCK_ALLOCATOR(sa);
+			return p;
+		}
+		if (sa->used - r_oldsz + r_sz <= MA_BLOCK_SIZE) {
+			sa->used = sa->used - r_oldsz + r_sz;
+			COND_UNLOCK_ALLOCATOR(sa);
+			return p;
+		}
+	}
+	COND_UNLOCK_ALLOCATOR(sa);
+
+	if (r_sz <= r_oldsz)
+		return p;
+
 	void *r = ma_alloc(sa, sz);
 
 	if (r)
@@ -2481,7 +2507,10 @@ void
 ma_free(allocator *sa, void *obj)
 {
 	COND_LOCK_ALLOCATOR(sa);
-	if (!obj || ma_tmp_active(sa)) return; // nothing to do
+	if (!obj || ma_tmp_active(sa)) {
+		COND_UNLOCK_ALLOCATOR(sa);
+		return; // nothing to do
+	}
 	// retrieve size from header
 	void *ptr = (char *) obj - MA_HEADER_SIZE;
 	size_t sz = *((size_t *) ptr);

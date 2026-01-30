@@ -3720,8 +3720,8 @@ expr_list:
 	;
 
 named_value_commalist:
-		ident scalar_exp                           { $$ = append_string(append_symbol(L(), $2), $1); }
-	|	named_value_commalist ',' ident scalar_exp { $$ = append_string(append_symbol($1, $4), $3); }
+		column_id scalar_exp                           { $$ = append_string(append_symbol(L(), $2), $1); }
+	|	named_value_commalist ',' column_id scalar_exp { $$ = append_string(append_symbol($1, $4), $3); }
 	;
 
 null:
@@ -5307,10 +5307,10 @@ value_exp:
 	|	ARRAY select_with_parens          { $$ = $2; }
 	|	ARRAY array_expr                  { $$ = _symbol_create_list(SQL_SET, $2); }
 	|	VECTOR vector_expr                { $$ = _symbol_create_list(SQL_VECTOR, $2); }
-	|	session_user     { $$ = _symbol_create_list(SQL_NAME, append_string(append_string(L(), ma_strdup(SA, "sys")), ma_strdup(SA, "current_user"))); }
-	|	CURRENT_SCHEMA   { $$ = _symbol_create_list(SQL_NAME, append_string(append_string(L(), ma_strdup(SA, "sys")), ma_strdup(SA, "current_schema"))); }
-	|	CURRENT_ROLE     { $$ = _symbol_create_list(SQL_NAME, append_string(append_string(L(), ma_strdup(SA, "sys")), ma_strdup(SA, "current_role"))); }
-	|	CURRENT_TIMEZONE { $$ = _symbol_create_list(SQL_NAME, append_string(append_string(L(), ma_strdup(SA, "sys")), ma_strdup(SA, "current_timezone"))); }
+	|	session_user     { $$ = _symbol_create_list(SQL_NAME, append_string(append_string(L(), "sys"), "current_user")); }
+	|	CURRENT_SCHEMA   { $$ = _symbol_create_list(SQL_NAME, append_string(append_string(L(), "sys"), "current_schema")); }
+	|	CURRENT_ROLE     { $$ = _symbol_create_list(SQL_NAME, append_string(append_string(L(), "sys"), "current_role")); }
+	|	CURRENT_TIMEZONE { $$ = _symbol_create_list(SQL_NAME, append_string(append_string(L(), "sys"), "current_timezone")); }
 	|	datetime_funcs
 	|	EXISTS select_with_parens       { $$ = _symbol_create_symbol( SQL_EXISTS, $2 ); }
 	|	NOT_EXISTS select_with_parens   { $$ = _symbol_create_symbol( SQL_NOT_EXISTS, $2 ); }

@@ -52,6 +52,6 @@ body:
   - type: markdown
     attributes:
       value: |
-        If the above is not provided and cannot be inferred from your GitHub profile page,
-        we might close your issue without further review. Refer to the
+        If we find the above answers questionable and it is not obvious from your GitHub profile page,
+        we reserve the right to close your issue without further review. Please refer to the
         [reasoning behind this rule](https://berthub.eu/articles/posts/anonymous-help/) if you have questions.

@@ -46,9 +46,9 @@
 #if defined(__GNUC__) && defined(HAVE_VALGRIND)
 #include <valgrind.h>
 #else
-#define VALGRIND_MALLOCLIKE_BLOCK(addr, sizeB, rzB, is_zeroed)
-#define VALGRIND_FREELIKE_BLOCK(addr, rzB)
-#define VALGRIND_RESIZEINPLACE_BLOCK(addr, oldSizeB, newSizeB, rzB)
+#define VALGRIND_MALLOCLIKE_BLOCK(addr, sizeB, rzB, is_zeroed) ((void) 0)
+#define VALGRIND_FREELIKE_BLOCK(addr, rzB) ((void) 0)
+#define VALGRIND_RESIZEINPLACE_BLOCK(addr, oldSizeB, newSizeB, rzB) ((void) 0)
 #endif
 
 #ifndef MAP_NORESERVE

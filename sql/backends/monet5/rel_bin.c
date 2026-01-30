@@ -3374,7 +3374,7 @@ rel2bin_hash_lookup(backend *be, sql_rel *rel, stmt *left, stmt *right, sql_idx 
 			return stmt_join(be, h, idx, 0, cmp_equal, 0, semantics, false);
 		}
 	} else {
-		return stmt_uselect(be, idx, h, cmp_equal, NULL, 0, semantics);
+		return stmt_uselect(be, idx, h, cmp_equal, left->cand, 0, semantics);
 	}
 }
 
@@ -5474,6 +5474,10 @@ rel2bin_select(backend *be, sql_rel *rel, list *refs)
 			sql_idx *i = p->value.pval;
 			int oldvtop = be->mb->vtop, oldstop = be->mb->stop;
 
+			if (sel) {
+				sub->cand = sel;
+				sel = NULL;
+			}
 			if (!(sel = rel2bin_hash_lookup(be, rel, sub, NULL, i, en))) {
 				/* hash lookup cannot be used, clean leftover mal statements */
 				clean_mal_statements(be, oldstop, oldvtop);

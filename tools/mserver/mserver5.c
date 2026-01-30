@@ -754,6 +754,10 @@ main(int argc, char **av)
 		};
 		struct stat sb;
 		if (binpath != NULL) {
+			if (MT_stat(binpath, &sb) != 0 &&
+				MT_stat(av[0], &sb) == 0 &&
+				MT_path_absolute(av[0]))
+				binpath = av[0];
 			char *p = strrchr(binpath, DIR_SEP);
 			if (p != NULL)
 				*p = '\0';

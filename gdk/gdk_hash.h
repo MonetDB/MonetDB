@@ -157,9 +157,9 @@ HASHgetlink(const Hash *h, BUN i)
 }
 
 /* mix_bte(0x80) == 0x80 */
-#define mix_bte(X)	((unsigned int) (unsigned char) (X))
+#define mix_bte(X)	((unsigned int) (uint8_t) (X))
 /* mix_sht(0x8000) == 0x8000 */
-#define mix_sht(X)	((unsigned int) (unsigned short) (X))
+#define mix_sht(X)	((unsigned int) (uint16_t) (X))
 /* mix_int(0x81060038) == 0x80000000 */
 #define mix_int(X)	(((unsigned int) (X) >> 7) ^	\
 			 ((unsigned int) (X) >> 13) ^	\

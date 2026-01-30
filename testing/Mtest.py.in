@@ -2746,7 +2746,7 @@ class ServerClass:
         self.sendusr1()
 
     def checkkeys(self):
-        if not checkkeys:
+        if not checkkeys or self.port is None:
             return
         self.outfile.flush()
         try:
@@ -2817,12 +2817,10 @@ class ServerClass:
                 self.lock.release()
 
     def LaunchIt(self, cwd=None, env=os.environ):
-        self.outfile.flush()
-        self.errfile.flush()
-
         cmd = self.cmd
         if procdebug:
             print('LaunchIt: starting process "%s" (inpipe)\n' % '" "'.join(cmd))
+
         stdin = process.DEVNULL
         stdout = self.outfile
         stderr = self.errfile
@@ -2843,6 +2841,12 @@ class ServerClass:
 
         else:
             stdout = process.PIPE
+        print(f'# Launching {cmd}', file=self.outfile)
+        if cwd is not None:
+            print(f'# in directory {cwd}', file=self.outfile)
+        print(f'# Environment: {env}', file=self.outfile)
+        self.outfile.flush()
+        self.errfile.flush()
         if os.name == 'nt':
             proc = process.Popen(cmd, stdin=stdin, stdout=stdout,
                                  stderr=stderr, text=True, cwd=cwd, env=env,

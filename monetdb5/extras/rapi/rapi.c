@@ -305,7 +305,8 @@ static BAT* sexp_to_bat(SEXP s, int type) {
 			return NULL;
 		}
 		b = COLnew(0, TYPE_str, cnt, TRANSIENT);
-		if (!b) return NULL;
+		if (!b)
+			return NULL;
 		b->tnil = false;
 		b->tnonil = true;
 		b->tkey = false;

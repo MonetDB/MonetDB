@@ -176,6 +176,7 @@ BATcreatedesc(oid hseq, int tt, bool heapnames, role_t role, uint16_t width)
 		.theap = h,
 		.tvheap = vh,
 		.creator_tid = MT_getpid(),
+		.qc = role == TRANSIENT ? MT_thread_get_qry_ctx() : NULL,
 	};
 
 	if (bn->theap) {
@@ -785,6 +786,13 @@ COLcopy2(BAT *b, int tt, bool writable, bool mayshare, role_t role)
 			 * vheap could be used completely, even if the
 			 * offset heap is only (less than) half the size
 			 * of the parent's offset heap */
+			slowcopy = true;
+		} else if (bi.vh && role == PERSISTENT && !writable) {
+			/* writable usually means no view, but
+			 * role==PERSISTENT already implies that, so we
+			 * use it to decide whether we can do a faster
+			 * memcpy (if true) or must do a slower
+			 * individual insert (if false) */
 			slowcopy = true;
 		}
 	}

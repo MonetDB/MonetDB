@@ -1,7 +1,7 @@
 create
 counts
-HAVE_DATA_PATH?load
 HAVE_DATA_PATH?alter
+HAVE_DATA_PATH?load
 HAVE_DATA_PATH?check
 HAVE_DATA_PATH?q1
 HAVE_DATA_PATH?q2
