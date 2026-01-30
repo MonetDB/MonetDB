@@ -4239,8 +4239,10 @@ rel_next_value_for( mvc *sql, symbol *se )
 	sql_subtype t;
 	sql_subfunc *f;
 
-	if (!sname)
-		sname = "sys";
+	if (!sname) {
+		sql_schema *s = cur_schema(sql);
+		sname = s->base.name;
+	}
 	if (!stack_find_rel_view(sql, seqname)) {
 		if (!(seq = find_sequence_on_scope(sql, sname, seqname, "NEXT VALUE FOR")))
 			return NULL;
