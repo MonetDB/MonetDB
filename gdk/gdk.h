@@ -433,19 +433,19 @@ typedef struct BAT {
 
 /* some access functions for the bitmask type */
 static inline void
-mskSet(BAT *b, BUN p)
+mskSet(const BAT *b, BUN p)
 {
 	((uint32_t *) b->theap->base)[p / 32] |= 1U << (p % 32);
 }
 
 static inline void
-mskClr(BAT *b, BUN p)
+mskClr(const BAT *b, BUN p)
 {
 	((uint32_t *) b->theap->base)[p / 32] &= ~(1U << (p % 32));
 }
 
 static inline void
-mskSetVal(BAT *b, BUN p, msk v)
+mskSetVal(const BAT *b, BUN p, msk v)
 {
 	if (v)
 		mskSet(b, p);
@@ -453,16 +453,19 @@ mskSetVal(BAT *b, BUN p, msk v)
 		mskClr(b, p);
 }
 
+__attribute__((__pure__))
 static inline msk
-mskGetVal(BAT *b, BUN p)
+mskGetVal(const BAT *b, BUN p)
 {
 	return ((uint32_t *) b->theap->base)[p / 32] & (1U << (p % 32));
 }
 
 gdk_export gdk_return HEAPextend(Heap *h, size_t size, bool mayshare)
 	__attribute__((__warn_unused_result__));
-gdk_export size_t HEAPvmsize(Heap *h);
-gdk_export size_t HEAPmemsize(Heap *h);
+gdk_export size_t HEAPvmsize(const Heap *h)
+	__attribute__((__pure__));
+gdk_export size_t HEAPmemsize(const Heap *h)
+	__attribute__((__pure__));
 gdk_export void HEAPdecref(Heap *h, bool remove);
 gdk_export void HEAPincref(Heap *h);
 

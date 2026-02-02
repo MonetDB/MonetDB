@@ -900,7 +900,7 @@ HEAPsave(Heap *h, const char *nme, const char *ext, bool dosync, BUN free, MT_Lo
 
 /* Return the (virtual) size of the heap. */
 size_t
-HEAPvmsize(Heap *h)
+HEAPvmsize(const Heap *h)
 {
 	if (h && h->base && h->free)
 		return h->size;
@@ -910,7 +910,7 @@ HEAPvmsize(Heap *h)
 /* Return the allocated size of the heap, i.e. if the heap is memory
  * mapped and not copy-on-write (privately mapped), return 0. */
 size_t
-HEAPmemsize(Heap *h)
+HEAPmemsize(const Heap *h)
 {
 	if (h && h->base && h->free && h->storage != STORE_MMAP)
 		return h->size;
