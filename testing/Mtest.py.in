@@ -283,8 +283,6 @@ CONDITIONALS = {
     'HAVE_JDBCTESTS'       : False,
     'HAVE_JDBCTESTS_JAR'   : False,
     'HAVE_MONETDBJDBC_JAR' : False,
-    'HAVE_PERL'            : False,
-    'HAVE_PHP'             : False,
     'HAVE_RUBY'            : False,
     'HAVE_SQLITE3ODBC'     : False,
     'MERCURIAL'            : False,
@@ -3715,16 +3713,17 @@ def main(argv):
     opts = parser.parse_args()
     args = opts.tests
 
-    r_noecho = '--no-echo'
-    if CheckExec('R'):
-        with process.Popen(['R', '--version'],
-                           stdout=process.PIPE, stderr=process.PIPE,
-                           text=True) as proc:
-            r_out, r_err = proc.communicate()
-        res = re.search(r'R version (?P<major>\d+)\.', r_out)
-        if res is not None and int(res.group('major')) < 4:
-            r_noecho = '--slave'
-        if CONDITIONALS['HAVE_LIBR']:
+    if CONDITIONALS['HAVE_LIBR']:
+        if CheckExec('R'):
+            with process.Popen(['R', '--version'],
+                               stdout=process.PIPE, stderr=process.PIPE,
+                               text=True) as proc:
+                r_out, r_err = proc.communicate()
+            res = re.search(r'R version (?P<major>\d+)\.', r_out)
+            if res is not None and int(res.group('major')) < 4:
+                r_noecho = '--slave'
+            else:
+                r_noecho = '--no-echo'
             with process.Popen(['R', r_noecho, '--no-save', '--no-restore',
                                 '-e', 'print(Sys.getenv("R_LIBS_USER"))'],
                                stdout=process.PIPE, stderr=process.PIPE,
@@ -3734,6 +3733,11 @@ def main(argv):
             if res is not None:
                 rdir = os.path.expanduser(res.group('dir'))
                 os.makedirs(rdir, exist_ok=True)
+            r_noecho = r_out = r_err = None  # clean junk
+        else:
+            # couldn't find R
+            print('Compiled with R support but cannot find R binary')
+            CONDITIONALS['HAVE_LIBR'] = False
 
     CONDITIONALS['HAVE_SQLITE3ODBC'] = os.path.exists('/usr/lib64/libsqlite3odbc.so')
 
@@ -3893,28 +3897,6 @@ def main(argv):
     if env.get('TSTDATAPATH'):
         CONDITIONALS['HAVE_DATA_PATH'] = True
 
-    if CheckExec('perl'):
-        with process.Popen(['perl', '-e', 'use MonetDB::CLI::MapiPP; use DBI;'],
-                           stdout=process.PIPE, stderr=process.PIPE,
-                           text=True) as proc:
-            perl_out, perl_err = proc.communicate()
-        if proc.returncode == 0:
-            CONDITIONALS['HAVE_PERL'] = True
-        else:
-            print('Perl available, but MonetDB driver or DBI module not available')
-    if CheckExec('php'):
-        phpcmd = ['php']
-        if 'PHP_INCPATH' in os.environ:
-            phpcmd.extend(['-d', 'include_path=%s' % os.environ['PHP_INCPATH']])
-        phpcmd.extend(['-r', "require 'monetdb/php_monetdb.php';"])
-        with process.Popen(phpcmd,
-                           stdout=process.PIPE, stderr=process.PIPE,
-                           text=True) as proc:
-            php_out, php_err = proc.communicate()
-        if proc.returncode == 0:
-            CONDITIONALS['HAVE_PHP'] = True
-        else:
-            print('PHP available, but MonetDB driver not available')
     if CheckExec('ruby'):
         # also check ruby version; we require >= 1.9 for "require_relative"
         with process.Popen(['ruby', '--version'],
