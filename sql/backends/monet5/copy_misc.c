@@ -246,11 +246,7 @@ copy_report_error(struct error_handling *restrict admin, int rel_row, int column
 			mask->free = sizeof(ccand_t) + nmask * sizeof(uint32_t);
 			uint32_t *r = (uint32_t*)(mask->base + sizeof(ccand_t));
 			memset(r, ~0, (nmask-1) * sizeof(uint32_t));
-			uint32_t v=0;
-			int w = cnt%32;
-			for(int i = 0; i<w; i++)
-				v |= 1<<i;
-			r[cnt/32] = v;
+			r[cnt/32] = (1U << (cnt % 32)) - 1;
 			b->tvheap = mask;
 		}
 		if (cnt) {
