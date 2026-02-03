@@ -160,7 +160,7 @@ malAtomDefinition(const char *name, int tpe)
 	/* overload atom ? */
 	if (tpe) {
 		BATatoms[i] = BATatoms[tpe];
-		strcpy_len(BATatoms[i].name, name, sizeof(BATatoms[i].name));
+		strtcpy(BATatoms[i].name, name, sizeof(BATatoms[i].name));
 		BATatoms[i].storage = ATOMstorage(tpe);
 	} else {					/* cannot overload void atoms */
 		BATatoms[i].storage = i;

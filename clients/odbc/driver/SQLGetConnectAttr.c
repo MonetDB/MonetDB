@@ -98,7 +98,7 @@ MNDBGetConnectAttr(ODBCDbc *dbc,
 			addDbcError(dbc, "HY090", NULL, 0);
 			return SQL_ERROR;
 		}
-		strcpy_len((char *) ValuePtr, "", BufferLength);
+		strtcpy((char *) ValuePtr, "", BufferLength);
 		if (StringLengthPtr) {
 			*(StringLengthPtr) = (SQLINTEGER) 0;
 		}

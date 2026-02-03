@@ -634,7 +634,7 @@ str FITSdirpat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		char fname[BUFSIZ];
 
 		s = stmt;
-		strcpy_len(fname, globbuf.gl_pathv[j], sizeof(fname));
+		strtcpy(fname, globbuf.gl_pathv[j], sizeof(fname));
 		status = 0;
 		fits_open_file(&fptr, fname, READONLY, &status);
 		if (status == 0) {
@@ -750,7 +750,7 @@ str FITSattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		s = fname;
 	else
 		s++;
-	if (strcpy_len(bname, s, sizeof(bname)) >= sizeof(bname)) {
+	if (strtcpy(bname, s, sizeof(bname)) == -1) {
 		fits_close_file(fptr, &status);
 		throw(MAL, "fits.attach", SQLSTATE(FI000) "File name too long\n");
 	}

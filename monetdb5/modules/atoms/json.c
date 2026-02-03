@@ -814,7 +814,7 @@ JSONgetValue(allocator *ma, const JSON *jt, int idx)
 		return (char *) str_nil;
 	s = ma_alloc(ma, jt->elm[idx].valuelen + 1);
 	if (s)
-		strcpy_len(s, jt->elm[idx].value, jt->elm[idx].valuelen + 1);
+		strtcpy(s, jt->elm[idx].value, jt->elm[idx].valuelen + 1);
 	return s;
 }
 
@@ -2134,7 +2134,7 @@ JSONkeyArray(Client ctx, json *ret, const json *js)
 					ma_close(&ta_state);
 					goto memfail;
 				}
-				strcpy_len(r, jt->elm[i].value - 1, jt->elm[i].valuelen + 3);
+				strtcpy(r, jt->elm[i].value - 1, jt->elm[i].valuelen + 3);
 			} else {
 				r = "\"\"";
 			}

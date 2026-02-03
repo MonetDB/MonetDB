@@ -181,7 +181,7 @@ connect_socket_unix(Mapi mid)
 	userver = (struct sockaddr_un) {
 		.sun_family = AF_UNIX,
 	};
-	strcpy_len(userver.sun_path, sockname, sizeof(userver.sun_path));
+	strtcpy(userver.sun_path, sockname, sizeof(userver.sun_path));
 
 	if (connect(s, (struct sockaddr *) &userver, sizeof(struct sockaddr_un)) == SOCKET_ERROR) {
 		closesocket(s);

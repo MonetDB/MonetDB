@@ -1007,7 +1007,7 @@ strerror_r(int errnum, char *buf, size_t buflen)
 	char *msg;
 	MT_lock_set(&strerrlock);
 	msg = strerror(errnum);
-	strcpy_len(buf, msg, buflen);
+	strtcpy(buf, msg, buflen);
 	MT_lock_unset(&strerrlock);
 	return 0;
 }

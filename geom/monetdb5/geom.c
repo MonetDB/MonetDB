@@ -14,7 +14,6 @@
  */
 
 #include "geom.h"
-#include "gdk_system.h"
 #include "geod.h"
 #include "geom_atoms.h"
 #include "mal_exception.h"
@@ -1854,7 +1853,7 @@ dumpGeometriesSingle(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry,
 		if (newPath == NULL) {
 			throw(MAL, "geom.Dump", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
-		strcpy_len(newPath, path, pathLength);
+		strtcpy(newPath, path, pathLength);
 	}
 	if (BUNappend(idBAT, newPath, false) != GDK_SUCCEED ||
 	    BUNappend(geomBAT, singleWKB, false) != GDK_SUCCEED)

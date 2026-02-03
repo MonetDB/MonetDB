@@ -85,7 +85,7 @@ extern char *dupODBCstring(const SQLCHAR *inStr, size_t length);
 			ret;						\
 		}							\
 		if (buf && (buflen) > 0) {				\
-			_l = strcpy_len((char *) (buf), (str) ? (const char *) (str) : "", (buflen)); \
+			_l = strlcpy((char *) (buf), (str) ? (const char *) (str) : "", (buflen)); \
 		} else {						\
 			_l = (str) ? (lent) (strlen) : 0;		\
 		}							\

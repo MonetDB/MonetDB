@@ -587,7 +587,7 @@ strFromStr(allocator *ma, const char *restrict src, size_t *restrict len, char *
 	if (!external) {
 		size_t sz = strLen(src);
 		atommem(sz);
-		return (ssize_t) strcpy_len(*dst, src, sz);
+		return (ssize_t) strlcpy(*dst, src, sz);
 	}
 
 	if (strNil(src)) {
@@ -735,7 +735,7 @@ strToStr(allocator *ma, char **restrict dst, size_t *restrict len, const char *r
 	if (!external) {
 		sz = strLen(src);
 		atommem(sz);
-		return (ssize_t) strcpy_len(*dst, src, sz);
+		return (ssize_t) strlcpy(*dst, src, sz);
 	}
 	if (strNil(src)) {
 		atommem(4);
@@ -9926,7 +9926,7 @@ BATaggrdigest(allocator *ma, BAT **bnp, char **shap, const char *digest,
 
 	for (gid = 0; gid < ngrp; gid++) {
 		if (mdctx[gid] == NULL || mdctx[gid] == (EVP_MD_CTX *) -1) {
-			strcpy_len(digestbuf, str_nil, sizeof(digestbuf));
+			strtcpy(digestbuf, str_nil, sizeof(digestbuf));
 		} else {
 			if (!EVP_DigestFinal_ex(mdctx[gid], md_value, &md_len)) {
 				GDKerror("Could not update digest value.\n");

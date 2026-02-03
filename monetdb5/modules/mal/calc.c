@@ -79,7 +79,7 @@ CMDvarADDstr(Client ctx, str *ret, const char *const *s1, const char *const *s2)
 	s = ma_alloc(ma, l1);
 	if (s == NULL)
 		return mythrow(MAL, "calc.+", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	strconcat_len(s, l1, *s1, *s2, NULL);
+	strtconcat(s, l1, *s1, *s2, NULL);
 	*ret = s;
 	return MAL_SUCCEED;
 }

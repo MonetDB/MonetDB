@@ -442,8 +442,8 @@ vheapinit(BAT *b, const char *buf, unsigned bbpversion, const char *filename, in
 		.farmid = BBPselectfarm(PERSISTENT, b->ttype, varheap),
 		.hasfile = free > 0,
 	};
-	strconcat_len(b->tvheap->filename, sizeof(b->tvheap->filename),
-		      filename, ".theap", NULL);
+	strtconcat(b->tvheap->filename, sizeof(b->tvheap->filename),
+		   filename, ".theap", NULL);
 	return n;
 }
 
@@ -864,7 +864,7 @@ BBPreadEntries(FILE *fp, unsigned bbpversion, int lineno
 		} else {
 			if (s)
 				*s = 0;
-			strcpy_len(logical, headname, sizeof(logical));
+			strtcpy(logical, headname, sizeof(logical));
 		}
 		if (strcmp(logical, BBP_bak(b.batCacheid)) == 0) {
 			BBP_logical(b.batCacheid) = BBP_bak(b.batCacheid);
@@ -877,7 +877,7 @@ BBPreadEntries(FILE *fp, unsigned bbpversion, int lineno
 				goto bailout;
 			}
 		}
-		strcpy_len(BBP_physical(b.batCacheid), filename, sizeof(BBP_physical(b.batCacheid)));
+		strtcpy(BBP_physical(b.batCacheid), filename, sizeof(BBP_physical(b.batCacheid)));
 #ifdef __COVERITY__
 		/* help coverity */
 		BBP_physical(b.batCacheid)[sizeof(BBP_physical(b.batCacheid)) - 1] = 0;
@@ -1242,7 +1242,7 @@ fixhashashbat(BAT *b)
 	Heap h1 = *b->theap;	/* old heap */
 	h1.base = NULL;
 	h1.dirty = false;
-	strconcat_len(h1.filename, sizeof(h1.filename), filename, ".", t, NULL);
+	strtconcat(h1.filename, sizeof(h1.filename), filename, ".", t, NULL);
 	if (HEAPload(&h1, filename, t, false) != GDK_SUCCEED) {
 		TRC_CRITICAL(GDK, "loading old tail heap "
 			     "for BAT %d failed\n", b->batCacheid);
@@ -1251,7 +1251,7 @@ fixhashashbat(BAT *b)
 	Heap vh1 = *b->tvheap;	/* old heap */
 	vh1.base = NULL;
 	vh1.dirty = false;
-	strconcat_len(vh1.filename, sizeof(vh1.filename), filename, ".theap", NULL);
+	strtconcat(vh1.filename, sizeof(vh1.filename), filename, ".theap", NULL);
 	if (HEAPload(&vh1, filename, "theap", false) != GDK_SUCCEED) {
 		HEAPfree(&h1, false);
 		TRC_CRITICAL(GDK, "loading old string heap "
@@ -1286,7 +1286,7 @@ fixhashashbat(BAT *b)
 	h2->free = h1.free;
 
 	*vh2 = *b->tvheap;
-	strconcat_len(vh2->filename, sizeof(vh2->filename), nme, ".theap", NULL);
+	strtconcat(vh2->filename, sizeof(vh2->filename), nme, ".theap", NULL);
 	strHeap(vh2, b->batCapacity);
 	if (vh2->base == NULL) {
 		HEAPfree(&h1, false);
@@ -1446,7 +1446,7 @@ jsonupgradebat(BAT *b, json_storage_conversion fixJSONStorage)
 	Heap h1 = *b->theap;
 	h1.base = NULL;
 	h1.dirty = false;
-	strconcat_len(h1.filename, sizeof(h1.filename), filename, ".tail", NULL);
+	strtconcat(h1.filename, sizeof(h1.filename), filename, ".tail", NULL);
 	if (HEAPload(&h1, filename, "tail", false) != GDK_SUCCEED) {
 		TRC_CRITICAL(GDK, "loading old tail heap "
 			     "for BAT %d failed\n", b->batCacheid);
@@ -1456,7 +1456,7 @@ jsonupgradebat(BAT *b, json_storage_conversion fixJSONStorage)
 	Heap vh1 = *b->tvheap;
 	vh1.base = NULL;
 	vh1.dirty = false;
-	strconcat_len(vh1.filename, sizeof(vh1.filename), filename, ".theap", NULL);
+	strtconcat(vh1.filename, sizeof(vh1.filename), filename, ".theap", NULL);
 	if (HEAPload(&vh1, filename, "theap", false) != GDK_SUCCEED) {
 		HEAPfree(&h1, false);
 		TRC_CRITICAL(GDK, "loading old string heap "
@@ -1492,7 +1492,7 @@ jsonupgradebat(BAT *b, json_storage_conversion fixJSONStorage)
 	h2->free = h1.free;
 
 	*vh2 = *b->tvheap;
-	strconcat_len(vh2->filename, sizeof(vh2->filename), nme, ".theap", NULL);
+	strtconcat(vh2->filename, sizeof(vh2->filename), nme, ".theap", NULL);
 	strHeap(vh2, b->batCapacity);
 	if (vh2->base == NULL) {
 		HEAPfree(&h1, false);
@@ -3476,7 +3476,7 @@ heap_move(Heap *hp, const char *srcdir, const char *dstdir, const char *nme, con
 		long_str kill_ext;
 		char path[MAXPATH];
 
-		strconcat_len(kill_ext, sizeof(kill_ext), ext, ".kill", NULL);
+		strtconcat(kill_ext, sizeof(kill_ext), ext, ".kill", NULL);
 		if (GDKfilepath(path, sizeof(path), hp->farmid, dstdir, nme, kill_ext) != GDK_SUCCEED)
 			return GDK_FAIL;
 		fp = MT_fopen(path, "w");
@@ -3602,7 +3602,7 @@ do_backup(Heap *h, bool dirty, bool subcommit)
 		assert(ext != NULL);
 		*ext++ = '\0';
 
-		strconcat_len(extnew, sizeof(extnew), ext, ".new", NULL);
+		strtconcat(extnew, sizeof(extnew), ext, ".new", NULL);
 		if (dirty &&
 		    !file_exists(h->farmid, BAKDIR, nme, extnew) &&
 		    !file_exists(h->farmid, BAKDIR, nme, ext)) {
@@ -3647,8 +3647,8 @@ do_backup(Heap *h, bool dirty, bool subcommit)
 		    (h->storage == STORE_PRIV || h->newstorage == STORE_PRIV)) {
 			long_str kill_ext;
 
-			strconcat_len(kill_ext, sizeof(kill_ext),
-				      ext, ".new.kill", NULL);
+			strtconcat(kill_ext, sizeof(kill_ext),
+				   ext, ".new.kill", NULL);
 			if (file_exists(h->farmid, BAKDIR, nme, kill_ext) &&
 			    file_move(h->farmid, BAKDIR, SUBDIR, nme, kill_ext) != GDK_SUCCEED) {
 				ret = GDK_FAIL;

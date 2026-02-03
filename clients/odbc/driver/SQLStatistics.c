@@ -289,7 +289,7 @@ MNDBStatistics(ODBCStmt *stmt,
 		free(tab);
 
 	/* add the ordering */
-	pos += strcpy_len(query + pos, " order by \"NON_UNIQUE\", \"TYPE\", \"INDEX_QUALIFIER\", \"INDEX_NAME\", \"ORDINAL_POSITION\"", querylen - pos);
+	pos += strlcpy(query + pos, " order by \"NON_UNIQUE\", \"TYPE\", \"INDEX_QUALIFIER\", \"INDEX_NAME\", \"ORDINAL_POSITION\"", querylen - pos);
 	assert(pos < querylen);
 
 	/* debug: fprintf(stdout, "SQLStatistics query (pos: %zu, len: %zu):\n%s\n\n", pos, strlen(query), query); */

@@ -205,7 +205,7 @@ MNDBColumnPrivileges(ODBCStmt *stmt,
 	}
 
 	/* add the ordering (exclude table_cat as it is the same for all rows) */
-	pos += strcpy_len(query + pos, " order by \"TABLE_SCHEM\", \"TABLE_NAME\", \"COLUMN_NAME\", \"PRIVILEGE\"", querylen - pos);
+	pos += strlcpy(query + pos, " order by \"TABLE_SCHEM\", \"TABLE_NAME\", \"COLUMN_NAME\", \"PRIVILEGE\"", querylen - pos);
 	assert(pos < querylen);
 
 	/* debug: fprintf(stdout, "SQLColumnPrivileges query (pos: %zu, len: %zu):\n%s\n\n", pos, strlen(query), query); */

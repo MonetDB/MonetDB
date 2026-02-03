@@ -372,7 +372,7 @@ str_Sub_String(str *buf, size_t *buflen, const char *s, int off, int l)
 	s = UTF8_strtail(s, off);
 	len = (size_t) (UTF8_strtail(s, l) - s + 1);
 	CHECK_STR_BUFFER_LENGTH(buf, buflen, len, "str.substring");
-	strcpy_len(*buf, s, len);
+	strtcpy(*buf, s, len);
 	return MAL_SUCCEED;
 }
 
@@ -794,7 +794,7 @@ str_splitpart(str *buf, size_t *buflen, const char *s, const char *s2, int f)
 
 	len++;
 	CHECK_STR_BUFFER_LENGTH(buf, buflen, len, "str.splitpart");
-	strcpy_len(*buf, s, len);
+	strtcpy(*buf, s, len);
 	return MAL_SUCCEED;
 }
 
@@ -919,7 +919,7 @@ str_strip(str *buf, size_t *buflen, const char *s)
 
 	n++;
 	CHECK_STR_BUFFER_LENGTH(buf, buflen, n, "str.strip");
-	strcpy_len(*buf, s, n);
+	strtcpy(*buf, s, n);
 	return MAL_SUCCEED;
 }
 
@@ -962,7 +962,7 @@ str_ltrim(str *buf, size_t *buflen, const char *s)
 	size_t nallocate = len - n + 1;
 
 	CHECK_STR_BUFFER_LENGTH(buf, buflen, nallocate, "str.ltrim");
-	strcpy_len(*buf, s + n, nallocate);
+	strtcpy(*buf, s + n, nallocate);
 	return MAL_SUCCEED;
 }
 
@@ -1005,7 +1005,7 @@ str_rtrim(str *buf, size_t *buflen, const char *s)
 
 	n++;
 	CHECK_STR_BUFFER_LENGTH(buf, buflen, n, "str.rtrim");
-	strcpy_len(*buf, s, n);
+	strtcpy(*buf, s, n);
 	return MAL_SUCCEED;
 }
 
@@ -1088,7 +1088,7 @@ str_strip2(str *buf, size_t *buflen, const char *s, const char *s2)
 
 		n++;
 		CHECK_STR_BUFFER_LENGTH(buf, buflen, n, "str.strip2");
-		strcpy_len(*buf, s, n);
+		strtcpy(*buf, s, n);
 		return MAL_SUCCEED;
 	}
 }
@@ -1144,7 +1144,7 @@ str_ltrim2(str *buf, size_t *buflen, const char *s, const char *s2)
 		nallocate = len - n + 1;
 
 		CHECK_STR_BUFFER_LENGTH(buf, buflen, nallocate, "str.ltrim2");
-		strcpy_len(*buf, s + n, nallocate);
+		strtcpy(*buf, s + n, nallocate);
 		return MAL_SUCCEED;
 	}
 }
@@ -1200,7 +1200,7 @@ str_rtrim2(str *buf, size_t *buflen, const char *s, const char *s2)
 		n++;
 
 		CHECK_STR_BUFFER_LENGTH(buf, buflen, n, "str.rtrim2");
-		strcpy_len(*buf, s, n);
+		strtcpy(*buf, s, n);
 		return MAL_SUCCEED;
 	}
 }
@@ -1254,7 +1254,7 @@ pad(str *buf, size_t *buflen, const char *s, const char *pad, int len, int left,
 		slen = pad - s + 1;
 
 		CHECK_STR_BUFFER_LENGTH(buf, buflen, slen, malfunc);
-		strcpy_len(*buf, s, slen);
+		strtcpy(*buf, s, slen);
 		return MAL_SUCCEED;
 	}
 
@@ -1499,11 +1499,11 @@ str_substitute(str *buf, size_t *buflen, const char *s, const char *src,
 			break;
 		n = fnd - pfnd;
 		if (n > 0) {
-			strcpy_len(b, pfnd, n + 1);
+			strtcpy(b, pfnd, n + 1);
 			b += n;
 		}
 		if (ldst > 0) {
-			strcpy_len(b, dst, ldst + 1);
+			strtcpy(b, dst, ldst + 1);
 			b += ldst;
 		}
 		if (*fnd == 0)
