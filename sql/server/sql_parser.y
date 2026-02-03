@@ -7045,6 +7045,7 @@ reduced_keywords:
 	|	WHITESPACE   { $$ = "whitespace"; }
 		/* odbc */
 	|	IFNULL       { $$ = "ifnull"; }
+	|	sqlNAME      { $$ = "name"; }
 
 	|	ODBC_DATE_ESCAPE_PREFIX      { $$ = "d"; }
 	|	ODBC_TIME_ESCAPE_PREFIX      { $$ = "t"; }

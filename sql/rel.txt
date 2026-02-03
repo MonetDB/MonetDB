@@ -139,7 +139,7 @@ e_cmp
 
 			cmp_filter = 6,		filters			->l/r are both lists
 
-			cmp_in = 8,			in list handling 	->r is a list of values
+			cmp_in = 8,		in list handling 	->r is a list of values
 			cmp_notin = 9,		not in list handling	->r is a list of values
 
 			cmp_conjunctive = 10,			and handling  		-> l is a list

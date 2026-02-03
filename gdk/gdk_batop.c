@@ -2874,6 +2874,8 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 			}
 			goto error;
 		}
+		if (reverse)
+			bn->tseqbase = oid_nil;
 		bn->tsorted = !reverse && !nilslast;
 		bn->trevsorted = reverse && nilslast;
 		if (m != NULL) {

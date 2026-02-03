@@ -4477,9 +4477,10 @@ rel_cast(sql_query *query, sql_rel **rel, symbol *se, int f)
 	if (tpe->type->eclass == EC_DEC) {
 		sql_subtype *et = exp_subtype(e);
 		if (e->type == e_atom && !tpe->digits) {
-			if (et->type->eclass == EC_NUM || et->type->eclass == EC_DEC) {
-				tpe->digits = atom_num_digits(e->l);
-				tpe = sql_bind_subtype(sql->sa, "decimal", tpe->digits, et->scale);
+			if (e->l && (et->type->eclass == EC_NUM || et->type->eclass == EC_DEC)) {
+				tpe->digits = atom_num_digits(e->l) + 1;
+				tpe->scale = 1;
+				tpe = sql_bind_subtype(sql->sa, "decimal", tpe->digits, tpe->scale);
 			} else if (EC_VARCHAR(et->type->eclass)) {
 				char *s = E_ATOM_STRING(e);
 				unsigned int min_precision = 0, min_scale = 0;
@@ -4523,8 +4524,10 @@ rel_next_value_for( mvc *sql, symbol *se )
 	sql_subtype t;
 	sql_subfunc *f;
 
-	if (!sname)
-		sname = "sys";
+	if (!sname) {
+		sql_schema *s = cur_schema(sql);
+		sname = s->base.name;
+	}
 	if (!stack_find_rel_view(sql, seqname)) {
 		if (!(seq = find_sequence_on_scope(sql, sname, seqname, "NEXT VALUE FOR")))
 			return NULL;
@@ -4942,7 +4945,8 @@ rel_order_by(sql_query *query, sql_rel **R, symbol *orderby, int needs_distinct,
 			assert(is_project(rel->op));
 			for(node *n = rel->exps->h; n; n = n->next) {
 				sql_exp *e = n->data;
-				append(exps, exp_ref(sql, e));
+				append(exps, e=exp_ref(sql, e));
+				set_ascending(e);
 			}
 			return exps;
 		}
@@ -6292,9 +6296,12 @@ rel_select_exp(sql_query *query, sql_rel *rel, SelectNode *sn, exp_kind ek)
 		 */
 		pexps = list_merge(pexps, exps_copy(sql, te), (fdup)NULL);
 	}
+	int card = inner->card;
 	if (rel && is_groupby(rel->op) && rel->flag) {
 		list *gbe = rel->r;
 		if (!list_empty(gbe)) {
+			inner->card = CARD_AGGR;
+			card = CARD_MULTI;
 			for (node *n=gbe->h; n; n = n->next) {
 				sql_exp *e = n->data;
 				if (rel->flag == 1 && is_atom(e->type) && a_no_name(&e->alias)) {
@@ -6319,6 +6326,7 @@ rel_select_exp(sql_query *query, sql_rel *rel, SelectNode *sn, exp_kind ek)
 		set_processed(rel);
 	}
 	rel = rel_project(sql->sa, rel, pexps);
+	rel->card = card;
 
 	rel = rel_having_limits_nodes(query, rel, sn, ek, group_totals);
 	return rel;

@@ -1,0 +1,4 @@
+query D
+select 15 / cast(10 as numeric) as anon_1
+----
+1.500

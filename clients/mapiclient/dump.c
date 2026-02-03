@@ -1208,7 +1208,7 @@ dump_column_definition(Mapi mid, stream *sqlf, const char *schema,
 				mnstr_printf(sqlf, " (");
 				cnt = 1;
 			}
-		} else
+		} else if (strcmp(k_type, "4") != 0)
 			mnstr_printf(sqlf, ", ");
 		if (cnt)
 			dquoted_print(sqlf, c_column, NULL);
