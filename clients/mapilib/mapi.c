@@ -3687,7 +3687,7 @@ mapi_query_part(MapiHdl hdl, const char *query, size_t size)
 	if (hdl->query == NULL) {
 		hdl->query = strndup(query, size);
 	} else {
-		size_t sz = strnlen(hdl->query, size);
+		size_t sz = strlen(hdl->query);
 		char *q;
 
 		if (sz < 512 &&
