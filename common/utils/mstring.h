@@ -11,8 +11,7 @@
 #ifndef _MSTRING_H_
 #define _MSTRING_H_
 
-#include <stdarg.h>		/* va_list etc. */
-#include <string.h>		/* strlen */
+#include <string.h>
 
 #if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ > 4))
 /* not on CentOS 6 (GCC 4.4.7) */
@@ -31,6 +30,18 @@
 #else
 #define __access__(...)
 #define __nonnull__(...)
+#endif
+
+#ifndef mutils_export
+#if defined(_MSC_VER) || defined(__CYGWIN__) || defined(__MINGW32__)
+#ifndef LIBMUTILS
+#define mutils_export extern __declspec(dllimport)
+#else
+#define mutils_export extern __declspec(dllexport)
+#endif
+#else
+#define mutils_export extern
+#endif
 #endif
 
 /* naming convention (also see Linux man page string_copying(7)):
@@ -123,58 +134,21 @@ stpecpy(char *restrict dst, char *end, const char *restrict src)
 /* copy the NULL terminated list of src strings with a maximum of n
  * bytes to dst; return the combined length of the src strings; dst is
  * guaranteed to be NULL-terminated (if n > 0) */
-__attribute__((__access__(write_only, 1, 2)))
-__attribute__((__nonnull__(1)))
-__attribute__((__sentinel__))
-static inline size_t
-strlconcat(char *restrict dst, size_t n, const char *restrict src, ...)
-{
-	va_list ap;
-	size_t i = 0;
-
-	va_start(ap, src);
-	while (src) {
-		size_t l;
-		if (i < n)
-			l = strlcpy(dst + i, src, n - i);
-		else
-			l = strlen(src);
-		i += l;
-		src = va_arg(ap, const char *);
-	}
-	va_end(ap);
-	return i;
-}
+mutils_export size_t strlconcat(char *restrict dst, size_t n,
+								const char *restrict src, ...)
+	__attribute__((__access__(write_only, 1, 2)))
+	__attribute__((__nonnull__(1)))
+	__attribute__((__sentinel__));
 
 /* copy the NULL terminated list of src strings with a maximum of n
  * bytes to dst; return -1 if the buffer was too small, else the
  * combined length of the src strings; dst is guaranteed to be
  * NULL-terminated (if n > 0) */
-__attribute__((__access__(write_only, 1, 2)))
-__attribute__((__nonnull__(1)))
-__attribute__((__sentinel__))
-static inline ssize_t
-strtconcat(char *restrict dst, size_t n, const char *restrict src, ...)
-{
-	va_list ap;
-	char *end = dst + n;
-
-	if (n == 0) {
-		errno = ENOBUFS;
-		return -1;
-	}
-	va_start(ap, src);
-	while (src && dst) {
-		dst = stpecpy(dst, end, src);
-		src = va_arg(ap, const char *);
-	}
-	va_end(ap);
-	if (dst == NULL) {
-		errno = E2BIG;
-		return -1;
-	}
-	return dst - (end - n);
-}
+mutils_export ssize_t strtconcat(char *restrict dst, size_t n,
+								 const char *restrict src, ...)
+	__attribute__((__access__(write_only, 1, 2)))
+	__attribute__((__nonnull__(1)))
+	__attribute__((__sentinel__));
 
 #ifdef __has_builtin
 #if __has_builtin(__builtin_expect)
