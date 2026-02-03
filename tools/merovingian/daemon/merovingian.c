@@ -50,7 +50,7 @@
 #include "msabaoth.h"
 #include "mutils.h" /* MT_lockf */
 #include "mcrypt.h" /* mcrypt_BackendSum */
-#include "mstring.h"			/* strcpy_len */
+#include "mstring.h"			/* strtcpy */
 #include "utils/utils.h"
 #include "utils/properties.h"
 #include "utils/glob.h"
@@ -493,7 +493,7 @@ main(int argc, char *argv[])
 	 * hardcoded bin-dir */
 	p = get_bin_path();
 	if (p != NULL) {
-		if (strcpy_len(_mero_mserver, p, sizeof(_mero_mserver)) >= sizeof(_mero_mserver)) {
+		if (strtcpy(_mero_mserver, p, sizeof(_mero_mserver)) == -1) {
 			Mlevelfprintf(ERROR, stderr, "fatal: monetdbd full path name is too long\n");
 			exit(1);
 		}
@@ -721,7 +721,7 @@ main(int argc, char *argv[])
 	}
 
 	if (_mero_mserver[0] == 0) {
-		if (strcpy_len(_mero_mserver, BINDIR "/mserver5", sizeof(_mero_mserver)) >= sizeof(_mero_mserver)) {
+		if (strtcpy(_mero_mserver, BINDIR "/mserver5", sizeof(_mero_mserver)) == -1) {
 			Mlevelfprintf(ERROR, stderr, "fatal: mserver5 full path name is too long\n");
 			MERO_EXIT_CLEAN(1);
 		}

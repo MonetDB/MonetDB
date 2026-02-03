@@ -34,8 +34,8 @@ unshare_varsized_heap(BAT *b)
 			.farmid = BBPselectfarm(b->batRole, b->ttype, varheap),
 			.refs = ATOMIC_VAR_INIT(1),
 		};
-		strconcat_len(h->filename, sizeof(h->filename),
-			      BBP_physical(b->batCacheid), ".theap", NULL);
+		strtconcat(h->filename, sizeof(h->filename),
+			   BBP_physical(b->batCacheid), ".theap", NULL);
 		/* if parent bat is much larger (currently more than
 		 * twice) than the view, we copy the strings
 		 * individually so that the resulting vheap is reduced
@@ -489,8 +489,8 @@ append_varsized_bat(BAT *b, BATiter *ni, struct canditer *ci, bool mayshare)
 			.farmid = BBPselectfarm(b->batRole, b->ttype, varheap),
 			.refs = ATOMIC_VAR_INIT(1),
 		};
-		strconcat_len(h->filename, sizeof(h->filename),
-			      BBP_physical(b->batCacheid), ".theap", NULL);
+		strtconcat(h->filename, sizeof(h->filename),
+			   BBP_physical(b->batCacheid), ".theap", NULL);
 		if (HEAPcopy(h, b->tvheap, 0) != GDK_SUCCEED) {
 			HEAPfree(h, true);
 			GDKfree(h);

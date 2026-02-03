@@ -601,7 +601,7 @@ MT_init(void)
 			if (p == NULL)
 				break;
 			*p = 0;
-			strcpy_len(cgr, dir, 1024);
+			strtcpy(cgr, dir, 1024);
 		}
 		fclose(fc);
 	}
@@ -722,16 +722,16 @@ MT_init(void)
 				if (strstr(q, "memory") == NULL)
 					continue;
 				/* limit of memory usage */
-				strconcat_len(pth, sizeof(pth),
-					      cgr1, p,
-					      "/memory.limit_in_bytes",
-					      NULL);
+				strtconcat(pth, sizeof(pth),
+					   cgr1, p,
+					   "/memory.limit_in_bytes",
+					   NULL);
 				f = fopen(pth, "r");
 				if (f == NULL) {
-					strconcat_len(pth, sizeof(pth),
-						      cgr1,
-						      "/memory.limit_in_bytes",
-						      NULL);
+					strtconcat(pth, sizeof(pth),
+						   cgr1,
+						   "/memory.limit_in_bytes",
+						   NULL);
 					f = fopen(pth, "r");
 				}
 				if (f != NULL) {
@@ -744,16 +744,16 @@ MT_init(void)
 					fclose(f);
 				}
 				/* soft limit of memory usage */
-				strconcat_len(pth, sizeof(pth),
-					      cgr1, p,
-					      "/memory.soft_limit_in_bytes",
-					      NULL);
+				strtconcat(pth, sizeof(pth),
+					   cgr1, p,
+					   "/memory.soft_limit_in_bytes",
+					   NULL);
 				f = fopen(pth, "r");
 				if (f == NULL) {
-					strconcat_len(pth, sizeof(pth),
-						      cgr1,
-						      "/memory.soft_limit_in_bytes",
-						      NULL);
+					strtconcat(pth, sizeof(pth),
+						   cgr1,
+						   "/memory.soft_limit_in_bytes",
+						   NULL);
 					f = fopen(pth, "r");
 				}
 				if (f != NULL) {
@@ -767,16 +767,16 @@ MT_init(void)
 				}
 				/* limit of memory+swap usage
 				 * we use this as maximum virtual memory size */
-				strconcat_len(pth, sizeof(pth),
-					      cgr1, p,
-					      "/memory.memsw.limit_in_bytes",
-					      NULL);
+				strtconcat(pth, sizeof(pth),
+					   cgr1, p,
+					   "/memory.memsw.limit_in_bytes",
+					   NULL);
 				f = fopen(pth, "r");
 				if (f == NULL) {
-					strconcat_len(pth, sizeof(pth),
-						      cgr1,
-						      "/memory.memsw.limit_in_bytes",
-						      NULL);
+					strtconcat(pth, sizeof(pth),
+						   cgr1,
+						   "/memory.memsw.limit_in_bytes",
+						   NULL);
 					f = fopen(pth, "r");
 				}
 				if (f != NULL) {
@@ -2363,7 +2363,7 @@ create_allocator(const char *name, bool use_lock)
 	eb_init(&sa->eb);
 	MT_lock_init(&sa->lock, "allocator_lock");
 	if (name)
-		strcpy_len(sa->name, name, sizeof(sa->name));
+		strtcpy(sa->name, name, sizeof(sa->name));
 	return sa;
 }
 

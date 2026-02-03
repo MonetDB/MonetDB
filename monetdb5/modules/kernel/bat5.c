@@ -598,23 +598,23 @@ infoHeap(BAT *bk, BAT *bv, Heap *hp, const char *nme)
 
 	if (!hp)
 		return GDK_SUCCEED;
-	strconcat_len(kbuf, sizeof(kbuf), nme, "free", NULL);
+	strtconcat(kbuf, sizeof(kbuf), nme, "free", NULL);
 	if (BUNappend(bk, kbuf, false) != GDK_SUCCEED ||
 		BUNappend(bv, local_utoa(hp->free, vbuf), false) != GDK_SUCCEED)
 		return GDK_FAIL;
-	strconcat_len(kbuf, sizeof(kbuf), nme, "size", NULL);
+	strtconcat(kbuf, sizeof(kbuf), nme, "size", NULL);
 	if (BUNappend(bk, kbuf, false) != GDK_SUCCEED ||
 		BUNappend(bv, local_utoa(hp->size, vbuf), false) != GDK_SUCCEED)
 		return GDK_FAIL;
-	strconcat_len(kbuf, sizeof(kbuf), nme, "storage", NULL);
+	strtconcat(kbuf, sizeof(kbuf), nme, "storage", NULL);
 	if (BUNappend(bk, kbuf, false) != GDK_SUCCEED ||
 		BUNappend(bv, (hp->base == NULL || hp->base == (char *) 1) ? "absent" : (hp->storage == STORE_MMAP) ? (hp-> filename [0] ? "memory mapped" : "anonymous vm") : (hp->storage == STORE_PRIV) ? "private map" : "malloced", false) != GDK_SUCCEED)
 		return GDK_FAIL;
-	strconcat_len(kbuf, sizeof(kbuf), nme, "newstorage", NULL);
+	strtconcat(kbuf, sizeof(kbuf), nme, "newstorage", NULL);
 	if (BUNappend(bk, kbuf, false) != GDK_SUCCEED ||
 		BUNappend(bv, (hp->newstorage == STORE_MEM) ? "malloced" : (hp->newstorage == STORE_PRIV) ? "private map" : "memory mapped", false) != GDK_SUCCEED)
 		return GDK_FAIL;
-	strconcat_len(kbuf, sizeof(kbuf), nme, "filename", NULL);
+	strtconcat(kbuf, sizeof(kbuf), nme, "filename", NULL);
 	if (BUNappend(bk, kbuf, false) != GDK_SUCCEED ||
 		BUNappend(bv, hp->filename[0] ? hp->filename : "no file",
 				  false) != GDK_SUCCEED)

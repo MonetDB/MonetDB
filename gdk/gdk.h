@@ -21,6 +21,8 @@
 #ifndef _GDK_H_
 #define _GDK_H_
 
+#include "monetdb_config.h"
+
 /* standard includes upon which all configure tests depend */
 #ifdef HAVE_SYS_STAT_H
 # include <sys/stat.h>
@@ -29,8 +31,6 @@
 # include <unistd.h>
 #endif
 
-#include <ctype.h>		/* isspace etc. */
-
 #ifdef HAVE_SYS_FILE_H
 # include <sys/file.h>
 #endif
@@ -38,9 +38,6 @@
 #ifdef HAVE_DIRENT_H
 # include <dirent.h>
 #endif
-
-#include <limits.h>		/* for *_MIN and *_MAX */
-#include <float.h>		/* for FLT_MAX and DBL_MAX */
 
 #ifndef PATH_MAX
 #define PATH_MAX	1024
@@ -1778,8 +1775,6 @@ gdk_export void GDKusr1triggerCB(void (*func)(void));
 
 #define SQLSTATE(sqlstate)	#sqlstate "!"
 #define MAL_MALLOC_FAIL	"Could not allocate memory"
-
-#include <setjmp.h>
 
 typedef struct exception_buffer {
 #ifdef HAVE_SIGLONGJMP

@@ -441,9 +441,9 @@ _create_relational_remote_body(mvc *m, const char *mod, const char *name, sql_re
 		goto cleanup;
 	}
 	if (!temp) {
-		strconcat_len(pwhash, pwlen + 2, "\1", password, NULL);
+		strtconcat(pwhash, pwlen + 2, "\1", password, NULL);
 	} else {
-		strconcat_len(pwhash, pwlen + 2, "", password, NULL);
+		strtconcat(pwhash, pwlen + 2, "", password, NULL);
 	}
 	p = pushStr(curBlk, p, pwhash);
 	p = pushStr(curBlk, p, "msql");

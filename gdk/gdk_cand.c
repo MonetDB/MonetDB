@@ -1344,8 +1344,7 @@ BATnegcands(oid tseq, BUN nr, BAT *odels)
 		.dirty = true,
 		.refs = ATOMIC_VAR_INIT(1),
 	};
-	strconcat_len(dels->filename, sizeof(dels->filename),
-		      nme, ".theap", NULL);
+	strtconcat(dels->filename, sizeof(dels->filename), nme, ".theap", NULL);
 
 	if (dels->farmid < 0 ||
 	    HEAPalloc(dels, hi - lo + (sizeof(ccand_t)/sizeof(oid)), sizeof(oid)) != GDK_SUCCEED) {
@@ -1409,8 +1408,7 @@ BATmaskedcands(oid hseq, BUN nr, BAT *masked, bool selected)
 		.dirty = true,
 		.refs = ATOMIC_VAR_INIT(1),
 	};
-	strconcat_len(msks->filename, sizeof(msks->filename),
-		      nme, ".theap", NULL);
+	strtconcat(msks->filename, sizeof(msks->filename), nme, ".theap", NULL);
 
 	nmask = (nr + 31) / 32;
 	if (msks->farmid < 0 ||
@@ -1526,8 +1524,8 @@ BATunmask(BAT *b)
 			.dirty = true,
 			.refs = ATOMIC_VAR_INIT(1),
 		};
-		strconcat_len(dels->filename, sizeof(dels->filename),
-			      BBP_physical(bn->batCacheid), ".theap", NULL);
+		strtconcat(dels->filename, sizeof(dels->filename),
+			   BBP_physical(bn->batCacheid), ".theap", NULL);
 
 		if (dels->farmid < 0 ||
 		    HEAPalloc(dels, cnt * 32 - bi.count

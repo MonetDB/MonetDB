@@ -21,6 +21,7 @@ target_sources(mutils
   md5.c md5.h
   mprompt.h
   msabaoth.c msabaoth.h
+  mstring.c
   mutf8.c mutf8.h
   mutils.c mutils.h
   muuid.c muuid.h

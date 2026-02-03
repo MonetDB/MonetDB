@@ -10,7 +10,6 @@
 
 #include "geom_atoms.h"
 #include "gdk.h"
-#include "gdk_system.h"
 
 /***********************************************/
 /************* wkb type functions **************/

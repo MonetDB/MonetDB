@@ -738,9 +738,9 @@ MT_thread_setalgorithm(const char *algo)
 		if (algo) {
 			if (self->algolen > 0) {
 				if (self->algolen < sizeof(self->algorithm))
-					self->algolen += strconcat_len(self->algorithm + self->algolen, sizeof(self->algorithm) - self->algolen, "; ", algo, NULL);
+					self->algolen += strlconcat(self->algorithm + self->algolen, sizeof(self->algorithm) - self->algolen, "; ", algo, NULL);
 			} else
-				self->algolen = strcpy_len(self->algorithm, algo, sizeof(self->algorithm));
+				self->algolen = strlcpy(self->algorithm, algo, sizeof(self->algorithm));
 		} else {
 			self->algorithm[0] = 0;
 			self->algolen = 0;
@@ -815,7 +815,7 @@ thread_starter(void *arg)
 #ifdef HAVE_PTHREAD_SETNAME_NP
 	/* name can be at most 16 chars including \0 */
 	char name[16];
-	(void) strcpy_len(name, self->threadname, sizeof(name));
+	(void) strtcpy(name, self->threadname, sizeof(name));
 	pthread_setname_np(
 #ifndef __APPLE__
 		pthread_self(),
@@ -1006,7 +1006,7 @@ MT_create_thread(MT_Id *t, void (*f) (void *), void *arg, enum MT_thr_detach d, 
 	}
 	MT_lock_unset(&thread_init_lock);
 
-	strcpy_len(self->threadname, threadname, sizeof(self->threadname));
+	strtcpy(self->threadname, threadname, sizeof(self->threadname));
 	char *p;
 	if ((p = strstr(self->threadname, "XXXX")) != NULL) {
 		/* overwrite XXXX with thread ID; bottom three bits are
@@ -1262,7 +1262,7 @@ MT_cond_init(MT_Cond *cond, const char *name)
 #else
 	pthread_cond_init(&cond->cv, NULL);
 #endif
-	strcpy_len(cond->name, name, sizeof(cond->name));
+	strtcpy(cond->name, name, sizeof(cond->name));
 }
 
 

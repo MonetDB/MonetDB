@@ -1362,6 +1362,8 @@ char *prompt_getlogin(void);
 struct dirent *readdir(DIR *dir);
 void rewinddir(DIR *dir);
 char *simple_prompt(const char *prompt, int maxlen, int echo, const char *def);
+size_t strlconcat(char *restrict dst, size_t n, const char *restrict src, ...) __attribute__((__access__(write_only, 1, 2))) __attribute__(()) __attribute__((__sentinel__));
+ssize_t strtconcat(char *restrict dst, size_t n, const char *restrict src, ...) __attribute__((__access__(write_only, 1, 2))) __attribute__(()) __attribute__((__sentinel__));
 char *utf16toutf8(const uint16_t *src);
 const uint8_t utf8d[364];
 uint16_t *utf8toutf16(const char *src);
