@@ -662,9 +662,9 @@ MT_getcwd(char *buffer, size_t size)
 	free(wcwd);
 	if (cwd == NULL)
 		return NULL;
-	size_t len = strlcpy(buffer, cwd, size);
+	ssize_t len = strtcpy(buffer, cwd, size);
 	free(cwd);
-	return len < size ? buffer : NULL;
+	return len == -1 ? NULL : buffer;
 }
 
 int
@@ -794,9 +794,9 @@ get_bin_path(void)
 	static wchar_t wbin_path[PATH_MAX];
 	if (GetModuleFileNameW(NULL, wbin_path, PATH_MAX) != 0) {
 		char *path = utf16toutf8(wbin_path);
-		size_t len = strlcpy(_bin_path, path, PATH_MAX);
+		ssize_t len = strtcpy(_bin_path, path, PATH_MAX);
 		free(path);
-		if (len < PATH_MAX)
+		if (len > 0)
 			return _bin_path;
 	}
 #elif defined(HAVE__NSGETEXECUTABLEPATH)  /* Darwin/OSX */

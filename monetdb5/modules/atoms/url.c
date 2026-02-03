@@ -401,9 +401,7 @@ URLgetBasename(Client ctx, str *retval, const url *val)
 			} else {
 				l = s - b;
 			}
-			if ((*retval = ma_alloc(ma, l + 1)) != NULL) {
-				strtcpy(*retval, b, l + 1);
-			}
+			*retval = ma_strndup(ma, b, l);
 		}
 	}
 
@@ -433,8 +431,8 @@ URLgetContext(Client ctx, str *retval, const url *val)
 			throw(ILLARG, "url.getContext", "bad url");
 		if (p == s) {
 			*retval = (char *) str_nil;
-		} else if ((*retval = ma_alloc(ma, s - p + 1)) != NULL) {
-			strtcpy(*retval, p, s - p + 1);
+		} else {
+			*retval = ma_strndup(ma, p, s - p);
 		}
 	}
 
@@ -468,9 +466,7 @@ URLgetExtension(Client ctx, str *retval, const url *val)
 			size_t l = s - e;
 
 			assert(*e == '.');
-			if ((*retval = ma_alloc(ma, l)) != NULL) {
-				strtcpy(*retval, e + 1, l);
-			}
+			*retval = ma_strndup(ma, e + 1, l - 1);
 		}
 	}
 
@@ -504,9 +500,7 @@ URLgetFile(Client ctx, str *retval, const url *val)
 			size_t l;
 
 			l = s - b;
-			if ((*retval = ma_alloc(ma, l + 1)) != NULL) {
-				strtcpy(*retval, b, l + 1);
-			}
+			*retval = ma_strndup(ma, b, l);
 		}
 	}
 
@@ -544,9 +538,7 @@ URLgetHost(Client ctx, str *retval, const url *val)
 			} else {
 				l = s - h;
 			}
-			if ((*retval = ma_alloc(ma, l + 1)) != NULL) {
-				strtcpy(*retval, h, l + 1);
-			}
+			*retval = ma_strndup(ma, h, l);
 		}
 	}
 
@@ -588,9 +580,7 @@ URLgetDomain(Client ctx, str *retval, const url *val)
 				p--;
 				l++;
 			}
-			if ((*retval = ma_alloc(ma, l + 1)) != NULL) {
-				strtcpy(*retval, p, l + 1);
-			}
+			*retval = ma_strndup(ma, p, l);
 		}
 	}
 
@@ -622,9 +612,7 @@ URLgetPort(Client ctx, str *retval, const url *val)
 		} else {
 			size_t l = s - p;
 
-			if ((*retval = ma_alloc(ma, l + 1)) != NULL) {
-				strtcpy(*retval, p, l + 1);
-			}
+			*retval = ma_strndup(ma, p, l);
 		}
 	}
 
@@ -651,9 +639,7 @@ URLgetProtocol(Client ctx, str *retval, const url *val)
 			throw(ILLARG, "url.getProtocol", "bad url");
 		size_t l = s - *val;
 
-		if ((*retval = ma_alloc(ma, l)) != NULL) {
-			strtcpy(*retval, *val, l);
-		}
+		*retval = ma_strndup(ma, *val, l - 1);
 	}
 
 	if (*retval == NULL)
@@ -686,9 +672,7 @@ URLgetQuery(Client ctx, str *retval, const url *val)
 
 			q++;
 			l = s - q;
-			if ((*retval = ma_alloc(ma, l + 1)) != NULL) {
-				strtcpy(*retval, q, l + 1);
-			}
+			*retval = ma_strndup(ma, q, l);
 		} else {
 			*retval = (char *) str_nil;
 		}
@@ -757,9 +741,7 @@ URLgetUser(Client ctx, str *retval, const url *val)
 			} else {
 				l = h - u - 1;
 			}
-			if ((*retval = ma_alloc(ma, l + 1)) != NULL) {
-				strtcpy(*retval, u, l + 1);
-			}
+			*retval = ma_strndup(ma, u, l);
 		}
 	}
 
@@ -894,8 +876,7 @@ extractURLHost(Client ctx, str *retval, const char *const *url, const bit *no_ww
 				l -= 4;
 			}
 			if (domain && l > 3) {
-				if ((*retval = ma_alloc(ma, l + 1)) != NULL)
-					strtcpy(*retval, h, l + 1);
+				*retval = ma_strndup(ma, h, l);
 			} else {
 				*retval = (char *) str_nil;
 			}
