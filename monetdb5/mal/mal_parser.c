@@ -1907,12 +1907,17 @@ parseEnd(Client ctx)
  */
 
 #define GETvariable(FREE)												\
-	if ((varid = findVariableLength(curBlk, CURRENT(ctx), l)) == -1) { \
-		varid = newVariable(curBlk, CURRENT(ctx), l, TYPE_any);		\
-		advance(ctx, l);												\
-		if (varid <  0) { FREE; return; }								\
-	} else																\
-		advance(ctx, l);
+	do {																\
+		if ((varid = findVariableLength(curBlk, CURRENT(ctx), l)) == -1) { \
+			varid = newVariable(curBlk, CURRENT(ctx), l, TYPE_any);		\
+			advance(ctx, l);											\
+			if (varid <  0) {											\
+				FREE;													\
+				return;													\
+			}															\
+		} else															\
+			advance(ctx, l);											\
+	} while (0)
 
 /* The parameter of parseArguments is the return value of the enclosing function. */
 static int

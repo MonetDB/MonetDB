@@ -87,9 +87,9 @@ BATcheckorderidx(BAT *b)
 		b->torderidx = NULL;
 		if ((hp = GDKzalloc(sizeof(*hp))) != NULL &&
 		    (hp->farmid = BBPselectfarm(b->batRole, b->ttype, orderidxheap)) >= 0) {
-			strconcat_len(hp->filename,
-				      sizeof(hp->filename),
-				      nme, ".torderidx", NULL);
+			strtconcat(hp->filename,
+				   sizeof(hp->filename),
+				   nme, ".torderidx", NULL);
 			hp->storage = hp->newstorage = STORE_INVALID;
 
 			/* check whether a persisted orderidx can be found */
@@ -144,8 +144,8 @@ createOIDXheap(BAT *b, bool stable)
 		.dirty = true,
 		.refs = ATOMIC_VAR_INIT(1),
 	};
-	strconcat_len(m->filename, sizeof(m->filename),
-		      BBP_physical(b->batCacheid), ".torderidx", NULL);
+	strtconcat(m->filename, sizeof(m->filename),
+		   BBP_physical(b->batCacheid), ".torderidx", NULL);
 	if (m->farmid < 0 ||
 	    HEAPalloc(m, BATcount(b) + ORDERIDXOFF, SIZEOF_OID) != GDK_SUCCEED) {
 		GDKfree(m);
@@ -382,8 +382,7 @@ GDKmergeidx(BAT *b, BAT**a, int n_ar)
 		.dirty = true,
 		.refs = ATOMIC_VAR_INIT(1),
 	};
-	strconcat_len(m->filename, sizeof(m->filename),
-		      nme, ".torderidx", NULL);
+	strtconcat(m->filename, sizeof(m->filename), nme, ".torderidx", NULL);
 	if (m->farmid < 0 ||
 	    HEAPalloc(m, BATcount(b) + ORDERIDXOFF, SIZEOF_OID) != GDK_SUCCEED) {
 		GDKfree(m);

@@ -1083,7 +1083,7 @@ timestamp_precision_tostr(allocator *ma, str *buf, size_t *len, timestamp val, i
 		if( *buf == NULL)
 			return -1;
 	}
-	return (ssize_t) strconcat_len(*buf, *len, buf1, " ", buf2, NULL);
+	return (ssize_t) strlconcat(*buf, *len, buf1, " ", buf2, NULL);
 }
 
 ssize_t

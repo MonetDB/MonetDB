@@ -169,47 +169,43 @@ IOprint_val(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		if (dst+X1 > buf+size) {										\
 			size_t osize = size;										\
 			ptrdiff_t offset = dst - buf;								\
-			char *tmp;													\
 			do {														\
 				size *= 2;												\
 			} while (dst+X1 > buf+size);								\
-			tmp = ma_realloc(ma, buf, size, osize);						\
-			if (tmp == NULL) {											\
+			buf = ma_realloc(ma, buf, size, osize);						\
+			if (buf == NULL) {											\
 				va_end(ap);												\
 				throw(MAL, "io.printf", SQLSTATE(HY013) MAL_MALLOC_FAIL); \
 			}															\
-			buf = tmp;													\
 			dst = buf + offset;											\
 		}																\
 	} while (0)
 
-#define m5sprintf(X1)											\
-	if (width > adds) {											\
-		str newadd;												\
-		newadd = ma_realloc(ma, add, width + 10, adds);			\
-		if (newadd != NULL) {									\
-			adds = width + 10;									\
-			add = newadd;										\
-		}														\
-	}															\
-	n = snprintf(add, adds, meta, X1);							\
-	while (n < 0 || (size_t) n >= adds) {						\
-		size_t newadds;											\
-		str newadd;												\
-																\
-		if (n >= 0)     /* glibc 2.1 */							\
-			newadds = n + 1;   /* precisely what is needed */	\
-		else            /* glibc 2.0 */							\
-			newadds = n * 2;     /* twice the old size */		\
-																\
-		newadd = ma_realloc(ma, add, newadds, adds);			\
-		if (newadd == NULL)										\
-			break;												\
-																\
-		adds = newadds;											\
-		add = newadd;											\
-		n = snprintf(add, adds, meta, X1);						\
-	}
+#define m5sprintf(X1)												\
+	do {															\
+		if (width > adds) {											\
+			add = ma_realloc(ma, add, width + 10, adds);			\
+			if (add != NULL) {										\
+				adds = width + 10;									\
+			}														\
+		}															\
+		n = snprintf(add, adds, meta, X1);							\
+		while (n < 0 || (size_t) n >= adds) {						\
+			size_t newadds;											\
+																	\
+			if (n >= 0)     /* glibc 2.1 */							\
+				newadds = n + 1;   /* precisely what is needed */	\
+			else            /* glibc 2.0 */							\
+				newadds = n * 2;     /* twice the old size */		\
+																	\
+			add = ma_realloc(ma, add, newadds, adds);				\
+			if (add == NULL)										\
+				break;												\
+																	\
+			adds = newadds;											\
+			n = snprintf(add, adds, meta, X1);						\
+		}															\
+	} while (0)
 
 
 static const char toofew_error[] =
@@ -417,6 +413,10 @@ IOprintf_(allocator *ma, str *res, const char *format, ...)
 			} else {
 				va_end(ap);
 				throw(MAL, "io.printf", format_error, argc);
+			}
+			if (add == NULL) {
+				va_end(ap);
+				throw(MAL, "io.printf", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 			width = strlen(add);
 			writemem(width);

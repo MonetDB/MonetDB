@@ -143,8 +143,7 @@ GDKtracer_init_trace_file(const char *dbpath, const char *dbtrace)
 			active_tracer = stdout;
 			return GDK_FAIL;
 		}
-		if (strconcat_len(fn, fnl, dbpath, DIR_SEP_STR, FILE_NAME, NULL)
-		    >= fnl) {
+		if (strtconcat(fn, fnl, dbpath, DIR_SEP_STR, FILE_NAME, NULL) == -1) {
 			/* cannot happen */
 			goto too_long;
 		}
@@ -154,17 +153,11 @@ GDKtracer_init_trace_file(const char *dbpath, const char *dbtrace)
 		return GDK_SUCCEED;
 	} else {
 		write_to_tracer = true;
-		size_t fnl = strlen(dbtrace) + 1;
-		fn = malloc(fnl);
+		fn = strdup(dbtrace);
 		if (fn == NULL) {
 			GDK_TRACER_EXCEPTION("malloc failure\n");
 			active_tracer = stdout;
 			return GDK_FAIL;
-		}
-		if (strcpy_len(fn, dbtrace, fnl)
-		    >= fnl) {
-			/* cannot happen */
-			goto too_long;
 		}
 	}
 	free(file_name);

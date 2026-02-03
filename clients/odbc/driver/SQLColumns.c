@@ -246,7 +246,7 @@ MNDBColumns(ODBCStmt *stmt,
 	}
 
 	/* add the ordering (exclude table_cat as it is the same for all rows) */
-	pos += strcpy_len(query + pos, " order by \"TABLE_SCHEM\", \"TABLE_NAME\", \"ORDINAL_POSITION\"", querylen - pos);
+	pos += strlcpy(query + pos, " order by \"TABLE_SCHEM\", \"TABLE_NAME\", \"ORDINAL_POSITION\"", querylen - pos);
 	if (pos >= querylen)
 		fprintf(stderr, "pos >= querylen, %zu > %zu\n", pos, querylen);
 	assert(pos < querylen);

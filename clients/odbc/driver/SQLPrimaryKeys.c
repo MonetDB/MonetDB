@@ -203,7 +203,7 @@ MNDBPrimaryKeys(ODBCStmt *stmt,
 		free(tab);
 
 	/* add the ordering */
-	pos += strcpy_len(query + pos, " order by \"TABLE_SCHEM\", \"TABLE_NAME\", \"KEY_SEQ\"", querylen - pos);
+	pos += strlcpy(query + pos, " order by \"TABLE_SCHEM\", \"TABLE_NAME\", \"KEY_SEQ\"", querylen - pos);
 	assert(pos < querylen);
 
 	/* debug: fprintf(stdout, "SQLPrimaryKeys query (pos: %zu, len: %zu):\n%s\n\n", pos, strlen(query), query); */

@@ -54,7 +54,7 @@ openConnectionIP(int *socks, bool udp, const char *bindaddr, unsigned short port
 		hints.ai_flags |= AI_NUMERICHOST;
 		ipv6_vs6only = 0;
 		bindaddr = "::1";
-		strcpy_len(host, "localhost", sizeof(host));
+		strtcpy(host, "localhost", sizeof(host));
 	} else if (strcmp(bindaddr, "all") == 0) {
 		hints.ai_family = AF_INET6;
 		ipv6_vs6only = 0;
@@ -71,11 +71,11 @@ openConnectionIP(int *socks, bool udp, const char *bindaddr, unsigned short port
 		hints.ai_family = AF_INET6;
 		hints.ai_flags |= AI_NUMERICHOST;
 		ipv6_vs6only = 1;
-		strcpy_len(host, "localhost", sizeof(host));
+		strtcpy(host, "localhost", sizeof(host));
 	} else if (strcmp(bindaddr, "127.0.0.1") == 0) {
 		hints.ai_family = AF_INET;
 		hints.ai_flags |= AI_NUMERICHOST;
-		strcpy_len(host, "localhost", sizeof(host));
+		strtcpy(host, "localhost", sizeof(host));
 	} else {
 		hints.ai_family = AF_INET6;
 		ipv6_vs6only = 0;
@@ -208,7 +208,7 @@ openConnectionUNIX(int *ret, const char *path, int mode, FILE *log)
 	server = (struct sockaddr_un) {
 		.sun_family = AF_UNIX,
 	};
-	strcpy_len(server.sun_path, path, sizeof(server.sun_path));
+	strtcpy(server.sun_path, path, sizeof(server.sun_path));
 
 	/* have to use umask to restrict permissions to avoid a race
 	 * condition */

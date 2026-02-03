@@ -305,7 +305,7 @@ main(int argc, char **argv)
 #ifdef HAVE_CTIME_R
 		ctime_r(&t, buf);
 #else
-		strcpy_len(buf, ctime(&t), sizeof(buf));
+		strtcpy(buf, ctime(&t), sizeof(buf));
 #endif
 #endif
 		if ((p = strrchr(buf, '\n')) != NULL)

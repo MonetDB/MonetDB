@@ -178,7 +178,7 @@ MNDBTablePrivileges(ODBCStmt *stmt,
 	}
 
 	/* add the ordering (exclude table_cat as it is the same for all rows) */
-	pos += strcpy_len(query + pos, " order by \"TABLE_SCHEM\", \"TABLE_NAME\", \"PRIVILEGE\", \"GRANTEE\"", querylen - pos);
+	pos += strlcpy(query + pos, " order by \"TABLE_SCHEM\", \"TABLE_NAME\", \"PRIVILEGE\", \"GRANTEE\"", querylen - pos);
 	assert(pos < querylen);
 
 	/* debug: fprintf(stdout, "SQLTablePrivileges query (pos: %zu, len: %zu):\n%s\n\n", pos, strlen(query), query); */

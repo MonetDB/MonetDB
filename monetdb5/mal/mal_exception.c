@@ -69,7 +69,7 @@ concatErrors(char *err1, const char *err2)
 	char *new = ma_alloc(ma, len);
 	if (new == NULL)
 		return err1;
-	strconcat_len(new, len, err1, addnl ? "\n" : "", err2, NULL);
+	strtconcat(new, len, err1, addnl ? "\n" : "", err2, NULL);
 	return new;
 }
 
@@ -100,8 +100,7 @@ createExceptionInternal(enum malexception type, const char *fcn,
 	msg = ma_alloc(ma, msglen + len + 2);
 	if (msg != NULL) {
 		/* the calls below succeed: the arguments have already been checked */
-		(void) strconcat_len(msg, msglen + 1,
-							 exceptionNames[type], ":", fcn, ":", NULL);
+		strtconcat(msg, msglen + 1, exceptionNames[type], ":", fcn, ":", NULL);
 		if (len > 0)
 			(void) vsnprintf(msg + msglen, len + 1, format, ap2);
 		char *q = msg + strlen(msg);
@@ -227,8 +226,7 @@ createMalExceptionInternal(MalBlkPtr mb, int pc, enum malexception type,
 							prev, addnl ? "\n" : "",
 							exceptionNames[type], s, fcn, pc);
 		} else if (type == SYNTAX) {
-			(void) strconcat_len(msg, msglen + 1,
-								 exceptionNames[type], ":", NULL);
+			(void) strtconcat(msg, msglen + 1, exceptionNames[type], ":", NULL);
 		} else {
 			(void) snprintf(msg, msglen + 1, "%s:%s.%s[%d]:",
 							exceptionNames[type], s, fcn, pc);
@@ -315,7 +313,7 @@ getExceptionPlace(allocator *ma, const char *exception)
 			if ((t = strchr(s, ':')) != NULL) {
 				if ((ret = ma_alloc(ma, t - s + 1)) == NULL)
 					return NULL;
-				strcpy_len(ret, s, t - s + 1);
+				strtcpy(ret, s, t - s + 1);
 				return ret;
 			}
 			break;

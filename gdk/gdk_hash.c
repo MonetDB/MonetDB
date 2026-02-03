@@ -453,12 +453,12 @@ BATcheckhash(BAT *b)
 			    (h->heaplink.farmid = BBPselectfarm(b->batRole, b->ttype, hashheap)) >= 0 &&
 			    (h->heapbckt.farmid = BBPselectfarm(b->batRole, b->ttype, hashheap)) >= 0) {
 				const char *nme = BBP_physical(b->batCacheid);
-				strconcat_len(h->heaplink.filename,
-					      sizeof(h->heaplink.filename),
-					      nme, ".thashl", NULL);
-				strconcat_len(h->heapbckt.filename,
-					      sizeof(h->heapbckt.filename),
-					      nme, ".thashb", NULL);
+				strtconcat(h->heaplink.filename,
+					   sizeof(h->heaplink.filename),
+					   nme, ".thashl", NULL);
+				strtconcat(h->heapbckt.filename,
+					   sizeof(h->heapbckt.filename),
+					   nme, ".thashb", NULL);
 				h->heaplink.storage = STORE_INVALID;
 				h->heaplink.newstorage = STORE_INVALID;
 				h->heapbckt.storage = STORE_INVALID;
@@ -767,10 +767,10 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 	h->width = HASHwidth(BATcapacity(b));
 	h->heaplink.dirty = true;
 	h->heapbckt.dirty = true;
-	strconcat_len(h->heaplink.filename, sizeof(h->heaplink.filename),
-		      nme, ".", ext, "l", NULL);
-	strconcat_len(h->heapbckt.filename, sizeof(h->heapbckt.filename),
-		      nme, ".", ext, "b", NULL);
+	strtconcat(h->heaplink.filename, sizeof(h->heaplink.filename),
+		   nme, ".", ext, "l", NULL);
+	strtconcat(h->heapbckt.filename, sizeof(h->heapbckt.filename),
+		   nme, ".", ext, "b", NULL);
 	h->heapbckt.parentid = b->batCacheid;
 	h->heaplink.parentid = b->batCacheid;
 	if (HEAPalloc(&h->heaplink, hascand ? ci->ncand : BATcapacity(b),

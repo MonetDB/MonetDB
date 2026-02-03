@@ -71,120 +71,119 @@ BATall_grp(BAT *l, BAT *g, BAT *e, BAT *s)
 		return NULL;
 	}
 
-	allocator *ta = MT_thread_getallocator();
-	allocator_state ta_state = ma_open(ta);
 	if (BATcount(l) == 0 || ngrp == 0) {
 		const void *nilp = ATOMnilptr(l->ttype);
-		if ((res = BATconstant(ngrp == 0 ? 0 : min, l->ttype, nilp, ngrp, TRANSIENT)) == NULL)
-			goto alloc_fail;
-	} else {
-		BATiter li;
-
-		if ((res = COLnew(min, l->ttype, ngrp, TRANSIENT)) == NULL)
-			goto alloc_fail;
-		if ((oids = ma_alloc(ta, ngrp * sizeof(oid))) == NULL)
-			goto alloc_fail;
-
-		for (i = 0; i < ngrp; i++)
-			oids[i] = BUN_NONE;
-
-		if (!g || BATtdense(g))
-			gids = NULL;
-		else
-			gids = (const oid *) Tloc(g, 0);
-
-		li = bat_iterator(l);
-		switch (ATOMbasetype(l->ttype)) {
-		case TYPE_bte:
-			SQLall_grp_imp(bte);
-			break;
-		case TYPE_sht:
-			SQLall_grp_imp(sht);
-			break;
-		case TYPE_int:
-			SQLall_grp_imp(int);
-			break;
-		case TYPE_lng:
-			SQLall_grp_imp(lng);
-			break;
-#ifdef HAVE_HGE
-		case TYPE_hge:
-			SQLall_grp_imp(hge);
-			break;
-#endif
-		case TYPE_flt:
-			SQLall_grp_imp(flt);
-			break;
-		case TYPE_dbl:
-			SQLall_grp_imp(dbl);
-			break;
-		default: {
-			bool (*atomeq) (const void *, const void *) = ATOMequal(l->ttype);
-			const void *restrict nilp = ATOMnilptr(l->ttype);
-
-			for (BUN n = 0; n < ci.ncand; n++) {
-				i = canditer_next(&ci) - l->hseqbase;
-				if (gids == NULL ||
-					(gids[i] >= min && gids[i] <= max)) {
-					if (gids)
-						gid = gids[i] - min;
-					else
-						gid = (oid) i;
-					if (oids[gid] != (BUN_NONE - 1)) {
-						if (oids[gid] == BUN_NONE) {
-							if (!atomeq(BUNtail(&li, i), nilp))
-								oids[gid] = i;
-						} else {
-							const void *pi = BUNtail(&li, oids[gid]);
-							const void *pp = BUNtail(&li, i);
-							if (!atomeq(pi, pp) && !atomeq(pp, nilp))
-								oids[gid] = BUN_NONE - 1;
-						}
-					}
-				}
-			}
-
-			if (ATOMvarsized(l->ttype)) {
-				for (i = 0; i < ngrp; i++) { /* convert the found oids in values */
-					BUN noid = oids[i];
-					const void *next;
-					if (noid > (BUN_NONE - 2)) {
-						next = nilp;
-						hasnil = 1;
-					} else {
-						next = BUNtvar(&li, noid);
-					}
-					if (tfastins_nocheckVAR(res, i, next) != GDK_SUCCEED) {
-						bat_iterator_end(&li);
-						goto alloc_fail;
-					}
-				}
-			} else {
-				uint8_t *restrict rcast = (uint8_t *) Tloc(res, 0);
-				uint16_t width = res->twidth;
-				for (i = 0; i < ngrp; i++) { /* convert the found oids in values */
-					BUN noid = oids[i];
-					const void *next;
-					if (noid > (BUN_NONE - 2)) {
-						next = nilp;
-						hasnil = 1;
-					} else {
-						next = BUNtloc(&li, noid);
-					}
-					memcpy(rcast, next, width);
-					rcast += width;
-				}
-			}
-		}
-		}
-		bat_iterator_end(&li);
-		BATsetcount(res, ngrp);
-		res->tnil = hasnil != 0;
-		res->tnonil = hasnil == 0;
-		res->tkey = BATcount(res) <= 1;
-		res->tsorted = BATcount(res) <= 1;
-		res->trevsorted = BATcount(res) <= 1;
+		return BATconstant(ngrp == 0 ? 0 : min, l->ttype, nilp, ngrp, TRANSIENT);
 	}
+
+	if ((res = COLnew(min, l->ttype, ngrp, TRANSIENT)) == NULL)
+		return NULL;
+
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
+
+	if ((oids = ma_alloc(ta, ngrp * sizeof(oid))) == NULL)
+		goto alloc_fail;
+
+	for (i = 0; i < ngrp; i++)
+		oids[i] = BUN_NONE;
+
+	if (!g || BATtdense(g))
+		gids = NULL;
+	else
+		gids = (const oid *) Tloc(g, 0);
+
+	BATiter li = bat_iterator(l);
+	switch (ATOMbasetype(l->ttype)) {
+	case TYPE_bte:
+		SQLall_grp_imp(bte);
+		break;
+	case TYPE_sht:
+		SQLall_grp_imp(sht);
+		break;
+	case TYPE_int:
+		SQLall_grp_imp(int);
+		break;
+	case TYPE_lng:
+		SQLall_grp_imp(lng);
+		break;
+#ifdef HAVE_HGE
+	case TYPE_hge:
+		SQLall_grp_imp(hge);
+		break;
+#endif
+	case TYPE_flt:
+		SQLall_grp_imp(flt);
+		break;
+	case TYPE_dbl:
+		SQLall_grp_imp(dbl);
+		break;
+	default: {
+		bool (*atomeq) (const void *, const void *) = ATOMequal(l->ttype);
+		const void *restrict nilp = ATOMnilptr(l->ttype);
+
+		for (BUN n = 0; n < ci.ncand; n++) {
+			i = canditer_next(&ci) - l->hseqbase;
+			if (gids == NULL ||
+			    (gids[i] >= min && gids[i] <= max)) {
+				if (gids)
+					gid = gids[i] - min;
+				else
+					gid = (oid) i;
+				if (oids[gid] != (BUN_NONE - 1)) {
+					if (oids[gid] == BUN_NONE) {
+						if (!atomeq(BUNtail(&li, i), nilp))
+							oids[gid] = i;
+					} else {
+						const void *pi = BUNtail(&li, oids[gid]);
+						const void *pp = BUNtail(&li, i);
+						if (!atomeq(pi, pp) && !atomeq(pp, nilp))
+							oids[gid] = BUN_NONE - 1;
+					}
+				}
+			}
+		}
+
+		if (ATOMvarsized(l->ttype)) {
+			for (i = 0; i < ngrp; i++) { /* convert the found oids in values */
+				BUN noid = oids[i];
+				const void *next;
+				if (noid > (BUN_NONE - 2)) {
+					next = nilp;
+					hasnil = 1;
+				} else {
+					next = BUNtvar(&li, noid);
+				}
+				if (tfastins_nocheckVAR(res, i, next) != GDK_SUCCEED) {
+					bat_iterator_end(&li);
+					goto alloc_fail;
+				}
+			}
+		} else {
+			uint8_t *restrict rcast = (uint8_t *) Tloc(res, 0);
+			uint16_t width = res->twidth;
+			for (i = 0; i < ngrp; i++) { /* convert the found oids in values */
+				BUN noid = oids[i];
+				const void *next;
+				if (noid > (BUN_NONE - 2)) {
+					next = nilp;
+					hasnil = 1;
+				} else {
+					next = BUNtloc(&li, noid);
+				}
+				memcpy(rcast, next, width);
+				rcast += width;
+			}
+		}
+	}
+	}
+	bat_iterator_end(&li);
+	BATsetcount(res, ngrp);
+	res->tnil = hasnil != 0;
+	res->tnonil = hasnil == 0;
+	res->tkey = BATcount(res) <= 1;
+	res->tsorted = BATcount(res) <= 1;
+	res->trevsorted = BATcount(res) <= 1;
 
 	ma_close(&ta_state);
 

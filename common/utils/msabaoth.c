@@ -1197,7 +1197,7 @@ msab_deserialise(sabdb **ret, const char *sdb)
 		return(strdup(buf));
 	}
 	dbname = malloc(lasts - sdb + 1);
-	strcpy_len(dbname, sdb, lasts - sdb + 1);
+	strtcpy(dbname, sdb, lasts - sdb + 1);
 	sdb = ++lasts;
 	lasts = strchr(sdb, ',');
 	if (lasts == NULL) {
@@ -1207,7 +1207,7 @@ msab_deserialise(sabdb **ret, const char *sdb)
 		return(strdup(buf));
 	}
 	uri = malloc(lasts - sdb + 1);
-	strcpy_len(uri, sdb, lasts - sdb + 1);
+	strtcpy(uri, sdb, lasts - sdb + 1);
 	sdb = ++lasts;
 	int locked, state, n;
 	switch (sscanf(sdb, "%d,%d%n", &locked, &state, &n)) {
@@ -1240,7 +1240,7 @@ msab_deserialise(sabdb **ret, const char *sdb)
 	}
 	if (lasts > sdb) {
 		scens = malloc(lasts - sdb + 1);
-		strcpy_len(scens, sdb, lasts - sdb + 1);
+		strtcpy(scens, sdb, lasts - sdb + 1);
 	} else {
 		scens = NULL;
 	}

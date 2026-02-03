@@ -143,7 +143,12 @@ candmask_pop(uint32_t x)
 #undef BUILTIN_USED
 }
 
-#define canditer_next_dense(ci)		((ci)->seq + (ci)->next++)
+static inline oid
+canditer_next_dense(struct canditer *ci)
+{
+	return ci->seq + ci->next++;
+}
+
 static inline oid
 canditer_next(struct canditer *ci)
 {
@@ -192,7 +197,14 @@ gdk_export oid canditer_peekprev(const struct canditer *ci)
 	__attribute__((__pure__));
 gdk_export oid canditer_idx(const struct canditer *ci, BUN p)
 	__attribute__((__pure__));
-#define canditer_idx_dense(ci, p) ((p >= (ci)->ncand)?oid_nil:((ci)->seq + p))
+
+__attribute__((__pure__))
+static inline oid
+canditer_idx_dense(const struct canditer *ci, BUN p)
+{
+	return p >= ci->ncand ? oid_nil : ci->seq + p;
+}
+
 gdk_export void canditer_setidx(struct canditer *ci, BUN p);
 gdk_export void canditer_reset(struct canditer *ci);
 
@@ -207,6 +219,7 @@ canditer_search_dense(const struct canditer *ci, oid o, bool next)
 	else
 		return o - ci->seq;
 }
+
 gdk_export BUN canditer_search(const struct canditer *ci, oid o, bool next)
 	__attribute__((__pure__));
 
@@ -228,6 +241,7 @@ canditer_contains(const struct canditer *ci, oid o)
 	}
 	return canditer_search(ci, o, false) != BUN_NONE;
 }
+
 gdk_export oid canditer_mask_next(const struct canditer *ci, oid o, bool next)
 	__attribute__((__pure__));
 

@@ -34,38 +34,39 @@ str
 malBootstrap(char *modules[], bool embedded, const char *initpasswd)
 {
 	Client c;
-	str msg = MAL_SUCCEED;
+
+	/* we cannot use errors that are handed down to us since we destroy
+	 * the error allocator when there is an error
+	 * note that our caller logs a CRITICAL error in case we return an
+	 * error, so we don't log anything */
 
 	c = MCinitClient(MAL_ADMIN, NULL, NULL);
 	if (c == NULL) {
-		throw(MAL, "malBootstrap", "Failed to initialize client");
+		return "MALException:malBootstrap:Failed to initialize client\n";
 	}
 	assert(c != NULL);
 	c->curmodule = c->usermodule = userModule();
 	if (c->usermodule == NULL) {
 		MCcloseClient(c);
-		throw(MAL, "malBootstrap", "Failed to initialize client MAL module");
+		return "MALException:malBootstrap:Failed to initialize client MAL module\n";
 	}
-	if ((msg = defaultScenario(c))) {
+	(void) defaultScenario(c);	/* cannot fail */
+	if (MSinitClientPrg(c, userRef, mainRef) != MAL_SUCCEED) {
 		MCcloseClient(c);
-		return msg;
-	}
-	if ((msg = MSinitClientPrg(c, userRef, mainRef)) != MAL_SUCCEED) {
-		MCcloseClient(c);
-		return msg;
+		return "MALException:malBootstrap:Failed to initialize client program\n";
 	}
 
 	if (MCinitClientThread(c) < 0) {
 		MCcloseClient(c);
-		throw(MAL, "malBootstrap", "Failed to create client thread");
+		return "MALException:malBootstrap:Failed to create client thread\n";
 	}
-	if ((msg = malIncludeModules(c, modules, 0, embedded, initpasswd)) != MAL_SUCCEED) {
+	if (malIncludeModules(c, modules, 0, embedded, initpasswd) != MAL_SUCCEED) {
 		MCcloseClient(c);
-		return msg;
+		return "MALException:malBootstrap:Failed to initialize the modules\n";
 	}
 	MCcloseClient(c);
 	MT_thread_set_qry_ctx(NULL);
-	return msg;
+	return MAL_SUCCEED;
 }
 
 /*

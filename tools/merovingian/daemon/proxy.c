@@ -165,7 +165,7 @@ startProxy(int psock, stream *cfdin, stream *cfout,
 		server = (struct sockaddr_un) {
 			.sun_family = AF_UNIX,
 		};
-		strcpy_len(server.sun_path, usock, sizeof(server.sun_path));
+		strtcpy(server.sun_path, usock, sizeof(server.sun_path));
 		free(conn);
 		if ((ssock = socket(PF_UNIX, SOCK_STREAM
 #ifdef SOCK_CLOEXEC

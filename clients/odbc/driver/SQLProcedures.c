@@ -165,7 +165,7 @@ MNDBProcedures(ODBCStmt *stmt,
 	}
 
 	/* add the ordering (exclude procedure_cat as it is the same for all rows) */
-	pos += strcpy_len(query + pos, " order by \"PROCEDURE_SCHEM\", \"PROCEDURE_NAME\", \"SPECIFIC_NAME\"", querylen - pos);
+	pos += strlcpy(query + pos, " order by \"PROCEDURE_SCHEM\", \"PROCEDURE_NAME\", \"SPECIFIC_NAME\"", querylen - pos);
 	assert(pos < querylen);
 
 	/* debug: fprintf(stdout, "SQLProcedures query (pos: %zu, len: %zu):\n%s\n\n", pos, strlen(query), query); */

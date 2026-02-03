@@ -1,0 +1,82 @@
+statement ok
+create table test (a int not null, b int not null, primary key (a, b))
+
+statement ok
+insert into test values (1, 1)
+
+statement ok
+delete from test where a = 1;
+
+statement ok
+insert into test values (1, 1)
+
+-- BUG: returns 2 identical rows (1, 1), this violates the constraint
+query II
+select * from test where a = 1 and b = 1
+----
+1
+1
+
+-- OK: returns 1 row
+query II
+select * from test where a = 1
+----
+1
+1
+
+query II
+select * from test where b = 1
+----
+1
+1
+
+query II
+select * from test
+----
+1
+1
+
+statement ok
+drop table test
+
+-- also happens with a composite unique constraint:
+statement ok
+create table test (a int, b int, unique (a, b))
+
+statement ok
+insert into test values (1, 1)
+
+statement ok
+delete from test where a = 1;
+
+statement ok
+insert into test values (1, 1)
+
+-- BUG: returns 2 identical rows (1, 1), this violates the constraint
+query II
+select * from test where a = 1 and b = 1
+----
+1
+1
+
+-- OK: returns 1 row
+query II
+select * from test where a = 1
+----
+1
+1
+
+query II
+select * from test where b = 1
+----
+1
+1
+
+query II
+select * from test
+----
+1
+1
+
+statement ok
+drop table test

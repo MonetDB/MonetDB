@@ -257,7 +257,7 @@ MNDBProcedureColumns(ODBCStmt *stmt,
 	}
 
 	/* add the ordering (exclude procedure_cat as it is the same for all rows) */
-	pos += strcpy_len(query + pos, " order by \"PROCEDURE_SCHEM\", \"PROCEDURE_NAME\", \"SPECIFIC_NAME\", \"COLUMN_TYPE\", \"ORDINAL_POSITION\"", querylen - pos);
+	pos += strlcpy(query + pos, " order by \"PROCEDURE_SCHEM\", \"PROCEDURE_NAME\", \"SPECIFIC_NAME\", \"COLUMN_TYPE\", \"ORDINAL_POSITION\"", querylen - pos);
 	if (pos >= querylen)
 		fprintf(stderr, "pos >= querylen, %zu > %zu\n", pos, querylen);
 	assert(pos < querylen);

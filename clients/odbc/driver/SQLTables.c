@@ -211,7 +211,7 @@ MNDBTables(ODBCStmt *stmt,
 			int i;
 			size_t j;
 
-			pos += strcpy_len(query + pos, " and tt.table_type_name in (", querylen - pos);
+			pos += strlcpy(query + pos, " and tt.table_type_name in (", querylen - pos);
 			for (j = 0, i = 0; i < NameLength4 + 1; i++) {
 				if (i == NameLength4 || TableType[i] == ',') {
 					if (j > 0 && buf[j - 1] == ' ')
@@ -252,7 +252,7 @@ MNDBTables(ODBCStmt *stmt,
 		}
 
 		/* add the ordering */
-		pos += strcpy_len(query + pos, " order by \"TABLE_TYPE\", \"TABLE_SCHEM\", \"TABLE_NAME\"", querylen - pos);
+		pos += strlcpy(query + pos, " order by \"TABLE_TYPE\", \"TABLE_SCHEM\", \"TABLE_NAME\"", querylen - pos);
 		assert(pos < querylen);
 	}
 

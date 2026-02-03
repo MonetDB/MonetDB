@@ -244,7 +244,7 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 	c->idle = 0;
 	c->login = c->lastcmd = time(0);
 	c->session = GDKusec();
-	strcpy_len(c->optimizer, "default_pipe", sizeof(c->optimizer));
+	strtcpy(c->optimizer, "default_pipe", sizeof(c->optimizer));
 	c->workerlimit = 0;
 	c->memorylimit = 0;
 	c->querytimeout = 0;
@@ -356,7 +356,7 @@ MCcloseClient(Client c)
 		freeModule(c->usermodule);
 	c->usermodule = c->curmodule = 0;
 	c->father = 0;
-	strcpy_len(c->optimizer, "default_pipe", sizeof(c->optimizer));
+	strtcpy(c->optimizer, "default_pipe", sizeof(c->optimizer));
 	c->workerlimit = 0;
 	c->memorylimit = 0;
 	c->querytimeout = 0;

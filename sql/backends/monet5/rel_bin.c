@@ -949,9 +949,10 @@ exp2bin_named_placeholders(backend *be, sql_exp *fe)
 
 	if (list_empty(args))
 		return NULL;
-	for (node *n = args->h; n; n = n->next, argc++) {
+	for (node *n = args->h, *m = be->mvc->params->h; n && m; n = n->next, m = m->next, argc++) {
 		sql_exp *a = n->data;
-		sql_subtype *t = exp_subtype(a);
+		sql_arg *p = m->data;
+		sql_subtype *t = &p->type;
 		stmt *s = exp_bin(be, a, NULL, NULL, NULL, NULL, NULL, NULL, 1, 0, 1);
 		InstrPtr q = newAssignment(be->mb);
 
@@ -2930,7 +2931,7 @@ rel2bin_hash_lookup(backend *be, sql_rel *rel, stmt *left, stmt *right, sql_idx 
 			return stmt_join(be, h, idx, 0, cmp_equal, 0, semantics, false);
 		}
 	} else {
-		return stmt_uselect(be, idx, h, cmp_equal, NULL, 0, semantics);
+		return stmt_uselect(be, idx, h, cmp_equal, left->cand, 0, semantics);
 	}
 }
 
@@ -5095,6 +5096,10 @@ rel2bin_select(backend *be, sql_rel *rel, list *refs)
 			sql_idx *i = p->value.pval;
 			int oldvtop = be->mb->vtop, oldstop = be->mb->stop;
 
+			if (sel) {
+				sub->cand = sel;
+				sel = NULL;
+			}
 			if (!(sel = rel2bin_hash_lookup(be, rel, sub, NULL, i, en))) {
 				/* hash lookup cannot be used, clean leftover mal statements */
 				clean_mal_statements(be, oldstop, oldvtop);

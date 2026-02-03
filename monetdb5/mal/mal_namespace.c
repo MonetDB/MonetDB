@@ -152,7 +152,7 @@ findName(const char *nme, bool allocate)
 	}
 	m = &namespace->data[namespace->count++];
 	assert(m->nme != nme);
-	strcpy_len(m->nme, nme, sizeof(m->nme));
+	strtcpy(m->nme, nme, sizeof(m->nme));
 	m->next = *n;
 	*n = m;
 	MT_lock_unset(&mal_namespaceLock);
@@ -173,7 +173,7 @@ getNameLen(const char *nme, size_t len)
 	char name[IDLENGTH + 1];
 	if (len > IDLENGTH)
 		len = IDLENGTH;
-	strcpy_len(name, nme, len + 1);
+	strtcpy(name, nme, len + 1);
 	return findName(name, false);
 }
 
@@ -191,6 +191,6 @@ putNameLen(const char *nme, size_t len)
 	char name[IDLENGTH + 1];
 	if (len > IDLENGTH)
 		len = IDLENGTH;
-	strcpy_len(name, nme, len + 1);
+	strtcpy(name, nme, len + 1);
 	return findName(name, true);
 }

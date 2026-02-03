@@ -124,7 +124,7 @@ addAtom(mel_atom *atoms)
 			if (tpe < 0)
 				throw(TYPE, __func__, TYPE_NOT_SUPPORTED);
 			BATatoms[i] = BATatoms[tpe];
-			strcpy_len(BATatoms[i].name, atoms->name, sizeof(BATatoms[i].name));
+			strtcpy(BATatoms[i].name, atoms->name, sizeof(BATatoms[i].name));
 			BATatoms[i].storage = ATOMstorage(tpe);
 		} else {				/* cannot overload void atoms */
 			BATatoms[i].storage = i;

@@ -97,7 +97,7 @@ command_create(int argc, char *argv[])
 	dbfarm = argv[1];
 
 	/* check if dbfarm actually exists */
-	strcpy_len(path, dbfarm, sizeof(path));
+	strtcpy(path, dbfarm, sizeof(path));
 	p = path;
 	while ((p = strchr(p + 1, '/')) != NULL) {
 		*p = '\0';

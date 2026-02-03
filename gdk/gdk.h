@@ -21,6 +21,8 @@
 #ifndef _GDK_H_
 #define _GDK_H_
 
+#include "monetdb_config.h"
+
 /* standard includes upon which all configure tests depend */
 #ifdef HAVE_SYS_STAT_H
 # include <sys/stat.h>
@@ -29,8 +31,6 @@
 # include <unistd.h>
 #endif
 
-#include <ctype.h>		/* isspace etc. */
-
 #ifdef HAVE_SYS_FILE_H
 # include <sys/file.h>
 #endif
@@ -38,9 +38,6 @@
 #ifdef HAVE_DIRENT_H
 # include <dirent.h>
 #endif
-
-#include <limits.h>		/* for *_MIN and *_MAX */
-#include <float.h>		/* for FLT_MAX and DBL_MAX */
 
 #ifndef PATH_MAX
 #define PATH_MAX	1024
@@ -443,23 +440,24 @@ typedef struct BAT {
 	MT_RWLock thashlock;	/* lock specifically for hash management */
 	MT_Lock batIdxLock;	/* lock to manipulate other indexes/properties */
 	Heap *oldtail;		/* old tail heap, to be destroyed after commit */
+	QryCtx *qc;		/* query context of owner if transient */
 } BAT;
 
 /* some access functions for the bitmask type */
 static inline void
-mskSet(BAT *b, BUN p)
+mskSet(const BAT *b, BUN p)
 {
 	((uint32_t *) b->theap->base)[p / 32] |= 1U << (p % 32);
 }
 
 static inline void
-mskClr(BAT *b, BUN p)
+mskClr(const BAT *b, BUN p)
 {
 	((uint32_t *) b->theap->base)[p / 32] &= ~(1U << (p % 32));
 }
 
 static inline void
-mskSetVal(BAT *b, BUN p, msk v)
+mskSetVal(const BAT *b, BUN p, msk v)
 {
 	if (v)
 		mskSet(b, p);
@@ -467,26 +465,45 @@ mskSetVal(BAT *b, BUN p, msk v)
 		mskClr(b, p);
 }
 
+__attribute__((__pure__))
 static inline msk
-mskGetVal(BAT *b, BUN p)
+mskGetVal(const BAT *b, BUN p)
 {
 	return ((uint32_t *) b->theap->base)[p / 32] & (1U << (p % 32));
 }
 
 gdk_export gdk_return HEAPextend(Heap *h, size_t size, bool mayshare)
 	__attribute__((__warn_unused_result__));
-gdk_export size_t HEAPvmsize(Heap *h);
-gdk_export size_t HEAPmemsize(Heap *h);
+gdk_export size_t HEAPvmsize(const Heap *h)
+	__attribute__((__pure__));
+gdk_export size_t HEAPmemsize(const Heap *h)
+	__attribute__((__pure__));
 gdk_export void HEAPdecref(Heap *h, bool remove);
 gdk_export void HEAPincref(Heap *h);
 gdk_export gdk_return HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 	__attribute__((__warn_unused_result__));
 	//__attribute__((__visibility__("hidden")));
 
-#define VIEWtparent(x)	((x)->theap == NULL || (x)->theap->parentid == (x)->batCacheid ? 0 : (x)->theap->parentid)
-#define VIEWvtparent(x)	((x)->tvheap == NULL || (x)->tvheap->parentid == (x)->batCacheid ? 0 : (x)->tvheap->parentid)
+__attribute__((__pure__))
+static inline bat
+VIEWtparent(const BAT *b)
+{
+	return b->theap == NULL || b->theap->parentid == b->batCacheid ? 0 : b->theap->parentid;
+}
 
-#define isVIEW(x)	(VIEWtparent(x) != 0 || VIEWvtparent(x) != 0)
+__attribute__((__pure__))
+static inline bat
+VIEWvtparent(const BAT *b)
+{
+	return b->tvheap == NULL || b->tvheap->parentid == b->batCacheid ? 0 : b->tvheap->parentid;
+}
+
+__attribute__((__pure__))
+static inline bool
+isVIEW(const BAT *b)
+{
+	return VIEWtparent(b) != 0 || VIEWvtparent(b) != 0;
+}
 
 typedef struct {
 	char *logical;		/* logical name (may point at bak) */
@@ -1122,10 +1139,14 @@ BATsettrivprop(BAT *b)
 				/* the only value is NIL */
 				b->tminpos = BUN_NONE;
 				b->tmaxpos = BUN_NONE;
+				b->tnil = true;
+				b->tnonil = false;
 			} else {
 				/* the only value is both min and max */
 				b->tminpos = 0;
 				b->tmaxpos = 0;
+				b->tnonil = true;
+				b->tnil = false;
 			}
 		} else {
 			b->tsorted = false;
@@ -1778,8 +1799,6 @@ gdk_export void GDKusr1triggerCB(void (*func)(void));
 
 #define SQLSTATE(sqlstate)	#sqlstate "!"
 #define MAL_MALLOC_FAIL	"Could not allocate memory"
-
-#include <setjmp.h>
 
 typedef struct exception_buffer {
 #ifdef HAVE_SIGLONGJMP

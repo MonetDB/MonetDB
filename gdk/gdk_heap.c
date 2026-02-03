@@ -252,10 +252,10 @@ HEAPextend(Heap *h, size_t size, bool mayshare)
 	const char *failure = "None";
 
 	if (GDKinmemory(h->farmid)) {
-		strcpy_len(nme, ":memory:", sizeof(nme));
+		strtcpy(nme, ":memory:", sizeof(nme));
 		ext = "ext";
 	} else {
-		strcpy_len(nme, h->filename, sizeof(nme));
+		strtcpy(nme, h->filename, sizeof(nme));
 		ext = decompose_filename(nme);
 	}
 	failure = "size > h->size";
@@ -770,7 +770,7 @@ HEAPload(Heap *h, const char *nme, const char *ext, bool trunc)
 	 * takes precedence. */
 	if (GDKfilepath(dstpath, sizeof(dstpath), h->farmid, BATDIR, nme, ext) != GDK_SUCCEED)
 		return GDK_FAIL;
-	strconcat_len(srcpath, sizeof(srcpath), dstpath, suffix, NULL);
+	strtconcat(srcpath, sizeof(srcpath), dstpath, suffix, NULL);
 
 	t0 = GDKusec();
 	ret = MT_rename(srcpath, dstpath);
@@ -868,7 +868,7 @@ HEAPsave(Heap *h, const char *nme, const char *ext, bool dosync, BUN free, MT_Lo
 		/* anonymous or private VM is saved as if it were malloced */
 		store = STORE_MEM;
 		assert(strlen(ext) + strlen(suffix) < sizeof(extension));
-		strconcat_len(extension, sizeof(extension), ext, suffix, NULL);
+		strtconcat(extension, sizeof(extension), ext, suffix, NULL);
 		ext = extension;
 	} else if (store != STORE_MEM) {
 		store = h->storage;
@@ -902,7 +902,7 @@ HEAPsave(Heap *h, const char *nme, const char *ext, bool dosync, BUN free, MT_Lo
 
 /* Return the (virtual) size of the heap. */
 size_t
-HEAPvmsize(Heap *h)
+HEAPvmsize(const Heap *h)
 {
 	if (h && h->base && h->free)
 		return h->size;
@@ -912,7 +912,7 @@ HEAPvmsize(Heap *h)
 /* Return the allocated size of the heap, i.e. if the heap is memory
  * mapped and not copy-on-write (privately mapped), return 0. */
 size_t
-HEAPmemsize(Heap *h)
+HEAPmemsize(const Heap *h)
 {
 	if (h && h->base && h->free && h->storage != STORE_MMAP)
 		return h->size;

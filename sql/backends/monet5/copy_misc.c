@@ -230,7 +230,7 @@ copy_report_error(struct error_handling *restrict admin, int rel_row, int column
 				.dirty = true,
 				.refs = ATOMIC_VAR_INIT(1),
 			};
-			strconcat_len(mask->filename, sizeof(mask->filename), nme, ".theap", NULL);
+			strtconcat(mask->filename, sizeof(mask->filename), nme, ".theap", NULL);
 
 			BUN nmask = (cnt + 31) / 32;
 			if (mask->farmid < 0 ||

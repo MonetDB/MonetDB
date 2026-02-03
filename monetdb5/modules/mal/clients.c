@@ -261,8 +261,8 @@ CLTsetoptimizer(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		msg = createException(MAL, "clients.setoptimizer",
 							  "Session not active anymore");
 	else
-		strcpy_len(mal_clients[idx].optimizer, opt,
-				   sizeof(mal_clients[idx].optimizer));
+		strtcpy(mal_clients[idx].optimizer, opt,
+				sizeof(mal_clients[idx].optimizer));
 	MT_lock_unset(&mal_contextLock);
 	return msg;
 }

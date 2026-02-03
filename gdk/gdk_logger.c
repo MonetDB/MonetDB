@@ -1807,7 +1807,7 @@ log_switch_bat(BAT *old, BAT *new, const char *fn, const char *name)
 		GDKerror("cannot convert old %s to transient", name);
 		return GDK_FAIL;
 	}
-	if (strconcat_len(bak, sizeof(bak), fn, "_", name, NULL) >= sizeof(bak)) {
+	if (strtconcat(bak, sizeof(bak), fn, "_", name, NULL) == -1) {
 		GDKerror("name %s_%s too long\n", fn, name);
 		return GDK_FAIL;
 	}
@@ -1974,10 +1974,10 @@ cleanup_and_swap(logger *lg, int *r, const log_bid *bids, lng *lids, lng *cnts,
 	lg->catalog_cnt = ncnts;
 	lg->catalog_lid = nlids;
 	char bak[FILENAME_MAX];
-	strconcat_len(bak, sizeof(bak), lg->fn, "_catalog_cnt", NULL);
+	strtconcat(bak, sizeof(bak), lg->fn, "_catalog_cnt", NULL);
 	if (BBPrename(lg->catalog_cnt, bak) < 0)
 		GDKclrerr();
-	strconcat_len(bak, sizeof(bak), lg->fn, "_catalog_lid", NULL);
+	strtconcat(bak, sizeof(bak), lg->fn, "_catalog_lid", NULL);
 	if (BBPrename(lg->catalog_lid, bak) < 0)
 		GDKclrerr();
 	rotation_lock(lg);
@@ -2171,7 +2171,7 @@ log_filename(logger *lg, char bak[FILENAME_MAX], char filename[FILENAME_MAX])
 		return GDK_FAIL;
 	}
 	if (bak) {
-		if (strconcat_len(bak, FILENAME_MAX, filename, ".bak", NULL) >= FILENAME_MAX) {
+		if (strtconcat(bak, FILENAME_MAX, filename, ".bak", NULL) == -1) {
 			GDKerror("Logger filename path is too large\n");
 			return GDK_FAIL;
 		}
@@ -2308,7 +2308,7 @@ log_load(const char *fn, logger *lg, char filename[FILENAME_MAX])
 		}
 	}
 
-	strconcat_len(bak, sizeof(bak), fn, "_catalog_bid", NULL);
+	strtconcat(bak, sizeof(bak), fn, "_catalog_bid", NULL);
 	catalog_bid = BBPindex(bak);
 
 	/* initialize arrays for type mapping, to be read from disk */
@@ -2338,17 +2338,17 @@ log_load(const char *fn, logger *lg, char filename[FILENAME_MAX])
 
 		/* give the catalog bats names so we can find them
 		 * next time */
-		strconcat_len(bak, sizeof(bak), fn, "_catalog_bid", NULL);
+		strtconcat(bak, sizeof(bak), fn, "_catalog_bid", NULL);
 		if (BBPrename(lg->catalog_bid, bak) < 0) {
 			goto error;
 		}
 
-		strconcat_len(bak, sizeof(bak), fn, "_catalog_id", NULL);
+		strtconcat(bak, sizeof(bak), fn, "_catalog_id", NULL);
 		if (BBPrename(lg->catalog_id, bak) < 0) {
 			goto error;
 		}
 
-		strconcat_len(bak, sizeof(bak), fn, "_dcatalog", NULL);
+		strtconcat(bak, sizeof(bak), fn, "_dcatalog", NULL);
 		if (BBPrename(lg->dcatalog, bak) < 0) {
 			goto error;
 		}
@@ -2408,7 +2408,7 @@ log_load(const char *fn, logger *lg, char filename[FILENAME_MAX])
 				goto error;
 			}
 
-			strconcat_len(bak, sizeof(bak), fn, "_catalog_id", NULL);
+			strtconcat(bak, sizeof(bak), fn, "_catalog_id", NULL);
 			catalog_id = BBPindex(bak);
 			o = BATdescriptor(catalog_id);
 			if (o == NULL) {
@@ -2417,7 +2417,7 @@ log_load(const char *fn, logger *lg, char filename[FILENAME_MAX])
 				goto error;
 			}
 
-			strconcat_len(bak, sizeof(bak), fn, "_dcatalog", NULL);
+			strtconcat(bak, sizeof(bak), fn, "_dcatalog", NULL);
 			dcatalog = BBPindex(bak);
 			d = BATdescriptor(dcatalog);
 			if (d == NULL) {
@@ -2457,7 +2457,7 @@ log_load(const char *fn, logger *lg, char filename[FILENAME_MAX])
 		GDKerror("failed to create catalog_cnt bat");
 		goto error;
 	}
-	strconcat_len(bak, sizeof(bak), fn, "_catalog_cnt", NULL);
+	strtconcat(bak, sizeof(bak), fn, "_catalog_cnt", NULL);
 	if (BBPrename(lg->catalog_cnt, bak) < 0)
 		GDKclrerr();
 	lg->catalog_lid = logbat_new(TYPE_lng, 1, SYSTRANS);
@@ -2465,18 +2465,18 @@ log_load(const char *fn, logger *lg, char filename[FILENAME_MAX])
 		GDKerror("failed to create catalog_lid bat");
 		goto error;
 	}
-	strconcat_len(bak, sizeof(bak), fn, "_catalog_lid", NULL);
+	strtconcat(bak, sizeof(bak), fn, "_catalog_lid", NULL);
 	if (BBPrename(lg->catalog_lid, bak) < 0)
 		GDKclrerr();
 	if (bm_get_counts(lg) != GDK_SUCCEED)
 		goto error;
 
-	strconcat_len(bak, sizeof(bak), fn, "_seqs_id", NULL);
+	strtconcat(bak, sizeof(bak), fn, "_seqs_id", NULL);
 	if (BBPindex(bak)) {
 		lg->seqs_id = BATdescriptor(BBPindex(bak));
-		strconcat_len(bak, sizeof(bak), fn, "_seqs_val", NULL);
+		strtconcat(bak, sizeof(bak), fn, "_seqs_val", NULL);
 		lg->seqs_val = BATdescriptor(BBPindex(bak));
-		strconcat_len(bak, sizeof(bak), fn, "_dseqs", NULL);
+		strtconcat(bak, sizeof(bak), fn, "_dseqs", NULL);
 		lg->dseqs = BATdescriptor(BBPindex(bak));
 		if (lg->seqs_id == NULL ||
 		    lg->seqs_val == NULL ||
@@ -2500,17 +2500,17 @@ log_load(const char *fn, logger *lg, char filename[FILENAME_MAX])
 			goto error;
 		}
 
-		strconcat_len(bak, sizeof(bak), fn, "_seqs_id", NULL);
+		strtconcat(bak, sizeof(bak), fn, "_seqs_id", NULL);
 		if (BBPrename(lg->seqs_id, bak) < 0) {
 			goto error;
 		}
 
-		strconcat_len(bak, sizeof(bak), fn, "_seqs_val", NULL);
+		strtconcat(bak, sizeof(bak), fn, "_seqs_val", NULL);
 		if (BBPrename(lg->seqs_val, bak) < 0) {
 			goto error;
 		}
 
-		strconcat_len(bak, sizeof(bak), fn, "_dseqs", NULL);
+		strtconcat(bak, sizeof(bak), fn, "_dseqs", NULL);
 		if (BBPrename(lg->dseqs, bak) < 0) {
 			goto error;
 		}

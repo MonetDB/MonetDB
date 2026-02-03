@@ -93,7 +93,7 @@ MNDBPrepare(ODBCStmt *stmt,
 		addStmtError(stmt, "HY001", NULL, 0);
 		return SQL_ERROR;
 	}
-	strconcat_len(s, querylen, "prepare ", query, NULL);
+	strtconcat(s, querylen, "prepare ", query, NULL);
 	free(query);
 
 	ODBCResetStmt(stmt);

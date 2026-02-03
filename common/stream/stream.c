@@ -55,6 +55,7 @@
 #include "monetdb_config.h"
 #include "stream.h"
 #include "stream_internal.h"
+#include "mstring.h"
 #include <stdio.h>
 
 

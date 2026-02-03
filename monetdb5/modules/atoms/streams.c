@@ -144,19 +144,18 @@ mnstr_read_stringwrap(Client ctx, str *res, const Stream *S)
 	stream *s = *(stream **) S;
 	ssize_t len = 0;
 	size_t size = CHUNK +1;
-	char *buf = ma_alloc(ma, size), *start = buf, *tmp;
+	char *buf = ma_alloc(ma, size), *start = buf;
 
 	if (buf == NULL)
 		throw(MAL, "mnstr_read_stringwrap", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	while ((len = mnstr_read(s, start, 1, CHUNK)) > 0) {
 		size_t osz = size;
 		size += len;
-		tmp = ma_realloc(ma, buf, size, osz);
-		if (tmp == NULL) {
+		buf = ma_realloc(ma, buf, size, osz);
+		if (buf == NULL) {
 			throw(MAL, "mnstr_read_stringwrap",
 				  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
-		buf = tmp;
 		start = buf + size - CHUNK -1;
 
 		*start = '\0';

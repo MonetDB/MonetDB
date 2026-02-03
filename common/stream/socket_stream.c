@@ -426,20 +426,6 @@ socket_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
 			mnstr_set_error_errno(s, errno == EINTR ? MNSTR_INTERRUPT : MNSTR_READ_ERROR, NULL);
 			return -1;
 		}
-#ifdef HAVE_SYS_UN_H
-		/* when reading a block size in a block stream
-		 * (elmsize==2,cnt==1), we may actually get an "OOB" message
-		 * when this is a Unix domain socket */
-		if (s->putoob == socket_putoob_unix &&
-			elmsize == 2 && cnt == 1 && nr == 2 &&
-			((char *)buf)[0] == OOBMSG0 &&
-			((char *)buf)[1] == OOBMSG1) {
-			/* also read (and discard) the "pay load" */
-			(void) recv(s->stream_data.s, buf, 1, 0);
-			mnstr_set_error(s, MNSTR_INTERRUPT, "query abort from client");
-			return -1;
-		}
-#endif
 		break;
 	}
 	if (nr == 0) {

@@ -440,13 +440,11 @@ INSPECTgetSource(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 			if (strlen(ps) >= lim - len) {
 				/* expand the buffer */
-				char *bn;
-				bn = ma_realloc(mb->ma, buf, lim + BUFSIZ, lim);
-				if (bn == NULL) {
+				buf = ma_realloc(mb->ma, buf, lim + BUFSIZ, lim);
+				if (buf == NULL) {
 					throw(MAL, "inspect.getSource",
 						  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				}
-				buf = bn;
 				lim += BUFSIZ;
 			}
 			strcat(buf + len, ps);

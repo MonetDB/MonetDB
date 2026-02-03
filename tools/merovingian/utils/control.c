@@ -64,7 +64,7 @@ control_setup(
 		server = (struct sockaddr_un) {
 			.sun_family = AF_UNIX,
 		};
-		strcpy_len(server.sun_path, host, sizeof(server.sun_path));
+		strtcpy(server.sun_path, host, sizeof(server.sun_path));
 		if (connect(control->sock, (struct sockaddr *) &server, sizeof(struct sockaddr_un)) == -1) {
 			switch (errno) {
 			case ENOENT:

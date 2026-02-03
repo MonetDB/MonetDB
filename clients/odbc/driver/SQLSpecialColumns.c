@@ -227,7 +227,7 @@ MNDBSpecialColumns(ODBCStmt *stmt,
 		 */
 
 		/* 1st cte: syskeys */
-		pos += strcpy_len(query + pos,
+		pos += strlcpy(query + pos,
 			"with syskeys as ("
 			/* all pkeys */
 			"SELECT \"id\", \"table_id\" FROM \"sys\".\"keys\" WHERE \"type\" = 0 "
@@ -240,7 +240,7 @@ MNDBSpecialColumns(ODBCStmt *stmt,
 		if (inclTmpKey) {
 			/* we must also include the primary key or unique constraint of local temporary tables which are stored in tmp.keys */
 			/* 2nd cte: tmpkeys */
-			pos += strcpy_len(query + pos,
+			pos += strlcpy(query + pos,
 			", tmpkeys as ("
 			"SELECT \"id\", \"table_id\" FROM \"tmp\".\"keys\" WHERE \"type\" = 0 "
 			"UNION ALL "
@@ -250,7 +250,7 @@ MNDBSpecialColumns(ODBCStmt *stmt,
 			querylen - pos);
 		}
 		/* 3rd cte: tableids */
-		pos += strcpy_len(query + pos,
+		pos += strlcpy(query + pos,
 			", tableids as ("
 			"SELECT t.\"id\" "
 			"FROM \"sys\".\"tables\" t "
@@ -262,7 +262,7 @@ MNDBSpecialColumns(ODBCStmt *stmt,
 			/* filtering requested on catalog name */
 			if (strcmp((char *) CatalogName, msetting_string(stmt->Dbc->settings, MP_DATABASE)) != 0) {
 				/* catalog name does not match the database name, so return no rows */
-				pos += strcpy_len(query + pos, " and 1=2", querylen - pos);
+				pos += strlcpy(query + pos, " and 1=2", querylen - pos);
 			}
 		}
 		if (sch) {
@@ -274,7 +274,7 @@ MNDBSpecialColumns(ODBCStmt *stmt,
 			pos += snprintf(query + pos, querylen - pos, " and %s", tab);
 		}
 		/* 4th cte: cols, this unions 2 (or 4 when inclTmpKey == true) select queries */
-		pos += strcpy_len(query + pos,
+		pos += strlcpy(query + pos,
 			"), cols as ("
 			"SELECT c.\"name\", c.\"type\", c.\"type_digits\", c.\"type_scale\", o.\"nr\" "
 			"FROM syskeys k "
@@ -284,12 +284,12 @@ MNDBSpecialColumns(ODBCStmt *stmt,
 			querylen - pos);
 		/* add an extra selection when SQL_NO_NULLS is requested */
 		if (Nullable == SQL_NO_NULLS) {
-			pos += strcpy_len(query + pos, " WHERE c.\"null\" = false", querylen - pos);
+			pos += strlcpy(query + pos, " WHERE c.\"null\" = false", querylen - pos);
 		}
 		if (inclTmpKey) {
 			/* we must also include the primary key or unique constraint of local temporary tables
 			 * which are stored in tmp.keys, tmp.objects, tmp._tables and tmp._columns */
-			pos += strcpy_len(query + pos,
+			pos += strlcpy(query + pos,
 			" UNION ALL "
 			"SELECT c.\"name\", c.\"type\", c.\"type_digits\", c.\"type_scale\", o.\"nr\" "
 			"FROM tmpkeys k "
@@ -299,11 +299,11 @@ MNDBSpecialColumns(ODBCStmt *stmt,
 			querylen - pos);
 			/* add an extra selection when SQL_NO_NULLS is requested */
 			if (Nullable == SQL_NO_NULLS) {
-				pos += strcpy_len(query + pos, " WHERE c.\"null\" = false", querylen - pos);
+				pos += strlcpy(query + pos, " WHERE c.\"null\" = false", querylen - pos);
 			}
 		}
 		/* when there is No PK and No unique constraints, we should return all columns of the table */
-		pos += strcpy_len(query + pos,
+		pos += strlcpy(query + pos,
 			" UNION ALL "
 			"SELECT c.\"name\", c.\"type\", c.\"type_digits\", c.\"type_scale\", c.\"number\" "
 			"FROM tableids t "
@@ -312,10 +312,10 @@ MNDBSpecialColumns(ODBCStmt *stmt,
 			querylen - pos);
 		/* add an extra selection when SQL_NO_NULLS is requested */
 		if (Nullable == SQL_NO_NULLS) {
-			pos += strcpy_len(query + pos, " AND c.\"null\" = false", querylen - pos);
+			pos += strlcpy(query + pos, " AND c.\"null\" = false", querylen - pos);
 		}
 		if (inclTmpKey) {
-			pos += strcpy_len(query + pos,
+			pos += strlcpy(query + pos,
 			" UNION ALL "
 			"SELECT c.\"name\", c.\"type\", c.\"type_digits\", c.\"type_scale\", c.\"number\" "
 			"FROM tableids t "
@@ -324,7 +324,7 @@ MNDBSpecialColumns(ODBCStmt *stmt,
 			querylen - pos);
 			/* add an extra selection when SQL_NO_NULLS is requested */
 			if (Nullable == SQL_NO_NULLS) {
-				pos += strcpy_len(query + pos, " AND c.\"null\" = false", querylen - pos);
+				pos += strlcpy(query + pos, " AND c.\"null\" = false", querylen - pos);
 			}
 		}
 		/* the final select query */

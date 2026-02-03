@@ -256,7 +256,7 @@ commit
 query I nosort
 SELECT CAST(COUNT(*) - (SELECT c FROM sys.myvar) AS BIGINT) FROM sys.roles
 ----
-1
+2
 
 statement ok
 start transaction

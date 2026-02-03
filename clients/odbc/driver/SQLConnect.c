@@ -40,7 +40,7 @@
 #endif
 
 #ifndef HAVE_SQLGETPRIVATEPROFILESTRING
-#define SQLGetPrivateProfileString(section,entry,default,buffer,bufferlen,filename)	((int) strcpy_len(buffer,default,bufferlen))
+#define SQLGetPrivateProfileString(section,entry,default,buffer,bufferlen,filename)	((int) strlcpy(buffer,default,bufferlen))
 #endif
 
 static SQLRETURN

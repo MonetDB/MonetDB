@@ -1,0 +1,48 @@
+-- create a user WITHOUT a default role
+statement ok
+create user a with password 'A' name 'Aa'
+
+-- check the users
+query TT
+select name, fullname from sys.users where name = 'a'
+----
+a
+Aa
+
+statement error Role 'a' already exists
+create role a
+
+-- Apparently the create user a implicitly also creates a role with the same name
+-- check the roles
+query T
+select name from sys.roles where name = 'a'
+----
+a
+
+-- check the auths
+query T
+select name from sys.auths where name = 'a'
+----
+a
+
+
+-- cleanup
+statement ok
+alter user "a" set schema "sys"
+
+statement ok
+drop schema "a" cascade
+
+statement ok
+drop user "a"
+
+-- check the users
+query TT
+select name, fullname from sys.users where name = 'a'
+----
+
+-- check the roles
+query T
+select name from sys.roles where name = 'a'
+----
+

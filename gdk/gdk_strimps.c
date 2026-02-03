@@ -426,9 +426,9 @@ BATcheckstrimps(BAT *b)
 		b->tstrimps = NULL;
 		if ((hp = GDKzalloc(sizeof(Strimps))) != NULL &&
 		    (hp->strimps.farmid = BBPselectfarm(b->batRole, b->ttype, strimpheap)) >= 0) {
-			strconcat_len(hp->strimps.filename,
-				      sizeof(hp->strimps.filename),
-				      nme, ".tstrimps", NULL);
+			strtconcat(hp->strimps.filename,
+				   sizeof(hp->strimps.filename),
+				   nme, ".tstrimps", NULL);
 			hp->strimps.parentid = b->batCacheid;
 
 			/* check whether a persisted strimp can be found */
@@ -738,9 +738,8 @@ STRMPcreateStrimpHeap(BAT *b, BAT *s)
 		    (r->strimps.farmid =
 		     BBPselectfarm(b->batRole, b->ttype, strimpheap)) < 0 ||
 		    (r->strimps.parentid = b->batCacheid) <= 0 ||
-		    strconcat_len(r->strimps.filename, sizeof(r->strimps.filename),
-				  nme, ".tstrimps",
-				  NULL) >= sizeof(r->strimps.filename) ||
+		    strtconcat(r->strimps.filename, sizeof(r->strimps.filename),
+			       nme, ".tstrimps", NULL) == -1 ||
 		    HEAPalloc(&r->strimps, BATcount(b) * sizeof(uint64_t) + sz,
 			      sizeof(uint8_t)) != GDK_SUCCEED) {
 			GDKfree(r);

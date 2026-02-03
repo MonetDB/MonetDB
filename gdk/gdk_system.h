@@ -378,7 +378,7 @@ __pragma(comment(linker, "/include:" _LOCK_PREF_ "wininit_" #n "_"))
 #define MT_lock_init(l, n)					\
 	do {							\
 		InitializeCriticalSection(&(l)->lock);		\
-		strcpy_len((l)->name, (n), sizeof((l)->name));	\
+		strtcpy((l)->name, (n), sizeof((l)->name));	\
 		_DBG_LOCK_INIT(l);				\
 	} while (0)
 
@@ -419,7 +419,7 @@ typedef struct MT_RWLock {
 #define MT_rwlock_init(l, n)					\
 	do {							\
 		InitializeSRWLock(&(l)->lock);			\
-		strcpy_len((l)->name, (n), sizeof((l)->name));	\
+		strtcpy((l)->name, (n), sizeof((l)->name));	\
 	 } while (0)
 
 #define MT_rwlock_destroy(l)	((void) 0)
@@ -466,7 +466,7 @@ typedef struct MT_Lock {
 #define MT_lock_init(l, n)					\
 	do {							\
 		pthread_mutex_init(&(l)->lock, 0);		\
-		strcpy_len((l)->name, (n), sizeof((l)->name));	\
+		strtcpy((l)->name, (n), sizeof((l)->name));	\
 		_DBG_LOCK_INIT(l);				\
 	} while (0)
 
@@ -528,7 +528,7 @@ typedef struct MT_RWLock {
 #define MT_rwlock_init(l, n)					\
 	do {							\
 		pthread_rwlock_init(&(l)->lock, NULL);		\
-		strcpy_len((l)->name, (n), sizeof((l)->name));	\
+		strtcpy((l)->name, (n), sizeof((l)->name));	\
 	 } while (0)
 
 #define MT_rwlock_destroy(l)	pthread_rwlock_destroy(&(l)->lock)
@@ -562,7 +562,7 @@ typedef struct MT_RWLock {
 	do {							\
 		pthread_mutex_init(&(l)->lock, 0);		\
 		ATOMIC_INIT(&(l)->readers, 0);			\
-		strcpy_len((l)->name, (n), sizeof((l)->name));	\
+		strtcpy((l)->name, (n), sizeof((l)->name));	\
 	} while (0)
 
 #define MT_rwlock_destroy(l)				\
@@ -650,7 +650,7 @@ typedef struct {
 #define MT_sema_init(s, nr, n)						\
 	do {								\
 		assert((s)->sema == NULL);				\
-		strcpy_len((s)->name, (n), sizeof((s)->name));		\
+		strtcpy((s)->name, (n), sizeof((s)->name));		\
 		(s)->sema = CreateSemaphore(NULL, nr, 0x7fffffff, NULL); \
 	} while (0)
 
@@ -685,7 +685,7 @@ typedef struct {
 
 #define MT_sema_init(s, nr, n)						\
 	do {								\
-		strcpy_len((s)->name, (n), sizeof((s)->name));		\
+		strtcpy((s)->name, (n), sizeof((s)->name));		\
 		(s)->sema = dispatch_semaphore_create((long) (nr));	\
 	} while (0)
 
@@ -706,7 +706,7 @@ typedef struct {
 
 #define MT_sema_init(s, nr, n)					\
 	do {							\
-		strcpy_len((s)->name, (n), sizeof((s)->name));	\
+		strtcpy((s)->name, (n), sizeof((s)->name));	\
 		(s)->cnt = (nr);				\
 		(s)->wakeups = 0;				\
 		pthread_mutex_init(&(s)->mutex, 0);		\
@@ -755,7 +755,7 @@ typedef struct {
 
 #define MT_sema_init(s, nr, n)					\
 	do {							\
-		strcpy_len((s)->name, (n), sizeof((s)->name));	\
+		strtcpy((s)->name, (n), sizeof((s)->name));	\
 		sem_init(&(s)->sema, 0, nr);			\
 	} while (0)
 

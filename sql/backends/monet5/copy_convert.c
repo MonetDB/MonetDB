@@ -345,12 +345,12 @@ string_sharing_bat(BUN cnt, const char *base)
 		.free = GDK_ELIMLIMIT,
 		.size = GDK_ELIMLIMIT,
     };
-	strconcat_len(hp->filename, sizeof(hp->filename), nme, ".theap", NULL);
+	strtconcat(hp->filename, sizeof(hp->filename), nme, ".theap", NULL);
 	hp->base = (char*)base;
 	b->tvheap = hp;
 	b->ttype = TYPE_str;
 	/* upgrade filename */
-	strconcat_len(b->theap->filename, sizeof(b->theap->filename), nme, ".tail4", NULL);
+	strtconcat(b->theap->filename, sizeof(b->theap->filename), nme, ".tail4", NULL);
 	return b;
 }
 

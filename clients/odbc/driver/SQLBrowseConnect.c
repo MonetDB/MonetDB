@@ -39,10 +39,6 @@
 #include <odbcinst.h>
 #endif
 
-#ifndef HAVE_SQLGETPRIVATEPROFILESTRING
-#define SQLGetPrivateProfileString(section,entry,default,buffer,bufferlen,filename)	((int) strcpy_len(buffer,default,bufferlen))
-#endif
-
 static void
 suggest_settings(ODBCDbc *dbc, char **buf, size_t *pos, size_t *cap, char touched_as, const char *prefix)
 {
@@ -122,7 +118,7 @@ MNDBBrowseConnect(ODBCDbc *dbc,
 	// note that we leave out level 1, they have already been provided
 
 	if (buf && pos) {
-		size_t n = strcpy_len((char*)OutConnectionString, buf, BufferLength);
+		size_t n = strlcpy((char*)OutConnectionString, buf, BufferLength);
 		if (StringLength2Ptr)
 			*StringLength2Ptr = (SQLSMALLINT)n;
 	}
