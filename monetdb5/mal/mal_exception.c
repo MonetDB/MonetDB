@@ -300,7 +300,6 @@ getExceptionType(const char *exception)
 str
 getExceptionPlace(allocator *ma, const char *exception)
 {
-	str ret;
 	const char *s, *t;
 	enum malexception i;
 	size_t l;
@@ -311,10 +310,7 @@ getExceptionPlace(allocator *ma, const char *exception)
 			exception[l] == ':') {
 			s = exception + l + 1;
 			if ((t = strchr(s, ':')) != NULL) {
-				if ((ret = ma_alloc(ma, t - s + 1)) == NULL)
-					return NULL;
-				strtcpy(ret, s, t - s + 1);
-				return ret;
+				return ma_strndup(ma, s, t - s);
 			}
 			break;
 		}

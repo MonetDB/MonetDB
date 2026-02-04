@@ -44,7 +44,11 @@
  * Precondition: inStr != NULL
  * Postcondition: returns a newly allocated null terminated string
  */
-extern char *dupODBCstring(const SQLCHAR *inStr, size_t length);
+static inline char *
+dupODBCstring(const SQLCHAR *inStr, size_t length)
+{
+	return strndup((const char *) inStr, length);
+}
 
 /*
  * Utility macro to fix up args that represent an ODBC string.  If len

@@ -1841,19 +1841,10 @@ dumpGeometriesSingle(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry,
 		snprintf(newPath, lvlDigitsNum + 1, "%u", *lvl);
 	} else {
 		//remove the comma at the end of the path
-#ifdef __COVERITY__
-		/* coverity complains about the allocated space being
-		 * too small, but we just want to reduce the length of
-		 * the string by one, so the length in the #else part
-		 * is exactly what we need */
-		newPath = ma_alloc(ma, pathLength + 1);
-#else
-		newPath = ma_alloc(ma, pathLength);
-#endif
+		newPath = ma_strndup(ma, path, pathLength - 1);
 		if (newPath == NULL) {
 			throw(MAL, "geom.Dump", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
-		strtcpy(newPath, path, pathLength);
 	}
 	if (BUNappend(idBAT, newPath, false) != GDK_SUCCEED ||
 	    BUNappend(geomBAT, singleWKB, false) != GDK_SUCCEED)

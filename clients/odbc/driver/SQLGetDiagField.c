@@ -36,7 +36,7 @@
 			size_t _l;					\
 			if (len < 0)					\
 				return SQL_ERROR;			\
-			_l = strlcpy((char *) buf, str, len);	\
+			_l = strlcpy((char *) buf, str, len);		\
 			if (lenp)					\
 				*lenp = (SQLSMALLINT) _l;		\
 			if (buf == NULL || _l >= (size_t) len)		\

@@ -51,6 +51,33 @@
  * stpe*: chainable with end-of-buffer pointer.
  */
 
+#ifndef HAVE_STRNLEN
+__attribute__((__nonnull__(1)))
+static inline size_t
+strnlen(const char *s, size_t n)
+{
+	for (size_t i = 0; i < n; i++)
+		if (s[i] == 0)
+			return i;
+	return n;
+}
+#endif
+
+#ifndef HAVE_STRNDUP
+__attribute__((__nonnull__(1)))
+static inline char *
+strndup(const char *s, size_t n)
+{
+	n = strnlen(s, n);
+	char *p = malloc(n + 1);
+	if (p != NULL) {
+		memcpy(p, s, n);
+		p[n] = 0;
+	}
+	return p;
+}
+#endif
+
 #ifndef HAVE_STRLCPY
 /* Copy the input string into a destination string.  If the destination
  * buffer, limited by its size, isn't large enough to hold the copy, the

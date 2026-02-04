@@ -139,8 +139,10 @@ connect_socket_unix(Mapi mid)
 
 	mapi_log_record(mid, "CONN", "Connecting to Unix domain socket %s with timeout %ld", sockname, timeout);
 
-	struct sockaddr_un userver;
-	if (strlen(sockname) >= sizeof(userver.sun_path)) {
+	struct sockaddr_un userver = {
+		.sun_family = AF_UNIX,
+	};
+	if (strtcpy(userver.sun_path, sockname, sizeof(userver.sun_path)) == -1) {
 		return mapi_printError(mid, __func__, MERROR, "path name '%s' too long", sockname);
 	}
 
@@ -177,11 +179,6 @@ connect_socket_unix(Mapi mid)
 	}
 
 	// Attempt to connect
-
-	userver = (struct sockaddr_un) {
-		.sun_family = AF_UNIX,
-	};
-	strtcpy(userver.sun_path, sockname, sizeof(userver.sun_path));
 
 	if (connect(s, (struct sockaddr *) &userver, sizeof(struct sockaddr_un)) == SOCKET_ERROR) {
 		closesocket(s);

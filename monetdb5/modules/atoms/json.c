@@ -808,14 +808,9 @@ JSONcompile(Client ctx, const char *expr, pattern terms[])
 static str
 JSONgetValue(allocator *ma, const JSON *jt, int idx)
 {
-	str s;
-
 	if (jt->elm[idx].valuelen == 0)
 		return (char *) str_nil;
-	s = ma_alloc(ma, jt->elm[idx].valuelen + 1);
-	if (s)
-		strtcpy(s, jt->elm[idx].value, jt->elm[idx].valuelen + 1);
-	return s;
+	return ma_strndup(ma, jt->elm[idx].value, jt->elm[idx].valuelen);
 }
 
 /* eats res and r */
@@ -2129,12 +2124,11 @@ JSONkeyArray(Client ctx, json *ret, const json *js)
 	if (jt->elm[0].kind == JSON_OBJECT) {
 		for (i = jt->elm[0].next; i; i = jt->elm[i].next) {
 			if (jt->elm[i].valuelen) {
-				r = ma_alloc(ma, jt->elm[i].valuelen + 3);
+				r = ma_strndup(ma, jt->elm[i].value - 1, jt->elm[i].valuelen + 2);
 				if (r == NULL) {
 					ma_close(&ta_state);
 					goto memfail;
 				}
-				strtcpy(r, jt->elm[i].value - 1, jt->elm[i].valuelen + 3);
 			} else {
 				r = "\"\"";
 			}

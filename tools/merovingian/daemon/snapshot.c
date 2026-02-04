@@ -27,6 +27,7 @@
 #include "stream.h"
 #include "utils/database.h"
 #include "forkmserver.h"
+#include "mstring.h"
 
 struct dir_helper {
 	char *dir;

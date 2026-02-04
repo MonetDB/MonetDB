@@ -172,6 +172,8 @@
 #cmakedefine HAVE_STRERROR_S 1
 #cmakedefine HAVE_STPCPY 1
 #cmakedefine HAVE_STRLCPY 1
+#cmakedefine HAVE_STRNDUP 1
+#cmakedefine HAVE_STRNLEN 1
 #cmakedefine HAVE_STRPTIME 1
 #cmakedefine HAVE_SYSCONF 1
 #cmakedefine HAVE_TASK_INFO 1

@@ -3685,10 +3685,7 @@ mapi_query_part(MapiHdl hdl, const char *query, size_t size)
 	mid->active = hdl;
 	/* remember the query just for the error messages */
 	if (hdl->query == NULL) {
-		hdl->query = malloc(size + 1);
-		if (hdl->query) {
-			strtcpy(hdl->query, query, size + 1);
-		}
+		hdl->query = strndup(query, size);
 	} else {
 		size_t sz = strlen(hdl->query);
 		char *q;
@@ -4070,8 +4067,7 @@ unquote(const char *msg, char **str, const char **next, int endchar, size_t *len
 			p++;
 		}
 		len = s - msg;
-		*str = malloc(len + 1);
-		strtcpy(*str, msg, len + 1);
+		*str = strndup(msg, len);
 
 		if (next)
 			*next = p;

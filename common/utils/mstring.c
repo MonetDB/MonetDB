@@ -50,14 +50,15 @@ strtconcat(char *restrict dst, size_t n, const char *restrict src, ...)
 		return -1;
 	}
 	va_start(ap, src);
-	while (src && dst) {
+	while (src) {
 		dst = stpecpy(dst, end, src);
+		if (dst == NULL) {
+			va_end(ap);
+			errno = E2BIG;
+			return -1;
+		}
 		src = va_arg(ap, const char *);
 	}
 	va_end(ap);
-	if (dst == NULL) {
-		errno = E2BIG;
-		return -1;
-	}
 	return dst - (end - n);
 }

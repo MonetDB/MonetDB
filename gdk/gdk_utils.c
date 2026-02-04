@@ -1833,6 +1833,7 @@ GDKstrndup(const char *s, size_t size)
 
 	if (s == NULL)
 		return NULL;
+	size = strnlen(s, size);
 	if ((p = GDKmalloc_internal(size + 1, false)) == NULL)
 		return NULL;
 	if (size > 0)
@@ -2406,6 +2407,7 @@ ma_destroy(allocator *sa)
 char *
 ma_strndup(allocator *sa, const char *s, size_t l)
 {
+	l = strnlen(s, l);
 	char *r = ma_alloc(sa, l + 1);
 
 	if (r) {
@@ -2421,7 +2423,15 @@ ma_strdup(allocator *sa, const char *s)
 {
 	if (strNil(s))
 		return (char *) str_nil;
-	return ma_strndup(sa, s, strlen(s));
+
+	size_t l = strlen(s);
+	char *r = ma_alloc(sa, l + 1);
+
+	if (r) {
+		memcpy(r, s, l);
+		r[l] = 0;
+	}
+	return r;
 }
 
 #undef ma_strconcat
