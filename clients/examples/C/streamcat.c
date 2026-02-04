@@ -75,7 +75,7 @@ static void copy_stream_to_file(stream *in, FILE *out, size_t bufsize);
 
 static void copy_file_to_stream(FILE *in, stream *out, size_t bufsize, bool do_flush, mnstr_flush_level flush_level);
 
-_Noreturn static void croak(int status, const char *msg, ...)
+_Noreturn static void croak(int status, _In_z_ _Printf_format_string_ const char *msg, ...)
 	__attribute__((__format__(__printf__, 2, 3)));
 
 /* Format the message and write it to stderr. Then exit with the given status.

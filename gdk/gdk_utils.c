@@ -344,7 +344,7 @@ GDKcopyenv(BAT **key, BAT **val, bool writable)
  */
 __attribute__((__format__(__printf__, 2, 3)))
 static void
-GDKlog(FILE *lockFile, const char *format, ...)
+GDKlog(FILE *lockFile, _In_z_ _Printf_format_string_ const char *format, ...)
 {
 	va_list ap;
 	char *p = 0, buf[1024];

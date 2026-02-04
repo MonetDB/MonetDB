@@ -160,8 +160,7 @@
 	{                                                                          \
 		if (mask == NULL) {                                                    \
 			for (iu = 0; iu < ret->count; iu++) {                              \
-				if (isnan((                                                    \
-						(mtpe_from *)data)[index_offset * ret->count + iu])) { \
+				if (isnan(((mtpe_from *)data)[index_offset * ret->count + iu])) { \
 					bat->tnil = true;                                          \
 					((mtpe_to *)Tloc(bat, 0))[index + iu] = mtpe_to##_nil;     \
 				} else {                                                       \
@@ -172,8 +171,7 @@
 		} else {                                                               \
 			for (iu = 0; iu < ret->count; iu++) {                              \
 				if (mask[index_offset * ret->count + iu] == TRUE ||            \
-					isnan((                                                    \
-						(mtpe_from *)data)[index_offset * ret->count + iu])) { \
+					isnan(((mtpe_from *)data)[index_offset * ret->count + iu])) { \
 					bat->tnil = true;                                          \
 					((mtpe_to *)Tloc(bat, 0))[index + iu] = mtpe_to##_nil;     \
 				} else {                                                       \
