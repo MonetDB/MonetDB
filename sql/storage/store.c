@@ -6094,8 +6094,6 @@ sql_trans_rename_table(sql_trans *tr, sql_schema *s, sqlid id, const char *new_n
 
 	if ((res = table_dup(tr, t, t->s, new_name, &dup, true)))
 		return res;
-	if (isGlobal(t))
-		res = cleanup_schema_objects(t, tr);
 	return res;
 }
 
