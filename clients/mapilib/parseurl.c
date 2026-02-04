@@ -66,7 +66,7 @@ advance(scanner *sc)
 	return sc->c;
 }
 
-static bool complain(scanner *sc, const char *fmt, ...)
+static bool complain(scanner *sc, _In_z_ _Printf_format_string_ const char *fmt, ...)
 	__attribute__((__format__(printf, 2, 3)));
 
 static bool

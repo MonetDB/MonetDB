@@ -189,7 +189,10 @@ MNDBDriverConnect(ODBCDbc *dbc,
 	scratch_alloc = buildConnectionString(dsn ? dsn : "DEFAULT", settings);
 	if (!scratch_alloc)
 		goto failure;
-	out_len = strlcpy((char*)OutConnectionString, scratch_alloc, BufferLength);
+	if (OutConnectionString)
+		out_len = strlcpy((char*)OutConnectionString, scratch_alloc, BufferLength);
+	else
+		out_len = strlen(scratch_alloc);
 	if (StringLength2Ptr)
 		*StringLength2Ptr = (SQLSMALLINT)out_len;
 	if (out_len + 1 > (size_t)BufferLength) {
