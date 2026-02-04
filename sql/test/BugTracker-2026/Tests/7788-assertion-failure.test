@@ -1,0 +1,24 @@
+statement ok
+CREATE TABLE v0 ( v1 INTEGER , v2 NUMERIC , v3 INTEGER )
+
+statement ok
+INSERT INTO v0 VALUES ( 13 , -1 , 87 )
+
+statement ok
+INSERT INTO v0 VALUES ( 80 , 0 , 37 )
+
+statement error 42000!SELECT: no such window function 'nth_value'(tinyint)
+SELECT NTH_VALUE ( 127 ) OVER ( ORDER BY v3 ) FROM v0
+
+-- sql/server/rel_select.c:4675: rel_order_by: Assertion `is_project(rel->op)' failed.
+statement error 42000!SELECT:
+SELECT 0 , 'x' , 'x' , -1 FROM v0 WHERE v3 = -1 OR v2 < ( SELECT 20405044.000000 * ( v3 ) FROM v0 AS v4 NATURAL JOIN v0 WHERE v1 = v3 ) ORDER BY SUM ( + v3 ORDER BY x DESC ) , v2
+
+-- sql/server/rel_select.c:4675: rel_order_by: Assertion `is_project(rel->op)' failed.
+statement error 42000!SELECT: no such window function 'nth_value'(tinyint)
+UPDATE v0 SET v1 = ( SELECT NTH_VALUE ( 127 ) OVER ( ORDER BY v3 ) FROM v0 )
+ WHERE ( SELECT 0 , 'x' , 'x' , -1 FROM v0 WHERE v3 = -1 OR v2 < ( SELECT 20405044.000000 * ( v3 ) FROM v0 AS v4 NATURAL JOIN v0 WHERE v1 = v3 ) ORDER BY SUM ( + v3 ORDER BY x DESC ) , v2 ) = v3 <= v3
+
+statement ok
+DROP TABLE v0
+
