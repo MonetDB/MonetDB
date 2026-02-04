@@ -110,7 +110,7 @@ select u.*, fa.* from flt_arr fa, unnest(fa.n) u
 11
 {10,11}
 
-query TIII nosort unnest_all
+query TI nosort unnest_all
 select fa.*, u.* from flt_arr fa, unnest(fa.n) u
 ----
 {10,11}
@@ -175,16 +175,19 @@ select * from flt_arr
 {60}
 {70,71}
 
-## ambiguous col elements (table vs unnest())
-
 statement ok
 create table amb (elements int[])
 
 statement ok
 insert into amb values (array[10, 11]), (array[20, 21])
 
-statement error SELECT: identifier 'elements' ambiguous
-select elements from amb, unnest(elements)
+query T nosort 
+select elements from amb, unnest(elements) elements
+----
+{10,11}
+{10,11}
+{20,21}
+{20,21}
 
 query T nosort 
 select elements from amb, unnest(elements) u

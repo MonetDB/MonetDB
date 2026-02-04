@@ -604,8 +604,13 @@ rel_base_projection( mvc *sql, sql_rel *rel, int intern)
 
 	for (node *cn = ol_first_node(t->columns); cn; cn = cn->next, i++) {
 		if (rel_base_is_used(ba, i)) {
-			sql_exp *e = bind_col_exp(sql, ba, name, cn->data);
-			append(exps, e);
+			sql_column *c = cn->data;
+			if (intern || c->column_type == column_plain) {
+				sql_exp *e = bind_col_exp(sql, ba, name, c);
+				if (intern && c->column_type != column_plain)
+					set_intern(e);
+				append(exps, e);
+			}
 		}
 	}
 	if ((intern && rel_base_is_used(ba, i)) || list_empty(exps)) { /* Add TID column if no column is used */
@@ -666,8 +671,11 @@ rel_base_project_all( mvc *sql, sql_rel *rel, char *tname)
 	if (!exps || !a_cmp_obj_name(name, tname))
 		return NULL;
 
-	for (node *cn = ol_first_node(t->columns); cn; cn = cn->next)
-		append(exps, bind_col( sql, rel, name, cn->data));
+	for (node *cn = ol_first_node(t->columns); cn; cn = cn->next) {
+			sql_column *c = cn->data;
+			if (c->column_type == column_plain)
+				append(exps, bind_col( sql, rel, name, c));
+	}
 	return exps;
 }
 

@@ -367,6 +367,21 @@ check_table_columns(mvc *sql, sql_table *t, dlist *columns, const char *op, char
 	return collist;
 }
 
+static node *
+insert_complex(sql_subtype *t, node *m)
+{
+	if (t->type->composite && !t->multiset) {
+		for(node *f = t->type->d.fields->h; f; f = f->next) {
+			sql_arg *ft = f->data;
+			if (ft->type.type->composite && !ft->type.multiset)
+				m = insert_complex(&ft->type, m->next);
+			else
+				m = m->next;
+		}
+	}
+	return m;
+}
+
 static list *
 rel_inserts(mvc *sql, sql_table *t, sql_rel *r, list *collist, size_t rowcount, int copy, const char* action)
 {
@@ -406,11 +421,14 @@ rel_inserts(mvc *sql, sql_table *t, sql_rel *r, list *collist, size_t rowcount, 
 			}
 		}
 	}
-	for (m = ol_first_node(t->columns); m; m = m->next) {
+	for (m = ol_first_node(t->columns); m; ) {
 		sql_column *c = m->data;
 		sql_exp *exps = NULL;
 
-		if (c->column_type == column_plain && !inserts[c->colnr]) {
+		if (c->type.type->composite && !c->type.multiset) {
+			m = insert_complex(&c->type, m->next);
+			continue;
+		} else if (c->column_type == column_plain && !inserts[c->colnr]) {
 			for (size_t j = 0; j < rowcount; j++) {
 				sql_exp *e = NULL;
 
@@ -440,6 +458,7 @@ rel_inserts(mvc *sql, sql_table *t, sql_rel *r, list *collist, size_t rowcount, 
 			inserts[c->colnr] = exps;
 			assert(inserts[c->colnr]);
 		}
+		m = m->next;
 	}
 	/* rewrite into unions */
 	if (has_rel && rowcount && all_values) {

@@ -4075,7 +4075,7 @@ sql_trans_create_column_intern(sql_column **rcol, sql_trans *tr, sql_table *t, c
 			for (node *n = col->type.type->d.fields->h; n; n = n->next) {
 				sql_arg *f = n->data;
 				sql_column *ic = NULL;
-				if (sql_trans_create_column_intern( &ic, tr, tt, f->name, &f->type, column_intern) < 0)
+				if (sql_trans_create_column_intern( &ic, tr, tt, f->name, &f->type, column_plain) < 0)
 					return -2;
 			}
 		} else {
@@ -4202,14 +4202,14 @@ sql_trans_copy_column( sql_trans *tr, sql_table *t, sql_column *c, sql_column **
 			for (node *n = col->type.type->d.fields->h; n; n = n->next) {
 				sql_arg *f = n->data;
 				sql_column *ic = NULL;
-				if (sql_trans_create_column_intern( &ic, tr, tt, f->name, &f->type, column_intern) < 0)
+				if (sql_trans_create_column_intern( &ic, tr, tt, f->name, &f->type, column_plain) < 0)
 					return -2;
 			}
 		} else {
 			sql_column *ic = NULL;
 			sql_subtype lt = c->type;
 			lt.multiset = MS_VALUE;
-			if (sql_trans_create_column_intern( &ic, tr, tt, MSEL_NAME, &lt, column_intern) < 0)
+			if (sql_trans_create_column_intern( &ic, tr, tt, MSEL_NAME, &lt, column_plain) < 0)
 				return -2;
 		}
 		if (c->type.multiset > MS_VALUE) { /* sets, arrays, vectors need oid col */

@@ -883,7 +883,7 @@ DEP_FUNC
 query TTT nosort
 SELECT distinct c.name, v.name, 'DEP_VIEW' from sys.columns as c, sys.tables as v, sys.dependencies as dep where c.id = dep.id AND v.id = dep.depend_id AND dep.depend_type = 5 AND v.type in (1, 11, 21, 31) order by c.name, v.name
 ----
-1773 values hashing to f976ca5f8d89a24a8e824db233ce9c07
+1779 values hashing to e9a294a8326b52a7a6d4f3f6d6f5e0eb
 
 query TTT nosort
 SELECT c.name, k.name, 'DEP_KEY' from sys.columns as c,  sys.objects as kc, sys.keys as k where kc."name" = c.name AND kc.id = k.id AND k.table_id = c.table_id AND k.rkey = -1 order by c.name, k.name
