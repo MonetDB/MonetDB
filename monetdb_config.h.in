@@ -366,8 +366,10 @@ typedef __uint128_t uhge;
 // End Section: monetdb configure sizes
 
 /* Does your compiler support `__attribute__' extension? */
-#if !defined(__GNUC__) && !defined(__clang__) && !defined(__attribute__)
-#define __attribute__(a)
+#if !defined(__has_attribute)
+#ifndef __attribute__
+#define __attribute__(...)
+#endif
 #endif
 
 #if !defined(__cplusplus) || __cplusplus < 201103L

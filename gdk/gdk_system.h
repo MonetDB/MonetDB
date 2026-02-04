@@ -12,37 +12,14 @@
 #define _GDK_SYSTEM_H_
 
 /* if __has_attribute is not known to the preprocessor, we ignore
- * attributes completely; if it is known, use it to find out whether
- * specific attributes that we use are known */
-#ifndef __has_attribute
-#ifndef __GNUC__
-/* we can define __has_attribute as 1 since we define __attribute__ as empty */
-#define __has_attribute(attr)	1
-#ifndef __attribute__
-#define __attribute__(attr)	/* empty */
-#endif
-#else
-/* older GCC does have attributes, but not __has_attribute and not all
- * attributes that we use are known */
-#define __has_attribute__access__ 0
-#define __has_attribute__alloc_size__ 1
-#define __has_attribute__cold__ 1
-#define __has_attribute__const__ 1
-#define __has_attribute__constructor__ 1
-#define __has_attribute__designated_init__ 0
-#define __has_attribute__format__ 1
-#define __has_attribute__malloc__ 1
-#define __has_attribute__nonnull__ 1
-#define __has_attribute__nonstring__ 0
-#define __has_attribute__pure__ 1
-#define __has_attribute__returns_nonnull__ 0
-#define __has_attribute__visibility__ 1
-#define __has_attribute__warn_unused_result__ 1
-#define __has_attribute(attr)	__has_attribute##attr
-#endif
-#endif
+ * attributes completely (see monetdb_config.h); if it is known, use it
+ * to find out whether specific attributes that we use are known */
+#if defined(__has_attribute)
 #if !__has_attribute(__access__)
 #define __access__(...)
+#endif
+#if !__has_attribute(__aligned__)
+#define __aligned__(...)
 #endif
 #if !__has_attribute(__alloc_size__)
 #define __alloc_size__(...)
@@ -62,15 +39,21 @@
 #if !__has_attribute(__format__)
 #define __format__(...)
 #endif
-/* attribute malloc with argument seems to have been introduced in gcc 13 */
 #if !__has_attribute(__malloc__)
 #define __malloc__
 #define __malloc__(...)
 #elif !defined(__GNUC__) || __GNUC__ < 13
+/* attribute malloc with argument seems to have been introduced in gcc 13 */
 #define __malloc__(...)
+#endif
+#if !__has_attribute(__noinline__)
+#define __noinline__
 #endif
 #if !__has_attribute(__nonnull__)
 #define __nonnull__(...)
+#endif
+#if !__has_attribute(__nonnull_if_nonzero__)
+#define __nonnull_if_nonzero__(...)
 #endif
 #if !__has_attribute(__nonstring__)
 #define __nonstring__
@@ -81,13 +64,15 @@
 #if !__has_attribute(__returns_nonnull__)
 #define __returns_nonnull__
 #endif
+#if !__has_attribute(__sentinel__)
+#define __sentinel__
+#endif
 #if !__has_attribute(__visibility__)
-#define __visibility__(...)
-#elif defined(__CYGWIN__)
 #define __visibility__(...)
 #endif
 #if !__has_attribute(__warn_unused_result__)
 #define __warn_unused_result__
+#endif
 #endif
 
 /* unreachable code */

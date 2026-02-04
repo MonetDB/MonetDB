@@ -20,24 +20,28 @@
 #define GCC_Pragma(pragma)
 #endif
 
+/* if __has_attribute is not known to the preprocessor, we ignore
+ * attributes completely (see monetdb_config.h); if it is known, use it
+ * to find out whether specific attributes that we use are known */
 #if defined(__has_attribute)
-#if ! __has_attribute(__access__)
+#if !__has_attribute(__access__)
 #define __access__(...)
 #endif
-#if ! __has_attribute(__nonnull__)
+#if !__has_attribute(__format__)
+#define __format__(...)
+#endif
+#if !__has_attribute(__nonnull__)
 #define __nonnull__(...)
 #endif
-#if ! __has_attribute(__nonnull_if_nonzero__)
+#if !__has_attribute(__nonnull_if_nonzero__)
 #define __nonnull_if_nonzero__(...)
 #endif
-#if ! __has_attribute(__pure__)
-#define __pure__(...)
+#if !__has_attribute(__pure__)
+#define __pure__
 #endif
-#else
-#define __access__(...)
-#define __nonnull__(...)
-#define __nonnull_if_nonzero__(...)
-#define __pure__(...)
+#if !__has_attribute(__sentinel__)
+#define __sentinel__
+#endif
 #endif
 
 #ifndef mutils_export

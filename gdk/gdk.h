@@ -57,9 +57,6 @@
  * use as a Boolean. */
 typedef enum { GDK_FAIL, GDK_SUCCEED } gdk_return;
 
-gdk_export _Noreturn void GDKfatal(_In_z_ _Printf_format_string_ const char *format, ...)
-	__attribute__((__format__(__printf__, 1, 2)));
-
 typedef struct allocator allocator;
 /* checkpoint or snapshot of allocator internal state we can use
  * to restore to a point in time */
@@ -76,6 +73,9 @@ typedef struct {
 #include "gdk_posix.h"
 #include "stream.h"
 #include "mstring.h"
+
+gdk_export _Noreturn void GDKfatal(_In_z_ _Printf_format_string_ const char *format, ...)
+	__attribute__((__format__(__printf__, 1, 2)));
 
 #undef MIN
 #undef MAX

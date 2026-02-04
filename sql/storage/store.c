@@ -2745,7 +2745,7 @@ end:
 // Our stream.h makes sure __attribute__ exists.
 __attribute__((__format__(__printf__, 3, 4)))
 static void
-tar_write_header_field(char **cursor_ptr, size_t size, const char *fmt, ...)
+tar_write_header_field(char **cursor_ptr, size_t size, _In_z_ _Printf_format_string_ const char *fmt, ...)
 {
 	va_list ap;
 

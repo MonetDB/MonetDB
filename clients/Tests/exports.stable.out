@@ -1760,7 +1760,7 @@ int mnstr_readStr(stream *restrict s, char *restrict val);
 ssize_t mnstr_read_block(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt);
 ssize_t mnstr_readline(stream *restrict s, void *restrict buf, size_t maxcnt);
 void mnstr_set_bigendian(stream *s, bool bigendian);
-void mnstr_set_error(stream *s, mnstr_error_kind kind, const char *fmt, ...) __attribute__((__format__(__printf__, 3, 4)));
+void mnstr_set_error(stream *s, mnstr_error_kind kind, _In_z_ _Printf_format_string_ const char *fmt, ...) __attribute__((__format__(__printf__, 3, 4)));
 void mnstr_settimeout(stream *s, unsigned int ms, bool (*func)(void *), void *data);
 const char *mnstr_version(void);
 ssize_t mnstr_write(stream *restrict s, const void *restrict buf, size_t elmsize, size_t cnt);
