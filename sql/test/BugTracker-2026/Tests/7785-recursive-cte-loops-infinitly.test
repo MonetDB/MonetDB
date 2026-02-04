@@ -1,0 +1,32 @@
+statement ok
+CREATE TABLE t (
+    label VARCHAR(10),
+    step INTEGER,
+    value DOUBLE NOT NULL DEFAULT 0.0
+)
+
+statement ok
+INSERT INTO t VALUES ('a', 1, 1.1)
+
+statement ok
+INSERT INTO t VALUES ('a', 1, 1.1)
+
+statement ok
+INSERT INTO t VALUES ('b', 1, 2.2)
+
+query TI nosort
+WITH RECURSIVE cte(label, step) AS (
+    SELECT DISTINCT label, step
+    FROM t
+    UNION ALL
+    SELECT label, step + 1
+    FROM cte
+    WHERE step < 3
+)
+SELECT COUNT(*) < 9 FROM cte
+----
+1
+
+statement ok
+DROP TABLE t
+
