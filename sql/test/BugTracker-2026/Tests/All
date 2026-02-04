@@ -1,3 +1,4 @@
+KNOWNFAIL?7758-truncate-sys-tables-corrupts-db
 7766-assertion-failure
 7767-assertion-failure
 7769-assertion-failure
