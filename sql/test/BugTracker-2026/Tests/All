@@ -12,6 +12,7 @@ KNOWNFAIL?7781-truncate-sys-tables-corrupts-db
 7783-deleted-row
 KNOWNFAIL?7785-recursive-cte-loops-infinitly
 7786-rename-drop-table
+7787-assertion-failure
 7804-querylog-catalog-orderby-bug
 7805-orderby-all-bug
 7806-numeric-no-prec-no-scale
