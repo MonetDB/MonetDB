@@ -4,6 +4,7 @@
 7770-assertion-failure
 7771-assertion-failure
 7774-insert-into-renamed-table-assertion-failure
+7775-assertion-failure
 7780-unnest-slow
 7782-roles-view
 7783-deleted-row
