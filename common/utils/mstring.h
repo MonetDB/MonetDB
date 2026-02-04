@@ -27,9 +27,17 @@
 #if ! __has_attribute(__nonnull__)
 #define __nonnull__(...)
 #endif
+#if ! __has_attribute(__nonnull_if_nonzero__)
+#define __nonnull_if_nonzero__(...)
+#endif
+#if ! __has_attribute(__pure__)
+#define __pure__(...)
+#endif
 #else
 #define __access__(...)
 #define __nonnull__(...)
+#define __nonnull_if_nonzero__(...)
+#define __pure__(...)
 #endif
 
 #ifndef mutils_export
@@ -52,7 +60,9 @@
  */
 
 #ifndef HAVE_STRNLEN
+__attribute__((__pure__))
 __attribute__((__nonnull__(1)))
+__attribute__((__access__(read_only, 1, 2)))
 static inline size_t
 strnlen(const char *s, size_t n)
 {
@@ -101,7 +111,6 @@ strlcpy(char *restrict dst, const char *restrict src, size_t n)
 	return strlen(src);
 }
 #endif
-#define strcpy_len strlcpy
 
 #ifndef HAVE_STPCPY
 /* Copy the input string into a destination string.  The programmer is
@@ -124,7 +133,8 @@ stpcpy(char *restrict dst, const char *restrict src)
  * truncated (but it is guaranteed to be null-terminated). It returns
  * the length of the string, or -1 if it truncated. */
 __attribute__((__access__(write_only, 1, 3)))
-__attribute__((__nonnull__(1, 2)))
+__attribute__((__nonnull_if_nonzero__(1, 3)))
+__attribute__((__nonnull__(2)))
 static inline ssize_t
 strtcpy(char *restrict dst, const char *restrict src, size_t dsize)
 {
@@ -260,11 +270,9 @@ checkUTF8(const char *v)
 	return true;
 }
 
-static inline int vreallocprintf(char **buf, size_t *pos, size_t *size, const char *fmt, va_list ap)
-	__attribute__((__format__(__printf__, 4, 0)));
-
+__attribute__((__format__(__printf__, 4, 0)))
 static inline int
-vreallocprintf(char **buf, size_t *pos, size_t *capacity, const char *fmt, va_list args)
+vreallocprintf(char **buf, size_t *pos, size_t *capacity, _In_z_ _Printf_format_string_ const char *fmt, va_list args)
 {
 	va_list ap;
 
@@ -313,11 +321,9 @@ vreallocprintf(char **buf, size_t *pos, size_t *capacity, const char *fmt, va_li
 	}
 }
 
-static inline int reallocprintf(char **buf, size_t *pos, size_t *size, const char *fmt, ...)
-	__attribute__((__format__(__printf__, 4, 5)));
-
+__attribute__((__format__(__printf__, 4, 5)))
 static inline int
-reallocprintf(char **buf, size_t *pos, size_t *capacity, const char *fmt, ...)
+reallocprintf(char **buf, size_t *pos, size_t *capacity, _In_z_ _Printf_format_string_ const char *fmt, ...)
 {
 	int n;
 	va_list ap;
