@@ -463,7 +463,7 @@ doChallenge(void *data)
 			p += strlen(p);
 			*p++ = ']';
 			*p++ = ':';
-			strncpy(p, service, peer_end - p);
+			strtcpy(p, service, peer_end - p);
 			peer = peerbuf;
 		} else {
 			peer = NULL;

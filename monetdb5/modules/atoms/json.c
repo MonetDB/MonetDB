@@ -172,7 +172,7 @@ JSONtoStorageString(JSON *jt, int idx, json *ret, size_t *out_size)
 		break;
 	case JSON_ELEMENT:
 		*p++ = '"';
-		strncpy(p, jt->elm[idx].value, jt->elm[idx].valuelen);
+		memcpy(p, jt->elm[idx].value, jt->elm[idx].valuelen);
 		p += jt->elm[idx].valuelen;
 		*p++ = '"';
 		*p++ = ':';
@@ -187,7 +187,7 @@ JSONtoStorageString(JSON *jt, int idx, json *ret, size_t *out_size)
 	case JSON_NUMBER:
 		/* fall through */
 	case JSON_STRING:
-		strncpy(p, jt->elm[idx].value, jt->elm[idx].valuelen);
+		memcpy(p, jt->elm[idx].value, jt->elm[idx].valuelen);
 		*out_size += jt->elm[idx].valuelen;
 		p += *out_size;
 		break;
@@ -200,7 +200,7 @@ JSONtoStorageString(JSON *jt, int idx, json *ret, size_t *out_size)
 		p += sz;
 		break;
 	case JSON_NULL:
-		strncpy(p, "null", 5);
+		strcpy(p, "null");
 		*out_size += 4;
 		p += *out_size;
 		break;
@@ -755,7 +755,7 @@ JSONcompile(Client ctx, const char *expr, pattern terms[])
 			if (terms[t].name == NULL)
 				throw(MAL, "json.compile", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			terms[t].namelen = s - beg;
-			strncpy(terms[t].name, beg, s - beg);
+			strtcpy(terms[t].name, beg, s - beg + 1);
 			if (*s == '.')
 				s--;
 			if (*s == 0) {
@@ -2587,10 +2587,10 @@ JSONfoldKeyValue(Client ctx, str *ret, const bat *id, const bat *key, const bat 
 				goto memfail;
 			}
 			if (strcmp(val, "nil") == 0) {
-				val = NULL;
+				val = "null";
 			}
 		}
-		l = val ? strlen(val) : 4;
+		l = strlen(val);
 		size_t osz = lim;
 		while (l > lim - len)
 			lim = (lim / (i + 1)) * cnt + BUFSIZ + l + 3;
@@ -2600,7 +2600,7 @@ JSONfoldKeyValue(Client ctx, str *ret, const bat *id, const bat *key, const bat 
 			bat_iterator_end(&bvi);
 			goto memfail;
 		}
-		strncpy(row + len, val ? val : "null", l);
+		strcpy(row + len, val);
 		len += l;
 		row[len++] = ',';
 		row[len] = 0;
