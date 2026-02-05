@@ -1,0 +1,17 @@
+statement ok
+CREATE TABLE v0 ( v1 FLOAT , v2 FLOAT )
+
+statement ok
+INSERT INTO v0 VALUES ( 33296913.000000 , 46714997.000000 )
+
+statement error 42000!SELECT: cannot use non GROUP BY column 'v1' in query results without an aggregate function
+SELECT v1 AS v4 FROM v0 AS v3 GROUP BY v2
+
+-- exp_bin: CRITICAL: Could not find v3.v1
+-- sql/backends/monet5/rel_bin.c:1899: exp_bin: Assertion `s' failed.
+statement error 42000!SELECT: cannot use non GROUP BY column 'v1' in query results without an aggregate function
+SELECT MAX ( ( SELECT v1 AS v4 FROM v0 AS v3 GROUP BY v2 ) ) FROM v0
+
+statement ok
+DROP TABLE v0
+
