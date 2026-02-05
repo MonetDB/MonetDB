@@ -4110,6 +4110,7 @@ sql_trans_create_column_intern(sql_column **rcol, sql_trans *tr, sql_table *t, c
 		}
 	}
 	if (!isDeclaredTable(t)) {
+		obj_lock_init(&col->lock, 'c', col->base.id);
 		char *strnil = (char*)ATOMnilptr(TYPE_str);
 		int digits = type_digits(&col->type);
 		if ((res = store->table_api.table_insert(tr, syscolumn, &col->base.id, &col->base.name, &col->type.type->base.name,
