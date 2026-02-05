@@ -355,6 +355,7 @@ rel_with_query(sql_query *query, symbol *q )
 				nrel = rel_setop_n_ary_check_types(sql, base_rel, nrel, ls, rs, op_munion);
 			} else {
 				base_rel->used |= statistics_gathered;
+				base_rel->dynamic = true;
 				prop *p = base_rel->p = prop_create(sql->sa, PROP_COUNT, base_rel->p);
 				p->value.lval = 1000000; /* random ? */
 
@@ -1538,6 +1539,7 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 	dlist *l = NULL;
 	sql_rel *inner = rel?*rel:NULL, *outer = NULL;
 	int used_lower_after_processed = 0;
+	int outer_state = 0;
 
 	assert((column_r->token == SQL_COLUMN || column_r->token == SQL_IDENT)
 		   && column_r->type == type_list);
@@ -1571,24 +1573,26 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 					if (!(exp = rel_bind_column(sql, outer->l, name, f, 0)) &&
 						sql->session->status == -ERR_AMBIGUOUS)
 						return NULL;
-					else
+					else if(exp)
 						used_lower_after_processed = is_processed(outer);
 				}
 				if (exp && is_simple_project(outer->op) && !rel_find_exp(outer, exp))
 					exp = rel_project_add_exp(sql, outer, exp);
 				if (exp)
+					outer_state = query_fetch_outer_state(query, i);
+				if (exp)
 					break;
 			}
 			if (exp && exp->card != CARD_AGGR && is_groupby(outer->op) &&
-				!is_sql_aggr(f) && rel_find_exp(outer->l, exp))
+				!is_sql_aggr(outer_state) && !is_sql_aggr(f) && rel_find_exp(outer->l, exp))
 				return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000)
 								 "SELECT: cannot use non GROUP BY column '%s' in query"
 								 " results without an aggregate function", name);
-			if (exp && outer && outer->card <= CARD_AGGR && exp->card > CARD_AGGR && !is_sql_aggr(f))
+			if (exp && outer && outer->card <= CARD_AGGR && exp->card > CARD_AGGR && !is_sql_aggr(outer_state) && !is_sql_aggr(f))
 				return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000)
 								 "SELECT: cannot use non GROUP BY column '%s' in query"
 								 " results without an aggregate function", name);
-			if (exp && outer && !is_sql_aggr(f) && !is_sql_aggr(query_fetch_outer_state(query, i))) {
+			if (exp && outer && !is_sql_aggr(outer_state) && !is_sql_aggr(f) && !is_sql_aggr(query_fetch_outer_state(query, i))) {
 				if (used_lower_after_processed || query_outer_used_exp( query, i, exp, f)) {
 					sql_exp *lu = used_lower_after_processed?exp:query_outer_last_used(query, i);
 					if (exp_name(lu) && exp_relname(lu) && !has_label(lu))
@@ -1601,7 +1605,7 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 			}
 			if (exp) {
 				int of = query_fetch_outer_state(query, i);
-				if (is_groupby(outer->op) && !is_sql_aggr(f)) {
+				if (0 && is_groupby(outer->op) && !is_sql_aggr(f)) {
 					exp = rel_groupby_add_aggr(sql, outer, exp);
 					exp->card = CARD_ATOM;
 				} else if (is_groupby(outer->op) && is_sql_aggr(f) && exps_any_match(outer->exps, exp))
@@ -1691,24 +1695,26 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 					if (!(exp = rel_bind_column3(sql, outer->l, sname, tname, cname, f)) &&
 						sql->session->status == -ERR_AMBIGUOUS)
 						return NULL;
-					else
+					else if(exp)
 						used_lower_after_processed = is_processed(outer);
 				}
 				if (exp && is_simple_project(outer->op) && !rel_find_exp(outer, exp))
 					exp = rel_project_add_exp(sql, outer, exp);
 				if (exp)
+					outer_state = query_fetch_outer_state(query, i);
+				if (exp)
 					break;
 			}
 			if (exp && exp->card != CARD_AGGR && is_groupby(outer->op) &&
-				!is_sql_aggr(f) && rel_find_exp(outer->l, exp))
+				!is_sql_aggr(outer_state) && !is_sql_aggr(f) && rel_find_exp(outer->l, exp))
 				return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000)
 								 "SELECT: cannot use non GROUP BY column '%s.%s' in"
 								 " query results without an aggregate function", tname, cname);
-			if (exp && outer && outer->card <= CARD_AGGR && exp->card > CARD_AGGR && !is_sql_aggr(f))
+			if (exp && outer && outer->card <= CARD_AGGR && exp->card > CARD_AGGR && !is_sql_aggr(outer_state) && !is_sql_aggr(f))
 				return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000)
 								 "SELECT: cannot use non GROUP BY column '%s.%s'"
 								 " in query results without an aggregate function", tname, cname);
-			if (exp && outer && !is_sql_aggr(f)) {
+			if (exp && outer && !is_sql_aggr(outer_state) && !is_sql_aggr(f)) {
 				if (used_lower_after_processed || query_outer_used_exp( query, i, exp, f)) {
 					sql_exp *lu = used_lower_after_processed?exp:query_outer_last_used(query, i);
 					if (exp_name(lu) && exp_relname(lu) && !has_label(lu))
@@ -1721,7 +1727,7 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 			}
 			if (exp) {
 				int of = query_fetch_outer_state(query, i);
-				if (is_groupby(outer->op) && !is_sql_aggr(f)) {
+				if (0 && is_groupby(outer->op) && !is_sql_aggr(f)) {
 					exp = rel_groupby_add_aggr(sql, outer, exp);
 					exp->card = CARD_ATOM;
 				} else if (is_groupby(outer->op) && is_sql_aggr(f) && exps_any_match(outer->exps, exp))
@@ -2386,9 +2392,12 @@ rel_in_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 				if (rel && *rel && is_join((*rel)->op))
 					set_dependent((*rel));
 				if (is_project(r->op) && is_project_true(r->l) && list_length(r->exps) == 1) {
-					re = r->exps->h->data;
-					if (is_freevar(re))
-						reset_freevar(re);
+					sql_exp *nre = r->exps->h->data;
+					if (exp_is_rel(nre)) {
+						if (is_freevar(nre))
+							reset_freevar(nre);
+						re = nre;
+					}
 				}
 			} else if (is_values(re) && is_tuple != list_length(exp_get_values(re))) {
 				return sql_error(sql, 02, SQLSTATE(42000) "Tuple sizes do not match");
@@ -5396,6 +5405,8 @@ rel_value_exp2(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 			assert(se->token == SQL_SELECT);
 			exp_kind nek = ek;
 			nek.aggr = is_sql_aggr(f);
+			if (rel && *rel)
+				nek.aggr = 0;
 			if (is_sql_no_subquery(f))
 				return sql_error(sql, 02, SQLSTATE(42000) "SELECT: subquery not allowed");
 

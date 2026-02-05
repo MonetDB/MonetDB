@@ -4,9 +4,9 @@ CREATE TABLE v0 ( v1 INT PRIMARY KEY , v2 VARCHAR ( 52 ) )
 statement error 42000!SELECT: identifier 'v2' unknown
 SELECT v2 AND v1 AND v1
 
--- sql/backends/monet5/rel_bin.c:4958: rel2bin_select: Assertion `sql->session->status == -10' failed.
-statement error 42000!SELECT: identifier 'v2' unknown
+query T
 SELECT left ( v1 , -128 ) FROM v0 WHERE v2 IN ( SELECT v2 AND v1 AND v1 )
+----
 
 statement ok
 DROP TABLE v0
