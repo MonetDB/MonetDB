@@ -2385,6 +2385,11 @@ geos2wkb(allocator *ma, wkb **geomWKB, size_t *len, const GEOSGeometry *geosGeom
 		return NULL;
 
 	assert(wkbLen <= GDK_int_max);
+	if (wkbLen > (size_t) GDK_int_max) {
+		GEOSFree_r(geoshandle, w);
+		GDKerror("geos2wkb: wkb length too large\n");
+		return NULL;
+	}
 
 	*geomWKB = ma_alloc(ma, wkb_size(wkbLen));
 	//If malloc failed create a NULL wkb
@@ -2564,6 +2569,8 @@ wkbFromBinaryWithBuffer(allocator *ma, wkb **geomWKB, size_t *len, const char **
 
 	wkbLength = strLength / 2;
 	assert(wkbLength <= GDK_int_max);
+	if (wkbLength > (size_t) GDK_int_max)
+		throw(MAL, "geom.FromBinary", SQLSTATE(38000) "Geos length too large");
 
 	if (!*geomWKB || *len < wkb_size(wkbLength)) {
 		*len = wkb_size(wkbLength);

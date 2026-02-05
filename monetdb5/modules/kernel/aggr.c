@@ -75,7 +75,7 @@ AGGRgrouped_bat_or_val(bat *retval1, bat *retval2, const bat *bid,
 			}
 			BBPunfix(q->batCacheid);
 		} else {
-			qvalue = *(quantile_val);
+			qvalue = *quantile_val;
 		}
 		if (qvalue < 0 || qvalue > 1) {
 			BBPreclaim(b);

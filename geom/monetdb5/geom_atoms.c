@@ -211,9 +211,9 @@ wkbWRITE(const void *A, stream *s, size_t cnt)
 
 	(void) cnt;
 	assert(cnt == 1);
-	if (!mnstr_writeInt(s, len))	/* 64bit: check for overflow */
+	if (!mnstr_writeInt(s, len))
 		return GDK_FAIL;
-	if (!mnstr_writeInt(s, srid))	/* 64bit: check for overflow */
+	if (!mnstr_writeInt(s, srid))
 		return GDK_FAIL;
 	if (len > 0 &&		/* 64bit: check for overflow */
 	    mnstr_write(s, (char *) a->data, len, 1) < 0)
