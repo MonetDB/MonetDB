@@ -2836,13 +2836,16 @@ __attribute__((__warn_unused_result__))
 static gdk_return
 tar_write(stream *outfile, const char *path,  const char *data, size_t size)
 {
-	const size_t tail = size % TAR_BLOCK_SIZE;
-	const size_t bulk = size - tail;
+	const ssize_t tail = size % TAR_BLOCK_SIZE;
+	const ssize_t bulk = size - tail;
 
 	if (bulk) {
-		size_t written = mnstr_write(outfile, data, 1, bulk);
-		if (written != bulk) {
-			GDKerror("Wrote only %zu bytes of %s instead of first %zu", written, path, bulk);
+		ssize_t written = mnstr_write(outfile, data, 1, bulk);
+		if (written < 0) {
+			GDKerror("Error writing tar header %s: %s", path, mnstr_peek_error(outfile));
+			return GDK_FAIL;
+		} else if (written != bulk) {
+			GDKerror("Wrote only %zd bytes of %s instead of first %zd", written, path, bulk);
 			return GDK_FAIL;
 		}
 	}
@@ -2850,9 +2853,12 @@ tar_write(stream *outfile, const char *path,  const char *data, size_t size)
 	if (tail) {
 		char buf[TAR_BLOCK_SIZE] = {0};
 		memcpy(buf, data + bulk, tail);
-		size_t written = mnstr_write(outfile, buf, 1, TAR_BLOCK_SIZE);
-		if (written != TAR_BLOCK_SIZE) {
-			GDKerror("Wrote only %zu tail bytes of %s instead of %d", written, path, TAR_BLOCK_SIZE);
+		ssize_t written = mnstr_write(outfile, buf, 1, TAR_BLOCK_SIZE);
+		if (written < 0) {
+			GDKerror("Error writing tar header %s: %s", path, mnstr_peek_error(outfile));
+			return GDK_FAIL;
+		} else if (written != TAR_BLOCK_SIZE) {
+			GDKerror("Wrote only %zd bytes of %s instead of first %zd", written, path, bulk);
 			return GDK_FAIL;
 		}
 	}
