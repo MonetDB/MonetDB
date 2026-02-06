@@ -1511,10 +1511,12 @@ jsonupgradebat(BAT *b, json_storage_conversion fixJSONStorage)
 	b->tvheap = vh2;
 	vh2 = NULL;
 
+	allocator *ta = MT_thread_getallocator();
 	for (BUN i = 0; i < b->batCount; i++) {
 		var_t o = ((var_t *) h1.base)[i];
 		const char *s = vh1.base + o;
 		char *ns;
+		allocator_state ta_state = ma_open(ta);
 		if (fixJSONStorage(&ns, &s) != GDK_SUCCEED) {
 			HEAPfree(&h1, false);
 			HEAPfree(&vh1, false);
@@ -1523,10 +1525,11 @@ jsonupgradebat(BAT *b, json_storage_conversion fixJSONStorage)
 			b->tvheap = ovh;
 			TRC_CRITICAL(GDK, "converting value "
 				     "in BAT %d failed\n", b->batCacheid);
+			ma_close(&ta_state);
 			return GDK_FAIL;
 		}
 		var_t no = strPut(b, &o, ns);
-		GDKfree(ns);
+		ma_close(&ta_state);
 		if (no == (var_t) -1) {
 			HEAPfree(&h1, false);
 			HEAPfree(&vh1, false);
