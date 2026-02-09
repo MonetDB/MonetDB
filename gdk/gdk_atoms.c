@@ -1996,13 +1996,13 @@ static void *
 BLOBread(allocator *ma, void *A, size_t *dstlen, stream *s, size_t cnt)
 {
 	blob *a = A;
-	int len;
+	lng len;
 
 	(void) cnt;
 	assert(cnt == 1);
-	if (mnstr_readInt(s, &len) != 1 || len < 0)
+	if (mnstr_readLng(s, &len) != 1 || len < 0)
 		return NULL;
-	if (a == NULL || *dstlen < (size_t) len) {
+	if (a == NULL || (lng) *dstlen < len) {
 		if (ma) {
 			a = ma_realloc(ma, a, (size_t) len, *dstlen);
 		} else {
@@ -2027,8 +2027,7 @@ BLOBwrite(const void *A, stream *s, size_t cnt)
 
 	(void) cnt;
 	assert(cnt == 1);
-	if (!mnstr_writeInt(s, (int) len) /* 64bit: check for overflow */ ||
-		mnstr_write(s, a, len, 1) < 0)
+	if (!mnstr_writeLng(s, (lng) len) || mnstr_write(s, a, len, 1) < 0)
 		return GDK_FAIL;
 	return GDK_SUCCEED;
 }
@@ -2037,7 +2036,7 @@ static size_t
 BLOBlength(const void *P)
 {
 	const blob *p = P;
-	size_t l = blobsize(p->nitems); /* 64bit: check for overflow */
+	size_t l = blobsize(p->nitems);
 	assert(l <= (size_t) GDK_int_max);
 	return l;
 }

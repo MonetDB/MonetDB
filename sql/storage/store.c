@@ -20,7 +20,7 @@
 #include "bat/bat_logger.h"
 
 /* version 05.23.05 of catalog */
-#define CATALOG_VERSION 52305	/* first after Mar2025 */
+#define CATALOG_VERSION 52306	/* first in Dec2025-SP1 */
 
 static void
 obj_lock_init( MT_Lock *l, char c, sqlid id)
