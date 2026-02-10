@@ -136,11 +136,12 @@ UTF8_strncpy(char *restrict dst, const char *restrict s, int n)
 	return dst;
 }
 
-/* return number of Unicode codepoints in s; s is not nil */
+/* return number of Unicode codepoints in s or -1 if larger than
+ * INT_MAX; s is not nil */
 int
 UTF8_strlen(const char *s)
 {								/* This function assumes, s is never nil */
-	size_t pos = 0;
+	size_t len = 0;
 
 	UTF8_assert(s);
 	assert(!strNil(s));
@@ -148,10 +149,11 @@ UTF8_strlen(const char *s)
 	while (*s) {
 		/* just count leading bytes of encoded code points; only works
 		 * for correctly encoded UTF-8 */
-		pos += (*s++ & 0xC0) != 0x80;
+		len += (*s++ & 0xC0) != 0x80;
 	}
-	assert(pos <= (size_t) INT_MAX);
-	return (int) pos;
+	if (len > (size_t) INT_MAX)
+		return -1;
+	return (int) len;
 }
 
 /* return (int) strlen(s); s is not nil; returns -1 for strings that are
