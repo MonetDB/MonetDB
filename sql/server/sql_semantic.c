@@ -534,7 +534,7 @@ score_func( sql_func *f, list *tl, bool exact, bool *downcast)
 			nscore = -nscore;
 		}
 		score += nscore;
-		if (EC_VARCHAR(t->type->eclass) && EC_NUMBER(a->type.type->eclass))
+		if (EC_VARCHAR(t->type->eclass) && !EC_VARCHAR(a->type.type->eclass) && a->type.type->eclass != EC_ANY)
 			nr_strconverts++;
 		if (nr_strconverts > 1)
 			return 0;
