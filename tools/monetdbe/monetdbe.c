@@ -1704,14 +1704,16 @@ monetdbe_bind(monetdbe_statement *stmt, void *data, size_t i)
 		}
 		VALset(&stmt_internal->data[i], tpe, b);
 	} else if (tpe == TYPE_str) {
-		char *val = GDKstrdup(data);
+		backend *b = stmt_internal->mdbe->c->sqlcontext;
+		if (!b->mvc->sa)
+			b->mvc->sa = create_allocator(NULL, false);
+		char *val = ma_strdup(b->mvc->sa, data);
 
 		if (val == NULL) {
 			set_error(stmt_internal->mdbe, createException(MAL, "monetdbe.monetdbe_bind", MAL_MALLOC_FAIL));
 			return stmt_internal->mdbe->msg;
 		}
 		VALset(&stmt_internal->data[i], tpe, val);
-		// FIX this leaks no free for val
 	} else {
 		VALset(&stmt_internal->data[i], tpe, data);
 	}
