@@ -21,6 +21,7 @@ KNOWNFAIL?7792-assertion-failure
 KNOWNFAIL?7793-assertion-failure
 KNOWNFAIL?7794-assertion-failure
 KNOWNFAIL?7795-assertion-failure
+7796-assertion-failure
 7804-querylog-catalog-orderby-bug
 7805-orderby-all-bug
 7806-numeric-no-prec-no-scale
