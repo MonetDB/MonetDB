@@ -110,7 +110,18 @@ if(NOT MONETDB_STATIC)
       monetdbe)
 
     install(TARGETS
+      example1
+      example2
+      example_append
+      example_append_raw
+      example_backup
+      example_blob
+      example_connections
+      example_copy
+      example_decimals
       example_proxy
+      example_sessions
+      example_temporal
       DESTINATION ${CMAKE_INSTALL_BINDIR}
       COMPONENT mbeddedtest)
 

@@ -1,1 +1,12 @@
+debian/tmp/usr/bin/example1 usr/bin
+debian/tmp/usr/bin/example2 usr/bin
+debian/tmp/usr/bin/example_append usr/bin
+debian/tmp/usr/bin/example_append_raw usr/bin
+debian/tmp/usr/bin/example_backup usr/bin
+debian/tmp/usr/bin/example_blob usr/bin
+debian/tmp/usr/bin/example_connections usr/bin
+debian/tmp/usr/bin/example_copy usr/bin
+debian/tmp/usr/bin/example_decimals usr/bin
 debian/tmp/usr/bin/example_proxy usr/bin
+debian/tmp/usr/bin/example_sessions usr/bin
+debian/tmp/usr/bin/example_temporal usr/bin

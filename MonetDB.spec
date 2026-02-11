@@ -856,7 +856,18 @@ package.  You probably don't need this, unless you are a developer.
 
 %files embedded-tests
 %defattr(-,root,root)
+%{_bindir}/example1
+%{_bindir}/example2
+%{_bindir}/example_append
+%{_bindir}/example_append_raw
+%{_bindir}/example_backup
+%{_bindir}/example_blob
+%{_bindir}/example_connections
+%{_bindir}/example_copy
+%{_bindir}/example_decimals
 %{_bindir}/example_proxy
+%{_bindir}/example_sessions
+%{_bindir}/example_temporal
 
 %package testing-python
 Summary: MonetDB - Monet Database Management System
