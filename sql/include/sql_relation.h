@@ -278,6 +278,7 @@ typedef enum operator_type {
 #define reset_single(rel) 	(rel)->single = 0
 #define set_recursive(rel) 	(rel)->recursive = 1
 #define is_recursive(rel) 	((rel)->recursive)
+#define is_dynamic(rel) 	((rel)->dynamic)
 
 #define is_freevar(e) 		((e)->freevar)
 #define set_freevar(e,level) 	(e)->freevar = level+1
@@ -309,7 +310,8 @@ typedef struct relation {
 	 outer:1,	/* used as outer (ungrouped) */
 	 grouped:1,	/* groupby processed all the group by exps */
 	 single:1,
-	 recursive:1;	/* recursive unions */
+	 recursive:1,	/* recursive unions */
+	 dynamic:1;		/* dynamic content (ie the double used base side of the recursive union) */
 	/*
 	 * Used by rewriters at rel_unnest, rel_optimizer and rel_distribute so a relation is not modified twice
 	 * The list is kept at rel_optimizer_private.h Please update it accordingly

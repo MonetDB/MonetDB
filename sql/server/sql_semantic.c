@@ -534,7 +534,7 @@ score_func( sql_func *f, list *tl, bool exact, bool *downcast)
 			nscore = -nscore;
 		}
 		score += nscore;
-		if (EC_VARCHAR(t->type->eclass) && EC_NUMBER(a->type.type->eclass))
+		if (EC_VARCHAR(t->type->eclass) && !EC_VARCHAR(a->type.type->eclass) && a->type.type->eclass != EC_ANY)
 			nr_strconverts++;
 		if (nr_strconverts > 1)
 			return 0;
@@ -595,15 +595,19 @@ sql_bind_func__(mvc *sql, list *ff, const char *fname, list *ops, sql_ftype type
 
 				if ((f->type != type && f->type != filt) || (f->private && !private))
 					continue;
-				if (strcmp(f->base.name, fname) == 0 && ((!exact && (list_length(f->ops) == list_length(ops) || (list_length(f->ops) <= list_length(ops) && f->vararg))) || (exact && list_cmp(f->ops, ops, (fcmp) &arg_subtype_cmp) == 0))) {
+				if (strcmp(f->base.name, fname) == 0 &&
+					(exact
+					 ? list_cmp(f->ops, ops, (fcmp) &arg_subtype_cmp) == 0
+					 : (list_length(f->ops) == list_length(ops) ||
+						(list_length(f->ops) <= list_length(ops) && f->vararg)))) {
 					int npoints = score_func(f, ops, exact, &downcast);
 					if (downcast) {
-						if ((!dcand && (npoints || exact)) || (dcand && npoints > dpoints)) {
+						if (dcand ? npoints > dpoints : npoints || exact) {
 							dcand = f;
 							dpoints = npoints;
 						}
 					} else {
-						if ((!cand && (npoints || exact)) || (cand && npoints > points)) {
+						if (cand ? npoints > points : npoints || exact) {
 							cand = f;
 							points = npoints;
 						}
@@ -618,15 +622,19 @@ sql_bind_func__(mvc *sql, list *ff, const char *fname, list *ops, sql_ftype type
 
 				if ((f->type != type && f->type != filt) || (f->private && !private))
 					continue;
-				if (strcmp(f->base.name, fname) == 0 && ((!exact && (list_length(f->ops) == list_length(ops) || (list_length(f->ops) <= list_length(ops) && f->vararg))) || (exact && list_cmp(f->ops, ops, (fcmp) &arg_subtype_cmp) == 0))) {
+				if (strcmp(f->base.name, fname) == 0 &&
+					(exact
+					 ? list_cmp(f->ops, ops, (fcmp) &arg_subtype_cmp) == 0
+					 : (list_length(f->ops) == list_length(ops) ||
+						(list_length(f->ops) <= list_length(ops) && f->vararg)))) {
 					int npoints = score_func(f, ops, exact, &downcast);
 					if (downcast) {
-						if ((!dcand && (npoints || exact)) || (dcand && npoints > dpoints)) {
+						if (dcand ? npoints > dpoints : npoints || exact) {
 							dcand = f;
 							dpoints = npoints;
 						}
 					} else {
-						if ((!cand && (npoints || exact)) || (cand && npoints > points)) {
+						if (cand ? npoints > points : npoints || exact) {
 							cand = f;
 							points = npoints;
 						}

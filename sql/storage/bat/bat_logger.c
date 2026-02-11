@@ -20,10 +20,43 @@
 #define CATALOG_SEP2022 52302	/* first in Sep2022 */
 #define CATALOG_AUG2024 52303	/* first in Aug2024 */
 #define CATALOG_MAR2025 52304	/* first in Mar2025 */
+#define CATALOG_DEC2025 52305	/* first in Dec2025 */
 
 /* Note, CATALOG version 52300 is the first one where the basic system
  * tables (the ones created in store.c) have fixed and unchangeable
  * ids. */
+
+#ifdef CATALOG_DEC2025
+static void *
+BLOBreadOld(allocator *ma, void *A, size_t *dstlen, stream *s, size_t cnt)
+{
+	blob *a = A;
+	int len;
+
+	(void) cnt;
+	assert(cnt == 1);
+	if (mnstr_readInt(s, &len) != 1 || len < 0)
+		return NULL;
+	if (a == NULL || *dstlen < (size_t) len) {
+		if (ma) {
+			a = ma_realloc(ma, a, (size_t) len, *dstlen);
+		} else {
+			GDKfree(a);
+			a = GDKmalloc((size_t) len);
+		}
+		if (a == NULL)
+			return NULL;
+		*dstlen = (size_t) len;
+	}
+	if (mnstr_read(s, (char *) a, (size_t) len, 1) != 1) {
+		return NULL;
+	}
+	return a;
+}
+
+/* original atomRead function for TYPE_blob */
+static void *(*blobread)(allocator *ma, ptr, size_t *, stream *, size_t);
+#endif
 
 /* return GDK_SUCCEED if we can handle the upgrade from oldversion to
  * newversion */
@@ -31,6 +64,16 @@ static gdk_return
 bl_preversion(sqlstore *store, int oldversion, int newversion)
 {
 	(void)newversion;
+
+#ifdef CATALOG_DEC2025
+	if (oldversion <= CATALOG_DEC2025) {
+		/* replace atomRead function for blobs with version compatible
+		 * with older WAL format; this change is reverted in the
+		 * postversion function */
+		blobread = BATatoms[TYPE_blob].atomRead;
+		BATatoms[TYPE_blob].atomRead = BLOBreadOld;
+	}
+#endif
 
 #ifdef CATALOG_JUL2021
 	if (oldversion == CATALOG_JUL2021) {
@@ -66,6 +109,14 @@ bl_preversion(sqlstore *store, int oldversion, int newversion)
 
 #ifdef CATALOG_MAR2025
 	if (oldversion == CATALOG_MAR2025) {
+		/* upgrade to default releases */
+		store->catalog_version = oldversion;
+		return GDK_SUCCEED;
+	}
+#endif
+
+#ifdef CATALOG_DEC2025
+	if (oldversion == CATALOG_DEC2025) {
 		/* upgrade to default releases */
 		store->catalog_version = oldversion;
 		return GDK_SUCCEED;
@@ -165,6 +216,11 @@ bl_postversion(void *Store, logger *lg)
 {
 	sqlstore *store = Store;
 	gdk_return rc;
+
+#ifdef CATALOG_DEC2025
+	if (blobread)
+		BATatoms[TYPE_blob].atomRead = blobread;
+#endif
 
 #ifdef CATALOG_JUL2021
 	if (store->catalog_version <= CATALOG_JUL2021) {
