@@ -868,6 +868,8 @@ package.  You probably don't need this, unless you are a developer.
 %{_bindir}/example_proxy
 %{_bindir}/example_sessions
 %{_bindir}/example_temporal
+%{_bindir}/demo_oob_read
+%{_bindir}/demo_oob_write
 
 %package testing-python
 Summary: MonetDB - Monet Database Management System

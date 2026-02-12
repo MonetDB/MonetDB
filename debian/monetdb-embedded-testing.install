@@ -10,3 +10,5 @@ debian/tmp/usr/bin/example_decimals usr/bin
 debian/tmp/usr/bin/example_proxy usr/bin
 debian/tmp/usr/bin/example_sessions usr/bin
 debian/tmp/usr/bin/example_temporal usr/bin
+debian/tmp/usr/bin/demo_oob_read usr/bin
+debian/tmp/usr/bin/demo_oob_write usr/bin

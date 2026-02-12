@@ -90,6 +90,20 @@ if(NOT MONETDB_STATIC)
     monetdbe)
   add_test(NAME run_example_sessions COMMAND example_sessions)
 
+  add_executable(demo_oob_read demo_oob_read.c)
+  target_link_libraries(demo_oob_read
+    PRIVATE
+    monetdb_config_header
+    monetdbe)
+  add_test(NAME run_demo_oob_read COMMAND demo_oob_read)
+
+  add_executable(demo_oob_write demo_oob_write.c)
+  target_link_libraries(demo_oob_write
+    PRIVATE
+    monetdb_config_header
+    monetdbe)
+  add_test(NAME run_demo_oob_write COMMAND demo_oob_write)
+
   if(WITH_CMOCKA)
     add_executable(cmocka_test cmocka_test.c test_helper.c)
     target_include_directories(cmocka_test PRIVATE "${CMOCKA_INCLUDE_DIR}")
@@ -120,6 +134,8 @@ if(NOT MONETDB_STATIC)
       example_proxy
       example_sessions
       example_temporal
+      demo_oob_read
+      demo_oob_write
       DESTINATION ${CMAKE_INSTALL_BINDIR}
       COMPONENT mbeddedtest)
 

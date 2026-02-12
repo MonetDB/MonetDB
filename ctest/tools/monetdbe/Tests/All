@@ -10,3 +10,5 @@ example_decimals
 example_proxy
 example_sessions
 example_temporal
+demo_oob_read
+demo_oob_write

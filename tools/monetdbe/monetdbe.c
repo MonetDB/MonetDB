@@ -430,6 +430,7 @@ cleanup:
 	if (nq)
 		GDKfree(nq);
 	MSresetInstructions(c->curprg->def, 1);
+	freeVariables(c, c->curprg->def, NULL, 1);
 	if (fdin_changed) { //c->fdin was set
 		bstream_destroy(c->fdin);
 		c->fdin = old_bstream;
