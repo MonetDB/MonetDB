@@ -114,10 +114,8 @@ if(NOT MONETDB_STATIC)
       example2
       example_append
       example_append_raw
-      example_backup
       example_blob
       example_connections
-      example_copy
       example_decimals
       example_proxy
       example_sessions
@@ -127,9 +125,24 @@ if(NOT MONETDB_STATIC)
 
     if(WIN32)
       install(FILES
+        $<TARGET_PDB_FILE:example1>
+        $<TARGET_PDB_FILE:example2>
+        $<TARGET_PDB_FILE:example_append>
+        $<TARGET_PDB_FILE:example_append_raw>
+        $<TARGET_PDB_FILE:example_blob>
+        $<TARGET_PDB_FILE:example_connections>
+        $<TARGET_PDB_FILE:example_decimals>
         $<TARGET_PDB_FILE:example_proxy>
+        $<TARGET_PDB_FILE:example_sessions>
+        $<TARGET_PDB_FILE:example_temporal>
         DESTINATION ${CMAKE_INSTALL_BINDIR}
         OPTIONAL)
+    else()
+      install(TARGETS
+        example_backup
+        example_copy
+        DESTINATION ${CMAKE_INSTALL_BINDIR}
+        COMPONENT mbeddedtest)
     endif()
   endif()
 endif()
