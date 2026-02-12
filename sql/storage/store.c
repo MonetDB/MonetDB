@@ -4161,8 +4161,7 @@ sql_trans_create_(sqlstore *store, sql_trans *parent, const char *name)
 
 	if (!parent) {
 		tr->localtmps = os_new(NULL, (destroy_fptr) &table_destroy, true, true, false, false, store);
-	}
-	else {
+	} else {
 		tr->localtmps = os_dup(parent->localtmps);
 	}
 

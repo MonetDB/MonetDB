@@ -1212,7 +1212,7 @@ os_has_changes(objectset *os, struct sql_trans *tr)
 	if (n) {
 		objectversion *ov = n->ov;
 
-		if (ov && os_atmc_get_state(ov) == active && ov->ts != tr->tid && ov->ts > TRANSACTION_ID_BASE)
+		if (ov && os_atmc_get_state(ov) == active && ov->ts != tr->tid && ov->ts > TRANSACTION_ID_BASE && (!tr->parent || !tr_version_of_parent(tr, ov->ts)))
 			return true;
 	}
 	return false;
