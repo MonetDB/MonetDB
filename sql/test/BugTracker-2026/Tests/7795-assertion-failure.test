@@ -1,0 +1,14 @@
+statement ok
+CREATE TABLE v0 ( v1 SMALLINT , v2 REAL )
+
+query I nosort
+SELECT v2 FROM v0 ORDER BY v1 DESC , v2 LIMIT 0 OFFSET 91
+----
+
+-- sql/backends/monet5/rel_bin.c:4874: rel2bin_project: Assertion `sql->session->status == -10' failed.
+statement ok
+UPDATE v0 SET v1 = ( SELECT v2 ORDER BY v1 DESC , v2 LIMIT 0 OFFSET 91 ) WHERE -2147483648 IN ( v1 )
+
+statement ok
+DROP TABLE v0
+

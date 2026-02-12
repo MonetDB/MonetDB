@@ -1,0 +1,26 @@
+-- in strNil error: Cannot access memory at address 0x134>) at MonetDB/gdk/gdk_atoms.h:410
+-- in strEq  error: Cannot access memory at address 0x134>, r=0x7fc800d0e46b <str_nil> "\200") at MonetDB/gdk/gdk_atoms.h:438
+-- in GDKanalyticalmax (tpe=18, frame_type=0) at MonetDB/gdk/gdk_analytic_func.c:1361
+statement error GDK reported error: mergejoin: more than one match
+SELECT ( WITH x ( x ) AS ( SELECT 1 ) SELECT ( WITH x ( x ) AS ( SELECT 1 UNION SELECT 1 - x FROM x ) SELECT ( SELECT ( NULLIF ( 9.000000 , 0 ) ) FROM ( SELECT ( WITH x AS ( SELECT * FROM generate_series ( 44 , 3 ) ) SELECT CASE WHEN lead ( x ) OVER ( ORDER BY x ASC , x DESC , x ) IN ( 69 , MAX ( CASE WHEN 97 THEN 66 END ) OVER ( ) + ( SELECT COUNT ( * ) ) ) THEN 41 END FROM x ORDER BY max ( 'y' ) OVER ( ROWS BETWEEN ( WITH x ( x ) AS ( SELECT 1 ) SELECT ( WITH x ( x ) AS ( SELECT DISTINCT SUM ( 1 ) ) SELECT ( SELECT ( CASE WHEN NOT - 10 IS NULL AND NULL IS NULL THEN - 30 WHEN - - 39 * - 89 NOT IN ( - 51 * - - 1.000000 , count ( * ) / 67 ) THEN count ( 54 ) END ) FROM GENERATE_SERIES ( 1 , x ) ) ) FROM x ) PRECEDING AND CURRENT ROW ) ) WHERE ( SELECT x FROM x WHERE x != 1 GROUP BY x ) != x ORDER BY x ) ) FROM x ) FROM x )
+
+statement error GDK reported error: mergejoin: more than one match
+SELECT ( WITH x ( x ) AS ( SELECT 1 )
+ SELECT ( WITH x ( x ) AS ( SELECT 1 UNION SELECT 1 - x FROM x )
+  SELECT ( SELECT ( NULLIF ( 9.000000 , 0 ) ) FROM (
+   SELECT ( WITH x AS ( SELECT * FROM generate_series ( 44 , 3 ) )
+    SELECT CASE WHEN lead ( x ) OVER ( ORDER BY x ASC , x DESC , x ) IN ( 69 , MAX ( CASE WHEN 97 THEN 66 END ) OVER ( ) + ( SELECT COUNT ( * ) ) ) THEN 41 END FROM x
+     ORDER BY max ( 'y' ) OVER ( ROWS BETWEEN (
+      WITH x ( x ) AS ( SELECT 1 )
+       SELECT ( WITH x ( x ) AS ( SELECT DISTINCT SUM ( 1 ) )
+        SELECT (
+         SELECT ( CASE WHEN NOT - 10 IS NULL AND NULL IS NULL THEN - 30 WHEN - - 39 * - 89 NOT IN ( - 51 * - - 1.000000 , count ( * ) / 67 ) THEN count ( 54 ) END ) FROM GENERATE_SERIES ( 1 , x )
+        )
+       )
+      FROM x ) PRECEDING AND CURRENT ROW )
+    ) WHERE ( SELECT x FROM x WHERE x != 1 GROUP BY x ) != x ORDER BY x
+   )
+  )
+ FROM x )
+FROM x )
+

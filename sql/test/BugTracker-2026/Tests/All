@@ -1,3 +1,4 @@
+KNOWNFAIL?7728-select-with-subqueries-crash
 KNOWNFAIL?7758-truncate-sys-tables-corrupts-db
 7766-assertion-failure
 7767-assertion-failure
@@ -17,6 +18,15 @@ KNOWNFAIL?7788-assertion-failure
 KNOWNFAIL?7789-assertion-failure
 KNOWNFAIL?7790-assertion-failure
 KNOWNFAIL?7791-assertion-failure
+KNOWNFAIL?7792-assertion-failure
+KNOWNFAIL?7793-assertion-failure
+KNOWNFAIL?7794-assertion-failure
+KNOWNFAIL?7795-assertion-failure
+7796-assertion-failure
+KNOWNFAIL?7797-assertion-failure
+KNOWNFAIL?7800-assertion-failure
+KNOWNFAIL?7801-assertion-failure
+7802-select-with-subqueries
 7804-querylog-catalog-orderby-bug
 7805-orderby-all-bug
 7806-numeric-no-prec-no-scale
