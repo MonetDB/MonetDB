@@ -909,7 +909,7 @@ os_add_(objectset *os, struct sql_trans *tr, const char *name, sql_base *b)
 		if (os->destroy)
 			os->destroy(os->store, ov->b);
 		_DELETE(ov);
-		TRC_WARNING(SQL_STORE, "%s" "if (!os->concurrent && os_has_changes(os, tr)) { /* for object sets without concurrent support, conflict if concurrent changes are there */", __func__);
+		TRC_WARNING(SQL_STORE, "if (!os->concurrent && os_has_changes(os, tr)) { /* for object sets without concurrent support, conflict if concurrent changes are there */");
 		return -3; /* conflict */
 	}
 

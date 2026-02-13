@@ -1,10 +1,10 @@
 query D nosort
-SELECT 0.100000 FROM dependencies ORDER BY max ( 'y' )
+SELECT 0.100000 FROM sys.dependencies ORDER BY max ( 'y' )
 ----
 0.100000
 
 query D nosort
-SELECT 0.100000 FROM dependencies ORDER BY max ( 'y' ) OVER ( ROWS BETWEEN 1.100000 PRECEDING AND 8 PRECEDING ) limit 1
+SELECT 0.100000 FROM sys.dependencies ORDER BY max ( 'y' ) OVER ( ROWS BETWEEN 1.100000 PRECEDING AND 8 PRECEDING ) limit 1
 ----
 0.100000
 

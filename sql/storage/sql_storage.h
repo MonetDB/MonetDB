@@ -441,7 +441,7 @@ extern int sql_trans_begin(sql_session *s);
 extern int sql_trans_end(sql_session *s, int commit /* rollback=0, or commit=1 temporaries */);
 
 extern list* sql_trans_schema_user_dependencies(sql_trans *tr, sqlid schema_id);
-extern int sql_trans_create_dependency(sql_trans *tr, sqlid id, sqlid depend_id, sql_dependency depend_type);
+extern int sql_trans_create_dependency(sql_trans *tr, sqlid id, sqlid depend_id, sql_dependency depend_type, temp_t temp);
 extern int sql_trans_drop_dependencies(sql_trans *tr, sqlid depend_id);
 extern int sql_trans_drop_dependency(sql_trans *tr, sqlid id, sqlid depend_id, sql_dependency depend_type);
 extern list* sql_trans_get_dependents(sql_trans *tr, sqlid id, sql_dependency depend_type, list *ignore_ids);

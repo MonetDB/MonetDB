@@ -1011,6 +1011,69 @@ bl_postversion(void *Store, logger *lg)
 	}
 #endif
 
+#ifdef CATALOG_DEC2025
+	if (store->catalog_version <= CATALOG_DEC2025) {
+		if (tabins(lg,
+				   2067, &(msk) {false},	/* sys._tables */
+				   /* 2168 is tmp.dependencies */
+				   2068, &(int) {2168},		/* sys._tables.id */
+				   2069, "dependencies",	/* sys._tables.name */
+				   2070, &(int) {2114},		/* sys._tables.schema_id */
+				   2071, str_nil,			/* sys._tables.query */
+				   2072, &(sht) {0},		/* sys._tables.type */
+				   2073, &(bit) {TRUE},		/* sys._tables.system */
+				   2074, &(sht) {CA_PRESERVE}, /* sys._tables.commit_action */
+				   2075, &(sht) {0},		/* sys._tables.access */
+				   0) != GDK_SUCCEED)
+			return GDK_FAIL;
+		if (tabins(lg,
+				   2076, &(msk) {false},	/* sys._columns */
+				   /* 2169 is tmp.dependencies.id */
+				   2077, &(int) {2169},		/* sys._columns.id */
+				   2078, "id",				/* sys._columns.name */
+				   2079, "int",				/* sys._columns.type */
+				   2080, &(int) {31},		/* sys._columns.type_digits */
+				   2081, &(int) {0},		/* sys._columns.type_scale */
+				   2082, &(int) {2168},		/* sys._columns.table_id */
+				   2083, str_nil,			/* sys._columns.default */
+				   2084, &(bit) {TRUE},		/* sys._columns.null */
+				   2085, &(int) {0},		/* sys._columns.number */
+				   2086, str_nil,			/* sys._columns.storage */
+				   0) != GDK_SUCCEED)
+			return GDK_FAIL;
+		if (tabins(lg,
+				   2076, &(msk) {false},	/* sys._columns */
+				   /* 2170 is tmp.dependencies.depend_id */
+				   2077, &(int) {2170},		/* sys._columns.id */
+				   2078, "depend_id",		/* sys._columns.name */
+				   2079, "int",				/* sys._columns.type */
+				   2080, &(int) {31},		/* sys._columns.type_digits */
+				   2081, &(int) {0},		/* sys._columns.type_scale */
+				   2082, &(int) {2168},		/* sys._columns.table_id */
+				   2083, str_nil,			/* sys._columns.default */
+				   2084, &(bit) {TRUE},		/* sys._columns.null */
+				   2085, &(int) {1},		/* sys._columns.number */
+				   2086, str_nil,			/* sys._columns.storage */
+				   0) != GDK_SUCCEED)
+			return GDK_FAIL;
+		if (tabins(lg,
+				   2076, &(msk) {false},	/* sys._columns */
+				   /* 2171 is tmp.dependencies.depend_type */
+				   2077, &(int) {2171},		/* sys._columns.id */
+				   2078, "depend_type",		/* sys._columns.name */
+				   2079, "smallint",		/* sys._columns.type */
+				   2080, &(int) {15},		/* sys._columns.type_digits */
+				   2081, &(int) {0},		/* sys._columns.type_scale */
+				   2082, &(int) {2168},		/* sys._columns.table_id */
+				   2083, str_nil,			/* sys._columns.default */
+				   2084, &(bit) {TRUE},		/* sys._columns.null */
+				   2085, &(int) {2},		/* sys._columns.number */
+				   2086, str_nil,			/* sys._columns.storage */
+				   0) != GDK_SUCCEED)
+			return GDK_FAIL;
+	}
+#endif
+
 	return GDK_SUCCEED;
 }
 

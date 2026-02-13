@@ -35,11 +35,11 @@ list_find_func_id(list *ids, sqlid id)
 
 /*Function to create a dependency*/
 int
-sql_trans_create_dependency(sql_trans* tr, sqlid id, sqlid depend_id, sql_dependency depend_type)
+sql_trans_create_dependency(sql_trans* tr, sqlid id, sqlid depend_id, sql_dependency depend_type, temp_t temp)
 {
 	assert(id && depend_id);
 	sqlstore *store = tr->store;
-	sql_schema * s = find_sql_schema(tr, "sys");
+	sql_schema * s = find_sql_schema(tr, temp == SQL_LOCAL_TEMP || temp == SQL_DECLARED_TABLE ? "tmp" : "sys");
 	sql_table *t = find_sql_table(tr, s, "dependencies");
 	sql_column *c_id = find_sql_column(t, "id");
 	sql_column *c_dep_id = find_sql_column(t, "depend_id");
@@ -54,12 +54,12 @@ sql_trans_create_dependency(sql_trans* tr, sqlid id, sqlid depend_id, sql_depend
 }
 
 /*Function to drop the dependencies on depend_id*/
-int
-sql_trans_drop_dependencies(sql_trans* tr, sqlid depend_id)
+static int
+sql_trans_drop_dependencies_intern(const char *sname, sql_trans* tr, sqlid depend_id)
 {
 	sqlstore *store = tr->store;
 	oid rid;
-	sql_schema * s = find_sql_schema(tr, "sys");
+	sql_schema * s = find_sql_schema(tr, sname);
 	sql_table* deps = find_sql_table(tr, s, "dependencies");
 	sql_column * dep_dep_id = find_sql_column(deps, "depend_id");
 	rids *rs;
@@ -74,13 +74,22 @@ sql_trans_drop_dependencies(sql_trans* tr, sqlid depend_id)
 	return log_res;
 }
 
-/*Function to drop the dependency between object and target, ie obj_id/depend_id*/
 int
-sql_trans_drop_dependency(sql_trans* tr, sqlid obj_id, sqlid depend_id, sql_dependency depend_type)
+sql_trans_drop_dependencies(sql_trans* tr, sqlid depend_id)
+{
+	int log_res = sql_trans_drop_dependencies_intern("sys", tr, depend_id);
+	if (log_res != LOG_OK)
+		return log_res;
+	return sql_trans_drop_dependencies_intern("tmp", tr, depend_id);
+}
+
+/*Function to drop the dependency between object and target, ie obj_id/depend_id*/
+static int
+sql_trans_drop_dependency_intern(const char *sname, sql_trans* tr, sqlid obj_id, sqlid depend_id, sql_dependency depend_type)
 {
 	sqlstore *store = tr->store;
 	oid rid;
-	sql_schema * s = find_sql_schema(tr, "sys");
+	sql_schema * s = find_sql_schema(tr, sname);
 	sql_table* deps = find_sql_table(tr, s, "dependencies");
 	sql_column *dep_obj_id = find_sql_column(deps, "id");
 	sql_column *dep_dep_id = find_sql_column(deps, "depend_id");
@@ -98,20 +107,29 @@ sql_trans_drop_dependency(sql_trans* tr, sqlid obj_id, sqlid depend_id, sql_depe
 	return log_res;
 }
 
+int
+sql_trans_drop_dependency(sql_trans* tr, sqlid obj_id, sqlid depend_id, sql_dependency depend_type)
+{
+	int log_res = sql_trans_drop_dependency_intern("sys", tr, obj_id, depend_id, depend_type);
+	if (log_res != LOG_OK)
+		return log_res;
+	return sql_trans_drop_dependency_intern("tmp", tr, obj_id, depend_id, depend_type);
+}
+
 /*It returns a list with depend_id_1, depend_type_1,
                          depend_id_2, depend_type_2, ....*/
-list*
-sql_trans_get_dependents(sql_trans* tr, sqlid id,
-						 sql_dependency dependent_type,
-						 list * ignore_ids)
+static list *
+sql_trans_get_dependents_intern(list *dep_list, const char *sname,
+								sql_trans* tr, sqlid id,
+								sql_dependency dependent_type,
+								list * ignore_ids)
 {
 	sqlstore *store = tr->store;
 	table_functions table_api = store->table_api;
 	sql_schema *s = find_sql_schema(tr, "sys");
-	sql_table *deps = find_sql_table(tr, s, "dependencies");
+	sql_table *deps = find_sql_table(tr, find_sql_schema(tr, sname), "dependencies");
 	sql_column *dep_id, *dep_dep_id, *dep_dep_type, *tri_id, *table_id;
-	list *dep_list = list_create((fdestroy)_free),
-		*schema_tables = NULL;
+	list *schema_tables = NULL;
 	void *v;
 	oid rid;
 	rids *rs;
@@ -258,9 +276,22 @@ sql_trans_get_dependents(sql_trans* tr, sqlid id,
 	return dep_list;
 }
 
+list *
+sql_trans_get_dependents(sql_trans* tr, sqlid id,
+						 sql_dependency dependent_type,
+						 list * ignore_ids)
+{
+	list *dep_list = list_create((fdestroy)_free);
+	dep_list = sql_trans_get_dependents_intern(dep_list, "sys", tr, id,
+											   dependent_type, ignore_ids);
+	dep_list = sql_trans_get_dependents_intern(dep_list, "tmp", tr, id,
+											   dependent_type, ignore_ids);
+	return dep_list;
+}
+
 /*It checks if there are dependency between two ID's */
-sqlid
-sql_trans_get_dependency_type(sql_trans *tr, sqlid id, sql_dependency depend_type)
+static sqlid
+sql_trans_get_dependency_type_intern(const char *sname, sql_trans *tr, sqlid id, sql_dependency depend_type)
 {
 	sqlstore *store = tr->store;
 	oid rid;
@@ -269,7 +300,7 @@ sql_trans_get_dependency_type(sql_trans *tr, sqlid id, sql_dependency depend_typ
 	sql_column *dep_id, *dep_dep_id, *dep_dep_type;
 	sht dtype = (sht) depend_type;
 
-	s = find_sql_schema(tr, "sys");
+	s = find_sql_schema(tr, sname);
 	dep = find_sql_table(tr, s, "dependencies");
 	dep_id = find_sql_column(dep, "id");
 	dep_dep_id = find_sql_column(dep, "depend_id");
@@ -281,6 +312,15 @@ sql_trans_get_dependency_type(sql_trans *tr, sqlid id, sql_dependency depend_typ
 	} else {
 		return -1;
 	}
+}
+
+sqlid
+sql_trans_get_dependency_type(sql_trans *tr, sqlid id, sql_dependency depend_type)
+{
+	sqlid res = sql_trans_get_dependency_type_intern("sys", tr, id, depend_type);
+	if (res > 0)
+		return res;
+	return sql_trans_get_dependency_type_intern("tmp", tr, id, depend_type);
 }
 
 /*It checks if there are dependency between two ID's */
@@ -303,7 +343,18 @@ sql_trans_check_dependency(sql_trans *tr, sqlid id, sqlid depend_id, sql_depende
 	rid = store->table_api.column_find_row(tr, dep_id, &id, dep_dep_id, &depend_id, dep_dep_type, &dtype, NULL);
 	if (!is_oid_nil(rid))
 		return 1;
-	else return 0;
+
+	s = find_sql_schema(tr, "tmp");
+	dep = find_sql_table(tr, s, "dependencies");
+	dep_id = find_sql_column(dep, "id");
+	dep_dep_id = find_sql_column(dep, "depend_id");
+	dep_dep_type = find_sql_column(dep, "depend_type");
+
+	rid = store->table_api.column_find_row(tr, dep_id, &id, dep_dep_id, &depend_id, dep_dep_type, &dtype, NULL);
+	if (!is_oid_nil(rid))
+		return 1;
+
+	return 0;
 }
 
 /*Schema on users*/

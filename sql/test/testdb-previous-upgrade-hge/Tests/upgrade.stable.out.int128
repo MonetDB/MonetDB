@@ -1,3 +1,5 @@
+Running database upgrade commands to update system tables.
+
 Running database upgrade commands:
 create type inet4 external name inet4;
 create type inet6 external name inet6;
