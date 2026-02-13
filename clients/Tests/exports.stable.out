@@ -1569,6 +1569,7 @@ str flt_num2dec_bte(Client ctx, bte *res, const flt *v, const int *d2, const int
 str flt_num2dec_int(Client ctx, int *res, const flt *v, const int *d2, const int *s2);
 str flt_num2dec_lng(Client ctx, lng *res, const flt *v, const int *d2, const int *s2);
 str flt_num2dec_sht(Client ctx, sht *res, const flt *v, const int *d2, const int *s2);
+void freeVariables(Client c, MalBlkPtr mb, MalStkPtr glb, int oldvtop);
 str getBackendContext(Client cntxt, backend **be);
 str getSQLContext(Client cntxt, MalBlkPtr mb, mvc **c, backend **b);
 str hge_dec2_bte(Client ctx, bte *res, const int *s1, const hge *v);
