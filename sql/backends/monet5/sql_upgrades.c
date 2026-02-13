@@ -220,7 +220,7 @@ check_sys_tables(Client c, mvc *m, sql_schema *s)
 	}
 	{
 		res_table *output = NULL;
-		err = SQLstatementIntern(c, "select * from sys.args where id between 2000 and 2171;\n", "update", true, false, &output);
+		err = SQLstatementIntern(c, "select a.id from sys.args a where a.id between 2000 and (select max(c.id) from sys._columns c where c.id < 3000);\n", "update", true, false, &output);
 		if (err)
 			return err;
 		BAT *b = BATdescriptor(output->cols[0].b);
