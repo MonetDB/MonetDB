@@ -6,31 +6,31 @@ query TI nosort
 SELECT type,COUNT(id) FROM cols_6624 GROUP BY type HAVING COUNT(id)>5 ORDER BY COUNT(id) DESC
 ----
 int
-20
+22
 varchar
 15
 smallint
-6
+7
 
 query TI nosort
 SELECT type,COUNT(id) FROM cols_6624 GROUP BY type HAVING COUNT(id)>5 ORDER BY 2 DESC
 ----
 int
-20
+22
 varchar
 15
 smallint
-6
+7
 
 query TI nosort
 SELECT type,COUNT(id) as cnt FROM cols_6624 GROUP BY type HAVING COUNT(id)>5 ORDER BY cnt DESC
 ----
 int
-20
+22
 varchar
 15
 smallint
-6
+7
 
 statement ok
 DROP TABLE cols_6624

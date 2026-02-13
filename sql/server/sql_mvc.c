@@ -47,7 +47,7 @@ sql_create_comments(mvc *m, sql_schema *s)
 	sql_trans_create_ukey(&k, m->session->tr, t, "comments_id_pkey", pkey, NULL);
 	sql_trans_create_kc(m->session->tr, k, c);
 	sql_trans_key_done(m->session->tr, k);
-	sql_trans_create_dependency(m->session->tr, c->base.id, k->idx->base.id, INDEX_DEPENDENCY);
+	sql_trans_create_dependency(m->session->tr, c->base.id, k->idx->base.id, INDEX_DEPENDENCY, SQL_PERSIST);
 	mvc_create_column_(&c, m, t, "remark", "varchar", 65000);
 	sql_trans_alter_null(m->session->tr, c, 0);
 }
@@ -74,7 +74,7 @@ mvc_init_create_view(mvc *m, sql_schema *s, const char *name, const char *query)
 			r = sql_processrelation(m, r, 0, 0, 0, 0);
 		if (r) {
 			list *blist = rel_dependencies(m, r);
-			if (mvc_create_dependencies(m, blist, t->base.id, VIEW_DEPENDENCY)) {
+			if (mvc_create_dependencies(m, blist, t->base.id, VIEW_DEPENDENCY, SQL_PERSIST)) {
 				ma_close(&ta_state);
 				(void) sql_error(m, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				return NULL;
@@ -1381,7 +1381,7 @@ mvc_drop_column(mvc *m, sql_table *t, sql_column *col, int drop_action)
 }
 
 int
-mvc_create_dependency(mvc *m, sql_base *b, sqlid depend_id, sql_dependency depend_type)
+mvc_create_dependency(mvc *m, sql_base *b, sqlid depend_id, sql_dependency depend_type, temp_t temp)
 {
 	int res = LOG_OK;
 
@@ -1390,13 +1390,13 @@ mvc_create_dependency(mvc *m, sql_base *b, sqlid depend_id, sql_dependency depen
 		if (!b->new)
 			res = sql_trans_add_dependency(m->session->tr, b->id, ddl);
 		if (res == LOG_OK)
-			res = sql_trans_create_dependency(m->session->tr, b->id, depend_id, depend_type);
+			res = sql_trans_create_dependency(m->session->tr, b->id, depend_id, depend_type, temp);
 	}
 	return res;
 }
 
 int
-mvc_create_dependencies(mvc *m, list *blist, sqlid depend_id, sql_dependency dep_type)
+mvc_create_dependencies(mvc *m, list *blist, sqlid depend_id, sql_dependency dep_type, temp_t temp)
 {
 	int res = LOG_OK;
 
@@ -1407,7 +1407,7 @@ mvc_create_dependencies(mvc *m, list *blist, sqlid depend_id, sql_dependency dep
 			if (!b->new) /* only add old objects to the transaction dependency list */
 				res = sql_trans_add_dependency(m->session->tr, b->id, ddl);
 			if (res == LOG_OK)
-				res = mvc_create_dependency(m, b, depend_id, dep_type);
+				res = mvc_create_dependency(m, b, depend_id, dep_type, temp);
 		}
 	}
 	return res;
