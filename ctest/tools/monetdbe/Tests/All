@@ -2,10 +2,10 @@ example1
 example2
 example_append
 example_append_raw
-example_backup
+NOT_WIN32?example_backup
 example_blob
 example_connections
-example_copy
+NOT_WIN32?example_copy
 example_decimals
 example_proxy
 example_sessions

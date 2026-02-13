@@ -143,6 +143,8 @@ if(NOT MONETDB_STATIC)
 
     if(WIN32)
       install(FILES
+        $<TARGET_PDB_FILE:demo_oob_read>
+        $<TARGET_PDB_FILE:demo_oob_write>
         $<TARGET_PDB_FILE:example1>
         $<TARGET_PDB_FILE:example2>
         $<TARGET_PDB_FILE:example_append>
