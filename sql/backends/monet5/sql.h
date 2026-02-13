@@ -52,222 +52,401 @@
 #include "bat/bat_storage.h"
 #include "bat/bat_utils.h"
 
-extern int sqlcleanup(backend *be, int err);
-extern sql_rel *sql_symbol2relation(backend *be, symbol *sym);
+extern int sqlcleanup(backend *be, int err)
+	__attribute__((__visibility__("hidden")));
+extern sql_rel *sql_symbol2relation(backend *be, symbol *sym)
+	__attribute__((__visibility__("hidden")));
 
-extern BAT *mvc_bind(mvc *m, const char *sname, const char *tname, const char *cname, int access);
-extern BAT *mvc_bind_idxbat(mvc *m, const char *sname, const char *tname, const char *iname, int access);
+extern BAT *mvc_bind(mvc *m, const char *sname, const char *tname, const char *cname, int access)
+	__attribute__((__visibility__("hidden")));
+extern BAT *mvc_bind_idxbat(mvc *m, const char *sname, const char *tname, const char *iname, int access)
+	__attribute__((__visibility__("hidden")));
 
-extern str SQLmvc(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+extern str SQLmvc(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
 
-extern str mvc_grow_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str mvc_claim_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str mvc_add_dependency_change(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str mvc_add_column_predicate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str mvc_append_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str mvc_append_column(sql_trans *t, sql_column *c, BUN offset, BAT *pos, BAT *ins);
+extern str mvc_grow_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
+extern str mvc_claim_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
+extern str mvc_add_dependency_change(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
+extern str mvc_add_column_predicate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
+extern str mvc_append_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
+extern str mvc_append_column(sql_trans *t, sql_column *c, BUN offset, BAT *pos, BAT *ins)
+	__attribute__((__visibility__("hidden")));
 
-extern str mvc_update_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str mvc_delta_values(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str mvc_clear_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str mvc_delete_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str SQLtid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str DELTAbat(Client ctx, bat *result, const bat *col, const bat *uid, const bat *uval);
-extern str DELTAsub(Client ctx, bat *result, const bat *col, const bat *cid, const bat *uid, const bat *uval);
-extern str DELTAproject(Client ctx, bat *result, const bat *select, const bat *col, const bat *uid, const bat *uval);
+extern str mvc_update_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
+extern str mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
+extern str mvc_delta_values(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
+extern str mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
+extern str mvc_clear_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
+extern str mvc_delete_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
+extern str SQLtid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
+extern str DELTAbat(Client ctx, bat *result, const bat *col, const bat *uid, const bat *uval)
+	__attribute__((__visibility__("hidden")));
+extern str DELTAsub(Client ctx, bat *result, const bat *col, const bat *cid, const bat *uid, const bat *uval)
+	__attribute__((__visibility__("hidden")));
+extern str DELTAproject(Client ctx, bat *result, const bat *select, const bat *col, const bat *uid, const bat *uval)
+	__attribute__((__visibility__("hidden")));
 
-extern str BATleftproject(Client ctx, bat *result, const bat *col, const bat *l, const bat *r);
+extern str BATleftproject(Client ctx, bat *result, const bat *col, const bat *l, const bat *r)
+	__attribute__((__visibility__("hidden")));
 
-extern str mvc_table_result_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+extern str mvc_table_result_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
 
-extern str mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+extern str mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
 
-extern str mvc_affected_rows_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str mvc_export_result_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str mvc_export_head_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str mvc_export_chunk_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str mvc_export_operation_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str mvc_scalar_value_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str mvc_row_result_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str wrap_onclient_compression(stream **s, str context, int nr, bool binary);
-extern str mvc_export_row_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str mvc_bin_import_column_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str mvc_bin_import_bytes_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str mvc_bin_import_nul_terminated_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str mvc_bin_export_column_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str setVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str getVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str sql_variables(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str mvc_logfile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str mvc_next_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str mvc_next_value_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str mvc_get_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str mvc_peak_next_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str mvc_getVersion(Client ctx, lng *r, const int *clientid);
-extern str mvc_restart_seq(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str not_unique(Client ctx, bit *ret, const bat *bid);
-extern str SQLdrop_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str SQLargRecord(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str SQLoptimizersUpdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str month_interval_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str second_interval_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str dump_cache(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str dump_opt_stats(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str dump_trace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str sql_rt_credentials_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str sql_querylog_catalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str sql_querylog_calls(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str sql_querylog_empty(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str sql_rowid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str sql_rank_grp(bat *rid, const bat *bid, const bat *gid, const bat *gpe);
-extern str sql_rank(bat *rid, const bat *bid);
-extern str sql_dense_rank_grp(bat *rid, const bat *bid, const bat *gid, const bat *gpe);
-extern str sql_dense_rank(bat *rid, const bat *bid);
-extern str SQLidentity(Client ctx, oid *rid, const void *i);
-extern str BATSQLidentity(Client ctx, bat *rid, const bat *bid);
-extern str PBATSQLidentity(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp, int replace);
+extern str mvc_affected_rows_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
+extern str mvc_export_result_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
+extern str mvc_export_head_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
+extern str mvc_export_chunk_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
+extern str mvc_export_operation_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
+extern str mvc_scalar_value_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
+extern str mvc_row_result_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
+extern str wrap_onclient_compression(stream **s, str context, int nr, bool binary)
+	__attribute__((__visibility__("hidden")));
+extern str mvc_export_row_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
+extern str mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
+extern str mvc_bin_import_column_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
+extern str mvc_bin_import_bytes_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
+extern str mvc_bin_import_nul_terminated_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
+extern str mvc_bin_export_column_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
+extern str setVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
+extern str getVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
+extern str sql_variables(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
+extern str mvc_logfile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
+extern str mvc_next_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
+extern str mvc_next_value_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
+extern str mvc_get_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
+extern str mvc_peak_next_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
+extern str mvc_getVersion(Client ctx, lng *r, const int *clientid)
+	__attribute__((__visibility__("hidden")));
+extern str mvc_restart_seq(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
+extern str not_unique(Client ctx, bit *ret, const bat *bid)
+	__attribute__((__visibility__("hidden")));
+extern str SQLdrop_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
+extern str SQLargRecord(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
+extern str SQLoptimizersUpdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
+extern str month_interval_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
+extern str second_interval_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
+extern str dump_cache(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
+extern str dump_opt_stats(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
+extern str dump_trace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
+extern str sql_rt_credentials_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
+extern str sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
+extern str sql_querylog_catalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
+extern str sql_querylog_calls(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
+extern str sql_querylog_empty(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
+extern str sql_rowid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
+extern str sql_rank_grp(bat *rid, const bat *bid, const bat *gid, const bat *gpe)
+	__attribute__((__visibility__("hidden")));
+extern str sql_rank(bat *rid, const bat *bid)
+	__attribute__((__visibility__("hidden")));
+extern str sql_dense_rank_grp(bat *rid, const bat *bid, const bat *gid, const bat *gpe)
+	__attribute__((__visibility__("hidden")));
+extern str sql_dense_rank(bat *rid, const bat *bid)
+	__attribute__((__visibility__("hidden")));
+extern str SQLidentity(Client ctx, oid *rid, const void *i)
+	__attribute__((__visibility__("hidden")));
+extern str BATSQLidentity(Client ctx, bat *rid, const bat *bid)
+	__attribute__((__visibility__("hidden")));
+extern str PBATSQLidentity(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
+extern str create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp, int replace)
+	__attribute__((__visibility__("hidden")));
 sql5_export str create_table_from_emit(Client cntxt, char *sname, char *tname, sql_emit_col *columns, size_t ncols);
 sql5_export str append_to_table_from_emit(Client cntxt, char *sname, char *tname, sql_emit_col *columns, size_t ncols);
 
-extern str bte_dec_round_wrap(Client ctx, bte *res, const bte *v, const bte *r);
-extern str bte_bat_dec_round_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str bte_bat_dec_round_wrap_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str bte_bat_dec_round_wrap_nocst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str bte_round_wrap(Client ctx, bte *res, const bte *v, const bte *r, const int *d, const int *s);
-extern str bte_bat_round_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str bte_bat_round_wrap_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str bte_bat_round_wrap_nocst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+extern str bte_dec_round_wrap(Client ctx, bte *res, const bte *v, const bte *r)
+	__attribute__((__visibility__("hidden")));
+extern str bte_bat_dec_round_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
+extern str bte_bat_dec_round_wrap_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
+extern str bte_bat_dec_round_wrap_nocst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
+extern str bte_round_wrap(Client ctx, bte *res, const bte *v, const bte *r, const int *d, const int *s)
+	__attribute__((__visibility__("hidden")));
+extern str bte_bat_round_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
+extern str bte_bat_round_wrap_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
+extern str bte_bat_round_wrap_nocst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
 
 
-extern str str_2dec_bte(Client ctx, bte *res, const str *val, const int *d, const int *sc);
-extern str batstr_2dec_bte(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str bte_dec2second_interval(Client ctx, lng *res, const int *sc, const bte *dec, const int *ek, const int *sk);
-extern str bte_batdec2second_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+extern str str_2dec_bte(Client ctx, bte *res, const str *val, const int *d, const int *sc)
+	__attribute__((__visibility__("hidden")));
+extern str batstr_2dec_bte(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
+extern str bte_dec2second_interval(Client ctx, lng *res, const int *sc, const bte *dec, const int *ek, const int *sk)
+	__attribute__((__visibility__("hidden")));
+extern str bte_batdec2second_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
 
-extern str nil_2dec_bte(Client ctx, bte *res, const void *val, const int *d, const int *sc);
-extern str batnil_2dec_bte(Client ctx, bat *res, const bat *val, const int *d, const int *sc);
+extern str nil_2dec_bte(Client ctx, bte *res, const void *val, const int *d, const int *sc)
+	__attribute__((__visibility__("hidden")));
+extern str batnil_2dec_bte(Client ctx, bat *res, const bat *val, const int *d, const int *sc)
+	__attribute__((__visibility__("hidden")));
 
-extern str sht_dec_round_wrap(Client ctx, sht *res, const sht *v, const sht *r);
-extern str sht_bat_dec_round_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str sht_bat_dec_round_wrap_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str sht_bat_dec_round_wrap_nocst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str sht_round_wrap(Client ctx, sht *res, const sht *v, const bte *r, const int *d, const int *s);
-extern str sht_bat_round_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str sht_bat_round_wrap_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str sht_bat_round_wrap_nocst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str str_2dec_sht(Client ctx, sht *res, const str *val, const int *d, const int *sc);
-extern str batstr_2dec_sht(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str sht_dec2second_interval(Client ctx, lng *res, const int *sc, const sht *dec, const int *ek, const int *sk);
-extern str sht_batdec2second_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+extern str sht_dec_round_wrap(Client ctx, sht *res, const sht *v, const sht *r)
+	__attribute__((__visibility__("hidden")));
+extern str sht_bat_dec_round_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
+extern str sht_bat_dec_round_wrap_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
+extern str sht_bat_dec_round_wrap_nocst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
+extern str sht_round_wrap(Client ctx, sht *res, const sht *v, const bte *r, const int *d, const int *s)
+	__attribute__((__visibility__("hidden")));
+extern str sht_bat_round_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
+extern str sht_bat_round_wrap_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
+extern str sht_bat_round_wrap_nocst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
+extern str str_2dec_sht(Client ctx, sht *res, const str *val, const int *d, const int *sc)
+	__attribute__((__visibility__("hidden")));
+extern str batstr_2dec_sht(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
+extern str sht_dec2second_interval(Client ctx, lng *res, const int *sc, const sht *dec, const int *ek, const int *sk)
+	__attribute__((__visibility__("hidden")));
+extern str sht_batdec2second_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
 
-extern str nil_2dec_sht(Client ctx, sht *res, const void *val, const int *d, const int *sc);
-extern str batnil_2dec_sht(Client ctx, bat *res, const bat *val, const int *d, const int *sc);
+extern str nil_2dec_sht(Client ctx, sht *res, const void *val, const int *d, const int *sc)
+	__attribute__((__visibility__("hidden")));
+extern str batnil_2dec_sht(Client ctx, bat *res, const bat *val, const int *d, const int *sc)
+	__attribute__((__visibility__("hidden")));
 
-extern str int_dec_round_wrap(Client ctx, int *res, const int *v, const int *r);
-extern str int_bat_dec_round_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str int_bat_dec_round_wrap_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str int_bat_dec_round_wrap_nocst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str int_round_wrap(Client ctx, int *res, const int *v, const bte *r, const int *d, const int *s);
-extern str int_bat_round_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str int_bat_round_wrap_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str int_bat_round_wrap_nocst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str str_2dec_int(Client ctx, int *res, const str *val, const int *d, const int *sc);
-extern str batstr_2dec_int(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str int_dec2second_interval(Client ctx, lng *res, const int *sc, const int *dec, const int *ek, const int *sk);
-extern str int_batdec2second_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+extern str int_dec_round_wrap(Client ctx, int *res, const int *v, const int *r)
+	__attribute__((__visibility__("hidden")));
+extern str int_bat_dec_round_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
+extern str int_bat_dec_round_wrap_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
+extern str int_bat_dec_round_wrap_nocst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
+extern str int_round_wrap(Client ctx, int *res, const int *v, const bte *r, const int *d, const int *s)
+	__attribute__((__visibility__("hidden")));
+extern str int_bat_round_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
+extern str int_bat_round_wrap_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
+extern str int_bat_round_wrap_nocst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
+extern str str_2dec_int(Client ctx, int *res, const str *val, const int *d, const int *sc)
+	__attribute__((__visibility__("hidden")));
+extern str batstr_2dec_int(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
+extern str int_dec2second_interval(Client ctx, lng *res, const int *sc, const int *dec, const int *ek, const int *sk)
+	__attribute__((__visibility__("hidden")));
+extern str int_batdec2second_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
 
-extern str nil_2dec_int(Client ctx, int *res, const void *val, const int *d, const int *sc);
-extern str batnil_2dec_int(Client ctx, bat *res, const bat *val, const int *d, const int *sc);
+extern str nil_2dec_int(Client ctx, int *res, const void *val, const int *d, const int *sc)
+	__attribute__((__visibility__("hidden")));
+extern str batnil_2dec_int(Client ctx, bat *res, const bat *val, const int *d, const int *sc)
+	__attribute__((__visibility__("hidden")));
 
-extern str lng_dec_round_wrap(Client ctx, lng *res, const lng *v, const lng *r);
-extern str lng_bat_dec_round_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str lng_bat_dec_round_wrap_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str lng_bat_dec_round_wrap_nocst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str lng_round_wrap(Client ctx, lng *res, const lng *v, const bte *r, const int *d, const int *s);
-extern str lng_bat_round_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str lng_bat_round_wrap_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str lng_bat_round_wrap_nocst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str str_2dec_lng(Client ctx, lng *res, const str *val, const int *d, const int *sc);
-extern str batstr_2dec_lng(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str lng_dec2second_interval(Client ctx, lng *res, const int *sc, const lng *dec, const int *ek, const int *sk);
-extern str lng_batdec2second_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+extern str lng_dec_round_wrap(Client ctx, lng *res, const lng *v, const lng *r)
+	__attribute__((__visibility__("hidden")));
+extern str lng_bat_dec_round_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
+extern str lng_bat_dec_round_wrap_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
+extern str lng_bat_dec_round_wrap_nocst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
+extern str lng_round_wrap(Client ctx, lng *res, const lng *v, const bte *r, const int *d, const int *s)
+	__attribute__((__visibility__("hidden")));
+extern str lng_bat_round_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
+extern str lng_bat_round_wrap_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
+extern str lng_bat_round_wrap_nocst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
+extern str str_2dec_lng(Client ctx, lng *res, const str *val, const int *d, const int *sc)
+	__attribute__((__visibility__("hidden")));
+extern str batstr_2dec_lng(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
+extern str lng_dec2second_interval(Client ctx, lng *res, const int *sc, const lng *dec, const int *ek, const int *sk)
+	__attribute__((__visibility__("hidden")));
+extern str lng_batdec2second_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
 
-extern str nil_2dec_lng(Client ctx, lng *res, const void *val, const int *d, const int *sc);
-extern str batnil_2dec_lng(Client ctx, bat *res, const bat *val, const int *d, const int *sc);
+extern str nil_2dec_lng(Client ctx, lng *res, const void *val, const int *d, const int *sc)
+	__attribute__((__visibility__("hidden")));
+extern str batnil_2dec_lng(Client ctx, bat *res, const bat *val, const int *d, const int *sc)
+	__attribute__((__visibility__("hidden")));
 
 #ifdef HAVE_HGE
-extern str hge_dec_round_wrap(Client ctx, hge *res, const hge *v, const hge *r);
-extern str hge_bat_dec_round_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str hge_bat_dec_round_wrap_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str hge_bat_dec_round_wrap_nocst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str hge_round_wrap(Client ctx, hge *res, const hge *v, const bte *r, const int *d, const int *s);
-extern str hge_bat_round_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str hge_bat_round_wrap_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str hge_bat_round_wrap_nocst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str str_2dec_hge(Client ctx, hge *res, const str *val, const int *d, const int *sc);
-extern str batstr_2dec_hge(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str hge_dec2second_interval(Client ctx, lng *res, const int *sc, const hge *dec, const int *ek, const int *sk);
-extern str hge_batdec2second_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+extern str hge_dec_round_wrap(Client ctx, hge *res, const hge *v, const hge *r)
+	__attribute__((__visibility__("hidden")));
+extern str hge_bat_dec_round_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
+extern str hge_bat_dec_round_wrap_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
+extern str hge_bat_dec_round_wrap_nocst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
+extern str hge_round_wrap(Client ctx, hge *res, const hge *v, const bte *r, const int *d, const int *s)
+	__attribute__((__visibility__("hidden")));
+extern str hge_bat_round_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
+extern str hge_bat_round_wrap_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
+extern str hge_bat_round_wrap_nocst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
+extern str str_2dec_hge(Client ctx, hge *res, const str *val, const int *d, const int *sc)
+	__attribute__((__visibility__("hidden")));
+extern str batstr_2dec_hge(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
+extern str hge_dec2second_interval(Client ctx, lng *res, const int *sc, const hge *dec, const int *ek, const int *sk)
+	__attribute__((__visibility__("hidden")));
+extern str hge_batdec2second_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
 
-extern str nil_2dec_hge(Client ctx, hge *res, const void *val, const int *d, const int *sc);
-extern str batnil_2dec_hge(Client ctx, bat *res, const bat *val, const int *d, const int *sc);
+extern str nil_2dec_hge(Client ctx, hge *res, const void *val, const int *d, const int *sc)
+	__attribute__((__visibility__("hidden")));
+extern str batnil_2dec_hge(Client ctx, bat *res, const bat *val, const int *d, const int *sc)
+	__attribute__((__visibility__("hidden")));
 #endif
 
-extern str nil_2time_timestamp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str str_2time_timestamp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str str_2time_timestamptz(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+extern str nil_2time_timestamp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
+extern str str_2time_timestamp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
+extern str str_2time_timestamptz(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
 sql5_export str batstr_2time_timestamp(Client ctx, bat *res, const bat *v, const bat *s, const int *len);
-extern str batstr_2time_timestamptz(Client ctx, bat *res, const bat *v, const bat *s, const int *len, const lng *tz);
-extern str timestamp_2time_timestamp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+extern str batstr_2time_timestamptz(Client ctx, bat *res, const bat *v, const bat *s, const int *len, const lng *tz)
+	__attribute__((__visibility__("hidden")));
+extern str timestamp_2time_timestamp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
 
-extern str nil_2time_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str str_2time_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str str_2time_daytimetz(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+extern str nil_2time_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
+extern str str_2time_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
+extern str str_2time_daytimetz(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
 sql5_export str batstr_2time_daytime(Client ctx, bat *res, const bat *v, const bat *s, const int *len);
-extern str daytime_2time_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+extern str daytime_2time_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
 
-extern str bat_date_trunc(Client ctx, bat *res, const str *scale, const bat *v);
-extern str date_trunc(Client ctx, timestamp *res, const str *scale, const timestamp *v);
+extern str bat_date_trunc(Client ctx, bat *res, const str *scale, const bat *v)
+	__attribute__((__visibility__("hidden")));
+extern str date_trunc(Client ctx, timestamp *res, const str *scale, const timestamp *v)
+	__attribute__((__visibility__("hidden")));
 
-extern str nil_2_date(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+extern str nil_2_date(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
 
-extern str SQLstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+extern str SQLstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
+extern str SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
 
-extern str flt_dec_round_wrap(Client ctx, flt *res, const flt *v, const flt *r);
-extern str flt_bat_dec_round_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str flt_bat_dec_round_wrap_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str flt_bat_dec_round_wrap_nocst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str flt_round_wrap(Client ctx, flt *res, const flt *v, const bte *r);
-extern str flt_bat_round_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str flt_bat_round_wrap_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str flt_bat_round_wrap_nocst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str flt_trunc_wrap(Client ctx, flt *res, const flt *v, const int *r);
+extern str flt_dec_round_wrap(Client ctx, flt *res, const flt *v, const flt *r)
+	__attribute__((__visibility__("hidden")));
+extern str flt_bat_dec_round_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
+extern str flt_bat_dec_round_wrap_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
+extern str flt_bat_dec_round_wrap_nocst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
+extern str flt_round_wrap(Client ctx, flt *res, const flt *v, const bte *r)
+	__attribute__((__visibility__("hidden")));
+extern str flt_bat_round_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
+extern str flt_bat_round_wrap_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
+extern str flt_bat_round_wrap_nocst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
+extern str flt_trunc_wrap(Client ctx, flt *res, const flt *v, const int *r)
+	__attribute__((__visibility__("hidden")));
 
-extern str dbl_dec_round_wrap(Client ctx, dbl *res, const dbl *v, const dbl *r);
-extern str dbl_bat_dec_round_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str dbl_bat_dec_round_wrap_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str dbl_bat_dec_round_wrap_nocst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str dbl_round_wrap(Client ctx, dbl *res, const dbl *v, const bte *r);
-extern str dbl_bat_round_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str dbl_bat_round_wrap_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str dbl_bat_round_wrap_nocst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str dbl_trunc_wrap(Client ctx, dbl *res, const dbl *v, const int *r);
+extern str dbl_dec_round_wrap(Client ctx, dbl *res, const dbl *v, const dbl *r)
+	__attribute__((__visibility__("hidden")));
+extern str dbl_bat_dec_round_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
+extern str dbl_bat_dec_round_wrap_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
+extern str dbl_bat_dec_round_wrap_nocst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
+extern str dbl_round_wrap(Client ctx, dbl *res, const dbl *v, const bte *r)
+	__attribute__((__visibility__("hidden")));
+extern str dbl_bat_round_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
+extern str dbl_bat_round_wrap_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
+extern str dbl_bat_round_wrap_nocst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
+extern str dbl_trunc_wrap(Client ctx, dbl *res, const dbl *v, const int *r)
+	__attribute__((__visibility__("hidden")));
 
 #define radians(x)	((x) * (3.14159265358979323846 / 180.0))
 #define degrees(x)	((x) * (180.0 / 3.14159265358979323846))
 
-extern str SQLcst_alpha_cst(Client ctx, dbl *res, const dbl *decl, const dbl *theta);
-extern str SQLbat_alpha_cst(Client ctx, bat *res, const bat *decl, const dbl *theta);
-extern str SQLcst_alpha_bat(Client ctx, bat *res, const dbl *decl, const bat *theta);
-extern str month_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str second_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str second_interval_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+extern str SQLcst_alpha_cst(Client ctx, dbl *res, const dbl *decl, const dbl *theta)
+	__attribute__((__visibility__("hidden")));
+extern str SQLbat_alpha_cst(Client ctx, bat *res, const bat *decl, const dbl *theta)
+	__attribute__((__visibility__("hidden")));
+extern str SQLcst_alpha_bat(Client ctx, bat *res, const dbl *decl, const bat *theta)
+	__attribute__((__visibility__("hidden")));
+extern str month_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
+extern str second_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
+extern str second_interval_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
 
 #include "sql_cast.h"
 
@@ -275,22 +454,35 @@ sql5_export str checkSQLContext(Client cntxt);
 sql5_export str getSQLContext(Client cntxt, MalBlkPtr mb, mvc **c, backend **b);
 
 sql5_export void freeVariables(Client c, MalBlkPtr mb, MalStkPtr glb, int oldvtop);
-extern str second_interval_2_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str timestamp_2_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str date_2_timestamp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str SQLcurrent_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str SQLcurrent_timestamp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+extern str second_interval_2_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
+extern str timestamp_2_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
+extern str date_2_timestamp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
+extern str SQLcurrent_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
+extern str SQLcurrent_timestamp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
 
-extern str SQLflush_log(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str SQLsuspend_log_flushing(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str SQLresume_log_flushing(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str SQLhot_snapshot(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str SQLpersist_unlogged(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+extern str SQLflush_log(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
+extern str SQLsuspend_log_flushing(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
+extern str SQLresume_log_flushing(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
+extern str SQLhot_snapshot(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
+extern str SQLpersist_unlogged(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
 
-extern str SQLsession_prepared_statements(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str SQLsession_prepared_statements_args(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+extern str SQLsession_prepared_statements(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
+extern str SQLsession_prepared_statements_args(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
 
-extern str SQLunionfunc(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+extern str SQLunionfunc(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
 
 sql5_export str getBackendContext(Client cntxt, backend **be);
 
