@@ -258,10 +258,10 @@ output_line(allocator *ma, char **buf, size_t *len, char **localbuf, size_t *loc
 						return -1;	/* *buf freed by caller */
 					*len = fill + l + f->seplen + BUFSIZ;
 				}
-				strncpy(*buf + fill, p, l);
+				strtcpy(*buf + fill, p, l + 1);
 				fill += l;
 			}
-			strncpy(*buf + fill, f->sep, f->seplen);
+			strtcpy(*buf + fill, f->sep, f->seplen + 1);
 			fill += f->seplen;
 		}
 	}
@@ -589,11 +589,11 @@ output_line_dense(allocator *ma, char **buf, size_t *len, char **localbuf, size_
 					return -1;	/* *buf freed by caller */
 				*len = fill + l + f->seplen + BUFSIZ;
 			}
-			strncpy(*buf + fill, p, l);
+			strtcpy(*buf + fill, p, l + 1);
 			fill += l;
 			f->p++;
 		}
-		strncpy(*buf + fill, f->sep, f->seplen);
+		strtcpy(*buf + fill, f->sep, f->seplen + 1);
 		fill += f->seplen;
 	}
 	if (fd && mnstr_write(fd, *buf, 1, fill) != fill)

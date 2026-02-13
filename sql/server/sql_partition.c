@@ -308,7 +308,7 @@ bootstrap_partition_expression(mvc *sql, sql_table *mt, int instantiate)
 		nr = sql_processrelation(sql, nr, 0, instantiate, 0, 0);
 		if (nr) {
 			list *blist = rel_dependencies(sql, nr);
-			if (mvc_create_dependencies(sql, blist, mt->base.id, FUNC_DEPENDENCY))
+			if (mvc_create_dependencies(sql, blist, mt->base.id, FUNC_DEPENDENCY, SQL_PERSIST))
 				msg = createException(SQL, "sql.partition", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		r->l = base;

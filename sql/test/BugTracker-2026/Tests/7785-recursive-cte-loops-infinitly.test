@@ -1,0 +1,85 @@
+statement ok
+CREATE TABLE t (
+    label VARCHAR(10),
+    step INTEGER,
+    value DOUBLE NOT NULL DEFAULT 0.0
+)
+
+statement ok
+INSERT INTO t VALUES ('a', 1, 1.1)
+
+statement ok
+INSERT INTO t VALUES ('a', 1, 1.1)
+
+statement ok
+INSERT INTO t VALUES ('b', 1, 2.2)
+
+query TIR nosort
+SELECT * FROM t
+----
+a
+1
+1.100
+a
+1
+1.100
+b
+1
+2.200
+
+-- next query with UNION does NOT stop
+query I nosort
+WITH RECURSIVE cte(label, step) AS (
+    SELECT DISTINCT label, step
+    FROM t
+    UNION
+    SELECT label, step + 1
+    FROM cte
+    WHERE step < 3
+)
+SELECT COUNT(*) < 9 FROM cte
+----
+1
+
+-- next query with UNION ALL does NOT stop
+query I nosort
+WITH RECURSIVE cte(label, step) AS (
+    SELECT DISTINCT label, step
+    FROM t
+    UNION ALL
+    SELECT label, step + 1
+    FROM cte
+    WHERE step < 3
+)
+SELECT COUNT(*) < 9 FROM cte
+----
+1
+
+-- next query with UNION ALL does NOT stop
+query TI nosort
+WITH RECURSIVE cte(label, step) AS (
+    SELECT DISTINCT label, step
+    FROM t
+    UNION ALL
+    SELECT label, step + 1
+    FROM cte
+    WHERE step < 3
+)
+SELECT * FROM cte
+----
+a
+1
+b
+1
+a
+2
+b
+2
+a
+3
+b
+3
+
+statement ok
+DROP TABLE t
+

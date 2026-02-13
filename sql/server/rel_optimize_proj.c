@@ -3348,7 +3348,7 @@ rel_merge_unions(visitor *v, sql_rel *rel)
 		for(node *n = l->h; n; ) {
 			node *next = n->next;
 			sql_rel *c = n->data;
-			if (is_munion(c->op) && (need_distinct(rel) || !need_distinct(c))) {
+			if (!rel_is_ref(c) && is_munion(c->op) && (need_distinct(rel) || !need_distinct(c))) {
 				c = rel_dup(c);
 				list_remove_node(l, NULL, n);
 				l = list_join(l, c->l);

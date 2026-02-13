@@ -330,6 +330,8 @@ rel_bind_column( mvc *sql, sql_rel *rel, const char *cname, int f, int no_tname)
 					e = exps_refers(e, rel->r);
 					if (ambiguous || multi)
 						return sql_error(sql, ERR_AMBIGUOUS, SQLSTATE(42000) "SELECT: identifier '%s' ambiguous", cname);
+					if (e)
+						return exp_ref(sql, e);
 					return e;
 				}
 			}
@@ -417,7 +419,7 @@ rel_bind_column2( mvc *sql, sql_rel *rel, sql_alias *tname, const char *cname, i
 						return sql_error(sql, ERR_AMBIGUOUS, SQLSTATE(42000) "SELECT: identifier '%s%s%s' ambiguous",
 										 tname ? tname->name : "", tname ? "." : "", cname);
 					if (e)
-						return e;
+						return exp_ref(sql, e);
 				}
 			}
 		}

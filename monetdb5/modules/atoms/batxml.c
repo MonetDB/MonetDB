@@ -1353,7 +1353,7 @@ BATxmlaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 				if (bunfastapp_nocheckVAR(bn, buf) != GDK_SUCCEED)
 					goto bunins_failed;
 				nils += strNil(buf);
-				strncpy(buf, str_nil, maxlen);
+				strtcpy(buf, str_nil, maxlen);
 				buflen = 0;
 				if (p == q)
 					break;
@@ -1366,7 +1366,7 @@ BATxmlaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 			if (strNil(v)) {
 				if (skip_nils)
 					continue;
-				strncpy(buf, str_nil, buflen);
+				strtcpy(buf, str_nil, maxlen);
 				isnil = 1;
 			} else {
 				len = strlen(v);
@@ -1380,7 +1380,7 @@ BATxmlaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 					buf = tmp;
 				}
 				if (buflen == 0) {
-					strncpy(buf, v, maxlen);
+					strtcpy(buf, v, maxlen);
 					buflen += len;
 				} else if (buf[0] != v[0]) {
 					err = "incompatible values in group";
@@ -1405,7 +1405,7 @@ BATxmlaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 			if (strNil(v)) {
 				if (skip_nils)
 					continue;
-				strncpy(buf, str_nil, buflen);
+				strtcpy(buf, str_nil, maxlen);
 				nils++;
 				break;
 			}
@@ -1420,7 +1420,7 @@ BATxmlaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 				buf = tmp;
 			}
 			if (buflen == 0) {
-				strncpy(buf, v, maxlen);
+				strtcpy(buf, v, maxlen);
 				buflen += len;
 			} else if (buf[0] != v[0]) {
 				err = "incompatible values in group";

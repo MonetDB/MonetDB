@@ -652,14 +652,14 @@ mal2str(MalBlkPtr mb, int first, int last)
 	}
 
 	totlen = 0;
+	char *p = ps;
 	for (i = first; i < last; i++) {
 		if (txt[i]) {
-			strncpy(ps + totlen, txt[i], len[i]);
-			ps[totlen + len[i]] = '\n';
-			ps[totlen + len[i] + 1] = 0;
-			totlen += len[i] + 1;
+			p = stpcpy(p, txt[i]);
+			*p++ = '\n';
 		}
 	}
+	*p = 0;
 	return ps;
 }
 

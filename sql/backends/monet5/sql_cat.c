@@ -599,7 +599,7 @@ create_trigger(mvc *sql, char *sname, char *tname, char *triggername, int time, 
 				r = sql_processrelation(sql, r, 0, 0, 0, 0);
 			if (r) {
 				list *blist = rel_dependencies(sql, r);
-				if (mvc_create_dependencies(sql, blist, tri->base.id, TRIGGER_DEPENDENCY)) {
+				if (mvc_create_dependencies(sql, blist, tri->base.id, TRIGGER_DEPENDENCY, SQL_PERSIST)) {
 					ma_destroy(sql->sa);
 					sql->sa = sa;
 					throw(SQL, "sql.create_trigger", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -1101,7 +1101,7 @@ create_func(mvc *sql, char *sname, char *fname, sql_func *f, int replace)
 				for (n = f->ops->h; n; n = n->next) {
 					sql_arg *a = n->data;
 
-					if (a->type.type->s && mvc_create_dependency(sql, &a->type.type->base, nf->base.id, TYPE_DEPENDENCY)) {
+					if (a->type.type->s && mvc_create_dependency(sql, &a->type.type->base, nf->base.id, TYPE_DEPENDENCY, SQL_PERSIST)) {
 						ma_destroy(sql->sa);
 						sql->sa = sa;
 						throw(SQL, "sql.create_func", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -1112,14 +1112,14 @@ create_func(mvc *sql, char *sname, char *fname, sql_func *f, int replace)
 				for (n = f->res->h; n; n = n->next) {
 					sql_arg *a = n->data;
 
-					if (a->type.type->s && mvc_create_dependency(sql, &a->type.type->base, nf->base.id, TYPE_DEPENDENCY)) {
+					if (a->type.type->s && mvc_create_dependency(sql, &a->type.type->base, nf->base.id, TYPE_DEPENDENCY, SQL_PERSIST)) {
 						ma_destroy(sql->sa);
 						sql->sa = sa;
 						throw(SQL, "sql.create_func", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					}
 				}
 			}
-			if (mvc_create_dependencies(sql, blist, nf->base.id, !IS_PROC(f) ? FUNC_DEPENDENCY : PROC_DEPENDENCY)) {
+			if (mvc_create_dependencies(sql, blist, nf->base.id, !IS_PROC(f) ? FUNC_DEPENDENCY : PROC_DEPENDENCY, SQL_PERSIST)) {
 				ma_destroy(sql->sa);
 				sql->sa = sa;
 				throw(SQL, "sql.create_func", SQLSTATE(HY013) MAL_MALLOC_FAIL);

@@ -47,4 +47,4 @@ target_sources(test_detect_pthreadkill
 target_link_libraries(test_detect_pthreadkill
   PRIVATE
   monetdb_config_header)
-add_test(testDetectPthreadkill test_detect_pthreadkill)
+add_test(NAME testDetectPthreadkill COMMAND test_detect_pthreadkill)

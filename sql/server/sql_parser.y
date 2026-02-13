@@ -6295,6 +6295,22 @@ literal:
 				YYABORT;
 			}
 		}
+	|	GEOMETRY string
+		{
+			sql_subtype t;
+			atom *a = NULL;
+			int r;
+
+			if (!(r = sql_find_subtype(&t, "geometry", 0, 0))) {
+				sqlformaterror(m, SQLSTATE(22000) "Type (geometry) unknown");
+				YYABORT;
+			}
+			if (!(a = atom_general(SA, &t, $2, m->timezone))) {
+				sqlformaterror(m, SQLSTATE(22000) "Incorrect geometry (%s)", $2);
+				YYABORT;
+			}
+			$$ = _newAtomNode(a);
+		}
 	|	aTYPE string
 		{
 			sql_subtype t;
