@@ -1,3 +1,5 @@
+Running database upgrade commands to update system tables.
+
 Running database upgrade commands:
 DROP VIEW sys.describe_accessible_tables CASCADE;
 DROP VIEW sys.roles CASCADE;

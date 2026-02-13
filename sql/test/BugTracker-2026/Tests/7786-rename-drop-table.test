@@ -1,0 +1,20 @@
+statement ok
+CREATE TABLE test_table (id INT PRIMARY KEY, name VARCHAR(100))
+
+statement ok rowcount 1
+INSERT INTO test_table (id, name) VALUES (1, 'Test Name')
+
+statement ok
+ALTER TABLE test_table RENAME TO renamed_table
+
+query IT
+SELECT * FROM renamed_table
+-----
+1
+Test Name
+
+statement ok rowcount 1
+UPDATE renamed_table SET name = 'Updated Name' WHERE id = 1
+
+statement ok
+Drop table renamed_table

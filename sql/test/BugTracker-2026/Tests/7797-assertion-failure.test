@@ -1,0 +1,11 @@
+statement ok
+CREATE TABLE v0 ( v1 BOOLEAN NOT NULL , v2 INT DEFAULT 0 )
+
+-- sql/backends/monet5/rel_bin.c:4874: rel2bin_project: Assertion `sql->session->status == -10' failed.
+query ITI nosort
+SELECT v1 , 'x' , ( SELECT v1 ORDER BY v1 DESC LIMIT 83 ) FROM v0
+----
+
+statement ok
+DROP TABLE v0
+

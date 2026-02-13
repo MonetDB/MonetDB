@@ -282,6 +282,7 @@ typedef enum operator_type {
 #define reset_single(rel) 	(rel)->single = 0
 #define set_recursive(rel) 	(rel)->recursive = 1
 #define is_recursive(rel) 	((rel)->recursive)
+#define is_dynamic(rel) 	((rel)->dynamic)
 
 #define is_freevar(e) 		((e)->freevar)
 #define set_freevar(e,level) 	(e)->freevar = level+1
@@ -313,6 +314,7 @@ typedef struct relation {
 	 outer:1,	/* used as outer (ungrouped) */
 	 grouped:1,	/* groupby processed all the group by exps */
 	 single:1,
+	 dynamic:1,		/* dynamic content (ie the double used base side of the recursive union) */
 	 recursive:1,	/* recursive unions */
 	 parallel:1,	/* suitable for parallel pipeline? */
 	 partition:2,	/* partition input relation?

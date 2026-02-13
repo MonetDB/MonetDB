@@ -44,4 +44,4 @@ add_executable(test_detect_unixgetaddrinfo)
 target_sources(test_detect_unixgetaddrinfo
   PRIVATE
   ${CMAKE_CURRENT_BINARY_DIR}/test_detect_unixgetaddrinfo.c)
-add_test(testDetectUnixgetaddrinfo test_detect_unixgetaddrinfo)
+add_test(NAME testDetectUnixgetaddrinfo COMMAND test_detect_unixgetaddrinfo)

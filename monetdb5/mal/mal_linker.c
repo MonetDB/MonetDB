@@ -415,11 +415,10 @@ locate_file(allocator *ma, const char *basename, const char *ext)
 		}
 		if (i + filelen + 2 > PATH_MAX)
 			return NULL;
-		/* we are now sure the directory name, file
-		   base name, extension, and separator fit
-		   into fullname, so we don't need to do any
-		   extra checks */
-		strncpy(fullname, mod_path, i);
+		/* we are now sure the directory name, file base name,
+		 * extension, and separator fit into fullname, so we don't need
+		 * to do any extra checks */
+		strtcpy(fullname, mod_path, i + 1);
 		fullname[i] = DIR_SEP;
 		strcpy(stpcpy(fullname + i + 1, basename), ext);
 		if ((fd = MT_open(fullname, O_RDONLY | O_CLOEXEC)) >= 0) {

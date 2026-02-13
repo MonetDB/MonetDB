@@ -1,0 +1,15 @@
+statement ok
+CREATE TABLE v0 ( v1 TEXT PRIMARY KEY )
+
+query T nosort
+SELECT DISTINCT v1 FROM v0 WHERE - 'x' >= v1 IS NOT NULL = ( 8 * CASE v1 IN ( SELECT v1 + -1 + 83 + v1 ISNULL WHERE v1 OR v1 ) WHEN 'x' THEN -2147483648 ELSE -32768 END AND v1 < 'x' )
+----
+
+-- sql/backends/monet5/rel_bin.c:3202: rel2bin_groupjoin: Assertion `sql->session->status == -10' failed.
+statement ok
+UPDATE v0 x SET v1 = 96
+ WHERE ( v1 OR NOT v1 ) BETWEEN -1 > v1 AND ( SELECT DISTINCT v1 WHERE - 'x' >= v1 IS NOT NULL = ( 8 * CASE v1 IN ( SELECT v1 + -1 + 83 + v1 ISNULL WHERE v1 OR v1 ) WHEN 'x' THEN -2147483648 ELSE -32768 END AND v1 < 'x' ) )
+
+statement ok
+DROP TABLE v0
+

@@ -279,9 +279,7 @@ wrapup:
 		if (maxsize > 0) {												\
 			if (maxsize >= sizeof(buf))									\
 				maxsize = sizeof(buf) - 1;								\
-			strncpy(buf, ptr, maxsize);									\
-			buf[maxsize] = 0;											\
-			if (strlen(buf) >= sizeof(buf) - 1)							\
+			if (strtcpy(buf, ptr, maxsize + 1) == -1)					\
 				return GDKstrdup("string too long to convert.");		\
 			ptr = buf;													\
 		}																\

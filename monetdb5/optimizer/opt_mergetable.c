@@ -1013,7 +1013,7 @@ join_split(allocator *ma, Client ctx, InstrPtr p, int args)
 	name = ma_alloc(ma, len + 3);
 	if (!name)
 		return -2;
-	strncpy(name, getFunctionId(p), len - 7);
+	strtcpy(name, getFunctionId(p), len - 7 + 1);
 	strcpy(name + len - 7, "join");
 
 	sym = findSymbol(ctx->usermodule, getModuleId(p), name);

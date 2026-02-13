@@ -1,0 +1,17 @@
+statement ok
+CREATE TABLE v0 ( v1 INTEGER , v2 REAL )
+
+statement ok
+INSERT INTO v0 VALUES ( 37096283.000000 , 91 ) , ( 16866961.000000 , NULL )
+
+query R nosort
+SELECT v2 FROM V0 ORDER BY v1 = v0 . v1 DESC , v2 LIMIT 13 OFFSET 76
+----
+
+-- sql/server/rel_rel.c:2418: exp_rel_visitor: Assertion `e' failed.
+statement ok
+UPDATE v0 SET v2 = ( SELECT v2 ORDER BY v1 = v0 . v1 DESC , v2 LIMIT 13 OFFSET 76 )
+
+statement ok
+DROP TABLE v0
+

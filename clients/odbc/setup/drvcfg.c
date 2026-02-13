@@ -23,7 +23,6 @@
 #include "monetdb_config.h"
 
 #include "drvcfg.h"
-#include <string.h>		/* for memset(), memcpy(), strncpy() */
 #include "mstring.h"
 
 static const char *aHost[] = {

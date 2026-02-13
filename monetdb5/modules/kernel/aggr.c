@@ -72,19 +72,18 @@ AGGRgrouped_bat_or_val(bat *retval1, bat *retval2, const bat *bid,
 				MT_lock_set(&q->theaplock);
 				qvalue = ((const dbl *) Tloc(q, 0))[0];
 				MT_lock_unset(&q->theaplock);
-				if (qvalue < 0 || qvalue > 1) {
-					BBPunfix(b->batCacheid);
-					BBPreclaim(g);
-					BBPreclaim(e);
-					BBPreclaim(s);
-					BBPunfix(q->batCacheid);
-					throw(MAL, malfunc,
-						  "quantile value of %f is not in range [0,1]", qvalue);
-				}
 			}
 			BBPunfix(q->batCacheid);
 		} else {
-			qvalue = *(quantile_val);
+			qvalue = *quantile_val;
+		}
+		if (qvalue < 0 || qvalue > 1) {
+			BBPreclaim(b);
+			BBPreclaim(g);
+			BBPreclaim(e);
+			BBPreclaim(s);
+			throw(MAL, malfunc,
+				  "quantile value of %f is not in range [0,1]", qvalue);
 		}
 		bn = (*quantilefunc) (b, g, e, s, tp, qvalue, skip_nils);
 	} else if ((*grpfunc2) (&bn, retval2 ? &cnts : NULL, b, g, e, s, tp,

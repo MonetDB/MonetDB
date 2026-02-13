@@ -227,8 +227,7 @@ msab_dbpathinit(const char *dbpath)
 
 	p = strrchr(dbpath, DIR_SEP);
 	assert(p != NULL);
-	strncpy(dbfarm, dbpath, p - dbpath);
-	dbfarm[p - dbpath] = 0;
+	strtcpy(dbfarm, dbpath, p - dbpath + 1);
 	msab_init(dbfarm, p + 1);
 }
 void

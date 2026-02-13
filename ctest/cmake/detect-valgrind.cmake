@@ -31,7 +31,7 @@ elseif (${LINUX_DISTRO} STREQUAL "ubuntu")
 elseif(${LINUX_DISTRO} STREQUAL "fedora")
   if(${LINUX_DISTRO_VERSION} VERSION_GREATER_EQUAL "30")
     assert_package_detected(
-      detect FALSE
+      detect TRUE
       legacyvariable HAVE_VALGRIND
       variablename VALGRIND_FOUND)
   endif()

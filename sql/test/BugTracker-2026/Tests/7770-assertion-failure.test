@@ -1,0 +1,22 @@
+statement ok
+CREATE TABLE v0 ( v1 INT PRIMARY KEY , v2 FLOAT )
+
+statement error 42000!COUNT: aggregate function 'count' not allowed in GROUP BY clause
+SELECT v2 GROUP BY COUNT ( v1 NOT BETWEEN 'x' AND v1 ) >= ( 'x' = 'x' AND v1 BETWEEN -1 AND NULL = v2 >= v2 )
+
+-- sql/server/sql_query.c:163: query_outer_aggregated: Assertion `sq->grouped' failed.
+statement error 42000!COUNT: aggregate function 'count' not allowed in GROUP BY clause
+SELECT 50 FROM v0 GROUP BY v1 , v2 HAVING ( 67 = 64 AND ( ( SELECT v2 GROUP BY COUNT ( v1 NOT BETWEEN 'x' AND v1 ) >= ( 'x' = 'x' AND v1 BETWEEN -1 AND NULL = v2 >= v2 ) ) ) = 19 )
+
+-- sql/server/sql_query.c:163: query_outer_aggregated: Assertion `sq->grouped' failed.
+statement error 42000!COUNT: aggregate function 'count' not allowed in GROUP BY clause
+INSERT INTO v0 VALUES ( 7 , 59 ) , ( 23 , 127 ) , ( 0 , 15585972.000000 ) , ( 70 , 97506846.000000 )
+ , ( 76 , ( SELECT 50 FROM v0 GROUP BY v1 , v2 HAVING ( 67 = 64 AND ( ( SELECT v2 GROUP BY COUNT ( v1 NOT BETWEEN 'x' AND v1 ) >= ( 'x' = 'x' AND v1 BETWEEN -1 AND NULL = v2 >= v2 ) ) ) = 19 ) ) )
+
+query IR nosort
+SELECT v1, v2 FROM v0
+----
+
+statement ok
+DROP TABLE v0
+

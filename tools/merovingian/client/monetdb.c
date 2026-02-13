@@ -29,6 +29,7 @@
 #include "msabaoth.h"
 #include "mutils.h"
 #include "stream.h"
+#include "mstring.h"
 #include <string.h> /* strerror */
 #include <sys/stat.h> /* mkdir, stat, umask */
 #include <sys/types.h> /* mkdir, readdir */
@@ -1153,6 +1154,8 @@ command_set(int argc, char *argv[], meroset type)
 	bool doall = true;
 	char *p = NULL;
 	char property[24] = "";
+	char *prop = property;
+	char *propend = &property[sizeof(property)];
 	int i;
 	int state = 0;
 	char *res;
@@ -1192,7 +1195,7 @@ command_set(int argc, char *argv[], meroset type)
 			/* make this option no longer available, for easy use
 			 * later on */
 			argv[i] = NULL;
-		} else if (property[0] == '\0') {
+		} else if (prop == property) {
 			/* first non-option is property, rest is database */
 			p = argv[i];
 			if (type == SET) {
@@ -1202,15 +1205,14 @@ command_set(int argc, char *argv[], meroset type)
 					exit(1);
 				}
 				*p = '\0';
-				snprintf(property, sizeof(property), "%s", argv[i]);
+				prop = stpecpy(prop, propend, argv[i]);
 				*p++ = '=';
 				p = argv[i];
 			} else {
-				snprintf(property, sizeof(property), "%s", argv[i]);
+				prop = stpecpy(prop, propend, argv[i]);
 			}
 			argv[i] = NULL;
-		}
-		else
+		} else
 			doall = false;
 	}
 
@@ -1266,7 +1268,7 @@ command_set(int argc, char *argv[], meroset type)
 	}
 
 	if (type == INHERIT) {
-		strncat(property, "=", sizeof(property) - strlen(property) - 1);
+		prop = stpecpy(prop, propend, "=");
 		p = property;
 	}
 

@@ -1,0 +1,13 @@
+statement ok
+CREATE TABLE v0 ( v1 INT PRIMARY KEY , v2 VARCHAR ( 52 ) )
+
+statement error 42000!SELECT: identifier 'v2' unknown
+SELECT v2 AND v1 AND v1
+
+query T
+SELECT left ( v1 , -128 ) FROM v0 WHERE v2 IN ( SELECT v2 AND v1 AND v1 )
+----
+
+statement ok
+DROP TABLE v0
+

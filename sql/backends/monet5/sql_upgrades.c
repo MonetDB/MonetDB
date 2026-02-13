@@ -218,6 +218,20 @@ check_sys_tables(Client c, mvc *m, sql_schema *s)
 		if (needsystabfix)
 			return sql_fix_system_tables(c, m);
 	}
+	{
+		res_table *output = NULL;
+		err = SQLstatementIntern(c, "select a.id from sys.args a where a.id between 2000 and (select max(c.id) from sys._columns c where c.id < 3000);\n", "update", true, false, &output);
+		if (err)
+			return err;
+		BAT *b = BATdescriptor(output->cols[0].b);
+		res_table_destroy(output);
+		if (b == NULL)
+			throw(SQL, "sql.catalog", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		bool needsystabfix = BATcount(b) > 0;
+		BBPunfix(b->batCacheid);
+		if (needsystabfix)
+			return sql_fix_system_tables(c, m);
+	}
 	return NULL;
 }
 
@@ -5275,7 +5289,9 @@ sql_update_dec2025_sp1(Client c, mvc *sql, sql_schema *s)
 	static const char query1[] = "select id from sys._tables where name = 'roles' and schema_id = 2000"
 		" and query = 'create view sys.roles as select id, name, grantor from sys.auths a where a.name not in (select u.name from sys.db_user_info u);';";
 	err = SQLstatementIntern(c, query1, "update", true, false, &output);
-	if (err == MAL_SUCCEED && (b = BBPquickdesc(output->cols[0].b)) && BATcount(b) == 1) {
+	if (err)
+		return err;
+	if ((b = BBPquickdesc(output->cols[0].b)) != NULL && BATcount(b) == 1) {
 		static const char stmt1[] =
 			"DROP VIEW sys.describe_accessible_tables CASCADE;\n"
 			"DROP VIEW sys.roles CASCADE;\n"
@@ -5306,10 +5322,8 @@ sql_update_dec2025_sp1(Client c, mvc *sql, sql_schema *s)
 		fflush(stdout);
 		err = SQLstatementIntern(c, stmt1, "update", true, false, NULL);
 	}
-	if (output != NULL) {
-		res_table_destroy(output);
-		output = NULL;
-	}
+	res_table_destroy(output);
+	output = NULL;
 
 	return err;
 }

@@ -1242,6 +1242,7 @@ def PerformDir(env, testdir, testlist, total_tests):
                             with dbh.cursor() as crs:
                                 try:
                                     crs.execute("call logging.setcomplevel('SQL_EXECUTION', 'INFO')")
+                                    crs.execute("call logging.setcomplevel('BAT', 'INFO')")
                                 except TimeoutError:
                                     print('\nTimeout setting log level.\n')
                     except KeyboardInterrupt:

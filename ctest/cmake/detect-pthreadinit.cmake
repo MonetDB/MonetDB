@@ -47,4 +47,4 @@ target_sources(test_detect_pthreadinit
 target_link_libraries(test_detect_pthreadinit
   PRIVATE
   monetdb_config_header)
-add_test(testDetectPthreadinit test_detect_pthreadinit)
+add_test(NAME testDetectPthreadinit COMMAND test_detect_pthreadinit)

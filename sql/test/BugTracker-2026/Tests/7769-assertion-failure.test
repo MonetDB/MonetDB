@@ -1,0 +1,11 @@
+statement ok
+CREATE TABLE v0 ( v1 INT )
+
+-- sql/backends/monet5/sql_rank.c:989: SQLnth_value: Assertion `v->bat' failed.
+query II nosort
+SELECT v1 , NTH_VALUE ( v1 , 82 ) OVER ( RANGE BETWEEN CURRENT ROW AND UNBOUNDED FOLLOWING ) AS v5 FROM v0
+----
+
+statement ok
+DROP TABLE v0
+

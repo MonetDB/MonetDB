@@ -1,0 +1,34 @@
+-- 1. Truncate a critical system table
+statement error TRUNCATE system tables is not allowed
+TRUNCATE TABLE sys._tables
+
+-- 2. Observe that metadata is gone (optional)
+query I nosort
+SELECT COUNT(*) > 0 FROM sys._tables
+----
+1
+
+statement error TRUNCATE system tables is not allowed
+TRUNCATE TABLE sys.auths     -- Immediate loss of credential checking
+
+query I nosort
+SELECT COUNT(*) > 0 FROM sys.auths
+----
+1
+
+statement error TRUNCATE system tables is not allowed
+TRUNCATE TABLE sys._columns   -- Loss of column definitions
+
+query I nosort
+SELECT COUNT(*) > 0 FROM sys._columns
+----
+1
+
+statement error TRUNCATE system tables is not allowed
+TRUNCATE TABLE sys.functions  -- Loss of built-in and user functions
+
+query I nosort
+SELECT COUNT(*) > 0 FROM sys.functions
+----
+1
+

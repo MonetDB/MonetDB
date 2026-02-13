@@ -2271,12 +2271,6 @@ log_load(const char *fn, logger *lg, char filename[FILENAME_MAX])
 	bool readlogs = false;
 	bool needsnew = false;	/* need to write new log file? */
 
-	/* refactor */
-	if (!LOG_DISABLED(lg)) {
-		if (log_filename(lg, bak, filename) != GDK_SUCCEED)
-			goto error;
-	}
-
 	lg->catalog_bid = NULL;
 	lg->catalog_id = NULL;
 	lg->catalog_cnt = NULL;
@@ -2291,6 +2285,8 @@ log_load(const char *fn, logger *lg, char filename[FILENAME_MAX])
 		/* try to open logfile backup, or failing that, the file
 		 * itself. we need to know whether this file exists when
 		 * checking the database consistency later on */
+		if (log_filename(lg, bak, filename) != GDK_SUCCEED)
+			goto error;
 		if ((fp = MT_fopen(bak, "r")) != NULL) {
 			fclose(fp);
 			fp = NULL;
@@ -2524,13 +2520,16 @@ log_load(const char *fn, logger *lg, char filename[FILENAME_MAX])
 	}
 	ATOMIC_SET(&GDKdebug, dbg);
 
+	bool earlyexit = GDKgetenv_isyes("process-wal-and-exit");
 	if (readlogs) {
 		ulng log_id = lg->saved_id + 1;
-		bool earlyexit = GDKgetenv_isyes("process-wal-and-exit");
 		if (log_readlogs(lg, filename) != GDK_SUCCEED) {
 			goto error;
 		}
 		if (!earlyexit) {
+			/* in case or process-wal-and-exit, do NOT run
+			 * upgrade code, and therefore do NOT update WAL
+			 * version number */
 			if (lg->postfuncp && (*lg->postfuncp) (lg->funcdata, lg) != GDK_SUCCEED)
 				goto error;
 			if (needsnew) {
@@ -2557,21 +2556,17 @@ log_load(const char *fn, logger *lg, char filename[FILENAME_MAX])
 		ATOMIC_SET(&GDKdebug, dbg);
 		for (; log_id <= lg->saved_id; log_id++)
 			(void) log_cleanup(lg, log_id);	/* ignore error of removing file */
-		if (earlyexit) {
-			printf("# mserver5 exiting\n");
-			exit(0);
-		}
-		if (needsnew &&
+		if (needsnew && !earlyexit &&
 		    GDKunlink(0, lg->dir, LOGFILE, "bak") != GDK_SUCCEED) {
 			TRC_CRITICAL(GDK, "couldn't remove old log.bak file\n");
 			return GDK_FAIL;
 		}
 	} else {
 		lg->id = lg->saved_id + 1;
-		if (GDKgetenv_isyes("process-wal-and-exit")) {
-			printf("# mserver5 exiting\n");
-			exit(0);
-		}
+	}
+	if (earlyexit) {
+		printf("# mserver5 exiting\n");
+		exit(0);
 	}
 #ifdef GDKLIBRARY_JSON
 	if (log_json_upgrade_finalize() == GDK_FAIL)

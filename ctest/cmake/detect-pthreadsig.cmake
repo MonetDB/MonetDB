@@ -47,4 +47,4 @@ target_sources(test_detect_pthreadsig
 target_link_libraries(test_detect_pthreadsig
   PRIVATE
   monetdb_config_header)
-add_test(testDetectPthreadsig test_detect_pthreadsig)
+add_test(NAME testDetectPthreadsig COMMAND test_detect_pthreadsig)

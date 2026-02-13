@@ -575,7 +575,7 @@ rel_prune_predicates(visitor *v, sql_rel *rel)
 {
 	if (rel->l) {
 		sql_rel *l = rel->l;
-		if (is_single(l))
+		if (is_single(l) || is_dynamic(l))
 			return rel->exps;
 	}
 	if (!list_empty(rel->attr))

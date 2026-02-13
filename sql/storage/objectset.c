@@ -909,7 +909,7 @@ os_add_(objectset *os, struct sql_trans *tr, const char *name, sql_base *b)
 		if (os->destroy)
 			os->destroy(os->store, ov->b);
 		_DELETE(ov);
-		TRC_WARNING(SQL_STORE, "%s" "if (!os->concurrent && os_has_changes(os, tr)) { /* for object sets without concurrent support, conflict if concurrent changes are there */", __func__);
+		TRC_WARNING(SQL_STORE, "if (!os->concurrent && os_has_changes(os, tr)) { /* for object sets without concurrent support, conflict if concurrent changes are there */");
 		return -3; /* conflict */
 	}
 
@@ -1212,7 +1212,7 @@ os_has_changes(objectset *os, struct sql_trans *tr)
 	if (n) {
 		objectversion *ov = n->ov;
 
-		if (ov && os_atmc_get_state(ov) == active && ov->ts != tr->tid && ov->ts > TRANSACTION_ID_BASE)
+		if (ov && os_atmc_get_state(ov) == active && ov->ts != tr->tid && ov->ts > TRANSACTION_ID_BASE && (!tr->parent || !tr_version_of_parent(tr, ov->ts)))
 			return true;
 	}
 	return false;

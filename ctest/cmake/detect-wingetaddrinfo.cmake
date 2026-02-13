@@ -44,4 +44,4 @@ add_executable(test_detect_wingetaddrinfo)
 target_sources(test_detect_wingetaddrinfo
   PRIVATE
   ${CMAKE_CURRENT_BINARY_DIR}/test_detect_wingetaddrinfo.c)
-add_test(testDetectWingetaddrinfo test_detect_wingetaddrinfo)
+add_test(NAME testDetectWingetaddrinfo COMMAND test_detect_wingetaddrinfo)

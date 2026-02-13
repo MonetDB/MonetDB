@@ -142,7 +142,7 @@ function(assert_variable_exists assert_variable_variablename)
   target_sources("test_${assert_variable_variablename}_var"
     PRIVATE
     "${CMAKE_CURRENT_BINARY_DIR}/test_${assert_variable_variablename}_var.c")
-  add_test("testDetect${assert_variable_variablename}" "test_${assert_variable_variablename}_var")
+  add_test(NAME "testDetect${assert_variable_variablename}" COMMAND "test_${assert_variable_variablename}_var")
 endfunction()
 
 # CMake function to test if a cmake variable has a corresponding
@@ -171,8 +171,8 @@ function(assert_legacy_variable_exists)
   target_link_libraries("test_${assert_variable_legacy_variablename}_legacy_var"
   PRIVATE
   monetdb_config_header)
-  add_test("testDetect${assert_variable_legacy_variablename}Legacy"
-    "test_${assert_variable_legacy_variablename}_legacy_var")
+  add_test(NAME "testDetect${assert_variable_legacy_variablename}Legacy"
+    COMMAND "test_${assert_variable_legacy_variablename}_legacy_var")
 endfunction()
 
 # CMake function to test if the package detection gave the
@@ -201,8 +201,8 @@ function(assert_package_detected)
   target_link_libraries("test_${assert_package_variablename}_detect_var"
   PRIVATE
   monetdb_config_header)
-  add_test("testDetect${assert_package_variablename}Detect"
-    "test_${assert_package_variablename}_detect_var")
+  add_test(NAME "testDetect${assert_package_variablename}Detect"
+    COMMAND "test_${assert_package_variablename}_detect_var")
 endfunction()
 
 function(find_selinux_types)

@@ -42,8 +42,9 @@ BLOBnitems(Client ctx, int *ret, blob **b)
 	(void) ctx;
 	if (is_blob_nil(*b)) {
 		*ret = int_nil;
+	} else if ((*b)->nitems > (size_t) GDK_int_max) {
+		*ret = -1;
 	} else {
-		assert((*b)->nitems < INT_MAX);
 		*ret = (int) (*b)->nitems;
 	}
 	return MAL_SUCCEED;
@@ -93,8 +94,9 @@ BLOBnitems_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			if (is_blob_nil(b)) {
 				vals[i] = int_nil;
 				nils = true;
+			} else if (b->nitems > (size_t) GDK_int_max) {
+				vals[i] = -1;
 			} else {
-				assert((int) b->nitems < INT_MAX);
 				vals[i] = (int) b->nitems;
 			}
 		}
@@ -106,8 +108,9 @@ BLOBnitems_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			if (is_blob_nil(b)) {
 				vals[i] = int_nil;
 				nils = true;
+			} else if (b->nitems > (size_t) GDK_int_max) {
+				vals[i] = -1;
 			} else {
-				assert((int) b->nitems < INT_MAX);
 				vals[i] = (int) b->nitems;
 			}
 		}

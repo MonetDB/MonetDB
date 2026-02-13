@@ -1,0 +1,13 @@
+statement ok
+CREATE TABLE v0 ( v1 INTEGER )
+
+statement error 42000!SELECT: no such operator 'stddev'(boolean)
+SELECT v1 >= -2147483648 AND STDDEV ( v1 NOT LIKE 'x' ) <= 'x' + CUME_DIST ( DISTINCT STDDEV ( v1 ) ) FROM v0
+
+-- sql/backends/monet5/sql_execute.c:57: SQLrun: Assertion `!*m->errstr' failed.
+statement error 42000!SELECT: no such operator 'stddev'(boolean)
+ALTER TABLE v0 ADD COLUMN v2 INTEGER DEFAULT 2 NOT NULL PRIMARY KEY CHECK ( v1 >= -2147483648 AND STDDEV ( v2 NOT LIKE 'x' ) <= 'x' + CUME_DIST ( DISTINCT STDDEV ( v1 ) ) )
+
+statement ok
+DROP TABLE v0
+

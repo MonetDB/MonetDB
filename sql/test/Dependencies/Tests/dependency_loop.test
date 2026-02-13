@@ -172,7 +172,7 @@ UNION
 ( SELECT subject,'swrc:isbn' AS predicate,object FROM swrc_isbn )
 
 query I rowsort
-select count(*) from dependencies where depend_type = 5 and depend_id in (select id from sys._tables where not system)
+select count(*) from sys.dependencies where depend_type = 5 and depend_id in (select id from sys._tables where not system)
 ----
 72
 
