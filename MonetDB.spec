@@ -856,6 +856,8 @@ package.  You probably don't need this, unless you are a developer.
 
 %files embedded-tests
 %defattr(-,root,root)
+%{_bindir}/demo_oob_read
+%{_bindir}/demo_oob_write
 %{_bindir}/example1
 %{_bindir}/example2
 %{_bindir}/example_append

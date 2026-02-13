@@ -1,3 +1,5 @@
+debian/tmp/usr/bin/demo_oob_read usr/bin
+debian/tmp/usr/bin/demo_oob_write usr/bin
 debian/tmp/usr/bin/example1 usr/bin
 debian/tmp/usr/bin/example2 usr/bin
 debian/tmp/usr/bin/example_append usr/bin

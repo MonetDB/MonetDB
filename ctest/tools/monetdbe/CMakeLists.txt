@@ -124,6 +124,8 @@ if(NOT MONETDB_STATIC)
       monetdbe)
 
     install(TARGETS
+      demo_oob_read
+      demo_oob_write
       example1
       example2
       example_append
