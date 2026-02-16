@@ -116,7 +116,7 @@ typedef struct stmt {
 	stmtdata op4;		/* only op4 will hold other types */
 
 	unsigned int
-	 nrcols:2,
+	 nrcols:2,      /* NOT number of columns but (0 single value, 1 single column, 2 multi columns, 3 multi values)*/
 	 key:1,			/* key (aka all values are unique) */ // TODO make this thing a bool
 	 aggr:1,		/* aggregated */
 	 partition:1,	/* selected as mitosis candidate */

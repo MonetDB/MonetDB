@@ -149,21 +149,24 @@ rel_base_use_all( mvc *sql, sql_rel *rel)
 
 
 static node *
-rel_nested_basetable_add_vector_cols(mvc *sql, rel_base_t *ba, sql_column *c, node *cn, list *exps)
+rel_basetable_add_vector_cols(mvc *sql, sql_alias *pa, sql_column *c, node *cn, list *exps)
 {
-	sql_alias *atname = a_create(sql->sa, c->base.name);
-	atname->parent = ba->name;
+	assert(c);
+	if (!c)
+		return cn;
+	sql_alias *acname = a_create(sql->sa, c->base.name);
+	acname->parent = pa;
 	int i = sql->nid;
 	prop *p = NULL;
 	sql_exp *e = NULL;
 
 	unsigned int ncols = c->type.digits;
 	sql->nid += ncols;
-	for (unsigned int k = 0; k < ncols; k++, i++) {
+	for (unsigned int k = 0; k < ncols && cn; k++, i++) {
 		sql_column *c = cn->data;
 		if (!column_privs(sql, c, PRIV_SELECT))
 			continue;
-		e = exp_alias(sql, atname, c->base.name, atname, c->base.name, &c->type, CARD_MULTI, c->null, is_column_unique(c), 1);
+		e = exp_alias(sql, acname, c->base.name, acname, c->base.name, &c->type, CARD_MULTI, c->null, is_column_unique(c), 1);
 		if (e == NULL)
 			return NULL;
 		e->nid = -(i);
@@ -346,7 +349,7 @@ rel_nested_basetable(mvc *sql, sql_table *t, sql_alias *atname)
 				e->f = sa_list(sql->sa);
 			if (!e || !e->f)
 				return NULL;
-			cn = rel_nested_basetable_add_vector_cols(sql, ba, c, cn->next, e->f);
+			cn = rel_basetable_add_vector_cols(sql, atname, c, cn->next, e->f);
 		} else if (c->type.multiset) {
 			e = exp_alias(sql, atname, c->base.name, atname, c->base.name, &c->type, CARD_MULTI, c->null, is_column_unique(c), 0);
 			prop *p = p = prop_create(sql->sa, PROP_NESTED, e->p);
