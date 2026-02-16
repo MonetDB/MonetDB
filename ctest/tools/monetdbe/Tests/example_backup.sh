@@ -1,2 +1,4 @@
 #!/bin/sh
-example_backup > /dev/null
+f=$(mktemp)
+trap "rm -f $f" EXIT
+example_backup $f > /dev/null
