@@ -8,14 +8,27 @@
  * For copyright information, see the file debian/copyright.
  */
 
+#include "gdk.h"
+#include "gdk_system.h"
+#include "mal_arguments.h"
 #include "monetdb_config.h"
-#include <netcdf.h>
+#include "sql_mem.h"
+#include "rel_file_loader.h"
+#include "rel_exp.h"
+#include "sql_catalog.h"
+#include "sql_list.h"
 #include "sql_mvc.h"
 #include "sql.h"
 #include "sql_execute.h"
+#include "sql_relation.h"
 #include "sql_scenario.h"
 #include "mal_exception.h"
+#include "mal_instruction.h"
+#include "mal_builder.h"
+#include <netcdf.h>
 #include "netcdf_vault.h"
+#include "sql_statement.h"
+#include "sql_types.h"
 
 /* SQL statements for population of NetCDF catalog */
 #define INSFILE \
@@ -964,13 +977,263 @@ NCDFimportVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return msg;
 }
 
+static str
+HDF5dataset(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) ctx;
+	(void) mb;
+	char *msg = MAL_SUCCEED;
+	int ncid, varid, retval;
+    int ndims;
+	int dimids[NC_MAX_VAR_DIMS];
+
+	const char* fname = *getArgReference_str(stk, pci, pci->retc);
+	const char* dataset = *getArgReference_str(stk, pci, pci->retc + 1);
+	sql_subtype *st = *getArgReference_ptr(stk, pci, pci->retc + 2);
+	(void) st;
+	allocator *ta = MT_thread_getallocator();
+
+    // Open the file
+    // NetCDF-4 handles the HDF5 format automatically
+    if ((retval = nc_open(fname, NC_NOWRITE, &ncid)))
+		throw(MAL, "netcdf.HDF5dataset",
+			   	SQLSTATE(NC000) "Cannot open NetCDF file %s: %s", fname, nc_strerror(retval));
+
+    // Find the ID for the dataset
+    if ((retval = nc_inq_varid(ncid, dataset, &varid))) {
+		nc_close(ncid);
+		throw(MAL, "netcdf.HDF5dataset",
+			SQLSTATE(NC000) "Cannot find dataset %s: %s",
+							   dataset, nc_strerror(retval));
+	}
+
+    // Get dimension information to confirm sizes
+    size_t rows, cols;
+    if ((retval = nc_inq_varndims(ncid, varid, &ndims))) {
+		nc_close(ncid);
+		throw(MAL, "netcdf.HDF5dataset",
+			SQLSTATE(NC000) "Cannot read number of dimmensions %d: %s",
+							   varid, nc_strerror(retval));
+	}
+	assert(ndims == 2);
+
+    if ((retval = nc_inq_vardimid(ncid, varid, dimids))) {
+		nc_close(ncid);
+		throw(MAL, "netcdf.HDF5dataset",
+			SQLSTATE(NC000) "Cannot read dataset %s: %s",
+							   dataset, nc_strerror(retval));
+	}
+
+    nc_inq_dimlen(ncid, dimids[0], &rows);
+    nc_inq_dimlen(ncid, dimids[1], &cols);
+
+	assert(cols == (size_t)pci->retc);
+    //printf("Dataset 'train' has dimensions: %zu x %zu\n", rows, cols);
+
+	allocator_state ta_state = ma_open(ta);
+    // Allocate memory buffer for the data
+    float *buffer = (float *)ma_alloc(ta, rows * cols * sizeof(float));
+    if (buffer == NULL) {
+		nc_close(ncid);
+		ma_close(&ta_state);
+		throw(MAL, "netcdf.HDF5dataset", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
+
+    // Read the entire dataset into the buffer
+    if ((retval = nc_get_var_float(ncid, varid, buffer))) {
+		nc_close(ncid);
+		ma_close(&ta_state);
+		throw(MAL, "netcdf.HDF5dataset", SQLSTATE(NC000) "Cannot read data");
+	}
+    nc_close(ncid);
+    //printf("First element of train[0][0]: %f\n", buffer[0]);
+
+	BAT **bats = (BAT**)ma_zalloc(ta, sizeof(BAT*) * pci->retc);
+	if (!bats) {
+		ma_close(&ta_state);
+		throw(MAL, "netcdf.HDF5dataset", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
+
+	for(int i = 0; i < pci->retc; i++) {
+		bats[i] = COLnew(0, getBatType(getArgType(mb, pci, i)), 10, TRANSIENT);
+		if (!bats[i]) {
+			msg = createException(MAL, "netcdf.HDF5dataset", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			goto bailout;
+		}
+	}
+	// loop over load data
+	for (size_t i=0; i<rows*cols; i++) {
+		double v = buffer[i];
+		size_t j = i%cols;
+		if ((BUNappend(bats[j], &v, false) != GDK_SUCCEED)) {
+			msg = createException(MAL, "netcdf.HDF5dataset", "Error appending value %f", v);
+			goto bailout;
+		}
+	}
+
+	for(int i = 0; i < pci->retc && bats[i]; i++) {
+		*getArgReference_bat(stk, pci, i) = bats[i]->batCacheid;
+		BBPkeepref(bats[i]);
+	}
+	ma_close(&ta_state);
+	return msg;
+bailout:
+	for(int i = 0; i < pci->retc; i++)
+		if (bats[i])
+			BBPreclaim(bats[i]);
+	ma_close(&ta_state);
+	return msg;
+}
+
+static str
+hdf5_relation(mvc *sql, sql_subfunc *f, char *fname, list *res_exps, char *tname, lng *est)
+{
+	#define ERR(e) {printf("Error: %s\n", nc_strerror(e)); exit(1);}
+	(void) est;
+
+    int ncid, varid, ndims, type;
+    int dimids[NC_MAX_VAR_DIMS];
+    size_t dim_lens[NC_MAX_VAR_DIMS];
+    //size_t type_size;
+
+    // Open the file (Read-Only)
+    int retval = nc_open(fname, NC_NOWRITE, &ncid);
+    if (retval)
+		throw(MAL, "netcdf.hdf5_relation", SQLSTATE(NC000) "Cannot open HDF5 file %s: %s", fname, nc_strerror(retval));
+
+    // Get the ID for the "train" variable hardcoding for now
+	const char *vname = "train";
+    if ((retval = nc_inq_varid(ncid, vname, &varid))) {
+		nc_close(ncid);
+		throw(MAL, "netcdf.hdf5_relation",
+							   SQLSTATE(NC000) "Cannot read variable %s: %s",
+							   vname, nc_strerror(retval));
+	}
+
+    // Get the type and number of dimensions
+    if ((retval = nc_inq_var(ncid, varid, NULL, &type, &ndims, dimids, NULL))) {
+		nc_close(ncid);
+		throw(MAL, "netcdf.hdf5_relation",
+				SQLSTATE(NC000) "Cannot read variable %d : %s", varid, nc_strerror(retval));
+	}
+
+	// 2 dim vectors only
+	assert(ndims==2);
+	assert(type == NC_FLOAT || type == NC_DOUBLE);
+
+    // Get the size of each dimension
+    //printf("Variable 'train' has %d dimensions:\n", ndims);
+    for (int i = 0; i < ndims; i++) {
+        if ((retval = nc_inq_dimlen(ncid, dimids[i], &dim_lens[i]))) {
+		nc_close(ncid);
+		throw(MAL, "netcdf.hdf5_relation",
+				SQLSTATE(NC000) "Cannot read dim len %d : %s", dimids[i], nc_strerror(retval));
+
+		}
+        //printf("  Dimension %d size: %zu\n", i, dim_lens[i]);
+    }
+	//const size_t rows = dim_lens[0];
+	const size_t cols = dim_lens[1];
+    nc_close(ncid);
+
+	list *types = sa_list(sql->sa);
+	list *names = sa_list(sql->sa);
+	list_append(names, ma_strdup(sql->sa, vname));
+	// FIX for actual type in dataset
+	sql_subtype *st = SA_ZNEW(sql->sa, sql_subtype);
+	*st = *sql_fetch_localtype(TYPE_dbl);
+	st->digits = cols;
+	st->multiset = MS_VECTOR;
+	list_append(types, st);
+	sql_alias *atname = a_create(sql->sa, tname);
+	sql_exp *e = exp_column(sql->sa, atname, vname, st, CARD_MULTI, 1, 0, 0);
+	e->alias.label = -(sql->nid++);
+	e->f = sa_list(sql->sa);
+	for(size_t i=0; i < cols; i++) {
+		char *buf = ma_alloc(sql->sa, sizeof(char)*32);
+        snprintf(buf, 32, "%s.%zu", vname, i);
+		sql_exp *ne = exp_alias(sql, atname, buf, atname, buf, st, CARD_MULTI, 0, 0, 0);
+		list_append(e->f, ne);
+	}
+	set_basecol(e);
+	list_append(res_exps, e);
+	f->tname = tname;
+	f->res = types;
+	f->coltypes = types;
+	f->colnames = names;
+    return MAL_SUCCEED;
+}
+
+static void *
+hdf5_load(void *BE, sql_subfunc *f, char *filename, sql_exp *topn)
+{
+	(void) topn;
+	backend *be = BE;
+	allocator *sa = be->mvc->sa;
+	sql_subtype *st = f->res->h->data;
+	size_t ncols = st->digits;
+	const char *dataset = "train"; // FIX hardcoded
+	const char *cname = f->colnames->h->data;
+
+	InstrPtr q = newStmtArgs(be->mb, "netcdf", "hdf5dataset", ncols + 3);
+	setVarType(be->mb, getArg(q, 0), newBatType(st->type->localtype));
+	for (size_t i = 1; i<ncols; i++)
+		q = pushReturn(be->mb, q, newTmpVariable(be->mb, newBatType(st->type->localtype)));
+
+	q = pushStr(be->mb, q, filename);
+	q = pushStr(be->mb, q, dataset);
+	q = pushPtr(be->mb, q, st);
+	pushInstruction(be->mb, q);
+
+	list *r = sa_list(sa);
+	for(size_t i = 0; i < ncols; i++) {
+		stmt *br = stmt_blackbox_result(be, q, i, sql_fetch_localtype(TYPE_dbl));
+		stmt *s = stmt_alias(be, br, -(be->mvc->nid++), a_create(sa, f->tname), cname);
+		append(r, s);
+	}
+	stmt *s = stmt_list(be, r);
+
+	//stmt* s = stmt_none(be);
+	//s->q = q;
+	//s->nr = getDestVar(q);
+	s->subtype = *st;
+	s->nested = true;
+	//s->multiset = st->multiset;
+	//s = stmt_alias(be, s, 1, a_create(sa, f->tname), dataset);
+	list *l = sa_list(be->mvc->sa);
+	append(l,s);
+	s = stmt_list(be, l);
+	return s;
+}
+
+static str
+NETCDFprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void)cntxt; (void)mb; (void)stk; (void)pci;
+
+	fl_register("hdf5", &hdf5_relation, &hdf5_load);
+	return MAL_SUCCEED;
+}
+
+static str
+NETCDFepilogue(void *ret)
+{
+	(void)ret;
+	fl_unregister("hdf5");
+	return MAL_SUCCEED;
+}
+
+
 #include "mel.h"
 static mel_func netcdf_init_funcs[] = {
- command("netcdf", "test", NCDFtest, false, "Returns number of variables in a given NetCDF dataset (file)", args(1,2, arg("",int),arg("filename",str))),
- pattern("netcdf", "attach", NCDFattach, true, "Register a NetCDF file in the vault", args(1,2, arg("",void),arg("filename",str))),
- command("netcdf", "importvar", NCDFimportVarStmt, true, "Import variable: compose create array string", args(1,3, arg("",str),arg("filename",str),arg("varid",int))),
- pattern("netcdf", "importvariable", NCDFimportVariable, true, "Import variable: create array and load data from variable varname of file fileid", args(1,3, arg("",void),arg("fileid",int),arg("varname",str))),
- { .imp=NULL }
+	pattern("netcdf", "prelude", NETCDFprelude, false, "", noargs),
+	command("netcdf", "epilogue", NETCDFepilogue, false, "", noargs),
+	command("netcdf", "test", NCDFtest, false, "Returns number of variables in a given NetCDF dataset (file)", args(1,2, arg("",int),arg("filename",str))),
+	pattern("netcdf", "attach", NCDFattach, true, "Register a NetCDF file in the vault", args(1,2, arg("",void),arg("filename",str))),
+	command("netcdf", "importvar", NCDFimportVarStmt, true, "Import variable: compose create array string", args(1,3, arg("",str),arg("filename",str),arg("varid",int))),
+	pattern("netcdf", "importvariable", NCDFimportVariable, true, "Import variable: create array and load data from variable varname of file fileid", args(1,3, arg("",void),arg("fileid",int),arg("varname",str))),
+	pattern("netcdf", "hdf5dataset", HDF5dataset, true, "Load dataset from hdf5", args(1,4, batvararg("",any),arg("filename",str),arg("dataset",str), arg("type", ptr))),
+	{ .imp=NULL }
 };
 #include "mal_import.h"
 #ifdef _MSC_VER
