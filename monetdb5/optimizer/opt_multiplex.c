@@ -64,11 +64,11 @@ OPTexpandMultiplex(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "optimizer.multiplex", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 #ifndef NDEBUG
-	TRC_WARNING_IF(MAL_OPTIMIZER) {
+	TRC_INFO_IF(MAL_OPTIMIZER) {
 		char *ps = instruction2str(mb, stk, pci, LIST_MAL_DEBUG);
-		TRC_WARNING_ENDIF(MAL_OPTIMIZER,
-						  "To speedup %s.%s a bulk operator implementation is needed%s%s\n",
-						  mod, fcn, ps ? " for " : "", ps ? ps : "");
+		TRC_INFO_ENDIF(MAL_OPTIMIZER,
+					   "To speedup %s.%s a bulk operator implementation is needed%s%s\n",
+					   mod, fcn, ps ? " for " : "", ps ? ps : "");
 	}
 #endif
 

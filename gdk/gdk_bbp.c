@@ -1511,10 +1511,12 @@ jsonupgradebat(BAT *b, json_storage_conversion fixJSONStorage)
 	b->tvheap = vh2;
 	vh2 = NULL;
 
+	allocator *ta = MT_thread_getallocator();
 	for (BUN i = 0; i < b->batCount; i++) {
 		var_t o = ((var_t *) h1.base)[i];
 		const char *s = vh1.base + o;
 		char *ns;
+		allocator_state ta_state = ma_open(ta);
 		if (fixJSONStorage(&ns, &s) != GDK_SUCCEED) {
 			HEAPfree(&h1, false);
 			HEAPfree(&vh1, false);
@@ -1523,10 +1525,11 @@ jsonupgradebat(BAT *b, json_storage_conversion fixJSONStorage)
 			b->tvheap = ovh;
 			TRC_CRITICAL(GDK, "converting value "
 				     "in BAT %d failed\n", b->batCacheid);
+			ma_close(&ta_state);
 			return GDK_FAIL;
 		}
 		var_t no = strPut(b, &o, ns);
-		GDKfree(ns);
+		ma_close(&ta_state);
 		if (no == (var_t) -1) {
 			HEAPfree(&h1, false);
 			HEAPfree(&vh1, false);
@@ -4055,11 +4058,14 @@ force_move(int farmid, const char *srcdir, const char *dstdir, const char *name)
 
 	if ((p = strrchr(name, '.')) != NULL && strcmp(p, ".kill") == 0) {
 		/* Found a X.new.kill file, ie remove the X.new file */
-		ptrdiff_t len = p - name;
+		size_t len = p - name;
 		long_str srcpath;
 
-		strncpy(srcpath, name, len);
-		srcpath[len] = '\0';
+		if (len >= sizeof(srcpath)) {
+			GDKerror("force_move: file name %s too long\n", name);
+			return GDK_FAIL;
+		}
+		strtcpy(srcpath, name, len + 1);
 		if (GDKfilepath(dstpath, sizeof(dstpath), farmid, dstdir, srcpath, NULL) != GDK_SUCCEED) {
 			return GDK_FAIL;
 		}
@@ -4163,12 +4169,11 @@ BBPrecover(int farmid)
 		}
 		if (q == NULL)
 			q = dent->d_name + strlen(dent->d_name);
-		if ((j = q - dent->d_name) + 1 > sizeof(path)) {
+		if ((j = q - dent->d_name) >= sizeof(path)) {
 			/* name too long: ignore */
 			continue;
 		}
-		strncpy(path, dent->d_name, j);
-		path[j] = 0;
+		strtcpy(path, dent->d_name, j + 1);
 		if (GDKisdigit(*path)) {
 			i = strtol(path, NULL, 8);
 		} else {
@@ -4311,8 +4316,7 @@ BBPdiskscan(const char *parent, size_t baseoff)
 	DIR *dirp = opendir(parent);
 	struct dirent *dent;
 	char fullname[FILENAME_MAX];
-	str dst;
-	size_t dstlen;
+	char *dst;
 	const char *src = parent;
 
 	if (dirp == NULL) {
@@ -4321,10 +4325,9 @@ BBPdiskscan(const char *parent, size_t baseoff)
 		return true;	/* nothing to do */
 	}
 
-	dst = stpcpy(fullname, src);
-	if (dst > fullname && dst[-1] != DIR_SEP)
-		*dst++ = DIR_SEP;
-	dstlen = sizeof(fullname) - (dst - fullname);
+	dst = stpecpy(fullname, &fullname[sizeof(fullname)], src);
+	if (dst != NULL && dst > fullname && dst[-1] != DIR_SEP)
+		dst = stpecpy(dst, &fullname[sizeof(fullname)], DIR_SEP_STR);
 
 	while ((dent = readdir(dirp)) != NULL) {
 		const char *p;
@@ -4347,16 +4350,13 @@ BBPdiskscan(const char *parent, size_t baseoff)
 			continue;
 
 		p = strchr(dent->d_name, '.');
-
-		if (strlen(dent->d_name) >= dstlen) {
+		if (stpecpy(dst, &fullname[sizeof(fullname)], dent->d_name) == NULL) {
 			/* found a file with too long a name
-			   (i.e. unknown); stop pruning in this
-			   subdir */
+			 * (i.e. unknown); stop pruning in this
+			 * subdir */
 			fprintf(stderr, "unexpected file %s, leaving %s.\n", dent->d_name, parent);
 			break;
 		}
-		strncpy(dst, dent->d_name, dstlen);
-		fullname[sizeof(fullname) - 1] = 0;
 
 		if (p == NULL && !BBPdiskscan(fullname, baseoff)) {
 			/* it was a directory */

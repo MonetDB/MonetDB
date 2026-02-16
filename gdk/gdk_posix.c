@@ -22,7 +22,6 @@
 #include "gdk_private.h"
 #include "mutils.h"
 #include <unistd.h>
-#include <string.h>     /* strncpy */
 
 #ifdef HAVE_FCNTL_H
 # include <fcntl.h>

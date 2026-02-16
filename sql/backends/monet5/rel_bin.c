@@ -5270,7 +5270,8 @@ rel2bin_project(backend *be, sql_rel *rel, list *refs, sql_rel *topn)
 			exp_label(sql->sa, exp, ++sql->label);
 		if (exp_name(exp)) {
 			s = stmt_rename(be, exp, s);
-			s->label = exp->alias.label;
+			if (exp->alias.label)
+				s->label = exp->alias.label;
 		}
 		if (!nrcols && s->nrcols && !list_empty(pl)) {
 			for (node *n = pl->h; n; n=n->next)
@@ -6105,7 +6106,7 @@ sql_insert_triggers(backend *be, sql_table *t, stmt **updates, int time)
 	return res;
 }
 
-static void
+static int
 sql_insert_check(backend *be, sql_key *key, list *inserts)
 {
 	mvc *sql = be->mvc;
@@ -6113,6 +6114,9 @@ sql_insert_check(backend *be, sql_key *key, list *inserts)
 	sql_alias *rname = table_alias(be->mvc->sa, key->t, NULL);
 	sql_rel *rel = rel_basetable(sql, key->t, rname);
 	sql_exp *exp = exp_read(sql, rel, NULL, NULL, ma_strdup(sql->sa, key->check), &pos, 0);
+	if (!exp)
+		return -2;
+
 	rel->exps = rel_base_projection(sql, rel, 0);
 
 	/* create new sub stmt with needed inserts */
@@ -6132,6 +6136,7 @@ sql_insert_check(backend *be, sql_key *key, list *inserts)
 	s = stmt_aggr(be, s, NULL, NULL, cnt, 1, 0, 1);
 	char *msg = sa_message(sql->sa, SQLSTATE(40002) "INSERT INTO: violated constraint '%s.%s' CHECK(%s)", key->t->s->base.name, key->base.name, exp->comment);
 	(void)stmt_exception(be, s, msg, 00001);
+	return 0;
 }
 
 static sql_table *
@@ -6341,8 +6346,8 @@ rel2bin_insert_ms(backend *be, sql_rel *rel, list *refs)
 
 	for (n = ol_first_node(t->keys); n; n = n->next) {
 		sql_key * key = n->data;
-		if (key->type == ckey)
-			sql_insert_check(be, key, inserts->op4.lval);
+		if (key->type == ckey && sql_insert_check(be, key, inserts->op4.lval) < 0)
+			return NULL;
 	}
 
 	if (!sql_insert_check_null(be, t, inserts->op4.lval))

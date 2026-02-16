@@ -1,1 +1,14 @@
+example1
+example2
+example_append
+example_append_raw
+NOT_WIN32?example_backup
+example_blob
+example_connections
+NOT_WIN32?example_copy
+example_decimals
 example_proxy
+example_sessions
+example_temporal
+demo_oob_read
+demo_oob_write

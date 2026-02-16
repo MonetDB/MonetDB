@@ -713,6 +713,8 @@ column_options(sql_query *query, dlist *opt_list, sql_schema *ss, sql_table *t, 
 
 					res = column_constraint_type(query, opt_name ? opt_name : default_name, sym, ss, t, cs, isDeclared, &used);
 					ma_close(&ta_state);
+					if (res<0)
+						res = SQL_ERR;
 				} 	break;
 				case SQL_DEFAULT: {
 					symbol *sym = s->data.sym;

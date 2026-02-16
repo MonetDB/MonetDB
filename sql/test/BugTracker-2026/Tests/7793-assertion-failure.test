@@ -1,0 +1,27 @@
+statement ok
+CREATE TABLE v0 ( v1 INT , v2 INT , v3 VARCHAR ( 73 ) )
+
+statement ok
+INSERT INTO v0 VALUES ( 52 , NULL , 'x' ) , ( -128 , NULL , 'x' ) , ( 38 , NULL , 'x' )
+
+statement ok
+CREATE TABLE v4 ( v5 INT , v6 INT )
+
+statement ok
+INSERT INTO v4 VALUES ( 30 , 2147483647 ) , ( 94 , 8 ) , ( 73 , -1 )
+
+query I nosort
+SELECT v5 FROM v4 WHERE v5 IN ( SELECT DISTINCT v2 FROM v0 WHERE v5 = v6 + 12 )
+----
+
+-- sql/backends/monet5/rel_bin.c:3953: rel2bin_semijoin: Assertion `sql->session->status == -10' failed.
+statement ok
+UPDATE v0 SET v1 = ( SELECT v5 FROM v4 WHERE v5 IN ( SELECT DISTINCT v2 WHERE v5 = v6 + 12 ) ) WHERE v2 IS NULL
+
+
+statement ok
+DROP TABLE v4
+
+statement ok
+DROP TABLE v0
+

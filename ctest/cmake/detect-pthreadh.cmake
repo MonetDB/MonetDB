@@ -47,4 +47,4 @@ target_sources(test_detect_pthreadh
 target_link_libraries(test_detect_pthreadh
   PRIVATE
   monetdb_config_header)
-add_test(testDetectPthreadh test_detect_pthreadh)
+add_test(NAME testDetectPthreadh COMMAND test_detect_pthreadh)

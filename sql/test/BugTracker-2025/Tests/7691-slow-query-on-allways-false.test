@@ -2,7 +2,7 @@ statement ok
 create table test(value int, name string)
 
 statement ok
-insert into test (select i, cast(i as string) from generate_series(0, 10000000) i(i))
+insert into test (select i, cast(i as string) from generate_series(0, 100000) i(i))
 
 # optimize the base table away !
 query T python .plan.filter

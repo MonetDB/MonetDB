@@ -47,4 +47,4 @@ target_sources(test_detect_getaddrinfo
 target_link_libraries(test_detect_getaddrinfo
   PRIVATE
   monetdb_config_header)
-add_test(testDetectGetaddrinfo test_detect_getaddrinfo)
+add_test(NAME testDetectGetaddrinfo COMMAND test_detect_getaddrinfo)

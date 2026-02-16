@@ -1,0 +1,19 @@
+statement ok
+CREATE TABLE v0 ( v1 STRING NOT NULL CHECK ( v1 >= 31 AND v1 <= 40 ) )
+
+statement error 42S02!DROP TABLE: no such table 'v2'
+DROP TABLE v2
+
+statement ok
+ALTER TABLE v0 RENAME TO v2
+
+-- sql/backends/monet5/rel_bin.c:1550: exp_bin: Assertion `0' failed.
+statement error 40002!INSERT INTO: violated constraint 'sys.v0_v1_check' CHECK( v1 >= 31 and v1 <= 40 )
+INSERT INTO v2 ( v1 ) VALUES ( 127 )
+
+statement error 42S02!DROP TABLE: no such table 'v0'
+DROP TABLE v0
+
+statement ok
+DROP TABLE v2
+

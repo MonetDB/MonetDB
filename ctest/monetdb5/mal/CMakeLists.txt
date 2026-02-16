@@ -19,7 +19,7 @@ target_link_libraries(test_malEmbeddedBoot
   ${CMAKE_DL_LIBS}
   Threads::Threads)
 target_compile_definitions(test_malEmbeddedBoot PRIVATE LIBMONETDB5)
-add_test(malEmbeddedBoot test_malEmbeddedBoot)
+add_test(NAME malEmbeddedBoot COMMAND test_malEmbeddedBoot)
 
 add_executable(test_malInclude test_malInclude.c)
 target_link_libraries(test_malInclude
@@ -32,4 +32,4 @@ target_link_libraries(test_malInclude
   ${CMAKE_DL_LIBS}
   Threads::Threads)
 target_compile_definitions(test_malInclude PRIVATE LIBMONETDB5)
-add_test(malInclude test_malInclude)
+add_test(NAME malInclude COMMAND test_malInclude)

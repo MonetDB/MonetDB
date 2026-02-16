@@ -20,10 +20,43 @@
 #define CATALOG_SEP2022 52302	/* first in Sep2022 */
 #define CATALOG_AUG2024 52303	/* first in Aug2024 */
 #define CATALOG_MAR2025 52304	/* first in Mar2025 */
+#define CATALOG_DEC2025 52305	/* first in Dec2025 */
 
 /* Note, CATALOG version 52300 is the first one where the basic system
  * tables (the ones created in store.c) have fixed and unchangeable
  * ids. */
+
+#ifdef CATALOG_DEC2025
+static void *
+BLOBreadOld(allocator *ma, void *A, size_t *dstlen, stream *s, size_t cnt)
+{
+	blob *a = A;
+	int len;
+
+	(void) cnt;
+	assert(cnt == 1);
+	if (mnstr_readInt(s, &len) != 1 || len < 0)
+		return NULL;
+	if (a == NULL || *dstlen < (size_t) len) {
+		if (ma) {
+			a = ma_realloc(ma, a, (size_t) len, *dstlen);
+		} else {
+			GDKfree(a);
+			a = GDKmalloc((size_t) len);
+		}
+		if (a == NULL)
+			return NULL;
+		*dstlen = (size_t) len;
+	}
+	if (mnstr_read(s, (char *) a, (size_t) len, 1) != 1) {
+		return NULL;
+	}
+	return a;
+}
+
+/* original atomRead function for TYPE_blob */
+static void *(*blobread)(allocator *ma, ptr, size_t *, stream *, size_t);
+#endif
 
 /* return GDK_SUCCEED if we can handle the upgrade from oldversion to
  * newversion */
@@ -31,6 +64,16 @@ static gdk_return
 bl_preversion(sqlstore *store, int oldversion, int newversion)
 {
 	(void)newversion;
+
+#ifdef CATALOG_DEC2025
+	if (oldversion <= CATALOG_DEC2025) {
+		/* replace atomRead function for blobs with version compatible
+		 * with older WAL format; this change is reverted in the
+		 * postversion function */
+		blobread = BATatoms[TYPE_blob].atomRead;
+		BATatoms[TYPE_blob].atomRead = BLOBreadOld;
+	}
+#endif
 
 #ifdef CATALOG_JUL2021
 	if (oldversion == CATALOG_JUL2021) {
@@ -66,6 +109,14 @@ bl_preversion(sqlstore *store, int oldversion, int newversion)
 
 #ifdef CATALOG_MAR2025
 	if (oldversion == CATALOG_MAR2025) {
+		/* upgrade to default releases */
+		store->catalog_version = oldversion;
+		return GDK_SUCCEED;
+	}
+#endif
+
+#ifdef CATALOG_DEC2025
+	if (oldversion == CATALOG_DEC2025) {
 		/* upgrade to default releases */
 		store->catalog_version = oldversion;
 		return GDK_SUCCEED;
@@ -165,6 +216,11 @@ bl_postversion(void *Store, logger *lg)
 {
 	sqlstore *store = Store;
 	gdk_return rc;
+
+#ifdef CATALOG_DEC2025
+	if (blobread)
+		BATatoms[TYPE_blob].atomRead = blobread;
+#endif
 
 #ifdef CATALOG_JUL2021
 	if (store->catalog_version <= CATALOG_JUL2021) {
@@ -1011,7 +1067,7 @@ bl_postversion(void *Store, logger *lg)
 		if (tabins(lg,
 				   2076, &(msk) {false},	/* sys._columns */
 				   /* 2168 is sys._columns.column_type */
-				   2077, &(int) {2168},		/* sys._columns.id */
+				   2077, &(int) {2172},		/* sys._columns.id */
 				   2078, "column_type",		/* sys._columns.name */
 				   2079, "tinyint",			/* sys._columns.type */
 				   2080, &(int) {7},		/* sys._columns.type_digits */
@@ -1029,7 +1085,7 @@ bl_postversion(void *Store, logger *lg)
 		if (tabins(lg,
 				   2076, &(msk) {false},	/* sys._columns */
 				   /* 2169 is tmp._columns.column_type */
-				   2077, &(int) {2169},		/* sys._columns.id */
+				   2077, &(int) {2173},		/* sys._columns.id */
 				   2078, "column_type",		/* sys._columns.name */
 				   2079, "tinyint",			/* sys._columns.type */
 				   2080, &(int) {7},		/* sys._columns.type_digits */
@@ -1047,7 +1103,7 @@ bl_postversion(void *Store, logger *lg)
 		if (tabins(lg,
 				   2076, &(msk) {false},	/* sys._columns */
 				   /* 2170 is sys._columns.multiset */
-				   2077, &(int) {2170},		/* sys._columns.id */
+				   2077, &(int) {2174},		/* sys._columns.id */
 				   2078, "multiset",		/* sys._columns.name */
 				   2079, "tinyint",			/* sys._columns.type */
 				   2080, &(int) {7},		/* sys._columns.type_digits */
@@ -1065,7 +1121,7 @@ bl_postversion(void *Store, logger *lg)
 		if (tabins(lg,
 				   2076, &(msk) {false},	/* sys._columns */
 				   /* 2171 is tmp._columns.multiset */
-				   2077, &(int) {2171},		/* sys._columns.id */
+				   2077, &(int) {2175},		/* sys._columns.id */
 				   2078, "multiset",		/* sys._columns.name */
 				   2079, "tinyint",			/* sys._columns.type */
 				   2080, &(int) {7},		/* sys._columns.type_digits */
@@ -1083,7 +1139,7 @@ bl_postversion(void *Store, logger *lg)
 		if (tabins(lg,
 				   2076, &(msk) {false},	/* sys._columns */
 				   /* 2172 is sy.args.multiset */
-				   2077, &(int) {2172},		/* sys._columns.id */
+				   2077, &(int) {2176},		/* sys._columns.id */
 				   2078, "multiset",		/* sys._columns.name */
 				   2079, "tinyint",			/* sys._columns.type */
 				   2080, &(int) {7},		/* sys._columns.type_digits */
@@ -1104,6 +1160,69 @@ bl_postversion(void *Store, logger *lg)
 #ifdef CATALOG_MAR2025
 	if (store->catalog_version <= CATALOG_MAR2025) {
 		/* nothing to do */
+	}
+#endif
+
+#ifdef CATALOG_DEC2025
+	if (store->catalog_version <= CATALOG_DEC2025) {
+		if (tabins(lg,
+				   2067, &(msk) {false},	/* sys._tables */
+				   /* 2168 is tmp.dependencies */
+				   2068, &(int) {2168},		/* sys._tables.id */
+				   2069, "dependencies",	/* sys._tables.name */
+				   2070, &(int) {2114},		/* sys._tables.schema_id */
+				   2071, str_nil,			/* sys._tables.query */
+				   2072, &(sht) {0},		/* sys._tables.type */
+				   2073, &(bit) {TRUE},		/* sys._tables.system */
+				   2074, &(sht) {CA_PRESERVE}, /* sys._tables.commit_action */
+				   2075, &(sht) {0},		/* sys._tables.access */
+				   0) != GDK_SUCCEED)
+			return GDK_FAIL;
+		if (tabins(lg,
+				   2076, &(msk) {false},	/* sys._columns */
+				   /* 2169 is tmp.dependencies.id */
+				   2077, &(int) {2169},		/* sys._columns.id */
+				   2078, "id",				/* sys._columns.name */
+				   2079, "int",				/* sys._columns.type */
+				   2080, &(int) {31},		/* sys._columns.type_digits */
+				   2081, &(int) {0},		/* sys._columns.type_scale */
+				   2082, &(int) {2168},		/* sys._columns.table_id */
+				   2083, str_nil,			/* sys._columns.default */
+				   2084, &(bit) {TRUE},		/* sys._columns.null */
+				   2085, &(int) {0},		/* sys._columns.number */
+				   2086, str_nil,			/* sys._columns.storage */
+				   0) != GDK_SUCCEED)
+			return GDK_FAIL;
+		if (tabins(lg,
+				   2076, &(msk) {false},	/* sys._columns */
+				   /* 2170 is tmp.dependencies.depend_id */
+				   2077, &(int) {2170},		/* sys._columns.id */
+				   2078, "depend_id",		/* sys._columns.name */
+				   2079, "int",				/* sys._columns.type */
+				   2080, &(int) {31},		/* sys._columns.type_digits */
+				   2081, &(int) {0},		/* sys._columns.type_scale */
+				   2082, &(int) {2168},		/* sys._columns.table_id */
+				   2083, str_nil,			/* sys._columns.default */
+				   2084, &(bit) {TRUE},		/* sys._columns.null */
+				   2085, &(int) {1},		/* sys._columns.number */
+				   2086, str_nil,			/* sys._columns.storage */
+				   0) != GDK_SUCCEED)
+			return GDK_FAIL;
+		if (tabins(lg,
+				   2076, &(msk) {false},	/* sys._columns */
+				   /* 2171 is tmp.dependencies.depend_type */
+				   2077, &(int) {2171},		/* sys._columns.id */
+				   2078, "depend_type",		/* sys._columns.name */
+				   2079, "smallint",		/* sys._columns.type */
+				   2080, &(int) {15},		/* sys._columns.type_digits */
+				   2081, &(int) {0},		/* sys._columns.type_scale */
+				   2082, &(int) {2168},		/* sys._columns.table_id */
+				   2083, str_nil,			/* sys._columns.default */
+				   2084, &(bit) {TRUE},		/* sys._columns.null */
+				   2085, &(int) {2},		/* sys._columns.number */
+				   2086, str_nil,			/* sys._columns.storage */
+				   0) != GDK_SUCCEED)
+			return GDK_FAIL;
 	}
 #endif
 

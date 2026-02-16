@@ -1,0 +1,16 @@
+statement ok
+CREATE TABLE v0 ( v1 BIGINT , v2 INT )
+
+-- sql/backends/monet5/rel_bin.c:4958   rel2bin_select: Assertion `sql->session->status == -10' failed.
+query R nosort
+SELECT + ( 14368317.000000 ) - 44826742.000000 FROM v0 WHERE ( v2 NOT IN ( v2 ) AND v2 IS NOT NULL NOT IN ( ( SELECT ( NOT ( v1 IS NULL ) ) AND ( NOT ( NOT ( 'x' = 'x' AND v1 = 0 ) ) ) ) ) ) > 'x'
+----
+
+-- sql/backends/monet5/rel_bin.c:3463   rel2bin_join: Assertion `sql->session->status == -10' failed.
+statement ok
+INSERT INTO v0 ( v1 )
+ VALUES ( ( SELECT + ( 14368317.000000 ) - 44826742.000000 FROM v0 WHERE ( v2 NOT IN ( v2 ) AND v2 IS NOT NULL NOT IN ( ( SELECT ( NOT ( v1 IS NULL ) ) AND ( NOT ( NOT ( 'x' = 'x' AND v1 = 0 ) ) ) ) ) ) > 'x' ) ) , ( 8 )
+
+statement ok
+DROP TABLE v0
+

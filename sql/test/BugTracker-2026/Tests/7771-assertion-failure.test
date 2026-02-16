@@ -1,0 +1,29 @@
+statement ok
+CREATE TABLE v0 ( v1 FLOAT )
+
+statement ok
+INSERT INTO v0 VALUES ( 83386963.000000 )
+
+query I nosort
+SELECT 0 FROM v0 WHERE ( v1 = -128 AND v1 = -1 ) OR ( v1 * ( SELECT -128 FROM ( SELECT v1 AS v2 , ( 0 < v1 AND v1 < 'x' ) FROM v0 BOOLEAN GROUP BY v1 * 12 , v1 ) ) + v1 )
+----
+0
+
+query R nosort
+SELECT v1 FROM v0
+----
+83386963.000
+
+-- sql/backends/monet5/sql_statement.c:4610: stmt_alias_: Assertion `label' failed.
+statement ok
+INSERT INTO v0 VALUES ( 0 ) , ( 16 ) , ( 12 ) , ( 34 ) , ( 16 ) , ( -32768 ) , ( 255 )
+ , ( ( SELECT 0 FROM v0 WHERE ( v1 = -128 AND v1 = -1 ) OR ( v1 * ( SELECT -128 FROM ( SELECT v1 AS v2 , ( 0 < v1 AND v1 < 'x' ) FROM v0 BOOLEAN GROUP BY v1 * 12 , v1 ) ) + v1 ) ) )
+
+query I nosort
+SELECT count(*) FROM v0
+----
+9
+
+statement ok
+DROP TABLE v0
+
