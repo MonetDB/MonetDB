@@ -615,7 +615,12 @@ class SQLLogic:
                 result.append(col)
             if err and expected is not None and self.out:
                 print('Differences:', file=self.out)
-                self.out.writelines(list(difflib.ndiff([x + '\n' for x in expected], [x + '\n' for x in ndata])))
+                print('\n'.join(difflib.context_diff(expected,
+                                                     ndata,
+                                                     fromfile='expected',
+                                                     tofile='received',
+                                                     lineterm='')),
+                      file=self.out)
             if resdata is not None:
                 result = []
                 ndata = []
@@ -688,7 +693,12 @@ class SQLLogic:
                         recv.append(col)
                 if self.out:
                     print('Differences:', file=self.out)
-                    self.out.writelines(list(difflib.ndiff([x + '\n' for x in expected], [x + '\n' for x in recv])))
+                    print('\n'.join(difflib.context_diff(expected,
+                                                         recv,
+                                                         fromfile='expected',
+                                                         tofile='received',
+                                                         lineterm='')),
+                          file=self.out)
             if resdata is not None:
                 result = []
                 for row in resdata:
@@ -701,26 +711,26 @@ class SQLLogic:
             if sorting == 'rowsort':
                 ndata = sorted(data)
             err_msg_buff = []
+            received = []
             for row in ndata:
                 for col in row:
-                    if expected is not None:
-                        if i < len(expected) and col != expected[i]:
-                            err_msg_buff.append('unexpected value;\nreceived "%s"\nexpected "%s"' % (col, expected[i]))
-                            #self.query_error(query, 'unexpected value; received "%s", expected "%s"' % (col, expected[i]), data=data)
-                            err = True
-                        i += 1
+                    received.append(col)
                     m.update(bytes(col, encoding='utf-8'))
                     m.update(b'\n')
                     result.append(col)
-            if err and expected is not None:
-                self.query_error(query, '\n'.join(err_msg_buff))
-                recv = []
-                for row in ndata:
-                    for col in row:
-                        recv.append(col + '\n')
-                if self.out:
-                    print('Differences:', file=self.out)
-                    self.out.writelines(list(difflib.ndiff([x + '\n' for x in expected], recv)))
+            if expected is not None:
+                diffs = list(difflib.context_diff(expected,
+                                                  received,
+                                                  fromfile='expected',
+                                                  tofile='received',
+                                                  lineterm=''))
+                if diffs:
+                    if not err:
+                        self.query_error(query, 'unexpected output')
+                    err = True
+                    if self.out:
+                        print('Differences:', file=self.out)
+                        print('\n'.join(diffs), file=self.out)
             if resdata is not None:
                 if sorting == 'rowsort':
                     resdata.sort()
