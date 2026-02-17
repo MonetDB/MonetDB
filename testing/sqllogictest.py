@@ -194,6 +194,11 @@ class SQLLogic:
             self.crs = dbh.cursor()
         else:
             dbh = malmapi.Connection()
+            if usock is not None:
+                if usock.startswith('mapi:monetdb:///'):
+                    usock = usock[15:]
+                elif usock.startsiwht('monetdb:///'):
+                    usock = usock[10:]
             dbh.connect(database=self.database,
                         username=username,
                         password=password,
