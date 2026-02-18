@@ -1,3 +1,54 @@
+monetdb (11.55.3) unstable; urgency=low
+
+  * Rebuilt.
+  * GH#7690: CASE operator inside aggregate function error
+  * GH#7691: Slow execution of a query with a constantly false
+    WHERE-condition
+  * GH#7726: MonetDB server (Mar2025-SP2-release) crashes at `ALGgroupby `
+  * GH#7759: PCRE replace referencing non-existing capture groups fails with
+    "Could not allocate space"
+  * GH#7760: Unexpectedly high resource and time usage when using IN (SELECT
+    table_name.column_name FROM table_name GROUP BY 1) subquery
+  * GH#7765: CREATE LOCAL TEMPORARY VIEW leaves orphan dependencies behind
+  * GH#7766: Assertion failure in exp_bin when using scalar subquery with
+    GROUP BY inside aggregate
+  * GH#7767: Assertion failure (sql->session->status == -10) in
+    rel2bin_select caused by malformed IN (SELECT ...) expression
+  * GH#7768: Simple single table query returns wrong results
+  * GH#7769: Crash in NTH_VALUE window function with RANGE frame
+  * GH#7771: Assertion failure in stmt_alias_ with scalar subquery in INSERT
+    VALUES
+  * GH#7772: msqldump does not dump UNLOGGED TABLE definitions
+  * GH#7773: msqldump generates invalid SQL CREATE TABLE definitions for
+    tables with multiple CHECK constraints
+  * GH#7775: heap-buffer-overflow in monetdb causing monetdb crash
+  * GH#7780: PLAN performance explosion with CTEs, nested CASE, wide column
+    counts
+  * GH#7782: system view sys.roles does not list implicitly created roles
+  * GH#7783: Duplicate rows returned when selecting on composite primary key
+    after delete/re-insert
+  * GH#7785: Recursive CTE with UNION ALL may cause infinite loop /
+    non-terminating execution
+  * GH#7786: DROP TABLE fails with HY013 "Could not allocate memory" after
+    ALTER TABLE RENAME
+  * GH#7787: mserver crash:   SQLrun: Assertion `!*m->errstr'  sql_execute.c
+  * GH#7798: running mserver5 under valgrind does not initialize SQL
+    interface.
+  * GH#7799: server crashes when an error is detected during initialization
+  * GH#7803: sever crash at  rel_dce_refs
+  * GH#7804: server crash (assertion failure) when querying:
+    sys.querylog_catalog order by id desc
+  * GH#7805: ORDER BY ALL queries return data in reserve order
+  * GH#7806: Casting to decimal without precision and scale assumes wrong
+    defaults
+  * GH#7808: BLOBs longer then 2 GiB cause a server crash
+  * GH#7810: You can have DATE string, but you cannot have GEOMETRY string
+    to cast a string constant
+  * GH#7811: SELECT 'x' - 'x'; gives weird error message.
+  * GH#7812: MONETDB HEAP BUFFER OVERFLOW
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 16 Feb 2026 11:04:46 +0100
+
 monetdb (11.55.1) unstable; urgency=low
 
   * sql: New implementation for the CONTAINS filter function for string data

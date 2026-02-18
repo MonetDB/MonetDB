@@ -1,6 +1,5 @@
 iterator01
 iterator02
-iterator03
 clients01
 
 bigsum
@@ -31,10 +30,6 @@ mapi05
 mapi06
 mapi07
 mapi01
-
-manifold
-manifoldstr
-#manifoldaggr
 
 # might show different output if openssl is compiled without full sha2
 # support

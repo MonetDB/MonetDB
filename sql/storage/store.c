@@ -79,10 +79,11 @@ store_oldest_pending(sqlstore *store)
 	return store->oldest_pending;
 }
 
+static sqlid highest_id; /* highest id doled out by bootstrap_create_column */
 static inline bool
 instore(sqlid id)
 {
-	if (id >= 2000 && id <= 2176)
+	if (id >= 2000 && id <= highest_id)
 		return true;
 	return false;
 }
@@ -1707,6 +1708,9 @@ bootstrap_create_column(sql_trans *tr, sql_table *t, const char *name, sqlid id,
 {
 	sqlstore *store = tr->store;
 	sql_column *col = ZNEW(sql_column);
+
+	if (id > highest_id)
+		highest_id = id;
 
 	if ((sqlid) ATOMIC_GET(&store->obj_id) <= id)
 		ATOMIC_SET(&store->obj_id, id + 1);

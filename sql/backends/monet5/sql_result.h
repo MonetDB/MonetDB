@@ -19,21 +19,31 @@
 #include "sql_qc.h"
 #include "sql_parser.h"		/* sql_error */
 
-extern int mvc_affrows(mvc *c, stream *s, lng val, str w, oid query_id, lng last_id, lng starttime, lng maloptimizer, lng reloptimizer);
-extern int mvc_export_affrows(backend *b, stream *s, lng val, str w, oid query_id, lng starttime, lng maloptimizer);
-extern int mvc_export_operation(backend *b, stream *s, str w, lng starttime, lng maloptimizer);
-extern int mvc_export_result(backend *b, stream *s, int res_id, bool header, lng starttime, lng maloptimizer);
-extern int mvc_export_head(backend *b, stream *s, int res_id, int only_header, int compute_lengths, lng starttime, lng maloptimizer);
-extern int mvc_export_chunk(backend *b, stream *s, int res_id, BUN offset, BUN nr);
-extern int mvc_export_bin_chunk(backend *b, stream *s, int res_id, BUN offset, BUN nr);
+extern int mvc_affrows(mvc *c, stream *s, lng val, str w, oid query_id, lng last_id, lng starttime, lng maloptimizer, lng reloptimizer)
+	__attribute__((__visibility__("hidden")));
+extern int mvc_export_affrows(backend *b, stream *s, lng val, str w, oid query_id, lng starttime, lng maloptimizer)
+	__attribute__((__visibility__("hidden")));
+extern int mvc_export_operation(backend *b, stream *s, str w, lng starttime, lng maloptimizer)
+	__attribute__((__visibility__("hidden")));
+extern int mvc_export_result(backend *b, stream *s, int res_id, bool header, lng starttime, lng maloptimizer)
+	__attribute__((__visibility__("hidden")));
+extern int mvc_export_head(backend *b, stream *s, int res_id, int only_header, int compute_lengths, lng starttime, lng maloptimizer)
+	__attribute__((__visibility__("hidden")));
+extern int mvc_export_chunk(backend *b, stream *s, int res_id, BUN offset, BUN nr)
+	__attribute__((__visibility__("hidden")));
+extern int mvc_export_bin_chunk(backend *b, stream *s, int res_id, BUN offset, BUN nr)
+	__attribute__((__visibility__("hidden")));
 
-extern int mvc_export_prepare(backend *b, stream *s);
+extern int mvc_export_prepare(backend *b, stream *s)
+	__attribute__((__visibility__("hidden")));
 
-extern str mvc_import_table(Client cntxt, BAT ***bats, mvc *c, bstream *s, sql_table *t, const char *sep, const char *rsep, const char *ssep, const char *ns, lng nr, lng offset, int best, bool from_stdin, bool escape, const char *decsep, const char *decskip);
+extern str mvc_import_table(Client cntxt, BAT ***bats, mvc *c, bstream *s, sql_table *t, const char *sep, const char *rsep, const char *ssep, const char *ns, lng nr, lng offset, int best, bool from_stdin, bool escape, const char *decsep, const char *decskip)
+	__attribute__((__visibility__("hidden")));
 sql5_export int mvc_result_table(backend *be, oid query_id, int nr_cols, mapi_query_t type);
 
 sql5_export int mvc_result_column(backend *be, const char *tn, const char *name, const char *typename, int digits, int scale, int multiset, BAT *b);
-extern int mvc_result_value(backend *be, const char *tn, const char *name, const char *typename, int digits, int scale, int multiset, ptr *p, int mtype);
+extern int mvc_result_value(backend *be, const char *tn, const char *name, const char *typename, int digits, int scale, int multiset, ptr *p, int mtype)
+	__attribute__((__visibility__("hidden")));
 
 /*
   The covered errors so far:
@@ -43,11 +53,15 @@ extern int mvc_result_value(backend *be, const char *tn, const char *name, const
   -3 GDK error
   -4 Stream error
 */
-extern const char *mvc_export_error(backend *be, stream *s, int err_code);
+extern const char *mvc_export_error(backend *be, stream *s, int err_code)
+	__attribute__((__visibility__("hidden")));
 
-extern ssize_t convert2str(allocator *ma, mvc *m, sql_class eclass, int d, int sc, int has_tz, const void *p, int mtype, char **buf, size_t *len);
-extern int mvc_export(mvc *m, stream *s, res_table *t, BUN nr);
+extern ssize_t convert2str(allocator *ma, mvc *m, sql_class eclass, int d, int sc, int has_tz, const void *p, int mtype, char **buf, size_t *len)
+	__attribute__((__visibility__("hidden")));
+extern int mvc_export(mvc *m, stream *s, res_table *t, BUN nr)
+	__attribute__((__visibility__("hidden")));
 
-extern str mvc_from_string(mvc *m, BAT **bats, int nr, char *s, sql_subtype *t);
+extern str mvc_from_string(mvc *m, BAT **bats, int nr, char *s, sql_subtype *t)
+	__attribute__((__visibility__("hidden")));
 
 #endif /* sql_result_H */

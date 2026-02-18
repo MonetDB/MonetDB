@@ -24,7 +24,6 @@ if(NETCDF_FOUND)
   target_sources(netcdff
     PRIVATE
     netcdf.c
-    netcdf_vault.h
     ${MONETDB_CURRENT_SQL_SOURCES})
 
   target_include_directories(netcdff

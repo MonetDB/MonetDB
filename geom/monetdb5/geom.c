@@ -4871,9 +4871,6 @@ wkbNumGeometries(Client ctx, int *out, wkb **geom)
 
 /* TODO: Analyze these functions below (what's the dif from normal contain, is it unfinished?) */
 
-geom_export str wkbContains_point_bat(Client ctx, bat *out, wkb **a, bat *point_x, bat *point_y);
-geom_export str wkbContains_point(Client ctx, bit *out, wkb **a, dbl *point_x, dbl *point_y);
-
 static inline double
 isLeft(double P0x, double P0y, double P1x, double P1y, double P2x, double P2y)
 {
@@ -5046,7 +5043,7 @@ pnpolyWithHoles(bat *out, int nvert, dbl *vx, dbl *vy, int nholes, dbl **hx, dbl
 #define POLY_NUM_VERT 120
 #define POLY_NUM_HOLE 10
 
-str
+static str
 wkbContains_point_bat(Client ctx, bat *out, wkb **a, bat *point_x, bat *point_y)
 {
 	allocator *ma = ctx->curprg->def->ma;
@@ -5165,7 +5162,7 @@ wkbContains_point_bat(Client ctx, bat *out, wkb **a, bat *point_x, bat *point_y)
 	return err;
 }
 
-str
+static str
 wkbContains_point(Client ctx, bit *out, wkb **a, dbl *point_x, dbl *point_y)
 {
 	(void) ctx;

@@ -47364,55 +47364,10 @@ pattern iterator.new(X_0:bat[:any_1]) (X_1:oid, X_2:any_1)
 ITRbunIterator
 Process the buns one by one extracted from a void table.
 iterator
-new
-command iterator.new(X_0:bat[:any_1], X_1:lng) (X_2:lng, X_3:bat[:any_1])
-ITRnewChunk
-Create an iterator with fixed granule size.@The result is a view.
-iterator
 next
 pattern iterator.next(X_0:bat[:any_1]) (X_1:oid, X_2:any_1)
 ITRbunNext
 Produce the next bun for processing.
-iterator
-next
-command iterator.next(X_0:bat[:any_1], X_1:lng) (X_2:lng, X_3:bat[:any_1])
-ITRnextChunk
-Produce the next chunk for processing.
-iterator
-next
-command iterator.next(X_0:dbl, X_1:dbl):dbl
-ITRnext_dbl
-Advances the iterator with a fixed value
-iterator
-next
-command iterator.next(X_0:flt, X_1:flt):flt
-ITRnext_flt
-(empty)
-iterator
-next
-command iterator.next(X_0:hge, X_1:hge):hge
-ITRnext_hge
-(empty)
-iterator
-next
-command iterator.next(X_0:int, X_1:int):int
-ITRnext_int
-(empty)
-iterator
-next
-command iterator.next(X_0:lng, X_1:lng):lng
-ITRnext_lng
-(empty)
-iterator
-next
-command iterator.next(X_0:oid, X_1:oid):oid
-ITRnext_oid
-(empty)
-iterator
-next
-command iterator.next(X_0:sht, X_1:sht):sht
-ITRnext_sht
-(empty)
 json
 dump
 pattern json.dump(X_0:json):bat[:str]

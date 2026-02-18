@@ -560,7 +560,7 @@ select 'null in fkeys.delete_action', delete_action, * from sys.fkeys where dele
 [ "sys._tables",	"sys",	"range_partitions",	NULL,	"TABLE",	true,	"COMMIT",	"WRITABLE",	NULL	]
 [ "sys._tables",	"sys",	"rejects",	"create view sys.rejects as select * from sys.rejects();",	"VIEW",	true,	"COMMIT",	"WRITABLE",	NULL	]
 [ "sys._tables",	"sys",	"remote_user_info",	NULL,	"TABLE",	true,	"COMMIT",	"WRITABLE",	NULL	]
-[ "sys._tables",	"sys",	"roles",	"create view sys.roles as select id, name, grantor from sys.auths a where a.name not in (select u.name from sys.db_user_info u);",	"VIEW",	true,	"COMMIT",	"WRITABLE",	NULL	]
+[ "sys._tables",	"sys",	"roles",	"create view sys.roles as select id, name, grantor from sys.auths;",	"VIEW",	true,	"COMMIT",	"WRITABLE",	NULL	]
 [ "sys._tables",	"sys",	"schemas",	NULL,	"TABLE",	true,	"COMMIT",	"WRITABLE",	NULL	]
 [ "sys._tables",	"sys",	"schemastorage",	"create view sys.\"schemastorage\" as select \"schema\", count(*) as \"storages\", sum(columnsize) as columnsize, sum(heapsize) as heapsize, sum(hashes) as hashsize, sum(\"imprints\") as imprintsize, sum(orderidx) as orderidxsize from sys.\"storage\" group by \"schema\" order by \"schema\";",	"VIEW",	true,	"COMMIT",	"WRITABLE",	NULL	]
 [ "sys._tables",	"sys",	"sequences",	NULL,	"TABLE",	true,	"COMMIT",	"WRITABLE",	NULL	]
@@ -584,6 +584,7 @@ select 'null in fkeys.delete_action', delete_action, * from sys.fkeys where dele
 [ "sys._tables",	"sys",	"var_values",	"create view sys.var_values (var_name, value) as select 'current_role', current_role union all select 'current_schema', current_schema union all select 'current_timezone', current_timezone union all select 'current_user', current_user union all select 'debug', debug union all select 'last_id', last_id union all select 'optimizer', optimizer union all select 'pi', pi() union all select 'rowcnt', rowcnt;",	"VIEW",	true,	"COMMIT",	"WRITABLE",	NULL	]
 [ "sys._tables",	"tmp",	"_columns",	NULL,	"TABLE",	true,	"PRESERVE",	"WRITABLE",	NULL	]
 [ "sys._tables",	"tmp",	"_tables",	NULL,	"TABLE",	true,	"PRESERVE",	"WRITABLE",	NULL	]
+[ "sys._tables",	"tmp",	"dependencies",	NULL,	"TABLE",	true,	"PRESERVE",	"WRITABLE",	NULL	]
 [ "sys._tables",	"tmp",	"idxs",	NULL,	"TABLE",	true,	"PRESERVE",	"WRITABLE",	NULL	]
 [ "sys._tables",	"tmp",	"keys",	NULL,	"TABLE",	true,	"PRESERVE",	"WRITABLE",	NULL	]
 [ "sys._tables",	"tmp",	"objects",	NULL,	"TABLE",	true,	"PRESERVE",	"WRITABLE",	NULL	]
@@ -1668,6 +1669,9 @@ select 'null in fkeys.delete_action', delete_action, * from sys.fkeys where dele
 [ "sys._columns",	"tmp",	"_tables",	"system",	"boolean",	1,	0,	NULL,	true,	5,	NULL,	NULL	]
 [ "sys._columns",	"tmp",	"_tables",	"commit_action",	"smallint",	15,	0,	NULL,	true,	6,	NULL,	NULL	]
 [ "sys._columns",	"tmp",	"_tables",	"access",	"smallint",	15,	0,	NULL,	true,	7,	NULL,	NULL	]
+[ "sys._columns",	"tmp",	"dependencies",	"id",	"int",	31,	0,	NULL,	true,	0,	NULL,	NULL	]
+[ "sys._columns",	"tmp",	"dependencies",	"depend_id",	"int",	31,	0,	NULL,	true,	1,	NULL,	NULL	]
+[ "sys._columns",	"tmp",	"dependencies",	"depend_type",	"smallint",	15,	0,	NULL,	true,	2,	NULL,	NULL	]
 [ "sys._columns",	"tmp",	"idxs",	"id",	"int",	31,	0,	NULL,	true,	0,	NULL,	NULL	]
 [ "sys._columns",	"tmp",	"idxs",	"table_id",	"int",	31,	0,	NULL,	true,	1,	NULL,	NULL	]
 [ "sys._columns",	"tmp",	"idxs",	"type",	"int",	31,	0,	NULL,	true,	2,	NULL,	NULL	]
@@ -3459,7 +3463,6 @@ select 'null in fkeys.delete_action', delete_action, * from sys.fkeys where dele
 [ "table used by view",	"tmp",	"keys",	"sys",	"ids",	"VIEW"	]
 [ "table used by view",	"tmp",	"triggers",	"sys",	"ids",	"VIEW"	]
 [ "table used by view",	"sys",	"auths",	"sys",	"roles",	"VIEW"	]
-[ "table used by view",	"sys",	"db_user_info",	"sys",	"roles",	"VIEW"	]
 [ "table used by view",	"sys",	"storage",	"sys",	"schemastorage",	"VIEW"	]
 [ "table used by view",	"sys",	"schemas",	"sys",	"statistics",	"VIEW"	]
 [ "table used by view",	"sys",	"tables",	"sys",	"statistics",	"VIEW"	]
@@ -4327,7 +4330,6 @@ select 'null in fkeys.delete_action', delete_action, * from sys.fkeys where dele
 [ "column used by view",	"sys",	"auths",	"grantor",	"sys",	"roles",	"VIEW"	]
 [ "column used by view",	"sys",	"auths",	"id",	"sys",	"roles",	"VIEW"	]
 [ "column used by view",	"sys",	"auths",	"name",	"sys",	"roles",	"VIEW"	]
-[ "column used by view",	"sys",	"db_user_info",	"name",	"sys",	"roles",	"VIEW"	]
 [ "column used by view",	"sys",	"storage",	"columnsize",	"sys",	"schemastorage",	"VIEW"	]
 [ "column used by view",	"sys",	"storage",	"hashes",	"sys",	"schemastorage",	"VIEW"	]
 [ "column used by view",	"sys",	"storage",	"heapsize",	"sys",	"schemastorage",	"VIEW"	]
@@ -6122,8 +6124,8 @@ select 'null in fkeys.delete_action', delete_action, * from sys.fkeys where dele
 % %7,	role_id,	login_id,	role_id # name
 % varchar,	int,	int,	int # type
 % 0,	1,	1,	1 # length
-% .%7,	sys.user_role,	sys.user_role,	sys.user_role # table_name
-% %7,	role_id,	login_id,	role_id # name
+% .%4,	sys.user_role,	sys.user_role,	sys.user_role # table_name
+% %4,	role_id,	login_id,	role_id # name
 % varchar,	int,	int,	int # type
 % 0,	1,	1,	1 # length
 % .%4,	sys.privileges,	sys.privileges,	sys.privileges,	sys.privileges,	sys.privileges,	sys.privileges # table_name
