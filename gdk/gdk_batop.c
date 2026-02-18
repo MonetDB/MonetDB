@@ -232,9 +232,12 @@ insert_string_bat(BAT *b, BATiter *ni, struct canditer *ci, bool force, bool may
 
 	/* make sure there is (vertical) space in the offset heap, we
 	 * may also widen thanks to v, set above */
+	MT_lock_set(&b->theaplock);
 	if (GDKupgradevarheap(b, v, oldcnt + cnt < b->batCapacity ? b->batCapacity : oldcnt + cnt, b->batCount) != GDK_SUCCEED) {
+		MT_lock_unset(&b->theaplock);
 		return GDK_FAIL;
 	}
+	MT_lock_unset(&b->theaplock);
 
 	if (toff == 0 && ni->width == b->twidth && ci->tpe == cand_dense) {
 		/* we don't need to do any translation of offset
@@ -1511,14 +1514,15 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 				prevnew = new;
 				prevoff = d;
 			}
-			MT_lock_unset(&b->theaplock);
 			if (rc != GDK_SUCCEED) {
+				MT_lock_unset(&b->theaplock);
 				goto bailout;
 			}
 			if (b->twidth < SIZEOF_VAR_T &&
 			    (b->twidth <= 2 ? d - GDK_VAROFFSET : d) >= ((size_t) 1 << (8 << b->tshift))) {
 				/* doesn't fit in current heap, upgrade it */
 				if (GDKupgradevarheap(b, d, 0, MAX(updid, b->batCount)) != GDK_SUCCEED) {
+					MT_lock_unset(&b->theaplock);
 					goto bailout;
 				}
 			}
@@ -1533,6 +1537,7 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 				bi.minpos = minpos;
 				bi.maxpos = maxpos;
 			}
+			MT_lock_unset(&b->theaplock);
 			switch (b->twidth) {
 			case 1:
 				((uint8_t *) b->theap->base)[updid] = (uint8_t) (d - GDK_VAROFFSET);

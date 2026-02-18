@@ -1219,15 +1219,18 @@ tfastins_nocheckVAR(BAT *b, BUN p, const void *v)
 	assert(b->theap->parentid == b->batCacheid);
 	MT_lock_set(&b->theaplock);
 	rc = ATOMputVAR(b, &d, v);
-	MT_lock_unset(&b->theaplock);
-	if (rc != GDK_SUCCEED)
+	if (rc != GDK_SUCCEED) {
+		MT_lock_unset(&b->theaplock);
 		return rc;
+	}
 	if (b->twidth < SIZEOF_VAR_T &&
 	    (b->twidth <= 2 ? d - GDK_VAROFFSET : d) >= ((size_t) 1 << (8 << b->tshift))) {
 		/* doesn't fit in current heap, upgrade it */
 		rc = GDKupgradevarheap(b, d, 0, MAX(p, b->batCount));
-		if (rc != GDK_SUCCEED)
+		if (rc != GDK_SUCCEED) {
+			MT_lock_unset(&b->theaplock);
 			return rc;
+		}
 	}
 	switch (b->twidth) {
 	case 1:
@@ -1247,6 +1250,7 @@ tfastins_nocheckVAR(BAT *b, BUN p, const void *v)
 	default:
 		MT_UNREACHABLE();
 	}
+	MT_lock_unset(&b->theaplock);
 	return GDK_SUCCEED;
 }
 
