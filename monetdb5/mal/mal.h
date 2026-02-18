@@ -108,7 +108,8 @@ typedef struct SYMDEF {
 	struct SYMDEF *skip;		/* skip to next different symbol */
 	const char *name;
 	int kind;					/* what kind of symbol */
-	bool allocated;				/* allocated using mallocs or compiled inside the binary */
+	bool allocated:1;			/* allocated using mallocs or compiled inside the binary */
+	bool fallocated:1;			/* func contents was malloced */
 	struct MALBLK *def;			/* the details of the MAL fcn */
 	mel_func *func;
 } *Symbol, SymRecord;
