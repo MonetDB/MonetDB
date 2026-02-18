@@ -460,14 +460,6 @@ BATproject2(BAT *restrict l, BAT *restrict r1, BAT *restrict r2)
 			tpe = r1i.width == 1 ? TYPE_bte : (r1i.width == 2 ? TYPE_sht : (r1i.width == 4 ? TYPE_int : TYPE_lng));
 			vheaptrick = true;
 		}
-	} else if (ATOMvarsized(tpe) &&
-		   li.nonil &&
-		   r2 == NULL &&
-		   (r1i.count == 0 ||
-		    lcount > (r1i.count >> 3) ||
-		    r1i.restricted == BAT_READ)) {
-		tpe = r1i.width == 4 ? TYPE_int : TYPE_lng;
-		vheaptrick = true;
 	} else if (tpe == TYPE_msk || mask_cand(r1)) {
 		r1 = BATunmask(r1);
 		if (r1 == NULL)

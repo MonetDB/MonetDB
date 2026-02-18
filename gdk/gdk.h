@@ -247,8 +247,6 @@ typedef size_t BUN;
 #endif
 #define BUN_MAX (BUN_NONE - 1)	/* maximum allowed size of a BAT */
 
-#define ATOMextern(t)	(ATOMstorage(t) >= TYPE_str)
-
 typedef enum {
 	PERSISTENT = 0,
 	TRANSIENT,
