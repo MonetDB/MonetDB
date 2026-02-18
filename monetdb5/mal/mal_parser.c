@@ -1402,6 +1402,7 @@ fcnCommandPatternHeader(Client ctx, int kind)
 		return NULL;
 	}
 	*curFunc = (mel_func) {
+		.allocated = true,
 		.command = kind == COMMANDsymbol,
 		.fcn = fnme,
 		.mod = modnme,
@@ -1550,7 +1551,6 @@ parseCommandPattern(Client ctx, int kind, MALfcn address)
 	curPrg->func = curFunc;
 	curPrg->def = NULL;
 	curPrg->allocated = true;
-	curPrg->fallocated = true;
 
 	skipSpace(ctx);
 	if (MALkeyword(ctx, "address", 7)) {
