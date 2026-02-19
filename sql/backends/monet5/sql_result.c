@@ -242,7 +242,7 @@ bat_max_strlength(BAT *b)
 	int max = 0;
 	BATiter bi = bat_iterator(b);
 
-	BATloop(b, p, q) {
+	BATloop(&bi, p, q) {
 		l = UTF8_strwidth((const char *) BUNtvar(&bi, p));
 
 		if (is_int_nil(l))
@@ -264,7 +264,7 @@ bat_max_##TPE##length(BAT *b) \
 	BATiter bi = bat_iterator(b); \
 	const TPE *restrict vals = (const TPE *) bi.base; \
  \
-	BATloop(b, p, q) { \
+	BATloop(&bi, p, q) { \
 		HIGH m = 0; \
 		TPE l = vals[p]; \
  \

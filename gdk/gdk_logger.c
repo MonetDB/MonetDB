@@ -1822,10 +1822,9 @@ log_switch_bat(BAT *old, BAT *new, const char *fn, const char *name)
 static gdk_return
 bm_get_counts(logger *lg)
 {
-	BUN p, q;
 	const log_bid *bids = (const log_bid *) Tloc(lg->catalog_bid, 0);
 
-	BATloop(lg->catalog_bid, p, q) {
+	for (BUN p = 0, q = lg->catalog_bid->batCount; p < q; p++) {
 		oid pos = p;
 		lng cnt = 0;
 		lng lid = lng_nil;
@@ -1885,7 +1884,7 @@ cleanup_and_swap(logger *lg, int *r, const log_bid *bids, lng *lids, lng *cnts,
 	}
 
 	oid *poss = Tloc(dcatalog, 0);
-	BATloop(dcatalog, p, q) {
+	for (p = 0, q = dcatalog->batCount; p < q; p++) {
 		oid pos = poss[p];
 
 		if (lids[pos] == lng_nil || lids[pos] > lg->saved_tid)
@@ -1997,7 +1996,6 @@ bm_subcommit(logger *lg, logged_range *pending, uint32_t *updated, BUN maxupdate
 	allocator_state ta_state = ma_open(ta);
 	BUN cnt = pending ? pending->cnt : BATcount(lg->catalog_bid);
 	BUN dcnt = BATcount(lg->dcatalog);
-	BUN p, q;
 	BAT *catalog_bid = lg->catalog_bid;
 	BAT *catalog_id = lg->catalog_id;
 	BAT *dcatalog = lg->dcatalog;
@@ -2025,7 +2023,7 @@ bm_subcommit(logger *lg, logged_range *pending, uint32_t *updated, BUN maxupdate
 		cnts = (lng *) Tloc(lg->catalog_cnt, 0);
 	if (lg->catalog_lid)
 		lids = (lng *) Tloc(lg->catalog_lid, 0);
-	BATloop(catalog_bid, p, q) {
+	for (BUN p = 0, q = lg->catalog_bid->batCount; p < q; p++) {
 		if (lids && lids[p] != lng_nil && lids[p] <= lg->saved_tid) {
 			cleanup++;
 			if (lids[p] == -1)
@@ -2377,7 +2375,6 @@ log_load(const char *fn, logger *lg, char filename[FILENAME_MAX])
 		/* find the persistent catalog. As non persistent bats
 		 * require a logical reference we also add a logical
 		 * reference for the persistent bats */
-		BUN p, q;
 		BAT *b, *o, *d;
 
 		assert(!lg->inmemory);
@@ -2427,7 +2424,7 @@ log_load(const char *fn, logger *lg, char filename[FILENAME_MAX])
 			lg->catalog_id = o;
 			lg->dcatalog = d;
 			const log_bid *bids = (const log_bid *) Tloc(lg->catalog_bid, 0);
-			BATloop(lg->catalog_bid, p, q) {
+			for (BUN p = 0, q = lg->catalog_bid->batCount; p < q; p++) {
 				bat bid = bids[p];
 				oid pos = p;
 
@@ -2741,12 +2738,11 @@ log_destroy(logger *lg)
 	}
 	if (lg->catalog_bid) {
 		log_lock(lg);
-		BUN p, q;
 		BAT *b = lg->catalog_bid;
 
 		/* free resources */
 		const log_bid *bids = (const log_bid *) Tloc(b, 0);
-		BATloop(b, p, q) {
+		for (BUN p = 0, q = b->batCount; p < q; p++) {
 			bat bid = bids[p];
 
 			BBPrelease(bid);

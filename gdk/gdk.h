@@ -1502,8 +1502,8 @@ gdk_export void VIEWbounds(BAT *b, BAT *view, BUN l, BUN h);
 		}							\
 	} while (false)
 
-#define BATloop(r, p, q)				\
-	for (q = BATcount(r), p = 0; p < q; p++)
+#define BATloop(bi, p, q)				\
+	for (q = (bi)->count, p = 0; p < q; p++)
 
 enum prop_t {
 	GDK_MIN_BOUND, /* MINimum allowed value for range partitions [min, max> */

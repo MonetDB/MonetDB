@@ -1069,8 +1069,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 			bat_data->valloced = !can_mprotect_varheap;
 
 			li = bat_iterator(input_bats[index]);
-			BATloop(input_bats[index], p, q)
-			{
+			BATloop(&li, p, q) {
 				char *t = (char *)BUNtvar(&li, p);
 				if (strNil(t)) {
 					bat_data->data[j] = NULL;
@@ -1176,8 +1175,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 			bat_data->valloced = !can_mprotect_varheap;
 
 			li = bat_iterator(input_bats[index]);
-			BATloop(input_bats[index], p, q)
-			{
+			BATloop(&li, p, q) {
 				blob *t = (blob *)BUNtvar(&li, p);
 				if (t->nitems == ~(size_t)0) {
 					bat_data->data[j].size = ~(size_t) 0;
@@ -1232,8 +1230,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 			j = 0;
 
 			li = bat_iterator(input_bats[index]);
-			BATloop(input_bats[index], p, q)
-			{
+			BATloop(&li, p, q) {
 				const void *t = BUNtail(&li, p);
 				if (BATatoms[bat_type].atomNull &&
 					BATatoms[bat_type].atomCmp(
