@@ -75,7 +75,8 @@ if len(sys.argv) == 2 and sys.argv[1] == 'upgrade':
     with open(f) as fil:
         stable = fil.readlines()
     import difflib
-    for line in difflib.unified_diff(stable, srvout, fromfile='test', tofile=f):
+    for line in difflib.unified_diff(stable, srvout,
+                                     fromfile='expected', tofile='received'):
         sys.stderr.write(line)
         xit = 1
     if len(cltout) != 3 or cltout[0] != 'START TRANSACTION;' or cltout[1] != 'SET SCHEMA "sys";' or cltout[2] != 'COMMIT;':
