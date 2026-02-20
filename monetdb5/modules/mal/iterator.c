@@ -42,79 +42,6 @@
 #include "mal_exception.h"
 
 /*
- * We start with the large chunk iterator.
- * The definition of the control statements require the same
- * control variables, which means that the BATview is accessible
- * to determine how far to advance when the next chunk is retrieved.
- * The number of elements in the chunk is limited by the granule
- * size.
- */
-static str
-ITRnewChunk(Client ctx, lng *res, bat *vid, const bat *bid, const lng *granule)
-{
-	(void) ctx;
-	BAT *b, *view;
-
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "chop.newChunk", INTERNAL_BAT_ACCESS);
-	}
-	/*  printf("set bat chunk bound to " LLFMT " 0 - " BUNFMT "\n",
-	 *granule, MIN(BATcount(b),(BUN) *granule)); */
-	view = VIEWcreate(b->hseqbase, b, 0, (BUN) *granule);
-	if (view == NULL) {
-		BBPunfix(b->batCacheid);
-		throw(MAL, "chop.newChunk", GDK_EXCEPTION);
-	}
-
-	*vid = view->batCacheid;
-	BBPkeepref(view);
-	BBPunfix(b->batCacheid);
-	*res = 0;
-	return MAL_SUCCEED;
-}
-
-/*
- * The nextChunk version advances the reader,
- * which also means that the view descriptor is already available.
- * The granule size may differ in each call.
- */
-static str
-ITRnextChunk(Client ctx, lng *res, bat *vid, const bat *bid, const lng *granule)
-{
-	(void) ctx;
-	BAT *b, *view;
-	BUN i;
-
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "iterator.nextChunk", INTERNAL_BAT_ACCESS);
-	}
-	if ((view = BATdescriptor(*vid)) == NULL) {
-		BBPunfix(b->batCacheid);
-		throw(MAL, "iterator.nextChunk", INTERNAL_BAT_ACCESS);
-	}
-	i = (BUN) (*res + BATcount(view));
-	if (i >= BATcount(b)) {
-		*res = lng_nil;
-		*vid = 0;
-		BBPunfix(view->batCacheid);
-		BBPunfix(b->batCacheid);
-		return MAL_SUCCEED;
-	}
-	/* printf("set bat chunk bound to " BUNFMT " - " BUNFMT " \n",
-	   i, i+(BUN) *granule-1); */
-	VIEWbounds(b, view, i, i + (BUN) *granule);
-	MT_lock_set(&b->theaplock);
-	view->tkey = b->tkey | (*granule <= 1);
-	MT_lock_unset(&b->theaplock);
-	BAThseqbase(view, is_oid_nil(b->hseqbase) ? oid_nil : b->hseqbase + i);
-	*vid = view->batCacheid;
-	BBPkeepref(view);
-	BBPunfix(b->batCacheid);
-	*res = i;
-	return MAL_SUCCEED;
-}
-
-/*
  * @-
  * The BUN- and BAT-stream manipulate a long handle, i.e.
  * the destination variable. It assumes it has been set to
@@ -139,7 +66,7 @@ ITRbunIterator(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bid = getArgReference_bat(stk, pci, 2);
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "iterator.nextChunk", INTERNAL_BAT_ACCESS);
+		throw(MAL, "iterator.new", INTERNAL_BAT_ACCESS);
 	}
 
 	if (BATcount(b) == 0) {
@@ -153,7 +80,7 @@ ITRbunIterator(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (VALinit(mb->ma, tail, ATOMtype(b->ttype), BUNtail(&bi, *head)) == NULL) {
 		bat_iterator_end(&bi);
 		BBPunfix(b->batCacheid);
-		throw(MAL, "iterator.nextChunk", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		throw(MAL, "iterator.new", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	bat_iterator_end(&bi);
 	BBPunfix(b->batCacheid);
@@ -176,7 +103,7 @@ ITRbunNext(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bid = getArgReference_bat(stk, pci, 2);
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "iterator.nextChunk", INTERNAL_BAT_ACCESS);
+		throw(MAL, "iterator.next", INTERNAL_BAT_ACCESS);
 	}
 
 	*head = *head + 1;
@@ -189,113 +116,17 @@ ITRbunNext(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (VALinit(mb->ma, tail, ATOMtype(b->ttype), BUNtail(&bi, *head)) == NULL) {
 		bat_iterator_end(&bi);
 		BBPunfix(b->batCacheid);
-		throw(MAL, "iterator.nextChunk", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		throw(MAL, "iterator.next", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	bat_iterator_end(&bi);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 
-static str
-ITRnext_oid(Client ctx, oid *i, const oid *step, const oid *last)
-{
-	(void) ctx;
-	oid v = *i;
-	v = v + *step;
-	*i = v;
-	if (*last <= v)
-		*i = oid_nil;
-	return MAL_SUCCEED;
-}
-
-static str
-ITRnext_lng(Client ctx, lng *i, const lng *step, const lng *last)
-{
-	(void) ctx;
-	lng v = *i;
-	v = v + *step;
-	*i = v;
-	if (*last <= v)
-		*i = lng_nil;
-	return MAL_SUCCEED;
-}
-
-#ifdef HAVE_HGE
-static str
-ITRnext_hge(Client ctx, hge *i, const hge *step, const hge *last)
-{
-	(void) ctx;
-	hge v = *i;
-	v = v + *step;
-	*i = v;
-	if (*last <= v)
-		*i = hge_nil;
-	return MAL_SUCCEED;
-}
-#endif
-static str
-ITRnext_int(Client ctx, int *i, const int *step, const int *last)
-{
-	(void) ctx;
-	int v = *i;
-	v = v + *step;
-	*i = v;
-	if (*last <= v)
-		*i = int_nil;
-	return MAL_SUCCEED;
-}
-
-static str
-ITRnext_sht(Client ctx, sht *i, const sht *step, const sht *last)
-{
-	(void) ctx;
-	sht v = *i;
-	v = v + *step;
-	*i = v;
-	if (*last <= v)
-		*i = int_nil;
-	return MAL_SUCCEED;
-}
-
-static str
-ITRnext_flt(Client ctx, flt *i, const flt *step, const flt *last)
-{
-	(void) ctx;
-	flt v = *i;
-	v = v + *step;
-	*i = v;
-	if (*last <= v)
-		*i = flt_nil;
-	return MAL_SUCCEED;
-}
-
-static str
-ITRnext_dbl(Client ctx, dbl *i, const dbl *step, const dbl *last)
-{
-	(void) ctx;
-	dbl v = *i;
-	v = v + *step;
-	*i = v;
-	if (*last <= v)
-		*i = dbl_nil;
-	return MAL_SUCCEED;
-}
-
 #include "mel.h"
 static mel_func iterator_init_funcs[] = {
- command("iterator", "new", ITRnewChunk, false, "Create an iterator with fixed granule size.\nThe result is a view.", args(2,4, arg("",lng),batargany("",1),batargany("b",1),arg("size",lng))),
- command("iterator", "next", ITRnextChunk, false, "Produce the next chunk for processing.", args(2,4, arg("",lng),batargany("",1),batargany("b",1),arg("size",lng))),
  pattern("iterator", "new", ITRbunIterator, false, "Process the buns one by one extracted from a void table.", args(2,3, arg("h",oid),argany("t",1),batargany("b",1))),
  pattern("iterator", "next", ITRbunNext, false, "Produce the next bun for processing.", args(2,3, arg("h",oid),argany("t",1),batargany("b",1))),
- command("iterator", "next", ITRnext_oid, false, "", args(1,3, arg("",oid),arg("step",oid),arg("last",oid))),
- command("iterator", "next", ITRnext_sht, false, "", args(1,3, arg("",sht),arg("step",sht),arg("last",sht))),
- command("iterator", "next", ITRnext_int, false, "", args(1,3, arg("",int),arg("step",int),arg("last",int))),
- command("iterator", "next", ITRnext_lng, false, "", args(1,3, arg("",lng),arg("step",lng),arg("last",lng))),
- command("iterator", "next", ITRnext_flt, false, "", args(1,3, arg("",flt),arg("step",flt),arg("last",flt))),
- command("iterator", "next", ITRnext_dbl, false, "Advances the iterator with a fixed value", args(1,3, arg("",dbl),arg("step",dbl),arg("last",dbl))),
-#ifdef HAVE_HGE
- command("iterator", "next", ITRnext_hge, false, "", args(1,3, arg("",hge),arg("step",hge),arg("last",hge))),
-#endif
  { .imp=NULL }
 };
 #include "mal_import.h"

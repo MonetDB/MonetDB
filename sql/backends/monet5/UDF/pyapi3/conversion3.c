@@ -215,8 +215,7 @@ PyArrayObject_FromBAT(allocator *ma, Client ctx, PyInput *inp, size_t t_start, s
 		li = bat_iterator(b);
 		vararray = PyArray_EMPTY(1, elements, NPY_OBJECT, 0);
 		data = PyArray_DATA((PyArrayObject *)vararray);
-		BATloop(b, p, q)
-		{
+		BATloop(&li, p, q) {
 			const blob *t = (const blob *)BUNtvar(&li, p);
 			if (t->nitems == ~(size_t)0) {
 				data[p] = Py_None;
@@ -272,8 +271,7 @@ PyArrayObject_FromBAT(allocator *ma, Client ctx, PyInput *inp, size_t t_start, s
 					PyObject **data = ((PyObject **)PyArray_DATA((PyArrayObject *)vararray));
 					// PyObject *obj;
 					j = 0;
-					BATloop(b, p, q)
-					{
+					BATloop(&li, p, q) {
 						date dt = *(const date*)BUNtail(&li, p);
 						if (is_date_nil(dt))
 							dt = date_create(1, 1, 1);
@@ -292,8 +290,7 @@ PyArrayObject_FromBAT(allocator *ma, Client ctx, PyInput *inp, size_t t_start, s
 					PyObject **data = ((PyObject **)PyArray_DATA((PyArrayObject *)vararray));
 					// PyObject *obj;
 					j = 0;
-					BATloop(b, p, q)
-					{
+					BATloop(&li, p, q) {
 						daytime dt = *(const daytime*)BUNtail(&li, p);
 						if (is_daytime_nil(dt))
 							dt = daytime_create(0, 0, 0, 0);
@@ -315,8 +312,7 @@ PyArrayObject_FromBAT(allocator *ma, Client ctx, PyInput *inp, size_t t_start, s
 					PyObject **data = ((PyObject **)PyArray_DATA((PyArrayObject *)vararray));
 					// PyObject *obj;
 					j = 0;
-					BATloop(b, p, q)
-					{
+					BATloop(&li, p, q) {
 						const timestamp ts = *(const timestamp*)BUNtail(&li, p);
 						const date dt = is_timestamp_nil(ts) ? date_create(1, 1, 1) : timestamp_date(ts);
 						const daytime dtm = is_timestamp_nil(ts) ? daytime_create(0, 0, 0, 0) : timestamp_daytime(ts);
@@ -335,8 +331,7 @@ PyArrayObject_FromBAT(allocator *ma, Client ctx, PyInput *inp, size_t t_start, s
 				vararray = PyArray_New(&PyArray_Type, 1, elements, NPY_OBJECT,
 									   NULL, NULL, 0, 0, NULL);
 
-				BATloop(b, p, q)
-				{
+				BATloop(&li, p, q) {
 					const char *t = (const char *)BUNtvar(&li, p);
 					for (; *t != 0; t++) {
 						if (*t & 0x80) {
@@ -363,8 +358,7 @@ PyArrayObject_FromBAT(allocator *ma, Client ctx, PyInput *inp, size_t t_start, s
 													  " PyObject strings.");
 								goto wrapup;
 							}
-							BATloop(b, p, q)
-							{
+							BATloop(&li, p, q) {
 								const char *t = (const char *)BUNtvar(&li, p);
 								ptrdiff_t offset = t - b->tvheap->base;
 								if (!pyptrs[offset]) {
@@ -392,8 +386,7 @@ PyArrayObject_FromBAT(allocator *ma, Client ctx, PyInput *inp, size_t t_start, s
 							}
 							GDKfree(pyptrs);
 						} else {
-							BATloop(b, p, q)
-							{
+							BATloop(&li, p, q) {
 								const char *t = (const char *)BUNtvar(&li, p);
 								if (strNil(t)) {
 									// str_nil isn't a valid UTF-8 character
@@ -428,8 +421,7 @@ PyArrayObject_FromBAT(allocator *ma, Client ctx, PyInput *inp, size_t t_start, s
 													  " PyObject strings.");
 								goto wrapup;
 							}
-							BATloop(b, p, q)
-							{
+							BATloop(&li, p, q) {
 								const char *t = (const char *)BUNtvar(&li, p);
 								ptrdiff_t offset = t - b->tvheap->base;
 								if (!pyptrs[offset]) {
@@ -441,8 +433,7 @@ PyArrayObject_FromBAT(allocator *ma, Client ctx, PyInput *inp, size_t t_start, s
 							}
 							GDKfree(pyptrs);
 						} else {
-							BATloop(b, p, q)
-							{
+							BATloop(&li, p, q) {
 								const char *t = (const char *)BUNtvar(&li, p);
 								obj = PyUnicode_FromString(t);
 								if (obj == NULL) {
@@ -471,7 +462,7 @@ PyArrayObject_FromBAT(allocator *ma, Client ctx, PyInput *inp, size_t t_start, s
 				npy_float64 *data = (npy_float64 *)PyArray_DATA((PyArrayObject *)vararray);
 				BATiter bi = bat_iterator(b);
 				const hge *vals = (const hge *) bi.base;
-				BATloop(b, p, q) {
+				BATloop(&bi, p, q) {
 					data[j++] = (npy_float64)vals[p];
 				}
 				bat_iterator_end(&bi);
@@ -1204,8 +1195,7 @@ ConvertFromSQLType(allocator *ma, Client ctx, BAT *b, sql_subtype *sql_subtype, 
 								   SQLSTATE(HY013) MAL_MALLOC_FAIL " string conversion BAT.");
 		}
 		BATiter li = bat_iterator(b);
-		BATloop(b, p, q)
-		{
+		BATloop(&li, p, q) {
 			const void *element = (const void*)BUNtail(&li, p);
 			if (strConversion(ma, &result, &length, element, false) < 0) {
 				bat_iterator_end(&li);

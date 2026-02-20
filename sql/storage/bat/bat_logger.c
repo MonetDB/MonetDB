@@ -909,8 +909,7 @@ bl_postversion(void *Store, logger *lg)
 			 * arguments that we've found (i.e. just the input and
 			 * output arg for sys.st_interiorrings and the function
 			 * itself) */
-			BUN p, q;
-			BATloop (r1, p, q) {
+			for (BUN p = 0, q = r1->batCount; p < q; p++) {
 				oid o = BUNtoid(r1, p);
 				if (BUNreplace(b, o, &(bool) {true}, false) != GDK_SUCCEED) {
 					bat_destroy(funcs);

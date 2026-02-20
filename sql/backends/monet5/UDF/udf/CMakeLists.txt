@@ -25,7 +25,7 @@ create_include_object(
 
 target_sources(udf
   PRIVATE
-  udf.c udf.h
+  udf.c
   udf_impl.h
   ${MONETDB_CURRENT_SQL_SOURCES})
 

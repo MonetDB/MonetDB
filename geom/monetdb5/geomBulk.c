@@ -685,7 +685,7 @@ wkbMBR_bat(Client ctx, bat *outBAT_id, bat *inBAT_id)
 	}
 
 	inBAT_iter = bat_iterator(inBAT);
-	BATloop(inBAT, p, q) {
+	BATloop(&inBAT_iter, p, q) {
 		str err = NULL;
 
 		inWKB = (wkb *) BUNtvar(&inBAT_iter, p);
@@ -1154,7 +1154,7 @@ wkbCoordinateFromMBR_bat(Client ctx, bat *outBAT_id, bat *inBAT_id, int *coordin
 
 	//iterator over the BAT
 	inBAT_iter = bat_iterator(inBAT);
-	BATloop(inBAT, p, q) {	//iterate over all valid elements
+	BATloop(&inBAT_iter, p, q) {	//iterate over all valid elements
 		str err = NULL;
 
 		inMBR = (mbr *) BUNtloc(&inBAT_iter, p);
@@ -1204,7 +1204,7 @@ WKBtoSTRflagINT_bat(Client ctx, bat *outBAT_id, bat *inBAT_id, int *flag, str (*
 
 	//iterator over the input BAT
 	inBAT_iter = bat_iterator(inBAT);
-	BATloop(inBAT, p, q) {	//iterate over all valid elements
+	BATloop(&inBAT_iter, p, q) {	//iterate over all valid elements
 		str err = NULL;
 		char *outSingle;
 
@@ -1275,7 +1275,7 @@ WKBtoWKB_bat(Client ctx, bat *outBAT_id, bat *inBAT_id, str (*func) (Client, wkb
 
 	//iterator over the input BAT
 	inBAT_iter = bat_iterator(inBAT);
-	BATloop(inBAT, p, q) {	//iterate over all valid elements
+	BATloop(&inBAT_iter, p, q) {	//iterate over all valid elements
 		str err = NULL;
 		wkb *outSingle;
 
@@ -1339,7 +1339,7 @@ WKBtoWKBflagINT_bat(Client ctx, bat *outBAT_id, bat *inBAT_id, const int *flag, 
 
 	//iterator over the input BAT
 	inBAT_iter = bat_iterator(inBAT);
-	BATloop(inBAT, p, q) {	//iterate over all valid elements
+	BATloop(&inBAT_iter, p, q) {	//iterate over all valid elements
 		str err = NULL;
 		wkb *outSingle;
 
@@ -1402,7 +1402,7 @@ WKBtoBIT_bat(Client ctx, bat *outBAT_id, bat *inBAT_id, str (*func) (Client, bit
 
 	//iterator over the input BAT
 	inBAT_iter = bat_iterator(inBAT);
-	BATloop(inBAT, p, q) {	//iterate over all valid elements
+	BATloop(&inBAT_iter, p, q) {	//iterate over all valid elements
 		str err = NULL;
 		bit outSingle;
 
@@ -1494,7 +1494,7 @@ WKBtoINT_bat(Client ctx, bat *outBAT_id, bat *inBAT_id, str (*func) (Client, int
 
 	//iterator over the input BAT
 	inBAT_iter = bat_iterator(inBAT);
-	BATloop(inBAT, p, q) {	//iterate over all valid elements
+	BATloop(&inBAT_iter, p, q) {	//iterate over all valid elements
 		str err = NULL;
 		int outSingle;
 
@@ -1564,7 +1564,7 @@ WKBtoINTflagINT_bat(Client ctx, bat *outBAT_id, bat *inBAT_id, int *flag, str (*
 
 	//iterator over the input BAT
 	inBAT_iter = bat_iterator(inBAT);
-	BATloop(inBAT, p, q) {	//iterate over all valid elements
+	BATloop(&inBAT_iter, p, q) {	//iterate over all valid elements
 		str err = NULL;
 		int outSingle;
 
@@ -1635,7 +1635,7 @@ wkbGetCoordinate_bat(Client ctx, bat *outBAT_id, bat *inBAT_id, int *flag)
 
 	//iterator over the input BAT
 	inBAT_iter = bat_iterator(inBAT);
-	BATloop(inBAT, p, q) {	//iterate over all valid elements
+	BATloop(&inBAT_iter, p, q) {	//iterate over all valid elements
 		str err = NULL;
 		double outSingle;
 
@@ -1810,7 +1810,7 @@ wkbContains_geom_bat(Client ctx, bat *outBAT_id, wkb **geomWKB, bat *inBAT_id)
 
 	//iterator over the BATs
 	inBAT_iter = bat_iterator(inBAT);
-	BATloop(inBAT, p, q) {
+	BATloop(&inBAT_iter, p, q) {
 		str err = NULL;
 		bit outBIT;
 
@@ -1860,7 +1860,7 @@ wkbContains_bat_geom(Client ctx, bat *outBAT_id, bat *inBAT_id, wkb **geomWKB)
 
 	//iterator over the BATs
 	inBAT_iter = bat_iterator(inBAT);
-	BATloop(inBAT, p, q) {
+	BATloop(&inBAT_iter, p, q) {
 		str err = NULL;
 		bit outBIT;
 
@@ -2047,7 +2047,7 @@ wkbSetSRID_bat(Client ctx, bat *outBAT_id, bat *inBAT_id, int *srid)
 
 	//iterator over the BATs
 	inBAT_iter = bat_iterator(inBAT);
-	BATloop(inBAT, p, q) {
+	BATloop(&inBAT_iter, p, q) {
 		str err = NULL;
 		wkb *outWKB = NULL;
 
@@ -2158,7 +2158,7 @@ wkbDistance_geom_bat(Client ctx, bat *outBAT_id, wkb **geomWKB, bat *inBAT_id)
 
 	//iterator over the BAT
 	inBAT_iter = bat_iterator(inBAT);
-	BATloop(inBAT, p, q) {
+	BATloop(&inBAT_iter, p, q) {
 		str err = NULL;
 		double distanceVal = 0;
 

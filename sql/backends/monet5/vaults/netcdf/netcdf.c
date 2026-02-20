@@ -15,7 +15,8 @@
 #include "sql_execute.h"
 #include "sql_scenario.h"
 #include "mal_exception.h"
-#include "netcdf_vault.h"
+#include "mal.h"
+#include "mal_client.h"
 
 /* SQL statements for population of NetCDF catalog */
 #define INSFILE \
@@ -58,7 +59,7 @@ fix_quote( char *n, int l)
 
 
 /* simple test for netcdf library */
-str
+static str
 NCDFtest(Client ctx, int *vars, str *fname)
 {
 	(void) ctx;
@@ -218,7 +219,7 @@ NCDFARRAYseries(bat *bid, bte start, bte step, int stop, int group, int series)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 NCDFattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	mvc *m = NULL;
@@ -570,7 +571,7 @@ header: %s", nc_strerror(retval));
 
 /* Compose create table statement to create table representing NetCDF variable in the
  * database. Used for testing, can be removed from release. */
-str
+static str
 NCDFimportVarStmt(Client ctx, str *sciqlstmt, str *fname, int *varid)
 {
 	(void) ctx;
@@ -722,7 +723,7 @@ NCDFloadVar(bat **dim, bat *v, int ncid, int varid, nc_type vtype, int vndims, i
 }
 
 /* import variable given file id and variable name */
-str
+static str
 NCDFimportVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	mvc *m = NULL;

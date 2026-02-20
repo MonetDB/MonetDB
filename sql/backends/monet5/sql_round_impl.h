@@ -683,25 +683,17 @@ batnil_2dec(Client ctx, bat *res, const bat *bid, const int *d, const int *sc)
 {
 	(void) ctx;
 	BAT *b, *dst;
-	BUN p, q;
 
 	(void) d;
 	(void) sc;
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(SQL, "batcalc.nil_2dec_" STRING(TYPE), SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
-	dst = COLnew(b->hseqbase, TPE(TYPE), BATcount(b), TRANSIENT);
+	const TYPE r = NIL(TYPE);
+	dst = BATconstant(0, TPE(TYPE), &r, BATcount(b), TRANSIENT);
 	if (dst == NULL) {
 		BBPunfix(b->batCacheid);
 		throw(SQL, "sql.dec_" STRING(TYPE), SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	}
-	const TYPE r = NIL(TYPE);
-	BATloop(b, p, q) {
-		if (BUNappend(dst, &r, false) != GDK_SUCCEED) {
-			BBPunfix(b->batCacheid);
-			BBPreclaim(dst);
-			throw(SQL, "sql.dec_" STRING(TYPE), SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		}
 	}
 	*res = dst->batCacheid;
 	BBPkeepref(dst);

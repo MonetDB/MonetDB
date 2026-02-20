@@ -48,36 +48,69 @@ gdk_return mbrWRITE(const void *C, stream *s, size_t cnt);
 /* Non-atom MBR functions */
 bool is_mbr_nil(const mbr *m);
 /* MBR FUNCTIONS */
-geom_export str mbrFromString(Client ctx, mbr **w, const char **src);
-geom_export str wkbMBR(Client ctx, mbr **res, wkb **geom);
-geom_export str wkbBox2D(Client ctx, mbr** box, wkb** point1, wkb** point2);
-geom_export str wkbBox2D_bat(Client ctx, bat* outBAT_id, bat *aBAT_id, bat *bBAT_id);
-geom_export str mbrOverlaps(Client ctx, bit *out, mbr **b1, mbr **b2);
-geom_export str mbrOverlaps_wkb(Client ctx, bit *out, wkb **geom1WKB, wkb **geom2WKB);
-geom_export str mbrAbove(Client ctx, bit *out, mbr **b1, mbr **b2);
-geom_export str mbrAbove_wkb(Client ctx, bit *out, wkb **geom1WKB, wkb **geom2WKB);
-geom_export str mbrBelow(Client ctx, bit *out, mbr **b1, mbr **b2);
-geom_export str mbrBelow_wkb(Client ctx, bit *out, wkb **geom1WKB, wkb **geom2WKB);
-geom_export str mbrLeft(Client ctx, bit *out, mbr **b1, mbr **b2);
-geom_export str mbrLeft_wkb(Client ctx, bit *out, wkb **geom1WKB, wkb **geom2WKB);
-geom_export str mbrRight(Client ctx, bit *out, mbr **b1, mbr **b2);
-geom_export str mbrRight_wkb(Client ctx, bit *out, wkb **geom1WKB, wkb **geom2WKB);
-geom_export str mbrOverlapOrAbove(Client ctx, bit *out, mbr **b1, mbr **b2);
-geom_export str mbrOverlapOrAbove_wkb(Client ctx, bit *out, wkb **geom1WKB, wkb **geom2WKB);
-geom_export str mbrOverlapOrBelow(Client ctx, bit *out, mbr **b1, mbr **b2);
-geom_export str mbrOverlapOrBelow_wkb(Client ctx, bit *out, wkb **geom1WKB, wkb **geom2WKB);
-geom_export str mbrOverlapOrLeft(Client ctx, bit *out, mbr **b1, mbr **b2);
-geom_export str mbrOverlapOrLeft_wkb(Client ctx, bit *out, wkb **geom1WKB, wkb **geom2WKB);
-geom_export str mbrOverlapOrRight(Client ctx, bit *out, mbr **b1, mbr **b2);
-geom_export str mbrOverlapOrRight_wkb(Client ctx, bit *out, wkb **geom1WKB, wkb **geom2WKB);
-geom_export str mbrContains(Client ctx, bit *out, mbr **b1, mbr **b2);
-geom_export str mbrContains_wkb(Client ctx, bit *out, wkb **geom1WKB, wkb **geom2WKB);
-geom_export str mbrContained(Client ctx, bit *out, mbr **b1, mbr **b2);
-geom_export str mbrContained_wkb(Client ctx, bit *out, wkb **geom1WKB, wkb **geom2WKB);
-geom_export str mbrEqual(Client ctx, bit *out, mbr **b1, mbr **b2);
-geom_export str mbrEqual_wkb(Client ctx, bit *out, wkb **geom1WKB, wkb **geom2WKB);
-geom_export str mbrDiagonal(dbl *out, mbr **b);
-geom_export str mbrDistance(Client ctx, dbl *out, mbr **b1, mbr **b2);
-geom_export str mbrDistance_wkb(Client ctx, dbl *out, wkb **geom1WKB, wkb **geom2WKB);
-geom_export str wkbCoordinateFromWKB(Client ctx, dbl*, wkb**, int*);
-geom_export str wkbCoordinateFromMBR(Client ctx, dbl*, mbr**, int*);
+extern str mbrFromString(Client ctx, mbr **w, const char **src)
+	__attribute__((__visibility__("hidden")));
+extern str wkbMBR(Client ctx, mbr **res, wkb **geom)
+	__attribute__((__visibility__("hidden")));
+extern str wkbBox2D(Client ctx, mbr** box, wkb** point1, wkb** point2)
+	__attribute__((__visibility__("hidden")));
+extern str wkbBox2D_bat(Client ctx, bat* outBAT_id, bat *aBAT_id, bat *bBAT_id)
+	__attribute__((__visibility__("hidden")));
+extern str mbrOverlaps(Client ctx, bit *out, mbr **b1, mbr **b2)
+	__attribute__((__visibility__("hidden")));
+extern str mbrOverlaps_wkb(Client ctx, bit *out, wkb **geom1WKB, wkb **geom2WKB)
+	__attribute__((__visibility__("hidden")));
+extern str mbrAbove(Client ctx, bit *out, mbr **b1, mbr **b2)
+	__attribute__((__visibility__("hidden")));
+extern str mbrAbove_wkb(Client ctx, bit *out, wkb **geom1WKB, wkb **geom2WKB)
+	__attribute__((__visibility__("hidden")));
+extern str mbrBelow(Client ctx, bit *out, mbr **b1, mbr **b2)
+	__attribute__((__visibility__("hidden")));
+extern str mbrBelow_wkb(Client ctx, bit *out, wkb **geom1WKB, wkb **geom2WKB)
+	__attribute__((__visibility__("hidden")));
+extern str mbrLeft(Client ctx, bit *out, mbr **b1, mbr **b2)
+	__attribute__((__visibility__("hidden")));
+extern str mbrLeft_wkb(Client ctx, bit *out, wkb **geom1WKB, wkb **geom2WKB)
+	__attribute__((__visibility__("hidden")));
+extern str mbrRight(Client ctx, bit *out, mbr **b1, mbr **b2)
+	__attribute__((__visibility__("hidden")));
+extern str mbrRight_wkb(Client ctx, bit *out, wkb **geom1WKB, wkb **geom2WKB)
+	__attribute__((__visibility__("hidden")));
+extern str mbrOverlapOrAbove(Client ctx, bit *out, mbr **b1, mbr **b2)
+	__attribute__((__visibility__("hidden")));
+extern str mbrOverlapOrAbove_wkb(Client ctx, bit *out, wkb **geom1WKB, wkb **geom2WKB)
+	__attribute__((__visibility__("hidden")));
+extern str mbrOverlapOrBelow(Client ctx, bit *out, mbr **b1, mbr **b2)
+	__attribute__((__visibility__("hidden")));
+extern str mbrOverlapOrBelow_wkb(Client ctx, bit *out, wkb **geom1WKB, wkb **geom2WKB)
+	__attribute__((__visibility__("hidden")));
+extern str mbrOverlapOrLeft(Client ctx, bit *out, mbr **b1, mbr **b2)
+	__attribute__((__visibility__("hidden")));
+extern str mbrOverlapOrLeft_wkb(Client ctx, bit *out, wkb **geom1WKB, wkb **geom2WKB)
+	__attribute__((__visibility__("hidden")));
+extern str mbrOverlapOrRight(Client ctx, bit *out, mbr **b1, mbr **b2)
+	__attribute__((__visibility__("hidden")));
+extern str mbrOverlapOrRight_wkb(Client ctx, bit *out, wkb **geom1WKB, wkb **geom2WKB)
+	__attribute__((__visibility__("hidden")));
+extern str mbrContains(Client ctx, bit *out, mbr **b1, mbr **b2)
+	__attribute__((__visibility__("hidden")));
+extern str mbrContains_wkb(Client ctx, bit *out, wkb **geom1WKB, wkb **geom2WKB)
+	__attribute__((__visibility__("hidden")));
+extern str mbrContained(Client ctx, bit *out, mbr **b1, mbr **b2)
+	__attribute__((__visibility__("hidden")));
+extern str mbrContained_wkb(Client ctx, bit *out, wkb **geom1WKB, wkb **geom2WKB)
+	__attribute__((__visibility__("hidden")));
+extern str mbrEqual(Client ctx, bit *out, mbr **b1, mbr **b2)
+	__attribute__((__visibility__("hidden")));
+extern str mbrEqual_wkb(Client ctx, bit *out, wkb **geom1WKB, wkb **geom2WKB)
+	__attribute__((__visibility__("hidden")));
+extern str mbrDiagonal(dbl *out, mbr **b)
+	__attribute__((__visibility__("hidden")));
+extern str mbrDistance(Client ctx, dbl *out, mbr **b1, mbr **b2)
+	__attribute__((__visibility__("hidden")));
+extern str mbrDistance_wkb(Client ctx, dbl *out, wkb **geom1WKB, wkb **geom2WKB)
+	__attribute__((__visibility__("hidden")));
+extern str wkbCoordinateFromWKB(Client ctx, dbl*, wkb**, int*)
+	__attribute__((__visibility__("hidden")));
+extern str wkbCoordinateFromMBR(Client ctx, dbl*, mbr**, int*)
+	__attribute__((__visibility__("hidden")));

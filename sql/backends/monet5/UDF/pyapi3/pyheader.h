@@ -68,8 +68,10 @@
 #define pyapi_export extern
 #endif
 
-PyDateTime_CAPI *get_DateTimeAPI(void);
-void init_DateTimeAPI(void);
+extern PyDateTime_CAPI *get_DateTimeAPI(void)
+	__attribute__((__visibility__("hidden")));
+extern void init_DateTimeAPI(void)
+	__attribute__((__visibility__("hidden")));
 
 #define USE_DATETIME_API						\
 	do {										\

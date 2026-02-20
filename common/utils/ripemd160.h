@@ -11,8 +11,6 @@
 #ifndef _SEEN_RIPEMD160_H
 #define _SEEN_RIPEMD160_H 1
 
-#include "mcrypt.h"				/* for mutils_export */
-
 typedef struct RIPEMD160Context {
 	uint32_t digest[5];
 	uint8_t overflow[64];
@@ -22,10 +20,13 @@ typedef struct RIPEMD160Context {
 
 #define RIPEMD160_DIGEST_LENGTH 20
 
-void RIPEMD160Reset(RIPEMD160Context *ctxt);
+void RIPEMD160Reset(RIPEMD160Context *ctxt)
+	__attribute__((__visibility__("hidden")));
 void RIPEMD160Input(RIPEMD160Context *ctxt,
-					const uint8_t *bytes, unsigned bytecount);
+					const uint8_t *bytes, unsigned bytecount)
+	__attribute__((__visibility__("hidden")));
 void RIPEMD160Result(RIPEMD160Context *ctxt,
-					 uint8_t digest[RIPEMD160_DIGEST_LENGTH]);
+					 uint8_t digest[RIPEMD160_DIGEST_LENGTH])
+	__attribute__((__visibility__("hidden")));
 
 #endif

@@ -18,17 +18,25 @@
 
 #include "pyheader.h"
 
-pyapi_export str PYAPI3PyAPIevalStd(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-pyapi_export str PYAPI3PyAPIevalAggr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-pyapi_export str PYAPI3PyAPIevalStdMap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-pyapi_export str PYAPI3PyAPIevalAggrMap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-pyapi_export str PYAPI3PyAPIevalLoader(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+extern str PYAPI3PyAPIevalStd(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
+extern str PYAPI3PyAPIevalAggr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
+extern str PYAPI3PyAPIevalStdMap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
+extern str PYAPI3PyAPIevalAggrMap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
+extern str PYAPI3PyAPIevalLoader(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+	__attribute__((__visibility__("hidden")));
 
-bool PYAPI3PyAPIInitialized(void);
+extern bool PYAPI3PyAPIInitialized(void)
+	__attribute__((__visibility__("hidden")));
 
-str _loader_init(void);
+extern str _loader_init(void)
+	__attribute__((__visibility__("hidden")));
 
-pyapi_export char *PyError_CreateException(char *error_text, char *pycall);
+extern char *PyError_CreateException(char *error_text, char *pycall)
+	__attribute__((__visibility__("hidden")));
 
 pyapi_export bool option_disable_fork;
 

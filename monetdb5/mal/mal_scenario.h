@@ -38,15 +38,23 @@ mal_export Scenario findScenario(const char *nme);
 mal_export str getScenarioLanguage(Client c);
 
 #ifdef LIBMONETDB5
-extern str setScenario(Client c, const char *nme);
-extern str runScenario(Client c);
+extern str setScenario(Client c, const char *nme)
+	__attribute__((__visibility__("hidden")));
+extern str runScenario(Client c)
+	__attribute__((__visibility__("hidden")));
 
-extern void showCurrentScenario(void);
-extern void showScenarioByName(stream *f, const char *s);
-extern void showScenario(stream *f, Scenario s);
-extern void showAllScenarios(stream *f);
-extern void resetScenario(Client c);
-extern str defaultScenario(Client c);
+extern void showCurrentScenario(void)
+	__attribute__((__visibility__("hidden")));
+extern void showScenarioByName(stream *f, const char *s)
+	__attribute__((__visibility__("hidden")));
+extern void showScenario(stream *f, Scenario s)
+	__attribute__((__visibility__("hidden")));
+extern void showAllScenarios(stream *f)
+	__attribute__((__visibility__("hidden")));
+extern void resetScenario(Client c)
+	__attribute__((__visibility__("hidden")));
+extern str defaultScenario(Client c)
+	__attribute__((__visibility__("hidden")));
 #endif
 
 #endif /* _MAL_SCENARIO_H */

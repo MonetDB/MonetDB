@@ -19,6 +19,8 @@ mal_export str GRPsubgroup5(Client ctx, bat *ngid, bat *next, bat *nhis,
 							const bat *gid, const bat *eid, const bat *hid);
 
 extern str GRPsubgroup2(Client ctx, bat *ngid, bat *next, bat *nhis, const bat *bid,
-						const bat *gid);
-extern str GRPgroup3(Client ctx, bat *ngid, bat *next, const bat *bid);
+						const bat *gid)
+	__attribute__((__visibility__("hidden")));
+extern str GRPgroup3(Client ctx, bat *ngid, bat *next, const bat *bid)
+	__attribute__((__visibility__("hidden")));
 #endif /* _GROUP_H_ */

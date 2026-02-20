@@ -33,34 +33,48 @@ typedef struct {
 } ReturnBatDescr;
 
 //! Returns true if a NPY_#type is an integral type, and false otherwise
-pyapi_export bool PyType_IsInteger(int);
+extern bool PyType_IsInteger(int)
+	__attribute__((__visibility__("hidden")));
 //! Returns true if a NPY_#type is a float type, and false otherwise
-pyapi_export bool PyType_IsFloat(int);
+extern bool PyType_IsFloat(int)
+	__attribute__((__visibility__("hidden")));
 //! Returns true if a NPY_#type is a double type, and false otherwise
-pyapi_export bool PyType_IsDouble(int);
+extern bool PyType_IsDouble(int)
+	__attribute__((__visibility__("hidden")));
 //! Formats NPY_#type as a String (so NPY_INT => "INT"), for usage in error
 //! reporting and warnings
-pyapi_export char *PyType_Format(int);
+extern char *PyType_Format(int)
+	__attribute__((__visibility__("hidden")));
 //! Returns true if a PyObject is a scalar type ('scalars' in this context means
 //! numeric or string types)
-pyapi_export bool PyType_IsPyScalar(PyObject *object);
+extern bool PyType_IsPyScalar(PyObject *object)
+	__attribute__((__visibility__("hidden")));
 //! Returns true if the PyObject is of type numpy.ndarray, and false otherwise
-pyapi_export bool PyType_IsNumpyArray(PyObject *object);
+extern bool PyType_IsNumpyArray(PyObject *object)
+	__attribute__((__visibility__("hidden")));
 //! Returns true if the PyObject is of type numpy.ma.core.MaskedArray, and false
 //! otherwise
-pyapi_export bool PyType_IsNumpyMaskedArray(PyObject *object);
+extern bool PyType_IsNumpyMaskedArray(PyObject *object)
+	__attribute__((__visibility__("hidden")));
 //! Returns true if the PyObject is of type pandas.core.frame.DataFrame, and
 //! false otherwise
-pyapi_export bool PyType_IsPandasDataFrame(PyObject *object);
+extern bool PyType_IsPandasDataFrame(PyObject *object)
+	__attribute__((__visibility__("hidden")));
 //! Returns true if the PyObject is of type lazyarray, and false otherwise
-pyapi_export bool PyType_IsLazyArray(PyObject *object);
-pyapi_export char *BatType_Format(int);
+extern bool PyType_IsLazyArray(PyObject *object)
+	__attribute__((__visibility__("hidden")));
+extern char *BatType_Format(int)
+	__attribute__((__visibility__("hidden")));
 
-pyapi_export int PyType_ToBat(int);
-pyapi_export int BatType_ToPyType(int);
+extern int PyType_ToBat(int)
+	__attribute__((__visibility__("hidden")));
+extern int BatType_ToPyType(int)
+	__attribute__((__visibility__("hidden")));
 
-pyapi_export bool Python_ObtainGIL(void);
-pyapi_export bool Python_ReleaseGIL(bool);
+extern bool Python_ObtainGIL(void)
+	__attribute__((__visibility__("hidden")));
+extern bool Python_ReleaseGIL(bool)
+	__attribute__((__visibility__("hidden")));
 
 #define bte_TO_PYSCALAR(value) PyLong_FromLong(value)
 #define bit_TO_PYSCALAR(value) PyLong_FromLong(value)
@@ -73,6 +87,7 @@ pyapi_export bool Python_ReleaseGIL(bool);
 // A simple #define that converts a numeric TYPE_<mtpe> value to a Python scalar
 #define SCALAR_TO_PYSCALAR(mtpe, value) mtpe##_TO_PYSCALAR(value)
 
-void _pytypes_init(void);
+extern void _pytypes_init(void)
+	__attribute__((__visibility__("hidden")));
 
 #endif /* _PYTYPE_LIB_ */

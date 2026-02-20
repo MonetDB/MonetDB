@@ -2123,7 +2123,7 @@ strbat_reverse(BAT *b)
 	}
 
 	bi = bat_iterator(b);
-	BATloop(b, p, q) {
+	BATloop(&bi, p, q) {
 		src = (const char *) BUNtail(&bi, p);
 		len = strlen(src);
 		if (len >= dstlen) {

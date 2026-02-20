@@ -505,7 +505,7 @@ pcre_replace_bat(BAT **res, BAT *origin_strs, const char *pattern,
 			  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	BATiter origin_strsi = bat_iterator(origin_strs);
-	BATloop(origin_strs, p, q) {
+	BATloop(&origin_strsi, p, q) {
 		origin_str = BUNtvar(&origin_strsi, p);
 		tmpres = single_replace(ta, pcre_code, match_data, origin_str,
 								(PCRE2_SIZE) strlen((char *) origin_str), exec_options,

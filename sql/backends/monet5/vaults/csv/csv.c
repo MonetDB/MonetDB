@@ -107,10 +107,19 @@ detect_delimiter(const char *buf, char q, int *nr_fields)
 	}
 	if (l) {
 		int maxpos = -1, maxcnt = 0;
-		for (int i = 0; i<DLEN; i++) {
-			if (cnts[i][0] == cnts[i][1] && maxcnt < cnts[i][0]) {
-				maxcnt = cnts[i][0];
-				maxpos = i;
+		if (l < 2) {
+			for (int i = 0; i<DLEN; i++) {
+				if (maxcnt < cnts[i][0]) {
+					maxcnt = cnts[i][0];
+					maxpos = i;
+				}
+			}
+		} else {
+			for (int i = 0; i<DLEN; i++) {
+				if (cnts[i][0] == cnts[i][1] && maxcnt < cnts[i][0]) {
+					maxcnt = cnts[i][0];
+					maxpos = i;
+				}
 			}
 		}
 		if (maxpos>=0) {
