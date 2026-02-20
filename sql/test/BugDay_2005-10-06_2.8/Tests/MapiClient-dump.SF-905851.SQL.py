@@ -28,7 +28,8 @@ def main():
     output = out.splitlines(keepends=True)
     with open('MapiClient-dump.SF-905851.stable.out') as fil:
         stable = fil.readlines()
-    for line in difflib.unified_diff(stable, output):
+    for line in difflib.unified_diff(stable, output,
+                                     fromfile='expected', tofile='received'):
         sys.stderr.write(line)
 
 main()

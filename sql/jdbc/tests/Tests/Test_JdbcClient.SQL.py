@@ -21,9 +21,9 @@ except AttributeError:
 def verify_output(stream, actual, expected):
     diff = list(difflib.unified_diff(
         expected.splitlines(),
-        actual.splitlines(),
-        "EXPECTED",
-        "ACTUAL",
+        actual.splitlines() ,
+        fromfile='expected',
+        tofile='received',
         lineterm=''
     ))
     if not diff:

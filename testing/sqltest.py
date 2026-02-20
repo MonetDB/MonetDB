@@ -140,7 +140,9 @@ def diff(stable_file, test_file, ratio=0.95):
         with open(test_file) as ftest:
             test = list(filter(filter_fn, ftest.read().split('\n')))
             a, b = filter_matching_blocks(stable, test, ratio)
-            diff = list(difflib.unified_diff(a, b, fromfile='stable', tofile='test'))
+            diff = list(difflib.unified_diff(a, b,
+                                             fromfile='expected',
+                                             tofile='received'))
             if len(diff) > 0:
                 diff = '\n'.join(diff)
             else:
@@ -461,7 +463,9 @@ class MclientTestResult(TestCaseResult, RunnableTestResult):
             data = list(filter(filter_headers, data))
         a, b = filter_matching_blocks(stable, data, ratio)
         if a or b:
-            diff = list(difflib.unified_diff(stable, data, fromfile='stable', tofile='test'))
+            diff = list(difflib.unified_diff(stable, data,
+                                             fromfile='expected',
+                                             tofile='received'))
             if len(diff) > 0:
                 err_file = self.test_case.err_file
                 msg = "expected to match stable output {} but it didn't\n".format(fout)
@@ -482,7 +486,9 @@ class MclientTestResult(TestCaseResult, RunnableTestResult):
         with open(ferr, 'r') as f:
             stable = list(filter(filter_fn, f.read().split('\n')))
         a, b = filter_matching_blocks(stable, err, ratio)
-        diff = list(difflib.unified_diff(a, b, fromfile='stable', tofile='test'))
+        diff = list(difflib.unified_diff(a, b,
+                                         fromfile='expected',
+                                         tofile='received'))
         if len(diff) > 0:
             err_file = self.test_case.err_file
             msg = "expected to match stable error {} but it didn't\n".format(ferr)
@@ -500,7 +506,9 @@ class MclientTestResult(TestCaseResult, RunnableTestResult):
         data = list(filter(filter_junk, self.output.split('\n')))
         data = list(filter(filter_headers, data))
         a, b = filter_matching_blocks(expected, data, ratio)
-        diff = list(difflib.unified_diff(a, b, fromfile='expected', tofile='test'))
+        diff = list(difflib.unified_diff(a, b,
+                                         fromfile='expected',
+                                         tofile='received'))
         if len(diff) > 0:
             err_file = self.test_case.err_file
             exp = '\n'.join(expected)
@@ -610,7 +618,9 @@ class SQLDump():
         with open(fout, 'r') as f:
             stable = list(filter(filter_junk, f.read().split('\n')))
         a, b = filter_matching_blocks(stable, dump, ratio)
-        diff = list(difflib.unified_diff(a, b, fromfile='stable', tofile='test'))
+        diff = list(difflib.unified_diff(a, b,
+                                         fromfile='expected',
+                                         tofile='received'))
         if len(diff) > 0:
             err_file = self.test_case.err_file
             msg = "sql dump expected to match stable output {} but it didn't\n".format(fout)

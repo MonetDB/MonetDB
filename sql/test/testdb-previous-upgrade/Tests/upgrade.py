@@ -81,7 +81,8 @@ if len(sys.argv) == 2 and sys.argv[1] == 'upgrade':
                 del stable[i-1:i+4]
                 break
     import difflib
-    for line in difflib.unified_diff(stable, srvout, fromfile='test', tofile=f):
+    for line in difflib.unified_diff(stable, srvout,
+                                     fromfile='expected', tofile='received'):
         sys.stderr.write(line)
         xit = 1
 else:
