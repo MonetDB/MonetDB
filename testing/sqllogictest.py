@@ -14,13 +14,14 @@
 # The skipif/onlyif mechanism has been slightly extended.  Recognized
 # "system"s are:
 # MonetDB, arch=<architecture>, system=<system>, bits=<bits>,
-# threads=<threads>, has-hugeint, knownfail
+# threads=<threads>, has-hugeint, knownfail, pipeline
 # where <architecture> is generally what the Python call
 # platform.machine() returns (i.e. x86_64, i686, aarch64, ppc64,
 # ppc64le, note 'AMD64' is translated to 'x86_64' and 'arm64' to
 # 'aarch64'); <system> is whatever platform.system() returns
 # (i.e. Linux, Darwin, Windows); <bits> is either 32bit or 64bit;
-# <threads> is the number of threads.
+# <threads> is the number of threads; pipeline is true when using the
+# pipeline execution engine.
 
 # statement (ok|ok rowcount|error) [arg]
 # query (I|D|T|R)+ (nosort|rowsort|valuesort|python)? [arg]
@@ -882,6 +883,7 @@ class SQLLogic:
         self.approve = approve
         self.initfile(f, defines, run_until=run_until)
         nthreads = None
+        pipeline = None
         if self.timeout:
             timeout = int((time.time() - self.starttime) + self.timeout)
         else:
@@ -940,6 +942,12 @@ class SQLLogic:
                         elif words[1] == 'knownfail':
                             if not self.alltests:
                                 skipping = True
+                        elif words[1] == 'pipeline':
+                            if pipeline is None:
+                                self.crs.execute("select val from sys.debugflags() where flag = 'pipeline'")
+                                pipeline = self.crs.fetchall()[0][0]
+                            if pipeline:
+                                skipping = True
                     elif words[0] == 'onlyif':
                         skipping = True
                         if words[1] in ('MonetDB', f'arch={architecture}', f'system={system}', f'bits={bits}'):
@@ -955,6 +963,12 @@ class SQLLogic:
                                 skipping = False
                         elif words[1] == 'knownfail':
                             if self.alltests:
+                                skipping = False
+                        elif words[1] == 'pipeline':
+                            if pipeline is None:
+                                self.crs.execute("select val from sys.debugflags() where flag = 'pipeline'")
+                                pipeline = self.crs.fetchall()[0][0]
+                            if pipeline:
                                 skipping = False
                     self.writeline(line.rstrip())
                     line = self.readline()
