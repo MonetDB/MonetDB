@@ -3230,6 +3230,16 @@ BATcount_no_nil(BAT *b, BAT *s)
 		bat_iterator_end(&bi);
 		return ci.ncand;
 	}
+	if (BATcheckhash(b)) {
+		BUN p = 0;
+		const void *nil = ATOMnilptr(b->ttype);
+		cnt = ci.ncand;
+		HASHloop(bi, b->thash, p, nil)
+			if (canditer_contains(&ci, p + b->hseqbase))
+				cnt--;
+		bat_iterator_end(&bi);
+		return cnt;
+	}
 	p = bi.base;
 	t = ATOMbasetype(bi.type);
 	switch (t) {
@@ -3282,6 +3292,38 @@ BATcount_no_nil(BAT *b, BAT *s)
 			cnt += !is_inet6_nil(((const inet6 *) p)[canditer_next(&ci) - hseq]);
 		break;
 	case TYPE_str:
+		if (GDK_ELIMDOUBLES(bi.vh)) {
+			var_t off = strLocate(bi.vh, str_nil);
+			if (off == (var_t) -2) {
+				cnt = ci.ncand;
+				break;
+			}
+			switch (bi.width) {
+			case 1:
+				off -= GDK_VAROFFSET;
+				CAND_LOOP(&ci)
+					cnt += (var_t) ((const uint8_t *) p)[canditer_next(&ci) - hseq] != off;
+				break;
+			case 2:
+				off -= GDK_VAROFFSET;
+				CAND_LOOP(&ci)
+					cnt += (var_t) ((const uint16_t *) p)[canditer_next(&ci) - hseq] != off;
+				break;
+			case 4:
+				CAND_LOOP(&ci)
+					cnt += (var_t) ((const uint32_t *) p)[canditer_next(&ci) - hseq] != off;
+				break;
+#if SIZEOF_VAR_T == 8
+			case 8:
+				CAND_LOOP(&ci)
+					cnt += (var_t) ((const uint64_t *) p)[canditer_next(&ci) - hseq] != off;
+				break;
+#endif
+			default:
+				MT_UNREACHABLE();
+			}
+			break;
+		}
 		base = bi.vh->base;
 		switch (bi.width) {
 		case 1:
