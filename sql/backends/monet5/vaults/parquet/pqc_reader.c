@@ -1696,10 +1696,8 @@ pqc_read_chunk( pqc_reader_t *r, int wnr, void *output /*fixed sized atom storag
 
 		}
 		pos = pqc_page_header(r, cr, pos);
-		if (pos < 0) {
-			assert(0);
+		if (pos < 0)
 			return -1;
-		}
 		/* read data */
 		if (cr->cc->cur_page.num_values < nrows)
 			nrows = cr->cc->cur_page.num_values;
@@ -1719,10 +1717,8 @@ pqc_read_chunk( pqc_reader_t *r, int wnr, void *output /*fixed sized atom storag
 				pos = pqc_definition(r, cr, output, cr->cc->cur_page.num_values, (u_int32_t)pos, definition);
 				cr->pos = pos;
 			}
-			if (pos < 0) {
-				assert(0);
+			if (pos < 0)
 				return pos;
-			}
 			u_int64_t orows = nrows;
 			if (r->pse->precision == 0 && !output)
 				orows = 0;
