@@ -2737,8 +2737,7 @@ monetdbe_result_fetch(monetdbe_result* mres, monetdbe_column** res, size_t colum
 
 		j = 0;
 		li = bat_iterator(b);
-		BATloop(b, p, q)
-		{
+		BATloop(&li, p, q) {
 			const char *t = (const char*)BUNtvar(&li, p);
 			if (strcmp(t, str_nil) == 0) {
 				bat_data->data[j] = NULL;
@@ -2816,8 +2815,7 @@ monetdbe_result_fetch(monetdbe_result* mres, monetdbe_column** res, size_t colum
 		j = 0;
 
 		li = bat_iterator(b);
-		BATloop(b, p, q)
-		{
+		BATloop(&li, p, q) {
 			const blob *t = (const blob *)BUNtvar(&li, p);
 			if (t->nitems == ~(size_t)0) {
 				bat_data->data[j].size = 0;
@@ -2854,8 +2852,7 @@ monetdbe_result_fetch(monetdbe_result* mres, monetdbe_column** res, size_t colum
 		j = 0;
 
 		li = bat_iterator(b);
-		BATloop(b, p, q)
-		{
+		BATloop(&li, p, q) {
 			const void *t = BUNtail(&li, p);
 			if (BATatoms[bat_type].atomCmp(t, BATatoms[bat_type].atomNull) == 0) {
 				bat_data->data[j] = NULL;

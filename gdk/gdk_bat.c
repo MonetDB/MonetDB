@@ -1628,15 +1628,16 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 				MT_rwlock_wrunlock(&b->thashlock);
 				goto bailout;
 			}
-			MT_lock_unset(&b->theaplock);
 			if (b->twidth < SIZEOF_VAR_T &&
 			    (b->twidth <= 2 ? _d - GDK_VAROFFSET : _d) >= ((size_t) 1 << (8 << b->tshift))) {
 				/* doesn't fit in current heap, upgrade it */
 				if (GDKupgradevarheap(b, _d, 0, bi.count) != GDK_SUCCEED) {
+					MT_lock_unset(&b->theaplock);
 					MT_rwlock_wrunlock(&b->thashlock);
 					goto bailout;
 				}
 			}
+			MT_lock_unset(&b->theaplock);
 			/* reinitialize iterator after possible heap upgrade */
 			{
 				/* save and restore minpos/maxpos */
@@ -1837,7 +1838,7 @@ slowfnd(BAT *b, const void *v)
 	BUN p, q;
 	bool (*atomeq)(const void *, const void *) = ATOMequal(bi.type);
 
-	BATloop(b, p, q) {
+	BATloop(&bi, p, q) {
 		if ((*atomeq)(v, BUNtail(&bi, p))) {
 			bat_iterator_end(&bi);
 			return p;
@@ -2857,7 +2858,7 @@ BATassertProps(BAT *b)
 			/* only call compare function if we have to */
 			bool cmpprv = b->tsorted | b->trevsorted | b->tkey;
 
-			BATloop(b, p, q) {
+			BATloop(&bi, p, q) {
 				valp = BUNtail(&bi, p);
 				bool isnil = eqf(valp, nilp);
 				assert(!isnil || !notnull);
@@ -2938,7 +2939,7 @@ BATassertProps(BAT *b)
 				TRC_WARNING(BAT, "Cannot allocate hash table\n");
 				goto abort_check;
 			}
-			BATloop(b, p, q) {
+			BATloop(&bi, p, q) {
 				BUN hb;
 				BUN prb;
 				valp = BUNtail(&bi, p);

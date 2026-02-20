@@ -299,14 +299,14 @@ ATOMname(int t)
 bool
 ATOMisdescendant(int tpe, int parent)
 {
-	int cur = -1;
+	int cur;
 
-	while (cur != tpe) {
-		cur = tpe;
-		if (cur == parent)
+	do {
+		if (tpe == parent)
 			return true;
+		cur = tpe;
 		tpe = ATOMstorage(tpe);
-	}
+	} while (cur != tpe);
 	return false;
 }
 

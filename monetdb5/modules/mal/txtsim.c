@@ -409,7 +409,7 @@ BATTXTSIMmaxlevenshtein(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	ma = MT_thread_getallocator();
 	allocator_state ma_state = ma_open(ma);
 
-	BATloop(left, p, q) {
+	BATloop(&li, p, q) {
 		lv = BUNtail(&li, p);
 		rv = BUNtail(&ri, p);
 		llen = UTF8_strlen(lv);

@@ -1052,7 +1052,7 @@ RMTput(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			bool (*atomeq)(const void *, const void *) = ATOMequal(tpe);
 
 			bi = bat_iterator(b);
-			BATloop(b, p, q) {
+			BATloop(&bi, p, q) {
 				const void *v = BUNtail(&bi, p);
 				tailv = ATOMformat(ma, tpe, v);
 				if (tailv == NULL) {

@@ -34,13 +34,14 @@ BATmaxminpos_bte(BAT *o, bte m)
 	o->tnil = m<0?true:false;
 	o->tnonil = m<=0?false:true;
 	bte *op = (bte*)Tloc(o, 0);
-	BATloop(o, p, q) {
+	q = o->batCount;
+	for (p = 0; p < q; p++) {
 		if (op[p] == minval) {
 			minpos = p;
 			break;
 		}
 	}
-	BATloop(o, p, q) {
+	for (p = 0; p < q; p++) {
 		if (op[p] == maxval) {
 			maxpos = p;
 			break;
@@ -61,13 +62,14 @@ BATmaxminpos_sht(BAT *o, sht m)
 	o->tnil = m<0?true:false;
 	o->tnonil = m<=0?false:true;
 	sht *op = (sht*)Tloc(o, 0);
-	BATloop(o, p, q) {
+	q = o->batCount;
+	for (p = 0; p < q; p++) {
 		if (op[p] == minval) {
 			minpos = p;
 			break;
 		}
 	}
-	BATloop(o, p, q) {
+	for (p = 0; p < q; p++) {
 		if (op[p] == maxval) {
 			maxpos = p;
 			break;
@@ -88,13 +90,14 @@ BATmaxminpos_int(BAT *o, int m)
 	o->tnil = m<0?true:false;
 	o->tnonil = m<=0?false:true;
 	int *op = (int*)Tloc(o, 0);
-	BATloop(o, p, q) {
+	q = o->batCount;
+	for (p = 0; p < q; p++) {
 		if (op[p] == minval) {
 			minpos = p;
 			break;
 		}
 	}
-	BATloop(o, p, q) {
+	for (p = 0; p < q; p++) {
 		if (op[p] == maxval) {
 			maxpos = p;
 			break;
@@ -161,7 +164,7 @@ DICTcompress_intern(BAT **O, BAT **U, BAT *b, bool ordered, bool persists, bool 
 	if (tt == TYPE_bte) {
 		bte *op = (bte*)Tloc(o, 0);
 		bool havenil = false;
-		BATloop(b, p, q) {
+		BATloop(&bi, p, q) {
 			BUN up = 0;
 			HASHloop(&ui, ui.b->thash, up, BUNtail(&bi, p)) {
 				op[p] = (bte)up;
@@ -180,7 +183,7 @@ DICTcompress_intern(BAT **O, BAT **U, BAT *b, bool ordered, bool persists, bool 
 	} else if (tt == TYPE_sht) {
 		sht *op = (sht*)Tloc(o, 0);
 		bool havenil = false;
-		BATloop(b, p, q) {
+		BATloop(&bi, p, q) {
 			BUN up = 0;
 			HASHloop(&ui, ui.b->thash, up, BUNtail(&bi, p)) {
 				op[p] = (sht)up;
@@ -199,7 +202,7 @@ DICTcompress_intern(BAT **O, BAT **U, BAT *b, bool ordered, bool persists, bool 
 	} else {
 		int *op = (int*)Tloc(o, 0);
 		bool havenil = false;
-		BATloop(b, p, q) {
+		BATloop(&bi, p, q) {
 			BUN up = 0;
 			HASHloop(&ui, ui.b->thash, up, BUNtail(&bi, p)) {
 				op[p] = (int)up;
@@ -335,7 +338,7 @@ DICTcompress_col(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	do { \
 		TPE *up = Tloc(u, 0); \
 		TPE *restrict bp = Tloc(b, 0); \
-		BATloop(o, p, q) { \
+		BATloop(&oi, p, q) { \
 			TPE v = up[op[p]]; \
 			nils |= is_##TPE##_nil(v); \
 			bp[p] = v; \
@@ -373,7 +376,7 @@ DICTdecompress_(BAT *o, BAT *u, role_t role)
 			break;
 #endif
 		default:
-			BATloop(o, p, q) {
+			BATloop(&oi, p, q) {
 				BUN up = op[p];
 				if (BUNappend(b, BUNtail(&ui, up), false) != GDK_SUCCEED) {
 					bat_iterator_end(&oi);
@@ -398,7 +401,7 @@ DICTdecompress_(BAT *o, BAT *u, role_t role)
 			break;
 #endif
 		default:
-			BATloop(o, p, q) {
+			BATloop(&oi, p, q) {
 				BUN up = op[p];
 				if (BUNappend(b, BUNtail(&ui, up), false) != GDK_SUCCEED) {
 					bat_iterator_end(&oi);
@@ -423,7 +426,7 @@ DICTdecompress_(BAT *o, BAT *u, role_t role)
 			break;
 #endif
 		default:
-			BATloop(o, p, q) {
+			BATloop(&oi, p, q) {
 				BUN up = op[p];
 				if (BUNappend(b, BUNtail(&ui, up), false) != GDK_SUCCEED) {
 					bat_iterator_end(&oi);
@@ -482,14 +485,14 @@ convert_oid( BAT *o, int rt)
 	if (rt == TYPE_bte) {
 		unsigned char *rp = Tloc(b, 0);
 		if (oi.type == TYPE_void) {
-			BATloop(o, p, q) {
+			BATloop(&oi, p, q) {
 				rp[p] = (unsigned char) (p+o->tseqbase);
 				brokenrange |= ((bte)rp[p] < 0);
 				nil |= ((bte)rp[p] == bte_nil);
 			}
 		} else {
 			oid *op = Tloc(o, 0);
-			BATloop(o, p, q) {
+			BATloop(&oi, p, q) {
 				rp[p] = (unsigned char) op[p];
 				brokenrange |= ((bte)rp[p] < 0);
 				nil |= ((bte)rp[p] == bte_nil);
@@ -498,14 +501,14 @@ convert_oid( BAT *o, int rt)
 	} else if (rt == TYPE_sht) {
 		unsigned short *rp = Tloc(b, 0);
 		if (oi.type == TYPE_void) {
-			BATloop(o, p, q) {
+			BATloop(&oi, p, q) {
 				rp[p] = (unsigned short) (p+o->tseqbase);
 				brokenrange |= ((short)rp[p] < 0);
 				nil |= ((short)rp[p] == sht_nil);
 			}
 		} else {
 			oid *op = Tloc(o, 0);
-			BATloop(o, p, q) {
+			BATloop(&oi, p, q) {
 				rp[p] = (unsigned short) op[p];
 				brokenrange |= ((short)rp[p] < 0);
 				nil |= ((short)rp[p] == sht_nil);
@@ -514,14 +517,14 @@ convert_oid( BAT *o, int rt)
 	} else if (rt == TYPE_int) {
 		unsigned short *rp = Tloc(b, 0);
 		if (oi.type == TYPE_void) {
-			BATloop(o, p, q) {
+			BATloop(&oi, p, q) {
 				rp[p] = (unsigned short) (p+o->tseqbase);
 				brokenrange |= ((short)rp[p] < 0);
 				nil |= ((short)rp[p] == int_nil);
 			}
 		} else {
 			oid *op = Tloc(o, 0);
-			BATloop(o, p, q) {
+			BATloop(&oi, p, q) {
 				rp[p] = (unsigned short) op[p];
 				brokenrange |= ((short)rp[p] < 0);
 				nil |= ((short)rp[p] == int_nil);
