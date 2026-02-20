@@ -1050,30 +1050,31 @@ HDF5dataset(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
     //printf("First element of train[0][0]: %f\n", buffer[0]);
 
 	BAT **bats = (BAT**)ma_zalloc(ta, sizeof(BAT*) * pci->retc);
-	if (!bats) {
+	dbl **dbls = (dbl**)ma_zalloc(ta, sizeof(dbl*) * pci->retc);
+	if (!bats || !dbls) {
 		ma_close(&ta_state);
 		throw(MAL, "netcdf.HDF5dataset", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
 	for(int i = 0; i < pci->retc; i++) {
-		bats[i] = COLnew(0, getBatType(getArgType(mb, pci, i)), 10, TRANSIENT);
+		bats[i] = COLnew(0, getBatType(getArgType(mb, pci, i)), rows, TRANSIENT);
 		if (!bats[i]) {
 			msg = createException(MAL, "netcdf.HDF5dataset", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto bailout;
 		}
+		dbls[i] = Tloc(bats[i], 0);
 	}
 	// loop over load data
-	for (size_t i=0; i<rows*cols; i++) {
-		double v = buffer[i];
-		size_t j = i%cols;
-		if ((BUNappend(bats[j], &v, false) != GDK_SUCCEED)) {
-			msg = createException(MAL, "netcdf.HDF5dataset", "Error appending value %f", v);
-			goto bailout;
+	for (size_t r=0; r<rows; r++) {
+		for(BUN c=0; c<cols; c++, buffer++) {
+			dbls[c][r] = *buffer;
 		}
 	}
 
 	for(int i = 0; i < pci->retc && bats[i]; i++) {
 		*getArgReference_bat(stk, pci, i) = bats[i]->batCacheid;
+		BATsetcount(bats[i], rows);
+		BATnegateprops(bats[i]);
 		BBPkeepref(bats[i]);
 	}
 	ma_close(&ta_state);
