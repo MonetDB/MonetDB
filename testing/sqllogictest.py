@@ -620,7 +620,7 @@ class SQLLogic:
                 result.append(col)
             if err and expected is not None and self.out:
                 print('Differences:', file=self.out)
-                print('\n'.join(difflib.context_diff(expected,
+                print('\n'.join(difflib.unified_diff(expected,
                                                      ndata,
                                                      fromfile='expected',
                                                      tofile='received',
@@ -698,7 +698,7 @@ class SQLLogic:
                         recv.append(col)
                 if self.out:
                     print('Differences:', file=self.out)
-                    print('\n'.join(difflib.context_diff(expected,
+                    print('\n'.join(difflib.unified_diff(expected,
                                                          recv,
                                                          fromfile='expected',
                                                          tofile='received',
@@ -724,7 +724,7 @@ class SQLLogic:
                     m.update(b'\n')
                     result.append(col)
             if expected is not None:
-                diffs = list(difflib.context_diff(expected,
+                diffs = list(difflib.unified_diff(expected,
                                                   received,
                                                   fromfile='expected',
                                                   tofile='received',
