@@ -3240,7 +3240,7 @@ BATcount_no_nil(BAT *b, BAT *s)
 		BUN p = 0;
 		const void *nil = ATOMnilptr(b->ttype);
 		cnt = ci.ncand;
-		HASHloop(bi, b->thash, p, nil)
+		HASHloop(&bi, b->thash, p, nil)
 			if (canditer_contains(&ci, p + b->hseqbase))
 				cnt--;
 		bat_iterator_end(&bi);
