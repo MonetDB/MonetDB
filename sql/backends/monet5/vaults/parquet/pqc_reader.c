@@ -1554,7 +1554,7 @@ pqc_add_nil( pqc_reader_t *r, pqc_creader_t *cr, char *output, char *data, u_int
 			for(u_int64_t i = 0; i<nrows; i++)
 				((lng*)output)[i] = *(lng*)r->nil;
 			break;
-#if HAVE_HGE
+#ifdef HAVE_HGE
 		case 16:
 			for(u_int64_t i = 0; i<nrows; i++)
 				((hge*)output)[i] = *(hge*)r->nil;

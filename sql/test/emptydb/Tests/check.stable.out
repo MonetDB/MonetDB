@@ -4446,7 +4446,7 @@ select 'null in fkeys.delete_action', delete_action, * from sys.fkeys where dele
 % .%1,	.t,	.t,	.s,	.f,	.dt # table_name
 % %1,	systemname,	sqlname,	name,	name,	dependency_type_name # name
 % varchar,	varchar,	varchar,	varchar,	varchar,	varchar # type
-% 21,	4,	4,	4,	18,	4 # length
+% 21,	5,	5,	4,	18,	4 # length
 [ "type used by function",	"json",	"json",	"json",	"filter",	"TYPE"	]
 [ "type used by function",	"json",	"json",	"json",	"filter",	"TYPE"	]
 [ "type used by function",	"json",	"json",	"json",	"filter",	"TYPE"	]
@@ -5409,7 +5409,6 @@ select 'null in fkeys.delete_action', delete_action, * from sys.fkeys where dele
 [ "sys.keywords",	"PARTITION"	]
 [ "sys.keywords",	"PASSWORD"	]
 [ "sys.keywords",	"PATH"	]
-[ "sys.keywords",	"PLAN"	]
 [ "sys.keywords",	"POSITION"	]
 [ "sys.keywords",	"PRECEDING"	]
 [ "sys.keywords",	"PRECISION"	]
