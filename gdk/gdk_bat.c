@@ -482,48 +482,50 @@ BATclear(BAT *b, bool force)
 
 	/* we must dispose of all inserted atoms */
 	MT_lock_set(&b->theaplock);
-	if (force && BATatoms[b->ttype].atomDel == NULL) {
-		assert(b->tvheap == NULL || b->tvheap->parentid == b->batCacheid);
-		/* no stable elements: we do a quick heap clean */
-		/* need to clean heap which keeps data even though the
-		   BUNs got removed. This means reinitialize when
-		   free > 0
-		*/
-		if (b->tvheap && b->tvheap->free > 0) {
-			Heap *th = GDKmalloc(sizeof(Heap));
+	if (!b->ustr) {
+		if (force && BATatoms[b->ttype].atomDel == NULL) {
+			assert(b->tvheap == NULL || b->tvheap->parentid == b->batCacheid);
+			/* no stable elements: we do a quick heap clean */
+			/* need to clean heap which keeps data even though the
+			   BUNs got removed. This means reinitialize when
+			   free > 0
+			*/
+			if (b->tvheap && b->tvheap->free > 0) {
+				Heap *th = GDKmalloc(sizeof(Heap));
 
-			if (th == NULL) {
-				MT_lock_unset(&b->theaplock);
-				return GDK_FAIL;
+				if (th == NULL) {
+					MT_lock_unset(&b->theaplock);
+					return GDK_FAIL;
+				}
+				*th = (Heap) {
+					.farmid = b->tvheap->farmid,
+					.parentid = b->tvheap->parentid,
+					.dirty = true,
+					.hasfile = b->tvheap->hasfile,
+					.refs = ATOMIC_VAR_INIT(1),
+				};
+				strtcpy(th->filename, b->tvheap->filename, sizeof(th->filename));
+				if (ATOMheap(b->ttype, th, 0) != GDK_SUCCEED) {
+					MT_lock_unset(&b->theaplock);
+					return GDK_FAIL;
+				}
+				tvp = b->tvheap->parentid;
+				HEAPdecref(b->tvheap, false);
+				b->tvheap = th;
 			}
-			*th = (Heap) {
-				.farmid = b->tvheap->farmid,
-				.parentid = b->tvheap->parentid,
-				.dirty = true,
-				.hasfile = b->tvheap->hasfile,
-				.refs = ATOMIC_VAR_INIT(1),
-			};
-			strtcpy(th->filename, b->tvheap->filename, sizeof(th->filename));
-			if (ATOMheap(b->ttype, th, 0) != GDK_SUCCEED) {
-				MT_lock_unset(&b->theaplock);
-				return GDK_FAIL;
+		} else {
+			/* do heap-delete of all inserted atoms */
+			void (*tatmdel)(Heap*,var_t*) = BATatoms[b->ttype].atomDel;
+
+			/* TYPE_str has no del method, so we shouldn't get here */
+			assert(tatmdel == NULL || b->twidth == sizeof(var_t));
+			if (tatmdel) {
+				BATiter bi = bat_iterator_nolock(b);
+
+				for (p = b->batInserted, q = BATcount(b); p < q; p++)
+					(*tatmdel)(b->tvheap, (var_t*) BUNtloc(&bi,p));
+				b->tvheap->dirty = true;
 			}
-			tvp = b->tvheap->parentid;
-			HEAPdecref(b->tvheap, false);
-			b->tvheap = th;
-		}
-	} else {
-		/* do heap-delete of all inserted atoms */
-		void (*tatmdel)(Heap*,var_t*) = BATatoms[b->ttype].atomDel;
-
-		/* TYPE_str has no del method, so we shouldn't get here */
-		assert(tatmdel == NULL || b->twidth == sizeof(var_t));
-		if (tatmdel) {
-			BATiter bi = bat_iterator_nolock(b);
-
-			for (p = b->batInserted, q = BATcount(b); p < q; p++)
-				(*tatmdel)(b->tvheap, (var_t*) BUNtloc(&bi,p));
-			b->tvheap->dirty = true;
 		}
 	}
 
@@ -697,9 +699,9 @@ COLcopy2(BAT *b, int tt, bool writable, bool mayshare, role_t role)
 
 	BATcheck(b, NULL);
 
-	/* can't share vheap when persistent */
-	assert(!mayshare || role == TRANSIENT);
-	if (mayshare && role != TRANSIENT)
+	/* can't share vheap when persistent (unless ustr) */
+	assert(!mayshare || role == TRANSIENT || b->ustr);
+	if (mayshare && role != TRANSIENT && !b->ustr)
 		mayshare = false;
 
 	/* maybe a bit ugly to change the requested bat type?? */
@@ -794,11 +796,18 @@ COLcopy2(BAT *b, int tt, bool writable, bool mayshare, role_t role)
 			 * memcpy (if true) or must do a slower
 			 * individual insert (if false) */
 			slowcopy = true;
+		} else if (b->ustr) {
+			/* copy is not a ustr bat so we don't want to
+			 * carry all unused strings */
+			slowcopy = true;
 		}
 	}
 
 	bn = COLnew2(b->hseqbase, tt, bi.count, role, bi.width);
 	if (bn == NULL) {
+		goto bunins_failed;
+	}
+	if (b->ustr && mayshare && BATconvert2ustr(bn) != GDK_SUCCEED) {
 		goto bunins_failed;
 	}
 	if (bn->tvheap != NULL && bn->tvheap->base == NULL && !mayshare) {
@@ -818,10 +827,12 @@ COLcopy2(BAT *b, int tt, bool writable, bool mayshare, role_t role)
 		/* case (3): just copy the heaps */
 		if (bn->tvheap) {
 			if (mayshare) {
-				HEAPincref(bi.vh);
-				HEAPdecref(bn->tvheap, true);
-				BBPretain(bi.vh->parentid);
-				bn->tvheap = bi.vh;
+				if (!bn->ustr) {
+					HEAPincref(bi.vh);
+					HEAPdecref(bn->tvheap, true);
+					BBPretain(bi.vh->parentid);
+					bn->tvheap = bi.vh;
+				}
 			} else {
 				if (HEAPextend(bn->tvheap, bi.vhfree, true) != GDK_SUCCEED)
 					goto bunins_failed;
@@ -980,7 +991,7 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 
 	BATcheck(b, GDK_FAIL);
 
-	assert(!VIEWtparent(b));
+	assert(!VIEWtparent(b) || b->ustr);
 
 	if (count == 0)
 		return GDK_SUCCEED;
@@ -1020,7 +1031,7 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 		}
 	}
 
-	if (unshare_varsized_heap(b) != GDK_SUCCEED) {
+	if (!b->ustr && unshare_varsized_heap(b) != GDK_SUCCEED) {
 		return GDK_FAIL;
 	}
 
@@ -1831,20 +1842,17 @@ void_inplace(BAT *b, oid id, const void *val, bool force)
  * known and a hash index is available, one should use the inline
  * functions to speed-up processing.
  */
-static BUN
-slowfnd(BAT *b, const void *v)
+static inline BUN
+slowfnd(BATiter *bi, const void *v)
 {
-	BATiter bi = bat_iterator(b);
 	BUN p, q;
-	bool (*atomeq)(const void *, const void *) = ATOMequal(bi.type);
+	bool (*atomeq)(const void *, const void *) = ATOMequal(bi->type);
 
-	BATloop(&bi, p, q) {
-		if ((*atomeq)(v, BUNtail(&bi, p))) {
-			bat_iterator_end(&bi);
+	BATloop(bi, p, q) {
+		if ((*atomeq)(v, BUNtail(bi, p))) {
 			return p;
 		}
 	}
-	bat_iterator_end(&bi);
 	return BUN_NONE;
 }
 
@@ -1896,12 +1904,11 @@ BUNfnd(BAT *b, const void *v)
 		if (BATordered(b) || BATordered_rev(b))
 			return SORTfnd(b, v);
 	}
+	bi = bat_iterator(b);	/* outside of hashlock */
 	if (BAThash(b) == GDK_SUCCEED) {
-		bi = bat_iterator(b); /* outside of hashlock */
 		MT_rwlock_rdlock(&b->thashlock);
 		if (b->thash == NULL) {
 			MT_rwlock_rdunlock(&b->thashlock);
-			bat_iterator_end(&bi);
 			goto hashfnd_failed;
 		}
 		switch (ATOMbasetype(bi.type)) {
@@ -1963,7 +1970,9 @@ BUNfnd(BAT *b, const void *v)
   hashfnd_failed:
 	/* can't build hash table, search the slow way */
 	GDKclrerr();
-	return slowfnd(b, v);
+	r = slowfnd(&bi, v);
+	bat_iterator_end(&bi);
+	return r;
 }
 
 /*
@@ -2351,7 +2360,7 @@ BATcheckmodes(BAT *b, bool existing)
 		dirty |= (b->theap->newstorage != m1);
 	}
 
-	if (b->tvheap) {
+	if (b->tvheap && !b->ustr) {
 		bool ta = (b->batRestricted == BAT_APPEND) && ATOMappendpriv(b->ttype, b->tvheap);
 		m3 = HEAPcommitpersistence(b->tvheap, wr || ta, existing);
 		dirty |= (b->tvheap->newstorage != m3);
@@ -2361,7 +2370,7 @@ BATcheckmodes(BAT *b, bool existing)
 
 	if (dirty) {
 		b->theap->newstorage = m1;
-		if (b->tvheap)
+		if (b->tvheap && !b->ustr)
 			b->tvheap->newstorage = m3;
 	}
 	return GDK_SUCCEED;
@@ -2394,7 +2403,8 @@ BATsetaccess(BAT *b, restrict_t newmode)
 			b1 = b->theap->newstorage;
 			m1 = HEAPchangeaccess(b->theap, ACCESSMODE(wr, rd), existing);
 		}
-		if (b->tvheap && b->tvheap->parentid == b->batCacheid) {
+		if (!b->ustr &&
+		    b->tvheap && b->tvheap->parentid == b->batCacheid) {
 			bool ta = (newmode == BAT_APPEND && ATOMappendpriv(b->ttype, b->tvheap));
 			b3 = b->tvheap->newstorage;
 			m3 = HEAPchangeaccess(b->tvheap, ACCESSMODE(wr && ta, rd && ta), existing);
@@ -2409,7 +2419,9 @@ BATsetaccess(BAT *b, restrict_t newmode)
 		b->batRestricted = newmode;
 		if (b->theap->parentid == b->batCacheid)
 			b->theap->newstorage = m1;
-		if (b->tvheap && b->tvheap->parentid == b->batCacheid)
+		if (!b->ustr &&
+		    b->tvheap &&
+		    b->tvheap->parentid == b->batCacheid)
 			b->tvheap->newstorage = m3;
 
 		MT_lock_unset(&b->theaplock);
@@ -2418,7 +2430,7 @@ BATsetaccess(BAT *b, restrict_t newmode)
 			MT_lock_set(&b->theaplock);
 			b->batRestricted = bakmode;
 			b->theap->newstorage = b1;
-			if (b->tvheap)
+			if (!b->ustr && b->tvheap)
 				b->tvheap->newstorage = b3;
 			MT_lock_unset(&b->theaplock);
 			BBPunfix(b->batCacheid);
@@ -2695,7 +2707,7 @@ BATassertProps(BAT *b)
 	}
 
 	/* void, str and blob imply varsized */
-	if (ATOMstorage(b->ttype) == TYPE_str ||
+	if ((ATOMstorage(b->ttype) == TYPE_str && !b->ustr) ||
 	    ATOMstorage(b->ttype) == TYPE_blob)
 		assert(b->tvheap != NULL);
 	/* other "known" types are not varsized */

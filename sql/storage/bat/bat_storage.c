@@ -2893,7 +2893,7 @@ double_elim_col(sql_trans *tr, sql_column *col)
 	} else if (col && ATOMstorage(col->type.type->localtype) == TYPE_str && ATOMIC_PTR_GET(&col->data)) {
 		BAT *b = bind_col(tr, col, QUICK);
 
-		if (b && ATOMstorage(b->ttype) == TYPE_str) { /* check double elimination */
+		if (b && ATOMstorage(b->ttype) == TYPE_str && !b->ustr) { /* check double elimination */
 			de = GDK_ELIMDOUBLES(b->tvheap);
 			if (de)
 				de = (int) ceil(b->tvheap->free / (double) GDK_VAROFFSET);

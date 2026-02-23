@@ -178,6 +178,7 @@ VIEWcreate(oid seq, BAT *b, BUN l, BUN h)
 	bn->tnonil = bi.nonil;
 	bn->tnil = bi.nil;
 	bn->tascii = bi.ascii;
+	bn->ustr = bi.ustr;
 	bn->tnokey[0] = bi.nokey[0];
 	bn->tnokey[1] = bi.nokey[1];
 	bn->tnosorted = bi.nosorted;

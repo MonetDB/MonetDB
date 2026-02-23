@@ -1469,7 +1469,7 @@ snapshot_bats(stream *plan, BAT *bats_to_omit, const char *db_dir)
 		}
 
 		// Include the heaps in the plan
-		if (ATOMvarsized(b.ttype)) {
+		if (ATOMvarsized(b.ttype) && !b.ustr) {
 			r = snapshot_heap(plan, db_dir, b.batCacheid, filename, "theap", b.tvheap->free);
 			if (r != GDK_SUCCEED)
 				goto end;

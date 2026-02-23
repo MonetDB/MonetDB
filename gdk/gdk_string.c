@@ -171,6 +171,177 @@ countStrings(const Heap *h)
 }
 
 
+static BAT *ustrbat;
+static MT_Lock ustrlock = MT_LOCK_INITIALIZER(ustrlock);
+
+BAT *
+getUstrBat(void)
+{
+	MT_lock_set(&ustrlock);
+	BAT *b = ustrbat;
+	if (b == NULL) {
+		bat bid = BBPindex("ustrbat");
+		if (bid > 0) {
+			b = ustrbat = BATdescriptor(bid);
+		}
+	}
+	MT_lock_unset(&ustrlock);
+	return b;
+}
+
+void
+BATustrget(BAT *b)
+{
+	MT_lock_set(&ustrlock);
+	assert(ustrbat != NULL);
+	assert(b->tvheap == NULL);
+	b->tvheap = ustrbat->tvheap;
+	HEAPincref(ustrbat->tvheap);
+	MT_lock_unset(&ustrlock);
+}
+
+static gdk_return
+ustrCreate(void)
+{
+	bat bid = BBPindex("ustrbat");
+	if (bid > 0) {
+		ustrbat = BATdescriptor(bid);
+		if (ustrbat == NULL)
+			return GDK_FAIL;
+	} else {
+		ustrbat = COLnew2(0, TYPE_str, 1024, PERSISTENT, SIZEOF_VAR_T);
+		if (ustrbat == NULL)
+			return GDK_FAIL;
+		if (ustrbat->tvheap != NULL &&
+		    ustrbat->tvheap->base == NULL &&
+		    ATOMheap(TYPE_str, ustrbat->tvheap, 1024) != GDK_SUCCEED) {
+			BBPreclaim(ustrbat);
+			ustrbat = NULL;
+			return GDK_FAIL;
+		}
+		if (BUNappend(ustrbat, str_nil, true) != GDK_SUCCEED ||
+		    BUNappend(ustrbat, "", true) != GDK_SUCCEED) {
+			BBPreclaim(ustrbat);
+			ustrbat = NULL;
+			return GDK_FAIL;
+		}
+		BBPrename(ustrbat, "ustrbat");
+		BATmode(ustrbat, false);
+		ustrbat = BATsetaccess(ustrbat, BAT_READ);
+	}
+	return GDK_SUCCEED;
+}
+
+static var_t
+ustrPut(BAT *b, var_t *dst, const char *v)
+{
+	assert(b->ustr);
+	assert(ustrbat != NULL);
+	assert(BBP_refs(ustrbat->batCacheid) > 0);
+
+	/* this function is the ONLY place where ustrbat may be changed
+	 * (inserted into), and we're holding the ustrlock, so we are
+	 * totally save looking at the heaps */
+	MT_lock_set(&ustrlock);
+	if (ustrbat == NULL) {
+		if (ustrCreate() != GDK_SUCCEED) {
+			MT_lock_unset(&ustrlock);
+			return (var_t) -1;
+		}
+	}
+	BUN p = BUNfnd(ustrbat, v);
+	if (p == BUN_NONE) {
+		/* string does not yet occur in ustrbat */
+		p = ustrbat->batCount;
+		if (p >= BATcapacity(ustrbat) &&
+		    BATextend(ustrbat, BATgrows(ustrbat)) != GDK_SUCCEED) {
+			MT_lock_unset(&ustrlock);
+			return (var_t) -1;
+		}
+		MT_rwlock_wrlock(&ustrbat->thashlock);
+		if (tfastins_nocheckVAR(ustrbat, p, v) != GDK_SUCCEED) {
+			MT_lock_unset(&ustrlock);
+			MT_rwlock_wrunlock(&ustrbat->thashlock);
+			return (var_t) -1;
+		}
+		if (ustrbat->thash)
+			HASHappend_locked(ustrbat, p, v);
+		MT_lock_set(&ustrbat->theaplock);
+		ustrbat->tsorted = ustrbat->trevsorted = (p == 0);
+		if (strNil(v)) {
+			ustrbat->tnonil = false;
+			ustrbat->tnil = true;
+		}
+		ustrbat->batCount++;
+		ustrbat->theap->dirty = true;
+		ustrbat->theap->free = ustrbat->batCount << ustrbat->tshift;
+		MT_rwlock_wrunlock(&ustrbat->thashlock);
+		ustrbat->tunique_est = (double) ustrbat->batCount;
+		ustrbat->tkey = true;
+		MT_lock_unset(&ustrbat->theaplock);
+	}
+	var_t d = VarHeapVal(ustrbat->theap->base, p, ustrbat->twidth);
+	Heap *vh = NULL;
+	if (b->tvheap != ustrbat->tvheap) {
+		vh = b->tvheap;
+		b->tvheap = ustrbat->tvheap;
+		HEAPincref(b->tvheap);
+	}
+	if (b->tascii && !ustrbat->tascii && !strNil(v)) {
+		for (const uint8_t *p = (const uint8_t *) v; *p; p++) {
+			if (*p & 0x80) {
+				b->tascii = false;
+				break;
+			}
+		}
+	}
+
+	MT_lock_unset(&ustrlock);
+	if (vh)
+		HEAPdecref(vh, false);
+	*dst = d;
+	return d;
+}
+
+gdk_return
+BATconvert2ustr(BAT *b)
+{
+	MT_lock_set(&b->theaplock);
+	if (b->ustr) {
+		MT_lock_unset(&b->theaplock);
+		GDKerror("BAT is already ustr\n");
+		return GDK_FAIL;
+	}
+	if (b->batCount != 0) {
+		MT_lock_unset(&b->theaplock);
+		GDKerror("BAT must be empty to convert to ustr\n");
+		return GDK_FAIL;
+	}
+	/* widen theap to full width */
+	if (GDKupgradevarheap(b, (var_t) 1 << (4 * SIZEOF_VAR_T),
+			      0, 0) != GDK_SUCCEED) {
+		MT_lock_unset(&b->theaplock);
+		return GDK_FAIL;
+	}
+	MT_lock_set(&ustrlock);
+	if (ustrbat == NULL && ustrCreate() != GDK_SUCCEED) {
+		MT_lock_unset(&ustrlock);
+		MT_lock_unset(&b->theaplock);
+		return GDK_FAIL;
+	}
+	b->ustr = true;
+	Heap *vh = b->tvheap;
+	b->tvheap = ustrbat->tvheap;
+	HEAPincref(b->tvheap);
+	BBPretain(b->tvheap->parentid);
+	MT_lock_unset(&ustrlock);
+	MT_lock_unset(&b->theaplock);
+	if (vh)
+		HEAPdecref(vh, true);
+	return GDK_SUCCEED;
+}
+
+
 /*
  * The strPut routine. The routine strLocate can be used to identify
  * the location of a string in the heap if it exists. Otherwise it
@@ -206,6 +377,9 @@ strLocate(Heap *h, const char *v)
 var_t
 strPut(BAT *b, var_t *dst, const void *V)
 {
+	if (b->ustr)
+		return ustrPut(b, dst, V);
+
 	const char *v = V;
 	Heap *h = b->tvheap;
 	size_t pad;

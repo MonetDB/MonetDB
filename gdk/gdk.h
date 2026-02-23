@@ -402,6 +402,7 @@ typedef struct BAT {
 	bool tsorted:1;		/* column is sorted in ascending order */
 	bool trevsorted:1;	/* column is sorted in descending order */
 	bool tascii:1;		/* string column is fully ASCII (7 bit) */
+	bool ustr:1;		/* use ustrbat */
 	BUN tnokey[2];		/* positions that prove key==FALSE */
 	BUN tnosorted;		/* position that proves sorted==FALSE */
 	BUN tnorevsorted;	/* position that proves revsorted==FALSE */
@@ -483,7 +484,7 @@ __attribute__((__pure__))
 static inline bool
 isVIEW(const BAT *b)
 {
-	return VIEWtparent(b) != 0 || VIEWvtparent(b) != 0;
+	return VIEWtparent(b) != 0 || (!b->ustr && VIEWvtparent(b) != 0);
 }
 
 typedef struct {
@@ -609,7 +610,8 @@ typedef struct BATiter {
 		vhdirty:1,
 		copiedtodisk:1,
 		transient:1,
-		ascii:1;
+		ascii:1,
+		ustr:1;
 	restrict_t restricted:2;
 #ifndef NDEBUG
 	bool locked:1;
@@ -657,6 +659,7 @@ bat_iterator_nolock(BAT *b)
 			.sorted = b->tsorted,
 			.revsorted = b->trevsorted,
 			.ascii = b->tascii,
+			.ustr = b->ustr,
 			/* only look at heap dirty flag if we own it */
 			.hdirty = b->theap->parentid == b->batCacheid && b->theap->dirty,
 			/* also, if there is no vheap, it's not dirty */
@@ -770,6 +773,8 @@ gdk_export BAT *COLnew2(oid hseq, int tt, BUN cap, role_t role, uint16_t width)
 gdk_export BAT *BATdense(oid hseq, oid tseq, BUN cnt)
 	__attribute__((__warn_unused_result__));
 gdk_export gdk_return BATextend(BAT *b, BUN newcap)
+	__attribute__((__warn_unused_result__));
+gdk_export gdk_return BATconvert2ustr(BAT *b)
 	__attribute__((__warn_unused_result__));
 
 /* internal */

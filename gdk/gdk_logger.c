@@ -1999,7 +1999,8 @@ bm_subcommit(logger *lg, logged_range *pending, uint32_t *updated, BUN maxupdate
 	BAT *catalog_bid = lg->catalog_bid;
 	BAT *catalog_id = lg->catalog_id;
 	BAT *dcatalog = lg->dcatalog;
-	BUN nn = 13 + cnt;
+	bool seenustr = false;
+	BUN nn = 14 + cnt;
 	bat *n = ma_alloc(ta, sizeof(bat) * nn);
 	bat *r = ma_alloc(ta, sizeof(bat) * nn);
 	BUN *sizes = ma_alloc(ta, sizeof(BUN) * nn);
@@ -2050,6 +2051,12 @@ bm_subcommit(logger *lg, logged_range *pending, uint32_t *updated, BUN maxupdate
 		assert(col);
 		sizes[i] = cnts ? (BUN) cnts[p] : 0;
 		n[i++] = col;
+		seenustr |= BBP_desc(col)->ustr;
+	}
+	if (seenustr) {
+		BAT *ustrbat = getUstrBat();
+		sizes[i] = BATcount(ustrbat);
+		n[i++] = ustrbat->batCacheid;
 	}
 	/* now commit catalog, so it's also up to date on disk */
 	sizes[i] = cnt;

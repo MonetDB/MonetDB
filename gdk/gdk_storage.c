@@ -709,7 +709,7 @@ BATsave_iter(BAT *b, BATiter *bi, BUN size)
 						    bi->h->filename);
 				close(fd);
 			}
-			if (bi->vh) {
+			if (bi->vh && !bi->ustr) {
 				fd = GDKfdlocate(bi->vh->farmid, bi->vh->filename, "rb+", NULL);
 				if (fd < 0) {
 					GDKsyserror("cannot open file %s for sync\n",
@@ -738,6 +738,7 @@ BATsave_iter(BAT *b, BATiter *bi, BUN size)
 			err = HEAPsave(bi->h, nme, tail, dosync, bi->hfree, &b->theaplock);
 		}
 		if (bi->vh
+		    && !bi->ustr
 		    && (!bi->copiedtodisk || bi->vhdirty)
 		    && ATOMvarsized(bi->type)
 		    && err == GDK_SUCCEED)
@@ -751,7 +752,7 @@ BATsave_iter(BAT *b, BATiter *bi, BUN size)
 			b->theap->wasempty = bi->h->wasempty;
 			b->theap->hasfile |= bi->h->hasfile;
 		}
-		if (b->tvheap && b->tvheap != bi->vh) {
+		if (!b->ustr && b->tvheap && b->tvheap != bi->vh) {
 			assert(b->tvheap->dirty);
 			b->tvheap->wasempty = bi->vh->wasempty;
 			b->tvheap->hasfile |= bi->vh->hasfile;
@@ -759,7 +760,7 @@ BATsave_iter(BAT *b, BATiter *bi, BUN size)
 		if (size != b->batCount) {
 			/* if the size doesn't match, the BAT must be dirty */
 			b->theap->dirty = true;
-			if (b->tvheap)
+			if (!b->ustr && b->tvheap)
 				b->tvheap->dirty = true;
 		}
 		/* there is something on disk now */
@@ -824,7 +825,7 @@ BATload_intern(bat bid, bool lock)
 	}
 
 	/* LOAD tail heap */
-	if (ATOMvarsized(b->ttype)) {
+	if (ATOMvarsized(b->ttype) && !b->ustr) {
 		b->tvheap->storage = b->tvheap->newstorage = STORE_INVALID;
 		if ((b->tvheap->free == 0 ?
 		     ATOMheap(b->ttype, b->tvheap, b->batCapacity) :

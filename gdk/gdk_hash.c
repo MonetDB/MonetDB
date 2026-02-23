@@ -432,6 +432,9 @@ HASHgrowbucket(BAT *b)
 bool
 BATcheckhash(BAT *b)
 {
+	if (b->ttype == TYPE_void)
+		return false;
+
 	lng t = 0;
 	Hash *h;
 
@@ -500,7 +503,7 @@ BATcheckhash(BAT *b)
 							}
 							h->nunique = hdata[5];
 							h->nheads = hdata[6];
-							h->type = ATOMtype(b->ttype);
+							h->type = ATOMbasetype(b->ttype);
 							if (h->width < SIZEOF_BUN &&
 							    ((BUN) 1 << (8 * h->width)) - 1 > h->nbucket) {
 								close(fd);
@@ -738,24 +741,12 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 
 	assert(strcmp(ext, "thash") != 0 || !hascand);
 	assert(bi.type != TYPE_msk);
+	assert(bi.type != TYPE_void);
 
 	MT_thread_setalgorithm(hascand ? "create hash with candidates" : "create hash");
 	TRC_DEBUG_IF(ACCELERATOR) t0 = GDKusec();
 	TRC_DEBUG(ACCELERATOR,
 		  ALGOBATFMT ": create hash;\n", ALGOBATPAR(b));
-	if (bi.type == TYPE_void) {
-		if (is_oid_nil(b->tseqbase)) {
-			TRC_DEBUG(ACCELERATOR,
-				  "cannot create hash-table on void-NIL column.\n");
-			GDKerror("no hash on void/nil column\n");
-			bat_iterator_end(&bi);
-			return NULL;
-		}
-		TRC_DEBUG(ACCELERATOR,
-			  "creating hash-table on void column..\n");
-		assert(0);
-		tpe = TYPE_void;
-	}
 
 	if ((h = GDKzalloc(sizeof(*h))) == NULL ||
 	    (h->heaplink.farmid = BBPselectfarm(hascand ? TRANSIENT : b->batRole, bi.type, hashheap)) < 0 ||
@@ -836,7 +827,7 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 		p = 0;
 		HEAPfree(&h->heapbckt, true);
 		/* create the hash structures */
-		if (HASHnew(h, ATOMtype(bi.type), BATcapacity(b),
+		if (HASHnew(h, ATOMtype(tpe), BATcapacity(b),
 			    mask, ci->ncand, true) != GDK_SUCCEED) {
 			HEAPfree(&h->heaplink, true);
 			GDKfree(h);
@@ -878,7 +869,7 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 			starthash(inet6);
 			break;
 		default: {
-			bool (*atomeq)(const void *, const void *) = ATOMequal(h->type);
+			bool (*atomeq)(const void *, const void *) = ATOMequal(tpe);
 			TIMEOUT_LOOP_IDX(p, cnt1, qry_ctx) {
 				const void *restrict v = BUNtail(&bi, o - b->hseqbase);
 				c = hash_any(h, v);
@@ -961,7 +952,7 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 		finishhash(inet6);
 		break;
 	default: {
-		bool (*atomeq)(const void *, const void *) = ATOMequal(h->type);
+		bool (*atomeq)(const void *, const void *) = ATOMequal(tpe);
 		TIMEOUT_LOOP(ci->ncand - p, qry_ctx) {
 			const void *restrict v = BUNtail(&bi, o - b->hseqbase);
 			c = hash_any(h, v);

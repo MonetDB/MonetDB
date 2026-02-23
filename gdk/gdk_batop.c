@@ -139,8 +139,8 @@ insert_string_bat(BAT *b, BATiter *ni, struct canditer *ci, bool force, bool may
 	assert(b->ttype == TYPE_str);
 	assert(b->tbaseoff == 0);
 	assert(b->theap->parentid == b->batCacheid);
-	/* only transient bats can use some other bat's string heap */
-	assert(b->batRole == TRANSIENT || b->tvheap->parentid == b->batCacheid);
+	/* only transient or ustr bats can use some other bat's string heap */
+	assert(b->ustr || b->batRole == TRANSIENT || b->tvheap->parentid == b->batCacheid);
 	if (cnt == 0)
 		return GDK_SUCCEED;
 
@@ -149,6 +149,8 @@ insert_string_bat(BAT *b, BATiter *ni, struct canditer *ci, bool force, bool may
 		 * need to append the offsets */
 		toff = 0;
 		MT_thread_setalgorithm("shared vheap");
+	} else if (b->ustr) {
+		MT_thread_setalgorithm("individual inserts into ustr");
 	} else if (mayshare && b->batRole == TRANSIENT && oldcnt == 0) {
 		/* we can share the vheaps, so we then only need to
 		 * append the offsets */
@@ -311,7 +313,8 @@ insert_string_bat(BAT *b, BATiter *ni, struct canditer *ci, bool force, bool may
 				MT_UNREACHABLE();
 			}
 		}
-	} else if (b->tvheap->free < ni->vhfree / 2 ||
+	} else if (b->ustr ||
+		   b->tvheap->free < ni->vhfree / 2 ||
 		   GDK_ELIMDOUBLES(b->tvheap)) {
 		/* if b's string heap is much smaller than n's string
 		 * heap, don't bother checking whether n's string
@@ -758,6 +761,11 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 	if (b == NULL || n == NULL || BATcount(n) == 0) {
 		return GDK_SUCCEED;
 	}
+	canditer_init(&ci, n, s);
+	if (ci.ncand == 0) {
+		return GDK_SUCCEED;
+	}
+
 	assert(b->theap->parentid == b->batCacheid);
 
 	TRC_DEBUG_IF(ALGO) {
@@ -781,11 +789,6 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 
 	BATiter ni = bat_iterator(n);
-
-	canditer_init(&ci, n, s);
-	if (ci.ncand == 0) {
-		goto doreturn;
-	}
 
 	if (BATcount(b) + ci.ncand > BUN_MAX) {
 		bat_iterator_end(&ni);
@@ -2007,7 +2010,7 @@ BATslice(BAT *b, BUN l, BUN h)
 		prestricted = BAT_WRITE; /* just initialize with anything */
 	}
 	if (bi.restricted == BAT_READ &&
-	    (!VIEWtparent(b) || prestricted == BAT_READ)) {
+	    (bi.ustr || !VIEWtparent(b) || prestricted == BAT_READ)) {
 		bn = VIEWcreate(b->hseqbase + low, b, l, h);
 		if (bn == NULL)
 			goto doreturn;
@@ -2707,7 +2710,7 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 		bn = BATproject(o, b);
 		if (bn == NULL)
 			goto error;
-		if (bn->ttype == TYPE_void || isVIEW(bn)) {
+		if (bn->ttype == TYPE_void || VIEWtparent(bn)) {
 			BAT *b2 = COLcopy2(bn, ATOMtype(bn->ttype), true, true, TRANSIENT);
 			BBPunfix(bn->batCacheid);
 			bn = b2;
@@ -3298,6 +3301,11 @@ BATcount_no_nil(BAT *b, BAT *s)
 			cnt += !is_inet6_nil(((const inet6 *) p)[canditer_next(&ci) - hseq]);
 		break;
 	case TYPE_str:
+		if (bi.ustr) {
+			/* TODO: check whether nil occurs in ustrbat; if
+			 * not, return BATcount(b), else count offsets
+			 * != nil offset */
+		}
 		if (GDK_ELIMDOUBLES(bi.vh)) {
 			var_t off = strLocate(bi.vh, str_nil);
 			if (off == (var_t) -2) {

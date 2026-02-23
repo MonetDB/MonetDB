@@ -74,6 +74,8 @@ gdk_return BATsave_iter(BAT *bd, BATiter *bi, BUN size)
 	__attribute__((__visibility__("hidden")));
 void BATsetdims(BAT *b, uint16_t width)
 	__attribute__((__visibility__("hidden")));
+void BATustrget(BAT *b)
+	__attribute__((__visibility__("hidden")));
 void BBPcacheit(BAT *bn, bool lock)
 	__attribute__((__visibility__("hidden")));
 gdk_return BBPchkfarms(void)
@@ -167,6 +169,8 @@ gdk_return GDKtracer_init(const char *dbname, const char *dbtrace)
 gdk_return GDKunlink(int farmid, const char *dir, const char *nme, const char *extension)
 	__attribute__((__visibility__("hidden")));
 lng getBBPlogno(void)
+	__attribute__((__visibility__("hidden")));
+BAT *getUstrBat(void)
 	__attribute__((__visibility__("hidden")));
 BUN HASHappend(BAT *b, BUN i, const void *v)
 	__attribute__((__visibility__("hidden")));

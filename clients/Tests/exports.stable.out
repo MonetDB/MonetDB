@@ -113,6 +113,7 @@ gdk_return BATclear(BAT *b, bool force);
 void BATcommit(BAT *b, BUN size);
 BAT *BATconstant(oid hseq, int tt, const void *val, BUN cnt, role_t role);
 BAT *BATconvert(BAT *b, BAT *s, int tp, uint8_t scale1, uint8_t scale2, uint8_t precision);
+gdk_return BATconvert2ustr(BAT *b) __attribute__((__warn_unused_result__));
 BUN BATcount_no_nil(BAT *b, BAT *s);
 gdk_return BATdel(BAT *b, BAT *d) __attribute__((__warn_unused_result__));
 BAT *BATdense(oid hseq, oid tseq, BUN cnt) __attribute__((__warn_unused_result__));
