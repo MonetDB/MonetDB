@@ -344,7 +344,8 @@ typedef struct PROPrec PROPrec;
 #define GDKLIBRARY_HSIZE	061045U /* first in Jan2022: heap "size" values */
 #define GDKLIBRARY_JSON 	061046U /* first in Sep2022: json storage changes*/
 #define GDKLIBRARY_STATUS	061047U /* first in Dec2023: no status/filename columns */
-#define GDKLIBRARY		061050U /* first in Aug2024 */
+#define GDKLIBRARY_USTR		061050U /* first in Aug2024: no ustr */
+#define GDKLIBRARY		061051U /* first after Dec2025 */
 
 /* The batRestricted field indicates whether a BAT is readonly.
  * we have modes: BAT_WRITE  = all permitted

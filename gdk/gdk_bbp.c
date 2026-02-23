@@ -519,7 +519,7 @@ heapinit(BAT *b, const char *buf,
 #endif
 #endif
 
-	if (properties & ~0x3F81) {
+	if (properties & (bbpversion <= GDKLIBRARY_USTR ? ~0x1F81 : ~0x3F81)) {
 		TRC_CRITICAL(GDK, "unknown properties are set: incompatible database on line %d of BBP.dir\n", lineno);
 		return -1;
 	}
@@ -559,7 +559,7 @@ heapinit(BAT *b, const char *buf,
 	b->tnonil = (properties & 0x0400) != 0;
 	b->tnil = (properties & 0x0800) != 0;
 	b->tascii = (properties & 0x1000) != 0;
-	b->ustr = (properties & 0x2000) != 0;
+	b->ustr = (bbpversion <= GDKLIBRARY_USTR) ? false : (properties & 0x2000) != 0;
 	b->tnosorted = (BUN) nosorted;
 	b->tnorevsorted = (BUN) norevsorted;
 	b->tunique_est = 0.0;
@@ -1002,7 +1002,8 @@ BBPheader(FILE *fp, int *lineno, bat *bbpsize, lng *logno, bool allow_hge_upgrad
 	    bbpversion != GDKLIBRARY_STATUS &&
 	    bbpversion != GDKLIBRARY_JSON &&
 	    bbpversion != GDKLIBRARY_HSIZE &&
-	    bbpversion != GDKLIBRARY_HASHASH) {
+	    bbpversion != GDKLIBRARY_HASHASH &&
+	    bbpversion != GDKLIBRARY_USTR) {
 		TRC_CRITICAL(GDK, "incompatible BBP version: expected 0%o, got 0%o. "
 			     "This database was probably created by a %s version of MonetDB.",
 			     GDKLIBRARY, bbpversion,
