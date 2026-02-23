@@ -211,7 +211,8 @@ typedef union {
 
 typedef struct {
 	size_t nitems;
-	uint8_t data[] __attribute__((__nonstring__));
+	uint8_t data[] __attribute__((__nonstring__))
+		__attribute__((__counted_by__(nitems)));
 } blob;
 gdk_export size_t blobsize(size_t nitems) __attribute__((__const__));
 
