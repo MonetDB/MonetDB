@@ -14,7 +14,6 @@
  */
 
 #include "geom.h"
-#include "gdk_system.h"
 #include "geod.h"
 #include "geom_atoms.h"
 #include "mal_exception.h"
@@ -1842,19 +1841,10 @@ dumpGeometriesSingle(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry,
 		snprintf(newPath, lvlDigitsNum + 1, "%u", *lvl);
 	} else {
 		//remove the comma at the end of the path
-#ifdef __COVERITY__
-		/* coverity complains about the allocated space being
-		 * too small, but we just want to reduce the length of
-		 * the string by one, so the length in the #else part
-		 * is exactly what we need */
-		newPath = ma_alloc(ma, pathLength + 1);
-#else
-		newPath = ma_alloc(ma, pathLength);
-#endif
+		newPath = ma_strndup(ma, path, pathLength - 1);
 		if (newPath == NULL) {
 			throw(MAL, "geom.Dump", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
-		strcpy_len(newPath, path, pathLength);
 	}
 	if (BUNappend(idBAT, newPath, false) != GDK_SUCCEED ||
 	    BUNappend(geomBAT, singleWKB, false) != GDK_SUCCEED)
@@ -2385,6 +2375,11 @@ geos2wkb(allocator *ma, wkb **geomWKB, size_t *len, const GEOSGeometry *geosGeom
 		return NULL;
 
 	assert(wkbLen <= GDK_int_max);
+	if (wkbLen > (size_t) GDK_int_max) {
+		GEOSFree_r(geoshandle, w);
+		GDKerror("geos2wkb: wkb length too large\n");
+		return NULL;
+	}
 
 	*geomWKB = ma_alloc(ma, wkb_size(wkbLen));
 	//If malloc failed create a NULL wkb
@@ -2564,6 +2559,8 @@ wkbFromBinaryWithBuffer(allocator *ma, wkb **geomWKB, size_t *len, const char **
 
 	wkbLength = strLength / 2;
 	assert(wkbLength <= GDK_int_max);
+	if (wkbLength > (size_t) GDK_int_max)
+		throw(MAL, "geom.FromBinary", SQLSTATE(38000) "Geos length too large");
 
 	if (!*geomWKB || *len < wkb_size(wkbLength)) {
 		*len = wkb_size(wkbLength);
@@ -4874,9 +4871,6 @@ wkbNumGeometries(Client ctx, int *out, wkb **geom)
 
 /* TODO: Analyze these functions below (what's the dif from normal contain, is it unfinished?) */
 
-geom_export str wkbContains_point_bat(Client ctx, bat *out, wkb **a, bat *point_x, bat *point_y);
-geom_export str wkbContains_point(Client ctx, bit *out, wkb **a, dbl *point_x, dbl *point_y);
-
 static inline double
 isLeft(double P0x, double P0y, double P1x, double P1y, double P2x, double P2y)
 {
@@ -5049,7 +5043,7 @@ pnpolyWithHoles(bat *out, int nvert, dbl *vx, dbl *vy, int nholes, dbl **hx, dbl
 #define POLY_NUM_VERT 120
 #define POLY_NUM_HOLE 10
 
-str
+static str
 wkbContains_point_bat(Client ctx, bat *out, wkb **a, bat *point_x, bat *point_y)
 {
 	allocator *ma = ctx->curprg->def->ma;
@@ -5085,17 +5079,14 @@ wkbContains_point_bat(Client ctx, bat *out, wkb **a, bat *point_x, bat *point_y)
 		sscanf(subtoken, "%lf %lf", &vert_x[nvert], &vert_y[nvert]);
 		nvert++;
 		if ((nvert % POLY_NUM_VERT) == 0) {
-			double *tmp;
-			tmp = ma_realloc(ma, vert_x, nvert * 2 * sizeof(double), nvert);
-			if (tmp == NULL) {
+			vert_x = ma_realloc(ma, vert_x, nvert * 2 * sizeof(double), nvert);
+			if (vert_x == NULL) {
 				throw(MAL, "geom.Contains", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
-			vert_x = tmp;
-			tmp = ma_realloc(ma, vert_y, nvert * 2 * sizeof(double), nvert);
-			if (tmp == NULL) {
+			vert_y = ma_realloc(ma, vert_y, nvert * 2 * sizeof(double), nvert);
+			if (vert_y == NULL) {
 				throw(MAL, "geom.Contains", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
-			vert_y = tmp;
 		}
 	}
 
@@ -5132,40 +5123,32 @@ wkbContains_point_bat(Client ctx, bat *out, wkb **a, bat *point_x, bat *point_y)
 			sscanf(subtoken, "%lf %lf", &holes_x[nholes][nhole], &holes_y[nholes][nhole]);
 			nhole++;
 			if ((nhole % POLY_NUM_VERT) == 0) {
-				double *tmp;
-				tmp = ma_realloc(ma, holes_x[nholes], nhole * 2 * sizeof(double), nhole);
-				if (tmp == NULL) {
+				holes_x[nholes] = ma_realloc(ma, holes_x[nholes], nhole * 2 * sizeof(double), nhole);
+				if (holes_x[nholes] == NULL) {
 					throw(MAL, "geom.Contains", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				}
-				holes_x[nholes] = tmp;
-				tmp = ma_realloc(ma, holes_y[nholes], nhole * 2 * sizeof(double), nhole);
-				if (tmp == NULL) {
+				holes_y[nholes] = ma_realloc(ma, holes_y[nholes], nhole * 2 * sizeof(double), nhole);
+				if (holes_y[nholes] == NULL) {
 					throw(MAL, "geom.Contains", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				}
-				holes_y[nholes] = tmp;
 			}
 		}
 
 		holes_n[nholes] = nhole;
 		nholes++;
 		if ((nholes % POLY_NUM_HOLE) == 0) {
-			double **tmp;
-			int *itmp;
-			tmp = ma_realloc(ma, holes_x, nholes * 2 * sizeof(double *), nholes);
-			if (tmp == NULL) {
+			holes_x = ma_realloc(ma, holes_x, nholes * 2 * sizeof(double *), nholes);
+			if (holes_x == NULL) {
 				throw(MAL, "geom.Contains", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
-			holes_x = tmp;
-			tmp = ma_realloc(ma, holes_y, nholes * 2 * sizeof(double *), nholes);
-			if (tmp == NULL) {
+			holes_y = ma_realloc(ma, holes_y, nholes * 2 * sizeof(double *), nholes);
+			if (holes_y == NULL) {
 				throw(MAL, "geom.Contains", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
-			holes_y = tmp;
-			itmp = ma_realloc(ma, holes_n, nholes * 2 * sizeof(int), nholes);
-			if (itmp == NULL) {
+			holes_n = ma_realloc(ma, holes_n, nholes * 2 * sizeof(int), nholes);
+			if (holes_n == NULL) {
 				throw(MAL, "geom.Contains", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
-			holes_n = itmp;
 		}
 		token = strtok_r(NULL, ")", &saveptr1);
 	}
@@ -5179,7 +5162,7 @@ wkbContains_point_bat(Client ctx, bat *out, wkb **a, bat *point_x, bat *point_y)
 	return err;
 }
 
-str
+static str
 wkbContains_point(Client ctx, bit *out, wkb **a, dbl *point_x, dbl *point_y)
 {
 	(void) ctx;

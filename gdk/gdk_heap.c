@@ -251,10 +251,10 @@ HEAPextend(Heap *h, size_t size, bool mayshare)
 	const char *failure = "None";
 
 	if (GDKinmemory(h->farmid)) {
-		strcpy_len(nme, ":memory:", sizeof(nme));
+		strtcpy(nme, ":memory:", sizeof(nme));
 		ext = "ext";
 	} else {
-		strcpy_len(nme, h->filename, sizeof(nme));
+		strtcpy(nme, h->filename, sizeof(nme));
 		ext = decompose_filename(nme);
 	}
 	failure = "size > h->size";
@@ -437,7 +437,9 @@ HEAPextend(Heap *h, size_t size, bool mayshare)
 
 /* grow the string offset heap so that the value v fits (i.e. wide
  * enough to fit the value), and it has space for at least cap elements;
- * copy ncopy BUNs, or up to the heap size, whichever is smaller */
+ * copy ncopy BUNs, or up to the heap size, whichever is smaller
+ *
+ * this function should be called with theaplock held */
 gdk_return
 GDKupgradevarheap(BAT *b, var_t v, BUN cap, BUN ncopy)
 {
@@ -478,7 +480,11 @@ GDKupgradevarheap(BAT *b, var_t v, BUN cap, BUN ncopy)
 				BATsetcapacity(b, cap);
 			return GDK_SUCCEED;
 		}
-		return BATextend(b, newsize >> shift);
+		if (HEAPgrow(&b->theap, newsize,
+			     b->batRestricted == BAT_READ) != GDK_SUCCEED)
+			return GDK_FAIL;
+		b->batCapacity = newsize >> shift;
+		return GDK_SUCCEED;
 	}
 
 	n = MIN(ncopy, old->size >> b->tshift);
@@ -573,7 +579,6 @@ GDKupgradevarheap(BAT *b, var_t v, BUN cap, BUN ncopy)
 	default:
 		MT_UNREACHABLE();
 	}
-	MT_lock_set(&b->theaplock);
 	b->tshift = shift;
 	b->twidth = width;
 	if (cap > BATcapacity(b))
@@ -590,7 +595,6 @@ GDKupgradevarheap(BAT *b, var_t v, BUN cap, BUN ncopy)
 		ValPtr p = BATgetprop_nolock(b, (enum prop_t) 20);
 		HEAPdecref(old, p == NULL || strcmp(((Heap*) p->val.pval)->filename, old->filename) != 0);
 	}
-	MT_lock_unset(&b->theaplock);
 	return GDK_SUCCEED;
 }
 
@@ -768,7 +772,7 @@ HEAPload(Heap *h, const char *nme, const char *ext, bool trunc)
 	 * takes precedence. */
 	if (GDKfilepath(dstpath, sizeof(dstpath), h->farmid, BATDIR, nme, ext) != GDK_SUCCEED)
 		return GDK_FAIL;
-	strconcat_len(srcpath, sizeof(srcpath), dstpath, suffix, NULL);
+	strtconcat(srcpath, sizeof(srcpath), dstpath, suffix, NULL);
 
 	t0 = GDKusec();
 	ret = MT_rename(srcpath, dstpath);
@@ -866,7 +870,7 @@ HEAPsave(Heap *h, const char *nme, const char *ext, bool dosync, BUN free, MT_Lo
 		/* anonymous or private VM is saved as if it were malloced */
 		store = STORE_MEM;
 		assert(strlen(ext) + strlen(suffix) < sizeof(extension));
-		strconcat_len(extension, sizeof(extension), ext, suffix, NULL);
+		strtconcat(extension, sizeof(extension), ext, suffix, NULL);
 		ext = extension;
 	} else if (store != STORE_MEM) {
 		store = h->storage;
@@ -900,7 +904,7 @@ HEAPsave(Heap *h, const char *nme, const char *ext, bool dosync, BUN free, MT_Lo
 
 /* Return the (virtual) size of the heap. */
 size_t
-HEAPvmsize(Heap *h)
+HEAPvmsize(const Heap *h)
 {
 	if (h && h->base && h->free)
 		return h->size;
@@ -910,7 +914,7 @@ HEAPvmsize(Heap *h)
 /* Return the allocated size of the heap, i.e. if the heap is memory
  * mapped and not copy-on-write (privately mapped), return 0. */
 size_t
-HEAPmemsize(Heap *h)
+HEAPmemsize(const Heap *h)
 {
 	if (h && h->base && h->free && h->storage != STORE_MMAP)
 		return h->size;

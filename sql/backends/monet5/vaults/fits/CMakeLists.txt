@@ -34,7 +34,6 @@ if(HAVE_FITS)
   target_sources(fits
     PRIVATE
     fits.c
-    fits.h
     ${MONETDB_CURRENT_SQL_SOURCES})
 
   set_target_properties(fits

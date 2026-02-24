@@ -112,7 +112,7 @@ tmp_schema(mvc *sql)
 	return mvc_bind_schema(sql, "tmp");
 }
 
-#define DO_NOTHING(x) ;
+#define DO_NOTHING(x) ((void) 0)
 
 /* as we don't have OOP in C, I prefer a single macro with the search path algorithm to passing function pointers */
 #define search_object_on_path(CALL, EXTRA_CONDITION, EXTRA, ERROR_CODE, show_error) \
@@ -182,7 +182,7 @@ find_sequence_on_scope(mvc *sql, const char *sname, const char *name, const char
 	static const char objstr[] = "sequence";
 	sql_sequence *res = NULL;
 
-	search_object_on_path(res = find_sql_sequence(sql->session->tr, next, name), DO_NOTHING, ;, SQLSTATE(42000), true);
+	search_object_on_path(res = find_sql_sequence(sql->session->tr, next, name), DO_NOTHING, ((void) 0), SQLSTATE(42000), true);
 	return res;
 }
 
@@ -192,7 +192,7 @@ find_idx_on_scope(mvc *sql, const char *sname, const char *name, const char *err
 	static const char objstr[] = "index";
 	sql_idx *res = NULL;
 
-	search_object_on_path(res = mvc_bind_idx(sql, next, name), DO_NOTHING, ;, SQLSTATE(42S12), true);
+	search_object_on_path(res = mvc_bind_idx(sql, next, name), DO_NOTHING, ((void) 0), SQLSTATE(42S12), true);
 	return res;
 }
 
@@ -202,7 +202,7 @@ find_type_on_scope(mvc *sql, const char *sname, const char *name, const char *er
 	static const char objstr[] = "type";
 	sql_type *res = NULL;
 
-	search_object_on_path(res = schema_bind_type(sql, next, name), DO_NOTHING, ;, SQLSTATE(42S01), true);
+	search_object_on_path(res = schema_bind_type(sql, next, name), DO_NOTHING, ((void) 0), SQLSTATE(42S01), true);
 	return res;
 }
 
@@ -212,7 +212,7 @@ find_trigger_on_scope(mvc *sql, const char *sname, const char *name, const char 
 	static const char objstr[] = "trigger";
 	sql_trigger *res = NULL;
 
-	search_object_on_path(res = mvc_bind_trigger(sql, next, name), DO_NOTHING, ;, SQLSTATE(3F000), true);
+	search_object_on_path(res = mvc_bind_trigger(sql, next, name), DO_NOTHING, ((void) 0), SQLSTATE(3F000), true);
 	return res;
 }
 
@@ -534,7 +534,7 @@ score_func( sql_func *f, list *tl, bool exact, bool *downcast)
 			nscore = -nscore;
 		}
 		score += nscore;
-		if (EC_VARCHAR(t->type->eclass) && EC_NUMBER(a->type.type->eclass))
+		if (EC_VARCHAR(t->type->eclass) && !EC_VARCHAR(a->type.type->eclass) && a->type.type->eclass != EC_ANY)
 			nr_strconverts++;
 		if (nr_strconverts > 1)
 			return 0;
@@ -595,15 +595,19 @@ sql_bind_func__(mvc *sql, list *ff, const char *fname, list *ops, sql_ftype type
 
 				if ((f->type != type && f->type != filt) || (f->private && !private))
 					continue;
-				if (strcmp(f->base.name, fname) == 0 && ((!exact && (list_length(f->ops) == list_length(ops) || (list_length(f->ops) <= list_length(ops) && f->vararg))) || (exact && list_cmp(f->ops, ops, (fcmp) &arg_subtype_cmp) == 0))) {
+				if (strcmp(f->base.name, fname) == 0 &&
+					(exact
+					 ? list_cmp(f->ops, ops, (fcmp) &arg_subtype_cmp) == 0
+					 : (list_length(f->ops) == list_length(ops) ||
+						(list_length(f->ops) <= list_length(ops) && f->vararg)))) {
 					int npoints = score_func(f, ops, exact, &downcast);
 					if (downcast) {
-						if ((!dcand && (npoints || exact)) || (dcand && npoints > dpoints)) {
+						if (dcand ? npoints > dpoints : npoints || exact) {
 							dcand = f;
 							dpoints = npoints;
 						}
 					} else {
-						if ((!cand && (npoints || exact)) || (cand && npoints > points)) {
+						if (cand ? npoints > points : npoints || exact) {
 							cand = f;
 							points = npoints;
 						}
@@ -618,15 +622,19 @@ sql_bind_func__(mvc *sql, list *ff, const char *fname, list *ops, sql_ftype type
 
 				if ((f->type != type && f->type != filt) || (f->private && !private))
 					continue;
-				if (strcmp(f->base.name, fname) == 0 && ((!exact && (list_length(f->ops) == list_length(ops) || (list_length(f->ops) <= list_length(ops) && f->vararg))) || (exact && list_cmp(f->ops, ops, (fcmp) &arg_subtype_cmp) == 0))) {
+				if (strcmp(f->base.name, fname) == 0 &&
+					(exact
+					 ? list_cmp(f->ops, ops, (fcmp) &arg_subtype_cmp) == 0
+					 : (list_length(f->ops) == list_length(ops) ||
+						(list_length(f->ops) <= list_length(ops) && f->vararg)))) {
 					int npoints = score_func(f, ops, exact, &downcast);
 					if (downcast) {
-						if ((!dcand && (npoints || exact)) || (dcand && npoints > dpoints)) {
+						if (dcand ? npoints > dpoints : npoints || exact) {
 							dcand = f;
 							dpoints = npoints;
 						}
 					} else {
-						if ((!cand && (npoints || exact)) || (cand && npoints > points)) {
+						if (cand ? npoints > points : npoints || exact) {
 							cand = f;
 							points = npoints;
 						}

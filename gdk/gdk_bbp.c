@@ -442,8 +442,8 @@ vheapinit(BAT *b, const char *buf, unsigned bbpversion, const char *filename, in
 		.farmid = BBPselectfarm(PERSISTENT, b->ttype, varheap),
 		.hasfile = free > 0,
 	};
-	strconcat_len(b->tvheap->filename, sizeof(b->tvheap->filename),
-		      filename, ".theap", NULL);
+	strtconcat(b->tvheap->filename, sizeof(b->tvheap->filename),
+		   filename, ".theap", NULL);
 	return n;
 }
 
@@ -864,7 +864,7 @@ BBPreadEntries(FILE *fp, unsigned bbpversion, int lineno
 		} else {
 			if (s)
 				*s = 0;
-			strcpy_len(logical, headname, sizeof(logical));
+			strtcpy(logical, headname, sizeof(logical));
 		}
 		if (strcmp(logical, BBP_bak(b.batCacheid)) == 0) {
 			BBP_logical(b.batCacheid) = BBP_bak(b.batCacheid);
@@ -877,7 +877,7 @@ BBPreadEntries(FILE *fp, unsigned bbpversion, int lineno
 				goto bailout;
 			}
 		}
-		strcpy_len(BBP_physical(b.batCacheid), filename, sizeof(BBP_physical(b.batCacheid)));
+		strtcpy(BBP_physical(b.batCacheid), filename, sizeof(BBP_physical(b.batCacheid)));
 #ifdef __COVERITY__
 		/* help coverity */
 		BBP_physical(b.batCacheid)[sizeof(BBP_physical(b.batCacheid)) - 1] = 0;
@@ -1242,7 +1242,7 @@ fixhashashbat(BAT *b)
 	Heap h1 = *b->theap;	/* old heap */
 	h1.base = NULL;
 	h1.dirty = false;
-	strconcat_len(h1.filename, sizeof(h1.filename), filename, ".", t, NULL);
+	strtconcat(h1.filename, sizeof(h1.filename), filename, ".", t, NULL);
 	if (HEAPload(&h1, filename, t, false) != GDK_SUCCEED) {
 		TRC_CRITICAL(GDK, "loading old tail heap "
 			     "for BAT %d failed\n", b->batCacheid);
@@ -1251,7 +1251,7 @@ fixhashashbat(BAT *b)
 	Heap vh1 = *b->tvheap;	/* old heap */
 	vh1.base = NULL;
 	vh1.dirty = false;
-	strconcat_len(vh1.filename, sizeof(vh1.filename), filename, ".theap", NULL);
+	strtconcat(vh1.filename, sizeof(vh1.filename), filename, ".theap", NULL);
 	if (HEAPload(&vh1, filename, "theap", false) != GDK_SUCCEED) {
 		HEAPfree(&h1, false);
 		TRC_CRITICAL(GDK, "loading old string heap "
@@ -1286,7 +1286,7 @@ fixhashashbat(BAT *b)
 	h2->free = h1.free;
 
 	*vh2 = *b->tvheap;
-	strconcat_len(vh2->filename, sizeof(vh2->filename), nme, ".theap", NULL);
+	strtconcat(vh2->filename, sizeof(vh2->filename), nme, ".theap", NULL);
 	strHeap(vh2, b->batCapacity);
 	if (vh2->base == NULL) {
 		HEAPfree(&h1, false);
@@ -1452,7 +1452,7 @@ jsonupgradebat(BAT *b, json_storage_conversion fixJSONStorage)
 	Heap h1 = *b->theap;
 	h1.base = NULL;
 	h1.dirty = false;
-	strconcat_len(h1.filename, sizeof(h1.filename), filename, ".tail", NULL);
+	strtconcat(h1.filename, sizeof(h1.filename), filename, ".tail", NULL);
 	if (HEAPload(&h1, filename, "tail", false) != GDK_SUCCEED) {
 		TRC_CRITICAL(GDK, "loading old tail heap "
 			     "for BAT %d failed\n", b->batCacheid);
@@ -1462,7 +1462,7 @@ jsonupgradebat(BAT *b, json_storage_conversion fixJSONStorage)
 	Heap vh1 = *b->tvheap;
 	vh1.base = NULL;
 	vh1.dirty = false;
-	strconcat_len(vh1.filename, sizeof(vh1.filename), filename, ".theap", NULL);
+	strtconcat(vh1.filename, sizeof(vh1.filename), filename, ".theap", NULL);
 	if (HEAPload(&vh1, filename, "theap", false) != GDK_SUCCEED) {
 		HEAPfree(&h1, false);
 		TRC_CRITICAL(GDK, "loading old string heap "
@@ -1498,7 +1498,7 @@ jsonupgradebat(BAT *b, json_storage_conversion fixJSONStorage)
 	h2->free = h1.free;
 
 	*vh2 = *b->tvheap;
-	strconcat_len(vh2->filename, sizeof(vh2->filename), nme, ".theap", NULL);
+	strtconcat(vh2->filename, sizeof(vh2->filename), nme, ".theap", NULL);
 	strHeap(vh2, b->batCapacity);
 	if (vh2->base == NULL) {
 		HEAPfree(&h1, false);
@@ -1517,10 +1517,12 @@ jsonupgradebat(BAT *b, json_storage_conversion fixJSONStorage)
 	b->tvheap = vh2;
 	vh2 = NULL;
 
+	allocator *ta = MT_thread_getallocator();
 	for (BUN i = 0; i < b->batCount; i++) {
 		var_t o = ((var_t *) h1.base)[i];
 		const char *s = vh1.base + o;
 		char *ns;
+		allocator_state ta_state = ma_open(ta);
 		if (fixJSONStorage(&ns, &s) != GDK_SUCCEED) {
 			HEAPfree(&h1, false);
 			HEAPfree(&vh1, false);
@@ -1529,10 +1531,11 @@ jsonupgradebat(BAT *b, json_storage_conversion fixJSONStorage)
 			b->tvheap = ovh;
 			TRC_CRITICAL(GDK, "converting value "
 				     "in BAT %d failed\n", b->batCacheid);
+			ma_close(&ta_state);
 			return GDK_FAIL;
 		}
 		var_t no = strPut(b, &o, ns);
-		GDKfree(ns);
+		ma_close(&ta_state);
 		if (no == (var_t) -1) {
 			HEAPfree(&h1, false);
 			HEAPfree(&vh1, false);
@@ -1681,6 +1684,7 @@ BBPtrim(bool aggressive, bat nbat)
 		MT_lock_unset(&GDKswapLock(bid));
 		if (swap) {
 			TRC_DEBUG(BAT, "unload and free bat %d\n", bid);
+			MT_thread_set_qry_ctx(b->qc);
 			if (BBPfree(b) != GDK_SUCCEED)
 				GDKerror("unload failed for bat %d", bid);
 			n++;
@@ -1693,6 +1697,7 @@ BBPtrim(bool aggressive, bat nbat)
 			MT_sleep_ms(2);
 		}
 	}
+	MT_thread_set_qry_ctx(NULL);
 	if (n > 0)
 		TRC_INFO(BAT, "unloaded %d bats, %zu%s bytes in "LLFMT" usec%s\n", n, mem, humansize(mem, (char[24]){0}, 24), GDKusec() - t0, aggressive ? " (also hot)" : "");
 	return changed;
@@ -2427,7 +2432,7 @@ BBPdump(void)
 			MT_rwlock_rdunlock(&b->thashlock);
 		}
 		printf(" role: %s\n",
-		       b->batRole == PERSISTENT ? "persistent" : "transient");
+		       b->batRole == PERSISTENT ? "persistent" : b->batRole == SYSTRANS ? "systrans" : "transient");
 	}
 	printf("# %d bats: mem=%zu, vm=%zu\n", n, mem, vm);
 	fflush(stdout);
@@ -3480,7 +3485,7 @@ heap_move(Heap *hp, const char *srcdir, const char *dstdir, const char *nme, con
 		long_str kill_ext;
 		char path[MAXPATH];
 
-		strconcat_len(kill_ext, sizeof(kill_ext), ext, ".kill", NULL);
+		strtconcat(kill_ext, sizeof(kill_ext), ext, ".kill", NULL);
 		if (GDKfilepath(path, sizeof(path), hp->farmid, dstdir, nme, kill_ext) != GDK_SUCCEED)
 			return GDK_FAIL;
 		fp = MT_fopen(path, "w");
@@ -3606,7 +3611,7 @@ do_backup(Heap *h, bool dirty, bool subcommit)
 		assert(ext != NULL);
 		*ext++ = '\0';
 
-		strconcat_len(extnew, sizeof(extnew), ext, ".new", NULL);
+		strtconcat(extnew, sizeof(extnew), ext, ".new", NULL);
 		if (dirty &&
 		    !file_exists(h->farmid, BAKDIR, nme, extnew) &&
 		    !file_exists(h->farmid, BAKDIR, nme, ext)) {
@@ -3651,8 +3656,8 @@ do_backup(Heap *h, bool dirty, bool subcommit)
 		    (h->storage == STORE_PRIV || h->newstorage == STORE_PRIV)) {
 			long_str kill_ext;
 
-			strconcat_len(kill_ext, sizeof(kill_ext),
-				      ext, ".new.kill", NULL);
+			strtconcat(kill_ext, sizeof(kill_ext),
+				   ext, ".new.kill", NULL);
 			if (file_exists(h->farmid, BAKDIR, nme, kill_ext) &&
 			    file_move(h->farmid, BAKDIR, SUBDIR, nme, kill_ext) != GDK_SUCCEED) {
 				ret = GDK_FAIL;
@@ -4059,11 +4064,14 @@ force_move(int farmid, const char *srcdir, const char *dstdir, const char *name)
 
 	if ((p = strrchr(name, '.')) != NULL && strcmp(p, ".kill") == 0) {
 		/* Found a X.new.kill file, ie remove the X.new file */
-		ptrdiff_t len = p - name;
+		size_t len = p - name;
 		long_str srcpath;
 
-		strncpy(srcpath, name, len);
-		srcpath[len] = '\0';
+		if (len >= sizeof(srcpath)) {
+			GDKerror("force_move: file name %s too long\n", name);
+			return GDK_FAIL;
+		}
+		strtcpy(srcpath, name, len + 1);
 		if (GDKfilepath(dstpath, sizeof(dstpath), farmid, dstdir, srcpath, NULL) != GDK_SUCCEED) {
 			return GDK_FAIL;
 		}
@@ -4167,12 +4175,11 @@ BBPrecover(int farmid)
 		}
 		if (q == NULL)
 			q = dent->d_name + strlen(dent->d_name);
-		if ((j = q - dent->d_name) + 1 > sizeof(path)) {
+		if ((j = q - dent->d_name) >= sizeof(path)) {
 			/* name too long: ignore */
 			continue;
 		}
-		strncpy(path, dent->d_name, j);
-		path[j] = 0;
+		strtcpy(path, dent->d_name, j + 1);
 		if (GDKisdigit(*path)) {
 			i = strtol(path, NULL, 8);
 		} else {
@@ -4315,8 +4322,7 @@ BBPdiskscan(const char *parent, size_t baseoff)
 	DIR *dirp = opendir(parent);
 	struct dirent *dent;
 	char fullname[FILENAME_MAX];
-	str dst;
-	size_t dstlen;
+	char *dst;
 	const char *src = parent;
 
 	if (dirp == NULL) {
@@ -4325,10 +4331,9 @@ BBPdiskscan(const char *parent, size_t baseoff)
 		return true;	/* nothing to do */
 	}
 
-	dst = stpcpy(fullname, src);
-	if (dst > fullname && dst[-1] != DIR_SEP)
-		*dst++ = DIR_SEP;
-	dstlen = sizeof(fullname) - (dst - fullname);
+	dst = stpecpy(fullname, &fullname[sizeof(fullname)], src);
+	if (dst != NULL && dst > fullname && dst[-1] != DIR_SEP)
+		dst = stpecpy(dst, &fullname[sizeof(fullname)], DIR_SEP_STR);
 
 	while ((dent = readdir(dirp)) != NULL) {
 		const char *p;
@@ -4351,16 +4356,13 @@ BBPdiskscan(const char *parent, size_t baseoff)
 			continue;
 
 		p = strchr(dent->d_name, '.');
-
-		if (strlen(dent->d_name) >= dstlen) {
+		if (stpecpy(dst, &fullname[sizeof(fullname)], dent->d_name) == NULL) {
 			/* found a file with too long a name
-			   (i.e. unknown); stop pruning in this
-			   subdir */
+			 * (i.e. unknown); stop pruning in this
+			 * subdir */
 			fprintf(stderr, "unexpected file %s, leaving %s.\n", dent->d_name, parent);
 			break;
 		}
-		strncpy(dst, dent->d_name, dstlen);
-		fullname[sizeof(fullname) - 1] = 0;
 
 		if (p == NULL && !BBPdiskscan(fullname, baseoff)) {
 			/* it was a directory */

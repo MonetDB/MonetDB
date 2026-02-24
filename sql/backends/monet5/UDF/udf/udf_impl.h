@@ -50,7 +50,7 @@ UF(UDFfuse_,UI,UO,_) ( Client ctx, UO *ret , UI one , UI two )
 	return MAL_SUCCEED;
 }
 /* MAL wrapper */
-char *
+static char *
 UF(UDFfuse_,UI,UO,) ( Client ctx, UO *ret , const UI *one , const UI *two )
 {
 	(void) ctx;

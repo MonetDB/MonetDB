@@ -21,6 +21,8 @@
 #ifndef _GDK_H_
 #define _GDK_H_
 
+#include "monetdb_config.h"
+
 /* standard includes upon which all configure tests depend */
 #ifdef HAVE_SYS_STAT_H
 # include <sys/stat.h>
@@ -29,8 +31,6 @@
 # include <unistd.h>
 #endif
 
-#include <ctype.h>		/* isspace etc. */
-
 #ifdef HAVE_SYS_FILE_H
 # include <sys/file.h>
 #endif
@@ -38,9 +38,6 @@
 #ifdef HAVE_DIRENT_H
 # include <dirent.h>
 #endif
-
-#include <limits.h>		/* for *_MIN and *_MAX */
-#include <float.h>		/* for FLT_MAX and DBL_MAX */
 
 #ifndef PATH_MAX
 #define PATH_MAX	1024
@@ -60,9 +57,6 @@
  * use as a Boolean. */
 typedef enum { GDK_FAIL, GDK_SUCCEED } gdk_return;
 
-gdk_export _Noreturn void GDKfatal(_In_z_ _Printf_format_string_ const char *format, ...)
-	__attribute__((__format__(__printf__, 1, 2)));
-
 typedef struct allocator allocator;
 /* checkpoint or snapshot of allocator internal state we can use
  * to restore to a point in time */
@@ -79,6 +73,9 @@ typedef struct {
 #include "gdk_posix.h"
 #include "stream.h"
 #include "mstring.h"
+
+gdk_export _Noreturn void GDKfatal(_In_z_ _Printf_format_string_ const char *format, ...)
+	__attribute__((__format__(__printf__, 1, 2)));
 
 #undef MIN
 #undef MAX
@@ -214,7 +211,8 @@ typedef union {
 
 typedef struct {
 	size_t nitems;
-	uint8_t data[] __attribute__((__nonstring__));
+	uint8_t data[] __attribute__((__nonstring__))
+		__attribute__((__counted_by__(nitems)));
 } blob;
 gdk_export size_t blobsize(size_t nitems) __attribute__((__const__));
 
@@ -249,8 +247,6 @@ typedef size_t BUN;
 #define BUN_NONE ((BUN) INT64_MAX)
 #endif
 #define BUN_MAX (BUN_NONE - 1)	/* maximum allowed size of a BAT */
-
-#define ATOMextern(t)	(ATOMstorage(t) >= TYPE_str)
 
 typedef enum {
 	PERSISTENT = 0,
@@ -428,23 +424,24 @@ typedef struct BAT {
 	MT_RWLock thashlock;	/* lock specifically for hash management */
 	MT_Lock batIdxLock;	/* lock to manipulate other indexes/properties */
 	Heap *oldtail;		/* old tail heap, to be destroyed after commit */
+	QryCtx *qc;		/* query context of owner if transient */
 } BAT;
 
 /* some access functions for the bitmask type */
 static inline void
-mskSet(BAT *b, BUN p)
+mskSet(const BAT *b, BUN p)
 {
 	((uint32_t *) b->theap->base)[p / 32] |= 1U << (p % 32);
 }
 
 static inline void
-mskClr(BAT *b, BUN p)
+mskClr(const BAT *b, BUN p)
 {
 	((uint32_t *) b->theap->base)[p / 32] &= ~(1U << (p % 32));
 }
 
 static inline void
-mskSetVal(BAT *b, BUN p, msk v)
+mskSetVal(const BAT *b, BUN p, msk v)
 {
 	if (v)
 		mskSet(b, p);
@@ -452,23 +449,42 @@ mskSetVal(BAT *b, BUN p, msk v)
 		mskClr(b, p);
 }
 
+__attribute__((__pure__))
 static inline msk
-mskGetVal(BAT *b, BUN p)
+mskGetVal(const BAT *b, BUN p)
 {
 	return ((uint32_t *) b->theap->base)[p / 32] & (1U << (p % 32));
 }
 
 gdk_export gdk_return HEAPextend(Heap *h, size_t size, bool mayshare)
 	__attribute__((__warn_unused_result__));
-gdk_export size_t HEAPvmsize(Heap *h);
-gdk_export size_t HEAPmemsize(Heap *h);
+gdk_export size_t HEAPvmsize(const Heap *h)
+	__attribute__((__pure__));
+gdk_export size_t HEAPmemsize(const Heap *h)
+	__attribute__((__pure__));
 gdk_export void HEAPdecref(Heap *h, bool remove);
 gdk_export void HEAPincref(Heap *h);
 
-#define VIEWtparent(x)	((x)->theap == NULL || (x)->theap->parentid == (x)->batCacheid ? 0 : (x)->theap->parentid)
-#define VIEWvtparent(x)	((x)->tvheap == NULL || (x)->tvheap->parentid == (x)->batCacheid ? 0 : (x)->tvheap->parentid)
+__attribute__((__pure__))
+static inline bat
+VIEWtparent(const BAT *b)
+{
+	return b->theap == NULL || b->theap->parentid == b->batCacheid ? 0 : b->theap->parentid;
+}
 
-#define isVIEW(x)	(VIEWtparent(x) != 0 || VIEWvtparent(x) != 0)
+__attribute__((__pure__))
+static inline bat
+VIEWvtparent(const BAT *b)
+{
+	return b->tvheap == NULL || b->tvheap->parentid == b->batCacheid ? 0 : b->tvheap->parentid;
+}
+
+__attribute__((__pure__))
+static inline bool
+isVIEW(const BAT *b)
+{
+	return VIEWtparent(b) != 0 || VIEWvtparent(b) != 0;
+}
 
 typedef struct {
 	char *logical;		/* logical name (may point at bak) */
@@ -1220,15 +1236,18 @@ tfastins_nocheckVAR(BAT *b, BUN p, const void *v)
 	assert(b->theap->parentid == b->batCacheid);
 	MT_lock_set(&b->theaplock);
 	rc = ATOMputVAR(b, &d, v);
-	MT_lock_unset(&b->theaplock);
-	if (rc != GDK_SUCCEED)
+	if (rc != GDK_SUCCEED) {
+		MT_lock_unset(&b->theaplock);
 		return rc;
+	}
 	if (b->twidth < SIZEOF_VAR_T &&
 	    (b->twidth <= 2 && d != 0 ? d - GDK_VAROFFSET : d) >= ((size_t) 1 << (8 << b->tshift))) {
 		/* doesn't fit in current heap, upgrade it */
 		rc = GDKupgradevarheap(b, d, 0, MAX(p, b->batCount));
-		if (rc != GDK_SUCCEED)
+		if (rc != GDK_SUCCEED) {
+			MT_lock_unset(&b->theaplock);
 			return rc;
+		}
 	}
 	switch (b->twidth) {
 	case 1:
@@ -1252,6 +1271,7 @@ tfastins_nocheckVAR(BAT *b, BUN p, const void *v)
 	default:
 		MT_UNREACHABLE();
 	}
+	MT_lock_unset(&b->theaplock);
 	return GDK_SUCCEED;
 }
 
@@ -1503,8 +1523,8 @@ gdk_export void VIEWbounds(BAT *b, BAT *view, BUN l, BUN h);
 		}							\
 	} while (false)
 
-#define BATloop(r, p, q)				\
-	for (q = BATcount(r), p = 0; p < q; p++)
+#define BATloop(bi, p, q)				\
+	for (q = (bi)->count, p = 0; p < q; p++)
 
 enum prop_t {
 	GDK_MIN_BOUND, /* MINimum allowed value for range partitions [min, max> */
@@ -1778,8 +1798,6 @@ gdk_export void GDKusr1triggerCB(void (*func)(void));
 
 #define SQLSTATE(sqlstate)	#sqlstate "!"
 #define MAL_MALLOC_FAIL	"Could not allocate memory"
-
-#include <setjmp.h>
 
 typedef struct exception_buffer {
 #ifdef HAVE_SIGLONGJMP

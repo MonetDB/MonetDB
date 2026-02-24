@@ -22,7 +22,6 @@
 #include "gdk_private.h"
 #include "mutils.h"
 #include <unistd.h>
-#include <string.h>     /* strncpy */
 
 #ifdef HAVE_FCNTL_H
 # include <fcntl.h>
@@ -46,9 +45,9 @@
 #if defined(__GNUC__) && defined(HAVE_VALGRIND)
 #include <valgrind.h>
 #else
-#define VALGRIND_MALLOCLIKE_BLOCK(addr, sizeB, rzB, is_zeroed)
-#define VALGRIND_FREELIKE_BLOCK(addr, rzB)
-#define VALGRIND_RESIZEINPLACE_BLOCK(addr, oldSizeB, newSizeB, rzB)
+#define VALGRIND_MALLOCLIKE_BLOCK(addr, sizeB, rzB, is_zeroed) ((void) 0)
+#define VALGRIND_FREELIKE_BLOCK(addr, rzB) ((void) 0)
+#define VALGRIND_RESIZEINPLACE_BLOCK(addr, oldSizeB, newSizeB, rzB) ((void) 0)
 #endif
 
 #ifndef MAP_NORESERVE
@@ -1007,7 +1006,7 @@ strerror_r(int errnum, char *buf, size_t buflen)
 	char *msg;
 	MT_lock_set(&strerrlock);
 	msg = strerror(errnum);
-	strcpy_len(buf, msg, buflen);
+	strtcpy(buf, msg, buflen);
 	MT_lock_unset(&strerrlock);
 	return 0;
 }

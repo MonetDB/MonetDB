@@ -590,7 +590,10 @@ if check:
     with open(stableout) as fil:
         stable = fil.readlines()
     import difflib
-    for line in difflib.unified_diff([x for x in stable if not x.startswith('%')], [x for x in output if not x.startswith('%')], fromfile='test', tofile=stableout):
+    for line in difflib.unified_diff(
+            [x for x in stable if not x.startswith('%')],
+            [x for x in output if not x.startswith('%')],
+            fromfile='expected', tofile='received'):
         sys.stderr.write(line)
         xit = 1
 elif approve:

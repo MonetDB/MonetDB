@@ -136,11 +136,12 @@ UTF8_strncpy(char *restrict dst, const char *restrict s, int n)
 	return dst;
 }
 
-/* return number of Unicode codepoints in s; s is not nil */
+/* return number of Unicode codepoints in s or -1 if larger than
+ * INT_MAX; s is not nil */
 int
 UTF8_strlen(const char *s)
 {								/* This function assumes, s is never nil */
-	size_t pos = 0;
+	size_t len = 0;
 
 	UTF8_assert(s);
 	assert(!strNil(s));
@@ -148,10 +149,11 @@ UTF8_strlen(const char *s)
 	while (*s) {
 		/* just count leading bytes of encoded code points; only works
 		 * for correctly encoded UTF-8 */
-		pos += (*s++ & 0xC0) != 0x80;
+		len += (*s++ & 0xC0) != 0x80;
 	}
-	assert(pos <= (size_t) INT_MAX);
-	return (int) pos;
+	if (len > (size_t) INT_MAX)
+		return -1;
+	return (int) len;
 }
 
 /* return (int) strlen(s); s is not nil; returns -1 for strings that are
@@ -372,7 +374,7 @@ str_Sub_String(str *buf, size_t *buflen, const char *s, int off, int l)
 	s = UTF8_strtail(s, off);
 	len = (size_t) (UTF8_strtail(s, l) - s + 1);
 	CHECK_STR_BUFFER_LENGTH(buf, buflen, len, "str.substring");
-	strcpy_len(*buf, s, len);
+	strtcpy(*buf, s, len);
 	return MAL_SUCCEED;
 }
 
@@ -794,7 +796,7 @@ str_splitpart(str *buf, size_t *buflen, const char *s, const char *s2, int f)
 
 	len++;
 	CHECK_STR_BUFFER_LENGTH(buf, buflen, len, "str.splitpart");
-	strcpy_len(*buf, s, len);
+	strtcpy(*buf, s, len);
 	return MAL_SUCCEED;
 }
 
@@ -919,7 +921,7 @@ str_strip(str *buf, size_t *buflen, const char *s)
 
 	n++;
 	CHECK_STR_BUFFER_LENGTH(buf, buflen, n, "str.strip");
-	strcpy_len(*buf, s, n);
+	strtcpy(*buf, s, n);
 	return MAL_SUCCEED;
 }
 
@@ -962,7 +964,7 @@ str_ltrim(str *buf, size_t *buflen, const char *s)
 	size_t nallocate = len - n + 1;
 
 	CHECK_STR_BUFFER_LENGTH(buf, buflen, nallocate, "str.ltrim");
-	strcpy_len(*buf, s + n, nallocate);
+	strtcpy(*buf, s + n, nallocate);
 	return MAL_SUCCEED;
 }
 
@@ -1005,7 +1007,7 @@ str_rtrim(str *buf, size_t *buflen, const char *s)
 
 	n++;
 	CHECK_STR_BUFFER_LENGTH(buf, buflen, n, "str.rtrim");
-	strcpy_len(*buf, s, n);
+	strtcpy(*buf, s, n);
 	return MAL_SUCCEED;
 }
 
@@ -1088,7 +1090,7 @@ str_strip2(str *buf, size_t *buflen, const char *s, const char *s2)
 
 		n++;
 		CHECK_STR_BUFFER_LENGTH(buf, buflen, n, "str.strip2");
-		strcpy_len(*buf, s, n);
+		strtcpy(*buf, s, n);
 		return MAL_SUCCEED;
 	}
 }
@@ -1144,7 +1146,7 @@ str_ltrim2(str *buf, size_t *buflen, const char *s, const char *s2)
 		nallocate = len - n + 1;
 
 		CHECK_STR_BUFFER_LENGTH(buf, buflen, nallocate, "str.ltrim2");
-		strcpy_len(*buf, s + n, nallocate);
+		strtcpy(*buf, s + n, nallocate);
 		return MAL_SUCCEED;
 	}
 }
@@ -1200,7 +1202,7 @@ str_rtrim2(str *buf, size_t *buflen, const char *s, const char *s2)
 		n++;
 
 		CHECK_STR_BUFFER_LENGTH(buf, buflen, n, "str.rtrim2");
-		strcpy_len(*buf, s, n);
+		strtcpy(*buf, s, n);
 		return MAL_SUCCEED;
 	}
 }
@@ -1254,7 +1256,7 @@ pad(str *buf, size_t *buflen, const char *s, const char *pad, int len, int left,
 		slen = pad - s + 1;
 
 		CHECK_STR_BUFFER_LENGTH(buf, buflen, slen, malfunc);
-		strcpy_len(*buf, s, slen);
+		strtcpy(*buf, s, slen);
 		return MAL_SUCCEED;
 	}
 
@@ -1499,11 +1501,11 @@ str_substitute(str *buf, size_t *buflen, const char *s, const char *src,
 			break;
 		n = fnd - pfnd;
 		if (n > 0) {
-			strcpy_len(b, pfnd, n + 1);
+			strtcpy(b, pfnd, n + 1);
 			b += n;
 		}
 		if (ldst > 0) {
-			strcpy_len(b, dst, ldst + 1);
+			strtcpy(b, dst, ldst + 1);
 			b += ldst;
 		}
 		if (*fnd == 0)
@@ -2122,21 +2124,19 @@ strbat_reverse(BAT *b)
 	}
 
 	bi = bat_iterator(b);
-	BATloop(b, p, q) {
+	BATloop(&bi, p, q) {
 		src = (const char *) BUNtail(&bi, p);
 		len = strlen(src);
 		if (len >= dstlen) {
-			char *ndst;
 			size_t osz = dstlen;
 			dstlen = len + 1024;
-			ndst = ma_realloc(ta, dst, dstlen, osz);
-			if (ndst == NULL) {
+			dst = ma_realloc(ta, dst, dstlen, osz);
+			if (dst == NULL) {
 				bat_iterator_end(&bi);
 				BBPreclaim(bn);
 				ma_close(&ta_state);
 				return NULL;
 			}
-			dst = ndst;
 		}
 		do_strrev(dst, src, len);
 		if (BUNappend(bn, dst, false) != GDK_SUCCEED) {

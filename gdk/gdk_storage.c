@@ -61,7 +61,7 @@ GDKfilepath(char *path, size_t pathlen, int farmid, const char *dir, const char 
 	const char *sep;
 
 	if (GDKinmemory(farmid)) {
-		if (strcpy_len(path, ":memory:", pathlen) >= pathlen) {
+		if (strtcpy(path, ":memory:", pathlen) == -1) {
 			GDKerror("buffer too small\n");
 			return GDK_FAIL;
 		}
@@ -82,18 +82,18 @@ GDKfilepath(char *path, size_t pathlen, int farmid, const char *dir, const char 
 	} else {
 		sep = DIR_SEP_STR;
 	}
-	size_t len;
+	ssize_t len;
 	if (farmid == NOFARM) {
-		len = strconcat_len(path, pathlen,
-				    dir ? dir : "", sep, name,
-				    ext ? "." : NULL, ext, NULL);
+		len = strtconcat(path, pathlen,
+				 dir ? dir : "", sep, name,
+				 ext ? "." : NULL, ext, NULL);
 	} else {
-		len = strconcat_len(path, pathlen,
-				    BBPfarms[farmid].dirname, DIR_SEP_STR,
-				    dir ? dir : "", sep, name,
-				    ext ? "." : NULL, ext, NULL);
+		len = strtconcat(path, pathlen,
+				 BBPfarms[farmid].dirname, DIR_SEP_STR,
+				 dir ? dir : "", sep, name,
+				 ext ? "." : NULL, ext, NULL);
 	}
-	if (len >= pathlen) {
+	if (len == -1) {
 		GDKerror("path name too long\n");
 		return GDK_FAIL;
 	}

@@ -76,7 +76,7 @@ struct msettings {
 };
 
 
-const char *format_error(msettings *mp, const char *fmt, ...)
+const char *format_error(msettings *mp, _In_z_ _Printf_format_string_ const char *fmt, ...)
 	__attribute__((__format__(__printf__, 2, 3)));
 
 // wrappers around mp->allocator
@@ -138,7 +138,7 @@ msettings_strdup(const msettings *mp, const char *string)
 }
 
 
-static inline char* msettings_allocprintf(const msettings *mp, const char *fmt, ...)
+static inline char* msettings_allocprintf(const msettings *mp, _In_z_ _Printf_format_string_ const char *fmt, ...)
 	__attribute__((__format__(__printf__, 2, 3)));
 
 static inline char*

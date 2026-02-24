@@ -5,12 +5,12 @@ statement ok
 CREATE VIEW "sys"."test1" ("col1", "col2") AS SELECT "col1", "col2" FROM "sys"."test1"()
 
 query I rowsort
-select count(*) from dependencies inner join tables on dependencies.id = tables.id where tables.name = 'test1'
+select count(*) from sys.dependencies inner join tables on sys.dependencies.id = tables.id where tables.name = 'test1'
 ----
 0
 
 query I rowsort
-select count(*) from dependencies inner join functions on dependencies.id = functions.id where functions.name = 'test1'
+select count(*) from sys.dependencies inner join functions on sys.dependencies.id = functions.id where functions.name = 'test1'
 ----
 1
 
@@ -24,12 +24,12 @@ statement error
 DROP VIEW "test1"
 
 query I rowsort
-select count(*) from dependencies inner join tables on dependencies.id = tables.id where tables.name = 'test1'
+select count(*) from sys.dependencies inner join tables on sys.dependencies.id = tables.id where tables.name = 'test1'
 ----
 1
 
 query I rowsort
-select count(*) from dependencies inner join functions on dependencies.id = functions.id where functions.name = 'test1'
+select count(*) from sys.dependencies inner join functions on sys.dependencies.id = functions.id where functions.name = 'test1'
 ----
 1
 
@@ -43,12 +43,12 @@ statement ok
 DROP FUNCTION "test1"()
 
 query I rowsort
-select count(*) from dependencies inner join tables on dependencies.id = tables.id where tables.name = 'test1'
+select count(*) from sys.dependencies inner join tables on sys.dependencies.id = tables.id where tables.name = 'test1'
 ----
 0
 
 query I rowsort
-select count(*) from dependencies inner join functions on dependencies.id = functions.id where functions.name = 'test1'
+select count(*) from sys.dependencies inner join functions on sys.dependencies.id = functions.id where functions.name = 'test1'
 ----
 0
 

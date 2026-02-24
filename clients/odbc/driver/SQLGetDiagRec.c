@@ -103,7 +103,7 @@ MNDBGetDiagRec(SQLSMALLINT HandleType,
 		/* copy only the first SQL_SQLSTATE_SIZE (5) chars in
 		 * the buffer and make it null terminated
 		 */
-		strcpy_len((char *) SQLState, state, SQL_SQLSTATE_SIZE + 1);
+		strtcpy((char *) SQLState, state, SQL_SQLSTATE_SIZE + 1);
 	}
 
 	if (NativeErrorPtr)
@@ -118,9 +118,9 @@ MNDBGetDiagRec(SQLSMALLINT HandleType,
 	 * and used to determine where the error originated
 	 */
 	if (dbc && dbc->dsn)
-		msgLen = (SQLSMALLINT) strconcat_len((char *) MessageText, BufferLength, ODBCErrorMsgPrefix, "[", dbc->dsn, "]", msg, NULL);
+		msgLen = (SQLSMALLINT) strlconcat((char *) MessageText, BufferLength, ODBCErrorMsgPrefix, "[", dbc->dsn, "]", msg, NULL);
 	else
-		msgLen = (SQLSMALLINT) strconcat_len((char *) MessageText, BufferLength, ODBCErrorMsgPrefix, msg, NULL);
+		msgLen = (SQLSMALLINT) strlconcat((char *) MessageText, BufferLength, ODBCErrorMsgPrefix, msg, NULL);
 
 	if (TextLengthPtr)
 		*TextLengthPtr = msgLen;

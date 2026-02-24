@@ -1278,12 +1278,11 @@ cntArgsReturns(Client ctx, int *retc)
 	return cnt;
 }
 
-static void
+static inline void
 mf_destroy(mel_func *f)
 {
 	if (f) {
-		if (f->args)
-			GDKfree(f->args);
+		GDKfree(f->args);
 		GDKfree(f);
 	}
 }
@@ -1398,30 +1397,26 @@ fcnCommandPatternHeader(Client ctx, int kind)
 	assert(kind == COMMANDsymbol || kind == PATTERNsymbol);
 
 	mel_func *curFunc = (mel_func*)GDKmalloc(sizeof(mel_func));
-	if (curFunc)
-		curFunc->args = NULL;
-	if (curFunc && nargs)
+	if (curFunc == NULL) {
+		parseError(ctx, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		return NULL;
+	}
+	*curFunc = (mel_func) {
+		.allocated = true,
+		.command = kind == COMMANDsymbol,
+		.fcn = fnme,
+		.mod = modnme,
+		.retc = retc,
+		.argc = nargs,
+	};
+	if (nargs)
 		curFunc->args = (mel_arg*)GDKmalloc(sizeof(mel_arg)*nargs);
 
-	if (ctx->curprg == NULL || ctx->curprg->def->errors || curFunc == NULL || (nargs && curFunc->args == NULL)) {
+	if (ctx->curprg == NULL || ctx->curprg->def->errors || (nargs && curFunc->args == NULL)) {
 		mf_destroy(curFunc);
 		parseError(ctx, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return NULL;
 	}
-
-	curFunc->fcn = fnme;
-	curFunc->mod = modnme;
-	curFunc->cname = NULL;
-	curFunc->command = false;
-	if (kind == COMMANDsymbol)
-		curFunc->command = true;
-	curFunc->unsafe = 0;
-	curFunc->vargs = 0;
-	curFunc->vrets = 0;
-	curFunc->poly = 0;
-	curFunc->retc = retc;
-	curFunc->argc = nargs;
-	curFunc->comment = NULL;
 
 	/* get calling parameters */
 	ch = currChar(ctx);
@@ -1501,8 +1496,9 @@ fcnCommandPatternHeader(Client ctx, int kind)
 			if ((ch = currChar(ctx)) != ',') {
 				if (ch == ')')
 					break;
+				mf_destroy(curFunc);
 				parseError(ctx, "',' expected\n");
-				return curFunc;
+				return NULL;
 			} else {
 				nextChar(ctx);	/* skip ',' */
 				i++;
@@ -1907,12 +1903,17 @@ parseEnd(Client ctx)
  */
 
 #define GETvariable(FREE)												\
-	if ((varid = findVariableLength(curBlk, CURRENT(ctx), l)) == -1) { \
-		varid = newVariable(curBlk, CURRENT(ctx), l, TYPE_any);		\
-		advance(ctx, l);												\
-		if (varid <  0) { FREE; return; }								\
-	} else																\
-		advance(ctx, l);
+	do {																\
+		if ((varid = findVariableLength(curBlk, CURRENT(ctx), l)) == -1) { \
+			varid = newVariable(curBlk, CURRENT(ctx), l, TYPE_any);		\
+			advance(ctx, l);											\
+			if (varid <  0) {											\
+				FREE;													\
+				return;													\
+			}															\
+		} else															\
+			advance(ctx, l);											\
+	} while (0)
 
 /* The parameter of parseArguments is the return value of the enclosing function. */
 static int

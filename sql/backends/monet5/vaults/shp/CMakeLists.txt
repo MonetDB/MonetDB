@@ -21,7 +21,7 @@ if(GDAL_FOUND)
 
   target_sources(shp
     PRIVATE
-    shp.c shp.h
+    shp.c
     ${MONETDB_CURRENT_SQL_SOURCES})
 
   target_include_directories(shp

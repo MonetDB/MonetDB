@@ -11,8 +11,7 @@
 #ifndef _MSTRING_H_
 #define _MSTRING_H_
 
-#include <stdarg.h>		/* va_list etc. */
-#include <string.h>		/* strlen */
+#include <string.h>
 
 #if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ > 4))
 /* not on CentOS 6 (GCC 4.4.7) */
@@ -21,21 +20,92 @@
 #define GCC_Pragma(pragma)
 #endif
 
+/* if __has_attribute is not known to the preprocessor, we ignore
+ * attributes completely (see monetdb_config.h); if it is known, use it
+ * to find out whether specific attributes that we use are known */
 #if defined(__has_attribute)
-#if ! __has_attribute(__access__)
+#if !__has_attribute(__access__)
 #define __access__(...)
 #endif
-#else
-#define __access__(...)
+#if !__has_attribute(__format__)
+#define __format__(...)
+#endif
+#if !__has_attribute(__nonnull__)
+#define __nonnull__(...)
+#endif
+#if !__has_attribute(__nonnull_if_nonzero__)
+#define __nonnull_if_nonzero__(...)
+#endif
+#if !__has_attribute(__pure__)
+#define __pure__
+#endif
+#if !__has_attribute(__sentinel__)
+#define __sentinel__
+#endif
 #endif
 
-/* copy at most (n-1) bytes from src to dst and add a terminating NULL
- * byte; return length of src (i.e. can be more than what is copied) */
-__attribute__((__access__(write_only, 1, 3)))
+#ifndef mutils_export
+#if defined(_MSC_VER) || defined(__CYGWIN__) || defined(__MINGW32__)
+#ifndef LIBMUTILS
+#define mutils_export extern __declspec(dllimport)
+#else
+#define mutils_export extern __declspec(dllexport)
+#endif
+#else
+#define mutils_export extern
+#endif
+#endif
+
+/* naming convention (also see Linux man page string_copying(7)):
+ * strl*: copy string, truncating if too long, return length of source;
+ * strt*: copy string, truncating if too long, return -1 if too long.
+ * stp*: chainable interface;
+ * stpe*: chainable with end-of-buffer pointer.
+ */
+
+#ifndef HAVE_STRNLEN
+__attribute__((__pure__))
+__attribute__((__nonnull__(1)))
+__attribute__((__access__(read_only, 1, 2)))
 static inline size_t
-strcpy_len(char *restrict dst, const char *restrict src, size_t n)
+strnlen(const char *s, size_t n)
 {
-	if (dst != NULL && n != 0) {
+	for (size_t i = 0; i < n; i++)
+		if (s[i] == 0)
+			return i;
+	return n;
+}
+#endif
+
+#ifndef HAVE_STRNDUP
+__attribute__((__nonnull__(1)))
+static inline char *
+strndup(const char *s, size_t n)
+{
+	n = strnlen(s, n);
+	char *p = malloc(n + 1);
+	if (p != NULL) {
+		memcpy(p, s, n);
+		p[n] = 0;
+	}
+	return p;
+}
+#endif
+
+#ifndef HAVE_STRLCPY
+/* Copy the input string into a destination string.  If the destination
+ * buffer, limited by its size, isn't large enough to hold the copy, the
+ * resulting string is truncated (but it is guaranteed to be
+ * null-terminated).  It returns the length of the total string it
+ * tried to create.
+ * Note, strtcpy is more efficient if the length of the input string is
+ * not needed and the string was truncated. */
+__attribute__((__access__(write_only, 1, 3)))
+__attribute__((__nonnull__(1, 2)))
+static inline size_t
+strlcpy(char *restrict dst, const char *restrict src, size_t n)
+{
+	if (n != 0) {
 		for (size_t i = 0; i < n; i++) {
 			if ((dst[i] = src[i]) == 0)
 				return i;
@@ -44,30 +114,82 @@ strcpy_len(char *restrict dst, const char *restrict src, size_t n)
 	}
 	return strlen(src);
 }
+#endif
+
+#ifndef HAVE_STPCPY
+/* Copy the input string into a destination string.  The programmer is
+ * responsible for allocating a buffer large enough.  It returns a
+ * pointer suitable for chaining. */
+__attribute__((__nonnull__(1, 2)))
+static inline char *
+stpcpy(char *restrict dst, const char *restrict src)
+{
+	size_t i;
+	for (i = 0; src[i]; i++)
+		dst[i] = src[i];
+	dst[i] = 0;
+	return dst + i;
+}
+#endif
+
+/* Copy the input string into a destination string.  If the destination
+ * buffer isn't large enough to hold the copy, the resulting string is
+ * truncated (but it is guaranteed to be null-terminated). It returns
+ * the length of the string, or -1 if it truncated. */
+__attribute__((__access__(write_only, 1, 3)))
+__attribute__((__nonnull_if_nonzero__(1, 3)))
+__attribute__((__nonnull__(2)))
+static inline ssize_t
+strtcpy(char *restrict dst, const char *restrict src, size_t dsize)
+{
+	if (dsize == 0) {
+		errno = ENOBUFS;
+		return -1;
+	}
+	for (size_t i = 0; i < dsize; i++) {
+		if ((dst[i] = src[i]) == 0)
+			return (ssize_t) i;
+	}
+	dst[dsize - 1] = 0;
+	errno = E2BIG;
+	return -1;
+}
+
+/* Chain-copy the input string into a destination string.  If the
+ * destination buffer, limited by a pointer to its end, isn't large
+ * enough to hold the copy, the resulting string is truncated (but it is
+ * guaranteed to be null-terminated).  It returns a pointer suitable for
+ * chaining.  Truncation needs to be detected only once after the last
+ * chained call. */
+__attribute__((__nonnull__(2, 3)))
+static inline char *
+stpecpy(char *restrict dst, char *end, const char *restrict src)
+{
+	if (dst == NULL)
+		return NULL;
+	assert(dst <= end);
+	ssize_t dlen = strtcpy(dst, src, end - dst);
+	return dlen == -1 ? NULL : dst + dlen;
+}
 
 /* copy the NULL terminated list of src strings with a maximum of n
- * bytes to dst; return the combined length of the src strings */
-__attribute__((__access__(write_only, 1, 2)))
-__attribute__((__sentinel__))
-static inline size_t
-strconcat_len(char *restrict dst, size_t n, const char *restrict src, ...)
-{
-	va_list ap;
-	size_t i = 0;
+ * bytes to dst; return the combined length of the src strings; dst is
+ * guaranteed to be NULL-terminated (if n > 0) */
+mutils_export size_t strlconcat(char *restrict dst, size_t n,
+								const char *restrict src, ...)
+	__attribute__((__access__(write_only, 1, 2)))
+	__attribute__((__nonnull__(1)))
+	__attribute__((__sentinel__));
 
-	va_start(ap, src);
-	while (src) {
-		size_t l;
-		if (dst && i < n)
-			l = strcpy_len(dst + i, src, n - i);
-		else
-			l = strlen(src);
-		i += l;
-		src = va_arg(ap, const char *);
-	}
-	va_end(ap);
-	return i;
-}
+/* copy the NULL terminated list of src strings with a maximum of n
+ * bytes to dst; return -1 if the buffer was too small, else the
+ * combined length of the src strings; dst is guaranteed to be
+ * NULL-terminated (if n > 0) */
+mutils_export ssize_t strtconcat(char *restrict dst, size_t n,
+								 const char *restrict src, ...)
+	__attribute__((__access__(write_only, 1, 2)))
+	__attribute__((__nonnull__(1)))
+	__attribute__((__sentinel__));
 
 #ifdef __has_builtin
 #if __has_builtin(__builtin_expect)
@@ -152,11 +274,9 @@ checkUTF8(const char *v)
 	return true;
 }
 
-static inline int vreallocprintf(char **buf, size_t *pos, size_t *size, const char *fmt, va_list ap)
-	__attribute__((__format__(__printf__, 4, 0)));
-
+__attribute__((__format__(__printf__, 4, 0)))
 static inline int
-vreallocprintf(char **buf, size_t *pos, size_t *capacity, const char *fmt, va_list args)
+vreallocprintf(char **buf, size_t *pos, size_t *capacity, _In_z_ _Printf_format_string_ const char *fmt, va_list args)
 {
 	va_list ap;
 
@@ -205,11 +325,9 @@ vreallocprintf(char **buf, size_t *pos, size_t *capacity, const char *fmt, va_li
 	}
 }
 
-static inline int reallocprintf(char **buf, size_t *pos, size_t *size, const char *fmt, ...)
-	__attribute__((__format__(__printf__, 4, 5)));
-
+__attribute__((__format__(__printf__, 4, 5)))
 static inline int
-reallocprintf(char **buf, size_t *pos, size_t *capacity, const char *fmt, ...)
+reallocprintf(char **buf, size_t *pos, size_t *capacity, _In_z_ _Printf_format_string_ const char *fmt, ...)
 {
 	int n;
 	va_list ap;

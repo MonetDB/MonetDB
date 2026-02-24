@@ -401,9 +401,7 @@ URLgetBasename(Client ctx, str *retval, const url *val)
 			} else {
 				l = s - b;
 			}
-			if ((*retval = ma_alloc(ma, l + 1)) != NULL) {
-				strcpy_len(*retval, b, l + 1);
-			}
+			*retval = ma_strndup(ma, b, l);
 		}
 	}
 
@@ -433,8 +431,8 @@ URLgetContext(Client ctx, str *retval, const url *val)
 			throw(ILLARG, "url.getContext", "bad url");
 		if (p == s) {
 			*retval = (char *) str_nil;
-		} else if ((*retval = ma_alloc(ma, s - p + 1)) != NULL) {
-			strcpy_len(*retval, p, s - p + 1);
+		} else {
+			*retval = ma_strndup(ma, p, s - p);
 		}
 	}
 
@@ -468,9 +466,7 @@ URLgetExtension(Client ctx, str *retval, const url *val)
 			size_t l = s - e;
 
 			assert(*e == '.');
-			if ((*retval = ma_alloc(ma, l)) != NULL) {
-				strcpy_len(*retval, e + 1, l);
-			}
+			*retval = ma_strndup(ma, e + 1, l - 1);
 		}
 	}
 
@@ -504,9 +500,7 @@ URLgetFile(Client ctx, str *retval, const url *val)
 			size_t l;
 
 			l = s - b;
-			if ((*retval = ma_alloc(ma, l + 1)) != NULL) {
-				strcpy_len(*retval, b, l + 1);
-			}
+			*retval = ma_strndup(ma, b, l);
 		}
 	}
 
@@ -544,9 +538,7 @@ URLgetHost(Client ctx, str *retval, const url *val)
 			} else {
 				l = s - h;
 			}
-			if ((*retval = ma_alloc(ma, l + 1)) != NULL) {
-				strcpy_len(*retval, h, l + 1);
-			}
+			*retval = ma_strndup(ma, h, l);
 		}
 	}
 
@@ -588,9 +580,7 @@ URLgetDomain(Client ctx, str *retval, const url *val)
 				p--;
 				l++;
 			}
-			if ((*retval = ma_alloc(ma, l + 1)) != NULL) {
-				strcpy_len(*retval, p, l + 1);
-			}
+			*retval = ma_strndup(ma, p, l);
 		}
 	}
 
@@ -622,9 +612,7 @@ URLgetPort(Client ctx, str *retval, const url *val)
 		} else {
 			size_t l = s - p;
 
-			if ((*retval = ma_alloc(ma, l + 1)) != NULL) {
-				strcpy_len(*retval, p, l + 1);
-			}
+			*retval = ma_strndup(ma, p, l);
 		}
 	}
 
@@ -651,9 +639,7 @@ URLgetProtocol(Client ctx, str *retval, const url *val)
 			throw(ILLARG, "url.getProtocol", "bad url");
 		size_t l = s - *val;
 
-		if ((*retval = ma_alloc(ma, l)) != NULL) {
-			strcpy_len(*retval, *val, l);
-		}
+		*retval = ma_strndup(ma, *val, l - 1);
 	}
 
 	if (*retval == NULL)
@@ -686,9 +672,7 @@ URLgetQuery(Client ctx, str *retval, const url *val)
 
 			q++;
 			l = s - q;
-			if ((*retval = ma_alloc(ma, l + 1)) != NULL) {
-				strcpy_len(*retval, q, l + 1);
-			}
+			*retval = ma_strndup(ma, q, l);
 		} else {
 			*retval = (char *) str_nil;
 		}
@@ -757,9 +741,7 @@ URLgetUser(Client ctx, str *retval, const url *val)
 			} else {
 				l = h - u - 1;
 			}
-			if ((*retval = ma_alloc(ma, l + 1)) != NULL) {
-				strcpy_len(*retval, u, l + 1);
-			}
+			*retval = ma_strndup(ma, u, l);
 		}
 	}
 
@@ -894,8 +876,7 @@ extractURLHost(Client ctx, str *retval, const char *const *url, const bit *no_ww
 				l -= 4;
 			}
 			if (domain && l > 3) {
-				if ((*retval = ma_alloc(ma, l + 1)) != NULL)
-					strcpy_len(*retval, h, l + 1);
+				*retval = ma_strndup(ma, h, l);
 			} else {
 				*retval = (char *) str_nil;
 			}
@@ -916,7 +897,7 @@ static inline str
 str_buf_copy(str *buf, size_t *buflen, const char *s, size_t l)
 {
 	CHECK_STR_BUFFER_LENGTH(buf, buflen, l, "url.str_buf_copy");
-	strcpy_len(*buf, s, l);
+	strtcpy(*buf, s, l);
 	return MAL_SUCCEED;
 }
 
@@ -949,7 +930,7 @@ BATextractURLHost(Client ctx, bat *res, const bat *bid, const bit *no_www)
 	}
 
 	BATiter bi = bat_iterator(b);
-	BATloop(b, p, q) {
+	BATloop(&bi, p, q) {
 		const char *url = (const char *) BUNtvar(&bi, p);
 		if (strNil(url)) {
 			if (bunfastapp_nocheckVAR(bn, str_nil) != GDK_SUCCEED) {

@@ -1,0 +1,20 @@
+statement ok
+CREATE TABLE v0 ( v1 INT , v2 INT )
+
+query I nosort
+SELECT LEAD ( 'x' , 'x' , TRUE ) OVER ( PARTITION BY v1 ORDER BY v2 >= v2 IS NOT NULL ) FROM v0 WHERE v2 > -1
+----
+
+-- sql/backends/monet5/sql_statement.c:4610: stmt_alias_: Assertion `label' failed.
+statement ok
+INSERT INTO v0 VALUES ( 10 , -1 ) , ( 0 , 8 ) , ( 49 , 67 )
+ , ( 255 , ( SELECT LEAD ( 'x' , 'x' , TRUE ) OVER ( PARTITION BY v1 ORDER BY v2 >= v2 IS NOT NULL ) FROM v0 WHERE v2 > -1 ) )
+
+query I nosort
+SELECT count(*) FROM v0
+----
+4
+
+statement ok
+DROP TABLE v0
+

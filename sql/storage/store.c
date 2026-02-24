@@ -20,7 +20,7 @@
 #include "bat/bat_logger.h"
 
 /* version 05.23.05 of catalog */
-#define CATALOG_VERSION 52305	/* first after Mar2025 */
+#define CATALOG_VERSION 52306	/* first in Dec2025-SP1 */
 
 static void
 obj_lock_init( MT_Lock *l, char c, sqlid id)
@@ -78,10 +78,11 @@ store_oldest_pending(sqlstore *store)
 	return store->oldest_pending;
 }
 
+static sqlid highest_id; /* highest id doled out by bootstrap_create_column */
 static inline bool
 instore(sqlid id)
 {
-	if (id >= 2000 && id <= 2167)
+	if (id >= 2000 && id <= highest_id)
 		return true;
 	return false;
 }
@@ -1628,6 +1629,9 @@ bootstrap_create_column(sql_trans *tr, sql_table *t, const char *name, sqlid id,
 	sqlstore *store = tr->store;
 	sql_column *col = ZNEW(sql_column);
 
+	if (id > highest_id)
+		highest_id = id;
+
 	if ((sqlid) ATOMIC_GET(&store->obj_id) <= id)
 		ATOMIC_SET(&store->obj_id, id + 1);
 	TRC_DEBUG(SQL_STORE, "Create column: %s\n", name);
@@ -2165,7 +2169,12 @@ store_load(sqlstore *store, allocator *pa)
 		bootstrap_create_column(tr, t, "id", 2159, "int", 31) == NULL ||
 		bootstrap_create_column(tr, t, "name", 2160, "varchar", 1024) == NULL ||
 		bootstrap_create_column(tr, t, "nr", 2161, "int", 31) == NULL ||
-		bootstrap_create_column(tr, t, "sub", 2164, "int", 31) == NULL) {
+		bootstrap_create_column(tr, t, "sub", 2164, "int", 31) == NULL ||
+
+		(t = bootstrap_create_table(tr, s, "dependencies", 2168)) == NULL ||
+		bootstrap_create_column(tr, t, "id", 2169, "int", 31) == NULL ||
+		bootstrap_create_column(tr, t, "depend_id", 2170, "int", 31) == NULL ||
+		bootstrap_create_column(tr, t, "depend_type", 2171, "smallint", 15) == NULL) {
 		goto critical;
 	}
 
@@ -2745,7 +2754,7 @@ end:
 // Our stream.h makes sure __attribute__ exists.
 __attribute__((__format__(__printf__, 3, 4)))
 static void
-tar_write_header_field(char **cursor_ptr, size_t size, const char *fmt, ...)
+tar_write_header_field(char **cursor_ptr, size_t size, _In_z_ _Printf_format_string_ const char *fmt, ...)
 {
 	va_list ap;
 
@@ -2836,13 +2845,16 @@ __attribute__((__warn_unused_result__))
 static gdk_return
 tar_write(stream *outfile, const char *path,  const char *data, size_t size)
 {
-	const size_t tail = size % TAR_BLOCK_SIZE;
-	const size_t bulk = size - tail;
+	const ssize_t tail = size % TAR_BLOCK_SIZE;
+	const ssize_t bulk = size - tail;
 
 	if (bulk) {
-		size_t written = mnstr_write(outfile, data, 1, bulk);
-		if (written != bulk) {
-			GDKerror("Wrote only %zu bytes of %s instead of first %zu", written, path, bulk);
+		ssize_t written = mnstr_write(outfile, data, 1, bulk);
+		if (written < 0) {
+			GDKerror("Error writing tar header %s: %s", path, mnstr_peek_error(outfile));
+			return GDK_FAIL;
+		} else if (written != bulk) {
+			GDKerror("Wrote only %zd bytes of %s instead of first %zd", written, path, bulk);
 			return GDK_FAIL;
 		}
 	}
@@ -2850,9 +2862,12 @@ tar_write(stream *outfile, const char *path,  const char *data, size_t size)
 	if (tail) {
 		char buf[TAR_BLOCK_SIZE] = {0};
 		memcpy(buf, data + bulk, tail);
-		size_t written = mnstr_write(outfile, buf, 1, TAR_BLOCK_SIZE);
-		if (written != TAR_BLOCK_SIZE) {
-			GDKerror("Wrote only %zu tail bytes of %s instead of %d", written, path, TAR_BLOCK_SIZE);
+		ssize_t written = mnstr_write(outfile, buf, 1, TAR_BLOCK_SIZE);
+		if (written < 0) {
+			GDKerror("Error writing tar header %s: %s", path, mnstr_peek_error(outfile));
+			return GDK_FAIL;
+		} else if (written != TAR_BLOCK_SIZE) {
+			GDKerror("Wrote only %zd bytes of %s instead of first %zd", written, path, bulk);
 			return GDK_FAIL;
 		}
 	}
@@ -3647,12 +3662,12 @@ func_dup(sql_trans *tr, sql_func *of, sql_schema *s)
 }
 
 static int
-store_reset_sql_functions(sql_trans *tr, sqlid id)
+store_reset_sql_functions_impl(const char *sname, sql_trans *tr, sqlid id)
 {
 	sqlstore *store = tr->store;
 	int res = LOG_OK, sql_lang = (int) FUNC_LANG_SQL; /* functions other than SQL don't require to be instantiated again */
 	sql_schema *syss = find_sql_schema(tr, "sys");
-	sql_table *deps = find_sql_table(tr, syss, "dependencies");
+	sql_table *deps = find_sql_table(tr, find_sql_schema(tr, sname), "dependencies");
 	rids *sql_funcs = NULL, *depends = NULL, *joined = NULL;
 
 	/* Find dependencies from the object */
@@ -3698,6 +3713,15 @@ store_reset_sql_functions(sql_trans *tr, sqlid id)
 	return res;
 }
 
+static int
+store_reset_sql_functions(sql_trans *tr, sqlid id)
+{
+	int res;
+	if ((res = store_reset_sql_functions_impl("sys", tr, id)) < 0)
+		return res;
+	return store_reset_sql_functions_impl("tmp", tr, id);
+}
+
 int
 sql_trans_copy_key( sql_trans *tr, sql_table *t, sql_key *k, sql_key **kres)
 {
@@ -3732,7 +3756,7 @@ sql_trans_copy_key( sql_trans *tr, sql_table *t, sql_key *k, sql_key **kres)
 		if (!rkey)
 			return LOG_ERR;
 
-		if ((res = sql_trans_create_dependency(tr, rkey->base.id, nk->base.id, FKEY_DEPENDENCY)))
+		if ((res = sql_trans_create_dependency(tr, rkey->base.id, nk->base.id, FKEY_DEPENDENCY, t->persistence)))
 			return res;
 		/* TODO this has to be cleaned out once the sql_cat.c cleanup is done */
 		if (!isNew(rkey) && (res = sql_trans_add_dependency(tr, rkey->base.id, ddl)))
@@ -3752,10 +3776,10 @@ sql_trans_copy_key( sql_trans *tr, sql_table *t, sql_key *k, sql_key **kres)
 			return res;
 
 		if (nk->type == fkey) {
-			if ((res = sql_trans_create_dependency(tr, kc->c->base.id, nk->base.id, FKEY_DEPENDENCY)))
+			if ((res = sql_trans_create_dependency(tr, kc->c->base.id, nk->base.id, FKEY_DEPENDENCY, t->persistence)))
 				return res;
 		} else if (nk->type == pkey || nk->type == ukey || nk->type == unndkey || nk->type == ckey) {
-			if ((res = sql_trans_create_dependency(tr, kc->c->base.id, nk->base.id, KEY_DEPENDENCY)))
+			if ((res = sql_trans_create_dependency(tr, kc->c->base.id, nk->base.id, KEY_DEPENDENCY, t->persistence)))
 				return res;
 			if (nk->type == pkey && (res = sql_trans_alter_null(tr, kc->c, 0)))
 				return res;
@@ -3812,7 +3836,7 @@ sql_trans_copy_idx( sql_trans *tr, sql_table *t, sql_idx *i, sql_idx **ires)
 			idx_destroy(store, ni);
 			return res;
 		}
-		if ((res = sql_trans_create_dependency(tr, ic->c->base.id, ni->base.id, INDEX_DEPENDENCY))) {
+		if ((res = sql_trans_create_dependency(tr, ic->c->base.id, ni->base.id, INDEX_DEPENDENCY, t->persistence))) {
 			idx_destroy(store, ni);
 			return res;
 		}
@@ -3881,7 +3905,7 @@ sql_trans_copy_trigger( sql_trans *tr, sql_table *t, sql_trigger *tri, sql_trigg
 			trigger_destroy(store, nt);
 			return res;
 		}
-		if ((res = sql_trans_create_dependency(tr, ic->c->base.id, nt->base.id, TRIGGER_DEPENDENCY))) {
+		if ((res = sql_trans_create_dependency(tr, ic->c->base.id, nt->base.id, TRIGGER_DEPENDENCY, t->persistence))) {
 			trigger_destroy(store, nt);
 			return res;
 		}
@@ -3983,7 +4007,7 @@ sql_trans_copy_column( sql_trans *tr, sql_table *t, sql_column *c, sql_column **
 			return res;
 		}
 		if (c->type.type->s) { /* column depends on type */
-			if ((res = sql_trans_create_dependency(tr, c->type.type->base.id, col->base.id, TYPE_DEPENDENCY))) {
+			if ((res = sql_trans_create_dependency(tr, c->type.type->base.id, col->base.id, TYPE_DEPENDENCY, t->persistence))) {
 				return res;
 			}
 			if (!isNew(c->type.type) && (res = sql_trans_add_dependency(tr, c->type.type->base.id, ddl))) {
@@ -4155,8 +4179,7 @@ sql_trans_create_(sqlstore *store, sql_trans *parent, const char *name)
 
 	if (!parent) {
 		tr->localtmps = os_new(NULL, (destroy_fptr) &table_destroy, true, true, false, false, store);
-	}
-	else {
+	} else {
 		tr->localtmps = os_dup(parent->localtmps);
 	}
 
@@ -5738,7 +5761,7 @@ sql_trans_add_table(sql_trans *tr, sql_table *mt, sql_table *pt)
 	bool child_of_partitioned = false;
 
 	/* merge table depends on part table */
-	if ((res = sql_trans_create_dependency(tr, pt->base.id, mt->base.id, TABLE_DEPENDENCY)))
+	if ((res = sql_trans_create_dependency(tr, pt->base.id, mt->base.id, TABLE_DEPENDENCY, mt->persistence)))
 		return res;
 	assert(isMergeTable(mt) || isReplicaTable(mt));
 
@@ -5874,7 +5897,7 @@ sql_trans_add_range_partition(allocator *sa, sql_trans *tr, sql_table *mt, sql_t
 		assert(!is_oid_nil(rid));
 
 		/* add merge table dependency */
-		if ((res = sql_trans_create_dependency(tr, pt->base.id, mt->base.id, TABLE_DEPENDENCY)))
+		if ((res = sql_trans_create_dependency(tr, pt->base.id, mt->base.id, TABLE_DEPENDENCY, mt->persistence)))
 			goto finish;
 		sqlid id = store->table_api.column_find_sqlid(tr, find_sql_column(partitions, "id"), rid);
 		if ((res = store->table_api.table_insert(tr, sysobj, &p->base.id, &p->base.name, &mt->base.id, &pt->base.id)))
@@ -6021,7 +6044,7 @@ sql_trans_add_value_partition(allocator *sa, sql_trans *tr, sql_table *mt, sql_t
 
 	if (!update) {
 		/* add merge table dependency */
-		if ((res = sql_trans_create_dependency(tr, pt->base.id, mt->base.id, TABLE_DEPENDENCY)))
+		if ((res = sql_trans_create_dependency(tr, pt->base.id, mt->base.id, TABLE_DEPENDENCY, mt->persistence)))
 			return res;
 		if ((res = store->table_api.table_insert(tr, sysobj, &p->base.id, &p->base.name, &mt->base.id, &pt->base.id)))
 			return res;
@@ -6094,8 +6117,6 @@ sql_trans_rename_table(sql_trans *tr, sql_schema *s, sqlid id, const char *new_n
 
 	if ((res = table_dup(tr, t, t->s, new_name, &dup, true)))
 		return res;
-	if (isGlobal(t))
-		res = cleanup_schema_objects(t, tr);
 	return res;
 }
 
@@ -6477,7 +6498,7 @@ sql_trans_create_column(sql_column **rcol, sql_trans *tr, sql_table *t, const ch
 	}
 
 	if (tpe->type->s) {/* column depends on type */
-		if ((res = sql_trans_create_dependency(tr, tpe->type->base.id, col->base.id, TYPE_DEPENDENCY))) {
+		if ((res = sql_trans_create_dependency(tr, tpe->type->base.id, col->base.id, TYPE_DEPENDENCY, t->persistence))) {
 			return res;
 		}
 		if (!isNew(tpe->type) && (res = sql_trans_add_dependency(tr, tpe->type->base.id, ddl))) {
@@ -6973,7 +6994,7 @@ sql_trans_create_fkey(sql_fkey **kres, sql_trans *tr, sql_table *t, const char *
 	if ((res = store->table_api.table_insert(tr, syskey, &nk->base.id, &t->base.id, &nk->type, &nk->base.name, (nk->type == fkey) ? &((sql_fkey *) nk)->rkey : &neg, &action)))
 		return res;
 
-	if ((res = sql_trans_create_dependency(tr, ((sql_fkey *) nk)->rkey, nk->base.id, FKEY_DEPENDENCY)))
+	if ((res = sql_trans_create_dependency(tr, ((sql_fkey *) nk)->rkey, nk->base.id, FKEY_DEPENDENCY, t->persistence)))
 		return res;
 	*kres = (sql_fkey*) nk;
 	return res;
@@ -6996,7 +7017,7 @@ sql_trans_create_kc(sql_trans *tr, sql_key *k, sql_column *c)
 		return res;
 
 	if (k->type == pkey || k->type == ukey || k->type == unndkey || k->type == ckey) {
-		if ((res = sql_trans_create_dependency(tr, c->base.id, k->base.id, KEY_DEPENDENCY)))
+		if ((res = sql_trans_create_dependency(tr, c->base.id, k->base.id, KEY_DEPENDENCY, k->t->persistence)))
 			return res;
 		if (k->type == pkey && (res = sql_trans_alter_null(tr, c, 0))) /* should never trigger error */
 			return res;
@@ -7024,7 +7045,7 @@ sql_trans_create_fkc(sql_trans *tr, sql_fkey *fk, sql_column *c)
 	if (k->idx && (res = sql_trans_create_ic(tr, k->idx, c)))
 		return res;
 
-	if ((res = sql_trans_create_dependency(tr, c->base.id, k->base.id, FKEY_DEPENDENCY)))
+	if ((res = sql_trans_create_dependency(tr, c->base.id, k->base.id, FKEY_DEPENDENCY, k->t->persistence)))
 		return res;
 
 	if ((res = store->table_api.table_insert(tr, syskc, &k->base.id, &kc->c->base.name, &nr, ATOMnilptr(TYPE_int))))
@@ -7484,7 +7505,7 @@ sql_trans_create_sequence(sql_trans *tr, sql_schema *s, const char *name, lng st
 
 	/*Create a BEDROPPED dependency for a SERIAL COLUMN*/
 	if (bedropped) {
-		if ((res = sql_trans_create_dependency(tr, seq->base.id, seq->base.id, BEDROPPED_DEPENDENCY)))
+		if ((res = sql_trans_create_dependency(tr, seq->base.id, seq->base.id, BEDROPPED_DEPENDENCY, SQL_PERSIST)))
 			return res;
 		if (!isNew(seq) && (res = sql_trans_add_dependency(tr, seq->base.id, ddl)))
 			return res;

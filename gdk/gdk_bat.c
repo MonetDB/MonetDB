@@ -176,6 +176,7 @@ BATcreatedesc(oid hseq, int tt, bool heapnames, role_t role, uint16_t width)
 		.theap = h,
 		.tvheap = vh,
 		.creator_tid = MT_getpid(),
+		.qc = role == TRANSIENT ? MT_thread_get_qry_ctx() : NULL,
 	};
 
 	if (bn->theap) {
@@ -185,9 +186,9 @@ BATcreatedesc(oid hseq, int tt, bool heapnames, role_t role, uint16_t width)
 
 		if (bn->tvheap) {
 			bn->tvheap->parentid = bn->batCacheid;
-			strconcat_len(bn->tvheap->filename,
-				      sizeof(bn->tvheap->filename),
-				      nme, ".theap", NULL);
+			strtconcat(bn->tvheap->filename,
+				   sizeof(bn->tvheap->filename),
+				   nme, ".theap", NULL);
 		}
 	}
 	char name[MT_NAME_LEN];
@@ -250,20 +251,20 @@ settailname(Heap *restrict tail, const char *restrict physnme, int tt, int width
 		switch (width) {
 		case 0:
 		case 1:
-			strconcat_len(tail->filename,
-				      sizeof(tail->filename), physnme,
-				      ".tail1", NULL);
+			strtconcat(tail->filename,
+				   sizeof(tail->filename), physnme,
+				   ".tail1", NULL);
 			return;
 		case 2:
-			strconcat_len(tail->filename,
-				      sizeof(tail->filename), physnme,
-				      ".tail2", NULL);
+			strtconcat(tail->filename,
+				   sizeof(tail->filename), physnme,
+				   ".tail2", NULL);
 			return;
 		case 4:
 #if SIZEOF_VAR_T == 8
-			strconcat_len(tail->filename,
-				      sizeof(tail->filename), physnme,
-				      ".tail4", NULL);
+			strtconcat(tail->filename,
+				   sizeof(tail->filename), physnme,
+				   ".tail4", NULL);
 			return;
 		case 8:
 #endif
@@ -272,8 +273,8 @@ settailname(Heap *restrict tail, const char *restrict physnme, int tt, int width
 			MT_UNREACHABLE();
 		}
 	}
-	strconcat_len(tail->filename, sizeof(tail->filename), physnme,
-		      ".tail", NULL);
+	strtconcat(tail->filename, sizeof(tail->filename), physnme,
+		   ".tail", NULL);
 }
 
 /*
@@ -502,7 +503,7 @@ BATclear(BAT *b, bool force)
 				.hasfile = b->tvheap->hasfile,
 				.refs = ATOMIC_VAR_INIT(1),
 			};
-			strcpy_len(th->filename, b->tvheap->filename, sizeof(th->filename));
+			strtcpy(th->filename, b->tvheap->filename, sizeof(th->filename));
 			if (ATOMheap(b->ttype, th, 0) != GDK_SUCCEED) {
 				MT_lock_unset(&b->theaplock);
 				return GDK_FAIL;
@@ -785,6 +786,13 @@ COLcopy2(BAT *b, int tt, bool writable, bool mayshare, role_t role)
 			 * vheap could be used completely, even if the
 			 * offset heap is only (less than) half the size
 			 * of the parent's offset heap */
+			slowcopy = true;
+		} else if (bi.vh && role == PERSISTENT && !writable) {
+			/* writable usually means no view, but
+			 * role==PERSISTENT already implies that, so we
+			 * use it to decide whether we can do a faster
+			 * memcpy (if true) or must do a slower
+			 * individual insert (if false) */
 			slowcopy = true;
 		}
 	}
@@ -1626,15 +1634,16 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 				MT_rwlock_wrunlock(&b->thashlock);
 				goto bailout;
 			}
-			MT_lock_unset(&b->theaplock);
 			if (b->twidth < SIZEOF_VAR_T &&
 			    (b->twidth <= 2 && _d != 0 ? _d - GDK_VAROFFSET : _d) >= ((size_t) 1 << (8 << b->tshift))) {
 				/* doesn't fit in current heap, upgrade it */
 				if (GDKupgradevarheap(b, _d, 0, bi.count) != GDK_SUCCEED) {
+					MT_lock_unset(&b->theaplock);
 					MT_rwlock_wrunlock(&b->thashlock);
 					goto bailout;
 				}
 			}
+			MT_lock_unset(&b->theaplock);
 			/* reinitialize iterator after possible heap upgrade */
 			{
 				/* save and restore minpos/maxpos */
@@ -1839,7 +1848,7 @@ slowfnd(BAT *b, const void *v)
 	BUN p, q;
 	bool (*atomeq)(const void *, const void *) = ATOMequal(bi.type);
 
-	BATloop(b, p, q) {
+	BATloop(&bi, p, q) {
 		if ((*atomeq)(v, BUNtail(&bi, p))) {
 			bat_iterator_end(&bi);
 			return p;
@@ -2677,21 +2686,21 @@ BATassertProps(BAT *b)
 			assert(isview1 || b->theap->size >> b->tshift >= b->batCapacity);
 	}
 	if (!isview1) {
-		strconcat_len(filename, sizeof(filename),
-			      BBP_physical(b->theap->parentid),
-			      b->ttype == TYPE_str ? b->twidth == 1 ? ".tail1" : b->twidth == 2 ? ".tail2" :
+		strtconcat(filename, sizeof(filename),
+			   BBP_physical(b->theap->parentid),
+			   b->ttype == TYPE_str ? b->twidth == 1 ? ".tail1" : b->twidth == 2 ? ".tail2" :
 #if SIZEOF_VAR_T == 8
-			      b->twidth == 4 ? ".tail4" :
+			   b->twidth == 4 ? ".tail4" :
 #endif
-			      ".tail" : ".tail",
-			      NULL);
+			   ".tail" : ".tail",
+			   NULL);
 		assert(strcmp(b->theap->filename, filename) == 0);
 	}
 	if (!isview2 && b->tvheap) {
-		strconcat_len(filename, sizeof(filename),
-			      BBP_physical(b->tvheap->parentid),
-			      ".theap",
-			      NULL);
+		strtconcat(filename, sizeof(filename),
+			   BBP_physical(b->tvheap->parentid),
+			   ".theap",
+			   NULL);
 		assert(strcmp(b->tvheap->filename, filename) == 0);
 	}
 
@@ -2859,7 +2868,7 @@ BATassertProps(BAT *b)
 			/* only call compare function if we have to */
 			bool cmpprv = b->tsorted | b->trevsorted | b->tkey;
 
-			BATloop(b, p, q) {
+			BATloop(&bi, p, q) {
 				valp = BUNtail(&bi, p);
 				bool isnil = eqf(valp, nilp);
 				assert(!isnil || !notnull);
@@ -2940,7 +2949,7 @@ BATassertProps(BAT *b)
 				TRC_WARNING(BAT, "Cannot allocate hash table\n");
 				goto abort_check;
 			}
-			BATloop(b, p, q) {
+			BATloop(&bi, p, q) {
 				BUN hb;
 				BUN prb;
 				valp = BUNtail(&bi, p);

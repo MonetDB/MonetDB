@@ -463,7 +463,7 @@ doChallenge(void *data)
 			p += strlen(p);
 			*p++ = ']';
 			*p++ = ':';
-			strncpy(p, service, peer_end - p);
+			strtcpy(p, service, peer_end - p);
 			peer = peerbuf;
 		} else {
 			peer = NULL;
@@ -802,7 +802,7 @@ start_listen(SOCKET *sockp, int *portp, const char *listenaddr,
 		hints.ai_flags |= AI_NUMERICHOST;
 		ipv6_vs6only = 0;
 		listenaddr = "::1";
-		strcpy_len(host, "localhost", hostlen);
+		strtcpy(host, "localhost", hostlen);
 	} else if (strcmp(listenaddr, "all") == 0) {
 		hints.ai_family = AF_INET6;
 		ipv6_vs6only = 0;
@@ -819,11 +819,11 @@ start_listen(SOCKET *sockp, int *portp, const char *listenaddr,
 		hints.ai_family = AF_INET6;
 		hints.ai_flags |= AI_NUMERICHOST;
 		ipv6_vs6only = 1;
-		strcpy_len(host, "localhost", hostlen);
+		strtcpy(host, "localhost", hostlen);
 	} else if (strcmp(listenaddr, "127.0.0.1") == 0) {
 		hints.ai_family = AF_INET;
 		hints.ai_flags |= AI_NUMERICHOST;
-		strcpy_len(host, "localhost", hostlen);
+		strtcpy(host, "localhost", hostlen);
 	} else {
 		hints.ai_family = AF_INET6;
 		ipv6_vs6only = 0;

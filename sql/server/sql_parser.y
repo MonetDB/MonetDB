@@ -3692,8 +3692,8 @@ expr_list:
 	;
 
 named_value_commalist:
-		ident scalar_exp                           { $$ = append_string(append_symbol(L(), $2), $1); }
-	|	named_value_commalist ',' ident scalar_exp { $$ = append_string(append_symbol($1, $4), $3); }
+		column_id scalar_exp                           { $$ = append_string(append_symbol(L(), $2), $1); }
+	|	named_value_commalist ',' column_id scalar_exp { $$ = append_string(append_symbol($1, $4), $3); }
 	;
 
 null:
@@ -5257,7 +5257,7 @@ param:
 			sql_add_param(m, NULL, NULL);
 			$$ = _symbol_create_int( SQL_PARAMETER, nr );
 		}
-	|	':'ident
+	|	':'column_id
 		{
 			int nr = sql_bind_param( m, $2);
 			if (nr < 0) {
@@ -6214,6 +6214,22 @@ literal:
 				YYABORT;
 			}
 		}
+	|	GEOMETRY string
+		{
+			sql_subtype t;
+			atom *a = NULL;
+			int r;
+
+			if (!(r = sql_find_subtype(&t, "geometry", 0, 0))) {
+				sqlformaterror(m, SQLSTATE(22000) "Type (geometry) unknown");
+				YYABORT;
+			}
+			if (!(a = atom_general(SA, &t, $2, m->timezone))) {
+				sqlformaterror(m, SQLSTATE(22000) "Incorrect geometry (%s)", $2);
+				YYABORT;
+			}
+			$$ = _newAtomNode(a);
+		}
 	|	aTYPE string
 		{
 			sql_subtype t;
@@ -6921,6 +6937,7 @@ reduced_keywords:
 	|	WHITESPACE   { $$ = "whitespace"; }
 		/* odbc */
 	|	IFNULL       { $$ = "ifnull"; }
+	|	sqlNAME      { $$ = "name"; }
 
 	|	ODBC_DATE_ESCAPE_PREFIX      { $$ = "d"; }
 	|	ODBC_TIME_ESCAPE_PREFIX      { $$ = "t"; }

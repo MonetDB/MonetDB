@@ -246,7 +246,7 @@ newODBCError(const char *SQLState, const char *msg, int nativeCode)
 	};
 
 	if (SQLState) {
-		strcpy_len(error->sqlState, SQLState, sizeof(error->sqlState));
+		strtcpy(error->sqlState, SQLState, sizeof(error->sqlState));
 	}
 
 	if (msg) {

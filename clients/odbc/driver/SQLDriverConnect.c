@@ -55,10 +55,9 @@ ODBCGetKeyAttr(const SQLCHAR **conn, SQLSMALLINT *nconn, char **key, char **attr
 	if (*nconn == 0 || !**conn || **conn == ';')
 		return 0;
 	len = *conn - p;
-	*key = (char *) malloc(len + 1);
+	*key = strndup((const char *) p, len);
 	if (*key == NULL)
 		return -1;
-	strcpy_len(*key, (char *) p, len + 1);
 	(*conn)++;
 	(*nconn)--;
 	p = *conn;
@@ -72,13 +71,12 @@ ODBCGetKeyAttr(const SQLCHAR **conn, SQLSMALLINT *nconn, char **key, char **attr
 			(*nconn)--;
 		}
 		len = *conn - p;
-		*attr = (char *) malloc(len + 1);
+		*attr = strndup((const char *) p, len);
 		if (*attr == NULL) {
 			free(*key);
 			*key = NULL;
 			return -1;
 		}
-		strcpy_len(*attr, (char *) p, len + 1);
 		(*conn)++;
 		(*nconn)--;
 		/* should check that *nconn == 0 || **conn == ';' */
@@ -88,13 +86,12 @@ ODBCGetKeyAttr(const SQLCHAR **conn, SQLSMALLINT *nconn, char **key, char **attr
 			(*nconn)--;
 		}
 		len = *conn - p;
-		*attr = (char *) malloc(len + 1);
+		*attr = strndup((const char *) p, len);
 		if (*attr == NULL) {
 			free(*key);
 			*key = NULL;
 			return -1;
 		}
-		strcpy_len(*attr, (char *) p, len + 1);
 	}
 	if (*nconn > 0 && **conn) {
 		(*conn)++;
@@ -192,7 +189,10 @@ MNDBDriverConnect(ODBCDbc *dbc,
 	scratch_alloc = buildConnectionString(dsn ? dsn : "DEFAULT", settings);
 	if (!scratch_alloc)
 		goto failure;
-	out_len = strcpy_len((char*)OutConnectionString, scratch_alloc, BufferLength);
+	if (OutConnectionString)
+		out_len = strlcpy((char*)OutConnectionString, scratch_alloc, BufferLength);
+	else
+		out_len = strlen(scratch_alloc);
 	if (StringLength2Ptr)
 		*StringLength2Ptr = (SQLSMALLINT)out_len;
 	if (out_len + 1 > (size_t)BufferLength) {

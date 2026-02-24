@@ -218,6 +218,20 @@ check_sys_tables(Client c, mvc *m, sql_schema *s)
 		if (needsystabfix)
 			return sql_fix_system_tables(c, m);
 	}
+	{
+		res_table *output = NULL;
+		err = SQLstatementIntern(c, "select a.id from sys.args a where a.id between 2000 and (select max(c.id) from sys._columns c where c.id < 3000);\n", "update", true, false, &output);
+		if (err)
+			return err;
+		BAT *b = BATdescriptor(output->cols[0].b);
+		res_table_destroy(output);
+		if (b == NULL)
+			throw(SQL, "sql.catalog", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		bool needsystabfix = BATcount(b) > 0;
+		BBPunfix(b->batCacheid);
+		if (needsystabfix)
+			return sql_fix_system_tables(c, m);
+	}
 	return NULL;
 }
 
@@ -5264,6 +5278,57 @@ sql_update_dec2025(Client c, mvc *sql, sql_schema *s)
 }
 
 static str
+sql_update_dec2025_sp1(Client c, mvc *sql, sql_schema *s)
+{
+	char *err = NULL;
+	res_table *output = NULL;
+	BAT *b;
+
+	/* 10_sys_schema_extension.sql */
+	/* correct definition of view sys.roles */
+	static const char query1[] = "select id from sys._tables where name = 'roles' and schema_id = 2000"
+		" and query = 'create view sys.roles as select id, name, grantor from sys.auths a where a.name not in (select u.name from sys.db_user_info u);';";
+	err = SQLstatementIntern(c, query1, "update", true, false, &output);
+	if (err)
+		return err;
+	if ((b = BBPquickdesc(output->cols[0].b)) != NULL && BATcount(b) == 1) {
+		static const char stmt1[] =
+			"DROP VIEW sys.describe_accessible_tables CASCADE;\n"
+			"DROP VIEW sys.roles CASCADE;\n"
+			"CREATE VIEW sys.roles AS SELECT id, name, grantor FROM sys.auths;\n"
+			"GRANT SELECT ON sys.roles TO PUBLIC;\n"
+			"CREATE VIEW sys.describe_accessible_tables AS\n"
+			"    SELECT\n"
+			"        schemas.name AS schema,\n"
+			"        tables.name  AS table,\n"
+			"        tt.table_type_name AS table_type,\n"
+			"        pc.privilege_code_name AS privs,\n"
+			"        p.privileges AS privs_code\n"
+			"    FROM privileges p\n"
+			"    JOIN sys.roles ON p.auth_id = roles.id\n"
+			"    JOIN sys.tables ON p.obj_id = tables.id\n"
+			"    JOIN sys.table_types tt ON tables.type = tt.table_type_id\n"
+			"    JOIN sys.schemas ON tables.schema_id = schemas.id\n"
+			"    JOIN sys.privilege_codes pc ON p.privileges = pc.privilege_code_id\n"
+			"    WHERE roles.name = current_role;\n"
+			"GRANT SELECT ON sys.describe_accessible_tables TO PUBLIC;\n"
+			"UPDATE sys._tables SET system = true WHERE not system and schema_id = 2000 and name in ('roles', 'describe_accessible_tables');\n";
+		sql_table *t;
+		if ((t = mvc_bind_table(sql, s, "roles")) != NULL)
+			t->system = 0; /* make it non-system else the drop view will fail */
+		if ((t = mvc_bind_table(sql, s, "describe_accessible_tables")) != NULL)
+			t->system = 0; /* make it non-system else the drop view will fail */
+		printf("Running database upgrade commands:\n%s\n", stmt1);
+		fflush(stdout);
+		err = SQLstatementIntern(c, stmt1, "update", true, false, NULL);
+	}
+	res_table_destroy(output);
+	output = NULL;
+
+	return err;
+}
+
+static str
 sql_update_default(Client c, mvc *sql, sql_schema *s)
 {
 	char *err;
@@ -5480,6 +5545,11 @@ SQLupgrades(Client c, mvc *m)
 	}
 
 	if ((err = sql_update_dec2025(c, m, s)) != NULL) {
+		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
+		goto handle_error;
+	}
+
+	if ((err = sql_update_dec2025_sp1(c, m, s)) != NULL) {
 		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 		goto handle_error;
 	}

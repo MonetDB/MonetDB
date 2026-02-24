@@ -355,7 +355,7 @@ create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp,
 				so no additional dependencies are needed */
 			if (strncmp(c->def, next_value_for, strlen(next_value_for)) != 0) {
 				list *blist = rel_dependencies(sql, r);
-				if (mvc_create_dependencies(sql, blist, nt->base.id, FUNC_DEPENDENCY)) {
+				if (mvc_create_dependencies(sql, blist, nt->base.id, FUNC_DEPENDENCY, temp)) {
 					ma_destroy(nsa);
 					sql->sa = osa;
 					throw(SQL, "sql.catalog", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -484,7 +484,7 @@ create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp,
 			r = sql_processrelation(sql, r, 0, 0, 0, 0);
 		if (r) {
 			list *blist = rel_dependencies(sql, r);
-			if (mvc_create_dependencies(sql, blist, nt->base.id, VIEW_DEPENDENCY)) {
+			if (mvc_create_dependencies(sql, blist, nt->base.id, VIEW_DEPENDENCY, temp)) {
 				ma_destroy(nsa);
 				sql->sa = osa;
 				throw(SQL, "sql.catalog", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -3405,7 +3405,7 @@ SQLbat_alpha_cst(Client ctx, bat *res, const bat *decl, const dbl *theta)
 	s = sin(radians(*theta));
 	BATiter bi = bat_iterator(b);
 	const dbl *vals = (const dbl *) bi.base;
-	BATloop(b, p, q) {
+	BATloop(&bi, p, q) {
 		dbl d = vals[p];
 		if (is_dbl_nil(d))
 			r = dbl_nil;
@@ -3450,7 +3450,7 @@ SQLcst_alpha_bat(Client ctx, bat *res, const dbl *decl, const bat *thetabid)
 	}
 	BATiter bi = bat_iterator(b);
 	thetas = (dbl *) bi.base;
-	BATloop(b, p, q) {
+	BATloop(&bi, p, q) {
 		dbl d = *decl;
 		dbl theta = thetas[p];
 
@@ -3977,7 +3977,7 @@ do_sql_rank_grp(bat *rid, const bat *bid, const bat *gid, int nrank, int dense, 
 		BBPunfix(g->batCacheid);
 		throw(SQL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
-	BATloop(b, p, q) {
+	BATloop(&bi, p, q) {
 		on = BUNtail(&bi, p);
 		gn = BUNtail(&gi, p);
 
@@ -4034,13 +4034,13 @@ do_sql_rank(bat *rid, const bat *bid, int nrank, int dense, const char *name)
 		throw(SQL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	if (BATtdensebi(&bi)) {
-		BATloop(b, p, q) {
+		BATloop(&bi, p, q) {
 			if (BUNappend(r, &rank, false) != GDK_SUCCEED)
 				goto bailout;
 			rank++;
 		}
 	} else {
-		BATloop(b, p, q) {
+		BATloop(&bi, p, q) {
 			n = BUNtail(&bi, p);
 			if (!eq(n, cur))
 				rank = nrank;

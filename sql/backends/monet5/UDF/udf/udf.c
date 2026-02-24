@@ -10,10 +10,21 @@
 
 /* monetdb_config.h must be the first include in each .c file */
 #include "monetdb_config.h"
-#include "udf.h"
+#include "sql.h"
 #include "str.h"
+#include <string.h>
 
 /* Reverse a string */
+
+/* using C macro for convenient type-expansion */
+#define UDFfuse_scalar_decl(in,out) \
+	static char *UDFfuse_##in##_##out(Client ctx, out *ret, const in *one, const in *two)
+UDFfuse_scalar_decl(bte, sht);
+UDFfuse_scalar_decl(sht, int);
+UDFfuse_scalar_decl(int, lng);
+#ifdef HAVE_HGE
+UDFfuse_scalar_decl(lng, hge);
+#endif
 
 /* actual implementation */
 /* all non-exported functions must be declared static */
@@ -74,7 +85,7 @@ UDFreverse_(str *buf, size_t *buflen, const char *src)
 }
 
 /* MAL wrapper */
-str
+static str
 UDFreverse(Client ctx, str *res, const str *arg)
 {
 	(void) ctx;
@@ -187,7 +198,7 @@ bailout:
 }
 
 /* MAL wrapper */
-char *
+static char *
 UDFBATreverse(Client ctx, bat *ret, const bat *arg)
 {
 	(void) ctx;
@@ -376,7 +387,7 @@ UDFBATfuse_(Client ctx, BAT **ret, BAT *bone, BAT *btwo)
 }
 
 /* MAL wrapper */
-char *
+static char *
 UDFBATfuse(Client ctx, bat *ires, const bat *ione, const bat *itwo)
 {
 	(void) ctx;

@@ -12,7 +12,7 @@
 #include "copybinary.h"
 #include "copybinary_support.h"
 
-_Noreturn void croak(int status, const char *msg, ...)
+_Noreturn void croak(int status, _In_z_ _Printf_format_string_ const char *msg, ...)
 	__attribute__((__format__(__printf__, 2, 3)));
 
 void gen_decimal_tinyints(FILE *f, bool byteswap, long nrecs, char *arg);
@@ -48,4 +48,3 @@ struct rng {
 };
 #define rng_next(rng) ((rng)->state = (uint64_t)(rng)->state * 48271 % 0x7fffffff)
 #define my_favorite_rng() ((struct rng) { .state = 42 })
-

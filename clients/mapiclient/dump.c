@@ -1141,7 +1141,7 @@ dump_column_definition(Mapi mid, stream *sqlf, const char *schema,
 				mnstr_printf(sqlf, " (");
 				cnt = 1;
 			}
-		} else
+		} else if (strcmp(k_type, "4") != 0)
 			mnstr_printf(sqlf, ", ");
 		if (cnt)
 			dquoted_print(sqlf, c_column, NULL);
@@ -1542,13 +1542,11 @@ describe_sequence(Mapi mid, const char *schema, const char *tname, stream *sqlf)
 
 	if (schema == NULL) {
 		if ((sname = strchr(tname, '.')) != NULL) {
-			size_t len = sname - tname + 1;
-
-			sname = malloc(len);
+			size_t len = sname - tname;
+			sname = strndup(tname, len);
 			if (sname == NULL)
 				goto bailout;
-			strcpy_len(sname, tname, len);
-			tname += len;
+			tname += len + 1;
 		} else if ((sname = get_schema(mid)) == NULL) {
 			return 1;
 		}
@@ -2103,15 +2101,14 @@ dump_table(Mapi mid, const char *schema, const char *tname, stream *sqlf,
 
 	if (schema == NULL) {
 		if ((sname = strchr(tname, '.')) != NULL) {
-			size_t len = sname - tname + 1;
+			size_t len = sname - tname;
 
-			sname = malloc(len);
+			sname = strndup(tname, len);
 			if (sname == NULL) {
 				fprintf(stderr, "malloc failure\n");
 				return 1;
 			}
-			strcpy_len(sname, tname, len);
-			tname += len;
+			tname += len + 1;
 		} else if ((sname = get_schema(mid)) == NULL) {
 			return 1;
 		}
@@ -2534,13 +2531,12 @@ dump_functions(Mapi mid, stream *sqlf, char set_schema, const char *sname, const
 			/* no schema given, so figure it out */
 			const char *dot = strchr(fname, '.');
 			if (dot != NULL) {
-				size_t len = dot - fname + 1;
+				size_t len = dot - fname;
 
-				to_free = malloc(len);
+				to_free = strndup(fname, len);
 				if (to_free == NULL)
 					goto bailout;
-				strcpy_len(to_free, fname, len);
-				fname += len;
+				fname += len + 1;
 			} else if ((to_free = get_schema(mid)) == NULL) {
 				return 1;
 			}

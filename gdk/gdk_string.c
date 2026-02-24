@@ -587,7 +587,7 @@ strFromStr(allocator *ma, const char *restrict src, size_t *restrict len, char *
 	if (!external) {
 		size_t sz = strLen(src);
 		atommem(sz);
-		return (ssize_t) strcpy_len(*dst, src, sz);
+		return (ssize_t) strlcpy(*dst, src, sz);
 	}
 
 	if (strNil(src)) {
@@ -735,7 +735,7 @@ strToStr(allocator *ma, char **restrict dst, size_t *restrict len, const char *r
 	if (!external) {
 		sz = strLen(src);
 		atommem(sz);
-		return (ssize_t) strcpy_len(*dst, src, sz);
+		return (ssize_t) strlcpy(*dst, src, sz);
 	}
 	if (strNil(src)) {
 		atommem(4);
@@ -6887,11 +6887,11 @@ convertcase(allocator *ma, char **restrict buf, size_t *restrict buflen,
 				 * terminating NUL */
 				size_t newlen = bl + 1024;
 				dst = ma_realloc(ma, *buf, newlen, bl);
+				*buf = (char *) dst;
 				if (dst == NULL) {
-					*buflen = bl;
+					*buflen = 0;
 					return GDK_FAIL;
 				}
-				*buf = (char *) dst;
 				bl = newlen;
 				bl5 = bl - 5;
 			}
@@ -6935,11 +6935,11 @@ convertcase(allocator *ma, char **restrict buf, size_t *restrict buflen,
 	if (dstoff + 1 > bl) {
 		size_t newlen = dstoff + 1;
 		dst = ma_realloc(ma, *buf, newlen, bl);
+		*buf = (char *) dst;
 		if (dst == NULL) {
-			*buflen = bl;
+			*buflen = 0;
 			return GDK_FAIL;
 		}
-		*buf = (char *) dst;
 		bl = newlen;
 	}
 	dst[dstoff] = '\0';
@@ -6978,8 +6978,6 @@ BATcaseconvert(BAT *b, BAT *s, int direction, const char *restrict func)
 	oid bhseqbase = b->hseqbase;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
-	allocator *ta = MT_thread_getallocator();
-	allocator_state ta_state = ma_open(ta);
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 	BATcheck(b, NULL);
@@ -6990,6 +6988,8 @@ BATcaseconvert(BAT *b, BAT *s, int direction, const char *restrict func)
 	bi = bat_iterator(b);
 	char *buf = NULL;
 	size_t buflen = 0;
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
 	TIMEOUT_LOOP_IDX_DECL(i, ci.ncand, qry_ctx) {
 		BUN x = canditer_next(&ci) - bhseqbase;
 		if (convertcase(ta, &buf, &buflen, BUNtvar(&bi, x),
@@ -9726,11 +9726,11 @@ GDKasciify(allocator *ma, char **restrict buf, size_t *restrict buflen,
 				 * bytes plus terminating NUL */
 				size_t newlen = bl + 1024;
 				dst = ma_realloc(ma, *buf, newlen, bl);
+				*buf = (char *) dst;
 				if (dst == NULL) {
-					*buflen = bl;
+					*buflen = 0;
 					return GDK_FAIL;
 				}
-				*buf = (char *) dst;
 				bl = newlen;
 				bl8 = bl - 8;
 			}
@@ -9756,11 +9756,11 @@ GDKasciify(allocator *ma, char **restrict buf, size_t *restrict buflen,
 	if (dstoff + 1 > bl) {
 		size_t newlen = dstoff + 1;
 		dst = ma_realloc(ma, *buf, newlen, bl);
+		*buf = (char *) dst;
 		if (dst == NULL) {
-			*buflen = bl;
+			*buflen = 0;
 			return GDK_FAIL;
 		}
-		*buf = (char *) dst;
 		bl = newlen;
 	}
 	dst[dstoff] = '\0';
@@ -9784,8 +9784,6 @@ BATasciify(BAT *b, BAT *s)
 	oid bhseqbase = b->hseqbase;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
-	allocator *ta = MT_thread_getallocator();
-	allocator_state ta_state = ma_open(ta);
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 	BATcheck(b, NULL);
@@ -9796,6 +9794,8 @@ BATasciify(BAT *b, BAT *s)
 	bi = bat_iterator(b);
 	char *buf = NULL;
 	size_t buflen = 0;
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
 	TIMEOUT_LOOP_IDX_DECL(i, ci.ncand, qry_ctx) {
 		BUN x = canditer_next(&ci) - bhseqbase;
 		if (GDKasciify(ta, &buf, &buflen, BUNtvar(&bi, x)) != GDK_SUCCEED ||
@@ -9926,7 +9926,7 @@ BATaggrdigest(allocator *ma, BAT **bnp, char **shap, const char *digest,
 
 	for (gid = 0; gid < ngrp; gid++) {
 		if (mdctx[gid] == NULL || mdctx[gid] == (EVP_MD_CTX *) -1) {
-			strcpy_len(digestbuf, str_nil, sizeof(digestbuf));
+			strtcpy(digestbuf, str_nil, sizeof(digestbuf));
 		} else {
 			if (!EVP_DigestFinal_ex(mdctx[gid], md_value, &md_len)) {
 				GDKerror("Could not update digest value.\n");

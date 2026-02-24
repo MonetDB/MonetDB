@@ -1550,7 +1550,7 @@ add_error(struct MapiResultSet *result, char *error)
 	     (error[4] >= 'A' && error[4] <= 'Z'))) {
 		if (result->errorstr == NULL) {
 			/* remember SQLSTATE for first error */
-			strcpy_len(result->sqlstate, error,
+			strtcpy(result->sqlstate, error,
 				   sizeof(result->sqlstate));
 		}
 		/* skip SQLSTATE */
@@ -2657,7 +2657,7 @@ mapi_param_store(MapiHdl hdl)
 				free(val);
 				break;
 			default:
-				strcpy_len(hdl->query + k, src, lim - k);
+				strtcpy(hdl->query + k, src, lim - k);
 				break;
 			}
 		}
@@ -3685,17 +3685,14 @@ mapi_query_part(MapiHdl hdl, const char *query, size_t size)
 	mid->active = hdl;
 	/* remember the query just for the error messages */
 	if (hdl->query == NULL) {
-		hdl->query = malloc(size + 1);
-		if (hdl->query) {
-			strcpy_len(hdl->query, query, size + 1);
-		}
+		hdl->query = strndup(query, size);
 	} else {
 		size_t sz = strlen(hdl->query);
 		char *q;
 
 		if (sz < 512 &&
 		    (q = realloc(hdl->query, sz + size + 1)) != NULL) {
-			strcpy_len(q + sz, query, size + 1);
+			strtcpy(q + sz, query, size + 1);
 			hdl->query = q;
 		}
 	}
@@ -4070,8 +4067,7 @@ unquote(const char *msg, char **str, const char **next, int endchar, size_t *len
 			p++;
 		}
 		len = s - msg;
-		*str = malloc(len + 1);
-		strcpy_len(*str, msg, len + 1);
+		*str = strndup(msg, len);
 
 		if (next)
 			*next = p;

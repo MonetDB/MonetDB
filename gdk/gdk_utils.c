@@ -344,7 +344,7 @@ GDKcopyenv(BAT **key, BAT **val, bool writable)
  */
 __attribute__((__format__(__printf__, 2, 3)))
 static void
-GDKlog(FILE *lockFile, const char *format, ...)
+GDKlog(FILE *lockFile, _In_z_ _Printf_format_string_ const char *format, ...)
 {
 	va_list ap;
 	char *p = 0, buf[1024];
@@ -601,7 +601,7 @@ MT_init(void)
 			if (p == NULL)
 				break;
 			*p = 0;
-			strcpy_len(cgr, dir, 1024);
+			strtcpy(cgr, dir, 1024);
 		}
 		fclose(fc);
 	}
@@ -722,16 +722,16 @@ MT_init(void)
 				if (strstr(q, "memory") == NULL)
 					continue;
 				/* limit of memory usage */
-				strconcat_len(pth, sizeof(pth),
-					      cgr1, p,
-					      "/memory.limit_in_bytes",
-					      NULL);
+				strtconcat(pth, sizeof(pth),
+					   cgr1, p,
+					   "/memory.limit_in_bytes",
+					   NULL);
 				f = fopen(pth, "r");
 				if (f == NULL) {
-					strconcat_len(pth, sizeof(pth),
-						      cgr1,
-						      "/memory.limit_in_bytes",
-						      NULL);
+					strtconcat(pth, sizeof(pth),
+						   cgr1,
+						   "/memory.limit_in_bytes",
+						   NULL);
 					f = fopen(pth, "r");
 				}
 				if (f != NULL) {
@@ -744,16 +744,16 @@ MT_init(void)
 					fclose(f);
 				}
 				/* soft limit of memory usage */
-				strconcat_len(pth, sizeof(pth),
-					      cgr1, p,
-					      "/memory.soft_limit_in_bytes",
-					      NULL);
+				strtconcat(pth, sizeof(pth),
+					   cgr1, p,
+					   "/memory.soft_limit_in_bytes",
+					   NULL);
 				f = fopen(pth, "r");
 				if (f == NULL) {
-					strconcat_len(pth, sizeof(pth),
-						      cgr1,
-						      "/memory.soft_limit_in_bytes",
-						      NULL);
+					strtconcat(pth, sizeof(pth),
+						   cgr1,
+						   "/memory.soft_limit_in_bytes",
+						   NULL);
 					f = fopen(pth, "r");
 				}
 				if (f != NULL) {
@@ -767,16 +767,16 @@ MT_init(void)
 				}
 				/* limit of memory+swap usage
 				 * we use this as maximum virtual memory size */
-				strconcat_len(pth, sizeof(pth),
-					      cgr1, p,
-					      "/memory.memsw.limit_in_bytes",
-					      NULL);
+				strtconcat(pth, sizeof(pth),
+					   cgr1, p,
+					   "/memory.memsw.limit_in_bytes",
+					   NULL);
 				f = fopen(pth, "r");
 				if (f == NULL) {
-					strconcat_len(pth, sizeof(pth),
-						      cgr1,
-						      "/memory.memsw.limit_in_bytes",
-						      NULL);
+					strtconcat(pth, sizeof(pth),
+						   cgr1,
+						   "/memory.memsw.limit_in_bytes",
+						   NULL);
 					f = fopen(pth, "r");
 				}
 				if (f != NULL) {
@@ -1828,6 +1828,7 @@ GDKstrndup(const char *s, size_t size)
 
 	if (s == NULL)
 		return NULL;
+	size = strnlen(s, size);
 	if ((p = GDKmalloc_internal(size + 1, false)) == NULL)
 		return NULL;
 	if (size > 0)
@@ -2006,17 +2007,19 @@ GDKmremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 #define round16(sz) ((sz+15)&~15)
 #define round_block_size(sz) ((sz + (MA_BLOCK_SIZE - 1))&~(MA_BLOCK_SIZE - 1))
 
-#define COND_LOCK_ALLOCATOR(a)			\
-	bool __alloc_locked = false;		\
-	if ((a)->use_lock) {			\
-		MT_lock_set(&(a)->lock);	\
-		__alloc_locked = true;		\
-	} else assert((a)->self == MT_getpid());
+#define COND_LOCK_ALLOCATOR(a)					\
+	do {							\
+		if ((a)->use_lock) {				\
+			MT_lock_set(&(a)->lock);		\
+		} else assert((a)->self == MT_getpid());	\
+	} while (0)
 
-#define COND_UNLOCK_ALLOCATOR(a)		\
-	if (__alloc_locked) {			\
-		MT_lock_unset(&(a)->lock);	\
-	}
+#define COND_UNLOCK_ALLOCATOR(a)			\
+	do {						\
+		if ((a)->use_lock) {			\
+			MT_lock_unset(&(a)->lock);	\
+		}					\
+	} while (0)
 
 
 typedef struct freed_t {
@@ -2184,6 +2187,7 @@ ma_realloc(allocator *sa, void *p, size_t sz, size_t oldsz)
 {
 	size_t r_oldsz = round16(oldsz);
 	size_t r_sz = round16(sz);
+	COND_LOCK_ALLOCATOR(sa);
 	if (r_oldsz <= sa->used &&
 	    (char *) sa->blks[sa->nr - 1] + sa->used - r_oldsz == (char *) p) {
 		/* trying to realloc the last allocated buffer, we may
@@ -2191,13 +2195,18 @@ ma_realloc(allocator *sa, void *p, size_t sz, size_t oldsz)
 		if (sz <= oldsz) {
 			/* size reduction */
 			sa->used = sa->used - r_oldsz + r_sz;
+			COND_UNLOCK_ALLOCATOR(sa);
 			return p;
 		}
 		if (sa->used - r_oldsz + r_sz <= MA_BLOCK_SIZE) {
 			sa->used = sa->used - r_oldsz + r_sz;
+			COND_UNLOCK_ALLOCATOR(sa);
 			return p;
 		}
-	} else if (r_sz <= r_oldsz)
+	}
+	COND_UNLOCK_ALLOCATOR(sa);
+
+	if (r_sz <= r_oldsz)
 		return p;
 
 	void *r = ma_alloc(sa, sz);
@@ -2355,7 +2364,7 @@ create_allocator(const char *name, bool use_lock)
 	eb_init(&sa->eb);
 	MT_lock_init(&sa->lock, "allocator_lock");
 	if (name)
-		strcpy_len(sa->name, name, sizeof(sa->name));
+		strtcpy(sa->name, name, sizeof(sa->name));
 	return sa;
 }
 
@@ -2393,6 +2402,7 @@ ma_destroy(allocator *sa)
 char *
 ma_strndup(allocator *sa, const char *s, size_t l)
 {
+	l = strnlen(s, l);
 	char *r = ma_alloc(sa, l + 1);
 
 	if (r) {
@@ -2408,7 +2418,15 @@ ma_strdup(allocator *sa, const char *s)
 {
 	if (strNil(s))
 		return (char *) str_nil;
-	return ma_strndup(sa, s, strlen(s));
+
+	size_t l = strlen(s);
+	char *r = ma_alloc(sa, l + 1);
+
+	if (r) {
+		memcpy(r, s, l);
+		r[l] = 0;
+	}
+	return r;
 }
 
 #undef ma_strconcat
@@ -2499,7 +2517,10 @@ void
 ma_free(allocator *sa, void *obj)
 {
 	COND_LOCK_ALLOCATOR(sa);
-	if (!obj || ma_tmp_active(sa)) return; // nothing to do
+	if (!obj || ma_tmp_active(sa)) {
+		COND_UNLOCK_ALLOCATOR(sa);
+		return; // nothing to do
+	}
 	// retrieve size from header
 	void *ptr = (char *) obj - MA_HEADER_SIZE;
 	size_t sz = *((size_t *) ptr);

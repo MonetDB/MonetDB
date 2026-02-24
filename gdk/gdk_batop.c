@@ -34,8 +34,8 @@ unshare_varsized_heap(BAT *b)
 			.farmid = BBPselectfarm(b->batRole, b->ttype, varheap),
 			.refs = ATOMIC_VAR_INIT(1),
 		};
-		strconcat_len(h->filename, sizeof(h->filename),
-			      BBP_physical(b->batCacheid), ".theap", NULL);
+		strtconcat(h->filename, sizeof(h->filename),
+			   BBP_physical(b->batCacheid), ".theap", NULL);
 		/* if parent bat is much larger (currently more than
 		 * twice) than the view, we copy the strings
 		 * individually so that the resulting vheap is reduced
@@ -240,9 +240,12 @@ insert_string_bat(BAT *b, BATiter *ni, struct canditer *ci, bool force, bool may
 
 	/* make sure there is (vertical) space in the offset heap, we
 	 * may also widen thanks to v, set above */
+	MT_lock_set(&b->theaplock);
 	if (GDKupgradevarheap(b, v, oldcnt + cnt < b->batCapacity ? b->batCapacity : oldcnt + cnt, b->batCount) != GDK_SUCCEED) {
+		MT_lock_unset(&b->theaplock);
 		return GDK_FAIL;
 	}
+	MT_lock_unset(&b->theaplock);
 
 	if (toff == 0 && ni->width == b->twidth && ci->tpe == cand_dense) {
 		/* we don't need to do any translation of offset
@@ -513,8 +516,8 @@ append_varsized_bat(BAT *b, BATiter *ni, struct canditer *ci, bool mayshare)
 			.farmid = BBPselectfarm(b->batRole, b->ttype, varheap),
 			.refs = ATOMIC_VAR_INIT(1),
 		};
-		strconcat_len(h->filename, sizeof(h->filename),
-			      BBP_physical(b->batCacheid), ".theap", NULL);
+		strtconcat(h->filename, sizeof(h->filename),
+			   BBP_physical(b->batCacheid), ".theap", NULL);
 		if (HEAPcopy(h, b->tvheap, 0) != GDK_SUCCEED) {
 			HEAPfree(h, true);
 			GDKfree(h);
@@ -1540,14 +1543,15 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 				prevnew = new;
 				prevoff = d;
 			}
-			MT_lock_unset(&b->theaplock);
 			if (rc != GDK_SUCCEED) {
+				MT_lock_unset(&b->theaplock);
 				goto bailout;
 			}
 			if (b->twidth < SIZEOF_VAR_T &&
 			    (b->twidth <= 2 && d != 0 ? d - GDK_VAROFFSET : d) >= ((size_t) 1 << (8 << b->tshift))) {
 				/* doesn't fit in current heap, upgrade it */
 				if (GDKupgradevarheap(b, d, 0, MAX(updid, b->batCount)) != GDK_SUCCEED) {
+					MT_lock_unset(&b->theaplock);
 					goto bailout;
 				}
 			}
@@ -1562,6 +1566,7 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 				bi.minpos = minpos;
 				bi.maxpos = maxpos;
 			}
+			MT_lock_unset(&b->theaplock);
 			switch (b->twidth) {
 			case 1:
 				if (d != 0)
@@ -2907,6 +2912,8 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 			}
 			goto error;
 		}
+		if (reverse)
+			bn->tseqbase = oid_nil;
 		bn->tsorted = !reverse && !nilslast;
 		bn->trevsorted = reverse && nilslast;
 		if (m != NULL) {
@@ -3262,6 +3269,16 @@ BATcount_no_nil(BAT *b, BAT *s)
 		bat_iterator_end(&bi);
 		return ci.ncand;
 	}
+	if (BATcheckhash(b)) {
+		BUN p = 0;
+		const void *nil = ATOMnilptr(b->ttype);
+		cnt = ci.ncand;
+		HASHloop(&bi, b->thash, p, nil)
+			if (canditer_contains(&ci, p + b->hseqbase))
+				cnt--;
+		bat_iterator_end(&bi);
+		return cnt;
+	}
 	p = bi.base;
 	t = ATOMbasetype(bi.type);
 	switch (t) {
@@ -3314,6 +3331,38 @@ BATcount_no_nil(BAT *b, BAT *s)
 			cnt += !is_inet6_nil(((const inet6 *) p)[canditer_next(&ci) - hseq]);
 		break;
 	case TYPE_str:
+		if (GDK_ELIMDOUBLES(bi.vh)) {
+			var_t off = strLocate(bi.vh, str_nil);
+			if (off == (var_t) -2) {
+				cnt = ci.ncand;
+				break;
+			}
+			switch (bi.width) {
+			case 1:
+				off -= GDK_VAROFFSET;
+				CAND_LOOP(&ci)
+					cnt += (var_t) ((const uint8_t *) p)[canditer_next(&ci) - hseq] != off;
+				break;
+			case 2:
+				off -= GDK_VAROFFSET;
+				CAND_LOOP(&ci)
+					cnt += (var_t) ((const uint16_t *) p)[canditer_next(&ci) - hseq] != off;
+				break;
+			case 4:
+				CAND_LOOP(&ci)
+					cnt += (var_t) ((const uint32_t *) p)[canditer_next(&ci) - hseq] != off;
+				break;
+#if SIZEOF_VAR_T == 8
+			case 8:
+				CAND_LOOP(&ci)
+					cnt += (var_t) ((const uint64_t *) p)[canditer_next(&ci) - hseq] != off;
+				break;
+#endif
+			default:
+				MT_UNREACHABLE();
+			}
+			break;
+		}
 		base = bi.vh->base;
 		switch (bi.width) {
 		case 1:

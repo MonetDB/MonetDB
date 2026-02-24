@@ -227,8 +227,7 @@ msab_dbpathinit(const char *dbpath)
 
 	p = strrchr(dbpath, DIR_SEP);
 	assert(p != NULL);
-	strncpy(dbfarm, dbpath, p - dbpath);
-	dbfarm[p - dbpath] = 0;
+	strtcpy(dbfarm, dbpath, p - dbpath + 1);
 	msab_init(dbfarm, p + 1);
 }
 void
@@ -1196,8 +1195,7 @@ msab_deserialise(sabdb **ret, const char *sdb)
 				 "string does not contain dbname: %s", sdb);
 		return(strdup(buf));
 	}
-	dbname = malloc(lasts - sdb + 1);
-	strcpy_len(dbname, sdb, lasts - sdb + 1);
+	dbname = strndup(sdb, lasts - sdb);
 	sdb = ++lasts;
 	lasts = strchr(sdb, ',');
 	if (lasts == NULL) {
@@ -1206,8 +1204,7 @@ msab_deserialise(sabdb **ret, const char *sdb)
 		free(dbname);
 		return(strdup(buf));
 	}
-	uri = malloc(lasts - sdb + 1);
-	strcpy_len(uri, sdb, lasts - sdb + 1);
+	uri = strndup(sdb, lasts - sdb);
 	sdb = ++lasts;
 	int locked, state, n;
 	switch (sscanf(sdb, "%d,%d%n", &locked, &state, &n)) {
@@ -1239,8 +1236,7 @@ msab_deserialise(sabdb **ret, const char *sdb)
 		return(strdup(buf));
 	}
 	if (lasts > sdb) {
-		scens = malloc(lasts - sdb + 1);
-		strcpy_len(scens, sdb, lasts - sdb + 1);
+		scens = strndup(sdb, lasts - sdb);
 	} else {
 		scens = NULL;
 	}

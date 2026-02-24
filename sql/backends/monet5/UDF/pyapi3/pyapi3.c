@@ -35,7 +35,7 @@ static const char *FunctionBasePath(char *buf, size_t len)
 		if (home) {
 			char *path = utf16toutf8(home);
 			if (path) {
-				strcpy_len(buf, path, len);
+				strtcpy(buf, path, len);
 				free(path);
 				basepath = buf;
 			}

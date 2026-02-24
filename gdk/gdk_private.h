@@ -409,12 +409,12 @@ extern struct BBPfarm_t {
 	uint32_t roles;		/* bitmask of allowed roles */
 	const char *dirname;	/* farm directory */
 	FILE *lock_file;
-} BBPfarms[MAXFARMS];
+} BBPfarms[MAXFARMS] __attribute__((__visibility__("hidden")));
 
-extern batlock_t GDKbatLock[BBP_BATMASK + 1];
-extern size_t GDK_mmap_minsize_persistent; /* size after which we use memory mapped files for persistent heaps */
-extern size_t GDK_mmap_minsize_transient; /* size after which we use memory mapped files for transient heaps */
-extern size_t GDK_mmap_pagesize; /* mmap granularity */
+extern batlock_t GDKbatLock[BBP_BATMASK + 1] __attribute__((__visibility__("hidden")));
+extern size_t GDK_mmap_minsize_persistent __attribute__((__visibility__("hidden"))); /* size after which we use memory mapped files for persistent heaps */
+extern size_t GDK_mmap_minsize_transient __attribute__((__visibility__("hidden"))); /* size after which we use memory mapped files for transient heaps */
+extern size_t GDK_mmap_pagesize __attribute__((__visibility__("hidden"))); /* mmap granularity */
 
 #define BATcheck(tst, err)				\
 	do {						\
@@ -441,19 +441,19 @@ extern size_t GDK_mmap_pagesize; /* mmap granularity */
 /* when the number of updates to a BAT is less than 1 in this number, we
  * keep the unique_est property */
 #define GDK_UNIQUE_ESTIMATE_KEEP_FRACTION	1000
-extern BUN gdk_unique_estimate_keep_fraction; /* should become a define once */
+extern BUN gdk_unique_estimate_keep_fraction __attribute__((__visibility__("hidden"))); /* should become a define once */
 /* if the number of unique values is less than 1 in this number, we
  * destroy the hash rather than update it in HASH{append,insert,delete} */
 #define HASH_DESTROY_UNIQUES_FRACTION		1000
-extern BUN hash_destroy_uniques_fraction;     /* likewise */
+extern BUN hash_destroy_uniques_fraction __attribute__((__visibility__("hidden")));     /* likewise */
 /* if the estimated number of unique values is less than 1 in this
  * number, don't build a hash table to do a hashselect */
 #define NO_HASH_SELECT_FRACTION			1000
-extern dbl no_hash_select_fraction;           /* same here */
+extern dbl no_hash_select_fraction __attribute__((__visibility__("hidden")));           /* same here */
 /* if the hash chain is longer than this number, we delete the hash
  * rather than maintaining it in HASHdelete */
 #define HASH_DESTROY_CHAIN_LENGTH		1000
-extern BUN hash_destroy_chain_length;
+extern BUN hash_destroy_chain_length __attribute__((__visibility__("hidden")));
 
 extern void (*GDKtriggerusr1)(void);
 

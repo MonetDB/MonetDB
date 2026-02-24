@@ -52,25 +52,6 @@ DllMain(HINSTANCE hinstDLL, DWORD reason, LPVOID reserved)
 }
 #endif
 
-/*
- * Utility function to duplicate an ODBC string (with a length
- * specified, may not be null terminated) to a normal C string (null
- * terminated).
- *
- * Precondition: inStr != NULL
- * Postcondition: returns a newly allocated null terminated string.
- */
-char *
-dupODBCstring(const SQLCHAR *inStr, size_t length)
-{
-	char *tmp = (char *) malloc((length + 1) * sizeof(char));
-
-	if (tmp == NULL)
-		return NULL;
-	strcpy_len(tmp, (const char *) inStr, length + 1);
-	return tmp;
-}
-
 /* Convert a SQLWCHAR (UTF-16 encoded string) to UTF-8.  On success,
    clears the location pointed to by errmsg and returns NULL or a
    newly allocated buffer.  On error, assigns a string with an error

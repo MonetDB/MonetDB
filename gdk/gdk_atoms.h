@@ -278,6 +278,7 @@ gdk_export const inet6 inet6_nil;
 #define ATOMvarsized(t)		(BATatoms[t].atomPut != NULL)
 #define ATOMlinear(t)		BATatoms[t].linear
 #define ATOMtype(t)		((t) == TYPE_void ? TYPE_oid : (t))
+#define ATOMextern(t)		(ATOMstorage(t) >= TYPE_str)
 
 /* The base type is the storage type if the comparison function, the
  * hash function, and the nil value are the same as those of the

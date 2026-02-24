@@ -430,6 +430,7 @@ cleanup:
 	if (nq)
 		GDKfree(nq);
 	MSresetInstructions(c->curprg->def, 1);
+	freeVariables(c, c->curprg->def, NULL, 1);
 	if (fdin_changed) { //c->fdin was set
 		bstream_destroy(c->fdin);
 		c->fdin = old_bstream;
@@ -1704,14 +1705,16 @@ monetdbe_bind(monetdbe_statement *stmt, void *data, size_t i)
 		}
 		VALset(&stmt_internal->data[i], tpe, b);
 	} else if (tpe == TYPE_str) {
-		char *val = GDKstrdup(data);
+		backend *b = stmt_internal->mdbe->c->sqlcontext;
+		if (!b->mvc->sa)
+			b->mvc->sa = create_allocator(NULL, false);
+		char *val = ma_strdup(b->mvc->sa, data);
 
 		if (val == NULL) {
 			set_error(stmt_internal->mdbe, createException(MAL, "monetdbe.monetdbe_bind", MAL_MALLOC_FAIL));
 			return stmt_internal->mdbe->msg;
 		}
 		VALset(&stmt_internal->data[i], tpe, val);
-		// FIX this leaks no free for val
 	} else {
 		VALset(&stmt_internal->data[i], tpe, data);
 	}
@@ -2733,8 +2736,7 @@ monetdbe_result_fetch(monetdbe_result* mres, monetdbe_column** res, size_t colum
 
 		j = 0;
 		li = bat_iterator(b);
-		BATloop(b, p, q)
-		{
+		BATloop(&li, p, q) {
 			const char *t = (const char*)BUNtvar(&li, p);
 			if (strcmp(t, str_nil) == 0) {
 				bat_data->data[j] = NULL;
@@ -2812,8 +2814,7 @@ monetdbe_result_fetch(monetdbe_result* mres, monetdbe_column** res, size_t colum
 		j = 0;
 
 		li = bat_iterator(b);
-		BATloop(b, p, q)
-		{
+		BATloop(&li, p, q) {
 			const blob *t = (const blob *)BUNtvar(&li, p);
 			if (t->nitems == ~(size_t)0) {
 				bat_data->data[j].size = 0;
@@ -2850,8 +2851,7 @@ monetdbe_result_fetch(monetdbe_result* mres, monetdbe_column** res, size_t colum
 		j = 0;
 
 		li = bat_iterator(b);
-		BATloop(b, p, q)
-		{
+		BATloop(&li, p, q) {
 			const void *t = BUNtail(&li, p);
 			if (BATatoms[bat_type].atomCmp(t, BATatoms[bat_type].atomNull) == 0) {
 				bat_data->data[j] = NULL;

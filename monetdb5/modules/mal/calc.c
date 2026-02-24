@@ -79,7 +79,7 @@ CMDvarADDstr(Client ctx, str *ret, const char *const *s1, const char *const *s2)
 	s = ma_alloc(ma, l1);
 	if (s == NULL)
 		return mythrow(MAL, "calc.+", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	strconcat_len(s, l1, *s1, *s2, NULL);
+	strtconcat(s, l1, *s1, *s2, NULL);
 	*ret = s;
 	return MAL_SUCCEED;
 }
@@ -546,9 +546,10 @@ CALCswitchbit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	if (ATOMextern(t1)) {
 		size_t len = ATOMlen(t1, *(ptr **)p);
-		*(ptr **) retval = ma_realloc(mb->ma, *(ptr **) p, len, len);
+		*(ptr **) retval = ma_alloc(mb->ma, len);
 		if (*(ptr **) retval == NULL)
 			throw(MAL, "ifthenelse", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		memcpy(*(ptr **) retval, *(ptr **)p, len);
 	} else if (t1 == TYPE_void) {
 		memcpy(retval, p, sizeof(oid));
 	} else {

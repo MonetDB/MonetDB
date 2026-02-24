@@ -113,9 +113,9 @@ renderTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx, int flg, char *buf,
 				cv_len = 100;
 				if (cv_len > (size_t) ((buf + max_len) - bufend))
 					cv_len = (buf + max_len) - bufend - 1;
-				strcpy_len(bufend, cv, cv_len + 1); /* 1 for null termination */
+				strtcpy(bufend, cv, cv_len + 1); /* 1 for null termination */
 				bufend += cv_len;
-				cv_len = strconcat_len(bufend, (buf + max_len) - bufend, "\" ..... ", NULL);
+				cv_len = strlconcat(bufend, (buf + max_len) - bufend, "\" ..... ", NULL);
 				bufend += cv_len;
 			} else {
 				bufend = stpcpy(bufend, cv);
@@ -144,7 +144,7 @@ renderTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx, int flg, char *buf,
 		|| showtype) {
 		tpe = getTypeName(mb->ma, getVarType(mb, varid));
 		if (tpe) {
-			strconcat_len(bufend, (buf + max_len) - bufend, ":", tpe, NULL);
+			strtconcat(bufend, (buf + max_len) - bufend, ":", tpe, NULL);
 		}
 	}
 }
@@ -652,14 +652,14 @@ mal2str(MalBlkPtr mb, int first, int last)
 	}
 
 	totlen = 0;
+	char *p = ps;
 	for (i = first; i < last; i++) {
 		if (txt[i]) {
-			strncpy(ps + totlen, txt[i], len[i]);
-			ps[totlen + len[i]] = '\n';
-			ps[totlen + len[i] + 1] = 0;
-			totlen += len[i] + 1;
+			p = stpcpy(p, txt[i]);
+			*p++ = '\n';
 		}
 	}
+	*p = 0;
 	return ps;
 }
 

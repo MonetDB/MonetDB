@@ -75,6 +75,11 @@ freeSymbol(Symbol s)
 		freeMalBlk(s->def);
 		s->def = NULL;
 	} else if (s->allocated && s->func) {
+		if (s->func->allocated) {
+			GDKfree(s->func->args);
+			GDKfree((void *) s->func->comment);
+			GDKfree((void *) s->func->cname);
+		}
 		GDKfree(s->func);
 	}
 	GDKfree(s);
@@ -207,7 +212,7 @@ resetMalBlk(MalBlkPtr *mbpp)
 	nmb->stmt[0] = copyInstruction(nmb, mb->stmt[0]);
 	if (nmb->stmt[0] == NULL)
 		return createMalException(mb, 0, TYPE, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	strcpy_len(nmb->binding, mb->binding, sizeof(mb->binding));
+	strtcpy(nmb->binding, mb->binding, sizeof(mb->binding));
 	nmb->stop = 1;
 	nmb->vtop = 0;
 	nmb->tag = mb->tag;
@@ -286,7 +291,7 @@ copyMalBlk(MalBlkPtr old)
 		goto bailout;
 	}
 
-	strcpy_len(mb->binding, old->binding, sizeof(mb->binding));
+	strtcpy(mb->binding, old->binding, sizeof(mb->binding));
 	mb->errors = old->errors;	/* WHY copy errors? */
 	mb->tag = old->tag;
 	mb->runtime = old->runtime;
@@ -500,7 +505,7 @@ getVarNameIntoBuffer(MalBlkPtr mb, int idx, char *buf)
 		char kind = getVarKind(mb, idx);
 		(void) snprintf(buf, IDLENGTH, "%c_%d", kind ? kind : REFMARKER, idx);
 	} else {
-		strcpy_len(buf, s, IDLENGTH);
+		strtcpy(buf, s, IDLENGTH);
 	}
 	return buf;
 }

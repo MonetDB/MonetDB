@@ -1807,7 +1807,7 @@ log_switch_bat(BAT *old, BAT *new, const char *fn, const char *name)
 		GDKerror("cannot convert old %s to transient", name);
 		return GDK_FAIL;
 	}
-	if (strconcat_len(bak, sizeof(bak), fn, "_", name, NULL) >= sizeof(bak)) {
+	if (strtconcat(bak, sizeof(bak), fn, "_", name, NULL) == -1) {
 		GDKerror("name %s_%s too long\n", fn, name);
 		return GDK_FAIL;
 	}
@@ -1822,10 +1822,9 @@ log_switch_bat(BAT *old, BAT *new, const char *fn, const char *name)
 static gdk_return
 bm_get_counts(logger *lg)
 {
-	BUN p, q;
 	const log_bid *bids = (const log_bid *) Tloc(lg->catalog_bid, 0);
 
-	BATloop(lg->catalog_bid, p, q) {
+	for (BUN p = 0, q = lg->catalog_bid->batCount; p < q; p++) {
 		oid pos = p;
 		lng cnt = 0;
 		lng lid = lng_nil;
@@ -1885,7 +1884,7 @@ cleanup_and_swap(logger *lg, int *r, const log_bid *bids, lng *lids, lng *cnts,
 	}
 
 	oid *poss = Tloc(dcatalog, 0);
-	BATloop(dcatalog, p, q) {
+	for (p = 0, q = dcatalog->batCount; p < q; p++) {
 		oid pos = poss[p];
 
 		if (lids[pos] == lng_nil || lids[pos] > lg->saved_tid)
@@ -1974,10 +1973,10 @@ cleanup_and_swap(logger *lg, int *r, const log_bid *bids, lng *lids, lng *cnts,
 	lg->catalog_cnt = ncnts;
 	lg->catalog_lid = nlids;
 	char bak[FILENAME_MAX];
-	strconcat_len(bak, sizeof(bak), lg->fn, "_catalog_cnt", NULL);
+	strtconcat(bak, sizeof(bak), lg->fn, "_catalog_cnt", NULL);
 	if (BBPrename(lg->catalog_cnt, bak) < 0)
 		GDKclrerr();
-	strconcat_len(bak, sizeof(bak), lg->fn, "_catalog_lid", NULL);
+	strtconcat(bak, sizeof(bak), lg->fn, "_catalog_lid", NULL);
 	if (BBPrename(lg->catalog_lid, bak) < 0)
 		GDKclrerr();
 	rotation_lock(lg);
@@ -1997,7 +1996,6 @@ bm_subcommit(logger *lg, logged_range *pending, uint32_t *updated, BUN maxupdate
 	allocator_state ta_state = ma_open(ta);
 	BUN cnt = pending ? pending->cnt : BATcount(lg->catalog_bid);
 	BUN dcnt = BATcount(lg->dcatalog);
-	BUN p, q;
 	BAT *catalog_bid = lg->catalog_bid;
 	BAT *catalog_id = lg->catalog_id;
 	BAT *dcatalog = lg->dcatalog;
@@ -2025,7 +2023,7 @@ bm_subcommit(logger *lg, logged_range *pending, uint32_t *updated, BUN maxupdate
 		cnts = (lng *) Tloc(lg->catalog_cnt, 0);
 	if (lg->catalog_lid)
 		lids = (lng *) Tloc(lg->catalog_lid, 0);
-	BATloop(catalog_bid, p, q) {
+	for (BUN p = 0, q = lg->catalog_bid->batCount; p < q; p++) {
 		if (lids && lids[p] != lng_nil && lids[p] <= lg->saved_tid) {
 			cleanup++;
 			if (lids[p] == -1)
@@ -2171,7 +2169,7 @@ log_filename(logger *lg, char bak[FILENAME_MAX], char filename[FILENAME_MAX])
 		return GDK_FAIL;
 	}
 	if (bak) {
-		if (strconcat_len(bak, FILENAME_MAX, filename, ".bak", NULL) >= FILENAME_MAX) {
+		if (strtconcat(bak, FILENAME_MAX, filename, ".bak", NULL) == -1) {
 			GDKerror("Logger filename path is too large\n");
 			return GDK_FAIL;
 		}
@@ -2271,12 +2269,6 @@ log_load(const char *fn, logger *lg, char filename[FILENAME_MAX])
 	bool readlogs = false;
 	bool needsnew = false;	/* need to write new log file? */
 
-	/* refactor */
-	if (!LOG_DISABLED(lg)) {
-		if (log_filename(lg, bak, filename) != GDK_SUCCEED)
-			goto error;
-	}
-
 	lg->catalog_bid = NULL;
 	lg->catalog_id = NULL;
 	lg->catalog_cnt = NULL;
@@ -2291,6 +2283,8 @@ log_load(const char *fn, logger *lg, char filename[FILENAME_MAX])
 		/* try to open logfile backup, or failing that, the file
 		 * itself. we need to know whether this file exists when
 		 * checking the database consistency later on */
+		if (log_filename(lg, bak, filename) != GDK_SUCCEED)
+			goto error;
 		if ((fp = MT_fopen(bak, "r")) != NULL) {
 			fclose(fp);
 			fp = NULL;
@@ -2308,7 +2302,7 @@ log_load(const char *fn, logger *lg, char filename[FILENAME_MAX])
 		}
 	}
 
-	strconcat_len(bak, sizeof(bak), fn, "_catalog_bid", NULL);
+	strtconcat(bak, sizeof(bak), fn, "_catalog_bid", NULL);
 	catalog_bid = BBPindex(bak);
 
 	/* initialize arrays for type mapping, to be read from disk */
@@ -2338,17 +2332,17 @@ log_load(const char *fn, logger *lg, char filename[FILENAME_MAX])
 
 		/* give the catalog bats names so we can find them
 		 * next time */
-		strconcat_len(bak, sizeof(bak), fn, "_catalog_bid", NULL);
+		strtconcat(bak, sizeof(bak), fn, "_catalog_bid", NULL);
 		if (BBPrename(lg->catalog_bid, bak) < 0) {
 			goto error;
 		}
 
-		strconcat_len(bak, sizeof(bak), fn, "_catalog_id", NULL);
+		strtconcat(bak, sizeof(bak), fn, "_catalog_id", NULL);
 		if (BBPrename(lg->catalog_id, bak) < 0) {
 			goto error;
 		}
 
-		strconcat_len(bak, sizeof(bak), fn, "_dcatalog", NULL);
+		strtconcat(bak, sizeof(bak), fn, "_dcatalog", NULL);
 		if (BBPrename(lg->dcatalog, bak) < 0) {
 			goto error;
 		}
@@ -2381,7 +2375,6 @@ log_load(const char *fn, logger *lg, char filename[FILENAME_MAX])
 		/* find the persistent catalog. As non persistent bats
 		 * require a logical reference we also add a logical
 		 * reference for the persistent bats */
-		BUN p, q;
 		BAT *b, *o, *d;
 
 		assert(!lg->inmemory);
@@ -2408,7 +2401,7 @@ log_load(const char *fn, logger *lg, char filename[FILENAME_MAX])
 				goto error;
 			}
 
-			strconcat_len(bak, sizeof(bak), fn, "_catalog_id", NULL);
+			strtconcat(bak, sizeof(bak), fn, "_catalog_id", NULL);
 			catalog_id = BBPindex(bak);
 			o = BATdescriptor(catalog_id);
 			if (o == NULL) {
@@ -2417,7 +2410,7 @@ log_load(const char *fn, logger *lg, char filename[FILENAME_MAX])
 				goto error;
 			}
 
-			strconcat_len(bak, sizeof(bak), fn, "_dcatalog", NULL);
+			strtconcat(bak, sizeof(bak), fn, "_dcatalog", NULL);
 			dcatalog = BBPindex(bak);
 			d = BATdescriptor(dcatalog);
 			if (d == NULL) {
@@ -2431,7 +2424,7 @@ log_load(const char *fn, logger *lg, char filename[FILENAME_MAX])
 			lg->catalog_id = o;
 			lg->dcatalog = d;
 			const log_bid *bids = (const log_bid *) Tloc(lg->catalog_bid, 0);
-			BATloop(lg->catalog_bid, p, q) {
+			for (BUN p = 0, q = lg->catalog_bid->batCount; p < q; p++) {
 				bat bid = bids[p];
 				oid pos = p;
 
@@ -2457,7 +2450,7 @@ log_load(const char *fn, logger *lg, char filename[FILENAME_MAX])
 		GDKerror("failed to create catalog_cnt bat");
 		goto error;
 	}
-	strconcat_len(bak, sizeof(bak), fn, "_catalog_cnt", NULL);
+	strtconcat(bak, sizeof(bak), fn, "_catalog_cnt", NULL);
 	if (BBPrename(lg->catalog_cnt, bak) < 0)
 		GDKclrerr();
 	lg->catalog_lid = logbat_new(TYPE_lng, 1, SYSTRANS);
@@ -2465,18 +2458,18 @@ log_load(const char *fn, logger *lg, char filename[FILENAME_MAX])
 		GDKerror("failed to create catalog_lid bat");
 		goto error;
 	}
-	strconcat_len(bak, sizeof(bak), fn, "_catalog_lid", NULL);
+	strtconcat(bak, sizeof(bak), fn, "_catalog_lid", NULL);
 	if (BBPrename(lg->catalog_lid, bak) < 0)
 		GDKclrerr();
 	if (bm_get_counts(lg) != GDK_SUCCEED)
 		goto error;
 
-	strconcat_len(bak, sizeof(bak), fn, "_seqs_id", NULL);
+	strtconcat(bak, sizeof(bak), fn, "_seqs_id", NULL);
 	if (BBPindex(bak)) {
 		lg->seqs_id = BATdescriptor(BBPindex(bak));
-		strconcat_len(bak, sizeof(bak), fn, "_seqs_val", NULL);
+		strtconcat(bak, sizeof(bak), fn, "_seqs_val", NULL);
 		lg->seqs_val = BATdescriptor(BBPindex(bak));
-		strconcat_len(bak, sizeof(bak), fn, "_dseqs", NULL);
+		strtconcat(bak, sizeof(bak), fn, "_dseqs", NULL);
 		lg->dseqs = BATdescriptor(BBPindex(bak));
 		if (lg->seqs_id == NULL ||
 		    lg->seqs_val == NULL ||
@@ -2500,17 +2493,17 @@ log_load(const char *fn, logger *lg, char filename[FILENAME_MAX])
 			goto error;
 		}
 
-		strconcat_len(bak, sizeof(bak), fn, "_seqs_id", NULL);
+		strtconcat(bak, sizeof(bak), fn, "_seqs_id", NULL);
 		if (BBPrename(lg->seqs_id, bak) < 0) {
 			goto error;
 		}
 
-		strconcat_len(bak, sizeof(bak), fn, "_seqs_val", NULL);
+		strtconcat(bak, sizeof(bak), fn, "_seqs_val", NULL);
 		if (BBPrename(lg->seqs_val, bak) < 0) {
 			goto error;
 		}
 
-		strconcat_len(bak, sizeof(bak), fn, "_dseqs", NULL);
+		strtconcat(bak, sizeof(bak), fn, "_dseqs", NULL);
 		if (BBPrename(lg->dseqs, bak) < 0) {
 			goto error;
 		}
@@ -2524,13 +2517,16 @@ log_load(const char *fn, logger *lg, char filename[FILENAME_MAX])
 	}
 	ATOMIC_SET(&GDKdebug, dbg);
 
+	bool earlyexit = GDKgetenv_isyes("process-wal-and-exit");
 	if (readlogs) {
 		ulng log_id = lg->saved_id + 1;
-		bool earlyexit = GDKgetenv_isyes("process-wal-and-exit");
 		if (log_readlogs(lg, filename) != GDK_SUCCEED) {
 			goto error;
 		}
 		if (!earlyexit) {
+			/* in case or process-wal-and-exit, do NOT run
+			 * upgrade code, and therefore do NOT update WAL
+			 * version number */
 			if (lg->postfuncp && (*lg->postfuncp) (lg->funcdata, lg) != GDK_SUCCEED)
 				goto error;
 			if (needsnew) {
@@ -2557,21 +2553,17 @@ log_load(const char *fn, logger *lg, char filename[FILENAME_MAX])
 		ATOMIC_SET(&GDKdebug, dbg);
 		for (; log_id <= lg->saved_id; log_id++)
 			(void) log_cleanup(lg, log_id);	/* ignore error of removing file */
-		if (earlyexit) {
-			printf("# mserver5 exiting\n");
-			exit(0);
-		}
-		if (needsnew &&
+		if (needsnew && !earlyexit &&
 		    GDKunlink(0, lg->dir, LOGFILE, "bak") != GDK_SUCCEED) {
 			TRC_CRITICAL(GDK, "couldn't remove old log.bak file\n");
 			return GDK_FAIL;
 		}
 	} else {
 		lg->id = lg->saved_id + 1;
-		if (GDKgetenv_isyes("process-wal-and-exit")) {
-			printf("# mserver5 exiting\n");
-			exit(0);
-		}
+	}
+	if (earlyexit) {
+		printf("# mserver5 exiting\n");
+		exit(0);
 	}
 #ifdef GDKLIBRARY_JSON
 	if (log_json_upgrade_finalize() == GDK_FAIL)
@@ -2746,12 +2738,11 @@ log_destroy(logger *lg)
 	}
 	if (lg->catalog_bid) {
 		log_lock(lg);
-		BUN p, q;
 		BAT *b = lg->catalog_bid;
 
 		/* free resources */
 		const log_bid *bids = (const log_bid *) Tloc(b, 0);
-		BATloop(b, p, q) {
+		for (BUN p = 0, q = b->batCount; p < q; p++) {
 			bat bid = bids[p];
 
 			BBPrelease(bid);

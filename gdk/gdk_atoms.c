@@ -299,14 +299,14 @@ ATOMname(int t)
 bool
 ATOMisdescendant(int tpe, int parent)
 {
-	int cur = -1;
+	int cur;
 
-	while (cur != tpe) {
-		cur = tpe;
-		if (cur == parent)
+	do {
+		if (tpe == parent)
 			return true;
+		cur = tpe;
 		tpe = ATOMstorage(tpe);
-	}
+	} while (cur != tpe);
 	return false;
 }
 
@@ -1996,13 +1996,13 @@ static void *
 BLOBread(allocator *ma, void *A, size_t *dstlen, stream *s, size_t cnt)
 {
 	blob *a = A;
-	int len;
+	lng len;
 
 	(void) cnt;
 	assert(cnt == 1);
-	if (mnstr_readInt(s, &len) != 1 || len < 0)
+	if (mnstr_readLng(s, &len) != 1 || len < 0)
 		return NULL;
-	if (a == NULL || *dstlen < (size_t) len) {
+	if (a == NULL || (lng) *dstlen < len) {
 		if (ma) {
 			a = ma_realloc(ma, a, (size_t) len, *dstlen);
 		} else {
@@ -2027,8 +2027,7 @@ BLOBwrite(const void *A, stream *s, size_t cnt)
 
 	(void) cnt;
 	assert(cnt == 1);
-	if (!mnstr_writeInt(s, (int) len) /* 64bit: check for overflow */ ||
-		mnstr_write(s, a, len, 1) < 0)
+	if (!mnstr_writeLng(s, (lng) len) || mnstr_write(s, a, len, 1) < 0)
 		return GDK_FAIL;
 	return GDK_SUCCEED;
 }
@@ -2037,7 +2036,7 @@ static size_t
 BLOBlength(const void *P)
 {
 	const blob *p = P;
-	size_t l = blobsize(p->nitems); /* 64bit: check for overflow */
+	size_t l = blobsize(p->nitems);
 	assert(l <= (size_t) GDK_int_max);
 	return l;
 }
@@ -2209,9 +2208,9 @@ atomDesc BATatoms[MAXATOMS] = {
 		.atomEqual = (bool (*)(const void *, const void *)) lngEq,
 		.atomHash = (BUN (*)(const void *)) lngHash,
 #endif
-		.atomFromStr = (ssize_t (*)(allocator *ma, const char *, size_t *, void **, bool)) OIDfromStr,
-		.atomToStr = (ssize_t (*)(allocator *ma, char **, size_t *, const void *, bool)) OIDtoStr,
-		.atomRead = (void *(*)(allocator *ma, void *, size_t *, stream *, size_t)) voidRead,
+		.atomFromStr = (ssize_t (*)(allocator *, const char *, size_t *, void **, bool)) OIDfromStr,
+		.atomToStr = (ssize_t (*)(allocator *, char **, size_t *, const void *, bool)) OIDtoStr,
+		.atomRead = (void *(*)(allocator *, void *, size_t *, stream *, size_t)) voidRead,
 		.atomWrite = (gdk_return (*)(const void *, stream *, size_t)) voidWrite,
 	},
 	[TYPE_bit] = {
@@ -2220,9 +2219,9 @@ atomDesc BATatoms[MAXATOMS] = {
 		.linear = true,
 		.size = sizeof(bit),
 		.atomNull = (void *) &bte_nil,
-		.atomFromStr = (ssize_t (*)(allocator *ma, const char *, size_t *, void **, bool)) bitFromStr,
-		.atomToStr = (ssize_t (*)(allocator *ma, char **, size_t *, const void *, bool)) bitToStr,
-		.atomRead = (void *(*)(allocator *ma, void *, size_t *, stream *, size_t)) bitRead,
+		.atomFromStr = (ssize_t (*)(allocator *, const char *, size_t *, void **, bool)) bitFromStr,
+		.atomToStr = (ssize_t (*)(allocator *, char **, size_t *, const void *, bool)) bitToStr,
+		.atomRead = (void *(*)(allocator *, void *, size_t *, stream *, size_t)) bitRead,
 		.atomWrite = (gdk_return (*)(const void *, stream *, size_t)) bitWrite,
 		.atomCmp = (int (*)(const void *, const void *)) bteCmp,
 		.atomEqual = (bool (*)(const void *, const void *)) bteEq,
@@ -2233,9 +2232,9 @@ atomDesc BATatoms[MAXATOMS] = {
 		.storage = TYPE_msk,
 		.linear = false,
 		.size = 1,	/* really 1/8 */
-		.atomFromStr = (ssize_t (*)(allocator *ma, const char *, size_t *, void **, bool)) mskFromStr,
-		.atomToStr = (ssize_t (*)(allocator *ma, char **, size_t *, const void *, bool)) mskToStr,
-		.atomRead = (void *(*)(allocator *ma, void *, size_t *, stream *, size_t)) mskRead,
+		.atomFromStr = (ssize_t (*)(allocator *, const char *, size_t *, void **, bool)) mskFromStr,
+		.atomToStr = (ssize_t (*)(allocator *, char **, size_t *, const void *, bool)) mskToStr,
+		.atomRead = (void *(*)(allocator *, void *, size_t *, stream *, size_t)) mskRead,
 		.atomWrite = (gdk_return (*)(const void *, stream *, size_t)) mskWrite,
 		.atomCmp = (int (*)(const void *, const void *)) mskCmp,
 		.atomEqual = (bool (*)(const void *, const void *)) mskEq,
@@ -2246,9 +2245,9 @@ atomDesc BATatoms[MAXATOMS] = {
 		.linear = true,
 		.size = sizeof(bte),
 		.atomNull = (void *) &bte_nil,
-		.atomFromStr = (ssize_t (*)(allocator *ma, const char *, size_t *, void **, bool)) bteFromStr,
-		.atomToStr = (ssize_t (*)(allocator *ma, char **, size_t *, const void *, bool)) bteToStr,
-		.atomRead = (void *(*)(allocator *ma, void *, size_t *, stream *, size_t)) bteRead,
+		.atomFromStr = (ssize_t (*)(allocator *, const char *, size_t *, void **, bool)) bteFromStr,
+		.atomToStr = (ssize_t (*)(allocator *, char **, size_t *, const void *, bool)) bteToStr,
+		.atomRead = (void *(*)(allocator *, void *, size_t *, stream *, size_t)) bteRead,
 		.atomWrite = (gdk_return (*)(const void *, stream *, size_t)) bteWrite,
 		.atomCmp = (int (*)(const void *, const void *)) bteCmp,
 		.atomEqual = (bool (*)(const void *, const void *)) bteEq,
@@ -2260,9 +2259,9 @@ atomDesc BATatoms[MAXATOMS] = {
 		.linear = true,
 		.size = sizeof(sht),
 		.atomNull = (void *) &sht_nil,
-		.atomFromStr = (ssize_t (*)(allocator *ma, const char *, size_t *, void **, bool)) shtFromStr,
-		.atomToStr = (ssize_t (*)(allocator *ma, char **, size_t *, const void *, bool)) shtToStr,
-		.atomRead = (void *(*)(allocator *ma, void *, size_t *, stream *, size_t)) shtRead,
+		.atomFromStr = (ssize_t (*)(allocator *, const char *, size_t *, void **, bool)) shtFromStr,
+		.atomToStr = (ssize_t (*)(allocator *, char **, size_t *, const void *, bool)) shtToStr,
+		.atomRead = (void *(*)(allocator *, void *, size_t *, stream *, size_t)) shtRead,
 		.atomWrite = (gdk_return (*)(const void *, stream *, size_t)) shtWrite,
 		.atomCmp = (int (*)(const void *, const void *)) shtCmp,
 		.atomEqual = (bool (*)(const void *, const void *)) shtEq,
@@ -2274,9 +2273,9 @@ atomDesc BATatoms[MAXATOMS] = {
 		.linear = true,
 		.size = sizeof(int),
 		.atomNull = (void *) &int_nil,
-		.atomFromStr = (ssize_t (*)(allocator *ma, const char *, size_t *, void **, bool)) intFromStr,
-		.atomToStr = (ssize_t (*)(allocator *ma, char **, size_t *, const void *, bool)) intToStr,
-		.atomRead = (void *(*)(allocator *ma, void *, size_t *, stream *, size_t)) intRead,
+		.atomFromStr = (ssize_t (*)(allocator *, const char *, size_t *, void **, bool)) intFromStr,
+		.atomToStr = (ssize_t (*)(allocator *, char **, size_t *, const void *, bool)) intToStr,
+		.atomRead = (void *(*)(allocator *, void *, size_t *, stream *, size_t)) intRead,
 		.atomWrite = (gdk_return (*)(const void *, stream *, size_t)) intWrite,
 		.atomCmp = (int (*)(const void *, const void *)) intCmp,
 		.atomEqual = (bool (*)(const void *, const void *)) intEq,
@@ -2289,7 +2288,7 @@ atomDesc BATatoms[MAXATOMS] = {
 #if SIZEOF_OID == SIZEOF_INT
 		.storage = TYPE_int,
 		.atomNull = (void *) &int_nil,
-		.atomRead = (void *(*)(allocator *ma, void *, size_t *, stream *, size_t)) intRead,
+		.atomRead = (void *(*)(allocator *, void *, size_t *, stream *, size_t)) intRead,
 		.atomWrite = (gdk_return (*)(const void *, stream *, size_t)) intWrite,
 		.atomCmp = (int (*)(const void *, const void *)) intCmp,
 		.atomEqual = (bool (*)(const void *, const void *)) intEq,
@@ -2297,14 +2296,14 @@ atomDesc BATatoms[MAXATOMS] = {
 #else
 		.storage = TYPE_lng,
 		.atomNull = (void *) &lng_nil,
-		.atomRead = (void *(*)(allocator *ma, void *, size_t *, stream *, size_t)) lngRead,
+		.atomRead = (void *(*)(allocator *, void *, size_t *, stream *, size_t)) lngRead,
 		.atomWrite = (gdk_return (*)(const void *, stream *, size_t)) lngWrite,
 		.atomCmp = (int (*)(const void *, const void *)) lngCmp,
 		.atomEqual = (bool (*)(const void *, const void *)) lngEq,
 		.atomHash = (BUN (*)(const void *)) lngHash,
 #endif
-		.atomFromStr = (ssize_t (*)(allocator *ma, const char *, size_t *, void **, bool)) OIDfromStr,
-		.atomToStr = (ssize_t (*)(allocator *ma, char **, size_t *, const void *, bool)) OIDtoStr,
+		.atomFromStr = (ssize_t (*)(allocator *, const char *, size_t *, void **, bool)) OIDfromStr,
+		.atomToStr = (ssize_t (*)(allocator *, char **, size_t *, const void *, bool)) OIDtoStr,
 	},
 	[TYPE_ptr] = {
 		.name = "ptr",
@@ -2312,9 +2311,9 @@ atomDesc BATatoms[MAXATOMS] = {
 		.linear = true,
 		.size = sizeof(void *),
 		.atomNull = (void *) &ptr_nil,
-		.atomFromStr = (ssize_t (*)(allocator *ma, const char *, size_t *, void **, bool)) ptrFromStr,
-		.atomToStr = (ssize_t (*)(allocator *ma, char **, size_t *, const void *, bool)) ptrToStr,
-		.atomRead = (void *(*)(allocator *ma, void *, size_t *, stream *, size_t)) ptrRead,
+		.atomFromStr = (ssize_t (*)(allocator *, const char *, size_t *, void **, bool)) ptrFromStr,
+		.atomToStr = (ssize_t (*)(allocator *, char **, size_t *, const void *, bool)) ptrToStr,
+		.atomRead = (void *(*)(allocator *, void *, size_t *, stream *, size_t)) ptrRead,
 		.atomWrite = (gdk_return (*)(const void *, stream *, size_t)) ptrWrite,
 #if SIZEOF_VOID_P == SIZEOF_INT
 		.atomCmp = (int (*)(const void *, const void *)) intCmp,
@@ -2332,9 +2331,9 @@ atomDesc BATatoms[MAXATOMS] = {
 		.linear = true,
 		.size = sizeof(flt),
 		.atomNull = (void *) &flt_nil,
-		.atomFromStr = (ssize_t (*)(allocator *ma, const char *, size_t *, void **, bool)) fltFromStr,
-		.atomToStr = (ssize_t (*)(allocator *ma, char **, size_t *, const void *, bool)) fltToStr,
-		.atomRead = (void *(*)(allocator *ma, void *, size_t *, stream *, size_t)) fltRead,
+		.atomFromStr = (ssize_t (*)(allocator *, const char *, size_t *, void **, bool)) fltFromStr,
+		.atomToStr = (ssize_t (*)(allocator *, char **, size_t *, const void *, bool)) fltToStr,
+		.atomRead = (void *(*)(allocator *, void *, size_t *, stream *, size_t)) fltRead,
 		.atomWrite = (gdk_return (*)(const void *, stream *, size_t)) fltWrite,
 		.atomCmp = (int (*)(const void *, const void *)) fltCmp,
 		.atomEqual = (bool (*)(const void *, const void *)) fltEq,
@@ -2346,9 +2345,9 @@ atomDesc BATatoms[MAXATOMS] = {
 		.linear = true,
 		.size = sizeof(dbl),
 		.atomNull = (void *) &dbl_nil,
-		.atomFromStr = (ssize_t (*)(allocator *ma, const char *, size_t *, void **, bool)) dblFromStr,
-		.atomToStr = (ssize_t (*)(allocator *ma, char **, size_t *, const void *, bool)) dblToStr,
-		.atomRead = (void *(*)(allocator *ma, void *, size_t *, stream *, size_t)) dblRead,
+		.atomFromStr = (ssize_t (*)(allocator *, const char *, size_t *, void **, bool)) dblFromStr,
+		.atomToStr = (ssize_t (*)(allocator *, char **, size_t *, const void *, bool)) dblToStr,
+		.atomRead = (void *(*)(allocator *, void *, size_t *, stream *, size_t)) dblRead,
 		.atomWrite = (gdk_return (*)(const void *, stream *, size_t)) dblWrite,
 		.atomCmp = (int (*)(const void *, const void *)) dblCmp,
 		.atomEqual = (bool (*)(const void *, const void *)) dblEq,
@@ -2360,9 +2359,9 @@ atomDesc BATatoms[MAXATOMS] = {
 		.linear = true,
 		.size = sizeof(lng),
 		.atomNull = (void *) &lng_nil,
-		.atomFromStr = (ssize_t (*)(allocator *ma, const char *, size_t *, void **, bool)) lngFromStr,
-		.atomToStr = (ssize_t (*)(allocator *ma, char **, size_t *, const void *, bool)) lngToStr,
-		.atomRead = (void *(*)(allocator *ma, void *, size_t *, stream *, size_t)) lngRead,
+		.atomFromStr = (ssize_t (*)(allocator *, const char *, size_t *, void **, bool)) lngFromStr,
+		.atomToStr = (ssize_t (*)(allocator *, char **, size_t *, const void *, bool)) lngToStr,
+		.atomRead = (void *(*)(allocator *, void *, size_t *, stream *, size_t)) lngRead,
 		.atomWrite = (gdk_return (*)(const void *, stream *, size_t)) lngWrite,
 		.atomCmp = (int (*)(const void *, const void *)) lngCmp,
 		.atomEqual = (bool (*)(const void *, const void *)) lngEq,
@@ -2375,9 +2374,9 @@ atomDesc BATatoms[MAXATOMS] = {
 		.linear = true,
 		.size = sizeof(hge),
 		.atomNull = (void *) &hge_nil,
-		.atomFromStr = (ssize_t (*)(allocator *ma, const char *, size_t *, void **, bool)) hgeFromStr,
-		.atomToStr = (ssize_t (*)(allocator *ma, char **, size_t *, const void *, bool)) hgeToStr,
-		.atomRead = (void *(*)(allocator *ma, void *, size_t *, stream *, size_t)) hgeRead,
+		.atomFromStr = (ssize_t (*)(allocator *, const char *, size_t *, void **, bool)) hgeFromStr,
+		.atomToStr = (ssize_t (*)(allocator *, char **, size_t *, const void *, bool)) hgeToStr,
+		.atomRead = (void *(*)(allocator *, void *, size_t *, stream *, size_t)) hgeRead,
 		.atomWrite = (gdk_return (*)(const void *, stream *, size_t)) hgeWrite,
 		.atomCmp = (int (*)(const void *, const void *)) hgeCmp,
 		.atomEqual = (bool (*)(const void *, const void *)) hgeEq,
@@ -2390,9 +2389,9 @@ atomDesc BATatoms[MAXATOMS] = {
 		.linear = true,
 		.size = sizeof(int),
 		.atomNull = (void *) &int_nil,
-		.atomFromStr = (ssize_t (*)(allocator *ma, const char *, size_t *, void **, bool)) date_fromstr,
-		.atomToStr = (ssize_t (*)(allocator *ma, char **, size_t *, const void *, bool)) date_tostr,
-		.atomRead = (void *(*)(allocator *ma, void *, size_t *, stream *, size_t)) intRead,
+		.atomFromStr = (ssize_t (*)(allocator *, const char *, size_t *, void **, bool)) date_fromstr,
+		.atomToStr = (ssize_t (*)(allocator *, char **, size_t *, const void *, bool)) date_tostr,
+		.atomRead = (void *(*)(allocator *, void *, size_t *, stream *, size_t)) intRead,
 		.atomWrite = (gdk_return (*)(const void *, stream *, size_t)) intWrite,
 		.atomCmp = (int (*)(const void *, const void *)) intCmp,
 		.atomEqual = (bool (*)(const void *, const void *)) intEq,
@@ -2404,9 +2403,9 @@ atomDesc BATatoms[MAXATOMS] = {
 		.linear = true,
 		.size = sizeof(lng),
 		.atomNull = (void *) &lng_nil,
-		.atomFromStr = (ssize_t (*)(allocator *ma, const char *, size_t *, void **, bool)) daytime_tz_fromstr,
-		.atomToStr = (ssize_t (*)(allocator *ma, char **, size_t *, const void *, bool)) daytime_tostr,
-		.atomRead = (void *(*)(allocator *ma, void *, size_t *, stream *, size_t)) lngRead,
+		.atomFromStr = (ssize_t (*)(allocator *, const char *, size_t *, void **, bool)) daytime_tz_fromstr,
+		.atomToStr = (ssize_t (*)(allocator *, char **, size_t *, const void *, bool)) daytime_tostr,
+		.atomRead = (void *(*)(allocator *, void *, size_t *, stream *, size_t)) lngRead,
 		.atomWrite = (gdk_return (*)(const void *, stream *, size_t)) lngWrite,
 		.atomCmp = (int (*)(const void *, const void *)) lngCmp,
 		.atomEqual = (bool (*)(const void *, const void *)) lngEq,
@@ -2418,9 +2417,9 @@ atomDesc BATatoms[MAXATOMS] = {
 		.linear = true,
 		.size = sizeof(lng),
 		.atomNull = (void *) &lng_nil,
-		.atomFromStr = (ssize_t (*)(allocator *ma, const char *, size_t *, void **, bool)) timestamp_fromstr,
-		.atomToStr = (ssize_t (*)(allocator *ma, char **, size_t *, const void *, bool)) timestamp_tostr,
-		.atomRead = (void *(*)(allocator *ma, void *, size_t *, stream *, size_t)) lngRead,
+		.atomFromStr = (ssize_t (*)(allocator *, const char *, size_t *, void **, bool)) timestamp_fromstr,
+		.atomToStr = (ssize_t (*)(allocator *, char **, size_t *, const void *, bool)) timestamp_tostr,
+		.atomRead = (void *(*)(allocator *, void *, size_t *, stream *, size_t)) lngRead,
 		.atomWrite = (gdk_return (*)(const void *, stream *, size_t)) lngWrite,
 		.atomCmp = (int (*)(const void *, const void *)) lngCmp,
 		.atomEqual = (bool (*)(const void *, const void *)) lngEq,
@@ -2474,9 +2473,9 @@ atomDesc BATatoms[MAXATOMS] = {
 		.linear = true,
 		.size = sizeof(var_t),
 		.atomNull = (void *) str_nil,
-		.atomFromStr = (ssize_t (*)(allocator *ma, const char *, size_t *, void **, bool)) strFromStr,
-		.atomToStr = (ssize_t (*)(allocator *ma, char **, size_t *, const void *, bool)) strToStr,
-		.atomRead = (void *(*)(allocator *ma, void *, size_t *, stream *, size_t)) strRead,
+		.atomFromStr = (ssize_t (*)(allocator *, const char *, size_t *, void **, bool)) strFromStr,
+		.atomToStr = (ssize_t (*)(allocator *, char **, size_t *, const void *, bool)) strToStr,
+		.atomRead = (void *(*)(allocator *, void *, size_t *, stream *, size_t)) strRead,
 		.atomWrite = (gdk_return (*)(const void *, stream *, size_t)) strWrite,
 		.atomCmp = (int (*)(const void *, const void *)) strCmp,
 		.atomEqual = (bool (*)(const void *, const void *)) strEq,

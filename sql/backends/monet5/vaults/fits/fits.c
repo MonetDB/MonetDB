@@ -23,7 +23,8 @@
 #include <fitsio2.h>
 #include <longnam.h>
 
-#include "fits.h"
+#include "mal.h"
+#include "mal_client.h"
 #include "mutils.h"
 #include "sql_mvc.h"
 #include "sql_scenario.h"
@@ -169,7 +170,8 @@ fits2subtype(sql_subtype *tpe, int t, long rep, long wid) /* type long used by f
 	return 1;
 }
 
-str FITSexportTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+static str
+FITSexportTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str msg = MAL_SUCCEED;
 	str tname = *getArgReference_str(stk, pci, 1);
@@ -563,7 +565,8 @@ str FITSexportTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 
-str FITSdir(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+static str
+FITSdir(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str msg = MAL_SUCCEED;
 	str dir = *getArgReference_str(stk, pci, 1);
@@ -606,7 +609,8 @@ str FITSdir(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return msg;
 }
 
-str FITSdirpat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+static str
+FITSdirpat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str msg = MAL_SUCCEED;
 	str dir = *getArgReference_str(stk, pci, 1);
@@ -634,7 +638,7 @@ str FITSdirpat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		char fname[BUFSIZ];
 
 		s = stmt;
-		strcpy_len(fname, globbuf.gl_pathv[j], sizeof(fname));
+		strtcpy(fname, globbuf.gl_pathv[j], sizeof(fname));
 		status = 0;
 		fits_open_file(&fptr, fname, READONLY, &status);
 		if (status == 0) {
@@ -656,7 +660,7 @@ str FITSdirpat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 
-str
+static str
 FITStest(Client ctx, int *res, str *fname)
 {
 	(void) ctx;
@@ -676,7 +680,8 @@ FITStest(Client ctx, int *res, str *fname)
 	return msg;
 }
 
-str FITSattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+static str
+FITSattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	mvc *m = NULL;
 	sql_trans *tr;
@@ -750,7 +755,7 @@ str FITSattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		s = fname;
 	else
 		s++;
-	if (strcpy_len(bname, s, sizeof(bname)) >= sizeof(bname)) {
+	if (strtcpy(bname, s, sizeof(bname)) == -1) {
 		fits_close_file(fptr, &status);
 		throw(MAL, "fits.attach", SQLSTATE(FI000) "File name too long\n");
 	}
@@ -906,7 +911,8 @@ str FITSattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+static str
+FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	mvc *m = NULL;
 	sql_schema *sch;

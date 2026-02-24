@@ -23,7 +23,6 @@
 #include "monetdb_config.h"
 
 #include "drvcfg.h"
-#include <string.h>		/* for memset(), memcpy(), strncpy() */
 #include "mstring.h"
 
 static const char *aHost[] = {
@@ -40,38 +39,38 @@ ODBCINSTGetProperties(HODBCINSTPROPERTY lastprop)
 	lastprop->nPromptType = ODBCINST_PROMPTTYPE_COMBOBOX;
 	lastprop->aPromptData = malloc(sizeof(aHost));
 	memcpy(lastprop->aPromptData, aHost, sizeof(aHost));
-	strcpy_len(lastprop->szName, "Host", sizeof(lastprop->szName));
-	strcpy_len(lastprop->szValue, "", sizeof(lastprop->szValue));
+	strtcpy(lastprop->szName, "Host", sizeof(lastprop->szName));
+	strtcpy(lastprop->szValue, "", sizeof(lastprop->szValue));
 
 	lastprop->pNext = (HODBCINSTPROPERTY) calloc(1, sizeof(ODBCINSTPROPERTY));
 	lastprop = lastprop->pNext;
 	lastprop->nPromptType = ODBCINST_PROMPTTYPE_TEXTEDIT;
-	strcpy_len(lastprop->szName, "Port", sizeof(lastprop->szName));
-	strcpy_len(lastprop->szValue, "", sizeof(lastprop->szValue));
+	strtcpy(lastprop->szName, "Port", sizeof(lastprop->szName));
+	strtcpy(lastprop->szValue, "", sizeof(lastprop->szValue));
 
 	lastprop->pNext = (HODBCINSTPROPERTY) calloc(1, sizeof(ODBCINSTPROPERTY));
 	lastprop = lastprop->pNext;
 	lastprop->nPromptType = ODBCINST_PROMPTTYPE_TEXTEDIT;
-	strcpy_len(lastprop->szName, "Database", sizeof(lastprop->szName));
-	strcpy_len(lastprop->szValue, "", sizeof(lastprop->szValue));
+	strtcpy(lastprop->szName, "Database", sizeof(lastprop->szName));
+	strtcpy(lastprop->szValue, "", sizeof(lastprop->szValue));
 
 	lastprop->pNext = (HODBCINSTPROPERTY) calloc(1, sizeof(ODBCINSTPROPERTY));
 	lastprop = lastprop->pNext;
 	lastprop->nPromptType = ODBCINST_PROMPTTYPE_TEXTEDIT;
-	strcpy_len(lastprop->szName, "User", sizeof(lastprop->szName));
-	strcpy_len(lastprop->szValue, "", sizeof(lastprop->szValue));
+	strtcpy(lastprop->szName, "User", sizeof(lastprop->szName));
+	strtcpy(lastprop->szValue, "", sizeof(lastprop->szValue));
 
 	lastprop->pNext = (HODBCINSTPROPERTY) calloc(1, sizeof(ODBCINSTPROPERTY));
 	lastprop = lastprop->pNext;
 	lastprop->nPromptType = ODBCINST_PROMPTTYPE_TEXTEDIT;
-	strcpy_len(lastprop->szName, "Password", sizeof(lastprop->szName));
-	strcpy_len(lastprop->szValue, "", sizeof(lastprop->szValue));
+	strtcpy(lastprop->szName, "Password", sizeof(lastprop->szName));
+	strtcpy(lastprop->szValue, "", sizeof(lastprop->szValue));
 
 	lastprop->pNext = (HODBCINSTPROPERTY) calloc(1, sizeof(ODBCINSTPROPERTY));
 	lastprop = lastprop->pNext;
 	lastprop->nPromptType = ODBCINST_PROMPTTYPE_TEXTEDIT;
-	strcpy_len(lastprop->szName, "Debug", sizeof(lastprop->szName));
-	strcpy_len(lastprop->szValue, "", sizeof(lastprop->szValue));
+	strtcpy(lastprop->szName, "Debug", sizeof(lastprop->szName));
+	strtcpy(lastprop->szValue, "", sizeof(lastprop->szValue));
 
 	return 1;
 }

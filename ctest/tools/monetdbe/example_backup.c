@@ -14,7 +14,7 @@
 #define error(msg) do{fprintf(stderr, "Failure: %s\n", msg); return -1;}while(0)
 
 int
-main(void)
+main(int argc, char **argv)
 {
 	char* err = NULL;
 	monetdbe_database mdbe;
@@ -29,7 +29,7 @@ main(void)
 	if ((err = monetdbe_query(mdbe, "INSERT INTO test VALUES (TRUE, 42, 42, 42, 42, 42, 42.42, 42.42, 'Hello'), (NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'World')", NULL, NULL)) != NULL)
 		error(err);
 
-	err = monetdbe_dump_database(mdbe, "/tmp/backup");
+	err = monetdbe_dump_database(mdbe, argc > 1 ? argv[1] : "/tmp/backup");
 	if (err)
 		error(err);
 	if (monetdbe_close(mdbe))
