@@ -89,6 +89,8 @@ typedef struct {
 
 	allocator *ma;
 	allocator_state ma_state;
+
+	size_t off0, off1;
 } MergeState;
 
 /* Free all the temp memory owned by the MergeState.  This must be
@@ -208,7 +210,18 @@ merge_getmem(MergeState *ms, ssize_t need, void **ap,
 		}							\
 	} while (0)
 
-#define ISLT_any(X, Y, ms)  (((ms)->heap ? (*(ms)->compare)((ms)->heap + VarHeapVal(X,0,(ms)->hs), (ms)->heap + VarHeapVal(Y,0,(ms)->hs)) : (*(ms)->compare)((X), (Y))) < 0)
+#define ISLT_any(X, Y, ms)  	(((ms)->heap				\
+				  ? ((ms)->off0 = VarHeapVal(X,0,(ms)->hs), \
+				     (ms)->off1 = VarHeapVal(Y,0,(ms)->hs), \
+				     (ms)->off0 == (ms)->off1		\
+				     ? 0				\
+				     : (ms)->off0 == 0			\
+				     ? -1				\
+				     : (ms)->off1 == 0			\
+				     ? 1				\
+				     : (*(ms)->compare)((ms)->heap + (ms)->off0, \
+							(ms)->heap + (ms)->off1)) \
+				  : (*(ms)->compare)((X), (Y))) < 0)
 #define ISLT_bte(X, Y, ms)	(* (bte *) (X) < * (bte *) (Y))
 #define ISLT_sht(X, Y, ms)	(* (sht *) (X) < * (sht *) (Y))
 #define ISLT_int(X, Y, ms)	(* (int *) (X) < * (int *) (Y))

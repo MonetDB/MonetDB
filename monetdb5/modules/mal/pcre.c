@@ -1477,7 +1477,7 @@ PCRElikeselect(Client ctx, bat *ret, const bat *bid, const bat *sid, const char 
 }
 
 #define APPEND(b, o)	(((oid *) b->theap->base)[b->batCount++] = (o))
-#define VALUE(s, x)		(s##vars + VarHeapVal(s##vals, (x), s##i.width))
+#define VALUE(s, x)		((off = VarHeapVal(s##vals, (x), s##i.width)) == 0 ? str_nil : s##vars + off)
 
 /* nested loop implementation for PCRE join */
 #define pcre_join_loop(STRCMP, MNRE_MATCH)								\
@@ -1567,6 +1567,7 @@ pcrejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, const char *esc,
 {
 	struct canditer lci, rci;
 	const char *lvals, *rvals, *lvars, *rvars, *vl, *vr;
+	size_t off;
 	int rskipped = 0;			/* whether we skipped values in r */
 	oid lbase, rbase, lo, ro, lastl = 0;	/* last value inserted into r1 */
 	BUN nl, newcap;

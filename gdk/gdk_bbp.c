@@ -1312,10 +1312,14 @@ fixhashashbat(BAT *b)
 		var_t o;
 		switch (b->twidth) {
 		case 1:
-			o = (var_t) ((uint8_t *) h1.base)[i] + GDK_VAROFFSET;
+			o = (var_t) ((uint8_t *) h1.base)[i];
+			if (o != 0)
+				o += GDK_VAROFFSET;
 			break;
 		case 2:
-			o = (var_t) ((uint16_t *) h1.base)[i] + GDK_VAROFFSET;
+			o = (var_t) ((uint16_t *) h1.base)[i];
+			if (o != 0)
+				o += GDK_VAROFFSET;
 			break;
 #if SIZEOF_VAR_T == 8
 		case 4:
@@ -1326,7 +1330,7 @@ fixhashashbat(BAT *b)
 			o = ((var_t *) h1.base)[i];
 			break;
 		}
-		const char *s = vh1.base + o;
+		const char *s = o == 0 ? str_nil : vh1.base + o;
 		var_t no = strPut(b, &o, s);
 		if (no == (var_t) -1) {
 			HEAPfree(&h1, false);
@@ -1338,15 +1342,17 @@ fixhashashbat(BAT *b)
 				     "for BAT %d failed\n", b->batCacheid);
 			return GDK_FAIL;
 		}
-		assert(no >= GDK_VAROFFSET);
+		assert(no == 0 || no >= GDK_VAROFFSET);
 		switch (b->twidth) {
 		case 1:
-			no -= GDK_VAROFFSET;
+			if (no != 0)
+				no -= GDK_VAROFFSET;
 			assert(no <= 0xFF);
 			((uint8_t *) h2->base)[i] = (uint8_t) no;
 			break;
 		case 2:
-			no -= GDK_VAROFFSET;
+			if (no != 0)
+				no -= GDK_VAROFFSET;
 			assert(no <= 0xFFFF);
 			((uint16_t *) h2->base)[i] = (uint16_t) no;
 			break;
@@ -1518,7 +1524,7 @@ jsonupgradebat(BAT *b, json_storage_conversion fixJSONStorage)
 	allocator *ta = MT_thread_getallocator();
 	for (BUN i = 0; i < b->batCount; i++) {
 		var_t o = ((var_t *) h1.base)[i];
-		const char *s = vh1.base + o;
+		const char *s = o == 0 ? str_nil : vh1.base + o;
 		char *ns;
 		allocator_state ta_state = ma_open(ta);
 		if (fixJSONStorage(&ns, &s) != GDK_SUCCEED) {

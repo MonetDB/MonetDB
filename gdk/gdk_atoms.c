@@ -1982,7 +1982,8 @@ BLOBeq(const void *L, const void *R)
 static void
 BLOBdel(Heap *h, var_t *idx)
 {
-	HEAP_free(h, *idx);
+	if (*idx != 0)
+		HEAP_free(h, *idx);
 }
 
 static BUN
@@ -2053,6 +2054,8 @@ BLOBput(BAT *b, var_t *bun, const void *VAL)
 	const blob *val = VAL;
 	char *base = NULL;
 
+	if (is_blob_nil(val))
+		return *bun = 0;
 	*bun = HEAP_malloc(b, blobsize(val->nitems));
 	base = b->tvheap->base;
 	if (*bun != (var_t) -1) {

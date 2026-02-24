@@ -150,8 +150,8 @@ struct qsort_t {
 			SWAP1((i) * buf->ts, (j) * buf->ts, t, buf->ts); \
 	} while (0)
 
-#define varOFF(i)		(buf->base + VarHeapVal(h, i, buf->hs))
-#define varCMP(i, j)		(*buf->cmp)(varOFF(i), varOFF(j))
+#define varOFF(i,off)		((off = VarHeapVal(h, i, buf->hs)) == 0 ? buf->nil : buf->base + off)
+#define varCMP(i, j)		(*buf->cmp)(varOFF(i,off1), varOFF(j,off2))
 #define varltf(i, j)		(varCMP(i, j) < 0)
 #define varlef(i, j)		(varCMP(i, j) <= 0)
 #define varltl(i, j)		(!varnil(i) && (varnil(j) || varCMP(i, j) < 0))
@@ -160,8 +160,8 @@ struct qsort_t {
 #define varlel_rev(i, j)	(varCMP(i, j) >= 0)
 #define varltf_rev(i, j)	(!varnil(j) && (varnil(i) || varCMP(i, j) > 0))
 #define varlef_rev(i, j)	(varnil(i) || (!varnil(j) && varCMP(i, j) >= 0))
-#define vareq(i, j)		((*buf->eq)(varOFF(i), varOFF(j)))
-#define varnil(i)		((*buf->eq)(varOFF(i), buf->nil))
+#define vareq(i, j)		((*buf->eq)(varOFF(i,off1), varOFF(j,off2)))
+#define varnil(i)		((*buf->eq)(varOFF(i,off1), buf->nil))
 #define varswap(i, j)		anyswap(i, j)
 
 #define LE(i, j, TPE, SUFF)	CONCAT3(TPE, le, SUFF)(i, j)
@@ -329,6 +329,7 @@ struct qsort_t {
 #undef TPE
 
 #define TPE var
+#define INITIALIZER size_t off1, off2
 #define SUFF f
 #include "gdk_qsort_impl.h"
 #undef SUFF
@@ -342,6 +343,7 @@ struct qsort_t {
 #include "gdk_qsort_impl.h"
 #undef SUFF
 #undef TPE
+#undef INITIALIZER
 
 /* Sort the array `h' of `n' elements with size `hs' each and type
  * `ts' in ascending or descending (if `reverse' is true) order.  If

@@ -680,7 +680,7 @@ TXTSIMminjarowinkler(Client ctx, bit *res, const char *const *x, const char *con
 
 #undef VALUE
 #undef APPEND
-#define VALUE(s, x) (s##vars + VarHeapVal(s##vals, (x), s##width))
+#define VALUE(s, x) ((off = VarHeapVal(s##vals, (x), s##width)) == 0 ? str_nil : s##vars + off)
 #define APPEND(b, o) (((oid *) b->theap->base)[b->batCount++] = (o))
 
 #define PREP_BAT_STRITEM(B, CI, SI)										\
@@ -771,6 +771,7 @@ maxlevenshteinjoin(BAT **r1, BAT **r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int k)
 	BUN n;
 	struct canditer lci, rci;
 	const char *lvals, *rvals, *lvars, *rvars;;
+	size_t off;
 	int lwidth, rwidth, d;
 	str_item *lsi = NULL, *rsi = NULL;
 	str msg = MAL_SUCCEED;
@@ -955,6 +956,7 @@ minjarowinklerjoin(BAT **r1, BAT **r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	BUN n;
 	struct canditer lci, rci;
 	const char *lvals, *rvals, *lvars, *rvars;
+	size_t off;
 	int lwidth, rwidth, lb = 0, ub = 0, m = -1, *x_flags = NULL, *y_flags = NULL;
 	str_item *ssl = NULL, *ssr = NULL, shortest;
 	str msg = MAL_SUCCEED;
