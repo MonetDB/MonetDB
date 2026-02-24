@@ -200,6 +200,8 @@ strLocate(Heap *h, const char *v)
 		if (strcmp(v, (str) (next + 1)) == 0)
 			return (var_t) ((sizeof(stridx_t) + *ref));	/* found */
 	}
+	if (strNil(v))
+		return 0;
 	return (var_t) -2;
 }
 
@@ -264,6 +266,13 @@ strPut(BAT *b, var_t *dst, const void *V)
 		}
 	}
 	/* the string was not found in the heap, we need to enter it */
+
+	/* when entering nil, just return offset 0
+	 * note that we checked first whether nil already occurs and
+	 * returned that if we found it -- this we way we stay fully
+	 * double eliminated in older string bats */
+	if (strNil(v))
+		return *dst = 0;
 
 	/* check that string is correctly encoded UTF-8; there was no
 	 * need to do this earlier: if the string was found above, it

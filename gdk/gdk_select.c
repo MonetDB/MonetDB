@@ -653,7 +653,7 @@ fullscan_str(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 		return BUN_NONE;
 	}
 	*algo = anti ? "select: fullscan anti-equi strelim" : "select: fullscan equi strelim";
-	assert(pos == 0 || pos > GDK_VAROFFSET);
+	assert(pos == 0 || pos >= GDK_VAROFFSET);
 	switch (bi->width) {
 	case 1: {
 		const unsigned char *ptr = (const unsigned char *) bi->base;

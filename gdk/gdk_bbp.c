@@ -1326,7 +1326,7 @@ fixhashashbat(BAT *b)
 			o = ((var_t *) h1.base)[i];
 			break;
 		}
-		const char *s = o != 0 ? vh1.base + o : str_nil;
+		const char *s = o == 0 ? str_nil : vh1.base + o;
 		var_t no = strPut(b, &o, s);
 		if (no == (var_t) -1) {
 			HEAPfree(&h1, false);
@@ -1520,7 +1520,7 @@ jsonupgradebat(BAT *b, json_storage_conversion fixJSONStorage)
 	allocator *ta = MT_thread_getallocator();
 	for (BUN i = 0; i < b->batCount; i++) {
 		var_t o = ((var_t *) h1.base)[i];
-		const char *s = vh1.base + o;
+		const char *s = o == 0 ? str_nil : vh1.base + o;
 		char *ns;
 		allocator_state ta_state = ma_open(ta);
 		if (fixJSONStorage(&ns, &s) != GDK_SUCCEED) {

@@ -4496,10 +4496,10 @@ BATcalcifthenelse_intern(BATiter *bi,
 	if (bn->tvheap) {
 		assert((heap1 != NULL && width1 > 0) || (width1 == 0 && incr1 == 0));
 		assert((heap2 != NULL && width2 > 0) || (width2 == 0 && incr2 == 0));
+		const void *nil = ATOMnilptr(bi->type);
 		if (ATOMstorage(bi->type) == TYPE_msk) {
 			const uint32_t *src = bi->base;
 			BUN n = cnt / 32;
-			const void *nil = ATOMnilptr(bi->type);
 			TIMEOUT_LOOP_IDX(i, n + 1, qry_ctx) {
 				BUN rem = i == n ? cnt % 32 : 32;
 				uint32_t mask = rem != 0 ? src[i] : 0;
@@ -4531,7 +4531,6 @@ BATcalcifthenelse_intern(BATiter *bi,
 				      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
 		} else {
 			const bit *src = bi->base;
-			const void *nil = ATOMnilptr(tpe);
 			TIMEOUT_LOOP_IDX(i, cnt, qry_ctx) {
 				size_t off;
 				if (src[i] && !is_bit_nil(src[i])) {

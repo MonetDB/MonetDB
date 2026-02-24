@@ -224,15 +224,15 @@ bat_to_sexp(BAT* b, int type)
 			}
 			BATloop(&bi, p, q) {
 				const char *t = (const char *) BUNtvar(&bi, p);
-				ptrdiff_t offset = t - b->tvheap->base;
-				if (!sexp_ptrs[offset]) {
-					if (strNil(t)) {
-						sexp_ptrs[offset] = NA_STRING;
-					} else {
+				if (strNil(t)) {
+					SET_STRING_ELT(varvalue, j++, NA_STRING);
+				} else {
+					ptrdiff_t offset = t - b->tvheap->base;
+					if (!sexp_ptrs[offset]) {
 						sexp_ptrs[offset] = RSTR(t);
 					}
+					SET_STRING_ELT(varvalue, j++, sexp_ptrs[offset]);
 				}
-				SET_STRING_ELT(varvalue, j++, sexp_ptrs[offset]);
 			}
 			GDKfree(sexp_ptrs);
 		}

@@ -246,7 +246,7 @@ joininitresults(BAT **r1p, BAT **r2p, BAT **r3p, BUN lcnt, BUN rcnt,
 #define VALUE(s, x)	(s##vars ?					\
 			 (off = VarHeapVal(s##vals, (x), s##i.width)) == 0 ? \
 			 nil :						\
-			 s##vars + off : \
+			 s##vars + off :				\
 			 s##vals ? (const char *) s##vals + ((x) * s##i.width) : \
 			 (s##val = BUNtoid(s, (x)), (const char *) &s##val))
 #define FVALUE(s, x)	((const char *) s##vals + ((x) * s##i.width))

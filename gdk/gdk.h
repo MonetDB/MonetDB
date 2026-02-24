@@ -898,9 +898,7 @@ BUNtvar(const BATiter *bi, BUN p)
 {
 	assert(bi->type && bi->vh);
 	size_t off = VarHeapVal(bi->base, p, bi->width);
-	if (off == 0)
-		return ATOMnilptr(bi->type);
-	return bi->vh->base + off;
+	return off == 0 ? ATOMnilptr(bi->type) : bi->vh->base + off;
 }
 
 __attribute__((__pure__))
@@ -1129,8 +1127,8 @@ BATsettrivprop(BAT *b)
 					/* the only value is both min and max */
 					b->tminpos = 0;
 					b->tmaxpos = 0;
-					b->tnil = false;
 					b->tnonil = true;
+					b->tnil = false;
 				}
 			}
 		} else {
@@ -1147,9 +1145,13 @@ BATsettrivprop(BAT *b)
 			if (off0 == off1)
 				c = 0;
 			else if (off0 == 0)
-				c = -1;
+				c = ATOMeq(b->ttype,
+					   b->tvheap->base + off1,
+					   ATOMnilptr(b->ttype)) - 1;
 			else if (off1 == 0)
-				c = 1;
+				c = !ATOMeq(b->ttype,
+					    b->tvheap->base + off0,
+					    ATOMnilptr(b->ttype));
 			else
 				c = ATOMcmp(b->ttype,
 					    b->tvheap->base + off0,
@@ -1240,8 +1242,9 @@ tfastins_nocheckVAR(BAT *b, BUN p, const void *v)
 		MT_lock_unset(&b->theaplock);
 		return rc;
 	}
-	if (b->twidth < SIZEOF_VAR_T &&
-	    (b->twidth <= 2 && d != 0 ? d - GDK_VAROFFSET : d) >= ((size_t) 1 << (8 << b->tshift))) {
+	if (d != 0 &&
+	    b->twidth < SIZEOF_VAR_T &&
+	    (b->twidth <= 2 ? d - GDK_VAROFFSET : d) >= ((size_t) 1 << (8 << b->tshift))) {
 		/* doesn't fit in current heap, upgrade it */
 		rc = GDKupgradevarheap(b, d, 0, MAX(p, b->batCount));
 		if (rc != GDK_SUCCEED) {

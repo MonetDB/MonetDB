@@ -14,6 +14,7 @@
 #include "gdk_calc_private.h"
 
 #define VALUE(x)	(vars ? (off = VarHeapVal(vals, (x), width)) == 0 ? nil : vars + off : vals + (x) * width)
+
 /* BATunique returns a bat that indicates the unique tail values of
  * the input bat.  This is essentially the same output as the
  * "extents" output of BATgroup.  The difference is that BATunique

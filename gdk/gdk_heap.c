@@ -533,12 +533,12 @@ GDKupgradevarheap(BAT *b, var_t v, BUN cap, BUN ncopy)
 		case 1:
 			pc = (uint8_t *) old->base;
 			for (i = 0; i < n; i++)
-				pi[i] = pc[i] ? pc[i] + GDK_VAROFFSET : 0;
+				pi[i] = pc[i] == 0 ? 0 : pc[i] + GDK_VAROFFSET;
 			break;
 		case 2:
 			ps = (uint16_t *) old->base;
 			for (i = 0; i < n; i++)
-				pi[i] = ps[i] ? ps[i] + GDK_VAROFFSET : 0;
+				pi[i] = ps[i] == 0 ? 0 : ps[i] + GDK_VAROFFSET;
 			break;
 		default:
 			MT_UNREACHABLE();
@@ -555,12 +555,12 @@ GDKupgradevarheap(BAT *b, var_t v, BUN cap, BUN ncopy)
 		case 1:
 			pc = (uint8_t *) old->base;
 			for (i = 0; i < n; i++)
-				pl[i] = pc[i] ? pc[i] + GDK_VAROFFSET : 0;
+				pl[i] = pc[i] == 0 ? 0 : pc[i] + GDK_VAROFFSET;
 			break;
 		case 2:
 			ps = (uint16_t *) old->base;
 			for (i = 0; i < n; i++)
-				pl[i] = ps[i] ? ps[i] + GDK_VAROFFSET : 0;
+				pl[i] = ps[i] == 0 ? 0 : ps[i] + GDK_VAROFFSET;
 			break;
 		case 4:
 			pi = (uint32_t *) old->base;
