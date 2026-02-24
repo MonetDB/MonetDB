@@ -519,7 +519,7 @@ heapinit(BAT *b, const char *buf,
 #endif
 #endif
 
-	if (properties & (bbpversion <= GDKLIBRARY_USTR ? ~0x1F81 : ~0x3F81)) {
+	if (properties & (bbpversion <= GDKLIBRARY_USTR ? ~0x1F81 : ~0x7F81)) {
 		TRC_CRITICAL(GDK, "unknown properties are set: incompatible database on line %d of BBP.dir\n", lineno);
 		return -1;
 	}
@@ -560,6 +560,7 @@ heapinit(BAT *b, const char *buf,
 	b->tnil = (properties & 0x0800) != 0;
 	b->tascii = (properties & 0x1000) != 0;
 	b->ustr = (bbpversion <= GDKLIBRARY_USTR) ? false : (properties & 0x2000) != 0;
+	b->tvkey = (bbpversion <= GDKLIBRARY_USTR) ? false : (properties & 0x4000) != 0;
 	b->tnosorted = (BUN) nosorted;
 	b->tnorevsorted = (BUN) norevsorted;
 	b->tunique_est = 0.0;
@@ -2096,19 +2097,20 @@ heap_entry(FILE *fp, BATiter *bi, BUN size)
 			free = 0;
 	}
 
-	return fprintf(fp, " %s %d %d %d " BUNFMT " " BUNFMT " " BUNFMT " "
+	return fprintf(fp, " %s %" PRIu16 " %d %d " BUNFMT " " BUNFMT " " BUNFMT " "
 		       BUNFMT " " OIDFMT " %zu %" PRIu64" %" PRIu64,
 		       bi->type >= 0 ? BATatoms[bi->type].name : ATOMunknown_name(bi->type),
 		       bi->width,
 		       bi->type == TYPE_void || bi->vh != NULL || bi->ustr,
-		       (((unsigned short) bi->sorted << 0) |
-			((unsigned short) bi->revsorted << 7) |
-			((unsigned short) bi->key << 8) |
-			((unsigned short) BATtdensebi(bi) << 9) |
-			((unsigned short) bi->nonil << 10) |
-			((unsigned short) bi->nil << 11) |
-			((unsigned short) bi->ascii << 12) |
-			((unsigned short) bi->ustr << 13)),
+		       (((uint16_t) bi->sorted << 0) |
+			((uint16_t) bi->revsorted << 7) |
+			((uint16_t) bi->key << 8) |
+			((uint16_t) BATtdensebi(bi) << 9) |
+			((uint16_t) bi->nonil << 10) |
+			((uint16_t) bi->nil << 11) |
+			((uint16_t) bi->ascii << 12) |
+			((uint16_t) bi->ustr << 13) |
+			((uint16_t) bi->vkey << 14)),
 		       bi->nokey[0] >= size || bi->nokey[1] >= size ? 0 : bi->nokey[0],
 		       bi->nokey[0] >= size || bi->nokey[1] >= size ? 0 : bi->nokey[1],
 		       bi->nosorted >= size ? 0 : bi->nosorted,

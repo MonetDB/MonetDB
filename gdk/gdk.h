@@ -398,6 +398,7 @@ typedef struct BAT {
 	/* see also comment near BATassertProps() for more information
 	 * about the properties */
 	bool tkey:1;		/* no duplicate values present */
+	bool tvkey:1;		/* no duplicate values in tvheap */
 	bool tnonil:1;		/* there are no nils in the column */
 	bool tnil:1;		/* there is a nil in the column */
 	bool tsorted:1;		/* column is sorted in ascending order */
@@ -603,6 +604,7 @@ typedef struct BATiter {
 	uint8_t shift;
 	int8_t type;
 	bool key:1,
+		vkey:1,
 		nonil:1,
 		nil:1,
 		sorted:1,
@@ -655,6 +657,7 @@ bat_iterator_nolock(BAT *b)
 			.maxpos = isview ? BUN_NONE : b->tmaxpos,
 			.unique_est = b->tunique_est,
 			.key = b->tkey,
+			.vkey = b->tvkey,
 			.nonil = b->tnonil,
 			.nil = b->tnil,
 			.sorted = b->tsorted,

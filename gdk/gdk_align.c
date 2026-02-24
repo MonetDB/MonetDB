@@ -170,6 +170,7 @@ VIEWcreate(oid seq, BAT *b, BUN l, BUN h)
 	 * accelerator data. We need copies because in case of a mark,
 	 * we are going to override a column with a void. */
 	bn->tkey = bi.key;
+	bn->tvkey = bi.vkey;
 	bn->tseqbase = bi.tseq;
 	bn->tsorted = bi.sorted;
 	bn->trevsorted = bi.revsorted;

@@ -249,6 +249,7 @@ ustrPut(BAT *b, var_t *dst, const char *v)
 			return (var_t) -1;
 		}
 	}
+	assert(ustrbat->tvkey);
 	BUN p = BUNfnd(ustrbat, v);
 	if (p == BUN_NONE) {
 		/* string does not yet occur in ustrbat */
@@ -278,6 +279,7 @@ ustrPut(BAT *b, var_t *dst, const char *v)
 		MT_rwlock_wrunlock(&ustrbat->thashlock);
 		ustrbat->tunique_est = (double) ustrbat->batCount;
 		ustrbat->tkey = true;
+		ustrbat->tvkey = true;
 		MT_lock_unset(&ustrbat->theaplock);
 	}
 	var_t d = VarHeapVal(ustrbat->theap->base, p, ustrbat->twidth);
@@ -403,6 +405,7 @@ strPut(BAT *b, var_t *dst, const void *V)
 #endif
 		h->dirty = true;
 		b->tascii = true;
+		b->tvkey = true;
 	}
 
 	off = strHash(v);
@@ -505,7 +508,8 @@ strPut(BAT *b, var_t *dst, const void *V)
 		 * string */
 		pos -= sizeof(stridx_t);
 		*(stridx_t *) (h->base + pos) = *bucket;
-	}
+	} else if (*bucket != 0)
+		b->tvkey = false;	/* we no longer know for sure */
 	*bucket = (stridx_t) pos;	/* set bucket to the new string */
 	h->dirty = true;
 
