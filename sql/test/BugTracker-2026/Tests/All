@@ -30,3 +30,4 @@ KNOWNFAIL?7801-assertion-failure
 7804-querylog-catalog-orderby-bug
 7805-orderby-all-bug
 7806-numeric-no-prec-no-scale
+7813_push_down_topn

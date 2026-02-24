@@ -1350,7 +1350,7 @@ rel_push_topn_and_sample_down_(visitor *v, sql_rel *rel)
 		}
 
 		/* duplicate topn/sample direct under union */
-		if (r && !rel_is_ref(r) && r->l && r->r && is_munion(r->op) && r->exps) {
+		if (r && !rel_is_ref(r) && r->l && is_munion(r->op) && r->exps) {
 			list *rels = r->l;
 			bool changed = false;
 			for(node *n = rels->h; n; n = n->next) {

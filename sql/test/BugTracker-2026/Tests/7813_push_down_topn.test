@@ -1,0 +1,36 @@
+statement ok
+create table x1 (i int)
+
+statement ok
+create table x2 (i int)
+
+statement ok rowcount 3
+insert into x1 values(1),(2),(5)
+
+statement ok rowcount 3
+insert into x2 values(11),(12),(15)
+
+statement ok
+create merge table x (i int)
+
+statement ok
+alter table x add table x1
+
+statement ok
+alter table x add table x2
+
+query T
+explain after logical rewrite select * from x limit 2
+----
+project (
+| top N (
+| | munion (
+| | | top N (
+| | | | table("sys"."x1") [ "x1"."i" as "x"."i" ]
+| | | ) [ bigint(63) "2" ],
+| | | top N (
+| | | | table("sys"."x2") [ "x2"."i" as "x"."i" ]
+| | | ) [ bigint(63) "2" ]
+| | ) [ "x"."i" ]
+| ) [ bigint(63) "2" ]
+) [ "x"."i" ]
