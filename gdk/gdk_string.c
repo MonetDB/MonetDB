@@ -209,16 +209,9 @@ ustrCreate(void)
 		if (ustrbat == NULL)
 			return GDK_FAIL;
 	} else {
-		ustrbat = COLnew2(0, TYPE_str, 1024, PERSISTENT, SIZEOF_VAR_T);
+		ustrbat = COLnew(0, TYPE_str, 1024, PERSISTENT);
 		if (ustrbat == NULL)
 			return GDK_FAIL;
-		if (ustrbat->tvheap != NULL &&
-		    ustrbat->tvheap->base == NULL &&
-		    ATOMheap(TYPE_str, ustrbat->tvheap, 1024) != GDK_SUCCEED) {
-			BBPreclaim(ustrbat);
-			ustrbat = NULL;
-			return GDK_FAIL;
-		}
 		if (BUNappend(ustrbat, str_nil, true) != GDK_SUCCEED ||
 		    BUNappend(ustrbat, "", true) != GDK_SUCCEED) {
 			BBPreclaim(ustrbat);
@@ -268,11 +261,7 @@ ustrPut(BAT *b, var_t *dst, const char *v)
 		if (ustrbat->thash)
 			HASHappend_locked(ustrbat, p, v);
 		MT_lock_set(&ustrbat->theaplock);
-		ustrbat->tsorted = ustrbat->trevsorted = (p == 0);
-		if (strNil(v)) {
-			ustrbat->tnonil = false;
-			ustrbat->tnil = true;
-		}
+		ustrbat->tsorted = ustrbat->trevsorted = false;
 		ustrbat->batCount++;
 		ustrbat->theap->dirty = true;
 		ustrbat->theap->free = ustrbat->batCount << ustrbat->tshift;
@@ -317,12 +306,6 @@ BATconvert2ustr(BAT *b)
 	if (b->batCount != 0) {
 		MT_lock_unset(&b->theaplock);
 		GDKerror("BAT must be empty to convert to ustr\n");
-		return GDK_FAIL;
-	}
-	/* widen theap to full width */
-	if (GDKupgradevarheap(b, (var_t) 1 << (4 * SIZEOF_VAR_T),
-			      0, 0) != GDK_SUCCEED) {
-		MT_lock_unset(&b->theaplock);
 		return GDK_FAIL;
 	}
 	MT_lock_set(&ustrlock);
