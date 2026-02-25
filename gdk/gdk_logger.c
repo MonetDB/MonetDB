@@ -1004,6 +1004,14 @@ la_bat_create(logger *lg, logaction *la, int tid)
 	if (la->tt < 0)
 		BATtseqbase(b, 0);
 
+	if (la->tt == TYPE_str && la->cid < 0) {
+		if (BATconvert2ustr(b) != GDK_SUCCEED) {
+			logbat_destroy(b);
+			return GDK_FAIL;
+		}
+		la->cid = -la->cid;
+	}
+
 	if ((b = BATsetaccess(b, BAT_READ)) == NULL ||
 	    log_add_bat(lg, b, la->cid, tid) != GDK_SUCCEED) {
 		logbat_destroy(b);
@@ -1448,12 +1456,12 @@ log_read_transaction(logger *lg, BAT *ids_to_omit, uint32_t *updated, BUN maxupd
 			else
 				TRC_DEBUG_ENDIF(WAL, "%d %d", l.flag, l.id);
 		}
-		skip_entry = (ids_to_omit && BUNfnd(ids_to_omit, &l.id) != BUN_NONE);
 		switch (l.flag) {
 		case LOG_UPDATE_CB:
 		case LOG_UPDATE_CONST:
 		case LOG_UPDATE_BULK:
 		case LOG_UPDATE:
+			skip_entry = (ids_to_omit && BUNfnd(ids_to_omit, &l.id) != BUN_NONE);
 			if (skip_entry)
 				break;
 			/* fall through */
@@ -1464,8 +1472,9 @@ log_read_transaction(logger *lg, BAT *ids_to_omit, uint32_t *updated, BUN maxupd
 				BUN p;
 				BUN posnew = BUN_NONE;
 				BUN posold = BUN_NONE;
+				int cid = l.flag == LOG_CREATE && l.id < 0 ? -l.id : l.id;
 				MT_rwlock_rdlock(&cni.b->thashlock);
-				HASHloop_int(&cni, cni.b->thash, p, &l.id) {
+				HASHloop_int(&cni, cni.b->thash, p, &cid) {
 					lng lid = *(lng *) Tloc(lg->catalog_lid, p);
 					if (lid == lng_nil || lid > tr->tid)
 						posnew = p;
@@ -3337,7 +3346,7 @@ log_bat_persists(logger *lg, BAT *b, log_id id)
 	}
 
 	l.flag = LOG_CREATE;
-	l.id = id;
+	l.id = b->ustr ? -id : id;
 	if (!LOG_DISABLED(lg)) {
 		assert(mnstr_errnr(lg->current->output_log) == MNSTR_NO__ERROR);
 		if (mnstr_errnr(lg->current->output_log) != MNSTR_NO__ERROR ||
