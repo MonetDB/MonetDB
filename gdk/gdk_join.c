@@ -3332,6 +3332,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 	}
 	BBPreclaim(r1);
 	BBPreclaim(r2);
+	BBPreclaim(r3);
 	BBPreclaim(b);
 	return GDK_FAIL;
 }
