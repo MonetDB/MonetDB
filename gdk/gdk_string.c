@@ -308,6 +308,11 @@ BATconvert2ustr(BAT *b)
 		GDKerror("BAT must be empty to convert to ustr\n");
 		return GDK_FAIL;
 	}
+	if (b->batRole != PERSISTENT) {
+		MT_lock_unset(&b->theaplock);
+		GDKerror("BAT must be in persistent farm to convert to ustr\n");
+		return GDK_FAIL;
+	}
 	MT_lock_set(&ustrlock);
 	if (ustrbat == NULL && ustrCreate() != GDK_SUCCEED) {
 		MT_lock_unset(&ustrlock);

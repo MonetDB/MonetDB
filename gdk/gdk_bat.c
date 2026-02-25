@@ -807,7 +807,10 @@ COLcopy2(BAT *b, int tt, bool writable, bool mayshare, role_t role)
 	if (bn == NULL) {
 		goto bunins_failed;
 	}
-	if (b->ustr && mayshare && BATconvert2ustr(bn) != GDK_SUCCEED) {
+	if (b->ustr &&
+	    mayshare &&
+	    role == PERSISTENT &&
+	    BATconvert2ustr(bn) != GDK_SUCCEED) {
 		goto bunins_failed;
 	}
 	if (bn->tvheap != NULL && bn->tvheap->base == NULL && !mayshare) {
