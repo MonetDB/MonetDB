@@ -721,9 +721,12 @@ BAThashsave(BAT *b, bool dosync)
  * If a candidate list s is also given, the hash table is specific for
  * the combination of the two: only values from b that are referred to
  * by s are included in the hash table, so if a result is found when
- * searching the hash table, the result is a candidate. */
+ * searching the hash table, the result is a candidate.
+ * If offsets is set, the hash is built on the theap values and not the
+ * values in the tvheap that they point to. */
 Hash *
-BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict ext)
+BAThash_impl(BAT *restrict b, struct canditer *restrict ci,
+	     bool offsets, const char *restrict ext)
 {
 	lng t0 = 0;
 	BUN cnt1;
@@ -735,6 +738,27 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 	const char *nme = GDKinmemory(b->theap->farmid) ? ":memory:" : BBP_physical(b->batCacheid);
 	BATiter bi = bat_iterator(b);
 	unsigned int tpe = ATOMbasetype(bi.type);
+	if (offsets) {
+		assert(b->tvheap);
+		switch (bi.width) {
+		case 1:
+			tpe = TYPE_bte;
+			break;
+		case 2:
+			tpe = TYPE_sht;
+			break;
+		case 4:
+			tpe = TYPE_int;
+			break;
+#if SIZEOF_VAR_T == 8
+		case 8:
+			tpe = TYPE_lng;
+			break;
+#endif
+		default:
+			MT_UNREACHABLE();
+		}
+	}
 	bool hascand = ci->tpe != cand_dense || ci->ncand != bi.count;
 
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
@@ -1046,7 +1070,7 @@ BAThash(BAT *b)
 	if (b->thash == NULL) {
 		struct canditer ci;
 		canditer_init(&ci, b, NULL);
-		if ((b->thash = BAThash_impl(b, &ci, "thash")) == NULL) {
+		if ((b->thash = BAThash_impl(b, &ci, false, "thash")) == NULL) {
 			MT_rwlock_wrunlock(&b->thashlock);
 			return GDK_FAIL;
 		}

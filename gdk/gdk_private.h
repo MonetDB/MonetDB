@@ -59,7 +59,7 @@ void BATfree(BAT *b)
 gdk_return BATgroup_internal(BAT **groups, BAT **extents, BAT **histo, BAT *b, BAT *s, BAT *g, BAT *e, BAT *h, bool subsorted)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
-Hash *BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict ext)
+Hash *BAThash_impl(BAT *restrict b, struct canditer *restrict ci, bool offsets, const char *restrict ext)
 	__attribute__((__visibility__("hidden")));
 void BAThashsave(BAT *b, bool dosync)
 	__attribute__((__visibility__("hidden")));
