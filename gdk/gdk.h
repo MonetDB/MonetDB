@@ -657,7 +657,7 @@ bat_iterator_nolock(BAT *b)
 			.maxpos = isview ? BUN_NONE : b->tmaxpos,
 			.unique_est = b->tunique_est,
 			.key = b->tkey,
-			.vkey = b->tvkey,
+			.vkey = b->tvkey || (b->tvheap && BBP_desc(b->tvheap->parentid)->tvkey),
 			.nonil = b->tnonil,
 			.nil = b->tnil,
 			.sorted = b->tsorted,
