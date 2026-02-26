@@ -3347,11 +3347,15 @@ BATcount_no_nil(BAT *b, BAT *s)
 			 * not, return BATcount(b), else count offsets
 			 * != nil offset */
 		}
-		if (GDK_ELIMDOUBLES(bi.vh)) {
-			off = strLocate(bi.vh, str_nil);
-			if (off == (var_t) -2) {
-				cnt = ci.ncand;
-				break;
+		if (bi.vkey) {
+			if (GDK_ELIMDOUBLES(bi.vh)) {
+				off = strLocate(bi.vh, str_nil);
+				if (off == (var_t) -2) {
+					cnt = ci.ncand;
+					break;
+				}
+			} else {
+				off = 0;
 			}
 			switch (bi.width) {
 			case 1:

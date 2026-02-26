@@ -901,7 +901,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	/* for strings we can use the offset instead of the actual
 	 * string values if we know that the strings in the string
 	 * heap are unique */
-	if (t == TYPE_str && GDK_ELIMDOUBLES(bi.vh)) {
+	if (t == TYPE_str && bi.vkey) {
 		switch (bi.width) {
 		case 1:
 			t = TYPE_bte;
@@ -1185,7 +1185,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		hs->heaplink.parentid = b->batCacheid;
 		if (snprintf(hs->heaplink.filename, sizeof(hs->heaplink.filename), "%s.thshgrpl%x", nme, (unsigned) MT_getpid()) >= (int) sizeof(hs->heaplink.filename) ||
 		    snprintf(hs->heapbckt.filename, sizeof(hs->heapbckt.filename), "%s.thshgrpb%x", nme, (unsigned) MT_getpid()) >= (int) sizeof(hs->heapbckt.filename) ||
-		    HASHnew(hs, bi.type, BATcount(b), nbucket, BUN_NONE, false) != GDK_SUCCEED) {
+		    HASHnew(hs, t, BATcount(b), nbucket, BUN_NONE, false) != GDK_SUCCEED) {
 			GDKfree(hs);
 			hs = NULL;
 			GDKerror("cannot allocate hash table\n");

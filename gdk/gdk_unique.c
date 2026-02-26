@@ -108,9 +108,7 @@ BATunique(BAT *b, BAT *s)
 	hseq = b->hseqbase;
 
 	if (ATOMbasetype(bi.type) == TYPE_bte ||
-	    (bi.width == 1 &&
-	     ATOMstorage(bi.type) == TYPE_str &&
-	     (GDK_ELIMDOUBLES(bi.vh) || bi.vkey))) {
+	    (bi.width == 1 && bi.vkey)) {
 		uint8_t val;
 
 		algomsg = "unique: byte-sized atoms";
@@ -134,9 +132,7 @@ BATunique(BAT *b, BAT *s)
 		TIMEOUT_CHECK(qry_ctx,
 			      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed, qry_ctx));
 	} else if (ATOMbasetype(bi.type) == TYPE_sht ||
-		   (bi.width == 2 &&
-		    ATOMstorage(bi.type) == TYPE_str &&
-		    (GDK_ELIMDOUBLES(bi.vh) || bi.vkey))) {
+		   (bi.width == 2 && bi.vkey)) {
 		uint16_t val;
 
 		algomsg = "unique: short-sized atoms";

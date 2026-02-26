@@ -2804,7 +2804,8 @@ vkeyjoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 	BATiter li = bat_iterator(l);
 	BATiter ri = bat_iterator(r);
 
-	var_t niloff = GDK_ELIMDOUBLES(li.vh) ? strLocate(li.vh, str_nil) : 0;
+	var_t niloff = (ATOMstorage(li.type) == TYPE_str &&
+			GDK_ELIMDOUBLES(li.vh)) ? strLocate(li.vh, str_nil) : 0;
 	assert(niloff != (var_t) -2);
 
 	bit defmark = 0;

@@ -551,6 +551,12 @@ gdk_export void BBPtmunlock(void);
 
 gdk_export BAT *BBPquickdesc(bat b);
 
+typedef var_t stridx_t;
+#define SIZEOF_STRIDX_T SIZEOF_VAR_T
+#define GDK_VARALIGN SIZEOF_STRIDX_T
+
+#include "gdk_atoms.h"
+
 /* BAT iterator, also protects use of BAT heaps with reference counts.
  *
  * A BAT iterator has to be used with caution, but it does have to be
@@ -657,7 +663,11 @@ bat_iterator_nolock(BAT *b)
 			.maxpos = isview ? BUN_NONE : b->tmaxpos,
 			.unique_est = b->tunique_est,
 			.key = b->tkey,
-			.vkey = b->tvkey || (b->tvheap && BBP_desc(b->tvheap->parentid)->tvkey),
+			.vkey = (b->tvheap &&
+				 (b->tvkey ||
+				  BBP_desc(b->tvheap->parentid)->tvkey ||
+				  (ATOMstorage(b->ttype) == TYPE_str &&
+				   GDK_ELIMDOUBLES(b->tvheap)))),
 			.nonil = b->tnonil,
 			.nil = b->tnil,
 			.sorted = b->tsorted,
@@ -828,11 +838,6 @@ gdk_export BUN ORDERfndlast(BAT *b, Heap *oidxh, const void *v);
 
 gdk_export BUN BUNfnd(BAT *b, const void *right);
 
-typedef var_t stridx_t;
-#define SIZEOF_STRIDX_T SIZEOF_VAR_T
-#define GDK_VARALIGN SIZEOF_STRIDX_T
-
-#include "gdk_atoms.h"
 #include "gdk_cand.h"
 
 __attribute__((__pure__))

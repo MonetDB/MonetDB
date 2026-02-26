@@ -616,15 +616,14 @@ fullscan_str(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 
 	if (anti && tl == th && !bi->nonil && GDK_ELIMDOUBLES(bi->vh) &&
-	    strcmp(tl, str_nil) != 0 &&
-	    strLocate(bi->vh, str_nil) == (var_t) -2) {
+	    !strNil(tl) && strLocate(bi->vh, str_nil) == (var_t) -2) {
 		/* anti-equi select for non-nil value, and there are no
 		 * nils, so we can use fast path; trigger by setting
 		 * nonil */
 		bi->nonil = true;
 	}
 	if (!((equi ||
-	       (anti && tl == th && (bi->nonil || strcmp(tl, str_nil) == 0))) &&
+	       (anti && tl == th && (bi->nonil || strNil(tl)))) &&
 	      GDK_ELIMDOUBLES(bi->vh)))
 		return fullscan_any(bi, ci, bn, tl, th, li, hi, equi, anti,
 				    nil_matches, lval, hval, lnil, cnt, hseq,
