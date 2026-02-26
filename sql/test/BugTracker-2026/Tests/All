@@ -32,3 +32,4 @@ KNOWNFAIL?7801-assertion-failure
 7806-numeric-no-prec-no-scale
 7813_push_down_topn
 KNOWNFAIL?7815-ALGmarkselect-crash
+KNOWNFAIL?7816-table-returning-function-crash

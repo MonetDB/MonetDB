@@ -1,0 +1,61 @@
+statement ok
+CREATE OR REPLACE FUNCTION lov2rows(lov string, sep string)
+RETURNS TABLE(lov string, vnr integer, val string)
+BEGIN
+  DECLARE TABLE rt(lov string, vnr integer, val string);
+  IF lov IS NOT NULL AND sep IS NOT NULL THEN
+    INSERT INTO rt
+    select lov, g.value as vnr, splitpart(lov, sep, g.value) as v
+      from generate_series((select 1, cast(2+max(length(lov)) as int))) g
+     where lov is not null   -- exclude nulls
+       and lov <> ''         -- exclude empty strings
+       and splitpart(lov, sep, g.value) <> ''  -- exclude empty parts
+     order by 1, vnr;
+  END IF;
+  RETURN rt;
+END
+
+-- running query first time works
+query TIT
+select * from lov2rows('a,b,c', ',')
+----
+a,b,c
+1
+a
+a,b,c
+2
+b
+a,b,c
+3
+c
+
+-- running same query second time crashes the server
+query TIT
+select * from lov2rows('a,b,c', ',')
+----
+a,b,c
+1
+a
+a,b,c
+2
+b
+a,b,c
+3
+c
+
+-- Program terminated with signal SIGSEGV, Segmentation fault.
+-- #0  0x00007fc9e9644754 in strNil (s=0x10000000000 <error: Cannot access memory at address 0x10000000000>) at MonetDB/gdk/gdk_atoms.h:410
+-- 410		return s == NULL || (s[0] == '\200' && s[1] == '\0');
+-- #1  0x00007fc9e964907c in STRsplitpart (ctx=0xd5c8490, res=0x7fc954214840, haystack=0x7fc950005b20, needle=0x7fc954149b80, field=0x7fc9e9648fc8 <STRsplitpart>) at MonetDB/monetdb5/modules/atoms/str.c:811
+--        ma = 0x7fc9542347a0
+--        buf = 0x0
+--        msg = 0x0
+--        s = 0x10000000000 <error: Cannot access memory at address 0x10000000000>
+--        s2 = 0x34 <error: Cannot access memory at address 0x34>
+--        f = -443987883
+--        __func__ = "STRsplitpart"
+-- #2  0x00007fc9e961ba28 in runMALsequence (cntxt=0xd5c8490, mb=0x7fc954214840, startpc=1, stoppc=50, stk=0x7fc950005b20, env=0x7fc95423ec20, pcicaller=0x7fc9542588b0) at MonetDB/monetdb5/mal/mal_interpreter.c:703
+
+statement ok
+DROP FUNCTION lov2rows
+
