@@ -389,6 +389,7 @@ ALGmarkselect(Client ctx, bat *r1, bat *r2, const bat *gid, const bat *mid, cons
 		throw(MAL, "algebra.markselect", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	BUN nr = BATcount(g), q = 0;
+	assert (nr == BATcount(m) && nr == BATcount(p)); 
 
 	if ((res1 = COLnew(0, TYPE_oid, nr, TRANSIENT)) == NULL || (res2 = COLnew(0, TYPE_bit, nr, TRANSIENT)) == NULL) {
 		BBPreclaim(g);

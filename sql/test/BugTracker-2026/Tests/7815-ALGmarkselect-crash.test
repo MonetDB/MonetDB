@@ -57,7 +57,9 @@ FROM (
 ) AS x
 
 -- adjusted the query by removing one ( from the 4th line. It now should return error:
-statement error GDK reported error: project1_bte: does not match always
+--statement error GDK reported error: project1_bte: does not match always
+query I
+select count(*) from (
 SELECT CAST( CAST( '-0.0' AS NUMERIC ) AS BIGINT )
 FROM (
   SELECT CAST(
@@ -102,7 +104,9 @@ FROM (
     UNION
     SELECT DISTINCT * FROM generate_series( CAST( '616263' AS BIGINT ), 5 )
   )
-) AS x
+) AS x ) as c
+----
+616259
 
 -- Program terminated with signal SIGSEGV, Segmentation fault.
 -- #0  0x00007f641ad953da in ALGmarkselect (ctx=0x35e0b490, r1=0x7f63841e7870, r2=0x7f63841e7890, gid=0x7f63841e7670, mid=0x7f63841e77d0, pid=0x7f63841e7830, Any=0x7f63841e7750 "\001") at MonetDB/monetdb5/modules/kernel/algebra.c:412

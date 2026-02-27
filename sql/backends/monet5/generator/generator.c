@@ -1244,8 +1244,17 @@ VLTgenerator_projection(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	cnt = BATcount(b);
-	if ( b->ttype == TYPE_void)
+	if ( b->ttype == TYPE_void) {
 		o = b->tseqbase;
+		if (is_oid_nil(o)) {	
+			tpe = getArgType(mb,p,1);
+			BAT *bn = BATconstant(b->hseqbase, tpe, ATOMnilptr(tpe), cnt, TRANSIENT);
+			BBPunfix(b->batCacheid);
+			*getArgReference_bat(stk,pci,0) = bn->batCacheid;
+			BBPkeepref(bn);
+			return MAL_SUCCEED;
+		}
+	}
 	else
 		ol = (oid*) Tloc(b,0);
 
