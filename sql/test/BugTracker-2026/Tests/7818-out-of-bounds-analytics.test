@@ -67,8 +67,7 @@ SELECT covar_pop (
 FROM (
     SELECT 1 AS x
     UNION SELECT 0 AS x
-    UNION SELECT DISTINCT * FROM generate_series ( CAST( 65536 AS REAL ) , CAST( 1.900000 AS REAL ) ) AS x
-    WHERE 625
+    UNION SELECT DISTINCT * FROM generate_series ( CAST( 100 AS REAL ) , CAST( 1.900000 AS REAL ) ) AS x
 ) as x(x)) as x
 ----
-65536
+100

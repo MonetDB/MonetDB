@@ -743,21 +743,20 @@ merge_ors(mvc *sql, list *exps, int *changes)
 			eqs = new_exp_list(sql->sa);
 			neq = new_exp_list(sql->sa);
 
-			for(node *n = el->h; n; n = n->next) {
+			for(node *n = el->h; n; ) {
 				sql_exp *e = n->data;
 				if (e->type == e_cmp && e->flag == cmp_con && !is_anti(e)) {
 					exp_or_chain_groups(e->l, &gen_ands, &mce_ands, &eqs, &neq);
 				} else if (e->type == e_cmp && e->flag == cmp_dis && !is_anti(e)) {
-					node *p = el->h;
-					for( ; p->next != n; p = p->next)
-						;
-					list_remove_node(el, NULL, n);
+					node *p = list_remove_node(el, NULL, n);
 					list_merge(el, e->l, NULL);
 					n = p;
+					continue;
 				} else {
 					list *l = append(sa_list(sql->sa), e);
 					exp_or_chain_groups(l, &gen_ands, &mce_ands, &eqs, &neq);
 				}
+				n = n->next;
 			}
 
 			/* detect col cmp_eq exps with multiple values */
