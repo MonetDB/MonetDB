@@ -913,9 +913,12 @@ rel2bin_oahash_fullouterjoin(backend *be, sql_rel *rel, list *refs)
 	list *shared_hp = stmts_ht->op1?stmts_ht->op1->op4.lval:NULL;
 	/* hash side mark if a join-match has been found.  NIL: unused; TRUE: matched; FALSE unmatched */
 	/* Mark the payloads, if exist; otherwise the last hash column */
-	stmt *hp_mrk = stmt_oahash_hshmrk_init(be, stmts_ht);
+	stmt *hp_mrk = stmt_oahash_hshmrk_init(be, stmts_ht, be->pp > 0);
 	// X_48:int := slicer.no_slices(X_9:bat[:int]);
 	stmt *hp_mrk_slc = stmt_no_slices(be, hp_mrk, false);
+	if (be->pp > 0) {
+		moveInstruction(be->mb, be->mb->stop-1, be->pp_pc++);
+	}
 
 	/*** start pipeline.concat ***/
 	int p_source = be->source, p_concatcnt = be->concatcnt;
@@ -1060,7 +1063,13 @@ rel2bin_oahash_fullouterjoin(backend *be, sql_rel *rel, list *refs)
 	sub = subres_assign_resultvars(be, sub, vars);
 	if (!sub) return NULL;
 
+//	if (be->concatcnt == 1) {/* add dummy source */
+//			int source = pp_counter(be, -1, hp_mrk_slc->nr);
+//			stmt_concat_add_source(be);
+//			(void)pp_counter_get(be, source); /* use source else statement gets garbage collected */
+//	}
 	(void)stmt_concat_barrier_end(be, b);
+	assert (be->concatcnt == 2);
 
 	if (p_source)
 		stmt_concat_add_subconcat(be, p_source, p_concatcnt);

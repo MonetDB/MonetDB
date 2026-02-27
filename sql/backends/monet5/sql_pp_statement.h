@@ -18,7 +18,7 @@ extern void set_pipeline(backend *be, stmt *pp);
 extern stmt * get_pipeline(backend *be);
 
 extern stmt *stmt_oahash_new(backend *be, sql_subtype *tpe, int estimate, int parent, int nrparts);
-extern stmt *stmt_oahash_hshmrk_init(backend *be, stmt *stmts_ht);
+extern stmt *stmt_oahash_hshmrk_init(backend *be, stmt *stmts_ht, bool moveup);
 extern stmt *stmt_oahash_build_ht(backend *be, stmt *ht, stmt *key, stmt *prnt, const stmt *pp);
 extern stmt *stmt_oahash_frequency(backend *be, stmt *freq, stmt *prnt, bool occ_cnt, const stmt *pp);
 

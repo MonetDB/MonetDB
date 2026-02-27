@@ -475,7 +475,7 @@ stmt_oahash_new(backend *be, sql_subtype *tpe, int estimate, int parent, int nrp
 }
 
 stmt *
-stmt_oahash_hshmrk_init(backend *be, stmt *stmts_ht)
+stmt_oahash_hshmrk_init(backend *be, stmt *stmts_ht, bool moveup)
 {
 	InstrPtr q = newStmt(be->mb, putName("oahash"), "hashmark_init");
 	if (q == NULL)
@@ -486,14 +486,21 @@ stmt_oahash_hshmrk_init(backend *be, stmt *stmts_ht)
 	/* hp_gid or the last hash-column */
 	stmt *ht = stmts_ht->op4.lval->t->data;
 	stmt *hp = stmts_ht->op2?stmts_ht->op2:NULL;
-	if (!ht->nrcols)
+	if (!ht->nrcols) {
 		ht = const_column(be, ht);
+		if (moveup) {
+				moveInstruction(be->mb, be->mb->stop-1, be->pp_pc++);
+		}
+	}
 	q = pushArgument(be->mb, q, ht->nr);
 	if (hp)
 		q = pushArgument(be->mb, q, hp->nr);
 	else
 		q = pushNilBat(be->mb, q);
 	pushInstruction(be->mb, q);
+	if (moveup) {
+			moveInstruction(be->mb, be->mb->stop-1, be->pp_pc++);
+	}
 
 	stmt *s = stmt_none(be);
 	s->op4.typeval = *sql_fetch_localtype(TYPE_bit);
