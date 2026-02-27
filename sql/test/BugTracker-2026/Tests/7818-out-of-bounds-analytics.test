@@ -1,0 +1,74 @@
+
+query IIIII
+SELECT corr ( NULL , 2 ) OVER ( ) ,
+       corr ( 2 , NULL ) OVER ( ) ,
+       corr ( x , NULL ) OVER ( ) ,
+       corr ( NULL , x ) OVER ( ) ,
+       corr ( NULL , NULL ) OVER ( )
+FROM (select 1) as x(x);
+----
+NULL
+NULL
+NULL
+NULL
+NULL
+
+query RRRRRR
+SELECT covar_pop ( 1 , 1 ) OVER ( ) ,
+       covar_samp ( 1 , 1 ) OVER ( ) ,
+       corr ( 1 , 1 ) OVER ( ) ,
+       covar_pop ( 1 , NULL ) OVER ( ) ,
+       covar_samp ( 1 , NULL ) OVER ( ) ,
+       corr ( 1 , NULL ) OVER ( ) ;
+----
+0.000
+NULL
+NULL
+NULL
+NULL
+NULL
+
+query I
+select count(*) from (
+SELECT covar_pop (
+           CASE WHEN x % 2 = 0
+               THEN x / 2
+               ELSE (
+                   (
+                       SELECT COUNT (
+                           - CASE 19
+                               WHEN - 97 THEN -1.000000 / 0.000000 * - 478
+                             END
+                       ) OVER ( ORDER BY x ) = 0 AS x
+                       ORDER BY COALESCE ( x , 0 )
+                              + COALESCE (
+                                    corr ( 1 , 1 ) OVER ( ) ,
+                                    covar_pop ( 1 , NULL ) OVER ( ) ,
+                                    covar_samp ( 1.900000 , 1.000000 ^ 1 ) OVER (
+                                        ORDER BY 754 DESC NULLS FIRST
+                                        RANGE BETWEEN CURRENT ROW
+                                          AND CASE WHEN EXISTS ( SELECT NULL )
+                                                THEN 1
+                                                ELSE 1 < ( SELECT 1 )
+                                              END FOLLOWING
+                                    ) ,
+                                    corr ( 1 , NULL ) OVER ( )
+                                )
+                   )
+               ) / 2
+           END ,
+           locate ( '-1' , x ) > 0
+       ) OVER ( ) ,
+       corr ( 1 , 1 ) OVER ( PARTITION BY x ORDER BY x GROUPS BETWEEN 5 PRECEDING AND 2 FOLLOWING ) ,
+       corr ( 1 , 1 ) OVER ( ) ,
+       MAX ( CASE x WHEN 1 THEN x END ) OVER ( ) ,
+       covar_samp ( 1 , NULL ) OVER ( ) ,
+       corr ( 1 , NULL ) OVER ( )
+FROM (
+    SELECT 1 AS x
+    UNION SELECT 0 AS x
+    UNION SELECT DISTINCT * FROM generate_series ( CAST( 65536 AS REAL ) , CAST( 1.900000 AS REAL ) ) AS x
+    WHERE 625
+) as x(x)) as x
+----
+65536
