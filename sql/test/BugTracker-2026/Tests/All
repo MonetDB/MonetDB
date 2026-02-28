@@ -3,7 +3,7 @@ KNOWNFAIL?7758-truncate-sys-tables-corrupts-db
 7766-assertion-failure
 7767-assertion-failure
 7769-assertion-failure
-KNOWNFAIL?7770-assertion-failure
+7770-assertion-failure
 7771-assertion-failure
 KNOWNFAIL?7774-insert-into-renamed-table-assertion-failure
 7775-assertion-failure
