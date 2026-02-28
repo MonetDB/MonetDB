@@ -464,6 +464,7 @@ exps_cse_dis( visitor *v, list *oexps, sql_exp *de)
 				m = ll->h;
 				lpos = 0;
 			}
+			continue;
 		}
 		m = m->next;
 	   	lpos++;

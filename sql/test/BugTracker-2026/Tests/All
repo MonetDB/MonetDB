@@ -34,3 +34,4 @@ KNOWNFAIL?7801-assertion-failure
 7816-table-returning-function-crash
 7818-out-of-bounds-analytics
 7820-mergeors-reset-list
+7826-crash-in-optimizer
