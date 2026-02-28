@@ -4680,10 +4680,8 @@ rel_order_by(sql_query *query, sql_rel **R, symbol *orderby, int needs_distinct,
 	dnode *o = orderby->data.lval->h;
 	dlist *selection = NULL;
 
-	if (is_sql_orderby(f)) {
-		assert(is_project(rel->op));
+	if (is_sql_orderby(f))
 		rel = rel->l;
-	}
 
 	for (; o; o = o->next) {
 		symbol *order = o->data.sym;
