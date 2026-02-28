@@ -2837,6 +2837,9 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f, exp_ki
 
 		if (is_psm_call(f) || is_sql_merge(f))
 			return sql_error(sql, 02, SQLSTATE(42000) "%s: subqueries not supported inside %s", is_psm_call(f) ? "CALL" : "MERGE", is_psm_call(f) ? "CALL statements" : "MERGE conditions");
+		if (is_sql_no_subquery(f) && is_sql_check(f))
+			return sql_error(sql, 02, SQLSTATE(42000) "CHECK: subqueries not allowed inside check constraint");
+
 		if (rel && *rel)
 			query_push_outer(query, *rel, f);
 		sq = rel_setquery(query, sc);
