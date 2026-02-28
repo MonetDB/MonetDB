@@ -1,5 +1,4 @@
-KNOWNFAIL?7728-select-with-subqueries-crash
-KNOWNFAIL?7758-truncate-sys-tables-corrupts-db
+7728-select-with-subqueries-crash
 7766-assertion-failure
 7767-assertion-failure
 7769-assertion-failure
