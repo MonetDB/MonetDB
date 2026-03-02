@@ -577,8 +577,6 @@ PPconcat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 typedef struct pp_resultset_t {
 	Sink s;
 	ATOMIC_TYPE claimed;
-	/* todo per result column a lock */
-
 	MT_Lock l;
 } pp_resultset;
 
