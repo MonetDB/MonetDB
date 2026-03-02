@@ -198,8 +198,9 @@ wkbREAD(allocator *ma, void *A, size_t *dstlen, stream *s, size_t cnt)
 			GDKfree(a);
 		return NULL;
 	}
-	if (ma == NULL && a != (wkb *) A) {
-		GDKfree(A);
+	if (a != (wkb *) A) {
+		if (ma == NULL)
+			GDKfree(A);
 		*dstlen = wkblen;
 	}
 	return a;
@@ -579,8 +580,9 @@ mbrREAD(allocator *ma, void *A, size_t *dstlen, stream *s, size_t cnt)
 		c->xmax = vals[2];
 		c->ymax = vals[3];
 	}
-	if (ma == NULL && a != (mbr *) A) {
-		GDKfree(A);
+	if (a != (mbr *) A) {
+		if (ma == NULL)
+			GDKfree(A);
 		*dstlen = cnt * sizeof(mbr);
 	}
 	return a;
