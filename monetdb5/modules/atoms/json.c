@@ -609,15 +609,18 @@ jsonRead(allocator *ma, str a, size_t *dstlen, stream *s, size_t cnt)
 	if ((a = BATatoms[TYPE_str].atomRead(ma, a, dstlen, s, cnt)) == NULL)
 		return NULL;
 
-	msg = JSONstr2json_intern(ma, &out, &(size_t){0}, &(const char *){a});
-	if (ma == NULL)
-		GDKfree(a);
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
+	msg = JSONstr2json_intern(ta, &out, &(size_t){0}, &(const char *){a});
 	if (msg != MAL_SUCCEED) {
+		ma_close(&ta_state);
+		if (ma == NULL)
+			GDKfree(a);
 		return NULL;
 	}
-	*dstlen = strlen(out) + 1;
-
-	return out;
+	strcpy_len(a, out, *dstlen);
+	ma_close(&ta_state);
+	return a;
 }
 
 #endif
