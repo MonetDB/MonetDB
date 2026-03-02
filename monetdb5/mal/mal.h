@@ -159,7 +159,7 @@ typedef struct INSTR {
 	const char *modname;		/* module context, reference into namespace */
 	const char *fcnname;		/* function name, reference into namespace */
 	int argc, retc, maxarg;		/* total and result argument count */
-	int argv[];					/* at least a few entries */
+	int argv[] __attribute__((__counted_by__(maxarg)));	/* at least a few entries */
 } *InstrPtr, InstrRecord;
 
 typedef struct MALBLK {
