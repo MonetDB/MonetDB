@@ -443,6 +443,7 @@ int
 findVariableLength(MalBlkPtr mb, const char *name, int len)
 {
 	int i;
+	assert(mb->vtop <= mb->vsize);
 	for (i = mb->vtop - 1; i >= 0; i--) {
 		const char *s = mb->var[i].name;
 		if (s && strncmp(name, s, len) == 0 && s[len] == 0)

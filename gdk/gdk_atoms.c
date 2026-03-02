@@ -869,18 +869,21 @@ TYPE##Read(allocator *ma, TYPE *A, size_t *dstlen, stream *s, size_t cnt) \
 		if (ma) {						\
 			a = ma_realloc(ma, a, cnt * sizeof(TYPE), *dstlen); \
 		} else {						\
-			GDKfree(a);					\
 			a = GDKmalloc(cnt * sizeof(TYPE));		\
 		}							\
 		if (a == NULL)						\
 			return NULL;					\
-		*dstlen = cnt * sizeof(TYPE);				\
 	}								\
 	if (mnstr_read##NAME##Array(s, (CAST *) a, cnt) == 0 ||		\
 	    mnstr_errnr(s) != MNSTR_NO__ERROR) {			\
-		if (a != A)						\
+		if (ma == NULL && a != A)				\
 			GDKfree(a);					\
 		return NULL;						\
+	}								\
+	if (a != A) {							\
+		if (ma == NULL)						\
+			GDKfree(A);					\
+		*dstlen = cnt * sizeof(TYPE);				\
 	}								\
 	return a;							\
 }									\
@@ -912,17 +915,20 @@ mskRead(allocator *ma, msk *A, size_t *dstlen, stream *s, size_t cnt)
 		if (ma) {
 			a = ma_realloc(ma, a, 1, *dstlen);
 		} else {
-			GDKfree(a);
 			a = GDKmalloc(1);
 		}
 		if (a == NULL)
 			return NULL;
-		*dstlen = 1;
 	}
 	if (mnstr_readBte(s, &v) != 1) {
-		if (a != A)
+		if (ma == NULL && a != A)
 			GDKfree(a);
 		return NULL;
+	}
+	if (a != A) {
+		if (ma == NULL)
+			GDKfree(A);
+		*dstlen = 1;
 	}
 	*a = v != 0;
 	return a;
@@ -1350,17 +1356,20 @@ UUIDread(allocator *ma, void *U, size_t *dstlen, stream *s, size_t cnt)
 		if (ma) {
 			u = ma_realloc(ma, u, cnt * sizeof(uuid), *dstlen);
 		} else {
-			GDKfree(u);
 			u = GDKmalloc(cnt * sizeof(uuid));
 		}
 		if (u == NULL)
 			return NULL;
-		*dstlen = cnt * sizeof(uuid);
 	}
 	if (mnstr_read(s, u, UUID_SIZE, cnt) < (ssize_t) cnt) {
-		if (u != U)
+		if (ma == NULL && u != (uuid *) U)
 			GDKfree(u);
 		return NULL;
+	}
+	if (u != (uuid *) U) {
+		if (ma == NULL)
+			GDKfree(U);
+		*dstlen = cnt * sizeof(uuid);
 	}
 	return u;
 }
@@ -1500,17 +1509,20 @@ INET4read(allocator *ma, void *U, size_t *dstlen, stream *s, size_t cnt)
 		if (ma) {
 			u = ma_realloc(ma, u, cnt * sizeof(inet4), *dstlen);
 		} else {
-			GDKfree(u);
 			u = GDKmalloc(cnt * sizeof(inet4));
 		}
 		if (u == NULL)
 			return NULL;
-		*dstlen = cnt * sizeof(inet4);
 	}
-	if (mnstr_read(s, u, 4, cnt) < (ssize_t) cnt) {
-		if (u != U)
+	if (mnstr_read(s, u, sizeof(inet4), cnt) < (ssize_t) cnt) {
+		if (ma == NULL && u != (inet4 *) U)
 			GDKfree(u);
 		return NULL;
+	}
+	if (u != (inet4 *) U) {
+		if (ma == NULL)
+			GDKfree(U);
+		*dstlen = cnt * sizeof(inet4);
 	}
 	return u;
 }
@@ -1820,17 +1832,20 @@ INET6read(allocator *ma, void *U, size_t *dstlen, stream *s, size_t cnt)
 		if (ma) {
 			u = ma_realloc(ma, u, cnt * sizeof(inet6), *dstlen);
 		} else {
-			GDKfree(u);
 			u = GDKmalloc(cnt * sizeof(inet6));
 		}
 		if (u == NULL)
 			return NULL;
-		*dstlen = cnt * sizeof(inet6);
 	}
 	if (mnstr_read(s, u, sizeof(inet6), cnt) < (ssize_t) cnt) {
-		if (u != U)
+		if (ma == NULL && u != (inet6 *) U)
 			GDKfree(u);
 		return NULL;
+	}
+	if (u != (inet6 *) U) {
+		if (ma == NULL)
+			GDKfree(U);
+		*dstlen = cnt * sizeof(inet6);
 	}
 	return u;
 }
@@ -2000,21 +2015,27 @@ BLOBread(allocator *ma, void *A, size_t *dstlen, stream *s, size_t cnt)
 
 	(void) cnt;
 	assert(cnt == 1);
-	if (mnstr_readLng(s, &len) != 1 || len < 0)
+	if (mnstr_readLng(s, &len) != 1 || len < 0) {
 		return NULL;
+	}
 	if (a == NULL || (lng) *dstlen < len) {
 		if (ma) {
 			a = ma_realloc(ma, a, (size_t) len, *dstlen);
 		} else {
-			GDKfree(a);
 			a = GDKmalloc((size_t) len);
 		}
 		if (a == NULL)
 			return NULL;
-		*dstlen = (size_t) len;
 	}
 	if (mnstr_read(s, (char *) a, (size_t) len, 1) != 1) {
+		if (ma == NULL && a != (blob *) A)
+			GDKfree(a);
 		return NULL;
+	}
+	if (a != (blob *) A) {
+		if (ma == NULL)
+			GDKfree(A);
+		*dstlen = (size_t) len;
 	}
 	return a;
 }

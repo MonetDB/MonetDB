@@ -4403,22 +4403,15 @@ sql_trans_commit(sql_trans *tr)
 					ok = c->log(tr, c);
 			}
 			if (ok == LOG_OK && !list_empty(store->seqchanges)) {
-				//sequences_lock(store);
 				for(node *n = store->seqchanges->h; n; ) {
 					node *next = n->next;
 					log_store_sequence(store, n->data);
 					list_remove_node(store->seqchanges, NULL, n);
 					n = next;
 				}
-				//sequences_unlock(store);
 			}
-			if (ok == LOG_OK && store->prev_oid != (sqlid) ATOMIC_GET(&store->obj_id)) {
-				if (!flush)
-					MT_lock_set(&store->flush);
+			if (ok == LOG_OK && store->prev_oid != (sqlid) ATOMIC_GET(&store->obj_id))
 				ok = store->logger_api.log_tsequence(store, OBJ_SID, (sqlid) ATOMIC_GET(&store->obj_id));
-				if (!flush)
-					MT_lock_unset(&store->flush);
-			}
 			store->prev_oid = (sqlid) ATOMIC_GET(&store->obj_id);
 
 
