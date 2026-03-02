@@ -953,7 +953,7 @@ rel2bin_oahash_fullouterjoin(backend *be, sql_rel *rel, list *refs)
 
 	if (list_empty(jexps)) { /* cartesian */
 		sub = rel2bin_oahash_cart(be, rel, refs, stmts_ht, &probed_ids, &probe_sub, &probe_side, &hash_side, &hash_ids, &hf);
-		hsh_mrk = stmt_mirror(be, hash_ids);
+		hsh_mrk = hash_ids;
 		if (!shared_hp && !list_empty(rel_hsh->exps) /*|| !list_empty(rel_hsh->attr)*/)
 			shared_hp = shared_ht;
 	} else {
