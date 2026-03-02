@@ -193,7 +193,8 @@ avg_num_deltas(lng)
 			goto cleanup;					\
 		populate_segment_tree(avg_num_deltas##TPE, ncount, INIT_AGGREGATE_AVG_NUM, COMPUTE_LEVEL0_AVG_NUM, COMPUTE_LEVELN_AVG_NUM, TPE, NOTHING, NOTHING); \
 		for (; k < i; k++)					\
-			compute_on_segment_tree(avg_num_deltas##TPE, start[k] - j, end[k] - j, INIT_AGGREGATE_AVG_NUM, COMPUTE_LEVELN_AVG_NUM, FINALIZE_AGGREGATE_AVG_NUM, TPE, NOTHING, NOTHING); \
+			if ((lng)(start[k]-j) >= 0)				\
+				compute_on_segment_tree(avg_num_deltas##TPE, start[k] - j, end[k] - j, INIT_AGGREGATE_AVG_NUM, COMPUTE_LEVELN_AVG_NUM, FINALIZE_AGGREGATE_AVG_NUM, TPE, NOTHING, NOTHING); \
 		j = k;							\
 	} while (0)
 
@@ -297,7 +298,8 @@ avg_fp_deltas(dbl)
 			goto cleanup;					\
 		populate_segment_tree(avg_fp_deltas_##TPE, ncount, INIT_AGGREGATE_AVG_FP, COMPUTE_LEVEL0_AVG_FP, COMPUTE_LEVELN_AVG_FP, TPE, NOTHING, NOTHING); \
 		for (; k < i; k++)					\
-			compute_on_segment_tree(avg_fp_deltas_##TPE, start[k] - j, end[k] - j, INIT_AGGREGATE_AVG_FP, COMPUTE_LEVELN_AVG_FP, FINALIZE_AGGREGATE_AVG_FP, TPE, NOTHING, NOTHING); \
+			if ((lng)(start[k]-j) >= 0)				\
+				compute_on_segment_tree(avg_fp_deltas_##TPE, start[k] - j, end[k] - j, INIT_AGGREGATE_AVG_FP, COMPUTE_LEVELN_AVG_FP, FINALIZE_AGGREGATE_AVG_FP, TPE, NOTHING, NOTHING); \
 		j = k;							\
 	} while (0)
 
@@ -577,7 +579,8 @@ avg_int_deltas(lng)
 			goto cleanup;					\
 		populate_segment_tree(avg_int_deltas_##TPE, ncount, INIT_AGGREGATE_AVG_INT, COMPUTE_LEVEL0_AVG_INT, COMPUTE_LEVELN_AVG_INT, TPE, NOTHING, NOTHING); \
 		for (; k < i; k++)					\
-			compute_on_segment_tree(avg_int_deltas_##TPE, start[k] - j, end[k] - j, INIT_AGGREGATE_AVG_INT, COMPUTE_LEVELN_AVG_INT, FINALIZE_AGGREGATE_AVG_INT, TPE, NOTHING, NOTHING); \
+			if ((lng)(start[k]-j) >= 0)				\
+				compute_on_segment_tree(avg_int_deltas_##TPE, start[k] - j, end[k] - j, INIT_AGGREGATE_AVG_INT, COMPUTE_LEVELN_AVG_INT, FINALIZE_AGGREGATE_AVG_INT, TPE, NOTHING, NOTHING); \
 		j = k;							\
 	} while (0)
 
@@ -847,7 +850,8 @@ typedef struct stdev_var_deltas {
 			goto cleanup;					\
 		populate_segment_tree(stdev_var_deltas, ncount, INIT_AGGREGATE_STDEV_VARIANCE, COMPUTE_LEVEL0_STDEV_VARIANCE, COMPUTE_LEVELN_STDEV_VARIANCE, TPE, SAMPLE, OP); \
 		for (; k < i; k++)					\
-			compute_on_segment_tree(stdev_var_deltas, start[k] - j, end[k] - j, INIT_AGGREGATE_STDEV_VARIANCE, COMPUTE_LEVELN_STDEV_VARIANCE, FINALIZE_AGGREGATE_STDEV_VARIANCE, TPE, SAMPLE, OP); \
+			if ((lng)(start[k]-j) >= 0)				\
+				compute_on_segment_tree(stdev_var_deltas, start[k] - j, end[k] - j, INIT_AGGREGATE_STDEV_VARIANCE, COMPUTE_LEVELN_STDEV_VARIANCE, FINALIZE_AGGREGATE_STDEV_VARIANCE, TPE, SAMPLE, OP); \
 		j = k;							\
 	} while (0)
 
@@ -1132,7 +1136,8 @@ typedef struct covariance_deltas {
 			goto cleanup;					\
 		populate_segment_tree(covariance_deltas, ncount, INIT_AGGREGATE_COVARIANCE, COMPUTE_LEVEL0_COVARIANCE, COMPUTE_LEVELN_COVARIANCE, TPE, SAMPLE, OP); \
 		for (; k < i; k++)					\
-			compute_on_segment_tree(covariance_deltas, start[k] - j, end[k] - j, INIT_AGGREGATE_COVARIANCE, COMPUTE_LEVELN_COVARIANCE, FINALIZE_AGGREGATE_COVARIANCE, TPE, SAMPLE, OP); \
+			if ((lng)(start[k]-j) >= 0)				\
+				compute_on_segment_tree(covariance_deltas, start[k] - j, end[k] - j, INIT_AGGREGATE_COVARIANCE, COMPUTE_LEVELN_COVARIANCE, FINALIZE_AGGREGATE_COVARIANCE, TPE, SAMPLE, OP); \
 		j = k;							\
 	} while (0)
 
@@ -1397,7 +1402,8 @@ typedef struct correlation_deltas {
 			goto cleanup;					\
 		populate_segment_tree(correlation_deltas, ncount, INIT_AGGREGATE_CORRELATION, COMPUTE_LEVEL0_CORRELATION, COMPUTE_LEVELN_CORRELATION, TPE, SAMPLE, OP); \
 		for (; k < i; k++)					\
-			compute_on_segment_tree(correlation_deltas, start[k] - j, end[k] - j, INIT_AGGREGATE_CORRELATION, COMPUTE_LEVELN_CORRELATION, FINALIZE_AGGREGATE_CORRELATION, TPE, SAMPLE, OP); \
+			if ((lng)(start[k]-j) >= 0)				\
+				compute_on_segment_tree(correlation_deltas, start[k] - j, end[k] - j, INIT_AGGREGATE_CORRELATION, COMPUTE_LEVELN_CORRELATION, FINALIZE_AGGREGATE_CORRELATION, TPE, SAMPLE, OP); \
 		j = k;							\
 	} while (0)
 

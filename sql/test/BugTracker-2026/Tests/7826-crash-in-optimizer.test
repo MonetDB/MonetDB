@@ -1,0 +1,45 @@
+query II
+select  
+  subq_1.c1 as c0, 
+  subq_1.c1 as c1
+from 
+  (select  
+        subq_0.c2 as c0, 
+        subq_0.c2 as c1
+      from 
+        (select  
+              ref_0.session_attr as c0, 
+              66 as c1, 
+              ref_0.session_attr as c2
+            from 
+              clientinfo_properties as ref_0
+            where ((true) 
+                or (EXISTS (
+                  select  
+                      ref_1.view1_schema_id as c0, 
+                      ref_0.session_attr as c1, 
+                      ref_0.prop as c2
+                    from 
+                      dependency_views_on_views as ref_1
+                    where true
+                    limit 66))) 
+              or (((false) 
+                  or (ref_0.session_attr is NULL)) 
+                or (ref_0.session_attr is not NULL))) as subq_0
+      where ((subq_0.c2 is NULL) 
+          or (((subq_0.c2 is not NULL) 
+              or (subq_0.c0 is not NULL)) 
+            and (false))) 
+        and (false)) as subq_1
+where ((subq_1.c0 is not NULL) 
+    and (subq_1.c1 is not NULL)) 
+  or (((subq_1.c0 is not NULL) 
+      and ((true) 
+        or (((true) 
+            and ((subq_1.c0 is not NULL) 
+              and (subq_1.c0 is not NULL))) 
+          and (subq_1.c0 is not NULL)))) 
+    and (subq_1.c0 is not NULL))
+limit 77
+----
+

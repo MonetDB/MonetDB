@@ -958,12 +958,12 @@ push_up_project(mvc *sql, sql_rel *rel, list *ad)
 
 				if (is_left(rel->op) && !list_empty(rel->attr)) {
 				   	if (list_empty(rel->exps)) {
-						sql_exp *oe = rel->attr->h->data;
+						sql_exp *oe = exp_copy(sql, rel->attr->h->data);
 						rel_project_add_exp(sql, l, oe);
 					} else {
 						assert(list_length(rel->exps)==1);
 						sql_exp *e = exp_copy(sql, rel->exps->h->data);
-						sql_exp *oe = rel->attr->h->data;
+						sql_exp *oe = exp_copy(sql, rel->attr->h->data);
 						rel_project_add_exp(sql, l, e);
 						if (exp_is_atom(oe) && exp_is_false(oe))
 							e->flag = cmp_notequal;
@@ -1468,7 +1468,7 @@ push_up_join(mvc *sql, sql_rel *rel, list *ad)
 				sql_rel *n, *nr, *nj, *nl;
 				list *inner_exps = exps_copy(sql, j->exps);
 				list *outer_exps = exps_copy(sql, rel->exps);
-				list *attr = j->attr;
+				list *attr = j->attr?exps_copy(sql, j->attr):NULL;
 				int single = is_single(j);
 
 				rel->r = rel_dup(jl);
@@ -1538,7 +1538,7 @@ push_up_join(mvc *sql, sql_rel *rel, list *ad)
 				if (is_single(j))
 					set_single(nj);
 				nj->exps = exps_copy(sql, j->exps);
-				nj->attr = j->attr;
+				nj->attr = j->attr?exps_copy(sql, j->attr):NULL;
 				set_processed(nj);
 				rel_destroy(sql, j);
 				j = nj;
@@ -1554,7 +1554,7 @@ push_up_join(mvc *sql, sql_rel *rel, list *ad)
 				if (is_single(j))
 					set_single(nj);
 				nj->exps = exps_copy(sql, j->exps);
-				nj->attr = j->attr;
+				nj->attr = j->attr?exps_copy(sql, j->attr):NULL;
 				set_processed(nj);
 				rel_destroy(sql, j);
 				j = nj;
