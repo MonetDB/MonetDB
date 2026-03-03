@@ -1456,9 +1456,9 @@ cs_update_bat( sql_trans *tr, sql_delta **batp, sql_table *t, BAT *tids, BAT *up
 			BUN i = 0;
 			while ( seg && res == LOG_OK && i < ucnt) {
 				oid rid = canditer_next(&ci);
-				if (seg->end <= rid)
+				while (seg->end <= rid)
 					seg = ATOMIC_PTR_GET(&seg->next);
-				else if (seg->start <= rid && seg->end > rid) {
+				if (seg->start <= rid && seg->end > rid) {
 					/* check for delete conflicts */
 					if (seg->ts >= tr->ts && seg->deleted) {
 						res = LOG_CONFLICT;
