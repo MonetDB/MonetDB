@@ -18,3 +18,6 @@ HAVE_CUDF?capi15
 HAVE_CUDF?capi16
 HAVE_CUDF?capi17
 HAVE_CUDF?capi18
+
+HAVE_CUDF?7285-cudf-grouped-aggr
+HAVE_CUDF?7525-cudf-aggr-var-input
