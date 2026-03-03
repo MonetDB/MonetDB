@@ -47,6 +47,14 @@ rel_properties(visitor *v, sql_rel *rel)
 			(rel->op != op_insert && ol_length(t->keys)) ||
 			(rel->op == op_delete && !rel->r);
 	}
+	if (is_groupby(rel->op) && rel->exps) {
+		for(node *n = rel->exps->h; n; n = n->next) {
+			sql_exp *e = n->data;
+                        sql_subfunc *sf = e->f;
+			if (e->type == e_aggr && sf->func->type == F_AGGR && !sf->func->s && !strcmp(sf->func->base.name, "fsum"))  /* handle fsum use classic */
+				gp->complex_modify |= 1;
+		}
+	}
 	return rel;
 }
 

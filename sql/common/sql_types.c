@@ -1176,6 +1176,7 @@ sqltypeinit( allocator *sa)
 	for (t = floats; t < dates; t++) {
 		sql_create_aggr(sa, "sum", "aggr", "sum", FALSE, FALSE, *t, 1, *t);
 		sql_create_aggr(sa, "prod", "aggr", "prod", FALSE, FALSE, *t, 1, *t);
+		sql_create_aggr(sa, "fsum", "aggr", "sum", FALSE, FALSE, *t, 1, *t);
 	}
 	sql_create_aggr(sa, "sum", "aggr", "sum", FALSE, FALSE, MONINT, 1, MONINT);
 	sql_create_aggr(sa, "sum", "aggr", "sum", FALSE, FALSE, DAYINT, 1, DAYINT);
