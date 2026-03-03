@@ -32,5 +32,16 @@ HAVE_LIBPY3?pyloader3_01
 HAVE_LIBPY3?pyloader3_02
 HAVE_LIBPY3?pyloader3_05
 
+HAVE_LIBPY3?6385-aggr_udf_with_more_than_2params
+HAVE_LIBPY3?6444-table_returning_with
+HAVE_LIBPY3?6464-python_loader_clobbers_default_with_null
 HAVE_LIBPY3?6508-pyUDF-crash
-
+HAVE_LIBPY3?6726-python-aggregate-no-groups
+HAVE_LIBPY3?6759-python-loader-string
+HAVE_LIBPY3?6797-python3-udf-modules
+HAVE_LIBPY3?7138-python-aggregates-void-bat
+HAVE_LIBPY3?7142-aggregates-tables
+HAVE_LIBPY3?7158-python-aggregates-empty
+HAVE_LIBPY3?7206-python-empty-arrays
+HAVE_LIBPY3?7252-python-udf-inside-udf
+HAVE_LIBPY3?7422-aggregate-vararg
