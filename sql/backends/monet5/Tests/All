@@ -1,11 +1,5 @@
 optimizers
 
-# should this work?
-#inlineUDF
-
-# disabled for now
-#Mbeddedsql5--help
-
 simpleSQL
 limithack
 shutdown
