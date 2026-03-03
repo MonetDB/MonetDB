@@ -1252,16 +1252,18 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 		}
 
 		if ((c->storage_type || nc->storage_type) && (!c->storage_type || !nc->storage_type || strcmp(c->storage_type, nc->storage_type) != 0)) {
-			if (c->t->access == TABLE_WRITABLE)
+			if (c->t->access == TABLE_WRITABLE && (c->storage_type == NULL || strcmp(c->storage_type, "USTR") != 0))
 				throw(SQL,"sql.alter_table", SQLSTATE(40002) "ALTER TABLE: SET STORAGE for column %s.%s only allowed on READ or INSERT ONLY tables", c->t->base.name, c->base.name);
 			switch (mvc_storage(sql, nc, c->storage_type)) {
-				case -1:
-					throw(SQL,"sql.alter_table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-				case -2:
-				case -3:
-					throw(SQL,"sql.alter_table", SQLSTATE(42000) "ALTER TABLE: SET STORAGE transaction conflict detected");
-				default:
-					break;
+			case -1:
+				throw(SQL,"sql.alter_table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			case -2:
+			case -3:
+				throw(SQL,"sql.alter_table", SQLSTATE(42000) "ALTER TABLE: SET STORAGE transaction conflict detected");
+			case -4:
+				throw(SQL, "sql.alter_table", SQLSTATE(42000) "ALTER TABLE: SET STORAGE error converting column");
+			default:
+				break;
 			}
 		}
 		if (subtype_cmp(&c->type, &nc->type) != 0) {

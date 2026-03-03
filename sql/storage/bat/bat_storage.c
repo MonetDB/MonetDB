@@ -2342,7 +2342,7 @@ append_col(sql_trans *tr, sql_column *c, BUN offset, BAT *offsets, void *data, B
 	if ((delta = bind_col_data(tr, c, NULL)) == NULL)
 		return LOG_ERR;
 
-	assert(delta->cs.st == ST_DEFAULT || delta->cs.st == ST_DICT || delta->cs.st == ST_FOR);
+	assert(delta->cs.st == ST_DEFAULT || delta->cs.st == ST_DICT || delta->cs.st == ST_FOR || delta->cs.st == ST_USTR);
 
 	odelta = delta;
 	if ((res = append_col_execute(tr, &delta, c, offset, offsets, data, cnt, isbat, tpe, c->storage_type)) != LOG_OK)
@@ -2731,7 +2731,7 @@ set_stats_col(sql_trans *tr, sql_column *c, double *unique_est, char *min, char 
 	lock_column(tr->store, c);
 	if (unique_est) {
 		sql_delta *d;
-		if ((d = ATOMIC_PTR_GET(&c->data)) && d->cs.st == ST_DEFAULT) {
+		if ((d = ATOMIC_PTR_GET(&c->data)) && (d->cs.st == ST_DEFAULT || d->cs.st == ST_USTR)) {
 			BAT *b;
 			if ((b = bind_col_no_view(tr, c, RDONLY))) {
 				MT_lock_set(&b->theaplock);
@@ -2889,6 +2889,9 @@ double_elim_col(sql_trans *tr, sql_column *col)
 				de = 1;
 			else if (b && b->ttype == TYPE_sht)
 				de = 2;
+		} else if (d->cs.st == ST_USTR) {
+			BAT *b = bind_col(tr, col, QUICK);
+			de = b->twidth;
 		}
 	} else if (col && ATOMstorage(col->type.type->localtype) == TYPE_str && ATOMIC_PTR_GET(&col->data)) {
 		BAT *b = bind_col(tr, col, QUICK);
@@ -2941,7 +2944,7 @@ col_stats(sql_trans *tr, sql_column *c, bool *nonil, bool *unique, double *uniqu
 					ok |= 2;
 			}
 			if (d->cs.ucnt == 0) {
-				if (d->cs.st == ST_DEFAULT) {
+				if (d->cs.st == ST_DEFAULT || d->cs.st == ST_USTR) {
 					*unique = bi.key;
 					*unique_est = bi.unique_est;
 					if (*unique_est == 0)
@@ -3193,6 +3196,8 @@ create_col(sql_trans *tr, sql_column *c)
 				bat->cs.st = ST_DICT;
 			} else if (strncmp(c->storage_type, "FOR", 3) == 0) {
 				bat->cs.st = ST_FOR;
+			} else if (strcmp(c->storage_type, "USTR") == 0) {
+				bat->cs.st = ST_USTR;
 			}
 		}
 		return ok;
@@ -3804,7 +3809,7 @@ clear_cs(sql_trans *tr, column_storage *cs, bool renew, bool temp)
 	BUN sz = 0;
 
 	(void)tr;
-	assert(cs->st == ST_DEFAULT || cs->st == ST_DICT || cs->st == ST_FOR);
+	assert(cs->st == ST_DEFAULT || cs->st == ST_DICT || cs->st == ST_FOR || cs->st == ST_USTR);
 	if (cs->bid && renew) {
 		b = quick_descriptor(cs->bid);
 		if (b) {

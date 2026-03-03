@@ -199,6 +199,7 @@ typedef enum storage_type {
 	ST_DEFAULT = 0,
 	ST_DICT,
 	ST_FOR,
+	ST_USTR,
 } storage_type;
 
 typedef int (*col_compress_fptr) (sql_trans *tr, sql_column *c, storage_type st, BAT *offsets, BAT *vals);

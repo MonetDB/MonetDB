@@ -1933,7 +1933,7 @@ bailout:
 }
 
 static int
-dump_table_storage(Mapi mid, const char *schema, const char *tname, stream *sqlf)
+dump_table_storage(Mapi mid, const char *schema, const char *tname, stream *sqlf, bool after)
 {
 	char *query = NULL;
 	size_t maxquerylen;
@@ -1951,10 +1951,10 @@ dump_table_storage(Mapi mid, const char *schema, const char *tname, stream *sqlf
 
 	snprintf(query, maxquerylen,
 			 "SELECT name, storage FROM sys._columns "
-			 "WHERE storage IS NOT NULL "
+			 "WHERE storage %s LIKE 'USTR' "
 			 "AND table_id = (SELECT id FROM sys._tables WHERE name = '%s' "
 			 "AND schema_id = (SELECT id FROM sys.schemas WHERE name = '%s'))",
-			 t, s);
+			 after ? "NOT" : "", t, s);
 	if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid))
 		goto bailout;
 	while ((mapi_fetch_row(hdl)) != 0) {
@@ -1999,27 +1999,29 @@ dump_table_access(Mapi mid, const char *schema, const char *tname, stream *sqlf)
 
 	snprintf(query, maxquerylen,
 			 "SELECT t.access FROM sys._tables t, sys.schemas s "
-			 "WHERE s.name = '%s' AND t.schema_id = s.id AND t.name = '%s'",
+			 "WHERE s.name = '%s' AND t.schema_id = s.id AND t.name = '%s' AND t.access in (1, 2)",
 			 s, t);
 	if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid))
 		goto bailout;
-	if (mapi_rows_affected(hdl) != 1) {
-		if (mapi_rows_affected(hdl) == 0)
-			fprintf(stderr, "table %s.%s does not exist\n", schema, tname);
-		else
-			fprintf(stderr, "table %s.%s is not unique\n", schema, tname);
+	switch (mapi_rows_affected(hdl)) {
+	case 0:
+		break;
+	case 1:
+		while ((mapi_fetch_row(hdl)) != 0) {
+			const char *access = mapi_fetch_field(hdl, 0);
+			if (access && (*access == '1' || *access == '2')) {
+				mnstr_printf(sqlf, "ALTER TABLE ");
+				dquoted_print(sqlf, schema, ".");
+				dquoted_print(sqlf, tname, " ");
+				mnstr_printf(sqlf, "SET %s ONLY;\n", *access == '1' ? "READ" : "INSERT");
+			}
+		}
+		rc = 0;						/* success */
+		break;
+	default:
+		fprintf(stderr, "table %s.%s is not unique\n", schema, tname);
 		goto bailout;
 	}
-	while ((mapi_fetch_row(hdl)) != 0) {
-		const char *access = mapi_fetch_field(hdl, 0);
-		if (access && (*access == '1' || *access == '2')) {
-			mnstr_printf(sqlf, "ALTER TABLE ");
-			dquoted_print(sqlf, schema, ".");
-			dquoted_print(sqlf, tname, " ");
-			mnstr_printf(sqlf, "SET %s ONLY;\n", *access == '1' ? "READ" : "INSERT");
-		}
-	}
-	rc = 0;						/* success */
   bailout:
 	free(query);
 	free(s);
@@ -2204,11 +2206,13 @@ dump_table(Mapi mid, const char *schema, const char *tname, stream *sqlf,
 
 	rc = describe_table(mid, schema, tname, sqlf, foreign, databaseDump);
 	if (rc == 0)
-		rc = dump_table_storage(mid, schema, tname, sqlf);
+		rc = dump_table_storage(mid, schema, tname, sqlf, false);
 	if (rc == 0 && !describe)
 		rc = dump_table_data(mid, schema, tname, sqlf, ddir, ext, useInserts, noescape);
 	if (rc == 0)
 		rc = dump_table_access(mid, schema, tname, sqlf);
+	if (rc == 0)
+		rc = dump_table_storage(mid, schema, tname, sqlf, true);
 	if (rc == 0 && !databaseDump)
 		rc = dump_table_defaults(mid, schema, tname, sqlf);
   doreturn:
