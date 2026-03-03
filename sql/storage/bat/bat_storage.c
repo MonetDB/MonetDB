@@ -1586,13 +1586,9 @@ cs_update_bat( sql_trans *tr, sql_delta **batp, sql_table *t, BAT *tids, BAT *up
 
 							/* handle dense (void) cases together as we need to merge updates (which is slower anyway) */
 							BUN uip = 0, uie = BATcount(ui);
-							oid uiseqb = ui->tseqbase;
-							oid *uipt = NULL;
 							BATiter uii = bat_iterator(ui);
-							if (!BATtdensebi(&uii))
-								uipt = uii.base;
 							while (uip < uie && ci.next < ci.ncand && res == LOG_OK) {
-								oid uiv = (uipt)?uipt[uip]: uiseqb+uip;
+								oid uiv = *(oid*)BUNtail(&uii, uip);
 								oid niv = canditer_peek(&ci);
 
 								if (uiv < niv) {
@@ -1627,7 +1623,7 @@ cs_update_bat( sql_trans *tr, sql_delta **batp, sql_table *t, BAT *tids, BAT *up
 								}
 							}
 							while (uip < uie && res == LOG_OK) {
-								oid uiv = (uipt)?uipt[uip]: uiseqb+uip;
+								oid uiv = *(oid*)BUNtail(&uii, uip);
 								upd = BUNtail(&ovi, uip);
 								if (BUNappend(nui, (ptr) &uiv, true) != GDK_SUCCEED ||
 										BUNappend(nuv, (ptr) upd, true) != GDK_SUCCEED)
@@ -1652,17 +1648,14 @@ cs_update_bat( sql_trans *tr, sql_delta **batp, sql_table *t, BAT *tids, BAT *up
 							/* handle dense (void) cases together as we need to merge updates (which is slower anyway) */
 							BUN uip = 0, uie = BATcount(ui);
 							BUN nip = 0, nie = BATcount(tids);
-							oid uiseqb = ui->tseqbase;
 							oid niseqb = tids->tseqbase;
-							oid *uipt = NULL, *nipt = NULL;
+							oid *nipt = NULL;
 							BATiter uii = bat_iterator(ui);
 							BATiter tidsi = bat_iterator(tids);
-							if (!BATtdensebi(&uii))
-								uipt = uii.base;
 							if (!BATtdensebi(&tidsi))
 								nipt = tidsi.base;
 							while (uip < uie && nip < nie && res == LOG_OK) {
-								oid uiv = (uipt)?uipt[uip]: uiseqb+uip;
+								oid uiv = *(oid*)BUNtail(&uii, uip);
 								oid niv = (nipt)?nipt[nip]: niseqb+nip;
 
 								if (uiv < niv) {
@@ -1697,7 +1690,7 @@ cs_update_bat( sql_trans *tr, sql_delta **batp, sql_table *t, BAT *tids, BAT *up
 								}
 							}
 							while (uip < uie && res == LOG_OK) {
-								oid uiv = (uipt)?uipt[uip]: uiseqb+uip;
+								oid uiv = *(oid*)BUNtail(&uii, uip);
 								upd = BUNtail(&ovi, uip);
 								if (BUNappend(nui, (ptr) &uiv, true) != GDK_SUCCEED ||
 										BUNappend(nuv, (ptr) upd, true) != GDK_SUCCEED)
