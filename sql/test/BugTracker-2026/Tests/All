@@ -35,4 +35,5 @@ KNOWNFAIL?7801-assertion-failure
 7818-out-of-bounds-analytics
 7820-mergeors-reset-list
 7826-crash-in-optimizer
+KNOWNFAIL?7832-strcmp-NULL-crash.test
 7836-use-after-free
