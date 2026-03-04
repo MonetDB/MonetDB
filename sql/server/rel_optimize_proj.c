@@ -2701,6 +2701,85 @@ rel_remove_const_aggr(visitor *v, sql_rel *rel)
 	return rel;
 }
 
+static sql_rel *
+rel_use_equality_exps(visitor *v, sql_rel *rel)
+{
+	bool gb = false;
+	if (!rel || rel_is_ref(rel) ||
+	   !((gb = (is_groupby(rel->op) && rel->r)) || (is_project(rel->op) && need_distinct(rel))))
+		return rel;
+	sql_rel *j = rel->l;
+	if (!j || rel_is_ref(j) || j->op != op_join || list_empty(j->exps))
+		return rel;
+	/* rewrite group by expressions to the one side of the join,
+	   if all exps come from one side we should be able to simplify the join later.
+	 */
+	list *gbe = gb?rel->r:rel->exps;
+	int lscnt = 0, rscnt = 0, lcnt = 0, rcnt = 0;
+	for(node *n = gbe->h; n; n = n->next) {
+		sql_exp *e = n->data;
+
+		if (e->type == e_column) {
+			int l = rel_find_exp(j->l, e) != NULL;
+			int r = rel_find_exp(j->r, e) != NULL;
+			lcnt += l;
+			rcnt += r;
+			for(node *m = j->exps->h; m; m = m->next) {
+				sql_exp *je = m->data;
+				if (je->type == e_cmp && je->flag == cmp_equal && !is_anti(je)) {
+					/* this assumes a true join expression ! */
+					int eq = exp_equal(e, je->l) == 0 || exp_equal(e, je->r) == 0;
+					if (eq) {
+						lscnt += l;
+						rscnt += r;
+					}
+				}
+			}
+		}
+	}
+	if ((lcnt+rcnt) != list_length(gbe) || !(lscnt+rscnt) || !lcnt || !rcnt)
+		return rel;
+	if (lscnt == lcnt || rscnt == rcnt) {
+		int lside = (lscnt == lcnt);
+		int scnt = lside?lscnt:rscnt;
+		sql_rel *js = (lside)?j->l:j->r;
+		list *ngbe = sa_list(v->sql->sa);
+		for(node *n = gbe->h; n; n = n->next) {
+			sql_exp *e = n->data;
+
+			if (e->type == e_column && scnt) {
+				if (rel_find_exp(js, e) != NULL) {
+					for(node *m = j->exps->h; m; m = m->next) {
+						sql_exp *je = m->data;
+						if (je->type == e_cmp && je->flag == cmp_equal && !is_anti(je)) {
+							int le = exp_equal(e, je->l) == 0;
+							int re = exp_equal(e, je->r) == 0;
+							if (le || re) {
+								scnt--;
+								sql_exp *ne = NULL;
+								if (le)
+									ne = exp_ref(v->sql, je->r);
+								else
+									ne = exp_ref(v->sql, je->l);
+								exp_prop_alias(v->sql->sa, ne, e);
+								e = ne;
+								break;
+							}
+						}
+					}
+				}
+			}
+			append(ngbe, e);
+		}
+		v->changes++;
+		if (gb)
+			rel->r = ngbe;
+		else
+			rel->exps = ngbe;
+	}
+	return rel;
+}
+
 #if 0
 static sql_rel *
 rel_groupby_distinct2(visitor *v, sql_rel *rel)
@@ -3186,6 +3265,7 @@ rel_optimize_projections_(visitor *v, sql_rel *rel)
 {
 	rel = rel_project_cse(v, rel);
 	rel = rel_project_select_exp(v, rel);
+	rel = rel_use_equality_exps(v, rel);
 
 	if (!rel || !is_groupby(rel->op))
 		return rel;
