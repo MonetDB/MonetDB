@@ -71,7 +71,7 @@ typedef struct {
 		if (ATOMextern(mut->args[0].b->ttype)) {						\
 			for (;;) {													\
 				void *v = NULL;											\
-				msg = (*(MALfcn##N##ptr mut->pci->fcn))(mut->cntxt, &v, __VA_ARGS__); \
+				msg = (*(MALfcn##N##ptr mfcn))(mut->cntxt, &v, __VA_ARGS__); \
 				if (msg)												\
 					goto bunins_failed;									\
 				if (bunfastapp(mut->args[0].b, v) != GDK_SUCCEED) {		\
@@ -104,7 +104,7 @@ typedef struct {
 			void *v = mut->args[0].first;								\
 			size_t w = mut->args[0].b->twidth;							\
 			for (;;) {													\
-				msg = (*(MALfcn##N mut->pci->fcn))(mut->cntxt, v, __VA_ARGS__);		\
+				msg = (*(MALfcn##N mfcn))(mut->cntxt, v, __VA_ARGS__);		\
 				if (msg)												\
 					goto bunins_failed;									\
 				if (++oo == olimit)										\
@@ -136,7 +136,7 @@ typedef struct {
 // Only the last error message is returned, the value of
 // an erroneous call depends on the operator itself.
 static str
-MANIFOLDjob(MULTItask *mut)
+MANIFOLDjob(MULTItask *mut, MALfcn mfcn)
 {
 	int i;
 	char **args;
@@ -389,10 +389,7 @@ MANIFOLDevaluate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		goto wrapup;
 	}
 
-	MALfcn ofcn = mut.pci->fcn;
-	mut.pci->fcn = fcn;
-	msg = MANIFOLDjob(&mut);
-	mut.pci->fcn = ofcn;
+	msg = MANIFOLDjob(&mut, fcn);
 
   wrapup:
 	// restore the argument types

@@ -142,7 +142,15 @@ handleClient(void *data)
 #endif
 			MONETDB5_PASSWDHASH
 			);
-	mnstr_flush(fout, MNSTR_FLUSH_DATA);
+	if (mnstr_flush(fout, MNSTR_FLUSH_DATA) != 0) {
+		/* We succesfully accepted a connection but writing to it failed
+		 * immediately. This is likely to be a TCP-based health check that
+		 * closed the connection as soon as it was accepted. */
+		close_stream(fout);
+		close_stream(fdin);
+		self->dead = true;
+		return NO_ERR;
+	}
 
 	/* get response */
 	buf[0] = '\0';
