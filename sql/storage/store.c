@@ -4199,8 +4199,6 @@ sql_trans_copy_column( sql_trans *tr, sql_table *t, sql_column *c, sql_column **
 	/* flatten vector types */
 	if (c->type.multiset == MS_VECTOR) {
 		uint8_t localtype = c->type.type->localtype;
-		// should be flt or dbl
-		assert(localtype==TYPE_flt || localtype==TYPE_dbl);
 		size_t ncols = c->type.digits;
 		sql_subtype tp = *sql_fetch_localtype(localtype);
 		for (size_t i=0; i < ncols; i++) {
