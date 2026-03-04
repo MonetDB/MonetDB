@@ -40,3 +40,4 @@ KNOWNFAIL?7833-assertion-failure
 7834-BATsubcross-more-than-one-match
 7835-strcmp-NULL-crash
 7836-use-after-free
+7837-crash
