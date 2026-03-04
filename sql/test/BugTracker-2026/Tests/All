@@ -41,4 +41,4 @@ KNOWNFAIL?7833-assertion-failure
 7835-strcmp-NULL-crash
 7836-use-after-free
 7837-crash
-KNOWNFAIL?7838-crash
+7838-crash
