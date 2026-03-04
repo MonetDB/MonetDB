@@ -430,6 +430,7 @@ int yydebug=1;
 	opt_array_bounds
 	as_subquery_clause
 	assignment_commalist
+	opt_assignment_commalist
 	authid_list
 	case_opt_else_statement
 	column_commalist_parens
@@ -3762,6 +3763,11 @@ assignment:
 		}
 	;
 
+opt_assignment_commalist:
+		'(' assignment_commalist ')'	{ $$ = $2; }
+	| 	/* empty */			{ $$ = NULL; }
+	;
+
 opt_where_clause:
 		/* empty */			{ $$ = NULL; }
 	|	WHERE scalar_exp	{ $$ = $2; }
@@ -4237,7 +4243,20 @@ table_ref:
 			append_symbol(l, $2);
 			$$ = _symbol_create_list(SQL_NAME, l);
 		}
-	|	string opt_table_name
+	|	sqlLOADER '(' assignment_commalist ')' opt_table_name
+		{
+			dlist *f = L();
+			append_list(f, append_string(L(), "loader"));
+			append_int(f, FALSE); /* ignore distinct */
+			append_list(f, $3);
+
+			dlist *l = L();
+			append_symbol(l, _symbol_create_list( SQL_NOP, f));
+			append_int(l, 0);
+			append_symbol(l, $5);
+			$$ = _symbol_create_list(SQL_TABLE, l);
+		}
+	|	string opt_assignment_commalist opt_table_name
 		{
 			dlist *f = L();
 			const char *s = $1;
@@ -4256,7 +4275,7 @@ table_ref:
 			append_symbol(l, _symbol_create_list( SQL_NOP, f));
 
 			append_int(l, 0);
-			append_symbol(l, $2);
+			append_symbol(l, $3);
 			$$ = _symbol_create_list(SQL_TABLE, l);
 		}
 	|	func_ref opt_table_name
