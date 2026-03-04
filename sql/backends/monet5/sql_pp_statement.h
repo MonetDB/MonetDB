@@ -67,7 +67,7 @@ extern int stmt_concat_barrier_end(backend *be, int barrier);
 extern int stmt_concat_add_source(backend *be);
 extern int stmt_concat_add_subconcat(backend *be, int p_source, int p_concatcnt );
 
-extern int pp_counter(backend *be, int nr_slices, int var_nr_slices);
+extern int pp_counter(backend *be, int nr_slices, int var_nr_slices, bool sync);
 extern int pp_counter_get(backend *be, int counter);
 
 extern int pp_claim(backend *be, int resultset, int nrrows);

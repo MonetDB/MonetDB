@@ -1013,7 +1013,7 @@ rel2bin_oahash_fullouterjoin(backend *be, sql_rel *rel, list *refs)
 	if (!sub) return NULL;
 
 	if (be->concatcnt == 0) {/* add dummy source */
-		int source = pp_counter(be, 1, -1);
+		int source = pp_counter(be, 1, -1, false); 
 		stmt_concat_add_source(be);
 		(void)pp_counter_get(be, source); /* use source else statement gets garbage collected */
 	}
@@ -1022,7 +1022,7 @@ rel2bin_oahash_fullouterjoin(backend *be, sql_rel *rel, list *refs)
 
 	/*** second concat_block: add the NULLs ***/
 	b = stmt_concat_barrier(be, be->source, 1, b);
-	int source = pp_counter(be, -1, hp_mrk_slc->nr);
+	int source = pp_counter(be, -1, hp_mrk_slc->nr, true); /* synchronizes at start of outer results */
 	stmt_concat_add_source(be);
 	(void)pp_counter_get(be, source); /* use source else statement gets garbage collected */
 
@@ -1063,11 +1063,6 @@ rel2bin_oahash_fullouterjoin(backend *be, sql_rel *rel, list *refs)
 	sub = subres_assign_resultvars(be, sub, vars);
 	if (!sub) return NULL;
 
-//	if (be->concatcnt == 1) {/* add dummy source */
-//			int source = pp_counter(be, -1, hp_mrk_slc->nr);
-//			stmt_concat_add_source(be);
-//			(void)pp_counter_get(be, source); /* use source else statement gets garbage collected */
-//	}
 	(void)stmt_concat_barrier_end(be, b);
 	assert (be->concatcnt == 2);
 

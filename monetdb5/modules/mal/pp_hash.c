@@ -1430,10 +1430,12 @@ OAHASHadd_freq(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BUN cnt2 = BATcount(frq);
 		if (cnt2 < slt->tmaxval) {
 			memset(Tloc(frq, cnt2), 0, frq->twidth*(slt->tmaxval-cnt2));
+			pipeline_lock2(frq);
 			BATsetcount(frq, slt->tmaxval);
 			// TODO: would be nice to have a bat.new variant that initiates props
 			BATnegateprops(frq);
 			frq->tnonil = true;
+			pipeline_unlock2(frq);
 		}
 
 		gid *sltid = Tloc(slt, 0);
@@ -1452,7 +1454,6 @@ OAHASHadd_freq(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				freqs[sltid[i]]++;
 			}
 		}
-
 		pipeline_unlock1(frq);
 		locked = false;
 

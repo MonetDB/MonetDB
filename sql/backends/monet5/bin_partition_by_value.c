@@ -125,9 +125,9 @@ rel2bin_slicer_pp(backend *be, stmt *sub)
 	if (sub->partition) {
 		stmt *mat = sub->op4.lval->h->data;
 		int nrparts = mat_nr_parts(be, mat->nr);
-		source = pp_counter(be, 0, nrparts);
+		source = pp_counter(be, 0, nrparts, false);
 	} else {
-		source = pp_counter(be, -1, pp_dynamic_slices(be, sub));
+		source = pp_counter(be, -1, pp_dynamic_slices(be, sub), false);
 	}
 	if (be->pp) {
 		stmt_concat_add_source(be);
@@ -338,7 +338,7 @@ partition_groupby(backend *be, sql_rel *rel, stmt *mats, bool neededpp)
 	list *results = partition_groupby_results(be, rel);
 	if (!results)
 		return NULL;
-	int source = pp_counter(be, PARTITION_NRPARTS, -1);
+	int source = pp_counter(be, PARTITION_NRPARTS, -1, false);
 	stmt *pp = stmt_pp_start_generator(be, source, true);
 	set_pipeline(be, pp);
 	(void)pp_counter_get(be, source);

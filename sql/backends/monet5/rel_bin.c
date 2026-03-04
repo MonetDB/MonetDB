@@ -2384,7 +2384,7 @@ rel2bin_basetable(backend *be, sql_rel *rel)
 	int neededpp = get_need_pipeline(be);
 	if (neededpp || (rel->spb && rel->partition)) {
 		int nr_parts = pp_nr_slices(rel);
-		int source = pp_counter(be, nr_parts, -1);
+		int source = pp_counter(be, nr_parts, -1, false);
 
 		if (be->pp) {
 			stmt_concat_add_source(be);
@@ -4540,7 +4540,7 @@ rel2bin_munion(backend *be, sql_rel *rel, list *refs)
 			if (!len || len > list_length(rel_stmt->op4.lval))
 				len = list_length(rel_stmt->op4.lval);
 			if (be->concatcnt == i) {/* add dummy source */
-				int source = pp_counter(be, 1, -1);
+				int source = pp_counter(be, 1, -1, false);
 				stmt_concat_add_source(be);
 				(void)pp_counter_get(be, source); /* use source else statement gets garbage collected */
 			}
@@ -4854,7 +4854,7 @@ rel2bin_project(backend *be, sql_rel *rel, list *refs, sql_rel *topn)
 	}
 
 	if (rel->spb && rel->card <= CARD_ATOM && !rel->l && be->pp) { /* adding constants to a stream (union) */
-		int source = pp_counter(be, 1, -1);
+		int source = pp_counter(be, 1, -1, false);
 		stmt_concat_add_source(be);
 		(void)pp_counter_get(be, source); /* use source else statement gets garbage collected */
 	}
@@ -5879,7 +5879,7 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 	int sync = 0;
 
 	if (be->need_pipeline)
-		sync = pp_counter(be, -1, -1);
+		sync = pp_counter(be, -1, -1, false);
 
 	if (is_physical(tr->op))
 		tr = tr->l;
@@ -8128,7 +8128,7 @@ subrel_bin(backend *be, sql_rel *rel, list *refs)
 				//printf("# needs pipeline, started from subrel (referenced rel)\n");
 				be->need_pipeline = false;
 				if (rel->op == op_buildhash && !list_empty(rel->attr)) {
-					int source = pp_counter(be, -1, pp_dynamic_slices(be, s));
+					int source = pp_counter(be, -1, pp_dynamic_slices(be, s), false);
 
 					if (be->pp) {
 						stmt_concat_add_source(be);

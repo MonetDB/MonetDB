@@ -136,16 +136,24 @@ sync_counter_done(pp_counter *c, int wid, int nr_workers, int redo)
 {
 	(void)redo;
 	int res = 0, cur;
-    MT_lock_set(&c->l);
+	MT_lock_set(&c->l);
 	if (!c->cur)
 		c->cur = (int*)GDKzalloc(sizeof(int) * nr_workers);
 	cur = c->current++;
 	if (cur >= c->nr)
 		res = 1;
-    MT_lock_unset(&c->l);
+	if (res && c->scnt != nr_workers) {
+		c->scnt++;
+		if (c->scnt != nr_workers)
+			MT_cond_wait(&c->c, &c->l);
+		else
+			MT_cond_broadcast(&c->c);
+		assert(c->scnt == nr_workers);
+	}
+	MT_lock_unset(&c->l);
 	assert(c->cur);
 	c->cur[wid] = cur;
-    return res;
+	return res;
 }
 
 static int
@@ -153,16 +161,16 @@ counter_done(pp_counter *c, int wid, int nr_workers, int redo)
 {
 	(void)redo;
 	int res = 0, cur;
-    MT_lock_set(&c->l);
+	MT_lock_set(&c->l);
 	if (!c->cur)
 		c->cur = (int*)GDKzalloc(sizeof(int) * nr_workers);
 	cur = c->current++;
 	if (cur >= c->nr)
 		res = 1;
-    MT_lock_unset(&c->l);
+	MT_lock_unset(&c->l);
 	assert(c->cur);
 	c->cur[wid] = cur;
-    return res;
+	return res;
 }
 
 static str
@@ -181,6 +189,18 @@ PPcounter_get(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (c->s.type != COUNTER_SINK) {
 		BBPreclaim(b);
 		throw(MAL, "pipeline.counter_get", SQLSTATE(HY002) "Invalid source %d", c->s.type);
+	}
+	if (c->sync && c->scnt != (int)p->p->nr_workers) {
+		MT_lock_set(&c->l);
+		if (c->scnt != (int)p->p->nr_workers) {
+			c->scnt++;
+			if (c->scnt != p->p->nr_workers)
+				MT_cond_wait(&c->c, &c->l);
+			else
+				MT_cond_broadcast(&c->c);
+		}
+		assert(c->scnt == (int)p->p->nr_workers);
+		MT_lock_unset(&c->l);
 	}
 	if (!c->cur) {
 		c->s.done(c, p->wid, p->p->nr_workers, false);
@@ -459,18 +479,24 @@ concat_done( pp_concat *c, int wid, int nr_workers, bool redo )
 	}
 	Sink *s = c->srcs[c->cur[wid]];
 	if (s) {
+		MT_lock_unset(&c->l);
 		if (s->type == SUBCONCAT_SINK)
 			res = concat_done( (pp_concat*)s, wid, nr_workers, redo);
-		else
+		else {
 			res = s->done(s, wid, nr_workers, redo);
+		}
+		MT_lock_set(&c->l);
 		while(res && ++c->cur[wid] < c->max) {
 			s = c->srcs[c->cur[wid]];
 			if (!s)
 				break;
+			MT_lock_unset(&c->l);
 			if (s->type == SUBCONCAT_SINK)
 				res = concat_done( (pp_concat*)s, wid, nr_workers, false);
-			else
+			else {
 				res = s->done(s, wid, nr_workers, false);
+			}
+			MT_lock_set(&c->l);
 		}
 	}
 	MT_lock_unset(&c->l);

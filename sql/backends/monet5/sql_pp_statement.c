@@ -1304,13 +1304,15 @@ stmt_concat_add_subconcat(backend *be, int p_source, int p_concatcnt)
 }
 
 int
-pp_counter(backend *be, int nr_slices, int var_nr_slices)
+pp_counter(backend *be, int nr_slices, int var_nr_slices, bool sync)
 {
     InstrPtr q = newStmt(be->mb, "pipeline", "counter");
 	if (var_nr_slices == -1)
 		q = pushInt(be->mb, q, nr_slices);
 	else
 		q = pushArgument(be->mb, q, var_nr_slices);
+	if (sync)
+		q = pushBit(be->mb, q, TRUE);
 	pushInstruction(be->mb, q);
 	return getArg(q, 0);
 }
