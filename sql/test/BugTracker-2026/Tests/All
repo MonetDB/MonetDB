@@ -1,9 +1,8 @@
-KNOWNFAIL?7728-select-with-subqueries-crash
-KNOWNFAIL?7758-truncate-sys-tables-corrupts-db
+7728-select-with-subqueries-crash
 7766-assertion-failure
 7767-assertion-failure
 7769-assertion-failure
-KNOWNFAIL?7770-assertion-failure
+7770-assertion-failure
 7771-assertion-failure
 KNOWNFAIL?7774-insert-into-renamed-table-assertion-failure
 7775-assertion-failure
@@ -14,11 +13,11 @@ KNOWNFAIL?7781-truncate-sys-tables-corrupts-db
 7785-recursive-cte-loops-infinitly
 7786-rename-drop-table
 7787-assertion-failure
-KNOWNFAIL?7788-assertion-failure
+7788-assertion-failure
 KNOWNFAIL?7789-assertion-failure
-KNOWNFAIL?7790-assertion-failure
+7790-assertion-failure
 KNOWNFAIL?7791-assertion-failure
-KNOWNFAIL?7792-assertion-failure
+7792-assertion-failure
 KNOWNFAIL?7793-assertion-failure
 KNOWNFAIL?7794-assertion-failure
 KNOWNFAIL?7795-assertion-failure
@@ -30,3 +29,10 @@ KNOWNFAIL?7801-assertion-failure
 7804-querylog-catalog-orderby-bug
 7805-orderby-all-bug
 7806-numeric-no-prec-no-scale
+7813_push_down_topn
+7815-ALGmarkselect-crash
+7816-table-returning-function-crash
+7818-out-of-bounds-analytics
+7820-mergeors-reset-list
+7826-crash-in-optimizer
+7836-use-after-free

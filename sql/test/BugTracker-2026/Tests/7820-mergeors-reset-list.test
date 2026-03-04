@@ -1,0 +1,42 @@
+query II
+select  
+  (select function_type_id from function_types limit 1 offset 1)
+     as c0, 
+  ref_0.depend_type as c1
+from 
+  dependency_functions_on_triggers as ref_0
+where (cast(coalesce(ref_0.trigger_id,
+      ref_0.trigger_table_id) as int) is NULL) 
+  and ((((ref_0.trigger_id is NULL) 
+        or ((((false) 
+              and (true)) 
+            or (false)) 
+          or ((true) 
+            and ((ref_0.trigger_table_id is NULL) 
+              or (ref_0.trigger_id is not NULL))))) 
+      or ((ref_0.trigger_name is not NULL) 
+        and (ref_0.function_schema_id is not NULL))) 
+    and ((EXISTS (
+        select  
+            ref_1.schema_name as c0, 
+            ref_0.depend_type as c1, 
+            ref_0.function_schema_id as c2, 
+            ref_1.schema_name as c3, 
+            ref_0.trigger_name as c4, 
+            ref_1.user_name as c5, 
+            ref_1.user_name as c6, 
+            ref_0.function_id as c7, 
+            ref_0.trigger_table_id as c8, 
+            ref_1.schema_name as c9, 
+            ref_1.stmt as c10, 
+            ref_1.schema_name as c11, 
+            ref_0.depend_type as c12, 
+            ref_0.depend_type as c13, 
+            ref_0.function_type as c14
+          from 
+            dump_add_schemas_to_users as ref_1
+          where false
+          limit 105)) 
+      or (ref_0.function_id is NULL)))
+limit 61
+----

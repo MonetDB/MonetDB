@@ -1402,9 +1402,11 @@ sql_update_jan2022(Client c, mvc *sql)
 					"create function sys.current_sessionid() returns int\n"
 					"external name clients.current_sessionid;\n"
 					"grant execute on function sys.current_sessionid to public;\n"
-					"create function sys.optimizer_stats()\n"
-					" returns table (optname string, count int, timing bigint)\n"
-					" external name inspect.optimizer_stats;\n"
+/* function sys.optimizer_stats is dropped again later and MAL function
+ * inspect.optimizer_stats no longer exists */
+//					"create function sys.optimizer_stats()\n"
+//					" returns table (optname string, count int, timing bigint)\n"
+//					" external name inspect.optimizer_stats;\n"
 					"create function sys.querycache()\n"
 					" returns table (query string, count int)\n"
 					" external name sql.dump_cache;\n"
@@ -1458,7 +1460,9 @@ sql_update_jan2022(Client c, mvc *sql)
 					"external name sql.copy_rejects;\n"
 					"grant execute on function rejects to public;\n"
 					"create view sys.rejects as select * from sys.rejects();\n"
-					"create function profiler.getlimit() returns integer external name profiler.getlimit;\n"
+/* function profiler.getlimit is dropped later and MAL function
+ * profiler.getlimit no longer exists */
+//					"create function profiler.getlimit() returns integer external name profiler.getlimit;\n"
 					"create function sys.\"storage\"()\n"
 					"returns table (\n"
 					" \"schema\" varchar(1024),\n"
@@ -5162,7 +5166,7 @@ sql_update_dec2025(Client c, mvc *sql, sql_schema *s)
 		return err;
 
 	if (sql_bind_func(sql, "sys", "optimizer_stats", NULL, NULL, F_UNION, true, true)) {
-		static const char query[] = "drop function sys.optimizer_stats cascade;\n";
+		static const char query[] = "drop function if exists sys.optimizer_stats cascade;\n";
 		printf("Running database upgrade commands:\n%s\n", query);
 		err = SQLstatementIntern(c, query, "update", true, false, NULL);
 		if (err)
@@ -5176,7 +5180,7 @@ sql_update_dec2025(Client c, mvc *sql, sql_schema *s)
 		static const char query[] = "drop procedure profiler.start cascade;\n"
 			"drop procedure profiler.stop cascade;\n"
 			"drop procedure profiler.setlimit cascade;\n"
-			"drop function profiler.getlimit cascade;\n"
+			"drop function if exists profiler.getlimit cascade;\n"
 			"drop procedure profiler.setheartbeat cascade;\n";
 		printf("Running database upgrade commands:\n%s\n", query);
 		err = SQLstatementIntern(c, query, "update", true, false, NULL);

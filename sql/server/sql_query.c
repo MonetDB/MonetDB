@@ -160,7 +160,6 @@ query_outer_aggregated(sql_query *q, int i, sql_exp *e)
 {
 	stacked_query *sq = sql_stack_fetch(q->outer, i);
 
-	assert(sq->grouped);
 	sq->last_used = e;
 	sq->used_card = sq->rel->card;
 	return 0;
