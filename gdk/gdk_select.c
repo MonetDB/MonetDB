@@ -610,8 +610,10 @@ fullscan_str(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 	     bool lval, bool hval, bool lnil, BUN cnt, const oid hseq,
 	     oid *restrict dst, BUN maximum, const char **algo)
 {
-	var_t pos;
-	BUN p, ncand = ci->ncand;
+	var_t pos = 0;
+	BUN p = 0;
+	BUN ncand = ci->ncand;
+	BAT *pb = BBP_desc(bi->vh->parentid);
 	oid o;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 
@@ -624,11 +626,33 @@ fullscan_str(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 	}
 	if (!((equi ||
 	       (anti && tl == th && (bi->nonil || strNil(tl)))) &&
-	      GDK_ELIMDOUBLES(bi->vh)))
+	      (GDK_ELIMDOUBLES(bi->vh) ||
+	       (bi->vkey && BATcheckhash(pb))))) {
+		/* we're looking for multiple values (range, or anti with
+		 * nils) or the bat is not duplicate eliminated, so do a
+		 * full scan with actual value compares */
 		return fullscan_any(bi, ci, bn, tl, th, li, hi, equi, anti,
 				    nil_matches, lval, hval, lnil, cnt, hseq,
 				    dst, maximum, algo);
-	if ((pos = strLocate(bi->vh, tl)) == (var_t) -2) {
+	}
+	if (GDK_ELIMDOUBLES(bi->vh)) {
+		pos = strLocate(bi->vh, tl);
+		if (pos == (var_t) -1) {
+			*algo = NULL;
+			BBPreclaim(bn);
+			return BUN_NONE;
+		}
+	} else if (strNil(tl)) {
+		pos = 0;
+	} else if ((p = BUNfnd(pb, tl)) == BUN_NONE) {
+		pos = (var_t) -2;
+	} else {
+		MT_lock_set(&pb->theaplock);
+		pos = VarHeapVal(pb->theap->base, p, pb->twidth);
+		MT_lock_unset(&pb->theaplock);
+	}
+	if (pos == (var_t) -2) {
+		/* searched for value does not occur */
 		if (anti) {
 			/* return the whole shebang */
 			*algo = "select: fullscan anti-equi strelim (all)";
@@ -646,12 +670,9 @@ fullscan_str(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 		*algo = "select: fullscan equi strelim (nomatch)";
 		return 0;
 	}
-	if (pos == (var_t) -1) {
-		*algo = NULL;
-		BBPreclaim(bn);
-		return BUN_NONE;
-	}
-	*algo = anti ? "select: fullscan anti-equi strelim" : "select: fullscan equi strelim";
+	*algo = anti
+		? "select: fullscan anti-equi strelim"
+		: "select: fullscan equi strelim";
 	assert(pos == 0 || pos >= GDK_VAROFFSET);
 	switch (bi->width) {
 	case 1: {
