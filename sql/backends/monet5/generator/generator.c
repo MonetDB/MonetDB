@@ -1199,9 +1199,14 @@ VLTgenerator_thetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		}																\
 		v = (TPE*) Tloc(bn,0);											\
 		for(; cnt-- > 0; o++){											\
-			val = f + ((TPE) (ol == NULL  ? o : ol[o])) * s;			\
-			if ( (s > 0 &&  (val < f || val >= l)) || (s < 0 && (val <= l || val > f))) \
-				continue;												\
+			oid oi = ol == NULL ? o : ol[o];							\
+			if (is_oid_nil(oi)) {										\
+				val = TPE##_nil;										\
+			} else {													\
+				val = f + ((TPE) (ol == NULL  ? o : ol[o])) * s;		\
+				if ( (s > 0 &&  (val < f || val >= l)) || (s < 0 && (val <= l || val > f))) \
+					continue;											\
+			}															\
 			*v++ = val;													\
 			c++;														\
 		}																\
@@ -1246,7 +1251,7 @@ VLTgenerator_projection(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	cnt = BATcount(b);
 	if ( b->ttype == TYPE_void) {
 		o = b->tseqbase;
-		if (is_oid_nil(o)) {	
+		if (is_oid_nil(o)) {
 			tpe = getArgType(mb,p,1);
 			BAT *bn = BATconstant(b->hseqbase, tpe, ATOMnilptr(tpe), cnt, TRANSIENT);
 			BBPunfix(b->batCacheid);
