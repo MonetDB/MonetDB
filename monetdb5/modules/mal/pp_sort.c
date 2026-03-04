@@ -216,6 +216,7 @@ PPsubmerge_any( bat *Rzzl, bat *Rzzb, bat *Rzza, BAT *lcol, BAT *rcol, BAT *zzl,
 			p = o;
 		}
 	}
+	(void)ilen; (void)rlen;
 	assert (ilen == rlen && ilen == tsz);
 	/*
 	printf("sub\n");

@@ -225,7 +225,7 @@ PIPELINEworker(void *T)
 				/* only collect one error (from one thread, needed for stable testing) */
 				if (ATOMIC_PTR_CAS(&s->error, &null, error)) {
 					strcpy(s->errbuf, error);
-					ATOMIC_PTR_CAS(&s->error, &error, s->errbuf);
+					ATOMIC_PTR_CAS(&s->error, (void**)&error, s->errbuf);
 				}
 			}
 			freeStack(stk);
