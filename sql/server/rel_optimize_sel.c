@@ -3631,7 +3631,9 @@ filter_column_in_partition_by_columns(sql_exp *column, list *keyColumns)
 			char *keyColTableName = keyCol->l;
 			char *keyColColumnName = keyCol->r;
 
-			if (!strcmp(tableName, keyColTableName) && !strcmp(columnName, keyColColumnName)) {
+			if (keyColTableName != NULL && keyColColumnName != NULL &&
+			    !strcmp(tableName, keyColTableName) &&
+			    !strcmp(columnName, keyColColumnName)) {
 				/* match */
 				return true;
 			}

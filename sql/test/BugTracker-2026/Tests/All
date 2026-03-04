@@ -38,5 +38,5 @@ KNOWNFAIL?7801-assertion-failure
 7832-strcmp-NULL-crash
 KNOWNFAIL?7833-assertion-failure
 7834-BATsubcross-more-than-one-match
-KNOWNFAIL?7835-strcmp-NULL-crash
+7835-strcmp-NULL-crash
 7836-use-after-free
