@@ -2005,6 +2005,7 @@ dump_table_access(Mapi mid, const char *schema, const char *tname, stream *sqlf)
 		goto bailout;
 	switch (mapi_rows_affected(hdl)) {
 	case 0:
+		rc = 0;
 		break;
 	case 1:
 		while ((mapi_fetch_row(hdl)) != 0) {
