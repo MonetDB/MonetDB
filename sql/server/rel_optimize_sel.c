@@ -3614,7 +3614,7 @@ rank_exp_has_partition_key(sql_exp *e)
 /*
  * Checks if a filter column is also used as an aggregation key, so it can be later safely pushed down.
  */
-static int
+static bool
 filter_column_in_partition_by_columns(sql_exp *column, list *keyColumns)
 {
 	/* check if it is a column or an e_convert, and get the actual column if it is the latter */
@@ -3625,19 +3625,21 @@ filter_column_in_partition_by_columns(sql_exp *column, list *keyColumns)
 	char *tableName = column->l;
 	char *columnName = column->r;
 
-	for (node *n = keyColumns->h; n; n = n->next) {
-		sql_exp *keyCol = n->data;
-		char *keyColTableName = keyCol->l;
-		char *keyColColumnName = keyCol->r;
+	if (tableName != NULL && columnName != NULL) {
+		for (node *n = keyColumns->h; n; n = n->next) {
+			sql_exp *keyCol = n->data;
+			char *keyColTableName = keyCol->l;
+			char *keyColColumnName = keyCol->r;
 
-		if (!strcmp(tableName, keyColTableName) && !strcmp(columnName, keyColColumnName)) {
-			/* match */
-			return 1;
+			if (!strcmp(tableName, keyColTableName) && !strcmp(columnName, keyColColumnName)) {
+				/* match */
+				return true;
+			}
 		}
 	}
 
 	/* no matches found */
-	return 0;
+	return false;
 }
 
 /*
