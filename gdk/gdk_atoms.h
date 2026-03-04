@@ -24,12 +24,20 @@
  * points to.
  *
  * atomCmp returns a value less than zero/equal to zero/greater than
- * zer if the first argument points to a values which is deemed
+ * zero if the first argument points to a values which is deemed
  * smaller/equal to/larger than the value pointed to by the second
  * argument.
  *
  * atomHash calculates a hash function for the value pointed to by the
  * argument.
+ *
+ * atomRead reads cnt values from stream s and returns them in dst.  The
+ * available space in dst is given in *dstlen.  If dst is too small (or
+ * NULL), a new buffer is allocated and *dstlen is filled in with the
+ * allocated size.  atomRread returns a pointer to the buffer where the
+ * data was written.  On any kind of failure (usually either allocation
+ * or reading), the function returns NULL and dst and *dstlen are
+ * unaffected (i.e. similar to realloc).
  */
 
 #define IDLENGTH	64	/* maximum BAT id length */

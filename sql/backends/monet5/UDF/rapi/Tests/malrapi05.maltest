@@ -1,0 +1,82 @@
+statement ok
+g:= bat.new(:int)
+
+statement ok
+bat.append(g,1)
+
+statement ok
+bat.append(g,2)
+
+statement ok
+bat.append(g,3)
+
+statement ok
+bat.append(g,1)
+
+statement ok
+bat.append(g,2)
+
+statement ok
+bat.append(g,3)
+
+statement ok
+bat.append(g,1)
+
+statement ok
+bat.append(g,2)
+
+statement ok
+bat.append(g,3)
+
+statement ok
+bat.append(g,1)
+
+statement ok
+b:= bat.new(:dbl)
+
+statement ok
+bat.append(b,1804289383:dbl)
+
+statement ok
+bat.append(b,846930886:dbl)
+
+statement ok
+bat.append(b,1681692777:dbl)
+
+statement ok
+bat.append(b,1714636915:dbl)
+
+statement ok
+bat.append(b,1957747793:dbl)
+
+statement ok
+bat.append(b,424238335:dbl)
+
+statement ok
+bat.append(b,719885386:dbl)
+
+statement ok
+bat.append(b,1649760492:dbl)
+
+statement ok
+bat.append(b,596516649:dbl)
+
+statement ok
+bat.append(b,1189641421:dbl)
+
+statement ok
+(r:bat[:int], s:bat[:dbl]) := rapi.eval(nil:ptr,"aggregate(arg1,by=list(arg2),FUN=function(x){sort(x)[max(length(x)-arg3,0)]})",b,g,1)
+
+query IIR rowsort
+io.print(r,s)
+----
+0
+1
+1714636915.000
+1
+2
+1649760492.000
+2
+3
+596516649.000
+

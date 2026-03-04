@@ -1,0 +1,42 @@
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE AGGREGATE rapi18(n int) RETURNS DOUBLE LANGUAGE R {
+  aggregate(x=n, by=list(aggr_group), FUN=function(df){42})$x
+}
+
+statement ok
+CREATE FUNCTION rapi18datagen() RETURNS TABLE (g int, n int) LANGUAGE R {
+  g <- rep(1:500, rep(400, 500))
+  data.frame(g, 10L)
+}
+
+statement ok
+CREATE TABLE rapi18bad as select * from rapi18datagen() limit 200000 with data
+
+query I rowsort
+select count(distinct g) from rapi18bad
+----
+500
+
+query IR rowsort
+select g, rapi18(n) from rapi18bad group by g
+----
+1000 values hashing to 11dbd9e3e1c8fd598a3eaf93a417a852
+
+statement ok
+create table empty_table(col1 int)
+
+query R rowsort
+select rapi18(col1) from empty_table
+----
+NULL
+
+query R rowsort
+select rapi18(col1) from empty_table group by col1
+----
+
+statement ok
+ROLLBACK
+

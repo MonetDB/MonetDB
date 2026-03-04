@@ -755,9 +755,10 @@ strToStr(allocator *ma, char **restrict dst, size_t *restrict len, const char *r
 }
 
 str
-strRead(allocator *ma, str a, size_t *dstlen, stream *s, size_t cnt)
+strRead(allocator *ma, str A, size_t *dstlen, stream *s, size_t cnt)
 {
 	int len;
+	str a = A;
 
 	(void) cnt;
 	assert(cnt == 1);
@@ -767,17 +768,22 @@ strRead(allocator *ma, str a, size_t *dstlen, stream *s, size_t cnt)
 		if (ma) {
 			a = ma_realloc(ma, a, (size_t) len + 1, *dstlen);
 		} else {
-			GDKfree(a);
 			a = GDKmalloc((size_t) len + 1);
 		}
 		if (a == NULL)
 			return NULL;
-		*dstlen = len + 1;
 	}
 	if (len && mnstr_read(s, a, len, 1) != 1) {
+		if (ma == NULL && a != A)
+			GDKfree(a);
 		return NULL;
 	}
 	a[len] = 0;
+	if (a != A) {
+		if (ma == NULL)
+			GDKfree(A);
+		*dstlen = len + 1;
+	}
 	return a;
 }
 

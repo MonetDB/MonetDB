@@ -1,0 +1,77 @@
+statement ok
+gv:= bat.new(:int)
+
+statement ok
+gv:= bat.append(gv,1)
+
+statement ok
+gv:= bat.append(gv,1)
+
+statement ok
+gv:= bat.append(gv,2)
+
+statement ok
+gv:= bat.append(gv,2)
+
+statement ok
+dv:= bat.new(:int)
+
+statement ok
+dv:= bat.append(dv,42)
+
+statement ok
+dv:= bat.append(dv,84)
+
+statement ok
+dv:= bat.append(dv,42)
+
+statement ok
+dv:= bat.append(dv,20)
+
+statement ok
+ti:= bat.new(:oid)
+
+statement ok
+ti:= bat.append(ti,0:oid)
+
+statement ok
+ti:= bat.append(ti,1:oid)
+
+statement ok
+ti:= bat.append(ti,2:oid)
+
+statement ok
+ti:= bat.append(ti,3:oid)
+
+statement ok
+ti_gv:bat[:int] := algebra.projection(ti,gv)
+
+statement ok
+(grp:bat[:oid],r1_9:bat[:oid],r2_9:bat[:lng]) := group.groupdone(ti_gv)
+
+statement ok
+ti_dv:bat[:int] := algebra.projection(ti,dv)
+
+query II rowsort
+io.print(grp)
+----
+0
+0
+1
+0
+2
+1
+3
+1
+
+statement ok
+res:bat[:dbl] := rapi.subeval_aggr(nil:ptr,"res <- aggregate(arg2, by=list(aggr_group), FUN=median); return(res$x)",ti_gv,ti_dv);
+
+query IR nosort
+io.print(res)
+----
+0
+63.000
+1
+31.000
+

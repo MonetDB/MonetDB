@@ -1,0 +1,436 @@
+statement ok
+bbit:= bat.new(:bit)
+
+statement ok
+bat.append(bbit,1:bit)
+
+statement ok
+bat.append(bbit,0:bit)
+
+statement ok
+bat.append(bbit,1:bit)
+
+statement ok
+bat.append(bbit,0:bit)
+
+statement ok
+bat.append(bbit,nil:bit)
+
+statement ok
+rbit:bat[:dbl] := rapi.eval(nil:ptr,"Re(fft(na.omit(arg1)))",bbit)
+
+query IR rowsort
+io.print(rbit)
+----
+0
+2.000
+1
+0.000
+2
+2.000
+3
+0.000
+
+statement ok
+bbte:= bat.new(:bte)
+
+statement ok
+bat.append(bbte,42:bte)
+
+statement ok
+bat.append(bbte,84:bte)
+
+statement error
+bat.append(bbte,254:bte)
+
+statement ok
+bat.append(bbte,0:bte)
+
+statement ok
+bat.append(bbte,nil:bte)
+
+statement ok
+rbte:bat[:dbl] := rapi.eval(nil:ptr,"Re(fft(na.omit(arg1)))",bbte)
+
+query IR rowsort
+io.print(rbte)
+----
+0
+126.000
+1
+0.000
+2
+0.000
+
+statement ok
+bsht:= bat.new(:sht)
+
+statement ok
+bat.append(bsht,42:sht)
+
+statement ok
+bat.append(bsht,82:sht)
+
+statement ok
+bat.append(bsht,0:sht)
+
+statement ok
+bat.append(bsht,3276:sht)
+
+statement ok
+bat.append(bsht,nil:sht)
+
+statement ok
+rsht:bat[:dbl] := rapi.eval(nil:ptr,"Re(fft(na.omit(arg1)))",bsht)
+
+query IR rowsort
+io.print(rsht)
+----
+0
+3400.000
+1
+42.000
+2
+-3316.000
+3
+42.000
+
+statement ok
+bint:= bat.new(:int)
+
+statement ok
+bat.append(bint,1804289383:int)
+
+statement ok
+bat.append(bint,846930886:int)
+
+statement ok
+bat.append(bint,1681692777:int)
+
+statement ok
+bat.append(bint,1714636915:int)
+
+statement ok
+bat.append(bint,nil:int)
+
+statement ok
+rint:bat[:dbl] := rapi.eval(nil:ptr,"Re(fft(na.omit(arg1)))",bint)
+
+query IR rowsort
+io.print(rint)
+----
+0
+6047549961.000
+1
+122596606.000
+2
+924414359.000
+3
+122596606.000
+
+statement ok
+blng:= bat.new(:lng)
+
+statement ok
+bat.append(blng,1804289383L)
+
+statement ok
+bat.append(blng,846930886L)
+
+statement ok
+bat.append(blng,1681692777L)
+
+statement ok
+bat.append(blng,1714636915L)
+
+statement ok
+rlng:bat[:dbl] := rapi.eval(nil:ptr,"Re(fft(na.omit(arg1)))",blng)
+
+query IR rowsort
+io.print(rlng)
+----
+0
+6047549961.000
+1
+122596606.000
+2
+924414359.000
+3
+122596606.000
+
+statement ok
+bhge:= bat.new(:hge)
+
+statement ok
+bat.append(bhge,1804289383:hge)
+
+statement ok
+bat.append(bhge,846930886:hge)
+
+statement ok
+bat.append(bhge,1681692777:hge)
+
+statement ok
+bat.append(bhge,1714636915:hge)
+
+statement ok
+rhge:bat[:dbl] := rapi.eval(nil:ptr,"Re(fft(na.omit(arg1)))",bhge)
+
+query IR rowsort
+io.print(rhge)
+----
+0
+6047549961.000
+1
+122596606.000
+2
+924414359.000
+3
+122596606.000
+
+statement ok
+into:int := rapi.eval(nil:ptr, "42L")
+
+query T rowsort
+io.print(into)
+----
+42
+
+statement ok
+bflt:= bat.new(:flt)
+
+statement ok
+bat.append(bflt,18042.89383:flt)
+
+statement ok
+bat.append(bflt,846.930886:flt)
+
+statement ok
+bat.append(bflt,16.81692777:flt)
+
+statement ok
+bat.append(bflt,1714636.915:flt)
+
+statement ok
+rflt:bat[:dbl] := rapi.eval(nil:ptr,"Re(fft(na.omit(arg1)))",bflt)
+
+query IR rowsort
+io.print(rflt)
+----
+0
+1733543.517
+1
+18026.078
+2
+-1697424.094
+3
+18026.078
+
+statement ok
+bdbl:= bat.new(:dbl)
+
+statement ok
+bat.append(bdbl,180428.9383:dbl)
+
+statement ok
+bat.append(bdbl,84.6930886:dbl)
+
+statement ok
+bat.append(bdbl,168169.2777:dbl)
+
+statement ok
+bat.append(bdbl,17146369.15:dbl)
+
+statement ok
+bat.append(bdbl,nil:dbl)
+
+statement ok
+rdbl:bat[:dbl] := rapi.eval(nil:ptr,"Re(fft(na.omit(arg1)))",bdbl)
+
+query IR rowsort
+io.print(rdbl)
+----
+0
+17495052.059
+1
+12259.661
+2
+-16797855.627
+3
+12259.661
+
+statement ok
+bstr:= bat.new(:str)
+
+statement ok
+bat.append(bstr,"asdf":str)
+
+statement ok
+bat.append(bstr,"sd asd asd asd asd a":str)
+
+statement ok
+bat.append(bstr,"":str)
+
+statement ok
+bat.append(bstr,nil:str)
+
+statement ok
+rstr:bat[:int] := rapi.eval(nil:ptr,"nchar(arg1)",bstr)
+
+query II rowsort
+io.print(rstr)
+----
+0
+4
+1
+20
+2
+0
+3
+NULL
+
+statement ok
+so:str := rapi.eval(nil:ptr,"'asdf'")
+
+query T rowsort
+io.print(so)
+----
+"asdf"
+
+statement ok
+binto:= bat.new(:int)
+
+statement ok
+bat.append(binto,1804289383:int)
+
+statement ok
+bat.append(binto,846930886:int)
+
+statement ok
+bat.append(binto,1681692777:int)
+
+statement ok
+bat.append(binto,1714636915:int)
+
+statement ok
+bat.append(binto,nil:int)
+
+statement ok
+rintbi:bat[:int] := rapi.eval(nil:ptr,"arg1",binto)
+
+query II rowsort
+io.print(rintbi)
+----
+0
+1804289383
+1
+846930886
+2
+1681692777
+3
+1714636915
+4
+NULL
+
+statement ok
+rintbi2:bat[:int] := rapi.eval(nil:ptr,"as.integer(arg1)",binto)
+
+query II rowsort
+io.print(rintbi2)
+----
+0
+1804289383
+1
+846930886
+2
+1681692777
+3
+1714636915
+4
+NULL
+
+statement ok
+rintbl:bat[:lng] := rapi.eval(nil:ptr,"as.integer(arg1)",binto)
+
+query II rowsort
+io.print(rintbl)
+----
+0
+1804289383
+1
+846930886
+2
+1681692777
+3
+1714636915
+4
+NULL
+
+statement ok
+rintbh:bat[:hge] := rapi.eval(nil:ptr,"as.integer(arg1)",binto)
+
+query II rowsort
+io.print(rintbh)
+----
+0
+1804289383
+1
+846930886
+2
+1681692777
+3
+1714636915
+4
+NULL
+
+statement ok
+rintbd:bat[:dbl] := rapi.eval(nil:ptr,"as.numeric(arg1)",binto)
+
+query IR rowsort
+io.print(rintbd)
+----
+0
+1804289383.000
+1
+846930886.000
+2
+1681692777.000
+3
+1714636915.000
+4
+NULL
+
+statement ok
+rintbs:bat[:str] := rapi.eval(nil:ptr,"as.character(arg1)",binto)
+
+query IT rowsort
+io.print(rintbs)
+----
+0
+1804289383
+1
+846930886
+2
+1681692777
+3
+1714636915
+4
+NULL
+
+statement ok
+rintbf:bat[:str] := rapi.eval(nil:ptr,"as.factor(arg1)",binto)
+
+query IT rowsort
+io.print(rintbf)
+----
+0
+1804289383
+1
+846930886
+2
+1681692777
+3
+1714636915
+4
+NULL
+

@@ -1,0 +1,24 @@
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE FUNCTION rapi00() returns table (d integer)
+language R {
+	return(seq(1,10));
+}
+
+query I rowsort
+SELECT d FROM rapi00() AS R WHERE d > 5
+----
+10
+6
+7
+8
+9
+
+statement ok
+DROP FUNCTION rapi00
+
+statement ok
+ROLLBACK
+

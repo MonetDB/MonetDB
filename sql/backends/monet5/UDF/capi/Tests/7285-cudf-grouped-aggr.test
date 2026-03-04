@@ -1,0 +1,62 @@
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE AGGREGATE jit_sum(input INTEGER) RETURNS BIGINT LANGUAGE C {
+    // initialize one aggregate per group
+    result->initialize(result, aggr_group.count);
+    // zero initialize the sums
+    memset(result->data, 0, result->count * sizeof(result->null_value));
+    // gather the sums for each of the groups
+    for(size_t i = 0; i < input.count; i++) {
+        result->data[aggr_group.data[i]] += input.data[i];
+    }
+}
+
+statement ok
+CREATE TABLE tab(x INTEGER, y INTEGER)
+
+statement ok rowcount 7
+insert into tab values (1,1),(2,2),(3,3),(1,10),(2,50),(3,6),(1,100000)
+
+query I rowsort
+SELECT jit_sum(y) FROM tab
+----
+100072
+
+query II rowsort
+SELECT sum(y), jit_sum(y) FROM tab
+----
+100072
+100072
+
+query I rowsort
+SELECT sum(y) FROM tab GROUP BY x
+----
+100011
+52
+9
+
+query I rowsort
+SELECT jit_sum(y) FROM tab GROUP BY x
+----
+100011
+52
+9
+
+query III rowsort
+SELECT x, sum(y), jit_sum(y) FROM tab GROUP BY x
+----
+1
+100011
+100011
+2
+52
+52
+3
+9
+9
+
+statement ok
+ROLLBACK
+

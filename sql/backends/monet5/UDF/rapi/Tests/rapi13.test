@@ -1,0 +1,154 @@
+statement ok
+start transaction
+
+statement ok
+CREATE TABLE "streams" (
+    "ts"      TIMESTAMP,
+    "type"    TINYINT,
+    "station" CHARACTER LARGE OBJECT,
+    "lat"     DOUBLE,
+    "lon"     DOUBLE,
+    "alt"     DOUBLE
+)
+
+statement ok
+copy 5 records into streams from stdin
+<COPY_INTO_DATA>
+2015-06-03 15:11:17.000000|2|"4CA56B"|52.08069|5.86654|3.8e+04
+2015-06-03 15:11:17.000000|2|"4010EA"|51.19084|4.98646|38025
+2015-06-03 15:11:17.000000|2|"406C71"|52.36768|7.17085|3.5e+04
+2015-06-03 15:11:17.000000|2|"4006A4"|52.44951|5.21294|37025
+2015-06-03 15:11:17.000000|2|"45AC45"|52.12491|6.03063|3.6e+04
+
+statement ok
+CREATE FUNCTION working_test(stt string, tss interval second, lat double, lon double, alt double) returns table (i int, j int, k int) language R {
+	return(data.frame(1:10, 1:10, 1:10))
+}
+
+statement ok
+CREATE FUNCTION broken_test(stt string, tss interval second, lat double, lon double, alt double) returns table (i int, j int, k int, l int) language R {
+	return(data.frame(1:10, 1:10, 1:10, 1:10))
+}
+
+statement ok
+create temporary table planes as SELECT station, (ts-CAST('1970-01-01' AS timestamp)) tsdiff, lat, lon, alt*0.3048 altitude FROM streams WHERE type = 2 and alt > 0 with data
+
+query TTRRR rowsort
+select * from planes
+----
+"4006A4"
+16589 days, 15:11:17
+52.450
+5.213
+11285.220
+"4010EA"
+16589 days, 15:11:17
+51.191
+4.986
+11590.020
+"406C71"
+16589 days, 15:11:17
+52.368
+7.171
+10668.000
+"45AC45"
+16589 days, 15:11:17
+52.125
+6.031
+10972.800
+"4CA56B"
+16589 days, 15:11:17
+52.081
+5.867
+11582.400
+
+query III rowsort
+select * from working_test( (SELECT * FROM planes AS p) )
+----
+1
+1
+1
+10
+10
+10
+2
+2
+2
+3
+3
+3
+4
+4
+4
+5
+5
+5
+6
+6
+6
+7
+7
+7
+8
+8
+8
+9
+9
+9
+
+query IIII rowsort
+select * from broken_test( (SELECT * FROM planes AS p) )
+----
+1
+1
+1
+1
+10
+10
+10
+10
+2
+2
+2
+2
+3
+3
+3
+3
+4
+4
+4
+4
+5
+5
+5
+5
+6
+6
+6
+6
+7
+7
+7
+7
+8
+8
+8
+8
+9
+9
+9
+9
+
+statement ok
+drop table planes
+
+statement ok
+drop function working_test
+
+statement ok
+drop function broken_test
+
+statement ok
+rollback
+

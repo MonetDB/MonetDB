@@ -117,7 +117,7 @@ libgeom_export const char *geom_type2str(int t, int flag);
 typedef struct wkb {
 	int len;
 	int srid;
-	char data[];
+	char data[] __attribute__((__counted_by__(len)));
 } wkb;
 
 typedef struct {

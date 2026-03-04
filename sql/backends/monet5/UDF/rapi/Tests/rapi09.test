@@ -1,0 +1,70 @@
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE FUNCTION shouldbeint() RETURNS TABLE (i integer) LANGUAGE R {as.numeric(42.0)}
+
+statement error
+SELECT * FROM shouldbeint()
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE FUNCTION throwwarning() RETURNS TABLE (i integer) LANGUAGE R {
+	warning("this is the wrong kind of handbag")
+	as.integer(42)
+}
+
+query I rowsort
+SELECT * FROM throwwarning()
+----
+42
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE FUNCTION throwerror() RETURNS TABLE (i integer) LANGUAGE R {stop("goodbye cruel world")}
+
+statement error
+SELECT * FROM throwerror()
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE FUNCTION suicide() RETURNS TABLE (i integer) LANGUAGE R {quit(save="no")}
+
+statement error
+SELECT * FROM suicide()
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE FUNCTION suicide2() RETURNS TABLE (i integer) LANGUAGE R {base::quit(save="no")}
+
+statement error
+SELECT * FROM suicide2()
+
+statement ok
+ROLLBACK
+
+query I rowsort
+SELECT 1
+----
+1
+

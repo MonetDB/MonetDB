@@ -1,0 +1,32 @@
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE rval(i integer,j integer)
+
+statement ok
+INSERT INTO rval VALUES (1,4), (2,3), (3,2), (4,1)
+
+statement ok
+CREATE FUNCTION rapi02(i integer,j integer,z integer) returns integer
+language R {
+	return(i*sum(j)*z);
+}
+
+query I rowsort
+SELECT rapi02(i,j,2) as r02 FROM rval
+----
+20
+40
+60
+80
+
+statement ok
+DROP FUNCTION rapi02
+
+statement ok
+DROP TABLE rval
+
+statement ok
+ROLLBACK
+

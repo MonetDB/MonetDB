@@ -33,6 +33,9 @@
 #if !__has_attribute(__constructor__)
 #define __constructor__
 #endif
+#if !__has_attribute(__counted_by__)
+#define __counted_by__(...)
+#endif
 #if !__has_attribute(__designated_init__)
 #define __designated_init__
 #endif

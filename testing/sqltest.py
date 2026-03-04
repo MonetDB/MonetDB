@@ -110,6 +110,7 @@ def filter_lines_starting_with(predicates=[]):
 
 
 def filter_matching_blocks(a: [str] = [], b: [str] = [], ratio=0.95):
+    return a, b
     # TODO add some ctx before any mismatch lines
     ptr = 0
     red_a = []

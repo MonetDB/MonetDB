@@ -1,0 +1,84 @@
+statement ok
+b:= bat.new(:int)
+
+statement ok
+bat.append(b,1804289383)
+
+statement ok
+bat.append(b,846930886)
+
+statement ok
+bat.append(b,1681692777)
+
+statement ok
+bat.append(b,1714636915)
+
+statement ok
+bat.append(b,1957747793)
+
+statement ok
+bat.append(b,424238335)
+
+statement ok
+bat.append(b,719885386)
+
+statement ok
+bat.append(b,1649760492)
+
+statement ok
+bat.append(b,596516649)
+
+statement ok
+bat.append(b,1189641421)
+
+query II rowsort
+io.print(b)
+----
+0
+1804289383
+1
+846930886
+2
+1681692777
+3
+1714636915
+4
+1957747793
+5
+424238335
+6
+719885386
+7
+1649760492
+8
+596516649
+9
+1189641421
+
+statement ok
+r:bat[:dbl] := rapi.eval(nil:ptr,"print(arg1);someval <- Re(fft(arg1)); print(someval); return(someval);",b);
+
+query IR rowsort
+io.print(r)
+----
+0
+12585340037.000
+1
+525771362.908
+2
+-879667492.324
+3
+2456894287.592
+4
+158316768.824
+5
+934923939.000
+6
+158316768.824
+7
+2456894287.592
+8
+-879667492.324
+9
+525771362.908
+

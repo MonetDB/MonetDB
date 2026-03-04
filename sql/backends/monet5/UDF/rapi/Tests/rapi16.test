@@ -1,0 +1,52 @@
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE rapi16(a INTEGER, b DOUBLE)
+
+statement ok
+INSERT INTO rapi16 VALUES (1,1.2), (1,2.2), (2,2.5), (2,0.9)
+
+statement ok
+CREATE FUNCTION rapi16(a INTEGER, b DOUBLE) RETURNS TABLE (c INTEGER, d DOUBLE) LANGUAGE R {
+data.frame(c=a,d=b)}
+
+query IR rowsort
+SELECT * FROM rapi16((SELECT A, B FROM rapi16 AS X))
+----
+1
+1.200
+1
+2.200
+2
+0.900
+2
+2.500
+
+statement ok
+CREATE VIEW rapi16v AS SELECT * FROM rapi16((SELECT A, B FROM rapi16 AS X))
+
+query IR rowsort
+SELECT * FROM rapi16v
+----
+1
+1.200
+1
+2.200
+2
+0.900
+2
+2.500
+
+statement ok
+DROP VIEW rapi16v
+
+statement ok
+DROP FUNCTION rapi16
+
+statement ok
+DROP TABLE rapi16
+
+statement ok
+ROLLBACK
+

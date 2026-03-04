@@ -1,0 +1,14 @@
+statement ok
+START TRANSACTION
+
+statement ok
+create function dt(d date) returns string language R { class(d) }
+
+query T rowsort
+select dt( cast('2015-09-21' as date) )
+----
+Date
+
+statement ok
+ROLLBACK
+

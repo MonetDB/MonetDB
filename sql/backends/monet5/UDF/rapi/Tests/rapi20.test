@@ -1,0 +1,23 @@
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE rapi20dummy (i INTEGER)
+
+statement ok
+INSERT INTO rapi20dummy VALUES (42), (84)
+
+statement ok
+CREATE FUNCTION rapi20() RETURNS TABLE(i INTEGER) LANGUAGE R {
+	loopback_query("SELECT * FROM rapi20dummy")$i
+}
+
+query I rowsort
+SELECT * FROM rapi20()
+----
+42
+84
+
+statement ok
+ROLLBACK
+

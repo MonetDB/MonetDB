@@ -1,0 +1,73 @@
+statement ok
+CREATE AGGREGATE aggr2(val INTEGER, val2 INTEGER)
+RETURNS INTEGER
+LANGUAGE PYTHON {
+    unique = numpy.unique(aggr_group)
+    x = numpy.zeros(shape=(unique.size))
+    for i in range(0, unique.size):
+        x[i] = numpy.sum(val[aggr_group==unique[i]])
+    return(x)
+}
+
+statement ok
+CREATE AGGREGATE aggr3(val INTEGER, val2 INTEGER, val3 INTEGER)
+RETURNS DOUBLE
+LANGUAGE PYTHON {
+    unique = numpy.unique(aggr_group)
+    x = numpy.zeros(shape=(unique.size))
+    for i in range(0, unique.size):
+        x[i] = numpy.sum(val[aggr_group==unique[i]])
+    return(x)
+}
+
+statement ok
+CREATE AGGREGATE aggr4(val INTEGER, val2 INTEGER, val3 INTEGER, val4 INTEGER)
+RETURNS DOUBLE
+LANGUAGE PYTHON {
+    unique = numpy.unique(aggr_group)
+    x = numpy.zeros(shape=(unique.size))
+    for i in range(0, unique.size):
+        x[i] = numpy.sum(val[aggr_group==unique[i]])
+    return(x)
+}
+
+statement ok
+CREATE TABLE grouped_ints (value INTEGER, groupnr INTEGER, dbvalue double)
+
+statement ok
+INSERT INTO  grouped_ints VALUES (1, 0, 0.11), (2, 1, 0.22), (3, 0, 0.33), (4,1, 0.44), (5,0, 0.55)
+
+query IR rowsort
+SELECT groupnr, aggr3(value, value, value) FROM grouped_ints GROUP BY groupnr
+----
+0
+9.000
+1
+6.000
+
+query IR rowsort
+SELECT groupnr, aggr4(value, value, value, value) FROM grouped_ints GROUP BY groupnr
+----
+0
+9.000
+1
+6.000
+
+statement error
+SELECT groupnr, aggr2(value) FROM grouped_ints GROUP BY groupnr
+
+statement error
+SELECT groupnr, aggr2(value, value, value) FROM grouped_ints GROUP BY groupnr
+
+statement ok
+DROP TABLE grouped_ints
+
+statement ok
+DROP AGGREGATE aggr2
+
+statement ok
+DROP AGGREGATE aggr3
+
+statement ok
+DROP AGGREGATE aggr4
+

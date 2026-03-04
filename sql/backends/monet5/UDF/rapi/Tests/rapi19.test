@@ -1,0 +1,16 @@
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE FUNCTION rapi19() RETURNS DOUBLE LANGUAGE R {
+	42
+}
+
+query R rowsort
+SELECT rapi19()
+----
+42.000
+
+statement ok
+ROLLBACK
+

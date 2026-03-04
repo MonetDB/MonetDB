@@ -1,0 +1,24 @@
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE testTableDates (d DATE)
+
+statement ok
+INSERT INTO testTableDates(d) VALUES ('2019-01-01'),('2019-01-02'),('2019-01-03')
+
+statement ok
+CREATE FUNCTION testDateLoopback(din DATE) RETURNS TABLE (dout DATE) LANGUAGE R {
+   data.frame(dout=din)
+}
+
+query T rowsort
+SELECT * FROM testDateLoopback( (SELECT * FROM testTableDates) )
+----
+2019-01-01
+2019-01-02
+2019-01-03
+
+statement ok
+ROLLBACK
+

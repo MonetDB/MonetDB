@@ -1,0 +1,29 @@
+statement ok
+CREATE FUNCTION test_timestamp_with_nulls(actual_takeoff_datetime timestamp)
+RETURNS STRING LANGUAGE PYTHON {
+    import json
+    return json.dumps(list(map(lambda x: x if x is None else x.isoformat(sep=' '), actual_takeoff_datetime.tolist())));
+}
+
+statement ok
+CREATE TABLE example (
+    "column1" timestamp
+)
+
+statement ok
+insert into example ("column1") values ('2017-01-01 00:00:01')
+
+statement ok
+insert into example ("column1") values (NULL)
+
+query T rowsort
+select test_timestamp_with_nulls("column1") from example
+----
+["2017-01-01 00:00:01", null]
+
+statement ok
+drop table example
+
+statement ok
+drop function test_timestamp_with_nulls(timestamp)
+

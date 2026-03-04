@@ -185,17 +185,22 @@ wkbREAD(allocator *ma, void *A, size_t *dstlen, stream *s, size_t cnt)
 		if (ma) {
 			a = ma_realloc(ma, a, wkblen, *dstlen);
 		} else {
-			GDKfree(a);
 			a = GDKmalloc(wkblen);
 		}
 		if (a == NULL)
 			return NULL;
-		*dstlen = wkblen;
 	}
 	a->len = len;
 	a->srid = srid;
 	if (len > 0 && mnstr_read(s, (char *) a->data, len, 1) != 1) {
+		if (ma == NULL && a != (wkb *) A)
+			GDKfree(a);
 		return NULL;
+	}
+	if (a != (wkb *) A) {
+		if (ma == NULL)
+			GDKfree(A);
+		*dstlen = wkblen;
 	}
 	return a;
 }
@@ -557,15 +562,15 @@ mbrREAD(allocator *ma, void *A, size_t *dstlen, stream *s, size_t cnt)
 		if (ma) {
 			a = ma_realloc(ma, a, cnt * sizeof(mbr), *dstlen);
 		} else {
-			GDKfree(a);
 			a = GDKmalloc(cnt * sizeof(mbr));
 		}
 		if (a == NULL)
 			return NULL;
-		*dstlen = cnt * sizeof(mbr);
 	}
 	for (i = 0, c = a; i < cnt; i++, c++) {
 		if (!mnstr_readIntArray(s, v, 4)) {
+			if (ma == NULL && a != (mbr *) A)
+				GDKfree(a);
 			return NULL;
 		}
 		memcpy(vals, v, 4 * sizeof(int));
@@ -573,6 +578,11 @@ mbrREAD(allocator *ma, void *A, size_t *dstlen, stream *s, size_t cnt)
 		c->ymin = vals[1];
 		c->xmax = vals[2];
 		c->ymax = vals[3];
+	}
+	if (a != (mbr *) A) {
+		if (ma == NULL)
+			GDKfree(A);
+		*dstlen = cnt * sizeof(mbr);
 	}
 	return a;
 }

@@ -1,0 +1,40 @@
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE rval(groupcol integer,datacol integer)
+
+statement ok
+INSERT INTO rval VALUES (1,42), (1,84), (2,42), (2,21)
+
+statement ok
+CREATE AGGREGATE aggrmedian(val integer) RETURNS integer LANGUAGE R {
+	if (exists("aggr_group")) {
+		return(as.integer(aggregate(val, by=list(aggr_group), FUN=median)$x))
+	} else {
+		return(as.integer(median(val)))
+	}
+}
+
+query I rowsort
+SELECT aggrmedian(datacol) FROM rval
+----
+42
+
+query II rowsort
+SELECT groupcol,aggrmedian(datacol) FROM rval GROUP BY groupcol
+----
+1
+63
+2
+31
+
+statement ok
+DROP AGGREGATE aggrmedian
+
+statement ok
+DROP TABLE rval
+
+statement ok
+ROLLBACK
+

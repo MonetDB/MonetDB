@@ -1,0 +1,23 @@
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE FUNCTION rapi01(i integer) returns table (i integer, d double)
+language R {
+	return(data.frame(i=seq(1,i),d=42.0));
+}
+
+query IR rowsort
+SELECT i,d FROM rapi01(42) AS R WHERE i>40
+----
+41
+42.000
+42
+42.000
+
+statement ok
+DROP FUNCTION rapi01
+
+statement ok
+ROLLBACK
+

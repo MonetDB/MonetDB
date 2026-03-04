@@ -1,0 +1,19 @@
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE OR REPLACE FUNCTION f1(i INTEGER) RETURNS INTEGER
+LANGUAGE PYTHON
+{
+    import pickle
+    return max(pickle.DEFAULT_PROTOCOL, i)
+}
+
+query I rowsort
+SELECT f1(1000000)
+----
+1000000
+
+statement ok
+ROLLBACK
+

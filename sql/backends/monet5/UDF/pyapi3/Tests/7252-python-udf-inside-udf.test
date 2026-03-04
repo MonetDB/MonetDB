@@ -1,0 +1,45 @@
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE FUNCTION pyfunc(i integer) returns table (pyi integer)
+language P
+{
+	x = range(1, i + 1)
+	return([x])
+}
+
+statement ok
+CREATE FUNCTION ups(i integer) returns table (i integer)
+BEGIN
+	RETURN SELECT pyi FROM pyfunc(i);
+END
+
+statement ok
+COMMIT
+
+query I nosort
+select i from ups(1)
+----
+1
+
+@connection(id=2, username=monetdb, password=monetdb)
+query I nosort
+select i from ups(1)
+----
+1
+
+@connection(id=3, username=monetdb, password=monetdb)
+query I nosort
+select i from ups(1)
+----
+1
+
+@connection(id=2)
+statement ok
+DROP FUNCTION ups
+
+@connection(id=2)
+statement ok
+DROP FUNCTION pyfunc
+

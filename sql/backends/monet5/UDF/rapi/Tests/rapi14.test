@@ -1,0 +1,33 @@
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE dval(i integer)
+
+statement ok
+INSERT INTO dval VALUES (1),(2),(3),(4)
+
+statement ok
+CREATE FUNCTION rapi14() returns boolean
+language R
+{
+    rep(T,4)
+}
+
+query I rowsort
+SELECT rapi14() FROM dval
+----
+1
+1
+1
+1
+
+statement ok
+DROP FUNCTION rapi14
+
+statement ok
+DROP TABLE dval
+
+statement ok
+ROLLBACK
+

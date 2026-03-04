@@ -1,0 +1,90 @@
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE observations (subject int, age int, height int, weight int)
+
+statement ok
+insert into observations values (1, 30, 180, 75), (2, 60, 190, 85), (3, 7, 100, 40), (4, 48, 196, 597)
+
+query IIII rowsort
+SELECT * FROM observations
+----
+1
+30
+180
+75
+2
+60
+190
+85
+3
+7
+100
+40
+4
+48
+196
+597
+
+statement ok
+CREATE FUNCTION widetolong(subject int, age int, height int, weight int) RETURNS TABLE (subject int, key string, value int) LANGUAGE R {
+	dd <- data.frame(subject, age, height, weight)
+	if (length(subject) < 2) stop("What do we want? Vectorization! When do we want it? Now!")
+	do.call(rbind,
+		lapply(split(dd, dd$subject),
+			function(split) data.frame(
+				subject=rep(split$subject, 3),
+				key=c("age", "height", "weight"),
+				value=c(split$age, split$height, split$weight))))
+}
+
+query ITI rowsort
+SELECT * FROM widetolong( (SELECT * FROM observations AS o) )
+----
+1
+age
+30
+1
+height
+180
+1
+weight
+75
+2
+age
+60
+2
+height
+190
+2
+weight
+85
+3
+age
+7
+3
+height
+100
+3
+weight
+40
+4
+age
+48
+4
+height
+196
+4
+weight
+597
+
+statement ok
+DROP FUNCTION widetolong
+
+statement ok
+DROP TABLE observations
+
+statement ok
+ROLLBACK
+

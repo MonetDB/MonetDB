@@ -388,8 +388,11 @@ MANIFOLDevaluate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto wrapup;
 	}
+
+	MALfcn ofcn = mut.pci->fcn;
 	mut.pci->fcn = fcn;
 	msg = MANIFOLDjob(&mut);
+	mut.pci->fcn = ofcn;
 
   wrapup:
 	// restore the argument types
