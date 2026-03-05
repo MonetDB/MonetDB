@@ -167,7 +167,7 @@ typedef struct hash_table {
 	int pinned_nr;
 	allocator **allocators;
 	int nr_allocators;
-	int processed;
+	size_t processed;
 
 	MT_RWLock rwlock;	/* needed for save resizing */
 } hash_table;

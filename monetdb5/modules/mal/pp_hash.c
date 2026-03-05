@@ -238,7 +238,7 @@ ht_deactivate(hash_table *ht)
 			}										\
 		}											\
 
-#define CREHASH_a(TYPE) \
+#define CREHASH_a() \
 		for(size_t i = 0; i < oldsize; i++) {		\
 			char **vals = ht->vals;					\
 			gid og = ogids[i];						\
@@ -420,7 +420,7 @@ OAHASHnew(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 		BBPreclaim(pht);
 		return createException(MAL, "oahash.new", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
-	b->tsink = (Sink*)ht_create(tt, size*1.2*2.1, parent);
+	b->tsink = (Sink*)ht_create(tt, (size_t)(size*1.2*2.1), parent);
 	BBPreclaim(pht);
 	if (b->tsink == NULL) {
 		BBPunfix(b->batCacheid);
