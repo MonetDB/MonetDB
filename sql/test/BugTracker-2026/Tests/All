@@ -48,3 +48,4 @@ KNOWNFAIL?7833-assertion-failure
 KNOWNFAIL?7843-assertion-failure
 7844_rel_aggr-crash
 KNOWNFAIL?7845-assertion-failure
+KNOWNFAIL?7846-do_covariance_and_correlation-crash
