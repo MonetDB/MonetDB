@@ -25,7 +25,7 @@ str_cmp(const char * s1, const char * s2)
 }
 
 static unsigned int
-log_base2(unsigned int n)
+log_base2(size_t n)
 {
 	unsigned int l ;
 
@@ -170,12 +170,12 @@ ht_deactivate(hash_table *ht)
 			}										\
 		}											\
 
-#define REHASH_f(Type) \
+#define REHASH_f(Type,Type2) \
 		for(size_t i = 0; i < oldsize; i++) {		\
 			Type *vals = ht->vals;					\
 			gid og = ogids[i];						\
 			if (og) {								\
-				gid hv = (gid)_hash_##Type(vals[og])&ht->mask, k = hv; \
+				gid hv = (gid)_hash_##Type(*(Type2*)(vals+og))&ht->mask, k = hv; \
 				gid g = ngids[k];					\
 				for (gid l=1; g; l++) {				\
 					nextk;							\
@@ -221,12 +221,12 @@ ht_deactivate(hash_table *ht)
 			}										\
 		}											\
 
-#define CREHASH_f(Type) \
+#define CREHASH_f(Type, Type2) \
 		for(size_t i = 0; i < oldsize; i++) {		\
 			Type *vals = ht->vals;					\
 			gid og = ogids[i];						\
 			if (og) {								\
-				gid hv = (gid)combine(pgids[og], _hash_##Type(vals[og]), prime)&ht->mask, k = hv; \
+				gid hv = (gid)combine(pgids[og], _hash_##Type(*(Type2*)(vals+og)), prime)&ht->mask, k = hv; \
 				gid g = ngids[k];			\
 				for (gid l=1; g; l++) {				\
 					nextk;							\
@@ -322,10 +322,10 @@ ht_rehash(hash_table *ht)
 				break;
 #endif
 			case TYPE_flt:
-				REHASH_f(flt);
+				REHASH_f(flt, int);
 				break;
 			case TYPE_dbl:
-				REHASH_f(dbl);
+				REHASH_f(dbl, lng);
 				break;
 			default:
 				if (ATOMvarsized(ht->type)) {
@@ -370,10 +370,10 @@ ht_rehash(hash_table *ht)
 				break;
 #endif
 			case TYPE_flt:
-				CREHASH_f(flt);
+				CREHASH_f(flt, int);
 				break;
 			case TYPE_dbl:
-				CREHASH_f(dbl);
+				CREHASH_f(dbl, lng);
 				break;
 			default:
 				if (ATOMvarsized(ht->type)) {
