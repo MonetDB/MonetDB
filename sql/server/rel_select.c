@@ -3654,7 +3654,7 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, char *sname, char *anam
 			if (GDKtoupper(ta, &uaname, &(size_t){0}, aname) != GDK_SUCCEED)
 				uaname = aname;
 			return sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate functions not allowed in functions in FROM", uaname);
-		} else if (is_sql_aggr(f) && groupby->grouped) {
+		} else if (is_sql_aggr(f) && groupby && groupby->grouped) {
 			if (GDKtoupper(ta, &uaname, &(size_t){0}, aname) != GDK_SUCCEED)
 				uaname = aname;
 			return sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate functions cannot be nested", uaname);

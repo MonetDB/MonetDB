@@ -46,4 +46,4 @@ KNOWNFAIL?7833-assertion-failure
 7841-BATsubcross-more-than-one-match
 7842-crash
 KNOWNFAIL?7843-assertion-failure
-KNOWNFAIL?7844_rel_aggr-crash
+7844_rel_aggr-crash
