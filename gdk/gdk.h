@@ -1849,7 +1849,7 @@ gdk_export void ma_close(const allocator_state *); /* close temporary frame, res
 gdk_export void ma_free(allocator *sa, void *);
 gdk_export exception_buffer *ma_get_eb(allocator *sa)
        __attribute__((__pure__));
-gdk_export char *ma_copy(allocator *sa, char *s, int l);
+gdk_export char *ma_copy(allocator *sa, char *s, size_t l);
 
 gdk_export int ma_info(allocator *sa, char *buf, size_t buflen, const char *pref);
 

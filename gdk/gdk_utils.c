@@ -2729,7 +2729,7 @@ eb_error(exception_buffer *eb, const char *msg, int val)
 }
 
 char *
-ma_copy(allocator *ma, char *s, int l)
+ma_copy(allocator *ma, char *s, size_t l)
 {
 	char *r = ma_alloc(ma, l);
 
