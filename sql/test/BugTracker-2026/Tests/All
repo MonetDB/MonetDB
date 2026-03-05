@@ -45,3 +45,4 @@ KNOWNFAIL?7833-assertion-failure
 7840-crash
 7841-BATsubcross-more-than-one-match
 7842-crash
+KNOWNFAIL?7843-assertion-failure
