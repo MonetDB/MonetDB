@@ -50,3 +50,4 @@ KNOWNFAIL?7843-assertion-failure
 KNOWNFAIL?7845-assertion-failure
 KNOWNFAIL?7846-do_covariance_and_correlation-crash
 KNOWNFAIL?7847-assertion-failure
+KNOWNFAIL?7848-assertion-failure
