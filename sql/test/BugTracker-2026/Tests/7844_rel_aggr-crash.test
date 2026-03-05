@@ -1,0 +1,44 @@
+query I
+SELECT 'a\0' < 'a'
+----
+0
+
+query I
+SELECT 'a\t' < 'a'
+----
+0
+
+query I
+SELECT 'a\t' < 'a '
+----
+1
+
+statement ok
+CREATE TABLE x ( x CHAR ( 10 ) NOT NULL )
+
+statement ok
+INSERT INTO x VALUES ( 'a' ) , ( 'a' ) , ( 'a\t' ) , ( 'a ' )
+
+statement ok
+DROP TABLE x
+
+statement error 42000!SELECT: identifier 'x' unknown
+SELECT ( 'txs' , 2 , -1.100000 , NULLIF ( 0 , COUNT ( CASE WHEN 4 >= 5 THEN x END ) ) ) , ( SUBSTR ( - 41 , - 14 % - CASE - - 1 WHEN - - 82 THEN - - 'profiler' END / 46 - - 87 * 52 ) , 4 , 0 , 'a' ) , ( 'txxxxt' , 2 , 4 , 'es' )
+
+statement error 42000!COUNT: aggregate functions not allowed on an unique value
+SELECT ( 'txs' , 2 , -1.100000 , NULLIF ( 0 , COUNT ( CASE WHEN 4 >= 5 THEN 'x' END ) ) ) , ( SUBSTR ( - 41 , - 14 % - CASE - - 1 WHEN - - 82 THEN - - 'profiler' END / 46 - - 87 * 52 ) , 4 , 0 , 'a' ) , ( 'txxxxt' , 2 , 4 , 'es' )
+
+statement error 42000!SELECT: subquery must return only one column
+SELECT ( 'txs' , 2 , -1.100000 , NULLIF ( 0 , CASE WHEN 4 >= 5 THEN 'x' END ) ) , ( SUBSTR ( - 41 , - 14 % - CASE - - 1 WHEN - - 82 THEN - - 'profiler' END / 46 - - 87 * 52 ) , 4 , 0 , 'a' ) , ( 'txxxxt' , 2 , 4 , 'es' )
+
+-- Segmentation fault in _rel_aggr (query=0x7f498c1ac090, rel=0x7f49c0a33d08, distinct=0, sname=0x0, aname=0x7f498c1a8190 "count", args=0x0, orderby=0x0, f=16580) at sql/server/rel_select.c:3657
+-- 3657			} else if (is_sql_aggr(f) && groupby->grouped) {
+statement error 42000!SELECT: identifier 'x' unknown
+SELECT ( 'txs' , 2 , -1.100000 , NULLIF ( 0 , COUNT ( CASE WHEN COUNT ( * ) >= 5 THEN MAX ( CASE WHEN x = 5 THEN x END ) END ) ) ) , ( SUBSTR ( - 41 , - 14 % - CASE - - 1 WHEN - - 82 THEN - - 'profiler' END / 46 - - 87 * 52 ) , 4 , 0 , 'a' ) , ( 'txxxxt' , 2 , 4 , 'es' )
+
+query TT
+SELECT 'b' , 'b'
+----
+b
+b
+
