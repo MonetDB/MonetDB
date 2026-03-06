@@ -53,5 +53,5 @@ mel_func pp_aggr_init_funcs[] = {
 #undef read
 #pragma section(".CRT$XCU",read)
 #endif
-LIB_STARTUP_FUNC(init_aggr_mal)
+LIB_STARTUP_FUNC(init_pp_aggr_mal)
 { mal_module("pp_aggr", NULL, pp_aggr_init_funcs); }

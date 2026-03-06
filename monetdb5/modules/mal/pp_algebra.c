@@ -253,8 +253,8 @@ LOCKEDAGGRprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				t[0] = val;												\
 				tcnt[0] = cnt;											\
 			} else {													\
-			    dbl tt = (tcnt[0] + cnt);								\
-				t[0] = (t[0]*((dbl)tcnt[0]/tt)) + (val*((dbl)cnt/tt));	\
+			    dbl tt = (dbl) (tcnt[0] + cnt);							\
+				t[0] = (T) ((t[0]*((dbl)tcnt[0]/tt)) + (val*((dbl)cnt/tt))); \
 				tcnt[0] += cnt;											\
 			}															\
 			MT_lock_set(&b->theaplock);									\
@@ -410,7 +410,7 @@ mulmod(lng a, lng b, lng c)
 				r = 0;					\
 			} else {					\
 				a = (T) ((a1 / n) * N1 +  (a2 / n) * N2 + (r1 + r2) / n); 	\
-				__int64 xlo, xhi;						\
+				__int64 xlo, xhi, rem;										\
 				xlo = _mul128((__int64) (a1 % n), N1, &xhi);			\
 				a += (T) _div128(xhi, xlo, (__int64) n, &rem);			\
 				xlo = _mul128((__int64) (a2 % n), N2, &xhi);			\
@@ -504,7 +504,7 @@ mulmod(lng a, lng b, lng c)
 		if (is_##T2##_nil(a2)) {						\
 			a2 = a1;							\
 			e2 = 0;								\
-			overflow += n2;							\
+			overflow += n2 != 0;							\
 			n2 = !(is_##T1##_nil(a1));					\
 		} else if (!is_##T1##_nil(a1)) {					\
 			T2 t = a2 + a1;							\
@@ -523,8 +523,8 @@ mulmod(lng a, lng b, lng c)
 		if (is_##T##_nil(a2)) {							\
 			a2 = a1;							\
 			e2 = e1;							\
-			overflow += n2;							\
-			overflow += (is_##T##_nil(a1)?n1:0);				\
+			overflow += n2 != 0;							\
+			overflow += (is_##T##_nil(a1)?n1!=0:0);				\
 			n2 = n1;							\
 		} else if (!is_##T##_nil(a1)) {						\
 		    T t = a2 + a1;							\
