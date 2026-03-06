@@ -504,7 +504,7 @@ mulmod(lng a, lng b, lng c)
 		if (is_##T2##_nil(a2)) {						\
 			a2 = a1;							\
 			e2 = 0;								\
-			overflow += n2 != 0;							\
+			overflow += n2;							\
 			n2 = !(is_##T1##_nil(a1));					\
 		} else if (!is_##T1##_nil(a1)) {					\
 			T2 t = a2 + a1;							\
@@ -523,8 +523,8 @@ mulmod(lng a, lng b, lng c)
 		if (is_##T##_nil(a2)) {							\
 			a2 = a1;							\
 			e2 = e1;							\
-			overflow += n2 != 0;							\
-			overflow += (is_##T##_nil(a1)?n1!=0:0);				\
+			overflow += n2;							\
+			overflow += (is_##T##_nil(a1)?n1:0);				\
 			n2 = n1;							\
 		} else if (!is_##T##_nil(a1)) {						\
 		    T t = a2 + a1;							\
@@ -3046,8 +3046,8 @@ LALGavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		/* float avg core */
 		if (!bn) {
 			bn = COLnew(0, TYPE_dbl, max, TRANSIENT);
-			cn = COLnew(0, TYPE_lng, max, TRANSIENT);
 			rn = COLnew(0, TYPE_dbl, max, TRANSIENT);
+			cn = COLnew(0, TYPE_lng, max, TRANSIENT);
 			if (bn == NULL || cn == NULL || rn == NULL) {
 				err = createException(MAL, "pp aggr.avg", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto error;
@@ -3064,8 +3064,8 @@ LALGavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			goto error;
 		}
 		dbl *rvals = Tloc(bn, 0);
-		lng *rcnts = Tloc(cn, 0);
 		dbl *rerrs = Tloc(rn, 0);
+		lng *rcnts = Tloc(cn, 0);
 		oid *grps = Tloc(g, 0);
 
 		QryCtx *qry_ctx = MT_thread_get_qry_ctx();
@@ -3126,11 +3126,11 @@ LALGavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			goto error;
 		}
 		dbl *vals = Tloc(b, 0);
-		lng *cnts = Tloc(c, 0);
 		dbl *errs = Tloc(r, 0);
-		lng *rcnts = Tloc(cn, 0);
-		dbl *rerrs = Tloc(rn, 0);
+		lng *cnts = Tloc(c, 0);
 		dbl *rvals = Tloc(bn, 0);
+		dbl *rerrs = Tloc(rn, 0);
+		lng *rcnts = Tloc(cn, 0);
 		oid *grps = Tloc(g, 0);
 
 		QryCtx *qry_ctx = MT_thread_get_qry_ctx();
