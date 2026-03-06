@@ -194,7 +194,7 @@ PPsubmerge_any( bat *Rzzl, bat *Rzzb, bat *Rzza, BAT *lcol, BAT *rcol, BAT *zzl,
 				p = o;
 				pa = oa;
 			} else {
-				pa = oa - (side?(re-p):(le-p));
+				pa = oa - (int)(side?(re-p):(le-p));
 			}
 		} else {
 			rlen += len;
