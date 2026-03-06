@@ -825,9 +825,8 @@ gdk_export gdk_return BATupdate(BAT *b, BAT *p, BAT *n, bool force)
 gdk_export gdk_return BATupdatepos(BAT *b, const oid *positions, BAT *n, bool autoincr, bool force)
 	__attribute__((__warn_unused_result__));
 
-gdk_return unshare_varsized_heap(BAT *b)
+gdk_export gdk_return unshare_varsized_heap(BAT *b)
 	__attribute__((__warn_unused_result__));
-	//__attribute__((__visibility__("hidden")));
 /* Functions to perform a binary search on a sorted BAT.
  * See gdk_search.c for details. */
 gdk_export BUN SORTfnd(BAT *b, const void *v);
