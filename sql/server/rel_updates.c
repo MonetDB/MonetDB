@@ -1410,7 +1410,12 @@ delete_table(sql_query *query, dlist *qname, str alias, symbol *opt_where, dlist
 			if (!(r = rel_logical_exp(query, r, opt_where, sql_where)))
 				return NULL;
 			e = exp_column(sql->sa, rel_name(r), TID, sql_fetch_localtype(TYPE_oid), CARD_MULTI, 0, 1, 1);
-			e->nid = rel_base_nid(bt, NULL);
+			if (t->multiset || t->composite) {
+				sql_exp *te = list_fetch(filter_exps_by_localtype(sa_list(sql->sa), ((sql_rel*)r->l)->exps, TYPE_oid), 0);
+				e->nid = te? te->nid : rel_base_nid(bt, NULL);
+			} else {
+				e->nid = rel_base_nid(bt, NULL);
+			}
 			e->alias.label = e->nid;
 			r = rel_project(sql->sa, r, list_append(new_exp_list(sql->sa), e));
 			r = rel_delete(sql->sa, rel_dup(bt), r);

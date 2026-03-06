@@ -4542,3 +4542,15 @@ free_exp(allocator *sa, sql_exp *e)
 	}
 	_free_exp_internal(sa, e);
 }
+
+list *
+filter_exps_by_localtype(list *res, list *exps, int8_t localtype)
+{
+	for (node *n = exps->h; n; n=n->next) {
+		sql_exp *e = n->data;
+		sql_subtype *t = exp_subtype(e);
+		if (t->type->localtype == localtype)
+			list_append(res, e);
+	}
+	return res;
+}
