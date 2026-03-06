@@ -1006,7 +1006,7 @@ topn_grouped( size_t n, oid *pos, oid *sl, heapn *hp, int *err) \
 			}				\
 		}					\
 	}						\
-	return j;				\
+	return (int)j;				\
 }							\
 
 static int

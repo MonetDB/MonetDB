@@ -527,7 +527,7 @@ mulmod(lng a, lng b, lng c)
 			overflow += (is_##T##_nil(a1)?(int)n1:0);			\
 			n2 = n1;							\
 		} else if (!is_##T##_nil(a1)) {						\
-		    T t = a2 + a1;							\
+		    	T t = a2 + a1;							\
 			if (fabs(a2) >= fabs(a1))					\
 				e2 += (a2 - t) + a1;					\
 			else								\
