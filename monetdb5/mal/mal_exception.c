@@ -135,10 +135,11 @@ createException(enum malexception type, const char *fcn, const char *format,
 {
 	va_list ap;
 	str ret = NULL, localGDKerrbuf = GDKerrbuf;
+	const char *p;
 
 	if (localGDKerrbuf &&
-		(ret = strstr(format, MAL_MALLOC_FAIL)) != NULL &&
-		ret[strlen(MAL_MALLOC_FAIL)] != ':' &&
+		(p = strstr(format, MAL_MALLOC_FAIL)) != NULL &&
+		p[strlen(MAL_MALLOC_FAIL)] != ':' &&
 		(strncmp(localGDKerrbuf, "GDKmalloc", 9) == 0 ||
 		 strncmp(localGDKerrbuf, "GDKrealloc", 10) == 0 ||
 		 strncmp(localGDKerrbuf, "GDKzalloc", 9) == 0 ||
