@@ -2984,7 +2984,7 @@ double_elim_col(sql_trans *tr, sql_column *col)
 			if (de) {
 				BUN bytes = b->tvheap->free - GDK_VAROFFSET;
 				if (bytes > 0)
-					de = bytes/b->twidth;
+					de = (int)(bytes/b->twidth);
 			}
 		}
 	}
