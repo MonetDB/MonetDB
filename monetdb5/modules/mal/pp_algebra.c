@@ -3135,7 +3135,7 @@ LALGavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 		QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 		qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
-		int overflow = 0;
+		lng overflow = 0;
 		assert(b->ttype == TYPE_dbl);
 		for (oid i = bn->batCount; i < max; i++) {
 			rvals[i] = dbl_nil;
@@ -3478,7 +3478,7 @@ LALGsum_float(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 		QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 		qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
-		int overflow = 0;
+		lng overflow = 0;
 		if (ATOMbasetype(b->ttype) == TYPE_flt) {
 			flt *vals = Tloc(b, 0);
 			flt *rerrs = Tloc(rn, 0);
@@ -3538,7 +3538,7 @@ LALGsum_float(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 		QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 		qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
-		int overflow = 0;
+		lng overflow = 0;
 		if (ATOMbasetype(b->ttype) == TYPE_flt) {
 			flt *vals = Tloc(b, 0);
 			flt *errs = Tloc(r, 0);
