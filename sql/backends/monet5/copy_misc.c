@@ -179,7 +179,7 @@ too_many_errors(struct error_handling *admin)
 }
 
 gdk_return
-copy_report_error(struct error_handling *restrict admin, int rel_row, int column, _In_z_ _Printf_format_string_ const char *restrict format, ...)
+copy_report_error(struct error_handling *restrict admin, lng rel_row, int column, _In_z_ _Printf_format_string_ const char *restrict format, ...)
 {
 	va_list ap;
 	const char *col_name;
@@ -251,7 +251,7 @@ copy_report_error(struct error_handling *restrict admin, int rel_row, int column
 		}
 		if (cnt) {
 			uint32_t *r = (uint32_t*)(admin->rows->tvheap->base + sizeof(ccand_t));
-			int w = rel_row%32;
+			int w = (int)(rel_row%32);
 			/* unset rel_row bit */
 			r[rel_row/32] &= ~(1<<w);
 		}

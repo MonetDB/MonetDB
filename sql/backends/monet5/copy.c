@@ -209,12 +209,12 @@ reader_new(stream *s, BUN offset, BUN maxcount, BUN sz, str col_sep_str, str lin
 	r->done = false;
 	r->error = false;
 	r->col_sep_str = (unsigned char*)col_sep_str;
-	r->col_sep_len = strlen(col_sep_str);
+	r->col_sep_len = (int)strlen(col_sep_str);
 	r->line_sep_str = (unsigned char*)line_sep_str;
-	r->line_sep_len = strlen(line_sep_str);
+	r->line_sep_len = (int)strlen(line_sep_str);
 	r->quote_str = (unsigned char*)quote_str;
 	r->null_repr = (unsigned char*)null_repr;
-	r->null_repr_len = strlen(null_repr);
+	r->null_repr_len = (int)strlen(null_repr);
 	r->escape_enabled = escape_enabled;
 	r->best_effort = best_effort;
 	return r;
@@ -570,7 +570,7 @@ COPYsplitlines(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		sleep_ns(1);
 
 	if (!r->done)
-		p->seqnr = r->bs->seq[p->wid];
+		p->seqnr = (int)r->bs->seq[p->wid];
 	else
 		p->seqnr = -2;
 	if (!r->done && !r->error) {

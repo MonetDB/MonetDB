@@ -87,7 +87,7 @@ struct error_handling {
 
 void copy_init_error_handling(struct error_handling *admin, Client cntxt, lng starting_row, int default_col_no, const char *column_name, bat rows);
 void copy_error_handling_inhibit_deletes(struct error_handling *admin);
-gdk_return copy_report_error(struct error_handling *admin, int rel_row, int column, _In_z_ _Printf_format_string_ const char *restrict format, ...)
+gdk_return copy_report_error(struct error_handling *admin, lng rel_row, int column, _In_z_ _Printf_format_string_ const char *restrict format, ...)
 	__attribute__((__format__(__printf__, 4, 5)));
 str copy_check_too_many_errors(struct error_handling *admin, const char *fname);
 const char *copy_error_message(struct error_handling *admin);
@@ -156,15 +156,15 @@ struct scan_state {
 
 extern str scan_fields(
 	struct error_handling *errors, struct scan_state *state,
-	unsigned char *null_repr, int null_repr_len, int ncols, int nrows, int **columns);
+	unsigned char *null_repr, int null_repr_len, int ncols, lng nrows, int **columns);
 
 extern str scan_fields1( /* no quote_char, sep len == 1 */
 	struct error_handling *errors, struct scan_state *state,
-	unsigned char *null_repr, int null_repr_len, int ncols, int nrows, int **columns);
+	unsigned char *null_repr, int null_repr_len, int ncols, lng nrows, int **columns);
 
 extern str scan_fieldsN(
 	struct error_handling *errors, struct scan_state *state,
-	unsigned char *null_repr, int null_repr_len, int ncols, int nrows, int **columns);
+	unsigned char *null_repr, int null_repr_len, int ncols, lng nrows, int **columns);
 
 
 ////////////////////////////////////////////////////////////////////////

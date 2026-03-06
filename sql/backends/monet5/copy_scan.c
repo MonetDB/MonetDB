@@ -448,7 +448,7 @@ scan_fieldN(struct scan_state *state, unsigned char *sep_found)
 static gdk_return
 check_row_end(
 	struct error_handling *errors, struct scan_state *state,
-	int row, int col, int ncols, unsigned char sep)
+	lng row, int col, int ncols, unsigned char sep)
 {
 	if (col == ncols - 1) {
 		// Last column. Expect LINE_SEP or COL_SEP LINE_SEP
@@ -493,7 +493,7 @@ check_row_end(
 str
 scan_fields(
 	struct error_handling *errors, struct scan_state *state,
-	unsigned char *null_repr, int null_repr_len, int ncols, int nrows, int **columns)
+	unsigned char *null_repr, int null_repr_len, int ncols, lng nrows, int **columns)
 {
 	int row = 0;
 	int col = 0;
@@ -575,7 +575,7 @@ scan_fields(
 str
 scan_fields1(
 	struct error_handling *errors, struct scan_state *state,
-	unsigned char *null_repr, int null_repr_len, int ncols, int nrows, int **columns)
+	unsigned char *null_repr, int null_repr_len, int ncols, lng nrows, int **columns)
 {
 	int row = 0;
 	int col = 0;
@@ -657,7 +657,7 @@ scan_fields1(
 str
 scan_fieldsN( /* ie use col_sep_str */
 	struct error_handling *errors, struct scan_state *state,
-	unsigned char *null_repr, int null_repr_len, int ncols, int nrows, int **columns)
+	unsigned char *null_repr, int null_repr_len, int ncols, lng nrows, int **columns)
 {
 	int row = 0;
 	int col = 0;
