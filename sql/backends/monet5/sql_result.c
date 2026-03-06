@@ -877,9 +877,7 @@ create_prepare_result(backend *b, cq *q, int nrows)
 	}
 
 	if (q->f->ops) {
-		int i;
-
-		for (n = q->f->ops->h, i = 0; n; n = n->next, i++) {
+		for (n = q->f->ops->h; n; n = n->next) {
 			a = n->data;
 			t = &a->type;
 

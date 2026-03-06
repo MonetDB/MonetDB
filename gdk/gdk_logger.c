@@ -369,12 +369,6 @@ string_reader(logger *lg, BAT *b, lng nr)
 }
 
 
-struct offset {
-	lng os;		  /* offset within source BAT in logfile */
-	lng nr;		  /* number of values to be copied */
-	lng od;		  /* offset within destination BAT in database */
-};
-
 static log_return
 log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, BAT **cands, bool skip_entry)
 {

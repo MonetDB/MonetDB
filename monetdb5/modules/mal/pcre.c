@@ -1493,7 +1493,7 @@ PCRElikeselect(Client ctx, bat *ret, const bat *bid, const bat *sid, const char 
 				if ((msg = mnre_like_build(ta, &re, vr, false, use_strcmp, (unsigned char) *esc)) != MAL_SUCCEED) \
 					goto bailout;										\
 				canditer_reset(&lci);									\
-				TIMEOUT_LOOP_IDX_DECL(lidx, lci.ncand, qry_ctx) {		\
+				TIMEOUT_LOOP(lci.ncand, qry_ctx) {		\
 					lo = canditer_next(&lci);							\
 					vl = VALUE(l, lo - lbase);							\
 					if (strNil(vl)) {									\
