@@ -62,5 +62,5 @@ mel_func pp_group_init_funcs[] = {
 #undef read
 #pragma section(".CRT$XCU",read)
 #endif
-LIB_STARTUP_FUNC(init_group_mal)
+LIB_STARTUP_FUNC(init_pp_group_mal)
 { mal_module("pp_group", NULL, pp_group_init_funcs); }
