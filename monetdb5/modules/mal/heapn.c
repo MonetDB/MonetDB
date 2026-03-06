@@ -292,7 +292,7 @@ heap_down_any( heapn *hp, int p)
 		hp->pos[q] = vpos;
 		return heap_down_any(hp, q);
 	}
-	return p+1;
+	return (int)(p+1);
 }
 
 static int
@@ -300,7 +300,7 @@ heap_up_any( heapn *hp, size_t p)
 {
 	subheap *sh = hp->sub;
 	if (p == 0)
-		return p+1;
+		return (int)(p+1);
 	size_t q = (p-1)/2;
 	/* todo get real bat var atom offsets */
 	int cmp = sh->cmp(BUNtvar(&sh->vbi, hp->pos[q]), BUNtvar(&sh->vbi, hp->pos[p]), sh);
@@ -318,11 +318,11 @@ heap_up_any( heapn *hp, size_t p)
 		hp->pos[p] = hp->pos[q];
 		hp->pos[q] = vpos;
 		if (q == 0)
-			return q+1;
+			return (int)(q+1);
 		return heap_up_any(hp, q);
 	}
 	p++;
-	return p;
+	return (int)p;
 }
 
 static gid
@@ -391,7 +391,7 @@ gheap_up_any( heapn *hp, gid g, size_t p)
 	subheap *sh = hp->sub;
 	oid *pos = hp->pos + g * hp->size;  \
 	if (p == 0)
-		return p+1;
+		return (int)(p+1);
 	size_t q = (p-1)/2;
 	/* todo get real bat var atom offsets */
 	int cmp = sh->cmp(BUNtvar(&sh->vbi, pos[q]), BUNtvar(&sh->vbi, pos[p]), sh);
@@ -409,11 +409,11 @@ gheap_up_any( heapn *hp, gid g, size_t p)
 		pos[p] = pos[q];
 		pos[q] = vpos;
 		if (q == 0)
-			return q+1;
+			return (int)(q+1);
 		return gheap_up_any(hp, g, q);
 	}
 	p++;
-	return p;
+	return (int)p;
 }
 
 static int
@@ -593,7 +593,7 @@ heap_down_##T( heapn *hp, size_t p)		\
 		hp->pos[q] = vpos;				\
 		return heap_down_##T(hp, q);	\
 	}									\
-	return p+1;							\
+	return (int)(p+1);							\
 }										\
 										\
 static int								\
@@ -601,7 +601,7 @@ heap_up_##T( heapn *hp, size_t p)		\
 {										\
 	subheap *sh = hp->sub;				\
 	if (p == 0)							\
-		return p+1;						\
+		return (int)(p+1);						\
 	T *vals = sh->vals;					\
 	size_t q = (p-1)/2;					\
 	T cmp = sh->nlarge?type_cmp(T, vals[hp->pos[q]] , vals[hp->pos[p]]):type_cmp_nsmall(T, vals[hp->pos[q]], vals[hp->pos[p]]); 			\
@@ -619,11 +619,11 @@ heap_up_##T( heapn *hp, size_t p)		\
 		hp->pos[p] = hp->pos[q];		\
 		hp->pos[q] = vpos;				\
 		if (q == 0)						\
-			return q+1;					\
+			return (int)(q+1);					\
 		return heap_up_##T(hp, q);		\
 	}									\
 	p++;								\
-	return p;							\
+	return (int)p;							\
 }										\
 										\
 static gid								\
@@ -695,7 +695,7 @@ gheap_down_##T( heapn *hp, gid g, size_t p)		\
 		pos[q] = vpos;				\
 		return gheap_down_##T(hp, g, q);	\
 	}									\
-	return p+1;							\
+	return (int)(p+1);							\
 }										\
 										\
 static int								\
@@ -704,7 +704,7 @@ gheap_up_##T( heapn *hp, gid g, size_t p)		\
 	subheap *sh = hp->sub;				\
 	oid *pos = hp->pos + g * hp->size;  \
 	if (p == 0)							\
-		return p+1;						\
+		return (int)(p+1);						\
 	T *vals = sh->vals;					\
 	size_t q = (p-1)/2;					\
 	T cmp = sh->nlarge?type_cmp(T, vals[pos[q]] , vals[pos[p]]):type_cmp_nsmall(T, vals[pos[q]], vals[pos[p]]); 			\
@@ -722,11 +722,11 @@ gheap_up_##T( heapn *hp, gid g, size_t p)		\
 		pos[p] = pos[q];				\
 		pos[q] = vpos;					\
 		if (q == 0)						\
-			return q+1;					\
+			return (int)(q+1);					\
 		return gheap_up_##T(hp, g, q);	\
 	}									\
 	p++;								\
-	return p;							\
+	return (int)p;							\
 }										\
 										\
 static gid								\
