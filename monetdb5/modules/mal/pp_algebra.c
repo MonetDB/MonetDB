@@ -3063,9 +3063,9 @@ LALGavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			err = createException(MAL, "pp aggr.avg", GDK_EXCEPTION);
 			goto error;
 		}
+		dbl *rvals = Tloc(bn, 0);
 		lng *rcnts = Tloc(cn, 0);
 		dbl *rerrs = Tloc(rn, 0);
-		dbl *rvals = Tloc(bn, 0);
 		oid *grps = Tloc(g, 0);
 
 		QryCtx *qry_ctx = MT_thread_get_qry_ctx();
