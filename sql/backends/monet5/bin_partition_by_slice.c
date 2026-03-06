@@ -45,7 +45,7 @@ exp_getcard(mvc *sql, sql_rel *rel, sql_exp *e)
 	prop *p;
 
 	if ((p = find_prop(e->p, PROP_NUNIQUES)))
-		est = p->value.dval;
+		est = (BUN)p->value.dval;
 
 	if (est == BUN_NONE || (ulng) est > (ulng) GDK_lng_max) {
 		cnt = 85000000;
@@ -238,7 +238,7 @@ rel_groupby_prepare_pp(list **aggrresults, list **serializedresults, backend *be
 					sql_exp *e = n->data;
 					if (!exp_is_scalar(e)) {
 						sql_subtype *t = exp_subtype(e);
-						stmt *s = stmt_bat_new(be, t, estimate*1.1);
+						stmt *s = stmt_bat_new(be, t, (lng)(estimate*1.1));
 						if (!s)
 							return NULL;
 						append(*serializedresults, s);
@@ -262,7 +262,7 @@ rel_groupby_prepare_pp(list **aggrresults, list **serializedresults, backend *be
 					for(node *n = obe->h; n; n = n->next) {
 						sql_exp *e = n->data;
 						sql_subtype *t = exp_subtype(e);
-						stmt *s = stmt_bat_new(be, t, estimate*1.1);
+						stmt *s = stmt_bat_new(be, t, (lng)(estimate*1.1));
 						if (!s)
 							return NULL;
 						append(*serializedresults, s);
@@ -321,7 +321,7 @@ rel_groupby_prepare_pp(list **aggrresults, list **serializedresults, backend *be
 
 		list *gbexps = rel->r;
 		if (need_serialize) {
-			stmt *s = stmt_bat_new(be, sql_fetch_localtype(TYPE_oid), estimate*1.1);
+			stmt *s = stmt_bat_new(be, sql_fetch_localtype(TYPE_oid), (lng)(estimate*1.1));
 			if (!s)
 				return NULL;
 			append(*serializedresults, s);
@@ -363,7 +363,7 @@ rel_groupby_prepare_pp(list **aggrresults, list **serializedresults, backend *be
 				int need_distinct = need_distinct(e);
 
 				if (need_distinct) { /* need reduced group (ids) result */
-					stmt *s = stmt_bat_new(be, sql_fetch_localtype(TYPE_oid), estimate*1.1);
+					stmt *s = stmt_bat_new(be, sql_fetch_localtype(TYPE_oid), (lng)(estimate*1.1));
 					if (!s)
 						return NULL;
 					append(*serializedresults, s);
@@ -372,7 +372,7 @@ rel_groupby_prepare_pp(list **aggrresults, list **serializedresults, backend *be
 					sql_exp *e = n->data;
 					if (!exp_is_scalar(e)) {
 						sql_subtype *t = exp_subtype(e);
-						stmt *s = stmt_bat_new(be, t, estimate*1.1);
+						stmt *s = stmt_bat_new(be, t, (lng)(estimate*1.1));
 						if (!s)
 							return NULL;
 						append(*serializedresults, s);
@@ -400,7 +400,7 @@ rel_groupby_prepare_pp(list **aggrresults, list **serializedresults, backend *be
 					for(node *n = obe->h; n; n = n->next) {
 						sql_exp *e = n->data;
 						sql_subtype *t = exp_subtype(e);
-						stmt *s = stmt_bat_new(be, t, estimate*1.1);
+						stmt *s = stmt_bat_new(be, t, (lng)(estimate*1.1));
 						if (!s)
 							return NULL;
 						append(*serializedresults, s);
@@ -414,7 +414,7 @@ rel_groupby_prepare_pp(list **aggrresults, list **serializedresults, backend *be
 			if (avg && EC_APPNUM(t->type->eclass) && it && !EC_APPNUM(it->type->eclass))
 				t = it;
 
-			stmt *s = nrparts?stmt_mat_new(be, t, 256):stmt_bat_new(be, t, estimate*1.1);
+			stmt *s = nrparts?stmt_mat_new(be, t, 256):stmt_bat_new(be, t, (lng)(estimate*1.1));
 			if (s == NULL)
 				return NULL;
 			append(shared, &s->nr);
@@ -422,14 +422,14 @@ rel_groupby_prepare_pp(list **aggrresults, list **serializedresults, backend *be
 
 			if (avg || sum) { /* remainder (or compensation) and count */
 				s = nrparts?stmt_mat_new(be, EC_APPNUM(t->type->eclass) ? t: sql_fetch_localtype(TYPE_lng), 256):
-					stmt_bat_new(be, EC_APPNUM(t->type->eclass) ? t: sql_fetch_localtype(TYPE_lng), estimate*1.1);
+					stmt_bat_new(be, EC_APPNUM(t->type->eclass) ? t: sql_fetch_localtype(TYPE_lng), (lng)(estimate*1.1));
 				if (s == NULL)
 					return NULL;
 				append(shared, &s->nr);
 				append(*aggrresults, &s->nr);
 
 				s = nrparts?stmt_mat_new(be, sql_fetch_localtype(TYPE_lng), 256):
-					stmt_bat_new(be, sql_fetch_localtype(TYPE_lng), estimate*1.1);
+					stmt_bat_new(be, sql_fetch_localtype(TYPE_lng), (lng)(estimate*1.1));
 				if (s == NULL)
 					return NULL;
 				append(shared, &s->nr);
