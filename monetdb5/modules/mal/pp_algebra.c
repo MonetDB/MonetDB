@@ -504,7 +504,7 @@ mulmod(lng a, lng b, lng c)
 		if (is_##T2##_nil(a2)) {						\
 			a2 = a1;							\
 			e2 = 0;								\
-			overflow += n2;							\
+			overflow += (int)n2;						\
 			n2 = !(is_##T1##_nil(a1));					\
 		} else if (!is_##T1##_nil(a1)) {					\
 			T2 t = a2 + a1;							\
@@ -523,8 +523,8 @@ mulmod(lng a, lng b, lng c)
 		if (is_##T##_nil(a2)) {							\
 			a2 = a1;							\
 			e2 = e1;							\
-			overflow += n2;							\
-			overflow += (is_##T##_nil(a1)?n1:0);				\
+			overflow += (int)n2;						\
+			overflow += (is_##T##_nil(a1)?(int)n1:0);			\
 			n2 = n1;							\
 		} else if (!is_##T##_nil(a1)) {						\
 		    T t = a2 + a1;							\
@@ -596,7 +596,7 @@ LOCKEDAGGRsum_avg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool 
 				break;
 #endif
 			case TYPE_flt: {
-				lng overflow = 0;
+				int overflow = 0;
 				flt a1 = *getArgReference_flt(stk, pci, pci->retc + 1);
 				flt r1 = *getArgReference_flt(stk, pci, pci->retc + 2);
 				lng n1 = *getArgReference_lng(stk, pci, pci->retc + 3);
@@ -614,7 +614,7 @@ LOCKEDAGGRsum_avg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool 
 				break;
 			}
 			case TYPE_dbl: {
-				lng overflow = 0;
+				int overflow = 0;
 				dbl a1 = *getArgReference_dbl(stk, pci, pci->retc + 1);
 				dbl r1 = *getArgReference_dbl(stk, pci, pci->retc + 2);
 				lng n1 = *getArgReference_lng(stk, pci, pci->retc + 3);
@@ -3070,7 +3070,7 @@ LALGavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 		QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 		qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
-		lng overflow = 0;
+		int overflow = 0;
 		switch (ATOMbasetype(b->ttype)) {
 			case TYPE_flt: {
 				flt *vals = Tloc(b, 0);
@@ -3135,7 +3135,7 @@ LALGavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 		QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 		qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
-		lng overflow = 0;
+		int overflow = 0;
 		assert(b->ttype == TYPE_dbl);
 		for (oid i = bn->batCount; i < max; i++) {
 			rvals[i] = dbl_nil;
@@ -3478,7 +3478,7 @@ LALGsum_float(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 		QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 		qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
-		lng overflow = 0;
+		int overflow = 0;
 		if (ATOMbasetype(b->ttype) == TYPE_flt) {
 			flt *vals = Tloc(b, 0);
 			flt *rerrs = Tloc(rn, 0);
@@ -3538,7 +3538,7 @@ LALGsum_float(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 		QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 		qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
-		lng overflow = 0;
+		int overflow = 0;
 		if (ATOMbasetype(b->ttype) == TYPE_flt) {
 			flt *vals = Tloc(b, 0);
 			flt *errs = Tloc(r, 0);
