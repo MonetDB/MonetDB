@@ -596,7 +596,7 @@ LOCKEDAGGRsum_avg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool 
 				break;
 #endif
 			case TYPE_flt: {
-				int overflow = 0;
+				lng overflow = 0;
 				flt a1 = *getArgReference_flt(stk, pci, pci->retc + 1);
 				flt r1 = *getArgReference_flt(stk, pci, pci->retc + 2);
 				lng n1 = *getArgReference_lng(stk, pci, pci->retc + 3);
@@ -614,7 +614,7 @@ LOCKEDAGGRsum_avg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool 
 				break;
 			}
 			case TYPE_dbl: {
-				int overflow = 0;
+				lng overflow = 0;
 				dbl a1 = *getArgReference_dbl(stk, pci, pci->retc + 1);
 				dbl r1 = *getArgReference_dbl(stk, pci, pci->retc + 2);
 				lng n1 = *getArgReference_lng(stk, pci, pci->retc + 3);
