@@ -1028,7 +1028,7 @@ topn_void( size_t n, oid *pos, oid *sl, heapn *hp, int *err)
 	}
 	if (sh->min) {
 		for(; i<n; i++) {
-			int c = hpvals[hp->pos[0]] - val+i;
+			int c = (int)(hpvals[hp->pos[0]] - val + i);
 			if (c < 0 || (sh->sub && c == 0 && subheap_newroot(hp, sh->sub, i))) {
 				pos[j] = heap_del_lng(hp);
 				pos[j] = heap_ins_void(hp, i, val+i, err);
@@ -1038,7 +1038,7 @@ topn_void( size_t n, oid *pos, oid *sl, heapn *hp, int *err)
 		}
 	} else {
 		for(; i<n; i++) {
-			int c = hpvals[hp->pos[0]] - val + i;
+			int c = (int)(hpvals[hp->pos[0]] - val + i);
 			if (c > 0 || (sh->sub && c == 0 && subheap_newroot(hp, sh->sub, i))) {
 				pos[j] = heap_del_lng(hp);
 				pos[j] = heap_ins_void(hp, i, val+i, err);
@@ -1047,7 +1047,7 @@ topn_void( size_t n, oid *pos, oid *sl, heapn *hp, int *err)
 			}
 		}
 	}
-	return j;
+	return (int)j;
 }
 
 static heapn *
@@ -1508,7 +1508,7 @@ HEAPtopn(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr pci)
 			if (gps) BBPreclaim(gps);
 			throw(MAL, "heap.topn", ILLEGAL_ARGUMENT);
 		}
-		heapn *hp = heapn_create(n, 0, gps?true:false);
+		heapn *hp = heapn_create((int)n, 0, gps?true:false);
 		hps = HEAPnew_topn(s, pci, args, hp, n, b, min, nulls_last);
 		if (!hps) {
 			BBPunfix(b->batCacheid);
@@ -1838,7 +1838,7 @@ HEAPorder(Client ctx, bat *rid, bat *hb)
 	BATsetcount(r, hp->used);
 	BATnegateprops(r);
 
-	int used = hp->used-1;
+	size_t used = hp->used-1;
 	if (!hp->sub || (!hp->shared && hp->grouped)) {
 		BUN j = 0;
 		for(size_t g = 0; g < hp->gsize; g++) {
