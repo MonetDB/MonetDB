@@ -1612,7 +1612,7 @@ HEAPtopn(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr pci)
 			nsh->in = BATdescriptor(*in);
 			if (!nsh->in) {
 				if (!private) {
-					ATOMIC_INC(&hps->unused);
+					hps->unused++;
 					pipeline_unlock1(hps);
 				}
 				for(nsh = sh; nsh; nsh = nsh->sub) {
