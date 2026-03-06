@@ -186,7 +186,7 @@ str_hsh( str v )
     return h;
 }
 
-extern hash_table *ht_create(int type, int size, hash_table *p);
+extern hash_table *ht_create(int type, size_t size, hash_table *p);
 extern int ht_rehash(hash_table *ht);
 
 extern void ht_activate(hash_table *ht);

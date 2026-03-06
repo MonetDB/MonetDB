@@ -60,7 +60,7 @@ unshare_varsized_heap(BAT *b)
 					       o += GDK_VAROFFSET;
 					if (o && atomput(b, &o, oh->base + o) == (var_t) -1)
 						goto bailout;
-					((uint8_t *) b->theap->base)[i] = (uint8_t) o?(o - GDK_VAROFFSET):0;
+					((uint8_t *) b->theap->base)[i] = (uint8_t)(o?(o - GDK_VAROFFSET):0);
 				}
 				break;
 			case 2:
@@ -70,7 +70,7 @@ unshare_varsized_heap(BAT *b)
 					       o += GDK_VAROFFSET;
 					if (o && atomput(b, &o, oh->base + o) == (var_t) -1)
 						goto bailout;
-					((uint16_t *) b->theap->base)[i] = (uint16_t) o?(o - GDK_VAROFFSET):0;
+					((uint16_t *) b->theap->base)[i] = (uint16_t)(o?(o - GDK_VAROFFSET):0);
 				}
 				break;
 #if SIZEOF_VAR_T == 8

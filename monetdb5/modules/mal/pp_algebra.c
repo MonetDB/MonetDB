@@ -18,8 +18,10 @@
 
 #define sum(a,b) a+b
 #define prod(a,b) a*b
+#ifndef min
 #define min(a,b) a<b?a:b
 #define max(a,b) a>b?a:b
+#endif
 
 #define uuid_min(a,b) ((cmp((void*)&a,(void*)&b)<0)?a:b)
 #define uuid_max(a,b) ((cmp((void*)&a,(void*)&b)>0)?a:b)
@@ -391,95 +393,95 @@ mulmod(lng a, lng b, lng c)
 #include <immintrin.h>
 #pragma intrinsic(_mul128)
 #pragma intrinsic(_div128)
-#define avg_aggr_comb(T, a1, r1, n1, a2, r2, n2)							\
-	do {																	\
-		if (is_##T##_nil(a2)) {												\
-			a2 = a1;														\
-			r2 = r1;														\
-			n2 = n1;														\
-		} else if (!is_##T##_nil(a1)) {										\
-			lng N1 = is_lng_nil(n1) ? 0 : n1;								\
-			lng N2 = is_lng_nil(n2) ? 0 : n2;								\
-			lng n = N1 + N2;												\
-			T a;															\
-			lng r;															\
-			if (n == 0) {													\
-				a = 0;														\
-				r = 0;														\
-			} else {														\
+#define avg_aggr_comb(T, a1, r1, n1, a2, r2, n2)			\
+	do {								\
+		if (is_##T##_nil(a2)) {					\
+			a2 = a1;					\
+			r2 = r1;					\
+			n2 = n1;					\
+		} else if (!is_##T##_nil(a1)) {				\
+			lng N1 = is_lng_nil(n1) ? 0 : n1;		\
+			lng N2 = is_lng_nil(n2) ? 0 : n2;		\
+			lng n = N1 + N2;				\
+			T a;						\
+			lng r;						\
+			if (n == 0) {					\
+				a = 0;					\
+				r = 0;					\
+			} else {					\
 				a = (T) ((a1 / n) * N1 +  (a2 / n) * N2 + (r1 + r2) / n); 	\
-				__int64 xlo, xhi;											\
-				xlo = _mul128((__int64) (a1 % n), N1, &xhi);				\
-				a += (T) _div128(xhi, xlo, (__int64) n, &rem);				\
-				xlo = _mul128((__int64) (a2 % n), N2, &xhi);				\
-				a += (T) _div128(xhi, xlo, (__int64) n, &rem);				\
-				r = (r1 + r2) % n;											\
-				xlo = _mul128(a1, N1, &xhi);								\
+				__int64 xlo, xhi;						\
+				xlo = _mul128((__int64) (a1 % n), N1, &xhi);			\
+				a += (T) _div128(xhi, xlo, (__int64) n, &rem);			\
+				xlo = _mul128((__int64) (a2 % n), N2, &xhi);			\
+				a += (T) _div128(xhi, xlo, (__int64) n, &rem);			\
+				r = (r1 + r2) % n;						\
+				xlo = _mul128(a1, N1, &xhi);					\
 				xhi = _div128(xhi, xlo, n, &xlo); /* xlo is remainder */ 	\
-				r += xlo;													\
-				xlo = _mul128(a2, N2, &xhi);								\
+				r += xlo;							\
+				xlo = _mul128(a2, N2, &xhi);					\
 				xhi = _div128(xhi, xlo, n, &xlo); /* xlo is remainder */ 	\
-				r += xlo;													\
-				while (r >= n) {											\
-					r -= n;													\
-					a++;													\
-				}															\
-				while (r < 0) {												\
-					r += n;													\
-					a--;													\
-				}															\
-				fix_avg(T, a, r, n);										\
-			}																\
-			a2 = a;															\
-			r2 = r;															\
-			n2 = n;															\
-		}																	\
+				r += xlo;							\
+				while (r >= n) {						\
+					r -= n;							\
+					a++;							\
+				}								\
+				while (r < 0) {							\
+					r += n;							\
+					a--;							\
+				}								\
+				fix_avg(T, a, r, n);						\
+			}									\
+			a2 = a;									\
+			r2 = r;									\
+			n2 = n;									\
+		}										\
 	} while (0)
 #else
-#define avg_aggr_comb(T, a1, r1, n1, a2, r2, n2)							\
-	do {																	\
-		if (is_##T##_nil(a2)) {												\
-			a2 = a1;														\
-			r2 = r1;														\
-			n2 = n1;														\
-		} else if (!is_##T##_nil(a1)) {										\
-			lng N1 = is_lng_nil(n1) ? 0 : n1;								\
-			lng N2 = is_lng_nil(n2) ? 0 : n2;								\
-			lng n = N1 + N2;												\
-			T a;															\
-			lng r;															\
-			if (n == 0) {													\
-				a = 0;														\
-				r = 0;														\
-			} else {														\
-				lng x1 = a1 % n;											\
-				lng x2 = a2 % n;											\
-				if ((N1 != 0 &&												\
+#define avg_aggr_comb(T, a1, r1, n1, a2, r2, n2)			\
+	do {								\
+		if (is_##T##_nil(a2)) {					\
+			a2 = a1;					\
+			r2 = r1;					\
+			n2 = n1;					\
+		} else if (!is_##T##_nil(a1)) {				\
+			lng N1 = is_lng_nil(n1) ? 0 : n1;		\
+			lng N2 = is_lng_nil(n2) ? 0 : n2;		\
+			lng n = N1 + N2;				\
+			T a;						\
+			lng r;						\
+			if (n == 0) {					\
+				a = 0;					\
+				r = 0;					\
+			} else {					\
+				lng x1 = a1 % n;			\
+				lng x2 = a2 % n;			\
+				if ((N1 != 0 &&				\
 					 (x1 > GDK_lng_max / N1 || x1 < -GDK_lng_max / N1)) || 	\
-					(N2 != 0 &&												\
+					(N2 != 0 &&					        \
 					 (x2 > GDK_lng_max / N2 || x2 < -GDK_lng_max / N2))) { 	\
-					err = createException(SQL, "aggr.avg",					\
-						  SQLSTATE(22003) "overflow in calculation");		\
-					goto error;												\
-				}															\
-				a = (T) ((a1 / n) * N1 + (x1 * N1) / n +					\
-						 (a2 / n) * N2 + (x2 * N2) / n +					\
-						 (r1 + r2) / n);									\
+					err = createException(SQL, "aggr.avg",			\
+						  SQLSTATE(22003) "overflow in calculation");	\
+					goto error;						\
+				}								\
+				a = (T) ((a1 / n) * N1 + (x1 * N1) / n +			\
+						 (a2 / n) * N2 + (x2 * N2) / n +		\
+						 (r1 + r2) / n);				\
 				r = mulmod(a1, N1, n) + mulmod(a2, N2, n) + (r1 + r2) % n; 	\
-				while (r >= n) {											\
-					r -= n;													\
-					a++;													\
-				}															\
-				while (r < 0) {												\
-					r += n;													\
-					a--;													\
-				}															\
-				fix_avg(T, a, r, n);										\
-			}																\
-			a2 = a;															\
-			r2 = r;															\
-			n2 = n;															\
-		}																	\
+				while (r >= n) {						\
+					r -= n;							\
+					a++;							\
+				}								\
+				while (r < 0) {							\
+					r += n;							\
+					a--;							\
+				}								\
+				fix_avg(T, a, r, n);						\
+			}									\
+			a2 = a;									\
+			r2 = r;									\
+			n2 = n;									\
+		}										\
 	} while (0)
 #endif
 
@@ -488,53 +490,53 @@ mulmod(lng a, lng b, lng c)
 		T a1 = *getArgReference_##T(stk, pci, pci->retc + 1);				\
 		lng r1 = *getArgReference_lng(stk, pci, pci->retc + 2);				\
 		lng n1 = *getArgReference_lng(stk, pci, pci->retc + 3);				\
-		T a2 = *(T*)Tloc(b, 0);												\
-		lng r2 = *(lng*)Tloc(r, 0);											\
-		lng n2 = *(lng*)Tloc(c, 0);											\
-		avg_aggr_comb(T, a1, r1, n1, a2, r2, n2);							\
-		*(T*)Tloc(b, 0) = a2;												\
-		*(lng*)Tloc(r, 0) = r2;												\
-		*(lng*)Tloc(c, 0) = n2;												\
+		T a2 = *(T*)Tloc(b, 0);								\
+		lng r2 = *(lng*)Tloc(r, 0);							\
+		lng n2 = *(lng*)Tloc(c, 0);							\
+		avg_aggr_comb(T, a1, r1, n1, a2, r2, n2);					\
+		*(T*)Tloc(b, 0) = a2;								\
+		*(lng*)Tloc(r, 0) = r2;								\
+		*(lng*)Tloc(c, 0) = n2;								\
 	} while (0)
 
-#define avg_aggr_float(T1, T2, a1, a2, e2, n2)								\
-	do {																	\
-		if (is_##T2##_nil(a2)) {											\
-			a2 = a1;														\
-			e2 = 0;															\
-			overflow += n2;													\
-			n2 = !(is_##T1##_nil(a1));										\
-		} else if (!is_##T1##_nil(a1)) {									\
-			T2 t = a2 + a1;													\
-			if (fabs(a2) >= fabs(a1))										\
-				e2 += (a2 - t) + a1;										\
-			else															\
-				e2 += (a1 - t) + a2;										\
-			a2 = t;															\
-			overflow += (isinf(t) || isnan(t));								\
-			n2++;															\
-		}																	\
+#define avg_aggr_float(T1, T2, a1, a2, e2, n2)						\
+	do {										\
+		if (is_##T2##_nil(a2)) {						\
+			a2 = a1;							\
+			e2 = 0;								\
+			overflow += n2;							\
+			n2 = !(is_##T1##_nil(a1));					\
+		} else if (!is_##T1##_nil(a1)) {					\
+			T2 t = a2 + a1;							\
+			if (fabs(a2) >= fabs(a1))					\
+				e2 += (a2 - t) + a1;					\
+			else								\
+				e2 += (a1 - t) + a2;					\
+			a2 = t;								\
+			overflow += (isinf(t) || isnan(t));				\
+			n2++;								\
+		}									\
 	} while(0)
 
-#define avg_aggr_float_comb(T, a1, e1, n1, a2, e2, n2)						\
-	do {																	\
-		if (is_##T##_nil(a2)) {												\
-			a2 = a1;														\
-			e2 = e1;														\
-			overflow += n2;													\
-			overflow += (is_##T##_nil(a1)?n1:0);							\
-			n2 = n1;														\
-		} else if (!is_##T##_nil(a1)) {										\
-		    T t = a2 + a1;													\
-			if (fabs(a2) >= fabs(a1))										\
-				e2 += (a2 - t) + a1;										\
-			else															\
-				e2 += (a1 - t) + a2;										\
-			a2 = t;															\
-			overflow += (isinf(t) || isnan(t));								\
-			e2 += e1;														\
-			n2 += n1;														\
-		}																	\
+#define avg_aggr_float_comb(T, a1, e1, n1, a2, e2, n2)					\
+	do {										\
+		if (is_##T##_nil(a2)) {							\
+			a2 = a1;							\
+			e2 = e1;							\
+			overflow += n2;							\
+			overflow += (is_##T##_nil(a1)?n1:0);				\
+			n2 = n1;							\
+		} else if (!is_##T##_nil(a1)) {						\
+		    T t = a2 + a1;							\
+			if (fabs(a2) >= fabs(a1))					\
+				e2 += (a2 - t) + a1;					\
+			else								\
+				e2 += (a1 - t) + a2;					\
+			a2 = t;								\
+			overflow += (isinf(t) || isnan(t));				\
+			e2 += e1;							\
+			n2 += n1;							\
+		}									\
 	} while(0)
 
 static str

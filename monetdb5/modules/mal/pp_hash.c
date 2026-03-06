@@ -132,7 +132,7 @@ _ht_create( int type, size_t size, hash_table *p)
 }
 
 hash_table *
-ht_create(int type, int size, hash_table *p)
+ht_create(int type, size_t size, hash_table *p)
 {
 	if (size < HT_MIN_SIZE)
 		size = HT_MIN_SIZE;
@@ -1899,7 +1899,7 @@ OAHASHnprobe(Client ctx, bat *PRB_oid, bat *HSH_slotid, const bat *PRB_key, cons
 		Type *vals = ht->vals; \
 		\
 		if (any) { \
-			gid k = (gid)_hash_##Type(Type##_nil)&ht->mask; \
+			gid k = (gid)_hash_##Type(*(BaseType*)(&Type##_nil))&ht->mask; \
 			gid slot = ht->gids[k]; \
 			while (slot && !is_##Type##_nil(vals[slot])) { \
 				k++; \
@@ -2586,7 +2586,7 @@ OAHASHprobe_cmbd(Client ctx, bat *PRB_oid, bat *HSH_slotid, const bat *PRB_key, 
 				slt[mtdcnt2] = oid_nil; \
 				bit has_nil = false; \
 				if (any) { \
-					gid hsh = (gid)combine(gi[i], _hash_##Type(Type##_nil), prime)&ht->mask; \
+					gid hsh = (gid)combine(gi[i], _hash_##Type(*(BaseType*)(&Type##_nil)), prime)&ht->mask; \
 					slot = ATOMIC_GET(ht->gids+hsh); \
 					while (slot && (pgids[slot] != gi[i] || !is_##Type##_nil(vals[slot]))) { \
 						hsh++; \
@@ -3254,7 +3254,7 @@ OAHASHno_slices(Client ctx, int *no_slices, bat *ht_sink)
 	if (h->size < SLICE_SIZE )
 		*no_slices = 1;
 	else
-		*no_slices = (h->size+SLICE_SIZE-1)/SLICE_SIZE;
+		*no_slices = (int)((h->size+SLICE_SIZE-1)/SLICE_SIZE);
 	FORCEMITODEBUG
 	if (*no_slices < GDKnr_threads)
 		*no_slices = GDKnr_threads;
@@ -3309,6 +3309,12 @@ OAHASHnth_slice(Client ctx, bat *slice, bat *ht_sink, int *slice_nr)
 		h[j] = _hash_##T((T)v[j]); \
 } break;
 
+#define hashloopf(T, BT) { \
+	T *v = Tloc(i, 0); \
+	for (BUN j = 0; j<cnt; j++) \
+		h[j] = _hash_##T(*(BT*)(v+j)); \
+} break;
+
 static str
 OAHASHhash(Client cntxt, MalBlkPtr m, MalStkPtr stk, InstrPtr p)
 {
@@ -3353,9 +3359,9 @@ OAHASHhash(Client cntxt, MalBlkPtr m, MalStkPtr stk, InstrPtr p)
 		hashloop(hge);
 #endif
 	case TYPE_flt:
-		hashloop(flt);
+		hashloopf(flt, int);
 	case TYPE_dbl:
-		hashloop(dbl);
+		hashloopf(dbl, lng);
 	default:
 		printf("todo\n");
 	}

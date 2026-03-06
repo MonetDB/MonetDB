@@ -207,7 +207,7 @@ SLICERno_slices(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (cnt < SLICE_SIZE)
 		*res = 1;
 	else
-		*res = (cnt+SLICE_SIZE-1)/SLICE_SIZE;
+		*res = (int)((cnt+SLICE_SIZE-1)/SLICE_SIZE);
 	FORCEMITODEBUG
 	if (*res < GDKnr_threads)
 		*res = MIN((int)GDKnr_threads,(int)cnt);
