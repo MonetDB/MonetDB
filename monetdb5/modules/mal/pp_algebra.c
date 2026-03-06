@@ -3064,7 +3064,7 @@ LALGavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			goto error;
 		}
 		lng *rcnts = Tloc(cn, 0);
-		lng *rerrs = Tloc(rn, 0);
+		dbl *rerrs = Tloc(rn, 0);
 		dbl *rvals = Tloc(bn, 0);
 		oid *grps = Tloc(g, 0);
 
@@ -3129,7 +3129,7 @@ LALGavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		lng *cnts = Tloc(c, 0);
 		dbl *errs = Tloc(r, 0);
 		lng *rcnts = Tloc(cn, 0);
-		lng *rerrs = Tloc(rn, 0);
+		dbl *rerrs = Tloc(rn, 0);
 		dbl *rvals = Tloc(bn, 0);
 		oid *grps = Tloc(g, 0);
 
