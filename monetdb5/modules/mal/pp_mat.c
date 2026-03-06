@@ -133,7 +133,7 @@ MATnew(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			break;
 		BATnegateprops(b);
 		if (hashsize)
-			b->tsink = (Sink*)ht_create(tt, hashsize*1.2*2.1, pmat?(hash_table*)pmat->bat[i]->tsink:NULL);
+			b->tsink = (Sink*)ht_create(tt, (size_t)(hashsize*1.2*2.1), pmat?(hash_table*)pmat->bat[i]->tsink:NULL);
 	}
 	if (i < mat->nr) {
 		mat_destroy(mat);
@@ -285,7 +285,7 @@ PARTpartition(Client ctx, bat *pos, const bat *part, const bat *glen )
 			if (err == NULL) {								\
 				T *dp = (T*)Tloc(d, 0);						\
 				for(BUN i = 0; i<BATcount(d); i++) {		\
-					int g = grp[i];							\
+					lng g = grp[i];							\
 					cp[g][curpos[g]] = dp[i];				\
 					curpos[g]++;							\
 				}											\
@@ -314,7 +314,7 @@ PARTpartition(Client ctx, bat *pos, const bat *part, const bat *glen )
 			BATiter di = bat_iterator(d); \
 			BUN cnt = BATcount(d); \
 			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
-				int g = grp[i];						\
+				lng g = grp[i];						\
 				if (tfastins_nocheckVAR( mt->bat[g], curpos[g], BUNtvar(&di, i)) != GDK_SUCCEED) { \
 					err = createException(MAL, "pp algebra.projection", MAL_MALLOC_FAIL); \
 					goto error; \
@@ -518,7 +518,7 @@ MATnr_parts(Client ctx, int *nr, const bat *mat, const int *slicesize)
 	assert(mt->s.type == MAT_SINK);
 	int n = 0;
 	for(int i = 0; i< mt->nr; i++) {
-		n += (BATcount(mt->bat[i]) + sz - 1)/sz;
+		n += (int)((BATcount(mt->bat[i]) + sz - 1)/sz);
 		mt->bat[i] = BATsetaccess(mt->bat[i], BAT_READ);
 	}
 	mt->nr_parts = n;
@@ -528,7 +528,7 @@ MATnr_parts(Client ctx, int *nr, const bat *mat, const int *slicesize)
 	if (!mt->part || !mt->subpart)
 		throw(MAL, "mat.nr_parts", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	for(int i = 0, k = 0; i<mt->nr; i++) {
-		int nr = (BATcount(mt->bat[i]) + sz - 1)/sz;
+		int nr = (int)((BATcount(mt->bat[i]) + sz - 1)/sz);
 		for(int j = 0; j < nr; j++, k++) {
 			mt->part[k] = i;
 			mt->subpart[k] = j;

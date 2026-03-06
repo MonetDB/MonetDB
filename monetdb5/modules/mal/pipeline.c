@@ -36,7 +36,7 @@ BATupgrade(BAT *r, BAT *b, bool locked)
 		if (locked)
 			MT_lock_unset(&r->theaplock);
 		if (r->twidth < b->twidth)
-			err = GDKupgradevarheap(r, (1L << (8L << (b->tshift - 1))) + GDK_VAROFFSET, 0, 0) != GDK_SUCCEED;
+			err = GDKupgradevarheap(r, (LL_CONSTANT(1) << (8 << (b->tshift - 1))) + GDK_VAROFFSET, 0, 0) != GDK_SUCCEED;
 		if (locked)
 			MT_lock_set(&r->theaplock);
 		assert (r->twidth == b->twidth);
