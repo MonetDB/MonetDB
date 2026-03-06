@@ -616,6 +616,7 @@ ssize_t timestamp_precision_tostr(allocator *ma, str *buf, size_t *len, timestam
 ssize_t timestamp_tostr(allocator *ma, str *buf, size_t *len, const timestamp *val, bool external);
 ssize_t timestamp_tz_fromstr(allocator *ma, const char *buf, size_t *len, timestamp **ret, bool external);
 const timestamp unixepoch;
+gdk_return unshare_varsized_heap(BAT *b) __attribute__((__warn_unused_result__));
 const uuid uuid_nil;
 gdk_return void_inplace(BAT *b, oid id, const void *val, bool force) __attribute__((__warn_unused_result__));
 
