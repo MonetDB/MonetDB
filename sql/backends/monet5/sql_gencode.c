@@ -105,12 +105,11 @@ InstrPtr
 relational_func_create_result_part2(MalBlkPtr mb, InstrPtr q, sql_rel *r)
 {
 	node *n;
-	int i;
 
 	if (q == NULL)
 		return NULL;
 	q->argc = q->retc = 0;
-	for (i = 0, n = r->exps->h; n; n = n->next, i++) {
+	for (n = r->exps->h; n; n = n->next) {
 		sql_exp *e = n->data;
 		int type = exp_subtype(e)->type->localtype;
 

@@ -1541,14 +1541,14 @@ describe_sequence(Mapi mid, const char *schema, const char *tname, stream *sqlf)
 	char *sname = NULL;
 
 	if (schema == NULL) {
-		if ((sname = strchr(tname, '.')) != NULL) {
-			size_t len = sname - tname + 1;
+		const char *p = strchr(tname, '.');
+		if (p != NULL) {
+			size_t len = p - tname;
 
-			sname = malloc(len);
+			sname = strndup(tname, len);
 			if (sname == NULL)
 				goto bailout;
-			strcpy_len(sname, tname, len);
-			tname += len;
+			tname += len + 1;
 		} else if ((sname = get_schema(mid)) == NULL) {
 			return 1;
 		}
@@ -2102,16 +2102,16 @@ dump_table(Mapi mid, const char *schema, const char *tname, stream *sqlf,
 	int rc = 1;
 
 	if (schema == NULL) {
-		if ((sname = strchr(tname, '.')) != NULL) {
-			size_t len = sname - tname + 1;
+		const char *p = strchr(tname, '.');
+		if (p != NULL) {
+			size_t len = p - tname;
 
-			sname = malloc(len);
+			sname = strndup(tname, len);
 			if (sname == NULL) {
 				fprintf(stderr, "malloc failure\n");
 				return 1;
 			}
-			strcpy_len(sname, tname, len);
-			tname += len;
+			tname += len + 1;
 		} else if ((sname = get_schema(mid)) == NULL) {
 			return 1;
 		}
