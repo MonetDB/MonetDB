@@ -1107,7 +1107,7 @@ BATcalcmin(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 			uint8_t *restrict bcast = (uint8_t *) Tloc(bn, 0);
 			uint16_t width = bn->twidth;
 			if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
-				TIMEOUT_LOOP_IDX_DECL(i, ci1.ncand, qry_ctx) {
+				TIMEOUT_LOOP(ci1.ncand, qry_ctx) {
 					oid x1 = canditer_next_dense(&ci1) - b1hseqbase;
 					oid x2 = canditer_next_dense(&ci2) - b2hseqbase;
 					const void *p1 = BUNtloc(&b1i, x1);
@@ -1124,7 +1124,7 @@ BATcalcmin(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 				TIMEOUT_CHECK(qry_ctx,
 					      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
 			} else {
-				TIMEOUT_LOOP_IDX_DECL(i, ci1.ncand, qry_ctx) {
+				TIMEOUT_LOOP(ci1.ncand, qry_ctx) {
 					oid x1 = canditer_next(&ci1) - b1hseqbase;
 					oid x2 = canditer_next(&ci2) - b2hseqbase;
 					const void *p1 = BUNtloc(&b1i, x1);
@@ -1334,7 +1334,7 @@ BATcalcmin_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 			uint8_t *restrict bcast = (uint8_t *) Tloc(bn, 0);
 			uint16_t width = bn->twidth;
 			if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
-				TIMEOUT_LOOP_IDX_DECL(i, ci1.ncand, qry_ctx) {
+				TIMEOUT_LOOP(ci1.ncand, qry_ctx) {
 					oid x1 = canditer_next_dense(&ci1) - b1hseqbase;
 					oid x2 = canditer_next_dense(&ci2) - b2hseqbase;
 					const void *p1 = BUNtloc(&b1i, x1);
@@ -1355,7 +1355,7 @@ BATcalcmin_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 				TIMEOUT_CHECK(qry_ctx,
 					      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
 			} else {
-				TIMEOUT_LOOP_IDX_DECL(i, ci1.ncand, qry_ctx) {
+				TIMEOUT_LOOP(ci1.ncand, qry_ctx) {
 					oid x1 = canditer_next(&ci1) - b1hseqbase;
 					oid x2 = canditer_next(&ci2) - b2hseqbase;
 					const void *p1 = BUNtloc(&b1i, x1);
@@ -1513,7 +1513,7 @@ BATcalcmincst(BAT *b, const ValRecord *v, BAT *s)
 		} else {
 			uint8_t *restrict bcast = (uint8_t *) Tloc(bn, 0);
 			uint16_t width = bn->twidth;
-			TIMEOUT_LOOP_IDX_DECL(i, ci.ncand, qry_ctx) {
+			TIMEOUT_LOOP(ci.ncand, qry_ctx) {
 				oid x = canditer_next(&ci) - bhseqbase;
 				const void *restrict p1 = BUNtloc(&bi, x);
 				if (eq(p1, nil)) {
@@ -1687,7 +1687,7 @@ BATcalcmincst_no_nil(BAT *b, const ValRecord *v, BAT *s)
 			uint8_t *restrict bcast = (uint8_t *) Tloc(bn, 0);
 			uint16_t width = bn->twidth;
 			if (eq(p2, nil)) {
-				TIMEOUT_LOOP_IDX_DECL(i, ci.ncand, qry_ctx) {
+				TIMEOUT_LOOP(ci.ncand, qry_ctx) {
 					oid x = canditer_next(&ci) - bhseqbase;
 					const void *restrict p1 = BUNtloc(&bi, x);
 					nils |= eq(p1, nil);
@@ -1697,7 +1697,7 @@ BATcalcmincst_no_nil(BAT *b, const ValRecord *v, BAT *s)
 				TIMEOUT_CHECK(qry_ctx,
 					      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
 			} else {
-				TIMEOUT_LOOP_IDX_DECL(i, ci.ncand, qry_ctx) {
+				TIMEOUT_LOOP(ci.ncand, qry_ctx) {
 					oid x = canditer_next(&ci) - bhseqbase;
 					const void *restrict p1 = BUNtloc(&bi, x);
 					p1 = eq(p1, nil) || cmp(p2, p1) < 0 ? p2 : p1;
@@ -1851,7 +1851,7 @@ BATcalcmax(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 			uint8_t *restrict bcast = (uint8_t *) Tloc(bn, 0);
 			uint16_t width = bn->twidth;
 			if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
-				TIMEOUT_LOOP_IDX_DECL(i, ci1.ncand, qry_ctx) {
+				TIMEOUT_LOOP(ci1.ncand, qry_ctx) {
 					oid x1 = canditer_next_dense(&ci1) - b1hseqbase;
 					oid x2 = canditer_next_dense(&ci2) - b2hseqbase;
 					const void *p1 = BUNtloc(&b1i, x1);
@@ -1868,7 +1868,7 @@ BATcalcmax(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 				TIMEOUT_CHECK(qry_ctx,
 					      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
 			} else {
-				TIMEOUT_LOOP_IDX_DECL(i, ci1.ncand, qry_ctx) {
+				TIMEOUT_LOOP(ci1.ncand, qry_ctx) {
 					oid x1 = canditer_next(&ci1) - b1hseqbase;
 					oid x2 = canditer_next(&ci2) - b2hseqbase;
 					const void *p1 = BUNtloc(&b1i, x1);
@@ -2038,7 +2038,7 @@ BATcalcmax_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 			uint8_t *restrict bcast = (uint8_t *) Tloc(bn, 0);
 			uint16_t width = bn->twidth;
 			if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
-				TIMEOUT_LOOP_IDX_DECL(i, ci1.ncand, qry_ctx) {
+				TIMEOUT_LOOP(ci1.ncand, qry_ctx) {
 					oid x1 = canditer_next_dense(&ci1) - b1hseqbase;
 					oid x2 = canditer_next_dense(&ci2) - b2hseqbase;
 					const void *p1, *p2;
@@ -2060,7 +2060,7 @@ BATcalcmax_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 				TIMEOUT_CHECK(qry_ctx,
 					      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
 			} else {
-				TIMEOUT_LOOP_IDX_DECL(i, ci1.ncand, qry_ctx) {
+				TIMEOUT_LOOP(ci1.ncand, qry_ctx) {
 					oid x1 = canditer_next(&ci1) - b1hseqbase;
 					oid x2 = canditer_next(&ci2) - b2hseqbase;
 					const void *p1, *p2;
@@ -2202,7 +2202,7 @@ BATcalcmaxcst(BAT *b, const ValRecord *v, BAT *s)
 		} else {
 			uint8_t *restrict bcast = (uint8_t *) Tloc(bn, 0);
 			uint16_t width = bn->twidth;
-			TIMEOUT_LOOP_IDX_DECL(i, ci.ncand, qry_ctx) {
+			TIMEOUT_LOOP(ci.ncand, qry_ctx) {
 				oid x = canditer_next(&ci) - bhseqbase;
 				const void *restrict p1 = BUNtloc(&bi, x);
 				if (eq(p1, nil)) {
@@ -2349,7 +2349,7 @@ BATcalcmaxcst_no_nil(BAT *b, const ValRecord *v, BAT *s)
 			uint8_t *restrict bcast = (uint8_t *) Tloc(bn, 0);
 			uint16_t width = bn->twidth;
 			if (eq(p2, nil)) {
-				TIMEOUT_LOOP_IDX_DECL(i, ci.ncand, qry_ctx) {
+				TIMEOUT_LOOP(ci.ncand, qry_ctx) {
 					oid x = canditer_next(&ci) - bhseqbase;
 					const void *restrict p1 = BUNtloc(&bi, x);
 					nils |= eq(p1, nil);
@@ -2359,7 +2359,7 @@ BATcalcmaxcst_no_nil(BAT *b, const ValRecord *v, BAT *s)
 				TIMEOUT_CHECK(qry_ctx,
 					      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
 			} else {
-				TIMEOUT_LOOP_IDX_DECL(i, ci.ncand, qry_ctx) {
+				TIMEOUT_LOOP(ci.ncand, qry_ctx) {
 					oid x = canditer_next(&ci) - bhseqbase;
 					const void *restrict p1 = BUNtloc(&bi, x);
 					p1 = eq(p1, nil) || cmp(p2, p1) > 0 ? p2 : p1;

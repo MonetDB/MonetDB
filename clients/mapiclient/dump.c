@@ -1541,8 +1541,10 @@ describe_sequence(Mapi mid, const char *schema, const char *tname, stream *sqlf)
 	char *sname = NULL;
 
 	if (schema == NULL) {
-		if ((sname = strchr(tname, '.')) != NULL) {
-			size_t len = sname - tname;
+		const char *p = strchr(tname, '.');
+		if (p != NULL) {
+			size_t len = p - tname;
+
 			sname = strndup(tname, len);
 			if (sname == NULL)
 				goto bailout;
@@ -2100,8 +2102,9 @@ dump_table(Mapi mid, const char *schema, const char *tname, stream *sqlf,
 	int rc = 1;
 
 	if (schema == NULL) {
-		if ((sname = strchr(tname, '.')) != NULL) {
-			size_t len = sname - tname;
+		const char *p = strchr(tname, '.');
+		if (p != NULL) {
+			size_t len = p - tname;
 
 			sname = strndup(tname, len);
 			if (sname == NULL) {

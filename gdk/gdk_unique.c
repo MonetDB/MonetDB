@@ -32,7 +32,7 @@ BATunique(BAT *b, BAT *s)
 	const char *vals;
 	const char *vars;
 	int width;
-	oid i, o, hseq;
+	oid o, hseq;
 	const char *nme;
 	BUN hb;
 	bool (*eq)(const void *, const void *);
@@ -113,7 +113,7 @@ BATunique(BAT *b, BAT *s)
 		algomsg = "unique: byte-sized atoms";
 		uint32_t seen[256 >> 5];
 		memset(seen, 0, sizeof(seen));
-		TIMEOUT_LOOP_IDX(i, ci.ncand, qry_ctx) {
+		TIMEOUT_LOOP(ci.ncand, qry_ctx) {
 			o = canditer_next(&ci);
 			val = ((const uint8_t *) vals)[o - hseq];
 			uint32_t m = UINT32_C(1) << (val & 0x1F);
@@ -139,7 +139,7 @@ BATunique(BAT *b, BAT *s)
 		algomsg = "unique: short-sized atoms";
 		uint32_t seen[65536 >> 5];
 		memset(seen, 0, sizeof(seen));
-		TIMEOUT_LOOP_IDX(i, ci.ncand, qry_ctx) {
+		TIMEOUT_LOOP(ci.ncand, qry_ctx) {
 			o = canditer_next(&ci);
 			val = ((const uint16_t *) vals)[o - hseq];
 			uint32_t m = UINT32_C(1) << (val & 0x1F);
@@ -159,7 +159,7 @@ BATunique(BAT *b, BAT *s)
 	} else if (bi.sorted || bi.revsorted) {
 		const void *prev = NULL;
 		algomsg = "unique: sorted";
-		TIMEOUT_LOOP_IDX(i, ci.ncand, qry_ctx) {
+		TIMEOUT_LOOP(ci.ncand, qry_ctx) {
 			o = canditer_next(&ci);
 			v = VALUE(o - hseq);
 			if (prev == NULL || !(*eq)(v, prev)) {
@@ -184,7 +184,7 @@ BATunique(BAT *b, BAT *s)
 			MT_rwlock_rdunlock(&b->thashlock);
 			goto lost_hash;
 		}
-		TIMEOUT_LOOP_IDX(i, ci.ncand, qry_ctx) {
+		TIMEOUT_LOOP(ci.ncand, qry_ctx) {
 			BUN p;
 
 			o = canditer_next(&ci);
@@ -248,7 +248,7 @@ BATunique(BAT *b, BAT *s)
 			HEAPfree(&hsh.heapbckt, true);
 			goto bunins_failed;
 		}
-		TIMEOUT_LOOP_IDX(i, ci.ncand, qry_ctx) {
+		TIMEOUT_LOOP(ci.ncand, qry_ctx) {
 			o = canditer_next(&ci);
 			v = VALUE(o - hseq);
 			prb = HASHprobe(&hsh, v);

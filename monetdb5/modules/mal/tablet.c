@@ -455,14 +455,13 @@ output_file_ordered(Tablet *as, BAT *order, stream *fd, bstream *in)
 	int res = 0;
 	char *buf = ma_alloc(ta, len);
 	BUN p, q;
-	BUN i = 0;
 	BUN offset = as->offset;
 
 	if (buf == NULL) {
 		ma_close(&ta_state);
 		return -1;
 	}
-	for (q = offset + as->nr, p = offset; p < q; p++, i++) {
+	for (q = offset + as->nr, p = offset; p < q; p++) {
 		oid h = order->hseqbase + p;
 
 		if (((p - offset) & 8191) == 8191 && bstream_getoob(in)) {

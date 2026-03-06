@@ -658,18 +658,16 @@ static str
 MDBgetExceptionVariable(Client ctx, str *ret, const char *const *msg)
 {
 	allocator *ma = ctx->curprg->def->ma;
-	str tail;
+	const char *tail;
 
 	tail = strchr(*msg, ':');
 	if (tail == 0)
 		throw(MAL, "mdb.getExceptionVariable",
 			  OPERATION_FAILED " ':'<name> missing");
 
-	*tail = 0;
-	*ret = ma_strdup(ma, *msg);
+	*ret = ma_strndup(ma, *msg, tail - *msg);
 	if (*ret == NULL)
 		throw(MAL, "mdb.getExceptionVariable", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	*tail = ':';
 	return MAL_SUCCEED;
 }
 
@@ -677,22 +675,21 @@ static str
 MDBgetExceptionContext(Client ctx, str *ret, const char *const *msg)
 {
 	allocator *ma = ctx->curprg->def->ma;
-	str tail, tail2;
+	const char *tail, *tail2;
 
 	tail = strchr(*msg, ':');
 	if (tail == 0)
 		throw(MAL, "mdb.getExceptionContext",
 			  OPERATION_FAILED " ':'<name> missing");
-	tail2 = strchr(tail + 1, ':');
+	tail++;
+	tail2 = strchr(tail, ':');
 	if (tail2 == 0)
 		throw(MAL, "mdb.getExceptionContext",
 			  OPERATION_FAILED " <name> missing");
 
-	*tail2 = 0;
-	*ret = ma_strdup(ma, tail + 1);
+	*ret = ma_strndup(ma, tail, tail2 - tail);
 	if (*ret == NULL)
 		throw(MAL, "mdb.getExceptionContext", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	*tail2 = ':';
 	return MAL_SUCCEED;
 }
 
@@ -700,7 +697,7 @@ static str
 MDBgetExceptionReason(Client ctx, str *ret, const char *const *msg)
 {
 	allocator *ma = ctx->curprg->def->ma;
-	str tail;
+	const char *tail;
 
 	tail = strchr(*msg, ':');
 	if (tail == 0)

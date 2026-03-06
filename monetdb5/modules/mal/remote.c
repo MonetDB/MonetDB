@@ -126,7 +126,7 @@ RMTresolve(Client ctx, bat *ret, const char *const *pat)
 #else
 	BAT *list;
 	const char *mero_uri;
-	char *p;
+	const char *p;
 	unsigned int port;
 	char **redirs;
 	char **or;

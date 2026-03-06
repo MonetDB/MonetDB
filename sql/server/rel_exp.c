@@ -1824,7 +1824,7 @@ rel_find_exp_and_corresponding_rel_(sql_rel *rel, sql_exp *e, bool subexp, sql_r
 {
 	sql_exp *ne = NULL;
 
-	if (!rel)
+	if (!rel || !e)
 		return NULL;
 	switch(e->type) {
 	case e_column:
