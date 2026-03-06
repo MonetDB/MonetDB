@@ -3431,5 +3431,5 @@ static mel_func oa_hash_init_funcs[] = {
 #undef read
 #pragma section(".CRT$XCU",read)
 #endif
-LIB_STARTUP_FUNC(init_pipeline_mal)
+LIB_STARTUP_FUNC(init_oa_hash_mal)
 { mal_module("oa_hash", NULL, oa_hash_init_funcs); }

@@ -4933,5 +4933,5 @@ static mel_func pp_algebra_init_funcs[] = {
 #undef read
 #pragma section(".CRT$XCU",read)
 #endif
-LIB_STARTUP_FUNC(init_pipeline_mal)
+LIB_STARTUP_FUNC(init_pp_algebra_mal)
 { mal_module("pp_algebra", NULL, pp_algebra_init_funcs); }

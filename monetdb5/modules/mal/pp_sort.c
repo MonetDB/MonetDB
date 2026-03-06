@@ -880,5 +880,5 @@ static mel_func pp_sort_init_funcs[] = {
 #undef read
 #pragma section(".CRT$XCU",read)
 #endif
-LIB_STARTUP_FUNC(init_pipeline_mal)
+LIB_STARTUP_FUNC(init_pp_sort_mal)
 { mal_module("pp_sort", NULL, pp_sort_init_funcs); }

@@ -227,5 +227,5 @@ static mel_func pp_slicer_init_funcs[] = {
 #undef read
 #pragma section(".CRT$XCU",read)
 #endif
-LIB_STARTUP_FUNC(init_pipeline_mal)
+LIB_STARTUP_FUNC(init_pp_slicer_mal)
 { mal_module("pp_slicer", NULL, pp_slicer_init_funcs); }
