@@ -235,7 +235,7 @@ mal_command_generator(const char *text, int state)
 	}
 	/* try the server to answer */
 	if (!state) {
-		char *c;
+		const char *c;
 		c = strstr(text, ":=");
 		if (c)
 			text = c + 2;
