@@ -5115,10 +5115,9 @@ stmt_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int red
 	if (op1->type != st_list) {
 		q = pushArgument(mb, q, op1->nr);
 	} else {
-		int i;
 		node *n;
 
-		for (i=0, n = op1->op4.lval->h; n; n = n->next, i++) {
+		for (n = op1->op4.lval->h; n; n = n->next) {
 			stmt *op = n->data;
 
 			q = pushArgument(mb, q, op->nr);
@@ -5557,13 +5556,12 @@ stmt_control_end(backend *be, stmt *cond)
 static InstrPtr
 dump_cols(MalBlkPtr mb, list *l, InstrPtr q)
 {
-	int i;
 	node *n;
 
 	if (q == NULL)
 		return NULL;
 	q->retc = q->argc = 0;
-	for (i = 0, n = l->h; n; n = n->next, i++) {
+	for (n = l->h; n; n = n->next) {
 		stmt *c = n->data;
 
 		q = pushArgument(mb, q, c->nr);
@@ -5572,7 +5570,7 @@ dump_cols(MalBlkPtr mb, list *l, InstrPtr q)
 		return NULL;
 	q->retc = q->argc;
 	/* Let's make it a proper assignment */
-	for (i = 0, n = l->h; n; n = n->next, i++) {
+	for (n = l->h; n; n = n->next) {
 		stmt *c = n->data;
 
 		q = pushArgument(mb, q, c->nr);

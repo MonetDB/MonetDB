@@ -382,9 +382,9 @@ connect_socket_tcp_addr(Mapi mid, struct addrinfo *info)
 static const char *
 base_name(const char *file)
 {
-	char *p = strrchr(file, '/');
+	const char *p = strrchr(file, '/');
 #ifdef _MSC_VER
-	char *q = strrchr(file, '\\');
+	const char *q = strrchr(file, '\\');
 	if (q != NULL) {
 		if (p == NULL || p < q)
 			p = q;

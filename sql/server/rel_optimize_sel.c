@@ -246,7 +246,7 @@ exp_merge_range(visitor *v, sql_rel *rel, list *exps)
 			}
 		} else if (n->next &&
 			   e->type == e_cmp && e->flag < cmp_equal && !e->f &&
-		    	   re->card > CARD_ATOM && !is_anti(e)) {
+			   re->card > CARD_ATOM && !is_anti(e)) {
 			for (m=n->next; m; m = m->next) {
 				sql_exp *f = m->data;
 				sql_exp *lf = f->l;
@@ -466,7 +466,7 @@ exps_cse_dis( visitor *v, list *oexps, sql_exp *de)
 			continue;
 		}
 		m = m->next;
-	   	lpos++;
+		lpos++;
 	}
 	//if (changes) {
 		/* todo check for empty lists */
@@ -644,14 +644,14 @@ exp_or_chain_groups(list *exps, list **gen_ands, list **mce_ands, list **eqs, li
 	 *
 	 * return true if there is an exp with more than one cmp_eq
 	 */
-    bool eq_only = true;
-    for (node *n = exps->h; n && eq_only; n = n->next) {
-        sql_exp *e = n->data;
-        sql_exp *le = e->l, *re = e->r;
-        eq_only &= (e->type == e_cmp && e->flag == cmp_equal &&
-                    le->card != CARD_ATOM && is_column(le->type) &&
-                    re->card == CARD_ATOM && !is_semantics(e));
-    }
+	bool eq_only = true;
+	for (node *n = exps->h; n && eq_only; n = n->next) {
+		sql_exp *e = n->data;
+		sql_exp *le = e->l, *re = e->r;
+		eq_only &= (e->type == e_cmp && e->flag == cmp_equal &&
+			    le->card != CARD_ATOM && is_column(le->type) &&
+			    re->card == CARD_ATOM && !is_semantics(e));
+	}
 
 	if (list_length(exps) > 1) {
 		/*if (eq_only)*/
@@ -1051,8 +1051,8 @@ exp_or2in( mvc *sql, sql_exp *le, sql_exp *re)
  *     ((x = a and y > 1 and y < 5) or
  *      (x = c and y > 1 and y < 10) or
  *      (x = e and y > 1 and y < 20)) and
- *     	 x in (a,c,e) and
- *     	 y > 1 and y < 20
+ *       x in (a,c,e) and
+ *       y > 1 and y < 20
  *
  * for single expression or's we can do better
  *		x in (a, b, c) or x in (d, e, f)
@@ -1795,7 +1795,7 @@ exp_count(int *cnt, sql_exp *e)
 			if (e->f)
 				exp_count(cnt, e->f);
 		}
- 		flag = e->flag;
+		flag = e->flag;
 		switch (flag) {
 		case cmp_equal:
 			*cnt += 90;
@@ -2764,7 +2764,7 @@ rel_join_order_(visitor *v, sql_rel *rel)
 		return rel;
 
 	if (v->opt >= 0 && rel->opt >= v->opt) /* only once */
-        return rel;
+		return rel;
 
 	switch (rel->op) {
 	case op_basetable:
@@ -2818,7 +2818,7 @@ rel_join_order_(visitor *v, sql_rel *rel)
 	if (is_join(rel->op))
 		rel = reorder_join(v, rel);
 	if (rel && v->opt >= 0)
-        rel->opt = v->opt;
+		rel->opt = v->opt;
 	return rel;
 }
 
@@ -2840,7 +2840,7 @@ bind_join_order(visitor *v, global_props *gp)
 {
 	int flag = v->sql->sql_optimizer;
 	return gp->opt_level == 1 && gp->opt_cycle < 10 && !gp->cnt[op_update] && (gp->cnt[op_join] || gp->cnt[op_left] ||
-		   gp->cnt[op_right] || gp->cnt[op_full]) && (flag & join_order) ? rel_join_order : NULL;
+		gp->cnt[op_right] || gp->cnt[op_full]) && (flag & join_order) ? rel_join_order : NULL;
 }
 
 /* this join order is to be done once after statistics are gathered */
@@ -2849,7 +2849,7 @@ bind_join_order2(visitor *v, global_props *gp)
 {
 	/*int flag = v->sql->sql_optimizer;
 	return gp->opt_level == 1 && !gp->has_special_modify && !gp->cnt[op_update] && (gp->cnt[op_join] || gp->cnt[op_left] ||
-		   gp->cnt[op_right] || gp->cnt[op_full]) && (flag & join_order) ? rel_join_order : NULL;*/
+		gp->cnt[op_right] || gp->cnt[op_full]) && (flag & join_order) ? rel_join_order : NULL;*/
 	/* TODO we have to propagate count statistics here */
 	(void) v;
 	(void) gp;
@@ -2916,7 +2916,7 @@ rel_rewrite_semijoin(visitor *v, sql_rel *rel)
 		}
 
 		/* More general case is (join reduction)
-   		   {semi,anti}join (A, join(A,B) [A.c1 == B.c1]) [ A.c1 == B.c1 ]
+		   {semi,anti}join (A, join(A,B) [A.c1 == B.c1]) [ A.c1 == B.c1 ]
 		   into {semi,anti}join (A,B) [ A.c1 == B.c1 ]
 
 		   for semijoin also A.c1 == B.k1 ] [ A.c1 == B.k2 ] could be rewritten
@@ -2929,7 +2929,7 @@ rel_rewrite_semijoin(visitor *v, sql_rel *rel)
 			list *exps;
 
 			if (!rel->exps || !r->exps ||
-		       	    list_length(rel->exps) != list_length(r->exps))
+			    list_length(rel->exps) != list_length(r->exps))
 				return rel;
 			exps = new_exp_list(v->sql->sa);
 
@@ -3610,7 +3610,7 @@ rank_exp_has_partition_key(sql_exp *e)
 /*
  * Checks if a filter column is also used as an aggregation key, so it can be later safely pushed down.
  */
-static int
+static bool
 filter_column_in_partition_by_columns(sql_exp *column, list *keyColumns)
 {
 	/* check if it is a column or an e_convert, and get the actual column if it is the latter */
@@ -3621,19 +3621,23 @@ filter_column_in_partition_by_columns(sql_exp *column, list *keyColumns)
 	char *tableName = column->l;
 	char *columnName = column->r;
 
-	for (node *n = keyColumns->h; n; n = n->next) {
-		sql_exp *keyCol = n->data;
-		char *keyColTableName = keyCol->l;
-		char *keyColColumnName = keyCol->r;
+	if (tableName != NULL && columnName != NULL) {
+		for (node *n = keyColumns->h; n; n = n->next) {
+			sql_exp *keyCol = n->data;
+			char *keyColTableName = keyCol->l;
+			char *keyColColumnName = keyCol->r;
 
-		if (!strcmp(tableName, keyColTableName) && !strcmp(columnName, keyColColumnName)) {
-			/* match */
-			return 1;
+			if (keyColTableName != NULL && keyColColumnName != NULL &&
+			    !strcmp(tableName, keyColTableName) &&
+			    !strcmp(columnName, keyColColumnName)) {
+				/* match */
+				return true;
+			}
 		}
 	}
 
 	/* no matches found */
-	return 0;
+	return false;
 }
 
 /*
@@ -3679,7 +3683,7 @@ rel_push_select_down(visitor *v, sql_rel *rel)
 	}
 	/*
 	 * Push select through semi/anti join
-	 * 	select (semi(A,B)) == semi(select(A), B)
+	 *      select (semi(A,B)) == semi(select(A), B)
 	 */
 	if (is_select(rel->op) && r && is_semi(r->op) && !(rel_is_ref(r))) {
 		rel->l = r->l;
@@ -3694,7 +3698,7 @@ rel_push_select_down(visitor *v, sql_rel *rel)
 			sql_rel *rx = r->r;
 			if (lx->ref.refcnt == 2 && !rel_is_ref(rx)) {
 				while (rx->l && !rel_is_ref(rx->l) &&
-	      			       (is_project(rx->op) ||
+				       (is_project(rx->op) ||
 					is_select(rx->op) ||
 					is_join(rx->op)))
 						rx = rx->l;
@@ -3850,13 +3854,13 @@ rel_push_select_down(visitor *v, sql_rel *rel)
 							sql_subfunc *rankf = ranke->f;
 							if (rankf->func->type == F_ANALYTIC) { /* rank functions cannot have a frame */
 								sql_rel *tn = NULL;
-							   	if (strcmp(rankf->func->base.name, "rank") == 0 && is_simple_project(pl->op) && pl->r) {
+								if (strcmp(rankf->func->base.name, "rank") == 0 && is_simple_project(pl->op) && pl->r) {
 									tn = r->l = rel_topn(v->sql->sa, r->l, append(sa_list(v->sql->sa), e->r));
 									tn->grouped = 1;
 									v->changes++;
 									break;
 								}
-							   	if (strcmp(rankf->func->base.name, "row_number") == 0 && list_empty(r->r) && !is_topn(pl->op)) {
+								if (strcmp(rankf->func->base.name, "row_number") == 0 && list_empty(r->r) && !is_topn(pl->op)) {
 									tn = r->l = rel_topn(v->sql->sa, r->l, append(sa_list(v->sql->sa), e->r));
 									tn->grouped = 1;
 									v->changes++;
