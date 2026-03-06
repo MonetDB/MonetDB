@@ -125,7 +125,7 @@ subheap_down( heapn *hp, subheap *sh, size_t q, size_t l)
 		q = l;
 	else if (!sh->min && cmp < 0)
 		q = l;
-	return q;
+	return (int)q;
 }
 
 static int
@@ -144,7 +144,7 @@ subheap_up( heapn *hp, subheap *sh, size_t q, size_t p)
 		q = p;
 	else if (!sh->min && cmp > 0)
 		q = p;
-	return q;
+	return (int)q;
 }
 
 static int
@@ -164,7 +164,7 @@ gsubheap_down( heapn *hp, subheap *sh, oid g, size_t q, size_t l)
 		q = l;
 	else if (!sh->min && cmp < 0)
 		q = l;
-	return q;
+	return (int)q;
 }
 
 static int
@@ -184,7 +184,7 @@ gsubheap_up( heapn *hp, subheap *sh, oid g, size_t q, size_t p)
 		q = p;
 	else if (!sh->min && cmp > 0)
 		q = p;
-	return q;
+	return (int)q;
 }
 
 
