@@ -567,7 +567,7 @@ heap_down_##T( heapn *hp, size_t p)		\
 	size_t l = p*2+1, r = p*2+2, q = p;	\
 										\
 	if (l < hp->used) {					\
-		T cmp = sh->nlarge?type_cmp(T, vals[hp->pos[q]] , vals[hp->pos[l]]):type_cmp_nsmall(T, vals[hp->pos[q]], vals[hp->pos[l]]); 			\
+		int cmp = sh->nlarge?type_cmp(T, vals[hp->pos[q]] , vals[hp->pos[l]]):type_cmp_nsmall(T, vals[hp->pos[q]], vals[hp->pos[l]]); 			\
 										\
 		if (!cmp && sh->sub)			\
 			q = subheap_down(hp, sh->sub, q, l);	\
@@ -577,7 +577,7 @@ heap_down_##T( heapn *hp, size_t p)		\
 			q = l;						\
 	}									\
 	if (r < hp->used) {					\
-		T cmp = sh->nlarge?type_cmp(T, vals[hp->pos[q]] , vals[hp->pos[r]]):type_cmp_nsmall(T, vals[hp->pos[q]], vals[hp->pos[r]]); 			\
+		int cmp = sh->nlarge?type_cmp(T, vals[hp->pos[q]] , vals[hp->pos[r]]):type_cmp_nsmall(T, vals[hp->pos[q]], vals[hp->pos[r]]); 			\
 										\
 		if (!cmp && sh->sub)			\
 			q = subheap_down(hp, sh->sub, q, r);	\
@@ -604,7 +604,7 @@ heap_up_##T( heapn *hp, size_t p)		\
 		return (int)(p+1);						\
 	T *vals = sh->vals;					\
 	size_t q = (p-1)/2;					\
-	T cmp = sh->nlarge?type_cmp(T, vals[hp->pos[q]] , vals[hp->pos[p]]):type_cmp_nsmall(T, vals[hp->pos[q]], vals[hp->pos[p]]); 			\
+	int cmp = sh->nlarge?type_cmp(T, vals[hp->pos[q]] , vals[hp->pos[p]]):type_cmp_nsmall(T, vals[hp->pos[q]], vals[hp->pos[p]]); 			\
 										\
 	if (!cmp && sh->sub)				\
 		q = subheap_up(hp, sh->sub, q, p);	\
@@ -669,7 +669,7 @@ gheap_down_##T( heapn *hp, gid g, size_t p)		\
 	size_t l = p*2+1, r = p*2+2, q = p;	\
 										\
 	if (l < (size_t)hp->useda[g]) {					\
-		T cmp = sh->nlarge?type_cmp(T, vals[pos[q]] , vals[pos[l]]):type_cmp_nsmall(T, vals[pos[q]], vals[pos[l]]); 			\
+		int cmp = sh->nlarge?type_cmp(T, vals[pos[q]] , vals[pos[l]]):type_cmp_nsmall(T, vals[pos[q]], vals[pos[l]]); 			\
 										\
 		if (!cmp && sh->sub)			\
 			q = gsubheap_down(hp, sh->sub, g, q, l);	\
@@ -679,7 +679,7 @@ gheap_down_##T( heapn *hp, gid g, size_t p)		\
 			q = l;						\
 	}									\
 	if (r < (size_t)hp->useda[g]) {					\
-		T cmp = sh->nlarge?type_cmp(T, vals[pos[q]] , vals[pos[r]]):type_cmp_nsmall(T, vals[pos[q]], vals[pos[r]]); 			\
+		int cmp = sh->nlarge?type_cmp(T, vals[pos[q]] , vals[pos[r]]):type_cmp_nsmall(T, vals[pos[q]], vals[pos[r]]); 			\
 										\
 		if (!cmp && sh->sub)			\
 			q = gsubheap_down(hp, sh->sub, g, q, r);	\
@@ -707,7 +707,7 @@ gheap_up_##T( heapn *hp, gid g, size_t p)		\
 		return (int)(p+1);						\
 	T *vals = sh->vals;					\
 	size_t q = (p-1)/2;					\
-	T cmp = sh->nlarge?type_cmp(T, vals[pos[q]] , vals[pos[p]]):type_cmp_nsmall(T, vals[pos[q]], vals[pos[p]]); 			\
+	int cmp = sh->nlarge?type_cmp(T, vals[pos[q]] , vals[pos[p]]):type_cmp_nsmall(T, vals[pos[q]], vals[pos[p]]); 			\
 										\
 	if (!cmp && sh->sub)				\
 		q = gsubheap_up(hp, sh->sub, g, q, p);	\
@@ -829,7 +829,7 @@ topn_##T( size_t n, oid *pos, oid *sl, heapn *hp, int *err)			\
 			}				\
 		}					\
 	}						\
-	return j;				\
+	return (int)j;				\
 }							\
 							\
 static int				\
@@ -848,7 +848,7 @@ topn_grouped_##T( size_t n, oid *pos, oid *sl, heapn *hp, int *err)			\
 			}					\
 			j = i;				\
 		}						\
-		return j;			\
+		return (int)j;			\
 	}						\
 	T *hpvals = sh->vals;	\
 	T *vals = sh->ivals;	\
@@ -924,7 +924,7 @@ topn_grouped_##T( size_t n, oid *pos, oid *sl, heapn *hp, int *err)			\
 			}				\
 		}					\
 	}						\
-	return j;				\
+	return (int)j;				\
 }							\
 							\
 
