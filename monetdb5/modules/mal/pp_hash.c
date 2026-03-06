@@ -1895,12 +1895,11 @@ OAHASHnprobe(Client ctx, bat *PRB_oid, bat *HSH_slotid, const bat *PRB_key, cons
 
 #define BATfoprobe(Type, BaseType) \
 	do { \
-		BaseType nil = *(BaseType*)&Type##_nil;	\
 		Type *ky = Tloc(k, 0); \
 		Type *vals = ht->vals; \
 		\
 		if (any) { \
-			gid k = (gid)_hash_##Type(nil)&ht->mask; \
+			gid k = (gid)_hash_##Type((BaseType)Type##_nil)&ht->mask; \
 			gid slot = ht->gids[k]; \
 			while (slot && !is_##Type##_nil(vals[slot])) { \
 				k++; \
@@ -2554,7 +2553,6 @@ OAHASHprobe_cmbd(Client ctx, bat *PRB_oid, bat *HSH_slotid, const bat *PRB_key, 
 
 #define BATfoprobe_cmbd(Type, BaseType) \
 	do { \
-		BaseType nil = *(BaseType*)&Type##_nil; \
 		Type *ky = Tloc(k, 0); \
 		Type *vals = ht->vals; \
 		\
@@ -2588,7 +2586,7 @@ OAHASHprobe_cmbd(Client ctx, bat *PRB_oid, bat *HSH_slotid, const bat *PRB_key, 
 				slt[mtdcnt2] = oid_nil; \
 				bit has_nil = false; \
 				if (any) { \
-					gid hsh = (gid)combine(gi[i], _hash_##Type(nil), prime)&ht->mask; \
+					gid hsh = (gid)combine(gi[i], _hash_##Type((BaseType)Type##_nil), prime)&ht->mask; \
 					slot = ATOMIC_GET(ht->gids+hsh); \
 					while (slot && (pgids[slot] != gi[i] || !is_##Type##_nil(vals[slot]))) { \
 						hsh++; \
