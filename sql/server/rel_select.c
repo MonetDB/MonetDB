@@ -4742,6 +4742,8 @@ rel_order_by(sql_query *query, sql_rel **R, symbol *orderby, int needs_distinct,
 					}
 					if (!is_freevar(e) && !(is_sql_window(f) && exp_is_atom(e)))
 						e = exp_ref(sql, e);
+					else
+						e = exp_copy(sql, e);
 				}
 			}
 
@@ -5980,6 +5982,8 @@ rel_select_exp(sql_query *query, sql_rel *rel, SelectNode *sn, exp_kind ek)
 							atom *a = e->l;
 							int nr = (int)atom_get_int(a);
 							if (nr == (list_length(pexps) + 1)) {
+								if (exp_has_aggr(inner, ce))
+									return sql_error(sql, 02, SQLSTATE(42000) "SELECT: aggregate functions are not allowed in GROUP BY");
 								n->data = ce;
 								ce = exp_ref(sql, ce);
 								ce->card = CARD_AGGR;

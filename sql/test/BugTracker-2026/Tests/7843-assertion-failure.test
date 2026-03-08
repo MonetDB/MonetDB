@@ -68,4 +68,4 @@ SELECT x , CASE WHEN x > 12 THEN 1 ELSE ( x = 1 AND x = ( SELECT x ORDER BY x , 
 13
 1
 NULL
-0
+NULL
