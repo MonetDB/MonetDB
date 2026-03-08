@@ -4417,18 +4417,18 @@ list_power_set(allocator *sa, list* input) /* cube */
 }
 
 static list*
-list_rollup(allocator *sa, list* input)
+list_rollup(mvc *sql, list* input)
 {
-	list *res = sa_list(sa);
+	list *res = sa_list(sql->sa);
 
 	for (int counter = input->cnt; counter > 0; counter--) {
-		list *ll = sa_list(sa);
+		list *ll = sa_list(sql->sa);
 		int j = 0;
 		for (node *n = input->h; n && j < counter; j++, n = n->next)
-			list_append(ll, n->data);
+			list_append(ll, exps_copy(sql, n->data));
 		list_append(res, ll);
 	}
-	list_append(res, sa_list(sa)); /* global aggregate case */
+	list_append(res, sa_list(sql->sa)); /* global aggregate case */
 	return res;
 }
 
@@ -4520,7 +4520,7 @@ rel_groupings(sql_query *query, sql_rel **rel, symbol *groupby, dlist *selection
 				}
 				if (is_sql_group_totals(f)) {
 					if (grouping->token == SQL_ROLLUP)
-						next_set = list_rollup(sql->sa, set_cols);
+						next_set = list_rollup(sql, set_cols);
 					else if (grouping->token == SQL_CUBE)
 						next_set = list_power_set(sql->sa, set_cols);
 					else /* the list of sets is not used in the "GROUP BY a, b, ..." case */
