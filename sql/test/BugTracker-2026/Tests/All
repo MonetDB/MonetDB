@@ -56,3 +56,4 @@ KNOWNFAIL?7774-insert-into-renamed-table-assertion-failure
 7853-in-rcte-generator
 7854-rcte-trims
 7855-ntile
+KNONWFAIL?7852-complex-not-in

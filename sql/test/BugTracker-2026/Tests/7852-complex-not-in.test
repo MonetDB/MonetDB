@@ -1,0 +1,35 @@
+statement error SELECT: subquery must return only one column
+SELECT ( 1 , 2 , 3 ) = ( 1 , 2 , 3 ) 
+----
+
+statement error SELECT: subquery must return only one column
+SELECT ( 1 , 2 , 3 ) < ( 1 , 2 , 3 ) 
+----
+
+statement error SELECT: subquery must return only one column
+SELECT NOT ( ( 1 , 2 , 3 ) = ( 1 , 2 , 3 ) ) 
+----
+
+statement error Cannot match a tuple to a single value
+SELECT ( 1 , 2 , 3 ) IN ( ( 1 ) , ( 2 ) , ( 3 ) ) 
+----
+
+statement error Subquery has too few columns
+SELECT ( 1 , 2 , 3 ) IN ( SELECT 1 UNION SELECT 2 UNION SELECT 3 ) 
+----
+
+statement error SELECT: subquery must return only one column
+SELECT ( SELECT 1 AS x , 2 AS x , 3 AS x ) = ( SELECT 1 AS x , 2 AS x , 3 AS x ) 
+----
+
+statement error SELECT: subquery must return only one column
+SELECT ( 1 , 0 , 3 ) = ( 1 , 2 , 3 ) 
+----
+
+statement error SELECT: subquery must return only one column
+SELECT ( 1 , 0 , 3 ) != ( 1 , 2 , 3 ) 
+----
+
+query I
+SELECT COUNT ( * ) OVER ( ROWS BETWEEN CASE WHEN 'foo' < 'foobar' THEN 1 ELSE - 13 * - ( 0 ) + 39 * - COUNT ( * ) * - COUNT ( * ) END PRECEDING AND CURRENT ROW ) = 0 AS x FROM ( SELECT 1 AS x UNION SELECT 0 AS x UNION SELECT 3 AS x ) WHERE 48 * 51 * - - 54 * - 77 * 46 NOT IN ( SELECT DISTINCT CASE WHEN NULL = NULL THEN NULL ELSE NULL END UNION SELECT 2 AS x UNION SELECT 3 AS x ) 
+----
