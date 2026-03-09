@@ -3585,6 +3585,10 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, char *sname, char *anam
 			if (GDKtoupper(ta, &uaname, &(size_t){0}, aname) != GDK_SUCCEED)
 				uaname = aname;
 			return sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate functions not allowed in WHERE clause", uaname);
+		} else if (is_sql_window_rows(f)) {
+			if (GDKtoupper(ta, &uaname, &(size_t){0}, aname) != GDK_SUCCEED)
+				uaname = aname;
+			return sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate functions not allowed in window ROWS", uaname);
 		} else if (is_sql_update_set(f) || is_sql_psm(f)) {
 			if (GDKtoupper(ta, &uaname, &(size_t){0}, aname) != GDK_SUCCEED)
 				uaname = aname;
@@ -3674,6 +3678,10 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, char *sname, char *anam
 			if (GDKtoupper(ta, &uaname, &(size_t){0}, aname) != GDK_SUCCEED)
 				uaname = aname;
 			return sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate functions not allowed in WHERE clause", uaname);
+		} else if (is_sql_window_rows(f)) {
+			if (GDKtoupper(ta, &uaname, &(size_t){0}, aname) != GDK_SUCCEED)
+				uaname = aname;
+			return sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate functions not allowed in window ROWS", uaname);
 		} else if (!all_aggr && !list_empty(ungrouped_cols)) {
 			for (node *n = ungrouped_cols->h ; n ; n = n->next) {
 				sql_rel *outer;
@@ -3701,6 +3709,10 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, char *sname, char *anam
 						if (GDKtoupper(ta, &uaname, &(size_t){0}, aname) != GDK_SUCCEED)
 							uaname = aname;
 						return sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate functions not allowed in WHERE clause", uaname);
+					} else if (!used_rel && is_sql_window_rows(of)) {
+						if (GDKtoupper(ta, &uaname, &(size_t){0}, aname) != GDK_SUCCEED)
+							uaname = aname;
+						return sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate functions not allowed in window ROWS", uaname);
 					} else if (!is_sql_aggr(of)) {
 						set_outer(outer);
 					}
@@ -4409,18 +4421,18 @@ list_power_set(allocator *sa, list* input) /* cube */
 }
 
 static list*
-list_rollup(allocator *sa, list* input)
+list_rollup(mvc *sql, list* input)
 {
-	list *res = sa_list(sa);
+	list *res = sa_list(sql->sa);
 
 	for (int counter = input->cnt; counter > 0; counter--) {
-		list *ll = sa_list(sa);
+		list *ll = sa_list(sql->sa);
 		int j = 0;
 		for (node *n = input->h; n && j < counter; j++, n = n->next)
-			list_append(ll, n->data);
+			list_append(ll, exps_copy(sql, n->data));
 		list_append(res, ll);
 	}
-	list_append(res, sa_list(sa)); /* global aggregate case */
+	list_append(res, sa_list(sql->sa)); /* global aggregate case */
 	return res;
 }
 
@@ -4512,7 +4524,7 @@ rel_groupings(sql_query *query, sql_rel **rel, symbol *groupby, dlist *selection
 				}
 				if (is_sql_group_totals(f)) {
 					if (grouping->token == SQL_ROLLUP)
-						next_set = list_rollup(sql->sa, set_cols);
+						next_set = list_rollup(sql, set_cols);
 					else if (grouping->token == SQL_CUBE)
 						next_set = list_power_set(sql->sa, set_cols);
 					else /* the list of sets is not used in the "GROUP BY a, b, ..." case */
@@ -4746,6 +4758,8 @@ rel_order_by(sql_query *query, sql_rel **R, symbol *orderby, int needs_distinct,
 					}
 					if (!is_freevar(e) && !(is_sql_window(f) && exp_is_atom(e)))
 						e = exp_ref(sql, e);
+					else
+						e = exp_copy(sql, e);
 				}
 			}
 
@@ -4844,6 +4858,7 @@ calculate_window_bound(sql_query *query, sql_rel *p, tokens token, symbol *bound
 	sql_subtype *bt, *bound_tp = sql_fetch_localtype(TYPE_lng), *iet = exp_subtype(ie);
 	sql_exp *res = NULL;
 
+	f = f|sql_window_rows;
 	if ((bound->token == SQL_PRECEDING || bound->token == SQL_FOLLOWING || bound->token == SQL_CURRENT_ROW) && bound->type == type_int) {
 		atom *a = NULL;
 		bt = (frame_type == FRAME_ROWS || frame_type == FRAME_GROUPS) ? bound_tp : iet;
@@ -5983,6 +5998,8 @@ rel_select_exp(sql_query *query, sql_rel *rel, SelectNode *sn, exp_kind ek)
 							atom *a = e->l;
 							int nr = (int)atom_get_int(a);
 							if (nr == (list_length(pexps) + 1)) {
+								if (exp_has_aggr(inner, ce))
+									return sql_error(sql, 02, SQLSTATE(42000) "SELECT: aggregate functions are not allowed in GROUP BY");
 								n->data = ce;
 								ce = exp_ref(sql, ce);
 								ce->card = CARD_AGGR;

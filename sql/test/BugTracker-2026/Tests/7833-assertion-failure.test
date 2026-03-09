@@ -1,4 +1,3 @@
-query II
+statement error Illegal argument
 SELECT 301 AS x , 5 IN ( SELECT 5 FROM ( SELECT 5 UNION SELECT RANK ( ) OVER ( ) FROM generate_series ( 285 , 298 ) AS x GROUP BY x HAVING NOT x < ANY ( NOT MAX ( 561 ) < x * AVG ( x + x ) * x ) ) AS x ) AND 6 IN ( SELECT MAX ( x ) , MIN ( x ) , MAX ( x ) , MIN ( x ) , MAX ( x ) , MIN ( x ) LIMIT 0 OFFSET 0 ) GROUP BY x , x HAVING x = 1
-----
 

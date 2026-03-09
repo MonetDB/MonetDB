@@ -117,6 +117,11 @@ WHERE EXISTS (
     WHERE true
 )
 ----
+1
+1
+1
+1
+1
 
 statement ok
 DROP TABLE orders

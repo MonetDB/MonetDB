@@ -1483,8 +1483,12 @@ static inline sql_rel *
 rel_simplify_groupby_columns(visitor *v, sql_rel *rel)
 {
 	if (is_groupby(rel->op) && !list_empty(rel->r)) {
-		sql_rel *l = rel->l;
+		sql_rel *l = rel->l, *p = rel;
 
+		if (l && is_select(l->op)) {
+			p = l;
+			l = l->l;
+		}
 		for (node *n=((list*)rel->r)->h; n ; n = n->next) {
 			sql_exp *e = n->data;
 			e->used = 0; /* we need to use this flag, clean it first */
@@ -1557,7 +1561,7 @@ rel_simplify_groupby_columns(visitor *v, sql_rel *rel)
 						if (!has_label(e)) /* dangerous to merge, skip it */
 							continue;
 						if (!is_simple_project(l->op) || !list_empty(l->r) || rel_is_ref(l) || need_distinct(l))
-							rel->l = l = rel_project(v->sql->sa, l, rel_projections(v->sql, l, NULL, 1, 1));
+							p->l = l = rel_project(v->sql->sa, l, rel_projections(v->sql, l, NULL, 1, 1));
 						list_append(l->exps, e);
 						n->data = e = exp_ref(v->sql, e);
 						list_hash_clear(rel->r);
@@ -1588,7 +1592,7 @@ rel_simplify_groupby_columns(visitor *v, sql_rel *rel)
 							if (colf) /* a col reference is already there, add a new label */
 								exp_label(v->sql->sa, ne, ++v->sql->label);
 							if (!is_simple_project(l->op) || !list_empty(l->r) || rel_is_ref(l) || need_distinct(l))
-								rel->l = l = rel_project(v->sql->sa, l, rel_projections(v->sql, l, NULL, 1, 1));
+								p->l = l = rel_project(v->sql->sa, l, rel_projections(v->sql, l, NULL, 1, 1));
 							list_append(l->exps, ne);
 							n->data = exp_ref(v->sql, ne);
 						}

@@ -471,10 +471,8 @@ SELECT (col2) IN ((SELECT col2), MIN(col3)) FROM another_T GROUP BY col2
 1
 1
 
-query I rowsort
+statement error /more than one match/
 SELECT (SELECT CASE WHEN MIN(i1.i) IS NULL THEN (SELECT i2.i FROM integers i2) ELSE MAX(i1.i) END) FROM integers i1
-----
-3
 
 statement ok
 DROP FUNCTION evilfunction(INT)
