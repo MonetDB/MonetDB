@@ -108,7 +108,7 @@ BuildRequires: systemd
 BuildRequires: checkpolicy
 BuildRequires: selinux-policy-devel
 BuildRequires: hardlink
-BuildRequires: cmake3 >= 3.12
+BuildRequires: cmake >= 3.12
 BuildRequires: gcc
 BuildRequires: bison
 BuildRequires: python3-devel
@@ -977,7 +977,7 @@ sed -i 's;@CMAKE_INSTALL_FULL_RUNSTATEDIR@/monetdb;@CMAKE_INSTALL_FULL_LOCALSTAT
 sed -i 's/1\.2/1.1/' misc/selinux/monetdb.te
 %endif
 
-%cmake3 \
+%cmake \
         -DCMAKE_BUILD_TYPE=Release \
         -DCMAKE_INSTALL_RUNSTATEDIR=/run \
         -DRELEASE_VERSION=ON \
@@ -1009,12 +1009,12 @@ sed -i 's/1\.2/1.1/' misc/selinux/monetdb.te
         -DWITH_XML2=ON \
         -DWITH_ZLIB=ON
 
-%cmake3_build
+%cmake_build
 
 %install
 mkdir -p "${RPM_BUILD_ROOT}"/usr
 for d in etc var; do mkdir "${RPM_BUILD_ROOT}"/$d; ln -s ../$d "${RPM_BUILD_ROOT}"/usr/$d; done
-%cmake3_install
+%cmake_install
 rm "${RPM_BUILD_ROOT}"/usr/var "${RPM_BUILD_ROOT}"/usr/etc
 
 # move file to correct location
