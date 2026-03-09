@@ -58,8 +58,8 @@
 # derivatives (CentOS, Scientific Linux), the geos library is not
 # available.  However, the geos library is available in the Extra
 # Packages for Enterprise Linux (EPEL).
-%if %{fedpkgs} && (0%{?rhel} != 7) && (0%{?rhel} != 8) && (0%{?rhel} != 9)
-# By default create the MonetDB-geom package on Fedora and RHEL 7
+%if %{fedpkgs} && (0%{?rhel} != 8)
+# By default create the MonetDB-geom package on Fedora
 %bcond_without geos
 %endif
 
@@ -95,16 +95,8 @@ URL: https://www.monetdb.org/
 BugURL: https://github.com/MonetDB/MonetDB/issues
 Source: https://www.monetdb.org/downloads/sources/Dec2025-SP1/MonetDB-%{version}.tar.bz2
 
-# The Fedora packaging document says we need systemd-rpm-macros for
-# the _unitdir and _tmpfilesdir macros to exist; however on RHEL 7
-# that doesn't exist and we need systemd, so instead we just require
-# the macro file that contains the definitions.
 # We need checkpolicy and selinux-policy-devel for the SELinux policy.
-%if 0%{?rhel} != 7
 BuildRequires: systemd-rpm-macros
-%else
-BuildRequires: systemd
-%endif
 BuildRequires: checkpolicy
 BuildRequires: selinux-policy-devel
 BuildRequires: hardlink
@@ -133,10 +125,8 @@ BuildRequires: geos-devel >= 3.10.0
 BuildRequires: pkgconfig(libcurl)
 BuildRequires: pkgconfig(liblzma)
 BuildRequires: pkgconfig(libxml-2.0)
-%if 0%{?rhel} != 7
 BuildRequires: pkgconfig(openssl) >= 1.1.1
 %global with_openssl 1
-%endif
 %if %{with pcre}
 BuildRequires: pkgconfig(libpcre2-8)
 %endif
@@ -144,8 +134,7 @@ BuildRequires: pkgconfig(zlib)
 BuildRequires: pkgconfig(liblz4) >= 1.8
 %if %{with py3integration}
 BuildRequires: pkgconfig(python3) >= 3.5
-# cannot use python3dist(numpy) because of CentOS 7
-BuildRequires: python3-numpy
+BuildRequires: python3dist(numpy)
 %endif
 %if %{with rintegration}
 BuildRequires: pkgconfig(libR)
@@ -157,11 +146,9 @@ BuildRequires: pkgconfig(libR)
 # BuildRequires: pkgconfig(proj)        # -DWITH_PROJ=ON
 # BuildRequires: pkgconfig(valgrind)    # -DWITH_VALGRIND=ON
 
-%if (0%{?fedora} >= 22)
 Recommends: %{name}-SQL%{?_isa} = %{version}-%{release}
 Recommends: %{name}-server%{?_isa} = %{version}-%{release}
 Suggests: %{name}-client%{?_isa} = %{version}-%{release}
-%endif
 
 %description
 MonetDB is a database management system that is developed from a
@@ -312,10 +299,8 @@ library.
 %package client-lib
 Summary: MonetDB - Monet Database Management System Client Programs
 Group: Applications/Databases
-%if (0%{?fedora} >= 22)
 Recommends: %{name}-SQL%{?_isa} = %{version}-%{release}
 Recommends: %{name}-server%{?_isa} = %{version}-%{release}
-%endif
 
 %description client-lib
 MonetDB is a database management system that is developed from a
@@ -338,10 +323,8 @@ you will very likely need this package.
 Summary: MonetDB - Monet Database Management System Client Programs
 Group: Applications/Databases
 Requires: %{name}-client-lib%{?_isa} = %{version}-%{release}
-%if (0%{?fedora} >= 22)
 Recommends: %{name}-SQL%{?_isa} = %{version}-%{release}
 Recommends: %{name}-server%{?_isa} = %{version}-%{release}
-%endif
 
 %description client
 MonetDB is a database management system that is developed from a
@@ -438,15 +421,11 @@ Group: Applications/Databases
 Requires: %{name}-server%{?_isa} = %{version}-%{release}
 Requires: %{name}-client%{?_isa} = %{version}-%{release}
 Requires: %{name}-client-odbc%{?_isa} = %{version}-%{release}
-%if (0%{?fedora} >= 22)
 Recommends: perl-DBD-monetdb >= 1.0
 Recommends: php-monetdb >= 1.0
-%endif
 Requires: %{name}-server%{?_isa} = %{version}-%{release}
-%if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} > 7
 Recommends: python3dist(lz4)
 Recommends: python3dist(scipy)
-%endif
 
 %description client-tests
 MonetDB is a database management system that is developed from a
@@ -637,10 +616,8 @@ Requires: %{name}-libs%{?_isa} = %{version}-%{release}
 Obsoletes: MonetDB5-server < 11.50.0
 Provides: MonetDB5-server = %{version}-%{release}
 Provides: MonetDB5-server%{?_isa} = %{version}-%{release}
-%if (0%{?fedora} >= 22)
 Recommends: %{name}-SQL%{?_isa} = %{version}-%{release}
 Suggests: %{name}-client%{?_isa} = %{version}-%{release}
-%endif
 Requires(pre): systemd
 
 %description server
@@ -726,9 +703,7 @@ Requires(pre): %{name}-server%{?_isa} = %{version}-%{release}
 Obsoletes: MonetDB-SQL-server5 < 11.50.0
 Provides: %{name}-SQL-server5 = %{version}-%{release}
 Provides: %{name}-SQL-server5%{?_isa} = %{version}-%{release}
-%if (0%{?fedora} >= 22)
 Suggests: %{name}-client%{?_isa} = %{version}-%{release}
-%endif
 %{?systemd_requires}
 
 %description SQL
@@ -755,7 +730,6 @@ configuration.
 %if %{without compat}
 %dir %attr(775,monetdb,monetdb) %{_localstatedir}/log/monetdb
 %dir %attr(775,monetdb,monetdb) %{_rundir}/monetdb
-# RHEL >= 7, and all current Fedora
 %{_tmpfilesdir}/monetdbd.conf
 %{_unitdir}/monetdbd.service
 %config(noreplace) %attr(664,monetdb,monetdb) %{_localstatedir}/monetdb5/dbfarm/.merovingian_properties
@@ -968,13 +942,6 @@ fi
 %setup -q -n MonetDB-%{version}
 
 %build
-# from Fedora 40, selinux uses /run where before it used /var/run
-# the code is now for Fedora 40 but needs a patch for older versions
-%if (0%{?fedora} < 40)
-sed -i 's;@CMAKE_INSTALL_FULL_RUNSTATEDIR@/monetdb;@CMAKE_INSTALL_FULL_LOCALSTATEDIR@/run/monetdb;' misc/selinux/monetdb.fc.in
-sed -i 's/1\.2/1.1/' misc/selinux/monetdb.te
-%endif
-
 %cmake \
         -DCMAKE_BUILD_TYPE=Release \
         -DCMAKE_INSTALL_RUNSTATEDIR=/run \
