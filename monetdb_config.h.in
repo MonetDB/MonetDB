@@ -157,6 +157,8 @@
 #cmakedefine HAVE_SHUTDOWN 1
 #cmakedefine HAVE_SIGACTION 1
 #cmakedefine HAVE_SIGLONGJMP 1
+#cmakedefine HAVE_STRNDUP 1
+#cmakedefine HAVE_STRNLEN 1
 #cmakedefine HAVE_STRPTIME 1
 #cmakedefine HAVE_SYSCONF 1
 #cmakedefine HAVE_TASK_INFO 1
@@ -384,6 +386,31 @@ typedef __uint128_t uhge;
  * actually used in the GNU header file to make the distinction. */
 #if defined(__USE_GNU) && defined(HAVE_STRERROR_R)
 #define STRERROR_R_CHARP 1
+#endif
+
+#ifndef HAVE_STRNLEN
+static inline size_t
+strnlen(const char *s, size_t n)
+{
+	for (size_t i = 0; i < n; i++)
+		if (s[i] == 0)
+			return i;
+	return n;
+}
+#endif
+
+#ifndef HAVE_STRNDUP
+static inline char *
+strndup(const char *s, size_t n)
+{
+	n = strnlen(s, n);
+	char *p = malloc(n + 1);
+	if (p != NULL) {
+		memcpy(p, s, n);
+		p[n] = '\0';
+	}
+	return p;
+}
 #endif
 
 #ifdef _MSC_VER

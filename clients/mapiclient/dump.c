@@ -1545,11 +1545,9 @@ describe_sequence(Mapi mid, const char *schema, const char *tname, stream *sqlf)
 		if (p != NULL) {
 			size_t len = p - tname;
 
-			sname = malloc(len+1);
+			sname = strndup(tname, len);
 			if (sname == NULL)
 				goto bailout;
-			strcpy_len(sname, tname, len);
-			sname[len] = 0;
 			tname += len + 1;
 		} else if ((sname = get_schema(mid)) == NULL) {
 			return 1;
@@ -2108,14 +2106,11 @@ dump_table(Mapi mid, const char *schema, const char *tname, stream *sqlf,
 		if (p != NULL) {
 			size_t len = p - tname;
 
-			sname = malloc(len+1);
+			sname = strndup(tname, len);
 			if (sname == NULL) {
 				fprintf(stderr, "malloc failure\n");
 				return 1;
 			}
-			strcpy_len(sname, tname, len);
-			sname[len] = 0;
-
 			tname += len + 1;
 		} else if ((sname = get_schema(mid)) == NULL) {
 			return 1;
