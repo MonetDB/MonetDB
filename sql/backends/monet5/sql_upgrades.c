@@ -375,6 +375,16 @@ sql_drop_shp(Client c)
 	return SQLstatementIntern(c, query, "update", true, false, NULL);
 }
 
+
+static str
+sql_update_generator(Client c)
+{
+	static const char query[] =
+		"update sys.args set name = 'limit' where name = 'last' and func_id in (select id from sys.functions where schema_id = 2000 and name = 'generate_series' and func like '% last %');\n"
+		"update sys.functions set func = replace(func, ' last ', ' \"limit\" ') where schema_id = 2000 and name = 'generate_series' and func like '% last %';\n";
+	return SQLstatementIntern(c, query, "update", true, false, NULL);
+}
+
 static str
 sql_update_jan2022(Client c, mvc *sql)
 {
@@ -5384,6 +5394,10 @@ SQLupgrades(Client c, mvc *m)
 		}
 	}
 #endif
+
+	if ((err = sql_update_generator(c)) != NULL) {
+		goto handle_error;
+	}
 
 	if ((err = sql_update_jan2022(c, m)) != NULL) {
 		goto handle_error;
