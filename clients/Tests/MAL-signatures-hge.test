@@ -49494,6 +49494,16 @@ pattern oahash.new(X_0:any_1, X_1:int, X_2:bat[:any_2]):bat[:any_1]
 OAHASHnew
 (empty)
 oahash
+new
+pattern oahash.new(X_0:any_1, X_1:lng):bat[:any_1]
+OAHASHnew
+(empty)
+oahash
+new
+pattern oahash.new(X_0:any_1, X_1:lng, X_2:bat[:any_2]):bat[:any_1]
+OAHASHnew
+(empty)
+oahash
 no_slices
 command oahash.no_slices(X_0:bat[:any_1]):int
 OAHASHno_slices

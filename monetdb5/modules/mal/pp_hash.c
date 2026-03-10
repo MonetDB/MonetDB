@@ -404,9 +404,19 @@ OAHASHnew(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 
 	bat *res = getArgReference_bat(s, p, 0);
 	int tt = getArgType(m, p, 1);
-	int size = *getArgReference_int(s, p, 2);
+	int tt2 = getArgType(m, p, 2);
+	lng size = 0;
 	hash_table *parent = NULL;
 	BAT *pht = NULL;
+
+	if (tt2 == TYPE_int) {
+		size = (lng) *getArgReference_int(s, p, 2);
+	} else {
+		assert(tt2 == TYPE_lng);
+		size = *getArgReference_lng(s, p, 2);
+	}
+	/* multiply with the magic estimation while avoiding overflow */
+	size = size > (BUN_MAX / 1.2 / 2.1)? BUN_MAX : size * 1.2 * 2.1;
 
 	if (p->argc == 4) {
 		bat pid = *getArgReference_bat(s, p, 3);
@@ -420,7 +430,7 @@ OAHASHnew(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 		BBPreclaim(pht);
 		return createException(MAL, "oahash.new", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
-	b->tsink = (Sink*)ht_create(tt, (size_t)(size*1.2*2.1), parent);
+	b->tsink = (Sink*)ht_create(tt, (size_t)size, parent);
 	BBPreclaim(pht);
 	if (b->tsink == NULL) {
 		BBPunfix(b->batCacheid);
@@ -3377,6 +3387,9 @@ OAHASHhash(Client cntxt, MalBlkPtr m, MalStkPtr stk, InstrPtr p)
 static mel_func oa_hash_init_funcs[] = {
  pattern("oahash", "new", OAHASHnew, false, "", args(1,3, batargany("ht_sink",1),argany("tt",1),arg("size",int))),
  pattern("oahash", "new", OAHASHnew, false, "", args(1,4, batargany("ht_sink",1),argany("tt",1),arg("size",int),batargany("p",2))),
+ pattern("oahash", "new", OAHASHnew, false, "", args(1,3, batargany("ht_sink",1),argany("tt",1),arg("size",lng))),
+ pattern("oahash", "new", OAHASHnew, false, "", args(1,4, batargany("ht_sink",1),argany("tt",1),arg("size",lng),batargany("p",2))),
+
  command("oahash", "hashmark_init", OAHASHhashmark_init, false, "", args(1,3, batarg("hashmark",bit),batargany("ht_sink",1),batargany("payload",2))),
  pattern("hash", "ext", UHASHext, false, "", args(1,2, batarg("ext",oid),batargany("in",1))),
 
