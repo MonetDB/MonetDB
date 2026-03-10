@@ -1,2 +1,2 @@
-statement error 22018!conversion of string 'x' to type bte failed.
+statement error 22018!conversion of string ...
 SELECT * FROM ( SELECT * FROM ( SELECT 1 AS x ) WHERE x IN ( SELECT ALL sql_min ( NULL , NULL ) FROM ( SELECT * FROM ( WITH x AS ( SELECT 1 ) SELECT ( SELECT CASE WHEN NOT NULL THEN 4 * - 48 * 51 * - - 54 * - 77 * 46 WHEN NOT ( NULL ) IN ( - ( - - 49 ) * - 1 , - 41 , - 14 % - CASE - - 1 WHEN - - 82 THEN - 22 ^ COUNT ( * ) END / 46 - - 87 * 52 ) THEN 56 ELSE NULL END FROM ( SELECT SUM ( 0 ) OVER ( ORDER BY SUM ( '$.f2' BETWEEN 1 AND 1 ) ) FROM x GROUP BY rollup ( x , x ) ORDER BY x , x , x ) , ( SELECT x AS x ) WHERE x = 'x' ) , 'x' FROM x ) WHERE ( x % 7 ) = 0 ) ) ) 
