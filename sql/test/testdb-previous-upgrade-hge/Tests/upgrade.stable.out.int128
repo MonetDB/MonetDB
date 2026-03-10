@@ -281,7 +281,7 @@ GRANT SELECT ON sys.describe_accessible_tables TO PUBLIC;
 UPDATE sys._tables SET system = true WHERE not system and schema_id = 2000 and name in ('roles', 'describe_accessible_tables');
 
 Running database upgrade commands:
-delete from sys.dependencies where id = 2048 and depend_id = (select f.id from sys.functions f where name = 'get_merge_table_partition_expressions');
+delete from sys.dependencies where (id, depend_id) in (select c.id, f.id from sys.functions f, sys._tables t, sys._columns c, sys.dependencies d where c.table_id = t.id and f.id = d.depend_id and c.id = d.id and f.schema_id = 2000 and t.schema_id = 2000 and (f.name, t.name, c.name) in (values ('get_merge_table_partition_expressions', 'table_partitions', 'id')));
 
 Running database upgrade commands:
 drop function sys.dump_database;
