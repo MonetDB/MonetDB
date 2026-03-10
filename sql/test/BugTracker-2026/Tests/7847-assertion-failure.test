@@ -1,0 +1,182 @@
+statement ok
+CREATE SCHEMA test7847
+
+statement ok
+SET SCHEMA test7847
+
+statement ok
+CREATE TABLE users (
+    id           INT,
+    username     VARCHAR(100),
+    email        VARCHAR(255),
+    age          INT,
+    status       VARCHAR(20),
+    created_at   TIMESTAMP,
+    score        DOUBLE
+)
+
+statement ok
+CREATE TABLE posts (
+    id          INT,
+    user_id     INT,
+    title       VARCHAR(255),
+    content     VARCHAR(1000),
+    views       INT,
+    likes       INT,
+    created_at  TIMESTAMP,
+    rating      DOUBLE
+)
+
+statement ok
+CREATE TABLE comments (
+    id          INT,
+    post_id     INT,
+    user_id     INT,
+    content     VARCHAR(1000),
+    is_spam     INT,
+    created_at  TIMESTAMP
+)
+
+statement ok
+CREATE TABLE orders (
+    id          INT,
+    user_id     INT,
+    amount      DOUBLE,
+    status      VARCHAR(20),
+    created_at  TIMESTAMP
+)
+
+statement ok
+INSERT INTO users VALUES
+(1, 'alice', 'alice@test.com', 20, 'active',  '2022-01-01 10:00:00', 88.5),
+(2, 'bob',   'bob@test.com',   30, 'active',  '2022-01-02 11:00:00', 92.3),
+(3, 'carol', NULL,             NULL, 'banned','2022-01-03 12:00:00', NULL),
+(4, 'dave',  'dave@test.com',  45, 'active',  '2022-01-04 13:00:00', 65.2),
+(5, NULL,    'null@test.com',  18, 'inactive','2022-01-05 14:00:00', 70.0)
+
+statement ok
+INSERT INTO posts VALUES
+(1, 1, 'Hello World', 'First post', 100, 10, '2022-01-10 10:00:00', 4.5),
+(2, 1, 'Another Post', NULL,        150, 20, '2022-01-11 11:00:00', 3.0),
+(3, 2, 'Bob Post',     'Content',   NULL,  5, '2022-01-12 12:00:00', NULL),
+(4, 3, NULL,           'Empty',     50,   2, '2022-01-13 13:00:00', 5.0),
+(5, 4, 'Last Post',    'Last',      300,  30,'2022-01-14 14:00:00', 4.9)
+
+statement ok
+INSERT INTO comments VALUES
+(1, 1, 2, 'Nice post', 0, '2022-01-20 10:00:00'),
+(2, 1, 3, 'Spam here', 1,  '2022-01-21 11:00:00'),
+(3, 2, 1, 'Thanks',    0, '2022-01-22 12:00:00'),
+(4, 4, 5, NULL,        0, '2022-01-23 13:00:00')
+
+statement ok
+INSERT INTO orders VALUES
+(1, 1, 100.00, 'paid',    '2022-02-01 09:00:00'),
+(2, 1, 200.50, 'shipped', '2022-02-02 10:00:00'),
+(3, 2, NULL,   'failed',  '2022-02-03 11:00:00'),
+(4, 3, 50.00,  'paid',    '2022-02-04 12:00:00'),
+(5, 5, 999.99, 'paid',    '2022-02-05 13:00:00')
+
+-- query triggers assertion failure in rel2bin_groupjoin (be=0x7f97c01a61b0, rel=0x7f97c01ec140, refs=0x7f97c0265180) at MonetDB/sql/backends/monet5/rel_bin.c:3202
+query I rowsort
+SELECT 1
+FROM orders AS ref_0, comments AS ref_2
+INNER JOIN comments AS ref_1
+ON ref_2.user_id != ref_1.post_id
+WHERE EXISTS (
+    SELECT
+        CASE
+            WHEN EXISTS (
+                SELECT
+                    ref_1.post_id AS c0,
+                    ref_0.amount AS c3
+                FROM orders AS ref_4
+                WHERE EXISTS (
+                    SELECT 1
+                    FROM posts AS ref_5
+                )
+            )
+            AND (
+                subq_0.c0 != ref_2.is_spam
+            )
+            THEN subq_0.c0
+            ELSE (SELECT MIN(id) FROM orders)
+        END AS c19
+    FROM (
+        SELECT
+            ref_0.user_id AS c0
+        FROM orders AS ref_3
+        WHERE
+            ref_3.id < ref_1.id
+    ) AS subq_0
+)
+----
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+
+statement ok
+DROP TABLE orders
+
+statement ok
+DROP TABLE comments
+
+statement ok
+DROP TABLE posts
+
+statement ok
+DROP TABLE users
+
+statement ok
+SET SCHEMA sys
+
+statement ok
+DROP SCHEMA test7847
+

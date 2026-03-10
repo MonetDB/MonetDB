@@ -1,0 +1,71 @@
+query II rowsort
+SELECT x , CASE WHEN x < 12 THEN 1 ELSE 0 END AS x FROM ( SELECT 10 AS x UNION SELECT 11 AS x UNION SELECT 12 AS x UNION SELECT 13 AS x )
+----
+10
+1
+11
+1
+12
+0
+13
+0
+
+query II rowsort
+SELECT x , CASE WHEN x <= 12 THEN 1 ELSE 0 END AS x FROM ( SELECT 10 AS x UNION SELECT 11 AS x UNION SELECT 12 AS x UNION SELECT 13 AS x )
+----
+10
+1
+11
+1
+12
+1
+13
+0
+
+query II rowsort
+SELECT x , CASE WHEN x = 12 THEN 1 ELSE 0 END AS x FROM ( SELECT 10 AS x UNION SELECT 11 AS x UNION SELECT 12 AS x UNION SELECT 13 AS x )
+----
+10
+0
+11
+0
+12
+1
+13
+0
+
+query II rowsort
+SELECT x , CASE WHEN x >= 12 THEN 1 ELSE 0 END AS x FROM ( SELECT 10 AS x UNION SELECT 11 AS x UNION SELECT 12 AS x UNION SELECT 13 AS x )
+----
+10
+0
+11
+0
+12
+1
+13
+1
+
+query I rowsort
+SELECT 10 AS x UNION SELECT 11 AS x GROUP BY CUBE ( x , x ) UNION SELECT 12 AS x UNION SELECT 13 AS x
+----
+10
+11
+12
+13
+NULL
+
+-- next query produces assertion failure in rel_find_exp_and_corresponding_rel_ (rel=0x7f3bf81b0e80, e=0x7f3bf81adf90, subexp=false, res=0x0) at sql/server/rel_exp.c:1786
+query II rowsort
+SELECT x , CASE WHEN x > 12 THEN 1 ELSE ( x = 1 AND x = ( SELECT x ORDER BY x , x DESC NULLS FIRST , x , x ) ) END AS x FROM ( SELECT 10 AS x UNION SELECT 11 AS x GROUP BY CUBE ( x , x ) UNION SELECT 12 AS x UNION SELECT 13 AS x )
+----
+10
+0
+11
+0
+12
+0
+13
+1
+NULL
+NULL

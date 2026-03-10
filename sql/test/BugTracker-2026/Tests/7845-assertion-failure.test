@@ -1,0 +1,15 @@
+query T rowsort
+SELECT x FROM ( SELECT 'a' AS x UNION SELECT 'b' AS x ) AS x
+----
+a
+b
+
+-- assertion failure in exp_bin (be=0x7f96b81a61b0, e=0x7f96b81b5760, left=0x7f96b821d130, right=0x7f96b821d310, grp=0x0, ext=0x0, cnt=0x0, sel=0x0, depth=1, reduce=0, push=0) at sql/backends/monet5/rel_bin.c:1899
+statement error 42000!SELECT: aggregate functions are not allowed in GROUP BY
+SELECT * FROM ( SELECT 11 AS x )
+ JOIN ( SELECT * FROM ( SELECT * FROM ( SELECT 10 AS x ) ) UNION SELECT * FROM generate_series ( CAST( 0.000000 AS REAL ) , CAST( 123.999496 AS REAL ) , CAST( 1.600000 AS REAL ) ) ORDER BY COALESCE ( x , 0 ) + COALESCE ( x , 0 ) ) USING ( x )
+  WHERE x BETWEEN ( SELECT 1 AS x WHERE ( SELECT x AS x WHERE x IN ( SELECT x FROM ( WITH RECURSIVE x ( x ) AS ( SELECT count ( * ) = - 36 * - 33 * - 49 * CASE 50 WHEN - 21 + 0 + - COUNT ( * ) THEN NULL WHEN 99 * - 43 + - - 35 THEN - 75 ELSE NULL END * - - 51 * 0 GROUP BY 1 ) SELECT x FROM x WHERE x = 2 UNION SELECT x FROM x WHERE x = 3 ORDER BY x , x LIMIT 4 ) ) ) ) AND x
+ GROUP BY x
+ HAVING x * x
+----
+

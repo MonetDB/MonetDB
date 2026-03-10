@@ -769,7 +769,7 @@ str
 str_splitpart(str *buf, size_t *buflen, const char *s, const char *s2, int f)
 {
 	size_t len;
-	char *p = NULL;
+	const char *p = NULL;
 
 	if (f <= 0)
 		throw(MAL, "str.splitpart",
@@ -1477,7 +1477,7 @@ str_substitute(str *buf, size_t *buflen, const char *s, const char *src,
 			   const char *dst, bit repeat)
 {
 	size_t lsrc = strlen(src), ldst = strlen(dst), n, l = strlen(s);
-	char *b, *fnd;
+	char *b;
 	const char *pfnd;
 
 	if (!lsrc || !l) {			/* s/src is an empty string, there's nothing to substitute */
@@ -1496,7 +1496,7 @@ str_substitute(str *buf, size_t *buflen, const char *s, const char *src,
 	b = *buf;
 	pfnd = s;
 	do {
-		fnd = strstr(pfnd, src);
+		const char *fnd = strstr(pfnd, src);
 		if (fnd == NULL)
 			break;
 		n = fnd - pfnd;

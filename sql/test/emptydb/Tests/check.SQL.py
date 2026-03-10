@@ -11,6 +11,8 @@ user = 'monetdb'
 passwd = 'monetdb'
 approve = None
 check = None
+stableout = 'check.stable.out.32bit' if os.getenv('TST_BITS', '') == '32bit' else 'check.stable.out.int128' if os.getenv('HAVE_HGE') else 'check.stable.out'
+
 if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser(description='Run check queries on a database')
@@ -24,11 +26,17 @@ if __name__ == '__main__':
                         help='user name to login to the database with')
     parser.add_argument('--password', action='store', default=passwd,
                         help='password to use to login to the database with')
-    parser.add_argument('--approve', action='store', default=approve,
+    xgroup = parser.add_argument_group(title='at most one of these')
+    rgroup = xgroup.add_mutually_exclusive_group()
+    rgroup.add_argument('--approve', action='store', default=approve,
                         type=argparse.FileType('w'),
                         help='file in which to produce a new .test file '
                         'with updated results')
-    parser.add_argument('check', nargs='*', help='name of test')
+    rgroup.add_argument('--stableout', action='store', default=None,
+                        help='stable output to compare against '
+                        '(implies check mode)')
+    parser.add_argument('check', nargs='*', help='name of test '
+                        '(implies check mode, ignored if --approve)')
     opts = parser.parse_args()
     port = opts.port
     dbname = opts.database
@@ -37,6 +45,9 @@ if __name__ == '__main__':
     passwd = opts.password
     approve = opts.approve
     check = opts.check
+    if opts.stableout is not None:
+        stableout = opts.stableout
+        check = True
 
 xit = 0
 output = []
@@ -586,7 +597,6 @@ with process.client('sql', interactive=True, echo=False, format='test',
 
 if check:
     output = ''.join(output).splitlines(keepends=True)
-    stableout = 'check.stable.out.32bit' if os.getenv('TST_BITS', '') == '32bit' else 'check.stable.out.int128' if os.getenv('HAVE_HGE') else 'check.stable.out'
     with open(stableout) as fil:
         stable = fil.readlines()
     import difflib

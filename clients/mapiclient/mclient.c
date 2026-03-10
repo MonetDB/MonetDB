@@ -3317,9 +3317,9 @@ getfile(void *data, const char *filename, bool binary,
 		}
 		if (f == NULL) {
 			if (curfile != NULL) {
-				char *p = strrchr(curfile, '/');
+				const char *p = strrchr(curfile, '/');
 #ifdef _MSC_VER
-				char *q = strrchr(curfile, '\\');
+				const char *q = strrchr(curfile, '\\');
 				if (p == NULL || (q != NULL && q > p))
 					p = q;
 #endif

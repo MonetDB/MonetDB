@@ -10074,7 +10074,7 @@ BATaggrdigest(allocator *ma, BAT **bnp, char **shap, const char *digest,
 	if (mdctx == NULL)
 		goto bailout;
 
-	TIMEOUT_LOOP_IDX_DECL(i, ci.ncand, qry_ctx) {
+	TIMEOUT_LOOP(ci.ncand, qry_ctx) {
 		oid p = canditer_next(&ci) - b->hseqbase;
 		if (gids)
 			gid = gids[p];

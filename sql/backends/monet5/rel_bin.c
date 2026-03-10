@@ -4768,6 +4768,8 @@ rel2bin_project(backend *be, sql_rel *rel, list *refs, sql_rel *topn)
 				break;
 			/* create group by */
 			stmt *gbcol = exp_bin(be, gbe, sub, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
+			if (!gbcol)
+				gbcol = exp_bin(be, gbe, psub, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
 
 			if (!gbcol) {
 				assert(sql->session->status == -10); /* Stack overflow errors shouldn't terminate the server */

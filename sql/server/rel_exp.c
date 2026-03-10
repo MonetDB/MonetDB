@@ -1824,7 +1824,7 @@ rel_find_exp_and_corresponding_rel_(sql_rel *rel, sql_exp *e, bool subexp, sql_r
 {
 	sql_exp *ne = NULL;
 
-	if (!rel)
+	if (!rel || !e)
 		return NULL;
 	switch(e->type) {
 	case e_column:
@@ -2347,8 +2347,6 @@ exp_has_aggr(sql_rel *r, sql_exp *e )
 	case e_aggr:
 		return true;
 	case e_cmp:
-		if (e->card != CARD_ATOM)
-			return false;
 		if (e->flag == cmp_filter)
 			return exps_have_aggr(r, e->l) && exps_have_aggr(r, e->r);
 		if (e->flag == cmp_con || e->flag == cmp_dis)
