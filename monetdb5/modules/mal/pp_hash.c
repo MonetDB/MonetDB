@@ -416,7 +416,7 @@ OAHASHnew(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 		size = *getArgReference_lng(s, p, 2);
 	}
 	/* multiply with the magic estimation while avoiding overflow */
-	size = size > (BUN_MAX / 1.2 / 2.1)? BUN_MAX : size * 1.2 * 2.1;
+	size = size > ((dbl)BUN_MAX / 1.2 / 2.1)? BUN_MAX : size * 1.2 * 2.1;
 
 	if (p->argc == 4) {
 		bat pid = *getArgReference_bat(s, p, 3);

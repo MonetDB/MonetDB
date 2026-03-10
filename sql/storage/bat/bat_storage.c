@@ -2982,7 +2982,7 @@ double_elim_col(sql_trans *tr, sql_column *col)
 		if (b && ATOMstorage(b->ttype) == TYPE_str) { /* check double elimination */
 			de = GDK_ELIMDOUBLES(b->tvheap);
 			if (de) {
-				BUN bytes = b->tvheap->free - GDK_VAROFFSET;
+				BUN bytes = (b->tvheap->free >= GDK_VAROFFSET)? b->tvheap->free - GDK_VAROFFSET : 0;
 				if (bytes > 0)
 					de = (int)(bytes/b->twidth);
 			}
