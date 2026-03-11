@@ -922,7 +922,6 @@ pqc_definition( pqc_reader_t *r, pqc_creader_t *cr, void *output, u_int32_t num_
 		} else { /* rle */
 			len>>=1;
 			char val = data[pos++];
-			assert(val >= 0 && val <= max);
 			if (i == 0 && (val != max || len < num_values)) {
 				assert(max == 1); /* need to implement levels */
 				cr->definitionsize = 0;
