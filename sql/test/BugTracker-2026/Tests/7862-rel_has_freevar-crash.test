@@ -1,0 +1,22 @@
+query II rowsort
+SELECT x , CASE WHEN x > 12 THEN 1 ELSE 0 END AS x
+ FROM ( SELECT 10 AS x UNION SELECT 11 AS x GROUP BY CUBE ( x , x ) UNION SELECT 12 AS x UNION SELECT 13 AS x )
+----
+10
+0
+11
+0
+12
+0
+13
+1
+NULL
+0
+
+-- Segmentation fault. in rel_has_freevar (sql=0x7f0a081844e0, rel=0x0) at sql/server/rel_unnest.c:170    if (is_basetable(rel->op)) {  -- cause of seg fault: rel=0x0
+query II rowsort
+SELECT x , CASE WHEN x > 12 THEN 1 ELSE 0 END AS x
+  FROM ( SELECT 10 AS x UNION SELECT 11 AS x GROUP BY CUBE ( x , x ) UNION SELECT 12 AS x UNION SELECT 13 AS x )
+ WHERE x IN ( WITH RECURSIVE x ( row_number ) AS ( SELECT 1 UNION SELECT x + 1 FROM x WHERE x < 20 ) SELECT x AS x FROM x WHERE x NOT IN ( 8 , 12 , CAST( 0.000000 AS FLOAT ) , 24 , 32 ) OR x = 512 GROUP BY x HAVING NOT x < ANY ( CASE WHEN NULLIF ( ( WITH RECURSIVE x ( x ) AS ( SELECT 1 UNION SELECT x + 1 FROM ( WITH RECURSIVE x ( x ) AS ( SELECT CASE WHEN x < - 13 * - ( 0 ) + 39 * - ( SELECT '1' ) + 0.100000 + 0.100000 THEN CAST( '-0' AS DOUBLE ) END UNION SELECT ROUND ( 70 , 2 ) FROM x ) SELECT * FROM ( SELECT 'b' AS x FROM x ) WHERE x NOT IN ( 'a' ) ) WHERE x < 8 ) SELECT - COUNT ( * ) FROM x AS x WHERE NOT ( - x ) BETWEEN - x AND NULL ) , NULL ) IS NULL THEN 1 ELSE 0 END AND 6 IN ( SELECT MAX ( x ) , x < -1234567 , MAX ( x ) , MIN ( x ) , MAX ( x ) , MIN ( x ) ORDER BY 1 , 2 LIMIT 0 OFFSET 0 ) ) )
+----
+
