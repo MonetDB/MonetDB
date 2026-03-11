@@ -379,10 +379,24 @@ sql_drop_shp(Client c)
 static str
 sql_update_generator(Client c)
 {
-	static const char query[] =
-		"update sys.args set name = 'limit' where name = 'last' and func_id in (select id from sys.functions where schema_id = 2000 and name = 'generate_series' and func like '% last %');\n"
-		"update sys.functions set func = replace(func, ' last ', ' \"limit\" ') where schema_id = 2000 and name = 'generate_series' and func like '% last %';\n";
-	return SQLstatementIntern(c, query, "update", true, false, NULL);
+	res_table *output;
+	char *err = SQLstatementIntern(c, "select func_id from sys.args where func_id in (select id from sys.functions where name = 'generate_series' and schema_id = 2000) and name = 'last';\n", "update", true, false, &output);
+	if (err)
+		return err;
+	BAT *b = BATdescriptor(output->cols[0].b);
+	if (b) {
+		if (BATcount(b) > 0) {
+			static const char query[] =
+				"update sys.args set name = 'limit' where name = 'last' and func_id in (select id from sys.functions where schema_id = 2000 and name = 'generate_series' and func like '% last %');\n"
+				"update sys.functions set func = replace(func, ' last ', ' \"limit\" ') where schema_id = 2000 and name = 'generate_series' and func like '% last %';\n";
+			printf("Running database upgrade commands:\n%s\n", query);
+			fflush(stdout);
+			err = SQLstatementIntern(c, query, "update", true, false, NULL);
+		}
+		BBPunfix(b->batCacheid);
+	}
+	res_table_destroy(output);
+	return err;
 }
 
 static str
