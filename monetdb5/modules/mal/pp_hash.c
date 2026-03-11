@@ -568,7 +568,7 @@ UHASHext(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 			pipeline_unlock(p); \
 			assert(p->wid < p->p->nr_workers); \
 			if (!SK->allocators[p->wid]) { \
-				char name[16]; \
+				char name[MT_NAME_LEN]; \
 				snprintf(name, sizeof(name), "pp%d", p->wid); \
 				SK->allocators[p->wid] = create_allocator(name, false); \
 				if (!SK->allocators[p->wid]) { \
