@@ -82,6 +82,7 @@ HAVE_HGE?7637_str_to_decimal
 7743-crash
 7744_opt_null_in_where
 7745-antijoin-bad-mal-gen
+7746-incorrect-boolean-expr
 7748-update-returning-subquery-crash
 7753-like-in-projection
 7752-union-sum
