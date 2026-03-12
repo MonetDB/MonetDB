@@ -59,3 +59,4 @@ KNOWNFAIL?7774-insert-into-renamed-table-assertion-failure
 7855-ntile
 7856-crash-exp-match
 7857-rollup-crash
+7862-rel_has_freevar-crash

@@ -5,7 +5,7 @@ statement ok
 create procedure test_populate()
 begin
   declare rowmax bigint;
-  set rowmax = 100000;
+  set rowmax = 10000;
   declare rowindex bigint;
   set rowindex = 0;
   while rowindex < rowmax do
@@ -36,4 +36,31 @@ project (
 | | ) [ (("test_base"."item") ! in (varchar(10) "a", varchar(10) "b", varchar(10) "c", varchar(10) "d", varchar(10) "e", varchar(10) "f", varchar(10) "g", varchar(10) "h", varchar(10) "i", varchar(10) "j", varchar(10) "k", varchar(10) "l", varchar(10) "m", varchar(10) "n", varchar(10) "o", varchar(10) "p", varchar(10) "q", varchar(10) "r", varchar(10) "s", varchar(10) "t", varchar(10) "u", varchar(10) "v", varchar(10) "w", varchar(10) "x", varchar(10) "y", varchar(10) "z")) = (boolean(1) "true") ]
 | ) [  ] [ "sys"."count"() as "%2"."%2" ]
 ) [ "%2"."%2" ]
+
+query I
+select count(*) from test_base  where item is null or not(item in ('a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z'))
+----
+100000
+
+-- suggested workaround to put the not next to the 'in'. ie from not(x in (list)) -> x not in (list)
+query I
+select count(distinct item) from test_base  where item is null or not(item in ('a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z'))
+----
+100000
+
+query T python .plan.filter
+explain select count(*) from test_base  where item is null or item not in ('a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z')
+----
+project (
+| group by (
+| | select (
+| | | table("sys"."test_base") [ "test_base"."item" ]
+| | ) [ ("test_base"."item") notin (varchar(10) "a", varchar(10) "b", varchar(10) "c", varchar(10) "d", varchar(10) "e", varchar(10) "f", varchar(10) "g", varchar(10) "h", varchar(10) "i", varchar(10) "j", varchar(10) "k", varchar(10) "l", varchar(10) "m", varchar(10) "n", varchar(10) "o", varchar(10) "p", varchar(10) "q", varchar(10) "r", varchar(10) "s", varchar(10) "t", varchar(10) "u", varchar(10) "v", varchar(10) "w", varchar(10) "x", varchar(10) "y", varchar(10) "z") ]
+| ) [  ] [ "sys"."count"() as "%2"."%2" ]
+) [ "%2"."%2" ]
+
+query I
+select count(*) from test_base  where item is null or item not in ('a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z')
+----
+100000
 

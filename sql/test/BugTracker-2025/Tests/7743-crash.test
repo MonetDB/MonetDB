@@ -1,0 +1,34 @@
+statement ok
+CREATE TABLE v0 ( v1 INT PRIMARY KEY , v2 FLOAT )
+
+statement error 40002!INSERT INTO: PRIMARY KEY constraint 'v0.v0_v1_pkey' violated
+ INSERT INTO v0 VALUES ( -1 , -2147483648 ) , ( -1 , -2147483648 ) , ( 67 , 67318661.000000 ) , ( 92 , 44700023.000000 ) , ( 10 , 57032360.000000 )
+
+statement ok
+ UPDATE v0 SET v1 = v1 - -1 WHERE v2 LIKE 'x' AND v2 IN ( SELECT v2 FROM ( SELECT v2 WHERE v1 < -1 UNION SELECT v2 FROM v0 WHERE v1 IS NOT NULL ) WHERE v2 NOT LIKE v1 )
+
+statement error 42000!syntax error, unexpected sqlINT, expecting SCOLON or ':' in: " select v2 , json_objectagg ( v1 ) as v3 from v0 where between 27"
+ SELECT v2 , JSON_OBJECTAGG ( v1 ) AS v3 FROM v0 WHERE BETWEEN 27 AND 82741941.000000
+
+statement error 42000!SELECT: no such operator 'std'(double)
+ SELECT v2 , STD ( v2 ) AS v4 FROM v0 WHERE v1 IN ( SELECT v2 FROM v0 WHERE v1 > 44 )
+
+statement error 42000!SELECT: no such operator 'percent_rank'(int)
+ SELECT FIRST_VALUE ( ( SELECT PERCENT_RANK ( v1 ) FROM v0 ) ) AS v5
+
+statement error 42000!syntax error, unexpected COMPARISON in: " select v0 . v2 , v0 . v2 , json_objectagg ( v0 . v1 + v0 . v1 ) from v0 a join v0 b on v0 . v1 < >"
+ SELECT v0 . v2 , v0 . v2 , JSON_OBJECTAGG ( v0 . v1 + v0 . v1 ) FROM v0 a JOIN v0 b ON v0 . v1 < > v0 . v2
+
+statement error 42000!SELECT: no such operator 'json_arrayagg'(double)
+ SELECT v2 , JSON_ARRAYAGG ( v2 ) FROM v0 WHERE v1 IS NOT NULL
+
+statement error 42000!SELECT: cannot use non GROUP BY column 'v0.v1' in query results without an aggregate function
+ CREATE TABLE v7 AS SELECT v1 , MAX ( v1 ) AS v6 FROM v0
+
+statement error 42000!syntax error, unexpected WINDOW, expecting SCOLON or ':' in: " select sum ( v2 ) from v7 where v1 = 'x' group by v2 window v8 as ( order by v2 ) window"
+ SELECT SUM ( v2 ) FROM v7 WHERE v1 = 'x' GROUP BY v2 WINDOW v8 AS ( ORDER BY v2 ) WINDOW x AS ( )
+
+-- cleanup
+statement ok
+DROP TABLE v0
+

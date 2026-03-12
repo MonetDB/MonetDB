@@ -1,0 +1,94 @@
+-- the literal 86399999.00000000000 has 19 significant digits and is converted to a double when hge is not supported
+query T nosort
+explain select 86399999.00000000000 / 86400000.0
+----
+project (
+|  [ boolean(1) "true" as "%1"."%1" ]
+) [ "sys"."sql_div"(double(51) "86399999", double(53) "86400000") ]
+
+-- 0.999999988425926
+query T nosort
+select cast(86399999.00000000000 / 86400000.0 as string)
+----
+0.999999988425926
+
+
+-- the literal 86399999.0000000000 has 18 significant digits and is converted to a decimal(18,10) when hge is not supported
+query T nosort
+explain select 86399999.0000000000 / 86400000.0
+----
+project (
+|  [ boolean(1) "true" as "%1"."%1" ]
+) [ "sys"."sql_div"(decimal(18,11)[decimal(18,10) "863999990000000000"], decimal(9,1) "864000000") ]
+
+
+statement error 22003!overflow in conversion to DECIMAL(18,11).
+select cast(86399999.0000000000 / 86400000.0 as string)
+
+
+-- the literal 86399999.000000000 has 17 significant digits and is converted to a decimal(17,9) when hge is not supported
+query T nosort
+explain select 86399999.000000000 / 86400000.0
+----
+project (
+|  [ boolean(1) "true" as "%1"."%1" ]
+) [ "sys"."sql_div"(decimal(18,10)[decimal(17,9) "86399999000000000"], decimal(9,1) "864000000") ]
+
+
+query T nosort
+select cast(86399999.000000000 / 86400000.0 as string)
+----
+0.999999988
+
+
+-- workaround using int as divider
+-- 0.999999988425926
+query T nosort
+select cast(86399999.0000000000 / 86400000 as string)
+----
+0.9999999884
+
+query T nosort
+explain select 86399999.0000000000 / 86400000
+----
+project (
+|  [ boolean(1) "true" as "%1"."%1" ]
+) [ "sys"."sql_div"(decimal(18,10) "863999990000000000", int(27) "86400000") ]
+
+-- workarounds using explicit castings
+query T nosort
+select cast(86399999.0000000000 / cast(86400000.0 as decimal(8,0)) as string)
+----
+0.9999999884
+
+query T nosort
+explain select 86399999.0000000000 / cast(86400000.0 as decimal(8,0))
+----
+project (
+|  [ boolean(1) "true" as "%1"."%1" ]
+) [ "sys"."sql_div"(decimal(18,10) "863999990000000000", decimal(8) "86400000") ]
+
+query T nosort
+select cast(cast(86399999.0000000000 as decimal(18,10)) / cast(86400000.0 as decimal(8,0)) as string)
+----
+0.9999999884
+
+query T nosort
+explain select cast(86399999.0000000000 as decimal(18,10)) / cast(86400000.0 as decimal(8,0))
+----
+project (
+|  [ boolean(1) "true" as "%1"."%1" ]
+) [ "sys"."sql_div"(decimal(18,10) "863999990000000000", decimal(8) "86400000") ]
+
+query T nosort
+select cast(cast(86399999.0000000000 as decimal(17,9)) / 86400000.0 as string)
+----
+0.999999988
+
+query T nosort
+explain select cast(86399999.0000000000 as decimal(17,9)) / 86400000.0
+----
+project (
+|  [ boolean(1) "true" as "%1"."%1" ]
+) [ "sys"."sql_div"(decimal(18,10)[decimal(17,9)[decimal(18,10) "863999990000000000"]], decimal(9,1) "864000000") ]
+
