@@ -179,7 +179,7 @@ rel_has_freevar(mvc *sql, sql_rel *rel)
 		res = exps_have_freevar(sql, rel->exps) || (rel->l && rel_has_freevar(sql, rel->l));
 	} else if (is_join(rel->op) || is_set(rel->op) || is_semi(rel->op) || is_modify(rel->op)) {
 		res = exps_have_freevar(sql, rel->exps) ||
-			rel_has_freevar(sql, rel->l) || rel_has_freevar(sql, rel->r);
+			(rel->l && rel_has_freevar(sql, rel->l)) || (rel->r && rel_has_freevar(sql, rel->r));
 	} else if (is_munion(rel->op)) {
 		int v = exps_have_freevar(sql, rel->exps);
 		list *l = rel->l;
