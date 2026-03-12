@@ -84,6 +84,7 @@ HAVE_HGE?7637_str_to_decimal
 7745-antijoin-bad-mal-gen
 7746-incorrect-boolean-expr
 7748-update-returning-subquery-crash
+KNOWNFAIL?7750-dependency-not-removed-bug
 7753-like-in-projection
 7752-union-sum
 7756-anti-join-null
