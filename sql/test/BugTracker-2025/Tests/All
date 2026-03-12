@@ -79,6 +79,7 @@ HAVE_HGE?7637_str_to_decimal
 7740-crash
 7741_missing_rel_name
 7742-crash
+7743-crash
 7744_opt_null_in_where
 7745-antijoin-bad-mal-gen
 7748-update-returning-subquery-crash
