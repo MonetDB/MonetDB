@@ -1,0 +1,30 @@
+statement ok
+CREATE TABLE v0 ( v1 INT PRIMARY KEY , v2 FLOAT )
+
+statement ok
+ INSERT INTO v0 VALUES ( -1 , -128 ) , ( 22 , 72 ) , ( 62 , 98859564.000000 ) , ( 0 , 26139268.000000 ) , ( 76 , 77221851.000000 )
+
+statement ok
+ UPDATE v0 SET v1 = v2 - -2147483648 WHERE v2 LIKE 'x' AND v1 IN ( SELECT v1 FROM ( SELECT v2 FROM v0 WHERE v2 < 0 UNION SELECT v1 FROM v0 WHERE v1 IS NOT NULL ) WHERE v1 LIKE 'x' )
+
+statement error 42000!SELECT: identifier 'between' unknown
+ SELECT v2 , PERCENT_RANK ( v1 ) AS v3 FROM v0 WHERE BETWEEN -128 AND 99472945.000000
+
+statement error 42000!SELECT: cannot use non GROUP BY column 'v0.v2' in query results without an aggregate function
+ SELECT v2 , VAR_POP ( v2 ) AS v4 FROM v0 WHERE v2 IN ( SELECT v2 FROM v0 WHERE v2 > 50 )
+
+statement error 42000!SELECT: no such operator 'bit_and'(int)
+ SELECT NTH_VALUE ( ( SELECT BIT_AND ( v1 ) FROM v0 ) ) AS v5
+
+statement error 42000!syntax error, unexpected COMPARISON in: " select v0 . v1 , v0 . v1 , sum ( v0 . v1 + v0 . v2 ) from v0 a join v0 b on v0 . v2 < >"
+ SELECT v0 . v1 , v0 . v1 , SUM ( v0 . v1 + v0 . v2 ) FROM v0 a JOIN v0 b ON v0 . v2 < > v0 . v1
+
+statement error 42000!SELECT: no such operator 'lead'(int)
+ SELECT v1 , LEAD ( v1 ) FROM v0 WHERE v2 IS NOT NULL
+
+statement error 42000!SELECT: no such operator 'bit_xor'(int)
+ CREATE TABLE v7 AS SELECT v2 , BIT_XOR ( v1 ) AS v6 FROM v0
+
+statement error 42S02!SELECT: no such table 'v7'
+ SELECT CUME_DIST ( v1 ) OVER ( PARTITION BY v1 ORDER BY v2 , v1 DESC NULLS FIRST ) FROM v7 WINDOW v8 AS ( )
+

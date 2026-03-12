@@ -76,6 +76,7 @@ HAVE_HGE?7637_str_to_decimal
 7737-join-order
 7738-crash
 7739-left-join-attr-missing
+7740-crash
 7741_missing_rel_name
 7744_opt_null_in_where
 7745-antijoin-bad-mal-gen
