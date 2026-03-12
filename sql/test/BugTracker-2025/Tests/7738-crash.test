@@ -1,0 +1,95 @@
+statement ok
+CREATE TABLE v0 ( v1 STRING )
+
+statement ok
+INSERT INTO v0 VALUES ( 'x' )
+
+statement ok
+INSERT INTO v0 VALUES ( 'x' )
+
+statement ok
+INSERT INTO v0 VALUES ( 'x' )
+
+statement ok
+INSERT INTO v0 VALUES ( 'x' )
+
+statement ok
+INSERT INTO v0 VALUES ( 'x' )
+
+query T rowsort
+SELECT insert ( v1 , 54 , 40 , 'x' ) FROM v0 WHERE v1 = 'x'
+----
+xx
+xx
+xx
+xx
+xx
+
+query T rowsort
+ SELECT * FROM v0 WHERE v1 IN ( SELECT v1 )
+----
+x
+x
+x
+x
+x
+
+query T rowsort
+ SELECT insert ( v1 , -128 , 97 , 'x' ) FROM v0 WHERE v1 = 'x'
+----
+x
+x
+x
+x
+x
+
+query T rowsort
+ SELECT insert ( v1 , -128 , 18 , 'x' ) FROM v0 WHERE v1 = 'x'
+----
+x
+x
+x
+x
+x
+
+statement error 42000!The number of characters for insert function must be non negative
+ SELECT insert ( v1 , 255 , -128 , 'x' ) FROM v0 WHERE v1 = 'x'
+
+statement error 42000!SELECT: no such window function 'bit_xor'(tinyint, tinyint)
+ SELECT v1 , v1 , BIT_XOR ( 8 , 0 ) OVER ( ORDER BY v1 ) AS v2 FROM v0
+
+query T rowsort
+ SELECT insert ( 'x' , -32768 , 8 , 'x' ) AS v3
+----
+x
+
+statement error 42000!syntax error, unexpected SELECT in: " select insert ( v1 , -2147483648 , 83 , 'x' ) as v4 from v0 where v1 = ( select v1 from v0 order by variance ( select"
+ SELECT insert ( v1 , -2147483648 , 83 , 'x' ) AS v4 FROM v0 WHERE v1 = ( SELECT v1 FROM v0 ORDER BY VARIANCE ( SELECT v1 ) DESC LIMIT 25 )
+
+query T rowsort
+ SELECT insert ( v1 , 127 , 22 , 'x' ) FROM ( SELECT v1 FROM v0 WHERE v1 LIKE 'x' ) AS v5
+----
+xx
+xx
+xx
+xx
+xx
+
+statement ok
+ INSERT INTO v0 SELECT insert ( v1 , 7 , 7 , 'x' ) FROM v0
+
+statement error 42000!SELECT: identifier 'v1' unknown
+ SELECT v1 FROM ( SELECT insert ( 'x' , 0 , 16 , 'x' ) AS v7 ) AS v6
+
+query T rowsort
+ SELECT insert ( v1 , 76 , 11 , 'x' ) FROM v0 WHERE v1 LIKE 'x'
+----
+xx
+xx
+xx
+xx
+xx
+
+statement error 42000!SELECT: no such operator 'std'(varchar)
+ SELECT insert ( v1 , 35 , 24 , 'x' ) FROM v0 WHERE STD ( v1 ) > 75
+
