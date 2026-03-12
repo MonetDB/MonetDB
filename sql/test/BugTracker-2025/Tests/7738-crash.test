@@ -93,3 +93,7 @@ xx
 statement error 42000!SELECT: no such operator 'std'(varchar)
  SELECT insert ( v1 , 35 , 24 , 'x' ) FROM v0 WHERE STD ( v1 ) > 75
 
+-- cleanup
+statement ok
+DROP TABLE v0
+

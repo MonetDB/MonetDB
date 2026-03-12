@@ -28,3 +28,7 @@ statement error 42000!SELECT: no such operator 'bit_xor'(int)
 statement error 42S02!SELECT: no such table 'v7'
  SELECT CUME_DIST ( v1 ) OVER ( PARTITION BY v1 ORDER BY v2 , v1 DESC NULLS FIRST ) FROM v7 WINDOW v8 AS ( )
 
+-- cleanup
+statement ok
+DROP TABLE v0
+
