@@ -1847,7 +1847,8 @@ static str
 do_covariance_and_correlation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char *op,
 							  BAT *(*func)(BAT *, BAT *, BAT *, BAT *, BAT *, BAT *, int, int), lng minimum, dbl defaultv, dbl single_case)
 {
-	BAT *r = NULL, *b = NULL, *c = NULL, *p = NULL, *o = NULL, *s = NULL, *e = NULL, *st = NULL;
+	BAT *r = NULL, *b = NULL, *c = NULL, *p = NULL, *o = NULL, *s = NULL, *e = NULL;
+	Heap *st = NULL;
 	int tp1, tp2, frame_type;
 	bool is_a_bat1, is_a_bat2;
 	str msg = MAL_SUCCEED;
@@ -1988,7 +1989,8 @@ do_covariance_and_correlation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 	}
 
 bailout1:
-	BBPreclaim(st);
+	if (st)
+		HEAPdecref(st, true);
 	unfix_inputs(6, b, c, p, o, s, e);
 	finalize_output(res, r, msg);
 	return msg;

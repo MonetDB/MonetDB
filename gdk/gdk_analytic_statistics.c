@@ -384,7 +384,7 @@ GDKanalyticalavg(BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, int frame_type
 #else
 	lng sum = 0;
 #endif
-	BAT *st = NULL;
+	Heap *st = NULL;
 
 	assert(np == NULL || cnt == 0 || np[0] == 0);
 	if (cnt > 0) {
@@ -420,7 +420,8 @@ cleanup:
 	bat_iterator_end(&bi);
 	bat_iterator_end(&si);
 	bat_iterator_end(&ei);
-	BBPreclaim(st);
+	if (st)
+		HEAPdecref(st, true);
 	if (res != GDK_SUCCEED) {
 		BBPreclaim(r);
 		r = NULL;
@@ -653,7 +654,7 @@ GDKanalyticalavginteger(BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, int fra
 	bit *np = pi.base, *op = oi.base;
 	void *segment_tree = NULL;
 	gdk_return res = GDK_SUCCEED;
-	BAT *st = NULL;
+	Heap *st = NULL;
 
 	assert(np == NULL || cnt == 0 || np[0] == 0);
 	if (cnt > 0) {
@@ -689,7 +690,8 @@ cleanup:
 	bat_iterator_end(&bi);
 	bat_iterator_end(&si);
 	bat_iterator_end(&ei);
-	BBPreclaim(st);
+	if (st)
+		HEAPdecref(st, true);
 	if (res != GDK_SUCCEED) {
 		BBPreclaim(r);
 		r = NULL;
@@ -930,7 +932,7 @@ GDKanalytical_##NAME(BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, int frame_
 	dbl *rb = (dbl *) Tloc(r, 0), mean = 0, m2 = 0, delta;		\
 	void *segment_tree = NULL;					\
 	gdk_return res = GDK_SUCCEED;					\
-	BAT *st = NULL;							\
+	Heap *st = NULL;						\
 									\
 	assert(np == NULL || cnt == 0 || np[0] == 0);			\
 	if (cnt > 0) {							\
@@ -970,7 +972,8 @@ cleanup:								\
 	bat_iterator_end(&bi);						\
 	bat_iterator_end(&si);						\
 	bat_iterator_end(&ei);						\
-	BBPreclaim(st);							\
+	if (st)								\
+		HEAPdecref(st, true);					\
 	if (res != GDK_SUCCEED) {					\
 		BBPreclaim(r);						\
 		r = NULL;						\
@@ -1162,7 +1165,7 @@ GDKanalytical_##NAME(BAT *p, BAT *o, BAT *b1, BAT *b2, BAT *s, BAT *e, int tpe, 
 	dbl *rb = (dbl *) Tloc(r, 0), mean1 = 0, mean2 = 0, m2 = 0, delta1, delta2; \
 	void *segment_tree = NULL;					\
 	gdk_return res = GDK_SUCCEED;					\
-	BAT *st = NULL;							\
+	Heap *st = NULL;						\
 									\
 	assert(np == NULL || cnt == 0 || np[0] == 0);			\
 	if (cnt > 0) {							\
@@ -1203,7 +1206,8 @@ cleanup:								\
 	bat_iterator_end(&b2i);						\
 	bat_iterator_end(&si);						\
 	bat_iterator_end(&ei);						\
-	BBPreclaim(st);							\
+	if (st)								\
+		HEAPdecref(st, true);					\
 	if (res != GDK_SUCCEED) {					\
 		BBPreclaim(r);						\
 		r = NULL;						\
@@ -1428,7 +1432,7 @@ GDKanalytical_correlation(BAT *p, BAT *o, BAT *b1, BAT *b2, BAT *s, BAT *e, int 
 	dbl *rb = (dbl *) Tloc(r, 0), mean1 = 0, mean2 = 0, up = 0, down1 = 0, down2 = 0, delta1, delta2, aux, rr;
 	void *segment_tree = NULL;
 	gdk_return res = GDK_SUCCEED;
-	BAT *st = NULL;
+	Heap *st = NULL;
 
 	assert(np == NULL || cnt == 0 || np[0] == 0);
 	if (cnt > 0) {
@@ -1469,7 +1473,8 @@ cleanup:
 	bat_iterator_end(&b2i);
 	bat_iterator_end(&si);
 	bat_iterator_end(&ei);
-	BBPreclaim(st);
+	if (st)
+		HEAPdecref(st, true);
 	if (res != GDK_SUCCEED) {
 		BBPreclaim(r);
 		r = NULL;
