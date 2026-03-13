@@ -12,24 +12,30 @@
 #include "gdk.h"
 #include "gdk_analytic.h"
 #include "gdk_calc_private.h"
+#include "gdk_private.h"
 
-BAT *
+Heap *
 GDKinitialize_segment_tree(void)
 {
-	/* The tree is allocated using raw bytes, so use a GDK type of size 1 */
-	BAT *st = COLnew(0, TYPE_bte, 0, TRANSIENT);
-
-	if (!st)
+	Heap *h = GDKmalloc(sizeof(Heap));
+	if (h == NULL)
 		return NULL;
-	assert(st->tshift == 0);
-	BATsetcount(st, 0);
-	st->tsorted = st->trevsorted = st->tkey = st->tnonil = st->tnil = false;
-	st->tnosorted = st->tnorevsorted = 0;
-	return st;
+	*h = (Heap) {
+		.farmid = BBPselectfarm(TRANSIENT, TYPE_bte, dataheap),
+		.dirty = true,
+		.refs = ATOMIC_VAR_INIT(1),
+	};
+	snprintf(h->filename, sizeof(h->filename), "st%zu.tmp",
+		 (size_t) MT_getpid());
+	if (h->farmid < 0 || HEAPalloc(h, 1024, 1) != GDK_SUCCEED) {
+		GDKfree(h);
+		return NULL;
+	}
+	return h;
 }
 
 gdk_return
-GDKrebuild_segment_tree(oid ncount, oid data_size, BAT *st, void **segment_tree, oid **levels_offset, oid *nlevels)
+GDKrebuild_segment_tree(oid ncount, oid data_size, Heap *st, void **segment_tree, oid **levels_offset, oid *nlevels)
 {
 	oid total_size, next_tree_size = ncount, counter = ncount, next_levels = 1; /* there will be at least one level */
 
@@ -46,14 +52,15 @@ GDKrebuild_segment_tree(oid ncount, oid data_size, BAT *st, void **segment_tree,
 	next_tree_size = ((next_tree_size + SIZEOF_OID - 1) / SIZEOF_OID) * SIZEOF_OID;
 	total_size = next_tree_size + next_levels * sizeof(oid);
 
-	if (total_size > BATcount(st)) {
+	if (total_size > st->size) {
 		total_size = (((total_size) + 1023) & ~1023); /* align to a multiple of 1024 bytes */
-		if (BATextend(st, total_size) != GDK_SUCCEED)
+		st->free = st->size;
+		if (HEAPextend(st, total_size, true) != GDK_SUCCEED)
 			return GDK_FAIL;
-		BATsetcount(st, total_size);
-		*segment_tree = (void*)Tloc(st, 0);
-		*levels_offset = (oid*)((bte*)Tloc(st, 0) + next_tree_size); /* levels offset will be next to the segment tree */
+		*segment_tree = st->base;
+		*levels_offset = (oid*)(st->base + next_tree_size); /* levels offset will be next to the segment tree */
 	} else {
+		*segment_tree = st->base;
 		*levels_offset = (oid*)(*(bte**)segment_tree + next_tree_size); /* no reallocation, just update location of levels offset */
 	}
 	return GDK_SUCCEED;
@@ -1315,7 +1322,7 @@ GDKanalytical##OP(BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, int frame_typ
 	gdk_return res = GDK_SUCCEED;					\
 	uint16_t width = r->twidth;					\
 	uint8_t *restrict rcast = (uint8_t *) Tloc(r, 0);		\
-	BAT *st = NULL;							\
+	Heap *st = NULL;						\
 									\
 	assert(np == NULL || cnt == 0 || np[0] == 0);			\
 	if (cnt > 0) {							\
@@ -1351,7 +1358,8 @@ cleanup:								\
 	bat_iterator_end(&bi);						\
 	bat_iterator_end(&si);						\
 	bat_iterator_end(&ei);						\
-	BBPreclaim(st);							\
+	if (st)								\
+		HEAPdecref(st, true);					\
 	if (res != GDK_SUCCEED) {					\
 		BBPreclaim(r);						\
 		r = NULL;						\
@@ -1685,7 +1693,7 @@ GDKanalyticalcount(BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, bit ignore_nils, int 
 	bool count_all = !ignore_nils || bi.nonil, last = false;
 	void *segment_tree = NULL;
 	gdk_return res = GDK_SUCCEED;
-	BAT *st = NULL;
+	Heap *st = NULL;
 
 	assert(np == NULL || cnt == 0 || np[0] == 0);
 	if (cnt > 0) {
@@ -1721,7 +1729,8 @@ cleanup:
 	bat_iterator_end(&bi);
 	bat_iterator_end(&si);
 	bat_iterator_end(&ei);
-	BBPreclaim(st);
+	if (st)
+		HEAPdecref(st, true);
 	if (res != GDK_SUCCEED) {
 		BBPreclaim(r);
 		r = NULL;
@@ -2022,7 +2031,7 @@ GDKanalyticalsum(BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tp1, int tp2, int f
 	bit *np = pi.base, *op = oi.base;
 	void *segment_tree = NULL;
 	gdk_return res = GDK_SUCCEED;
-	BAT *st = NULL;
+	Heap *st = NULL;
 
 	assert(np == NULL || cnt == 0 || np[0] == 0);
 	if (cnt > 0) {
@@ -2066,7 +2075,8 @@ cleanup:
 	bat_iterator_end(&bi);
 	bat_iterator_end(&si);
 	bat_iterator_end(&ei);
-	BBPreclaim(st);
+	if (st)
+		HEAPdecref(st, true);
 	if (res != GDK_SUCCEED) {
 		BBPreclaim(r);
 		r = NULL;
@@ -2552,7 +2562,7 @@ GDKanalyticalprod(BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tp1, int tp2, int 
 	bit *np = pi.base, *op = oi.base;
 	void *segment_tree = NULL;
 	gdk_return res = GDK_SUCCEED;
-	BAT *st = NULL;
+	Heap *st = NULL;
 
 	assert(np == NULL || cnt == 0 || np[0] == 0);
 	if (cnt > 0) {
@@ -2592,7 +2602,8 @@ cleanup:
 	bat_iterator_end(&bi);
 	bat_iterator_end(&si);
 	bat_iterator_end(&ei);
-	BBPreclaim(st);
+	if (st)
+		HEAPdecref(st, true);
 	if (res != GDK_SUCCEED) {
 		BBPreclaim(r);
 		r = NULL;
