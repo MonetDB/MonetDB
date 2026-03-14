@@ -62,3 +62,4 @@ KNOWNFAIL?7774-insert-into-renamed-table-assertion-failure
 KNOWNFAIL?7862-rel_has_freevar-crash
 7865-unnest-cte-crash
 7867-push-groupby-down
+7872-exp-type-check-failed
