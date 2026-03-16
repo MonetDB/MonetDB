@@ -2155,7 +2155,7 @@ gen_push_groupby_down(mvc *sql, sql_rel *rel, int *changes)
 				list *args = ce->l;
 
 				/* check args are part of left/right */
-				if (!list_empty(args) && rel_has_exps(cl, args, false) == 0)
+				if (!list_empty(args) && rel_has_exps(cr, args, false) != 0)
 					return rel;
 				if (rel->op != op_join && exp_aggr_is_count(ce))
 					ce->p = prop_create(sql->sa, PROP_COUNT, ce->p);

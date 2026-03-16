@@ -1,0 +1,20 @@
+statement error 42000!types decimal(9,6) and boolean(1,0) are not equal for column 'row_number'
+SELECT x , CASE WHEN x > 12 THEN 1 ELSE 0 END AS x
+FROM (
+    SELECT 10 AS x
+    UNION SELECT 11 AS x GROUP BY CUBE ( x , x )
+    UNION SELECT 12 AS x
+    UNION SELECT 3.141593 AS x
+)
+WHERE x IN (
+    WITH RECURSIVE x ( row_number ) AS (
+        SELECT AVG ( CAST( NULL AS INT ) ) OVER ( ORDER BY 3 NULLS LAST ) != 955
+        UNION
+        SELECT x + 1 FROM x WHERE x < 20
+    )
+    SELECT x FROM x
+    WHERE x NOT IN ( 8 , 12 , CAST( 0.000000 AS FLOAT ) , 24 , 32 )
+       OR x = 512
+    GROUP BY x
+    HAVING NOT x = '2'
+)
