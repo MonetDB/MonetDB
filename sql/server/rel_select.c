@@ -4350,10 +4350,9 @@ symbol_get_identifier(symbol *sym)
 static sql_exp*
 rel_group_column(sql_query *query, sql_rel **rel, symbol *grp, dlist *selection, list *exps, int f)
 {
-	sql_query *lquery = query_create(query->sql);
 	mvc *sql = query->sql;
 	exp_kind ek = {type_value, card_value, TRUE};
-	sql_exp *e = rel_value_exp2(lquery, rel, grp, f, ek);
+	sql_exp *e = rel_value_exp2(query, rel, grp, f, ek);
 
 	if (e && exp_is_atom(e)) {
 		sql_subtype *tpe = exp_subtype(e);

@@ -330,7 +330,7 @@ merge_freevar(list *l, list *r, bool all)
 }
 
 static list * exps_freevar(mvc *sql, list *exps, bool all);
-static list * rel_freevar(mvc *sql, sql_rel *rel);
+static list * rel_freevar(mvc *sql, sql_rel *rel, sql_rel *ref);
 
 static list *
 exp_freevar(mvc *sql, sql_exp *e, bool all)
@@ -375,7 +375,7 @@ exp_freevar(mvc *sql, sql_exp *e, bool all)
 	case e_psm:
 		if (exp_is_rel(e))
 			if (rel_has_freevar(sql, e->l))
-				return rel_freevar(sql, e->l);
+				return rel_freevar(sql, e->l, NULL);
 		return NULL;
 	case e_atom:
 		if (e->f)
@@ -407,13 +407,13 @@ exps_freevar(mvc *sql, list *exps, bool all)
 }
 
 static list *
-rel_freevar(mvc *sql, sql_rel *rel)
+rel_freevar(mvc *sql, sql_rel *rel, sql_rel *ref)
 {
 	list *lexps = NULL, *rexps = NULL, *exps = NULL;
 
 	if (mvc_highwater(sql))
 		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
-	if (!rel)
+	if (!rel || rel == ref)
 		return NULL;
 	if (is_independent(rel->used))
 		return NULL;
@@ -423,8 +423,8 @@ rel_freevar(mvc *sql, sql_rel *rel)
 	case op_right:
 	case op_full:
 		exps = exps_freevar(sql, rel->exps, false);
-		lexps = rel_freevar(sql, rel->l);
-		rexps = rel_freevar(sql, rel->r);
+		lexps = rel_freevar(sql, rel->l, ref);
+		rexps = rel_freevar(sql, rel->r, ref);
 		lexps = merge_freevar(lexps, rexps, false);
 		exps = merge_freevar(exps, lexps, false);
 		return exps;
@@ -434,22 +434,22 @@ rel_freevar(mvc *sql, sql_rel *rel)
 	case op_table: {
 		sql_exp *call = rel->r;
 		if (rel->flag != TRIGGER_WRAPPER && rel->l)
-			lexps = rel_freevar(sql, rel->l);
+			lexps = rel_freevar(sql, rel->l, ref);
 		exps = (rel->flag != TRIGGER_WRAPPER && call)?exps_freevar(sql, call->l, false):NULL;
 		return merge_freevar(exps, lexps, false);
 	}
 	case op_except:
 	case op_inter:
 		exps = exps_freevar(sql, rel->exps, false);
-		lexps = rel_freevar(sql, rel->l);
-		rexps = rel_freevar(sql, rel->r);
+		lexps = rel_freevar(sql, rel->l, ref);
+		rexps = rel_freevar(sql, rel->r, ref);
 		lexps = merge_freevar(lexps, rexps, false);
 		exps = merge_freevar(exps, lexps, false);
 		return exps;
 	case op_munion:
 		exps = exps_freevar(sql, rel->exps, false);
 		for (node *n = ((list*)rel->l)->h; n; n = n->next) {
-			lexps = rel_freevar(sql, n->data);
+			lexps = rel_freevar(sql, n->data, ref);
 			exps = merge_freevar(exps, lexps, false);
 		}
 		return exps;
@@ -464,12 +464,12 @@ rel_freevar(mvc *sql, sql_rel *rel)
 	case op_groupby:
 	case op_project:
 		exps = exps_freevar(sql, rel->exps, false);
-		lexps = rel_freevar(sql, rel->l);
+		lexps = rel_freevar(sql, rel->l, ref);
 		if (rel->r) {
 			if (is_groupby(rel->op) || is_simple_project(rel->op))
 				rexps = exps_freevar(sql, rel->r, false);
 			else
-				rexps = rel_freevar(sql, rel->r);
+				rexps = rel_freevar(sql, rel->r, ref);
 			lexps = merge_freevar(lexps, rexps, false);
 		}
 		exps = merge_freevar(exps, lexps, false);
@@ -486,7 +486,7 @@ rel_dependent_var(mvc *sql, sql_rel *l, sql_rel *r)
 	list *res = NULL;
 
 	if (rel_has_freevar(sql, r)){
-		list *freevar = rel_freevar(sql, r);
+		list *freevar = rel_freevar(sql, r, l);
 		if (freevar) {
 			node *n;
 			list *boundvar = rel_projections(sql, l, NULL, 1, 0);
@@ -1739,7 +1739,8 @@ push_up_munion(mvc *sql, sql_rel *rel, list *ad)
 				set_has_freevar(sl);
 				if (!is_simple_project(sl->op))
 					sl = rel_inplace_project(sql->sa, sl, NULL, rel_projections(sql, sl, NULL, 1, 1));
-				list *exps = exps_copy(sql, ad);
+				list *exps = NULL;
+				exps = rel_projections(sql, d, NULL, 1, 1);
 				for(node *n = exps->h; n; n = n->next) {
 					sql_exp *e = n->data;
 					set_freevar(e, 0);
@@ -1889,11 +1890,11 @@ rel_unnest_dependent(mvc *sql, sql_rel *rel)
 		l = rel->l;
 		r = rel->r;
 
+		/*
 		if (rel_has_freevar(sql, l)) {
-			rel->l = rel_unnest_dependent(sql, rel->l);
+			 rel->l = rel_unnest_dependent(sql, rel->l);
 			if (rel_has_freevar(sql, rel->l)) {
 				if (rel->op == op_left && list_empty(rel->attr) && !rel_has_freevar(sql, rel->r) && rel_dependent_var(sql, rel->r, rel->l)) {
-assert(0);
 					sql_rel *l = rel->l;
 
 					rel->l = rel->r;
@@ -1903,6 +1904,7 @@ assert(0);
 				}
 			}
 		}
+		*/
 
 		if (!rel_has_freevar(sql, r)) {
 			if (rel_has_freevar(sql, l) && is_innerjoin(rel->op) && !rel->exps) {
@@ -1912,6 +1914,8 @@ assert(0);
 				r = rel->r;
 			} else {
 				reset_dependent(rel);
+				if (is_join(rel->op))
+					rel_bind_vars(sql, rel->l, rel->exps);
 				return rel;
 			}
 		}
@@ -2334,7 +2338,7 @@ rewrite_inner(mvc *sql, sql_rel *rel, sql_rel *inner, operator_type op, sql_rel 
 	assert(d);
 	if (rel_has_freevar(sql, inner)) {
 		list *dv = rel_dependent_var(sql, d, inner);
-		list *fv = rel_freevar(sql, inner);
+		list *fv = rel_freevar(sql, inner, d);
 		/* check if the inner depends on the new join (d) or one level up */
 		if (list_length(dv))
 			set_dependent(d);
