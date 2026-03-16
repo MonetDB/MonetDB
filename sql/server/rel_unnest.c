@@ -1737,6 +1737,8 @@ push_up_munion(mvc *sql, sql_rel *rel, list *ad)
 			if (rec) {
 				sql_rel *sl = rlist->h->data;
 				set_has_freevar(sl);
+				if (!is_simple_project(sl->op))
+					sl = rel_inplace_project(sql->sa, sl, NULL, rel_projections(sql, sl, NULL, 1, 1));
 				list *exps = exps_copy(sql, ad);
 				for(node *n = exps->h; n; n = n->next) {
 					sql_exp *e = n->data;

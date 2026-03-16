@@ -362,19 +362,28 @@ rel_with_query(sql_query *query, symbol *q )
 
 				/* down cast the recursive side (on errors users should add casts on the base side) */
 				list *nrs = new_exp_list(sql->sa);
-				if(!nrs)
+				if(!nrs) {
+					stack_pop_frame(sql);
 					return NULL;
+				}
 
 				for (node *n = ls->h, *m = rs->h; n && m; n = n->next, m = m->next) {
 					sql_subtype *t = exp_subtype(n->data);
-					append(nrs, exp_check_type(sql, t, nrel, m->data, type_equal));
+					sql_exp *e = exp_check_type(sql, t, nrel, m->data, type_equal);
+					if (!e) {
+						stack_pop_frame(sql);
+						return NULL;
+					}
+					append(nrs, e);
 				}
 				nrel = rel_project(sql->sa, nrel, nrs);
 				nrel = rel_setop_n_ary(sql->sa, append(append(sa_list(sql->sa), base_rel), nrel), op_munion);
 				set_recursive(nrel);
 			}
-			if (!nrel)
+			if (!nrel) {
+				stack_pop_frame(sql);
 				return NULL;
+			}
 			if (recursive_distinct)
 				set_distinct(nrel);
 			rel_setop_n_ary_set_exps(sql, nrel, rel_projections(sql, nrel, NULL, 0, 1), false);
