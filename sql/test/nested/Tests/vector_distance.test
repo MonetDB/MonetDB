@@ -1,0 +1,26 @@
+statement ok
+create table foo (s string, v float vector[3])
+
+statement ok
+insert into foo values ('a', (0.1,0.1,0.1)), ('b', (0.2,0.2,0.2)), ('c', (0.9,0.9,0.9)), ('d', (0.5,0.5,0.5))
+
+query TR rowsort
+select s, l2sq_distance(v, vector[0.5,0.5,0.5]) as d from foo
+----
+a
+0.480
+b
+0.270
+c
+0.480
+d
+0.000
+
+query T nosort
+select s from foo order by l2sq_distance(v, vector[0.5,0.5,0.5]) limit 2
+----
+d
+b
+
+statement ok
+drop table foo

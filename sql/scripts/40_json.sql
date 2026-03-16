@@ -102,3 +102,20 @@ create aggregate json.tojsonarray( x string ) returns string external name aggr.
 GRANT EXECUTE ON AGGREGATE json.tojsonarray( string ) TO PUBLIC;
 create aggregate json.tojsonarray( x double ) returns string external name aggr.jsonaggr;
 GRANT EXECUTE ON AGGREGATE json.tojsonarray( double ) TO PUBLIC;
+
+
+CREATE FUNCTION sys.l2sq_distance(a float vector, b float vector)
+RETURNS double EXTERNAL NAME vss.l2sq_distance;
+--GRANT EXECUTE ON FUNCTION sys.l2sq_distance(a float vector, b float vector) TO PUBLIC;
+
+CREATE FUNCTION sys.l1_distance(a float vector, b float vector)
+RETURNS double EXTERNAL NAME vss.l1_distance;
+--GRANT EXECUTE ON FUNCTION sys.l1_distance(a float vector, b float vector) TO PUBLIC;
+
+CREATE FUNCTION sys.ip_distance(a float vector, b float vector)
+RETURNS double EXTERNAL NAME vss.ip_distance;
+--GRANT EXECUTE ON FUNCTION sys.ip_distance(a float vector, b float vector) TO PUBLIC;
+
+CREATE FUNCTION sys.cos_distance(a float vector, b float vector)
+RETURNS double EXTERNAL NAME vss.cos_distance;
+--GRANT EXECUTE ON FUNCTION sys.cos_distance(a float vector, b float vector) TO PUBLIC;
