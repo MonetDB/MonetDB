@@ -116,7 +116,7 @@ suffixrules = {
     'Makefile': ('', '', '# ', '', True),
     '.merovingian_properties': ('', '', '# ', '', True),
     'copyright': ('', '', '', '', True),
-    'license.txt': ('', '', '', '', True),
+    'LICENSE': ('', '', '', '', True),
     }
 
 def getcomments(file, pre=None, post=None, start=None, end=None, nl=True):
