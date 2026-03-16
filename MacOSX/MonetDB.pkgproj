@@ -696,7 +696,7 @@
 						<key>VALUE</key>
 						<dict>
 							<key>PATH</key>
-							<string>../LICENSE</string>
+							<string>../license.txt</string>
 							<key>PATH_TYPE</key>
 							<integer>1</integer>
 						</dict>

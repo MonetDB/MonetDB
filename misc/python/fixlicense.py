@@ -115,8 +115,6 @@ suffixrules = {
     'CMakeLists.txt': ('#[[', '#]]', '# ', '', True),
     'Makefile': ('', '', '# ', '', True),
     '.merovingian_properties': ('', '', '# ', '', True),
-    'copyright': ('', '', '', '', True),
-    'LICENSE': ('', '', '', '', True),
     }
 
 def getcomments(file, pre=None, post=None, start=None, end=None, nl=True):
