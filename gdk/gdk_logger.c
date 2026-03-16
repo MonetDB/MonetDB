@@ -38,6 +38,7 @@ static gdk_return log_del_bat(logger *lg, log_bid bid);
 #define LOG_CLEAR	8	/* DEPRECATED */
 #define LOG_BAT_GROUP	9
 #define LOG_UPDATE_CB  10
+#define LOG_CREATE_USTR	11
 
 #ifdef NATIVE_WIN32
 #define getfilepos _ftelli64
@@ -65,6 +66,7 @@ static const char *log_commands[] = {
 	"",			/* LOG_CLEAR IS DEPRECATED */
 	"LOG_BAT_GROUP",
 	"LOG_UPDATE_CB",
+	"LOG_CREATE_USTR",
 };
 
 typedef struct logaction {
@@ -960,13 +962,13 @@ la_bat_destroy(logger *lg, logaction *la, int tid)
 }
 
 static log_return
-log_read_create(logger *lg, trans *tr, log_id id)
+log_read_create(logger *lg, trans *tr, logformat *l)
 {
 	bte tt;
 	int tpe;
 
 	assert(!lg->inmemory);
-	TRC_DEBUG(WAL, "create %d", id);
+	TRC_DEBUG(WAL, "create%s %d", l->flag == LOG_CREATE_USTR ? " ustr" : "", l->id);
 
 	if (mnstr_read(lg->input_log, &tt, 1, 1) != 1) {
 		TRC_CRITICAL(GDK, "read failed\n");
@@ -976,9 +978,9 @@ log_read_create(logger *lg, trans *tr, log_id id)
 	tpe = find_type_nr(lg, tt);
 	/* read create */
 	if (tr_grow(tr) == GDK_SUCCEED) {
-		tr->changes[tr->nr].type = LOG_CREATE;
+		tr->changes[tr->nr].type = l->flag;
 		tr->changes[tr->nr].tt = tpe;
-		tr->changes[tr->nr].cid = id;
+		tr->changes[tr->nr].cid = l->id;
 		tr->nr++;
 		return LOG_OK;
 	}
@@ -997,6 +999,12 @@ la_bat_create(logger *lg, logaction *la, int tid)
 
 	if (la->tt < 0)
 		BATtseqbase(b, 0);
+
+	if (la->type == LOG_CREATE_USTR &&
+	    BATconvert2ustr(b) != GDK_SUCCEED) {
+		logbat_destroy(b);
+		return GDK_FAIL;
+	}
 
 	if ((b = BATsetaccess(b, BAT_READ)) == NULL ||
 	    log_add_bat(lg, b, la->cid, tid) != GDK_SUCCEED) {
@@ -1071,6 +1079,7 @@ la_apply(logger *lg, logaction *c, int tid)
 		ret = la_bat_updates(lg, c, tid);
 		break;
 	case LOG_CREATE:
+	case LOG_CREATE_USTR:
 		if (!lg->flushing)
 			ret = la_bat_create(lg, c, tid);
 		break;
@@ -1452,6 +1461,7 @@ log_read_transaction(logger *lg, BAT *ids_to_omit, uint32_t *updated, BUN maxupd
 				break;
 			/* fall through */
 		case LOG_CREATE:
+		case LOG_CREATE_USTR:
 		case LOG_DESTROY:
 			if (tr != NULL && updated && BAThash(lg->catalog_id) == GDK_SUCCEED) {
 				BATiter cni = bat_iterator(lg->catalog_id);
@@ -1472,7 +1482,7 @@ log_read_transaction(logger *lg, BAT *ids_to_omit, uint32_t *updated, BUN maxupd
 				 * location of the bat that this
 				 * transaction is working on, and posold
 				 * is the location of the previous
-				 * version of the bat.  If LOG_CREATE,
+				 * version of the bat.  If LOG_CREATE(_USTR),
 				 * both are relevant, since the latter
 				 * is the new bat, and the former is the
 				 * to-be-destroyed bat.  For
@@ -1486,7 +1496,10 @@ log_read_transaction(logger *lg, BAT *ids_to_omit, uint32_t *updated, BUN maxupd
 					assert(posnew < maxupdated);
 					updated[posnew / 32] |= 1U << (posnew % 32);
 				}
-				if ((l.flag == LOG_CREATE || posnew == BUN_NONE) && posold != BUN_NONE) {
+				if ((l.flag == LOG_CREATE ||
+				     l.flag == LOG_CREATE_USTR ||
+				     posnew == BUN_NONE) &&
+				    posold != BUN_NONE) {
 					assert(posold < maxupdated);
 					updated[posold / 32] |= 1U << (posold % 32);
 				}
@@ -1538,10 +1551,11 @@ log_read_transaction(logger *lg, BAT *ids_to_omit, uint32_t *updated, BUN maxupd
 			}
 			break;
 		case LOG_CREATE:
+		case LOG_CREATE_USTR:
 			if (tr == NULL)
 				err = LOG_EOF;
 			else
-				err = log_read_create(lg, tr, l.id);
+				err = log_read_create(lg, tr, &l);
 			break;
 		case LOG_DESTROY:
 			if (tr == NULL)
@@ -3330,7 +3344,7 @@ log_bat_persists(logger *lg, BAT *b, log_id id)
 		return GDK_FAIL;
 	}
 
-	l.flag = LOG_CREATE;
+	l.flag = b->ustr ? LOG_CREATE_USTR : LOG_CREATE;
 	l.id = id;
 	if (!LOG_DISABLED(lg)) {
 		assert(mnstr_errnr(lg->current->output_log) == MNSTR_NO__ERROR);

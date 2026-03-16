@@ -381,6 +381,7 @@ column_constraint_name(allocator *ta, symbol *s, sql_column *sc, sql_table *t)
 
 #define COL_NULL	0
 #define COL_DEFAULT 1
+#define COL_STORAGE 2
 
 static bool
 foreign_key_check_types(sql_subtype *lt, sql_subtype *rt)
@@ -695,67 +696,44 @@ column_options(sql_query *query, dlist *opt_list, sql_schema *ss, sql_table *t, 
 			symbol *s = n->data.sym;
 
 			switch (s->token) {
-				case SQL_CONSTRAINT: {
-					dlist *l = s->data.lval;
-					char *opt_name = l->h->data.sval, *default_name = NULL;
-					symbol *sym = l->h->next->data.sym;
-					allocator *ta = MT_thread_getallocator();
-					allocator_state ta_state = ma_open(ta);
+			case SQL_CONSTRAINT: {
+				dlist *l = s->data.lval;
+				char *opt_name = l->h->data.sval, *default_name = NULL;
+				symbol *sym = l->h->next->data.sym;
+				allocator *ta = MT_thread_getallocator();
+				allocator_state ta_state = ma_open(ta);
 
-					if (!opt_name && !(default_name = column_constraint_name(ta, sym, cs, t))) {
-						ma_close(&ta_state);
-						return SQL_ERR;
-					}
-
-					res = column_constraint_type(query, opt_name ? opt_name : default_name, sym, ss, t, cs, isDeclared, &used);
+				if (!opt_name && !(default_name = column_constraint_name(ta, sym, cs, t))) {
 					ma_close(&ta_state);
-					if (res<0)
-						res = SQL_ERR;
-				} 	break;
-				case SQL_DEFAULT: {
-					symbol *sym = s->data.sym;
-					char *err = NULL, *r;
+					return SQL_ERR;
+				}
 
-					if ((used&(1<<COL_DEFAULT))) {
-						(void) sql_error(sql, 02, SQLSTATE(42000) "A default value for a column may be specified at most once");
+				res = column_constraint_type(query, opt_name ? opt_name : default_name, sym, ss, t, cs, isDeclared, &used);
+				ma_close(&ta_state);
+				if (res<0)
+					res = SQL_ERR;
+			} 	break;
+			case SQL_DEFAULT: {
+				symbol *sym = s->data.sym;
+				char *err = NULL, *r;
+
+				if (used & (1 << COL_DEFAULT)) {
+					(void) sql_error(sql, 02, SQLSTATE(42000) "A default value for a column may be specified at most once");
+					return SQL_ERR;
+				}
+				used |= (1 << COL_DEFAULT);
+
+				if (sym->token == SQL_COLUMN || sym->token == SQL_IDENT || sym->token == SQL_NEXT) {
+					exp_kind ek = {type_value, card_value, FALSE};
+					sql_exp *e = rel_logical_value_exp(query, NULL, sym, sql_sel, ek);
+
+					if (!e)
 						return SQL_ERR;
-					}
-					used |= (1<<COL_DEFAULT);
+					if (e && is_atom(e->type)) {
+						atom *a = exp_value(sql, e);
 
-					if (sym->token == SQL_COLUMN || sym->token == SQL_IDENT || sym->token == SQL_NEXT) {
-						exp_kind ek = {type_value, card_value, FALSE};
-						sql_exp *e = rel_logical_value_exp(query, NULL, sym, sql_sel, ek);
-
-						if (!e)
-							return SQL_ERR;
-						if (e && is_atom(e->type)) {
-							atom *a = exp_value(sql, e);
-
-							if (a && atom_null(a)) {
-								switch (mvc_default(sql, cs, NULL)) {
-									case -1:
-										(void) sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-										return SQL_ERR;
-									case -2:
-									case -3:
-										(void) sql_error(sql, 02, SQLSTATE(42000) "DEFAULT: transaction conflict detected while setting default value");
-										return SQL_ERR;
-									default:
-										break;
-								}
-								break;
-							}
-						}
-						/* reset error */
-						sql->session->status = 0;
-						sql->errstr[0] = '\0';
-					}
-					r = symbol2string(sql, s->data.sym, 0, &err);
-					if (!r) {
-						(void) sql_error(sql, 02, SQLSTATE(42000) "Incorrect default value '%s'", err?err:"");
-						return SQL_ERR;
-					} else {
-						switch (mvc_default(sql, cs, r)) {
+						if (a && atom_null(a)) {
+							switch (mvc_default(sql, cs, NULL)) {
 							case -1:
 								(void) sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 								return SQL_ERR;
@@ -765,35 +743,73 @@ column_options(sql_query *query, dlist *opt_list, sql_schema *ss, sql_table *t, 
 								return SQL_ERR;
 							default:
 								break;
+							}
+							break;
 						}
 					}
-				} 	break;
-				case SQL_NOT_NULL:
-				case SQL_NULL: {
-					int null = (s->token != SQL_NOT_NULL);
-
-					if ((used&(1<<COL_NULL))) {
-						(void) sql_error(sql, 02, SQLSTATE(42000) "NULL constraint for a column may be specified at most once");
-						return SQL_ERR;
-					}
-					used |= (1<<COL_NULL);
-
-					switch (mvc_null(sql, cs, null)) {
-						case -1:
-							(void) sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-							return SQL_ERR;
-						case -2:
-						case -3:
-							(void) sql_error(sql, 02, SQLSTATE(42000) "NULL CONSTRAINT: transaction conflict detected");
-							return SQL_ERR;
-						default:
-							break;
-					}
-				} 	break;
-				default: {
-					(void) sql_error(sql, 02, SQLSTATE(M0M03) "Unknown column option (%p)->token = %s", s, token2string(s->token));
+					/* reset error */
+					sql->session->status = 0;
+					sql->errstr[0] = '\0';
+				}
+				r = symbol2string(sql, s->data.sym, 0, &err);
+				if (!r) {
+					(void) sql_error(sql, 02, SQLSTATE(42000) "Incorrect default value '%s'", err?err:"");
 					return SQL_ERR;
 				}
+				switch (mvc_default(sql, cs, r)) {
+				case -1:
+					(void) sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					return SQL_ERR;
+				case -2:
+				case -3:
+					(void) sql_error(sql, 02, SQLSTATE(42000) "DEFAULT: transaction conflict detected while setting default value");
+					return SQL_ERR;
+				default:
+					break;
+				}
+				break;
+			}
+			case SQL_NOT_NULL:
+			case SQL_NULL:
+				if (used & (1 << COL_NULL)) {
+					(void) sql_error(sql, 02, SQLSTATE(42000) "NULL constraint for a column may be specified at most once");
+					return SQL_ERR;
+				}
+				used |= (1 << COL_NULL);
+
+				switch (mvc_null(sql, cs, (s->token != SQL_NOT_NULL))) {
+				case -1:
+					(void) sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					return SQL_ERR;
+				case -2:
+				case -3:
+					(void) sql_error(sql, 02, SQLSTATE(42000) "NULL CONSTRAINT: transaction conflict detected");
+					return SQL_ERR;
+				default:
+					break;
+				}
+				break;
+			case SQL_STORAGE:
+				if (used & (1 << COL_STORAGE)) {
+					(void) sql_error(sql, 02, SQLSTATE(42000) "STORAGE option for a column may be specified at most once");
+					return SQL_ERR;
+				}
+				used |= (1 << COL_STORAGE);
+				switch (mvc_storage(sql, cs, s->data.sval)) {
+				case -1:
+					(void) sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					return SQL_ERR;
+				case -2:
+				case -3:
+					(void) sql_error(sql, 02, SQLSTATE(42000) "STORAGE option: transaction conflict detected");
+					return SQL_ERR;
+				default:
+					break;
+				}
+				break;
+			default:
+				(void) sql_error(sql, 02, SQLSTATE(M0M03) "Unknown column option (%p)->token = %s", s, token2string(s->token));
+				return SQL_ERR;
 			}
 		}
 	}
@@ -1374,18 +1390,26 @@ table_element(sql_query *query, symbol *s, sql_schema *ss, sql_table *t, int alt
 			}
 			assert(oc->type.type->eclass != EC_ANY);
 			switch (mvc_create_column(&nc, sql, t, oc->base.name, &oc->type)) {
-				case -1:
-					sql_error(sql, 01, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-					return SQL_ERR;
-				case -2:
-				case -3:
-					sql_error(sql, 01, SQLSTATE(42000) "%s: transaction conflict detected", action);
-					return SQL_ERR;
-				default:
-					break;
+			case -1:
+				sql_error(sql, 01, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				return SQL_ERR;
+			case -2:
+			case -3:
+				sql_error(sql, 01, SQLSTATE(42000) "%s: transaction conflict detected", action);
+				return SQL_ERR;
+			default:
+				sql_error(sql, 01, SQLSTATE(42000) "%s: unknown error", action);
+				return SQL_ERR;
+			case 0:
+				break;
 			}
-			if (nc && oc->null != nc->null)
+			assert(nc != NULL);
+			if (oc->null != nc->null)
 				mvc_null(sql, nc, oc->null);
+			if (oc->storage_type &&
+				(nc->storage_type == NULL ||
+				 strcmp(oc->storage_type, nc->storage_type) != 0))
+				mvc_storage(sql, nc, oc->storage_type);
 		}
 	} 	break;
 	case SQL_DROP_COLUMN:

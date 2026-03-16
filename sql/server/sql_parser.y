@@ -305,6 +305,7 @@ int yydebug=1;
 	sql
 	SelectStmt
 	sqlstmt
+	storage_type
 	string_funcs
 	table_constraint
 	table_constraint_type
@@ -2266,6 +2267,7 @@ column_option:
 		default
 	|	column_constraint
 	|	generated_column
+	|	storage_type
 	;
 
 default:
@@ -2274,6 +2276,10 @@ default:
 
 default_value:
 		scalar_exp_no_and { $$ = $1; }
+	;
+
+storage_type:
+		STORAGE string { $$ = _symbol_create(SQL_STORAGE, $2); }
 	;
 
 column_constraint:

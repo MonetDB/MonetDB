@@ -919,7 +919,8 @@ dump_column_definition(Mapi mid, stream *sqlf, const char *schema,
 				"c.type_digits, "	/* 2 */
 				"c.type_scale, "	/* 3 */
 				"c.\"null\", "		/* 4 */
-				"c.number "			/* 5 */
+				"c.number, "		/* 5 */
+				"c.storage "		/* 6 */
 			 "FROM sys._columns c "
 			 "WHERE c.table_id = %s "
 			 "ORDER BY c.number", tid);
@@ -930,7 +931,8 @@ dump_column_definition(Mapi mid, stream *sqlf, const char *schema,
 				"c.type_digits, "	/* 2 */
 				"c.type_scale, "	/* 3 */
 				"c.\"null\", "		/* 4 */
-				"c.number "			/* 5 */
+				"c.number, "		/* 5 */
+				"c.storage "		/* 6 */
 			 "FROM sys._columns c, "
 			      "sys._tables t, "
 			      "sys.schemas s "
@@ -950,6 +952,7 @@ dump_column_definition(Mapi mid, stream *sqlf, const char *schema,
 		char *c_type_digits = strdup(mapi_fetch_field(hdl, 2));
 		char *c_type_scale = strdup(mapi_fetch_field(hdl, 3));
 		const char *c_null = mapi_fetch_field(hdl, 4);
+		const char *c_storage = mapi_fetch_field(hdl, 6);
 		int space;
 
 		if (mapi_error(mid) || !c_type || !c_type_digits || !c_type_scale) {
@@ -997,6 +1000,11 @@ dump_column_definition(Mapi mid, stream *sqlf, const char *schema,
 		if (strcmp(c_null, "false") == 0) {
 			mnstr_printf(sqlf, "%*s NOT NULL",
 						 CAP(13 - space), "");
+			space = 13;
+		}
+		if (c_storage && strcmp(c_storage, "USTR") == 0) {
+			mnstr_printf(sqlf, "%*s STORAGE '%s'",
+						 CAP(13 - space), "", c_storage);
 			space = 13;
 		}
 
@@ -1935,7 +1943,7 @@ bailout:
 }
 
 static int
-dump_table_storage(Mapi mid, const char *schema, const char *tname, stream *sqlf, bool after)
+dump_table_storage(Mapi mid, const char *schema, const char *tname, stream *sqlf)
 {
 	char *query = NULL;
 	size_t maxquerylen;
@@ -1953,10 +1961,10 @@ dump_table_storage(Mapi mid, const char *schema, const char *tname, stream *sqlf
 
 	snprintf(query, maxquerylen,
 			 "SELECT name, storage FROM sys._columns "
-			 "WHERE storage %s LIKE 'USTR' "
+			 "WHERE storage NOT LIKE 'USTR' "
 			 "AND table_id = (SELECT id FROM sys._tables WHERE name = '%s' "
 			 "AND schema_id = (SELECT id FROM sys.schemas WHERE name = '%s'))",
-			 after ? "NOT" : "", t, s);
+			 t, s);
 	if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid))
 		goto bailout;
 	while ((mapi_fetch_row(hdl)) != 0) {
@@ -2209,14 +2217,12 @@ dump_table(Mapi mid, const char *schema, const char *tname, stream *sqlf,
 	}
 
 	rc = describe_table(mid, schema, tname, sqlf, foreign, databaseDump);
-	if (rc == 0)
-		rc = dump_table_storage(mid, schema, tname, sqlf, false);
 	if (rc == 0 && !describe)
 		rc = dump_table_data(mid, schema, tname, sqlf, ddir, ext, useInserts, noescape);
 	if (rc == 0)
 		rc = dump_table_access(mid, schema, tname, sqlf);
 	if (rc == 0)
-		rc = dump_table_storage(mid, schema, tname, sqlf, true);
+		rc = dump_table_storage(mid, schema, tname, sqlf);
 	if (rc == 0 && !databaseDump)
 		rc = dump_table_defaults(mid, schema, tname, sqlf);
   doreturn:

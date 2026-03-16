@@ -3236,6 +3236,16 @@ create_col(sql_trans *tr, sql_column *c)
 			BAT *b = bat_new(type, c->t->sz, PERSISTENT);
 			if (!b) {
 				ok = LOG_ERR;
+			} else if (c->storage_type &&
+					   strcmp(c->storage_type, "USTR") == 0) {
+				if (BATconvert2ustr(b) != GDK_SUCCEED) {
+					bat_destroy(b);
+					ok = LOG_ERR;
+				} else {
+					bat->cs.st = ST_USTR;
+					create_delta(ATOMIC_PTR_GET(&c->data), b);
+					bat_destroy(b);
+				}
 			} else {
 				create_delta(ATOMIC_PTR_GET(&c->data), b);
 				bat_destroy(b);
