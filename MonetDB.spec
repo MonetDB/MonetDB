@@ -163,7 +163,7 @@ more client packages.
 %ldconfig_scriptlets
 
 %files
-%license COPYING
+%license LICENSE
 %defattr(-,root,root)
 %{_libdir}/libbat*.so.*
 
@@ -218,7 +218,7 @@ various other components.
 %ldconfig_scriptlets mutils
 
 %files mutils
-%license COPYING
+%license LICENSE
 %defattr(-,root,root)
 %{_libdir}/libmutils*.so.*
 
@@ -261,7 +261,7 @@ various other components.
 %ldconfig_scriptlets stream
 
 %files stream
-%license COPYING
+%license LICENSE
 %defattr(-,root,root)
 %{_libdir}/libstream*.so.*
 
@@ -313,7 +313,7 @@ you will very likely need this package.
 %ldconfig_scriptlets client-lib
 
 %files client-lib
-%license COPYING
+%license LICENSE
 %defattr(-,root,root)
 %{_libdir}/libmapi*.so.*
 
@@ -336,7 +336,7 @@ SQL database so that it can be loaded back later.  If you want to use
 MonetDB, you will very likely need this package.
 
 %files client
-%license COPYING
+%license LICENSE
 %defattr(-,root,root)
 %{_bindir}/mclient*
 %{_bindir}/msqldump*
@@ -406,7 +406,7 @@ if [ "$1" -eq 0 ]; then
 fi
 
 %files client-odbc
-%license COPYING
+%license LICENSE
 %defattr(-,root,root)
 %{_libdir}/libMonetODBC.so
 %{_libdir}/libMonetODBCs.so
