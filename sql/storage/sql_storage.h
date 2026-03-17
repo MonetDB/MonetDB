@@ -20,6 +20,9 @@
 #define LOG_ERR		(-1)
 #define LOG_CONFLICT	(-2)
 
+#define DEFAULT_PARTSIZE 100000
+#define MED_PARTSIZE 1000
+#define MIN_PARTSIZE 1
 
 struct sqlstore;
 
@@ -539,7 +542,7 @@ typedef struct sql_change {
 } sql_change;
 
 extern sql_base *dup_base(sql_base *b);
-extern void trans_add(sql_trans *tr, sql_base *b, void *data, tc_cleanup_fptr cleanup, tc_commit_fptr commit, tc_log_fptr log);
+extern void trans_add(sql_trans *tr, sql_base *b, void *data, tc_cleanup_fptr cleanup, tc_commit_fptr commit, tc_log_fptr log, bool locked);
 extern void trans_del(sql_trans *tr, sql_base *b);
 extern int tr_version_of_parent(sql_trans *tr, ulng ts);
 

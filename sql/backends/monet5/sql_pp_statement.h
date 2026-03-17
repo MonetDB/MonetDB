@@ -48,6 +48,7 @@ extern stmt *stmt_unique_sharedout(backend *be, stmt *op1, int output);
 extern stmt *stmt_slice(backend *be, stmt *col, stmt *limit);
 extern stmt *stmt_nth_slice(backend *be, stmt *col, bool hash);
 extern stmt *stmt_no_slices(backend *be, stmt *col, bool hash); /* call mal nr of slices */
+extern stmt *table_no_slices(backend *be, sql_table *t); /* call sql.no_slices(schema, table) */
 
 extern stmt *stmt_pp_start_nrparts(backend *ba, int nrparts); /* create barrier label := true; part := part_nr(); leave: label:= part >= nrparts; */
 extern stmt *stmt_pp_start_dynamic(backend *ba, int input); /* create barrier label := true; part := part_nr(); leave: label:= part >= nrparts; */

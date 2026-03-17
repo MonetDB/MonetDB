@@ -510,7 +510,7 @@ rel_groupby_combine_pp(backend *be, sql_rel *rel, list *gbstmts, stmt *grp, stmt
 			);
 
 			if (strcmp(sf->func->base.name, "count") == 0) {
-				name = "sum";
+				name = "sum_no_nil";
 			} else {
 			    avg = (strcmp(sf->func->base.name, "avg") == 0);
 				sum = (strcmp(sf->func->base.name, "sum") == 0);
@@ -839,6 +839,7 @@ rel2bin_groupby_pp(backend *be, sql_rel *rel, list *refs)
 	if (!sub && (!rel->spb || pp_can_not_start(be->mvc, rel->l))) {
 		set_need_pipeline(be);
 	} else {
+assert(nrparts);
 		int nr_parts = nrparts==0 ? pp_nr_slices(rel->l) : 0;
 		int source = pp_counter(be, nr_parts, nrparts == 0 ? -1: nrparts, false);
 

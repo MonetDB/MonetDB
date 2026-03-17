@@ -37980,7 +37980,7 @@ OAHASHnprobe_single
 Probe the `key`-s in the hash table. For a not-matched key, return its OID in the 'key' column and the slot ID in the hash table
 oahash
 nth_slice
-command oahash.nth_slice(X_0:int) (X_1:bat[:oid], X_2:bat[:any_1])
+command oahash.nth_slice(X_0:bat[:any_1], X_1:int):bat[:oid]
 OAHASHnth_slice
 Get the nth slice of this hashtable.
 oahash
@@ -38745,7 +38745,7 @@ SLICERno_slices
 Returns the number of slices into which the input BAT is to be sliced
 slicer
 nth_slice
-pattern slicer.nth_slice(X_0:int) (X_1:bat[:any_1], X_2:bat[:any_1])
+pattern slicer.nth_slice(X_0:bat[:any_1], X_1:int):bat[:any_1]
 SLICERnth_slice
 Return the n-th slice, of SLICE_SIZE rrows, from the input BAT
 sop

@@ -921,12 +921,12 @@ os_add_(objectset *os, struct sql_trans *tr, const char *name, sql_base *b)
 	}
 
 	if ((res = os_add_name_based(os, tr, name, ov))) {
-		trans_add(tr, b, ov, &tc_gc_objectversion, &tc_commit_objectversion, NULL);
+		trans_add(tr, b, ov, &tc_gc_objectversion, &tc_commit_objectversion, NULL, false);
 		return res;
 	}
 
 	if (os->temporary) (void) os_dup(os); // TODO transaction_layer_revamp: embed into refcounting subproject
-	trans_add(tr, b, ov, &tc_gc_objectversion, &tc_commit_objectversion, NULL);
+	trans_add(tr, b, ov, &tc_gc_objectversion, &tc_commit_objectversion, NULL, false);
 	return res;
 }
 
@@ -1026,12 +1026,12 @@ os_del_(objectset *os, struct sql_trans *tr, const char *name, sql_base *b)
 	}
 
 	if ((res = os_del_name_based(os, tr, name, ov))) {
-		trans_add(tr, b, ov, &tc_gc_objectversion, &tc_commit_objectversion, NULL);
+		trans_add(tr, b, ov, &tc_gc_objectversion, &tc_commit_objectversion, NULL, false);
 		return res;
 	}
 
 	if (os->temporary) (void) os_dup(os); // TODO transaction_layer_revamp: embed into refcounting subproject
-	trans_add(tr, b, ov, &tc_gc_objectversion, &tc_commit_objectversion, NULL);
+	trans_add(tr, b, ov, &tc_gc_objectversion, &tc_commit_objectversion, NULL, false);
 	return res;
 }
 

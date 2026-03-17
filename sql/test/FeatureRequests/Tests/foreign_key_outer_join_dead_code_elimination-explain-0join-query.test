@@ -56,6 +56,8 @@ sql.bind
 1
 sql.mvc
 1
+sql.no_slices
+1
 sql.resultSet
 1
 sql.tid

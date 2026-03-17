@@ -662,7 +662,6 @@ stmt_tid(backend *be, sql_table *t, int partition)
 	q = pushStr(mb, q, t->base.name);
 	if (partition && be->pp) {
 		q = pushArgument(mb, q, be->pp);
-		q = pushInt(mb, q, be->nrparts);
 	}
 	if (t && isTable(t) && partition) {
 		sql_trans *tr = be->mvc->session->tr;
@@ -763,7 +762,6 @@ stmt_bat(backend *be, sql_column *c, int access, int partition)
 	q = pushArgument(mb, q, getIntConstant(mb,access));
 	if (partition && be->pp) {
 		q = pushArgument(mb, q, be->pp);
-		q = pushInt(mb, q, be->nrparts);
 	}
 
 	if (access == RD_UPD_ID) {
@@ -828,7 +826,6 @@ stmt_idxbat(backend *be, sql_idx *i, int access, int partition)
 	q = pushArgument(mb, q, getIntConstant(mb, access));
 	if (partition && be->pp) {
 		q = pushArgument(mb, q, be->pp);
-		q = pushInt(mb, q, be->nrparts);
 	}
 
 	if (access == RD_UPD_ID) {

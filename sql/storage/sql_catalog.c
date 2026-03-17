@@ -21,7 +21,7 @@ base_key( sql_base *b )
 }
 
 void
-trans_add(sql_trans *tr, sql_base *b, void *data, tc_cleanup_fptr cleanup, tc_commit_fptr commit, tc_log_fptr log)
+trans_add(sql_trans *tr, sql_base *b, void *data, tc_cleanup_fptr cleanup, tc_commit_fptr commit, tc_log_fptr log, bool locked)
 {
 	sql_change *change = MNEW(sql_change);
 
@@ -32,11 +32,13 @@ trans_add(sql_trans *tr, sql_base *b, void *data, tc_cleanup_fptr cleanup, tc_co
 		.commit = commit,
 		.log = log,
 	};
-	MT_lock_set(&tr->lock);
+	if (!locked)
+		MT_lock_set(&tr->lock);
 	tr->changes = list_add(tr->changes, change);
 	if (log)
 		tr->logchanges++;
-	MT_lock_unset(&tr->lock);
+	if (!locked)
+		MT_lock_unset(&tr->lock);
 }
 
 void

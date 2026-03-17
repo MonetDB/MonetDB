@@ -489,7 +489,7 @@ stmt_oahash_hshmrk_init(backend *be, stmt *stmts_ht, bool moveup)
 	if (!ht->nrcols) {
 		ht = const_column(be, ht);
 		if (moveup) {
-				moveInstruction(be->mb, be->mb->stop-1, be->pp_pc++);
+			moveInstruction(be->mb, be->mb->stop-1, be->pp_pc++);
 		}
 	}
 	q = pushArgument(be->mb, q, ht->nr);
@@ -499,7 +499,7 @@ stmt_oahash_hshmrk_init(backend *be, stmt *stmts_ht, bool moveup)
 		q = pushNilBat(be->mb, q);
 	pushInstruction(be->mb, q);
 	if (moveup) {
-			moveInstruction(be->mb, be->mb->stop-1, be->pp_pc++);
+		moveInstruction(be->mb, be->mb->stop-1, be->pp_pc++);
 	}
 
 	stmt *s = stmt_none(be);
@@ -797,9 +797,7 @@ stmt_nth_slice(backend *be, stmt *col, bool hash)
 		setVarType(be->mb, getArg(q, 0), newBatType(TYPE_oid));
 	else
 		setVarType(be->mb, getArg(q, 0), newBatType(tt));
-	//q = pushArgument(be->mb, q, col->nr);
-	q = pushReturn(be->mb, q, col->nr);
-	q->inout = 1;
+	q = pushArgument(be->mb, q, col->nr);
 	q = pushArgument(be->mb, q, be->pp);
 
 	pushInstruction(be->mb, q);
@@ -837,6 +835,31 @@ stmt_no_slices(backend *be, stmt *col, bool hash)
 	}
 
 	ns->op1 = col;
+	ns->nrcols = 1;
+	ns->key = 1;
+	ns->aggr = 1;
+	ns->q = q;
+	ns->nr = getArg(q, 0);
+	ns->op4.typeval = *sql_fetch_localtype(TYPE_int);
+	return ns;
+}
+
+stmt *
+table_no_slices(backend *be, sql_table *t)
+{
+	InstrPtr q = newStmt(be->mb, sqlRef, no_slicesRef);
+	q = pushStr(be->mb, q, t->s->base.name);
+	q = pushStr(be->mb, q, t->base.name);
+
+	pushInstruction(be->mb, q);
+	if (be->pp_pc)
+        	moveInstruction(be->mb, be->mb->stop-1, be->pp_pc++);
+	stmt *ns = stmt_create(be->mvc->sa, st_result); /* ?? */
+	if (ns == NULL) {
+		freeInstruction(be->mb, q);
+		return NULL;
+	}
+
 	ns->nrcols = 1;
 	ns->key = 1;
 	ns->aggr = 1;
@@ -1277,10 +1300,10 @@ stmt_concat_add_source(backend *be)
 	/* statement at top of stack need to be moved and added to the concat iterator */
 	int next = getDestVar(be->mb->stmt[be->mb->stop-1]);
 	moveInstruction(be->mb, be->mb->stop-1, be->pp_pc++);
-    InstrPtr q = newStmt(be->mb, "pipeline", "concat_add");
+	InstrPtr q = newStmt(be->mb, "pipeline", "concat_add");
 	q->argv[0] = be->source;
-    q = pushArgument(be->mb, q, be->source);
-    q = pushArgument(be->mb, q, next);
+	q = pushArgument(be->mb, q, be->source);
+	q = pushArgument(be->mb, q, next);
 	pushInstruction(be->mb, q);
 	moveInstruction(be->mb, be->mb->stop-1, be->pp_pc++);
 	be->concatcnt++;
@@ -1290,10 +1313,10 @@ stmt_concat_add_source(backend *be)
 int
 stmt_concat_add_subconcat(backend *be, int p_source, int p_concatcnt)
 {
-    InstrPtr q = newStmt(be->mb, "pipeline", "concat_add");
+	InstrPtr q = newStmt(be->mb, "pipeline", "concat_add");
 	q->argv[0] = p_source;
-    q = pushArgument(be->mb, q, p_source);
-    q = pushArgument(be->mb, q, be->source);
+	q = pushArgument(be->mb, q, p_source);
+	q = pushArgument(be->mb, q, be->source);
 	pushInstruction(be->mb, q);
 	/* statement at top of stack need to be moved and added to the concat iterator */
 	moveInstruction(be->mb, be->mb->stop-1, be->pp_pc++);

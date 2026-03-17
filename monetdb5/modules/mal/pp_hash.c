@@ -971,7 +971,10 @@ OAHASHbuild_tbl(Client ctx, bat *slot_id, bat *ht_sink, const bat *key, const pt
 	g->tmaxval = last;
 	g->tkey = FALSE;
 	*slot_id = g->batCacheid;
-	BBPkeepref(u);
+	//skip propcheck
+	//BBPkeepref(u);
+	BBPretain(u->batCacheid);
+	BBPunfix(u->batCacheid);
 	BBPkeepref(g);
 	(void)private;
 	return MAL_SUCCEED;
@@ -1373,7 +1376,10 @@ OAHASHbuild_tbl_cmbd(Client ctx, bat *slot_id, bat *ht_sink, const bat *key, con
 	g->tmaxval = last;
 	g->tkey = FALSE;
 	*slot_id = g->batCacheid;
-	BBPkeepref(u);
+	//skip propcheck
+	//BBPkeepref(u);
+	BBPretain(u->batCacheid);
+	BBPunfix(u->batCacheid);
 	BBPkeepref(g);
 	(void)private;
 
@@ -1476,7 +1482,10 @@ OAHASHadd_freq(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	BBPunfix(slt->batCacheid);
-	BBPkeepref(frq);
+	//skip propcheck
+	//BBPkeepref(frq);
+	BBPretain(frq->batCacheid);
+	BBPunfix(frq->batCacheid);
 	if (occrrence_idx) {
 		BATsetcount(res, cnt);
 		BATnegateprops(res);
@@ -3308,7 +3317,7 @@ OAHASHnth_slice(Client ctx, bat *slice, bat *ht_sink, int *slice_nr)
 
 	*ht_sink = b->batCacheid;
 	*slice = r->batCacheid;
-	BBPkeepref(b);
+	BBPunfix(b->batCacheid);
 	BBPkeepref(r);
 	return MAL_SUCCEED;
 }
@@ -3432,7 +3441,7 @@ static mel_func oa_hash_init_funcs[] = {
  command("oahash", "explode_unmatched", OAHASHexplode_unmatched, false, "Expand the count of 'unmatched' with 'frequency'.  Returns the count in a VOID BAT.", args(1,4, batarg("",oid),batargany("ht_sink",1),batarg("unmatched",oid),batarg("frequency",lng))),
 
  command("oahash", "no_slices", OAHASHno_slices, false, "Get the number of slices for this hashtable.", args(1,2, arg("slices",int),batargany("ht_sink",1))),
- command("oahash", "nth_slice", OAHASHnth_slice, false, "Get the nth slice of this hashtable.", args(2,3, batarg("slice",oid),batargany("ht_sink",1),arg("slice_nr",int))),
+ command("oahash", "nth_slice", OAHASHnth_slice, false, "Get the nth slice of this hashtable.", args(1,3, batarg("slice",oid),batargany("ht_sink",1),arg("slice_nr",int))),
 
  pattern("oahash", "hash", OAHASHhash, false, "Compute hash.", args(1,2, arg("hash", lng), argany("in",1))),
  pattern("batoahash", "hash", OAHASHhash, false, "Compute hash.", args(1,2, batarg("hash", lng), batargany("in",1))),

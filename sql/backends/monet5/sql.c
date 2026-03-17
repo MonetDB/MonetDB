@@ -1265,17 +1265,17 @@ mvc_bind_idxbat(mvc *m, const char *sname, const char *tname, const char *iname,
 str
 mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int upd = (pci->argc == 7 || pci->argc == 9);
+	int upd = (pci->retc == 2);
 	BAT *b = NULL;
 	bat *bid = getArgReference_bat(stk, pci, 0);
 	mvc *m = NULL;
 	str msg;
-	const char *sname	= *getArgReference_str(stk, pci, 2 + upd);
-	const char *tname	= *getArgReference_str(stk, pci, 3 + upd);
-	const char *cname	= *getArgReference_str(stk, pci, 4 + upd);
-	const int	access	= *getArgReference_int(stk, pci, 5 + upd);
+	const char *sname = *getArgReference_str(stk, pci, 2 + upd);
+	const char *tname = *getArgReference_str(stk, pci, 3 + upd);
+	const char *cname = *getArgReference_str(stk, pci, 4 + upd);
+	const int access = *getArgReference_int(stk, pci, 5 + upd);
 
-	const bool partitioned_access = pci->argc == (8 + upd) && getArgType(mb, pci, 6 + upd) == TYPE_int;
+	const bool partitioned_access = pci->argc > (6 + upd) && getArgType(mb, pci, 6 + upd) == TYPE_int;
 
 	/* This doesn't work with quick access for now... */
 	assert(access != QUICK);
@@ -1295,8 +1295,11 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (partitioned_access) {
 		/* partitioned access */
 		int part_nr = *getArgReference_int(stk, pci, 6 + upd);
-		int nr_parts = *getArgReference_int(stk, pci, 7 + upd);
+		int nr_parts = 0;
+		if (pci->argc == 8 + upd)
+			nr_parts = *getArgReference_int(stk, pci, 7 + upd);
 		if (is_merge) {
+			assert(nr_parts);
 			int nr_members = list_length(t->members);
 			/* remap into SQLtid in partition */
 			int parts_per_member = (nr_parts/nr_members);
@@ -1311,9 +1314,14 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			part_nr = p_nr;
 			nr_parts = parts_per_member;
 		}
-		BUN cnt = store->storage_api.count_col(m->session->tr, c, 0), psz;
+		BUN cnt = store->storage_api.count_col(m->session->tr, c, 0), psz = DEFAULT_PARTSIZE;
 		oid l, h;
-		psz = cnt ? (cnt / nr_parts) : 0;
+		if (nr_parts) {
+			psz = cnt ? (cnt / nr_parts) : 0;
+		} else {
+        		FORCEMITODEBUG
+			psz = MED_PARTSIZE;
+		}
 		l = part_nr * psz;
 		if (l > cnt)
 			l = cnt;
@@ -1588,17 +1596,17 @@ cleanup:
 str
 mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int upd = (pci->argc == 7 || pci->argc == 9);
+	int upd = (pci->retc == 2);
 	BAT *b = NULL;
 	bat *bid = getArgReference_bat(stk, pci, 0);
 	mvc *m = NULL;
 	str msg;
-	const char *sname	= *getArgReference_str(stk, pci, 2 + upd);
-	const char *tname	= *getArgReference_str(stk, pci, 3 + upd);
-	const char *iname	= *getArgReference_str(stk, pci, 4 + upd);
-	const int	access	= *getArgReference_int(stk, pci, 5 + upd);
+	const char *sname = *getArgReference_str(stk, pci, 2 + upd);
+	const char *tname = *getArgReference_str(stk, pci, 3 + upd);
+	const char *iname = *getArgReference_str(stk, pci, 4 + upd);
+	const int access = *getArgReference_int(stk, pci, 5 + upd);
 
-	const bool partitioned_access = pci->argc == (8 + upd) && getArgType(mb, pci, 6 + upd) == TYPE_int;
+	const bool partitioned_access = pci->argc > (6 + upd) && getArgType(mb, pci, 6 + upd) == TYPE_int;
 
 	/* This doesn't work with quick access for now... */
 	assert(access != QUICK);
@@ -1617,10 +1625,17 @@ mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (partitioned_access) {
 		/* partitioned access */
 		int part_nr = *getArgReference_int(stk, pci, 6 + upd);
-		int nr_parts = *getArgReference_int(stk, pci, 7 + upd);
-		BUN cnt = store->storage_api.count_idx(m->session->tr, i, 0), psz;
+		int nr_parts = 0;
+		if (pci->argc == 8 + upd)
+			nr_parts = *getArgReference_int(stk, pci, 7 + upd);
+		BUN cnt = store->storage_api.count_idx(m->session->tr, i, 0), psz = DEFAULT_PARTSIZE;
 		oid l, h;
-		psz = cnt ? (cnt / nr_parts) : 0;
+		if (nr_parts) {
+			psz = cnt ? (cnt / nr_parts) : 0;
+		} else {
+        		FORCEMITODEBUG
+			psz = MED_PARTSIZE;
+		}
 		l = part_nr * psz;
 		if (l > cnt)
 			l = cnt;
@@ -2344,6 +2359,30 @@ BATleftproject(Client ctx, bat *Res, const bat *Col, const bat *L, const bat *R)
 	return MAL_SUCCEED;
 }
 
+static str
+SQLno_slices(Client cntxt, int *nrslices, str *sname, str *tname)
+{
+	backend *be = (backend *) cntxt->sqlcontext;
+	sql_schema *s = mvc_bind_schema(be->mvc, *sname);
+	if (s == NULL)
+		throw(SQL, "sql.no_slices", SQLSTATE(3F000) "Schema missing %s", *sname);
+	sql_table *t = mvc_bind_table(be->mvc, s, *tname);
+	if (t == NULL)
+		throw(SQL, "sql.no_slices", SQLSTATE(42S02) "Table missing %s.%s", *sname, *tname);
+	sqlstore *store = be->mvc->store;
+	if (!ol_first_node(t->columns))
+		throw(SQL, "sql.no_slices", SQLSTATE(42S22) "Column missing %s.%s", *sname, *tname);
+	sql_column *c = ol_first_node(t->columns)->data;
+	BUN cnt = store->storage_api.count_col(be->mvc->session->tr, c, 0);
+	BUN psz = DEFAULT_PARTSIZE;
+        FORCEMITODEBUG
+	  	psz = MED_PARTSIZE;
+	*nrslices = (int)((cnt+psz-1)/psz);
+	if (*nrslices == 0)
+		*nrslices = 1;
+	return MAL_SUCCEED;
+}
+
 /* str SQLtid(bat *result, mvc *m, str *sname, str *tname) */
 str
 SQLtid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -2378,7 +2417,10 @@ SQLtid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/* we have full table count, nr of deleted (unused rows) */
 	int part_nr = 0;
 	int nr_parts = 1;
-	if (pci->argc == 6) {	/* partitioned version */
+	if (pci->argc == 5) {	/* fixed size partitioned version */
+		part_nr = *getArgReference_int(stk, pci, 4);
+		nr_parts = 0;
+	} else if (pci->argc == 6) {	/* partitioned version */
 		part_nr = *getArgReference_int(stk, pci, 4);
 		nr_parts = *getArgReference_int(stk, pci, 5);
 	}
@@ -2390,7 +2432,7 @@ SQLtid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		int member = part_nr/parts_per_member;
 		int p_nr = part_nr % parts_per_member;
 		sql_part *pd = list_fetch(t->members, member);
-        sql_table *pt = find_sql_table_id(m->session->tr, s, pd->member);
+		sql_table *pt = find_sql_table_id(m->session->tr, s, pd->member);
 		b = store->storage_api.bind_cands(tr, pt, parts_per_member, p_nr);
 	} else {
 		b = store->storage_api.bind_cands(tr, t, nr_parts, part_nr);
@@ -5681,22 +5723,43 @@ static mel_func sql_init_funcs[] = {
  pattern("sql", "deltas", mvc_delta_values, false, "Return the delta values sizes of all columns of the schema's tables, plus the current transaction level", args(7,8, batarg("ids",int),batarg("segments",lng),batarg("all",lng),batarg("inserted",lng),batarg("updated",lng),batarg("deleted",lng),batarg("tr_level",int),arg("schema",str))),
  pattern("sql", "deltas", mvc_delta_values, false, "Return the delta values sizes from the table's columns, plus the current transaction level", args(7,9, batarg("ids",int),batarg("segments",lng),batarg("all",lng),batarg("inserted",lng),batarg("updated",lng),batarg("deleted",lng),batarg("tr_level",int),arg("schema",str),arg("table",str))),
  pattern("sql", "deltas", mvc_delta_values, false, "Return the delta values sizes of a column, plus the current transaction level", args(7,10, batarg("ids",int),batarg("segments",lng),batarg("all",lng),batarg("inserted",lng),batarg("updated",lng),batarg("deleted",lng),batarg("tr_level",int),arg("schema",str),arg("table",str),arg("column",str))),
+
  pattern("sql", "emptybindidx", mvc_bind_idxbat_wrap, false, "", args(1,6, batargany("",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("index",str),arg("access",int))),
  pattern("sql", "bind_idxbat", mvc_bind_idxbat_wrap, false, "Bind the 'schema.table.index' BAT with access kind:\n0 - base table\n1 - inserts\n2 - updates", args(1,6, batargany("",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("index",str),arg("access",int))),
+
  pattern("sql", "emptybindidx", mvc_bind_idxbat_wrap, false, "", args(2,7, batarg("uid",oid),batargany("uval",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("index",str),arg("access",int))),
  pattern("sql", "bind_idxbat", mvc_bind_idxbat_wrap, false, "Bind the 'schema.table.index' BAT with access kind:\n0 - base table\n1 - inserts\n2 - updates", args(2,7, batarg("uid",oid),batargany("uval",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("index",str),arg("access",int))),
+
  pattern("sql", "emptybindidx", mvc_bind_idxbat_wrap, false, "", args(1,8, batargany("",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("index",str),arg("access",int),arg("part_nr",int),arg("nr_parts",int))),
  pattern("sql", "bind_idxbat", mvc_bind_idxbat_wrap, false, "Bind the 'schema.table.index' BAT with access kind:\n0 - base table\n1 - inserts\n2 - updates", args(1,8, batargany("",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("index",str),arg("access",int),arg("part_nr",int),arg("nr_parts",int))),
+
+ pattern("sql", "emptybindidx", mvc_bind_idxbat_wrap, false, "", args(1,7, batargany("",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("index",str),arg("access",int),arg("part_nr",int))),
+ pattern("sql", "bind_idxbat", mvc_bind_idxbat_wrap, false, "Bind the 'schema.table.index' BAT with access kind:\n0 - base table\n1 - inserts\n2 - updates", args(1,7, batargany("",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("index",str),arg("access",int),arg("part_nr",int))),
+
  pattern("sql", "emptybindidx", mvc_bind_idxbat_wrap, false, "", args(2,9, batarg("uid",oid),batargany("uval",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("index",str),arg("access",int),arg("part_nr",int),arg("nr_parts",int))),
  pattern("sql", "bind_idxbat", mvc_bind_idxbat_wrap, false, "Bind the 'schema.table.index' BAT with access kind:\n0 - base table\n1 - inserts\n2 - updates", args(2,9, batarg("uid",oid),batargany("uval",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("index",str),arg("access",int),arg("part_nr",int),arg("nr_parts",int))),
+
+ pattern("sql", "emptybindidx", mvc_bind_idxbat_wrap, false, "", args(2,8, batarg("uid",oid),batargany("uval",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("index",str),arg("access",int),arg("part_nr",int))),
+ pattern("sql", "bind_idxbat", mvc_bind_idxbat_wrap, false, "Bind the 'schema.table.index' BAT with access kind:\n0 - base table\n1 - inserts\n2 - updates", args(2,8, batarg("uid",oid),batargany("uval",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("index",str),arg("access",int),arg("part_nr",int))),
+
  pattern("sql", "emptybind", mvc_bind_wrap, false, "", args(1,6, batargany("",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("column",str),arg("access",int))),
  pattern("sql", "bind", mvc_bind_wrap, false, "Bind the 'schema.table.column' BAT with access kind:\n0 - base table\n1 - inserts\n2 - updates", args(1,6, batargany("",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("column",str),arg("access",int))),
+
  pattern("sql", "emptybind", mvc_bind_wrap, false, "", args(2,7, batarg("uid",oid),batargany("uval",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("column",str),arg("access",int))),
  pattern("sql", "bind", mvc_bind_wrap, false, "Bind the 'schema.table.column' BAT with access kind:\n0 - base table\n1 - inserts\n2 - updates", args(2,7, batarg("uid",oid),batargany("uval",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("column",str),arg("access",int))),
+
  pattern("sql", "emptybind", mvc_bind_wrap, false, "", args(1,8, batargany("",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("column",str),arg("access",int),arg("part_nr",int),arg("nr_parts",int))),
  pattern("sql", "bind", mvc_bind_wrap, false, "Bind the 'schema.table.column' BAT partition with access kind:\n0 - base table\n1 - inserts\n2 - updates", args(1,8, batargany("",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("column",str),arg("access",int),arg("part_nr",int),arg("nr_parts",int))),
+
+ pattern("sql", "emptybind", mvc_bind_wrap, false, "", args(1,7, batargany("",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("column",str),arg("access",int),arg("part_nr",int))),
+ pattern("sql", "bind", mvc_bind_wrap, false, "Bind the 'schema.table.column' BAT partition with access kind:\n0 - base table\n1 - inserts\n2 - updates", args(1,7, batargany("",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("column",str),arg("access",int),arg("part_nr",int))),
+
  pattern("sql", "emptybind", mvc_bind_wrap, false, "", args(2,9, batarg("uid",oid),batargany("uval",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("column",str),arg("access",int),arg("part_nr",int),arg("nr_parts",int))),
  pattern("sql", "bind", mvc_bind_wrap, false, "Bind the 'schema.table.column' BAT with access kind:\n0 - base table\n1 - inserts\n2 - updates", args(2,9, batarg("uid",oid),batargany("uval",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("column",str),arg("access",int),arg("part_nr",int),arg("nr_parts",int))),
+
+ pattern("sql", "emptybind", mvc_bind_wrap, false, "", args(2,8, batarg("uid",oid),batargany("uval",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("column",str),arg("access",int),arg("part_nr",int))),
+ pattern("sql", "bind", mvc_bind_wrap, false, "Bind the 'schema.table.column' BAT with access kind:\n0 - base table\n1 - inserts\n2 - updates", args(2,8, batarg("uid",oid),batargany("uval",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("column",str),arg("access",int),arg("part_nr",int))),
+
  command("sql", "delta", DELTAbat, false, "Return column bat with delta's applied.", args(1,4, batargany("",1),batargany("col",1),batarg("uid",oid),batargany("uval",1))),
  command("sql", "projectdelta", DELTAproject, false, "Return column bat with delta's applied.", args(1,5, batargany("",1),batarg("select",oid),batargany("col",1),batarg("uid",oid),batargany("uval",1))),
  command("sql", "subdelta", DELTAsub, false, "Return a single bat of selected delta.", args(1,5, batarg("",oid),batarg("col",oid),batarg("cand",oid),batarg("uid",oid),batarg("uval",oid))),
@@ -5711,6 +5774,7 @@ static mel_func sql_init_funcs[] = {
  pattern("sql", "update", mvc_update_wrap, false, "Update the values of the column tname.cname. Returns sequence number for order dependence)", args(1,7, arg("",int), arg("mvc",int),arg("sname",str),arg("tname",str),arg("cname",str),argany("rids",0),argany("upd",0))),
  pattern("sql", "clear_table", mvc_clear_table_wrap, true, "Clear the table sname.tname.", args(1,4, arg("",lng),arg("sname",str),arg("tname",str),arg("restart_sequences",int))),
  pattern("sql", "tid", SQLtid, false, "Return a column with the valid tuple identifiers associated with the table sname.tname.", args(1,4, batarg("",oid),arg("mvc",int),arg("sname",str),arg("tname",str))),
+ pattern("sql", "tid", SQLtid, false, "Return a slice of the tables tid column, based on fixed partition sizes.", args(1,5, batarg("",oid),arg("mvc",int),arg("sname",str),arg("tname",str),arg("part_nr",int))),
  pattern("sql", "tid", SQLtid, false, "Return the tables tid column.", args(1,6, batarg("",oid),arg("mvc",int),arg("sname",str),arg("tname",str),arg("part_nr",int),arg("nr_parts",int))),
  pattern("sql", "delete", mvc_delete_wrap, true, "Delete a row from a table. Returns sequence number for order dependence.", args(1,5, arg("",int),arg("mvc",int),arg("sname",str),arg("tname",str),argany("b",0))),
  pattern("sql", "resultSet", mvc_scalar_value_wrap, true, "Prepare a table result set for the client front-end.", args(1,8, arg("",int),arg("tbl",str),arg("attr",str),arg("tpe",str),arg("len",int),arg("scale",int),arg("eclass",int),argany("val",0))),
@@ -6583,6 +6647,7 @@ static mel_func sql_init_funcs[] = {
  pattern("sql", "check", SQLcheck, false, "Return sql string of check constraint.", args(1,3, arg("sql",str), arg("sname", str), arg("name", str))),
  pattern("sql", "read_dump_rel", SQLread_dump_rel, false, "Reads sql_rel string into sql_rel object and then writes it to the return value", args(1,2, arg("sql",str), arg("sql_rel", str))),
  pattern("sql", "normalize_monetdb_url", SQLnormalize_monetdb_url, false, "Normalize mapi:monetdb://, monetdb:// or monetdbs:// URL", args(1,2, arg("",str),arg("u",str))),
+ command("sql", "no_slices", SQLno_slices, false, "Return number of slices of table", args(1,3, arg("", int), arg("schema",str), arg("table",str))),
  { .imp=NULL }
 };
 #include "mal_import.h"

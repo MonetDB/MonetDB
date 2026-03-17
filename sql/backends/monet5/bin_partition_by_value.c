@@ -22,6 +22,7 @@
 #include "rel_rewriter.h"
 #include "mal_builder.h"
 #include "sql_pp_statement.h"
+#include "sql_storage.h"
 
 /* Generate the stmt to compute the number of dynamic slices, e.g.
  *   X_42:int := slicer.no_slices(X_24:bat[:...]);
@@ -81,7 +82,7 @@ mat_nr_parts(backend *be, int m)
 {
 	InstrPtr mp = newStmt(be->mb, "mat", "nr_parts");
 	mp = pushArgument(be->mb, mp, m);
-	mp = pushInt(be->mb, mp, 100000);
+	mp = pushInt(be->mb, mp, DEFAULT_PARTSIZE);
 	pushInstruction(be->mb, mp);
 	return getArg(mp, 0);
 }
@@ -488,6 +489,7 @@ rel2bin_partition(backend *be, sql_rel *rel, list *refs)
 	if (!rel->spb && !be->need_pipeline) {
 		set_need_pipeline(be);
 	} else {
+assert(0);
 		pp = stmt_pp_start_nrparts(be, pp_nr_slices(part_rel->l));
 		set_pipeline(be, pp);
 	}

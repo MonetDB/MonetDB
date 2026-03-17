@@ -678,7 +678,7 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 			if (p && (p->op != op_topn || !topn_limit(p)))
 				rel_dup(rel);
 			if (rel->l)
-				res = rel_pipeline(v, rel->l, materialize, 0);
+				res = rel_pipeline(v, rel->l, materialize, pb);
 			if (pb && !rel_is_ref(rel)) {
 				rel->spb = 1;
 				res = SPB;

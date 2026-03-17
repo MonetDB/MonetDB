@@ -61,7 +61,7 @@ pp_nr_slices(sql_rel *rel)
 	else if (est/GDKnr_threads < PP_MIN_SIZE)
 		nr_slices = (int)(est/PP_MIN_SIZE);
 	else
-	    nr_slices =	(int)(est/PP_MAX_SIZE);
+		nr_slices = (int)(est/PP_MAX_SIZE);
 	FORCEMITODEBUG
 	if (nr_slices < GDKnr_threads)
 		nr_slices = GDKnr_threads;

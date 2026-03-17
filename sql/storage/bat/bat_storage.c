@@ -151,16 +151,16 @@ trans_add_obj_(sql_trans *tr, sql_base *b, void *data, tc_cleanup_fptr cleanup, 
 				found = true;
 		}
 	}
- 	MT_lock_unset(&tr->lock);
 	if (!found)
-		trans_add(tr, dup_base(b), data, cleanup, commit, log);
+		trans_add(tr, dup_base(b), data, cleanup, commit, log, true);
+ 	MT_lock_unset(&tr->lock);
 }
 
 static void
 trans_add_obj(sql_trans *tr, sql_base *b, void *data, tc_cleanup_fptr cleanup, tc_commit_fptr commit, tc_log_fptr log)
 {
 	assert(cleanup);
-	trans_add(tr, dup_base(b), data, cleanup, commit, log);
+	trans_add(tr, dup_base(b), data, cleanup, commit, log, false);
 }
 
 static void
@@ -168,7 +168,7 @@ trans_add_table(sql_trans *tr, sql_base *b, sql_table *t, void *data, tc_cleanup
 {
 	assert(cleanup);
 	dup_base(&t->base);
-	trans_add(tr, b, data, cleanup, commit, log);
+	trans_add(tr, b, data, cleanup, commit, log, false);
 }
 
 static int
@@ -2511,8 +2511,6 @@ storage_delete_val(sql_trans *tr, sql_table *t, storage *s, oid rid)
 {
 	lock_table(tr->store, t);
 
-	int in_transaction = segments_in_transaction(tr, t);
-
 	/* find segment of rid, split, mark new segment deleted (for tr->tid) */
 	segment *seg = s->segs->h, *p = NULL;
 	for (; seg; p = seg, seg = ATOMIC_PTR_GET(&seg->next)) {
@@ -2533,9 +2531,8 @@ storage_delete_val(sql_trans *tr, sql_table *t, storage *s, oid rid)
 			break;
 		}
 	}
+	trans_add_obj_(tr, &t->base, s, &tc_gc_del, &commit_update_del, NOT_TO_BE_LOGGED(t) ? NULL : &log_update_del);
 	unlock_table(tr->store, t);
-	if (!in_transaction)
-		trans_add_obj(tr, &t->base, s, &tc_gc_del, &commit_update_del, NOT_TO_BE_LOGGED(t) ? NULL : &log_update_del);
 	return LOG_OK;
 }
 
@@ -2580,7 +2577,6 @@ delete_range(sql_trans *tr, sql_table *t, storage *s, size_t start, size_t cnt)
 static int
 storage_delete_bat(sql_trans *tr, sql_table *t, storage *s, BAT *i)
 {
-	int in_transaction = segments_in_transaction(tr, t);
 	BAT *oi = i;	/* update ids */
 	int ok = LOG_OK;
 
@@ -2655,8 +2651,7 @@ storage_delete_bat(sql_trans *tr, sql_table *t, storage *s, BAT *i)
 	if (i != oi)
 		bat_destroy(i);
 	// assert
-	if (!in_transaction)
-		trans_add_obj(tr, &t->base, s, &tc_gc_del, &commit_update_del, NOT_TO_BE_LOGGED(t) ? NULL : &log_update_del);
+	trans_add_obj_(tr, &t->base, s, &tc_gc_del, &commit_update_del, NOT_TO_BE_LOGGED(t) ? NULL : &log_update_del);
 	return ok;
 }
 
@@ -3882,7 +3877,7 @@ drop_col(sql_trans *tr, sql_column *c)
 {
 	assert(!isNew(c));
 	sql_delta *d = ATOMIC_PTR_GET(&c->data);
-	trans_add(tr, &c->base, d, &tc_gc_col, &commit_destroy_del, isTempTable(c->t) ? NULL : &log_destroy_col);
+	trans_add(tr, &c->base, d, &tc_gc_col, &commit_destroy_del, isTempTable(c->t) ? NULL : &log_destroy_col, false);
 	return LOG_OK;
 }
 
@@ -3891,7 +3886,7 @@ drop_idx(sql_trans *tr, sql_idx *i)
 {
 	assert(!isNew(i));
 	sql_delta *d = ATOMIC_PTR_GET(&i->data);
-	trans_add(tr, &i->base, d, &tc_gc_idx, &commit_destroy_del, isTempTable(i->t) ? NULL : &log_destroy_idx);
+	trans_add(tr, &i->base, d, &tc_gc_idx, &commit_destroy_del, isTempTable(i->t) ? NULL : &log_destroy_idx, false);
 	return LOG_OK;
 }
 
@@ -5154,12 +5149,18 @@ bind_cands(sql_trans *tr, sql_table *t, int nr_of_parts, int part_nr)
 		return BATdense(0, 0, 0);
 
 	/* compute proper part */
-	size_t part_size = nr/nr_of_parts;
+	size_t part_size = DEFAULT_PARTSIZE;
+	if (nr_of_parts == 0) {
+		FORCEMITODEBUG
+			part_size = MED_PARTSIZE;
+	} else {
+		part_size = nr/nr_of_parts;
+	}
 	size_t start = part_size * part_nr;
 	size_t end = start + part_size;
-	if (part_nr == (nr_of_parts-1))
+	if ((nr_of_parts == 0 && end > nr) ||
+		(nr_of_parts && (part_nr == (nr_of_parts-1))))
 		end = nr;
-	assert(end <= nr);
 	return segments2cands(s, tr, t, start, end);
 }
 

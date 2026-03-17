@@ -48,6 +48,8 @@
 			b->tnonil = true;									\
 			MT_lock_unset(&b->theaplock);						\
 		} else if (BATcount(b) == 0) {							\
+			if (no_nil)											\
+				val = 0;										\
 			if (BUNappend(b, &val, true) != GDK_SUCCEED)		\
 				err = createException(MAL, "lockedaggr." #f,	\
 					SQLSTATE(HY013) MAL_MALLOC_FAIL);			\
@@ -69,43 +71,16 @@
 			b->tnonil = true;											\
 			MT_lock_unset(&b->theaplock);								\
 		} else if (BATcount(b) == 0) {									\
+			if (no_nil)													\
+				val = 0;												\
 			if (BUNappend(b, &val, true) != GDK_SUCCEED)				\
 				err = createException(MAL, "lockedaggr." #f,			\
 					SQLSTATE(HY013) MAL_MALLOC_FAIL);					\
 		}																\
 	}
 
-#define vaggr(T,CT,f)														\
-	if (type == TYPE_##T) {												\
-		BATiter bi = bat_iterator(b);									\
-		T val = *getArgReference_##T(stk, pci, 2);						\
-		const void *nil = ATOMnilptr(type);								\
-		int (*cmp)(const void *v1,const void *v2) = ATOMcompare(type);	\
-		if (cmp(val,nil) != 0 && BATcount(b)) {							\
-			CT t = BUNtvar(&bi, 0);								\
-			if (cmp(t,nil) == 0) {										\
-				if (BUNreplace(b, 0, val, true) != GDK_SUCCEED)			\
-					err = createException(MAL, "2 lockedaggr." #f,		\
-						SQLSTATE(HY013) MAL_MALLOC_FAIL);				\
-			} else														\
-				if (f(t, val) == val)									\
-					if (BUNreplace(b, 0, val, true) != GDK_SUCCEED)		\
-						err = createException(MAL, "1 lockedaggr." #f,	\
-							SQLSTATE(HY013) MAL_MALLOC_FAIL);			\
-			MT_lock_set(&b->theaplock);									\
-			b->tnil = false;											\
-			b->tnonil = true;											\
-			MT_lock_unset(&b->theaplock);								\
-		} else if (BATcount(b) == 0) {									\
-			if (BUNappend(b, val, true) != GDK_SUCCEED)					\
-				err = createException(MAL, "3 lockedaggr." #f,			\
-					SQLSTATE(HY013) MAL_MALLOC_FAIL);					\
-		}																\
-		bat_iterator_end(&bi);											\
-	}
-
 static str
-LOCKEDAGGRsum1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+LOCKEDAGGRsum1_(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool no_nil)
 {
 	bat *res = getArgReference_bat(stk, pci, 0);
 	Pipeline *p = (Pipeline*)*getArgReference_ptr(stk, pci, 1);
@@ -145,6 +120,14 @@ LOCKEDAGGRsum1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				BBPunfix(b->batCacheid);
 		}
 	} else {
+			ptr p = (ptr)ATOMnilptr(type);
+#ifdef HAVE_HGE
+			hge val = 0;
+#else
+			lng val = 0;
+#endif
+			if (no_nil)
+				p = &val;
 			BAT *b = COLnew(0, type, 1, TRANSIENT);
 			if (!b || BUNappend(b, p, true) != GDK_SUCCEED)
 				err = createException(MAL, "lockedaggr.sum", "Result is not initialized");
@@ -161,6 +144,18 @@ LOCKEDAGGRsum1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return err;
 	(void)cntxt;
 	return MAL_SUCCEED;
+}
+
+static str
+LOCKEDAGGRsum1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	return LOCKEDAGGRsum1_(cntxt, mb, stk, pci, false);
+}
+
+static str
+LOCKEDAGGRsum_no_nil1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	return LOCKEDAGGRsum1_(cntxt, mb, stk, pci, true);
 }
 
 #define paggr(T,OT,f)											\
@@ -688,6 +683,80 @@ LOCKEDAGGRavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 #define vmin(a,b) ((cmp(a,b) < 0)?a:b)
 #define vmax(a,b) ((cmp(a,b) > 0)?a:b)
+
+#undef aggr
+#undef faggr
+#undef vaggr
+
+#define aggr(T,f)												\
+	if (type == TYPE_##T) {										\
+		T val = *getArgReference_##T(stk, pci, 2);				\
+		if (!is_##T##_nil(val) && BATcount(b)) {				\
+			T *t = Tloc(b, 0);									\
+			if (is_##T##_nil(t[0])) {							\
+				t[0] = val;										\
+			} else												\
+				t[0] = f(t[0], val);							\
+			MT_lock_set(&b->theaplock);							\
+			b->tnil = false;									\
+			b->tnonil = true;									\
+			MT_lock_unset(&b->theaplock);						\
+		} else if (BATcount(b) == 0) {							\
+			if (BUNappend(b, &val, true) != GDK_SUCCEED)		\
+				err = createException(MAL, "lockedaggr." #f,	\
+					SQLSTATE(HY013) MAL_MALLOC_FAIL);			\
+		}														\
+	}
+
+#define faggr(T,f)														\
+	if (type == TYPE_##T) {												\
+		T val = *getArgReference_TYPE(stk, pci, 2, T);					\
+		int (*cmp)(const void *v1,const void *v2) = ATOMcompare(type);	\
+		if (!is_##T##_nil(val) && BATcount(b)) {						\
+			T *t = Tloc(b, 0);											\
+			if (is_##T##_nil(t[0])) {									\
+				t[0] = val;												\
+			} else														\
+				t[0] = f(t[0], val);									\
+			MT_lock_set(&b->theaplock);									\
+			b->tnil = false;											\
+			b->tnonil = true;											\
+			MT_lock_unset(&b->theaplock);								\
+		} else if (BATcount(b) == 0) {									\
+			if (BUNappend(b, &val, true) != GDK_SUCCEED)				\
+				err = createException(MAL, "lockedaggr." #f,			\
+					SQLSTATE(HY013) MAL_MALLOC_FAIL);					\
+		}																\
+	}
+
+#define vaggr(T,CT,f)														\
+	if (type == TYPE_##T) {												\
+		BATiter bi = bat_iterator(b);									\
+		T val = *getArgReference_##T(stk, pci, 2);						\
+		const void *nil = ATOMnilptr(type);								\
+		int (*cmp)(const void *v1,const void *v2) = ATOMcompare(type);	\
+		if (cmp(val,nil) != 0 && BATcount(b)) {							\
+			CT t = BUNtvar(&bi, 0);								\
+			if (cmp(t,nil) == 0) {										\
+				if (BUNreplace(b, 0, val, true) != GDK_SUCCEED)			\
+					err = createException(MAL, "2 lockedaggr." #f,		\
+						SQLSTATE(HY013) MAL_MALLOC_FAIL);				\
+			} else														\
+				if (f(t, val) == val)									\
+					if (BUNreplace(b, 0, val, true) != GDK_SUCCEED)		\
+						err = createException(MAL, "1 lockedaggr." #f,	\
+							SQLSTATE(HY013) MAL_MALLOC_FAIL);			\
+			MT_lock_set(&b->theaplock);									\
+			b->tnil = false;											\
+			b->tnonil = true;											\
+			MT_lock_unset(&b->theaplock);								\
+		} else if (BATcount(b) == 0) {									\
+			if (BUNappend(b, val, true) != GDK_SUCCEED)					\
+				err = createException(MAL, "3 lockedaggr." #f,			\
+					SQLSTATE(HY013) MAL_MALLOC_FAIL);					\
+		}																\
+		bat_iterator_end(&bi);											\
+	}
 
 static str
 LOCKEDAGGRmin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -4855,6 +4924,7 @@ ALGfsum(Client ctx, dbl *result, dbl *com, lng *cnt, const bat *bid)
 #include "mel.h"
 static mel_func pp_algebra_init_funcs[] = {
  pattern("lockedaggr", "sum", LOCKEDAGGRsum1, true, "sum values into bat (bat has value, update), using the bat lock", args(1,3, sharedbatargany("", 1), arg("pipeline", ptr), argany("val", 1))),
+ pattern("lockedaggr", "sum_no_nil", LOCKEDAGGRsum_no_nil1, true, "sum values into bat (bat has value, update), using the bat lock", args(1,3, sharedbatargany("", 1), arg("pipeline", ptr), argany("val", 1))),
  pattern("lockedaggr", "prod", LOCKEDAGGRprod, true, "product of all values, using the bat lock", args(1,3, sharedbatargany("", 1), arg("pipeline", ptr), argany("val", 2))),
  pattern("lockedaggr", "avg", LOCKEDAGGRavg, true, "avg values into bat (bat has value, update), using the bat lock", args(2,5, sharedbatargany("", 1), sharedbatarg("rcnt", lng), arg("pipeline", ptr), argany("val", 1), arg("cnt", lng))),
  pattern("lockedaggr", "avg", LOCKEDAGGRavg, true, "avg values into bat (bat has value, update), using the bat lock", args(3,7, sharedbatargany("", 1), sharedbatarg("rremainder", lng), sharedbatarg("rcnt", lng), arg("pipeline", ptr), argany("val", 1), arg("remainder", lng), arg("cnt", lng))),

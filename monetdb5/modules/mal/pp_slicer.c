@@ -186,7 +186,7 @@ SLICERnth_slice(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	*bid = b->batCacheid;
 	*res = r->batCacheid;
-	BBPkeepref(b);
+	BBPunfix(b->batCacheid);
 	BBPkeepref(r);
 	return MAL_SUCCEED;
 }
@@ -218,7 +218,7 @@ SLICERno_slices(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #include "mel.h"
 static mel_func pp_slicer_init_funcs[] = {
  command("algebra", "subslice", LALGsubslice, false, "Returns the slice of a pipelined result", args(3,7, batarg("gid", oid), batarg("rid", oid), batarg("tid", oid), batargany("b", 1), arg("start", lng), arg("end", lng), arg("pipeline", ptr))),
- pattern("slicer", "nth_slice", SLICERnth_slice, false, "Return the n-th slice, of SLICE_SIZE rrows, from the input BAT", args(2,3, batargany("slice",1), batargany("b",1), arg("nr",int))),
+ pattern("slicer", "nth_slice", SLICERnth_slice, false, "Return the n-th slice, of SLICE_SIZE rrows, from the input BAT", args(1,3, batargany("slice",1), batargany("b",1), arg("nr",int))),
  pattern("slicer", "no_slices", SLICERno_slices, false, "Returns the number of slices into which the input BAT is to be sliced", args(1,2, arg("slices", int), batargany("b",1))),
  { .imp=NULL }
 };

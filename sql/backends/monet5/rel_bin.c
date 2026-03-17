@@ -2382,21 +2382,20 @@ static stmt *
 rel2bin_basetable(backend *be, sql_rel *rel)
 {
 	int neededpp = get_need_pipeline(be);
+	sql_table *t = rel->l;
 	if (neededpp || (rel->spb && rel->partition)) {
-		int nr_parts = pp_nr_slices(rel);
-		int source = pp_counter(be, nr_parts, -1, false);
+		stmt *no_slices = table_no_slices(be, t);
+		int source = pp_counter(be, -1, no_slices->nr, false);
 
 		if (be->pp) {
 			stmt_concat_add_source(be);
 		} else {
 			set_pipeline(be, stmt_pp_start_generator(be, source, true));
 		}
-		be->nrparts = nr_parts;
 		(void)pp_counter_get(be, source);
 	}
 
 	mvc *sql = be->mvc;
-	sql_table *t = rel->l;
 	sql_column *fcol = NULL;
 	sql_idx *fi = NULL;
 	list *l = sa_list(sql->sa);
@@ -5334,6 +5333,7 @@ rel2bin_topn(backend *be, sql_rel *rel, list *refs)
 		if (!rel->spb && !be->need_pipeline) {
 			set_need_pipeline(be);
 		} else {
+assert(0);
 			stmt *pp = stmt_pp_start_nrparts(be, pp_nr_slices(rel->l));
 			set_pipeline(be, pp);
 		}

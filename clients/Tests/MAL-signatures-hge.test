@@ -48058,6 +48058,11 @@ sum
 unsafe pattern lockedaggr.sum(X_0:ptr, X_1:any_1):bat[:any_1]
 LOCKEDAGGRsum1
 sum values into bat (bat has value, update), using the bat lock
+lockedaggr
+sum_no_nil
+unsafe pattern lockedaggr.sum_no_nil(X_0:ptr, X_1:any_1):bat[:any_1]
+LOCKEDAGGRsum_no_nil1
+sum values into bat (bat has value, update), using the bat lock
 lockedalgebra
 projection
 command lockedalgebra.projection(X_0:ptr, X_1:bat[:oid], X_2:bat[:any_1]):bat[:any_1]
@@ -49520,7 +49525,7 @@ OAHASHnprobe_single
 Probe the `key`-s in the hash table. For a not-matched key, return its OID in the 'key' column and the slot ID in the hash table
 oahash
 nth_slice
-command oahash.nth_slice(X_0:int) (X_1:bat[:oid], X_2:bat[:any_1])
+command oahash.nth_slice(X_0:bat[:any_1], X_1:int):bat[:oid]
 OAHASHnth_slice
 Get the nth slice of this hashtable.
 oahash
@@ -50285,7 +50290,7 @@ SLICERno_slices
 Returns the number of slices into which the input BAT is to be sliced
 slicer
 nth_slice
-pattern slicer.nth_slice(X_0:int) (X_1:bat[:any_1], X_2:bat[:any_1])
+pattern slicer.nth_slice(X_0:bat[:any_1], X_1:int):bat[:any_1]
 SLICERnth_slice
 Return the n-th slice, of SLICE_SIZE rrows, from the input BAT
 sop
@@ -50470,6 +50475,16 @@ mvc_bind_wrap
 Bind the 'schema.table.column' BAT with access kind:@0 - base table@1 - inserts@2 - updates
 sql
 bind
+pattern sql.bind(X_0:int, X_1:str, X_2:str, X_3:str, X_4:int, X_5:int) (X_6:bat[:oid], X_7:bat[:any_1])
+mvc_bind_wrap
+Bind the 'schema.table.column' BAT with access kind:@0 - base table@1 - inserts@2 - updates
+sql
+bind
+pattern sql.bind(X_0:int, X_1:str, X_2:str, X_3:str, X_4:int, X_5:int):bat[:any_1]
+mvc_bind_wrap
+Bind the 'schema.table.column' BAT partition with access kind:@0 - base table@1 - inserts@2 - updates
+sql
+bind
 pattern sql.bind(X_0:int, X_1:str, X_2:str, X_3:str, X_4:int, X_5:int, X_6:int) (X_7:bat[:oid], X_8:bat[:any_1])
 mvc_bind_wrap
 Bind the 'schema.table.column' BAT with access kind:@0 - base table@1 - inserts@2 - updates
@@ -50486,6 +50501,16 @@ Bind the 'schema.table.index' BAT with access kind:@0 - base table@1 - inserts@2
 sql
 bind_idxbat
 pattern sql.bind_idxbat(X_0:int, X_1:str, X_2:str, X_3:str, X_4:int):bat[:any_1]
+mvc_bind_idxbat_wrap
+Bind the 'schema.table.index' BAT with access kind:@0 - base table@1 - inserts@2 - updates
+sql
+bind_idxbat
+pattern sql.bind_idxbat(X_0:int, X_1:str, X_2:str, X_3:str, X_4:int, X_5:int) (X_6:bat[:oid], X_7:bat[:any_1])
+mvc_bind_idxbat_wrap
+Bind the 'schema.table.index' BAT with access kind:@0 - base table@1 - inserts@2 - updates
+sql
+bind_idxbat
+pattern sql.bind_idxbat(X_0:int, X_1:str, X_2:str, X_3:str, X_4:int, X_5:int):bat[:any_1]
 mvc_bind_idxbat_wrap
 Bind the 'schema.table.index' BAT with access kind:@0 - base table@1 - inserts@2 - updates
 sql
@@ -50775,6 +50800,16 @@ mvc_bind_wrap
 (empty)
 sql
 emptybind
+pattern sql.emptybind(X_0:int, X_1:str, X_2:str, X_3:str, X_4:int, X_5:int) (X_6:bat[:oid], X_7:bat[:any_1])
+mvc_bind_wrap
+(empty)
+sql
+emptybind
+pattern sql.emptybind(X_0:int, X_1:str, X_2:str, X_3:str, X_4:int, X_5:int):bat[:any_1]
+mvc_bind_wrap
+(empty)
+sql
+emptybind
 pattern sql.emptybind(X_0:int, X_1:str, X_2:str, X_3:str, X_4:int, X_5:int, X_6:int) (X_7:bat[:oid], X_8:bat[:any_1])
 mvc_bind_wrap
 (empty)
@@ -50791,6 +50826,16 @@ mvc_bind_idxbat_wrap
 sql
 emptybindidx
 pattern sql.emptybindidx(X_0:int, X_1:str, X_2:str, X_3:str, X_4:int):bat[:any_1]
+mvc_bind_idxbat_wrap
+(empty)
+sql
+emptybindidx
+pattern sql.emptybindidx(X_0:int, X_1:str, X_2:str, X_3:str, X_4:int, X_5:int) (X_6:bat[:oid], X_7:bat[:any_1])
+mvc_bind_idxbat_wrap
+(empty)
+sql
+emptybindidx
+pattern sql.emptybindidx(X_0:int, X_1:str, X_2:str, X_3:str, X_4:int, X_5:int):bat[:any_1]
 mvc_bind_idxbat_wrap
 (empty)
 sql
@@ -51008,6 +51053,11 @@ next_value
 unsafe pattern sql.next_value(X_0:str, X_1:str):lng
 mvc_next_value
 return the next value of the sequence
+sql
+no_slices
+command sql.no_slices(X_0:str, X_1:str):int
+SQLno_slices
+Return number of slices of table
 sql
 normalize_monetdb_url
 pattern sql.normalize_monetdb_url(X_0:str):str
@@ -51493,6 +51543,11 @@ tid
 pattern sql.tid(X_0:int, X_1:str, X_2:str):bat[:oid]
 SQLtid
 Return a column with the valid tuple identifiers associated with the table sname.tname.
+sql
+tid
+pattern sql.tid(X_0:int, X_1:str, X_2:str, X_3:int):bat[:oid]
+SQLtid
+Return a slice of the tables tid column, based on fixed partition sizes.
 sql
 tid
 pattern sql.tid(X_0:int, X_1:str, X_2:str, X_3:int, X_4:int):bat[:oid]
