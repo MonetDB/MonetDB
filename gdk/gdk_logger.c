@@ -27,17 +27,17 @@ static gdk_return log_del_bat(logger *lg, log_bid bid);
  * The transaction log files have a binary format.
  */
 
-#define LOG_START	0
-#define LOG_END		1
-#define LOG_UPDATE_CONST	2
-#define LOG_UPDATE_BULK	3
-#define LOG_UPDATE	4
-#define LOG_CREATE	5
-#define LOG_DESTROY	6
-#define LOG_SEQ		7
-#define LOG_CLEAR	8	/* DEPRECATED */
-#define LOG_BAT_GROUP	9
-#define LOG_UPDATE_CB  10
+#define LOG_START	 0
+#define LOG_END		 1
+#define LOG_UPDATE_CONST 2
+#define LOG_UPDATE_BULK	 3
+#define LOG_UPDATE	 4
+#define LOG_CREATE	 5
+#define LOG_DESTROY	 6
+#define LOG_SEQ		 7
+#define LOG_CLEAR	 8	/* DEPRECATED */
+#define LOG_BAT_GROUP	 9
+#define LOG_UPDATE_CB	10
 #define LOG_CREATE_USTR	11
 
 #ifdef NATIVE_WIN32
