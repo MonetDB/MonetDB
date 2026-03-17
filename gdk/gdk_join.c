@@ -2926,6 +2926,8 @@ vkeyjoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 				x = hash_lng(hsh, &l);
 				break;
 			}
+			default:
+				MT_UNREACHABLE();
 			}
 			for (BUN rb = HASHget(hsh, x);
 			     rb != BUN_NONE;
