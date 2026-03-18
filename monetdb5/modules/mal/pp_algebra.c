@@ -1081,7 +1081,7 @@ LALGunique(Client ctx, bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid)
 		pipeline_unlock(p);
 		assert(p->wid < p->p->nr_workers);
 		if (!h->allocators[p->wid]) {
-			char name[8];
+			char name[MT_NAME_LEN];
 			snprintf(name, sizeof(name), "pp%d", p->wid);
 			h->allocators[p->wid] = create_allocator(name, false);
 			if (!h->allocators[p->wid]) {
@@ -1333,7 +1333,7 @@ LALGgroup_unique(Client ctx, bat *rid, bat *uid, const ptr *H, bat *bid, bat *si
 		pipeline_unlock(p);
 		assert(p->wid < p->p->nr_workers);
 		if (!h->allocators[p->wid]) {
-			char name[8];
+			char name[MT_NAME_LEN];
 			snprintf(name, sizeof(name), "pp%d", p->wid);
 			h->allocators[p->wid] = create_allocator(name, false);
 			if (!h->allocators[p->wid]) {
@@ -1684,7 +1684,7 @@ LALGgroup(Client ctx, bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 		pipeline_unlock(p);
 		assert(p->wid < p->p->nr_workers);
 		if (!h->allocators[p->wid]) {
-			char name[8];
+			char name[MT_NAME_LEN];
 			snprintf(name, sizeof(name), "pp%d", p->wid);
 			h->allocators[p->wid] = create_allocator(name, false);
 			if (!h->allocators[p->wid]) {
@@ -1978,7 +1978,7 @@ LALGderive(Client ctx, bat *rid, bat *uid, const ptr *H, bat *Gid, bat *Ph, bat 
 		pipeline_unlock(p);
 		assert(p->wid < p->p->nr_workers);
 		if (!h->allocators[p->wid]) {
-			char name[8];
+			char name[MT_NAME_LEN];
 			snprintf(name, sizeof(name), "pp%d", p->wid);
 			h->allocators[p->wid] = create_allocator(name, false);
 			if (!h->allocators[p->wid]) {
