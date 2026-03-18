@@ -2562,6 +2562,8 @@ func_def_type_no_proc:
 	|	AGGREGATE FUNCTION { $$ = F_AGGR; }
 	|	FILTER             { $$ = F_FILT; }
 	|	FILTER FUNCTION    { $$ = F_FILT; }
+	|	sqlGROUP FILTER             { $$ = F_GROUPFILT; }
+	|	sqlGROUP FILTER FUNCTION    { $$ = F_GROUPFILT; }
 	|	WINDOW             { $$ = F_ANALYTIC; }
 	|	WINDOW FUNCTION    { $$ = F_ANALYTIC; }
 	|	sqlLOADER          { $$ = F_LOADER; }

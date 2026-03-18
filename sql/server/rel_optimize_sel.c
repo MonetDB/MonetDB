@@ -186,6 +186,8 @@ bind_remove_redundant_join(visitor *v, global_props *gp)
 static list *
 exp_merge_range(visitor *v, sql_rel *rel, list *exps)
 {
+	if (!exps)
+		return exps;
 	node *n, *m;
 	for (n=exps->h; n; n = n->next) {
 		sql_exp *e = n->data;
@@ -1111,6 +1113,7 @@ rel_merge_select_rse(visitor *v, sql_rel *rel)
 	return rel;
 }
 
+static sql_rel * rel_push_select_down(visitor *v, sql_rel *rel);
 /* pack optimizers into a single function call to avoid iterations in the AST */
 static sql_rel *
 rel_optimize_select_and_joins_bottomup_(visitor *v, sql_rel *rel)
@@ -1119,6 +1122,7 @@ rel_optimize_select_and_joins_bottomup_(visitor *v, sql_rel *rel)
 		return rel;
 	uint8_t cycle = *(uint8_t*) v->data;
 
+	rel = rel_push_select_down(v, rel);
 	rel->exps = exp_merge_range(v, rel, rel->exps);
 	rel = rel_select_cse(v, rel);
 	if (cycle == 1)
@@ -3906,7 +3910,8 @@ rel_push_select_down(visitor *v, sql_rel *rel)
 			set_distinct(rel);
 		v->changes++;
 	}
-	if (is_select(rel->op) && r && is_munion(r->op) && !is_recursive(r) && !list_empty(r->exps) && !rel_is_ref(r) && !is_single(r) && !list_empty(exps)) {
+	if (is_select(rel->op) && !exps_has_group_filter(rel->exps) && 
+     	    r && is_munion(r->op) && !is_recursive(r) && !list_empty(r->exps) && !rel_is_ref(r) && !is_single(r) && !list_empty(exps)) {
 		sql_rel *u = r;
 		list *rels = u->l, *nrels = sa_list(v->sql->sa);
 		for(node *n = rels->h; n; n = n->next) {

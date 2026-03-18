@@ -78,7 +78,7 @@ project (
 | | | table("sys"."othertable") [ "othertable"."a" NOT NULL UNIQUE ]
 | | ) [ ("othertable"."a" NOT NULL UNIQUE) = (int(2) "1") ]
 | ) [ ("testkeys"."a" NOT NULL UNIQUE HASHCOL ) = ("othertable"."a" NOT NULL UNIQUE) ]
-) [ int(2) "1" as "othertable"."a" ]
+) [ "othertable"."a" NOT NULL UNIQUE ]
 
 # here 'othertable.a between 2 and 5' can be pushed up too
 query T nosort
@@ -101,7 +101,7 @@ explain show details select testkeys.a from testkeys inner join othertable on te
 ----
 project (
 | select (
-| |  [ int(2) NULL as "testkeys"."a" ]
+| | table("sys"."testkeys") [ "testkeys"."a" NOT NULL UNIQUE HASHCOL  ]
 | ) [ boolean(1) "false" ]
 ) [ "testkeys"."a" NOT NULL HASHCOL  ]
 
