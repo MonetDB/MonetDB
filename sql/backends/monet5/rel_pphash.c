@@ -132,7 +132,10 @@ oahash_slicer(backend *be, stmt *sub)
 static stmt *
 oahash_probe(backend *be, sql_rel *rel, list *jexps, list *exps_cmp_prb, const stmt *stmts_ht, stmt *sub, const stmt *pp, bool anti, bool outer, bool groupjoin, bool has_outerselect, stmt **nulls, stmt **prb_mrk)
 {
+	(void) outer;
+
 	stmt *prb_res = NULL, *outerm = NULL;
+	bool has_leftouter = (rel->op == op_left || rel->op == op_full || (rel->op == op_right && rel->oahash == 1));
 
 	/* stmts_ht is in the same order as the join columns */
 	for (node *n = exps_cmp_prb->h, *m = stmts_ht->op4.lval->h, *o = jexps->h; n && m && o; n = n->next, m = m->next, o = o->next) {
@@ -145,18 +148,20 @@ oahash_probe(backend *be, sql_rel *rel, list *jexps, list *exps_cmp_prb, const s
 		bool eq = (e2->flag == cmp_equal) && !anti;
 		bool grpjoin = groupjoin && is_any(e2);
 
-		prb_res = stmt_oahash_probe(be, key, prb_res, m->data, stmts_ht->op3, outerm, single, e2->semantics, eq, outer, grpjoin, pp);
+		prb_res = stmt_oahash_probe(be, key, prb_res, m->data, stmts_ht->op3, outerm, single, e2->semantics, eq, has_leftouter, grpjoin, pp);
 		if (prb_res == NULL) return NULL;
 
-		if (outer || grpjoin) {
-			assert (prb_res->q->retc == 3);
+		//if (outer || grpjoin) {
+		if (has_leftouter || grpjoin) {
+			assert (prb_res->q->retc >= 2);
 			outerm = stmt_blackbox_result(be, prb_res->q, 2, sql_fetch_localtype(TYPE_bit));
 		}
 
 		if (nulls && stmt_has_null(key) && is_any(e2))
 			*nulls = stmt_selectnil(be, key, *nulls);
 	}
-	if ((outer || groupjoin) && outerm)
+	//if ((outer || groupjoin) && outerm)
+	if ((has_leftouter || groupjoin) && outerm)
 		*prb_mrk = outerm;
 	/* probe of last column is the final res */
 	return prb_res;
@@ -408,10 +413,11 @@ rel2bin_oahash_equi_join(backend *be, sql_rel *rel, list *refs, list *jexps, stm
 	if (prb_res == NULL) return NULL;
 
 	/*** PROJECT RESULT PHASE ***/
-	bit outer = is_outerjoin(rel->op);
-	list *lp = oahash_project_prb(be, exps_prj_prb, prb_res, stmts_ht->op3, outer, sub, probed_rowids);
-	list *lh = oahash_project_hsh(be, exps_prj_hsh, stmts_ht, prb_res, outer, hsh_mrk);
+	bit leftouter = (rel->op == op_left || rel->op == op_full || (rel->op == op_right && rel->oahash == 1));
+	list *lp = oahash_project_prb(be, exps_prj_prb, prb_res, stmts_ht->op3, leftouter, sub, probed_rowids);
+	list *lh = oahash_project_hsh(be, exps_prj_hsh, stmts_ht, prb_res, leftouter, hsh_mrk);
 
+	bit outer = is_outerjoin(rel->op);
 	/* !exps_prj_hsh => !shared_hp => mark the last hash-column instead of a payload column */
 	if (outer && hsh_mrk && !*hsh_mrk) {
 		assert(list_empty(exps_prj_hsh));
@@ -672,7 +678,7 @@ rel2bin_oahash_cart(backend *be, sql_rel *rel, list *refs, stmt *stmts_ht, stmt 
 	stmt *setrepeat = stmts_prb_res->op4.lval->h->data;
 	assert(rowrepeat && setrepeat); /* must find */
 
-	/* Check for single left/right outer join and crossproduct that either rel->r is single or rel->l is empty. */
+ 	/* Check for single: either rel->r is single or rel->l is empty. */
 	if (rel->single && list_empty(rel->exps)) {
 		if (rowrepeat->nrcols > 0) {
 			int ppln = be->pipeline;
@@ -691,8 +697,8 @@ rel2bin_oahash_cart(backend *be, sql_rel *rel, list *refs, stmt *stmts_ht, stmt 
 			s->nr = qR->argv[0];
 			s->q = qR;
 
-			if (setrepeat->nrcols > 0) {
-				cnt = stmt_aggr(be, setrepeat, NULL, NULL, cnt_fnc, 1, 0, 1);
+			//if (setrepeat->nrcols > 0) {
+				cnt = stmt_aggr(be, column(be, setrepeat), NULL, NULL, cnt_fnc, 1, 0, 1);
 				InstrPtr qL = newStmtArgs(be->mb, calcRef, ">", 3);
 				qL = pushArgument(be->mb, qL, cnt->nr);
 				qL = pushInt(be->mb, qL, 0);
@@ -704,7 +710,7 @@ rel2bin_oahash_cart(backend *be, sql_rel *rel, list *refs, stmt *stmts_ht, stmt 
 				pushInstruction(be->mb, q);
 				s->nr = q->argv[0];
 				s->q = q;
-			}
+			//}
 			(void)stmt_exception(be, s, SQLSTATE(42000) "more than one match", 00001);
 
 			be->pipeline = ppln;
@@ -840,7 +846,7 @@ rel2bin_oahash_innerjoin(backend *be, sql_rel *rel, list *refs)
 }
 
 static stmt *
-rel2bin_oahash_outerjoin(backend *be, sql_rel *rel, list *refs)
+rel2bin_oahash_leftouterjoin(backend *be, sql_rel *rel, list *refs)
 {
 	stmt *sub = NULL, *probe_sub = NULL;
 	list *jexps = sa_list(be->mvc->sa), *sexps = sa_list(be->mvc->sa), *probe_side = NULL, *hash_side = NULL;
@@ -882,6 +888,177 @@ rel2bin_oahash_outerjoin(backend *be, sql_rel *rel, list *refs)
 		}
 		sub = stmt_list(be, list_merge(lh, lp, NULL));
 	}
+	return sub;
+}
+
+static stmt *
+rel2bin_oahash_rightouterjoin(backend *be, sql_rel *rel, list *refs)
+{
+	mvc *sql = be->mvc;
+	sql_subtype *tpe_oid = sql_fetch_localtype(TYPE_oid);
+
+	//int neededpp = (rel->spb || rel->partition) && get_need_pipeline(be);
+	//(void)neededpp;
+	assert((rel->oahash == 2) && "right outer join hashes RHS");
+	sql_rel *rel_hsh = NULL, *rel_prb = NULL;
+	//if (rel->oahash == 1) {
+	//	rel_hsh = rel->l;
+	//	rel_prb = rel->r;
+	//} else { /* rel->oahash == 2 */
+		rel_hsh = rel->r;
+		rel_prb = rel->l;
+	//}
+
+	stmt *stmts_ht = refs_find_rel(refs, rel_hsh);
+
+	if (!stmts_ht)
+		stmts_ht = rel2bin_oahash_cart_build(be, rel, refs);
+
+	list *shared_ht = stmts_ht->op4.lval;
+	list *shared_hp = stmts_ht->op1?stmts_ht->op1->op4.lval:NULL;
+	/* hash side mark if a join-match has been found.  NIL: unused; TRUE: matched; FALSE unmatched */
+	/* Mark the payloads, if exist; otherwise the last hash column */
+	stmt *hp_mrk = stmt_oahash_hshmrk_init(be, stmts_ht, be->pp > 0);
+	// X_48:int := slicer.no_slices(X_9:bat[:int]);
+	stmt *hp_mrk_slc = stmt_no_slices(be, hp_mrk, false);
+	if (be->pp > 0) {
+		moveInstruction(be->mb, be->mb->stop-1, be->pp_pc++);
+	}
+
+	/*** start pipeline.concat ***/
+	int p_source = be->source, p_concatcnt = be->concatcnt;
+	(void)stmt_concat(be, be->source, 2);
+
+	/* create all results variables, hash-side first */
+	list *vars = sa_list(sql->sa);
+	if (!list_empty(rel_hsh->exps)) {
+		for (node *n = rel_hsh->exps->h; n; n = n->next) {
+			sql_subtype *st = exp_subtype(n->data);
+			stmt *s = stmt_bat_declare(be, st);
+			append(vars, s);
+		}
+	}
+	if (!list_empty(rel_prb->exps)) {
+		for (node *n = rel_prb->exps->h; n; n = n->next) {
+			sql_subtype *st = exp_subtype(n->data);
+			stmt *s = stmt_bat_declare(be, st);
+			append(vars, s);
+		}
+	}
+
+	/*** first concat_block: the join ***/
+	int b = stmt_concat_barrier(be, be->source, 0, 0);
+
+	// existing innerjoin code, extended to mark the matched payloads
+	bool hf = false;
+	stmt *sub = NULL, *probed_ids = NULL;
+	list *jexps = sa_list(be->mvc->sa), *sexps = sa_list(be->mvc->sa), *probe_side = NULL, *hash_side = NULL;
+	split_join_exps_pp(rel, jexps, sexps, false);
+	bool single = rel->single && !list_empty(sexps);
+
+	stmt *hsh_mrk = NULL;
+
+	if (list_empty(jexps)) { /* cartesian */
+		sub = rel2bin_oahash_cart(be, rel, refs, stmts_ht, single?&probed_ids:NULL, NULL, &probe_side, &hash_side, &hsh_mrk /* hsh_mrk = hash_ids */, &hf);
+
+		/* Pseudo hash table does not have payload, use shared_ht to project resulting columns */
+		if (!shared_hp && !list_empty(rel_hsh->exps))
+			shared_hp = shared_ht;
+	} else {
+		sub = rel2bin_oahash_equi_join(be, rel, refs, jexps, single?&probed_ids:NULL, NULL /* probe_sub */, NULL /* nulls */, NULL /* prb_mrk */, &hsh_mrk, &probe_side, &hash_side, !list_empty(sexps) /* has_outerselect */);
+	}
+
+	if (!list_empty(sexps)) {
+		sub->cand = rel2bin_oahash_select(be, sub, sexps, rel, hf);
+		/* mark the matched payload */
+		hsh_mrk = stmt_project(be, sub->cand, hsh_mrk);
+		if (!hsh_mrk) return NULL;
+
+		if (single && sub->cand) {
+			assert(probed_ids);
+			stmt *ps = stmt_project(be, sub->cand, probed_ids);
+			sub->cand = stmt_single(be, sub->cand, ps);
+		}
+		sub = subrel_project(be, sub, refs, rel);
+
+
+	}// else {
+	//	atom *a_null = atom_general(sql->sa, tpe_oid, NULL, 0);
+	//	stmt *stmt_null = stmt_atom(be, a_null); /* we just need the count of unmatched */
+	//	/*  X_nn:bat[:oid] := algebra.thetaselect(<m>, nil:bat[:any], true:bit, "=":str);*/
+	//	stmt *sel = stmt_thetaselect(be, hsh_mrk, NULL, stmt_null, "ne", tpe_oid);
+	//	hsh_mrk = stmt_project(be, sel, hsh_mrk);
+	//}
+	if (!hsh_mrk) return NULL;
+	hp_mrk = stmt_algebra_project(be, hp_mrk, hsh_mrk, stmt_bool(be,1), projectRef, get_pipeline(be));
+	// END existing code
+
+	/* NB stmts order in sub must match that in vars, i.e. hash-side first */
+	if (!shared_hp && list_empty(jexps)) { /* skip useless hash side cols on empty payload */
+		node *n, *m;
+		for(n = sub->op4.lval->h, m = shared_ht->h; n && m ; n = n->next, m = m->next)
+			;
+		sub->op4.lval->h = n;
+	}
+	sub = subres_assign_resultvars(be, sub, vars);
+	if (!sub) return NULL;
+
+	if (be->concatcnt == 0) {/* add dummy source */
+		int source = pp_counter(be, 1, -1, false);
+		stmt_concat_add_source(be);
+		(void)pp_counter_get(be, source); /* use source else statement gets garbage collected */
+	}
+	(void)stmt_concat_barrier_end(be, b);
+	assert (be->concatcnt == 1);
+
+	/*** second concat_block: add the NULLs ***/
+	b = stmt_concat_barrier(be, be->source, 1, b);
+	int source = pp_counter(be, -1, hp_mrk_slc->nr, true); /* synchronizes at start of outer results */
+	stmt_concat_add_source(be);
+	(void)pp_counter_get(be, source); /* use source else statement gets garbage collected */
+
+	//output the unmatched rows with NULLs for the LHS columns
+	stmt *slice = stmt_nth_slice(be, hp_mrk, false);
+	stmt *unmatched = stmt_thetaselect(be, slice, NULL, stmt_bool(be, 0), "==", tpe_oid);
+	list *res2 = sa_list(sql->sa);
+	if (!list_empty(shared_hp)) {
+		for (node *n = shared_hp->h; n; n = n->next) {
+			stmt *c = stmt_project(be, unmatched, n->data);
+			const char *cname = column_name(sql->sa, c);
+			const char *tname = table_name(sql->sa, c);
+			int label = c->label;
+			c = stmt_alias(be, c, label, tname, cname);
+			append(res2, c);
+		}
+	} else {
+		/* without payload, we need to expand the count of unmatched freq if exists */
+		if (stmts_ht->op3) {
+			unmatched = stmt_oahash_explode_unmatched(be, shared_ht->t->data, unmatched, stmts_ht->op3);
+			if (unmatched == NULL) return NULL;
+		}
+	}
+
+	for (node *n = probe_side->h; n; n = n->next) {
+		sql_subtype *tpe = tail_type(n->data);
+		atom *a = atom_general(sql->sa, tpe, NULL, 0);
+		stmt *c = stmt_const(be, unmatched, stmt_atom(be, a)); /* we just need the count of unmatched */
+		const char *cname = column_name(sql->sa, n->data);
+		const char *tname = table_name(sql->sa, n->data);
+		int label = ((stmt*)n->data)->label;
+		c = stmt_alias(be, c, label, tname, cname);
+		append(res2, c);
+	}
+	sub = stmt_list(be, res2);
+
+	/* NB stmts order in sub must match that in vars, i.e. hash-side first */
+	sub = subres_assign_resultvars(be, sub, vars);
+	if (!sub) return NULL;
+
+	(void)stmt_concat_barrier_end(be, b);
+	assert (be->concatcnt == 2);
+
+	if (p_source)
+		stmt_concat_add_subconcat(be, p_source, p_concatcnt);
 	return sub;
 }
 
@@ -944,7 +1121,7 @@ rel2bin_oahash_fullouterjoin(backend *be, sql_rel *rel, list *refs)
 	/*** first concat_block: the join ***/
 	int b = stmt_concat_barrier(be, be->source, 0, 0);
 
-	// existing code, extended to mark the matched payloads
+	// existing leftjoin code, extended to mark the matched payloads
 	stmt *sub = NULL, *probe_sub = NULL;
 	list *jexps = sa_list(sql->sa), *sexps = sa_list(sql->sa), *probe_side = NULL, *hash_side = NULL;
 	split_join_exps_pp(rel, jexps, sexps, false);
@@ -1159,14 +1336,19 @@ rel2bin_oahash_semi(backend *be, sql_rel *rel, list *refs)
 stmt *
 rel2bin_oahash(backend *be, sql_rel *rel, list *refs)
 {
+	/* TODO: delay single check until after sexps */
     if (is_semi(rel->op)) {
         return rel2bin_oahash_semi(be, rel, refs);
     } else if (!list_empty(rel->attr)) {
         return rel2bin_oahash_groupjoin(be, rel, refs);
     } else if (is_outerjoin(rel->op)) {
-		if (rel->op == op_full)
+		if (rel->op == op_full) {
 			return rel2bin_oahash_fullouterjoin(be, rel, refs);
-        return rel2bin_oahash_outerjoin(be, rel, refs);
+		} else if (rel->op == op_right && rel->single ) {
+			return rel2bin_oahash_rightouterjoin(be, rel, refs);
+		} else {
+			return rel2bin_oahash_leftouterjoin(be, rel, refs);
+		}
     } else {
         assert(is_innerjoin(rel->op));
         return rel2bin_oahash_innerjoin(be, rel, refs);

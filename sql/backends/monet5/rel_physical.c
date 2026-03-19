@@ -863,7 +863,7 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 
 			if (!rel_hsh) {
 				/* For both left-outer join and all single outer joins, we hash the RHS */
-				if ((rel->single && rel->op != op_right) || rel->op == op_left)
+				if (rel->single || rel->op == op_left)
 					rel->oahash = 2;
 				else if (rel->op == op_right)
 					rel->oahash = 1;
