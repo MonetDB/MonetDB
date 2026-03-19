@@ -233,6 +233,7 @@ extern sql_exp *exp_numeric_supertype(mvc *sql, sql_exp *e);
 extern sql_exp *exp_values_set_supertype(mvc *sql, sql_exp *values, sql_subtype *opt_super);
 extern void free_exp(allocator *sa, sql_exp *e);
 extern void free_exps(allocator *sa, list *exps);
+extern bool exps_has_group_filter(list *exps);
 
 extern int exp_is_rename(sql_exp *e);
 extern int exp_is_useless_rename(sql_exp *e);

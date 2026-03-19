@@ -1031,14 +1031,14 @@ create_func(mvc *sql, char *sname, char *fname, sql_func *f, int replace)
 			}
 		}
 
-		if ((sf = sql_bind_func_(sql, s->base.name, fname, tl, f->type, false, true)) != NULL) {
+		if ((sf = sql_bind_func_(sql, s->base.name, fname, tl, f->group?F_GROUPFILT:f->type, false, true)) != NULL) {
 			sql_func *sff = sf->func;
 
 			if (!sff->s || sff->system)
 				throw(SQL,"sql.create_func", SQLSTATE(42000) "%s %s: not allowed to replace system %s %s;", base, F, fn, sff->base.name);
 
 			/* if all function parameters are the same, return */
-			if (sff->lang == f->lang && sff->type == f->type &&
+			if (sff->lang == f->lang && sff->type == f->type && sff->group == f->group &&
 				sff->varres == f->varres && sff->vararg == f->vararg &&
 				((!sff->query && !f->query) || (sff->query && f->query && strcmp(sff->query, f->query) == 0)) &&
 				list_cmp(sff->res, f->res, (fcmp) &args_cmp) == 0 &&
@@ -1061,7 +1061,7 @@ create_func(mvc *sql, char *sname, char *fname, sql_func *f, int replace)
 			sql->errstr[0] = '\0';
 		}
 	}
-	switch (mvc_create_func(&nf, sql, NULL, s, f->base.name, f->ops, f->res, f->type, f->lang, f->mod, f->imp, f->query, f->varres, f->vararg, f->system, f->side_effect, f->order_required, f->opt_order)) {
+	switch (mvc_create_func(&nf, sql, NULL, s, f->base.name, f->ops, f->res, f->group?F_GROUPFILT:f->type, f->lang, f->mod, f->imp, f->query, f->varres, f->vararg, f->system, f->side_effect, f->order_required, f->opt_order)) {
 		case -1:
 			throw(SQL,"sql.create_func", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		case -2:

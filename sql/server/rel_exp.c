@@ -4185,3 +4185,20 @@ free_exp(allocator *sa, sql_exp *e)
 	}
 	_free_exp_internal(sa, e);
 }
+
+bool 
+exps_has_group_filter(list *exps)
+{
+	if (list_empty(exps))
+		return false;
+	for(node *n = exps->h; n; n = n->next) {
+		sql_exp *e = n->data;
+		if (e->type == e_cmp && e->flag == cmp_filter) {
+			sql_subfunc *sf = e->f;
+			if (sf->func->group)
+				return true;
+		}
+	}	
+	return false;
+}
+

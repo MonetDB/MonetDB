@@ -355,7 +355,7 @@ CREATE TABLE sys.function_types (
     function_type_keyword VARCHAR(30) NOT NULL);
 
 -- Values taken from sql/include/sql_catalog.h see: #define F_FUNC 1,
--- F_PROC 2, F_AGGR 3, F_FILT 4, F_UNION 5, F_ANALYTIC 6, F_LOADER 7.
+-- F_PROC 2, F_AGGR 3, F_FILT 4, F_UNION 5, F_ANALYTIC 6, F_LOADER 7, F_GROUPFILT 8.
 INSERT INTO sys.function_types (function_type_id, function_type_name, function_type_keyword) VALUES
   (1, 'Scalar function', 'FUNCTION'),
   (2, 'Procedure', 'PROCEDURE'),
@@ -363,7 +363,8 @@ INSERT INTO sys.function_types (function_type_id, function_type_name, function_t
   (4, 'Filter function', 'FILTER FUNCTION'),
   (5, 'Function returning a table', 'FUNCTION'),
   (6, 'Analytic function', 'WINDOW'),
-  (7, 'Loader function', 'LOADER');
+  (7, 'Loader function', 'LOADER'),
+  (8, 'Group filter function', 'GROUP FILTER FUNCTION');
 
 ALTER TABLE sys.function_types SET READ ONLY;
 GRANT SELECT ON sys.function_types TO PUBLIC;

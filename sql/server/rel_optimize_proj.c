@@ -432,10 +432,12 @@ exp_match_exp_cmp( sql_exp *e1, sql_exp *e2)
 /* Pushing projects up the tree. Done very early in the optimizer.
  * Makes later steps easier.
  */
+static sql_rel * rel_project_select_exp(visitor *v, sql_rel *rel);
 extern void _rel_print(mvc *sql, sql_rel *rel);
 static sql_rel *
 rel_push_project_up_(visitor *v, sql_rel *rel)
 {
+	rel = rel_project_select_exp(v, rel);
 	if (is_simple_project(rel->op) && rel->l && !rel_is_ref(rel)) {
 		sql_rel *l = rel->l;
 		if (is_simple_project(l->op))
@@ -3165,6 +3167,18 @@ rel_project_select_exp(visitor *v, sql_rel *rel)
 			for(node *n = rel->exps->h; n; n = n->next) {
 				sql_exp *col = n->data;
 				if (col->type == e_column) {
+					sql_rel *ll = l->l;
+					/* first check if lower project is const */
+					if (is_simple_project(ll->op) && !ll->dynamic /* not base part of recusive union */) { 
+						sql_exp *i = rel_find_exp(l, col);
+						if (i && exp_is_atom(i) && !i->f) {
+							sql_exp *e = n->data = exp_copy(v->sql, i);
+							exp_setalias(e, col->alias.label, exp_relname(col), exp_name(col));
+							exp_propagate(v->sql->sa, e, col);
+							list_hash_clear(rel->exps);
+							continue;
+						}
+					}
 					for(node *m = l->exps->h; m; m = m->next) {
 						sql_exp *cmp = m->data;
 						if (cmp->type == e_cmp && cmp->flag == cmp_equal && !is_anti(cmp) && !is_semantics(cmp) && exp_is_atom(cmp->r)) {
@@ -3381,7 +3395,7 @@ rel_push_join_down_munion(visitor *v, sql_rel *rel)
 		list *exps = rel->exps, *attr = rel->attr;
 		sql_exp *je = NULL;
 
-		if (is_recursive(l) || is_recursive(r))
+		if (is_recursive(l) || is_recursive(r) || exps_has_group_filter(rel->exps) /* we cannot push group join like filters down */)
 			return rel;
 		/* we would like to optimize in place reference rels which point
 		 * to replica tables and let the replica optimizer handle those
