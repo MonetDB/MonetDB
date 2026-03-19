@@ -1945,7 +1945,7 @@ scan_loop_strselect(BAT *rl, BATiter *li, struct canditer *lci, const char *r,
 {
 	oid l_base = li->b->hseqbase;
 	const char *l_vars = li->vh->base, *l_vals = li->base;
-	size_t off;
+	var_t off;
 	size_t r_len = strlen(r);
 
 	lng t0 = 0;
@@ -2189,7 +2189,7 @@ nested_loop_strjoin(BAT *rl, BAT *rr, BATiter *li, BATiter *ri,
 	oid lbase = li->b->hseqbase, rbase = ri->b->hseqbase, or, ol;
 	const char *l_vars = li->vh->base, *r_vars = ri->vh->base,
 		*l_vals = li->base, *r_vals = ri->base;
-	size_t off;
+	var_t off;
 
 	lng t0 = 0;
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
@@ -2258,7 +2258,7 @@ init_bigram_idx(NGrams *ng, BATiter *bi, struct canditer *bci, QryCtx *qry_ctx)
 
 	oid b_base = bi->b->hseqbase;
 	const char *b_vars = bi->vh->base, *b_vals = bi->base;
-	size_t off;
+	var_t off;
 
 	canditer_reset(bci);
 	TIMEOUT_LOOP(bci->ncand, qry_ctx) {
@@ -2362,7 +2362,7 @@ bigram_strjoin(BAT *rl, BAT *rr, BATiter *li, BATiter *ri,
 	oid l_base = li->b->hseqbase, r_base = ri->b->hseqbase;
 	const char *l_vars = li->vh->base, *r_vars = ri->vh->base,
 		*l_vals = li->base, *r_vals = ri->base;
-	size_t off;
+	var_t off;
 
 	lng t0 = 0;
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
@@ -2538,7 +2538,7 @@ sorted_strjoin(BAT **rl_ptr, BAT **rr_ptr, BATiter *li, BATiter *ri,
 		ol = 0, or = 0, ly = 0, rx = 0, n;
 	const char *sorted_l_vars = sorted_li->vh->base, *sorted_r_vars = sorted_ri->vh->base,
 		*sorted_l_vals = sorted_li->base, *sorted_r_vals = sorted_ri->base;
-	size_t off;
+	var_t off;
 	size_t new_cap;
 
 	TIMEOUT_LOOP(sorted_lci.ncand, qry_ctx) {

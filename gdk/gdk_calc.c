@@ -4006,7 +4006,7 @@ BATcalcbetween_intern(const void *src, bool incr1, const char *hp1, int wd1,
 			if (incr3)
 				k = canditer_next(cihi) - seqbase3;
 			const void *p1, *p2, *p3;
-			size_t off;
+			var_t off;
 			p1 = hp1
 				? (off = VarHeapVal(src, i, wd1)) == 0
 				? nil
@@ -4504,7 +4504,7 @@ BATcalcifthenelse_intern(BATiter *bi,
 				BUN rem = i == n ? cnt % 32 : 32;
 				uint32_t mask = rem != 0 ? src[i] : 0;
 				for (BUN j = 0; j < rem; j++) {
-					size_t off;
+					var_t off;
 					if (mask & (1U << j)) {
 						if (heap1) {
 							off = VarHeapVal(col1, k, width1);
@@ -4532,7 +4532,7 @@ BATcalcifthenelse_intern(BATiter *bi,
 		} else {
 			const bit *src = bi->base;
 			TIMEOUT_LOOP_IDX(i, cnt, qry_ctx) {
-				size_t off;
+				var_t off;
 				if (src[i] && !is_bit_nil(src[i])) {
 					if (heap1) {
 						off = VarHeapVal(col1, k, width1);

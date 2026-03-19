@@ -911,7 +911,7 @@ static inline const void *
 BUNtvar(const BATiter *bi, BUN p)
 {
 	assert(bi->type && bi->vh);
-	size_t off = VarHeapVal(bi->base, p, bi->width);
+	var_t off = VarHeapVal(bi->base, p, bi->width);
 	return off == 0 ? ATOMnilptr(bi->type) : bi->vh->base + off;
 }
 
@@ -1124,7 +1124,7 @@ BATsettrivprop(BAT *b)
 				}
 				b->tseqbase = sqbs;
 			} else {
-				size_t off;
+				var_t off;
 				if (b->tvheap
 				    ? ((off = VarHeapVal(Tloc(b, 0), 0, b->twidth)) == 0 ||
 				       ATOMeq(b->ttype,
@@ -1154,8 +1154,8 @@ BATsettrivprop(BAT *b)
 	} else if (b->batCount == 2 && ATOMlinear(b->ttype)) {
 		int c;
 		if (b->tvheap) {
-			size_t off0 = VarHeapVal(Tloc(b, 0), 0, b->twidth);
-			size_t off1 = VarHeapVal(Tloc(b, 0), 1, b->twidth);
+			var_t off0 = VarHeapVal(Tloc(b, 0), 0, b->twidth);
+			var_t off1 = VarHeapVal(Tloc(b, 0), 1, b->twidth);
 			if (off0 == off1)
 				c = 0;
 			else if (off0 == 0)

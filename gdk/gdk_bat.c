@@ -1537,7 +1537,7 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 		} else if (bi.type == TYPE_msk) {
 			val = BUNtmsk(&bi, p);
 		} else if (b->tvheap) {
-			size_t off = VarHeapVal(bi.base, p, bi.width);
+			var_t off = VarHeapVal(bi.base, p, bi.width);
 			if (off == 0)
 				val = ATOMnilptr(bi.type);
 			else if (off < bi.vhfree)

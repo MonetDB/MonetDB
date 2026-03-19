@@ -339,7 +339,7 @@ binsearch(const oid *restrict indir,
 	}
 
 	int (*cmp)(const void *, const void *) = ATOMcompare(type);
-	size_t off;
+	var_t off;
 	const void *nil = ATOMnilptr(type);
 
 	if (last > 0) {

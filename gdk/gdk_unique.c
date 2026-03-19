@@ -32,7 +32,7 @@ BATunique(BAT *b, BAT *s)
 	const void *v;
 	const char *vals;
 	const char *vars;
-	size_t off;
+	var_t off;
 	const void *nil = ATOMnilptr(b->ttype);
 	int width;
 	oid o, hseq;

@@ -142,7 +142,7 @@ insert_string_bat(BAT *b, BATiter *ni, struct canditer *ci, bool force, bool may
 	BUN p, r;		/* loop variables */
 	const void *tp = NULL;	/* tail value pointer */
 	var_t v;
-	size_t off;		/* offset within n's string heap */
+	var_t off;		/* offset within n's string heap */
 	BUN cnt = ci->ncand;
 	BUN oldcnt = BATcount(b);
 
@@ -379,7 +379,7 @@ insert_string_bat(BAT *b, BATiter *ni, struct canditer *ci, bool force, bool may
 				 * eliminated and nil is actually
 				 * stored, we need to reuse its offset
 				 * by calling tfastins_nocheckVAR */
-				v = (var_t) off;
+				v = off;
 				switch (b->twidth) {
 				case 1:
 					assert(v - GDK_VAROFFSET < ((var_t) 1 << 8));
@@ -419,7 +419,7 @@ insert_string_bat(BAT *b, BATiter *ni, struct canditer *ci, bool force, bool may
 	MT_lock_unset(&b->theaplock);
 	/* maintain hash */
 	for (r = oldcnt, cnt = BATcount(b); b->thash && r < cnt; r++) {
-		size_t off = VarHeapVal(Tloc(b, 0), r, b->twidth);
+		off = VarHeapVal(Tloc(b, 0), r, b->twidth);
 		HASHappend_locked(b, r, off == 0 ? str_nil : b->tvheap->base + off);
 	}
 	BUN nunique = b->thash ? b->thash->nunique : 0;
@@ -1436,7 +1436,7 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 			 * after an update (with a mmapped tail file)
 			 * but before that was committed, then the
 			 * offset may point outside of the vheap */
-			size_t off = VarHeapVal(bi.base, updid, bi.width);
+			var_t off = VarHeapVal(bi.base, updid, bi.width);
 			const void *old = off == 0 ? ATOMnilptr(bi.type) : off < bi.vhfree ? BUNtvar(&bi, updid) : NULL;
 
 			if (old && atomeq(old, new)) {

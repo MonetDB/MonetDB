@@ -90,7 +90,7 @@ typedef struct {
 	allocator *ma;
 	allocator_state ma_state;
 
-	size_t off0, off1;
+	var_t off0, off1;
 } MergeState;
 
 /* Free all the temp memory owned by the MergeState.  This must be

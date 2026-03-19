@@ -449,7 +449,7 @@ strEq(const char *l, const char *r)
 }
 
 __attribute__((__pure__))
-static inline size_t
+static inline var_t
 VarHeapVal(const void *b, BUN p, int w)
 {
 	size_t off;

@@ -1951,7 +1951,7 @@ mergejoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 	BUN lscan, rscan;
 	const void *lvals, *rvals; /* the values of l/r (NULL if dense) */
 	const char *lvars, *rvars; /* the indirect values (NULL if fixed size) */
-	size_t off;
+	var_t off;
 	const void *nil = ATOMnilptr(l->ttype);
 	int (*cmp)(const void *, const void *) = ATOMcompare(l->ttype);
 	bool (*eq)(const void *, const void *) = ATOMequal(l->ttype);
@@ -3209,7 +3209,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 	BUN nr;
 	const char *lvals;
 	const char *lvars;
-	size_t off;
+	var_t off;
 	const void *nil = ATOMnilptr(l->ttype);
 	int (*cmp)(const void *, const void *) = ATOMcompare(l->ttype);
 	bool (*eq)(const void *, const void *) = ATOMequal(l->ttype);
@@ -3645,7 +3645,7 @@ count_unique(BAT *b, BAT *s, BUN *cnt1, BUN *cnt2)
 	const void *v;
 	const char *bvals;
 	const char *bvars;
-	size_t off;
+	var_t off;
 	const void *nil = ATOMnilptr(b->ttype);
 	oid bval;
 	oid i, o;
@@ -4055,7 +4055,7 @@ thetajoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int opcode,
 	struct canditer lci, rci;
 	const char *lvals, *rvals;
 	const char *lvars, *rvars;
-	size_t off;
+	var_t off;
 	const void *nil = ATOMnilptr(l->ttype);
 	int (*cmp)(const void *, const void *) = ATOMcompare(l->ttype);
 	bool (*eq)(const void *, const void *) = ATOMequal(l->ttype);
@@ -5478,7 +5478,7 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh,
 	BATiter rhi = bat_iterator(rh);
 	const char *rlvals, *rhvals;
 	const char *lvars, *rlvars, *rhvars;
-	size_t off;
+	var_t off;
 	const void *nil = ATOMnilptr(li.type);
 	int (*cmp)(const void *, const void *) = ATOMcompare(li.type);
 	bool (*eq)(const void *, const void *) = ATOMequal(li.type);

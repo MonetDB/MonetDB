@@ -329,7 +329,7 @@ struct qsort_t {
 #undef TPE
 
 #define TPE var
-#define INITIALIZER size_t off1, off2
+#define INITIALIZER var_t off1, off2
 #define SUFF f
 #include "gdk_qsort_impl.h"
 #undef SUFF
