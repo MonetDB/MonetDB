@@ -697,20 +697,19 @@ rel2bin_oahash_cart(backend *be, sql_rel *rel, list *refs, stmt *stmts_ht, stmt 
 			s->nr = qR->argv[0];
 			s->q = qR;
 
-			//if (setrepeat->nrcols > 0) {
-				cnt = stmt_aggr(be, column(be, setrepeat), NULL, NULL, cnt_fnc, 1, 0, 1);
-				InstrPtr qL = newStmtArgs(be->mb, calcRef, ">", 3);
-				qL = pushArgument(be->mb, qL, cnt->nr);
-				qL = pushInt(be->mb, qL, 0);
-				pushInstruction(be->mb, qL);
+			/* Always check the count of setrepeat, because even if it's a constanct, it is >0 */
+			cnt = stmt_aggr(be, column(be, setrepeat), NULL, NULL, cnt_fnc, 1, 0, 1);
+			InstrPtr qL = newStmtArgs(be->mb, calcRef, ">", 3);
+			qL = pushArgument(be->mb, qL, cnt->nr);
+			qL = pushInt(be->mb, qL, 0);
+			pushInstruction(be->mb, qL);
 
-				InstrPtr q = newStmtArgs(be->mb, calcRef, "and", 3);
-				q = pushArgument(be->mb, q, qR->argv[0]);
-				q = pushArgument(be->mb, q, qL->argv[0]);
-				pushInstruction(be->mb, q);
-				s->nr = q->argv[0];
-				s->q = q;
-			//}
+			InstrPtr q = newStmtArgs(be->mb, calcRef, "and", 3);
+			q = pushArgument(be->mb, q, qR->argv[0]);
+			q = pushArgument(be->mb, q, qL->argv[0]);
+			pushInstruction(be->mb, q);
+			s->nr = q->argv[0];
+			s->q = q;
 			(void)stmt_exception(be, s, SQLSTATE(42000) "more than one match", 00001);
 
 			be->pipeline = ppln;
@@ -857,7 +856,6 @@ rel2bin_oahash_leftouterjoin(backend *be, sql_rel *rel, list *refs)
 	int neededpp = (rel->spb || rel->partition) && get_need_pipeline(be);
 	(void)neededpp;
 
-	//assert(!(rel->single && list_empty(jexps)));
 	bool hf = false;
 	if (list_empty(jexps)) { /* cartesian */
 		stmt *stmts_ht = rel2bin_oahash_cart_build(be, rel, refs);
@@ -980,15 +978,8 @@ rel2bin_oahash_rightouterjoin(backend *be, sql_rel *rel, list *refs)
 			sub->cand = stmt_single(be, sub->cand, ps);
 		}
 		sub = subrel_project(be, sub, refs, rel);
+	}
 
-
-	}// else {
-	//	atom *a_null = atom_general(sql->sa, tpe_oid, NULL, 0);
-	//	stmt *stmt_null = stmt_atom(be, a_null); /* we just need the count of unmatched */
-	//	/*  X_nn:bat[:oid] := algebra.thetaselect(<m>, nil:bat[:any], true:bit, "=":str);*/
-	//	stmt *sel = stmt_thetaselect(be, hsh_mrk, NULL, stmt_null, "ne", tpe_oid);
-	//	hsh_mrk = stmt_project(be, sel, hsh_mrk);
-	//}
 	if (!hsh_mrk) return NULL;
 	hp_mrk = stmt_algebra_project(be, hp_mrk, hsh_mrk, stmt_bool(be,1), projectRef, get_pipeline(be));
 	// END existing code
