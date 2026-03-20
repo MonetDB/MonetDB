@@ -4222,7 +4222,7 @@ rel2bin_single(backend *be, stmt *s)
 stmt *
 rel_rename(backend *be, sql_rel *rel, stmt *sub)
 {
-	if (rel->exps) {
+	if (!list_empty(rel->exps)) {
 		node *en, *n;
 		list *l = sa_list(be->mvc->sa);
 
