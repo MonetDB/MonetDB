@@ -1322,6 +1322,7 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				*bid = id->batCacheid;
 				*uvl = vl->batCacheid;
 			} else {
+				BBPunfix(bn->batCacheid);
 				*bid = e_bat(TYPE_oid);
 				*uvl = e_bat(c->type.type->localtype);
 				if (*bid == BID_NIL || *uvl == BID_NIL) {
@@ -1354,8 +1355,7 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			BBPkeepref(bn);
 			*bid = bn->batCacheid;
 		}
-	}
-	else if (upd) { /*unpartitioned access to update bats*/
+	} else if (upd) { /*unpartitioned access to update bats*/
 		BAT *ui = NULL, *uv = NULL;
 		if (store->storage_api.bind_updates(m->session->tr, c, &ui, &uv) == LOG_ERR)
 			throw(SQL,"sql.bind",SQLSTATE(HY005) "Cannot access the update columns");
@@ -1365,8 +1365,7 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BBPkeepref(uv);
 		*bid = ui->batCacheid;
 		*uvl = uv->batCacheid;
-	}
-	else { /*unpartitioned access to base column*/
+	} else { /*unpartitioned access to base column*/
 		int coltype = getBatType(getArgType(mb, pci, 0));
 		b = store->storage_api.bind_col(m->session->tr, c, access);
 		if (b == NULL)
@@ -1675,6 +1674,7 @@ mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				*bid = id->batCacheid;
 				*uvl = vl->batCacheid;
 			} else {
+				BBPunfix(bn->batCacheid);
 				*bid = e_bat(TYPE_oid);
 				*uvl = e_bat((i->type==join_idx)?TYPE_oid:TYPE_lng);
 				if (*bid == BID_NIL || *uvl == BID_NIL) {
