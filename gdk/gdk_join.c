@@ -2778,12 +2778,13 @@ vkeyjoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 	 struct canditer *restrict lci, struct canditer *restrict rci,
 	 bool nil_matches, bool nil_on_miss, bool semi, bool only_misses,
 	 bool not_in, bool max_one, bool min_one,
-	 BUN estimate, lng t0, bool swapped,
+	 BUN estimate, lng t0, bool swapped, bool hash_cand,
 	 const char *reason)
 {
 	BAT *r1 = NULL;
 	BAT *r2 = NULL;
 	BAT *r3 = NULL;
+	bool locked = false;
 
 	assert(l->tvheap);
 	assert(r->tvheap);
@@ -2795,11 +2796,19 @@ vkeyjoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 
 	Hash *hsh;
-	char ext[32];
-	if (snprintf(ext, sizeof(ext), "thshjn%x",
-		     (unsigned) MT_getpid()) >= (int) sizeof(ext) ||
-	    (hsh = BAThash_impl(r, rci, true, ext)) == NULL)
-		return GDK_FAIL;
+	if (r->ustr && !hash_cand &&
+	    (BATcheckhash(r) ||
+	     (r->batRole == PERSISTENT && BAThash(r) == GDK_SUCCEED))) {
+		MT_rwlock_rdlock(&r->thashlock);
+		hsh = r->thash;
+		locked = true;
+	} else {
+		char ext[32];
+		if (snprintf(ext, sizeof(ext), "thshjn%x",
+			     (unsigned) MT_getpid()) >= (int) sizeof(ext) ||
+		    (hsh = BAThash_impl(r, rci, true, ext)) == NULL)
+			return GDK_FAIL;
+	}
 
 	BATiter li = bat_iterator(l);
 	BATiter ri = bat_iterator(r);
@@ -2811,41 +2820,20 @@ vkeyjoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 	bit defmark = 0;
 	if ((not_in || r3p) && !ri.nonil) {
 		BUN rb;
-		union {
-			bte b;
-			sht s;
-			int i;
-			lng l;
-		} u;
-		const void *nil;
-		switch (ri.width) {
-		case 1:
-			u.b = niloff == 0 ? 0 : niloff - GDK_VAROFFSET;
-			nil = &u.b;
-			break;
-		case 2:
-			u.s = niloff == 0 ? 0 : niloff - GDK_VAROFFSET;
-			nil = &u.s;
-			break;
-		case 4:
-			u.i = niloff;
-			nil = &u.i;
-			break;
-		case 8:
-			u.l = niloff;
-			nil = &u.l;
-			break;
-		}
-		HASHlooploc(&ri, hsh, rb, nil) {
+		HASHloop_var_t(&ri, hsh, rb, &niloff) {
 			if (r3p) {
 				defmark = bit_nil;
 				break;
 			}
-			HEAPfree(&hsh->heaplink, true);
-			HEAPfree(&hsh->heapbckt, true);
-			GDKfree(hsh);
 			bat_iterator_end(&li);
 			bat_iterator_end(&ri);
+			if (locked) {
+				MT_rwlock_rdunlock(&r->thashlock);
+			} else {
+				HEAPfree(&hsh->heaplink, true);
+				HEAPfree(&hsh->heapbckt, true);
+				GDKfree(hsh);
+			}
 			return nomatch(r1p, r2p, r3p, l, r, lci,
 				       bit_nil, false, false,
 				       __func__, t0);
@@ -2890,6 +2878,7 @@ vkeyjoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 		r1->tseqbase = oid_nil;
 
 	bool lskipped = false;
+	oid rseq = r->hseqbase;
 	while (lci->next < lci->ncand) {
 		GDK_CHECK_TIMEOUT(qry_ctx, counter, GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
 		oid lo = canditer_next(lci);
@@ -2904,44 +2893,20 @@ vkeyjoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 			}
 			mark = bit_nil;
 		} else {
-			BUN x;
-			switch (ri.width) {
-			case 1: {
-				uint8_t b = v == 0 ? 0 : (uint8_t) (v - GDK_VAROFFSET);
-				x = hash_bte(hsh, &b);
-				break;
-			}
-			case 2: {
-				uint16_t s = v == 0 ? 0 : (uint16_t) (v - GDK_VAROFFSET);
-				x = hash_sht(hsh, &s);
-				break;
-			}
-			case 4: {
-				uint32_t i = (uint32_t) v;
-				x = hash_int(hsh, &i);
-				break;
-			}
-			case 8: {
-				uint64_t l = (uint64_t) v;
-				x = hash_lng(hsh, &l);
-				break;
-			}
-			default:
-				MT_UNREACHABLE();
-			}
-			for (BUN rb = HASHget(hsh, x);
+			for (BUN rb = HASHget(hsh, HASHprobe(hsh, &v));
 			     rb != BUN_NONE;
 			     rb = HASHgetlink(hsh, rb)) {
-				oid ro = canditer_idx(rci, rb);
-				if (v != VarHeapVal(ri.base, ro - r->hseqbase, ri.width))
-					continue;
-				if (only_misses) {
-					nr++;
-					break;
+				oid ro;
+				if (v == VarHeapVal(ri.base, rb, ri.width) &&
+				    canditer_contains(rci, ro = (oid) (rb + rseq))) {
+					if (only_misses) {
+						nr++;
+						break;
+					}
+					HASHLOOPBODY();
+					if (semi)
+						break;
 				}
-				HASHLOOPBODY();
-				if (semi)
-					break;
 			}
 		}
 		if (nr == 0) {
@@ -2992,9 +2957,13 @@ vkeyjoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 			r1->trevsorted = false;
 	}
 
-	HEAPfree(&hsh->heaplink, true);
-	HEAPfree(&hsh->heapbckt, true);
-	GDKfree(hsh);
+	if (locked) {
+		MT_rwlock_rdunlock(&r->thashlock);
+	} else {
+		HEAPfree(&hsh->heaplink, true);
+		HEAPfree(&hsh->heapbckt, true);
+		GDKfree(hsh);
+	}
 
 	/* also set other bits of heap to correct value to indicate size */
 	BATsetcount(r1, BATcount(r1));
@@ -3056,9 +3025,13 @@ vkeyjoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
   bailout:
 	bat_iterator_end(&li);
 	bat_iterator_end(&ri);
-	HEAPfree(&hsh->heaplink, true);
-	HEAPfree(&hsh->heapbckt, true);
-	GDKfree(hsh);
+	if (locked) {
+		MT_rwlock_rdunlock(&r->thashlock);
+	} else {
+		HEAPfree(&hsh->heaplink, true);
+		HEAPfree(&hsh->heapbckt, true);
+		GDKfree(hsh);
+	}
 	BBPreclaim(r1);
 	BBPreclaim(r2);
 	BBPreclaim(r3);
@@ -3249,15 +3222,14 @@ hashjoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 
 	rl = rci->seq - r->hseqbase;
 	rh = canditer_last(rci) + 1 - r->hseqbase;
-	if (hash_cand) {
+	if (hash_cand || r->ustr) {
 		/* we need to create a hash on r specific for the
 		 * candidate list */
 		char ext[32];
-		assert(rci->s);
 		MT_thread_setalgorithm(swapped ? "hashjoin using candidate hash (swapped)" : "hashjoin using candidate hash");
 		TRC_DEBUG(ALGO, ALGOBATFMT ": creating "
-			  "hash for candidate list " ALGOBATFMT "%s%s\n",
-			  ALGOBATPAR(r), ALGOBATPAR(rci->s),
+			  "hash for candidate list " ALGOOPTBATFMT "%s%s\n",
+			  ALGOBATPAR(r), ALGOOPTBATPAR(rci->s),
 			  r->thash ? " ignoring existing hash" : "",
 			  swapped ? " (swapped)" : "");
 		if (snprintf(ext, sizeof(ext), "thshjn%x",
@@ -3936,7 +3908,7 @@ BATguess_uniques(BAT *b, struct canditer *ci)
  * is the estimated cost, the last three arguments receive some extra
  * information */
 double
-joincost(BAT *r, BUN lcount, struct canditer *rci,
+joincost(BAT *r, bool lustr, BUN lcount, struct canditer *rci,
 	 bool *hash, bool *phash, bool *cand)
 {
 	bool rhash;
@@ -3950,8 +3922,8 @@ joincost(BAT *r, BUN lcount, struct canditer *rci,
 
 	(void) BATcheckhash(r);
 	MT_rwlock_rdlock(&r->thashlock);
-	rhash = r->thash != NULL;
-	nheads = r->thash ? r->thash->nheads : 0;
+	rhash = r->thash != NULL && (!r->ustr || lustr);
+	nheads = rhash ? r->thash->nheads : 0;
 	cnt = BATcount(r);
 	MT_rwlock_rdunlock(&r->thashlock);
 
@@ -3972,7 +3944,7 @@ joincost(BAT *r, BUN lcount, struct canditer *rci,
 			rcost *= (double) cnt / nheads;
 		} else if ((parent = VIEWtparent(r)) != 0 &&
 			   (b = BATdescriptor(parent)) != NULL) {
-			if (BATcheckhash(b)) {
+			if (BATcheckhash(b) && (!b->ustr || lustr)) {
 				MT_rwlock_rdlock(&b->thashlock);
 				rhash = prhash = b->thash != NULL;
 				if (rhash) {
@@ -4563,7 +4535,7 @@ leftjoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			goto doreturn;
 		}
 	}
-	rcost = joincost(r, lci.ncand, &rci, &rhash, &prhash, &rcand);
+	rcost = joincost(r, l->ustr, lci.ncand, &rci, &rhash, &prhash, &rcand);
 	if (rcost < 0) {
 		rc = GDK_FAIL;
 		goto doreturn;
@@ -4576,7 +4548,7 @@ leftjoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		bool lhash, plhash, lcand, rkey = r->tkey;
 		double lcost;
 
-		lcost = joincost(l, rci.ncand, &lci, &lhash, &plhash, &lcand);
+		lcost = joincost(l, r->ustr, rci.ncand, &lci, &lhash, &plhash, &lcand);
 		if (lcost < 0) {
 			rc = GDK_FAIL;
 			goto doreturn;
@@ -4601,11 +4573,10 @@ leftjoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			if (l->tvheap &&
 			    r->tvheap &&
 			    l->tvheap->parentid == r->tvheap->parentid &&
-			    BBP_desc(VIEWvtparent(l))->tvkey &&
-			    BBP_desc(VIEWvtparent(r))->tvkey)
+			    BBP_desc(l->tvheap->parentid)->tvkey)
 				rc = vkeyjoin(&r2, &r1, NULL, r, l, &rci, &lci, nil_matches,
 					      false, false, false, false, false, false, estimate,
-					      t0, true, func);
+					      t0, true, lcand, func);
 			else
 				rc = hashjoin(&r2, &r1, NULL, r, l, &rci, &lci, nil_matches,
 					      false, false, false, false, false, false, estimate,
@@ -4674,12 +4645,11 @@ leftjoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	if (l->tvheap &&
 	    r->tvheap &&
 	    l->tvheap->parentid == r->tvheap->parentid &&
-	    BBP_desc(VIEWvtparent(l))->tvkey &&
-	    BBP_desc(VIEWvtparent(r))->tvkey)
+	    BBP_desc(l->tvheap->parentid)->tvkey)
 		rc = vkeyjoin(r1p, r2p, r3p, l, r, &lci, &rci,
 			      nil_matches, nil_on_miss, semi, only_misses,
 			      not_in, max_one, min_one, estimate, t0, false,
-			      func);
+			      rcand, func);
 	else
 		rc = hashjoin(r1p, r2p, r3p, l, r, &lci, &rci,
 			      nil_matches, nil_on_miss, semi, only_misses,
@@ -4954,8 +4924,8 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches
 		goto doreturn;
 	}
 
-	lcost = joincost(l, rci.ncand, &lci, &lhash, &plhash, &lcand);
-	rcost = joincost(r, lci.ncand, &rci, &rhash, &prhash, &rcand);
+	lcost = joincost(l, r->ustr, rci.ncand, &lci, &lhash, &plhash, &lcand);
+	rcost = joincost(r, l->ustr, lci.ncand, &rci, &rhash, &prhash, &rcand);
 	if (lcost < 0 || rcost < 0) {
 		rc = GDK_FAIL;
 		goto doreturn;
@@ -4987,11 +4957,10 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches
 		if (l->tvheap &&
 		    r->tvheap &&
 		    l->tvheap->parentid == r->tvheap->parentid &&
-		    BBP_desc(VIEWvtparent(l))->tvkey &&
-		    BBP_desc(VIEWvtparent(r))->tvkey)
+		    BBP_desc(l->tvheap->parentid)->tvkey)
 			rc = vkeyjoin(r2p ? r2p : &r2, r1p, NULL, r, l, &rci, &lci,
 				      nil_matches, false, false, false, false, false, false,
-				      estimate, t0, true,
+				      estimate, t0, true, lcand,
 				      __func__);
 		else
 			rc = hashjoin(r2p ? r2p : &r2, r1p, NULL, r, l, &rci, &lci,
@@ -5004,11 +4973,10 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches
 		if (l->tvheap &&
 		    r->tvheap &&
 		    l->tvheap->parentid == r->tvheap->parentid &&
-		    BBP_desc(VIEWvtparent(l))->tvkey &&
-		    BBP_desc(VIEWvtparent(r))->tvkey)
+		    BBP_desc(l->tvheap->parentid)->tvkey)
 			rc = vkeyjoin(r1p, r2p, NULL, l, r, &lci, &rci,
 				      nil_matches, false, false, false, false, false, false,
-				      estimate, t0, false,
+				      estimate, t0, false, rcand,
 				      __func__);
 		else
 			rc = hashjoin(r1p, r2p, NULL, l, r, &lci, &rci,

@@ -418,9 +418,16 @@ insert_string_bat(BAT *b, BATiter *ni, struct canditer *ci, bool force, bool may
 	assert(b->batCapacity >= b->batCount);
 	MT_lock_unset(&b->theaplock);
 	/* maintain hash */
-	for (r = oldcnt, cnt = BATcount(b); b->thash && r < cnt; r++) {
-		off = VarHeapVal(Tloc(b, 0), r, b->twidth);
-		HASHappend_locked(b, r, off == 0 ? str_nil : b->tvheap->base + off);
+	if (b->ustr) {
+		for (r = oldcnt, cnt = BATcount(b); b->thash && r < cnt; r++) {
+			off = VarHeapVal(Tloc(b, 0), r, b->twidth);
+			HASHappend_locked(b, r, &off);
+		}
+	} else {
+		for (r = oldcnt, cnt = BATcount(b); b->thash && r < cnt; r++) {
+			off = VarHeapVal(Tloc(b, 0), r, b->twidth);
+			HASHappend_locked(b, r, off == 0 ? str_nil : b->tvheap->base + off);
+		}
 	}
 	BUN nunique = b->thash ? b->thash->nunique : 0;
 	MT_rwlock_wrunlock(&b->thashlock);
@@ -1512,7 +1519,7 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 				locked = true;
 			}
 			if (old)
-				HASHdelete_locked(&bi, updid, old);
+				HASHdelete_locked(&bi, updid, bi.ustr ? &off : old);
 			else if (b->thash) {
 				doHASHdestroy(b, b->thash);
 				b->thash = NULL;
@@ -1599,7 +1606,7 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 			default:
 				MT_UNREACHABLE();
 			}
-			HASHinsert_locked(&bi, updid, new);
+			HASHinsert_locked(&bi, updid, bi.ustr ? &prevoff : new);
 
 		}
 		if (locked) {
@@ -3282,7 +3289,7 @@ BATcount_no_nil(BAT *b, BAT *s)
 	}
 	if (BATcheckhash(b)) {
 		BUN p = 0;
-		const void *nil = ATOMnilptr(b->ttype);
+		const void *nil = b->ustr ? &(var_t){0} : ATOMnilptr(b->ttype);
 		cnt = ci.ncand;
 		HASHloop(&bi, b->thash, p, nil)
 			if (canditer_contains(&ci, p + b->hseqbase))
@@ -3342,11 +3349,6 @@ BATcount_no_nil(BAT *b, BAT *s)
 			cnt += !is_inet6_nil(((const inet6 *) p)[canditer_next(&ci) - hseq]);
 		break;
 	case TYPE_str:
-		if (bi.ustr) {
-			/* TODO: check whether nil occurs in ustrbat; if
-			 * not, return BATcount(b), else count offsets
-			 * != nil offset */
-		}
 		if (bi.vkey) {
 			if (GDK_ELIMDOUBLES(bi.vh)) {
 				off = strLocate(bi.vh, str_nil);

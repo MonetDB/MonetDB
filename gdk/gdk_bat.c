@@ -1155,10 +1155,18 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 				VALclear(&maxprop);
 			if (b->thash) {
 				p -= count;
-				for (BUN i = 0; i < count; i++) {
-					t = ((void **) values)[i];
-					HASHappend_locked(b, p, t);
-					p++;
+				if (b->ustr) {
+					for (BUN i = 0; i < count; i++) {
+						var_t o = VarHeapVal(b->theap->base, p, b->twidth);
+						HASHappend_locked(b, p, &o);
+						p++;
+					}
+				} else {
+					for (BUN i = 0; i < count; i++) {
+						t = ((void **) values)[i];
+						HASHappend_locked(b, p, t);
+						p++;
+					}
 				}
 				nunique = b->thash ? b->thash->nunique : 0;
 			}
@@ -1218,7 +1226,7 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 				return rc;
 			}
 			if (b->thash) {
-				HASHappend_locked(b, p, t);
+				HASHappend_locked(b, p, b->ustr ? &(var_t){0} : t);
 			}
 			p++;
 		}
@@ -1415,7 +1423,7 @@ BUNdelete(BAT *b, oid o)
 	/* load hash so that we can maintain it */
 	(void) BATcheckhash(b);
 
-	BUN nunique = HASHdelete(&bi, p, BUNtail(&bi, p));
+	BUN nunique = HASHdelete(&bi, p, bi.ustr ? &(var_t){VarHeapVal(bi.base, p, bi.width)} : BUNtail(&bi, p));
 	ATOMdel(b->ttype, b->tvheap, (var_t *) BUNtloc(&bi, p));
 	bat_iterator_end(&bi);
 
@@ -1507,6 +1515,7 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 	/* load hash so that we can maintain it */
 	(void) BATcheckhash(b);
 	MT_rwlock_wrlock(&b->thashlock);
+	var_t off = 0;
 	for (BUN i = 0; i < count; i++) {
 		BUN p = autoincr ? positions[0] - b->hseqbase + i : positions[i] - b->hseqbase;
 		const void *t = b->ttype && b->tvheap ?
@@ -1537,13 +1546,14 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 		} else if (bi.type == TYPE_msk) {
 			val = BUNtmsk(&bi, p);
 		} else if (b->tvheap) {
-			var_t off = VarHeapVal(bi.base, p, bi.width);
+			off = VarHeapVal(bi.base, p, bi.width);
 			if (off == 0)
 				val = ATOMnilptr(bi.type);
 			else if (off < bi.vhfree)
 				val = bi.vh->base + off;
 			else
 				val = NULL; /* bad offset */
+
 		} else {
 			val = BUNtloc(&bi, p);
 		}
@@ -1596,7 +1606,7 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 					}
 				}
 			}
-			HASHdelete_locked(&bi, p, val);	/* first delete old value from hash */
+			HASHdelete_locked(&bi, p, b->ustr ? &off : val);	/* first delete old value from hash */
 		} else {
 			/* out of range old value, so the properties and
 			 * hash cannot be trusted */
@@ -1648,6 +1658,7 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 				MT_rwlock_wrunlock(&b->thashlock);
 				goto bailout;
 			}
+			off = _d;
 			if (b->twidth < SIZEOF_VAR_T &&
 			    (b->twidth <= 2 && _d != 0 ? _d - GDK_VAROFFSET : _d) >= ((size_t) 1 << (8 << b->tshift))) {
 				/* doesn't fit in current heap, upgrade it */
@@ -1723,7 +1734,7 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 			}
 		}
 
-		HASHinsert_locked(&bi, p, t);	/* insert new value into hash */
+		HASHinsert_locked(&bi, p, b->ustr ? &off : t);	/* insert new value into hash */
 
 		prv = p > 0 ? p - 1 : BUN_NONE;
 		nxt = p < last ? p + 1 : BUN_NONE;
@@ -1917,6 +1928,16 @@ BUNfnd(BAT *b, const void *v)
 		if (BATordered(b) || BATordered_rev(b))
 			return SORTfnd(b, v);
 	}
+	var_t off = 0;
+	if (b->ustr) {
+		BAT *u = getUstrBat();
+		if (u == NULL || (r = BUNfnd(u, v)) == BUN_NONE)
+			return r;
+		bi = bat_iterator(u);
+		off = VarHeapVal(bi.base, r, bi.width);
+		bat_iterator_end(&bi);
+		v = &off;
+	}
 	bi = bat_iterator(b);	/* outside of hashlock */
 	if (BAThash(b) == GDK_SUCCEED) {
 		MT_rwlock_rdlock(&b->thashlock);
@@ -1968,8 +1989,13 @@ BUNfnd(BAT *b, const void *v)
 				break;
 			break;
 		case TYPE_str:
-			HASHloop_str(&bi, b->thash, r, v)
-				break;
+			if (bi.ustr) {
+				HASHloop_var_t(&bi, b->thash, r, v)
+					break;
+			} else {
+				HASHloop_str(&bi, b->thash, r, v)
+					break;
+			}
 			break;
 		default:
 			HASHloop(&bi, b->thash, r, v)

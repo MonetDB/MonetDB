@@ -86,13 +86,15 @@ virtualize(BAT *bn)
 	return bn;
 }
 
-#define HASHloop_bound(bi, h, hb, v, lo, hi)		\
-	for (hb = HASHget(h, HASHprobe((h), v));	\
-	     hb != BUN_NONE;				\
-	     hb = HASHgetlink(h,hb))			\
-		if (hb >= (lo) && hb < (hi) &&		\
-		    (eq == NULL ||			\
-		     (*eq)(v, BUNtail(bi, hb))))
+#define HASHloop_bound(bi, h, hb, v, lo, hi)				\
+	for (hb = HASHget(h, HASHprobe((h), v));			\
+	     hb != BUN_NONE;						\
+	     hb = HASHgetlink(h,hb))					\
+		if (hb >= (lo) && hb < (hi) &&				\
+		    (eq == NULL ||					\
+		     (bi->ustr ?					\
+		      *(var_t *) v == VarHeapVal(bi->base, hb, bi->width) : \
+		      (*eq)(v, BUNtail(bi, hb)))))
 
 static BAT *
 hashselect(BATiter *bi, struct canditer *restrict ci, BAT *bn,
@@ -116,7 +118,16 @@ hashselect(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 	h = canditer_last(ci) + 1 - seq;
 
 	*algo = "hashselect";
-	if (phash && (b2 = BATdescriptor(VIEWtparent(bi->b))) != NULL) {
+	var_t off = 0;
+	if (bi->ustr) {
+		b2 = getUstrBat();
+		if ((i = BUNfnd(b2, tl)) == BUN_NONE)
+			return bn;
+		pbi = bat_iterator(b2);
+		off = VarHeapVal(pbi.base, i, pbi.width);
+		bat_iterator_end(&pbi);
+		tl = &off;
+	} else if (phash && (b2 = BATdescriptor(VIEWtparent(bi->b))) != NULL) {
 		*algo = "hashselect on parent";
 		TRC_DEBUG(ALGO, ALGOBATFMT
 			  " using parent(" ALGOBATFMT ") "
@@ -1695,7 +1706,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 	 * large; check for existence of hash last since that may
 	 * involve I/O */
 	if ((equi || antiequi) && !bi.sorted && !bi.revsorted) {
-		double cost = joincost(b, 1, &ci, &havehash, &phash, NULL);
+		double cost = joincost(b, true, 1, &ci, &havehash, &phash, NULL);
 		if (cost > 0 && cost < ci.ncand) {
 			wanthash = true;
 			if (havehash) {

@@ -738,31 +738,11 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci,
 	const char *nme = GDKinmemory(b->theap->farmid) ? ":memory:" : BBP_physical(b->batCacheid);
 	BATiter bi = bat_iterator(b);
 	unsigned int tpe = ATOMbasetype(bi.type);
-	if (offsets) {
-		assert(b->tvheap);
-		switch (bi.width) {
-		case 1:
-			tpe = TYPE_bte;
-			break;
-		case 2:
-			tpe = TYPE_sht;
-			break;
-		case 4:
-			tpe = TYPE_int;
-			break;
-#if SIZEOF_VAR_T == 8
-		case 8:
-			tpe = TYPE_lng;
-			break;
-#endif
-		default:
-			MT_UNREACHABLE();
-		}
-	}
 	bool hascand = ci->tpe != cand_dense || ci->ncand != bi.count;
 
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 
+	assert(!offsets || ATOMvarsized(b->ttype));
 	assert(strcmp(ext, "thash") != 0 || !hascand);
 	assert(bi.type != TYPE_msk);
 	assert(bi.type != TYPE_void);
@@ -851,8 +831,9 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci,
 		p = 0;
 		HEAPfree(&h->heapbckt, true);
 		/* create the hash structures */
-		if (HASHnew(h, ATOMtype(tpe), BATcapacity(b),
-			    mask, ci->ncand, true) != GDK_SUCCEED) {
+		if (HASHnew(h, offsets ? TYPE_oid : ATOMtype(tpe),
+			    BATcapacity(b), mask, ci->ncand,
+			    true) != GDK_SUCCEED) {
 			HEAPfree(&h->heaplink, true);
 			GDKfree(h);
 			bat_iterator_end(&bi);
@@ -893,6 +874,34 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci,
 			starthash(inet6);
 			break;
 		default: {
+			if (offsets) {
+				TIMEOUT_LOOP_IDX(p, cnt1, qry_ctx) {
+					var_t off = VarHeapVal(bi.base, o - b->hseqbase, bi.width);
+					c = hash_oid(h, &off);
+					hget = HASHget(h, c);
+					if (hget == BUN_NONE) {
+						if (h->nheads == maxslots)
+							TIMEOUT_LOOP_BREAK; /* mask too full */
+						h->nheads++;
+						h->nunique++;
+					} else {
+						for (hb = hget;
+						     hb != BUN_NONE;
+						     hb = HASHgetlink(h, hb)) {
+							if (off == VarHeapVal(bi.base, hb, bi.width))
+								break;
+						}
+						h->nunique += hb == BUN_NONE;
+					}
+					HASHputlink(h, p, hget);
+					HASHput(h, c, p);
+					o = canditer_next(ci);
+				}
+				TIMEOUT_CHECK(qry_ctx,
+					      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
+				break;
+			}
+
 			bool (*atomeq)(const void *, const void *) = ATOMequal(tpe);
 			TIMEOUT_LOOP_IDX(p, cnt1, qry_ctx) {
 				const void *restrict v = BUNtail(&bi, o - b->hseqbase);
@@ -976,6 +985,32 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci,
 		finishhash(inet6);
 		break;
 	default: {
+		if (offsets) {
+			TIMEOUT_LOOP(ci->ncand - p, qry_ctx) {
+				var_t off = VarHeapVal(bi.base, o - b->hseqbase, bi.width);
+				c = hash_oid(h, &off);
+				hget = HASHget(h, c);
+				h->nheads += hget == BUN_NONE;
+				if (!hascand) {
+					for (hb = hget;
+					     hb != BUN_NONE;
+					     hb = HASHgetlink(h, hb)) {
+						if (off == VarHeapVal(bi.base, hb, bi.width))
+							break;
+					}
+					h->nunique += hb == BUN_NONE;
+					o = canditer_next_dense(ci);
+				} else {
+					o = canditer_next(ci);
+				}
+				HASHputlink(h, p, hget);
+				HASHput(h, c, p);
+				p++;
+			}
+			TIMEOUT_CHECK(qry_ctx,
+				      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
+			break;
+		}
 		bool (*atomeq)(const void *, const void *) = ATOMequal(tpe);
 		TIMEOUT_LOOP(ci->ncand - p, qry_ctx) {
 			const void *restrict v = BUNtail(&bi, o - b->hseqbase);
@@ -1070,7 +1105,7 @@ BAThash(BAT *b)
 	if (b->thash == NULL) {
 		struct canditer ci;
 		canditer_init(&ci, b, NULL);
-		if ((b->thash = BAThash_impl(b, &ci, false, "thash")) == NULL) {
+		if ((b->thash = BAThash_impl(b, &ci, b->ustr, "thash")) == NULL) {
 			MT_rwlock_wrunlock(&b->thashlock);
 			return GDK_FAIL;
 		}
