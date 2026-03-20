@@ -63,3 +63,5 @@ KNOWNFAIL?7774-insert-into-renamed-table-assertion-failure
 7865-unnest-cte-crash
 7867-push-groupby-down
 7872-exp-type-check-failed
+KNOWNFAIL?7873-push_up_join-assertion-failure
+KNOWNFAIL?7874-rel2bin_join-assertion-failure
