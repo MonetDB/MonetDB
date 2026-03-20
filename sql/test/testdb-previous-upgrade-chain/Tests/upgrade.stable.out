@@ -368,3 +368,10 @@ END;
 update sys.functions set system = true where not system and schema_id = 2000 and name = 'dump_database' and type = 5;
 update sys._tables set system = true where not system and schema_id = 2000 and name in ('dump_tables', 'describe_tables');
 
+Running database upgrade commands:
+ALTER TABLE sys.function_types SET READ WRITE;
+COMMIT;
+INSERT INTO sys.function_types VALUES (8, 'Group filter function', 'GROUP FILTER FUNCTION');
+COMMIT;
+ALTER TABLE sys.function_types SET READ ONLY;
+
