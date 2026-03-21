@@ -33,6 +33,7 @@ pp_dynamic_slices(backend *be, stmt *sub)
 {
 	if (sub && sub->cand)
 		sub  = subrel_project(be, sub, NULL, NULL);
+	// FIXME: a better way to determine if 'sub' is an oahash-table. sub->op1 is the hash-payload!
 	node *n = sub->op1 ? sub->op4.lval->t : sub->op4.lval->h; /* for hash get last */
 	stmt *sc = n->data;
 
