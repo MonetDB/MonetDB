@@ -3229,9 +3229,15 @@ OAHASHexplode_unmatched(Client ctx, bat *res, const bat *ht_sink, const bat *unm
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 	BUN cnt = BATcount(u), ttlcnt = 0;
-	TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) {
-		ttlcnt += freq[umrk[i]];
-	}
+	// FIXME: replace this hacky solution with proper BATiter!!!
+	if (umrk)
+			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) {
+					ttlcnt += freq[umrk[i]];
+			}
+	else /* !umrk: u has dense tail */
+			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) {
+					ttlcnt += freq[u->hseqbase+i];
+			}
 	TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "oahash.explode_unmatched", RUNTIME_QRY_TIMEOUT));
 	if (err)
 		goto error;
@@ -3306,6 +3312,7 @@ OAHASHnth_slice(Client ctx, bat *slice, bat *ht_sink, int *slice_nr)
 		BBPunfix(b->batCacheid);
 		return createException(SQL, "slicer.nth_slice",	SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
+	// FIXME: replace the hacky Tloc with proper BUNappend or something
 	oid *o = Tloc(r, 0);
 	BUN j = 0;
 	for (BUN i = s; i<e; i++) {
