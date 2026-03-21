@@ -281,6 +281,18 @@ rel2bin_oahash_build(backend *be, sql_rel *rel, list *refs)
 		stmt *sub = rel2bin_materialize(be, l, refs, false);
 		if (sub->cand)
 			sub = subrel_project(be, sub, refs, rel);
+		if (exps_prj_hsh) {
+		/* reduce the resulting columns accordingly. just find the projection columns from sub and add them as stmts_hp */
+		// FIXME: add the (references to the) projection columns to sub->op1, but it now causes problem with pp_dynamic_slices. See the FIXME note there
+			list *ll = sa_list(be->mvc->sa);
+			for (node *n = exps_prj_hsh->h; n; n = n->next) {
+					sql_exp *e = n->data;
+					stmt *payload = exp_bin(be, e, sub, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
+					assert(payload); /* must find */
+					append(ll, payload);
+			}
+			sub = stmt_list(be, ll);
+		}
 		return sub;
 	}
 
