@@ -193,7 +193,7 @@ avg_num_deltas(lng)
 			goto cleanup;					\
 		populate_segment_tree(avg_num_deltas##TPE, ncount, INIT_AGGREGATE_AVG_NUM, COMPUTE_LEVEL0_AVG_NUM, COMPUTE_LEVELN_AVG_NUM, TPE, NOTHING, NOTHING); \
 		for (; k < i; k++)					\
-			if ((lng)(start[k]-j) >= 0)				\
+			if (start[k] >= j)				\
 				compute_on_segment_tree(avg_num_deltas##TPE, start[k] - j, end[k] - j, INIT_AGGREGATE_AVG_NUM, COMPUTE_LEVELN_AVG_NUM, FINALIZE_AGGREGATE_AVG_NUM, TPE, NOTHING, NOTHING); \
 		j = k;							\
 	} while (0)
@@ -298,7 +298,7 @@ avg_fp_deltas(dbl)
 			goto cleanup;					\
 		populate_segment_tree(avg_fp_deltas_##TPE, ncount, INIT_AGGREGATE_AVG_FP, COMPUTE_LEVEL0_AVG_FP, COMPUTE_LEVELN_AVG_FP, TPE, NOTHING, NOTHING); \
 		for (; k < i; k++)					\
-			if ((lng)(start[k]-j) >= 0)				\
+			if (start[k] >= j)				\
 				compute_on_segment_tree(avg_fp_deltas_##TPE, start[k] - j, end[k] - j, INIT_AGGREGATE_AVG_FP, COMPUTE_LEVELN_AVG_FP, FINALIZE_AGGREGATE_AVG_FP, TPE, NOTHING, NOTHING); \
 		j = k;							\
 	} while (0)
@@ -384,7 +384,7 @@ GDKanalyticalavg(BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, int frame_type
 #else
 	lng sum = 0;
 #endif
-	BAT *st = NULL;
+	Heap *st = NULL;
 
 	assert(np == NULL || cnt == 0 || np[0] == 0);
 	if (cnt > 0) {
@@ -420,7 +420,8 @@ cleanup:
 	bat_iterator_end(&bi);
 	bat_iterator_end(&si);
 	bat_iterator_end(&ei);
-	BBPreclaim(st);
+	if (st)
+		HEAPdecref(st, true);
 	if (res != GDK_SUCCEED) {
 		BBPreclaim(r);
 		r = NULL;
@@ -579,7 +580,7 @@ avg_int_deltas(lng)
 			goto cleanup;					\
 		populate_segment_tree(avg_int_deltas_##TPE, ncount, INIT_AGGREGATE_AVG_INT, COMPUTE_LEVEL0_AVG_INT, COMPUTE_LEVELN_AVG_INT, TPE, NOTHING, NOTHING); \
 		for (; k < i; k++)					\
-			if ((lng)(start[k]-j) >= 0)				\
+			if (start[k] >= j)				\
 				compute_on_segment_tree(avg_int_deltas_##TPE, start[k] - j, end[k] - j, INIT_AGGREGATE_AVG_INT, COMPUTE_LEVELN_AVG_INT, FINALIZE_AGGREGATE_AVG_INT, TPE, NOTHING, NOTHING); \
 		j = k;							\
 	} while (0)
@@ -653,7 +654,7 @@ GDKanalyticalavginteger(BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, int fra
 	bit *np = pi.base, *op = oi.base;
 	void *segment_tree = NULL;
 	gdk_return res = GDK_SUCCEED;
-	BAT *st = NULL;
+	Heap *st = NULL;
 
 	assert(np == NULL || cnt == 0 || np[0] == 0);
 	if (cnt > 0) {
@@ -689,7 +690,8 @@ cleanup:
 	bat_iterator_end(&bi);
 	bat_iterator_end(&si);
 	bat_iterator_end(&ei);
-	BBPreclaim(st);
+	if (st)
+		HEAPdecref(st, true);
 	if (res != GDK_SUCCEED) {
 		BBPreclaim(r);
 		r = NULL;
@@ -850,7 +852,7 @@ typedef struct stdev_var_deltas {
 			goto cleanup;					\
 		populate_segment_tree(stdev_var_deltas, ncount, INIT_AGGREGATE_STDEV_VARIANCE, COMPUTE_LEVEL0_STDEV_VARIANCE, COMPUTE_LEVELN_STDEV_VARIANCE, TPE, SAMPLE, OP); \
 		for (; k < i; k++)					\
-			if ((lng)(start[k]-j) >= 0)				\
+			if (start[k] >= j)				\
 				compute_on_segment_tree(stdev_var_deltas, start[k] - j, end[k] - j, INIT_AGGREGATE_STDEV_VARIANCE, COMPUTE_LEVELN_STDEV_VARIANCE, FINALIZE_AGGREGATE_STDEV_VARIANCE, TPE, SAMPLE, OP); \
 		j = k;							\
 	} while (0)
@@ -930,7 +932,7 @@ GDKanalytical_##NAME(BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, int frame_
 	dbl *rb = (dbl *) Tloc(r, 0), mean = 0, m2 = 0, delta;		\
 	void *segment_tree = NULL;					\
 	gdk_return res = GDK_SUCCEED;					\
-	BAT *st = NULL;							\
+	Heap *st = NULL;						\
 									\
 	assert(np == NULL || cnt == 0 || np[0] == 0);			\
 	if (cnt > 0) {							\
@@ -970,7 +972,8 @@ cleanup:								\
 	bat_iterator_end(&bi);						\
 	bat_iterator_end(&si);						\
 	bat_iterator_end(&ei);						\
-	BBPreclaim(st);							\
+	if (st)								\
+		HEAPdecref(st, true);					\
 	if (res != GDK_SUCCEED) {					\
 		BBPreclaim(r);						\
 		r = NULL;						\
@@ -1136,7 +1139,7 @@ typedef struct covariance_deltas {
 			goto cleanup;					\
 		populate_segment_tree(covariance_deltas, ncount, INIT_AGGREGATE_COVARIANCE, COMPUTE_LEVEL0_COVARIANCE, COMPUTE_LEVELN_COVARIANCE, TPE, SAMPLE, OP); \
 		for (; k < i; k++)					\
-			if ((lng)(start[k]-j) >= 0)				\
+			if (start[k] >= j)				\
 				compute_on_segment_tree(covariance_deltas, start[k] - j, end[k] - j, INIT_AGGREGATE_COVARIANCE, COMPUTE_LEVELN_COVARIANCE, FINALIZE_AGGREGATE_COVARIANCE, TPE, SAMPLE, OP); \
 		j = k;							\
 	} while (0)
@@ -1162,7 +1165,7 @@ GDKanalytical_##NAME(BAT *p, BAT *o, BAT *b1, BAT *b2, BAT *s, BAT *e, int tpe, 
 	dbl *rb = (dbl *) Tloc(r, 0), mean1 = 0, mean2 = 0, m2 = 0, delta1, delta2; \
 	void *segment_tree = NULL;					\
 	gdk_return res = GDK_SUCCEED;					\
-	BAT *st = NULL;							\
+	Heap *st = NULL;						\
 									\
 	assert(np == NULL || cnt == 0 || np[0] == 0);			\
 	if (cnt > 0) {							\
@@ -1203,7 +1206,8 @@ cleanup:								\
 	bat_iterator_end(&b2i);						\
 	bat_iterator_end(&si);						\
 	bat_iterator_end(&ei);						\
-	BBPreclaim(st);							\
+	if (st)								\
+		HEAPdecref(st, true);					\
 	if (res != GDK_SUCCEED) {					\
 		BBPreclaim(r);						\
 		r = NULL;						\
@@ -1402,7 +1406,7 @@ typedef struct correlation_deltas {
 			goto cleanup;					\
 		populate_segment_tree(correlation_deltas, ncount, INIT_AGGREGATE_CORRELATION, COMPUTE_LEVEL0_CORRELATION, COMPUTE_LEVELN_CORRELATION, TPE, SAMPLE, OP); \
 		for (; k < i; k++)					\
-			if ((lng)(start[k]-j) >= 0)				\
+			if (start[k] >= j)				\
 				compute_on_segment_tree(correlation_deltas, start[k] - j, end[k] - j, INIT_AGGREGATE_CORRELATION, COMPUTE_LEVELN_CORRELATION, FINALIZE_AGGREGATE_CORRELATION, TPE, SAMPLE, OP); \
 		j = k;							\
 	} while (0)
@@ -1428,7 +1432,7 @@ GDKanalytical_correlation(BAT *p, BAT *o, BAT *b1, BAT *b2, BAT *s, BAT *e, int 
 	dbl *rb = (dbl *) Tloc(r, 0), mean1 = 0, mean2 = 0, up = 0, down1 = 0, down2 = 0, delta1, delta2, aux, rr;
 	void *segment_tree = NULL;
 	gdk_return res = GDK_SUCCEED;
-	BAT *st = NULL;
+	Heap *st = NULL;
 
 	assert(np == NULL || cnt == 0 || np[0] == 0);
 	if (cnt > 0) {
@@ -1469,7 +1473,8 @@ cleanup:
 	bat_iterator_end(&b2i);
 	bat_iterator_end(&si);
 	bat_iterator_end(&ei);
-	BBPreclaim(st);
+	if (st)
+		HEAPdecref(st, true);
 	if (res != GDK_SUCCEED) {
 		BBPreclaim(r);
 		r = NULL;

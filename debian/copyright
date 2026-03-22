@@ -8,7 +8,7 @@ Copyright: 2024 - 2026 MonetDB Foundation
            August 2008 - 2023 MonetDB B.V.
            1997 - July 2008 CWI
 License: MPL-2.0
-Reference: COPYING
+Reference: LICENSE
 
 Files: clients/odbc/driver/*
 Copyright: 2024 - 2026 MonetDB Foundation

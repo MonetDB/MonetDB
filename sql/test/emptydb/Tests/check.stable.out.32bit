@@ -5570,6 +5570,7 @@ select 'null in fkeys.delete_action', delete_action, * from sys.fkeys where dele
 [ "sys.function_types",	"Filter function",	"FILTER FUNCTION"	]
 [ "sys.function_types",	"Function returning a table",	"FUNCTION"	]
 [ "sys.function_types",	"Scalar function",	"FUNCTION"	]
+[ "sys.function_types",	"Group filter function",	"GROUP FILTER FUNCTION"	]
 [ "sys.function_types",	"Loader function",	"LOADER"	]
 [ "sys.function_types",	"Procedure",	"PROCEDURE"	]
 [ "sys.function_types",	"Analytic function",	"WINDOW"	]

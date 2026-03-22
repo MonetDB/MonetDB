@@ -1,0 +1,32 @@
+query I
+SELECT x
+FROM
+(
+    SELECT 1 AS x
+    UNION
+    SELECT 1
+    FROM
+	(
+		SELECT 1 AS x
+		UNION
+		SELECT 1 AS x
+	)
+	GROUP BY x
+	HAVING COUNT(*) >
+	(
+		SELECT 1
+        WHERE x IN
+		(
+			SELECT *
+			FROM
+			(
+				WITH y AS (SELECT 1)
+				SELECT 1
+				FROM y
+				ORDER BY CASE WHEN x THEN x < ANY (x < (WITH z AS (SELECT 1) SELECT * FROM z)) END
+			)
+		)
+	)
+) AS x
+----
+1

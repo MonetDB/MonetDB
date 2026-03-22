@@ -919,9 +919,9 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 		return sql_error(sql, 02, SQLSTATE(42000) "CREATE %s: %ss cannot return tables", F, fn);
 	else if (res && type == F_PROC)
 		return sql_error(sql, 02, SQLSTATE(42000) "CREATE %s: procedures cannot have return parameters", F);
-	else if (res && (type == F_FILT || type == F_LOADER))
+	else if (res && (type == F_FILT || type == F_LOADER || type == F_GROUPFILT))
 		return sql_error(sql, 02, SQLSTATE(42000) "CREATE %s: %s functions don't have to specify a return type", F, fn);
-	else if (!res && !(type == F_PROC || type == F_FILT || type == F_LOADER))
+	else if (!res && !(type == F_PROC || type == F_FILT || type == F_LOADER || type == F_GROUPFILT))
 		return sql_error(sql, 02, SQLSTATE(42000) "CREATE %s: %ss require a return type", F, fn);
 	else if (lang == FUNC_LANG_MAL && type == F_LOADER)
 		return sql_error(sql, 02, SQLSTATE(42000) "CREATE %s: %s functions creation via MAL not supported", F, fn);
@@ -938,7 +938,7 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 
 	type_list = create_type_list(sql, params, 1);
 
-	if ((sf = sql_bind_func_(sql, s->base.name, fname, type_list, type, true, true)) != NULL && create) {
+	if ((sf = sql_bind_func_(sql, s->base.name, fname, type_list, type==F_GROUPFILT?F_FILT:type, true, true)) != NULL && create) {
 		if (sf->func->private) { /* cannot create a function using a private name or replace a existing one */
 			list_destroy(type_list);
 			return sql_error(sql, 02, SQLSTATE(42000) "CREATE %s: name '%s' cannot be used", F, fname);
@@ -974,9 +974,9 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 		sql->errstr[0] = '\0';
 	}
 
-	if (create && (type == F_FUNC || type == F_AGGR || type == F_FILT)) {
+	if (create && (type == F_FUNC || type == F_AGGR || type == F_FILT || type == F_GROUPFILT)) {
 		sql_subfunc *found = NULL;
-		if ((found = sql_bind_func_(sql, s->base.name, fname, type_list, (type == F_FUNC || type == F_FILT) ? F_AGGR : F_FUNC, true, true))) {
+		if ((found = sql_bind_func_(sql, s->base.name, fname, type_list, (type == F_FUNC || type == F_FILT || type == F_GROUPFILT) ? F_AGGR : F_FUNC, true, true))) {
 			list_destroy(type_list);
 			if (found->func->private) /* cannot create a function using a private name or replace a existing one */
 				return sql_error(sql, 02, SQLSTATE(42000) "CREATE %s: name '%s' cannot be used", F, fname);
@@ -1251,7 +1251,7 @@ resolve_func(mvc *sql, const char *sname, const char *name, dlist *typelist, sql
 				e = sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "%s %s: no such %s '%s'", op, F, fn, name);
 			return e;
 		}
-	} else if (((is_func && type != F_FILT) && !func->res) || (!is_func && func->res)) {
+	} else if (((is_func && type != F_FILT && type != F_GROUPFILT) && !func->res) || (!is_func && func->res)) {
 		list_destroy(list_func);
 		list_destroy(type_list);
 		return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "%s %s: cannot drop %s '%s'", op, F, fn, name);

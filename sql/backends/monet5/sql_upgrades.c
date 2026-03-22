@@ -375,6 +375,30 @@ sql_drop_shp(Client c)
 	return SQLstatementIntern(c, query, "update", true, false, NULL);
 }
 
+
+static str
+sql_update_generator(Client c)
+{
+	res_table *output;
+	char *err = SQLstatementIntern(c, "select func_id from sys.args where func_id in (select id from sys.functions where name = 'generate_series' and schema_id = 2000) and name = 'last';\n", "update", true, false, &output);
+	if (err)
+		return err;
+	BAT *b = BATdescriptor(output->cols[0].b);
+	if (b) {
+		if (BATcount(b) > 0) {
+			static const char query[] =
+				"update sys.args set name = 'limit' where name = 'last' and func_id in (select id from sys.functions where schema_id = 2000 and name = 'generate_series' and func like '% last %');\n"
+				"update sys.functions set func = replace(func, ' last ', ' \"limit\" ') where schema_id = 2000 and name = 'generate_series' and func like '% last %';\n";
+			printf("Running database upgrade commands:\n%s\n", query);
+			fflush(stdout);
+			err = SQLstatementIntern(c, query, "update", true, false, NULL);
+		}
+		BBPunfix(b->batCacheid);
+	}
+	res_table_destroy(output);
+	return err;
+}
+
 static str
 sql_update_jan2022(Client c, mvc *sql)
 {
@@ -5333,7 +5357,7 @@ sql_update_dec2025_sp1(Client c, mvc *sql, sql_schema *s)
 }
 
 static str
-sql_update_default(Client c, mvc *sql, sql_schema *s)
+sql_update_dec2025_sp2(Client c, mvc *sql, sql_schema *s)
 {
 	char *err;
 	res_table *output;
@@ -5342,25 +5366,36 @@ sql_update_default(Client c, mvc *sql, sql_schema *s)
 	(void) sql;
 	(void) s;
 
-	/* 2048 is id of column sys.table_partitions.id */
-	err = SQLstatementIntern(c, "select * from sys.dependencies where id = 2048 and depend_id = (select f.id from sys.functions f where name = 'get_merge_table_partition_expressions');\n", "update", true, false, &output);
+	/* better optimizers recognize that what before was seen as a
+	 * dependency in fact wasn't */
+	err = SQLstatementIntern(c, "select * from sys.dependencies where (id, depend_id) in (select c.id, f.id from sys.functions f, sys._tables t, sys._columns c, sys.dependencies d where c.table_id = t.id and f.id = d.depend_id and c.id = d.id and f.schema_id = 2000 and t.schema_id = 2000 and (f.name, t.name, c.name) in (values ('get_merge_table_partition_expressions', 'table_partitions', 'id')));\n", "update", true, false, &output);
 	if (err)
 		return err;
 	b = BATdescriptor(output->cols[0].b);
-	if (b != NULL) {
-		if (BATcount(b) != 0) {
-			const char query[] =
-				"delete from sys.dependencies where id = 2048 and depend_id = (select f.id from sys.functions f where name = 'get_merge_table_partition_expressions');\n";
+	if (b) {
+		if (BATcount(b) > 0) {
+			static const char query[] =
+				"delete from sys.dependencies where (id, depend_id) in (select c.id, f.id from sys.functions f, sys._tables t, sys._columns c, sys.dependencies d where c.table_id = t.id and f.id = d.depend_id and c.id = d.id and f.schema_id = 2000 and t.schema_id = 2000 and (f.name, t.name, c.name) in (values ('get_merge_table_partition_expressions', 'table_partitions', 'id')));\n";
+			assert(BATcount(b) == 1);
 			printf("Running database upgrade commands:\n%s\n", query);
 			fflush(stdout);
 			err = SQLstatementIntern(c, query, "update", true, false, NULL);
 		}
-		BBPreclaim(b);
+		BBPunfix(b->batCacheid);
 	}
 	res_table_destroy(output);
+	return err;
+}
 
-	if (err)
-		return err;
+static str
+sql_update_default(Client c, mvc *sql, sql_schema *s)
+{
+	char *err;
+	res_table *output;
+	BAT *b;
+
+	(void) sql;
+	(void) s;
 
 	err = SQLstatementIntern(c, "select id from sys._tables where name = 'describe_tables' and schema_id = 2000 and query like '%''false''%';\n", "update", true, false, &output);
 	if (err)
@@ -5466,6 +5501,30 @@ sql_update_default(Client c, mvc *sql, sql_schema *s)
 		BBPreclaim(b);
 	}
 	res_table_destroy(output);
+	if (err != MAL_SUCCEED)
+		return err;
+
+	if ((err = SQLstatementIntern(c, "select function_type_id from sys.function_types where function_type_keyword = 'GROUP FILTER FUNCTION';\n", "update", true, false, &output)))
+		return err;
+	if ((b = BBPquickdesc(output->cols[0].b)) && BATcount(b) == 0) {
+		static const char query1[] =
+			"ALTER TABLE sys.function_types SET READ WRITE;\n"
+			"COMMIT;\n";
+		static const char query2[] =
+			"INSERT INTO sys.function_types VALUES (8, 'Group filter function', 'GROUP FILTER FUNCTION');\n"
+			"COMMIT;\n";
+		static const char query3[] = "ALTER TABLE sys.function_types SET READ ONLY;\n";
+		printf("Running database upgrade commands:\n%s%s%s\n", query1, query2, query3);
+		fflush(stdout);
+		err = SQLstatementIntern(c, query1, "update", true, false, NULL);
+		if (err == MAL_SUCCEED) {
+			err = SQLstatementIntern(c, query2, "update", true, false, NULL);
+			if (err == MAL_SUCCEED) {
+				err = SQLstatementIntern(c, query3, "update", true, false, NULL);
+			}
+		}
+	}
+	res_table_destroy(output);
 
 	return err;
 }
@@ -5491,6 +5550,10 @@ SQLupgrades(Client c, mvc *m)
 		}
 	}
 #endif
+
+	if ((err = sql_update_generator(c)) != NULL) {
+		goto handle_error;
+	}
 
 	if ((err = sql_update_jan2022(c, m)) != NULL) {
 		goto handle_error;
@@ -5554,6 +5617,11 @@ SQLupgrades(Client c, mvc *m)
 	}
 
 	if ((err = sql_update_dec2025_sp1(c, m, s)) != NULL) {
+		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
+		goto handle_error;
+	}
+
+	if ((err = sql_update_dec2025_sp2(c, m, s)) != NULL) {
 		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 		goto handle_error;
 	}

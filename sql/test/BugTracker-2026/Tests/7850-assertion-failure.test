@@ -105,7 +105,7 @@ WHERE
     (subq_0.c0 >= subq_0.c3)
     OR
     (
-        0
+        '0'
         >=
         CASE
             WHEN ref_0.id IS NOT NULL

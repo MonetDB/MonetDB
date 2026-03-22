@@ -34,7 +34,9 @@ thread2.join()
 
 cursor1.execute("SELECT COUNT(*), COUNT(DISTINCT k), SUM(k) from T;")
 if cursor1.fetchall() != [(MAX_ITERATIONS, MAX_ITERATIONS, EXPECTED_SUM)]:
-    sys.stderr.write("[(%d,%d,%d)] expected" % (MAX_ITERATIONS, MAX_ITERATIONS, EXPECTED_SUM))
+    sys.stderr.write("[(%d,%d,%d)] expected, [(%d,%d,%d)] received" % (MAX_ITERATIONS, MAX_ITERATIONS, EXPECTED_SUM, res[0][0], res[0][1], res[0][2]))
+
+
 cursor1.execute("DROP TABLE T;")
 
 cursor1.close()

@@ -24,18 +24,19 @@
 #define sql_aggr         (1 << 6)  //ORed
 #define sql_farg         (1 << 7)  //ORed
 #define sql_window       (1 << 8)  //ORed
-#define sql_join         (1 << 9)  //ORed
-#define sql_outer        (1 << 10) //ORed
-#define sql_group_totals (1 << 11) //ORed
-#define sql_update_set   (1 << 12) //ORed
-#define sql_psm          (1 << 13) //ORed
-#define sql_values       (1 << 14) //ORed
-#define psm_call         (1 << 15) //ORed
-#define sql_or           (1 << 16) //ORed
-#define sql_merge        (1 << 17) //ORed
-#define sql_no_subquery  (1 << 18) //ORed
-#define sql_qualify      (1 << 19) //ORed
-#define sql_check        (1 << 20) //ORed
+#define sql_window_rows  (1 << 9)  //ORed
+#define sql_join         (1 << 10)  //ORed
+#define sql_outer        (1 << 11) //ORed
+#define sql_group_totals (1 << 12) //ORed
+#define sql_update_set   (1 << 13) //ORed
+#define sql_psm          (1 << 14) //ORed
+#define sql_values       (1 << 15) //ORed
+#define psm_call         (1 << 16) //ORed
+#define sql_or           (1 << 17) //ORed
+#define sql_merge        (1 << 18) //ORed
+#define sql_no_subquery  (1 << 19) //ORed
+#define sql_qualify      (1 << 20) //ORed
+#define sql_check        (1 << 21) //ORed
 
 #define is_sql_from(X)         ((X & sql_from) == sql_from)
 #define is_sql_where(X)        ((X & sql_where) == sql_where)
@@ -46,6 +47,7 @@
 #define is_sql_aggr(X)         ((X & sql_aggr) == sql_aggr)
 #define is_sql_farg(X)         ((X & sql_farg) == sql_farg)
 #define is_sql_window(X)       ((X & sql_window) == sql_window)
+#define is_sql_window_rows(X)  ((X & sql_window_rows) == sql_window_rows)
 #define is_sql_join(X)         ((X & sql_join) == sql_join)
 #define is_sql_outer(X)        ((X & sql_outer) == sql_outer)
 #define is_sql_group_totals(X) ((X & sql_group_totals) == sql_group_totals)

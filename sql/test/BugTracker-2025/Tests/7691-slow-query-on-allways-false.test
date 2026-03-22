@@ -11,7 +11,7 @@ explain show details select * from test where 1 = 0
 ----
 project (
 | select (
-| |  [ int(31) NULL as "test"."value", varchar NULL as "test"."name" ]
+| |  [ int(31) NULL as "test"."value" ]
 | ) [ boolean(1) "false" ]
-) [ "test"."value", "test"."name" ]
+) [ int(31) NULL as "test"."value", varchar NULL as "test"."name" ]
 

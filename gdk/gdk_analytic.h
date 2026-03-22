@@ -76,9 +76,9 @@ gdk_export BAT *GDKanalytical_correlation(BAT *p, BAT *o, BAT *b1, BAT *b2, BAT 
    and 'nlevels' is the number of levels on the current segment tree.
    In order to run in out-of-memory situations they are allocated inside a BAT. The 'levels_offset' are allocated after
    the segment tree. The beginning pointers for both are returned. */
-gdk_export BAT *GDKinitialize_segment_tree(void)
+gdk_export Heap *GDKinitialize_segment_tree(void)
 	__attribute__((__warn_unused_result__));
-gdk_export gdk_return GDKrebuild_segment_tree(oid ncount, oid data_size, BAT *st, void **segment_tree, oid **levels_offset, oid *nlevels);
+gdk_export gdk_return GDKrebuild_segment_tree(oid ncount, oid data_size, Heap *st, void **segment_tree, oid **levels_offset, oid *nlevels);
 
 /* segment_tree, levels_offset and nlevels must be already defined. ARG1, ARG2 and ARG3 are to be used by the aggregate */
 #define populate_segment_tree(CAST, COUNT, INIT_AGGREGATE, COMPUTE_LEVEL0, COMPUTE_LEVELN, ARG1, ARG2, ARG3) \
