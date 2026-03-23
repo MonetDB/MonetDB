@@ -375,8 +375,14 @@ HASHgrowbucket(BAT *b)
 		BATiter bi = bat_iterator(b);
 		if ((hb = HASHget(h, old)) != BUN_NONE) {
 			h->nheads--;
+			var_t off = 0;
+			const void *v = &off;
 			do {
-				const void *v = BUNtail(&bi, hb);
+				if (h->offsets) {
+					off = VarHeapVal(bi.base, hb, bi.width);
+				} else {
+					v = BUNtail(&bi, hb);
+				}
 				BUN hsh = ATOMhash(h->type, v);
 				assert((hsh & (mask - 1)) == old);
 				if (hsh & mask) {
@@ -760,6 +766,7 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci,
 		return NULL;
 	}
 	h->width = HASHwidth(BATcapacity(b));
+	h->offsets = offsets;
 	h->heaplink.dirty = true;
 	h->heapbckt.dirty = true;
 	strtconcat(h->heaplink.filename, sizeof(h->heaplink.filename),
@@ -1199,12 +1206,21 @@ HASHappend_locked(BAT *b, BUN i, const void *v)
 	BUN hb = HASHget(h, c);
 	BUN hb2;
 	BATiter bi = bat_iterator_nolock(b);
-	bool (*atomeq)(const void *, const void *) = ATOMequal(h->type);
-	for (hb2 = hb;
-	     hb2 != BUN_NONE;
-	     hb2 = HASHgetlink(h, hb2)) {
-		if (atomeq(v, BUNtail(&bi, hb2)))
-			break;
+	if (h->offsets) {
+		for (hb2 = hb;
+		     hb2 != BUN_NONE;
+		     hb2 = HASHgetlink(h, hb2)) {
+			if (*(var_t *) v == VarHeapVal(bi.base, hb2, bi.width))
+				break;
+		}
+	} else {
+		bool (*atomeq)(const void *, const void *) = ATOMequal(h->type);
+		for (hb2 = hb;
+		     hb2 != BUN_NONE;
+		     hb2 = HASHgetlink(h, hb2)) {
+			if (atomeq(v, BUNtail(&bi, hb2)))
+				break;
+		}
 	}
 	h->nheads += hb == BUN_NONE;
 	h->nunique += hb2 == BUN_NONE;
@@ -1265,6 +1281,16 @@ HASHinsert_locked(BATiter *bi, BUN p, const void *v)
 		h->heapbckt.dirty = true;
 		if (hb == BUN_NONE) {
 			h->nheads++;
+		} else if (h->offsets) {
+			do {
+				if (*(var_t *) v == VarHeapVal(bi->base, hb, bi->width)) {
+					/* found another row with the
+					 * same value, so don't
+					 * increment nunique */
+					return;
+				}
+				hb = HASHgetlink(h, hb);
+			} while (hb != BUN_NONE);
 		} else {
 			do {
 				if (atomeq(v, BUNtail(bi, hb))) {
@@ -1281,23 +1307,44 @@ HASHinsert_locked(BATiter *bi, BUN p, const void *v)
 		return;
 	}
 	bool seen = false;
-	for (;;) {
-		if (!seen)
-			seen = atomeq(v, BUNtail(bi, hb));
-		BUN hb2 = HASHgetlink(h, hb);
-		if (hb2 == BUN_NONE || hb2 < p) {
-			HASHputlink(h, p, hb2);
-			HASHputlink(h, hb, p);
-			h->heaplink.dirty = true;
-			while (!seen && hb2 != BUN_NONE) {
-				seen = atomeq(v, BUNtail(bi, hb2));
-				hb2 = HASHgetlink(h, hb2);
-			}
+	if (h->offsets) {
+		for (;;) {
 			if (!seen)
-				h->nunique++;
-			return;
+				seen = *(var_t*)v == VarHeapVal(bi->base, hb, bi->width);
+			BUN hb2 = HASHgetlink(h, hb);
+			if (hb2 == BUN_NONE || hb2 < p) {
+				HASHputlink(h, p, hb2);
+				HASHputlink(h, hb, p);
+				h->heaplink.dirty = true;
+				while (!seen && hb2 != BUN_NONE) {
+					seen = *(var_t*)v == VarHeapVal(bi->base, hb2, bi->width);
+					hb2 = HASHgetlink(h, hb2);
+				}
+				if (!seen)
+					h->nunique++;
+				return;
+			}
+			hb = hb2;
 		}
-		hb = hb2;
+	} else {
+		for (;;) {
+			if (!seen)
+				seen = atomeq(v, BUNtail(bi, hb));
+			BUN hb2 = HASHgetlink(h, hb);
+			if (hb2 == BUN_NONE || hb2 < p) {
+				HASHputlink(h, p, hb2);
+				HASHputlink(h, hb, p);
+				h->heaplink.dirty = true;
+				while (!seen && hb2 != BUN_NONE) {
+					seen = atomeq(v, BUNtail(bi, hb2));
+					hb2 = HASHgetlink(h, hb2);
+				}
+				if (!seen)
+					h->nunique++;
+				return;
+			}
+			hb = hb2;
+		}
 	}
 }
 
@@ -1351,6 +1398,16 @@ HASHdelete_locked(BATiter *bi, BUN p, const void *v)
 		h->heapbckt.dirty = true;
 		if (hb2 == BUN_NONE) {
 			h->nheads--;
+		} else if (h->offsets) {
+			do {
+				if (*(var_t*)v == VarHeapVal(bi->base, hb2, bi->width)) {
+					/* found another row with the
+					 * same value, so don't
+					 * decrement nunique below */
+					return;
+				}
+				hb2 = HASHgetlink(h, hb2);
+			} while (hb2 != BUN_NONE);
 		} else {
 			do {
 				if (atomeq(v, BUNtail(bi, hb2))) {
@@ -1369,25 +1426,49 @@ HASHdelete_locked(BATiter *bi, BUN p, const void *v)
 	}
 	bool seen = false;
 	BUN links = 0;
-	for (;;) {
-		if (!seen)
-			seen = atomeq(v, BUNtail(bi, hb));
-		BUN hb2 = HASHgetlink(h, hb);
-		assert(hb2 != BUN_NONE );
-		assert(hb2 < hb);
-		if (hb2 == p) {
-			for (hb2 = HASHgetlink(h, hb2);
-			     !seen && hb2 != BUN_NONE;
-			     hb2 = HASHgetlink(h, hb2))
-				seen = atomeq(v, BUNtail(bi, hb2));
-			break;
+	if (h->offsets) {
+		for (;;) {
+			if (!seen)
+				seen = *(var_t*)v == VarHeapVal(bi->base, hb, bi->width);
+			BUN hb2 = HASHgetlink(h, hb);
+			assert(hb2 != BUN_NONE );
+			assert(hb2 < hb);
+			if (hb2 == p) {
+				for (hb2 = HASHgetlink(h, hb2);
+				     !seen && hb2 != BUN_NONE;
+				     hb2 = HASHgetlink(h, hb2))
+					seen = *(var_t*)v == VarHeapVal(bi->base, hb2, bi->width);
+				break;
+			}
+			hb = hb2;
+			if (++links > hash_destroy_chain_length) {
+				b->thash = NULL;
+				doHASHdestroy(b, h);
+				GDKclrerr();
+				return;
+			}
 		}
-		hb = hb2;
-		if (++links > hash_destroy_chain_length) {
-			b->thash = NULL;
-			doHASHdestroy(b, h);
-			GDKclrerr();
-			return;
+	} else {
+		for (;;) {
+			if (!seen)
+				seen = atomeq(v, BUNtail(bi, hb));
+			BUN hb2 = HASHgetlink(h, hb);
+			assert(hb2 != BUN_NONE );
+			assert(hb2 < hb);
+			if (hb2 == p) {
+				for (hb2 = HASHgetlink(h, hb2);
+				     !seen && hb2 != BUN_NONE;
+				     hb2 = HASHgetlink(h, hb2))
+					seen = atomeq(v, BUNtail(bi, hb2));
+				break;
+			}
+			hb = hb2;
+			if (++links > hash_destroy_chain_length) {
+				b->thash = NULL;
+				doHASHdestroy(b, h);
+				GDKclrerr();
+				return;
+			}
 		}
 	}
 	HASHputlink(h, hb, HASHgetlink(h, p));

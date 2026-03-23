@@ -1870,11 +1870,19 @@ static inline BUN
 slowfnd(BATiter *bi, const void *v)
 {
 	BUN p, q;
-	bool (*atomeq)(const void *, const void *) = ATOMequal(bi->type);
 
-	BATloop(bi, p, q) {
-		if ((*atomeq)(v, BUNtail(bi, p))) {
-			return p;
+	if (bi->ustr) {
+		var_t off = *(var_t *) v;
+		BATloop(bi, p, q) {
+			if (off == VarHeapVal(bi->base, p, bi->width))
+				return p;
+		}
+	} else {
+		bool (*atomeq)(const void *, const void *) = ATOMequal(bi->type);
+		BATloop(bi, p, q) {
+			if ((*atomeq)(v, BUNtail(bi, p))) {
+				return p;
+			}
 		}
 	}
 	return BUN_NONE;

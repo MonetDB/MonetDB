@@ -92,7 +92,7 @@ virtualize(BAT *bn)
 	     hb = HASHgetlink(h,hb))					\
 		if (hb >= (lo) && hb < (hi) &&				\
 		    (eq == NULL ||					\
-		     (bi->ustr ?					\
+		     (h->offsets ?					\
 		      *(var_t *) v == VarHeapVal(bi->base, hb, bi->width) : \
 		      (*eq)(v, BUNtail(bi, hb)))))
 

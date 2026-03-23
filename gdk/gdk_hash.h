@@ -14,6 +14,7 @@
 struct Hash {
 	int type;		/* type of index entity */
 	uint8_t width;		/* width of hash entries */
+	bool offsets;		/* hash on offsets */
 	BUN mask1;		/* .mask1 < .nbucket <= .mask2 */
 	BUN mask2;		/* ... both are power-of-two minus one */
 	BUN nbucket;		/* number of valid hash buckets */
@@ -264,7 +265,7 @@ mix_inet6(const inet6 *u)
 	for (hb = HASHget(h, HASHprobe(h, v));			\
 	     hb != BUN_NONE;					\
 	     hb = HASHgetlink(h, hb))				\
-		if ((bi)->ustr ?					\
+		if ((h)->offsets ?					\
 		    *(var_t*)(v) == VarHeapVal((bi)->base, hb, (bi)->width) : \
 		    ATOMeq(h->type, v, BUNtail(bi, hb)))
 #define HASHloop_str(bi, h, hb, v)				\
