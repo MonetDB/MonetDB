@@ -94,7 +94,7 @@ stmt_pp_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int 
 			restype = intype;
 
 		/* For the single value aggregates, we use the incremental
- 		 * aggr. functions from the module 'iaggr' */
+		 * aggr. functions from the module 'iaggr' */
 		if (!grp && (strcmp(aggrfunc, "count") == 0 ||
 			     strcmp(aggrfunc, "min") == 0 ||
 			     strcmp(aggrfunc, "max") == 0 ||
@@ -509,6 +509,7 @@ stmt_oahash_hshmrk_init(backend *be, stmt *stmts_ht, bool moveup)
 	s->nrcols = 1;
 	return s;
 }
+
 stmt *
 stmt_oahash_build_ht(backend *be, stmt *ht, stmt *key, stmt *prnt, const stmt *pp)
 {
@@ -695,22 +696,22 @@ stmt_oahash_explode(backend *be, const stmt *prb_res, const stmt *freq, const st
 stmt *
 stmt_oahash_explode_unmatched(backend *be, const stmt *ht, const stmt *mrk, const stmt *freq)
 {
-    InstrPtr q = newStmt(be->mb, putName("oahash"), putName("explode_unmatched"));
-    if (q == NULL)
-        return NULL;
-    setVarType(be->mb, getArg(q, 0), newBatType(TYPE_oid)); /* expanded */
-    q = pushArgument(be->mb, q, ht->nr);
-    q = pushArgument(be->mb, q, mrk->nr);
-    q = pushArgument(be->mb, q, freq->nr);
-    pushInstruction(be->mb, q);
+	InstrPtr q = newStmt(be->mb, putName("oahash"), putName("explode_unmatched"));
+	if (q == NULL)
+		return NULL;
+	setVarType(be->mb, getArg(q, 0), newBatType(TYPE_oid)); /* expanded */
+	q = pushArgument(be->mb, q, ht->nr);
+	q = pushArgument(be->mb, q, mrk->nr);
+	q = pushArgument(be->mb, q, freq->nr);
+	pushInstruction(be->mb, q);
 
-    stmt *s = stmt_none(be);
-    if (s == NULL) return NULL;
-    s->op4.typeval = *sql_fetch_localtype(TYPE_oid);
-    s->nr = getArg(q, 0);
-    s->nrcols = 1;
-    s->q = q;
-    return s;
+	stmt *s = stmt_none(be);
+	if (s == NULL) return NULL;
+	s->op4.typeval = *sql_fetch_localtype(TYPE_oid);
+	s->nr = getArg(q, 0);
+	s->nrcols = 1;
+	s->q = q;
+	return s;
 }
 
 stmt *
@@ -853,7 +854,7 @@ table_no_slices(backend *be, sql_table *t)
 
 	pushInstruction(be->mb, q);
 	if (be->pp_pc)
-        	moveInstruction(be->mb, be->mb->stop-1, be->pp_pc++);
+		moveInstruction(be->mb, be->mb->stop-1, be->pp_pc++);
 	stmt *ns = stmt_create(be->mvc->sa, st_result); /* ?? */
 	if (ns == NULL) {
 		freeInstruction(be->mb, q);
@@ -1329,7 +1330,7 @@ stmt_concat_add_subconcat(backend *be, int p_source, int p_concatcnt)
 int
 pp_counter(backend *be, int nr_slices, int var_nr_slices, bool sync)
 {
-    InstrPtr q = newStmt(be->mb, "pipeline", "counter");
+	InstrPtr q = newStmt(be->mb, "pipeline", "counter");
 	if (var_nr_slices == -1)
 		q = pushInt(be->mb, q, nr_slices);
 	else
@@ -1343,10 +1344,10 @@ pp_counter(backend *be, int nr_slices, int var_nr_slices, bool sync)
 int
 pp_counter_get(backend *be, int counter)
 {
-    InstrPtr q = newStmt(be->mb, "pipeline", "counter_get");
+	InstrPtr q = newStmt(be->mb, "pipeline", "counter_get");
 	q->argv[0] = be->pp;
-    q = pushArgument(be->mb, q, counter);
-    q = pushArgument(be->mb, q, be->pipeline);
+	q = pushArgument(be->mb, q, counter);
+	q = pushArgument(be->mb, q, be->pipeline);
 	pushInstruction(be->mb, q);
 	return getArg(q, 0);
 }
