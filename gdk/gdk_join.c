@@ -2789,21 +2789,31 @@ vkeyjoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 	assert(l->tvheap);
 	assert(r->tvheap);
 	assert(l->tvheap->parentid == r->tvheap->parentid);
-	assert(BBP_desc(VIEWvtparent(l))->tvkey);
-	assert(BBP_desc(VIEWvtparent(r))->tvkey);
 
 	size_t counter = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 
 	Hash *hsh;
-	if (r->ustr && !hash_cand &&
-	    (BATcheckhash(r) ||
+	bool hashash;
+	if (!hash_cand && r->ustr &&
+	    ((hashash = BATcheckhash(r)) ||
 	     (r->batRole == PERSISTENT && BAThash(r) == GDK_SUCCEED))) {
+		MT_thread_setalgorithm(swapped ? hashash ? "vkeyjoin using existing hash (swapped)" : "vkeyjoin using new hash (swapped)" : hashash ? "vkeyjoin using existing hash" : "vkeyjoin using new hash");
+		TRC_DEBUG(ALGO, ALGOBATFMT ": %s hash%s",
+			  ALGOBATPAR(r),
+			  hashash ? "using existing" : "creating new",
+			  swapped ? " (swapped)" : "");
 		MT_rwlock_rdlock(&r->thashlock);
 		hsh = r->thash;
 		locked = true;
 	} else {
 		char ext[32];
+		MT_thread_setalgorithm(swapped ? "vkeyjoin using candidate hash (swapped)" : "vkeyjoin using candidate hash");
+		TRC_DEBUG(ALGO, ALGOBATFMT ": creating "
+			  "hash for candidate list " ALGOOPTBATFMT "%s%s\n",
+			  ALGOBATPAR(r), ALGOOPTBATPAR(rci->s),
+			  r->thash ? " ignoring existing hash" : "",
+			  swapped ? " (swapped)" : "");
 		if (snprintf(ext, sizeof(ext), "thshjn%x",
 			     (unsigned) MT_getpid()) >= (int) sizeof(ext) ||
 		    (hsh = BAThash_impl(r, rci, true, ext)) == NULL)
@@ -3332,6 +3342,11 @@ hashjoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 					}
 					if (locked)
 						MT_rwlock_rdunlock(&r->thashlock);
+					if (r->ustr) {
+						HEAPfree(&hsh->heaplink, true);
+						HEAPfree(&hsh->heapbckt, true);
+						GDKfree(hsh);
+					}
 					bat_iterator_end(&li);
 					bat_iterator_end(&ri);
 					BBPreclaim(b);
@@ -3526,7 +3541,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 		MT_rwlock_rdunlock(&r->thashlock);
 	}
 
-	if (hash_cand) {
+	if (hash_cand || r->ustr) {
 		HEAPfree(&hsh->heaplink, true);
 		HEAPfree(&hsh->heapbckt, true);
 		GDKfree(hsh);
@@ -3589,15 +3604,15 @@ hashjoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 	return GDK_SUCCEED;
 
   bailout:
-	bat_iterator_end(&li);
-	bat_iterator_end(&ri);
 	if (locked)
 		MT_rwlock_rdunlock(&r->thashlock);
-	if (hash_cand && hsh) {
+	if ((hash_cand || r->ustr) && hsh) {
 		HEAPfree(&hsh->heaplink, true);
 		HEAPfree(&hsh->heapbckt, true);
 		GDKfree(hsh);
 	}
+	bat_iterator_end(&li);
+	bat_iterator_end(&ri);
 	BBPreclaim(r1);
 	BBPreclaim(r2);
 	BBPreclaim(r3);

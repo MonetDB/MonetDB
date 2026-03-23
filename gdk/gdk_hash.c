@@ -503,7 +503,7 @@ BATcheckhash(BAT *b)
 							}
 							h->nunique = hdata[5];
 							h->nheads = hdata[6];
-							h->type = ATOMbasetype(b->ttype);
+							h->type = b->ustr ? TYPE_oid : ATOMbasetype(b->ttype);
 							if (h->width < SIZEOF_BUN &&
 							    ((BUN) 1 << (8 * h->width)) - 1 > h->nbucket) {
 								close(fd);
