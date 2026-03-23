@@ -922,12 +922,16 @@ pipeline_start(backend *be, int nrparts, int input, int sink)
 	setArgType(be->mb, q, 0, TYPE_bit);
 	q = pushReturn(be->mb, q, newTmpVariable(be->mb, TYPE_int));
 	q = pushReturn(be->mb, q, newTmpVariable(be->mb, TYPE_ptr));
-	if (sink > 0)  /* TODO handle case for both a sink and input/nrparts */
+	if (sink > 0) { /* TODO handle case for both a sink and input/nrparts */
+	//	assert(0);
 		q = pushArgument(be->mb, q, sink);
-	else if (input >= 0 && nrparts == 0)
+	} else if (input >= 0 && nrparts == 0) {
+		assert(0);
 		q = pushArgument(be->mb, q, input);
-	else
+	} else {
+		assert(nrparts < 0);
 		q = pushInt(be->mb, q, nrparts);
+	}
 
 	pushInstruction(be->mb, q);
 	be->nrparts = nrparts;
@@ -960,6 +964,7 @@ pipeline_leave(backend *be, stmt *pp)
 		r = pushArgument(be->mb, r, getArg(pp->q, pp->q->retc) /* nrparts first arg of pipeline */);
 		pushInstruction(be->mb, r);
 	} else if (!be->source) {
+		assert(0);
 		r = newAssignment(be->mb);
 		if (r == NULL)
 			return NULL;
@@ -1360,4 +1365,24 @@ pp_claim(backend *be, int resultset, int nrrows)
 	q = pushArgument(be->mb, q, nrrows);
 	pushInstruction(be->mb, q);
 	return getDestVar(q);
+}
+
+stmt *
+source_next(backend *be, sql_subtype *tpe)
+{
+	InstrPtr q = newStmt(be->mb, putName("source"), putName("next"));
+	if (q == NULL)
+		return NULL;
+
+	int tt = tpe->type->localtype;
+	setVarType(be->mb, getArg(q, 0), newBatType(tt));
+	q = pushArgument(be->mb, q, be->source);
+	pushInstruction(be->mb, q);
+
+	stmt *s = stmt_none(be);
+	s->op4.typeval = *tpe;
+	s->q = q;
+	s->nr = getArg(q, 0);
+	s->nrcols = 1;
+	return s;
 }

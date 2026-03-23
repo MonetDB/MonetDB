@@ -1721,6 +1721,7 @@ sqltypeinit( allocator *sa)
 	/* copyfrom fname (arg 15) */
 	f = sql_create_union(sa, "copyfrom", "sql", "copy_from", TRUE, SCALE_FIX, 0, TABLE, 14, PTR, STR, STR, STR, STR, STR, LNG, LNG, INT, STR, INT, INT, STR, STR);
 	f->varres = 1;
+	f->pipeline = 1;
 
 	/* bincopyfrom */
 	f = sql_create_union(sa, "copyfrombinary", "", "", TRUE, SCALE_FIX, 0, TABLE, 3, STR, STR, INT);
@@ -1729,6 +1730,7 @@ sqltypeinit( allocator *sa)
 	/* file_loader */
 	f = sql_create_union(sa, "file_loader", "", "", TRUE, SCALE_FIX, 0, TABLE, 1, STR);
 	f->varres = 1;
+	f->pipeline = 1;
 
 	/* generic proto_loader which expects an URI starting with the protocol like: 'odbc:' or 'monetdb:' or 'file:' */
 	f = sql_create_union(sa, "proto_loader", "", "", TRUE, SCALE_FIX, 0, TABLE, 1, STR);

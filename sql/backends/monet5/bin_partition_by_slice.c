@@ -339,7 +339,7 @@ rel_groupby_prepare_pp(list **aggrresults, list **serializedresults, backend *be
 			if (card > INT_MAX)
 				card = INT_MAX;
 
-			stmt *s = stmt_oahash_new(be, t, nrparts?256:card, curhash, nrparts);
+			stmt *s = stmt_oahash_new(be, t, nrparts?nrparts:card, curhash, nrparts);
 			if (s == NULL)
 				return NULL;
 			curhash = s->nr;
@@ -414,21 +414,21 @@ rel_groupby_prepare_pp(list **aggrresults, list **serializedresults, backend *be
 			if (avg && EC_APPNUM(t->type->eclass) && it && !EC_APPNUM(it->type->eclass))
 				t = it;
 
-			stmt *s = nrparts?stmt_mat_new(be, t, 256):stmt_bat_new(be, t, (lng)(estimate*1.1));
+			stmt *s = nrparts?stmt_mat_new(be, t, PARTITION_NRPARTS):stmt_bat_new(be, t, (lng)(estimate*1.1));
 			if (s == NULL)
 				return NULL;
 			append(shared, &s->nr);
 			append(*aggrresults, &s->nr);
 
 			if (avg || sum) { /* remainder (or compensation) and count */
-				s = nrparts?stmt_mat_new(be, EC_APPNUM(t->type->eclass) ? t: sql_fetch_localtype(TYPE_lng), 256):
-					stmt_bat_new(be, EC_APPNUM(t->type->eclass) ? t: sql_fetch_localtype(TYPE_lng), (lng)(estimate*1.1));
+				s = nrparts?stmt_mat_new(be, EC_APPNUM(t->type->eclass) ? t: sql_fetch_localtype(TYPE_lng), PARTITION_NRPARTS):
+				stmt_bat_new(be, EC_APPNUM(t->type->eclass) ? t: sql_fetch_localtype(TYPE_lng), (lng)(estimate*1.1));
 				if (s == NULL)
 					return NULL;
 				append(shared, &s->nr);
 				append(*aggrresults, &s->nr);
 
-				s = nrparts?stmt_mat_new(be, sql_fetch_localtype(TYPE_lng), 256):
+				s = nrparts?stmt_mat_new(be, sql_fetch_localtype(TYPE_lng), PARTITION_NRPARTS):
 					stmt_bat_new(be, sql_fetch_localtype(TYPE_lng), (lng)(estimate*1.1));
 				if (s == NULL)
 					return NULL;
@@ -452,7 +452,7 @@ rel_groupby_prepare_pp(list **aggrresults, list **serializedresults, backend *be
 					estimate = est;
 
 				assert(!nrparts);
-				stmt *s = stmt_oahash_new(be, t, nrparts?256:estimate, curhash, nrparts);
+				stmt *s = stmt_oahash_new(be, t, nrparts?nrparts:estimate, curhash, nrparts);
 				if (s == NULL)
 					return NULL;
 				assert(!e->shared);
@@ -836,29 +836,25 @@ rel2bin_groupby_pp(backend *be, sql_rel *rel, list *refs)
 
 	shared = rel_groupby_prepare_pp(&aggrresults, &serializedresults, be, rel, _2phases, need_serialize, nrparts);
 
-	if (!sub && (!rel->spb || pp_can_not_start(be->mvc, rel->l))) {
+	if (!sub && !rel->spb) {
 		set_need_pipeline(be);
 	} else {
-assert(nrparts);
-		int nr_parts = nrparts==0 ? pp_nr_slices(rel->l) : 0;
-		int source = pp_counter(be, nr_parts, nrparts == 0 ? -1: nrparts, false);
+		assert(nrparts);
+		int nr_parts = nrparts;
+		int source = pp_counter(be, nr_parts, nrparts, false);
 
 		if (be->pp) {
 			stmt_concat_add_source(be);
 		} else {
 			set_pipeline(be, stmt_pp_start_generator(be, source, true));
 		}
-		if (nrparts == 0)
-			be->nrparts = nr_parts;
 		int seqnr = pp_counter_get(be, source);
-		if (nrparts) { /* map sequence number (source) into mat_id and slice_id */
-			InstrPtr ctr = mat_counters_get(be, mat, seqnr);
-			sub = mats_fetch_slices(be, sub, getArg(ctr, 0), getArg(ctr, 1));
-			/* fetch result bats */
-			shared = mats_fetch(be, shared, aggrresults, getArg(ctr, 0));
-			oaggrresults = aggrresults;
-			aggrresults = shared;
-		}
+		InstrPtr ctr = mat_counters_get(be, mat, seqnr);
+		sub = mats_fetch_slices(be, sub, getArg(ctr, 0), getArg(ctr, 1));
+		/* fetch result bats */
+		shared = mats_fetch(be, shared, aggrresults, getArg(ctr, 0));
+		oaggrresults = aggrresults;
+		aggrresults = shared;
 	}
 	if (!sub && rel->l) { /* first construct the sub relation */
 		sub = subrel_bin(be, rel->l, refs);
@@ -1194,7 +1190,7 @@ assert(nrparts);
 			}
 			cursub = stmt_list(be, nl);
 		} else {
-			stmt *pp = stmt_pp_start_nrparts(be, 256);
+			stmt *pp = stmt_pp_start_nrparts(be, PARTITION_NRPARTS);
 			set_pipeline(be, pp);
 			int ppnr = be->pipeline;
 			be->pipeline = 0;

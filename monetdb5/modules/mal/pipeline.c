@@ -737,6 +737,34 @@ PPappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
+static str
+source_next(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void)mb;
+	(void)cntxt;
+
+	bat *res = getArgReference_bat(stk, pci, 0);
+	bat sb = *getArgReference_bat(stk, pci, 1);
+	BAT *s = BATdescriptor(sb);
+
+	if (!s)
+		throw(MAL, "source.next", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	Sink *src = s->tsink;
+	if (!src || !src->next_bat) {
+		BBPreclaim(s);
+		throw(MAL, "source.next", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	}
+	QryCtx *qc = MT_thread_get_qry_ctx();
+	BAT *r = src->next_bat(src, qc->wid);
+	if (!r) {
+		BBPreclaim(s);
+		throw(SQL, "source.next",  SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
+	*res = r->batCacheid;
+	BBPkeepref(r);
+	return MAL_SUCCEED;
+}
+
 #include "mel.h"
 static mel_func pipeline_init_funcs[] = {
  pattern("pipeline", "counter", PPcounter, true, "return counter source", args(1,2,
@@ -809,6 +837,11 @@ static mel_func pipeline_init_funcs[] = {
  pattern("pipeline", "send", PPsend, true, "send through channel", args(1,5,
 	 arg("", bit),
 	 arg("handle", ptr), argany("mailbox",1), arg("channel",int), argany("value", 1)
+ )),
+
+ pattern("source", "next", source_next, false, "return next part", args(1,2,
+	 batargany("res", 1),
+	 batargany("source", 2)
  )),
  { .imp=NULL }
 };

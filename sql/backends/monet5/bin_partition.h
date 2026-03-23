@@ -13,8 +13,6 @@
 
 #include "mal_backend.h"
 
-extern bool pp_can_not_start(mvc *sql, sql_rel *rel);
-
-extern int pp_nr_slices(sql_rel *rel);
+#define PARTITION_NRPARTS 256
 
 #endif /*_BIN_PARTITION_H_*/

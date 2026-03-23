@@ -73,4 +73,6 @@ extern int pp_counter_get(backend *be, int counter);
 
 extern int pp_claim(backend *be, int resultset, int nrrows);
 
+extern stmt *source_next(backend *be, sql_subtype *tpe);
+
 #endif /* _SQL_PP_STATEMENT_H_ */

@@ -1054,6 +1054,10 @@ load_func(sql_trans *tr, sql_schema *s, sqlid fid, subrids *rs)
 		t->order_required = true;
 	if (order_spec == 1)
 		t->opt_order = true;
+	t->pipeline = 0;
+	if (t->system && t->type == F_UNION && t->lang == FUNC_LANG_MAL &&
+			 strcmp(t->base.name, "generate_series") == 0)
+		t->pipeline = 1;
 
 	TRC_DEBUG(SQL_STORE, "Load function: %s\n", t->base.name);
 

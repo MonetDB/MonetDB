@@ -338,9 +338,13 @@ typedef struct PROPrec PROPrec;
 
 typedef void (*sink_destroy)(void *sink);
 typedef int (*sink_done)(void *sink, int wid, int nr_workers, bool redo);
+typedef int (*sink_next)(void *sink, int wid);
+typedef void *(*sink_next_bat)(void *sink, int wid);
 typedef struct Sink {
 	sink_destroy destroy;
 	sink_done done;
+	sink_next next; /* counter incrementing sources */
+	sink_next_bat next_bat; /* bat generating sources */
 	int type;		/* sink/source type */
 	char *error;
 } Sink;

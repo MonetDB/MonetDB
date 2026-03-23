@@ -509,7 +509,7 @@ typedef struct sql_func {
 	list *res;	/* list of results */
 	sql_flang lang;
 	char *query;	/* sql code */
-	bool
+	unsigned short
 	semantics:1, /* When set to true, function incorporates some kind of null semantics */
 	side_effect:1, /* if the function has side-effects */
 	varres:1,	/* variable output result */
@@ -518,8 +518,9 @@ typedef struct sql_func {
 	instantiated:1,	/* if the function is instantiated */
 	private:1,	/* certain functions cannot be bound from user queries */
 	order_required:1,	/* some aggregate functions require an order */
-	opt_order:1,
-	group:1;	/* some filter functions behave like group join */
+	opt_order:1,	/* some aggregate functions could have the inputs sorted */
+	group:1,		/* some filter functions behave like group join */
+	pipeline:1;		/* table returning function can be pipelined */
 
 	short fix_scale;
 			/*

@@ -178,7 +178,6 @@ rel_groupby_partition(sql_rel *rel)
 	return false;
 }
 
-#define PARTITION_NRPARTS 256
 /* part := part.new(nr_parts);
  * mat := mat.new(type:nil, nr_parts);
  */
@@ -490,9 +489,7 @@ rel2bin_partition(backend *be, sql_rel *rel, list *refs)
 	if (!rel->spb && !be->need_pipeline) {
 		set_need_pipeline(be);
 	} else {
-assert(0);
-		pp = stmt_pp_start_nrparts(be, pp_nr_slices(part_rel->l));
-		set_pipeline(be, pp);
+		assert(0);
 	}
 	if (rel->l) { /* first construct the sub relation */
 		sub = subrel_bin(be, part_rel->l, refs);

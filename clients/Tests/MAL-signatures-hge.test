@@ -45949,6 +45949,91 @@ pattern generator.join(X_0:bat[:sht], X_1:bat[:sht]) (X_2:bat[:oid], X_3:bat[:oi
 VLTgenerator_join
 (empty)
 generator
+new
+pattern generator.new(X_0:bte, X_1:bte):bat[:bte]
+VLTgenerator_new
+(empty)
+generator
+new
+pattern generator.new(X_0:bte, X_1:bte, X_2:bte):bat[:bte]
+VLTgenerator_new
+(empty)
+generator
+new
+pattern generator.new(X_0:date, X_1:date, X_2:int):bat[:bte]
+VLTgenerator_new
+date generator with step size in months
+generator
+new
+pattern generator.new(X_0:date, X_1:date, X_2:lng):bat[:bte]
+VLTgenerator_new
+date generator with step size in days
+generator
+new
+pattern generator.new(X_0:dbl, X_1:dbl):bat[:bte]
+VLTgenerator_new
+(empty)
+generator
+new
+pattern generator.new(X_0:dbl, X_1:dbl, X_2:dbl):bat[:bte]
+VLTgenerator_new
+Create and materialize a generator table
+generator
+new
+pattern generator.new(X_0:flt, X_1:flt):bat[:bte]
+VLTgenerator_new
+(empty)
+generator
+new
+pattern generator.new(X_0:flt, X_1:flt, X_2:flt):bat[:bte]
+VLTgenerator_new
+(empty)
+generator
+new
+pattern generator.new(X_0:hge, X_1:hge):bat[:bte]
+VLTgenerator_new
+(empty)
+generator
+new
+pattern generator.new(X_0:hge, X_1:hge, X_2:hge):bat[:bte]
+VLTgenerator_new
+Create and materialize a generator table
+generator
+new
+pattern generator.new(X_0:int, X_1:int):bat[:bte]
+VLTgenerator_new
+(empty)
+generator
+new
+pattern generator.new(X_0:int, X_1:int, X_2:int):bat[:bte]
+VLTgenerator_new
+(empty)
+generator
+new
+pattern generator.new(X_0:lng, X_1:lng):bat[:bte]
+VLTgenerator_new
+(empty)
+generator
+new
+pattern generator.new(X_0:lng, X_1:lng, X_2:lng):bat[:bte]
+VLTgenerator_new
+(empty)
+generator
+new
+pattern generator.new(X_0:sht, X_1:sht):bat[:bte]
+VLTgenerator_new
+(empty)
+generator
+new
+pattern generator.new(X_0:sht, X_1:sht, X_2:sht):bat[:bte]
+VLTgenerator_new
+(empty)
+generator
+new
+pattern generator.new(X_0:timestamp, X_1:timestamp, X_2:lng):bat[:bte]
+VLTgenerator_new
+(empty)
+generator
 parameters
 pattern generator.parameters(X_0:bte, X_1:bte):bat[:bte]
 VLTgenerator_noop
@@ -50333,6 +50418,11 @@ mproject
 pattern sort.mproject(X_0:bat[:int], X_1:bat[:any_1], X_2:bat[:any_1], X_3:ptr):bat[:any_1]
 PPmproject
 (empty)
+source
+next
+pattern source.next(X_0:bat[:any_2]):bat[:any_1]
+source_next
+return next part
 sql
 affectedRows
 unsafe pattern sql.affectedRows(X_0:int, X_1:lng):int

@@ -1483,6 +1483,39 @@ is_const_func(sql_subfunc *f, list *attr)
 }
 
 static stmt*
+exp2bin_generator(backend *be, sql_exp *fe, list *args)
+{
+	/*
+	 * source := generator.new(fe->start, fe->end, fe->step); # use client record to get default slice size
+	 * (p1) := pipeline()
+	 * res := source.next(source); # use client record to access current pipepine info
+	 *
+	 *	main
+	 * x := source.done(source);
+	 * p1 := redo( not(x))
+	 *  combine
+	 * p1 := exit()
+	 */
+	InstrPtr q = newStmt(be->mb, "generator", "new");
+	if (list_length(args)) {
+		for(node *n = args->h; n; n = n->next) {
+			stmt *a = n->data;
+			q = pushArgument(be->mb, q, a->nr);
+		}
+	}
+	pushInstruction(be->mb, q);
+	int source = getDestVar(q);
+	if (be->pp) {
+		stmt_concat_add_source(be);
+	} else {
+		set_pipeline(be, stmt_pp_start_generator(be, source, false));
+		be->need_pipeline = false;
+	}
+	sql_subfunc *sf = fe->f;
+	return source_next(be, sf->res->h->data);
+}
+
+static stmt*
 exp2bin_file_loader(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *sel)
 {
 	assert(left == NULL); (void)left;
@@ -1491,10 +1524,6 @@ exp2bin_file_loader(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *sel
 	sql_subfunc *f = fe->f;
 
 	list *arg_list = fe->l;
-	/*
-	list *type_list = f->res;
-	assert(1 + list_length(type_list) == list_length(arg_list));
-	*/
 
 	sql_exp *eexp = arg_list->h->next->data;
 	assert(is_atom(eexp->type));
@@ -1527,10 +1556,6 @@ exp2bin_proto_loader(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *se
 	sql_subfunc *f = fe->f;
 
 	list *arg_list = fe->l;
-	/*
-	list *type_list = f->res;
-	assert(1 + list_length(type_list) == list_length(arg_list));
-	*/
 
 	sql_exp *eexp = arg_list->h->next->data;
 	assert(is_atom(eexp->type));
@@ -1762,7 +1787,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 				return exp2bin_named_placeholders(be, e);
 		}
 		ATOMIC_TYPE oahash_enabled = (1U<<19);
-		if (SQLrunning && GDKdebug & oahash_enabled && f->func->mod && f->func->imp && strcmp(f->func->mod, "sql") == 0 && strcmp(f->func->imp, "copy_from") == 0)
+		if (SQLrunning && GDKdebug & oahash_enabled && f->func->pipeline && f->func->mod && f->func->imp && strcmp(f->func->mod, "sql") == 0 && strcmp(f->func->imp, "copy_from") == 0)
 			return exp2bin_copyparpipe(be, e);
 		if (!list_empty(exps)) {
 			unsigned nrcols = 0;
@@ -1791,6 +1816,8 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 				list_append(l, es);
 			}
 		}
+		if (SQLrunning && GDKdebug & oahash_enabled && f->func->pipeline && f->func->mod && f->func->imp && strcmp(f->func->mod, "generator") == 0 && strcmp(f->func->imp, "series") == 0)
+			return exp2bin_generator(be, e, l);
 		if (!(s = stmt_Nop(be, stmt_list(be, l), sel, f, rows)))
 			return NULL;
 	}	break;
@@ -5342,9 +5369,7 @@ rel2bin_topn(backend *be, sql_rel *rel, list *refs)
 		if (!rel->spb && !be->need_pipeline) {
 			set_need_pipeline(be);
 		} else {
-assert(0);
-			stmt *pp = stmt_pp_start_nrparts(be, pp_nr_slices(rel->l));
-			set_pipeline(be, pp);
+			assert(0);
 		}
 	}
 

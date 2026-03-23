@@ -65,6 +65,7 @@ typedef struct backend {
 	int pp_pc;		/* pc of pipeline statement, any pp prepare statements need to go before this one */
 	int concatcnt;	/* number of concat blocks with sources */
 	int source;		/* use source.done instead of pipeline.counter */
+	int part_size;
 	int sink;		/* if set sink.error will be used to keep the errors within this pipeline */
 	int cleanup;	/* variable which needs cleanup at end of block */
 	void *ppstmt;

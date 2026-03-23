@@ -184,6 +184,7 @@ sqlcleanup(backend *be, int err)
 	be->need_pipeline = 0;
 	be->pipeline = be->pp = be->nrparts = be->pp_pc = be->concatcnt = be->source = be->sink = be->cleanup = 0;
 	be->ppstmt = NULL;
+	be->part_size = DEFAULT_PARTSIZE;
 	mvc_query_processed(be->mvc);
 	return err;
 }

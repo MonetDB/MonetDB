@@ -17,6 +17,7 @@
 #include "mal.h"
 #include "mal_interpreter.h"
 #include "mal_function.h"
+#include "mal_backend.h"
 #include "gdk_time.h"
 
 
@@ -1744,8 +1745,257 @@ VLTgenerator_rangejoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return msg;
 }
 
+#define GENERATOR_SOURCE 10
+typedef struct generator {
+	Sink s;
+	int type;
+	int part_size;
+#ifdef HAVE_HGE
+	hge cnt;
+	hge cur;
+#else
+	lng cnt;
+	lng cur;
+#endif
+	ValRecord first;
+	ValRecord limit;
+	ValRecord step;
+	MT_Lock l;
+} generator;
+
+static void
+generator_free(generator *g)
+{
+	assert(g->s.type == GENERATOR_SOURCE);
+	MT_lock_destroy(&g->l);
+	GDKfree(g);
+}
+
+static bool
+generator_done(generator *g, int wid, int nr_workers, int redo)
+{
+	assert(g->s.type == GENERATOR_SOURCE);
+	(void)redo;
+	(void)wid;
+	(void)nr_workers;
+	MT_lock_set(&g->l);
+
+	MT_lock_unset(&g->l);
+	return true;
+}
+
+#define VLTgenerate(T) {				\
+	T *p = (T*)Tloc(b,0);						\
+	T s = *(T*)VALget(&g->step);	\
+	T v = *(T*)VALget(&g->first) + cur * s;	\
+	i = cur;							\
+	cur += g->part_size;				\
+	if (cur > g->cnt)					\
+		cur = g->cnt;					\
+	for(j=0; i<cur; i++, j++) {			\
+		p[j] = v;						\
+		v += s;							\
+	}									\
+	b->tsorted = s > 0 || j <= 1;		\
+	b->trevsorted = s < 0 || j <= 1;	\
+}
+
+static BAT *
+generator_next(generator *g, int wid)
+{
+	assert(g->s.type == GENERATOR_SOURCE);
+	(void)wid;
+
+#ifdef HAVE_HGE
+	hge cur = 0, i, j;
+#else
+	lng cur = 0, i, j;
+#endif
+	MT_lock_set(&g->l);
+	cur = g->cur;
+	g->cur += g->part_size;
+	MT_lock_unset(&g->l);
+	BAT *b = COLnew(0, g->type, (cur<g->cnt)?g->part_size:0, TRANSIENT);
+	if (!b || cur >= g->cnt)
+		return b;
+
+	switch (g->type) {
+	case TYPE_bte:
+		VLTgenerate(bte);
+		break;
+	case TYPE_sht:
+		VLTgenerate(sht);
+		break;
+	case TYPE_int:
+		VLTgenerate(int);
+		break;
+	case TYPE_lng:
+		VLTgenerate(lng);
+		break;
+#ifdef HAVE_HGE
+	case TYPE_hge:
+		VLTgenerate(hge);
+		break;
+#endif
+	case TYPE_flt:
+		VLTgenerate(flt);
+		break;
+	case TYPE_dbl:
+		VLTgenerate(dbl);
+		break;
+	default:
+		assert(0);
+	}
+	BATsetcount(b, j);
+	b->tkey = true;
+	b->tnil = false;
+	b->tnonil = true;
+	return b;
+}
+
+
+#define VLTgetlimits(TPE, uTPE) {						\
+		uTPE cnt = 0;									\
+		TPE f = *getArgReference_##TPE(stk, pci, 1);	\
+		TPE l = *getArgReference_##TPE(stk, pci, 2);	\
+		TPE s = 0;										\
+		if ( pci->argc == 3)							\
+			s = f <= l ? (TPE) 1 : (TPE) -1;			\
+		else											\
+			s =  *getArgReference_##TPE(stk,pci, 3);	\
+		if (s == 0 || is_##TPE##_nil(f) || is_##TPE##_nil(l) || is_##TPE##_nil(s))	\
+			throw(MAL, "generator.new",	SQLSTATE(42000) "Illegal generator range");	\
+		if (f == l) {									\
+			cnt = 0;									\
+		} else if (f < l) {								\
+			/* cnt = l - f */							\
+			if (s <= 0)									\
+				throw(MAL, "generator.new", SQLSTATE(42000) "Illegal generator range");		\
+			if (f >= 0 || l <= 0) {						\
+				/* no chance of any kind of overflow */	\
+				cnt = l - f;							\
+			} else {									\
+				/* f < 0 && l > 0, do calculation is unsigned type */	\
+				cnt = (uTPE) l + (uTPE) -f;				\
+			}											\
+			uTPE i = cnt / (uTPE) s;					\
+			if (i * (uTPE) s != cnt)					\
+				i++;									\
+			cnt = i;									\
+		} else {										\
+			/* l < f; cnt = f - l */					\
+			if (s >= 0)									\
+				throw(MAL, "generator.new", SQLSTATE(42000) "Illegal generator range");		\
+			if (l >= 0 || f <= 0) {						\
+				/* no chance of any kind of overflow */	\
+				cnt = f - l;							\
+			} else {									\
+				/* f > 0 && l < 0, do calculation is unsigned type */	\
+				cnt = (uTPE) f + (uTPE) -l;				\
+			}											\
+			uTPE i = cnt / (uTPE) -s;					\
+			if (i * (uTPE) -s != cnt)					\
+				i++;									\
+			cnt = i;									\
+		}												\
+		g->cnt = cnt;									\
+		VALset(&g->first, g->type, &f);					\
+		VALset(&g->limit, g->type, &l);					\
+		VALset(&g->step, g->type, &s);					\
+}
+
+static str
+VLTgenerator_get_limits(generator *g, Client cntxt, MalStkPtr stk, InstrPtr pci)
+{
+	(void) cntxt;
+
+	switch (g->type) {
+	case TYPE_bte:
+		VLTgetlimits(bte, uint8_t);
+		break;
+	case TYPE_sht:
+		VLTgetlimits(sht, uint16_t);
+		break;
+	case TYPE_int:
+		VLTgetlimits(int, unsigned);
+		break;
+	case TYPE_lng:
+		VLTgetlimits(lng, ulng);
+		break;
+#ifdef HAVE_HGE
+	case TYPE_hge:
+		VLTgetlimits(hge, uhge);
+		break;
+#endif
+	case TYPE_flt:
+		VLTgetlimits(flt, ulng);
+		break;
+	case TYPE_dbl:
+		VLTgetlimits(dbl, ulng);
+		break;
+	default:
+		assert(0);
+	}
+	return MAL_SUCCEED;
+}
+
+static str
+VLTgenerator_new(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	str msg;
+	backend *be = cntxt->sqlcontext;
+
+	if ((msg = VLTgenerator_noop(cntxt, mb, stk, pci)) != MAL_SUCCEED)
+		return msg;
+
+	int tt = getArgType(mb, pci, 1);
+	generator *g = (generator*)GDKzalloc(sizeof(generator));
+	if (!g)
+		throw(SQL, "generator.new",  SQLSTATE(HY013) MAL_MALLOC_FAIL);
+
+	BAT *b = COLnew(0, TYPE_bte, 0, TRANSIENT);
+	if (!b) {
+		GDKfree(g);
+		throw(SQL, "generator.new",  SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
+	b->tsink = (Sink*)g;
+	g->type = tt;
+	g->part_size = be->part_size;
+	g->cnt = g->cur = 0;
+	g->s.type = GENERATOR_SOURCE;
+	g->s.done = (sink_done)generator_done;
+	g->s.destroy = (sink_destroy)generator_free;
+	g->s.next_bat = (sink_next_bat)generator_next;
+	MT_lock_init(&g->l, "generator");
+
+	msg = VLTgenerator_get_limits(g, cntxt, stk, pci);
+
+	if( msg == MAL_SUCCEED){
+		*getArgReference_bat(stk, pci, 0) = b->batCacheid;
+		BBPkeepref(b);
+	}
+	return msg;
+}
+
+
 #include "mel.h"
 static mel_func generator_init_funcs[] = {
+ pattern("generator", "new", VLTgenerator_new, false, "", args(1,3, batarg("",bte),arg("first",bte),arg("limit",bte))),
+ pattern("generator", "new", VLTgenerator_new, false, "", args(1,3, batarg("",bte),arg("first",sht),arg("limit",sht))),
+ pattern("generator", "new", VLTgenerator_new, false, "", args(1,3, batarg("",bte),arg("first",int),arg("limit",int))),
+ pattern("generator", "new", VLTgenerator_new, false, "", args(1,3, batarg("",bte),arg("first",lng),arg("limit",lng))),
+ pattern("generator", "new", VLTgenerator_new, false, "", args(1,3, batarg("",bte),arg("first",flt),arg("limit",flt))),
+ pattern("generator", "new", VLTgenerator_new, false, "", args(1,3, batarg("",bte),arg("first",dbl),arg("limit",dbl))),
+ pattern("generator", "new", VLTgenerator_new, false, "", args(1,4, batarg("",bte),arg("first",bte),arg("limit",bte),arg("step",bte))),
+ pattern("generator", "new", VLTgenerator_new, false, "", args(1,4, batarg("",bte),arg("first",sht),arg("limit",sht),arg("step",sht))),
+ pattern("generator", "new", VLTgenerator_new, false, "", args(1,4, batarg("",bte),arg("first",int),arg("limit",int),arg("step",int))),
+ pattern("generator", "new", VLTgenerator_new, false, "", args(1,4, batarg("",bte),arg("first",lng),arg("limit",lng),arg("step",lng))),
+ pattern("generator", "new", VLTgenerator_new, false, "", args(1,4, batarg("",bte),arg("first",flt),arg("limit",flt),arg("step",flt))),
+ pattern("generator", "new", VLTgenerator_new, false, "Create and materialize a generator table", args(1,4, batarg("",bte),arg("first",dbl),arg("limit",dbl),arg("step",dbl))),
+ pattern("generator", "new", VLTgenerator_new, false, "date generator with step size in months", args(1,4, batarg("",bte),arg("first",date),arg("limit",date),arg("step",int))),
+ pattern("generator", "new", VLTgenerator_new, false, "date generator with step size in days", args(1,4, batarg("",bte),arg("first",date),arg("limit",date),arg("step",lng))),
+ pattern("generator", "new", VLTgenerator_new, false, "", args(1,4, batarg("",bte),arg("first",timestamp),arg("limit",timestamp),arg("step",lng))),
+
  pattern("generator", "series", VLTgenerator_table, false, "", args(1,3, batarg("",bte),arg("first",bte),arg("limit",bte))),
  pattern("generator", "series", VLTgenerator_table, false, "", args(1,3, batarg("",sht),arg("first",sht),arg("limit",sht))),
  pattern("generator", "series", VLTgenerator_table, false, "", args(1,3, batarg("",int),arg("first",int),arg("limit",int))),
@@ -1821,6 +2071,9 @@ static mel_func generator_init_funcs[] = {
  pattern("generator", "rangejoin", VLTgenerator_rangejoin, false, "", args(2,12, batarg("l",oid),batarg("r",oid),batarg("gen",flt),batarg("low",flt),batarg("hgh",flt),batarg("lc",oid),batarg("rc",oid),arg("li",bit),arg("ri",bit),arg("anti",bit),arg("sym",bit),arg("est",lng))),
  pattern("generator", "rangejoin", VLTgenerator_rangejoin, false, "Overloaded range join operation", args(2,12, batarg("l",oid),batarg("r",oid),batarg("gen",dbl),batarg("low",dbl),batarg("hgh",dbl),batarg("lc",oid),batarg("rc",oid),arg("li",bit),arg("ri",bit),arg("anti",bit),arg("sym",bit),arg("est",lng))),
 #ifdef HAVE_HGE
+ pattern("generator", "new", VLTgenerator_new, false, "", args(1,3, batarg("",bte),arg("first",hge),arg("limit",hge))),
+ pattern("generator", "new", VLTgenerator_new, false, "Create and materialize a generator table", args(1,4, batarg("",bte),arg("first",hge),arg("limit",hge),arg("step",hge))),
+
  pattern("generator", "series", VLTgenerator_table, false, "", args(1,3, batarg("",hge),arg("first",hge),arg("limit",hge))),
  pattern("generator", "series", VLTgenerator_table, false, "Create and materialize a generator table", args(1,4, batarg("",hge),arg("first",hge),arg("limit",hge),arg("step",hge))),
  pattern("generator", "parameters", VLTgenerator_noop, false, "Retain the table definition, but don't materialize", args(1,4, batarg("",hge),arg("first",hge),arg("limit",hge),arg("step",hge))),

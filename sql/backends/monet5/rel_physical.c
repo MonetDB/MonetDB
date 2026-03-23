@@ -675,14 +675,17 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 		 * multiple times */
 	} else if (is_simple_project(rel->op) || is_select(rel->op) || is_sample(rel->op)) {
 		if (pb && (is_simple_project(rel->op) || is_select(rel->op)) && exps_have_unsafe(rel->exps, 1, false)) {
-			if (p && (p->op != op_topn || !topn_limit(p)))
+			//if (p && (p->op != op_topn || !topn_limit(p)))
 				rel_dup(rel);
 			if (rel->l)
-				res = rel_pipeline(v, rel->l, materialize, pb);
+				res = rel_pipeline(v, rel->l, materialize, 0);
+			/*
 			if (pb && !rel_is_ref(rel)) {
 				rel->spb = 1;
 				res = SPB;
 			}
+			*/
+			res = EPB;
 		} else {
 			if (rel->l)
 				res = rel_pipeline(v, rel->l, materialize, pb?pb:!list_empty(rel->r)?SPB:0);
@@ -1003,7 +1006,7 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 		sql_exp *op = rel->r;
         if (rel->flag != TRIGGER_WRAPPER && op) {
             sql_subfunc *f = op->f;
-            if (f->func->lang == FUNC_LANG_INT && (strcmp(f->func->base.name, "file_loader") == 0)) {
+            if (f->func->lang == FUNC_LANG_INT && f->func->pipeline) {
 				if (pb)
 					rel->spb = 1;
 				res = pb;
