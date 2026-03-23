@@ -1102,6 +1102,18 @@ rel2bin_oahash_fullouterjoin(backend *be, sql_rel *rel, list *refs)
 
 	/*** start pipeline.concat ***/
 	int p_source = be->source, p_concatcnt = be->concatcnt;
+	/* A right outer join (as well as a full outer join) has exactly 2 concat blocks.
+	 * Block 1: the join part, in which we also need to generate MAL code to
+	 *   process the sub relations of the join. Therefore, this concat block
+	 *   might have already been added to the p_source by the code generation
+	 *   of the sub relations. If not, e.g. if the sub relations just contain
+	 *   constants, we add a dummy source at the end of code generation for this
+	 *   block (see code "add dummy source").
+	 * Block 2: the append-null part. The MAL code structure for this block is
+	 *   static. There is no more sub relations to process. Therefore, we
+	 *   immediately add this concat block to the p_source at the beginning of
+	 *   code generation for this block.
+	 */
 	(void)stmt_concat(be, be->source, 2);
 
 	/* create all results variables, hash-side first */
