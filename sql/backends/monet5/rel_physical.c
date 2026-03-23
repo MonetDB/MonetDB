@@ -548,7 +548,7 @@ static sql_rel *
 rel_buildhash(visitor *v, sql_rel *rel, sql_rel **iprj, bool crossproduct)
 {
 	if (crossproduct && rel->op == op_basetable) {
-		return rel;
+		return rel_dup(rel);
 	}
 	/* Inplace for hash sharing */
 	sql_rel *r = rel_create(v->sql->sa);
