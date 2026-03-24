@@ -3237,12 +3237,14 @@ BATcount_no_nil(BAT *b, BAT *s)
 		return ci.ncand;
 	}
 	if (BATcheckhash(b)) {
+		MT_rwlock_rdlock(&b->thashlock);
 		BUN p = 0;
 		const void *nil = ATOMnilptr(b->ttype);
 		cnt = ci.ncand;
 		HASHloop(&bi, b->thash, p, nil)
 			if (canditer_contains(&ci, p + b->hseqbase))
 				cnt--;
+		MT_rwlock_rdunlock(&b->thashlock);
 		bat_iterator_end(&bi);
 		return cnt;
 	}
