@@ -217,7 +217,32 @@ PPcounter(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void)cntxt;
 	(void)mb;
 	bat *rb = getArgReference_bat(stk, pci, 0);
-	int nr = *getArgReference_int(stk, pci, 1);
+	int nr = 0;
+	int tpe = getArgType(mb, pci, 1);
+	if (isaBatType(tpe)) { /* get the BAT to compute nparts */
+		bat *cb = getArgReference_bat(stk, pci, 1);
+		BAT *b = BATdescriptor(*cb);
+		if (!b)
+			return createException(SQL, "pipeline.counter", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		size_t cnt = 0;
+		hash_table *h = (hash_table*)b->tsink;
+		if (h && h->s.type == OA_HASH_TABLE_SINK) {
+			cnt = h->size;
+		} else {
+			cnt = BATcount(b);
+		}
+		BBPunfix(b->batCacheid);
+
+		if (cnt < SLICE_SIZE)
+			nr = 1;
+		else
+			nr = (int)((cnt+SLICE_SIZE-1)/SLICE_SIZE);
+		FORCEMITODEBUG
+		if (nr < GDKnr_threads)
+			nr = MIN((int)GDKnr_threads,(int)cnt);
+	} else { /* get nparts */
+		nr = *getArgReference_int(stk, pci, 1);
+	}
 	bool sync = false;
 	if (pci->argc == 3)
 		sync = *getArgReference_bit(stk, pci, 2);
@@ -771,9 +796,18 @@ static mel_func pipeline_init_funcs[] = {
 	 batarg("sink", bte),
 	 arg("nr", int)
  )),
+ pattern("pipeline", "counter", PPcounter, true, "return counter source", args(1,2,
+	 batarg("sink", bte),
+	 batargany("col", 1) /* BAT to be sliced into nparts for the counter */
+ )),
  pattern("pipeline", "counter", PPcounter, true, "return counter source", args(1,3,
 	 batarg("sink", bte),
 	 arg("nr", int),
+	 arg("sync", bool)	/* sync (ie all workers need to call this counter once, before any can continue) */
+ )),
+ pattern("pipeline", "counter", PPcounter, true, "return counter source", args(1,3,
+	 batarg("sink", bte),
+	 batargany("col", 1), /* BAT to be sliced into nparts for the counter */
 	 arg("sync", bool)	/* sync (ie all workers need to call this counter once, before any can continue) */
  )),
  pattern("pipeline", "counter_get", PPcounter_get, true, "return current number from the counter", args(1,3,

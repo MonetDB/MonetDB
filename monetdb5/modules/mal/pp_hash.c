@@ -3262,8 +3262,6 @@ error:
 	return err;
 }
 
-#define SLICE_SIZE 100000
-
 static str
 OAHASHno_slices(Client ctx, int *no_slices, bat *ht_sink)
 {

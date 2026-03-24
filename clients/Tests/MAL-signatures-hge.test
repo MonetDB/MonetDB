@@ -50065,6 +50065,16 @@ PPconcat_block
 Add source to concat
 pipeline
 counter
+unsafe pattern pipeline.counter(X_0:bat[:any_1]):bat[:bte]
+PPcounter
+return counter source
+pipeline
+counter
+unsafe pattern pipeline.counter(X_0:bat[:any_1], X_1:bool):bat[:bte]
+PPcounter
+return counter source
+pipeline
+counter
 unsafe pattern pipeline.counter(X_0:int):bat[:bte]
 PPcounter
 return counter source

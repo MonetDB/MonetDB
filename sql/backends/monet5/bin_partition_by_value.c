@@ -128,6 +128,19 @@ rel2bin_slicer_pp(backend *be, stmt *sub)
 		stmt *mat = sub->op4.lval->h->data;
 		int nrparts = mat_nr_parts(be, mat->nr);
 		source = pp_counter(be, -1, nrparts, false);
+    } else if (be->pp) {
+            if (sub && sub->cand)
+                sub = subrel_project(be, sub, NULL, NULL);
+            // FIXME: a better way to determine if 'sub' is an oahash-table. sub->op1 is the hash-payload!
+            node *n = sub->op1 ? sub->op4.lval->t : sub->op4.lval->h; /* for hash get last */
+            stmt *sc = n->data;
+
+            if (sc->nrcols == 0) {
+                source = pp_counter(be, 1, -1, false);
+            } else {
+                //sc = stmt_no_slices(be, sc, sub->op1?true:false /* hash table on op1 */);
+                source = pp_counter(be, -1, sc->nr, false);
+            }
 	} else {
 		source = pp_counter(be, -1, pp_dynamic_slices(be, sub), false);
 	}

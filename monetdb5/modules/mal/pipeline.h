@@ -20,6 +20,8 @@
 #define pipeline_lock2(r) MT_lock_set(&r->theaplock)
 #define pipeline_unlock2(r) MT_lock_unset(&r->theaplock)
 
+#define SLICE_SIZE 100000
+
 // TODO a better way to define/add/register sinks, similar to types
 #define OA_HASH_TABLE_SINK 1
 #define OA_HASH_PAYLOAD_SINK 2

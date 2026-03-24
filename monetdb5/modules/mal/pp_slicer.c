@@ -157,7 +157,6 @@ error:
 	return msg;
 }
 
-#define SLICE_SIZE 100000
 static str
 SLICERnth_slice(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
