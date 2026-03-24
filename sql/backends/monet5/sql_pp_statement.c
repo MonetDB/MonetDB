@@ -1332,9 +1332,15 @@ stmt_concat_add_subconcat(backend *be, int p_source, int p_concatcnt)
 	return 0;
 }
 
+/* allowed value combinations for (nr_slices, var_nr_slices):
+ * (-1, -1): a dummy pipeline.counter
+ * (nr_slices, -1): a static pipeline.counter(<nr_slices>)
+ * (-1, var_nr_slices): a dynamic pipeline.counter(<var_nr_slices>)
+ */
 int
 pp_counter(backend *be, int nr_slices, int var_nr_slices, bool sync)
 {
+	assert(!(nr_slices > 0 && var_nr_slices > 0));
 	InstrPtr q = newStmt(be->mb, "pipeline", "counter");
 	if (var_nr_slices == -1)
 		q = pushInt(be->mb, q, nr_slices);

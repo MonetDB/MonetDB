@@ -840,8 +840,7 @@ rel2bin_groupby_pp(backend *be, sql_rel *rel, list *refs)
 		set_need_pipeline(be);
 	} else {
 		assert(nrparts);
-		int nr_parts = nrparts;
-		int source = pp_counter(be, nr_parts, nrparts, false);
+		int source = pp_counter(be, -1, nrparts, false);
 
 		if (be->pp) {
 			stmt_concat_add_source(be);

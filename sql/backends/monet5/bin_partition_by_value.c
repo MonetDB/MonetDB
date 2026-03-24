@@ -127,7 +127,7 @@ rel2bin_slicer_pp(backend *be, stmt *sub)
 	if (sub->partition) {
 		stmt *mat = sub->op4.lval->h->data;
 		int nrparts = mat_nr_parts(be, mat->nr);
-		source = pp_counter(be, 0, nrparts, false);
+		source = pp_counter(be, -1, nrparts, false);
 	} else {
 		source = pp_counter(be, -1, pp_dynamic_slices(be, sub), false);
 	}
