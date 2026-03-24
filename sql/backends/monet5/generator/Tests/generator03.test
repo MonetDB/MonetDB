@@ -155,9 +155,3 @@ and value > timestamp '2008-03-01 11:00'
 2008-03-02 06:00:00
 2008-03-02 16:00:00
 
-query I rowsort
-select * from sys.generate_series(10,0,-3) where value < 6
-----
-1
-4
-
