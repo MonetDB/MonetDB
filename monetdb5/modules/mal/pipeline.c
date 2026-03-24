@@ -219,6 +219,10 @@ PPcounter(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat *rb = getArgReference_bat(stk, pci, 0);
 	int nr = 0;
 	int tpe = getArgType(mb, pci, 1);
+	/* FIXME: this code is copied from SLICERno_slices and OAHASHno_slices.
+	   We should have one base implementation for all three functions. In
+	   addition, we should merge SLICERno_slices and OAHASHno_slices.
+	*/
 	if (isaBatType(tpe)) { /* get the BAT to compute nparts */
 		bat *cb = getArgReference_bat(stk, pci, 1);
 		BAT *b = BATdescriptor(*cb);
