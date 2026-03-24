@@ -1477,8 +1477,7 @@ push_up_join(mvc *sql, sql_rel *rel, list *ad)
 				int single = is_single(j);
 
 				if (attr && exps_uses_exp(rel->exps, attr->h->data)) {
-					if (!rel_is_ref(rel) && !rel_is_ref(j) &&
-						rel->op == op_left && j->op == op_left) {
+					if (!rel_is_ref(rel) && !rel_is_ref(j) && j->op == op_left) {
 
 						j->l = rel->l;
 						rel->l = jl;
@@ -2199,9 +2198,10 @@ _rel_unnest(visitor *v, sql_rel *rel)
 	    (is_join(rel->op) && l && is_select(l->op) && exps_have_freevar(v->sql, l->exps) && !rel_is_ref(l)) ||
 	    (is_join(rel->op) && r && is_select(r->op) && exps_have_freevar(v->sql, r->exps) && !rel_is_ref(r)))) {
 		rel = push_up_select2(v, rel);
-		if (rel && is_select(rel->op)) {
-			sql_rel *l = rel->l;
-			if (is_dependent(l)) {
+		sql_rel *l = rel;
+		while (l && is_select(l->op)) {
+			l = l->l;
+			if (l && is_dependent(l)) {
 				rel->l = l = rel_unnest_dependent(v->sql, l);
 				v->changes++;
 			}

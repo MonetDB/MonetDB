@@ -81,6 +81,7 @@ INSERT INTO orders VALUES
 -- query triggers assertion failure in rel2bin_join (be=0x7ff0701a61b0, rel=0x7ff07015b800, refs=0x7ff07023cf60) at sql/backends/monet5/rel_bin.c:3463
 query TT rowsort
 select
+  distinct
   subq_0.c0,
   subq_3.c0
 from
@@ -137,7 +138,36 @@ from
           where ref_4.user_id < ref_4.id)
     ) as subq_3
 ----
-
+alice
+NULL
+alice
+alice
+alice
+bob
+alice
+carol
+alice
+dave
+bob
+NULL
+bob
+alice
+bob
+bob
+bob
+carol
+bob
+dave
+dave
+NULL
+dave
+alice
+dave
+bob
+dave
+carol
+dave
+dave
 
 statement ok
 DROP TABLE orders
