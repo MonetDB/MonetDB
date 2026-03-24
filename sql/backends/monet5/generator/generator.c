@@ -249,12 +249,23 @@ VLTgenerator_table_(BAT **result, Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 				throw(MAL, "generator.table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			v = (date *) Tloc(bn, 0);
 			BUN c;
-			for (c = 0; f < l; c++) {
-				*v++ = f;
-				f = date_add_month(f, s);
-				if (is_date_nil(f)) {
-					BBPreclaim(bn);
-					throw(MAL, "generator.table", SQLSTATE(22003) "overflow in calculation");
+			if (s < 0) {
+				for (c = 0; f > l; c++) {
+					*v++ = f;
+					f = date_add_month(f, s);
+					if (is_date_nil(f)) {
+						BBPreclaim(bn);
+						throw(MAL, "generator.table", SQLSTATE(22003) "overflow in calculation");
+					}
+				}
+			} else {
+				for (c = 0; f < l; c++) {
+					*v++ = f;
+					f = date_add_month(f, s);
+					if (is_date_nil(f)) {
+						BBPreclaim(bn);
+						throw(MAL, "generator.table", SQLSTATE(22003) "overflow in calculation");
+					}
 				}
 			}
 			n = c;
@@ -285,12 +296,23 @@ VLTgenerator_table_(BAT **result, Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 				throw(MAL, "generator.table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			v = (date *) Tloc(bn, 0);
 			BUN c;
-			for (c = 0; c < n && f < l; c++) {
-				*v++ = f;
-				f = date_add_day(f, (int) s);
-				if (is_date_nil(f)) {
-					BBPreclaim(bn);
-					throw(MAL, "generator.table", SQLSTATE(22003) "overflow in calculation");
+			if (s < 0) {
+				for (c = 0; c < n && f > l; c++) {
+					*v++ = f;
+					f = date_add_day(f, (int) s);
+					if (is_date_nil(f)) {
+						BBPreclaim(bn);
+						throw(MAL, "generator.table", SQLSTATE(22003) "overflow in calculation");
+					}
+				}
+			} else {
+				for (c = 0; c < n && f < l; c++) {
+					*v++ = f;
+					f = date_add_day(f, (int) s);
+					if (is_date_nil(f)) {
+						BBPreclaim(bn);
+						throw(MAL, "generator.table", SQLSTATE(22003) "overflow in calculation");
+					}
 				}
 			}
 			n = c;
@@ -876,7 +898,7 @@ VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			BBPreclaim(bn); 											\
 			throw(MAL,"generator.thetaselect", SQLSTATE(42000) "Unknown operator");	\
 		}																\
-		for(j=0;j<cap;j++, f+=s, o++)									\
+		for(j=0;j<=cap;j++, f+=s, o++) {								\
 			if (nil_matches && is_##TPE##_nil(low) ? anti :				\
 				((is_##TPE##_nil(low) || f >= low) && (is_##TPE##_nil(hgh) || f <= hgh)) != anti){ \
 				if(cand == NULL || canditer_contains(&ci, o)) {			\
@@ -884,6 +906,9 @@ VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					c++;												\
 				}														\
 			}															\
+			if (f == l)													\
+				break;													\
+		}																\
 	} while (0)
 
 
@@ -951,7 +976,7 @@ VLTgenerator_thetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			hgh = low = date_nil;
 			if ( strcmp(oper,"<") == 0){
 				hgh= *getArgReference_TYPE(stk,pci,3, date);
-				hgh = date_add_month(hgh, -1);
+				hgh = date_add_day(hgh, -1);
 				if (is_date_nil(hgh)) {
 					BBPreclaim(cand);
 					throw(MAL, "generator.select", SQLSTATE(22003) "overflow in calculation");
@@ -991,7 +1016,7 @@ VLTgenerator_thetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			v = (oid*) Tloc(bn,0);
 
 			val = f;
-			for(j = 0; j< cap; j++,  o++){
+			for(j = 0; ; j++,  o++){
 				if (((is_date_nil(low) || val >= low) &&
 				     (is_date_nil(hgh) || val <= hgh)) != anti){
 					if(cand == NULL || canditer_contains(&ci, o)){
@@ -1005,6 +1030,10 @@ VLTgenerator_thetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 					BBPreclaim(bn);
 					throw(MAL, "generator.thetaselect", SQLSTATE(22003) "overflow in calculation");
 				}
+				if (val == l)
+					break;
+				if (s < 0 ? val < l : val > l)
+					break;
 			}
 		} else if (tpe == TYPE_date) { /* days */
 			date f,l, val, low, hgh;
@@ -1066,7 +1095,7 @@ VLTgenerator_thetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			v = (oid*) Tloc(bn,0);
 
 			val = f;
-			for(j = 0; j< cap; j++,  o++){
+			for(j = 0; j<= cap; j++,  o++){
 				if (((is_date_nil(low) || val >= low) &&
 				     (is_date_nil(hgh) || val <= hgh)) != anti){
 					if(cand == NULL || canditer_contains(&ci, o)){
@@ -1080,6 +1109,8 @@ VLTgenerator_thetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 					BBPreclaim(bn);
 					throw(MAL, "generator.thetaselect", SQLSTATE(22003) "overflow in calculation");
 				}
+				if (val == l)
+					break;
 			}
 		} else if ( tpe == TYPE_timestamp){
 			timestamp f,l, val, low, hgh;
@@ -1145,7 +1176,7 @@ VLTgenerator_thetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			v = (oid*) Tloc(bn,0);
 
 			val = f;
-			for(j = 0; j< cap; j++,  o++){
+			for(j = 0; j<= cap; j++,  o++){
 				if (((is_timestamp_nil(low) || val >= low) &&
 				     (is_timestamp_nil(hgh) || val <= hgh)) != anti){
 					if(cand == NULL || canditer_contains(&ci, o)){
@@ -1159,6 +1190,8 @@ VLTgenerator_thetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 					BBPreclaim(bn);
 					throw(MAL, "generator.thetaselect", SQLSTATE(22003) "overflow in calculation");
 				}
+				if (val == l)
+					break;
 			}
 		} else {
 			BBPreclaim(cand);

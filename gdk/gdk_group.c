@@ -1320,7 +1320,9 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	gn->tunique_est = (double)ngrp;
 	*groups = gn;
 	if (!g && !e && !s) {
+		MT_lock_set(&b->theaplock);
 		b->tunique_est = (double)ngrp;
+		MT_lock_unset(&b->theaplock);
 	}
 	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
 		  ",g=" ALGOOPTBATFMT ",e=" ALGOOPTBATFMT
