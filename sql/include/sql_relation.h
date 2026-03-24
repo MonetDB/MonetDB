@@ -278,6 +278,7 @@ typedef enum operator_type {
 #define reset_single(rel) 	(rel)->single = 0
 #define set_recursive(rel) 	(rel)->recursive = 1
 #define is_recursive(rel) 	((rel)->recursive)
+#define set_dynamic(rel) 	(rel)->dynamic = 1
 #define is_dynamic(rel) 	((rel)->dynamic)
 
 #define is_freevar(e) 		((e)->freevar)
