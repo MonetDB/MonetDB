@@ -540,6 +540,8 @@ typedef struct sql_func {
 
 typedef struct sql_subfunc {
 	sql_func *func;
+	unsigned int
+		pipeline:1;	/* run with pipeline */
 	list *res;
 	list *coltypes; /* we need this for copy into from loader */
 	list *colnames; /* we need this for copy into from loader */

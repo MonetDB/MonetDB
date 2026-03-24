@@ -1006,10 +1006,14 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 		sql_exp *op = rel->r;
         if (rel->flag != TRIGGER_WRAPPER && op) {
             sql_subfunc *f = op->f;
-            if (f->func->lang == FUNC_LANG_INT && f->func->pipeline) {
-				if (pb)
-					rel->spb = 1;
+            if (/*f->func->lang == FUNC_LANG_INT &&*/ f->func->pipeline) {
 				res = pb;
+				if (pb) {
+					f->pipeline = 1;
+					rel->parallel = 1;
+					rel->spb = 1;
+					res = SPB;
+				}
             }
 		}
 	} else if (is_physical(rel->op)) {

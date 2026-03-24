@@ -1782,14 +1782,10 @@ VLTgenerator_rangejoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 typedef struct generator {
 	Sink s;
 	int type;
+	int steptype;
 	int part_size;
-#ifdef HAVE_HGE
-	hge cnt;
-	hge cur;
-#else
-	lng cnt;
-	lng cur;
-#endif
+	BUN cnt;
+	BUN cur;
 	ValRecord first;
 	ValRecord limit;
 	ValRecord step;
@@ -1811,10 +1807,12 @@ generator_done(generator *g, int wid, int nr_workers, int redo)
 	(void)redo;
 	(void)wid;
 	(void)nr_workers;
+	bool res = false;
 	MT_lock_set(&g->l);
-
+	if (g->cur >= g->cnt)
+		res = true;
 	MT_lock_unset(&g->l);
-	return true;
+	return res;
 }
 
 #define VLTgenerate(T) {				\
@@ -1839,11 +1837,7 @@ generator_next(generator *g, int wid)
 	assert(g->s.type == GENERATOR_SOURCE);
 	(void)wid;
 
-#ifdef HAVE_HGE
-	hge cur = 0, i, j;
-#else
-	lng cur = 0, i, j;
-#endif
+	BUN cur = 0, i, j = 0;
 	MT_lock_set(&g->l);
 	cur = g->cur;
 	g->cur += g->part_size;
@@ -1877,7 +1871,97 @@ generator_next(generator *g, int wid)
 		VLTgenerate(dbl);
 		break;
 	default:
-		assert(0);
+		if (g->type == TYPE_date && g->steptype == TYPE_int) { /* months */
+			date *v = (date *) Tloc(b, 0);
+			int s = g->step.val.ival;
+			date f = g->first.val.ival;
+			date l = g->limit.val.ival;
+			BUN c = cur;
+			cur += g->part_size;
+			for(BUN i = 0; i< cur; i++)
+				f = date_add_month(f, s);
+			if (cur > g->cnt)
+				cur = g->cnt;
+			if (s < 0) {
+				for (j = 0; c < cur && l < f; c++, j++) {
+					*v++ = f;
+					f = date_add_month(f, s);
+					if (is_date_nil(f)) {
+						BBPreclaim(b);
+						return NULL;
+					}
+				}
+			} else {
+				for (j = 0; c < cur && f < l; c++, j++) {
+					*v++ = f;
+					f = date_add_month(f, s);
+					if (is_date_nil(f)) {
+						BBPreclaim(b);
+						return NULL;
+					}
+				}
+			}
+			b->tsorted = s > 0 || j <= 1;
+			b->trevsorted = s < 0 || j <= 1;
+		} else if (g->type == TYPE_date) { /* days */
+			date *v = (date *) Tloc(b, 0);
+			lng s = g->step.val.lval;
+			date f = g->first.val.ival;
+			date l = g->limit.val.ival;
+			s /= 24*60*60*1000;
+			f += s*cur;
+			BUN c = cur;
+			cur += g->part_size;
+			if (cur > g->cnt)
+				cur = g->cnt;
+			if (s < 0) {
+				for (j = 0; c < cur && l < f; c++, j++) {
+					*v++ = f;
+					f = date_add_day(f, (int) s);
+					if (is_date_nil(f)) {
+						BBPreclaim(b);
+						return NULL;
+					}
+				}
+			} else {
+				for (j = 0; c < cur && f < l; c++, j++) {
+					*v++ = f;
+					f = date_add_day(f, (int) s);
+					if (is_date_nil(f)) {
+						BBPreclaim(b);
+						return NULL;
+					}
+				}
+			}
+			b->tsorted = s > 0 || j <= 1;
+			b->trevsorted = s < 0 || j <= 1;
+		} else if (g->type == TYPE_timestamp) {
+			timestamp *v = (timestamp *) Tloc(b, 0);
+			lng s = g->step.val.lval;
+			timestamp f = g->first.val.lval;
+			timestamp l = g->limit.val.lval;
+			s *= 1000;
+			f += s*cur;
+			BUN c = cur;
+			cur += g->part_size;
+			if (cur > g->cnt)
+				cur = g->cnt;
+			for (j = 0; c < cur; c++, j++) {
+				*v++ = f;
+				f = timestamp_add_usec(f, s);
+				if (is_timestamp_nil(f)) {
+					BBPreclaim(b);
+					return NULL;
+				}
+			}
+			if (cur >= g->cnt && f != l) {
+				*v++ = f;
+				j++;
+			}
+			b->tsorted = s > 0 || j <= 1;
+			b->trevsorted = s < 0 || j <= 1;
+		}
+		break;
 	}
 	BATsetcount(b, j);
 	b->tkey = true;
@@ -1931,14 +2015,45 @@ generator_next(generator *g, int wid)
 				i++;									\
 			cnt = i;									\
 		}												\
+		g->cnt = (BUN)cnt;								\
+		VALset(&g->first, g->type, &f);					\
+		VALset(&g->limit, g->type, &l);					\
+		VALset(&g->step, g->type, &s);					\
+}
+
+#define VLTgetlimits_flt(TPE) {							\
+		BUN cnt = 0;									\
+		TPE f = *getArgReference_##TPE(stk, pci, 1);	\
+		TPE l = *getArgReference_##TPE(stk, pci, 2);	\
+		TPE s = 0;										\
+		if ( pci->argc == 3)							\
+			s = f <= l ? (TPE) 1 : (TPE) -1;			\
+		else											\
+			s =  *getArgReference_##TPE(stk,pci, 3);	\
+		if (s == 0 || (s > 0 && f > l) || (s < 0 && f < l) || is_##TPE##_nil(f) || is_##TPE##_nil(l) || is_##TPE##_nil(s))	\
+			throw(MAL, "generator.new",	SQLSTATE(42000) "Illegal generator range");	\
+		cnt = (BUN) ((l - f) / s);						\
+		if ((TPE) (cnt * s + f) != l)					\
+			cnt++;										\
 		g->cnt = cnt;									\
 		VALset(&g->first, g->type, &f);					\
 		VALset(&g->limit, g->type, &l);					\
 		VALset(&g->step, g->type, &s);					\
 }
 
+#define VLTgetlimits_temporal(TPE, tTPE, sTPE) {		\
+		TPE f = *getArgReference_TYPE(stk, pci, 1, TPE);\
+		TPE l = *getArgReference_TYPE(stk, pci, 2, TPE);\
+		sTPE s = *getArgReference_##sTPE(stk,pci, 3);	\
+		if (s == 0 || is_##tTPE##_nil(f) || is_##tTPE##_nil(l) || is_##sTPE##_nil(s))	\
+			throw(MAL, "generator.new",	SQLSTATE(42000) "Illegal generator range");	\
+		VALset(&g->first, g->type, &f);					\
+		VALset(&g->limit, g->type, &l);					\
+		VALset(&g->step, g->steptype, &s);					\
+}
+
 static str
-VLTgenerator_get_limits(generator *g, Client cntxt, MalStkPtr stk, InstrPtr pci)
+VLTgenerator_get_limits(generator *g, Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) cntxt;
 
@@ -1961,13 +2076,67 @@ VLTgenerator_get_limits(generator *g, Client cntxt, MalStkPtr stk, InstrPtr pci)
 		break;
 #endif
 	case TYPE_flt:
-		VLTgetlimits(flt, ulng);
+		VLTgetlimits_flt(flt);
 		break;
 	case TYPE_dbl:
-		VLTgetlimits(dbl, ulng);
+		VLTgetlimits_flt(dbl);
 		break;
 	default:
-		assert(0);
+		if (g->type == TYPE_date) {
+			/* with date, step is of SQL type "interval month or day",
+			 * i.e., MAL / C type "int" or "lng" */
+			if (pci->argc == 3)
+				throw(MAL,"generator.new", SQLSTATE(42000) "Date step missing");
+			if (g->steptype == TYPE_int) {
+				ValRecord ret;
+				if (VARcalccmp(&ret, &stk->stk[pci->argv[1]], &stk->stk[pci->argv[2]]) != GDK_SUCCEED)
+					throw(MAL, "generator.new", SQLSTATE(42000) "Illegal generator expression range");
+				VLTgetlimits_temporal(date, int, int);
+				int s = g->step.val.ival;
+				if (s == 0 ||
+					(s > 0 && ret.val.btval > 0) ||
+					(s < 0 && ret.val.btval < 0) ||
+						is_date_nil(g->first.val.ival) || is_date_nil(g->limit.val.ival))
+					throw(MAL, "generator.new", SQLSTATE(42000) "Illegal generator range");
+				g->cnt = (BUN) (date_diff(g->limit.val.ival, g->first.val.ival) / (s *28)) + 1; /* n maybe too large now */
+			} else { /* default interval days */
+				ValRecord ret;
+				if (VARcalccmp(&ret, &stk->stk[pci->argv[1]], &stk->stk[pci->argv[2]]) != GDK_SUCCEED)
+					throw(MAL, "generator.new", SQLSTATE(42000) "Illegal generator expression range");
+				VLTgetlimits_temporal(date, int, lng);
+				lng s = g->step.val.lval;
+				if (s == 0 ||
+					(s > 0 && ret.val.btval > 0) ||
+					(s < 0 && ret.val.btval < 0) ||
+						is_date_nil(g->first.val.ival) || is_date_nil(g->limit.val.ival))
+					throw(MAL, "generator.new", SQLSTATE(42000) "Illegal generator range");
+				s /= 24*60*60*1000;
+				/* check if s is really in nr of days or usecs */
+				g->cnt = (BUN) (date_diff(g->limit.val.ival, g->first.val.ival) / s) + 1; /* n maybe too large now */
+			}
+		} else if (g->type == TYPE_timestamp) {
+			if ( pci->argc == 3)
+					throw(MAL,"generator.new", SQLSTATE(42000) "Timestamp step missing");
+			/* with timestamp, step is of SQL type "interval seconds",
+			 * i.e., MAL / C type "lng" */
+			ValRecord ret = { 0 };
+			if (VARcalccmp(&ret, &stk->stk[pci->argv[1]], &stk->stk[pci->argv[2]]) != GDK_SUCCEED)
+				throw(MAL, "generator.new", SQLSTATE(42000) "Illegal generator expression range");
+			VLTgetlimits_temporal(timestamp, lng, lng);
+			lng s = g->step.val.lval;
+			if (s == 0 ||
+			    (s > 0 && ret.val.btval > 0) ||
+			    (s < 0 && ret.val.btval < 0) ||
+				is_timestamp_nil(g->first.val.lval) || is_timestamp_nil(g->limit.val.lval))
+				throw(MAL, "generator.new", SQLSTATE(42000) "Illegal generator range");
+			/* casting one value to lng causes the whole
+			 * computation to be done as lng, reducing the
+			 * risk of overflow */
+			s *= 1000; /* msec -> usec */
+			g->cnt = (BUN) (timestamp_diff(g->limit.val.lval, g->first.val.lval) / s);
+		} else {
+			throw(MAL,"generator.new", SQLSTATE(42000) "unknown data type %d", getArgType(mb,pci,1));
+		}
 	}
 	return MAL_SUCCEED;
 }
@@ -1993,6 +2162,8 @@ VLTgenerator_new(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	b->tsink = (Sink*)g;
 	g->type = tt;
+	g->steptype = pci->argc==4 ? getArgType(mb, pci, 3) : tt;
+	assert(be->part_size);
 	g->part_size = be->part_size;
 	g->cnt = g->cur = 0;
 	g->s.type = GENERATOR_SOURCE;
@@ -2001,7 +2172,7 @@ VLTgenerator_new(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	g->s.next_bat = (sink_next_bat)generator_next;
 	MT_lock_init(&g->l, "generator");
 
-	msg = VLTgenerator_get_limits(g, cntxt, stk, pci);
+	msg = VLTgenerator_get_limits(g, cntxt, mb, stk, pci);
 
 	if( msg == MAL_SUCCEED){
 		*getArgReference_bat(stk, pci, 0) = b->batCacheid;

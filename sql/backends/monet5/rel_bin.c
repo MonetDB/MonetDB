@@ -1787,7 +1787,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 				return exp2bin_named_placeholders(be, e);
 		}
 		ATOMIC_TYPE oahash_enabled = (1U<<19);
-		if (SQLrunning && GDKdebug & oahash_enabled && f->func->pipeline && f->func->mod && f->func->imp && strcmp(f->func->mod, "sql") == 0 && strcmp(f->func->imp, "copy_from") == 0)
+		if (SQLrunning && (GDKdebug & oahash_enabled) && f->func->pipeline && f->func->mod && f->func->imp && strcmp(f->func->mod, "sql") == 0 && strcmp(f->func->imp, "copy_from") == 0)
 			return exp2bin_copyparpipe(be, e);
 		if (!list_empty(exps)) {
 			unsigned nrcols = 0;
@@ -1816,7 +1816,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 				list_append(l, es);
 			}
 		}
-		if (SQLrunning && GDKdebug & oahash_enabled && f->func->pipeline && f->func->mod && f->func->imp && strcmp(f->func->mod, "generator") == 0 && strcmp(f->func->imp, "series") == 0)
+		if (SQLrunning && (GDKdebug & oahash_enabled) && f->pipeline && f->func->mod && f->func->imp && strcmp(f->func->mod, "generator") == 0 && strcmp(f->func->imp, "series") == 0)
 			return exp2bin_generator(be, e, l);
 		if (!(s = stmt_Nop(be, stmt_list(be, l), sel, f, rows)))
 			return NULL;
@@ -8073,7 +8073,9 @@ rel2bin_materialize(backend *be, sql_rel *rel, list *refs, bool top)
 
 	list *shared = NULL;
 	sql_rel *sharedproject = NULL;
-	if (r && r->l && (is_simple_project(r->op) || is_munion(r->op) || (rel_is_ref(rel) && !is_groupby(r->op))) &&
+	if (r &&
+			((r->l && (is_simple_project(r->op) || is_munion(r->op) || (rel_is_ref(rel) && !is_groupby(r->op))))
+					  || r->op == op_table) &&
 			(!top || be->mvc->type != Q_UPDATE)) {
 		sharedproject = r;
 		if (!is_project(r->op))

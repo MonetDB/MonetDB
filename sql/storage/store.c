@@ -5443,6 +5443,10 @@ sql_trans_create_func(sql_func **fres, sql_trans *tr, sql_schema *s, const char 
 	}
 	t->query = (query)?_STRDUP(query):NULL;
 	t->s = s;
+	t->pipeline = 0;
+	if (t->type == F_UNION && t->lang == FUNC_LANG_MAL &&
+			 strcmp(t->base.name, "generate_series") == 0)
+		t->pipeline = 1;
 
 	if ((res = os_add(s->funcs, tr, t->base.name, &t->base)))
 		return res;
