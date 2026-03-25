@@ -208,8 +208,10 @@ HASHgetlink(const Hash *h, BUN i)
 #define hash_hge(H,V)	HASHbucket(H, (BUN) mix_hge(*(const uhge *) (V)))
 #endif
 #if SIZEOF_OID == SIZEOF_INT
+#define mix_oid(V)	mix_int(V)
 #define hash_oid(H,V)	hash_int(H,V)
 #else
+#define mix_oid(V)	mix_lng(V)
 #define hash_oid(H,V)	hash_lng(H,V)
 #endif
 #define hash_inet4(H,V)	HASHbucket(H, (BUN) mix_inet4(*(const inet4 *) (V)))

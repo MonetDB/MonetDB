@@ -884,7 +884,7 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci,
 			if (offsets) {
 				TIMEOUT_LOOP_IDX(p, cnt1, qry_ctx) {
 					var_t off = VarHeapVal(bi.base, o - b->hseqbase, bi.width);
-					c = hash_oid(h, &off);
+					c = HASHbucket(h, (BUN) mix_oid(off));
 					hget = HASHget(h, c);
 					if (hget == BUN_NONE) {
 						if (h->nheads == maxslots)
@@ -995,7 +995,7 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci,
 		if (offsets) {
 			TIMEOUT_LOOP(ci->ncand - p, qry_ctx) {
 				var_t off = VarHeapVal(bi.base, o - b->hseqbase, bi.width);
-				c = hash_oid(h, &off);
+				c = HASHbucket(h, (BUN) mix_oid(off));
 				hget = HASHget(h, c);
 				h->nheads += hget == BUN_NONE;
 				if (!hascand) {
