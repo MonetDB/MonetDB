@@ -155,6 +155,11 @@ where EXISTS (
              OR false))
     limit 107)
 ----
+102
+102
+102
+102
+102
 
 statement ok
 DROP TABLE orders
