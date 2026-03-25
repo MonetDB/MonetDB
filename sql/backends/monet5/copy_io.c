@@ -240,7 +240,7 @@ COPYfrom_stdin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			.quote_char = quote_char==1 ?quote_arg[0]:0,
 			.line_sep = line_sep==1 ?linesep_arg[0]:0,
 			.line_sep_str = (unsigned char*)linesep_arg,
-			.line_sep_len = strlen(linesep_arg),
+			.line_sep_len = (int)strlen(linesep_arg),
 			.escape_enabled = backslash_escapes,
 			.quoted = false,
 			.escape_pending = false,
