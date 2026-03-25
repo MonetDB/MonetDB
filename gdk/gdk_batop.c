@@ -2061,6 +2061,14 @@ BATslice(BAT *b, BUN l, BUN h)
 		} else {
 			bn->tnokey[0] = bn->tnokey[1] = 0;
 		}
+		if (bi.minpos >= l && bi.minpos < h)
+			bn->tminpos = bi.minpos - l;
+		else
+			bn->tminpos = BUN_NONE;
+		if (bi.maxpos >= l && bi.maxpos < h)
+			bn->tmaxpos = bi.maxpos - l;
+		else
+			bn->tmaxpos = BUN_NONE;
 	}
   doreturn:
 	bat_iterator_end(&bi);
