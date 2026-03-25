@@ -1877,9 +1877,9 @@ generator_next(generator *g, int wid)
 			date f = g->first.val.ival;
 			date l = g->limit.val.ival;
 			BUN c = cur;
-			cur += g->part_size;
 			for(BUN i = 0; i< cur; i++)
 				f = date_add_month(f, s);
+			cur += g->part_size;
 			if (cur > g->cnt)
 				cur = g->cnt;
 			if (s < 0) {
