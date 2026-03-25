@@ -509,7 +509,7 @@ typedef struct sql_func {
 	list *res;	/* list of results */
 	sql_flang lang;
 	char *query;	/* sql code */
-	unsigned short
+	bool
 	semantics:1, /* When set to true, function incorporates some kind of null semantics */
 	side_effect:1, /* if the function has side-effects */
 	varres:1,	/* variable output result */
