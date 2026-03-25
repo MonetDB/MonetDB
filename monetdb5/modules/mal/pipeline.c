@@ -532,6 +532,46 @@ concat_done( pp_concat *c, int wid, int nr_workers, bool redo )
 	return res;
 }
 
+static int
+concat_next( pp_concat *c, int wid)
+{
+	int res = 1;
+	assert(c->s.type == CONCAT_SINK || c->s.type == SUBCONCAT_SINK);
+	MT_lock_set(&c->l);
+	assert(c->started);
+	Sink *s = c->srcs[c->cur[wid]];
+	if (s) {
+		MT_lock_unset(&c->l);
+		if (s->type == SUBCONCAT_SINK)
+			res = concat_next( (pp_concat*)s, wid);
+		else if (s->next)
+			res = s->next(s, wid);
+		MT_lock_set(&c->l);
+	}
+	MT_lock_unset(&c->l);
+	return res;
+}
+
+static BAT*
+concat_next_bat( pp_concat *c, int wid)
+{
+	BAT *res = NULL;
+	assert(c->s.type == CONCAT_SINK || c->s.type == SUBCONCAT_SINK);
+	MT_lock_set(&c->l);
+	assert(c->started);
+	Sink *s = c->srcs[c->cur[wid]];
+	if (s) {
+		MT_lock_unset(&c->l);
+		if (s->type == SUBCONCAT_SINK)
+			res = concat_next_bat( (pp_concat*)s, wid);
+		else if (s->next_bat)
+			res = s->next_bat(s, wid);
+		MT_lock_set(&c->l);
+	}
+	MT_lock_unset(&c->l);
+	return res;
+}
+
 static str
 PPconcat_block(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -620,6 +660,8 @@ PPconcat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	pcat->s.type = CONCAT_SINK;
 	pcat->s.destroy = (sink_destroy)&concat_free;
 	pcat->s.done = (sink_done)&concat_done;
+	pcat->s.next = (sink_next)&concat_next;
+	pcat->s.next_bat = (sink_next_bat)&concat_next_bat;
 	pcat->current = 0;
 	pcat->max = nr;
 	pcat->started = false;
