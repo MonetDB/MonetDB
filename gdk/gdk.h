@@ -666,7 +666,8 @@ bat_iterator_nolock(BAT *b)
 			.vkey = (b->tvheap &&
 				 (b->tvkey ||
 				  BBP_desc(b->tvheap->parentid)->tvkey ||
-				  (ATOMstorage(b->ttype) == TYPE_str &&
+				  (b->ttype > 0 &&
+				   ATOMstorage(b->ttype) == TYPE_str &&
 				   GDK_ELIMDOUBLES(b->tvheap)))),
 			.nonil = b->tnonil,
 			.nil = b->tnil,

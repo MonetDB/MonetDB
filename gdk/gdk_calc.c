@@ -4496,7 +4496,7 @@ BATcalcifthenelse_intern(BATiter *bi,
 	if (bn->tvheap) {
 		assert((heap1 != NULL && width1 > 0) || (width1 == 0 && incr1 == 0));
 		assert((heap2 != NULL && width2 > 0) || (width2 == 0 && incr2 == 0));
-		const void *nil = ATOMnilptr(bi->type);
+		const void *nil = ATOMnilptr(tpe);
 		if (ATOMstorage(bi->type) == TYPE_msk) {
 			const uint32_t *src = bi->base;
 			BUN n = cnt / 32;
