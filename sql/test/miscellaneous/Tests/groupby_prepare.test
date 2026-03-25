@@ -8,13 +8,13 @@ query TIITTT nosort
 prepare select col0 from tab0 where (?) in (select col0 from tab0)
 ----
 int
-31
+7
 0
 (empty)
 tab0
 col0
 int
-31
+7
 0
 NULL
 NULL
@@ -24,19 +24,19 @@ query TIITTT nosort
 prepare select col0 from tab0 where (?,?) in (select col0,col1 from tab0)
 ----
 int
-31
+7
 0
 (empty)
 tab0
 col0
 int
-31
+7
 0
 NULL
 NULL
 NULL
 int
-31
+7
 0
 NULL
 NULL
@@ -46,13 +46,13 @@ query TIITTT nosort
 prepare select col0 from tab0 where (col1,col1) in (select col0,? from tab0)
 ----
 int
-31
+7
 0
 (empty)
 tab0
 col0
 int
-31
+7
 0
 NULL
 NULL
@@ -62,19 +62,19 @@ query TIITTT nosort
 prepare select col0 from tab0 where (col1,col1) in (select ?,? from tab0)
 ----
 int
-31
+7
 0
 (empty)
 tab0
 col0
 int
-31
+7
 0
 NULL
 NULL
 NULL
 int
-31
+7
 0
 NULL
 NULL
@@ -84,13 +84,13 @@ query TIITTT nosort
 prepare select col0 from tab0 where (col0) in (?)
 ----
 int
-31
+7
 0
 (empty)
 tab0
 col0
 int
-31
+7
 0
 NULL
 NULL
@@ -100,19 +100,19 @@ query TIITTT nosort
 prepare select col0 from tab0 where (col0) in (?,?)
 ----
 int
-31
+7
 0
 (empty)
 tab0
 col0
 int
-31
+7
 0
 NULL
 NULL
 NULL
 int
-31
+7
 0
 NULL
 NULL
@@ -128,7 +128,7 @@ boolean
 %5
 %5
 int
-31
+7
 0
 NULL
 NULL
@@ -144,7 +144,7 @@ boolean
 %4
 %4
 int
-31
+7
 0
 NULL
 NULL

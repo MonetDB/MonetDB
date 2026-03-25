@@ -76,7 +76,7 @@ query TIITTT rowsort
 prepare select max(aa) over (order by bb range between ? preceding and 10 following) from stressme order by 1
 ----
 int
-31
+3
 0
 NULL
 NULL

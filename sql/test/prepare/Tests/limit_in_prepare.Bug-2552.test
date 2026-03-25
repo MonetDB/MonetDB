@@ -64,7 +64,7 @@ query TIITTT nosort
 prepare select * from rr order by id limit ?
 ----
 int
-31
+2
 0
 (empty)
 rr
