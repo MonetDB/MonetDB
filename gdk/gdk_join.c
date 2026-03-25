@@ -3203,7 +3203,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 	bool ulocked = false;
 	BUN maxsize;
 	BAT *ustr = NULL;
-	BATiter ustri;
+	BATiter ustri = {0};
 	BAT *r1 = NULL;
 	BAT *r2 = NULL;
 	BAT *r3 = NULL;
