@@ -17,17 +17,6 @@
 #include "bin_partition.h"
 #include "sql_scenario.h"
 
-int
-parallel_copy_level(void)
-{
-	if (!SQLrunning)
-		return 0;
-	int level = GDKgetenv_int(COPY_PARALLEL_SETTING, int_nil);
-	if (is_int_nil(level))
-		level = 1;
-	return level;
-}
-
 static int
 get_copy_blocksize(void) {
 	int size = GDKgetenv_int(COPY_BLOCKSIZE_SETTING, -1);
@@ -37,20 +26,6 @@ get_copy_blocksize(void) {
 static int
 allocation_size(int blocksize)
 {
-	/*
-	int alt;
-	int size;
-
-	size = blocksize + blocksize / 8;
-
-	alt = blocksize + 4096;
-	size = size < alt ? alt : size;
-
-	alt = 8192;
-	size = size < alt ? alt : size;
-
-	return size;
-	*/
 	return blocksize;
 }
 
@@ -163,18 +138,6 @@ exp2bin_copyparpipe(backend *be, sql_exp *copyfrom)
 	MalBlkPtr mb = be->mb;
 	mvc *mvc = be->mvc;
 	allocator *sa = mvc->sa;
-
-	switch (parallel_copy_level()) {
-		case 0:
-			assert(0 /* how did we get here, then? */);
-			return NULL;
-		case 1:
-		case 2:
-			break; // main case, below
-		default:
-			assert(0 /* invalid parallel level */);
-			return NULL;
-	}
 
 	list *intermediate_stmts = sa_list(sa);
 	int int_bat_type = newBatType(TYPE_int);
