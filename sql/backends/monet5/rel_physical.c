@@ -271,7 +271,7 @@ rel_partition(mvc *sql, sql_rel *rel)
 	case op_update:
 	case op_delete:
 	case op_truncate:
-		if (rel->r && rel->card <= CARD_AGGR)
+		if (rel->r /*&& rel->card <= CARD_AGGR*/)
 			rel_partition(sql, rel->r);
 		break;
 	case op_join:
@@ -301,6 +301,16 @@ rel_partition(mvc *sql, sql_rel *rel)
 	case op_table:
 		if ((IS_TABLE_PROD_FUNC(rel->flag) || rel->flag == TABLE_FROM_RELATION) && rel->l)
 			rel_partition(sql, rel->l);
+		sql_exp *op = rel->r;
+        if (rel->flag != TRIGGER_WRAPPER && op) {
+            sql_subfunc *f = op->f;
+            if (f->func->pipeline) {
+				if (strcmp(f->func->base.name, "file_loader") == 0 || strcmp(f->func->base.name, "copyfrom") == 0) {
+					rel = rel_dup(rel);
+					f->pipeline = true;
+				}
+            }
+		}
 		break;
 	default:
 		assert(0);
@@ -1009,10 +1019,13 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
             if (/*f->func->lang == FUNC_LANG_INT &&*/ f->func->pipeline) {
 				res = pb;
 				if (pb) {
-					f->pipeline = 1;
+					f->pipeline = true;
 					rel->parallel = 1;
 					rel->spb = 1;
 					res = SPB;
+				} else {
+					rel = rel_dup(rel);
+					f->pipeline = true;
 				}
             }
 		}

@@ -1787,7 +1787,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 				return exp2bin_named_placeholders(be, e);
 		}
 		ATOMIC_TYPE oahash_enabled = (1U<<19);
-		if (SQLrunning && (GDKdebug & oahash_enabled) && f->func->pipeline && f->func->mod && f->func->imp && strcmp(f->func->mod, "sql") == 0 && strcmp(f->func->imp, "copy_from") == 0)
+		if (f->pipeline && f->func->mod && f->func->imp && strcmp(f->func->mod, "sql") == 0 && strcmp(f->func->imp, "copy_from") == 0)
 			return exp2bin_copyparpipe(be, e);
 		if (!list_empty(exps)) {
 			unsigned nrcols = 0;
