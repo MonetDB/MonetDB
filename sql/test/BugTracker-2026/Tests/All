@@ -69,3 +69,4 @@ KNOWNFAIL?7875-rel2bin_groupjoin-assertion-failure
 KNOWNFAIL?7876-rel2bin_select-assertion-failure
 7877-push_up_join-assertion-failure
 7878-exp_bin-assertion-failure
+7879-crash
