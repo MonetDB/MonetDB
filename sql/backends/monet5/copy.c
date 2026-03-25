@@ -188,6 +188,8 @@ reader_done(reader *r, int wid, int nr_workers, bool redo)
 	(void)wid;
 	(void)nr_workers;
 	(void)redo;
+	if (r->error)
+		return true;
 	return r->done;
 }
 
