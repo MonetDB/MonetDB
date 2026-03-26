@@ -280,7 +280,7 @@ exp2bin_copyparpipe(backend *be, sql_exp *copyfrom)
 				q = pushArgument(mb, q, our_block);
 				q = pushArgument(mb, q, be->pipeline);
 				q = pushArgument(mb, q, var_indices);
-				q = pushInt(mb, q, digits?digits:INT_MAX);
+				q = pushInt(mb, q, digits);
 				q = pushArgument(mb, q, rows);
 				q = pushInt(mb, q, i);
 				q = pushStr(mb, q, col->base.name);
