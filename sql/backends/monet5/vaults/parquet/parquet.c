@@ -29,7 +29,9 @@
 #include "bin_partition.h"
 
 #include <unistd.h>
+#ifdef HAVE_GLOB_H
 #include <glob.h>
+#endif
 
 #include <pqc_reader.h>
 
@@ -220,7 +222,7 @@ str_encoding(Encoding e)
 static const char*
 get_valid_utf8_or_empty(const char *s)
 {
-	if (s != NULL && checkUTF8(s))
+	if (s != NULL && checkUTF8(s, NULL))
 		return s;
 	return "";
 }
@@ -360,6 +362,7 @@ pqc_relation(mvc *sql, sql_subfunc *f, char *filename, list *res_exps, char *tna
 
 	if (est)
 		*est = 1;
+#ifdef HAVE_GLOB_H
 	if (filename && strchr(filename, '*')) {
 		glob_t pglob = {};
 		if (glob(filename, GLOB_ERR, NULL, &pglob) < 0)
@@ -370,6 +373,7 @@ pqc_relation(mvc *sql, sql_subfunc *f, char *filename, list *res_exps, char *tna
 			*est = pglob.gl_pathc;
 		globfree(&pglob);
 	}
+#endif
 	if (pqc_open(&pq, filename) < 0)
 		throw(SQL, SQLSTATE(42000), "parquet" "Could not open parquet file %s", filename);
 
@@ -433,7 +437,7 @@ pqc_relation(mvc *sql, sql_subfunc *f, char *filename, list *res_exps, char *tna
 			if (e->type == LT_UNKNOWN || e->type == listtype)
 				set_intern(ne);
 			list_append(res_exps, ne);
-			if (e->precision && *est > (1L<<e->precision)) {
+			if (e->precision && *est > ((lng) 1 << e->precision)) {
 				prop *p = ne->p = prop_create(sql->sa, PROP_NUNIQUES, ne->p);
 				p->value.dval = 1L << e->precision;
 			}
@@ -503,6 +507,7 @@ pqcc_create(pqc_file *pq, pqc_filemetadata *fmd, lng nrows)
 	return r;
 }
 
+#ifdef HAVE_GLOB_H
 typedef struct pqc_mcreader {
 	Sink sink;
 	glob_t glob;
@@ -517,8 +522,10 @@ typedef struct pqc_mcreader {
 static void
 pqcmc_destroy(pqc_mcreader *r)
 {
+#ifdef HAVE_GLOB_H
 	if (r->glob.gl_pathc)
 		globfree(&r->glob);
+#endif
 	assert(r->sink.type == MPARQUET_SINK);
 	GDKfree(r->c);
 	GDKfree(r->done);
@@ -560,6 +567,7 @@ pqcmc_create(glob_t *glob, lng nrows)
 	ATOMIC_INIT(&r->cnt, 0);
 	return r;
 }
+#endif
 
 #define FILE_READER_VECTORSIZE (16*1024*16)
 //(16*1024)
@@ -703,6 +711,7 @@ PARQUETread_large(BAT **R, pqc_creader *r, int colno, Pipeline *p, int wnr)
 	return NULL;
 }
 
+#ifdef HAVE_GLOB_H
 static str
 PARQUETread_multi(BAT **R, BAT *b, int colno, Pipeline *p)
 {
@@ -760,6 +769,7 @@ PARQUETread_multi(BAT **R, BAT *b, int colno, Pipeline *p)
 	}
 	return PARQUETread_large(R, r->c[wnr], colno, p, 0);
 }
+#endif
 
 static str
 PARQUETread(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -782,7 +792,11 @@ PARQUETread(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 		msg = PARQUETread_large(&rb, r, colno, p, p->wid);
 	} else {
+#ifdef HAVE_GLOB_H
 		msg = PARQUETread_multi(&rb, b, colno, p);
+#else
+		assert(0);
+#endif
 	}
 	BBPreclaim(b);
 	if (!msg) {
@@ -817,6 +831,7 @@ PARQUETopen(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (!b)
 		throw(SQL, "parquet.open",  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
+#ifdef HAVE_GLOB_H
 	if (f && strchr(f, '*')) {
 		glob_t pglob = {};
 		if (glob(f, GLOB_ERR, NULL, &pglob) < 0) {
@@ -824,7 +839,9 @@ PARQUETopen(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			throw(SQL, SQLSTATE(42000), "parquet" "Could not open parquet file %s", f);
 		}
 		b->tsink = (Sink*)pqcmc_create(&pglob, nrows);
-	} else {
+	} else
+#endif
+	{
 		if (pqc_open(&pq, f) < 0) {
 			BBPreclaim(b);
 			throw(SQL, "parquet.open",  SQLSTATE(HY013) "Failed to open file '%s'", f);
@@ -1225,8 +1242,8 @@ PARQUETmetadata(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			// should be enough to hold all concatenated encodings strings
 			char encodings_str[200] = "";
 			if (column_chunk.num_encodings ) {
-				u_int32_t char_cnt = 0;
-				for (u_int32_t k = 0; k < column_chunk.num_encodings && char_cnt < 200; k++) {
+				uint32_t char_cnt = 0;
+				for (uint32_t k = 0; k < column_chunk.num_encodings && char_cnt < 200; k++) {
 					char *next = str_encoding(column_chunk.encodings[k]);
 					char_cnt += strlen(next);
 					strcat(encodings_str, next);
@@ -1414,4 +1431,3 @@ static mel_func parquet_init_funcs[] = {
 #endif
 LIB_STARTUP_FUNC(init_parquet_mal)
 { mal_module("parquet", NULL, parquet_init_funcs); }
-

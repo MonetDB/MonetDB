@@ -42,7 +42,7 @@ COPYparse_generic(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat rows = *getArgReference_bat(stk, pci, 5);
 	int col_no = *getArgReference_int(stk, pci, 6);
 	const char *col_name = *getArgReference_str(stk, pci, 7);
-	int n;
+	BUN n;
 	void *buffer = NULL;
 	size_t buffer_len;
 	const void *nil_ptr;
@@ -67,7 +67,7 @@ COPYparse_generic(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	const char *start = (char*)r->bs->buf[p->wid];
 	const int *offsetp = (int*)Tloc(indices, 0);
 	allocator *ma = cntxt->curprg->def->ma;
-	for (int i = 0; i < n; i++) {
+	for (BUN i = 0; i < n; i++) {
 		gdk_return ok = GDK_SUCCEED;
 		int offset = offsetp[i];
 		const char *src = start + offset;
@@ -75,15 +75,15 @@ COPYparse_generic(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 		if (is_int_nil(offset)) {
 			to_insert = nil_ptr;
-		} else if (!checkUTF8(src)) {
-			ok = copy_report_error(&errors, i, -1, "incorrectly encoded UTF-8");
+		} else if (!checkUTF8(src, NULL)) {
+			ok = copy_report_error(&errors, (lng) i, -1, "incorrectly encoded UTF-8");
 			to_insert = nil_ptr;
 		} else {
 			ssize_t len = BATatoms[tpe].atomFromStr(ma, src, &buffer_len, &buffer, false);
 			if (len >= 0) {
 				to_insert = buffer;
 			} else {
-				ok = copy_report_error(&errors, i, -1, "invalid %s: %s", ATOMname(tpe), src);
+				ok = copy_report_error(&errors, (lng) i, -1, "invalid %s: %s", ATOMname(tpe), src);
 				GDKclrerr();
 				to_insert = nil_ptr;
 			}
@@ -177,7 +177,7 @@ COPYparse_float(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	const char *col_name = *getArgReference_str(stk, pci, 7);
 	str dec_sep = *getArgReference_str(stk, pci, 8);
 	str dec_skip = *getArgReference_str(stk, pci, 9);
-	int n;
+	BUN n;
 	dbl localdbl;
 	void *buffer = &localdbl;
 	size_t buffer_len = sizeof(dbl);
@@ -205,7 +205,7 @@ COPYparse_float(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	const char *start = (char*)r->bs->buf[p->wid];
 	const int *offsetp = (int*)Tloc(indices, 0);
 	allocator *ma = cntxt->curprg->def->ma;
-	for (int i = 0; i < n; i++) {
+	for (BUN i = 0; i < n; i++) {
 		gdk_return ok = GDK_SUCCEED;
 		int offset = offsetp[i];
 		const char *src = start + offset;
@@ -222,7 +222,7 @@ COPYparse_float(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			if (len >= 0) {
 				to_insert = buffer;
 			} else {
-				ok = copy_report_error(&errors, i, -1, "invalid %s: %s", ATOMname(tpe), src);
+				ok = copy_report_error(&errors, (lng) i, -1, "invalid %s: %s", ATOMname(tpe), src);
 				GDKclrerr();
 				to_insert = nil_ptr;
 				nils++;
@@ -262,65 +262,6 @@ end:
 	if (indices)
 		BBPunfix(indices->batCacheid);
 	return msg;
-}
-
-static inline bool
-checkUTF8str(const char *v, size_t maxlen, int *err)
-{
-	/* It is unlikely that this functions returns false, because
-	 * it is likely that the string presented is a correctly coded
-	 * UTF-8 string.  So we annotate the tests that are very
-	 * unlikely to succeed, i.e. the ones that lead to a return of
-	 * false, as being expected to return 0 using the
-	 * __builtin_expect function. */
-	size_t j = 0;
-	if (v != NULL) {
-		for (; v[j] && (v[j] & 0x80) == 0; j++)
-			;
-		/* check that string is correctly encoded UTF-8 */
-		for (size_t i = j; v[i]; i++, j++) {
-			/* we do not annotate all tests, only the ones
-			 * leading directly to an unlikely return
-			 * statement */
-			if ((v[i] & 0x80) == 0) {
-				;
-			} else if ((v[i] & 0xE0) == 0xC0) {
-				if (__builtin_expect(((v[i] & 0x1E) == 0), 0))
-					return false;
-				if (__builtin_expect(((v[++i] & 0xC0) != 0x80), 0))
-					return false;
-			} else if ((v[i] & 0xF0) == 0xE0) {
-				if ((v[i++] & 0x0F) == 0) {
-					if (__builtin_expect(((v[i] & 0xE0) != 0xA0), 0))
-						return false;
-				} else {
-					if (__builtin_expect(((v[i] & 0xC0) != 0x80), 0))
-						return false;
-				}
-				if (__builtin_expect(((v[++i] & 0xC0) != 0x80), 0))
-					return false;
-			} else if (__builtin_expect(((v[i] & 0xF8) == 0xF0), 1)) {
-				if ((v[i++] & 0x07) == 0) {
-					if (__builtin_expect(((v[i] & 0x30) == 0), 0))
-						return false;
-				}
-				if (__builtin_expect(((v[i] & 0xC0) != 0x80), 0))
-					return false;
-				if (__builtin_expect(((v[++i] & 0xC0) != 0x80), 0))
-					return false;
-				if (__builtin_expect(((v[++i] & 0xC0) != 0x80), 0))
-					return false;
-			} else {
-				return false;
-			}
-		}
-	}
-	if (maxlen > 0) {
-		*err = (j>maxlen);
-		return (j<=maxlen);
-	} else {
-		return true;
-	}
 }
 
 static BAT *
@@ -374,7 +315,7 @@ COPYparse_string(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT *offsets_bat = BATdescriptor(offsets_bat_id);
 	BAT *parsed_bat = NULL;
 	int colwidth = maxlen;
-	int n;
+	BUN n;
 
 	struct error_handling errors;
 	errors.init = 0;
@@ -386,7 +327,7 @@ COPYparse_string(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	errors.r = r;
 
 	const char *start = (char*)r->bs->buf[p->wid];
-	BUN nil_offset = r->bs->sz[p->wid]+2;
+	size_t nil_offset = r->bs->sz[p->wid]+2;
 	/*
 	parsed_bat = COLnew(0, TYPE_str, BATcount(offsets_bat), TRANSIENT);
 		*/
@@ -395,28 +336,27 @@ COPYparse_string(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		bailout(fname, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	n = BATcount(offsets_bat);
-	int err = 0;
 	const int *offsetp = (int*)Tloc(offsets_bat, 0);
 	int *offsetr = (int*)Tloc(parsed_bat, 0);
 	int nils = 0;
-	for (int i = 0; i < n; i++) {
+	for (BUN i = 0; i < n; i++) {
 		gdk_return ok;
 		int offset = offsetp[i];
 		//const void *to_insert = str_nil;
 
 		if (is_int_nil(offset)) {
 			ok = GDK_SUCCEED;
-			offset = nil_offset;
+			offset = (int) nil_offset;
 			nils++;
 		} else {
 			const char *src = start + offset;
-			if (!checkUTF8str(src, colwidth, &err)) {
-				offset = nil_offset;
+			size_t n;
+			if (!checkUTF8(src, &n)) {
+				offset = (int) nil_offset;
 				nils++;
-				if (err == 0)
-					ok = copy_report_error(&errors, i, -1, "incorrectly encoded UTF-8");
-				else
-					ok = copy_report_error(&errors, i, -1, "field too long, max length is %d", colwidth);
+				ok = copy_report_error(&errors, (lng) i, -1, "incorrectly encoded UTF-8");
+			} else if (n > (size_t) colwidth) {
+				ok = copy_report_error(&errors, (lng) i, -1, "field too long, max length is %d", colwidth);
 			} else {
 				ok = GDK_SUCCEED;
 				//to_insert = src;
@@ -470,7 +410,7 @@ parse_fixed_width_column(
 	const char *fname,
 	bat block_bat_id, Pipeline *p, bat offsets_bat_id,
 	int tpe,
-	void (*f)(struct error_handling*, void*, int, void*, char*, int*),
+	void (*f)(struct error_handling*, void*, BUN, void*, char*, int*),
 	void *fx)
 {
 	str msg = MAL_SUCCEED;
@@ -497,7 +437,7 @@ parse_fixed_width_column(
 
 	BATsetcount(parsed_bat, BATcount(offsets_bat));
 	// we don't know anything about the data we just parsed
-	int nils = fx?*(int*)fx:0;
+	lng nils = fx?*(int*)fx:0;
 	nils += errors->count;
 	parsed_bat->tkey = false;
 	parsed_bat->tnil = nils?true:false;

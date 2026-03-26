@@ -34,7 +34,7 @@
 extern int BATupgrade(BAT *r, BAT *b, bool locked);
 extern void BATswap_heaps(BAT *u, BAT *b, Pipeline *p);
 
-extern void counter_wait(Sink *s, int nr, Pipeline *p);
-extern void counter_next(Sink *s);
+mal_export void counter_wait(Sink *s, int nr, Pipeline *p);
+mal_export void counter_next(Sink *s);
 
 #endif /*_PIPELINE_H_*/

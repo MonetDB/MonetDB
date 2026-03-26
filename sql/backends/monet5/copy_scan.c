@@ -515,7 +515,7 @@ scan_fields(
 			state->pos += null_repr_len + 1;
 			ok = true;
 		} else {
-			field_offset = state->pos - state->start;
+			field_offset = (int) (state->pos - state->start);
 			const char *err_msg = scan_field(state, &sep);
 			if (err_msg == NULL) {
 				ok = true;
@@ -596,7 +596,7 @@ scan_fields1(
 			sep = state->pos[null_repr_len];
 			state->pos += null_repr_len + 1;
 		} else {
-			field_offset = state->pos - state->start;
+			field_offset = (int) (state->pos - state->start);
 
 			unsigned char *s = state->pos;
 			for (; *s; s++)
@@ -681,7 +681,7 @@ scan_fieldsN( /* ie use col_sep_str */
 			state->pos += null_repr_len + 1;
 			ok = true;
 		} else {
-			field_offset = state->pos - state->start;
+			field_offset = (int) (state->pos - state->start);
 			const char *err_msg = scan_fieldN(state, &sep);
 			if (err_msg == NULL) {
 				ok = true;
@@ -735,4 +735,3 @@ scan_fieldsN( /* ie use col_sep_str */
 
 	return MAL_SUCCEED;
 }
-

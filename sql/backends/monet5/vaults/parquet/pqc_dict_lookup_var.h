@@ -9,8 +9,8 @@ pqc_dict_lookup( pqc_creader_t *cr, void *output, int64_t nrows, int pos, int *s
 	bool mul8 = ((8/nr_bits)*nr_bits == 8);
 	T *dst = output;
 	T offset = *ssize;
-	u_int32_t idx = cr->idx;
-	u_int32_t j = 0;
+	uint32_t idx = cr->idx;
+	uint32_t j = 0;
 	if (cr->remaining) {
 		if (cr->is_rle) {
 			for(; i < nrows && j < cr->remaining; j++, i++)
@@ -22,7 +22,7 @@ pqc_dict_lookup( pqc_creader_t *cr, void *output, int64_t nrows, int pos, int *s
 			if (mul8) {
 				for(; i < nrows && j < cr->remaining; j++, i++) {
 					uchar v = data[pos];
-					u_int32_t idx = (v >> sh)&mask;
+					uint32_t idx = (v >> sh)&mask;
 					sh += nr_bits;
 					if (sh >= 8) {
 						pos++;
@@ -36,7 +36,7 @@ pqc_dict_lookup( pqc_creader_t *cr, void *output, int64_t nrows, int pos, int *s
 			} else if (nr_bits < 8) {
 				for(; i < nrows && j < cr->remaining; j++, i++) {
 					uchar v = data[pos];
-					u_int32_t idx = (v >> sh)&mask;
+					uint32_t idx = (v >> sh)&mask;
 					sh += nr_bits;
 					if (sh >= 8) {
 						pos++;
@@ -52,7 +52,7 @@ pqc_dict_lookup( pqc_creader_t *cr, void *output, int64_t nrows, int pos, int *s
 			} else if (nr_bits < 16) {
 				for(; i < nrows && j < cr->remaining; j++, i++) {
 					usht v = *(usht*)(data+pos);
-					u_int32_t idx = (v >> sh)&mask;
+					uint32_t idx = (v >> sh)&mask;
 					sh += nr_bits;
 					if (sh >= 16) {
 						pos+=2;
@@ -68,7 +68,7 @@ pqc_dict_lookup( pqc_creader_t *cr, void *output, int64_t nrows, int pos, int *s
 			} else if (nr_bits < 32) {
 				for(; i < nrows && j < cr->remaining; j++, i++) {
 					uint v = *(uint*)(data+pos);
-					u_int32_t idx = (v >> sh)&mask;
+					uint32_t idx = (v >> sh)&mask;
 					sh += nr_bits;
 					if (sh >= 32) {
 						pos+=4;
@@ -87,7 +87,7 @@ pqc_dict_lookup( pqc_creader_t *cr, void *output, int64_t nrows, int pos, int *s
 		cr->remaining -= j;
 	}
 	for(; i<nrows; ) {
-		u_int32_t len = 0;
+		uint32_t len = 0;
 		pos += pqc_get_int32((char*)data+pos, &len);
 		if (len & 1) {
 			len>>=1;
@@ -99,7 +99,7 @@ pqc_dict_lookup( pqc_creader_t *cr, void *output, int64_t nrows, int pos, int *s
 			if (mul8) {
 				for (; i < nrows && j < m; j++, i++) {
 					uchar v = data[pos];
-					u_int32_t idx = (v >> sh)&mask;
+					uint32_t idx = (v >> sh)&mask;
 					sh += nr_bits;
 					if (sh >= 8) {
 						pos++;
@@ -118,7 +118,7 @@ pqc_dict_lookup( pqc_creader_t *cr, void *output, int64_t nrows, int pos, int *s
 			} else if (nr_bits < 8) {
 				for (; i < nrows && j < m; j++, i++) {
 					uchar v = data[pos];
-					u_int32_t idx = (v >> sh)&mask;
+					uint32_t idx = (v >> sh)&mask;
 					sh += nr_bits;
 					if (sh >= 8) {
 						pos++;
@@ -139,7 +139,7 @@ pqc_dict_lookup( pqc_creader_t *cr, void *output, int64_t nrows, int pos, int *s
 			} else if (nr_bits < 16) {
 				for (; i < nrows && j < m; j++, i++) {
 					usht v = *(usht*)(data+pos);
-					u_int32_t idx = (v >> sh)&mask;
+					uint32_t idx = (v >> sh)&mask;
 					sh += nr_bits;
 					if (sh >= 16) {
 						pos+=2;
@@ -162,7 +162,7 @@ pqc_dict_lookup( pqc_creader_t *cr, void *output, int64_t nrows, int pos, int *s
 				int m = len*8;
 				for (; i < nrows && j < m; j++, i++) {
 					uint v = *(uint*)(data+pos);
-					u_int32_t idx = (v >> sh)&mask;
+					uint32_t idx = (v >> sh)&mask;
 					sh += nr_bits;
 					if (sh >= 32) {
 						pos+=4;
@@ -184,7 +184,7 @@ pqc_dict_lookup( pqc_creader_t *cr, void *output, int64_t nrows, int pos, int *s
 		} else if (nr_bits <= 8) { /* rle */
 			len>>=1;
 			uchar idx = data[pos++];
-			u_int32_t j = 0;
+			uint32_t j = 0;
 			for(; i < nrows && j < len; j++, i++)
 				dst[i] = offset+offsets[idx];
 			if (j < len) {
@@ -195,7 +195,7 @@ pqc_dict_lookup( pqc_creader_t *cr, void *output, int64_t nrows, int pos, int *s
 		} else if (nr_bits <= 16) { /* rle */
 			len>>=1;
 			usht idx = *(usht*)(data+pos);
-			u_int32_t j = 0;
+			uint32_t j = 0;
 			pos += 2;
 			for(; i < nrows && j < len; j++, i++)
 				dst[i] = offset+offsets[idx];
@@ -209,4 +209,3 @@ pqc_dict_lookup( pqc_creader_t *cr, void *output, int64_t nrows, int pos, int *s
 	cr->pos = pos;
 	return nrows;
 }
-

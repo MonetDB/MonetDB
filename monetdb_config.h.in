@@ -69,6 +69,7 @@
 #cmakedefine HAVE_DLFCN_H 1
 #cmakedefine HAVE_FCNTL_H 1
 #cmakedefine HAVE_GETOPT_H 1
+#cmakedefine HAVE_GLOB_H 1
 #cmakedefine HAVE_KVM_H 1
 #cmakedefine HAVE_MACH_MACH_INIT_H 1
 #cmakedefine HAVE_MACH_O_DYLD_H 1

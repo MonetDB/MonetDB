@@ -498,21 +498,30 @@ end:
 static void
 sleep_ns( int ns)
 {
-#ifdef HAVE_NANOSLEEP
-        struct timespec ts;
-
-        ts.tv_sec = (time_t) 0;
-        ts.tv_nsec = ns;
-        while (nanosleep(&ts, &ts) == -1 && errno == EINTR)
-                ;
+#ifdef NATIVE_WIN32
+	if (ns < 1000000)
+		ns = 1;
+	else
+		ns /= 1000000;
+	Sleep(ns);
 #else
-        struct timeval tv;
+#ifdef HAVE_NANOSLEEP
+	struct timespec ts;
 
-        tv.tv_sec = 0;
-        tv.tv_usec = ((ns+999)/1000);
-        (void) select(0, NULL, NULL, NULL, &tv);
+	ts.tv_sec = (time_t) 0;
+	ts.tv_nsec = ns;
+	while (nanosleep(&ts, &ts) == -1 && errno == EINTR)
+		;
+#else
+	struct timeval tv;
+
+	tv.tv_sec = 0;
+	tv.tv_usec = ((ns+999)/1000);
+	(void) select(0, NULL, NULL, NULL, &tv);
+#endif
 #endif
 }
+
 
 static str
 COPYsplitlines(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)

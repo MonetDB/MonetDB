@@ -102,7 +102,7 @@ void dump_block(const char *msg, BAT *b);
 ////////////////////////////////////////////////////////////////////////
 // copy_convert.c
 
-typedef void (*bulk_converter)(struct error_handling*, void *parms, int count, void *dest, char *data, int *offsets);
+typedef void (*bulk_converter)(struct error_handling*, void *parms, BUN count, void *dest, char *data, int *offsets);
 extern str parse_fixed_width_column(bat *ret, struct error_handling *errors, const char *fname, bat block_bat_id, Pipeline *p, bat offsets_bat_id, int tpe, bulk_converter f, void *parms);
 
 extern str COPYparse_generic(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);

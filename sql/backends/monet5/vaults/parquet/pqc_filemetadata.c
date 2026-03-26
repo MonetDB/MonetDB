@@ -203,7 +203,7 @@ pqc_open( pqc_file **PQ, char *fn)
 	*PQ = pq;
 	int res = pqc_magic(pq);
 
-	u_int32_t fmdlen = get_uint32((u_int8_t*)pq->buffer+pq->bsz-8);
+	uint32_t fmdlen = get_uint32((u_int8_t*)pq->buffer+pq->bsz-8);
 	if (pq->sz == 8) /* empty */
 		return 0;
 	if (fmdlen > pq->sz)
@@ -304,7 +304,7 @@ pqc_decimal( pqc_file *pq, pqc_schema_element *pse, int pos)
 {
 	int fieldid = 0, type = 0;
 
-	u_int32_t scale, precision;
+	uint32_t scale, precision;
 
 	while(true) {
 		pos += pqc_get_field(pq->buffer+pos, &fieldid, &type);
@@ -357,7 +357,7 @@ pqc_logicaltype( pqc_file *pq, pqc_schema_element *pse, int pos)
 {
 	int fieldid = 0, type = 0;
 
-	u_int32_t precision;
+	uint32_t precision;
 
 	while(true) {
 		pos += pqc_get_field(pq->buffer+pos, &fieldid, &type);
@@ -428,7 +428,7 @@ pqc_logicaltype( pqc_file *pq, pqc_schema_element *pse, int pos)
 }
 
 static int
-pqc_oldtype2logicaltype( pqc_schema_element *pse, u_int32_t type)
+pqc_oldtype2logicaltype( pqc_schema_element *pse, uint32_t type)
 {
 	switch (type) {
 	case OLD_BOOLEAN:
@@ -477,7 +477,7 @@ pqc_oldtype2logicaltype( pqc_schema_element *pse, u_int32_t type)
 }
 
 static int
-pqc_convertedtype2logicaltype( pqc_schema_element *pse, u_int32_t type)
+pqc_convertedtype2logicaltype( pqc_schema_element *pse, uint32_t type)
 {
 	switch (type) {
 	case CT_UTF8:
@@ -606,7 +606,7 @@ pqc_read_schema_element( pqc_file *pq, int nr, int pos, int *ccnr, pqc_schema_el
 		pse->parent = parent;
 	}
 	pse->ccnr = *ccnr;
-	u_int32_t oldtype, scale, precision, repetition, nchildren, convertedtype;
+	uint32_t oldtype, scale, precision, repetition, nchildren, convertedtype;
 
 	while(true) {
 		pos += pqc_get_field(pq->buffer+pos, &fieldid, &type);
@@ -681,7 +681,7 @@ pqc_read_schema_element( pqc_file *pq, int nr, int pos, int *ccnr, pqc_schema_el
 			break;
 		case SCHEMA_ELEMENT_FIELD_ID:
 			assert(type == T_I32);
-			u_int32_t _field_id;
+			uint32_t _field_id;
 			pos += pqc_get_zint32(pq->buffer+pos, &_field_id);
 			// TODO store _field_id in schema element?
 			break;
@@ -856,8 +856,8 @@ pqc_column_metadata( pqc_file *pq, pqc_columnchunk *cc, int pos )
 			pos += pqc_get_list(pq->buffer+pos, &size, &type);
 			TRC_INFO(PARQUET, "encodings list size %d type %d\n", size, type);
 			assert(type == T_I32);
-			u_int32_t encoding;
-			cc->encodings = ma_alloc(pq->pa, size * sizeof(u_int32_t));
+			uint32_t encoding;
+			cc->encodings = ma_alloc(pq->pa, size * sizeof(uint32_t));
 			for(int i = 0; i < size; i++) {
 				pos += pqc_get_zint32(pq->buffer+pos, &encoding);
 				cc->encodings[i] = encoding;
@@ -1121,9 +1121,9 @@ pqc_columnorder( pqc_file *pq, int pos )
 static int
 pqc_read_file( pqc_file *pq, bool metadata_only)
 {
-	u_int32_t pos = pq->pos;
-	u_int32_t version = 0;
-	u_int64_t nrows = 0;
+	uint32_t pos = pq->pos;
+	uint32_t version = 0;
+	uint64_t nrows = 0;
 
 	int fieldid = 0, type = 0, size = 0;
 

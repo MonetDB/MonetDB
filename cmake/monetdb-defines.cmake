@@ -18,6 +18,7 @@ function(monetdb_configure_defines)
   check_include_file("fcntl.h" HAVE_FCNTL_H)
 # use find_path for getopt.h since we need the path on Windows
   find_path(HAVE_GETOPT_H "getopt.h")
+  check_include_file("glob.h" HAVE_GLOB_H)
   check_include_file("kvm.h" HAVE_KVM_H)
   check_include_file("mach/mach_init.h" HAVE_MACH_MACH_INIT_H)
   check_include_file("mach/task.h" HAVE_MACH_TASK_H)

@@ -67,7 +67,7 @@
 #include "mutf8.h"
 #include "bigram.h"
 
-#define UTF8_assert(s)		assert(checkUTF8(s))
+#define UTF8_assert(s)		assert(checkUTF8(s, NULL))
 
 /* return the number of codepoints in `s' before `end'. */
 static inline int

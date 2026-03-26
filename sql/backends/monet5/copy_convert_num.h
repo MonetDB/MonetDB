@@ -6,7 +6,7 @@
 
 
 static TMPL_TYPE
-TMPL_SUFFIXED(parse_one_integer) (struct error_handling *errors, int rel_row, const char *value, int *nils)
+TMPL_SUFFIXED(parse_one_integer) (struct error_handling *errors, BUN rel_row, const char *value, int *nils)
 {
 	bool pos = true;
 	TMPL_TYPE acc = 0;
@@ -27,7 +27,7 @@ TMPL_SUFFIXED(parse_one_integer) (struct error_handling *errors, int rel_row, co
 		// int is safe because of promotion rules
 		int digit = *s - '0';
 		if (unlikely(acc > ((TMPL_MAX - digit) / 10))) {
-			copy_report_error(errors, rel_row, -1, "overflow: %s", value);
+			copy_report_error(errors, (lng) rel_row, -1, "overflow: %s", value);
 			return TMPL_NIL;
 		}
 		TMPL_TYPE new_acc = 10 * acc + digit;
@@ -63,15 +63,15 @@ TMPL_SUFFIXED(parse_one_integer) (struct error_handling *errors, int rel_row, co
 		s++;
 
 	if (s == value) {
-		copy_report_error(errors, rel_row, -1, "missing integer");
+		copy_report_error(errors, (lng) rel_row, -1, "missing integer");
 		(*nils)++;
 		return TMPL_NIL;
 	}
 	if (*s != '\0') {
 		if (isdigit(*s))
-			copy_report_error(errors, rel_row, -1, "unexpected decimal digit '%c' while parsing integer", *s);
+			copy_report_error(errors, (lng) rel_row, -1, "unexpected decimal digit '%c' while parsing integer", *s);
 		else
-			copy_report_error(errors, rel_row, -1, "unexpected character '%c' while parsing integer", *s);
+			copy_report_error(errors, (lng) rel_row, -1, "unexpected character '%c' while parsing integer", *s);
 		(*nils)++;
 		return TMPL_NIL;
 	}
@@ -83,7 +83,7 @@ TMPL_SUFFIXED(parse_one_integer) (struct error_handling *errors, int rel_row, co
 }
 
 static TMPL_TYPE
-TMPL_SUFFIXED(parse_one_decimal_skip) (struct error_handling *errors, struct decimal_parms *parms, int rel_row, const char *value)
+TMPL_SUFFIXED(parse_one_decimal_skip) (struct error_handling *errors, struct decimal_parms *parms, BUN rel_row, const char *value)
 {
 	const char *s = value;
 	int digits = parms->digits;
@@ -131,9 +131,9 @@ TMPL_SUFFIXED(parse_one_decimal_skip) (struct error_handling *errors, struct dec
 	}
 	if (*s) {
 		if (isdigit(*s))
-			copy_report_error(errors, rel_row, -1, "too many decimal digits while parsing decimal: %s", value);
+			copy_report_error(errors, (lng) rel_row, -1, "too many decimal digits while parsing decimal: %s", value);
 		else
-			copy_report_error(errors, rel_row, -1, "unexpected characters while parsing decimal: %s", s);
+			copy_report_error(errors, (lng) rel_row, -1, "unexpected characters while parsing decimal: %s", s);
 		parms->nils++;
 		return TMPL_NIL;
 	}
@@ -145,7 +145,7 @@ TMPL_SUFFIXED(parse_one_decimal_skip) (struct error_handling *errors, struct dec
 
 
 static TMPL_TYPE
-TMPL_SUFFIXED(parse_one_decimal) (struct error_handling *errors, struct decimal_parms *parms, int rel_row, const char *value)
+TMPL_SUFFIXED(parse_one_decimal) (struct error_handling *errors, struct decimal_parms *parms, BUN rel_row, const char *value)
 {
 	const char *s = value;
 	int digits = parms->digits;
@@ -188,9 +188,9 @@ TMPL_SUFFIXED(parse_one_decimal) (struct error_handling *errors, struct decimal_
 	}
 	if (*s || integer_digits < 0) {
 		if (integer_digits < 0 || isdigit(*s))
-			copy_report_error(errors, rel_row, -1, "too many decimal digits while parsing decimal: %s", value);
+			copy_report_error(errors, (lng) rel_row, -1, "too many decimal digits while parsing decimal: %s", value);
 		else
-			copy_report_error(errors, rel_row, -1, "unexpected characters while parsing decimal: %s", s);
+			copy_report_error(errors, (lng) rel_row, -1, "unexpected characters while parsing decimal: %s", s);
 		parms->nils++;
 		return TMPL_NIL;
 	}
@@ -202,14 +202,14 @@ TMPL_SUFFIXED(parse_one_decimal) (struct error_handling *errors, struct decimal_
 
 
 static void
-TMPL_SUFFIXED(parse_many_decimals) (struct error_handling *errors, void *parms_, int count, void *dest_, char *data, int *offsets)
+TMPL_SUFFIXED(parse_many_decimals) (struct error_handling *errors, void *parms_, BUN count, void *dest_, char *data, int *offsets)
 {
 	struct decimal_parms *parms = parms_;
 	TMPL_TYPE *dest = dest_;
 	int nils = 0;
 
 	if (parms->skip) {
-		for (int i = 0; i < count; i++) {
+		for (BUN i = 0; i < count; i++) {
 			int offset = offsets[i];
 			if (is_int_nil(offset)) {
 				dest[i] = TMPL_NIL;
@@ -219,7 +219,7 @@ TMPL_SUFFIXED(parse_many_decimals) (struct error_handling *errors, void *parms_,
 			dest[i] = TMPL_SUFFIXED(parse_one_decimal_skip)(errors, parms, i, data + offset);
 		}
 	} else {
-		for (int i = 0; i < count; i++) {
+		for (BUN i = 0; i < count; i++) {
 			int offset = offsets[i];
 			if (is_int_nil(offset)) {
 				dest[i] = TMPL_NIL;
@@ -233,13 +233,13 @@ TMPL_SUFFIXED(parse_many_decimals) (struct error_handling *errors, void *parms_,
 }
 
 static void
-TMPL_SUFFIXED(parse_many_integers) (struct error_handling *errors, void *parms, int count, void *dest_, char *data, int *offsets)
+TMPL_SUFFIXED(parse_many_integers) (struct error_handling *errors, void *parms, BUN count, void *dest_, char *data, int *offsets)
 {
 	int *Nils = (int*)parms;
 	TMPL_TYPE *dest = dest_;
 	int nils = 0;
 
-	for (int i = 0; i < count; i++) {
+	for (BUN i = 0; i < count; i++) {
 		int offset = offsets[i];
 		if (is_int_nil(offset)) {
 			dest[i] = TMPL_NIL;

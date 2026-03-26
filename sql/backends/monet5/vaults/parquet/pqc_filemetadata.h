@@ -373,7 +373,7 @@ typedef enum Encoding {
 
 typedef struct pqc_schema_element {
 	PhysicalType physical_type;
-	u_int32_t type_length;
+	uint32_t type_length;
 	convertedtype converted_type;
 	logicaltype type;	/* generalized types, ie type (logicaltype nr), precision, scale combinations */
 	int ccnr;  // column chunk number?
@@ -396,60 +396,60 @@ typedef struct pqc_schema_element {
 typedef struct pqc_keyvalue {
 	char *key;
 	char *value_string;
-	u_int64_t value;
+	uint64_t value;
 } pqc_keyvalue;
 
 typedef struct pqc_stat {
 	char *max_string;
 	char *max_value;
-	u_int32_t max;
+	uint32_t max;
 	char *min_string;
 	char *min_value;
-	u_int32_t min;
-	u_int64_t null_count;
-	u_int64_t distinct_count;
+	uint32_t min;
+	uint64_t null_count;
+	uint64_t distinct_count;
 } pqc_stat;
 
 typedef struct pqc_pageencodings {
-	u_int32_t page_type;
-	u_int32_t page_encoding;
-	u_int32_t page_count;
+	uint32_t page_type;
+	uint32_t page_encoding;
+	uint32_t page_count;
 } pqc_pageencodings;
 
 typedef struct pqc_page {
-	u_int32_t num_values;
-	u_int32_t num_nulls;
-	u_int32_t num_rows;
+	uint32_t num_values;
+	uint32_t num_nulls;
+	uint32_t num_rows;
 	pqc_pageencodings pageencodings[3];
-	u_int32_t definition_levels_byte_length; /* v2 only, v1 had it in the rle block */
-	u_int32_t repetition_levels_byte_length; /* v2 only, v1 had it in the rle block */
+	uint32_t definition_levels_byte_length; /* v2 only, v1 had it in the rle block */
+	uint32_t repetition_levels_byte_length; /* v2 only, v1 had it in the rle block */
 	bool is_compressed;
 	pqc_stat stat;
-	u_int32_t num_read;
+	uint32_t num_read;
 } pqc_page;
 
 typedef struct pqc_columnchunk {
 	char *file_path;
-	u_int64_t file_offset;
+	uint64_t file_offset;
 	/* meta data*/
-	u_int64_t offset_index_offset;
-	u_int32_t offset_index_length;
-	u_int64_t column_index_offset;
-	u_int32_t column_index_length;
+	uint64_t offset_index_offset;
+	uint32_t offset_index_length;
+	uint64_t column_index_offset;
+	uint32_t column_index_length;
 
-	u_int32_t type;
+	uint32_t type;
 	char *path_in_schema;
-	u_int32_t num_encodings;
+	uint32_t num_encodings;
 	Encoding *encodings;
 	CompressionCodec codec;
-	u_int64_t nrows;
-	u_int64_t num_values;
+	uint64_t nrows;
+	uint64_t num_values;
 	pqc_page cur_page;
-	u_int64_t total_uncompressed_size;
-	u_int64_t total_compressed_size;
-	u_int64_t data_page_offset;
-	u_int64_t index_page_offset;
-	u_int64_t dictionary_page_offset;
+	uint64_t total_uncompressed_size;
+	uint64_t total_compressed_size;
+	uint64_t data_page_offset;
+	uint64_t index_page_offset;
+	uint64_t dictionary_page_offset;
 
 	pqc_stat stat;
 	pqc_pageencodings pageencodings[3]; // page encodings stats
@@ -459,7 +459,7 @@ typedef struct pqc_columnchunk {
 } pqc_columnchunk;
 
 typedef struct pqc_sortingcolumn {
-	u_int32_t column_idx;
+	uint32_t column_idx;
 	bool descending;
 	bool nulls_first;
 } pqc_sortingcolumn;
@@ -470,16 +470,16 @@ typedef struct pqc_row_group {
 	pqc_columnchunk *columnchunks;
 	int nsortingcolumns;
 	pqc_sortingcolumn *sortingcolumns;
-	u_int64_t total_byte_size;
-	u_int64_t num_rows;
-	u_int64_t file_offset;
-	u_int64_t total_compressed_size;
-	u_int32_t ordinal;
+	uint64_t total_byte_size;
+	uint64_t num_rows;
+	uint64_t file_offset;
+	uint64_t total_compressed_size;
+	uint32_t ordinal;
 } pqc_row_group;
 
 typedef struct pqc_filemetadata {
 	char *created_by;
-	u_int32_t version;
+	uint32_t version;
 
 	/* internal data */
 	int64_t nrows;

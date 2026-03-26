@@ -269,7 +269,7 @@ strPut(BAT *b, var_t *dst, const void *V)
 	 * need to do this earlier: if the string was found above, it
 	 * must have gone through here in the past */
 #ifndef NDEBUG
-	if (!checkUTF8(v)) {
+	if (!checkUTF8(v, NULL)) {
 		GDKerror("incorrectly encoded UTF-8\n");
 		return (var_t) -1;
 	}
@@ -794,7 +794,7 @@ strWrite(const char *a, stream *s, size_t cnt)
 
 	(void) cnt;
 	assert(cnt == 1);
-	if (!checkUTF8(a)) {
+	if (!checkUTF8(a, NULL)) {
 		GDKerror("incorrectly encoded UTF-8\n");
 		return GDK_FAIL;
 	}
@@ -9854,7 +9854,7 @@ fstrPut(BAT *b, var_t *dst, const void *V)
 	}
 
 #ifndef NDEBUG
-	if (!checkUTF8(v)) {
+	if (!checkUTF8(v, NULL)) {
 		GDKerror("incorrectly encoded UTF-8\n");
 		return (var_t) -1;
 	}

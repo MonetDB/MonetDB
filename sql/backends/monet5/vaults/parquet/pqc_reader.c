@@ -11,7 +11,6 @@
 #include <gdk.h>
 #include <gdk_time.h>
 #include <sql_mem.h>
-#include <stream_internal.h>
 
 #ifdef HAVE_SNAPPY
 #include <snappy-c.h>
@@ -25,12 +24,21 @@
 #ifdef HAVE_LIBZ
 #include <zlib.h>
 
+#ifdef _MSC_VER
+/* use intrinsic functions on Windows */
+#define short_int_SWAP(s)	((int16_t) _byteswap_ushort((uint16_t) (s)))
+#else
+#define short_int_SWAP(s)				\
+	((int16_t) (((0x00ff & (uint16_t) (s)) << 8) |	\
+		  ((0xff00 & (uint16_t) (s)) >> 8)))
+#endif
+
 static int
 gzip_uncompress( char *dest, size_t ul, char *src, size_t cl)
 {
 	z_stream z = { 0 };
 	z.next_in = (unsigned char *)src;
-	z.avail_in = cl;
+	z.avail_in = (uint32_t) cl;
 	z.zalloc = Z_NULL;
 	z.zfree = Z_NULL;
 	z.opaque = Z_NULL;
@@ -41,7 +49,7 @@ gzip_uncompress( char *dest, size_t ul, char *src, size_t cl)
 	}
 
 	z.next_out = (unsigned char *)dest;
-	z.avail_out = ul;
+	z.avail_out = (uint32_t) ul;
 
 	int res = inflate(&z, Z_FINISH);
 	if (res != Z_OK && res != Z_STREAM_END) {
@@ -89,8 +97,8 @@ typedef struct pqc_creader_t {
 	size_t dictsize;
 	/* left over rle/bit packed */
 	bool is_rle;
-	u_int32_t idx;
-	u_int32_t remaining;
+	uint32_t idx;
+	uint32_t remaining;
 } pqc_creader_t;
 
 struct pqc_reader_t {
@@ -100,7 +108,7 @@ struct pqc_reader_t {
 	int rowgroup;
 	int colnr;		/* colnr of this reader */
 	int level;
-	u_int64_t sz;
+	uint64_t sz;
 	ATOMIC_TYPE rownr;
 	const void *nil;
 
@@ -109,8 +117,8 @@ struct pqc_reader_t {
 	pqc_creader_t *creader; /* per worker readers */
 };
 
-static int
-pqc_statistics( pqc_reader_t *r, pqc_creader_t *pr, pqc_stat *stat, int pos )
+static int64_t
+pqc_statistics( pqc_reader_t *r, pqc_creader_t *pr, pqc_stat *stat, int64_t pos )
 {
 	(void)r;
 	int fieldid = 0, type = 0;
@@ -211,13 +219,13 @@ pqc_statistics( pqc_reader_t *r, pqc_creader_t *pr, pqc_stat *stat, int pos )
 	return pos;
 }
 
-static int
-pqc_index_page(pqc_reader_t *r, pqc_creader_t *pr, int64_t pos, u_int32_t *num_values)
+static int64_t
+pqc_index_page(pqc_reader_t *r, pqc_creader_t *pr, int64_t pos, uint32_t *num_values)
 {
 	(void)r;
 	int fieldid = 0, type = 0;
 
-	u_int32_t encoding = 0;
+	uint32_t encoding = 0;
 
 	assert(0);
 	/* list stats */
@@ -245,13 +253,13 @@ pqc_index_page(pqc_reader_t *r, pqc_creader_t *pr, int64_t pos, u_int32_t *num_v
 	return pos;
 }
 
-static int
-pqc_dictionary_page(pqc_reader_t *r, pqc_creader_t *pr, int64_t pos, u_int32_t *num_values)
+static int64_t
+pqc_dictionary_page(pqc_reader_t *r, pqc_creader_t *pr, int64_t pos, uint32_t *num_values)
 {
 	(void)r;
 	int fieldid = 0, type = 0;
 
-	u_int32_t encoding = 0;
+	uint32_t encoding = 0;
 
 	/* list stats */
 	while(true) {
@@ -277,13 +285,13 @@ pqc_dictionary_page(pqc_reader_t *r, pqc_creader_t *pr, int64_t pos, u_int32_t *
 }
 
 static int
-pqc_data_page(pqc_reader_t *r, pqc_creader_t *pr, int64_t pos, u_int32_t *num_values)
+pqc_data_page(pqc_reader_t *r, pqc_creader_t *pr, int64_t pos, uint32_t *num_values)
 {
 	int fieldid = 0, type = 0;
 
-	u_int32_t encoding = 0;
-	u_int32_t definition_level_encoding = 0;
-	u_int32_t repetition_level_encoding = 0;
+	uint32_t encoding = 0;
+	uint32_t definition_level_encoding = 0;
+	uint32_t repetition_level_encoding = 0;
 	/* list stats */
 
 	while(true) {
@@ -322,15 +330,15 @@ pqc_data_page(pqc_reader_t *r, pqc_creader_t *pr, int64_t pos, u_int32_t *num_va
 }
 
 static int
-pqc_data_pageV2(pqc_reader_t *r, pqc_creader_t *pr, int64_t pos, u_int32_t *num_values)
+pqc_data_pageV2(pqc_reader_t *r, pqc_creader_t *pr, int64_t pos, uint32_t *num_values)
 {
 	int fieldid = 0, type = 0;
 
-	u_int32_t encoding = 0;
-	u_int32_t definition_levels_byte_length = 0;
-	u_int32_t repetition_levels_byte_length = 0;
+	uint32_t encoding = 0;
+	uint32_t definition_levels_byte_length = 0;
+	uint32_t repetition_levels_byte_length = 0;
 	/* list stats */
-	u_int32_t num_nulls = 0, num_rows = 0;
+	uint32_t num_nulls = 0, num_rows = 0;
 	pr->cc->cur_page.is_compressed=1;
 
 	while(true) {
@@ -385,10 +393,10 @@ pqc_data_pageV2(pqc_reader_t *r, pqc_creader_t *pr, int64_t pos, u_int32_t *num_
 }
 
 static int
-string_read_dict( pqc_creader_t *cr, u_int32_t num_values)
+string_read_dict( pqc_creader_t *cr, uint32_t num_values)
 /* in 32 bit len, string (without zero) */
 {
-	u_int32_t i, hsz = 0;
+	uint32_t i, hsz = 0;
 	u_int8_t *data = (u_int8_t*)cr->dict;
 
 	for (i=0; i<num_values; i++) {
@@ -432,14 +440,15 @@ string_read_dict( pqc_creader_t *cr, u_int32_t num_values)
 static int
 pqc_page_header( pqc_reader_t *r, pqc_creader_t *pr, int64_t pos)
 {
-	int fieldid = 0, type = 0, res = 0;
+	int fieldid = 0, type = 0;
+	int64_t res = 0;
 
 	/* list stats */
-	u_int32_t num_values = 0;
-	u_int32_t page_type = 0;
-	u_int32_t uncompressed_size = 0;
-	u_int32_t compressed_size = 0;
-	u_int32_t crc = 0;
+	uint32_t num_values = 0;
+	uint32_t page_type = 0;
+	uint32_t uncompressed_size = 0;
+	uint32_t compressed_size = 0;
+	uint32_t crc = 0;
 	while(res >= 0) {
 		pos += pqc_get_field(pr->buffer+pos, &fieldid, &type);
 		TRC_DEBUG(PARQUET, "field id %d type %d\n", fieldid, type);
@@ -654,7 +663,7 @@ pqc_page_header( pqc_reader_t *r, pqc_creader_t *pr, int64_t pos)
 				return -1;
 		}
 	}
-	if (pos >= 0 && !pr->cc->dictionary_page_offset && pr->bufsize > (u_int64_t)pos)
+	if (pos >= 0 && !pr->cc->dictionary_page_offset && pr->bufsize > (uint64_t)pos)
 		pos = pqc_page_header( r, pr, pos);
 	return pos;
 }
@@ -746,7 +755,7 @@ pqc_read_dict( pqc_reader_t *r, pqc_creader_t *cr)
 }
 
 static int64_t
-pqc_repetition( pqc_reader_t *r, pqc_creader_t *cr, void *output, u_int32_t num_values, u_int32_t pos, int max)
+pqc_repetition( pqc_reader_t *r, pqc_creader_t *cr, void *output, uint32_t num_values, uint32_t pos, int max)
 {
 	(void)max;
 	(void)r;
@@ -770,8 +779,8 @@ pqc_repetition( pqc_reader_t *r, pqc_creader_t *cr, void *output, u_int32_t num_
 	(void)output;
 	//int bits = 1;
 	char *data = cr->data;
-	u_int32_t nr_bytes = get_uint32((u_int8_t*)data+pos), len;
-	u_int64_t null = 0, j = 0;
+	uint32_t nr_bytes = get_uint32((u_int8_t*)data+pos), len;
+	uint64_t null = 0, j = 0;
 
 	if (cr->repetition)
 		_DELETE(cr->repetition);
@@ -779,9 +788,9 @@ pqc_repetition( pqc_reader_t *r, pqc_creader_t *cr, void *output, u_int32_t num_
 	cr->first_repetition = 0;
 
 	pos += sizeof(nr_bytes);
-	u_int32_t spos = pos;
+	uint32_t spos = pos;
 	char prv = 0;
-	for(u_int32_t i = 0; i<num_values && ((pos-spos) < nr_bytes); ) {
+	for(uint32_t i = 0; i<num_values && ((pos-spos) < nr_bytes); ) {
 		pos += pqc_get_int32(data+pos, &len);
 		if (len & 1) {
 			len>>=1;
@@ -850,7 +859,7 @@ pqc_repetition( pqc_reader_t *r, pqc_creader_t *cr, void *output, u_int32_t num_
 }
 
 static int64_t
-pqc_definition( pqc_reader_t *r, pqc_creader_t *cr, void *output, u_int32_t num_values, u_int32_t pos, int max)
+pqc_definition( pqc_reader_t *r, pqc_creader_t *cr, void *output, uint32_t num_values, uint32_t pos, int max)
 {
 	(void)max;
 	(void)r;
@@ -875,8 +884,8 @@ pqc_definition( pqc_reader_t *r, pqc_creader_t *cr, void *output, u_int32_t num_
 	(void)output;
 	//int bits = 1;
 	char *data = cr->data;
-	u_int32_t nr_bytes = get_uint32((u_int8_t*)data+pos), len;
-	u_int64_t null = 0, j = 0;
+	uint32_t nr_bytes = get_uint32((u_int8_t*)data+pos), len;
+	uint64_t null = 0, j = 0;
 
 	if (cr->definition)
 		_DELETE(cr->definition);
@@ -884,9 +893,9 @@ pqc_definition( pqc_reader_t *r, pqc_creader_t *cr, void *output, u_int32_t num_
 	cr->first_definition = cr->curdef = cr->cursubdef = 0;
 
 	pos += sizeof(nr_bytes);
-	u_int32_t spos = pos;
+	uint32_t spos = pos;
 	char prv = 0;
-	for(u_int32_t i = 0; i<num_values && ((pos-spos) < nr_bytes); ) {
+	for(uint32_t i = 0; i<num_values && ((pos-spos) < nr_bytes); ) {
 		pos += pqc_get_int32(data+pos, &len);
 		if (len & 1) {
 			len>>=1;
@@ -1022,10 +1031,10 @@ pqc_dict_lookup( pqc_reader_t *r, pqc_creader_t *cr, void *output, void *voutput
 		int64_t i = 0;
 		char **dst = output;
 		bool mul8 = ((8/nr_bits)*nr_bits == 8);
-		u_int32_t idx = cr->idx;
+		uint32_t idx = cr->idx;
 		if (cr->remaining) {
 			if (cr->is_rle) {
-				u_int32_t j = 0;
+				uint32_t j = 0;
 				for(; i < nrows && j < cr->remaining; j++, i++)
 					dst[i] = ((char**)cr->dict)[idx];
 				cr->remaining -= j;
@@ -1034,7 +1043,7 @@ pqc_dict_lookup( pqc_reader_t *r, pqc_creader_t *cr, void *output, void *voutput
 			}
 		}
 		for(; i<nrows; ) {
-			u_int32_t len = 0;
+			uint32_t len = 0;
 			pos += pqc_get_int32((char*)data+pos, &len);
 			if (len & 1) {
 				len>>=1;
@@ -1045,7 +1054,7 @@ pqc_dict_lookup( pqc_reader_t *r, pqc_creader_t *cr, void *output, void *voutput
 					int m = len*8;
 					for (int64_t j = 0; i < nrows && j < m; j++, i++) {
 						uchar v = data[pos];
-						u_int32_t idx = (v >> sh)&mask;
+						uint32_t idx = (v >> sh)&mask;
 						sh += nr_bits;
 						if (sh >= 8) {
 							pos++;
@@ -1058,7 +1067,7 @@ pqc_dict_lookup( pqc_reader_t *r, pqc_creader_t *cr, void *output, void *voutput
 					int m = len*8;
 					for (int64_t j = 0; i < nrows && j < m; j++, i++) {
 						uchar v = data[pos];
-						u_int32_t idx = (v >> sh)&mask;
+						uint32_t idx = (v >> sh)&mask;
 						sh += nr_bits;
 						if (sh >= 8) {
 							pos++;
@@ -1075,7 +1084,7 @@ pqc_dict_lookup( pqc_reader_t *r, pqc_creader_t *cr, void *output, void *voutput
 					int m = len*8;
 					for (int64_t j = 0; i < nrows && j < m; j++, i++) {
 						usht v = *(usht*)(data+pos);
-						u_int32_t idx = (v >> sh)&mask;
+						uint32_t idx = (v >> sh)&mask;
 						sh += nr_bits;
 						if (sh >= 16) {
 							pos+=2;
@@ -1094,7 +1103,7 @@ pqc_dict_lookup( pqc_reader_t *r, pqc_creader_t *cr, void *output, void *voutput
 					int m = len*8;
 					for (int64_t j = 0; i < nrows && j < m; j++, i++) {
 						uint v = *(uint*)(data+pos);
-						u_int32_t idx = (v >> sh)&mask;
+						uint32_t idx = (v >> sh)&mask;
 						sh += nr_bits;
 						if (sh >= 32) {
 							pos+=2;
@@ -1113,7 +1122,7 @@ pqc_dict_lookup( pqc_reader_t *r, pqc_creader_t *cr, void *output, void *voutput
 			} else if (nr_bits <= 8) { /* rle */
 				len>>=1;
 				uchar idx = data[pos++];
-				u_int32_t j = 0;
+				uint32_t j = 0;
 				for(; i < nrows && j < len; j++, i++)
 					dst[i] = ((char**)cr->dict)[idx];
 				if (j < len) {
@@ -1124,7 +1133,7 @@ pqc_dict_lookup( pqc_reader_t *r, pqc_creader_t *cr, void *output, void *voutput
 			} else if (nr_bits <= 16) { /* rle */
 				len>>=1;
 				usht idx = *(usht*)(data+pos);
-				u_int32_t j = 0;
+				uint32_t j = 0;
 				pos += 2;
 				for(; i < nrows && j < len; j++, i++)
 					dst[i] = ((char**)cr->dict)[idx];
@@ -1136,7 +1145,7 @@ pqc_dict_lookup( pqc_reader_t *r, pqc_creader_t *cr, void *output, void *voutput
 			} else if (nr_bits <= 32) { /* rle */
 				len>>=1;
 				uint idx = *(uint*)(data+pos);
-				u_int32_t j = 0;
+				uint32_t j = 0;
 				pos += 4;
 				for(; i < nrows && j < len; j++, i++)
 					dst[i] = ((char**)cr->dict)[idx];
@@ -1302,8 +1311,8 @@ offset_string_read_chunk( pqc_reader_t *r, pqc_creader_t *cr, void *output, void
 static int64_t
 pqc_read_delta( pqc_creader_t *cr, int *prefixes, int64_t nrows, int pos)
 {
-	u_int64_t blocks = 0, miniblocks = 0, count = 0;
-	u_int64_t val = 0;
+	uint64_t blocks = 0, miniblocks = 0, count = 0;
+	uint64_t val = 0;
 
 	(void)prefixes;
 	(void)nrows;
@@ -1424,9 +1433,9 @@ pqc_read_delta_strings( pqc_creader_t *cr, void *output, void *voutput, int64_t 
 }
 
 int64_t
-pqc_mark_chunk( pqc_reader_t *r, int nr_workers, int wnr, u_int64_t nrows)
+pqc_mark_chunk( pqc_reader_t *r, int nr_workers, int wnr, uint64_t nrows)
 {
-	u_int64_t orows = nrows;
+	uint64_t orows = nrows;
 	if (ATOMIC_GET(&r->rownr) >= r->sz)
 		return 0;
 
@@ -1474,8 +1483,8 @@ pqc_mark_chunk( pqc_reader_t *r, int nr_workers, int wnr, u_int64_t nrows)
 	return 1;
 }
 
-static u_int64_t
-pqc_nrows( pqc_creader_t *cr, u_int64_t nrows)
+static uint64_t
+pqc_nrows( pqc_creader_t *cr, uint64_t nrows)
 {
 	if (cr->cc->cur_page.num_nulls == nrows)
 		return 0;
@@ -1485,7 +1494,7 @@ pqc_nrows( pqc_creader_t *cr, u_int64_t nrows)
 
 	if (cr->definition) {
 		/* first find last */
-		for (u_int64_t i = 0; i<nrows; ) {
+		for (uint64_t i = 0; i<nrows; ) {
 			int len = cr->definition[cur];
 			len -= sdef;
 			if (i + len > nrows) {
@@ -1509,11 +1518,11 @@ pqc_nrows( pqc_creader_t *cr, u_int64_t nrows)
 }
 
 static int
-pqc_project( char *output, char *data, u_int64_t nrows, int w)
+pqc_project( char *output, char *data, uint64_t nrows, int w)
 {
 	if (w == 1) {
 		int sh = 0, j = 0;
-		for(u_int64_t i = 0; i < nrows; i++) {
+		for(uint64_t i = 0; i < nrows; i++) {
 			output[i] = (data[j]>>sh)&1;
 			sh++;
 			if (sh == 8) {
@@ -1529,7 +1538,7 @@ pqc_project( char *output, char *data, u_int64_t nrows, int w)
 }
 
 static int
-pqc_add_nil( pqc_reader_t *r, pqc_creader_t *cr, char *output, char *data, u_int64_t nrows, u_int64_t nils, int w)
+pqc_add_nil( pqc_reader_t *r, pqc_creader_t *cr, char *output, char *data, uint64_t nrows, uint64_t nils, int w)
 {
 	int cur = cr->curdef, sdef = cr->cursubdef;
 	int def = cr->first_definition;
@@ -1538,29 +1547,29 @@ pqc_add_nil( pqc_reader_t *r, pqc_creader_t *cr, char *output, char *data, u_int
 	if (nils == nrows){ // all null
 		switch(w) {
 		case 1:
-			for(u_int64_t i = 0; i<nrows; i++)
+			for(uint64_t i = 0; i<nrows; i++)
 				output[i] = *(char*)r->nil;
 			break;
 		case 2:
-			for(u_int64_t i = 0; i<nrows; i++)
+			for(uint64_t i = 0; i<nrows; i++)
 				((sht*)output)[i] = *(sht*)r->nil;
 			break;
 		case 4:
-			for(u_int64_t i = 0; i<nrows; i++)
+			for(uint64_t i = 0; i<nrows; i++)
 				((int*)output)[i] = *(int*)r->nil;
 			break;
 		case 8:
-			for(u_int64_t i = 0; i<nrows; i++)
+			for(uint64_t i = 0; i<nrows; i++)
 				((lng*)output)[i] = *(lng*)r->nil;
 			break;
 #ifdef HAVE_HGE
 		case 16:
-			for(u_int64_t i = 0; i<nrows; i++)
+			for(uint64_t i = 0; i<nrows; i++)
 				((hge*)output)[i] = *(hge*)r->nil;
 			break;
 #endif
 		default:
-			for(u_int64_t i = 0, j = 0; i<nrows; i++, j+=w)
+			for(uint64_t i = 0, j = 0; i<nrows; i++, j+=w)
 				memcpy(output+j, r->nil, w);
 			break;
 		}
@@ -1572,11 +1581,11 @@ pqc_add_nil( pqc_reader_t *r, pqc_creader_t *cr, char *output, char *data, u_int
 	if (!sdef)
 		def = !def;
 	pos = nrows*w;
-	for(u_int64_t i = nrows; i > 0 && cur >= 0; cur--){
+	for(uint64_t i = nrows; i > 0 && cur >= 0; cur--){
 		int len = cr->definition[cur];
 		len -= sdef;
 		sdef = 0;
-		if (i < (u_int64_t)len)
+		if (i < (uint64_t)len)
 			len = i;
 		i -= len;
 		if (def) {
@@ -1621,7 +1630,7 @@ pqc_max_definition( pqc_schema_element *pse)
 #define mkdate(y, m, d) (((uint32_t) (((y) + YEAR_OFFSET) * 12 + (m) - 1) << DTMONTH_SHIFT) | ((uint32_t) (d) << DTDAY_SHIFT))
 
 int64_t
-pqc_read_chunk( pqc_reader_t *r, int wnr, void *output /*fixed sized atom storage */, void *voutput /* var storage */, u_int64_t nrows, int *ssize, int *dict)
+pqc_read_chunk( pqc_reader_t *r, int wnr, void *output /*fixed sized atom storage */, void *voutput /* var storage */, uint64_t nrows, int *ssize, int *dict)
 {
 	if (ATOMIC_GET(&r->rownr) >= r->sz)
 		return 0;
@@ -1708,17 +1717,17 @@ pqc_read_chunk( pqc_reader_t *r, int wnr, void *output /*fixed sized atom storag
 			int definition = pqc_max_definition(r->pse);
 			if (repetition) {
 				/* bit vector for null's */
-				pos = pqc_repetition(r, cr, output, cr->cc->cur_page.num_values, (u_int32_t)pos, repetition);
+				pos = pqc_repetition(r, cr, output, cr->cc->cur_page.num_values, (uint32_t)pos, repetition);
 				cr->pos = pos;
 			}
 			if (definition) {
 				/* bit vector for null's */
-				pos = pqc_definition(r, cr, output, cr->cc->cur_page.num_values, (u_int32_t)pos, definition);
+				pos = pqc_definition(r, cr, output, cr->cc->cur_page.num_values, (uint32_t)pos, definition);
 				cr->pos = pos;
 			}
 			if (pos < 0)
 				return pos;
-			u_int64_t orows = nrows;
+			uint64_t orows = nrows;
 			if (r->pse->precision == 0 && !output)
 				orows = 0;
 			else
@@ -1777,7 +1786,7 @@ pqc_read_chunk( pqc_reader_t *r, int wnr, void *output /*fixed sized atom storag
 				uint32_t epoch_date = mkdate(1970, 1, 1);
 				if (r->pse->precision == 32) {
 					uint32_t *l = output;
-					for(u_int64_t i=0; i< nrows; i++) {
+					for(uint64_t i=0; i< nrows; i++) {
 						l[i] = date_add_day(epoch_date, l[i]);
 					}
 				}
@@ -1785,7 +1794,7 @@ pqc_read_chunk( pqc_reader_t *r, int wnr, void *output /*fixed sized atom storag
 				if (r->pse->type == timestamptype) {
 					if (r->pse->precision == 6) {
 						int64_t *l = output;
-						for(u_int64_t i=0; i< nrows; i++) {
+						for(uint64_t i=0; i< nrows; i++) {
 							l[i] = timestamp_fromusec(l[i]);
 						}
 					}
@@ -1802,7 +1811,7 @@ pqc_read_chunk( pqc_reader_t *r, int wnr, void *output /*fixed sized atom storag
 		/* next vector */
 		if (cr->data) {
 			int pos = cr->pos;
-			u_int64_t orows = nrows;
+			uint64_t orows = nrows;
 			if (r->pse->precision == 0 && !output)
 				orows = 0;
 			else
@@ -1861,7 +1870,7 @@ pqc_read_chunk( pqc_reader_t *r, int wnr, void *output /*fixed sized atom storag
 				uint32_t epoch_date = mkdate(1970, 1, 1);
 				if (r->pse->precision == 32) {
 					uint32_t *l = output;
-					for(u_int64_t i=0; i< nrows; i++) {
+					for(uint64_t i=0; i< nrows; i++) {
 						l[i] = date_add_day(epoch_date, l[i]);
 					}
 				}
@@ -1869,7 +1878,7 @@ pqc_read_chunk( pqc_reader_t *r, int wnr, void *output /*fixed sized atom storag
 				if (r->pse->type == timestamptype) {
 					if (r->pse->precision == 6) {
 						int64_t *l = output;
-						for(u_int64_t i=0; i< nrows; i++) {
+						for(uint64_t i=0; i< nrows; i++) {
 							l[i] = timestamp_fromusec(l[i]);
 						}
 					}

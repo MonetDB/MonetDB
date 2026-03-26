@@ -1815,20 +1815,20 @@ generator_done(generator *g, int wid, int nr_workers, int redo)
 	return res;
 }
 
-#define VLTgenerate(T) {				\
-	T *p = (T*)Tloc(b,0);						\
-	T s = *(T*)VALget(&g->step);	\
-	T v = *(T*)VALget(&g->first) + cur * s;	\
-	i = cur;							\
-	cur += g->part_size;				\
-	if (cur > g->cnt)					\
-		cur = g->cnt;					\
-	for(j=0; i<cur; i++, j++) {			\
-		p[j] = v;						\
-		v += s;							\
-	}									\
-	b->tsorted = s > 0 || j <= 1;		\
-	b->trevsorted = s < 0 || j <= 1;	\
+#define VLTgenerate(T) {							\
+	T *p = (T*)Tloc(b,0);							\
+	T s = *(T*)VALget(&g->step);					\
+	T v = (T) (*(T*)VALget(&g->first) + cur * s);	\
+	i = cur;										\
+	cur += g->part_size;							\
+	if (cur > g->cnt)								\
+		cur = g->cnt;								\
+	for(j=0; i<cur; i++, j++) {						\
+		p[j] = v;									\
+		v += s;										\
+	}												\
+	b->tsorted = s > 0 || j <= 1;					\
+	b->trevsorted = s < 0 || j <= 1;				\
 }
 
 static BAT *
@@ -1909,7 +1909,7 @@ generator_next(generator *g, int wid)
 			date f = g->first.val.ival;
 			date l = g->limit.val.ival;
 			s /= 24*60*60*1000;
-			f += s*cur;
+			f += (date) (s * cur);
 			BUN c = cur;
 			cur += g->part_size;
 			if (cur > g->cnt)
