@@ -177,6 +177,7 @@ BATcreatedesc(oid hseq, int tt, bool heapnames, role_t role, uint16_t width)
 		.tvheap = vh,
 		.creator_tid = MT_getpid(),
 		.qc = role == TRANSIENT ? MT_thread_get_qry_ctx() : NULL,
+		.cnting_sketch = {0},
 	};
 
 	if (bn->theap) {
@@ -198,6 +199,8 @@ BATcreatedesc(oid hseq, int tt, bool heapnames, role_t role, uint16_t width)
 	MT_lock_init(&bn->batIdxLock, name);
 	snprintf(name, sizeof(name), "hashlock%d", bn->batCacheid); /* fits */
 	MT_rwlock_init(&bn->thashlock, name);
+	snprintf(name, sizeof(name), "sklock%d", bn->batCacheid); /* fits */
+	MT_lock_init(&bn->sketch_lock, name);
 	return bn;
 }
 
@@ -613,6 +616,7 @@ BATdestroy(BAT *b)
 	MT_lock_destroy(&b->theaplock);
 	MT_lock_destroy(&b->batIdxLock);
 	MT_rwlock_destroy(&b->thashlock);
+	MT_lock_destroy(&b->sketch_lock);
 	if (b->theap) {
 		GDKfree(b->theap);
 	}

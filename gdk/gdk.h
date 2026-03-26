@@ -353,6 +353,13 @@ typedef struct Sink {
 
 #define ORDERIDXOFF		3
 
+#define HLL_BITS 5
+#define BITS_MASK   ((1ULL << HLL_BITS) - 1)
+#define MAX_CLZ     (64 - HLL_BITS)
+#define BUCKETS     (1U << HLL_BITS)
+#define CLZ_BUCKETS (MAX_CLZ + 1)
+#define HLLSEED     0xadc83b19ULL
+
 /* assert that atom width is power of 2, i.e., width == 1<<shift */
 #define assert_shift_width(shift,width) assert(((shift) == 0 && (width) == 0) || ((unsigned)1<<(shift)) == (unsigned)(width))
 
@@ -438,6 +445,10 @@ typedef struct BAT {
 	Strimps *tstrimps;	/* string imprint index  */
 	Sink *tsink;
 	PROPrec *tprops;	/* list of dynamic properties stored in the bat descriptor */
+
+	uint8_t cnting_sketch[BUCKETS][CLZ_BUCKETS];
+	uint64_t estimate;
+	MT_Lock sketch_lock;
 
 	MT_Lock theaplock;	/* lock protecting heap reference changes */
 	MT_RWLock thashlock;	/* lock specifically for hash management */

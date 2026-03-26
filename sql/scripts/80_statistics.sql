@@ -111,3 +111,15 @@ returns table (
 )
 external name sql."statistics";
 grant execute on function sys."statistics"(varchar(1024),varchar(1024),varchar(1024)) to public;
+
+create aggregate cde(c integer)
+returns integer external name aggr.cde;
+grant execute on aggregate cde(integer) to public;
+
+create aggregate cde(c bigint)
+returns integer external name aggr.cde;
+grant execute on aggregate cde(bigint) to public;
+
+create aggregate cde(c varchar)
+returns integer external name aggr.cde;
+grant execute on aggregate cde(varchar) to public;

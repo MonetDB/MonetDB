@@ -1539,6 +1539,162 @@ AGGRsubcorrcand(Client ctx, bat *retval, const bat *b1, const bat *b2, const bat
 						BATgroupcorrelation, "aggr.subcorr");
 }
 
+#include <sys/random.h>         /// TODO
+/// #include "murmurhash3.h"
+#define XXH_STATIC_LINKING_ONLY
+#define XXH_IMPLEMENTATION
+#include "xxhash.h"
+
+/// Helper function sigma as defined in
+/// "New cardinality estimation algorithms for HyperLogLog sketches"
+/// Otmar Ertl, arXiv:1702.01284
+static inline double
+sigma(double x)
+{
+	if (x == 1.) return INFINITY;
+	double y = 1;
+	double z = x;
+	double z_prime;
+	do {
+		x *= x;
+		z_prime = z;
+		z += x * y;
+		y += y;
+	} while(z_prime != z);
+	return z;
+}
+
+/// Helper function tau as defined in
+/// "New cardinality estimation algorithms for HyperLogLog sketches"
+/// Otmar Ertl, arXiv:1702.01284
+static inline double
+tau(double x)
+{
+	if (x == 0.0 || x == 1.0) return 0.0;
+	double y = 1.0;
+	double z = 1 - x;
+	double z_prime;
+	do {
+		x = sqrt(x);
+		z_prime = z;
+		y *= 0.5;
+		z -= pow(1 - x, 2) * y;
+	} while(z_prime != z);
+	return z / 3;
+}
+
+/// Estimator as defined in Algorithm 6 from
+/// "New cardinality estimation algorithms for HyperLogLog sketches"
+/// Otmar Ertl, arXiv:1702.01284.
+/// Only difference is how the multiplicity array is computed
+static inline uint64_t
+estimator(uint8_t cnt_sketch[BUCKETS][CLZ_BUCKETS])
+{
+	int8_t C[CLZ_BUCKETS + 1] = {0};
+	for (size_t bucket = 0; bucket < BUCKETS; bucket++)
+	{
+		int K = -1;
+		for (size_t clz = 0; clz < CLZ_BUCKETS; clz++)
+			if (cnt_sketch[bucket][clz] > 0)
+				K = clz;
+		K == -1 ? C[0]++ : C[K + 1]++;
+	}
+	double t = tau(1.0 - ((double)C[CLZ_BUCKETS] / BUCKETS));
+	double z = (double)BUCKETS * t;
+	for (int k = CLZ_BUCKETS; k >= 1; k--)
+	{
+		z = 0.5 * (z + (double)C[k]);
+	}
+	double s = sigma((double)C[0] / BUCKETS);
+	z += (double)BUCKETS * s;
+	const double alpha = 0.7213475204444817;
+	return llroundl(alpha * (double)BUCKETS * BUCKETS / z);
+}
+
+/// HyperLogLog Counting Sketches as defined in
+/// "Every Row Counts: Combining Sketches and Sampling for
+/// Accurate Group-By Result Estimates.
+/// Michael Freitag, Thomas Neumann.
+static str
+AGGRcde(Client c, int *estimate, const bat *bid)
+{
+	(void) c;
+	QryCtx *qryctx = MT_thread_get_qry_ctx();
+
+	/* uint64_t murmur3_out[2]; */
+	uint64_t hash;
+	uint8_t bucket;
+	uint8_t cnt_sketch[BUCKETS][CLZ_BUCKETS] = {0};
+	uint8_t clz;
+
+	BAT *b = BATdescriptor(*bid);
+	if (b == NULL)
+		throw(MAL, "AGGRcde", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	BATiter bi = bat_iterator(b);
+	int8_t btype = ATOMbasetype(bi.type);
+
+	if (VIEWtparent(b)) {
+		BAT *pb = BATdescriptor(VIEWtparent(b));
+		assert(pb);
+		printf("cnt dist est prop %lu\n", pb->estimate);
+		BBPreclaim(pb);
+	}
+
+	TIMEOUT_LOOP_IDX_DECL(i, BATcount(b), qryctx) {
+		const void *ptr = BUNtail(&bi, i);
+		switch (btype) {
+		case TYPE_int:
+			if (is_int_nil(*(int *)ptr))
+				continue;
+			else
+				/* MurmurHash3_x64_128(ptr, sizeof(int), HLLSEED, murmur3_out); */
+				/* hash = murmur3_out[1]; */
+				hash = XXH64(ptr, sizeof(int), HLLSEED);
+			break;
+		case TYPE_lng:
+			if (is_lng_nil(*(lng *)ptr))
+				continue;
+			else
+				/* MurmurHash3_x64_128(ptr, sizeof(lng), HLLSEED, murmur3_out); */
+				/* hash = murmur3_out[1]; */
+				hash = XXH64(ptr, sizeof(lng), HLLSEED);
+			break;
+		case TYPE_str:
+			if (strNil(ptr))
+				continue;
+			else
+				/* MurmurHash3_x64_128(ptr, strlen(ptr), HLLSEED, murmur3_out); */
+				/* hash = murmur3_out[1]; */
+				hash = XXH64(ptr, strlen(ptr), HLLSEED);
+			break;
+		default:
+			bat_iterator_end(&bi);
+			throw(MAL, "AGGRcde", SQLSTATE(42000) "NO IMPL FOR COL TYPE");
+		}
+
+		bucket = hash & BITS_MASK;
+		hash |= BITS_MASK;
+		clz = __builtin_clzll(hash);
+		assert(clz <= 58);
+		if (cnt_sketch[bucket][clz] <= 128) {
+			cnt_sketch[bucket][clz]++;
+		} else {
+			uint8_t k = cnt_sketch[bucket][clz] - 128;
+			uint64_t rng;
+			getrandom(&rng, sizeof(rng), 0); /// TODO
+			if ((rng & ((1ULL << k) - 1)) == 0)
+				cnt_sketch[bucket][clz]++;
+		}
+	}
+
+	bat_iterator_end(&bi);
+	BBPreclaim(b);
+
+	*estimate = llroundl(estimator(cnt_sketch));
+
+	return MAL_SUCCEED;
+}
+
 #include "mel.h"
 static mel_func aggr_init_funcs[] = {
  command("aggr", "sum", AGGRsum3_dbl, false, "Grouped tail sum on bte", args(1,4, batarg("",dbl),batarg("b",bte),batarg("g",oid),batargany("e",1))),
@@ -1941,6 +2097,9 @@ static mel_func aggr_init_funcs[] = {
  command("aggr", "subsha512", AGGRsha512grouped, false, "Grouped SHA512", args(1,5, batarg("",str),batarg("b",str),batarg("g",oid),batargany("e",1),arg("skip_nils",bit))),
  command("aggr", "ripemd160", AGGRripemd160, false, "Ungrouped RIPEMD160", args(1,2, arg("",str),batarg("b",str))),
  command("aggr", "subripemd160", AGGRripemd160grouped, false, "Grouped RIPEMD160", args(1,5, batarg("",str),batarg("b",str),batarg("g",oid),batargany("e",1),arg("skip_nils",bit))),
+
+ command("aggr", "cde", AGGRcde, false, "", args(1, 2, arg("estimate", int), batargany("b", 1))),
+
  { .imp=NULL }
 };
 #include "mal_import.h"
