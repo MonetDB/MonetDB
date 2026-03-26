@@ -21,7 +21,7 @@ def client(id):
     (10, 20, 30, 40, 50),
     (11, 21, 31, 41, 51),
     (12, 22, 32, 42, 52);
-    set optimizer = 'minimal_fast';
+    set optimizer = 'minimal_pipe';
     '''
     cursor.execute(init)
 
