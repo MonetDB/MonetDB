@@ -1190,7 +1190,7 @@ pqc_dict_lookup( pqc_reader_t *r, pqc_creader_t *cr, void *output, void *voutput
 	return nrows;
 }
 
-static int
+static int64_t
 string_read_chunk( pqc_creader_t *cr, char **rc, char *buf, int64_t nrows, int pos)
 {
 	if (nrows > cr->cc->cur_page.num_values)
@@ -1303,7 +1303,7 @@ string_size_chunk( pqc_creader_t *cr, int64_t nrows, int pos, int *ssize, int *d
 #undef T
 #undef offset_string_read_chunk
 
-static int
+static int64_t
 offset_string_read_chunk( pqc_reader_t *r, pqc_creader_t *cr, void *output, void *voutput, int64_t nrows,
 						  int pos, int offset, int width)
 {

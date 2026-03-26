@@ -132,6 +132,19 @@ pqc_dup(pqc_file *pq)
 	return pq;
 }
 
+#ifndef O_BINARY
+#define O_BINARY 0
+#endif
+#ifdef NATIVE_WIN32
+static inline int64_t
+mylseek(int fd, int64_t offset, int whence)
+{
+	return (int64_t) _lseeki64(fd, (__int64) offset, whence);
+}
+#else
+#define mylseek(fd, offset, whence)	lseek(fd, (off_t) (offset), whence)
+#endif
+
 pqc_file *
 pqc_copy(pqc_file *opq)
 {
@@ -141,7 +154,7 @@ pqc_copy(pqc_file *opq)
 		return pq;
 	pq->refcnt = 1;
 	pq->filename = opq->filename;
-	pq->fd = open(opq->filename, O_RDONLY);
+	pq->fd = open(opq->filename, O_RDONLY | O_BINARY);
 	pq->pa = create_allocator("pqc_copy", false);
 	if (!pq->pa) {
 		_DELETE(pq);
@@ -156,12 +169,12 @@ pqc_read( pqc_file *pq, int64_t offset, char *buffer, int sz)
 {
 	MT_lock_set(&pq->lock);
 	if (offset == 0 && sz < PQC_SMALL) {
-		if (lseek(pq->fd, offset, SEEK_SET) != offset)
+		if (mylseek(pq->fd, offset, SEEK_SET) != offset)
 			offset = -3;
 		if (read(pq->fd, buffer, sz) != sz)
 			offset = -3;
 	} else {
-		if (lseek(pq->fd, offset, SEEK_SET) != offset)
+		if (mylseek(pq->fd, offset, SEEK_SET) != offset)
 			offset = -3;
 		if (read(pq->fd, buffer, sz) != sz)
 			offset = -4;
@@ -195,16 +208,18 @@ pqc_open( pqc_file **PQ, char *fn)
 	TRC_DEBUG(PARQUET, "fd = %d, file_size = %zu\n", pq->fd, pq->sz);
 
 	ssize_t sz = pq->sz;
-	off_t offset = 0;
+	int64_t offset = 0;
 	if (sz > 1024) {
 		sz = 1024;
 		offset = pq->sz - sz;
 	}
-	if (offset && lseek(pq->fd, offset, SEEK_SET) != offset) {
+	if (offset && mylseek(pq->fd, offset, SEEK_SET) != offset) {
 		pqc_destroy(pq);
 		return -3;
 	}
-	if (read(pq->fd, buffer, sz) != sz) {
+	/* cast to int for Windows; we know it fits, and Linux automatically
+	 * casts back */
+	if (read(pq->fd, buffer, (int) sz) != sz) {
 		pqc_destroy(pq);
 		return -3;
 	}
@@ -225,11 +240,11 @@ pqc_open( pqc_file **PQ, char *fn)
 	TRC_DEBUG(PARQUET, "fmdlen %u\n", fmdlen);
 
 	offset = (pq->sz > pq->bsz) ? pq->sz - (pq->bsz + 8) : 0;
-	if (offset && lseek(pq->fd, offset, SEEK_SET) != offset) {
+	if (offset && mylseek(pq->fd, offset, SEEK_SET) != offset) {
 		pqc_destroy(pq);
 		return -3;
 	}
-	if (read(pq->fd, pq->buffer, pq->bsz) != (ssize_t)pq->bsz) {
+	if (read(pq->fd, pq->buffer, fmdlen) != (ssize_t)pq->bsz) {
 		pqc_destroy(pq);
 		return -3;
 	}
@@ -242,8 +257,8 @@ pqc_close( pqc_file *pq)
 	pqc_destroy(pq);
 }
 
-static int
-pqc_struct( pqc_file *pq, int pos)
+static size_t
+pqc_struct( pqc_file *pq, size_t pos)
 {
 	int fieldid = 0, type = 0;
 
@@ -257,8 +272,8 @@ pqc_struct( pqc_file *pq, int pos)
 	return pos;
 }
 
-static int
-pqc_timeunit( pqc_file *pq, pqc_schema_element *pse, int pos)
+static size_t
+pqc_timeunit( pqc_file *pq, pqc_schema_element *pse, size_t pos)
 {
 	int fieldid = 0, type = 0;
 
@@ -285,8 +300,8 @@ pqc_timeunit( pqc_file *pq, pqc_schema_element *pse, int pos)
 	return pos;
 }
 
-static int
-pqc_timestamp( pqc_file *pq, pqc_schema_element *pse, int pos)
+static size_t
+pqc_timestamp( pqc_file *pq, pqc_schema_element *pse, size_t pos)
 {
 	int fieldid = 0, type = 0;
 
@@ -309,8 +324,8 @@ pqc_timestamp( pqc_file *pq, pqc_schema_element *pse, int pos)
 	return pos;
 }
 
-static int
-pqc_decimal( pqc_file *pq, pqc_schema_element *pse, int pos)
+static size_t
+pqc_decimal( pqc_file *pq, pqc_schema_element *pse, size_t pos)
 {
 	int fieldid = 0, type = 0;
 
@@ -337,8 +352,8 @@ pqc_decimal( pqc_file *pq, pqc_schema_element *pse, int pos)
 	return pos;
 }
 
-static int
-pqc_integer( pqc_file *pq, pqc_schema_element *pse, int pos)
+static size_t
+pqc_integer( pqc_file *pq, pqc_schema_element *pse, size_t pos)
 {
 	int fieldid = 0, type = 0;
 
@@ -362,8 +377,8 @@ pqc_integer( pqc_file *pq, pqc_schema_element *pse, int pos)
 	return pos;
 }
 
-static int
-pqc_logicaltype( pqc_file *pq, pqc_schema_element *pse, int pos)
+static size_t
+pqc_logicaltype( pqc_file *pq, pqc_schema_element *pse, size_t pos)
 {
 	int fieldid = 0, type = 0;
 
@@ -406,7 +421,7 @@ pqc_logicaltype( pqc_file *pq, pqc_schema_element *pse, int pos)
 			break;
 		case LOGICAL_TYPE_TIME:
 			TRC_ERROR(PARQUET, "ERROR No support for LOGICAL_TYPE_TIME");
-			return -1;
+			return (size_t) -1;
 		case LOGICAL_TYPE_TIMESTAMP: /* timestamp */
 			pos = pqc_timestamp(pq, pse, pos);
 			break;
@@ -419,19 +434,19 @@ pqc_logicaltype( pqc_file *pq, pqc_schema_element *pse, int pos)
 			break;
 		case LOGICAL_TYPE_JSON:
 			TRC_ERROR(PARQUET, "no support for LOGICAL_TYPE_JSON");
-			return -1;
+			return (size_t) -1;
 		case LOGICAL_TYPE_BSON:
 			TRC_ERROR(PARQUET, "no support for LOGICAL_TYPE_BSON");
-			return -1;
+			return (size_t) -1;
 		case LOGICAL_TYPE_UUID:
 			TRC_ERROR(PARQUET, "no support for LOGICAL_TYPE_UUID");
-			return -1;
+			return (size_t) -1;
 		case LOGICAL_TYPE_FLOAT16:
 			TRC_ERROR(PARQUET, "no support for LOGICAL_TYPE_FLOAT16");
-			return -1;
+			return (size_t) -1;
 		default:
 			TRC_ERROR(PARQUET, "no support or unknown LOGICAL_TYPE  %d\n", fieldid);
-			return -1;
+			return (size_t) -1;
 		}
 	}
 	return pos;
@@ -600,8 +615,8 @@ pqc_convertedtype2logicaltype( pqc_schema_element *pse, uint32_t type)
 	return 0;
 }
 
-static int
-pqc_read_schema_element( pqc_file *pq, int nr, int pos, int *ccnr, pqc_schema_element *parent)
+static size_t
+pqc_read_schema_element( pqc_file *pq, int nr, size_t pos, int *ccnr, pqc_schema_element *parent)
 {
 	int fieldid = 0, type = 0;
 	pqc_schema_element *pse = pq->fmd->elements + nr;
@@ -635,7 +650,7 @@ pqc_read_schema_element( pqc_file *pq, int nr, int pos, int *ccnr, pqc_schema_el
 			pos += pqc_get_zint32(pq->buffer+pos, &precision);
 			if (pse->type != stringtype) {
 				TRC_ERROR(PARQUET, "precision %u used with wrong type %d\n", precision, pse->type);
-				return -1;
+				return (size_t) -1;
 			}
 			pse->type_length = precision;
 			TRC_INFO(PARQUET, "precision %u\n", precision);
@@ -653,7 +668,7 @@ pqc_read_schema_element( pqc_file *pq, int nr, int pos, int *ccnr, pqc_schema_el
 			int res = pqc_string(pq, pq->buffer+pos, &pse->name);
 			if (res < 0) {
 				TRC_ERROR(PARQUET, "failure reading SCHEMA_ELEMENT_NAME");
-				return -1;
+				return (size_t) -1;
 			}
 			pos += res;
 			TRC_INFO(PARQUET, "name %s\n", pse->name);
@@ -675,7 +690,7 @@ pqc_read_schema_element( pqc_file *pq, int nr, int pos, int *ccnr, pqc_schema_el
 			pos += pqc_get_zint32(pq->buffer+pos, &scale);
 			if (pse->type != decimaltype) {
 				TRC_ERROR(PARQUET, "scale %u used with wrong type %d\n", scale, pse->type);
-				return -1;
+				return (size_t) -1;
 			}
 			pse->scale = scale;
 			TRC_INFO(PARQUET, "scale %u\n", scale);
@@ -684,7 +699,7 @@ pqc_read_schema_element( pqc_file *pq, int nr, int pos, int *ccnr, pqc_schema_el
 			pos += pqc_get_zint32(pq->buffer+pos, &precision);
 			if (pse->type != decimaltype) {
 				TRC_ERROR(PARQUET, "precision %u used with wrong type %d\n", precision, pse->type);
-				return -1;
+				return (size_t) -1;
 			}
 			pse->precision = precision;
 			TRC_INFO(PARQUET, "precision %u\n", precision);
@@ -698,7 +713,7 @@ pqc_read_schema_element( pqc_file *pq, int nr, int pos, int *ccnr, pqc_schema_el
 		case SCHEMA_ELEMENT_LOGICAL_TYPE:
 			assert(type == T_STRUCT);
 			pos = pqc_logicaltype(pq, pse, pos);
-			if (pos < 0){
+			if (pos == (size_t) -1){
 				TRC_ERROR(PARQUET, "failure reading SCHEMA_ELEMENT_LOGICAL_TYPE");
 				return pos;
 			}
@@ -712,8 +727,8 @@ pqc_read_schema_element( pqc_file *pq, int nr, int pos, int *ccnr, pqc_schema_el
 	return pos;
 }
 
-static int
-pqc_read_keyvalue( pqc_file *pq, pqc_keyvalue *kv, int pos )
+static size_t
+pqc_read_keyvalue( pqc_file *pq, pqc_keyvalue *kv, size_t pos )
 {
 	int fieldid = 0, type = 0;
 	*kv = (pqc_keyvalue){};
@@ -747,8 +762,8 @@ pqc_read_keyvalue( pqc_file *pq, pqc_keyvalue *kv, int pos )
 	return pos;
 }
 
-static int
-pqc_statistics( pqc_file *pq, pqc_stat *stat, int pos )
+static size_t
+pqc_statistics( pqc_file *pq, pqc_stat *stat, size_t pos )
 {
 	int fieldid = 0, type = 0;
 
@@ -819,8 +834,8 @@ pqc_statistics( pqc_file *pq, pqc_stat *stat, int pos )
 	return pos;
 }
 
-static int
-pqc_pageencodingsstats( pqc_file *pq, pqc_pageencodings *pe, int pos )
+static size_t
+pqc_pageencodingsstats( pqc_file *pq, pqc_pageencodings *pe, size_t pos )
 {
 	int fieldid = 0, type = 0;
 
@@ -847,8 +862,8 @@ pqc_pageencodingsstats( pqc_file *pq, pqc_pageencodings *pe, int pos )
 	return pos;
 }
 
-static int
-pqc_column_metadata( pqc_file *pq, pqc_columnchunk *cc, int pos )
+static size_t
+pqc_column_metadata( pqc_file *pq, pqc_columnchunk *cc, size_t pos )
 {
 	int fieldid = 0, type = 0, size = 0;
 
@@ -896,10 +911,13 @@ pqc_column_metadata( pqc_file *pq, pqc_columnchunk *cc, int pos )
 				cc->path_in_schema = path_in_schema_str;
 			TRC_INFO(PARQUET, "path_in_schema %s\n", cc->path_in_schema);
 			break;
-		case COLUMN_META_DATA_CODEC:
-			pos += pqc_get_zint32(pq->buffer+pos, &cc->codec);
+		case COLUMN_META_DATA_CODEC: {
+			uint32_t v;
+			pos += pqc_get_zint32(pq->buffer+pos, &v);
+			cc->codec = (CompressionCodec) v;
 			TRC_INFO(PARQUET, "compression codec %u\n", cc->codec);
 			break;
+		}
 		case COLUMN_META_DATA_NUM_VALUES:
 			pos += pqc_get_zint64(pq->buffer+pos, &cc->nrows);
 			TRC_INFO(PARQUET, "num values %" PRIu64 "\n", cc->nrows);
@@ -952,8 +970,8 @@ pqc_column_metadata( pqc_file *pq, pqc_columnchunk *cc, int pos )
 	return pos;
 }
 
-static int
-pqc_read_columnchunk( pqc_file *pq, pqc_columnchunk *cc, int pos )
+static size_t
+pqc_read_columnchunk( pqc_file *pq, pqc_columnchunk *cc, size_t pos )
 {
 	int fieldid = 0, type = 0;
 	*cc = (pqc_columnchunk) { };
@@ -1010,8 +1028,8 @@ pqc_read_columnchunk( pqc_file *pq, pqc_columnchunk *cc, int pos )
 	return pos;
 }
 
-static int
-pqc_read_sortingcolumn( pqc_file *pq, pqc_sortingcolumn *sc, int pos)
+static size_t
+pqc_read_sortingcolumn( pqc_file *pq, pqc_sortingcolumn *sc, size_t pos)
 {
 	int fieldid = 0, type = 0;
 	*sc = (pqc_sortingcolumn){ };
@@ -1046,8 +1064,8 @@ pqc_read_sortingcolumn( pqc_file *pq, pqc_sortingcolumn *sc, int pos)
 	return pos;
 }
 
-static int
-pqc_rowgroup( pqc_file *pq, pqc_row_group *rg, int pos)
+static size_t
+pqc_rowgroup( pqc_file *pq, pqc_row_group *rg, size_t pos)
 {
 	int fieldid = 0, type = 0, size = 0;
 	*rg = (pqc_row_group){ };
@@ -1107,8 +1125,8 @@ pqc_rowgroup( pqc_file *pq, pqc_row_group *rg, int pos)
 	return pos;
 }
 
-static int
-pqc_columnorder( pqc_file *pq, int pos )
+static size_t
+pqc_columnorder( pqc_file *pq, size_t pos )
 {
 	int fieldid = 0, type = 0;
 
@@ -1131,7 +1149,7 @@ pqc_columnorder( pqc_file *pq, int pos )
 static int
 pqc_read_file( pqc_file *pq, bool metadata_only)
 {
-	uint32_t pos = pq->pos;
+	size_t pos = pq->pos;
 	uint32_t version = 0;
 	uint64_t nrows = 0;
 
@@ -1170,9 +1188,9 @@ pqc_read_file( pqc_file *pq, bool metadata_only)
 			}
 			pqc_schema_element *parent = NULL;
 			for(int i = 0, ccnr = 0; i < size; i++) {
-				int res = pqc_read_schema_element(pq, i, pos, &ccnr, parent);
-				if (res < 0)
-					return res;
+				pos = pqc_read_schema_element(pq, i, pos, &ccnr, parent);
+				if (pos == (size_t) -1)
+					return -1;
 				pqc_schema_element *pse = fmd->elements+i;
 
 				if (pse->nchildren > 0) {
@@ -1182,7 +1200,6 @@ pqc_read_file( pqc_file *pq, bool metadata_only)
 						parent = parent->parent;
 					}
 				}
-				pos = res;
 			}
 			break;
 		case FILE_METADATA_NUM_ROWS: /* I64 */

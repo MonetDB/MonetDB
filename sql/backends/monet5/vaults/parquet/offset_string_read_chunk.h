@@ -8,7 +8,7 @@
  * For copyright information, see the file debian/copyright.
  */
 
-static int
+static int64_t
 offset_string_read_chunk( pqc_reader_t *r, pqc_creader_t *cr, T *output, char *voutput, int64_t nrows, int pos, int offset)
 {
 	T *rc = output;
@@ -31,7 +31,8 @@ offset_string_read_chunk( pqc_reader_t *r, pqc_creader_t *cr, T *output, char *v
 		data += sizeof(int);
 		memcpy(buf, data, len);
 		buf[len] = 0;
-		rc[i] = offset + (buf-voutput);
+		assert((int64_t) (offset + (buf-voutput)) < (INT64_C(1) << (8 * sizeof(T))));
+		rc[i] = (T) (offset + (buf-voutput));
 		buf += len+1;
 		data += len;
 	}

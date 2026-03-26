@@ -86,7 +86,8 @@ pqc_dict_lookup( pqc_creader_t *cr, void *output, int64_t nrows, int pos, int *s
 						idx |= (v << (nr_bits-sh))&mask;
 					}
 					assert(idx < cr->dict_num_values);
-					dst[i] = ((int64_t*)cr->dict)[idx];
+					assert(((int64_t*)cr->dict)[idx] < ((int64_t) 1 << 8*sizeof(T)));
+					dst[i] = (T) ((int64_t*)cr->dict)[idx];
 				}
 				if ((cr->remaining - j) == 0)
 					pos += (sh)/8;
@@ -102,9 +103,8 @@ pqc_dict_lookup( pqc_creader_t *cr, void *output, int64_t nrows, int pos, int *s
 			len>>=1;
 			/* only 2 bits for now */
 			int sh = 0;
-			int mask = (1<<nr_bits) -1;
-			int64_t j = 0;
-			int m = len*8;
+			uint32_t mask = (1<<nr_bits) -1;
+			uint32_t m = len*8;
 			if (mul8) {
 				for (; i < nrows && j < m; j++, i++) {
 					uint8_t v = data[pos];
@@ -167,8 +167,6 @@ pqc_dict_lookup( pqc_creader_t *cr, void *output, int64_t nrows, int pos, int *s
 					pos+=(sh/8);
 				}
 			} else if (nr_bits < 32) {
-				int64_t j = 0;
-				int m = len*8;
 				for (; i < nrows && j < m; j++, i++) {
 					uint32_t v = *(uint32_t*)(data+pos);
 					uint32_t idx = (v >> sh)&mask;
@@ -180,7 +178,8 @@ pqc_dict_lookup( pqc_creader_t *cr, void *output, int64_t nrows, int pos, int *s
 						idx |= (v << (nr_bits-sh))&mask;
 					}
 					assert(idx < cr->dict_num_values);
-					dst[i] = ((int64_t*)cr->dict)[idx];
+					assert(((int64_t*)cr->dict)[idx] < ((int64_t) 1 << 8*sizeof(T)));
+					dst[i] = (T) ((int64_t*)cr->dict)[idx];
 				}
 				if (j < m) {
 					cr->is_rle = false;
@@ -193,7 +192,6 @@ pqc_dict_lookup( pqc_creader_t *cr, void *output, int64_t nrows, int pos, int *s
 		} else if (nr_bits <= 8) { /* rle */
 			len>>=1;
 			uint8_t idx = data[pos++];
-			uint32_t j = 0;
 			for(; i < nrows && j < len; j++, i++)
 				dst[i] = offset+offsets[idx];
 			if (j < len) {
@@ -204,7 +202,6 @@ pqc_dict_lookup( pqc_creader_t *cr, void *output, int64_t nrows, int pos, int *s
 		} else if (nr_bits <= 16) { /* rle */
 			len>>=1;
 			uint16_t idx = *(uint16_t*)(data+pos);
-			uint32_t j = 0;
 			pos += 2;
 			for(; i < nrows && j < len; j++, i++)
 				dst[i] = offset+offsets[idx];
