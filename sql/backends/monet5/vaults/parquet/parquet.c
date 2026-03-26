@@ -1242,7 +1242,7 @@ PARQUETmetadata(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			// should be enough to hold all concatenated encodings strings
 			char encodings_str[200] = "";
 			if (column_chunk.num_encodings ) {
-				uint32_t char_cnt = 0;
+				size_t char_cnt = 0;
 				for (uint32_t k = 0; k < column_chunk.num_encodings && char_cnt < 200; k++) {
 					char *next = str_encoding(column_chunk.encodings[k]);
 					char_cnt += strlen(next);

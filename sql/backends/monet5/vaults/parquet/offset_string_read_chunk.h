@@ -26,7 +26,7 @@ offset_string_read_chunk( pqc_reader_t *r, pqc_creader_t *cr, T *output, char *v
 		return nrows;
 	}
 	for (int64_t i=0; i<nrows; i++) {
-		unsigned int len = get_uint32((uchar*)data);
+		unsigned int len = get_uint32((uint8_t*)data);
 
 		data += sizeof(int);
 		memcpy(buf, data, len);

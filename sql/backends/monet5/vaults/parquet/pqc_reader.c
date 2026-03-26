@@ -75,9 +75,6 @@ gzip_uncompress( char *dest, size_t ul, char *src, size_t cl)
 #include <brotli/decode.h>
 #endif
 
-typedef unsigned char uchar;
-typedef unsigned short usht;
-
 typedef struct pqc_creader_t {
 	pqc_file *pq;
 	pqc_columnchunk *cc;
@@ -294,7 +291,7 @@ pqc_dictionary_page(pqc_reader_t *r, pqc_creader_t *pr, int64_t pos, uint32_t *n
 	return pos;
 }
 
-static int
+static int64_t
 pqc_data_page(pqc_reader_t *r, pqc_creader_t *pr, int64_t pos, uint32_t *num_values)
 {
 	int fieldid = 0, type = 0;
@@ -339,7 +336,7 @@ pqc_data_page(pqc_reader_t *r, pqc_creader_t *pr, int64_t pos, uint32_t *num_val
 	return pos;
 }
 
-static int
+static int64_t
 pqc_data_pageV2(pqc_reader_t *r, pqc_creader_t *pr, int64_t pos, uint32_t *num_values)
 {
 	int fieldid = 0, type = 0;
@@ -433,7 +430,7 @@ string_read_dict( pqc_creader_t *cr, uint32_t num_values)
 		data += sizeof(int);
 		memcpy(buf, data, len);
 		buf[len] = 0;
-		offsets[i] = buf - obuf;
+		offsets[i] = (int) (buf - obuf);
 		rc[i] = buf;
 		buf += len+1;
 		data += len;
@@ -447,7 +444,7 @@ string_read_dict( pqc_creader_t *cr, uint32_t num_values)
 	return num_values;
 }
 
-static int
+static int64_t
 pqc_page_header( pqc_reader_t *r, pqc_creader_t *pr, int64_t pos)
 {
 	int fieldid = 0, type = 0;
@@ -758,7 +755,7 @@ pqc_reader_destroy( pqc_reader_t *r )
 static int64_t
 pqc_read_dict( pqc_reader_t *r, pqc_creader_t *cr)
 {
-	int pos = pqc_page_header(r, cr, 0);
+	int64_t pos = pqc_page_header(r, cr, 0);
 	if (pos < 0)
 		return -1;
 	return pos;
@@ -790,7 +787,8 @@ pqc_repetition( pqc_reader_t *r, pqc_creader_t *cr, void *output, uint32_t num_v
 	//int bits = 1;
 	char *data = cr->data;
 	uint32_t nr_bytes = get_uint32((uint8_t*)data+pos), len;
-	uint64_t null = 0, j = 0;
+	uint32_t null = 0;
+	int j = 0;
 
 	if (cr->repetition)
 		_DELETE(cr->repetition);
@@ -895,7 +893,8 @@ pqc_definition( pqc_reader_t *r, pqc_creader_t *cr, void *output, uint32_t num_v
 	//int bits = 1;
 	char *data = cr->data;
 	uint32_t nr_bytes = get_uint32((uint8_t*)data+pos), len;
-	uint64_t null = 0, j = 0;
+	uint32_t null = 0;
+	int j = 0;
 
 	if (cr->definition)
 		_DELETE(cr->definition);
@@ -972,19 +971,19 @@ pqc_definition( pqc_reader_t *r, pqc_creader_t *cr, void *output, uint32_t num_v
 	return pos; //nr_bytes + sizeof(nr_bytes);
 }
 
-#define T uchar
+#define T uint8_t
 #define pqc_dict_lookup pqc_dict_lookup_uchr
 #include "pqc_dict_lookup.h"
 #undef T
 #undef pqc_dict_lookup
 
-#define T usht
+#define T uint16_t
 #define pqc_dict_lookup pqc_dict_lookup_usht
 #include "pqc_dict_lookup.h"
 #undef T
 #undef pqc_dict_lookup
 
-#define T uint
+#define T uint32_t
 #define pqc_dict_lookup pqc_dict_lookup_uint
 #include "pqc_dict_lookup.h"
 #undef T
@@ -997,19 +996,19 @@ pqc_definition( pqc_reader_t *r, pqc_creader_t *cr, void *output, uint32_t num_v
 #undef pqc_dict_lookup
 
 
-#define T uchar
+#define T uint8_t
 #define pqc_dict_lookup pqc_dict_lookup_var_uchr
 #include "pqc_dict_lookup_var.h"
 #undef T
 #undef pqc_dict_lookup
 
-#define T usht
+#define T uint16_t
 #define pqc_dict_lookup pqc_dict_lookup_var_usht
 #include "pqc_dict_lookup_var.h"
 #undef T
 #undef pqc_dict_lookup
 
-#define T uint
+#define T uint32_t
 #define pqc_dict_lookup pqc_dict_lookup_var_uint
 #include "pqc_dict_lookup_var.h"
 #undef T
@@ -1020,7 +1019,7 @@ pqc_definition( pqc_reader_t *r, pqc_creader_t *cr, void *output, uint32_t num_v
 static int64_t
 pqc_dict_lookup( pqc_reader_t *r, pqc_creader_t *cr, void *output, void *voutput, int64_t nrows, int pos, int *ssize, int *dict)
 {
-	uchar *data = (uchar*)cr->data;
+	uint8_t *data = (uint8_t*)cr->data;
 	/* asume rle data page */
 	if (r->pse->precision == 0 && !output) {
 		if (ssize) {
@@ -1063,7 +1062,7 @@ pqc_dict_lookup( pqc_reader_t *r, pqc_creader_t *cr, void *output, void *voutput
 				if (mul8) { /* todo handle 16 / 32 multiples */
 					int m = len*8;
 					for (int64_t j = 0; i < nrows && j < m; j++, i++) {
-						uchar v = data[pos];
+						uint8_t v = data[pos];
 						uint32_t idx = (v >> sh)&mask;
 						sh += nr_bits;
 						if (sh >= 8) {
@@ -1076,13 +1075,13 @@ pqc_dict_lookup( pqc_reader_t *r, pqc_creader_t *cr, void *output, void *voutput
 				} else if (nr_bits < 8) {
 					int m = len*8;
 					for (int64_t j = 0; i < nrows && j < m; j++, i++) {
-						uchar v = data[pos];
+						uint8_t v = data[pos];
 						uint32_t idx = (v >> sh)&mask;
 						sh += nr_bits;
 						if (sh >= 8) {
 							pos++;
 							sh -= 8;
-							uchar v = data[pos];
+							uint8_t v = data[pos];
 							idx |= (v << (nr_bits-sh))&mask;
 							if (j==(m-1) && sh > 0)
 								pos++;
@@ -1093,13 +1092,13 @@ pqc_dict_lookup( pqc_reader_t *r, pqc_creader_t *cr, void *output, void *voutput
 				} else if (nr_bits < 16) {
 					int m = len*8;
 					for (int64_t j = 0; i < nrows && j < m; j++, i++) {
-						usht v = *(usht*)(data+pos);
+						uint16_t v = *(uint16_t*)(data+pos);
 						uint32_t idx = (v >> sh)&mask;
 						sh += nr_bits;
 						if (sh >= 16) {
 							pos+=2;
 							sh -= 16;
-							usht v = *(usht*)(data+pos);
+							uint16_t v = *(uint16_t*)(data+pos);
 							idx |= (v << (nr_bits-sh))&mask;
 							if (j==(m-1) && sh >= 8)
 								pos++;
@@ -1112,13 +1111,13 @@ pqc_dict_lookup( pqc_reader_t *r, pqc_creader_t *cr, void *output, void *voutput
 				} else if (nr_bits < 32) {
 					int m = len*8;
 					for (int64_t j = 0; i < nrows && j < m; j++, i++) {
-						uint v = *(uint*)(data+pos);
+						uint32_t v = *(uint32_t*)(data+pos);
 						uint32_t idx = (v >> sh)&mask;
 						sh += nr_bits;
 						if (sh >= 32) {
 							pos+=2;
 							sh -= 32;
-							uint v = *(uint*)(data+pos);
+							uint32_t v = *(uint32_t*)(data+pos);
 							idx |= (v << (nr_bits-sh))&mask;
 							if (j==(m-1) && sh >= 8)
 								pos++;
@@ -1131,7 +1130,7 @@ pqc_dict_lookup( pqc_reader_t *r, pqc_creader_t *cr, void *output, void *voutput
 				}
 			} else if (nr_bits <= 8) { /* rle */
 				len>>=1;
-				uchar idx = data[pos++];
+				uint8_t idx = data[pos++];
 				uint32_t j = 0;
 				for(; i < nrows && j < len; j++, i++)
 					dst[i] = ((char**)cr->dict)[idx];
@@ -1142,7 +1141,7 @@ pqc_dict_lookup( pqc_reader_t *r, pqc_creader_t *cr, void *output, void *voutput
 				}
 			} else if (nr_bits <= 16) { /* rle */
 				len>>=1;
-				usht idx = *(usht*)(data+pos);
+				uint16_t idx = *(uint16_t*)(data+pos);
 				uint32_t j = 0;
 				pos += 2;
 				for(; i < nrows && j < len; j++, i++)
@@ -1154,7 +1153,7 @@ pqc_dict_lookup( pqc_reader_t *r, pqc_creader_t *cr, void *output, void *voutput
 				}
 			} else if (nr_bits <= 32) { /* rle */
 				len>>=1;
-				uint idx = *(uint*)(data+pos);
+				uint32_t idx = *(uint32_t*)(data+pos);
 				uint32_t j = 0;
 				pos += 4;
 				for(; i < nrows && j < len; j++, i++)
@@ -1199,7 +1198,7 @@ string_read_chunk( pqc_creader_t *cr, char **rc, char *buf, int64_t nrows, int p
 
 	char *data = cr->data + pos;
 	for (int64_t i=0; i<nrows; i++) {
-		unsigned int len = get_uint32((uchar*)data);
+		unsigned int len = get_uint32((uint8_t*)data);
 
 		data += sizeof(int);
 		memcpy(buf, data, len);
@@ -1240,7 +1239,7 @@ string_size_chunk_withnulls( pqc_creader_t *cr, int64_t nrows, int pos, int *ssi
 			sdef = 0;
 		}
 		if (def) {
-			unsigned int slen = get_uint32((uchar*)data);
+			unsigned int slen = get_uint32((uint8_t*)data);
 			data += slen + sizeof(int);
 			hsz += slen+1;
 		}
@@ -1277,7 +1276,7 @@ string_size_chunk( pqc_creader_t *cr, int64_t nrows, int pos, int *ssize, int *d
 	}
 
 	for (int64_t i=0; i<nrows; i++) {
-		unsigned int len = get_uint32((uchar*)data);
+		unsigned int len = get_uint32((uint8_t*)data);
 
 		data += len + sizeof(int);
 		hsz += len+1;
@@ -1286,19 +1285,19 @@ string_size_chunk( pqc_creader_t *cr, int64_t nrows, int pos, int *ssize, int *d
 	return 0;
 }
 
-#define T uchar
+#define T uint8_t
 #define offset_string_read_chunk offset_string_read_chunk_uchr
 #include "offset_string_read_chunk.h"
 #undef T
 #undef offset_string_read_chunk
 
-#define T usht
+#define T uint16_t
 #define offset_string_read_chunk offset_string_read_chunk_usht
 #include "offset_string_read_chunk.h"
 #undef T
 #undef offset_string_read_chunk
 
-#define T uint
+#define T uint32_t
 #define offset_string_read_chunk offset_string_read_chunk_uint
 #include "offset_string_read_chunk.h"
 #undef T
@@ -1365,7 +1364,7 @@ pqc_read_strings( pqc_creader_t *cr, char **rc, char *buf, int *lengths, int64_t
 
 /* todo other offsets */
 static int64_t
-offset_read_strings_sht( pqc_creader_t *cr, usht *rc, char *buf, int *lengths, int64_t nrows, int pos, int offset)
+offset_read_strings_sht( pqc_creader_t *cr, uint16_t *rc, char *buf, int *lengths, int64_t nrows, int pos, int offset)
 {
 	char *data = cr->data + pos;
 
@@ -1657,7 +1656,7 @@ pqc_read_chunk( pqc_reader_t *r, int wnr, void *output /*fixed sized atom storag
 		return 0;
 	if (cr->pos < 0 || cr->cc->cur_page.num_read == cr->cc->cur_page.num_values) {
 		cr->cc->cur_page.num_read = 0;
-		int pos = cr->bufpos;
+		int64_t pos = cr->bufpos;
 		if (cr->pos < 0) {
 			TRC_INFO(PARQUET, "%" PRIu64 " %" PRIu64 " %" PRIu64 " %" PRIu64 " %" PRIu64 "\n",
 					 r->fmd->rowgroups->file_offset,
