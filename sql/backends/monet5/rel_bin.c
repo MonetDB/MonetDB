@@ -731,7 +731,7 @@ exp_bin_conjunctive(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp,
 		}
 		sel1 = s;
 	}
-	if (sel1->nrcols == 0 && left) {
+	if (sel1 && sel1->nrcols == 0 && left) {
 		stmt *predicate = bin_find_smallest_column(be, left);
 
 		if (!reduce) {
