@@ -163,6 +163,7 @@ rel_has_freevar(mvc *sql, sql_rel *rel)
 		(void) sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 		return 0;
 	}
+	assert(rel);
 	if (!rel)
 		return 0;
 	if (is_independent(rel->used))
