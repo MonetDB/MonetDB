@@ -1,3 +1,12 @@
+/*
+ * SPDX-License-Identifier: MPL-2.0
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * For copyright information, see the file debian/copyright.
+ */
 
 static int64_t
 pqc_dict_lookup( pqc_creader_t *cr, void *output, int64_t nrows, int pos, int *ssize)
