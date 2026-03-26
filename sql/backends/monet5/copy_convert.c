@@ -355,7 +355,7 @@ COPYparse_string(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				offset = (int) nil_offset;
 				nils++;
 				ok = copy_report_error(&errors, (lng) i, -1, "incorrectly encoded UTF-8");
-			} else if (n > (size_t) colwidth) {
+			} else if (colwidth && n > (size_t) colwidth) {
 				ok = copy_report_error(&errors, (lng) i, -1, "field too long, max length is %d", colwidth);
 			} else {
 				ok = GDK_SUCCEED;
