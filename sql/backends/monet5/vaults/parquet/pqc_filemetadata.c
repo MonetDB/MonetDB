@@ -203,7 +203,7 @@ pqc_open( pqc_file **PQ, char *fn)
 	*PQ = pq;
 	int res = pqc_magic(pq);
 
-	uint32_t fmdlen = get_uint32((u_int8_t*)pq->buffer+pq->bsz-8);
+	uint32_t fmdlen = get_uint32((uint8_t*)pq->buffer+pq->bsz-8);
 	if (pq->sz == 8) /* empty */
 		return 0;
 	if (fmdlen > pq->sz)

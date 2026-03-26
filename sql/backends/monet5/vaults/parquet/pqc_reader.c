@@ -397,7 +397,7 @@ string_read_dict( pqc_creader_t *cr, uint32_t num_values)
 /* in 32 bit len, string (without zero) */
 {
 	uint32_t i, hsz = 0;
-	u_int8_t *data = (u_int8_t*)cr->dict;
+	uint8_t *data = (uint8_t*)cr->dict;
 
 	for (i=0; i<num_values; i++) {
 		unsigned int len = get_uint32(data);
@@ -416,7 +416,7 @@ string_read_dict( pqc_creader_t *cr, uint32_t num_values)
 	char **rc = (char**)mem;
 	char *buf = mem + sizeof(char*) * num_values + sizeof(int) * num_values, *obuf = buf;
 	int *offsets = (int*)(mem + sizeof(char*) * num_values);
-	data = (u_int8_t*)cr->dict;
+	data = (uint8_t*)cr->dict;
 	for (i=0; i<num_values; i++) {
 		unsigned int len = get_uint32(data);
 
@@ -551,7 +551,7 @@ pqc_page_header( pqc_reader_t *r, pqc_creader_t *pr, int64_t pos)
 #ifdef HAVE_BROTLI
 				/* for v2 add definition and repetition lengths */
 				int v2 = pr->cc->cur_page.definition_levels_byte_length + pr->cc->cur_page.repetition_levels_byte_length;
-				if (BrotliDecoderDecompress(compressed_size - v2, (u_int8_t*)pr->buffer+pos + v2, &ul, (u_int8_t*)pr->data) != BROTLI_DECODER_RESULT_SUCCESS)
+				if (BrotliDecoderDecompress(compressed_size - v2, (uint8_t*)pr->buffer+pos + v2, &ul, (uint8_t*)pr->data) != BROTLI_DECODER_RESULT_SUCCESS)
 					return -10;
 				pos += compressed_size;
 #else
@@ -634,7 +634,7 @@ pqc_page_header( pqc_reader_t *r, pqc_creader_t *pr, int64_t pos)
 #ifdef HAVE_BROTLI
 				/* for v2 add definition and repetition lengths */
 				int v2 = pr->cc->cur_page.definition_levels_byte_length + pr->cc->cur_page.repetition_levels_byte_length;
-				if (BrotliDecoderDecompress(compressed_size - v2, (u_int8_t*)pr->buffer+pos + v2, &ul, (u_int8_t*)pr->dict) != BROTLI_DECODER_RESULT_SUCCESS)
+				if (BrotliDecoderDecompress(compressed_size - v2, (uint8_t*)pr->buffer+pos + v2, &ul, (uint8_t*)pr->dict) != BROTLI_DECODER_RESULT_SUCCESS)
 					return -10;
 				pos += compressed_size;
 #else
@@ -779,7 +779,7 @@ pqc_repetition( pqc_reader_t *r, pqc_creader_t *cr, void *output, uint32_t num_v
 	(void)output;
 	//int bits = 1;
 	char *data = cr->data;
-	uint32_t nr_bytes = get_uint32((u_int8_t*)data+pos), len;
+	uint32_t nr_bytes = get_uint32((uint8_t*)data+pos), len;
 	uint64_t null = 0, j = 0;
 
 	if (cr->repetition)
@@ -884,7 +884,7 @@ pqc_definition( pqc_reader_t *r, pqc_creader_t *cr, void *output, uint32_t num_v
 	(void)output;
 	//int bits = 1;
 	char *data = cr->data;
-	uint32_t nr_bytes = get_uint32((u_int8_t*)data+pos), len;
+	uint32_t nr_bytes = get_uint32((uint8_t*)data+pos), len;
 	uint64_t null = 0, j = 0;
 
 	if (cr->definition)
