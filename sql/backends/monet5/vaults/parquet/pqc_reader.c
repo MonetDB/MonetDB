@@ -859,7 +859,7 @@ pqc_repetition( pqc_reader_t *r, pqc_creader_t *cr, void *output, uint32_t num_v
 	if (cr->repetition)
 		cr->repetitionsize = j;
 
-	TRC_DEBUG(PARQUET, "nulls %" PRIu64 " rows %u (%p)\n", null, num_values, cr->repetition);
+	TRC_DEBUG(PARQUET, "nulls %" PRIu32 " rows %u (%p)\n", null, num_values, cr->repetition);
 	// printf( "nulls %" PRIu64 " rows %u (%p)\n", null, num_values, cr->repetition);
 	cr->cc->cur_page.num_nulls = null;
 	/* return repetition level as structure 0/1 + len */
@@ -965,7 +965,7 @@ pqc_definition( pqc_reader_t *r, pqc_creader_t *cr, void *output, uint32_t num_v
 	if (cr->definition)
 		cr->definitionsize = j;
 
-	TRC_DEBUG(PARQUET, "nulls %" PRIu64 " rows %u (%p)\n", null, num_values, cr->definition);
+	TRC_DEBUG(PARQUET, "nulls %" PRIu32 " rows %u (%p)\n", null, num_values, cr->definition);
 	cr->cc->cur_page.num_nulls = null;
 	/* return definition level as structure 0/1 + len */
 	return pos; //nr_bytes + sizeof(nr_bytes);
