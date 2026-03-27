@@ -851,7 +851,7 @@ rel2bin_groupby_pp(backend *be, sql_rel *rel, list *refs)
 		InstrPtr ctr = mat_counters_get(be, mat, seqnr);
 		sub = mats_fetch_slices(be, sub, getArg(ctr, 0), getArg(ctr, 1));
 		/* fetch result bats */
-		shared = mats_fetch(be, shared, aggrresults, seqnr);//getArg(ctr, 0));
+		shared = mats_fetch(be, shared, aggrresults, getArg(ctr, 0));
 		oaggrresults = aggrresults;
 		aggrresults = shared;
 	}

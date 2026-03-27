@@ -521,12 +521,13 @@ MATnr_parts(Client ctx, int *nr, const bat *mat, const int *slicesize)
 	assert(mt->s.type == MAT_SINK);
 	int n = 0;
 	for(int i = 0; i< mt->nr; i++) {
-		n += (int)((BATcount(mt->bat[i]) + sz - 1)/sz);
+		BUN nr = BATcount(mt->bat[i]);
+		n += (int)((nr + sz - 1)/sz);
 		mt->bat[i] = BATsetaccess(mt->bat[i], BAT_READ);
+		if (!nr)
+			n++;
 	}
 	mt->nr_parts = n;
-	int cnt = n;
-	n++;
 	mt->part = (int*)GDKmalloc(sizeof(int) * n);
 	mt->subpart = (int*)GDKmalloc(sizeof(int) * n);
 	mt->slicesize = *slicesize;
@@ -538,9 +539,14 @@ MATnr_parts(Client ctx, int *nr, const bat *mat, const int *slicesize)
 			mt->part[k] = i;
 			mt->subpart[k] = j;
 		}
+		if (!nr) {
+			mt->part[k] = i;
+			mt->subpart[k] = 0;
+			k++;
+		}
 	}
+	*nr = n;
 	BBPreclaim(m);
-	*nr = cnt;
 	return MAL_SUCCEED;
 }
 
