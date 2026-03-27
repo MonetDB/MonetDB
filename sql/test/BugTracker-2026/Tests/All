@@ -70,6 +70,6 @@ KNOWNFAIL?7876-rel2bin_select-assertion-failure
 7877-push_up_join-assertion-failure
 7878-exp_bin-assertion-failure
 7879-crash
-KNOWNFAIL?7880-exp_bin_conjunctive-crash
+7880-exp_bin_conjunctive-crash
 7882-later-distinct
 7883-right-join-crash
