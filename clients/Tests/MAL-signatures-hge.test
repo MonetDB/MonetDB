@@ -48540,12 +48540,12 @@ MATnew
 Create mat for partitioning
 mat
 new
-pattern mat.new(X_0:any_1, X_1:int, X_2:int):bat[:any_1]
+pattern mat.new(X_0:any_1, X_1:int, X_2:lng):bat[:any_1]
 MATnew
 Create mat for partitioning
 mat
 new
-pattern mat.new(X_0:any_1, X_1:int, X_2:int, X_3:bat[:any_2]):bat[:any_1]
+pattern mat.new(X_0:any_1, X_1:int, X_2:lng, X_3:bat[:any_2]):bat[:any_1]
 MATnew
 Create mat for partitioning
 mat
@@ -50039,11 +50039,6 @@ command pcre.sql2pcre(X_0:str, X_1:str):str
 PCREsql2pcre
 Convert a SQL like pattern with the given escape character into a PCRE pattern.
 pipeline
-channel
-unsafe pattern pipeline.channel(X_0:any_1) (X_1:any_1, X_2:int)
-PPchannel
-create a new channel
-pipeline
 claim
 pattern pipeline.claim(X_0:bat[:bte], X_1:lng):lng
 PPclaim
@@ -50099,20 +50094,10 @@ pattern pipeline.identity(X_0:bat[:bte], X_1:bat[:any_1]):bat[:oid]
 PPidentity
 Return next set of unique object identifiers
 pipeline
-recv
-unsafe pattern pipeline.recv(X_0:ptr, X_1:any_1, X_2:int):any_1
-PPrecv
-receive from channel
-pipeline
 resultset
 pattern pipeline.resultset():bat[:bte]
 PPresultset
 return sink for synchronizing appends into resultset
-pipeline
-send
-unsafe pattern pipeline.send(X_0:ptr, X_1:any_1, X_2:int, X_3:any_1):bit
-PPsend
-send through channel
 profiler
 cpuload
 command profiler.cpuload(X_0:lng, X_1:lng, X_2:lng, X_3:lng, X_4:lng) (X_5:int, X_6:int)

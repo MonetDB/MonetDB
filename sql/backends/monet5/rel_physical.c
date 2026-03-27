@@ -709,8 +709,9 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 					sql_rel *l = rel->l;
 					if (!res && l && is_groupby(l->op) && l->l) {
 						sql_rel *p = l->l;
-						if (p->op == op_partition) {
-							l->partition = 1;
+						if (p->op == op_partition) { /* TODO pass that we can handle a partitioned result (l->partition
+						= 1), needs a check if next operator can handle that */
+							//l->partition = 1;
 							res = SPB;
 						}
 					}

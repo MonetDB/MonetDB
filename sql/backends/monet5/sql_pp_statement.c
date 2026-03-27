@@ -459,9 +459,9 @@ stmt_oahash_new(backend *be, sql_subtype *tpe, lng estimate, int parent, int nrp
 	int tt = tpe->type->localtype;
 	setVarType(be->mb, getArg(q, 0), newBatType(tt)); /* ht_sink */
 	q = pushType(be->mb, q, tt);
-	q = pushLng(be->mb, q, estimate);
 	if (nrparts)
 		q = pushArgument(be->mb, q, nrparts);
+	q = pushLng(be->mb, q, estimate);
 	if (parent)
 		q = pushArgument(be->mb, q, parent);
 	pushInstruction(be->mb, q);

@@ -87,13 +87,14 @@ MATnew(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	bat *mid = getArgReference_bat(stk, p, 0);
 	int tt = getArgType(mb, p, 1);
 	int nr = *getArgReference_int(stk, p, 2);
-	int hashsize = (p->argc >= 4)?*getArgReference_int(stk, p, 3):0;
+	lng hashsize = (p->argc >= 4)?*getArgReference_lng(stk, p, 3):0;
 	bat *pid = (p->argc == 5)?getArgReference_bat(stk, p, 4):NULL;
 
-	mat_t *mat = (mat_t*)GDKmalloc(sizeof(mat_t));
+	mat_t *mat = (mat_t*)GDKzalloc(sizeof(mat_t));
 	if (!mat)
 		throw(MAL, "mat.new", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	mat->nr = nr;
+	nr++;
 	mat->bat = (BAT**)GDKzalloc(nr * sizeof(BAT*));
 	mat->part = NULL;
 	mat->subpart = NULL;
@@ -126,6 +127,8 @@ MATnew(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		pmat = (mat_t*)p->tsink;
 		BBPreclaim(p);
 	}
+	if (hashsize) /* multiply with the magic estimation while avoiding overflow */
+		hashsize = hashsize > ((dbl)INT64_MAX / 1.2 / 2.1)? INT64_MAX : (lng)(hashsize * 1.2 * 2.1);
 	for (i = 0; i<mat->nr; i++ ) {
 		BAT *b = COLnew(0, tt, 100000 /* need estimate? */, TRANSIENT);
 		mat->bat[i] = b;
@@ -133,7 +136,7 @@ MATnew(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			break;
 		BATnegateprops(b);
 		if (hashsize)
-			b->tsink = (Sink*)ht_create(tt, (size_t)(hashsize*1.2*2.1), pmat?(hash_table*)pmat->bat[i]->tsink:NULL);
+			b->tsink = (Sink*)ht_create(tt, (size_t)(hashsize), pmat?(hash_table*)pmat->bat[i]->tsink:NULL);
 	}
 	if (i < mat->nr) {
 		mat_destroy(mat);
@@ -154,7 +157,7 @@ PARTnew(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	bat *pid = getArgReference_bat(stk, p, 0);
 	int nr = *getArgReference_int(stk, p, 1);
 
-	part_t *part = (part_t*)GDKmalloc(sizeof(part_t));
+	part_t *part = (part_t*)GDKzalloc(sizeof(part_t));
 	if (!part)
 		throw(MAL, "part.new", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	part->nr = nr;
@@ -522,6 +525,8 @@ MATnr_parts(Client ctx, int *nr, const bat *mat, const int *slicesize)
 		mt->bat[i] = BATsetaccess(mt->bat[i], BAT_READ);
 	}
 	mt->nr_parts = n;
+	int cnt = n;
+	n++;
 	mt->part = (int*)GDKmalloc(sizeof(int) * n);
 	mt->subpart = (int*)GDKmalloc(sizeof(int) * n);
 	mt->slicesize = *slicesize;
@@ -535,7 +540,7 @@ MATnr_parts(Client ctx, int *nr, const bat *mat, const int *slicesize)
 		}
 	}
 	BBPreclaim(m);
-	*nr = n;
+	*nr = cnt;
 	return MAL_SUCCEED;
 }
 
@@ -559,8 +564,8 @@ MATcounters_get(Client ctx, int *partid, int *sliceid, const bat *mat, const int
 #include "mel.h"
 mel_func pp_mat_init_funcs[] = {
  pattern("mat", "new", MATnew, false, "Create mat for partitioning", args(1,3, batargany("mat",1),argany("tt",1),arg("nr",int))),
- pattern("mat", "new", MATnew, false, "Create mat for partitioning", args(1,4, batargany("mat",1),argany("tt",1),arg("nr",int), arg("hashsize", int))),
- pattern("mat", "new", MATnew, false, "Create mat for partitioning", args(1,5, batargany("mat",1),argany("tt",1),arg("nr",int), arg("hashsize", int), batargany("parent",2))),
+ pattern("mat", "new", MATnew, false, "Create mat for partitioning", args(1,4, batargany("mat",1),argany("tt",1),arg("nr",int), arg("hashsize", lng))),
+ pattern("mat", "new", MATnew, false, "Create mat for partitioning", args(1,5, batargany("mat",1),argany("tt",1),arg("nr",int), arg("hashsize", lng), batargany("parent",2))),
  pattern("part", "new", PARTnew, false, "Create part for partitioning", args(1,2, batarg("mat",oid),arg("nr",int))),
  command("part", "prefixsum", PARTprefixsum, false, "Count per group id", args(1,3, batarg("pos",lng),batarg("gid",lng),arg("max",lng))),
  command("part", "partition", PARTpartition, false, "Claim result positions for the given group lengths, returns first pos of each group", args(1,3, batarg("pos",lng),batarg("part",oid),batarg("grouplen",lng))),

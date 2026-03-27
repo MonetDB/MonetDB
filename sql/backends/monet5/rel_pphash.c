@@ -1205,7 +1205,7 @@ rel2bin_oahash_fullouterjoin(backend *be, sql_rel *rel, list *refs)
 	if (!sub) return NULL;
 
 	if (be->concatcnt == 0) {/* add dummy source */
-		int source = pp_counter(be, 1, -1, false); 
+		int source = pp_counter(be, 1, -1, false);
 		stmt_concat_add_source(be);
 		(void)pp_counter_get(be, source); /* use source else statement gets garbage collected */
 	}

@@ -339,7 +339,7 @@ rel_groupby_prepare_pp(list **aggrresults, list **serializedresults, backend *be
 			if (card > INT_MAX)
 				card = INT_MAX;
 
-			stmt *s = stmt_oahash_new(be, t, nrparts?nrparts:card, curhash, nrparts);
+			stmt *s = stmt_oahash_new(be, t, nrparts?PARTITION_NRPARTS:card, curhash, nrparts);
 			if (s == NULL)
 				return NULL;
 			curhash = s->nr;
@@ -452,7 +452,7 @@ rel_groupby_prepare_pp(list **aggrresults, list **serializedresults, backend *be
 					estimate = est;
 
 				assert(!nrparts);
-				stmt *s = stmt_oahash_new(be, t, nrparts?nrparts:estimate, curhash, nrparts);
+				stmt *s = stmt_oahash_new(be, t, nrparts?PARTITION_NRPARTS:estimate, curhash, nrparts);
 				if (s == NULL)
 					return NULL;
 				assert(!e->shared);
@@ -851,7 +851,7 @@ rel2bin_groupby_pp(backend *be, sql_rel *rel, list *refs)
 		InstrPtr ctr = mat_counters_get(be, mat, seqnr);
 		sub = mats_fetch_slices(be, sub, getArg(ctr, 0), getArg(ctr, 1));
 		/* fetch result bats */
-		shared = mats_fetch(be, shared, aggrresults, getArg(ctr, 0));
+		shared = mats_fetch(be, shared, aggrresults, seqnr);//getArg(ctr, 0));
 		oaggrresults = aggrresults;
 		aggrresults = shared;
 	}

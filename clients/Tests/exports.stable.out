@@ -808,8 +808,6 @@ void MSresetStack(Client cntxt, MalBlkPtr mb, MalStkPtr glb);
 void MSresetVariables(MalBlkPtr mb);
 str OIDXcreateImplementation(Client cntxt, int tpe, BAT *b, int pieces);
 str OIDXdropImplementation(Client cntxt, BAT *b);
-void PIPELINEclear_counter(Pipeline *p);
-int PIPELINEnext_counter(Pipeline *p);
 str QLOGcalls(BAT **r);
 str QLOGcatalog(BAT **r);
 str QLOGdisable(void *ret);

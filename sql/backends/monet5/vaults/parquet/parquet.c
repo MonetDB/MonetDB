@@ -641,7 +641,7 @@ PARQUETread_large(BAT **R, pqc_creader *r, int colno, Pipeline *p, int wnr)
 		if (dict == 4)
 			offset = h->free;
 		ssize_t rsz = 0, tsz = 0;
-		if ((rsz = pqc_read_chunk(r->c[pse->ccnr], wnr, rb->theap->base, ((char*)rb->tvheap->base)+rb->tvheap->free, sz, &offset, &dict)) < 0) {
+		if ((rsz = pqc_read_chunk(r->c[pse->ccnr], wnr, rb->theap->base, ((char*)h->base)+h->free, sz, &offset, &dict)) < 0) {
 			BBPreclaim(rb);
 			throw (SQL, "parquet.read", SQLSTATE(HY002) "Error reading parquet file");
 		}
@@ -667,7 +667,7 @@ PARQUETread_large(BAT **R, pqc_creader *r, int colno, Pipeline *p, int wnr)
 			assert(h->size >= size);
 			dict = rb->twidth;
 			offset = h->free;
-			if ((rsz = pqc_read_chunk(r->c[pse->ccnr], wnr, ((char*)rb->theap->base)+(tsz*dict), ((char*)rb->tvheap->base)+rb->tvheap->free, sz-tsz, &offset, &dict)) < 0) {
+			if ((rsz = pqc_read_chunk(r->c[pse->ccnr], wnr, ((char*)rb->theap->base)+(tsz*dict), ((char*)h->base)+h->free, sz-tsz, &offset, &dict)) < 0) {
 				BBPreclaim(rb);
 				throw (SQL, "parquet.read", SQLSTATE(HY002) "Error reading parquet file");
 			}

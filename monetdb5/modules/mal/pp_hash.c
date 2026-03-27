@@ -410,6 +410,7 @@ OAHASHnew(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 	BAT *pht = NULL;
 
 	if (tt2 == TYPE_int) {
+		assert(0);
 		size = (lng) *getArgReference_int(s, p, 2);
 	} else {
 		assert(tt2 == TYPE_lng);

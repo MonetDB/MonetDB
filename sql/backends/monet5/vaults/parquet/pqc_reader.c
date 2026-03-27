@@ -1323,7 +1323,6 @@ pqc_read_delta( pqc_creader_t *cr, int *prefixes, int64_t nrows, int pos)
 	uint64_t blocks = 0, miniblocks = 0, count = 0;
 	uint64_t val = 0;
 
-	(void)prefixes;
 	(void)nrows;
 	if ((pos += pqc_get_int64(cr->data+pos, &blocks)) < 0) {
 		return -1;
@@ -1422,9 +1421,6 @@ pqc_read_delta_strings( pqc_creader_t *cr, void *output, void *voutput, int64_t 
 	int prefixes = 0;
 	if ((pos = pqc_read_delta( cr, &prefixes, nrows, pos)) < 0)
 		return -1;
-	(void)voutput;
-	(void)ssize;
-	(void)dict;
 	/* read lengths */
 	int lengths = 0;
 	if ((pos = pqc_read_delta( cr, &lengths, nrows, pos)) < 0)
