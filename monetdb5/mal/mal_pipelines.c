@@ -215,8 +215,7 @@ PIPELINEworker(void *T)
 				.seqnr = -1,
 				.wls = NULL,
 			};
-			QryCtx *qc = MT_thread_get_qry_ctx();
-			qc->wid = p->wid;
+			MT_thread_setdata(p);
 			stk->stk[s->mb->stmt[s->start]->argv[1]].val.ival = PIPELINEnext_counter(p);
 			stk->stk[s->mb->stmt[s->start]->argv[2]].val.pval = p;
 			/* the maxparts (arg 3) is generated ie constant value on the stack */

@@ -210,10 +210,8 @@ PPcounter_get(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		assert(c->scnt == (int)p->p->nr_workers);
 		MT_lock_unset(&c->l);
 	}
-	if (!c->cur) {
+	if (!c->cur)
 		c->s.done(c, p->wid, p->p->nr_workers, false);
-		//counter_done(c, p->wid, p->p->nr_workers, false);
-	}
 	*cur = c->cur[p->wid];
 	BBPreclaim(b);
 	return MAL_SUCCEED;
@@ -488,18 +486,21 @@ typedef struct pp_concat_t {
 	Sink s;
 
 	MT_Lock l;
-	/* TODO per worker ? */
 	int current;
 	int max;
 	bool started;
 	int *cur;
-	Sink *srcs[];
+	BAT *srcs[];
 } pp_concat;
 
 static void
 concat_free( pp_concat *pcat )
 {
 	MT_lock_destroy(&pcat->l);
+	for(int i = 0; i<pcat->max; i++) {
+		if (pcat->srcs[i])
+			BBPreclaim(pcat->srcs[i]);
+	}
 	GDKfree(pcat->cur);
 	GDKfree(pcat);
 }
@@ -514,8 +515,9 @@ concat_done( pp_concat *c, int wid, int nr_workers, bool redo )
 		c->cur = (int*)GDKzalloc(sizeof(int) * nr_workers);
 		c->started = true;
 	}
-	Sink *s = c->srcs[c->cur[wid]];
-	if (s) {
+	BAT *sb = c->srcs[c->cur[wid]];
+	if (sb) {
+		Sink *s = sb->tsink;
 		MT_lock_unset(&c->l);
 		if (s->type == SUBCONCAT_SINK)
 			res = concat_done( (pp_concat*)s, wid, nr_workers, redo);
@@ -524,9 +526,10 @@ concat_done( pp_concat *c, int wid, int nr_workers, bool redo )
 		}
 		MT_lock_set(&c->l);
 		while(res && ++c->cur[wid] < c->max) {
-			s = c->srcs[c->cur[wid]];
-			if (!s)
+			sb = c->srcs[c->cur[wid]];
+			if (!sb)
 				break;
+			s = sb->tsink;
 			MT_lock_unset(&c->l);
 			if (s->type == SUBCONCAT_SINK)
 				res = concat_done( (pp_concat*)s, wid, nr_workers, false);
@@ -547,8 +550,9 @@ concat_next( pp_concat *c, int wid)
 	assert(c->s.type == CONCAT_SINK || c->s.type == SUBCONCAT_SINK);
 	MT_lock_set(&c->l);
 	assert(c->started);
-	Sink *s = c->srcs[c->cur[wid]];
-	if (s) {
+	BAT *sb = c->srcs[c->cur[wid]];
+	if (sb) {
+		Sink *s = sb->tsink;
 		MT_lock_unset(&c->l);
 		if (s->type == SUBCONCAT_SINK)
 			res = concat_next( (pp_concat*)s, wid);
@@ -567,8 +571,9 @@ concat_next_bat( pp_concat *c, int wid)
 	assert(c->s.type == CONCAT_SINK || c->s.type == SUBCONCAT_SINK);
 	MT_lock_set(&c->l);
 	assert(c->started);
-	Sink *s = c->srcs[c->cur[wid]];
-	if (s) {
+	BAT *sb = c->srcs[c->cur[wid]];
+	if (sb) {
+		Sink *s = sb->tsink;
 		MT_lock_unset(&c->l);
 		if (s->type == SUBCONCAT_SINK)
 			res = concat_next_bat( (pp_concat*)s, wid);
@@ -638,10 +643,9 @@ PPconcat_add(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BBPreclaim(i);
 		throw(MAL, "pipeline.concat_add", SQLSTATE(HY002) "Concat too many sources (%d)", pcat->current);
 	}
-	pcat->srcs[pcat->current++] = i->tsink;
+	pcat->srcs[pcat->current++] = i;
 	if (i->tsink->type == CONCAT_SINK)
 		i->tsink->type = SUBCONCAT_SINK;
-	BBPreclaim(i);
 	*rb = b->batCacheid;
 	BBPkeepref(b);
 	return MAL_SUCCEED;
@@ -833,8 +837,8 @@ source_next(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BBPreclaim(s);
 		throw(MAL, "source.next", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
-	QryCtx *qc = MT_thread_get_qry_ctx();
-	BAT *r = src->next_bat(src, qc->wid);
+	Pipeline *p = MT_thread_getdata();
+	BAT *r = src->next_bat(src, p->wid);
 	if (!r) {
 		BBPreclaim(s);
 		throw(SQL, "source.next",  SQLSTATE(HY013) MAL_MALLOC_FAIL);
