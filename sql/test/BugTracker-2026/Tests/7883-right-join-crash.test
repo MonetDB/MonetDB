@@ -1,0 +1,40 @@
+statement ok
+CREATE SCHEMA test7883
+
+statement ok
+SET SCHEMA test7883
+
+statement ok
+CREATE TABLE users (
+    id           INT,
+    username     VARCHAR(100),
+    email        VARCHAR(255),
+    age          INT,
+    status       VARCHAR(20),
+    created_at   TIMESTAMP,
+    score        DOUBLE
+)
+
+statement ok rowcount 5
+INSERT INTO users VALUES
+(1, 'alice', 'alice@test.com', 20, 'active',  '2022-01-01 10:00:00', 88.5),
+(2, 'bob',   'bob@test.com',   30, 'active',  '2022-01-02 11:00:00', 92.3),
+(3, 'carol', NULL,             NULL, 'banned','2022-01-03 12:00:00', NULL),
+(4, 'dave',  'dave@test.com',  45, 'active',  '2022-01-04 13:00:00', 65.2),
+(5, NULL,    'null@test.com',  18, 'inactive','2022-01-05 14:00:00', 70.0)
+
+query I
+select 1
+from
+  users
+    right join (select
+          ref_2.username as c0
+        from
+          users as ref_2
+        where ref_2.age < ref_2.age) as subq_0
+    on (((true)
+          and (true))
+        or ((true)
+          and (true)))
+where true
+----
