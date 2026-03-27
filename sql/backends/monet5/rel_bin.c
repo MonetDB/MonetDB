@@ -3,7 +3,7 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
  * For copyright information, see the file debian/copyright.
  */
@@ -731,7 +731,7 @@ exp_bin_conjunctive(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp,
 		}
 		sel1 = s;
 	}
-	if (sel1->nrcols == 0 && left) {
+	if (sel1 && sel1->nrcols == 0 && left) {
 		stmt *predicate = bin_find_smallest_column(be, left);
 
 		if (!reduce) {

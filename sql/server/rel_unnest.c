@@ -3,7 +3,7 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
  * For copyright information, see the file debian/copyright.
  */
@@ -163,6 +163,7 @@ rel_has_freevar(mvc *sql, sql_rel *rel)
 		(void) sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 		return 0;
 	}
+	assert(rel);
 	if (!rel)
 		return 0;
 	if (is_independent(rel->used))
@@ -988,6 +989,8 @@ push_up_project(mvc *sql, sql_rel *rel, list *ad)
 			/* move project up, ie all attributes of left + the old expression list */
 			sql_rel *n = rel_project( sql->sa, (r->l)?rel:rel->l,
 					rel_projections(sql, rel->l, NULL, 1, 1));
+			if (need_distinct(r))
+					set_distinct(n);
 
 			if (is_left(rel->op) && !list_empty(rel->attr))
 				rel_project_add_exp(sql, n, exp_ref(sql, rel->attr->h->data));

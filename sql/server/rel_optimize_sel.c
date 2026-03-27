@@ -3,7 +3,7 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
  * For copyright information, see the file debian/copyright.
  */
@@ -471,8 +471,23 @@ exps_cse_dis( visitor *v, list *oexps, sql_exp *de)
 		m = m->next;
 		lpos++;
 	}
-	//if (changes) {
-		/* todo check for empty lists */
+	if (changes) {
+		for (node *n = dis->h; n; ) {
+			node *nxt = n->next;
+			if (!n->data)
+				list_remove_node(dis, NULL, n);
+			else {
+				sql_exp *e = n->data;
+				assert(e->type == e_cmp && e->flag == cmp_con);
+				list *l = e->l;
+				if (list_empty(l))
+					list_remove_node(dis, NULL, n);
+			}
+			n = nxt;
+		}
+		if (list_empty(dis))
+			de = exp_atom_bool(v->sql->sa, 1);
+	}
 	append(oexps, de);
 	return changes;
 }
