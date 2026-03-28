@@ -754,6 +754,10 @@ move_join_exps(mvc *sql, sql_rel *j, sql_rel *rel)
 	node *n;
 	list *exps = rel->exps;
 
+	if (j->attr && exps_uses_exp(rel->exps, j->attr->h->data)) {
+		assert(0);
+	}
+
 	if (list_empty(exps))
 		return;
 	rel->exps = sa_list(sql->sa);
@@ -1177,7 +1181,7 @@ push_up_select(mvc *sql, sql_rel *rel, list *ad)
 	if (inner && is_left(rel->op) && !need_distinct(d))
 		return rel_general_unnest(sql, rel, ad);
 	/* input rel is dependent join with on the right a select */
-	if ((!inner || is_semi(rel->op)) && rel && is_dependent(rel)) {
+	if ((!inner || is_semi(rel->op) || (is_left(rel->op) && !list_empty(rel->attr))) && rel && is_dependent(rel)) {
 		sql_rel *r = rel->r;
 
 		if (r && is_select(r->op)) { /* move into join */
