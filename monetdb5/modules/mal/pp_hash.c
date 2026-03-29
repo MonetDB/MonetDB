@@ -2257,7 +2257,9 @@ OAHASHmprobe(Client ctx, bat *PRB_oid, bat *HSH_slotid, bat *PRB_mark, const bat
 			\
 			gid hsh = (gid)combine(gi[i], _hash_##Type(*(((BaseType*)ky)+sltd[i]-off)), prime)&ht->mask; \
 			gid slot = ATOMIC_GET(ht->gids+hsh); \
-			while (slot && (pgids[slot] != gi[i] || (is_##Type##_nil(vals[slot]) != is_##Type##_nil(val)) || vals[slot] != val)) { \
+			while (slot && (pgids[slot] != gi[i] || \
+						((*semantics) && is_##Type##_nil(val) && !is_##Type##_nil(vals[slot])) || \
+						(!is_##Type##_nil(val) && vals[slot] != val))) { \
 				hsh++; \
 				hsh &= ht->mask; \
 				slot = ATOMIC_GET(ht->gids+hsh); \
@@ -2587,7 +2589,9 @@ OAHASHprobe_cmbd(Client ctx, bat *PRB_oid, bat *HSH_slotid, const bat *PRB_key, 
 			} \
 			gid hsh = (gid)combine(gi[i], _hash_##Type(*(((BaseType*)ky)+sltd[i]-off)), prime)&ht->mask; \
 			gid slot = ATOMIC_GET(ht->gids+hsh); \
-			while (slot && (pgids[slot] != gi[i] || (is_##Type##_nil(vals[slot]) != is_##Type##_nil(val)) || vals[slot] != val)) { \
+			while (slot && (pgids[slot] != gi[i] || \
+						((*semantics) && is_##Type##_nil(val) && !is_##Type##_nil(vals[slot])) || \
+						(!is_##Type##_nil(val) && vals[slot] != val))) { \
 				hsh++; \
 				hsh &= ht->mask; \
 				slot = ATOMIC_GET(ht->gids+hsh); \
