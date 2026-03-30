@@ -751,8 +751,8 @@ STRrevstr_search(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) ctx;
 	(void) mb;
 	int *res = getArgReference_int(stk, pci, 0);
-	const str haystack = *getArgReference_str(stk, pci, 1);
-	const str needle = *getArgReference_str(stk, pci, 2);
+	const char *haystack = *getArgReference_str(stk, pci, 1);
+	const char *needle = *getArgReference_str(stk, pci, 2);
 	bit icase = pci->argc == 4 && *getArgReference_bit(stk, pci, 3);
 
 	if (strNil(haystack) || strNil(needle)) {
@@ -1972,7 +1972,7 @@ scan_loop_strselect(BAT *rl, BATiter *li, struct canditer *lci, const char *r,
 }
 
 static str
-STRselect(MalStkPtr stk, InstrPtr pci, const str fname,
+STRselect(MalStkPtr stk, InstrPtr pci, const char *fname,
 		  int (*str_cmp)(const char *, const char *, size_t))
 {
 	str msg = MAL_SUCCEED;
@@ -2634,7 +2634,7 @@ sorted_strjoin(BAT **rl_ptr, BAT **rr_ptr, BATiter *li, BATiter *ri,
 }
 
 static inline str
-ignorecase(const bat IC, bool *icase, const str fname)
+ignorecase(bat IC, bool *icase, const char *fname)
 {
 	str msg = MAL_SUCCEED;
 	BAT *b = BATdescriptor(IC);
@@ -2653,7 +2653,7 @@ ignorecase(const bat IC, bool *icase, const str fname)
 }
 
 static str
-STRjoin(MalStkPtr stk, InstrPtr pci, const str fname,
+STRjoin(MalStkPtr stk, InstrPtr pci, const char *fname,
 		int (*str_cmp)(const char *, const char *, size_t))
 {
 	str msg = MAL_SUCCEED;
