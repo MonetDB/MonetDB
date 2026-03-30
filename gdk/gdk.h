@@ -447,7 +447,7 @@ typedef struct BAT {
 	PROPrec *tprops;	/* list of dynamic properties stored in the bat descriptor */
 
 	uint8_t cnting_sketch[BUCKETS][CLZ_BUCKETS];
-	uint64_t estimate;
+	double estimate;
 	MT_Lock sketch_lock;
 
 	MT_Lock theaplock;	/* lock protecting heap reference changes */

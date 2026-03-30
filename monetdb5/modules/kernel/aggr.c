@@ -1636,7 +1636,7 @@ AGGRcde(Client c, int *estimate, const bat *bid)
 	if (VIEWtparent(b)) {
 		BAT *pb = BATdescriptor(VIEWtparent(b));
 		assert(pb);
-		printf("cnt dist est prop %lu\n", pb->estimate);
+		printf("cnt dist est prop %f\n", pb->estimate);
 		BBPreclaim(pb);
 	}
 

@@ -813,7 +813,7 @@ estimator(uint8_t cnt_sketch[BUCKETS][CLZ_BUCKETS])
 	double s = sigma((double)C[0] / BUCKETS);
 	z += (double)BUCKETS * s;
 	const double alpha = 0.7213475204444817;
-	return llroundl(alpha * (double)BUCKETS * BUCKETS / z);
+	return alpha * (double)BUCKETS * BUCKETS / z;
 }
 
 static inline void
