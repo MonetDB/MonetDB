@@ -111,6 +111,34 @@ ON (
 WHERE ref_0.score IS NULL
 LIMIT 95
 ----
+NULL
+NULL
+NULL
+carol
+2022-01-03 12:00:00
+NULL
+Empty
+NULL
+NULL
+NULL
+carol
+2022-01-03 12:00:00
+NULL
+First post
+NULL
+NULL
+NULL
+carol
+2022-01-03 12:00:00
+NULL
+Last
+NULL
+NULL
+NULL
+carol
+2022-01-03 12:00:00
+NULL
+banned
 
 statement ok
 DROP TABLE orders
