@@ -73,3 +73,4 @@ KNOWNFAIL?7875-rel2bin_groupjoin-assertion-failure
 7880-exp_bin_conjunctive-crash
 7882-later-distinct
 7883-right-join-crash
+7886-local-view-in-with
