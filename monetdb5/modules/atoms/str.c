@@ -1962,10 +1962,10 @@ scan_loop_strselect(BAT *rl, BATiter *li, struct canditer *lci, const char *r,
 		rl->tnil = false;
 	}
 
-	TRC_DEBUG(ALGO, "(%s, %s, l=%s #%zu [%s], cl=%s #%zu, time="LLFMT"usecs)\n",
-			  fname, "scan_loop_strselect",
+	TRC_DEBUG(ALGO, "%s, l=%s #%zu [%s], cl=%s #%zu, time="LLFMT"usecs)\n",
+			  fname,
 			  BATgetId(li->b), li->count, ATOMname(li->b->ttype),
-			  lci ? BATgetId(lci->s) : "NULL", lci ? lci->ncand : 0,
+			  lci->s ? BATgetId(lci->s) : "NULL", lci->ncand,
 			  GDKusec() - t0);
 
 	return MAL_SUCCEED;
@@ -2217,8 +2217,8 @@ nested_loop_strjoin(BAT *rl, BAT *rr, BATiter *li, BATiter *ri,
 			  fname, "nested_loop_strjoin",
 			  BATgetId(li->b), li->count, ATOMname(li->b->ttype),
 			  BATgetId(ri->b), ri->count, ATOMname(ri->b->ttype),
-			  lci ? BATgetId(lci->s) : "NULL", lci ? lci->ncand : 0,
-			  rci ? BATgetId(rci->s) : "NULL", rci ? rci->ncand : 0,
+			  lci->s ? BATgetId(lci->s) : "NULL", lci->ncand,
+			  rci->s ? BATgetId(rci->s) : "NULL", rci->ncand,
 			  GDKusec() - t0);
 
 	return MAL_SUCCEED;
@@ -2458,8 +2458,8 @@ bigram_strjoin(BAT *rl, BAT *rr, BATiter *li, BATiter *ri,
 			  fname, "bigram_strjoin",
 			  BATgetId(li->b), li->count, ATOMname(li->b->ttype),
 			  BATgetId(ri->b), ri->count, ATOMname(ri->b->ttype),
-			  lci ? BATgetId(lci->s) : "NULL", lci ? lci->ncand : 0,
-			  rci ? BATgetId(rci->s) : "NULL", rci ? rci->ncand : 0,
+			  lci->s ? BATgetId(lci->s) : "NULL", lci->ncand,
+			  rci->s ? BATgetId(rci->s) : "NULL", rci->ncand,
 			  GDKusec() - t0);
 
 	return msg;
