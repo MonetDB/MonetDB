@@ -345,7 +345,8 @@ concat_free( pp_concat *pcat )
 		if (pcat->srcs[i])
 			BBPreclaim(pcat->srcs[i]);
 	}
-	GDKfree(pcat->cur);
+	if (pcat->cur)
+		GDKfree(pcat->cur);
 	GDKfree(pcat);
 }
 
@@ -451,7 +452,7 @@ PPconcat_block(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	pp_concat *pcat = (pp_concat*)b->tsink;
 	if (pcat->s.type != CONCAT_SINK && pcat->s.type != SUBCONCAT_SINK) {
 		BBPreclaim(b);
-		throw(MAL, "pipeline.concat_block", SQLSTATE(HY002) "Invalid source %d", pcat->s.type);
+		throw(MAL, "pipeline.concat_block", SQLSTATE(HY002) "Invalid type for a concat source %d", pcat->s.type);
 	}
 	MT_lock_set(&pcat->l);
 	assert(pcat->cur);
@@ -474,13 +475,14 @@ PPconcat_add(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT *b = BATdescriptor(cb), *i = BATdescriptor(ib);
 	if (!b || !i) {
 		BBPreclaim(b);
+		BBPreclaim(i);
 		throw(MAL, "pipeline.concat_add", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	pp_concat *pcat = (pp_concat*)b->tsink;
 	if (pcat->s.type != CONCAT_SINK && pcat->s.type != SUBCONCAT_SINK) {
 		BBPreclaim(b);
 		BBPreclaim(i);
-		throw(MAL, "pipeline.concat_add", SQLSTATE(HY002) "Invalid source %d", pcat->s.type);
+		throw(MAL, "pipeline.concat_add", SQLSTATE(HY002) "Invalid type for a concat source %d", pcat->s.type);
 	}
 	if (pcat->current >= pcat->max) {
 		BBPreclaim(b);
