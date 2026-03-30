@@ -156,8 +156,10 @@ sync_counter_done(pp_counter *c, int wid, int nr_workers, int redo)
 			MT_cond_wait(&p->p->cond, &p->p->l);
 		else
 			MT_cond_broadcast(&p->p->cond);
-		assert(c->scnt == nr_workers);
+		assert(c->scnt == nr_workers || p->p->error);
 	}
+	if (p->p->error)
+		res = 1;
 	MT_lock_unset(&p->p->l);
 	assert(c->cur);
 	c->cur[wid] = cur;
