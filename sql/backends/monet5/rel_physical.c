@@ -880,7 +880,7 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 				if (rel->single || rel->op == op_left)
 					rel->oahash = 2;
 				else if (rel->op == op_right)
-					rel->oahash = 2;
+					rel->oahash = 1;
 				else if (rel_getcount(v->sql, l) < rel_getcount(v->sql, r))
 					rel->oahash = 1;
 				else
