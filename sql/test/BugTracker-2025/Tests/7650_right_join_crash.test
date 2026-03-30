@@ -1,8 +1,12 @@
 statement ok
 CREATE TABLE IF NOT EXISTS t1(c0 INTERVAL DAY,c2 DOUBLE)
 
-# error because the relational algebra doesn't allow for perfect lazy evaluation always
-# sql correct result should be: NULL | NULL | 0
-statement error /more than one match/
+# without PIPELINE, it results in an error because the relational algebra doesn't allow for perfect lazy evaluation always
+#statement error /more than one match/
+# with PIPELINE, it produces the correct result: NULL | NULL | 0
+query III
 SELECT ALL * FROM t1 RIGHT JOIN (VALUES (0)) AS subQuery1(col_1) ON ( t1.c0 < ANY(VALUES (t1.c0+t1.c0)) ) AND (VALUES (subQuery1.col_1), (EXISTS (VALUES (t1.c2))) )
-
+----
+NULL
+NULL
+0

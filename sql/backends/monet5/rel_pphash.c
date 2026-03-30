@@ -135,7 +135,7 @@ oahash_probe(backend *be, sql_rel *rel, list *jexps, list *exps_cmp_prb, const s
 	(void) outer;
 
 	stmt *prb_res = NULL, *outerm = NULL;
-	bool has_leftouter = (rel->op == op_left || rel->op == op_full || (rel->op == op_right && rel->oahash == 1));
+	bool has_leftouter = (rel->op == op_left || rel->op == op_full /*|| (rel->op == op_right && rel->oahash == 1)*/);
 
 	/* stmts_ht is in the same order as the join columns */
 	for (node *n = exps_cmp_prb->h, *m = stmts_ht->op4.lval->h, *o = jexps->h; n && m && o; n = n->next, m = m->next, o = o->next) {
@@ -425,7 +425,7 @@ rel2bin_oahash_equi_join(backend *be, sql_rel *rel, list *refs, list *jexps, stm
 	if (prb_res == NULL) return NULL;
 
 	/*** PROJECT RESULT PHASE ***/
-	bit leftouter = (rel->op == op_left || rel->op == op_full || (rel->op == op_right && rel->oahash == 1));
+	bit leftouter = (rel->op == op_left || rel->op == op_full /*|| (rel->op == op_right && rel->oahash == 1)*/);
 	list *lp = oahash_project_prb(be, exps_prj_prb, prb_res, stmts_ht->op3, leftouter, sub, probed_rowids);
 	list *lh = oahash_project_hsh(be, exps_prj_hsh, stmts_ht, prb_res, leftouter, hsh_mrk);
 
@@ -1359,7 +1359,7 @@ rel2bin_oahash(backend *be, sql_rel *rel, list *refs)
     } else if (is_outerjoin(rel->op)) {
 		if (rel->op == op_full) {
 			return rel2bin_oahash_fullouterjoin(be, rel, refs);
-		} else if (rel->op == op_right && rel->single ) {
+		} else if (rel->op == op_right /* && rel->single */) {
 			return rel2bin_oahash_rightouterjoin(be, rel, refs);
 		} else {
 			return rel2bin_oahash_leftouterjoin(be, rel, refs);
