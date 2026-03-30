@@ -12,6 +12,7 @@
 #include "gdk.h"
 #include "gdk_analytic.h"
 #include "gdk_calc_private.h"
+#include "gdk_private.h"
 
 #ifdef HAVE_HGE
 #define LNG_HGE         hge
@@ -962,10 +963,6 @@ GDKanalytical_##NAME(BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, int frame_
 	BATsetcount(r, cnt);						\
 	r->tnonil = !has_nils;						\
 	r->tnil = has_nils;						\
-	goto cleanup; /* all these gotos seem confusing but it cleans up the ending of the operator */ \
-overflow:								\
-	GDKerror("22003!overflow in calculation.\n");			\
-	res = GDK_FAIL;							\
 cleanup:								\
 	bat_iterator_end(&pi);						\
 	bat_iterator_end(&oi);						\
@@ -981,6 +978,10 @@ cleanup:								\
 	return r;							\
 nosupport:								\
 	GDKerror("42000!%s of type %s unsupported.\n", DESC, ATOMname(tpe)); \
+	res = GDK_FAIL;							\
+	goto cleanup;							\
+overflow:								\
+	GDKerror("22003!overflow in calculation.\n");			\
 	res = GDK_FAIL;							\
 	goto cleanup;							\
 }
@@ -1195,10 +1196,6 @@ GDKanalytical_##NAME(BAT *p, BAT *o, BAT *b1, BAT *b2, BAT *s, BAT *e, int tpe, 
 	BATsetcount(r, cnt);						\
 	r->tnonil = !has_nils;						\
 	r->tnil = has_nils;						\
-	goto cleanup; /* all these gotos seem confusing but it cleans up the ending of the operator */ \
-overflow:								\
-	GDKerror("22003!overflow in calculation.\n");			\
-	res = GDK_FAIL;							\
 cleanup:								\
 	bat_iterator_end(&pi);						\
 	bat_iterator_end(&oi);						\
@@ -1215,6 +1212,10 @@ cleanup:								\
 	return r;							\
 nosupport:								\
 	GDKerror("42000!covariance of type %s unsupported.\n", ATOMname(tpe)); \
+	res = GDK_FAIL;							\
+	goto cleanup;							\
+overflow:								\
+	GDKerror("22003!overflow in calculation.\n");			\
 	res = GDK_FAIL;							\
 	goto cleanup;							\
 }
@@ -1414,6 +1415,8 @@ typedef struct correlation_deltas {
 BAT *
 GDKanalytical_correlation(BAT *p, BAT *o, BAT *b1, BAT *b2, BAT *s, BAT *e, int tpe, int frame_type)
 {
+	lng t0 = 0;
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 	BAT *r = COLnew(b1->hseqbase, TYPE_dbl, BATcount(b1), TRANSIENT);
 	if (r == NULL)
 		return NULL;
@@ -1462,10 +1465,6 @@ GDKanalytical_correlation(BAT *p, BAT *o, BAT *b1, BAT *b2, BAT *s, BAT *e, int 
 	BATsetcount(r, cnt);
 	r->tnonil = !has_nils;
 	r->tnil = has_nils;
-	goto cleanup; /* all these gotos seem confusing but it cleans up the ending of the operator */
-overflow:
-	GDKerror("22003!overflow in calculation.\n");
-	res = GDK_FAIL;
 cleanup:
 	bat_iterator_end(&pi);
 	bat_iterator_end(&oi);
@@ -1478,10 +1477,25 @@ cleanup:
 	if (res != GDK_SUCCEED) {
 		BBPreclaim(r);
 		r = NULL;
+	} else {
+		TRC_DEBUG(ALGO, "p=" ALGOOPTBATFMT ",o=" ALGOOPTBATFMT
+			  ",b1=" ALGOBATFMT ",b2=" ALGOBATFMT
+			  ",s=" ALGOOPTBATFMT ",e=" ALGOOPTBATFMT
+			  ",tpe=%s,frame_type=%d -> "
+			  ALGOBATFMT " (" LLFMT " usec)\n",
+			  ALGOOPTBATPAR(p), ALGOOPTBATPAR(o),
+			  ALGOBATPAR(b1), ALGOBATPAR(b2), ALGOOPTBATPAR(s),
+			  ALGOOPTBATPAR(e), ATOMname(tpe),
+			  frame_type, ALGOBATPAR(r),
+			  GDKusec() - t0);
 	}
 	return r;
   nosupport:
 	GDKerror("42000!correlation of type %s unsupported.\n", ATOMname(tpe));
+	res = GDK_FAIL;
+	goto cleanup;
+overflow:
+	GDKerror("22003!overflow in calculation.\n");
 	res = GDK_FAIL;
 	goto cleanup;
 }
