@@ -56,21 +56,18 @@ _ht_init(hash_table *h)
 	}
 	return h;
 error:
-	if(h->vals) GDKfree(h->vals);
-	if(h->gids) GDKfree((void *)h->gids);
-	if(h->pgids) GDKfree(h->pgids);
+	GDKfree(h->vals);
+	GDKfree((void *)h->gids);
+	GDKfree(h->pgids);
 	return NULL;
 }
 
 static void
 ht_destroy(hash_table *ht)
 {
-	if (ht->vals)
-		GDKfree(ht->vals);
-	if (ht->gids)
-		GDKfree((void*)ht->gids);
-	if (ht->pgids)
-		GDKfree(ht->pgids);
+	GDKfree(ht->vals);
+	GDKfree((void*)ht->gids);
+	GDKfree(ht->pgids);
 	if (ht->pinned) {
 		for(int i=0; i < ht->pinned_nr; i++) {
 			BBPunfix(ht->pinned[i]->parentid);
@@ -391,9 +388,9 @@ ht_rehash(hash_table *ht)
 	}
 	return 0;
 error:
-	if(ht->vals) GDKfree(ht->vals);
-	if(ht->gids) GDKfree((void *)ht->gids);
-	if(ht->pgids) GDKfree(ht->pgids);
+	GDKfree(ht->vals);
+	GDKfree((void *)ht->gids);
+	GDKfree(ht->pgids);
 	return -1;
 }
 

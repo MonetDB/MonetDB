@@ -243,8 +243,7 @@ PIPELINEworker(void *T)
 			}
 			freeStack(stk);
 			ma_close(&ma_state);
-			if (p->wls)
-				GDKfree(p->wls);
+			GDKfree(p->wls);
 			MT_sema_up(&s->s);
 		}
 		GDKfree(p);
