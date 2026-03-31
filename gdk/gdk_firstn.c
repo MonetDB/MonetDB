@@ -1350,7 +1350,7 @@ BATfirstn_offset(BAT *b, BAT *s, BAT *g, BUN n, BUN o, bool asc, bool nilslast, 
 	if (o == 0)
 		return topno;
 	/* calculate first o values */
-	rc = BATfirstn(&topo, NULL, b, topno, g, o, asc, nilslast, distinct);
+	rc = BATfirstn(&topo, NULL, b, s, g, o, asc, nilslast, distinct);
 	if (rc != GDK_SUCCEED) {
 		BBPreclaim(topno);
 		return NULL;
@@ -1575,7 +1575,7 @@ BATgroupedfirstn_offset(BUN n, BUN o, BAT *s, BAT *g, int nbats, BAT **bats, boo
 	topno = BATgroupedfirstn(no, s, g, nbats, bats, asc, nilslast);
 	if (o == 0 || topno == NULL)
 		return topno;
-	topo = BATgroupedfirstn(o, topno, g, nbats, bats, asc, nilslast);
+	topo = BATgroupedfirstn(o, s, g, nbats, bats, asc, nilslast);
 	if (topo == NULL) {
 		BBPreclaim(topno);
 		return NULL;
