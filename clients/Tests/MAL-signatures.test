@@ -37892,7 +37892,7 @@ oahash
 expand
 command oahash.expand(X_0:bat[:oid], X_1:bat[:oid], X_2:bat[:lng], X_3:bit):bat[:oid]
 OAHASHexpand
-Expand the selected keys according to their frequencies in the hash table. If 'leftouter' is true, append the not 'selected' keys
+Expand the selected keys according to their frequencies in the hash table. If 'left_outer' is true, append the not 'selected' keys
 oahash
 expand_cartesian
 command oahash.expand_cartesian(X_0:bat[:any_1], X_1:bat[:any_2], X_2:bit):bat[:oid]
@@ -37902,7 +37902,7 @@ oahash
 explode
 command oahash.explode(X_0:bat[:oid], X_1:bat[:lng], X_2:bat[:any_2], X_3:bit):bat[:oid]
 OAHASHexplode
-Explode the result vector 'frequency' times and return payload heap slot ids. If 'leftouter' is true, fill the not 'selected' slot with oid_nil
+Explode the result vector 'frequency' times and return payload heap slot ids. If 'left_outer' is true, fill the not 'selected' slot with oid_nil
 oahash
 explode_cartesian
 command oahash.explode_cartesian(X_0:bat[:any_1], X_1:bat[:2], X_2:bit):bat[:oid]

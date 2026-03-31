@@ -2859,7 +2859,7 @@ OAHASHmprobe_cmbd(Client ctx, bat *PRB_oid, bat *HSH_slotid, bat *PRB_mark, cons
 }
 
 static str
-OAHASHexpand(Client ctx, bat *expanded, const bat *selected, const bat *slotid, const bat *frequency, const bit *leftouter)
+OAHASHexpand(Client ctx, bat *expanded, const bat *selected, const bat *slotid, const bat *frequency, const bit *left_outer)
 {
 	(void)ctx;
 	BAT *e = NULL, *s = NULL, *l = NULL, *f = NULL;
@@ -2915,7 +2915,7 @@ OAHASHexpand(Client ctx, bat *expanded, const bat *selected, const bat *slotid, 
 	oid *sel = Tloc(s, 0);
 	oid *res = Tloc(e, 0);
 
-	if (*leftouter && freq) {
+	if (*left_outer && freq) {
 		TIMEOUT_LOOP_IDX_DECL(i, selcnt, qry_ctx) {
 			oid s = sid[i];
 			if (s != oid_nil) {
@@ -3026,7 +3026,7 @@ error:
 }
 
 static str
-OAHASHexplode(Client ctx, bat *fetched, const bat *slotid, const bat *frequency, const bat *ht_sink, const bit *leftouter)
+OAHASHexplode(Client ctx, bat *fetched, const bat *slotid, const bat *frequency, const bat *ht_sink, const bit *left_outer)
 {
 	(void)ctx;
 	BAT *f = NULL, *l = NULL, *h = NULL, *r = NULL;
@@ -3048,7 +3048,7 @@ OAHASHexplode(Client ctx, bat *fetched, const bat *slotid, const bat *frequency,
 	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 	selcnt = BATcount(l);
 	if (selcnt) {
-		if (*leftouter) {
+		if (*left_outer) {
 			TIMEOUT_LOOP_IDX_DECL(i, selcnt, qry_ctx) {
 				if (sid[i] != oid_nil)
 					fchcnt += freq[sid[i]];
@@ -3077,7 +3077,7 @@ OAHASHexplode(Client ctx, bat *fetched, const bat *slotid, const bat *frequency,
 		oid *res = Tloc(r, 0);
 		oid *vals = ht->vals;
 		oid *pgids = (oid*)ht->pgids;
-		if (*leftouter) {
+		if (*left_outer) {
 			TIMEOUT_LOOP_IDX_DECL(i, selcnt, qry_ctx) {
 				oid s = sid[i];
 				if (s != oid_nil) {
@@ -3141,7 +3141,7 @@ error:
 }
 
 static str
-OAHASHexplode_cart(Client ctx, bat *fetched, const bat *col, const bat *setrepeat, const bit *outer)
+OAHASHexplode_cart(Client ctx, bat *fetched, const bat *col, const bat *setrepeat, const bit *left_outer)
 {
 	(void)ctx;
 	BAT *f = NULL, *k = NULL, *d = NULL;
@@ -3160,7 +3160,7 @@ OAHASHexplode_cart(Client ctx, bat *fetched, const bat *col, const bat *setrepea
 	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 	keycnt = BATcount(k);
-	if (*outer && keycnt == 0) {
+	if (*left_outer && keycnt == 0) {
 		append_nulls = true;
 		keycnt = 1;
 	}
@@ -3440,13 +3440,13 @@ static mel_func oa_hash_init_funcs[] = {
  command("oahash", "combined_mprobe", OAHASHmprobe_cmbd_single, false, "Probe the selected `key`-s pairs in the hash table. For a matched item, return its OID in the 'key' column and the slot ID in the hash table", args(3,11, batarg("PRB_oid",oid),batarg("HSH_slotid",oid),batarg("PRB_matched",bit),batargany("PRB_key",1),batarg("PRB_selected",oid),batarg("HSH_pgids",oid),batargany("HSH_ht",1),batarg("frequency",lng),arg("single",bit),arg("semantics",bit),arg("pipeline",ptr))),
  command("oahash", "combined_mprobe", OAHASHmprobe_cmbd, false, "Probe the selected `key`-s in the hash table. For a matched item, return its OID in the 'key' column and the slot ID in the hash table", args(3,10, batarg("PRB_oid",oid),batarg("HSH_slotid",oid),batarg("PRB_matched",bit),batargany("PRB_key",1),batarg("PRB_selected",oid),batarg("HSH_pgids",oid),batargany("HSH_ht",1),arg("single",bit),arg("semantics",bit),arg("pipeline",ptr))),
 
- command("oahash", "expand", OAHASHexpand, false, "Expand the selected keys according to their frequencies in the hash table. If 'leftouter' is true, append the not 'selected' keys", args(1,5,batarg("expanded",oid),batarg("selected",oid),batarg("slotid",oid),batarg("frequency",lng),arg("leftouter",bit))),
+ command("oahash", "expand", OAHASHexpand, false, "Expand the selected keys according to their frequencies in the hash table. If 'left_outer' is true, append the not 'selected' keys", args(1,5,batarg("expanded",oid),batarg("selected",oid),batarg("slotid",oid),batarg("frequency",lng),arg("left_outer",bit))),
 
- command("oahash", "expand_cartesian", OAHASHexpand_cart, false, "Duplicate each value in 'col' the number of times as the count of 'rowrepeat'. For a left/right-outer join, if 'rowrepeat' is empty, output the values in 'col' once.", args(1,4, batarg("expanded",oid),batargany("col",1),batargany("rowrepeat",2),arg("LRouter",bit))),
+ command("oahash", "expand_cartesian", OAHASHexpand_cart, false, "Duplicate each value in 'col' the number of times as the count of 'rowrepeat'. For a left/right-outer join, if 'rowrepeat' is empty, output the values in 'col' once.", args(1,4, batarg("expanded",oid),batargany("col",1),batargany("rowrepeat",2),arg("left_outer",bit))),
 
- command("oahash", "explode", OAHASHexplode, false, "Explode the result vector 'frequency' times and return payload heap slot ids. If 'leftouter' is true, fill the not 'selected' slot with oid_nil", args(1,5, batarg("fetched",oid),batarg("slotid",oid),batarg("frequency",lng),batargany("hash_sink",2),arg("leftouter",bit))),
+ command("oahash", "explode", OAHASHexplode, false, "Explode the result vector 'frequency' times and return payload heap slot ids. If 'left_outer' is true, fill the not 'selected' slot with oid_nil", args(1,5, batarg("fetched",oid),batarg("slotid",oid),batarg("frequency",lng),batargany("hash_sink",2),arg("left_outer",bit))),
 
- command("oahash", "explode_cartesian", OAHASHexplode_cart, false, "Duplicate the whole 'col' the number of times as the count of 'setrepeat'.  For a left/right-ourter join, if 'col' is empty, output NULLs.", args(1,4, batarg("fetched",oid),batargany("col",1),batarg("setrepeat",2),arg("LRouter",bit))),
+ command("oahash", "explode_cartesian", OAHASHexplode_cart, false, "Duplicate the whole 'col' the number of times as the count of 'setrepeat'.  For a left/right-ourter join, if 'col' is empty, output NULLs.", args(1,4, batarg("fetched",oid),batargany("col",1),batarg("setrepeat",2),arg("left_outer",bit))),
 
  command("oahash", "explode_unmatched", OAHASHexplode_unmatched, false, "Expand the count of 'unmatched' with 'frequency'.  Returns the count in a VOID BAT.", args(1,4, batarg("",oid),batargany("ht_sink",1),batarg("unmatched",oid),batarg("frequency",lng))),
 
