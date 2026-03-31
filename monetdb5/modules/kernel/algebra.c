@@ -953,7 +953,7 @@ ALGintersect(Client ctx, bat *r1, const bat *lid, const bat *rid, const bat *sli
  *                s:bat[:oid],
  *                g:bat[:oid],
  *                n:lng,
- *                [ o:lng, ] -- if specified, no second return
+ *                [ o:lng, return_skipped:bit, ] -- if specified, no second return
  *                asc:bit,
  *                nilslast:bit,
  *                distinct:bit)
@@ -1015,6 +1015,10 @@ ALGfirstn(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			BBPreclaim(g);
 			throw(MAL, "algebra.firstn", ILLEGAL_ARGUMENT);
 		}
+		if (*getArgReference_bit(stk, pci, pci->retc + 5)) {
+			n += o;
+			o = 0;
+		}
 	}
 	asc = *getArgReference_bit(stk, pci, pci->argc - 3);
 	nilslast = *getArgReference_bit(stk, pci, pci->argc - 2);
@@ -1062,9 +1066,13 @@ ALGgroupedfirstn(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	ret = getArgReference_bat(stk, pci, 0);
 	if (getArgType(mb, pci, 2) == TYPE_lng) {
 		o = *getArgReference_lng(stk, pci, 2);
-		hasoff = 1;
 		if (o < 0)
 			throw(MAL, "algebra.groupedfirstn", ILLEGAL_ARGUMENT);
+		if (*getArgReference_bit(stk, pci, 3)) {
+			n += o;
+			o = 0;
+		}
+		hasoff = 2;
 	}
 	sid = *getArgReference_bat(stk, pci, 2 + hasoff);
 	gid = *getArgReference_bat(stk, pci, 3 + hasoff);
@@ -1962,9 +1970,9 @@ static mel_func algebra_init_funcs[] = {
  command("algebra", "intersect", ALGintersect, false, "Intersection of l and r with candidate lists (i.e. half of semi-join)", args(1,8, batarg("",oid),batargany("l",1),batargany("r",1),batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("max_one",bit),arg("estimate",lng))),
  pattern("algebra", "firstn", ALGfirstn, false, "Calculate first N values of B with candidate list S", args(1,8, batarg("",oid),batargany("b",0),batarg("s",oid),batarg("g",oid),arg("n",lng),arg("asc",bit),arg("nilslast",bit),arg("distinct",bit))),
  pattern("algebra", "firstn", ALGfirstn, false, "Calculate first N values of B with candidate list S", args(2,9, batarg("",oid),batarg("",oid),batargany("b",0),batarg("s",oid),batarg("g",oid),arg("n",lng),arg("asc",bit),arg("nilslast",bit),arg("distinct",bit))),
- pattern("algebra", "firstn", ALGfirstn, false, "Calculate first N values of B with candidate list S", args(1,9, batarg("",oid),batargany("b",0),batarg("s",oid),batarg("g",oid),arg("n",lng),arg("o",lng),arg("asc",bit),arg("nilslast",bit),arg("distinct",bit))),
+ pattern("algebra", "firstn", ALGfirstn, false, "Calculate first N values of B with candidate list S", args(1,10, batarg("",oid),batargany("b",0),batarg("s",oid),batarg("g",oid),arg("n",lng),arg("o",lng),arg("return_skipped",bit),arg("asc",bit),arg("nilslast",bit),arg("distinct",bit))),
  pattern("algebra", "groupedfirstn", ALGgroupedfirstn, false, "Grouped firstn", args(1,5, batarg("",oid),arg("n",lng),batarg("s",oid),batarg("g",oid),varargany("arg",0))),
- pattern("algebra", "groupedfirstn", ALGgroupedfirstn, false, "Grouped firstn", args(1,6, batarg("",oid),arg("n",lng),arg("o",lng),batarg("s",oid),batarg("g",oid),varargany("arg",0))),
+ pattern("algebra", "groupedfirstn", ALGgroupedfirstn, false, "Grouped firstn", args(1,7, batarg("",oid),arg("n",lng),arg("o",lng),arg("return_skipped",bit),batarg("s",oid),batarg("g",oid),varargany("arg",0))),
  command("algebra", "reuse", ALGreuse, false, "Reuse a temporary BAT if you can. Otherwise,\nallocate enough storage to accept result of an\noperation (not involving the heap)", args(1,2, batargany("",1),batargany("b",1))),
  command("algebra", "slice", ALGslice_oid, false, "Return the slice based on head oid x till y (exclusive).", args(1,4, batargany("",1),batargany("b",1),arg("x",oid),arg("y",oid))),
  command("algebra", "slice", ALGslice_int, false, "Return the slice with the BUNs at position x till y.", args(1,4, batargany("",1),batargany("b",1),arg("x",int),arg("y",int))),
