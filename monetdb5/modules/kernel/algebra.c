@@ -1007,7 +1007,6 @@ ALGfirstn(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (n > (lng) BUN_MAX)
 		n = BUN_MAX;
 	if (getArgType(mb, pci, pci->retc + 4) == TYPE_lng) {
-		assert(ret2 == NULL);
 		o = *getArgReference_lng(stk, pci, pci->retc + 4);
 		if (o < 0 || o > (lng) BUN_MAX) {
 			BBPreclaim(b);
@@ -1018,6 +1017,12 @@ ALGfirstn(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (*getArgReference_bit(stk, pci, pci->retc + 5)) {
 			n += o;
 			o = 0;
+		}
+		if (ret2 && o != 0) {
+			BBPreclaim(b);
+			BBPreclaim(s);
+			BBPreclaim(g);
+			throw(MAL, "algebra.firstn", ILLEGAL_ARGUMENT);
 		}
 	}
 	asc = *getArgReference_bit(stk, pci, pci->argc - 3);
@@ -1971,6 +1976,7 @@ static mel_func algebra_init_funcs[] = {
  pattern("algebra", "firstn", ALGfirstn, false, "Calculate first N values of B with candidate list S", args(1,8, batarg("",oid),batargany("b",0),batarg("s",oid),batarg("g",oid),arg("n",lng),arg("asc",bit),arg("nilslast",bit),arg("distinct",bit))),
  pattern("algebra", "firstn", ALGfirstn, false, "Calculate first N values of B with candidate list S", args(2,9, batarg("",oid),batarg("",oid),batargany("b",0),batarg("s",oid),batarg("g",oid),arg("n",lng),arg("asc",bit),arg("nilslast",bit),arg("distinct",bit))),
  pattern("algebra", "firstn", ALGfirstn, false, "Calculate first N values of B with candidate list S", args(1,10, batarg("",oid),batargany("b",0),batarg("s",oid),batarg("g",oid),arg("n",lng),arg("o",lng),arg("return_skipped",bit),arg("asc",bit),arg("nilslast",bit),arg("distinct",bit))),
+ pattern("algebra", "firstn", ALGfirstn, false, "Calculate first N values of B with candidate list S", args(2,11, batarg("",oid),batarg("",oid),batargany("b",0),batarg("s",oid),batarg("g",oid),arg("n",lng),arg("o",lng),arg("return_skipped",bit),arg("asc",bit),arg("nilslast",bit),arg("distinct",bit))),
  pattern("algebra", "groupedfirstn", ALGgroupedfirstn, false, "Grouped firstn", args(1,5, batarg("",oid),arg("n",lng),batarg("s",oid),batarg("g",oid),varargany("arg",0))),
  pattern("algebra", "groupedfirstn", ALGgroupedfirstn, false, "Grouped firstn", args(1,7, batarg("",oid),arg("n",lng),arg("o",lng),arg("return_skipped",bit),batarg("s",oid),batarg("g",oid),varargany("arg",0))),
  command("algebra", "reuse", ALGreuse, false, "Reuse a temporary BAT if you can. Otherwise,\nallocate enough storage to accept result of an\noperation (not involving the heap)", args(1,2, batargany("",1),batargany("b",1))),
