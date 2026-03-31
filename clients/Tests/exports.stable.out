@@ -121,6 +121,7 @@ BAT *BATdiff(BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches, bool not_in, BU
 BAT *BATdiffcand(BAT *a, BAT *b);
 gdk_return BATextend(BAT *b, BUN newcap) __attribute__((__warn_unused_result__));
 gdk_return BATfirstn(BAT **topn, BAT **gids, BAT *b, BAT *cands, BAT *grps, BUN n, bool asc, bool nilslast, bool distinct) __attribute__((__access__(write_only, 1))) __attribute__((__access__(write_only, 2))) __attribute__((__warn_unused_result__));
+BAT *BATfirstn_offset(BAT *b, BAT *s, BAT *g, BUN n, BUN o, bool asc, bool nilslast, bool distinct) __attribute__((__warn_unused_result__));
 restrict_t BATgetaccess(BAT *b);
 ValPtr BATgetprop(BAT *b, enum prop_t idx);
 ValPtr BATgetprop_nolock(BAT *b, enum prop_t idx);
@@ -134,6 +135,7 @@ BAT *BATgroupcount(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils);
 BAT *BATgroupcovariance_population(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils);
 BAT *BATgroupcovariance_sample(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils);
 BAT *BATgroupedfirstn(BUN n, BAT *s, BAT *g, int nbats, BAT **bats, bool *asc, bool *nilslast) __attribute__((__warn_unused_result__));
+BAT *BATgroupedfirstn_offset(BUN n, BUN o, BAT *s, BAT *g, int nbats, BAT **bats, bool *asc, bool *nilslast) __attribute__((__warn_unused_result__));
 BAT *BATgroupmax(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils);
 BAT *BATgroupmedian(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils);
 BAT *BATgroupmedian_avg(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils);
