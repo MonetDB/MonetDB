@@ -27,16 +27,6 @@ if len(sys.argv) == 2 and sys.argv[1] in ('dump', 'dump-nogeom'):
         if res is not None:
             points = ptsre.sub(r'(\g<0>)', res.group('points'))
             output[i] = line[:res.start('points')] + points + line[res.end('points'):]
-        else:
-            # this is independent of geos, but use the same loop to sort the list of AS PARTITION IN
-            txt = 'AS PARTITION IN ('
-            idx = line.find(txt)
-            if idx >= 0:
-                strt = idx + len(txt)
-                end = line.find(')', strt)
-                vals = ', '.join(sorted(line[strt:end].split(', ')))
-                output[i] = line[:strt] + vals + line[end:]
-
     stableout = '{}.stable.out'.format(sys.argv[1])
     with open(stableout, encoding='utf-8') as fil:
         stable = fil.readlines()
