@@ -1597,7 +1597,6 @@ BATgroupedfirstn_offset(BUN n, BUN o, BAT *s, BAT *g, int nbats, BAT **bats, boo
 		BBPreclaim(cand1);
 		BBPreclaim(cand2);
 	}
-	const oid *oids = Tloc(topno, 0);
 	oid *roids = Tloc(topn, 0);
 	for (BUN grp = 0; grp < ngrp; grp++) {
 		BAT *d = BATdiff(topno, topo, cand1, cand2, true, false, n);
@@ -1609,12 +1608,10 @@ BATgroupedfirstn_offset(BUN n, BUN o, BAT *s, BAT *g, int nbats, BAT **bats, boo
 			BBPreclaim(cand2);
 			return NULL;
 		}
-		const oid *doids = Tloc(d, 0);
 		for (BUN i = 0; i < BATcount(d); i++)
-			roids[i] = oids[doids[i]];
+			roids[i] = BUNtoid(topno, (BUN) BUNtoid(d, i));
 		BBPreclaim(d);
 		roids += n;
-		oids += no;
 		cand1->tseqbase += no;
 		cand2->tseqbase += o;
 	}
@@ -1623,7 +1620,7 @@ BATgroupedfirstn_offset(BUN n, BUN o, BAT *s, BAT *g, int nbats, BAT **bats, boo
 	BBPreclaim(cand1);
 	BBPreclaim(cand2);
 	/* we know little about the properties */
-	topn->tsorted = topn->trevsorted = topn->tkey = n <= 1;
+	topn->tsorted = topn->trevsorted = topn->tkey = BATcount(topn) <= 1;
 	topn->tnil = topn->tnonil = false;
 	return topn;
 }
