@@ -1622,5 +1622,8 @@ BATgroupedfirstn_offset(BUN n, BUN o, BAT *s, BAT *g, int nbats, BAT **bats, boo
 	BBPreclaim(topo);
 	BBPreclaim(cand1);
 	BBPreclaim(cand2);
+	/* we know little about the properties */
+	topn->tsorted = topn->trevsorted = topn->tkey = n <= 1;
+	topn->tnil = topn->tnonil = false;
 	return topn;
 }
