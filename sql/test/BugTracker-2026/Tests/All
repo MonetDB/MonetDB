@@ -65,7 +65,7 @@ KNOWNFAIL?7774-insert-into-renamed-table-assertion-failure
 7872-exp-type-check-failed
 7873-push_up_join-assertion-failure
 7874-rel2bin_join-assertion-failure
-KNOWNFAIL?7875-rel2bin_groupjoin-assertion-failure
+7875-rel2bin_groupjoin-assertion-failure
 7876-rel2bin_select-assertion-failure
 7877-push_up_join-assertion-failure
 7878-exp_bin-assertion-failure

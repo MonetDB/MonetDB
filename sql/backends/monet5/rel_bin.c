@@ -4181,20 +4181,13 @@ stmt_limit_value(backend *be, sql_rel *topn)
 
 	if (topn) {
 		sql_exp *le = topn_limit(topn);
-		sql_exp *oe = topn_offset(topn);
 
 		if (le) {
+			sql_subtype *lng = sql_fetch_localtype(TYPE_lng);
 			l = exp_bin(be, le, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
+			l = stmt_convert(be, l, NULL, exp_subtype(le), lng);
 			if(!l)
 				return NULL;
-			if (oe) {
-				sql_subtype *lng = sql_fetch_localtype(TYPE_lng);
-				sql_subfunc *add = sql_bind_func_result(be->mvc, "sys", "sql_add", F_FUNC, true, lng, 2, lng, lng);
-				stmt *o = exp_bin(be, oe, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
-				if(!o)
-					return NULL;
-				l = stmt_binop(be, l, o, NULL, add);
-			}
 		}
 	}
 	return l;
@@ -4673,13 +4666,116 @@ sql_reorder(backend *be, stmt *order, list *exps, stmt *s, list *oexps, list *os
 }
 
 static stmt *
+sub_topn(backend *be, stmt *sub, stmt **Psub, sql_rel *topn, list *oexps, stmt *l, stmt *o, int distinct)
+{
+	stmt *psub = Psub?*Psub:NULL;
+	node *n;
+	list *npl = sa_list(be->mvc->sa), *pl = psub?psub->op4.lval:sub->op4.lval;
+	/* distinct, topn returns at least N (unique groups) */
+	stmt *limit = NULL, *lpiv = NULL, *lgid = NULL;
+	int nr_obe = list_length(oexps);
+
+	/* check for partition columns */
+	stmt *grp = NULL, *ext = NULL, *cnt = NULL;
+	for (n=oexps->h; n; n = n->next, nr_obe--) {
+		sql_exp *gbe = n->data;
+		bool last = (!n->next || !is_partitioning((sql_exp*)n->next->data));
+
+		if (!topn->grouped || !is_partitioning(gbe))
+			break;
+		/* create group by */
+		stmt *gbcol = exp_bin(be, gbe, sub, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
+		if (!gbcol)
+			gbcol = exp_bin(be, gbe, psub, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
+
+		if (!gbcol) {
+			assert(be->mvc->session->status == -10); /* Stack overflow errors shouldn't terminate the server */
+			return NULL;
+		}
+		if (!gbcol->nrcols)
+			gbcol = stmt_const(be, bin_find_smallest_column(be, sub), gbcol);
+		stmt *groupby = stmt_group(be, gbcol, grp, ext, cnt, last);
+		grp = stmt_result(be, groupby, 0);
+		ext = stmt_result(be, groupby, 1);
+		cnt = stmt_result(be, groupby, 2);
+		gbcol = stmt_alias(be, gbcol, gbe->alias.label, exp_find_rel_name(gbe), exp_name(gbe));
+	}
+
+	if (grp)
+		lgid = grp;
+	for (; n; n = n->next, nr_obe--) {
+		sql_exp *orderbycole = n->data;
+
+		stmt *orderbycolstmt = exp_bin(be, orderbycole, sub, psub, NULL, NULL, NULL, NULL, 0, 0, 0);
+
+		if (!orderbycolstmt)
+			return NULL;
+
+		/* handle constants */
+		if (orderbycolstmt->nrcols == 0 && n->next) /* no need to sort on constant */
+			continue;
+		orderbycolstmt = column(be, orderbycolstmt);
+		if (!limit) {	/* topn based on a single column */
+			limit = stmt_limit(be, orderbycolstmt, NULL, grp, o, l, distinct, is_ascending(orderbycole), nulls_last(orderbycole), nr_obe, 1);
+		} else {	/* topn based on 2 columns */
+			limit = stmt_limit(be, orderbycolstmt, lpiv, lgid, o, l, distinct, is_ascending(orderbycole), nulls_last(orderbycole), nr_obe, 1);
+		}
+		if (!limit)
+			return NULL;
+		lpiv = limit;
+		if (!grp && nr_obe > 1) {
+			lpiv = stmt_result(be, limit, 0);
+			lgid = stmt_result(be, limit, 1);
+			if (lpiv == NULL || lgid == NULL)
+				return NULL;
+		}
+	}
+	if (!lpiv) {
+		stmt *orderbycolstmt = pl->h->data;
+
+		if (!orderbycolstmt)
+			return NULL;
+
+		orderbycolstmt = column(be, orderbycolstmt);
+		limit = stmt_limit(be, orderbycolstmt, NULL, grp, grp?o:stmt_atom_lng(be, 0), l, distinct, 0, 0, grp?1:nr_obe, 1);
+		lpiv = limit;
+		if (!lpiv)
+			return NULL;
+	}
+
+	limit = lpiv;
+	if (grp)
+		limit = stmt_project(be, stmt_selectnonil(be, limit, NULL), limit);
+	stmt *s;
+	if (psub) {
+		for (n=pl->h ; n; n = n->next) {
+			stmt *os = n->data;
+			list_append(npl, s=stmt_project(be, limit, column(be, os)));
+			s->label = os->label;
+		}
+		*Psub = stmt_list(be, npl);
+	}
+
+	/* also rebuild sub as multiple orderby expressions may use the sub table (ie aren't part of the result columns) */
+	pl = sub->op4.lval;
+	npl = sa_list(be->mvc->sa);
+	for (n=pl->h ; n; n = n->next) {
+		stmt *os = n->data;
+		list_append(npl, s = stmt_project(be, limit, column(be, os)));
+		s->label = os->label;
+	}
+	sub = stmt_list(be, npl);
+	return sub;
+}
+
+static stmt *
 rel2bin_project(backend *be, sql_rel *rel, list *refs, sql_rel *topn)
 {
 	mvc *sql = be->mvc;
 	list *pl;
 	node *en, *n;
 	stmt *sub = NULL, *psub = NULL;
-	stmt *l = NULL;
+	stmt *l = NULL, *o = NULL;
 
 	if (!rel->exps)
 		return stmt_none(be);
@@ -4687,6 +4783,17 @@ rel2bin_project(backend *be, sql_rel *rel, list *refs, sql_rel *topn)
 	l = stmt_limit_value(be, topn);
 	if (!l)
 		topn = NULL;
+	if (l) {
+		sql_subtype *lng = sql_fetch_localtype(TYPE_lng);
+		sql_exp *oe = topn_offset(topn);
+		if (oe) {
+			o = exp_bin(be, oe, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
+			o = stmt_convert(be, o, NULL, exp_subtype(oe), lng);
+		} else
+			o = stmt_atom_lng(be, 0);
+		if (!o)
+			return NULL;
+	}
 
 	if (rel->l) { /* first construct the sub relation */
 		sql_rel *l = rel->l;
@@ -4751,102 +4858,8 @@ rel2bin_project(backend *be, sql_rel *rel, list *refs, sql_rel *topn)
 		if both order by and distinct: then get first order by col
 		do topn on it. Project all again! Then rest
 	*/
-	if (topn && rel->r) {
-		list *oexps = rel->r, *npl = sa_list(sql->sa);
-		/* distinct, topn returns at least N (unique groups) */
-		int distinct = need_distinct(rel);
-		stmt *limit = NULL, *lpiv = NULL, *lgid = NULL;
-		int nr_obe = list_length(oexps);
-
-		/* check for partition columns */
-		stmt *grp = NULL, *ext = NULL, *cnt = NULL;
-		for (n=oexps->h; n; n = n->next, nr_obe--) {
-			sql_exp *gbe = n->data;
-			bool last = (!n->next || !is_partitioning((sql_exp*)n->next->data));
-
-			if (!topn->grouped || !is_partitioning(gbe))
-				break;
-			/* create group by */
-			stmt *gbcol = exp_bin(be, gbe, sub, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
-
-			if (!gbcol) {
-				assert(sql->session->status == -10); /* Stack overflow errors shouldn't terminate the server */
-				return NULL;
-			}
-			if (!gbcol->nrcols)
-				gbcol = stmt_const(be, bin_find_smallest_column(be, sub), gbcol);
-			stmt *groupby = stmt_group(be, gbcol, grp, ext, cnt, last);
-			grp = stmt_result(be, groupby, 0);
-			ext = stmt_result(be, groupby, 1);
-			cnt = stmt_result(be, groupby, 2);
-			gbcol = stmt_alias(be, gbcol, gbe->alias.label, exp_find_rel_name(gbe), exp_name(gbe));
-		}
-
-		if (grp)
-			lgid = grp;
-		for (; n; n = n->next, nr_obe--) {
-			sql_exp *orderbycole = n->data;
-
-			stmt *orderbycolstmt = exp_bin(be, orderbycole, sub, psub, NULL, NULL, NULL, NULL, 0, 0, 0);
-
-			if (!orderbycolstmt)
-				return NULL;
-
-			/* handle constants */
-			if (orderbycolstmt->nrcols == 0 && n->next) /* no need to sort on constant */
-				continue;
-			orderbycolstmt = column(be, orderbycolstmt);
-			if (!limit) {	/* topn based on a single column */
-				limit = stmt_limit(be, orderbycolstmt, NULL, grp, stmt_atom_lng(be, 0), l, distinct, is_ascending(orderbycole), nulls_last(orderbycole), nr_obe, 1);
-			} else {	/* topn based on 2 columns */
-				limit = stmt_limit(be, orderbycolstmt, lpiv, lgid, stmt_atom_lng(be, 0), l, distinct, is_ascending(orderbycole), nulls_last(orderbycole), nr_obe, 1);
-			}
-			if (!limit)
-				return NULL;
-			lpiv = limit;
-			if (!grp && nr_obe > 1) {
-				lpiv = stmt_result(be, limit, 0);
-				lgid = stmt_result(be, limit, 1);
-				if (lpiv == NULL || lgid == NULL)
-					return NULL;
-			}
-		}
-		if (!lpiv) {
-			stmt *orderbycolstmt = pl->h->data;
-
-			if (!orderbycolstmt)
-				return NULL;
-
-			orderbycolstmt = column(be, orderbycolstmt);
-			limit = stmt_limit(be, orderbycolstmt, NULL, grp, stmt_atom_lng(be, 0), l, distinct, 0, 0, nr_obe, 1);
-			lpiv = limit;
-			if (!lpiv)
-				return NULL;
-		}
-
-		limit = lpiv;
-		if (!limit) /* partition/order by cols fully overlap */
-			limit = stmt_limit(be, pl->h->data, NULL, grp, stmt_atom_lng(be, 0), l, 0,0,0,0,1);
-		if (limit && grp)
-			limit = stmt_project(be, stmt_selectnonil(be, limit, NULL), limit);
-		stmt *s;
-		for (n=pl->h ; n; n = n->next) {
-			stmt *os = n->data;
-			list_append(npl, s=stmt_project(be, limit, column(be, os)));
-			s->label = os->label;
-		}
-		psub = stmt_list(be, npl);
-
-		/* also rebuild sub as multiple orderby expressions may use the sub table (ie aren't part of the result columns) */
-		pl = sub->op4.lval;
-		npl = sa_list(sql->sa);
-		for (n=pl->h ; n; n = n->next) {
-			stmt *os = n->data;
-			list_append(npl, s = stmt_project(be, limit, column(be, os)));
-			s->label = os->label;
-		}
-		sub = stmt_list(be, npl);
-	}
+	if (topn && rel->r)
+		sub = sub_topn(be, sub, &psub, topn, rel->r, l, o, need_distinct(rel));
 	if (need_distinct(rel)) {
 		stmt *distinct = NULL;
 		psub = rel2bin_distinct(be, psub, &distinct);
@@ -5127,6 +5140,24 @@ rel2bin_topn(backend *be, sql_rel *rel, list *refs)
 	mvc *sql = be->mvc;
 	stmt *sub = NULL, *l = NULL, *o = NULL;
 	node *n;
+	sql_exp *le = topn_limit(rel);
+	sql_exp *oe = topn_offset(rel);
+
+	sql_subtype *lng = sql_fetch_localtype(TYPE_lng);
+
+	if (le) {
+		l = exp_bin(be, le, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
+		l = stmt_convert(be, l, NULL, exp_subtype(le), lng);
+	} else
+		l = stmt_atom_lng_nil(be);
+
+	if (oe) {
+		o = exp_bin(be, oe, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
+		o = stmt_convert(be, o, NULL, exp_subtype(oe), lng);
+	} else
+		o = stmt_atom_lng(be, 0);
+	if (!l || !o)
+		return NULL;
 
 	if (rel->l) { /* first construct the sub relation */
 		sql_rel *rl = rel->l;
@@ -5143,9 +5174,13 @@ rel2bin_topn(backend *be, sql_rel *rel, list *refs)
 				sub = refs_find_rel(refs, rl);
 				if (!sub)
 					sub = rel2bin_project(be, rl, refs, rel);
+				else if (rl->r) /* handle topn */
+					sub = sub_topn(be, sub, NULL, rel, rl->r, l, o, need_distinct(rl));
 			} else
 				sub = rel2bin_project(be, rl, refs, rel);
-			if (rel->grouped && rl->r && has_partitioning(rl->r))
+			if (0 && rel->grouped && rl->r && has_partitioning(rl->r))
+				return sub;
+			if (rl->r && le)
 				return sub;
 		} else {
 			sub = subrel_bin(be, rl, refs);
@@ -5155,33 +5190,10 @@ rel2bin_topn(backend *be, sql_rel *rel, list *refs)
 	if (!sub)
 		return NULL;
 
-	sql_exp *le = topn_limit(rel);
-	sql_exp *oe = topn_offset(rel);
-
 	n = sub->op4.lval->h;
 	if (n) {
 		stmt *limit = NULL, *sc = n->data;
 		list *newl = sa_list(sql->sa);
-		int oldvtop = be->mb->vtop, oldstop = be->mb->stop;
-
-		if (le)
-			l = exp_bin(be, le, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
-		if (!l) {
-			clean_mal_statements(be, oldstop, oldvtop);
-			l = stmt_atom_lng_nil(be);
-		}
-
-		oldvtop = be->mb->vtop;
-		oldstop = be->mb->stop;
-		if (oe)
-			o = exp_bin(be, oe, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
-		if (!o) {
-			clean_mal_statements(be, oldstop, oldvtop);
-			o = stmt_atom_lng(be, 0);
-		}
-		if (!l || !o)
-			return NULL;
-
 
 		sc = column(be, sc);
 		limit = stmt_limit(be, sc, NULL, NULL, o, l, 0,0,0,0,0);
