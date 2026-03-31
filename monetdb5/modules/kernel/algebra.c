@@ -1081,7 +1081,7 @@ ALGgroupedfirstn(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	sid = *getArgReference_bat(stk, pci, 2 + hasoff);
 	gid = *getArgReference_bat(stk, pci, 3 + hasoff);
-	int nbats = pci->argc - 4;
+	int nbats = pci->argc - 4 - hasoff;
 	if (nbats % 3 != 0)
 		throw(MAL, "algebra.groupedfirstn", ILLEGAL_ARGUMENT);
 	nbats /= 3;
