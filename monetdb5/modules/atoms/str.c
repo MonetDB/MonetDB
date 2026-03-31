@@ -3,7 +3,7 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
  * For copyright information, see the file debian/copyright.
  */
@@ -751,8 +751,8 @@ STRrevstr_search(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) ctx;
 	(void) mb;
 	int *res = getArgReference_int(stk, pci, 0);
-	const str haystack = *getArgReference_str(stk, pci, 1);
-	const str needle = *getArgReference_str(stk, pci, 2);
+	const char *haystack = *getArgReference_str(stk, pci, 1);
+	const char *needle = *getArgReference_str(stk, pci, 2);
 	bit icase = pci->argc == 4 && *getArgReference_bit(stk, pci, 3);
 
 	if (strNil(haystack) || strNil(needle)) {
@@ -1962,17 +1962,17 @@ scan_loop_strselect(BAT *rl, BATiter *li, struct canditer *lci, const char *r,
 		rl->tnil = false;
 	}
 
-	TRC_DEBUG(ALGO, "(%s, %s, l=%s #%zu [%s], cl=%s #%zu, time="LLFMT"usecs)\n",
-			  fname, "scan_loop_strselect",
+	TRC_DEBUG(ALGO, "%s, l=%s #%zu [%s], cl=%s #%zu, time="LLFMT"usecs)\n",
+			  fname,
 			  BATgetId(li->b), li->count, ATOMname(li->b->ttype),
-			  lci ? BATgetId(lci->s) : "NULL", lci ? lci->ncand : 0,
+			  lci->s ? BATgetId(lci->s) : "NULL", lci->ncand,
 			  GDKusec() - t0);
 
 	return MAL_SUCCEED;
 }
 
 static str
-STRselect(MalStkPtr stk, InstrPtr pci, const str fname,
+STRselect(MalStkPtr stk, InstrPtr pci, const char *fname,
 		  int (*str_cmp)(const char *, const char *, size_t))
 {
 	str msg = MAL_SUCCEED;
@@ -2217,8 +2217,8 @@ nested_loop_strjoin(BAT *rl, BAT *rr, BATiter *li, BATiter *ri,
 			  fname, "nested_loop_strjoin",
 			  BATgetId(li->b), li->count, ATOMname(li->b->ttype),
 			  BATgetId(ri->b), ri->count, ATOMname(ri->b->ttype),
-			  lci ? BATgetId(lci->s) : "NULL", lci ? lci->ncand : 0,
-			  rci ? BATgetId(rci->s) : "NULL", rci ? rci->ncand : 0,
+			  lci->s ? BATgetId(lci->s) : "NULL", lci->ncand,
+			  rci->s ? BATgetId(rci->s) : "NULL", rci->ncand,
 			  GDKusec() - t0);
 
 	return MAL_SUCCEED;
@@ -2458,8 +2458,8 @@ bigram_strjoin(BAT *rl, BAT *rr, BATiter *li, BATiter *ri,
 			  fname, "bigram_strjoin",
 			  BATgetId(li->b), li->count, ATOMname(li->b->ttype),
 			  BATgetId(ri->b), ri->count, ATOMname(ri->b->ttype),
-			  lci ? BATgetId(lci->s) : "NULL", lci ? lci->ncand : 0,
-			  rci ? BATgetId(rci->s) : "NULL", rci ? rci->ncand : 0,
+			  lci->s ? BATgetId(lci->s) : "NULL", lci->ncand,
+			  rci->s ? BATgetId(rci->s) : "NULL", rci->ncand,
 			  GDKusec() - t0);
 
 	return msg;
@@ -2634,7 +2634,7 @@ sorted_strjoin(BAT **rl_ptr, BAT **rr_ptr, BATiter *li, BATiter *ri,
 }
 
 static inline str
-ignorecase(const bat IC, bool *icase, const str fname)
+ignorecase(bat IC, bool *icase, const char *fname)
 {
 	str msg = MAL_SUCCEED;
 	BAT *b = BATdescriptor(IC);
@@ -2653,7 +2653,7 @@ ignorecase(const bat IC, bool *icase, const str fname)
 }
 
 static str
-STRjoin(MalStkPtr stk, InstrPtr pci, const str fname,
+STRjoin(MalStkPtr stk, InstrPtr pci, const char *fname,
 		int (*str_cmp)(const char *, const char *, size_t))
 {
 	str msg = MAL_SUCCEED;

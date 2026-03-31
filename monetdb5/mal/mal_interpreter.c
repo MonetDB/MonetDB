@@ -3,7 +3,7 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
  * For copyright information, see the file debian/copyright.
  */
@@ -697,9 +697,9 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 									  "address of pattern %s.%s missing",
 									  pci->modname, pci->fcnname);
 			} else {
-				TRC_DEBUG(ALGO, "calling %s.%s\n",
-						  pci->modname ? pci->modname : "<null>",
-						  pci->fcnname ? pci->fcnname : "<null>");
+				TRC_INFO(ALGO, "calling %s.%s\n",
+						 pci->modname ? pci->modname : "<null>",
+						 pci->fcnname ? pci->fcnname : "<null>");
 				ret = (*(str (*) (Client, MalBlkPtr, MalStkPtr, InstrPtr)) pci->
 					   fcn) (cntxt, mb, stk, pci);
 #ifndef NDEBUG

@@ -3,7 +3,7 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
  * For copyright information, see the file debian/copyright.
  */
@@ -2167,8 +2167,11 @@ BATgroupavg3(BAT **avgp, BAT **remp, BAT **cntp, BAT *b, BAT *g, BAT *e, BAT *s,
 	oid o;
 	lng *rems;
 	lng *cnts;
+	lng t0 = 0;
 
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	if ((err = BATgroupaggrinit2(true, b, g, e, s, &min, &max, &ngrp, &ci)) != NULL) {
 		GDKerror("%s\n", err);
@@ -2606,6 +2609,12 @@ BATgroupavg3(BAT **avgp, BAT **remp, BAT **cntp, BAT *b, BAT *g, BAT *e, BAT *s,
 	*avgp = bn;
 	*remp = rn;
 	*cntp = cn;
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",g=" ALGOOPTBATFMT ",e=" ALGOOPTBATFMT
+		  ",s=" ALGOOPTBATFMT " -> avgs=" ALGOBATFMT
+		  ",rems=" ALGOBATFMT ",cnts=" ALGOBATFMT " (" LLFMT " usec)\n",
+		  ALGOBATPAR(b), ALGOOPTBATPAR(g), ALGOOPTBATPAR(e),
+		  ALGOOPTBATPAR(s), ALGOBATPAR(bn), ALGOBATPAR(rn),
+		  ALGOBATPAR(cn), GDKusec() - t0);
 	return GDK_SUCCEED;
 
   bailout:
@@ -2941,8 +2950,11 @@ BATgroupavg3combine(BAT *avg, BAT *rem, BAT *cnt, BAT *g, BAT *e, bool skip_nils
 	struct canditer ci;
 	BUN i;
 	BAT *bn, *rn, *cn;
+	lng t0 = 0;
 
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	if ((err = BATgroupaggrinit(avg, g, e, NULL, &min, &max, &ngrp, &ci)) != NULL) {
 		GDKerror("%s\n", err);
@@ -3201,6 +3213,10 @@ BATgroupavg3combine(BAT *avg, BAT *rem, BAT *cnt, BAT *g, BAT *e, bool skip_nils
 	bn->tkey = ngrp == 1;
 	bn->tsorted = ngrp == 1;
 	bn->trevsorted = ngrp == 1;
+	TRC_DEBUG(ALGO, "avgs=" ALGOBATFMT ",rems=" ALGOBATFMT ",cnts=" ALGOBATFMT ",g=" ALGOOPTBATFMT ",e=" ALGOOPTBATFMT " -> " ALGOBATFMT " (" LLFMT " usec)\n",
+		  ALGOBATPAR(avg), ALGOBATPAR(rem), ALGOBATPAR(cnt),
+		  ALGOOPTBATPAR(g), ALGOOPTBATPAR(e), ALGOBATPAR(bn),
+		  GDKusec() - t0);
 	return bn;
 
   bailout:
@@ -3308,6 +3324,9 @@ BATcalcavg(BAT *b, BAT *s, dbl *avg, BUN *vals, int scale, bool inout)
 #endif
 	struct canditer ci;
 	const void *restrict src;
+	lng t0 = 0;
+
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	if (inout) {
 		double iprt, fprt; /* integer and fraction parts */
@@ -3394,6 +3413,10 @@ BATcalcavg(BAT *b, BAT *s, dbl *avg, BUN *vals, int scale, bool inout)
 		*avg /= pow(10.0, (double) scale);
 	if (vals)
 		*vals = (BUN) n;
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
+		  ",scale=%d -> avg=%g,#=" LLFMT " (" LLFMT " usec)\n",
+		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
+		  scale, *avg, n, GDKusec() - t0);
 	return GDK_SUCCEED;
 bailout:
 	bat_iterator_end(&bi);

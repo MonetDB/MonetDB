@@ -3,7 +3,7 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
  * For copyright information, see the file debian/copyright.
  */
@@ -1947,21 +1947,28 @@ CALCbat_to_hex_int(Client ctx, bat *resbat, bat *valuesbat)
 
 	assert(BATttype(values) == TYPE_int);
 	int *p = Tloc(values, 0); // always 0 regardless of hseqbase, is that correct?
+	res->tnil = false;
+	res->tnonil = true;
 	for (BUN i = 0; i < BATcount(values); i++) {
 		char buf[50];
 		int n = *p++;
 		const char *s;
-		if (is_int_nil(n))
+		if (is_int_nil(n)) {
 			s = str_nil;
-		else {
+			res->tnil = true;
+			res->tnonil = false;
+		} else {
 			snprintf(buf, sizeof(buf), "%" PRIx32, (uint32_t)n);
 			s = buf;
 		}
-		if (BUNappend(res, s, false) != GDK_SUCCEED) {
+		if (bunfastapp_nocheckVAR(res, s) != GDK_SUCCEED) {
 			msg = createException(MAL, "CALCbat_to_hex_int", GDK_EXCEPTION);
 			goto end;
 		}
 	}
+	res->tsorted = false;
+	res->trevsorted = false;
+	res->tkey = false;
 
 	msg = MAL_SUCCEED;
 end:
@@ -2003,21 +2010,28 @@ CALCbat_to_hex_lng(Client ctx, bat *resbat, bat *valuesbat)
 
 	assert(BATttype(values) == TYPE_lng);
 	lng *p = Tloc(values, 0); // always 0 regardless of hseqbase, is that correct?
+	res->tnil = false;
+	res->tnonil = true;
 	for (BUN i = 0; i < BATcount(values); i++) {
 		char buf[50];
 		lng n = *p++;
 		const char *s;
-		if (is_lng_nil(n))
+		if (is_lng_nil(n)) {
 			s = str_nil;
-		else {
+			res->tnil = true;
+			res->tnonil = false;
+		} else {
 			snprintf(buf, sizeof(buf), "%" PRIx64, (uint64_t)n);
 			s = buf;
 		}
-		if (BUNappend(res, s, false) != GDK_SUCCEED) {
+		if (bunfastapp_nocheckVAR(res, s) != GDK_SUCCEED) {
 			msg = createException(MAL, "CALCbat_to_hex_lng", GDK_EXCEPTION);
 			goto end;
 		}
 	}
+	res->tsorted = false;
+	res->trevsorted = false;
+	res->tkey = false;
 
 	msg = MAL_SUCCEED;
 end:
