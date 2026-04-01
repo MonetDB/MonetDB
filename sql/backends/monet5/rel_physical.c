@@ -245,6 +245,7 @@ rel_partition(mvc *sql, sql_rel *rel)
 	switch (rel->op) {
 	case op_basetable:
 	case op_sample:
+		rel->partition = 1;
 		break;
 	case op_project:
 	case op_select:

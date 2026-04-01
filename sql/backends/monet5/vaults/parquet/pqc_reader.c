@@ -120,9 +120,26 @@ struct pqc_reader_t {
 	const void *nil;
 
 	int nrworkers;
+	MT_Lock l;
+	char *error;
 	pqc_file *spq;
 	pqc_creader_t *creader; /* per worker readers */
 };
+
+static void
+pqc_set_error( pqc_reader_t *r, char *error )
+{
+	MT_lock_set(&r->l);
+	if (!r->error)
+		r->error = error;
+	MT_lock_unset(&r->l);
+}
+
+char *
+pqc_get_error( pqc_reader_t *r)
+{
+	return r->error;
+}
 
 static int64_t
 pqc_statistics( pqc_reader_t *r, pqc_creader_t *pr, pqc_stat *stat, int64_t pos )
@@ -517,7 +534,7 @@ pqc_page_header( pqc_reader_t *r, pqc_creader_t *pr, int64_t pos)
 				assert(uncompressed_size == ul);
 				pos += compressed_size;
 #else
-				TRC_INFO(PARQUET, "Snappy compression support is not available\n");
+				pqc_set_error(r, "Snappy compression support is not available\n");
 				return -1;
 #endif
 			} else if (pr->cc->codec == CC_GZIP) {
@@ -528,7 +545,7 @@ pqc_page_header( pqc_reader_t *r, pqc_creader_t *pr, int64_t pos)
 					return -10;
 				pos += compressed_size;
 #else
-				TRC_INFO(PARQUET, "gzip compression support is not available\n");
+				pqc_set_error(r, "gzip compression support is not available\n");
 				return -1;
 #endif
 			} else if (pr->cc->codec == CC_ZSTD) {
@@ -539,7 +556,7 @@ pqc_page_header( pqc_reader_t *r, pqc_creader_t *pr, int64_t pos)
 					return -10;
 				pos += compressed_size;
 #else
-				TRC_INFO(PARQUET, "zstd compression support is not available\n");
+				pqc_set_error(r, "zstd compression support is not available\n");
 				return -1;
 #endif
 			} else if (pr->cc->codec == CC_LZ4_RAW) {
@@ -551,7 +568,7 @@ pqc_page_header( pqc_reader_t *r, pqc_creader_t *pr, int64_t pos)
 					return -10;
 				pos += compressed_size;
 #else
-				TRC_INFO(PARQUET, "lz4 compression support is not available\n");
+				pqc_set_error(r, "lz4 compression support is not available\n");
 				return -1;
 #endif
 			} else if (pr->cc->codec == CC_BROTLI) {
@@ -562,14 +579,14 @@ pqc_page_header( pqc_reader_t *r, pqc_creader_t *pr, int64_t pos)
 					return -10;
 				pos += compressed_size;
 #else
-				TRC_INFO(PARQUET, "brotli compression support is not available\n");
+				pqc_set_error(r, "brotli compression support is not available\n");
 				return -1;
 #endif
 			} else if (pr->cc->codec == CC_LZO) {
-				TRC_INFO(PARQUET, "lzo compression support is not supported\n");
+				pqc_set_error(r, "lzo compression support is not supported\n");
 				return -1;
 			} else if (pr->cc->codec == CC_LZ4) {
-				TRC_INFO(PARQUET, "lz4 compression support is depricated use lz4_raw instead\n");
+				pqc_set_error(r, "lz4 compression support is depricated use lz4_raw instead\n");
 				return -1;
 			}
 		} else {
@@ -600,7 +617,7 @@ pqc_page_header( pqc_reader_t *r, pqc_creader_t *pr, int64_t pos)
 				assert(uncompressed_size == ul);
 				pos += compressed_size;
 #else
-				TRC_INFO(PARQUET, "Snappy compression support is not available\n");
+				pqc_set_error(r, "Snappy compression support is not available\n");
 				return -1;
 #endif
 			} else if (pr->cc->codec == CC_GZIP) {
@@ -611,7 +628,7 @@ pqc_page_header( pqc_reader_t *r, pqc_creader_t *pr, int64_t pos)
 					return -10;
 				pos += compressed_size;
 #else
-				TRC_INFO(PARQUET, "gzip compression support is not available\n");
+				pqc_set_error(r, "gzip compression support is not available\n");
 				return -1;
 #endif
 			} else if (pr->cc->codec == CC_ZSTD) {
@@ -622,7 +639,7 @@ pqc_page_header( pqc_reader_t *r, pqc_creader_t *pr, int64_t pos)
 					return -10;
 				pos += compressed_size;
 #else
-				TRC_INFO(PARQUET, "zstd compression support is not available\n");
+				pqc_set_error(r, "zstd compression support is not available\n");
 				return -1;
 #endif
 			} else if (pr->cc->codec == CC_LZ4_RAW) {
@@ -634,7 +651,7 @@ pqc_page_header( pqc_reader_t *r, pqc_creader_t *pr, int64_t pos)
 					return -10;
 				pos += compressed_size;
 #else
-				TRC_ERROR(PARQUET, "lz4 compression support is not available\n");
+				pqc_set_error(r, "lz4 compression support is not available\n");
 				return -1;
 #endif
 			} else if (pr->cc->codec == CC_BROTLI) {
@@ -645,14 +662,14 @@ pqc_page_header( pqc_reader_t *r, pqc_creader_t *pr, int64_t pos)
 					return -10;
 				pos += compressed_size;
 #else
-				TRC_ERROR(PARQUET, "brotli compression support is not available\n");
+				pqc_set_error(r, "brotli compression support is not available\n");
 				return -1;
 #endif
 			} else if (pr->cc->codec == CC_LZO) {
-				TRC_ERROR(PARQUET, "lzo compression support is not supported\n");
+				pqc_set_error(r, "lzo compression support is not supported\n");
 				return -1;
 			} else if (pr->cc->codec == CC_LZ4) {
-				TRC_ERROR(PARQUET, "lz4 compression support is depricated use lz4_raw instead\n");
+				pqc_set_error(r, "lz4 compression support is depricated use lz4_raw instead\n");
 				return -1;
 			}
 		} else {
@@ -696,6 +713,8 @@ pqc_reader( pqc_reader_t *p, pqc_file *pq, int nrworkers, /*pqc_columnchunk *cc,
 	r->nrworkers = nrworkers;
 	r->spq = pq;
 	r->nil = nil;
+	r->error = NULL;
+	MT_lock_init(&r->l, "pqc_reader");
 	assert(colnr < fmd->rowgroups->ncolumnchunks);
 	for(int i = 0; i<nrworkers; i++) {
 		cr = r->creader+i;
@@ -747,6 +766,7 @@ pqc_reader_destroy( pqc_reader_t *r )
 		if (cr->bufsize)
 			_DELETE(cr->buffer);
 	}
+	MT_lock_destroy(&r->l);
 	_DELETE(r->creader);
 	pqc_close(r->spq);
 	_DELETE(r);

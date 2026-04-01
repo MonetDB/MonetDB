@@ -6020,8 +6020,8 @@ static mel_func sql_init_funcs[] = {
  pattern("batcalc", "daytime", timestamp_2_daytime, false, "cast timestamp to a daytime and check for overflow", args(1,4, batarg("",daytime),batarg("v",timestamp),batarg("s",oid),arg("d",int))),
  pattern("calc", "timestamp", date_2_timestamp, false, "cast date to a timestamp and check for overflow", args(1,3, arg("",timestamp),arg("v",date),arg("d",int))),
  pattern("batcalc", "timestamp", date_2_timestamp, false, "cast date to a timestamp and check for overflow", args(1,4, batarg("",timestamp),batarg("v",date),batarg("s",oid),arg("d",int))),
- pattern("sql", "update_tables", SYSupdate_tables, true, "Procedure triggered on update of the sys._tables table", args(1,1, arg("",void))),
- pattern("sql", "update_schemas", SYSupdate_schemas, true, "Procedure triggered on update of the sys.schemas table", args(1,1, arg("",void))),
+ pattern("sql", "update_tables", SYSupdate_tables, true, "Procedure triggered on update of the sys._tables table", args(1,2, arg("",int),arg("d",int))),
+ pattern("sql", "update_schemas", SYSupdate_schemas, true, "Procedure triggered on update of the sys.schemas table", args(1,2, arg("",int),arg("d",int))),
  pattern("sql", "unionfunc", SQLunionfunc, false, "", args(1,4, varargany("",0),arg("mod",str),arg("fcn",str),varargany("",0))),
  /* decimals */
  command("calc", "bte", flt_num2dec_bte, false, "cast number to decimal(bte) and check for overflow", args(1,4, arg("",bte),arg("v",flt),arg("digits",int),arg("scale",int))),

@@ -1783,6 +1783,9 @@ SQLengine(Client c)
 str
 SYSupdate_tables(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	int *res = getArgReference_int(stk, pci, 0);
+	int d = *getArgReference_int(stk, pci, 1);
+	*res = d;
 	mvc *m = ((backend *) cntxt->sqlcontext)->mvc;
 
 	(void) mb;
@@ -1796,6 +1799,9 @@ SYSupdate_tables(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 SYSupdate_schemas(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	int *res = getArgReference_int(stk, pci, 0);
+	int d = *getArgReference_int(stk, pci, 1);
+	*res = d;
 	mvc *m = ((backend *) cntxt->sqlcontext)->mvc;
 
 	(void) mb;

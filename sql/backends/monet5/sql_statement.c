@@ -4455,6 +4455,14 @@ stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *f, stmt* rows)
 			q = pushInt(mb, q, tpe->digits);
 			q = pushInt(mb, q, tpe->scale);
 		}
+		/* triggers without arguments need dependency on mvc var */
+		if (f->func->type == F_PROC && f->func->side_effect && list_empty(ops->op4.lval) &&
+				(strcmp(fimp, "update_schemas") == 0 ||
+				 strcmp(fimp, "update_tables") == 0)) {
+			q->argv[0] = be->mvc_var;
+			q->argv[1] = be->mvc_var;
+			q->argc++;
+		}
 		pushInstruction(mb, q);
 	}
 

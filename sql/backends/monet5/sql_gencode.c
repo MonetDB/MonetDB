@@ -1281,6 +1281,11 @@ monet5_resolve_function(ptr M, sql_func *f, const char *fimp, bool *side_effect)
 			}
 			int nfargs = list_length(f->ops), nfres = list_length(f->res);
 
+			if (!nfargs && retc == 1 && argc == 1 && IS_PROC(f) && unsafe) { /* for unsafe procedures we inject mvc_var */
+				*side_effect = (bool) unsafe;
+				MT_lock_unset(&sql_gencodeLock);
+				return 1;
+			}
 			if (varargs || f->vararg || f->varres) {
 				*side_effect = (bool) unsafe;
 				MT_lock_unset(&sql_gencodeLock);

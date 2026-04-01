@@ -39905,12 +39905,12 @@ mvc_update_wrap
 Update the values of the column tname.cname. Returns sequence number for order dependence)
 sql
 update_schemas
-unsafe pattern sql.update_schemas():void
+unsafe pattern sql.update_schemas(X_0:int):int
 SYSupdate_schemas
 Procedure triggered on update of the sys.schemas table
 sql
 update_tables
-unsafe pattern sql.update_tables():void
+unsafe pattern sql.update_tables(X_0:int):int
 SYSupdate_tables
 Procedure triggered on update of the sys._tables table
 sql
