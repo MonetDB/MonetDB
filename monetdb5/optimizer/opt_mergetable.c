@@ -2127,7 +2127,7 @@ mat_topn(allocator *ma, MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n, i
 	} else {
 		ValRecord cst;
 		cst.vtype = getArgType(mb, p, 6);
-		cst.val.lval = 1;
+		cst.val.btval = 1;
 		cst.len = 0;
 		no_offset = defConstant(mb, cst.vtype, &cst);
 		if (no_offset < 0) {
