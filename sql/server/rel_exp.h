@@ -250,6 +250,8 @@ extern void free_exps(allocator *sa, list *exps);
 
 extern int exp_is_rename(sql_exp *e);
 extern int exp_is_useless_rename(sql_exp *e);
+extern list *filter_exps_by_type(list *res, list *exps, expression_type type);
 extern list *filter_exps_by_localtype(list *res, list *exps, int8_t localtype);
+extern list *rel_find_exps_by_type(list *res, sql_rel *rel, expression_type type);
 
 #endif /* _REL_EXP_H_ */

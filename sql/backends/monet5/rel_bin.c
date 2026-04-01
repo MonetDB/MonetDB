@@ -273,6 +273,32 @@ bin_find_column_nid(backend *be, stmt *sub, int label)
 	return list_find_column_nid(be, l, label);
 }
 
+//static stmt *
+//bin_find_column_nid_deep(backend *be, stmt *sub, int label)
+//{
+//	stmt *res = NULL;
+//	if (sub) {
+//		if (sub->label == label)
+//			return sub;
+//		if (!res && sub->op1)
+//			res = bin_find_column_nid_deep(be, sub->op1, label);
+//		if (!res && sub->op2)
+//			res = bin_find_column_nid_deep(be, sub->op2, label);
+//		if (!res && sub->op3)
+//			res = bin_find_column_nid_deep(be, sub->op3, label);
+//		if (!res && (sub->type == st_list) && sub->op4.lval) {
+//			list *l = sub->op4.lval;
+//			for (node *n = l->h; n; n = n->next) {
+//				stmt *s = n->data;
+//				res = bin_find_column_nid_deep(be, s, label);
+//				if (res)
+//					break;
+//			}
+//		}
+//	}
+//	return res;
+//}
+
 static list *
 bin_find_columns(backend *be, stmt *sub, const char *name)
 {
@@ -5202,6 +5228,106 @@ sql_reorder(backend *be, stmt *order, list *exps, stmt *s, list *oexps, list *os
 	return stmt_list(be, l);
 }
 
+/* BOND k-NN: detect ORDER BY l2sq_distance(vector_col, vector_literal) LIMIT k */
+static stmt*
+insert_bond(backend *be, sql_rel *rel, stmt *sub, stmt *l)
+{
+	mvc *sql = be->mvc;
+	int oldvtop = be->mb->vtop, oldstop = be->mb->stop;
+	list *el = rel_find_exps_by_type(sa_list(sql->sa), rel, e_func);
+	/* Find the vss distance function */
+	sql_exp *dist_exp = NULL;
+	for (node *n = el->h; n; n = n->next) {
+		sql_exp *e = n->data;
+		sql_subfunc *f = e->f;
+		if (strcmp(sql_func_mod(f->func), "vss") == 0) {
+			dist_exp = e;
+			break;
+		}
+	}
+	if (dist_exp) {
+		list *fexps = dist_exp->l;
+		sql_exp *le = fexps->h->data;
+		sql_exp *re = fexps->h->next->data;
+		/* Unwrap converts */
+		//while (le->type == e_convert) le = le->l;
+		//while (re->type == e_convert) re = re->l;
+		sql_subtype *lt = exp_subtype(le);
+		sql_subtype *rt = exp_subtype(re);
+		if (lt && rt && (lt->multiset == MS_VECTOR || rt->multiset == MS_VECTOR)) {
+			/* Compile both vector expressions */
+			stmt *ls = exp_bin(be, le, sub, NULL/*psub*/, NULL, NULL, NULL, NULL, 0, 0, 0);
+			stmt *rs = exp_bin(be, re, sub, NULL/*psub*/, NULL, NULL, NULL, NULL, 0, 0, 0);
+			//stmt *ls = bin_find_column_nid_deep(be, sub, le->nid);
+			//stmt *rs = bin_find_column_nid_deep(be, sub, re->nid);
+			while (ls && ls->type == st_alias) ls = ls->op1;
+			while (rs && rs->type == st_alias) rs = rs->op1;
+			if (ls && rs && ls->type == st_list && ls->nested &&
+				rs->type == st_list && rs->nested) {
+				list *col_dims = (le->type == e_column) ? ls->op4.lval : rs->op4.lval;
+				list *lit_dims = (le->type == e_column) ? rs->op4.lval : ls->op4.lval;
+				//sql_exp *lit_exp = (le->type == e_column) ? re : le;
+				int ndims = list_length(col_dims);
+				if (ndims == list_length(lit_dims)) {
+					/* Build vss.knn(k, dim0..dimN, q0..qN) → (oid_bat, dist_bat) */
+					MalBlkPtr mb = be->mb;
+					int nargs = 2 + 1 + ndims + ndims; /* 2 returns + k + dims + queries */
+					InstrPtr q = newStmtArgs(mb, "vss", "bond", nargs);
+					if (q) {
+						/* Two return values */
+						int oid_var = newTmpVariable(mb, newBatType(TYPE_oid));
+						int dist_var = newTmpVariable(mb, newBatType(TYPE_dbl));
+						getArg(q, 0) = oid_var;
+						q = pushReturn(mb, q, dist_var);
+						/* k parameter */
+						q = pushArgument(mb, q, l->nr);
+						/* dimension BATs */
+						for (node *dn = col_dims->h; dn; dn = dn->next) {
+							stmt *ds = dn->data;
+							q = pushArgument(mb, q, ds->nr);
+						}
+						/* query values (fetch scalars from literal dims) */
+						for (node *dn = lit_dims->h; dn; dn = dn->next) {
+							stmt *ds = dn->data;
+							stmt *scalar = stmt_fetch(be, ds);
+							if (!scalar) goto bond_fallback;
+							q = pushArgument(mb, q, scalar->nr);
+						}
+						pushInstruction(mb, q);
+
+						/* Use oid_bat as limit for projection */
+						sql_subtype *oid_t = sql_fetch_localtype(TYPE_oid);
+						stmt *oid_s = stmt_blackbox_result(be, q, 0, oid_t);
+						if (!oid_s) goto bond_fallback;
+						oid_s->nrcols = 1;
+						/* Project all output columns through oid_bat */
+						stmt *s;
+						//list *npl = sa_list(sql->sa);
+						//for (node *pn = psub->op4.lval->h; pn; pn = pn->next) {
+						//	stmt *os = pn->data;
+						//	list_append(npl, s = stmt_project(be, oid_s, column(be, os)));
+						//	s->label = os->label;
+						//}
+						//psub = stmt_list(be, npl);
+						/* Also rebuild sub */
+						list *npl2 = sa_list(sql->sa);
+						for (node *pn = sub->op4.lval->h; pn; pn = pn->next) {
+							stmt *os = pn->data;
+							list_append(npl2, s = stmt_project(be, oid_s, column(be, os)));
+							s->label = os->label;
+						}
+						sub = stmt_list(be, npl2);
+					}
+				}
+			}
+		}
+	}
+	return sub;
+bond_fallback:
+	clean_mal_statements(be, oldstop, oldvtop);
+	return sub;
+}
+
 static stmt *
 rel2bin_project(backend *be, sql_rel *rel, list *refs, sql_rel *topn)
 {
@@ -5219,9 +5345,9 @@ rel2bin_project(backend *be, sql_rel *rel, list *refs, sql_rel *topn)
 		topn = NULL;
 
 	if (rel->l) { /* first construct the sub relation */
-		sql_rel *l = rel->l;
-		if (l->op == op_ddl) {
-			sql_table *t = rel_ddl_table_get(l);
+		sql_rel *lr = rel->l;
+		if (lr->op == op_ddl) {
+			sql_table *t = rel_ddl_table_get(lr);
 
 			if (t)
 				sub = rel2bin_sql_table(be, t, rel->exps);
@@ -5232,6 +5358,10 @@ rel2bin_project(backend *be, sql_rel *rel, list *refs, sql_rel *topn)
 		if (!sub)
 			return NULL;
 	}
+
+//	/* BOND k-NN: detect ORDER BY l2sq_distance(vector_col, vector_literal) LIMIT k */
+	if (topn && rel->r && list_length(rel->r) == 1 && !need_distinct(rel))
+		sub = insert_bond(be, rel, sub, l);
 
 	pl = sa_list(sql->sa);
 	if (pl == NULL)
@@ -5280,6 +5410,7 @@ rel2bin_project(backend *be, sql_rel *rel, list *refs, sql_rel *topn)
 		nrcols = s->nrcols;
 		list_append(pl, s);
 	}
+
 	stmt_set_nrcols(psub);
 
 	/* In case of a topn
@@ -5384,6 +5515,7 @@ rel2bin_project(backend *be, sql_rel *rel, list *refs, sql_rel *topn)
 		}
 		sub = stmt_list(be, npl);
 	}
+
 	if (need_distinct(rel)) {
 		stmt *distinct = NULL;
 		psub = rel2bin_distinct(be, psub, &distinct);

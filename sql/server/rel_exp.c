@@ -4543,7 +4543,7 @@ free_exp(allocator *sa, sql_exp *e)
 	_free_exp_internal(sa, e);
 }
 
-list *
+inline list *
 filter_exps_by_localtype(list *res, list *exps, int8_t localtype)
 {
 	for (node *n = exps->h; n; n=n->next) {
@@ -4551,6 +4551,116 @@ filter_exps_by_localtype(list *res, list *exps, int8_t localtype)
 		sql_subtype *t = exp_subtype(e);
 		if (t->type->localtype == localtype)
 			list_append(res, e);
+	}
+	return res;
+}
+
+inline list *
+filter_exps_by_type(list *res, list *exps, expression_type type)
+{
+	for (node *n = exps->h; n; n=n->next) {
+		sql_exp *e = n->data;
+		if (e->type == type)
+			list_append(res, e);
+	}
+	return res;
+}
+
+inline list *
+rel_find_exps_by_type(list *res, sql_rel *rel, expression_type tpe)
+{
+	if (rel) {
+		switch(rel->op) {
+			case op_project:
+			case op_groupby:
+				if (rel->l)
+					res = rel_find_exps_by_type(res, rel->l, tpe);
+				/* PROJECT: rel->r is order by, GROUPBY: rel->r is group by exps */
+				if (rel->r)
+					res = filter_exps_by_type(res, rel->r, tpe);
+				if (rel->exps)
+					res = filter_exps_by_type(res, rel->exps, tpe);
+				break;
+
+			case op_join:
+			case op_left:
+			case op_right:
+			case op_full:
+			case op_semi:
+			case op_anti:
+				if (rel->l)
+					res = rel_find_exps_by_type(res, rel->l, tpe);
+				if (rel->r)
+					res = rel_find_exps_by_type(res, rel->r, tpe);
+				if (rel->exps)
+					res = filter_exps_by_type(res, rel->exps, tpe);
+				break;
+
+			case op_except:
+			case op_inter:
+				if (rel->l)
+					res = rel_find_exps_by_type(res, rel->l, tpe);
+				if (rel->r)
+					res = rel_find_exps_by_type(res, rel->r, tpe);
+				if (rel->exps)
+					res = filter_exps_by_type(res, rel->exps, tpe);
+				break;
+
+			case op_munion:
+				if (rel->l) { /* l is a list of relations */
+					for (node *n = ((list*)rel->l)->h; n; n = n->next)
+						res = rel_find_exps_by_type(res, n->data, tpe);
+				}
+				if (rel->exps)
+					res = filter_exps_by_type(res, rel->exps, tpe);
+				break;
+
+			case op_select:
+				if (rel->l)
+					res = rel_find_exps_by_type(res, rel->l, tpe);
+				if (rel->exps)
+					res = filter_exps_by_type(res, rel->exps, tpe);
+				break;
+
+			case op_topn:
+			case op_sample:
+				if (rel->l)
+					res = rel_find_exps_by_type(res, rel->l, tpe);
+				if (rel->exps)
+					res = filter_exps_by_type(res, rel->exps, tpe);
+				break;
+
+			case op_insert:
+			case op_update:
+			case op_delete:
+			case op_truncate:
+				if (rel->l)
+					res = rel_find_exps_by_type(res, rel->l, tpe);
+				if (rel->r)
+					res = rel_find_exps_by_type(res, rel->r, tpe);
+				if (rel->exps)
+					res = filter_exps_by_type(res, rel->exps, tpe);
+				break;
+
+			case op_basetable:
+			case op_table:
+				/* Leaf nodes or function calls */
+				if (rel->l && rel->op == op_table) /* op_table can have input relation */
+					res = rel_find_exps_by_type(res, rel->l, tpe);
+				if (rel->exps)
+					res = filter_exps_by_type(res, rel->exps, tpe);
+				break;
+
+			case op_ddl:
+				if (rel->l)
+					res = rel_find_exps_by_type(res, rel->l, tpe);
+				if (rel->exps)
+					res = filter_exps_by_type(res, rel->exps, tpe);
+				break;
+
+			default:
+				break;
+		}
 	}
 	return res;
 }
