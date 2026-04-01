@@ -316,7 +316,7 @@ metric_l1_##NAME(MalStkPtr stk, InstrPtr pci, size_t dim)                   \
 {                                                                             \
     R dist = 0;                                                               \
     /* SIMD optimization hints */                                             \
-    _Pragma("GCC ivdep")                                                      \
+    GCC_Pragma("GCC ivdep")                                                      \
     for (size_t i=0; i < dim; i++) {                                          \
         T ai = *getArgReference_##T(stk, pci, 1 + i);                         \
         T bi = *getArgReference_##T(stk, pci, 1 + dim + i);                   \
@@ -344,7 +344,7 @@ metric_ip_##NAME(MalStkPtr stk, InstrPtr pci, size_t dim)                     \
 {                                                                               \
     R ab = 0;                                                                   \
     /* SIMD optimization hints */                                               \
-    _Pragma("GCC ivdep")                                                        \
+    GCC_Pragma("GCC ivdep")                                                        \
     for (size_t i=0; i < dim; i++) {                                            \
         T ai = *getArgReference_##T(stk, pci, 1 + i);                           \
         T bi = *getArgReference_##T(stk, pci, 1 + dim + i);                     \
@@ -371,7 +371,7 @@ metric_l2sq_##NAME(MalStkPtr stk, InstrPtr pci, size_t dim)                   \
 {                                                                               \
     R dist = 0;                                                                 \
     /* SIMD optimization hints */                                               \
-    _Pragma("GCC ivdep")                                                        \
+    GCC_Pragma("GCC ivdep")                                                        \
     for (size_t i=0; i < dim; i++) {                                            \
         T ai = *getArgReference_##T(stk, pci, 1 + i);                           \
         T bi = *getArgReference_##T(stk, pci, 1 + dim + i);                     \
@@ -403,7 +403,7 @@ metric_cos_##NAME(MalStkPtr stk, InstrPtr pci, size_t dim) {                 \
     R ab = 0, a2 = 0, b2 = 0;                                                  \
                                                                                \
     /* SIMD optimization hints */                                              \
-    _Pragma("GCC ivdep")                                                       \
+    GCC_Pragma("GCC ivdep")                                                       \
     for (size_t i = 0; i < dim; i++) {                                         \
         T ai = *getArgReference_##T(stk, pci, 1 + i);                           \
         T bi = *getArgReference_##T(stk, pci, 1 + dim + i);                     \
