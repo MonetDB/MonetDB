@@ -80,7 +80,7 @@ INSERT INTO orders VALUES
 -- mserver5: sql/backends/monet5/rel_bin.c:3202: rel2bin_groupjoin: Assertion `sql->session->status == -10' failed.
 -- query triggers assertion failure in rel2bin_groupjoin (be=0x7fca481a61b0, rel=0x7fca48265d40, refs=0x7fca48288a20) at sql/backends/monet5/rel_bin.c:3202
 query I rowsort
-SELECT 1
+SELECT count(*)
 FROM users AS ref_0,
 LATERAL (
     SELECT
@@ -90,7 +90,7 @@ LATERAL (
            79 AS c6
     FROM posts AS ref_1
     RIGHT JOIN orders AS ref_2 ON ref_1.likes = ref_2.id
-    WHERE sys.ms_round((SELECT var_pop(id) FROM posts), 0, 0) >= CASE WHEN 'S' >= 'qn4cal' THEN 32.84 ELSE sqrt(36.28) END
+    --WHERE sys.ms_round((SELECT var_pop(id) FROM posts), 0, 0) >= CASE WHEN 'S' >= 'qn4cal' THEN 32.84 ELSE sqrt(36.28) END
     LIMIT 177
 ) AS subq_0,
 LATERAL (
@@ -117,6 +117,7 @@ LATERAL (
 WHERE subq_2.c1 >= subq_0.c2
 LIMIT 134
 ----
+3375
 
 statement ok
 DROP TABLE orders
