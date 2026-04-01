@@ -57,8 +57,17 @@ NULL
 3
 45
 
-statement error
+query II nosort
 SELECT i, (SELECT 42+i1.i FROM integers LIMIT 0) AS j FROM integers i1 ORDER BY i
+----
+NULL
+NULL
+1
+NULL
+2
+NULL
+3
+NULL
 
 query II nosort
 SELECT i, (SELECT i FROM integers WHERE 1=0 AND i1.i=i) AS j FROM integers i1 ORDER BY i
@@ -533,8 +542,17 @@ NULL
 statement error GDK reported error: BATsubcross: more than one match
 SELECT i, SUM(i1.i) FROM integers i1 GROUP BY i ORDER BY (SELECT SUM(i1.i) FROM integers)
 
-statement error
+query II nosort
 SELECT i, SUM((SELECT SUM(i)*i1.i FROM integers LIMIT 0)) AS k FROM integers i1 GROUP BY i ORDER BY i
+----
+NULL
+NULL
+1
+NULL
+2
+NULL
+3
+NULL
 
 query II nosort
 SELECT (SELECT i+i1.i FROM integers WHERE i=1) AS k, CAST(SUM(i) AS BIGINT) AS j FROM integers i1 GROUP BY k ORDER BY 1

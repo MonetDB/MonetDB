@@ -13,6 +13,7 @@
 #include "gdk_analytic.h"
 #include "gdk_time.h"
 #include "gdk_calc_private.h"
+#include "gdk_private.h"
 
 #define ANALYTICAL_DIFF_IMP(TPE)			\
 	do {						\
@@ -92,6 +93,8 @@
 BAT *
 GDKanalyticaldiff(BAT *b, BAT *p, const bit *restrict npbit, int tpe)
 {
+	lng t0 = 0;
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 	BUN i = 0, cnt = BATcount(b);
 	BATiter pi = bat_iterator(p);
 	BATiter bi = bat_iterator(b);
@@ -100,7 +103,6 @@ GDKanalyticaldiff(BAT *b, BAT *p, const bit *restrict npbit, int tpe)
 		return NULL;
 	bit *restrict rb = (bit *) Tloc(r, 0), npb = npbit ? *npbit : 0;
 	const bit *restrict np = (bit *) pi.base;
-
 	switch (ATOMbasetype(tpe)) {
 	case TYPE_bte:
 		ANALYTICAL_DIFF_IMP(bte);
@@ -172,6 +174,10 @@ GDKanalyticaldiff(BAT *b, BAT *p, const bit *restrict npbit, int tpe)
 	BATsetcount(r, cnt);
 	r->tnonil = true;
 	r->tnil = false;
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",p=" ALGOOPTBATFMT
+		  " -> " ALGOBATFMT "(" LLFMT " usec)\n",
+		  ALGOBATPAR(b), ALGOOPTBATPAR(p),
+		  ALGOBATPAR(r), GDKusec() - t0);
 	return r;
 }
 
@@ -612,7 +618,7 @@ GDKanalyticaldiff(BAT *b, BAT *p, const bit *restrict npbit, int tpe)
 	} while(0)
 
 static BAT *
-GDKanalyticalallbounds(BAT *b, BAT *p, bool preceding)
+GDKanalyticalallbounds(BAT *b, BAT *p, bool preceding, lng t0)
 {
 	BAT *r = COLnew(b->hseqbase, TYPE_oid, BATcount(b), TRANSIENT);
 	if (r == NULL)
@@ -653,6 +659,10 @@ GDKanalyticalallbounds(BAT *b, BAT *p, bool preceding)
 	BATsetcount(r, cnt);
 	r->tnonil = false;
 	r->tnil = false;
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",p=" ALGOOPTBATFMT
+		  " -> " ALGOBATFMT "(" LLFMT " usec)\n",
+		  ALGOBATPAR(b), ALGOOPTBATPAR(p),
+		  ALGOBATPAR(r), GDKusec() - t0);
 	return r;
 }
 
@@ -711,7 +721,7 @@ GDKanalyticalallbounds(BAT *b, BAT *p, bool preceding)
 #define NO_NAN_CHECK /* nulls match on this operator */
 
 static BAT *
-GDKanalyticalpeers(BAT *b, BAT *p, bool preceding) /* used in range when the limit is 0, ie match peer rows */
+GDKanalyticalpeers(BAT *b, BAT *p, bool preceding, lng t0) /* used in range when the limit is 0, ie match peer rows */
 {
 	BAT *r = COLnew(b->hseqbase, TYPE_oid, BATcount(b), TRANSIENT);
 	if (r == NULL)
@@ -855,6 +865,10 @@ GDKanalyticalpeers(BAT *b, BAT *p, bool preceding) /* used in range when the lim
 	BATsetcount(r, cnt);
 	r->tnonil = false;
 	r->tnil = false;
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",p=" ALGOOPTBATFMT
+		  " -> " ALGOBATFMT "(" LLFMT " usec)\n",
+		  ALGOBATPAR(b), ALGOOPTBATPAR(p),
+		  ALGOBATPAR(r), GDKusec() - t0);
 	return r;
 }
 
@@ -868,7 +882,9 @@ GDKanalyticalrowbounds(BAT *b, BAT *p, BAT *l, const void *restrict bound, int t
 	const bit *restrict np = pi.base;
 	bool last = false;
 	BAT *r = NULL;
+	lng t0 = 0;
 
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 	if (l) {		/* dynamic bounds */
 		if (li.nil)
 			goto invalid_bound;
@@ -970,7 +986,7 @@ GDKanalyticalrowbounds(BAT *b, BAT *p, BAT *l, const void *restrict bound, int t
 			bat_iterator_end(&pi);
 			bat_iterator_end(&bi);
 			bat_iterator_end(&li);
-			return GDKanalyticalallbounds(b, p, preceding);
+			return GDKanalyticalallbounds(b, p, preceding, t0);
 		}
 		if (is_lng_nil(limit) || limit < 0) { /* this check is needed if the input is empty */
 			goto invalid_bound;
@@ -992,6 +1008,10 @@ GDKanalyticalrowbounds(BAT *b, BAT *p, BAT *l, const void *restrict bound, int t
 	BATsetcount(r, cnt);
 	r->tnonil = (nils == 0);
 	r->tnil = (nils > 0);
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",p=" ALGOOPTBATFMT ",l=" ALGOOPTBATFMT
+		  " -> " ALGOBATFMT "(" LLFMT " usec)\n",
+		  ALGOBATPAR(b), ALGOOPTBATPAR(p), ALGOOPTBATPAR(l),
+		  ALGOBATPAR(r), GDKusec() - t0);
 	return r;
   bound_not_supported:
 	BBPreclaim(r);
@@ -1019,7 +1039,9 @@ GDKanalyticalrangebounds(BAT *b, BAT *p, BAT *l, const void *restrict bound, int
 	const bit *restrict np = pi.base;
 	bool last = false;
 	BAT *r = NULL;
+	lng t0 = 0;
 
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 	if ((tp1 == TYPE_daytime || tp1 == TYPE_date || tp1 == TYPE_timestamp) && tp2 != TYPE_int && tp2 != TYPE_lng)
 		goto bound_not_supported;
 
@@ -1126,13 +1148,13 @@ GDKanalyticalrangebounds(BAT *b, BAT *p, BAT *l, const void *restrict bound, int
 					bat_iterator_end(&pi);
 					bat_iterator_end(&bi);
 					bat_iterator_end(&li);
-					return GDKanalyticalallbounds(b, p, preceding);
+					return GDKanalyticalallbounds(b, p, preceding, t0);
 				}
 				if (ll == 0) {
 					bat_iterator_end(&pi);
 					bat_iterator_end(&bi);
 					bat_iterator_end(&li);
-					return GDKanalyticalpeers(b, p, preceding);
+					return GDKanalyticalpeers(b, p, preceding, t0);
 				}
 				limit = is_bte_nil(ll) ? lng_nil : (lng) ll;
 				break;
@@ -1143,13 +1165,13 @@ GDKanalyticalrangebounds(BAT *b, BAT *p, BAT *l, const void *restrict bound, int
 					bat_iterator_end(&pi);
 					bat_iterator_end(&bi);
 					bat_iterator_end(&li);
-					return GDKanalyticalallbounds(b, p, preceding);
+					return GDKanalyticalallbounds(b, p, preceding, t0);
 				}
 				if (ll == 0) {
 					bat_iterator_end(&pi);
 					bat_iterator_end(&bi);
 					bat_iterator_end(&li);
-					return GDKanalyticalpeers(b, p, preceding);
+					return GDKanalyticalpeers(b, p, preceding, t0);
 				}
 				limit = is_sht_nil(ll) ? lng_nil : (lng) ll;
 				break;
@@ -1160,13 +1182,13 @@ GDKanalyticalrangebounds(BAT *b, BAT *p, BAT *l, const void *restrict bound, int
 					bat_iterator_end(&pi);
 					bat_iterator_end(&bi);
 					bat_iterator_end(&li);
-					return GDKanalyticalallbounds(b, p, preceding);
+					return GDKanalyticalallbounds(b, p, preceding, t0);
 				}
 				if (int_limit == 0) {
 					bat_iterator_end(&pi);
 					bat_iterator_end(&bi);
 					bat_iterator_end(&li);
-					return GDKanalyticalpeers(b, p, preceding);
+					return GDKanalyticalpeers(b, p, preceding, t0);
 				}
 				limit = is_int_nil(int_limit) ? lng_nil : (lng) int_limit;
 				break;
@@ -1177,13 +1199,13 @@ GDKanalyticalrangebounds(BAT *b, BAT *p, BAT *l, const void *restrict bound, int
 					bat_iterator_end(&pi);
 					bat_iterator_end(&bi);
 					bat_iterator_end(&li);
-					return GDKanalyticalallbounds(b, p, preceding);
+					return GDKanalyticalallbounds(b, p, preceding, t0);
 				}
 				if (limit == 0) {
 					bat_iterator_end(&pi);
 					bat_iterator_end(&bi);
 					bat_iterator_end(&li);
-					return GDKanalyticalpeers(b, p, preceding);
+					return GDKanalyticalpeers(b, p, preceding, t0);
 				}
 				break;
 			}
@@ -1226,12 +1248,12 @@ GDKanalyticalrangebounds(BAT *b, BAT *p, BAT *l, const void *restrict bound, int
 				bat_iterator_end(&pi);
 				bat_iterator_end(&bi);
 				bat_iterator_end(&li);
-				return GDKanalyticalallbounds(b, p, preceding);
+				return GDKanalyticalallbounds(b, p, preceding, t0);
 			} else if (limit == 0) {
 				bat_iterator_end(&pi);
 				bat_iterator_end(&bi);
 				bat_iterator_end(&li);
-				return GDKanalyticalpeers(b, p, preceding);
+				return GDKanalyticalpeers(b, p, preceding, t0);
 			}
 			r = COLnew(b->hseqbase, TYPE_oid, BATcount(b), TRANSIENT);
 			if (r == NULL)
@@ -1252,12 +1274,12 @@ GDKanalyticalrangebounds(BAT *b, BAT *p, BAT *l, const void *restrict bound, int
 				bat_iterator_end(&pi);
 				bat_iterator_end(&bi);
 				bat_iterator_end(&li);
-				return GDKanalyticalallbounds(b, p, preceding);
+				return GDKanalyticalallbounds(b, p, preceding, t0);
 			} else if (limit == 0) {
 				bat_iterator_end(&pi);
 				bat_iterator_end(&bi);
 				bat_iterator_end(&li);
-				return GDKanalyticalpeers(b, p, preceding);
+				return GDKanalyticalpeers(b, p, preceding, t0);
 			}
 			r = COLnew(b->hseqbase, TYPE_oid, BATcount(b), TRANSIENT);
 			if (r == NULL)
@@ -1279,12 +1301,12 @@ GDKanalyticalrangebounds(BAT *b, BAT *p, BAT *l, const void *restrict bound, int
 				bat_iterator_end(&pi);
 				bat_iterator_end(&bi);
 				bat_iterator_end(&li);
-				return GDKanalyticalallbounds(b, p, preceding);
+				return GDKanalyticalallbounds(b, p, preceding, t0);
 			} else if (limit == 0) {
 				bat_iterator_end(&pi);
 				bat_iterator_end(&bi);
 				bat_iterator_end(&li);
-				return GDKanalyticalpeers(b, p, preceding);
+				return GDKanalyticalpeers(b, p, preceding, t0);
 			}
 			r = COLnew(b->hseqbase, TYPE_oid, BATcount(b), TRANSIENT);
 			if (r == NULL)
@@ -1308,6 +1330,10 @@ GDKanalyticalrangebounds(BAT *b, BAT *p, BAT *l, const void *restrict bound, int
 	BATsetcount(r, cnt);
 	r->tnonil = (nils == 0);
 	r->tnil = (nils > 0);
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",p=" ALGOOPTBATFMT ",l=" ALGOOPTBATFMT
+		  " -> " ALGOBATFMT "(" LLFMT " usec)\n",
+		  ALGOBATPAR(b), ALGOOPTBATPAR(p), ALGOOPTBATPAR(l),
+		  ALGOBATPAR(r), GDKusec() - t0);
 	return r;
   bound_not_supported:
 	BBPreclaim(r);
@@ -1349,7 +1375,9 @@ GDKanalyticalgroupsbounds(BAT *b, BAT *p, BAT *l, const void *restrict bound, in
 	const bit *restrict np = pi.base, *restrict bp = bi.base;
 	bool last = false;
 	BAT *r = NULL;
+	lng t0 = 0;
 
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 	if (bi.type != TYPE_bit) {
 		bat_iterator_end(&pi);
 		bat_iterator_end(&bi);
@@ -1459,7 +1487,7 @@ GDKanalyticalgroupsbounds(BAT *b, BAT *p, BAT *l, const void *restrict bound, in
 			bat_iterator_end(&pi);
 			bat_iterator_end(&bi);
 			bat_iterator_end(&li);
-			return GDKanalyticalallbounds(b, p, preceding);
+			return GDKanalyticalallbounds(b, p, preceding, t0);
 		}
 		if (is_lng_nil(limit) || limit < 0) { /* this check is needed if the input is empty */
 			goto invalid_bound;
@@ -1480,6 +1508,10 @@ GDKanalyticalgroupsbounds(BAT *b, BAT *p, BAT *l, const void *restrict bound, in
 	BATsetcount(r, cnt);
 	r->tnonil = true;
 	r->tnil = false;
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",p=" ALGOOPTBATFMT ",l=" ALGOOPTBATFMT
+		  " -> " ALGOBATFMT "(" LLFMT " usec)\n",
+		  ALGOBATPAR(b), ALGOOPTBATPAR(p), ALGOOPTBATPAR(l),
+		  ALGOBATPAR(r), GDKusec() - t0);
 	return r;
   bound_not_supported:
 	BBPreclaim(r);

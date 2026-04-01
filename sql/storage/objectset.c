@@ -801,7 +801,7 @@ os_add_name_based(objectset *os, struct sql_trans *tr, const char *name, objectv
 		objectversion *co = name_based_node->ov;
 		objectversion *oo = get_valid_object_name(tr, co, true);
 		if (co != oo) { /* conflict ? */
-			TRC_WARNING(SQL_STORE, "%s" "if (co != oo) { /* conflict ? */", __func__);
+			TRC_WARNING(SQL_STORE, "if (co != oo) { /* conflict ? */");
 			return -3;
 		}
 
@@ -816,7 +816,7 @@ os_add_name_based(objectset *os, struct sql_trans *tr, const char *name, objectv
 			*/
 			ATOMIC_BASE_TYPE expected_deleted = deleted;
 			if (!ATOMIC_CAS(&oo->state, &expected_deleted, block_destruction)) {
-				TRC_WARNING(SQL_STORE, "%s: " "if (!ATOMIC_CAS(&oo->state, &expected_deleted, block_destruction)) { /*conflict with cleaner or write-write conflict*/ ", __func__);
+				TRC_WARNING(SQL_STORE, "if (!ATOMIC_CAS(&oo->state, &expected_deleted, block_destruction)) { /*conflict with cleaner or write-write conflict*/ ");
 				return -3; /*conflict with cleaner or write-write conflict*/
 			}
 		}
@@ -853,7 +853,7 @@ os_add_id_based(objectset *os, struct sql_trans *tr, sqlid id, objectversion *ov
 		objectversion *co = id_based_node->ov;
 		objectversion *oo = get_valid_object_id(tr, co, true);
 		if (co != oo) { /* conflict ? */
-			TRC_WARNING(SQL_STORE, "%s" "if (co != oo) { /* conflict ? */", __func__);
+			TRC_WARNING(SQL_STORE, "if (co != oo) { /* conflict ? */");
 			return -3;
 		}
 
@@ -868,7 +868,7 @@ os_add_id_based(objectset *os, struct sql_trans *tr, sqlid id, objectversion *ov
 			*/
 			ATOMIC_BASE_TYPE expected_deleted = deleted;
 			if (!ATOMIC_CAS(&oo->state, &expected_deleted, block_destruction)) {
-				TRC_WARNING(SQL_STORE, "%s" "if (!ATOMIC_CAS(&oo->state, &expected_deleted, block_destruction)) { /*conflict with cleaner or write-write conflict*/", __func__);
+				TRC_WARNING(SQL_STORE, "if (!ATOMIC_CAS(&oo->state, &expected_deleted, block_destruction)) { /*conflict with cleaner or write-write conflict*/");
 				return -3; /*conflict with cleaner or write-write conflict*/
 			}
 		}
@@ -952,7 +952,7 @@ os_del_name_based(objectset *os, struct sql_trans *tr, const char *name, objectv
 		objectversion *oo = get_valid_object_name(tr, co, true);
 		ov->name_based_head = oo->name_based_head;
 		if (co != oo) { /* conflict ? */
-			TRC_WARNING(SQL_STORE, "%s: " "if (co != oo) { /* conflict ? */", __func__);
+			TRC_WARNING(SQL_STORE, "if (co != oo) { /* conflict ? */");
 			return -3;
 		}
 		ov->name_based_older = oo;
@@ -986,7 +986,7 @@ os_del_id_based(objectset *os, struct sql_trans *tr, sqlid id, objectversion *ov
 		objectversion *oo = get_valid_object_id(tr, co, true);
 		ov->id_based_head = oo->id_based_head;
 		if (co != oo) { /* conflict ? */
-			TRC_WARNING(SQL_STORE, "%s" "if (co != oo) { /* conflict ? */", __func__);
+			TRC_WARNING(SQL_STORE, "if (co != oo) { /* conflict ? */");
 			return -3;
 		}
 		ov->id_based_older = oo;

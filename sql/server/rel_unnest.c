@@ -744,6 +744,67 @@ rel_bound_exp(mvc *sql, sql_rel *rel )
 	return NULL;
 }
 
+static sql_exp* exp_replace_exp_using_label(sql_exp *e, int label, sql_exp *replace);
+
+static void
+list_exps_replace_exp_using_label(list *exps, int label, sql_exp *replace)
+{
+	if (!exps)
+		return ;
+	for (node *n = exps->h; n; n = n->next) {
+		sql_exp *e = n->data;
+		if (exp_replace_exp_using_label(e, label, replace))
+			n->data = replace;
+	}
+}
+
+static sql_exp*
+exp_replace_exp_using_label(sql_exp *e, int label, sql_exp *replace)
+{
+	switch (e->type) {
+		case e_psm:
+			break;
+		case e_atom:
+			if (e->f)
+				list_exps_replace_exp_using_label(e->f, label, replace);
+			break;
+		case e_convert:
+			if (exp_replace_exp_using_label(e->l, label, replace))
+				e->l = replace;
+			break;
+		case e_column:
+			if (e->nid == label)
+				return e;
+			break;
+		case e_func:
+		case e_aggr:
+			if (e->l)
+				list_exps_replace_exp_using_label(e->l, label, replace);
+		  	break;
+		case e_cmp: {
+			if (e->flag == cmp_con || e->flag == cmp_dis) {
+				list_exps_replace_exp_using_label(e->l, label, replace);
+			} else if (e->flag == cmp_in || e->flag == cmp_notin) {
+				if (exp_replace_exp_using_label(e->l, label, replace))
+					e->l = replace;
+				list_exps_replace_exp_using_label(e->r, label, replace);
+			} else if (e->flag == cmp_filter) {
+				list_exps_replace_exp_using_label(e->l, label, replace);
+				list_exps_replace_exp_using_label(e->r, label, replace);
+			} else {
+				if (exp_replace_exp_using_label(e->l, label, replace))
+					e->l = replace;
+				if (exp_replace_exp_using_label(e->r, label, replace))
+					e->r = replace;
+				if (e->f)
+					if (exp_replace_exp_using_label(e->f, label, replace))
+						e->f = replace;
+			}
+		} break;
+	}
+	return NULL;
+}
+
 /*
  * join j was just rewritten, but some join expressions may now
  * be too low in de relation rel. These need to move up.
@@ -753,6 +814,25 @@ move_join_exps(mvc *sql, sql_rel *j, sql_rel *rel)
 {
 	node *n;
 	list *exps = rel->exps;
+
+	if (list_length(j->attr) == 1 && exps_uses_exp(rel->exps, j->attr->h->data)) {
+		sql_exp *m = j->attr->h->data, *replace = NULL;
+		list *exps = j->exps;
+		if (list_empty(exps)) {
+			replace = exp_atom_bool(sql->sa, 1);
+		} else if (list_length(exps) == 1) {
+			replace = exps->h->data;
+		} else {
+			replace = exp_conjunctive(sql->sa, exps);
+		}
+		for (node *n = rel->exps->h; n; n = n->next) { /* push up the depending exps, and replace the referenced mark */
+			sql_exp *e = n->data;
+			exp_replace_exp_using_label(e, m->alias.label, replace);
+		}
+		j->exps = rel->exps;
+		rel->exps = NULL;
+		return ;
+	}
 
 	if (list_empty(exps))
 		return;
@@ -1177,7 +1257,7 @@ push_up_select(mvc *sql, sql_rel *rel, list *ad)
 	if (inner && is_left(rel->op) && !need_distinct(d))
 		return rel_general_unnest(sql, rel, ad);
 	/* input rel is dependent join with on the right a select */
-	if ((!inner || is_semi(rel->op)) && rel && is_dependent(rel)) {
+	if ((!inner || is_semi(rel->op) || (is_left(rel->op) && !list_empty(rel->attr))) && rel && is_dependent(rel)) {
 		sql_rel *r = rel->r;
 
 		if (r && is_select(r->op)) { /* move into join */
@@ -1962,7 +2042,7 @@ rel_unnest_dependent(mvc *sql, sql_rel *rel)
 				return rel_unnest_dependent(sql, rel);
 			}
 
-			if (r && (is_topn(r->op) || is_sample(r->op))) {
+			if (r && (is_topn(r->op) || is_sample(r->op)) && is_distinct_set(sql, l, ad)) {
 				sql_rel *l = r->l;
 				if (is_left(rel->op) && l && is_project(l->op) && !l->r && !project_unsafe(l, 1)) {
 					rel = push_down_topn_and_sample(sql, rel);

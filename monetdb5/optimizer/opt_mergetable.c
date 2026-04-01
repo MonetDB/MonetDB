@@ -2094,7 +2094,7 @@ mat_pack_topn(MalBlkPtr mb, InstrPtr slc, mat_t *mat, int m)
 static int
 mat_topn(allocator *ma, MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n, int o)
 {
-	int tpe = getArgType(mb, p, 0), k, is_slice = isSlice(p), zero = -1;
+	int tpe = getArgType(mb, p, 0), k, is_slice = isSlice(p), no_offset = -1;
 	InstrPtr pck, gpck = NULL, q, r;
 	int with_groups = (p->retc == 2), piv = 0, topn2 = (n >= 0);
 
@@ -2119,8 +2119,18 @@ mat_topn(allocator *ma, MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n, i
 		cst.vtype = getArgType(mb, p, 2);
 		cst.val.lval = 0;
 		cst.len = 0;
-		zero = defConstant(mb, cst.vtype, &cst);
-		if (zero < 0) {
+		no_offset = defConstant(mb, cst.vtype, &cst);
+		if (no_offset < 0) {
+			freeInstruction(mb, pck);
+			return -1;
+		}
+	} else {
+		ValRecord cst;
+		cst.vtype = getArgType(mb, p, 6);
+		cst.val.btval = 1;
+		cst.len = 0;
+		no_offset = defConstant(mb, cst.vtype, &cst);
+		if (no_offset < 0) {
 			freeInstruction(mb, pck);
 			return -1;
 		}
@@ -2140,11 +2150,13 @@ mat_topn(allocator *ma, MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n, i
 			getArg(q, 1) = newTmpVariable(mb, tpe);
 		getArg(q, q->retc) = getArg(ml->v[m].mi, k);
 		if (is_slice)			/* lower bound should always be 0 on partial slices */
-			getArg(q, q->retc + 1) = zero;
+			getArg(q, q->retc + 1) = no_offset;
 		else if (topn2) {
 			getArg(q, q->retc + 1) = getArg(ml->v[n].mi, k);
 			getArg(q, q->retc + 2) = getArg(ml->v[o].mi, k);
 		}
+		if (!is_slice)
+			getArg(q, 6) = no_offset; /* only return the 0 - limit+offset, later reduce too offset-limit */
 		pushInstruction(mb, q);
 
 		pck = pushArgument(mb, pck, getArg(q, 0));

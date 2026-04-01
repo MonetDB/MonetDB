@@ -2845,12 +2845,13 @@ dump_database(Mapi mid, stream *sqlf, const char *ddir, const char *ext, bool de
 			"AND d.id = t2.id "
 			"AND t2.schema_id = s2.id "
 		      "ORDER BY t1.id, t2.id) subq "
-			"LEFT OUTER JOIN sys.table_partitions "
-				"ON subq.id = table_partitions.table_id";
+		"LEFT OUTER JOIN sys.table_partitions "
+			"ON subq.id = table_partitions.table_id "
+		"ORDER BY subq.s1name, subq.t1name, subq.s2name, subq.t2name";
 	/* we must dump views, functions/procedures and triggers in order
 	 * of creation since they can refer to each other */
 	static const char views_functions_triggers[] =
-		"with vft (sname, name, id, query, remark) AS ("
+		"WITH vft (sname, name, id, query, remark) AS ("
 			"SELECT s.name AS sname, " /* views */
 			       "t.name AS name, "
 			       "t.id AS id, "
@@ -2885,7 +2886,8 @@ dump_database(Mapi mid, stream *sqlf, const char *ddir, const char *ext, bool de
 			  "AND t.id = tr.table_id "
 			  "AND t.system = FALSE"
 		") "
-		"SELECT id, sname, name, query, remark FROM vft ORDER BY id";
+		"SELECT id, sname, name, query, remark FROM vft "
+		"ORDER BY id";
 	char *sname = NULL;
 	char *curschema = NULL;
 	MapiHdl hdl = NULL;
@@ -3318,7 +3320,8 @@ dump_database(Mapi mid, stream *sqlf, const char *ddir, const char *ext, bool de
 					 "WHERE s.name = '%s' "
 					   "AND t.name = '%s' "
 					   "AND s.id = t.schema_id "
-					   "AND t.id = vp.table_id",
+					   "AND t.id = vp.table_id "
+					 "ORDER BY vp.value",
 					 s2, t2);
 				shdl = mapi_query(mid, query);
 				free(query);
