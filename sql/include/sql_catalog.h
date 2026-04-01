@@ -3,7 +3,7 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
  * For copyright information, see the file debian/copyright.
  */
@@ -437,7 +437,8 @@ typedef enum sql_ftype {
 	F_FILT = 4,
 	F_UNION = 5,
 	F_ANALYTIC = 6,
-	F_LOADER = 7
+	F_LOADER = 7,
+	F_GROUPFILT = 8
 } sql_ftype;
 
 #define IS_FUNC(f)     ((f)->type == F_FUNC)
@@ -447,6 +448,7 @@ typedef enum sql_ftype {
 #define IS_UNION(f)    ((f)->type == F_UNION)
 #define IS_ANALYTIC(f) ((f)->type == F_ANALYTIC)
 #define IS_LOADER(f)   ((f)->type == F_LOADER)
+#define IS_GROUPFILT(f)     ((f)->type == F_GROUPFILT)
 
 #define FUNC_TYPE_STR(type, F, fn) \
 	switch (type) { \
@@ -477,6 +479,10 @@ typedef enum sql_ftype {
 		case F_LOADER: \
 			F = "LOADER FUNCTION"; \
 			fn = "loader function"; \
+			break; \
+		case F_GROUPFILT: \
+			F = "GROUP FILTER FUNCTION"; \
+			fn = "group filter function"; \
 			break; \
 		default: \
 			assert(0); \
@@ -524,7 +530,8 @@ typedef struct sql_func {
 	instantiated:1,	/* if the function is instantiated */
 	private:1,	/* certain functions cannot be bound from user queries */
 	order_required:1,	/* some aggregate functions require an order */
-	opt_order:1;	/* some aggregate functions could have the inputs sorted */
+	opt_order:1,
+	group:1;	/* some filter functions behave like group join */
 
 	short fix_scale;
 			/*

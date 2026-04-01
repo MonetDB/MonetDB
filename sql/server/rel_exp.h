@@ -3,7 +3,7 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
  * For copyright information, see the file debian/copyright.
  */
@@ -247,6 +247,7 @@ extern sql_exp *exp_check_multiset(mvc *sql, sql_exp *exp); /* cast to any multi
 extern sql_exp *exp_check_vector(mvc *sql, sql_exp *exp);
 extern void free_exp(allocator *sa, sql_exp *e);
 extern void free_exps(allocator *sa, list *exps);
+extern bool exps_has_group_filter(list *exps);
 
 extern int exp_is_rename(sql_exp *e);
 extern int exp_is_useless_rename(sql_exp *e);

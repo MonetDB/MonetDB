@@ -3,7 +3,7 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
  * For copyright information, see the file debian/copyright.
  */
@@ -117,7 +117,7 @@ exp_push_down_prj(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 		if (is_groupby(f->op) && !list_empty(f->r) && ne->type == e_column) {
 			sql_exp *gbe = NULL;
 			if (ne->nid)
-				gbe = exps_bind_nid(f->exps, ne->nid);
+				gbe = exps_bind_nid(f->r, ne->nid);
 			ne = gbe;
 			if (!ne || (ne->type != e_column && (ne->type != e_atom || ne->f)))
 				return NULL;

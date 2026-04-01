@@ -47,7 +47,7 @@ munion (
 | project (
 | | select (
 | | | table("sys"."f4") [ "f4"."n" NOT NULL UNIQUE ]
-| | ) [ (int(2) "1") < ("f4"."n" NOT NULL UNIQUE) < (int(2) "5") ]
+| | ) [ (int(3) "1") < ("f4"."n" NOT NULL UNIQUE) < (int(3) "5") ]
 | ) [ "f4"."n" NOT NULL UNIQUE as "f_uchain"."n" ],
 | project (
 | | table("sys"."f3") [ "f3"."n" NOT NULL UNIQUE ]
@@ -55,7 +55,7 @@ munion (
 | project (
 | | select (
 | | | table("sys"."f1") [ "f1"."n" NOT NULL UNIQUE ]
-| | ) [ (int(2) "1") < ("f1"."n" NOT NULL UNIQUE) < (int(2) "5") ]
+| | ) [ (int(3) "1") < ("f1"."n" NOT NULL UNIQUE) < (int(3) "5") ]
 | ) [ "f1"."n" NOT NULL UNIQUE as "f_uchain"."n" ],
 | project (
 | | table("sys"."f2") [ "f2"."n" NOT NULL UNIQUE ]
@@ -84,7 +84,7 @@ munion (
 | project (
 | | select (
 | | | table("sys"."f4") [ "f4"."n" NOT NULL UNIQUE ]
-| | ) [ (int(2) "1") < ("f4"."n" NOT NULL UNIQUE) < (int(2) "5") ]
+| | ) [ (int(3) "1") < ("f4"."n" NOT NULL UNIQUE) < (int(3) "5") ]
 | ) [ "f4"."n" NOT NULL UNIQUE as "f_uchain"."n" ],
 | project (
 | | table("sys"."f3") [ "f3"."n" NOT NULL UNIQUE ]
@@ -92,7 +92,7 @@ munion (
 | project (
 | | select (
 | | | table("sys"."f1") [ "f1"."n" NOT NULL UNIQUE ]
-| | ) [ (int(2) "1") < ("f1"."n" NOT NULL UNIQUE) < (int(2) "5") ]
+| | ) [ (int(3) "1") < ("f1"."n" NOT NULL UNIQUE) < (int(3) "5") ]
 | ) [ "f1"."n" NOT NULL UNIQUE as "f_uchain"."n" ],
 | project (
 | | table("sys"."f2") [ "f2"."n" NOT NULL UNIQUE ]

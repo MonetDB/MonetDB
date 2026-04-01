@@ -202,9 +202,7 @@ munion (
 | | ) [ ("splitted"."stamp" NOT NULL UNIQUE) <= (timestamp(7) "2020-10-01 00:00:00.000000") ]
 | ) [ tinyint(1) "1" ],
 | project (
-| | select (
-| | | table("sys"."second_decade") [ "second_decade"."stamp" NOT NULL UNIQUE as "splitted"."stamp" ]
-| | ) [ ("splitted"."stamp" NOT NULL UNIQUE) <= (timestamp(7) "2020-10-01 00:00:00.000000") ]
+| | table("sys"."second_decade") [ "second_decade"."stamp" NOT NULL UNIQUE as "splitted"."stamp" ]
 | ) [ tinyint(1) "1" ],
 | project (
 | | select (
@@ -254,8 +252,8 @@ explain show details select 1 from splitted where stamp > TIMESTAMP '2020-01-01 
 ----
 project (
 | select (
-| | table("sys"."third_decade") [ "third_decade"."stamp" UNIQUE as "splitted"."stamp" ]
-| ) [ (timestamp(7) "2020-01-01 00:00:00.000000") < ("splitted"."stamp" UNIQUE) <= (timestamp(7) "2020-01-01 00:00:00.000000") ]
+| |  [ timestamp(7) NULL as "splitted"."stamp" ]
+| ) [ boolean(1) "false" ]
 ) [ tinyint(1) "1" ]
 
 query T nosort
@@ -554,8 +552,8 @@ explain show details select 1 from splitted2 where stamp in (5,6) and stamp > 10
 ----
 project (
 | select (
-| | table("sys"."third_decade2") [ "third_decade2"."stamp" NOT NULL UNIQUE as "splitted2"."stamp" ]
-| ) [ ("splitted2"."stamp" NOT NULL UNIQUE) > (int(31) "100"), ("splitted2"."stamp" NOT NULL UNIQUE) in (int(31) "5", int(31) "6") ]
+| |  [ int(3) NULL as "splitted2"."stamp" ]
+| ) [ boolean(1) "false" ]
 ) [ tinyint(1) "1" ]
 
 query T nosort

@@ -3,7 +3,7 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
  * For copyright information, see the file debian/copyright.
  */
@@ -283,6 +283,7 @@ typedef enum operator_type {
 #define reset_single(rel) 	(rel)->single = 0
 #define set_recursive(rel) 	(rel)->recursive = 1
 #define is_recursive(rel) 	((rel)->recursive)
+#define set_dynamic(rel) 	(rel)->dynamic = 1
 #define is_dynamic(rel) 	((rel)->dynamic)
 
 #define is_freevar(e) 		((e)->freevar)

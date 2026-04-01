@@ -28,7 +28,7 @@ project (
 | | | | | ) [ ("test"."k" NOT NULL) = (int(31) "10") ]
 | | | | ) [ int(31) "10" as "t1"."k", "test"."v" NOT NULL UNIQUE as "t1"."v", ("sys"."mod"("test"."v" NOT NULL UNIQUE, int(2) "2") NOT NULL) = (int(31) "0") as "t1"."flag" ]
 | | | ) [ "t1"."k" NOT NULL, "t1"."v" NOT NULL UNIQUE, "t1"."flag" NOT NULL ] [ "t1"."k" PART ASC NOT NULL, "t1"."v" NULLS LAST NOT NULL UNIQUE ]
-| | ) [ "t1"."v" NOT NULL UNIQUE, "t1"."flag" NOT NULL, "sys"."rank"(varchar["sys"."star"()], "sys"."diff"("t1"."k" PART NOT NULL), "sys"."diff"("t1"."v" NOT NULL UNIQUE)) as "t2"."rank" ]
+| | ) [ int(31) "10" as "t1"."k", "t1"."v" NOT NULL UNIQUE, "t1"."flag" NOT NULL, "sys"."rank"(varchar["sys"."star"()], "sys"."diff"("t1"."k" PART NOT NULL), "sys"."diff"("t1"."v" NOT NULL UNIQUE)) as "t2"."rank" ]
 | ) [ ("t1"."flag" NOT NULL) = (boolean(1) "false"), ("t2"."rank") = (int(31) "1") ]
 ) [ int(31) "10" as "t2"."k", "t1"."v" NOT NULL UNIQUE as "t2"."v", boolean(1) "false" as "t2"."flag", int(31) "1" as "t2"."rank" ]
 
@@ -106,7 +106,7 @@ project (
 | | | | | ) [ ("test"."k" NOT NULL) = (int(31) "10") ]
 | | | | ) [ int(31) "10" as "t1"."k", "test"."v" NOT NULL UNIQUE as "t1"."v", ("sys"."mod"("test"."v" NOT NULL UNIQUE, int(2) "2") NOT NULL) = (int(31) "0") as "t1"."flag" ]
 | | | ) [ "t1"."k" NOT NULL, "t1"."v" NOT NULL UNIQUE, "t1"."flag" NOT NULL ] [ "t1"."k" PART ASC NOT NULL, "t1"."v" NULLS LAST NOT NULL UNIQUE ]
-| | ) [ "t1"."v" NOT NULL UNIQUE, "t1"."flag" NOT NULL, "sys"."rank"(varchar["sys"."star"()], "sys"."diff"("t1"."k" PART NOT NULL), "sys"."diff"("t1"."v" NOT NULL UNIQUE)) as "t2"."rank" ]
+| | ) [ int(31) "10" as "t1"."k", "t1"."v" NOT NULL UNIQUE, "t1"."flag" NOT NULL, "sys"."rank"(varchar["sys"."star"()], "sys"."diff"("t1"."k" PART NOT NULL), "sys"."diff"("t1"."v" NOT NULL UNIQUE)) as "t2"."rank" ]
 | ) [ ("t1"."v" NOT NULL UNIQUE) = (int(31) "15"), ("t1"."flag" NOT NULL) = (boolean(1) "false"), ("t2"."rank") = (int(31) "1") ]
 ) [ int(31) "10" as "t2"."k", int(31) "15" as "t2"."v", boolean(1) "false" as "t2"."flag", int(31) "1" as "t2"."rank" ]
 
@@ -133,7 +133,7 @@ project (
 | | | | | ) [ ("test"."v" NOT NULL UNIQUE) = (int(31) "15") ]
 | | | | ) [ "test"."k" NOT NULL as "t1"."k", int(31) "15" as "t1"."v", ("sys"."mod"("test"."v" NOT NULL UNIQUE, int(2) "2") NOT NULL) = (int(31) "0") as "t1"."flag" ]
 | | | ) [ "t1"."k" NOT NULL, "t1"."v" NOT NULL, "t1"."flag" NOT NULL ] [ "t1"."v" PART NULLS LAST NOT NULL ]
-| | ) [ "t1"."k" NOT NULL, "t1"."flag" NOT NULL, "sys"."rank"(varchar["sys"."star"()], "sys"."diff"("t1"."v" PART NOT NULL), "sys"."diff"("t1"."v" PART NOT NULL)) as "t2"."rank" ]
+| | ) [ "t1"."k" NOT NULL, int(31) "15" as "t1"."v", "t1"."flag" NOT NULL, "sys"."rank"(varchar["sys"."star"()], "sys"."diff"("t1"."v" PART NOT NULL), "sys"."diff"("t1"."v" PART NOT NULL)) as "t2"."rank" ]
 | ) [ ("t1"."flag" NOT NULL) = (boolean(1) "false"), ("t2"."rank") = (int(31) "1"), ("t1"."k" NOT NULL) = (int(31) "10") ]
 ) [ int(31) "10" as "t2"."k", int(31) "15" as "t2"."v", boolean(1) "false" as "t2"."flag", int(31) "1" as "t2"."rank" ]
 
@@ -248,7 +248,7 @@ project (
 | | | | | ) [ ("test"."k" NOT NULL) = (varchar(100) "10") ]
 | | | | ) [ varchar(100) "10" as "t1"."k", "test"."v" NOT NULL UNIQUE as "t1"."v", ("sys"."mod"("test"."v" NOT NULL UNIQUE, int(2) "2") NOT NULL) = (int(31) "0") as "t1"."flag" ]
 | | | ) [ "t1"."k" NOT NULL, "t1"."v" NOT NULL UNIQUE, "t1"."flag" NOT NULL ] [ "t1"."k" PART ASC NOT NULL, "t1"."v" NULLS LAST NOT NULL UNIQUE ]
-| | ) [ "t1"."v" NOT NULL UNIQUE, "t1"."flag" NOT NULL, "sys"."rank"(varchar["sys"."star"()], "sys"."diff"("t1"."k" PART NOT NULL), "sys"."diff"("t1"."v" NOT NULL UNIQUE)) as "t2"."rank" ]
+| | ) [ varchar(100) "10" as "t1"."k", "t1"."v" NOT NULL UNIQUE, "t1"."flag" NOT NULL, "sys"."rank"(varchar["sys"."star"()], "sys"."diff"("t1"."k" PART NOT NULL), "sys"."diff"("t1"."v" NOT NULL UNIQUE)) as "t2"."rank" ]
 | ) [ ("t1"."flag" NOT NULL) = (boolean(1) "false"), ("t2"."rank") = (int(31) "1") ]
 ) [ varchar(100) "10" as "t2"."k", "t1"."v" NOT NULL UNIQUE as "t2"."v", boolean(1) "false" as "t2"."flag", int(31) "1" as "t2"."rank" ]
 

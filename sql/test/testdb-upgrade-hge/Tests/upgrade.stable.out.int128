@@ -1,5 +1,5 @@
 Running database upgrade commands:
-delete from sys.dependencies where id = 2048 and depend_id = (select f.id from sys.functions f where name = 'get_merge_table_partition_expressions');
+delete from sys.dependencies where (id, depend_id) in (select c.id, f.id from sys.functions f, sys._tables t, sys._columns c, sys.dependencies d where c.table_id = t.id and f.id = d.depend_id and c.id = d.id and f.schema_id = 2000 and t.schema_id = 2000 and (f.name, t.name, c.name) in (values ('get_merge_table_partition_expressions', 'table_partitions', 'id')));
 
 Running database upgrade commands:
 drop function sys.dump_database;
@@ -87,4 +87,11 @@ BEGIN
 END;
 update sys.functions set system = true where not system and schema_id = 2000 and name = 'dump_database' and type = 5;
 update sys._tables set system = true where not system and schema_id = 2000 and name in ('dump_tables', 'describe_tables');
+
+Running database upgrade commands:
+ALTER TABLE sys.function_types SET READ WRITE;
+COMMIT;
+INSERT INTO sys.function_types VALUES (8, 'Group filter function', 'GROUP FILTER FUNCTION');
+COMMIT;
+ALTER TABLE sys.function_types SET READ ONLY;
 

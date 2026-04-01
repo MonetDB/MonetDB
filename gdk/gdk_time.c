@@ -3,7 +3,7 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
  * For copyright information, see the file debian/copyright.
  */
@@ -12,38 +12,30 @@
 #include "gdk.h"
 #include "gdk_time.h"
 
-#define YEAR_MIN		(-4712)	/* 4713 BC */
+/* layout of a `date`:
+ * bottom 5 bits: day number minus 1 (i.e. 0..27/28/29/30 depending on month)
+ * next 21 bits: (year + 4712) * 12 + month
+ *  where month is 0 based (i.e. counting months since -4712)
+ * i.e. 000000mmmmmmmmmmmmmmmmmmmmmddddd
+ *
+ * A `daytime` is the number of microseconds since midnight
+ * (i.e. max is 24*60*60*1000000 which requires 37 bits out of 64)
+ *
+ * layout of a `timestamp`
+ * bottom 37 bits: `daytime`
+ * next 26 bits: `date` (21 bits months since -4712 and 5 bits day number)
+ * (i.e. 0mmmmmmmmmmmmmmmmmmmmmdddddttttttttttttttttttttttttttttttttttttt)
+ */
 
-#define YEAR_OFFSET		(-YEAR_MIN)
-#define DTDAY_WIDTH		5		/* 1..28/29/30/31, depending on month/year */
-#define DTDAY_SHIFT		0
-#define DTMONTH_WIDTH	21		/* enough for 174761 years (and 8 months) */
+#define YEAR_MIN	(-4712)	/* 4713 BC */
+
+#define YEAR_OFFSET	(-YEAR_MIN)
+#define DTDAY_WIDTH	5	/* 1..28/29/30/31, depending on month/year */
+#define DTDAY_SHIFT	0
+#define DTMONTH_WIDTH	21	/* enough for 174761 years (and 8 months) */
 #define DTMONTH_SHIFT	(DTDAY_WIDTH+DTDAY_SHIFT)
 
-#define YEAR_MAX		(YEAR_MIN+(1<<DTMONTH_WIDTH)/12-1)
-
-#define isdate(y, m, d)	((m) > 0 && (m) <= 12 && (d) > 0 && (y) >= YEAR_MIN && (y) <= YEAR_MAX && (d) <= monthdays(y, m))
-#define mkdate(y, m, d)	((date) (((uint32_t) (((y) + YEAR_OFFSET) * 12 + (m) - 1) << DTMONTH_SHIFT) \
-				 | ((uint32_t) (d) << DTDAY_SHIFT)))
-#define date_extract_day(dt)	((int) (((uint32_t) (dt) >> DTDAY_SHIFT) & ((1 << DTDAY_WIDTH) - 1)))
-#define date_extract_month(dt)	((int) ((((uint32_t) (dt) >> DTMONTH_SHIFT) & ((1 << DTMONTH_WIDTH) - 1)) % 12 + 1))
-#define date_extract_year(dt)	((int) ((((uint32_t) (dt) >> DTMONTH_SHIFT) & ((1 << DTMONTH_WIDTH) - 1)) / 12 - YEAR_OFFSET))
-
-#define istime(h,m,s,u)	((h) >= 0 && (h) < 24 && (m) >= 0 && (m) < 60 && (s) >= 0 && (s) <= 60 && (u) >= 0 && (u) < 1000000)
-#define mkdaytime(h,m,s,u)	(((((daytime) (h) * 60 + (m)) * 60) + (s)) * LL_CONSTANT(1000000) + (u))
-
-#define daytime_extract_hour(tm)	((int) (tm / HOUR_USEC))
-#define daytime_extract_minute(tm)	((int) ((tm / 60000000) % 60))
-#define daytime_extract_usecond(tm)	((int) (tm % 60000000)) /* includes seconds */
-
-#define TSTIME_WIDTH	37		/* [0..24*60*60*1000000) */
-#define TSTIME_SHIFT	0
-#define TSDATE_WIDTH	(DTDAY_WIDTH+DTMONTH_WIDTH)
-#define TSDATE_SHIFT	(TSTIME_SHIFT+TSTIME_WIDTH)
-#define ts_time(ts)		((daytime) (((uint64_t) (ts) >> TSTIME_SHIFT) & ((LL_CONSTANT(1) << TSTIME_WIDTH) - 1)))
-#define ts_date(ts)		((date) (((uint64_t) (ts) >> TSDATE_SHIFT) & ((1 << TSDATE_WIDTH) - 1)))
-#define mktimestamp(d, t)	((timestamp) (((uint64_t) (d) << TSDATE_SHIFT) | \
-					      ((uint64_t) (t) << TSTIME_SHIFT)))
+#define YEAR_MAX	(YEAR_MIN+(1<<DTMONTH_WIDTH)/12-1)
 
 static const int leapdays[13] = { /* days per month in leap year */
 	0, 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31
@@ -51,10 +43,119 @@ static const int leapdays[13] = { /* days per month in leap year */
 static const int cumdays[13] = { /* cumulative days in non leap year */
 	0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365
 };
-#define isleapyear(y)		((y) % 4 == 0 && ((y) % 100 != 0 || (y) % 400 == 0))
-#define monthdays(y, m)		(leapdays[m] - ((m) == 2 && !isleapyear(y)))
 
-const timestamp unixepoch = mktimestamp(mkdate(1970, 1, 1), mkdaytime(0, 0, 0, 0));
+__attribute__((__const__))
+static inline bool
+isleapyear(int y)
+{
+	return y % 4 == 0 && (y % 100 != 0 || y % 400 == 0);
+}
+
+__attribute__((__const__))
+static inline int
+monthdays(int y, int m)
+{
+	return leapdays[m] - (m == 2 && !isleapyear(y));
+}
+
+__attribute__((__const__))
+static inline bool
+isdate(int y, int m, int d)
+{
+	return m > 0 && m <= 12 && d > 0 && y >= YEAR_MIN && y <= YEAR_MAX && d <= monthdays(y, m);
+}
+
+__attribute__((__const__))
+static inline date
+mkdate(int y, int m, int d)
+{
+	return (date) (((uint32_t) ((y + YEAR_OFFSET) * 12 + m - 1) << DTMONTH_SHIFT) | ((uint32_t) d << DTDAY_SHIFT));
+}
+
+__attribute__((__const__))
+static inline int
+date_extract_day(date dt)
+{
+	return (int) (((uint32_t) dt >> DTDAY_SHIFT) & ((1 << DTDAY_WIDTH) - 1));
+}
+
+__attribute__((__const__))
+static inline int
+date_extract_month(date dt)
+{
+	return (int) ((((uint32_t) dt >> DTMONTH_SHIFT) & ((1 << DTMONTH_WIDTH) - 1)) % 12 + 1);
+}
+
+__attribute__((__const__))
+static inline int
+date_extract_year(date dt)
+{
+	return (int) ((((uint32_t) dt >> DTMONTH_SHIFT) & ((1 << DTMONTH_WIDTH) - 1)) / 12 - YEAR_OFFSET);
+}
+
+__attribute__((__const__))
+static inline bool
+istime(int h, int m, int s, int u)
+{
+	return h >= 0 && h < 24 && m >= 0 && m < 60 && s >= 0 && s <= 60 && u >= 0 && u < 1000000;
+}
+
+__attribute__((__const__))
+static inline daytime
+mkdaytime(int h, int m, int s, int u)
+{
+	return ((((daytime) h * 60 + m) * 60) + s) * LL_CONSTANT(1000000) + u;
+}
+
+__attribute__((__const__))
+static inline int
+daytime_extract_hour(daytime tm)
+{
+	return (int) (tm / HOUR_USEC);
+}
+
+__attribute__((__const__))
+static inline int
+daytime_extract_minute(daytime tm)
+{
+	return (int) ((tm / 60000000) % 60);
+}
+
+__attribute__((__const__))
+static inline int
+daytime_extract_usecond(daytime tm)
+{
+	return (int) (tm % 60000000); /* includes seconds */
+}
+
+#define TSTIME_WIDTH	37		/* [0..24*60*60*1000000) */
+#define TSTIME_SHIFT	0
+#define TSDATE_WIDTH	(DTDAY_WIDTH+DTMONTH_WIDTH)
+#define TSDATE_SHIFT	(TSTIME_SHIFT+TSTIME_WIDTH)
+
+__attribute__((__const__))
+static inline daytime
+ts_time(timestamp ts)
+{
+	return (daytime) (((uint64_t) ts >> TSTIME_SHIFT) & ((LL_CONSTANT(1) << TSTIME_WIDTH) - 1));
+}
+
+__attribute__((__const__))
+static inline date
+ts_date(timestamp ts)
+{
+	return (date) (((uint64_t) ts >> TSDATE_SHIFT) & ((1 << TSDATE_WIDTH) - 1));
+}
+
+__attribute__((__const__))
+static inline timestamp
+mktimestamp(date d, daytime t)
+{
+	return (timestamp) (((uint64_t) d << TSDATE_SHIFT) |
+			    ((uint64_t) t << TSTIME_SHIFT));
+}
+
+const timestamp unixepoch = (((((timestamp) 1970 + YEAR_OFFSET) * 12) << DTMONTH_SHIFT) | ((timestamp) 1 << DTDAY_SHIFT)) << TSDATE_SHIFT; /* mktimestamp(mkdate(1970, 1, 1), mkdaytime(0, 0, 0, 0)) */
 
 date
 date_create(int year, int month, int day)

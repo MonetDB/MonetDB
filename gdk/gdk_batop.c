@@ -3,7 +3,7 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
  * For copyright information, see the file debian/copyright.
  */
@@ -2061,6 +2061,14 @@ BATslice(BAT *b, BUN l, BUN h)
 		} else {
 			bn->tnokey[0] = bn->tnokey[1] = 0;
 		}
+		if (bi.minpos >= l && bi.minpos < h)
+			bn->tminpos = bi.minpos - l;
+		else
+			bn->tminpos = BUN_NONE;
+		if (bi.maxpos >= l && bi.maxpos < h)
+			bn->tmaxpos = bi.maxpos - l;
+		else
+			bn->tmaxpos = BUN_NONE;
 	}
   doreturn:
 	bat_iterator_end(&bi);
@@ -3237,12 +3245,14 @@ BATcount_no_nil(BAT *b, BAT *s)
 		return ci.ncand;
 	}
 	if (BATcheckhash(b)) {
+		MT_rwlock_rdlock(&b->thashlock);
 		BUN p = 0;
 		const void *nil = ATOMnilptr(b->ttype);
 		cnt = ci.ncand;
 		HASHloop(&bi, b->thash, p, nil)
 			if (canditer_contains(&ci, p + b->hseqbase))
 				cnt--;
+		MT_rwlock_rdunlock(&b->thashlock);
 		bat_iterator_end(&bi);
 		return cnt;
 	}

@@ -3,7 +3,7 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
  * For copyright information, see the file debian/copyright.
  */
@@ -155,6 +155,7 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 	allocator_state ta_state = ma_open(ta);
 	/*mnstr_printf(fout, "%p ", e);*/
 	if (mvc_debug_on(sql, 4) && e->alias.label < 0)
+	//if (sql->show_details && e->alias.label < 0)
 		mnstr_printf(fout, "%d: ", e->alias.label);
 	switch(e->type) {
 	case e_psm: {
@@ -295,6 +296,7 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 	case e_column: {
 		if (is_freevar(e))
 			mnstr_printf(fout, "!!!FREE!!! ");
+		//if (sql->show_details && e->nid)
 		if (mvc_debug_on(sql, 4) && e->nid)
 			mnstr_printf(fout, "<%d", e->nid);
 		if (e->l) {

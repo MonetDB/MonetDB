@@ -3,7 +3,7 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
  * For copyright information, see the file debian/copyright.
  */
@@ -432,10 +432,12 @@ exp_match_exp_cmp( sql_exp *e1, sql_exp *e2)
 /* Pushing projects up the tree. Done very early in the optimizer.
  * Makes later steps easier.
  */
+static sql_rel * rel_project_select_exp(visitor *v, sql_rel *rel);
 extern void _rel_print(mvc *sql, sql_rel *rel);
 static sql_rel *
 rel_push_project_up_(visitor *v, sql_rel *rel)
 {
+	rel = rel_project_select_exp(v, rel);
 	if (is_simple_project(rel->op) && rel->l && !rel_is_ref(rel)) {
 		sql_rel *l = rel->l;
 		if (is_simple_project(l->op))
@@ -1483,8 +1485,12 @@ static inline sql_rel *
 rel_simplify_groupby_columns(visitor *v, sql_rel *rel)
 {
 	if (is_groupby(rel->op) && !list_empty(rel->r)) {
-		sql_rel *l = rel->l;
+		sql_rel *l = rel->l, *p = rel;
 
+		if (l && is_select(l->op)) {
+			p = l;
+			l = l->l;
+		}
 		for (node *n=((list*)rel->r)->h; n ; n = n->next) {
 			sql_exp *e = n->data;
 			e->used = 0; /* we need to use this flag, clean it first */
@@ -1558,7 +1564,7 @@ rel_simplify_groupby_columns(visitor *v, sql_rel *rel)
 						if (!has_label(e)) /* dangerous to merge, skip it */
 							continue;
 						if (!is_simple_project(l->op) || !list_empty(l->r) || rel_is_ref(l) || need_distinct(l))
-							rel->l = l = rel_project(v->sql->sa, l, rel_projections(v->sql, l, NULL, 1, 1));
+							p->l = l = rel_project(v->sql->sa, l, rel_projections(v->sql, l, NULL, 1, 1));
 						list_append(l->exps, e);
 						n->data = e = exp_ref(v->sql, e);
 						list_hash_clear(rel->r);
@@ -1589,7 +1595,7 @@ rel_simplify_groupby_columns(visitor *v, sql_rel *rel)
 							if (colf) /* a col reference is already there, add a new label */
 								exp_label(v->sql->sa, ne, ++v->sql->label);
 							if (!is_simple_project(l->op) || !list_empty(l->r) || rel_is_ref(l) || need_distinct(l))
-								rel->l = l = rel_project(v->sql->sa, l, rel_projections(v->sql, l, NULL, 1, 1));
+								p->l = l = rel_project(v->sql->sa, l, rel_projections(v->sql, l, NULL, 1, 1));
 							list_append(l->exps, ne);
 							n->data = exp_ref(v->sql, ne);
 						}
@@ -2152,7 +2158,7 @@ gen_push_groupby_down(mvc *sql, sql_rel *rel, int *changes)
 				list *args = ce->l;
 
 				/* check args are part of left/right */
-				if (!list_empty(args) && rel_has_exps(cl, args, false) == 0)
+				if (!list_empty(args) && rel_has_exps(cr, args, false) != 0)
 					return rel;
 				if (rel->op != op_join && exp_aggr_is_count(ce))
 					ce->p = prop_create(sql->sa, PROP_COUNT, ce->p);
@@ -3162,6 +3168,18 @@ rel_project_select_exp(visitor *v, sql_rel *rel)
 			for(node *n = rel->exps->h; n; n = n->next) {
 				sql_exp *col = n->data;
 				if (col->type == e_column) {
+					sql_rel *ll = l->l;
+					/* first check if lower project is const */
+					if (is_simple_project(ll->op) && !ll->dynamic /* not base part of recusive union */) { 
+						sql_exp *i = rel_find_exp(l, col);
+						if (i && exp_is_atom(i) && !i->f) {
+							sql_exp *e = n->data = exp_copy(v->sql, i);
+							exp_setalias(e, col->alias.label, exp_relname(col), exp_name(col));
+							exp_propagate(v->sql->sa, e, col);
+							list_hash_clear(rel->exps);
+							continue;
+						}
+					}
 					for(node *m = l->exps->h; m; m = m->next) {
 						sql_exp *cmp = m->data;
 						if (cmp->type == e_cmp && cmp->flag == cmp_equal && !is_anti(cmp) && !is_semantics(cmp) && exp_is_atom(cmp->r)) {
@@ -3378,7 +3396,7 @@ rel_push_join_down_munion(visitor *v, sql_rel *rel)
 		list *exps = rel->exps, *attr = rel->attr;
 		sql_exp *je = NULL;
 
-		if (is_recursive(l) || is_recursive(r))
+		if (is_recursive(l) || is_recursive(r) || exps_has_group_filter(rel->exps) /* we cannot push group join like filters down */)
 			return rel;
 		/* we would like to optimize in place reference rels which point
 		 * to replica tables and let the replica optimizer handle those

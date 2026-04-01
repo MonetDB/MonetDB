@@ -3,7 +3,7 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
  * For copyright information, see the file debian/copyright.
  */
@@ -62,35 +62,6 @@
  * stp*: chainable interface;
  * stpe*: chainable with end-of-buffer pointer.
  */
-
-#ifndef HAVE_STRNLEN
-__attribute__((__pure__))
-__attribute__((__nonnull__(1)))
-__attribute__((__access__(read_only, 1, 2)))
-static inline size_t
-strnlen(const char *s, size_t n)
-{
-	for (size_t i = 0; i < n; i++)
-		if (s[i] == 0)
-			return i;
-	return n;
-}
-#endif
-
-#ifndef HAVE_STRNDUP
-__attribute__((__nonnull__(1)))
-static inline char *
-strndup(const char *s, size_t n)
-{
-	n = strnlen(s, n);
-	char *p = malloc(n + 1);
-	if (p != NULL) {
-		memcpy(p, s, n);
-		p[n] = 0;
-	}
-	return p;
-}
-#endif
 
 #ifndef HAVE_STRLCPY
 /* Copy the input string into a destination string.  If the destination

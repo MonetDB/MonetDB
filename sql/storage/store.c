@@ -3,7 +3,7 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
  * For copyright information, see the file debian/copyright.
  */
@@ -1034,6 +1034,10 @@ load_func(sql_trans *tr, sql_schema *s, sqlid fid, subrids *rs)
 	t->lang = (sql_flang) store->table_api.column_find_int(tr, find_sql_column(funcs, "language"), rid);
 	t->instantiated = t->lang != FUNC_LANG_SQL && t->lang != FUNC_LANG_MAL;
 	t->type = (sql_ftype) store->table_api.column_find_int(tr, find_sql_column(funcs, "type"), rid);
+	if (t->type == F_GROUPFILT) {
+		t->group = true;
+		t->type = F_FILT;
+	}
 	t->side_effect = (bool) store->table_api.column_find_bte(tr, find_sql_column(funcs, "side_effect"), rid);
 	t->varres = (bool) store->table_api.column_find_bte(tr, find_sql_column(funcs, "varres"), rid);
 	t->vararg = (bool) store->table_api.column_find_bte(tr, find_sql_column(funcs, "vararg"), rid);
@@ -5669,6 +5673,10 @@ create_sql_func(sqlstore *store, allocator *sa, const char *func, list *args, li
 	t->imp = (impl)?SA_STRDUP(sa, impl):NULL;
 	t->mod = SA_STRDUP(sa, mod);
 	t->type = type;
+	if (t->type == F_GROUPFILT) {
+		t->group = true;
+		t->type = F_FILT;
+	}
 	t->lang = lang;
 	t->instantiated = lang != FUNC_LANG_SQL && lang != FUNC_LANG_MAL;
 	t->semantics = TRUE;
@@ -5705,6 +5713,10 @@ sql_trans_create_func(sql_func **fres, sql_trans *tr, sql_schema *s, const char 
 	t->imp = (impl)?_STRDUP(impl):NULL;
 	t->mod =_STRDUP(mod);
 	t->type = type;
+	if (t->type == F_GROUPFILT) {
+		t->group = true;
+		t->type = F_FILT;
+	}
 	t->lang = lang;
 	t->instantiated = lang != FUNC_LANG_SQL && lang != FUNC_LANG_MAL;
 	t->semantics = semantics;

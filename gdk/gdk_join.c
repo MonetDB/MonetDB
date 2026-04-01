@@ -3,7 +3,7 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
  * For copyright information, see the file debian/copyright.
  */
@@ -3994,11 +3994,10 @@ fetchjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	r1->trevsorted = ri.revsorted || e - b <= 1;
 	r1->tseqbase = e == b ? 0 : e - b == 1 ? *(const oid *)Tloc(r1, 0) : oid_nil;
 	bat_iterator_end(&ri);
-	TRC_DEBUG(ALGO, "%s(l=" ALGOBATFMT ","
+	TRC_DEBUG(ALGO, "l=" ALGOBATFMT ","
 		  "r=" ALGOBATFMT ",sl=" ALGOOPTBATFMT ","
-		  "sr=" ALGOOPTBATFMT ") %s "
-		  "-> (" ALGOBATFMT "," ALGOOPTBATFMT ") " LLFMT "us\n",
-		  __func__,
+		  "sr=" ALGOOPTBATFMT " %s "
+		  "-> " ALGOBATFMT "," ALGOOPTBATFMT " (" LLFMT " usec)\n",
 		  ALGOBATPAR(l), ALGOBATPAR(r),
 		  ALGOOPTBATPAR(sl), ALGOOPTBATPAR(sr),
 		  reason,
@@ -4588,9 +4587,9 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches
 	}
 
 	if (lci.ncand == 0 || rci.ncand == 0) {
-		TRC_DEBUG(ALGO, "BATjoin(l=" ALGOBATFMT ","
+		TRC_DEBUG(ALGO, "l=" ALGOBATFMT ","
 			  "r=" ALGOBATFMT ",sl=" ALGOOPTBATFMT ","
-			  "sr=" ALGOOPTBATFMT ",nil_matches=%d)\n",
+			  "sr=" ALGOOPTBATFMT ",nil_matches=%d\n",
 			  ALGOBATPAR(l), ALGOBATPAR(r),
 			  ALGOOPTBATPAR(sl), ALGOOPTBATPAR(sr),
 			  nil_matches);

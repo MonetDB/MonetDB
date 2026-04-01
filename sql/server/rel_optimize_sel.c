@@ -3,7 +3,7 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
  * For copyright information, see the file debian/copyright.
  */
@@ -185,6 +185,8 @@ bind_remove_redundant_join(visitor *v, global_props *gp)
 static list *
 exp_merge_range(visitor *v, sql_rel *rel, list *exps)
 {
+	if (!exps)
+		return exps;
 	node *n, *m;
 	for (n=exps->h; n; n = n->next) {
 		sql_exp *e = n->data;
@@ -468,8 +470,23 @@ exps_cse_dis( visitor *v, list *oexps, sql_exp *de)
 		m = m->next;
 		lpos++;
 	}
-	//if (changes) {
-		/* todo check for empty lists */
+	if (changes) {
+		for (node *n = dis->h; n; ) {
+			node *nxt = n->next;
+			if (!n->data)
+				list_remove_node(dis, NULL, n);
+			else {
+				sql_exp *e = n->data;
+				assert(e->type == e_cmp && e->flag == cmp_con);
+				list *l = e->l;
+				if (list_empty(l))
+					list_remove_node(dis, NULL, n);
+			}
+			n = nxt;
+		}
+		if (list_empty(dis))
+			de = exp_atom_bool(v->sql->sa, 1);
+	}
 	append(oexps, de);
 	return changes;
 }
@@ -1110,6 +1127,7 @@ rel_merge_select_rse(visitor *v, sql_rel *rel)
 	return rel;
 }
 
+static sql_rel * rel_push_select_down(visitor *v, sql_rel *rel);
 /* pack optimizers into a single function call to avoid iterations in the AST */
 static sql_rel *
 rel_optimize_select_and_joins_bottomup_(visitor *v, sql_rel *rel)
@@ -1118,6 +1136,7 @@ rel_optimize_select_and_joins_bottomup_(visitor *v, sql_rel *rel)
 		return rel;
 	uint8_t cycle = *(uint8_t*) v->data;
 
+	rel = rel_push_select_down(v, rel);
 	rel->exps = exp_merge_range(v, rel, rel->exps);
 	rel = rel_select_cse(v, rel);
 	if (cycle == 1)
@@ -3902,7 +3921,8 @@ rel_push_select_down(visitor *v, sql_rel *rel)
 			set_distinct(rel);
 		v->changes++;
 	}
-	if (is_select(rel->op) && r && is_munion(r->op) && !is_recursive(r) && !list_empty(r->exps) && !rel_is_ref(r) && !is_single(r) && !list_empty(exps)) {
+	if (is_select(rel->op) && !exps_has_group_filter(rel->exps) && 
+     	    r && is_munion(r->op) && !is_recursive(r) && !list_empty(r->exps) && !rel_is_ref(r) && !is_single(r) && !list_empty(exps)) {
 		sql_rel *u = r;
 		list *rels = u->l, *nrels = sa_list(v->sql->sa);
 		for(node *n = rels->h; n; n = n->next) {

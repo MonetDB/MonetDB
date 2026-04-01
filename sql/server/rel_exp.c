@@ -3,7 +3,7 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
  * For copyright information, see the file debian/copyright.
  */
@@ -850,9 +850,8 @@ exp_propagate(allocator *sa, sql_exp *ne, sql_exp *oe)
 }
 
 static sql_exp *
-exp_ref_by_label(mvc *sql, sql_exp *o)
+exp_ref_by_label(allocator *sa, sql_exp *o)
 {
-	allocator *sa = sql->sa;
 	sql_exp *e = exp_create(sa, e_column);
 
 	if (e == NULL)
@@ -892,7 +891,7 @@ exp_ref(mvc *sql, sql_exp *e)
 	if (!has_label(e) && !exp_name(e))
 		exp_label(sql->sa, e, ++sql->label);
 	if (e->alias.label)
-		return exp_ref_by_label(sql, e);
+		return exp_ref_by_label(sql->sa, e);
 	sql_exp *ne = exp_propagate(sql->sa, exp_column(sql->sa, exp_relname(e), exp_name(e), exp_subtype(e), exp_card(e), has_nil(e), is_unique(e), is_intern(e)), e);
 	if (ne) {
 		ne->nid = e->alias.label;
@@ -928,7 +927,7 @@ exp_alias(mvc *sql, sql_alias *arname, const char *acname, sql_alias *org_rname,
 	if (e == NULL)
 		return NULL;
 	assert(acname && org_cname);
-	exp_setname(sql, e, arname?arname:org_rname, acname);
+	exp_setname(sql, e, (arname)?arname:org_rname, acname);
 	return e;
 }
 
@@ -3772,10 +3771,10 @@ exp_aggr_is_count(sql_exp *e)
 list *
 check_distinct_exp_names(mvc *sql, list *exps)
 {
-	(void) sql;
 	list *distinct_exps = NULL;
 	bool duplicates = false;
 
+	(void) sql;
 	if (list_length(exps) < 2) {
 		return exps; /* always true */
 	} else if (list_length(exps) < 5) {
@@ -4541,6 +4540,22 @@ free_exp(allocator *sa, sql_exp *e)
 			break;
 	}
 	_free_exp_internal(sa, e);
+}
+
+bool
+exps_has_group_filter(list *exps)
+{
+	if (list_empty(exps))
+		return false;
+	for(node *n = exps->h; n; n = n->next) {
+		sql_exp *e = n->data;
+		if (e->type == e_cmp && e->flag == cmp_filter) {
+			sql_subfunc *sf = e->f;
+			if (sf->func->group)
+				return true;
+		}
+	}
+	return false;
 }
 
 inline list *

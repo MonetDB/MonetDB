@@ -66,6 +66,7 @@ select * from generate_series(
 	cast( '-10' as interval hour))
 where value < timestamp '2008-03-02 00:00'
 ----
+2008-03-01 04:00:00
 2008-03-01 14:00:00
 
 query T rowsort

@@ -3,7 +3,7 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
  * For copyright information, see the file debian/copyright.
  */
@@ -12,6 +12,7 @@
 #include "gdk.h"
 #include "gdk_analytic.h"
 #include "gdk_calc_private.h"
+#include "gdk_private.h"
 
 #ifdef HAVE_HGE
 #define LNG_HGE         hge
@@ -193,7 +194,7 @@ avg_num_deltas(lng)
 			goto cleanup;					\
 		populate_segment_tree(avg_num_deltas##TPE, ncount, INIT_AGGREGATE_AVG_NUM, COMPUTE_LEVEL0_AVG_NUM, COMPUTE_LEVELN_AVG_NUM, TPE, NOTHING, NOTHING); \
 		for (; k < i; k++)					\
-			if ((lng)(start[k]-j) >= 0)				\
+			if (start[k] >= j)				\
 				compute_on_segment_tree(avg_num_deltas##TPE, start[k] - j, end[k] - j, INIT_AGGREGATE_AVG_NUM, COMPUTE_LEVELN_AVG_NUM, FINALIZE_AGGREGATE_AVG_NUM, TPE, NOTHING, NOTHING); \
 		j = k;							\
 	} while (0)
@@ -298,7 +299,7 @@ avg_fp_deltas(dbl)
 			goto cleanup;					\
 		populate_segment_tree(avg_fp_deltas_##TPE, ncount, INIT_AGGREGATE_AVG_FP, COMPUTE_LEVEL0_AVG_FP, COMPUTE_LEVELN_AVG_FP, TPE, NOTHING, NOTHING); \
 		for (; k < i; k++)					\
-			if ((lng)(start[k]-j) >= 0)				\
+			if (start[k] >= j)				\
 				compute_on_segment_tree(avg_fp_deltas_##TPE, start[k] - j, end[k] - j, INIT_AGGREGATE_AVG_FP, COMPUTE_LEVELN_AVG_FP, FINALIZE_AGGREGATE_AVG_FP, TPE, NOTHING, NOTHING); \
 		j = k;							\
 	} while (0)
@@ -384,7 +385,7 @@ GDKanalyticalavg(BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, int frame_type
 #else
 	lng sum = 0;
 #endif
-	BAT *st = NULL;
+	Heap *st = NULL;
 
 	assert(np == NULL || cnt == 0 || np[0] == 0);
 	if (cnt > 0) {
@@ -420,7 +421,8 @@ cleanup:
 	bat_iterator_end(&bi);
 	bat_iterator_end(&si);
 	bat_iterator_end(&ei);
-	BBPreclaim(st);
+	if (st)
+		HEAPdecref(st, true);
 	if (res != GDK_SUCCEED) {
 		BBPreclaim(r);
 		r = NULL;
@@ -579,7 +581,7 @@ avg_int_deltas(lng)
 			goto cleanup;					\
 		populate_segment_tree(avg_int_deltas_##TPE, ncount, INIT_AGGREGATE_AVG_INT, COMPUTE_LEVEL0_AVG_INT, COMPUTE_LEVELN_AVG_INT, TPE, NOTHING, NOTHING); \
 		for (; k < i; k++)					\
-			if ((lng)(start[k]-j) >= 0)				\
+			if (start[k] >= j)				\
 				compute_on_segment_tree(avg_int_deltas_##TPE, start[k] - j, end[k] - j, INIT_AGGREGATE_AVG_INT, COMPUTE_LEVELN_AVG_INT, FINALIZE_AGGREGATE_AVG_INT, TPE, NOTHING, NOTHING); \
 		j = k;							\
 	} while (0)
@@ -653,7 +655,7 @@ GDKanalyticalavginteger(BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, int fra
 	bit *np = pi.base, *op = oi.base;
 	void *segment_tree = NULL;
 	gdk_return res = GDK_SUCCEED;
-	BAT *st = NULL;
+	Heap *st = NULL;
 
 	assert(np == NULL || cnt == 0 || np[0] == 0);
 	if (cnt > 0) {
@@ -689,7 +691,8 @@ cleanup:
 	bat_iterator_end(&bi);
 	bat_iterator_end(&si);
 	bat_iterator_end(&ei);
-	BBPreclaim(st);
+	if (st)
+		HEAPdecref(st, true);
 	if (res != GDK_SUCCEED) {
 		BBPreclaim(r);
 		r = NULL;
@@ -850,7 +853,7 @@ typedef struct stdev_var_deltas {
 			goto cleanup;					\
 		populate_segment_tree(stdev_var_deltas, ncount, INIT_AGGREGATE_STDEV_VARIANCE, COMPUTE_LEVEL0_STDEV_VARIANCE, COMPUTE_LEVELN_STDEV_VARIANCE, TPE, SAMPLE, OP); \
 		for (; k < i; k++)					\
-			if ((lng)(start[k]-j) >= 0)				\
+			if (start[k] >= j)				\
 				compute_on_segment_tree(stdev_var_deltas, start[k] - j, end[k] - j, INIT_AGGREGATE_STDEV_VARIANCE, COMPUTE_LEVELN_STDEV_VARIANCE, FINALIZE_AGGREGATE_STDEV_VARIANCE, TPE, SAMPLE, OP); \
 		j = k;							\
 	} while (0)
@@ -930,7 +933,7 @@ GDKanalytical_##NAME(BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, int frame_
 	dbl *rb = (dbl *) Tloc(r, 0), mean = 0, m2 = 0, delta;		\
 	void *segment_tree = NULL;					\
 	gdk_return res = GDK_SUCCEED;					\
-	BAT *st = NULL;							\
+	Heap *st = NULL;						\
 									\
 	assert(np == NULL || cnt == 0 || np[0] == 0);			\
 	if (cnt > 0) {							\
@@ -960,17 +963,14 @@ GDKanalytical_##NAME(BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, int frame_
 	BATsetcount(r, cnt);						\
 	r->tnonil = !has_nils;						\
 	r->tnil = has_nils;						\
-	goto cleanup; /* all these gotos seem confusing but it cleans up the ending of the operator */ \
-overflow:								\
-	GDKerror("22003!overflow in calculation.\n");			\
-	res = GDK_FAIL;							\
 cleanup:								\
 	bat_iterator_end(&pi);						\
 	bat_iterator_end(&oi);						\
 	bat_iterator_end(&bi);						\
 	bat_iterator_end(&si);						\
 	bat_iterator_end(&ei);						\
-	BBPreclaim(st);							\
+	if (st)								\
+		HEAPdecref(st, true);					\
 	if (res != GDK_SUCCEED) {					\
 		BBPreclaim(r);						\
 		r = NULL;						\
@@ -978,6 +978,10 @@ cleanup:								\
 	return r;							\
 nosupport:								\
 	GDKerror("42000!%s of type %s unsupported.\n", DESC, ATOMname(tpe)); \
+	res = GDK_FAIL;							\
+	goto cleanup;							\
+overflow:								\
+	GDKerror("22003!overflow in calculation.\n");			\
 	res = GDK_FAIL;							\
 	goto cleanup;							\
 }
@@ -1136,7 +1140,7 @@ typedef struct covariance_deltas {
 			goto cleanup;					\
 		populate_segment_tree(covariance_deltas, ncount, INIT_AGGREGATE_COVARIANCE, COMPUTE_LEVEL0_COVARIANCE, COMPUTE_LEVELN_COVARIANCE, TPE, SAMPLE, OP); \
 		for (; k < i; k++)					\
-			if ((lng)(start[k]-j) >= 0)				\
+			if (start[k] >= j)				\
 				compute_on_segment_tree(covariance_deltas, start[k] - j, end[k] - j, INIT_AGGREGATE_COVARIANCE, COMPUTE_LEVELN_COVARIANCE, FINALIZE_AGGREGATE_COVARIANCE, TPE, SAMPLE, OP); \
 		j = k;							\
 	} while (0)
@@ -1162,7 +1166,7 @@ GDKanalytical_##NAME(BAT *p, BAT *o, BAT *b1, BAT *b2, BAT *s, BAT *e, int tpe, 
 	dbl *rb = (dbl *) Tloc(r, 0), mean1 = 0, mean2 = 0, m2 = 0, delta1, delta2; \
 	void *segment_tree = NULL;					\
 	gdk_return res = GDK_SUCCEED;					\
-	BAT *st = NULL;							\
+	Heap *st = NULL;						\
 									\
 	assert(np == NULL || cnt == 0 || np[0] == 0);			\
 	if (cnt > 0) {							\
@@ -1192,10 +1196,6 @@ GDKanalytical_##NAME(BAT *p, BAT *o, BAT *b1, BAT *b2, BAT *s, BAT *e, int tpe, 
 	BATsetcount(r, cnt);						\
 	r->tnonil = !has_nils;						\
 	r->tnil = has_nils;						\
-	goto cleanup; /* all these gotos seem confusing but it cleans up the ending of the operator */ \
-overflow:								\
-	GDKerror("22003!overflow in calculation.\n");			\
-	res = GDK_FAIL;							\
 cleanup:								\
 	bat_iterator_end(&pi);						\
 	bat_iterator_end(&oi);						\
@@ -1203,7 +1203,8 @@ cleanup:								\
 	bat_iterator_end(&b2i);						\
 	bat_iterator_end(&si);						\
 	bat_iterator_end(&ei);						\
-	BBPreclaim(st);							\
+	if (st)								\
+		HEAPdecref(st, true);					\
 	if (res != GDK_SUCCEED) {					\
 		BBPreclaim(r);						\
 		r = NULL;						\
@@ -1211,6 +1212,10 @@ cleanup:								\
 	return r;							\
 nosupport:								\
 	GDKerror("42000!covariance of type %s unsupported.\n", ATOMname(tpe)); \
+	res = GDK_FAIL;							\
+	goto cleanup;							\
+overflow:								\
+	GDKerror("22003!overflow in calculation.\n");			\
 	res = GDK_FAIL;							\
 	goto cleanup;							\
 }
@@ -1402,7 +1407,7 @@ typedef struct correlation_deltas {
 			goto cleanup;					\
 		populate_segment_tree(correlation_deltas, ncount, INIT_AGGREGATE_CORRELATION, COMPUTE_LEVEL0_CORRELATION, COMPUTE_LEVELN_CORRELATION, TPE, SAMPLE, OP); \
 		for (; k < i; k++)					\
-			if ((lng)(start[k]-j) >= 0)				\
+			if (start[k] >= j)				\
 				compute_on_segment_tree(correlation_deltas, start[k] - j, end[k] - j, INIT_AGGREGATE_CORRELATION, COMPUTE_LEVELN_CORRELATION, FINALIZE_AGGREGATE_CORRELATION, TPE, SAMPLE, OP); \
 		j = k;							\
 	} while (0)
@@ -1410,6 +1415,8 @@ typedef struct correlation_deltas {
 BAT *
 GDKanalytical_correlation(BAT *p, BAT *o, BAT *b1, BAT *b2, BAT *s, BAT *e, int tpe, int frame_type)
 {
+	lng t0 = 0;
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 	BAT *r = COLnew(b1->hseqbase, TYPE_dbl, BATcount(b1), TRANSIENT);
 	if (r == NULL)
 		return NULL;
@@ -1428,7 +1435,7 @@ GDKanalytical_correlation(BAT *p, BAT *o, BAT *b1, BAT *b2, BAT *s, BAT *e, int 
 	dbl *rb = (dbl *) Tloc(r, 0), mean1 = 0, mean2 = 0, up = 0, down1 = 0, down2 = 0, delta1, delta2, aux, rr;
 	void *segment_tree = NULL;
 	gdk_return res = GDK_SUCCEED;
-	BAT *st = NULL;
+	Heap *st = NULL;
 
 	assert(np == NULL || cnt == 0 || np[0] == 0);
 	if (cnt > 0) {
@@ -1458,10 +1465,6 @@ GDKanalytical_correlation(BAT *p, BAT *o, BAT *b1, BAT *b2, BAT *s, BAT *e, int 
 	BATsetcount(r, cnt);
 	r->tnonil = !has_nils;
 	r->tnil = has_nils;
-	goto cleanup; /* all these gotos seem confusing but it cleans up the ending of the operator */
-overflow:
-	GDKerror("22003!overflow in calculation.\n");
-	res = GDK_FAIL;
 cleanup:
 	bat_iterator_end(&pi);
 	bat_iterator_end(&oi);
@@ -1469,14 +1472,30 @@ cleanup:
 	bat_iterator_end(&b2i);
 	bat_iterator_end(&si);
 	bat_iterator_end(&ei);
-	BBPreclaim(st);
+	if (st)
+		HEAPdecref(st, true);
 	if (res != GDK_SUCCEED) {
 		BBPreclaim(r);
 		r = NULL;
+	} else {
+		TRC_DEBUG(ALGO, "p=" ALGOOPTBATFMT ",o=" ALGOOPTBATFMT
+			  ",b1=" ALGOBATFMT ",b2=" ALGOBATFMT
+			  ",s=" ALGOOPTBATFMT ",e=" ALGOOPTBATFMT
+			  ",tpe=%s,frame_type=%d -> "
+			  ALGOBATFMT " (" LLFMT " usec)\n",
+			  ALGOOPTBATPAR(p), ALGOOPTBATPAR(o),
+			  ALGOBATPAR(b1), ALGOBATPAR(b2), ALGOOPTBATPAR(s),
+			  ALGOOPTBATPAR(e), ATOMname(tpe),
+			  frame_type, ALGOBATPAR(r),
+			  GDKusec() - t0);
 	}
 	return r;
   nosupport:
 	GDKerror("42000!correlation of type %s unsupported.\n", ATOMname(tpe));
+	res = GDK_FAIL;
+	goto cleanup;
+overflow:
+	GDKerror("22003!overflow in calculation.\n");
 	res = GDK_FAIL;
 	goto cleanup;
 }

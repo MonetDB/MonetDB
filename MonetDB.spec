@@ -2,7 +2,7 @@
 #
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
 #
 # For copyright information, see the file debian/copyright.
 
@@ -58,8 +58,8 @@
 # derivatives (CentOS, Scientific Linux), the geos library is not
 # available.  However, the geos library is available in the Extra
 # Packages for Enterprise Linux (EPEL).
-%if %{fedpkgs} && (0%{?rhel} != 7) && (0%{?rhel} != 8) && (0%{?rhel} != 9)
-# By default create the MonetDB-geom package on Fedora and RHEL 7
+%if %{fedpkgs} && (0%{?rhel} != 8)
+# By default create the MonetDB-geom package on Fedora
 %bcond_without geos
 %endif
 
@@ -95,20 +95,12 @@ URL: https://www.monetdb.org/
 BugURL: https://github.com/MonetDB/MonetDB/issues
 Source: https://www.monetdb.org/downloads/sources/Dec2025-SP1/MonetDB-%{version}.tar.bz2
 
-# The Fedora packaging document says we need systemd-rpm-macros for
-# the _unitdir and _tmpfilesdir macros to exist; however on RHEL 7
-# that doesn't exist and we need systemd, so instead we just require
-# the macro file that contains the definitions.
 # We need checkpolicy and selinux-policy-devel for the SELinux policy.
-%if 0%{?rhel} != 7
 BuildRequires: systemd-rpm-macros
-%else
-BuildRequires: systemd
-%endif
 BuildRequires: checkpolicy
 BuildRequires: selinux-policy-devel
 BuildRequires: hardlink
-BuildRequires: cmake3 >= 3.12
+BuildRequires: cmake >= 3.12
 BuildRequires: gcc
 BuildRequires: bison
 BuildRequires: python3-devel
@@ -119,9 +111,7 @@ BuildRequires: unixODBC-devel
 BuildRequires: readline-devel
 %else
 BuildRequires: pkgconfig(bzip2)
-%if %{without compat}
 BuildRequires: pkgconfig(odbc)
-%endif
 BuildRequires: pkgconfig(readline)
 %endif
 %if %{with fits}
@@ -133,10 +123,8 @@ BuildRequires: geos-devel >= 3.10.0
 BuildRequires: pkgconfig(libcurl)
 BuildRequires: pkgconfig(liblzma)
 BuildRequires: pkgconfig(libxml-2.0)
-%if 0%{?rhel} != 7
 BuildRequires: pkgconfig(openssl) >= 1.1.1
 %global with_openssl 1
-%endif
 %if %{with pcre}
 BuildRequires: pkgconfig(libpcre2-8)
 %endif
@@ -144,8 +132,7 @@ BuildRequires: pkgconfig(zlib)
 BuildRequires: pkgconfig(liblz4) >= 1.8
 %if %{with py3integration}
 BuildRequires: pkgconfig(python3) >= 3.5
-# cannot use python3dist(numpy) because of CentOS 7
-BuildRequires: python3-numpy
+BuildRequires: python3dist(numpy)
 %endif
 %if %{with rintegration}
 BuildRequires: pkgconfig(libR)
@@ -157,11 +144,9 @@ BuildRequires: pkgconfig(libR)
 # BuildRequires: pkgconfig(proj)        # -DWITH_PROJ=ON
 # BuildRequires: pkgconfig(valgrind)    # -DWITH_VALGRIND=ON
 
-%if (0%{?fedora} >= 22)
 Recommends: %{name}-SQL%{?_isa} = %{version}-%{release}
 Recommends: %{name}-server%{?_isa} = %{version}-%{release}
 Suggests: %{name}-client%{?_isa} = %{version}-%{release}
-%endif
 
 %description
 MonetDB is a database management system that is developed from a
@@ -178,7 +163,7 @@ more client packages.
 %ldconfig_scriptlets
 
 %files
-%license COPYING
+%license LICENSE
 %defattr(-,root,root)
 %{_libdir}/libbat*.so.*
 
@@ -233,7 +218,7 @@ various other components.
 %ldconfig_scriptlets mutils
 
 %files mutils
-%license COPYING
+%license LICENSE
 %defattr(-,root,root)
 %{_libdir}/libmutils*.so.*
 
@@ -276,7 +261,7 @@ various other components.
 %ldconfig_scriptlets stream
 
 %files stream
-%license COPYING
+%license LICENSE
 %defattr(-,root,root)
 %{_libdir}/libstream*.so.*
 
@@ -312,10 +297,8 @@ library.
 %package client-lib
 Summary: MonetDB - Monet Database Management System Client Programs
 Group: Applications/Databases
-%if (0%{?fedora} >= 22)
 Recommends: %{name}-SQL%{?_isa} = %{version}-%{release}
 Recommends: %{name}-server%{?_isa} = %{version}-%{release}
-%endif
 
 %description client-lib
 MonetDB is a database management system that is developed from a
@@ -330,7 +313,7 @@ you will very likely need this package.
 %ldconfig_scriptlets client-lib
 
 %files client-lib
-%license COPYING
+%license LICENSE
 %defattr(-,root,root)
 %{_libdir}/libmapi*.so.*
 
@@ -338,10 +321,8 @@ you will very likely need this package.
 Summary: MonetDB - Monet Database Management System Client Programs
 Group: Applications/Databases
 Requires: %{name}-client-lib%{?_isa} = %{version}-%{release}
-%if (0%{?fedora} >= 22)
 Recommends: %{name}-SQL%{?_isa} = %{version}-%{release}
 Recommends: %{name}-server%{?_isa} = %{version}-%{release}
-%endif
 
 %description client
 MonetDB is a database management system that is developed from a
@@ -355,7 +336,7 @@ SQL database so that it can be loaded back later.  If you want to use
 MonetDB, you will very likely need this package.
 
 %files client
-%license COPYING
+%license LICENSE
 %defattr(-,root,root)
 %{_bindir}/mclient*
 %{_bindir}/msqldump*
@@ -409,7 +390,7 @@ This package contains the MonetDB ODBC driver.
 %post client-odbc
 # install driver if first install of package or if driver not installed yet
 if [ "$1" -eq 1 ] || ! odbcinst -d -q -n MonetDB >& /dev/null; then
-odbcinst -i -d -r <<EOF
+    odbcinst -i -d -r <<\EOF
 [MonetDB]
 Description = ODBC for MonetDB
 Driver = %{_exec_prefix}/lib/libMonetODBC.so
@@ -421,11 +402,11 @@ fi
 
 %postun client-odbc
 if [ "$1" -eq 0 ]; then
-odbcinst -u -d -n MonetDB
+    odbcinst -u -d -n MonetDB
 fi
 
 %files client-odbc
-%license COPYING
+%license LICENSE
 %defattr(-,root,root)
 %{_libdir}/libMonetODBC.so
 %{_libdir}/libMonetODBCs.so
@@ -438,15 +419,11 @@ Group: Applications/Databases
 Requires: %{name}-server%{?_isa} = %{version}-%{release}
 Requires: %{name}-client%{?_isa} = %{version}-%{release}
 Requires: %{name}-client-odbc%{?_isa} = %{version}-%{release}
-%if (0%{?fedora} >= 22)
 Recommends: perl-DBD-monetdb >= 1.0
 Recommends: php-monetdb >= 1.0
-%endif
 Requires: %{name}-server%{?_isa} = %{version}-%{release}
-%if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} > 7
 Recommends: python3dist(lz4)
 Recommends: python3dist(scipy)
-%endif
 
 %description client-tests
 MonetDB is a database management system that is developed from a
@@ -637,10 +614,8 @@ Requires: %{name}-libs%{?_isa} = %{version}-%{release}
 Obsoletes: MonetDB5-server < 11.50.0
 Provides: MonetDB5-server = %{version}-%{release}
 Provides: MonetDB5-server%{?_isa} = %{version}-%{release}
-%if (0%{?fedora} >= 22)
 Recommends: %{name}-SQL%{?_isa} = %{version}-%{release}
 Suggests: %{name}-client%{?_isa} = %{version}-%{release}
-%endif
 Requires(pre): systemd
 
 %description server
@@ -726,9 +701,7 @@ Requires(pre): %{name}-server%{?_isa} = %{version}-%{release}
 Obsoletes: MonetDB-SQL-server5 < 11.50.0
 Provides: %{name}-SQL-server5 = %{version}-%{release}
 Provides: %{name}-SQL-server5%{?_isa} = %{version}-%{release}
-%if (0%{?fedora} >= 22)
 Suggests: %{name}-client%{?_isa} = %{version}-%{release}
-%endif
 %{?systemd_requires}
 
 %description SQL
@@ -755,7 +728,6 @@ configuration.
 %if %{without compat}
 %dir %attr(775,monetdb,monetdb) %{_localstatedir}/log/monetdb
 %dir %attr(775,monetdb,monetdb) %{_rundir}/monetdb
-# RHEL >= 7, and all current Fedora
 %{_tmpfilesdir}/monetdbd.conf
 %{_unitdir}/monetdbd.service
 %config(noreplace) %attr(664,monetdb,monetdb) %{_localstatedir}/monetdb5/dbfarm/.merovingian_properties
@@ -870,18 +842,16 @@ package.  You probably don't need this, unless you are a developer.
 %{_bindir}/example_proxy
 %{_bindir}/example_sessions
 %{_bindir}/example_temporal
-%{_bindir}/demo_oob_read
-%{_bindir}/demo_oob_write
+%endif
 
+%if %{without compat}
 %package testing-python
 Summary: MonetDB - Monet Database Management System
 Group: Applications/Databases
 Requires: %{name}-client-tests = %{version}-%{release}
 Requires: python3dist(pymonetdb) >= 1.9
 BuildArch: noarch
-%endif
 
-%if %{without compat}
 %description testing-python
 MonetDB is a database management system that is developed from a
 main-memory perspective with use of a fully decomposed storage model,
@@ -935,28 +905,34 @@ an mserver5 process started by monetdbd under the control of systemd to
 read files in users' home directories.
 
 %post selinux
-for selinuxvariant in %{selinux_variants}
-do
-  /usr/sbin/semodule -s ${selinuxvariant} -i \
-    %{_datadir}/selinux/${selinuxvariant}/monetdb.pp &> /dev/null || :
+for selinuxvariant in %{selinux_variants}; do
+    /usr/sbin/semodule -s ${selinuxvariant} -i \
+        %{_datadir}/selinux/${selinuxvariant}/monetdb.pp &> /dev/null || :
 done
-/sbin/restorecon -R %{_localstatedir}/monetdb5 %{_localstatedir}/log/monetdb %{_rundir}/monetdb %{_bindir}/monetdbd* %{_bindir}/mserver5* %{_unitdir}/monetdbd.service &> /dev/null || :
+/sbin/restorecon -R %{_localstatedir}/monetdb5 \
+		 %{_localstatedir}/log/monetdb \
+		 %{_rundir}/monetdb %{_bindir}/monetdbd* \
+		 %{_bindir}/mserver5* \
+		 %{_unitdir}/monetdbd.service &> /dev/null || :
 /usr/bin/systemctl try-restart monetdbd.service
 
 %postun selinux
-if [ $1 -eq 0 ] ; then
-  active=`/usr/bin/systemctl is-active monetdbd.service`
-  if [ $active = active ]; then
-    /usr/bin/systemctl stop monetdbd.service
-  fi
-  for selinuxvariant in %{selinux_variants}
-  do
-    /usr/sbin/semodule -s ${selinuxvariant} -r monetdb &> /dev/null || :
-  done
-  /sbin/restorecon -R %{_localstatedir}/monetdb5 %{_localstatedir}/log/monetdb %{_rundir}/monetdb %{_bindir}/monetdbd* %{_bindir}/mserver5* %{_unitdir}/monetdbd.service &> /dev/null || :
-  if [ $active = active ]; then
-    /usr/bin/systemctl start monetdbd.service
-  fi
+if [ $1 -eq 0 ]; then
+    active=`/usr/bin/systemctl is-active monetdbd.service`
+    if [ $active = active ]; then
+        /usr/bin/systemctl stop monetdbd.service
+    fi
+    for selinuxvariant in %{selinux_variants}; do
+        /usr/sbin/semodule -s ${selinuxvariant} -r monetdb &> /dev/null || :
+    done
+    /sbin/restorecon -R %{_localstatedir}/monetdb5 \
+                     %{_localstatedir}/log/monetdb \
+                     %{_rundir}/monetdb %{_bindir}/monetdbd* \
+                     %{_bindir}/mserver5* \
+                     %{_unitdir}/monetdbd.service &> /dev/null || :
+    if [ $active = active ]; then
+        /usr/bin/systemctl start monetdbd.service
+    fi
 fi
 
 %files selinux
@@ -970,14 +946,7 @@ fi
 %setup -q -n MonetDB-%{version}
 
 %build
-# from Fedora 40, selinux uses /run where before it used /var/run
-# the code is now for Fedora 40 but needs a patch for older versions
-%if (0%{?fedora} < 40)
-sed -i 's;@CMAKE_INSTALL_FULL_RUNSTATEDIR@/monetdb;@CMAKE_INSTALL_FULL_LOCALSTATEDIR@/run/monetdb;' misc/selinux/monetdb.fc.in
-sed -i 's/1\.2/1.1/' misc/selinux/monetdb.te
-%endif
-
-%cmake3 \
+%cmake \
         -DCMAKE_BUILD_TYPE=Release \
         -DCMAKE_INSTALL_RUNSTATEDIR=/run \
         -DRELEASE_VERSION=ON \
@@ -987,7 +956,7 @@ sed -i 's/1\.2/1.1/' misc/selinux/monetdb.te
         -DGEOM=%{?with_geos:ON}%{!?with_geos:OFF} \
         -DINT128=%{?with_hugeint:ON}%{!?with_hugeint:OFF} \
         -DNETCDF=OFF \
-        -DODBC=%{!?with_compat:ON}%{?with_compat:OFF} \
+        -DODBC=ON \
         -DPY3INTEGRATION=%{?with_py3integration:ON}%{!?with_py3integration:OFF} \
         -DRINTEGRATION=%{?with_rintegration:ON}%{!?with_rintegration:OFF} \
         -DSANITIZER=OFF \
@@ -1009,18 +978,22 @@ sed -i 's/1\.2/1.1/' misc/selinux/monetdb.te
         -DWITH_XML2=ON \
         -DWITH_ZLIB=ON
 
-%cmake3_build
+%cmake_build
 
 %install
 mkdir -p "${RPM_BUILD_ROOT}"/usr
-for d in etc var; do mkdir "${RPM_BUILD_ROOT}"/$d; ln -s ../$d "${RPM_BUILD_ROOT}"/usr/$d; done
-%cmake3_install
+for d in etc var; do
+    mkdir "${RPM_BUILD_ROOT}"/$d
+    ln -s ../$d "${RPM_BUILD_ROOT}"/usr/$d
+done
+%cmake_install
 rm "${RPM_BUILD_ROOT}"/usr/var "${RPM_BUILD_ROOT}"/usr/etc
 
 # move file to correct location
 mkdir -p "${RPM_BUILD_ROOT}"%{_tmpfilesdir} "${RPM_BUILD_ROOT}"%{_sysusersdir}
-mv "${RPM_BUILD_ROOT}"%{_sysconfdir}/tmpfiles.d/monetdbd.conf "${RPM_BUILD_ROOT}"%{_tmpfilesdir}
-cat > "${RPM_BUILD_ROOT}"%{_sysusersdir}/monetdb.conf << EOF
+mv "${RPM_BUILD_ROOT}"%{_sysconfdir}/tmpfiles.d/monetdbd.conf \
+   "${RPM_BUILD_ROOT}"%{_tmpfilesdir}
+cat > "${RPM_BUILD_ROOT}"%{_sysusersdir}/monetdb.conf << \EOF
 u monetdb - "MonetDB Server" /var/lib/monetdb
 EOF
 rmdir "${RPM_BUILD_ROOT}"%{_sysconfdir}/tmpfiles.d
@@ -1035,11 +1008,11 @@ rm -f "${RPM_BUILD_ROOT}"%{_libdir}/monetdb5*/lib_microbenchmark*.so
 rm -f "${RPM_BUILD_ROOT}"%{_libdir}/monetdb5*/lib_udf*.so
 rm -f "${RPM_BUILD_ROOT}"%{_bindir}/monetdb_mtest.sh
 
-if [ -x /usr/sbin/hardlink ]; then
-    /usr/sbin/hardlink -cv "${RPM_BUILD_ROOT}"%{_datadir}/selinux
-else
-    # Fedora 31
+if [ -x /usr/bin/hardlink ]; then
+    # post unification of /bin and /sbin
     /usr/bin/hardlink -cv "${RPM_BUILD_ROOT}"%{_datadir}/selinux
+else
+    /usr/sbin/hardlink -cv "${RPM_BUILD_ROOT}"%{_datadir}/selinux
 fi
 
 # update shebang lines for Python scripts
@@ -1053,14 +1026,59 @@ fi
 
 %if %{with compat}
 # delete files that are not going to be installed in compat packages
-rm "${RPM_BUILD_ROOT}"%{_bindir}/{M{convert.py,test.py,z.py},bincopydata,example_proxy,m{alsample.pl,client,ktest.py,onetdb{,d},s{erver5,qldump},urltest},s{ample{0,1,4},hutdowntest,mack0{0,1},ql{logictest.py,sample.p{hp,l}},treamcat},testcondvar}
+rm "${RPM_BUILD_ROOT}"%{_bindir}/Mtest.py
+rm "${RPM_BUILD_ROOT}"%{_bindir}/Mz.py
+rm "${RPM_BUILD_ROOT}"%{_bindir}/ODBCgetInfo
+rm "${RPM_BUILD_ROOT}"%{_bindir}/ODBCmetadata
+rm "${RPM_BUILD_ROOT}"%{_bindir}/ODBCStmtAttr
+rm "${RPM_BUILD_ROOT}"%{_bindir}/ODBCtester
+rm "${RPM_BUILD_ROOT}"%{_bindir}/arraytest
+rm "${RPM_BUILD_ROOT}"%{_bindir}/backrefencode
+rm "${RPM_BUILD_ROOT}"%{_bindir}/bincopydata
+rm "${RPM_BUILD_ROOT}"%{_bindir}/demo_oob_read
+rm "${RPM_BUILD_ROOT}"%{_bindir}/demo_oob_write
+rm "${RPM_BUILD_ROOT}"%{_bindir}/example1
+rm "${RPM_BUILD_ROOT}"%{_bindir}/example2
+rm "${RPM_BUILD_ROOT}"%{_bindir}/example_append
+rm "${RPM_BUILD_ROOT}"%{_bindir}/example_append_raw
+rm "${RPM_BUILD_ROOT}"%{_bindir}/example_backup
+rm "${RPM_BUILD_ROOT}"%{_bindir}/example_blob
+rm "${RPM_BUILD_ROOT}"%{_bindir}/example_connections
+rm "${RPM_BUILD_ROOT}"%{_bindir}/example_copy
+rm "${RPM_BUILD_ROOT}"%{_bindir}/example_decimals
+rm "${RPM_BUILD_ROOT}"%{_bindir}/example_proxy
+rm "${RPM_BUILD_ROOT}"%{_bindir}/example_sessions
+rm "${RPM_BUILD_ROOT}"%{_bindir}/example_temporal
+rm "${RPM_BUILD_ROOT}"%{_bindir}/malsample.pl
+rm "${RPM_BUILD_ROOT}"%{_bindir}/mclient
+rm "${RPM_BUILD_ROOT}"%{_bindir}/mktest.py
+rm "${RPM_BUILD_ROOT}"%{_bindir}/monetdb
+rm "${RPM_BUILD_ROOT}"%{_bindir}/monetdbd
+rm "${RPM_BUILD_ROOT}"%{_bindir}/mserver5
+rm "${RPM_BUILD_ROOT}"%{_bindir}/msqldump
+rm "${RPM_BUILD_ROOT}"%{_bindir}/murltest
+rm "${RPM_BUILD_ROOT}"%{_bindir}/odbcconnect
+rm "${RPM_BUILD_ROOT}"%{_bindir}/odbcsample1
+rm "${RPM_BUILD_ROOT}"%{_bindir}/sample0
+rm "${RPM_BUILD_ROOT}"%{_bindir}/sample1
+rm "${RPM_BUILD_ROOT}"%{_bindir}/sample4
+rm "${RPM_BUILD_ROOT}"%{_bindir}/shutdowntest
+rm "${RPM_BUILD_ROOT}"%{_bindir}/smack00
+rm "${RPM_BUILD_ROOT}"%{_bindir}/smack01
+rm "${RPM_BUILD_ROOT}"%{_bindir}/sqllogictest.py
+rm "${RPM_BUILD_ROOT}"%{_bindir}/sqlsample.php
+rm "${RPM_BUILD_ROOT}"%{_bindir}/sqlsample.pl
+rm "${RPM_BUILD_ROOT}"%{_bindir}/streamcat
+rm "${RPM_BUILD_ROOT}"%{_bindir}/testcondvar
 rm -r "${RPM_BUILD_ROOT}"%{_datadir}/doc/MonetDB*
 rm "${RPM_BUILD_ROOT}"%{_datadir}/selinux/*/monetdb.pp
 rm -r "${RPM_BUILD_ROOT}"%{_datadir}/monetdb
 rm -r "${RPM_BUILD_ROOT}"%{_includedir}/monetdb
-rm "${RPM_BUILD_ROOT}"%{_libdir}/*.so "${RPM_BUILD_ROOT}"%{_libdir}/libmonetdbe.so.*
+rm "${RPM_BUILD_ROOT}"%{_libdir}/*.so
+rm "${RPM_BUILD_ROOT}"%{_libdir}/libmonetdbe.so.*
 rm -r "${RPM_BUILD_ROOT}"%{_libdir}/pkgconfig
-rm -r "${RPM_BUILD_ROOT}"%{_localstatedir}/lib/monetdb "${RPM_BUILD_ROOT}"%{_localstatedir}/monetdb5
+rm -r "${RPM_BUILD_ROOT}"%{_localstatedir}/lib/monetdb
+rm -r "${RPM_BUILD_ROOT}"%{_localstatedir}/monetdb5
 rm -r "${RPM_BUILD_ROOT}"%{_mandir}/man1
 rm -r "${RPM_BUILD_ROOT}"%{python3_sitelib}/MonetDBtesting
 rm "${RPM_BUILD_ROOT}"%{_sysconfdir}/logrotate.d/monetdbd
