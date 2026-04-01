@@ -74,3 +74,4 @@ KNOWNFAIL?7774-insert-into-renamed-table-assertion-failure
 7882-later-distinct
 7883-right-join-crash
 7886-local-view-in-with
+7888-or-false-write

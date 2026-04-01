@@ -1,0 +1,76 @@
+statement ok
+DROP TABLE IF EXISTS bug_t2
+
+statement ok
+DROP TABLE IF EXISTS bug_t1
+
+statement ok
+CREATE TABLE bug_t1 (
+  c1 INT,
+  c4 INT,
+  c5 DATE
+)
+
+statement ok
+CREATE TABLE bug_t2 (
+  c15 DOUBLE
+)
+
+statement ok rowcount 1
+INSERT INTO bug_t1 VALUES (1, 30, DATE '2019-02-16')
+
+statement ok rowcount 1
+INSERT INTO bug_t2 VALUES (531.0)
+
+statement ok rowcount 1
+UPDATE bug_t1
+SET c5 = DATE '2000-10-03'
+WHERE NOT c4 IS NULL
+  AND NOT (c4 IN (SELECT c15 FROM bug_t2) AND 1 = 0)
+
+query IIT
+SELECT * FROM bug_t1
+----
+1
+30
+2000-10-03
+
+statement ok
+DROP TABLE IF EXISTS bug_t2
+
+statement ok
+DROP TABLE IF EXISTS bug_t1
+
+statement ok
+CREATE TABLE bug_t1 (
+  c1 INT,
+  c4 INT,
+  c5 DATE
+)
+
+statement ok
+CREATE TABLE bug_t2 (
+  c15 DOUBLE
+)
+
+statement ok rowcount 1
+INSERT INTO bug_t1 VALUES (1, 30, DATE '2019-02-16')
+
+statement ok rowcount 1
+INSERT INTO bug_t2 VALUES (531.0)
+
+statement ok rowcount 1
+UPDATE bug_t1
+SET c5 = DATE '2000-10-03'
+WHERE (1 = 0)
+   OR (
+        NOT c4 IS NULL
+    AND NOT (c4 IN (SELECT c15 FROM bug_t2) AND 1 = 0)
+   )
+
+query IIT
+SELECT * FROM bug_t1;
+----
+1
+30
+2000-10-03

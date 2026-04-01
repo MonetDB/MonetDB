@@ -696,14 +696,19 @@ exp_bin_conjunctive(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp,
 	sel1 = sel;
 	for (n = l->h; n; n = n->next) {
 		sql_exp *c = n->data;
-		stmt *sin = (sel1 && sel1->nrcols)?sel1:NULL;
+		stmt *sin = (sel1 && sel1->nrcols && !anti)?sel1:NULL;
 
 		/* propagate the anti flag */
-		if (anti)
-			set_anti(c);
+		if (anti && reduce)
+			negate_anti(c);
 		s = exp_bin(be, c, left, right, grp, ext, cnt, reduce?sin:NULL, depth, reduce, push);
 		if (!s)
 			return s;
+		/* propagate the anti flag */
+		if (anti && !reduce) {
+			sql_subfunc *not = sql_bind_func(be->mvc, "sys", "not", bt, NULL, F_FUNC, true, true);
+			s = stmt_unop(be, s, NULL, not);
+		}
 
 		if (!reduce && sin && sin != sel) {
 			sql_subfunc *f = sql_bind_func(be->mvc, "sys", anti?"or":"and", bt, bt, F_FUNC, true, true);
@@ -757,11 +762,16 @@ exp_bin_disjunctive(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp,
 		sql_exp *c = n->data;
 
 		/* propagate the anti flag */
-		if (anti)
-			set_anti(c);
+		if (anti && reduce)
+			negate_anti(c);
 		s = exp_bin(be, c, left, right, grp, ext, cnt, reduce?sel:NULL, depth, reduce, push);
 		if (!s)
 			return s;
+		/* propagate the anti flag */
+		if (anti && !reduce) {
+			sql_subfunc *not = sql_bind_func(be->mvc, "sys", "not", bt, NULL, F_FUNC, true, true);
+			s = stmt_unop(be, s, NULL, not);
+		}
 
 		if (reduce && s->nrcols == 0 && left) {
 			stmt *predicate = bin_find_smallest_column(be, left);
