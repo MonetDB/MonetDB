@@ -686,7 +686,7 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 		 * multiple times */
 	} else if (is_simple_project(rel->op) || is_select(rel->op) || is_sample(rel->op)) {
 		if (pb && (is_simple_project(rel->op) || is_select(rel->op)) && exps_have_unsafe(rel->exps, 1, false)) {
-			//if (p && (p->op != op_topn || !topn_limit(p)))
+			if (p)
 				rel_dup(rel);
 			if (rel->l)
 				res = rel_pipeline(v, rel->l, materialize, 0);
@@ -724,7 +724,8 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 				if (pb || (p && p->op == op_topn && !topn_limit(p))
 					   || (p && p->op == op_project && exps_have_unsafe(p->exps, 1, false))
 					   || !list_empty(rel->r)) { /* nested */
-					rel_dup(rel);
+					if (p)
+						rel_dup(rel);
 					res = 0;
 					rel->partition = 1;
 				} else {
