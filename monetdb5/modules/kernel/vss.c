@@ -59,6 +59,12 @@ typedef struct {
 	dbl score;
 } dim_score;
 
+static int dbl_cmp(const void *a, const void *b) {
+    dbl fa = *(const dbl *)a;
+    dbl fb = *(const dbl *)b;
+    return (fa > fb) - (fa < fb);
+}
+
 static int
 dim_score_cmp(const void *a, const void *b)
 {
@@ -135,23 +141,34 @@ bond_create(allocator *ma, BAT **dim_bats, int ndims)
 
 
 static dbl
-bond_upper_bound(bond_collection *bc, const dbl *query_vals, BUN k, dbl *acc, dbl *res)
+bond_upper_bound_sampled(allocator *ma, bond_collection *bc, const dbl *query_vals, BUN k)
 {
-	for (int i = 0; i < bc->ndims; i++) {
-		BAT *b = bc->dims[i];
-		size_t cnt = BATcount(b);
-		assert(cnt > k);
-		dbl *d = (dbl*) Tloc(b, 0);
-		dbl q = query_vals[i];
-		for (BUN j=0; j<k && j<cnt; j++) {
-			dbl diff = q - d[j];
-			dbl sq = diff * diff;
-			acc[j] += sq;
-			if (acc[j] > *res)
-				*res = acc[j];
-		}
-	}
-	return *res;
+	BUN sample_size = 500;
+    if (bc->nvecs < sample_size) sample_size = bc->nvecs;
+
+	dbl *sample_dists = ma_zalloc(ma, sample_size * sizeof(dbl));
+
+    // random sample of OIDs
+    BAT *sample_oids = BATsample(bc->dims[0], sample_size);
+    if (!sample_oids) return DBL_MAX;
+
+	// calc full distance for the sample across all dimensions
+    for (int d = 0; d < bc->ndims; d++) {
+        BAT *pd = BATproject(sample_oids, bc->dims[d]);
+        const dbl *vals = (const dbl *) Tloc(pd, 0);
+        dbl q = query_vals[d];
+
+        for (BUN i = 0; i < sample_size; i++) {
+            dbl diff = vals[i] - q;
+            sample_dists[i] += diff * diff;
+        }
+        BBPreclaim(pd);
+    }
+
+	qsort(sample_dists, sample_size, sizeof(dbl), dbl_cmp);
+    dbl result = (k < sample_size) ? sample_dists[k-1] : sample_dists[sample_size-1];
+    BBPreclaim(sample_oids);
+    return result;
 }
 
 
@@ -599,8 +616,7 @@ BONDknn(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		ma_close(&ta_state);
 		throw(MAL, "vss.knn", MAL_MALLOC_FAIL);
 	}
-	dbl zero = 0.0;
-	bc->kth_upper = bond_upper_bound(bc, query_vals, k, kbuf, &zero);
+	bc->kth_upper = bond_upper_bound_sampled(ta, bc, query_vals, k);
 	BAT *oid_result = NULL, *dist_result = NULL;
 	char *rc = bond_search(bc, query_vals, (BUN) k, dim_order, NULL, &oid_result, &dist_result);
 
