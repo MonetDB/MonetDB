@@ -66,6 +66,7 @@ HAVE_HGE?7637_str_to_decimal
 7719-crash-in-complex-query
 7720-coalesce
 7722-recusive-cte-with-error-crash
+7724-sql_ref_inc-error
 7725-crash-find-rel-ref
 7726-commonterms
 7730-generate-series-month-int
