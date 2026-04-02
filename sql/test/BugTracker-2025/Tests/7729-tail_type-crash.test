@@ -1,0 +1,5 @@
+-- Segmentation fault in tail_type (st=0x0) at sql/backends/monet5/sql_statement.c:4647  switch (st->type) {
+query I
+SELECT ( WITH x ( x ) AS ( SELECT DISTINCT 1 ) SELECT ( SELECT x FROM x WHERE x = ( SELECT ( CASE WHEN x THEN x END ) WHERE ( SELECT x FROM x WHERE ( x , ( SELECT ( WITH x ( x ) AS ( SELECT DISTINCT 1 ) SELECT ( SELECT x FROM x WHERE x = ( SELECT ( CASE WHEN x THEN x END ) WHERE 1 + 1 + 1 + 1 + 1 + 1 + 1 + 9223372036854775808.000000 + 1 + 1 = ( SELECT x FROM x ) AND x GROUP BY 1 HAVING ( - 'x' >= x IS NOT NULL = ( 1 < x AND x < 'x' ) AND x = 8 ) ) GROUP BY x HAVING ( 9 = -1 AND x = 8 ) ) FROM x ) LIMIT 10 OFFSET 0 ) ) NOT IN ( SELECT x , x FROM x WHERE x > 1 ) ) AND x ) ) FROM x )
+----
+
