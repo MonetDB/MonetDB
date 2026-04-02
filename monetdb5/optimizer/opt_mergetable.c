@@ -2116,7 +2116,7 @@ mat_topn(allocator *ma, MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n, i
 
 	if (is_slice) {
 		ValRecord cst;
-		cst.vtype = getArgType(mb, p, 2);
+		cst.vtype = TYPE_lng;
 		cst.val.lval = 0;
 		cst.len = 0;
 		no_offset = defConstant(mb, cst.vtype, &cst);
@@ -2126,7 +2126,7 @@ mat_topn(allocator *ma, MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n, i
 		}
 	} else {
 		ValRecord cst;
-		cst.vtype = getArgType(mb, p, 6);
+		cst.vtype = TYPE_bit;
 		cst.val.btval = 1;
 		cst.len = 0;
 		no_offset = defConstant(mb, cst.vtype, &cst);
@@ -2156,7 +2156,7 @@ mat_topn(allocator *ma, MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n, i
 			getArg(q, q->retc + 2) = getArg(ml->v[o].mi, k);
 		}
 		if (!is_slice)
-			getArg(q, 6) = no_offset; /* only return the 0 - limit+offset, later reduce too offset-limit */
+			getArg(q, q->retc + 5) = no_offset; /* only return the 0 - limit+offset, later reduce too offset-limit */
 		pushInstruction(mb, q);
 
 		pck = pushArgument(mb, pck, getArg(q, 0));

@@ -5133,17 +5133,6 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 	return cursub;
 }
 
-static bool
-has_partitioning( list *exps )
-{
-	for(node *n = exps->h; n; n = n->next){
-		sql_exp *gbe = n->data;
-		if (is_partitioning(gbe))
-			return true;
-	}
-	return false;
-}
-
 static stmt *
 rel2bin_topn(backend *be, sql_rel *rel, list *refs)
 {
@@ -5188,8 +5177,6 @@ rel2bin_topn(backend *be, sql_rel *rel, list *refs)
 					sub = sub_topn(be, sub, NULL, rel, rl->r, l, o, need_distinct(rl));
 			} else
 				sub = rel2bin_project(be, rl, refs, rel);
-			if (0 && rel->grouped && rl->r && has_partitioning(rl->r))
-				return sub;
 			if (rl->r && le)
 				return sub;
 		} else {
