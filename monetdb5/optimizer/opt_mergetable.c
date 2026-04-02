@@ -2156,7 +2156,7 @@ mat_topn(allocator *ma, MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n, i
 			getArg(q, q->retc + 2) = getArg(ml->v[o].mi, k);
 		}
 		if (!is_slice)
-			getArg(q, q->retc + 5) = no_offset; /* only return the 0 - limit+offset, later reduce too offset-limit */
+			getArg(q, q->retc + 5) = no_offset; /* only return the 0 - limit+offset, later reduce to offset-limit */
 		pushInstruction(mb, q);
 
 		pck = pushArgument(mb, pck, getArg(q, 0));
