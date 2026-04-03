@@ -1788,17 +1788,18 @@ pqc_read_chunk( pqc_reader_t *r, int wnr, void *output /*fixed sized atom storag
 
 			pos = 0;
 			assert (cr->cc->index_page_offset == 0); /* we currently don't handle parquet indices */
+			int64_t offset = 0;
 			if (cr->cc->dictionary_page_offset) { /* load dictionary */
-				if ((cr->pos = pqc_read(cr->pq, cr->cc->dictionary_page_offset, cr->buffer, cr->cc->total_compressed_size)) < 0)
+				if ((offset = pqc_read(cr->pq, cr->cc->dictionary_page_offset, cr->buffer, cr->cc->total_compressed_size)) < 0)
 					return -3;
 
-				assert(cr->pos == (int64_t)cr->cc->dictionary_page_offset);
+				assert(offset == (int64_t)cr->cc->dictionary_page_offset);
 				if ((pos = pqc_read_dict(r, cr)) < 0)
 					return -4;
 			} else { /* read data page */
-				if ((cr->pos = pqc_read(cr->pq, cr->cc->data_page_offset, cr->buffer, cr->cc->total_compressed_size)) < 0)
+				if ((offset = pqc_read(cr->pq, cr->cc->data_page_offset, cr->buffer, cr->cc->total_compressed_size)) < 0)
 					return -3;
-				assert(cr->pos == (int64_t)cr->cc->data_page_offset);
+				assert(offset == (int64_t)cr->cc->data_page_offset);
 			}
 
 			/*
