@@ -1428,7 +1428,7 @@ offset_string_read_chunk( pqc_reader_t *r, pqc_creader_t *cr, void *output, void
 }
 
 /* ToDo change to int128 ! */
-static int64_t
+static int
 pqc_read_delta( pqc_creader_t *cr, int *prefixes, int64_t nrows, int pos)
 {
 	uint64_t blocks = 0, miniblocks = 0, count = 0;
@@ -1490,7 +1490,7 @@ offset_read_strings_sht( pqc_creader_t *cr, uint16_t *rc, char *buf, int *length
 		offset += len+1;
 		data += len;
 	}
-	return (data - cr->data);
+	return (int)(data - cr->data);
 }
 
 static int
