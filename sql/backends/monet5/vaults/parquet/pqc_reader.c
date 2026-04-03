@@ -21,7 +21,6 @@
 #include <gdk.h>
 #include <gdk_time.h>
 #include <sql_mem.h>
-#include <sql_decimal.h>
 
 #ifdef HAVE_SNAPPY
 #include <snappy-c.h>
@@ -1337,11 +1336,12 @@ string_size_chunk_withnulls( pqc_creader_t *cr, int64_t nrows, int pos, size_t *
 	int cur = cr->curdef, sdef = cr->cursubdef;
 	int def = cr->first_definition;
 	int dend = cr->definitionsize;
+	assert(nrows < INT32_MAX);
 	for(int64_t i = 0; i<nrows && cur<dend; ) {
 		int len = cr->definition[cur];
 		len -= sdef;
 		if (i + len > nrows) {
-			len = nrows-i;
+			len = (int)(nrows-i);
 			sdef += len;
 		} else {
 			sdef = 0;
@@ -1427,6 +1427,7 @@ offset_string_read_chunk( pqc_reader_t *r, pqc_creader_t *cr, void *output, void
 	return -1;
 }
 
+/* ToDo change to int128 ! */
 static int64_t
 pqc_read_delta( pqc_creader_t *cr, int *prefixes, int64_t nrows, int pos)
 {
@@ -1448,7 +1449,8 @@ pqc_read_delta( pqc_creader_t *cr, int *prefixes, int64_t nrows, int pos)
 		return -1;
 	}
 	if (count <= 1) {
-		*prefixes = val;
+		assert(val < INT32_MAX);
+		*prefixes = (int)val;
 		return pos;
 	}
 	return pos;
@@ -1472,7 +1474,7 @@ pqc_read_strings( pqc_creader_t *cr, char **rc, char *buf, int *lengths, int64_t
 }
 
 /* todo other offsets */
-static int64_t
+static int
 offset_read_strings_sht( pqc_creader_t *cr, uint16_t *rc, char *buf, int *lengths, int64_t nrows, int pos, size_t offset)
 {
 	char *data = cr->data + pos;
@@ -1482,7 +1484,8 @@ offset_read_strings_sht( pqc_creader_t *cr, uint16_t *rc, char *buf, int *length
 
 		memcpy(buf, data, len);
 		buf[len] = 0;
-		rc[i] = offset;
+		assert(offset < UINT16_MAX);
+		rc[i] = (uint16_t)offset;
 		buf += len+1;
 		offset += len+1;
 		data += len;
@@ -1503,7 +1506,7 @@ offset_read_strings( pqc_creader_t *cr, void *output, void *voutput, int *length
 	return -1;
 }
 
-static int64_t
+static int
 pqc_size_strings( pqc_creader_t *cr, int *lengths, int64_t nrows, int pos, size_t *ssize)
 {
 	size_t hsz = 0;
