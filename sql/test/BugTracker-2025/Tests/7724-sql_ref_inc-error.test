@@ -1,0 +1,9 @@
+-- GDK reported error: selectjoin: more than one match
+statement error /more than one match/
+SELECT ( WITH x ( x ) AS ( SELECT 1 )
+ SELECT 16 FROM x
+   WHERE ( SELECT ( SELECT * FROM generate_series ( 32989 , x = ( SELECT ( WITH x AS ( SELECT x ) SELECT x GROUP BY x HAVING ( ( SELECT ( SELECT x ) ) ) ) ) ) )
+           GROUP BY x + 1 , x
+         )
+       )
+
