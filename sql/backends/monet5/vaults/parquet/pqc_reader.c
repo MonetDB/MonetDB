@@ -519,6 +519,11 @@ pqc_page_header( pqc_reader_t *r, pqc_creader_t *pr, int64_t pos)
 	}
 	if (res < 0)
 		return pos;
+	if (uncompressed_size > INT32_MAX) {
+			pqc_set_error(r, "uncompressed size larger then INT32_MAX currently not supported\n");
+			return -1;
+	}
+
 	assert(page_type == DATA_PAGE || page_type == DICTIONARY_PAGE || page_type == DATA_PAGE_V2);
 	if (page_type == DATA_PAGE || page_type == DATA_PAGE_V2) {
 		if (uncompressed_size && pos >= 0 && pr->cc->codec && (page_type != DATA_PAGE_V2 || pr->cc->cur_page.is_compressed)) {
@@ -1993,6 +1998,10 @@ pqc_read_chunk( pqc_reader_t *r, int wnr, void *output /*fixed sized atom storag
 			}
 			ATOMIC_ADD(&r->rownr, orows);
 			cr->curnr += orows;
+			if (cr->cc->cur_page.num_read + orows > UINT32_MAX) {
+				pqc_set_error(r, "To many rows in one page (> UINT32_MAX)\n");
+				return -1;
+			}
 			cr->cc->cur_page.num_read += orows;
 			return orows;
 		}
@@ -2136,6 +2145,10 @@ pqc_read_chunk( pqc_reader_t *r, int wnr, void *output /*fixed sized atom storag
 				}
 			ATOMIC_ADD(&r->rownr, orows);
 			cr->curnr += orows;
+			if (cr->cc->cur_page.num_read + orows > UINT32_MAX) {
+				pqc_set_error(r, "To many rows in one page (> UINT32_MAX)\n");
+				return -1;
+			}
 			cr->cc->cur_page.num_read += orows;
 			return orows;
 		}
