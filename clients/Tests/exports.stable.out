@@ -1632,7 +1632,7 @@ int pqc_open(pqc_file **pq, char *fn);
 int pqc_put_int32(char *in, uint32_t v);
 int pqc_put_int64(char *in, uint64_t v);
 int64_t pqc_read(pqc_file *pq, int64_t offset, char *buffer, int nrbytes);
-int64_t pqc_read_chunk(pqc_reader_t *r, int wnr, void *d, void *vd, uint64_t nrows, int *ssize, int *dict);
+int64_t pqc_read_chunk(pqc_reader_t *r, int wnr, void *d, void *vd, uint64_t nrows, size_t *ssize, int *dict);
 int pqc_read_filemetadata(pqc_file *pq);
 int pqc_read_schema(pqc_file *pq);
 pqc_reader_t *pqc_reader(pqc_reader_t *p, pqc_file *pq, int nr_workers, pqc_filemetadata *fmd, int colnr, int64_t nrows, const void *nil);

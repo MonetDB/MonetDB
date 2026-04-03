@@ -119,7 +119,8 @@ typedef enum logicaltype {
   	uuidtype = 14, 			// no compatible ConvertedType
 	float16type = 15,
 	varianttype = 16,
-  	floattype = 25 			// no compatible ConvertedType
+  	floattype = 25,			// no compatible ConvertedType
+  	blobtype = 26 			// Internal type
 } logicaltype;
 
 typedef enum {
@@ -412,12 +413,14 @@ typedef struct pqc_keyvalue {
 typedef struct pqc_stat {
 	char *max_string;
 	char *max_value;
-	uint32_t max;
 	char *min_string;
 	char *min_value;
+	uint32_t max;
 	uint32_t min;
 	uint64_t null_count;
 	uint64_t distinct_count;
+	bool max_is_exact;
+	bool min_is_exact;
 } pqc_stat;
 
 typedef struct pqc_pageencodings {

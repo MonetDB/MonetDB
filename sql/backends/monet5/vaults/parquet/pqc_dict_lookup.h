@@ -14,15 +14,16 @@ pqc_dict_lookup( pqc_creader_t *cr, void *output, int64_t nrows, int pos)
 	uint8_t *data = (uint8_t*)cr->data;
 	int nr_bits = cr->nr_bits;
 	int64_t i = 0;
-	bool mul8 = ((8/nr_bits)*nr_bits == 8);
+	bool mul8 = nr_bits?((8/nr_bits)*nr_bits == 8):false;
 	T *dst = output;
 	uint32_t idx = cr->idx;
 	uint32_t j = 0;
 	int mask = (1<<nr_bits) -1;
+	P *dict = (P*)cr->dict;
 	if (cr->remaining) {
 		if (cr->is_rle) {
 			for(; i < nrows && j < cr->remaining; j++, i++)
-				dst[i] = ((T*)cr->dict)[idx];
+				dst[i] = (T)dict[idx];
 		} else {
 			int sh = idx;
 
@@ -36,7 +37,7 @@ pqc_dict_lookup( pqc_creader_t *cr, void *output, int64_t nrows, int pos)
 						sh = 0;
 					}
 					assert(idx < cr->dict_num_values);
-					dst[i] = ((T*)cr->dict)[idx];
+					dst[i] = (T)dict[idx];
 				}
 				if ((cr->remaining - j) == 0)
 					pos += (sh)/8;
@@ -52,7 +53,7 @@ pqc_dict_lookup( pqc_creader_t *cr, void *output, int64_t nrows, int pos)
 						idx |= (v << (nr_bits-sh))&mask;
 					}
 					assert(idx < cr->dict_num_values);
-					dst[i] = ((T*)cr->dict)[idx];
+					dst[i] = (T)dict[idx];
 				}
 				if ((cr->remaining - j) == 0)
 					pos += (sh)/8;
@@ -68,7 +69,7 @@ pqc_dict_lookup( pqc_creader_t *cr, void *output, int64_t nrows, int pos)
 						idx |= (v << (nr_bits-sh))&mask;
 					}
 					assert(idx < cr->dict_num_values);
-					dst[i] = ((T*)cr->dict)[idx];
+					dst[i] = (T)dict[idx];
 				}
 				if ((cr->remaining - j) == 0)
 					pos += (sh)/8;
@@ -84,7 +85,7 @@ pqc_dict_lookup( pqc_creader_t *cr, void *output, int64_t nrows, int pos)
 						idx |= (v << (nr_bits-sh))&mask;
 					}
 					assert(idx < cr->dict_num_values);
-					dst[i] = ((T*)cr->dict)[idx];
+					dst[i] = (T)dict[idx];
 				}
 				if ((cr->remaining - j) == 0)
 					pos += (sh)/8;
@@ -112,7 +113,7 @@ pqc_dict_lookup( pqc_creader_t *cr, void *output, int64_t nrows, int pos)
 						sh = 0;
 					}
 					assert(idx < cr->dict_num_values);
-					dst[i] = ((T*)cr->dict)[idx];
+					dst[i] = (T)dict[idx];
 				}
 				if (j < m) {
 					cr->is_rle = false;
@@ -133,7 +134,7 @@ pqc_dict_lookup( pqc_creader_t *cr, void *output, int64_t nrows, int pos)
 						idx |= (v << (nr_bits-sh))&mask;
 					}
 					assert(idx < cr->dict_num_values);
-					dst[i] = ((T*)cr->dict)[idx];
+					dst[i] = (T)dict[idx];
 				}
 				if (j < m) {
 					cr->is_rle = false;
@@ -154,7 +155,7 @@ pqc_dict_lookup( pqc_creader_t *cr, void *output, int64_t nrows, int pos)
 						idx |= (v << (nr_bits-sh))&mask;
 					}
 					assert(idx < cr->dict_num_values);
-					dst[i] = ((T*)cr->dict)[idx];
+					dst[i] = (T)dict[idx];
 				}
 				if (j < m) {
 					cr->is_rle = false;
@@ -175,7 +176,7 @@ pqc_dict_lookup( pqc_creader_t *cr, void *output, int64_t nrows, int pos)
 						idx |= (v << (nr_bits-sh))&mask;
 					}
 					assert(idx < cr->dict_num_values);
-					dst[i] = ((T*)cr->dict)[idx];
+					dst[i] = (T)dict[idx];
 				}
 				if (j < m) {
 					cr->is_rle = false;
@@ -185,13 +186,23 @@ pqc_dict_lookup( pqc_creader_t *cr, void *output, int64_t nrows, int pos)
 					pos+=(sh/8);
 				}
 			}
+		} else if (nr_bits == 0) {
+			len>>=1;
+			uint32_t j = 0;
+			for(; i < nrows && j < len; j++, i++)
+				dst[i] = (T)dict[0];
+			if (j < len) {
+				cr->is_rle = true;
+				cr->remaining = len - j;
+				cr->idx = idx;
+			}
 		} else if (nr_bits <= 8) { /* rle */
 			len>>=1;
 			uint8_t idx = data[pos++];
 			idx &= mask;
 			uint32_t j = 0;
 			for(; i < nrows && j < len; j++, i++)
-				dst[i] = ((T*)cr->dict)[idx];
+				dst[i] = (T)dict[idx];
 			if (j < len) {
 				cr->is_rle = true;
 				cr->remaining = len - j;
@@ -204,7 +215,7 @@ pqc_dict_lookup( pqc_creader_t *cr, void *output, int64_t nrows, int pos)
 			uint32_t j = 0;
 			pos += 2;
 			for(; i < nrows && j < len; j++, i++)
-				dst[i] = ((T*)cr->dict)[idx];
+				dst[i] = (T)dict[idx];
 			if (j < len) {
 				cr->is_rle = true;
 				cr->remaining = len - j;
@@ -217,7 +228,7 @@ pqc_dict_lookup( pqc_creader_t *cr, void *output, int64_t nrows, int pos)
 			uint32_t j = 0;
 			pos += 3;
 			for(; i < nrows && j < len; j++, i++)
-				dst[i] = ((T*)cr->dict)[idx];
+				dst[i] = (T)dict[idx];
 			if (j < len) {
 				cr->is_rle = true;
 				cr->remaining = len - j;

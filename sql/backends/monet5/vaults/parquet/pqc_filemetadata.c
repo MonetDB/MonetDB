@@ -477,7 +477,12 @@ pqc_oldtype2logicaltype( pqc_schema_element *pse, uint32_t type)
 		pse->isSigned = true;
 		break;
 	case OLD_INT96:
-		return -1;
+		pse->type = inttype;
+		pse->binary = true;
+		pse->precision = 96;
+		pse->size = 96;
+		pse->isSigned = true;
+		break;
 	case OLD_FLOAT:
 		pse->type = floattype;
 		pse->binary = true;
@@ -494,7 +499,8 @@ pqc_oldtype2logicaltype( pqc_schema_element *pse, uint32_t type)
 		break;
 	case OLD_BYTE_ARRAY:
 	case OLD_FIXED_LEN_BYTE_ARRAY:
-		pse->type = stringtype;
+		//pse->type = stringtype;
+		pse->type = blobtype;
 		pse->precision = 0;
 		break;
 	}
@@ -829,6 +835,17 @@ pqc_statistics( pqc_file *pq, pqc_stat *stat, size_t pos )
 				pos = pqc_read_keyvalue(pq, &kv, pos);
 			}
 		} break;
+		case STATISTICS_IS_MAX_VALUE_EXACT:
+			stat->max_is_exact = type != 2;
+			TRC_INFO(PARQUET, "STATISTICS_IS_MAX_VALUE_EXACT %d", stat->max_is_exact);
+			break;
+		case STATISTICS_IS_MIN_VALUE_EXACT:
+			stat->min_is_exact = type != 2;
+			TRC_INFO(PARQUET, "STATISTICS_IS_MIN_VALUE_EXACT %d", stat->min_is_exact);
+			break;
+		default:
+			TRC_ERROR(PARQUET, "UNKNOWN statistic field_id '%d'\n", fieldid);
+			return -1;
 		}
 	}
 	return pos;
