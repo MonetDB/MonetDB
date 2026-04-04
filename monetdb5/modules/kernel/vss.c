@@ -171,155 +171,288 @@ bond_upper_bound_sampled(allocator *ma, bond_collection *bc, const dbl *query_va
     return result;
 }
 
+static dbl
+quickselect(dbl *a, BUN n, BUN k)
+{
+    BUN left = 0, right = n - 1;
+    while (left < right) {
+        dbl pivot = a[(left + right) / 2];
+        BUN i = left, j = right;
+        while (i <= j) {
+            while (a[i] < pivot) i++;
+            while (a[j] > pivot) j--;
+            if (i <= j) {
+                dbl tmp = a[i]; a[i] = a[j]; a[j] = tmp;
+                i++; j--;
+            }
+        }
+        if (k <= j) right = j;
+        else if (i <= k) left = i;
+        else break;
+    }
+    return a[k];
+}
+
 
 static char*
-bond_search(bond_collection *bc, const dbl *query_vals,
+bond_search_fast(allocator *ma, bond_collection *bc, const dbl *query_vals,
 			BUN k, int *dim_order, BAT *cands,
 		   	BAT **oid_result, BAT **dist_result)
 {
-	BAT *partial = NULL;
-	BAT *candidates = cands;
-	bool own_candidates = false;
-
+	(void) cands;
 	if (!bc || !query_vals || k == 0 || !oid_result || !dist_result || !dim_order)
 		throw(MAL, "vss.bond_search", "invalid arguments");
 
-	*oid_result = NULL;
-	*dist_result = NULL;
+	dbl *partial_dists = ma_zalloc(ma, sizeof(dbl) * bc->nvecs);
+	oid *candidates = ma_alloc(ma, sizeof(oid) * bc->nvecs);
+	dbl *temp = ma_alloc(ma, sizeof(dbl) * bc->nvecs);
+	if (!partial_dists || !candidates)
+		throw(MAL, "vss.bond_search", MAL_MALLOC_FAIL);
 
+    dbl *rem_per_dim = ma_zalloc(ma, sizeof(dbl) * bc->ndims);
+	if (!rem_per_dim)
+		throw(MAL, "vss.bond_search", MAL_MALLOC_FAIL);
+	// pre-calculate theoretical maximums
+    dbl total_rem = 0;
+    for (int i = bc->ndims - 1; i >= 0; i--) {
+        int d = dim_order[i];
+		dbl d1 = query_vals[d] - bc->dim_min[d];
+        dbl d2 = query_vals[d] - bc->dim_max[d];
+        total_rem += fmax(d1*d1, d2*d2);
+        rem_per_dim[i] = total_rem;
+    }
+
+	// initialize all vectors are candidates
+	for (BUN i=0; i < bc->nvecs; i++)
+		candidates[i] = i;
+
+	BUN ncands = bc->nvecs;
+
+    GCC_Pragma("GCC ivdep")
 	for (int i = 0; i < bc->ndims; i++) {
 		int d = dim_order[i];
+		dbl qd = query_vals[d];
+		BAT *b = bc->dims[d];
+		const dbl *col = (const dbl*) Tloc(b, 0);
 
-		ValRecord qval = {.vtype = TYPE_dbl};
-		qval.val.dval = query_vals[d];
+		for (BUN j = 0; j < ncands; j++) {
+            dbl diff = col[candidates[j]] - qd;
+            partial_dists[j] += diff * diff;
+        }
 
-		/* diff = dim[d] - query[d] */
-		BAT *diff = BATcalcsubcst(bc->dims[d], &qval, candidates, TYPE_dbl);
-		if (!diff)
-			goto bailout;
-
-		/* sq = diff * diff */
-		BAT *sq = BATcalcmul(diff, diff, NULL, NULL, TYPE_dbl);
-		BBPreclaim(diff);
-		if (!sq)
-			goto bailout;
-
-		if (partial) {
-			BAT *new_partial = BATcalcadd(partial, sq, NULL, NULL, TYPE_dbl);
-			BBPreclaim(partial);
-			BBPreclaim(sq);
-			if (!new_partial)
-				goto bailout;
-			partial = new_partial;
-		} else {
-			partial = sq;
-		}
-
-		/* Prune after every m=2 step dimension (except the last) when
-		 * there are more than 2*k candidates remaining */
+		// Pruning
 		int step = 2;
-		if ((i % step == 0) && i > 0 && i < (bc->ndims - 1) && BATcount(partial) > k * 2) {
-			BAT *topn_oids = NULL;
-			BAT *oids = NULL;
-
-			if (BATfirstn(&topn_oids, NULL, partial, NULL,
-				      NULL, k, true, false, false) != GDK_SUCCEED)
-				goto bailout;
-
-			///* Find the k-th (worst) distance among top-k */
-			BATiter pi = bat_iterator(partial);
-			BATiter ti = bat_iterator(topn_oids);
-			dbl kth_dist = DBL_MAX;
-			for (BUN j = 0; j < BATcount(topn_oids); j++) {
-				oid o = BATtdense(topn_oids)? topn_oids->tseqbase + j : ((const oid *)ti.base)[j];
-				dbl v = ((const dbl *)pi.base)[o - partial->hseqbase];
-				if (v > kth_dist || kth_dist == DBL_MAX)
-					kth_dist = v;
-			}
-			bat_iterator_end(&ti);
-			bat_iterator_end(&pi);
-			BBPreclaim(topn_oids);
-			dbl theoretical_reminder = 0.0;
-			for (int j=i+1; j < bc->ndims; j++) {
-				// calc theoretical upper bound
-				dbl min_val = bc->dim_min[j];
-				dbl max_val = bc->dim_max[j];
-				dbl d1 = query_vals[j] - min_val;
-				dbl d2 = query_vals[j] - max_val;
-				dbl sq = fmax(d1*d1, d2*d2);
-				theoretical_reminder += sq;
-			}
-
+		if ((i % step == 0) && i > 0 && i < (bc->ndims - 1) && ncands > k * 2) {
+			memcpy(temp, partial_dists, ncands * sizeof(dbl));
+			dbl kth_dist = quickselect(temp, ncands, k-1);
+			dbl theoretical_reminder = rem_per_dim[i+1];
+			//dbl theoretical_reminder = 0.0;
+			//for (int j=i+1; j < bc->ndims; j++) {
+			//	// calc theoretical upper bound
+			//	dbl min_val = bc->dim_min[j];
+			//	dbl max_val = bc->dim_max[j];
+			//	dbl d1 = query_vals[j] - min_val;
+			//	dbl d2 = query_vals[j] - max_val;
+			//	dbl sq = fmax(d1*d1, d2*d2);
+			//	theoretical_reminder += sq;
+			//}
 			// potentially tighten upper bound
-			if (kth_dist != DBL_MAX && (bc->kth_upper > (kth_dist + theoretical_reminder)))
+			if (bc->kth_upper > (kth_dist + theoretical_reminder))
 				bc->kth_upper = kth_dist + theoretical_reminder;
 
-			/* Keep only candidates whose partial distance <= kth_dist */
-			dbl zero = 0.0;
-			BAT *new_cands = BATselect(partial, NULL,
-						   &zero, &bc->kth_upper,
-						   true, true, false, false);
-			if (!new_cands)
-				goto bailout;
-			BAT *new_partial = BATproject(new_cands, partial);
-			if (!new_partial) {
-				BBPreclaim(new_cands);
-				goto bailout;
-			}
-			BBPreclaim(partial);
-
-			if (own_candidates) {
-				oids = BATproject(new_cands, candidates);
-				BBPreclaim(new_cands);
-				BBPreclaim(candidates);
-				candidates = oids;
-			} else {
-				candidates = new_cands;
-			}
-			partial = new_partial;
-			own_candidates = true;
-		}
-
-		if (candidates && BATcount(candidates) < 10*k)
-			break;
+			// compact
+            BUN write_pos = 0;
+            for (BUN read_pos = 0; read_pos < ncands; read_pos++) {
+                if (partial_dists[read_pos] <= bc->kth_upper) {
+                    candidates[write_pos] = candidates[read_pos];
+                    partial_dists[write_pos] = partial_dists[read_pos];
+                    write_pos++;
+                }
+            }
+			ncands = write_pos;
+		} // END pruning
 	}
 
-	/* Final top-k selection */
+	BAT *koids = COLnew(0, TYPE_oid, k, TRANSIENT);
+    BAT *kdist = COLnew(0, TYPE_dbl, k, TRANSIENT);
+	// Final top k
 	{
-		BAT *topn_oids = NULL;
-		BAT *res_oids = NULL;
-
-		if (BATfirstn(&topn_oids, NULL, partial, NULL,
-			      NULL, k, true, false, false) != GDK_SUCCEED)
-			goto bailout;
-
-		/* Project distances through top-k oids */
-		BAT *result_dists = BATproject(topn_oids, partial);
-		BBPreclaim(partial);
-		if (!result_dists) {
-			BBPreclaim(topn_oids);
-			goto bailout;
+		memcpy(temp, partial_dists, ncands * sizeof(dbl));
+		//qsort(temp, ncands, sizeof(dbl), dbl_cmp);
+		dbl kth_dist = quickselect(temp, ncands, k-1);
+		BUN write_pos = 0;
+		for (BUN read_pos = 0; read_pos < ncands && write_pos < k; read_pos++) {
+			if (partial_dists[read_pos] <= kth_dist) {
+				*(oid*) Tloc(koids, write_pos) = candidates[read_pos];
+				*(dbl*) Tloc(kdist, write_pos) = partial_dists[read_pos];
+				write_pos++;
+			}
 		}
-		if (own_candidates) {
-			res_oids = BATproject(topn_oids, candidates);
-			BBPreclaim(candidates);
-			BBPreclaim(topn_oids);
-		} else {
-			res_oids = topn_oids;
-		}
-
-		*oid_result = res_oids;
-		*dist_result = result_dists;
 	}
+	BATsetcount(koids, k);
+    koids->tsorted = false;
+    koids->trevsorted = false;
+	BATsetcount(kdist, k);
+	kdist->tsorted = false;
+    kdist->trevsorted = false;
+    //kdist->tnonil = true;
+    kdist->tkey = false;
 
+	*oid_result = koids;
+	*dist_result = kdist;
 	return MAL_SUCCEED;
-
-bailout:
-	BBPreclaim(partial);
-	if (own_candidates)
-		BBPreclaim(candidates);
-	throw(MAL, "vss.bond_search", GDK_EXCEPTION);
 }
+
+
+
+//static char*
+//bond_search(bond_collection *bc, const dbl *query_vals,
+//			BUN k, int *dim_order, BAT *cands,
+//		   	BAT **oid_result, BAT **dist_result)
+//{
+//	BAT *partial = NULL;
+//	BAT *candidates = cands;
+//	bool own_candidates = false;
+//
+//	if (!bc || !query_vals || k == 0 || !oid_result || !dist_result || !dim_order)
+//		throw(MAL, "vss.bond_search", "invalid arguments");
+//
+//	*oid_result = NULL;
+//	*dist_result = NULL;
+//
+//	for (int i = 0; i < bc->ndims; i++) {
+//		int d = dim_order[i];
+//
+//		ValRecord qval = {.vtype = TYPE_dbl};
+//		qval.val.dval = query_vals[d];
+//
+//		/* diff = dim[d] - query[d] */
+//		BAT *diff = BATcalcsubcst(bc->dims[d], &qval, candidates, TYPE_dbl);
+//		if (!diff)
+//			goto bailout;
+//
+//		/* sq = diff * diff */
+//		BAT *sq = BATcalcmul(diff, diff, NULL, NULL, TYPE_dbl);
+//		BBPreclaim(diff);
+//		if (!sq)
+//			goto bailout;
+//
+//		if (partial) {
+//			BAT *new_partial = BATcalcadd(partial, sq, NULL, NULL, TYPE_dbl);
+//			BBPreclaim(partial);
+//			BBPreclaim(sq);
+//			if (!new_partial)
+//				goto bailout;
+//			partial = new_partial;
+//		} else {
+//			partial = sq;
+//		}
+//
+//		/* Prune after every m=2 step dimension (except the last) when
+//		 * there are more than 2*k candidates remaining */
+//		int step = 2;
+//		if ((i % step == 0) && i > 0 && i < (bc->ndims - 1) && BATcount(partial) > k * 2) {
+//			BAT *topn_oids = NULL;
+//			BAT *oids = NULL;
+//
+//			if (BATfirstn(&topn_oids, NULL, partial, NULL,
+//				      NULL, k, true, false, false) != GDK_SUCCEED)
+//				goto bailout;
+//
+//			///* Find the k-th (worst) distance among top-k */
+//			BATiter pi = bat_iterator(partial);
+//			BATiter ti = bat_iterator(topn_oids);
+//			dbl kth_dist = DBL_MAX;
+//			for (BUN j = 0; j < BATcount(topn_oids); j++) {
+//				oid o = BATtdense(topn_oids)? topn_oids->tseqbase + j : ((const oid *)ti.base)[j];
+//				dbl v = ((const dbl *)pi.base)[o - partial->hseqbase];
+//				if (v > kth_dist || kth_dist == DBL_MAX)
+//					kth_dist = v;
+//			}
+//			bat_iterator_end(&ti);
+//			bat_iterator_end(&pi);
+//			BBPreclaim(topn_oids);
+//			dbl theoretical_reminder = 0.0;
+//			for (int j=i+1; j < bc->ndims; j++) {
+//				// calc theoretical upper bound
+//				dbl min_val = bc->dim_min[j];
+//				dbl max_val = bc->dim_max[j];
+//				dbl d1 = query_vals[j] - min_val;
+//				dbl d2 = query_vals[j] - max_val;
+//				dbl sq = fmax(d1*d1, d2*d2);
+//				theoretical_reminder += sq;
+//			}
+//
+//			// potentially tighten upper bound
+//			if (kth_dist != DBL_MAX && (bc->kth_upper > (kth_dist + theoretical_reminder)))
+//				bc->kth_upper = kth_dist + theoretical_reminder;
+//
+//			/* Keep only candidates whose partial distance <= kth_dist */
+//			dbl zero = 0.0;
+//			BAT *new_cands = BATselect(partial, NULL,
+//						   &zero, &bc->kth_upper,
+//						   true, true, false, false);
+//			if (!new_cands)
+//				goto bailout;
+//			BAT *new_partial = BATproject(new_cands, partial);
+//			if (!new_partial) {
+//				BBPreclaim(new_cands);
+//				goto bailout;
+//			}
+//			BBPreclaim(partial);
+//
+//			if (own_candidates) {
+//				oids = BATproject(new_cands, candidates);
+//				BBPreclaim(new_cands);
+//				BBPreclaim(candidates);
+//				candidates = oids;
+//			} else {
+//				candidates = new_cands;
+//			}
+//			partial = new_partial;
+//			own_candidates = true;
+//		}
+//
+//		if (candidates && BATcount(candidates) < 10*k)
+//			break;
+//	}
+//
+//	/* Final top-k selection */
+//	{
+//		BAT *topn_oids = NULL;
+//		BAT *res_oids = NULL;
+//
+//		if (BATfirstn(&topn_oids, NULL, partial, NULL,
+//			      NULL, k, true, false, false) != GDK_SUCCEED)
+//			goto bailout;
+//
+//		/* Project distances through top-k oids */
+//		BAT *result_dists = BATproject(topn_oids, partial);
+//		BBPreclaim(partial);
+//		if (!result_dists) {
+//			BBPreclaim(topn_oids);
+//			goto bailout;
+//		}
+//		if (own_candidates) {
+//			res_oids = BATproject(topn_oids, candidates);
+//			BBPreclaim(candidates);
+//			BBPreclaim(topn_oids);
+//		} else {
+//			res_oids = topn_oids;
+//		}
+//
+//		*oid_result = res_oids;
+//		*dist_result = result_dists;
+//	}
+//
+//	return MAL_SUCCEED;
+//
+//bailout:
+//	BBPreclaim(partial);
+//	if (own_candidates)
+//		BBPreclaim(candidates);
+//	throw(MAL, "vss.bond_search", GDK_EXCEPTION);
+//}
 
 /**
  * @brief Generic Macro to generate L1(Manhattan) distance functions.
@@ -618,7 +751,7 @@ BONDknn(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	bc->kth_upper = bond_upper_bound_sampled(ta, bc, query_vals, k);
 	BAT *oid_result = NULL, *dist_result = NULL;
-	char *rc = bond_search(bc, query_vals, (BUN) k, dim_order, NULL, &oid_result, &dist_result);
+	char *rc = bond_search_fast(ta, bc, query_vals, (BUN) k, dim_order, NULL, &oid_result, &dist_result);
 
 	for (int i = 0; i < ndims; i++)
 		BBPreclaim(dim_bats[i]);
