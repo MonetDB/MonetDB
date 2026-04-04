@@ -125,18 +125,17 @@ bond_create(allocator *ma, BAT **dim_bats, int ndims)
 			for (int d = 0; d < ndims; d++) {
 				BAT *b = dim_bats[d];
 				bc->dims[d] = b;
-				/*
 				dbl avg;
 				BUN cnt;
 				if (BATcalcavg(b, NULL, &avg, &cnt, 0) != GDK_SUCCEED)
 					return NULL;
 				bc->dim_means[d] = avg;
+				/*
 				bc->dim_max[d] = *(dbl*)BATmax(b, NULL);
 				bc->dim_min[d] = *(dbl*)BATmin(b, NULL);
-				*/
-				bc->dim_means[d] =
 				bc->dim_max[d] =
-				bc->dim_min[d] = 1;
+				bc->dim_min[d] = *(dbl*)Tloc(b, 0);
+				*/
 			}
 			return bc;
 		}
@@ -204,8 +203,7 @@ bond_search_fast(allocator *ma, bond_collection *bc, const dbl *query_vals,
 			BUN k, int *dim_order, BAT *cands,
 		   	BAT **oid_result, BAT **dist_result)
 {
-	(void) cands;
-	if (!bc || !query_vals || k == 0 || !oid_result || !dist_result || !dim_order)
+	if (cands || !bc || !query_vals || k == 0 || !oid_result || !dist_result || !dim_order)
 		throw(MAL, "vss.bond_search", "invalid arguments");
 
 	dbl *partial_dists = ma_zalloc(ma, sizeof(dbl) * bc->nvecs);
@@ -293,6 +291,7 @@ bond_search_fast(allocator *ma, bond_collection *bc, const dbl *query_vals,
 				write_pos++;
 			}
 		}
+		k = write_pos;
 	}
 	BATsetcount(koids, k);
     koids->tsorted = false;
@@ -302,6 +301,9 @@ bond_search_fast(allocator *ma, bond_collection *bc, const dbl *query_vals,
     kdist->trevsorted = false;
     //kdist->tnonil = true;
     kdist->tkey = false;
+
+	BATprint(GDKstdout, koids);
+	BATprint(GDKstdout, kdist);
 
 	*oid_result = koids;
 	*dist_result = kdist;
