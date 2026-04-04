@@ -1028,7 +1028,7 @@ HDF5dataset(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
     nc_inq_dimlen(ncid, dimids[0], &rows);
     nc_inq_dimlen(ncid, dimids[1], &cols);
 
-	assert(cols == (size_t)pci->retc);
+    assert(cols == (size_t)pci->retc);
     //printf("Dataset 'train' has dimensions: %zu x %zu\n", rows, cols);
 
 	allocator_state ta_state = ma_open(ta);
@@ -1065,11 +1065,29 @@ HDF5dataset(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		dbls[i] = Tloc(bats[i], 0);
 	}
 	// loop over load data
+	size_t bsize = 64/sizeof(dbl);
+	for (size_t rb=0, rpos=0; rb<(rows/bsize); rb++, rpos += bsize) {
+		for (size_t cb=0, cpos=0; cb<(cols/bsize); cb++, cpos += bsize) {
+			flt *ib = buffer+(rpos*cols) + cpos;
+			BUN csize = (cpos+bsize) < cols ? bsize : cols-cpos;
+			BUN rsize = (rpos+bsize) < rows ? bsize : rows-rpos;
+			for(BUN c=0; c<csize; c++) {
+				dbl *dst = dbls[cpos+c];
+				dst += rpos;
+				flt *is = ib + c;
+				for (size_t r=0; r<rsize; r++, is += cols) {
+					*dst++ = *is;
+				}
+			}
+		}
+	}
+/*
 	for (size_t r=0; r<rows; r++) {
 		for(BUN c=0; c<cols; c++, buffer++) {
 			dbls[c][r] = *buffer;
 		}
 	}
+*/
 
 	for(int i = 0; i < pci->retc && bats[i]; i++) {
 		*getArgReference_bat(stk, pci, i) = bats[i]->batCacheid;

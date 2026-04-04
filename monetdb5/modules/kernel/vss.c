@@ -125,6 +125,7 @@ bond_create(allocator *ma, BAT **dim_bats, int ndims)
 			for (int d = 0; d < ndims; d++) {
 				BAT *b = dim_bats[d];
 				bc->dims[d] = b;
+				/*
 				dbl avg;
 				BUN cnt;
 				if (BATcalcavg(b, NULL, &avg, &cnt, 0) != GDK_SUCCEED)
@@ -132,6 +133,10 @@ bond_create(allocator *ma, BAT **dim_bats, int ndims)
 				bc->dim_means[d] = avg;
 				bc->dim_max[d] = *(dbl*)BATmax(b, NULL);
 				bc->dim_min[d] = *(dbl*)BATmin(b, NULL);
+				*/
+				bc->dim_means[d] =
+				bc->dim_max[d] =
+				bc->dim_min[d] = 1;
 			}
 			return bc;
 		}
@@ -709,11 +714,11 @@ BONDknn(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	allocator *ta = MT_thread_getallocator();
 	allocator_state ta_state = ma_open(ta);
 
+	lng T0 = GDKusec();
 	/* Get dimension BATs */
 	BAT **dim_bats = ma_alloc(ta, ndims * sizeof(BAT *));
 	dbl *query_vals = ma_alloc(ta, ndims * sizeof(dbl));
-	dbl *kbuf = ma_alloc(ta, k * sizeof(dbl));
-    memset(kbuf, 0, sizeof(dbl) * k);
+	dbl *kbuf = ma_zalloc(ta, k * sizeof(dbl));
 	if (!dim_bats || !query_vals || !kbuf) {
 		ma_close(&ta_state);
 		throw(MAL, "vss.knn", MAL_MALLOC_FAIL);
@@ -735,6 +740,10 @@ BONDknn(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	/* Create BOND collection and search */
 	bond_collection *bc = bond_create(ta, dim_bats, ndims);
+	lng T1 = GDKusec();
+	printf("creation %ld\n", T1 - T0);
+	T0 = T1;
+
 	if (!bc) {
 		for (int i = 0; i < ndims; i++)
 			BBPreclaim(dim_bats[i]);
@@ -749,9 +758,18 @@ BONDknn(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		ma_close(&ta_state);
 		throw(MAL, "vss.knn", MAL_MALLOC_FAIL);
 	}
+	T1 = GDKusec();
+	printf("order %ld\n", T1 - T0);
+	T0 = T1;
 	bc->kth_upper = bond_upper_bound_sampled(ta, bc, query_vals, k);
+	T1 = GDKusec();
+	printf("upperbound %ld\n", T1 - T0);
+	T0 = T1;
 	BAT *oid_result = NULL, *dist_result = NULL;
 	char *rc = bond_search_fast(ta, bc, query_vals, (BUN) k, dim_order, NULL, &oid_result, &dist_result);
+	T1 = GDKusec();
+	printf("search %ld\n", T1 - T0);
+	T0 = T1;
 
 	for (int i = 0; i < ndims; i++)
 		BBPreclaim(dim_bats[i]);

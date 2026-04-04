@@ -4802,7 +4802,7 @@ claim_segmentsV2(sql_trans *tr, sql_table *t, storage *s, size_t cnt, BUN *offse
 		/* hard to only add this once per transaction (probably want to change to once per new segment) */
 		trans_add_obj_(tr, &t->base, s, &tc_gc_del, &commit_update_del, NOT_TO_BE_LOGGED(t) ? NULL : &log_update_del);
 		if (!NOT_TO_BE_LOGGED(t))
-			tr->logchanges += (lng) total;
+			tr->logchanges += (lng) total * ol_length(t->columns);
 		if (*offsets) {
 			BAT *pos = *offsets;
 			assert(BATcount(pos) == total);
@@ -4884,7 +4884,7 @@ claim_segments(sql_trans *tr, sql_table *t, storage *s, size_t cnt, BUN *offset,
 		/* hard to only add this once per transaction (probably want to change to once per new segment) */
 		trans_add_obj_(tr, &t->base, s, &tc_gc_del, &commit_update_del, NOT_TO_BE_LOGGED(t) ? NULL : &log_update_del);
 		if (!NOT_TO_BE_LOGGED(t))
-			tr->logchanges += (lng) cnt;
+			tr->logchanges += (lng) cnt * ol_length(t->columns);
 		*offset = slot;
 	}
 	return ok;
