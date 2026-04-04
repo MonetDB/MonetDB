@@ -869,6 +869,8 @@ pqc_pageencodingsstats( pqc_file *pq, pqc_pageencodings *pe, size_t pos )
 		case PAGE_ENCODING_STATS_ENCODING:
 			pos += pqc_get_zint32(pq->buffer+pos, &pe->page_encoding);
 			TRC_INFO(PARQUET, "page_encoding %u\n", pe->page_encoding);
+			if (pe->page_encoding > BYTE_STREAM_SPLIT) /* unknown encoding */
+				return -1;
 			break;
 		case PAGE_ENCODING_STATS_COUNT:
 			pos += pqc_get_zint32(pq->buffer+pos, &pe->page_count);

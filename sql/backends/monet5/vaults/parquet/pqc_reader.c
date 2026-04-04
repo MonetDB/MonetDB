@@ -520,7 +520,7 @@ pqc_page_header( pqc_reader_t *r, pqc_creader_t *pr, int64_t pos)
 	if (res < 0)
 		return pos;
 	if (uncompressed_size > INT32_MAX) {
-			pqc_set_error(r, "uncompressed size larger then INT32_MAX currently not supported\n");
+			pqc_set_error(r, "uncompressed size larger then INT32_MAX currently not supported");
 			return -1;
 	}
 
@@ -543,7 +543,7 @@ pqc_page_header( pqc_reader_t *r, pqc_creader_t *pr, int64_t pos)
 				assert(uncompressed_size == ul);
 				pos += compressed_size;
 #else
-				pqc_set_error(r, "Snappy compression support is not available\n");
+				pqc_set_error(r, "Snappy compression support is not available");
 				return -1;
 #endif
 			} else if (pr->cc->codec == CC_GZIP) {
@@ -554,7 +554,7 @@ pqc_page_header( pqc_reader_t *r, pqc_creader_t *pr, int64_t pos)
 					return -10;
 				pos += compressed_size;
 #else
-				pqc_set_error(r, "gzip compression support is not available\n");
+				pqc_set_error(r, "gzip compression support is not available");
 				return -1;
 #endif
 			} else if (pr->cc->codec == CC_ZSTD) {
@@ -565,7 +565,7 @@ pqc_page_header( pqc_reader_t *r, pqc_creader_t *pr, int64_t pos)
 					return -10;
 				pos += compressed_size;
 #else
-				pqc_set_error(r, "zstd compression support is not available\n");
+				pqc_set_error(r, "zstd compression support is not available");
 				return -1;
 #endif
 			} else if (pr->cc->codec == CC_LZ4_RAW) {
@@ -577,7 +577,7 @@ pqc_page_header( pqc_reader_t *r, pqc_creader_t *pr, int64_t pos)
 					return -10;
 				pos += compressed_size;
 #else
-				pqc_set_error(r, "lz4 compression support is not available\n");
+				pqc_set_error(r, "lz4 compression support is not available");
 				return -1;
 #endif
 			} else if (pr->cc->codec == CC_BROTLI) {
@@ -588,14 +588,14 @@ pqc_page_header( pqc_reader_t *r, pqc_creader_t *pr, int64_t pos)
 					return -10;
 				pos += compressed_size;
 #else
-				pqc_set_error(r, "brotli compression support is not available\n");
+				pqc_set_error(r, "brotli compression support is not available");
 				return -1;
 #endif
 			} else if (pr->cc->codec == CC_LZO) {
-				pqc_set_error(r, "lzo compression support is not supported\n");
+				pqc_set_error(r, "lzo compression support is not supported");
 				return -1;
 			} else if (pr->cc->codec == CC_LZ4) {
-				pqc_set_error(r, "lz4 compression support is depricated use lz4_raw instead\n");
+				pqc_set_error(r, "lz4 compression support is depricated use lz4_raw instead");
 				return -1;
 			}
 		} else {
@@ -626,7 +626,7 @@ pqc_page_header( pqc_reader_t *r, pqc_creader_t *pr, int64_t pos)
 				assert(uncompressed_size == ul);
 				pos += compressed_size;
 #else
-				pqc_set_error(r, "Snappy compression support is not available\n");
+				pqc_set_error(r, "Snappy compression support is not available");
 				return -1;
 #endif
 			} else if (pr->cc->codec == CC_GZIP) {
@@ -637,7 +637,7 @@ pqc_page_header( pqc_reader_t *r, pqc_creader_t *pr, int64_t pos)
 					return -10;
 				pos += compressed_size;
 #else
-				pqc_set_error(r, "gzip compression support is not available\n");
+				pqc_set_error(r, "gzip compression support is not available");
 				return -1;
 #endif
 			} else if (pr->cc->codec == CC_ZSTD) {
@@ -648,7 +648,7 @@ pqc_page_header( pqc_reader_t *r, pqc_creader_t *pr, int64_t pos)
 					return -10;
 				pos += compressed_size;
 #else
-				pqc_set_error(r, "zstd compression support is not available\n");
+				pqc_set_error(r, "zstd compression support is not available");
 				return -1;
 #endif
 			} else if (pr->cc->codec == CC_LZ4_RAW) {
@@ -660,7 +660,7 @@ pqc_page_header( pqc_reader_t *r, pqc_creader_t *pr, int64_t pos)
 					return -10;
 				pos += compressed_size;
 #else
-				pqc_set_error(r, "lz4 compression support is not available\n");
+				pqc_set_error(r, "lz4 compression support is not available");
 				return -1;
 #endif
 			} else if (pr->cc->codec == CC_BROTLI) {
@@ -671,14 +671,14 @@ pqc_page_header( pqc_reader_t *r, pqc_creader_t *pr, int64_t pos)
 					return -10;
 				pos += compressed_size;
 #else
-				pqc_set_error(r, "brotli compression support is not available\n");
+				pqc_set_error(r, "brotli compression support is not available");
 				return -1;
 #endif
 			} else if (pr->cc->codec == CC_LZO) {
-				pqc_set_error(r, "lzo compression support is not supported\n");
+				pqc_set_error(r, "lzo compression support is not supported");
 				return -1;
 			} else if (pr->cc->codec == CC_LZ4) {
-				pqc_set_error(r, "lz4 compression support is depricated use lz4_raw instead\n");
+				pqc_set_error(r, "lz4 compression support is depricated use lz4_raw instead");
 				return -1;
 			}
 		} else {
@@ -1870,11 +1870,23 @@ pqc_read_chunk( pqc_reader_t *r, int wnr, void *output /*fixed sized atom storag
 				if (cr->definition)
 					(void)pqc_add_nil(r, cr, output, output, orows, cr->cc->cur_page.num_nulls, r->pse->size/8);
 			} else {
-				if (cr->cc->cur_page.pageencodings[0].page_encoding) {
-					/* delta strings == delta_encoded (encoding==5) prefixes (lengths),
-					 * delta_length_byte_array((encoding==6) == (delta encoded lengths, back2back strings)) suffix strings */
+				if (cr->cc->cur_page.pageencodings[0].page_encoding == DELTA_LENGTH_BYTE_ARRAY ||
+				    cr->cc->cur_page.pageencodings[0].page_encoding == DELTA_BYTE_ARRAY) {
+					if (r->pse->type != stringtype) {
+						pqc_set_error(r, "DELTA_LENGTH_BYTE_ARRAY|DELTA_BYTE_ARRAY needs stringtype");
+						return -1;
+					}
 					nrows = pqc_read_delta_strings(cr, output, voutput, nrows, pos, ssize, dict);
+				} else if (cr->cc->cur_page.pageencodings[0].page_encoding == DELTA_BINARY_PACKED) {
+					if (r->pse->type != inttype)
+						pqc_set_error(r, "DELTA_BINARY_PACKED needs inttypen");
+					pqc_set_error(r, "DELTA_BINARY_PACKED not handled yet");
+					return -1;
 				} else if (r->pse->type != stringtype) {
+					if (cr->cc->cur_page.pageencodings[0].page_encoding == BYTE_STREAM_SPLIT) {
+						pqc_set_error(r, "BYTE_STREAM_SPLIT not handled yet");
+						return -1;
+					}
 					/* fixed types, plain encoding */
 					if (!cr->definition) {
 						if ((r->pse->size/8)*8 != r->pse->size) {
@@ -2000,7 +2012,7 @@ pqc_read_chunk( pqc_reader_t *r, int wnr, void *output /*fixed sized atom storag
 			ATOMIC_ADD(&r->rownr, orows);
 			cr->curnr += orows;
 			if (cr->cc->cur_page.num_read + orows > UINT32_MAX) {
-				pqc_set_error(r, "To many rows in one page (> UINT32_MAX)\n");
+				pqc_set_error(r, "To many rows in one page (> UINT32_MAX)");
 				return -1;
 			}
 			cr->cc->cur_page.num_read += orows;
@@ -2024,11 +2036,23 @@ pqc_read_chunk( pqc_reader_t *r, int wnr, void *output /*fixed sized atom storag
 				if (cr->definition)
 					(void)pqc_add_nil(r, cr, output, output, orows, cr->cc->cur_page.num_nulls, r->pse->size/8);
 			} else {
-				if (cr->cc->cur_page.pageencodings[0].page_encoding) {
-					/* delta strings == delta_encoded (encoding==5) prefixes (lengths),
-					 * delta_length_byte_array((encoding==6) == (delta encoded lengths, back2back strings)) suffix strings */
+				if (cr->cc->cur_page.pageencodings[0].page_encoding == DELTA_LENGTH_BYTE_ARRAY ||
+				    cr->cc->cur_page.pageencodings[0].page_encoding == DELTA_BYTE_ARRAY) {
+					if (r->pse->type != stringtype) {
+						pqc_set_error(r, "DELTA_LENGTH_BYTE_ARRAY|DELTA_BYTE_ARRAY needs stringtype");
+						return -1;
+					}
 					nrows = pqc_read_delta_strings(cr, output, voutput, nrows, pos, ssize, dict);
+				} else if (cr->cc->cur_page.pageencodings[0].page_encoding == DELTA_BINARY_PACKED) {
+					if (r->pse->type != inttype)
+						pqc_set_error(r, "DELTA_BINARY_PACKED needs inttype");
+					pqc_set_error(r, "DELTA_BINARY_PACKED not handled yet");
+					return -1;
 				} else if (r->pse->type != stringtype) {
+					if (cr->cc->cur_page.pageencodings[0].page_encoding == BYTE_STREAM_SPLIT) {
+						pqc_set_error(r, "BYTE_STREAM_SPLIT not handled yet");
+						return -1;
+					}
 					/* fixed types, plain encoding */
 					if (!cr->definition) {
 						if ((r->pse->size/8)*8 != r->pse->size) {
@@ -2147,7 +2171,7 @@ pqc_read_chunk( pqc_reader_t *r, int wnr, void *output /*fixed sized atom storag
 			ATOMIC_ADD(&r->rownr, orows);
 			cr->curnr += orows;
 			if (cr->cc->cur_page.num_read + orows > UINT32_MAX) {
-				pqc_set_error(r, "To many rows in one page (> UINT32_MAX)\n");
+				pqc_set_error(r, "To many rows in one page (> UINT32_MAX)");
 				return -1;
 			}
 			cr->cc->cur_page.num_read += orows;
