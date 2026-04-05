@@ -743,7 +743,7 @@ BONDknn(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/* Create BOND collection and search */
 	bond_collection *bc = bond_create(ta, dim_bats, ndims);
 	lng T1 = GDKusec();
-	printf("creation %ld\n", T1 - T0);
+	printf("creation " LLFMT "\n", T1 - T0);
 	T0 = T1;
 
 	if (!bc) {
@@ -761,16 +761,16 @@ BONDknn(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "vss.knn", MAL_MALLOC_FAIL);
 	}
 	T1 = GDKusec();
-	printf("order %ld\n", T1 - T0);
+	printf("order " LLFMT "\n", T1 - T0);
 	T0 = T1;
 	bc->kth_upper = bond_upper_bound_sampled(ta, bc, query_vals, k);
 	T1 = GDKusec();
-	printf("upperbound %ld\n", T1 - T0);
+	printf("upperbound " LLFMT "\n", T1 - T0);
 	T0 = T1;
 	BAT *oid_result = NULL, *dist_result = NULL;
 	char *rc = bond_search_fast(ta, bc, query_vals, (BUN) k, dim_order, NULL, &oid_result, &dist_result);
 	T1 = GDKusec();
-	printf("search %ld\n", T1 - T0);
+	printf("search " LLFMT "\n", T1 - T0);
 	T0 = T1;
 
 	for (int i = 0; i < ndims; i++)
