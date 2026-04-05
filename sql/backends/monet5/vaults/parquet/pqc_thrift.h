@@ -108,11 +108,13 @@ pqc_export int pqc_get_string( char *in, char **s, int *len); /* need way to buf
 #define pqc_int(s) normal_int_SWAP(s)
 #define pqc_lng(s) long_int_SWAP(s)
 #define pqc_hge(s) huge_int_SWAP(s)
+#define pqc_be_sht(s) (s)
 #else
 #define pqc_sht(s) (s)
 #define pqc_int(s) (s)
 #define pqc_lng(s) (s)
 #define pqc_hge(s) (s)
+#define pqc_be_sht(s) short_int_SWAP(s)
 #endif
 
 #endif /*_PQC_THRIFT_H_*/

@@ -2055,12 +2055,12 @@ pqc_read_chunk( pqc_reader_t *r, int wnr, void *output /*fixed sized atom storag
 								char *dst = output;
 								/* FIXED ARRAY little endian len followed by big endian data,  what where they smoking */
 								for (uint32_t i = 0; i < nrows; i++, dst += 2) {
-									int len = *(int*)(((char*)cr->data)+pos);
+									int len = pqc_int(*(int*)(((char*)cr->data)+pos));
 									pos += 4;
 									*(sht*)dst = 0;
 									memcpy(dst, ((char*)cr->data)+pos, len);
 									if (len == 2)
-										*(sht*)dst = short_int_SWAP(*(sht*)dst);
+										*(sht*)dst = pqc_be_sht(*(sht*)dst);
 									pos += len;
 								}
 							}
@@ -2234,12 +2234,12 @@ pqc_read_chunk( pqc_reader_t *r, int wnr, void *output /*fixed sized atom storag
 								char *dst = output;
 								/* FIXED ARRAY little endian len followed by big endian data,  what where they smoking */
 								for (uint32_t i = 0; i < nrows; i++, dst += 2) {
-									int len = *(int*)(((char*)cr->data)+pos);
+									int len = pqc_int(*(int*)(((char*)cr->data)+pos));
 									pos += 4;
 									*(sht*)dst = 0;
 									memcpy(dst, ((char*)cr->data)+pos, len);
 									if (len == 2)
-										*(sht*)dst = short_int_SWAP(*(sht*)dst);
+										*(sht*)dst = pqc_be_sht(*(sht*)dst);
 									pos += len;
 								}
 							}
