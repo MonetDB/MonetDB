@@ -151,7 +151,7 @@ extern stmt *stmt_bat_new(backend *be, sql_subtype *tpe, lng estimate);
 extern stmt *stmt_bat_new2(backend *be, sql_subtype *tpe, stmt *sz_base);
 extern stmt *stmt_bat_declare(backend *be, sql_subtype *tpe);
 
-extern stmt *stmt_none(backend *be);
+sql_export stmt *stmt_none(backend *be);
 
 extern stmt *stmt_var(backend *be, const char *sname, const char *varname, sql_subtype *t, int declare, int level);
 extern stmt *stmt_vars(backend *be, const char *varname, sql_table *t, int declare, int level);

@@ -447,9 +447,9 @@ pqc_relation(mvc *sql, sql_subfunc *f, char *filename, list *res_exps, char *tna
 			char *name = NULL;
 			if (e->name) {
 				if (i == 14)
-				name = mkLower(ma_strdup(sql->sa, "e1"));
+					name = ma_strdup(sql->sa, "e1");
 				else
-				name = mkLower(ma_strdup(sql->sa, e->name));
+					name = ma_strdup(sql->sa, e->name);
 			} else {
 				char buff[25];
 				snprintf(buff, 25, "name_%i", i);

@@ -737,7 +737,7 @@ static size_t
 pqc_read_keyvalue( pqc_file *pq, pqc_keyvalue *kv, size_t pos )
 {
 	int fieldid = 0, type = 0;
-	*kv = (pqc_keyvalue){};
+	*kv = (pqc_keyvalue){ .key = NULL };
 
 	while(true) {
 		pos += pqc_get_field(pq->buffer+pos, &fieldid, &type);
@@ -993,7 +993,7 @@ static size_t
 pqc_read_columnchunk( pqc_file *pq, pqc_columnchunk *cc, size_t pos )
 {
 	int fieldid = 0, type = 0;
-	*cc = (pqc_columnchunk) { };
+	*cc = (pqc_columnchunk){ .type = 0 };
 
 	while(true) {
 		pos += pqc_get_field(pq->buffer+pos, &fieldid, &type);
@@ -1051,7 +1051,7 @@ static size_t
 pqc_read_sortingcolumn( pqc_file *pq, pqc_sortingcolumn *sc, size_t pos)
 {
 	int fieldid = 0, type = 0;
-	*sc = (pqc_sortingcolumn){ };
+	*sc = (pqc_sortingcolumn){ .column_idx = 0 };
 
 	while(true) {
 		pos += pqc_get_field(pq->buffer+pos, &fieldid, &type);
@@ -1087,7 +1087,7 @@ static size_t
 pqc_rowgroup( pqc_file *pq, pqc_row_group *rg, size_t pos)
 {
 	int fieldid = 0, type = 0, size = 0;
-	*rg = (pqc_row_group){ };
+	*rg = (pqc_row_group){ .num_rows = 0 };
 
 	while(true) {
 		pos += pqc_get_field(pq->buffer+pos, &fieldid, &type);
