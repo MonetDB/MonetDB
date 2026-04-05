@@ -34,15 +34,6 @@
 #ifdef HAVE_LIBZ
 #include <zlib.h>
 
-#ifdef _MSC_VER
-/* use intrinsic functions on Windows */
-#define short_int_SWAP(s)	((int16_t) _byteswap_ushort((uint16_t) (s)))
-#else
-#define short_int_SWAP(s)				\
-	((int16_t) (((0x00ff & (uint16_t) (s)) << 8) |	\
-		  ((0xff00 & (uint16_t) (s)) >> 8)))
-#endif
-
 static int
 gzip_uncompress( char *dest, size_t ul, char *src, size_t cl)
 {
@@ -756,12 +747,26 @@ pqc_page_header( pqc_reader_t *r, pqc_creader_t *pr, int64_t pos)
 			if (blob_read_dict(pr, num_values) < 0)
 				return -1;
 		}
+#ifdef WORDS_BIGENDIAN
+		if (num_values && (r->pse->type == inttype || r->pse->type == floattype)) {
+			char *s = pr->dict;
+			if (r->pse->size == 16)
+				for(uint32_t i = 0; i < num_values; i++, s+=sizeof(uint16_t))
+					*(uint16_t*)s = pqc_sht(*(uint16_t*)s);
+			if (r->pse->size == 32)
+				for(uint32_t i = 0; i < num_values; i++, s+=sizeof(uint32_t))
+					*(uint32_t*)s = pqc_int(*(uint32_t*)s);
+			if (r->pse->size == 64)
+				for(uint32_t i = 0; i < num_values; i++, s+=sizeof(uint64_t))
+					*(uint64_t*)s = pqc_lng(*(uint64_t*)s);
+		}
+#endif
 		if (num_values && r->pse->type == inttype && r->pse->precision == 96) { /* remove the 32 useless bits */
 			ulng *d = (ulng*)pr->dict;
 			char *s = pr->dict;
 			for(uint32_t i = 0; i < num_values; i++, s += 12) {
-				uint64_t nanoseconds = *(uint64_t*)s;
-				uint32_t julian_day = *(uint32_t*)(s+8);
+				uint64_t nanoseconds = pqc_lng(*(uint64_t*)s);
+				uint32_t julian_day = pqc_int(*(uint32_t*)(s+8));
 
 				nanoseconds /= LL_CONSTANT(1000);
 				julian_day -= 2440588;
