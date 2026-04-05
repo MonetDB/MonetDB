@@ -629,6 +629,7 @@ PARQUETread_large(BAT **R, pqc_creader *r, int colno, Pipeline *p, int wnr)
 	BAT *rb = NULL;
 
 	if (pse->type == stringtype || pse->type == blobtype) { /* remove vector from interface */
+		bool plain = 0;
 		int dict = 0;
 		bool is_string = (pse->type == stringtype);
 		size_t ssize = 0;
@@ -638,6 +639,8 @@ PARQUETread_large(BAT **R, pqc_creader *r, int colno, Pipeline *p, int wnr)
 				throw (SQL, "parquet.read", SQLSTATE(HY002) "Error reading parquet file '%s'", err);
 			throw (SQL, "parquet.read", SQLSTATE(HY002) "Error reading parquet file");
 		}
+		if (!dict)
+			plain = 1;
 		if (is_string) {
 			if (ssize < 256)
 				dict = 1;
@@ -654,7 +657,8 @@ PARQUETread_large(BAT **R, pqc_creader *r, int colno, Pipeline *p, int wnr)
 			throw(SQL, "parquet.read",  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		Heap *h = rb->tvheap;
-		BUN size = GDK_STRHASHTABLE * sizeof(stridx_t) + ssize/* * GDK_VARALIGN*/ + 8;
+		unsigned int varoff = is_string?GDK_STRHASHTABLE * sizeof(stridx_t):0;
+		BUN size = varoff + ssize/* * GDK_VARALIGN*/ + 8;
 		if (h->storage == STORE_INVALID) {
 			if (h->size < size && HEAPalloc(h, size, 1) != GDK_SUCCEED) {
 				BBPreclaim(rb);
@@ -662,7 +666,7 @@ PARQUETread_large(BAT **R, pqc_creader *r, int colno, Pipeline *p, int wnr)
 			}
 		}
 		assert(h->size >= size);
-		h->free = is_string?GDK_STRHASHTABLE * sizeof(stridx_t): 0;
+		h->free = varoff;
 		h->dirty = true;
 #ifdef NDEBUG
 		memset(h->base, 0, h->free);
@@ -672,7 +676,7 @@ PARQUETread_large(BAT **R, pqc_creader *r, int colno, Pipeline *p, int wnr)
 #endif
 		rb->tascii = true; /* tobe fixed */
 		size_t offset = 0;
-		if (dict == 4)
+		if (dict >= 4 && is_string)
 			offset = h->free;
 		ssize_t rsz = 0, tsz = 0;
 		if ((rsz = pqc_read_chunk(r->c[pse->ccnr], wnr, rb->theap->base, ((char*)h->base)+h->free, sz, &offset, &dict)) < 0) {
@@ -685,7 +689,6 @@ PARQUETread_large(BAT **R, pqc_creader *r, int colno, Pipeline *p, int wnr)
 		h->free += ssize;
 		tsz += rsz;
 		while(tsz < sz) {
-			bool plain = 0;
 			dict = 0;
 			if (rsz == 0)
 				break;
@@ -696,7 +699,7 @@ PARQUETread_large(BAT **R, pqc_creader *r, int colno, Pipeline *p, int wnr)
 				throw (SQL, "parquet.read", SQLSTATE(HY002) "Error reading parquet file");
 			}
 			Heap *h = rb->tvheap;
-			if (!dict) { /* only one dict, but could be some plain values */
+			if (!dict || plain) { /* only one dict, but could be some plain values */
 				plain = 1;
 				BUN _d = h->free + (ssize /** GDK_VARALIGN*/);
 				if (rb->twidth < SIZEOF_VAR_T &&
@@ -715,11 +718,9 @@ PARQUETread_large(BAT **R, pqc_creader *r, int colno, Pipeline *p, int wnr)
 				assert(h->size >= size);
 			}
 			dict = rb->twidth;
-			if (plain) {
-				if (dict > 2 || !is_string)
-					offset = h->free;
-			}
-			if ((rsz = pqc_read_chunk(r->c[pse->ccnr], wnr, ((char*)rb->theap->base)+(tsz*dict), ((char*)h->base)+(dict?0:h->free), sz-tsz, &offset, &dict)) < 0) {
+			if (plain && (dict > 2 || !is_string))
+				offset = h->free;
+			if ((rsz = pqc_read_chunk(r->c[pse->ccnr], wnr, ((char*)rb->theap->base)+(tsz*dict), ((char*)h->base)+(!plain?varoff:h->free), sz-tsz, &offset, &dict)) < 0) {
 				BBPreclaim(rb);
 				const char *err = pqc_get_error(r->c[pse->ccnr]);
 				if (err)
