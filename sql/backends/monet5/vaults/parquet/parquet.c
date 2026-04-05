@@ -638,12 +638,16 @@ PARQUETread_large(BAT **R, pqc_creader *r, int colno, Pipeline *p, int wnr)
 				throw (SQL, "parquet.read", SQLSTATE(HY002) "Error reading parquet file '%s'", err);
 			throw (SQL, "parquet.read", SQLSTATE(HY002) "Error reading parquet file");
 		}
-		if (ssize < 256)
-			dict = 1;
-		else if (ssize < 64*1024)
-			dict = 2;
-		else
-			dict = 4;
+		if (is_string) {
+			if (ssize < 256)
+				dict = 1;
+			else if (ssize < 64*1024)
+				dict = 2;
+			else
+				dict = 4;
+		} else {
+			dict = 8;
+		}
 		/* prepare heap */
 		rb = COLnew2(0, localtype, sz, TRANSIENT, dict);
 		if (!rb) {

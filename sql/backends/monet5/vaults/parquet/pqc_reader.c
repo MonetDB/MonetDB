@@ -477,6 +477,52 @@ string_read_dict( pqc_creader_t *cr, uint32_t num_values)
 	return num_values;
 }
 
+static int
+blob_read_dict( pqc_creader_t *cr, uint32_t num_values)
+/* in 32 bit len, string (without zero) */
+{
+	uint32_t i, hsz = 0;
+	uint8_t *data = (uint8_t*)cr->dict;
+
+	for (i=0; i<num_values; i++) {
+		unsigned int len = get_uint32(data);
+
+		data += len + sizeof(int);
+		hsz += len + sizeof(size_t);
+	}
+	if (num_values < 1)
+		return -1;
+	if (num_values > 100000 || hsz > 2000000)
+		return -1;
+	/* make one error to simplify memory management */
+	char *mem = NEW_ARRAY(char, (sizeof(char*) * num_values + sizeof(int) * num_values) + hsz);
+	if (!mem)
+		return -1;
+	char **rc = (char**)mem;
+	char *buf = mem + sizeof(char*) * num_values + sizeof(int) * num_values, *obuf = buf;
+	int *offsets = (int*)(mem + sizeof(char*) * num_values);
+	data = (uint8_t*)cr->dict;
+	for (i=0; i<num_values; i++) {
+		unsigned int len = get_uint32(data);
+
+		data += sizeof(int);
+		blob *b = (blob*)buf;
+		memcpy(b->data, data, len);
+		b->nitems = len;
+		offsets[i] = (int) (buf - obuf);
+		rc[i] = buf;
+		buf += sizeof(size_t)+len;
+		data += len;
+	}
+	if (cr->dict_allocated)
+		_DELETE(cr->dict);
+	cr->dict = mem;
+	cr->dictsize = buf - obuf;
+	cr->dict_num_values = num_values;
+	cr->dict_allocated = true;
+	return num_values;
+}
+
 static int64_t
 pqc_page_header( pqc_reader_t *r, pqc_creader_t *pr, int64_t pos)
 {
@@ -705,6 +751,9 @@ pqc_page_header( pqc_reader_t *r, pqc_creader_t *pr, int64_t pos)
 			pr->dict_num_values = pr->dictsize / (r->pse->size/8);
 		if (num_values && r->pse->type == stringtype) {
 			if (string_read_dict(pr, num_values) < 0)
+				return -1;
+		} else if (num_values && r->pse->type == blobtype) {
+			if (blob_read_dict(pr, num_values) < 0)
 				return -1;
 		}
 		if (num_values && r->pse->type == inttype && r->pse->precision == 96) { /* remove the 32 useless bits */
@@ -1114,14 +1163,25 @@ pqc_definition( pqc_reader_t *r, pqc_creader_t *cr, void *output, uint32_t num_v
 #undef T
 #undef pqc_dict_lookup
 
+#define T var_t
+#define pqc_dict_lookup pqc_dict_lookup_var_vart
+#include "pqc_dict_lookup_var.h"
+#undef T
+#undef pqc_dict_lookup
+
 static int64_t
 pqc_dict_lookup( pqc_reader_t *r, pqc_creader_t *cr, void *output, void *voutput, int64_t nrows, int pos, size_t *ssize, int *dict)
 {
 	uint8_t *data = (uint8_t*)cr->data;
+
+	size_t dictsize = cr->dictsize;
+	if (r->pse->type == blobtype)
+		dictsize += (cr->dict_num_values * (sizeof(size_t) - sizeof(int)));
+
 	/* asume rle data page */
 	if (r->pse->precision == 0 && !output) {
 		if (ssize) {
-			*ssize = cr->dictsize;
+			*ssize = dictsize;
 			assert(cr->dictsize);
 			return 0;
 		}
@@ -1277,14 +1337,15 @@ pqc_dict_lookup( pqc_reader_t *r, pqc_creader_t *cr, void *output, void *voutput
 			}
 		}
 	} else if (r->pse->precision == 0 && dict) { /* offsets */
-		memcpy(voutput, cr->dict + cr->dict_num_values * (sizeof(char*)+sizeof(int)), cr->dictsize);
+		memcpy(voutput, cr->dict + cr->dict_num_values * (sizeof(char*)+sizeof(int)), dictsize);
 		if (*dict == 1) {
 			return pqc_dict_lookup_var_uchr( cr, output, nrows, pos, ssize);
 		} else if (*dict == 2) {
 			return pqc_dict_lookup_var_usht( cr, output, nrows, pos, ssize);
-		} else {
-			assert(*dict == 4);
+		} else if (*dict == 4) {
 			return pqc_dict_lookup_var_uint( cr, output, nrows, pos, ssize);
+		} else {
+			return pqc_dict_lookup_var_vart( cr, output, nrows, pos, ssize);
 		}
 	} else if (r->pse->precision == 8) {
 		if (r->pse->size == 8)

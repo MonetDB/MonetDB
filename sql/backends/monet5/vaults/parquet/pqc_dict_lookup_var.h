@@ -86,7 +86,7 @@ pqc_dict_lookup( pqc_creader_t *cr, void *output, int64_t nrows, int pos, size_t
 						idx |= (v << (nr_bits-sh))&mask;
 					}
 					assert(idx < cr->dict_num_values);
-					assert(((int64_t*)cr->dict)[idx] < ((int64_t) 1 << 8*sizeof(T)));
+					//assert(((int64_t*)cr->dict)[idx] < ((int64_t) 1 << 8*sizeof(T)));
 					dst[i] = (T) ((int64_t*)cr->dict)[idx];
 				}
 				if ((cr->remaining - j) == 0)
@@ -187,7 +187,7 @@ pqc_dict_lookup( pqc_creader_t *cr, void *output, int64_t nrows, int pos, size_t
 						idx |= (v << (nr_bits-sh))&mask;
 					}
 					assert(idx < cr->dict_num_values);
-					assert(((int64_t*)cr->dict)[idx] < ((int64_t) 1 << 8*sizeof(T)));
+					//assert(((int64_t*)cr->dict)[idx] < ((int64_t) 1 << 8*sizeof(T)));
 					dst[i] = (T) ((int64_t*)cr->dict)[idx];
 				}
 				if (j < m) {
