@@ -2095,6 +2095,20 @@ pqc_read_chunk( pqc_reader_t *r, int wnr, void *output /*fixed sized atom storag
 						} else {
 							memcpy(output, ((char*)cr->data)+pos, nrows*(r->pse->size/8));
 							pos += (r->pse->size/8)*nrows;
+#ifdef WORDS_BIGENDIAN
+							if (nrows && (r->pse->type == inttype || r->pse->type == floattype)) {
+								char *s = output;
+								if (r->pse->size == 16)
+									for(uint32_t i = 0; i < nrows; i++, s+=sizeof(uint16_t))
+										*(uint16_t*)s = pqc_sht(*(uint16_t*)s);
+								if (r->pse->size == 32)
+									for(uint32_t i = 0; i < nrows; i++, s+=sizeof(uint32_t))
+										*(uint32_t*)s = pqc_int(*(uint32_t*)s);
+								if (r->pse->size == 64)
+									for(uint32_t i = 0; i < nrows; i++, s+=sizeof(uint64_t))
+										*(uint64_t*)s = pqc_lng(*(uint64_t*)s);
+							}
+#endif
 						}
 					} else {
 						pos += pqc_add_nil(r, cr, output, cr->data+pos, orows, cr->cc->cur_page.num_nulls, r->pse->size/8);
@@ -2260,6 +2274,20 @@ pqc_read_chunk( pqc_reader_t *r, int wnr, void *output /*fixed sized atom storag
 						} else {
 							memcpy(output, ((char*)cr->data)+pos, nrows*(r->pse->size/8));
 							pos += (r->pse->size/8)*nrows;
+#ifdef WORDS_BIGENDIAN
+							if (nrows && (r->pse->type == inttype || r->pse->type == floattype)) {
+								char *s = output;
+								if (r->pse->size == 16)
+									for(uint32_t i = 0; i < nrows; i++, s+=sizeof(uint16_t))
+										*(uint16_t*)s = pqc_sht(*(uint16_t*)s);
+								if (r->pse->size == 32)
+									for(uint32_t i = 0; i < nrows; i++, s+=sizeof(uint32_t))
+										*(uint32_t*)s = pqc_int(*(uint32_t*)s);
+								if (r->pse->size == 64)
+									for(uint32_t i = 0; i < nrows; i++, s+=sizeof(uint64_t))
+										*(uint64_t*)s = pqc_lng(*(uint64_t*)s);
+							}
+#endif
 						}
 					} else {
 						pos += pqc_add_nil(r, cr, output, cr->data+pos, orows, cr->cc->cur_page.num_nulls, r->pse->size/8);
