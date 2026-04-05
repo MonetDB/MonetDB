@@ -2027,7 +2027,7 @@ pqc_read_chunk( pqc_reader_t *r, int wnr, void *output /*fixed sized atom storag
 								if (!voutput) {
 									size_t blobsizes = 0;
 									for (uint32_t i = 0; i < nrows; i++) {
-										int len = *(int*)(src);
+										int len = pqc_int(*(int*)(src));
 										src += sizeof(int) + len;
 										blobsizes += sizeof(size_t) + len;
 									}
@@ -2039,7 +2039,7 @@ pqc_read_chunk( pqc_reader_t *r, int wnr, void *output /*fixed sized atom storag
 									char *dst = voutput, *fdst = voutput;
 									for (uint32_t i = 0; i < nrows; i++) {
 										p[i] = offset + (dst - fdst);
-										int len = *(int*)(src);
+										int len = pqc_int(*(int*)(src));
 										src += sizeof(int);
 										size_t *n = (size_t*)dst;
 										*n = len;
@@ -2206,7 +2206,7 @@ pqc_read_chunk( pqc_reader_t *r, int wnr, void *output /*fixed sized atom storag
 								if (!voutput) {
 									size_t blobsizes = 0;
 									for (uint32_t i = 0; i < nrows; i++) {
-										int len = *(int*)(src);
+										int len = pqc_int(*(int*)(src));
 										src += sizeof(int) + len;
 										blobsizes += sizeof(size_t) + len;
 									}
@@ -2218,7 +2218,7 @@ pqc_read_chunk( pqc_reader_t *r, int wnr, void *output /*fixed sized atom storag
 									char *dst = voutput, *fdst = voutput;
 									for (uint32_t i = 0; i < nrows; i++) {
 										p[i] = offset + (dst - fdst);
-										int len = *(int*)(src);
+										int len = pqc_int(*(int*)(src));
 										src += sizeof(int);
 										size_t *n = (size_t*)dst;
 										*n = len;
