@@ -521,6 +521,6 @@ pqc_export const pqc_schema_element *pqc_get_schema_elements( pqc_file *pq, int 
 pqc_export int pqc_read_filemetadata( pqc_file *pq);
 pqc_export pqc_filemetadata *pqc_get_filemetadata( pqc_file *pq );
 
-pqc_export int64_t pqc_read( pqc_file *pq, int64_t offset, char *buffer, int nrbytes);
+pqc_export int64_t pqc_read( pqc_file *pq, int64_t offset, char *buffer, size_t nrbytes);
 
 #endif /*_PQC_FILEMETADATA_H_*/

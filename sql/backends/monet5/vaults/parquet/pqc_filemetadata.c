@@ -165,18 +165,18 @@ pqc_copy(pqc_file *opq)
 }
 
 int64_t
-pqc_read( pqc_file *pq, int64_t offset, char *buffer, int sz)
+pqc_read( pqc_file *pq, int64_t offset, char *buffer, size_t sz)
 {
 	MT_lock_set(&pq->lock);
 	if (offset == 0 && sz < PQC_SMALL) {
 		if (mylseek(pq->fd, offset, SEEK_SET) != offset)
 			offset = -3;
-		if (read(pq->fd, buffer, sz) != sz)
+		if (read(pq->fd, buffer, sz) != (ssize_t)sz)
 			offset = -3;
 	} else {
 		if (mylseek(pq->fd, offset, SEEK_SET) != offset)
 			offset = -3;
-		if (read(pq->fd, buffer, sz) != sz)
+		if (read(pq->fd, buffer, sz) != (ssize_t)sz)
 			offset = -4;
 	}
 	MT_lock_unset(&pq->lock);
