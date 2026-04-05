@@ -1192,13 +1192,16 @@ pqc_definition( pqc_reader_t *r, pqc_creader_t *cr, void *output, uint32_t num_v
 #undef pqc_dict_lookup
 
 static int64_t
-pqc_dict_lookup( pqc_reader_t *r, pqc_creader_t *cr, void *output, void *voutput, int64_t nrows, int pos, size_t *ssize, int *dict)
+pqc_dict_lookup( pqc_reader_t *r, pqc_creader_t *cr, void *output, void *voutput, int64_t nrows, int64_t Pos, size_t *ssize, int *dict)
 {
 	uint8_t *data = (uint8_t*)cr->data;
 
 	size_t dictsize = cr->dictsize;
 	if (r->pse->type == blobtype)
 		dictsize += (cr->dict_num_values * (sizeof(size_t) - sizeof(int)));
+
+	assert(cr->datasize <= INT32_MAX);
+	int pos = (int)Pos;
 
 	/* asume rle data page */
 	if (r->pse->precision == 0 && !output) {
