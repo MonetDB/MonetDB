@@ -1841,10 +1841,17 @@ byte_split_stream( pqc_reader_t *r, pqc_creader_t *cr, char *output, int pos, in
 		uint8_t *p3 = p2 + nr;
 		uint8_t *res = (uint8_t*)output;
 		for (int64_t i = 0; i<nrows; i++, res+=4) {
+#ifdef WORDS_BIGENDIAN
+			res[3] = p0[i];
+			res[2] = p1[i];
+			res[1] = p2[i];
+			res[0] = p3[i];
+#else
 			res[0] = p0[i];
 			res[1] = p1[i];
 			res[2] = p2[i];
 			res[3] = p3[i];
+#endif
 		}
 	} else {
 		uint8_t *data = ((uint8_t*)cr->data)+pos;
@@ -1858,6 +1865,16 @@ byte_split_stream( pqc_reader_t *r, pqc_creader_t *cr, char *output, int pos, in
 		uint8_t *p7 = p6 + nr;
 		uint8_t *res = (uint8_t*)output;
 		for (int64_t i = 0; i<nrows; i++, res+=8) {
+#ifdef WORDS_BIGENDIAN
+			res[7] = p0[i];
+			res[6] = p1[i];
+			res[5] = p2[i];
+			res[4] = p3[i];
+			res[3] = p4[i];
+			res[2] = p5[i];
+			res[1] = p6[i];
+			res[0] = p7[i];
+#else
 			res[0] = p0[i];
 			res[1] = p1[i];
 			res[2] = p2[i];
@@ -1866,6 +1883,7 @@ byte_split_stream( pqc_reader_t *r, pqc_creader_t *cr, char *output, int pos, in
 			res[5] = p5[i];
 			res[6] = p6[i];
 			res[7] = p7[i];
+#endif
 		}
 	}
 	return (int)nrows;
