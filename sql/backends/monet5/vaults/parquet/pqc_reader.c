@@ -1558,7 +1558,7 @@ pqc_read_delta( pqc_creader_t *cr, int *prefixes, int64_t nrows, int pos)
 	return pos;
 }
 
-static int64_t
+static int
 pqc_read_strings( pqc_creader_t *cr, char **rc, char *buf, int *lengths, int64_t nrows, int pos)
 {
 	char *data = cr->data + pos;
@@ -1572,7 +1572,7 @@ pqc_read_strings( pqc_creader_t *cr, char **rc, char *buf, int *lengths, int64_t
 		buf += len+1;
 		data += len;
 	}
-	return (data - cr->data);
+	return (int)(data - cr->data);
 }
 
 /* todo other offsets */
@@ -1705,7 +1705,7 @@ pqc_mark_chunk( pqc_reader_t *r, int nr_workers, int wnr, uint64_t nrows)
 }
 
 static uint64_t
-pqc_nrows( pqc_creader_t *cr, uint64_t nrows)
+pqc_nrows( pqc_reader_t *r, pqc_creader_t *cr, uint64_t nrows)
 {
 	if (cr->cc->cur_page.num_nulls == nrows)
 		return 0;
@@ -1720,7 +1720,11 @@ pqc_nrows( pqc_creader_t *cr, uint64_t nrows)
 			len -= sdef;
 			if (i + len > nrows) {
 				sdef = len;
-				len = nrows-i;
+				if ((nrows-i) > INT32_MAX) {
+					pqc_set_error(r, "To many rows in one definition block (> INT32_MAX)");
+					return -1;
+				}
+				len = (int)(nrows-i);
 				sdef -= len;
 			} else {
 				sdef = 0;
@@ -1801,13 +1805,18 @@ pqc_add_nil( pqc_reader_t *r, pqc_creader_t *cr, char *output, char *data, uint6
 	def = cr->first_definition; /* set by pqc_nrows at the end of this block */
 	if (!sdef)
 		def = !def;
-	pos = nrows*w;
+	if ((nrows*w) > INT32_MAX) {
+		pqc_set_error(r, "To many rows add_nil block (> INT32_MAX)");
+		return -1;
+	}
+
+	pos = (int)(nrows*w);
 	for(uint64_t i = nrows; i > 0 && cur >= 0; cur--){
 		int len = cr->definition[cur];
 		len -= sdef;
 		sdef = 0;
 		if (i < (uint64_t)len)
-			len = i;
+			len = (int)i;
 		i -= len;
 		if (def) {
 			pos -= w*len;
@@ -1959,7 +1968,7 @@ pqc_read_chunk( pqc_reader_t *r, int wnr, void *output /*fixed sized atom storag
 					return -3;
 
 				assert(offset == (int64_t)cr->cc->dictionary_page_offset);
-				if ((pos = pqc_read_dict(r, cr)) < 0)
+				if ((pos = (int)pqc_read_dict(r, cr)) < 0)
 					return -4;
 			} else { /* read data page */
 				if ((offset = pqc_read(cr->pq, cr->cc->data_page_offset, cr->buffer, cr->cc->total_compressed_size)) < 0)
@@ -2028,7 +2037,7 @@ pqc_read_chunk( pqc_reader_t *r, int wnr, void *output /*fixed sized atom storag
 			if (r->pse->precision == 0 && !output)
 				orows = 0;
 			else
-				nrows = pqc_nrows(cr, nrows);
+				nrows = pqc_nrows(r, cr, nrows);
 			if (cr->dict) {
 				if (cr->cc->cur_page.num_values - cr->cc->cur_page.num_nulls)
 					nrows = pqc_dict_lookup(r, cr, output, voutput, nrows, pos, ssize, dict);
@@ -2213,7 +2222,7 @@ pqc_read_chunk( pqc_reader_t *r, int wnr, void *output /*fixed sized atom storag
 			if (r->pse->precision == 0 && !output)
 				orows = 0;
 			else
-				nrows = pqc_nrows(cr, nrows);
+				nrows = pqc_nrows(r, cr, nrows);
 			if (cr->dict) {
 				if (cr->cc->cur_page.num_values - cr->cc->cur_page.num_nulls)
 					nrows = pqc_dict_lookup(r, cr, output, voutput, nrows, pos, ssize, dict);
