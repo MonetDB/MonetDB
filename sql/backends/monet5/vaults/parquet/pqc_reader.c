@@ -2085,8 +2085,8 @@ pqc_read_chunk( pqc_reader_t *r, int wnr, void *output /*fixed sized atom storag
 							ulng *d = output;
 							char *s = ((char*)cr->data)+pos;
 							for(uint64_t i = 0; i < nrows; i++, s += 12) {
-								uint64_t nanoseconds = *(uint64_t*)s;
-								uint32_t julian_day = *(uint32_t*)(s+8);
+								uint64_t nanoseconds = pqc_lng(*(uint64_t*)s);
+								uint32_t julian_day = pqc_int(*(uint32_t*)(s+8));
 
 								nanoseconds /= LL_CONSTANT(1000);
 								julian_day -= 2440588;
@@ -2264,8 +2264,8 @@ pqc_read_chunk( pqc_reader_t *r, int wnr, void *output /*fixed sized atom storag
 							ulng *d = output;
 							char *s = ((char*)cr->data)+pos;
 							for(uint64_t i = 0; i < nrows; i++, s += 12) {
-								uint64_t nanoseconds = *(uint64_t*)s;
-								uint32_t julian_day = *(uint32_t*)(s+8);
+								uint64_t nanoseconds = pqc_lng(*(uint64_t*)s);
+								uint32_t julian_day = pqc_int(*(uint32_t*)(s+8));
 
 								nanoseconds /= LL_CONSTANT(1000);
 								julian_day -= 2440588;
