@@ -35,6 +35,23 @@
 #include <zlib.h>
 
 static int
+pse_get_width(pqc_schema_element *pse) 
+{
+	if (pse->type == decimaltype) {
+		if (pse->precision <= 3)
+			return 1;
+		if (pse->precision <= 5)
+			return 2;
+		if (pse->precision <= 9)
+			return 4;
+		if (pse->precision <= 19)
+			return 8;
+		return 16;
+	}
+	return 0;
+}
+
+static int
 gzip_uncompress( char *dest, size_t ul, char *src, size_t cl)
 {
 	z_stream z = { 0 };
@@ -2051,18 +2068,23 @@ pqc_read_chunk( pqc_reader_t *r, int wnr, void *output /*fixed sized atom storag
 									pos = src-cr->data;
 									*ssize = offset + (dst - fdst);
 								}
-							} else {
+							} else if (r->pse->type == decimaltype || r->pse->type == inttype) {
 								char *dst = output;
+								int width = pse_get_width(r->pse);
 								/* FIXED ARRAY little endian len followed by big endian data,  what where they smoking */
-								for (uint32_t i = 0; i < nrows; i++, dst += 2) {
+								for (uint32_t i = 0; i < nrows; i++, dst += width) {
 									int len = pqc_int(*(int*)(((char*)cr->data)+pos));
 									pos += 4;
-									*(sht*)dst = 0;
-									memcpy(dst, ((char*)cr->data)+pos, len);
-									if (len == 2)
-										*(sht*)dst = pqc_be_sht(*(sht*)dst);
+									*(uint16_t*)dst = 0;
+									int offset = width - len;
+									memcpy(dst+offset, ((char*)cr->data)+pos, len);
+									if (width == 2)
+										*(uint16_t*)dst = pqc_be_sht(*(uint16_t*)dst);
 									pos += len;
 								}
+							} else {
+								pqc_set_error(r, "PT_BYTE_ARRAY|PT_FIXED_LEN_BYTE_ARRAY with wrong type %d", r->pse->type);
+								return -1;
 							}
 						} else if (r->pse->type == inttype && r->pse->precision != r->pse->size) {
 							if (r->pse->precision == 8 && r->pse->size == 16) {
@@ -2230,18 +2252,23 @@ pqc_read_chunk( pqc_reader_t *r, int wnr, void *output /*fixed sized atom storag
 									pos = src-cr->data;
 									*ssize = offset + (dst - fdst);
 								}
-							} else {
+							} else if (r->pse->type == decimaltype || r->pse->type == inttype) {
 								char *dst = output;
+								int width = pse_get_width(r->pse);
 								/* FIXED ARRAY little endian len followed by big endian data,  what where they smoking */
-								for (uint32_t i = 0; i < nrows; i++, dst += 2) {
+								for (uint32_t i = 0; i < nrows; i++, dst += width) {
 									int len = pqc_int(*(int*)(((char*)cr->data)+pos));
 									pos += 4;
-									*(sht*)dst = 0;
-									memcpy(dst, ((char*)cr->data)+pos, len);
-									if (len == 2)
-										*(sht*)dst = pqc_be_sht(*(sht*)dst);
+									*(uint16_t*)dst = 0;
+									int offset = width - len;
+									memcpy(dst+offset, ((char*)cr->data)+pos, len);
+									if (width == 2)
+										*(uint16_t*)dst = pqc_be_sht(*(uint16_t*)dst);
 									pos += len;
 								}
+							} else {
+								pqc_set_error(r, "PT_BYTE_ARRAY|PT_FIXED_LEN_BYTE_ARRAY with wrong type %d", r->pse->type);
+								return -1;
 							}
 						} else if (r->pse->type == inttype && r->pse->precision != r->pse->size) {
 							if (r->pse->precision == 8 && r->pse->size == 16) {
