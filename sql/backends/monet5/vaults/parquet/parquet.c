@@ -715,11 +715,11 @@ PARQUETread_large(BAT **R, pqc_creader *r, int colno, Pipeline *p, int wnr)
 				assert(h->size >= size);
 			}
 			dict = rb->twidth;
-			if (dict > 2)
-				offset = h->free;
-			else if (plain)
-				offset = h->free - GDK_STRHASHTABLE * sizeof(stridx_t);
-			if ((rsz = pqc_read_chunk(r->c[pse->ccnr], wnr, ((char*)rb->theap->base)+(tsz*dict), ((char*)h->base)+h->free, sz-tsz, &offset, &dict)) < 0) {
+			if (plain) {
+				if (dict > 2 || !is_string)
+					offset = h->free;
+			}
+			if ((rsz = pqc_read_chunk(r->c[pse->ccnr], wnr, ((char*)rb->theap->base)+(tsz*dict), ((char*)h->base)+(dict?0:h->free), sz-tsz, &offset, &dict)) < 0) {
 				BBPreclaim(rb);
 				const char *err = pqc_get_error(r->c[pse->ccnr]);
 				if (err)

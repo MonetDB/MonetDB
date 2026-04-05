@@ -1186,6 +1186,8 @@ pqc_dict_lookup( pqc_reader_t *r, pqc_creader_t *cr, void *output, void *voutput
 	/* asume rle data page */
 	if (r->pse->precision == 0 && !output) {
 		if (ssize) {
+			if (dict)
+				*dict = 1; /* we still have a dict */
 			*ssize = dictsize;
 			assert(cr->dictsize);
 			return 0;
@@ -1258,13 +1260,13 @@ pqc_dict_lookup( pqc_reader_t *r, pqc_creader_t *cr, void *output, void *voutput
 				} else if (nr_bits < 16) {
 					int m = len*8;
 					for (int64_t j = 0; i < nrows && j < m; j++, i++) {
-						uint16_t v = *(uint16_t*)(data+pos);
+						uint16_t v = pqc_sht(*(uint16_t*)(data+pos));
 						uint32_t idx = (v >> sh)&mask;
 						sh += nr_bits;
 						if (sh >= 16) {
 							pos+=2;
 							sh -= 16;
-							uint16_t v = *(uint16_t*)(data+pos);
+							uint16_t v = pqc_sht(*(uint16_t*)(data+pos));
 							idx |= (v << (nr_bits-sh))&mask;
 							if (j==(m-1) && sh >= 8)
 								pos++;
@@ -1277,13 +1279,13 @@ pqc_dict_lookup( pqc_reader_t *r, pqc_creader_t *cr, void *output, void *voutput
 				} else if (nr_bits < 32) {
 					int m = len*8;
 					for (int64_t j = 0; i < nrows && j < m; j++, i++) {
-						uint32_t v = *(uint32_t*)(data+pos);
+						uint32_t v = pqc_int(*(uint32_t*)(data+pos));
 						uint32_t idx = (v >> sh)&mask;
 						sh += nr_bits;
 						if (sh >= 32) {
 							pos+=2;
 							sh -= 32;
-							uint32_t v = *(uint32_t*)(data+pos);
+							uint32_t v = pqc_sht(*(uint32_t*)(data+pos));
 							idx |= (v << (nr_bits-sh))&mask;
 							if (j==(m-1) && sh >= 8)
 								pos++;
@@ -1317,7 +1319,7 @@ pqc_dict_lookup( pqc_reader_t *r, pqc_creader_t *cr, void *output, void *voutput
 				}
 			} else if (nr_bits <= 16) { /* rle */
 				len>>=1;
-				uint16_t idx = *(uint16_t*)(data+pos);
+				uint16_t idx = pqc_sht(*(uint16_t*)(data+pos));
 				uint32_t j = 0;
 				pos += 2;
 				for(; i < nrows && j < len; j++, i++)
@@ -1329,7 +1331,7 @@ pqc_dict_lookup( pqc_reader_t *r, pqc_creader_t *cr, void *output, void *voutput
 				}
 			} else if (nr_bits <= 32) { /* rle */
 				len>>=1;
-				uint32_t idx = *(uint32_t*)(data+pos);
+				uint32_t idx = pqc_int(*(uint32_t*)(data+pos));
 				uint32_t j = 0;
 				pos += 4;
 				for(; i < nrows && j < len; j++, i++)
