@@ -49,6 +49,7 @@ if(WITH_PARQUET)
       monetdb5
       bat
       stream
+      mutils
       $<$<BOOL:${SNAPPY_FOUND}>:SNAPPY::SNAPPY>
       $<$<BOOL:${ZLIB_FOUND}>:ZLIB::ZLIB>
       $<$<BOOL:${ZSTD_FOUND}>:ZSTD::ZSTD>

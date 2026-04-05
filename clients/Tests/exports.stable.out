@@ -1614,6 +1614,7 @@ bool option_disable_fork;
 sql_part *partition_find_part(sql_trans *tr, sql_table *pt, sql_part *pp);
 int pl_register(const char *name, pl_add_types_fptr add_types, pl_load_fptr pl_load);
 void pl_unregister(const char *name);
+void pp_cleanup(backend *ba, int var);
 void pqc_close(pqc_file *pq);
 pqc_file *pqc_copy(pqc_file *pq);
 pqc_file *pqc_dup(pqc_file *pq);
@@ -1652,6 +1653,7 @@ char *sa_message(allocator *sa, _In_z_ _Printf_format_string_ const char *format
 msettings *sa_msettings_create(allocator *sa);
 char *sa_msettings_to_string(const msettings *mp, allocator *sa, size_t size_hint);
 sql_type *schema_bind_type(mvc *sql, sql_schema *s, const char *name);
+void set_pipeline(backend *be, stmt *pp);
 str sht_dec2_bte(Client ctx, bte *res, const int *s1, const sht *v);
 str sht_dec2_dbl(Client ctx, dbl *res, const int *s1, const sht *v);
 str sht_dec2_flt(Client ctx, flt *res, const int *s1, const sht *v);
@@ -1671,6 +1673,7 @@ str sht_num2dec_int(Client ctx, int *res, const sht *v, const int *d2, const int
 str sht_num2dec_lng(Client ctx, lng *res, const sht *v, const int *d2, const int *s2);
 str sht_num2dec_sht(Client ctx, sht *res, const sht *v, const int *d2, const int *s2);
 sql_subtype *sql_bind_subtype(allocator *sa, const char *name, unsigned int digits, unsigned int scale);
+sql_subtype *sql_fetch_localtype(int localtype);
 sql_subfunc *sql_find_func(mvc *sql, const char *sname, const char *fname, int nrargs, sql_ftype type, bool private, sql_subfunc *prev);
 int sql_find_subtype(sql_subtype *res, const char *name, unsigned int digits, unsigned int scale);
 void sql_init_subtype(sql_subtype *res, sql_type *t, unsigned int digits, unsigned int scale);
@@ -1679,8 +1682,11 @@ int sql_trans_add_dependency_change(sql_trans *tr, sqlid id, sql_dependency_chan
 int sql_trans_create_table(sql_table **tres, sql_trans *tr, sql_schema *s, const char *name, const char *sql, int tt, bit system, int persistence, int commit_action, int sz, bte properties);
 stmt *stmt_alias(backend *be, stmt *op1, int label, const char *tname, const char *name);
 stmt *stmt_blackbox_result(backend *be, InstrPtr q, int retnr, sql_subtype *t);
+int stmt_concat_add_source(backend *be);
 stmt *stmt_func(backend *be, stmt *ops, const char *name, sql_rel *imp, int f_union);
 stmt *stmt_list(backend *be, list *l);
+stmt *stmt_none(backend *be);
+stmt *stmt_pp_start_generator(backend *ba, int source, bool leave);
 
 # stream
 stream *block_stream(stream *s);
