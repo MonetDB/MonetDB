@@ -654,7 +654,7 @@ pqc_read_schema_element( pqc_file *pq, int nr, size_t pos, int *ccnr, pqc_schema
 			break;
 		case SCHEMA_ELEMENT_TYPE_LENGTH:
 			pos += pqc_get_zint32(pq->buffer+pos, &precision);
-			if (pse->type != stringtype) {
+			if (pse->type != stringtype && pse->type != blobtype) {
 				TRC_ERROR(PARQUET, "precision %u used with wrong type %d\n", precision, pse->type);
 				return (size_t) -1;
 			}

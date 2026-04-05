@@ -633,7 +633,7 @@ PARQUETread_large(BAT **R, pqc_creader *r, int colno, Pipeline *p, int wnr)
 		bool is_string = (pse->type == stringtype);
 		size_t ssize = 0;
 		if (pqc_read_chunk(r->c[pse->ccnr], wnr, NULL, NULL, sz, &ssize, &dict) < 0) {
-			char *err = pqc_get_error(r->c[pse->ccnr]);
+			const char *err = pqc_get_error(r->c[pse->ccnr]);
 			if (err)
 				throw (SQL, "parquet.read", SQLSTATE(HY002) "Error reading parquet file '%s'", err);
 			throw (SQL, "parquet.read", SQLSTATE(HY002) "Error reading parquet file");
@@ -673,7 +673,7 @@ PARQUETread_large(BAT **R, pqc_creader *r, int colno, Pipeline *p, int wnr)
 		ssize_t rsz = 0, tsz = 0;
 		if ((rsz = pqc_read_chunk(r->c[pse->ccnr], wnr, rb->theap->base, ((char*)h->base)+h->free, sz, &offset, &dict)) < 0) {
 			BBPreclaim(rb);
-			char *err = pqc_get_error(r->c[pse->ccnr]);
+			const char *err = pqc_get_error(r->c[pse->ccnr]);
 			if (err)
 				throw (SQL, "parquet.read", SQLSTATE(HY002) "Error reading parquet file '%s'", err);
 			throw (SQL, "parquet.read", SQLSTATE(HY002) "Error reading parquet file");
@@ -686,7 +686,7 @@ PARQUETread_large(BAT **R, pqc_creader *r, int colno, Pipeline *p, int wnr)
 			if (rsz == 0)
 				break;
 			if (pqc_read_chunk(r->c[pse->ccnr], wnr, NULL, NULL, sz, &ssize, &dict) < 0) {
-				char *err = pqc_get_error(r->c[pse->ccnr]);
+				const char *err = pqc_get_error(r->c[pse->ccnr]);
 				if (err)
 					throw (SQL, "parquet.read", SQLSTATE(HY002) "Error reading parquet file '%s'", err);
 				throw (SQL, "parquet.read", SQLSTATE(HY002) "Error reading parquet file");
@@ -717,7 +717,7 @@ PARQUETread_large(BAT **R, pqc_creader *r, int colno, Pipeline *p, int wnr)
 				offset = h->free - GDK_STRHASHTABLE * sizeof(stridx_t);
 			if ((rsz = pqc_read_chunk(r->c[pse->ccnr], wnr, ((char*)rb->theap->base)+(tsz*dict), ((char*)h->base)+h->free, sz-tsz, &offset, &dict)) < 0) {
 				BBPreclaim(rb);
-				char *err = pqc_get_error(r->c[pse->ccnr]);
+				const char *err = pqc_get_error(r->c[pse->ccnr]);
 				if (err)
 					throw (SQL, "parquet.read", SQLSTATE(HY002) "Error reading parquet file '%s'", err);
 				throw (SQL, "parquet.read", SQLSTATE(HY002) "Error reading parquet file");
@@ -737,7 +737,7 @@ PARQUETread_large(BAT **R, pqc_creader *r, int colno, Pipeline *p, int wnr)
 		ssize_t rsz = 0, tsz = 0;
 		if ((rsz = pqc_read_chunk(r->c[pse->ccnr], wnr, rb->theap->base, NULL, sz, NULL, NULL)) < 0) {
 			BBPreclaim(rb);
-			char *err = pqc_get_error(r->c[pse->ccnr]);
+			const char *err = pqc_get_error(r->c[pse->ccnr]);
 			if (err)
 				throw (SQL, "parquet.read", SQLSTATE(HY002) "Error reading parquet file '%s'", err);
 			throw (SQL, "parquet.read", SQLSTATE(HY002) "Error reading parquet file");
@@ -748,7 +748,7 @@ PARQUETread_large(BAT **R, pqc_creader *r, int colno, Pipeline *p, int wnr)
 				break;
 			if ((rsz = pqc_read_chunk(r->c[pse->ccnr], wnr, ((char*)rb->theap->base)+(tsz*rb->twidth), NULL, sz-tsz, NULL, NULL)) < 0) {
 				BBPreclaim(rb);
-				char *err = pqc_get_error(r->c[pse->ccnr]);
+				const char *err = pqc_get_error(r->c[pse->ccnr]);
 				if (err)
 					throw (SQL, "parquet.read", SQLSTATE(HY002) "Error reading parquet file '%s'", err);
 				throw (SQL, "parquet.read", SQLSTATE(HY002) "Error reading parquet file");

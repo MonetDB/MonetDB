@@ -110,6 +110,7 @@ typedef struct pqc_creader_t {
 	uint32_t remaining;
 } pqc_creader_t;
 
+#define ERRSIZE 1024
 struct pqc_reader_t {
 	struct pqc_reader_t *p;
 	pqc_filemetadata *fmd;
@@ -123,21 +124,32 @@ struct pqc_reader_t {
 
 	int nrworkers;
 	MT_Lock l;
-	char *error;
+	const char *error;
+	char errstr[ERRSIZE];
 	pqc_file *spq;
 	pqc_creader_t *creader; /* per worker readers */
 };
 
 static void
-pqc_set_error( pqc_reader_t *r, char *error )
+pqc_set_error( pqc_reader_t *r, const char *format, ... )
+	__attribute__((__format__(__printf__, 2, 3)));
+
+static void
+pqc_set_error( pqc_reader_t *r, const char *format, ... )
 {
+	va_list	ap;
+
+	va_start (ap, format);
+	vsnprintf(r->errstr, ERRSIZE-1, format, ap);
+	const char *error = r->errstr;
 	MT_lock_set(&r->l);
 	if (!r->error)
 		r->error = error;
 	MT_lock_unset(&r->l);
+	va_end (ap);
 }
 
-char *
+const char *
 pqc_get_error( pqc_reader_t *r)
 {
 	return r->error;
@@ -1725,6 +1737,56 @@ pqc_add_nil( pqc_reader_t *r, pqc_creader_t *cr, char *output, char *data, uint6
 }
 
 static int
+byte_split_stream( pqc_reader_t *r, pqc_creader_t *cr, char *output, int pos, int64_t nrows)
+{
+	if (r->pse->type != floattype && r->pse->type != inttype) {
+		pqc_set_error(r, "BYTE_SPLIT_STREAM encoding and type %d not supported", r->pse->type);
+		return -1;
+	}
+	if (r->pse->size != 4 && r->pse->size != 8) {
+		pqc_set_error(r, "BYTE_SPLIT_STREAM encoding and size %d not supported", r->pse->size);
+		return -1;
+	}
+	int64_t nr = cr->cc->cur_page.num_values;
+	if (r->pse->size == 4) {
+		char *data = ((char*)cr->data)+pos;
+		char *p0 = data;
+		char *p1 = p0 + nr;
+		char *p2 = p1 + nr;
+		char *p3 = p2 + nr;
+		char *res = output;
+		for (int64_t i = 0; i<nrows; i++, res+=4) {
+			res[0] = p0[i];
+			res[1] = p1[i];
+			res[2] = p2[i];
+			res[3] = p3[i];
+		}
+	} else {
+		char *data = ((char*)cr->data)+pos;
+		char *p0 = data;
+		char *p1 = p0 + nr;
+		char *p2 = p1 + nr;
+		char *p3 = p2 + nr;
+		char *p4 = p3 + nr;
+		char *p5 = p4 + nr;
+		char *p6 = p5 + nr;
+		char *p7 = p6 + nr;
+		char *res = output;
+		for (int64_t i = 0; i<nrows; i++, res+=4) {
+			res[0] = p0[i];
+			res[1] = p1[i];
+			res[2] = p2[i];
+			res[3] = p3[i];
+			res[4] = p4[i];
+			res[5] = p5[i];
+			res[6] = p6[i];
+			res[7] = p7[i];
+		}
+	}
+	return (int)nrows;
+}
+
+static int
 pqc_max_repetition( pqc_schema_element *pse)
 {
 	int repetition = 0;
@@ -1884,8 +1946,7 @@ pqc_read_chunk( pqc_reader_t *r, int wnr, void *output /*fixed sized atom storag
 					return -1;
 				} else if (r->pse->type != stringtype) {
 					if (cr->cc->cur_page.pageencodings[0].page_encoding == BYTE_STREAM_SPLIT) {
-						pqc_set_error(r, "BYTE_STREAM_SPLIT not handled yet");
-						return -1;
+						pos = byte_split_stream(r, cr, output, pos, nrows);
 					}
 					/* fixed types, plain encoding */
 					if (!cr->definition) {
@@ -2050,8 +2111,7 @@ pqc_read_chunk( pqc_reader_t *r, int wnr, void *output /*fixed sized atom storag
 					return -1;
 				} else if (r->pse->type != stringtype) {
 					if (cr->cc->cur_page.pageencodings[0].page_encoding == BYTE_STREAM_SPLIT) {
-						pqc_set_error(r, "BYTE_STREAM_SPLIT not handled yet");
-						return -1;
+						pos = byte_split_stream(r, cr, output, pos, nrows);
 					}
 					/* fixed types, plain encoding */
 					if (!cr->definition) {
