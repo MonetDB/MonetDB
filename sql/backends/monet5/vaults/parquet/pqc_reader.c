@@ -35,7 +35,7 @@
 #include <zlib.h>
 
 static int
-pse_get_width(pqc_schema_element *pse) 
+pse_get_width(pqc_schema_element *pse)
 {
 	if (pse->type == decimaltype) {
 		if (pse->precision <= 3)
@@ -1828,18 +1828,18 @@ byte_split_stream( pqc_reader_t *r, pqc_creader_t *cr, char *output, int pos, in
 		pqc_set_error(r, "BYTE_SPLIT_STREAM encoding and type %d not supported", r->pse->type);
 		return -1;
 	}
-	if (r->pse->size != 4 && r->pse->size != 8) {
+	if (r->pse->size != 32 && r->pse->size != 64) {
 		pqc_set_error(r, "BYTE_SPLIT_STREAM encoding and size %d not supported", r->pse->size);
 		return -1;
 	}
 	int64_t nr = cr->cc->cur_page.num_values;
-	if (r->pse->size == 4) {
-		char *data = ((char*)cr->data)+pos;
-		char *p0 = data;
-		char *p1 = p0 + nr;
-		char *p2 = p1 + nr;
-		char *p3 = p2 + nr;
-		char *res = output;
+	if (r->pse->size == 32) {
+		uint8_t *data = ((uint8_t*)cr->data)+pos;
+		uint8_t *p0 = data;
+		uint8_t *p1 = p0 + nr;
+		uint8_t *p2 = p1 + nr;
+		uint8_t *p3 = p2 + nr;
+		uint8_t *res = (uint8_t*)output;
 		for (int64_t i = 0; i<nrows; i++, res+=4) {
 			res[0] = p0[i];
 			res[1] = p1[i];
@@ -1847,17 +1847,17 @@ byte_split_stream( pqc_reader_t *r, pqc_creader_t *cr, char *output, int pos, in
 			res[3] = p3[i];
 		}
 	} else {
-		char *data = ((char*)cr->data)+pos;
-		char *p0 = data;
-		char *p1 = p0 + nr;
-		char *p2 = p1 + nr;
-		char *p3 = p2 + nr;
-		char *p4 = p3 + nr;
-		char *p5 = p4 + nr;
-		char *p6 = p5 + nr;
-		char *p7 = p6 + nr;
-		char *res = output;
-		for (int64_t i = 0; i<nrows; i++, res+=4) {
+		uint8_t *data = ((uint8_t*)cr->data)+pos;
+		uint8_t *p0 = data;
+		uint8_t *p1 = p0 + nr;
+		uint8_t *p2 = p1 + nr;
+		uint8_t *p3 = p2 + nr;
+		uint8_t *p4 = p3 + nr;
+		uint8_t *p5 = p4 + nr;
+		uint8_t *p6 = p5 + nr;
+		uint8_t *p7 = p6 + nr;
+		uint8_t *res = (uint8_t*)output;
+		for (int64_t i = 0; i<nrows; i++, res+=8) {
 			res[0] = p0[i];
 			res[1] = p1[i];
 			res[2] = p2[i];
@@ -2031,8 +2031,9 @@ pqc_read_chunk( pqc_reader_t *r, int wnr, void *output /*fixed sized atom storag
 					return -1;
 				} else if (r->pse->type != stringtype) {
 					if (cr->cc->cur_page.pageencodings[0].page_encoding == BYTE_STREAM_SPLIT) {
-						pos = byte_split_stream(r, cr, output, pos, nrows);
-					}
+						if ((pos = byte_split_stream(r, cr, output, pos, nrows)) < 0)
+							return pos;
+					} else
 					/* fixed types, plain encoding */
 					if (!cr->definition) {
 						if ((r->pse->size/8)*8 != r->pse->size) {
@@ -2215,8 +2216,9 @@ pqc_read_chunk( pqc_reader_t *r, int wnr, void *output /*fixed sized atom storag
 					return -1;
 				} else if (r->pse->type != stringtype) {
 					if (cr->cc->cur_page.pageencodings[0].page_encoding == BYTE_STREAM_SPLIT) {
-						pos = byte_split_stream(r, cr, output, pos, nrows);
-					}
+						if ((pos = byte_split_stream(r, cr, output, pos, nrows)) < 0)
+							return pos;
+					} else
 					/* fixed types, plain encoding */
 					if (!cr->definition) {
 						if ((r->pse->size/8)*8 != r->pse->size) {
