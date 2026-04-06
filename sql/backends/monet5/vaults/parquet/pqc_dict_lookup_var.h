@@ -9,7 +9,7 @@
  */
 
 static int64_t
-pqc_dict_lookup( pqc_creader_t *cr, void *output, int64_t nrows, int pos, size_t *ssize)
+pqc_dict_lookup( pqc_creader_t *cr, void *output, int64_t nrows, int64_t pos, size_t *ssize)
 {
 	uint8_t *data = (uint8_t*)cr->data;
 	int nr_bits = cr->nr_bits;

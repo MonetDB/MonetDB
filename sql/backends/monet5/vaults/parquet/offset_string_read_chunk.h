@@ -9,7 +9,7 @@
  */
 
 static int64_t
-offset_string_read_chunk( pqc_reader_t *r, pqc_creader_t *cr, T *output, char *voutput, int64_t nrows, int pos, int offset)
+offset_string_read_chunk( pqc_reader_t *r, pqc_creader_t *cr, T *output, char *voutput, int64_t nrows, int64_t pos, int offset)
 {
 	T *rc = output;
 	char *buf = voutput;
