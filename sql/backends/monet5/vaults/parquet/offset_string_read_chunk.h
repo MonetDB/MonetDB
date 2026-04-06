@@ -9,7 +9,7 @@
  */
 
 static int64_t
-offset_string_read_chunk( pqc_reader_t *r, pqc_creader_t *cr, T *output, char *voutput, int64_t nrows, int64_t pos, int offset)
+offset_string_read_chunk( pqc_reader_t *r, pqc_creader_t *cr, T *output, char *voutput, int64_t nrows, int64_t pos, size_t offset)
 {
 	T *rc = output;
 	char *buf = voutput;
@@ -22,7 +22,7 @@ offset_string_read_chunk( pqc_reader_t *r, pqc_creader_t *cr, T *output, char *v
 	if (cr->cc->cur_page.stat.null_count == cr->cc->cur_page.num_values) { /* all null */
 		assert(cr->cc->cur_page.num_nulls == cr->cc->cur_page.num_values);
        	for (int64_t i=0; i<nrows; i++)
-			rc[i] = offset;
+			rc[i] = (T)offset;
 		return nrows;
 	}
 	for (int64_t i=0; i<nrows; i++) {
