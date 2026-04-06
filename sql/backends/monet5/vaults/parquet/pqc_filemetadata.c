@@ -164,6 +164,28 @@ pqc_copy(pqc_file *opq)
 	return pq;
 }
 
+static ssize_t
+internal_read( int fd, char *dst, size_t sz)
+{
+	/* read in chunks, some OSs do not
+	 * give you all at once and Windows
+	 * only accepts int */
+	ssize_t n_expected = 0;
+	int n = 0;
+	for (ssize_t n_expected = (ssize_t) sz; n_expected > 0; n_expected -= n) {
+		n = read(fd, dst, (unsigned) MIN(1 << 30, n_expected));
+		if (n < 0)
+			return n;
+
+		if (n <= 0)
+			break;
+		dst += n;
+	}
+	if (n_expected > 0)
+		return -1;
+	return n_expected;
+}
+
 int64_t
 pqc_read( pqc_file *pq, int64_t offset, char *buffer, size_t sz)
 {
@@ -171,12 +193,12 @@ pqc_read( pqc_file *pq, int64_t offset, char *buffer, size_t sz)
 	if (offset == 0 && sz < PQC_SMALL) {
 		if (mylseek(pq->fd, offset, SEEK_SET) != offset)
 			offset = -3;
-		if (read(pq->fd, buffer, sz) != (ssize_t)sz)
+		if (internal_read(pq->fd, buffer, sz) != (ssize_t)sz)
 			offset = -3;
 	} else {
 		if (mylseek(pq->fd, offset, SEEK_SET) != offset)
 			offset = -3;
-		if (read(pq->fd, buffer, sz) != (ssize_t)sz)
+		if (internal_read(pq->fd, buffer, sz) != (ssize_t)sz)
 			offset = -4;
 	}
 	MT_lock_unset(&pq->lock);
@@ -219,7 +241,7 @@ pqc_open( pqc_file **PQ, char *fn)
 	}
 	/* cast to int for Windows; we know it fits, and Linux automatically
 	 * casts back */
-	if (read(pq->fd, buffer, (int) sz) != sz) {
+	if (internal_read(pq->fd, buffer, sz) != sz) {
 		pqc_destroy(pq);
 		return -3;
 	}
@@ -244,7 +266,7 @@ pqc_open( pqc_file **PQ, char *fn)
 		pqc_destroy(pq);
 		return -3;
 	}
-	if (read(pq->fd, pq->buffer, fmdlen) != (ssize_t)pq->bsz) {
+	if (internal_read(pq->fd, pq->buffer, fmdlen) != (ssize_t)pq->bsz) {
 		pqc_destroy(pq);
 		return -3;
 	}

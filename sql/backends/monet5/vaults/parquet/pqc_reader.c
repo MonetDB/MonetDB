@@ -2103,7 +2103,7 @@ pqc_read_page_chunk( pqc_reader_t *r, pqc_creader_t *cr, void *output /*fixed si
 		pqc_set_error(r, "To many rows in one page (> UINT32_MAX)");
 		return -1;
 	}
-	cr->cc->cur_page.num_read += orows;
+	cr->cc->cur_page.num_read += (uint32_t)orows; /* per page only uint32_t */
 	return orows;
 }
 
