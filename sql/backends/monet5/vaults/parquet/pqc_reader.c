@@ -2088,15 +2088,15 @@ pqc_read_page_chunk( pqc_reader_t *r, pqc_creader_t *cr, void *output /*fixed si
 				l[i] = date_add_day(epoch_date, l[i]);
 			}
 		}
-	} else // todo timetype
-		if (r->pse->type == timestamptype) {
-			if (r->pse->precision == 6) {
-				int64_t *l = output;
-				for(uint64_t i=0; i< nrows; i++) {
-					l[i] = timestamp_fromusec(l[i]);
-				}
+	} else { // todo timetype
+		if ((r->pse->type == timestamptype && r->pse->precision == 6) ||
+			(r->pse->type == inttype && r->pse->precision == 96)) {
+			int64_t *l = output;
+			for(uint64_t i=0; i< nrows; i++) {
+				l[i] = timestamp_fromusec(l[i]);
 			}
 		}
+	}
 	ATOMIC_ADD(&r->rownr, orows);
 	cr->curnr += orows;
 	if (cr->cc->cur_page.num_read + orows > UINT32_MAX) {

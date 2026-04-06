@@ -674,7 +674,7 @@ PARQUETread_large(BAT **R, pqc_creader *r, int colno, Pipeline *p, int wnr)
 		/* fill should solve initialization problems within valgrind */
 		memset(h->base, 0, h->size);
 #endif
-		rb->tascii = true; /* tobe fixed */
+		rb->tascii = false; /* tobe fixed */
 		size_t offset = 0;
 		if (dict >= 4 && is_string)
 			offset = h->free;
