@@ -183,7 +183,7 @@ internal_read( int fd, char *dst, size_t sz)
 	}
 	if (n_expected > 0)
 		return -1;
-	return n_expected;
+	return (ssize_t)sz;
 }
 
 int64_t
