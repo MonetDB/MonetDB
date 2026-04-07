@@ -522,5 +522,6 @@ pqc_export int pqc_read_filemetadata( pqc_file *pq);
 pqc_export pqc_filemetadata *pqc_get_filemetadata( pqc_file *pq );
 
 pqc_export int64_t pqc_read( pqc_file *pq, int64_t offset, char *buffer, size_t nrbytes);
+extern char *pq_get_error( pqc_file *pq);
 
 #endif /*_PQC_FILEMETADATA_H_*/

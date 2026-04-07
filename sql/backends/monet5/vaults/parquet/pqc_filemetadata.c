@@ -54,6 +54,7 @@ struct pqc_file {
 	allocator *pa;
 	size_t bsz;
 	char *buffer;
+	char *error;
 	MT_Lock lock;
 };
 
@@ -75,6 +76,29 @@ pqc_magic( pqc_file *pq)
 		return -1;
 	}
 	return 0;
+}
+
+static void
+pq_set_error( pqc_file *pq, const char *format, ... )
+	__attribute__((__format__(__printf__, 2, 3)));
+
+#define ERRSIZE 1024
+static void
+pq_set_error( pqc_file *pq, const char *format, ... )
+{
+	va_list	ap;
+
+	va_start(ap, format);
+	char *err = ma_alloc(pq->pa, ERRSIZE);
+	vsnprintf(err, ERRSIZE-1, format, ap);
+	pq->error = err;
+	va_end(ap);
+}
+
+char *
+pq_get_error( pqc_file *pq )
+{
+	return pq->error;
 }
 
 static int
@@ -455,19 +479,19 @@ pqc_logicaltype( pqc_file *pq, pqc_schema_element *pse, size_t pos)
 			pse->type = stringtype; /* no idea !! */
 			break;
 		case LOGICAL_TYPE_JSON:
-			TRC_ERROR(PARQUET, "no support for LOGICAL_TYPE_JSON");
+			pq_set_error(pq, "no support for LOGICAL_TYPE_JSON");
 			return (size_t) -1;
 		case LOGICAL_TYPE_BSON:
-			TRC_ERROR(PARQUET, "no support for LOGICAL_TYPE_BSON");
+			pq_set_error(pq, "no support for LOGICAL_TYPE_BSON");
 			return (size_t) -1;
 		case LOGICAL_TYPE_UUID:
-			TRC_ERROR(PARQUET, "no support for LOGICAL_TYPE_UUID");
+			pq_set_error(pq, "no support for LOGICAL_TYPE_UUID");
 			return (size_t) -1;
 		case LOGICAL_TYPE_FLOAT16:
-			TRC_ERROR(PARQUET, "no support for LOGICAL_TYPE_FLOAT16");
+			pq_set_error(pq, "no support for LOGICAL_TYPE_FLOAT16");
 			return (size_t) -1;
 		default:
-			TRC_ERROR(PARQUET, "no support or unknown LOGICAL_TYPE  %d\n", fieldid);
+			pq_set_error(pq, "no support or unknown LOGICAL_TYPE  %d\n", fieldid);
 			return (size_t) -1;
 		}
 	}

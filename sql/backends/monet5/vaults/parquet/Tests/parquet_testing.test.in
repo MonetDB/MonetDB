@@ -152,7 +152,7 @@ SELECT * FROM '$QTSTDATAPATH/parquet/parquet_testing/alltypes_tiny_pages_plain.p
 ----
 94900 values hashing to 4f704b5e65931cf827ad4717a2a5126e
 
-query T
+query T nosort
 SELECT * FROM '$QTSTDATAPATH/parquet/parquet_testing/binary.parquet'
 ----
 00
@@ -243,4 +243,13 @@ Kevin Bacon
 FFFF0102
 Ke
 4B65
+
+query RR nosort
+SELECT * FROM '$QTSTDATAPATH/parquet/parquet_testing/byte_stream_split.zstd.parquet'
+----
+600 values hashing to 81726693d3089923273d30b06ed47415
+
+statement error /no support for LOGICAL_TYPE_FLOAT16/
+SELECT * FROM '$QTSTDATAPATH/parquet/parquet_testing/byte_stream_split_extended.gzip.parquet'
+
 

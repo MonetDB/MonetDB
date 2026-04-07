@@ -402,8 +402,14 @@ pqc_relation(mvc *sql, sql_subfunc *f, char *filename, list *res_exps, char *tna
 	if (pqc_open(&pq, filename) < 0)
 		throw(SQL, SQLSTATE(42000), "parquet" "Could not open parquet file %s", filename);
 
+	allocator *ma = MT_thread_getallocator();
 	if (pqc_read_schema(pq) < 0) {
+		char *err = pq_get_error(pq);
+		if (err)
+			err = ma_strdup(ma, err);
 		pqc_close(pq);
+		if (err)
+			throw(SQL, SQLSTATE(42000), "parquet" "Could not read parquet file %s schema data, %s", filename, err);
 		throw(SQL, SQLSTATE(42000), "parquet" "Could not read parquet file %s schema data", filename);
 	}
 
@@ -412,7 +418,6 @@ pqc_relation(mvc *sql, sql_subfunc *f, char *filename, list *res_exps, char *tna
 		*est *= fmd->nrows;
 	int nr = 0;
 	const pqc_schema_element *pse = pqc_get_schema_elements(pq, &nr);
-	allocator *ma = MT_thread_getallocator();
 	if (pse) {
 		if (0)
 		if (pse->nchildren != (nr-1)) {
