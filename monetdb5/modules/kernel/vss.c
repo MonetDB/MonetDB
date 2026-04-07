@@ -273,6 +273,7 @@ bond_search_fast(allocator *ma, bond_collection *bc, const dbl *query_vals,
                 }
             }
 			ncands = write_pos;
+			printf("ncands " BUNFMT "\n", ncands);
 		} // END pruning
 	}
 
