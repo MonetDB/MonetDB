@@ -59,11 +59,11 @@ typedef struct {
 	dbl score;
 } dim_score;
 
-static int dbl_cmp(const void *a, const void *b) {
-    dbl fa = *(const dbl *)a;
-    dbl fb = *(const dbl *)b;
-    return (fa > fb) - (fa < fb);
-}
+//static int dbl_cmp(const void *a, const void *b) {
+//    dbl fa = *(const dbl *)a;
+//    dbl fb = *(const dbl *)b;
+//    return (fa > fb) - (fa < fb);
+//}
 
 static int
 dim_score_cmp(const void *a, const void *b)
@@ -118,29 +118,59 @@ bond_create(allocator *ma, BAT **dim_bats, int ndims)
 		};
 		if (bc) {
 			bc->dims = ma_alloc(ma, ndims * sizeof(BAT *));
-			bc->dim_means = ma_alloc(ma, ndims * sizeof(dbl));
-			bc->dim_max = ma_alloc(ma, ndims * sizeof(dbl));
-			bc->dim_min = ma_alloc(ma, ndims * sizeof(dbl));
+			bc->dim_means = ma_zalloc(ma, ndims * sizeof(dbl));
+			bc->dim_max = ma_zalloc(ma, ndims * sizeof(dbl));
+			bc->dim_min = ma_zalloc(ma, ndims * sizeof(dbl));
 			bc->nvecs = BATcount(dim_bats[0]);
 			for (int d = 0; d < ndims; d++) {
 				BAT *b = dim_bats[d];
 				bc->dims[d] = b;
+				// calc avg over the sample instead
+				/*
 				dbl avg;
 				BUN cnt;
 				if (BATcalcavg(b, NULL, &avg, &cnt, 0) != GDK_SUCCEED)
 					return NULL;
 				bc->dim_means[d] = avg;
-				/*
 				bc->dim_max[d] = *(dbl*)BATmax(b, NULL);
 				bc->dim_min[d] = *(dbl*)BATmin(b, NULL);
-				bc->dim_max[d] =
-				bc->dim_min[d] = *(dbl*)Tloc(b, 0);
 				*/
 			}
 			return bc;
 		}
 	}
 	return NULL;
+}
+
+static dbl
+quickselect(dbl *a, BUN n, BUN k)
+{
+	// Safety check for empty arrays or invalid k
+    if (n == 0 || k == 0 || k > n) return DBL_MAX;
+	if (k == 1) {
+		dbl min_dist = a[0];
+		for (BUN i = 1; i < n; i++) {
+			if (a[i] < min_dist) min_dist = a[i];
+		}
+		return min_dist;
+	}
+    BUN left = 0, right = n - 1, index = k - 1;
+    while (left < right) {
+        dbl pivot = a[(left + right) / 2];
+        BUN i = left, j = right;
+        while (i <= j) {
+            while (a[i] < pivot) i++;
+            while (a[j] > pivot) j--;
+            if (i <= j) {
+                dbl tmp = a[i]; a[i] = a[j]; a[j] = tmp;
+                i++; j--;
+            }
+        }
+        if (index <= j) right = j;
+        else if (i <= index) left = i;
+        else break;
+    }
+    return a[index];
 }
 
 
@@ -166,35 +196,20 @@ bond_upper_bound_sampled(allocator *ma, bond_collection *bc, const dbl *query_va
             dbl diff = vals[i] - q;
             sample_dists[i] += diff * diff;
         }
+
+		dbl avg;
+		if (BATcalcavg(pd, NULL, &avg, NULL, 0) == GDK_SUCCEED)
+			bc->dim_means[d] = avg;
+		bc->dim_min[d] = *(dbl*)BATmin(pd, NULL);
+		bc->dim_max[d] = *(dbl*)BATmax(pd, NULL);
         BBPreclaim(pd);
     }
 
-	qsort(sample_dists, sample_size, sizeof(dbl), dbl_cmp);
-    dbl result = (k < sample_size) ? sample_dists[k-1] : sample_dists[sample_size-1];
+	//qsort(sample_dists, sample_size, sizeof(dbl), dbl_cmp);
+    //dbl result = (k < sample_size) ? sample_dists[k-1] : sample_dists[sample_size-1];
+	dbl result = quickselect(sample_dists, sample_size, k);
     BBPreclaim(sample_oids);
     return result;
-}
-
-static dbl
-quickselect(dbl *a, BUN n, BUN k)
-{
-    BUN left = 0, right = n - 1;
-    while (left < right) {
-        dbl pivot = a[(left + right) / 2];
-        BUN i = left, j = right;
-        while (i <= j) {
-            while (a[i] < pivot) i++;
-            while (a[j] > pivot) j--;
-            if (i <= j) {
-                dbl tmp = a[i]; a[i] = a[j]; a[j] = tmp;
-                i++; j--;
-            }
-        }
-        if (k <= j) right = j;
-        else if (i <= k) left = i;
-        else break;
-    }
-    return a[k];
 }
 
 
@@ -221,8 +236,8 @@ bond_search_fast(allocator *ma, bond_collection *bc, const dbl *query_vals,
         int d = dim_order[i];
 		dbl d1 = query_vals[d] - bc->dim_min[d];
         dbl d2 = query_vals[d] - bc->dim_max[d];
+		rem_per_dim[i] = total_rem;
         total_rem += fmax(d1*d1, d2*d2);
-        rem_per_dim[i] = total_rem;
     }
 
 	// initialize all vectors are candidates
@@ -244,21 +259,12 @@ bond_search_fast(allocator *ma, bond_collection *bc, const dbl *query_vals,
         }
 
 		// Pruning
-		int step = 2;
+		int step = 2; // TODO step function of ndim?
 		if ((i % step == 0) && i > 0 && i < (bc->ndims - 1) && ncands > k * 2) {
+			lng T0 = GDKusec();
 			memcpy(temp, partial_dists, ncands * sizeof(dbl));
-			dbl kth_dist = quickselect(temp, ncands, k-1);
-			dbl theoretical_reminder = rem_per_dim[i+1];
-			//dbl theoretical_reminder = 0.0;
-			//for (int j=i+1; j < bc->ndims; j++) {
-			//	// calc theoretical upper bound
-			//	dbl min_val = bc->dim_min[j];
-			//	dbl max_val = bc->dim_max[j];
-			//	dbl d1 = query_vals[j] - min_val;
-			//	dbl d2 = query_vals[j] - max_val;
-			//	dbl sq = fmax(d1*d1, d2*d2);
-			//	theoretical_reminder += sq;
-			//}
+			dbl kth_dist = quickselect(temp, ncands, k);
+			dbl theoretical_reminder = rem_per_dim[i];
 			// potentially tighten upper bound
 			if (bc->kth_upper > (kth_dist + theoretical_reminder))
 				bc->kth_upper = kth_dist + theoretical_reminder;
@@ -272,7 +278,9 @@ bond_search_fast(allocator *ma, bond_collection *bc, const dbl *query_vals,
                     write_pos++;
                 }
             }
-			ncands = write_pos;
+			if (write_pos > 0)
+				ncands = write_pos;
+			printf("ncands " ULLFMT " d=%zu " "t=" LLFMT "\n", ncands,(size_t)i,  GDKusec() - T0);
 		} // END pruning
 	}
 
@@ -280,9 +288,10 @@ bond_search_fast(allocator *ma, bond_collection *bc, const dbl *query_vals,
     BAT *kdist = COLnew(0, TYPE_dbl, k, TRANSIENT);
 	// Final top k
 	{
+		lng T0 = GDKusec();
 		memcpy(temp, partial_dists, ncands * sizeof(dbl));
 		//qsort(temp, ncands, sizeof(dbl), dbl_cmp);
-		dbl kth_dist = quickselect(temp, ncands, k-1);
+		dbl kth_dist = quickselect(temp, ncands, k);
 		BUN write_pos = 0;
 		for (BUN read_pos = 0; read_pos < ncands && write_pos < k; read_pos++) {
 			if (partial_dists[read_pos] <= kth_dist) {
@@ -292,6 +301,7 @@ bond_search_fast(allocator *ma, bond_collection *bc, const dbl *query_vals,
 			}
 		}
 		k = write_pos;
+		printf("final top k step " LLFMT "\n", GDKusec() - T0);
 	}
 	BATsetcount(koids, k);
     koids->tsorted = false;
@@ -302,8 +312,8 @@ bond_search_fast(allocator *ma, bond_collection *bc, const dbl *query_vals,
     //kdist->tnonil = true;
     kdist->tkey = false;
 
-	BATprint(GDKstdout, koids);
-	BATprint(GDKstdout, kdist);
+	//BATprint(GDKstdout, koids);
+	//BATprint(GDKstdout, kdist);
 
 	*oid_result = koids;
 	*dist_result = kdist;
@@ -647,6 +657,7 @@ BATl2sq_distance(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) ctx;
 	(void) mb;
+	lng T0 = GDKusec();
     size_t ncols = (size_t) (pci->argc - pci->retc);
     // check for even num bats
     if ((ncols & 1) != 0)
@@ -688,6 +699,8 @@ BATl2sq_distance(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
     bn->tkey = false;
     bn->tsorted = false;
     bn->trevsorted = false;
+
+	printf("BATl2sq " LLFMT "\n", GDKusec() - T0);
 
     *ret = bn->batCacheid;
     BBPkeepref(bn);
@@ -753,6 +766,11 @@ BONDknn(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "vss.knn", MAL_MALLOC_FAIL);
 	}
 
+	bc->kth_upper = bond_upper_bound_sampled(ta, bc, query_vals, k);
+	T1 = GDKusec();
+	printf("upperbound " LLFMT "\n", T1 - T0);
+	T0 = T1;
+
 	int *dim_order = bond_dim_order(ta, bc, query_vals);
 	if (!dim_order) {
 		for (int i = 0; i < ndims; i++)
@@ -763,10 +781,7 @@ BONDknn(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	T1 = GDKusec();
 	printf("order " LLFMT "\n", T1 - T0);
 	T0 = T1;
-	bc->kth_upper = bond_upper_bound_sampled(ta, bc, query_vals, k);
-	T1 = GDKusec();
-	printf("upperbound " LLFMT "\n", T1 - T0);
-	T0 = T1;
+
 	BAT *oid_result = NULL, *dist_result = NULL;
 	char *rc = bond_search_fast(ta, bc, query_vals, (BUN) k, dim_order, NULL, &oid_result, &dist_result);
 	T1 = GDKusec();
