@@ -1268,10 +1268,12 @@ PARQUETmetadata(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		msg = createException(SQL, "parquet.metadata", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
+	char buf[512];
 	pqc_filemetadata *fmd = pqc_get_filemetadata(pq);
 	for (int i = 0; i < fmd->nrowgroups; i++) {
 		pqc_row_group row_group = fmd->rowgroups[i];
 		for (int j = 0; j < row_group.ncolumnchunks; j++) {
+			pqc_schema_element *pse = fmd->elements+j+1;
 			pqc_columnchunk column_chunk = row_group.columnchunks[j];
 			pqc_stat stats = column_chunk.stat;
 			if (BUNappend(row_group_id, &row_group.ordinal, false) != GDK_SUCCEED)
@@ -1293,17 +1295,21 @@ PARQUETmetadata(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				goto bailout;
 			if (BUNappend(type, str_physical_type(column_chunk.type), false) != GDK_SUCCEED)
 				goto bailout;
-			if (BUNappend(stats_min, get_valid_utf8_or_empty(stats.min_string), false) != GDK_SUCCEED)
+			(void)pqc_binary2string(pse, stats.min_string, buf, 512);
+			if (BUNappend(stats_min, buf, false) != GDK_SUCCEED)
 				goto bailout;
-			if (BUNappend(stats_max, get_valid_utf8_or_empty(stats.max_string), false) != GDK_SUCCEED)
+			(void)pqc_binary2string(pse, stats.max_string, buf, 512);
+			if (BUNappend(stats_max, buf, false) != GDK_SUCCEED)
 				goto bailout;
 			if (BUNappend(stats_null_count, &stats.null_count, false) != GDK_SUCCEED)
 				goto bailout;
 			if (BUNappend(stats_distinct_count, &stats.distinct_count, false) != GDK_SUCCEED)
 				goto bailout;
-			if (BUNappend(stats_min_value, get_valid_utf8_or_empty(stats.min_value), false) != GDK_SUCCEED)
+			(void)pqc_binary2string(pse, stats.min_value, buf, 512);
+			if (BUNappend(stats_min_value, buf, false) != GDK_SUCCEED)
 				goto bailout;
-			if (BUNappend(stats_max_value, get_valid_utf8_or_empty(stats.max_value), false) != GDK_SUCCEED)
+			(void)pqc_binary2string(pse, stats.max_value, buf, 512);
+			if (BUNappend(stats_max_value, buf, false) != GDK_SUCCEED)
 				goto bailout;
 			if (BUNappend(compression, str_compression_codec(column_chunk.codec), false) != GDK_SUCCEED)
 				goto bailout;

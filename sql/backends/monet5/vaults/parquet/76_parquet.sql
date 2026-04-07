@@ -49,7 +49,7 @@ returns table(
     stats_null_count BIGINT,
     stats_distinct_count BIGINT,
     stats_min_value VARCHAR,
-    stats_max_value	VARCHAR,
+    stats_max_value VARCHAR,
     compression	VARCHAR,
     encodings VARCHAR,
     index_page_offset BIGINT,

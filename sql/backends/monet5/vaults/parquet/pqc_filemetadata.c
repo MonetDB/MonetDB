@@ -21,6 +21,7 @@
 
 #include <mutils.h>
 #include <gdk.h>
+#include <gdk_time.h>
 #include <sql_mem.h>
 
 #define PQC_SMALL 64*1024
@@ -814,8 +815,50 @@ pqc_read_keyvalue( pqc_file *pq, pqc_keyvalue *kv, size_t pos )
 	return pos;
 }
 
+ssize_t
+pqc_binary2string(pqc_schema_element *pse, char *bindata, char *buf, size_t sz)
+{
+	if (!pse)
+		return -1;
+	buf[0] = 0;
+	if (!bindata)
+		return 0;
+	switch(pse->type) {
+		case enumtype:
+			if (pse->precision == 1)
+				return snprintf(buf, sz, "%s", *(char*)bindata?"true":"false");
+			return 0;
+		case inttype:
+			if (pse->size == 32)
+				return snprintf(buf, sz, "%d", *(int32_t*)bindata);
+			if (pse->size == 64)
+				return snprintf(buf, sz, "%ld", *(int64_t*)bindata);
+			if (pse->size == 96) {
+				uint64_t nanoseconds = pqc_lng(*(uint64_t*)bindata);
+				uint32_t julian_day = pqc_int(*(uint32_t*)(bindata+8));
+
+				nanoseconds /= LL_CONSTANT(1000);
+				julian_day -= 2440588;
+				ulng usec = (ulng)nanoseconds + julian_day * 86400 * LL_CONSTANT(1000000);
+				timestamp ts = timestamp_fromusec(usec);
+				return timestamp_tostr(NULL, &buf, &sz, &ts, 0);
+			}
+			break;
+		case floattype:
+			if (pse->size == 32)
+				return snprintf(buf, sz, "%f", *(flt*)bindata);
+			return snprintf(buf, sz, "%F", *(double*)bindata);
+		case stringtype:
+			return snprintf(buf, sz, "%s", (char*)bindata);
+		case blobtype:
+		default:
+			return snprintf(buf, sz, "not implemented");
+	}
+	return 0;
+}
+
 static size_t
-pqc_statistics( pqc_file *pq, pqc_stat *stat, size_t pos )
+pqc_statistics( pqc_file *pq, pqc_stat *stat, pqc_schema_element *pse, size_t pos )
 {
 	int fieldid = 0, type = 0;
 
@@ -831,6 +874,8 @@ pqc_statistics( pqc_file *pq, pqc_stat *stat, size_t pos )
 				if (res < 0)
 					return -1;
 				pos += res;
+				(void)pse;
+				/* TODO plain encoded, ie not a string but value ! */
 				TRC_INFO(PARQUET, "max_string '%s'\n", stat->max_string);
 			} else if (type == T_I32) {
 				pos += pqc_get_zint32(pq->buffer+pos, &stat->max);
@@ -843,6 +888,7 @@ pqc_statistics( pqc_file *pq, pqc_stat *stat, size_t pos )
 				if (res < 0)
 					return -1;
 				pos += res;
+				/* TODO plain encoded, ie not a string but value ! */
 				TRC_INFO(PARQUET, "min_string '%s'\n", stat->min_string);
 			} else if (type == T_I32) {
 				pos += pqc_get_zint32(pq->buffer+pos, &stat->min);
@@ -863,6 +909,7 @@ pqc_statistics( pqc_file *pq, pqc_stat *stat, size_t pos )
 				if (res < 0)
 					return -1;
 				pos += res;
+				/* TODO plain encoded, ie not a string but value ! */
 				TRC_INFO(PARQUET, "max_value '%s'\n", stat->max_value);
 			} else if (type == T_STRUCT) {
 				pqc_keyvalue kv;
@@ -875,6 +922,7 @@ pqc_statistics( pqc_file *pq, pqc_stat *stat, size_t pos )
 				if (res < 0)
 					return -1;
 				pos += res;
+				/* TODO plain encoded, ie not a string but value ! */
 				TRC_INFO(PARQUET, "min_value '%s'\n", stat->min_value);
 			} else if (type == T_STRUCT) {
 				pqc_keyvalue kv;
@@ -928,7 +976,7 @@ pqc_pageencodingsstats( pqc_file *pq, pqc_pageencodings *pe, size_t pos )
 }
 
 static size_t
-pqc_column_metadata( pqc_file *pq, pqc_columnchunk *cc, size_t pos )
+pqc_column_metadata( pqc_file *pq, pqc_columnchunk *cc, pqc_schema_element *pse, size_t pos )
 {
 	int fieldid = 0, type = 0, size = 0;
 
@@ -1018,7 +1066,7 @@ pqc_column_metadata( pqc_file *pq, pqc_columnchunk *cc, size_t pos )
 			TRC_INFO(PARQUET, "dictionary_page_offset %" PRIu64 "\n", cc->dictionary_page_offset);
 			break;
 		case COLUMN_META_DATA_STATISTICS:
-			pos = pqc_statistics(pq, &cc->stat, pos);
+			pos = pqc_statistics(pq, &cc->stat, pse, pos);
 			break;
 		case COLUMN_META_DATA_ENCODING_STATS:
 			pos += pqc_get_list(pq->buffer+pos, &size, &type);
@@ -1036,7 +1084,7 @@ pqc_column_metadata( pqc_file *pq, pqc_columnchunk *cc, size_t pos )
 }
 
 static size_t
-pqc_read_columnchunk( pqc_file *pq, pqc_columnchunk *cc, size_t pos )
+pqc_read_columnchunk( pqc_file *pq, pqc_columnchunk *cc, pqc_schema_element *pse, size_t pos )
 {
 	int fieldid = 0, type = 0;
 	*cc = (pqc_columnchunk){ .type = 0 };
@@ -1061,7 +1109,7 @@ pqc_read_columnchunk( pqc_file *pq, pqc_columnchunk *cc, size_t pos )
 		} break;
 		case COLUMN_CHUNK_META_DATA:
 			assert(type == T_STRUCT);
-			pos = pqc_column_metadata(pq, cc, pos);
+			pos = pqc_column_metadata(pq, cc, pse, pos);
 			break;
 		case COLUMN_CHUNK_OFFSET_INDEX_OFFSET:
 			pos += pqc_get_zint64(pq->buffer+pos, &cc->offset_index_offset);
@@ -1148,7 +1196,7 @@ pqc_rowgroup( pqc_file *pq, pqc_row_group *rg, size_t pos)
 			rg->ncolumnchunks = size;
 			rg->columnchunks = SA_NEW_ARRAY(pq->pa, pqc_columnchunk, size);
 			for(int i = 0; i < size; i++)
-				pos = pqc_read_columnchunk(pq, rg->columnchunks+i, pos);
+				pos = pqc_read_columnchunk(pq, rg->columnchunks+i, pq->fmd->elements+i+1, pos);
 			break;
 		case ROW_GROUP_TOTAL_BYTE_SIZE: {
 			assert (type == T_I64);
