@@ -280,7 +280,7 @@ bond_search_fast(allocator *ma, bond_collection *bc, const dbl *query_vals,
             }
 			if (write_pos > 0)
 				ncands = write_pos;
-			printf("ncands " ULLFMT " d=%zu " "t=" LLFMT "\n", ncands,(size_t)i,  GDKusec() - T0);
+			printf("ncands " BUNFMT " d=%zu " "t=" LLFMT "\n", ncands,(size_t)i,  GDKusec() - T0);
 		} // END pruning
 	}
 
