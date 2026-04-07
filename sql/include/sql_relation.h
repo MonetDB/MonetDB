@@ -315,14 +315,14 @@ typedef struct relation {
 	 outer:1,	/* used as outer (ungrouped) */
 	 grouped:1,	/* groupby processed all the group by exps */
 	 single:1,
-	 dynamic:1,		/* dynamic content (ie the double used base side of the recursive union) */
 	 recursive:1,	/* recursive unions */
+	 dynamic:1,		/* dynamic content (ie the double used base side of the recursive union) */
 	 parallel:1,	/* suitable for parallel pipeline? */
 	 partition:2,	/* partition input relation?
 					 * 0 (no), 1 (left relation), 2 (right relation) */
-	 oahash:2,	/* op_join: generate parallel OAHash join plan?
-				 * 0 (no), 1 (hash left), 2 (hash right)
-				 * op_basetable: generate parallel hash table plan */
+	 oahash:2,		/* op_join: generate parallel OAHash join plan?
+					 * 0 (no), 1 (hash left), 2 (hash right)
+					 * op_basetable: generate parallel hash table plan */
 	 spb:1;			/* should this `rel` start a pipeline block? */
 	/*
 	 * Used by rewriters at rel_unnest, rel_optimizer and rel_distribute so a relation is not modified twice
