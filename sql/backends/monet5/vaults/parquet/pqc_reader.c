@@ -35,46 +35,36 @@
 #include <zlib.h>
 
 static int
-pse_get_width(pqc_schema_element *pse)
-{
-	if (pse->type == decimaltype) {
-		if (pse->precision <= 3)
-			return 1;
-		if (pse->precision <= 5)
-			return 2;
-		if (pse->precision <= 9)
-			return 4;
-		if (pse->precision <= 19)
-			return 8;
-		return 16;
-	}
-	return 0;
-}
-
-static int
 gzip_uncompress( char *dest, size_t ul, char *src, size_t cl)
 {
-	z_stream z = { 0 };
-	z.next_in = (unsigned char *)src;
-	z.avail_in = (uint32_t) cl;
-	z.zalloc = Z_NULL;
-	z.zfree = Z_NULL;
-	z.opaque = Z_NULL;
+	while (cl) {
+		z_stream z = { 0 };
+		z.zalloc = Z_NULL;
+		z.zfree = Z_NULL;
+		z.opaque = Z_NULL;
 
-	if (inflateInit2(&z, 31) != Z_OK) { /* 15 bits window and 16 for gzip format */
-		//error("Failed to initialize z_stream");
-		return -1;
+		if (inflateInit2(&z, 31) != Z_OK) { /* 15 bits window and 16 for gzip format */
+			//error("Failed to initialize z_stream");
+			return -1;
+		}
+
+		z.next_in = (unsigned char *)src;
+		z.avail_in = (uint32_t) cl;
+		z.next_out = (unsigned char *)dest;
+		z.avail_out = (uint32_t) ul;
+
+		int res = inflate(&z, Z_FINISH);
+		if (res != Z_OK && res != Z_STREAM_END) {
+			printf("Failed to decompress GZIP block %d\n", res);
+			return -10;
+		}
+		inflateEnd(&z); /* cleanup */
+
+		src += z.total_in;
+		cl -= z.total_in;
+		dest += z.total_out;
+		ul -= z.total_out;
 	}
-
-	z.next_out = (unsigned char *)dest;
-	z.avail_out = (uint32_t) ul;
-
-	int res = inflate(&z, Z_FINISH);
-	if (res != Z_OK && res != Z_STREAM_END) {
-		printf("Failed to decompress GZIP block %d\n", res);
-		return -10;
-	}
-	inflateEnd(&z); /* cleanup */
 	return 0;
 }
 #endif
@@ -161,6 +151,23 @@ const char *
 pqc_get_error( pqc_reader_t *r)
 {
 	return r->error;
+}
+
+static int
+pse_get_width(pqc_schema_element *pse)
+{
+	if (pse->type == decimaltype) {
+		if (pse->precision <= 3)
+			return 1;
+		if (pse->precision <= 5)
+			return 2;
+		if (pse->precision <= 9)
+			return 4;
+		if (pse->precision <= 19)
+			return 8;
+		return 16;
+	}
+	return 0;
 }
 
 static int64_t
@@ -389,6 +396,9 @@ pqc_data_pageV2(pqc_reader_t *r, pqc_creader_t *pr, int64_t pos, uint32_t *num_v
 	uint32_t num_nulls = 0, num_rows = 0;
 	pr->cc->cur_page.is_compressed=1;
 
+	pr->cc->cur_page.pageencodings[1].page_encoding = RLE;
+	pr->cc->cur_page.pageencodings[2].page_encoding = RLE;
+
 	while(true) {
 		pos += pqc_get_field(pr->buffer+pos, &fieldid, &type);
 		TRC_DEBUG(PARQUET, "field id %d type %d\n", fieldid, type);
@@ -431,8 +441,7 @@ pqc_data_pageV2(pqc_reader_t *r, pqc_creader_t *pr, int64_t pos, uint32_t *num_v
 			break;
 		case DATA_PAGE_HEADER_V2_STATISTICS:
 			assert(type == T_STRUCT);
-			assert(0);
-			pqc_stat stat;
+			pqc_stat stat = { .max_value = NULL };
 			pos = pqc_statistics(r, pr, &stat, pos);
 			break;
 		}
@@ -599,12 +608,17 @@ pqc_page_header( pqc_reader_t *r, pqc_creader_t *pr, int64_t pos)
 				return -1;
 			pr->datasize = uncompressed_size;
 			pr->data_allocated = true;
-			size_t ul = uncompressed_size;
+			/* for v2 add definition and repetition lengths */
+			int v2 = pr->cc->cur_page.definition_levels_byte_length + pr->cc->cur_page.repetition_levels_byte_length;
+			size_t ul = uncompressed_size - v2;
+			if (v2) {
+				memcpy(pr->data, pr->buffer+pos, v2);
+				pos += v2;
+				compressed_size -= v2;
+			}
 			if (pr->cc->codec == CC_SNAPPY) {
 #ifdef HAVE_SNAPPY
-				/* for v2 add definition and repetition lengths */
-				int v2 = pr->cc->cur_page.definition_levels_byte_length + pr->cc->cur_page.repetition_levels_byte_length;
-				if (snappy_uncompress(pr->buffer+pos + v2, compressed_size - v2, pr->data, &ul) != SNAPPY_OK)
+				if (snappy_uncompress(pr->buffer+pos, compressed_size, pr->data + v2, &ul) != SNAPPY_OK)
 					return -10;
 				assert(uncompressed_size == ul);
 				pos += compressed_size;
@@ -614,9 +628,7 @@ pqc_page_header( pqc_reader_t *r, pqc_creader_t *pr, int64_t pos)
 #endif
 			} else if (pr->cc->codec == CC_GZIP) {
 #ifdef HAVE_LIBZ
-				/* for v2 add definition and repetition lengths */
-				int v2 = pr->cc->cur_page.definition_levels_byte_length + pr->cc->cur_page.repetition_levels_byte_length;
-				if (gzip_uncompress(pr->data, ul, pr->buffer+pos + v2, compressed_size - v2))
+				if (gzip_uncompress(pr->data + v2, ul, pr->buffer+pos, compressed_size))
 					return -10;
 				pos += compressed_size;
 #else
@@ -625,9 +637,7 @@ pqc_page_header( pqc_reader_t *r, pqc_creader_t *pr, int64_t pos)
 #endif
 			} else if (pr->cc->codec == CC_ZSTD) {
 #ifdef HAVE_ZSTD
-				/* for v2 add definition and repetition lengths */
-				int v2 = pr->cc->cur_page.definition_levels_byte_length + pr->cc->cur_page.repetition_levels_byte_length;
-				if (ZSTD_decompress(pr->data, ul, pr->buffer+pos + v2, compressed_size - v2) != ul)
+				if (ZSTD_decompress(pr->data + v2, ul, pr->buffer+pos, compressed_size) != ul)
 					return -10;
 				pos += compressed_size;
 #else
@@ -636,10 +646,8 @@ pqc_page_header( pqc_reader_t *r, pqc_creader_t *pr, int64_t pos)
 #endif
 			} else if (pr->cc->codec == CC_LZ4_RAW) {
 #ifdef HAVE_LIBLZ4
-				/* for v2 add definition and repetition lengths */
-				int v2 = pr->cc->cur_page.definition_levels_byte_length + pr->cc->cur_page.repetition_levels_byte_length;
 				int iul = (int)ul;
-				if (LZ4_decompress_safe(pr->buffer+pos + v2, pr->data, compressed_size - v2, iul) != iul)
+				if (LZ4_decompress_safe(pr->buffer+pos, pr->data + v2, compressed_size, iul) != iul)
 					return -10;
 				pos += compressed_size;
 #else
@@ -648,9 +656,7 @@ pqc_page_header( pqc_reader_t *r, pqc_creader_t *pr, int64_t pos)
 #endif
 			} else if (pr->cc->codec == CC_BROTLI) {
 #ifdef HAVE_BROTLI
-				/* for v2 add definition and repetition lengths */
-				int v2 = pr->cc->cur_page.definition_levels_byte_length + pr->cc->cur_page.repetition_levels_byte_length;
-				if (BrotliDecoderDecompress(compressed_size - v2, (uint8_t*)pr->buffer+pos + v2, &ul, (uint8_t*)pr->data) != BROTLI_DECODER_RESULT_SUCCESS)
+				if (BrotliDecoderDecompress(compressed_size, (uint8_t*)pr->buffer+pos, &ul, ((uint8_t*)pr->data) + v2) != BROTLI_DECODER_RESULT_SUCCESS)
 					return -10;
 				pos += compressed_size;
 #else
@@ -685,9 +691,7 @@ pqc_page_header( pqc_reader_t *r, pqc_creader_t *pr, int64_t pos)
 			size_t ul = uncompressed_size;
 			if (pr->cc->codec == CC_SNAPPY) {
 #ifdef HAVE_SNAPPY
-				/* for v2 add definition and repetition lengths */
-				int v2 = pr->cc->cur_page.definition_levels_byte_length + pr->cc->cur_page.repetition_levels_byte_length;
-				if (snappy_uncompress(pr->buffer+pos + v2, compressed_size - v2, pr->dict, &ul) != SNAPPY_OK)
+				if (snappy_uncompress(pr->buffer+pos, compressed_size, pr->dict, &ul) != SNAPPY_OK)
 					return -10;
 				assert(uncompressed_size == ul);
 				pos += compressed_size;
@@ -697,9 +701,7 @@ pqc_page_header( pqc_reader_t *r, pqc_creader_t *pr, int64_t pos)
 #endif
 			} else if (pr->cc->codec == CC_GZIP) {
 #ifdef HAVE_LIBZ
-				/* for v2 add definition and repetition lengths */
-				int v2 = pr->cc->cur_page.definition_levels_byte_length + pr->cc->cur_page.repetition_levels_byte_length;
-				if (gzip_uncompress(pr->dict, ul, pr->buffer+pos + v2, compressed_size - v2))
+				if (gzip_uncompress(pr->dict, ul, pr->buffer+pos, compressed_size))
 					return -10;
 				pos += compressed_size;
 #else
@@ -708,9 +710,7 @@ pqc_page_header( pqc_reader_t *r, pqc_creader_t *pr, int64_t pos)
 #endif
 			} else if (pr->cc->codec == CC_ZSTD) {
 #ifdef HAVE_ZSTD
-				/* for v2 add definition and repetition lengths */
-				int v2 = pr->cc->cur_page.definition_levels_byte_length + pr->cc->cur_page.repetition_levels_byte_length;
-				if (ZSTD_decompress(pr->dict, ul, pr->buffer+pos + v2, compressed_size - v2) != ul)
+				if (ZSTD_decompress(pr->dict, ul, pr->buffer+pos, compressed_size) != ul)
 					return -10;
 				pos += compressed_size;
 #else
@@ -719,10 +719,8 @@ pqc_page_header( pqc_reader_t *r, pqc_creader_t *pr, int64_t pos)
 #endif
 			} else if (pr->cc->codec == CC_LZ4_RAW) {
 #ifdef HAVE_LIBLZ4
-				/* for v2 add definition and repetition lengths */
-				int v2 = pr->cc->cur_page.definition_levels_byte_length + pr->cc->cur_page.repetition_levels_byte_length;
 				int iul = (int)ul;
-				if (LZ4_decompress_safe(pr->buffer+pos + v2, pr->dict, compressed_size - v2, iul) != iul)
+				if (LZ4_decompress_safe(pr->buffer+pos, pr->dict, compressed_size, iul) != iul)
 					return -10;
 				pos += compressed_size;
 #else
@@ -731,9 +729,7 @@ pqc_page_header( pqc_reader_t *r, pqc_creader_t *pr, int64_t pos)
 #endif
 			} else if (pr->cc->codec == CC_BROTLI) {
 #ifdef HAVE_BROTLI
-				/* for v2 add definition and repetition lengths */
-				int v2 = pr->cc->cur_page.definition_levels_byte_length + pr->cc->cur_page.repetition_levels_byte_length;
-				if (BrotliDecoderDecompress(compressed_size - v2, (uint8_t*)pr->buffer+pos + v2, &ul, (uint8_t*)pr->dict) != BROTLI_DECODER_RESULT_SUCCESS)
+				if (BrotliDecoderDecompress(compressed_size, (uint8_t*)pr->buffer+pos, &ul, (uint8_t*)pr->dict) != BROTLI_DECODER_RESULT_SUCCESS)
 					return -10;
 				pos += compressed_size;
 #else
@@ -916,7 +912,8 @@ pqc_repetition( pqc_reader_t *r, pqc_creader_t *cr, void *output, uint32_t num_v
 	(void)output;
 	//int bits = 1;
 	char *data = cr->data;
-	uint32_t nr_bytes = get_uint32((uint8_t*)data+pos), len;
+	bool v2 = cr->cc->cur_page.repetition_levels_byte_length;
+	uint32_t len, nr_bytes = v2 ? cr->cc->cur_page.repetition_levels_byte_length: get_uint32((uint8_t*)data+pos);
 	uint32_t null = 0;
 	int j = 0;
 
@@ -925,7 +922,8 @@ pqc_repetition( pqc_reader_t *r, pqc_creader_t *cr, void *output, uint32_t num_v
 	cr->repetition = NULL;
 	cr->first_repetition = 0;
 
-	pos += sizeof(nr_bytes);
+	if (!v2)
+		pos += sizeof(nr_bytes);
 	uint32_t spos = pos;
 	char prv = 0;
 	for(uint32_t i = 0; i<num_values && ((pos-spos) < nr_bytes); ) {
@@ -1022,7 +1020,8 @@ pqc_definition( pqc_reader_t *r, pqc_creader_t *cr, void *output, uint32_t num_v
 	(void)output;
 	//int bits = 1;
 	char *data = cr->data;
-	uint32_t nr_bytes = get_uint32((uint8_t*)data+pos), len;
+	bool v2 = cr->cc->cur_page.definition_levels_byte_length;
+	uint32_t len, nr_bytes = v2 ? cr->cc->cur_page.definition_levels_byte_length: get_uint32((uint8_t*)data+pos);
 	uint32_t null = 0;
 	int j = 0;
 
@@ -1031,7 +1030,8 @@ pqc_definition( pqc_reader_t *r, pqc_creader_t *cr, void *output, uint32_t num_v
 	cr->definition = NULL;
 	cr->first_definition = cr->curdef = cr->cursubdef = 0;
 
-	pos += sizeof(nr_bytes);
+	if (!v2)
+		pos += sizeof(nr_bytes);
 	uint32_t spos = pos;
 	char prv = 0;
 	for(uint32_t i = 0; i<num_values && ((pos-spos) < nr_bytes); ) {

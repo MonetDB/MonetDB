@@ -279,3 +279,9 @@ SELECT * FROM '$QTSTDATAPATH/parquet/parquet_testing/byte_array_decimal.parquet'
 22.000
 23.000
 24.000
+
+query I nosort
+SELECT sum(long_col) FROM '$QTSTDATAPATH/parquet/parquet_testing/concatenated_gzip_members.parquet'
+----
+131841
+
