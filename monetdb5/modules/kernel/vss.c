@@ -259,8 +259,8 @@ bond_search_fast(allocator *ma, bond_collection *bc, const dbl *query_vals,
         }
 
 		// Pruning
-		int step = 2; // TODO step function of ndim?
-		if ((i % step == 0) && i > 0 && i < (bc->ndims - 1) && ncands > k * 2) {
+		int step = bc->ndims > 128 ? 32 : (bc->ndims > 4 ? (bc->ndims / 4) : 4);
+		if ((i % step == 0) && i >= step && i < (bc->ndims - 1) && ncands > k * 2) {
 			lng T0 = GDKusec();
 			memcpy(temp, partial_dists, ncands * sizeof(dbl));
 			dbl kth_dist = quickselect(temp, ncands, k);
@@ -291,7 +291,7 @@ bond_search_fast(allocator *ma, bond_collection *bc, const dbl *query_vals,
 		lng T0 = GDKusec();
 		memcpy(temp, partial_dists, ncands * sizeof(dbl));
 		//qsort(temp, ncands, sizeof(dbl), dbl_cmp);
-		dbl kth_dist = quickselect(temp, ncands, k);
+		dbl kth_dist = quickselect(temp, ncands, (ncands < k) ? ncands : k);
 		BUN write_pos = 0;
 		for (BUN read_pos = 0; read_pos < ncands && write_pos < k; read_pos++) {
 			if (partial_dists[read_pos] <= kth_dist) {
