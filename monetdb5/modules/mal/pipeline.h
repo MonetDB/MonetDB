@@ -24,7 +24,6 @@
 
 // TODO a better way to define/add/register sinks, similar to types
 #define OA_HASH_TABLE_SINK 1
-#define OA_HASH_PAYLOAD_SINK 2
 #define TOPN_SINK 3
 #define HEAP_SINK 4
 #define PART_SINK 5
