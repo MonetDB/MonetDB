@@ -1,0 +1,172 @@
+statement ok
+CREATE SCHEMA test7894
+
+statement ok
+SET SCHEMA test7894
+
+statement ok
+CREATE TABLE users (
+    id           INT,
+    username     VARCHAR(100),
+    email        VARCHAR(255),
+    age          INT,
+    status       VARCHAR(20),
+    created_at   TIMESTAMP,
+    score        DOUBLE
+)
+
+statement ok
+CREATE TABLE comments (
+    id          INT,
+    post_id     INT,
+    user_id     INT,
+    content     VARCHAR(1000),
+    is_spam     INT,
+    created_at  TIMESTAMP
+)
+
+statement ok
+CREATE TABLE orders (
+    id          INT,
+    user_id     INT,
+    amount      DOUBLE,
+    status      VARCHAR(20),
+    created_at  TIMESTAMP
+)
+
+statement ok
+INSERT INTO users VALUES
+(1, 'alice', 'alice@test.com', 20, 'active',  '2022-01-01 10:00:00', 88.5),
+(2, 'bob',   'bob@test.com',   30, 'active',  '2022-01-02 11:00:00', 92.3),
+(3, 'carol', NULL,             NULL, 'banned','2022-01-03 12:00:00', NULL),
+(4, 'dave',  'dave@test.com',  45, 'active',  '2022-01-04 13:00:00', 65.2),
+(5, NULL,    'null@test.com',  18, 'inactive','2022-01-05 14:00:00', 70.0)
+
+statement ok
+INSERT INTO comments VALUES
+(1, 1, 2, 'Nice post', 0, '2022-01-20 10:00:00'),
+(2, 1, 3, 'Spam here', 1,  '2022-01-21 11:00:00'),
+(3, 2, 1, 'Thanks',    0, '2022-01-22 12:00:00'),
+(4, 4, 5, NULL,        0, '2022-01-23 13:00:00')
+
+statement ok
+INSERT INTO orders VALUES
+(1, 1, 100.00, 'paid',    '2022-02-01 09:00:00'),
+(2, 1, 200.50, 'shipped', '2022-02-02 10:00:00'),
+(3, 2, NULL,   'failed',  '2022-02-03 11:00:00'),
+(4, 3, 50.00,  'paid',    '2022-02-04 12:00:00'),
+(5, 5, 999.99, 'paid',    '2022-02-05 13:00:00')
+
+query I nosort
+select count(*)
+from
+  (select ref_0.user_id as c3
+        from
+          comments as ref_0
+        where lpad('o', ref_0.id) <> 'kye') as subq_0
+    right join users as ref_2
+    on (ref_2.id < subq_0.c3)
+----
+8
+
+query I nosort
+select count(*)
+from
+  (select ref_0.user_id as c3
+        from
+          comments as ref_0
+        where lpad('o', ref_0.id) <> 'kye') as subq_0
+    right join users as ref_2
+    on (ref_2.id < subq_0.c3)
+where ((false AND case when ref_2.score is NULL then case when 84.68 != sys.ms_round(
+          (select stddev_pop(id) from orders),
+          ref_2.id,
+          0) then true else false end
+       else false end
+    ))
+----
+0
+
+query I nosort
+select count(*)
+from
+  (select ref_0.user_id as c3
+        from
+          comments as ref_0
+        where lpad('o', ref_0.id) <> 'kye') as subq_0
+    right join users as ref_2
+    on (ref_2.id < subq_0.c3)
+where (not (false AND case when ref_2.score is NULL then case when 84.68 != sys.ms_round(
+          (select stddev_pop(id) from orders),
+          ref_2.id,
+          0) then true else false end
+       else false end
+    ))
+----
+8
+
+query I nosort
+select (
+select count(*)
+from
+  (select ref_0.user_id as c3
+        from
+          comments as ref_0
+        where lpad('o', ref_0.id) <> 'kye') as subq_0
+    right join users as ref_2
+    on (ref_2.id < subq_0.c3)
+where (false AND case when ref_2.score is NULL then case when 84.68 != sys.ms_round(
+          (select stddev_pop(id) from orders),
+          ref_2.id,
+          0) then true else false end
+       else false end
+    )
+) + (
+select count(*)
+from
+  (select ref_0.user_id as c3
+        from
+          comments as ref_0
+        where lpad('o', ref_0.id) <> 'kye') as subq_0
+    right join users as ref_2
+    on (ref_2.id < subq_0.c3)
+where (not (false AND case when ref_2.score is NULL then case when 84.68 != sys.ms_round(
+          (select stddev_pop(id) from orders),
+          ref_2.id,
+          0) then true else false end
+       else false end
+    ))
+) + (
+select count(*)
+from
+  (select ref_0.user_id as c3
+        from
+          comments as ref_0
+        where lpad('o', ref_0.id) <> 'kye') as subq_0
+    right join users as ref_2
+    on (ref_2.id < subq_0.c3)
+where ((false AND case when ref_2.score is NULL then case when 84.68 != sys.ms_round(
+          (select stddev_pop(id) from orders),
+          ref_2.id,
+          0) then true else false end
+       else false end
+    ) is null)
+)
+----
+8
+
+statement ok
+DROP TABLE orders
+
+statement ok
+DROP TABLE comments
+
+statement ok
+DROP TABLE users
+
+statement ok
+SET SCHEMA sys
+
+statement ok
+DROP SCHEMA test7894
+

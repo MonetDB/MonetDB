@@ -80,3 +80,4 @@ KNOWNFAIL?7774-insert-into-renamed-table-assertion-failure
 KNOWNFAIL?7891-update-issue
 KNOWNFAIL?7892-where-subqueries-sum-bug
 KNOWNFAIL?7893-where-subqueries-sum-bug
+KNOWNFAIL?7894-subquery-where-not-bug
