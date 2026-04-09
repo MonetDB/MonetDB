@@ -1,0 +1,70 @@
+statement ok
+CREATE TABLE comments7892 (
+    id          INT,
+    post_id     INT,
+    user_id     INT,
+    content     VARCHAR(1000),
+    is_spam     INT,
+    created_at  TIMESTAMP
+)
+
+statement ok
+INSERT INTO comments7892 VALUES
+(1, 1, 2, 'Nice post', 0, '2022-01-20 10:00:00'),
+(2, 1, 3, 'Spam here', 1,  '2022-01-21 11:00:00'),
+(3, 2, 1, 'Thanks',    0, '2022-01-22 12:00:00'),
+(4, 4, 5, NULL,        0, '2022-01-23 13:00:00')
+
+query I nosort
+select count(*)
+from
+  comments7892 as ref_0
+----
+4
+
+query I nosort
+select (
+select count(*)
+from
+  comments7892 as ref_0
+where (false AND case when (ref_0.id < ref_0.user_id)
+      or (ref_0.created_at is not NULL) then coalesce(nullif(true,nullif(false, false)),true) else true end)
+) + (
+select count(*)
+from
+  comments7892 as ref_0
+where (not (false AND case when (ref_0.id < ref_0.user_id)
+      or (ref_0.created_at is not NULL) then coalesce(nullif(true,nullif(false, false)),true) else true end))
+) + (
+select count(*)
+from
+  comments7892 as ref_0
+where ((false AND case when (ref_0.id < ref_0.user_id)
+      or (ref_0.created_at is not NULL) then coalesce(nullif(true,nullif(false, false)),true) else true end) is null)
+)
+----
+4
+
+query I nosort
+select (
+select count(*)
+from
+  comments7892
+where (false AND coalesce(true,false))
+) + (
+select count(*)
+from
+  comments7892
+where (not (false AND coalesce(true, false)))
+) + (
+select count(*)
+from
+  comments7892
+where ((false AND coalesce(true,false)) is null)
+)
+----
+4
+
+statement ok
+DROP TABLE comments7892
+
