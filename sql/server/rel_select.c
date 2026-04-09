@@ -1450,6 +1450,8 @@ sql_exp_values(sql_query *query, symbol *values)
 	if (!exps)
 		return NULL;
 	sql_exp *e = exp_values(query->sql->sa, exps);
+	if (e && values->token == SQL_VECTOR && (e = exp_check_vector(query->sql, e)) == NULL)
+			return NULL;
 	if (e && values->token == SQL_ROW)
 		e->row = 1;
 	return e;
@@ -5715,13 +5717,15 @@ rel_value_exp2(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 				|| se->token == SQL_ROW
 			   	|| se->token == SQL_SET
 			   	|| se->token == SQL_VECTOR) {
-			if (ek.card <= card_row && !(rel && *rel)) {
+			if (se->token == SQL_VECTOR || (ek.card <= card_row && !(rel && *rel))) {
 				sql_exp *e = sql_exp_values(query, se);
-				if (!e)
-					return NULL;
-				if (exp_is_atom(e)) /* single tuple */
-					return e;
-				r = rel_project(query->sql->sa, NULL, e->f);
+				if (e) {
+					if (exp_is_atom(e)) /* single tuple */
+						return e;
+					r = rel_project(query->sql->sa, NULL, e->f);
+				} else {
+					r = rel_values(query, se, NULL);
+				}
 			} else
 				r = rel_values(query, se, NULL);
 		} else {
