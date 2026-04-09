@@ -652,6 +652,16 @@ do {                                                    \
     }                                                   \
 } while (0)
 
+#define PATIAL_L2sq_const(R, BL, BR, CNT, T)            \
+do {                                                    \
+    const T *a = (const T*) Tloc(BL, 0);                \
+    const T *b = (const T*) Tloc(BR, 0);                \
+    for(BUN p = 0; p<cnt; p++) {                        \
+        T d = a[p] - b[0];                              \
+        R[p] += (T)d*d;                                 \
+    }                                                   \
+} while (0)
+
 static char*
 BATl2sq_distance(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -679,20 +689,40 @@ BATl2sq_distance(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
     size_t dims = ncols / 2;
 
-    for (size_t i = 0; i < dims; i++) {
-        BAT *bl = BATdescriptor(*getArgReference_bat(stk, pci, (i+1)));
-        BAT *br = BATdescriptor(*getArgReference_bat(stk, pci, (i+1) + dims));
-        assert(bl&&br);
-        int err = !(bl&&br);
-        if (!err)
-            PATIAL_L2sq(dest, bl, br, cnt, dbl);
-        BBPreclaim(bl);
-        BBPreclaim(br);
-        if (err) {
-            if (bn) BBPunfix(bn->batCacheid);
-            throw(MAL, "batvss.l2sq_distance", RUNTIME_OBJECT_MISSING);
-        }
-    }
+	BAT *br = BATdescriptor(*getArgReference_bat(stk, pci, 1 + dims));
+	BUN qcnt = BATcount(br);
+	BBPreclaim(br);
+	if (qcnt == 1) {
+		for (size_t i = 0; i < dims; i++) {
+			BAT *bl = BATdescriptor(*getArgReference_bat(stk, pci, (i+1)));
+			BAT *br = BATdescriptor(*getArgReference_bat(stk, pci, (i+1) + dims));
+			assert(bl&&br);
+			int err = !(bl&&br);
+			if (!err)
+				PATIAL_L2sq_const(dest, bl, br, cnt, dbl);
+			BBPreclaim(bl);
+			BBPreclaim(br);
+			if (err) {
+				if (bn) BBPunfix(bn->batCacheid);
+				throw(MAL, "batvss.l2sq_distance", RUNTIME_OBJECT_MISSING);
+			}
+		}
+	} else {
+		for (size_t i = 0; i < dims; i++) {
+			BAT *bl = BATdescriptor(*getArgReference_bat(stk, pci, (i+1)));
+			BAT *br = BATdescriptor(*getArgReference_bat(stk, pci, (i+1) + dims));
+			assert(bl&&br);
+			int err = !(bl&&br);
+			if (!err)
+				PATIAL_L2sq(dest, bl, br, cnt, dbl);
+			BBPreclaim(bl);
+			BBPreclaim(br);
+			if (err) {
+				if (bn) BBPunfix(bn->batCacheid);
+				throw(MAL, "batvss.l2sq_distance", RUNTIME_OBJECT_MISSING);
+			}
+		}
+	}
     // Finalize BAT metadata
     BATsetcount(bn, cnt);
     bn->tnonil = true;
@@ -700,7 +730,7 @@ BATl2sq_distance(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
     bn->tsorted = false;
     bn->trevsorted = false;
 
-	printf("BATl2sq " LLFMT "\n", GDKusec() - T0);
+	printf("#BATl2sq " LLFMT "\n", GDKusec() - T0);
 
     *ret = bn->batCacheid;
     BBPkeepref(bn);
