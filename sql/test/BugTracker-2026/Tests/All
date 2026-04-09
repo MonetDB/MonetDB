@@ -83,3 +83,4 @@ KNOWNFAIL?7893-where-subqueries-sum-bug
 KNOWNFAIL?7894-subquery-where-not-bug
 KNOWNFAIL?7895-subquery-where-not-bug
 KNOWNFAIL?7896-where-ascii-comparison-bug
+KNOWNFAIL?7906-rel2bin_join-assertion-failure
