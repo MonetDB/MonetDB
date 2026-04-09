@@ -21,8 +21,6 @@
 #include "copy.h"
 #include "rel_copy.h"
 
-#define COPY_SINK 42
-
 static void
 bufferstream_destroy( bufferstream *bs )
 {
