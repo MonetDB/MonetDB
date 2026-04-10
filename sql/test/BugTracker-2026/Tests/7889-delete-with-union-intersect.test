@@ -1,0 +1,97 @@
+statement ok
+DROP TABLE IF EXISTS bug_t3
+
+statement ok
+DROP TABLE IF EXISTS bug_t2
+
+statement ok
+CREATE TABLE bug_t2 (
+  c13 TIMESTAMP
+)
+
+statement ok
+CREATE TABLE bug_t3 (
+  c5 TIMESTAMP
+)
+
+statement ok rowcount 2
+INSERT INTO bug_t2 VALUES
+  (TIMESTAMP '2018-02-05 09:53:03'),
+  (TIMESTAMP '2000-02-15 12:06:44')
+
+statement ok rowcount 1
+INSERT INTO bug_t3 VALUES
+  (TIMESTAMP '2000-12-27 05:21:09')
+
+#-- original: deletes both rows
+statement ok rowcount 2
+DELETE FROM bug_t2
+WHERE EXISTS (
+  SELECT *
+  FROM (
+    SELECT c13, c13 + INTERVAL '13' MONTH + INTERVAL '19' DAY
+    FROM bug_t2
+    EXCEPT
+    SELECT k, k2
+    FROM (
+      SELECT c5 AS k, c5 AS k2 FROM bug_t3
+      UNION
+      SELECT c13 AS k, c13 AS k2 FROM bug_t2
+    ) AS s
+  ) AS q
+  WHERE q.c13 = q.c13
+)
+
+query I
+SELECT COUNT(*) AS remaining_after_original FROM bug_t2
+----
+0
+
+statement ok
+DROP TABLE IF EXISTS bug_t3
+
+statement ok
+DROP TABLE IF EXISTS bug_t2
+
+statement ok
+CREATE TABLE bug_t2 (
+  c13 TIMESTAMP
+)
+
+statement ok
+CREATE TABLE bug_t3 (
+  c5 TIMESTAMP
+)
+
+statement ok rowcount 2
+INSERT INTO bug_t2 VALUES
+  (TIMESTAMP '2018-02-05 09:53:03'),
+  (TIMESTAMP '2000-02-15 12:06:44')
+
+statement ok rowcount 1
+INSERT INTO bug_t3 VALUES
+  (TIMESTAMP '2000-12-27 05:21:09')
+
+#-- mutated: should behave equivalently here, but deletes no rows in MonetDB
+statement ok rowcount 2
+DELETE FROM bug_t2
+WHERE EXISTS (
+  SELECT *
+  FROM (
+    SELECT c13, c13 + INTERVAL '13' MONTH + INTERVAL '19' DAY
+    FROM bug_t2
+    EXCEPT
+    SELECT k, k2
+    FROM (
+      SELECT c5 AS k, c5 AS k2 FROM bug_t3
+      INTERSECT
+      SELECT c13 AS k, c13 AS k2 FROM bug_t2
+    ) AS s
+  ) AS q
+  WHERE q.c13 = q.c13
+)
+
+query I
+SELECT COUNT(*) AS remaining_after_mutated FROM bug_t2
+----
+0

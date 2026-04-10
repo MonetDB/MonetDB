@@ -1271,15 +1271,6 @@ stmt_limit(backend *be, stmt *col, stmt *piv, stmt *gid, stmt *offset, stmt *lim
 			q = pushBit(mb, q, nullslast);
 			return piv;
 		} else {
-			int topn = 0;
-
-			q = newStmt(mb, calcRef, plusRef);
-			if (q == NULL)
-				goto bailout;
-			q = pushArgument(mb, q, offset->nr);
-			q = pushArgument(mb, q, limit->nr);
-			topn = getDestVar(q);
-			pushInstruction(mb, q);
 
 			if (!gid || (piv && !piv->q)) { /* use algebra.firstn (possibly concurrently) */
 				int p = (piv) ? piv->nr : 0;
@@ -1297,7 +1288,9 @@ stmt_limit(backend *be, stmt *col, stmt *piv, stmt *gid, stmt *offset, stmt *lim
 					q = pushArgument(mb, q, g);
 				else
 					q = pushNilBat(mb, q);
-				q = pushArgument(mb, q, topn);
+				q = pushArgument(mb, q, limit->nr);
+				q = pushArgument(mb, q, offset->nr);
+				q = pushBit(mb, q, nr_obe > 1); /* reduce to offset and limit on last call */
 				q = pushBit(mb, q, dir);
 				q = pushBit(mb, q, nullslast);
 				q = pushBit(mb, q, distinct != 0);
@@ -1309,7 +1302,9 @@ stmt_limit(backend *be, stmt *col, stmt *piv, stmt *gid, stmt *offset, stmt *lim
 				q = newStmtArgs(mb, algebraRef, groupedfirstnRef, (nr_obe*3)+6);
 				if (q == NULL)
 					goto bailout;
-				q = pushArgument(mb, q, topn);
+				q = pushArgument(mb, q, limit->nr);
+				q = pushArgument(mb, q, offset->nr);
+				q = pushBit(mb, q, nr_obe > 1); /* reduce to offset and limit on last call */
 				q = pushNilBat(mb, q);	/* candidates */
 				if (g)					/* grouped case */
 					q = pushArgument(mb, q, g);
@@ -4560,6 +4555,8 @@ bailout:
 stmt *
 stmt_convert(backend *be, stmt *v, stmt *sel, sql_subtype *f, sql_subtype *t)
 {
+	if (!v)
+		return NULL;
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
 	const char *convert = t->type->d.impl, *mod = calcRef;

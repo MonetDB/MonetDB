@@ -999,14 +999,19 @@ exp_bin_conjunctive(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp,
 	sel1 = sel;
 	for (n = l->h; n; n = n->next) {
 		sql_exp *c = n->data;
-		stmt *sin = (sel1 && sel1->nrcols)?sel1:NULL;
+		stmt *sin = (sel1 && sel1->nrcols && !anti)?sel1:NULL;
 
 		/* propagate the anti flag */
-		if (anti)
-			set_anti(c);
+		if (anti && reduce)
+			negate_anti(c);
 		s = exp_bin(be, c, left, right, grp, ext, cnt, reduce?sin:NULL, depth, reduce, push);
 		if (!s)
 			return s;
+		/* propagate the anti flag */
+		if (anti && !reduce) {
+			sql_subfunc *not = sql_bind_func(be->mvc, "sys", "not", bt, NULL, F_FUNC, true, true);
+			s = stmt_unop(be, s, NULL, not);
+		}
 
 		if (!reduce && sin && sin != sel) {
 			sql_subfunc *f = sql_bind_func(be->mvc, "sys", anti?"or":"and", bt, bt, F_FUNC, true, true);
@@ -1060,11 +1065,16 @@ exp_bin_disjunctive(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp,
 		sql_exp *c = n->data;
 
 		/* propagate the anti flag */
-		if (anti)
-			set_anti(c);
+		if (anti && reduce)
+			negate_anti(c);
 		s = exp_bin(be, c, left, right, grp, ext, cnt, reduce?sel:NULL, depth, reduce, push);
 		if (!s)
 			return s;
+		/* propagate the anti flag */
+		if (anti && !reduce) {
+			sql_subfunc *not = sql_bind_func(be->mvc, "sys", "not", bt, NULL, F_FUNC, true, true);
+			s = stmt_unop(be, s, NULL, not);
+		}
 
 		if (reduce && s->nrcols == 0 && left) {
 			stmt *predicate = bin_find_smallest_column(be, left);
@@ -4737,20 +4747,13 @@ stmt_limit_value(backend *be, sql_rel *topn)
 
 	if (topn) {
 		sql_exp *le = topn_limit(topn);
-		sql_exp *oe = topn_offset(topn);
 
 		if (le) {
+			sql_subtype *lng = sql_fetch_localtype(TYPE_lng);
 			l = exp_bin(be, le, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
+			l = stmt_convert(be, l, NULL, exp_subtype(le), lng);
 			if(!l)
 				return NULL;
-			if (oe) {
-				sql_subtype *lng = sql_fetch_localtype(TYPE_lng);
-				sql_subfunc *add = sql_bind_func_result(be->mvc, "sys", "sql_add", F_FUNC, true, lng, 2, lng, lng);
-				stmt *o = exp_bin(be, oe, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
-				if(!o)
-					return NULL;
-				l = stmt_binop(be, l, o, NULL, add);
-			}
 		}
 	}
 	return l;
@@ -5229,7 +5232,7 @@ sql_reorder(backend *be, stmt *order, list *exps, stmt *s, list *oexps, list *os
 }
 
 static stmt *
-sub_topn(backend *be, stmt *sub, stmt **Psub, sql_rel *topn, list *oexps, stmt *l, int distinct)
+sub_topn(backend *be, stmt *sub, stmt **Psub, sql_rel *topn, list *oexps, stmt *l, stmt *o, int distinct)
 {
 	stmt *psub = Psub?*Psub:NULL;
 	node *n;
@@ -5279,9 +5282,9 @@ sub_topn(backend *be, stmt *sub, stmt **Psub, sql_rel *topn, list *oexps, stmt *
 			continue;
 		orderbycolstmt = column(be, orderbycolstmt);
 		if (!limit) {	/* topn based on a single column */
-			limit = stmt_limit(be, orderbycolstmt, NULL, grp, stmt_atom_lng(be, 0), l, distinct, is_ascending(orderbycole), nulls_last(orderbycole), nr_obe, 1);
+			limit = stmt_limit(be, orderbycolstmt, NULL, grp, o, l, distinct, is_ascending(orderbycole), nulls_last(orderbycole), nr_obe, 1);
 		} else {	/* topn based on 2 columns */
-			limit = stmt_limit(be, orderbycolstmt, lpiv, lgid, stmt_atom_lng(be, 0), l, distinct, is_ascending(orderbycole), nulls_last(orderbycole), nr_obe, 1);
+			limit = stmt_limit(be, orderbycolstmt, lpiv, lgid, o, l, distinct, is_ascending(orderbycole), nulls_last(orderbycole), nr_obe, 1);
 		}
 		if (!limit)
 			return NULL;
@@ -5300,16 +5303,14 @@ sub_topn(backend *be, stmt *sub, stmt **Psub, sql_rel *topn, list *oexps, stmt *
 			return NULL;
 
 		orderbycolstmt = column(be, orderbycolstmt);
-		limit = stmt_limit(be, orderbycolstmt, NULL, grp, stmt_atom_lng(be, 0), l, distinct, 0, 0, nr_obe, 1);
+		limit = stmt_limit(be, orderbycolstmt, NULL, grp, grp?o:stmt_atom_lng(be, 0), l, distinct, 0, 0, grp?1:nr_obe, 1);
 		lpiv = limit;
 		if (!lpiv)
 			return NULL;
 	}
 
 	limit = lpiv;
-	if (!limit) /* partition/order by cols fully overlap */
-		limit = stmt_limit(be, pl->h->data, NULL, grp, stmt_atom_lng(be, 0), l, 0,0,0,0,1);
-	if (limit && grp)
+	if (grp)
 		limit = stmt_project(be, stmt_selectnonil(be, limit, NULL), limit);
 	stmt *s;
 	if (psub) {
@@ -5440,7 +5441,7 @@ rel2bin_project(backend *be, sql_rel *rel, list *refs, sql_rel *topn)
 	list *pl;
 	node *en, *n;
 	stmt *sub = NULL, *psub = NULL;
-	stmt *l = NULL;
+	stmt *l = NULL, *o = NULL;
 
 	if (!rel->exps)
 		return stmt_none(be);
@@ -5448,6 +5449,17 @@ rel2bin_project(backend *be, sql_rel *rel, list *refs, sql_rel *topn)
 	l = stmt_limit_value(be, topn);
 	if (!l)
 		topn = NULL;
+	if (l) {
+		sql_subtype *lng = sql_fetch_localtype(TYPE_lng);
+		sql_exp *oe = topn_offset(topn);
+		if (oe) {
+			o = exp_bin(be, oe, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
+			o = stmt_convert(be, o, NULL, exp_subtype(oe), lng);
+		} else
+			o = stmt_atom_lng(be, 0);
+		if (!o)
+			return NULL;
+	}
 
 	if (rel->l) { /* first construct the sub relation */
 		sql_rel *lr = rel->l;
@@ -5522,7 +5534,7 @@ rel2bin_project(backend *be, sql_rel *rel, list *refs, sql_rel *topn)
 		do topn on it. Project all again! Then rest
 	*/
 	if (topn && rel->r)
-		sub = sub_topn(be, sub, &psub, topn, rel->r, l, need_distinct(rel));
+		sub = sub_topn(be, sub, &psub, topn, rel->r, l, o, need_distinct(rel));
 	if (need_distinct(rel)) {
 		stmt *distinct = NULL;
 		psub = rel2bin_distinct(be, psub, &distinct);
@@ -5786,17 +5798,6 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 	return cursub;
 }
 
-static bool
-has_partitioning( list *exps )
-{
-	for(node *n = exps->h; n; n = n->next){
-		sql_exp *gbe = n->data;
-		if (is_partitioning(gbe))
-			return true;
-	}
-	return false;
-}
-
 static stmt *
 rel2bin_topn(backend *be, sql_rel *rel, list *refs)
 {
@@ -5838,10 +5839,10 @@ rel2bin_topn(backend *be, sql_rel *rel, list *refs)
 				if (!sub)
 					sub = rel2bin_project(be, rl, refs, rel);
 				else if (rl->r) /* handle topn */
-					sub = sub_topn(be, sub, NULL, rel, rl->r, l, need_distinct(rl));
+					sub = sub_topn(be, sub, NULL, rel, rl->r, l, o, need_distinct(rl));
 			} else
 				sub = rel2bin_project(be, rl, refs, rel);
-			if (rel->grouped && rl->r && has_partitioning(rl->r))
+			if (rl->r && le)
 				return sub;
 		} else {
 			sub = subrel_bin(be, rl, refs);
@@ -5850,7 +5851,6 @@ rel2bin_topn(backend *be, sql_rel *rel, list *refs)
 	}
 	if (!sub)
 		return NULL;
-
 
 	n = sub->op4.lval->h;
 	if (n) {

@@ -3899,12 +3899,9 @@ rel_push_select_down(visitor *v, sql_rel *rel)
 
 		ul = rel_dup(ul);
 		ur = rel_dup(ur);
-		if (!is_project(ul->op))
-			ul = rel_project(v->sql->sa, ul,
-				rel_projections(v->sql, ul, NULL, 1, 1));
-		if (!is_project(ur->op))
-			ur = rel_project(v->sql->sa, ur,
-				rel_projections(v->sql, ur, NULL, 1, 1));
+		/* make new project always as we could have self refs */
+		ul = rel_project(v->sql->sa, ul, rel_projections(v->sql, ul, NULL, 1, 1));
+		ur = rel_project(v->sql->sa, ur, rel_projections(v->sql, ur, NULL, 1, 1));
 		rel_rename_exps(v->sql, u->exps, ul->exps);
 		rel_rename_exps(v->sql, u->exps, ur->exps);
 
