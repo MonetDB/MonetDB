@@ -467,7 +467,8 @@ isLikeOp(InstrPtr p)
 inline int
 isTopn(InstrPtr p)
 {
-	return ((getModuleId(p) == algebraRef && getFunctionId(p) == firstnRef)
+	return ((getFunctionId(p) && strcmp(getFunctionId(p), "bond") == 0) ||
+	       (getModuleId(p) == algebraRef && getFunctionId(p) == firstnRef)
 			|| isSlice(p));
 }
 

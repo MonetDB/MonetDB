@@ -2092,6 +2092,63 @@ mat_pack_topn(MalBlkPtr mb, InstrPtr slc, mat_t *mat, int m)
 }
 
 static int
+mat_topn_N(allocator *ma, MalBlkPtr mb, InstrPtr p, matlist_t *ml, int matches)
+{
+	int k, m, tpe = getArgType(mb, p, 0), tp2 = (p->retc == 2)?getArgType(mb, p, 1):-1;
+
+	/* each input is mat! */
+	m = is_a_mat(getArg(p, p->retc+1), ml);
+	if (m < 0)
+		return -1;
+
+	/* dummy mat instruction (needed to share result of p) */
+	InstrPtr pck = newInstructionArgs(mb, matRef, packRef, ml->v[m].mi->argc), q;
+	if (pck == NULL)
+		return -1;
+	getArg(pck, 0) = getArg(p, 0);
+
+	InstrPtr pc2 = p->retc == 2?newInstructionArgs(mb, matRef, packRef, ml->v[m].mi->argc):NULL;
+	if (p->retc == 2 && pc2 == NULL)
+		return -1;
+	if (p->retc == 2)
+		getArg(pc2, 0) = getArg(p, 1);
+
+	for (k = 1; mb->errors == NULL && k < ml->v[m].mi->argc; k++) {
+		if ((q = copyInstruction(mb, p)) == NULL) {
+			freeInstruction(mb, pck);
+			if (pc2)
+				freeInstruction(mb, pc2);
+			return -1;
+		}
+		getArg(q, 0) = newTmpVariable(mb, tpe);
+		if (p->retc == 2)
+			getArg(q, 1) = newTmpVariable(mb, tp2);
+		for(int i = 0; i<matches; i++) {
+			int mv = is_a_mat(getArg(p, p->retc+1+i), ml);
+			getArg(q, q->retc+1+i) = getArg(ml->v[mv].mi, k);
+		}
+
+		pushInstruction(mb, q);
+		pck = pushArgument(mb, pck, getArg(q, 0));
+		if (pc2)
+			pc2 = pushArgument(mb, pc2, getArg(q, 1));
+	}
+	if (mb->errors || mat_add_var(ma, ml, pck, p, getArg(p, 0), mat_tpn, m, 0, 0)) {
+		freeInstruction(mb, pck);
+		if (pc2)
+			freeInstruction(mb, pck);
+		return -1;
+	}
+	if (pc2 && (mb->errors || mat_add_var(ma, ml, pc2, p, getArg(p, 1), mat_tpn, m, 0, 0))) {
+		freeInstruction(mb, pck);
+		freeInstruction(mb, pc2);
+		return -1;
+	}
+	/* now project and repeat */
+	return 0;
+}
+
+static int
 mat_topn(allocator *ma, MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n, int o)
 {
 	int tpe = getArgType(mb, p, 0), k, is_slice = isSlice(p), no_offset = -1;
@@ -2557,6 +2614,19 @@ OPTmergetableImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 			}
 			actions++;
 			continue;
+		}
+		if (!distinct_topn && match >= 1 && bats == match && isTopn(p) && p->retc >= 1) {
+			bool matched = true;
+			for (int i = 0; i<match && matched; i++)
+				matched = (is_a_mat(getArg(p, p->retc+1+i), &ml) >= 0);
+			if (matched) {
+				if (mat_topn_N(ta, mb, p, &ml, match)) {
+					msg = createException(MAL, "optimizer.mergetable", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					goto cleanup;
+				}
+				actions++;
+				continue;
+			}
 		}
 		if (!distinct_topn && match == 3 && bats == 3 && isTopn(p)
 			&& ((m = is_a_mat(getArg(p, p->retc), &ml)) >= 0)

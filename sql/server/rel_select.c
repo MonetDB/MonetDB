@@ -4604,7 +4604,6 @@ rel_selection_ref(sql_query *query, sql_rel **rel, char *name, dlist *selection)
 
 					nl = dlist_create(sa);
 					exp_setname(query->sql, ve, NULL, name);
-					reset_intern(ve);
 					/* now we should rewrite the selection such that it uses the new group by column */
 					dlist_append_string(sa, nl, ma_strdup(sa, name));
 					nsym = symbol_create_list(sa, to, nl);

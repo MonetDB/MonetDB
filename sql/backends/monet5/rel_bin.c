@@ -2854,7 +2854,7 @@ rel2bin_basetable(backend *be, sql_rel *rel)
 	sql_column *fcol = NULL;
 	sql_idx *fi = NULL;
 	list *l = sa_list(sql->sa);
-	bool complex = (t->multiset || t->composite);
+	bool complex = ((t->multiset && t->multiset != MS_VECTOR) || t->composite);
 	stmt *dels = stmt_tid(be, t, !complex?rel->flag == REL_PARTITION:false), *col = NULL;
 	node *en, *cn = NULL;
 
