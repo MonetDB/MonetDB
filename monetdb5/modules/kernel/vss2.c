@@ -46,6 +46,7 @@
 typedef struct bond_collection {
 	BAT **dims;        /* array of dimension BATs (not owned, just referenced) */
 	int ndims;         /* number of dimensions */
+	int bsz;			   /* block size */
 	BUN nvecs;         /* number of vectors (rows) */
 	dbl *dim_means;    /* mean value per dimension (for dimension ordering) */
 	oid *candidates;
@@ -129,13 +130,16 @@ bond_create(allocator *ma, BAT **dim_bats, int ndims, int k)
 			.kth_upper = DBL_MAX,
 		};
 		if (bc) {
-			bc->candidates = ma_alloc(ma, VS * sizeof(oid));
-			bc->dists = ma_alloc(ma, VS * sizeof(dbl));
+			bc->bsz = VS;
+			if (ndims > 512)
+				bc->bsz = 8*VS;
+			bc->candidates = ma_alloc(ma, bc->bsz * sizeof(oid));
+			bc->dists = ma_alloc(ma, bc->bsz * sizeof(dbl));
 
 			bc->tcand = ma_alloc(ma, k * sizeof(oid));
 			bc->tdist = ma_alloc(ma, k * sizeof(dbl));
-			bc->tc = ma_alloc(ma, VS * sizeof(oid));
-			bc->td = ma_alloc(ma, VS * sizeof(dbl));
+			bc->tc = ma_alloc(ma, bc->bsz * sizeof(oid));
+			bc->td = ma_alloc(ma, bc->bsz * sizeof(dbl));
 			bc->dims = ma_alloc(ma, ndims * sizeof(BAT *));
 			bc->dim_means = ma_alloc(ma, ndims * sizeof(dbl));
 			bc->nvecs = BATcount(dim_bats[0]);
@@ -249,8 +253,8 @@ bond_upper_bound(bond_collection *bc, const dbl *query_vals, BUN k)
 	// calc full distance for the sample across all dimensions
 	dbl res = 0;
 	for (int nr = 0; nr < SS; nr++) {
-		oid base = nr * VS;
-		for (BUN i = 0; i < VS; i++) {
+		oid base = nr * bc->bsz;
+		for (int i = 0; i < bc->bsz; i++) {
 			tc[i] = base + i;
 			td[i] = 0;
 		}
@@ -260,7 +264,7 @@ bond_upper_bound(bond_collection *bc, const dbl *query_vals, BUN k)
 			dbl q = query_vals[d];
 			dbl sum = 0;
 
-			for (BUN i = 0; i < VS; i++) {
+			for (int i = 0; i < bc->bsz; i++) {
 				dbl diff = vals[tc[i]] - q;
 				dbl m = diff * diff;
 				td[i] += m;
@@ -269,13 +273,13 @@ bond_upper_bound(bond_collection *bc, const dbl *query_vals, BUN k)
 			bc->dim_means[d] += sum;
 		}
 		if (nr == 0) {
-			res = topn(tc, td, bc, VS, k);
+			res = topn(tc, td, bc, bc->bsz, k);
 			for(BUN i = 0; i < k; i++) {
 				cands [i] = bc->tcand[i];
 				dists[i] = bc->tdist[i];
 			}
 		} else {
-			res = topn_merge(cands, dists, bc->tc, bc->td, VS, k);
+			res = topn_merge(cands, dists, bc->tc, bc->td, bc->bsz, k);
 			for(BUN i = 0; i < k; i++) {
 				cands [i] = bc->tcand[i];
 				dists[i] = bc->tdist[i];
@@ -283,7 +287,7 @@ bond_upper_bound(bond_collection *bc, const dbl *query_vals, BUN k)
 		}
 	}
 	for (int d = 0; d < bc->ndims; d++) {
-		bc->dim_means[d] /= (VS*SS);
+		bc->dim_means[d] /= (bc->bsz*SS);
 	}
 	return res;
 }
@@ -301,8 +305,8 @@ bond_search_fast(bond_collection *bc, const dbl *query_vals,
 	BUN ncands = bc->nvecs, pruned = 0;
 	oid *tc = bc->tc;
 	dbl *td = bc->td;
-	for (BUN z = (SS*VS); z < ncands; z+=VS) {
-		BUN end = z+VS > ncands?ncands:z+VS, j, i = 0;
+	for (BUN z = (SS*bc->bsz); z < ncands; z+=bc->bsz) {
+		BUN end = z+bc->bsz > ncands?ncands:z+bc->bsz, j, i = 0;
 		// initialize, all vectors are candidates
 
 		//lng T0 = GDKusec();
@@ -321,13 +325,13 @@ bond_search_fast(bond_collection *bc, const dbl *query_vals,
 			const dbl *col = (const dbl*) Tloc(bc->dims[o], z);
 
 	//		lng T0 = GDKusec();
-			if (sz == VS) {
-				for (BUN i = 0; i < VS; i++) {
+			if (sz == (BUN)bc->bsz) {
+				for (int i = 0; i < bc->bsz; i++) {
 					dbl diff = col[i] - qd;
 					td[i] += diff * diff;
 				}
 			} else {
-				for (BUN i = 0; i < sz; i++) {
+				for (i = 0; i < sz; i++) {
 					dbl diff = col[i] - qd;
 					td[i] += diff * diff;
 				}

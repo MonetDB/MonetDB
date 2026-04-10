@@ -46,10 +46,15 @@
 typedef struct bond_collection {
 	BAT **dims;        /* array of dimension BATs (not owned, just referenced) */
 	int ndims;         /* number of dimensions */
+	int bsz;			   /* block size */
 	BUN nvecs;         /* number of vectors (rows) */
 	dbl *dim_means;    /* mean value per dimension (for dimension ordering) */
-	dbl *dim_max;		/* max value per dimension */
-	dbl *dim_min;		/* min value per dimension */
+	oid *candidates;
+	oid *tcand;
+	oid *tc;
+	dbl *dists;
+	dbl *tdist;
+	dbl *td;
 	dbl kth_upper;		/* kth upper bound */
 } bond_collection;
 
@@ -83,7 +88,7 @@ dim_score_cmp(const void *a, const void *b)
  * |query[d] - mean[d]| descending (most discriminating first).
  */
 static int *
-bond_dim_order(allocator *ma, bond_collection *bc, const dbl *query_vals)
+bond_dim_order(allocator *ma, bond_collection *bc)
 {
 	dim_score *scores = ma_alloc(ma, bc->ndims * sizeof(dim_score));
 	int *order = ma_alloc(ma, bc->ndims * sizeof(int));
@@ -95,11 +100,17 @@ bond_dim_order(allocator *ma, bond_collection *bc, const dbl *query_vals)
 
 	for (int d = 0; d < bc->ndims; d++) {
 		scores[d].dim = d;
-		dbl diff = query_vals[d] - bc->dim_means[d];
-		scores[d].score = diff < 0 ? -diff : diff;
+		scores[d].score = bc->dim_means[d];
 	}
 
+	/* TODO use gdk order, with 2 arrays, ie order and bc->dim_means */
 	qsort(scores, bc->ndims, sizeof(dim_score), dim_score_cmp);
+	/*
+	for (int d = 0; d < bc->ndims; d++) {
+		printf("%d %F ", scores[d].dim, scores[d].score);
+	}
+	printf("\n");
+	*/
 
 	for (int i = 0; i < bc->ndims; i++)
 		order[i] = scores[i].dim;
@@ -107,8 +118,10 @@ bond_dim_order(allocator *ma, bond_collection *bc, const dbl *query_vals)
 	return order;
 }
 
+#define SS 8
+#define VS (2048)
 static bond_collection *
-bond_create(allocator *ma, BAT **dim_bats, int ndims)
+bond_create(allocator *ma, BAT **dim_bats, int ndims, int k)
 {
 	if (dim_bats && ndims > 0) {
 		bond_collection *bc = ma_alloc(ma, sizeof(bond_collection));
@@ -117,24 +130,22 @@ bond_create(allocator *ma, BAT **dim_bats, int ndims)
 			.kth_upper = DBL_MAX,
 		};
 		if (bc) {
+			bc->bsz = VS;
+			if (ndims > 512)
+				bc->bsz = 8*VS;
+			bc->candidates = ma_alloc(ma, bc->bsz * sizeof(oid));
+			bc->dists = ma_alloc(ma, bc->bsz * sizeof(dbl));
+
+			bc->tcand = ma_alloc(ma, k * sizeof(oid));
+			bc->tdist = ma_alloc(ma, k * sizeof(dbl));
+			bc->tc = ma_alloc(ma, bc->bsz * sizeof(oid));
+			bc->td = ma_alloc(ma, bc->bsz * sizeof(dbl));
 			bc->dims = ma_alloc(ma, ndims * sizeof(BAT *));
-			bc->dim_means = ma_zalloc(ma, ndims * sizeof(dbl));
-			bc->dim_max = ma_zalloc(ma, ndims * sizeof(dbl));
-			bc->dim_min = ma_zalloc(ma, ndims * sizeof(dbl));
+			bc->dim_means = ma_alloc(ma, ndims * sizeof(dbl));
 			bc->nvecs = BATcount(dim_bats[0]);
 			for (int d = 0; d < ndims; d++) {
 				BAT *b = dim_bats[d];
 				bc->dims[d] = b;
-				// calc avg over the sample instead
-				/*
-				dbl avg;
-				BUN cnt;
-				if (BATcalcavg(b, NULL, &avg, &cnt, 0) != GDK_SUCCEED)
-					return NULL;
-				bc->dim_means[d] = avg;
-				bc->dim_max[d] = *(dbl*)BATmax(b, NULL);
-				bc->dim_min[d] = *(dbl*)BATmin(b, NULL);
-				*/
 			}
 			return bc;
 		}
@@ -142,175 +153,260 @@ bond_create(allocator *ma, BAT **dim_bats, int ndims)
 	return NULL;
 }
 
-static dbl
-quickselect(dbl *a, BUN n, BUN k)
+static inline void
+heap_down(oid *hcand, dbl *hd, int p, int k)
 {
-	// Safety check for empty arrays or invalid k
-    if (n == 0 || k == 0 || k > n) return DBL_MAX;
-	if (k == 1) {
-		dbl min_dist = a[0];
-		for (BUN i = 1; i < n; i++) {
-			if (a[i] < min_dist) min_dist = a[i];
-		}
-		return min_dist;
+	int l = p*2+1, r = p*2+2, q = p;
+	if (l < k && hd[q] < hd[l])
+		q = l;
+	if (r < k && hd[q] < hd[r])
+		q = r;
+	if (q != p) {
+		oid s = hcand[q];
+		hcand[q] = hcand[p];
+		hcand[p] = s;
+		dbl d = hd[q];
+		hd[q] = hd[p];
+		hd[p] = d;
+		heap_down(hcand, hd, q, k);
 	}
-    BUN left = 0, right = n - 1, index = k - 1;
-    while (left < right) {
-        dbl pivot = a[(left + right) / 2];
-        BUN i = left, j = right;
-        while (i <= j) {
-            while (a[i] < pivot) i++;
-            while (a[j] > pivot) j--;
-            if (i <= j) {
-                dbl tmp = a[i]; a[i] = a[j]; a[j] = tmp;
-                i++; j--;
-            }
-        }
-        if (index <= j) right = j;
-        else if (i <= index) left = i;
-        else break;
-    }
-    return a[index];
 }
 
+static inline void
+heap_del(oid *hcand, dbl *hd, int k)
+{
+	hcand[0] = hcand[k-1];
+	hd[0] = hd[k-1];
+	heap_down(hcand, hd, 0, k-1);
+}
+
+static inline void
+heap_up(oid *hcand, dbl *hd, int p)
+{
+	if (p == 0)
+		return;
+	size_t q = (p-1)/2;
+	if (hd[q] < hd[p]) { /* max heap */
+		oid s = hcand[q];
+		hcand[q] = hcand[p];
+		hcand[p] = s;
+		dbl d = hd[q];
+		hd[q] = hd[p];
+		hd[p] = d;
+		heap_up(hcand, hd, q);
+	}
+}
+
+/* max heap */
+static dbl
+topn_merge(oid *cands, dbl *d, oid *icands, dbl *id, BUN n, BUN k)
+{
+	for (BUN i = 0; i < n; i++) {
+		if (id[i] < d[0]) {
+			heap_del(cands, d, k);
+			cands[k-1] = icands[i];
+			d[k-1] = id[i];
+			heap_up(cands, d, k-1);
+		}
+	}
+	/*
+	for(i = 0; i < k; i++)
+		printf("%d %F\n", (int)hcand[i], hd[i]);
+		*/
+	return d[0];
+}
+
+/* max heap */
+static dbl
+topn(oid *cands, dbl *d, bond_collection *bc, BUN n, BUN k)
+{
+	oid *hcand = bc->tcand;
+	dbl *hd = bc->tdist;
+	BUN i = 0;
+	for (; i < k && i < n; i++) {
+		hcand[i] = cands[i];
+		hd[i] = d[i];
+		heap_up(hcand, hd, i);
+	}
+
+	for (; i < n; i++) {
+		if (d[i] < hd[0]) {
+			heap_del(hcand, hd, k);
+			hcand[k-1] = cands[i];
+			hd[k-1] = d[i];
+			heap_up(hcand, hd, k-1);
+		}
+	}
+	/*
+	for(i = 0; i < k; i++)
+		printf("%d %F\n", (int)hcand[i], hd[i]);
+		*/
+	return hd[0];
+}
 
 static dbl
-bond_upper_bound_sampled(allocator *ma, bond_collection *bc, const dbl *query_vals, BUN k)
+bond_upper_bound(bond_collection *bc, const dbl *query_vals, BUN k)
 {
-	BUN sample_size = 10000;
-    if (bc->nvecs < sample_size) sample_size = bc->nvecs;
-
-	dbl *sample_dists = ma_zalloc(ma, sample_size * sizeof(dbl));
-
-    // random sample of OIDs
-    BAT *sample_oids = BATsample(bc->dims[0], sample_size);
-    if (!sample_oids) return DBL_MAX;
+	oid *cands = bc->candidates, *tc = bc->tc;
+	dbl *dists = bc->dists, *td = bc->td;
 
 	// calc full distance for the sample across all dimensions
-    for (int d = 0; d < bc->ndims; d++) {
-        BAT *pd = BATproject(sample_oids, bc->dims[d]);
-        const dbl *vals = (const dbl *) Tloc(pd, 0);
-        dbl q = query_vals[d];
+	dbl res = 0;
+	for (int nr = 0; nr < SS; nr++) {
+		oid base = nr * bc->bsz;
+		for (int i = 0; i < bc->bsz; i++) {
+			tc[i] = base + i;
+			td[i] = 0;
+		}
 
-        for (BUN i = 0; i < sample_size; i++) {
-            dbl diff = vals[i] - q;
-            sample_dists[i] += diff * diff;
-        }
+		for (int d = 0; d < bc->ndims; d++) {
+			const dbl *vals = (const dbl *) Tloc(bc->dims[d], 0);
+			dbl q = query_vals[d];
+			dbl sum = 0;
 
-		dbl avg;
-		if (BATcalcavg(pd, NULL, &avg, NULL, 0) == GDK_SUCCEED)
-			bc->dim_means[d] = avg;
-		//bc->dim_min[d] = *(dbl*)BATmin(pd, NULL);
-		//bc->dim_max[d] = *(dbl*)BATmax(pd, NULL);
-        BBPreclaim(pd);
-    }
-
-	//qsort(sample_dists, sample_size, sizeof(dbl), dbl_cmp);
-    //dbl result = (k < sample_size) ? sample_dists[k-1] : sample_dists[sample_size-1];
-	dbl result = quickselect(sample_dists, sample_size, k);
-    BBPreclaim(sample_oids);
-    return result;
+			for (int i = 0; i < bc->bsz; i++) {
+				dbl diff = vals[tc[i]] - q;
+				dbl m = diff * diff;
+				td[i] += m;
+				sum += m;
+			}
+			bc->dim_means[d] += sum;
+		}
+		if (nr == 0) {
+			res = topn(tc, td, bc, bc->bsz, k);
+			for(BUN i = 0; i < k; i++) {
+				cands [i] = bc->tcand[i];
+				dists[i] = bc->tdist[i];
+			}
+		} else {
+			res = topn_merge(cands, dists, bc->tc, bc->td, bc->bsz, k);
+			for(BUN i = 0; i < k; i++) {
+				cands [i] = bc->tcand[i];
+				dists[i] = bc->tdist[i];
+			}
+		}
+	}
+	for (int d = 0; d < bc->ndims; d++) {
+		bc->dim_means[d] /= (bc->bsz*SS);
+	}
+	return res;
 }
 
-
 static char*
-bond_search_fast(allocator *ma, bond_collection *bc, const dbl *query_vals,
+bond_search_fast(bond_collection *bc, const dbl *query_vals,
 			BUN k, int *dim_order, BAT *cands,
 		   	BAT **oid_result, BAT **dist_result)
 {
 	if (cands || !bc || !query_vals || k == 0 || !oid_result || !dist_result || !dim_order)
 		throw(MAL, "vss.bond_search", "invalid arguments");
 
-	dbl *partial_dists = ma_zalloc(ma, sizeof(dbl) * bc->nvecs);
-	oid *candidates = ma_alloc(ma, sizeof(oid) * bc->nvecs);
-	dbl *temp = ma_alloc(ma, sizeof(dbl) * bc->nvecs);
-	if (!partial_dists || !candidates)
-		throw(MAL, "vss.bond_search", MAL_MALLOC_FAIL);
+	//lng T0 = GDKusec();
+	//lng Tinit = 0, Tdists = 0, Tprune = 0, Ttopn = 0;
+	BUN ncands = bc->nvecs, pruned = 0;
+	oid *tc = bc->tc;
+	dbl *td = bc->td;
+	for (BUN z = (SS*bc->bsz); z < ncands; z+=bc->bsz) {
+		BUN end = z+bc->bsz > ncands?ncands:z+bc->bsz, j, i = 0;
+		// initialize, all vectors are candidates
 
-    //dbl *rem_per_dim = ma_zalloc(ma, sizeof(dbl) * bc->ndims);
-	//if (!rem_per_dim)
-	//	throw(MAL, "vss.bond_search", MAL_MALLOC_FAIL);
-	//// pre-calculate theoretical maximums
-    //dbl total_rem = 0;
-    //for (int i = bc->ndims - 1; i >= 0; i--) {
-    //    int d = dim_order[i];
-	//	dbl d1 = query_vals[d] - bc->dim_min[d];
-    //    dbl d2 = query_vals[d] - bc->dim_max[d];
-	//	rem_per_dim[i] = total_rem;
-    //    total_rem += fmax(d1*d1, d2*d2);
-    //}
+		//lng T0 = GDKusec();
+		for (j = z, i = 0; j<end; j++, i++) {
+			tc[i] = i;
+			td[i] = 0;
+		}
+		//Tinit += GDKusec() - T0;
 
-	// initialize all vectors are candidates
-	for (BUN i=0; i < bc->nvecs; i++)
-		candidates[i] = i;
+		BUN sz = i, cur_pruned = 0;
+		int step = 2, mask = step - 1, d = 0;
+		for (d = 0; d < bc->ndims && (cur_pruned*16) < sz; d++) {
+			/* partial dists */
+			int o = dim_order[d];
+			dbl qd = query_vals[o];
+			const dbl *col = (const dbl*) Tloc(bc->dims[o], z);
 
-	BUN ncands = bc->nvecs;
-	printf("ncands " BUNFMT " d=0 \n", ncands);
+	//		lng T0 = GDKusec();
+			if (sz == (BUN)bc->bsz) {
+				for (int i = 0; i < bc->bsz; i++) {
+					dbl diff = col[i] - qd;
+					td[i] += diff * diff;
+				}
+			} else {
+				for (i = 0; i < sz; i++) {
+					dbl diff = col[i] - qd;
+					td[i] += diff * diff;
+				}
+			}
+	//		Tdists += GDKusec() - T0;
+			//printf("partial dists chunk " BUNFMT " " BUNFMT " d=%zu t=" LLFMT "\n", j, sz, (size_t)d,  GDKusec() - T0);
+			if ((d&mask) != mask)
+				continue;
+			step *= 2;
+			mask = step - 1;
 
-    GCC_Pragma("GCC ivdep")
-	for (int i = 0; i < bc->ndims; i++) {
-		int d = dim_order[i];
-		dbl qd = query_vals[d];
-		BAT *b = bc->dims[d];
-		const dbl *col = (const dbl*) Tloc(b, 0);
+			/* prune */
+	//		T0 = GDKusec();
+			for (BUN read_pos = 0; read_pos < sz; read_pos++)
+				cur_pruned += (td[read_pos] > bc->kth_upper);
+	//		Tprune += GDKusec() - T0;
+			//printf("prune " BUNFMT " d=%zu " "t=" LLFMT "\n",  sz, (size_t)d,  GDKusec() - T0);
+		}
+		for (; d < bc->ndims; d++) {
+			/* partial dists */
+			int o = dim_order[d];
+			dbl qd = query_vals[o];
+			const dbl *col = (const dbl*) Tloc(bc->dims[o], z);
 
-		GCC_Pragma("GCC ivdep")
-		for (BUN j = 0; j < ncands; j++) {
-			// huge TLB misses, random jum over large memory space?
-            dbl diff = col[candidates[j]] - qd;
-            partial_dists[j] += diff * diff;
-        }
+	//		lng T0 = GDKusec();
+			for (BUN i = 0; i < sz; i++) {
+				dbl diff = col[tc[i]] - qd;
+				td[i] += diff * diff;
+			}
+	//		Tdists += GDKusec() - T0;
+			//printf("partial dists chunk " BUNFMT " " BUNFMT " d=%zu t=" LLFMT "\n", j, sz, (size_t)d,  GDKusec() - T0);
+			if (sz <= 2*k || (d&mask) != mask)
+				continue;
+			step *= 2;
+			mask = step - 1;
 
-		// Pruning
-		int step = bc->ndims > 128 ? 32 : (bc->ndims > 4 ? (bc->ndims / 4) : 4);
-		if (bc->ndims > 512)
-			step = 64;
-		if ((i % step == 0) && i >= step && i < (bc->ndims - 1) && ncands > k * 2) {
-			lng T0 = GDKusec(), T1;
-			//memcpy(temp, partial_dists, ncands * sizeof(dbl));
-			//dbl kth_dist = quickselect(temp, ncands, k);
-			//T1 = GDKusec();
-			//printf("quickselect " LLFMT "\n", T1 - T0);
-			//T0 = T1;
-			//dbl theoretical_reminder = rem_per_dim[i];
-			//// potentially tighten upper bound
-			//if (bc->kth_upper > (kth_dist + theoretical_reminder))
-			//	bc->kth_upper = kth_dist + theoretical_reminder;
+			/* prune */
+	//		T0 = GDKusec();
+			BUN write_pos = 0;
+			for (BUN read_pos = 0; read_pos < sz; read_pos++) {
+				if (td[read_pos] <= bc->kth_upper) {
+					tc[write_pos] = tc[read_pos];
+					td[write_pos] = td[read_pos];
+					write_pos++;
+				}
+			}
+			pruned += sz - write_pos;
+			sz = write_pos;
+	//		Tprune += GDKusec() - T0;
+			//printf("prune " BUNFMT " d=%zu " "t=" LLFMT "\n",  sz, (size_t)d,  GDKusec() - T0);
+		}
 
-			// compact
-            BUN write_pos = 0;
-            for (BUN read_pos = 0; read_pos < ncands; read_pos++) {
-                if (partial_dists[read_pos] <= bc->kth_upper) {
-                    candidates[write_pos] = candidates[read_pos];
-                    partial_dists[write_pos] = partial_dists[read_pos];
-                    write_pos++;
-                }
-            }
-			if (write_pos > 0)
-				ncands = write_pos;
-			T1 = GDKusec();
-			printf("ncands " BUNFMT " d=%zu " "t=" LLFMT "\n", ncands,(size_t)i,  T1 - T0);
-		} // END pruning
+	//	T0 = GDKusec();
+		for(BUN i = 0; i<sz; i++)
+			tc[i] += z;
+		bc->kth_upper = topn_merge(bc->candidates, bc->dists, bc->tc, bc->td, sz, k);
+	//	Ttopn += GDKusec() - T0;
+		//printf("topn chnkd " BUNFMT " t=" LLFMT " %F\n", j, GDKusec() - T0, bc->kth_upper);
 	}
+	(void)pruned;
+	//printf("vectors t= " LLFMT " init=" LLFMT " dists=" LLFMT " prune " LLFMT " topn " LLFMT " upper %F, pruned " BUNFMT " \n",
+	//		GDKusec() - T0, Tinit, Tdists, Tprune, Ttopn, bc->kth_upper, pruned);
+	//printf("vectors t= " LLFMT " upper %F, pruned " BUNFMT " \n", GDKusec() - T0, bc->kth_upper, pruned);
 
+	//T0 = GDKusec();
 	BAT *koids = COLnew(0, TYPE_oid, k, TRANSIENT);
     BAT *kdist = COLnew(0, TYPE_dbl, k, TRANSIENT);
 	// Final top k
 	{
-		lng T0 = GDKusec();
-		memcpy(temp, partial_dists, ncands * sizeof(dbl));
-		//qsort(temp, ncands, sizeof(dbl), dbl_cmp);
-		dbl kth_dist = quickselect(temp, ncands, (ncands < k) ? ncands : k);
 		BUN write_pos = 0;
-		for (BUN read_pos = 0; read_pos < ncands && write_pos < k; read_pos++) {
-			if (partial_dists[read_pos] <= kth_dist) {
-				*(oid*) Tloc(koids, write_pos) = candidates[read_pos];
-				*(dbl*) Tloc(kdist, write_pos) = partial_dists[read_pos];
-				write_pos++;
-			}
+		for (; write_pos < k; write_pos++) {
+				*(oid*) Tloc(koids, write_pos) = bc->candidates[write_pos];
+				*(dbl*) Tloc(kdist, write_pos) = bc->dists[write_pos];
 		}
 		k = write_pos;
-		printf("final top k step " LLFMT "\n", GDKusec() - T0);
 	}
 	BATsetcount(koids, k);
     koids->tsorted = false;
@@ -320,6 +416,7 @@ bond_search_fast(allocator *ma, bond_collection *bc, const dbl *query_vals,
     kdist->trevsorted = false;
     //kdist->tnonil = true;
     kdist->tkey = false;
+	//printf("final top k " LLFMT "\n", GDKusec() - T0);
 
 	//BATprint(GDKstdout, koids);
 	//BATprint(GDKstdout, kdist);
@@ -329,156 +426,6 @@ bond_search_fast(allocator *ma, bond_collection *bc, const dbl *query_vals,
 	return MAL_SUCCEED;
 }
 
-
-
-//static char*
-//bond_search(bond_collection *bc, const dbl *query_vals,
-//			BUN k, int *dim_order, BAT *cands,
-//		   	BAT **oid_result, BAT **dist_result)
-//{
-//	BAT *partial = NULL;
-//	BAT *candidates = cands;
-//	bool own_candidates = false;
-//
-//	if (!bc || !query_vals || k == 0 || !oid_result || !dist_result || !dim_order)
-//		throw(MAL, "vss.bond_search", "invalid arguments");
-//
-//	*oid_result = NULL;
-//	*dist_result = NULL;
-//
-//	for (int i = 0; i < bc->ndims; i++) {
-//		int d = dim_order[i];
-//
-//		ValRecord qval = {.vtype = TYPE_dbl};
-//		qval.val.dval = query_vals[d];
-//
-//		/* diff = dim[d] - query[d] */
-//		BAT *diff = BATcalcsubcst(bc->dims[d], &qval, candidates, TYPE_dbl);
-//		if (!diff)
-//			goto bailout;
-//
-//		/* sq = diff * diff */
-//		BAT *sq = BATcalcmul(diff, diff, NULL, NULL, TYPE_dbl);
-//		BBPreclaim(diff);
-//		if (!sq)
-//			goto bailout;
-//
-//		if (partial) {
-//			BAT *new_partial = BATcalcadd(partial, sq, NULL, NULL, TYPE_dbl);
-//			BBPreclaim(partial);
-//			BBPreclaim(sq);
-//			if (!new_partial)
-//				goto bailout;
-//			partial = new_partial;
-//		} else {
-//			partial = sq;
-//		}
-//
-//		/* Prune after every m=2 step dimension (except the last) when
-//		 * there are more than 2*k candidates remaining */
-//		int step = 2;
-//		if ((i % step == 0) && i > 0 && i < (bc->ndims - 1) && BATcount(partial) > k * 2) {
-//			BAT *topn_oids = NULL;
-//			BAT *oids = NULL;
-//
-//			if (BATfirstn(&topn_oids, NULL, partial, NULL,
-//				      NULL, k, true, false, false) != GDK_SUCCEED)
-//				goto bailout;
-//
-//			///* Find the k-th (worst) distance among top-k */
-//			BATiter pi = bat_iterator(partial);
-//			BATiter ti = bat_iterator(topn_oids);
-//			dbl kth_dist = DBL_MAX;
-//			for (BUN j = 0; j < BATcount(topn_oids); j++) {
-//				oid o = BATtdense(topn_oids)? topn_oids->tseqbase + j : ((const oid *)ti.base)[j];
-//				dbl v = ((const dbl *)pi.base)[o - partial->hseqbase];
-//				if (v > kth_dist || kth_dist == DBL_MAX)
-//					kth_dist = v;
-//			}
-//			bat_iterator_end(&ti);
-//			bat_iterator_end(&pi);
-//			BBPreclaim(topn_oids);
-//			dbl theoretical_reminder = 0.0;
-//			for (int j=i+1; j < bc->ndims; j++) {
-//				// calc theoretical upper bound
-//				dbl min_val = bc->dim_min[j];
-//				dbl max_val = bc->dim_max[j];
-//				dbl d1 = query_vals[j] - min_val;
-//				dbl d2 = query_vals[j] - max_val;
-//				dbl sq = fmax(d1*d1, d2*d2);
-//				theoretical_reminder += sq;
-//			}
-//
-//			// potentially tighten upper bound
-//			if (kth_dist != DBL_MAX && (bc->kth_upper > (kth_dist + theoretical_reminder)))
-//				bc->kth_upper = kth_dist + theoretical_reminder;
-//
-//			/* Keep only candidates whose partial distance <= kth_dist */
-//			dbl zero = 0.0;
-//			BAT *new_cands = BATselect(partial, NULL,
-//						   &zero, &bc->kth_upper,
-//						   true, true, false, false);
-//			if (!new_cands)
-//				goto bailout;
-//			BAT *new_partial = BATproject(new_cands, partial);
-//			if (!new_partial) {
-//				BBPreclaim(new_cands);
-//				goto bailout;
-//			}
-//			BBPreclaim(partial);
-//
-//			if (own_candidates) {
-//				oids = BATproject(new_cands, candidates);
-//				BBPreclaim(new_cands);
-//				BBPreclaim(candidates);
-//				candidates = oids;
-//			} else {
-//				candidates = new_cands;
-//			}
-//			partial = new_partial;
-//			own_candidates = true;
-//		}
-//
-//		if (candidates && BATcount(candidates) < 10*k)
-//			break;
-//	}
-//
-//	/* Final top-k selection */
-//	{
-//		BAT *topn_oids = NULL;
-//		BAT *res_oids = NULL;
-//
-//		if (BATfirstn(&topn_oids, NULL, partial, NULL,
-//			      NULL, k, true, false, false) != GDK_SUCCEED)
-//			goto bailout;
-//
-//		/* Project distances through top-k oids */
-//		BAT *result_dists = BATproject(topn_oids, partial);
-//		BBPreclaim(partial);
-//		if (!result_dists) {
-//			BBPreclaim(topn_oids);
-//			goto bailout;
-//		}
-//		if (own_candidates) {
-//			res_oids = BATproject(topn_oids, candidates);
-//			BBPreclaim(candidates);
-//			BBPreclaim(topn_oids);
-//		} else {
-//			res_oids = topn_oids;
-//		}
-//
-//		*oid_result = res_oids;
-//		*dist_result = result_dists;
-//	}
-//
-//	return MAL_SUCCEED;
-//
-//bailout:
-//	BBPreclaim(partial);
-//	if (own_candidates)
-//		BBPreclaim(candidates);
-//	throw(MAL, "vss.bond_search", GDK_EXCEPTION);
-//}
 
 /**
  * @brief Generic Macro to generate L1(Manhattan) distance functions.
@@ -676,7 +623,7 @@ BATl2sq_distance(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) ctx;
 	(void) mb;
-	lng T0 = GDKusec();
+	//lng T0 = GDKusec();
     size_t ncols = (size_t) (pci->argc - pci->retc);
     // check for even num bats
     if ((ncols & 1) != 0)
@@ -739,7 +686,7 @@ BATl2sq_distance(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
     bn->tsorted = false;
     bn->trevsorted = false;
 
-	printf("#BATl2sq " LLFMT "\n", GDKusec() - T0);
+	//printf("#BATl2sq " LLFMT "\n", GDKusec() - T0);
 
     *ret = bn->batCacheid;
     BBPkeepref(bn);
@@ -768,7 +715,7 @@ BONDknn(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	allocator *ta = MT_thread_getallocator();
 	allocator_state ta_state = ma_open(ta);
 
-	lng T0 = GDKusec();
+	//lng T0 = GDKusec(), T1 = 0;
 	/* Get dimension BATs */
 	BAT **dim_bats = ma_alloc(ta, ndims * sizeof(BAT *));
 	dbl *query_vals = ma_alloc(ta, ndims * sizeof(dbl));
@@ -793,10 +740,10 @@ BONDknn(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	/* Create BOND collection and search */
-	bond_collection *bc = bond_create(ta, dim_bats, ndims);
-	lng T1 = GDKusec();
-	printf("creation " LLFMT "\n", T1 - T0);
-	T0 = T1;
+	bond_collection *bc = bond_create(ta, dim_bats, ndims, k);
+	//lng T1 = GDKusec();
+	//printf("creation " LLFMT "\n", T1 - T0);
+	//T0 = T1;
 
 	if (!bc) {
 		for (int i = 0; i < ndims; i++)
@@ -805,27 +752,27 @@ BONDknn(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "vss.knn", MAL_MALLOC_FAIL);
 	}
 
-	bc->kth_upper = bond_upper_bound_sampled(ta, bc, query_vals, k);
-	T1 = GDKusec();
-	printf("upperbound " LLFMT "\n", T1 - T0);
-	T0 = T1;
+	bc->kth_upper = bond_upper_bound(bc, query_vals, k);
+	//T1 = GDKusec();
+	//printf("upperbound " LLFMT " %F\n", T1 - T0, bc->kth_upper);
+	//T0 = T1;
 
-	int *dim_order = bond_dim_order(ta, bc, query_vals);
+	int *dim_order = bond_dim_order(ta, bc);
 	if (!dim_order) {
 		for (int i = 0; i < ndims; i++)
 			BBPreclaim(dim_bats[i]);
 		ma_close(&ta_state);
 		throw(MAL, "vss.knn", MAL_MALLOC_FAIL);
 	}
-	T1 = GDKusec();
-	printf("order " LLFMT "\n", T1 - T0);
-	T0 = T1;
+	//T1 = GDKusec();
+	//printf("create upperbound order " LLFMT "\n", T1 - T0);
+	//T0 = T1;
 
 	BAT *oid_result = NULL, *dist_result = NULL;
-	char *rc = bond_search_fast(ta, bc, query_vals, (BUN) k, dim_order, NULL, &oid_result, &dist_result);
-	T1 = GDKusec();
-	printf("search " LLFMT "\n", T1 - T0);
-	T0 = T1;
+	char *rc = bond_search_fast(bc, query_vals, (BUN) k, dim_order, NULL, &oid_result, &dist_result);
+	//T1 = GDKusec();
+	//printf("search " LLFMT "\n", T1 - T0);
+	//T0 = T1;
 
 	for (int i = 0; i < ndims; i++)
 		BBPreclaim(dim_bats[i]);
