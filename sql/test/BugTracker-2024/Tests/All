@@ -88,6 +88,7 @@ function_return_issue
 7563-is-distinct-from
 7572-max-length-changes
 7570-timestamp-str
+7573-strcpy_len-crash
 7574-startswith-bug
 7580-date-diff
 7582-ddl-exists
