@@ -177,7 +177,7 @@ quickselect(dbl *a, BUN n, BUN k)
 static dbl
 bond_upper_bound_sampled(allocator *ma, bond_collection *bc, const dbl *query_vals, BUN k)
 {
-	BUN sample_size = 500;
+	BUN sample_size = 10000;
     if (bc->nvecs < sample_size) sample_size = bc->nvecs;
 
 	dbl *sample_dists = ma_zalloc(ma, sample_size * sizeof(dbl));
@@ -200,8 +200,8 @@ bond_upper_bound_sampled(allocator *ma, bond_collection *bc, const dbl *query_va
 		dbl avg;
 		if (BATcalcavg(pd, NULL, &avg, NULL, 0) == GDK_SUCCEED)
 			bc->dim_means[d] = avg;
-		bc->dim_min[d] = *(dbl*)BATmin(pd, NULL);
-		bc->dim_max[d] = *(dbl*)BATmax(pd, NULL);
+		//bc->dim_min[d] = *(dbl*)BATmin(pd, NULL);
+		//bc->dim_max[d] = *(dbl*)BATmax(pd, NULL);
         BBPreclaim(pd);
     }
 
@@ -227,24 +227,25 @@ bond_search_fast(allocator *ma, bond_collection *bc, const dbl *query_vals,
 	if (!partial_dists || !candidates)
 		throw(MAL, "vss.bond_search", MAL_MALLOC_FAIL);
 
-    dbl *rem_per_dim = ma_zalloc(ma, sizeof(dbl) * bc->ndims);
-	if (!rem_per_dim)
-		throw(MAL, "vss.bond_search", MAL_MALLOC_FAIL);
-	// pre-calculate theoretical maximums
-    dbl total_rem = 0;
-    for (int i = bc->ndims - 1; i >= 0; i--) {
-        int d = dim_order[i];
-		dbl d1 = query_vals[d] - bc->dim_min[d];
-        dbl d2 = query_vals[d] - bc->dim_max[d];
-		rem_per_dim[i] = total_rem;
-        total_rem += fmax(d1*d1, d2*d2);
-    }
+    //dbl *rem_per_dim = ma_zalloc(ma, sizeof(dbl) * bc->ndims);
+	//if (!rem_per_dim)
+	//	throw(MAL, "vss.bond_search", MAL_MALLOC_FAIL);
+	//// pre-calculate theoretical maximums
+    //dbl total_rem = 0;
+    //for (int i = bc->ndims - 1; i >= 0; i--) {
+    //    int d = dim_order[i];
+	//	dbl d1 = query_vals[d] - bc->dim_min[d];
+    //    dbl d2 = query_vals[d] - bc->dim_max[d];
+	//	rem_per_dim[i] = total_rem;
+    //    total_rem += fmax(d1*d1, d2*d2);
+    //}
 
 	// initialize all vectors are candidates
 	for (BUN i=0; i < bc->nvecs; i++)
 		candidates[i] = i;
 
 	BUN ncands = bc->nvecs;
+	printf("ncands " BUNFMT " d=0 \n", ncands);
 
     GCC_Pragma("GCC ivdep")
 	for (int i = 0; i < bc->ndims; i++) {
@@ -253,21 +254,28 @@ bond_search_fast(allocator *ma, bond_collection *bc, const dbl *query_vals,
 		BAT *b = bc->dims[d];
 		const dbl *col = (const dbl*) Tloc(b, 0);
 
+		GCC_Pragma("GCC ivdep")
 		for (BUN j = 0; j < ncands; j++) {
+			// huge TLB misses, random jum over large memory space?
             dbl diff = col[candidates[j]] - qd;
             partial_dists[j] += diff * diff;
         }
 
 		// Pruning
 		int step = bc->ndims > 128 ? 32 : (bc->ndims > 4 ? (bc->ndims / 4) : 4);
+		if (bc->ndims > 512)
+			step = 64;
 		if ((i % step == 0) && i >= step && i < (bc->ndims - 1) && ncands > k * 2) {
-			lng T0 = GDKusec();
-			memcpy(temp, partial_dists, ncands * sizeof(dbl));
-			dbl kth_dist = quickselect(temp, ncands, k);
-			dbl theoretical_reminder = rem_per_dim[i];
-			// potentially tighten upper bound
-			if (bc->kth_upper > (kth_dist + theoretical_reminder))
-				bc->kth_upper = kth_dist + theoretical_reminder;
+			lng T0 = GDKusec(), T1;
+			//memcpy(temp, partial_dists, ncands * sizeof(dbl));
+			//dbl kth_dist = quickselect(temp, ncands, k);
+			//T1 = GDKusec();
+			//printf("quickselect " LLFMT "\n", T1 - T0);
+			//T0 = T1;
+			//dbl theoretical_reminder = rem_per_dim[i];
+			//// potentially tighten upper bound
+			//if (bc->kth_upper > (kth_dist + theoretical_reminder))
+			//	bc->kth_upper = kth_dist + theoretical_reminder;
 
 			// compact
             BUN write_pos = 0;
@@ -280,7 +288,8 @@ bond_search_fast(allocator *ma, bond_collection *bc, const dbl *query_vals,
             }
 			if (write_pos > 0)
 				ncands = write_pos;
-			printf("ncands " BUNFMT " d=%zu " "t=" LLFMT "\n", ncands,(size_t)i,  GDKusec() - T0);
+			T1 = GDKusec();
+			printf("ncands " BUNFMT " d=%zu " "t=" LLFMT "\n", ncands,(size_t)i,  T1 - T0);
 		} // END pruning
 	}
 
