@@ -1010,6 +1010,7 @@ backend_dumpstmt_body(backend *be, MalBlkPtr mb, sql_rel *r, int top, int add_en
 					qend--;
 				snprintf(buf, buf_sz, "%.*s %s", (int) qend+1, query, f->query);
 				query = buf;
+				be->client->query = ma_strdup(m->sa, buf);
 			}
 		}
 		q = pushStr(mb, q, query);
