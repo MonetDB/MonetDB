@@ -981,7 +981,7 @@ backend_dumpstmt_body(backend *be, MalBlkPtr mb, sql_rel *r, int top, int add_en
 	InstrPtr q, querylog = NULL;
 	int old_mv = be->mvc_var;
 	MalBlkPtr old_mb = be->mb;
-	char *cq_query = NULL, *buf = NULL;
+	char *buf = NULL;
 
 	assert(mb->ma);
 	/* Always keep the SQL query around for monitoring */
@@ -997,17 +997,18 @@ backend_dumpstmt_body(backend *be, MalBlkPtr mb, sql_rel *r, int top, int add_en
 		setVarType(mb, getArg(q, 0), TYPE_void);
 		if (r->flag == ddl_psm && r->exps
 			&& exps_have_func(r->exps) && r->exps->cnt == 1) {
-			sql_func *f = r->exps->h->data;
-			cq *cq = qc_find(m->qc, f->base.id);
-			cq_query = cq ? cq->f->query : NULL;
-			if (cq_query) {
-				size_t buf_sz = 2 + strlen(query) + strlen(cq_query);
+			sql_func *f = ((sql_subfunc*)((sql_exp*)r->exps->h->data)->f)->func;
+			if (f->query && f->type == F_PROC && f->imp && f->imp == f->base.name) {
+				size_t buf_sz = 2 + strlen(query) + strlen(f->query);
 				buf = ma_alloc(mb->ma, buf_sz * sizeof(char));
 				if (buf == NULL) {
 					sql_error(m, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					return -1;
 				}
-				snprintf(buf, buf_sz, "%.*s %s", (int)strlen(query) - 1, query, cq_query);
+				size_t qend = strlen(query) - 1;
+				while (query[qend] == ';' || isspace((uint8_t) query[qend]))
+					qend--;
+				snprintf(buf, buf_sz, "%.*s %s", (int) qend+1, query, f->query);
 				query = buf;
 			}
 		}
