@@ -2895,6 +2895,19 @@ exp_is_fallible(sql_exp *e)
 	return false;
 }
 
+bool
+exps_have_selfref(list *exps)
+{
+	bool selfref = false;
+	if (list_empty(exps))
+		return false;
+	for(node *n = exps->h; n && !selfref; n = n->next) {
+		sql_exp *e = n->data;
+		selfref |= is_selfref(e);
+	}
+	return selfref;
+}
+
 static inline int
 exp_key( sql_exp *e )
 {
