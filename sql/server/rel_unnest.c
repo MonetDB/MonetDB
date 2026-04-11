@@ -2020,8 +2020,11 @@ rel_unnest_dependent(mvc *sql, sql_rel *rel)
 					rel_destroy(sql, r);
 					r = NULL;
 					rel->r = l;
-					if (fv)
+					if (fv) {
+						if (is_semi(rel->op))
+							rel->attr = append(sa_list(sql->sa), exp_label(sql->sa, exp_atom_bool(sql->sa, 1), ++sql->label));
 						rel->op = op_left;
+					}
 					return rel_unnest_dependent(sql, rel);
 				}
 			}
