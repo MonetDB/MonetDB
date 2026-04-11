@@ -77,10 +77,10 @@ KNOWNFAIL?7774-insert-into-renamed-table-assertion-failure
 7888-or-false-write
 7889-delete-with-union-intersect
 7890-insert-exists-issue
-KNOWNFAIL?7891-update-issue
-KNOWNFAIL?7892-where-subqueries-sum-bug
-KNOWNFAIL?7893-where-subqueries-sum-bug
-KNOWNFAIL?7894-subquery-where-not-bug
-KNOWNFAIL?7895-subquery-where-not-bug
+7891-update-issue
+7892-where-subqueries-sum-bug
+7893-where-subqueries-sum-bug
+7894-subquery-where-not-bug
+7895-subquery-where-not-bug
 KNOWNFAIL?7896-where-ascii-comparison-bug
 KNOWNFAIL?7906-rel2bin_join-assertion-failure

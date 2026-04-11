@@ -714,7 +714,7 @@ exp_bin_conjunctive(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp,
 			sql_subfunc *f = sql_bind_func(be->mvc, "sys", anti?"or":"and", bt, bt, F_FUNC, true, true);
 			assert(f);
 			s = stmt_binop(be, sin, s, NULL, f);
-		} else if (!reduce && !sin && sel1 && sel1->nrcols == 0 && s->nrcols == 0) {
+		} else if (!reduce && !sin && sel1 && sel1->nrcols == 0) {
 			sql_subfunc *f = sql_bind_func(be->mvc, "sys", anti?"or":"and", bt, bt, F_FUNC, true, true);
 			assert(f);
 			s = stmt_binop(be, sel1, s, sin, f);
@@ -733,6 +733,8 @@ exp_bin_conjunctive(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp,
 				predicate = stmt_const(be, predicate, stmt_bool(be, 1));
 				s = stmt_uselect(be, predicate, s, cmp_equal, sel1, anti, is_semantics(c));
 			}
+		} else if (reduce && anti && sel1) {
+			s = stmt_tunion(be, s, sel1);
 		}
 		sel1 = s;
 	}
