@@ -4927,7 +4927,7 @@ BATbandjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			case TYPE_lng: {
 				if (is_lng_nil(*(const lng *) vr))
 					continue;
-				lng v1, v2;
+				lng v1 = 0, v2 = 0;
 				SUBI_WITH_CHECK(*(const lng *)vr,
 					       *(const lng *)c1,
 					       lng, v1,
@@ -4957,7 +4957,7 @@ BATbandjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			case TYPE_hge: {
 				if (is_hge_nil(*(const hge *) vr))
 					continue;
-				hge v1, v2 = 0;
+				hge v1 = 0, v2 = 0;
 				SUBI_WITH_CHECK(*(const hge *)vr,
 					       *(const hge *)c1,
 					       hge, v1,
@@ -4999,7 +4999,7 @@ BATbandjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			case TYPE_dbl: {
 				if (is_dbl_nil(*(const dbl *) vr))
 					continue;
-				dbl v1, v2 = 0;
+				dbl v1 = 0, v2 = 0;
 				SUBF_WITH_CHECK(*(const dbl *)vr,
 					       *(const dbl *)c1,
 					       dbl, v1,
