@@ -673,7 +673,7 @@ set_setop_side(visitor *v, sql_rel *rel, sql_rel *side)
 		rel->r = NULL;
 	else
 		rel->l = NULL;
-	if (!is_simple_project(side->op) || rel_is_ref(side) || !list_empty(side->r)) {
+	if (!is_simple_project(side->op) || exps_have_selfref(side->exps) || rel_is_ref(side) || !list_empty(side->r)) {
 		side = rel_project(v->sql->sa, side, rel_projections(v->sql, side, NULL, 0, 1));
 		set_count_prop(v->sql->sa, side, get_rel_count(side->l));
 		side->exps = exps_exp_visitor_bottomup(v, side, side->exps, 0, &rel_propagate_statistics, false);

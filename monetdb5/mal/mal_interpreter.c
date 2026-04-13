@@ -498,12 +498,10 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 	ValPtr backup;
 	int garbages[16], *garbage;
 	int stkpc = 0;
-	RuntimeProfileRecord runtimeProfile, runtimeProfileFunction;
+	RuntimeProfileRecord runtimeProfile = {0}, runtimeProfileFunction = {0};
 	lng lastcheck = 0;
 	bool startedProfileQueue = false;
 #define CHECKINTERVAL 1000		/* how often do we check for client disconnect */
-	runtimeProfile.ticks = runtimeProfileFunction.ticks = 0;
-
 	if (stk == NULL)
 		throw(MAL, "mal.interpreter", MAL_STACK_FAIL);
 
@@ -824,8 +822,6 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			break;
 		case ENDsymbol:
 			runtimeProfileExit(cntxt, mb, stk, pci, &runtimeProfile);
-			runtimeProfileExit(cntxt, mb, stk, getInstrPtr(mb, 0),
-							   &runtimeProfileFunction);
 			if (pcicaller && garbageControl(getInstrPtr(mb, 0)))
 				garbageCollector(cntxt, mb, stk, TRUE);
 			if (cntxt->qryctx.endtime == QRY_TIMEOUT) {
@@ -1193,9 +1189,6 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				}
 			}
 			if (stkpc == mb->stop) {
-				runtimeProfileExit(cntxt, mb, stk, pci, &runtimeProfile);
-				runtimeProfileExit(cntxt, mb, stk, getInstrPtr(mb, 0),
-								   &runtimeProfileFunction);
 				break;
 			}
 			break;
@@ -1217,9 +1210,6 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				if (garbageControl(getInstrPtr(mb, 0)))
 					garbageCollector(cntxt, mb, stk, TRUE);
 				/* reset the clock */
-				runtimeProfileExit(cntxt, mb, stk, pp, &runtimeProfile);
-				runtimeProfileExit(cntxt, mb, stk, getInstrPtr(mb, 0),
-								   &runtimeProfileFunction);
 			}
 			stkpc = mb->stop;
 			continue;
@@ -1236,6 +1226,10 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			stkpc = mb->stop;
 		}
 	}
+
+	if (startpc == 1 && startpc < mb->stop)
+		runtimeProfileExit(cntxt, mb, stk, getInstrPtr(mb, 0),
+						   &runtimeProfileFunction);
 
 	/* if we could not find the exception variable, cascade a new one */
 	/* don't add 'exception not caught' extra message for MAL sequences besides main function calls */
