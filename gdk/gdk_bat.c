@@ -1358,6 +1358,8 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 	OIDXdestroy(b);
 	STRMPdestroy(b);	/* TODO: use STRMPappendBitstring */
 	RTREEdestroy(b);
+	BATrmprop(b, GDK_AVERAGE);
+	BATrmprop(b, GDK_AVERAGE_COUNT);
 	return GDK_SUCCEED;
 }
 
@@ -1599,6 +1601,8 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 		OIDXdestroy(b);
 		STRMPdestroy(b);
 		RTREEdestroy(b);
+		BATrmprop(b, GDK_AVERAGE);
+		BATrmprop(b, GDK_AVERAGE_COUNT);
 
 		if (b->tvheap && b->ttype) {
 			var_t _d;

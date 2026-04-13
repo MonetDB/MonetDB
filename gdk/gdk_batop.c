@@ -802,6 +802,8 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 	OIDXdestroy(b);
 	STRMPdestroy(b);	/* TODO: use STRMPappendBitString */
 	RTREEdestroy(b);
+	BATrmprop(b, GDK_AVERAGE);
+	BATrmprop(b, GDK_AVERAGE_COUNT);
 
 	MT_lock_set(&b->theaplock);
 	const bool notnull = BATgetprop_nolock(b, GDK_NOT_NULL) != NULL;
@@ -1314,6 +1316,8 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 	OIDXdestroy(b);
 	STRMPdestroy(b);
 	RTREEdestroy(b);
+	BATrmprop(b, GDK_AVERAGE);
+	BATrmprop(b, GDK_AVERAGE_COUNT);
 	/* load hash so that we can maintain it */
 	(void) BATcheckhash(b);
 

@@ -3032,6 +3032,47 @@ BATcalcavg(BAT *b, BAT *s, dbl *avg, BUN *vals, int scale)
 
 	BATiter bi = bat_iterator(b);
 	src = bi.base;
+	if (ci.ncand == bi.count) {
+		MT_lock_set(&b->theaplock);
+		const ValRecord *p = BATgetprop_nolock(b, GDK_AVERAGE);
+		if (p != NULL) {
+			*avg = p->val.dval;
+			if (scale != 0 && !is_dbl_nil(*avg))
+				*avg /= pow(10.0, (double) scale);
+			if (vals) {
+				p = BATgetprop_nolock(b, GDK_AVERAGE_COUNT);
+				if (p != NULL)
+					*vals = (BUN) p->val.lval;
+				else
+					*vals = bi.count;
+			}
+			MT_lock_unset(&b->theaplock);
+			bat_iterator_end(&bi);
+			return GDK_SUCCEED;
+		}
+		MT_lock_unset(&b->theaplock);
+		if (b->batCacheid != bi.h->parentid) {
+			BAT *pb = BBP_desc(bi.h->parentid);
+			MT_lock_set(&pb->theaplock);
+			const ValRecord *p = BATgetprop_nolock(pb, GDK_AVERAGE);
+			if (p != NULL && pb->batCount == bi.count) {
+				*avg = p->val.dval;
+				if (scale != 0 && !is_dbl_nil(*avg))
+					*avg /= pow(10.0, (double) scale);
+				if (vals) {
+					p = BATgetprop_nolock(pb, GDK_AVERAGE_COUNT);
+					if (p != NULL)
+						*vals = (BUN) p->val.lval;
+					else
+						*vals = bi.count;
+				}
+				MT_lock_unset(&pb->theaplock);
+				bat_iterator_end(&bi);
+				return GDK_SUCCEED;
+			}
+			MT_lock_unset(&pb->theaplock);
+		}
+	}
 
 	switch (b->ttype) {
 	case TYPE_bte:
@@ -3061,6 +3102,25 @@ BATcalcavg(BAT *b, BAT *s, dbl *avg, BUN *vals, int scale)
 		GDKerror("average of type %s unsupported.\n",
 			 ATOMname(bi.type));
 		goto bailout;
+	}
+	if (ci.ncand == bi.count) {
+		MT_lock_set(&b->theaplock);
+		if (bi.base == b->theap->base && bi.count == b->batCount) {
+			BATsetprop_nolock(b, GDK_AVERAGE, TYPE_dbl, avg);
+			if ((BUN) n != bi.count)
+				BATsetprop_nolock(b, GDK_AVERAGE_COUNT, TYPE_lng, &n);
+		}
+		MT_lock_unset(&b->theaplock);
+		if (b->batCacheid != bi.h->parentid) {
+			BAT *pb = BBP_desc(bi.h->parentid);
+			MT_lock_set(&pb->theaplock);
+			if (bi.base == pb->theap->base && bi.count == pb->batCount) {
+				BATsetprop_nolock(pb, GDK_AVERAGE, TYPE_dbl, avg);
+				if ((BUN) n != bi.count)
+					BATsetprop_nolock(pb, GDK_AVERAGE_COUNT, TYPE_lng, &n);
+			}
+			MT_lock_unset(&pb->theaplock);
+		}
 	}
 	bat_iterator_end(&bi);
 	if (scale != 0 && !is_dbl_nil(*avg))

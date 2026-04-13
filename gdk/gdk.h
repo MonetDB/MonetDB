@@ -1510,7 +1510,8 @@ enum prop_t {
 	GDK_MIN_BOUND, /* MINimum allowed value for range partitions [min, max> */
 	GDK_MAX_BOUND, /* MAXimum of the range partitions [min, max>, ie. excluding this max value */
 	GDK_NOT_NULL,  /* bat bound to be not null */
-	/* CURRENTLY_NO_PROPERTIES_DEFINED, */
+	GDK_AVERAGE,   /* average value */
+	GDK_AVERAGE_COUNT,	/* # non-nil values for average */
 };
 
 gdk_export ValPtr BATgetprop(BAT *b, enum prop_t idx);
