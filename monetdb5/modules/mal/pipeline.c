@@ -319,6 +319,7 @@ PPdone(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void)cntxt; (void)mb;
 	BAT *b = BATdescriptor(B);
 	if (b) {
+		// TODO: check if b has the expected tsink and tsink->done
 		*res = b->tsink->done(b->tsink, p->wid, p->p->nr_workers, redo);
 		BBPreclaim(b);
 	}
