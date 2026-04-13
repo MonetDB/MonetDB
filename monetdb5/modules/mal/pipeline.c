@@ -196,9 +196,13 @@ PPcounter_get(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (!b)
 		throw(MAL, "pipeline.counter_get", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	pp_counter *c = (pp_counter*)b->tsink;
+	if (!c) {
+		BBPunfix(b->batCacheid);
+		throw(MAL, "pipeline.counter_get", SQLSTATE(HY002) "Missing source sink");
+	}
 	if (c->s.type != COUNTER_SINK) {
-		BBPreclaim(b);
-		throw(MAL, "pipeline.counter_get", SQLSTATE(HY002) "Invalid source %d", c->s.type);
+		BBPunfix(b->batCacheid);
+		throw(MAL, "pipeline.counter_get", SQLSTATE(HY002) "Invalid source type %d, expected %d", c->s.type, COUNTER_SINK);
 	}
 	if (c->sync && c->scnt != (int)p->p->nr_workers) {
 		MT_lock_set(&p->p->l);
@@ -215,7 +219,7 @@ PPcounter_get(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (!c->cur)
 		c->s.done(c, p->wid, p->p->nr_workers, false);
 	*cur = c->cur[p->wid];
-	BBPreclaim(b);
+	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -319,9 +323,12 @@ PPdone(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void)cntxt; (void)mb;
 	BAT *b = BATdescriptor(B);
 	if (b) {
-		// TODO: check if b has the expected tsink and tsink->done
+		if (!b->tsink) {
+			BBPunfix(b->batCacheid);
+			throw(MAL, "pipeline.done", SQLSTATE(HY002) "Missing source sink");
+		}
 		*res = b->tsink->done(b->tsink, p->wid, p->p->nr_workers, redo);
-		BBPreclaim(b);
+		BBPunfix(b->batCacheid);
 	}
 	return MAL_SUCCEED;
 }
