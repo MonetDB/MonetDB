@@ -149,14 +149,23 @@ sketch_merge(BAT* b, BAT* n)
 		for (size_t j = 0; j < CLZ_BUCKETS; j++)
 			if (n->cnting_sketch[i][j] > b->cnting_sketch[i][j])
 				b->cnting_sketch[i][j] = n->cnting_sketch[i][j];
-	b->tunique_est = sketch_estimator(b->cnting_sketch);
+	b->unique_guess = sketch_estimator(b->cnting_sketch);
 	MT_lock_unset(&b->batIdxLock);
 }
 
 double
-BATsketchestimator(BAT *b, BATiter *bi, struct canditer *bci)
+BATsketch_estimator(BAT *b, BATiter *bi, struct canditer *bci)
 {
-	if (b->tunique_est == 0)
-		sketch_populate(b, bi, bci);
-	return sketch_estimator(b->cnting_sketch);
+	BATiter nbi;
+	struct canditer nbci;
+	if (bi == NULL) {
+		nbi = bat_iterator(b);
+		canditer_init(&nbci, b, NULL);
+	}
+	sketch_populate(b, bi ? bi : &nbi, bci ? bci : &nbci);
+	double unique_guess = sketch_estimator(b->cnting_sketch);
+	b->unique_guess = unique_guess;
+	if (bi == NULL)
+		bat_iterator_end(&nbi);
+	return unique_guess;
 }

@@ -3542,8 +3542,8 @@ count_unique(BAT *b, BAT *s, BUN *cnt1, BUN *cnt2)
 static double
 guess_uniques(BAT *b, struct canditer *ci)
 {
-	if (b->tunique_est)
-		return b->tunique_est;
+	if (b->unique_guess)
+		return b->unique_guess;
 
 	BUN cnt1 = 0, cnt2;
 	BUN max = b->twidth < SIZEOF_BUN ? (BUN) 1 << (8*b->twidth) : BUN_MAX;
@@ -3628,8 +3628,8 @@ BATguess_uniques(BAT *b, struct canditer *ci)
 		return 0;
 	if (b->batCount == 1 || (ci && ci->ncand == 1))
 		return 1;
-	if (b->tunique_est)
-		return b->tunique_est;
+	if (b->unique_guess)
+		return b->unique_guess;
 	struct canditer lci;
 	if (ci == NULL) {
 		canditer_init(&lci, b, NULL);

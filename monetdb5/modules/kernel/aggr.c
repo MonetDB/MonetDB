@@ -1552,12 +1552,11 @@ AGGRcde(Client c, int *estimate, const bat *bid)
 
 	if (VIEWtparent(b)) {
 		BAT *pb = BATdescriptor(VIEWtparent(b));
-		assert(pb);
-		printf("cnt dist est prop %f\n", pb->tunique_est);
+		printf("cnt dist est prop %f\n", pb->unique_guess);
 		BBPreclaim(pb);
 	}
 
-	double est = BATsketchestimator(b, &bi, &bci);
+	double est = BATsketch_estimator(b, &bi, &bci);
 
 	bat_iterator_end(&bi);
 	BBPreclaim(b);

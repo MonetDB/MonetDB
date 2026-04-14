@@ -204,6 +204,9 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					/* Guess number of uniques if not entirely unique */
 					(void) BATguess_uniques(b, NULL);
 
+					if (b->unique_guess == 0)
+						(void) BATsketch_estimator(b, NULL, NULL);
+
 					/* Collect min and max values */
 					mn = BATmin(b, NULL);
 					GDKfree(mn);
