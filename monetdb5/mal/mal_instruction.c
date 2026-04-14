@@ -131,6 +131,7 @@ newMalBlk(int elements)
 	mb = MA_NEW(ma, MalBlkRecord);
 	if (mb == NULL) {
 		ma_destroy(ma);
+		ma_destroy(instr_allocator);
 		return NULL;
 	}
 
@@ -143,6 +144,7 @@ newMalBlk(int elements)
 	v = MA_ZNEW_ARRAY(ma, VarRecord, elements);
 	if (v == NULL) {
 		ma_destroy(ma);
+		ma_destroy(instr_allocator);
 		return NULL;
 	}
 	*mb = (MalBlkRecord) {
@@ -155,6 +157,7 @@ newMalBlk(int elements)
 	};
 	if (newMalBlkStmt(mb, elements) < 0) {
 		ma_destroy(ma);
+		ma_destroy(instr_allocator);
 		return NULL;
 	}
 	ATOMIC_INIT(&mb->workers, 1);
@@ -253,7 +256,8 @@ copyMalBlk(MalBlkPtr old)
 	mb->ma = ma;
 	mb->instr_allocator = create_allocator(ma_name(old->instr_allocator), true);
 	mb->var = MA_ZNEW_ARRAY(ma, VarRecord, old->vsize);
-	if (mb->var == NULL) {
+	if (mb->var == NULL || mb->instr_allocator == NULL) {
+		ma_destroy(mb->instr_allocator);
 		ma_destroy(ma);
 		return NULL;
 	}
@@ -316,6 +320,7 @@ copyMalBlk(MalBlkPtr old)
 			*/
 		VALclear(&mb->var[i].value);
 	}
+	ma_destroy(mb->instr_allocator);
 	ma_destroy(ma);
 	/*
 	GDKfree(mb->var);
