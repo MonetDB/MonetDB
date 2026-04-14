@@ -203,6 +203,12 @@ typedef enum {
 } ColumnMetaDataFields;
 
 typedef enum {
+    SIZE_STATISTICS_UNENCODED_BYTE_ARRAY_DATA_BYTES = 1,   // optional i64
+    SIZE_STATISTICS_REPETITION_LEVEL_HISTOGRAM = 2,        // optional i64[]
+    SIZE_STATISTICS_DEFINITION_LEVEL_HISTOGRAM = 3,        // optional i64[]
+} SizeStatisticsFields;
+
+typedef enum {
     COLUMN_CHUNK_FILE_PATH = 1,                  // optional string file_path
     COLUMN_CHUNK_FILE_OFFSET = 2,                // required i64 file_offset = 0
     COLUMN_CHUNK_META_DATA = 3,                  // optional ColumnMetaData meta_data
@@ -449,6 +455,8 @@ typedef struct pqc_columnchunk {
 	uint32_t offset_index_length;
 	uint64_t column_index_offset;
 	uint32_t column_index_length;
+	uint64_t bloom_filter_offset;
+	uint32_t bloom_filter_length;
 
 	uint32_t type;
 	char *path_in_schema;

@@ -61,24 +61,6 @@ struct pqc_file {
 
 #define PQC_MAGIC(c) ((c)[0] == 'P' && (c)[1] == 'A' && (c)[2] == 'R' && (c)[3] == '1')
 
-static int
-pqc_magic( pqc_file *pq)
-{
-	if (pq->sz < 8) {
-		TRC_ERROR(PARQUET, "This is a broken parquet file %s (size too small)\n", pq->filename);
-		return -1;
-	} else if (pq->sz <= pq->bsz &&
-		(!PQC_MAGIC(pq->buffer) ||
-				!PQC_MAGIC(pq->buffer+pq->bsz-4))) {
-		TRC_ERROR(PARQUET, "This is a broken parquet file %s (missing magic number)\n", pq->filename);
-		return -1;
-	} else if (!PQC_MAGIC(pq->buffer+pq->bsz-4)) {
-		TRC_ERROR(PARQUET, "This is a broken parquet file %s (missing magic number)\n", pq->filename);
-		return -1;
-	}
-	return 0;
-}
-
 static void
 pq_set_error( pqc_file *pq, const char *format, ... )
 	__attribute__((__format__(__printf__, 2, 3)));
@@ -100,6 +82,24 @@ char *
 pq_get_error( pqc_file *pq )
 {
 	return pq->error;
+}
+
+static int
+pqc_magic( pqc_file *pq)
+{
+	if (pq->sz < 8) {
+		pq_set_error(pq, "This is a broken parquet file %s (size too small)\n", pq->filename);
+		return -1;
+	} else if (pq->sz <= pq->bsz &&
+		(!PQC_MAGIC(pq->buffer) ||
+				!PQC_MAGIC(pq->buffer+pq->bsz-4))) {
+		pq_set_error(pq, "This is a broken parquet file %s (missing magic number)\n", pq->filename);
+		return -1;
+	} else if (!PQC_MAGIC(pq->buffer+pq->bsz-4)) {
+		pq_set_error(pq, "This is a broken parquet file %s (missing magic number)\n", pq->filename);
+		return -1;
+	}
+	return 0;
 }
 
 static int
@@ -340,6 +340,9 @@ pqc_timeunit( pqc_file *pq, pqc_schema_element *pse, size_t pos)
 			printf("nano\n");
 			pse->precision = 9;
 			break;
+		default:
+			pq_set_error(pq, "No support for field_id %d type %d\n", fieldid, type);
+			return -1;
 		}
 		assert(type == T_STRUCT); /* empty struct */
 		pos = pqc_struct(pq, pos);
@@ -366,6 +369,9 @@ pqc_timestamp( pqc_file *pq, pqc_schema_element *pse, size_t pos)
 			assert(type == T_STRUCT);
 			pos = pqc_timeunit(pq, pse, pos);
 			break;
+		default:
+			pq_set_error(pq, "No support for field_id %d type %d\n", fieldid, type);
+			return -1;
 		}
 	}
 	return pos;
@@ -394,6 +400,9 @@ pqc_decimal( pqc_file *pq, pqc_schema_element *pse, size_t pos)
 			TRC_DEBUG(PARQUET, "precision %u\n", precision);
 			pse->precision = precision;
 			break;
+		default:
+			pq_set_error(pq, "No support for field_id %d type %d\n", fieldid, type);
+			return -1;
 		}
 	}
 	return pos;
@@ -419,12 +428,15 @@ pqc_integer( pqc_file *pq, pqc_schema_element *pse, size_t pos)
 			pse->isSigned = type != T_BOOLEAN_FALSE;
 			TRC_DEBUG(PARQUET, "isSigned %d\n", type != T_BOOLEAN_FALSE);
 			break;
+		default:
+			pq_set_error(pq, "No support for field_id %d type %d\n", fieldid, type);
+			return -1;
 		}
 	}
 	return pos;
 }
 
-static size_t
+static ssize_t
 pqc_logicaltype( pqc_file *pq, pqc_schema_element *pse, size_t pos)
 {
 	int fieldid = 0, type = 0;
@@ -467,8 +479,8 @@ pqc_logicaltype( pqc_file *pq, pqc_schema_element *pse, size_t pos)
 			pse->precision = 32;
 			break;
 		case LOGICAL_TYPE_TIME:
-			TRC_ERROR(PARQUET, "ERROR No support for LOGICAL_TYPE_TIME");
-			return (size_t) -1;
+			pq_set_error(pq, "No support for LOGICAL_TYPE_TIME");
+			return -1;
 		case LOGICAL_TYPE_TIMESTAMP: /* timestamp */
 			pos = pqc_timestamp(pq, pse, pos);
 			break;
@@ -481,22 +493,22 @@ pqc_logicaltype( pqc_file *pq, pqc_schema_element *pse, size_t pos)
 			break;
 		case LOGICAL_TYPE_JSON:
 			pq_set_error(pq, "no support for LOGICAL_TYPE_JSON");
-			return (size_t) -1;
+			return -1;
 		case LOGICAL_TYPE_BSON:
 			pq_set_error(pq, "no support for LOGICAL_TYPE_BSON");
-			return (size_t) -1;
+			return -1;
 		case LOGICAL_TYPE_UUID:
 			pq_set_error(pq, "no support for LOGICAL_TYPE_UUID");
-			return (size_t) -1;
+			return -1;
 		case LOGICAL_TYPE_FLOAT16:
 			pq_set_error(pq, "no support for LOGICAL_TYPE_FLOAT16");
-			return (size_t) -1;
+			return -1;
 		default:
 			pq_set_error(pq, "no support or unknown LOGICAL_TYPE  %d\n", fieldid);
-			return (size_t) -1;
+			return -1;
 		}
 	}
-	return pos;
+	return (ssize_t)pos;
 }
 
 static int
@@ -668,7 +680,7 @@ pqc_convertedtype2logicaltype( pqc_schema_element *pse, uint32_t type)
 	return 0;
 }
 
-static size_t
+static ssize_t
 pqc_read_schema_element( pqc_file *pq, int nr, size_t pos, int *ccnr, pqc_schema_element *parent)
 {
 	int fieldid = 0, type = 0;
@@ -694,16 +706,18 @@ pqc_read_schema_element( pqc_file *pq, int nr, size_t pos, int *ccnr, pqc_schema
 		switch (fieldid) {
 		case SCHEMA_ELEMENT_TYPE:
 			pos += pqc_get_zint32(pq->buffer+pos, &oldtype);
-			if (pqc_oldtype2logicaltype(pse, oldtype) < 0)
-				TRC_ERROR(PARQUET, "type %u not handled\n", oldtype);
+			if (pqc_oldtype2logicaltype(pse, oldtype) < 0) {
+				pq_set_error(pq, "type %u not handled\n", oldtype);
+				return -1;
+			}
 			TRC_INFO(PARQUET, "old type %u to type %d\n", oldtype, pse->type);
 			pse->physical_type = oldtype;
 			break;
 		case SCHEMA_ELEMENT_TYPE_LENGTH:
 			pos += pqc_get_zint32(pq->buffer+pos, &precision);
 			if (pse->type != stringtype && pse->type != blobtype) {
-				TRC_ERROR(PARQUET, "precision %u used with wrong type %d\n", precision, pse->type);
-				return (size_t) -1;
+				pq_set_error(pq, "precision %u used with wrong type %d\n", precision, pse->type);
+				return -1;
 			}
 			pse->type_length = precision;
 			TRC_INFO(PARQUET, "precision %u\n", precision);
@@ -720,8 +734,8 @@ pqc_read_schema_element( pqc_file *pq, int nr, size_t pos, int *ccnr, pqc_schema
 			assert(type == T_BINARY);
 			int res = pqc_string(pq, pq->buffer+pos, &pse->name);
 			if (res < 0) {
-				TRC_ERROR(PARQUET, "failure reading SCHEMA_ELEMENT_NAME");
-				return (size_t) -1;
+				pq_set_error(pq, "failure reading SCHEMA_ELEMENT_NAME");
+				return -1;
 			}
 			pos += res;
 			TRC_INFO(PARQUET, "name %s\n", pse->name);
@@ -734,16 +748,18 @@ pqc_read_schema_element( pqc_file *pq, int nr, size_t pos, int *ccnr, pqc_schema
 			break;
 		case SCHEMA_ELEMENT_CONVERTED_TYPE:
 			pos += pqc_get_zint32(pq->buffer+pos, &convertedtype);
-			if (pqc_convertedtype2logicaltype(pse, convertedtype) < 0)
-				TRC_ERROR(PARQUET, "converted type %u not handled\n", convertedtype);
+			if (pqc_convertedtype2logicaltype(pse, convertedtype) < 0) {
+				pq_set_error(pq, "converted type %u not handled\n", convertedtype);
+				return -1;
+			}
 			TRC_INFO(PARQUET, "convertedtype %u to type %d\n", convertedtype, pse->type);
 			pse->converted_type = convertedtype;
 			break;
 		case SCHEMA_ELEMENT_SCALE:
 			pos += pqc_get_zint32(pq->buffer+pos, &scale);
 			if (pse->type != decimaltype) {
-				TRC_ERROR(PARQUET, "scale %u used with wrong type %d\n", scale, pse->type);
-				return (size_t) -1;
+				pq_set_error(pq, "scale %u used with wrong type %d\n", scale, pse->type);
+				return -1;
 			}
 			pse->scale = scale;
 			TRC_INFO(PARQUET, "scale %u\n", scale);
@@ -751,8 +767,8 @@ pqc_read_schema_element( pqc_file *pq, int nr, size_t pos, int *ccnr, pqc_schema
 		case SCHEMA_ELEMENT_PRECISION:
 			pos += pqc_get_zint32(pq->buffer+pos, &precision);
 			if (pse->type != decimaltype) {
-				TRC_ERROR(PARQUET, "precision %u used with wrong type %d\n", precision, pse->type);
-				return (size_t) -1;
+				pq_set_error(pq, "precision %u used with wrong type %d\n", precision, pse->type);
+				return -1;
 			}
 			pse->precision = precision;
 			TRC_INFO(PARQUET, "precision %u\n", precision);
@@ -763,21 +779,21 @@ pqc_read_schema_element( pqc_file *pq, int nr, size_t pos, int *ccnr, pqc_schema
 			pos += pqc_get_zint32(pq->buffer+pos, &_field_id);
 			// TODO store _field_id in schema element?
 			break;
-		case SCHEMA_ELEMENT_LOGICAL_TYPE:
+		case SCHEMA_ELEMENT_LOGICAL_TYPE: {
 			assert(type == T_STRUCT);
-			pos = pqc_logicaltype(pq, pse, pos);
-			if (pos == (size_t) -1){
-				TRC_ERROR(PARQUET, "failure reading SCHEMA_ELEMENT_LOGICAL_TYPE");
-				return pos;
-			}
-			break;
+			ssize_t ppos = pqc_logicaltype(pq, pse, pos);
+			if (ppos == -1)
+				return ppos;
+			pos = (size_t)ppos;
+		}	break;
 		default:
-			assert(0);
+			pq_set_error(pq, "No support for field_id %d type %d\n", fieldid, type);
+			return -1;
 		}
 	}
 	if (pse->type != LT_UNKNOWN && pse->type != listtype)
 		(*ccnr)++;
-	return pos;
+	return (ssize_t)pos;
 }
 
 static size_t
@@ -810,6 +826,9 @@ pqc_read_keyvalue( pqc_file *pq, pqc_keyvalue *kv, size_t pos )
 			pos += pqc_get_zint64(pq->buffer+pos, &kv->value);
 			TRC_INFO(PARQUET, "value %" PRIu64 "\n", kv->value);
 		} break;
+		default:
+			pq_set_error(pq, "No support for field_id %d type %d\n", fieldid, type);
+			return -1;
 		}
 	}
 	return pos;
@@ -938,7 +957,7 @@ pqc_statistics( pqc_file *pq, pqc_stat *stat, pqc_schema_element *pse, size_t po
 			TRC_INFO(PARQUET, "STATISTICS_IS_MIN_VALUE_EXACT %d", stat->min_is_exact);
 			break;
 		default:
-			TRC_ERROR(PARQUET, "UNKNOWN statistic field_id '%d'\n", fieldid);
+			pq_set_error(pq, "No support for field_id %d type %d\n", fieldid, type);
 			return -1;
 		}
 	}
@@ -970,6 +989,49 @@ pqc_pageencodingsstats( pqc_file *pq, pqc_pageencodings *pe, size_t pos )
 			pos += pqc_get_zint32(pq->buffer+pos, &pe->page_count);
 			TRC_INFO(PARQUET, "page_count %u\n", pe->page_count);
 			break;
+		default:
+			pq_set_error(pq, "No support for field_id %d type %d\n", fieldid, type);
+			return -1;
+		}
+	}
+	return pos;
+}
+
+static size_t
+pqc_sizestatistics( pqc_file *pq, pqc_columnchunk *cc, size_t pos)
+{
+	int fieldid = 0, type = 0, size = 0;
+	uint64_t v = 0;
+
+	(void)v;
+	(void)cc;
+	while(true) {
+		pos += pqc_get_field(pq->buffer+pos, &fieldid, &type);
+		TRC_DEBUG(PARQUET, "field id %d type %d\n", fieldid, type);
+		if (!type)
+			break;
+		switch (fieldid) {
+		case SIZE_STATISTICS_UNENCODED_BYTE_ARRAY_DATA_BYTES:
+			pos += pqc_get_zint64(pq->buffer+pos, &v);
+			TRC_INFO(PARQUET, "unencoded byte array data bytes %" PRIu64 "\n", v);
+			break;
+		case SIZE_STATISTICS_REPETITION_LEVEL_HISTOGRAM:
+			pos += pqc_get_list(pq->buffer+pos, &size, &type);
+			for(int i = 0; i < size; i++) {
+				pos += pqc_get_zint64(pq->buffer+pos, &v);
+				TRC_INFO(PARQUET, "rep level %" PRIu64 "\n", v);
+			}
+			break;
+		case SIZE_STATISTICS_DEFINITION_LEVEL_HISTOGRAM:
+			pos += pqc_get_list(pq->buffer+pos, &size, &type);
+			for(int i = 0; i < size; i++) {
+				pos += pqc_get_zint64(pq->buffer+pos, &v);
+				TRC_INFO(PARQUET, "def level %" PRIu64 "\n", v);
+			}
+			break;
+		default:
+			pq_set_error(pq, "No support for field_id %d type %d\n", fieldid, type);
+			return -1;
 		}
 	}
 	return pos;
@@ -1075,6 +1137,24 @@ pqc_column_metadata( pqc_file *pq, pqc_columnchunk *cc, pqc_schema_element *pse,
 			for(int i = 0; i < size; i++)
 				pos = pqc_pageencodingsstats(pq, cc->pageencodings+i, pos);
 			break;
+		case COLUMN_META_DATA_BLOOM_FILTER_OFFSET:
+			pos += pqc_get_zint64(pq->buffer+pos, &cc->bloom_filter_offset);
+			TRC_INFO(PARQUET, "bloom_filter_offset %" PRIu64 "\n", cc->bloom_filter_offset);
+			break;
+		case COLUMN_META_DATA_BLOOM_FILTER_LENGTH: {
+			uint32_t v;
+			pos += pqc_get_zint32(pq->buffer+pos, &v);
+			cc->bloom_filter_length = (CompressionCodec) v;
+			TRC_INFO(PARQUET, "bloom_filter_length %u\n", cc->bloom_filter_length);
+			}
+			break;
+		case COLUMN_META_DATA_SIZE_STATISTICS: {
+			pos = pqc_sizestatistics(pq, cc, pos);
+			break;
+		}
+		default:
+			pq_set_error(pq, "No support for field_id %d type %d\n", fieldid, type);
+			return -1;
 		}
 	}
 	if (cc->data_page_offset == 2147574643 && cc->dictionary_page_offset == 0  && cc->type != 5) {
@@ -1128,13 +1208,13 @@ pqc_read_columnchunk( pqc_file *pq, pqc_columnchunk *cc, pqc_schema_element *pse
 			TRC_INFO(PARQUET, "column_index_length %u\n", cc->column_index_length);
 			break;
 		case COLUMN_CHUNK_CRYPTO_METADATA:
-			TRC_ERROR(PARQUET, "No support for field_id COLUMN_CHUNK_CRYPTO_METADATA");
+			pq_set_error(pq, "No support for field_id COLUMN_CHUNK_CRYPTO_METADATA");
 			return -1;
 		case COLUMN_CHUNK_ENCRYPTED_COLUMN_METADATA:
-			TRC_ERROR(PARQUET, "No support for field_id COLUMN_CHUNK_ENCRYPTED_COLUMN_METADATA");
+			pq_set_error(pq, "No support for field_id COLUMN_CHUNK_ENCRYPTED_COLUMN_METADATA");
 			return -1;
 		default:
-			TRC_ERROR(PARQUET, "No support for field_id %d type %d\n", fieldid, type);
+			pq_set_error(pq, "No support for field_id %d type %d\n", fieldid, type);
 			return -1;
 		}
 	}
@@ -1172,6 +1252,9 @@ pqc_read_sortingcolumn( pqc_file *pq, pqc_sortingcolumn *sc, size_t pos)
 				sc->nulls_first = false;
 			TRC_INFO(PARQUET, "nulls_first %d\n", sc->nulls_first);
 			break;
+		default:
+			pq_set_error(pq, "No support for field_id %d type %d\n", fieldid, type);
+			return -1;
 		}
 	}
 	return pos;
@@ -1233,6 +1316,9 @@ pqc_rowgroup( pqc_file *pq, pqc_row_group *rg, size_t pos)
 			pos += pqc_get_zint32(pq->buffer+pos, &rg->ordinal);
 			TRC_INFO(PARQUET, "ordinal %u\n", rg->ordinal);
 			break;
+		default:
+			pq_set_error(pq, "No support for field_id %d type %d\n", fieldid, type);
+			return -1;
 		}
 	}
 	return pos;
@@ -1254,6 +1340,9 @@ pqc_columnorder( pqc_file *pq, size_t pos )
 			assert(type == T_STRUCT); /* empty struct */
 			pos = pqc_struct(pq, pos);
 		} break;
+		default:
+			pq_set_error(pq, "No support for field_id %d type %d\n", fieldid, type);
+			return -1;
 		}
 	}
 	return pos;
@@ -1272,7 +1361,7 @@ pqc_read_file( pqc_file *pq, bool metadata_only)
 	pqc_filemetadata *fmd = pq->fmd;
 	*fmd = (pqc_filemetadata) {0};
 	if (!pq->fmd) {
-		TRC_ERROR(PARQUET, "PQC: alloc failed\n");
+		pq_set_error(pq, "PQC: allocation failure\n");
 		return -1;
 	}
 	while(true) {
@@ -1296,7 +1385,7 @@ pqc_read_file( pqc_file *pq, bool metadata_only)
 			fmd->nelements = size;
 			fmd->elements = SA_NEW_ARRAY(pq->pa, pqc_schema_element, size);
 			if (!fmd->elements) {
-				TRC_ERROR(PARQUET, "PQC: alloc failed\n");
+				pq_set_error(pq, "PQC: allocation failure\n");
 				return -1;
 			}
 			pqc_schema_element *parent = NULL;
@@ -1331,7 +1420,7 @@ pqc_read_file( pqc_file *pq, bool metadata_only)
 			fmd->nrowgroups = size;
 			fmd->rowgroups = SA_NEW_ARRAY(pq->pa, pqc_row_group, size);
 			if (!fmd->rowgroups) {
-				TRC_ERROR(PARQUET, "PQC: alloc failed\n");
+				pq_set_error(pq, "PQC: allocation failure\n");
 				return -1;
 			}
 			for(int i = 0; i < size; i++)
@@ -1362,13 +1451,13 @@ pqc_read_file( pqc_file *pq, bool metadata_only)
 				pos = pqc_columnorder(pq, pos);
 			break;
 		case FILE_METADATA_ENCRYPTION_ALGORITHM:
-			TRC_ERROR(PARQUET, "No support for field_id FILE_METADATA_ENCRYPTION_ALGORITHM");
+			pq_set_error(pq, "No support for field_id FILE_METADATA_ENCRYPTION_ALGORITHM");
 			return -1;
 		case FILE_METADATA_FOOTER_SIGNING_KEY_METADATA:
-			TRC_ERROR(PARQUET, "No support for field_id FILE_METADATA_FOOTER_SIGNING_KEY_METADATA");
+			pq_set_error(pq, "No support for field_id FILE_METADATA_FOOTER_SIGNING_KEY_METADATA");
 			return -1;
 		default:
-			TRC_ERROR(PARQUET, "No support for field_id %d type %d\n", fieldid, type);
+			pq_set_error(pq, "No support for field_id %d type %d\n", fieldid, type);
 			return -1;
 		}
 	}
