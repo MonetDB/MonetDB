@@ -309,24 +309,11 @@ copyMalBlk(MalBlkPtr old)
 	return mb;
 
   bailout:
-	/*
-	for (i = 0; i < old->stop; i++)
-		freeInstruction(mb, mb->stmt[i]);
-		*/
 	for (i = 0; i < old->vtop; i++) {
-		/*
-		if (mb->var[i].name)
-			GDKfree(mb->var[i].name);
-			*/
 		VALclear(&mb->var[i].value);
 	}
 	ma_destroy(mb->instr_allocator);
 	ma_destroy(ma);
-	/*
-	GDKfree(mb->var);
-	GDKfree(mb->stmt);
-	GDKfree(mb);
-	*/
 	return NULL;
 }
 
@@ -611,10 +598,6 @@ clearVariable(MalBlkPtr mb, int varid)
 	v = getVar(mb, varid);
 	if (isVarConstant(mb, varid) || isVarDisabled(mb, varid))
 		VALclear(&v->value);
-	/*
-	if (v->name)
-		GDKfree(v->name);
-		*/
 	v->name = NULL;
 	v->type = 0;
 	v->constant = 0;

@@ -135,18 +135,6 @@ GROUPcollectSort(AGGRtask *a, int start, int finish)
 			}
 }
 
-//static void
-//GROUPdelete(AGGRtask *a)
-//{
-//	for (a->last--; a->last >= 0; a->last--) {
-//		BBPunfix(a->cols[a->last]->batCacheid);
-//	}
-//	GDKfree(a->bid);
-//	GDKfree(a->cols);
-//	GDKfree(a->unique);
-//	GDKfree(a);
-//}
-
 /*
  * The groups optimizer takes a grouping sequence and attempts to
  * minimize the intermediate result.  The choice depends on a good

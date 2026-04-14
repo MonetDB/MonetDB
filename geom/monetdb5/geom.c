@@ -265,8 +265,6 @@ wkbCollectAggr(Client ctx, wkb **out, const bat *bid) {
     // collection. Check libgeos GEOSGeom_createCollection_r(geoshandle, ) for more.
     bat_iterator_end(&bi);
     GEOSGeom_destroy_r(geoshandle, collection);
-    //if (unionGroup)
-        //GDKfree(unionGroup);
     BBPunfix(b->batCacheid);
 
 	return msg;

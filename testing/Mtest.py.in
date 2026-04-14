@@ -1353,7 +1353,7 @@ def PerformDir(env, testdir, testlist, total_tests):
                                 elif 'SIGUSR1 info end' in line:
                                     sigusr1 = False
                                     continue
-                                if (sigusr1 is False) and (line != '\n') and (not line.startswith('#')):
+                                if not sigusr1 and line != '\n' and not line.startswith('#'):
                                     if ext == 'out':
                                         ssout = F_ERROR
                                     else:
