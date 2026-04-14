@@ -801,12 +801,12 @@ PARQUETread_multi(BAT **R, BAT *b, int colno, Pipeline *p)
 		pipeline_lock(p);
 		if (!r->c[wnr]) {
 			size_t x = ATOMIC_INC(&r->cnt);
-			if (x >= r->glob.gl_pathc) {
+			if (x > r->glob.gl_pathc) {
 				r->done[wnr] = 1;
 				pipeline_unlock(p);
 				return 0;
 			}
-			char *f = r->glob.gl_pathv[x];
+			char *f = r->glob.gl_pathv[x-1];
 			pqc_file *pq = NULL;
 			lng nrows = r->nrows;
 
