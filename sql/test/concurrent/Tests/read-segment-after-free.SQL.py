@@ -41,7 +41,7 @@ except Exception as e:
 def client(_):
     conn = pymonetdb.connect(hostname=h, port=p, database=db, autocommit=True)
     cursor = conn.cursor()
-    cursor.execute("set optimizer = 'minimal_fast';")
+    cursor.execute("set optimizer = 'minimal_pipe';")
 
     for x in range(0, nr_queries):
         try:

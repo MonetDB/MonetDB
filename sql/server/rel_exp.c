@@ -3,7 +3,7 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
  * For copyright information, see the file debian/copyright.
  */
@@ -2892,7 +2892,6 @@ exp_unsafe(sql_exp *e, bool allow_identity, bool card)
 		sql_subfunc *f = e->f;
 
 		if (IS_ANALYTIC(f->func) || (!LANG_INT_OR_MAL(f->func->lang) && (!IS_FUNC(f->func) || f->func->lang != FUNC_LANG_SQL)) || f->func->side_effect || (!allow_identity && is_identity(e, NULL)))
-
 			return 1;
 		return exps_have_unsafe(e->l, allow_identity, card);
 	} break;

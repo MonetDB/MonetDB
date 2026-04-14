@@ -3,7 +3,7 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
  * For copyright information, see the file debian/copyright.
  */
@@ -245,6 +245,7 @@ rel_partition(mvc *sql, sql_rel *rel)
 	switch (rel->op) {
 	case op_basetable:
 	case op_sample:
+		rel->partition = 1;
 		break;
 	case op_project:
 	case op_select:
@@ -685,7 +686,7 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 		 * multiple times */
 	} else if (is_simple_project(rel->op) || is_select(rel->op) || is_sample(rel->op)) {
 		if (pb && (is_simple_project(rel->op) || is_select(rel->op)) && exps_have_unsafe(rel->exps, 1, false)) {
-			//if (p && (p->op != op_topn || !topn_limit(p)))
+			if (p)
 				rel_dup(rel);
 			if (rel->l)
 				res = rel_pipeline(v, rel->l, materialize, 0);
@@ -709,8 +710,9 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 					sql_rel *l = rel->l;
 					if (!res && l && is_groupby(l->op) && l->l) {
 						sql_rel *p = l->l;
-						if (p->op == op_partition) {
-							l->partition = 1;
+						if (p->op == op_partition) { /* TODO pass that we can handle a partitioned result (l->partition
+						= 1), needs a check if next operator can handle that */
+							//l->partition = 1;
 							res = SPB;
 						}
 					}
@@ -722,7 +724,8 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 				if (pb || (p && p->op == op_topn && !topn_limit(p))
 					   || (p && p->op == op_project && exps_have_unsafe(p->exps, 1, false))
 					   || !list_empty(rel->r)) { /* nested */
-					rel_dup(rel);
+					if (p)
+						rel_dup(rel);
 					res = 0;
 					rel->partition = 1;
 				} else {
@@ -879,7 +882,7 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 				if (rel->single || rel->op == op_left)
 					rel->oahash = 2;
 				else if (rel->op == op_right)
-					rel->oahash = 1;
+					rel->oahash = 2;
 				else if (rel_getcount(v->sql, l) < rel_getcount(v->sql, r))
 					rel->oahash = 1;
 				else

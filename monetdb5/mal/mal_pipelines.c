@@ -3,7 +3,7 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
  * For copyright information, see the file debian/copyright.
  */
@@ -182,6 +182,16 @@ thread_runoncpu(int cpu)
 }
 #endif
 
+static int
+PIPELINEnext_counter(Pipeline *p)
+{
+	MT_lock_set(&p->p->l);
+	int n = (int) p->p->master_counter++;
+	//p->p->counters[p->wid] = n;
+	MT_lock_unset(&p->p->l);
+	return n;
+}
+
 static void
 PIPELINEworker(void *T)
 {
@@ -215,25 +225,25 @@ PIPELINEworker(void *T)
 				.seqnr = -1,
 				.wls = NULL,
 			};
-			QryCtx *qc = MT_thread_get_qry_ctx();
-			qc->wid = p->wid;
+			MT_thread_setdata(p);
 			stk->stk[s->mb->stmt[s->start]->argv[1]].val.ival = PIPELINEnext_counter(p);
 			stk->stk[s->mb->stmt[s->start]->argv[2]].val.pval = p;
 			/* the maxparts (arg 3) is generated ie constant value on the stack */
 			str error = runMALsequence(s->cntxt, s->mb, s->start+1, s->stop, stk, 0, 0);
-			PIPELINEclear_counter(p);
+			//PIPELINEclear_counter(p);
 			if (error) {
-				void *null = NULL;
+				MT_lock_set(&p->p->l);
 				/* only collect one error (from one thread, needed for stable testing) */
-				if (ATOMIC_PTR_CAS(&s->error, &null, error)) {
+				if (p->p->error == NULL) {
 					strcpy(s->errbuf, error);
-					ATOMIC_PTR_CAS(&s->error, (void**)&error, s->errbuf);
+					p->p->error = s->errbuf;
 				}
+				MT_cond_broadcast(&p->p->cond); /* deblock all workers */
+				MT_lock_unset(&p->p->l);
 			}
 			freeStack(stk);
 			ma_close(&ma_state);
-			if (p->wls)
-				GDKfree(p->wls);
+			GDKfree(p->wls);
 			MT_sema_up(&s->s);
 		}
 		GDKfree(p);
@@ -305,15 +315,15 @@ runMALpipelines(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, int maxpart
 		cntxt->sqlprofiler = false;
 	/* initialize with direct increment of all threads at once */
 	ATOMIC_INIT(&s->workers, -1);
-	ATOMIC_PTR_INIT(&s->error, NULL);
+	s->error = NULL;
 	s->errbuf = GDKgetbuf();
 
 	char name[MT_NAME_LEN];
 	snprintf(name, sizeof(name), "PIPELINE%d", cntxt->idx);
 	MT_sema_init(&s->s, 0, name);
 	MT_lock_init(&s->l, name);
-	for (size_t i = 0; i < sizeof(s->counters) / sizeof(s->counters[0]); i++)
-		s->counters[i] = -1;
+	//for (size_t i = 0; i < sizeof(s->counters) / sizeof(s->counters[0]); i++)
+		//s->counters[i] = -1;
 	MT_cond_init(&s->cond, "pipeline-workers");
 	/* somehow get number of workers from statement/barrier */
 	for (int i = 0; i < s->nr_workers; i++)
@@ -325,7 +335,7 @@ runMALpipelines(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, int maxpart
 	MT_sema_destroy(&s->s);
 	MT_lock_destroy(&s->l);
 	bool has_sink = (s->sink != 0);
-	str err = ATOMIC_PTR_GET(&s->error);
+	str err = s->error;
 	if (err) {
 		QryCtx *qc = MT_thread_get_qry_ctx();
 		allocator *ma = qc->errorallocator;
@@ -385,22 +395,12 @@ stopMALpipelines(void)
 	MT_lock_unset(&pipelineLock);
 }
 
-int
-PIPELINEnext_counter(Pipeline *p)
-{
-	MT_lock_set(&p->p->l);
-	int n = (int) p->p->master_counter++;
-	p->p->counters[p->wid] = n;
-	MT_cond_broadcast(&p->p->cond);
-	MT_lock_unset(&p->p->l);
-	return n;
-}
-
-void
+/*
+static void
 PIPELINEclear_counter(Pipeline *p)
 {
 	MT_lock_set(&p->p->l);
 	p->p->counters[p->wid] = -1;
-	MT_cond_broadcast(&p->p->cond);
 	MT_lock_unset(&p->p->l);
 }
+*/

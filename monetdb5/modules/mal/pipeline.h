@@ -3,7 +3,7 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
  * For copyright information, see the file debian/copyright.
  */
@@ -24,7 +24,6 @@
 
 // TODO a better way to define/add/register sinks, similar to types
 #define OA_HASH_TABLE_SINK 1
-#define OA_HASH_PAYLOAD_SINK 2
 #define TOPN_SINK 3
 #define HEAP_SINK 4
 #define PART_SINK 5

@@ -3,7 +3,7 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
  * For copyright information, see the file debian/copyright.
  */
@@ -34,39 +34,37 @@
 #ifdef HAVE_LIBZ
 #include <zlib.h>
 
-#ifdef _MSC_VER
-/* use intrinsic functions on Windows */
-#define short_int_SWAP(s)	((int16_t) _byteswap_ushort((uint16_t) (s)))
-#else
-#define short_int_SWAP(s)				\
-	((int16_t) (((0x00ff & (uint16_t) (s)) << 8) |	\
-		  ((0xff00 & (uint16_t) (s)) >> 8)))
-#endif
-
 static int
 gzip_uncompress( char *dest, size_t ul, char *src, size_t cl)
 {
-	z_stream z = { 0 };
-	z.next_in = (unsigned char *)src;
-	z.avail_in = (uint32_t) cl;
-	z.zalloc = Z_NULL;
-	z.zfree = Z_NULL;
-	z.opaque = Z_NULL;
+	while (cl) {
+		z_stream z = { 0 };
+		z.zalloc = Z_NULL;
+		z.zfree = Z_NULL;
+		z.opaque = Z_NULL;
 
-	if (inflateInit2(&z, 31) != Z_OK) { /* 15 bits window and 16 for gzip format */
-		//error("Failed to initialize z_stream");
-		return -1;
+		if (inflateInit2(&z, 31) != Z_OK) { /* 15 bits window and 16 for gzip format */
+			//error("Failed to initialize z_stream");
+			return -1;
+		}
+
+		z.next_in = (unsigned char *)src;
+		z.avail_in = (uint32_t) cl;
+		z.next_out = (unsigned char *)dest;
+		z.avail_out = (uint32_t) ul;
+
+		int res = inflate(&z, Z_FINISH);
+		if (res != Z_OK && res != Z_STREAM_END) {
+			printf("Failed to decompress GZIP block %d\n", res);
+			return -10;
+		}
+		inflateEnd(&z); /* cleanup */
+
+		src += z.total_in;
+		cl -= z.total_in;
+		dest += z.total_out;
+		ul -= z.total_out;
 	}
-
-	z.next_out = (unsigned char *)dest;
-	z.avail_out = (uint32_t) ul;
-
-	int res = inflate(&z, Z_FINISH);
-	if (res != Z_OK && res != Z_STREAM_END) {
-		printf("Failed to decompress GZIP block %d\n", res);
-		return -10;
-	}
-	inflateEnd(&z); /* cleanup */
 	return 0;
 }
 #endif
@@ -93,6 +91,8 @@ typedef struct pqc_creader_t {
 	char first_repetition;	/* first repetition (alternating 0/1)  TODO handle levels */
 	int *repetition;	/* repetition lengths */
 	int repetitionsize;	/* size of repetition lengths */
+	uint32_t curpage;
+	uint32_t curpageencoding;
 	int curdef;
 	int cursubdef;
 	char *buffer;
@@ -108,6 +108,7 @@ typedef struct pqc_creader_t {
 	uint32_t remaining;
 } pqc_creader_t;
 
+#define ERRSIZE 1024
 struct pqc_reader_t {
 	struct pqc_reader_t *p;
 	pqc_filemetadata *fmd;
@@ -120,9 +121,54 @@ struct pqc_reader_t {
 	const void *nil;
 
 	int nrworkers;
+	MT_Lock l;
+	const char *error;
+	char errstr[ERRSIZE];
 	pqc_file *spq;
 	pqc_creader_t *creader; /* per worker readers */
 };
+
+static void
+pqc_set_error( pqc_reader_t *r, const char *format, ... )
+	__attribute__((__format__(__printf__, 2, 3)));
+
+static void
+pqc_set_error( pqc_reader_t *r, const char *format, ... )
+{
+	va_list	ap;
+
+	va_start (ap, format);
+	vsnprintf(r->errstr, ERRSIZE-1, format, ap);
+	const char *error = r->errstr;
+	MT_lock_set(&r->l);
+	if (!r->error)
+		r->error = error;
+	MT_lock_unset(&r->l);
+	va_end (ap);
+}
+
+const char *
+pqc_get_error( pqc_reader_t *r)
+{
+	return r->error;
+}
+
+static int
+pse_get_width(pqc_schema_element *pse)
+{
+	if (pse->type == decimaltype) {
+		if (pse->precision <= 3)
+			return 1;
+		if (pse->precision <= 5)
+			return 2;
+		if (pse->precision <= 9)
+			return 4;
+		if (pse->precision <= 19)
+			return 8;
+		return 16;
+	}
+	return 0;
+}
 
 static int64_t
 pqc_statistics( pqc_reader_t *r, pqc_creader_t *pr, pqc_stat *stat, int64_t pos )
@@ -213,11 +259,13 @@ pqc_statistics( pqc_reader_t *r, pqc_creader_t *pr, pqc_stat *stat, int64_t pos 
 #endif
 			} break;
 		case STATISTICS_IS_MAX_VALUE_EXACT:
-			TRC_ERROR(PARQUET, "not handled field_id STATISTICS_IS_MAX_VALUE_EXACT");
-			return -1;
+			stat->max_is_exact = type != 2;
+			TRC_INFO(PARQUET, "STATISTICS_IS_MAX_VALUE_EXACT %d", stat->max_is_exact);
+			break;
 		case STATISTICS_IS_MIN_VALUE_EXACT:
-			TRC_ERROR(PARQUET, "not handled field_id STATISTICS_IS_MIN_VALUE_EXACT");
-			return -1;
+			stat->min_is_exact = type != 2;
+			TRC_INFO(PARQUET, "STATISTICS_IS_MIN_VALUE_EXACT %d", stat->min_is_exact);
+			break;
 		default:
 			TRC_ERROR(PARQUET, "UNKNOWN statistic field_id '%d'\n", fieldid);
 			return -1;
@@ -348,6 +396,9 @@ pqc_data_pageV2(pqc_reader_t *r, pqc_creader_t *pr, int64_t pos, uint32_t *num_v
 	uint32_t num_nulls = 0, num_rows = 0;
 	pr->cc->cur_page.is_compressed=1;
 
+	pr->cc->cur_page.pageencodings[1].page_encoding = RLE;
+	pr->cc->cur_page.pageencodings[2].page_encoding = RLE;
+
 	while(true) {
 		pos += pqc_get_field(pr->buffer+pos, &fieldid, &type);
 		TRC_DEBUG(PARQUET, "field id %d type %d\n", fieldid, type);
@@ -390,8 +441,7 @@ pqc_data_pageV2(pqc_reader_t *r, pqc_creader_t *pr, int64_t pos, uint32_t *num_v
 			break;
 		case DATA_PAGE_HEADER_V2_STATISTICS:
 			assert(type == T_STRUCT);
-			assert(0);
-			pqc_stat stat;
+			pqc_stat stat = { .max_value = NULL };
 			pos = pqc_statistics(r, pr, &stat, pos);
 			break;
 		}
@@ -433,6 +483,52 @@ string_read_dict( pqc_creader_t *cr, uint32_t num_values)
 		offsets[i] = (int) (buf - obuf);
 		rc[i] = buf;
 		buf += len+1;
+		data += len;
+	}
+	if (cr->dict_allocated)
+		_DELETE(cr->dict);
+	cr->dict = mem;
+	cr->dictsize = buf - obuf;
+	cr->dict_num_values = num_values;
+	cr->dict_allocated = true;
+	return num_values;
+}
+
+static int
+blob_read_dict( pqc_creader_t *cr, uint32_t num_values)
+/* in 32 bit len, string (without zero) */
+{
+	uint32_t i, hsz = 0;
+	uint8_t *data = (uint8_t*)cr->dict;
+
+	for (i=0; i<num_values; i++) {
+		unsigned int len = get_uint32(data);
+
+		data += len + sizeof(int);
+		hsz += len + sizeof(size_t);
+	}
+	if (num_values < 1)
+		return -1;
+	if (num_values > 100000 || hsz > 2000000)
+		return -1;
+	/* make one error to simplify memory management */
+	char *mem = NEW_ARRAY(char, (sizeof(char*) * num_values + sizeof(int) * num_values) + hsz);
+	if (!mem)
+		return -1;
+	char **rc = (char**)mem;
+	char *buf = mem + sizeof(char*) * num_values + sizeof(int) * num_values, *obuf = buf;
+	int *offsets = (int*)(mem + sizeof(char*) * num_values);
+	data = (uint8_t*)cr->dict;
+	for (i=0; i<num_values; i++) {
+		unsigned int len = get_uint32(data);
+
+		data += sizeof(int);
+		blob *b = (blob*)buf;
+		memcpy(b->data, data, len);
+		b->nitems = len;
+		offsets[i] = (int) (buf - obuf);
+		rc[i] = buf;
+		buf += sizeof(size_t)+len;
 		data += len;
 	}
 	if (cr->dict_allocated)
@@ -498,6 +594,11 @@ pqc_page_header( pqc_reader_t *r, pqc_creader_t *pr, int64_t pos)
 	}
 	if (res < 0)
 		return pos;
+	if (uncompressed_size > INT32_MAX) {
+			pqc_set_error(r, "uncompressed size larger then INT32_MAX currently not supported");
+			return -1;
+	}
+
 	assert(page_type == DATA_PAGE || page_type == DICTIONARY_PAGE || page_type == DATA_PAGE_V2);
 	if (page_type == DATA_PAGE || page_type == DATA_PAGE_V2) {
 		if (uncompressed_size && pos >= 0 && pr->cc->codec && (page_type != DATA_PAGE_V2 || pr->cc->cur_page.is_compressed)) {
@@ -507,69 +608,66 @@ pqc_page_header( pqc_reader_t *r, pqc_creader_t *pr, int64_t pos)
 				return -1;
 			pr->datasize = uncompressed_size;
 			pr->data_allocated = true;
-			size_t ul = uncompressed_size;
+			/* for v2 add definition and repetition lengths */
+			int v2 = pr->cc->cur_page.definition_levels_byte_length + pr->cc->cur_page.repetition_levels_byte_length;
+			size_t ul = uncompressed_size - v2;
+			if (v2) {
+				memcpy(pr->data, pr->buffer+pos, v2);
+				pos += v2;
+				compressed_size -= v2;
+			}
 			if (pr->cc->codec == CC_SNAPPY) {
 #ifdef HAVE_SNAPPY
-				/* for v2 add definition and repetition lengths */
-				int v2 = pr->cc->cur_page.definition_levels_byte_length + pr->cc->cur_page.repetition_levels_byte_length;
-				if (snappy_uncompress(pr->buffer+pos + v2, compressed_size - v2, pr->data, &ul) != SNAPPY_OK)
+				if (snappy_uncompress(pr->buffer+pos, compressed_size, pr->data + v2, &ul) != SNAPPY_OK)
 					return -10;
 				assert(uncompressed_size == ul);
 				pos += compressed_size;
 #else
-				TRC_INFO(PARQUET, "Snappy compression support is not available\n");
+				pqc_set_error(r, "Snappy compression support is not available");
 				return -1;
 #endif
 			} else if (pr->cc->codec == CC_GZIP) {
 #ifdef HAVE_LIBZ
-				/* for v2 add definition and repetition lengths */
-				int v2 = pr->cc->cur_page.definition_levels_byte_length + pr->cc->cur_page.repetition_levels_byte_length;
-				if (gzip_uncompress(pr->data, ul, pr->buffer+pos + v2, compressed_size - v2))
+				if (gzip_uncompress(pr->data + v2, ul, pr->buffer+pos, compressed_size))
 					return -10;
 				pos += compressed_size;
 #else
-				TRC_INFO(PARQUET, "gzip compression support is not available\n");
+				pqc_set_error(r, "gzip compression support is not available");
 				return -1;
 #endif
 			} else if (pr->cc->codec == CC_ZSTD) {
 #ifdef HAVE_ZSTD
-				/* for v2 add definition and repetition lengths */
-				int v2 = pr->cc->cur_page.definition_levels_byte_length + pr->cc->cur_page.repetition_levels_byte_length;
-				if (ZSTD_decompress(pr->data, ul, pr->buffer+pos + v2, compressed_size - v2) != ul)
+				if (ZSTD_decompress(pr->data + v2, ul, pr->buffer+pos, compressed_size) != ul)
 					return -10;
 				pos += compressed_size;
 #else
-				TRC_INFO(PARQUET, "zstd compression support is not available\n");
+				pqc_set_error(r, "zstd compression support is not available");
 				return -1;
 #endif
 			} else if (pr->cc->codec == CC_LZ4_RAW) {
 #ifdef HAVE_LIBLZ4
-				/* for v2 add definition and repetition lengths */
-				int v2 = pr->cc->cur_page.definition_levels_byte_length + pr->cc->cur_page.repetition_levels_byte_length;
 				int iul = (int)ul;
-				if (LZ4_decompress_safe(pr->buffer+pos + v2, pr->data, compressed_size - v2, iul) != iul)
+				if (LZ4_decompress_safe(pr->buffer+pos, pr->data + v2, compressed_size, iul) != iul)
 					return -10;
 				pos += compressed_size;
 #else
-				TRC_INFO(PARQUET, "lz4 compression support is not available\n");
+				pqc_set_error(r, "lz4 compression support is not available");
 				return -1;
 #endif
 			} else if (pr->cc->codec == CC_BROTLI) {
 #ifdef HAVE_BROTLI
-				/* for v2 add definition and repetition lengths */
-				int v2 = pr->cc->cur_page.definition_levels_byte_length + pr->cc->cur_page.repetition_levels_byte_length;
-				if (BrotliDecoderDecompress(compressed_size - v2, (uint8_t*)pr->buffer+pos + v2, &ul, (uint8_t*)pr->data) != BROTLI_DECODER_RESULT_SUCCESS)
+				if (BrotliDecoderDecompress(compressed_size, (uint8_t*)pr->buffer+pos, &ul, ((uint8_t*)pr->data) + v2) != BROTLI_DECODER_RESULT_SUCCESS)
 					return -10;
 				pos += compressed_size;
 #else
-				TRC_INFO(PARQUET, "brotli compression support is not available\n");
+				pqc_set_error(r, "brotli compression support is not available");
 				return -1;
 #endif
 			} else if (pr->cc->codec == CC_LZO) {
-				TRC_INFO(PARQUET, "lzo compression support is not supported\n");
+				pqc_set_error(r, "lzo compression support is not supported");
 				return -1;
 			} else if (pr->cc->codec == CC_LZ4) {
-				TRC_INFO(PARQUET, "lz4 compression support is depricated use lz4_raw instead\n");
+				pqc_set_error(r, "lz4 compression support is depricated use lz4_raw instead");
 				return -1;
 			}
 		} else {
@@ -593,66 +691,56 @@ pqc_page_header( pqc_reader_t *r, pqc_creader_t *pr, int64_t pos)
 			size_t ul = uncompressed_size;
 			if (pr->cc->codec == CC_SNAPPY) {
 #ifdef HAVE_SNAPPY
-				/* for v2 add definition and repetition lengths */
-				int v2 = pr->cc->cur_page.definition_levels_byte_length + pr->cc->cur_page.repetition_levels_byte_length;
-				if (snappy_uncompress(pr->buffer+pos + v2, compressed_size - v2, pr->dict, &ul) != SNAPPY_OK)
+				if (snappy_uncompress(pr->buffer+pos, compressed_size, pr->dict, &ul) != SNAPPY_OK)
 					return -10;
 				assert(uncompressed_size == ul);
 				pos += compressed_size;
 #else
-				TRC_INFO(PARQUET, "Snappy compression support is not available\n");
+				pqc_set_error(r, "Snappy compression support is not available");
 				return -1;
 #endif
 			} else if (pr->cc->codec == CC_GZIP) {
 #ifdef HAVE_LIBZ
-				/* for v2 add definition and repetition lengths */
-				int v2 = pr->cc->cur_page.definition_levels_byte_length + pr->cc->cur_page.repetition_levels_byte_length;
-				if (gzip_uncompress(pr->dict, ul, pr->buffer+pos + v2, compressed_size - v2))
+				if (gzip_uncompress(pr->dict, ul, pr->buffer+pos, compressed_size))
 					return -10;
 				pos += compressed_size;
 #else
-				TRC_INFO(PARQUET, "gzip compression support is not available\n");
+				pqc_set_error(r, "gzip compression support is not available");
 				return -1;
 #endif
 			} else if (pr->cc->codec == CC_ZSTD) {
 #ifdef HAVE_ZSTD
-				/* for v2 add definition and repetition lengths */
-				int v2 = pr->cc->cur_page.definition_levels_byte_length + pr->cc->cur_page.repetition_levels_byte_length;
-				if (ZSTD_decompress(pr->dict, ul, pr->buffer+pos + v2, compressed_size - v2) != ul)
+				if (ZSTD_decompress(pr->dict, ul, pr->buffer+pos, compressed_size) != ul)
 					return -10;
 				pos += compressed_size;
 #else
-				TRC_INFO(PARQUET, "zstd compression support is not available\n");
+				pqc_set_error(r, "zstd compression support is not available");
 				return -1;
 #endif
 			} else if (pr->cc->codec == CC_LZ4_RAW) {
 #ifdef HAVE_LIBLZ4
-				/* for v2 add definition and repetition lengths */
-				int v2 = pr->cc->cur_page.definition_levels_byte_length + pr->cc->cur_page.repetition_levels_byte_length;
 				int iul = (int)ul;
-				if (LZ4_decompress_safe(pr->buffer+pos + v2, pr->dict, compressed_size - v2, iul) != iul)
+				if (LZ4_decompress_safe(pr->buffer+pos, pr->dict, compressed_size, iul) != iul)
 					return -10;
 				pos += compressed_size;
 #else
-				TRC_ERROR(PARQUET, "lz4 compression support is not available\n");
+				pqc_set_error(r, "lz4 compression support is not available");
 				return -1;
 #endif
 			} else if (pr->cc->codec == CC_BROTLI) {
 #ifdef HAVE_BROTLI
-				/* for v2 add definition and repetition lengths */
-				int v2 = pr->cc->cur_page.definition_levels_byte_length + pr->cc->cur_page.repetition_levels_byte_length;
-				if (BrotliDecoderDecompress(compressed_size - v2, (uint8_t*)pr->buffer+pos + v2, &ul, (uint8_t*)pr->dict) != BROTLI_DECODER_RESULT_SUCCESS)
+				if (BrotliDecoderDecompress(compressed_size, (uint8_t*)pr->buffer+pos, &ul, (uint8_t*)pr->dict) != BROTLI_DECODER_RESULT_SUCCESS)
 					return -10;
 				pos += compressed_size;
 #else
-				TRC_ERROR(PARQUET, "brotli compression support is not available\n");
+				pqc_set_error(r, "brotli compression support is not available");
 				return -1;
 #endif
 			} else if (pr->cc->codec == CC_LZO) {
-				TRC_ERROR(PARQUET, "lzo compression support is not supported\n");
+				pqc_set_error(r, "lzo compression support is not supported");
 				return -1;
 			} else if (pr->cc->codec == CC_LZ4) {
-				TRC_ERROR(PARQUET, "lz4 compression support is depricated use lz4_raw instead\n");
+				pqc_set_error(r, "lz4 compression support is depricated use lz4_raw instead");
 				return -1;
 			}
 		} else {
@@ -668,9 +756,43 @@ pqc_page_header( pqc_reader_t *r, pqc_creader_t *pr, int64_t pos)
 		if (num_values && r->pse->type == stringtype) {
 			if (string_read_dict(pr, num_values) < 0)
 				return -1;
+		} else if (num_values && r->pse->type == blobtype) {
+			if (blob_read_dict(pr, num_values) < 0)
+				return -1;
+		}
+#ifdef WORDS_BIGENDIAN
+		if (num_values && (r->pse->type == inttype || r->pse->type == floattype)) {
+			char *s = pr->dict;
+			if (r->pse->size == 16)
+				for(uint32_t i = 0; i < num_values; i++, s+=sizeof(uint16_t))
+					*(uint16_t*)s = pqc_sht(*(uint16_t*)s);
+			if (r->pse->size == 32)
+				for(uint32_t i = 0; i < num_values; i++, s+=sizeof(uint32_t))
+					*(uint32_t*)s = pqc_int(*(uint32_t*)s);
+			if (r->pse->size == 64)
+				for(uint32_t i = 0; i < num_values; i++, s+=sizeof(uint64_t))
+					*(uint64_t*)s = pqc_lng(*(uint64_t*)s);
+		}
+#endif
+		if (num_values && r->pse->type == inttype && r->pse->precision == 96) { /* remove the 32 useless bits */
+			ulng *d = (ulng*)pr->dict;
+			char *s = pr->dict;
+			for(uint32_t i = 0; i < num_values; i++, s += 12) {
+				uint64_t nanoseconds = pqc_lng(*(uint64_t*)s);
+				uint32_t julian_day = pqc_int(*(uint32_t*)(s+8));
+
+				nanoseconds /= LL_CONSTANT(1000);
+				julian_day -= 2440588;
+				*d++ = (ulng)nanoseconds + julian_day * 86400 * LL_CONSTANT(1000000);
+			}
 		}
 	}
-	if (pos >= 0 && !pr->cc->dictionary_page_offset && pr->bufsize > (uint64_t)pos)
+	pr->curpage++;
+	if (pr->curpage >= pr->cc->pageencodings[pr->curpageencoding].page_count) {
+		pr->curpageencoding++;
+		pr->curpage = 0;
+	}
+	if (pos >= 0 && !pr->cc->dictionary_page_offset && pr->bufsize > (uint64_t)pos && page_type == DICTIONARY_PAGE)
 		pos = pqc_page_header( r, pr, pos);
 	return pos;
 }
@@ -678,8 +800,8 @@ pqc_page_header( pqc_reader_t *r, pqc_creader_t *pr, int64_t pos)
 pqc_reader_t *
 pqc_reader( pqc_reader_t *p, pqc_file *pq, int nrworkers, /*pqc_columnchunk *cc, pqc_schema_element *pse,*/ pqc_filemetadata *fmd, int colnr, int64_t nrows, const void *nil)
 {
-	pqc_reader_t *r = MNEW(pqc_reader_t);
-	pqc_creader_t *cr = NEW_ARRAY(pqc_creader_t, nrworkers);
+	pqc_reader_t *r = ZNEW(pqc_reader_t);
+	pqc_creader_t *cr = ZNEW_ARRAY(pqc_creader_t, nrworkers);
 	if (!r || !cr) {
 		_DELETE(r);
 		return r;
@@ -696,6 +818,8 @@ pqc_reader( pqc_reader_t *p, pqc_file *pq, int nrworkers, /*pqc_columnchunk *cc,
 	r->nrworkers = nrworkers;
 	r->spq = pq;
 	r->nil = nil;
+	r->error = NULL;
+	MT_lock_init(&r->l, "pqc_reader");
 	assert(colnr < fmd->rowgroups->ncolumnchunks);
 	for(int i = 0; i<nrworkers; i++) {
 		cr = r->creader+i;
@@ -705,6 +829,7 @@ pqc_reader( pqc_reader_t *p, pqc_file *pq, int nrworkers, /*pqc_columnchunk *cc,
 		cr->cc = NULL;
 		cr->curnr = 0;
 		cr->pos = -1;
+		cr->nr_bits = -1;
 		cr->odict = cr->dict = 0;
 		cr->dictsize = 0;
 		cr->dict_allocated = false;
@@ -747,6 +872,7 @@ pqc_reader_destroy( pqc_reader_t *r )
 		if (cr->bufsize)
 			_DELETE(cr->buffer);
 	}
+	MT_lock_destroy(&r->l);
 	_DELETE(r->creader);
 	pqc_close(r->spq);
 	_DELETE(r);
@@ -786,7 +912,8 @@ pqc_repetition( pqc_reader_t *r, pqc_creader_t *cr, void *output, uint32_t num_v
 	(void)output;
 	//int bits = 1;
 	char *data = cr->data;
-	uint32_t nr_bytes = get_uint32((uint8_t*)data+pos), len;
+	bool v2 = cr->cc->cur_page.repetition_levels_byte_length;
+	uint32_t len, nr_bytes = v2 ? cr->cc->cur_page.repetition_levels_byte_length: get_uint32((uint8_t*)data+pos);
 	uint32_t null = 0;
 	int j = 0;
 
@@ -795,7 +922,8 @@ pqc_repetition( pqc_reader_t *r, pqc_creader_t *cr, void *output, uint32_t num_v
 	cr->repetition = NULL;
 	cr->first_repetition = 0;
 
-	pos += sizeof(nr_bytes);
+	if (!v2)
+		pos += sizeof(nr_bytes);
 	uint32_t spos = pos;
 	char prv = 0;
 	for(uint32_t i = 0; i<num_values && ((pos-spos) < nr_bytes); ) {
@@ -892,7 +1020,8 @@ pqc_definition( pqc_reader_t *r, pqc_creader_t *cr, void *output, uint32_t num_v
 	(void)output;
 	//int bits = 1;
 	char *data = cr->data;
-	uint32_t nr_bytes = get_uint32((uint8_t*)data+pos), len;
+	bool v2 = cr->cc->cur_page.definition_levels_byte_length;
+	uint32_t len, nr_bytes = v2 ? cr->cc->cur_page.definition_levels_byte_length: get_uint32((uint8_t*)data+pos);
 	uint32_t null = 0;
 	int j = 0;
 
@@ -901,23 +1030,24 @@ pqc_definition( pqc_reader_t *r, pqc_creader_t *cr, void *output, uint32_t num_v
 	cr->definition = NULL;
 	cr->first_definition = cr->curdef = cr->cursubdef = 0;
 
-	pos += sizeof(nr_bytes);
+	if (!v2)
+		pos += sizeof(nr_bytes);
 	uint32_t spos = pos;
 	char prv = 0;
 	for(uint32_t i = 0; i<num_values && ((pos-spos) < nr_bytes); ) {
 		pos += pqc_get_int32(data+pos, &len);
 		if (len & 1) {
 			len>>=1;
-			for(unsigned int b = 0; b < len; b++) {
+			for(unsigned int b = 0; i<num_values && b < len; b++) {
 				char val = data[pos++];
-				for (unsigned int k=0; k<8; ) {
+				for (unsigned int k=0; i<num_values && k<8; ) {
 					char v = (val>>k)&1;
-					int nlen = 1;
+					unsigned int nlen = 1;
 					for (k++; k<8; k++, nlen++) {
 						if (v != ((val>>k)&1))
 							break;
 					}
-					if (i == 0 && (val != 1 || len < num_values)) {
+					if (i == 0 && (v != 1 || nlen < num_values)) {
 						cr->definitionsize = 0;
 						cr->first_definition = v;
 						prv = !v;
@@ -972,29 +1102,70 @@ pqc_definition( pqc_reader_t *r, pqc_creader_t *cr, void *output, uint32_t num_v
 }
 
 #define T uint8_t
-#define pqc_dict_lookup pqc_dict_lookup_uchr
+#define P uint8_t
+#define pqc_dict_lookup pqc_dict_lookup_uchr_uchr
 #include "pqc_dict_lookup.h"
 #undef T
+#undef P
+#undef pqc_dict_lookup
+
+#define T uint8_t
+#define P uint16_t
+#define pqc_dict_lookup pqc_dict_lookup_uchr_usht
+#include "pqc_dict_lookup.h"
+#undef T
+#undef P
+#undef pqc_dict_lookup
+
+#define T uint8_t
+#define P uint32_t
+#define pqc_dict_lookup pqc_dict_lookup_uchr_uint
+#include "pqc_dict_lookup.h"
+#undef T
+#undef P
 #undef pqc_dict_lookup
 
 #define T uint16_t
-#define pqc_dict_lookup pqc_dict_lookup_usht
+#define P uint16_t
+#define pqc_dict_lookup pqc_dict_lookup_usht_usht
 #include "pqc_dict_lookup.h"
 #undef T
+#undef P
+#undef pqc_dict_lookup
+
+#define T uint16_t
+#define P uint32_t
+#define pqc_dict_lookup pqc_dict_lookup_usht_uint
+#include "pqc_dict_lookup.h"
+#undef T
+#undef P
 #undef pqc_dict_lookup
 
 #define T uint32_t
-#define pqc_dict_lookup pqc_dict_lookup_uint
+#define P uint32_t
+#define pqc_dict_lookup pqc_dict_lookup_uint_uint
 #include "pqc_dict_lookup.h"
 #undef T
+#undef P
 #undef pqc_dict_lookup
 
 #define T ulng
-#define pqc_dict_lookup pqc_dict_lookup_ulng
+#define P ulng
+#define pqc_dict_lookup pqc_dict_lookup_ulng_ulng
 #include "pqc_dict_lookup.h"
 #undef T
+#undef P
 #undef pqc_dict_lookup
 
+#ifdef HAVE_HGE
+#define T uhge
+#define P uhge
+#define pqc_dict_lookup pqc_dict_lookup_uhge_uhge
+#include "pqc_dict_lookup.h"
+#undef T
+#undef P
+#undef pqc_dict_lookup
+#endif
 
 #define T uint8_t
 #define pqc_dict_lookup pqc_dict_lookup_var_uchr
@@ -1013,33 +1184,44 @@ pqc_definition( pqc_reader_t *r, pqc_creader_t *cr, void *output, uint32_t num_v
 #include "pqc_dict_lookup_var.h"
 #undef T
 #undef pqc_dict_lookup
-/*
- *  TODO: multi page columnchunk, will have multiple dicts
- */
+
+#define T var_t
+#define pqc_dict_lookup pqc_dict_lookup_var_vart
+#include "pqc_dict_lookup_var.h"
+#undef T
+#undef pqc_dict_lookup
+
 static int64_t
-pqc_dict_lookup( pqc_reader_t *r, pqc_creader_t *cr, void *output, void *voutput, int64_t nrows, int pos, int *ssize, int *dict)
+pqc_dict_lookup( pqc_reader_t *r, pqc_creader_t *cr, void *output, void *voutput, int64_t nrows, int64_t pos, size_t *ssize, int *dict)
 {
 	uint8_t *data = (uint8_t*)cr->data;
+
+	size_t dictsize = cr->dictsize;
+	if (r->pse->type == blobtype)
+		dictsize += (cr->dict_num_values * (sizeof(size_t) - sizeof(int)));
+
+	assert(cr->datasize <= INT32_MAX);
+
 	/* asume rle data page */
 	if (r->pse->precision == 0 && !output) {
 		if (ssize) {
-			*ssize = cr->dictsize;
-			if (!cr->curnr)
-				cr->nr_bits = data[pos];
+			if (dict)
+				*dict = 1; /* we still have a dict */
+			*ssize = dictsize;
 			assert(cr->dictsize);
 			return 0;
 		}
 	}
 
 	/* rle / bit packed */
-	if (!cr->curnr)
+	if (cr->nr_bits < 0)
 		cr->nr_bits = data[pos++];
 	int nr_bits = cr->nr_bits;
 
 	if (r->pse->precision == 0 && !dict) {
 		int64_t i = 0;
 		char **dst = output;
-		bool mul8 = ((8/nr_bits)*nr_bits == 8);
+		bool mul8 = nr_bits?((8/nr_bits)*nr_bits == 8):false;
 		uint32_t idx = cr->idx;
 		if (cr->remaining) {
 			if (cr->is_rle) {
@@ -1059,7 +1241,12 @@ pqc_dict_lookup( pqc_reader_t *r, pqc_creader_t *cr, void *output, void *voutput
 				/* only 2 bits for now */
 				int sh = 0;
 				int mask = (1<<nr_bits) -1;
-				if (mul8) { /* todo handle 16 / 32 multiples */
+				if (nr_bits == 0) {
+					int m = len*8;
+					for (int64_t j = 0; i < nrows && j < m; j++, i++) {
+						dst[i] = ((char**)cr->dict)[0];
+					}
+				} else if (mul8) { /* todo handle 16 / 32 multiples */
 					int m = len*8;
 					for (int64_t j = 0; i < nrows && j < m; j++, i++) {
 						uint8_t v = data[pos];
@@ -1092,13 +1279,13 @@ pqc_dict_lookup( pqc_reader_t *r, pqc_creader_t *cr, void *output, void *voutput
 				} else if (nr_bits < 16) {
 					int m = len*8;
 					for (int64_t j = 0; i < nrows && j < m; j++, i++) {
-						uint16_t v = *(uint16_t*)(data+pos);
+						uint16_t v = pqc_sht(*(uint16_t*)(data+pos));
 						uint32_t idx = (v >> sh)&mask;
 						sh += nr_bits;
 						if (sh >= 16) {
 							pos+=2;
 							sh -= 16;
-							uint16_t v = *(uint16_t*)(data+pos);
+							uint16_t v = pqc_sht(*(uint16_t*)(data+pos));
 							idx |= (v << (nr_bits-sh))&mask;
 							if (j==(m-1) && sh >= 8)
 								pos++;
@@ -1111,13 +1298,13 @@ pqc_dict_lookup( pqc_reader_t *r, pqc_creader_t *cr, void *output, void *voutput
 				} else if (nr_bits < 32) {
 					int m = len*8;
 					for (int64_t j = 0; i < nrows && j < m; j++, i++) {
-						uint32_t v = *(uint32_t*)(data+pos);
+						uint32_t v = pqc_int(*(uint32_t*)(data+pos));
 						uint32_t idx = (v >> sh)&mask;
 						sh += nr_bits;
 						if (sh >= 32) {
 							pos+=2;
 							sh -= 32;
-							uint32_t v = *(uint32_t*)(data+pos);
+							uint32_t v = pqc_sht(*(uint32_t*)(data+pos));
 							idx |= (v << (nr_bits-sh))&mask;
 							if (j==(m-1) && sh >= 8)
 								pos++;
@@ -1127,6 +1314,16 @@ pqc_dict_lookup( pqc_reader_t *r, pqc_creader_t *cr, void *output, void *voutput
 						assert(idx < cr->dict_num_values);
 						dst[i] = ((char**)cr->dict)[idx];
 					}
+				}
+			} else if (nr_bits == 0) { /* rle */
+				len>>=1;
+				uint32_t j = 0;
+				for(; i < nrows && j < len; j++, i++)
+					dst[i] = ((char**)cr->dict)[0];
+				if (j < len) {
+					cr->is_rle = true;
+					cr->remaining = len - j;
+					cr->idx = idx;
 				}
 			} else if (nr_bits <= 8) { /* rle */
 				len>>=1;
@@ -1141,7 +1338,7 @@ pqc_dict_lookup( pqc_reader_t *r, pqc_creader_t *cr, void *output, void *voutput
 				}
 			} else if (nr_bits <= 16) { /* rle */
 				len>>=1;
-				uint16_t idx = *(uint16_t*)(data+pos);
+				uint16_t idx = pqc_sht(*(uint16_t*)(data+pos));
 				uint32_t j = 0;
 				pos += 2;
 				for(; i < nrows && j < len; j++, i++)
@@ -1153,7 +1350,7 @@ pqc_dict_lookup( pqc_reader_t *r, pqc_creader_t *cr, void *output, void *voutput
 				}
 			} else if (nr_bits <= 32) { /* rle */
 				len>>=1;
-				uint32_t idx = *(uint32_t*)(data+pos);
+				uint32_t idx = pqc_int(*(uint32_t*)(data+pos));
 				uint32_t j = 0;
 				pos += 4;
 				for(; i < nrows && j < len; j++, i++)
@@ -1166,23 +1363,37 @@ pqc_dict_lookup( pqc_reader_t *r, pqc_creader_t *cr, void *output, void *voutput
 			}
 		}
 	} else if (r->pse->precision == 0 && dict) { /* offsets */
-		memcpy(voutput, cr->dict + cr->dict_num_values * (sizeof(char*)+sizeof(int)), cr->dictsize);
+		memcpy(voutput, cr->dict + cr->dict_num_values * (sizeof(char*)+sizeof(int)), dictsize);
 		if (*dict == 1) {
 			return pqc_dict_lookup_var_uchr( cr, output, nrows, pos, ssize);
 		} else if (*dict == 2) {
 			return pqc_dict_lookup_var_usht( cr, output, nrows, pos, ssize);
-		} else {
-			assert(*dict == 4);
+		} else if (*dict == 4) {
 			return pqc_dict_lookup_var_uint( cr, output, nrows, pos, ssize);
+		} else {
+			return pqc_dict_lookup_var_vart( cr, output, nrows, pos, ssize);
 		}
 	} else if (r->pse->precision == 8) {
-		return pqc_dict_lookup_uchr( cr, output, nrows, pos);
+		if (r->pse->size == 8)
+			return pqc_dict_lookup_uchr_uchr( cr, output, nrows, pos);
+		if (r->pse->size == 16)
+			return pqc_dict_lookup_uchr_usht( cr, output, nrows, pos);
+		if (r->pse->size == 32)
+			return pqc_dict_lookup_uchr_uint( cr, output, nrows, pos);
 	} else if (r->pse->precision == 16) {
-		return pqc_dict_lookup_usht( cr, output, nrows, pos);
+		if (r->pse->size == 16)
+			return pqc_dict_lookup_usht_usht( cr, output, nrows, pos);
+		return pqc_dict_lookup_usht_uint( cr, output, nrows, pos);
 	} else if (r->pse->precision == 32) {
-		return pqc_dict_lookup_uint( cr, output, nrows, pos);
+		return pqc_dict_lookup_uint_uint( cr, output, nrows, pos);
 	} else if (r->pse->precision == 64 || (r->pse->precision < 8 && r->pse->size == 64)) {
-		return pqc_dict_lookup_ulng( cr, output, nrows, pos);
+		return pqc_dict_lookup_ulng_ulng( cr, output, nrows, pos);
+	} else if (r->pse->precision == 96) {
+		return pqc_dict_lookup_ulng_ulng( cr, output, nrows, pos);
+#ifdef HAVE_HGE
+	} else if (r->pse->precision == 128) {
+		return pqc_dict_lookup_uhge_uhge( cr, output, nrows, pos);
+#endif
 	} else {
 		printf("later %d\n", r->pse->precision);
 	}
@@ -1190,8 +1401,8 @@ pqc_dict_lookup( pqc_reader_t *r, pqc_creader_t *cr, void *output, void *voutput
 	return nrows;
 }
 
-static int
-string_read_chunk( pqc_creader_t *cr, char **rc, char *buf, int64_t nrows, int pos)
+static int64_t
+string_read_chunk( pqc_creader_t *cr, char **rc, char *buf, int64_t nrows, int64_t pos)
 {
 	if (nrows > cr->cc->cur_page.num_values)
 		nrows = cr->cc->cur_page.num_values;
@@ -1212,7 +1423,7 @@ string_read_chunk( pqc_creader_t *cr, char **rc, char *buf, int64_t nrows, int p
 }
 
 static int
-string_size_chunk_withnulls( pqc_creader_t *cr, int64_t nrows, int pos, int *ssize, int *dict)
+string_size_chunk_withnulls( pqc_creader_t *cr, int64_t nrows, int64_t pos, size_t *ssize, int *dict)
 {
 	(void)dict;
 	/* reuse strings */
@@ -1229,19 +1440,22 @@ string_size_chunk_withnulls( pqc_creader_t *cr, int64_t nrows, int pos, int *ssi
 	int cur = cr->curdef, sdef = cr->cursubdef;
 	int def = cr->first_definition;
 	int dend = cr->definitionsize;
+	assert(nrows < INT32_MAX);
 	for(int64_t i = 0; i<nrows && cur<dend; ) {
 		int len = cr->definition[cur];
 		len -= sdef;
 		if (i + len > nrows) {
-			len = nrows-i;
+			len = (int)(nrows-i);
 			sdef += len;
 		} else {
 			sdef = 0;
 		}
 		if (def) {
-			unsigned int slen = get_uint32((uint8_t*)data);
-			data += slen + sizeof(int);
-			hsz += slen+1;
+			for(int j=0; j<len; j++) {
+				unsigned int slen = get_uint32((uint8_t*)data);
+				data += slen + sizeof(int);
+				hsz += slen+1;
+			}
 		}
 		i+=len;
 		if (!sdef) {
@@ -1255,7 +1469,7 @@ string_size_chunk_withnulls( pqc_creader_t *cr, int64_t nrows, int pos, int *ssi
 }
 
 static int
-string_size_chunk( pqc_creader_t *cr, int64_t nrows, int pos, int *ssize, int *dict)
+string_size_chunk( pqc_creader_t *cr, int64_t nrows, int64_t pos, size_t *ssize, int *dict)
 {
 	/* based on dict call right version */
 	if (cr->definition)
@@ -1303,9 +1517,9 @@ string_size_chunk( pqc_creader_t *cr, int64_t nrows, int pos, int *ssize, int *d
 #undef T
 #undef offset_string_read_chunk
 
-static int
+static int64_t
 offset_string_read_chunk( pqc_reader_t *r, pqc_creader_t *cr, void *output, void *voutput, int64_t nrows,
-						  int pos, int offset, int width)
+						  int64_t pos, size_t offset, int width)
 {
 	if (width == 1) {
 		return offset_string_read_chunk_uchr( r, cr, output, voutput, nrows, pos, offset);
@@ -1318,12 +1532,11 @@ offset_string_read_chunk( pqc_reader_t *r, pqc_creader_t *cr, void *output, void
 }
 
 static int64_t
-pqc_read_delta( pqc_creader_t *cr, int *prefixes, int64_t nrows, int pos)
+pqc_read_delta( pqc_creader_t *cr, int *prefixes, int64_t nrows, int64_t pos)
 {
 	uint64_t blocks = 0, miniblocks = 0, count = 0;
 	uint64_t val = 0;
 
-	(void)prefixes;
 	(void)nrows;
 	if ((pos += pqc_get_int64(cr->data+pos, &blocks)) < 0) {
 		return -1;
@@ -1339,14 +1552,15 @@ pqc_read_delta( pqc_creader_t *cr, int *prefixes, int64_t nrows, int pos)
 		return -1;
 	}
 	if (count <= 1) {
-		*prefixes = val;
+		assert(val < INT32_MAX);
+		*prefixes = (int)val;
 		return pos;
 	}
 	return pos;
 }
 
 static int64_t
-pqc_read_strings( pqc_creader_t *cr, char **rc, char *buf, int *lengths, int64_t nrows, int pos)
+pqc_read_strings( pqc_creader_t *cr, char **rc, char *buf, int *lengths, int64_t nrows, int64_t pos)
 {
 	char *data = cr->data + pos;
 
@@ -1364,7 +1578,7 @@ pqc_read_strings( pqc_creader_t *cr, char **rc, char *buf, int *lengths, int64_t
 
 /* todo other offsets */
 static int64_t
-offset_read_strings_sht( pqc_creader_t *cr, uint16_t *rc, char *buf, int *lengths, int64_t nrows, int pos, int offset)
+offset_read_strings_sht( pqc_creader_t *cr, uint16_t *rc, char *buf, int *lengths, int64_t nrows, int64_t pos, size_t offset)
 {
 	char *data = cr->data + pos;
 
@@ -1373,7 +1587,8 @@ offset_read_strings_sht( pqc_creader_t *cr, uint16_t *rc, char *buf, int *length
 
 		memcpy(buf, data, len);
 		buf[len] = 0;
-		rc[i] = offset;
+		assert(offset < UINT16_MAX);
+		rc[i] = (uint16_t)offset;
 		buf += len+1;
 		offset += len+1;
 		data += len;
@@ -1381,8 +1596,8 @@ offset_read_strings_sht( pqc_creader_t *cr, uint16_t *rc, char *buf, int *length
 	return (data - cr->data);
 }
 
-static int
-offset_read_strings( pqc_creader_t *cr, void *output, void *voutput, int *lengths, int64_t nrows, int pos, int offset, int width)
+static int64_t
+offset_read_strings( pqc_creader_t *cr, void *output, void *voutput, int *lengths, int64_t nrows, int64_t pos, size_t offset, int width)
 {
 	if (width == 1) {
 		assert(0);
@@ -1395,7 +1610,7 @@ offset_read_strings( pqc_creader_t *cr, void *output, void *voutput, int *length
 }
 
 static int64_t
-pqc_size_strings( pqc_creader_t *cr, int *lengths, int64_t nrows, int pos, int *ssize)
+pqc_size_strings( pqc_creader_t *cr, int *lengths, int64_t nrows, int64_t pos, size_t *ssize)
 {
 	size_t hsz = 0;
 	(void) cr;
@@ -1411,7 +1626,7 @@ pqc_size_strings( pqc_creader_t *cr, int *lengths, int64_t nrows, int pos, int *
 }
 
 static int64_t
-pqc_read_delta_strings( pqc_creader_t *cr, void *output, void *voutput, int64_t nrows, int pos, int *ssize, int *dict)
+pqc_read_delta_strings( pqc_creader_t *cr, void *output, void *voutput, int64_t nrows, int64_t pos, size_t *ssize, int *dict)
 {
 	/* how to keep state!
 	 * for prefixes keep pos and counter
@@ -1422,9 +1637,6 @@ pqc_read_delta_strings( pqc_creader_t *cr, void *output, void *voutput, int64_t 
 	int prefixes = 0;
 	if ((pos = pqc_read_delta( cr, &prefixes, nrows, pos)) < 0)
 		return -1;
-	(void)voutput;
-	(void)ssize;
-	(void)dict;
 	/* read lengths */
 	int lengths = 0;
 	if ((pos = pqc_read_delta( cr, &lengths, nrows, pos)) < 0)
@@ -1465,6 +1677,7 @@ pqc_mark_chunk( pqc_reader_t *r, int nr_workers, int wnr, uint64_t nrows)
 			nrows = orows;
 			cr->pos = -1;
 			cr->curnr = 0;
+			cr->nr_bits = -1;
 			cr->cc = r->fmd->rowgroups[rg].columnchunks+r->colnr;
 
 			if (cr->data && cr->data_allocated)
@@ -1493,7 +1706,7 @@ pqc_mark_chunk( pqc_reader_t *r, int nr_workers, int wnr, uint64_t nrows)
 }
 
 static uint64_t
-pqc_nrows( pqc_creader_t *cr, uint64_t nrows)
+pqc_nrows( pqc_reader_t *r, pqc_creader_t *cr, uint64_t nrows)
 {
 	if (cr->cc->cur_page.num_nulls == nrows)
 		return 0;
@@ -1508,7 +1721,11 @@ pqc_nrows( pqc_creader_t *cr, uint64_t nrows)
 			len -= sdef;
 			if (i + len > nrows) {
 				sdef = len;
-				len = nrows-i;
+				if ((nrows-i) > INT32_MAX) {
+					pqc_set_error(r, "To many rows in one definition block (> INT32_MAX)");
+					return -1;
+				}
+				len = (int)(nrows-i);
 				sdef -= len;
 			} else {
 				sdef = 0;
@@ -1546,12 +1763,12 @@ pqc_project( char *output, char *data, uint64_t nrows, int w)
 	return 0;
 }
 
-static int
+static int64_t
 pqc_add_nil( pqc_reader_t *r, pqc_creader_t *cr, char *output, char *data, uint64_t nrows, uint64_t nils, int w)
 {
 	int cur = cr->curdef, sdef = cr->cursubdef;
 	int def = cr->first_definition;
-	int pos = 0;
+	int64_t pos = 0;
 
 	if (nils == nrows){ // all null
 		switch(w) {
@@ -1589,13 +1806,18 @@ pqc_add_nil( pqc_reader_t *r, pqc_creader_t *cr, char *output, char *data, uint6
 	def = cr->first_definition; /* set by pqc_nrows at the end of this block */
 	if (!sdef)
 		def = !def;
+	if ((nrows*w) > INT32_MAX) {
+		pqc_set_error(r, "To many rows add_nil block (> INT32_MAX)");
+		return -1;
+	}
+
 	pos = nrows*w;
 	for(uint64_t i = nrows; i > 0 && cur >= 0; cur--){
 		int len = cr->definition[cur];
 		len -= sdef;
 		sdef = 0;
 		if (i < (uint64_t)len)
-			len = i;
+			len = (int)i;
 		i -= len;
 		if (def) {
 			pos -= w*len;
@@ -1605,6 +1827,76 @@ pqc_add_nil( pqc_reader_t *r, pqc_creader_t *cr, char *output, char *data, uint6
 				memcpy(output+w*(i+j), r->nil, w);
 		}
 		def = !def;
+	}
+	return pos;
+}
+
+static int64_t
+byte_split_stream( pqc_reader_t *r, pqc_creader_t *cr, char *output, int64_t pos, int64_t nrows)
+{
+	if (r->pse->type != floattype && r->pse->type != inttype) {
+		pqc_set_error(r, "BYTE_SPLIT_STREAM encoding and type %d not supported", r->pse->type);
+		return -1;
+	}
+	if (r->pse->size != 32 && r->pse->size != 64) {
+		pqc_set_error(r, "BYTE_SPLIT_STREAM encoding and size %d not supported", r->pse->size);
+		return -1;
+	}
+	int64_t nr = cr->cc->cur_page.num_values;
+	if (r->pse->size == 32) {
+		uint8_t *data = ((uint8_t*)cr->data)+pos;
+		uint8_t *p0 = data;
+		uint8_t *p1 = p0 + nr;
+		uint8_t *p2 = p1 + nr;
+		uint8_t *p3 = p2 + nr;
+		uint8_t *res = (uint8_t*)output;
+		for (int64_t i = 0; i<nrows; i++, res += 4) {
+#ifdef WORDS_BIGENDIAN
+			res[3] = p0[i];
+			res[2] = p1[i];
+			res[1] = p2[i];
+			res[0] = p3[i];
+#else
+			res[0] = p0[i];
+			res[1] = p1[i];
+			res[2] = p2[i];
+			res[3] = p3[i];
+#endif
+		}
+		pos += nrows * 4;
+	} else {
+		uint8_t *data = ((uint8_t*)cr->data)+pos;
+		uint8_t *p0 = data;
+		uint8_t *p1 = p0 + nr;
+		uint8_t *p2 = p1 + nr;
+		uint8_t *p3 = p2 + nr;
+		uint8_t *p4 = p3 + nr;
+		uint8_t *p5 = p4 + nr;
+		uint8_t *p6 = p5 + nr;
+		uint8_t *p7 = p6 + nr;
+		uint8_t *res = (uint8_t*)output;
+		for (int64_t i = 0; i<nrows; i++, res += 8) {
+#ifdef WORDS_BIGENDIAN
+			res[7] = p0[i];
+			res[6] = p1[i];
+			res[5] = p2[i];
+			res[4] = p3[i];
+			res[3] = p4[i];
+			res[2] = p5[i];
+			res[1] = p6[i];
+			res[0] = p7[i];
+#else
+			res[0] = p0[i];
+			res[1] = p1[i];
+			res[2] = p2[i];
+			res[3] = p3[i];
+			res[4] = p4[i];
+			res[5] = p5[i];
+			res[6] = p6[i];
+			res[7] = p7[i];
+#endif
+		}
+		pos += nrows * 8;
 	}
 	return pos;
 }
@@ -1638,8 +1930,185 @@ pqc_max_definition( pqc_schema_element *pse)
 #define DTMONTH_SHIFT   (DTDAY_WIDTH+DTDAY_SHIFT)
 #define mkdate(y, m, d) (((uint32_t) (((y) + YEAR_OFFSET) * 12 + (m) - 1) << DTMONTH_SHIFT) | ((uint32_t) (d) << DTDAY_SHIFT))
 
+static int64_t
+pqc_read_page_chunk( pqc_reader_t *r, pqc_creader_t *cr, void *output /*fixed sized atom storage */, void *voutput /* var storage */, uint64_t nrows, size_t *ssize, int *dict)
+{
+	int64_t pos = cr->pos;
+	uint64_t orows = nrows;
+	if (r->pse->precision == 0 && !output)
+		orows = 0;
+	else
+		nrows = pqc_nrows(r, cr, nrows);
+	if (cr->dict) {
+		if (cr->cc->cur_page.num_values - cr->cc->cur_page.num_nulls)
+			nrows = pqc_dict_lookup(r, cr, output, voutput, nrows, pos, ssize, dict);
+		if (cr->definition)
+			(void)pqc_add_nil(r, cr, output, output, orows, cr->cc->cur_page.num_nulls, r->pse->size/8);
+	} else {
+		if (cr->cc->cur_page.pageencodings[0].page_encoding == DELTA_LENGTH_BYTE_ARRAY ||
+				cr->cc->cur_page.pageencodings[0].page_encoding == DELTA_BYTE_ARRAY) {
+			if (r->pse->type != stringtype) {
+				pqc_set_error(r, "DELTA_LENGTH_BYTE_ARRAY|DELTA_BYTE_ARRAY needs stringtype");
+				return -1;
+			}
+			nrows = pqc_read_delta_strings(cr, output, voutput, nrows, pos, ssize, dict);
+		} else if (cr->cc->cur_page.pageencodings[0].page_encoding == DELTA_BINARY_PACKED) {
+			if (r->pse->type != inttype)
+				pqc_set_error(r, "DELTA_BINARY_PACKED needs inttype");
+			pqc_set_error(r, "DELTA_BINARY_PACKED not handled yet");
+			return -1;
+		} else if (r->pse->type != stringtype) {
+			if (cr->cc->cur_page.pageencodings[0].page_encoding == BYTE_STREAM_SPLIT) {
+				if ((pos = byte_split_stream(r, cr, output, pos, nrows)) < 0)
+					return pos;
+			} else
+				/* fixed types, plain encoding */
+				if (!cr->definition) {
+					if ((r->pse->size/8)*8 != r->pse->size) {
+						pos += pqc_project(output, ((char*)cr->data)+pos, nrows, r->pse->size);
+					} else if (r->pse->physical_type == PT_BYTE_ARRAY ||
+							r->pse->physical_type == PT_FIXED_LEN_BYTE_ARRAY) {
+						char *src = cr->data+pos;
+						if (r->pse->type == blobtype) {
+							if (!voutput) {
+								size_t blobsizes = 0;
+								for (uint32_t i = 0; i < nrows; i++) {
+									int len = pqc_int(*(int*)(src));
+									src += sizeof(int) + len;
+									blobsizes += sizeof(size_t) + len;
+								}
+								*ssize = blobsizes;
+								return 0;
+							} else {
+								assert(voutput);
+								BUN *p = output, offset = *ssize;
+								char *dst = voutput, *fdst = voutput;
+								for (uint32_t i = 0; i < nrows; i++) {
+									p[i] = offset + (dst - fdst);
+									int len = pqc_int(*(int*)(src));
+									src += sizeof(int);
+									size_t *n = (size_t*)dst;
+									*n = len;
+									dst += sizeof(size_t);
+									memcpy(dst, src, len);
+									src += len;
+									dst += len;
+								}
+								pos = src-cr->data;
+								*ssize = offset + (dst - fdst);
+							}
+						} else if (r->pse->type == decimaltype || r->pse->type == inttype) {
+							char *dst = output;
+							int width = pse_get_width(r->pse);
+							/* FIXED ARRAY little endian len followed by big endian data,  what where they smoking */
+							for (uint32_t i = 0; i < nrows; i++, dst += width) {
+								int len = pqc_int(*(int*)(((char*)cr->data)+pos));
+								pos += 4;
+								*(uint16_t*)dst = 0;
+								int offset = width - len;
+								memcpy(dst+offset, ((char*)cr->data)+pos, len);
+								if (width == 2)
+									*(uint16_t*)dst = pqc_be_sht(*(uint16_t*)dst);
+								pos += len;
+							}
+						} else {
+							pqc_set_error(r, "PT_BYTE_ARRAY|PT_FIXED_LEN_BYTE_ARRAY with wrong type %d", r->pse->type);
+							return -1;
+						}
+					} else if (r->pse->type == inttype && r->pse->precision != r->pse->size) {
+						/* todo add signed case */
+						if (r->pse->precision == 8 && r->pse->size == 16) {
+							uint8_t *d = output;
+							uint16_t *s = (uint16_t*)(((char*)cr->data)+pos);
+							for(uint64_t i=0; i< nrows; i++)
+								d[i] = (uint8_t)s[i];
+						} else if (r->pse->precision == 8 && r->pse->size == 32) {
+							uint8_t *d = output;
+							uint32_t *s = (uint32_t*)(((char*)cr->data)+pos);
+							for(uint64_t i=0; i< nrows; i++)
+								d[i] = (uint8_t)s[i];
+						} else if (r->pse->precision == 16 && r->pse->size == 32) {
+							uint16_t *d = output;
+							uint32_t *s = (uint32_t*)(((char*)cr->data)+pos);
+							for(uint64_t i=0; i< nrows; i++)
+								d[i] = (uint16_t)s[i];
+						}
+					} else if (r->pse->type == inttype && r->pse->precision == r->pse->size && r->pse->size == 96) {
+						ulng *d = output;
+						char *s = ((char*)cr->data)+pos;
+						for(uint64_t i = 0; i < nrows; i++, s += 12) {
+							uint64_t nanoseconds = pqc_lng(*(uint64_t*)s);
+							uint32_t julian_day = pqc_int(*(uint32_t*)(s+8));
+
+							nanoseconds /= LL_CONSTANT(1000);
+							julian_day -= 2440588;
+							*d++ = (ulng)nanoseconds + julian_day * 86400 * LL_CONSTANT(1000000);
+						}
+					} else {
+						memcpy(output, ((char*)cr->data)+pos, nrows*(r->pse->size/8));
+						pos += (r->pse->size/8)*nrows;
+#ifdef WORDS_BIGENDIAN
+						if (nrows && (r->pse->type == inttype || r->pse->type == floattype)) {
+							char *s = output;
+							if (r->pse->size == 16)
+								for(uint32_t i = 0; i < nrows; i++, s+=sizeof(uint16_t))
+									*(uint16_t*)s = pqc_sht(*(uint16_t*)s);
+							if (r->pse->size == 32)
+								for(uint32_t i = 0; i < nrows; i++, s+=sizeof(uint32_t))
+									*(uint32_t*)s = pqc_int(*(uint32_t*)s);
+							if (r->pse->size == 64)
+								for(uint32_t i = 0; i < nrows; i++, s+=sizeof(uint64_t))
+									*(uint64_t*)s = pqc_lng(*(uint64_t*)s);
+						}
+#endif
+					}
+				} else {
+					pos += pqc_add_nil(r, cr, output, cr->data+pos, orows, cr->cc->cur_page.num_nulls, r->pse->size/8);
+				}
+			cr->pos = pos;
+		} else if (r->pse->type == stringtype) {
+			/* int32 len, string (no zero) encoding */
+			if (!ssize) {
+				string_read_chunk(cr, output, voutput, nrows, pos);
+				if (cr->definition)
+					(void)pqc_add_nil(r, cr, output, output, orows, cr->cc->cur_page.num_nulls, r->pse->size/8);
+			} else if (!voutput) {
+				return string_size_chunk(cr, nrows, pos, ssize, dict);
+			} else
+				offset_string_read_chunk(r, cr, output, voutput, nrows, pos, *ssize, *dict);
+		}
+	}
+	/* convert data */
+	if (r->pse->type == datetype) {
+		/* days since epoch ie 1-1-1970 */
+		uint32_t epoch_date = mkdate(1970, 1, 1);
+		if (r->pse->precision == 32) {
+			uint32_t *l = output;
+			for(uint64_t i=0; i< nrows; i++) {
+				l[i] = date_add_day(epoch_date, l[i]);
+			}
+		}
+	} else { // todo timetype
+		if ((r->pse->type == timestamptype && r->pse->precision == 6) ||
+			(r->pse->type == inttype && r->pse->precision == 96)) {
+			int64_t *l = output;
+			for(uint64_t i=0; i< nrows; i++) {
+				l[i] = timestamp_fromusec(l[i]);
+			}
+		}
+	}
+	ATOMIC_ADD(&r->rownr, orows);
+	cr->curnr += orows;
+	if (cr->cc->cur_page.num_read + orows > UINT32_MAX) {
+		pqc_set_error(r, "To many rows in one page (> UINT32_MAX)");
+		return -1;
+	}
+	cr->cc->cur_page.num_read += (uint32_t)orows; /* per page only uint32_t */
+	return orows;
+}
+
 int64_t
-pqc_read_chunk( pqc_reader_t *r, int wnr, void *output /*fixed sized atom storage */, void *voutput /* var storage */, uint64_t nrows, int *ssize, int *dict)
+pqc_read_chunk( pqc_reader_t *r, int wnr, void *output /*fixed sized atom storage */, void *voutput /* var storage */, uint64_t nrows, size_t *ssize, int *dict)
 {
 	if (ATOMIC_GET(&r->rownr) >= r->sz)
 		return 0;
@@ -1673,17 +2142,18 @@ pqc_read_chunk( pqc_reader_t *r, int wnr, void *output /*fixed sized atom storag
 
 			pos = 0;
 			assert (cr->cc->index_page_offset == 0); /* we currently don't handle parquet indices */
+			int64_t offset = 0;
 			if (cr->cc->dictionary_page_offset) { /* load dictionary */
-				if ((cr->pos = pqc_read(cr->pq, cr->cc->dictionary_page_offset, cr->buffer, cr->cc->total_compressed_size)) < 0)
+				if ((offset = pqc_read(cr->pq, cr->cc->dictionary_page_offset, cr->buffer, cr->cc->total_compressed_size)) < 0)
 					return -3;
 
-				assert(cr->pos == (int64_t)cr->cc->dictionary_page_offset);
-				if ((pos = pqc_read_dict(r, cr)) < 0)
+				assert(offset == (int64_t)cr->cc->dictionary_page_offset);
+				if ((pos = (int)pqc_read_dict(r, cr)) < 0)
 					return -4;
 			} else { /* read data page */
-				if ((cr->pos = pqc_read(cr->pq, cr->cc->data_page_offset, cr->buffer, cr->cc->total_compressed_size)) < 0)
+				if ((offset = pqc_read(cr->pq, cr->cc->data_page_offset, cr->buffer, cr->cc->total_compressed_size)) < 0)
 					return -3;
-				assert(cr->pos == (int64_t)cr->cc->data_page_offset);
+				assert(offset == (int64_t)cr->cc->data_page_offset);
 			}
 
 			/*
@@ -1697,20 +2167,26 @@ pqc_read_chunk( pqc_reader_t *r, int wnr, void *output /*fixed sized atom storag
 			cr->data = NULL;
 			cr->data_allocated = false;
 
-			if (cr->odict) { /* values may still be in flight */
-				_DELETE(cr->odict);
-				cr->odict = NULL;
+			if (cr->dict &&
+					cr->cc->pageencodings[cr->curpageencoding].page_encoding != PLAIN_DICTIONARY &&
+					cr->cc->pageencodings[cr->curpageencoding].page_encoding != RLE_DICTIONARY) { /* new dict */
+				if (cr->odict) { /* values may still be in flight */
+					_DELETE(cr->odict);
+					cr->odict = NULL;
+				}
+
+				if (cr->dict && cr->dict_allocated)
+					cr->odict = cr->dict;
+				cr->dict = NULL; /* TODO possible multi page dict usage (check encoding!) */
+				cr->dict_allocated = false;
 			}
-
-
-			if (cr->dict && cr->dict_allocated)
-				cr->odict = cr->dict;
-			cr->dict = NULL; /* TODO possible multi page dict usage (check encoding!) */
-			cr->dict_allocated = false;
 
 			if (cr->definition)
 				_DELETE(cr->definition);
-
+			cr->nr_bits = -1;
+			cr->is_rle = false;
+			cr->remaining = 0;
+			cr->idx = 0;
 		}
 		pos = pqc_page_header(r, cr, pos);
 		if (pos < 0)
@@ -1730,88 +2206,14 @@ pqc_read_chunk( pqc_reader_t *r, int wnr, void *output /*fixed sized atom storag
 				cr->pos = pos;
 			}
 			if (definition) {
+				assert(cr->cc->cur_page.pageencodings[1].page_encoding);
 				/* bit vector for null's */
 				pos = pqc_definition(r, cr, output, cr->cc->cur_page.num_values, (uint32_t)pos, definition);
 				cr->pos = pos;
 			}
 			if (pos < 0)
 				return pos;
-			uint64_t orows = nrows;
-			if (r->pse->precision == 0 && !output)
-				orows = 0;
-			else
-				nrows = pqc_nrows(cr, nrows);
-			if (cr->dict) {
-				if (cr->cc->cur_page.num_values - cr->cc->cur_page.num_nulls)
-					nrows = pqc_dict_lookup(r, cr, output, voutput, nrows, pos, ssize, dict);
-				if (cr->definition)
-					(void)pqc_add_nil(r, cr, output, output, orows, cr->cc->cur_page.num_nulls, r->pse->size/8);
-			} else {
-				if (cr->cc->cur_page.pageencodings[0].page_encoding) {
-					/* delta strings == delta_encoded (encoding==5) prefixes (lengths),
-					 * delta_length_byte_array((encoding==6) == (delta encoded lengths, back2back strings)) suffix strings */
-					nrows = pqc_read_delta_strings(cr, output, voutput, nrows, pos, ssize, dict);
-				} else if (r->pse->type != stringtype) {
-					/* fixed types, plain encoding */
-					if (!cr->definition) {
-						if ((r->pse->size/8)*8 != r->pse->size) {
-							pos += pqc_project(output, ((char*)cr->data)+pos, nrows, r->pse->size);
-						} else if (r->pse->physical_type == PT_BYTE_ARRAY ||
-								   r->pse->physical_type == PT_FIXED_LEN_BYTE_ARRAY) {
-							char *dst = output;
-							/* FIX ARRAY little endian len followed by big endian data,  what where they smoking */
-							for (uint32_t i = 0; i < nrows; i++, dst += 2) {
-								int len = *(int*)(((char*)cr->data)+pos);
-								pos += 4;
-								*(sht*)dst = 0;
-								memcpy(dst, ((char*)cr->data)+pos, len);
-								if (len == 2)
-									*(sht*)dst = short_int_SWAP(*(sht*)dst);
-								pos += len;
-							}
-						} else {
-							memcpy(output, ((char*)cr->data)+pos, nrows*(r->pse->size/8));
-							pos += (r->pse->size/8)*nrows;
-						}
-					} else {
-						pos += pqc_add_nil(r, cr, output, cr->data+pos, orows, cr->cc->cur_page.num_nulls, r->pse->size/8);
-					}
-					cr->pos = pos;
-				} else if (r->pse->type == stringtype) {
-					/* int32 len, string (no zero) encoding */
-					if (!ssize) {
-						string_read_chunk(cr, output, voutput, nrows, pos);
-						if (cr->definition)
-							(void)pqc_add_nil(r, cr, output, output, orows, cr->cc->cur_page.num_nulls, r->pse->size/8);
-					} else if (!voutput) {
-						return string_size_chunk(cr, nrows, pos, ssize, dict);
-					} else
-						offset_string_read_chunk(r, cr, output, voutput, nrows, pos, *ssize, *dict);
-				}
-			}
-			/* convert data */
-			if (r->pse->type == datetype) {
-				/* days since epoch ie 1-1-1970 */
-				uint32_t epoch_date = mkdate(1970, 1, 1);
-				if (r->pse->precision == 32) {
-					uint32_t *l = output;
-					for(uint64_t i=0; i< nrows; i++) {
-						l[i] = date_add_day(epoch_date, l[i]);
-					}
-				}
-			} else // todo timetype
-				if (r->pse->type == timestamptype) {
-					if (r->pse->precision == 6) {
-						int64_t *l = output;
-						for(uint64_t i=0; i< nrows; i++) {
-							l[i] = timestamp_fromusec(l[i]);
-						}
-					}
-				}
-			ATOMIC_ADD(&r->rownr, orows);
-			cr->curnr += orows;
-			cr->cc->cur_page.num_read += orows;
-			return orows;
+			return pqc_read_page_chunk(r, cr, output, voutput, nrows, ssize, dict);
 		}
 	} else {
 		assert(cr->cc->cur_page.num_read < cr->cc->cur_page.num_values);
@@ -1819,83 +2221,7 @@ pqc_read_chunk( pqc_reader_t *r, int wnr, void *output /*fixed sized atom storag
 			nrows = cr->cc->cur_page.num_values - cr->cc->cur_page.num_read;
 		/* next vector */
 		if (cr->data) {
-			int pos = cr->pos;
-			uint64_t orows = nrows;
-			if (r->pse->precision == 0 && !output)
-				orows = 0;
-			else
-				nrows = pqc_nrows(cr, nrows);
-			if (cr->dict) {
-				if (cr->cc->cur_page.num_values - cr->cc->cur_page.num_nulls)
-					nrows = pqc_dict_lookup(r, cr, output, voutput, nrows, pos, ssize, dict);
-				if (cr->definition)
-					(void)pqc_add_nil(r, cr, output, output, orows, cr->cc->cur_page.num_nulls, r->pse->size/8);
-			} else {
-				if (cr->cc->cur_page.pageencodings[0].page_encoding) {
-					/* delta strings == delta_encoded (encoding==5) prefixes (lengths),
-					 * delta_length_byte_array((encoding==6) == (delta encoded lengths, back2back strings)) suffix strings */
-					nrows = pqc_read_delta_strings(cr, output, voutput, nrows, pos, ssize, dict);
-				} else if (r->pse->type != stringtype) {
-					/* fixed types, plain encoding */
-					if (!cr->definition) {
-						if ((r->pse->size/8)*8 != r->pse->size) {
-							pos += pqc_project(output, ((char*)cr->data)+pos, nrows, r->pse->size);
-						} else if (r->pse->physical_type == PT_BYTE_ARRAY ||
-								   r->pse->physical_type == PT_FIXED_LEN_BYTE_ARRAY) {
-							/* FIX ARRAY little endian len followed by big endian data,  what where they smoking */
-							char *dst = output;
-							for (uint32_t i = 0; i < nrows; i++, dst += 2) {
-								int len = *(int*)(((char*)cr->data)+pos);
-								pos += 4;
-								*(sht*)dst = 0;
-								memcpy(dst, ((char*)cr->data)+pos, len);
-								if (len == 2)
-									*(sht*)dst = short_int_SWAP(*(sht*)dst);
-								pos += len;
-							}
-						} else {
-							memcpy(output, ((char*)cr->data)+pos, nrows*(r->pse->size/8));
-							pos += (r->pse->size/8)*nrows;
-						}
-					} else {
-						pos += pqc_add_nil(r, cr, output, cr->data+pos, orows, cr->cc->cur_page.num_nulls, r->pse->size/8);
-					}
-					cr->pos = pos;
-				} else if (r->pse->type == stringtype) {
-					/* int32 len, string (no zero) encoding */
-					if (!ssize) {
-						string_read_chunk(cr, output, voutput, nrows, pos);
-						if (cr->definition)
-							(void)pqc_add_nil(r, cr, output, output, orows, cr->cc->cur_page.num_nulls, r->pse->size/8);
-					} else if (!voutput) {
-						return string_size_chunk(cr, nrows, pos, ssize, dict);
-					} else
-						offset_string_read_chunk(r, cr, output, voutput, nrows, pos, *ssize, *dict);
-				}
-			}
-			/* convert data */
-			if (r->pse->type == datetype) {
-				/* days since epoch ie 1-1-1970 */
-				uint32_t epoch_date = mkdate(1970, 1, 1);
-				if (r->pse->precision == 32) {
-					uint32_t *l = output;
-					for(uint64_t i=0; i< nrows; i++) {
-						l[i] = date_add_day(epoch_date, l[i]);
-					}
-				}
-			} else // todo timetype
-				if (r->pse->type == timestamptype) {
-					if (r->pse->precision == 6) {
-						int64_t *l = output;
-						for(uint64_t i=0; i< nrows; i++) {
-							l[i] = timestamp_fromusec(l[i]);
-						}
-					}
-				}
-			ATOMIC_ADD(&r->rownr, orows);
-			cr->curnr += orows;
-			cr->cc->cur_page.num_read += orows;
-			return orows;
+			return pqc_read_page_chunk( r, cr, output, voutput, nrows, ssize, dict);
 		}
 	}
 	return 0;

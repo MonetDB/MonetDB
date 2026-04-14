@@ -3,7 +3,7 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
  * For copyright information, see the file debian/copyright.
  */
@@ -748,7 +748,7 @@ exp_bin_conjunctive(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp,
 		}
 		sel1 = s;
 	}
-	if (sel1->nrcols == 0 && left) {
+	if (sel1 && sel1->nrcols == 0 && left) {
 		stmt *predicate = bin_find_smallest_column(be, left);
 
 		if (!reduce) {
@@ -7358,17 +7358,13 @@ rel2bin_delete(backend *be, sql_rel *rel, list *refs)
 			return NULL;
 		assert(rows->type == st_list);
 		tids = rows->op4.lval->h->data; /* TODO this should be the candidate list instead */
-		if (list_length(rel->exps) > 1)
-			returning = rows;
-	} else if (list_length(rel->exps) > 1) {
-		returning = subrel_bin(be, rel->l, refs);
 	}
+	if (list_length(rel->exps) > 1)
+		returning = subrel_bin(be, rel->l, refs);
 
 	stmt *rows = tids;
-	if (!rows) {
+	if (!rows)
 		rows = stmt_tid(be, t, 0);
-		rows->label = 1; /* todo find nid from basetable ba */
-	}
 	stdelete = sql_delete(be, t, tids);
 	if (sql->cascade_action)
 		sql->cascade_action = NULL;
@@ -7388,6 +7384,8 @@ rel2bin_delete(backend *be, sql_rel *rel, list *refs)
 			sql_exp *exp = n->data;
 			stmt *s = exp_bin(be, exp, returning, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
 
+			if (tids && s)
+				s = stmt_project(be, tids, s);
 			if (!s) /* error */
 				return NULL;
 

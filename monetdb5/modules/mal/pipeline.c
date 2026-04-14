@@ -3,7 +3,7 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
  * For copyright information, see the file debian/copyright.
  */
@@ -126,15 +126,13 @@ typedef struct pp_counter_t {
 	int current;
 	bool sync;
 	int scnt;
-	MT_Cond c;
 	int *cur; /* nr per worker */
 } pp_counter;
 
 static void
 counter_free(pp_counter *c)
 {
-	if (c->cur)
-		GDKfree(c->cur);
+	GDKfree(c->cur);
 	MT_lock_destroy(&c->l);
 	GDKfree(c);
 }
@@ -144,21 +142,24 @@ sync_counter_done(pp_counter *c, int wid, int nr_workers, int redo)
 {
 	(void)redo;
 	int res = 0, cur;
-	MT_lock_set(&c->l);
+	Pipeline *p = MT_thread_getdata();
+	MT_lock_set(&p->p->l);
 	if (!c->cur)
 		c->cur = (int*)GDKzalloc(sizeof(int) * nr_workers);
 	cur = c->current++;
 	if (cur >= c->nr)
 		res = 1;
-	if (res && c->scnt != nr_workers) {
+	if (res && c->scnt != nr_workers && !p->p->error) {
 		c->scnt++;
 		if (c->scnt != nr_workers)
-			MT_cond_wait(&c->c, &c->l);
+			MT_cond_wait(&p->p->cond, &p->p->l);
 		else
-			MT_cond_broadcast(&c->c);
-		assert(c->scnt == nr_workers);
+			MT_cond_broadcast(&p->p->cond);
+		assert(c->scnt == nr_workers || p->p->error);
 	}
-	MT_lock_unset(&c->l);
+	if (p->p->error)
+		res = 1;
+	MT_lock_unset(&p->p->l);
 	assert(c->cur);
 	c->cur[wid] = cur;
 	return res;
@@ -189,33 +190,36 @@ PPcounter_get(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int *cur = getArgReference_int(stk, pci, 0);
 	bat cb = *getArgReference_bat(stk, pci, 1);
 	Pipeline *p = (Pipeline*)*getArgReference_ptr(stk, pci, 2);
+	//	Pipeline *p = MT_thread_getdata();
 
 	BAT *b = BATdescriptor(cb);
 	if (!b)
 		throw(MAL, "pipeline.counter_get", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	pp_counter *c = (pp_counter*)b->tsink;
+	if (!c) {
+		BBPunfix(b->batCacheid);
+		throw(MAL, "pipeline.counter_get", SQLSTATE(HY002) "Missing source sink");
+	}
 	if (c->s.type != COUNTER_SINK) {
-		BBPreclaim(b);
-		throw(MAL, "pipeline.counter_get", SQLSTATE(HY002) "Invalid source %d", c->s.type);
+		BBPunfix(b->batCacheid);
+		throw(MAL, "pipeline.counter_get", SQLSTATE(HY002) "Invalid source type %d, expected %d", c->s.type, COUNTER_SINK);
 	}
 	if (c->sync && c->scnt != (int)p->p->nr_workers) {
-		MT_lock_set(&c->l);
+		MT_lock_set(&p->p->l);
 		if (c->scnt != (int)p->p->nr_workers) {
 			c->scnt++;
 			if (c->scnt != p->p->nr_workers)
-				MT_cond_wait(&c->c, &c->l);
+				MT_cond_wait(&p->p->cond, &p->p->l);
 			else
-				MT_cond_broadcast(&c->c);
+				MT_cond_broadcast(&p->p->cond);
 		}
 		assert(c->scnt == (int)p->p->nr_workers);
-		MT_lock_unset(&c->l);
+		MT_lock_unset(&p->p->l);
 	}
-	if (!c->cur) {
+	if (!c->cur)
 		c->s.done(c, p->wid, p->p->nr_workers, false);
-		//counter_done(c, p->wid, p->p->nr_workers, false);
-	}
 	*cur = c->cur[p->wid];
-	BBPreclaim(b);
+	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -280,7 +284,6 @@ PPcounter(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (sync) {
 		c->sync = true;
 		c->scnt = 0;
-		MT_cond_init(&c->c, "sync_counter");
 		c->s.done = (sink_done)&sync_counter_done;
 	}
 	*rb = b->batCacheid;
@@ -320,166 +323,14 @@ PPdone(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void)cntxt; (void)mb;
 	BAT *b = BATdescriptor(B);
 	if (b) {
+		if (!b->tsink) {
+			BBPunfix(b->batCacheid);
+			throw(MAL, "pipeline.done", SQLSTATE(HY002) "Missing source sink");
+		}
 		*res = b->tsink->done(b->tsink, p->wid, p->p->nr_workers, redo);
-		BBPreclaim(b);
+		BBPunfix(b->batCacheid);
 	}
 	return MAL_SUCCEED;
-}
-
-// 	 (mailbox:T, metadata:int) := pipeline.channel(initial_value:T)
-static str
-PPchannel(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	(void)cntxt;
-	void *mailbox = getArgReference(stk, pci, 0);
-	int *metadata = getArgReference_int(stk, pci, 1);
-	void *value = getArgReference(stk, pci, 2);
-	int tpe = getArgType(mb, pci, 2);
-
-	if (!isaBatType(tpe) && ATOMvarsized(tpe))
-		throw(MAL, "pipeline.chanel", SQLSTATE(42000)"cannot make channel for varsized items");
-
-	if (isaBatType(tpe)) {
-		*(bat*)mailbox = *(bat*)value;
-		BBPretain(*(bat*)mailbox);
-	} else if (ATOMputFIX(tpe, mailbox, value) != GDK_SUCCEED) {
-		throw(MAL, "pipeline.send", GDK_EXCEPTION);
-	}
-	*metadata = 0;
-
-	(void)cntxt;
-	return MAL_SUCCEED;
-}
-
-// 	 dummy := pipeline.send(handle:ptr, mailbox:T, metadata:int, value:T)
-static str
-PPsend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	(void)cntxt;
-	str msg = MAL_SUCCEED;
-
-	ptr handle = *getArgReference_ptr(stk, pci, 1);
-	Pipeline *p = (Pipeline*)handle;
-	Pipelines *pp = p->p;
-
-	// Note: these point into the master stack frame not the worker stack frame
-	void *mailbox = getArgReference(pp->stk, pci, 2);
-	int *metadata = getArgReference_int(pp->stk, pci, 3);
-
-	void *value = getArgReference(stk, pci, 4);
-	int tpe = getArgGDKType(mb, pci, 4);
-
-	MT_lock_set(&pp->l);
-
-	// const char *ch_name = mb->var[getArg(pci, 2)].name;
-	// char *formatted = ATOMformat(tpe, value);
-	// fprintf(stderr, "Iteration %d sending value %s on channel %s\n", pp->counters[p->wid], formatted, ch_name);
-	// GDKfree(formatted);
-
-	if (!is_int_nil(*metadata)) {
-		msg = createException(MAL, "pipeline.send", SQLSTATE(42000)"causality violation detected in iteration %d: %d has sent already",
-			pp->counters[p->wid], *metadata);
-		goto bailout;
-	}
-
-	if (isaBatType(tpe)) {
-		*(bat*)mailbox = *(bat*)value;
-		BBPretain(*(bat*)mailbox);
-	} else if (ATOMputFIX(tpe, mailbox, value) != GDK_SUCCEED) {
-		msg = createException(MAL, "pipeline.send", GDK_EXCEPTION);
-		goto bailout;
-	}
-	*metadata = pp->counters[p->wid] + 1;
-
-	MT_cond_broadcast(&pp->cond);
-	(void)cntxt;
-bailout:
-	MT_lock_unset(&pp->l);
-	return msg;
-}
-
-// 	 value:T := pipeline.recv(handle, mailbox:T, metadata:int)
-static str
-PPrecv(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	(void)cntxt;
-	str msg = MAL_SUCCEED;
-	bool locked = false;
-
-	void *ret = getArgReference(stk, pci, 0);
-
-	ptr handle = *getArgReference_ptr(stk, pci, 1);
-	Pipeline *p = (Pipeline*)handle;
-	Pipelines *pp = p->p;
-
-	// Note: these point into the master stack frame not the worker stack frame
-	void *mailbox = getArgReference(pp->stk, pci, 2);
-	int *metadata = getArgReference_int(pp->stk, pci, 3);
-	int prev = int_nil; (void)prev; // for debug logging
-
-	int tpe = getArgGDKType(mb, pci, 2);
-	// const char *ch_name = mb->var[getArg(pci, 2)].name;
-
-	MT_lock_set(&pp->l);
-	locked = true;
-	prev = *metadata ^1; // different but no overflow
-	while (true) {
-		int myself = pp->counters[p->wid];
-		if (*metadata == myself) {
-			// found it, drop out
-			if (isaBatType(tpe)) {
-				*(bat*)ret = *(bat*)mailbox;
-				BBPretain(*(bat*)ret);
-			} else if (ATOMputFIX(tpe, ret, mailbox) != GDK_SUCCEED) {
-				msg = createException(MAL, "pipeline.recv", GDK_EXCEPTION);
-				goto bailout;
-			}
-			if (isaBatType(tpe)) {
-				BBPrelease(*(bat*)mailbox);
-				*(bat*)mailbox = bat_nil;
-			} else if (ATOMputFIX(tpe, mailbox, ATOMnilptr(tpe)) != GDK_SUCCEED) {
-				msg = createException(MAL, "pipeline.recv", GDK_EXCEPTION);
-				goto bailout;
-			}
-			*metadata = int_nil;
-			//
-			// char *formatted = ATOMformat(tpe, ret);
-			// fprintf(stderr, "Iteration %d recv'd %s from channel %s\n", pp->counters[p->wid], formatted, ch_name);
-			// GDKfree(formatted);
-			break;
-		}
-		// value is not in yet, is there still hope?
-		bool sender_still_running = false;
-		for (int i = 0; i < p->p->nr_workers; i++) {
-			if (pp->counters[i] == myself - 1) {
-				sender_still_running = true;
-				break;
-			}
-		}
-		if (!sender_still_running) {
-			// fprintf(stderr, "Iteration %d failed to recv from channel %s because no message was sent\n", pp->counters[p->wid], ch_name);
-			msg = createException(MAL, "pipeline.recv", SQLSTATE(42000)"iteration %d neglected to send a message to %d", myself - 1, myself);
-			break;
-		}
-
-		// if (*metadata != prev) {
-		// 	prev = *metadata;
-		// 	fprintf(stderr, "Iteration %d waiting to recv from channel %s [currently ", pp->counters[p->wid], ch_name);
-		// 	if (is_int_nil(*metadata))
-		// 		fprintf(stderr, "empty]\n");
-		// 	else
-		// 		fprintf(stderr, "for %d]\n", *metadata);
-		// }
-
-		// Wait until something changes
-		MT_cond_wait(&pp->cond, &pp->l);
-	}
-	(void)cntxt;
-
-bailout:
-	if (locked)
-		MT_lock_unset(&p->p->l);
-	return msg;
 }
 
 #define CONCAT_SINK 99
@@ -488,18 +339,21 @@ typedef struct pp_concat_t {
 	Sink s;
 
 	MT_Lock l;
-	/* TODO per worker ? */
 	int current;
 	int max;
 	bool started;
 	int *cur;
-	Sink *srcs[];
+	BAT *srcs[];
 } pp_concat;
 
 static void
 concat_free( pp_concat *pcat )
 {
 	MT_lock_destroy(&pcat->l);
+	for(int i = 0; i<pcat->max; i++) {
+		if (pcat->srcs[i])
+			BBPreclaim(pcat->srcs[i]);
+	}
 	GDKfree(pcat->cur);
 	GDKfree(pcat);
 }
@@ -514,8 +368,9 @@ concat_done( pp_concat *c, int wid, int nr_workers, bool redo )
 		c->cur = (int*)GDKzalloc(sizeof(int) * nr_workers);
 		c->started = true;
 	}
-	Sink *s = c->srcs[c->cur[wid]];
-	if (s) {
+	BAT *sb = c->srcs[c->cur[wid]];
+	if (sb) {
+		Sink *s = sb->tsink;
 		MT_lock_unset(&c->l);
 		if (s->type == SUBCONCAT_SINK)
 			res = concat_done( (pp_concat*)s, wid, nr_workers, redo);
@@ -524,9 +379,10 @@ concat_done( pp_concat *c, int wid, int nr_workers, bool redo )
 		}
 		MT_lock_set(&c->l);
 		while(res && ++c->cur[wid] < c->max) {
-			s = c->srcs[c->cur[wid]];
-			if (!s)
+			sb = c->srcs[c->cur[wid]];
+			if (!sb)
 				break;
+			s = sb->tsink;
 			MT_lock_unset(&c->l);
 			if (s->type == SUBCONCAT_SINK)
 				res = concat_done( (pp_concat*)s, wid, nr_workers, false);
@@ -547,8 +403,9 @@ concat_next( pp_concat *c, int wid)
 	assert(c->s.type == CONCAT_SINK || c->s.type == SUBCONCAT_SINK);
 	MT_lock_set(&c->l);
 	assert(c->started);
-	Sink *s = c->srcs[c->cur[wid]];
-	if (s) {
+	BAT *sb = c->srcs[c->cur[wid]];
+	if (sb) {
+		Sink *s = sb->tsink;
 		MT_lock_unset(&c->l);
 		if (s->type == SUBCONCAT_SINK)
 			res = concat_next( (pp_concat*)s, wid);
@@ -567,8 +424,9 @@ concat_next_bat( pp_concat *c, int wid)
 	assert(c->s.type == CONCAT_SINK || c->s.type == SUBCONCAT_SINK);
 	MT_lock_set(&c->l);
 	assert(c->started);
-	Sink *s = c->srcs[c->cur[wid]];
-	if (s) {
+	BAT *sb = c->srcs[c->cur[wid]];
+	if (sb) {
+		Sink *s = sb->tsink;
 		MT_lock_unset(&c->l);
 		if (s->type == SUBCONCAT_SINK)
 			res = concat_next_bat( (pp_concat*)s, wid);
@@ -602,7 +460,7 @@ PPconcat_block(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	pp_concat *pcat = (pp_concat*)b->tsink;
 	if (pcat->s.type != CONCAT_SINK && pcat->s.type != SUBCONCAT_SINK) {
 		BBPreclaim(b);
-		throw(MAL, "pipeline.concat_block", SQLSTATE(HY002) "Invalid source %d", pcat->s.type);
+		throw(MAL, "pipeline.concat_block", SQLSTATE(HY002) "Invalid type for a concat source %d", pcat->s.type);
 	}
 	MT_lock_set(&pcat->l);
 	assert(pcat->cur);
@@ -625,23 +483,23 @@ PPconcat_add(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT *b = BATdescriptor(cb), *i = BATdescriptor(ib);
 	if (!b || !i) {
 		BBPreclaim(b);
+		BBPreclaim(i);
 		throw(MAL, "pipeline.concat_add", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	pp_concat *pcat = (pp_concat*)b->tsink;
 	if (pcat->s.type != CONCAT_SINK && pcat->s.type != SUBCONCAT_SINK) {
 		BBPreclaim(b);
 		BBPreclaim(i);
-		throw(MAL, "pipeline.concat_add", SQLSTATE(HY002) "Invalid source %d", pcat->s.type);
+		throw(MAL, "pipeline.concat_add", SQLSTATE(HY002) "Invalid type for a concat source %d", pcat->s.type);
 	}
 	if (pcat->current >= pcat->max) {
 		BBPreclaim(b);
 		BBPreclaim(i);
 		throw(MAL, "pipeline.concat_add", SQLSTATE(HY002) "Concat too many sources (%d)", pcat->current);
 	}
-	pcat->srcs[pcat->current++] = i->tsink;
+	pcat->srcs[pcat->current++] = i;
 	if (i->tsink->type == CONCAT_SINK)
 		i->tsink->type = SUBCONCAT_SINK;
-	BBPreclaim(i);
 	*rb = b->batCacheid;
 	BBPkeepref(b);
 	return MAL_SUCCEED;
@@ -833,8 +691,8 @@ source_next(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BBPreclaim(s);
 		throw(MAL, "source.next", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
-	QryCtx *qc = MT_thread_get_qry_ctx();
-	BAT *r = src->next_bat(src, qc->wid);
+	Pipeline *p = MT_thread_getdata();
+	BAT *r = src->next_bat(src, p->wid);
 	if (!r) {
 		BBPreclaim(s);
 		throw(SQL, "source.next",  SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -912,19 +770,6 @@ static mel_func pipeline_init_funcs[] = {
 	 batargany("input", 1),
 	 arg("force", bit),
 	 batarg("sink", bte)
- )),
-
- pattern("pipeline", "channel", PPchannel, true, "create a new channel", args(2,3,
-	 argany("mailbox", 1), arg("channel", int),
-	 argany("initial", 1)
- )),
- pattern("pipeline", "recv", PPrecv, true, "receive from channel", args(1,4,
-	 argany("", 1),
-	 arg("handle", ptr), argany("mailbox", 1), arg("channel", int)
- )),
- pattern("pipeline", "send", PPsend, true, "send through channel", args(1,5,
-	 arg("", bit),
-	 arg("handle", ptr), argany("mailbox",1), arg("channel",int), argany("value", 1)
  )),
 
  pattern("source", "next", source_next, false, "return next part", args(1,2,

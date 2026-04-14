@@ -3,7 +3,7 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
  * For copyright information, see the file debian/copyright.
  */
@@ -119,7 +119,8 @@ typedef enum logicaltype {
   	uuidtype = 14, 			// no compatible ConvertedType
 	float16type = 15,
 	varianttype = 16,
-  	floattype = 25 			// no compatible ConvertedType
+  	floattype = 25,			// no compatible ConvertedType
+  	blobtype = 26 			// Internal type
 } logicaltype;
 
 typedef enum {
@@ -412,12 +413,14 @@ typedef struct pqc_keyvalue {
 typedef struct pqc_stat {
 	char *max_string;
 	char *max_value;
-	uint32_t max;
 	char *min_string;
 	char *min_value;
+	uint32_t max;
 	uint32_t min;
 	uint64_t null_count;
 	uint64_t distinct_count;
+	bool max_is_exact;
+	bool min_is_exact;
 } pqc_stat;
 
 typedef struct pqc_pageencodings {
@@ -518,6 +521,9 @@ pqc_export const pqc_schema_element *pqc_get_schema_elements( pqc_file *pq, int 
 pqc_export int pqc_read_filemetadata( pqc_file *pq);
 pqc_export pqc_filemetadata *pqc_get_filemetadata( pqc_file *pq );
 
-pqc_export int64_t pqc_read( pqc_file *pq, int64_t offset, char *buffer, int nrbytes);
+pqc_export int64_t pqc_read( pqc_file *pq, int64_t offset, char *buffer, size_t nrbytes);
+extern char *pq_get_error( pqc_file *pq);
+
+extern ssize_t pqc_binary2string(pqc_schema_element *pse, char *bindata, char *buf, size_t sz);
 
 #endif /*_PQC_FILEMETADATA_H_*/

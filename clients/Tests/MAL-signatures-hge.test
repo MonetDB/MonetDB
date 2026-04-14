@@ -48540,12 +48540,12 @@ MATnew
 Create mat for partitioning
 mat
 new
-pattern mat.new(X_0:any_1, X_1:int, X_2:int):bat[:any_1]
+pattern mat.new(X_0:any_1, X_1:int, X_2:lng):bat[:any_1]
 MATnew
 Create mat for partitioning
 mat
 new
-pattern mat.new(X_0:any_1, X_1:int, X_2:int, X_3:bat[:any_2]):bat[:any_1]
+pattern mat.new(X_0:any_1, X_1:int, X_2:lng, X_3:bat[:any_2]):bat[:any_1]
 MATnew
 Create mat for partitioning
 mat
@@ -49522,7 +49522,7 @@ oahash
 expand
 command oahash.expand(X_0:bat[:oid], X_1:bat[:oid], X_2:bat[:lng], X_3:bit):bat[:oid]
 OAHASHexpand
-Expand the selected keys according to their frequencies in the hash table. If 'leftouter' is true, append the not 'selected' keys
+Expand the selected keys according to their frequencies in the hash table. If 'left_outer' is true, append the not 'selected' keys
 oahash
 expand_cartesian
 command oahash.expand_cartesian(X_0:bat[:any_1], X_1:bat[:any_2], X_2:bit):bat[:oid]
@@ -49532,7 +49532,7 @@ oahash
 explode
 command oahash.explode(X_0:bat[:oid], X_1:bat[:lng], X_2:bat[:any_2], X_3:bit):bat[:oid]
 OAHASHexplode
-Explode the result vector 'frequency' times and return payload heap slot ids. If 'leftouter' is true, fill the not 'selected' slot with oid_nil
+Explode the result vector 'frequency' times and return payload heap slot ids. If 'left_outer' is true, fill the not 'selected' slot with oid_nil
 oahash
 explode_cartesian
 command oahash.explode_cartesian(X_0:bat[:any_1], X_1:bat[:2], X_2:bit):bat[:oid]
@@ -50039,11 +50039,6 @@ command pcre.sql2pcre(X_0:str, X_1:str):str
 PCREsql2pcre
 Convert a SQL like pattern with the given escape character into a PCRE pattern.
 pipeline
-channel
-unsafe pattern pipeline.channel(X_0:any_1) (X_1:any_1, X_2:int)
-PPchannel
-create a new channel
-pipeline
 claim
 pattern pipeline.claim(X_0:bat[:bte], X_1:lng):lng
 PPclaim
@@ -50099,20 +50094,10 @@ pattern pipeline.identity(X_0:bat[:bte], X_1:bat[:any_1]):bat[:oid]
 PPidentity
 Return next set of unique object identifiers
 pipeline
-recv
-unsafe pattern pipeline.recv(X_0:ptr, X_1:any_1, X_2:int):any_1
-PPrecv
-receive from channel
-pipeline
 resultset
 pattern pipeline.resultset():bat[:bte]
 PPresultset
 return sink for synchronizing appends into resultset
-pipeline
-send
-unsafe pattern pipeline.send(X_0:ptr, X_1:any_1, X_2:int, X_3:any_1):bit
-PPsend
-send through channel
 profiler
 cpuload
 command profiler.cpuload(X_0:lng, X_1:lng, X_2:lng, X_3:lng, X_4:lng) (X_5:int, X_6:int)
@@ -51690,12 +51675,12 @@ mvc_update_wrap
 Update the values of the column tname.cname. Returns sequence number for order dependence)
 sql
 update_schemas
-unsafe pattern sql.update_schemas():void
+unsafe pattern sql.update_schemas(X_0:int):int
 SYSupdate_schemas
 Procedure triggered on update of the sys.schemas table
 sql
 update_tables
-unsafe pattern sql.update_tables():void
+unsafe pattern sql.update_tables(X_0:int):int
 SYSupdate_tables
 Procedure triggered on update of the sys._tables table
 sql

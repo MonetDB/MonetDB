@@ -3,7 +3,7 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
  * For copyright information, see the file debian/copyright.
  */
@@ -1281,6 +1281,11 @@ monet5_resolve_function(ptr M, sql_func *f, const char *fimp, bool *side_effect)
 			}
 			int nfargs = list_length(f->ops), nfres = list_length(f->res);
 
+			if (!nfargs && retc == 1 && argc == 1 && IS_PROC(f) && unsafe) { /* for unsafe procedures we inject mvc_var */
+				*side_effect = (bool) unsafe;
+				MT_lock_unset(&sql_gencodeLock);
+				return 1;
+			}
 			if (varargs || f->vararg || f->varres) {
 				*side_effect = (bool) unsafe;
 				MT_lock_unset(&sql_gencodeLock);

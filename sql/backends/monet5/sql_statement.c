@@ -3,7 +3,7 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
  * For copyright information, see the file debian/copyright.
  */
@@ -4454,6 +4454,14 @@ stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *f, stmt* rows)
 		if (LANG_INT_OR_MAL(f->func->lang) && strcmp(fimp, "round") == 0 && tpe && tpe->type->eclass == EC_DEC && ops->op4.lval->h && ops->op4.lval->h->data) {
 			q = pushInt(mb, q, tpe->digits);
 			q = pushInt(mb, q, tpe->scale);
+		}
+		/* triggers without arguments need dependency on mvc var */
+		if (f->func->type == F_PROC && f->func->side_effect && list_empty(ops->op4.lval) &&
+				(strcmp(fimp, "update_schemas") == 0 ||
+				 strcmp(fimp, "update_tables") == 0)) {
+			q->argv[0] = be->mvc_var;
+			q->argv[1] = be->mvc_var;
+			q->argc++;
 		}
 		pushInstruction(mb, q);
 	}

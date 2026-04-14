@@ -2,7 +2,7 @@
 --
 -- This Source Code Form is subject to the terms of the Mozilla Public
 -- License, v. 2.0.  If a copy of the MPL was not distributed with this
--- file, You can obtain one at http://mozilla.org/MPL/2.0/.
+-- file, You can obtain one at https://mozilla.org/MPL/2.0/.
 --
 -- For copyright information, see the file debian/copyright.
 
@@ -49,7 +49,7 @@ returns table(
     stats_null_count BIGINT,
     stats_distinct_count BIGINT,
     stats_min_value VARCHAR,
-    stats_max_value	VARCHAR,
+    stats_max_value VARCHAR,
     compression	VARCHAR,
     encodings VARCHAR,
     index_page_offset BIGINT,

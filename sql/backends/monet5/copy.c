@@ -3,7 +3,7 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
  * For copyright information, see the file debian/copyright.
  */
@@ -20,8 +20,6 @@
 
 #include "copy.h"
 #include "rel_copy.h"
-
-#define COPY_SINK 42
 
 static void
 bufferstream_destroy( bufferstream *bs )

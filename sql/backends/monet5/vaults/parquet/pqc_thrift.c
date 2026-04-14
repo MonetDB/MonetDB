@@ -3,7 +3,7 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
  * For copyright information, see the file debian/copyright.
  */
@@ -32,28 +32,30 @@ get_le_uint32(unsigned char *c)
 	return r;
 }
 
+#if 0
 static uint64_t
-i64_to_zigzag (const int64_t l)
+i64_to_zigzag(const int64_t n)
 {
-  return (((uint64_t)l) << 1) ^ (l >> 63);
+	return (((uint64_t)n) << 1) ^ (n >> 63);
 }
 
 static uint32_t
-i32_to_zigzag (const int32_t n)
+i32_to_zigzag(const int32_t n)
 {
-  return (((uint32_t)n) << 1) ^ (n >> 31);
+	return (((uint32_t)n) << 1) ^ (n >> 31);
 }
+#endif
 
 static int64_t
-zigzag_to_i64 (uint64_t n)
+zigzag_to_i64(uint64_t n)
 {
-  return (n >> 1) ^ (uint64_t) (-(int64_t) (n & 1));
+	return (int64_t) ((n >> 1) ^ (0 - (n & 1)));
 }
 
 static int32_t
-zigzag_to_i32 (uint32_t n)
+zigzag_to_i32(uint32_t n)
 {
-  return (n >> 1) ^ (uint32_t) (-(int32_t) (n & 1));
+	return (int32_t) ((n >> 1) ^ (0 - (n & 1)));
 }
 
 int
@@ -116,20 +118,21 @@ pqc_get_zint64( char *in, uint64_t *V)
 	return err;
 }
 
+#if 0
 int
 pqc_put_int32( char *out, uint32_t V)
 {
 	int nr = 0;
-      	uint32_t v = i32_to_zigzag(V);
+	uint32_t v = i32_to_zigzag(V);
 
 	while (true) {
-    		if ((v & ~0x7F) == 0) {
-      			out[nr++] = (char)v;
-      			break;
-    		} else {
-      			out[nr++] = (char)((v & 0x7F) | 0x80);
-      			v >>= 7;
-    		}
+		if ((v & ~0x7F) == 0) {
+			out[nr++] = (char)v;
+			break;
+		} else {
+			out[nr++] = (char)((v & 0x7F) | 0x80);
+			v >>= 7;
+		}
   	}
 	return nr;
 }
@@ -138,19 +141,20 @@ int
 pqc_put_int64( char *out, uint64_t V)
 {
 	int nr = 0;
-      	uint64_t v = i64_to_zigzag(V);
+	uint64_t v = i64_to_zigzag(V);
 
 	while (true) {
-    		if ((v & ~0x7FL) == 0) {
-      			out[nr++] = (char)v;
-      			break;
-    		} else {
-      			out[nr++] = (char)((v & 0x7F) | 0x80);
-      			v >>= 7;
-    		}
+		if ((v & ~0x7FL) == 0) {
+			out[nr++] = (char)v;
+			break;
+		} else {
+			out[nr++] = (char)((v & 0x7F) | 0x80);
+			v >>= 7;
+		}
   	}
 	return nr;
 }
+#endif
 
 #define T_STOP 0
 
