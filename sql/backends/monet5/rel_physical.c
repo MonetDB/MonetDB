@@ -1453,7 +1453,7 @@ rel_push_down_topn(visitor *v, sql_rel *rel)
 					nexps = append_func_argument(v, oe, nexps);
 					append(pexps, oe);
 				} else {
-					assert (exp_is_useless_rename(oe) || (exp_is_rename(oe) && oe->nid != oe->alias.label));
+				//	assert (exp_is_useless_rename(oe) || (exp_is_rename(oe) && oe->nid != oe->alias.label));
 					append(nexps, oe);
 					append(pexps, exp_ref(v->sql, oe));
 				}

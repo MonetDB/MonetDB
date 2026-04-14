@@ -3275,7 +3275,8 @@ BATgroupavg3combine(BAT *avg, BAT *rem, BAT *cnt, BAT *g, BAT *e, bool skip_nils
 				a = (TYPE) sum;				\
 			}						\
 			/* we have to redo the last candidate */	\
-			(void) canditer_prev(&ci);			\
+			if (idx)					\
+				(void) canditer_prev(&ci);		\
 			/* idx is how many we've already done successfully */ \
 			TIMEOUT_LOOP(ci.ncand - idx, qry_ctx) {		\
 				/* loop invariant: */			\
@@ -3320,7 +3321,7 @@ BATcalcavg(BAT *b, BAT *s, dbl *avg, BUN *vals, int scale, bool inout)
 	lng n = 0, r = 0;
 	BUN i = 0;
 	double a = 0;
-	BUN idx;
+	BUN idx = 0;
 #ifdef HAVE_HGE
 	hge sum = 0;
 #else
