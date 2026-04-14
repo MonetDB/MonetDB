@@ -3619,6 +3619,16 @@ pattern algebra.firstn(X_0:bat[:any], X_1:bat[:oid], X_2:bat[:oid], X_3:lng, X_4
 ALGfirstn
 Calculate first N values of B with candidate list S
 algebra
+firstn
+pattern algebra.firstn(X_0:bat[:any], X_1:bat[:oid], X_2:bat[:oid], X_3:lng, X_4:lng, X_5:bit, X_6:bit, X_7:bit, X_8:bit) (X_9:bat[:oid], X_10:bat[:oid])
+ALGfirstn
+Calculate first N values of B with candidate list S
+algebra
+firstn
+pattern algebra.firstn(X_0:bat[:any], X_1:bat[:oid], X_2:bat[:oid], X_3:lng, X_4:lng, X_5:bit, X_6:bit, X_7:bit, X_8:bit):bat[:oid]
+ALGfirstn
+Calculate first N values of B with candidate list S
+algebra
 groupby
 command algebra.groupby(X_0:bat[:oid], X_1:bat[:lng]):bat[:oid]
 ALGgroupby
@@ -3626,6 +3636,11 @@ Produces a new BAT with groups identified by the head column. The result contain
 algebra
 groupedfirstn
 pattern algebra.groupedfirstn(X_0:lng, X_1:bat[:oid], X_2:bat[:oid], X_3:any...):bat[:oid]
+ALGgroupedfirstn
+Grouped firstn
+algebra
+groupedfirstn
+pattern algebra.groupedfirstn(X_0:lng, X_1:lng, X_2:bit, X_3:bat[:oid], X_4:bat[:oid], X_5:any...):bat[:oid]
 ALGgroupedfirstn
 Grouped firstn
 algebra

@@ -190,11 +190,11 @@ BATall_grp(BAT *l, BAT *g, BAT *e, BAT *s)
 	TRC_DEBUG(ALGO, "l=" ALGOBATFMT ",g=" ALGOBATFMT
 		  ",e=" ALGOOPTBATFMT ",s=" ALGOOPTBATFMT
 		  " -> " ALGOOPTBATFMT
-		  " (%s -- " LLFMT " usec)\n",
+		  " (" LLFMT " usec)\n",
 		  ALGOBATPAR(l), ALGOBATPAR(g),
 		  ALGOOPTBATPAR(e), ALGOOPTBATPAR(s),
 		  ALGOOPTBATPAR(res),
-		  __func__, GDKusec() - t0);
+		  GDKusec() - t0);
 	return res;
 alloc_fail:
 	BBPreclaim(res);
@@ -316,11 +316,11 @@ BATnil_grp(BAT *l, BAT *g, BAT *e, BAT *s)
 	TRC_DEBUG(ALGO, "l=" ALGOBATFMT ",g=" ALGOBATFMT
 		  ",e=" ALGOOPTBATFMT ",s=" ALGOOPTBATFMT
 		  " -> " ALGOOPTBATFMT
-		  " (%s -- " LLFMT " usec)\n",
+		  " (" LLFMT " usec)\n",
 		  ALGOBATPAR(l), ALGOBATPAR(g),
 		  ALGOOPTBATPAR(e), ALGOOPTBATPAR(s),
 		  ALGOOPTBATPAR(res),
-		  __func__, GDKusec() - t0);
+		  GDKusec() - t0);
 	return res;
 alloc_fail:
 	BBPreclaim(res);
@@ -457,11 +457,11 @@ BATanyequal_grp(BAT *l, BAT *r, BAT *g, BAT *e, BAT *s)
 	TRC_DEBUG(ALGO, "l=" ALGOBATFMT ",r=" ALGOBATFMT ",g=" ALGOBATFMT
 		  ",e=" ALGOOPTBATFMT ",s=" ALGOOPTBATFMT
 		  " -> " ALGOOPTBATFMT
-		  " (%s -- " LLFMT " usec)\n",
+		  " (" LLFMT " usec)\n",
 		  ALGOBATPAR(l), ALGOBATPAR(r), ALGOBATPAR(g),
 		  ALGOOPTBATPAR(e), ALGOOPTBATPAR(s),
 		  ALGOOPTBATPAR(res),
-		  __func__, GDKusec() - t0);
+		  GDKusec() - t0);
 	return res;
 alloc_fail:
 	BBPreclaim(res);
@@ -572,11 +572,11 @@ BATallnotequal_grp(BAT *l, BAT *r, BAT *g, BAT *e, BAT *s)
 	TRC_DEBUG(ALGO, "l=" ALGOBATFMT ",r=" ALGOBATFMT ",g=" ALGOBATFMT
 		  ",e=" ALGOOPTBATFMT ",s=" ALGOOPTBATFMT
 		  " -> " ALGOOPTBATFMT
-		  " (%s -- " LLFMT " usec)\n",
+		  " (" LLFMT " usec)\n",
 		  ALGOBATPAR(l), ALGOBATPAR(r), ALGOBATPAR(g),
 		  ALGOOPTBATPAR(e), ALGOOPTBATPAR(s),
 		  ALGOOPTBATPAR(res),
-		  __func__, GDKusec() - t0);
+		  GDKusec() - t0);
 	return res;
 alloc_fail:
 	BBPreclaim(res);
@@ -722,11 +722,11 @@ BATanyequal_grp2(BAT *l, BAT *r, BAT *rid, BAT *g, BAT *e, BAT *s)
 	TRC_DEBUG(ALGO, "l=" ALGOBATFMT ",r=" ALGOBATFMT ",rid=" ALGOBATFMT
 		  ",g=" ALGOBATFMT ",e=" ALGOOPTBATFMT ",s=" ALGOOPTBATFMT
 		  " -> " ALGOOPTBATFMT
-		  " (%s -- " LLFMT " usec)\n",
+		  " (" LLFMT " usec)\n",
 		  ALGOBATPAR(l), ALGOBATPAR(r), ALGOBATPAR(rid),
 		  ALGOBATPAR(g), ALGOOPTBATPAR(e), ALGOOPTBATPAR(s),
 		  ALGOOPTBATPAR(res),
-		  __func__, GDKusec() - t0);
+		  GDKusec() - t0);
 	return res;
 alloc_fail:
 	BBPreclaim(res);
@@ -845,11 +845,11 @@ BATallnotequal_grp2(BAT *l, BAT *r, BAT *rid, BAT *g, BAT *e, BAT *s)
 	TRC_DEBUG(ALGO, "l=" ALGOBATFMT ",r=" ALGOBATFMT ",rid=" ALGOBATFMT
 		  ",g=" ALGOBATFMT ",e=" ALGOOPTBATFMT ",s=" ALGOOPTBATFMT
 		  " -> " ALGOOPTBATFMT
-		  " (%s -- " LLFMT " usec)\n",
+		  " (" LLFMT " usec)\n",
 		  ALGOBATPAR(l), ALGOBATPAR(r), ALGOBATPAR(rid),
 		  ALGOBATPAR(g), ALGOOPTBATPAR(e), ALGOOPTBATPAR(s),
 		  ALGOOPTBATPAR(res),
-		  __func__, GDKusec() - t0);
+		  GDKusec() - t0);
 	return res;
 alloc_fail:
 	BBPreclaim(res);
@@ -918,11 +918,11 @@ BATsubexist(BAT *b, BAT *g, BAT *e, BAT *s)
 	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",g=" ALGOBATFMT
 		  ",e=" ALGOOPTBATFMT ",s=" ALGOOPTBATFMT
 		  " -> " ALGOOPTBATFMT
-		  " (%s -- " LLFMT " usec)\n",
+		  " (" LLFMT " usec)\n",
 		  ALGOBATPAR(b), ALGOBATPAR(g),
 		  ALGOOPTBATPAR(e), ALGOOPTBATPAR(s),
 		  ALGOOPTBATPAR(res),
-		  __func__, GDKusec() - t0);
+		  GDKusec() - t0);
 	return res;
 alloc_fail:
 	BBPreclaim(res);
@@ -990,11 +990,11 @@ BATsubnot_exist(BAT *b, BAT *g, BAT *e, BAT *s)
 	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",g=" ALGOBATFMT
 		  ",e=" ALGOOPTBATFMT ",s=" ALGOOPTBATFMT
 		  " -> " ALGOOPTBATFMT
-		  " (%s -- " LLFMT " usec)\n",
+		  " (" LLFMT " usec)\n",
 		  ALGOBATPAR(b), ALGOBATPAR(g),
 		  ALGOOPTBATPAR(e), ALGOOPTBATPAR(s),
 		  ALGOOPTBATPAR(res),
-		  __func__, GDKusec() - t0);
+		  GDKusec() - t0);
 	return res;
 alloc_fail:
 	BBPreclaim(res);

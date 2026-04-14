@@ -697,38 +697,43 @@ def CreateTstWhatXhtml(env, TST, stableWHAT, EXT, result, TSTDIR, TSTTRGDIR, TST
                    Element('a', {'href': '%s%s.diff.html' % (TST, WHAT),
                                  'target': target,
                                  'class': diffclass},
-                           Text(difftext)),
-                   Text(' between '),
-                   Element('a', {'href': '%s%s' % (TST, stableWHAT),
-                                 'target': target},
-                           Text(stableWHAT[1:])))
-    if REV:
-        d = urlpref
-        if os.path.isfile(TST + stableWHAT + '.src'):
-            # there's only one file like this...
-            with openutf8(os.path.join(TSTTRGDIR, TST + stableWHAT + '.src')) as fil:
-                fl = fil.readline().strip()
-            if fl.startswith('$RELSRCDIR/'):
-                fl = fl[11:]
-                while fl.startswith('../'):
-                    fl = fl[3:]
-                    d = d[:d.rindex('/')]
-            fl = '%s/%s' % (d, fl)
-        else:
-            fl = '%s/%s%s' % (d, TST, stableWHAT)
+                           Text(difftext)))
+    if os.path.exists(os.path.join(TSTTRGDIR, f'{TST}{stableWHAT}')):
         text.addchildren([
-                Text(' (id '),
-                Element('a', {'href': fl,
-                              'target': target}, Text(REV)),
-                Text(')')])
-    text.addchildren([
-            Text(' and '),
-            Element('a', {'href': '%s.test%s' % (TST, WHAT),
+            Text(' between '),
+            Element('a', {'href': '%s%s' % (TST, stableWHAT),
                           'target': target},
-                    Text('test%s' % WHAT)),
-            Text(' of '),
+                    Text(stableWHAT[1:]))])
+        if REV:
+            d = urlpref
+            if os.path.isfile(TST + stableWHAT + '.src'):
+                # there's only one file like this...
+                with openutf8(os.path.join(TSTTRGDIR, TST + stableWHAT + '.src')) as fil:
+                    fl = fil.readline().strip()
+                if fl.startswith('$RELSRCDIR/'):
+                    fl = fl[11:]
+                    while fl.startswith('../'):
+                        fl = fl[3:]
+                        d = d[:d.rindex('/')]
+                fl = '%s/%s' % (d, fl)
+            else:
+                fl = '%s/%s%s' % (d, TST, stableWHAT)
+            text.addchildren([
+                    Text(' (id '),
+                    Element('a', {'href': fl,
+                                  'target': target}, Text(REV)),
+                    Text(')')])
+        text.addchildren([
+                Text(' and '),
+                Element('a', {'href': '%s.test%s' % (TST, WHAT),
+                              'target': target},
+                        Text('test%s' % WHAT)),
+                Text(' of ')])
+    else:
+        text.addchild(Text(' in '))
+    text.addchild(
             Element('a', {'href': TST + EXT, 'target': target},
-                    Text(TST + EXT))])
+                    Text(TST + EXT)))
     if REV:
         d = urlpref
         if os.path.isfile(TST + EXT + '.src'):
@@ -755,8 +760,8 @@ def CreateTstWhatXhtml(env, TST, stableWHAT, EXT, result, TSTDIR, TSTTRGDIR, TST
                     Text(TSTDIR)),
             Text(' (')])
     if hg:
-        text.addchild(hg)
-        text.addchild(Text(', '))
+        text.addchildren([hg,
+                          Text(', ')])
     text.addchildren([
             Element('a', {'href': url(RELSRCDIR),
                           'target': target},
@@ -3692,7 +3697,7 @@ def main(argv):
     parser.add_argument('--restart', action='store_true', dest='restart', help='Restart server after each test')
     parser.add_argument('--addreqs', action='store_true', dest='addreqs', help='automatically add required tests when testing individual tests')
     parser.add_argument('--global_timeout', '-T', action='store', dest='global_timeout', type=int, default=global_timeout, metavar='<sec>', help='global timeout')
-    parser.add_argument('--data_path', '-D', action='store', dest='data_path', metavar='<path>', help='Path to the root directory of the data files needed for testing')
+    parser.add_argument('--data_path', '-D', action='store', dest='data_path', metavar='<path>', help='Path to the root directory of the data files needed for testing (default: TSTDATAPATH environment variable)')
     parser.add_argument('--alltests', action='store_true', dest='alltests', help='also run tests that are known to fail')
     parser.add_argument('--initdb', action='store', dest='initdb', metavar='<zipfile>', help='zip file with contents for initial database')
     parser.add_argument('--single-in-memory', action='store_true', dest='single_in_memory', help='use --in-memory for SingleServer directories')
@@ -4053,6 +4058,25 @@ def main(argv):
             URLPREFIX += '/'
         if not URLPREFIX.endswith('/file/'):
             URLPREFIX += 'file/'
+    else:
+        try:
+            with process.Popen(['hg', 'config', 'paths.default'],
+                               stdout=process.PIPE,
+                               stderr=process.PIPE,
+                               cwd=TSTSRCBASE,
+                               text=True) as proc:
+                out, err = proc.communicate()
+                if proc.returncode == 0:
+                    out = out.strip()
+                    out = out.rstrip('/')
+                    if out.startswith('ssh://hg@monetdb/'):
+                        URLPREFIX = f'https://www.monetdb.org/hg/{out[17:]}/file/'
+                    elif not out.startswith('https://'):
+                        URLPREFIX = f'{out}/file/'
+        except KeyboardInterrupt:
+            raise
+        except:
+            pass
     REV = opts.revision
     if produce_html and CONDITIONALS['MERCURIAL']:
         if REV is None:             # no --revision option: try to find out

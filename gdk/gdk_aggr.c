@@ -3231,7 +3231,7 @@ BATgroupavg3combine(BAT *avg, BAT *rem, BAT *cnt, BAT *g, BAT *e, bool skip_nils
 		if (!inout) {						\
 			/* first try to calculate the sum of all */	\
 			/* values into a lng/hge */			\
-			TIMEOUT_LOOP(ci.ncand, qry_ctx) {		\
+			TIMEOUT_LOOP_IDX(idx, ci.ncand, qry_ctx) {	\
 				i = canditer_next(&ci) - b->hseqbase;	\
 				x = ((const TYPE *) src)[i];		\
 				if (is_##TYPE##_nil(x))			\
@@ -3274,7 +3274,10 @@ BATgroupavg3combine(BAT *avg, BAT *rem, BAT *cnt, BAT *g, BAT *e, bool skip_nils
 			} else {					\
 				a = (TYPE) sum;				\
 			}						\
-			TIMEOUT_LOOP(ci.ncand, qry_ctx) {		\
+			/* we have to redo the last candidate */	\
+			(void) canditer_prev(&ci);			\
+			/* idx is how many we've already done successfully */ \
+			TIMEOUT_LOOP(ci.ncand - idx, qry_ctx) {		\
 				/* loop invariant: */			\
 				/* a + r/n == average(x[0],...,x[n]); */ \
 				/* 0 <= r < n */			\
@@ -3317,6 +3320,7 @@ BATcalcavg(BAT *b, BAT *s, dbl *avg, BUN *vals, int scale, bool inout)
 	lng n = 0, r = 0;
 	BUN i = 0;
 	double a = 0;
+	BUN idx;
 #ifdef HAVE_HGE
 	hge sum = 0;
 #else

@@ -188,6 +188,7 @@ extern bool exp_unsafe(sql_exp *e, bool allow_identity, bool card);
 extern int exp_has_sideeffect(sql_exp *e);
 extern bool exp_is_fallible(sql_exp *e); /* exp could result in an error, ie push up of lower restricting expressions isn't possible */
 extern bool exps_have_fallible(list *l);
+extern bool exps_have_selfref(list *l);
 
 extern sql_exp *exps_find_prop(list *exps, rel_prop kind);
 
@@ -202,7 +203,7 @@ extern sql_rel *find_rel(list *rels, sql_exp *e);
 extern sql_rel *find_one_rel(list *rels, sql_exp *e);
 
 extern sql_exp *exps_bind_nid(const list *exps, int nid); /* get first expression to which this nid points */
-extern sql_exp *exps_uses_nid(list *exps, int nid); /* get first expression which references back to nid */
+extern sql_exp *exps_uses_nid(list *exps, int nid); /* get first expression which references back to nid (shallow search) */
 extern sql_exp *exps_bind_column(list *exps, const char *cname, int *ambiguous, int *multiple, int no_tname /* set if expressions should be without a tname */);
 extern sql_exp *exps_bind_column2(list *exps, const char *rname, const char *cname, int *multiple);
 extern sql_exp * list_find_exp(const list *exps, sql_exp *e);

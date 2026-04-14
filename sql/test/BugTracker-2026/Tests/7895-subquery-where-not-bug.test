@@ -1,0 +1,63 @@
+statement ok
+CREATE TABLE orders (
+    id          INT,
+    user_id     INT,
+    amount      DOUBLE,
+    status      VARCHAR(20),
+    created_at  TIMESTAMP
+)
+
+statement ok
+INSERT INTO orders VALUES
+(1, 1, 100.00, 'paid',    '2022-02-01 09:00:00'),
+(2, 1, 200.50, 'shipped', '2022-02-02 10:00:00'),
+(3, 2, NULL,   'failed',  '2022-02-03 11:00:00'),
+(4, 3, 50.00,  'paid',    '2022-02-04 12:00:00'),
+(5, 5, 999.99, 'paid',    '2022-02-05 13:00:00')
+
+query I nosort
+select count(*)
+from
+  orders as ref_0
+----
+5
+
+query I nosort
+select count(*)
+from
+  orders as ref_0
+where (false AND nullif(case when ref_0.id is not NULL then true else true end, false))
+----
+0
+
+query I nosort
+select count(*)
+from
+  orders as ref_0
+where (not (false AND nullif(case when ref_0.id is not NULL then true else true end, false)))
+----
+5
+
+query I nosort
+select (
+select count(*)
+from
+  orders as ref_0
+where (false AND nullif(case when ref_0.id is not NULL then true else true end, false))
+) + (
+select count(*)
+from
+  orders as ref_0
+where (not (false AND nullif(case when ref_0.id is not NULL then true else true end, false)))
+) + (
+select count(*)
+from
+  orders as ref_0
+where ((false AND nullif(case when ref_0.id is not NULL then true else true end, false)) is null)
+)
+----
+5
+
+statement ok
+DROP TABLE orders
+
