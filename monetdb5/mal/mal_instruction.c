@@ -216,8 +216,10 @@ resetMalBlk(MalBlkPtr *mbpp)
 	nmb->stop = 1;
 	nmb->vtop = 0;
 	nmb->tag = mb->tag;
-	freeMalBlk(mb);
+	MT_lock_set(&mal_contextLock);
 	*mbpp = nmb;
+	MT_lock_unset(&mal_contextLock);
+	freeMalBlk(mb);
 	return MAL_SUCCEED;
 }
 
