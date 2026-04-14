@@ -3621,10 +3621,15 @@ guess_uniques(BAT *b, struct canditer *ci)
 BUN
 BATguess_uniques(BAT *b, struct canditer *ci)
 {
+	MT_lock_set(&b->theaplock);
+	BUN n = BUN_NONE;
 	if (b->batCount == 0 || (ci && ci->ncand == 0))
-		return 0;
-	if (b->batCount == 1 || (ci && ci->ncand == 1))
-		return 1;
+		n = 0;
+	else if (b->batCount == 1 || (ci && ci->ncand == 1))
+		n = 1;
+	MT_lock_unset(&b->theaplock);
+	if (n != BUN_NONE)
+		return n;
 	struct canditer lci;
 	if (ci == NULL) {
 		canditer_init(&lci, b, NULL);
