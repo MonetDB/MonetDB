@@ -61,7 +61,7 @@ typedef struct heapn {
 	BAT *grpb;
 	oid *grp;
 	BAT *usedb;
-	int *useda;
+	size_t *useda;
 	BAT *fullb;
 	bte *fulla;
 	bool grouped;
@@ -86,11 +86,11 @@ _heap_init( heapn *hp )
 			return NULL;
 		hp->grp = Tloc(hp->grpb, 0);
 
-		hp->usedb = COLnew(0, TYPE_int, hp->gsize, TRANSIENT);
+		hp->usedb = COLnew(0, TYPE_lng, hp->gsize, TRANSIENT);
 		if (!hp->usedb)
 			return NULL;
 		hp->useda = Tloc(hp->usedb, 0);
-		memset(hp->useda, 0, hp->gsize*sizeof(int));
+		memset(hp->useda, 0, hp->gsize*sizeof(size_t));
 
 		hp->fullb = COLnew(0, TYPE_bte, hp->gsize, TRANSIENT);
 		if (!hp->fullb)
@@ -109,7 +109,7 @@ _heap_init( heapn *hp )
 	return hp;
 }
 
-static int
+static size_t
 subheap_down( heapn *hp, subheap *sh, size_t q, size_t l)
 {
 	char *vals = sh->vals;
@@ -125,10 +125,10 @@ subheap_down( heapn *hp, subheap *sh, size_t q, size_t l)
 		q = l;
 	else if (!sh->min && cmp < 0)
 		q = l;
-	return (int)q;
+	return q;
 }
 
-static int
+static size_t
 subheap_up( heapn *hp, subheap *sh, size_t q, size_t p)
 {
 	int cmp = 0;
@@ -144,10 +144,10 @@ subheap_up( heapn *hp, subheap *sh, size_t q, size_t p)
 		q = p;
 	else if (!sh->min && cmp > 0)
 		q = p;
-	return (int)q;
+	return q;
 }
 
-static int
+static size_t
 gsubheap_down( heapn *hp, subheap *sh, oid g, size_t q, size_t l)
 {
 	oid *pos = hp->pos + g * hp->size;
@@ -164,10 +164,10 @@ gsubheap_down( heapn *hp, subheap *sh, oid g, size_t q, size_t l)
 		q = l;
 	else if (!sh->min && cmp < 0)
 		q = l;
-	return (int)q;
+	return q;
 }
 
-static int
+static size_t
 gsubheap_up( heapn *hp, subheap *sh, oid g, size_t q, size_t p)
 {
 	oid *pos = hp->pos + g * hp->size;
@@ -184,7 +184,7 @@ gsubheap_up( heapn *hp, subheap *sh, oid g, size_t q, size_t p)
 		q = p;
 	else if (!sh->min && cmp > 0)
 		q = p;
-	return (int)q;
+	return q;
 }
 
 
@@ -259,13 +259,13 @@ subheap_ins( subheap *sh, size_t pos, size_t dst)
 	return 0;
 }
 
-static int
-heap_down_any( heapn *hp, int p)
+static size_t
+heap_down_any( heapn *hp, size_t p)
 {
 	subheap *sh = hp->sub;
-	int l = p*2+1, r = p*2+2, q = p;
+	size_t l = p*2+1, r = p*2+2, q = p;
 
-	if (l < (int)hp->used) {
+	if (l < hp->used) {
 		int cmp = sh->cmp(BUNtvar(&sh->vbi, hp->pos[q]), BUNtvar(&sh->vbi, hp->pos[l]), sh);
 
 		if (!cmp && sh->sub)
@@ -275,7 +275,7 @@ heap_down_any( heapn *hp, int p)
 		else if (!sh->min && cmp < 0)
 			q = l;
 	}
-	if (r < (int)hp->used) {
+	if (r < hp->used) {
 		int cmp = sh->cmp(BUNtvar(&sh->vbi, hp->pos[q]), BUNtvar(&sh->vbi, hp->pos[r]), sh);
 
 		if (!cmp && sh->sub)
@@ -292,15 +292,15 @@ heap_down_any( heapn *hp, int p)
 		hp->pos[q] = vpos;
 		return heap_down_any(hp, q);
 	}
-	return (int)(p+1);
+	return p+1;
 }
 
-static int
+static size_t
 heap_up_any( heapn *hp, size_t p)
 {
 	subheap *sh = hp->sub;
 	if (p == 0)
-		return (int)(p+1);
+		return p+1;
 	size_t q = (p-1)/2;
 	/* todo get real bat var atom offsets */
 	int cmp = sh->cmp(BUNtvar(&sh->vbi, hp->pos[q]), BUNtvar(&sh->vbi, hp->pos[p]), sh);
@@ -318,11 +318,11 @@ heap_up_any( heapn *hp, size_t p)
 		hp->pos[p] = hp->pos[q];
 		hp->pos[q] = vpos;
 		if (q == 0)
-			return (int)(q+1);
+			return q+1;
 		return heap_up_any(hp, q);
 	}
 	p++;
-	return (int)p;
+	return p;
 }
 
 static gid
@@ -385,13 +385,13 @@ gsubheap_newroot( heapn *hp, subheap *sh, gid g, size_t p)
 	return newroot;
 }
 
-static int
+static size_t
 gheap_up_any( heapn *hp, gid g, size_t p)
 {
 	subheap *sh = hp->sub;
 	oid *pos = hp->pos + g * hp->size;  \
 	if (p == 0)
-		return (int)(p+1);
+		return p+1;
 	size_t q = (p-1)/2;
 	/* todo get real bat var atom offsets */
 	int cmp = sh->cmp(BUNtvar(&sh->vbi, pos[q]), BUNtvar(&sh->vbi, pos[p]), sh);
@@ -409,21 +409,21 @@ gheap_up_any( heapn *hp, gid g, size_t p)
 		pos[p] = pos[q];
 		pos[q] = vpos;
 		if (q == 0)
-			return (int)(q+1);
+			return q+1;
 		return gheap_up_any(hp, g, q);
 	}
 	p++;
-	return (int)p;
+	return p;
 }
 
-static int
-gheap_down_any( heapn *hp, gid g, int p)
+static size_t
+gheap_down_any( heapn *hp, gid g, size_t p)
 {
 	oid *pos = hp->pos + g * hp->size;	\
 	subheap *sh = hp->sub;
-	int l = p*2+1, r = p*2+2, q = p;
+	size_t l = p*2+1, r = p*2+2, q = p;
 
-	if (l < (int)hp->used) {
+	if (l < hp->used) {
 		int cmp = sh->cmp(BUNtvar(&sh->vbi, pos[q]), BUNtvar(&sh->vbi, pos[l]), sh);
 
 		if (!cmp && sh->sub)
@@ -433,7 +433,7 @@ gheap_down_any( heapn *hp, gid g, int p)
 		else if (!sh->min && cmp < 0)
 			q = l;
 	}
-	if (r < (int)hp->used) {
+	if (r < hp->used) {
 		int cmp = sh->cmp(BUNtvar(&sh->vbi, pos[q]), BUNtvar(&sh->vbi, pos[r]), sh);
 
 		if (!cmp && sh->sub)
@@ -494,13 +494,13 @@ gheap_ins_any( heapn *hp, size_t pos, int *err)
 			*err = subheap_ins( sh->sub, pos, vpos);
 	}
 	hp->useda[g]++;
-	hp->fulla[g] = (hp->useda[g] == (int)hp->size);
+	hp->fulla[g] = (hp->useda[g] == hp->size);
 	if (sh)
 		(void) gheap_up_any(hp, g, p);
 	return vpos;
 }
 
-static int heap_up_lng( heapn *hp, size_t p);
+static size_t heap_up_lng( heapn *hp, size_t p);
 
 static gid
 heap_ins_void( heapn *hp, size_t pos, oid val, int *err)
@@ -593,15 +593,15 @@ heap_down_##T( heapn *hp, size_t p)		\
 		hp->pos[q] = vpos;				\
 		return heap_down_##T(hp, q);	\
 	}									\
-	return (int)(p+1);							\
+	return p+1;							\
 }										\
 										\
-static int								\
+static size_t								\
 heap_up_##T( heapn *hp, size_t p)		\
 {										\
 	subheap *sh = hp->sub;				\
 	if (p == 0)							\
-		return (int)(p+1);						\
+		return p+1;						\
 	T *vals = sh->vals;					\
 	size_t q = (p-1)/2;					\
 	int cmp = sh->nlarge?type_cmp(T, vals[hp->pos[q]] , vals[hp->pos[p]]):type_cmp_nsmall(T, vals[hp->pos[q]], vals[hp->pos[p]]); 			\
@@ -619,11 +619,11 @@ heap_up_##T( heapn *hp, size_t p)		\
 		hp->pos[p] = hp->pos[q];		\
 		hp->pos[q] = vpos;				\
 		if (q == 0)						\
-			return (int)(q+1);					\
+			return q+1;					\
 		return heap_up_##T(hp, q);		\
 	}									\
 	p++;								\
-	return (int)p;							\
+	return p;							\
 }										\
 										\
 static gid								\
@@ -695,16 +695,16 @@ gheap_down_##T( heapn *hp, gid g, size_t p)		\
 		pos[q] = vpos;				\
 		return gheap_down_##T(hp, g, q);	\
 	}									\
-	return (int)(p+1);							\
+	return p+1;							\
 }										\
 										\
-static int								\
+static size_t								\
 gheap_up_##T( heapn *hp, gid g, size_t p)		\
 {										\
 	subheap *sh = hp->sub;				\
 	oid *pos = hp->pos + g * hp->size;  \
 	if (p == 0)							\
-		return (int)(p+1);						\
+		return p+1;						\
 	T *vals = sh->vals;					\
 	size_t q = (p-1)/2;					\
 	int cmp = sh->nlarge?type_cmp(T, vals[pos[q]] , vals[pos[p]]):type_cmp_nsmall(T, vals[pos[q]], vals[pos[p]]); 			\
@@ -722,11 +722,11 @@ gheap_up_##T( heapn *hp, gid g, size_t p)		\
 		pos[p] = pos[q];				\
 		pos[q] = vpos;					\
 		if (q == 0)						\
-			return (int)(q+1);					\
+			return q+1;					\
 		return gheap_up_##T(hp, g, q);	\
 	}									\
 	p++;								\
-	return (int)p;							\
+	return p;							\
 }										\
 										\
 static gid								\
@@ -764,13 +764,13 @@ gheap_ins_##T( heapn *hp, size_t pos, int *err)	\
 			*err = subheap_ins( sh->sub, pos, vpos);	\
 	}									\
 	hp->useda[g]++;						\
-	hp->fulla[g] = (hp->useda[g] == (int)hp->size);	\
+	hp->fulla[g] = (hp->useda[g] == hp->size);	\
 	if (sh)	\
 		(void) gheap_up_##T(hp, g, p);			\
 	return vpos;						\
 }						\
 						\
-static int				\
+static size_t				\
 topn_##T( size_t n, oid *pos, oid *sl, heapn *hp, int *err)			\
 {							\
 	size_t i = 0, j = 0;	\
@@ -829,10 +829,10 @@ topn_##T( size_t n, oid *pos, oid *sl, heapn *hp, int *err)			\
 			}				\
 		}					\
 	}						\
-	return (int)j;				\
+	return j;				\
 }							\
 							\
-static int				\
+static size_t				\
 topn_grouped_##T( size_t n, oid *pos, oid *sl, heapn *hp, int *err)			\
 {							\
 	size_t i = 0, j = 0;	\
@@ -841,14 +841,14 @@ topn_grouped_##T( size_t n, oid *pos, oid *sl, heapn *hp, int *err)			\
 	if (!sh) {				\
 		if (hp->used < hp->size) {	\
 			for(i=0; i<n; i++) {	\
-				if (hp->useda[hp->gi[i]] < (int)hp->size) { \
+				if (hp->useda[hp->gi[i]] < hp->size) { \
 					pos[i] = gheap_ins_##T(hp, i, err);	\
 					sl[i] = i;		\
 				}				\
 			}					\
 			j = i;				\
 		}						\
-		return (int)j;			\
+		return j;			\
 	}						\
 	T *hpvals = sh->vals;	\
 	T *vals = sh->ivals;	\
@@ -856,7 +856,7 @@ topn_grouped_##T( size_t n, oid *pos, oid *sl, heapn *hp, int *err)			\
 	if (sh->nlarge) {		\
 		if (sh->min) {		\
 			for(; i<n; i++) {						\
-				if (hp->useda[hp->gi[i]] < (int)hp->size) { \
+				if (hp->useda[hp->gi[i]] < hp->size) { \
 					pos[j] = gheap_ins_##T(hp, i, err);		\
 					sl[j] = i;	\
 					j++;	\
@@ -873,7 +873,7 @@ topn_grouped_##T( size_t n, oid *pos, oid *sl, heapn *hp, int *err)			\
 			}				\
 		} else {			\
 			for(; i<n; i++) {						\
-				if (hp->useda[hp->gi[i]] < (int)hp->size) { \
+				if (hp->useda[hp->gi[i]] < hp->size) { \
 					pos[j] = gheap_ins_##T(hp, i, err);		\
 					sl[j] = i;	\
 					j++;	\
@@ -891,7 +891,7 @@ topn_grouped_##T( size_t n, oid *pos, oid *sl, heapn *hp, int *err)			\
 		}					\
 	} else if (sh->min) {	\
 		for(; i<n; i++) {	\
-			if (hp->useda[hp->gi[i]] < (int)hp->size) { \
+			if (hp->useda[hp->gi[i]] < hp->size) { \
 				pos[j] = gheap_ins_##T(hp, i, err);		\
 				sl[j] = i;	\
 				j++;		\
@@ -908,7 +908,7 @@ topn_grouped_##T( size_t n, oid *pos, oid *sl, heapn *hp, int *err)			\
 		}					\
 	} else {				\
 		for(; i<n; i++) {	\
-			if (hp->useda[hp->gi[i]] < (int)hp->size) { \
+			if (hp->useda[hp->gi[i]] < hp->size) { \
 				pos[j] = gheap_ins_##T(hp, i, err);		\
 				sl[j] = i;	\
 				j++;		\
@@ -924,7 +924,7 @@ topn_grouped_##T( size_t n, oid *pos, oid *sl, heapn *hp, int *err)			\
 			}				\
 		}					\
 	}						\
-	return (int)j;				\
+	return j;				\
 }							\
 							\
 
@@ -993,23 +993,23 @@ HEAPnew_topn( MalStkPtr s, InstrPtr p, int args, heapn *hp, lng n, BAT *b, bit m
 	return b;
 }
 
-static int					\
+static size_t					\
 topn_grouped( size_t n, oid *pos, oid *sl, heapn *hp, int *err) \
 {							\
 	size_t i = 0, j = 0;	\
 							\
 	if (hp->used < hp->size) {	\
 		for(i=0; i<n; i++) {\
-			if (hp->useda[hp->gi[i]] < (int)hp->size) { \
+			if (hp->useda[hp->gi[i]] < hp->size) { \
 				pos[j] = gheap_ins_lng(hp, i, err);	\
 				sl[j++] = i;	\
 			}				\
 		}					\
 	}						\
-	return (int)j;				\
+	return j;				\
 }							\
 
-static int
+static size_t
 topn_void( size_t n, oid *pos, oid *sl, heapn *hp, int *err)
 {
 	size_t i = 0, j = 0;
@@ -1047,7 +1047,7 @@ topn_void( size_t n, oid *pos, oid *sl, heapn *hp, int *err)
 			}
 		}
 	}
-	return (int)j;
+	return j;
 }
 
 static heapn *
@@ -1242,7 +1242,7 @@ HEAPnew(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 	lng n = *getArgReference_lng(s, p, 1);
 	bit grouped = *getArgReference_bit(s, p, 2);
 
-	heapn *hp = heapn_create( (int)n, 1, grouped);
+	heapn *hp = heapn_create((size_t)n, 1, grouped);
 
 	if (!hp) {
 		heap_destroy(hp);
@@ -1508,7 +1508,7 @@ HEAPtopn(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr pci)
 			if (gps) BBPreclaim(gps);
 			throw(MAL, "heap.topn", ILLEGAL_ARGUMENT);
 		}
-		heapn *hp = heapn_create((int)n, 0, gps?true:false);
+		heapn *hp = heapn_create((size_t)n, 0, gps?true:false);
 		hps = HEAPnew_topn(s, pci, args, hp, n, b, min, nulls_last);
 		if (!hps) {
 			BBPunfix(b->batCacheid);
@@ -1571,7 +1571,7 @@ HEAPtopn(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr pci)
 				return createException(SQL, "heapn.topn",  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 			hp->useda = Tloc(hp->usedb, 0);
-			memset(hp->useda + os, 0, (hp->gsize-os)*sizeof(int));
+			memset(hp->useda + os, 0, (hp->gsize-os)*sizeof(size_t));
 			if (BATextend(hp->fullb, hp->gsize) != GDK_SUCCEED) {
 				assert(0); /* clean up needed */
 				return createException(SQL, "heapn.topn",  SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -1693,7 +1693,7 @@ HEAPtopn(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr pci)
 		if (hp->grouped) {
 			if (sh->min) {
 				for(; i<cnt; i++) {
-					if (hp->useda[hp->gi[i]] < (int)hp->size) {
+					if (hp->useda[hp->gi[i]] < hp->size) {
 						p[j] = gheap_ins_any(hp, i, &err);
 						sl[j] = i;
 						j++;
@@ -1710,7 +1710,7 @@ HEAPtopn(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr pci)
 				}
 			} else {
 				for(; i<cnt; i++) {
-					if (hp->useda[hp->gi[i]] < (int)hp->size) {
+					if (hp->useda[hp->gi[i]] < hp->size) {
 						p[j] = gheap_ins_any(hp, i, &err);
 						sl[j] = i;
 						j++;
@@ -1802,25 +1802,27 @@ HEAPtopn(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr pci)
 
 #define order(T)	\
 	if (hp->grouped) { \
-		BUN j = 0; \
 		for(size_t g = 0; g < hp->gsize; g++) { \
 			oid *pos = hp->pos + g * hp->size;  \
+			if (offset >= hp->useda[g])			\
+				continue;						\
+			for(i = 0; i<offset; i++)			\
+				(void) gheap_del_##T(hp, g);	\
 			j += hp->useda[g];					\
-			for(int i = 0; hp->useda[g]; i++) { \
+			for(; hp->useda[g]; i++) {			\
 				rp[j-(i+1)] = pos[0];			\
 				(void) gheap_del_##T(hp, g);	\
 			}									\
 		}										\
-		BATsetcount(r, j);						\
-	} else {									\
-		for(int i = 0; hp->used; i++) {			\
-			rp[used-i] = hp->pos[0];			\
+	} else if (offset < hp->used) {				\
+		for(; hp->used-offset; i++, j++) {		\
+			rp[used-offset-i] = hp->pos[0];		\
 			(void) heap_del_##T(hp);			\
 		}										\
 	}
 
 static str
-HEAPorder(Client ctx, bat *rid, bat *hb)
+HEAPorder(Client ctx, bat *rid, bat *hb, size_t offset)
 {
 	(void)ctx;
 	BAT *r = NULL, *hpb = BATdescriptor(*hb);
@@ -1835,18 +1837,23 @@ HEAPorder(Client ctx, bat *rid, bat *hb)
 		throw(MAL, "heapn.order",  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	oid *rp = Tloc(r, 0);
-	BATsetcount(r, hp->used);
 	BATnegateprops(r);
 
-	size_t used = hp->used-1;
+	if (offset > hp->size) {
+		BBPreclaim(hpb);
+		BBPreclaim(r);
+		throw(MAL, "heapn.order", "offset (%lu) too high\n", offset);
+	}
+	size_t used = hp->used-1, i = 0;
+	BUN j = 0;
 	if (!hp->sub || (!hp->shared && hp->grouped)) {
-		BUN j = 0;
 		for(size_t g = 0; g < hp->gsize; g++) {
 			oid *pos = hp->pos + g * hp->size;
-			for (int i = 0; i < hp->useda[g]; i++)
-				rp[j++] = pos[i];
+			if (offset >= hp->useda[g])
+				continue;
+			for (i = 0; i < hp->useda[g]-offset; i++)
+				rp[j++] = pos[offset+i];
 		}
-		BATsetcount(r, j);
 	} else if (!hp->sub->vb->ttype) {
 		order(lng);
 	} else if (ATOMstorage(hp->sub->vb->ttype) == TYPE_bte) {
@@ -1876,23 +1883,42 @@ HEAPorder(Client ctx, bat *rid, bat *hb)
 			BUN j = 0;
 			for(size_t g = 0; g < hp->gsize; g++) {
 				oid *pos = hp->pos + g * hp->size;
+				if (offset >= hp->useda[g])
+					continue;
+				for(i = 0; i<offset; i++)
+					(void) gheap_del_any(hp, g);
 				j += hp->useda[g];
-				for(int i = 0; hp->useda[g]; i++) {
+				for(; hp->useda[g]; i++) {
 					rp[j-(i+1)] = pos[0];
 					(void) gheap_del_any(hp, g);
 				}
 			}
-			BATsetcount(r, j);
-		} else {
-			for(int i = 0; hp->used; i++) {
-				rp[used-i] = hp->pos[0];
+		} else if (offset < hp->used) {
+			for(; hp->used-offset; i++, j++) {
+				rp[used-offset-i] = hp->pos[0];
 				(void) heap_del_any(hp);
 			}
 		}
 	}
+	BATsetcount(r, j);
 	*rid = r->batCacheid;
 	BBPkeepref(r);
 	return MAL_SUCCEED;
+}
+
+static str
+HEAPorder1(Client ctx, bat *rid, bat *hb)
+{
+	return HEAPorder(ctx, rid, hb, 0);
+}
+
+static str
+HEAPorder2(Client ctx, bat *rid, bat *hb, lng *O)
+{
+	size_t offset = (size_t)*O;
+	if (offset == 0)
+		offset++;
+	return HEAPorder(ctx, rid, hb, offset);
 }
 
 static str
@@ -1991,9 +2017,15 @@ static mel_func heapn_init_funcs[] = {
 				arg("pipeline", ptr)
 				)
 			),
-	command("heapn", "order", HEAPorder, false, "Order.", args(1,2,
+	command("heapn", "order", HEAPorder1, false, "Order.", args(1,2,
 				batarg("pos", oid),
 				batarg("heap",oid)
+				)
+			),
+	command("heapn", "order", HEAPorder2, false, "Order.", args(1,3,
+				batarg("pos", oid),
+				batarg("heap",oid),
+				arg("offset",lng)
 				)
 			),
 	command("heapn", "groups", HEAPgroups, false, "Project groups.", args(1,3,

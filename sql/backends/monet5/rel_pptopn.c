@@ -271,7 +271,7 @@ rel_pp_topn(backend *be, list *projectresults, stmt *sub, stmt *pp, stmt *o, stm
 }
 
 stmt *
-rel2bin_ordered_topn(backend *be, sql_rel *rel, list *refs, sql_rel *topn, stmt *all, stmt *offset, stmt *lim, list *projectresults)
+rel2bin_ordered_topn(backend *be, sql_rel *rel, list *refs, sql_rel *topn, stmt *all, stmt *offset, list *projectresults)
 {
 	mvc *sql = be->mvc;
 	stmt *sub = NULL, *psub = NULL;
@@ -491,10 +491,8 @@ rel2bin_ordered_topn(backend *be, sql_rel *rel, list *refs, sql_rel *topn, stmt 
 		/* o := heapn.order(hp) */
 		/* project(o, b); */
 		stmt *o = stmt_heapn_order(be, heap);
-		if (offset) {
-			stmt *limit = stmt_limit(be, o, NULL, NULL, offset, lim, 0, 0, 0, 0, 0);
-			o = stmt_project(be, limit, o);
-		}
+		if (offset)
+			o->q = pushArgument(be->mb, o->q, offset->nr);
 		psub = sql_reorder(be, o, rel->exps, psub, NULL, NULL);
 	}
 	return psub;

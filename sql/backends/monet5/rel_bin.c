@@ -5380,7 +5380,7 @@ rel2bin_topn(backend *be, sql_rel *rel, list *refs)
 		sql_rel *rl = rel->l;
 
 		if (df2 && rl->op == op_project && !list_empty(rl->r)) {
-			return rel2bin_ordered_topn(be, rl, refs, rel, all, oe?o:NULL, l, projectresults);
+			return rel2bin_ordered_topn(be, rl, refs, rel, all, oe?o:NULL, projectresults);
 		} else if (rl->op == op_munion && is_recursive(rl)) {
 			if (rel_is_ref(rl)) {
 				sub = refs_find_rel(refs, rl);

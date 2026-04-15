@@ -35861,7 +35861,12 @@ return new heap sink
 heapn
 order
 command heapn.order(X_0:bat[:oid]):bat[:oid]
-HEAPorder
+HEAPorder1
+Order.
+heapn
+order
+command heapn.order(X_0:bat[:oid], X_1:lng):bat[:oid]
+HEAPorder2
 Order.
 heapn
 projection
