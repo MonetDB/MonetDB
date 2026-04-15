@@ -50,15 +50,6 @@ sa_list(allocator *sa)
 	return list_init(l, sa, NULL);
 }
 
-/*
-static void
-_free(void *dummy, void *data)
-{
-	(void)dummy;
-	GDKfree(data);
-}
-*/
-
 list *
 sa_list_append(allocator *sa, list *l, void *data)
 {
