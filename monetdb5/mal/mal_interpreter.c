@@ -498,12 +498,10 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 	ValPtr backup;
 	int garbages[16], *garbage;
 	int stkpc = 0;
-	RuntimeProfileRecord runtimeProfile, runtimeProfileFunction;
+	RuntimeProfileRecord runtimeProfile = {0}, runtimeProfileFunction = {0};
 	lng lastcheck = 0;
 	bool startedProfileQueue = false;
 #define CHECKINTERVAL 1000		/* how often do we check for client disconnect */
-	runtimeProfile.ticks = runtimeProfileFunction.ticks = 0;
-
 	if (stk == NULL)
 		throw(MAL, "mal.interpreter", MAL_STACK_FAIL);
 
@@ -590,8 +588,6 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 		runtimeProfileBegin(cntxt, mb, stk, pci, &runtimeProfile);
 		if (runtimeProfile.ticks > lastcheck + CHECKINTERVAL) {
 			if (cntxt->fdin && TIMEOUT_TEST(&cntxt->qryctx)) {
-				if (cntxt->qryctx.endtime != QRY_INTERRUPT && cntxt->qryctx.endtime != QRY_TIMEOUT)
-					cntxt->mode = FINISHCLIENT;
 				switch (cntxt->qryctx.endtime) {
 				case QRY_TIMEOUT:
 					ret = createException(MAL, "mal.interpreter", SQLSTATE(HYT00) RUNTIME_QRY_TIMEOUT);
@@ -601,7 +597,9 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 					break;
 				default:
 					ret = createException(MAL, "mal.interpreter", SQLSTATE(HYT00) "Client disconnected");
+					MT_lock_set(&mal_contextLock);
 					cntxt->mode = FINISHCLIENT;
+					MT_lock_unset(&mal_contextLock);
 					break;
 				}
 				break;
@@ -824,8 +822,6 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			break;
 		case ENDsymbol:
 			runtimeProfileExit(cntxt, mb, stk, pci, &runtimeProfile);
-			runtimeProfileExit(cntxt, mb, stk, getInstrPtr(mb, 0),
-							   &runtimeProfileFunction);
 			if (pcicaller && garbageControl(getInstrPtr(mb, 0)))
 				garbageCollector(cntxt, mb, stk, TRUE);
 			if (cntxt->qryctx.endtime == QRY_TIMEOUT) {
@@ -1193,9 +1189,6 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				}
 			}
 			if (stkpc == mb->stop) {
-				runtimeProfileExit(cntxt, mb, stk, pci, &runtimeProfile);
-				runtimeProfileExit(cntxt, mb, stk, getInstrPtr(mb, 0),
-								   &runtimeProfileFunction);
 				break;
 			}
 			break;
@@ -1217,9 +1210,6 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				if (garbageControl(getInstrPtr(mb, 0)))
 					garbageCollector(cntxt, mb, stk, TRUE);
 				/* reset the clock */
-				runtimeProfileExit(cntxt, mb, stk, pp, &runtimeProfile);
-				runtimeProfileExit(cntxt, mb, stk, getInstrPtr(mb, 0),
-								   &runtimeProfileFunction);
 			}
 			stkpc = mb->stop;
 			continue;
@@ -1236,6 +1226,10 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			stkpc = mb->stop;
 		}
 	}
+
+	if (startpc == 1 && startpc < mb->stop)
+		runtimeProfileExit(cntxt, mb, stk, getInstrPtr(mb, 0),
+						   &runtimeProfileFunction);
 
 	/* if we could not find the exception variable, cascade a new one */
 	/* don't add 'exception not caught' extra message for MAL sequences besides main function calls */

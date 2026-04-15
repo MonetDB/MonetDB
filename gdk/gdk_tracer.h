@@ -120,6 +120,7 @@ typedef enum {
 	COMP( MAL_MAPI )			\
 	COMP( MAL_SERVER )			\
 	COMP( MAL_LOADER )			\
+	COMP( MAL_INSTRUCTION )			\
 						\
 	COMP( MAL_OPTIMIZER )			\
 						\

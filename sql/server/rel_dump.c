@@ -118,6 +118,8 @@ exp_or_print(mvc *sql, stream *fout, node *n, int anti, int depth, list *refs, i
 	sql_exp *r = n->next->data;
 
 	if (l->type == e_cmp && l->flag == cmp_con) {
+		if (is_anti(l))
+			mnstr_printf(fout, " !");
 		exps_print(sql, fout, l->l, depth, refs, 0, 1, decorate, 0);
 	} else {
 		mnstr_printf(fout, "(");
@@ -134,6 +136,8 @@ exp_or_print(mvc *sql, stream *fout, node *n, int anti, int depth, list *refs, i
 		mnstr_printf(fout, ")");
 	} else {
 		if (r->type == e_cmp && r->flag == cmp_con) {
+			if (is_anti(r))
+				mnstr_printf(fout, " !");
 			exps_print(sql, fout, r->l, depth, refs, 0, 1, decorate, 0);
 		} else {
 			mnstr_printf(fout, "(");

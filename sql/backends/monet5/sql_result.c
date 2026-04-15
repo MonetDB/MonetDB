@@ -57,9 +57,8 @@
 		ssize_t l;									\
 		if (is_##TYPE##_nil(v)) {					\
 			if (*Buf == NULL || *len < 5){			\
-				/*GDKfree(*Buf);*/						\
 				*len = 5;							\
-				*Buf = ma_zalloc(sa, *len);				\
+				*Buf = ma_zalloc(sa, *len);			\
 				if (*Buf == NULL) {					\
 					return -1;						\
 				}									\
@@ -88,9 +87,8 @@
 			buf[cur--] = '-';						\
 		l = (64-cur-1);								\
 		if (*Buf == NULL || (ssize_t) *len < l) {	\
-			/*GDKfree(*Buf);*/							\
 			*len = (size_t) l+1;					\
-			*Buf = ma_zalloc(sa, *len);					\
+			*Buf = ma_zalloc(sa, *len);				\
 			if (*Buf == NULL) {						\
 				return -1;							\
 			}										\
