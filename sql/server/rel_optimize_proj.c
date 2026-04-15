@@ -1850,9 +1850,8 @@ rel_push_aggr_down_n_arry(visitor *v, sql_rel *rel)
 	for (node *n = ((list*)u->l)->h; n; n = n->next) {
 		r = rel_dup(n->data);
 		//n->data = NULL; /* clean list as we steal the relation r, stealing is needed else (with multiple references) double project cleanup fails */
-		if (!is_project(r->op))
-			r = rel_project(v->sql->sa, r,
-				            rel_projections(v->sql, r, NULL, 1, 1));
+		if (!is_project(r->op) || exps_have_selfref(r->exps))
+			r = rel_project(v->sql->sa, r, rel_projections(v->sql, r, NULL, 1, 1));
 		rel_rename_exps(v->sql, u->exps, r->exps);
 		if (u != ou) {
 			bool isproject = is_project(r->op);
