@@ -88,3 +88,4 @@ KNOWNFAIL?7896-where-ascii-comparison-bug
 KNOWNFAIL?7903-query-without-result-bug
 KNOWNFAIL?7906-rel2bin_join-assertion-failure
 7911-query-without-result-bug
+7913-where-exist-subquery-bug
