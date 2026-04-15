@@ -1,0 +1,90 @@
+statement ok
+CREATE TABLE rt1 (c3 VARCHAR(255))
+
+statement ok
+INSERT INTO rt1 VALUES ('a')
+
+statement ok
+CREATE TABLE rt2_o (c1 INT)
+
+statement ok
+INSERT INTO rt2_o VALUES (1)
+
+-- sql/backends/monet5/rel_bin.c:1911: exp_bin: Assertion `s' failed.
+query I rowsort
+SELECT * FROM rt2_o
+WHERE EXISTS (
+  SELECT 1
+  FROM (
+    SELECT rt1.c3 AS k, rt1.c3 AS k2 FROM rt1
+    UNION ALL
+    SELECT rt1.c3 AS k, rt1.c3 AS k2 FROM rt1
+  ) s
+  GROUP BY s.k, s.k2
+)
+----
+1
+
+-- sql/backends/monet5/rel_bin.c:1911: exp_bin: Assertion `s' failed.
+statement ok rowcount 1
+DELETE FROM rt2_o
+WHERE EXISTS (
+  SELECT 1
+  FROM (
+    SELECT rt1.c3 AS k, rt1.c3 AS k2 FROM rt1
+    UNION ALL
+    SELECT rt1.c3 AS k, rt1.c3 AS k2 FROM rt1
+  ) s
+  GROUP BY s.k, s.k2
+)
+
+statement ok
+CREATE TABLE rt2_m (c1 INT)
+
+statement ok
+INSERT INTO rt2_m VALUES (2)
+
+query I rowsort
+SELECT * FROM rt2_m
+WHERE EXISTS (
+  SELECT 1
+  FROM (
+    SELECT rt1.c3 AS k, rt1.c3 AS k2 FROM rt1
+    UNION
+    SELECT rt1.c3 AS k, rt1.c3 AS k2 FROM rt1
+  ) s
+  GROUP BY s.k, s.k2
+)
+----
+2
+
+statement ok rowcount 1
+DELETE FROM rt2_m
+WHERE EXISTS (
+  SELECT 1
+  FROM (
+    SELECT rt1.c3 AS k, rt1.c3 AS k2 FROM rt1
+    UNION
+    SELECT rt1.c3 AS k, rt1.c3 AS k2 FROM rt1
+  ) s
+  GROUP BY s.k, s.k2
+)
+
+-- actual: remain_orig = 1, remain_mut = 0
+query II rowsort
+SELECT
+  (SELECT COUNT(*) FROM rt2_o) AS remain_orig,
+  (SELECT COUNT(*) FROM rt2_m) AS remain_mut
+----
+0
+0
+
+statement ok
+DROP TABLE rt2_o
+
+statement ok
+DROP TABLE rt2_m
+
+statement ok
+DROP TABLE rt1
+
