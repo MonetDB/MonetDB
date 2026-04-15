@@ -301,7 +301,6 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 				for (; i < limit; i++)
 					if (old[i])
 						pushInstruction(mb, old[i]);
-				//GDKfree(old);
 				throw(MAL, "optimizer.mitosis",
 					  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}

@@ -355,6 +355,18 @@ runtimeProfileBegin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 
 	assert(pci);
 	/* always collect the MAL instruction execution time */
+	TRC_DEBUG_IF(MAL_INSTRUCTION) {
+		switch (pci->token) {
+			case PATcall:
+			case CMDcall:
+			case FCNcall:
+				TRC_DEBUG_ENDIF(MAL_INSTRUCTION, "calling %s.%s",
+								pci->modname ? pci->modname : "???",
+								pci->fcnname ? pci->fcnname : "???");
+		default:
+			break;
+		}
+	}
 	prof->ticks = GDKusec();
 }
 
@@ -366,6 +378,33 @@ runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	lng ticks = GDKusec();
 
 	pci->ticks += ticks - prof->ticks;
+	TRC_DEBUG_IF(MAL_INSTRUCTION) {
+		TRC_DEBUG_ENDIF(MAL_INSTRUCTION, "%s ("LLFMT" usec)",
+						instruction2str(mb, stk, pci, LIST_MAL_ALL | LIST_MAL_ALGO),
+						ticks - prof->ticks);
+	} else {
+		TRC_INFO_IF(MAL_INSTRUCTION) {
+			switch (pci->token) {
+			case ASSIGNsymbol:
+				TRC_INFO_ENDIF(MAL_INSTRUCTION, "%sassignment ("LLFMT" usec)",
+							   pci->retc > 1 ? "multi-" : "",
+							   ticks - prof->ticks);
+				break;
+			case PATcall:
+			case CMDcall:
+			case FCNcall:
+				TRC_INFO_ENDIF(MAL_INSTRUCTION, "call %s.%s ("LLFMT" usec)",
+							   pci->modname ? pci->modname : "???",
+							   pci->fcnname ? pci->fcnname : "???",
+							   ticks - prof->ticks);
+				break;
+			case REMsymbol:
+			case ENDsymbol:
+			default:
+				break;
+			}
+		}
+	}
 	if (cntxt->sqlprofiler)
 		sqlProfilerEvent(cntxt, mb, stk, pci, ticks, ticks - prof->ticks);
 }
