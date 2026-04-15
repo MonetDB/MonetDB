@@ -452,6 +452,10 @@ OAHASHhashmark_init(Client ctx, bat *res, const bat *ht_sink, const bat *payload
 		err = createException(SQL, "oahash.hashmark_init", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto error;
 	}
+	if (ht && ht->tsink && ht->tsink->error) {
+		err = ht->tsink->error;
+		goto error;
+	}
 	if (payload && !is_bat_nil(*payload)) {
 		hp = BATdescriptor(*payload);
 		if (!hp) {
