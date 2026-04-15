@@ -156,6 +156,8 @@ sketch_merge(BAT* b, BAT* n)
 double
 BATsketch_estimator(BAT *b, BATiter *bi, struct canditer *bci)
 {
+	if (b->unique_guess)
+		return b->unique_guess;
 	BATiter nbi;
 	struct canditer nbci;
 	if (bi == NULL) {
