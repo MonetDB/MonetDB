@@ -84,5 +84,6 @@ KNOWNFAIL?7774-insert-into-renamed-table-assertion-failure
 7895-subquery-where-not-bug
 KNOWNFAIL?7896-where-ascii-comparison-bug
 7897-exp_bin-assertion-failure
+KNOWNFAIL?7903-query-without-result-bug
 KNOWNFAIL?7906-rel2bin_join-assertion-failure
 7899-correlated-with-complex-and-or
