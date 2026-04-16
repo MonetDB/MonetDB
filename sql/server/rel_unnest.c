@@ -1550,6 +1550,20 @@ push_up_join(mvc *sql, sql_rel *rel, list *ad)
 					return NULL;
 				return rel;
 			}
+			if (is_left(rel->op) && !list_empty(rel->attr) && is_innerjoin(j->op) && list_empty(j->exps)) {
+				/* remove any project, as we don't need */
+				if (rd) { /* just throw away the left */
+					rel->r = rel_dup(jr);
+					rel_destroy(sql, j);
+					return rel;
+				}
+				if (ld) { /* just throw away the left */
+					rel->r = rel_dup(jl);
+					rel_destroy(sql, j);
+					return rel;
+				}
+				assert(0);
+			}
 
 			if (ld && rd) {
 				node *m;

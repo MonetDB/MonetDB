@@ -82,7 +82,7 @@ KNOWNFAIL?7774-insert-into-renamed-table-assertion-failure
 7893-where-subqueries-sum-bug
 7894-subquery-where-not-bug
 7895-subquery-where-not-bug
-KNOWNFAIL?7896-where-ascii-comparison-bug
+7896-where-ascii-comparison-bug
 7897-exp_bin-assertion-failure
 7899-correlated-with-complex-and-or
 7903-query-without-result-bug
