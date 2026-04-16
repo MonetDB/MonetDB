@@ -353,7 +353,7 @@ typedef struct Sink {
 
 #define ORDERIDXOFF		3
 
-#define HLL_BITS 5
+#define HLL_BITS 6
 #define BITS_MASK   ((1ULL << HLL_BITS) - 1)
 #define MAX_CLZ     (64 - HLL_BITS)
 #define BUCKETS     (1U << HLL_BITS)
