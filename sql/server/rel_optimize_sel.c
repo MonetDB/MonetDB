@@ -10,7 +10,6 @@
 
 #include "monetdb_config.h"
 #include "rel_optimizer_private.h"
-#include "rel_planner.h"
 #include "rel_exp.h"
 #include "rel_select.h"
 #include "rel_rewriter.h"
@@ -2309,10 +2308,6 @@ order_joins(visitor *v, list *rels, list *exps)
 		sql_exp *e = djn->data;
 		list_remove_data(exps, NULL, e);
 	}
-	if (list_length(rels) > 2 && mvc_debug_on(v->sql, 256)) {
-		top =  rel_planner(v->sql, rels, sdje, exps);
-		return top;
-	}
 
 	allocator *ta = MT_thread_getallocator();
 	int nr_exps = list_length(sdje), nr_rels = list_length(rels), ci = 1;
@@ -3922,7 +3917,7 @@ rel_push_select_down(visitor *v, sql_rel *rel)
 			set_distinct(rel);
 		v->changes++;
 	}
-	if (is_select(rel->op) && !exps_has_group_filter(rel->exps) && 
+	if (is_select(rel->op) && !exps_has_group_filter(rel->exps) &&
      	    r && is_munion(r->op) && !is_recursive(r) && !list_empty(r->exps) && !rel_is_ref(r) && !is_single(r) && !list_empty(exps)) {
 		sql_rel *u = r;
 		list *rels = u->l, *nrels = sa_list(v->sql->sa);
