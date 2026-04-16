@@ -333,6 +333,13 @@ rel_merge_projects_(visitor *v, sql_rel *rel)
 	return rel;
 }
 
+sql_rel *
+rel_merge_project(mvc *sql, sql_rel *rel)
+{
+	visitor v = { .sql = sql };
+	return rel_merge_projects_(&v, rel);
+}
+
 static sql_rel *
 rel_merge_projects(visitor *v, global_props *gp, sql_rel *rel)
 {

@@ -87,7 +87,7 @@ KNOWNFAIL?7774-insert-into-renamed-table-assertion-failure
 7899-correlated-with-complex-and-or
 7903-query-without-result-bug
 7905-sum-case-subquery-bug
-KNOWNFAIL?7906-rel2bin_join-assertion-failure
+7906-rel2bin_join-assertion-failure
 7911-query-without-result-bug
 7913-where-exist-subquery-bug
 7914-exp_bin-assertion-failure

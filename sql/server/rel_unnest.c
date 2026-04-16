@@ -619,6 +619,51 @@ push_up_project_exp(mvc *sql, sql_rel *rel, sql_exp *e)
 	return e;
 }
 
+/* in case of cross products with freevars in projections down the three, we push all the projects */
+static sql_rel *
+push_up_projects(mvc *sql, sql_rel *rel)
+{
+	if (!rel)
+		return rel;
+	if (is_project(rel->op)) {
+		sql_rel *l = rel->l;
+		if (l && is_project(l->op))
+			rel = rel_merge_project(sql, rel);
+		l = rel->l;
+		if (is_join(l->op))
+			rel->l = l = push_up_projects(sql, rel->l);
+		if (l && is_project(l->op))
+			rel = rel_merge_project(sql, rel);
+	}
+	if (is_join(rel->op) && list_empty(rel->exps)) {
+		sql_rel *l = rel->l, *r = rel->r;
+		bool needed = ((is_simple_project(l->op) && !list_empty(l->exps)) ||
+					   (is_simple_project(r->op) && !list_empty(r->exps)));
+		if (needed) {
+			list *nexps = NULL;
+			if (is_simple_project(l->op) && !list_empty(l->exps)) {
+				rel->l = l = push_up_projects(sql, l);
+				nexps = l->exps;
+				l->exps = NULL;
+				rel->l = l->l;
+				l->l = NULL;
+				rel_destroy(sql, l);
+			}
+			if (is_simple_project(r->op) && !list_empty(r->exps)) {
+				rel->r = r = push_up_projects(sql, r);
+				nexps = list_join(nexps, r->exps);
+				r->exps = NULL;
+				rel->r = r->l;
+				r->l = NULL;
+				rel_destroy(sql, r);
+			}
+			if (nexps)
+				return rel_project(sql->sa, rel, nexps);
+		}
+	}
+	return rel;
+}
+
 static sql_exp *exp_rewrite(mvc *sql, sql_rel *rel, sql_exp *e, list *ad);
 
 static list *
@@ -1552,17 +1597,8 @@ push_up_join(mvc *sql, sql_rel *rel, list *ad)
 			}
 			if (is_left(rel->op) && !list_empty(rel->attr) && is_innerjoin(j->op) && list_empty(j->exps)) {
 				/* remove any project, as we don't need */
-				if (rd) { /* just throw away the left */
-					rel->r = rel_dup(jr);
-					rel_destroy(sql, j);
-					return rel;
-				}
-				if (ld) { /* just throw away the left */
-					rel->r = rel_dup(jl);
-					rel_destroy(sql, j);
-					return rel;
-				}
-				assert(0);
+				rel->r = j = push_up_projects(sql, j);
+				return rel;
 			}
 
 			if (ld && rd) {
