@@ -60,6 +60,7 @@ KNOWNFAIL?7774-insert-into-renamed-table-assertion-failure
 7856-crash-exp-match
 7857-rollup-crash
 7862-rel_has_freevar-crash
+7864-rel_exp_visitor-crash
 7865-unnest-cte-crash
 7866-rel_has_freevar-crash
 7867-push-groupby-down
