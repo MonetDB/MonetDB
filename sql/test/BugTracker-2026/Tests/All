@@ -61,6 +61,7 @@ KNOWNFAIL?7774-insert-into-renamed-table-assertion-failure
 7857-rollup-crash
 7862-rel_has_freevar-crash
 7865-unnest-cte-crash
+7866-rel_has_freevar-crash
 7867-push-groupby-down
 7868-rel_optimize_select_and_joins_bottomup-crash
 7869-rel_propagate_statistics-crash

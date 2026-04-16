@@ -1,0 +1,27 @@
+query I rowsort
+SELECT * FROM ( SELECT * FROM ( SELECT 1 AS x ) WHERE x IN ( SELECT ( row_number ( ) OVER ( ) ) GROUP BY x HAVING NOT x < ANY ( NOT MAX ( 561 ) < x * 27 * CASE WHEN NOT NULL IN ( - 69 , ( SELECT group_concat ( DISTINCT x ) FROM ( SELECT DISTINCT - 82 * 26 - - 27 * CASE WHEN NOT NULL IN ( - 69 , ( WITH x ( x , x ) AS ( SELECT 2 , 3 ) SELECT count ( * ) FROM x ) > 5 + - 12 * - 27 * CASE WHEN NOT NULL IN ( - 69 , ( SUM ( DISTINCT CAST( - 1 - 1 + ROUND ( -1 , 0.500000 ) % 70 AS BIGINT ) ) ) + MAX ( - 6 ) + - COUNT ( * ) / - 27 * CASE WHEN NOT NULL IN ( - 69 , ( SUM ( DISTINCT CAST( NULL AS INTEGER ) ) ) + MAX ( - 6 ) + - COUNT ( * ) / - - ( 77 ) + 37 , 44 , - - 0 * 23 , - - 86 , 3 , 12 ) THEN 41 WHEN NOT - 21 / - 95 IS NOT NULL THEN 255 END + 37 , 44 , - - 0 * 23 , - - 86 , 3 , 12 ) THEN 41 WHEN NOT - 21 / - 95 IS NOT NULL THEN 255 END + 37 , 44 , - - 0 * 23 , - - 86 , 3 , 12 ) THEN 41 WHEN NOT NULL LIKE 'nontemp%' THEN 63 END AS x WHERE NOT ( ( 725 = x OR 561 = x OR x = 943 ) OR ( x = 683 ) ) ) GROUP BY x ) + - COUNT ( * ) / - - ( 77 ) + 37 , 44 , - - 0 * 23 , - - 86 , 3 , 12 ) THEN 41 WHEN covar_pop ( 455 , NULL ) THEN 917999 END ) ) )
+----
+
+statement ok
+create table x (x int)
+
+statement error 42000!PARTITION BY: subqueries not allowed in PARTITION BY clause
+SELECT x , SUM ( x ) OVER w1 FROM x WINDOW w1 AS ( PARTITION BY x IN ( SELECT x FROM x ) ) ORDER BY x
+
+query II rowsort
+SELECT x , SUM ( x ) OVER w1 FROM x WINDOW w1 AS ( PARTITION BY x IN ( NULL ) ) ORDER BY x
+----
+
+query I rowsort
+SELECT SUM ( 0 ) OVER ( ) ORDER BY SUM ( 0 ) OVER ( )
+----
+0
+
+query I rowsort
+SELECT SUM ( x ) FROM x ORDER BY SUM ( x ) DESC
+----
+NULL
+
+statement ok
+drop table x
+
