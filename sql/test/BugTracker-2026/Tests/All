@@ -75,6 +75,7 @@ KNOWNFAIL?7774-insert-into-renamed-table-assertion-failure
 7882-later-distinct
 7883-right-join-crash
 7886-local-view-in-with
+7887-closed-connection-bug
 7888-or-false-write
 7889-delete-with-union-intersect
 7890-insert-exists-issue
