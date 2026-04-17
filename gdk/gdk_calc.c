@@ -1022,6 +1022,10 @@ BATcalcmin(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 		GDKerror("inputs have incompatible types\n");
 		return NULL;
 	}
+	if (!ATOMlinear(b1->ttype)) {
+		GDKerror("input is not a linear type\n");
+		return NULL;
+	}
 
 	canditer_init(&ci1, b1, s1);
 	canditer_init(&ci2, b2, s2);
@@ -1241,6 +1245,10 @@ BATcalcmin_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 		GDKerror("inputs have incompatible types\n");
 		return NULL;
 	}
+	if (!ATOMlinear(b1->ttype)) {
+		GDKerror("input is not a linear type\n");
+		return NULL;
+	}
 
 	canditer_init(&ci1, b1, s1);
 	canditer_init(&ci2, b2, s2);
@@ -1456,6 +1464,10 @@ BATcalcmincst(BAT *b, const ValRecord *v, BAT *s)
 		GDKerror("inputs have incompatible types\n");
 		return NULL;
 	}
+	if (!ATOMlinear(b->ttype)) {
+		GDKerror("input is not a linear type\n");
+		return NULL;
+	}
 
 	canditer_init(&ci, b, s);
 	p2 = VALptr(v);
@@ -1618,6 +1630,10 @@ BATcalcmincst_no_nil(BAT *b, const ValRecord *v, BAT *s)
 		GDKerror("inputs have incompatible types\n");
 		return NULL;
 	}
+	if (!ATOMlinear(b->ttype)) {
+		GDKerror("input is not a linear type\n");
+		return NULL;
+	}
 
 	canditer_init(&ci, b, s);
 	if (ci.ncand == 0)
@@ -1764,6 +1780,10 @@ BATcalcmax(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 	b2hseqbase = b2->hseqbase;
 	if (ATOMtype(b1->ttype) != ATOMtype(b2->ttype)) {
 		GDKerror("inputs have incompatible types\n");
+		return NULL;
+	}
+	if (!ATOMlinear(b1->ttype)) {
+		GDKerror("input is not a linear type\n");
 		return NULL;
 	}
 
@@ -1941,6 +1961,10 @@ BATcalcmax_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 	b2hseqbase = b2->hseqbase;
 	if (ATOMtype(b1->ttype) != ATOMtype(b2->ttype)) {
 		GDKerror("inputs have incompatible types\n");
+		return NULL;
+	}
+	if (!ATOMlinear(b1->ttype)) {
+		GDKerror("input is not a linear type\n");
 		return NULL;
 	}
 
@@ -2145,6 +2169,10 @@ BATcalcmaxcst(BAT *b, const ValRecord *v, BAT *s)
 		GDKerror("inputs have incompatible types\n");
 		return NULL;
 	}
+	if (!ATOMlinear(b->ttype)) {
+		GDKerror("input is not a linear type\n");
+		return NULL;
+	}
 
 	canditer_init(&ci, b, s);
 	p2 = VALptr(v);
@@ -2278,6 +2306,10 @@ BATcalcmaxcst_no_nil(BAT *b, const ValRecord *v, BAT *s)
 	bhseqbase = b->hseqbase;
 	if (ATOMtype(b->ttype) != v->vtype) {
 		GDKerror("inputs have incompatible types\n");
+		return NULL;
+	}
+	if (!ATOMlinear(b->ttype)) {
+		GDKerror("input is not a linear type\n");
 		return NULL;
 	}
 
@@ -4058,6 +4090,10 @@ BATcalcbetween(BAT *b, BAT *lo, BAT *hi, BAT *s, BAT *slo, BAT *shi,
 	BATcheck(lo, NULL);
 	BATcheck(hi, NULL);
 
+	if (!ATOMlinear(b->ttype)) {
+		GDKerror("input is not a linear type\n");
+		return NULL;
+	}
 	canditer_init(&ci, b, s);
 	canditer_init(&cilo, lo, slo);
 	canditer_init(&cihi, hi, shi);
@@ -4153,6 +4189,10 @@ BATcalcbetweencstcst(BAT *b, const ValRecord *lo, const ValRecord *hi,
 		GDKerror("incompatible input types.\n");
 		return NULL;
 	}
+	if (!ATOMlinear(b->ttype)) {
+		GDKerror("input is not a linear type\n");
+		return NULL;
+	}
 
 	canditer_init(&ci, b, s);
 
@@ -4218,6 +4258,10 @@ BATcalcbetweenbatcst(BAT *b, BAT *lo, const ValRecord *hi, BAT *s, BAT *slo,
 
 	if (ATOMbasetype(b->ttype) != ATOMbasetype(hi->vtype)) {
 		GDKerror("incompatible input types.\n");
+		return NULL;
+	}
+	if (!ATOMlinear(b->ttype)) {
+		GDKerror("input is not a linear type\n");
 		return NULL;
 	}
 
@@ -4298,6 +4342,10 @@ BATcalcbetweencstbat(BAT *b, const ValRecord *lo, BAT *hi, BAT *s, BAT *shi,
 
 	if (ATOMbasetype(b->ttype) != ATOMbasetype(lo->vtype)) {
 		GDKerror("incompatible input types.\n");
+		return NULL;
+	}
+	if (!ATOMlinear(b->ttype)) {
+		GDKerror("input is not a linear type\n");
 		return NULL;
 	}
 

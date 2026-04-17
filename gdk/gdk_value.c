@@ -338,7 +338,7 @@ VALconvert(allocator *ma, int typ, ValPtr t)
 /* Compare two values in P and Q and return -1/0/1 depending on
  * whether P is less than, equal to, or larger than Q. Also return -1
  * if P or Q is NULL or NIL, or if the types of P and Q are not
- * equal. */
+ * equal, or if the type is non-linear and the values not equal. */
 int
 VALcmp(const ValRecord *p, const ValRecord *q)
 {
@@ -357,6 +357,8 @@ VALcmp(const ValRecord *p, const ValRecord *q)
 	nilptr = ATOMnilptr(tpe);
 	pp = VALptr(p);
 	pq = VALptr(q);
+	if (!ATOMlinear(tpe))
+		return (*eq)(pp, pq) - 1; /* return 0 if equal, -1 if not */
 	if ((*eq)(pp, nilptr) && (*eq)(pq, nilptr))
 		return 0;	/* eq nil val */
 	if ((*eq)(pp, nilptr) || (*eq)(pq, nilptr))

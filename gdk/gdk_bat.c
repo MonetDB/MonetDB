@@ -1040,21 +1040,23 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 	const void *t = b->ttype == TYPE_msk ? &(msk){false} : ATOMnilptr(b->ttype);
 	MT_lock_set(&b->theaplock);
 	BATiter bi = bat_iterator_nolock(b);
-	const ValRecord *prop;
 	ValRecord minprop, maxprop;
 	const void *minbound = NULL, *maxbound = NULL;
-	if ((prop = BATgetprop_nolock(b, GDK_MIN_BOUND)) != NULL &&
-	    VALcopy(NULL, &minprop, prop) != NULL)
-		minbound = VALptr(&minprop);
-	if ((prop = BATgetprop_nolock(b, GDK_MAX_BOUND)) != NULL &&
-	    VALcopy(NULL, &maxprop, prop) != NULL)
-		maxbound = VALptr(&maxprop);
+	if (ATOMlinear(b->ttype)) {
+		const ValRecord *prop;
+		if ((prop = BATgetprop_nolock(b, GDK_MIN_BOUND)) != NULL &&
+		    VALcopy(NULL, &minprop, prop) != NULL)
+			minbound = VALptr(&minprop);
+		if ((prop = BATgetprop_nolock(b, GDK_MAX_BOUND)) != NULL &&
+		    VALcopy(NULL, &maxprop, prop) != NULL)
+			maxbound = VALptr(&maxprop);
+	}
 	const bool notnull = BATgetprop_nolock(b, GDK_NOT_NULL) != NULL;
 	bool setnil = false;
 	MT_lock_unset(&b->theaplock);
 	MT_rwlock_wrlock(&b->thashlock);
 	if (values && b->ttype) {
-		int (*atomcmp) (const void *, const void *) = ATOMcompare(b->ttype);
+		int (*atomcmp) (const void *, const void *) = ATOMlinear(b->ttype) ? ATOMcompare(b->ttype) : NULL;
 		bool (*atomeq) (const void *, const void *) = ATOMequal(b->ttype);
 		const void *atomnil = ATOMnilptr(b->ttype);
 		const void *minvalp = NULL, *maxvalp = NULL;
@@ -1115,19 +1117,21 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 						maxvalp = BUNtvar(&bi, bi.maxpos);
 				}
 				if (!isnil) {
-					if (p == 0) {
-						bi.minpos = bi.maxpos = 0;
-						minvalp = maxvalp = t;
-					} else {
-						if (bi.minpos != BUN_NONE &&
-						    atomcmp(minvalp, t) > 0) {
-							bi.minpos = p;
-							minvalp = t;
-						}
-						if (bi.maxpos != BUN_NONE &&
-						    atomcmp(maxvalp, t) < 0) {
-							bi.maxpos = p;
-							maxvalp = t;
+					if (atomcmp != NULL) {
+						if (p == 0) {
+							bi.minpos = bi.maxpos = 0;
+							minvalp = maxvalp = t;
+						} else {
+							if (bi.minpos != BUN_NONE &&
+							    atomcmp(minvalp, t) > 0) {
+								bi.minpos = p;
+								minvalp = t;
+							}
+							if (bi.maxpos != BUN_NONE &&
+							    atomcmp(maxvalp, t) < 0) {
+								bi.maxpos = p;
+								maxvalp = t;
+							}
 						}
 					}
 				} else {
@@ -1173,19 +1177,21 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 					HASHappend_locked(b, p, t);
 				}
 				if (!atomeq(t, atomnil)) {
-					if (p == 0) {
-						bi.minpos = bi.maxpos = 0;
-						minvalp = maxvalp = t;
-					} else {
-						if (bi.minpos != BUN_NONE &&
-						    atomcmp(minvalp, t) > 0) {
-							bi.minpos = p;
-							minvalp = t;
-						}
-						if (bi.maxpos != BUN_NONE &&
-						    atomcmp(maxvalp, t) < 0) {
-							bi.maxpos = p;
-							maxvalp = t;
+					if (atomcmp != NULL) {
+						if (p == 0) {
+							bi.minpos = bi.maxpos = 0;
+							minvalp = maxvalp = t;
+						} else {
+							if (bi.minpos != BUN_NONE &&
+							    atomcmp(minvalp, t) > 0) {
+								bi.minpos = p;
+								minvalp = t;
+							}
+							if (bi.maxpos != BUN_NONE &&
+							    atomcmp(maxvalp, t) < 0) {
+								bi.maxpos = p;
+								maxvalp = t;
+							}
 						}
 					}
 				} else {
@@ -1306,18 +1312,31 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 				b->tunique_est = 1;
 				break;
 			case 2:
-				if (b->tvheap)
-					c = ATOMcmp(b->ttype,
-						    ((void **) values)[0],
-						    ((void **) values)[1]);
-				else
-					c = ATOMcmp(b->ttype,
-						    values,
-						    (char *) values + b->twidth);
-				b->tsorted = c <= 0;
-				b->tnosorted = !b->tsorted;
-				b->trevsorted = c >= 0;
-				b->tnorevsorted = !b->trevsorted;
+				if (ATOMlinear(b->ttype)) {
+					if (b->tvheap)
+						c = ATOMcmp(b->ttype,
+							    ((void **) values)[0],
+							    ((void **) values)[1]);
+					else
+						c = ATOMcmp(b->ttype,
+							    values,
+							    (char *) values + b->twidth);
+					b->tsorted = c <= 0;
+					b->tnosorted = !b->tsorted;
+					b->trevsorted = c >= 0;
+					b->tnorevsorted = !b->trevsorted;
+				} else {
+					if (b->tvheap)
+						c = !ATOMeq(b->ttype,
+							    ((void **) values)[0],
+							    ((void **) values)[1]);
+					else
+						c = !ATOMeq(b->ttype,
+							    values,
+							    (char *) values + b->twidth);
+					b->tsorted = b->trevsorted = false;
+					b->tnosorted = b->tnorevsorted = 0;
+				}
 				b->tkey = c != 0;
 				b->tnokey[0] = 0;
 				b->tnokey[1] = !b->tkey;
@@ -1337,11 +1356,17 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 			else
 				t = values;
 		}
-		int c = ATOMcmp(b->ttype, BUNtail(&bi, 0), t);
-		b->tsorted = c <= 0;
-		b->tnosorted = !b->tsorted;
-		b->trevsorted = c >= 0;
-		b->tnorevsorted = !b->trevsorted;
+		int c;
+		if (ATOMlinear(b->ttype)) {
+			c = ATOMcmp(b->ttype, BUNtail(&bi, 0), t);
+			b->tsorted = c <= 0;
+			b->tnosorted = !b->tsorted;
+			b->trevsorted = c >= 0;
+			b->tnorevsorted = !b->trevsorted;
+		} else {
+			c = !ATOMeq(b->ttype, BUNtail(&bi, 0), t);
+			b->tsorted = b->trevsorted = false;
+		}
 		b->tkey = c != 0;
 		b->tnokey[0] = 0;
 		b->tnokey[1] = !b->tkey;
@@ -1456,7 +1481,7 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 {
 	BUN prv, nxt;
 	const void *val;
-	int (*atomcmp) (const void *, const void *) = ATOMcompare(b->ttype);
+	int (*atomcmp) (const void *, const void *) = ATOMlinear(b->ttype) ? ATOMcompare(b->ttype) : NULL;
 	bool (*atomeq) (const void *, const void *) = ATOMequal(b->ttype);
 	const void *atomnil = ATOMnilptr(b->ttype);
 
@@ -1481,15 +1506,17 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 	} else if (count > BATcount(b) / gdk_unique_estimate_keep_fraction) {
 		b->tunique_est = 0;
 	}
-	const ValRecord *prop;
 	ValRecord minprop, maxprop;
 	const void *minbound = NULL, *maxbound = NULL;
-	if ((prop = BATgetprop_nolock(b, GDK_MIN_BOUND)) != NULL &&
-	    VALcopy(NULL, &minprop, prop) != NULL)
-		minbound = VALptr(&minprop);
-	if ((prop = BATgetprop_nolock(b, GDK_MAX_BOUND)) != NULL &&
-	    VALcopy(NULL, &maxprop, prop) != NULL)
-		maxbound = VALptr(&maxprop);
+	if (ATOMlinear(b->ttype)) {
+		const ValRecord *prop;
+		if ((prop = BATgetprop_nolock(b, GDK_MIN_BOUND)) != NULL &&
+		    VALcopy(NULL, &minprop, prop) != NULL)
+			minbound = VALptr(&minprop);
+		if ((prop = BATgetprop_nolock(b, GDK_MAX_BOUND)) != NULL &&
+		    VALcopy(NULL, &maxprop, prop) != NULL)
+			maxbound = VALptr(&maxprop);
+	}
 	const bool notnull = BATgetprop_nolock(b, GDK_NOT_NULL) != NULL;
 	MT_lock_unset(&b->theaplock);
 	/* load hash so that we can maintain it */
@@ -1548,7 +1575,7 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 				b->tnil = false;
 				MT_lock_unset(&b->theaplock);
 			}
-			if (b->ttype != TYPE_void) {
+			if (b->ttype != TYPE_void && atomcmp != NULL) {
 				if (bi.maxpos != BUN_NONE) {
 					if (!isnil && atomcmp(BUNtail(&bi, bi.maxpos), t) < 0) {
 						/* new value is larger
@@ -1709,41 +1736,43 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 		nxt = p < last ? p + 1 : BUN_NONE;
 
 		MT_lock_set(&b->theaplock);
-		if (b->tsorted) {
-			if (prv != BUN_NONE &&
-			    atomcmp(t, BUNtail(&bi, prv)) < 0) {
-				b->tsorted = false;
-				b->tnosorted = p;
-			} else if (nxt != BUN_NONE &&
-				   atomcmp(t, BUNtail(&bi, nxt)) > 0) {
-				b->tsorted = false;
-				b->tnosorted = nxt;
-			} else if (b->ttype != TYPE_void && BATtdense(b)) {
+		if (atomcmp) {
+			if (b->tsorted) {
 				if (prv != BUN_NONE &&
-				    1 + * (oid *) BUNtloc(&bi, prv) != * (oid *) t) {
-					b->tseqbase = oid_nil;
+				    atomcmp(t, BUNtail(&bi, prv)) < 0) {
+					b->tsorted = false;
+					b->tnosorted = p;
 				} else if (nxt != BUN_NONE &&
-					   * (oid *) BUNtloc(&bi, nxt) != 1 + * (oid *) t) {
-					b->tseqbase = oid_nil;
-				} else if (prv == BUN_NONE &&
-					   nxt == BUN_NONE) {
-					b->tseqbase = * (oid *) t;
+					   atomcmp(t, BUNtail(&bi, nxt)) > 0) {
+					b->tsorted = false;
+					b->tnosorted = nxt;
+				} else if (b->ttype != TYPE_void && BATtdense(b)) {
+					if (prv != BUN_NONE &&
+					    1 + * (oid *) BUNtloc(&bi, prv) != * (oid *) t) {
+						b->tseqbase = oid_nil;
+					} else if (nxt != BUN_NONE &&
+						   * (oid *) BUNtloc(&bi, nxt) != 1 + * (oid *) t) {
+						b->tseqbase = oid_nil;
+					} else if (prv == BUN_NONE &&
+						   nxt == BUN_NONE) {
+						b->tseqbase = * (oid *) t;
+					}
 				}
-			}
-		} else if (b->tnosorted == p || b->tnosorted == p + 1)
-			b->tnosorted = 0;
-		if (b->trevsorted) {
-			if (prv != BUN_NONE &&
-			    atomcmp(t, BUNtail(&bi, prv)) > 0) {
-				b->trevsorted = false;
-				b->tnorevsorted = p;
-			} else if (nxt != BUN_NONE &&
-				   atomcmp(t, BUNtail(&bi, nxt)) < 0) {
-				b->trevsorted = false;
-				b->tnorevsorted = nxt;
-			}
-		} else if (b->tnorevsorted == p || b->tnorevsorted == p + 1)
-			b->tnorevsorted = 0;
+			} else if (b->tnosorted == p || b->tnosorted == p + 1)
+				b->tnosorted = 0;
+			if (b->trevsorted) {
+				if (prv != BUN_NONE &&
+				    atomcmp(t, BUNtail(&bi, prv)) > 0) {
+					b->trevsorted = false;
+					b->tnorevsorted = p;
+				} else if (nxt != BUN_NONE &&
+					   atomcmp(t, BUNtail(&bi, nxt)) < 0) {
+					b->trevsorted = false;
+					b->tnorevsorted = nxt;
+				}
+			} else if (b->tnorevsorted == p || b->tnorevsorted == p + 1)
+				b->tnorevsorted = 0;
+		}
 		if (((b->ttype != TYPE_void) & b->tkey) && b->batCount > 1) {
 			BATkey(b, false);
 		} else if (!b->tkey && (b->tnokey[0] == p || b->tnokey[1] == p))
@@ -2852,7 +2881,12 @@ BATassertProps(BAT *b)
 			minval = BUNtail(&bi, b->tminpos);
 			assert(!eqf(minval, nilp));
 		}
-		if (ATOMstorage(b->ttype) == TYPE_msk) {
+		/* min and max only make sense for linear types */
+		assert(maxbound == NULL || ATOMlinear(b->ttype));
+		assert(minbound == NULL || ATOMlinear(b->ttype));
+		assert(maxval == NULL || ATOMlinear(b->ttype));
+		assert(minval == NULL || ATOMlinear(b->ttype));
+		if (ATOMstorage(b->ttype) == TYPE_msk || !ATOMlinear(b->ttype)) {
 			/* for now, don't do extra checks for bit mask */
 			;
 		} else if (b->tsorted || b->trevsorted || !b->tkey) {

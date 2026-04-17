@@ -281,7 +281,7 @@ output_value(allocator*ma, char **buf, size_t *len, ssize_t fill, char **localbu
 	const char *p = BUNtail(&f->ci, f->p);
 	ssize_t l = 0;
 
-	if (!p || ATOMcmp(f->adt, ATOMnilptr(f->adt), p) == 0) {
+	if (!p || ATOMeq(f->adt, ATOMnilptr(f->adt), p)) {
 		p = f->nullstr;
 		l = (ssize_t) strlen(p);
 	} else {

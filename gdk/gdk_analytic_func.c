@@ -1351,6 +1351,12 @@ minmaxvarsized##IMP:							\
 BAT *									\
 GDKanalytical##OP(BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, int frame_type) \
 {									\
+	if (!ATOMlinear(b->ttype)) {					\
+		/* there is no such thing as a smallest/largest value if \
+		 * you can't compare values */				\
+		GDKerror("non-linear type");				\
+		return NULL;						\
+	}								\
 	lng t0 = 0;							\
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();				\
 	BAT *r = COLnew(b->hseqbase, b->ttype, BATcount(b), TRANSIENT); \

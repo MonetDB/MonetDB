@@ -3774,6 +3774,17 @@ thetajoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int opcode,
 	assert(ATOMtype(l->ttype) == ATOMtype(r->ttype));
 	assert((opcode & (MASK_EQ | MASK_LT | MASK_GT)) != 0);
 
+	if (!ATOMlinear(l->ttype)) {
+		switch (opcode) {
+		case MASK_EQ:
+		case MASK_NE:
+			break;
+		default:
+			GDKerror("input is not a linear type\n");
+			return GDK_FAIL;
+		}
+	}
+
 	BATiter li = bat_iterator(l);
 	BATiter ri = bat_iterator(r);
 
@@ -3857,11 +3868,19 @@ thetajoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int opcode,
 					rval = (oid) ((lng) ro + roff);
 				if (!nil_matches && eq(vr, nil))
 					continue;
-				c = cmp(vl, vr);
-				if (!((opcode & MASK_LT && c < 0) ||
-				      (opcode & MASK_GT && c > 0) ||
-				      (opcode & MASK_EQ && c == 0)))
-					continue;
+				if (opcode == MASK_EQ) {
+					if (!eq(vl, vr))
+						continue;
+				} else if (opcode == MASK_NE) {
+					if (eq(vl, vr))
+						continue;
+				} else {
+					c = cmp(vl, vr);
+					if (!((opcode & MASK_LT && c < 0) ||
+					      (opcode & MASK_GT && c > 0) ||
+					      (opcode & MASK_EQ && c == 0)))
+						continue;
+				}
 				if (maybeextend(r1, r2, NULL, 1, lci.next, lci.ncand, maxsize) != GDK_SUCCEED)
 					goto bailout;
 				if (BATcount(r1) > 0) {
@@ -4246,7 +4265,7 @@ leftjoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		*r1p = bitmaskjoin(l, r, &lci, &rci, only_misses, func, t0);
 		rc = *r1p == NULL ? GDK_FAIL : GDK_SUCCEED;
 		goto doreturn;
-	} else {
+	} else if (ATOMlinear(r->ttype)) {
 		/* looking at r->tvheap, so we need a lock */
 		MT_lock_set(&r->theaplock);
 		BUN hsz = r->tvheap ? r->tvheap->size : 0;
@@ -5129,6 +5148,10 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh,
 	  struct canditer *lci, struct canditer *rci,
 	  bool linc, bool hinc, bool anti, bool symmetric, BUN maxsize)
 {
+	if (!ATOMlinear(l->ttype)) {
+		GDKerror("input is not a linear type\n");
+		return GDK_FAIL;
+	}
 	if (!anti && !symmetric) {
 		/* we'll need these */
 		(void) BATordered(l);

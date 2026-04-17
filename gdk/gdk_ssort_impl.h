@@ -809,6 +809,11 @@ GDKssortimpl(void *restrict h, void *restrict t, const void *restrict heap,
 	size_t lo, hi;
 	ssize_t minrun;
 
+	if (!ATOMlinear(tpe)) {
+		GDKerror("input is not a linear type\n");
+		return GDK_FAIL;
+	}
+
 	assert(h);
 	assert(hs > 0);
 

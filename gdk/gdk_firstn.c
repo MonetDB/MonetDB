@@ -1292,6 +1292,11 @@ BATfirstn(BAT **topn, BAT **gids, BAT *b, BAT *s, BAT *g, BUN n, bool asc, bool 
 		return GDK_SUCCEED;
 	}
 
+	if (!ATOMlinear(b->ttype)) {
+		GDKerror("input is not a linear type\n");
+		return GDK_FAIL;
+	}
+
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	(void) BATordered(b);
@@ -1400,6 +1405,12 @@ BATgroupedfirstn(BUN n, BAT *s, BAT *g, int nbats, BAT **bats, bool *asc, bool *
 
 	assert(nbats > 0);
 
+	for (int i = 0; i < nbats; i++) {
+		if (!ATOMlinear(bats[i]->ttype)) {
+			GDKerror("input is not a linear type\n");
+			return NULL;
+		}
+	}
 	if (n == 0 || BATcount(bats[0]) == 0) {
 		return BATdense(0, 0, 0);
 	}

@@ -363,7 +363,7 @@ GDKqsort(void *restrict h, void *restrict t, const void *restrict base,
 	assert(tpe != TYPE_void);
 	assert((ts == 0) == (t == NULL));
 
-	if (n <= 1)
+	if (n <= 1 || !ATOMlinear(tpe))
 		return;		/* nothing to do */
 
 	buf.hs = (unsigned int) hs;

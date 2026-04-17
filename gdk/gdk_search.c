@@ -307,6 +307,7 @@ binsearch(const oid *restrict indir,
 
 	assert(ordering == 1 || ordering == -1);
 	assert(lo < hi);
+	assert(ATOMlinear(type));
 
 	--hi;			/* now hi is inclusive */
 
