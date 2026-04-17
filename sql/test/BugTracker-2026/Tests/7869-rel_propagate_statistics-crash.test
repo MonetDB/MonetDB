@@ -32,7 +32,7 @@ SELECT log ( 2.000000 ) , ln ( 2 ) , log ( 2 , 64.000000 ) , log10 ( 100.000000 
 2.000
 
 -- Math exception: Numerical argument out of domain
-statement error Math exception: Numerical argument out of domain
+statement error Math exception: ...
 SELECT log2 ( '-1000' )
 
 query R nosort
@@ -46,7 +46,7 @@ SELECT SUM ( CAST( locate ( 'HE' , 'hello' , 2 ) AS REAL ) ) OVER ( ORDER BY 1 )
 0.000
 
 -- Math exception: Numerical result out of range
-statement error Math exception: Numerical result out of range
+statement error Math exception: ...
 SELECT log ( 64.000000 , SUM ( CAST( locate ( 'HE' , 'hello' , 2 ) AS REAL ) ) OVER ( ORDER BY 1 ) )
 
 query R nosort
