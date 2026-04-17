@@ -34,7 +34,7 @@ typedef struct {
 	BAT *b;
 	void *first;
 	void *last;
-	int size;
+	uint32_t size;
 	int type;
 	BUN cnt;
 	BATiter bi;

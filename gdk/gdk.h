@@ -391,7 +391,7 @@ typedef struct BAT {
 	BUN batCapacity;	/* tuple capacity */
 
 	/* dynamic column properties */
-	uint16_t twidth;	/* byte-width of the atom array */
+	uint32_t twidth;	/* byte-width of the atom array */
 	int8_t ttype;		/* type id. */
 	uint8_t tshift;		/* log2 of bun width */
 	/* see also comment near BATassertProps() for more information
@@ -597,7 +597,7 @@ typedef struct BATiter {
 	BUN nosorted, norevsorted;
 	BUN minpos, maxpos;
 	double unique_est;
-	uint16_t width;
+	uint32_t width;
 	uint8_t shift;
 	int8_t type;
 	bool key:1,
@@ -765,7 +765,7 @@ gdk_export void HEAP_free(Heap *heap, var_t block);
 
 gdk_export BAT *COLnew(oid hseq, int tltype, BUN capacity, role_t role)
 	__attribute__((__warn_unused_result__));
-gdk_export BAT *COLnew2(oid hseq, int tt, BUN cap, role_t role, uint16_t width)
+gdk_export BAT *COLnew2(oid hseq, int tt, BUN cap, role_t role, uint32_t width)
 	__attribute__((__warn_unused_result__));
 gdk_export BAT *BATdense(oid hseq, oid tseq, BUN cnt)
 	__attribute__((__warn_unused_result__));
@@ -773,7 +773,7 @@ gdk_export gdk_return BATextend(BAT *b, BUN newcap)
 	__attribute__((__warn_unused_result__));
 
 /* internal */
-gdk_export uint8_t ATOMelmshift(int sz)
+gdk_export uint8_t ATOMelmshift(uint32_t sz)
 	__attribute__((__const__));
 gdk_export gdk_return ATOMheap(int id, Heap *hp, size_t cap)
 	__attribute__((__warn_unused_result__));
@@ -1014,7 +1014,7 @@ gdk_export gdk_return BATsort(BAT **sorted, BAT **order, BAT **groups, BAT *b, B
 	__attribute__((__warn_unused_result__));
 
 
-gdk_export void GDKqsort(void *restrict h, void *restrict t, const void *restrict base, size_t n, int hs, int ts, int tpe, bool reverse, bool nilslast);
+gdk_export void GDKqsort(void *restrict h, void *restrict t, const void *restrict base, size_t n, size_t hs, size_t ts, int tpe, bool reverse, bool nilslast);
 
 /* BAT is dense (i.e., BATtvoid() is true and tseqbase is not NIL) */
 __attribute__((__pure__))

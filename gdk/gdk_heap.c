@@ -444,7 +444,7 @@ gdk_return
 GDKupgradevarheap(BAT *b, var_t v, BUN cap, BUN ncopy)
 {
 	uint8_t shift = b->tshift;
-	uint16_t width = b->twidth;
+	uint32_t width = b->twidth;
 	uint8_t *pc;
 	uint16_t *ps;
 	uint32_t *pi;

@@ -4400,7 +4400,7 @@ sql_storage_appendrow(BAT *bs, const char *sname, const char *tname, const char 
 
 	if (BUNappend(loc, BBP_physical(bs->batCacheid), false) != GDK_SUCCEED)
 		goto bailout1;
-	w = bsi.width;
+	w = (int) bsi.width;
 	if (BUNappend(atom, &w, false) != GDK_SUCCEED)
 		goto bailout1;
 

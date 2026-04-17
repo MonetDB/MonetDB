@@ -109,7 +109,7 @@ BUNtpos(BATiter *bi, BUN p)
 }
 
 BAT *
-BATcreatedesc(oid hseq, int tt, bool heapnames, role_t role, uint16_t width)
+BATcreatedesc(oid hseq, int tt, bool heapnames, role_t role, uint32_t width)
 {
 	bat bid;
 	BAT *bn;
@@ -202,10 +202,10 @@ BATcreatedesc(oid hseq, int tt, bool heapnames, role_t role, uint16_t width)
 }
 
 uint8_t
-ATOMelmshift(int sz)
+ATOMelmshift(uint32_t sz)
 {
 	uint8_t sh;
-	int i = sz >> 1;
+	uint32_t i = sz >> 1;
 
 	for (sh = 0; i != 0; sh++) {
 		i >>= 1;
@@ -215,7 +215,7 @@ ATOMelmshift(int sz)
 
 
 void
-BATsetdims(BAT *b, uint16_t width)
+BATsetdims(BAT *b, uint32_t width)
 {
 	b->twidth = b->ttype == TYPE_str ? width > 0 ? width : 1 : ATOMsize(b->ttype);
 	b->tshift = ATOMelmshift(b->twidth);
@@ -245,7 +245,7 @@ BATtailname(const BAT *b)
 }
 
 void
-settailname(Heap *restrict tail, const char *restrict physnme, int tt, int width)
+settailname(Heap *restrict tail, const char *restrict physnme, int tt, uint32_t width)
 {
 	if (tt == TYPE_str) {
 		switch (width) {
@@ -289,7 +289,7 @@ settailname(Heap *restrict tail, const char *restrict physnme, int tt, int width
  * filenames.
  */
 BAT *
-COLnew2(oid hseq, int tt, BUN cap, role_t role, uint16_t width)
+COLnew2(oid hseq, int tt, BUN cap, role_t role, uint32_t width)
 {
 	BAT *bn;
 
@@ -2774,7 +2774,7 @@ BATassertProps(BAT *b)
 		MT_lock_unset(&b->theaplock);
 		return;
 	}
-	assert(1 << b->tshift == b->twidth);
+	assert(UINT32_C(1) << b->tshift == b->twidth);
 	/* only linear atoms can be sorted */
 	assert(!b->tsorted || ATOMlinear(b->ttype));
 	assert(!b->trevsorted || ATOMlinear(b->ttype));

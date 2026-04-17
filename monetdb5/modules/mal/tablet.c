@@ -2179,7 +2179,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out,
 
 		if (best && BATcount(as->format[firstcol].c)) {
 			BUN limit;
-			int width;
+			uint32_t width;
 
 			for (attr = 0; attr < as->nr_attrs; attr++) {
 				if (as->format[attr].skip)

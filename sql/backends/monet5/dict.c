@@ -1387,7 +1387,7 @@ DICTprepare4append_vals(void **noffsets, void *vals, BUN cnt, BAT *dict)
 	}
 
 	int varsized = ATOMvarsized(dict->ttype);
-	int wd = (varsized?sizeof(char*):dict->twidth);
+	size_t wd = (varsized?sizeof(char*):dict->twidth);
 	char *vp = vals;
 	BATiter ui = bat_iterator_nolock(dict);
 	if (tt == TYPE_bte) {

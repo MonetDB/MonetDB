@@ -48,7 +48,7 @@ bool BATcheckhash(BAT *b)
 gdk_return BATcheckmodes(BAT *b, bool persistent)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
-BAT *BATcreatedesc(oid hseq, int tt, bool heapnames, role_t role, uint16_t width)
+BAT *BATcreatedesc(oid hseq, int tt, bool heapnames, role_t role, uint32_t width)
 	__attribute__((__visibility__("hidden")));
 void BATdelete(BAT *b)
 	__attribute__((__visibility__("hidden")));
@@ -72,7 +72,7 @@ gdk_return BATmaterialize(BAT *b, BUN cap)
 	__attribute__((__visibility__("hidden")));
 gdk_return BATsave_iter(BAT *bd, BATiter *bi, BUN size)
 	__attribute__((__visibility__("hidden")));
-void BATsetdims(BAT *b, uint16_t width)
+void BATsetdims(BAT *b, uint32_t width)
 	__attribute__((__visibility__("hidden")));
 void BBPcacheit(BAT *bn, bool lock)
 	__attribute__((__visibility__("hidden")));
@@ -98,7 +98,7 @@ gdk_return BBPsync(int cnt, const bat *restrict subcommit, const BUN *restrict s
 	__attribute__((__visibility__("hidden")))
 	__attribute__((__access__(read_only, 2, 1)))
 	__attribute__((__access__(read_only, 3, 1)));
-BUN binsearch(const oid *restrict indir, int type, const void *restrict vals, const char * restrict vars, int width, BUN lo, BUN hi, const void *restrict v, int ordering, int last)
+BUN binsearch(const oid *restrict indir, int type, const void *restrict vals, const char * restrict vars, uint32_t width, BUN lo, BUN hi, const void *restrict v, int ordering, int last)
 	__attribute__((__visibility__("hidden")));
 BUN binsearch_bte(const oid *restrict indir, const bte *restrict vals, BUN lo, BUN hi, bte v, int ordering, int last)
 	__attribute__((__visibility__("hidden")));
@@ -156,10 +156,10 @@ gdk_return GDKsave(int farmid, const char *nme, const char *ext, void *buf, size
 gdk_return GDKrsort(void *restrict h, void *restrict t, size_t n, size_t hs, size_t ts, bool reverse, bool isuuid)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
-gdk_return GDKssort_rev(void *restrict h, void *restrict t, const void *restrict base, size_t n, int hs, int ts, int tpe)
+gdk_return GDKssort_rev(void *restrict h, void *restrict t, const void *restrict base, size_t n, size_t hs, size_t ts, int tpe)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
-gdk_return GDKssort(void *restrict h, void *restrict t, const void *restrict base, size_t n, int hs, int ts, int tpe)
+gdk_return GDKssort(void *restrict h, void *restrict t, const void *restrict base, size_t n, size_t hs, size_t ts, int tpe)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
 gdk_return GDKtracer_init(const char *dbname, const char *dbtrace)
@@ -237,7 +237,7 @@ void PROPdestroy(BAT *b)
 	__attribute__((__visibility__("hidden")));
 void PROPdestroy_nolock(BAT *b)
 	__attribute__((__visibility__("hidden")));
-void settailname(Heap *restrict tail, const char *restrict physnme, int tt, int width)
+void settailname(Heap *restrict tail, const char *restrict physnme, int tt, uint32_t width)
 	__attribute__((__visibility__("hidden")));
 void strCleanHash(Heap *hp, bool rebuild)
 	__attribute__((__visibility__("hidden")));

@@ -22,8 +22,9 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 						 InstrPtr pci)
 {
 	int i, j, limit, slimit, pieces = 1, mito_parts = 0,
-		mito_size = 0, row_size = 0, mt = -1, nr_cols = 0, nr_aggrs = 0,
+		mito_size = 0, mt = -1, nr_cols = 0, nr_aggrs = 0,
 		nr_maps = 0;
+	uint32_t row_size = 0;
 	str schema = 0, table = 0;
 	BUN r = 0, rowcnt = 0;		/* table should be sizeable to consider parallel execution */
 	InstrPtr p, q, *old, target = 0;

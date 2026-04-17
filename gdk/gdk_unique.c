@@ -31,7 +31,7 @@ BATunique(BAT *b, BAT *s)
 	const void *v;
 	const char *vals;
 	const char *vars;
-	int width;
+	uint32_t width;
 	oid o, hseq;
 	const char *nme;
 	BUN hb;

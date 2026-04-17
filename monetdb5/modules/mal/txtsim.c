@@ -771,7 +771,8 @@ maxlevenshteinjoin(BAT **r1, BAT **r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int k)
 	BUN n;
 	struct canditer lci, rci;
 	const char *lvals, *rvals, *lvars, *rvars;;
-	int lwidth, rwidth, d;
+	uint32_t lwidth, rwidth;
+	int d;
 	str_item *lsi = NULL, *rsi = NULL;
 	str msg = MAL_SUCCEED;
 	unsigned int *buffer = NULL;
@@ -955,7 +956,8 @@ minjarowinklerjoin(BAT **r1, BAT **r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	BUN n;
 	struct canditer lci, rci;
 	const char *lvals, *rvals, *lvars, *rvars;
-	int lwidth, rwidth, lb = 0, ub = 0, m = -1, *x_flags = NULL, *y_flags = NULL;
+	uint32_t lwidth, rwidth;
+	int lb = 0, ub = 0, m = -1, *x_flags = NULL, *y_flags = NULL;
 	str_item *ssl = NULL, *ssr = NULL, shortest;
 	str msg = MAL_SUCCEED;
 	const bool sliding_window_allowed = threshold > (2.01 + JARO_WINKLER_PREFIX_LEN * JARO_WINKLER_SCALING_FACTOR) / 3.0;

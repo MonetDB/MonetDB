@@ -161,7 +161,7 @@ BATall_grp(BAT *l, BAT *g, BAT *e, BAT *s)
 			}
 		} else {
 			uint8_t *restrict rcast = (uint8_t *) Tloc(res, 0);
-			uint16_t width = res->twidth;
+			uint32_t width = res->twidth;
 			for (i = 0; i < ngrp; i++) { /* convert the found oids in values */
 				BUN noid = oids[i];
 				const void *next;

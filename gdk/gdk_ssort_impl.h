@@ -800,7 +800,7 @@ do_ssort(MergeState *ms, ssize_t nremaining, size_t lo, size_t hi, ssize_t minru
  * atoms). */
 gdk_return
 GDKssortimpl(void *restrict h, void *restrict t, const void *restrict heap,
-	     size_t nitems, int hs, int ts, int tpe)
+	     size_t nitems, size_t hs, size_t ts, int tpe)
 {
 	char temp;
 	MergeState ms;
@@ -820,8 +820,8 @@ GDKssortimpl(void *restrict h, void *restrict t, const void *restrict heap,
 	ms.min_gallop = MIN_GALLOP;
 	ms.compare = ATOMcompare(tpe);
 	ms.heap = heap;
-	ms.hs = hs;
-	ms.ts = ts;
+	ms.hs = (int) hs;
+	ms.ts = (int) ts;
 	ms.bh = h;
 	if (!t)
 		t = &temp;

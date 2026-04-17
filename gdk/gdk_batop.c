@@ -2408,7 +2408,7 @@ BATordered_rev(BAT *b)
  * "quick" sort does not produce errors */
 static gdk_return
 do_sort(void *restrict h, void *restrict t, const void *restrict base,
-	size_t n, int hs, int ts, int tpe, bool reverse, bool nilslast,
+	size_t n, size_t hs, size_t ts, int tpe, bool reverse, bool nilslast,
 	bool stable)
 {
 	if (n <= 1)		/* trivially sorted */
