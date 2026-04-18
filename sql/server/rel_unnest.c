@@ -16,6 +16,7 @@
 #include "rel_exp.h"
 #include "rel_select.h"
 #include "rel_rewriter.h"
+#include "rel_optimizer.h"
 
 #define rewrite_no_freevar       (1 << 8)
 #define is_independent(X)        ((X & rewrite_no_freevar) == rewrite_no_freevar)
@@ -627,6 +628,8 @@ push_up_projects(mvc *sql, sql_rel *rel)
 		return rel;
 	if (is_project(rel->op)) {
 		sql_rel *l = rel->l;
+		if (l && is_topn(l->op))
+			rel->l = l = rel_push_topn_down(sql, l);
 		if (l && is_project(l->op))
 			rel = rel_merge_project(sql, rel);
 		l = rel->l;
@@ -636,6 +639,7 @@ push_up_projects(mvc *sql, sql_rel *rel)
 			rel = rel_merge_project(sql, rel);
 	}
 	if (is_join(rel->op) && list_empty(rel->exps)) {
+		bool left_group_join = (is_left(rel->op) && !list_empty(rel->attr));
 		sql_rel *l = rel->l, *r = rel->r;
 		bool needed = ((is_simple_project(l->op) && !list_empty(l->exps)) ||
 					   (is_simple_project(r->op) && !list_empty(r->exps)));
@@ -651,13 +655,15 @@ push_up_projects(mvc *sql, sql_rel *rel)
 			}
 			if (is_simple_project(r->op) && !list_empty(r->exps)) {
 				rel->r = r = push_up_projects(sql, r);
-				nexps = list_join(nexps, r->exps);
-				r->exps = NULL;
-				rel->r = r->l;
-				r->l = NULL;
-				rel_destroy(sql, r);
+				if (!left_group_join) {
+					nexps = list_join(nexps, r->exps);
+					r->exps = NULL;
+					rel->r = r->l;
+					r->l = NULL;
+					rel_destroy(sql, r);
+				}
 			}
-			if (nexps)
+			if (!left_group_join && nexps)
 				return rel_project(sql->sa, rel, nexps);
 		}
 	}
@@ -1585,6 +1591,37 @@ push_up_join(mvc *sql, sql_rel *rel, list *ad)
 				rel->r = j = push_up_select_l(sql, j);
 				return rel; /* ie try again */
 			}
+
+#if 0
+			if (is_left(rel->op) && !list_empty(rel->attr) && is_innerjoin(j->op) && list_empty(j->exps)) {
+				/* remove any project, as we don't need */
+				rel->r = j = push_up_projects(sql, j);
+				if (!is_join(j->op) || !rel_has_freevar(sql, j) || !rel_dependent_var(sql, d, j))
+					return rel;
+				jl = j->l;
+				jr = j->r;
+			}
+			if (is_join(rel->op) && !list_empty(rel->exps) && !list_empty(j->attr) && list_empty(j->exps) && exps_uses_exp(rel->exps, j->attr->h->data)) {
+				/* remove any project, as we don't need */
+				rel->r = j = push_up_projects(sql, j);
+				rel = rel_deadcode_elimination(sql, rel);
+				if (!is_join(j->op) || !rel_has_freevar(sql, j) || !rel_dependent_var(sql, d, j))
+					return rel;
+				jl = j->l;
+				jr = j->r;
+			}
+#endif
+			if ((is_left(rel->op) && !list_empty(rel->attr) && is_innerjoin(j->op) && list_empty(j->exps)) ||
+			    (is_join(rel->op) && !list_empty(rel->exps) && !list_empty(j->attr) && list_empty(j->exps) && exps_uses_exp(rel->exps, j->attr->h->data))) {
+				/* remove any project, as we don't need */
+				rel->r = j = push_up_projects(sql, j);
+				rel = rel_deadcode_elimination(sql, rel);
+				if (!is_join(j->op) || !rel_has_freevar(sql, j) || !rel_dependent_var(sql, d, j))
+					return rel;
+				jl = j->l;
+				jr = j->r;
+			}
+
 			rd = (j->op != op_full && j->op != op_right)?rel_dependent_var(sql, d, jr):(list*)1;
 			ld = ((j->op == op_join || j->op == op_right))?rel_dependent_var(sql, d, jl):(list*)1;
 
@@ -1593,11 +1630,6 @@ push_up_join(mvc *sql, sql_rel *rel, list *ad)
 				rel->r = j = rewrite_outer2inner_union(&v, j);
 				if (!j)
 					return NULL;
-				return rel;
-			}
-			if (is_left(rel->op) && !list_empty(rel->attr) && is_innerjoin(j->op) && list_empty(j->exps)) {
-				/* remove any project, as we don't need */
-				rel->r = j = push_up_projects(sql, j);
 				return rel;
 			}
 
@@ -1778,12 +1810,7 @@ push_up_set(mvc *sql, sql_rel *rel, list *ad)
 				set_distinct(ns);
 
 			if (is_join(rel->op) && !is_semi(rel->op)) {
-				list *sexps = sa_list(sql->sa), *dexps = rel_projections(sql, d, NULL, 1, 1);
-				for (node *m = dexps->h; m; m = m->next) {
-					sql_exp *e = m->data;
-
-					list_append(sexps, exp_ref(sql, e));
-				}
+				list *dexps = rel_projections(sql, d, NULL, 1, 1), *sexps = exps_refs(sql, dexps);
 				ns->exps = list_join(sexps, ns->exps);
 			}
 			/* add/remove projections to inner parts of the union (as we push a join or semijoin down) */
