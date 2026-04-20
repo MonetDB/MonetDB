@@ -39324,6 +39324,11 @@ pattern sqlcatalog.create_user(X_0:str, X_1:str, X_2:int, X_3:str, X_4:str, X_5:
 SQLcreate_user
 Catalog operation create_user
 sqlcatalog
+create_ustr
+pattern sqlcatalog.create_ustr(X_0:str, X_1:str, X_2:int):void
+SQLcreate_ustr
+Catalog operation create_ustr
+sqlcatalog
 create_view
 pattern sqlcatalog.create_view(X_0:str, X_1:str, X_2:ptr, X_3:int, X_4:int):void
 SQLcreate_view
@@ -39388,6 +39393,11 @@ drop_user
 pattern sqlcatalog.drop_user(X_0:str, X_1:str, X_2:int):void
 SQLdrop_user
 Catalog operation drop_user
+sqlcatalog
+drop_ustr
+pattern sqlcatalog.drop_ustr(X_0:str, X_1:str, X_2:int, X_3:int):void
+SQLdrop_ustr
+Catalog operation drop_ustr
 sqlcatalog
 drop_view
 pattern sqlcatalog.drop_view(X_0:str, X_1:str, X_2:int, X_3:int):void

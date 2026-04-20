@@ -5186,6 +5186,107 @@ col_compress(sql_trans *tr, sql_column *col, storage_type st, BAT *o, BAT *u)
 	return LOG_OK;
 }
 
+static int
+tc_gc_ustr(sql_store Store, sql_change *change, ulng oldest)
+{
+	sqlstore *store = Store;
+	sql_ustr *u = (sql_ustr *) change->obj;
+
+	if (u == NULL) {
+		/* cleaned earlier */
+		return 1;
+	}
+
+	if (change->handled || isDeleted(u)) {
+		ustr_destroy(store, u);
+		return 1;
+	}
+	if (oldest && oldest >= TRANSACTION_ID_BASE) /* cannot cleanup older stuff on savepoint commits */
+		return 0;
+
+	ustr_destroy(store, u);
+	return 1;
+}
+
+#if 0
+static int
+commit_create_ustr(sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldest)
+{
+	sql_ustr *u = (sql_ustr *) change->obj;
+	(void) u;
+	(void) tr;
+	(void) commit_ts;
+	(void) oldest;
+	return 0;
+}
+#endif
+
+static int
+log_create_ustr(sql_trans *tr, sql_change *c)
+{
+	sqlstore *store = tr->store;
+	sql_ustr *u = (sql_ustr *) c->obj;
+	BAT *b = temp_descriptor(u->batid);
+
+	if (b == NULL)
+		return LOG_ERR;
+	gdk_return rc = log_bat_persists(store->logger, b, u->base.id);
+	bat_destroy(b);
+	return rc == GDK_SUCCEED ? LOG_OK : LOG_ERR;
+}
+
+static int
+create_ustr(sql_trans *tr, sql_ustr *u)
+{
+	sqlstore* store = tr->store;
+
+	if (!isNew(u)) {
+		int bid = log_find_bat(store->logger, u->base.id);
+		if (bid <= 0)
+			return LOG_ERR;
+		u->batid = temp_dup(bid);
+	} else if (u->batid == 0) {
+		BAT *b = bat_new(TYPE_str, 0, PERSISTENT);
+		if (b == NULL)
+			return LOG_ERR;
+		bat_set_access(b, BAT_READ);
+		BBPkeepref(b);
+		u->batid = b->batCacheid;
+		trans_add_obj(tr, &u->base, NULL, tc_gc_ustr, NULL/*commit_create_ustr*/,
+					  log_create_ustr);
+	}
+	return LOG_OK;
+}
+
+static int
+log_destroy_ustr(sql_trans *tr, sql_change *c)
+{
+	sqlstore *store = tr->store;
+	sql_ustr *u = (sql_ustr *) c->obj;
+	gdk_return rc = GDK_SUCCEED;
+	if (!GDKinmemory(0) && !tr->parent && u->batid != 0)
+		rc = log_bat_transient(store->logger, u->base.id);
+	temp_destroy(u->batid);
+	u->batid = 0;
+	return rc == GDK_SUCCEED ? LOG_OK : LOG_ERR;
+}
+
+static int
+drop_ustr(sql_trans *tr, sql_ustr *u)
+{
+	if (!isNew(u))
+		trans_add_obj(tr, &u->base, NULL, tc_gc_ustr, NULL, log_destroy_ustr);
+	return LOG_OK;
+}
+
+static int
+destroy_ustr(sqlstore *store, sql_ustr *u)
+{
+	(void) store;
+	temp_destroy(u->batid);
+	return LOG_OK;
+}
+
 void
 bat_storage_init( store_functions *sf)
 {
@@ -5242,4 +5343,8 @@ bat_storage_init( store_functions *sf)
 	sf->vacuum_col = &vacuum_col;
 	sf->vacuum_tab = &vacuum_tab;
 	sf->col_compress = &col_compress;
+
+	sf->create_ustr = &create_ustr;
+	sf->drop_ustr = &drop_ustr;
+	sf->destroy_ustr = &destroy_ustr;
 }

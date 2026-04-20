@@ -7762,6 +7762,8 @@ rel2bin_ddl(backend *be, sql_rel *rel, list *refs)
 		case ddl_rename_schema:
 		case ddl_rename_table:
 		case ddl_rename_column:
+		case ddl_create_ustr:
+		case ddl_drop_ustr:
 			s = rel2bin_catalog2(be, rel, refs);
 			sql->type = Q_SCHEMA;
 			break;

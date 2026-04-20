@@ -155,6 +155,9 @@ rel_semantic(sql_query *query, symbol *s)
 
 	case SQL_CREATE_TYPE:
 	case SQL_DROP_TYPE:
+
+	case SQL_CREATE_USTR:
+	case SQL_DROP_USTR:
 		return rel_schemas(query, s);
 
 	case SQL_CREATE_SEQ:

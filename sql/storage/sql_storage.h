@@ -177,6 +177,10 @@ typedef int (*upgrade_del_fptr) (sql_trans *tr, sql_table *t);
 typedef int (*vacuum_col_fptr) (sql_trans *tr, sql_column *c, bool force);
 typedef int (*vacuum_tab_fptr) (sql_trans *tr, sql_table *t, bool force);
 
+typedef int (*create_ustr_fptr) (sql_trans *tr, sql_ustr *u);
+typedef int (*drop_ustr_fptr) (sql_trans *tr, sql_ustr *u);
+typedef int (*destroy_ustr_fptr) (struct sqlstore *store, sql_ustr *u);
+
 /*
 -- free the storage resources for columns, indices and tables
 -- returns LOG_OK, LOG_ERR
@@ -268,6 +272,10 @@ typedef struct store_functions {
 	upgrade_del_fptr upgrade_del;
 	vacuum_col_fptr vacuum_col;
 	vacuum_tab_fptr vacuum_tab;
+
+	create_ustr_fptr create_ustr;
+	drop_ustr_fptr drop_ustr;
+	destroy_ustr_fptr destroy_ustr;
 } store_functions;
 
 typedef int (*log_create_fptr) (struct sqlstore *store, int debug, const char *logdir, int catalog_version);
@@ -413,6 +421,7 @@ extern int sql_trans_ranges(sql_trans *tr, sql_column *col, void **min, void **m
 extern void column_destroy(struct sqlstore *store, sql_column *c);
 extern void idx_destroy(struct sqlstore *store, sql_idx * i);
 extern void table_destroy(struct sqlstore *store, sql_table *t);
+extern void ustr_destroy(struct sqlstore *store, sql_ustr *u);
 
 extern int sql_trans_create_ukey(sql_key **res, sql_trans *tr, sql_table *t, const char *name, key_type kt, const char* check);
 extern int sql_trans_key_done(sql_trans *tr, sql_key *k);
@@ -462,6 +471,9 @@ extern sql_idx *create_sql_ic(struct sqlstore *store, allocator *sa, sql_idx *i,
 extern sql_idx *create_sql_idx_done(sql_trans *tr, sql_idx *i);
 extern sql_func *create_sql_func(struct sqlstore *store, allocator *sa, const char *func, list *args, list *res, sql_ftype type, sql_flang lang, const char *mod,
 								 const char *impl, const char *query, bit varres, bit vararg, bit system, bit side_effect, bit order_required, bit opt_order);
+
+extern int sql_trans_create_ustr(sql_trans *tr, sql_schema *s, const char *uname);
+extern int sql_trans_drop_ustr(sql_trans *tr, sql_schema *s, sql_ustr *u, int drop_action);
 
 /* for alter we need to duplicate a table */
 extern sql_table *dup_sql_table(allocator *sa, sql_table *t);

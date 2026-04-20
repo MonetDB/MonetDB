@@ -334,6 +334,12 @@ find_sql_schema_id(sql_trans *tr, sqlid id)
 	return (sql_schema*)os_find_id(tr->cat->schemas, tr, id);
 }
 
+sql_ustr *
+find_sql_ustr(sql_trans *tr, sql_schema *s, const char *uname)
+{
+	return (sql_ustr *) os_find_name(s->ustrs, tr, uname);
+}
+
 sql_type *
 find_sql_type(sql_trans *tr, sql_schema *s, const char *tname)
 {

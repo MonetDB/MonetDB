@@ -63,7 +63,8 @@ typedef enum sql_dependency {
 	SEQ_DEPENDENCY = 12,
 	PROC_DEPENDENCY = 13,
 	BEDROPPED_DEPENDENCY = 14, /*The object must be dropped when the dependent object is dropped independently of the DROP type.*/
-	TYPE_DEPENDENCY = 15
+	TYPE_DEPENDENCY = 15,
+	USTR_DEPENDENCY = 16,
 } sql_dependency;
 
 #define NO_DEPENDENCY 0
@@ -304,6 +305,7 @@ typedef struct sql_schema {
 	struct objectset *idxs;		/* global, but these objects are only */
 	struct objectset *triggers;	/* useful within a table */
 	struct objectset *parts;
+	struct objectset *ustrs;
 
 	char *internal; 	/* optional internal module name */
 	sql_store store;
@@ -748,6 +750,12 @@ typedef struct sql_table {
 	} part;
 } sql_table;
 
+typedef struct sql_ustr {
+	sql_base base;
+	bat batid;
+	sql_schema *s;
+} sql_ustr;
+
 typedef struct res_col {
 	char *tn;
 	char *name;
@@ -815,6 +823,8 @@ extern sql_table *find_sql_table_id(sql_trans *tr, sql_schema *s, sqlid id);
 extern sql_table *sql_trans_find_table(sql_trans *tr, sqlid id);
 
 extern sql_sequence *find_sql_sequence(sql_trans *tr, sql_schema *s, const char *sname);
+
+extern sql_ustr *find_sql_ustr(sql_trans *tr, sql_schema *s, const char *uname);
 
 extern sql_schema *find_sql_schema(sql_trans *t, const char *sname);
 extern sql_schema *find_sql_schema_id(sql_trans *t, sqlid id);

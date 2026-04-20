@@ -1822,7 +1822,7 @@ rel_create_view(sql_query *query, int temp, dlist *qname, dlist *column_spec, sy
 }
 
 static sql_rel *
-rel_schema2(allocator *sa, int cat_type, char *sname, char *auth, int nr)
+rel_schema2(allocator *sa, int cat_type, const char *sname, const char *auth, int nr)
 {
 	sql_rel *rel = rel_create(sa);
 	list *exps = new_exp_list(sa);
@@ -1917,7 +1917,7 @@ schema_auth(dlist *name_auth)
 }
 
 static sql_rel *
-rel_drop(allocator *sa, int cat_type, char *sname, char *first_val, char *second_val, int nr, int exists_check)
+rel_drop(allocator *sa, ddl_statement cat_type, const char *sname, const char *first_val, const char *second_val, int nr, int exists_check)
 {
 	sql_rel *rel = rel_create(sa);
 	list *exps = new_exp_list(sa);
@@ -3064,6 +3064,34 @@ rel_set_table_schema(sql_query *query, char *old_schema, char *tname, char *new_
 	return rel;
 }
 
+static sql_rel *
+rel_create_ustr(allocator *sa, const char *sname, const char *uname, int if_not_exists)
+{
+	return rel_schema2(sa, ddl_create_ustr, sname, uname, if_not_exists);
+}
+
+static sql_rel *
+rel_drop_ustr(allocator *sa, const char *sname, const char *uname, int if_exists, int drop_action)
+{
+	sql_rel *rel = rel_create(sa);
+	list *exps = new_exp_list(sa);
+	if (!rel || !exps)
+		return NULL;
+
+	append(exps, exp_atom_clob(sa, sname));
+	append(exps, exp_atom_clob(sa, uname));
+	append(exps, exp_atom_int(sa, drop_action));
+	append(exps, exp_atom_int(sa, if_exists));
+	rel->l = NULL;
+	rel->r = NULL;
+	rel->op = op_ddl;
+	rel->flag = ddl_drop_ustr;
+	rel->exps = exps;
+	rel->card = 0;
+	rel->nrcols = 0;
+	return rel;
+}
+
 sql_rel *
 rel_schemas(sql_query *query, symbol *s)
 {
@@ -3267,6 +3295,43 @@ rel_schemas(sql_query *query, symbol *s)
 		}
 		ret = rel_schema2(sql->sa, ddl_drop_index, idx->t->s->base.name, iname, 0);
 	} 	break;
+	case SQL_CREATE_USTR: {
+		dlist *l = s->data.lval;
+		dlist *qname = l->h->data.lval;
+		char *sname = qname_schema(qname);
+		char *cname = qname_schema_object(qname);
+		int if_not_exists = l->h->next->data.i_val;
+		sql_schema *sch;
+		if (sname == NULL) {
+			sch = cur_schema(sql);
+			sname = sch->base.name;
+		} else {
+			sch = mvc_bind_schema(sql, sname);
+		}
+		if (!mvc_schema_privs(sql, sch)) {
+			return sql_error(sql, 02, SQLSTATE(42000) "CREATE DISTINCT STRING COLUMN: insufficient privileges for user '%s' in schema '%s'", get_string_global_var(sql, "current_user"), sname);
+		}
+		ret = rel_create_ustr(sql->sa, sname, cname, if_not_exists);
+		break;
+	}
+	case SQL_DROP_USTR: {
+		dlist *l = s->data.lval;
+		dlist *qname = l->h->data.lval;
+		char *sname = qname_schema(qname);
+		char *cname = qname_schema_object(qname);
+		sql_schema *sch;
+		if (sname == NULL) {
+			sch = cur_schema(sql);
+			sname = sch->base.name;
+		} else {
+			sch = mvc_bind_schema(sql, sname);
+		}
+		if (!mvc_schema_privs(sql, sch)) {
+			return sql_error(sql, 02, SQLSTATE(42000) "CREATE DISTINCT STRING COLUMN: insufficient privileges for user '%s' in schema '%s'", get_string_global_var(sql, "current_user"), sname);
+		}
+		ret = rel_drop_ustr(sql->sa, sname, cname, l->h->next->data.i_val, l->h->next->next->data.i_val);
+		break;
+	}
 	case SQL_CREATE_USER: {
 		dlist *l = s->data.lval;
 		char *username = l->h->data.sval;
