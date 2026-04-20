@@ -4239,7 +4239,7 @@ sql_trans_copy_column( sql_trans *tr, sql_table *t, sql_column *c, sql_column **
 			if (sql_trans_create_column_intern( &ic, tr, tt, MSEL_NAME, &lt, column_plain) < 0)
 				return -2;
 		}
-		if (c->type.multiset > MS_VALUE) { /* sets, arrays, vectors need oid col */
+		if (c->type.multiset > MS_VALUE) { /* sets, arrays need oid col */
 			char *name = MSID_NAME;
 			sql_subtype tp = *sql_fetch_localtype(MSID_TYPE);
 			sql_column *ic = NULL;

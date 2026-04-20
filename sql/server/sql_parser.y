@@ -654,7 +654,7 @@ int yydebug=1;
 %token <sval> ASYMMETRIC SYMMETRIC ORDER ORDERED BY IMPRINTS
 %token <sval> ESCAPE UESCAPE HAVING sqlGROUP ROLLUP CUBE sqlNULL
 %token <sval> GROUPING SETS FROM FOR MATCH
-%token <sval> SETOF ARRAY VECTOR
+%token <sval> SETOF ARRAY VECTOR FBLOCK
 
 %token <sval> EXTRACT
 
@@ -6782,6 +6782,7 @@ simple_data_type:
 				YYABORT;
 			}
 		}
+	|	FBLOCK                 { sql_find_subtype(&$$, "fblock", 0, 0); }
 	;
 
 subgeometry_type:
@@ -8275,6 +8276,7 @@ char *token2string(tokens token)
 	SQL(UPDATE);
 	SQL(USING);
 	SQL(VALUES);
+	SQL(FBLOCK);
 	SQL(VECTOR);
 	SQL(VIEW);
 	SQL(WHEN);

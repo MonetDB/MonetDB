@@ -336,6 +336,7 @@ const ptr ptr_nil = NULL;
 const uuid uuid_nil = {0};
 const inet4 inet4_nil = {0};
 const inet6 inet6_nil = {0};
+const inet6 fblock_nil = {0};
 
 /*
  * @- Atomic ADT functions
@@ -2213,6 +2214,70 @@ BLOBfromStr(allocator *ma, const char *instr, size_t *l, void **VAL, bool extern
 	return (ssize_t) (s - instr);
 }
 
+static void *
+FBLOCKread(allocator *ma, void *U, size_t *dstlen, stream *s, size_t cnt)
+{
+	fblock *u = U;
+	if (u == NULL || *dstlen < cnt * sizeof(fblock)) {
+		if (ma) {
+			u = ma_realloc(ma, u, cnt * sizeof(fblock), *dstlen);
+		} else {
+			u = GDKmalloc(cnt * sizeof(fblock));
+		}
+		if (u == NULL)
+			return NULL;
+	}
+	if (mnstr_read(s, u, sizeof(fblock), cnt) < (ssize_t) cnt) {
+		if (ma == NULL && u != (fblock *) U)
+			GDKfree(u);
+		return NULL;
+	}
+	if (u != (fblock *) U) {
+		if (ma == NULL)
+			GDKfree(U);
+		*dstlen = cnt * sizeof(fblock);
+	}
+	return u;
+}
+
+static gdk_return
+FBLOCKwrite(const void *u, stream *s, size_t cnt)
+{
+	return mnstr_write(s, u, sizeof(fblock), cnt) ? GDK_SUCCEED : GDK_FAIL;
+}
+
+static bool
+FBLOCKeq(const void *L, const void *R)
+{
+	if (L == R)
+		return true;
+	const fblock *l = L, *r = R;
+	return memcmp(l->data, r->data, sizeof(fblock)) == 0;
+}
+
+static BUN
+FBLOCKhash(const void *v)
+{
+	const fblock *b = (const fblock *) v;
+	// TODO better hash
+	return mix_uuid((const uuid *) b->data);
+}
+
+static int
+FBLOCKcmp(const void *L, const void *R)
+{
+	const fblock *l = L, *r = R;
+	size_t litems = l->header.nrows * l->header.ncols;
+	size_t ritems = r->header.nrows * r->header.ncols;
+	if (litems == ritems)
+		return 0;
+	if (litems > ritems)
+		return 1;
+	return -1;
+}
+
+
+
 atomDesc BATatoms[MAXATOMS] = {
 	[TYPE_void] = {
 		.name = "void",
@@ -2523,9 +2588,21 @@ atomDesc BATatoms[MAXATOMS] = {
 		.atomLen = BLOBlength,
 		.atomHeap = BLOBheap,
 	},
+	[TYPE_fblock] = {
+		.name = "fblock",
+		.storage = TYPE_fblock,
+		.linear = false,
+		.size = sizeof(fblock),
+		.atomNull = (void *) &fblock_nil,
+		.atomRead = FBLOCKread,
+		.atomWrite = FBLOCKwrite,
+		.atomEqual = FBLOCKeq,
+		.atomHash = FBLOCKhash,
+		.atomCmp = FBLOCKcmp,
+	},
 };
 
-int GDKatomcnt = TYPE_blob + 1;
+int GDKatomcnt = TYPE_fblock + 1;
 
 /*
  * Sometimes a bat descriptor is loaded before the dynamic module

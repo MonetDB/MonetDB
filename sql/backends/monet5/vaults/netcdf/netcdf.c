@@ -1028,7 +1028,7 @@ HDF5dataset(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
     nc_inq_dimlen(ncid, dimids[0], &rows);
     nc_inq_dimlen(ncid, dimids[1], &cols);
 
-    assert(cols == (size_t)pci->retc);
+	//assert(cols == (size_t)pci->retc);
     //printf("Dataset 'train' has dimensions: %zu x %zu\n", rows, cols);
 
 	allocator_state ta_state = ma_open(ta);
@@ -1056,45 +1056,83 @@ HDF5dataset(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "netcdf.HDF5dataset", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
-	for(int i = 0; i < pci->retc; i++) {
-		bats[i] = COLnew(0, getBatType(getArgType(mb, pci, i)), rows, TRANSIENT);
-		if (!bats[i]) {
-			msg = createException(MAL, "netcdf.HDF5dataset", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			goto bailout;
+	if (FBLOCK_OFF) {
+		for(int i = 0; i < pci->retc; i++) {
+			bats[i] = COLnew(0, getBatType(getArgType(mb, pci, i)), rows, TRANSIENT);
+			if (!bats[i]) {
+				msg = createException(MAL, "netcdf.HDF5dataset", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto bailout;
+			}
+			dbls[i] = Tloc(bats[i], 0);
 		}
-		dbls[i] = Tloc(bats[i], 0);
+	} else {
+		size_t block_size = sizeof(fblock);
+		size_t block_capacity = block_size / sizeof(dbl);
+		size_t nrows = block_capacity / cols;
+		//size_t nblocks = (rows + nrows - 1) / nrows;
+		size_t nblocks = rows / nrows;
+		int btype = getBatType(getArgType(mb, pci, 0));
+		bats[0] = COLnew(0, btype, nblocks, TRANSIENT);
+		assert(bats[0]->twidth == block_size);
 	}
+
 	// loop over load data
-	size_t bsize = 64/sizeof(dbl);
-	for (size_t rb=0, rpos=0; rb<(rows/bsize); rb++, rpos += bsize) {
-		for (size_t cb=0, cpos=0; cb<(cols/bsize); cb++, cpos += bsize) {
-			flt *ib = buffer+(rpos*cols) + cpos;
-			BUN csize = (cpos+bsize) < cols ? bsize : cols-cpos;
-			BUN rsize = (rpos+bsize) < rows ? bsize : rows-rpos;
-			for(BUN c=0; c<csize; c++) {
-				dbl *dst = dbls[cpos+c];
-				dst += rpos;
-				flt *is = ib + c;
-				for (size_t r=0; r<rsize; r++, is += cols) {
-					*dst++ = *is;
+	if (FBLOCK_ON) {
+		fblock *blocks = (fblock *) Tloc(bats[0], 0);
+		// Number of doubles that fit in one block
+		size_t block_capacity = sizeof(fblock) / sizeof(dbl);
+		// Number of rows per block
+		size_t nrows = block_capacity / cols;
+		//size_t nblocks = (rows + nrows - 1) / nrows;
+		size_t nblocks = rows / nrows; //full blks
+
+		for (size_t rpos = 0; rpos < rows; rpos += nrows) {
+			size_t rsize = (rpos + nrows) < rows ? nrows : (rows - rpos);
+			size_t block_idx = rpos / nrows;
+			// full blks for now not to deal with header
+			// e.g. sacrifice some vectors from the dataset
+			if (rsize < nrows) break;
+
+			fblock *cb = &blocks[block_idx];
+			dbl *dst_block_base = (dbl*)cb;
+
+			for (size_t cpos = 0; cpos < cols; cpos++) {
+				dbl *col_dst = dst_block_base + (cpos * nrows);
+				for (size_t r = 0; r < rsize; r++) {
+					flt v = buffer[(rpos + r) * cols + cpos];
+					col_dst[r] = (dbl)v;
 				}
 			}
 		}
-	}
-/*
-	for (size_t r=0; r<rows; r++) {
-		for(BUN c=0; c<cols; c++, buffer++) {
-			dbls[c][r] = *buffer;
+		*getArgReference_bat(stk, pci, 0) = bats[0]->batCacheid;
+		BATsetcount(bats[0], nblocks);
+		BATnegateprops(bats[0]);
+		BBPkeepref(bats[0]);
+	} else {
+		size_t bsize = 64/sizeof(dbl);
+		for (size_t rb=0, rpos=0; rb<(rows/bsize); rb++, rpos += bsize) {
+			for (size_t cb=0, cpos=0; cb<(cols/bsize); cb++, cpos += bsize) {
+				flt *ib = buffer+(rpos*cols) + cpos;
+				BUN csize = (cpos+bsize) < cols ? bsize : cols-cpos;
+				BUN rsize = (rpos+bsize) < rows ? bsize : rows-rpos;
+				for(BUN c=0; c<csize; c++) {
+					dbl *dst = dbls[cpos+c];
+					dst += rpos;
+					flt *is = ib + c;
+					for (size_t r=0; r<rsize; r++, is += cols) {
+						*dst++ = *is;
+					}
+				}
+			}
+		}
+		for(int i = 0; i < pci->retc && bats[i]; i++) {
+			*getArgReference_bat(stk, pci, i) = bats[i]->batCacheid;
+			BATsetcount(bats[i], rows);
+			BATnegateprops(bats[i]);
+			BBPkeepref(bats[i]);
 		}
 	}
-*/
 
-	for(int i = 0; i < pci->retc && bats[i]; i++) {
-		*getArgReference_bat(stk, pci, i) = bats[i]->batCacheid;
-		BATsetcount(bats[i], rows);
-		BATnegateprops(bats[i]);
-		BBPkeepref(bats[i]);
-	}
 	ma_close(&ta_state);
 	return msg;
 bailout:
@@ -1161,19 +1199,23 @@ hdf5_relation(mvc *sql, sql_subfunc *f, char *fname, list *res_exps, char *tname
 	list_append(names, ma_strdup(sql->sa, vname));
 	// FIX for actual type in dataset
 	sql_subtype *st = SA_ZNEW(sql->sa, sql_subtype);
-	*st = *sql_fetch_localtype(TYPE_dbl);
+	if (FBLOCK_ON)
+		*st = *sql_fetch_localtype(TYPE_fblock);
+	else
+		*st = *sql_fetch_localtype(TYPE_dbl);
 	st->digits = cols;
-	st->multiset = MS_VECTOR;
 	list_append(types, st);
 	sql_alias *atname = a_create(sql->sa, tname);
 	sql_exp *e = exp_column(sql->sa, atname, vname, st, CARD_MULTI, 1, 0, 0);
 	e->alias.label = -(sql->nid++);
-	e->f = sa_list(sql->sa);
-	for(size_t i=0; i < cols; i++) {
-		char *buf = ma_alloc(sql->sa, sizeof(char)*32);
-        snprintf(buf, 32, "%s.%zu", vname, i);
-		sql_exp *ne = exp_alias(sql, atname, buf, atname, buf, st, CARD_MULTI, 0, 0, 0);
-		list_append(e->f, ne);
+	if (FBLOCK_OFF) {
+		e->f = sa_list(sql->sa);
+		for(size_t i=0; i < cols; i++) {
+			char *buf = ma_alloc(sql->sa, sizeof(char)*32);
+			snprintf(buf, 32, "%s.%zu", vname, i);
+			sql_exp *ne = exp_alias(sql, atname, buf, atname, buf, st, CARD_MULTI, 0, 0, 0);
+			list_append(e->f, ne);
+		}
 	}
 	set_basecol(e);
 	list_append(res_exps, e);
@@ -1197,33 +1239,41 @@ hdf5_load(void *BE, sql_subfunc *f, char *filename, sql_exp *topn)
 
 	InstrPtr q = newStmtArgs(be->mb, "netcdf", "hdf5dataset", ncols + 3);
 	setVarType(be->mb, getArg(q, 0), newBatType(st->type->localtype));
-	for (size_t i = 1; i<ncols; i++)
-		q = pushReturn(be->mb, q, newTmpVariable(be->mb, newBatType(st->type->localtype)));
+	if (FBLOCK_OFF)
+		for (size_t i = 1; i<ncols; i++)
+			q = pushReturn(be->mb, q, newTmpVariable(be->mb, newBatType(st->type->localtype)));
 
 	q = pushStr(be->mb, q, filename);
 	q = pushStr(be->mb, q, dataset);
 	q = pushPtr(be->mb, q, st);
 	pushInstruction(be->mb, q);
 
-	list *r = sa_list(sa);
-	for(size_t i = 0; i < ncols; i++) {
-		stmt *br = stmt_blackbox_result(be, q, i, sql_fetch_localtype(TYPE_dbl));
-		stmt *s = stmt_alias(be, br, -(be->mvc->nid++), a_create(sa, f->tname), cname);
-		append(r, s);
-	}
-	stmt *s = stmt_list(be, r);
+	if (FBLOCK_ON) {
+		stmt* s = stmt_none(be);
+		s->q = q;
+		s->nr = getDestVar(q);
+		return s;
+	} else {
+		list *r = sa_list(sa);
+		for(size_t i = 0; i < ncols; i++) {
+			stmt *br = stmt_blackbox_result(be, q, i, sql_fetch_localtype(TYPE_dbl));
+			stmt *s = stmt_alias(be, br, -(be->mvc->nid++), a_create(sa, f->tname), cname);
+			append(r, s);
+		}
+		stmt *s = stmt_list(be, r);
 
-	//stmt* s = stmt_none(be);
-	//s->q = q;
-	//s->nr = getDestVar(q);
-	s->subtype = *st;
-	s->nested = true;
-	//s->multiset = st->multiset;
-	//s = stmt_alias(be, s, 1, a_create(sa, f->tname), dataset);
-	list *l = sa_list(be->mvc->sa);
-	append(l,s);
-	s = stmt_list(be, l);
-	return s;
+		//stmt* s = stmt_none(be);
+		//s->q = q;
+		//s->nr = getDestVar(q);
+		s->subtype = *st;
+		s->nested = true;
+		//s->multiset = st->multiset;
+		//s = stmt_alias(be, s, 1, a_create(sa, f->tname), dataset);
+		list *l = sa_list(be->mvc->sa);
+		append(l,s);
+		s = stmt_list(be, l);
+		return s;
+	}
 }
 
 static str

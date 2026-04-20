@@ -1035,6 +1035,9 @@ sqltypeinit( allocator *sa)
 
 	BLOB = *t++ = sql_create_type(sa, "BLOB", 0, 0, 0, EC_BLOB, "blob");
 
+	// fix block experiment
+	*t++ = sql_create_type(sa, "FBLOCK", 0, 0, 0, EC_BLOB, "fblock");
+
 	sql_create_func(sa, "length", "blob", "nitems", FALSE, FALSE, SCALE_NONE, 0, INT, 1, BLOB);
 	sql_create_func(sa, "octet_length", "blob", "nitems", FALSE, FALSE, SCALE_NONE, 0, INT, 1, BLOB);
 

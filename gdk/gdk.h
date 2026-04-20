@@ -163,6 +163,7 @@ enum {
 	TYPE_inet6,
 	TYPE_str,
 	TYPE_blob,
+	TYPE_fblock,
 	TYPE_any = 255,		/* limit types to <255! */
 };
 
@@ -184,6 +185,19 @@ typedef union {
 #endif
 	uint8_t hex[16];
 } inet6;
+
+typedef union  {
+	uint32_t align;		/* force alignment, only used for equality */
+	uint8_t nrows;
+	uint8_t ncols;
+	uint8_t base;
+} fblock_header;
+
+typedef union {
+	fblock_header header;
+	// only 8 pages will fit in twidth for now
+	uint8_t data[8*1024*4] __attribute__((__nonstring__));
+} fblock;
 
 #define SIZEOF_OID	SIZEOF_SIZE_T
 typedef size_t oid;
@@ -1956,4 +1970,6 @@ gdk_export int ma_info(allocator *sa, char *buf, size_t buflen, const char *pref
 	})
 #endif
 
+#define FBLOCK_ON 1
+#define FBLOCK_OFF !FBLOCK_ON
 #endif /* _GDK_H_ */

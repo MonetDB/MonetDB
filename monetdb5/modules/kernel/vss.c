@@ -794,6 +794,85 @@ BONDknn(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 
+//static str
+//process_block(fblock *blk, dbl *query_vals, size_t nrows, size_t ncols, dbl *threshold)
+//{
+//
+//
+//	return MAL_SUCCEED;
+//}
+
+static char*
+pdx(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) ctx;
+	(void) mb;
+	//lng T0 = GDKusec();
+    bat *ret = getArgReference_bat(stk, pci, 0);
+	// data
+    BAT *b = BATdescriptor(*getArgReference_bat(stk, pci, 1));
+	size_t k = *getArgReference_int(stk, pci, 2);
+	size_t nblocks = BATcount(b);
+	(void) nblocks;
+    size_t ndims = (size_t) (pci->argc - pci->retc - 2);
+	size_t block_capacity = sizeof(fblock) / sizeof(dbl);
+	// Number of rows per block
+	size_t nrows = block_capacity / ndims;
+	(void) nrows;
+	fblock *blocks = (fblock *) Tloc(b, 0);
+	(void) blocks;
+
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
+
+	dbl *query_vals = ma_alloc(ta, ndims * sizeof(dbl));
+	// size_t len = nrows > k ? nrows : k;
+	// block candidates
+	//oid *bc = ma_alloc(ta, nrows * sizeof(oid));
+	//dbl *bd = ma_alloc(ta, nrows * sizeof(dbl));
+	oid *cands = ma_zalloc(ta, k * sizeof(oid));
+	(void) cands;
+	if (!query_vals) {
+		ma_close(&ta_state);
+		throw(MAL, "vss.pdx", MAL_MALLOC_FAIL);
+	}
+
+	for (size_t i = 0; i < ndims; i++) {
+		BAT *b = BATdescriptor(*getArgReference_bat(stk, pci, i + 3));
+		if (!b) {
+			ma_close(&ta_state);
+			throw(MAL, "vss.knn", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		}
+		query_vals[i] = *(dbl*)Tloc(b, 0);
+	}
+
+	// TODO process blks
+
+    BAT *bn = COLnew(0, TYPE_oid, k, TRANSIENT);
+    if (bn == NULL)
+        throw(MAL, "batvss.pdx", MAL_MALLOC_FAIL);
+
+	// Final top k
+	//{
+	//	for (size_t i=0; i < k; i++) {
+	//		*(oid*) Tloc(bn, i) = cands[i];
+	//	}
+	//}
+
+    // Finalize BAT metadata
+    BATsetcount(bn, k);
+    bn->tnonil = true;
+    bn->tkey = false;
+    bn->tsorted = false;
+    bn->trevsorted = false;
+
+	//printf("#BATl2sq " LLFMT "\n", GDKusec() - T0);
+
+    *ret = bn->batCacheid;
+    BBPkeepref(bn);
+    return MAL_SUCCEED;
+}
+
 #include "mel.h"
 static mel_func vss_init_funcs[] = {
 	pattern("vss", "bond", BONDknn, false, "BOND k-NN search on decomposed vector columns",
@@ -817,6 +896,12 @@ static mel_func vss_init_funcs[] = {
 	pattern("batvss", "l2sq_distance", BATl2sq_distance, false,
 		"Euclidean distanse L2",
 		args(1, 2, batarg("", dbl), batvararg("cols", dbl))),
+	//pattern("vss", "pdx", pdx, false,
+	//	"Euclidean distanse L2",
+	//	args(1, 3, arg("", oid), arg("", fblock), varargany("args", 0))),
+	pattern("batvss", "pdx", pdx, false,
+		"Euclidean distanse L2",
+		args(1, 4, batarg("", oid), batarg("", fblock), arg("k", int), varargany("args", 0))),
 	{ .imp=NULL }		/* sentinel */
 };
 

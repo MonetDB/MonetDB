@@ -108,6 +108,10 @@ CREATE FUNCTION sys.l2sq_distance(a float vector, b float vector)
 RETURNS double EXTERNAL NAME vss.l2sq_distance;
 --GRANT EXECUTE ON FUNCTION sys.l2sq_distance(a float vector, b float vector) TO PUBLIC;
 
+--PDX
+CREATE FUNCTION sys.pdx(a fblock, k int, b float vector)
+RETURNS oid EXTERNAL NAME batvss.pdx;
+
 CREATE FUNCTION sys.l1_distance(a float vector, b float vector)
 RETURNS double EXTERNAL NAME vss.l1_distance;
 --GRANT EXECUTE ON FUNCTION sys.l1_distance(a float vector, b float vector) TO PUBLIC;
