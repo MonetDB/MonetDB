@@ -1022,6 +1022,10 @@ BATcalcmin(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 		GDKerror("inputs have incompatible types\n");
 		return NULL;
 	}
+	if (!ATOMlinear(b1->ttype)) {
+		GDKerror("input is not a linear type\n");
+		return NULL;
+	}
 
 	canditer_init(&ci1, b1, s1);
 	canditer_init(&ci2, b2, s2);
@@ -1105,7 +1109,7 @@ BATcalcmin(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 			}
 		} else {
 			uint8_t *restrict bcast = (uint8_t *) Tloc(bn, 0);
-			uint16_t width = bn->twidth;
+			uint32_t width = bn->twidth;
 			if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
 				TIMEOUT_LOOP(ci1.ncand, qry_ctx) {
 					oid x1 = canditer_next_dense(&ci1) - b1hseqbase;
@@ -1241,6 +1245,10 @@ BATcalcmin_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 		GDKerror("inputs have incompatible types\n");
 		return NULL;
 	}
+	if (!ATOMlinear(b1->ttype)) {
+		GDKerror("input is not a linear type\n");
+		return NULL;
+	}
 
 	canditer_init(&ci1, b1, s1);
 	canditer_init(&ci2, b2, s2);
@@ -1332,7 +1340,7 @@ BATcalcmin_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 			}
 		} else {
 			uint8_t *restrict bcast = (uint8_t *) Tloc(bn, 0);
-			uint16_t width = bn->twidth;
+			uint32_t width = bn->twidth;
 			if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
 				TIMEOUT_LOOP(ci1.ncand, qry_ctx) {
 					oid x1 = canditer_next_dense(&ci1) - b1hseqbase;
@@ -1456,6 +1464,10 @@ BATcalcmincst(BAT *b, const ValRecord *v, BAT *s)
 		GDKerror("inputs have incompatible types\n");
 		return NULL;
 	}
+	if (!ATOMlinear(b->ttype)) {
+		GDKerror("input is not a linear type\n");
+		return NULL;
+	}
 
 	canditer_init(&ci, b, s);
 	p2 = VALptr(v);
@@ -1512,7 +1524,7 @@ BATcalcmincst(BAT *b, const ValRecord *v, BAT *s)
 				      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
 		} else {
 			uint8_t *restrict bcast = (uint8_t *) Tloc(bn, 0);
-			uint16_t width = bn->twidth;
+			uint32_t width = bn->twidth;
 			TIMEOUT_LOOP(ci.ncand, qry_ctx) {
 				oid x = canditer_next(&ci) - bhseqbase;
 				const void *restrict p1 = BUNtloc(&bi, x);
@@ -1618,6 +1630,10 @@ BATcalcmincst_no_nil(BAT *b, const ValRecord *v, BAT *s)
 		GDKerror("inputs have incompatible types\n");
 		return NULL;
 	}
+	if (!ATOMlinear(b->ttype)) {
+		GDKerror("input is not a linear type\n");
+		return NULL;
+	}
 
 	canditer_init(&ci, b, s);
 	if (ci.ncand == 0)
@@ -1685,7 +1701,7 @@ BATcalcmincst_no_nil(BAT *b, const ValRecord *v, BAT *s)
 			}
 		} else {
 			uint8_t *restrict bcast = (uint8_t *) Tloc(bn, 0);
-			uint16_t width = bn->twidth;
+			uint32_t width = bn->twidth;
 			if (eq(p2, nil)) {
 				TIMEOUT_LOOP(ci.ncand, qry_ctx) {
 					oid x = canditer_next(&ci) - bhseqbase;
@@ -1764,6 +1780,10 @@ BATcalcmax(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 	b2hseqbase = b2->hseqbase;
 	if (ATOMtype(b1->ttype) != ATOMtype(b2->ttype)) {
 		GDKerror("inputs have incompatible types\n");
+		return NULL;
+	}
+	if (!ATOMlinear(b1->ttype)) {
+		GDKerror("input is not a linear type\n");
 		return NULL;
 	}
 
@@ -1849,7 +1869,7 @@ BATcalcmax(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 			}
 		} else {
 			uint8_t *restrict bcast = (uint8_t *) Tloc(bn, 0);
-			uint16_t width = bn->twidth;
+			uint32_t width = bn->twidth;
 			if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
 				TIMEOUT_LOOP(ci1.ncand, qry_ctx) {
 					oid x1 = canditer_next_dense(&ci1) - b1hseqbase;
@@ -1941,6 +1961,10 @@ BATcalcmax_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 	b2hseqbase = b2->hseqbase;
 	if (ATOMtype(b1->ttype) != ATOMtype(b2->ttype)) {
 		GDKerror("inputs have incompatible types\n");
+		return NULL;
+	}
+	if (!ATOMlinear(b1->ttype)) {
+		GDKerror("input is not a linear type\n");
 		return NULL;
 	}
 
@@ -2036,7 +2060,7 @@ BATcalcmax_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 			}
 		} else {
 			uint8_t *restrict bcast = (uint8_t *) Tloc(bn, 0);
-			uint16_t width = bn->twidth;
+			uint32_t width = bn->twidth;
 			if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
 				TIMEOUT_LOOP(ci1.ncand, qry_ctx) {
 					oid x1 = canditer_next_dense(&ci1) - b1hseqbase;
@@ -2145,6 +2169,10 @@ BATcalcmaxcst(BAT *b, const ValRecord *v, BAT *s)
 		GDKerror("inputs have incompatible types\n");
 		return NULL;
 	}
+	if (!ATOMlinear(b->ttype)) {
+		GDKerror("input is not a linear type\n");
+		return NULL;
+	}
 
 	canditer_init(&ci, b, s);
 	p2 = VALptr(v);
@@ -2201,7 +2229,7 @@ BATcalcmaxcst(BAT *b, const ValRecord *v, BAT *s)
 				      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
 		} else {
 			uint8_t *restrict bcast = (uint8_t *) Tloc(bn, 0);
-			uint16_t width = bn->twidth;
+			uint32_t width = bn->twidth;
 			TIMEOUT_LOOP(ci.ncand, qry_ctx) {
 				oid x = canditer_next(&ci) - bhseqbase;
 				const void *restrict p1 = BUNtloc(&bi, x);
@@ -2280,6 +2308,10 @@ BATcalcmaxcst_no_nil(BAT *b, const ValRecord *v, BAT *s)
 		GDKerror("inputs have incompatible types\n");
 		return NULL;
 	}
+	if (!ATOMlinear(b->ttype)) {
+		GDKerror("input is not a linear type\n");
+		return NULL;
+	}
 
 	canditer_init(&ci, b, s);
 	if (ci.ncand == 0)
@@ -2347,7 +2379,7 @@ BATcalcmaxcst_no_nil(BAT *b, const ValRecord *v, BAT *s)
 			}
 		} else {
 			uint8_t *restrict bcast = (uint8_t *) Tloc(bn, 0);
-			uint16_t width = bn->twidth;
+			uint32_t width = bn->twidth;
 			if (eq(p2, nil)) {
 				TIMEOUT_LOOP(ci.ncand, qry_ctx) {
 					oid x = canditer_next(&ci) - bhseqbase;
@@ -3910,9 +3942,9 @@ VARcalcrsh(ValPtr ret, const ValRecord *lft, const ValRecord *rgt)
 	} while (0)
 
 static BAT *
-BATcalcbetween_intern(const void *src, bool incr1, const char *hp1, int wd1,
-		      const void *lo, bool incr2, const char *hp2, int wd2,
-		      const void *hi, bool incr3, const char *hp3, int wd3,
+BATcalcbetween_intern(const void *src, bool incr1, const char *hp1, uint32_t wd1,
+		      const void *lo, bool incr2, const char *hp2, uint32_t wd2,
+		      const void *hi, bool incr3, const char *hp3, uint32_t wd3,
 		      int tp,
 		      struct canditer *restrict ci,
 		      struct canditer *restrict cilo,
@@ -4058,6 +4090,10 @@ BATcalcbetween(BAT *b, BAT *lo, BAT *hi, BAT *s, BAT *slo, BAT *shi,
 	BATcheck(lo, NULL);
 	BATcheck(hi, NULL);
 
+	if (!ATOMlinear(b->ttype)) {
+		GDKerror("input is not a linear type\n");
+		return NULL;
+	}
 	canditer_init(&ci, b, s);
 	canditer_init(&cilo, lo, slo);
 	canditer_init(&cihi, hi, shi);
@@ -4153,6 +4189,10 @@ BATcalcbetweencstcst(BAT *b, const ValRecord *lo, const ValRecord *hi,
 		GDKerror("incompatible input types.\n");
 		return NULL;
 	}
+	if (!ATOMlinear(b->ttype)) {
+		GDKerror("input is not a linear type\n");
+		return NULL;
+	}
 
 	canditer_init(&ci, b, s);
 
@@ -4218,6 +4258,10 @@ BATcalcbetweenbatcst(BAT *b, BAT *lo, const ValRecord *hi, BAT *s, BAT *slo,
 
 	if (ATOMbasetype(b->ttype) != ATOMbasetype(hi->vtype)) {
 		GDKerror("incompatible input types.\n");
+		return NULL;
+	}
+	if (!ATOMlinear(b->ttype)) {
+		GDKerror("input is not a linear type\n");
 		return NULL;
 	}
 
@@ -4298,6 +4342,10 @@ BATcalcbetweencstbat(BAT *b, const ValRecord *lo, BAT *hi, BAT *s, BAT *shi,
 
 	if (ATOMbasetype(b->ttype) != ATOMbasetype(lo->vtype)) {
 		GDKerror("incompatible input types.\n");
+		return NULL;
+	}
+	if (!ATOMlinear(b->ttype)) {
+		GDKerror("input is not a linear type\n");
 		return NULL;
 	}
 
@@ -4457,9 +4505,9 @@ VARcalcbetween(ValPtr ret, const ValRecord *v, const ValRecord *lo,
 static BAT *
 BATcalcifthenelse_intern(BATiter *bi,
 			 const void *col1, bool incr1, const char *heap1,
-			 int width1, bool nonil1, oid seq1,
+			 uint32_t width1, bool nonil1, oid seq1,
 			 const void *col2, bool incr2, const char *heap2,
-			 int width2, bool nonil2, oid seq2,
+			 uint32_t width2, bool nonil2, oid seq2,
 			 int tpe)
 {
 	BAT *bn;

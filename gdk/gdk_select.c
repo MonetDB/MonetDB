@@ -497,6 +497,45 @@ fullscan_any(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 				}
 			}
 		}
+	} else if (anti && tl == th) {
+		*algo = "select: fullscan anti-equi";
+		if (nil && (*eq)(tl, nil))
+			nil = NULL;
+		if (ci->tpe == cand_dense) {
+			TIMEOUT_LOOP_IDX(p, ncand, qry_ctx) {
+				o = canditer_next_dense(ci);
+				v = BUNtail(bi, o-hseq);
+				if (!(*eq)(tl, v) &&
+				    (nil == NULL || !(*eq)(v, nil))) {
+					dst = buninsfix(bn, dst, cnt, o,
+							(BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
+							       * (dbl) (ncand-p) * 1.1 + 1024),
+							maximum);
+					if (dst == NULL) {
+						BBPreclaim(bn);
+						return BUN_NONE;
+					}
+					cnt++;
+				}
+			}
+		} else {
+			TIMEOUT_LOOP_IDX(p, ncand, qry_ctx) {
+				o = canditer_next(ci);
+				v = BUNtail(bi, o-hseq);
+				if (!(*eq)(tl, v) &&
+				    (nil == NULL || !(*eq)(v, nil))) {
+					dst = buninsfix(bn, dst, cnt, o,
+							(BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
+							       * (dbl) (ncand-p) * 1.1 + 1024),
+							maximum);
+					if (dst == NULL) {
+						BBPreclaim(bn);
+						return BUN_NONE;
+					}
+					cnt++;
+				}
+			}
+		}
 	} else if (anti) {
 		*algo = "select: fullscan anti";
 		if (ci->tpe == cand_dense) {
@@ -1112,6 +1151,8 @@ BATrange(BATiter *bi, const void *tl, const void *th, bool li, bool hi)
 	bool (*atomeq) (const void *, const void *) = ATOMequal(bi->type);
 	BATiter bi2 = *bi;
 
+	if (!ATOMlinear(bi->type))
+		return range_inside; /* search whole bat */
 	if (tl && (*atomeq)(tl, ATOMnilptr(bi->type)))
 		tl = NULL;
 	if (th && (*atomeq)(th, ATOMnilptr(bi->type)))
@@ -1429,6 +1470,9 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			bat_iterator_end(&bi);
 			return bn;
 		}
+	} else if (!ATOMlinear(b->ttype)) {
+		GDKerror("input is not a linear type\n");
+		return NULL;
 	} else {
 		/* range select: we only care about nil_matches in
 		 * (anti-)equi-select */
@@ -1477,7 +1521,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 				  anti, ALGOOPTBATPAR(bn), GDKusec() - t0);
 			bat_iterator_end(&bi);
 			return bn;
-		} else if ((equi && (lnil || !(li && hi))) || ATOMcmp(t, tl, th) > 0) {
+		} else if (equi ? lnil || !li || !hi : ATOMcmp(t, tl, th) > 0) {
 			/* various ways to select for everything except nil */
 			if (equi && !lnil && nil_matches && !(li && hi)) {
 				/* nil is not special, so return
@@ -1521,7 +1565,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 	/* if equi set, then so are both lval and hval */
 	assert(!equi || (lval && hval));
 
-	if (hval && (equi ? !li || !hi : ATOMcmp(t, tl, th) > 0)) {
+	if (hval && (equi ? !li || !hi : !antiequi && ATOMcmp(t, tl, th) > 0)) {
 		/* empty range */
 		MT_thread_setalgorithm("select: empty range");
 		bn = BATdense(0, 0, 0);
@@ -1715,7 +1759,8 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 	    !havehash &&
 	    !bi.sorted &&
 	    !bi.revsorted &&
-	    ci.tpe == cand_dense) {
+	    ci.tpe == cand_dense &&
+	    ATOMlinear(b->ttype)) {
 		BAT *view = NULL;
 		(void) BATcheckorderidx(b);
 		MT_lock_set(&b->batIdxLock);

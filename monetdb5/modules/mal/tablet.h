@@ -61,7 +61,7 @@ typedef struct Column_t {
 	bit ws;						/* if set we need to skip white space */
 	char quote;					/* if set use this character for string quotes */
 	const void *nildata;
-	int size;
+	uint32_t size;
 } Column;
 
 /*

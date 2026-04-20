@@ -298,7 +298,7 @@ realign_tags(void)
 BUN
 binsearch(const oid *restrict indir,
 	  int type, const void *restrict vals, const char * restrict vars,
-	  int width, BUN lo, BUN hi, const void *restrict v,
+	  uint32_t width, BUN lo, BUN hi, const void *restrict v,
 	  int ordering, int last)
 {
 	BUN mid;
@@ -307,6 +307,7 @@ binsearch(const oid *restrict indir,
 
 	assert(ordering == 1 || ordering == -1);
 	assert(lo < hi);
+	assert(ATOMlinear(type));
 
 	--hi;			/* now hi is inclusive */
 

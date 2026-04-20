@@ -561,7 +561,7 @@ INSPECTatom_sizes(Client ctx, bat *ret)
 		throw(MAL, "inspect.getAtomSizes", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	for (i = 0; i < GDKatomcnt; i++) {
-		s = ATOMsize(i);
+		s = (int) ATOMsize(i);
 		if (BUNappend(b, &s, false) != GDK_SUCCEED)
 			goto bailout;
 	}

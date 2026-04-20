@@ -456,7 +456,7 @@ heapinit(BAT *b, const char *buf,
 {
 	int t;
 	char type[33];
-	uint16_t width;
+	uint32_t width;
 	uint16_t var;
 	uint16_t properties;
 	uint64_t nokey0;
@@ -476,7 +476,7 @@ heapinit(BAT *b, const char *buf,
 	storage = STORE_INVALID;	      /* for GDKLIBRARY_HSIZE case */
 	if (bbpversion <= GDKLIBRARY_HSIZE ?
 	    sscanf(buf,
-		   " %10s %" SCNu16 " %" SCNu16 " %" SCNu16 " %" SCNu64
+		   " %10s %" SCNu32 " %" SCNu16 " %" SCNu16 " %" SCNu64
 		   " %" SCNu64 " %" SCNu64 " %" SCNu64 " %" SCNu64
 		   " %" SCNu64 " %" SCNu64 " %" SCNu16 " %" SCNu64 " %" SCNu64
 		   "%n",
@@ -485,7 +485,7 @@ heapinit(BAT *b, const char *buf,
 		   &free, &size, &storage, &minpos, &maxpos,
 		   &n) < 14 :
 	    sscanf(buf,
-		   " %10s %" SCNu16 " %" SCNu16 " %" SCNu16 " %" SCNu64
+		   " %10s %" SCNu32 " %" SCNu16 " %" SCNu16 " %" SCNu64
 		   " %" SCNu64 " %" SCNu64 " %" SCNu64 " %" SCNu64
 		   " %" SCNu64 " %" SCNu64 " %" SCNu64
 		   "%n",
@@ -2079,7 +2079,7 @@ heap_entry(FILE *fp, BATiter *bi, BUN size)
 			free = 0;
 	}
 
-	return fprintf(fp, " %s %d %d %d " BUNFMT " " BUNFMT " " BUNFMT " "
+	return fprintf(fp, " %s %" PRIu32 " %d %d " BUNFMT " " BUNFMT " " BUNFMT " "
 		       BUNFMT " " OIDFMT " %zu %" PRIu64" %" PRIu64,
 		       bi->type >= 0 ? BATatoms[bi->type].name : ATOMunknown_name(bi->type),
 		       bi->width,

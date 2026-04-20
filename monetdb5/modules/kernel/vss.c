@@ -158,9 +158,9 @@ bond_create(allocator *ma, BAT **dim_bats, int ndims, int k)
 }
 
 static inline void
-heap_down(oid *hcand, dbl *hd, int p, int k)
+heap_down(oid *hcand, dbl *hd, BUN p, BUN k)
 {
-	int l = p*2+1, r = p*2+2, q = p;
+	BUN l = p*2+1, r = p*2+2, q = p;
 	if (l < k && hd[q] < hd[l])
 		q = l;
 	if (r < k && hd[q] < hd[r])
@@ -177,7 +177,7 @@ heap_down(oid *hcand, dbl *hd, int p, int k)
 }
 
 static inline void
-heap_del(oid *hcand, dbl *hd, int k)
+heap_del(oid *hcand, dbl *hd, BUN k)
 {
 	hcand[0] = hcand[k-1];
 	hd[0] = hd[k-1];
@@ -185,11 +185,11 @@ heap_del(oid *hcand, dbl *hd, int k)
 }
 
 static inline void
-heap_up(oid *hcand, dbl *hd, int p)
+heap_up(oid *hcand, dbl *hd, BUN p)
 {
 	if (p == 0)
 		return;
-	size_t q = (p-1)/2;
+	BUN q = (p-1)/2;
 	if (hd[q] < hd[p]) { /* max heap */
 		oid s = hcand[q];
 		hcand[q] = hcand[p];

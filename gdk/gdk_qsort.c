@@ -356,16 +356,14 @@ struct qsort_t {
  * sort. */
 void
 GDKqsort(void *restrict h, void *restrict t, const void *restrict base,
-	 size_t n, int hs, int ts, int tpe, bool reverse, bool nilslast)
+	 size_t n, size_t hs, size_t ts, int tpe, bool reverse, bool nilslast)
 {
 	struct qsort_t buf;
 
-	assert(hs > 0);
-	assert(ts >= 0);
 	assert(tpe != TYPE_void);
 	assert((ts == 0) == (t == NULL));
 
-	if (n <= 1)
+	if (n <= 1 || !ATOMlinear(tpe))
 		return;		/* nothing to do */
 
 	buf.hs = (unsigned int) hs;

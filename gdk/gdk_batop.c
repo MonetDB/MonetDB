@@ -807,57 +807,59 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 
 	MT_lock_set(&b->theaplock);
 	const bool notnull = BATgetprop_nolock(b, GDK_NOT_NULL) != NULL;
-	if ((prop = BATgetprop_nolock(b, GDK_MIN_BOUND)) != NULL &&
-	    VALcopy(NULL, &minprop, prop) != NULL) {
-		minbound = VALptr(&minprop);
-		if (ci.ncand == BATcount(n) &&
-		    ni.minpos != BUN_NONE &&
-		    atomcmp(BUNtail(&ni, ni.minpos), minbound) < 0) {
-			assert(0);
-			GDKerror("value out of bounds\n");
-			MT_lock_unset(&b->theaplock);
-			goto bailout;
+	if (ATOMlinear(b->ttype)) {
+		if ((prop = BATgetprop_nolock(b, GDK_MIN_BOUND)) != NULL &&
+		    VALcopy(NULL, &minprop, prop) != NULL) {
+			minbound = VALptr(&minprop);
+			if (ci.ncand == BATcount(n) &&
+			    ni.minpos != BUN_NONE &&
+			    atomcmp(BUNtail(&ni, ni.minpos), minbound) < 0) {
+				assert(0);
+				GDKerror("value out of bounds\n");
+				MT_lock_unset(&b->theaplock);
+				goto bailout;
+			}
 		}
-	}
-	if ((prop = BATgetprop_nolock(b, GDK_MAX_BOUND)) != NULL &&
-	    VALcopy(NULL, &maxprop, prop) != NULL) {
-		maxbound = VALptr(&maxprop);
-		if (ci.ncand == BATcount(n) &&
-		    ni.maxpos != BUN_NONE &&
-		    atomcmp(BUNtail(&ni, ni.maxpos), maxbound) >= 0) {
-			assert(0);
-			GDKerror("value out of bounds\n");
-			MT_lock_unset(&b->theaplock);
-			goto bailout;
+		if ((prop = BATgetprop_nolock(b, GDK_MAX_BOUND)) != NULL &&
+		    VALcopy(NULL, &maxprop, prop) != NULL) {
+			maxbound = VALptr(&maxprop);
+			if (ci.ncand == BATcount(n) &&
+			    ni.maxpos != BUN_NONE &&
+			    atomcmp(BUNtail(&ni, ni.maxpos), maxbound) >= 0) {
+				assert(0);
+				GDKerror("value out of bounds\n");
+				MT_lock_unset(&b->theaplock);
+				goto bailout;
+			}
 		}
-	}
 
-	if (BATcount(b) == 0 || b->tmaxpos != BUN_NONE) {
-		if (ni.maxpos != BUN_NONE) {
-			BATiter bi = bat_iterator_nolock(b);
-			if (BATcount(b) == 0 || atomcmp(BUNtail(&bi, b->tmaxpos), BUNtail(&ni, ni.maxpos)) < 0) {
-				if (s == NULL) {
-					b->tmaxpos = BATcount(b) + ni.maxpos;
-				} else {
-					b->tmaxpos = BUN_NONE;
+		if (BATcount(b) == 0 || b->tmaxpos != BUN_NONE) {
+			if (ni.maxpos != BUN_NONE) {
+				BATiter bi = bat_iterator_nolock(b);
+				if (BATcount(b) == 0 || atomcmp(BUNtail(&bi, b->tmaxpos), BUNtail(&ni, ni.maxpos)) < 0) {
+					if (s == NULL) {
+						b->tmaxpos = BATcount(b) + ni.maxpos;
+					} else {
+						b->tmaxpos = BUN_NONE;
+					}
 				}
+			} else {
+				b->tmaxpos = BUN_NONE;
 			}
-		} else {
-			b->tmaxpos = BUN_NONE;
 		}
-	}
-	if (BATcount(b) == 0 || b->tminpos != BUN_NONE) {
-		if (ni.minpos != BUN_NONE) {
-			BATiter bi = bat_iterator_nolock(b);
-			if (BATcount(b) == 0 || atomcmp(BUNtail(&bi, b->tminpos), BUNtail(&ni, ni.minpos)) > 0) {
-				if (s == NULL) {
-					b->tminpos = BATcount(b) + ni.minpos;
-				} else {
-					b->tminpos = BUN_NONE;
+		if (BATcount(b) == 0 || b->tminpos != BUN_NONE) {
+			if (ni.minpos != BUN_NONE) {
+				BATiter bi = bat_iterator_nolock(b);
+				if (BATcount(b) == 0 || atomcmp(BUNtail(&bi, b->tminpos), BUNtail(&ni, ni.minpos)) > 0) {
+					if (s == NULL) {
+						b->tminpos = BATcount(b) + ni.minpos;
+					} else {
+						b->tminpos = BUN_NONE;
+					}
 				}
+			} else {
+				b->tminpos = BUN_NONE;
 			}
-		} else {
-			b->tminpos = BUN_NONE;
 		}
 	}
 	if (BATcount(b) == 0 && ci.ncand == ni.count)
@@ -946,51 +948,55 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 			b->tnokey[0] = b->tnokey[1] = 0;
 		}
 	} else {
-		BUN last = r - 1;
-		BATiter bi = bat_iterator_nolock(b);
-		int xx = ATOMcmp(b->ttype,
-				 BUNtail(&ni, ci.seq - hseq),
-				 BUNtail(&bi, last));
-		if (b->tsorted && !ni.sorted && ni.nosorted == 0 && xx >= 0) {
-			/* b is currently sorted; we don't know whether
-			 * n is sorted; first value of n is at least as
-			 * large as last value of b: we invest in an
-			 * order check of n to see whether the result is
-			 * still sorted */
-			(void) BATordered(n);
-			bat_iterator_end(&ni);
-			ni = bat_iterator(n);
-		}
-		if (b->trevsorted && !ni.revsorted && ni.norevsorted == 0 && xx <= 0) {
-			/* b is currently reverse sorted; we don't know
-			 * whether n is reverse sorted; first value of n
-			 * is at most as large as last value of b: we
-			 * invest in an order check of n to see whether
-			 * the result is still reverse sorted */
-			(void) BATordered_rev(n);
-			bat_iterator_end(&ni);
-			ni = bat_iterator(n);
-		}
-		if (b->tsorted && (!ni.sorted || xx < 0)) {
-			b->tsorted = false;
-			b->tnosorted = 0;
-			b->tseqbase = oid_nil;
-		}
-		if (b->trevsorted &&
-		    (!ni.revsorted || xx > 0)) {
-			b->trevsorted = false;
-			b->tnorevsorted = 0;
-		}
-		if (b->tkey &&
-		    (!(b->tsorted || b->trevsorted) ||
-		     !ni.key || xx == 0)) {
+		if (ATOMlinear(b->ttype)) {
+			BUN last = r - 1;
+			BATiter bi = bat_iterator_nolock(b);
+			int xx = ATOMcmp(b->ttype,
+					 BUNtail(&ni, ci.seq - hseq),
+					 BUNtail(&bi, last));
+			if (b->tsorted && !ni.sorted && ni.nosorted == 0 && xx >= 0) {
+				/* b is currently sorted; we don't know whether
+				 * n is sorted; first value of n is at least as
+				 * large as last value of b: we invest in an
+				 * order check of n to see whether the result is
+				 * still sorted */
+				(void) BATordered(n);
+				bat_iterator_end(&ni);
+				ni = bat_iterator(n);
+			}
+			if (b->trevsorted && !ni.revsorted && ni.norevsorted == 0 && xx <= 0) {
+				/* b is currently reverse sorted; we don't know
+				 * whether n is reverse sorted; first value of n
+				 * is at most as large as last value of b: we
+				 * invest in an order check of n to see whether
+				 * the result is still reverse sorted */
+				(void) BATordered_rev(n);
+				bat_iterator_end(&ni);
+				ni = bat_iterator(n);
+			}
+			if (b->tsorted && (!ni.sorted || xx < 0)) {
+				b->tsorted = false;
+				b->tnosorted = 0;
+				b->tseqbase = oid_nil;
+			}
+			if (b->trevsorted &&
+			    (!ni.revsorted || xx > 0)) {
+				b->trevsorted = false;
+				b->tnorevsorted = 0;
+			}
+			if (b->tkey &&
+			    (!(b->tsorted || b->trevsorted) ||
+			     !ni.key || xx == 0)) {
+				BATkey(b, false);
+			}
+			if (b->ttype != TYPE_void && b->tsorted && BATtdense(b) &&
+			    (!BATtdensebi(&ni) ||
+			     ci.tpe != cand_dense ||
+			     1 + *(oid *) BUNtloc(&bi, last) != BUNtoid(n, ci.seq - hseq))) {
+				b->tseqbase = oid_nil;
+			}
+		} else {
 			BATkey(b, false);
-		}
-		if (b->ttype != TYPE_void && b->tsorted && BATtdense(b) &&
-		    (!BATtdensebi(&ni) ||
-		     ci.tpe != cand_dense ||
-		     1 + *(oid *) BUNtloc(&bi, last) != BUNtoid(n, ci.seq - hseq))) {
-			b->tseqbase = oid_nil;
 		}
 		b->tnonil &= ni.nonil;
 		b->tnil |= ni.nil && ci.ncand == ni.count;
@@ -1340,7 +1346,7 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 	b->tkey = false;
 	b->tnokey[0] = b->tnokey[1] = 0;
 
-	int (*atomcmp)(const void *, const void *) = ATOMcompare(b->ttype);
+	int (*atomcmp)(const void *, const void *) = ATOMlinear(b->ttype) ? ATOMcompare(b->ttype) : NULL;
 	bool (*atomeq)(const void *, const void *) = ATOMequal(b->ttype);
 	const void *nil = ATOMnilptr(b->ttype);
 	oid hseqend = b->hseqbase + BATcount(b);
@@ -1431,50 +1437,52 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 			b->tnonil &= !isnil;
 			b->tnil |= isnil;
 			MT_lock_unset(&b->theaplock);
-			if (bi.maxpos != BUN_NONE) {
-				/* if new value is the same as the
-				 * previous new value, we've already
-				 * dealt with it; if we've already
-				 * updated the maxpos, it cannot be the
-				 * same as the old value, so we can skip
-				 * that check */
-				if (!isnil &&
-				    (prevnew == NULL || prevnew != new) &&
-				    atomcmp(BUNtvar(&bi, bi.maxpos), new) < 0) {
-					/* new value is larger than
-					 * previous largest */
-					bi.maxpos = updid;
-					maxupdated = true;
-				} else if (old == NULL ||
-					   (!maxupdated &&
-					    atomeq(BUNtvar(&bi, bi.maxpos), old) &&
-					    !atomeq(new, old))) {
-					/* old value is equal to
-					 * largest and new value is
-					 * smaller, so we don't know
-					 * anymore which is the
-					 * largest */
-					bi.maxpos = BUN_NONE;
+			if (atomcmp) {
+				if (bi.maxpos != BUN_NONE) {
+					/* if new value is the same as the
+					 * previous new value, we've already
+					 * dealt with it; if we've already
+					 * updated the maxpos, it cannot be the
+					 * same as the old value, so we can skip
+					 * that check */
+					if (!isnil &&
+					    (prevnew == NULL || prevnew != new) &&
+					    atomcmp(BUNtvar(&bi, bi.maxpos), new) < 0) {
+						/* new value is larger than
+						 * previous largest */
+						bi.maxpos = updid;
+						maxupdated = true;
+					} else if (old == NULL ||
+						   (!maxupdated &&
+						    atomeq(BUNtvar(&bi, bi.maxpos), old) &&
+						    !atomeq(new, old))) {
+						/* old value is equal to
+						 * largest and new value is
+						 * smaller, so we don't know
+						 * anymore which is the
+						 * largest */
+						bi.maxpos = BUN_NONE;
+					}
 				}
-			}
-			if (bi.minpos != BUN_NONE) {
-				if (!isnil &&
-				    (prevnew == NULL || prevnew != new) &&
-				    atomcmp(BUNtvar(&bi, bi.minpos), new) > 0) {
-					/* new value is smaller than
-					 * previous smallest */
-					bi.minpos = updid;
-					minupdated = true;
-				} else if (old == NULL ||
-					   (!minupdated &&
-					    atomeq(BUNtvar(&bi, bi.minpos), old) &&
-					    !atomeq(new, old))) {
-					/* old value is equal to
-					 * smallest and new value is
-					 * larger, so we don't know
-					 * anymore which is the
-					 * smallest */
-					bi.minpos = BUN_NONE;
+				if (bi.minpos != BUN_NONE) {
+					if (!isnil &&
+					    (prevnew == NULL || prevnew != new) &&
+					    atomcmp(BUNtvar(&bi, bi.minpos), new) > 0) {
+						/* new value is smaller than
+						 * previous smallest */
+						bi.minpos = updid;
+						minupdated = true;
+					} else if (old == NULL ||
+						   (!minupdated &&
+						    atomeq(BUNtvar(&bi, bi.minpos), old) &&
+						    !atomeq(new, old))) {
+						/* old value is equal to
+						 * smallest and new value is
+						 * larger, so we don't know
+						 * anymore which is the
+						 * smallest */
+						bi.minpos = BUN_NONE;
+					}
 				}
 			}
 			if (!locked) {
@@ -1701,13 +1709,15 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 			 * extreme as those of b, we can replace b's
 			 * min/max, else we don't know what b's new
 			 * min/max are*/
-			if (bi.minpos != BUN_NONE && ni.minpos != BUN_NONE &&
+			if (atomcmp &&
+			    bi.minpos != BUN_NONE && ni.minpos != BUN_NONE &&
 			    atomcmp(BUNtloc(&bi, bi.minpos), BUNtail(&ni, ni.minpos)) >= 0) {
 				bi.minpos = pos + ni.minpos;
 			} else {
 				bi.minpos = BUN_NONE;
 			}
-			if (bi.maxpos != BUN_NONE && ni.maxpos != BUN_NONE &&
+			if (atomcmp &&
+			    bi.maxpos != BUN_NONE && ni.maxpos != BUN_NONE &&
 			    atomcmp(BUNtloc(&bi, bi.maxpos), BUNtail(&ni, ni.maxpos)) <= 0) {
 				bi.maxpos = pos + ni.maxpos;
 			} else {
@@ -1803,36 +1813,38 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 			}
 			b->tnonil &= !isnil;
 			b->tnil |= isnil;
-			if (bi.maxpos != BUN_NONE) {
-				if (!isnil &&
-				    atomcmp(BUNtloc(&bi, bi.maxpos), new) < 0) {
-					/* new value is larger than
-					 * previous largest */
-					bi.maxpos = updid;
-				} else if (atomeq(BUNtloc(&bi, bi.maxpos), old) &&
-					   !atomeq(new, old)) {
-					/* old value is equal to
-					 * largest and new value is
-					 * smaller, so we don't know
-					 * anymore which is the
-					 * largest */
-					bi.maxpos = BUN_NONE;
+			if (atomcmp) {
+				if (bi.maxpos != BUN_NONE) {
+					if (!isnil &&
+					    atomcmp(BUNtloc(&bi, bi.maxpos), new) < 0) {
+						/* new value is larger than
+						 * previous largest */
+						bi.maxpos = updid;
+					} else if (atomeq(BUNtloc(&bi, bi.maxpos), old) &&
+						   !atomeq(new, old)) {
+						/* old value is equal to
+						 * largest and new value is
+						 * smaller, so we don't know
+						 * anymore which is the
+						 * largest */
+						bi.maxpos = BUN_NONE;
+					}
 				}
-			}
-			if (bi.minpos != BUN_NONE) {
-				if (!isnil &&
-				    atomcmp(BUNtloc(&bi, bi.minpos), new) > 0) {
-					/* new value is smaller than
-					 * previous smallest */
-					bi.minpos = updid;
-				} else if (atomeq(BUNtloc(&bi, bi.minpos), old) &&
-					   !atomeq(new, old)) {
-					/* old value is equal to
-					 * smallest and new value is
-					 * larger, so we don't know
-					 * anymore which is the
-					 * smallest */
-					bi.minpos = BUN_NONE;
+				if (bi.minpos != BUN_NONE) {
+					if (!isnil &&
+					    atomcmp(BUNtloc(&bi, bi.minpos), new) > 0) {
+						/* new value is smaller than
+						 * previous smallest */
+						bi.minpos = updid;
+					} else if (atomeq(BUNtloc(&bi, bi.minpos), old) &&
+						   !atomeq(new, old)) {
+						/* old value is equal to
+						 * smallest and new value is
+						 * larger, so we don't know
+						 * anymore which is the
+						 * smallest */
+						bi.minpos = BUN_NONE;
+					}
 				}
 			}
 
@@ -2408,7 +2420,7 @@ BATordered_rev(BAT *b)
  * "quick" sort does not produce errors */
 static gdk_return
 do_sort(void *restrict h, void *restrict t, const void *restrict base,
-	size_t n, int hs, int ts, int tpe, bool reverse, bool nilslast,
+	size_t n, size_t hs, size_t ts, int tpe, bool reverse, bool nilslast,
 	bool stable)
 {
 	if (n <= 1)		/* trivially sorted */

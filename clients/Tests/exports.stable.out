@@ -1,7 +1,7 @@
 # gdk
 int ALIGNsynced(BAT *b1, BAT *b2);
 int ATOMallocate(const char *nme);
-uint8_t ATOMelmshift(int sz) __attribute__((__const__));
+uint8_t ATOMelmshift(uint32_t sz) __attribute__((__const__));
 char *ATOMformat(allocator *ma, int id, const void *val) __attribute__((__warn_unused_result__));
 gdk_return ATOMheap(int id, Heap *hp, size_t cap) __attribute__((__warn_unused_result__));
 int ATOMindex(const char *nme);
@@ -248,7 +248,7 @@ const void *BUNtpos(BATiter *bi, BUN p) __attribute__((__pure__));
 BAT *COLcopy(BAT *b, int tt, bool writable, role_t role);
 BAT *COLcopy2(BAT *b, int tt, bool writable, bool mayshare, role_t role);
 BAT *COLnew(oid hseq, int tltype, BUN capacity, role_t role) __attribute__((__warn_unused_result__));
-BAT *COLnew2(oid hseq, int tt, BUN cap, role_t role, uint16_t width) __attribute__((__warn_unused_result__));
+BAT *COLnew2(oid hseq, int tt, BUN cap, role_t role, uint32_t width) __attribute__((__warn_unused_result__));
 size_t GDK_mem_maxsize;
 size_t GDK_vm_maxsize;
 BAT *GDKanalytical_correlation(BAT *p, BAT *o, BAT *b1, BAT *b2, BAT *s, BAT *e, int tpe, int frame_type) __attribute__((__warn_unused_result__));
@@ -316,7 +316,7 @@ int GDKnr_threads;
 void GDKprepareExit(void);
 void GDKprintinfo(void);
 void GDKprintinforegister(void (*func)(void));
-void GDKqsort(void *restrict h, void *restrict t, const void *restrict base, size_t n, int hs, int ts, int tpe, bool reverse, bool nilslast);
+void GDKqsort(void *restrict h, void *restrict t, const void *restrict base, size_t n, size_t hs, size_t ts, int tpe, bool reverse, bool nilslast);
 void *GDKrealloc(void *pold, size_t size) __attribute__((__alloc_size__(2))) __attribute__((__warn_unused_result__));
 gdk_return GDKrebuild_segment_tree(oid ncount, oid data_size, Heap *st, void **segment_tree, oid **levels_offset, oid *nlevels);
 void GDKreset(int status);

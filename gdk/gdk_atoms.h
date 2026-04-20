@@ -450,7 +450,7 @@ strEq(const char *l, const char *r)
 
 __attribute__((__pure__))
 static inline size_t
-VarHeapVal(const void *b, BUN p, int w)
+VarHeapVal(const void *b, BUN p, uint32_t w)
 {
 	switch (w) {
 	case 1:

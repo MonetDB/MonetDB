@@ -299,7 +299,7 @@ GDKanalyticalfirst(BAT *b, BAT *s, BAT *e, int tpe)
 				has_nils |= atomeq(curval, nil);
 			}
 		} else {
-			uint16_t width = r->twidth;
+			uint32_t width = r->twidth;
 			uint8_t *restrict rcast = (uint8_t *) Tloc(r, 0);
 			for (; k < cnt; k++) {
 				const void *curval = (end[k] > start[k]) ? BUNtloc(&bi, start[k]) : nil;
@@ -393,7 +393,7 @@ GDKanalyticallast(BAT *b, BAT *s, BAT *e, int tpe)
 				has_nils |= atomeq(curval, nil);
 			}
 		} else {
-			uint16_t width = r->twidth;
+			uint32_t width = r->twidth;
 			uint8_t *restrict rcast = (uint8_t *) Tloc(r, 0);
 			for (; k < cnt; k++) {
 				const void *curval = (end[k] > start[k]) ? BUNtloc(&bi, end[k] - 1) : nil;
@@ -530,7 +530,7 @@ GDKanalyticalnthvalue(BAT *b, BAT *s, BAT *e, BAT *t, lng nth, int tpe)
 				}
 			} else {
 				uint8_t *restrict rcast = (uint8_t *) Tloc(r, 0);
-				uint16_t width = r->twidth;
+				uint32_t width = r->twidth;
 				for (; k < cnt; k++) {
 					lng lnth = tp[k];
 					if (!is_lng_nil(nth) && nth <= 0) goto invalidnth;
@@ -604,7 +604,7 @@ GDKanalyticalnthvalue(BAT *b, BAT *s, BAT *e, BAT *t, lng nth, int tpe)
 					}
 				}
 			} else {
-				uint16_t width = r->twidth;
+				uint32_t width = r->twidth;
 				uint8_t *restrict rcast = (uint8_t *) Tloc(r, 0);
 				if (is_lng_nil(nth)) {
 					has_nils = true;
@@ -1351,6 +1351,12 @@ minmaxvarsized##IMP:							\
 BAT *									\
 GDKanalytical##OP(BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, int frame_type) \
 {									\
+	if (!ATOMlinear(b->ttype)) {					\
+		/* there is no such thing as a smallest/largest value if \
+		 * you can't compare values */				\
+		GDKerror("non-linear type");				\
+		return NULL;						\
+	}								\
 	lng t0 = 0;							\
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();				\
 	BAT *r = COLnew(b->hseqbase, b->ttype, BATcount(b), TRANSIENT); \
@@ -1370,7 +1376,7 @@ GDKanalytical##OP(BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, int frame_typ
 	bool (*atomeq)(const void *, const void *) = ATOMequal(tpe);	\
 	void *segment_tree = NULL;					\
 	gdk_return res = GDK_SUCCEED;					\
-	uint16_t width = r->twidth;					\
+	uint32_t width = r->twidth;					\
 	uint8_t *restrict rcast = (uint8_t *) Tloc(r, 0);		\
 	Heap *st = NULL;						\
 									\

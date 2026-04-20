@@ -184,7 +184,7 @@ HASHupgradehashheap(BAT *b)
 {
 #if defined(BUN2) || defined(BUN8)
 	Hash *h = b->thash;
-	int nwidth = h->width << 1;
+	unsigned nwidth = h->width << 1;
 	BUN i;
 
 	assert(nwidth <= SIZEOF_BUN);

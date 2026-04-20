@@ -570,6 +570,8 @@ CALCmin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	if (t != getArgType(mb, pci, 2))
 		return mythrow(MAL, "calc.min", SEMANTIC_TYPE_MISMATCH);
+	if (!ATOMlinear(t))
+		throw(MAL, "calc.min", SEMANTIC_TYPE_MISMATCH);
 	nil = ATOMnilptr(t);
 	if (t >= TYPE_str && ATOMstorage(t) >= TYPE_str) {
 		p1 = *(ptr *) p1;
@@ -596,6 +598,8 @@ CALCmin_no_nil(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	if (t != getArgType(mb, pci, 2))
 		return mythrow(MAL, "calc.min", SEMANTIC_TYPE_MISMATCH);
+	if (!ATOMlinear(t))
+		throw(MAL, "calc.min", SEMANTIC_TYPE_MISMATCH);
 	nil = ATOMnilptr(t);
 	if (t >= TYPE_str && ATOMstorage(t) >= TYPE_str) {
 		p1 = *(ptr *) p1;
@@ -633,6 +637,8 @@ CALCmax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	if (t != getArgType(mb, pci, 2))
 		return mythrow(MAL, "calc.max", SEMANTIC_TYPE_MISMATCH);
+	if (!ATOMlinear(t))
+		throw(MAL, "calc.min", SEMANTIC_TYPE_MISMATCH);
 	nil = ATOMnilptr(t);
 	if (t >= TYPE_str && ATOMstorage(t) >= TYPE_str) {
 		p1 = *(ptr *) p1;
@@ -692,6 +698,8 @@ CALCmax_no_nil(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	if (t != getArgType(mb, pci, 2))
 		return mythrow(MAL, "calc.max", SEMANTIC_TYPE_MISMATCH);
+	if (!ATOMlinear(t))
+		throw(MAL, "calc.min", SEMANTIC_TYPE_MISMATCH);
 	nil = ATOMnilptr(t);
 	if (t >= TYPE_str && ATOMstorage(t) >= TYPE_str) {
 		p1 = *(ptr *) p1;

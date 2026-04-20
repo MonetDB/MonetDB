@@ -393,7 +393,7 @@ sql_statistics(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							posi = bat_iterator_copy(&qdi);
 						}
 
-						w = qdi.width;
+						w = (int) qdi.width;
 						cnt = qdi.count;
 						un = qdi.key;
 						bat_iterator_end(&qdi);

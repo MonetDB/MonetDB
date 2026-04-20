@@ -11,8 +11,8 @@
 /* this file is included multiple times by gdk_calc.c */
 
 static BUN
-op_typeswitchloop(const void *lft, int tp1, bool incr1, const char *hp1, int wd1,
-		  const void *rgt, int tp2, bool incr2, const char *hp2, int wd2,
+op_typeswitchloop(const void *lft, int tp1, bool incr1, const char *hp1, uint32_t wd1,
+		  const void *rgt, int tp2, bool incr2, const char *hp2, uint32_t wd2,
 		  TPE *restrict dst,
 		  struct canditer *restrict ci1, struct canditer *restrict ci2,
 		  oid candoff1, oid candoff2,
@@ -779,8 +779,8 @@ op_typeswitchloop(const void *lft, int tp1, bool incr1, const char *hp1, int wd1
 }
 
 static BAT *
-BATcalcop_intern(const void *lft, int tp1, bool incr1, const char *hp1, int wd1,
-		 const void *rgt, int tp2, bool incr2, const char *hp2, int wd2,
+BATcalcop_intern(const void *lft, int tp1, bool incr1, const char *hp1, uint32_t wd1,
+		 const void *rgt, int tp2, bool incr2, const char *hp2, uint32_t wd2,
 		 struct canditer *restrict ci1, struct canditer *restrict ci2,
 		 oid candoff1, oid candoff2, bool nonil, oid seqbase,
 #ifdef NIL_MATCHES_FLAG
