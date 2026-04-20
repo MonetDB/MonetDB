@@ -793,7 +793,6 @@ BONDknn(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-
 //static str
 //process_block(fblock *blk, dbl *query_vals, size_t nrows, size_t ncols, dbl *threshold)
 //{
@@ -826,12 +825,16 @@ pdx(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	allocator_state ta_state = ma_open(ta);
 
 	dbl *query_vals = ma_alloc(ta, ndims * sizeof(dbl));
-	// size_t len = nrows > k ? nrows : k;
 	// block candidates
-	//oid *bc = ma_alloc(ta, nrows * sizeof(oid));
-	//dbl *bd = ma_alloc(ta, nrows * sizeof(dbl));
-	oid *cands = ma_zalloc(ta, k * sizeof(oid));
+	oid *bc = ma_alloc(ta, nrows * sizeof(oid));
+	(void) bc;
+	// block distances
+	dbl *bd = ma_alloc(ta, nrows * sizeof(dbl));
+	(void) bd;
+	oid *cands = ma_alloc(ta, k * sizeof(oid));
 	(void) cands;
+	dbl *dists = ma_zalloc(ta, k * sizeof(dbl));
+	(void) dists;
 	if (!query_vals) {
 		ma_close(&ta_state);
 		throw(MAL, "vss.pdx", MAL_MALLOC_FAIL);
@@ -847,6 +850,12 @@ pdx(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	// TODO process blks
+//	for (size_t i = 0; i < nblocks; i++) {
+//		// curr blk
+//		fblock *blk = blocks + i;
+//
+//
+//	}
 
     BAT *bn = COLnew(0, TYPE_oid, k, TRANSIENT);
     if (bn == NULL)
