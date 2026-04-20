@@ -615,8 +615,18 @@ log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, BAT **cands, bo
 				}
 			} else {
 				if (!ATOMvarsized(tpe)) {
+					size_t sz = ATOMsize(tpe);
+					if (sz > lg->rbufsize) {
+						char *buf = lg->rbuf;
+						if (!(buf = GDKrealloc(lg->rbuf, sz))) {
+							TRC_CRITICAL(GDK, "couldn't grow string buffer\n");
+							return LOG_ERR;
+						}
+						lg->rbuf = buf;
+						lg->rbufsize = sz;
+					}
 					size_t cnt = 0, snr = (size_t) nr;
-					size_t tlen = lg->rbufsize / ATOMsize(tpe), ntlen = lg->rbufsize;
+					size_t tlen = lg->rbufsize / sz, ntlen = lg->rbufsize;
 					assert(tlen);
 					/* read in chunks of max
 					 * BUFSIZE/width rows */
