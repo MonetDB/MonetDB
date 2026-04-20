@@ -2922,7 +2922,7 @@ OAHASHexpand(Client ctx, bat *expanded, const bat *selected, const bat *slotid, 
 			if (s != oid_nil) {
 				gid frq = (gid)freq[s];
 				frq = frq?frq:1;
-				TIMEOUT_LOOP_IDX_DECL(f, frq, qry_ctx) {
+				TIMEOUT_LOOP(frq, qry_ctx) {
 					res[idx++] = sel[i];
 				}
 			} else {
@@ -2933,7 +2933,7 @@ OAHASHexpand(Client ctx, bat *expanded, const bat *selected, const bat *slotid, 
 		TIMEOUT_LOOP_IDX_DECL(i, selcnt, qry_ctx) {
 			gid frq = (gid)freq[sid[i]];
 			frq = frq?frq:1;
-			TIMEOUT_LOOP_IDX_DECL(j, frq, qry_ctx) {
+			TIMEOUT_LOOP(frq, qry_ctx) {
 				res[idx++] = sel[i];
 			}
 		}
@@ -3000,7 +3000,7 @@ OAHASHexpand_cart(Client ctx, bat *expanded, const bat *col, const bat *rowrepea
 	oid *res = Tloc(e, 0);
 	BUN off = k->hseqbase;
 	TIMEOUT_LOOP_IDX_DECL(i, keycnt, qry_ctx) {
-		TIMEOUT_LOOP_IDX_DECL(j, repcnt, qry_ctx) {
+		TIMEOUT_LOOP(repcnt, qry_ctx) {
 			res[idx++] = off+i;
 		}
 	}
@@ -3178,13 +3178,13 @@ OAHASHexplode_cart(Client ctx, bat *fetched, const bat *col, const bat *setrepea
 
 		if (append_nulls) {
 			oid *res = Tloc(f, 0);
-			TIMEOUT_LOOP_IDX_DECL(i, repcnt, qry_ctx) {
+			TIMEOUT_LOOP(repcnt, qry_ctx) {
 				res[idx++] = oid_nil;
 			}
 		} else {
 			oid *res = Tloc(f, 0);
 			BUN off = k->hseqbase;
-			TIMEOUT_LOOP_IDX_DECL(i, repcnt, qry_ctx) {
+			TIMEOUT_LOOP(repcnt, qry_ctx) {
 				TIMEOUT_LOOP_IDX_DECL(j, keycnt, qry_ctx) {
 					res[idx++] = off+j;
 				}
