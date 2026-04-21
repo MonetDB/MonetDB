@@ -390,6 +390,7 @@ main(int argc, char **av)
 	modules[mods++] = "netcdf";
 #endif
 	modules[mods++] = "csv";
+	modules[mods++] = "parquet";
 	modules[mods++] = "monetdb_loader";
 #ifdef HAVE_SHP
 	modules[mods++] = "shp";

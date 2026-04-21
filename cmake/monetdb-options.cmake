@@ -194,7 +194,3 @@ option(WITH_MSERVER5
 option(WITH_MAPI_CLIENT
   "Build mapi clients(mclient, msqldump)"
   ON)
-
-option(WITH_PARQUET
-  "Include parquet support (default=ON)"
-  ON)
