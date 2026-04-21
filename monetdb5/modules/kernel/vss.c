@@ -205,12 +205,17 @@ heap_up(oid *hcand, dbl *hd, BUN p)
 static dbl
 topn_merge(oid *cands, dbl *d, oid *icands, dbl *id, BUN n, BUN k)
 {
+    if (k == 0) return DBL_MAX;
+    if (n == 0) return d[0];
 	for (BUN i = 0; i < n; i++) {
 		if (id[i] < d[0]) {
-			heap_del(cands, d, k);
-			cands[k-1] = icands[i];
-			d[k-1] = id[i];
-			heap_up(cands, d, k-1);
+			//heap_del(cands, d, k);
+			//cands[k-1] = icands[i];
+			//d[k-1] = id[i];
+			//heap_up(cands, d, k-1);
+			cands[0] = icands[i];
+            d[0] = id[i];
+            heap_down(cands, d, 0, k);
 		}
 	}
 	/*
@@ -222,30 +227,40 @@ topn_merge(oid *cands, dbl *d, oid *icands, dbl *id, BUN n, BUN k)
 
 /* max heap */
 static dbl
-topn(oid *cands, dbl *d, bond_collection *bc, BUN n, BUN k)
+topn(oid *cands, dbl *d, oid *hcand, dbl* hd, BUN n, BUN k)
 {
-	oid *hcand = bc->tcand;
-	dbl *hd = bc->tdist;
+	//oid *hcand = bc->tcand;
+	//dbl *hd = bc->tdist;
 	BUN i = 0;
+    // Fill the heap initially
 	for (; i < k && i < n; i++) {
 		hcand[i] = cands[i];
 		hd[i] = d[i];
 		heap_up(hcand, hd, i);
 	}
 
-	for (; i < n; i++) {
-		if (d[i] < hd[0]) {
-			heap_del(hcand, hd, k);
-			hcand[k-1] = cands[i];
-			hd[k-1] = d[i];
-			heap_up(hcand, hd, k-1);
-		}
-	}
+    // If we have more candidates than k, treat them as a merge
+    for (; i < n; i++) {
+        if (d[i] < hd[0]) {
+            hcand[0] = cands[i];
+            hd[0] = d[i];
+            heap_down(hcand, hd, 0, k);
+        }
+    }
+
+	//for (; i < n; i++) {
+	//	if (d[i] < hd[0]) {
+	//		heap_del(hcand, hd, k);
+	//		hcand[k-1] = cands[i];
+	//		hd[k-1] = d[i];
+	//		heap_up(hcand, hd, k-1);
+	//	}
+	//}
 	/*
 	for(i = 0; i < k; i++)
 		printf("%d %F\n", (int)hcand[i], hd[i]);
 		*/
-	return hd[0];
+    return hd[0];
 }
 
 static dbl
@@ -277,7 +292,7 @@ bond_upper_bound(bond_collection *bc, const dbl *query_vals, BUN k)
 			bc->dim_means[d] += sum;
 		}
 		if (nr == 0) {
-			res = topn(tc, td, bc, bc->bsz, k);
+			res = topn(tc, td, bc->tcand, bc->tdist, bc->bsz, k);
 			for(BUN i = 0; i < k; i++) {
 				cands[i] = bc->tcand[i];
 				dists[i] = bc->tdist[i];
@@ -793,13 +808,41 @@ BONDknn(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-//static str
-//process_block(fblock *blk, dbl *query_vals, size_t nrows, size_t ncols, dbl *threshold)
-//{
-//
-//
-//	return MAL_SUCCEED;
-//}
+static str
+process_block(fblock *blk, dbl *query_vals,
+	   	size_t nrows, size_t ncols, dbl threshold,
+	   	oid *bc, dbl *bd, BUN *kcands)
+{
+	BUN ncand = nrows;
+
+	for (size_t i = 0; i < ncols; i++) {
+		dbl *col = (dbl*)blk + (i * nrows);
+
+		for (BUN j = 0; j < ncand; j++) {
+			oid idx = bc[j];
+			dbl dv = col[idx];
+			dbl qv = query_vals[i];
+			dbl diff = qv - dv;
+			bd[j] += diff*diff;
+		}
+
+		// prune at specific intervals
+		if (threshold != DBL_MAX && (i % 4 == 3)) {
+			BUN write_pos = 0;
+			for (BUN read_pos = 0; read_pos < ncand; read_pos++) {
+				if (bd[read_pos] <= threshold) {
+					bc[write_pos] = bc[read_pos];
+					bd[write_pos] = bd[read_pos];
+					write_pos++;
+				}
+			}
+			ncand = write_pos;
+		}
+	}
+
+	*kcands = ncand;
+	return MAL_SUCCEED;
+}
 
 static char*
 pdx(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -827,46 +870,85 @@ pdx(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	dbl *query_vals = ma_alloc(ta, ndims * sizeof(dbl));
 	// block candidates
 	oid *bc = ma_alloc(ta, nrows * sizeof(oid));
-	(void) bc;
 	// block distances
 	dbl *bd = ma_alloc(ta, nrows * sizeof(dbl));
-	(void) bd;
-	oid *cands = ma_alloc(ta, k * sizeof(oid));
-	(void) cands;
-	dbl *dists = ma_zalloc(ta, k * sizeof(dbl));
-	(void) dists;
-	if (!query_vals) {
+
+	// Global result buffers
+    oid *cands = ma_alloc(ta, k * sizeof(oid));
+    dbl *dists = ma_alloc(ta, k * sizeof(dbl));
+
+    // Heap storage for the first block top-n
+    oid *hcands = ma_alloc(ta, k * sizeof(oid));
+    dbl *hdists = ma_alloc(ta, k * sizeof(dbl));
+
+	if (!query_vals || !bc || !bd || !cands || !dists) {
 		ma_close(&ta_state);
+		BBPunfix(b->batCacheid);
 		throw(MAL, "vss.pdx", MAL_MALLOC_FAIL);
 	}
 
-	for (size_t i = 0; i < ndims; i++) {
-		BAT *b = BATdescriptor(*getArgReference_bat(stk, pci, i + 3));
-		if (!b) {
-			ma_close(&ta_state);
-			throw(MAL, "vss.knn", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-		}
-		query_vals[i] = *(dbl*)Tloc(b, 0);
+	// Initialize
+	for (size_t j = 0; j < k; j++) {
+		dists[j] = DBL_MAX;
+		cands[j] = j;
 	}
 
-	// TODO process blks
-//	for (size_t i = 0; i < nblocks; i++) {
-//		// curr blk
-//		fblock *blk = blocks + i;
-//
-//
-//	}
+	for (size_t i = 0; i < ndims; i++) {
+		BAT *b_dim = BATdescriptor(*getArgReference_bat(stk, pci, i + 3));
+		if (!b_dim) {
+			ma_close(&ta_state);
+			BBPunfix(b->batCacheid);
+			throw(MAL, "vss.knn", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		}
+		query_vals[i] = *(dbl*)Tloc(b_dim, 0);
+		BBPunfix(b_dim->batCacheid);
+	}
+
+	dbl threshold = DBL_MAX;
+	for (size_t i = 0; i < nblocks; i++) {
+		// curr blk
+		fblock *blk = blocks + i;
+		// reset bc and bc for current block
+		for (size_t j = 0; j < nrows; j++) {
+			bd[j] = 0;
+			bc[j] = (oid)j;
+		}
+		str msg;
+		BUN ncand = (BUN) nrows;
+		if ((msg = process_block(blk, query_vals, nrows, ndims, threshold, bc, bd, &ncand)) != MAL_SUCCEED) {
+			ma_close(&ta_state);
+			BBPunfix(b->batCacheid);
+			return msg;
+		}
+
+		// Convert local block indices to global OIDs
+        for (BUN j = 0; j < ncand; j++) {
+            bc[j] += (oid)(i * nrows);
+        }
+
+		if (i == 0 && ncand > k) {
+			threshold = topn(bc, bd, hcands, hdists, ncand, k);
+			for(BUN j = 0; j < k; j++) {
+				cands[j] = hcands[j];
+				dists[j] = hdists[j];
+			}
+		} else {
+			threshold = topn_merge(cands, dists, bc, bd, ncand, k);
+		}
+	}
 
     BAT *bn = COLnew(0, TYPE_oid, k, TRANSIENT);
-    if (bn == NULL)
+    if (bn == NULL) {
+		ma_close(&ta_state);
+		BBPunfix(b->batCacheid);
         throw(MAL, "batvss.pdx", MAL_MALLOC_FAIL);
+	}
 
-	// Final top k
-	//{
-	//	for (size_t i=0; i < k; i++) {
-	//		*(oid*) Tloc(bn, i) = cands[i];
-	//	}
-	//}
+
+	// Copy heap results to BAT
+    for (size_t i = 0; i < k; i++) {
+        ((oid*)Tloc(bn, 0))[i] = cands[i];
+    }
 
     // Finalize BAT metadata
     BATsetcount(bn, k);
@@ -877,6 +959,8 @@ pdx(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	//printf("#BATl2sq " LLFMT "\n", GDKusec() - T0);
 
+	ma_close(&ta_state);
+	BBPunfix(b->batCacheid);
     *ret = bn->batCacheid;
     BBPkeepref(bn);
     return MAL_SUCCEED;
