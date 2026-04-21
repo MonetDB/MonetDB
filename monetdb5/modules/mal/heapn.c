@@ -1242,7 +1242,9 @@ HEAPnew(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 	lng n = *getArgReference_lng(s, p, 1);
 	bit grouped = *getArgReference_bit(s, p, 2);
 
-	heapn *hp = heapn_create((size_t)n, 1, grouped);
+	if (n < 0 || n > INT_MAX)
+		throw(MAL, "heap.topn", ILLEGAL_ARGUMENT);
+	heapn *hp = heapn_create((int)n, 1, grouped);
 
 	if (!hp) {
 		heap_destroy(hp);
@@ -1503,12 +1505,12 @@ HEAPtopn(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr pci)
 	bit nulls_last = (nr_cols)?*getArgReference_bit(s, pci, args++):false;
 
 	if (private) {
-		if (n < 0) {
+		if (n < 0 || n > INT_MAX) {
 			BBPunfix(b->batCacheid);
 			if (gps) BBPreclaim(gps);
 			throw(MAL, "heap.topn", ILLEGAL_ARGUMENT);
 		}
-		heapn *hp = heapn_create((size_t)n, 0, gps?true:false);
+		heapn *hp = heapn_create((int)n, 0, gps?true:false);
 		hps = HEAPnew_topn(s, pci, args, hp, n, b, min, nulls_last);
 		if (!hps) {
 			BBPunfix(b->batCacheid);
