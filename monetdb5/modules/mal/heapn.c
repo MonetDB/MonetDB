@@ -559,7 +559,7 @@ heap_type_cmp(dbl)
 
 #define heap_type(T) 					\
 										\
-static int								\
+static size_t							\
 heap_down_##T( heapn *hp, size_t p)		\
 {										\
 	subheap *sh = hp->sub;				\
@@ -660,7 +660,7 @@ heap_ins_##T( heapn *hp, size_t pos, int *err)	\
 	return vpos;						\
 }						\
 \
-static int								\
+static size_t							\
 gheap_down_##T( heapn *hp, gid g, size_t p)		\
 {										\
 	subheap *sh = hp->sub;				\
