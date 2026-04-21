@@ -50008,6 +50008,41 @@ wrapper
 pattern optimizer.wrapper(X_0:str, X_1:str):str
 OPTwrapper
 Fake optimizer
+parquet
+epilogue
+command parquet.epilogue():void
+PARQUETepilogue
+(empty)
+parquet
+file_metadata
+pattern parquet.file_metadata(X_0:str) (X_1:bat[:str], X_2:bat[:lng], X_3:bat[:lng], X_4:bat[:lng], X_5:bat[:lng], X_6:bat[:str], X_7:bat[:str])
+PARQUETfile_metadata
+Read parquet file metadata
+parquet
+metadata
+pattern parquet.metadata(X_0:str) (X_1:bat[:lng], X_2:bat[:lng], X_3:bat[:lng], X_4:bat[:lng], X_5:bat[:lng], X_6:bat[:lng], X_7:bat[:lng], X_8:bat[:str], X_9:bat[:str], X_10:bat[:str], X_11:bat[:str], X_12:bat[:lng], X_13:bat[:lng], X_14:bat[:str], X_15:bat[:str], X_16:bat[:str], X_17:bat[:str], X_18:bat[:lng], X_19:bat[:lng], X_20:bat[:lng], X_21:bat[:lng], X_22:bat[:lng])
+PARQUETmetadata
+Read parquet metadata
+parquet
+open
+unsafe pattern parquet.open(X_0:str, X_1:lng):bat[:oid]
+PARQUETopen
+Create resource for shared reading from parquet file
+parquet
+prelude
+pattern parquet.prelude():void
+PARQUETprelude
+(empty)
+parquet
+read
+pattern parquet.read(X_0:bat[:oid], X_1:int, X_2:ptr):bat[:any_1]
+PARQUETread
+read part of parquet file
+parquet
+schema
+pattern parquet.schema(X_0:str) (X_1:bat[:str], X_2:bat[:str], X_3:bat[:str], X_4:bat[:lng], X_5:bat[:str], X_6:bat[:lng], X_7:bat[:str], X_8:bat[:str], X_9:bat[:lng], X_10:bat[:lng])
+PARQUETschema
+Read parquet schema
 part
 new
 pattern part.new(X_0:int):bat[:oid]
