@@ -334,7 +334,6 @@ PPdone(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 #define CONCAT_SINK 99
-#define SUBCONCAT_SINK 100
 typedef struct pp_concat_t {
 	Sink s;
 
@@ -362,7 +361,7 @@ static int
 concat_done( pp_concat *c, int wid, int nr_workers, bool redo )
 {
 	int res = 1;
-	assert(c->s.type == CONCAT_SINK || c->s.type == SUBCONCAT_SINK);
+	assert(c->s.type == CONCAT_SINK);
 	MT_lock_set(&c->l);
 	if (!c->started) {
 		c->cur = (int*)GDKzalloc(sizeof(int) * nr_workers);
@@ -372,11 +371,7 @@ concat_done( pp_concat *c, int wid, int nr_workers, bool redo )
 	if (sb) {
 		Sink *s = sb->tsink;
 		MT_lock_unset(&c->l);
-		if (s->type == SUBCONCAT_SINK)
-			res = concat_done( (pp_concat*)s, wid, nr_workers, redo);
-		else {
-			res = s->done(s, wid, nr_workers, redo);
-		}
+		res = s->done(s, wid, nr_workers, redo);
 		MT_lock_set(&c->l);
 		while(res && ++c->cur[wid] < c->max) {
 			sb = c->srcs[c->cur[wid]];
@@ -384,11 +379,7 @@ concat_done( pp_concat *c, int wid, int nr_workers, bool redo )
 				break;
 			s = sb->tsink;
 			MT_lock_unset(&c->l);
-			if (s->type == SUBCONCAT_SINK)
-				res = concat_done( (pp_concat*)s, wid, nr_workers, false);
-			else {
-				res = s->done(s, wid, nr_workers, false);
-			}
+			res = s->done(s, wid, nr_workers, false);
 			MT_lock_set(&c->l);
 		}
 	}
@@ -400,16 +391,14 @@ static int
 concat_next( pp_concat *c, int wid)
 {
 	int res = 1;
-	assert(c->s.type == CONCAT_SINK || c->s.type == SUBCONCAT_SINK);
+	assert(c->s.type == CONCAT_SINK);
 	MT_lock_set(&c->l);
 	assert(c->started);
 	BAT *sb = c->srcs[c->cur[wid]];
 	if (sb) {
 		Sink *s = sb->tsink;
 		MT_lock_unset(&c->l);
-		if (s->type == SUBCONCAT_SINK)
-			res = concat_next( (pp_concat*)s, wid);
-		else if (s->next)
+		if (s->next)
 			res = s->next(s, wid);
 		MT_lock_set(&c->l);
 	}
@@ -421,16 +410,14 @@ static BAT*
 concat_next_bat( pp_concat *c, int wid)
 {
 	BAT *res = NULL;
-	assert(c->s.type == CONCAT_SINK || c->s.type == SUBCONCAT_SINK);
+	assert(c->s.type == CONCAT_SINK);
 	MT_lock_set(&c->l);
 	assert(c->started);
 	BAT *sb = c->srcs[c->cur[wid]];
 	if (sb) {
 		Sink *s = sb->tsink;
 		MT_lock_unset(&c->l);
-		if (s->type == SUBCONCAT_SINK)
-			res = concat_next_bat( (pp_concat*)s, wid);
-		else if (s->next_bat)
+		if (s->next_bat)
 			res = s->next_bat(s, wid);
 		MT_lock_set(&c->l);
 	}
@@ -458,7 +445,7 @@ PPconcat_block(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (!b)
 		throw(MAL, "pipeline.concat_block", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	pp_concat *pcat = (pp_concat*)b->tsink;
-	if (pcat->s.type != CONCAT_SINK && pcat->s.type != SUBCONCAT_SINK) {
+	if (pcat->s.type != CONCAT_SINK) {
 		BBPreclaim(b);
 		throw(MAL, "pipeline.concat_block", SQLSTATE(HY002) "Invalid type for a concat source %d", pcat->s.type);
 	}
@@ -487,7 +474,7 @@ PPconcat_add(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "pipeline.concat_add", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	pp_concat *pcat = (pp_concat*)b->tsink;
-	if (pcat->s.type != CONCAT_SINK && pcat->s.type != SUBCONCAT_SINK) {
+	if (pcat->s.type != CONCAT_SINK) {
 		BBPreclaim(b);
 		BBPreclaim(i);
 		throw(MAL, "pipeline.concat_add", SQLSTATE(HY002) "Invalid type for a concat source %d", pcat->s.type);
@@ -498,8 +485,6 @@ PPconcat_add(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "pipeline.concat_add", SQLSTATE(HY002) "Concat too many sources (%d)", pcat->current);
 	}
 	pcat->srcs[pcat->current++] = i;
-	if (i->tsink->type == CONCAT_SINK)
-		i->tsink->type = SUBCONCAT_SINK;
 	*rb = b->batCacheid;
 	BBPkeepref(b);
 	return MAL_SUCCEED;
