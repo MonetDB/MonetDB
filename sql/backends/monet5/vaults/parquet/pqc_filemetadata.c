@@ -264,8 +264,6 @@ pqc_open( pqc_file **PQ, char *fn)
 		pqc_destroy(pq);
 		return -3;
 	}
-	/* cast to int for Windows; we know it fits, and Linux automatically
-	 * casts back */
 	if (internal_read(pq->fd, buffer, sz) != sz) {
 		pqc_destroy(pq);
 		return -3;
@@ -1477,9 +1475,8 @@ pqc_get_schema_elements( pqc_file *pq, int *nr)
 	if (pq->read_schema) {
 		*nr = pq->fmd->nelements;
 		return pq->fmd->elements;
-	} else {
-		return NULL;
 	}
+	return NULL;
 }
 
 int

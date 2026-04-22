@@ -533,6 +533,8 @@ mvc_claim_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sql_schema *s;
 	sql_table *t;
 	Sink *sync = NULL;
+	int nr = -1;
+	Pipeline *p = NULL;
 
 	*res = 0;
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
@@ -554,16 +556,17 @@ mvc_claim_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (!(b = BATdescriptor(*sid)))
 			msg = createException(SQL, "sql.claim", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		sync = b->tsink;
+		p = (Pipeline*)*getArgReference_ptr(stk, pci, 8);
 		BBPreclaim(b);
-		int nr = *getArgReference_int(stk, pci, 7);
-		Pipeline *p = (Pipeline*)*getArgReference_ptr(stk, pci, 8);
-		if (p->seqnr >= 0)
+		nr = *getArgReference_int(stk, pci, 7);	/* passed counter for table/bat sources */
+		if (p->seqnr >= 0) /* seq number from file/generator inputs */
 			nr = p->seqnr;
 		else if (!cnt && p->seqnr == -2)
 			nr = -1;
-		if (nr >= 0)
-			counter_wait(sync, nr, p);
-		else
+		if (nr >= 0) {
+			bool done = 0;
+			pipeline_get_token(p, 7, nr, &done);
+		} else
 			sync = NULL;
 	}
 	if (mvc_claim_slots(m->session->tr, t, (size_t)cnt, offset, &pos) == LOG_OK) {
@@ -573,11 +576,11 @@ mvc_claim_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			BBPkeepref(pos);
 		}
 		if (sync)
-			counter_next(sync);
+			pipeline_pass_token(p, 7, nr);
 		return MAL_SUCCEED;
 	}
 	if (sync)
-		counter_next(sync);
+			pipeline_pass_token(p, 7, nr);
 	throw(SQL, "sql.claim", SQLSTATE(3F000) "Could not claim slots");
 }
 

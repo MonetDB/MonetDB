@@ -3736,7 +3736,7 @@ stmt_claim(backend *be, sql_table *t, stmt *cnt, int sync)
 	if (!t || cnt->nr < 0)
 		goto bailout;
 	assert(t->s);				/* declared table */
-	q = newStmtArgs(mb, sqlRef, claimRef, 6);
+	q = newStmtArgs(mb, sqlRef, claimRef, sync?9:6);
 	if (q == NULL)
 		goto bailout;
 	/* returns offset or offsets */

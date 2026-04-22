@@ -147,13 +147,16 @@ sync_counter_done(pp_counter *c, int wid, int nr_workers, int redo)
 	if (!c->cur)
 		c->cur = (int*)GDKzalloc(sizeof(int) * nr_workers);
 	cur = c->current++;
-	if (cur >= c->nr)
+	if (cur >= c->nr) {
 		res = 1;
+		p->tseqnr += c->nr;
+	}
 	if (res && c->scnt != nr_workers && !p->p->error) {
 		c->scnt++;
-		if (c->scnt != nr_workers)
-			MT_cond_wait(&p->p->cond, &p->p->l);
-		else
+		if (c->scnt != nr_workers) {
+			while (c->scnt != p->p->nr_workers && !p->p->error)
+				MT_cond_wait(&p->p->cond, &p->p->l);
+		} else
 			MT_cond_broadcast(&p->p->cond);
 		assert(c->scnt == nr_workers || p->p->error);
 	}
@@ -174,8 +177,11 @@ counter_done(pp_counter *c, int wid, int nr_workers, int redo)
 	if (!c->cur)
 		c->cur = (int*)GDKzalloc(sizeof(int) * nr_workers);
 	cur = c->current++;
-	if (cur >= c->nr)
+	if (cur >= c->nr) {
 		res = 1;
+		Pipeline *p = MT_thread_getdata();
+		p->tseqnr += c->nr;
+	}
 	MT_lock_unset(&c->l);
 	assert(c->cur);
 	c->cur[wid] = cur;
@@ -208,17 +214,22 @@ PPcounter_get(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		MT_lock_set(&p->p->l);
 		if (c->scnt != (int)p->p->nr_workers) {
 			c->scnt++;
-			if (c->scnt != p->p->nr_workers)
-				MT_cond_wait(&p->p->cond, &p->p->l);
-			else
+			if (c->scnt != p->p->nr_workers) {
+				while (c->scnt != p->p->nr_workers && !p->p->error)
+					MT_cond_wait(&p->p->cond, &p->p->l);
+			} else
 				MT_cond_broadcast(&p->p->cond);
 		}
-		assert(c->scnt == (int)p->p->nr_workers);
+		assert(p->p->error || c->scnt == (int)p->p->nr_workers);
 		MT_lock_unset(&p->p->l);
 	}
 	if (!c->cur)
 		c->s.done(c, p->wid, p->p->nr_workers, false);
 	*cur = c->cur[p->wid];
+	if (*cur >= c->nr)
+		p->seqnr = -2;
+	else
+		p->seqnr = p->tseqnr + *cur;
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -289,27 +300,6 @@ PPcounter(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	*rb = b->batCacheid;
 	BBPkeepref(b);
 	return MAL_SUCCEED;
-}
-
-void
-counter_wait(Sink *s, int nr, Pipeline *p)
-{
-	pp_counter *c = (pp_counter*)s;
-	assert(s->type == COUNTER_SINK);
-
-	while (c->current < nr && !ATOMIC_PTR_GET(&p->p->error))
-		sleep_ns(10);
-}
-
-void
-counter_next(Sink *s)
-{
-	pp_counter *c = (pp_counter*)s;
-	assert(s->type == COUNTER_SINK);
-
-	MT_lock_set(&c->l);
-	c->current++;
-	MT_lock_unset(&c->l);
 }
 
 static str

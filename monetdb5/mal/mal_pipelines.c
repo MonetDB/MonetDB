@@ -182,16 +182,6 @@ thread_runoncpu(int cpu)
 }
 #endif
 
-static int
-PIPELINEnext_counter(Pipeline *p)
-{
-	MT_lock_set(&p->p->l);
-	int n = (int) p->p->master_counter++;
-	//p->p->counters[p->wid] = n;
-	MT_lock_unset(&p->p->l);
-	return n;
-}
-
 static void
 PIPELINEworker(void *T)
 {
@@ -222,15 +212,15 @@ PIPELINEworker(void *T)
 			*p = (Pipeline) {
 				.p = s,
 				.wid = (int) ATOMIC_INC(&s->workers),
+				.tseqnr = 0,
 				.seqnr = -1,
 				.wls = NULL,
 			};
 			MT_thread_setdata(p);
-			stk->stk[s->mb->stmt[s->start]->argv[1]].val.ival = PIPELINEnext_counter(p);
+			stk->stk[s->mb->stmt[s->start]->argv[1]].val.ival = -1;
 			stk->stk[s->mb->stmt[s->start]->argv[2]].val.pval = p;
 			/* the maxparts (arg 3) is generated ie constant value on the stack */
 			str error = runMALsequence(s->cntxt, s->mb, s->start+1, s->stop, stk, 0, 0);
-			//PIPELINEclear_counter(p);
 			if (error) {
 				MT_lock_set(&p->p->l);
 				/* only collect one error (from one thread, needed for stable testing) */
@@ -273,7 +263,7 @@ PIPELINESinitialize(void)
 		workers[i].q = q_create(256, name);
 		if (first)				/* only initialize once */
 			ATOMIC_PTR_INIT(&workers[i].cntxt, NULL);
-		snprintf(name, sizeof(name), "PIPELINEworker%d", i);
+		snprintf(name, sizeof(name), "PPworker%d", i);
 		if (MT_create_thread(&workers[i].id, PIPELINEworker, (void *) &workers[i], MT_THR_JOINABLE, name) < 0) {
 			workers[i].flag = IDLE;
 		} else {
@@ -322,8 +312,8 @@ runMALpipelines(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, int maxpart
 	snprintf(name, sizeof(name), "PIPELINE%d", cntxt->idx);
 	MT_sema_init(&s->s, 0, name);
 	MT_lock_init(&s->l, name);
-	//for (size_t i = 0; i < sizeof(s->counters) / sizeof(s->counters[0]); i++)
-		//s->counters[i] = -1;
+	for(int i = 0; i<8; i++) /* pass any token to the first worker */
+		s->channel[i] = 0;
 	MT_cond_init(&s->cond, "pipeline-workers");
 	/* somehow get number of workers from statement/barrier */
 	for (int i = 0; i < s->nr_workers; i++)
@@ -395,12 +385,22 @@ stopMALpipelines(void)
 	MT_lock_unset(&pipelineLock);
 }
 
-/*
-static void
-PIPELINEclear_counter(Pipeline *p)
+int
+pipeline_pass_token(Pipeline *p, int channel, int id)
 {
 	MT_lock_set(&p->p->l);
-	p->p->counters[p->wid] = -1;
+	p->p->channel[channel] = (id+1) % p->p->nr_workers;
+	MT_cond_broadcast(&p->p->cond); /* deblock all workers */
 	MT_lock_unset(&p->p->l);
+	return p->p->error?-1:0;
 }
-*/
+
+int
+pipeline_get_token(Pipeline *p, int channel, int id, bool *done)
+{
+	MT_lock_set(&p->p->l);
+	while (p->p->channel[channel] != (id % p->p->nr_workers) && !p->p->error && !(*done))
+		MT_cond_wait(&p->p->cond, &p->p->l);
+	MT_lock_unset(&p->p->l);
+	return p->p->error?-1:0;
+}

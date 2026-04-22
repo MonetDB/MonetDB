@@ -12,6 +12,7 @@
 #define _PQC_FILEMETADATA_H_
 
 #include <stdbool.h>
+#include <stdint.h>
 #include <sys/types.h>
 
 /* get windows defa */
