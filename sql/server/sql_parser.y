@@ -1175,7 +1175,7 @@ schema:
 			append_int(l, $3);
 			$$ = _symbol_create_list( SQL_CREATE_SCHEMA, l);
 			if ($7 && dlist_length($7))
-				$$ = _symbol_create_list(SQL_MULSTMT, dlist_prepend(SA, $7, $$));
+				$$ = _symbol_create_list(SQL_CREATE_SCHEMA_WITH_ELEMENTS, dlist_prepend(SA, $7, $$));
 		}
 	|	drop SCHEMA if_exists qname drop_action
 		{
@@ -8045,6 +8045,7 @@ char *token2string(tokens token)
 	SQL(CREATE_INDEX);
 	SQL(CREATE_ROLE);
 	SQL(CREATE_SCHEMA);
+	SQL(CREATE_SCHEMA_WITH_ELEMENTS);
 	SQL(CREATE_SEQ);
 	SQL(CREATE_TABLE);
 	SQL(CREATE_TABLE_LOADER);

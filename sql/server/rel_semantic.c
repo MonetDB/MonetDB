@@ -194,7 +194,6 @@ rel_semantic(sql_query *query, symbol *s)
 	case SQL_MULSTMT: {
 		dnode *d;
 		sql_rel *r = NULL;
-		sql_schema *os = cur_schema(sql);
 
 		if (!stack_push_frame(sql, "%MUL"))
 			return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -212,7 +211,6 @@ rel_semantic(sql_query *query, symbol *s)
 				r = nr;
 		}
 		stack_pop_frame(sql);
-		sql->session->schema = os;
 		return r;
 	}
 	case SQL_PREP:

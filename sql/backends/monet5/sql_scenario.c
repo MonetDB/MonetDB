@@ -1389,6 +1389,197 @@ SQLchannelcmd(Client c, backend *be)
 	return msg;
 }
 
+static char *
+parse_execute(Client c, backend *be, symbol *sym)
+{
+	mvc *m = be->mvc;
+	int err = 0, pstatus = m->session->status;
+	sql_rel *r = sql_symbol2relation(be, sym);
+	char *msg = NULL;
+
+	if (!r || (err = mvc_status(m) && m->type != Q_TRANS && *m->errstr)) {
+		if (strlen(m->errstr) > 6 && m->errstr[5] == '!')
+			msg = createException(PARSE, "SQLparser", "%s", m->errstr);
+		else
+			msg = createException(PARSE, "SQLparser", SQLSTATE(42000) "%s", m->errstr);
+		*m->errstr = 0;
+		msg = handle_error(m, pstatus, msg);
+		sqlcleanup(be, err);
+		return msg;
+	}
+
+	int oldvtop = c->curprg->def->vtop;
+	int oldstop = c->curprg->def->stop;
+	(void)runtimeProfileSetTag(c); /* generate and set the tag in the mal block of the clients current program. */
+	if (m->emode != m_prepare ||
+			(m->emode == m_prepare && m->emod == mod_exec && is_ddl(r->op)) /* direct execution prepare */) {
+		mvc_query_processed(m);
+
+		err = 0;
+		setVarType(c->curprg->def, 0, 0);
+		if (m->emode != m_prepare && be->subbackend && be->subbackend->check(be->subbackend, r)) {
+			res_table *rt = NULL;
+			if (be->subbackend->exec(be->subbackend, r, be->result_id++, &rt) == NULL) { /* on error fall back */
+				be->subbackend->reset(be->subbackend);
+				if (rt) {
+					rt->next = be->results;
+					be->results = rt;
+				}
+				return NULL;
+			}
+			be->subbackend->reset(be->subbackend);
+		}
+
+		int opt = 0;
+		if (m->emode == m_prepare && m->emod == mod_exec) {
+			/* generated the named parameters for the placeholders */
+			if (backend_dumpstmt(be, c->curprg->def, r->r, !(m->emod == mod_exec), 0, c->query) < 0) {
+				msg = handle_error(m, 0, msg);
+				err = 1;
+				MSresetInstructions(c->curprg->def, oldstop);
+				freeVariables(c, c->curprg->def, NULL, oldvtop);
+			}
+			r = r->l;
+			m->emode = m_normal;
+			m->emod = mod_none;
+		}
+		if (!err && backend_dumpstmt(be, c->curprg->def, r, !(m->emod == mod_exec), 0, c->query) < 0) {
+			msg = handle_error(m, 0, msg);
+			err = 1;
+			MSresetInstructions(c->curprg->def, oldstop);
+			freeVariables(c, c->curprg->def, NULL, oldvtop);
+			c->curprg->def->errors = NULL;
+		} else {
+			opt = ((m->emod == mod_exec) == 0); /* no need to optimize prepare - execute */
+		}
+
+		if (be->mvc->emod == mod_explain_phys &&
+				be->mvc->step == S_PHYSICAL &&
+				be->mvc->temporal == T_BEFORE)
+			opt = 0;
+
+		if (err)
+			m->session->status = -10;
+		if (err == 0) {
+			/* no parsing error encountered, finalize the code of the query wrapper */
+			pushEndInstruction(c->curprg->def);
+
+			/* check the query wrapper for errors */
+			if (msg == MAL_SUCCEED)
+				msg = chkTypes(c->usermodule, c->curprg->def, TRUE);
+
+			if (msg == MAL_SUCCEED && opt) {
+				msg = SQLoptimizeQuery(c, c->curprg->def);
+				if (msg != MAL_SUCCEED) {
+					c->curprg->def->errors = NULL;
+					MSresetInstructions(c->curprg->def, oldstop);
+					freeVariables(c, c->curprg->def, NULL, oldvtop);
+					return msg;
+				}
+			} else if (msg == MAL_SUCCEED && !opt) {
+				c->curprg->def->vsize = c->curprg->def->vtop; /* no optimizations, ie no need for extra variables */
+			}
+
+			/* we know more in this case than chkProgram(c->fdout, c->usermodule, c->curprg->def); */
+			if (msg == MAL_SUCCEED && c->curprg->def->errors) {
+				msg = c->curprg->def->errors;
+				c->curprg->def->errors = 0;
+				/* restore the state */
+				MSresetInstructions(c->curprg->def, oldstop);
+				freeVariables(c, c->curprg->def, NULL, oldvtop);
+				if (msg == NULL && *m->errstr){
+					if (strlen(m->errstr) > 6 && m->errstr[5] == '!')
+						msg = createException(PARSE, "SQLparser", "%s", m->errstr);
+					else
+						msg = createException(PARSE, "SQLparser", SQLSTATE(M0M27) "Semantic errors %s", m->errstr);
+					*m->errstr = 0;
+				} else if (msg) {
+					str newmsg = createException(PARSE, "SQLparser", SQLSTATE(M0M27) "Semantic errors %s", msg);
+					msg = newmsg;
+				}
+			}
+		}
+	} else {
+		char *q_copy = ma_strdup(m->sa, c->query);
+
+		be->q = NULL;
+		if (!q_copy) {
+			msg = createException(PARSE, "SQLparser", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			err = 1;
+		} else {
+			be->q = qc_insert(m->qc, m->sa,	/* the allocator */
+					r,	/* keep relational query */
+					m->sym,	/* the sql symbol tree */
+					m->params,	/* the argument list */
+					m->type,	/* the type of the statement */
+					q_copy,
+					be->no_mitosis);
+			if (!be->q) {
+				msg = createException(PARSE, "SQLparser", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				err = 1;
+			}
+		}
+		mvc_query_processed(m);
+		if (be->q && backend_dumpproc(be, c, be->q, r) < 0) {
+			msg = handle_error(m, 0, msg);
+			err = 1;
+		}
+
+		/* passed over to query cache, used during dumpproc */
+		m->sa = NULL;
+		m->sym = NULL;
+		m->runs = NULL;
+		m->params = NULL;
+
+		if (be->q) {
+			int res = 0;
+			if (!err && (res = mvc_export_prepare(be, c->fdout)) < 0) {
+				msg = createException(PARSE, "SQLparser", SQLSTATE(45000) "Export operation failed: %s", mvc_export_error(be, c->fdout, res));
+				err = 1;
+			}
+			int qc_id = be->q->id;
+			if (err) {
+				be->q->name = NULL; /* later remove cleanup from mal from qc code */
+				qc_delete(m->qc, be->q);
+			}
+			be->result_id = qc_id;
+			be->q = NULL;
+		}
+		if (err)
+			m->session->status = -10;
+		sqlcleanup(be, 0);
+		c->query = NULL;
+		return msg;
+	}
+	if (msg)
+		return msg;
+
+	if (c->curprg->def->stop == 1) {
+		printf("not used ???\n");
+		sqlcleanup(be, 0);
+		return NULL;
+	}
+
+	assert (m->emode != m_deallocate && m->emode != m_prepare);
+	assert (c->curprg->def->stop > 2);
+
+	msg = SQLrun(c, be);
+
+	if (m->type == Q_SCHEMA && m->qc != NULL)
+		qc_clean(m->qc);
+	be->q = NULL;
+	if (msg)
+		m->session->status = -10;
+	sqlcleanup(be, (!msg) ? 0 : -1);
+	MSresetInstructions(c->curprg->def, 1);
+	freeVariables(c, c->curprg->def, NULL, oldvtop);
+	/*
+	 * Any error encountered during execution should block further processing
+	 * unless auto_commit has been set.
+	 */
+	return msg;
+}
+
 /*
  * The SQL block is stored in the client input buffer, from which it
  * can be parsed by the SQL parser. The client structure contains
@@ -1492,163 +1683,24 @@ SQLparser_body(Client c, backend *be)
 			msg = createException(PARSE, "SQLparser", SQLSTATE(45000) "Export operation failed: %s", mvc_export_error(be, c->fdout, err));
 		sqlcleanup(be, 0);
 		return msg;
+	} else if (m->sym && m->sym->token == SQL_CREATE_SCHEMA_WITH_ELEMENTS) {
+		dlist *stmts = m->sym->data.lval;
+		sql_schema *os = cur_schema(m);
+		symbol *s = stmts->h->data.sym;
+		msg = parse_execute(c, be, s);
+		if (!msg) {
+			dlist *auth_name = s->data.lval->h->data.lval;
+			char *name = auth_name->h->data.sval;
+			if (mvc_set_schema(m, name)) {
+				for (dnode *n = stmts->h->next; n && !msg; n = n->next) {
+					s = n->data.sym;
+					msg = parse_execute(c, be, s);
+				}
+			}
+		}
+		m->session->schema = os;
 	} else {
-		sql_rel *r = sql_symbol2relation(be, m->sym);
-
-		if (!r || (err = mvc_status(m) && m->type != Q_TRANS && *m->errstr)) {
-			if (strlen(m->errstr) > 6 && m->errstr[5] == '!')
-				msg = createException(PARSE, "SQLparser", "%s", m->errstr);
-			else
-				msg = createException(PARSE, "SQLparser", SQLSTATE(42000) "%s", m->errstr);
-			*m->errstr = 0;
-			msg = handle_error(m, pstatus, msg);
-			sqlcleanup(be, err);
-			goto finalize;
-		}
-
-		int oldvtop = c->curprg->def->vtop;
-		int oldstop = c->curprg->def->stop;
-		(void)runtimeProfileSetTag(c); /* generate and set the tag in the mal block of the clients current program. */
-		if (m->emode != m_prepare ||
-			(m->emode == m_prepare && m->emod == mod_exec && is_ddl(r->op)) /* direct execution prepare */) {
-			mvc_query_processed(m);
-
-			err = 0;
-			setVarType(c->curprg->def, 0, 0);
-			if (m->emode != m_prepare && be->subbackend && be->subbackend->check(be->subbackend, r)) {
-				res_table *rt = NULL;
-				if (be->subbackend->exec(be->subbackend, r, be->result_id++, &rt) == NULL) { /* on error fall back */
-					be->subbackend->reset(be->subbackend);
-					if (rt) {
-						rt->next = be->results;
-						be->results = rt;
-					}
-					return NULL;
-				}
-				be->subbackend->reset(be->subbackend);
-			}
-
-			int opt = 0;
-			if (m->emode == m_prepare && m->emod == mod_exec) {
-				/* generated the named parameters for the placeholders */
-				if (backend_dumpstmt(be, c->curprg->def, r->r, !(m->emod == mod_exec), 0, c->query) < 0) {
-					msg = handle_error(m, 0, msg);
-					err = 1;
-					MSresetInstructions(c->curprg->def, oldstop);
-					freeVariables(c, c->curprg->def, NULL, oldvtop);
-				}
-				r = r->l;
-				m->emode = m_normal;
-				m->emod = mod_none;
-			}
-			if (!err && backend_dumpstmt(be, c->curprg->def, r, !(m->emod == mod_exec), 0, c->query) < 0) {
-				msg = handle_error(m, 0, msg);
-				err = 1;
-				MSresetInstructions(c->curprg->def, oldstop);
-				freeVariables(c, c->curprg->def, NULL, oldvtop);
-				c->curprg->def->errors = NULL;
-			} else {
-				opt = ((m->emod == mod_exec) == 0); /* no need to optimize prepare - execute */
-			}
-
-			if (be->mvc->emod == mod_explain_phys &&
-				be->mvc->step == S_PHYSICAL &&
-				be->mvc->temporal == T_BEFORE)
-				opt = 0;
-
-			if (err)
-				m->session->status = -10;
-			if (err == 0) {
-				/* no parsing error encountered, finalize the code of the query wrapper */
-				pushEndInstruction(c->curprg->def);
-
-				/* check the query wrapper for errors */
-				if (msg == MAL_SUCCEED)
-					msg = chkTypes(c->usermodule, c->curprg->def, TRUE);
-
-				if (msg == MAL_SUCCEED && opt) {
-					msg = SQLoptimizeQuery(c, c->curprg->def);
-					if (msg != MAL_SUCCEED) {
-						c->curprg->def->errors = NULL;
-						MSresetInstructions(c->curprg->def, oldstop);
-						freeVariables(c, c->curprg->def, NULL, oldvtop);
-						goto finalize;
-					}
-				} else if (msg == MAL_SUCCEED && !opt) {
-					c->curprg->def->vsize = c->curprg->def->vtop; /* no optimizations, ie no need for extra variables */
-				}
-
-				/* we know more in this case than chkProgram(c->fdout, c->usermodule, c->curprg->def); */
-				if (msg == MAL_SUCCEED && c->curprg->def->errors) {
-					msg = c->curprg->def->errors;
-					c->curprg->def->errors = 0;
-					/* restore the state */
-					MSresetInstructions(c->curprg->def, oldstop);
-					freeVariables(c, c->curprg->def, NULL, oldvtop);
-					if (msg == NULL && *m->errstr){
-						if (strlen(m->errstr) > 6 && m->errstr[5] == '!')
-							msg = createException(PARSE, "SQLparser", "%s", m->errstr);
-						else
-							msg = createException(PARSE, "SQLparser", SQLSTATE(M0M27) "Semantic errors %s", m->errstr);
-						*m->errstr = 0;
-					} else if (msg) {
-						str newmsg = createException(PARSE, "SQLparser", SQLSTATE(M0M27) "Semantic errors %s", msg);
-						msg = newmsg;
-					}
-				}
-			}
-		} else {
-			char *q_copy = ma_strdup(m->sa, c->query);
-
-			be->q = NULL;
-			if (!q_copy) {
-				msg = createException(PARSE, "SQLparser", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-				err = 1;
-			} else {
-				be->q = qc_insert(m->qc, m->sa,	/* the allocator */
-						  r,	/* keep relational query */
-						  m->sym,	/* the sql symbol tree */
-						  m->params,	/* the argument list */
-						  m->type,	/* the type of the statement */
-						  q_copy,
-						  be->no_mitosis);
-				if (!be->q) {
-					msg = createException(PARSE, "SQLparser", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-					err = 1;
-				}
-			}
-			mvc_query_processed(m);
-			if (be->q && backend_dumpproc(be, c, be->q, r) < 0) {
-				msg = handle_error(m, 0, msg);
-				err = 1;
-			}
-
-			/* passed over to query cache, used during dumpproc */
-			m->sa = NULL;
-			m->sym = NULL;
-			m->runs = NULL;
-			m->params = NULL;
-
-			if (be->q) {
-				int res = 0;
-				if (!err && (res = mvc_export_prepare(be, c->fdout)) < 0) {
-					msg = createException(PARSE, "SQLparser", SQLSTATE(45000) "Export operation failed: %s", mvc_export_error(be, c->fdout, res));
-					err = 1;
-				}
-				int qc_id = be->q->id;
-				if (err) {
-					be->q->name = NULL; /* later remove cleanup from mal from qc code */
-					qc_delete(m->qc, be->q);
-				}
-				be->result_id = qc_id;
-				be->q = NULL;
-			}
-			if (err)
-				m->session->status = -10;
-			sqlcleanup(be, 0);
-			c->query = NULL;
-			return msg;
-		}
+		msg = parse_execute(c, be, m->sym);
 	}
 finalize:
 	if (m->sa)
@@ -1713,7 +1765,6 @@ SQLengine_(Client c)
 	if (msg || c->mode <= FINISHCLIENT)
 		return msg;
 
-	int oldvtop = c->curprg?c->curprg->def->vtop:0;
 	if (be->language == 'X') {
 		return SQLchannelcmd(c, be);
 	} else if (be->language !='S') {
@@ -1729,30 +1780,6 @@ SQLengine_(Client c)
 	if (msg || c->mode <= FINISHCLIENT)
 		return msg;
 
-	if (c->curprg->def->stop == 1) {
-		sqlcleanup(be, 0);
-		return NULL;
-	}
-
-	mvc *m = be->mvc;
-
-	assert (m->emode != m_deallocate && m->emode != m_prepare);
-	assert (c->curprg->def->stop > 2);
-
-	msg = SQLrun(c, be);
-
-	if (m->type == Q_SCHEMA && m->qc != NULL)
-		qc_clean(m->qc);
-	be->q = NULL;
-	if (msg)
-		m->session->status = -10;
-	sqlcleanup(be, (!msg) ? 0 : -1);
-	MSresetInstructions(c->curprg->def, 1);
-	freeVariables(c, c->curprg->def, NULL, oldvtop);
-	/*
-	 * Any error encountered during execution should block further processing
-	 * unless auto_commit has been set.
-	 */
 	return msg;
 }
 

@@ -1981,17 +1981,7 @@ rel_create_schema(sql_query *query, dlist *auth_name, int if_not_exists)
 			return sql_error(sql, 02, SQLSTATE(3F000) "CREATE SCHEMA: name '%s' already in use", name);
 		return rel_psm_block(sql->sa, new_exp_list(sql->sa));
 	} else {
-		sql_schema *ss = SA_ZNEW(sql->sa, sql_schema);
-		sql_rel *ret = rel_create_schema_dll(sql->sa, name, auth, 0);
-
-		ss->base.name = name;
-		ss->auth_id = auth_id;
-		ss->owner = sql->user_id;
-
-		/* we need to create schema elements later, so switch to the new schema */
-		if (ret && stack_has_frame(sql, "%MUL") != 0)
-			sql->session->schema = ss;
-		return ret;
+		return rel_create_schema_dll(sql->sa, name, auth, 0);
 	}
 }
 
