@@ -808,6 +808,56 @@ BONDknn(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
+//#if 0
+static str
+_process_block(fblock *blk, dbl *query_vals,
+             size_t nrows, size_t ncols, dbl threshold,
+             oid *bc, dbl *bd, BUN *kcands)
+{
+    BUN ncand = (BUN)nrows;
+
+    // Outer dimension loop in tiles of 8
+    for (size_t i = 0; i < ncols; i += 8) {
+        size_t i_end = (i + 8 > ncols) ? ncols : i + 8;
+
+        // Inner candidate loop in tiles of 8
+        for (BUN j = 0; j < ncand; j += 8) {
+            BUN j_end = (j + 8 > ncand) ? ncand : j + 8;
+
+            // Process the 8x8 (or smaller) tile
+            for (size_t ii = i; ii < i_end; ii++) {
+                dbl qv = query_vals[ii];
+                dbl *col = (dbl*)blk + (ii * nrows);
+
+                for (BUN jj = j; jj < j_end; jj++) {
+                    oid idx = bc[jj];
+                    dbl dv = col[idx];
+                    dbl diff = qv - dv;
+                    bd[jj] += diff * diff;
+                }
+            }
+        }
+
+        // Prune logic: only check threshold after completing a dimension tile
+        if (threshold != DBL_MAX) {
+            BUN write_pos = 0;
+            for (BUN read_pos = 0; read_pos < ncand; read_pos++) {
+                if (bd[read_pos] <= threshold) {
+                    bc[write_pos] = bc[read_pos];
+                    bd[write_pos] = bd[read_pos];
+                    write_pos++;
+                }
+            }
+            ncand = write_pos;
+        }
+    }
+
+    *kcands = ncand;
+    return MAL_SUCCEED;
+}
+//#endif
+
+#if 0
 static str
 process_block(fblock *blk, dbl *query_vals,
 	   	size_t nrows, size_t ncols, dbl threshold,
@@ -843,6 +893,7 @@ process_block(fblock *blk, dbl *query_vals,
 	*kcands = ncand;
 	return MAL_SUCCEED;
 }
+#endif
 
 static char*
 pdx(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -915,7 +966,7 @@ pdx(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 		str msg;
 		BUN ncand = (BUN) nrows;
-		if ((msg = process_block(blk, query_vals, nrows, ndims, threshold, bc, bd, &ncand)) != MAL_SUCCEED) {
+		if ((msg = _process_block(blk, query_vals, nrows, ndims, threshold, bc, bd, &ncand)) != MAL_SUCCEED) {
 			ma_close(&ta_state);
 			BBPunfix(b->batCacheid);
 			return msg;

@@ -1997,7 +1997,7 @@ GDKmremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 }
 
 #define MA_NUM_BLOCKS 64
-#define MA_BLOCK_SIZE (128*1024)
+#define MA_BLOCK_SIZE (256*1024)
 #define MA_HEADER_SIZE (2*(sizeof(size_t)))
 #if SIZEOF_SIZE_T == 4
 #define CANARY_VALUE ((size_t) UINT32_C(0xDEADBEEF))

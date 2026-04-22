@@ -195,7 +195,6 @@ typedef union  {
 
 typedef union {
 	fblock_header header;
-	// only 8 pages will fit in twidth for now
 	uint8_t data[64*1024*4] __attribute__((__nonstring__));
 } fblock;
 
