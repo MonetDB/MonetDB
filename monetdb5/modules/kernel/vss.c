@@ -176,6 +176,7 @@ heap_down(oid *hcand, dbl *hd, BUN p, BUN k)
 	}
 }
 
+#if 0
 static inline void
 heap_del(oid *hcand, dbl *hd, BUN k)
 {
@@ -183,6 +184,7 @@ heap_del(oid *hcand, dbl *hd, BUN k)
 	hd[0] = hd[k-1];
 	heap_down(hcand, hd, 0, k-1);
 }
+#endif
 
 static inline void
 heap_up(oid *hcand, dbl *hd, BUN p)
