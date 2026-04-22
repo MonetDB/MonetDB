@@ -1172,9 +1172,10 @@ schema:
 			append_list(l, $4);
 			append_symbol(l, $5);
 			append_symbol(l, $6);
-			append_list(l, $7);
 			append_int(l, $3);
 			$$ = _symbol_create_list( SQL_CREATE_SCHEMA, l);
+			if ($7 && dlist_length($7))
+				$$ = _symbol_create_list(SQL_MULSTMT, dlist_prepend(SA, $7, $$));
 		}
 	|	drop SCHEMA if_exists qname drop_action
 		{

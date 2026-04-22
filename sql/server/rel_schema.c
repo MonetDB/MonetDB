@@ -1962,7 +1962,7 @@ rel_create_schema_dll(allocator *sa, char *sname, char *auth, int nr)
 }
 
 static sql_rel *
-rel_create_schema(sql_query *query, dlist *auth_name, dlist *schema_elements, int if_not_exists)
+rel_create_schema(sql_query *query, dlist *auth_name, int if_not_exists)
 {
 	mvc *sql = query->sql;
 	char *name = dlist_get_schema_name(auth_name);
@@ -1981,8 +1981,6 @@ rel_create_schema(sql_query *query, dlist *auth_name, dlist *schema_elements, in
 			return sql_error(sql, 02, SQLSTATE(3F000) "CREATE SCHEMA: name '%s' already in use", name);
 		return rel_psm_block(sql->sa, new_exp_list(sql->sa));
 	} else {
-		sql_schema *os = cur_schema(sql);
-		dnode *n = schema_elements->h;
 		sql_schema *ss = SA_ZNEW(sql->sa, sql_schema);
 		sql_rel *ret = rel_create_schema_dll(sql->sa, name, auth, 0);
 
@@ -1990,18 +1988,9 @@ rel_create_schema(sql_query *query, dlist *auth_name, dlist *schema_elements, in
 		ss->auth_id = auth_id;
 		ss->owner = sql->user_id;
 
-		sql->session->schema = ss;
-		while (n) {
-			sql_rel *res = rel_semantic(query, n->data.sym);
-			if (!res) {
-				rel_destroy(sql, ret);
-				sql->session->schema = os;
-				return NULL;
-			}
-			ret = rel_list(sql->sa, ret, res);
-			n = n->next;
-		}
-		sql->session->schema = os;
+		/* we need to create schema elements later, so switch to the new schema */
+		if (ret && stack_has_frame(sql, "%MUL") != 0)
+			sql->session->schema = ss;
 		return ret;
 	}
 }
@@ -3099,9 +3088,7 @@ rel_schemas(sql_query *query, symbol *s)
 	{
 		dlist *l = s->data.lval;
 
-		ret = rel_create_schema(query, l->h->data.lval,
-				l->h->next->next->next->data.lval,
-				l->h->next->next->next->next->data.i_val); /* if not exists */
+		ret = rel_create_schema(query, l->h->data.lval, l->h->next->next->next->data.i_val); /* if not exists */
 	} 	break;
 	case SQL_DROP_SCHEMA:
 	{
