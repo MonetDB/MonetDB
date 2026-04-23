@@ -1698,6 +1698,7 @@ SQLparser_body(Client c, backend *be)
 				}
 			}
 		}
+		m->session->schema_name = os->base.name;
 		m->session->schema = os;
 	} else {
 		msg = parse_execute(c, be, m->sym);
