@@ -108,3 +108,4 @@ KNOWNFAIL?7920-correlated-top-1-subquery-bug
 KNOWNFAIL?7921-correlated-floor-ratio-bug
 KNOWNFAIL?7922-sum-overflow-error-bug
 KNOWNFAIL?7923-sum-decimal-conversion-overflow-bug
+KNOWNFAIL?7924-sum-double-overflow-bug
