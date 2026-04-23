@@ -97,3 +97,4 @@ KNOWNFAIL?7774-insert-into-renamed-table-assertion-failure
 7911-query-without-result-bug
 7913-where-exist-subquery-bug
 7914-exp_bin-assertion-failure
+7915-delete-exists-having-bug
