@@ -94,6 +94,7 @@ KNOWNFAIL?7774-insert-into-renamed-table-assertion-failure
 7903-query-without-result-bug
 7905-sum-case-subquery-bug
 7906-rel2bin_join-assertion-failure
+7910-where-case-when-and-bug
 7911-query-without-result-bug
 7912-where-or-1-is-1-bug
 7913-where-exist-subquery-bug
