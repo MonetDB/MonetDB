@@ -104,3 +104,4 @@ KNOWNFAIL?7774-insert-into-renamed-table-assertion-failure
 KNOWNFAIL?7917-correlated-count-query-bug
 KNOWNFAIL?7918-subquery-limit-offset-bug
 KNOWNFAIL?7919-correlated-count-distinct-bug
+KNOWNFAIL?7920-correlated-top-1-subquery-bug
