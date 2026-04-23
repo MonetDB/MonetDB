@@ -1,0 +1,151 @@
+statement ok
+CREATE TABLE t_bug12 (
+  id INT PRIMARY KEY,
+  p SMALLINT NOT NULL,
+  ot INT NOT NULL,
+  v INT NOT NULL,
+  vf DOUBLE PRECISION NOT NULL
+)
+
+statement ok
+CREATE TABLE t_bug12_aux (
+  id INT PRIMARY KEY,
+  ref_id INT NOT NULL
+)
+
+statement ok rowcount 8
+INSERT INTO t_bug12 VALUES
+  (2, -9, 2509, -32768, -1e308),
+  (3, -9, 2518, 960, 16777216.0),
+  (10, -9, 2581, -836, -1e308),
+  (12, -9, 2599, 32767, 8e-8),
+  (13, -9, 2608, -805, 1e4),
+  (17, -11, 4000, 976, 711050.39981052),
+  (18, -11, 4002, -202, -90567.44172833),
+  (19, -11, 4004, -202, 1e-308)
+
+statement ok rowcount 2
+INSERT INTO t_bug12_aux VALUES
+  (1, 13),
+  (2, 13)
+
+-- original window query
+-- MonetDB returns: 22003!overflow in calculation. but other RDBMS do not.
+-- the sum(t_bug12.vf) needs to add: -1e308 + -1e308 + 1e308, which apparently fails with overflow in calculation error, see below.
+query II nosort
+SELECT p, v
+FROM (
+  SELECT s.p,
+         s.v,
+         SUM(s.vf) OVER (
+           PARTITION BY s.p
+           ORDER BY s.ot ASC
+           RANGE BETWEEN 5 PRECEDING AND 5 FOLLOWING
+         ) AS wa
+  FROM t_bug12 AS s
+  LEFT JOIN t_bug12_aux AS a ON a.ref_id = s.id
+) x
+WHERE wa >= 2
+ORDER BY p, v
+----
+-11
+-202
+-11
+-202
+-11
+976
+-9
+-805
+-9
+-805
+-9
+960
+
+-- the sum(t_bug12.vf) needs to add: -1e308 + -1e308 + 1e308, which apparently fails with overflow in calculation error
+query R nosort
+SELECT -1e308 + -1e308 + 1e308 as sum
+----
+-100000000000000001097906362944045541740492309677311846336810682903157585404911491537163328978494688899061249669721172515611590283743140088328307009198146046031271664502933027185697489699588559043338384466165001178426897626212945177628091195786707458122783970171784415105291802893207873272974885715430223118336.000
+
+-- if we add precedence MonetDB can compute without overflow in calculation error
+query R nosort
+SELECT -1e308 + (-1e308 + 1e308) as sum
+----
+-100000000000000001097906362944045541740492309677311846336810682903157585404911491537163328978494688899061249669721172515611590283743140088328307009198146046031271664502933027185697489699588559043338384466165001178426897626212945177628091195786707458122783970171784415105291802893207873272974885715430223118336.000
+
+
+-- Note: without the "WHERE wa >= 2" part it does not return: 22003!overflow in calculation.
+query II nosort
+SELECT p, v
+FROM (
+  SELECT s.p,
+         s.v,
+         SUM(s.vf) OVER (
+           PARTITION BY s.p
+           ORDER BY s.ot ASC
+           RANGE BETWEEN 5 PRECEDING AND 5 FOLLOWING
+         ) AS wa
+  FROM t_bug12 AS s
+  LEFT JOIN t_bug12_aux AS a ON a.ref_id = s.id
+) x
+ORDER BY p, v
+----
+-11
+-202
+-11
+-202
+-11
+976
+-9
+-32768
+-9
+-836
+-9
+-805
+-9
+-805
+-9
+960
+-9
+32767
+
+-- equivalent rewrite
+query II nosort
+SELECT p, v
+FROM (
+  SELECT s.p, s.v, s.ot, s.vf
+  FROM t_bug12 AS s
+  LEFT JOIN t_bug12_aux AS a ON a.ref_id = s.id
+) AS t1
+WHERE (
+  SELECT SUM(t2.vf)
+  FROM (
+    SELECT s.p, s.v, s.ot, s.vf
+    FROM t_bug12 AS s
+    LEFT JOIN t_bug12_aux AS a ON a.ref_id = s.id
+  ) AS t2
+  WHERE t2.p = t1.p
+    AND t2.ot >= t1.ot - 5
+    AND t2.ot <= t1.ot + 5
+) >= 2
+ORDER BY p, v
+----
+-11
+-202
+-11
+-202
+-11
+976
+-9
+-805
+-9
+-805
+-9
+960
+
+statement ok
+DROP TABLE t_bug12_aux
+
+statement ok
+DROP TABLE t_bug12
+
