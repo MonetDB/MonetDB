@@ -598,6 +598,8 @@ load_column(sql_trans *tr, sql_table *t, res_table *rt_cols)
 		sql_init_subtype(&c->type, lt, sz, d);
 	}
 	c->type.multiset = *(bte*)store->table_api.table_fetch_value(rt_cols, find_sql_column(columns, "multiset"));
+	if (c->type.multiset == MS_VECTOR && sz)
+		c->type.digits = sz;
 	c->def = NULL;
 	def = (char*)store->table_api.table_fetch_value(rt_cols, find_sql_column(columns, "default"));
 	if (!strNil(def))
