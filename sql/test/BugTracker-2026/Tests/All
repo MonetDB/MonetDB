@@ -118,3 +118,4 @@ KNOWNFAIL?7930-rel2bin_select-assertion-failure
 KNOWNFAIL?7931-rel2bin_select-assertion-failure
 7932-canditer_init-assertion-failure
 7933-query-without-result-bug
+KNOWNFAIL?7934-ALGouterselect-assertion-failure
