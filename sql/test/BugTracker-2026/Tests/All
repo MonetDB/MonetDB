@@ -114,3 +114,4 @@ KNOWNFAIL?7926-lag-null-changes-error-issue
 7927-ALGouterselect-assertion-failure
 KNOWNFAIL?7928-rel2bin_semijoin-assertion-failure
 KNOWNFAIL?7929-rel2bin_join-assertion-failure
+KNOWNFAIL?7930-rel2bin_select-assertion-failure
