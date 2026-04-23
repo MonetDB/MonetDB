@@ -514,6 +514,8 @@ forkMserver(const char *database, sabdb** stats, bool force)
 			 "--set=merovingian_uri=mapi:monetdb://%s:%u/%s",
 			 _mero_hostname, mport, database);
 	argv[c++] = _mero_mserver;
+	if (getuid() == 0)
+		argv[c++] = "--accept-the-risks-running-as-root";
 	argv[c++] = dbpath;
 	argv[c++] = muri;
 	if (dbextra != NULL) {

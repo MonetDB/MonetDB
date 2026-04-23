@@ -483,6 +483,18 @@ main(int argc, char *argv[])
 	int retfd = -1;
 	int dup_err;
 
+	if (getuid() == 0) {
+		if (argc > 1 && strcmp(argv[1], "--accept-the-risks-running-as-root") == 0) {
+			Mlevelfprintf(WARNING, stderr, "running as root is not recommended\n");
+			argv[1] = argv[0];
+			argv++;
+			argc--;
+		} else {
+			Mlevelfprintf(ERROR, stderr, "fatal: running as root is not allowed\n");
+			exit(1);
+		}
+	}
+
 	/* seed the randomiser for when we create a database, send responses
 	 * to HELO, etc */
 	srand(time(NULL));
