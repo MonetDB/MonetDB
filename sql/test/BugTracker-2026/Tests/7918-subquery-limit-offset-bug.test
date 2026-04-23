@@ -1,0 +1,74 @@
+statement ok
+CREATE TABLE t_bug8 (
+  id INT NOT NULL,
+  p SMALLINT NOT NULL,
+  o INT NOT NULL,
+  ot INT NOT NULL,
+  od DECIMAL(20, 10) NOT NULL,
+  odt DECIMAL(20, 10) NOT NULL,
+  os VARCHAR(128) NOT NULL,
+  ost VARCHAR(128) NOT NULL,
+  v INT NOT NULL DEFAULT 0 CHECK (v BETWEEN -1000 AND 1000),
+  vn INT NULL,
+  vb BIGINT NOT NULL,
+  vt SMALLINT NOT NULL,
+  vf DOUBLE PRECISION NOT NULL,
+  vc VARCHAR(128) NULL,
+  dt TIMESTAMP NOT NULL,
+  PRIMARY KEY (id),
+  UNIQUE (p, od)
+)
+
+statement ok rowcount 3
+INSERT INTO t_bug8
+  (id, p, o, ot, od, odt, os, ost, v, vn, vb, vt, vf, vc, dt)
+VALUES
+  (17, -12, 2500, 2500, -782211.9318816716, '-782211.9318816716',
+   '4cnpNEEvso6__p1_r0_id17', 'grp_1_0', 501, -141, -429396143068, 59,
+   201774.19929128, '', '2022-01-06 02:46:36'),
+  (19, -12, 2514, 2507, -782211.9318804610, '-782211.9318810663',
+   '  leading__p1_r2_id19', 'grp_1_1', 942, -338, 5223599680331, 74,
+   4e6, 'beta', '1980-12-25 11:57:39'),
+  (18, -12, 2507, 2500, -782211.9318810663, '-782211.9318816716',
+   '-532138__p1_r1_id18', 'grp_1_0', -270, 32767, 3795154580248, 15,
+   -220171.48415278, 'alpha', '1976-06-23 08:20:08')
+
+-- original window query
+query I nosort
+SELECT v
+FROM (
+  SELECT v, ROW_NUMBER() OVER (PARTITION BY p ORDER BY od DESC) AS rn
+  FROM t_bug8
+) x
+WHERE rn = 2
+ORDER BY v
+----
+-270
+
+-- equivalent rewrite
+query I nosort
+SELECT t1.v
+FROM (
+  SELECT p, v, od
+  FROM t_bug8
+) AS t1
+WHERE t1.od = (
+  SELECT nth.od
+  FROM (
+    SELECT t2.od AS od
+    FROM (
+      SELECT p, v, od
+      FROM t_bug8
+    ) AS t2
+    WHERE t2.p = t1.p
+    ORDER BY t2.od DESC
+    LIMIT 1 OFFSET 1
+  ) AS nth
+)
+ORDER BY t1.v
+----
+-270
+
+statement ok
+DROP TABLE t_bug8
+
