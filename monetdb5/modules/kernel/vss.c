@@ -297,8 +297,14 @@ bond_search_fast(bond_collection *bc, const dbl *query_vals,
 			const dbl *col = (const dbl *) (bc->dimsp[o]+z);
 
 	//		lng T0 = GDKusec();
-			GCC_Pragma("GCC ivdep")                                                        \
-			for (i=0; i < sz; i++) {
+			for (i=0; i+2 < sz; i+=2) {
+				dbl diff0 = col[i+0] - qd;
+				dbl diff1 = col[i+1] - qd;
+				td[i+0] += diff0 * diff0;
+				td[i+1] += diff1 * diff1;
+				cur_pruned += (td[i+0] > bc->kth_upper) + (td[i+1] > bc->kth_upper);
+			}
+			for (; i < sz; i++) {
 				dbl diff = col[i] - qd;
 				td[i] += diff * diff;
 				cur_pruned += (td[i] > bc->kth_upper);
