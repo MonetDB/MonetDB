@@ -153,7 +153,7 @@ bond_create(allocator *ma, BAT **dim_bats, int ndims, int k)
 	return NULL;
 }
 
-static inline void
+static void
 heap_down(oid *hcand, dbl *hd, BUN p, BUN k)
 {
 	BUN l = p*2+1, r = p*2+2, q = p;
@@ -172,7 +172,7 @@ heap_down(oid *hcand, dbl *hd, BUN p, BUN k)
 	}
 }
 
-static inline void
+static void
 heap_up(oid *hcand, dbl *hd, BUN p)
 {
 	if (p == 0)
@@ -297,14 +297,7 @@ bond_search_fast(bond_collection *bc, const dbl *query_vals,
 			const dbl *col = (const dbl *) (bc->dimsp[o]+z);
 
 	//		lng T0 = GDKusec();
-			for (i=0; i+2 < sz; i+=2) {
-				dbl diff0 = col[i+0] - qd;
-				dbl diff1 = col[i+1] - qd;
-				td[i+0] += diff0 * diff0;
-				td[i+1] += diff1 * diff1;
-				cur_pruned += (td[i+0] > bc->kth_upper) + (td[i+1] > bc->kth_upper);
-			}
-			for (; i < sz; i++) {
+			for (i=0; i < sz; i++) {
 				dbl diff = col[i] - qd;
 				td[i] += diff * diff;
 				cur_pruned += (td[i] > bc->kth_upper);
@@ -319,7 +312,6 @@ bond_search_fast(bond_collection *bc, const dbl *query_vals,
 			const dbl *col = (const dbl *) (bc->dimsp[o]+z);
 
 	//		lng T0 = GDKusec();
-			GCC_Pragma("GCC ivdep")                                                        \
 			for (i=0; i < sz; i++) {
 				dbl diff = col[tc[i]] - qd;
 				td[i] += diff * diff;
@@ -575,9 +567,9 @@ do {                                                    \
 #define PATIAL_L2sq_const(R, BL, BR, CNT, T)            \
 do {                                                    \
     const T *a = (const T*) Tloc(BL, 0);                \
-    const T *b = (const T*) Tloc(BR, 0);                \
+    const T b = *(const T*) Tloc(BR, 0);                \
     for(BUN p = 0; p<cnt; p++) {                        \
-        T d = a[p] - b[0];                              \
+        T d = a[p] - b;                                \
         R[p] += (T)d*d;                                 \
     }                                                   \
 } while (0)
