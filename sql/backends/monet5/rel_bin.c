@@ -1017,7 +1017,7 @@ exp_bin_conjunctive(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp,
 			sql_subfunc *f = sql_bind_func(be->mvc, "sys", anti?"or":"and", bt, bt, F_FUNC, true, true);
 			assert(f);
 			s = stmt_binop(be, sin, s, NULL, f);
-		} else if (!reduce && !sin && sel1 && sel1->nrcols == 0 && s->nrcols == 0) {
+		} else if (!reduce && !sin && sel1 && sel1->nrcols == 0) {
 			sql_subfunc *f = sql_bind_func(be->mvc, "sys", anti?"or":"and", bt, bt, F_FUNC, true, true);
 			assert(f);
 			s = stmt_binop(be, sel1, s, sin, f);
@@ -1036,6 +1036,8 @@ exp_bin_conjunctive(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp,
 				predicate = stmt_const(be, predicate, stmt_bool(be, 1));
 				s = stmt_uselect(be, predicate, s, cmp_equal, sel1, anti, is_semantics(c));
 			}
+		} else if (reduce && anti && sel1) {
+			s = stmt_tunion(be, s, sel1);
 		}
 		sel1 = s;
 	}
@@ -2370,6 +2372,10 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 					clean_mal_statements(be, oldstop, oldvtop);
 					s = exp_bin(be, n->data, right, NULL, grp, ext, cnt, NULL, depth+1, 0, push);
 					swapped = 1;
+				}
+				if (!s && right && !reduce) {
+					clean_mal_statements(be, oldstop, oldvtop);
+					s = exp_bin(be, n->data, left, right, grp, ext, cnt, NULL, depth+1, 0, push);
 				}
 				if (!s)
 					return s;

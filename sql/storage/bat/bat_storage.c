@@ -3385,7 +3385,6 @@ commit_create_idx( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldes
 	if (!tr->parent)
 		i->base.new = 0;
 	return commit_create_delta( tr, i->t, &i->base, delta, commit_ts, oldest);
-	return LOG_OK;
 }
 
 static int

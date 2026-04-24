@@ -50,15 +50,6 @@ sa_list(allocator *sa)
 	return list_init(l, sa, NULL);
 }
 
-/*
-static void
-_free(void *dummy, void *data)
-{
-	(void)dummy;
-	GDKfree(data);
-}
-*/
-
 list *
 sa_list_append(allocator *sa, list *l, void *data)
 {
@@ -722,6 +713,8 @@ list_map(list *l, void *data, fmap map)
 list *
 list_join(list *l, list *data)
 {
+	if (!l)
+		return data;
 	assert(data->sa);
 	assert(data->sa == l->sa);
 	assert(!l->ht);

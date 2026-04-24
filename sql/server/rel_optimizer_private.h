@@ -77,6 +77,8 @@ typedef struct sql_optimizer {
 #define distinct_project2groupby           (1 << 20)
 #define push_select_up                     (1 << 21)
 
+extern sql_rel *rel_merge_project(mvc *sql, sql_rel *rel);
+extern sql_rel *rel_push_topn_down(mvc *sql, sql_rel *rel);
 extern run_optimizer bind_split_select(visitor *v, global_props *gp) __attribute__((__visibility__("hidden")));
 extern run_optimizer bind_push_project_down(visitor *v, global_props *gp) __attribute__((__visibility__("hidden")));
 extern run_optimizer bind_merge_projects(visitor *v, global_props *gp) __attribute__((__visibility__("hidden")));

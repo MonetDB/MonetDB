@@ -127,6 +127,7 @@ extern list* exps_label(mvc *sql, list *exps);
 extern sql_exp * exp_copy( mvc *sql, sql_exp *e);
 extern list * exps_copy( mvc *sql, list *exps);
 extern list * exps_alias( mvc *sql, list *exps);
+extern list * exps_refs( mvc *sql, list *exps); /* create new list of references to the exps */
 
 extern void exp_swap( sql_exp *e );
 
@@ -187,6 +188,7 @@ extern bool exp_unsafe(sql_exp *e, bool allow_identity, bool card);
 extern int exp_has_sideeffect(sql_exp *e);
 extern bool exp_is_fallible(sql_exp *e); /* exp could result in an error, ie push up of lower restricting expressions isn't possible */
 extern bool exps_have_fallible(list *l);
+extern bool exps_have_selfref(list *l);
 
 extern sql_exp *exps_find_prop(list *exps, rel_prop kind);
 

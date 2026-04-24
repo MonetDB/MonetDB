@@ -1,0 +1,43 @@
+statement ok
+CREATE TABLE s1 (
+  c1 INT
+)
+
+statement ok
+CREATE TABLE s2 (
+  c2 INT,
+  c13 TIMESTAMP
+)
+
+query I nosort
+SELECT c2 FROM s2
+WHERE EXISTS (
+  SELECT 1
+  FROM s2, s1
+  WHERE s2.c13 IS NULL
+    AND (
+      (s2.c2 = s1.c1)
+      OR EXISTS (SELECT 1)
+    )
+)
+----
+
+statement ok rowcount 0
+UPDATE s2
+SET c2 = 0
+WHERE EXISTS (
+  SELECT 1
+  FROM s2, s1
+  WHERE s2.c13 IS NULL
+    AND (
+      (s2.c2 = s1.c1)
+      OR EXISTS (SELECT 1)
+    )
+)
+
+statement ok
+DROP TABLE s2
+
+statement ok
+DROP TABLE s1
+

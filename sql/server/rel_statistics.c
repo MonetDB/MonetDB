@@ -673,7 +673,7 @@ set_setop_side(visitor *v, sql_rel *rel, sql_rel *side)
 		rel->r = NULL;
 	else
 		rel->l = NULL;
-	if (!is_simple_project(side->op) || rel_is_ref(side) || !list_empty(side->r)) {
+	if (!is_simple_project(side->op) || exps_have_selfref(side->exps) || rel_is_ref(side) || !list_empty(side->r)) {
 		side = rel_project(v->sql->sa, side, rel_projections(v->sql, side, NULL, 0, 1));
 		set_count_prop(v->sql->sa, side, get_rel_count(side->l));
 		side->exps = exps_exp_visitor_bottomup(v, side, side->exps, 0, &rel_propagate_statistics, false);
@@ -860,7 +860,7 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 			while (is_sample(pl->op) || is_topn(pl->op)) /* skip topN and sample relations in the middle */
 					pl = pl->l;
 			/* if it's not a projection, then project and propagate statistics */
-			if (!is_project(pl->op) && !is_base(pl->op)) {
+			if ((!is_project(pl->op) && !is_base(pl->op)) || exps_have_selfref(pl->exps)) {
 				pl = rel_project(v->sql->sa, pl, rel_projections(v->sql, pl, NULL, 0, 1));
 				set_count_prop(v->sql->sa, pl, get_rel_count(pl->l));
 				pl->exps = exps_exp_visitor_bottomup(v, pl, pl->exps, 0, &rel_propagate_statistics, false);

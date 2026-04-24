@@ -158,8 +158,7 @@ BATXMLxmltext(Client ctx, bat *ret, const bat *bid)
 
 			if (buf == NULL || size < len) {
 				size = len + 128;
-				if (buf != NULL)
-					GDKfree(buf);
+				GDKfree(buf);
 				buf = GDKmalloc(size);
 				if (buf == NULL) {
 					err = SQLSTATE(HY013) MAL_MALLOC_FAIL;
@@ -189,14 +188,12 @@ BATXMLxmltext(Client ctx, bat *ret, const bat *bid)
 		assert(content != NULL || buf != NULL);
 		if (bunfastapp_nocheckVAR(bn, content != NULL ? content : buf) != GDK_SUCCEED)
 			goto bunins_failed;
-		if (content != NULL)
-			GDKfree(content);
+		GDKfree(content);
 		content = NULL;
 	}
 	bat_iterator_end(&bi);
 	finalizeResult(ret, bn, b);
-	if (buf != NULL)
-		GDKfree(buf);
+	GDKfree(buf);
 	if (doc != NULL)
 		xmlFreeDoc(doc);
 	return MAL_SUCCEED;
@@ -204,12 +201,10 @@ BATXMLxmltext(Client ctx, bat *ret, const bat *bid)
 	bat_iterator_end(&bi);
 	BBPunfix(b->batCacheid);
 	BBPunfix(bn->batCacheid);
-	if (buf != NULL)
-		GDKfree(buf);
+	GDKfree(buf);
 	if (doc != NULL)
 		xmlFreeDoc(doc);
-	if (content != NULL)
-		GDKfree(content);
+	GDKfree(content);
 	throw(MAL, "xml.text", "%s", err);
 }
 
@@ -278,8 +273,7 @@ BATXMLstr2xml(Client ctx, bat *ret, const bat *bid)
 	bat_iterator_end(&bi);
 	BBPunfix(b->batCacheid);
 	BBPunfix(bn->batCacheid);
-	if (buf != NULL)
-		GDKfree(buf);
+	GDKfree(buf);
 	throw(MAL, "xml.xml", "%s", err);
 }
 
@@ -423,8 +417,7 @@ BATXMLcontent(Client ctx, bat *ret, const bat *bid)
 	bat_iterator_end(&bi);
 	xmlBufferFree(xbuf);
 	xmlFreeDoc(doc);
-	if (buf != NULL)
-		GDKfree(buf);
+	GDKfree(buf);
 	BBPunfix(b->batCacheid);
 	BBPunfix(bn->batCacheid);
 	throw(MAL, "xml.document", "%s", err);
@@ -498,10 +491,8 @@ BATXMLoptions(Client ctx, bat *ret, const char *const *name, const char *const *
 	const char *err = OPERATION_FAILED " During bulk options analysis";
 
 	if (val == NULL || buf == NULL) {
-		if (val != NULL)
-			GDKfree(val);
-		if (buf != NULL)
-			GDKfree(buf);
+		GDKfree(val);
+		GDKfree(buf);
 		throw(MAL, "batxml.options", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	if ((b = BATdescriptor(*bid)) == NULL) {
@@ -560,10 +551,8 @@ BATXMLoptions(Client ctx, bat *ret, const char *const *name, const char *const *
   bunins_failed:
 	BBPunfix(b->batCacheid);
 	BBPunfix(bn->batCacheid);
-	if (buf != NULL)
-		GDKfree(buf);
-	if (val != NULL)
-		GDKfree(val);
+	GDKfree(buf);
+	GDKfree(val);
 	throw(MAL, "batxml.options", "%s", err);
 }
 
@@ -624,8 +613,7 @@ BATXMLcomment(Client ctx, bat *ret, const bat *bid)
 	bat_iterator_end(&bi);
 	BBPunfix(b->batCacheid);
 	BBPunfix(bn->batCacheid);
-	if (buf != NULL)
-		GDKfree(buf);
+	GDKfree(buf);
 	throw(MAL, "xml.comment", "%s", err);
 }
 
@@ -704,8 +692,7 @@ BATXMLpi(Client ctx, bat *ret, const char *const *target, const bat *bid)
 	bat_iterator_end(&bi);
 	BBPunfix(b->batCacheid);
 	BBPunfix(bn->batCacheid);
-	if (buf != NULL)
-		GDKfree(buf);
+	GDKfree(buf);
 	throw(MAL, "xml.pi", "%s", err);
 }
 
@@ -793,8 +780,7 @@ BATXMLroot(Client ctx, bat *ret, const bat *bid, const char *const *version,
 	bat_iterator_end(&bi);
 	BBPunfix(b->batCacheid);
 	BBPunfix(bn->batCacheid);
-	if (buf != NULL)
-		GDKfree(buf);
+	GDKfree(buf);
 	throw(MAL, "xml.root", "%s", err);
 }
 
@@ -861,8 +847,7 @@ BATXMLattribute(Client ctx, bat *ret, const char *const *name, const bat *bid)
 	bat_iterator_end(&bi);
 	BBPunfix(b->batCacheid);
 	BBPunfix(bn->batCacheid);
-	if (buf != NULL)
-		GDKfree(buf);
+	GDKfree(buf);
 	throw(MAL, "xml.attribute", "%s", err);
 }
 
@@ -985,14 +970,10 @@ BATXMLforest(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	p = GDKmalloc(sizeof(BUN) * pci->argc);
 	q = GDKmalloc(sizeof(BUN) * pci->argc);
 	if (buf == NULL || bi == NULL || p == NULL || q == NULL) {
-		if (buf)
-			GDKfree(buf);
-		if (bi)
-			GDKfree(bi);
-		if (p)
-			GDKfree(p);
-		if (q)
-			GDKfree(q);
+		GDKfree(buf);
+		GDKfree(bi);
+		GDKfree(p);
+		GDKfree(q);
 		throw(MAL, "xml.forest", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
@@ -1094,8 +1075,7 @@ BATXMLforest(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 	}
 	BBPunfix(bn->batCacheid);
-	if (buf != NULL)
-		GDKfree(buf);
+	GDKfree(buf);
 	GDKfree(bi);
 	GDKfree(p);
 	GDKfree(q);
@@ -1185,8 +1165,7 @@ BATXMLconcat(Client ctx, bat *ret, const bat *bid, const bat *rid)
 	BBPunfix(r->batCacheid);
 	BBPunfix(b->batCacheid);
 	BBPunfix(bn->batCacheid);
-	if (buf != NULL)
-		GDKfree(buf);
+	GDKfree(buf);
 	throw(MAL, "xml.concat", "%s", err);
 }
 
@@ -1454,8 +1433,7 @@ BATxmlaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 		BBPunfix(b->batCacheid);
 	if (freeg && g)
 		BBPunfix(g->batCacheid);
-	if (buf)
-		GDKfree(buf);
+	GDKfree(buf);
 	*bnp = bn;
 	return err;
 

@@ -3918,7 +3918,7 @@ rel_push_select_down(visitor *v, sql_rel *rel)
 			set_distinct(rel);
 		v->changes++;
 	}
-	if (is_select(rel->op) && !exps_has_group_filter(rel->exps) && 
+	if (is_select(rel->op) && !exps_has_group_filter(rel->exps) &&
      	    r && is_munion(r->op) && !is_recursive(r) && !list_empty(r->exps) && !rel_is_ref(r) && !is_single(r) && !list_empty(exps)) {
 		sql_rel *u = r;
 		list *rels = u->l, *nrels = sa_list(v->sql->sa);

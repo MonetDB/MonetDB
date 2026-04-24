@@ -1,0 +1,108 @@
+-- Repro for MonetDB logic bug (tautological OR should not reduce result set)
+statement ok
+CREATE TABLE repro_t1(c1 INT)
+
+statement ok
+CREATE TABLE repro_t2(c1 INT, c2 INT)
+
+statement ok
+CREATE TABLE repro_t3(c2 INT, c3 INT)
+
+statement ok rowcount 2
+INSERT INTO repro_t1 VALUES (1), (7)
+
+statement ok rowcount 1
+INSERT INTO repro_t2 VALUES (8, 7)
+
+statement ok rowcount 1
+INSERT INTO repro_t3 VALUES (6, 8)
+
+statement ok
+CREATE TABLE repro_out_orig(id INT)
+
+statement ok
+CREATE TABLE repro_out_mut(id INT)
+
+-- Original
+query I rowsort
+SELECT DISTINCT repro_t2.c1
+FROM repro_t2, repro_t1 AS d
+WHERE d.c1 > (
+  SELECT AVG(repro_t3.c2)
+  FROM repro_t3
+  WHERE repro_t3.c3 = repro_t2.c1
+  ORDER BY AVG(repro_t3.c2) ASC NULLS FIRST
+  LIMIT 1
+)
+AND repro_t2.c2 = d.c1
+----
+8
+
+statement ok rowcount 1
+INSERT INTO repro_out_orig
+SELECT DISTINCT repro_t2.c1
+FROM repro_t2, repro_t1 AS d
+WHERE d.c1 > (
+  SELECT AVG(repro_t3.c2)
+  FROM repro_t3
+  WHERE repro_t3.c3 = repro_t2.c1
+  ORDER BY AVG(repro_t3.c2) ASC NULLS FIRST
+  LIMIT 1
+)
+AND repro_t2.c2 = d.c1
+
+-- Mutated (tautological relaxation)
+query I rowsort
+SELECT DISTINCT repro_t2.c1
+FROM repro_t2, repro_t1 AS d
+WHERE d.c1 > (
+  SELECT AVG(repro_t3.c2)
+  FROM repro_t3
+  WHERE repro_t3.c3 = repro_t2.c1
+  ORDER BY AVG(repro_t3.c2) ASC NULLS FIRST
+  LIMIT 1
+)
+AND (repro_t2.c2 = d.c1 OR 1 = 1)
+----
+8
+
+statement ok rowcount 1
+INSERT INTO repro_out_mut
+SELECT DISTINCT repro_t2.c1
+FROM repro_t2, repro_t1 AS d
+WHERE d.c1 > (
+  SELECT AVG(repro_t3.c2)
+  FROM repro_t3
+  WHERE repro_t3.c3 = repro_t2.c1
+  ORDER BY AVG(repro_t3.c2) ASC NULLS FIRST
+  LIMIT 1
+)
+AND (repro_t2.c2 = d.c1 OR 1 = 1)
+
+-- observed: (8)
+query I rowsort
+SELECT * FROM repro_out_orig ORDER BY id
+----
+8
+
+-- observed: empty
+query I rowsort
+SELECT * FROM repro_out_mut ORDER BY id
+----
+8
+
+statement ok
+DROP TABLE repro_t1
+
+statement ok
+DROP TABLE repro_t2
+
+statement ok
+DROP TABLE repro_t3
+
+statement ok
+DROP TABLE repro_out_orig
+
+statement ok
+DROP TABLE repro_out_mut
+

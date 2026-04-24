@@ -1,0 +1,96 @@
+statement ok
+CREATE TABLE t_bug14 (
+  id INT NOT NULL,
+  p INT NOT NULL,
+--  o INT NOT NULL,
+--  ot INT NOT NULL,
+  od DECIMAL(18, 10) NOT NULL,
+--  odt DECIMAL(20, 10) NOT NULL,
+--  os VARCHAR(128) NOT NULL,
+--  ost VARCHAR(128) NOT NULL,
+  v INT NOT NULL,
+--  vn INT NULL,
+--  vb BIGINT NOT NULL,
+--  vt SMALLINT NOT NULL,
+  vf DOUBLE PRECISION NOT NULL,
+--  vc VARCHAR(128) NULL,
+--  dt TIMESTAMP NOT NULL,
+  PRIMARY KEY (id),
+  UNIQUE (p, od)
+)
+
+statement ok rowcount 20
+INSERT INTO t_bug14
+  (id, p, od, v, vf)
+VALUES
+  (18, -10, -99999999.9999855361, -647, -1e-308),
+  (21, -10, -99999999.9999838753, 32767, -3e-6),
+  (15, -10, -99999999.9999871969, 971, -5e-324),
+  (31, -10, -99999999.9999783393, 515, 16777217.0),
+  (27, -10, -99999999.9999805537, 25, -5e-324),
+  (20, -10, -99999999.9999844289, -418, -1e308),
+  (23, -10, -99999999.9999827681, 32767, -8e8),
+  (12, -10, -99999999.9999888577, -1, 1e8),
+  (22, -10, -99999999.9999833217, 627, 6e-11),
+  (29, -10, -99999999.9999794465, -730, 852615.36386326),
+  (28, -10, -99999999.9999800001, 0, -1e308),
+  (25, -10, -99999999.9999816609, 597, -0.0),
+  (17, -10, -99999999.9999860897, -66, -4e4),
+  (16, -10, -99999999.9999866433, 123, 240490.77319753),
+  (30, -10, -99999999.9999788929, 803, 6e6),
+  (24, -10, -99999999.9999822145, 236, 8e-7),
+  (13, -10, -99999999.9999883041, -136, -1e-308),
+  (19, -10, -99999999.9999849825, -437, 229349.79122303),
+  (26, -10, -99999999.9999811073, -888, -1e-308),
+  (14, -10, -99999999.9999877505, 164, 0.0)
+
+-- original window query
+-- MonetDB fails with: 22003!overflow in calculation.
+query II nosort
+SELECT p, v
+FROM (
+  SELECT p, v,
+         SUM(vf) OVER (
+           PARTITION BY p
+           ORDER BY od DESC
+           ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+         ) AS wa
+  FROM t_bug14
+) x
+WHERE wa >= 2
+  AND v >= -178
+ORDER BY p, v
+----
+-10
+515
+-10
+803
+
+-- equivalent rewrite
+-- MonetDB fails with: 22003!overflow in sum aggregate.
+query II nosort
+SELECT p, v
+FROM (
+  SELECT p, v, od, vf
+  FROM t_bug14
+) AS t1
+WHERE (
+  SELECT SUM(t2.vf)
+  FROM (
+    SELECT p, v, od, vf
+    FROM t_bug14
+  ) AS t2
+  WHERE t2.p = t1.p
+    AND NOT (t1.od > t2.od)
+) >= 2
+  AND v >= -178
+ORDER BY p, v
+----
+-10
+515
+-10
+803
+
+statement ok
+DROP TABLE t_bug14
+

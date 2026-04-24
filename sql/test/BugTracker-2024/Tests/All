@@ -97,6 +97,7 @@ function_return_issue
 7593-double-as-text-notation-issue
 KNOWNFAIL?7598-foreign_key_match_options
 KNOWNFAIL?7598-foreign_key_match_options_dump
+7599-case-str_to_date-multiplex_error
 7602-copy-into-multiple-files
 7603-copy-into-3files-crash
 7605_full_3_level_name_support

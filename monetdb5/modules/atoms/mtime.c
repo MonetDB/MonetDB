@@ -109,12 +109,11 @@ MTIMEcurrent_timestamp(Client ctx, timestamp *ret)
 bailout: \
 	*ret = NULL; \
 	if (!msg && res && !(*ret = ma_strdup(ma, res))) \
-		msg = createException(MAL, "batmtime." MALFUNC, SQLSTATE(HY013) MAL_MALLOC_FAIL); \
-	/*GDKfree(res)*/
+		msg = createException(MAL, "batmtime." MALFUNC, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
-#define FINISH_INT_SINGLE(MALFUNC) *ret = res
+#define FINISH_INT_SINGLE(MALFUNC)	do { *ret = res; } while (0)
 
-#define FINISH_BUFFER_MULTI(RES) /*GDKfree(RES)*/
+#define FINISH_BUFFER_MULTI(RES)	((void) 0)
 
 #define CLEAR_NOTHING(RES)
 

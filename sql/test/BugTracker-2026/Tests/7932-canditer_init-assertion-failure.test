@@ -1,0 +1,49 @@
+statement ok
+CREATE TABLE orders (
+    id          INT,
+    user_id     INT,
+    amount      DOUBLE,
+    status      VARCHAR(20),
+    created_at  TIMESTAMP
+)
+
+statement ok rowcount 5
+INSERT INTO orders VALUES
+(1, 1, 100.00, 'paid',    '2022-02-01 09:00:00'),
+(2, 1, 200.50, 'shipped', '2022-02-02 10:00:00'),
+(3, 2, NULL,   'failed',  '2022-02-03 11:00:00'),
+(4, 3, 50.00,  'paid',    '2022-02-04 12:00:00'),
+(5, 5, 999.99, 'paid',    '2022-02-05 13:00:00')
+
+-- gdk/gdk_cand.c:435: canditer_init: Assertion `s->ttype == TYPE_msk|| s->tsorted' failed.
+query I nosort
+SELECT 1
+FROM (
+    SELECT subq_0.c0 AS c8
+    FROM (
+        SELECT ref_0.user_id AS c0
+        FROM orders AS ref_0
+        WHERE TRUE
+    ) AS subq_0
+    WHERE STARTSWITH('bkne7k', 'b')
+      AND STARTSWITH('8usk', '02x')
+) AS subq_1
+WHERE (37 IS NOT NULL)
+   OR (('hej1c' > COALESCE(
+            '7zhw',
+            CASE
+                WHEN (subq_1.c8 IS NOT NULL)
+                THEN NULLIF('ex9uf', '33th')
+                ELSE 'sk9j8e'
+            END
+        ))
+    OR EXISTS (
+        SELECT 1
+        FROM orders AS ref_1
+        WHERE ref_1.id <> CHAR_LENGTH('ju200')
+    ))
+----
+
+statement ok
+DROP TABLE orders
+

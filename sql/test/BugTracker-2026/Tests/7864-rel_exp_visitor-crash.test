@@ -1,0 +1,13 @@
+statement error 22018!conversion of string to type bte failed.
+SELECT * FROM ( SELECT * FROM ( SELECT 1 AS x ) WHERE x IN ( SELECT ALL sql_min ( NULL , NULL ) FROM ( SELECT * FROM ( WITH x AS ( SELECT 1 WHERE ( 1 , 2 ) IN ( ( CAST( x AS TEXT ) , 4 ) , ( 1 , 2 ) ) ) SELECT ( SELECT x FROM ( SELECT SUM ( 0 ) OVER ( ORDER BY SUM ( 0 BETWEEN 1 AND 1 ) ) FROM x GROUP BY rollup ( x , x ) ORDER BY CAST( - 70 + - 89 - ( SUM ( CASE - NULLIF ( 87 , CASE CAST( NULL AS INTEGER ) WHEN 13 / ( 68 * - ( 64 ) ) THEN 39 WHEN 70 * - 95 THEN 60 ELSE 15 + 25 END * 5 ) WHEN 36 THEN NULL WHEN 24 THEN NULL ELSE 66 END ) ) AS BIGINT ) DESC , x , x ) , ( SELECT x AS x ) WHERE x = 'x' ) , 'x' FROM x ) WHERE ( x % 7 ) = 0 ) ) )
+
+
+query I rowsort
+SELECT * FROM ( SELECT * FROM ( SELECT 1 AS x )
+ WHERE x IN ( SELECT ALL sql_min ( NULL , NULL ) FROM ( SELECT * FROM (
+  WITH x AS ( SELECT 1 WHERE ( 1 , 2 ) IN ( ( CAST( x AS TINYINT ) , 4 ) , ( 1 , 2 ) ) )
+  SELECT ( SELECT x FROM ( SELECT SUM ( 0 ) OVER ( ORDER BY SUM ( 0 BETWEEN 1 AND 1 ) ) FROM x GROUP BY rollup ( x , x )
+            ORDER BY CAST( - 70 + - 89 - ( SUM ( CASE - NULLIF ( 87 , CASE CAST( NULL AS INTEGER ) WHEN 13 / ( 68 * - ( 64 ) ) THEN 39 WHEN 70 * - 95 THEN 60 ELSE 15 + 25 END * 5 ) WHEN 36 THEN NULL WHEN 24 THEN NULL ELSE 66 END ) ) AS BIGINT ) DESC , x , x ) ,
+             ( SELECT x AS x ) WHERE cast(x as string) = 'x' ) , 'x' FROM x ) WHERE ( x % 7 ) = 0 ) ) )
+----
+

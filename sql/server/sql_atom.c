@@ -407,9 +407,7 @@ atom2string(allocator *sa, atom *a)
 		if ((p = ATOMformat(sa, a->data.vtype, VALget(&a->data))) == NULL) {
 			snprintf(buf, sizeof(buf), "atom2string(TYPE_%d) not implemented", a->data.vtype);
 		} else {
-			 //char *r = ma_strdup(sa, p);
-			 // GDKfree(p);
-			 return p;
+			return p;
 		}
 	}
 	return ma_strdup(sa, buf);

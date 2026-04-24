@@ -1,0 +1,67 @@
+statement ok
+CREATE TABLE t_bug11 (
+  id INT,
+  p VARCHAR(32),
+  od DECIMAL(20, 10),
+  v INT,
+  PRIMARY KEY (id),
+  UNIQUE (p, od)
+)
+
+statement ok rowcount 10
+INSERT INTO t_bug11 VALUES
+  (10, 'pk_v_06891_2', 695043.6706009629, -764),
+  (11, 'pk_v_06891_2', 695043.6706009323, 850),
+  (12, 'pk_v_06891_2', 695043.6706009017, 285),
+  (13, 'pk_v_06891_2', 695043.6706008711, 424),
+  (14, 'pk_v_06891_2', 695043.6706008405, 335),
+  (15, 'pk_v_06891_2', 695043.6706008099, -602),
+  (16, 'pk_v_06891_2', 695043.6706007793, 747),
+  (17, 'pk_v_06891_2', 695043.6706007487, -657),
+  (18, 'pk_v_06891_2', 695043.6706007181, 993),
+  (19, 'pk_v_06891_2', 695043.6706006875, 747)
+
+-- original window query
+query I nosort
+SELECT v
+FROM (
+  SELECT v, NTILE(5) OVER (PARTITION BY p ORDER BY od ASC) AS rn
+  FROM t_bug11
+) x
+WHERE rn IN (1, 3, 4, 5)
+ORDER BY v
+----
+-764
+-602
+285
+335
+424
+747
+850
+993
+
+-- rewritten window query
+-- bucket = FLOOR(count_before / 2) + 1
+query I nosort
+SELECT t1.v
+FROM t_bug11 AS t1
+WHERE FLOOR((
+  SELECT COUNT(*)
+  FROM t_bug11 AS t2
+  WHERE t2.p = t1.p
+    AND t2.od < t1.od
+) / 2) + 1 IN (1, 3, 4, 5)
+ORDER BY t1.v
+----
+-764
+-602
+285
+335
+424
+747
+850
+993
+
+statement ok
+DROP TABLE t_bug11
+

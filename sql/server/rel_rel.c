@@ -869,6 +869,7 @@ rel_crossproduct(allocator *sa, sql_rel *l, sql_rel *r, operator_type join)
 	rel->exps = NULL;
 	rel->card = CARD_MULTI;
 	rel->nrcols = l->nrcols + r->nrcols;
+	rel->opt = l->opt;
 	return rel;
 }
 
@@ -1149,6 +1150,7 @@ rel_project(allocator *sa, sql_rel *l, list *e)
 		else
 			rel->nrcols = l->nrcols;
 		rel->single = is_single(l);
+		rel->opt = l->opt;
 	}
 	if (e && !list_empty(e)) {
 		set_processed(rel);
@@ -1314,8 +1316,8 @@ _rel_projections(mvc *sql, sql_rel *rel, sql_alias *tname, int settname, int int
 				if (basecol && !is_basecol(e))
 					continue;
 				if (intern || !is_intern(e)) {
-					if (!e->alias.label || (exp_is_rel(e) && e->alias.name == NULL))
-						en->data = e = exp_label(sql->sa, e, ++sql->label);
+					if (exp_is_rel(e) && e->alias.name == NULL && exp_relname(e) && exp_name(e))
+						e->alias.name = exp_name(e);
 					sql_exp *ne = exp_ref(sql, e);
 					if (settname && tname)
 						exp_setname(sql, ne, tname, exp_name(e));

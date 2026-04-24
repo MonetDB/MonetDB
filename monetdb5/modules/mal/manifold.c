@@ -75,10 +75,8 @@ typedef struct {
 				if (msg)												\
 					goto bunins_failed;									\
 				if (bunfastapp(mut->args[0].b, v) != GDK_SUCCEED) {		\
-					/*GDKfree(v);*/											\
 					goto bunins_failed;									\
 				}														\
-				/*GDKfree(v);*/											\
 				if (++oo == olimit)										\
 					break;												\
 				for (i = mut->fvar; i <= mut->lvar; i++) {				\

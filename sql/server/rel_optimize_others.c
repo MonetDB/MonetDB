@@ -438,7 +438,8 @@ rel_exps_mark_used(allocator *sa, sql_rel *rel, sql_rel *subrel)
 		}
 
 		if (!nr && is_project(rel->op) && len > 0) /* project at least one column if exists */
-			exps[0]->used = 1;
+			if (!is_freevar(exps[0]))
+				exps[0]->used = 1;
 
 		for (i = len-1; i >= 0; i--) {
 			sql_exp *e = exps[i];
@@ -454,7 +455,8 @@ rel_exps_mark_used(allocator *sa, sql_rel *rel, sql_rel *subrel)
 	if (!nr && subrel && (is_project(subrel->op) || is_base(subrel->op)) && !list_empty(subrel->exps) &&
 		(is_simple_project(rel->op) && project_unsafe(rel, false))) {
 		sql_exp *e = subrel->exps->h->data;
-		e->used = 1;
+		if (!is_freevar(e))
+			e->used = 1;
 	}
 	if (rel->r && (is_simple_project(rel->op) || is_groupby(rel->op))) {
 		list *l = rel->r;
@@ -524,7 +526,8 @@ rel_used(sql_rel *rel)
 		return;
 	if (is_join(rel->op) || is_set(rel->op) || is_semi(rel->op) || is_modify(rel->op)) {
 		rel_used(rel->l);
-		rel_used(rel->r);
+		if (!is_semi(rel->op) && !(is_left(rel->op) && !list_empty(rel->attr)))
+			rel_used(rel->r);
 	} else if (rel->op == op_munion) {
 		list *l = rel->l;
 		for(node *n = l->h; n; n = n->next)
@@ -773,10 +776,12 @@ rel_remove_unused(mvc *sql, sql_rel *rel)
 				sql_exp *e = n->data;
 
 				/* at least one (needed for crossproducts, count(*), rank() and single value projections) */
-				if (!e->used && list_length(rel->exps) > 1)
+				if (!e->used && (list_length(rel->exps) > 1 || is_freevar(e)))
 					list_remove_node(rel->exps, NULL, n);
 				n = next;
 			}
+			if (list_empty(rel->exps))
+				append(rel->exps, exp_atom_bool(sql->sa, 0));
 		}
 		return rel;
 
@@ -1157,7 +1162,7 @@ rel_dce(visitor *v, global_props *gp, sql_rel *rel)
 sql_rel *
 rel_deadcode_elimination(mvc *sql, sql_rel *rel)
 {
-	visitor v = {.sql = sql };
+	visitor v = {.sql = sql, .opt = rel->opt };
 	return rel_dce_(&v, rel);
 }
 
@@ -1504,6 +1509,14 @@ rel_push_topn_and_sample_down_(visitor *v, sql_rel *rel)
 	}
 	return rel;
 }
+
+sql_rel *
+rel_push_topn_down(mvc *sql, sql_rel *rel)
+{
+	visitor v = { .sql = sql };
+	return rel_push_topn_and_sample_down_( &v, rel);
+}
+
 
 static sql_rel *
 rel_push_topn_and_sample_down(visitor *v, global_props *gp, sql_rel *rel)
