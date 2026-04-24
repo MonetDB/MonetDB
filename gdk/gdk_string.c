@@ -190,27 +190,35 @@ ustrPut(BAT *b, var_t *dst, const char *v)
 	MT_lock_set(&ustrbat->theaplock);
 	BUN p = BUN_NONE;
 	if (ustrbat->batCount != 0) {
+		BATiter ui = bat_iterator_nolock(ustrbat);
 		if (ustrbat->thash == NULL) {
-			struct canditer ui;
-			canditer_init(&ui, ustrbat, NULL);
-			if ((ustrbat->thash = BAThash_impl(ustrbat, &ui, false, "thash")) == NULL) {
+			/* don't use canditer_init since it tries to
+			 * acquire theaplock (deadlock) */
+			struct canditer cui = {
+				.tpe = cand_dense,
+				.seq = ustrbat->hseqbase,
+				.hseq = ustrbat->hseqbase,
+				.ncand = ustrbat->batCount,
+			};
+			if ((ustrbat->thash = BAThash_impl(&ui, &cui, false, "thash")) == NULL) {
 				MT_lock_unset(&ustrbat->theaplock);
 				MT_rwlock_wrunlock(&ustrbat->thashlock);
 				return (var_t) -1;
 			}
 		}
-		BATiter ui = bat_iterator_nolock(ustrbat);
 		HASHloop_str(&ui, ustrbat->thash, p, v)
 			break;
 	}
 	if (p == BUN_NONE) {
 		/* string does not yet occur in ustrbat */
 		p = ustrbat->batCount;
-		if (p >= BATcapacity(ustrbat) &&
-		    BATextend(ustrbat, BATgrows(ustrbat)) != GDK_SUCCEED) {
-			MT_lock_unset(&ustrbat->theaplock);
-			MT_rwlock_wrunlock(&ustrbat->thashlock);
-			return (var_t) -1;
+		if (p >= BATcapacity(ustrbat)) {
+			if (HEAPgrow(&ustrbat->theap, (size_t) BATgrows(ustrbat) << ustrbat->tshift, true) != GDK_SUCCEED) {
+				MT_lock_unset(&ustrbat->theaplock);
+				MT_rwlock_wrunlock(&ustrbat->thashlock);
+				return (var_t) -1;
+			}
+			ustrbat->batCapacity = (BUN) (ustrbat->theap->size >> ustrbat->tshift);
 		}
 		if (tfastins_nochecknolockVAR(ustrbat, p, v) != GDK_SUCCEED) {
 			MT_lock_unset(&ustrbat->theaplock);
@@ -254,6 +262,8 @@ ustrPut(BAT *b, var_t *dst, const char *v)
 gdk_return
 BATconvert2ustr(BAT *b, BAT *bu)
 {
+	TRC_DEBUG(ALGO, ALGOBATFMT ", " ALGOBATFMT "\n",
+		  ALGOBATPAR(b), ALGOBATPAR(bu));
 	MT_lock_set(&b->theaplock);
 	if (b->ustr) {
 		MT_lock_unset(&b->theaplock);
@@ -276,6 +286,18 @@ BATconvert2ustr(BAT *b, BAT *bu)
 		return GDK_FAIL;
 	}
 	MT_lock_set(&bu->theaplock);
+	if (!bu->tvkey) {
+		MT_lock_unset(&b->theaplock);
+		MT_lock_unset(&bu->theaplock);
+		GDKerror("USTR BAT must have tvkey property\n");
+		return GDK_FAIL;
+	}
+	if (bu->ustr) {
+		MT_lock_unset(&b->theaplock);
+		MT_lock_unset(&bu->theaplock);
+		GDKerror("USTR BAT must not itself be ustr\n");
+		return GDK_FAIL;
+	}
 	BBPfix(bu->batCacheid);
 	b->ustr = bu->batCacheid;
 	Heap *vh = b->tvheap;

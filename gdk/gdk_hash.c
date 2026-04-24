@@ -372,7 +372,7 @@ HASHgrowbucket(BAT *b)
 		h->heapbckt.free += h->width;
 		BUN lold, lnew, hb;
 		lold = lnew = BUN_NONE;
-		BATiter bi = bat_iterator(b);
+		BATiter bi = bat_iterator_nolock(b);
 		if ((hb = HASHget(h, old)) != BUN_NONE) {
 			h->nheads--;
 			var_t off = 0;
@@ -405,7 +405,6 @@ HASHgrowbucket(BAT *b)
 				hb = HASHgetlink(h, hb);
 			} while (hb != BUN_NONE);
 		}
-		bat_iterator_end(&bi);
 		if (lnew == BUN_NONE)
 			HASHput(h, new, BUN_NONE);
 		else
@@ -671,7 +670,7 @@ BAThashsave(BAT *b, bool dosync)
 
 #define starthash(TYPE)							\
 	do {								\
-		const TYPE *restrict v = (const TYPE *) BUNtloc(&bi, 0);	\
+		const TYPE *restrict v = (const TYPE *) BUNtloc(bi, 0);	\
 		TIMEOUT_LOOP_IDX(p, cnt1, qry_ctx) {			\
 			c = hash_##TYPE(h, v + o - b->hseqbase);	\
 			hget = HASHget(h, c);				\
@@ -698,7 +697,7 @@ BAThashsave(BAT *b, bool dosync)
 	} while (0)
 #define finishhash(TYPE)						\
 	do {								\
-		const TYPE *restrict v = (const TYPE *) BUNtloc(&bi, 0);	\
+		const TYPE *restrict v = (const TYPE *) BUNtloc(bi, 0);	\
 		TIMEOUT_LOOP(ci->ncand - p, qry_ctx) {			\
 			c = hash_##TYPE(h, v + o - b->hseqbase);	\
 			hget = HASHget(h, c);				\
@@ -731,9 +730,10 @@ BAThashsave(BAT *b, bool dosync)
  * If offsets is set, the hash is built on the theap values and not the
  * values in the tvheap that they point to. */
 Hash *
-BAThash_impl(BAT *restrict b, struct canditer *restrict ci,
+BAThash_impl(BATiter *restrict bi, struct canditer *restrict ci,
 	     bool offsets, const char *restrict ext)
 {
+	BAT *b = bi->b;
 	lng t0 = 0;
 	BUN cnt1;
 	BUN mask, maxmask = 0;
@@ -742,16 +742,15 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci,
 	BUN hget, hb;
 	Hash *h = NULL;
 	const char *nme = GDKinmemory(b->theap->farmid) ? ":memory:" : BBP_physical(b->batCacheid);
-	BATiter bi = bat_iterator(b);
-	unsigned int tpe = ATOMbasetype(bi.type);
-	bool hascand = ci->tpe != cand_dense || ci->ncand != bi.count;
+	unsigned int tpe = ATOMbasetype(bi->type);
+	bool hascand = ci->tpe != cand_dense || ci->ncand != bi->count;
 
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 
 	assert(!offsets || ATOMvarsized(b->ttype));
 	assert(strcmp(ext, "thash") != 0 || !hascand);
-	assert(bi.type != TYPE_msk);
-	assert(bi.type != TYPE_void);
+	assert(bi->type != TYPE_msk);
+	assert(bi->type != TYPE_void);
 
 	MT_thread_setalgorithm(hascand ? "create hash with candidates" : "create hash");
 	TRC_DEBUG_IF(ACCELERATOR) t0 = GDKusec();
@@ -759,10 +758,9 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci,
 		  ALGOBATFMT ": create hash;\n", ALGOBATPAR(b));
 
 	if ((h = GDKzalloc(sizeof(*h))) == NULL ||
-	    (h->heaplink.farmid = BBPselectfarm(hascand ? TRANSIENT : b->batRole, bi.type, hashheap)) < 0 ||
-	    (h->heapbckt.farmid = BBPselectfarm(hascand ? TRANSIENT : b->batRole, bi.type, hashheap)) < 0) {
+	    (h->heaplink.farmid = BBPselectfarm(hascand ? TRANSIENT : b->batRole, bi->type, hashheap)) < 0 ||
+	    (h->heapbckt.farmid = BBPselectfarm(hascand ? TRANSIENT : b->batRole, bi->type, hashheap)) < 0) {
 		GDKfree(h);
-		bat_iterator_end(&bi);
 		return NULL;
 	}
 	h->width = HASHwidth(BATcapacity(b));
@@ -778,7 +776,6 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci,
 	if (HEAPalloc(&h->heaplink, hascand ? ci->ncand : BATcapacity(b),
 		      h->width) != GDK_SUCCEED) {
 		GDKfree(h);
-		bat_iterator_end(&bi);
 		return NULL;
 	}
 	h->heaplink.free = ci->ncand * h->width;
@@ -798,13 +795,13 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci,
 	} else if (ATOMsize(tpe) == 2) {
 		/* perfect hash for two-byte sized atoms */
 		mask = (1 << 16);
-	} else if (bi.key || ci->ncand <= 4096) {
+	} else if (bi->key || ci->ncand <= 4096) {
 		/* if key, or if small, don't bother dynamically
 		 * adjusting the hash mask */
 		mask = HASHmask(ci->ncand);
-	} else if (!hascand && bi.unique_est != 0) {
+	} else if (!hascand && bi->unique_est != 0) {
 		maxmask = HASHmask(ci->ncand);
-		mask = HASHmask((BUN) bi.unique_est);
+		mask = HASHmask((BUN) bi->unique_est);
 		if (mask < maxmask) {
 			/* it's only an estimate: try out on first 25%
 			 * of b */
@@ -843,7 +840,6 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci,
 			    true) != GDK_SUCCEED) {
 			HEAPfree(&h->heaplink, true);
 			GDKfree(h);
-			bat_iterator_end(&bi);
 			return NULL;
 		}
 
@@ -883,7 +879,7 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci,
 		default: {
 			if (offsets) {
 				TIMEOUT_LOOP_IDX(p, cnt1, qry_ctx) {
-					var_t off = VarHeapVal(bi.base, o - b->hseqbase, bi.width);
+					var_t off = VarHeapVal(bi->base, o - b->hseqbase, bi->width);
 					c = HASHbucket(h, (BUN) mix_oid(off));
 					hget = HASHget(h, c);
 					if (hget == BUN_NONE) {
@@ -895,7 +891,7 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci,
 						for (hb = hget;
 						     hb != BUN_NONE;
 						     hb = HASHgetlink(h, hb)) {
-							if (off == VarHeapVal(bi.base, hb, bi.width))
+							if (off == VarHeapVal(bi->base, hb, bi->width))
 								break;
 						}
 						h->nunique += hb == BUN_NONE;
@@ -911,7 +907,7 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci,
 
 			bool (*atomeq)(const void *, const void *) = ATOMequal(tpe);
 			TIMEOUT_LOOP_IDX(p, cnt1, qry_ctx) {
-				const void *restrict v = BUNtail(&bi, o - b->hseqbase);
+				const void *restrict v = BUNtail(bi, o - b->hseqbase);
 				c = hash_any(h, v);
 				hget = HASHget(h, c);
 				if (hget == BUN_NONE) {
@@ -924,7 +920,7 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci,
 					     hb != BUN_NONE;
 					     hb = HASHgetlink(h, hb)) {
 						if (atomeq(v,
-							   BUNtail(&bi, hb)))
+							   BUNtail(bi, hb)))
 							break;
 					}
 					h->nunique += hb == BUN_NONE;
@@ -994,7 +990,7 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci,
 	default: {
 		if (offsets) {
 			TIMEOUT_LOOP(ci->ncand - p, qry_ctx) {
-				var_t off = VarHeapVal(bi.base, o - b->hseqbase, bi.width);
+				var_t off = VarHeapVal(bi->base, o - b->hseqbase, bi->width);
 				c = HASHbucket(h, (BUN) mix_oid(off));
 				hget = HASHget(h, c);
 				h->nheads += hget == BUN_NONE;
@@ -1002,7 +998,7 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci,
 					for (hb = hget;
 					     hb != BUN_NONE;
 					     hb = HASHgetlink(h, hb)) {
-						if (off == VarHeapVal(bi.base, hb, bi.width))
+						if (off == VarHeapVal(bi->base, hb, bi->width))
 							break;
 					}
 					h->nunique += hb == BUN_NONE;
@@ -1020,7 +1016,7 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci,
 		}
 		bool (*atomeq)(const void *, const void *) = ATOMequal(tpe);
 		TIMEOUT_LOOP(ci->ncand - p, qry_ctx) {
-			const void *restrict v = BUNtail(&bi, o - b->hseqbase);
+			const void *restrict v = BUNtail(bi, o - b->hseqbase);
 			c = hash_any(h, v);
 			hget = HASHget(h, c);
 			h->nheads += hget == BUN_NONE;
@@ -1028,7 +1024,7 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci,
 				for (hb = hget;
 				     hb != BUN_NONE;
 				     hb = HASHgetlink(h, hb)) {
-					if (atomeq(v, BUNtail(&bi, hb)))
+					if (atomeq(v, BUNtail(bi, hb)))
 						break;
 				}
 				h->nunique += hb == BUN_NONE;
@@ -1043,16 +1039,6 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci,
 		break;
 	}
 	}
-	bat_iterator_end(&bi);
-	/* if the number of unique values is equal to the bat count,
-	 * all values are necessarily distinct */
-	MT_lock_set(&b->theaplock);
-	if (h->nunique == BATcount(b) && !b->tkey) {
-		b->tkey = true;
-	}
-	if (ci->ncand == BATcount(b))
-		b->tunique_est = (double) h->nunique;
-	MT_lock_unset(&b->theaplock);
 	TRC_DEBUG_IF(ACCELERATOR) {
 		TRC_DEBUG_ENDIF(ACCELERATOR,
 				"hash construction " LLFMT " usec\n", GDKusec() - t0);
@@ -1061,7 +1047,6 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci,
 	return h;
 
   bailout:
-	bat_iterator_end(&bi);
 	HEAPfree(&h->heaplink, true);
 	HEAPfree(&h->heapbckt, true);
 	GDKfree(h);
@@ -1111,11 +1096,23 @@ BAThash(BAT *b)
 	/* we have the write lock */
 	if (b->thash == NULL) {
 		struct canditer ci;
+		BATiter bi = bat_iterator(b);;
 		canditer_init(&ci, b, NULL);
-		if ((b->thash = BAThash_impl(b, &ci, b->ustr != 0, "thash")) == NULL) {
+		b->thash = BAThash_impl(&bi, &ci, b->ustr != 0, "thash");
+		bat_iterator_end(&bi);
+		if (b->thash == NULL) {
 			MT_rwlock_wrunlock(&b->thashlock);
 			return GDK_FAIL;
 		}
+		/* if the number of unique values is equal to the bat
+		 * count, all values are necessarily distinct */
+		MT_lock_set(&b->theaplock);
+		if (b->thash->nunique == BATcount(b) && !b->tkey) {
+			b->tkey = true;
+		}
+		if (ci.ncand == BATcount(b))
+			b->tunique_est = (double) b->thash->nunique;
+		MT_lock_unset(&b->theaplock);
 	}
 	MT_rwlock_wrunlock(&b->thashlock);
 	return GDK_SUCCEED;

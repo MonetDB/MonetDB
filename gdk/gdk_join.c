@@ -2815,8 +2815,12 @@ vkeyjoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 			  r->thash ? " ignoring existing hash" : "",
 			  swapped ? " (swapped)" : "");
 		if (snprintf(ext, sizeof(ext), "thshjn%x",
-			     (unsigned) MT_getpid()) >= (int) sizeof(ext) ||
-		    (hsh = BAThash_impl(r, rci, true, ext)) == NULL)
+			     (unsigned) MT_getpid()) >= (int) sizeof(ext))
+			return GDK_FAIL;
+		BATiter ri = bat_iterator(r);
+		hsh = BAThash_impl(&ri, rci, true, ext);
+		bat_iterator_end(&ri);
+		if (hsh == NULL)
 			return GDK_FAIL;
 	}
 
@@ -3247,9 +3251,11 @@ hashjoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 		if (snprintf(ext, sizeof(ext), "thshjn%x",
 			     (unsigned) MT_getpid()) >= (int) sizeof(ext))
 			goto bailout;
-		if ((hsh = BAThash_impl(r, rci, false, ext)) == NULL) {
+		BATiter ri = bat_iterator(r);
+		hsh = BAThash_impl(&ri, rci, false, ext);
+		bat_iterator_end(&ri);
+		if (hsh == NULL)
 			goto bailout;
-		}
 	} else if (r->ustr) {
 		/* we use a hash on r */
 		MT_thread_setalgorithm(swapped ? "hashjoin using ustr hash (swapped)" : "hashjoin using ustr hash");
