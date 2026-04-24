@@ -2822,6 +2822,8 @@ dump_database(Mapi mid, stream *sqlf, const char *ddir, const char *ext, bool de
 		"ORDER BY sch.name, seq.name";
 	static const char sequences2[] =
 		"SELECT * FROM sys.describe_sequences ORDER BY sch, seq";
+	static const char ustrs[] =
+		"SELECT s.name, o.name FROM sys.objects o, sys.schemas s WHERE o.nr = s.id ORDER BY s.name, o.name";
 	static const char tables[] =
 		"SELECT t.id AS id, "
 			   "s.name AS sname, "
@@ -3111,6 +3113,19 @@ dump_database(Mapi mid, stream *sqlf, const char *ddir, const char *ext, bool de
 		goto bailout;
 	mapi_close_handle(hdl);
 	hdl = NULL;
+
+	if ((hdl = mapi_query(mid, ustrs)) == NULL || mapi_error(mid))
+		goto bailout;
+
+	while (rc == 0 &&
+		   mnstr_errnr(sqlf) == MNSTR_NO__ERROR &&
+	       mapi_fetch_row(hdl) != 0) {
+		const char *sname = mapi_fetch_field(hdl, 0);
+		const char *uname = mapi_fetch_field(hdl, 1);
+		mnstr_printf(sqlf, "CREATE DISTINCT STRING COLUMN ");
+		dquoted_print(sqlf, sname, ".");
+		dquoted_print(sqlf, uname, ";\n");
+	}
 
 	/* Tables, views, triggers, and functions can all reference each
 	 * other, so we need to be very careful in how we dump them.  We
