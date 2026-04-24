@@ -45,9 +45,9 @@
 
 typedef struct bond_collection {
 	BAT **dims;        /* array of dimension BATs (not owned, just referenced) */
+	dbl **dimsp;
 	int ndims;         /* number of dimensions */
 	int bsz;			   /* block size */
-	int wsz;			   /* block size */
 	BUN nvecs;         /* number of vectors (rows) */
 	dbl *dim_means;    /* mean value per dimension (for dimension ordering) */
 	oid *candidates;
@@ -119,7 +119,6 @@ bond_dim_order(allocator *ma, bond_collection *bc)
 	return order;
 }
 
-#define SS 4
 #define VS (2048)
 static bond_collection *
 bond_create(allocator *ma, BAT **dim_bats, int ndims, int k)
@@ -140,14 +139,13 @@ bond_create(allocator *ma, BAT **dim_bats, int ndims, int k)
 			bc->tc = ma_alloc(ma, bc->bsz * sizeof(oid));
 			bc->td = ma_alloc(ma, bc->bsz * sizeof(dbl));
 			bc->dims = ma_alloc(ma, ndims * sizeof(BAT *));
+			bc->dimsp = ma_alloc(ma, ndims * sizeof(dbl *));
 			bc->dim_means = ma_alloc(ma, ndims * sizeof(dbl));
 			bc->nvecs = BATcount(dim_bats[0]);
-			bc->wsz = SS;
-			if (bc->nvecs < 100000)
-				bc->wsz = 1;
 			for (int d = 0; d < ndims; d++) {
 				BAT *b = dim_bats[d];
 				bc->dims[d] = b;
+				bc->dimsp[d] = (dbl*)Tloc(b,0);
 			}
 			return bc;
 		}
@@ -174,16 +172,6 @@ heap_down(oid *hcand, dbl *hd, BUN p, BUN k)
 	}
 }
 
-#if 0
-static inline void
-heap_del(oid *hcand, dbl *hd, BUN k)
-{
-	hcand[0] = hcand[k-1];
-	hd[0] = hd[k-1];
-	heap_down(hcand, hd, 0, k-1);
-}
-#endif
-
 static inline void
 heap_up(oid *hcand, dbl *hd, BUN p)
 {
@@ -209,19 +197,11 @@ topn_merge(oid *cands, dbl *d, oid *icands, dbl *id, BUN n, BUN k)
     if (n == 0) return d[0];
 	for (BUN i = 0; i < n; i++) {
 		if (id[i] < d[0]) {
-			//heap_del(cands, d, k);
-			//cands[k-1] = icands[i];
-			//d[k-1] = id[i];
-			//heap_up(cands, d, k-1);
 			cands[0] = icands[i];
             d[0] = id[i];
             heap_down(cands, d, 0, k);
 		}
 	}
-	/*
-	for(i = 0; i < k; i++)
-		printf("%d %F\n", (int)hcand[i], hd[i]);
-		*/
 	return d[0];
 }
 
@@ -229,8 +209,6 @@ topn_merge(oid *cands, dbl *d, oid *icands, dbl *id, BUN n, BUN k)
 static dbl
 topn(oid *cands, dbl *d, oid *hcand, dbl* hd, BUN n, BUN k)
 {
-	//oid *hcand = bc->tcand;
-	//dbl *hd = bc->tdist;
 	BUN i = 0;
     // Fill the heap initially
 	for (; i < k && i < n; i++) {
@@ -247,19 +225,6 @@ topn(oid *cands, dbl *d, oid *hcand, dbl* hd, BUN n, BUN k)
             heap_down(hcand, hd, 0, k);
         }
     }
-
-	//for (; i < n; i++) {
-	//	if (d[i] < hd[0]) {
-	//		heap_del(hcand, hd, k);
-	//		hcand[k-1] = cands[i];
-	//		hd[k-1] = d[i];
-	//		heap_up(hcand, hd, k-1);
-	//	}
-	//}
-	/*
-	for(i = 0; i < k; i++)
-		printf("%d %F\n", (int)hcand[i], hd[i]);
-		*/
     return hd[0];
 }
 
@@ -271,39 +236,31 @@ bond_upper_bound(bond_collection *bc, const dbl *query_vals, BUN k)
 
 	// calc full distance for the sample across all dimensions
 	dbl res = 0;
-	for (int nr = 0; nr < bc->wsz; nr++) {
-		oid base = nr * bc->bsz;
-		for (int i = 0; i < bc->bsz; i++) {
-			tc[i] = base + i;
-			td[i] = 0;
-		}
-
-		for (int d = 0; d < bc->ndims; d++) {
-			const dbl *vals = (const dbl *) Tloc(bc->dims[d], 0);
-			dbl q = query_vals[d];
-			dbl sum = 0;
-
-			for (int i = 0; i < bc->bsz; i++) {
-				dbl diff = vals[tc[i]] - q;
-				dbl m = diff * diff;
-				td[i] += m;
-				sum += m;
-			}
-			bc->dim_means[d] += sum;
-		}
-		if (nr == 0) {
-			res = topn(tc, td, bc->tcand, bc->tdist, bc->bsz, k);
-			for(BUN i = 0; i < k; i++) {
-				cands[i] = bc->tcand[i];
-				dists[i] = bc->tdist[i];
-			}
-		} else {
-			res = topn_merge(cands, dists, tc, td, bc->bsz, k);
-		}
+	for (int i = 0; i < bc->bsz; i++) {
+		tc[i] = i;
+		td[i] = 0;
 	}
+
 	for (int d = 0; d < bc->ndims; d++) {
-		bc->dim_means[d] /= (bc->bsz*bc->wsz);
+		const dbl *vals = (const dbl *) bc->dimsp[d];
+		dbl q = query_vals[d];
+		dbl sum = 0;
+
+		for (int i = 0; i < bc->bsz; i++) {
+			dbl diff = vals[tc[i]] - q;
+			dbl m = diff * diff;
+			td[i] += m;
+			sum += m;
+		}
+		bc->dim_means[d] += sum;
 	}
+	res = topn(tc, td, bc->tcand, bc->tdist, bc->bsz, k);
+	for(BUN i = 0; i < k; i++) {
+		cands[i] = bc->tcand[i];
+		dists[i] = bc->tdist[i];
+	}
+	for (int d = 0; d < bc->ndims; d++)
+		bc->dim_means[d] /= bc->bsz;
 	return res;
 }
 
@@ -320,7 +277,7 @@ bond_search_fast(bond_collection *bc, const dbl *query_vals,
 	BUN ncands = bc->nvecs, pruned = 0;
 	oid *tc = bc->tc;
 	dbl *td = bc->td;
-	for (BUN z = (bc->wsz*bc->bsz); z < ncands; z+=bc->bsz) {
+	for (BUN z = bc->bsz; z < ncands; z+=bc->bsz) {
 		BUN end = z+bc->bsz > ncands?ncands:z+bc->bsz, j, i = 0;
 		// initialize, all vectors are candidates
 
@@ -337,19 +294,12 @@ bond_search_fast(bond_collection *bc, const dbl *query_vals,
 			/* partial dists */
 			int o = dim_order[d];
 			dbl qd = query_vals[o];
-			const dbl *col = (const dbl*) Tloc(bc->dims[o], z);
+			const dbl *col = (const dbl *) (bc->dimsp[o]+z);
 
 	//		lng T0 = GDKusec();
-			if (sz == (BUN)bc->bsz) {
-				for (int i = 0; i < bc->bsz; i++) {
-					dbl diff = col[i] - qd;
-					td[i] += diff * diff;
-				}
-			} else {
-				for (i = 0; i < sz; i++) {
-					dbl diff = col[i] - qd;
-					td[i] += diff * diff;
-				}
+			for (i = 0; i < sz; i++) {
+				dbl diff = col[i] - qd;
+				td[i] += diff * diff;
 			}
 	//		Tdists += GDKusec() - T0;
 			//printf("partial dists chunk " BUNFMT " " BUNFMT " d=%zu t=" LLFMT "\n", j, sz, (size_t)d,  GDKusec() - T0);
@@ -365,7 +315,7 @@ bond_search_fast(bond_collection *bc, const dbl *query_vals,
 			/* partial dists */
 			int o = dim_order[d];
 			dbl qd = query_vals[o];
-			const dbl *col = (const dbl*) Tloc(bc->dims[o], z);
+			const dbl *col = (const dbl *) (bc->dimsp[o]+z);
 
 	//		lng T0 = GDKusec();
 			for (BUN i = 0; i < sz; i++) {
