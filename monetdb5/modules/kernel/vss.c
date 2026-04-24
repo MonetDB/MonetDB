@@ -119,7 +119,7 @@ bond_dim_order(allocator *ma, bond_collection *bc)
 	return order;
 }
 
-#define SS 8
+#define SS 4
 #define VS (2048)
 static bond_collection *
 bond_create(allocator *ma, BAT **dim_bats, int ndims, int k)
@@ -132,10 +132,8 @@ bond_create(allocator *ma, BAT **dim_bats, int ndims, int k)
 		};
 		if (bc) {
 			bc->bsz = VS;
-			if (ndims > 512)
-				bc->bsz = 8*VS;
-			bc->candidates = ma_alloc(ma, bc->bsz * sizeof(oid));
-			bc->dists = ma_alloc(ma, bc->bsz * sizeof(dbl));
+			bc->candidates = ma_alloc(ma, k * sizeof(oid));
+			bc->dists = ma_alloc(ma, k * sizeof(dbl));
 
 			bc->tcand = ma_alloc(ma, k * sizeof(oid));
 			bc->tdist = ma_alloc(ma, k * sizeof(dbl));
@@ -300,11 +298,7 @@ bond_upper_bound(bond_collection *bc, const dbl *query_vals, BUN k)
 				dists[i] = bc->tdist[i];
 			}
 		} else {
-			res = topn_merge(cands, dists, bc->tc, bc->td, bc->bsz, k);
-			for(BUN i = 0; i < k; i++) {
-				cands[i] = bc->tcand[i];
-				dists[i] = bc->tdist[i];
-			}
+			res = topn_merge(cands, dists, tc, td, bc->bsz, k);
 		}
 	}
 	for (int d = 0; d < bc->ndims; d++) {
@@ -339,7 +333,7 @@ bond_search_fast(bond_collection *bc, const dbl *query_vals,
 
 		BUN sz = i, cur_pruned = 0;
 		int step = 2, mask = step - 1, d = 0;
-		for (d = 0; d < bc->ndims && (cur_pruned*16) < sz; d++) {
+		for (d = 0; d < bc->ndims && (cur_pruned*4) < sz; d++) {
 			/* partial dists */
 			int o = dim_order[d];
 			dbl qd = query_vals[o];
@@ -359,10 +353,6 @@ bond_search_fast(bond_collection *bc, const dbl *query_vals,
 			}
 	//		Tdists += GDKusec() - T0;
 			//printf("partial dists chunk " BUNFMT " " BUNFMT " d=%zu t=" LLFMT "\n", j, sz, (size_t)d,  GDKusec() - T0);
-			if ((d&mask) != mask)
-				continue;
-			step *= 2;
-			mask = step - 1;
 
 			/* prune */
 	//		T0 = GDKusec();
@@ -371,7 +361,7 @@ bond_search_fast(bond_collection *bc, const dbl *query_vals,
 	//		Tprune += GDKusec() - T0;
 			//printf("prune " BUNFMT " d=%zu " "t=" LLFMT "\n",  sz, (size_t)d,  GDKusec() - T0);
 		}
-		for (; d < bc->ndims; d++) {
+		for (; d < bc->ndims && sz; d++) {
 			/* partial dists */
 			int o = dim_order[d];
 			dbl qd = query_vals[o];
@@ -384,7 +374,7 @@ bond_search_fast(bond_collection *bc, const dbl *query_vals,
 			}
 	//		Tdists += GDKusec() - T0;
 			//printf("partial dists chunk " BUNFMT " " BUNFMT " d=%zu t=" LLFMT "\n", j, sz, (size_t)d,  GDKusec() - T0);
-			if (sz <= 2*k || (d&mask) != mask)
+			if ((d&mask) != mask)
 				continue;
 			step *= 2;
 			mask = step - 1;
@@ -983,16 +973,15 @@ pdx(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			bc[j] = (oid)j;
 		}
 		str msg;
-
 		BUN ncand = (BUN) nrows;
 		if ((msg = _process_block(blk, query_vals, nrows, ndims, threshold, bc, bd, &ncand)) != MAL_SUCCEED) {
 			ma_close(&ta_state);
 			BBPunfix(b->batCacheid);
 			return msg;
 		}
-		//T1 = GDKusec();
-		//printf("Process block " LLFMT "\n", T1 - T0);
-		//T0 = T1;
+	//T1 = GDKusec();
+	//printf("block processed " LLFMT " block cands %d\n", T1 - T0, (int)nrows);
+	//T0 = T1;
 
 		// Convert local block indices to global OIDs
         for (BUN j = 0; j < ncand; j++) {
