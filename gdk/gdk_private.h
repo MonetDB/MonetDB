@@ -74,8 +74,6 @@ gdk_return BATsave_iter(BAT *bd, BATiter *bi, BUN size)
 	__attribute__((__visibility__("hidden")));
 void BATsetdims(BAT *b, uint16_t width)
 	__attribute__((__visibility__("hidden")));
-void BATustrget(BAT *b)
-	__attribute__((__visibility__("hidden")));
 void BBPcacheit(BAT *bn, bool lock)
 	__attribute__((__visibility__("hidden")));
 gdk_return BBPchkfarms(void)
@@ -170,8 +168,6 @@ gdk_return GDKunlink(int farmid, const char *dir, const char *nme, const char *e
 	__attribute__((__visibility__("hidden")));
 lng getBBPlogno(void)
 	__attribute__((__visibility__("hidden")));
-BAT *getUstrBat(void)
-	__attribute__((__visibility__("hidden")));
 BUN HASHappend(BAT *b, BUN i, const void *v)
 	__attribute__((__visibility__("hidden")));
 void HASHappend_locked(BAT *b, BUN i, const void *v)
@@ -215,7 +211,7 @@ void HEAP_recover(Heap *, const var_t *, BUN)
 gdk_return HEAPsave(Heap *h, const char *nme, const char *ext, bool dosync, BUN free, MT_Lock *lock)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
-double joincost(BAT *r, bool lustr, BUN lcount, struct canditer *rci, bool *hash, bool *phash, bool *cand)
+double joincost(BAT *r, bat lustr, BUN lcount, struct canditer *rci, bool *hash, bool *phash, bool *cand)
 	__attribute__((__visibility__("hidden")));
 void STRMPincref(Strimps *strimps)
 	__attribute__((__visibility__("hidden")));
@@ -334,7 +330,7 @@ ilog2(BUN x)
 }
 
 /* some macros to help print info about BATs when using ALGODEBUG */
-#define ALGOBATFMT	"%s#" BUNFMT "@" OIDFMT "[%s%s]%s%s%s%s%s%s%s%s%s"
+#define ALGOBATFMT	"%s#" BUNFMT "@" OIDFMT "[%s%s]%s%s%s%s%s%s%s%s%s%s"
 #define ALGOBATPAR(b)							\
 	BATgetId(b),							\
 	BATcount(b),							\
@@ -346,12 +342,13 @@ ilog2(BUN x)
 	b->tsorted ? "S" : b->tnosorted ? "!s" : "",			\
 	b->trevsorted ? "R" : b->tnorevsorted ? "!r" : "",		\
 	b->tkey ? "K" : b->tnokey[1] ? "!k" : "",			\
+	b->tvkey ? "U" : "",						\
 	b->tnonil ? "N" : "",						\
 	b->thash ? "H" : "",						\
 	b->torderidx ? "O" : "",					\
 	b->tstrimps ? "I" : b->theap && b->theap->parentid && BBP_desc(b->theap->parentid) && BBP_desc(b->theap->parentid)->tstrimps ? "(I)" : ""
 /* use ALGOOPTBAT* when BAT is optional (can be NULL) */
-#define ALGOOPTBATFMT	"%s%s" BUNFMT "%s" OIDFMT "%s%s%s%s%s%s%s%s%s%s%s%s%s"
+#define ALGOOPTBATFMT	"%s%s" BUNFMT "%s" OIDFMT "%s%s%s%s%s%s%s%s%s%s%s%s%s%s"
 #define ALGOOPTBATPAR(b)						\
 	b ? BATgetId(b) : "",						\
 	b ? "#" : "",							\
@@ -367,6 +364,7 @@ ilog2(BUN x)
 	b ? b->tsorted ? "S" : b->tnosorted ? "!s" : "" : "",		\
 	b ? b->trevsorted ? "R" : b->tnorevsorted ? "!r" : "" : "",	\
 	b ? b->tkey ? "K" : b->tnokey[1] ? "!k" : "" : "",		\
+	b && b->tvkey ? "U" : "",					       \
 	b && b->tnonil ? "N" : "",					\
 	b && b->thash ? "H" : "",					\
 	b && b->torderidx ? "O" : "",					\

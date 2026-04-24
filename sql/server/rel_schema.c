@@ -382,6 +382,7 @@ column_constraint_name(allocator *ta, symbol *s, sql_column *sc, sql_table *t)
 #define COL_NULL	0
 #define COL_DEFAULT 1
 #define COL_STORAGE 2
+#define COL_USTR	4
 
 static bool
 foreign_key_check_types(sql_subtype *lt, sql_subtype *rt)
@@ -802,6 +803,30 @@ column_options(sql_query *query, dlist *opt_list, sql_schema *ss, sql_table *t, 
 				case -2:
 				case -3:
 					(void) sql_error(sql, 02, SQLSTATE(42000) "STORAGE option: transaction conflict detected");
+					return SQL_ERR;
+				default:
+					break;
+				}
+				break;
+			case SQL_USTR:
+				if (used & (1 << COL_USTR)) {
+					(void) sql_error(sql, 02, SQLSTATE(42000) "DISTINCT STRING COLUMN option for a column may be specified at most once");
+					return SQL_ERR;
+				}
+				used |= (1 << COL_USTR);
+				switch (mvc_ustr(sql, ss, cs, s->data.lval)) {
+				case -1:
+					(void) sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					return SQL_ERR;
+				case -2:
+				case -3:
+					(void) sql_error(sql, 02, SQLSTATE(42000) "DISTINCT STRING COLUMN option: transaction conflict detected");
+					return SQL_ERR;
+				case -4:
+					(void) sql_error(sql, 02, SQLSTATE(42000) "DISTINCT STRING COLUMN option: no such schema '%s'", qname_schema(s->data.lval));
+					return SQL_ERR;
+				case -5:
+					(void) sql_error(sql, 02, SQLSTATE(42000) "DISTINCT STRING COLUMN option: column is not a (var)char column");
 					return SQL_ERR;
 				default:
 					break;

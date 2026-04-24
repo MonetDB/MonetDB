@@ -160,6 +160,7 @@ BATcreatedesc(oid hseq, int tt, bool heapnames, role_t role, uint16_t width)
 
 		.ttype = tt,
 		.tkey = true,
+		.tvkey = tt == TYPE_str,
 		.tnonil = true,
 		.tnil = false,
 		.tsorted = ATOMlinear(tt),
@@ -809,9 +810,12 @@ COLcopy2(BAT *b, int tt, bool writable, bool mayshare, role_t role)
 	}
 	if (b->ustr &&
 	    mayshare &&
-	    role == PERSISTENT &&
-	    BATconvert2ustr(bn) != GDK_SUCCEED) {
-		goto bunins_failed;
+	    role == PERSISTENT) {
+		BAT *bu = BATdescriptor(b->ustr);
+		gdk_return rc = BATconvert2ustr(bn, bu);
+		BBPreclaim(bu);
+		if (rc != GDK_SUCCEED)
+			goto bunins_failed;
 	}
 	if (bn->tvheap != NULL && bn->tvheap->base == NULL && !mayshare) {
 		/* this combination can happen since the last
@@ -840,6 +844,7 @@ COLcopy2(BAT *b, int tt, bool writable, bool mayshare, role_t role)
 				if (HEAPextend(bn->tvheap, bi.vhfree, true) != GDK_SUCCEED)
 					goto bunins_failed;
 				memcpy(bn->tvheap->base, bi.vh->base, bi.vhfree);
+				bn->tvkey = bi.vkey;
 				bn->tvheap->free = bi.vhfree;
 				bn->tvheap->dirty = true;
 				bn->tascii = bi.ascii;
@@ -1938,8 +1943,8 @@ BUNfnd(BAT *b, const void *v)
 	}
 	var_t off = 0;
 	if (b->ustr) {
-		BAT *u = getUstrBat();
-		if (u == NULL || (r = BUNfnd(u, v)) == BUN_NONE)
+		BAT *u = BBP_desc(b->ustr);
+		if ((r = BUNfnd(u, v)) == BUN_NONE)
 			return r;
 		bi = bat_iterator(u);
 		off = VarHeapVal(bi.base, r, bi.width);

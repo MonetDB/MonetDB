@@ -404,7 +404,7 @@ typedef struct BAT {
 	bool tsorted:1;		/* column is sorted in ascending order */
 	bool trevsorted:1;	/* column is sorted in descending order */
 	bool tascii:1;		/* string column is fully ASCII (7 bit) */
-	bool ustr:1;		/* use ustrbat */
+	bat ustr;		/* use ustr bat */
 	BUN tnokey[2];		/* positions that prove key==FALSE */
 	BUN tnosorted;		/* position that proves sorted==FALSE */
 	BUN tnorevsorted;	/* position that proves revsorted==FALSE */
@@ -619,8 +619,8 @@ typedef struct BATiter {
 		vhdirty:1,
 		copiedtodisk:1,
 		transient:1,
-		ascii:1,
-		ustr:1;
+		ascii:1;
+	bat ustr;
 	restrict_t restricted:2;
 #ifndef NDEBUG
 	bool locked:1;
@@ -789,7 +789,7 @@ gdk_export BAT *BATdense(oid hseq, oid tseq, BUN cnt)
 	__attribute__((__warn_unused_result__));
 gdk_export gdk_return BATextend(BAT *b, BUN newcap)
 	__attribute__((__warn_unused_result__));
-gdk_export gdk_return BATconvert2ustr(BAT *b)
+gdk_export gdk_return BATconvert2ustr(BAT *b, BAT *bu)
 	__attribute__((__warn_unused_result__));
 
 /* internal */
@@ -1245,16 +1245,14 @@ gdk_export void GDKclrerr(void);
  */
 __attribute__((__warn_unused_result__))
 static inline gdk_return
-tfastins_nocheckVAR(BAT *b, BUN p, const void *v)
+tfastins_nochecknolockVAR(BAT *b, BUN p, const void *v)
 {
 	var_t d;
 	gdk_return rc;
 	assert(b->tbaseoff == 0);
 	assert(b->theap->parentid == b->batCacheid);
-	MT_lock_set(&b->theaplock);
 	rc = ATOMputVAR(b, &d, v);
 	if (rc != GDK_SUCCEED) {
-		MT_lock_unset(&b->theaplock);
 		return rc;
 	}
 	if (d != 0 &&
@@ -1263,7 +1261,6 @@ tfastins_nocheckVAR(BAT *b, BUN p, const void *v)
 		/* doesn't fit in current heap, upgrade it */
 		rc = GDKupgradevarheap(b, d, 0, MAX(p, b->batCount));
 		if (rc != GDK_SUCCEED) {
-			MT_lock_unset(&b->theaplock);
 			return rc;
 		}
 	}
@@ -1289,8 +1286,17 @@ tfastins_nocheckVAR(BAT *b, BUN p, const void *v)
 	default:
 		MT_UNREACHABLE();
 	}
-	MT_lock_unset(&b->theaplock);
 	return GDK_SUCCEED;
+}
+
+__attribute__((__warn_unused_result__))
+static inline gdk_return
+tfastins_nocheckVAR(BAT *b, BUN p, const void *v)
+{
+	MT_lock_set(&b->theaplock);
+	gdk_return rc = tfastins_nochecknolockVAR(b, p, v);
+	MT_lock_unset(&b->theaplock);
+	return rc;
 }
 
 __attribute__((__warn_unused_result__))

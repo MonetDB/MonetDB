@@ -825,6 +825,7 @@ extern sql_table *sql_trans_find_table(sql_trans *tr, sqlid id);
 extern sql_sequence *find_sql_sequence(sql_trans *tr, sql_schema *s, const char *sname);
 
 extern sql_ustr *find_sql_ustr(sql_trans *tr, sql_schema *s, const char *uname);
+extern sql_ustr *find_sql_ustr_id(sql_trans *tr, sql_schema *s, sqlid id);
 
 extern sql_schema *find_sql_schema(sql_trans *t, const char *sname);
 extern sql_schema *find_sql_schema_id(sql_trans *t, sqlid id);

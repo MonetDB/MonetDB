@@ -250,6 +250,7 @@ extern int mvc_default(mvc *c, sql_column *col, char *val);
 extern int mvc_check(mvc *m, sql_column *col, char *check);
 extern int mvc_drop_default(mvc *c, sql_column *col);
 extern int mvc_storage(mvc *c, sql_column *col, char *storage);
+extern int mvc_ustr(mvc *m, sql_schema *s, sql_column *col, dlist *l);
 extern int mvc_subtype(mvc *m, sql_column *col, sql_subtype *t);
 extern int mvc_access(mvc *m, sql_table *t, sht access);
 extern int mvc_is_sorted(mvc *c, sql_column *col);

@@ -998,13 +998,26 @@ dump_column_definition(Mapi mid, stream *sqlf, const char *schema,
 		}
 		space = dump_type(mid, sqlf, c_type, c_type_digits, c_type_scale, hashge);
 		if (strcmp(c_null, "false") == 0) {
-			mnstr_printf(sqlf, "%*s NOT NULL",
-						 CAP(13 - space), "");
+			mnstr_printf(sqlf, "%*s NOT NULL", CAP(13 - space), "");
 			space = 13;
 		}
-		if (c_storage && strcmp(c_storage, "USTR") == 0) {
-			mnstr_printf(sqlf, "%*s STORAGE '%s'",
-						 CAP(13 - space), "", c_storage);
+		if (c_storage && strncmp(c_storage, "USTR", 4) == 0) {
+			char q[128];
+			int sid, uid;
+			sscanf(c_storage, "USTR %d %d", &sid, &uid);
+			snprintf(q, sizeof(q), "SELECT s.name, o.name FROM sys.schemas s, sys.objects o WHERE s.id = %d AND o.nr = s.id AND o.id = %d", sid, uid);
+			MapiHdl h = mapi_query(mid, q);
+			if (h != NULL) {
+				if (mapi_fetch_row(h) != 0) {
+					const char *sname = mapi_fetch_field(h, 0);
+					const char *uname = mapi_fetch_field(h, 1);
+					mnstr_printf(sqlf, "%*s DISTINCT STRING COLUMN ",
+								 CAP(13 - space), "");
+					dquoted_print(sqlf, sname, ".");
+					dquoted_print(sqlf, uname, NULL);
+				}
+				mapi_close_handle(h);
+			}
 			space = 13;
 		}
 
@@ -1961,7 +1974,7 @@ dump_table_storage(Mapi mid, const char *schema, const char *tname, stream *sqlf
 
 	snprintf(query, maxquerylen,
 			 "SELECT name, storage FROM sys._columns "
-			 "WHERE storage NOT LIKE 'USTR' "
+			 "WHERE storage NOT LIKE 'USTR%%' "
 			 "AND table_id = (SELECT id FROM sys._tables WHERE name = '%s' "
 			 "AND schema_id = (SELECT id FROM sys.schemas WHERE name = '%s'))",
 			 t, s);

@@ -158,6 +158,7 @@ insert_string_bat(BAT *b, BATiter *ni, struct canditer *ci, bool force, bool may
 		/* vheaps are already shared, continue doing so: we just
 		 * need to append the offsets */
 		toff = 0;
+		b->tvkey |= ni->vkey;
 		MT_thread_setalgorithm("shared vheap");
 	} else if (b->ustr) {
 		MT_thread_setalgorithm("individual inserts into ustr");
@@ -170,6 +171,7 @@ insert_string_bat(BAT *b, BATiter *ni, struct canditer *ci, bool force, bool may
 		HEAPincref(ni->vh);
 		b->tvheap = ni->vh;
 		b->tascii = ni->ascii;
+		b->tvkey = ni->vkey;
 		MT_lock_unset(&b->theaplock);
 		BBPretain(ni->vh->parentid);
 		if (bid != b->batCacheid)
@@ -231,6 +233,7 @@ insert_string_bat(BAT *b, BATiter *ni, struct canditer *ci, bool force, bool may
 				b->tvheap->free = toff + ni->vhfree;
 				b->tvheap->dirty = true;
 				b->tascii &= ni->ascii;
+				b->tvkey = ni->vkey && toff == 0;
 				MT_lock_unset(&b->theaplock);
 			}
 		}
@@ -569,6 +572,7 @@ append_varsized_bat(BAT *b, BATiter *ni, struct canditer *ci, bool mayshare)
 		b->trevsorted = ni->revsorted;
 		b->tnorevsorted = ni->norevsorted;
 		b->tkey = ni->key;
+		b->tvkey = ni->vkey;
 		b->tnokey[0] = ni->nokey[0];
 		b->tnokey[1] = ni->nokey[1];
 		b->tminpos = ni->minpos;
@@ -977,6 +981,7 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 			b->tnorevsorted = 0;
 		}
 		b->tkey = ni.key;
+		b->tvkey = ni.vkey;
 		if (ci.ncand == BATcount(n)) {
 			b->tnokey[0] = ni.nokey[0];
 			b->tnokey[1] = ni.nokey[1];

@@ -3196,7 +3196,7 @@ create_col(sql_trans *tr, sql_column *c)
 				bat->cs.st = ST_DICT;
 			} else if (strncmp(c->storage_type, "FOR", 3) == 0) {
 				bat->cs.st = ST_FOR;
-			} else if (strcmp(c->storage_type, "USTR") == 0) {
+			} else if (strncmp(c->storage_type, "USTR", 4) == 0) {
 				bat->cs.st = ST_USTR;
 			}
 		}
@@ -3237,15 +3237,20 @@ create_col(sql_trans *tr, sql_column *c)
 			if (!b) {
 				ok = LOG_ERR;
 			} else if (c->storage_type &&
-					   strcmp(c->storage_type, "USTR") == 0) {
-				if (BATconvert2ustr(b) != GDK_SUCCEED) {
-					bat_destroy(b);
+					   strncmp(c->storage_type, "USTR ", 5) == 0) {
+				int sid, uid;
+				sscanf(c->storage_type, "USTR %d %d", &sid, &uid);
+				sql_schema *s = find_sql_schema_id(tr, sid);
+				sql_ustr *u = find_sql_ustr_id(tr, s, uid);
+				BAT *bu = temp_descriptor(u->batid);
+				if (BATconvert2ustr(b, bu) != GDK_SUCCEED) {
 					ok = LOG_ERR;
 				} else {
 					bat->cs.st = ST_USTR;
 					create_delta(ATOMIC_PTR_GET(&c->data), b);
-					bat_destroy(b);
 				}
+				bat_destroy(b);
+				bat_destroy(bu);
 			} else {
 				create_delta(ATOMIC_PTR_GET(&c->data), b);
 				bat_destroy(b);

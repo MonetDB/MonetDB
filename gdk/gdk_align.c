@@ -206,6 +206,8 @@ VIEWcreate(oid seq, BAT *b, BUN l, BUN h)
 	BBPretain(bn->theap->parentid);
 	if (bn->tvheap)
 		BBPretain(bn->tvheap->parentid);
+	if (bn->ustr)
+		BBPfix(bn->ustr);
 	TRC_DEBUG(ALGO, ALGOBATFMT " " BUNFMT "," BUNFMT " -> " ALGOBATFMT "\n",
 		  ALGOBATPAR(b), l, h, ALGOBATPAR(bn));
 	return bn;

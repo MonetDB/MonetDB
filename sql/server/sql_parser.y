@@ -324,6 +324,7 @@ int yydebug=1;
 	update_statement
 	update_stmt
 	ustr_def
+	ustr_column
 	value_exp
 	view_def
 	when_statement
@@ -2272,6 +2273,7 @@ column_option:
 	|	column_constraint
 	|	generated_column
 	|	storage_type
+	|	ustr_column
 	;
 
 default:
@@ -2284,6 +2286,13 @@ default_value:
 
 storage_type:
 		STORAGE string { $$ = _symbol_create(SQL_STORAGE, $2); }
+	;
+
+ustr_column:
+		DISTINCT sqlSTRING COLUMN qname
+		{
+			$$ = _symbol_create_list(SQL_USTR, $4);
+		}
 	;
 
 column_constraint:
@@ -8181,6 +8190,7 @@ char *token2string(tokens token)
 	SQL(UNIQUE_NULLS_NOT_DISTINCT);
 	SQL(UPDATE);
 	SQL(USING);
+	SQL(USTR);
 	SQL(VALUES);
 	SQL(VIEW);
 	SQL(WHEN);

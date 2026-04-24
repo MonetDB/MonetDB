@@ -1112,7 +1112,7 @@ BAThash(BAT *b)
 	if (b->thash == NULL) {
 		struct canditer ci;
 		canditer_init(&ci, b, NULL);
-		if ((b->thash = BAThash_impl(b, &ci, b->ustr, "thash")) == NULL) {
+		if ((b->thash = BAThash_impl(b, &ci, b->ustr != 0, "thash")) == NULL) {
 			MT_rwlock_wrunlock(&b->thashlock);
 			return GDK_FAIL;
 		}

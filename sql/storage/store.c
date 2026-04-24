@@ -6905,15 +6905,6 @@ sql_trans_alter_storage(sql_trans *tr, sql_column *col, char *storage)
 
 		if (is_oid_nil(rid))
 			return -1;
-		if (strcmp(p, "USTR") == 0) {
-			sql_delta *d = ATOMIC_PTR_GET(&col->data);
-			BAT *b = BATdescriptor(d->cs.bid);
-			if (b == NULL || BATconvert2ustr(b) != GDK_SUCCEED) {
-				BBPreclaim(b);
-				return -4;
-			}
-			BBPreclaim(b);
-		}
 		if ((res = store->table_api.column_update_value(tr, col_dfs, rid, p)))
 			return res;
 

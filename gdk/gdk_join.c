@@ -3261,7 +3261,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 		MT_rwlock_rdlock(&r->thashlock);
 		hsh = r->thash;
 		locked = true;
-		ustr = getUstrBat();
+		ustr = BBP_desc(r->ustr);
 		ustri = bat_iterator(ustr);
 		if (BAThash(ustr) != GDK_SUCCEED)
 			goto bailout;
@@ -3365,8 +3365,9 @@ hashjoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 					bat_iterator_end(&li);
 					bat_iterator_end(&ri);
 					BBPreclaim(b);
-					if (ustr)
+					if (ustr) {
 						bat_iterator_end(&ustri);
+					}
 					return nomatch(r1p, r2p, r3p, l, r, lci,
 						       bit_nil, false, false,
 						       __func__, t0);
@@ -3388,8 +3389,9 @@ hashjoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 					bat_iterator_end(&li);
 					bat_iterator_end(&ri);
 					BBPreclaim(b);
-					if (ustr)
+					if (ustr) {
 						bat_iterator_end(&ustri);
+					}
 					return nomatch(r1p, r2p, r3p, l, r, lci,
 						       bit_nil, false, false,
 						       __func__, t0);
@@ -3640,8 +3642,9 @@ hashjoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 	}
 	bat_iterator_end(&li);
 	bat_iterator_end(&ri);
-	if (ustr)
+	if (ustr) {
 		bat_iterator_end(&ustri);
+	}
 	if (BATcount(r1) > 0) {
 		if (BATtdense(r1))
 			r1->tseqbase = ((oid *) r1->theap->base)[0];
@@ -3686,8 +3689,9 @@ hashjoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 	}
 	bat_iterator_end(&li);
 	bat_iterator_end(&ri);
-	if (ustr)
+	if (ustr) {
 		bat_iterator_end(&ustri);
+	}
 	BBPreclaim(r1);
 	BBPreclaim(r2);
 	BBPreclaim(r3);
@@ -4003,7 +4007,7 @@ BATguess_uniques(BAT *b, struct canditer *ci)
  * is the estimated cost, the last three arguments receive some extra
  * information */
 double
-joincost(BAT *r, bool lustr, BUN lcount, struct canditer *rci,
+joincost(BAT *r, bat lustr, BUN lcount, struct canditer *rci,
 	 bool *hash, bool *phash, bool *cand)
 {
 	bool rhash;
@@ -4017,7 +4021,7 @@ joincost(BAT *r, bool lustr, BUN lcount, struct canditer *rci,
 
 	(void) BATcheckhash(r);
 	MT_rwlock_rdlock(&r->thashlock);
-	rhash = r->thash != NULL && (!r->ustr || lustr);
+	rhash = r->thash != NULL && (!r->ustr || r->ustr == lustr);
 	nheads = rhash ? r->thash->nheads : 0;
 	cnt = BATcount(r);
 	MT_rwlock_rdunlock(&r->thashlock);
@@ -4039,7 +4043,7 @@ joincost(BAT *r, bool lustr, BUN lcount, struct canditer *rci,
 			rcost *= (double) cnt / nheads;
 		} else if ((parent = VIEWtparent(r)) != 0 &&
 			   (b = BATdescriptor(parent)) != NULL) {
-			if (BATcheckhash(b) && (!b->ustr || lustr)) {
+			if (BATcheckhash(b) && (!b->ustr || b->ustr == lustr)) {
 				MT_rwlock_rdlock(&b->thashlock);
 				rhash = prhash = b->thash != NULL;
 				if (rhash) {

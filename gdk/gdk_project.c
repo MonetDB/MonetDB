@@ -559,6 +559,7 @@ BATproject2(BAT *restrict l, BAT *restrict r1, BAT *restrict r2)
 		bn->twidth = r1i.width;
 		bn->tshift = r1i.shift;
 		bn->tascii = r1i.ascii;
+		bn->tvkey = r1i.vkey;
 	}
 
 	bn->tunique_est =
@@ -821,6 +822,7 @@ BATprojectchain(BAT **bats)
 			bn->tnonil = bi.nonil;
 			bn->tkey = false;
 			bn->tascii = bi.ascii;
+			bn->tvkey = bi.vkey;
 			assert(bn->tvheap == NULL);
 			bn->tvheap = bi.vh;
 			HEAPincref(bi.vh);

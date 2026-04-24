@@ -120,12 +120,15 @@ hashselect(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 	*algo = "hashselect";
 	var_t off = 0;
 	if (bi->ustr) {
-		b2 = getUstrBat();
-		if ((i = BUNfnd(b2, tl)) == BUN_NONE)
+		b2 = BATdescriptor(bi->ustr);
+		if ((i = BUNfnd(b2, tl)) == BUN_NONE) {
+			BBPreclaim(b2);
 			return bn;
+		}
 		pbi = bat_iterator(b2);
 		off = VarHeapVal(pbi.base, i, pbi.width);
 		bat_iterator_end(&pbi);
+		BBPreclaim(b2);
 		tl = &off;
 	} else if (phash && (b2 = BATdescriptor(VIEWtparent(bi->b))) != NULL) {
 		*algo = "hashselect on parent";

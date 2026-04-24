@@ -420,6 +420,15 @@ vheapinit(BAT *b, const char *buf, unsigned bbpversion, const char *filename, in
 		TRC_CRITICAL(GDK, "invalid format for BBP.dir on line %d", lineno);
 		return -1;
 	}
+	if (b->ustr) {
+		assert(bbpversion > GDKLIBRARY_USTR);
+		if (free == 0 || free >= N_BBPINIT * BBPINIT) {
+			TRC_CRITICAL(GDK, "ustr ID (%" PRIu64 ") out of allowed range, on line %d", free, lineno);
+			return -1;
+		}
+		b->ustr = (bat) free;
+		return n;
+	}
 	if (b->batCount == 0)
 		free = 0;
 	if (b->ttype >= 0 &&
@@ -559,7 +568,7 @@ heapinit(BAT *b, const char *buf,
 	b->tnonil = (properties & 0x0400) != 0;
 	b->tnil = (properties & 0x0800) != 0;
 	b->tascii = (properties & 0x1000) != 0;
-	b->ustr = (bbpversion <= GDKLIBRARY_USTR) ? false : (properties & 0x2000) != 0;
+	b->ustr = (bbpversion <= GDKLIBRARY_USTR) ? 0 : (properties & 0x2000) != 0;
 	b->tvkey = (bbpversion <= GDKLIBRARY_USTR) ? false : (properties & 0x4000) != 0;
 	b->tnosorted = (BUN) nosorted;
 	b->tnorevsorted = (BUN) norevsorted;
@@ -591,7 +600,7 @@ heapinit(BAT *b, const char *buf,
 		b->tmaxpos = (BUN) maxpos;
 	else
 		b->tmaxpos = BUN_NONE;
-	if (t && var && !b->ustr) {
+	if (t && var) {
 		t = vheapinit(b, buf + n, bbpversion, filename, lineno);
 		if (t < 0)
 			return t;
@@ -1897,25 +1906,23 @@ BBPinit(bool allow_hge_upgrade, bool no_manager)
 	/* add free bats to free list in such a way that low numbered
 	 * ones are at the head of the list; also record whether we have
 	 * a ustr bat */
-	bool seenustr = false;
 	for (bat i = (bat) ATOMIC_GET(&BBPsize) - 1; i > 0; i--) {
 		BAT *b = BBP_desc(i);
 		if (b->batCacheid == 0) {
 			BBP_next(i) = BBP_free;
 			BBP_free = i;
 			BBP_nfree++;
-		} else {
-			seenustr |= b->ustr;
+		} else if (b->ustr) {
+			BAT *u = BBP_desc(b->ustr);
+			if (u->batCacheid == 0 ||
+			    u->ttype != TYPE_str ||
+			    u->ustr != 0 ||
+			    !u->tvkey) {
+				TRC_CRITICAL(GDK, "incorrect reference to ustr bat from " ALGOBATFMT, ALGOBATPAR(b));
+				ATOMIC_SET(&GDKdebug, dbg);
+				return GDK_FAIL;
+			}
 		}
-	}
-
-	if (seenustr && getUstrBat() == NULL) {
-#ifdef GDKLIBRARY_HASHASH
-		GDKfree(hashbats);
-#endif
-		TRC_CRITICAL(GDK, "ustrbat is missing");
-		ATOMIC_SET(&GDKdebug, dbg);
-		return GDK_FAIL;
 	}
 
 	/* will call BBPrecover if needed */
@@ -2115,7 +2122,7 @@ heap_entry(FILE *fp, BATiter *bi, BUN size)
 			((uint16_t) bi->nonil << 10) |
 			((uint16_t) bi->nil << 11) |
 			((uint16_t) bi->ascii << 12) |
-			((uint16_t) bi->ustr << 13) |
+			((uint16_t) (bi->ustr != 0) << 13) |
 			((uint16_t) bi->vkey << 14)),
 		       bi->nokey[0] >= size || bi->nokey[1] >= size ? 0 : bi->nokey[0],
 		       bi->nokey[0] >= size || bi->nokey[1] >= size ? 0 : bi->nokey[1],
@@ -2130,10 +2137,11 @@ heap_entry(FILE *fp, BATiter *bi, BUN size)
 static inline int
 vheap_entry(FILE *fp, BATiter *bi, BUN size)
 {
-	(void) size;
-	if (bi->vh == NULL || bi->ustr)
-		return 0;
-	return fprintf(fp, " %zu", size == 0 ? 0 : bi->vhfree);
+	if (bi->ustr)
+		return fprintf(fp, " %d", bi->ustr);
+	if (bi->vh != NULL)
+		return fprintf(fp, " %zu", size == 0 ? 0 : bi->vhfree);
+	return 0;
 }
 
 static gdk_return
@@ -3132,6 +3140,9 @@ decref(bat i, bool logical, bool lock, const char *func)
 int
 BBPunfix(bat i)
 {
+	bat u;
+	if (BBPcheck(i) != 0 && (u = BBP_desc(i)->ustr) != 0)
+		decref(u, false, true, __func__);
 	return decref(i, false, true, __func__);
 }
 
@@ -3158,6 +3169,8 @@ BBPkeepref(BAT *b)
 	if (BATsetaccess(b, BAT_READ) == NULL)
 		return;		/* already decreffed */
 
+	if (b->ustr)
+		decref(b->ustr, false, lock, __func__);
 	refs = decref(i, false, lock, __func__);
 	(void) refs;
 	assert(refs >= 0);
@@ -3169,7 +3182,12 @@ BATdescriptor(bat i)
 	BAT *b = NULL;
 
 	if (BBPcheck(i)) {
+		BAT *u = NULL;
 		bool lock = locked_by == 0 || locked_by != MT_getpid();
+		b = BBP_desc(i);
+		if (b->ustr)
+			u = BATdescriptor(b->ustr);
+		b = NULL;
 		if (lock) {
 			MT_lock_set(&GDKswapLock(i));
 			while (BBP_status(i) & (BBPUNSTABLE|BBPLOADING)) {
@@ -3188,11 +3206,23 @@ BATdescriptor(bat i)
 			} else {
 				b = BBP_desc(i);
 			}
-			if (b->ustr && b->tvheap == NULL)
-				BATustrget(b);
+			if (b != NULL && u != NULL) {
+				MT_lock_set(&b->theaplock);
+				MT_lock_set(&u->theaplock);
+				if (b->tvheap != u->tvheap) {
+					if (b->tvheap != NULL)
+						HEAPdecref(b->tvheap, false);
+					HEAPincref(u->tvheap);
+					b->tvheap = u->tvheap;
+				}
+				MT_lock_unset(&u->theaplock);
+				MT_lock_unset(&b->theaplock);
+			}
 		}
 		if (lock)
 			MT_lock_unset(&GDKswapLock(i));
+		if (b == NULL && u != NULL)
+			BBPreclaim(u);
 	}
 	return b;
 }
@@ -3232,8 +3262,6 @@ getBBPdescriptor(bat i)
 		TRC_DEBUG(IO, "load %s\n", BBP_logical(i));
 
 		b = BATload_intern(i, false);
-		if (b && b->ustr && b->tvheap == NULL)
-			BATustrget(b);
 
 		BBP_status_off(i, BBPLOADING);
 		CHECKDEBUG if (b != NULL)

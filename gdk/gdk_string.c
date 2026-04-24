@@ -170,106 +170,64 @@ countStrings(const Heap *h)
 }
 
 
-static BAT *ustrbat;
-static MT_Lock ustrlock = MT_LOCK_INITIALIZER(ustrlock);
-
-BAT *
-getUstrBat(void)
-{
-	MT_lock_set(&ustrlock);
-	BAT *b = ustrbat;
-	if (b == NULL) {
-		bat bid = BBPindex("ustrbat");
-		if (bid > 0) {
-			b = ustrbat = BATdescriptor(bid);
-		}
-	}
-	MT_lock_unset(&ustrlock);
-	return b;
-}
-
-void
-BATustrget(BAT *b)
-{
-	MT_lock_set(&ustrlock);
-	assert(ustrbat != NULL);
-	assert(b->tvheap == NULL);
-	b->tvheap = ustrbat->tvheap;
-	HEAPincref(ustrbat->tvheap);
-	MT_lock_unset(&ustrlock);
-}
-
-static gdk_return
-ustrCreate(void)
-{
-	bat bid = BBPindex("ustrbat");
-	if (bid > 0) {
-		ustrbat = BATdescriptor(bid);
-		if (ustrbat == NULL)
-			return GDK_FAIL;
-	} else {
-		ustrbat = COLnew(0, TYPE_str, 1024, PERSISTENT);
-		if (ustrbat == NULL)
-			return GDK_FAIL;
-		if (BUNappend(ustrbat, str_nil, true) != GDK_SUCCEED ||
-		    BUNappend(ustrbat, "", true) != GDK_SUCCEED) {
-			BBPreclaim(ustrbat);
-			ustrbat = NULL;
-			return GDK_FAIL;
-		}
-		BBPrename(ustrbat, "ustrbat");
-		BATmode(ustrbat, false);
-		ustrbat = BATsetaccess(ustrbat, BAT_READ);
-	}
-	return GDK_SUCCEED;
-}
-
 static var_t
 ustrPut(BAT *b, var_t *dst, const char *v)
 {
 	assert(b->ustr);
-	assert(ustrbat != NULL);
-	assert(BBP_refs(ustrbat->batCacheid) > 0);
+
+	if (strNil(v)) {
+		*dst = 0;
+		return 0;
+	}
+
+	BAT *ustrbat = BBP_desc(b->ustr);
+	assert(ustrbat->tvkey);
 
 	/* this function is the ONLY place where ustrbat may be changed
-	 * (inserted into), and we're holding the ustrlock, so we are
+	 * (inserted into), and we're holding the ustrbat->theaplock, so we are
 	 * totally save looking at the heaps */
-	MT_lock_set(&ustrlock);
-	if (ustrbat == NULL) {
-		if (ustrCreate() != GDK_SUCCEED) {
-			MT_lock_unset(&ustrlock);
-			return (var_t) -1;
+	MT_rwlock_wrlock(&ustrbat->thashlock);
+	MT_lock_set(&ustrbat->theaplock);
+	BUN p = BUN_NONE;
+	if (ustrbat->batCount != 0) {
+		if (ustrbat->thash == NULL) {
+			struct canditer ui;
+			canditer_init(&ui, ustrbat, NULL);
+			if ((ustrbat->thash = BAThash_impl(ustrbat, &ui, false, "thash")) == NULL) {
+				MT_lock_unset(&ustrbat->theaplock);
+				MT_rwlock_wrunlock(&ustrbat->thashlock);
+				return (var_t) -1;
+			}
 		}
+		BATiter ui = bat_iterator_nolock(ustrbat);
+		HASHloop_str(&ui, ustrbat->thash, p, v)
+			break;
 	}
-	assert(ustrbat->tvkey);
-	BUN p = BUNfnd(ustrbat, v);
 	if (p == BUN_NONE) {
 		/* string does not yet occur in ustrbat */
 		p = ustrbat->batCount;
 		if (p >= BATcapacity(ustrbat) &&
 		    BATextend(ustrbat, BATgrows(ustrbat)) != GDK_SUCCEED) {
-			MT_lock_unset(&ustrlock);
+			MT_lock_unset(&ustrbat->theaplock);
+			MT_rwlock_wrunlock(&ustrbat->thashlock);
 			return (var_t) -1;
 		}
-		MT_rwlock_wrlock(&ustrbat->thashlock);
-		if (tfastins_nocheckVAR(ustrbat, p, v) != GDK_SUCCEED) {
-			MT_lock_unset(&ustrlock);
+		if (tfastins_nochecknolockVAR(ustrbat, p, v) != GDK_SUCCEED) {
+			MT_lock_unset(&ustrbat->theaplock);
 			MT_rwlock_wrunlock(&ustrbat->thashlock);
 			return (var_t) -1;
 		}
 		if (ustrbat->thash)
 			HASHappend_locked(ustrbat, p, v);
-		MT_lock_set(&ustrbat->theaplock);
 		ustrbat->tsorted = ustrbat->trevsorted = false;
 		ustrbat->batCount++;
 		ustrbat->theap->dirty = true;
 		ustrbat->theap->free = ustrbat->batCount << ustrbat->tshift;
-		MT_rwlock_wrunlock(&ustrbat->thashlock);
 		ustrbat->tunique_est = (double) ustrbat->batCount;
 		ustrbat->tkey = true;
 		ustrbat->tvkey = true;
-		MT_lock_unset(&ustrbat->theaplock);
 	}
+	MT_rwlock_wrunlock(&ustrbat->thashlock);
 	var_t d = VarHeapVal(ustrbat->theap->base, p, ustrbat->twidth);
 	Heap *vh = NULL;
 	if (b->tvheap != ustrbat->tvheap) {
@@ -286,7 +244,7 @@ ustrPut(BAT *b, var_t *dst, const char *v)
 		}
 	}
 
-	MT_lock_unset(&ustrlock);
+	MT_lock_unset(&ustrbat->theaplock);
 	if (vh)
 		HEAPdecref(vh, false);
 	*dst = d;
@@ -294,7 +252,7 @@ ustrPut(BAT *b, var_t *dst, const char *v)
 }
 
 gdk_return
-BATconvert2ustr(BAT *b)
+BATconvert2ustr(BAT *b, BAT *bu)
 {
 	MT_lock_set(&b->theaplock);
 	if (b->ustr) {
@@ -317,18 +275,14 @@ BATconvert2ustr(BAT *b)
 		GDKerror("BAT must be in persistent farm to convert to ustr\n");
 		return GDK_FAIL;
 	}
-	MT_lock_set(&ustrlock);
-	if (ustrbat == NULL && ustrCreate() != GDK_SUCCEED) {
-		MT_lock_unset(&ustrlock);
-		MT_lock_unset(&b->theaplock);
-		return GDK_FAIL;
-	}
-	b->ustr = true;
+	MT_lock_set(&bu->theaplock);
+	BBPfix(bu->batCacheid);
+	b->ustr = bu->batCacheid;
 	Heap *vh = b->tvheap;
-	b->tvheap = ustrbat->tvheap;
+	b->tvheap = bu->tvheap;
 	HEAPincref(b->tvheap);
 	BBPretain(b->tvheap->parentid);
-	MT_lock_unset(&ustrlock);
+	MT_lock_unset(&bu->theaplock);
 	MT_lock_unset(&b->theaplock);
 	if (vh)
 		HEAPdecref(vh, true);
@@ -509,8 +463,9 @@ strPut(BAT *b, var_t *dst, const void *V)
 		 * string */
 		pos -= sizeof(stridx_t);
 		*(stridx_t *) (h->base + pos) = *bucket;
-	} else if (*bucket != 0)
+	} else {
 		b->tvkey = false;	/* we no longer know for sure */
+	}
 	*bucket = (stridx_t) pos;	/* set bucket to the new string */
 	h->dirty = true;
 

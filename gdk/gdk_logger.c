@@ -968,7 +968,7 @@ log_read_create(logger *lg, trans *tr, logformat *l)
 	int tpe;
 
 	assert(!lg->inmemory);
-	TRC_DEBUG(WAL, "create%s %d", l->flag == LOG_CREATE_USTR ? " ustr" : "", l->id);
+	TRC_DEBUG(WAL, "create %d", l->id);
 
 	if (mnstr_read(lg->input_log, &tt, 1, 1) != 1) {
 		TRC_CRITICAL(GDK, "read failed\n");
@@ -988,6 +988,39 @@ log_read_create(logger *lg, trans *tr, logformat *l)
 	return LOG_ERR;
 }
 
+static log_return
+log_read_create_ustr(logger *lg, trans *tr, logformat *l)
+{
+	bte tt;
+	int tpe;
+	int uid;
+
+	assert(!lg->inmemory);
+	TRC_DEBUG(WAL, "create ustr %d", l->id);
+
+	if (mnstr_read(lg->input_log, &tt, 1, 1) != 1) {
+		TRC_CRITICAL(GDK, "read failed\n");
+		return LOG_EOF;
+	}
+	if (mnstr_readInt(lg->input_log, &uid) != 1) {
+		TRC_CRITICAL(GDK, "read failed\n");
+		return LOG_EOF;
+	}
+
+	tpe = find_type_nr(lg, tt);
+	/* read create */
+	if (tr_grow(tr) == GDK_SUCCEED) {
+		tr->changes[tr->nr].type = l->flag;
+		tr->changes[tr->nr].tt = tpe;
+		tr->changes[tr->nr].cid = l->id;
+		tr->changes[tr->nr].id = uid;
+		tr->nr++;
+		return LOG_OK;
+	}
+	TRC_CRITICAL(GDK, "memory allocation failed\n");
+	return LOG_ERR;
+}
+
 static gdk_return
 la_bat_create(logger *lg, logaction *la, int tid)
 {
@@ -1000,11 +1033,44 @@ la_bat_create(logger *lg, logaction *la, int tid)
 	if (la->tt < 0)
 		BATtseqbase(b, 0);
 
-	if (la->type == LOG_CREATE_USTR &&
-	    BATconvert2ustr(b) != GDK_SUCCEED) {
+	if ((b = BATsetaccess(b, BAT_READ)) == NULL ||
+	    log_add_bat(lg, b, la->cid, tid) != GDK_SUCCEED) {
 		logbat_destroy(b);
 		return GDK_FAIL;
 	}
+	logbat_destroy(b);
+	return GDK_SUCCEED;
+}
+
+static gdk_return
+la_bat_create_ustr(logger *lg, logaction *la, int tid)
+{
+	BAT *b;
+
+	/* formerly head column type, should be void */
+	if ((b = COLnew(0, la->tt, BATSIZE, PERSISTENT)) == NULL)
+		return GDK_FAIL;
+
+	if (la->tt < 0)
+		BATtseqbase(b, 0);
+
+	BUN p = log_find(lg->catalog_id, lg->dcatalog, (int) la->id);
+	if (p == BUN_NONE) {
+		logbat_destroy(b);
+		return GDK_FAIL;
+	}
+	BAT *u = BATdescriptor(* (int *) Tloc(lg->catalog_bid, p));
+	if (u == NULL) {
+		logbat_destroy(b);
+		return GDK_FAIL;
+	}
+
+	if (BATconvert2ustr(b, u) != GDK_SUCCEED) {
+		BBPreclaim(u);
+		logbat_destroy(b);
+		return GDK_FAIL;
+	}
+	BBPreclaim(u);
 
 	if ((b = BATsetaccess(b, BAT_READ)) == NULL ||
 	    log_add_bat(lg, b, la->cid, tid) != GDK_SUCCEED) {
@@ -1079,9 +1145,12 @@ la_apply(logger *lg, logaction *c, int tid)
 		ret = la_bat_updates(lg, c, tid);
 		break;
 	case LOG_CREATE:
-	case LOG_CREATE_USTR:
 		if (!lg->flushing)
 			ret = la_bat_create(lg, c, tid);
+		break;
+	case LOG_CREATE_USTR:
+		if (!lg->flushing)
+			ret = la_bat_create_ustr(lg, c, tid);
 		break;
 	case LOG_DESTROY:
 		if (!lg->flushing)
@@ -1551,11 +1620,19 @@ log_read_transaction(logger *lg, BAT *ids_to_omit, uint32_t *updated, BUN maxupd
 			}
 			break;
 		case LOG_CREATE:
-		case LOG_CREATE_USTR:
 			if (tr == NULL)
 				err = LOG_EOF;
 			else
 				err = log_read_create(lg, tr, &l);
+			break;
+		case LOG_CREATE_USTR:
+			if (tr == NULL)
+				err = LOG_EOF;
+			else if ((err = log_read_create_ustr(lg, tr, &l)) == LOG_OK && updated) {
+				BUN p = log_find(lg->catalog_id, lg->dcatalog, (int) tr->changes[tr->nr - 1].id);
+				assert(p < maxupdated);
+				updated[p / 32] |= 1U << (p % 32);
+			}
 			break;
 		case LOG_DESTROY:
 			if (tr == NULL)
@@ -2007,7 +2084,6 @@ bm_subcommit(logger *lg, logged_range *pending, uint32_t *updated, BUN maxupdate
 	BAT *catalog_bid = lg->catalog_bid;
 	BAT *catalog_id = lg->catalog_id;
 	BAT *dcatalog = lg->dcatalog;
-	bool seenustr = false;
 	BUN nn = 14 + cnt;
 	bat *n = ma_alloc(ta, sizeof(bat) * nn);
 	bat *r = ma_alloc(ta, sizeof(bat) * nn);
@@ -2059,12 +2135,6 @@ bm_subcommit(logger *lg, logged_range *pending, uint32_t *updated, BUN maxupdate
 		assert(col);
 		sizes[i] = cnts ? (BUN) cnts[p] : 0;
 		n[i++] = col;
-		seenustr |= BBP_desc(col)->ustr;
-	}
-	if (seenustr) {
-		BAT *ustrbat = getUstrBat();
-		sizes[i] = BATcount(ustrbat);
-		n[i++] = ustrbat->batCacheid;
 	}
 	/* now commit catalog, so it's also up to date on disk */
 	sizes[i] = cnt;
@@ -3344,13 +3414,22 @@ log_bat_persists(logger *lg, BAT *b, log_id id)
 		return GDK_FAIL;
 	}
 
-	l.flag = b->ustr ? LOG_CREATE_USTR : LOG_CREATE;
-	l.id = id;
 	if (!LOG_DISABLED(lg)) {
+		int ubid = 0;
+		if (b->ustr) {
+			l.flag = LOG_CREATE_USTR;
+			BUN p = log_find(lg->catalog_bid, lg->dcatalog, b->ustr);
+			ubid = * (int *) Tloc(lg->catalog_id, p);
+		} else {
+			l.flag = LOG_CREATE;
+		}
+		l.id = id;
 		assert(mnstr_errnr(lg->current->output_log) == MNSTR_NO__ERROR);
 		if (mnstr_errnr(lg->current->output_log) != MNSTR_NO__ERROR ||
 		    log_write_format(lg, &l) != GDK_SUCCEED ||
-		    mnstr_write(lg->current->output_log, &ta, 1, 1) != 1) {
+		    mnstr_write(lg->current->output_log, &ta, 1, 1) != 1 ||
+		    (b->ustr &&
+		     !mnstr_writeInt(lg->current->output_log, ubid))) {
 			const char *err = mnstr_peek_error(lg->current->output_log);
 			TRC_CRITICAL(GDK, "write failed%s%s\n", err ? ": " : "", err ? err : "");
 			log_unlock(lg);
