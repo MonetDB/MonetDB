@@ -36707,12 +36707,12 @@ mmath
 log2arg
 command mmath.log2arg(X_0:dbl, X_1:dbl):dbl
 MATHbinary_LOGdbl
-The log(x) function returns the logarithm of x in the given base.
+The log(base,x) function returns the logarithm of x in the given base.
 mmath
 log2arg
 command mmath.log2arg(X_0:flt, X_1:flt):flt
 MATHbinary_LOGflt
-The log(x) function returns the logarithm of x in the given base.
+(empty)
 mmath
 nextafter
 command mmath.nextafter(X_0:dbl, X_1:dbl):dbl

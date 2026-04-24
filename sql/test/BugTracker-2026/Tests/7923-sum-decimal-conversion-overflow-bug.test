@@ -1,0 +1,75 @@
+statement ok
+CREATE TABLE t_bug13 (
+  id INT,
+  p INT,
+  ot INT,
+  od DECIMAL(18, 10),
+  v INT,
+  PRIMARY KEY (id)
+)
+
+statement ok rowcount 5
+INSERT INTO t_bug13 VALUES
+  (20, 22, 2500, -221577.0472590154, -805),
+  (21, 22, 2501, -221577.0472588599, -851),
+  (22, 22, 2502, -221577.0472587044, -32768),
+  (23, 22, 2503, -221577.0472585489, 0),
+  (24, 22, 2504, -221577.0472583934, 722)
+
+-- original window query, should return no rows
+-- MonetDB returns: 22003!overflow in conversion to DECIMAL(16,10). but other RDBMS do not.
+query I nosort
+SELECT v
+FROM (
+  SELECT v, SUM(od) OVER (PARTITION BY p ORDER BY ot ASC) AS wa
+  FROM t_bug13
+) x
+WHERE wa >= 2
+ORDER BY v
+----
+
+-- modified original window query with an explicit cast to DECIMAL(17,10) works, returns no rows
+query I nosort
+SELECT v
+FROM (
+  SELECT v, cast(SUM(od) OVER (PARTITION BY p ORDER BY ot ASC) as DECIMAL(17,10)) AS wa
+  FROM t_bug13
+) x
+WHERE wa >= 2
+ORDER BY v
+----
+
+-- equivalent rewrite, returns no rows
+query I nosort
+SELECT t1.v
+FROM t_bug13 AS t1
+WHERE (
+  SELECT SUM(t2.od)
+  FROM t_bug13 AS t2
+  WHERE t2.p = t1.p
+    AND t2.ot <= t1.ot
+) >= 2
+ORDER BY t1.v
+----
+
+-- Note: standalone query with sum window function works
+-- Note that the value -1107885.2362935220 doesn't fit in a DECIMAL(16,10), so the chosen DECIMAL(16,10) data type for column wa is too small
+query IT nosort
+SELECT v, SUM(od) OVER (PARTITION BY p ORDER BY ot ASC) AS wa
+FROM t_bug13
+ORDER BY v
+----
+-32768
+-664731.1417765797
+-851
+-443154.0945178753
+-805
+-221577.0472590154
+0
+-886308.1890351286
+722
+-1107885.2362935220
+
+statement ok
+DROP TABLE t_bug13
+

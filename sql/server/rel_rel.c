@@ -894,6 +894,7 @@ rel_crossproduct(allocator *sa, sql_rel *l, sql_rel *r, operator_type join)
 	rel->exps = NULL;
 	rel->card = CARD_MULTI;
 	rel->nrcols = l->nrcols + r->nrcols;
+	rel->opt = l->opt;
 	return rel;
 }
 
@@ -1172,6 +1173,7 @@ rel_project(allocator *sa, sql_rel *l, list *e)
 		else
 			rel->nrcols = l->nrcols;
 		rel->single = is_single(l);
+		rel->opt = l->opt;
 	}
 	if (e && !list_empty(e)) {
 		set_processed(rel);

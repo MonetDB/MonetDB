@@ -1939,6 +1939,10 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 					s = exp_bin(be, n->data, right, NULL, grp, ext, cnt, NULL, depth+1, 0, push);
 					swapped = 1;
 				}
+				if (!s && right && !reduce) {
+					clean_mal_statements(be, oldstop, oldvtop);
+					s = exp_bin(be, n->data, left, right, grp, ext, cnt, NULL, depth+1, 0, push);
+				}
 				if (!s)
 					return s;
 				if (s->nrcols == 0 && first && left && left->nrcols)

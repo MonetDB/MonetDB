@@ -360,6 +360,10 @@ main(int argc, char **av)
 		{"process-wal-and-exit", no_argument, NULL, 0},
 		{"clean-BBP", no_argument, NULL, 0},
 
+#ifdef HAVE_GETUID
+		{"accept-the-risks-running-as-root", no_argument, NULL, 0},
+#endif
+
 		{NULL, 0, NULL, 0}
 	};
 
@@ -425,6 +429,10 @@ main(int argc, char **av)
 	if (!(setlen = mo_builtin_settings(&set)))
 		usage(prog, -1);
 
+#ifdef HAVE_GETUID
+	bool allow_root = false;
+#endif
+
 	for (;;) {
 		int option_index = 0;
 
@@ -436,6 +444,12 @@ main(int argc, char **av)
 
 		switch (c) {
 		case 0:
+#ifdef HAVE_GETUID
+			if (strcmp(long_options[option_index].name, "accept-the-risks-running-as-root") == 0) {
+				allow_root = true;
+				break;
+			}
+#endif
 			if (strcmp(long_options[option_index].name, "in-memory") == 0) {
 				inmemory = true;
 				break;
@@ -653,6 +667,17 @@ main(int argc, char **av)
 			usage(prog, -1);
 		}
 	}
+
+#ifdef HAVE_GETUID
+	if (getuid() == 0) {
+		if (allow_root) {
+			fprintf(stderr, "WARNING: running as root is not recommended\n");
+		} else {
+			fprintf(stderr, "ERROR: running as root is not allowed\n");
+			exit(1);
+		}
+	}
+#endif
 
 	if (optind < argc)
 		usage(prog, -1);

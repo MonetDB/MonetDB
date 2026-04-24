@@ -1,3 +1,7 @@
 # ChangeLog file for devel
 # This file is updated with Maddlog
 
+* Thu Apr 23 2026 Sjoerd Mullender <sjoerd@acm.org>
+- It is no longer allowed to run mserver5 or monetdbd as root.  There are
+  important security concerns when these servers are run as root.
+

@@ -1,0 +1,55 @@
+statement ok
+CREATE TABLE t_bug9 (
+  id INT,
+  p INT,
+  ot INT,
+  v INT,
+  PRIMARY KEY (id)
+)
+
+statement ok rowcount 6
+INSERT INTO t_bug9 VALUES
+  (1, -9, 2500, 251),
+  (2, -9, 2500, -32768),
+  (3, -9, 2509, 960),
+  (4, -9, 2509, 975),
+  (5, -9, 2518, 413),
+  (7, -9, 2536, -182)
+
+-- original window query
+query I nosort
+SELECT v
+FROM (
+  SELECT v, DENSE_RANK() OVER (PARTITION BY p ORDER BY ot DESC) AS rn
+  FROM t_bug9
+) x
+WHERE rn IN (1, 3, 4)
+ORDER BY v
+----
+-32768
+-182
+251
+960
+975
+
+-- equivalent rewrite
+query I nosort
+SELECT t1.v
+FROM t_bug9 AS t1
+WHERE (
+  SELECT COUNT(DISTINCT t2.ot)
+  FROM t_bug9 AS t2
+  WHERE t2.p = t1.p
+    AND t2.ot > t1.ot
+) IN (0, 2, 3)
+ORDER BY t1.v
+----
+-32768
+-182
+251
+960
+975
+
+statement ok
+DROP TABLE t_bug9
+
