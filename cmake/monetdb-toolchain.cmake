@@ -155,6 +155,7 @@ function(monetdb_default_compiler_options)
 
   if(NOT MSVC)
     add_option_if_available("-Wno-unreachable-code")
+    add_compile_options("-march=native")
   endif()
 
   if(NOT ASSERT)
