@@ -408,7 +408,8 @@ rel_bind_column2( mvc *sql, sql_rel *rel, sql_alias *tname, const char *cname, i
 		if (!list_empty(rel->exps)) {
 			e = exps_bind_column2(rel->exps, tname, cname, &multi);
 			if (multi)
-				return sql_error(sql, ERR_AMBIGUOUS, SQLSTATE(42000) "SELECT: identifier '%s.%s' ambiguous", tname->name, cname);
+				return sql_error(sql, ERR_AMBIGUOUS, SQLSTATE(42000) "SELECT: identifier '%s.%s' ambiguous",
+								 tname->name, cname);
 			if (!e && is_groupby(rel->op) && rel->r) {
 				sql_rel *l = rel->l;
 				if (l)
@@ -426,7 +427,8 @@ rel_bind_column2( mvc *sql, sql_rel *rel, sql_alias *tname, const char *cname, i
 		if (!e && (is_sql_sel(f) || is_sql_having(f) || !f) && is_groupby(rel->op) && rel->r) {
 			e = exps_bind_column2(rel->r, tname, cname, &multi);
 			if (multi)
-				return sql_error(sql, ERR_AMBIGUOUS, SQLSTATE(42000) "SELECT: identifier '%s.%s' ambiguous", tname->name, cname);
+				return sql_error(sql, ERR_AMBIGUOUS, SQLSTATE(42000) "SELECT: identifier '%s.%s' ambiguous",
+								 tname->name, cname);
 			if (e) {
 				e = exp_ref(sql, e);
 				e->card = rel->card;
@@ -455,7 +457,8 @@ rel_bind_column2( mvc *sql, sql_rel *rel, sql_alias *tname, const char *cname, i
 		if (!e && !list_empty(rel->attr)) {
 			e = exps_bind_column2(rel->attr, tname, cname, &multi);
 			if (multi)
-				return sql_error(sql, ERR_AMBIGUOUS, SQLSTATE(42000) "SELECT: identifier '%s.%s' ambiguous", tname->name, cname);
+				return sql_error(sql, ERR_AMBIGUOUS, SQLSTATE(42000) "SELECT: identifier '%s.%s' ambiguous",
+								 tname->name, cname);
 			if (e) {
 				e = exp_ref(sql, e);
 				e->card = rel->card;
@@ -1316,7 +1319,7 @@ _rel_projections(mvc *sql, sql_rel *rel, sql_alias *tname, int settname, int int
 				if (basecol && !is_basecol(e))
 					continue;
 				if (intern || !is_intern(e)) {
-					if (exp_is_rel(e) && e->alias.name == NULL && exp_relname(e) && exp_name(e))
+					if (exp_is_rel(e) && e->alias.name == NULL && e->alias.parent && exp_name(e))
 						e->alias.name = exp_name(e);
 					sql_exp *ne = exp_ref(sql, e);
 					if (settname && tname)
