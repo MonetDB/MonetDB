@@ -817,14 +817,16 @@ _process_block(fblock *blk, dbl *query_vals,
              oid *bc, dbl *bd, BUN *kcands)
 {
     BUN ncand = (BUN)nrows;
+	size_t TILE_SIZE = 8;
+	bool prun_ok = false;
 
-    // Outer dimension loop in tiles of 8
-    for (size_t i = 0; i < ncols; i += 8) {
-        size_t i_end = (i + 8 > ncols) ? ncols : i + 8;
+    // Outer dimension loop in tiles of TILE_SIZE
+    for (size_t i = 0; i < ncols; i += TILE_SIZE) {
+        size_t i_end = (i + TILE_SIZE > ncols) ? ncols : i + TILE_SIZE;
 
-        // Inner candidate loop in tiles of 8
-        for (BUN j = 0; j < ncand; j += 8) {
-            BUN j_end = (j + 8 > ncand) ? ncand : j + 8;
+        // Inner candidate loop in tiles of TILE_SIZE
+        for (BUN j = 0; j < ncand; j += TILE_SIZE) {
+            BUN j_end = (j + TILE_SIZE > ncand) ? ncand : j + TILE_SIZE;
 
             // Process the 8x8 (or smaller) tile
             for (size_t ii = i; ii < i_end; ii++) {
@@ -845,14 +847,24 @@ _process_block(fblock *blk, dbl *query_vals,
             BUN write_pos = 0;
             for (BUN read_pos = 0; read_pos < ncand; read_pos++) {
                 if (bd[read_pos] <= threshold) {
-                    bc[write_pos] = bc[read_pos];
-                    bd[write_pos] = bd[read_pos];
-                    write_pos++;
+					if (prun_ok) {
+						bc[write_pos] = bc[read_pos];
+						bd[write_pos] = bd[read_pos];
+					}
+					write_pos++;
                 }
             }
-            ncand = write_pos;
+			if (prun_ok) {
+				ncand = write_pos;
+			} else {
+				prun_ok = write_pos > (0.75 * nrows);
+			}
+
         }
+		// EXIT EARLY: If no candidates left, stop processing this block
+        if (ncand == 0) break;
     }
+	//printf("prunned %zu candidates %zu nrows %zu \n", (nrows - ncand), ncand, nrows);
 
     *kcands = ncand;
     return MAL_SUCCEED;
@@ -902,7 +914,7 @@ pdx(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) ctx;
 	(void) mb;
-	//lng T0 = GDKusec();
+	//lng T0 = GDKusec(), T1 = 0;
     bat *ret = getArgReference_bat(stk, pci, 0);
 	// data
     BAT *b = BATdescriptor(*getArgReference_bat(stk, pci, 1));
@@ -956,7 +968,11 @@ pdx(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		query_vals[i] = *(dbl*)Tloc(b_dim, 0);
 		BBPunfix(b_dim->batCacheid);
 	}
+	//T1 = GDKusec();
+	//printf("Init Step loading query values " LLFMT "\n", T1 - T0);
+	//T0 = T1;
 
+	// Process blocks
 	dbl threshold = DBL_MAX;
 	for (size_t i = 0; i < nblocks; i++) {
 		// curr blk
@@ -967,12 +983,16 @@ pdx(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			bc[j] = (oid)j;
 		}
 		str msg;
+
 		BUN ncand = (BUN) nrows;
 		if ((msg = _process_block(blk, query_vals, nrows, ndims, threshold, bc, bd, &ncand)) != MAL_SUCCEED) {
 			ma_close(&ta_state);
 			BBPunfix(b->batCacheid);
 			return msg;
 		}
+		//T1 = GDKusec();
+		//printf("Process block " LLFMT "\n", T1 - T0);
+		//T0 = T1;
 
 		// Convert local block indices to global OIDs
         for (BUN j = 0; j < ncand; j++) {
@@ -988,6 +1008,9 @@ pdx(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		} else {
 			threshold = topn_merge(cands, dists, bc, bd, ncand, k);
 		}
+		//T1 = GDKusec();
+		//printf("TOP N " LLFMT "\n", T1 - T0);
+		//T0 = T1;
 	}
 
     BAT *bn = COLnew(0, TYPE_oid, k, TRANSIENT);
@@ -1010,7 +1033,7 @@ pdx(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
     bn->tsorted = false;
     bn->trevsorted = false;
 
-	//printf("#BATl2sq " LLFMT "\n", GDKusec() - T0);
+	//printf("#pdx took" LLFMT "\n", GDKusec() - T0);
 
 	ma_close(&ta_state);
 	BBPunfix(b->batCacheid);

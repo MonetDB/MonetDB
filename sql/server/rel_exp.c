@@ -399,22 +399,9 @@ nested_exps(mvc *sql, sql_subtype *t, sql_alias *p, const char *name)
 			append(nested, e);
 		}
 	} else {
-		if (t->multiset == MS_VECTOR) {
-			uint8_t localtype = t->type->localtype;
-			sql_subtype *it = sql_fetch_localtype(localtype);
-			size_t ncols = t->digits;
-			for (size_t idx=0; idx < ncols; idx++) {
-				char *buf = ma_alloc(sql->sa, 32);
-				snprintf(buf, 32, "vec_idx_%zu", idx);
-				sql_exp *e = exp_alias(sql, atname, buf, atname, buf, it, CARD_MULTI, true, false, 1);
-				set_intern(e);
-				append(nested, e);
-			}
-		} else {
 			sql_exp *e = exp_alias(sql, atname, MSEL_NAME, atname, MSEL_NAME, t,
 					CARD_MULTI, true, false, 1);
 			append(nested, e);
-		}
 	}
 	sql_subtype *it = sql_fetch_localtype(MSID_TYPE);
 	if (t->multiset) {
