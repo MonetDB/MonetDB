@@ -297,19 +297,14 @@ bond_search_fast(bond_collection *bc, const dbl *query_vals,
 			const dbl *col = (const dbl *) (bc->dimsp[o]+z);
 
 	//		lng T0 = GDKusec();
-			for (i = 0; i < sz; i++) {
+			GCC_Pragma("GCC ivdep")                                                        \
+			for (i=0; i < sz; i++) {
 				dbl diff = col[i] - qd;
 				td[i] += diff * diff;
+				cur_pruned += (td[i] > bc->kth_upper);
 			}
 	//		Tdists += GDKusec() - T0;
 			//printf("partial dists chunk " BUNFMT " " BUNFMT " d=%zu t=" LLFMT "\n", j, sz, (size_t)d,  GDKusec() - T0);
-
-			/* prune */
-	//		T0 = GDKusec();
-			for (BUN read_pos = 0; read_pos < sz; read_pos++)
-				cur_pruned += (td[read_pos] > bc->kth_upper);
-	//		Tprune += GDKusec() - T0;
-			//printf("prune " BUNFMT " d=%zu " "t=" LLFMT "\n",  sz, (size_t)d,  GDKusec() - T0);
 		}
 		for (; d < bc->ndims && sz; d++) {
 			/* partial dists */
@@ -318,7 +313,8 @@ bond_search_fast(bond_collection *bc, const dbl *query_vals,
 			const dbl *col = (const dbl *) (bc->dimsp[o]+z);
 
 	//		lng T0 = GDKusec();
-			for (BUN i = 0; i < sz; i++) {
+			GCC_Pragma("GCC ivdep")                                                        \
+			for (i=0; i < sz; i++) {
 				dbl diff = col[tc[i]] - qd;
 				td[i] += diff * diff;
 			}
