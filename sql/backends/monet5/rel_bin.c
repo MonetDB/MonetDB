@@ -1486,10 +1486,6 @@ exp2bin_file_loader(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *sel
 	sql_subfunc *f = fe->f;
 
 	list *arg_list = fe->l;
-	/*
-	list *type_list = f->res;
-	assert(1 + list_length(type_list) == list_length(arg_list));
-	*/
 
 	sql_exp *eexp = arg_list->h->next->data;
 	assert(is_atom(eexp->type));
@@ -1522,10 +1518,6 @@ exp2bin_proto_loader(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *se
 	sql_subfunc *f = fe->f;
 
 	list *arg_list = fe->l;
-	/*
-	list *type_list = f->res;
-	assert(1 + list_length(type_list) == list_length(arg_list));
-	*/
 
 	sql_exp *eexp = arg_list->h->next->data;
 	assert(is_atom(eexp->type));
@@ -7125,9 +7117,9 @@ rel2bin_delete(backend *be, sql_rel *rel, list *refs)
 			if (!s) /* error */
 				return NULL;
 
-			if (!exp_name(exp))
+			if (!exp_name(exp)) {
 				exp_label(sql->sa, exp, ++sql->label);
-			if (exp_name(exp)) {
+			} else {
 				s = stmt_rename(be, exp, s);
 				s->label = exp->alias.label;
 			}

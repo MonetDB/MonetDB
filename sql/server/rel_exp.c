@@ -4221,7 +4221,7 @@ free_exp(allocator *sa, sql_exp *e)
 	_free_exp_internal(sa, e);
 }
 
-bool 
+bool
 exps_has_group_filter(list *exps)
 {
 	if (list_empty(exps))
@@ -4233,7 +4233,7 @@ exps_has_group_filter(list *exps)
 			if (sf->func->group)
 				return true;
 		}
-	}	
+	}
 	return false;
 }
 
