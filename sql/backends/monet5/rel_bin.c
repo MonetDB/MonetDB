@@ -1876,10 +1876,6 @@ exp2bin_file_loader(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *sel
 	sql_subfunc *f = fe->f;
 
 	list *arg_list = fe->l;
-	/*
-	list *type_list = f->res;
-	assert(1 + list_length(type_list) == list_length(arg_list));
-	*/
 
 	sql_exp *eexp = arg_list->h->next->data;
 	assert(is_atom(eexp->type));
@@ -1912,10 +1908,6 @@ exp2bin_proto_loader(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *se
 	sql_subfunc *f = fe->f;
 
 	list *arg_list = fe->l;
-	/*
-	list *type_list = f->res;
-	assert(1 + list_length(type_list) == list_length(arg_list));
-	*/
 
 	sql_exp *eexp = arg_list->h->next->data;
 	assert(is_atom(eexp->type));
@@ -3697,7 +3689,7 @@ rel2bin_groupjoin(backend *be, sql_rel *rel, list *refs)
 			if (mark && is_any(e)) {
 				join = stmt_markjoin(be, l, r, !is_any(e), 0);
 			} else
-				join = stmt_join_cand(be, column(be, l), column(be, r), left->cand, NULL/*right->cand*/, is_anti(e), (comp_type) cmp_equal/*e->flag*/, 0, is_any(e)|is_semantics(e), false, rel->op == op_left?false:true);
+				join = stmt_join_cand(be, column(be, l), column(be, r), left->cand, NULL/*right->cand*/, is_anti(e), (comp_type) cmp_equal/*e->flag*/, 0, is_any(e)|is_semantics(e), false, (rel->op == op_left || !list_empty(rel->attr))?false:true);
 			jl = stmt_result(be, join, 0);
 			jr = stmt_result(be, join, 1);
 			if (mark && is_any(e))
@@ -8117,9 +8109,9 @@ rel2bin_delete(backend *be, sql_rel *rel, list *refs)
 			if (!s) /* error */
 				return NULL;
 
-			if (!exp_name(exp))
+			if (!exp_name(exp)) {
 				exp_label(sql->sa, exp, ++sql->label);
-			if (exp_name(exp)) {
+			} else {
 				s = stmt_rename(be, exp, s);
 				s->label = exp->alias.label;
 			}

@@ -57,7 +57,7 @@ SELECT log ( 64.000000 , SUM ( CAST( locate ( 'HE' , 'hello' , 2 ) AS REAL ) ) O
 query R nosort
 SELECT covar_samp ( 5.000000 , 2.100000 ) OVER ( ROWS 913 PRECEDING ) FROM
  ( WITH RECURSIVE x ( x ) AS ( SELECT 1 UNION SELECT x + 1 FROM x WHERE x < 20 )
-   SELECT x FROM x WHERE x NOT IN ( 8 , 12 , 16 , 24 , x > x OR CASE WHEN CAST( ( SELECT x ORDER BY 1 ) AS FLOAT ) THEN NULL ELSE 1 <= 1 END < x = 't4' ) OR x = 512 )
+   SELECT x FROM x WHERE x NOT IN ( 8 , 12 , 16 , 24 , cast(x > x OR CASE WHEN CAST( ( SELECT x ORDER BY 1 ) AS FLOAT ) THEN NULL ELSE 1 <= 1 END < x as string) = 't4' ) OR x = 512 )
 ----
 
 query R nosort

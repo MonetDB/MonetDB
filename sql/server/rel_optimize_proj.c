@@ -3176,7 +3176,7 @@ rel_project_select_exp(visitor *v, sql_rel *rel)
 				if (col->type == e_column) {
 					sql_rel *ll = l->l;
 					/* first check if lower project is const */
-					if (is_simple_project(ll->op) && !ll->dynamic /* not base part of recusive union */) { 
+					if (is_simple_project(ll->op) && !ll->dynamic /* not base part of recusive union */) {
 						sql_exp *i = rel_find_exp(l, col);
 						if (i && exp_is_atom(i) && !i->f) {
 							sql_exp *e = n->data = exp_copy(v->sql, i);
