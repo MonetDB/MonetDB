@@ -99,6 +99,7 @@ WHERE ref_0.id <= ref_0.post_id
 LIMIT 79
 ----
 0
+0
 
 statement ok
 DROP TABLE posts
