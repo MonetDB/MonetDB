@@ -1150,7 +1150,7 @@ rel_dce_(visitor *v, sql_rel *rel, bool partial)
 		v->opt = rel->opt+1;
 	rel_used(rel);
 	rel_dce_sub(v, rel);
-	if (refs) {
+	if (refs && !partial) {
 		for(node *n = refs->h; n; n = n->next) {
 			sql_rel *i = n->data;
 
