@@ -1592,25 +1592,6 @@ push_up_join(mvc *sql, sql_rel *rel, list *ad)
 				return rel; /* ie try again */
 			}
 
-#if 0
-			if (is_left(rel->op) && !list_empty(rel->attr) && is_innerjoin(j->op) && list_empty(j->exps)) {
-				/* remove any project, as we don't need */
-				rel->r = j = push_up_projects(sql, j);
-				if (!is_join(j->op) || !rel_has_freevar(sql, j) || !rel_dependent_var(sql, d, j))
-					return rel;
-				jl = j->l;
-				jr = j->r;
-			}
-			if (is_join(rel->op) && !list_empty(rel->exps) && !list_empty(j->attr) && list_empty(j->exps) && exps_uses_exp(rel->exps, j->attr->h->data)) {
-				/* remove any project, as we don't need */
-				rel->r = j = push_up_projects(sql, j);
-				rel = rel_deadcode_elimination(sql, rel);
-				if (!is_join(j->op) || !rel_has_freevar(sql, j) || !rel_dependent_var(sql, d, j))
-					return rel;
-				jl = j->l;
-				jr = j->r;
-			}
-#endif
 			if ((is_left(rel->op) && !list_empty(rel->attr) && is_innerjoin(j->op) && list_empty(j->exps)) ||
 			    (is_join(rel->op) && !list_empty(rel->exps) && !list_empty(j->attr) && list_empty(j->exps) && exps_uses_exp(rel->exps, j->attr->h->data))) {
 				/* remove any project, as we don't need */
@@ -3652,7 +3633,7 @@ rewrite_anyequal(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 			} else {
 				sql_rel *rewrite = NULL;
 				if (lsq) {
-					(void)rewrite_inner(sql, rel, lsq, rel->card<=CARD_ATOM?op_left:op_join, &rewrite, NULL);
+					(void)rewrite_inner(sql, rel, lsq, op_left, &rewrite, NULL);
 					exp_reset_props(rewrite, le, is_left(rewrite->op));
 				}
 				if (rsq) {

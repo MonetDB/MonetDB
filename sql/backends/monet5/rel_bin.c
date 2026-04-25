@@ -3153,7 +3153,7 @@ rel2bin_groupjoin(backend *be, sql_rel *rel, list *refs)
 			if (mark && is_any(e)) {
 				join = stmt_markjoin(be, l, r, !is_any(e), 0);
 			} else
-				join = stmt_join_cand(be, column(be, l), column(be, r), left->cand, NULL/*right->cand*/, is_anti(e), (comp_type) cmp_equal/*e->flag*/, 0, is_any(e)|is_semantics(e), false, rel->op == op_left?false:true);
+				join = stmt_join_cand(be, column(be, l), column(be, r), left->cand, NULL/*right->cand*/, is_anti(e), (comp_type) cmp_equal/*e->flag*/, 0, is_any(e)|is_semantics(e), false, (rel->op == op_left || !list_empty(rel->attr))?false:true);
 			jl = stmt_result(be, join, 0);
 			jr = stmt_result(be, join, 1);
 			if (mark && is_any(e))
