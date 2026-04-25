@@ -1337,7 +1337,7 @@ rel_out2inner(visitor *v, sql_rel *rel) {
 
 	sql_rel* join = (sql_rel*) rel->l;
 
-	if (rel_is_ref(join)) {
+	if (rel_is_ref(join) || !list_empty(join->attr)) {
 		/* Do not alter a multi-referenced join relation.
 			* This is problematic (e.g. in the case of the plan of a merge statement)
 			* basically because there are no guarantees on the other container relations.
