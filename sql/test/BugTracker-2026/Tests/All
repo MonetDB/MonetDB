@@ -101,11 +101,11 @@ KNOWNFAIL?7774-insert-into-renamed-table-assertion-failure
 7914-exp_bin-assertion-failure
 7915-delete-exists-having-bug
 7916-lateral-join-distinct-bug
-KNOWNFAIL?7917-correlated-count-query-bug
+7917-correlated-count-query-bug
 KNOWNFAIL?7918-subquery-limit-offset-bug
-KNOWNFAIL?7919-correlated-count-distinct-bug
+7919-correlated-count-distinct-bug
 KNOWNFAIL?7920-correlated-top-1-subquery-bug
-KNOWNFAIL?7921-correlated-floor-ratio-bug
+7921-correlated-floor-ratio-bug
 KNOWNFAIL?7922-sum-overflow-error-bug
 KNOWNFAIL?7923-sum-decimal-conversion-overflow-bug
 KNOWNFAIL?7924-sum-double-overflow-bug
