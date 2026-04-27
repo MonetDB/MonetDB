@@ -451,8 +451,8 @@ ALGmarkselect(Client ctx, bat *r1, bat *r2, const bat *gid, const bat *mid, cons
 		if (nr) {
 			ri1[q] = c-1;
 			ri2[q] = (m == TRUE)?TRUE:(has_nil)?bit_nil:FALSE;
+			q++;
 		}
-		q++;
 	}
 	BATsetcount(res1, q);
 	BATsetcount(res2, q);
