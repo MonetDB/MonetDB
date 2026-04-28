@@ -1537,6 +1537,7 @@ log_read_transaction(logger *lg, BAT *ids_to_omit, uint32_t *updated, BUN maxupd
 				BUN p;
 				BUN posnew = BUN_NONE;
 				BUN posold = BUN_NONE;
+				BUN posustr = BUN_NONE;
 				MT_rwlock_rdlock(&cni.b->thashlock);
 				HASHloop_int(&cni, cni.b->thash, p, &l.id) {
 					lng lid = *(lng *) Tloc(lg->catalog_lid, p);
@@ -1544,6 +1545,12 @@ log_read_transaction(logger *lg, BAT *ids_to_omit, uint32_t *updated, BUN maxupd
 						posnew = p;
 					else if (lid == tr->tid)
 						posold = p;
+					bat bid = *(int*)Tloc(lg->catalog_bid, p);
+					if (!is_bat_nil(bid) && BBP_logical(bid) != NULL && (bid = BBP_desc(bid)->ustr) != 0) {
+						posustr = log_find(lg->catalog_bid, lg->dcatalog, bid);
+						if (BUNreplace(lg->catalog_cnt, posustr, &(lng){BBP_desc(bid)->batCount}, false) != GDK_SUCCEED)
+							GDKwarning("should not be possible\n");
+					}
 				}
 				MT_rwlock_rdunlock(&cni.b->thashlock);
 				bat_iterator_end(&cni);
@@ -1571,6 +1578,10 @@ log_read_transaction(logger *lg, BAT *ids_to_omit, uint32_t *updated, BUN maxupd
 				    posold != BUN_NONE) {
 					assert(posold < maxupdated);
 					updated[posold / 32] |= 1U << (posold % 32);
+				}
+				if (posustr != BUN_NONE) {
+					assert(posustr < maxupdated);
+					updated[posustr / 32] |= 1U << (posustr % 32);
 				}
 			}
 			break;
@@ -1628,11 +1639,8 @@ log_read_transaction(logger *lg, BAT *ids_to_omit, uint32_t *updated, BUN maxupd
 		case LOG_CREATE_USTR:
 			if (tr == NULL)
 				err = LOG_EOF;
-			else if ((err = log_read_create_ustr(lg, tr, &l)) == LOG_OK && updated) {
-				BUN p = log_find(lg->catalog_id, lg->dcatalog, (int) tr->changes[tr->nr - 1].id);
-				assert(p < maxupdated);
-				updated[p / 32] |= 1U << (p % 32);
-			}
+			else
+				err = log_read_create_ustr(lg, tr, &l);
 			break;
 		case LOG_DESTROY:
 			if (tr == NULL)

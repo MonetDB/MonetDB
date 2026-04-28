@@ -876,7 +876,7 @@ BATdelete(BAT *b)
 	if (b->theap) {
 		HEAPfree(b->theap, true);
 	}
-	if (b->tvheap) {
+	if (b->tvheap && !b->ustr) {
 		HEAPfree(b->tvheap, true);
 	}
 	b->batCopiedtodisk = false;
