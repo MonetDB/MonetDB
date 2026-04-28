@@ -473,7 +473,7 @@ topn(oid *cands, dbl *d, oid *hcand, dbl* hd, BUN n, BUN k)
 #define bond_upper_bound bond_upper_bound_flt
 #define bond_search_fast bond_search_fast_flt
 #define BONDknn BONDknn_flt
-#include <bond.h>
+#include "bond.h"
 #undef VS
 #undef BOND_ELEM_T
 #undef BOND_btype
@@ -491,7 +491,7 @@ topn(oid *cands, dbl *d, oid *hcand, dbl* hd, BUN n, BUN k)
 #define bond_upper_bound bond_upper_bound_dbl
 #define bond_search_fast bond_search_fast_dbl
 #define BONDknn BONDknn_dbl
-#include <bond.h>
+#include "bond.h"
 #undef VS
 #undef BOND_ELEM_T
 #undef BOND_ELEM_T

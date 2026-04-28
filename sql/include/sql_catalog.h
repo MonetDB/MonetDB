@@ -389,25 +389,18 @@ typedef struct sql_type {
 	sql_base base;
 
 	union {
-		char *impl; /* backend correspondent type */
-		struct list *fields;	/* list of fields (args) */
+		char *impl;			/* backend correspondent type */
+		struct list *fields;/* list of fields (args) */
 	} d;
 	unsigned int digits;
-	unsigned int scale;	/* indicates how scale is used in functions */
+	unsigned int scale;		/* indicates how scale is used in functions */
 	int8_t localtype;		/* localtype, need for coersions */
 	unsigned char
 		radix:6,
 		composite:1;
-	sql_class eclass; 	/* types are grouped into equivalence classes */
+	sql_class eclass;		/* types are grouped into equivalence classes */
 	sql_schema *s;
 } sql_type;
-
-/*
-typedef struct sql_alias {
-	char *name;
-	char *alias;
-} sql_alias;
-*/
 
 #define ARG_IN 1
 #define ARG_OUT 0
@@ -417,6 +410,7 @@ typedef struct sql_subtype {
 	unsigned int digits;
 	unsigned int scale;
 	unsigned char multiset;
+	unsigned int dim;
 } sql_subtype;
 
 /* sql_func need type transform rules types are equal if underlying
