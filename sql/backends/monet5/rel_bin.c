@@ -1801,7 +1801,7 @@ vec_values(backend *be, sql_exp *exp, stmt *left, stmt *sel, vec_dim *acc, unsig
 		if (t->multiset == MS_VECTOR)
 			acc = vec_values(be, e, left, sel, acc, dim);
 		else {
-			stmt *s = exp_bin(be, e, left, NULL, NULL, NULL, NULL, sel, 0, 0, 0);
+			stmt *s = exp_bin(be, e, e->card <= CARD_ATOM ? NULL : left, NULL, NULL, NULL, NULL, sel, 0, 0, 0);
 			vec_dim d = acc[i];
 			if (!d.t)
 				d.t = t;
@@ -1835,7 +1835,13 @@ exp2stmt_vector(backend *be, sql_exp *e, stmt *left, stmt *sel)
 	list *l = sa_list(be->mvc->sa);
 	for (size_t i = 0; i < ndim; i++) {
 		vec_dim d = vals[i];
-		stmt *s = stmt_append_bulk(be, stmt_temp(be, d.t), d.vals);
+		stmt *s = NULL;
+		assert(list_length(d.vals));
+		if (list_length(d.vals) != 1)
+			s = stmt_append_bulk(be, stmt_temp(be, d.t), d.vals);
+		else
+			s = d.vals->h->data;
+		assert(s);
 		list_append(l, s);
 	}
 	stmt *s = stmt_list(be, l);
@@ -1877,7 +1883,7 @@ exp2bin_file_loader(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *sel
 
 	list *arg_list = fe->l;
 
-	sql_exp *eexp = arg_list->h->next->data;
+	sql_exp *eexp = exps_bind_column(arg_list, "ext", NULL, NULL, 0);
 	assert(is_atom(eexp->type));
 	atom *ea = eexp->l;
 	assert(ea->data.vtype == TYPE_str);
@@ -1888,7 +1894,7 @@ exp2bin_file_loader(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *sel
 		fl = fl_find("csv");
 	if (!fl)
 		return NULL;
-	sql_exp *fexp = arg_list->h->data;
+	sql_exp *fexp = exps_bind_column(arg_list, "filename", NULL, NULL, 0);
 	assert(is_atom(fexp->type));
 	atom *fa = fexp->l;
 	assert(fa->data.vtype == TYPE_str);
@@ -1896,7 +1902,7 @@ exp2bin_file_loader(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *sel
 	sql_exp *topn = NULL;
 	if (list_length(arg_list) == 3)
 		topn = list_fetch(arg_list, 2);
-	return (stmt*)fl->load(be, f, filename, topn);
+	return (stmt*)fl->load(be, f, filename, arg_list, topn);
 }
 
 static stmt*
@@ -1909,7 +1915,7 @@ exp2bin_proto_loader(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *se
 
 	list *arg_list = fe->l;
 
-	sql_exp *eexp = arg_list->h->next->data;
+	sql_exp *eexp = exps_bind_column(arg_list, "proto", NULL, NULL, 0);
 	assert(is_atom(eexp->type));
 	atom *ea = eexp->l;
 	assert(ea->data.vtype == TYPE_str);
@@ -1920,7 +1926,7 @@ exp2bin_proto_loader(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *se
 		pl = pl_find("mapi");
 	if (!pl)
 		return NULL;
-	sql_exp *fexp = arg_list->h->data;
+	sql_exp *fexp = exps_bind_column(arg_list, "uri", NULL, NULL, 0);
 	assert(is_atom(fexp->type));
 	atom *fa = fexp->l;
 	assert(fa->data.vtype == TYPE_str);
@@ -1928,7 +1934,7 @@ exp2bin_proto_loader(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *se
 	sql_exp *topn = NULL;
 	if (list_length(arg_list) == 3)
 		topn = list_fetch(arg_list, 2);
-	return (stmt*)pl->load(be, f, filename, topn);
+	return (stmt*)pl->load(be, f, filename, arg_list, topn);
 }
 
 static stmt *
@@ -5393,9 +5399,12 @@ insert_bond(backend *be, sql_rel *rel, stmt *sub, stmt *l)
 						/* query values (fetch scalars from literal dims) */
 						for (node *dn = lit_dims->h; dn; dn = dn->next) {
 							stmt *ds = dn->data;
-							stmt *scalar = stmt_fetch(be, ds);
-							if (!scalar) goto bond_fallback;
-							q = pushArgument(mb, q, scalar->nr);
+							if (ds->nrcols) {
+								printf("fetch %d\n", ds->nrcols);
+								ds = stmt_fetch(be, ds);
+							}
+							if (!ds) goto bond_fallback;
+							q = pushArgument(mb, q, ds->nr);
 						}
 						pushInstruction(mb, q);
 

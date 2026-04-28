@@ -1969,6 +1969,4 @@ gdk_export int ma_info(allocator *sa, char *buf, size_t buflen, const char *pref
 	})
 #endif
 
-#define FBLOCK_ON 1
-#define FBLOCK_OFF !FBLOCK_ON
 #endif /* _GDK_H_ */

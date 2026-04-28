@@ -945,6 +945,8 @@ load_arg(sql_trans *tr, sql_schema *s, oid rid)
 		sql_init_subtype(&a->type, lt, digits, scale);
 	}
 	a->type.multiset = store->table_api.column_find_bte(tr, find_sql_column(args, "multiset"), rid);
+	if (a->type.multiset == MS_VECTOR)
+		a->type.digits = 0;
 	store->table_api.column_find_string_end(cbat);
 	return a;
 }

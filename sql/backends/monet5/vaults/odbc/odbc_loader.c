@@ -543,8 +543,9 @@ fraction2msec(SQLUINTEGER fraction, SQLSMALLINT decimaldigits) {
  * the caller argument is ODBC_RELATION when called from odbc_relation and ODBC_LOADER when called from ODBCloader
  */
 static str
-odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *in_exps, list *res_exps, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	(void)in_exps;
 	if (sql == NULL)
 		return "Missing mvc value.";
 	if (f == NULL)
@@ -1553,15 +1554,16 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
  * Fill the list res_exps, with one result expressions per resulting column.
  */
 static str
-odbc_relation(mvc *sql, sql_subfunc *f, char *url, list *res_exps, char *aname)
+odbc_relation(mvc *sql, sql_subfunc *f, char *url, list *in_exps, list *res_exps, char *aname)
 {
 	(void) aname;
-	return odbc_query(ODBC_RELATION, sql, f, url, res_exps, NULL, NULL, NULL);
+	return odbc_query(ODBC_RELATION, sql, f, url, in_exps, res_exps, NULL, NULL, NULL);
 }
 
 static void *
-odbc_load(void *BE, sql_subfunc *f, char *url, sql_exp *topn)
+odbc_load(void *BE, sql_subfunc *f, char *url, list *in_exps, sql_exp *topn)
 {
+	(void)in_exps;
 	backend *be = (backend*)BE;
 	if (!f)
 		return NULL;
@@ -1605,7 +1607,7 @@ ODBCloader(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str uri = *getArgReference_str(stk, pci, pci->retc);
 	sql_subfunc *f = *(sql_subfunc**)getArgReference_ptr(stk, pci, pci->retc+1);
 
-	return odbc_query(ODBC_LOADER, be->mvc, f, uri, NULL, mb, stk, pci);
+	return odbc_query(ODBC_LOADER, be->mvc, f, uri, NULL, NULL, mb, stk, pci);
 }
 
 static str

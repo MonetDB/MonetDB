@@ -425,8 +425,9 @@ typedef struct csv_t {
  * Fill the list res_exps, with one result expressions per resulting column.
  */
 static str
-csv_relation(mvc *sql, sql_subfunc *f, char *filename, list *res_exps, char *tname, lng *est)
+csv_relation(mvc *sql, sql_subfunc *f, char *filename, list *in_exps, list *res_exps, char *tname, lng *est)
 {
+	(void)in_exps;
 	stream *file = csv_open_file(filename);
 	if (file == NULL)
 		return RUNTIME_FILE_NOT_FOUND;
@@ -505,8 +506,9 @@ csv_relation(mvc *sql, sql_subfunc *f, char *filename, list *res_exps, char *tna
 }
 
 static void *
-csv_load(void *BE, sql_subfunc *f, char *filename, sql_exp *topn)
+csv_load(void *BE, sql_subfunc *f, char *filename, list *in_list, sql_exp *topn)
 {
+	(void)in_list;
 	backend *be = (backend*)BE;
 	mvc *sql = be->mvc;
 	csv_t *r = (csv_t *)f->sname;

@@ -145,8 +145,9 @@ append_terms(allocator *sa, JSON *jt, BAT *b)
 
 
 static str
-json_relation(mvc *sql, sql_subfunc *f, char *filename, list *res_exps, char *tname, lng *est)
+json_relation(mvc *sql, sql_subfunc *f, char *filename, list *in_exps, list *res_exps, char *tname, lng *est)
 {
+	(void)in_exps;
 	(void) filename;
 	(void) est;
 	char *res = MAL_SUCCEED;
@@ -176,8 +177,9 @@ json_relation(mvc *sql, sql_subfunc *f, char *filename, list *res_exps, char *tn
 
 
 static void *
-load_json(void *BE, sql_subfunc *f, char *filename, sql_exp *topn)
+load_json(void *BE, sql_subfunc *f, char *filename, list *in_exps, sql_exp *topn)
 {
+	(void)in_exps;
 	(void) topn; // TODO include topn
 	backend *be = BE;
 	allocator *sa = be->mvc->sa;
@@ -199,8 +201,9 @@ load_json(void *BE, sql_subfunc *f, char *filename, sql_exp *topn)
 }
 
 static void *
-load_ndjson(void *BE, sql_subfunc *f, char *filename, sql_exp *topn)
+load_ndjson(void *BE, sql_subfunc *f, char *filename, list *in_exps, sql_exp *topn)
 {
+	(void)in_exps;
 	(void) topn; // TODO include topn
 	backend *be = BE;
 	allocator *sa = be->mvc->sa;

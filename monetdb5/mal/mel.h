@@ -55,6 +55,7 @@ typedef struct __attribute__((__designated_init__)) mel_atom {
 #define vararg(n,t)			{ /*.name=n,*/ .type=# t, .vargs=true }
 #define batarg(n,t)			{ /*.name=n,*/ .type=# t, .isbat=true }
 #define batvararg(n,t)		{ /*.name=n,*/ .type=# t, .isbat=true, .vargs=true }
+#define optbatvararg(n,t)	{ /*.name=n,*/ .type=# t, .opt=1, .vargs=true }
 #define argany(n,a)			{ /*.name=n,*/ .nr=a, }
 #define varargany(n,a)		{ /*.name=n,*/ .nr=a, .vargs=true, }
 #define batargany(n,a)		{ /*.name=n,*/ .isbat=true, .nr=a, }

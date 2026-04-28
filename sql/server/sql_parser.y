@@ -654,7 +654,7 @@ int yydebug=1;
 %token <sval> ASYMMETRIC SYMMETRIC ORDER ORDERED BY IMPRINTS
 %token <sval> ESCAPE UESCAPE HAVING sqlGROUP ROLLUP CUBE sqlNULL
 %token <sval> GROUPING SETS FROM FOR MATCH
-%token <sval> SETOF ARRAY VECTOR FBLOCK
+%token <sval> SETOF ARRAY VECTOR
 
 %token <sval> EXTRACT
 
@@ -4247,10 +4247,34 @@ table_ref:
 		}
 	|	sqlLOADER '(' assignment_commalist ')' opt_table_name
 		{
+			dlist *args = $3;
+			bool ploader = false, floader = false;
+			if (args) {
+				for(dnode *dn = args->h; dn; dn = dn->next) {
+					symbol *assign = dn->data.sym;
+					if (assign->token != SQL_ASSIGN || dlist_length(assign->data.lval) != 2) {
+						sqlformaterror(m, SQLSTATE(22019) "%s", "Assignment format incorrect");
+						$$ = NULL;
+						YYABORT;
+					}
+					if (strcmp(assign->data.lval->h->next->data.sval, "uri") == 0)
+						ploader = true;
+					if (strcmp(assign->data.lval->h->next->data.sval, "filename") == 0)
+						floader = true;
+				}
+			}
+			if ((!ploader && !floader) || (ploader && floader)) {
+				if (!ploader)
+					sqlformaterror(m, SQLSTATE(22019) "%s", "file or proto loader missing filename or uri");
+				else
+					sqlformaterror(m, SQLSTATE(22019) "%s", "file or proto loader cannot handle both filename and uri");
+				$$ = NULL;
+				YYABORT;
+			}
 			dlist *f = L();
-			append_list(f, append_string(L(), "loader"));
+			append_list(f, append_string(L(), ploader ? "proto_loader" : "file_loader"));
 			append_int(f, FALSE); /* ignore distinct */
-			append_list(f, $3);
+			append_list(f, args);
 
 			dlist *l = L();
 			append_symbol(l, _symbol_create_list( SQL_NOP, f));
@@ -4262,20 +4286,27 @@ table_ref:
 		{
 			dlist *f = L();
 			const char *s = $1;
-			const char *loader = looks_like_url(s) ? "proto_loader" : "file_loader";
+			bool ploader = looks_like_url(s);
+			const char *loader = ploader ? "proto_loader" : "file_loader";
 			append_list(f, append_string(L(), loader));
 			append_int(f, FALSE); /* ignore distinct */
 			int len = UTF8_strlen(s);
 			sql_subtype t;
 			sql_find_subtype(&t, "char", len, 0);
 
-			dlist *args = L();
-			append_symbol(args, _newAtomNode( _atom_string(&t, s)));
+			dlist *l = L();
+			append_symbol(l, _newAtomNode( _atom_string(&t, s)));
+			append_string(l, ploader ? "uri" : "filename");
+			symbol *str1 = _symbol_create_list( SQL_ASSIGN, l);
+
+			l = $2;
+			if (!l)
+				l = L();
+			dlist *args = prepend_node(l, node_symbol(SA, str1));
 			append_list(f, args);
 
-			dlist *l = L();
+			l = L();
 			append_symbol(l, _symbol_create_list( SQL_NOP, f));
-
 			append_int(l, 0);
 			append_symbol(l, $3);
 			$$ = _symbol_create_list(SQL_TABLE, l);
@@ -6782,7 +6813,6 @@ simple_data_type:
 				YYABORT;
 			}
 		}
-	|	FBLOCK                 { sql_find_subtype(&$$, "fblock", 0, 0); }
 	;
 
 subgeometry_type:
@@ -8276,7 +8306,6 @@ char *token2string(tokens token)
 	SQL(UPDATE);
 	SQL(USING);
 	SQL(VALUES);
-	SQL(FBLOCK);
 	SQL(VECTOR);
 	SQL(VIEW);
 	SQL(WHEN);

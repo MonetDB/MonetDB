@@ -670,8 +670,12 @@ nary_function_arg_types_2str(allocator *ta, list* types, int N)
 static char *
 file_loader_add_table_column_types(mvc *sql, sql_subfunc *f, list *exps, list *res_exps, char *tname, lng *est)
 {
-	sql_exp *file = exps->h->data;
-	if (!exp_is_atom(file))
+	sql_exp *file = exps_bind_column(exps, "filename", NULL, NULL, 0);
+	if (!file && list_length(exps) == 1) {
+		file = exps->h->data;
+		exp_setname(sql, file, NULL, "filename");
+	}
+	if (!file || !exp_is_atom(file))
 		return "Filename missing";
 
 	atom *a = file->l;
@@ -711,13 +715,14 @@ file_loader_add_table_column_types(mvc *sql, sql_subfunc *f, list *exps, list *r
 			return sa_message(MT_thread_getallocator(),
 							  "Filename extension '%s' missing", ext?ext:"");
 	}
-	str err = fl->add_types(sql, f, filename, res_exps, tname, est);
+	str err = fl->add_types(sql, f, filename, exps, res_exps, tname, est);
 	if (err)
 		return err;
 	sql_subtype *st = sql_fetch_localtype(TYPE_str);
 	sql_exp *ext_exp = exp_atom(sql->sa, atom_string(sql->sa, st, ext));
 	if (!ext_exp)
 		return MAL_MALLOC_FAIL;
+	exp_setname(sql, ext_exp, NULL, "ext");
 	append(exps, ext_exp);
 	return NULL;
 }
@@ -859,7 +864,7 @@ rel_file_loader(mvc *sql, list *exps, list *tl, char *tname)
 		if (list_empty(tl) || (nexps = check_arguments_and_find_largest_any_type(sql, NULL, exps, f, 1, false))) {
 			list *res_exps = sa_list(sql->sa);
 			lng est = 0;
-			if (list_length(exps) == 1 && f && f->func->varres && strlen(f->func->mod) == 0 && strlen(f->func->imp) == 0) {
+			if (/*list_length(exps) == 1 &&*/ f && f->func->varres && strlen(f->func->mod) == 0 && strlen(f->func->imp) == 0) {
 				allocator *ta = MT_thread_getallocator();
 				allocator_state ta_state = ma_open(ta);
 				char *err = file_loader_add_table_column_types(sql, f, nexps, res_exps, tname, &est);
@@ -885,8 +890,12 @@ rel_file_loader(mvc *sql, list *exps, list *tl, char *tname)
 static char *
 proto_loader_add_table_column_types(mvc *sql, sql_subfunc *f, list *exps, list *res_exps, char *tname)
 {
-	sql_exp *uri = exps->h->data;
-	if (!exp_is_atom(uri))
+	sql_exp *uri = exps_bind_column(exps, "uri", NULL, NULL, 0);
+	if (!uri && list_length(exps) == 1) {
+		uri = exps->h->data;
+		exp_setname(sql, uri, NULL, "uri");
+	}
+	if (!uri || !exp_is_atom(uri))
 		return "URI missing";
 
 	atom *a = uri->l;
@@ -916,7 +925,7 @@ proto_loader_add_table_column_types(mvc *sql, sql_subfunc *f, list *exps, list *
 		return sa_message(MT_thread_getallocator(),
 						  "URI protocol '%s' not supported", proto?proto:"");
 
-	str err = pl->add_types(sql, f, uristr, res_exps, tname);
+	str err = pl->add_types(sql, f, uristr, exps, res_exps, tname);
 	if (err)
 		return err;
 
@@ -925,6 +934,7 @@ proto_loader_add_table_column_types(mvc *sql, sql_subfunc *f, list *exps, list *
 	if (!proto_exp)
 		return MAL_MALLOC_FAIL;
 
+	exp_setname(sql, proto_exp, NULL, "proto");
 	append(exps, proto_exp);
 	return NULL;
 }
@@ -1008,7 +1018,7 @@ rel_named_table_function(sql_query *query, sql_rel *rel, symbol *ast, int latera
 	if (l->next) { /* table call with subquery */
 		int is_value = 1;
 		if (l->next->type == type_symbol || l->next->type == type_list) {
-			int count = 0;
+			int count = 0, assign = 0;
 
 			if (l->next->type == type_symbol)
 				n = l->next;
@@ -1016,8 +1026,11 @@ rel_named_table_function(sql_query *query, sql_rel *rel, symbol *ast, int latera
 				n = l->next->data.lval?l->next->data.lval->h:NULL;
 
 			for (dnode *m = n; m; m = m->next) {
-				if (m->type == type_symbol && m->data.sym->token == SQL_SELECT)
+				if (m->type == type_symbol && m->data.sym->token == SQL_SELECT) {
 					subquery = m->data.sym;
+				} else if (m->type == type_symbol && m->data.sym->token == SQL_ASSIGN) {
+					assign++;
+				}
 				count++;
 			}
 			if (subquery && count > 1)
@@ -1028,6 +1041,23 @@ rel_named_table_function(sql_query *query, sql_rel *rel, symbol *ast, int latera
 				if (!(sq = rel_subquery(query, subquery, ek)))
 					return NULL;
 				is_value = 0;
+			} else if (assign) {
+				exp_kind iek = {type_value, unnest?card_row:card_set, TRUE};
+				for ( ; n && n->data.sym->token == SQL_ASSIGN; n = n->next) { /* value, name */
+					dlist *d = n->data.sym->data.lval;
+					symbol *val = d->h->data.sym;
+					char *name = d->h->next->data.sval;
+					sql_exp *e = rel_value_exp(query, &outer, val, sql_sel | sql_from, iek);
+
+					if (!e)
+						return NULL;
+					if (!exp_is_atom(e)) {
+						return sql_error(sql, 02, SQLSTATE(42000) "SELECT: The named arguments for the table returning function %s%s%s'%s' must be literals",
+								 sname ? "'":"", sname ? sname : "", sname ? "'.":"", fname);
+					}
+					exp_setname(query->sql, e, NULL, name);
+					append(exps, e);
+				}
 			} else {
 				exp_kind iek = {type_value, unnest?card_row:card_set, TRUE};
 				for ( ; n; n = n->next) {

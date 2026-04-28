@@ -14,8 +14,8 @@
 #include "sql_types.h"
 #include "sql_mvc.h"
 
-typedef str (*pl_add_types_fptr)(mvc *sql, sql_subfunc *f, char *url, list *res_exps, char *name);
-typedef void *(*pl_load_fptr)(void *be, sql_subfunc *f, char *url, sql_exp *topn); /* use void * as both return type and be argument are unknown types at this layer */
+typedef str (*pl_add_types_fptr)(mvc *sql, sql_subfunc *f, char *url, list *in_exps, list *res_exps, char *name);
+typedef void *(*pl_load_fptr)(void *be, sql_subfunc *f, char *url, list *in_exps, sql_exp *topn); /* use void * as both return type and be argument are unknown types at this layer */
 
 typedef struct proto_loader_t {
 	char *name;

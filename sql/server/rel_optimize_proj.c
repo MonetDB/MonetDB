@@ -2549,7 +2549,7 @@ rel_remove_const_aggr(visitor *v, sql_rel *rel)
 
 	list *exps = rel->exps;
 
-	if(rel->op != op_groupby || list_empty(exps))
+	if (rel->op != op_groupby || list_empty(exps))
 		return rel;
 
 	if (!list_empty(rel->r)) {

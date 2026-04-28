@@ -105,21 +105,33 @@ GRANT EXECUTE ON AGGREGATE json.tojsonarray( double ) TO PUBLIC;
 
 
 CREATE FUNCTION sys.l2sq_distance(a float vector, b float vector)
-RETURNS double EXTERNAL NAME vss.l2sq_distance;
+RETURNS float EXTERNAL NAME vss.l2sq_distance;
 --GRANT EXECUTE ON FUNCTION sys.l2sq_distance(a float vector, b float vector) TO PUBLIC;
 
+CREATE FUNCTION sys.l2sq_distance(a real vector, b real vector)
+RETURNS float EXTERNAL NAME vss.l2sq_distance;
+
 --PDX
-CREATE FUNCTION sys.pdx(a fblock, k int, b float vector)
+CREATE FUNCTION sys.pdx(a fblock, k int, b real vector)
 RETURNS oid EXTERNAL NAME batvss.pdx;
 
 CREATE FUNCTION sys.l1_distance(a float vector, b float vector)
-RETURNS double EXTERNAL NAME vss.l1_distance;
+RETURNS float EXTERNAL NAME vss.l1_distance;
 --GRANT EXECUTE ON FUNCTION sys.l1_distance(a float vector, b float vector) TO PUBLIC;
 
+CREATE FUNCTION sys.l1_distance(a real vector, b real vector)
+RETURNS float EXTERNAL NAME vss.l1_distance;
+
 CREATE FUNCTION sys.ip_distance(a float vector, b float vector)
-RETURNS double EXTERNAL NAME vss.ip_distance;
+RETURNS float EXTERNAL NAME vss.ip_distance;
 --GRANT EXECUTE ON FUNCTION sys.ip_distance(a float vector, b float vector) TO PUBLIC;
 
+CREATE FUNCTION sys.ip_distance(a real vector, b real vector)
+RETURNS float EXTERNAL NAME vss.ip_distance;
+
 CREATE FUNCTION sys.cos_distance(a float vector, b float vector)
-RETURNS double EXTERNAL NAME vss.cos_distance;
+RETURNS float EXTERNAL NAME vss.cos_distance;
 --GRANT EXECUTE ON FUNCTION sys.cos_distance(a float vector, b float vector) TO PUBLIC;
+
+CREATE FUNCTION sys.cos_distance(a real vector, b real vector)
+RETURNS float EXTERNAL NAME vss.cos_distance;

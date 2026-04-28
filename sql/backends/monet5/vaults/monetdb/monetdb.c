@@ -49,8 +49,9 @@ typedef struct mdb_loader_t {
  * Fill the list res_exps, with one result expressions per resulting column.
  */
 static str
-monetdb_relation(mvc *sql, sql_subfunc *f, char *raw_uri, list *res_exps, char *aname)
+monetdb_relation(mvc *sql, sql_subfunc *f, char *raw_uri, list *in_exps, list *res_exps, char *aname)
 {
+	(void)in_exps;
 	str ret; // intentionally uninitialized to provoke control flow warnings
 
 	const char *uri_error = NULL;
@@ -212,8 +213,9 @@ sql_template(allocator *sa, const char **parts)
 
 
 static void *
-monetdb_load(void *BE, sql_subfunc *f, char *uri, sql_exp *topn)
+monetdb_load(void *BE, sql_subfunc *f, char *uri, list *in_exps, sql_exp *topn)
 {
+	(void)in_exps;
 	(void)uri; // assumed to be equivalent to mdb_loader_t->uri, though maybe unnormalized.
 	(void)topn;
 

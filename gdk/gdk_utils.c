@@ -1355,7 +1355,7 @@ GDKreset(int status)
 		GDK_mmap_pagesize = MMAP_PAGESIZE;
 		GDK_mem_maxsize = (size_t) ((double) MT_npages() * (double) MT_pagesize() * 0.815);
 		GDK_vm_maxsize = GDK_VM_MAXSIZE;
-		GDKatomcnt = TYPE_blob + 1;
+		GDKatomcnt = TYPE_fblock + 1;
 
 		if (GDK_mem_maxsize / 16 < GDK_mmap_minsize_transient) {
 			GDK_mmap_minsize_transient = GDK_mem_maxsize / 16;

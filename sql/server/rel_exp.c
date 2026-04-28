@@ -3996,6 +3996,7 @@ exp_check_vector_type(mvc *sql, sql_subtype *t, sql_rel *rel, sql_exp *exp, chec
 		}
 	}
 	exp->tpe = *t;
+	exp->tpe.digits = list_length(vals);
 	return exp;
 }
 
@@ -4016,6 +4017,9 @@ exp_check_multiset_type(mvc *sql, sql_subtype *t, sql_rel *rel, sql_exp *exp, ch
 			return exp;
 		if (t->type->composite)
 			return sql_error( sql, 03, SQLSTATE(42000) "cannot convert value into composite type '%s'", t->type->base.name);
+		if (et && et->multiset && t->multiset)
+			return sql_error( sql, 03, SQLSTATE(42000) "cannot convert value with type '%s[%u]' into multiset type '%s[%u]'",
+					et->type->base.name, et->digits, t->type->base.name, t->digits);
 		return sql_error( sql, 03, SQLSTATE(42000) "cannot convert value into multiset type '%s[]'", t->type->base.name);
 	}
 
@@ -4072,7 +4076,8 @@ sql_exp *
 exp_check_vector(mvc *sql, sql_exp *e)
 {
 	if (is_values(e)) { /* check for single tuple type */
-		sql_subtype t = *sql_fetch_localtype(TYPE_dbl);
+		//sql_subtype t = *sql_fetch_localtype(TYPE_dbl);
+		sql_subtype t = *exp_subtype(e);
 		t.multiset = MS_VECTOR;
 		t.digits = list_length(e->f);
 		return exp_check_vector_type(sql, &t, NULL, e, type_equal);
