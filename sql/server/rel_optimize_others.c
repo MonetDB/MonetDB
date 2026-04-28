@@ -440,7 +440,8 @@ rel_exps_mark_used(allocator *sa, sql_rel *rel, sql_rel *subrel)
 		}
 
 		if (!nr && is_project(rel->op) && len > 0) /* project at least one column if exists */
-			exps[0]->used = 1;
+			if (!is_freevar(exps[0]))
+				exps[0]->used = 1;
 
 		for (i = len-1; i >= 0; i--) {
 			sql_exp *e = exps[i];
@@ -456,7 +457,8 @@ rel_exps_mark_used(allocator *sa, sql_rel *rel, sql_rel *subrel)
 	if (!nr && subrel && (is_project(subrel->op) || is_base(subrel->op)) && !list_empty(subrel->exps) &&
 		(is_simple_project(rel->op) && project_unsafe(rel, false))) {
 		sql_exp *e = subrel->exps->h->data;
-		e->used = 1;
+		if (!is_freevar(e))
+			e->used = 1;
 	}
 	if (rel->r && (is_simple_project(rel->op) || is_groupby(rel->op))) {
 		list *l = rel->r;
@@ -526,7 +528,8 @@ rel_used(sql_rel *rel)
 		return;
 	if (is_join(rel->op) || is_set(rel->op) || is_semi(rel->op) || is_modify(rel->op)) {
 		rel_used(rel->l);
-		rel_used(rel->r);
+		if (!is_semi(rel->op) && !(is_left(rel->op) && !list_empty(rel->attr)))
+			rel_used(rel->r);
 	} else if (rel->op == op_munion) {
 		list *l = rel->l;
 		for(node *n = l->h; n; n = n->next)
@@ -775,10 +778,12 @@ rel_remove_unused(mvc *sql, sql_rel *rel)
 				sql_exp *e = n->data;
 
 				/* at least one (needed for crossproducts, count(*), rank() and single value projections) */
-				if (!e->used && list_length(rel->exps) > 1)
+				if (!e->used && (list_length(rel->exps) > 1 || is_freevar(e)))
 					list_remove_node(rel->exps, NULL, n);
 				n = next;
 			}
+			if (list_empty(rel->exps))
+				append(rel->exps, exp_atom_bool(sql->sa, 0));
 		}
 		return rel;
 
@@ -1123,19 +1128,29 @@ rel_add_projects(visitor *v, sql_rel *rel)
 }
 
 static sql_rel *
-rel_dce_(visitor *v, sql_rel *rel)
+rel_dce_(visitor *v, sql_rel *rel, bool partial)
 {
 	list *refs = sa_list(v->sql->sa);
 
 	if (v->opt >= 0 && rel)
 		v->opt = rel->opt+1;
 	rel_dce_refs(v->sql, rel, refs);
+	if (refs && !partial) {
+		for(node *n = refs->h; n; n = n->next) {
+			sql_rel *i = n->data;
+
+			while (!rel_is_ref(i) && i->l && !is_base(i->op))
+				i = i->l;
+			if (i)
+				rel_used(i);
+		}
+	}
 	rel = rel_add_projects(v, rel);
 	if (v->opt >= 0 && rel)
 		v->opt = rel->opt+1;
 	rel_used(rel);
 	rel_dce_sub(v, rel);
-	if (refs) {
+	if (refs && !partial) {
 		for(node *n = refs->h; n; n = n->next) {
 			sql_rel *i = n->data;
 
@@ -1152,15 +1167,15 @@ static sql_rel *
 rel_dce(visitor *v, global_props *gp, sql_rel *rel)
 {
 	(void) gp;
-	return rel_dce_(v, rel);
+	return rel_dce_(v, rel, false);
 }
 
 /* keep export for other projects */
 sql_rel *
 rel_deadcode_elimination(mvc *sql, sql_rel *rel)
 {
-	visitor v = {.sql = sql };
-	return rel_dce_(&v, rel);
+	visitor v = {.sql = sql, .opt = rel->opt };
+	return rel_dce_(&v, rel, true);
 }
 
 run_optimizer
@@ -1506,6 +1521,14 @@ rel_push_topn_and_sample_down_(visitor *v, sql_rel *rel)
 	}
 	return rel;
 }
+
+sql_rel *
+rel_push_topn_down(mvc *sql, sql_rel *rel)
+{
+	visitor v = { .sql = sql };
+	return rel_push_topn_and_sample_down_( &v, rel);
+}
+
 
 static sql_rel *
 rel_push_topn_and_sample_down(visitor *v, global_props *gp, sql_rel *rel)

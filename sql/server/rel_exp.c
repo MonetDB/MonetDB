@@ -3392,6 +3392,28 @@ exp_copy(mvc *sql, sql_exp * e)
 	return ne;
 }
 
+list *
+exps_refs(mvc *sql, list *exps)
+{
+	if (mvc_highwater(sql)) {
+		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
+	}
+	if (!exps) {
+		return NULL;
+	}
+	list *nexps = new_exp_list(sql->sa);
+	for (node *n = exps->h; n; n = n->next) {
+		sql_exp *arg = n->data;
+
+		arg = exp_ref(sql, arg);
+		if (!arg) {
+			return NULL;
+		}
+		append(nexps, arg);
+	}
+	return nexps;
+}
+
 /* scaling for the division operator */
 static sql_exp *
 exp_scale_algebra(mvc *sql, sql_subfunc *f, sql_rel *rel, sql_exp *l, sql_exp *r)
@@ -4199,7 +4221,7 @@ free_exp(allocator *sa, sql_exp *e)
 	_free_exp_internal(sa, e);
 }
 
-bool 
+bool
 exps_has_group_filter(list *exps)
 {
 	if (list_empty(exps))
@@ -4211,7 +4233,7 @@ exps_has_group_filter(list *exps)
 			if (sf->func->group)
 				return true;
 		}
-	}	
+	}
 	return false;
 }
 

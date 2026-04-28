@@ -16,6 +16,7 @@
 #include "rel_exp.h"
 #include "rel_select.h"
 #include "rel_rewriter.h"
+#include "rel_optimizer.h"
 
 #define rewrite_no_freevar       (1 << 8)
 #define is_independent(X)        ((X & rewrite_no_freevar) == rewrite_no_freevar)
@@ -617,6 +618,56 @@ push_up_project_exp(mvc *sql, sql_rel *rel, sql_exp *e)
 		break;
 	}
 	return e;
+}
+
+/* in case of cross products with freevars in projections down the three, we push all the projects */
+static sql_rel *
+push_up_projects(mvc *sql, sql_rel *rel)
+{
+	if (!rel)
+		return rel;
+	if (is_project(rel->op)) {
+		sql_rel *l = rel->l;
+		if (l && is_topn(l->op))
+			rel->l = l = rel_push_topn_down(sql, l);
+		if (l && is_project(l->op))
+			rel = rel_merge_project(sql, rel);
+		l = rel->l;
+		if (is_join(l->op))
+			rel->l = l = push_up_projects(sql, rel->l);
+		if (l && is_project(l->op))
+			rel = rel_merge_project(sql, rel);
+	}
+	if (is_join(rel->op) && list_empty(rel->exps)) {
+		bool left_group_join = (is_left(rel->op) && !list_empty(rel->attr));
+		sql_rel *l = rel->l, *r = rel->r;
+		bool needed = ((is_simple_project(l->op) && !list_empty(l->exps)) ||
+					   (is_simple_project(r->op) && !list_empty(r->exps)));
+		if (needed) {
+			list *nexps = NULL;
+			if (is_simple_project(l->op) && !list_empty(l->exps)) {
+				rel->l = l = push_up_projects(sql, l);
+				nexps = l->exps;
+				l->exps = NULL;
+				rel->l = l->l;
+				l->l = NULL;
+				rel_destroy(sql, l);
+			}
+			if (is_simple_project(r->op) && !list_empty(r->exps)) {
+				rel->r = r = push_up_projects(sql, r);
+				if (!left_group_join) {
+					nexps = list_join(nexps, r->exps);
+					r->exps = NULL;
+					rel->r = r->l;
+					r->l = NULL;
+					rel_destroy(sql, r);
+				}
+			}
+			if (!left_group_join && nexps)
+				return rel_project(sql->sa, rel, nexps);
+		}
+	}
+	return rel;
 }
 
 static sql_exp *exp_rewrite(mvc *sql, sql_rel *rel, sql_exp *e, list *ad);
@@ -1540,6 +1591,18 @@ push_up_join(mvc *sql, sql_rel *rel, list *ad)
 				rel->r = j = push_up_select_l(sql, j);
 				return rel; /* ie try again */
 			}
+
+			if ((is_left(rel->op) && !list_empty(rel->attr) && is_innerjoin(j->op) && list_empty(j->exps)) ||
+			    (is_join(rel->op) && !list_empty(rel->exps) && !list_empty(j->attr) && list_empty(j->exps) && exps_uses_exp(rel->exps, j->attr->h->data))) {
+				/* remove any project, as we don't need */
+				rel->r = j = push_up_projects(sql, j);
+				rel = rel_deadcode_elimination(sql, rel);
+				if (!is_join(j->op) || !rel_has_freevar(sql, j) || !rel_dependent_var(sql, d, j))
+					return rel;
+				jl = j->l;
+				jr = j->r;
+			}
+
 			rd = (j->op != op_full && j->op != op_right)?rel_dependent_var(sql, d, jr):(list*)1;
 			ld = ((j->op == op_join || j->op == op_right))?rel_dependent_var(sql, d, jl):(list*)1;
 
@@ -1728,12 +1791,7 @@ push_up_set(mvc *sql, sql_rel *rel, list *ad)
 				set_distinct(ns);
 
 			if (is_join(rel->op) && !is_semi(rel->op)) {
-				list *sexps = sa_list(sql->sa), *dexps = rel_projections(sql, d, NULL, 1, 1);
-				for (node *m = dexps->h; m; m = m->next) {
-					sql_exp *e = m->data;
-
-					list_append(sexps, exp_ref(sql, e));
-				}
+				list *dexps = rel_projections(sql, d, NULL, 1, 1), *sexps = exps_refs(sql, dexps);
 				ns->exps = list_join(sexps, ns->exps);
 			}
 			/* add/remove projections to inner parts of the union (as we push a join or semijoin down) */
@@ -3575,7 +3633,7 @@ rewrite_anyequal(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 			} else {
 				sql_rel *rewrite = NULL;
 				if (lsq) {
-					(void)rewrite_inner(sql, rel, lsq, rel->card<=CARD_ATOM?op_left:op_join, &rewrite, NULL);
+					(void)rewrite_inner(sql, rel, lsq, op_left, &rewrite, NULL);
 					exp_reset_props(rewrite, le, is_left(rewrite->op));
 				}
 				if (rsq) {
