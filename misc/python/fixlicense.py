@@ -205,20 +205,6 @@ def addlicense(file, pre=None, post=None, start=None, end=None, verbose=False):
             # add a blank line
             addblank = True
             line = f.readline()
-        if '-*-' in line:
-            # if file starts with an Emacs mode specification, keep
-            # the line there
-            g.write(line)
-            # add a blank line
-            addblank = True
-            line = f.readline()
-        if 'vim:' in line:
-            # if file starts with a vim mode specification, keep
-            # the line there
-            g.write(line)
-            # add a blank line
-            addblank = True
-            line = f.readline()
         if line.startswith('<?xml'):
             # if line starts with an XML declaration, keep the line there
             g.write(line)
@@ -324,16 +310,6 @@ def dellicense(file, pre=None, post=None, start=None, end=None, verbose=False):
         f = open(file)
         line = f.readline()
         if line.startswith('#!'):
-            g.write(line)
-            line = f.readline()
-            if line and line == '\n':
-                line = f.readline()
-        if '-*-' in line:
-            g.write(line)
-            line = f.readline()
-            if line and line == '\n':
-                line = f.readline()
-        if 'vim:' in line:
             g.write(line)
             line = f.readline()
             if line and line == '\n':
@@ -453,14 +429,6 @@ def listfile(file, pre=None, post=None, start=None, end=None, verbose=False):
         f = open(file)
         line = f.readline()
         if line.startswith('#!'):
-            line = f.readline()
-            if line and line == '\n':
-                line = f.readline()
-        if '-*-' in line:
-            line = f.readline()
-            if line and line == '\n':
-                line = f.readline()
-        if 'vim:' in line:
             line = f.readline()
             if line and line == '\n':
                 line = f.readline()
