@@ -3251,6 +3251,10 @@ create_col(sql_trans *tr, sql_column *c)
 				}
 				bat_destroy(b);
 				bat_destroy(bu);
+				if (ok == LOG_OK)
+					ok = sql_trans_create_dependency(tr, u->base.id, c->base.id,
+													 USTR_DEPENDENCY,
+													 c->t->persistence);
 			} else {
 				create_delta(ATOMIC_PTR_GET(&c->data), b);
 				bat_destroy(b);
