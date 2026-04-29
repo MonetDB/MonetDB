@@ -100,6 +100,7 @@ KNOWNFAIL?7774-insert-into-renamed-table-assertion-failure
 7901-sum-case-and-or-bug
 7902-sum-case-and-bug
 7903-query-without-result-bug
+7904-sum-case-and-bug
 7905-sum-case-subquery-bug
 7906-rel2bin_join-assertion-failure
 7910-where-case-when-and-bug
