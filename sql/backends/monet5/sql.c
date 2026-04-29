@@ -1825,7 +1825,7 @@ mvc_append_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		ins = *(ptr *) ins;
 	if (isbat) {
 		b =  (BAT*) ins;
-		if (VIEWtparent(b) || VIEWvtparent(b)) {
+		if (isVIEW(b)) {
 			/* note, b == (BAT*)ins */
 			b = COLcopy(b, b->ttype, true, TRANSIENT);
 			BBPreclaim(ins);

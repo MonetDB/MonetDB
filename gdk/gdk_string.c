@@ -186,6 +186,7 @@ ustrPut(BAT *b, var_t *dst, const char *v)
 	/* this function is the ONLY place where ustrbat may be changed
 	 * (inserted into), and we're holding the ustrbat->theaplock, so we are
 	 * totally save looking at the heaps */
+	(void) BATcheckhash(ustrbat); /* load hash table */
 	MT_rwlock_wrlock(&ustrbat->thashlock);
 	MT_lock_set(&ustrbat->theaplock);
 	BUN p = BUN_NONE;

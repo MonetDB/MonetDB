@@ -560,6 +560,9 @@ BATproject2(BAT *restrict l, BAT *restrict r1, BAT *restrict r2)
 		bn->tshift = r1i.shift;
 		bn->tascii = r1i.ascii;
 		bn->tvkey = r1i.vkey;
+		bn->ustr = r1i.ustr;
+		if (bn->ustr)
+			BBPfix(bn->ustr);
 	}
 
 	bn->tunique_est =
