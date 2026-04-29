@@ -1,0 +1,82 @@
+statement ok
+CREATE SCHEMA s7901
+
+statement ok
+SET SCHEMA s7901
+
+statement ok
+CREATE TABLE users (
+    id           INT,
+    username     VARCHAR(100),
+    email        VARCHAR(255),
+    age          INT,
+    status       VARCHAR(20),
+    created_at   TIMESTAMP,
+    score        DOUBLE
+)
+
+statement ok
+CREATE TABLE orders (
+    id          INT,
+    user_id     INT,
+    amount      DOUBLE,
+    status      VARCHAR(20),
+    created_at  TIMESTAMP
+)
+
+statement ok rowcount 5
+INSERT INTO users VALUES
+(1, 'alice', 'alice@test.com', 20, 'active',  '2022-01-01 10:00:00', 88.5),
+(2, 'bob',   'bob@test.com',   30, 'active',  '2022-01-02 11:00:00', 92.3),
+(3, 'carol', NULL,             NULL, 'banned','2022-01-03 12:00:00', NULL),
+(4, 'dave',  'dave@test.com',  45, 'active',  '2022-01-04 13:00:00', 65.2),
+(5, NULL,    'null@test.com',  18, 'inactive','2022-01-05 14:00:00', 70.0)
+
+statement ok rowcount 5
+INSERT INTO orders VALUES
+(1, 1, 100.00, 'paid',    '2022-02-01 09:00:00'),
+(2, 1, 200.50, 'shipped', '2022-02-02 10:00:00'),
+(3, 2, NULL,   'failed',  '2022-02-03 11:00:00'),
+(4, 3, 50.00,  'paid',    '2022-02-04 12:00:00'),
+(5, 5, 999.99, 'paid',    '2022-02-05 13:00:00')
+
+-- RESULT: {0}
+query I
+SELECT COUNT(*)
+FROM users AS ref_0
+WHERE (
+    (FALSE AND ref_0.age IS NULL)
+    OR (
+        ((NULLIF('uxkl2','dd9gl') <= '55cray') OR ref_0.created_at IS NOT NULL)
+        AND ((15.7 <= (SELECT var_samp(id) FROM orders))
+        AND ('n' >= CASE WHEN ref_0.id IS NOT NULL THEN '8oheep' ELSE 'oy6ev' END))
+    )
+)
+----
+0
+
+-- RESULT was: {1} wrong!
+query I
+SELECT SUM(CASE WHEN (
+    (FALSE AND ref_0.age IS NULL)
+    OR (
+        ((NULLIF('uxkl2','dd9gl') <= '55cray') OR ref_0.created_at IS NOT NULL)
+        AND ((15.7 <= (SELECT var_samp(id) FROM orders))
+        AND ('n' >= CASE WHEN ref_0.id IS NOT NULL THEN '8oheep' ELSE 'oy6ev' END))
+    )
+) THEN 1 ELSE 0 END + 0)
+FROM users AS ref_0
+----
+0
+
+statement ok
+DROP TABLE users
+
+statement ok
+DROP TABLE orders
+
+statement ok
+SET SCHEMA sys
+
+statement ok
+DROP SCHEMA s7901

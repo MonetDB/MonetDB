@@ -97,6 +97,7 @@ KNOWNFAIL?7774-insert-into-renamed-table-assertion-failure
 7898-correlated-subquery-inconsistency-bug
 7899-correlated-with-complex-and-or
 7900-semijoin-inconsistency-bug
+7901-sum-case-and-or-bug
 7903-query-without-result-bug
 7905-sum-case-subquery-bug
 7906-rel2bin_join-assertion-failure
