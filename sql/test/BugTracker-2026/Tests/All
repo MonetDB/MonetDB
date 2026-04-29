@@ -94,6 +94,7 @@ KNOWNFAIL?7774-insert-into-renamed-table-assertion-failure
 7895-subquery-where-not-bug
 7896-where-ascii-comparison-bug
 7897-exp_bin-assertion-failure
+7898-correlated-subquery-inconsistency-bug
 7899-correlated-with-complex-and-or
 7903-query-without-result-bug
 7905-sum-case-subquery-bug
