@@ -155,6 +155,6 @@ from
     on (true )
 where ((true)
     and (55.85 != 55.45))
-  or (true AND true);
+  or (true AND true)
 ----
 125

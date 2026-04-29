@@ -1,0 +1,22 @@
+statement error 22018!conversion of string to type dbl failed.
+SELECT * FROM ( SELECT * FROM ( SELECT 1 AS x ) WHERE x IN ( SELECT ALL sql_min ( NULL , NULL ) FROM ( SELECT * FROM ( WITH x AS ( SELECT 1 ) SELECT ( SELECT x FROM ( SELECT SUM ( 0 ) OVER ( ORDER BY SUM ( 0 BETWEEN 1 AND 1 ) ) FROM x GROUP BY rollup ( x , x ) ORDER BY lag ( 'bug' , CAST( 45 - - CASE CASE WHEN 2 > NULL THEN 1 ELSE 0 END WHEN COUNT ( * ) + SUM ( DISTINCT 91 ) + MIN ( DISTINCT 41 ) / 65 THEN 98 END * - 0 - - COUNT ( * ) AS BIGINT ) , 'oth' ) OVER ( ) , x , x ) , ( SELECT x AS x ) WHERE x = 'x' ) , 'x' FROM ( SELECT 'ejyzs' AS x UNION SELECT 0 AS x UNION SELECT NOT ( NULL ) IN ( - ( 9.100000 ) * - 1 , - 41 , - 14 - - CASE - - 1 WHEN - - 82 THEN - - 23 END / 46 - - 87 * 52 ) AS x ORDER BY CASE WHEN x % 2 = 0 THEN x / 2 ELSE ( x + 1 ) / 2 END DESC ) ) WHERE ( x % 7 ) = 0 ) ) )
+
+statement error 42000!types boolean(1,0) and int(16,0) are not equal for column 'x'
+SELECT * FROM ( SELECT * FROM ( SELECT 1 AS x ) WHERE x IN
+ ( SELECT ALL sql_min ( NULL , NULL ) FROM (
+    SELECT * FROM (
+      WITH x AS ( SELECT 1 ) SELECT ( SELECT x FROM ( SELECT SUM ( 0 ) OVER ( ORDER BY SUM ( 0 BETWEEN 1 AND 1 ) ) FROM x GROUP BY rollup ( x , x ) ORDER BY lag ( 'bug' , CAST( 45 - - CASE CASE WHEN 2 > NULL THEN 1 ELSE 0 END WHEN COUNT ( * ) + SUM ( DISTINCT 91 ) + MIN ( DISTINCT 41 ) / 65 THEN 98 END * - 0 - - COUNT ( * ) AS BIGINT ) , 'oth' ) OVER ( ) , x , x ) , ( SELECT x AS x ) WHERE x = 'x' )
+       , 'x' FROM ( SELECT 59568 AS x UNION SELECT 0 AS x UNION SELECT NOT ( NULL ) IN ( - ( 9.100000 ) * - 1 , - 41 , - 14 - - CASE - - 1 WHEN - - 82 THEN - - 23 END / 46 - - 87 * 52 ) AS x
+                    ORDER BY CASE WHEN x % 2 = 0 THEN x / 2 ELSE ( x + 1 ) / 2 END DESC
+                  ) )
+    WHERE ( x % 7 ) = 0 ) ) )
+
+statement error GDK reported error: hashjoin: more than one match
+SELECT * FROM ( SELECT * FROM ( SELECT 1 AS x ) WHERE x IN
+ ( SELECT ALL sql_min ( NULL , NULL ) FROM (
+    SELECT * FROM (
+      WITH x AS ( SELECT 1 ) SELECT ( SELECT x FROM ( SELECT SUM ( 0 ) OVER ( ORDER BY SUM ( 0 BETWEEN 1 AND 1 ) ) FROM x GROUP BY rollup ( x , x ) ORDER BY lag ( 'bug' , CAST( 45 - - CASE CASE WHEN 2 > NULL THEN 1 ELSE 0 END WHEN COUNT ( * ) + SUM ( DISTINCT 91 ) + MIN ( DISTINCT 41 ) / 65 THEN 98 END * - 0 - - COUNT ( * ) AS BIGINT ) , 'oth' ) OVER ( ) , x , x ) , ( SELECT x AS x ) WHERE x = x )
+       , 'x' FROM ( SELECT 59568 AS x UNION SELECT 0 AS x UNION SELECT CAST(NOT ( NULL ) IN ( - ( 9.100000 ) * - 1 , - 41 , - 14 - - CASE - - 1 WHEN - - 82 THEN - - 23 END / 46 - - 87 * 52 ) as int) AS x
+                    ORDER BY CASE WHEN x % 2 = 0 THEN x / 2 ELSE ( x + 1 ) / 2 END DESC
+                  ) )
+    WHERE ( x % 7 ) = 0 ) ) )

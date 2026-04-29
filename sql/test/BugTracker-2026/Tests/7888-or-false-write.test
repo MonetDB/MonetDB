@@ -69,7 +69,7 @@ WHERE (1 = 0)
    )
 
 query IIT
-SELECT * FROM bug_t1;
+SELECT * FROM bug_t1
 ----
 1
 30

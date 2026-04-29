@@ -23,7 +23,10 @@ c
 d
 
 query T
-select * from test where (1 <> 1) or (not (test_col in ('a','b')));
+select * from test where (1 <> 1) or (not (test_col in ('a','b')))
 ----
 c
 d
+
+statement ok
+drop table test
