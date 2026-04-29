@@ -1,0 +1,91 @@
+statement ok
+CREATE SCHEMA s7902
+
+statement ok
+SET SCHEMA s7902
+
+statement ok
+CREATE TABLE users (
+    id           INT,
+    username     VARCHAR(100),
+    email        VARCHAR(255),
+    age          INT,
+    status       VARCHAR(20),
+    created_at   TIMESTAMP,
+    score        DOUBLE
+)
+
+statement ok
+CREATE TABLE posts (
+    id          INT,
+    user_id     INT,
+    title       VARCHAR(255),
+    content     VARCHAR(1000),
+    views       INT,
+    likes       INT,
+    created_at  TIMESTAMP,
+    rating      DOUBLE
+)
+
+statement ok rowcount 5
+INSERT INTO users VALUES
+(1, 'alice', 'alice@test.com', 20, 'active',  '2022-01-01 10:00:00', 88.5),
+(2, 'bob',   'bob@test.com',   30, 'active',  '2022-01-02 11:00:00', 92.3),
+(3, 'carol', NULL,             NULL, 'banned','2022-01-03 12:00:00', NULL),
+(4, 'dave',  'dave@test.com',  45, 'active',  '2022-01-04 13:00:00', 65.2),
+(5, NULL,    'null@test.com',  18, 'inactive','2022-01-05 14:00:00', 70.0)
+
+statement ok rowcount 5
+INSERT INTO posts VALUES
+(1, 1, 'Hello World', 'First post', 100, 10, '2022-01-10 10:00:00', 4.5),
+(2, 1, 'Another Post', NULL,        150, 20, '2022-01-11 11:00:00', 3.0),
+(3, 2, 'Bob Post',     'Content',   NULL,  5, '2022-01-12 12:00:00', NULL),
+(4, 3, NULL,           'Empty',     50,   2, '2022-01-13 13:00:00', 5.0),
+(5, 4, 'Last Post',    'Last',      300,  30,'2022-01-14 14:00:00', 4.9)
+
+-- RESULT: {0}
+query I
+select count(*)
+from
+  (select
+        ref_0.user_id as c0,
+        ref_1.status as c1,
+        ref_1.username as c2
+      from
+        posts as ref_0
+          inner join users as ref_1
+          on (52.47 > 27.26)
+      where true) as subq_0
+where ((4 >= ascii(rtrim('1ve')))
+  and (subq_0.c2 is not NULL))
+----
+0
+
+-- RESULT was: {20} wrong!
+query I
+select sum(case when ((4 >= ascii(rtrim('1ve')))
+  and (subq_0.c2 is not NULL)) then 1 else 0 end + 0)
+from
+  (select
+        ref_0.user_id as c0,
+        ref_1.status as c1,
+        ref_1.username as c2
+      from
+        posts as ref_0
+          inner join users as ref_1
+          on (true)
+      where true) as subq_0
+----
+0
+
+statement ok
+DROP TABLE users
+
+statement ok
+DROP TABLE posts
+
+statement ok
+SET SCHEMA sys
+
+statement ok
+DROP SCHEMA s7902
