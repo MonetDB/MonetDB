@@ -1299,7 +1299,7 @@ hdf5_relation(mvc *sql, sql_subfunc *f, char *fname, list *in_exps, list *res_ex
 		*st = *sql_fetch_localtype(TYPE_flt);
 	else
 		*st = *sql_fetch_localtype(TYPE_dbl);
-	st->digits = cols;
+	st->dim = cols;
 	if (!fblock)
 		st->multiset = MS_VECTOR;
 	list_append(types, st);
@@ -1331,7 +1331,7 @@ hdf5_load(void *BE, sql_subfunc *f, char *filename, list *in_exps, sql_exp *topn
 	backend *be = BE;
 	allocator *sa = be->mvc->sa;
 	sql_subtype *st = f->res->h->data;
-	size_t ncols = st->digits;
+	size_t ncols = st->dim;
 	const char *dataset = exps_find(be->mvc, in_exps, "dataset", "train");
 	const char *cname = f->colnames->h->data;
 

@@ -6641,12 +6641,10 @@ data_type:
 	|	SETOF simple_data_type opt_array_bounds     { $$ = $2; $$.multiset = MS_SETOF; /* ignore array size or give error */ }
 	|	simple_data_type ARRAY '[' posint ']'       { $$ = $1;
 													 $$.multiset = MS_ARRAY;
-													 $$.digits = $4;
 													 $$.dim = $4;
 												   }
 	|	simple_data_type VECTOR '[' posint ']'      { $$ = $1;
 													 $$.multiset = MS_VECTOR;
-													 $$.digits = $4;
 													 $$.dim = $4;
 												   }
 	|	SETOF simple_data_type ARRAY '[' posint ']' { $$ = $2; $$.multiset = MS_SETOF; /* ignore array size or give error */ }

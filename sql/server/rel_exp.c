@@ -3979,16 +3979,16 @@ exp_check_composite_type(mvc *sql, sql_subtype *t, sql_rel *rel, sql_exp *exp, c
 static sql_exp *
 exp_check_vector_type(mvc *sql, sql_subtype *t, sql_rel *rel, sql_exp *exp, check_type tpe)
 {
-	assert(t->multiset == MS_VECTOR);
 	if (t->multiset != MS_VECTOR || exp_is_rel(exp) || exp_is_null(exp))
 		return exp;
+	assert(t->multiset == MS_VECTOR);
 	list *vals = exp_get_values(exp);
 	if (vals) {
 		for (node *m = vals->h; m; m = m->next) {
 			sql_exp *e = m->data;
 			sql_subtype st = *t;
 			st.multiset = 0;
-			st.digits = 0;
+			st.dim = 0;
 			e = exp_check_type(sql, &st, rel, e, tpe);
 			if (!e)
 				return NULL;
@@ -3996,7 +3996,9 @@ exp_check_vector_type(mvc *sql, sql_subtype *t, sql_rel *rel, sql_exp *exp, chec
 		}
 	}
 	exp->tpe = *t;
-	exp->tpe.digits = list_length(vals);
+	if (!exp->tpe.dim)
+		exp->tpe.dim = list_length(vals);
+	assert(exp->tpe.dim == (unsigned)list_length(vals));
 	return exp;
 }
 
@@ -4019,7 +4021,7 @@ exp_check_multiset_type(mvc *sql, sql_subtype *t, sql_rel *rel, sql_exp *exp, ch
 			return sql_error( sql, 03, SQLSTATE(42000) "cannot convert value into composite type '%s'", t->type->base.name);
 		if (et && et->multiset && t->multiset)
 			return sql_error( sql, 03, SQLSTATE(42000) "cannot convert value with type '%s[%u]' into multiset type '%s[%u]'",
-					et->type->base.name, et->digits, t->type->base.name, t->digits);
+					et->type->base.name, et->dim, t->type->base.name, t->dim);
 		return sql_error( sql, 03, SQLSTATE(42000) "cannot convert value into multiset type '%s[]'", t->type->base.name);
 	}
 
@@ -4034,6 +4036,7 @@ exp_check_multiset_type(mvc *sql, sql_subtype *t, sql_rel *rel, sql_exp *exp, ch
 	}
 	sql_subtype ct = *t;
 	ct.multiset = false;
+	ct.dim = 0;
 
 	if (ct.type->composite && list_length(ct.type->d.fields) == 1) {
 		sql_arg *f1 = ct.type->d.fields->h->data;
@@ -4076,10 +4079,9 @@ sql_exp *
 exp_check_vector(mvc *sql, sql_exp *e)
 {
 	if (is_values(e)) { /* check for single tuple type */
-		//sql_subtype t = *sql_fetch_localtype(TYPE_dbl);
 		sql_subtype t = *exp_subtype(e);
 		t.multiset = MS_VECTOR;
-		t.digits = list_length(e->f);
+		t.dim = list_length(e->f);
 		return exp_check_vector_type(sql, &t, NULL, e, type_equal);
 	}
 	sql_subtype *st = exp_subtype(e);

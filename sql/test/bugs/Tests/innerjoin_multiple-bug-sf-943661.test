@@ -11,7 +11,7 @@ select schemas.name, tables.name, columns.name from
 			'objects', 'keys', 'modules', 'sequences')
  order by schemas.name, tables.name, columns.name
 ----
-441 values hashing to 9fb8b451a549eed8d9b5168ded796bd4
+444 values hashing to b57bdb3f446e42c86ba4c146d5d7953d
 
 query TTT nosort
 select s.name, t.name, c.name from
@@ -26,5 +26,5 @@ select s.name, t.name, c.name from
 			'objects', 'keys', 'modules', 'sequences')
  order by s.name, t.name, c.name
 ----
-441 values hashing to 9fb8b451a549eed8d9b5168ded796bd4
+444 values hashing to b57bdb3f446e42c86ba4c146d5d7953d
 

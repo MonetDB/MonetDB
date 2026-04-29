@@ -247,6 +247,7 @@ sql_init_subtype(sql_subtype *res, sql_type *t, unsigned int digits, unsigned in
 	if (!digits && !scale && t->eclass == EC_DEC)
 		res->scale = res->digits = 0;
 	res->multiset = MS_VALUE;
+	res->dim = 0;
 }
 
 sql_subtype *

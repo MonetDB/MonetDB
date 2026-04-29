@@ -918,17 +918,17 @@ create_prepare_result(backend *b, cq *q, int nrows)
 		goto wrapup;
 	}
 
-	if (	mvc_result_column(b, ".prepare", "type"		, "varchar",	len1, 0, MS_VALUE, btype	) ||
-			mvc_result_column(b, ".prepare", "digits"	, "int",		len2, 0, MS_VALUE, bdigits) ||
-			mvc_result_column(b, ".prepare", "scale"	, "int",		len3, 0, MS_VALUE, bscale	) ||
-			mvc_result_column(b, ".prepare", "schema"	, "varchar",	len4, 0, MS_VALUE, bschema) ||
-			mvc_result_column(b, ".prepare", "table"	, "varchar",	len5, 0, MS_VALUE, btable	) ||
-			mvc_result_column(b, ".prepare", "column"	, "varchar",	len6, 0, MS_VALUE, bcolumn)) {
+	if (	mvc_result_column(b, ".prepare", "type"		, "varchar",	len1, 0, MS_VALUE, 0, btype	) ||
+			mvc_result_column(b, ".prepare", "digits"	, "int",		len2, 0, MS_VALUE, 0, bdigits) ||
+			mvc_result_column(b, ".prepare", "scale"	, "int",		len3, 0, MS_VALUE, 0, bscale	) ||
+			mvc_result_column(b, ".prepare", "schema"	, "varchar",	len4, 0, MS_VALUE, 0, bschema) ||
+			mvc_result_column(b, ".prepare", "table"	, "varchar",	len5, 0, MS_VALUE, 0, btable	) ||
+			mvc_result_column(b, ".prepare", "column"	, "varchar",	len6, 0, MS_VALUE, 0, bcolumn)) {
 		error = -1;
 		goto wrapup;
 	}
 
-	if ((b->client->protocol == PROTOCOL_COLUMNAR || GDKembedded()) && mvc_result_column(b, "prepare", "impl" , "varchar", len7, 0, MS_VALUE, bimpl))
+	if ((b->client->protocol == PROTOCOL_COLUMNAR || GDKembedded()) && mvc_result_column(b, "prepare", "impl" , "varchar", len7, 0, MS_VALUE, 0, bimpl))
 		error = -1;
 
 	wrapup:
@@ -1705,7 +1705,7 @@ next_col(res_col *c)
 			res = 3;
 			break;
 		case MS_VECTOR:
-			res = c->type.digits + 1; // all dimensions
+			res = c->type.dim + 1; // all dimensions
 			c->nrfields = res;
 			return res;
 		default:
@@ -2066,17 +2066,17 @@ mvc_result_table(backend *be, oid query_id, int nr_cols, mapi_query_t type)
 }
 
 int
-mvc_result_column(backend *be, const char *tn, const char *name, const char *typename, int digits, int scale, int multiset, BAT *b)
+mvc_result_column(backend *be, const char *tn, const char *name, const char *typename, int digits, int scale, int multiset, int dim, BAT *b)
 {
 	/* return 0 on success, non-zero on failure */
-	return res_col_create(be->mvc->session->tr, be->results, tn, name, typename, digits, scale, multiset, true, b->ttype, b, false) ? 0 : -1;
+	return res_col_create(be->mvc->session->tr, be->results, tn, name, typename, digits, scale, multiset, dim, true, b->ttype, b, false) ? 0 : -1;
 }
 
 int
-mvc_result_value(backend *be, const char *tn, const char *name, const char *typename, int digits, int scale, int multiset, ptr *p, int mtype)
+mvc_result_value(backend *be, const char *tn, const char *name, const char *typename, int digits, int scale, int multiset, int dim, ptr *p, int mtype)
 {
 	/* return 0 on success, non-zero on failure */
-	return res_col_create(be->mvc->session->tr, be->results, tn, name, typename, digits, scale, multiset, false, mtype, p, false) ? 0 : -1;
+	return res_col_create(be->mvc->session->tr, be->results, tn, name, typename, digits, scale, multiset, dim, false, mtype, p, false) ? 0 : -1;
 }
 
 /* Translate error code from export function to error string */
@@ -2327,7 +2327,7 @@ ARRAYparser(allocator *ma, char **S, Column *cols, int nr, int *elm, sql_subtype
 		if (t->type->composite) {
 			msg = TUPLEparser(ma, &s, cols, nr, &i, t);
 		} else if (t->multiset == MS_VECTOR) {
-			for (size_t j=0; j < t->digits; j++) {
+			for (size_t j=0; j < t->dim; j++) {
 				msg = VALUEparser(ma, &s, cols, i, t, ',', '}');
 				i++;
 				skipspace(s);
@@ -2404,7 +2404,7 @@ from_string_cols(Column *fmt, BAT **bats, int nr, int cur, sql_subtype *t)
 		if (i < 0 || i >= nr)
 			return -10;
 		if (t->multiset == MS_VECTOR) {
-			for (size_t j=0; j<t->digits; j++) {
+			for (size_t j=0; j<t->dim; j++) {
 				fmt[i].frstr = &_ASCIIadt_frStr;
 				fmt[i].extra = t;
 				fmt[i].adt = t->type->localtype;

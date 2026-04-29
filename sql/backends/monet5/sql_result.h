@@ -41,8 +41,8 @@ extern str mvc_import_table(Client cntxt, BAT ***bats, mvc *c, bstream *s, sql_t
 	__attribute__((__visibility__("hidden")));
 sql5_export int mvc_result_table(backend *be, oid query_id, int nr_cols, mapi_query_t type);
 
-sql5_export int mvc_result_column(backend *be, const char *tn, const char *name, const char *typename, int digits, int scale, int multiset, BAT *b);
-extern int mvc_result_value(backend *be, const char *tn, const char *name, const char *typename, int digits, int scale, int multiset, ptr *p, int mtype)
+sql5_export int mvc_result_column(backend *be, const char *tn, const char *name, const char *typename, int digits, int scale, int multiset, int dim, BAT *b);
+extern int mvc_result_value(backend *be, const char *tn, const char *name, const char *typename, int digits, int scale, int multiset, int dim, ptr *p, int mtype)
 	__attribute__((__visibility__("hidden")));
 
 /*

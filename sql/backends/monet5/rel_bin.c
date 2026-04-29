@@ -1820,7 +1820,7 @@ exp2stmt_vector(backend *be, sql_exp *e, stmt *left, stmt *sel)
 {
 	sql_subtype *t = exp_subtype(e);
 	assert(t->multiset == MS_VECTOR);
-	unsigned int ndim = t->digits;
+	unsigned int ndim = t->dim;
 	vec_dim *vals = ma_alloc(be->mvc->sa, sizeof(vec_dim) * ndim);
 	if (!vals)
 		return NULL;

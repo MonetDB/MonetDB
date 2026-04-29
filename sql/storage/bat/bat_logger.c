@@ -1013,8 +1013,8 @@ bl_postversion(void *Store, logger *lg)
 		if (coltype == NULL)
 			return GDK_FAIL;
 		if ((coltype = BATsetaccess(coltype, BAT_READ)) == NULL ||
-			/* 2168 is sys._columns.column_type */
-			BUNappend(lg->catalog_id, &(int) {2168}, true) != GDK_SUCCEED ||
+			/* 2174 is sys._columns.column_type */
+			BUNappend(lg->catalog_id, &(int) {2174}, true) != GDK_SUCCEED ||
 			BUNappend(lg->catalog_bid, &coltype->batCacheid, true) != GDK_SUCCEED ||
 			BUNappend(lg->catalog_lid, &lng_nil, false) != GDK_SUCCEED ||
 			BUNappend(lg->catalog_cnt, &(lng) {colcnt}, false) != GDK_SUCCEED
@@ -1030,8 +1030,8 @@ bl_postversion(void *Store, logger *lg)
 		if (multiset == NULL)
 			return GDK_FAIL;
 		if ((multiset = BATsetaccess(multiset, BAT_READ)) == NULL ||
-			/* 2170 is sys._columns.multiset */
-			BUNappend(lg->catalog_id, &(int) {2170}, true) != GDK_SUCCEED ||
+			/* 2175 is sys._columns.multiset */
+			BUNappend(lg->catalog_id, &(int) {2175}, true) != GDK_SUCCEED ||
 			BUNappend(lg->catalog_bid, &multiset->batCacheid, true) != GDK_SUCCEED ||
 			BUNappend(lg->catalog_lid, &lng_nil, false) != GDK_SUCCEED ||
 			BUNappend(lg->catalog_cnt, &(lng) {colcnt}, false) != GDK_SUCCEED
@@ -1042,12 +1042,30 @@ bl_postversion(void *Store, logger *lg)
 		BBPretain(multiset->batCacheid);
 		bat_destroy(multiset);
 
-		/* new TINYINT column sys._columns.multiset */
+		/* new INT column sys._columns.type_dim */
+		BAT *dim = BATconstant(b->hseqbase, TYPE_int, &(int) {0}, colcnt, PERSISTENT);
+		if (dim == NULL)
+			return GDK_FAIL;
+		if ((dim = BATsetaccess(dim, BAT_READ)) == NULL ||
+			/* 2176 is sys._columns.type_dim */
+			BUNappend(lg->catalog_id, &(int) {2176}, true) != GDK_SUCCEED ||
+			BUNappend(lg->catalog_bid, &dim->batCacheid, true) != GDK_SUCCEED ||
+			BUNappend(lg->catalog_lid, &lng_nil, false) != GDK_SUCCEED ||
+			BUNappend(lg->catalog_cnt, &(lng) {colcnt}, false) != GDK_SUCCEED
+			) {
+			bat_destroy(dim);
+			return GDK_FAIL;
+		}
+		BBPretain(dim->batCacheid);
+		bat_destroy(dim);
+
+		/* new TINYINT column sys.args.multiset */
 		b = log_temp_descriptor(log_find_bat(lg, 2029)); /* sys.args.id */
 		if (b == NULL)
 			return GDK_FAIL;
-		multiset = BATconstant(b->hseqbase, TYPE_bte, &(bte) {MS_VALUE}, BATcount(b), PERSISTENT);
+		colcnt = BATcount(b); /* we'll need it a few times */
 		bat_destroy(b);
+		multiset = BATconstant(b->hseqbase, TYPE_bte, &(bte) {MS_VALUE}, colcnt, PERSISTENT);
 		if (multiset == NULL)
 			return GDK_FAIL;
 		if ((multiset = BATsetaccess(multiset, BAT_READ)) == NULL ||
@@ -1055,7 +1073,7 @@ bl_postversion(void *Store, logger *lg)
 			BUNappend(lg->catalog_id, &(int) {2172}, true) != GDK_SUCCEED ||
 			BUNappend(lg->catalog_bid, &multiset->batCacheid, true) != GDK_SUCCEED ||
 			BUNappend(lg->catalog_lid, &lng_nil, false) != GDK_SUCCEED ||
-			BUNappend(lg->catalog_cnt, &(lng) {BATcount(multiset)}, false) != GDK_SUCCEED
+			BUNappend(lg->catalog_cnt, &(lng) {colcnt}, false) != GDK_SUCCEED
 			) {
 			bat_destroy(multiset);
 			return GDK_FAIL;
@@ -1063,94 +1081,173 @@ bl_postversion(void *Store, logger *lg)
 		BBPretain(multiset->batCacheid);
 		bat_destroy(multiset);
 
+		/* new TINYINT column sys.args.type_dim */
+		dim = BATconstant(b->hseqbase, TYPE_int, &(int) {0}, colcnt, PERSISTENT);
+		if (dim == NULL)
+			return GDK_FAIL;
+		if ((dim = BATsetaccess(dim, BAT_READ)) == NULL ||
+			/* 2173 is sys.args.dim */
+			BUNappend(lg->catalog_id, &(int) {2173}, true) != GDK_SUCCEED ||
+			BUNappend(lg->catalog_bid, &dim->batCacheid, true) != GDK_SUCCEED ||
+			BUNappend(lg->catalog_lid, &lng_nil, false) != GDK_SUCCEED ||
+			BUNappend(lg->catalog_cnt, &(lng) {colcnt}, false) != GDK_SUCCEED
+			) {
+			bat_destroy(dim);
+			return GDK_FAIL;
+		}
+		BBPretain(dim->batCacheid);
+		bat_destroy(dim);
+
 		if (tabins(lg,
 				   2076, &(msk) {false},	/* sys._columns */
-				   /* 2168 is sys._columns.column_type */
+				   /* 2172 is sys.args.multiset */
 				   2077, &(int) {2172},		/* sys._columns.id */
-				   2078, "column_type",		/* sys._columns.name */
-				   2079, "tinyint",			/* sys._columns.type */
-				   2080, &(int) {7},		/* sys._columns.type_digits */
-				   2081, &(int) {0},		/* sys._columns.type_scale */
-				   /* 2076 is sys._columns */
-				   2082, &(int) {2076},		/* sys._columns.table_id */
-				   2083, str_nil,			/* sys._columns.default */
-				   2084, &(bit) {TRUE},		/* sys._columns.null */
-				   2085, &(int) {10},		/* sys._columns.number */
-				   2086, str_nil,			/* sys._columns.storage */
-				   2168, &(bte) {0},		/* sys._columns.column_type */
-				   2170, &(bte) {MS_VALUE},	/* sys._columns.multiset */
-				   0) != GDK_SUCCEED)
-			return GDK_FAIL;
-		if (tabins(lg,
-				   2076, &(msk) {false},	/* sys._columns */
-				   /* 2169 is tmp._columns.column_type */
-				   2077, &(int) {2173},		/* sys._columns.id */
-				   2078, "column_type",		/* sys._columns.name */
-				   2079, "tinyint",			/* sys._columns.type */
-				   2080, &(int) {7},		/* sys._columns.type_digits */
-				   2081, &(int) {0},		/* sys._columns.type_scale */
-				   /* 2124 is tmp._columns */
-				   2082, &(int) {2124},		/* sys._columns.table_id */
-				   2083, str_nil,			/* sys._columns.default */
-				   2084, &(bit) {TRUE},		/* sys._columns.null */
-				   2085, &(int) {10},		/* sys._columns.number */
-				   2086, str_nil,			/* sys._columns.storage */
-				   2168, &(bte) {0},		/* sys._columns.column_type */
-				   2170, &(bte) {MS_VALUE},	/* sys._columns.multiset */
-				   0) != GDK_SUCCEED)
-			return GDK_FAIL;
-		if (tabins(lg,
-				   2076, &(msk) {false},	/* sys._columns */
-				   /* 2170 is sys._columns.multiset */
-				   2077, &(int) {2174},		/* sys._columns.id */
 				   2078, "multiset",		/* sys._columns.name */
 				   2079, "tinyint",			/* sys._columns.type */
 				   2080, &(int) {7},		/* sys._columns.type_digits */
 				   2081, &(int) {0},		/* sys._columns.type_scale */
-				   /* 2076 is sys._columns */
-				   2082, &(int) {2076},		/* sys._columns.table_id */
-				   2083, str_nil,			/* sys._columns.default */
-				   2084, &(bit) {TRUE},		/* sys._columns.null */
-				   2085, &(int) {11},		/* sys._columns.number */
-				   2086, str_nil,			/* sys._columns.storage */
-				   2168, &(bte) {0},		/* sys._columns.column_type */
-				   2170, &(bte) {MS_VALUE},	/* sys._columns.multiset */
-				   0) != GDK_SUCCEED)
-			return GDK_FAIL;
-		if (tabins(lg,
-				   2076, &(msk) {false},	/* sys._columns */
-				   /* 2171 is tmp._columns.multiset */
-				   2077, &(int) {2175},		/* sys._columns.id */
-				   2078, "multiset",		/* sys._columns.name */
-				   2079, "tinyint",			/* sys._columns.type */
-				   2080, &(int) {7},		/* sys._columns.type_digits */
-				   2081, &(int) {0},		/* sys._columns.type_scale */
-				   /* 2124 is tmp._columns */
-				   2082, &(int) {2124},		/* sys._columns.table_id */
-				   2083, str_nil,			/* sys._columns.default */
-				   2084, &(bit) {TRUE},		/* sys._columns.null */
-				   2085, &(int) {11},		/* sys._columns.number */
-				   2086, str_nil,			/* sys._columns.storage */
-				   2168, &(bte) {0},		/* sys._columns.column_type */
-				   2170, &(bte) {MS_VALUE},	/* sys._columns.multiset */
-				   0) != GDK_SUCCEED)
-			return GDK_FAIL;
-		if (tabins(lg,
-				   2076, &(msk) {false},	/* sys._columns */
-				   /* 2172 is sy.args.multiset */
-				   2077, &(int) {2176},		/* sys._columns.id */
-				   2078, "multiset",		/* sys._columns.name */
-				   2079, "tinyint",			/* sys._columns.type */
-				   2080, &(int) {7},		/* sys._columns.type_digits */
-				   2081, &(int) {0},		/* sys._columns.type_scale */
-				   /* 2028 is sy.args */
+				   /* 2028 is sys.args */
 				   2082, &(int) {2028},		/* sys._columns.table_id */
 				   2083, str_nil,			/* sys._columns.default */
 				   2084, &(bit) {TRUE},		/* sys._columns.null */
 				   2085, &(int) {8},		/* sys._columns.number */
 				   2086, str_nil,			/* sys._columns.storage */
-				   2168, &(bte) {0},		/* sys._columns.column_type */
-				   2170, &(bte) {MS_VALUE},	/* sys._columns.multiset */
+				   2174, &(bte) {0},		/* sys._columns.column_type */
+				   2175, &(bte) {MS_VALUE},	/* sys._columns.multiset */
+				   2176, &(int) {0},		/* sys._columns.type_dim */
+				   0) != GDK_SUCCEED)
+			return GDK_FAIL;
+		if (tabins(lg,
+				   2076, &(msk) {false},	/* sys._columns */
+				   /* 2173 is sy.args.type_dim */
+				   2077, &(int) {2173},		/* sys._columns.id */
+				   2078, "type_dim",		/* sys._columns.name */
+				   2079, "int",			/* sys._columns.type */
+				   2080, &(int) {31},		/* sys._columns.type_digits */
+				   2081, &(int) {0},		/* sys._columns.type_scale */
+				   /* 2028 is sys.args */
+				   2082, &(int) {2028},		/* sys._columns.table_id */
+				   2083, str_nil,			/* sys._columns.default */
+				   2084, &(bit) {TRUE},		/* sys._columns.null */
+				   2085, &(int) {9},		/* sys._columns.number */
+				   2086, str_nil,			/* sys._columns.storage */
+				   2174, &(bte) {0},		/* sys._columns.column_type */
+				   2175, &(bte) {MS_VALUE},	/* sys._columns.multiset */
+				   2176, &(int) {0},		/* sys._columns.type_dim */
+				   0) != GDK_SUCCEED)
+			return GDK_FAIL;
+		if (tabins(lg,
+				   2076, &(msk) {false},	/* sys._columns */
+				   /* 2174 is sys._columns.column_type */
+				   2077, &(int) {2174},		/* sys._columns.id */
+				   2078, "column_type",		/* sys._columns.name */
+				   2079, "tinyint",			/* sys._columns.type */
+				   2080, &(int) {7},		/* sys._columns.type_digits */
+				   2081, &(int) {0},		/* sys._columns.type_scale */
+				   /* 2076 is sys._columns */
+				   2082, &(int) {2076},		/* sys._columns.table_id */
+				   2083, str_nil,			/* sys._columns.default */
+				   2084, &(bit) {TRUE},		/* sys._columns.null */
+				   2085, &(int) {10},		/* sys._columns.number */
+				   2086, str_nil,			/* sys._columns.storage */
+				   2174, &(bte) {0},		/* sys._columns.column_type */
+				   2175, &(bte) {MS_VALUE},	/* sys._columns.multiset */
+				   2176, &(int) {0},		/* sys._columns.type_dim */
+				   0) != GDK_SUCCEED)
+			return GDK_FAIL;
+		if (tabins(lg,
+				   2076, &(msk) {false},	/* sys._columns */
+				   /* 2175 is sys._columns.multiset */
+				   2077, &(int) {2175},		/* sys._columns.id */
+				   2078, "multiset",		/* sys._columns.name */
+				   2079, "tinyint",			/* sys._columns.type */
+				   2080, &(int) {7},		/* sys._columns.type_digits */
+				   2081, &(int) {0},		/* sys._columns.type_scale */
+				   /* 2076 is sys._columns */
+				   2082, &(int) {2076},		/* sys._columns.table_id */
+				   2083, str_nil,			/* sys._columns.default */
+				   2084, &(bit) {TRUE},		/* sys._columns.null */
+				   2085, &(int) {11},		/* sys._columns.number */
+				   2086, str_nil,			/* sys._columns.storage */
+				   2174, &(bte) {0},		/* sys._columns.column_type */
+				   2175, &(bte) {MS_VALUE},	/* sys._columns.multiset */
+				   2176, &(int) {0},		/* sys._columns.type_dim */
+				   0) != GDK_SUCCEED)
+			return GDK_FAIL;
+		if (tabins(lg,
+				   2076, &(msk) {false},	/* sys._columns */
+				   /* 2176 is sys._columns.type_dim */
+				   2077, &(int) {2176},		/* sys._columns.id */
+				   2078, "type_dim",		/* sys._columns.name */
+				   2079, "int",			/* sys._columns.type */
+				   2080, &(int) {31},		/* sys._columns.type_digits */
+				   2081, &(int) {0},		/* sys._columns.type_scale */
+				   /* 2076 is sys._columns */
+				   2082, &(int) {2076},		/* sys._columns.table_id */
+				   2083, str_nil,			/* sys._columns.default */
+				   2084, &(bit) {TRUE},		/* sys._columns.null */
+				   2085, &(int) {12},		/* sys._columns.number */
+				   2086, str_nil,			/* sys._columns.storage */
+				   2174, &(bte) {0},		/* sys._columns.column_type */
+				   2175, &(bte) {MS_VALUE},	/* sys._columns.multiset */
+				   2176, &(int) {0},		/* sys._columns.type_dim */
+				   0) != GDK_SUCCEED)
+			return GDK_FAIL;
+		if (tabins(lg,
+				   2076, &(msk) {false},	/* sys._columns */
+				   /* 2177 is tmp._columns.column_type */
+				   2077, &(int) {2177},		/* sys._columns.id */
+				   2078, "column_type",		/* sys._columns.name */
+				   2079, "tinyint",			/* sys._columns.type */
+				   2080, &(int) {7},		/* sys._columns.type_digits */
+				   2081, &(int) {0},		/* sys._columns.type_scale */
+				   /* 2124 is tmp._columns */
+				   2082, &(int) {2124},		/* sys._columns.table_id */
+				   2083, str_nil,			/* sys._columns.default */
+				   2084, &(bit) {TRUE},		/* sys._columns.null */
+				   2085, &(int) {10},		/* sys._columns.number */
+				   2086, str_nil,			/* sys._columns.storage */
+				   2174, &(bte) {0},		/* sys._columns.column_type */
+				   2175, &(bte) {MS_VALUE},	/* sys._columns.multiset */
+				   2176, &(int) {0},		/* sys._columns.type_dim */
+				   0) != GDK_SUCCEED)
+			return GDK_FAIL;
+		if (tabins(lg,
+				   2076, &(msk) {false},	/* sys._columns */
+				   /* 2178 is tmp._columns.multiset */
+				   2077, &(int) {2178},		/* sys._columns.id */
+				   2078, "multiset",		/* sys._columns.name */
+				   2079, "tinyint",			/* sys._columns.type */
+				   2080, &(int) {7},		/* sys._columns.type_digits */
+				   2081, &(int) {0},		/* sys._columns.type_scale */
+				   /* 2124 is tmp._columns */
+				   2082, &(int) {2124},		/* sys._columns.table_id */
+				   2083, str_nil,			/* sys._columns.default */
+				   2084, &(bit) {TRUE},		/* sys._columns.null */
+				   2085, &(int) {11},		/* sys._columns.number */
+				   2086, str_nil,			/* sys._columns.storage */
+				   2174, &(bte) {0},		/* sys._columns.column_type */
+				   2175, &(bte) {MS_VALUE},	/* sys._columns.multiset */
+				   2176, &(int) {0},		/* sys._columns.type_dim */
+				   0) != GDK_SUCCEED)
+			return GDK_FAIL;
+		if (tabins(lg,
+				   2076, &(msk) {false},	/* sys._columns */
+				   /* 2179 is tmp._columns.type_dim */
+				   2077, &(int) {2179},		/* sys._columns.id */
+				   2078, "type_dim",		/* sys._columns.name */
+				   2079, "int",			/* sys._columns.type */
+				   2080, &(int) {31},		/* sys._columns.type_digits */
+				   2081, &(int) {0},		/* sys._columns.type_scale */
+				   /* 2124 is tmp._columns */
+				   2082, &(int) {2124},		/* sys._columns.table_id */
+				   2083, str_nil,			/* sys._columns.default */
+				   2084, &(bit) {TRUE},		/* sys._columns.null */
+				   2085, &(int) {12},		/* sys._columns.number */
+				   2086, str_nil,			/* sys._columns.storage */
+				   2174, &(bte) {0},		/* sys._columns.column_type */
+				   2175, &(bte) {MS_VALUE},	/* sys._columns.multiset */
+				   2176, &(int) {0},		/* sys._columns.type_dim */
 				   0) != GDK_SUCCEED)
 			return GDK_FAIL;
 	}

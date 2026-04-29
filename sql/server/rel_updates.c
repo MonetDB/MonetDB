@@ -353,7 +353,7 @@ check_table_columns(mvc *sql, sql_table *t, dlist *columns, const char *op, char
 				}
 				n = n->next;
 				// skip all dimensions
-				for(unsigned int i=0; i < c->type.digits; i++)
+				for(unsigned int i=0; i < c->type.dim; i++)
 					n = n->next;
 			} else {
 				n = n->next;

@@ -598,8 +598,7 @@ load_column(sql_trans *tr, sql_table *t, res_table *rt_cols)
 		sql_init_subtype(&c->type, lt, sz, d);
 	}
 	c->type.multiset = *(bte*)store->table_api.table_fetch_value(rt_cols, find_sql_column(columns, "multiset"));
-	if (c->type.multiset == MS_VECTOR && sz)
-		c->type.digits = sz;
+	c->type.dim = *(int*)store->table_api.table_fetch_value(rt_cols, find_sql_column(columns, "type_dim"));
 	c->def = NULL;
 	def = (char*)store->table_api.table_fetch_value(rt_cols, find_sql_column(columns, "default"));
 	if (!strNil(def))
@@ -945,8 +944,7 @@ load_arg(sql_trans *tr, sql_schema *s, oid rid)
 		sql_init_subtype(&a->type, lt, digits, scale);
 	}
 	a->type.multiset = store->table_api.column_find_bte(tr, find_sql_column(args, "multiset"), rid);
-	if (a->type.multiset == MS_VECTOR)
-		a->type.digits = 0;
+	a->type.dim = store->table_api.column_find_int(tr, find_sql_column(args, "type_dim"), rid);
 	store->table_api.column_find_string_end(cbat);
 	return a;
 }
@@ -1803,6 +1801,7 @@ dup_sql_type(sql_trans *tr, sql_schema *s, sql_subtype *oc, sql_subtype *nc)
 		sql_init_subtype(nc, lt, nc->digits, nc->scale);
 	}
 	nc->multiset = oc->multiset;
+	nc->dim = oc->dim;
 }
 
 static sql_column *
@@ -2106,7 +2105,8 @@ store_load(sqlstore *store, allocator *pa)
 		bootstrap_create_column(tr, t, "type_scale", 2034, "int", 31) == NULL ||
 		bootstrap_create_column(tr, t, "inout", 2035, "tinyint", 7) == NULL ||
 		bootstrap_create_column(tr, t, "number", 2036, "int", 31) == NULL ||
-		bootstrap_create_column(tr, t, "multiset", 2172, "tinyint", 7) == NULL || /* setof (1), array (2) or not (0) */
+		bootstrap_create_column(tr, t, "multiset", 2172, "tinyint", 7) == NULL || /* setof (1), array (2), vector(3) or not (0) */
+		bootstrap_create_column(tr, t, "type_dim", 2173, "int", 31) == NULL ||
 
 		(t = bootstrap_create_table(tr, s, "sequences", 2037)) == NULL ||
 		bootstrap_create_column(tr, t, "id", 2038, "int", 31) == NULL ||
@@ -2165,8 +2165,9 @@ store_load(sqlstore *store, allocator *pa)
 		bootstrap_create_column(tr, t, "null", 2084, "boolean", 1) == NULL ||
 		bootstrap_create_column(tr, t, "number", 2085, "int", 31) == NULL ||
 		bootstrap_create_column(tr, t, "storage", 2086, "varchar", 2048) == NULL ||
-		bootstrap_create_column(tr, t, "column_type", 2176, "tinyint", 7) == NULL ||
-		bootstrap_create_column(tr, t, "multiset", 2174, "tinyint", 7) == NULL || /* setof (1), array (2) or not (0) */
+		bootstrap_create_column(tr, t, "column_type", 2174, "tinyint", 7) == NULL ||
+		bootstrap_create_column(tr, t, "multiset", 2175, "tinyint", 7) == NULL || /* setof (1), array (2), vector(3) or not (0) */
+		bootstrap_create_column(tr, t, "type_dim", 2176, "int", 31) == NULL ||
 
 		(t = bootstrap_create_table(tr, s, "keys", 2087)) == NULL ||
 		bootstrap_create_column(tr, t, "id", 2088, "int", 31) == NULL ||
@@ -2229,8 +2230,9 @@ store_load(sqlstore *store, allocator *pa)
 		bootstrap_create_column(tr, t, "null", 2132, "boolean", 1) == NULL ||
 		bootstrap_create_column(tr, t, "number", 2133, "int", 31) == NULL ||
 		bootstrap_create_column(tr, t, "storage", 2134, "varchar", 2048) == NULL ||
-		bootstrap_create_column(tr, t, "column_type", 2173, "tinyint", 7) == NULL ||
-		bootstrap_create_column(tr, t, "multiset", 2175, "tinyint", 7) == NULL || /* setof (1), array (2) or not (0) */
+		bootstrap_create_column(tr, t, "column_type", 2177, "tinyint", 7) == NULL ||
+		bootstrap_create_column(tr, t, "multiset", 2178, "tinyint", 7) == NULL || /* setof (1), array (2), vector(3) or not (0) */
+		bootstrap_create_column(tr, t, "type_dim", 2179, "int", 31) == NULL ||
 
 		(t = bootstrap_create_table(tr, s, "keys", 2135)) == NULL ||
 		bootstrap_create_column(tr, t, "id", 2136, "int", 31) == NULL ||
@@ -4148,7 +4150,8 @@ sql_trans_create_column_intern(sql_column **rcol, sql_trans *tr, sql_table *t, c
 		if ((res = store->table_api.table_insert(tr, syscolumn, &col->base.id, &col->base.name, &col->type.type->base.name,
 						&digits, &col->type.scale, &t->base.id,
 						(col->def) ? &col->def : &strnil, &col->null, &col->colnr,
-						(col->storage_type) ? &col->storage_type : &strnil, &col->column_type, &col->type.multiset))) {
+						(col->storage_type) ? &col->storage_type : &strnil, &col->column_type,
+						&col->type.multiset, &col->type.dim))) {
 			return res;
 		}
 	}
@@ -4207,7 +4210,7 @@ sql_trans_copy_column( sql_trans *tr, sql_table *t, sql_column *c, sql_column **
 	/* flatten vector types */
 	if (c->type.multiset == MS_VECTOR) {
 		uint8_t localtype = c->type.type->localtype;
-		size_t ncols = c->type.digits;
+		size_t ncols = c->type.dim;
 		sql_subtype tp = *sql_fetch_localtype(localtype);
 		for (size_t i=0; i < ncols; i++) {
 			char buf[32];
@@ -4276,7 +4279,8 @@ sql_trans_copy_column( sql_trans *tr, sql_table *t, sql_column *c, sql_column **
 		if ((res = store->table_api.table_insert(tr, syscolumn, &col->base.id, &col->base.name, &col->type.type->base.name,
 					&digits, &col->type.scale, &t->base.id,
 					(col->def) ? &col->def : &strnil, &col->null, &col->colnr,
-					(col->storage_type) ? &col->storage_type : &strnil, &col->column_type, &c->type.multiset))) {
+					(col->storage_type) ? &col->storage_type : &strnil, &col->column_type,
+					&c->type.multiset, &c->type.dim))) {
 			return res;
 		}
 		if (c->type.type->s) { /* column depends on type */
@@ -5625,7 +5629,8 @@ sql_trans_create_type(sql_trans *tr, sql_schema *s, const char *sqlname, unsigne
 				if ((res = sql_trans_create_dependency(tr, a->type.type->base.id, t->base.id, TYPE_DEPENDENCY, SQL_PERSIST)))
 					return res;
 
-			if ((res = store->table_api.table_insert(tr, sysarg, &id, &t->base.id, &a->name, &a->type.type->base.name, &a->type.digits, &a->type.scale, &a->inout, &number, &a->type.multiset)))
+			if ((res = store->table_api.table_insert(tr, sysarg, &id, &t->base.id, &a->name, &a->type.type->base.name,
+						&a->type.digits, &a->type.scale, &a->inout, &number, &a->type.multiset, &a->type.dim)))
 				return res;
 		}
 	}
@@ -5750,13 +5755,15 @@ sql_trans_create_func(sql_func **fres, sql_trans *tr, sql_schema *s, const char 
 	if (t->res) for (n = t->res->h; n; n = n->next, number++) {
 		sql_arg *a = n->data;
 		sqlid id = store_next_oid(tr->store);
-		if ((res = store->table_api.table_insert(tr, sysarg, &id, &t->base.id, &a->name, &a->type.type->base.name, &a->type.digits, &a->type.scale, &a->inout, &number, &a->type.multiset)))
+		if ((res = store->table_api.table_insert(tr, sysarg, &id, &t->base.id, &a->name, &a->type.type->base.name,
+						&a->type.digits, &a->type.scale, &a->inout, &number, &a->type.multiset, &a->type.dim)))
 			return res;
 	}
 	if (t->ops) for (n = t->ops->h; n; n = n->next, number++) {
 		sql_arg *a = n->data;
 		sqlid id = store_next_oid(tr->store);
-		if ((res = store->table_api.table_insert(tr, sysarg, &id, &t->base.id, &a->name, &a->type.type->base.name, &a->type.digits, &a->type.scale, &a->inout, &number, &a->type.multiset)))
+		if ((res = store->table_api.table_insert(tr, sysarg, &id, &t->base.id, &a->name, &a->type.type->base.name,
+						&a->type.digits, &a->type.scale, &a->inout, &number, &a->type.multiset, &a->type.dim)))
 			return res;
 	}
 	*fres = t;

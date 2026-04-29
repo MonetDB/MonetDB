@@ -35888,6 +35888,21 @@ new
 pattern batuuid.new(X_0:lng):bat[:uuid]
 UUIDgenerateUuidInt_bulk
 Generate a new uuid (dummy version for side effect free multiplex loop)
+batvss
+l2sq_distance
+pattern batvss.l2sq_distance(X_0:bat?[:dbl]...):bat[:dbl]
+BATl2sq_distance
+Euclidean distanse L2
+batvss
+l2sq_distance
+pattern batvss.l2sq_distance(X_0:bat?[:flt]...):bat[:dbl]
+BATl2sq_distance
+Euclidean distanse L2
+batvss
+pdx
+pattern batvss.pdx(X_0:bat[:fblock], X_1:int, X_2:flt...):bat[:oid]
+pdx
+Euclidean distanse L2
 batxml
 attribute
 command batxml.attribute(X_0:str, X_1:bat[:str]):bat[:xml]
@@ -48834,6 +48849,16 @@ unsafe pattern netcdf.attach(X_0:str):void
 NCDFattach
 Register a NetCDF file in the vault
 netcdf
+epilogue
+command netcdf.epilogue():void
+NETCDFepilogue
+(empty)
+netcdf
+hdf5dataset
+unsafe pattern netcdf.hdf5dataset(X_0:str, X_1:str, X_2:ptr):bat[:any]...
+HDF5dataset
+Load dataset from hdf5
+netcdf
 importvar
 unsafe command netcdf.importvar(X_0:str, X_1:int):str
 NCDFimportVarStmt
@@ -48843,6 +48868,11 @@ importvariable
 unsafe pattern netcdf.importvariable(X_0:int, X_1:str):void
 NCDFimportVariable
 Import variable: create array and load data from variable varname of file fileid
+netcdf
+prelude
+pattern netcdf.prelude():void
+NETCDFprelude
+(empty)
 netcdf
 test
 command netcdf.test(X_0:str):int
@@ -50425,17 +50455,17 @@ mvc_restart_seq
 restart the sequence with value start
 sql
 resultSet
-unsafe pattern sql.resultSet(X_0:bat[:str], X_1:bat[:str], X_2:bat[:str], X_3:bat[:int], X_4:bat[:int], X_5:bat[:int], X_6:bat[:any]...):int
+unsafe pattern sql.resultSet(X_0:bat[:str], X_1:bat[:str], X_2:bat[:str], X_3:bat[:int], X_4:bat[:int], X_5:bat[:int], X_6:bat[:int], X_7:bat[:any]...):int
 mvc_result_set_wrap
 Prepare a table result set for the client in default CSV format
 sql
 resultSet
-unsafe pattern sql.resultSet(X_0:bat[:str], X_1:bat[:str], X_2:bat[:str], X_3:bat[:int], X_4:bat[:int], X_5:bat[:int], X_6:any...):int
+unsafe pattern sql.resultSet(X_0:bat[:str], X_1:bat[:str], X_2:bat[:str], X_3:bat[:int], X_4:bat[:int], X_5:bat[:int], X_6:bat[:int], X_7:any...):int
 mvc_row_result_wrap
 Prepare a table result set for the client front-end
 sql
 resultSet
-unsafe pattern sql.resultSet(X_0:str, X_1:str, X_2:str, X_3:int, X_4:int, X_5:int, X_6:int, X_7:any):int
+unsafe pattern sql.resultSet(X_0:str, X_1:str, X_2:str, X_3:int, X_4:int, X_5:int, X_6:int, X_7:int, X_8:any):int
 mvc_scalar_value_wrap
 Prepare a table result set for the client front-end.
 sql
@@ -51838,6 +51868,56 @@ uuid
 command uuid.uuid(X_0:str):uuid
 UUIDstr2uuid
 Coerce a string to a uuid, validating its format
+vss
+bond
+pattern vss.bond(X_0:lng, X_1:bat?[:dbl]...) (X_2:bat[:oid], X_3:bat[:dbl])
+BONDknn_dbl
+BOND k-NN search on decomposed vector columns
+vss
+bond
+pattern vss.bond(X_0:lng, X_1:bat?[:flt]...) (X_2:bat[:oid], X_3:bat[:dbl])
+BONDknn_flt
+BOND k-NN search on decomposed vector columns
+vss
+cos_distance
+pattern vss.cos_distance(X_0:flt...):dbl
+cos_distance_f32
+Cosine (Angular) distance
+vss
+cos_distance
+pattern vss.cos_distance(X_0:dbl...):dbl
+cos_distance_f64
+Cosine (Angular) distance
+vss
+ip_distance
+pattern vss.ip_distance(X_0:flt...):dbl
+ip_distance_f32
+Inner (Dot) Product distance
+vss
+ip_distance
+pattern vss.ip_distance(X_0:dbl...):dbl
+ip_distance_f64
+Inner (Dot) Product distance
+vss
+l1_distance
+pattern vss.l1_distance(X_0:flt...):dbl
+l1_distance_f32
+L1(Manhattan) distance
+vss
+l1_distance
+pattern vss.l1_distance(X_0:dbl...):dbl
+l1_distance_f64
+L1(Manhattan) distance
+vss
+l2sq_distance
+pattern vss.l2sq_distance(X_0:flt...):dbl
+l2sq_distance_f32
+Euclidean distanse L2
+vss
+l2sq_distance
+pattern vss.l2sq_distance(X_0:dbl...):dbl
+l2sq_distance_f64
+Euclidean distanse L2
 xml
 attribute
 command xml.attribute(X_0:str, X_1:str):xml

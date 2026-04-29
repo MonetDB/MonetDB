@@ -160,7 +160,7 @@ rel_basetable_add_vector_cols(mvc *sql, sql_alias *pa, sql_column *c, node *cn, 
 	prop *p = NULL;
 	sql_exp *e = NULL;
 
-	unsigned int ncols = c->type.digits;
+	unsigned int ncols = c->type.dim;
 	sql->nid += ncols;
 	for (unsigned int k = 0; k < ncols && cn; k++, i++) {
 		sql_column *c = cn->data;

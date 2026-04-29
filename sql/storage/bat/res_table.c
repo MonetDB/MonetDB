@@ -53,13 +53,14 @@ res_table_create(sql_trans *tr, int res_id, oid query_id, int nr_cols, mapi_quer
 }
 
 res_col *
-res_col_create(sql_trans *tr, res_table *t, const char *tn, const char *name, const char *typename, int digits, int scale, int multiset, bool isbat, char mtype, void *val, bool cached)
+res_col_create(sql_trans *tr, res_table *t, const char *tn, const char *name, const char *typename, int digits, int scale, int multiset, int dim, bool isbat, char mtype, void *val, bool cached)
 {
 	res_col *c = t->cols + t->cur_col;
 	BAT *b;
 
 	if (!sql_find_subtype(&c->type, typename, digits, scale))
 		sql_init_subtype(&c->type, sql_trans_bind_type(tr, NULL, typename), digits, scale);
+	c->type.dim = dim;
 	c->nrfields = 1;
 	c->virt = (multiset&4)?true:false;
 	c->type.multiset = multiset&3;

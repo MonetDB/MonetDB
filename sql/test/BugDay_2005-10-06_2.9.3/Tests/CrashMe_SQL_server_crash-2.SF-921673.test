@@ -1,4 +1,4 @@
-query ITTTTIIIIIITIIIIIII rowsort
+query TTTTTIIIITTTIIIITTT rowsort
 SELECT	null AS TABLE_CAT,
 	schemas.name AS TABLE_SCHEM,
 	tables.name AS TABLE_NAME,
@@ -27,5 +27,5 @@ WHERE columns.table_id = tables.id
     'objects', 'keys', 'modules', 'sequences')
 ORDER BY TABLE_SCHEM, TABLE_NAME, ORDINAL_POSITION
 ----
-1197 values hashing to 56f3defdf3e9070754bc7e49db1c6fd4
+1216 values hashing to 597de616223cbfe233b574523cec7ef3
 
