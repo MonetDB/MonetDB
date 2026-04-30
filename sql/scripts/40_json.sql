@@ -110,6 +110,7 @@ RETURNS float EXTERNAL NAME vss.l2sq_distance;
 
 CREATE FUNCTION sys.l2sq_distance(a real vector, b real vector)
 RETURNS float EXTERNAL NAME vss.l2sq_distance;
+--GRANT EXECUTE ON FUNCTION sys.l2sq_distance(a real vector, b real vector) TO PUBLIC;
 
 --PDX
 CREATE FUNCTION sys.pdx(a fblock, k int, b real vector)

@@ -4079,6 +4079,7 @@ sql_exp *
 exp_check_vector(mvc *sql, sql_exp *e)
 {
 	if (is_values(e)) { /* check for single tuple type */
+		e = exp_values_set_supertype(sql, e, NULL);
 		sql_subtype t = *exp_subtype(e);
 		t.multiset = MS_VECTOR;
 		t.dim = list_length(e->f);

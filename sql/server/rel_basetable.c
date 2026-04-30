@@ -413,7 +413,7 @@ rel_nested_basetable(mvc *sql, sql_table *t, sql_alias *atname)
 sql_rel *
 rel_basetable(mvc *sql, sql_table *t, sql_alias *atname)
 {
-	if (t->multiset || t->composite)
+	if (t->multiset || t->composite || t->vector)
 		return rel_nested_basetable(sql, t, atname);
 	allocator *sa = sql->sa;
 	sql_rel *rel = rel_create(sa);

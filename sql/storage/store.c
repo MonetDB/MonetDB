@@ -845,8 +845,10 @@ load_table(sql_trans *tr, sql_schema *s, res_table *rt_tables, res_table *rt_par
 			table_destroy(store, t);
 			return NULL;
 		}
-		if (next->type.multiset)
+		if (next->type.multiset && next->type.multiset != MS_VECTOR)
 			t->multiset=true;
+		if (next->type.multiset && next->type.multiset == MS_VECTOR)
+			t->vector=true;
 		if (next->type.type->composite)
 			t->composite=true;
 		if (ol_add(t->columns, &next->base)) {
@@ -3604,6 +3606,7 @@ table_dup(sql_trans *tr, sql_table *ot, sql_schema *s, const char *name,
 	t->query = (ot->query) ?_STRDUP(ot->query) : NULL;
 	t->properties = ot->properties;
 	t->multiset = ot->multiset;
+	t->vector = ot->vector;
 	t->composite = ot->composite;
 
 	t->columns = ol_new(NULL, (destroy_fptr) &column_destroy, store);
@@ -4087,8 +4090,10 @@ sql_trans_create_column_intern(sql_column **rcol, sql_trans *tr, sql_table *t, c
 		return -1; /* TODO not sure what to do here */
 
 	col = create_sql_column_with_id(NULL, store_next_oid(tr->store), t, name, tpe, column_type);
-	if (col->type.multiset)
+	if (col->type.multiset && col->type.multiset != MS_VECTOR)
 		t->multiset=true;
+	if (col->type.multiset && col->type.multiset == MS_VECTOR)
+		t->vector=true;
 	if (col->type.type->composite)
 		t->composite=true;
 
@@ -4184,8 +4189,10 @@ sql_trans_copy_column( sql_trans *tr, sql_table *t, sql_column *c, sql_column **
 	sql_column *col = ZNEW(sql_column);
 	base_init(NULL, &col->base, c->base.id?c->base.id:store_next_oid(tr->store), true, c->base.name);
 	dup_sql_type(tr, t->s, &(c->type), &(col->type));
-	if (c->type.multiset)
+	if (c->type.multiset && c->type.multiset != MS_VECTOR)
 		t->multiset=true;
+	if (c->type.multiset && c->type.multiset == MS_VECTOR)
+		t->vector=true;
 	if (c->type.type->composite)
 		t->composite=true;
 	col->def = NULL;
@@ -6886,6 +6893,7 @@ sql_trans_drop_column(sql_trans *tr, sql_table *t, sqlid id, int drop_action)
 		return res;
 	t = dup;
 	t->multiset=false;
+	t->vector=false;
 	t->composite=false;
 	for (node *nn = t->columns->l->h ; nn ; nn = nn->next) {
 		sql_column *next = (sql_column *) nn->data;
@@ -6895,8 +6903,10 @@ sql_trans_drop_column(sql_trans *tr, sql_table *t, sqlid id, int drop_action)
 		} else if (col) { /* if the column to be dropped was found, decrease the column number for others after it */
 			next->colnr--;
 
-			if (next->type.multiset)
+			if (next->type.multiset && next->type.multiset != MS_VECTOR)
 				t->multiset=true;
+			if (next->type.multiset && next->type.multiset == MS_VECTOR)
+				t->vector=true;
 			if (next->type.type->composite)
 				t->composite=false;
 			if (!isDeclaredTable(t)) {

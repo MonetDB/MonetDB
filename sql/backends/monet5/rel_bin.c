@@ -6655,7 +6655,7 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 			return NULL;
 		t = rel_ddl_table_get(tr);
 	}
-	if (t->multiset || t->composite)
+	if (t->multiset || t->composite || t->vector)
 		return rel2bin_insert_ms(be, rel, refs);
 
 	if (rel->r) /* first construct the inserts relation */

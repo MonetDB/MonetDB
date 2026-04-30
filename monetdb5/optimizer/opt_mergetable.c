@@ -542,13 +542,14 @@ mat_apply1(allocator *ma, MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int va
 static int
 mat_apply(allocator *ma, MalBlkPtr mb, InstrPtr p, matlist_t *ml, int nrmats)
 {
-	int matvar[8], fargument[8], k, l, parts = 0;
+	int *matvar = (int*)ma_alloc(ma, nrmats * sizeof(int));
+	int *fargument = (int*)ma_alloc(ma, nrmats * sizeof(int));
+	int k, l, parts = 0;
 
 	if (nrmats == 1
 		&& ((getModuleId(p) == batcalcRef && getFunctionId(p) == identityRef)
 			|| (getModuleId(p) == batRef && getFunctionId(p) == mirrorRef)))
 		return mat_apply1(ma, mb, p, ml, is_a_mat(getArg(p, 1), ml), 1);
-	assert(nrmats <= 8);
 
 	assert(p->retc < p->argc);	/* i.e. matvar[0] gets initialized */
 	for (k = p->retc, l = 0; k < p->argc; k++) {
