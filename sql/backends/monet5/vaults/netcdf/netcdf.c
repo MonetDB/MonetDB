@@ -1038,9 +1038,6 @@ HDF5dataset(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
     //printf("Dataset 'train' has dimensions: %zu x %zu\n", rows, cols);
 
 	allocator_state ta_state = ma_open(ta);
-	// todo read float or doubles!
-    // Allocate memory buffer for the data
-	assert(type == NC_FLOAT);
 
 	size_t sz = 0;
 	if (st->multiset == MS_VECTOR) {
