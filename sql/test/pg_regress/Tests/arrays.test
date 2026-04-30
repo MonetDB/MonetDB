@@ -220,8 +220,10 @@ SELECT ARRAY[1,2] || ARRAY[3,4] AS "{1,2,3,4}"
 ----
 00
 
-statement error value too long for type (var)char(5)...
+query T nosort
 SELECT ARRAY[[['happy','birthday']]] AS "ARRAY"
+----
+{"happy","birthday"}
 
 statement error Error in optimizer defaultfast:...
 SELECT ARRAY[[['hello','world']]] || ARRAY[[['happy','birthday']]] AS "ARRAY"
@@ -253,8 +255,10 @@ SELECT ARRAY[['a','bc'],['def','hijk']]::text[]::varchar[] AS "{{a,bc},{def,hijk
 statement error
 SELECT ARRAY[['a','bc'],['def','hijk']]::text[]::varchar[] is of (varchar[]) as "TRUE"
 
-statement error value too long for type (var)char(1)
+query T
 SELECT CAST(ARRAY[[[[[['a','bb','ccc']]]]]] as text[]) as "{{{{{{a,bb,ccc}}}}}}"
+----
+{"a","bb","ccc"}
 
 statement error conversion of string '{1,2,3}' to type bte failed.
 select 33 = any ('{1,2,3}')

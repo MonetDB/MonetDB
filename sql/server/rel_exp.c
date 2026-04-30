@@ -4065,6 +4065,7 @@ sql_exp *
 exp_check_multiset(mvc *sql, sql_exp *e)
 {
 	if (is_values(e)) { /* check for single tuple type */
+		e = exp_values_set_supertype(sql, e, NULL);
 		sql_subtype t = *exp_subtype(e);
 		t.multiset = MS_ARRAY;
 		return exp_check_multiset_type(sql, &t, NULL, e, type_equal);
