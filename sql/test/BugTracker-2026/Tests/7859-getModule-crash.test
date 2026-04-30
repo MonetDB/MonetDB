@@ -1,0 +1,22 @@
+statement error 22018!conversion of string '<?xml-stylesheet href="mystyle.css" type="text/css"?>' to type bte failed.
+SELECT x NOT IN (
+ WITH RECURSIVE x ( x ) AS ( SELECT 1 UNION SELECT x + 1 FROM generate_series ( 8888 , x = ( SELECT x FROM x WHERE ( 'x' ) ) ) WHERE x < 20 )
+ SELECT NULL NOT IN ( SELECT * FROM x ) FROM generate_series ( '<?xml-stylesheet href="mystyle.css" type="text/css"?>' , 3 ) WHERE x < 10 ORDER BY x , 'YYYY-MM-DD' NULLS LAST ) AS x
+  , CASE WHEN x > 12 THEN 1 ELSE 0 END AS x
+  FROM ( SELECT 10 AS x UNION SELECT 11 AS x UNION SELECT 12 AS x UNION SELECT 13 AS x )
+
+query II rowsort
+SELECT x NOT IN (
+ WITH RECURSIVE x ( x ) AS ( SELECT 1 UNION SELECT x + 1 FROM generate_series ( 8888 , x = ( SELECT x FROM x WHERE ( 'x' ) ) ) WHERE x < 20 )
+ SELECT NULL NOT IN ( SELECT * FROM x ) FROM generate_series ( 0 , 3 ) WHERE x < 10 ORDER BY x , 'YYYY-MM-DD' NULLS LAST ) AS x
+  , CASE WHEN x > 12 THEN 1 ELSE 0 END AS x
+  FROM ( SELECT 10 AS x UNION SELECT 11 AS x UNION SELECT 12 AS x UNION SELECT 13 AS x )
+----
+NULL
+0
+NULL
+0
+NULL
+0
+NULL
+1

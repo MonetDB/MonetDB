@@ -1959,6 +1959,8 @@ scan_loop_strselect(BAT *rl, BATiter *li, struct canditer *lci, const char *r,
 	BATsetcount(rl, BATcount(rl));
 	if (BATcount(rl) > 0) {
 		BATnegateprops(rl);
+		rl->tsorted = true;
+		rl->tkey = true;
 		rl->tnonil = true;
 		rl->tnil = false;
 	}

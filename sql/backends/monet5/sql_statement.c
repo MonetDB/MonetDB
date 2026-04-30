@@ -1222,6 +1222,35 @@ stmt_result(backend *be, stmt *s, int nr)
 	return ns;
 }
 
+stmt *
+stmt_identity(backend *be, stmt *s)
+{
+	MalBlkPtr mb = be->mb;
+
+	if (s == NULL)
+		goto bailout;
+
+	InstrPtr q = dump_1(mb, batcalcRef, identityRef, s);
+
+	if (q) {
+		stmt *ns = stmt_create(be->mvc->sa, st_mirror);
+		if (ns == NULL) {
+			goto bailout;
+		}
+
+		ns->op1 = s;
+		ns->nrcols = 2;
+		ns->key = s->key;
+		ns->aggr = s->aggr;
+		ns->q = q;
+		ns->nr = getDestVar(q);
+		return ns;
+	}
+  bailout:
+	if (ma_get_eb(be->mvc->sa)->enabled)
+		eb_error(ma_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	return NULL;
+}
 
 /* limit maybe atom nil */
 stmt *
