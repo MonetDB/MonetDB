@@ -6460,8 +6460,8 @@ static mel_func sql_init_funcs[] = {
  pattern("sqlcatalog", "rename_schema", SQLrename_schema, false, "Catalog operation rename_schema", args(0,2, arg("sname",str),arg("newnme",str))),
  pattern("sqlcatalog", "rename_table", SQLrename_table, false, "Catalog operation rename_table", args(0,4, arg("osname",str),arg("nsname",str),arg("otname",str),arg("ntname",str))),
  pattern("sqlcatalog", "rename_column", SQLrename_column, false, "Catalog operation rename_column", args(0,4, arg("sname",str),arg("tname",str),arg("cname",str),arg("newnme",str))),
- pattern("sqlcatalog", create_ustrRef, SQLcreate_ustr, false, "Catalog operation create_ustr", args(0, 3, arg("sname",str),arg("uname",str),arg("ifnotexists",int))),
- pattern("sqlcatalog", drop_ustrRef, SQLdrop_ustr, false, "Catalog operation drop_ustr", args(0, 4, arg("sname",str),arg("uname",str),arg("action",int),arg("ifexists",int))),
+ pattern("sqlcatalog", "create_ustr", SQLcreate_ustr, false, "Catalog operation create_ustr", args(0, 3, arg("sname",str),arg("uname",str),arg("ifnotexists",int))),
+ pattern("sqlcatalog", "drop_ustr", SQLdrop_ustr, false, "Catalog operation drop_ustr", args(0, 4, arg("sname",str),arg("uname",str),arg("action",int),arg("ifexists",int))),
  /* sql_transaction */
  pattern("sql", "transaction_release", SQLtransaction_release, true, "A transaction statement (type can be commit,release,rollback or start)", args(1,3, arg("",void),arg("chain",int),arg("name",str))),
  pattern("sql", "transaction_commit", SQLtransaction_commit, true, "A transaction statement (type can be commit,release,rollback or start)", args(1,3, arg("",void),arg("chain",int),arg("name",str))),
