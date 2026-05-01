@@ -1551,28 +1551,22 @@ parse_execute(Client c, backend *be, symbol *sym)
 		c->query = NULL;
 		return msg;
 	}
-	if (msg)
+	if (msg) {
+		sqlcleanup(be, -1);
 		return msg;
-
-	if (c->curprg->def->stop == 1) {
-		assert(0);
-		printf("not used ???\n");
-		sqlcleanup(be, 0);
-		return NULL;
 	}
 
 	assert (m->emode != m_deallocate && m->emode != m_prepare);
 	assert (c->curprg->def->stop > 2);
 
 	msg = SQLrun(c, be);
-
 	if (m->type == Q_SCHEMA && m->qc != NULL)
 		qc_clean(m->qc);
 	be->q = NULL;
-	if (msg)
+	if (msg) {
 		m->session->status = -10;
-	if (msg)
-		sqlcleanup(be, (!msg) ? 0 : -1);
+		sqlcleanup(be, -1);
+	}
 	MSresetInstructions(c->curprg->def, 1);
 	freeVariables(c, c->curprg->def, NULL, oldvtop);
 	/*
