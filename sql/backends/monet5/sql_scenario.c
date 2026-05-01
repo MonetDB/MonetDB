@@ -1509,7 +1509,7 @@ parse_execute(Client c, backend *be, symbol *sym)
 		} else {
 			be->q = qc_insert(m->qc, m->sa,	/* the allocator */
 					r,	/* keep relational query */
-					m->sym,	/* the sql symbol tree */
+					sym,	/* the sql symbol tree */
 					m->params,	/* the argument list */
 					m->type,	/* the type of the statement */
 					q_copy,
@@ -1527,7 +1527,6 @@ parse_execute(Client c, backend *be, symbol *sym)
 
 		/* passed over to query cache, used during dumpproc */
 		m->sa = NULL;
-		m->sym = NULL;
 		m->runs = NULL;
 		m->params = NULL;
 
@@ -1703,6 +1702,7 @@ SQLparser_body(Client c, backend *be)
 	} else {
 		msg = parse_execute(c, be, m->sym);
 	}
+	m->sym = NULL;
 finalize:
 	if (m->sa)
 		eb_init(ma_get_eb(m->sa)); /* exiting the scope where the exception buffer can be used */
