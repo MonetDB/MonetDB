@@ -839,6 +839,8 @@ COLcopy2(BAT *b, int tt, bool writable, bool mayshare, role_t role)
 					HEAPdecref(bn->tvheap, true);
 					BBPretain(bi.vh->parentid);
 					bn->tvheap = bi.vh;
+					bn->tvkey = bi.vkey;
+					bn->tascii = bi.ascii;
 				}
 			} else {
 				if (HEAPextend(bn->tvheap, bi.vhfree, true) != GDK_SUCCEED)
