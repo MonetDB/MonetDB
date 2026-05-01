@@ -1,0 +1,15 @@
+query I
+SELECT * FROM ( SELECT * FROM ( SELECT 10 ) AS x
+ UNION SELECT * FROM ( SELECT 10 ) AS x ) AS x
+----
+10
+
+statement error GDK reported error: hashjoin: more than one match
+SELECT * FROM ( SELECT * FROM ( SELECT 10 AS x ) )
+ UNION SELECT * FROM ( SELECT * FROM ( SELECT 11 AS x )
+    JOIN ( SELECT * FROM ( SELECT * FROM ( SELECT 1 AS x  UNION SELECT 0 AS x  UNION SELECT 86400.000000 AS x GROUP BY CUBE ( x , x ) ) )
+           UNION SELECT * FROM generate_series ( CAST( 0.000000 AS REAL ) , CAST( 123.999496 AS REAL ) , CAST( 1.600000 AS REAL ) )
+                 ORDER BY x * 10 NOT LIKE ( SELECT 814 = x FROM ( WITH x AS ( SELECT 1 ) SELECT ALL group_concat ( 119070 , 3 ) FROM x GROUP BY rollup ( x , x ) ) , ( SELECT 1 ) )
+           , CASE WHEN x > 12 THEN 1 ELSE sql_min ( 3.141593 , CASE WHEN x < 12 THEN sql_min ( CASE WHEN x > 12 THEN 1 ELSE lpad ( 1 * x , 510 * x ) END , 't1_my_tablex' ) END ) END DESC NULLS FIRST
+           , x LIMIT 24 ) USING ( x ) )
+

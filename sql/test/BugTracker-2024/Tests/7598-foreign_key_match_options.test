@@ -2,7 +2,7 @@ statement ok
 create table authors(lastname varchar(20), firstname varchar(20), primary key (lastname, firstname))
 
 statement ok
-insert into authors values ('doe', 'john');
+insert into authors values ('doe', 'john')
 
 statement ok
 create table books_simple (authlast varchar (20), authfirst varchar(20), foreign key(authlast, authfirst) references authors(lastname, firstname))

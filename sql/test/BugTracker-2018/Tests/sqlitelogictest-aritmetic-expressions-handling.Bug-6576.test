@@ -60,7 +60,7 @@ SELECT ALL - 35 * - 0 AS col2
 
 query I rowsort
 SELECT + - 36 * - + 33 * - + 49 * + CASE 50 WHEN - 21 + 0 + - COUNT ( * ) THEN NULL
-WHEN + 99 * - 43 + - - 35 THEN - 75 ELSE NULL END * - - 51 * + 0 AS col2; -- NULL
+WHEN + 99 * - 43 + - - 35 THEN - 75 ELSE NULL END * - - 51 * + 0 AS col2
 ----
 NULL
 

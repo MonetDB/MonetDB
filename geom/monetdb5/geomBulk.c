@@ -532,7 +532,7 @@ filterJoinRTree(bat *lres_id, bat *rres_id, const bat *l_id, const bat *r_id, do
 			continue;
 
 		//Calculate the MBR for the constant geometry
-		mbr *outer_mbr = mbrFromGeos(outer_geom);
+		mbr *outer_mbr = mbrFromGeos(ta, outer_geom);
 		BUN* results_rtree = RTREEsearch(ta, inner_b, outer_mbr, outer_ci.ncand);
 		if (results_rtree == NULL) {
 			msg = createException(MAL, name, "RTreesearch failed, returned NULL candidates");

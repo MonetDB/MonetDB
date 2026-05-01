@@ -3646,6 +3646,7 @@ rel2bin_groupjoin(backend *be, sql_rel *rel, list *refs)
 	if (!left || !right)
 		return NULL;
 	left = row2cols(be, left);
+	stmt *lgid = stmt_identity(be, bin_find_smallest_column(be, left));
 	right = row2cols(be, right);
 
 	bool equality_only = true;
@@ -3727,6 +3728,8 @@ rel2bin_groupjoin(backend *be, sql_rel *rel, list *refs)
 			s = stmt_alias(be, s, c->label, rnme, nme);
 			list_append(nl, s);
 		}
+		if (lgid)
+			lgid = stmt_project(be, jl, lgid);
 		for (n = right->op4.lval->h; n; n = n->next) {
 			stmt *c = n->data;
 			assert(c->label);
@@ -3764,7 +3767,7 @@ rel2bin_groupjoin(backend *be, sql_rel *rel, list *refs)
 				p = stmt_const(be, bin_find_smallest_column(be, sub), p);
 			if (sel)
 				p = stmt_project(be, sel, column(be, p));
-			stmt *li = jl;
+			stmt *li = lgid;
 			if (sel)
 				li = stmt_project(be, sel, li);
 			osel = sel;

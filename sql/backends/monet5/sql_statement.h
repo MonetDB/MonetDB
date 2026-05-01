@@ -240,6 +240,7 @@ extern stmt *stmt_const(backend *be, stmt *s, stmt *val);
 extern stmt *stmt_gen_group(backend *be, stmt *gids, stmt *cnts);	/* given a gid,cnt blowup to full groups */
 extern stmt *stmt_mirror(backend *be, stmt *s);
 extern stmt *stmt_result(backend *be, stmt *s, int nr);
+extern stmt *stmt_identity(backend *be, stmt *s);
 
 /*
  * dir:      direction of the ordering, ie 1 Ascending, 0 descending

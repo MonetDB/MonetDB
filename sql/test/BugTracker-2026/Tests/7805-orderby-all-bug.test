@@ -30,7 +30,7 @@ SELECT DISTINCT name FROM t7805 ORDER BY ALL
 
 -- compare with equivalent queries:
 query T nosort
-SELECT name FROM t7805 ORDER BY name;
+SELECT name FROM t7805 ORDER BY name
 ----
 0
 0
