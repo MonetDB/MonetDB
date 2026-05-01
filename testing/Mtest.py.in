@@ -49,6 +49,7 @@ mserver5_opts = []
 global_timeout = 0
 start_time = time.time()
 test_progress = 0
+test_errors = 0
 
 # whether output goes to a tty
 isatty = os.isatty(sys.stdout.fileno())
@@ -1045,6 +1046,7 @@ def find_test_dirs(thisdir, recursive=True):
 
 def PerformDir(env, testdir, testlist, total_tests):
     global test_progress
+    global test_errors
     interrupted = False
     td = time.time()
     elem = None
@@ -1272,6 +1274,7 @@ def PerformDir(env, testdir, testlist, total_tests):
                     tt, FtOut, FtErr, bodyline, reason, links = RunTest(env, TST, COND, oktests, length, pSrvr, total_tests, options, environ, TSTDB, TSTDIR, TSTSRCDIR, RELSRCDIR, TSTTRGDIR)
                     alllinks.extend(links)
                 TIMES.append((TSTDIR, TST, tt, FtOut, FtErr, reason))
+                test_errors += (FtOut > F_WARN) or (FtErr > F_WARN)
                 FdOut = max(FdOut,FtOut)
                 FdErr = max(FdErr,FtErr)
                 if bodyline is not None:
@@ -3015,7 +3018,10 @@ def mapi_ping(port, host='localhost', tries=3):
 threadids = {}
 up = '\033[A'
 down = '\033[B'
-def progress(count, total, test, spaces=' '*(ttywidth or 100)):
+
+
+def progress(count, errors, total, test, spaces=' '*(ttywidth or 100)):
+    errs = ''
     if os.name == 'nt':
         nl = ''
         line = 0
@@ -3025,21 +3031,23 @@ def progress(count, total, test, spaces=' '*(ttywidth or 100)):
         if tid not in threadids:
             threadids[tid] = len(threadids)
             nl = '\n'
-        line = len(threadids) - threadids[tid] - 1
+        line = len(threadids) - threadids[tid]
+        if errors:
+            errs = f'\r{errors} errors'
     perc = int(count*100/total) if total and count else 0
     width = len(str(total))
     s = f'[{count:{width}}/{total}] ({perc:2}%)    {test}'
     if len(s) > ttywidth:
         test = test[len(s)-ttywidth:]
         s = f'[{count:{width}}/{total}] ({perc:2}%)    {test}'
-    sys.stdout.write(nl + '\r' + up*line + spaces + '\r' + s + down*line)
+    sys.stdout.write(nl + '\r' + up*line + spaces + '\r' + s + down*line + errs)
 
 
 def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, length, nomito, threads, user, passwd, COND, PSRVR, total_tests, options, TSTDB, TSTDIR, TSTTRGDIR, TSTSRCDIR, environ):
     ATJOB2 = ''
     print(file=sys.stderr, end='', flush=True)
     if not verbose:
-        progress(test_progress, total_tests, os.path.join(TSTDIR, TST + EXT))
+        progress(test_progress, test_errors, total_tests, os.path.join(TSTDIR, TST + EXT))
     else:
         if ttywidth > 0 and length + 10 + 21 >= ttywidth:
             # 10 - length of prompt()
