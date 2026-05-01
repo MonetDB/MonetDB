@@ -3126,6 +3126,8 @@ dump_database(Mapi mid, stream *sqlf, const char *ddir, const char *ext, bool de
 		dquoted_print(sqlf, sname, ".");
 		dquoted_print(sqlf, uname, ";\n");
 	}
+	mapi_close_handle(hdl);
+	hdl = NULL;
 
 	/* Tables, views, triggers, and functions can all reference each
 	 * other, so we need to be very careful in how we dump them.  We
