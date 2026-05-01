@@ -1624,7 +1624,7 @@ insert_schemas(sql_trans *tr)
 				sql_column *c = o->data;
 
 				if ((res = store->table_api.table_insert(tr, syscolumn, &c->base.id, &c->base.name, &c->type.type->base.name, &c->type.digits, &c->type.scale,
-										&t->base.id, (c->def) ? &c->def : &strnil, &c->null, &c->colnr, (c->storage_type)? &c->storage_type : &strnil, &c->column_type, &c->type.multiset)))
+										&t->base.id, (c->def) ? &c->def : &strnil, &c->null, &c->colnr, (c->storage_type)? &c->storage_type : &strnil, &c->column_type, &c->type.multiset, &c->type.dim)))
 					return res;
 			}
 		}
