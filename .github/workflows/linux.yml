@@ -11,6 +11,9 @@ on:
   schedule:
     - cron:  '15 1 * * *'
 
+env:
+  TSTALTLOCALHOST: altlocalhost
+
 jobs:
   test:
     strategy:
@@ -54,6 +57,16 @@ jobs:
       - name: install pymonetdb cryptography
         run: pip3 install --user --break-system-packages --upgrade pymonetdb cryptography
         if: runner.os == 'macOS'
+
+
+      - name: Patch /etc/hosts on Unix
+        run: echo '127.0.0.1	altlocalhost' | sudo tee -a /etc/hosts
+        if: runner.os != 'Windows'
+
+      - name: Patch \etc\hosts on Windows
+        run: Add-Content "C:\Windows\System32\drivers\etc\hosts" "127.0.0.1 altlocalhost"
+        shell: powershell
+        if: runner.os == 'Windows'
 
       - name: make MonetDB on linux
         run: |
