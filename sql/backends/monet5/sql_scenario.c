@@ -1546,7 +1546,8 @@ parse_execute(Client c, backend *be, symbol *sym)
 		}
 		if (err)
 			m->session->status = -10;
-		sqlcleanup(be, 0);
+		if (msg)
+			sqlcleanup(be, 0);
 		c->query = NULL;
 		return msg;
 	}
@@ -1554,6 +1555,7 @@ parse_execute(Client c, backend *be, symbol *sym)
 		return msg;
 
 	if (c->curprg->def->stop == 1) {
+		assert(0);
 		printf("not used ???\n");
 		sqlcleanup(be, 0);
 		return NULL;
@@ -1569,7 +1571,8 @@ parse_execute(Client c, backend *be, symbol *sym)
 	be->q = NULL;
 	if (msg)
 		m->session->status = -10;
-	sqlcleanup(be, (!msg) ? 0 : -1);
+	if (msg)
+		sqlcleanup(be, (!msg) ? 0 : -1);
 	MSresetInstructions(c->curprg->def, 1);
 	freeVariables(c, c->curprg->def, NULL, oldvtop);
 	/*
@@ -1699,8 +1702,12 @@ SQLparser_body(Client c, backend *be)
 		}
 		m->session->schema_name = os->base.name;
 		m->session->schema = os;
+		if (!msg)
+			sqlcleanup(be, 0);
 	} else {
 		msg = parse_execute(c, be, m->sym);
+		if (!msg)
+			sqlcleanup(be, 0);
 	}
 	m->sym = NULL;
 finalize:
