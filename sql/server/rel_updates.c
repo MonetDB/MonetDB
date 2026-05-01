@@ -599,7 +599,7 @@ sql_table_type(mvc *sql, sql_table *t, list *collist)
 		tt = SA_ZNEW(sql->sa, sql_subtype);
 		sql_type *it = SA_ZNEW(sql->sa, sql_type);
 		tt->type = it;
-		it->d.fields = list_create((fdestroy) &arg_destroy);
+		it->d.fields = sa_list(sql->sa);
 		it->base.name = ma_strdup(sql->sa, t->base.name);
 		it->composite = true;
 		for(node *n = collist->h; n; n = n->next) {
