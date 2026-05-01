@@ -129,7 +129,7 @@ typedef struct {
 
 libgeom_export gdk_return libgeom_init(void);
 
-#define mbr_nil mbrFromGeos(NULL);
+#define mbr_nil mbrFromGeos(NULL, NULL);
 
 libgeom_export bool is_wkb_nil(const wkb *wkbp);
 libgeom_export GEOSGeom wkb2geos(const wkb *geomWKB);

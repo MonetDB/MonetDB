@@ -2170,6 +2170,9 @@ ma_reset(allocator *sa)
 	sa->size = MA_NUM_BLOCKS;
 	sa->blks[0] = sa->first_blk;
 	sa->used = offset;
+#if !defined(NDEBUG) && !defined(SANITIZER)
+	DEADBEEFCHK memset((char *) sa->blks[0] + offset, '\xDB', MA_BLOCK_SIZE - offset);
+#endif
 #ifndef NDEBUG
 	sa->frees = 0;
 #endif
@@ -2232,6 +2235,9 @@ ma_fill_in_header(void *r, size_t sz)
 		// store canary value to help us detect double free
 		rs[1] = CANARY_VALUE;
 		r = &rs[2];
+#if !defined(NDEBUG) && !defined(SANITIZER)
+		DEADBEEFCHK memset(r, '\xBD', sz);
+#endif
 	}
 	return r;
 }

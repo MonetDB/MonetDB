@@ -561,10 +561,10 @@ INEThost(Client ctx, str *retval, const inet *val)
 	if (is_inet_nil(val)) {
 		*retval = (char *) str_nil;
 	} else {
-		ip = ma_alloc(ma, sizeof(char) * 16);
+		ip = ma_alloc(ma, 16);
 		if (ip == NULL)
 			throw(MAL, "INEThost", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		sprintf(ip, "%d.%d.%d.%d", val->q1, val->q2, val->q3, val->q4);
+		snprintf(ip, 16, "%d.%d.%d.%d", val->q1, val->q2, val->q3, val->q4);
 		*retval = ip;
 	}
 	return (MAL_SUCCEED);
