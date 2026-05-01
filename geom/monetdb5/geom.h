@@ -52,7 +52,7 @@ geom_export str wkbFromWKB(Client ctx, wkb **w, wkb **src);
 
 /* gets a GEOSGeometry and returns the mbr of it
  * works only for 2D geometries */
-geom_export mbr* mbrFromGeos(const GEOSGeom geosGeometry);
+geom_export mbr* mbrFromGeos(allocator *ma, const GEOSGeom geosGeometry);
 
 
 geom_export str wkbFromText(Client ctx, wkb **geomWKB, str *geomWKT, int* srid, int *tpe);

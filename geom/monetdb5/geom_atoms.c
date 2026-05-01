@@ -654,7 +654,7 @@ wkbMBR(Client ctx, mbr **geomMBR, wkb **geomWKB)
 		throw(MAL, "geom.MBR", SQLSTATE(38000) "Geos problem converting GEOS to WKB");
 	}
 
-	*geomMBR = mbrFromGeos(geosGeometry);
+	*geomMBR = mbrFromGeos(ma, geosGeometry);
 
 	GEOSGeom_destroy_r(geoshandle, geosGeometry);
 

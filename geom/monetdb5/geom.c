@@ -2406,10 +2406,9 @@ geos2wkb(allocator *ma, wkb **geomWKB, size_t *len, const GEOSGeometry *geosGeom
 
 /* gets the mbr from the geometry */
 mbr *
-mbrFromGeos(const GEOSGeom geosGeometry)
+mbrFromGeos(allocator *ma, const GEOSGeom geosGeometry)
 {
-	allocator *ma = MT_thread_getallocator();
-	assert(ma);
+	assert(ma != NULL || geosGeometry == NULL);
 	GEOSGeom envelope;
 	mbr *geomMBR;
 	double xmin = 0, ymin = 0, xmax = 0, ymax = 0;
