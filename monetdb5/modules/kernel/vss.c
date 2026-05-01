@@ -252,7 +252,7 @@ BATl2sq_distance(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
         cnt = BATcount(b);
     BBPreclaim(b);
 
-    BAT *bn = COLnew(0, TYPE_dbl, cnt, TRANSIENT);
+    BAT *bn = COLnew(b->hseqbase, TYPE_dbl, cnt, TRANSIENT);
     if (bn == NULL)
 		throw(MAL, "batvss.l2sq_distance", MAL_MALLOC_FAIL);
 
@@ -714,8 +714,9 @@ pdx(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 
 	// Copy heap results to BAT
+	BUN base = b->hseqbase;
     for (size_t i = 0; i < k; i++) {
-        ((oid*)Tloc(bn, 0))[i] = cands[i];
+        ((oid*)Tloc(bn, 0))[i] = cands[i] + base;
     }
 
     // Finalize BAT metadata
