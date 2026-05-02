@@ -452,32 +452,26 @@ main(int argc, char *argv[])
 	int thret;
 	bool merodontfork = false;
 	confkeyval ckv[] = {
-		{"logfile",       strdup("merovingian.log"), 0,                STR},
-		{"pidfile",       strdup("merovingian.pid"), 0,                STR},
-		{"loglevel",      strdup("information"),   INFORMATION,        LOGLEVEL},
-
-		{"sockdir",       strdup("/tmp"),          0,                  STR},
-		{"listenaddr",    strdup("localhost"),     0,                  LADDR},
-		{"port",          strdup(MERO_PORT),       atoi(MERO_PORT),    INT},
-
-		{"exittimeout",   strdup("60"),            60,                 SINT},
-		{"forward",       strdup("proxy"),         0,                  OTHER},
-
-		{"discovery",     strdup("true"),          1,                  BOOLEAN},
-		{"discoveryttl",  strdup("600"),           600,                INT},
-
-		{"control",       strdup("false"),         0,                  BOOLEAN},
-		{"passphrase",    NULL,                    0,                  STR},
-
-		{"snapshotdir",   NULL,                    0,                  STR},
+		{"logfile",             strdup("merovingian.log"), 0,               STR},
+		{"pidfile",             strdup("merovingian.pid"), 0,               STR},
+		{"loglevel",            strdup("information"),     INFORMATION,     LOGLEVEL},
+		{"sockdir",             strdup("/tmp"),            0,               STR},
+		{"listenaddr",          strdup("localhost"),       0,               LADDR},
+		{"port",                strdup(MERO_PORT),         atoi(MERO_PORT), INT},
+		{"exittimeout",         strdup("60"),              60,              SINT},
+		{"forward",             strdup("proxy"),           0,               OTHER},
+		{"discovery",           strdup("no"),              0,               BOOLEAN},
+		{"discoveryttl",        strdup("600"),             600,             INT},
+		{"control",             strdup("no"),              0,               BOOLEAN},
+		{"passphrase",          NULL,                      0,               STR},
+		{"snapshotdir",         NULL,                      0,               STR},
 #ifdef HAVE_LIBLZ4
-		{"snapshotcompression", strdup(".tar.lz4"), 0,                 STR},
+		{"snapshotcompression", strdup(".tar.lz4"),        0,               STR},
 #else
-		{"snapshotcompression", strdup(".tar"),     0,                 STR},
+		{"snapshotcompression", strdup(".tar"),            0,               STR},
 #endif
-		{"keepalive",     strdup("60"),            60,                 INT},
-
-		{ NULL,           NULL,                    0,                  INVALID}
+		{"keepalive",           strdup("60"),              60,              INT},
+		{ NULL,                 NULL,                      0,               INVALID}
 	};
 	confkeyval *kv;
 	int retfd = -1;
