@@ -89,7 +89,7 @@ rel_table_projections( mvc *sql, sql_rel *rel, char *tname, int level )
 					sql_exp *e = en->data;;
 
 					if ((is_basecol(e) && exp_relname(e) && a_cmp_obj_name(exp_relname(e), tname)) ||
-                    (is_basecol(e) && !exp_relname(e) && e->l && a_cmp_obj_name(e->l, tname))) {
+					    (is_basecol(e) && !exp_relname(e) && e->l && a_cmp_obj_name(e->l, tname))) {
 						if (exp_name(e) && exps_bind_column2(exps, exp_relname(e)?exp_relname(e):e->l, exp_name(e), NULL))
 							rename = 1;
 						else
@@ -864,7 +864,7 @@ rel_file_loader(mvc *sql, list *exps, list *tl, char *tname)
 		if (list_empty(tl) || (nexps = check_arguments_and_find_largest_any_type(sql, NULL, exps, f, 1, false))) {
 			list *res_exps = sa_list(sql->sa);
 			lng est = 0;
-			if (/*list_length(exps) == 1 &&*/ f && f->func->varres && strlen(f->func->mod) == 0 && strlen(f->func->imp) == 0) {
+			if (f && f->func->varres && strlen(f->func->mod) == 0 && strlen(f->func->imp) == 0) {
 				allocator *ta = MT_thread_getallocator();
 				allocator_state ta_state = ma_open(ta);
 				char *err = file_loader_add_table_column_types(sql, f, nexps, res_exps, tname, &est);
@@ -1944,7 +1944,6 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 			if (exp && outer && (is_select(outer->op) || is_join(outer->op)))
 				set_dependent_(outer);
 		}
-
 		/* some views are just in the stack, like before and after updates views */
 		if (rel && sql->use_views) {
 			sql_rel *v = NULL;
@@ -1969,7 +1968,6 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 								 "SELECT: cannot use non GROUP BY column '%s' in query"
 								 " results without an aggregate function", name);
 		}
-
 		if (!exp)
 			return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000)
 							 "SELECT: identifier '%s' unknown", name);
@@ -2086,6 +2084,7 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 					return NULL;
 			}
 		}
+
 		if (!exp && ta) { /* If no column was found, try a global variable */
 			sql_var *var = NULL;
 			sql_subtype *tpe = NULL;
@@ -2120,10 +2119,10 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 			return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42S22) "SELECT: no such column '%s.%s'", ta?ta->name:"", cname);
 		if (exp && inner && inner->card <= CARD_AGGR && exp->card > CARD_AGGR &&
 			(is_sql_sel(f) || is_sql_having(f)) &&
-		   	(!is_sql_aggr(f) && !(inner->flag)))
+			 (!is_sql_aggr(f) && !(inner->flag)))
 			return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000)
-							"SELECT: cannot use non GROUP BY column '%s.%s' in query"
-							"results without an aggregate function", ta?ta->name:"", cname);
+							 "SELECT: cannot use non GROUP BY column '%s.%s' in query"
+							 " results without an aggregate function", ta?ta->name:"", cname);
 		if (exp && inner && is_groupby(inner->op) && !is_sql_aggr(f) && !is_freevar(exp))
 			exp = rel_groupby_add_aggr(sql, inner, exp);
 
@@ -6728,7 +6727,7 @@ rel_joinquery_(sql_query *query, symbol *tab1, int natural, jt jointype, symbol 
 
 	if (a_match(rel_name(t1), rel_name(t2))) {
 		if (rel_name(t1) || rel_name(t2))
-			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: ERROR:  table name '%s' specified more than once", rel_name(t1)->name);
+			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: ERROR: table name '%s' specified more than once", rel_name(t1)->name);
 	}
 
 	inner = rel = rel_crossproduct(sql->sa, t1, t2, op);

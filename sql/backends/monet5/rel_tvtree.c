@@ -34,7 +34,8 @@ tv_get_type(sql_subtype *st)
 static tv_tree*
 tv_node(allocator *sa, sql_subtype *st, tv_type tvt)
 {
-	tv_tree *n = (sa)?SA_NEW(sa, tv_tree):MNEW(tv_tree);
+	assert(sa);
+	tv_tree *n = SA_NEW(sa, tv_tree);
 	if (n == NULL)
 		return NULL;
 	n->st = st;
