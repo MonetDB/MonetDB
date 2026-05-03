@@ -722,7 +722,6 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *in_exps, list 
 		sql_subtype * sql_mtype;
 		list * typelist = sa_list(sql->sa);
 		list * nameslist = sa_list(sql->sa);
-		f->tname = ma_strdup(sql->sa, tname);
 		for (SQLUSMALLINT col = 1; col <= (SQLUSMALLINT) nr_cols; col++) {
 			/* for each result column get name, datatype, size and decdigits */
 			// TODO use ODBC W function
@@ -745,19 +744,20 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *in_exps, list 
 			if (res_exps) {
 				/* also get the table name for this result column */
 				// TODO use ODBC W function
-				ret = SQLColAttribute(stmt, col, SQL_DESC_TABLE_NAME, (SQLPOINTER) f->tname, (SQLSMALLINT) MAX_TBL_NAME_LEN, NULL, NULL);
+				ret = SQLColAttribute(stmt, col, SQL_DESC_TABLE_NAME, (SQLPOINTER) tname, (SQLSMALLINT) MAX_TBL_NAME_LEN, NULL, NULL);
 				if (ret != SQL_SUCCESS && ret != SQL_SUCCESS_WITH_INFO) {
 					// DuckDB does not support SQLColAttribute(stmt, col, SQL_DESC_TABLE_NAME, ...), it returns SQL_ERROR, SQLSTATE HYC00 Driver not capable
-					strcpy(f->tname, "");
+					strcpy(tname, "");
 					ret = SQL_SUCCESS;	// needed to continue processing without reporting this error
 				}
-				tblname = a_create(sql->sa, f->tname);
+				tblname = a_create(sql->sa, ma_strdup(sql->sa, tname));
 				sql_exp *ne = exp_column(sql->sa, tblname, colname, sql_mtype, CARD_MULTI, 1, 0, 0);
 				set_basecol(ne);
 				ne->alias.label = -(sql->nid++);
 				list_append(res_exps, ne);
 			}
 		}
+		f->tname = ma_strdup(sql->sa, tname);
 		f->colnames = nameslist;
 		f->coltypes = typelist;
 		f->res = typelist;
