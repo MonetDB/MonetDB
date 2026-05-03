@@ -1666,7 +1666,8 @@ insert_args(sql_trans *tr, sql_table *sysarg, list *args, sqlid funcid, const ch
 			snprintf(buf, sizeof(buf), arg_def, next_number);
 			next_name = buf;
 		}
-		if ((res = store->table_api.table_insert(tr, sysarg, &id, &funcid, &next_name, &a->type.type->base.name, &a->type.digits, &a->type.scale, &a->inout, &next_number, &a->type.multiset)))
+		if ((res = store->table_api.table_insert(tr, sysarg, &id, &funcid, &next_name, &a->type.type->base.name,
+						&a->type.digits, &a->type.scale, &a->inout, &next_number, &a->type.multiset, &a->type.dim)))
 			return res;
 	}
 	return res;
