@@ -373,14 +373,14 @@ output_multiset_dense(allocator *ma, char **buf, size_t *len, ssize_t fill, char
 {
 	nr_attrs -= (multiset == MS_ARRAY)?2:1;
 	Column *msid = fmt + nr_attrs;
-	int *idp = (int*)Tloc(msid->c, msid->p);
+	int *idp = (int*)Tloc(msid->c, msid->p), *ep = idp + (BATcount(msid->c) - msid->p);
 	int first = 1;
 
 	if (!quoted)
 		(*buf)[fill++] = '\'';
 	(*buf)[fill++] = '{';
 	(*buf)[fill] = 0;
-	for (; *idp == id && fill > 0; idp++, msid->p++) {
+	for (; *idp == id && idp < ep && fill > 0; idp++, msid->p++) {
 		if (!first)
 			(*buf)[fill++] = ',';
 		if (composite) {
@@ -408,7 +408,7 @@ output_multiset_sorted(allocator *ma, char **buf, size_t *len, ssize_t fill, cha
 	Column *msid = fmt + nr_attrs;
 	/* how to also keep prev id */
 	BUN pos = msid->p;
-	int *idp = (int*)Tloc(msid->c, pos);
+	int *idp = (int*)Tloc(msid->c, pos), *ep = idp + (BATcount(msid->c) - pos);
 	int first = 1;
 
 	if (id >= 0 && msid->p) {
@@ -423,17 +423,18 @@ output_multiset_sorted(allocator *ma, char **buf, size_t *len, ssize_t fill, cha
 		(*buf)[fill++] = '\'';
 	(*buf)[fill++] = '{';
 	(*buf)[fill] = 0;
-	if (id >= 0)
-	for (; *idp == id && fill > 0; idp++, msid->p++, pos++) {
-		if (!first)
-			(*buf)[fill++] = ',';
-		if (composite) {
-			fill = output_composite(ma, buf, len, fill, localbuf, locallen, fmt, nr_attrs, composite, true);
-		} else {
-			fmt->p = pos;
-			fill = output_value(ma, buf, len, fill, localbuf, locallen, fmt);
+	if (id >= 0) {
+		for (; *idp == id && idp < ep && fill > 0; idp++, msid->p++, pos++) {
+			if (!first)
+				(*buf)[fill++] = ',';
+			if (composite) {
+				fill = output_composite(ma, buf, len, fill, localbuf, locallen, fmt, nr_attrs, composite, true);
+			} else {
+				fmt->p = pos;
+				fill = output_value(ma, buf, len, fill, localbuf, locallen, fmt);
+			}
+			first = 0;
 		}
-		first = 0;
 	}
 	if (fill < 0)
 		return fill;
@@ -452,7 +453,7 @@ output_multiset(allocator *ma, char **buf, size_t *len, ssize_t fill, char **loc
 	Column *msid = fmt + nr_attrs;
 	/* how to also keep prev id */
 	BUN pos = msid->p;
-	int *idp = (int*)Tloc(msid->c, pos);
+	int *idp = (int*)Tloc(msid->c, pos), *ep = idp + (BATcount(msid->c) - pos);
 	int first = 1;
 
 	if (id >= 0 && msid->p) {
@@ -468,7 +469,7 @@ output_multiset(allocator *ma, char **buf, size_t *len, ssize_t fill, char **loc
 	(*buf)[fill++] = '{';
 	(*buf)[fill] = 0;
 	if (id >= 0)
-	for (; *idp == id && fill > 0; idp++, msid->p++, pos++) {
+	for (; *idp == id && idp < ep && fill > 0; idp++, msid->p++, pos++) {
 		if (!first)
 			(*buf)[fill++] = ',';
 		if (composite) {
