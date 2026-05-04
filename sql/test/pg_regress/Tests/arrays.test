@@ -171,13 +171,12 @@ SELECT t.f[1][3][1] AS "131", t.f[2][2][1] AS "221" FROM (
 query T nosort
 SELECT ARRAY[[[[[['hello'],['world']]]]]]
 ----
-{"world"}
+{{{{{{"hello"},{"world"}}}}}}
 
 query T nosort
 SELECT ARRAY[ARRAY['hello'],ARRAY['world']]
 ----
-{"hello"}
-{"world"}
+{{"hello"},{"world"}}
 
 statement error
 SELECT ARRAY(select f2 from arrtest_f order by f2) AS "ARRAY"
@@ -223,7 +222,7 @@ SELECT ARRAY[1,2] || ARRAY[3,4] AS "{1,2,3,4}"
 query T nosort
 SELECT ARRAY[[['happy','birthday']]] AS "ARRAY"
 ----
-{"happy","birthday"}
+{{{"happy","birthday"}}}
 
 statement error Error in optimizer defaultfast:...
 SELECT ARRAY[[['hello','world']]] || ARRAY[[['happy','birthday']]] AS "ARRAY"
@@ -258,7 +257,7 @@ SELECT ARRAY[['a','bc'],['def','hijk']]::text[]::varchar[] is of (varchar[]) as 
 query T
 SELECT CAST(ARRAY[[[[[['a','bb','ccc']]]]]] as text[]) as "{{{{{{a,bb,ccc}}}}}}"
 ----
-{"a","bb","ccc"}
+{{{{{{"a","bb","ccc"}}}}}}
 
 statement error conversion of string '{1,2,3}' to type bte failed.
 select 33 = any ('{1,2,3}')
