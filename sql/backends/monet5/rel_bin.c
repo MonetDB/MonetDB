@@ -339,7 +339,7 @@ static stmt *
 bin_find_smallest_column(backend *be, stmt *sub)
 {
 	stmt *res = sub->op4.lval->h->data;
-	int best_score = statment_score(sub->op4.lval->h->data);
+	int best_score = statment_score(res);
 
 	if (sub->op4.lval->h->next)
 		for (node *n = sub->op4.lval->h->next ; n ; n = n->next) {

@@ -491,7 +491,7 @@ rel_dependent_var(mvc *sql, sql_rel *l, sql_rel *r)
 		list *freevar = rel_freevar(sql, r, l);
 		if (freevar) {
 			node *n;
-			list *boundvar = rel_projections(sql, l, NULL, 1, 0);
+					list *boundvar = rel_projections(sql, l, NULL, 1, 0);
 
 			for(n = freevar->h; n; n = n->next) {
 				sql_exp *e = n->data, *ne = NULL;
