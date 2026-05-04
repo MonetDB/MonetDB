@@ -3677,6 +3677,20 @@ joincost(BAT *r, BUN lcount, struct canditer *rci,
 		if (rhash) {
 			/* average chain length */
 			rcost *= (double) cnt / nheads;
+			/* If the hash exists, but the working set
+			 * exceeds physical RAM, random-access probes
+			 * will cause massive page fault thrashing.
+			 * Multiply the probe cost by an I/O latency
+			 * factor to encourage swapping to a sequential
+			 * scan instead. */
+			if (!GDKinmemory(r->theap->farmid) &&
+			    (size_t)cnt * ATOMsize(r->ttype) + (r->tvheap ? r->tvheap->free : 0) > GDK_mem_maxsize / 4) {
+				/* Disk random access is ~100x to 1000x
+				 * slower than RAM.  A 100x penalty
+				 * forces the optimizer to treat these
+				 * probes as highly toxic. */
+				rcost *= 100.0;
+			}
 		} else if ((parent = VIEWtparent(r)) != 0 &&
 			   (b = BATdescriptor(parent)) != NULL) {
 			if (BATcheckhash(b)) {
@@ -3705,7 +3719,12 @@ joincost(BAT *r, BUN lcount, struct canditer *rci,
 			/* only count the cost of creating the hash for
 			 * non-persistent bats */
 			MT_lock_set(&r->theaplock);
-			if (r->batRole != PERSISTENT /* || r->theap->dirty */ || GDKinmemory(r->theap->farmid))
+			/* If the BAT is persistent but so large that
+			 * building a hash might thrash memory, consider
+			 * it very expensive, so encourage choosing a
+			 * linear scan of this side instead. */
+			if (r->batRole != PERSISTENT /* || r->theap->dirty */ || GDKinmemory(r->theap->farmid) ||
+			    (size_t)cnt * ATOMsize(r->ttype) + (r->tvheap ? r->tvheap->free : 0) > GDK_mem_maxsize / 4)
 				rcost += cnt * 2.0;
 			MT_lock_unset(&r->theaplock);
 		}
