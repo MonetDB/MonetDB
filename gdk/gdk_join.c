@@ -3683,6 +3683,7 @@ joincost(BAT *r, BUN lcount, struct canditer *rci,
 			 * Multiply the probe cost by an I/O latency
 			 * factor to encourage swapping to a sequential
 			 * scan instead. */
+			MT_lock_set(&r->theaplock);
 			if (!GDKinmemory(r->theap->farmid) &&
 			    (size_t)cnt * ATOMsize(r->ttype) + (r->tvheap ? r->tvheap->free : 0) > GDK_mem_maxsize / 4) {
 				/* Disk random access is ~100x to 1000x
@@ -3691,6 +3692,7 @@ joincost(BAT *r, BUN lcount, struct canditer *rci,
 				 * probes as highly toxic. */
 				rcost *= 100.0;
 			}
+			MT_lock_unset(&r->theaplock);
 		} else if ((parent = VIEWtparent(r)) != 0 &&
 			   (b = BATdescriptor(parent)) != NULL) {
 			if (BATcheckhash(b)) {
