@@ -663,255 +663,6 @@ handle_in_exps(backend *be, sql_exp *ce, list *nl, stmt *left, stmt *right, stmt
 	return s;
 }
 
-
-static stmt * value_list(backend *be, sql_exp *vals_exp, stmt *left, stmt *sel);
-
-static stmt *
-composite_value_list(backend *be, sql_exp *tuple, stmt *left, stmt *sel)
-{
-	assert(is_row(tuple));
-	list *fields = exp_get_values(tuple);
-	list *f = sa_list(be->mvc->sa);
-	for (node *n = fields->h; n; n = n->next) {
-		sql_exp *e = n->data;
-		stmt *i;
-
-		if(is_values(e))
-			i = value_list(be, e, left, sel);
-		else
-			i = exp_bin(be, e, left, NULL, NULL, NULL, NULL, sel, 0, 0, 0);
-		if (!i)
-			return NULL;
-		if (i->type == st_list) {
-			for( node *n = i->op4.lval->h; n; n = n->next)
-				list_append(f, n->data);
-		} else
-			list_append(f, i);
-	}
-	return stmt_list(be, f);
-}
-
-static stmt *
-set_value_list(backend *be, sql_exp *vals_exp, stmt *left, stmt *sel)
-{
-	assert(is_values(vals_exp));
-	list *vals = exp_get_values(vals_exp);
-	sql_subtype *type = exp_subtype(vals->h->data);
-	bool single_value = list_length(vals) <= 1;
-	int multi_result = 0;
-
-	if (!type)
-		return sql_error(be->mvc, 02, SQLSTATE(42000) "Could not infer the type of a value list column");
-
-	/* create bat append values */
-	list *l = sa_list(be->mvc->sa);
-	for (node *n = vals->h; n; n = n->next) {
-		sql_exp *e = n->data;
-		stmt *i = exp_bin(be, e, left, NULL, NULL, NULL, NULL, sel, 0, 0, 0);
-
-		if (!i)
-			return NULL;
-		if (single_value)
-			return i;
-		list_append(l, i);
-
-		if (i->type == st_list && list_length(i->op4.lval) > 1)
-			multi_result = list_length(i->op4.lval);
-	}
-	/*  n-tuples */
-	if (multi_result) {
-		list *rl = sa_list(be->mvc->sa);
-		for(int i = 0; i < multi_result; i++) {
-			node *n = l->h;
-			stmt *s = n->data;
-			stmt *input = list_fetch(s->op4.lval, i);
-			sql_subtype *type = tail_type(input);
-			list *nl = list_append(sa_list(be->mvc->sa), input);
-			for (n = n->next; n; n = n->next) {
-				stmt *s = n->data;
-				stmt *input = list_fetch(s->op4.lval, i);
-				nl = list_append(nl, input);
-			}
-			append(rl, stmt_append_bulk(be, stmt_temp(be, type), nl));
-		}
-		return stmt_list(be, rl);
-	}
-	return stmt_append_bulk(be, stmt_temp(be, type), l);
-}
-
-static int
-type_create_result(backend *be, sql_subtype *type, list *cols)
-{
-	if (type->type->composite) {
-		for(node *n = type->type->d.fields->h; n; n = n->next) {
-			sql_arg *a = n->data;
-
-			if (a->type.type->composite) {
-				if(type_create_result(be, &a->type, cols) < 0)
-					return -1;
-			} else {
-				append(cols, sa_list(be->mvc->sa));
-			}
-		}
-	} else {
-		append(cols, sa_list(be->mvc->sa));
-	}
-	if (type->multiset) /* multisetid */
-		append(cols, sa_list(be->mvc->sa));
-	if (type->multiset == MS_ARRAY) /* multisetnr */
-		append(cols, sa_list(be->mvc->sa));
-	if (type->multiset) /* rowid */
-		append(cols, sa_list(be->mvc->sa));
-	return 0;
-}
-
-static node *
-append_tuple(backend *be, sql_exp *tuple, sql_subtype *type, stmt *left, stmt *sel, node *cols, int rowcnt, int lcnt, bool row)
-{
-	if (row && !is_row(tuple)) { /* multiset data */
-		node *ncols = cols;
-		assert(is_values(tuple));
-		list *tuples = exp_get_values(tuple);
-		int i = 1;
-		if (list_empty(tuples)) {
-			list *vals = cols->data;
-			append(vals, stmt_atom_int(be, int_nil));
-			if (type->type->composite) {
-				node *n = cols;
-				if (type->multiset)
-					n = n->next;
-				for(node *o = type->type->d.fields->h; n && o; n = n->next, o = o->next)
-					;
-				if (type->multiset)
-					n = n->next;
-				if (type->multiset == MS_ARRAY)
-					n = n->next;
-				return n;
-			} else
-				return cols->next;
-		}
-		for(node *n = tuples->h; n; n = n->next, i++)
-			if ((ncols=append_tuple(be, n->data, type, left, sel, cols, rowcnt, i, 0)) == cols)
-				return cols;
-		return ncols;
-	}
-	assert(tuple->row);
-	list *attr = exp_get_values(tuple);
-	node *n, *m = cols, *o;
-	sql_subtype *ntype = type;
-	if (is_row(tuple) && list_length(type->type->d.fields) == 1) {
-		sql_arg *f = type->type->d.fields->h->data;
-		ntype = &f->type;
-	}
-	if (ntype->type->composite) {
-		for(n = attr->h, o = ntype->type->d.fields->h; n && o; n = n->next, o = o->next) {
-			sql_arg *f = o->data;
-			sql_exp *e = n->data;
-			list *vals = m->data;
-			if (f->type.type->composite) {
-				node *nm = append_tuple(be, e, &f->type, left, sel, m, rowcnt, lcnt, ntype->multiset);
-				if (nm == m)
-					return m;
-				m = nm;
-			} else {
-				stmt *i = exp_bin(be, e, left, NULL, NULL, NULL, NULL, sel, 0, 0, 0);
-				append(vals, i);
-				m = m->next;
-			}
-		}
-	} else {
-		assert(list_length(attr) == 1);
-		sql_exp *e = attr->h->data;
-		list *vals = m->data;
-		stmt *i = exp_bin(be, e, left, NULL, NULL, NULL, NULL, sel, 0, 0, 0);
-		m = m->next;
-		append(vals, i);
-	}
-	if (type->multiset) {
-		list *vals = m->data;
-		append(vals, stmt_atom_int(be, rowcnt));
-		m = m->next;
-	}
-	if (type->multiset == MS_ARRAY) {
-		list *vals = m->data;
-		append(vals, stmt_atom_int(be, lcnt));
-		m = m->next;
-	}
-	if (type->multiset) {
-		if (lcnt == 1) {
-			list *vals = m->data;
-			append(vals, stmt_atom_int(be, rowcnt));
-		}
-		m = m->next;
-	}
-	return m;
-}
-
-static stmt *
-tuple_result(backend *be, list *cols)
-{
-	list *row = sa_list(be->mvc->sa);
-
-	for (node *n = cols->h; n; n = n->next) {
-		list *vals = n->data;
-		sql_subtype *type = tail_type(vals->h->data);
-		append(row, stmt_append_bulk(be, stmt_temp(be, type), vals));
-	}
-	return stmt_list(be, row);
-}
-
-// TODO: >>>>>>>>>>>>>>>>>>>> remove value_list and friends
-static stmt *
-value_list(backend *be, sql_exp *vals_exp, stmt *left, stmt *sel)
-{
-	if (!be) return NULL;
-
-	assert(is_values(vals_exp));
-	list *vals = exp_get_values(vals_exp);
-	sql_subtype *type = exp_subtype(vals_exp);
-	list *l;
-
-	if (!type || list_empty(vals))
-		return sql_error(be->mvc, 02, SQLSTATE(42000) "Could not infer the type of a value list column");
-
-	if (!is_row(vals_exp) && type->type->composite) {
-		list *attr = sa_list(be->mvc->sa);
-		sql_exp *v = vals->h->data;
-		if (type_create_result(be, type, attr) < 0)
-			return NULL;
-		int rowcnt = 0, lcnt = 1;
-		int irc = is_row(v)?0:1;
-		int lrc = is_row(v)?1:0;
-		for (node *n = vals->h; n; n = n->next, rowcnt += irc, lcnt += lrc) {
-			if (append_tuple(be, n->data, type, left, sel, attr->h, rowcnt, lcnt, 1) == attr->h)
-				return NULL;
-		}
-		return tuple_result(be, attr);
-	}
-	if (type->multiset || (!is_row(vals_exp) && type->type->composite))
-		return set_value_list(be, vals_exp, left, sel);
-
-	if (is_row(vals_exp))
-		return composite_value_list(be, vals_exp, left, sel);
-
-	type = exp_subtype(vals->h->data);
-
-	/* create bat append values */
-	l = sa_list(be->mvc->sa);
-	for (node *n = vals->h; n; n = n->next) {
-		sql_exp *e = n->data;
-		stmt *i = exp_bin(be, e, left, NULL, NULL, NULL, NULL, sel, 0, 0, 0);
-
-		if (!i)
-			return NULL;
-
-		if (list_length(vals) == 1)
-			return i;
-		list_append(l, i);
-	}
-	return stmt_append_bulk(be, stmt_temp(be, type), l);
-}
-
 static stmt *
 value_tvtree(backend *be, sql_exp *vals_exp, stmt *left, stmt *sel)
 {
@@ -2090,6 +1841,8 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 				s = exp2stmt_vector(be, e, left, sel);
 			} else {
 				s = value_tvtree(be, e, left, sel);
+				if (!s && right)
+					s = value_tvtree(be, e, right, sel);
 			}
 		} else {			/* arguments */
 			sql_subtype *t = e->tpe.type?&e->tpe:NULL;
@@ -5472,9 +5225,9 @@ rel2bin_project(backend *be, sql_rel *rel, list *refs, sql_rel *topn)
 	}
 
 	if (rel->l) { /* first construct the sub relation */
-		sql_rel *lr = rel->l;
-		if (lr->op == op_ddl) {
-			sql_table *t = rel_ddl_table_get(lr);
+		sql_rel *l = rel->l;
+		if (l->op == op_ddl) {
+			sql_table *t = rel_ddl_table_get(l);
 
 			if (t)
 				sub = rel2bin_sql_table(be, t, rel->exps);
@@ -6744,9 +6497,8 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 	}
 
 	int mvc_var = be->mvc_var;
-	for (n = ol_first_node(t->columns)/*, m = inserts->op4.lval->h*/; n /*&& m*/; n = n->next/*, m = m->next*/) {
+	for (n = ol_first_node(t->columns); n; n = n->next) {
 
-		//stmt *ins = m->data;
 		sql_column *c = n->data;
 		stmt *ins = updates[c->colnr];
 
