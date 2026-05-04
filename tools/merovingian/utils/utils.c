@@ -213,107 +213,107 @@ setConfVal(confkeyval *ckv, const char *val) {
 
 	/* check the input */
 	switch (ckv->type) {
-		case INVALID: {
+	case INVALID: {
+		char buf[256];
+		snprintf(buf, sizeof(buf),
+				 "key '%s' is uninitialised (invalid value), internal error",
+				 ckv->key);
+		return(strdup(buf));
+	}
+	case SINT:
+	case INT: {
+		const char *p = val;
+		int sign = 1;
+		if (ckv->type == SINT && *p == '-') {
+			sign = -1;
+			p++;
+		}
+		while (isdigit((unsigned char) *p))
+			p++;
+		if (*p != '\0') {
 			char buf[256];
 			snprintf(buf, sizeof(buf),
-					"key '%s' is uninitialised (invalid value), internal error",
-					ckv->key);
+					 "key '%s' requires an integer-type value, got: %s",
+					 ckv->key, val);
 			return(strdup(buf));
 		}
-		case SINT:
-		case INT: {
-			const char *p = val;
-			int sign = 1;
-			if (ckv->type == SINT && *p == '-') {
-				sign = -1;
-				p++;
-			}
-			while (isdigit((unsigned char) *p))
-				p++;
-			if (*p != '\0') {
-				char buf[256];
-				snprintf(buf, sizeof(buf),
-						"key '%s' requires an integer-type value, got: %s",
-						ckv->key, val);
-				return(strdup(buf));
-			}
-			ival = sign * atoi(val);
-			break;
+		ival = sign * atoi(val);
+		break;
+	}
+	case BOOLEAN:
+		if (strcasecmp(val, "true") == 0 ||
+			strcasecmp(val, "yes") == 0 ||
+			strcmp(val, "1") == 0)
+		{
+			val = "yes";
+			ival = 1;
+		} else if (strcasecmp(val, "false") == 0 ||
+				   strcasecmp(val, "no") == 0 ||
+				   strcmp(val, "0") == 0)
+		{
+			val = "no";
+			ival = 0;
+		} else {
+			char buf[256];
+			snprintf(buf, sizeof(buf),
+					 "key '%s' requires a boolean-type value, got: %s",
+					 ckv->key, val);
+			return(strdup(buf));
 		}
-		case BOOLEAN:
-			if (strcasecmp(val, "true") == 0 ||
-					strcasecmp(val, "yes") == 0 ||
-					strcmp(val, "1") == 0)
-			{
-				val = "yes";
-				ival = 1;
-			} else if (strcasecmp(val, "false") == 0 ||
-					strcasecmp(val, "no") == 0 ||
-					strcmp(val, "0") == 0)
-			{
-				val = "no";
-				ival = 0;
-			} else {
-				char buf[256];
-				snprintf(buf, sizeof(buf),
-						"key '%s' requires a boolean-type value, got: %s",
-						ckv->key, val);
-				return(strdup(buf));
-			}
-			break;
-		case MURI:
-			if (strncmp(val, "mapi:monetdb://",
-						sizeof("mapi:monetdb://") -1) != 0)
-			{
-				char buf[256];
-				snprintf(buf, sizeof(buf),
-						"key '%s' requires a mapi:monetdb:// URI value, got: %s",
-						ckv->key, val);
-				return(strdup(buf));
-			}
-			/* TODO: check full URL? */
-			break;
-		case LADDR:
-			if (strncmp(val, "127.0.0.1", strlen("127.0.0.1")) != 0 &&
-				strncmp(val, "0.0.0.0", strlen("0.0.0.0")) != 0 &&
-				strncmp(val, "::", 2) != 0 &&
-				strncmp(val, "::1", 3) != 0 &&
-				strncmp(val, "localhost", strlen("localhost")) != 0 &&
-				strncmp(val, "all", strlen("all")) != 0
+		break;
+	case MURI:
+		if (strncmp(val, "mapi:monetdb://",
+					sizeof("mapi:monetdb://") -1) != 0)
+		{
+			char buf[256];
+			snprintf(buf, sizeof(buf),
+					 "key '%s' requires a mapi:monetdb:// URI value, got: %s",
+					 ckv->key, val);
+			return(strdup(buf));
+		}
+		/* TODO: check full URL? */
+		break;
+	case LADDR:
+		if (strncmp(val, "127.0.0.1", strlen("127.0.0.1")) != 0 &&
+			strncmp(val, "0.0.0.0", strlen("0.0.0.0")) != 0 &&
+			strncmp(val, "::", 2) != 0 &&
+			strncmp(val, "::1", 3) != 0 &&
+			strncmp(val, "localhost", strlen("localhost")) != 0 &&
+			strncmp(val, "all", strlen("all")) != 0
 			) {
-				char buf[256];
-				snprintf(buf, sizeof(buf),
-						 "only valid values for %s are \"127.0.0.1\", \"0.0.0.0\", \"::1\", \"::\", \"localhost\" or \"all\"\n",
-						 ckv->key);
-				return(strdup(buf));
-			}
-			break;
-		case LOGLEVEL:
-			if (strcasecmp(val, "error") == 0) {
-				val = "error";
-				ival = ERROR;
-			} else if (strcasecmp(val, "warning") == 0) {
-				val = "warning";
-				ival = WARNING;
-			} else if (strcasecmp(val, "information") == 0) {
-				val = "information";
-				ival = INFORMATION;
-			} else if (strcasecmp(val, "debug") == 0) {
-				val = "debug";
-				ival = DEBUG;
-			} else {
-				return(strdup("allowed loglevel values are: error or warning or information or debug\n"));
-			}
-			break;
-		case MODS:
-			for (size_t i = 0; val[i]; i++) {
-				if (val[i] < ' ' || val[i] == '\\' || val[i] == '/' || val[i] >= 0177)
-					return strdup("only printable ASCII character other than \\ and / allowed");
-			}
-			/* fall through */
-		case STR:
-		case OTHER:
-			/* leave as is, not much to check */
+			char buf[256];
+			snprintf(buf, sizeof(buf),
+					 "only valid values for %s are \"127.0.0.1\", \"0.0.0.0\", \"::1\", \"::\", \"localhost\" or \"all\"\n",
+					 ckv->key);
+			return(strdup(buf));
+		}
+		break;
+	case LOGLEVEL:
+		if (strcasecmp(val, "error") == 0) {
+			val = "error";
+			ival = ERROR;
+		} else if (strcasecmp(val, "warning") == 0) {
+			val = "warning";
+			ival = WARNING;
+		} else if (strcasecmp(val, "information") == 0) {
+			val = "information";
+			ival = INFORMATION;
+		} else if (strcasecmp(val, "debug") == 0) {
+			val = "debug";
+			ival = DEBUG;
+		} else {
+			return(strdup("allowed loglevel values are: error or warning or information or debug\n"));
+		}
+		break;
+	case MODS:
+		for (size_t i = 0; val[i]; i++) {
+			if (val[i] < ' ' || val[i] == '\\' || val[i] == '/' || val[i] >= 0177)
+				return strdup("only printable ASCII character other than \\ and / allowed");
+		}
+		/* fall through */
+	case STR:
+	case OTHER:
+		/* leave as is, not much to check */
 		break;
 	}
 	if (ckv->val != NULL)
