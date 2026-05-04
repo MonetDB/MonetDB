@@ -935,8 +935,7 @@ rel_named_table_function(sql_query *query, sql_rel *rel, symbol *ast, int latera
 				append(tl, exp_subtype(e));
 			}
 		} else {
-			for (node *en = exps->h; en; en = en->next)
-				append(tl, exp_subtype(en->data));
+			tl = exp_types(sql->sa, exps);
 		}
 	}
 
@@ -2332,8 +2331,7 @@ rel_in_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 	int is_tuple = 0, add_select = 0;
 
 	/* complex case */
-	//if (dl->h->type == type_list) { /* (a,b..) in (.. ) */
-	if (dl->h->type == type_symbol && dl->h->data.sym->token == SQL_VALUES) {
+	if (dl->h->type == type_symbol && dl->h->data.sym->token == SQL_VALUES) { /* (a,b..) in (.. ) */
 		lo = dl->h->data.sym;
 		dn = lo->data.lval->h->data.lval->h;
 		lo = dn->data.sym;

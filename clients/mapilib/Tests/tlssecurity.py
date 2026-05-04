@@ -114,7 +114,8 @@ attempt('refuse_wrong_cert', 'server1', 'verify failed', cert=certpath('ca2.crt'
 # For example, `localhost.localdomain` instead of `localhost`.
 # The client should refuse to let the connection proceed.
 
-attempt('refuse_wrong_host', 'server1', 'verify failed', host='localhost.localdomain', cert=certpath('ca1.crt'))
+althost = os.environ.get('TSTALTLOCALHOST', 'localhost.localdomain')
+attempt('refuse_wrong_host', 'server1', 'verify failed', host=althost, cert=certpath('ca1.crt'))
 
 # refuse_tlsv12
 #
