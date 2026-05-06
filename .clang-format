@@ -1,0 +1,161 @@
+---
+IndentWidth: 8
+TabWidth: 8
+UseTab: Always
+AlignAfterOpenBracket: Align
+AlignArrayOfStructures: Left
+AlignConsecutiveAssignments: None
+AlignConsecutiveBitFields: None
+AlignConsecutiveDeclarations: None
+AlignConsecutiveMacros: Consecutive
+AlignEscapedNewlines: LeftWithLastLine
+AlignOperands: Align
+AlignTrailingComments: Always
+AllowAllArgumentsOnNextLine: true
+AllowAllParametersOfDeclarationOnNextLine: true
+AllowShortBlocksOnASingleLine: Never
+AllowShortCaseExpressionOnASingleLine: false
+AllowShortCaseLabelsOnASingleLine: false
+AllowShortEnumsOnASingleLine: false
+AllowShortFunctionsOnASingleLine: None
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false
+# clang-format 23: AllowShortRecordOnASingleLine: Never
+AlwaysBreakBeforeMultilineStrings: false
+AttributeMacros: [_In_z_, _Printf_format_string_]
+BinPackArguments: true
+BinPackParameters: BinPack
+BitFieldColonSpacing: None
+BreakAdjacentStringLiterals: true
+BreakAfterAttributes: Always
+BreakAfterReturnType: AllDefinitions
+BreakBeforeBinaryOperators: None
+BreakBeforeBraces: Linux
+BreakBeforeTernaryOperators: true
+BreakBinaryOperations: RespectPrecedence
+BreakFunctionDefinitionParameters: false
+BreakStringLiterals: false
+ColumnLimit: 80
+ContinuationIndentWidth: 8
+EnumTrailingComma: Leave
+ForEachMacros:
+  - BATloop
+  - TIMEOUT_LOOP_IDX
+  - TIMEOUT_LOOP_IDX_DECL
+  - TIMEOUT_LOOP
+IfMacros: 
+  - TRC_CRITICAL_IF
+  - TRC_ERROR_IF
+  - TRC_WARNING_IF
+  - TRC_INFO_IF
+  - TRC_DEBUG_IF
+IncludeCategories:
+  - Regex: '^"monetdb_config\.h"'
+  - Regex: '.*'
+IndentCaseBlocks: false
+IndentCaseLabels: false
+# clang-format 22: IndentGotoLabels: HalfIndent
+IndentGotoLabels: false
+IndentPPDirectives: AfterHash
+InsertNewlineAtEOF: true
+KeepEmptyLines:
+  AtEndOfFile: false
+  AtStartOfBlock: false
+  AtStartOfFile: false
+LineEnding: LF
+PPIndentWidth: 1
+PointerAlignment: Right
+QualifierAlignment: Leave
+ReflowComments: IndentOnly
+SpaceAfterCStyleCast: true
+SpaceAfterLogicalNot: false
+SpaceAroundPointerQualifiers: Default
+SpaceBeforeAssignmentOperators: true
+SpaceBeforeCaseColon: false
+SpaceBeforeParens: ControlStatementsExceptControlMacros
+SpaceBeforeSquareBrackets: false
+SpaceInEmptyParentheses: false
+SpacesInParens: Never
+SpacesInSquareBrackets: false
+StatementAttributeLikeMacros:
+  - fits_export
+  - gdk_export
+  - generator_export
+  - geom_export
+  - libgeom_export
+  - mal_export
+  - mapi_export
+  - monetdbe_export
+  - moptions_export
+  - mutils_export
+  - mvc_export
+  - netcdf_export
+  - orderidx_export
+  - pyapi_export
+  - shp_export
+  - sql5_export
+  - sql_export
+  - udf_export
+TypeNames:
+  - allocator
+  - ATOMIC_BASE_TYPE
+  - ATOMIC_TYPE
+  - bat
+  - BAT
+  - BATiter
+  - bit
+  - bte
+  - BUN
+  - BUN2type
+  - BUN4type
+  - BUN8type
+  - date
+  - daytime
+  - dbl
+  - FILE
+  - flt
+  - gdk_callback_func
+  - gdk_return
+  - Hash
+  - Heap
+  - hge
+  - __int128_t
+  - int16_t
+  - int32_t
+  - int64_t
+  - int8_t
+  - lng
+  - log_bid
+  - logger
+  - log_id
+  - Mapi
+  - MapiHdl
+  - MapiMsg
+  - msk
+  - MT_Cond
+  - MT_Id
+  - MT_Lock
+  - MT_Sema
+  - off_t
+  - oid
+  - old_logger
+  - PROPrec
+  - ptr
+  - QryCtx
+  - RTree
+  - sht
+  - str
+  - stream
+  - stridx_t
+  - Strimps
+  - timestamp
+  - time_t
+  - trans
+  - uint16_t
+  - uint32_t
+  - uint64_t
+  - uint8_t
+  - ulng
+  - url
+  - ValRecord
+  - var_t
