@@ -964,7 +964,7 @@ static void ctl_handle_client(
 
 				if (strcmp(q, "#defaults") == 0) {
 					/* send defaults to client */
-					writePropsBuf(_mero_db_props, &pbuf);
+					pbuf = writePropsBuf(_mero_db_props);
 					send_list();
 
 					Mlevelfprintf(INFORMATION, _mero_ctlout, "%s: served default property "
@@ -1000,7 +1000,7 @@ static void ctl_handle_client(
 				/* from here we'll always succeed, even if we don't
 				 * send anything */
 				readProps(props, stats->path);
-				writePropsBuf(props, &pbuf);
+				pbuf = writePropsBuf(props);
 				send_list();
 				freeConfFile(props);
 				free(props);
