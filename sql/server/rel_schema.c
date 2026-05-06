@@ -2589,7 +2589,7 @@ rel_create_user(allocator *sa, char *user, char *passwd, int enc, char *fullname
 }
 
 static sql_rel *
-rel_alter_user(allocator *sa, char *user, char *passwd, int enc, char *schema, char *schema_path, char *oldpasswd, char *role, lng max_memory, int max_workers)
+rel_alter_user(allocator *sa, char *user, char *passwd, int enc, char *schema, char *schema_path, char *oldpasswd, char *role, lng max_memory, int max_workers, char *optimizer)
 {
 	sql_rel *rel = rel_create(sa);
 	list *exps = new_exp_list(sa);
@@ -2605,6 +2605,7 @@ rel_alter_user(allocator *sa, char *user, char *passwd, int enc, char *schema, c
 	append(exps, exp_atom_clob(sa, role));
 	append(exps, exp_atom_lng(sa, max_memory));
 	append(exps, exp_atom_int(sa, max_workers));
+	append(exps, exp_atom_clob(sa, optimizer));
 
 	rel->l = NULL;
 	rel->r = NULL;
@@ -3303,7 +3304,7 @@ rel_schemas(sql_query *query, symbol *s)
 		dlist *l = s->data.lval;
 		char *username = l->h->data.sval;
 		dnode *a = l->h->next->data.lval->h;
-		int if_exists = l->h->next->next->next->next->next->data.i_val;
+		int if_exists = l->h->next->next->next->next->next->next->data.i_val;
 
 		if (if_exists == 1 && username != NULL && is_oid_nil(backend_find_user(sql, username))) {
 			/* user does not exist, but IF EXISTS is specified, so we are done */
@@ -3317,7 +3318,8 @@ rel_schemas(sql_query *query, symbol *s)
 				a->next->next->next->next->data.sval, /* old passwd */
 				l->h->next->next->data.sval, /* default role */
 				l->h->next->next->next->data.l_val, /* max_memory */
-				l->h->next->next->next->next->data.i_val /* max_workers */
+				l->h->next->next->next->next->data.i_val, /* max_workers */
+				l->h->next->next->next->next->next->data.sval /* optimizer */
 			);
 	} 	break;
 	case SQL_RENAME_USER: {

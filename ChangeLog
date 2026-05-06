@@ -1,6 +1,10 @@
 # ChangeLog file for devel
 # This file is updated with Maddlog
 
+* Wed May  6 2026 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
+- Added capability to change the OPTIMIZER setting for a USER via:
+  ALTER USER user_id OPTIMIZER 'minimal_pipe';
+
 * Sat May  2 2026 Lucas Pereira <lucas.pereira@monetdbsolutions.com>
 - Set default to 'no' of monetdbd discovery property.
 

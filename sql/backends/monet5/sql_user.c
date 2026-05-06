@@ -303,7 +303,7 @@ monet5_create_user(ptr _mvc, str user, str passwd, bool enc, str fullname, sqlid
 	if (!optimizer)
 		optimizer = default_optimizer;
 	if (!isOptimizerPipe(optimizer)) {
-		throw(MAL, "sql.create_user", SQLSTATE(42000) "Optimizer pipe %s unknown", optimizer);
+		throw(MAL, "sql.create_user", SQLSTATE(42000) "Optimizer pipe '%s' unknown", optimizer);
 	}
 
 
@@ -455,8 +455,8 @@ monet5_schema_has_user(ptr _mvc, sql_schema *s)
 }
 
 static int
-monet5_alter_user(ptr _mvc, str user, str passwd, bool enc, sqlid schema_id, str schema_path, str oldpasswd, sqlid
-		role_id, lng max_memory, int max_workers)
+monet5_alter_user(ptr _mvc, str user, str passwd, bool enc, sqlid schema_id, str schema_path, str oldpasswd,
+		sqlid role_id, lng max_memory, int max_workers, str optimizer)
 {
 	mvc *m = (mvc *) _mvc;
 	Client c = MCgetClient(m->clientid);
@@ -469,7 +469,7 @@ monet5_alter_user(ptr _mvc, str user, str passwd, bool enc, sqlid schema_id, str
 	sql_table *info = find_sql_table(m->session->tr, sys, "db_user_info");
 	sql_column *users_name = find_sql_column(info, "name");
 
-	if (schema_id || schema_path || role_id || max_memory > -1 || max_workers > -1) {
+	if (schema_id || schema_path || role_id || max_memory > -1 || max_workers > -1 || optimizer) {
 		rid = store->table_api.column_find_row(m->session->tr, users_name, user, NULL);
 		// user should be checked here since the way `ALTER USER ident ...` stmt is
 		if (is_oid_nil(rid)) {
@@ -610,6 +610,21 @@ monet5_alter_user(ptr _mvc, str user, str passwd, bool enc, sqlid schema_id, str
 			(void) sql_error(m, 02, SQLSTATE(42000) "ALTER USER: failed%s",
 							res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
 			return (FALSE);
+		}
+	}
+
+	if (optimizer) {
+		sql_column *users_optimizer = find_sql_column(info, "optimizer");
+
+		if (!isOptimizerPipe(optimizer)) {
+			(void) sql_error(m, 02, SQLSTATE(42000) "ALTER USER: failed. Optimizer pipe '%s' unknown", optimizer);
+			return FALSE;
+		}
+
+		if ((res = store->table_api.column_update_value(m->session->tr, users_optimizer, rid, optimizer))) {
+			(void) sql_error(m, 02, SQLSTATE(42000) "ALTER USER: failed%s",
+							res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
+			return FALSE;
 		}
 	}
 

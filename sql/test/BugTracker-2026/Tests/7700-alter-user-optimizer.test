@@ -1,0 +1,47 @@
+statement ok
+CREATE USER test WITH PASSWORD 'me' NAME 'tester' OPTIMIZER 'default_pipe'
+
+query TT nosort
+SELECT name, optimizer FROM sys.users WHERE name = 'test'
+----
+test
+default_pipe
+
+statement ok
+ALTER USER test OPTIMIZER 'minimal_pipe'
+
+query TT nosort
+SELECT name, optimizer FROM sys.users WHERE name = 'test'
+----
+test
+minimal_pipe
+
+statement error M0M27!42000!ALTER USER: failed. Optimizer pipe 'maximal_fast' unknown
+ALTER USER test OPTIMIZER 'maximal_fast'
+
+statement ok
+ALTER USER test OPTIMIZER 'sequential_pipe'
+
+query TT nosort
+SELECT name, optimizer FROM sys.users WHERE name = 'test'
+----
+test
+sequential_pipe
+
+statement error M0M27!42000!ALTER USER: failed. Optimizer pipe 'maximum_fast' unknown
+ALTER USER test OPTIMIZER 'maximum_fast'
+
+statement error M1M05!DROP USER: 'test' owns a schema
+DROP USER test
+
+statement ok
+ALTER USER test SET SCHEMA sys
+
+statement ok
+SET SCHEMA sys
+
+statement ok
+DROP SCHEMA test
+
+statement ok
+DROP USER test
