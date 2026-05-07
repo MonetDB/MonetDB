@@ -254,7 +254,7 @@ parse_schema_path_str(mvc *m, str schema_path, bool build) /* this function for 
 		}
 	}
 	if (status == inside_str)
-		throw(SQL, "sql.schema_path", SQLSTATE(0E000) "A schema path cannot end inside inside a schema name");
+		throw(SQL, "sql.schema_path", SQLSTATE(0E000) "A schema path cannot end inside a schema name");
 	return MAL_SUCCEED;
 }
 
