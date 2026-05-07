@@ -114,7 +114,6 @@ tmp_schema(mvc *sql)
 
 #define DO_NOTHING(x) ((void) 0)
 
-/* as we don't have OOP in C, I prefer a single macro with the search path algorithm to passing function pointers */
 #define search_object_on_path(CALL, EXTRA_CONDITION, EXTRA, ERROR_CODE, show_error) \
 	do { \
 		sql_schema *next = NULL; \
@@ -156,64 +155,122 @@ tmp_schema(mvc *sql)
 			return sql_error(sql, ERR_NOTFOUND, ERROR_CODE "%s: no such %s %s%s%s'%s'", error, objstr, sname ? "'":"", sname ? sname : "", sname ? "'.":"", name); \
 	} while (0)
 
-#define table_extra \
-	do { \
-		if (s) { \
-			next = s; /* there's a default schema to search before all others, e.g. bind a child table from a merge table */ \
-			res = mvc_bind_table(sql, next, name); \
-		} \
-		if (!res && strcmp(objstr, "table") == 0 && (res = stack_find_table(sql, name))) /* for tables, first try a declared table from the stack */ \
-			return res; \
-	} while (0)
+/* more or less the above, but as a function */
+static sql_base *
+search_object_on_path_func(mvc *sql,
+						   sql_base *(*func)(mvc *, sql_schema *, const char *),
+						   sql_schema *s, const char *sname, const char *name,
+						   const char *error_code,
+						   const char *objstr, const char *error)
+{
+	sql_schema *next = NULL;
+	sql_base *res = NULL;
+
+	if (sname) {
+		/* user has explicitly typed the schema, so either the object is
+		 * there or we return error */
+		if ((next = mvc_bind_schema(sql, sname)) == NULL)
+			return sql_error(sql, ERR_NOTFOUND,
+							 SQLSTATE(3F000) "%s: no such schema '%s'",
+							 error, sname);
+		if (res == NULL) {
+			res = func(sql, next, name);
+		}
+	} else {
+		sql_schema *cur = cur_schema(sql);
+		char *session_schema = cur->base.name;
+
+		if (s) {
+			/* s is only ever not NULL for tables/views */
+			res = func(sql, s, name);
+		}
+		if (res == NULL && strcmp(objstr, "table") == 0) {
+			res = (sql_base *) stack_find_table(sql, name);
+			if (res)
+				return res;
+		}
+		if (!res && !sql->schema_path_has_tmp && strcmp(session_schema, "tmp") != 0) {
+			/* if 'tmp' is not in the search path, search it before all
+			 * others */
+			res = func(sql, tmp_schema(sql), name);
+		}
+		if (!res) { /* then current session's schema */
+			res = func(sql, cur, name);
+		}
+		if (!res) {
+			/* object not found yet, look inside search path */
+			for (node *n = sql->schema_path->h ; n && !res ; n = n->next) {
+				str p = (str) n->data;
+				if (strcmp(session_schema, p) != 0 && (next = mvc_bind_schema(sql, p)))
+					res = func(sql, next, name);
+			}
+		}
+		if (!res && !sql->schema_path_has_sys && strcmp(session_schema, "sys") != 0) {
+			/* if 'sys' is not in the current path search it next */
+			res = func(sql, mvc_bind_schema(sql, "sys"), name);
+		}
+	}
+	if (!res)
+		return sql_error(sql, ERR_NOTFOUND, "%s%s: no such %s %s%s%s'%s'",
+						 error_code, error, objstr, sname ? "'":"",
+						 sname ? sname : "", sname ? "'.":"", name);
+	return res;
+}
 
 sql_table *
 find_table_or_view_on_scope(mvc *sql, sql_schema *s, const char *sname, const char *name, const char *error, bool isView)
 {
-	const char *objstr = isView ? "view" : "table";
-	sql_table *res = NULL;
+	return (sql_table *) search_object_on_path_func(
+		sql,
+		(sql_base *(*)(mvc *, sql_schema *, const char *)) mvc_bind_table,
+		s, sname, name, SQLSTATE(42S02), isView ? "view" : "table",
+		error);
+}
 
-	search_object_on_path(res = mvc_bind_table(sql, next, name), DO_NOTHING, table_extra, SQLSTATE(42S02), true);
-	return res;
+static sql_sequence *
+find_sequence(mvc *sql, sql_schema *s, const char *name)
+{
+	return find_sql_sequence(sql->session->tr, s, name);
 }
 
 sql_sequence *
 find_sequence_on_scope(mvc *sql, const char *sname, const char *name, const char *error)
 {
-	static const char objstr[] = "sequence";
-	sql_sequence *res = NULL;
-
-	search_object_on_path(res = find_sql_sequence(sql->session->tr, next, name), DO_NOTHING, ((void) 0), SQLSTATE(42000), true);
-	return res;
+	return (sql_sequence *) search_object_on_path_func(
+		sql,
+		(sql_base *(*)(mvc *, sql_schema *, const char *)) find_sequence,
+		NULL, sname, name, SQLSTATE(42000), "sequence",
+		error);
 }
 
 sql_idx *
 find_idx_on_scope(mvc *sql, const char *sname, const char *name, const char *error)
 {
-	static const char objstr[] = "index";
-	sql_idx *res = NULL;
-
-	search_object_on_path(res = mvc_bind_idx(sql, next, name), DO_NOTHING, ((void) 0), SQLSTATE(42S12), true);
-	return res;
+	return (sql_idx *) search_object_on_path_func(
+		sql,
+		(sql_base *(*)(mvc *, sql_schema *, const char *)) mvc_bind_idx,
+		NULL, sname, name, SQLSTATE(42S12), "index",
+		error);
 }
 
 sql_type *
 find_type_on_scope(mvc *sql, const char *sname, const char *name, const char *error)
 {
-	static const char objstr[] = "type";
-	sql_type *res = NULL;
-
-	search_object_on_path(res = schema_bind_type(sql, next, name), DO_NOTHING, ((void) 0), SQLSTATE(42S01), true);
-	return res;
+	return (sql_type *) search_object_on_path_func(
+		sql,
+		(sql_base *(*)(mvc *, sql_schema *, const char *)) schema_bind_type,
+		NULL, sname, name, SQLSTATE(42S01), "type",
+		error);
 }
 
 sql_trigger *
 find_trigger_on_scope(mvc *sql, const char *sname, const char *name, const char *error)
 {
-	static const char objstr[] = "trigger";
-	sql_trigger *res = NULL;
-
-	search_object_on_path(res = mvc_bind_trigger(sql, next, name), DO_NOTHING, ((void) 0), SQLSTATE(3F000), true);
-	return res;
+	return (sql_trigger *) search_object_on_path_func(
+		sql,
+		(sql_base *(*)(mvc *, sql_schema *, const char *)) mvc_bind_trigger,
+		NULL, sname, name, SQLSTATE(3F000), "trigger",
+		error);
 }
 
 /* A variable can be any of the following, from the innermost to the outermost:
@@ -224,6 +281,7 @@ find_trigger_on_scope(mvc *sql, const char *sname, const char *name, const char 
 #define variable_extra \
 	do { \
 		if (!res) { \
+			int nr; \
 			if ((*var = stack_find_var_frame(sql, name, level))) { /* check if variable is known from the stack */ \
 				*tpe = &((*var)->var.tpe); \
 				res = true; \
@@ -250,9 +308,7 @@ find_variable_on_scope(mvc *sql, const char *sname, const char *name, sql_var **
 {
 	static const char objstr[] = "variable";
 	bool res = false;
-	int nr = 0;
 
-	(void)nr;
 	search_object_on_path(var_find_on_global, DO_NOTHING, variable_extra, SQLSTATE(42000), true);
 	return res;
 }
