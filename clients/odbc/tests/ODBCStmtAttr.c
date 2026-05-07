@@ -41,7 +41,7 @@ prerr(SQLSMALLINT tpe, SQLHANDLE hnd, const char *func, const char *pref)
 		 || (strcmp(pref,"Info") != 0)
 		 || (strcmp((char*)state,"01S02") != 0)
 		 || errnr != 0
-		 || (strncmp((char*)msg,"[MonetDB][ODBC Driver 11.", 25) != 0))
+		 || (strncmp((char*)msg,"[MonetDB][ODBC Driver ", 22) != 0))
 			fprintf(stderr, "%s: %s: SQLstate %s, Errnr %d, Message %s\n", func, pref, (char*)state, (int)errnr, (char*)msg);
 		break;
 	case SQL_INVALID_HANDLE:

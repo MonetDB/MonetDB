@@ -3021,7 +3021,7 @@ down = '\033[B'
 
 
 def progress(count, errors, total, test, spaces=' '*(ttywidth or 100)):
-    errs = ''
+    errs = '\r'
     if os.name == 'nt':
         nl = ''
         line = 0
@@ -3032,7 +3032,9 @@ def progress(count, errors, total, test, spaces=' '*(ttywidth or 100)):
             threadids[tid] = len(threadids)
             nl = '\n'
         line = len(threadids) - threadids[tid]
-        if errors:
+        if errors == 1:
+            errs = f'\r{errors} error'
+        elif errors > 1:
             errs = f'\r{errors} errors'
     perc = int(count*100/total) if total and count else 0
     width = len(str(total))

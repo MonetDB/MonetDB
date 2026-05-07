@@ -1,6 +1,10 @@
 # ChangeLog file for devel
 # This file is updated with Maddlog
 
+* Thu May  7 2026 Sjoerd Mullender <sjoerd@acm.org>
+- The version number has changed from three levels where the first level
+  has always been 11 to two levels.  The 11. has been dropped.
+
 * Wed May  6 2026 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
 - Added capability to change the OPTIMIZER setting for a USER via:
   ALTER USER user_id OPTIMIZER 'minimal_pipe';
