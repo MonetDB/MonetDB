@@ -44,7 +44,7 @@ monet_version(void)
 	sz_mem_gb = (dbl)(MT_npages() * MT_pagesize()) / (1024.0 * 1024.0 * 1024.0);
 	cores = MT_check_nr_cores();
 
-	printf("MonetDB 5 server %s", GDKversion());
+	printf("MonetDB 5 server %s", GDKversion(false));
 #ifdef MONETDB_RELEASE
 	printf(" (%s)", MONETDB_RELEASE);
 #else

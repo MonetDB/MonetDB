@@ -124,7 +124,7 @@ gdk_export bool GDKexiting(void);
 gdk_export void GDKprepareExit(void);
 gdk_export void GDKreset(int status);
 /* global version number */
-gdk_export const char *GDKversion(void)
+gdk_export const char *GDKversion(bool full)
 	__attribute__((__const__));
 /* ABI version of GDK library */
 gdk_export const char *GDKlibversion(void)

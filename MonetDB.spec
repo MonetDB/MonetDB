@@ -6,7 +6,7 @@
 #
 # For copyright information, see the file debian/copyright.
 
-%global version 11.56.0
+%global version 56.0.0
 
 %bcond_with compat
 

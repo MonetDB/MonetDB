@@ -1640,9 +1640,18 @@ THRinit(void)
 	return 0;
 }
 
+/* stringify token */
+#define _STRINGIFY_(s) #s
+#define STRINGIFY(t) _STRINGIFY_(t)
+
 const char *
-GDKversion(void)
+GDKversion(bool full)
 {
+	(void) full;		/* in case patch != 0 */
+#if MONETDB_VERSION_PATCH == 0
+	if (!full)
+		return STRINGIFY(MONETDB_VERSION_MAJOR) "." STRINGIFY(MONETDB_VERSION_MINOR);
+#endif
 	return MONETDB_VERSION;
 }
 
