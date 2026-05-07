@@ -111,7 +111,7 @@ KNOWNFAIL?7774-insert-into-renamed-table-assertion-failure
 7915-delete-exists-having-bug
 7916-lateral-join-distinct-bug
 7917-correlated-count-query-bug
-KNOWNFAIL?7918-subquery-limit-offset-bug
+7918-subquery-limit-offset-bug
 7919-correlated-count-distinct-bug
 KNOWNFAIL?7920-correlated-top-1-subquery-bug
 7921-correlated-floor-ratio-bug
@@ -127,4 +127,4 @@ KNOWNFAIL?7930-rel2bin_select-assertion-failure
 KNOWNFAIL?7931-rel2bin_select-assertion-failure
 7932-canditer_init-assertion-failure
 7933-query-without-result-bug
-KNOWNFAIL?7934-ALGouterselect-assertion-failure
+7934-ALGouterselect-assertion-failure
