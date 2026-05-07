@@ -115,7 +115,7 @@ monet_hello(void)
 	static const char qc[] = " kMGTPE";
 	int qi = 0;
 
-	printf("# MonetDB 5 server v%s", GDKversion());
+	printf("# MonetDB 5 server v%s", GDKversion(false));
 	{
 #ifdef MONETDB_RELEASE
 		printf(" (%s)", MONETDB_RELEASE);
@@ -744,7 +744,7 @@ main(int argc, char **av)
 	}
 	mo_free_options(set, setlen);
 
-	if (GDKsetenv("monet_version", GDKversion()) != GDK_SUCCEED
+	if (GDKsetenv("monet_version", GDKversion(true)) != GDK_SUCCEED
 		|| GDKsetenv("monet_build_type", BUILD_TYPE) != GDK_SUCCEED
 		|| GDKsetenv("monet_extra_c_flags", EXTRA_C_FLAGS) != GDK_SUCCEED
 		|| GDKsetenv("monet_release",

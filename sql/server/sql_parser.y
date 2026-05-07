@@ -1504,10 +1504,10 @@ alter_statement:
 			append_int(l, $3);
 			$$ = _symbol_create_list(SQL_SET_TABLE_SCHEMA, l );
 		}
-	|	ALTER USER if_exists column_id opt_with_encrypted_password user_schema opt_schema_path opt_default_role opt_max_memory_max_workers
+	|	ALTER USER if_exists column_id opt_with_encrypted_password user_schema opt_schema_path opt_default_role opt_max_memory_max_workers opt_optimizer
 		{
 			dlist *l = L(), *p = L();
-			if (!$5 && !$6 && !$7 && !$8 && $9[0] < 0 && $9[1] < 0) {
+			if (!$5 && !$6 && !$7 && !$8 && $9[0] < 0 && $9[1] < 0 && !$10) {
 				yyerror(m, "ALTER USER: At least one property should be updated");
 				YYABORT;
 			}
@@ -1521,6 +1521,7 @@ alter_statement:
 			append_string(l, $8);
 			append_lng(l, $9[0]);
 			append_int(l, (int)$9[1]);
+			append_string(l, $10);
 			append_int(l, $3);
 			$$ = _symbol_create_list( SQL_ALTER_USER, l );
 		}
@@ -1546,6 +1547,7 @@ alter_statement:
 			append_string(l, NULL);
 			append_lng(l, -1);
 			append_int(l, -1);
+			append_string(l, NULL);
 			append_int(l, FALSE);
 			$$ = _symbol_create_list( SQL_ALTER_USER, l );
 		}
@@ -3769,7 +3771,7 @@ assignment:
 
 opt_assignment_commalist:
 		'(' assignment_commalist ')'	{ $$ = $2; }
-	| 	/* empty */			{ $$ = NULL; }
+	|	/* empty */			{ $$ = NULL; }
 	;
 
 opt_where_clause:

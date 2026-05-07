@@ -90,8 +90,8 @@ retrieveDiagMsg(SQLHANDLE stmt, char * outp, size_t outp_len)
 	if (ret == SQL_SUCCESS || ret == SQL_SUCCESS_WITH_INFO) {
 		/* The message layout is: "[MonetDB][ODBC Driver 11.46.0][MonetDB-Test]error/warning text".
 		   The ODBC driver version numbers changes in time. Overwrite it to get a stable output */
-		if (strncmp(msg, "[MonetDB][ODBC Driver 11.", 25) == 0) {
-			return snprintf(outp, outp_len, "SQLstate %s, Errnr %d, Message [MonetDB][ODBC Driver 11.##.#]%s\n", (char*)state, (int)errnr, strchr(msg + 25, ']') + 1);
+		if (strncmp(msg, "[MonetDB][ODBC Driver ", 22) == 0) {
+			return snprintf(outp, outp_len, "SQLstate %s, Errnr %d, Message [MonetDB][ODBC Driver ##.##.#]%s\n", (char*)state, (int)errnr, strchr(msg + 25, ']') + 1);
 		}
 		return snprintf(outp, outp_len, "SQLstate %s, Errnr %d, Message %s\n", (char*)state, (int)errnr, (char*)msg);
 	}
@@ -198,7 +198,7 @@ testGetDataTruncatedString(SQLHANDLE stmt, SWORD ctype)
 			"SQLColAttribute(1, SQL_DESC_LITERAL_PREFIX: ') returns 0, NumAttr 47\n"
 			"SQLColAttribute(1, SQL_DESC_LITERAL_SUFFIX: ') returns 0, NumAttr 47\n"
 			"SQLGetData(1, SQL_C_CHAR, 20) returns 1, vallen 47, buf: '1234567890123456789'\n"
-			"SQLstate 01004, Errnr 0, Message [MonetDB][ODBC Driver 11.##.#][MonetDB-Test]String data, right truncated\n"
+			"SQLstate 01004, Errnr 0, Message [MonetDB][ODBC Driver ##.##.#][MonetDB-Test]String data, right truncated\n"
 			"SQLGetData(1, SQL_C_CHAR, 30) returns 0, vallen 28, buf: '0 abcdefghijklmnopqrstuvwxyz'\n");
 	} else
 	if (ctype == SQL_C_WCHAR) {
@@ -210,9 +210,9 @@ testGetDataTruncatedString(SQLHANDLE stmt, SWORD ctype)
 			"SQLColAttribute(1, SQL_DESC_LITERAL_PREFIX: ') returns 0, NumAttr 47\n"
 			"SQLColAttribute(1, SQL_DESC_LITERAL_SUFFIX: ') returns 0, NumAttr 47\n"
 			"SQLGetData(1, SQL_C_WCHAR, 20) returns 1, vallen 94, buf: ''\n"
-			"SQLstate 01004, Errnr 0, Message [MonetDB][ODBC Driver 11.##.#][MonetDB-Test]String data, right truncated\n"
+			"SQLstate 01004, Errnr 0, Message [MonetDB][ODBC Driver ##.##.#][MonetDB-Test]String data, right truncated\n"
 			"SQLGetData(1, SQL_C_WCHAR, 30) returns 1, vallen 76, buf: ''\n"
-			"SQLstate 01004, Errnr 0, Message [MonetDB][ODBC Driver 11.##.#][MonetDB-Test]String data, right truncated\n");
+			"SQLstate 01004, Errnr 0, Message [MonetDB][ODBC Driver ##.##.#][MonetDB-Test]String data, right truncated\n");
 	}
 
 	ret = SQLCloseCursor(stmt);

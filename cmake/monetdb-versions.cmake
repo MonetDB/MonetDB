@@ -8,8 +8,8 @@
 # For copyright information, see the file debian/copyright.
 #]]
 
-set(MONETDB_VERSION_MAJOR "11")
-set(MONETDB_VERSION_MINOR "56")
+set(MONETDB_VERSION_MAJOR "56")
+set(MONETDB_VERSION_MINOR "0")
 set(MONETDB_VERSION_PATCH "0")
 
 if(RELEASE_VERSION)

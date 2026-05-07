@@ -830,15 +830,15 @@ SELECT count(0.3121149) FROM (select case when 2 > 1 then 0.3 end from (select 1
 36
 
 query I nosort
-SELECT CAST(2 AS REAL) BETWEEN 2 AND (t5.c0 / t5.c0)^5 AS X FROM t5 ORDER BY x NULLS LAST
+SELECT CAST(2 AS REAL) BETWEEN 2 AND power(t5.c0 / t5.c0,5) AS X FROM t5 ORDER BY x NULLS LAST
 ----
-1
-1
-1
-1
-1
-1
-1
+0
+0
+0
+0
+0
+0
+0
 NULL
 NULL
 NULL
@@ -846,15 +846,15 @@ NULL
 NULL
 
 query I nosort
-SELECT CAST(2 AS REAL) BETWEEN 2 AND (rt5.c0 / rt5.c0)^5 AS X FROM rt5 ORDER BY x NULLS LAST
+SELECT CAST(2 AS REAL) BETWEEN 2 AND power(rt5.c0 / rt5.c0,5) AS X FROM rt5 ORDER BY x NULLS LAST
 ----
-1
-1
-1
-1
-1
-1
-1
+0
+0
+0
+0
+0
+0
+0
 NULL
 NULL
 NULL
