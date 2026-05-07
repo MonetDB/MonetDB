@@ -324,6 +324,8 @@ int yydebug=1;
 	type_def
 	update_statement
 	update_stmt
+	array_expr
+	array_element
 	value_exp
 	view_def
 	when_statement
@@ -489,9 +491,9 @@ int yydebug=1;
 	procedure_body
 	routine_designator
 	expr_list
-	array_expr
+	array_contents
 	vector_expr
-	array_expr_list
+	//array_expr_list
 	schema_element_list
 	schema_name_clause
 	schema_name_list
@@ -5329,16 +5331,17 @@ vector_expr:
 	|	'[' ']'                { $$ = NULL; }
 	;
 
-array_expr:
-		'[' expr_list ']'      { $$ = $2; }
-	|	'['array_expr_list ']' { $$ = $2; }
-	|	'[' ']'                { $$ = NULL; }
-	;
+//#array_expr:
+//#		'['array_expr_list ']' { $$ = $2; }
+//#	|	'[' expr_list ']'      { $$ = $2; }
+//#	|	'[' ']'                { $$ = NULL; }
+//#	;
+//#
+//#array_expr_list:
+//#		array_expr                     { $$ = append_list(L(), $1); }
+//#	|  	array_expr_list ',' array_expr { $$ = append_list($1, $3); }
+//#	;
 
-array_expr_list:
-		array_expr                     { $$ = $1; }
-	|  	array_expr_list ',' array_expr { $$ = $3; }
-	;
 
 value_exp:
 		atom { $$ = $1; }
@@ -5357,7 +5360,7 @@ value_exp:
 	|	'('scalar_exp ')' opt_indirection { $$ = $2; }
 	|	'('expr_list ',' scalar_exp ')'   { $$ = _symbol_create_list(SQL_ROW, append_symbol($2, $4)); }
 	|	ARRAY select_with_parens          { $$ = $2; }
-	|	ARRAY array_expr                  { $$ = _symbol_create_list(SQL_SET, $2); }
+	|	ARRAY array_expr                  { $$ = $2; }
 	|	VECTOR vector_expr                { $$ = _symbol_create_list(SQL_VECTOR, $2); }
 	|	session_user     { $$ = _symbol_create_list(SQL_NAME, append_string(append_string(L(), "sys"), "current_user")); }
 	|	CURRENT_SCHEMA   { $$ = _symbol_create_list(SQL_NAME, append_string(append_string(L(), "sys"), "current_schema")); }
@@ -5382,6 +5385,21 @@ value_exp:
 	|	odbc_scalar_func_escape
 	|	select_with_parens  %prec UMINUS { $$ = $1; }
 	;
+
+array_element:
+    value_exp		{ $$ = $1; }
+    | array_expr	{ $$ = $1; }
+    ;
+
+array_contents:
+    array_element						{ $$ = append_symbol(L(), $1); }
+    | array_contents ',' array_element	{ $$ = append_symbol($1, $3); }
+    ;
+
+array_expr:
+    '[' ']'						{ $$ = NULL; }
+    | '[' array_contents ']'	{ $$ = _symbol_create_list(SQL_SET, $2); }
+    ;
 
 param:
 		PARAM
