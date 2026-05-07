@@ -1,5 +1,5 @@
 query II rowsort
-SELECT x , CASE WHEN x > 12 THEN 1 ELSE 0 END AS x
+SELECT x , CASE WHEN x > 12 THEN 1 ELSE 0 END AS y
  FROM ( SELECT 10 AS x UNION SELECT 11 AS x GROUP BY CUBE ( x , x ) UNION SELECT 12 AS x UNION SELECT 13 AS x )
 ----
 10
@@ -20,7 +20,7 @@ NULL
 -- By reducing the initial virtual table with one row it now computes 6^10 = 60466176 rows (60 million), which apparently executes much faster, without changing the complex logic.
 query II rowsort
 -- EXPLAIN SHOW DETAILS
-SELECT x , CASE WHEN x > 12 THEN 1 ELSE 0 END AS x
+SELECT x , CASE WHEN x > 12 THEN 1 ELSE 0 END AS y
 --  FROM ( SELECT 10 AS x UNION SELECT 11 AS x GROUP BY CUBE ( x , x ) UNION SELECT 12 AS x UNION SELECT 13 AS x )  -- original FROM clause
   FROM ( SELECT 11 AS x GROUP BY CUBE ( x , x ) UNION SELECT 12 AS x UNION SELECT 13 AS x )  -- changed FROM clause to reduce execution time
  WHERE x IN (
@@ -42,9 +42,5 @@ SELECT x , CASE WHEN x > 12 THEN 1 ELSE 0 END AS x
 ----
 11
 0
-12
-0
 13
 1
-NULL
-0
