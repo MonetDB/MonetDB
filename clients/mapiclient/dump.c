@@ -920,8 +920,12 @@ dump_column_definition(Mapi mid, stream *sqlf, const char *schema,
 				"c.type_scale, "	/* 3 */
 				"c.\"null\", "		/* 4 */
 				"c.number, "		/* 5 */
-				"c.storage "		/* 6 */
+				"us.name, "			/* 6 */
+				"uo.name "			/* 7 */
 			 "FROM sys._columns c "
+				 "LEFT OUTER JOIN sys.dependencies d ON c.id = d.depend_id "
+				 "LEFT OUTER JOIN sys.objects uo ON d.id = uo.id "
+				 "LEFT OUTER JOIN sys.schemas us ON uo.nr = us.id "
 			 "WHERE c.table_id = %s "
 			 "ORDER BY c.number", tid);
 	else
@@ -932,8 +936,12 @@ dump_column_definition(Mapi mid, stream *sqlf, const char *schema,
 				"c.type_scale, "	/* 3 */
 				"c.\"null\", "		/* 4 */
 				"c.number, "		/* 5 */
-				"c.storage "		/* 6 */
-			 "FROM sys._columns c, "
+				"us.name, "			/* 6 */
+				"uo.name "			/* 7 */
+			 "FROM sys._columns c "
+				 "LEFT OUTER JOIN sys.dependencies d ON c.id = d.depend_id "
+				 "LEFT OUTER JOIN sys.objects uo ON d.id = uo.id "
+				 "LEFT OUTER JOIN sys.schemas us ON uo.nr = us.id, "
 			      "sys._tables t, "
 			      "sys.schemas s "
 			 "WHERE c.table_id = t.id "
@@ -952,13 +960,23 @@ dump_column_definition(Mapi mid, stream *sqlf, const char *schema,
 		char *c_type_digits = strdup(mapi_fetch_field(hdl, 2));
 		char *c_type_scale = strdup(mapi_fetch_field(hdl, 3));
 		const char *c_null = mapi_fetch_field(hdl, 4);
-		const char *c_storage = mapi_fetch_field(hdl, 6);
+		char *s_name = mapi_fetch_field(hdl, 6);
+		char *o_name = mapi_fetch_field(hdl, 7);
 		int space;
 
 		if (mapi_error(mid) || !c_type || !c_type_digits || !c_type_scale) {
 			free(c_type);
 			free(c_type_digits);
 			free(c_type_scale);
+			goto bailout;
+		}
+		if ((s_name && (s_name = strdup(s_name)) == NULL) ||
+			(o_name && (o_name = strdup(o_name)) == NULL)) {
+			free(c_type);
+			free(c_type_digits);
+			free(c_type_scale);
+			free(s_name);
+			free(o_name);
 			goto bailout;
 		}
 
@@ -1001,23 +1019,11 @@ dump_column_definition(Mapi mid, stream *sqlf, const char *schema,
 			mnstr_printf(sqlf, "%*s NOT NULL", CAP(13 - space), "");
 			space = 13;
 		}
-		if (c_storage && strncmp(c_storage, "USTR", 4) == 0) {
-			char q[128];
-			int sid, uid;
-			sscanf(c_storage, "USTR %d %d", &sid, &uid);
-			snprintf(q, sizeof(q), "SELECT s.name, o.name FROM sys.schemas s, sys.objects o WHERE s.id = %d AND o.nr = s.id AND o.id = %d", sid, uid);
-			MapiHdl h = mapi_query(mid, q);
-			if (h != NULL) {
-				if (mapi_fetch_row(h) != 0) {
-					const char *sname = mapi_fetch_field(h, 0);
-					const char *uname = mapi_fetch_field(h, 1);
-					mnstr_printf(sqlf, "%*s DISTINCT STRING COLUMN ",
+		if (s_name && o_name) {
+			mnstr_printf(sqlf, "%*s DISTINCT STRING COLUMN ",
 								 CAP(13 - space), "");
-					dquoted_print(sqlf, sname, ".");
-					dquoted_print(sqlf, uname, NULL);
-				}
-				mapi_close_handle(h);
-			}
+			dquoted_print(sqlf, s_name, ".");
+			dquoted_print(sqlf, o_name, NULL);
 			space = 13;
 		}
 
@@ -1025,6 +1031,8 @@ dump_column_definition(Mapi mid, stream *sqlf, const char *schema,
 		free(c_type);
 		free(c_type_digits);
 		free(c_type_scale);
+		free(s_name);
+		free(o_name);
 		if (mnstr_errnr(sqlf) != MNSTR_NO__ERROR)
 			goto bailout;
 	}
