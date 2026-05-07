@@ -39,7 +39,7 @@ CREATE TABLE sys.dependency_types (
     dependency_type_id   SMALLINT NOT NULL PRIMARY KEY,
     dependency_type_name VARCHAR(15) NOT NULL UNIQUE);
 
--- Values taken from sql/include/sql_catalog.h  see: #define SCHEMA_DEPENDENCY 1, TABLE_DEPENDENCY 2, ..., TYPE_DEPENDENCY 15.
+-- Values taken from sql/include/sql_catalog.h  see: #define SCHEMA_DEPENDENCY 1, TABLE_DEPENDENCY 2, ..., USTR_DEPENDENCY 16.
 INSERT INTO sys.dependency_types (dependency_type_id, dependency_type_name) VALUES
   (1, 'SCHEMA'),
   (2, 'TABLE'),
@@ -55,7 +55,8 @@ INSERT INTO sys.dependency_types (dependency_type_id, dependency_type_name) VALU
   (12, 'SEQUENCE'),
   (13, 'PROCEDURE'),
   (14, 'BE_DROPPED'),
-  (15, 'TYPE');
+  (15, 'TYPE'),
+  (16, 'USTR');
 
 ALTER TABLE sys.dependency_types SET READ ONLY;
 GRANT SELECT ON sys.dependency_types TO PUBLIC;

@@ -5775,6 +5775,7 @@ select 'null in fkeys.delete_action', delete_action, * from sys.fkeys where dele
 [ "sys.dependency_types",	13,	"PROCEDURE"	]
 [ "sys.dependency_types",	14,	"BE_DROPPED"	]
 [ "sys.dependency_types",	15,	"TYPE"	]
+[ "sys.dependency_types",	16,	"USTR"	]
 % .%2,	sys.%1,	sys.schemas # table_name
 % %2,	%1,	id # name
 % varchar,	bigint,	int # type
