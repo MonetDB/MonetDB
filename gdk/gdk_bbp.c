@@ -2058,6 +2058,13 @@ BBPexit(void)
 						HEAPdecref(b->theap, false);
 						b->theap = NULL;
 					}
+					if (b->ustr) {
+						--BBP_lrefs(b->ustr);
+						if (b->tvheap)
+							HEAPdecref(b->tvheap,
+								   false);
+						b->tvheap = NULL;
+					}
 					tp = VIEWvtparent(b);
 					if (tp != 0) {
 						--BBP_lrefs(tp);
