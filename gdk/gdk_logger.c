@@ -832,6 +832,7 @@ static gdk_return
 la_bat_updates(logger *lg, logaction *la, int tid)
 {
 	log_bid bid = internal_find_bat(lg, la->cid, tid);
+	log_bid ubid;
 	BAT *b = NULL;
 
 	if (bid < 0)
@@ -845,6 +846,9 @@ la_bat_updates(logger *lg, logaction *la, int tid)
 		b = BATdescriptor(bid);
 		if (b == NULL)
 			return GDK_FAIL;
+		ubid = b->ustr;
+	} else {
+		ubid = BBP_desc(bid)->ustr;
 	}
 	BUN cnt = 0;
 	if (la->type == LOG_UPDATE_BULK) {
@@ -918,13 +922,28 @@ la_bat_updates(logger *lg, logaction *la, int tid)
 		}
 	}
 	cnt = (BUN) (la->offset + la->nr);
-	if (la_bat_update_count(lg, la->cid, cnt, tid) != GDK_SUCCEED) {
+	if (la_bat_update_count(lg, la->cid, (lng) cnt, tid) != GDK_SUCCEED) {
 		if (b)
 			logbat_destroy(b);
 		return GDK_FAIL;
 	}
 	if (b)
 		logbat_destroy(b);
+	if (ubid != 0) {
+		BUN pos = log_find(lg->catalog_bid, lg->dcatalog, ubid);
+		if (pos == BUN_NONE)
+			return GDK_FAIL;
+		b = BATdescriptor(ubid);
+		if (b == NULL)
+			return GDK_FAIL;
+		MT_lock_set(&b->theaplock);
+		cnt = b->batCount;
+		MT_lock_unset(&b->theaplock);
+		BBPreclaim(b);
+		if (la_bat_update_count(lg, *(int*)Tloc(lg->catalog_id, pos),
+					(lng) cnt, tid) != GDK_SUCCEED)
+			return GDK_FAIL;
+	}
 	return GDK_SUCCEED;
 }
 
