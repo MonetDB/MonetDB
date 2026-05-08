@@ -117,7 +117,7 @@ KNOWNFAIL?7774-insert-into-renamed-table-assertion-failure
 7920-correlated-top-1-subquery-bug
 7921-correlated-floor-ratio-bug
 KNOWNFAIL?7922-sum-overflow-error-bug
-KNOWNFAIL?7923-sum-decimal-conversion-overflow-bug
+7923-sum-decimal-conversion-overflow-bug
 KNOWNFAIL?7924-sum-double-overflow-bug
 KNOWNFAIL?7925-inconsistent-compare-varchar-to-bte-bug
 KNOWNFAIL?7926-lag-null-changes-error-issue
