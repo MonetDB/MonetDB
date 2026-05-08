@@ -3599,7 +3599,7 @@ exps_inout(sql_subfunc *f, list *exps)
 void
 exps_largest_int(sql_subfunc *f, list *exps, lng cnt)
 {
-	if (!f->func->res || cnt == 0)
+	if (!f->func->res || (cnt == 0 && f->func->type == F_AGGR))
 		return;
 	sql_subtype *res = f->res->h->data;
 	if (res->type->eclass != EC_DEC && res->type->eclass != EC_NUM)
@@ -3624,6 +3624,8 @@ exps_largest_int(sql_subfunc *f, list *exps, lng cnt)
 		break;
 	}
 	digits += mdigits;
+	if (f->func->type == F_ANALYTIC)
+		largesttype = res->type;
 	if (largesttype && digits <= largesttype->digits)
 		sql_init_subtype(res, largesttype, digits, scale);
 	else if (is_decimal)
