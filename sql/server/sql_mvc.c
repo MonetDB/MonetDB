@@ -1511,7 +1511,7 @@ mvc_ustr(mvc *m, sql_schema *s, sql_column *col, dlist *l)
 	if (sname != NULL && (s = mvc_bind_schema(m, sname)) == NULL)
 		return -4;
 	TRC_DEBUG(SQL_TRANS, "Ustr: %s %s.%s\n", col->base.name, s->base.name, uname);
-	if (col->type.type->eclass != EC_STRING)
+	if (!EC_VARCHAR(col->type.type->eclass))
 		return -5;
 	sql_ustr *u = find_sql_ustr(m->session->tr, s, uname);
 	if (u == NULL)
