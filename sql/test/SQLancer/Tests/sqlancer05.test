@@ -690,7 +690,7 @@ NULL
 
 query T rowsort
 select t2.c1 from v0, t2 right outer join (values (least(ifthenelse(false, '', '47940718'), sql_max('栩', 'U*>Kz0')),
-case cast(interval '-165227345' month as string) when "insert"('f3', 0.57506007, -1550051844, '0.06527867754732408')
+case cast(interval '-165227345' month as string) when "insert"('f3', 057506007, -1550051844, '0.06527867754732408')
 then 'u' when '2033856974' then case when true then '' when false then '-1543387917' when true then '0.4055556886118663'
 when false then 'c' else 'E\n' end end)) as sub0 on nullif(not (false), (t2.c1) not between asymmetric (t2.c1) and (t2.c1))
 where case ((50)*(1836147184)) when least(5110, 1303739364) then (false) = false when 3 then least(true, true) when

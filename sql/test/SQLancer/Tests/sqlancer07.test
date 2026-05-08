@@ -500,7 +500,7 @@ statement ok
 create view v0(c0) as (values (((-839450346)||(0.2907855)))) with check option
 
 statement ok
-create view v1(c0) as (with cte0(c0) as (values (case when ((true)or(true)) then ((0.75)&(0.16181643)) else 0.5068248 end)) select all 0.48 from t1, v0, t2,t0,cte0)
+create view v1(c0) as (with cte0(c0) as (values (case when ((true)or(true)) then ((075)&(016181643)) else 0.5068248 end)) select all 0.48 from t1, v0, t2,t0,cte0)
 
 statement ok
 create view v2(c0) as (select distinct interval '883554454' month from t1, t2) with check option

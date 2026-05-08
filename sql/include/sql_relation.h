@@ -310,6 +310,7 @@ typedef struct relation {
 	 card:2,	/* 0, 1 (row), 2 aggr, 3 */
 	 dependent:1, 	/* dependent join */
 	 distinct:1,
+	 fv_distinct:1,	/* set during general unnest */
 	 processed:1,   /* fully processed or still in the process of building */
 	 outer:1,	/* used as outer (ungrouped) */
 	 grouped:1,	/* groupby processed all the group by exps */

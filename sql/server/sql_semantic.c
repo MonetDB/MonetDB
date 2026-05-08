@@ -595,6 +595,9 @@ score_func( sql_func *f, list *tl, bool exact, bool *downcast)
 		if (nr_strconverts > 1)
 			return 0;
 
+		if (f->fix_scale == SCALE_NONE && a->type.type->eclass == EC_NUM && t->type->eclass == EC_DEC)
+			/* no automatic conversions into numerics for fixed (SCALE_NONE) functions */
+			return 0;
 		if (f->fix_scale == SCALE_FIX && a->type.type->eclass == EC_DEC && digits > a->type.type->digits) /* doesn't fit */
 			return 0;
 		/* sql types equal but implementation differences */
