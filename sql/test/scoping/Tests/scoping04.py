@@ -76,21 +76,21 @@ try:
     cur1.execute('ALTER USER myuser SCHEMA PATH \'"sc1\';')
     sys.stderr.write("Exception expected")
 except pymonetdb.DatabaseError as e:
-    if "A schema path cannot end inside inside a schema name" not in str(e):
-        sys.stderr.write("Error: \"A schema path cannot end inside inside a schema name\" expected")
+    if "A schema path cannot end inside a schema name" not in str(e):
+        sys.stderr.write(f'Error: "A schema path cannot end inside a schema name" expected, received: "{str(e)}"')
 try:
     cur1.execute('ALTER USER myuser SCHEMA PATH \'""\';')
     sys.stderr.write("Exception expected")
 except pymonetdb.DatabaseError as e:
     if "A schema name cannot be empty" not in str(e):
-        sys.stderr.write("Error: \"A schema name cannot be empty\" expected")
+        sys.stderr.write(f'Error: "A schema name cannot be empty" expected, received: "{str(e)}"')
 try:
     mylongname = 'a' * 1023
     cur1.execute('ALTER USER myuser SCHEMA PATH \'"%s"\';' % mylongname) # not allowed
     sys.stderr.write("Exception expected")
 except pymonetdb.DatabaseError as e:
     if "A schema has up to 1023 characters" not in str(e):
-        sys.stderr.write("Error: \"A schema has up to 1023 characters\" expected")
+        sys.stderr.write(f'Error: "A schema has up to 1023 characters" expected, received "{str(e)}"')
 
 mylongname = 'a' * 1022
 cur1.execute('ALTER USER myuser SCHEMA PATH \'"%s"\';' % mylongname) # allowed
@@ -114,8 +114,9 @@ client1.close()
 client1 = pymonetdb.connect(database=db, port=port, autocommit=True, username='myuser', password='1')
 cur1 = client1.cursor()
 cur1.execute('SELECT """"(), "🤓🤯🥶"(), ","();')
-if cur1.fetchall() != [(5,6,7)]:
-    sys.stderr.write('Expected result: [(5,6,7)]')
+r = cur1.fetchall()
+if r != [(5,6,7)]:
+    sys.stderr.write(f'Expected result: [(5,6,7)], received {r}')
 cur1.close()
 client1.close()
 
