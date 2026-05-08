@@ -2295,6 +2295,10 @@ ustr_column:
 		{
 			$$ = _symbol_create_list(SQL_USTR, $4);
 		}
+	|	USING qname
+		{
+			$$ = _symbol_create_list(SQL_USTR, $2);
+		}
 	;
 
 column_constraint:
