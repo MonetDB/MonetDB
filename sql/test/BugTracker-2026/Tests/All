@@ -119,7 +119,7 @@ KNOWNFAIL?7774-insert-into-renamed-table-assertion-failure
 KNOWNFAIL?7922-sum-overflow-error-bug
 7923-sum-decimal-conversion-overflow-bug
 KNOWNFAIL?7924-sum-double-overflow-bug
-KNOWNFAIL?7925-inconsistent-compare-varchar-to-bte-bug
+7925-inconsistent-compare-varchar-to-bte-bug
 KNOWNFAIL?7926-lag-null-changes-error-issue
 7927-ALGouterselect-assertion-failure
 KNOWNFAIL?7928-rel2bin_semijoin-assertion-failure
