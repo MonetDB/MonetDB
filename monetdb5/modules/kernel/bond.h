@@ -54,7 +54,6 @@ bond_upper_bound(bond_collection *bc, const BOND_ELEM_T *query_vals, BUN k)
 	oid *cands = bc->candidates, *tc = bc->tc;
 	dbl *dists = bc->dists, *td = bc->td;
 
-	// calc full distance for the sample across all dimensions
 	dbl res = 0;
 	for (int i = 0; i < bc->bsz; i++) {
 		tc[i] = i;
@@ -184,9 +183,13 @@ bond_search_fast(bond_collection *bc, const BOND_ELEM_T *query_vals,
 		}
 		k = write_pos;
 	}
+	// Set result BAT properties
 	BATsetcount(koids, k);
     koids->tsorted = false;
     koids->trevsorted = false;
+	koids->tnonil = true;
+    koids->tkey = true;
+
 	BATsetcount(kdist, k);
 	kdist->tsorted = false;
     kdist->trevsorted = false;
@@ -207,6 +210,7 @@ BONDknn(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) cntxt;
 	(void) mb;
+	BAT *oid_result = NULL, *dist_result = NULL;
 
 	lng k_lng = *getArgReference_lng(stk, pci, 2);
 	if (k_lng <= 0)
@@ -248,6 +252,33 @@ BONDknn(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		query_vals[i] = *(BOND_ELEM_T*)getArgReference(stk, pci, qarg);
 	}
 
+	size_t nvecs = BATcount(dim_bats[0]);
+	// if nvecs less than VS skip optimization all together
+	if (nvecs < VS) {
+		oid base = dim_bats[0]->hseqbase;
+		BAT *koids = COLnew(base, TYPE_oid, 0, TRANSIENT);
+		if (koids == NULL) {
+			ma_close(&ta_state);
+			return MAL_MALLOC_FAIL;
+		}
+		// candidates are all vectors
+		for (BUN i=0; i < nvecs; i++)
+			*(oid*) Tloc(koids, i) = i + base;
+
+		BATsetcount(koids, nvecs);
+		koids->tsorted = true;
+		koids->trevsorted = false;
+		koids->tkey = true;
+		koids->tnonil = true;
+
+		oid_result = koids;
+		*getArgReference_bat(stk, pci, 0) = oid_result->batCacheid;
+		*getArgReference_bat(stk, pci, 1) = bat_nil;
+		BBPkeepref(oid_result);
+		ma_close(&ta_state);
+		return MAL_SUCCEED;
+	}
+
 	/* Create BOND collection and search */
 	bond_collection *bc = bond_create(ta, dim_bats, ndims, k);
 	//lng T1 = GDKusec();
@@ -277,7 +308,6 @@ BONDknn(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	//printf("create upperbound order " LLFMT "\n", T1 - T0);
 	//T0 = T1;
 
-	BAT *oid_result = NULL, *dist_result = NULL;
 	char *rc = bond_search_fast(bc, query_vals, (BUN) k, dim_order, NULL, &oid_result, &dist_result);
 	//T1 = GDKusec();
 	//printf("search " LLFMT "\n", T1 - T0);
