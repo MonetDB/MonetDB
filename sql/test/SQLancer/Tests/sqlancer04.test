@@ -635,7 +635,7 @@ create view v3(vc0) as (values (not (('%') is not null)), (least(cast(1 as boole
 when cast(0 as string) then (true) is null when cast(9 as string(678)) then ((true)or(false)) end), (false)) with check option
 
 statement ok
-create view v20(vc0) as (values (((sql_max(2, 82072511062432451645065611))&(abs(025579435)))))
+create view v20(vc0) as (values (((sql_max(2, 0))&(abs(0)))))
 
 statement ok
 create view v37(vc0) as (values ('1837521830'), (replace(coalesce('4', '', '20', '0.5074455058602168'),
