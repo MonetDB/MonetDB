@@ -352,14 +352,14 @@
 #cmakedefine HAVE_HGE 1
 
 #ifdef HAVE_HGE
+/* define types int128_t and uint128_t for 128 bit integers in the style
+ * of stdint.h */
 #ifdef HAVE___INT128
-typedef __int128 hge;
-typedef unsigned __int128 uhge;
-#define SIZEOF_HGE SIZEOF___INT128
+typedef __int128 int128_t;
+typedef unsigned __int128 uint128_t;
 #elif defined(HAVE___INT128_T) && defined(HAVE___UINT128_T)
-typedef __int128_t hge;
-typedef __uint128_t uhge;
-#define SIZEOF_HGE SIZEOF___INT128_T
+typedef __int128_t int128_t;
+typedef __uint128_t uint128_t;
 #endif
 #endif
 

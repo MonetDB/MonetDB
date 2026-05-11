@@ -47,15 +47,16 @@
 # define stream_export extern
 #endif
 
+/* Does your compiler support `__attribute__' extension? */
+#if !defined(__has_attribute)
+#ifndef __attribute__
+#define __attribute__(...)
+#endif
+#endif
+
 /* Defines to help the compiler check printf-style format arguments.
  * These defines are also in our config.h, but we repeat them here so
  * that we don't need that for this file.*/
-#ifndef __GNUC__
-/* This feature is available in gcc versions 2.5 and later.  */
-# ifndef __attribute__
-#  define __attribute__(Spec)	/* empty */
-# endif
-#endif
 #if !defined(_MSC_VER) && !defined(_In_z_)
 # define _In_z_
 # define _Printf_format_string_
@@ -122,8 +123,8 @@ stream_export int mnstr_writeFlt(stream *s, float val); // sql_result.c/mapi10
 stream_export int mnstr_writeDbl(stream *s, double val); // sql_result.c/mapi10
 
 #ifdef HAVE_HGE
-stream_export int mnstr_readHge(stream *restrict s, hge *restrict val); // unused
-stream_export int mnstr_writeHge(stream *s, hge val); // sql_result.c/mapi10
+stream_export int mnstr_readHge(stream *restrict s, int128_t *restrict val); // unused
+stream_export int mnstr_writeHge(stream *s, int128_t val); // sql_result.c/mapi10
 #endif
 
 stream_export int mnstr_readBteArray(stream *restrict s, int8_t *restrict val, size_t cnt); // unused
@@ -138,8 +139,8 @@ stream_export int mnstr_writeIntArray(stream *restrict s, const int *restrict va
 stream_export int mnstr_readLngArray(stream *restrict s, int64_t *restrict val, size_t cnt); // unused
 stream_export int mnstr_writeLngArray(stream *restrict s, const int64_t *restrict val, size_t cnt); // unused
 #ifdef HAVE_HGE
-stream_export int mnstr_readHgeArray(stream *restrict s, hge *restrict val, size_t cnt); // unused
-stream_export int mnstr_writeHgeArray(stream *restrict s, const hge *restrict val, size_t cnt); // unused
+stream_export int mnstr_readHgeArray(stream *restrict s, int128_t *restrict val, size_t cnt); // unused
+stream_export int mnstr_writeHgeArray(stream *restrict s, const int128_t *restrict val, size_t cnt); // unused
 #endif
 stream_export int mnstr_printf(stream *restrict s, _In_z_ _Printf_format_string_ const char *restrict format, ...) // USED all over
 	__attribute__((__format__(__printf__, 2, 3)));

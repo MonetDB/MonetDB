@@ -18,7 +18,7 @@
 #include <float.h>		/* for FLT_MAX */
 
 #ifdef HAVE_HGE
-#define MAXBIGNUM10	(((uhge) UINT64_C(0x1999999999999999) << 64) | ((uhge) UINT64_C(0x9999999999999999)))
+#define MAXBIGNUM10	(((uint128_t) UINT64_C(0x1999999999999999) << 64) | ((uint128_t) UINT64_C(0x9999999999999999)))
 #define MAXBIGNUMLAST	'5'
 #else
 #define MAXBIGNUM10	(UINT64_MAX / 10)
@@ -35,7 +35,7 @@ typedef struct {
 				 * i.e. multiply with power of 10) */
 	uint8_t sign;		/* 1 pos, 0 neg */
 #ifdef HAVE_HGE
-	uhge val;		/* the value (128 bits) */
+	uint128_t val;		/* the value (128 bits) */
 #else
 	uint64_t val;		/* the value (64 bits) */
 #endif
@@ -1329,7 +1329,7 @@ ODBCFetch(ODBCStmt *stmt,
 			for (n = 0, f = 1; n < nval.scale; n++)
 				f *= 10;
 #ifdef HAVE_HGE
-			uhge v = nval.val / f;
+			uint128_t v = nval.val / f;
 			if (v > UINT64_MAX) {
 				/* Numeric value out of range */
 				addStmtError(stmt, "22003", NULL, 0);

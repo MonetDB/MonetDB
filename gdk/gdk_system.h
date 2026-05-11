@@ -147,7 +147,6 @@ enum MT_thr_detach { MT_THR_JOINABLE, MT_THR_DETACHED };
 #define MT_NAME_LEN	32	/* length of thread/semaphore/etc. names */
 
 #define UNKNOWN_THREAD "unknown thread"
-typedef int64_t lng;
 
 typedef struct QryCtx {
 	lng starttime;
