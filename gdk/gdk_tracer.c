@@ -388,7 +388,7 @@ GDKtracer_get_component_level(const char *comp)
 		GDKerror("unknown component\n");
 		return NULL;
 	}
-	return level_str[ATOMIC_GET(&lvl_per_component[component])];
+	return level_str[ATOMIC_GET(&lvl_per_component[component])] + 2;
 }
 
 
