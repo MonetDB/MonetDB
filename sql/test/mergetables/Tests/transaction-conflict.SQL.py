@@ -1,16 +1,26 @@
 from MonetDBtesting import tpymonetdb as pymonetdb
-import os, sys, threading
+import os
+import sys
+import threading
 
 """
-Attempt to modify a merge table in a conflicting transaction. After the rollback, the table's contents must be cleaned
+Attempt to modify a merge table in a conflicting transaction. After the
+rollback, the table's contents must be cleaned
 """
+
+barrier1 = threading.Barrier(2)
+barrier2 = threading.Barrier(2)
+
 
 class MergeTableWriter(threading.Thread):
-    def __init__(self, barrier1, barrier2):
-        self._wconn = pymonetdb.connect(port = int(os.getenv('MAPIPORT', '50000')), database = os.getenv('TSTDB', 'demo'), hostname = os.getenv('MAPIHOST', 'localhost'), autocommit=True)
+    def __init__(self):
+        self._wconn = pymonetdb.connect(port=int(os.getenv('MAPIPORT',
+                                                           '50000')),
+                                        database=os.getenv('TSTDB', 'demo'),
+                                        hostname=os.getenv('MAPIHOST',
+                                                           'localhost'),
+                                        autocommit=True)
         self._wcursor = self._wconn.cursor()
-        self._barrier1 = barrier1
-        self._barrier2 = barrier2
         threading.Thread.__init__(self)
 
     def run(self):
@@ -26,10 +36,12 @@ class MergeTableWriter(threading.Thread):
         self._wcursor.close()
         self._wconn.close()
 
-conn = pymonetdb.connect(port = int(os.getenv('MAPIPORT', '50000')), database = os.getenv('TSTDB', 'demo'), hostname = os.getenv('MAPIHOST', 'localhost'), autocommit=True)
+
+conn = pymonetdb.connect(port=int(os.getenv('MAPIPORT', '50000')),
+                         database=os.getenv('TSTDB', 'demo'),
+                         hostname=os.getenv('MAPIHOST', 'localhost'),
+                         autocommit=True)
 cursor = conn.cursor()
-barrier1 = threading.Barrier(2)
-barrier2 = threading.Barrier(2)
 
 cursor.execute("""
 START TRANSACTION;
@@ -41,7 +53,7 @@ CREATE TABLE "part"("col1" int);
 COMMIT;
 """)
 
-mtwriter = MergeTableWriter(barrier1, barrier2)
+mtwriter = MergeTableWriter()
 mtwriter.start()
 
 i = 0
