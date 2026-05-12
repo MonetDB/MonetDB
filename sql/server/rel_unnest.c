@@ -87,7 +87,7 @@ is_distinct_set(mvc *sql, sql_rel *rel, list *ad, bool need_join)
 	distinct = need_distinct(rel);
 	if (need_join)
 		distinct &= rel->fv_distinct;
-	if (is_project(rel->op) && rel->l && !distinct)
+	if (is_project(rel->op) && rel->l && !distinct && !is_munion(rel->op))
 		distinct = is_distinct_set(sql, rel->l, ad, need_join);
 	if (is_semi(rel->op))
 		distinct = is_distinct_set(sql, rel->l, ad, need_join);

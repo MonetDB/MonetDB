@@ -67,11 +67,11 @@ extern "C" {
 #define mapi_export extern
 #endif
 
-#ifndef __GNUC__
-/* This feature is available in gcc versions 2.5 and later.  */
-# ifndef __attribute__
-#  define __attribute__(Spec)	/* empty */
-# endif
+/* Does your compiler support `__attribute__' extension? */
+#if !defined(__has_attribute)
+#ifndef __attribute__
+#define __attribute__(...)
+#endif
 #endif
 
 /* connection-oriented functions */

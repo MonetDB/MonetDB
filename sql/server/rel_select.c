@@ -542,7 +542,7 @@ rel_get_count(sql_rel *rel)
 	return 0;
 }
 
-#define is_sum_aggr(f) (f->type == F_AGGR && strcmp(f->base.name, "sum") == 0)
+#define is_sum_aggr(f) ((f->type == F_AGGR || f->type == F_ANALYTIC) && strcmp(f->base.name, "sum") == 0)
 
 list *
 check_arguments_and_find_largest_any_type(mvc *sql, sql_rel *rel, list *exps, sql_subfunc *sf, int maybe_zero_or_one, bool internal)
@@ -623,7 +623,9 @@ check_arguments_and_find_largest_any_type(mvc *sql, sql_rel *rel, list *exps, sq
 	/* handle any extra arguments for rel_dump/analytic funcs */
 	for ( ; n; n = n->next)
 		append(nexps, n->data);
-	if (sf->func->fix_scale == SCALE_FIX || IS_ANALYTIC(sf->func)) {
+	if (is_sum_aggr(sf->func)) {
+		exps_largest_int(sf, nexps, rel_get_count(rel));
+	} else if (sf->func->fix_scale == SCALE_FIX || IS_ANALYTIC(sf->func)) {
 		exps_scale_fix(sf, nexps, atp);
 	} else if (sf->func->fix_scale == MAX_BITS) {
 		exps_max_bits(sf, nexps);
@@ -636,8 +638,7 @@ check_arguments_and_find_largest_any_type(mvc *sql, sql_rel *rel, list *exps, sq
 		exps_digits_add(sf, nexps);
 	} else if (sf->func->fix_scale == INOUT) {
 		exps_inout(sf, nexps);
-	} else if (is_sum_aggr(sf->func))
-		exps_largest_int(sf, nexps, rel_get_count(rel));
+	}
 
 	/* dirty hack */
 	if (sf->func->type != F_PROC && sf->func->type != F_UNION && sf->func->type != F_LOADER && res) {
@@ -5577,7 +5578,7 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 
 	types = exp_types(sql->sa, fargs);
 	wf = bind_func_(sql, sname, aname, types, F_ANALYTIC, false, &found, false);
-	if (wf && !list_empty(fargs) && !(fargs = check_arguments_and_find_largest_any_type(sql, NULL, fargs, wf, 0, false)))
+	if (wf && !list_empty(fargs) && !(fargs = check_arguments_and_find_largest_any_type(sql, p, fargs, wf, 0, false)))
 		wf = NULL;
 	if (!wf) {
 		allocator_state ta_state = ma_open(ta);

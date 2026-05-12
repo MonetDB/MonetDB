@@ -385,7 +385,7 @@ SQLexecPostLoginTriggers(Client c)
 						c->curprg = curprg;
 						ma_destroy(m->sa);
 						m->sa = sa;
-						throw(SQL, "sql.SQLexecPostLoginTriggers", SQLSTATE(4200) "%s", "generating MAL failed");
+						throw(SQL, "sql.SQLexecPostLoginTriggers", SQLSTATE(42000) "%s", "generating MAL failed");
 					}
 
 					msg = SQLoptimizeQuery(c, c->curprg->def);
@@ -668,7 +668,7 @@ SQLinit(Client c, const char *initpasswd)
 	}
 
 	if ((opt_pipe = GDKgetenv("sql_optimizer")) && !isOptimizerPipe(opt_pipe))
-		throw(SQL, "sql.init", SQLSTATE(42000) "invalid sql optimizer pipeline %s", opt_pipe);
+		throw(SQL, "sql.init", SQLSTATE(22023) "invalid sql optimizer pipeline '%s'", opt_pipe);
 
 	MT_lock_set(&sql_contextLock);
 

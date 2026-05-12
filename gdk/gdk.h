@@ -55,12 +55,24 @@
 
 /* Only ever compare with GDK_SUCCEED, never with GDK_FAIL, and do not
  * use as a Boolean. */
-typedef enum { GDK_FAIL, GDK_SUCCEED } gdk_return;
+typedef enum gdk_return { GDK_FAIL, GDK_SUCCEED } gdk_return;
+
+/* basic GDK types */
+typedef bool msk;
+typedef int8_t bit;
+typedef int8_t bte;
+typedef int16_t sht;
+typedef int64_t lng;
+typedef uint64_t ulng;
+#ifdef HAVE_HGE
+typedef int128_t hge;
+typedef uint128_t uhge;
+#endif
 
 typedef struct allocator allocator;
 /* checkpoint or snapshot of allocator internal state we can use
  * to restore to a point in time */
-typedef struct {
+typedef struct allocator_state {
 	size_t nr;
 	size_t used;
 	size_t objects;
@@ -167,12 +179,6 @@ enum {
 	TYPE_any = 255,		/* limit types to <255! */
 };
 
-typedef bool msk;
-typedef int8_t bit;
-typedef int8_t bte;
-typedef int16_t sht;
-/* typedef int64_t lng; -- defined in gdk_system.h */
-typedef uint64_t ulng;
 typedef union {
 	uint32_t align;		/* force alignment, only used for equality */
 	uint8_t quad[4] __attribute__((__nonstring__));
@@ -235,6 +241,12 @@ gdk_export size_t blobsize(size_t nitems) __attribute__((__const__));
 #define ULLFMT			"%" PRIu64
 #define LLSCN			"%" SCNd64
 #define ULLSCN			"%" SCNu64
+
+#ifdef HAVE_HGE
+#define SIZEOF_HGE		16
+/* constants, printf format, scanf format: not supported for 128 bit
+ * integers */
+#endif
 
 typedef oid var_t;		/* type used for heap index of var-sized BAT */
 #define SIZEOF_VAR_T	SIZEOF_OID
