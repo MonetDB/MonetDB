@@ -196,7 +196,7 @@ strLocate(Heap *h, const char *v)
 	/* search the linked list */
 	for (ref = ((stridx_t *) h->base) + off; *ref; ref = next) {
 		next = (stridx_t *) (h->base + *ref);
-		if (strcmp(v, (str) (next + 1)) == 0)
+		if (strcmp(v, (char *) (next + 1)) == 0)
 			return (var_t) ((sizeof(stridx_t) + *ref));	/* found */
 	}
 	return (var_t) -2;
@@ -753,11 +753,11 @@ strToStr(allocator *ma, char **restrict dst, size_t *restrict len, const char *r
 	}
 }
 
-str
-strRead(allocator *ma, str A, size_t *dstlen, stream *s, size_t cnt)
+char *
+strRead(allocator *ma, char *A, size_t *dstlen, stream *s, size_t cnt)
 {
 	int len;
-	str a = A;
+	char *a = A;
 
 	(void) cnt;
 	assert(cnt == 1);
@@ -812,7 +812,7 @@ concat_strings(allocator *ma, BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 	oid gid;
 	BUN i, p, nils = 0;
 	size_t *restrict lengths = NULL, separator_length = 0, next_length;
-	str *restrict astrings = NULL;
+	char **restrict astrings = NULL;
 	BATiter bi, bis = {0};
 	BAT *bn = NULL;
 	gdk_return rres = GDK_FAIL;
@@ -976,7 +976,7 @@ concat_strings(allocator *ma, BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 		/* first used to calculated the total length of
 		 * each group, then the the total offset */
 		lengths = ma_zalloc(ta, ngrp * sizeof(*lengths));
-		astrings = ma_alloc(ta, ngrp * sizeof(str));
+		astrings = ma_alloc(ta, ngrp * sizeof(char *));
 		if (lengths == NULL || astrings == NULL) {
 			goto finish;
 		}
@@ -1249,13 +1249,12 @@ done:
 		if (empty) {						\
 			if (single_str == NULL) { /* reuse the same buffer, resize it when needed */ \
 				max_group_length = 1;			\
-				if ((single_str = GDKmalloc(max_group_length + 1)) == NULL) \
+				if ((single_str = ma_alloc(ta, max_group_length + 1)) == NULL) \
 					goto allocation_error;		\
-			} else if (1 > max_group_length) {		\
+			} else if (max_group_length < 1) {		\
 				max_group_length = 1;			\
-				if ((next_single_str = GDKrealloc(single_str, max_group_length + 1)) == NULL) \
+				if ((single_str = ma_realloc(ta, single_str, 1, max_group_length + 1)) == NULL) \
 					goto allocation_error;		\
-				single_str = next_single_str;		\
 			}						\
 			strcpy(single_str, str_nil);			\
 			has_nils = true;				\
@@ -1263,13 +1262,12 @@ done:
 			empty = true;					\
 			if (single_str == NULL) { /* reuse the same buffer, resize it when needed */ \
 				max_group_length = next_group_length;	\
-				if ((single_str = GDKmalloc(max_group_length + 1)) == NULL) \
+				if ((single_str = ma_alloc(ta, max_group_length + 1)) == NULL) \
 					goto allocation_error;		\
 			} else if (next_group_length > max_group_length) { \
-				max_group_length = next_group_length;	\
-				if ((next_single_str = GDKrealloc(single_str, max_group_length + 1)) == NULL) \
+				if ((single_str = ma_realloc(ta, single_str, next_group_length + 1, max_group_length + 1)) == NULL) \
 					goto allocation_error;		\
-				single_str = next_single_str;		\
+				max_group_length = next_group_length;	\
 			}						\
 									\
 			for (oid m = START; m < END; m++) {		\
@@ -1404,8 +1402,10 @@ GDKanalytical_str_group_concat(BAT *r, BAT *p, BAT *o, BAT *b, BAT *sep, BAT *s,
 	BATiter ei = bat_iterator(e);
 	oid i = 0, j = 0, k = 0, cnt = bi.count, *restrict start = si.base, *restrict end = ei.base;
 	bit *np = pi.base, *op = oi.base;
-	str single_str = NULL, next_single_str;
+	char *single_str = NULL;
 	size_t separator_length = 0, next_group_length, max_group_length = 0, next_length, offset;
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
 
 	assert((sep && !separator && bi.count == sepi.count) || (!sep && separator));
 	if (b->ttype != TYPE_str || r->ttype != TYPE_str || (sep && sep->ttype != TYPE_str)) {
@@ -1416,6 +1416,7 @@ GDKanalytical_str_group_concat(BAT *r, BAT *p, BAT *o, BAT *b, BAT *sep, BAT *s,
 		bat_iterator_end(&sepi);
 		bat_iterator_end(&si);
 		bat_iterator_end(&ei);
+		ma_close(&ta_state);
 		return GDK_FAIL;
 	}
 	if (sep && sepi.count == 1) { /* Only one element in sep */
@@ -1451,10 +1452,10 @@ GDKanalytical_str_group_concat(BAT *r, BAT *p, BAT *o, BAT *b, BAT *sep, BAT *s,
 	bat_iterator_end(&sepi);
 	bat_iterator_end(&si);
 	bat_iterator_end(&ei);
-	GDKfree(single_str);
 	BATsetcount(r, cnt);
 	r->tnonil = !has_nils;
 	r->tnil = has_nils;
+	ma_close(&ta_state);
 	return GDK_SUCCEED;
   allocation_error:
 	bat_iterator_end(&pi);
@@ -1463,7 +1464,7 @@ GDKanalytical_str_group_concat(BAT *r, BAT *p, BAT *o, BAT *b, BAT *sep, BAT *s,
 	bat_iterator_end(&sepi);
 	bat_iterator_end(&si);
 	bat_iterator_end(&ei);
-	GDKfree(single_str);
+	ma_close(&ta_state);
 	return GDK_FAIL;
   notimplemented:
 	bat_iterator_end(&pi);
@@ -1473,6 +1474,7 @@ GDKanalytical_str_group_concat(BAT *r, BAT *p, BAT *o, BAT *b, BAT *sep, BAT *s,
 	bat_iterator_end(&si);
 	bat_iterator_end(&ei);
 	GDKerror("str_group_concat not yet implemented for current row until unbounded case\n");
+	ma_close(&ta_state);
 	return GDK_FAIL;
 }
 
