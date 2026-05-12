@@ -3203,7 +3203,9 @@ BATdescriptor(bat i)
 			}
 		}
 		if (incref(i, false, false) > 0) {
+			bool loading = false;
 			if ((BBP_status(i) & BBPLOADED) == 0) {
+				loading = true;
 				b = getBBPdescriptor(i);
 				if (b == NULL) {
 					/* if loading failed, we need to
@@ -3225,6 +3227,8 @@ BATdescriptor(bat i)
 				MT_lock_unset(&u->theaplock);
 				MT_lock_unset(&b->theaplock);
 			}
+			CHECKDEBUG if (loading && b != NULL)
+				BATassertProps(b);
 		}
 		if (lock)
 			MT_lock_unset(&GDKswapLock(i));
@@ -3271,8 +3275,6 @@ getBBPdescriptor(bat i)
 		b = BATload_intern(i, false);
 
 		BBP_status_off(i, BBPLOADING);
-		CHECKDEBUG if (b != NULL)
-			BATassertProps(b);
 		MT_cond_broadcast(&GDKswapCond(i));
 	}
 	return b;
