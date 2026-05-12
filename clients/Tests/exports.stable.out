@@ -1703,8 +1703,8 @@ ssize_t mnstr_read(stream *restrict s, void *restrict buf, size_t elmsize, size_
 int mnstr_readBte(stream *restrict s, int8_t *restrict val);
 int mnstr_readBteArray(stream *restrict s, int8_t *restrict val, size_t cnt);
 int mnstr_readChr(stream *restrict s, char *restrict val);
-int mnstr_readHge(stream *restrict s, hge *restrict val);
-int mnstr_readHgeArray(stream *restrict s, hge *restrict val, size_t cnt);
+int mnstr_readHge(stream *restrict s, int128_t *restrict val);
+int mnstr_readHgeArray(stream *restrict s, int128_t *restrict val, size_t cnt);
 int mnstr_readInt(stream *restrict s, int *restrict val);
 int mnstr_readIntArray(stream *restrict s, int *restrict val, size_t cnt);
 int mnstr_readLng(stream *restrict s, int64_t *restrict val);
@@ -1724,8 +1724,8 @@ int mnstr_writeBteArray(stream *restrict s, const int8_t *restrict val, size_t c
 int mnstr_writeChr(stream *s, char val);
 int mnstr_writeDbl(stream *s, double val);
 int mnstr_writeFlt(stream *s, float val);
-int mnstr_writeHge(stream *s, hge val);
-int mnstr_writeHgeArray(stream *restrict s, const hge *restrict val, size_t cnt);
+int mnstr_writeHge(stream *s, int128_t val);
+int mnstr_writeHgeArray(stream *restrict s, const int128_t *restrict val, size_t cnt);
 int mnstr_writeInt(stream *s, int val);
 int mnstr_writeIntArray(stream *restrict s, const int *restrict val, size_t cnt);
 int mnstr_writeLng(stream *s, int64_t val);

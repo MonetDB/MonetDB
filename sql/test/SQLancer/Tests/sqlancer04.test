@@ -645,7 +645,7 @@ case 1108638173 when 1 then 'PS	' when 0.480478635864931780119491122604813426733
 statement ok
 create view v40(vc0) as (values ((true) not in (false, false)), ("isauuid"(case 8 when 4 then 'F&' when 0 then '&' end)))
 
-query I
+query I nosort
 select cast(sum(count) as bigint) from (select cast(greatest(false, true) as int) as count from v37 full outer join
 (select all ((((1074663557)%(0.8367095941704169)))%(v20.vc0 * 0.25281408194923194)), 0.573499282341099
 from v20 where ((((true)or(true)))or(true)) group by 2) as sub0 on
@@ -701,7 +701,7 @@ SELECT 1 FROM v7, v43 WHERE v7.vc1 ILIKE v43.vc1
 
 query RI rowsort
 SELECT median(ALL least(+ (0.26910993823565487748084024133277125656604766845703125),
-((6631138324737548828125)&(-1283341470)))), CASE WHEN NOT (FALSE) THEN
+((1138324737548828125)&(-1283341470)))), CASE WHEN NOT (FALSE) THEN
 least(-650735786, -1123683253) ELSE 1414135574 END FROM v7, v38, v43 RIGHT OUTER JOIN
 (SELECT ALL sql_max(CAST(v28.vc0 AS REAL), ifthenelse(v32.vc1, 56, 104)), ((CAST(v28.vc1 AS DOUBLE))*
 (CAST(TRUE AS TINYINT))), 'u''A#{' FROM v28, v32, v3) AS sub0 ON (((TRUE)AND(TRUE))) = TRUE

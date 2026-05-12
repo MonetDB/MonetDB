@@ -177,7 +177,7 @@ mnstr_writeDbl(stream *s, double val)
 
 #ifdef HAVE_HGE
 int
-mnstr_readHge(stream *restrict s, hge *restrict val)
+mnstr_readHge(stream *restrict s, int128_t *restrict val)
 {
 	if (s == NULL || val == NULL)
 		return 0;
@@ -195,7 +195,7 @@ mnstr_readHge(stream *restrict s, hge *restrict val)
 }
 
 int
-mnstr_writeHge(stream *s, hge val)
+mnstr_writeHge(stream *s, int128_t val)
 {
 	if (s == NULL || s->errkind != MNSTR_NO__ERROR)
 		return 0;
@@ -330,7 +330,7 @@ mnstr_writeLngArray(stream *restrict s, const int64_t *restrict val, size_t cnt)
 
 #ifdef HAVE_HGE
 int
-mnstr_readHgeArray(stream *restrict s, hge *restrict val, size_t cnt)
+mnstr_readHgeArray(stream *restrict s, int128_t *restrict val, size_t cnt)
 {
 	if (s == NULL || val == NULL)
 		return 0;
@@ -348,7 +348,7 @@ mnstr_readHgeArray(stream *restrict s, hge *restrict val, size_t cnt)
 }
 
 int
-mnstr_writeHgeArray(stream *restrict s, const hge *restrict val, size_t cnt)
+mnstr_writeHgeArray(stream *restrict s, const int128_t *restrict val, size_t cnt)
 {
 	if (s == NULL || s->errkind != MNSTR_NO__ERROR || val == NULL)
 		return 0;
