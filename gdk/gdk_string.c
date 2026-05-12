@@ -1225,88 +1225,109 @@ done:
 	return bn;
 }
 
-#define compute_next_single_str(START, END)				\
-	do {								\
-		for (oid m = START; m < END; m++) {			\
-			const char *sb = BUNtvar(bi, m);		\
-									\
-			if (!strNil(sb)) {				\
-				if (separator) {			\
-					next_group_length += strlen(sb); \
-					if (!empty)			\
-						next_group_length += separator_length; \
-				} else { /* sep case */			\
-					assert(sep != NULL);		\
-					const char *sl = BUNtvar(sepi, m); \
-									\
-					next_group_length += strlen(sb); \
-					if (!empty && !strNil(sl))	\
-						next_group_length += strlen(sl); \
-				}					\
-				empty = false;				\
-			}						\
-		}							\
-		if (empty) {						\
-			if (single_str == NULL) { /* reuse the same buffer, resize it when needed */ \
-				max_group_length = 1;			\
-				if ((single_str = ma_alloc(ta, max_group_length + 1)) == NULL) \
-					goto allocation_error;		\
-			} else if (max_group_length < 1) {		\
-				max_group_length = 1;			\
-				if ((single_str = ma_realloc(ta, single_str, 1, max_group_length + 1)) == NULL) \
-					goto allocation_error;		\
-			}						\
-			strcpy(single_str, str_nil);			\
-			has_nils = true;				\
-		} else {						\
-			empty = true;					\
-			if (single_str == NULL) { /* reuse the same buffer, resize it when needed */ \
-				max_group_length = next_group_length;	\
-				if ((single_str = ma_alloc(ta, max_group_length + 1)) == NULL) \
-					goto allocation_error;		\
-			} else if (next_group_length > max_group_length) { \
-				if ((single_str = ma_realloc(ta, single_str, next_group_length + 1, max_group_length + 1)) == NULL) \
-					goto allocation_error;		\
-				max_group_length = next_group_length;	\
-			}						\
-									\
-			for (oid m = START; m < END; m++) {		\
-				const char *sb = BUNtvar(bi, m);	\
-									\
-				if (strNil(sb))				\
-					continue;			\
-				if (separator) {			\
-					if (!empty) {			\
-						memcpy(single_str + offset, separator, separator_length); \
-						offset += separator_length; \
-					}				\
-				} else { /* sep case */			\
-					assert(sep != NULL);		\
-					const char *sl = BUNtvar(sepi, m); \
-									\
-					if (!empty && !strNil(sl)) {	\
-						next_length = strlen(sl); \
-						memcpy(single_str + offset, sl, next_length); \
-						offset += next_length;	\
-					}				\
-				}					\
-				next_length = strlen(sb);		\
-				memcpy(single_str + offset, sb, next_length); \
-				offset += next_length;			\
-				empty = false;				\
-			}						\
-									\
-			single_str[offset] = '\0';			\
-		}							\
-	} while (0)
+static gdk_return
+compute_next_single_str(size_t *mglp, char **ssp, bool *hnp,
+			allocator *ta,
+			size_t separator_length,
+			const char *restrict separator,
+			BATiter *sepi,
+			BATiter *bi,
+			oid start, oid end)
+{
+	size_t max_group_length = *mglp;
+	char *single_str = *ssp;
+	bool has_nils = *hnp;
+	size_t next_group_length = 0;
+	size_t next_length = 0;
+	size_t offset = 0;
+	bool empty = true;
+
+	for (oid m = start; m < end; m++) {
+		const char *sb = BUNtvar(*bi, m);
+
+		if (!strNil(sb)) {
+			if (separator) {
+				next_group_length += strlen(sb);
+				if (!empty)
+					next_group_length += separator_length;
+			} else { /* sep case */
+				assert(sep != NULL);
+				const char *sl = BUNtvar(*sepi, m);
+
+				next_group_length += strlen(sb);
+				if (!empty && !strNil(sl))
+					next_group_length += strlen(sl);
+			}
+			empty = false;
+		}
+	}
+	if (empty) {
+		if (single_str == NULL) { /* reuse the same buffer, resize it when needed */
+			max_group_length = 1;
+			if ((single_str = ma_alloc(ta, max_group_length + 1)) == NULL)
+				return GDK_FAIL;
+		} else if (max_group_length < 1) {
+			max_group_length = 1;
+			if ((single_str = ma_realloc(ta, single_str, 1, max_group_length + 1)) == NULL)
+				return GDK_FAIL;
+		}
+		strcpy(single_str, str_nil);
+		has_nils = true;
+	} else {
+		empty = true;
+		if (single_str == NULL) { /* reuse the same buffer, resize it when needed */
+			max_group_length = next_group_length;
+			if ((single_str = ma_alloc(ta, max_group_length + 1)) == NULL)
+				return GDK_FAIL;
+		} else if (next_group_length > max_group_length) {
+			if ((single_str = ma_realloc(ta, single_str, next_group_length + 1, max_group_length + 1)) == NULL)
+				return GDK_FAIL;
+			max_group_length = next_group_length;
+		}
+
+		for (oid m = start; m < end; m++) {
+			const char *sb = BUNtvar(*bi, m);
+
+			if (strNil(sb))
+				continue;
+			if (separator) {
+				if (!empty) {
+					memcpy(single_str + offset, separator, separator_length);
+					offset += separator_length;
+				}
+			} else { /* sep case */
+				assert(sep != NULL);
+				const char *sl = BUNtvar(*sepi, m);
+
+				if (!empty && !strNil(sl)) {
+					next_length = strlen(sl);
+					memcpy(single_str + offset, sl, next_length);
+					offset += next_length;
+				}
+			}
+			next_length = strlen(sb);
+			memcpy(single_str + offset, sb, next_length);
+			offset += next_length;
+			empty = false;
+		}
+
+		single_str[offset] = '\0';
+	}
+	*mglp = max_group_length;
+	*ssp = single_str;
+	*hnp = has_nils;
+	return GDK_SUCCEED;
+}
 
 #define ANALYTICAL_STR_GROUP_CONCAT_UNBOUNDED_TILL_CURRENT_ROW		\
 	do {								\
 		size_t slice_length = 0;				\
-		next_group_length = next_length = offset = 0;		\
-		empty = true;						\
-		compute_next_single_str(k, i); /* compute the entire string then slice it starting from the beginning */ \
-		empty = true;						\
+		if (compute_next_single_str(&max_group_length, &single_str, \
+					    &has_nils, ta, separator_length, \
+					    separator, &sepi, &bi, \
+					    k, i) != GDK_SUCCEED) /* compute the entire string then slice it starting from the beginning */ \
+			goto allocation_error;				\
+		bool empty = true;					\
 		for (; k < i;) {					\
 			const char *nsep;				\
 			oid m = k;					\
@@ -1349,9 +1370,11 @@ done:
 
 #define ANALYTICAL_STR_GROUP_CONCAT_ALL_ROWS				\
 	do {								\
-		next_group_length = next_length = offset = 0;		\
-		empty = true;						\
-		compute_next_single_str(k, i);				\
+		if (compute_next_single_str(&max_group_length, &single_str, \
+					    &has_nils, ta, separator_length, \
+					    separator, &sepi, &bi,	\
+					    k, i) != GDK_SUCCEED)	\
+			goto allocation_error;				\
 		for (; k < i; k++)					\
 			if (tfastins_nocheckVAR(r, k, single_str) != GDK_SUCCEED) \
 				goto allocation_error;			\
@@ -1370,9 +1393,12 @@ done:
 #define ANALYTICAL_STR_GROUP_CONCAT_OTHERS				\
 	do {								\
 		for (; k < i; k++) {					\
-			next_group_length = next_length = offset = 0;	\
-			empty = true;					\
-			compute_next_single_str(start[k], end[k]);	\
+			if (compute_next_single_str(&max_group_length,	\
+						    &single_str, &has_nils, \
+						    ta, separator_length, \
+						    separator, &sepi, &bi, \
+						    start[k], end[k]) != GDK_SUCCEED) \
+				goto allocation_error;			\
 			if (tfastins_nocheckVAR(r, k, single_str) != GDK_SUCCEED) \
 				goto allocation_error;			\
 		}							\
@@ -1393,7 +1419,7 @@ done:
 gdk_return
 GDKanalytical_str_group_concat(BAT *r, BAT *p, BAT *o, BAT *b, BAT *sep, BAT *s, BAT *e, const char *restrict separator, int frame_type)
 {
-	bool has_nils = false, empty;
+	bool has_nils = false;
 	BATiter pi = bat_iterator(p);
 	BATiter oi = bat_iterator(o);
 	BATiter bi = bat_iterator(b);
@@ -1403,7 +1429,7 @@ GDKanalytical_str_group_concat(BAT *r, BAT *p, BAT *o, BAT *b, BAT *sep, BAT *s,
 	oid i = 0, j = 0, k = 0, cnt = bi.count, *restrict start = si.base, *restrict end = ei.base;
 	bit *np = pi.base, *op = oi.base;
 	char *single_str = NULL;
-	size_t separator_length = 0, next_group_length, max_group_length = 0, next_length, offset;
+	size_t separator_length = 0, max_group_length = 0;
 	allocator *ta = MT_thread_getallocator();
 	allocator_state ta_state = ma_open(ta);
 
