@@ -51,8 +51,8 @@ while i < 3:
     cursor.execute('CREATE TABLE "dummy"(col1 int);')
     cursor.execute('DROP TABLE "dummy";')
     cursor.execute('COMMIT;')
-    barrier2.wait()
     barrier1.reset()
+    barrier2.wait()
     barrier2.reset()
     i += 1
 
