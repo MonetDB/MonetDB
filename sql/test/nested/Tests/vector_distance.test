@@ -22,5 +22,85 @@ select s from foo order by l2sq_distance(v, vector[0.5,0.5,0.5]) limit 2
 d
 b
 
+query I
+SELECT cos_distance(vector[1,2], vector[1,2])
+----
+0
+
+query I
+SELECT cos_distance(vector[1,2], vector[2,4])
+----
+0
+
+query I
+SELECT cos_distance(vector[1,0], vector[0,2])
+----
+1
+
+query R
+SELECT cos_distance(vector[1,1], vector[-1,-1])
+----
+2.000
+
+statement ok
+drop table foo
+
+statement ok
+create table foo (s string, v float vector[2])
+
+statement ok
+insert into foo values ('a', (1,0)), ('b', (0,2)), ('c', (-1,0))
+
+query R
+SELECT cos_distance(foo.v, vector[1,0]) from foo
+----
+0.000
+1.000
+2.000
+
+statement ok
+drop table foo
+
+### Manhattan/L1 distance ###
+
+query I
+SELECT l1_distance(vector[0,0], vector[3,4]);
+----
+7
+
+query I
+SELECT l1_distance(vector[0,0], vector[0,1]);
+----
+1
+
+query I
+SELECT l1_distance(vector[1,2,3,4], vector[1,2,3,4]);
+----
+0
+
+### Inner Product (IP) distance ###
+query I
+SELECT ip_distance(vector[1,2], vector[3,4]);
+----
+-10
+
+query I
+SELECT ip_distance(vector[1,1,1,1,1,1,1,1,1], vector[1,2,3,4,5,6,7,8,9]);
+----
+-44
+
+statement ok
+create table foo (id serial, v float vector[2])
+
+statement ok
+insert into foo(v) values ((1,0)), ((0,1)), ((1,1))
+
+query I
+select ip_distance(v, vector[1, 1]) from foo
+----
+0
+0
+-1
+
 statement ok
 drop table foo
