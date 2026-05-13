@@ -1251,7 +1251,6 @@ compute_next_single_str(size_t *mglp, char **ssp, bool *hnp,
 				if (!empty)
 					next_group_length += separator_length;
 			} else { /* sep case */
-				assert(sep != NULL);
 				const char *sl = BUNtvar(*sepi, m);
 
 				next_group_length += strlen(sb);
@@ -1296,7 +1295,6 @@ compute_next_single_str(size_t *mglp, char **ssp, bool *hnp,
 					offset += separator_length;
 				}
 			} else { /* sep case */
-				assert(sep != NULL);
 				const char *sl = BUNtvar(*sepi, m);
 
 				if (!empty && !strNil(sl)) {
