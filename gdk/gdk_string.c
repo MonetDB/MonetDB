@@ -1319,102 +1319,14 @@ compute_next_single_str(size_t *mglp, char **ssp, bool *hnp,
 	return GDK_SUCCEED;
 }
 
-#define ANALYTICAL_STR_GROUP_CONCAT_UNBOUNDED_TILL_CURRENT_ROW		\
-	do {								\
-		size_t slice_length = 0;				\
-		if (compute_next_single_str(&max_group_length, &single_str, \
-					    &has_nils, ta, separator_length, \
-					    separator, &sepi, &bi, \
-					    k, i) != GDK_SUCCEED) /* compute the entire string then slice it starting from the beginning */ \
-			goto allocation_error;				\
-		bool empty = true;					\
-		for (; k < i;) {					\
-			const char *nsep;				\
-			oid m = k;					\
-			j = k;						\
-			do {						\
-				k++;					\
-			} while (k < i && !op[k]);			\
-			for (; j < k; j++) {				\
-				const char *nstr = BUNtvar(bi, j);	\
-				if (!strNil(nstr)) {			\
-					slice_length += strlen(nstr);	\
-					if (!empty) {			\
-						if (separator) {	\
-							nsep = (const char *) separator; \
-						} else { /* sep case */	\
-							assert(sep != NULL); \
-							nsep = BUNtvar(sepi, j); \
-						}			\
-						if (!strNil(nsep))	\
-							slice_length += strlen(nsep); \
-					}				\
-					empty = false;			\
-				}					\
-			}						\
-			if (empty) {					\
-				for (j = m; j < k; j++)			\
-					if (tfastins_nocheckVAR(r, j, str_nil) != GDK_SUCCEED) \
-						goto allocation_error;	\
-				has_nils = true;			\
-			} else {					\
-				char save = single_str[slice_length];	\
-				single_str[slice_length] = '\0';	\
-				for (j = m; j < k; j++)			\
-					if (tfastins_nocheckVAR(r, j, single_str) != GDK_SUCCEED) \
-						goto allocation_error;	\
-				single_str[slice_length] = save;	\
-			}						\
-		}							\
-	} while (0)
-
-#define ANALYTICAL_STR_GROUP_CONCAT_ALL_ROWS				\
-	do {								\
-		if (compute_next_single_str(&max_group_length, &single_str, \
-					    &has_nils, ta, separator_length, \
-					    separator, &sepi, &bi,	\
-					    k, i) != GDK_SUCCEED)	\
-			goto allocation_error;				\
-		for (; k < i; k++)					\
-			if (tfastins_nocheckVAR(r, k, single_str) != GDK_SUCCEED) \
-				goto allocation_error;			\
-	} while (0)
-
-#define ANALYTICAL_STR_GROUP_CONCAT_CURRENT_ROW				\
-	do {								\
-		for (; k < i; k++) {					\
-			const char *next = BUNtvar(bi, k);		\
-			if (tfastins_nocheckVAR(r, k, next) != GDK_SUCCEED) \
-				goto allocation_error;			\
-			has_nils |= strNil(next);			\
-		}							\
-	} while (0)
-
-#define ANALYTICAL_STR_GROUP_CONCAT_OTHERS				\
-	do {								\
-		for (; k < i; k++) {					\
-			if (compute_next_single_str(&max_group_length,	\
-						    &single_str, &has_nils, \
-						    ta, separator_length, \
-						    separator, &sepi, &bi, \
-						    start[k], end[k]) != GDK_SUCCEED) \
-				goto allocation_error;			\
-			if (tfastins_nocheckVAR(r, k, single_str) != GDK_SUCCEED) \
-				goto allocation_error;			\
-		}							\
-	} while (0)
-
-#define ANALYTICAL_STR_GROUP_CONCAT_PARTITIONS(IMP)	\
-	do {						\
-		if (p) {				\
-			for (; i < cnt; i++) {		\
-				if (np[i])		\
-					IMP;		\
-			}				\
-		}					\
-		i = cnt;				\
-		IMP;					\
-	} while (0)
+/* these macros are copied from sql_catalog.h */
+#define FRAME_ROWS  0 		/* number of rows (preceding/following) */
+#define FRAME_RANGE 1		/* logical range (based on the ordering column) */
+#define FRAME_GROUPS 2
+#define FRAME_UNBOUNDED_TILL_CURRENT_ROW 3
+#define FRAME_CURRENT_ROW_TILL_UNBOUNDED 4
+#define FRAME_ALL 5
+#define FRAME_CURRENT_ROW 6
 
 gdk_return
 GDKanalytical_str_group_concat(BAT *r, BAT *p, BAT *o, BAT *b, BAT *sep, BAT *s, BAT *e, const char *restrict separator, int frame_type)
@@ -1455,20 +1367,105 @@ GDKanalytical_str_group_concat(BAT *r, BAT *p, BAT *o, BAT *b, BAT *sep, BAT *s,
 
 	if (cnt > 0) {
 		switch (frame_type) {
-		case 3: /* unbounded until current row */
-			ANALYTICAL_STR_GROUP_CONCAT_PARTITIONS(ANALYTICAL_STR_GROUP_CONCAT_UNBOUNDED_TILL_CURRENT_ROW);
+		case FRAME_UNBOUNDED_TILL_CURRENT_ROW:
+			for (i = p ? 0 : cnt; i <= cnt; i++) {
+				if (i == cnt || np[i]) {
+					size_t slice_length = 0;
+					if (compute_next_single_str(&max_group_length, &single_str,
+								    &has_nils, ta, separator_length,
+								    separator, &sepi, &bi,
+								    k, i) != GDK_SUCCEED) /* compute the entire string then slice it starting from the beginning */
+						goto allocation_error;
+					bool empty = true;
+					for (; k < i;) {
+						const char *nsep;
+						oid m = k;
+						j = k;
+						do {
+							k++;
+						} while (k < i && !op[k]);
+						for (; j < k; j++) {
+							const char *nstr = BUNtvar(bi, j);
+							if (!strNil(nstr)) {
+								slice_length += strlen(nstr);
+								if (!empty) {
+									if (separator) {
+										nsep = (const char *) separator;
+									} else { /* sep case */
+										assert(sep != NULL);
+										nsep = BUNtvar(sepi, j);
+									}
+									if (!strNil(nsep))
+										slice_length += strlen(nsep);
+								}
+								empty = false;
+							}
+						}
+						if (empty) {
+							for (j = m; j < k; j++)
+								if (tfastins_nocheckVAR(r, j, str_nil) != GDK_SUCCEED)
+									goto allocation_error;
+							has_nils = true;
+						} else {
+							char save = single_str[slice_length];
+							single_str[slice_length] = '\0';
+							for (j = m; j < k; j++)
+								if (tfastins_nocheckVAR(r, j, single_str) != GDK_SUCCEED)
+									goto allocation_error;
+							single_str[slice_length] = save;
+						}
+					}
+				}
+			}
 			break;
-		case 4: /* current row until unbounded */
+		case FRAME_CURRENT_ROW_TILL_UNBOUNDED:
 			goto notimplemented;
-		case 5: /* all rows */
-			ANALYTICAL_STR_GROUP_CONCAT_PARTITIONS(ANALYTICAL_STR_GROUP_CONCAT_ALL_ROWS);
+		case FRAME_ALL:
+			for (i = p ? 0 : cnt; i <= cnt; i++) {
+				if (i == cnt || np[i]) {
+					if (compute_next_single_str(&max_group_length, &single_str,
+								    &has_nils, ta, separator_length,
+								    separator, &sepi, &bi,
+								    k, i) != GDK_SUCCEED)
+						goto allocation_error;
+					for (; k < i; k++)
+						if (tfastins_nocheckVAR(r, k, single_str) != GDK_SUCCEED)
+							goto allocation_error;
+				}
+			}
 			break;
-		case 6: /* current row */
-			ANALYTICAL_STR_GROUP_CONCAT_PARTITIONS(ANALYTICAL_STR_GROUP_CONCAT_CURRENT_ROW);
+		case FRAME_CURRENT_ROW:
+			for (i = p ? 0 : cnt; i <= cnt; i++) {
+				if (i == cnt || np[i]) {
+					for (; k < i; k++) {
+						const char *next = BUNtvar(bi, k);
+						if (tfastins_nocheckVAR(r, k, next) != GDK_SUCCEED)
+							goto allocation_error;
+						has_nils |= strNil(next);
+					}
+				}
+			}
+			break;
+		case FRAME_ROWS:
+		case FRAME_RANGE:
+		case FRAME_GROUPS:
+			for (i = p ? 0 : cnt; i <= cnt; i++) {
+				if (i == cnt || np[i]) {
+					for (; k < i; k++) {
+						if (compute_next_single_str(&max_group_length,
+									    &single_str, &has_nils,
+									    ta, separator_length,
+									    separator, &sepi, &bi,
+									    start[k], end[k]) != GDK_SUCCEED)
+							goto allocation_error;
+						if (tfastins_nocheckVAR(r, k, single_str) != GDK_SUCCEED)
+							goto allocation_error;
+					}
+				}
+			}
 			break;
 		default:
-			ANALYTICAL_STR_GROUP_CONCAT_PARTITIONS(ANALYTICAL_STR_GROUP_CONCAT_OTHERS);
-			break;
+			MT_UNREACHABLE();
 		}
 	}
 
