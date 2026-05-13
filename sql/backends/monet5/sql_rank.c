@@ -1677,7 +1677,7 @@ SQLvar_pop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #define COVARIANCE_AND_CORRELATION_ONE_SIDE_UNBOUNDED_TILL_CURRENT_ROW(TPE) \
 	do {																\
 		TPE *restrict bp = (TPE*)di.base;								\
-		for (; k < i;) {												\
+		while (k < i) {													\
 			j = k;														\
 			do {														\
 				n += !is_##TPE##_nil(bp[k]);							\

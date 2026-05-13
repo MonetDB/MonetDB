@@ -929,7 +929,7 @@ GDKanalyticallead(BAT *b, BAT *p, BUN lead, const void *restrict default_value, 
 #define ANALYTICAL_MIN_MAX_CALC_FIXED_UNBOUNDED_TILL_CURRENT_ROW(TPE, MIN_MAX) \
 	do {								\
 		TPE curval = TPE##_nil;					\
-		for (; k < i;) {					\
+		while (k < i) {						\
 			j = k;						\
 			do {						\
 				if (!is_##TPE##_nil(bp[k])) {		\
@@ -1036,7 +1036,7 @@ GDKanalyticallead(BAT *b, BAT *p, BUN lead, const void *restrict default_value, 
 	do {								\
 		const void *curval = nil;				\
 		if (ATOMvarsized(tpe)) {				\
-			for (; k < i;) {				\
+			while (k < i) {					\
 				j = k;					\
 				do {					\
 					const void *next = BUNtvar(bi, k); \
@@ -1054,7 +1054,7 @@ GDKanalyticallead(BAT *b, BAT *p, BUN lead, const void *restrict default_value, 
 				has_nils |= atomeq(curval, nil);	\
 			}						\
 		} else {						\
-			for (; k < i;) {				\
+			while (k < i) {					\
 				j = k;					\
 				do {					\
 					const void *next = BUNtloc(bi, k); \
@@ -1367,7 +1367,7 @@ ANALYTICAL_MIN_MAX(max, MAX, <)
 	do {								\
 		curval = 0;						\
 		if (count_all) {					\
-			for (; k < i;) {				\
+			while (k < i) {					\
 				j = k;					\
 				do {					\
 					k++;				\
@@ -1377,7 +1377,7 @@ ANALYTICAL_MIN_MAX(max, MAX, <)
 					rb[j] = curval;			\
 			}						\
 		} else {						\
-			for (; k < i;) {				\
+			while (k < i) {					\
 				j = k;					\
 				do {					\
 					curval += !is_##TPE##_nil(bp[k]); \
@@ -1489,7 +1489,7 @@ ANALYTICAL_MIN_MAX(max, MAX, <)
 	do {								\
 		curval = 0;						\
 		if (count_all) {					\
-			for (; k < i;) {				\
+			while (k < i) {					\
 				j = k;					\
 				do {					\
 					k++;				\
@@ -1499,7 +1499,7 @@ ANALYTICAL_MIN_MAX(max, MAX, <)
 					rb[j] = curval;			\
 			}						\
 		} else {						\
-			for (; k < i; ) {				\
+			while (k < i) {					\
 				j = k;					\
 				do {					\
 					curval += !atomeq(BUNtail(bi, k), nil); \
@@ -1733,7 +1733,7 @@ cleanup:
 #define ANALYTICAL_SUM_IMP_NUM_UNBOUNDED_TILL_CURRENT_ROW(TPE1, TPE2)	\
 	do {								\
 		TPE2 curval = TPE2##_nil;				\
-		for (; k < i;) {					\
+		while (k < i) {						\
 			j = k;						\
 			do {						\
 				if (!is_##TPE1##_nil(bp[k])) {		\
@@ -2092,7 +2092,7 @@ nosupport:
 #define ANALYTICAL_PROD_CALC_NUM_UNBOUNDED_TILL_CURRENT_ROW(TPE1, TPE2, TPE3) \
 	do {								\
 		TPE2 curval = TPE2##_nil;				\
-		for (; k < i;) {					\
+		while (k < i) {						\
 			j = k;						\
 			do {						\
 				PROD_NUM(TPE1, TPE2, TPE3, bp[k]);	\
@@ -2199,7 +2199,7 @@ nosupport:
 #define ANALYTICAL_PROD_CALC_NUM_LIMIT_UNBOUNDED_TILL_CURRENT_ROW(TPE1, TPE2, REAL_IMP) \
 	do {								\
 		TPE2 curval = TPE2##_nil;				\
-		for (; k < i;) {					\
+		while (k < i) {						\
 			j = k;						\
 			do {						\
 				PROD_NUM_LIMIT(TPE1, TPE2, REAL_IMP, bp[k]); \
@@ -2295,7 +2295,7 @@ nosupport:
 #define ANALYTICAL_PROD_CALC_FP_UNBOUNDED_TILL_CURRENT_ROW(TPE1, TPE2, ARG3)	/* ARG3 is ignored here */ \
 	do {								\
 		TPE2 curval = TPE2##_nil;				\
-		for (; k < i;) {					\
+		while (k < i) {						\
 			j = k;						\
 			do {						\
 				PROD_FP(TPE1, TPE2, bp[k]);		\

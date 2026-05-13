@@ -3185,7 +3185,7 @@ string_writer(logger *lg, BAT *b, lng offset, lng nr)
 		return GDK_FAIL;
 	BATiter bi = bat_iterator(b);
 	BUN p = (BUN) offset;
-	for (; p < end;) {
+	while (p < end) {
 		size_t sz = 0;
 		if (resize) {
 			if ((buf = GDKrealloc(lg->wbuf, resize)) == NULL) {

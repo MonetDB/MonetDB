@@ -1375,7 +1375,7 @@ GDKanalytical_str_group_concat(BAT *r, BAT *p, BAT *o, BAT *b, BAT *sep, BAT *s,
 								    k, i) != GDK_SUCCEED) /* compute the entire string then slice it starting from the beginning */
 						goto allocation_error;
 					bool empty = true;
-					for (; k < i;) {
+					while (k < i) {
 						const char *nsep;
 						oid m = k;
 						j = k;
