@@ -1326,8 +1326,8 @@ compute_next_single_str(size_t *mglp, char **ssp, bool *hnp,
 #define FRAME_ALL 5
 #define FRAME_CURRENT_ROW 6
 
-gdk_return
-GDKanalytical_str_group_concat(BAT *r, BAT *p, BAT *o, BAT *b, BAT *sep, BAT *s, BAT *e, const char *restrict separator, int frame_type)
+BAT *
+GDKanalytical_str_group_concat(BAT *b, BAT *p, BAT *o, BAT *sep, BAT *s, BAT *e, const char *restrict separator, int frame_type)
 {
 	bool has_nils = false;
 	BATiter pi = bat_iterator(p);
@@ -1340,9 +1340,10 @@ GDKanalytical_str_group_concat(BAT *r, BAT *p, BAT *o, BAT *b, BAT *sep, BAT *s,
 	size_t separator_length = 0, max_group_length = 0;
 	allocator *ta = MT_thread_getallocator();
 	allocator_state ta_state = ma_open(ta);
+	BAT *bn = NULL;
 
 	assert((sep && !separator && bi.count == sepi.count) || (!sep && separator));
-	if (b->ttype != TYPE_str || r->ttype != TYPE_str || (sep && sep->ttype != TYPE_str)) {
+	if (b->ttype != TYPE_str || (sep && sep->ttype != TYPE_str)) {
 		GDKerror("only string type is supported\n");
 		goto bailout;
 	}
@@ -1353,6 +1354,9 @@ GDKanalytical_str_group_concat(BAT *r, BAT *p, BAT *o, BAT *b, BAT *sep, BAT *s,
 
 	if (sep == NULL)
 		separator_length = strlen(separator);
+
+	if ((bn = COLnew(b->hseqbase, TYPE_str, bi.count, TRANSIENT)) == NULL)
+		goto bailout;
 
 	if (bi.count > 0) {
 		switch (frame_type) {
@@ -1397,7 +1401,7 @@ GDKanalytical_str_group_concat(BAT *r, BAT *p, BAT *o, BAT *b, BAT *sep, BAT *s,
 						}
 						if (empty) {
 							for (j = m; j < k; j++)
-								if (tfastins_nocheckVAR(r, j, str_nil) != GDK_SUCCEED) {
+								if (tfastins_nocheckVAR(bn, j, str_nil) != GDK_SUCCEED) {
 									bat_iterator_end(&oi);
 									goto bailout;
 								}
@@ -1406,7 +1410,7 @@ GDKanalytical_str_group_concat(BAT *r, BAT *p, BAT *o, BAT *b, BAT *sep, BAT *s,
 							char save = single_str[slice_length];
 							single_str[slice_length] = '\0';
 							for (j = m; j < k; j++)
-								if (tfastins_nocheckVAR(r, j, single_str) != GDK_SUCCEED) {
+								if (tfastins_nocheckVAR(bn, j, single_str) != GDK_SUCCEED) {
 									bat_iterator_end(&oi);
 									goto bailout;
 								}
@@ -1430,7 +1434,7 @@ GDKanalytical_str_group_concat(BAT *r, BAT *p, BAT *o, BAT *b, BAT *sep, BAT *s,
 								    k, i) != GDK_SUCCEED)
 						goto bailout;
 					for (; k < i; k++)
-						if (tfastins_nocheckVAR(r, k, single_str) != GDK_SUCCEED)
+						if (tfastins_nocheckVAR(bn, k, single_str) != GDK_SUCCEED)
 							goto bailout;
 				}
 			}
@@ -1440,7 +1444,7 @@ GDKanalytical_str_group_concat(BAT *r, BAT *p, BAT *o, BAT *b, BAT *sep, BAT *s,
 				if (i == bi.count || np[i]) {
 					for (; k < i; k++) {
 						const char *next = BUNtvar(&bi, k);
-						if (tfastins_nocheckVAR(r, k, next) != GDK_SUCCEED)
+						if (tfastins_nocheckVAR(bn, k, next) != GDK_SUCCEED)
 							goto bailout;
 						has_nils |= strNil(next);
 					}
@@ -1463,7 +1467,7 @@ GDKanalytical_str_group_concat(BAT *r, BAT *p, BAT *o, BAT *b, BAT *sep, BAT *s,
 							bat_iterator_end(&ei);
 							goto bailout;
 						}
-						if (tfastins_nocheckVAR(r, k, single_str) != GDK_SUCCEED) {
+						if (tfastins_nocheckVAR(bn, k, single_str) != GDK_SUCCEED) {
 							bat_iterator_end(&ei);
 							goto bailout;
 						}
@@ -1478,23 +1482,24 @@ GDKanalytical_str_group_concat(BAT *r, BAT *p, BAT *o, BAT *b, BAT *sep, BAT *s,
 		}
 	}
 
-	BATsetcount(r, bi.count);
+	BATsetcount(bn, bi.count);
 	bat_iterator_end(&pi);
 	bat_iterator_end(&bi);
 	bat_iterator_end(&sepi);
 	bat_iterator_end(&si);
-	r->tnonil = !has_nils;
-	r->tnil = has_nils;
+	bn->tnonil = !has_nils;
+	bn->tnil = has_nils;
 	ma_close(&ta_state);
-	return GDK_SUCCEED;
+	return bn;
 
   bailout:
+	BBPreclaim(bn);
 	bat_iterator_end(&pi);
 	bat_iterator_end(&bi);
 	bat_iterator_end(&sepi);
 	bat_iterator_end(&si);
 	ma_close(&ta_state);
-	return GDK_FAIL;
+	return NULL;
 }
 
 /* The three case conversion tables are specially crafted from the

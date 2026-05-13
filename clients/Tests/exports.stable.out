@@ -256,7 +256,7 @@ BAT *GDKanalytical_covariance_pop(BAT *p, BAT *o, BAT *b1, BAT *b2, BAT *s, BAT 
 BAT *GDKanalytical_covariance_samp(BAT *p, BAT *o, BAT *b1, BAT *b2, BAT *s, BAT *e, int tpe, int frame_type) __attribute__((__warn_unused_result__));
 BAT *GDKanalytical_stddev_pop(BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, int frame_type) __attribute__((__warn_unused_result__));
 BAT *GDKanalytical_stddev_samp(BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, int frame_type) __attribute__((__warn_unused_result__));
-gdk_return GDKanalytical_str_group_concat(BAT *r, BAT *p, BAT *o, BAT *b, BAT *sep, BAT *s, BAT *e, const char *restrict separator, int frame_type);
+BAT *GDKanalytical_str_group_concat(BAT *b, BAT *p, BAT *o, BAT *sep, BAT *s, BAT *e, const char *restrict separator, int frame_type);
 BAT *GDKanalytical_variance_pop(BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, int frame_type) __attribute__((__warn_unused_result__));
 BAT *GDKanalytical_variance_samp(BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, int frame_type) __attribute__((__warn_unused_result__));
 BAT *GDKanalyticalavg(BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, int frame_type) __attribute__((__warn_unused_result__));
