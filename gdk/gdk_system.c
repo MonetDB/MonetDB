@@ -199,9 +199,9 @@ struct mtthread {
 	void *data;		/* and its data */
 	struct thread_funcs *thread_funcs; /* callback funcs */
 	int nthread_funcs;
-	MT_Lock *lockwait;	/* lock we're waiting for */
-	ATOMIC_PTR_TYPE semawait;/* semaphore we're waiting for */
-	MT_Cond *condwait;	/* condition variable we're waiting for */
+	ATOMIC_PTR_TYPE lockwait; /* lock we're waiting for */
+	ATOMIC_PTR_TYPE semawait; /* semaphore we're waiting for */
+	ATOMIC_PTR_TYPE condwait; /* condition variable we're waiting for */
 #ifdef LOCK_OWNER
 	MT_Lock *mylocks;	/* locks we're holding */
 #endif
@@ -316,9 +316,9 @@ dump_threads(void)
 	if (!GDK_TRACER_TEST(M_DEBUG, THRD))
 		printf("Threads:\n");
 	for (struct mtthread *t = mtthreads; t; t = t->next) {
-		MT_Lock *lk = t->lockwait;
+		MT_Lock *lk = ATOMIC_PTR_GET(&t->lockwait);
 		MT_Sema *sm = ATOMIC_PTR_GET(&t->semawait);
-		MT_Cond *cn = t->condwait;
+		MT_Cond *cn = ATOMIC_PTR_GET(&t->condwait);
 		struct mtthread *jn = t->joinwait;
 		const char *working = ATOMIC_PTR_GET(&t->working);
 		char mabuf[300];
@@ -643,7 +643,7 @@ MT_thread_setlockwait(MT_Lock *lock)
 	struct mtthread *self = thread_self();
 
 	if (self)
-		self->lockwait = lock;
+		ATOMIC_PTR_SET(&self->lockwait, lock);
 }
 
 void
@@ -665,7 +665,7 @@ MT_thread_setcondwait(MT_Cond *cond)
 	struct mtthread *self = thread_self();
 
 	if (self)
-		self->condwait = cond;
+		ATOMIC_PTR_SET(&self->condwait, cond);
 }
 
 #ifdef LOCK_OWNER
