@@ -1106,8 +1106,8 @@ tr_grow(trans *tr)
 		tr->sz <<= 1;
 		changes = ma_realloc(MT_thread_getallocator(),
 				     tr->changes,
-				     sz * sizeof(logaction),
-				     tr->sz * sizeof(logaction));
+				     tr->sz * sizeof(logaction),
+				     sz * sizeof(logaction));
 		if (changes == NULL)
 			return GDK_FAIL;
 		tr->changes = changes;
@@ -2992,13 +2992,13 @@ log_flush(logger *lg, ulng ts)
 			BUN n = BATcount(lg->catalog_id);
 			size_t a = ((n + 31) & ~31) / 8;
 			if (a > allocated) {
-				updated = ma_realloc(ta, updated, allocated, a);
+				updated = ma_realloc(ta, updated, a, allocated);
 				if (updated == NULL) {
 					ma_close(&ta_state);
 					log_unlock(lg);
 					return GDK_FAIL;
 				}
-				memset(updated + allocated / 4, 0, a - allocated);
+				memset((char *) updated + allocated, 0, a - allocated);
 				allocated = a;
 			}
 			nupdated = n;
