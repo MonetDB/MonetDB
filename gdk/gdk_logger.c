@@ -2047,7 +2047,7 @@ bm_subcommit(logger *lg, logged_range *pending, uint32_t *updated, BUN maxupdate
 				return GDK_FAIL;
 			}
 		}
-		if (updated && p < maxupdated && (updated[p / 32] & (1U << (p % 32))) == 0) {
+		if (updated && (p >= maxupdated || (updated[p / 32] & (1U << (p % 32))) == 0)) {
 			continue;
 		}
 		bat col = bids[p];
@@ -3112,6 +3112,36 @@ log_constant_bulk(logger *lg, int type, const void *val, log_id id, lng offset, 
 	return ok;
 }
 
+static gdk_return
+lg_updated_set_bit(logger *lg, log_id id, BUN p)
+{
+	assert(p != BUN_NONE);
+	if (lg->updated != NULL) {
+		if (id > 0) {
+			p = log_find(lg->catalog_id, lg->dcatalog, id);
+			if (p == BUN_NONE) {
+				GDKerror("%d not found in catalog_id BAT", id);
+				return GDK_FAIL;
+			}
+		}
+		if (p >= lg->maxupdated) {
+			BUN cnt = BATcount(lg->catalog_id);
+			assert(p < cnt);
+			size_t allocated = ((cnt + 31) & ~31) / 8;
+			assert(allocated > 0);
+			uint32_t *u = GDKrealloc(lg->updated, allocated);
+			if (u == NULL)
+				return GDK_FAIL;
+			memset((char *) u + lg->maxupdated / 8, 0,
+			       allocated - lg->maxupdated / 8);
+			lg->maxupdated = allocated * 8;
+			lg->updated = u;
+		}
+		lg->updated[p / 32] |= 1U << (p % 32);
+	}
+	return GDK_SUCCEED;
+}
+
 gdk_return
 log_constant(logger *lg, int type, const void *val, log_id id, lng offset, lng cnt, lng total_cnt)
 {
@@ -3120,15 +3150,8 @@ log_constant(logger *lg, int type, const void *val, log_id id, lng offset, lng c
 
 	if (LOG_DISABLED(lg) || !nr) {
 		/* logging is switched off */
-		if (lg->updated != NULL) {
-			BUN p = log_find(lg->catalog_id, lg->dcatalog, id);
-			if (p == BUN_NONE) {
-				GDKerror("%d not found in catalog_id BAT", id);
-				return GDK_FAIL;
-			}
-			if (p < lg->maxupdated)
-				lg->updated[p / 32] |= 1U << (p % 32);
-		}
+		if (lg_updated_set_bit(lg, id, 0) != GDK_SUCCEED)
+			return GDK_FAIL;
 		if (nr) {
 			log_lock(lg);
 			ok = la_bat_update_count(lg, id, offset + cnt, lg->tid);
@@ -3235,15 +3258,8 @@ internal_log_bat(logger *lg, BAT *b, log_id id, lng offset, lng cnt, int sliced,
 
 	if (LOG_DISABLED(lg) || !nr) {
 		/* logging is switched off */
-		if (lg->updated != NULL) {
-			BUN p = log_find(lg->catalog_id, lg->dcatalog, id);
-			if (p == BUN_NONE) {
-				GDKerror("%d not found in catalog_id BAT", id);
-				return GDK_FAIL;
-			}
-			if (p < lg->maxupdated)
-				lg->updated[p / 32] |= 1U << (p % 32);
-		}
+		if (lg_updated_set_bit(lg, id, 0) != GDK_SUCCEED)
+			return GDK_FAIL;
 		if (nr)
 			return la_bat_update_count(lg, id, offset + cnt, lg->tid);
 		return GDK_SUCCEED;
@@ -3468,15 +3484,8 @@ log_delta(logger *lg, BAT *uid, BAT *uval, log_id id)
 
 	if (LOG_DISABLED(lg)) {
 		/* logging is switched off */
-		if (lg->updated != NULL) {
-			BUN p = log_find(lg->catalog_id, lg->dcatalog, id);
-			if (p == BUN_NONE) {
-				GDKerror("%d not found in catalog_id BAT", id);
-				return GDK_FAIL;
-			}
-			if (p < lg->maxupdated)
-				lg->updated[p / 32] |= 1U << (p % 32);
-		}
+		if (lg_updated_set_bit(lg, id, 0) != GDK_SUCCEED)
+			return GDK_FAIL;
 		log_unlock(lg);
 		return GDK_SUCCEED;
 	}
@@ -3813,8 +3822,8 @@ log_del_bat(logger *lg, log_bid bid)
 	}
 
 	assert(lg->catalog_lid->hseqbase == 0);
-	if (lg->updated != NULL && p < lg->maxupdated)
-		lg->updated[p / 32] |= 1U << (p % 32);
+	if (lg_updated_set_bit(lg, 0, p) != GDK_SUCCEED)
+		return GDK_FAIL;
 	return BUNreplace(lg->catalog_lid, p, &lid, false);
 }
 
