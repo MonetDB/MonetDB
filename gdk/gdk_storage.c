@@ -672,18 +672,20 @@ BATsave_iter(BAT *b, BATiter *bi, BUN size)
 
 	dosync = (BBP_status(b->batCacheid) & BBPPERSISTENT) != 0;
 	assert(!GDKinmemory(bi->h->farmid));
-	/* views cannot be saved, but make an exception for
-	 * force-remapped views */
-	if (isVIEW(b)) {
-		if (locked)
-			MT_rwlock_rdunlock(&b->thashlock);
-		GDKerror("%s is a view on %s; cannot be saved\n", BATgetId(b), BBP_logical(VIEWtparent(b)));
-		return GDK_FAIL;
-	}
 	if (!BATdirtybi(*bi)) {
 		if (locked)
 			MT_rwlock_rdunlock(&b->thashlock);
 		return GDK_SUCCEED;
+	}
+	/* views cannot be saved, but make an exception for
+	 * force-remapped views */
+	if ((bi->h != NULL && bi->h->parentid != b->batCacheid) ||
+	    (bi->vh != NULL && bi->vh->parentid != b->batCacheid && bi->vh->parentid != b->ustr)) {
+		if (locked)
+			MT_rwlock_rdunlock(&b->thashlock);
+		GDKerror("%s is a view on %s; cannot be saved\n", BATgetId(b), BBP_logical(VIEWtparent(b)));
+		assert(0);
+		return GDK_FAIL;
 	}
 
 	/* start saving data */
