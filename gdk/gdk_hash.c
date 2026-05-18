@@ -1154,8 +1154,9 @@ HASHprobe(const Hash *h, const void *v)
 }
 
 void
-HASHappend_locked(BAT *b, BUN i, const void *v)
+HASHappend_locked(BATiter *bi, BUN i, const void *v)
 {
+	BAT *b = bi->b;
 	Hash *h = b->thash;
 	if (h == NULL) {
 		return;
@@ -1202,12 +1203,11 @@ HASHappend_locked(BAT *b, BUN i, const void *v)
 	h->heaplink.free += h->width;
 	BUN hb = HASHget(h, c);
 	BUN hb2;
-	BATiter bi = bat_iterator_nolock(b);
 	if (h->offsets) {
 		for (hb2 = hb;
 		     hb2 != BUN_NONE;
 		     hb2 = HASHgetlink(h, hb2)) {
-			if (*(var_t *) v == VarHeapVal(bi.base, hb2, bi.width))
+			if (*(var_t *) v == VarHeapVal(bi->base, hb2, bi->width))
 				break;
 		}
 	} else {
@@ -1215,7 +1215,7 @@ HASHappend_locked(BAT *b, BUN i, const void *v)
 		for (hb2 = hb;
 		     hb2 != BUN_NONE;
 		     hb2 = HASHgetlink(h, hb2)) {
-			if (atomeq(v, BUNtail(&bi, hb2)))
+			if (atomeq(v, BUNtail(bi, hb2)))
 				break;
 		}
 	}
@@ -1231,8 +1231,11 @@ BUN
 HASHappend(BAT *b, BUN i, const void *v)
 {
 	BUN nunique;
+	MT_lock_set(&b->theaplock);
+	BATiter bi = bat_iterator_nolock(b);
+	MT_lock_unset(&b->theaplock);
 	MT_rwlock_wrlock(&b->thashlock);
-	HASHappend_locked(b, i, v);
+	HASHappend_locked(&bi, i, v);
 	nunique = b->thash ? b->thash->nunique : 0;
 	MT_rwlock_wrunlock(&b->thashlock);
 	return nunique;

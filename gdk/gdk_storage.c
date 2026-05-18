@@ -689,6 +689,8 @@ BATsave_iter(BAT *b, BATiter *bi, BUN size)
 	}
 
 	/* start saving data */
+	if (bi->type == TYPE_msk)
+		MT_lock_set(&b->theaplock);
 	if (bi->type != TYPE_void && bi->base == NULL) {
 		assert(BBP_status(b->batCacheid) & BBPSWAPPED);
 		if (dosync && !(ATOMIC_GET(&GDKdebug) & NOSYNCMASK)) {
@@ -737,18 +739,19 @@ BATsave_iter(BAT *b, BATiter *bi, BUN size)
 		if ((!bi->copiedtodisk || bi->hdirty)
 		    && (err == GDK_SUCCEED && bi->type)) {
 			const char *tail = strchr(bi->h->filename, '.') + 1;
-			err = HEAPsave(bi->h, nme, tail, dosync, bi->hfree, &b->theaplock);
+			err = HEAPsave(bi->h, nme, tail, dosync, bi->hfree, bi->type == TYPE_msk ? NULL : &b->theaplock);
 		}
 		if (bi->vh
 		    && !bi->ustr
 		    && (!bi->copiedtodisk || bi->vhdirty)
 		    && ATOMvarsized(bi->type)
 		    && err == GDK_SUCCEED)
-			err = HEAPsave(bi->vh, nme, "theap", dosync, bi->vhfree, &b->theaplock);
+			err = HEAPsave(bi->vh, nme, "theap", dosync, bi->vhfree, bi->type == TYPE_msk ? NULL : &b->theaplock);
 	}
 
 	if (err == GDK_SUCCEED) {
-		MT_lock_set(&b->theaplock);
+		if (bi->type != TYPE_msk)
+			MT_lock_set(&b->theaplock);
 		if (b->theap != bi->h) {
 			assert(b->theap->dirty);
 			b->theap->wasempty = bi->h->wasempty;
@@ -770,7 +773,8 @@ BATsave_iter(BAT *b, BATiter *bi, BUN size)
 		MT_lock_unset(&b->theaplock);
 		if (locked &&  b->thash && b->thash != (Hash *) 1)
 			BAThashsave(b, dosync);
-	}
+	} else if (bi->type == TYPE_msk)
+		MT_lock_unset(&b->theaplock);
 	if (locked)
 		MT_rwlock_rdunlock(&b->thashlock);
 	return err;

@@ -59,7 +59,7 @@
 	do {								\
 		TPE a = 0;						\
 		dbl curval = dbl_nil;					\
-		for (; k < i;) {					\
+		while (k < i) {						\
 			j = k;						\
 			do {						\
 				ANALYTICAL_AVERAGE_CALC_NUM_STEP1(TPE, IMP, bp[k]); \
@@ -204,7 +204,7 @@ avg_num_deltas(lng)
 	do {								\
 		TPE a = 0;						\
 		dbl curval = dbl_nil;					\
-		for (; k < i;) {					\
+		while (k < i) {						\
 			j = k;						\
 			do {						\
 				if (!is_##TPE##_nil(bp[k]))		\
@@ -458,7 +458,7 @@ nosupport:
 #define ANALYTICAL_AVG_INT_UNBOUNDED_TILL_CURRENT_ROW(TPE)		\
 	do {								\
 		TPE avg = 0;						\
-		for (; k < i;) {					\
+		while (k < i) {						\
 			j = k;						\
 			do {						\
 				if (!is_##TPE##_nil(bp[k]))		\
@@ -707,7 +707,7 @@ nosupport:
 #define ANALYTICAL_STDEV_VARIANCE_UNBOUNDED_TILL_CURRENT_ROW(TPE, SAMPLE, OP) \
 	do {								\
 		TPE *restrict bp = (TPE*)bi.base;			\
-		for (; k < i;) {					\
+		while (k < i) {						\
 			j = k;						\
 			do {						\
 				TPE v = bp[k];				\
@@ -994,7 +994,7 @@ GDK_ANALYTICAL_STDEV_VARIANCE(variance_pop, 0, m2 / n, "variance")
 #define ANALYTICAL_COVARIANCE_UNBOUNDED_TILL_CURRENT_ROW(TPE, SAMPLE, OP) \
 	do {								\
 		TPE *bp1 = (TPE*)b1i.base, *bp2 = (TPE*)b2i.base;	\
-		for (; k < i;) {					\
+		while (k < i) {						\
 			j = k;						\
 			do {						\
 				TPE v1 = bp1[k], v2 = bp2[k];		\
@@ -1226,7 +1226,7 @@ GDK_ANALYTICAL_COVARIANCE(covariance_pop, 0, m2 / n)
 #define ANALYTICAL_CORRELATION_UNBOUNDED_TILL_CURRENT_ROW(TPE, SAMPLE, OP)	/* SAMPLE and OP not used */ \
 	do {								\
 		TPE *bp1 = (TPE*)b1i.base, *bp2 = (TPE*)b2i.base;	\
-		for (; k < i;) {					\
+		while (k < i) {						\
 			j = k;						\
 			do {						\
 				TPE v1 = bp1[k], v2 = bp2[k];		\
