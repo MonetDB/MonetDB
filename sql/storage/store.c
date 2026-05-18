@@ -7880,8 +7880,11 @@ store_printinfo(sqlstore *store)
 		printf("WAL is currently locked, so no WAL information\n");
 		return;
 	}
-	printf("WAL:\n");
-	printf("SQL store oldest pending "ULLFMT"\n", store->oldest_pending);
+	if (MT_lock_trytime(&store->lock, 1000)) {
+		printf("WAL:\n");
+		printf("SQL store oldest pending "ULLFMT"\n", store->oldest_pending);
+		MT_lock_unset(&store->lock);
+	}
 	log_printinfo(store->logger);
 	MT_lock_unset(&store->commit);
 }

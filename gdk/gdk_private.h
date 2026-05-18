@@ -170,7 +170,7 @@ lng getBBPlogno(void)
 	__attribute__((__visibility__("hidden")));
 BUN HASHappend(BAT *b, BUN i, const void *v)
 	__attribute__((__visibility__("hidden")));
-void HASHappend_locked(BAT *b, BUN i, const void *v)
+void HASHappend_locked(BATiter *bi, BUN i, const void *v)
 	__attribute__((__visibility__("hidden")));
 void HASHfree(BAT *b)
 	__attribute__((__visibility__("hidden")));
