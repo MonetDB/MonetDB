@@ -290,37 +290,10 @@ BATconvert2ustr(BAT *b, BAT *bu)
 	}
 	MT_lock_set(&bu->theaplock);
 	if (!bu->tvkey) {
-		/* if bu was created and filled during initial WAL
-		 * processing, the tvkey property may have gotten lost,
-		 * so we check it: the way the bu bat is created, the
-		 * offsets are strictly ascending */
-		assert(bu->twidth >= 4);
-		if (bu->twidth == 4) {
-			const uint32_t *p = (const uint32_t *) bu->theap->base;
-			uint32_t prev = 0;
-			for (BUN i = 0, n = bu->batCount; i < n; i++) {
-				if (p[i] <= prev) {
-					MT_lock_unset(&b->theaplock);
-					MT_lock_unset(&bu->theaplock);
-					GDKerror("USTR BAT must have tvkey property\n");
-					return GDK_FAIL;
-				}
-				prev = p[i];
-			}
-		} else if (bu->twidth == 8) {
-			const uint64_t *p = (const uint64_t *) bu->theap->base;
-			uint64_t prev = 0;
-			for (BUN i = 0, n = bu->batCount; i < n; i++) {
-				if (p[i] <= prev) {
-					MT_lock_unset(&b->theaplock);
-					MT_lock_unset(&bu->theaplock);
-					GDKerror("USTR BAT must have tvkey property\n");
-					return GDK_FAIL;
-				}
-				prev = p[i];
-			}
-		}
-		bu->tvkey = true;
+		MT_lock_unset(&b->theaplock);
+		MT_lock_unset(&bu->theaplock);
+		GDKerror("USTR BAT must have tvkey property\n");
+		return GDK_FAIL;
 	}
 	if (bu->ustr) {
 		MT_lock_unset(&b->theaplock);

@@ -1084,6 +1084,17 @@ la_bat_create_ustr(logger *lg, logaction *la, int tid)
 		logbat_destroy(b);
 		return GDK_FAIL;
 	}
+	/* we're the only thread around, so we don't need the heap lock */
+	if (!u->tvkey &&
+	    (u->batCount <= 1 ||
+	     (BAThash(u) == GDK_SUCCEED &&
+	      u->thash->nunique == u->batCount))) {
+		/* most likely, this bat (u) was created and filled
+		 * earlier during processing of the WAL, and since that
+		 * wasn't done through the normal ustr processing, the
+		 * tvkey property was lost */
+		u->tvkey = true;
+	}
 
 	if (BATconvert2ustr(b, u) != GDK_SUCCEED) {
 		BBPreclaim(u);
