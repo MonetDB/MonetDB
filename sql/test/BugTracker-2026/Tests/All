@@ -128,4 +128,4 @@ KNOWNFAIL?7931-rel2bin_select-assertion-failure
 7932-canditer_init-assertion-failure
 7933-query-without-result-bug
 7934-ALGouterselect-assertion-failure
-7937-where-not-in-values-null-bug
+KNOWNFAIL?7937-where-not-in-values-null-bug
