@@ -129,3 +129,4 @@ KNOWNFAIL?7931-rel2bin_select-assertion-failure
 7933-query-without-result-bug
 7934-ALGouterselect-assertion-failure
 KNOWNFAIL?7937-where-not-in-values-null-bug
+KNOWNFAIL?7938-not-x-is-const-and-x-is-not-null-bug
