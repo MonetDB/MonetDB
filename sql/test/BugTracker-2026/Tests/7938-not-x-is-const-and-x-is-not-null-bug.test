@@ -1,19 +1,29 @@
-query TI nosort
+query TT nosort
 SELECT x, CASE WHEN NOT(x = 'YTD' AND x IS NOT NULL) THEN 'False' ELSE 'True' END AS f
   FROM (VALUES ('YTD'), ('NOT YTD')) AS v(x)
 ----
 YTD
-1
+True
 NOT YTD
-0
+False
 
 -- strangly when swapping condition order (a AND b) into (b AND a), it works correct
-query TI nosort
+query TT nosort
 SELECT x, CASE WHEN NOT(x IS NOT NULL AND x = 'YTD') THEN 'False' ELSE 'True' END AS f
   FROM (VALUES ('YTD'), ('NOT YTD')) AS v(x)
 ----
 YTD
-1
+True
 NOT YTD
-0
+False
+
+-- without the NOT is also works correct
+query TT nosort
+SELECT x, CASE WHEN (x = 'YTD' AND x IS NOT NULL) THEN 'True' ELSE 'False' END AS f
+  FROM (VALUES ('YTD'), ('NOT YTD')) AS v(x)
+----
+YTD
+True
+NOT YTD
+False
 
