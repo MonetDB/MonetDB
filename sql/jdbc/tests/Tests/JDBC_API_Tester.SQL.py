@@ -14,6 +14,7 @@ URL=f"jdbc:monetdb://{HOST}:{MAPIPORT}/{TSTDB}?user={USER}&password={PASSWORD}{J
 
 JDBC_API_TESTER_ARGS=''
 # JDBC_API_TESTER_ARGS='-skipMALoutput'
+JDBC_API_TESTER_ARGS='-supportsNestedTypes'
 
 cmd = ['java', 'JDBC_API_Tester', URL, JDBC_API_TESTER_ARGS]
 try:
