@@ -1,3 +1,8 @@
+query T
+select vector[1,2]
+----
+(1,2)
+
 statement ok
 create table t(embedding float vector[3])
 
