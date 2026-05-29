@@ -4228,8 +4228,13 @@ rel_cast(sql_query *query, sql_rel **rel, symbol *se, int f)
 		sql_subtype *et = exp_subtype(e);
 		if (e->type == e_atom && !tpe->digits) {
 			if (e->l && (et->type->eclass == EC_NUM || et->type->eclass == EC_DEC)) {
-				tpe->digits = atom_num_digits(e->l) + 1;
-				tpe->scale = 1;
+				if (et->digits && et->scale) {
+					tpe->digits = et->digits;
+					tpe->scale = et->scale;
+				} else {
+					tpe->digits = atom_num_digits(e->l) + 1;
+					tpe->scale = 1;
+				}
 				tpe = sql_bind_subtype(sql->sa, "decimal", tpe->digits, tpe->scale);
 			} else if (EC_VARCHAR(et->type->eclass)) {
 				char *s = E_ATOM_STRING(e);
