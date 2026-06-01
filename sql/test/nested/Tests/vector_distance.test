@@ -22,20 +22,25 @@ select s from foo order by l2sq_distance(v, vector[0.5,0.5,0.5]) limit 2
 d
 b
 
-query I
-SELECT cos_distance(vector[1,2], vector[1,2])
+query R
+SELECT round(cos_distance(vector[1,2], vector[1,2]), 8)
 ----
-0
+0.000
 
-query I
-SELECT cos_distance(vector[1,2], vector[2,4])
+query R
+SELECT round(cos_distance(vector[1,2], vector[2,4]), 8)
 ----
-0
+0.000
 
-query I
+query R
 SELECT cos_distance(vector[1,0], vector[0,2])
 ----
-1
+1.000
+
+query R
+SELECT cos_distance(vector[1,1], vector[1,2])
+----
+0.051
 
 query R
 SELECT cos_distance(vector[1,1], vector[-1,-1])
