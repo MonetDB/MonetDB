@@ -5511,7 +5511,7 @@ unnest(visitor *v, sql_rel *parent, sql_rel * rel, struct unnesting *info, list 
 	if (!rel)
 		return ;
 
-	if (list_empty(acc)) { /* unnest ends add join with d */
+	if (list_empty(acc) && !rel_is_ref(rel)) { /* unnest ends add join with d */
 		sql_rel *d = rel_project(v->sql->sa, rel_dup(info->info->d), rel_projections(v->sql, info->info->d, NULL, 1, 1));
 		add_outers_repr(v, d, info, true);
 		sql_rel *nrel = rel_crossproduct(v->sql->sa, d, rel,  op_join);
@@ -5523,6 +5523,15 @@ unnest(visitor *v, sql_rel *parent, sql_rel * rel, struct unnesting *info, list 
 		return ;
 	}
 	rel->used |= unnest_used;
+	if (list_empty(acc) && rel_is_ref(rel)) { /* unnest of ref needs inplace join with d */
+		sql_rel *d = rel_project(v->sql->sa, rel_dup(info->info->d), rel_projections(v->sql, info->info->d, NULL, 1, 1));
+		add_outers_repr(v, d, info, true);
+	   	list *exps = list_merge(rel_projections(v->sql, d, NULL, 0, 1), rel_projections(v->sql, rel, NULL, 0, 1), NULL);
+		rel = rel_inplace_project(v->sql->sa, rel, NULL, exps);
+		rel->l = rel_crossproduct(v->sql->sa, d, rel->l,  op_join);
+		//rel_update_subrel(parent, rel, nrel);
+		return;
+	}
 
 	/* handle projection of freevar without lower relation */
 	if (is_simple_project(rel->op) && !rel->l) {
@@ -5566,13 +5575,14 @@ unnest(visitor *v, sql_rel *parent, sql_rel * rel, struct unnesting *info, list 
 		assert(list_length(rels) == 2);
 		sql_rel *base = rels->h->data;
 		sql_rel *iter = rels->h->next->data;
-		//list *base_acc = accessing(v, base, acc);
 		struct unnesting base_unnest = { .info = info->info };
-		list *base_acc = list_dup(acc, NULL);
+		list *base_acc = accessing(v, base, acc);
+		bool add_base = (list_empty(base_acc));
 		unnest(v, rel, base, &base_unnest, base_acc);
-		//struct unnesting iter_unnest = { .info = info->info };
+		set_recursive(base);
 		list *iter_acc = accessing(v, iter, acc);
-		//unnest(v, rel, iter, &iter_unnest, iter_acc);
+		if (add_base) /* make sure we unnest up till the base */
+			append(iter_acc, base);
 		unnest(v, rel, iter, info, iter_acc);
 		rel->exps = add_outers(v, rel->exps, info, false);
 		rel->exps = rewrite_columns(v, rel->exps, info);
