@@ -5561,6 +5561,21 @@ unnest(visitor *v, sql_rel *parent, sql_rel * rel, struct unnesting *info, list 
 				or->r = add_outers(v, or->r, info, true);
 		}
 		rel->grouped = 1;
+	} else if (is_munion(rel->op) && is_recursive(rel)) {
+		list *rels = rel->l;
+		assert(list_length(rels) == 2);
+		sql_rel *base = rels->h->data;
+		sql_rel *iter = rels->h->next->data;
+		//list *base_acc = accessing(v, base, acc);
+		struct unnesting base_unnest = { .info = info->info };
+		list *base_acc = list_dup(acc, NULL);
+		unnest(v, rel, base, &base_unnest, base_acc);
+		//struct unnesting iter_unnest = { .info = info->info };
+		list *iter_acc = accessing(v, iter, acc);
+		//unnest(v, rel, iter, &iter_unnest, iter_acc);
+		unnest(v, rel, iter, info, iter_acc);
+		rel->exps = add_outers(v, rel->exps, info, false);
+		rel->exps = rewrite_columns(v, rel->exps, info);
 	} else if (is_munion(rel->op)) {
 		list *rels = rel->l;
 		for (node *n = rels->h; n; n = n->next) {
