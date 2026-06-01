@@ -41,7 +41,7 @@ rel_table_projections( mvc *sql, sql_rel *rel, char *tname, int level )
 		return NULL;
 
 	if (!tname)
-		return _rel_projections(sql, rel, NULL, 1, 0, 1);
+		return _rel_projections(sql, rel, NULL, 1, 0, 1, false);
 
 	switch(rel->op) {
 	case op_join:
@@ -3991,6 +3991,7 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, char *sname, char *anam
 			return e;
 		if (all_freevar) {
 			rel_bind_vars(sql, groupby->l, exps);
+			rel_bind_vars(sql, groupby, exps); /* for self refs */
 			assert(!is_simple_project(res->op));
 			e->card = CARD_ATOM;
 			set_freevar(e, all_freevar-1);

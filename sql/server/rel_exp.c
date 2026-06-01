@@ -813,6 +813,8 @@ exp_ref_by_label(allocator *sa, sql_exp *o)
 		*/
 	if (is_intern(o))
 		set_intern(e);
+	if (is_freevar(o) && o->alias.label == o->nid /* only original IU */)
+		set_freevar(e, is_freevar(o)-1);
 	return exp_propagate(sa, e, o);
 }
 
@@ -1912,8 +1914,9 @@ rel_find_exp_and_corresponding_rel(sql_rel *rel, sql_exp *e, bool subexp, sql_re
 		case op_basetable:
 			break;
 		case op_munion:
-			for (node* n = ((list*)rel->l)->h; n && !ne; n = n->next)
-				ne = rel_find_exp_and_corresponding_rel(n->data, e, subexp, res, under_join);
+			if (!is_project(rel->op) && rel->l)
+				for (node* n = ((list*)rel->l)->h; n && !ne; n = n->next)
+					ne = rel_find_exp_and_corresponding_rel(n->data, e, subexp, res, under_join);
 			break;
 		default:
 			if (!is_project(rel->op) && rel->l)

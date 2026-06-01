@@ -22,7 +22,8 @@ typedef enum rel_prop {
 	PROP_UKEY,		/* p = list of exps */
 	PROP_REMOTE,    /* uri for remote execution */
 	PROP_USED,      /* number of times exp is used */
-	PROP_GROUPINGS  /* used by ROLLUP/CUBE/GROUPING SETS, value contains the list of sets */
+	PROP_GROUPINGS,  /* used by ROLLUP/CUBE/GROUPING SETS, value contains the list of sets */
+	PROP_UNNESTING	/* used by unnesting rewriter */
 } rel_prop;
 
 typedef struct prop {
