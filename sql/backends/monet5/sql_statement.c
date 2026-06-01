@@ -3620,7 +3620,7 @@ stmt_output(backend *be, stmt *lst)
 	stmt *first = n->data;
 
 	/* single value result, has a fast exit */
-	if (cnt == 1 && first->nrcols <= 0 ){
+	if (cnt == 1 && first && (first->nrcols <= 0) && !first->nested){
 		allocator *ta = MT_thread_getallocator();
 		allocator_state ta_state = ma_open(ta);
 		stmt *c = n->data;

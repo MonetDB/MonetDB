@@ -137,29 +137,34 @@ DEFINE_METRIC_L2SQ(f64, dbl, dbl)
  * @param T    The scalar type for input vectors (e.g., float, double).
  * @param R    The result/accumulation type (to prevent overflow).
  */
-#define DEFINE_METRIC_COS(NAME, T, R)                                          \
-static R																	\
-metric_cos_##NAME(MalStkPtr stk, InstrPtr pci, size_t dim) {                 \
-    R ab = 0, a2 = 0, b2 = 0;                                                  \
-                                                                               \
-    /* SIMD optimization hints */                                              \
-    GCC_Pragma("GCC ivdep")                                                       \
-    for (size_t i = 0; i < dim; i++) {                                         \
+#define DEFINE_METRIC_COS(NAME, T, R)											\
+static R																		\
+metric_cos_##NAME(MalStkPtr stk, InstrPtr pci, size_t dim) {					\
+    R ab = 0, a2 = 0, b2 = 0;													\
+																				\
+    /* SIMD optimization hints */												\
+    GCC_Pragma("GCC ivdep")                                                     \
+    for (size_t i = 0; i < dim; i++) {											\
         T ai = *getArgReference_##T(stk, pci, 1 + i);                           \
         T bi = *getArgReference_##T(stk, pci, 1 + dim + i);                     \
-        ab += ai * bi;                                                         \
-        a2 += ai * ai;                                                         \
-        b2 += bi * bi;                                                         \
-    }                                                                          \
-    R result_if_zero[2][2];                                                    \
-    R norm_a = SELECT_SQRT(R, a2);                                             \
-    R norm_b = SELECT_SQRT(R, b2);                                             \
-                                                                               \
-    result_if_zero[0][0] = (R)1.0 - (ab / (norm_a * norm_b));                  \
-    result_if_zero[0][1] = (R)1.0;                                             \
-    result_if_zero[1][0] = (R)1.0;                                             \
-    result_if_zero[1][1] = (R)0.0;                                             \
-    return result_if_zero[a2 == 0][b2 == 0];                                   \
+        ab += (R)ai * (R)bi;															\
+        a2 += (R)ai * (R)ai;															\
+        b2 += (R)bi * (R)bi;															\
+    }																			\
+    R result_if_zero[2][2];														\
+    R norm_a = SELECT_SQRT(R, a2);												\
+    R norm_b = SELECT_SQRT(R, b2);												\
+	R similarity = (ab / (norm_a * norm_b));									\
+	/* Keep in range */															\
+    if (similarity > (R)1.0)													\
+        similarity = (R)1.0;													\
+    else if (similarity < (R)-1.0)												\
+        similarity = (R)-1.0;													\
+    result_if_zero[0][0] = (R)1.0 - (R)similarity;								\
+    result_if_zero[0][1] = (R)1.0;                                             	\
+    result_if_zero[1][0] = (R)1.0;                                             	\
+    result_if_zero[1][1] = (R)0.0;                                             	\
+    return result_if_zero[a2 == 0][b2 == 0];                                   	\
 }
 
 // For float (32-bit)

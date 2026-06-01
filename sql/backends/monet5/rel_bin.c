@@ -1597,7 +1597,6 @@ exp2stmt_vector(backend *be, sql_exp *e, stmt *left, stmt *sel)
 	}
 	stmt *s = stmt_list(be, l);
 	s->nested = true;
-	s->nrcols = 3;
 	s->subtype = *t;
 	return s;
 }
