@@ -5754,6 +5754,7 @@ rel_djoin_elim(visitor *v, sql_rel *prel, sql_rel *rel, struct unnesting *parent
 		if (!refs_find(outer_refs, e)) {
 			d = rel_crossproduct(v->sql->sa, d, rel_dup(parent->info->d), op_join);
 			outer_refs = list_merge(outer_refs, parent->info->outer_refs, NULL);
+			d = rel_project(v->sql->sa, rel_dup(d), rel_projections(v->sql, d, NULL, 0, 1));
 		}
 	}
 	rel_distinct(d);
