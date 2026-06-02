@@ -5143,6 +5143,7 @@ struct unnesting {
 	list *cclasses;		/* map of equivalant columns (only use if reduction by join isn't selective) */
 	list *repr; /* map outer 2 inner col names */
 	struct unnesting *parent;
+	bool right;
 };
 
 static bool
@@ -5480,15 +5481,27 @@ add_outers(visitor *v, list *exps, struct unnesting *info, bool partition)
 static void
 add_outers_repr(visitor *v, sql_rel *d, struct unnesting *info, bool relabel)
 {
-		for (node *n = d->exps->h, *m = info->info->outer_refs->h; n && m;
-			n = n->next, m = m->next) {
-			sql_exp *new = n->data;
-			sql_exp *old = m->data;
-			info->repr = sa_list_append(v->sql->sa, info->repr, old);
-			info->repr = sa_list_append(v->sql->sa, info->repr, new);
-			if (relabel)
-				new->alias.label = -(v->sql->nid++);
-		}
+	node *n = d->exps->h, *m = info->info->outer_refs->h;
+	int nr_outers = d->nr_outers, nr_inner = list_length(info->info->outer_refs) - nr_outers;
+
+	assert(nr_inner >= 0);
+
+	for (; m && nr_inner && nr_outers; m = m->next, nr_inner--) {
+		sql_exp *new = exp_copy(v->sql, m->data);
+		sql_exp *old = m->data;
+		info->repr = sa_list_append(v->sql->sa, info->repr, old);
+		info->repr = sa_list_append(v->sql->sa, info->repr, new);
+		if (relabel)
+			new->alias.label = -(v->sql->nid++);
+	}
+	for (; n && m; n = n->next, m = m->next) {
+		sql_exp *new = relabel ? n->data : exp_copy(v->sql, n->data);
+		sql_exp *old = m->data;
+		info->repr = sa_list_append(v->sql->sa, info->repr, old);
+		info->repr = sa_list_append(v->sql->sa, info->repr, new);
+		if (relabel)
+			new->alias.label = -(v->sql->nid++);
+	}
 }
 
 static void
@@ -5519,7 +5532,13 @@ unnest(visitor *v, sql_rel *parent, sql_rel * rel, struct unnesting *info, list 
 		return;
 	}
 	if (rel_is_ref(rel) && is_unnest_used(rel->used)) {
-		add_outers_repr(v, rel, info, false);
+		if (/*is_recursive(rel) &&*/ info->right) {
+			sql_rel *nrel = rel_project(v->sql->sa, rel, rel_projections(v->sql, rel, NULL, 0, 1));
+			nrel->nr_outers = rel->nr_outers;
+			rel_update_subrel(parent, rel, nrel);
+			rel = nrel;
+		}
+		add_outers_repr(v, rel, info, info->right);
 		return ;
 	}
 	rel->used |= unnest_used;
@@ -5528,6 +5547,7 @@ unnest(visitor *v, sql_rel *parent, sql_rel * rel, struct unnesting *info, list 
 		add_outers_repr(v, d, info, true);
 	   	list *exps = list_merge(rel_projections(v->sql, d, NULL, 0, 1), rel_projections(v->sql, rel, NULL, 0, 1), NULL);
 		rel = rel_inplace_project(v->sql->sa, rel, NULL, exps);
+		rel->nr_outers = list_length(info->info->outer_refs);
 		rel->l = rel_crossproduct(v->sql->sa, d, rel->l,  op_join);
 		//rel_update_subrel(parent, rel, nrel);
 		return;
@@ -5538,6 +5558,7 @@ unnest(visitor *v, sql_rel *parent, sql_rel * rel, struct unnesting *info, list 
 		sql_rel *d = rel->l = rel_project(v->sql->sa, rel_dup(info->info->d), rel_projections(v->sql, info->info->d, NULL, 1, 1));
 		add_outers_repr(v, d, info, true);
 		rel->exps = add_outers(v, rel->exps, info, false);
+		rel->nr_outers = list_length(info->info->outer_refs);
 		rel->exps = rewrite_columns(v, rel->exps, info);
 		return;
 	}
@@ -5556,6 +5577,7 @@ unnest(visitor *v, sql_rel *parent, sql_rel * rel, struct unnesting *info, list 
 			n->data = aexp = exp_rewrite(v->sql, rel, aexp, info->info->outer_refs);
 		}
 		rel->exps = add_outers(v, rel->exps, info, false);
+		rel->nr_outers = list_length(info->info->outer_refs);
 		rel->exps = rewrite_columns(v, rel->exps, info);
 		if (rel->r) {
 			rel->r = add_outers(v, rel->r, info, true);
@@ -5585,6 +5607,7 @@ unnest(visitor *v, sql_rel *parent, sql_rel * rel, struct unnesting *info, list 
 			append(iter_acc, base);
 		unnest(v, rel, iter, info, iter_acc);
 		rel->exps = add_outers(v, rel->exps, info, false);
+		rel->nr_outers = list_length(info->info->outer_refs);
 		rel->exps = rewrite_columns(v, rel->exps, info);
 	} else if (is_munion(rel->op)) {
 		list *rels = rel->l;
@@ -5600,6 +5623,7 @@ unnest(visitor *v, sql_rel *parent, sql_rel * rel, struct unnesting *info, list 
 			}
 		}
 		rel->exps = add_outers(v, rel->exps, info, false);
+		rel->nr_outers = list_length(info->info->outer_refs);
 		rel->exps = rewrite_columns(v, rel->exps, info);
 	} else if (is_set(rel->op)) {
 		list *lacc = accessing(v, rel->l, acc);
@@ -5608,6 +5632,7 @@ unnest(visitor *v, sql_rel *parent, sql_rel * rel, struct unnesting *info, list 
 		list *racc = accessing(v, rel->r, acc);
 		unnest(v, rel, rel->r, info, racc);
 		rel->exps = add_outers(v, rel->exps, info, false);
+		rel->nr_outers = list_length(info->info->outer_refs);
 		rel->exps = rewrite_columns(v, rel->exps, info);
 	} else if (is_groupby(rel->op)) {
 		bool no_groups = !rel->r; /* or for cubes if groupingsets has empty case */
@@ -5615,6 +5640,7 @@ unnest(visitor *v, sql_rel *parent, sql_rel * rel, struct unnesting *info, list 
 		list *gexps = rel->r = add_outers(v, rel->r, info, false);
 		gexps = rel->r = rewrite_columns(v, rel->r, info);
 		rel->exps = add_outers(v, rel->exps, info, false);
+		rel->nr_outers = list_length(info->info->outer_refs);
 		rel->exps = rewrite_columns(v, rel->exps, info);
 		if (no_groups) {
 			/* change info->D left-outer-(group)join rel (on outerRefs) */
@@ -5660,7 +5686,7 @@ unnest(visitor *v, sql_rel *parent, sql_rel * rel, struct unnesting *info, list 
 			return;
 		}
 		struct unnesting lunnesting = { .info = info->info };
-		struct unnesting runnesting = { .info = info->info };
+		struct unnesting runnesting = { .info = info->info, .right=true };
 		unnest(v, rel, rel->l, &lunnesting, accLeft);
 		unnest(v, rel, rel->r, &runnesting, accRight);
 		rel->exps = rewrite_columns_for_join(v, rel->exps, &lunnesting, &runnesting);
@@ -5671,6 +5697,7 @@ unnest(visitor *v, sql_rel *parent, sql_rel * rel, struct unnesting *info, list 
 		assert(0);
 		unnest(v, rel, rel->l, info, acc);
 		rel->exps = add_outers(v, rel->exps, info, false);
+		rel->nr_outers = list_length(info->info->outer_refs);
 		rel->exps = rewrite_columns(v, rel->exps, info);
 	}
 }
@@ -5712,7 +5739,6 @@ rel_djoin_elim(visitor *v, sql_rel *prel, sql_rel *rel, struct unnesting *parent
 		list *acc_left = accessing(v, rel->l, parent_accessing);
 		unnest(v, rel, rel->l, parent, acc_left);
 		rel->exps = rewrite_columns(v, rel->exps, parent);
-		/* TODO ? rewrite moved maps */
 	}
 	assert(is_dependent(rel));
 	prop *p = find_prop(rel->p, PROP_UNNESTING);
@@ -5755,6 +5781,7 @@ rel_djoin_elim(visitor *v, sql_rel *prel, sql_rel *rel, struct unnesting *parent
 		sql_rel *p = changed_maps;
 		while(p && p->op == op_project) {
 			p->exps = add_outers(v, p->exps, parent, false);
+			p->nr_outers = list_length(parent->info->outer_refs);
 			p->exps = rewrite_columns(v, p->exps, parent);
 			assert(!p->r);
 			if (p->l != rel)
@@ -5803,7 +5830,6 @@ rel_unnest(mvc *sql, sql_rel *rel)
 	list *refs = v.data;
 	sql_rel *op = NULL;
 	while (list_length(refs) > 0 && !v.changes) {
-		int len = list_length(refs);
 		node *n = refs->h;
 		sql_rel *r = n->data;
 		sql_rel *p = n->next->data;
@@ -5827,7 +5853,6 @@ rel_unnest(mvc *sql, sql_rel *rel)
 		}
 		op = r;
 		(void)rel_djoin_elim(&v, p, r, NULL, NULL, refs );
-		assert(len != list_length(refs));
 	}
 	v.data = NULL;
 
