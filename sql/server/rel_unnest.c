@@ -967,6 +967,8 @@ exp_rewrite(mvc *sql, sql_rel *rel, sql_exp *e, list *ad)
 				df = sql_bind_func(sql, NULL, "diff", exp_subtype(de), NULL, F_ANALYTIC, true, true);
 			}
 			assert(df);
+			de = exp_copy(sql, de);
+			set_freevar(de, 1);
 			append(args, de);
 			pe = exp_op(sql->sa, args, df);
 		}
@@ -5384,7 +5386,7 @@ rewrite_column(visitor *v, sql_exp *e, struct unnesting *info)
 		{
 			sql_exp *ne = repr_find(v, info->repr, e);
 			if (ne && ne != e && ne->alias.label < 0) {
-				if (0 && e->alias.label == e->nid)
+				if (e->freevar && e->alias.label == e->nid)
 					e->alias.label = ne->alias.label;
 				e->nid = ne->alias.label;
 				if (e->freevar)
@@ -5426,6 +5428,22 @@ rewrite_columns_for_join(visitor *v, list *exps, struct unnesting *linfo, struct
 	/* rewrite based on inner side (left outer use linfo->repr), (right use rinfo->repr) full use
 	 * coalesce(linfo.repr/rinfo.repr) */
 	return rewrite_columns(v, exps, rinfo);
+}
+
+static void
+rewrite_columns_groupings(visitor *v, sql_rel *rel, struct unnesting *info)
+{
+	prop *found;
+
+	if ((found = find_prop(rel->p, PROP_GROUPINGS))) {
+		list *sets = (list*) found->value.pval;
+		for(node *n = sets->h; n; n = n->next) {
+			list *l = n->data;
+			for (node *m = l->h; m; m = m ->next) {
+				m->data = rewrite_columns(v, m->data, info);
+			}
+		}
+	}
 }
 
 static bool rel_djoin_elim(visitor *v, sql_rel *prel, sql_rel *rel, struct unnesting *parent, list *parent_accessing, list *refs);
@@ -5642,10 +5660,11 @@ unnest(visitor *v, sql_rel *parent, sql_rel * rel, struct unnesting *info, list 
 		rel->exps = add_outers(v, rel->exps, info, false);
 		rel->nr_outers = list_length(info->info->outer_refs);
 		rel->exps = rewrite_columns(v, rel->exps, info);
+		if (rel->p)
+			rewrite_columns_groupings(v, rel, info);
 		if (no_groups) {
 			/* change info->D left-outer-(group)join rel (on outerRefs) */
 			/* for now first create left-outer-join(d,rel) */
-			//assert(!info->parent);
 			sql_rel *d = rel_project(v->sql->sa, rel_dup(info->info->d), rel_projections(v->sql, info->info->d, NULL, 1, 1));
 			sql_rel *nrel = rel_crossproduct(v->sql->sa, d, rel,  op_left);
 			rel_update_subrel(parent, rel, nrel);
