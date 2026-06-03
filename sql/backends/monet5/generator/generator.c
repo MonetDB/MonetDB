@@ -1780,7 +1780,7 @@ VLTgenerator_rangejoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 #define GENERATOR_SOURCE 10
 typedef struct generator {
-	struct pipeline_io s;
+	struct pipeline_io pl_io;
 	int type;
 	int steptype;
 	int part_size;
@@ -1795,7 +1795,7 @@ typedef struct generator {
 static void
 generator_free(generator *g)
 {
-	assert(g->s.type == GENERATOR_SOURCE);
+	assert(g->pl_io.type == GENERATOR_SOURCE);
 	MT_lock_destroy(&g->l);
 	GDKfree(g);
 }
@@ -1803,7 +1803,7 @@ generator_free(generator *g)
 static bool
 generator_done(generator *g, int wid, int nr_workers, int redo)
 {
-	assert(g->s.type == GENERATOR_SOURCE);
+	assert(g->pl_io.type == GENERATOR_SOURCE);
 	(void)redo;
 	(void)wid;
 	(void)nr_workers;
@@ -1834,7 +1834,7 @@ generator_done(generator *g, int wid, int nr_workers, int redo)
 static BAT *
 generator_next(generator *g, int wid)
 {
-	assert(g->s.type == GENERATOR_SOURCE);
+	assert(g->pl_io.type == GENERATOR_SOURCE);
 	(void)wid;
 
 	BUN cur = 0, i, j = 0;
@@ -2166,10 +2166,10 @@ VLTgenerator_new(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	assert(be->part_size);
 	g->part_size = be->part_size;
 	g->cnt = g->cur = 0;
-	g->s.type = GENERATOR_SOURCE;
-	g->s.done = (pipeline_io_done)generator_done;
-	g->s.destroy = (pipeline_io_destroy)generator_free;
-	g->s.next_bat = (pipeline_io_next_bat)generator_next;
+	g->pl_io.type = GENERATOR_SOURCE;
+	g->pl_io.done = (pipeline_io_done)generator_done;
+	g->pl_io.destroy = (pipeline_io_destroy)generator_free;
+	g->pl_io.next_bat = (pipeline_io_next_bat)generator_next;
 	MT_lock_init(&g->l, "generator");
 
 	msg = VLTgenerator_get_limits(g, cntxt, mb, stk, pci);

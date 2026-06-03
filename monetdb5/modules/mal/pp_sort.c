@@ -684,7 +684,7 @@ typedef struct part_t {
 } part_t;
 
 typedef struct sop_t {
-	struct pipeline_io s;
+	struct pipeline_io pl_io;
 	int nr;
 	int nr_workers;
 	MT_Lock l;
@@ -711,7 +711,7 @@ sop_done(sop_t *q, int wid, int nr_workers, bool redo)
 	(void)redo;
 	(void)nr_workers;
 	int res = 0;
-    assert(q->s.type == PIPELINE_IO_SOP);
+    assert(q->pl_io.type == PIPELINE_IO_SOP);
 
 	MT_lock_set(&q->l);
 	assert(q->workers[wid] == 0);
@@ -744,9 +744,9 @@ SOPnew(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	q->h = NULL;
 	q->t = NULL;
 	MT_lock_init(&q->l, "sop");
-	q->s.destroy = (pipeline_io_destroy)&sop_destroy;
-	q->s.done = (pipeline_io_done)&sop_done;
-	q->s.type = PIPELINE_IO_SOP;
+	q->pl_io.destroy = (pipeline_io_destroy)&sop_destroy;
+	q->pl_io.done = (pipeline_io_done)&sop_done;
+	q->pl_io.type = PIPELINE_IO_SOP;
 
 	BAT *qb = COLnew(0, TYPE_oid, 0 /* need estimate? */, TRANSIENT);
 	if (!qb) {
@@ -773,7 +773,7 @@ SOPadd(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	if (!qb)
 		throw(MAL, "sop.add", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	sop_t *q = (sop_t*)qb->pl_io;
-	assert(q->s.type == PIPELINE_IO_SOP);
+	assert(q->pl_io.type == PIPELINE_IO_SOP);
 
 	part_t *e = (part_t*)GDKmalloc(sizeof(part_t) + sizeof(bat) * nr);
 	if (!e) {
@@ -817,7 +817,7 @@ SOPfetch(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	if (!qb)
 		throw(MAL, "sop.dequeue", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	sop_t *q = (sop_t*)qb->pl_io;
-	assert(q->s.type == PIPELINE_IO_SOP);
+	assert(q->pl_io.type == PIPELINE_IO_SOP);
 
 	part_t *e = q->workers[wid];
 	if (e) {

@@ -133,7 +133,7 @@ sync_counter_done(struct pipeline_counter *c, int wid, int nr_workers, int redo)
 	Pipeline *p = MT_thread_getdata();
 	MT_lock_set(&p->p->l);
 	if (!c->cur)
-		c->cur = (int*)GDKzalloc(sizeof(int) * nr_workers);
+		c->cur = GDKzalloc(sizeof(int) * nr_workers);
 	cur = c->current++;
 	if (cur >= c->nr) {
 		res = 1;
@@ -163,7 +163,7 @@ counter_done(struct pipeline_counter *c, int wid, int nr_workers, int redo)
 	int res = 0, cur;
 	MT_lock_set(&c->l);
 	if (!c->cur)
-		c->cur = (int*)GDKzalloc(sizeof(int) * nr_workers);
+		c->cur = GDKzalloc(sizeof(int) * nr_workers);
 	cur = c->current++;
 	if (cur >= c->nr) {
 		res = 1;
@@ -241,7 +241,7 @@ PPcounter(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			return createException(SQL, "pipeline.counter", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		size_t cnt = 0;
 		hash_table *h = (hash_table*)b->pl_io;
-		if (h && h->s.type == PIPELINE_IO_HASH_TABLE) {
+		if (h && h->pl_io.type == PIPELINE_IO_HASH_TABLE) {
 			cnt = h->size;
 		} else {
 			cnt = BATcount(b);
@@ -262,7 +262,7 @@ PPcounter(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (pci->argc == 3)
 		sync = *getArgReference_bit(stk, pci, 2);
 
-	struct pipeline_counter *c = (struct pipeline_counter*)GDKzalloc(sizeof(struct pipeline_counter));
+	struct pipeline_counter *c = GDKzalloc(sizeof(struct pipeline_counter));
 	if (!c) {
 		throw(SQL, "pipeline.counter",  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
@@ -330,7 +330,7 @@ concat_done(struct pipeline_concat *c, int wid, int nr_workers, bool redo )
 	assert(c->pl_io.type == PIPELINE_IO_CONCAT);
 	MT_lock_set(&c->l);
 	if (!c->started) {
-		c->cur = (int*)GDKzalloc(sizeof(int) * nr_workers);
+		c->cur = GDKzalloc(sizeof(int) * nr_workers);
 		c->started = true;
 	}
 	BAT *sb = c->srcs[c->cur[wid]];
@@ -463,7 +463,7 @@ PPconcat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void)mb;
 	bat *rb = getArgReference_bat(stk, pci, 0);
 	int nr = *getArgReference_int(stk, pci, 1);
-	struct pipeline_concat *pcat = (struct pipeline_concat*)GDKzalloc(sizeof(struct pipeline_concat) + (nr+1) * sizeof(struct pipeline_io*) );
+	struct pipeline_concat *pcat = GDKzalloc(sizeof(struct pipeline_concat) + (nr + 1) * sizeof(struct pipeline_io*));
 
 	if (!pcat)
 		throw(SQL, "pipeline.concat",  SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -494,7 +494,7 @@ PPresultset(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void)cntxt;
 	(void)mb;
 	bat *rb = getArgReference_bat(stk, pci, 0);
-	struct pipeline_resultset *prs = (struct pipeline_resultset*)GDKzalloc(sizeof(struct pipeline_resultset));
+	struct pipeline_resultset *prs = GDKzalloc(sizeof(struct pipeline_resultset));
 
 	if (!prs)
 		throw(SQL, "pipeline.resultset",  SQLSTATE(HY013) MAL_MALLOC_FAIL);

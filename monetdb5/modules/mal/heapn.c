@@ -48,7 +48,7 @@ typedef struct subheap {
 } subheap;
 
 typedef struct heapn {
-	struct pipeline_io s;
+	struct pipeline_io pl_io;
 	size_t size;
 	size_t used;
 	bool full;
@@ -1055,8 +1055,8 @@ _heap_create( int size, bool shared, bool grouped )
 {
 	heapn *h = (heapn*)GDKzalloc(sizeof(heapn));
 
-	h->s.destroy = (pipeline_io_destroy)heap_destroy;
-	h->s.type = PIPELINE_IO_HEAP;
+	h->pl_io.destroy = (pipeline_io_destroy)heap_destroy;
+	h->pl_io.type = PIPELINE_IO_HEAP;
 	h->shared = shared;
 	h->grouped = grouped;
 	h->size = size;
@@ -1524,7 +1524,7 @@ HEAPtopn(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr pci)
 	}
 	private = hps->tprivate_bat;
 	heapn *hp = (heapn*)hps->pl_io;
-	assert(hp && hp->s.type == PIPELINE_IO_HEAP);
+	assert(hp && hp->pl_io.type == PIPELINE_IO_HEAP);
 	if (((hp->sub && hp->sub->vb == NULL) || (hp->grouped && hp->grpb == NULL)) && !_heap_init(hp)) {
 		BBPreclaim(b);
 		BBPreclaim(gps);
