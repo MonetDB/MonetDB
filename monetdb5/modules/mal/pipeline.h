@@ -36,7 +36,33 @@
 #define PIPELINE_IO_COUNTER    8
 #define PIPELINE_IO_CONCAT     9
 #define PIPELINE_IO_PARQUET    10
-#define PIPELINE_IO_MPARQUET   10
+#define PIPELINE_IO_MPARQUET   11
+
+struct pipeline_counter {
+	struct pipeline_io pl_io;
+	MT_Lock l;
+	int nr;
+	int current;
+	bool sync;
+	int scnt;
+	int *cur; /* nr per worker */
+};
+
+struct pipeline_concat {
+	struct pipeline_io pl_io;
+	MT_Lock l;
+	int current;
+	int max;
+	bool started;
+	int *cur;
+	BAT *srcs[];
+};
+
+struct pipeline_resultset {
+	struct pipeline_io pl_io;
+	ATOMIC_TYPE claimed;
+	MT_Lock l;
+};
 
 extern int BATupgrade(BAT *r, BAT *b, bool locked);
 extern void BATswap_heaps(BAT *u, BAT *b, Pipeline *p);
