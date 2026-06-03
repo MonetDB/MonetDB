@@ -35,7 +35,7 @@ topn_create(void)
 	if (!t)
 		return NULL;
 
-	t->s.destroy = (sink_destroy)&topn_destroy;
+	t->s.destroy = (pl_io_destroy)&topn_destroy;
 	t->s.type = TOPN_SINK;
 	t->start = 0;
 	t->end = 0;
@@ -66,7 +66,7 @@ LALGsubslice(Client ctx, bat *gid, bat *rid, bat *tid, bat *bid, /*bat *sid,*/ l
 			msg = createException(SQL, "algebra.subslice", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto error;
 		}
-		t->tsink = (Sink*)n;
+		t->pl_io = (Sink*)n;
 		t->tprivate_bat = 1;
 	} else {
 		if ((t = BATdescriptor(*tid)) == NULL) {
@@ -79,13 +79,13 @@ LALGsubslice(Client ctx, bat *gid, bat *rid, bat *tid, bat *bid, /*bat *sid,*/ l
 		pipeline_lock1(t);
 		locked = 1;
 	}
-	n = (topn_t*)t->tsink;
+	n = (topn_t*)t->pl_io;
 	if (!n) {
 		if ((n = topn_create()) == NULL) {
 			msg = createException(SQL, "algebra.subslice", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto error;
 		}
-		t->tsink = (Sink*)n;
+		t->pl_io = (Sink*)n;
 	}
 	assert(n && n->s.type == TOPN_SINK);
 

@@ -555,7 +555,7 @@ mvc_claim_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BAT *b;
 		if (!(b = BATdescriptor(*sid)))
 			msg = createException(SQL, "sql.claim", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-		sync = b->tsink;
+		sync = b->pl_io;
 		p = (Pipeline*)*getArgReference_ptr(stk, pci, 8);
 		BBPreclaim(b);
 		nr = *getArgReference_int(stk, pci, 7);	/* passed counter for table/bat sources */

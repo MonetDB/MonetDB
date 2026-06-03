@@ -60,7 +60,7 @@ MATpackInternal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	for (i = 1; i < p->argc; i++) {
 		bat bid = stk->stk[getArg(p, i)].val.bval;
 		b = BBPquickdesc(bid);
-		mat_t *mp = (mat_t *) b->tsink;
+		mat_t *mp = (mat_t *) b->pl_io;
 		if (mp && mp->s.type == MAT_SINK) {
 			bn = pack_mat(b);
 			if (bn == NULL)
@@ -145,7 +145,7 @@ MATpackIncrement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		throw(MAL, "mat.pack", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
 	if (getArgType(mb, p, 2) == TYPE_int) {
-		mat_t *mp = (mat_t *) b->tsink;
+		mat_t *mp = (mat_t *) b->pl_io;
 		if (mp && mp->s.type == MAT_SINK) {
 			bn = pack_mat(b);
 			if (bn == NULL)

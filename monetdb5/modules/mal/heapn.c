@@ -987,7 +987,7 @@ HEAPnew_topn( MalStkPtr s, InstrPtr p, int args, heapn *hp, lng n, BAT *b, bit m
 	heapn_done(hp);
 	b = COLnew(0, TYPE_oid, hp->grouped?n*256:n, TRANSIENT);
 	if (b)
-		b->tsink = (Sink*)hp;
+		b->pl_io = (Sink*)hp;
 	else
 		heap_destroy(hp);
 	return b;
@@ -1055,7 +1055,7 @@ _heap_create( int size, bool shared, bool grouped )
 {
 	heapn *h = (heapn*)GDKzalloc(sizeof(heapn));
 
-	h->s.destroy = (sink_destroy)heap_destroy;
+	h->s.destroy = (pl_io_destroy)heap_destroy;
 	h->s.type = HEAP_SINK;
 	h->shared = shared;
 	h->grouped = grouped;
@@ -1227,7 +1227,7 @@ HEAPnew_new( MalBlkPtr m, MalStkPtr s, InstrPtr p, heapn *hp, lng n, int tt,  bi
 	}
 	BAT *b = COLnew(0, TYPE_oid, hp->grouped?(n*256):n, TRANSIENT);
 	if (b)
-		b->tsink = (Sink*)hp;
+		b->pl_io = (Sink*)hp;
 	else
 		heap_destroy(hp);
 	return b;
@@ -1523,7 +1523,7 @@ HEAPtopn(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr pci)
 		hps = BATdescriptor(*HP);
 	}
 	private = hps->tprivate_bat;
-	heapn *hp = (heapn*)hps->tsink;
+	heapn *hp = (heapn*)hps->pl_io;
 	assert(hp && hp->s.type == HEAP_SINK);
 	if (((hp->sub && hp->sub->vb == NULL) || (hp->grouped && hp->grpb == NULL)) && !_heap_init(hp)) {
 		BBPreclaim(b);
@@ -1832,7 +1832,7 @@ HEAPorder(Client ctx, bat *rid, bat *hb, size_t offset)
 	if (!hpb)
 		throw(MAL, "heapn.order", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
-	heapn *hp = (heapn*)hpb->tsink;
+	heapn *hp = (heapn*)hpb->pl_io;
 	r = COLnew(0, TYPE_oid, hp->grouped?hp->gsize*hp->size:hp->size, TRANSIENT);
 	if (!r) {
 		BBPreclaim(hpb);

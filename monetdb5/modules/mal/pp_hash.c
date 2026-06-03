@@ -95,7 +95,7 @@ _ht_create( int type, size_t size, hash_table *p)
 
 	if (!type)
 		type = TYPE_oid;
-	h->s.destroy = (sink_destroy)&ht_destroy;
+	h->s.destroy = (pl_io_destroy)&ht_destroy;
 	h->s.type = OA_HASH_TABLE_SINK;
 	if (bits >= GIDBITS)
 		bits = GIDBITS-1;
@@ -420,7 +420,7 @@ OAHASHnew(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 		bat pid = *getArgReference_bat(s, p, 3);
 		if ((pht = BATdescriptor(pid)) == NULL)
 			return createException(MAL, "oahash.new", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-		parent = (hash_table*)pht->tsink;
+		parent = (hash_table*)pht->pl_io;
 	}
 
 	BAT *b = COLnew(0, tt, 0, TRANSIENT);
@@ -428,9 +428,9 @@ OAHASHnew(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 		BBPreclaim(pht);
 		return createException(MAL, "oahash.new", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
-	b->tsink = (Sink*)ht_create(tt, (size_t)size, parent);
+	b->pl_io = (Sink*)ht_create(tt, (size_t)size, parent);
 	BBPreclaim(pht);
-	if (b->tsink == NULL) {
+	if (b->pl_io == NULL) {
 		BBPunfix(b->batCacheid);
 		return createException(MAL, "oahash.new", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
@@ -452,8 +452,8 @@ OAHASHhashmark_init(Client ctx, bat *res, const bat *ht_sink, const bat *payload
 		err = createException(SQL, "oahash.hashmark_init", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto error;
 	}
-	if (ht && ht->tsink && ht->tsink->error) {
-		err = ht->tsink->error;
+	if (ht && ht->pl_io && ht->pl_io->error) {
+		err = ht->pl_io->error;
 		goto error;
 	}
 	if (payload && !is_bat_nil(*payload)) {
@@ -464,9 +464,9 @@ OAHASHhashmark_init(Client ctx, bat *res, const bat *ht_sink, const bat *payload
 		}
 	}
 
-    hash_table *h = (hash_table*)ht->tsink;
+    hash_table *h = (hash_table*)ht->pl_io;
 	if (hp)
-		h = (hash_table*)hp->tsink;
+		h = (hash_table*)hp->pl_io;
 	//assert(h && h->s.type == OA_HASH_TABLE_SINK);
 	BUN sz = h?h->last:BATcount(ht); /* no hash ie outer cross product case */
 
@@ -531,7 +531,7 @@ UHASHext(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 	BAT *i = BATdescriptor(*in);
 	if (!i)
 		return createException(MAL, "hash.ext", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	hash_table *h = (hash_table*)i->tsink;
+	hash_table *h = (hash_table*)i->pl_io;
 	if (!h || h->s.type != OA_HASH_TABLE_SINK) {
 		BBPreclaim(i);
 		return createException(MAL, "hash.ext", SQLSTATE(HY002) "Missing hash table");
@@ -875,7 +875,7 @@ OAHASHbuild_tbl(Client ctx, bat *slot_id, bat *ht_sink, const bat *key, const pt
 		err = createException(SQL, "oahash.build_table", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto error;
 	}
-	hash_table *h = (hash_table*)u->tsink;
+	hash_table *h = (hash_table*)u->pl_io;
 	assert(h && h->s.type == OA_HASH_TABLE_SINK);
 
 	BUN cnt = BATcount(b);
@@ -1277,7 +1277,7 @@ OAHASHbuild_tbl_cmbd(Client ctx, bat *slot_id, bat *ht_sink, const bat *key, con
 		err = createException(MAL, "oahash.build_combined_table", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto error;
 	}
-	hash_table *h = (hash_table*)u->tsink;
+	hash_table *h = (hash_table*)u->pl_io;
 	assert(h && h->s.type == OA_HASH_TABLE_SINK);
 
 	BUN cnt = BATcount(b);
@@ -1687,12 +1687,12 @@ OAHASHprobe1(Client ctx, bat *PRB_oid, bat *HSH_slotid, const bat *PRB_key, cons
 	}
 
 	if (keycnt) {
-		if (t->tsink->error) {
-			err = t->tsink->error;
+		if (t->pl_io->error) {
+			err = t->pl_io->error;
 			goto error;
 		}
 
-		hash_table *ht = (hash_table*)t->tsink;
+		hash_table *ht = (hash_table*)t->pl_io;
 		bool empty = (ht->last == 0);
 		int tt = k->ttype;
 		QryCtx *qry_ctx = MT_thread_get_qry_ctx();
@@ -2051,12 +2051,12 @@ OAHASHomprobe(Client ctx, bat *PRB_oid, bat *HSH_slotid, bat *PRB_mark, const ba
 	}
 
 	if (keycnt) {
-		if (t->tsink->error) {
-			err = t->tsink->error;
+		if (t->pl_io->error) {
+			err = t->pl_io->error;
 			goto error;
 		}
 
-		hash_table *ht = (hash_table*)t->tsink;
+		hash_table *ht = (hash_table*)t->pl_io;
 		int tt = k->ttype;
 		QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 		qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
@@ -2349,12 +2349,12 @@ OAHASHprobe_cmbd_single(Client ctx, bat *PRB_oid, bat *HSH_slotid, const bat *PR
 	}
 
 	if (mtdcnt) {
-		if (t->tsink->error) {
-			err = t->tsink->error;
+		if (t->pl_io->error) {
+			err = t->pl_io->error;
 			goto error;
 		}
 
-		hash_table *ht = (hash_table*)t->tsink;
+		hash_table *ht = (hash_table*)t->pl_io;
 		unsigned int prime = hash_prime_nr[ht->bits-5];
 		int tt = k->ttype;
 		QryCtx *qry_ctx = MT_thread_get_qry_ctx();
@@ -2722,12 +2722,12 @@ OAHASHomprobe_cmbd(Client ctx, bat *PRB_oid, bat *HSH_slotid, bat *PRB_mark, con
 	}
 
 	if (mtdcnt) {
-		if (t->tsink->error) {
-			err = t->tsink->error;
+		if (t->pl_io->error) {
+			err = t->pl_io->error;
 			goto error;
 		}
 
-		hash_table *ht = (hash_table*)t->tsink;
+		hash_table *ht = (hash_table*)t->pl_io;
 		unsigned int prime = hash_prime_nr[ht->bits-5];
 		int tt = k->ttype;
 		QryCtx *qry_ctx = MT_thread_get_qry_ctx();
@@ -3044,7 +3044,7 @@ OAHASHexplode(Client ctx, bat *fetched, const bat *slotid, const bat *frequency,
 
 	oid *sid = Tloc(l, 0);
 	lng *freq = Tloc(f, 0);
-	hash_table *ht = (hash_table*)h->tsink;
+	hash_table *ht = (hash_table*)h->pl_io;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 	selcnt = BATcount(l);
@@ -3277,7 +3277,7 @@ OAHASHno_slices(Client ctx, int *no_slices, bat *ht_sink)
 	BAT *b = BATdescriptor(*ht_sink);
 	if (!b)
 		return createException(SQL, "oahash.no_slices",	SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	hash_table *h = (hash_table*)b->tsink;
+	hash_table *h = (hash_table*)b->pl_io;
 	assert(h && h->s.type == OA_HASH_TABLE_SINK);
 
 	if (h->size < SLICE_SIZE )
@@ -3300,7 +3300,7 @@ OAHASHnth_slice(Client ctx, bat *slice, bat *ht_sink, int *slice_nr)
 	BAT *b = BATdescriptor(*ht_sink);
 	if (!b)
 		return createException(SQL, "oahash.nth_slice",	SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	hash_table *h = (hash_table*)b->tsink;
+	hash_table *h = (hash_table*)b->pl_io;
 	assert(h && h->s.type == OA_HASH_TABLE_SINK);
 	BUN s = *slice_nr * SLICE_SIZE, e = s + SLICE_SIZE;
 	BAT *r = NULL;

@@ -2160,16 +2160,16 @@ VLTgenerator_new(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		GDKfree(g);
 		throw(SQL, "generator.new",  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
-	b->tsink = (Sink*)g;
+	b->pl_io = (Sink*)g;
 	g->type = tt;
 	g->steptype = pci->argc==4 ? getArgType(mb, pci, 3) : tt;
 	assert(be->part_size);
 	g->part_size = be->part_size;
 	g->cnt = g->cur = 0;
 	g->s.type = GENERATOR_SOURCE;
-	g->s.done = (sink_done)generator_done;
-	g->s.destroy = (sink_destroy)generator_free;
-	g->s.next_bat = (sink_next_bat)generator_next;
+	g->s.done = (pl_io_done)generator_done;
+	g->s.destroy = (pl_io_destroy)generator_free;
+	g->s.next_bat = (pl_io_next_bat)generator_next;
 	MT_lock_init(&g->l, "generator");
 
 	msg = VLTgenerator_get_limits(g, cntxt, mb, stk, pci);

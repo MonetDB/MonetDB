@@ -336,19 +336,21 @@ gdk_export bool VALisnil(const ValRecord *v);
 
 typedef struct PROPrec PROPrec;
 
-typedef void (*sink_destroy)(void *sink);
-typedef int (*sink_done)(void *sink, int wid, int nr_workers, bool redo);
-typedef int (*sink_next)(void *sink, int wid);
-typedef void *(*sink_next_bat)(void *sink, int wid);
-typedef struct Sink {
-	sink_destroy destroy;
-	sink_done done;
-	sink_next next; /* counter incrementing sources */
-	sink_next_bat next_bat; /* bat generating sources */
+typedef void (*pl_io_destroy)(void *pl_io);
+typedef int (*pl_io_done)(void *pl_io, int wid, int nr_workers, bool redo);
+typedef int (*pl_io_next)(void *pl_io, int wid);
+typedef void *(*pl_io_next_bat)(void *pl_io, int wid);
+
+typedef struct pipeline_io {
+	pl_io_destroy destroy;
+	pl_io_done done;
+	pl_io_next next; /* counter incrementing sources */
+	pl_io_next_bat next_bat; /* bat generating sources */
 	int type;		/* sink/source type */
 	char *error;
-} Sink;
-#define TSKdestroy(b) if (b->tsink && b->tsink->destroy) { b->tsink->destroy(b->tsink); b->tsink = NULL; }
+} pl_source, pl_sink, Sink;
+
+#define TSKdestroy(b) if (b->pl_io && b->pl_io->destroy) { b->pl_io->destroy(b->pl_io); b->pl_io = NULL; }
 #define TSKfree(b)    TSKdestroy(b)
 
 #define ORDERIDXOFF		3
@@ -436,7 +438,7 @@ typedef struct BAT {
 #endif
 	Heap *torderidx;	/* order oid index */
 	Strimps *tstrimps;	/* string imprint index  */
-	Sink *tsink;
+	struct pipeline_io *pl_io;
 	PROPrec *tprops;	/* list of dynamic properties stored in the bat descriptor */
 
 	MT_Lock theaplock;	/* lock protecting heap reference changes */

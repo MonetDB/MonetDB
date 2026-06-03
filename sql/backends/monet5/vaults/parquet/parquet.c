@@ -525,8 +525,8 @@ pqcc_create(pqc_file *pq, pqc_filemetadata *fmd, lng nrows)
 {
 	pqc_creader *r = (pqc_creader*)GDKzalloc(sizeof(pqc_creader));
 
-	r->sink.destroy = (sink_destroy)&pqcc_destroy;
-	r->sink.done = (sink_done)&pqcc_done;
+	r->sink.destroy = (pl_io_destroy)&pqcc_destroy;
+	r->sink.done = (pl_io_done)&pqcc_done;
 	r->sink.type = PARQUET_SINK;
 	r->b = pq;
 	r->fmd = fmd;
@@ -586,8 +586,8 @@ pqcmc_create(glob_t *glob, lng nrows)
 		globfree(glob);
 		return NULL;
 	}
-	r->sink.destroy = (sink_destroy)&pqcmc_destroy;
-	r->sink.done = (sink_done)&pqcmc_done;
+	r->sink.destroy = (pl_io_destroy)&pqcmc_destroy;
+	r->sink.done = (pl_io_done)&pqcmc_done;
 	r->sink.type = MPARQUET_SINK;
 	r->nrworkers = 1;
 	r->glob = *glob;
@@ -783,8 +783,8 @@ PARQUETread_large(BAT **R, pqc_creader *r, int colno, Pipeline *p, int wnr)
 static str
 PARQUETread_multi(BAT **R, BAT *b, int colno, Pipeline *p)
 {
-	assert(b->tsink->type == MPARQUET_SINK);
-	pqc_mcreader *r = (pqc_mcreader*)b->tsink;
+	assert(b->pl_io->type == MPARQUET_SINK);
+	pqc_mcreader *r = (pqc_mcreader*)b->pl_io;
 	assert(r);
 
 	int wnr = p->wid;
@@ -853,9 +853,9 @@ PARQUETread(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT *b = BATdescriptor(pqb), *rb = NULL;
 	if (!b)
 		throw (SQL, "parquet.read", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	if (b->tsink->type == PARQUET_SINK) {
-		assert(b->tsink->type == PARQUET_SINK);
-		pqc_creader *r = (pqc_creader*)b->tsink;
+	if (b->pl_io->type == PARQUET_SINK) {
+		assert(b->pl_io->type == PARQUET_SINK);
+		pqc_creader *r = (pqc_creader*)b->pl_io;
 		assert(r);
 
 		msg = PARQUETread_large(&rb, r, colno, p, p->wid);
@@ -906,7 +906,7 @@ PARQUETopen(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			BBPreclaim(b);
 			throw(SQL, SQLSTATE(42000), "parquet" "Could not open parquet file %s", f);
 		}
-		b->tsink = (Sink*)pqcmc_create(&pglob, nrows);
+		b->pl_io = (Sink*)pqcmc_create(&pglob, nrows);
 	} else
 #endif
 	{
@@ -927,10 +927,10 @@ PARQUETopen(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (fmd->nrows > nrows)
 			fmd->nrows = nrows;
 
-		b->tsink = (Sink*)pqcc_create(pq, fmd, nrows);
+		b->pl_io = (Sink*)pqcc_create(pq, fmd, nrows);
 	}
 
-	if (!b->tsink) {
+	if (!b->pl_io) {
 		BBPreclaim(b);
 		throw(SQL, "parquet.open",  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}

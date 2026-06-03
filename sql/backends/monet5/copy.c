@@ -195,8 +195,8 @@ static reader *
 reader_new(stream *s, BUN offset, BUN maxcount, BUN sz, str col_sep_str, str line_sep_str, str quote_str, str null_repr, bool escape_enabled, bool best_effort)
 {
 	reader *r = (reader*)GDKzalloc(sizeof(reader));
-	r->sink.destroy = (sink_destroy)&reader_destroy;
-	r->sink.done = (sink_done)&reader_done;
+	r->sink.destroy = (pl_io_destroy)&reader_destroy;
+	r->sink.done = (pl_io_done)&reader_done;
 	r->sink.type = COPY_SINK;
 	r->s = s;
 	r->offset = offset;
@@ -521,7 +521,7 @@ COPYsplitlines(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ((block_bat = BATdescriptor(block_bat_id)) == NULL)
 		bailout("copy.splitlines", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
-	r = (reader*)block_bat->tsink;
+	r = (reader*)block_bat->pl_io;
 	errors.r = r;
 
 	while(!r->bs) {
@@ -772,12 +772,12 @@ COPYnew(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (!b)
 		throw(SQL, "copy.new",  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
-	b->tsink = (Sink*)reader_new(s, offset, maxcount, sz, col_sep_str, line_sep_str, quote_str, null_repr, escape_enabled, best_effort);
-	if (!b->tsink) {
+	b->pl_io = (Sink*)reader_new(s, offset, maxcount, sz, col_sep_str, line_sep_str, quote_str, null_repr, escape_enabled, best_effort);
+	if (!b->pl_io) {
 		BBPreclaim(b);
 		throw(SQL, "copy.new",  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
-	reader *r = (reader*)b->tsink;
+	reader *r = (reader*)b->pl_io;
 	r->col_sep = col_sep;
 	r->line_sep = line_sep;
 	r->quote_char = quote_char;

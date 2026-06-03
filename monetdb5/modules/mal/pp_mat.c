@@ -32,7 +32,7 @@ typedef struct part_t {
 BAT *
 pack_mat(BAT *b)
 {
-	mat_t *mp = (mat_t*)b->tsink;
+	mat_t *mp = (mat_t*)b->pl_io;
 	BUN cap = 0;
 
 	for (int i = 0; i<mp->nr; i++)
@@ -104,7 +104,7 @@ MATnew(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		GDKfree(mat);
 		throw(MAL, "mat.new", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
-	mat->s.destroy = (sink_destroy)&mat_destroy;
+	mat->s.destroy = (pl_io_destroy)&mat_destroy;
 	mat->s.type = MAT_SINK;
 
 	BAT *matb = COLnew(0, tt, 1, TRANSIENT);
@@ -124,7 +124,7 @@ MATnew(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			BBPunfix(matb->batCacheid);
 			throw(MAL, "mat.new", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		}
-		pmat = (mat_t*)p->tsink;
+		pmat = (mat_t*)p->pl_io;
 		BBPreclaim(p);
 	}
 	if (hashsize) /* multiply with the magic estimation while avoiding overflow */
@@ -136,14 +136,14 @@ MATnew(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			break;
 		BATnegateprops(b);
 		if (hashsize)
-			b->tsink = (Sink*)ht_create(tt, (size_t)(hashsize), pmat?(hash_table*)pmat->bat[i]->tsink:NULL);
+			b->pl_io = (Sink*)ht_create(tt, (size_t)(hashsize), pmat?(hash_table*)pmat->bat[i]->pl_io:NULL);
 	}
 	if (i < mat->nr) {
 		mat_destroy(mat);
 		BBPunfix(matb->batCacheid);
 		throw(MAL, "mat.new", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
-	matb->tsink = (Sink*)mat;
+	matb->pl_io = (Sink*)mat;
 	*mid = matb->batCacheid;
 	BBPkeepref(matb);
 	return MAL_SUCCEED;
@@ -167,7 +167,7 @@ PARTnew(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		throw(MAL, "part.new", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	MT_lock_init(&part->l, "partition");
-	part->s.destroy = (sink_destroy)&part_destroy;
+	part->s.destroy = (pl_io_destroy)&part_destroy;
 	part->s.type = PART_SINK;
 
 	BAT *partb = COLnew(0, TYPE_oid, 100000 /* need estimate? */, TRANSIENT);
@@ -177,7 +177,7 @@ PARTnew(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		throw(MAL, "part.new", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
-	partb->tsink = (Sink*)part;
+	partb->pl_io = (Sink*)part;
 	*pid = partb->batCacheid;
 	BBPkeepref(partb);
 	return MAL_SUCCEED;
@@ -226,7 +226,7 @@ PARTpartition(Client ctx, bat *pos, const bat *part, const bat *glen )
 		BBPreclaim(g);
 		throw(MAL, "part.partition", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
-	part_t *pt = (part_t*)p->tsink;
+	part_t *pt = (part_t*)p->pl_io;
 	assert(pt->s.type == PART_SINK);
 	assert(pt->nr == (int)BATcount(g));
 	BAT *posb = COLnew(0, TYPE_lng, pt->nr, TRANSIENT);
@@ -358,7 +358,7 @@ MATproject(Client ctx, bat *mat, const bat *pos, const bat *lid, const bat *gid,
 		curpos[i] = *(lng*)Tloc(p, i);
 	lng *lp = (lng*)Tloc(l, 0);
 	lng *grp = (lng*)Tloc(g, 0);
-	mat_t *mt = (mat_t*)m->tsink;
+	mat_t *mt = (mat_t*)m->pl_io;
 	assert(mt->s.type == MAT_SINK);
 	assert(mt->nr == (int)BATcount(p));
 	assert(mt->nr == (int)BATcount(l));
@@ -458,7 +458,7 @@ MATfetch(Client ctx, bat *res, const bat *mat, const int *i )
 	BAT *m = BATdescriptor(*mat);
 	if (!m)
 		throw(MAL, "mat.fetch", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	mat_t *mt = (mat_t*)m->tsink;
+	mat_t *mt = (mat_t*)m->pl_io;
 	assert(mt->s.type == MAT_SINK);
 	assert(*i < mt->nr);
 	BAT *b = mt->bat[*i];
@@ -476,7 +476,7 @@ MATfetch_slices(Client ctx, bat *res, const bat *mat, const int *i, const int *S
 	BAT *m = BATdescriptor(*mat);
 	if (!m)
 		throw(MAL, "mat.fetch", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	mat_t *mt = (mat_t*)m->tsink;
+	mat_t *mt = (mat_t*)m->pl_io;
 	assert(mt->s.type == MAT_SINK);
 	assert(*i < mt->nr);
 	mt->bat[*i] = BATsetaccess(mt->bat[*i], BAT_READ);
@@ -499,7 +499,7 @@ MATadd(Client ctx, bat *mat, const bat *bid, const int *i )
 		if (b) BBPunfix(b->batCacheid);
 		throw(MAL, "mat.add", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
-	mat_t *mt = (mat_t*)m->tsink;
+	mat_t *mt = (mat_t*)m->pl_io;
 	assert(mt->s.type == MAT_SINK);
 	assert(*i < mt->nr);
 	if (mt->bat[*i])
@@ -517,7 +517,7 @@ MATnr_parts(Client ctx, int *nr, const bat *mat, const int *slicesize)
 	BAT *m = BATdescriptor(*mat);
 	if (!m)
 		throw(MAL, "mat.nr_parts", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	mat_t *mt = (mat_t*)m->tsink;
+	mat_t *mt = (mat_t*)m->pl_io;
 	assert(mt->s.type == MAT_SINK);
 	int n = 0;
 	for(int i = 0; i< mt->nr; i++) {
@@ -557,7 +557,7 @@ MATcounters_get(Client ctx, int *partid, int *sliceid, const bat *mat, const int
 	BAT *m = BATdescriptor(*mat);
 	if (!m)
 		throw(MAL, "mat.counters_get", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	mat_t *mt = (mat_t*)m->tsink;
+	mat_t *mt = (mat_t*)m->pl_io;
 	assert(mt->s.type == MAT_SINK);
 	if (*partnr > mt->nr_parts || *partnr < 0)
 		throw(MAL, "mat.counters_get", SQLSTATE(HY002) "partnr out of range");

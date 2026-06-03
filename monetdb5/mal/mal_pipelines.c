@@ -338,7 +338,7 @@ runMALpipelines(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, int maxpart
 			if (!sb) {
 				err = createException(SQL, "language.pipeline", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			} else {
-				Sink *sink = sb->tsink;
+				Sink *sink = sb->pl_io;
 				sink->error = err;
 				BBPreclaim(sb);
 			}

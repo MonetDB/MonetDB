@@ -201,7 +201,7 @@ PPcounter_get(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT *b = BATdescriptor(cb);
 	if (!b)
 		throw(MAL, "pipeline.counter_get", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	pp_counter *c = (pp_counter*)b->tsink;
+	pp_counter *c = (pp_counter*)b->pl_io;
 	if (!c) {
 		BBPunfix(b->batCacheid);
 		throw(MAL, "pipeline.counter_get", SQLSTATE(HY002) "Missing source sink");
@@ -252,7 +252,7 @@ PPcounter(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (!b)
 			return createException(SQL, "pipeline.counter", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		size_t cnt = 0;
-		hash_table *h = (hash_table*)b->tsink;
+		hash_table *h = (hash_table*)b->pl_io;
 		if (h && h->s.type == OA_HASH_TABLE_SINK) {
 			cnt = h->size;
 		} else {
@@ -284,10 +284,10 @@ PPcounter(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL, "pipeline.counter",  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
-	b->tsink = (Sink*)c;
+	b->pl_io = (Sink*)c;
 	c->s.type = COUNTER_SINK;
-	c->s.destroy = (sink_destroy)&counter_free;
-	c->s.done = (sink_done)&counter_done;
+	c->s.destroy = (pl_io_destroy)&counter_free;
+	c->s.done = (pl_io_done)&counter_done;
 	c->current = 0;
 	c->cur = NULL;
 	c->nr = nr;
@@ -295,7 +295,7 @@ PPcounter(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (sync) {
 		c->sync = true;
 		c->scnt = 0;
-		c->s.done = (sink_done)&sync_counter_done;
+		c->s.done = (pl_io_done)&sync_counter_done;
 	}
 	*rb = b->batCacheid;
 	BBPkeepref(b);
@@ -313,11 +313,11 @@ PPdone(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void)cntxt; (void)mb;
 	BAT *b = BATdescriptor(B);
 	if (b) {
-		if (!b->tsink) {
+		if (!b->pl_io) {
 			BBPunfix(b->batCacheid);
 			throw(MAL, "pipeline.done", SQLSTATE(HY002) "Missing source sink");
 		}
-		*res = b->tsink->done(b->tsink, p->wid, p->p->nr_workers, redo);
+		*res = b->pl_io->done(b->pl_io, p->wid, p->p->nr_workers, redo);
 		BBPunfix(b->batCacheid);
 	}
 	return MAL_SUCCEED;
@@ -359,7 +359,7 @@ concat_done( pp_concat *c, int wid, int nr_workers, bool redo )
 	}
 	BAT *sb = c->srcs[c->cur[wid]];
 	if (sb) {
-		Sink *s = sb->tsink;
+		Sink *s = sb->pl_io;
 		MT_lock_unset(&c->l);
 		res = s->done(s, wid, nr_workers, redo);
 		MT_lock_set(&c->l);
@@ -367,7 +367,7 @@ concat_done( pp_concat *c, int wid, int nr_workers, bool redo )
 			sb = c->srcs[c->cur[wid]];
 			if (!sb)
 				break;
-			s = sb->tsink;
+			s = sb->pl_io;
 			MT_lock_unset(&c->l);
 			res = s->done(s, wid, nr_workers, false);
 			MT_lock_set(&c->l);
@@ -386,7 +386,7 @@ concat_next( pp_concat *c, int wid)
 	assert(c->started);
 	BAT *sb = c->srcs[c->cur[wid]];
 	if (sb) {
-		Sink *s = sb->tsink;
+		Sink *s = sb->pl_io;
 		MT_lock_unset(&c->l);
 		if (s->next)
 			res = s->next(s, wid);
@@ -405,7 +405,7 @@ concat_next_bat( pp_concat *c, int wid)
 	assert(c->started);
 	BAT *sb = c->srcs[c->cur[wid]];
 	if (sb) {
-		Sink *s = sb->tsink;
+		Sink *s = sb->pl_io;
 		MT_lock_unset(&c->l);
 		if (s->next_bat)
 			res = s->next_bat(s, wid);
@@ -434,7 +434,7 @@ PPconcat_block(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT *b = BATdescriptor(cb);
 	if (!b)
 		throw(MAL, "pipeline.concat_block", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	pp_concat *pcat = (pp_concat*)b->tsink;
+	pp_concat *pcat = (pp_concat*)b->pl_io;
 	if (pcat->s.type != CONCAT_SINK) {
 		BBPreclaim(b);
 		throw(MAL, "pipeline.concat_block", SQLSTATE(HY002) "Invalid type for a concat source %d", pcat->s.type);
@@ -463,7 +463,7 @@ PPconcat_add(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BBPreclaim(i);
 		throw(MAL, "pipeline.concat_add", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
-	pp_concat *pcat = (pp_concat*)b->tsink;
+	pp_concat *pcat = (pp_concat*)b->pl_io;
 	if (pcat->s.type != CONCAT_SINK) {
 		BBPreclaim(b);
 		BBPreclaim(i);
@@ -497,12 +497,12 @@ PPconcat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		GDKfree(pcat);
 		throw(SQL, "pipeline.concat",  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
-	b->tsink = (Sink*)pcat;
+	b->pl_io = (Sink*)pcat;
 	pcat->s.type = CONCAT_SINK;
-	pcat->s.destroy = (sink_destroy)&concat_free;
-	pcat->s.done = (sink_done)&concat_done;
-	pcat->s.next = (sink_next)&concat_next;
-	pcat->s.next_bat = (sink_next_bat)&concat_next_bat;
+	pcat->s.destroy = (pl_io_destroy)&concat_free;
+	pcat->s.done = (pl_io_done)&concat_done;
+	pcat->s.next = (pl_io_next)&concat_next;
+	pcat->s.next_bat = (pl_io_next_bat)&concat_next_bat;
 	pcat->current = 0;
 	pcat->max = nr;
 	pcat->started = false;
@@ -534,8 +534,8 @@ PPresultset(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		GDKfree(prs);
 		throw(SQL, "pipeline.resultset",  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
-	b->tsink = (Sink*)prs;
-	prs->s.destroy = (sink_destroy)&GDKfree;
+	b->pl_io = (Sink*)prs;
+	prs->s.destroy = (pl_io_destroy)&GDKfree;
 	MT_lock_init(&prs->l, "resultset");
 	*rb = b->batCacheid;
 	BBPkeepref(b);
@@ -552,7 +552,7 @@ PPclaim(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	BAT *b = BATdescriptor(rb);
 	if (b) {
-		pp_resultset *rs = (pp_resultset*)b->tsink;
+		pp_resultset *rs = (pp_resultset*)b->pl_io;
 		*res = ATOMIC_ADD(&rs->claimed, cnt);
 		BBPreclaim(b);
 	}
@@ -577,7 +577,7 @@ PPidentity(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BBPreclaim(b);
 	b = BATdescriptor(rb);
 	if (b) {
-		pp_resultset *rs = (pp_resultset*)b->tsink;
+		pp_resultset *rs = (pp_resultset*)b->pl_io;
 		offset = ATOMIC_ADD(&rs->claimed, cnt);
 		BBPreclaim(b);
 
@@ -612,7 +612,7 @@ PPappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BBPreclaim(r);
 		throw(MAL, "bat.append", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
-	pp_resultset *pp_rs = (pp_resultset*)r->tsink;
+	pp_resultset *pp_rs = (pp_resultset*)r->pl_io;
 	(void)pp_rs;
 
 	if (i && (i->ttype == TYPE_msk || mask_cand(i))) {
@@ -661,7 +661,7 @@ source_next(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if (!s)
 		throw(MAL, "source.next", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	Sink *src = s->tsink;
+	Sink *src = s->pl_io;
 	if (!src || !src->next_bat) {
 		BBPreclaim(s);
 		throw(MAL, "source.next", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);

@@ -747,8 +747,8 @@ SOPnew(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	q->h = NULL;
 	q->t = NULL;
 	MT_lock_init(&q->l, "sop");
-	q->s.destroy = (sink_destroy)&sop_destroy;
-	q->s.done = (sink_done)&sop_done;
+	q->s.destroy = (pl_io_destroy)&sop_destroy;
+	q->s.done = (pl_io_done)&sop_done;
 	q->s.type = SOP_SINK;
 
 	BAT *qb = COLnew(0, TYPE_oid, 0 /* need estimate? */, TRANSIENT);
@@ -756,7 +756,7 @@ SOPnew(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		GDKfree(q);
 		throw(MAL, "sop.new", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
-	qb->tsink = (Sink*)q;
+	qb->pl_io = (Sink*)q;
 	*sop = qb->batCacheid;
 	BBPkeepref(qb);
 	return MAL_SUCCEED;
@@ -775,7 +775,7 @@ SOPadd(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	BAT *qb = BATdescriptor(*qbat);
 	if (!qb)
 		throw(MAL, "sop.add", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	sop_t *q = (sop_t*)qb->tsink;
+	sop_t *q = (sop_t*)qb->pl_io;
 	assert(q->s.type == SOP_SINK);
 
 	part_t *e = (part_t*)GDKmalloc(sizeof(part_t) + sizeof(bat) * nr);
@@ -819,7 +819,7 @@ SOPfetch(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	BAT *qb = BATdescriptor(*qbat);
 	if (!qb)
 		throw(MAL, "sop.dequeue", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	sop_t *q = (sop_t*)qb->tsink;
+	sop_t *q = (sop_t*)qb->pl_io;
 	assert(q->s.type == SOP_SINK);
 
 	part_t *e = q->workers[wid];
