@@ -5542,10 +5542,10 @@ unnest(visitor *v, sql_rel *parent, sql_rel * rel, struct unnesting *info, list 
 	if (!rel)
 		return ;
 
-	if (list_empty(acc) && !rel_is_ref(rel)) { /* unnest ends add join with d */
+	if (list_empty(acc) && !rel_is_ref(rel) && (!is_simple_project(rel->op) || rel->l)) { /* unnest ends add join with d */
 		sql_rel *d = rel_project(v->sql->sa, rel_dup(info->info->d), rel_projections(v->sql, info->info->d, NULL, 1, 1));
 		add_outers_repr(v, d, info, true);
-		sql_rel *nrel = rel_crossproduct(v->sql->sa, d, rel,  op_join);
+		sql_rel *nrel = rel_crossproduct(v->sql->sa, d, rel, is_right(info->info->join->op) ? info->info->join->op : op_join);
 		rel_update_subrel(parent, rel, nrel);
 		return;
 	}
@@ -5566,7 +5566,7 @@ unnest(visitor *v, sql_rel *parent, sql_rel * rel, struct unnesting *info, list 
 	   	list *exps = list_merge(rel_projections(v->sql, d, NULL, 0, 1), rel_projections(v->sql, rel, NULL, 0, 1), NULL);
 		rel = rel_inplace_project(v->sql->sa, rel, NULL, exps);
 		rel->nr_outers = list_length(info->info->outer_refs);
-		rel->l = rel_crossproduct(v->sql->sa, d, rel->l,  op_join);
+		rel->l = rel_crossproduct(v->sql->sa, d, rel->l,  is_right(info->info->join->op) ? info->info->join->op : op_join);
 		//rel_update_subrel(parent, rel, nrel);
 		return;
 	}
