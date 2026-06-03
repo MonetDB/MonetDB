@@ -525,8 +525,8 @@ pqcc_create(pqc_file *pq, pqc_filemetadata *fmd, lng nrows)
 {
 	pqc_creader *r = (pqc_creader*)GDKzalloc(sizeof(pqc_creader));
 
-	r->sink.destroy = (pl_io_destroy)&pqcc_destroy;
-	r->sink.done = (pl_io_done)&pqcc_done;
+	r->sink.destroy = (pipeline_io_destroy)&pqcc_destroy;
+	r->sink.done = (pipeline_io_done)&pqcc_done;
 	r->sink.type = PARQUET_SINK;
 	r->b = pq;
 	r->fmd = fmd;
@@ -586,8 +586,8 @@ pqcmc_create(glob_t *glob, lng nrows)
 		globfree(glob);
 		return NULL;
 	}
-	r->sink.destroy = (pl_io_destroy)&pqcmc_destroy;
-	r->sink.done = (pl_io_done)&pqcmc_done;
+	r->sink.destroy = (pipeline_io_destroy)&pqcmc_destroy;
+	r->sink.done = (pipeline_io_done)&pqcmc_done;
 	r->sink.type = MPARQUET_SINK;
 	r->nrworkers = 1;
 	r->glob = *glob;

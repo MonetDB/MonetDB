@@ -747,8 +747,8 @@ SOPnew(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	q->h = NULL;
 	q->t = NULL;
 	MT_lock_init(&q->l, "sop");
-	q->s.destroy = (pl_io_destroy)&sop_destroy;
-	q->s.done = (pl_io_done)&sop_done;
+	q->s.destroy = (pipeline_io_destroy)&sop_destroy;
+	q->s.done = (pipeline_io_done)&sop_done;
 	q->s.type = SOP_SINK;
 
 	BAT *qb = COLnew(0, TYPE_oid, 0 /* need estimate? */, TRANSIENT);

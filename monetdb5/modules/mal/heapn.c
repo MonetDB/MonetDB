@@ -1055,7 +1055,7 @@ _heap_create( int size, bool shared, bool grouped )
 {
 	heapn *h = (heapn*)GDKzalloc(sizeof(heapn));
 
-	h->s.destroy = (pl_io_destroy)heap_destroy;
+	h->s.destroy = (pipeline_io_destroy)heap_destroy;
 	h->s.type = HEAP_SINK;
 	h->shared = shared;
 	h->grouped = grouped;

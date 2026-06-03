@@ -2167,9 +2167,9 @@ VLTgenerator_new(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	g->part_size = be->part_size;
 	g->cnt = g->cur = 0;
 	g->s.type = GENERATOR_SOURCE;
-	g->s.done = (pl_io_done)generator_done;
-	g->s.destroy = (pl_io_destroy)generator_free;
-	g->s.next_bat = (pl_io_next_bat)generator_next;
+	g->s.done = (pipeline_io_done)generator_done;
+	g->s.destroy = (pipeline_io_destroy)generator_free;
+	g->s.next_bat = (pipeline_io_next_bat)generator_next;
 	MT_lock_init(&g->l, "generator");
 
 	msg = VLTgenerator_get_limits(g, cntxt, mb, stk, pci);

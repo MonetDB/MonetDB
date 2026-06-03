@@ -95,7 +95,7 @@ _ht_create( int type, size_t size, hash_table *p)
 
 	if (!type)
 		type = TYPE_oid;
-	h->s.destroy = (pl_io_destroy)&ht_destroy;
+	h->s.destroy = (pipeline_io_destroy)&ht_destroy;
 	h->s.type = OA_HASH_TABLE_SINK;
 	if (bits >= GIDBITS)
 		bits = GIDBITS-1;

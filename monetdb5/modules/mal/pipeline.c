@@ -286,8 +286,8 @@ PPcounter(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	b->pl_io = (struct pipeline_io*)c;
 	c->s.type = COUNTER_SINK;
-	c->s.destroy = (pl_io_destroy)&counter_free;
-	c->s.done = (pl_io_done)&counter_done;
+	c->s.destroy = (pipeline_io_destroy)&counter_free;
+	c->s.done = (pipeline_io_done)&counter_done;
 	c->current = 0;
 	c->cur = NULL;
 	c->nr = nr;
@@ -295,7 +295,7 @@ PPcounter(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (sync) {
 		c->sync = true;
 		c->scnt = 0;
-		c->s.done = (pl_io_done)&sync_counter_done;
+		c->s.done = (pipeline_io_done)&sync_counter_done;
 	}
 	*rb = b->batCacheid;
 	BBPkeepref(b);
@@ -499,10 +499,10 @@ PPconcat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	b->pl_io = (struct pipeline_io*)pcat;
 	pcat->s.type = CONCAT_SINK;
-	pcat->s.destroy = (pl_io_destroy)&concat_free;
-	pcat->s.done = (pl_io_done)&concat_done;
-	pcat->s.next = (pl_io_next)&concat_next;
-	pcat->s.next_bat = (pl_io_next_bat)&concat_next_bat;
+	pcat->s.destroy = (pipeline_io_destroy)&concat_free;
+	pcat->s.done = (pipeline_io_done)&concat_done;
+	pcat->s.next = (pipeline_io_next)&concat_next;
+	pcat->s.next_bat = (pipeline_io_next_bat)&concat_next_bat;
 	pcat->current = 0;
 	pcat->max = nr;
 	pcat->started = false;
@@ -535,7 +535,7 @@ PPresultset(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL, "pipeline.resultset",  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	b->pl_io = (struct pipeline_io*)prs;
-	prs->s.destroy = (pl_io_destroy)&GDKfree;
+	prs->s.destroy = (pipeline_io_destroy)&GDKfree;
 	MT_lock_init(&prs->l, "resultset");
 	*rb = b->batCacheid;
 	BBPkeepref(b);

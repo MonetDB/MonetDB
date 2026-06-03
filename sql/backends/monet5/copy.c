@@ -195,8 +195,8 @@ static reader *
 reader_new(stream *s, BUN offset, BUN maxcount, BUN sz, str col_sep_str, str line_sep_str, str quote_str, str null_repr, bool escape_enabled, bool best_effort)
 {
 	reader *r = (reader*)GDKzalloc(sizeof(reader));
-	r->sink.destroy = (pl_io_destroy)&reader_destroy;
-	r->sink.done = (pl_io_done)&reader_done;
+	r->sink.destroy = (pipeline_io_destroy)&reader_destroy;
+	r->sink.done = (pipeline_io_done)&reader_done;
 	r->sink.type = COPY_SINK;
 	r->s = s;
 	r->offset = offset;

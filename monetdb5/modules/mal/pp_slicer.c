@@ -35,7 +35,7 @@ topn_create(void)
 	if (!t)
 		return NULL;
 
-	t->s.destroy = (pl_io_destroy)&topn_destroy;
+	t->s.destroy = (pipeline_io_destroy)&topn_destroy;
 	t->s.type = TOPN_SINK;
 	t->start = 0;
 	t->end = 0;

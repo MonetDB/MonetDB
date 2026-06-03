@@ -104,7 +104,7 @@ MATnew(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		GDKfree(mat);
 		throw(MAL, "mat.new", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
-	mat->s.destroy = (pl_io_destroy)&mat_destroy;
+	mat->s.destroy = (pipeline_io_destroy)&mat_destroy;
 	mat->s.type = MAT_SINK;
 
 	BAT *matb = COLnew(0, tt, 1, TRANSIENT);
@@ -167,7 +167,7 @@ PARTnew(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		throw(MAL, "part.new", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	MT_lock_init(&part->l, "partition");
-	part->s.destroy = (pl_io_destroy)&part_destroy;
+	part->s.destroy = (pipeline_io_destroy)&part_destroy;
 	part->s.type = PART_SINK;
 
 	BAT *partb = COLnew(0, TYPE_oid, 100000 /* need estimate? */, TRANSIENT);

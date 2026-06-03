@@ -336,19 +336,19 @@ gdk_export bool VALisnil(const ValRecord *v);
 
 typedef struct PROPrec PROPrec;
 
-typedef void (*pl_io_destroy)(void *pl_io);
-typedef int (*pl_io_done)(void *pl_io, int wid, int nr_workers, bool redo);
-typedef int (*pl_io_next)(void *pl_io, int wid);
-typedef void *(*pl_io_next_bat)(void *pl_io, int wid);
+typedef void  (*pipeline_io_destroy)  (void *pl_io);
+typedef int   (*pipeline_io_done)     (void *pl_io, int wid, int nr_workers, bool redo);
+typedef int   (*pipeline_io_next)     (void *pl_io, int wid);
+typedef void *(*pipeline_io_next_bat) (void *pl_io, int wid);
 
 typedef struct pipeline_io {
-	pl_io_destroy destroy;
-	pl_io_done done;
-	pl_io_next next; /* counter incrementing sources */
-	pl_io_next_bat next_bat; /* bat generating sources */
-	int type;		/* sink/source type */
+	pipeline_io_destroy destroy;
+	pipeline_io_done done;
+	pipeline_io_next next;         /* counter incrementing sources */
+	pipeline_io_next_bat next_bat; /* bat generating sources */
+	int type;                      /* sink/source type */
 	char *error;
-} pl_source, pl_sink;
+} pipeline_source, pipeline_sink;
 
 #define TSKdestroy(b) if (b->pl_io && b->pl_io->destroy) { b->pl_io->destroy(b->pl_io); b->pl_io = NULL; }
 #define TSKfree(b)    TSKdestroy(b)
