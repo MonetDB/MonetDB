@@ -36,7 +36,7 @@ topn_create(void)
 		return NULL;
 
 	t->s.destroy = (pipeline_io_destroy)&topn_destroy;
-	t->s.type = TOPN_SINK;
+	t->s.type = PIPELINE_IO_TOPN;
 	t->start = 0;
 	t->end = 0;
 	return t;
@@ -87,7 +87,7 @@ LALGsubslice(Client ctx, bat *gid, bat *rid, bat *tid, bat *bid, /*bat *sid,*/ l
 		}
 		t->pl_io = (struct pipeline_io*)n;
 	}
-	assert(n && n->s.type == TOPN_SINK);
+	assert(n && n->s.type == PIPELINE_IO_TOPN);
 
 	(void)p;
 	BUN cnt = BATcount(b);

@@ -1056,7 +1056,7 @@ _heap_create( int size, bool shared, bool grouped )
 	heapn *h = (heapn*)GDKzalloc(sizeof(heapn));
 
 	h->s.destroy = (pipeline_io_destroy)heap_destroy;
-	h->s.type = HEAP_SINK;
+	h->s.type = PIPELINE_IO_HEAP;
 	h->shared = shared;
 	h->grouped = grouped;
 	h->size = size;
@@ -1524,7 +1524,7 @@ HEAPtopn(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr pci)
 	}
 	private = hps->tprivate_bat;
 	heapn *hp = (heapn*)hps->pl_io;
-	assert(hp && hp->s.type == HEAP_SINK);
+	assert(hp && hp->s.type == PIPELINE_IO_HEAP);
 	if (((hp->sub && hp->sub->vb == NULL) || (hp->grouped && hp->grpb == NULL)) && !_heap_init(hp)) {
 		BBPreclaim(b);
 		BBPreclaim(gps);

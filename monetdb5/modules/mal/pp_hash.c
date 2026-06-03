@@ -48,7 +48,7 @@ _ht_init(hash_table *h)
 		if (h->vals == NULL || h->gids == NULL)
 			goto error;
 		if (h->p) {
-			assert(h->s.type == OA_HASH_TABLE_SINK);
+			assert(h->s.type == PIPELINE_IO_HASH_TABLE);
 			h->pgids = (gid*)GDKmalloc(sizeof(gid)* h->size);
 			if (h->pgids == NULL)
 				goto error;
@@ -96,7 +96,7 @@ _ht_create( int type, size_t size, hash_table *p)
 	if (!type)
 		type = TYPE_oid;
 	h->s.destroy = (pipeline_io_destroy)&ht_destroy;
-	h->s.type = OA_HASH_TABLE_SINK;
+	h->s.type = PIPELINE_IO_HASH_TABLE;
 	if (bits >= GIDBITS)
 		bits = GIDBITS-1;
 	h->bits = bits;
@@ -467,7 +467,7 @@ OAHASHhashmark_init(Client ctx, bat *res, const bat *ht_sink, const bat *payload
     hash_table *h = (hash_table*)ht->pl_io;
 	if (hp)
 		h = (hash_table*)hp->pl_io;
-	//assert(h && h->s.type == OA_HASH_TABLE_SINK);
+	//assert(h && h->s.type == PIPELINE_IO_HASH_TABLE);
 	BUN sz = h?h->last:BATcount(ht); /* no hash ie outer cross product case */
 
 	r = COLnew(0, TYPE_bit, sz, TRANSIENT);
@@ -532,7 +532,7 @@ UHASHext(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 	if (!i)
 		return createException(MAL, "hash.ext", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	hash_table *h = (hash_table*)i->pl_io;
-	if (!h || h->s.type != OA_HASH_TABLE_SINK) {
+	if (!h || h->s.type != PIPELINE_IO_HASH_TABLE) {
 		BBPreclaim(i);
 		return createException(MAL, "hash.ext", SQLSTATE(HY002) "Missing hash table");
 	}
@@ -876,7 +876,7 @@ OAHASHbuild_tbl(Client ctx, bat *slot_id, bat *ht_sink, const bat *key, const pt
 		goto error;
 	}
 	hash_table *h = (hash_table*)u->pl_io;
-	assert(h && h->s.type == OA_HASH_TABLE_SINK);
+	assert(h && h->s.type == PIPELINE_IO_HASH_TABLE);
 
 	BUN cnt = BATcount(b);
 	g = COLnew(b->hseqbase, TYPE_oid, cnt, TRANSIENT);
@@ -1278,7 +1278,7 @@ OAHASHbuild_tbl_cmbd(Client ctx, bat *slot_id, bat *ht_sink, const bat *key, con
 		goto error;
 	}
 	hash_table *h = (hash_table*)u->pl_io;
-	assert(h && h->s.type == OA_HASH_TABLE_SINK);
+	assert(h && h->s.type == PIPELINE_IO_HASH_TABLE);
 
 	BUN cnt = BATcount(b);
 	g = COLnew(b->hseqbase, TYPE_oid, cnt, TRANSIENT);
@@ -3278,7 +3278,7 @@ OAHASHno_slices(Client ctx, int *no_slices, bat *ht_sink)
 	if (!b)
 		return createException(SQL, "oahash.no_slices",	SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	hash_table *h = (hash_table*)b->pl_io;
-	assert(h && h->s.type == OA_HASH_TABLE_SINK);
+	assert(h && h->s.type == PIPELINE_IO_HASH_TABLE);
 
 	if (h->size < SLICE_SIZE )
 		*no_slices = 1;
@@ -3301,7 +3301,7 @@ OAHASHnth_slice(Client ctx, bat *slice, bat *ht_sink, int *slice_nr)
 	if (!b)
 		return createException(SQL, "oahash.nth_slice",	SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	hash_table *h = (hash_table*)b->pl_io;
-	assert(h && h->s.type == OA_HASH_TABLE_SINK);
+	assert(h && h->s.type == PIPELINE_IO_HASH_TABLE);
 	BUN s = *slice_nr * SLICE_SIZE, e = s + SLICE_SIZE;
 	BAT *r = NULL;
 

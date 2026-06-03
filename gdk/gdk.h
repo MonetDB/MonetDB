@@ -438,8 +438,9 @@ typedef struct BAT {
 #endif
 	Heap *torderidx;	/* order oid index */
 	Strimps *tstrimps;	/* string imprint index  */
-	struct pipeline_io *pl_io;
 	PROPrec *tprops;	/* list of dynamic properties stored in the bat descriptor */
+
+	struct pipeline_io *pl_io;
 
 	MT_Lock theaplock;	/* lock protecting heap reference changes */
 	MT_RWLock thashlock;	/* lock specifically for hash management */

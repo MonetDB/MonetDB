@@ -168,7 +168,7 @@ bufferstream_jumpN(bufferstream *bs, unsigned char *sep, int len, int cb)
 static void
 reader_destroy(reader *r)
 {
-	assert(r->sink.type == COPY_SINK);
+	assert(r->sink.type == PIPELINE_IO_COPY);
 	if (r->s) {
 		mnstr_close(r->s);
 		mnstr_destroy(r->s);
@@ -197,7 +197,7 @@ reader_new(stream *s, BUN offset, BUN maxcount, BUN sz, str col_sep_str, str lin
 	reader *r = (reader*)GDKzalloc(sizeof(reader));
 	r->sink.destroy = (pipeline_io_destroy)&reader_destroy;
 	r->sink.done = (pipeline_io_done)&reader_done;
-	r->sink.type = COPY_SINK;
+	r->sink.type = PIPELINE_IO_COPY;
 	r->s = s;
 	r->offset = offset;
 	r->maxcount = maxcount;

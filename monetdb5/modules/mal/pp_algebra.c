@@ -1061,7 +1061,7 @@ LALGunique(Client ctx, bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid)
 	}
 
 	hash_table *h = (hash_table*)u->pl_io;
-	assert(h && h->s.type == OA_HASH_TABLE_SINK);
+	assert(h && h->s.type == PIPELINE_IO_HASH_TABLE);
 	MT_lock_set(&u->theaplock);
 	MT_lock_set(&b->theaplock);
 	if (ATOMvarsized(u->ttype) /*&& !VIEWvtparent(b)*/) {
@@ -1313,7 +1313,7 @@ LALGgroup_unique(Client ctx, bat *rid, bat *uid, const ptr *H, bat *bid, bat *si
 	}
 
 	hash_table *h = (hash_table*)u->pl_io;
-	assert(h && h->s.type == OA_HASH_TABLE_SINK);
+	assert(h && h->s.type == PIPELINE_IO_HASH_TABLE);
 	MT_lock_set(&u->theaplock);
 	MT_lock_set(&b->theaplock);
 	if (ATOMvarsized(u->ttype) /*&& !VIEWvtparent(b)*/) {
@@ -1662,7 +1662,7 @@ LALGgroup(Client ctx, bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 	//(void)sid;
 
 	hash_table *h = (hash_table*)u->pl_io;
-	assert(h && h->s.type == OA_HASH_TABLE_SINK);
+	assert(h && h->s.type == PIPELINE_IO_HASH_TABLE);
 	MT_lock_set(&u->theaplock);
 	MT_lock_set(&b->theaplock);
 	if ((ATOMvarsized(u->ttype) && !VIEWvtparent(b)) ||
@@ -1956,7 +1956,7 @@ LALGderive(Client ctx, bat *rid, bat *uid, const ptr *H, bat *Gid, bat *Ph, bat 
 	//(void)sid;
 
 	hash_table *h = (hash_table*)u->pl_io;
-	assert(h && h->s.type == OA_HASH_TABLE_SINK);
+	assert(h && h->s.type == PIPELINE_IO_HASH_TABLE);
 	MT_lock_set(&u->theaplock);
 	MT_lock_set(&b->theaplock);
 	if ((ATOMvarsized(u->ttype) && !VIEWvtparent(b)) ||

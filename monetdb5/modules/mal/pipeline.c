@@ -117,7 +117,6 @@ sleep_ns( int ns)
 #endif
 }
 
-#define COUNTER_SINK 98
 typedef struct pp_counter_t {
 	struct pipeline_io s;
 
@@ -206,9 +205,9 @@ PPcounter_get(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BBPunfix(b->batCacheid);
 		throw(MAL, "pipeline.counter_get", SQLSTATE(HY002) "Missing source sink");
 	}
-	if (c->s.type != COUNTER_SINK) {
+	if (c->s.type != PIPELINE_IO_COUNTER) {
 		BBPunfix(b->batCacheid);
-		throw(MAL, "pipeline.counter_get", SQLSTATE(HY002) "Invalid source type %d, expected %d", c->s.type, COUNTER_SINK);
+		throw(MAL, "pipeline.counter_get", SQLSTATE(HY002) "Invalid source type %d, expected %d", c->s.type, PIPELINE_IO_COUNTER);
 	}
 	if (c->sync && c->scnt != (int)p->p->nr_workers) {
 		MT_lock_set(&p->p->l);
@@ -253,7 +252,7 @@ PPcounter(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			return createException(SQL, "pipeline.counter", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		size_t cnt = 0;
 		hash_table *h = (hash_table*)b->pl_io;
-		if (h && h->s.type == OA_HASH_TABLE_SINK) {
+		if (h && h->s.type == PIPELINE_IO_HASH_TABLE) {
 			cnt = h->size;
 		} else {
 			cnt = BATcount(b);
@@ -285,7 +284,7 @@ PPcounter(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	b->pl_io = (struct pipeline_io*)c;
-	c->s.type = COUNTER_SINK;
+	c->s.type = PIPELINE_IO_COUNTER;
 	c->s.destroy = (pipeline_io_destroy)&counter_free;
 	c->s.done = (pipeline_io_done)&counter_done;
 	c->current = 0;
@@ -323,7 +322,6 @@ PPdone(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-#define CONCAT_SINK 99
 typedef struct pp_concat_t {
 	struct pipeline_io s;
 
@@ -351,7 +349,7 @@ static int
 concat_done( pp_concat *c, int wid, int nr_workers, bool redo )
 {
 	int res = 1;
-	assert(c->s.type == CONCAT_SINK);
+	assert(c->s.type == PIPELINE_IO_CONCAT);
 	MT_lock_set(&c->l);
 	if (!c->started) {
 		c->cur = (int*)GDKzalloc(sizeof(int) * nr_workers);
@@ -381,7 +379,7 @@ static int
 concat_next( pp_concat *c, int wid)
 {
 	int res = 1;
-	assert(c->s.type == CONCAT_SINK);
+	assert(c->s.type == PIPELINE_IO_CONCAT);
 	MT_lock_set(&c->l);
 	assert(c->started);
 	BAT *sb = c->srcs[c->cur[wid]];
@@ -400,7 +398,7 @@ static BAT*
 concat_next_bat( pp_concat *c, int wid)
 {
 	BAT *res = NULL;
-	assert(c->s.type == CONCAT_SINK);
+	assert(c->s.type == PIPELINE_IO_CONCAT);
 	MT_lock_set(&c->l);
 	assert(c->started);
 	BAT *sb = c->srcs[c->cur[wid]];
@@ -435,7 +433,7 @@ PPconcat_block(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (!b)
 		throw(MAL, "pipeline.concat_block", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	pp_concat *pcat = (pp_concat*)b->pl_io;
-	if (pcat->s.type != CONCAT_SINK) {
+	if (pcat->s.type != PIPELINE_IO_CONCAT) {
 		BBPreclaim(b);
 		throw(MAL, "pipeline.concat_block", SQLSTATE(HY002) "Invalid type for a concat source %d", pcat->s.type);
 	}
@@ -464,7 +462,7 @@ PPconcat_add(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "pipeline.concat_add", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	pp_concat *pcat = (pp_concat*)b->pl_io;
-	if (pcat->s.type != CONCAT_SINK) {
+	if (pcat->s.type != PIPELINE_IO_CONCAT) {
 		BBPreclaim(b);
 		BBPreclaim(i);
 		throw(MAL, "pipeline.concat_add", SQLSTATE(HY002) "Invalid type for a concat source %d", pcat->s.type);
@@ -498,7 +496,7 @@ PPconcat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL, "pipeline.concat",  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	b->pl_io = (struct pipeline_io*)pcat;
-	pcat->s.type = CONCAT_SINK;
+	pcat->s.type = PIPELINE_IO_CONCAT;
 	pcat->s.destroy = (pipeline_io_destroy)&concat_free;
 	pcat->s.done = (pipeline_io_done)&concat_done;
 	pcat->s.next = (pipeline_io_next)&concat_next;

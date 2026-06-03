@@ -677,9 +677,6 @@ PPmproject(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return msg;
 }
 
-/* set of (ordered) parts */
-#define SOP_SINK 43
-
 typedef struct part_t {
 	struct part_t *next;
 	int nr;
@@ -714,7 +711,7 @@ sop_done(sop_t *q, int wid, int nr_workers, bool redo)
 	(void)redo;
 	(void)nr_workers;
 	int res = 0;
-    assert(q->s.type == SOP_SINK);
+    assert(q->s.type == PIPELINE_IO_SOP);
 
 	MT_lock_set(&q->l);
 	assert(q->workers[wid] == 0);
@@ -749,7 +746,7 @@ SOPnew(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	MT_lock_init(&q->l, "sop");
 	q->s.destroy = (pipeline_io_destroy)&sop_destroy;
 	q->s.done = (pipeline_io_done)&sop_done;
-	q->s.type = SOP_SINK;
+	q->s.type = PIPELINE_IO_SOP;
 
 	BAT *qb = COLnew(0, TYPE_oid, 0 /* need estimate? */, TRANSIENT);
 	if (!qb) {
@@ -776,7 +773,7 @@ SOPadd(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	if (!qb)
 		throw(MAL, "sop.add", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	sop_t *q = (sop_t*)qb->pl_io;
-	assert(q->s.type == SOP_SINK);
+	assert(q->s.type == PIPELINE_IO_SOP);
 
 	part_t *e = (part_t*)GDKmalloc(sizeof(part_t) + sizeof(bat) * nr);
 	if (!e) {
@@ -820,7 +817,7 @@ SOPfetch(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	if (!qb)
 		throw(MAL, "sop.dequeue", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	sop_t *q = (sop_t*)qb->pl_io;
-	assert(q->s.type == SOP_SINK);
+	assert(q->s.type == PIPELINE_IO_SOP);
 
 	part_t *e = q->workers[wid];
 	if (e) {
