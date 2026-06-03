@@ -72,30 +72,13 @@ static struct timeval startup_time;
  */
 struct logbuf {
 	char *logbuffer;
-	char *logbase;
 	size_t loglen;
 	size_t logcap;
+	allocator *ma;
 };
 
-static inline void
-lognew(struct logbuf *logbuf)
-{
-	logbuf->loglen = 0;
-	logbuf->logbase = logbuf->logbuffer;
-	*logbuf->logbase = 0;
-}
-
-static inline void
-logdel(struct logbuf *logbuf)
-{
-	GDKfree(logbuf->logbuffer);
-	logbuf->logbuffer = NULL;
-}
-
-static bool logadd(struct logbuf *logbuf,
-				   _In_z_ _Printf_format_string_ const char *fmt, ...)
-		__attribute__((__format__(__printf__, 2, 3)))
-		__attribute__((__warn_unused_result__));
+__attribute__((__format__(__printf__, 2, 3)))
+__attribute__((__warn_unused_result__))
 static bool
 logadd(struct logbuf *logbuf, const char *fmt, ...)
 {
@@ -107,27 +90,34 @@ logadd(struct logbuf *logbuf, const char *fmt, ...)
 	tmp_len = vsnprintf(tmp_buff, sizeof(tmp_buff), fmt, va);
 	va_end(va);
 	if (tmp_len < 0) {
-		logdel(logbuf);
 		return false;
 	}
 	if (logbuf->loglen + (size_t) tmp_len >= logbuf->logcap) {
 		char *alloc_buff;
+		size_t oldcap = logbuf->logcap;
 		logbuf->logcap += (size_t) tmp_len + (size_t) tmp_len / 2;
 		if (logbuf->logcap < LOGLEN)
 			logbuf->logcap = LOGLEN;
-		alloc_buff = GDKrealloc(logbuf->logbuffer, logbuf->logcap);
-		if (alloc_buff == NULL) {
-			TRC_ERROR(MAL_SERVER,
-					  "Profiler JSON buffer reallocation failure\n");
-			logdel(logbuf);
-			return false;
+		if (logbuf->logbuffer == NULL)
+			logbuf->logbuffer = ma_alloc(logbuf->ma, logbuf->logcap);
+		else {
+			alloc_buff = ma_realloc(logbuf->ma, logbuf->logbuffer,
+									logbuf->logcap, oldcap);
+			if (alloc_buff == NULL) {
+				TRC_ERROR(MAL_SERVER,
+						  "Profiler JSON buffer reallocation failure\n");
+				return false;
+			}
+			logbuf->logbuffer = alloc_buff;
 		}
-		logbuf->logbuffer = alloc_buff;
-		lognew(logbuf);
 	}
-	if (tmp_len > 0) {
+	if ((size_t) tmp_len < sizeof(tmp_buff)) {
+		logbuf->loglen += strtcpy(logbuf->logbuffer + logbuf->loglen,
+								  tmp_buff,
+								  logbuf->logcap - logbuf->loglen);
+	} else {
 		va_start(va, fmt);
-		logbuf->loglen += vsnprintf(logbuf->logbase + logbuf->loglen,
+		logbuf->loglen += vsnprintf(logbuf->logbuffer + logbuf->loglen,
 									logbuf->logcap - logbuf->loglen, fmt, va);
 		va_end(va);
 	}
@@ -149,14 +139,12 @@ static str phase_descriptions[] = {
 };
 
 static str
-prepareMalEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
-				lng clk, lng ticks)
+prepareMalEvent(allocator *ma, Client cntxt, MalBlkPtr mb, MalStkPtr stk,
+				InstrPtr pci, lng clk, lng ticks)
 {
-	struct logbuf logbuf;
+	struct logbuf logbuf = {.ma = ma};
 	uint64_t mclk;
 	const char *algo = MT_thread_getalgorithm();
-
-	logbuf = (struct logbuf) { 0 };
 
 	mclk = (uint64_t) clk - ((uint64_t) startup_time.tv_sec * 1000000 -
 							 (uint64_t) startup_time.tv_usec);
@@ -196,7 +184,6 @@ prepareMalEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		goto cleanup_and_exit;
 	return logbuf.logbuffer;
   cleanup_and_exit:
-	logdel(&logbuf);
 	return NULL;
 }
 
@@ -384,7 +371,6 @@ sqlProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 				 lng clk, lng ticks)
 {
 	str stmt, c, ev;
-	int errors = 0;
 
 	if (cntxt->profticks == NULL)
 		return;
@@ -398,24 +384,26 @@ sqlProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	   c++;
 	 */
 
-	ev = prepareMalEvent(cntxt, mb, stk, pci, clk, ticks);
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
+
+	ev = prepareMalEvent(ta, cntxt, mb, stk, pci, clk, ticks);
 	// keep it a short transaction
 	MT_lock_set(&mal_profileLock);
 	if (cntxt->profticks == NULL) {
 		MT_lock_unset(&mal_profileLock);
+		ma_close(&ta_state);
 		return;
 	}
-	errors += BUNappend(cntxt->profticks, &ticks, false) != GDK_SUCCEED;
-	errors += BUNappend(cntxt->profstmt, c, false) != GDK_SUCCEED;
-	errors += BUNappend(cntxt->profevents, ev ? ev : str_nil,
-						false) != GDK_SUCCEED;
-	if (errors > 0) {
+	if (BUNappend(cntxt->profticks, &ticks, false) != GDK_SUCCEED ||
+		BUNappend(cntxt->profstmt, c, false) != GDK_SUCCEED ||
+		BUNappend(cntxt->profevents, ev ? ev : str_nil, false) != GDK_SUCCEED) {
 		/* stop profiling if an error occurred */
 		cntxt->sqlprofiler = false;
 	}
 
 	MT_lock_unset(&mal_profileLock);
-	GDKfree(ev);
+	ma_close(&ta_state);
 }
 
 /* Calculate a pessimistic size of the disk storage */

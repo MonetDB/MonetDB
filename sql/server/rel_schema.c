@@ -1738,7 +1738,7 @@ rel_create_view(sql_query *query, int temp, dlist *qname, dlist *column_spec, sy
 		}
 
 		bool globals = sql->globals;
-		sql->globals = (temp != SQL_LOCAL_TEMP);
+		sql->globals = (persistent && temp != SQL_LOCAL_TEMP);
 		pfoundid = sql->objid;
 		sql->objid = foundid; /* when recreating a view, the view itself can't be found */
 		sq = schema_selects(query, s, ast);

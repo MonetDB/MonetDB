@@ -53,7 +53,7 @@ COPYparse_generic(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (block == NULL || indices == NULL)
 		bailout("copy.parse_generic", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	n = BATcount(indices);
-	reader *r = (reader*)block->tsink;
+	reader *r = (reader*)block->pl_io;
 	copy_init_error_handling(&errors, cntxt, r->line_count[p->wid], col_no, col_name, rows);
 	errors.r = r;
 
@@ -192,7 +192,7 @@ COPYparse_float(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (block == NULL || indices == NULL)
 		bailout("copy.parse_float", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	n = BATcount(indices);
-	reader *r = (reader*)block->tsink;
+	reader *r = (reader*)block->pl_io;
 	copy_init_error_handling(&errors, cntxt, r->line_count[p->wid], col_no, col_name, rows);
 	errors.r = r;
 
@@ -322,7 +322,7 @@ COPYparse_string(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if (!block_bat || !offsets_bat)
 		bailout(fname, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	reader *r = (reader*)block_bat->tsink;
+	reader *r = (reader*)block_bat->pl_io;
 	copy_init_error_handling(&errors, cntxt, r->line_count[p->wid], col_no, col_name, rows);
 	errors.r = r;
 
@@ -423,7 +423,7 @@ parse_fixed_width_column(
 	if (!block_bat || !offsets_bat)
 		bailout(fname, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
-	reader *r = (reader*)block_bat->tsink;
+	reader *r = (reader*)block_bat->pl_io;
 	errors->r = r;
 	errors->starting_row = r->line_count[p->wid];
 	parsed_bat = COLnew(0, tpe, BATcount(offsets_bat), TRANSIENT);

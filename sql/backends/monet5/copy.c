@@ -168,7 +168,7 @@ bufferstream_jumpN(bufferstream *bs, unsigned char *sep, int len, int cb)
 static void
 reader_destroy(reader *r)
 {
-	assert(r->sink.type == COPY_SINK);
+	assert(r->sink.type == PIPELINE_IO_COPY);
 	if (r->s) {
 		mnstr_close(r->s);
 		mnstr_destroy(r->s);
@@ -195,9 +195,9 @@ static reader *
 reader_new(stream *s, BUN offset, BUN maxcount, BUN sz, str col_sep_str, str line_sep_str, str quote_str, str null_repr, bool escape_enabled, bool best_effort)
 {
 	reader *r = (reader*)GDKzalloc(sizeof(reader));
-	r->sink.destroy = (sink_destroy)&reader_destroy;
-	r->sink.done = (sink_done)&reader_done;
-	r->sink.type = COPY_SINK;
+	r->sink.destroy = (pipeline_io_destroy)&reader_destroy;
+	r->sink.done = (pipeline_io_done)&reader_done;
+	r->sink.type = PIPELINE_IO_COPY;
 	r->s = s;
 	r->offset = offset;
 	r->maxcount = maxcount;
@@ -493,34 +493,6 @@ end:
 	return msg;
 }
 
-static void
-sleep_ns( int ns)
-{
-#ifdef NATIVE_WIN32
-	if (ns < 1000000)
-		ns = 1;
-	else
-		ns /= 1000000;
-	Sleep(ns);
-#else
-#ifdef HAVE_NANOSLEEP
-	struct timespec ts;
-
-	ts.tv_sec = (time_t) 0;
-	ts.tv_nsec = ns;
-	while (nanosleep(&ts, &ts) == -1 && errno == EINTR)
-		;
-#else
-	struct timeval tv;
-
-	tv.tv_sec = 0;
-	tv.tv_usec = ((ns+999)/1000);
-	(void) select(0, NULL, NULL, NULL, &tv);
-#endif
-#endif
-}
-
-
 static str
 COPYsplitlines(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -549,7 +521,7 @@ COPYsplitlines(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ((block_bat = BATdescriptor(block_bat_id)) == NULL)
 		bailout("copy.splitlines", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
-	r = (reader*)block_bat->tsink;
+	r = (reader*)block_bat->pl_io;
 	errors.r = r;
 
 	while(!r->bs) {
@@ -575,8 +547,8 @@ COPYsplitlines(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ((r->done) || r->error)
 		p->p->master_counter = (p->p->nr_workers*-2);
 
-	while (!r->done && !r->error && ATOMIC_GET(&r->seqnr) != r->bs->seq[p->wid])
-		sleep_ns(1);
+	if (!r->done && !r->error)
+		(void)pipeline_get_token(p, 0, p->wid, &r->done);
 
 	if (!r->done)
 		p->seqnr = (int)r->bs->seq[p->wid];
@@ -594,7 +566,10 @@ COPYsplitlines(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			r->error = true;
 			bailout("copy.splitlines", SQLSTATE(42000) "unterminated line at end of file while jumping");
 		}
-		ATOMIC_INC(&r->seqnr);
+	}
+	if (r->can_jump) {
+		ATOMIC_INC(&r->seqnr); // send token to next reader on channel 0
+		(void)pipeline_pass_token(p, 0, p->wid);
 	}
 
 	/* TODO: handle skipping with jumping */
@@ -618,19 +593,20 @@ COPYsplitlines(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			r->error = true;
 			return msg;
 		}
-		if (r->can_jump) {
-			while (!r->done && !r->error && ATOMIC_GET(&r->jump_seqnr) != r->bs->seq[p->wid])
-				sleep_ns(1);
-		}
+		if (r->can_jump)
+			(void)pipeline_get_token(p, 1, p->wid, &r->done);
 		r->linecount += line_count;
 		state.end = state.start + e;
 		r->bs->pos[p->wid] = e;
 		r->maxcount -= line_count;
 		if (r->maxcount == 0)
 			r->done = 1;
-		if (r->can_jump)
-			ATOMIC_INC(&r->jump_seqnr);
 	}
+	if (r->can_jump) {
+		ATOMIC_INC(&r->jump_seqnr);
+		(void)pipeline_pass_token(p, 1, p->wid);
+	}
+
 	r->bs->seq[p->wid] += p->p->nr_workers;
 	if (r->best_effort) {
 		errors.rows = BATdescriptor(errors.rows_batid);
@@ -638,11 +614,13 @@ COPYsplitlines(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BATsetcount(errors.rows, line_count);
 	}
 
-	if (!r->can_jump)
-		ATOMIC_INC(&r->seqnr);
-
 	if (r->bs->eof)
 		r->done = r->bs->eof;
+
+	if (!r->can_jump) {
+		ATOMIC_INC(&r->seqnr); /* send on channel 0*/
+		(void)pipeline_pass_token(p, 0, p->wid);
+	}
 
 	return_bats = GDKzalloc(ncols * sizeof(*return_bats));
 	return_indices = GDKzalloc(ncols * sizeof(*return_indices));
@@ -790,16 +768,16 @@ COPYnew(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		null_repr = NULL;
 
 	(void)mb; (void)cntxt;
-	BAT *b = COLnew(0, TYPE_bte, 1024, TRANSIENT);
+	BAT *b = COLnew(0, TYPE_bte, 0, TRANSIENT);
 	if (!b)
 		throw(SQL, "copy.new",  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
-	b->tsink = (Sink*)reader_new(s, offset, maxcount, sz, col_sep_str, line_sep_str, quote_str, null_repr, escape_enabled, best_effort);
-	if (!b->tsink) {
+	b->pl_io = (struct pipeline_io*)reader_new(s, offset, maxcount, sz, col_sep_str, line_sep_str, quote_str, null_repr, escape_enabled, best_effort);
+	if (!b->pl_io) {
 		BBPreclaim(b);
 		throw(SQL, "copy.new",  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
-	reader *r = (reader*)b->tsink;
+	reader *r = (reader*)b->pl_io;
 	r->col_sep = col_sep;
 	r->line_sep = line_sep;
 	r->quote_char = quote_char;

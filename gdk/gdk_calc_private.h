@@ -33,10 +33,12 @@
 
 #ifdef __has_builtin
 #if __has_builtin(__builtin_add_overflow)
-#define OP_WITH_CHECK(lft, rgt, dst, op, max, on_overflow)		\
+#define OP_WITH_CHECK(lft, rgt, TYPE3, dst, op, max, on_overflow)	\
 	do {								\
+		TYPE3 old = dst;					\
 		if (__builtin_##op##_overflow(lft, rgt, &(dst)) ||	\
 		    (dst) < -(max) /*|| (dst) > (max)*/) {		\
+			dst = old;					\
 			on_overflow;					\
 		}							\
 	} while (0)
@@ -66,7 +68,7 @@
 #ifdef OP_WITH_CHECK
 /* integer version using Gnu CC builtin function for overflow check */
 #define ADDI_WITH_CHECK(lft, rgt, TYPE3, dst, max, on_overflow)		\
-	OP_WITH_CHECK(lft, rgt, dst, add, max, on_overflow)
+	OP_WITH_CHECK(lft, rgt, TYPE3, dst, add, max, on_overflow)
 #else
 /* integer version using generic version */
 #define ADDI_WITH_CHECK(lft, rgt, TYPE3, dst, max, on_overflow) \
@@ -100,7 +102,7 @@
 #ifdef OP_WITH_CHECK
 /* integer version using Gnu CC builtin function for overflow check */
 #define SUBI_WITH_CHECK(lft, rgt, TYPE3, dst, max, on_overflow)		\
-	OP_WITH_CHECK(lft, rgt, dst, sub, max, on_overflow)
+	OP_WITH_CHECK(lft, rgt, TYPE3, dst, sub, max, on_overflow)
 #else
 /* integer version using generic version */
 #define SUBI_WITH_CHECK(lft, rgt, TYPE3, dst, max, on_overflow) \
@@ -127,7 +129,7 @@
 #ifdef OP_WITH_CHECK
 /* integer version using Gnu CC builtin function for overflow check */
 #define MULI4_WITH_CHECK(lft, rgt, TYPE3, dst, max, TYPE4, on_overflow) \
-	OP_WITH_CHECK(lft, rgt, dst, mul, max, on_overflow)
+	OP_WITH_CHECK(lft, rgt, TYPE3, dst, mul, max, on_overflow)
 #else
 /* integer version using generic version */
 #define MULI4_WITH_CHECK(lft, rgt, TYPE3, dst, max, TYPE4, on_overflow) \
@@ -190,7 +192,7 @@
 #ifdef HAVE_HGE
 #ifdef OP_WITH_CHECK
 #define HGEMUL_CHECK(lft, rgt, dst, max, on_overflow)			\
-	OP_WITH_CHECK(lft, rgt, dst, mul, max, on_overflow)
+	OP_WITH_CHECK(lft, rgt, hge, dst, mul, max, on_overflow)
 #else
 #define HGEMUL_CHECK(lft, rgt, dst, max, on_overflow)			\
 	do {								\

@@ -1,3 +1,151 @@
+monetdb (11.55.5) unstable; urgency=low
+
+  * Rebuilt.
+  * GH#7728: MonetDB server (Mar2025-SP2-release) crashes at `strCmp`
+  * GH#7770: Assertion failure in query_outer_aggregated with aggregated
+    scalar subquery in INSERT VALUES
+  * GH#7788: mserver crash: rel_order_by raising assertion
+    is_project(rel->op)  fail
+  * GH#7789: mserver crash : rel_bin.c exp_bin: Assertion `0' failed.
+  * GH#7790: mserver5 crash: rel_bin rel2bin_insert Assertion `!n && !m'
+    failed
+  * GH#7791: mserver5 crash :  rel_bin.c Assertion `sql->session->status ==
+    -10' failed.
+  * GH#7792: Mserver crash：rel_bin.c stmt *rel2bin_join: Assertion
+    `sql->session->status == -10' failed
+  * GH#7793: mserver crash：rel2bin_semijoin Assertion `sql->session->status
+    == -10' failed.
+  * GH#7794: mserver crash: rel_bin rel2bin_groupby Assertion
+    `sql->session->status == -10'
+  * GH#7795: mserver crash: rel2bin_project  Assertion `sql->session->status
+    == -10' failed.
+  * GH#7796: mserver crash : stmt_alias_  Assertion `label' failed.
+  * GH#7797: monetdb crash ：rel_exp.c rel_find_exp_and_corresponding_rel_
+    Assertion `e->nid' failed.
+  * GH#7800: mserver crash: rel_used_projections Assertion `e->nid &&
+    exps_bind_nid(exps, e->nid)' failed
+  * GH#7801: mserver crash:exp_rel_visitor  Assertion `e' failed.
+  * GH#7813: Top N not pushed down to Remote Tables in Merge Table
+    (v11.53.15)
+  * GH#7815: Server SIGSEGV in `ALGmarkselect` triggered by `CAST`·`WHEN NOT
+    NULL`·`UNION SELECT DISTINCT` feature intersection
+  * GH#7816: table returning function with split_part() and
+    generate_series() crashes server when called multiple times
+  * GH#7818: Server crash in `GDKanalytical_covariance_samp` triggered by
+    NULL-argument statistical window functions combined with divide-by-zero
+    frame bounds and empty UNION range
+  * GH#7820: MonetDB server crashes with "unexpected end of file" on SELECT
+    with scalar subquery and EXISTS referencing system tables
+  * GH#7826: Monetdb server crash on SELECT with nested derived tables,
+    EXISTS subquery with LIMIT, and complex boolean predicates on system
+    catalog tables
+  * GH#7832: Server crash in `rel_push_select_down` (SQL optimizer)
+    triggered by row-value comparison warm-up sequence and `rank() OVER
+    (PARTITION BY mixed-type literals)`
+  * GH#7833: Bug Report — Server crash in `rel_push_select_down` (SQL
+    optimizer) triggered by `RANK() OVER` in `HAVING NOT x < ANY (aggregate
+    comparison)` with multi-column MAX/MIN SELECT
+  * GH#7834: Server crash in `rel_push_select_down` (SQL optimizer)
+    triggered by doubly-nested recursive CTE inside
+    `STDDEV_POP(NULLIF(...))` with `CUBE` GROUP BY and correlated NOT IN
+    subquery
+  * GH#7835: Server crash in `rel_push_select_down` (SQL optimizer)
+    triggered by `NULLIF(recursive_CTE, NULL)` inside HAVING with `GROUP BY
+    CUBE` and triple-UNION source
+  * GH#7836: MonetDB server crash on SELECT with CASE WHEN containing nested
+    EXISTS, LATERAL subquery with LIMIT, and complex boolean predicates on
+    system catalog tables
+  * GH#7837: MonetDB server crash on SELECT with nested CASE WHEN,
+    correlated EXISTS subqueries, LATERAL join with LIMIT/OFFSET, and
+    complex constant-folded predicates
+  * GH#7838: MonetDB server crash on SELECT with nested joins, EXISTS
+    subquery with scalar aggregates, and OR in ON conditions
+  * GH#7839: TCP health check floods merovingian log with errors
+  * GH#7840: MonetDB server crash during optimization of SELECT with nested
+    LATERAL and multiple scalar aggregate subqueries
+  * GH#7841: Server crash in `rel_push_select_down` (SQL optimizer)
+    triggered by nested recursive CTE inside `STDDEV_POP(NULLIF(...))` with
+    `CUBE` grouping and BETWEEN on `md5(NULL)`
+  * GH#7842: Server crash in `rel_push_select_down` (SQL optimizer)
+    triggered by `max() OVER` in UNION with `GROUP BY CUBE` and deeply
+    nested recursive CTE in NOT IN HAVING predicate
+  * GH#7843: Server crash during signal handling (`vscanf`/`psiginfo`)
+    triggered by multi-statement sequence with `rank() OVER (PARTITION BY
+    mixed-type literals)` after simple comparison warm-up
+  * GH#7844: Server crash in `_rel_aggr` (aggregate relation builder)
+    triggered by `SUM(DISTINCT)` after multi-statement escape-character
+    comparison sequence and CREATE/DROP TABLE
+  * GH#7845: Server crash in `bin_find_smallest_column`
+  * GH#7846: Server crash in `do_covariance_and_correlation`
+  * GH#7847: MonetDB server crash during SELECT with nested EXISTS, CASE
+    expression, and correlated subquery referencing derived table columns
+  * GH#7848: MonetDB server crash during SELECT with LATERAL subquery,
+    nested CASE expressions, and scalar subqueries
+  * GH#7849: MonetDB server crash during SELECT with nested EXISTS, mixed
+    JOIN types, and correlated derived-table subquery
+  * GH#7850: MonetDB server crash during SELECT with LATERAL subquery, mixed
+    JOIN types, and nested CASE expressions
+  * GH#7851: MonetDB server crash during MERGE with deeply nested LATERAL
+    subqueries and correlated EXISTS predicates
+  * GH#7852: Server crash in `exp_bin` (expression code generation)
+    triggered by row-value comparison warm-up sequence and `COUNT(*) OVER
+    (ROWS BETWEEN CASE ... PRECEDING AND CURRENT ROW)` with complex NOT IN
+    subquery
+  * GH#7853: Server crash in `exp_bin` (expression code generation)
+    triggered by `5 IN (subquery) AND 6 IN (subquery)` with HAVING
+    containing recursive CTE
+  * GH#7854: Server crash in `exp_freevar` during `rel_unnest_dependent`
+    (deep recursion) triggered by doubly-nested recursive CTE with
+    `ltrim(rtrim(sql_min(...)))` seed and deeply correlated NOT IN subquery
+    with `SUM(DISTINCT CAST(NULL IN (...) AS INTEGER))`
+  * GH#7855: Server crash in `exp_has_freevar`
+  * GH#7856: Server crash in `exp_match`
+  * GH#7857: Server crash in `exp_rel_visitor`
+  * GH#7859: Server crash in `getModule`
+  * GH#7862: Server crash in `rel_crossproduct`
+  * GH#7865: Server crash in `rel_get_statistics_`
+  * GH#7867: Server crash in `rel_optimize_projections_`
+  * GH#7870: Server crash in `rel_set_type`
+  * GH#7872: Server crash in `rel_unnest_simplify`
+  * GH#7873: MonetDB crash with deeply nested LATERAL and EXISTS queries
+  * GH#7874: MonetDB crash on SELECT with nested LATERAL subqueries,
+    multi-level JOINs, and correlated EXISTS predicates
+  * GH#7875: MonetDB server crash during SELECT with multiple LATERAL
+    subqueries, complex JOIN conditions, and nested CASE expressions
+  * GH#7876: MonetDB server crash during SELECT with RIGHT JOIN, EXISTS
+    subquery, and complex constant-folded expressions
+  * GH#7877: MonetDB crash with nested RIGHT JOINs, correlated EXISTS
+    subqueries, and constant-based join predicates
+  * GH#7878: MonetDB crash with minimal LATERAL subquery and nested CASE in
+    WHERE
+  * GH#7880: MonetDB crash (SIGSEGV) on query with nested LATERAL subqueries
+    and CASE expression, no direct reason reported by mserver5
+  * GH#7882: Incorrect optimization of LATERAL subquery with DISTINCT and
+    outer reference leading to wrong results or planner error
+  * GH#7883: MonetDB crash (SIGSEGV) on query with RIGHT JOIN and Subquery,
+    no direct reason reported by mserver5
+  * GH#7884: MonetDB crash (SIGSEGV) on query with Lateral subquery and a
+    redundant always-true predicate, no direct reason reported by mserver5
+  * GH#7886: LOCAL TEMPORARY VIEW not visible via CTE
+  * GH#7888: MonetDB produces different results for two logically equivalent
+    UPDATE statements.  The mutated statement differs from the original only
+    by adding a dead boolean branch inside the predicate:  AND 1 = 0
+  * GH#7889: MonetDB produces different results for two `DELETE` statements
+    whose `EXISTS` subqueries should be equivalent in this test case.
+  * GH#7890: Wrong result for semantically equivalent INSERT ... SELECT ...
+    WHERE EXISTS(...) with UNION / EXCEPT / INTERSECT
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 03 Apr 2026 11:56:28 +0200
+
+monetdb (11.55.5) unstable; urgency=low
+
+  * MonetDB: Suppress error messages in merovingian.log when incoming connections
+    are closed by the client before any I/O takes place.
+    Service health monitoring tools tend to do this periodically to check
+    if MonetDB is still up.
+
+ -- Joeri van Ruth <joeri.van.ruth@monetdbsolutions.com>  Wed, 4 Mar 2026 11:56:28 +0200
+
 monetdb (11.55.3) unstable; urgency=low
 
   * Rebuilt.

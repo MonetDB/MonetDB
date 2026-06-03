@@ -12,7 +12,7 @@
 #define _PP_MAT_H_
 
 typedef struct mat_t {
-	Sink s;
+	struct pipeline_io pl_io;
 	int nr;
 	int nr_parts;
 	int *part;

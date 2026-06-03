@@ -1060,8 +1060,8 @@ LALGunique(Client ctx, bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid)
 		goto error;
 	}
 
-	hash_table *h = (hash_table*)u->tsink;
-	assert(h && h->s.type == OA_HASH_TABLE_SINK);
+	hash_table *h = (hash_table*)u->pl_io;
+	assert(h && h->pl_io.type == PIPELINE_IO_HASH_TABLE);
 	MT_lock_set(&u->theaplock);
 	MT_lock_set(&b->theaplock);
 	if (ATOMvarsized(u->ttype) /*&& !VIEWvtparent(b)*/) {
@@ -1312,8 +1312,8 @@ LALGgroup_unique(Client ctx, bat *rid, bat *uid, const ptr *H, bat *bid, bat *si
 		goto error;
 	}
 
-	hash_table *h = (hash_table*)u->tsink;
-	assert(h && h->s.type == OA_HASH_TABLE_SINK);
+	hash_table *h = (hash_table*)u->pl_io;
+	assert(h && h->pl_io.type == PIPELINE_IO_HASH_TABLE);
 	MT_lock_set(&u->theaplock);
 	MT_lock_set(&b->theaplock);
 	if (ATOMvarsized(u->ttype) /*&& !VIEWvtparent(b)*/) {
@@ -1643,8 +1643,8 @@ LALGgroup(Client ctx, bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 			err = createException(MAL, "pp group.group", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto error;
 		}
-		u->tsink = (Sink*)ht_create(b->ttype?b->ttype:TYPE_oid, 1, NULL);
-		if (u->tsink == NULL) {
+		u->pl_io = (struct pipeline_io*)ht_create(b->ttype?b->ttype:TYPE_oid, 1, NULL);
+		if (u->pl_io == NULL) {
 			err = createException(MAL, "pp group.group", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto error;
 		}
@@ -1661,8 +1661,8 @@ LALGgroup(Client ctx, bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 	//assert(is_bat_nil(*sid)); /* no cands jet */
 	//(void)sid;
 
-	hash_table *h = (hash_table*)u->tsink;
-	assert(h && h->s.type == OA_HASH_TABLE_SINK);
+	hash_table *h = (hash_table*)u->pl_io;
+	assert(h && h->pl_io.type == PIPELINE_IO_HASH_TABLE);
 	MT_lock_set(&u->theaplock);
 	MT_lock_set(&b->theaplock);
 	if ((ATOMvarsized(u->ttype) && !VIEWvtparent(b)) ||
@@ -1936,8 +1936,8 @@ LALGderive(Client ctx, bat *rid, bat *uid, const ptr *H, bat *Gid, bat *Ph, bat 
 			goto error;
 		}
 		/* Lookup parent hash */
-		u->tsink = (Sink*)ht_create(b->ttype?b->ttype:TYPE_oid, 1, (hash_table*)H->tsink);
-		if (u->tsink == NULL) {
+		u->pl_io = (struct pipeline_io*)ht_create(b->ttype?b->ttype:TYPE_oid, 1, (hash_table*)H->pl_io);
+		if (u->pl_io == NULL) {
 			BBPunfix(H->batCacheid);
 			err = createException(MAL, "pp group.group(derive)", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto error;
@@ -1955,8 +1955,8 @@ LALGderive(Client ctx, bat *rid, bat *uid, const ptr *H, bat *Gid, bat *Ph, bat 
 	//assert(is_bat_nil(*sid)); /* no cands jet */
 	//(void)sid;
 
-	hash_table *h = (hash_table*)u->tsink;
-	assert(h && h->s.type == OA_HASH_TABLE_SINK);
+	hash_table *h = (hash_table*)u->pl_io;
+	assert(h && h->pl_io.type == PIPELINE_IO_HASH_TABLE);
 	MT_lock_set(&u->theaplock);
 	MT_lock_set(&b->theaplock);
 	if ((ATOMvarsized(u->ttype) && !VIEWvtparent(b)) ||

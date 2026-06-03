@@ -3327,20 +3327,6 @@ bind_optimize_projections(visitor *v, global_props *gp)
 		   || gp->cnt[op_inter] || gp->cnt[op_except]) && (flag & optimize_projections) ? rel_optimize_projections : NULL;
 }
 
-
-static bool
-exps_have_selfref(list *exps)
-{
-	bool selfref = false;
-	if (list_empty(exps))
-		return false;
-	for(node *n = exps->h; n && !selfref; n = n->next) {
-		sql_exp *e = n->data;
-		selfref |= is_selfref(e);
-	}
-	return selfref;
-}
-
 static inline sql_rel *
 rel_push_project_down_union(visitor *v, sql_rel *rel)
 {

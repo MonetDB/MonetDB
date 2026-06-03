@@ -5,5 +5,6 @@ debian/tmp/usr/lib/x86_64-linux-gnu/libmonetdbsql*.so* usr/lib/x86_64-linux-gnu
 # usr/lib/x86_64-linux-gnu/monetdb5*/lib_*.so EXCEPT: lib_{fits,geom,gsl,microbenchmark,pyapi*,rapi,sql,udf}.so
 debian/tmp/usr/lib/x86_64-linux-gnu/monetdb5*/lib_capi.so usr/lib/x86_64-linux-gnu/monetdb5
 debian/tmp/usr/lib/x86_64-linux-gnu/monetdb5*/lib_csv.so usr/lib/x86_64-linux-gnu/monetdb5
+debian/tmp/usr/lib/x86_64-linux-gnu/monetdb5*/lib_parquet.so usr/lib/x86_64-linux-gnu/monetdb5
 debian/tmp/usr/lib/x86_64-linux-gnu/monetdb5*/lib_generator.so usr/lib/x86_64-linux-gnu/monetdb5
 debian/tmp/usr/lib/x86_64-linux-gnu/monetdb5*/lib_monetdb_loader.so usr/lib/x86_64-linux-gnu/monetdb5

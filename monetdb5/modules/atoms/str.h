@@ -133,7 +133,6 @@
 			str newbuf = ma_alloc(ma, newlen);								\
 			if (!newbuf)												\
 				throw(MAL, OP, SQLSTATE(HY013) MAL_MALLOC_FAIL);		\
-			/*GDKfree(*BUFFER);*/											\
 			*BUFFER = newbuf;											\
 			*BUFFER_LEN = newlen;										\
 		}																\

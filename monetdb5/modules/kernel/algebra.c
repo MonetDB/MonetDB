@@ -389,7 +389,7 @@ ALGmarkselect(Client ctx, bat *r1, bat *r2, const bat *gid, const bat *mid, cons
 		throw(MAL, "algebra.markselect", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	BUN nr = BATcount(g), q = 0;
-	assert (nr == BATcount(m) && nr == BATcount(p)); 
+	assert (nr == BATcount(m) && nr == BATcount(p));
 
 	if ((res1 = COLnew(0, TYPE_oid, nr, TRANSIENT)) == NULL || (res2 = COLnew(0, TYPE_bit, nr, TRANSIENT)) == NULL) {
 		BBPreclaim(g);
@@ -990,9 +990,10 @@ ALGintersect(Client ctx, bat *r1, const bat *lid, const bat *rid, const bat *sli
 }
 
 /* algebra.firstn(b:bat[:any],
- *                [ s:bat[:oid],
- *                [ g:bat[:oid], ] ]
+ *                s:bat[:oid],
+ *                g:bat[:oid],
  *                n:lng,
+ *                [ o:lng, return_skipped:bit, ] -- if specified, no second return
  *                asc:bit,
  *                nilslast:bit,
  *                distinct:bit)
@@ -1006,48 +1007,76 @@ ALGfirstn(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT *b, *s = NULL, *g = NULL;
 	BAT *bn = NULL, *gn = NULL;
 	lng n;
+	lng o = 0;
 	bit asc, nilslast, distinct;
-	gdk_return rc;
+	gdk_return rc = GDK_SUCCEED;
 
 	(void) cntxt;
 	(void) mb;
 
 	assert(pci->retc == 1 || pci->retc == 2);
-	assert(pci->argc - pci->retc >= 5 && pci->argc - pci->retc <= 7);
+	assert(pci->argc - pci->retc >= 5 && pci->argc - pci->retc <= 9);
 
-	n = *getArgReference_lng(stk, pci, pci->argc - 4);
-	if (n < 0)
-		throw(MAL, "algebra.firstn", ILLEGAL_ARGUMENT);
-	if (n > (lng) BUN_MAX)
-		n = BUN_MAX;
 	ret1 = getArgReference_bat(stk, pci, 0);
 	if (pci->retc == 2)
 		ret2 = getArgReference_bat(stk, pci, 1);
+
 	bid = *getArgReference_bat(stk, pci, pci->retc);
+	sid = *getArgReference_bat(stk, pci, pci->retc + 1);
+	gid = *getArgReference_bat(stk, pci, pci->retc + 2);
 	if ((b = BATdescriptor(bid)) == NULL)
-		throw(MAL, "algebra.firstn", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	if (pci->argc - pci->retc > 5) {
-		sid = *getArgReference_bat(stk, pci, pci->retc + 1);
-		if (!is_bat_nil(sid) && (s = BATdescriptor(sid)) == NULL) {
-			BBPunfix(bid);
-			throw(MAL, "algebra.firstn",
-				  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		rc = GDK_FAIL;
+	if (rc == GDK_SUCCEED && !is_bat_nil(sid) && (s = BATdescriptor(sid)) == NULL)
+		rc = GDK_FAIL;
+	if (rc == GDK_SUCCEED && !is_bat_nil(gid) && (g = BATdescriptor(gid)) == NULL)
+		rc = GDK_FAIL;
+	if (rc != GDK_SUCCEED) {
+		BBPreclaim(b);
+		BBPreclaim(s);
+		BBPreclaim(g);
+		throw(MAL, "algebra.firstn",
+			  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	}
+	n = *getArgReference_lng(stk, pci, pci->retc + 3);
+	if (n < 0) {
+		BBPreclaim(b);
+		BBPreclaim(s);
+		BBPreclaim(g);
+		throw(MAL, "algebra.firstn", ILLEGAL_ARGUMENT);
+	}
+	if (n > (lng) BUN_MAX)
+		n = BUN_MAX;
+	if (getArgType(mb, pci, pci->retc + 4) == TYPE_lng) {
+		o = *getArgReference_lng(stk, pci, pci->retc + 4);
+		if (o < 0 || o > (lng) BUN_MAX) {
+			BBPreclaim(b);
+			BBPreclaim(s);
+			BBPreclaim(g);
+			throw(MAL, "algebra.firstn", ILLEGAL_ARGUMENT);
 		}
-		if (pci->argc - pci->retc > 6) {
-			gid = *getArgReference_bat(stk, pci, pci->retc + 2);
-			if (!is_bat_nil(gid) && (g = BATdescriptor(gid)) == NULL) {
-				BBPunfix(bid);
-				BBPunfix(sid);
-				throw(MAL, "algebra.firstn",
-					  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-			}
+		if (*getArgReference_bit(stk, pci, pci->retc + 5)) {
+			n += o;
+			o = 0;
+		}
+		if (ret2 && o != 0) {
+			BBPreclaim(b);
+			BBPreclaim(s);
+			BBPreclaim(g);
+			throw(MAL, "algebra.firstn", ILLEGAL_ARGUMENT);
 		}
 	}
 	asc = *getArgReference_bit(stk, pci, pci->argc - 3);
 	nilslast = *getArgReference_bit(stk, pci, pci->argc - 2);
 	distinct = *getArgReference_bit(stk, pci, pci->argc - 1);
-	rc = BATfirstn(&bn, ret2 ? &gn : NULL, b, s, g, (BUN) n, asc, nilslast,
-				   distinct);
+
+	if (o > 0) {
+		bn = BATfirstn_offset(b, s, g, (BUN) n, (BUN) o, asc, nilslast,
+							  distinct);
+		if (bn == NULL)
+			rc = GDK_FAIL;
+	} else
+		rc = BATfirstn(&bn, ret2 ? &gn : NULL, b, s, g, (BUN) n,
+					   asc, nilslast, distinct);
 	BBPunfix(b->batCacheid);
 	BBPreclaim(s);
 	BBPreclaim(g);
@@ -1070,6 +1099,8 @@ ALGgroupedfirstn(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT *s = NULL, *g = NULL;
 	BAT *bn = NULL;
 	lng n;
+	lng o = 0;
+	int hasoff = 0;
 
 	(void) cntxt;
 	(void) mb;
@@ -1078,9 +1109,19 @@ ALGgroupedfirstn(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (n < 0)
 		throw(MAL, "algebra.groupedfirstn", ILLEGAL_ARGUMENT);
 	ret = getArgReference_bat(stk, pci, 0);
-	sid = *getArgReference_bat(stk, pci, 2);
-	gid = *getArgReference_bat(stk, pci, 3);
-	int nbats = pci->argc - 4;
+	if (getArgType(mb, pci, 2) == TYPE_lng) {
+		o = *getArgReference_lng(stk, pci, 2);
+		if (o < 0)
+			throw(MAL, "algebra.groupedfirstn", ILLEGAL_ARGUMENT);
+		if (*getArgReference_bit(stk, pci, 3)) {
+			n += o;
+			o = 0;
+		}
+		hasoff = 2;
+	}
+	sid = *getArgReference_bat(stk, pci, 2 + hasoff);
+	gid = *getArgReference_bat(stk, pci, 3 + hasoff);
+	int nbats = pci->argc - 4 - hasoff;
 	if (nbats % 3 != 0)
 		throw(MAL, "algebra.groupedfirstn", ILLEGAL_ARGUMENT);
 	nbats /= 3;
@@ -1098,7 +1139,7 @@ ALGgroupedfirstn(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "algebra.groupedfirstn", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	for (int i = 0; i < nbats; i++) {
-		bats[i] = BATdescriptor(*getArgReference_bat(stk, pci, i * 3 + 4));
+		bats[i] = BATdescriptor(*getArgReference_bat(stk, pci, i * 3 + 4 + hasoff));
 		if (bats[i] == NULL) {
 			while (i > 0)
 				BBPreclaim(bats[--i]);
@@ -1106,10 +1147,13 @@ ALGgroupedfirstn(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			BBPreclaim(s);
 			throw(MAL, "algebra.groupedfirstn", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		}
-		ascs[i] = *getArgReference_bit(stk, pci, i * 3 + 5);
-		nlss[i] = *getArgReference_bit(stk, pci, i * 3 + 6);
+		ascs[i] = *getArgReference_bit(stk, pci, i * 3 + 5 + hasoff);
+		nlss[i] = *getArgReference_bit(stk, pci, i * 3 + 6 + hasoff);
 	}
-	bn = BATgroupedfirstn((BUN) n, s, g, nbats, bats, ascs, nlss);
+	if (o > 0)
+		bn = BATgroupedfirstn_offset((BUN) n, (BUN) o, s, g, nbats, bats, ascs, nlss);
+	else
+		bn = BATgroupedfirstn((BUN) n, s, g, nbats, bats, ascs, nlss);
 	BBPreclaim(s);
 	BBPreclaim(g);
 	for (int i = 0; i < nbats; i++)
@@ -1972,7 +2016,10 @@ static mel_func algebra_init_funcs[] = {
  command("algebra", "intersect", ALGintersect, false, "Intersection of l and r with candidate lists (i.e. half of semi-join)", args(1,8, batarg("",oid),batargany("l",1),batargany("r",1),batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("max_one",bit),arg("estimate",lng))),
  pattern("algebra", "firstn", ALGfirstn, false, "Calculate first N values of B with candidate list S", args(1,8, batarg("",oid),batargany("b",0),batarg("s",oid),batarg("g",oid),arg("n",lng),arg("asc",bit),arg("nilslast",bit),arg("distinct",bit))),
  pattern("algebra", "firstn", ALGfirstn, false, "Calculate first N values of B with candidate list S", args(2,9, batarg("",oid),batarg("",oid),batargany("b",0),batarg("s",oid),batarg("g",oid),arg("n",lng),arg("asc",bit),arg("nilslast",bit),arg("distinct",bit))),
+ pattern("algebra", "firstn", ALGfirstn, false, "Calculate first N values of B with candidate list S", args(1,10, batarg("",oid),batargany("b",0),batarg("s",oid),batarg("g",oid),arg("n",lng),arg("o",lng),arg("return_skipped",bit),arg("asc",bit),arg("nilslast",bit),arg("distinct",bit))),
+ pattern("algebra", "firstn", ALGfirstn, false, "Calculate first N values of B with candidate list S", args(2,11, batarg("",oid),batarg("",oid),batargany("b",0),batarg("s",oid),batarg("g",oid),arg("n",lng),arg("o",lng),arg("return_skipped",bit),arg("asc",bit),arg("nilslast",bit),arg("distinct",bit))),
  pattern("algebra", "groupedfirstn", ALGgroupedfirstn, false, "Grouped firstn", args(1,5, batarg("",oid),arg("n",lng),batarg("s",oid),batarg("g",oid),varargany("arg",0))),
+ pattern("algebra", "groupedfirstn", ALGgroupedfirstn, false, "Grouped firstn", args(1,7, batarg("",oid),arg("n",lng),arg("o",lng),arg("return_skipped",bit),batarg("s",oid),batarg("g",oid),varargany("arg",0))),
  command("algebra", "reuse", ALGreuse, false, "Reuse a temporary BAT if you can. Otherwise,\nallocate enough storage to accept result of an\noperation (not involving the heap)", args(1,2, batargany("",1),batargany("b",1))),
  command("algebra", "slice", ALGslice_oid, false, "Return the slice based on head oid x till y (exclusive).", args(1,4, batargany("",1),batargany("b",1),arg("x",oid),arg("y",oid))),
  command("algebra", "slice", ALGslice_int, false, "Return the slice with the BUNs at position x till y.", args(1,4, batargany("",1),batargany("b",1),arg("x",int),arg("y",int))),

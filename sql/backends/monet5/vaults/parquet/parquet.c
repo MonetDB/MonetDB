@@ -482,7 +482,7 @@ pqc_relation(mvc *sql, sql_subfunc *f, char *filename, list *res_exps, char *tna
 }
 
 typedef struct pqc_creader {
-	Sink sink;
+	struct pipeline_io sink;
 	pqc_file *b;
 	pqc_filemetadata *fmd;
 	lng nrows;
@@ -492,12 +492,11 @@ typedef struct pqc_creader {
 	char *done;
 	pqc_reader_t **c;	/* column reader per column */
 } pqc_creader;
-#define PARQUET_SINK 43
 
 static void
 pqcc_destroy(pqc_creader *r)
 {
-	assert(r->sink.type == PARQUET_SINK);
+	assert(r->sink.type == PIPELINE_IO_PARQUET);
 	/* for each r->readers */
 	for(int i = 0; i < r->ncols; i++)
 		if (r->c[i])
@@ -514,7 +513,7 @@ pqcc_done(pqc_creader *r, int wid, int nr_workers, bool redo)
 {
 	(void)redo;
 	(void)nr_workers;
-	assert(r->sink.type == PARQUET_SINK);
+	assert(r->sink.type == PIPELINE_IO_PARQUET);
 	if (r->done && r->done[wid])
 		return 1;
 	return 0;
@@ -525,9 +524,9 @@ pqcc_create(pqc_file *pq, pqc_filemetadata *fmd, lng nrows)
 {
 	pqc_creader *r = (pqc_creader*)GDKzalloc(sizeof(pqc_creader));
 
-	r->sink.destroy = (sink_destroy)&pqcc_destroy;
-	r->sink.done = (sink_done)&pqcc_done;
-	r->sink.type = PARQUET_SINK;
+	r->sink.destroy = (pipeline_io_destroy)&pqcc_destroy;
+	r->sink.done = (pipeline_io_done)&pqcc_done;
+	r->sink.type = PIPELINE_IO_PARQUET;
 	r->b = pq;
 	r->fmd = fmd;
 	r->nrows = nrows;
@@ -539,7 +538,7 @@ pqcc_create(pqc_file *pq, pqc_filemetadata *fmd, lng nrows)
 
 #ifdef HAVE_GLOB_H
 typedef struct pqc_mcreader {
-	Sink sink;
+	struct pipeline_io sink;
 	glob_t glob;
 	lng nrows;
 	int nrworkers;
@@ -547,7 +546,6 @@ typedef struct pqc_mcreader {
 	char *done;
 	pqc_creader **c;	/* reader per worker */
 } pqc_mcreader;
-#define MPARQUET_SINK 44
 
 static void
 pqcmc_destroy(pqc_mcreader *r)
@@ -556,7 +554,7 @@ pqcmc_destroy(pqc_mcreader *r)
 	if (r->glob.gl_pathc)
 		globfree(&r->glob);
 #endif
-	assert(r->sink.type == MPARQUET_SINK);
+	assert(r->sink.type == PIPELINE_IO_MPARQUET);
 	GDKfree(r->c);
 	GDKfree(r->done);
 	GDKfree(r);
@@ -567,7 +565,7 @@ pqcmc_done(pqc_mcreader *r, int wid, int nr_workers, bool redo)
 {
 	(void)redo;
 	(void)nr_workers;
-	assert(r->sink.type == MPARQUET_SINK);
+	assert(r->sink.type == PIPELINE_IO_MPARQUET);
 	if (r->c && r->c[wid] && r->c[wid]->done[0]) {
 			pqcc_destroy(r->c[wid]);
 			r->c[wid] = NULL;
@@ -586,9 +584,9 @@ pqcmc_create(glob_t *glob, lng nrows)
 		globfree(glob);
 		return NULL;
 	}
-	r->sink.destroy = (sink_destroy)&pqcmc_destroy;
-	r->sink.done = (sink_done)&pqcmc_done;
-	r->sink.type = MPARQUET_SINK;
+	r->sink.destroy = (pipeline_io_destroy)&pqcmc_destroy;
+	r->sink.done = (pipeline_io_done)&pqcmc_done;
+	r->sink.type = PIPELINE_IO_MPARQUET;
 	r->nrworkers = 1;
 	r->glob = *glob;
 	r->nrows = nrows;
@@ -783,8 +781,8 @@ PARQUETread_large(BAT **R, pqc_creader *r, int colno, Pipeline *p, int wnr)
 static str
 PARQUETread_multi(BAT **R, BAT *b, int colno, Pipeline *p)
 {
-	assert(b->tsink->type == MPARQUET_SINK);
-	pqc_mcreader *r = (pqc_mcreader*)b->tsink;
+	assert(b->pl_io->type == PIPELINE_IO_MPARQUET);
+	pqc_mcreader *r = (pqc_mcreader*)b->pl_io;
 	assert(r);
 
 	int wnr = p->wid;
@@ -801,12 +799,12 @@ PARQUETread_multi(BAT **R, BAT *b, int colno, Pipeline *p)
 		pipeline_lock(p);
 		if (!r->c[wnr]) {
 			size_t x = ATOMIC_INC(&r->cnt);
-			if (x >= r->glob.gl_pathc) {
+			if (x > r->glob.gl_pathc) {
 				r->done[wnr] = 1;
 				pipeline_unlock(p);
 				return 0;
 			}
-			char *f = r->glob.gl_pathv[x];
+			char *f = r->glob.gl_pathv[x-1];
 			pqc_file *pq = NULL;
 			lng nrows = r->nrows;
 
@@ -853,9 +851,9 @@ PARQUETread(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT *b = BATdescriptor(pqb), *rb = NULL;
 	if (!b)
 		throw (SQL, "parquet.read", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	if (b->tsink->type == PARQUET_SINK) {
-		assert(b->tsink->type == PARQUET_SINK);
-		pqc_creader *r = (pqc_creader*)b->tsink;
+	if (b->pl_io->type == PIPELINE_IO_PARQUET) {
+		assert(b->pl_io->type == PIPELINE_IO_PARQUET);
+		pqc_creader *r = (pqc_creader*)b->pl_io;
 		assert(r);
 
 		msg = PARQUETread_large(&rb, r, colno, p, p->wid);
@@ -906,7 +904,7 @@ PARQUETopen(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			BBPreclaim(b);
 			throw(SQL, SQLSTATE(42000), "parquet" "Could not open parquet file %s", f);
 		}
-		b->tsink = (Sink*)pqcmc_create(&pglob, nrows);
+		b->pl_io = (struct pipeline_io*)pqcmc_create(&pglob, nrows);
 	} else
 #endif
 	{
@@ -927,10 +925,10 @@ PARQUETopen(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (fmd->nrows > nrows)
 			fmd->nrows = nrows;
 
-		b->tsink = (Sink*)pqcc_create(pq, fmd, nrows);
+		b->pl_io = (struct pipeline_io*)pqcc_create(pq, fmd, nrows);
 	}
 
-	if (!b->tsink) {
+	if (!b->pl_io) {
 		BBPreclaim(b);
 		throw(SQL, "parquet.open",  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}

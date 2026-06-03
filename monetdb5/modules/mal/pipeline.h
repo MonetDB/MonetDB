@@ -11,6 +11,9 @@
 #ifndef _PIPELINE_H_
 #define _PIPELINE_H_
 
+#include "gdk.h"
+#include "mal_pipelines.h"
+
 #define pipeline_lock(pl) MT_lock_set(&pl->p->l)
 #define pipeline_unlock(pl) MT_lock_unset(&pl->p->l)
 
@@ -23,17 +26,45 @@
 #define SLICE_SIZE 100000
 
 // TODO a better way to define/add/register sinks, similar to types
-#define OA_HASH_TABLE_SINK 1
-#define TOPN_SINK 3
-#define HEAP_SINK 4
-#define PART_SINK 5
-#define MAT_SINK  6
-#define COPY_SINK 42
+#define PIPELINE_IO_HASH_TABLE 1
+#define PIPELINE_IO_SOP        2 /* set of ordered parts */
+#define PIPELINE_IO_TOPN       3
+#define PIPELINE_IO_HEAP       4
+#define PIPELINE_IO_PART       5
+#define PIPELINE_IO_MAT        6
+#define PIPELINE_IO_COPY       7
+#define PIPELINE_IO_COUNTER    8
+#define PIPELINE_IO_CONCAT     9
+#define PIPELINE_IO_PARQUET    10
+#define PIPELINE_IO_MPARQUET   11
+
+struct pipeline_counter {
+	struct pipeline_io pl_io;
+	MT_Lock l;
+	int nr;
+	int current;
+	bool sync;
+	int scnt;
+	int *cur; /* nr per worker */
+};
+
+struct pipeline_concat {
+	struct pipeline_io pl_io;
+	MT_Lock l;
+	int current;
+	int max;
+	bool started;
+	int *cur;
+	BAT *srcs[];
+};
+
+struct pipeline_resultset {
+	struct pipeline_io pl_io;
+	ATOMIC_TYPE claimed;
+	MT_Lock l;
+};
 
 extern int BATupgrade(BAT *r, BAT *b, bool locked);
 extern void BATswap_heaps(BAT *u, BAT *b, Pipeline *p);
-
-mal_export void counter_wait(Sink *s, int nr, Pipeline *p);
-mal_export void counter_next(Sink *s);
 
 #endif /*_PIPELINE_H_*/

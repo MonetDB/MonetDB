@@ -131,6 +131,7 @@ newMalBlk(int elements)
 	mb = MA_NEW(ma, MalBlkRecord);
 	if (mb == NULL) {
 		ma_destroy(ma);
+		ma_destroy(instr_allocator);
 		return NULL;
 	}
 
@@ -143,6 +144,7 @@ newMalBlk(int elements)
 	v = MA_ZNEW_ARRAY(ma, VarRecord, elements);
 	if (v == NULL) {
 		ma_destroy(ma);
+		ma_destroy(instr_allocator);
 		return NULL;
 	}
 	*mb = (MalBlkRecord) {
@@ -155,6 +157,7 @@ newMalBlk(int elements)
 	};
 	if (newMalBlkStmt(mb, elements) < 0) {
 		ma_destroy(ma);
+		ma_destroy(instr_allocator);
 		return NULL;
 	}
 	ATOMIC_INIT(&mb->workers, 1);
@@ -216,8 +219,10 @@ resetMalBlk(MalBlkPtr *mbpp)
 	nmb->stop = 1;
 	nmb->vtop = 0;
 	nmb->tag = mb->tag;
-	freeMalBlk(mb);
+	MT_lock_set(&mal_contextLock);
 	*mbpp = nmb;
+	MT_lock_unset(&mal_contextLock);
+	freeMalBlk(mb);
 	return MAL_SUCCEED;
 }
 
@@ -251,7 +256,8 @@ copyMalBlk(MalBlkPtr old)
 	mb->ma = ma;
 	mb->instr_allocator = create_allocator(ma_name(old->instr_allocator), true);
 	mb->var = MA_ZNEW_ARRAY(ma, VarRecord, old->vsize);
-	if (mb->var == NULL) {
+	if (mb->var == NULL || mb->instr_allocator == NULL) {
+		ma_destroy(mb->instr_allocator);
 		ma_destroy(ma);
 		return NULL;
 	}
@@ -303,23 +309,11 @@ copyMalBlk(MalBlkPtr old)
 	return mb;
 
   bailout:
-	/*
-	for (i = 0; i < old->stop; i++)
-		freeInstruction(mb, mb->stmt[i]);
-		*/
 	for (i = 0; i < old->vtop; i++) {
-		/*
-		if (mb->var[i].name)
-			GDKfree(mb->var[i].name);
-			*/
 		VALclear(&mb->var[i].value);
 	}
+	ma_destroy(mb->instr_allocator);
 	ma_destroy(ma);
-	/*
-	GDKfree(mb->var);
-	GDKfree(mb->stmt);
-	GDKfree(mb);
-	*/
 	return NULL;
 }
 
@@ -621,10 +615,6 @@ clearVariable(MalBlkPtr mb, int varid)
 	v = getVar(mb, varid);
 	if (isVarConstant(mb, varid) || isVarDisabled(mb, varid))
 		VALclear(&v->value);
-	/*
-	if (v->name)
-		GDKfree(v->name);
-		*/
 	v->name = NULL;
 	v->type = 0;
 	v->constant = 0;

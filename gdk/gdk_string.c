@@ -53,7 +53,6 @@
 #define atommem(size)					\
 	do {						\
 		if (*dst == NULL || *len < (size)) {	\
-			/*GDKfree(*dst);*/		\
 			*len = (size);			\
 			*dst = ma_alloc(ma, *len);	\
 			if (*dst == NULL) {		\

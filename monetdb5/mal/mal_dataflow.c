@@ -265,10 +265,10 @@ DFLOWworker(void *T)
 		if (t->flag == WAITING) {
 			/* wait until we are allowed to start working */
 			MT_sema_down(&t->s);
-			t->flag = RUNNING;
 			if (ATOMIC_GET(&exiting)) {
 				break;
 			}
+			t->flag = RUNNING;
 		}
 		assert(t->flag == RUNNING);
 		cntxt = ATOMIC_PTR_GET(&t->cntxt);

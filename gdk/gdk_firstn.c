@@ -1334,6 +1334,34 @@ BATfirstn(BAT **topn, BAT **gids, BAT *b, BAT *s, BAT *g, BUN n, bool asc, bool 
 	return rc;
 }
 
+/* return first n values, after skipping o first values */
+BAT *
+BATfirstn_offset(BAT *b, BAT *s, BAT *g, BUN n, BUN o, bool asc, bool nilslast, bool distinct)
+{
+	BAT *topno;
+	BAT *topo;
+	BAT *topn;
+	gdk_return rc;
+
+	/* first calculate first o+n values */
+	rc = BATfirstn(&topno, NULL, b, s, g, o + n, asc, nilslast, distinct);
+	if (rc != GDK_SUCCEED)
+		return NULL;
+	if (o == 0)
+		return topno;
+	/* calculate first o values */
+	rc = BATfirstn(&topo, NULL, b, s, g, o, asc, nilslast, distinct);
+	if (rc != GDK_SUCCEED) {
+		BBPreclaim(topno);
+		return NULL;
+	}
+	/* subtract first o value from first o+n values */
+	topn = BATdiffcand(topno, topo);
+	BBPreclaim(topno);
+	BBPreclaim(topo);
+	return topn;
+}
+
 /* Calculate the first N values for each group given in G of the bats in
  * BATS (of which there are NBATS), but only considering the candidates
  * in S.
@@ -1534,4 +1562,65 @@ BATgroupedfirstn(BUN n, BAT *s, BAT *g, int nbats, BAT **bats, bool *asc, bool *
   bailout:
 	BBPreclaim(bn);
 	return NULL;
+}
+
+BAT *
+BATgroupedfirstn_offset(BUN n, BUN o, BAT *s, BAT *g, int nbats, BAT **bats, bool *asc, bool *nilslast)
+{
+	BAT *topno;
+	BAT *topo;
+	BAT *topn;
+	BUN no = n + o;
+
+	topno = BATgroupedfirstn(no, s, g, nbats, bats, asc, nilslast);
+	if (o == 0 || topno == NULL)
+		return topno;
+	topo = BATgroupedfirstn(o, s, g, nbats, bats, asc, nilslast);
+	if (topo == NULL) {
+		BBPreclaim(topno);
+		return NULL;
+	}
+	BUN ngrp = BATcount(topo) / o;
+	assert(ngrp == BATcount(topno) / no);
+	topn = BATconstant(0, TYPE_oid, &oid_nil, ngrp * n, TRANSIENT);
+	if (topn == NULL) {
+		BBPreclaim(topno);
+		BBPreclaim(topo);
+		return NULL;
+	}
+	BAT *cand1 = BATdense(0, 0, no);
+	BAT *cand2 = BATdense(0, 0, o);
+	if (cand1 == NULL || cand2 == NULL) {
+		BBPreclaim(topno);
+		BBPreclaim(topo);
+		BBPreclaim(topn);
+		BBPreclaim(cand1);
+		BBPreclaim(cand2);
+	}
+	oid *roids = Tloc(topn, 0);
+	for (BUN grp = 0; grp < ngrp; grp++) {
+		BAT *d = BATdiff(topno, topo, cand1, cand2, true, false, n);
+		if (d == NULL) {
+			BBPreclaim(topno);
+			BBPreclaim(topo);
+			BBPreclaim(topn);
+			BBPreclaim(cand1);
+			BBPreclaim(cand2);
+			return NULL;
+		}
+		for (BUN i = 0; i < BATcount(d); i++)
+			roids[i] = BUNtoid(topno, (BUN) BUNtoid(d, i));
+		BBPreclaim(d);
+		roids += n;
+		cand1->tseqbase += no;
+		cand2->tseqbase += o;
+	}
+	BBPreclaim(topno);
+	BBPreclaim(topo);
+	BBPreclaim(cand1);
+	BBPreclaim(cand2);
+	/* we know little about the properties */
+	topn->tsorted = topn->trevsorted = topn->tkey = BATcount(topn) <= 1;
+	topn->tnil = topn->tnonil = false;
+	return topn;
 }

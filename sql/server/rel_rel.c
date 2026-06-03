@@ -1360,8 +1360,8 @@ _rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int in
 				if (basecol && !is_basecol(e))
 					continue;
 				if (intern || !is_intern(e)) {
-					if (!e->alias.label || (exp_is_rel(e) && e->alias.name == NULL))
-						en->data = e = exp_label(sql->sa, e, ++sql->label);
+					if (exp_is_rel(e) && e->alias.name == NULL && e->alias.rname && exp_name(e))
+						e->alias.name = exp_name(e);
 					sql_exp *ne = exp_ref(sql, e);
 					if (settname && tname)
 						exp_setname(sql, ne, tname, exp_name(e));

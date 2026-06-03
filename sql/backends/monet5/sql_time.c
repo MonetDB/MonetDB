@@ -1206,7 +1206,6 @@ bailout:
 				goto bailout1; \
 			} \
 			msg = createException(SQL, "batcalc." FUNC_NAME, SQLSTATE(22003) "Value %s too large to fit at a " FUNC_NAME, str_val); \
-			/*GDKfree(str_val);*/ \
 			goto bailout1; \
 		} \
 	} while (0)
@@ -1221,7 +1220,6 @@ bailout:
 				goto bailout1; \
 			} \
 			msg = createException(SQL, "batcalc." FUNC_NAME, SQLSTATE(22003) "Overflow in conversion of %s to " FUNC_NAME, str_val); \
-			/*GDKfree(str_val);*/ \
 			goto bailout1; \
 		} \
 	} while (0)

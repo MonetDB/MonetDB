@@ -146,7 +146,7 @@ typedef lng (*fhsh)(const void *v);
 typedef size_t (*flen)(const void *v);
 
 typedef struct hash_table {
-	Sink s;
+	struct pipeline_io pl_io;
 	int type;
 	int width;
 	fcmp cmp;

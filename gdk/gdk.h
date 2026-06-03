@@ -336,19 +336,21 @@ gdk_export bool VALisnil(const ValRecord *v);
 
 typedef struct PROPrec PROPrec;
 
-typedef void (*sink_destroy)(void *sink);
-typedef int (*sink_done)(void *sink, int wid, int nr_workers, bool redo);
-typedef int (*sink_next)(void *sink, int wid);
-typedef void *(*sink_next_bat)(void *sink, int wid);
-typedef struct Sink {
-	sink_destroy destroy;
-	sink_done done;
-	sink_next next; /* counter incrementing sources */
-	sink_next_bat next_bat; /* bat generating sources */
-	int type;		/* sink/source type */
+typedef void  (*pipeline_io_destroy)  (void *pl_io);
+typedef int   (*pipeline_io_done)     (void *pl_io, int wid, int nr_workers, bool redo);
+typedef int   (*pipeline_io_next)     (void *pl_io, int wid);
+typedef void *(*pipeline_io_next_bat) (void *pl_io, int wid);
+
+typedef struct pipeline_io {
+	pipeline_io_destroy destroy;
+	pipeline_io_done done;
+	pipeline_io_next next;         /* counter incrementing sources */
+	pipeline_io_next_bat next_bat; /* bat generating sources */
+	int type;                      /* sink/source type */
 	char *error;
-} Sink;
-#define TSKdestroy(b) if (b->tsink && b->tsink->destroy) { b->tsink->destroy(b->tsink); b->tsink = NULL; }
+} pipeline_source, pipeline_sink;
+
+#define TSKdestroy(b) if (b->pl_io && b->pl_io->destroy) { b->pl_io->destroy(b->pl_io); b->pl_io = NULL; }
 #define TSKfree(b)    TSKdestroy(b)
 
 #define ORDERIDXOFF		3
@@ -443,8 +445,9 @@ typedef struct BAT {
 #endif
 	Heap *torderidx;	/* order oid index */
 	Strimps *tstrimps;	/* string imprint index  */
-	Sink *tsink;
 	PROPrec *tprops;	/* list of dynamic properties stored in the bat descriptor */
+
+	struct pipeline_io *pl_io;
 
 	uint8_t cnting_sketch[BUCKETS][CLZ_BUCKETS];
 	double unique_guess;
@@ -1631,9 +1634,12 @@ gdk_export gdk_return BATfirstn(BAT **topn, BAT **gids, BAT *b, BAT *cands, BAT 
 	__attribute__((__access__(write_only, 1)))
 	__attribute__((__access__(write_only, 2)))
 	__attribute__((__warn_unused_result__));
+gdk_export BAT *BATfirstn_offset(BAT *b, BAT *s, BAT *g, BUN n, BUN o, bool asc, bool nilslast, bool distinct)
+	__attribute__((__warn_unused_result__));
 gdk_export BAT *BATgroupedfirstn(BUN n, BAT *s, BAT *g, int nbats, BAT **bats, bool *asc, bool *nilslast)
 	__attribute__((__warn_unused_result__));
-
+gdk_export BAT *BATgroupedfirstn_offset(BUN n, BUN o, BAT *s, BAT *g, int nbats, BAT **bats, bool *asc, bool *nilslast)
+	__attribute__((__warn_unused_result__));
 
 gdk_export gdk_return GDKtoupper(allocator *ma, char **restrict buf, size_t *restrict buflen, const char *restrict s)
 	__attribute__((__access__(read_write, 2)))

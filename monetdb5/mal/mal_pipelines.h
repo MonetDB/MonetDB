@@ -26,9 +26,10 @@ typedef struct Pipelines {
 	MT_Cond cond;	/* condition variable for full worker synchronisation and worker execution order */
 	int maxparts;
 	int nr_workers;
+	int seqnr;
 	ATOMIC_TYPE workers;
 	ATOMIC_TYPE master_counter;
-	//int counters[THREADS];
+	int channel[8]; /* sinks use 8, 7 etc, sources 0, 1 etc */
 	int status;
 	bat sink;
 } Pipelines;
@@ -36,6 +37,7 @@ typedef struct Pipelines {
 typedef struct Pipeline {
 	Pipelines *p;	/* the shared pipelines */
 	int wid;	/* worker id [ 0 .. nr_workers ] */
+	int tseqnr;	/* multi sources pipelines aggregated seqnr (for previous sources) */
 	int seqnr;	/* needed to keep things align/ordered */
 	void *wls;	/* worker local storage */
 } Pipeline;
@@ -43,5 +45,10 @@ typedef struct Pipeline {
 mal_export str runMALpipelines(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, int maxparts, bat sink, MalStkPtr stk);
 //mal_export int PIPELINEnext_counter(Pipeline *p);
 //mal_export void PIPELINEclear_counter(Pipeline *p);
+//
+
+mal_export int pipeline_pass_token(Pipeline *p, int channel, int id); /* pass the token to the worker id+1 */
+mal_export int pipeline_get_token(Pipeline *p, int channel, int id, bool *done); /* wait for token addressed to id, done flag could change and
+																			ends waiting */
 
 #endif /*  _MAL_PIPELINES_H*/

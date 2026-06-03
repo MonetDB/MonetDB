@@ -297,21 +297,18 @@ monet5_create_user(ptr _mvc, str user, str passwd, bool enc, str fullname, sqlid
 	}
 
 	if ((ret = parse_schema_path_str(m, schema_path, false)) != MAL_SUCCEED) {
-//		GDKfree(schema_buf);
 		return ret;
 	}
 
 	if (!optimizer)
 		optimizer = default_optimizer;
 	if (!isOptimizerPipe(optimizer)) {
-//		GDKfree(schema_buf);
 		throw(MAL, "sql.create_user", SQLSTATE(42000) "Optimizer pipe %s unknown", optimizer);
 	}
 
 
 	if (!enc) {
 		if (!(pwd = mcrypt_BackendSum(passwd, strlen(passwd)))) {
-//			GDKfree(schema_buf);
 			throw(MAL, "sql.create_user", SQLSTATE(42000) "Crypt backend hash not found");
 		}
 	} else {
@@ -325,14 +322,12 @@ monet5_create_user(ptr _mvc, str user, str passwd, bool enc, str fullname, sqlid
 		free(pwd);
 	if (err != MAL_SUCCEED) {
 		ma_close(&ta_state);
-//		GDKfree(schema_buf);
 		throw(MAL, "sql.create_user", SQLSTATE(42000) "create backend hash failure");
 	}
 
 	user_id = store_next_oid(m->session->tr->store);
 	sqlid default_role_id = role_id > 0 ? role_id : user_id;
 	if ((log_res = store->table_api.table_insert(m->session->tr, db_user_info, &user, &fullname, &schema_id, &schema_path, &max_memory, &max_workers, &optimizer, &default_role_id, &hash))) {
-//		GDKfree(schema_buf);
 		ma_close(&ta_state);
 		throw(SQL, "sql.create_user", SQLSTATE(42000) "Create user failed%s", log_res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
 	}

@@ -1,0 +1,12 @@
+statement ok
+start transaction
+
+statement ok
+CREATE LOCAL TEMPORARY VIEW v AS
+ SELECT * FROM _tables
+
+statement ok
+CREATE LOCAL TEMPORARY TABLE t AS
+ WITH cte AS (SELECT * FROM v)
+  SELECT * FROM cte
+

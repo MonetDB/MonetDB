@@ -17,7 +17,7 @@
 #include "pipeline.h"
 
 typedef struct topn_t {
-	Sink s;
+	struct pipeline_io pl_io;
 	lng start;
 	lng end;
 } topn_t;
@@ -35,8 +35,8 @@ topn_create(void)
 	if (!t)
 		return NULL;
 
-	t->s.destroy = (sink_destroy)&topn_destroy;
-	t->s.type = TOPN_SINK;
+	t->pl_io.destroy = (pipeline_io_destroy)&topn_destroy;
+	t->pl_io.type = PIPELINE_IO_TOPN;
 	t->start = 0;
 	t->end = 0;
 	return t;
@@ -66,7 +66,7 @@ LALGsubslice(Client ctx, bat *gid, bat *rid, bat *tid, bat *bid, /*bat *sid,*/ l
 			msg = createException(SQL, "algebra.subslice", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto error;
 		}
-		t->tsink = (Sink*)n;
+		t->pl_io = (struct pipeline_io*)n;
 		t->tprivate_bat = 1;
 	} else {
 		if ((t = BATdescriptor(*tid)) == NULL) {
@@ -79,15 +79,15 @@ LALGsubslice(Client ctx, bat *gid, bat *rid, bat *tid, bat *bid, /*bat *sid,*/ l
 		pipeline_lock1(t);
 		locked = 1;
 	}
-	n = (topn_t*)t->tsink;
+	n = (topn_t*)t->pl_io;
 	if (!n) {
 		if ((n = topn_create()) == NULL) {
 			msg = createException(SQL, "algebra.subslice", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto error;
 		}
-		t->tsink = (Sink*)n;
+		t->pl_io = (struct pipeline_io*)n;
 	}
-	assert(n && n->s.type == TOPN_SINK);
+	assert(n && n->pl_io.type == PIPELINE_IO_TOPN);
 
 	(void)p;
 	BUN cnt = BATcount(b);
