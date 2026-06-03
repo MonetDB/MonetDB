@@ -37,7 +37,7 @@ typedef struct bufferstream {
 } bufferstream;
 
 typedef struct reader {
-	Sink sink;
+	struct pipeline_io sink;
 	stream *s;
 	BUN sz;
 	BUN offset;

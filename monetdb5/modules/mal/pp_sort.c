@@ -687,7 +687,7 @@ typedef struct part_t {
 } part_t;
 
 typedef struct sop_t {
-	Sink s;
+	struct pipeline_io s;
 	int nr;
 	int nr_workers;
 	MT_Lock l;
@@ -756,7 +756,7 @@ SOPnew(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		GDKfree(q);
 		throw(MAL, "sop.new", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
-	qb->pl_io = (Sink*)q;
+	qb->pl_io = (struct pipeline_io*)q;
 	*sop = qb->batCacheid;
 	BBPkeepref(qb);
 	return MAL_SUCCEED;

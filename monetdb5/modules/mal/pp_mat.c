@@ -23,7 +23,7 @@
 #include "pipeline.h"
 
 typedef struct part_t {
-	Sink s;
+	struct pipeline_io s;
 	int nr;
 	lng *curpos;
 	MT_Lock l;
@@ -136,14 +136,14 @@ MATnew(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			break;
 		BATnegateprops(b);
 		if (hashsize)
-			b->pl_io = (Sink*)ht_create(tt, (size_t)(hashsize), pmat?(hash_table*)pmat->bat[i]->pl_io:NULL);
+			b->pl_io = (struct pipeline_io*)ht_create(tt, (size_t)(hashsize), pmat?(hash_table*)pmat->bat[i]->pl_io:NULL);
 	}
 	if (i < mat->nr) {
 		mat_destroy(mat);
 		BBPunfix(matb->batCacheid);
 		throw(MAL, "mat.new", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
-	matb->pl_io = (Sink*)mat;
+	matb->pl_io = (struct pipeline_io*)mat;
 	*mid = matb->batCacheid;
 	BBPkeepref(matb);
 	return MAL_SUCCEED;
@@ -177,7 +177,7 @@ PARTnew(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		throw(MAL, "part.new", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
-	partb->pl_io = (Sink*)part;
+	partb->pl_io = (struct pipeline_io*)part;
 	*pid = partb->batCacheid;
 	BBPkeepref(partb);
 	return MAL_SUCCEED;

@@ -532,7 +532,7 @@ mvc_claim_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT *pos = NULL;
 	sql_schema *s;
 	sql_table *t;
-	Sink *sync = NULL;
+	struct pipeline_io *sync = NULL;
 	int nr = -1;
 	Pipeline *p = NULL;
 

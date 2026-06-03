@@ -772,7 +772,7 @@ COPYnew(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (!b)
 		throw(SQL, "copy.new",  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
-	b->pl_io = (Sink*)reader_new(s, offset, maxcount, sz, col_sep_str, line_sep_str, quote_str, null_repr, escape_enabled, best_effort);
+	b->pl_io = (struct pipeline_io*)reader_new(s, offset, maxcount, sz, col_sep_str, line_sep_str, quote_str, null_repr, escape_enabled, best_effort);
 	if (!b->pl_io) {
 		BBPreclaim(b);
 		throw(SQL, "copy.new",  SQLSTATE(HY013) MAL_MALLOC_FAIL);

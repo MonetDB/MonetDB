@@ -428,7 +428,7 @@ OAHASHnew(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 		BBPreclaim(pht);
 		return createException(MAL, "oahash.new", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
-	b->pl_io = (Sink*)ht_create(tt, (size_t)size, parent);
+	b->pl_io = (struct pipeline_io*)ht_create(tt, (size_t)size, parent);
 	BBPreclaim(pht);
 	if (b->pl_io == NULL) {
 		BBPunfix(b->batCacheid);

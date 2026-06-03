@@ -1780,7 +1780,7 @@ VLTgenerator_rangejoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 #define GENERATOR_SOURCE 10
 typedef struct generator {
-	Sink s;
+	struct pipeline_io s;
 	int type;
 	int steptype;
 	int part_size;
@@ -2160,7 +2160,7 @@ VLTgenerator_new(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		GDKfree(g);
 		throw(SQL, "generator.new",  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
-	b->pl_io = (Sink*)g;
+	b->pl_io = (struct pipeline_io*)g;
 	g->type = tt;
 	g->steptype = pci->argc==4 ? getArgType(mb, pci, 3) : tt;
 	assert(be->part_size);

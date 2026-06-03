@@ -17,7 +17,7 @@
 #include "pipeline.h"
 
 typedef struct topn_t {
-	Sink s;
+	struct pipeline_io s;
 	lng start;
 	lng end;
 } topn_t;
@@ -66,7 +66,7 @@ LALGsubslice(Client ctx, bat *gid, bat *rid, bat *tid, bat *bid, /*bat *sid,*/ l
 			msg = createException(SQL, "algebra.subslice", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto error;
 		}
-		t->pl_io = (Sink*)n;
+		t->pl_io = (struct pipeline_io*)n;
 		t->tprivate_bat = 1;
 	} else {
 		if ((t = BATdescriptor(*tid)) == NULL) {
@@ -85,7 +85,7 @@ LALGsubslice(Client ctx, bat *gid, bat *rid, bat *tid, bat *bid, /*bat *sid,*/ l
 			msg = createException(SQL, "algebra.subslice", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto error;
 		}
-		t->pl_io = (Sink*)n;
+		t->pl_io = (struct pipeline_io*)n;
 	}
 	assert(n && n->s.type == TOPN_SINK);
 

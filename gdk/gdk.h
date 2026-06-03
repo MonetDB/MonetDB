@@ -348,7 +348,7 @@ typedef struct pipeline_io {
 	pl_io_next_bat next_bat; /* bat generating sources */
 	int type;		/* sink/source type */
 	char *error;
-} pl_source, pl_sink, Sink;
+} pl_source, pl_sink;
 
 #define TSKdestroy(b) if (b->pl_io && b->pl_io->destroy) { b->pl_io->destroy(b->pl_io); b->pl_io = NULL; }
 #define TSKfree(b)    TSKdestroy(b)

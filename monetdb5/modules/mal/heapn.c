@@ -48,7 +48,7 @@ typedef struct subheap {
 } subheap;
 
 typedef struct heapn {
-	Sink s;
+	struct pipeline_io s;
 	size_t size;
 	size_t used;
 	bool full;
@@ -987,7 +987,7 @@ HEAPnew_topn( MalStkPtr s, InstrPtr p, int args, heapn *hp, lng n, BAT *b, bit m
 	heapn_done(hp);
 	b = COLnew(0, TYPE_oid, hp->grouped?n*256:n, TRANSIENT);
 	if (b)
-		b->pl_io = (Sink*)hp;
+		b->pl_io = (struct pipeline_io*)hp;
 	else
 		heap_destroy(hp);
 	return b;
@@ -1227,7 +1227,7 @@ HEAPnew_new( MalBlkPtr m, MalStkPtr s, InstrPtr p, heapn *hp, lng n, int tt,  bi
 	}
 	BAT *b = COLnew(0, TYPE_oid, hp->grouped?(n*256):n, TRANSIENT);
 	if (b)
-		b->pl_io = (Sink*)hp;
+		b->pl_io = (struct pipeline_io*)hp;
 	else
 		heap_destroy(hp);
 	return b;

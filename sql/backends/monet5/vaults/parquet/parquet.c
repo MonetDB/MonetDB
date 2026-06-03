@@ -482,7 +482,7 @@ pqc_relation(mvc *sql, sql_subfunc *f, char *filename, list *res_exps, char *tna
 }
 
 typedef struct pqc_creader {
-	Sink sink;
+	struct pipeline_io sink;
 	pqc_file *b;
 	pqc_filemetadata *fmd;
 	lng nrows;
@@ -539,7 +539,7 @@ pqcc_create(pqc_file *pq, pqc_filemetadata *fmd, lng nrows)
 
 #ifdef HAVE_GLOB_H
 typedef struct pqc_mcreader {
-	Sink sink;
+	struct pipeline_io sink;
 	glob_t glob;
 	lng nrows;
 	int nrworkers;
@@ -906,7 +906,7 @@ PARQUETopen(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			BBPreclaim(b);
 			throw(SQL, SQLSTATE(42000), "parquet" "Could not open parquet file %s", f);
 		}
-		b->pl_io = (Sink*)pqcmc_create(&pglob, nrows);
+		b->pl_io = (struct pipeline_io*)pqcmc_create(&pglob, nrows);
 	} else
 #endif
 	{
@@ -927,7 +927,7 @@ PARQUETopen(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (fmd->nrows > nrows)
 			fmd->nrows = nrows;
 
-		b->pl_io = (Sink*)pqcc_create(pq, fmd, nrows);
+		b->pl_io = (struct pipeline_io*)pqcc_create(pq, fmd, nrows);
 	}
 
 	if (!b->pl_io) {
