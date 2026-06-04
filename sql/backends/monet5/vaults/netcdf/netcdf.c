@@ -61,7 +61,7 @@
 	}
 
 static void
-fix_quote( char *n, int l)
+fix_quote(char *n, int l)
 {
 	int i;
 
@@ -69,7 +69,6 @@ fix_quote( char *n, int l)
 		if (n[i]=='\'')
 			n[i] = ' ';
 }
-
 
 /* simple test for netcdf library */
 static str
@@ -289,12 +288,12 @@ NCDFattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	/* Open NetCDF file  */
 	if ((retval = nc_open(fname, NC_NOWRITE, &ncid)))
-		return createException(MAL, "netcdf.test", SQLSTATE(NC000) "Cannot open NetCDF \
-file %s: %s", fname, nc_strerror(retval));
+		return createException(MAL, "netcdf.test",
+				SQLSTATE(NC000) "Cannot open NetCDF file %s: %s", fname, nc_strerror(retval));
 
 	if ((retval = nc_inq(ncid, &ndims, &nvars, &ngatts, &unlimdim)))
-		return createException(MAL, "netcdf.test", SQLSTATE(NC000) "Cannot read NetCDF \
-header: %s", nc_strerror(retval));
+		return createException(MAL, "netcdf.test",
+				SQLSTATE(NC000) "Cannot read NetCDF header: %s", nc_strerror(retval));
 
 	/* Insert row into netcdf_files table */
 	col = mvc_bind_column(m, tfiles, "file_id");
@@ -608,7 +607,6 @@ NCDFimportVarStmt(Client ctx, str *sciqlstmt, str *fname, int *varid)
 		return createException(MAL, "netcdf.attach",
 							   SQLSTATE(NC000) "Cannot read variable %d : %s", *varid, nc_strerror(retval));
 
-
 	j = snprintf(buf, sizeof(buf),"create table %s( ", vname);
 
 	for (i = 0; i < vndims; i++){
@@ -777,7 +775,6 @@ NCDFimportVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	rid = store->table_api.column_find_row(m->session->tr, col, (void *)&fid, NULL);
 	if (is_oid_nil(rid))
 		return createException(MAL, "netcdf.importvar", SQLSTATE(NC000) "File %d not in the NetCDF vault\n", fid);
-
 
 	col = mvc_bind_column(m, tfiles, "location");
 	fname = (str)store->table_api.column_find_value(m->session->tr, col, rid);
@@ -985,7 +982,7 @@ HDF5dataset(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;
 	char *msg = MAL_SUCCEED;
 	int ncid, varid, retval;
-    int ndims;
+	int ndims;
 	int dimids[NC_MAX_VAR_DIMS];
 
 	const char* fname = *getArgReference_str(stk, pci, pci->retc);
@@ -993,23 +990,23 @@ HDF5dataset(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sql_subtype *st = *getArgReference_ptr(stk, pci, pci->retc + 2);
 	allocator *ta = MT_thread_getallocator();
 
-    // Open the file
-    // NetCDF-4 handles the HDF5 format automatically
-    if ((retval = nc_open(fname, NC_NOWRITE, &ncid)))
+	// Open the file
+	// NetCDF-4 handles the HDF5 format automatically
+	if ((retval = nc_open(fname, NC_NOWRITE, &ncid)))
 		throw(MAL, "netcdf.HDF5dataset",
 			   	SQLSTATE(NC000) "Cannot open NetCDF file %s: %s", fname, nc_strerror(retval));
 
-    // Find the ID for the dataset
-    if ((retval = nc_inq_varid(ncid, dataset, &varid))) {
+	// Find the ID for the dataset
+	if ((retval = nc_inq_varid(ncid, dataset, &varid))) {
 		nc_close(ncid);
 		throw(MAL, "netcdf.HDF5dataset",
 			SQLSTATE(NC000) "Cannot find dataset %s: %s",
 							   dataset, nc_strerror(retval));
 	}
 
-    // Get dimension information to confirm sizes
-    size_t rows, cols;
-    if ((retval = nc_inq_varndims(ncid, varid, &ndims))) {
+	// Get dimension information to confirm sizes
+	size_t rows, cols;
+	if ((retval = nc_inq_varndims(ncid, varid, &ndims))) {
 		nc_close(ncid);
 		throw(MAL, "netcdf.HDF5dataset",
 			SQLSTATE(NC000) "Cannot read number of dimmensions %d: %s",
@@ -1017,25 +1014,25 @@ HDF5dataset(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	assert(ndims == 2);
 
-    if ((retval = nc_inq_vardimid(ncid, varid, dimids))) {
+	if ((retval = nc_inq_vardimid(ncid, varid, dimids))) {
 		nc_close(ncid);
 		throw(MAL, "netcdf.HDF5dataset",
 			SQLSTATE(NC000) "Cannot read dataset %s: %s",
 							   dataset, nc_strerror(retval));
 	}
 
-    nc_inq_dimlen(ncid, dimids[0], &rows);
-    nc_inq_dimlen(ncid, dimids[1], &cols);
+	nc_inq_dimlen(ncid, dimids[0], &rows);
+	nc_inq_dimlen(ncid, dimids[1], &cols);
 
 	int type = 0;
-    if ((retval = nc_inq_var(ncid, varid, NULL, &type, NULL, NULL, NULL))) {
+	if ((retval = nc_inq_var(ncid, varid, NULL, &type, NULL, NULL, NULL))) {
 		nc_close(ncid);
 		throw(MAL, "netcdf.hdf5_relation",
 				SQLSTATE(NC000) "Cannot read variable %d : %s", varid, nc_strerror(retval));
 	}
 	assert(type == NC_FLOAT || type == NC_DOUBLE);
 	//assert(cols == (size_t)pci->retc);
-    //printf("Dataset 'train' has dimensions: %zu x %zu\n", rows, cols);
+	//printf("Dataset 'train' has dimensions: %zu x %zu\n", rows, cols);
 
 	allocator_state ta_state = ma_open(ta);
 
@@ -1045,15 +1042,15 @@ HDF5dataset(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	} else {
 		sz = sizeof(fblock);
 	}
-    float *buffer = (float *)ma_alloc(ta, sz);
-    if (buffer == NULL) {
+	float *buffer = (float *)ma_alloc(ta, sz);
+	if (buffer == NULL) {
 		nc_close(ncid);
 		ma_close(&ta_state);
 		throw(MAL, "netcdf.HDF5dataset", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
-    // Read the entire dataset into the buffer
-    //printf("First element of train[0][0]: %f\n", buffer[0]);
+	// Read the entire dataset into the buffer
+	//printf("First element of train[0][0]: %f\n", buffer[0]);
 
 	BAT **bats = (BAT**)ma_zalloc(ta, sizeof(BAT*) * pci->retc);
 	if (!bats) {
@@ -1238,19 +1235,19 @@ hdf5_relation(mvc *sql, sql_subfunc *f, char *fname, list *in_exps, list *res_ex
 	#define ERR(e) {printf("Error: %s\n", nc_strerror(e)); exit(1);}
 	(void) est;
 
-    int ncid, varid, ndims, type;
-    int dimids[NC_MAX_VAR_DIMS];
-    size_t dim_lens[NC_MAX_VAR_DIMS];
-    //size_t type_size;
+	int ncid, varid, ndims, type;
+	int dimids[NC_MAX_VAR_DIMS];
+	size_t dim_lens[NC_MAX_VAR_DIMS];
+	//size_t type_size;
 
-    // Open the file (Read-Only)
-    int retval = nc_open(fname, NC_NOWRITE, &ncid);
-    if (retval)
+	// Open the file (Read-Only)
+	int retval = nc_open(fname, NC_NOWRITE, &ncid);
+	if (retval)
 		throw(MAL, "netcdf.hdf5_relation", SQLSTATE(NC000) "Cannot open HDF5 file %s: %s", fname, nc_strerror(retval));
 
-    // Get the ID for the "train" variable hardcoding for now
+	// Get the ID for the "train" variable hardcoding for now
 	const char *vname = exps_find(sql, in_exps, "dataset", "train");
-    if ((retval = nc_inq_varid(ncid, vname, &varid))) {
+	if ((retval = nc_inq_varid(ncid, vname, &varid))) {
 		nc_close(ncid);
 		throw(MAL, "netcdf.hdf5_relation",
 							   SQLSTATE(NC000) "Cannot read variable %s: %s",
@@ -1258,8 +1255,8 @@ hdf5_relation(mvc *sql, sql_subfunc *f, char *fname, list *in_exps, list *res_ex
 	}
 	const char *vtype = exps_find(sql, in_exps, "type", NULL);
 
-    // Get the type and number of dimensions
-    if ((retval = nc_inq_var(ncid, varid, NULL, &type, &ndims, dimids, NULL))) {
+	// Get the type and number of dimensions
+	if ((retval = nc_inq_var(ncid, varid, NULL, &type, &ndims, dimids, NULL))) {
 		nc_close(ncid);
 		throw(MAL, "netcdf.hdf5_relation",
 				SQLSTATE(NC000) "Cannot read variable %d : %s", varid, nc_strerror(retval));
@@ -1269,20 +1266,19 @@ hdf5_relation(mvc *sql, sql_subfunc *f, char *fname, list *in_exps, list *res_ex
 	assert(ndims==2);
 	assert(type == NC_FLOAT || type == NC_DOUBLE);
 
-    // Get the size of each dimension
-    //printf("Variable 'train' has %d dimensions:\n", ndims);
-    for (int i = 0; i < ndims; i++) {
-        if ((retval = nc_inq_dimlen(ncid, dimids[i], &dim_lens[i]))) {
-		nc_close(ncid);
-		throw(MAL, "netcdf.hdf5_relation",
+	// Get the size of each dimension
+	//printf("Variable 'train' has %d dimensions:\n", ndims);
+	for (int i = 0; i < ndims; i++) {
+		if ((retval = nc_inq_dimlen(ncid, dimids[i], &dim_lens[i]))) {
+			nc_close(ncid);
+			throw(MAL, "netcdf.hdf5_relation",
 				SQLSTATE(NC000) "Cannot read dim len %d : %s", dimids[i], nc_strerror(retval));
-
 		}
-        //printf("  Dimension %d size: %zu\n", i, dim_lens[i]);
-    }
+	//printf("  Dimension %d size: %zu\n", i, dim_lens[i]);
+	}
 	//const size_t rows = dim_lens[0];
 	const size_t cols = dim_lens[1];
-    nc_close(ncid);
+	nc_close(ncid);
 
 	list *types = sa_list(sql->sa);
 	list *names = sa_list(sql->sa);
@@ -1318,7 +1314,7 @@ hdf5_relation(mvc *sql, sql_subfunc *f, char *fname, list *in_exps, list *res_ex
 	f->res = types;
 	f->coltypes = types;
 	f->colnames = names;
-    return MAL_SUCCEED;
+	return MAL_SUCCEED;
 }
 
 static void *
