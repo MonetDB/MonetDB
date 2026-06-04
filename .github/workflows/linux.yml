@@ -109,14 +109,22 @@ jobs:
       - name: choco packages
         run: |
           choco install winflexbison3
-          vcpkg install libiconv bzip2 libxml2 pcre2 zlib getopt 
+          vcpkg install libiconv bzip2 libxml2 pcre2 zlib getopt
+        if: runner.os == 'Windows'
+
+      - name: utf8 console
+        shell: pwsh
+        run: |
+          chcp 65001 | Out-Null
+          $OutputEncoding = [System.Text.Encoding]::UTF8
+          [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
         if: runner.os == 'Windows'
 
       - name: make MonetDB on Windows
         shell: pwsh
         run: |
           mkdir build
-          cd build 
+          cd build
           cmake ..  -DCMAKE_INSTALL_PREFIX=C:\MDB -DCMAKE_TOOLCHAIN_FILE=C:\vcpkg\scripts\buildsystems\vcpkg.cmake -DPY3INTEGRATION=OFF -DRINTEGRATION=OFF  -DCMAKE_BUILD_TYPE=Release -DASSERT=OFF -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}  -DCMAKE_SUMMARY=ON
           cmake --build . --target install
         if: runner.os == 'Windows'
