@@ -112,14 +112,6 @@ jobs:
           vcpkg install libiconv bzip2 libxml2 pcre2 zlib getopt
         if: runner.os == 'Windows'
 
-      - name: utf8 console
-        shell: pwsh
-        run: |
-          chcp 65001 | Out-Null
-          $OutputEncoding = [System.Text.Encoding]::UTF8
-          [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
-        if: runner.os == 'Windows'
-
       - name: make MonetDB on Windows
         shell: pwsh
         run: |
@@ -140,7 +132,7 @@ jobs:
           PATH=$HOME/MDB/bin:$PATH $HOME/MDB/bin/Mtest.py -r --debug=0 --ci --no-html --TSTTRGBASE=.
         if: runner.os != 'Windows'
 
-      - name: mtest-pipeline 
+      - name: mtest-pipeline
         run: |
           PATH=$HOME/MDB/bin:$PATH $HOME/MDB/bin/Mtest.py -r --debug=0 --ci --no-html --TSTTRGBASE=. --pipeline
         if: runner.os != 'Windows'
@@ -157,13 +149,19 @@ jobs:
         shell: pwsh
         run: |
           $env:PATH = 'C:\MDB\lib;C:\MDB\lib\monetdb5;C:\MDB\bin;C:\vcpkg\installed\x64-windows\bin;C:\vcpkg\installed\x64-windows\debug\bin;' + $env:PATH
+          chcp 65001 | Out-Null
+          $OutputEncoding = [System.Text.Encoding]::UTF8
+          [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
           python C:\MDB\bin\Mtest.py -r --debug=0 --ci --no-html --TSTTRGBASE=.
         if: runner.os == 'Windows'
 
-      - name: mtest 
+      - name: mtest-pipeline
         shell: pwsh
         run: |
           $env:PATH = 'C:\MDB\lib;C:\MDB\lib\monetdb5;C:\MDB\bin;C:\vcpkg\installed\x64-windows\bin;C:\vcpkg\installed\x64-windows\debug\bin;' + $env:PATH
+          chcp 65001 | Out-Null
+          $OutputEncoding = [System.Text.Encoding]::UTF8
+          [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
           python C:\MDB\bin\Mtest.py -r --debug=0 --ci --no-html --TSTTRGBASE=. --pipeline
         if: runner.os == 'Windows'
 
