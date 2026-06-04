@@ -220,105 +220,168 @@ DEFINE_SCALAR_HANDLER(cos, f32, flt, dbl)
 // cos double (64-bit)
 DEFINE_SCALAR_HANDLER(cos, f64, dbl, dbl)
 
-#if 0
-#define PATIAL_L2sq(R, BL, BR, CNT, T)                  \
-do {                                                    \
-    const T *a = (const T*) Tloc(BL, 0);                \
-    const T *b = (const T*) Tloc(BR, 0);                \
-    for(BUN p = 0; p<cnt; p++) {                        \
-        dbl d = a[p] - b[p];                            \
-        R[p] += d*d;									\
-    }                                                   \
+/**
+ * @brief Partial Euclidean Distance for 2 aligned BATs.
+ * @param DEST		Accumulated result buffer
+ * @param R			Return type
+ * @param T			Input type
+ * @param BL		Left BAT
+ * @param BR		Right BAT
+ * @param CNT		Count
+ */
+#define PARTIAL_l2sq_bats(DEST, RV2, RV3, R, T, BL, BR, CNT)            \
+do {                                                                    \
+    const T *a = (const T*) Tloc(BL, 0);                                \
+    const T *b = (const T*) Tloc(BR, 0);                                \
+    R *res = (R*) DEST;                                                 \
+    GCC_Pragma("GCC ivdep")                                             \
+    for (BUN p = 0; p < (CNT); p++) {                                   \
+        R diff = (R)a[p] - (R)b[p];                                     \
+        res[p] += diff * diff;                                          \
+    }                                                                   \
 } while (0)
 
-#define PATIAL_L2sq_const(R, BL, b, CNT, T)             \
-do {                                                    \
-    const T *a = (const T*) Tloc(BL, 0);                \
-    for(BUN p = 0; p<cnt; p++) {                        \
-        dbl d = a[p] - b;                               \
-        R[p] += d*d;									\
-    }                                                   \
+/**
+ * @brief Linear Partial Manhattan (L1) distance for 2 aligned BATs.
+ */
+#define PARTIAL_l1_bats(DEST, RV2, RV3, R, T, BL, BR, CNT)              \
+do {                                                                    \
+    const T *a = (const T*) Tloc(BL, 0);                                \
+    const T *b = (const T*) Tloc(BR, 0);                                \
+    R *res = (R*) DEST;                                                 \
+                                                                        \
+    GCC_Pragma("GCC ivdep")                                             \
+    for (BUN p = 0; p < (CNT); p++) {                                   \
+        R diff = (R)a[p] - (R)b[p];                                     \
+        res[p] += (diff < 0) ? -diff : diff;                            \
+    }                                                                   \
 } while (0)
-#endif
+
+/**
+ * @brief Linear Partial Inner Product (IP)
+ * accumulation for 2 aligned BATs.
+ */
+#define PARTIAL_ip_bats(DEST, RV2, RV3, R, T, BL, BR, CNT)              \
+do {                                                                    \
+    const T *a = (const T*) Tloc(BL, 0);                                \
+    const T *b = (const T*) Tloc(BR, 0);                                \
+    R *res = (R*) DEST;                                                 \
+                                                                        \
+    GCC_Pragma("GCC ivdep")                                             \
+    for (BUN p = 0; p < (CNT); p++) {                                   \
+        res[p] += (R)a[p] * (R)b[p];                                    \
+    }                                                                   \
+} while (0)
+
+/**
+ * @brief Linear Partial Cosine accumulations for 2 aligned BATs.
+ * @param DEST		Stores the accumulated Dot Product (A . B)
+ * @param RV2		Stores the accumulated Norm Squared of Left Vector ||A||^2
+ * @param RV3		Stores the accumulated Norm Squared of Right Vector ||B||^2
+ * @param R			Return type
+ * @param T			Input type
+ * @param BL		Left BAT
+ * @param BR		Right BAT
+ * @param CNT		Count
+ */
+#define PARTIAL_cos_bats(DEST, RV2, RV3, R, T, BL, BR, CNT)		\
+do {                                                            \
+    const T *a = (const T*) Tloc(BL, 0);                        \
+    const T *b = (const T*) Tloc(BR, 0);                        \
+    R *rdp = (R*) DEST;                                         \
+    R *rv2 = (R*) RV2;                                          \
+    R *rv3 = (R*) RV3;                                          \
+                                                                \
+    GCC_Pragma("GCC ivdep")                                     \
+    for (BUN p = 0; p < (CNT); p++) {                           \
+        rdp[p] += (R)a[p] * (R)b[p];                            \
+        rv2[p] += (R)a[p] * (R)a[p];                            \
+        rv3[p] += (R)b[p] * (R)b[p];                            \
+    }                                                           \
+} while (0)
+
 
 /**
  * @brief Partial Euclidean distance accumulation.
- * @param RES  Tloc of result BAT
- * @param RV2   not used
- * @param COL  Tloc of input BAT
- * @param QVAL Query value for dimension
- * @param CNT  count/size of RES and COL
- * @param T    result type
+ * @param DEST  Result buffer
+ * @param RV2   Not used
+ * @param COL   Tloc of input BAT
+ * @param QVAL  Query value for dimension
+ * @param CNT   Size of COL
+ * @param R     Result type
  */
-#define PATIAL_l2sq(RES, RV2, COL, QVAL, CNT, T)		\
-do {                                                    \
-    /* SIMD optimization hints */                       \
-    GCC_Pragma("GCC ivdep")                             \
-    for(BUN p = 0; p < (CNT); p++) {                    \
-        T d = (T)COL[p] - (T)QVAL;						\
-        (RES)[p] += d*d;								\
-    }                                                   \
+#define PATIAL_l2sq_scalar(DEST, RV2, COL, QVAL, CNT, R)		\
+do {															\
+    R *res = (R*) DEST;                                     	\
+    /* SIMD optimization hints */                       		\
+    GCC_Pragma("GCC ivdep")                             		\
+    for(BUN p = 0; p < (CNT); p++) {                    		\
+        R diff = (R)COL[p] - (R)QVAL;							\
+        res[p] += diff * diff;									\
+    }                                                   		\
 } while (0)
 
 
 /**
- * @brief Partial accumulations for cos distance.
- * @param RDP	dot product buffer
- * @param RV2	vector values buffer
- * @param COL	Tloc of input BAT
- * @param QVAL  Query value for dimension
- * @param CNT	count/size of COL and RES
- * @param T		result type
+ * @brief Partial accumulations for cosine distance.
+ * @param DEST		Buffer for Dot Product (A . B)
+ * @param RV2		Accumulating result buffer
+ * @param COL		Tloc of input BAT
+ * @param QVAL  	Query value for dimension
+ * @param CNT   	Size of COL
+ * @param R			Result type
  */
-#define PATIAL_cos(RDP, RV2, COL, QVAL, CNT, T)			\
-do {                                                    \
-    T q_dim = (T)(QVAL);                                \
-    /* SIMD optimization */								\
-    GCC_Pragma("GCC ivdep")                             \
-    for(BUN p = 0; p < (CNT); p++) {                    \
-        /* Accumulate Dot Product */					\
-        (RDP)[p] += (T)(COL)[p] * q_dim;                \
-        /* Accumulate vector norms */					\
-		(RV2)[p] += (T)(COL)[p] * (T)(COL)[p];			\
-    }                                                   \
+#define PATIAL_cos_scalar(DEST, RV2, COL, QVAL, CNT, R)			\
+do {                                                    		\
+    R *rdp = (R*) DEST;                                 		\
+    R *rv2 = (R*) RV2;											\
+    /* SIMD optimization */										\
+    GCC_Pragma("GCC ivdep")                             		\
+    for(BUN p = 0; p < (CNT); p++) {                    		\
+        /* Accumulate Dot Product */							\
+        rdp[p] += (R)(COL)[p] * (R)QVAL;						\
+        /* Accumulate vector norms */							\
+		rv2[p] += (R)(COL)[p] * (R)(COL)[p];					\
+    }                                                   		\
 } while (0)
 
 /**
  * @brief Partial Inner Product accumulation.
- * @param RES   Tloc of result BAT
+ * @param DEST  Result buffer
  * @param RV2   not used
  * @param COL   Tloc of input BAT
  * @param QVAL  Query value for dimension
- * @param CNT   count/size of RES and COL
- * @param T		result type
+ * @param CNT   Size of COL
+ * @param R		result type
  */
-#define PATIAL_ip(RES, RV2, COL, QVAL, CNT, T)			\
-do {                                                    \
-    T q_dim = (T)(QVAL);                                \
-    /* SIMD optimization hints */                       \
-    GCC_Pragma("GCC ivdep")                             \
-    for(BUN p = 0; p < (CNT); p++) {                    \
-		(RES)[p] += (T)COL[p] * q_dim;					\
-    }                                                   \
+#define PATIAL_ip_scalar(DEST, RV2, COL, QVAL, CNT, R)			\
+do {                                                    		\
+    R *res = (R*) DEST;                                 		\
+    /* SIMD optimization hints */                       		\
+    GCC_Pragma("GCC ivdep")                             		\
+    for(BUN p = 0; p < (CNT); p++) {                    		\
+		res[p] += (R)COL[p] * (R)QVAL;							\
+    }                                                   		\
 } while (0)
 
 /**
- * @brief Partial L1/Manhattan distance.
- * @param RES    Tloc of result BAT
- * @param RV2   not used
- * @param COL    Tloc of input BAT
- * @param QVAL   Query value for dimension
- * @param CNT	 count/size of RES and COL
- * @param T      result type
+ * @brief Partial	L1/Manhattan distance.
+ * @param DEST		Result buffer
+ * @param RV2		not used
+ * @param COL		Tloc of input BAT
+ * @param QVAL   	Query value for dimension
+ * @param CNT		Size of COL
+ * @param R      	Result type
  */
-#define PATIAL_l1(RES, RV2, COL, QVAL, CNT, T)          \
-do {                                                    \
-    /* SIMD optimization hints */                       \
-    GCC_Pragma("GCC ivdep")                             \
-    for(BUN p = 0; p < (CNT); p++) {                    \
-		T diff = (T)COL[p] - (T)QVAL;					\
-		(RES)[p] += (diff < 0) ? -diff : diff;			\
-    }                                                   \
+#define PATIAL_l1_scalar(DEST, RV2, COL, QVAL, CNT, R)			\
+do {                                                    		\
+    R *res = (R*) DEST;                                 		\
+    /* SIMD optimization hints */                       		\
+    GCC_Pragma("GCC ivdep")                             		\
+    for(BUN p = 0; p < (CNT); p++) {                    		\
+		R diff = (R)COL[p] - (R)QVAL;							\
+		res[p] += (diff < 0) ? -diff : diff;					\
+    }                                                   		\
 } while (0)
 
 /**
@@ -326,102 +389,126 @@ do {                                                    \
  * @param METRIC The prefix for the function name (e.g. l2sq, cos, ip).
  * @param TNAME The suffix for the function name (e.g., f32, f64).
  * @param T    The scalar type for input vectors (e.g., float, double).
- * @param R    The result/accumulation type (to prevent overflow).
+ * @param R    The result/accumulation type.
  */
-#define DEFINE_BAT_HANDLER(METRIC, TNAME, T, R)												\
-static char*																				\
-BAT##METRIC##_distance_##TNAME(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)       \
-{																							\
-	(void) ctx;																				\
-	(void) mb;																				\
-	allocator *ta = MT_thread_getallocator();												\
-	allocator_state ta_state = ma_open(ta);													\
-    size_t ncols = (size_t) (pci->argc - pci->retc);										\
-    /*check for even input*/																\
-    if ((ncols & 1) != 0)																	\
-        throw(MAL, "batvss." #METRIC "_distance", SQLSTATE(HY097) DIMENSION_MISMATCH_ERR);	\
-    size_t dims = ncols / 2;																\
-	/*find out args input order, e.g. does qry vector come first or not*/					\
-    size_t cnt = 0, qry_idx, bat_idx;														\
-	int _tpe = getArgType(mb, pci, 1);														\
-	BAT *b = NULL;																			\
-	if (isaBatType(_tpe)) {																	\
-		bat_idx = 1;																		\
-		qry_idx = 1 + dims;																	\
-		b = BATdescriptor(*getArgReference_bat(stk, pci, bat_idx));							\
-		if (!b)																				\
-			throw(MAL, "batvss." #METRIC "_distance", RUNTIME_OBJECT_MISSING);				\
-		cnt = BATcount(b);																	\
-		BBPreclaim(b);																		\
-	} else  {																				\
-		bat_idx = 1 + dims;																	\
-		qry_idx = 1;																		\
-		b = BATdescriptor(*getArgReference_bat(stk, pci, bat_idx));							\
-		if (!b)																				\
-			throw(MAL, "batvss." #METRIC "_distance", RUNTIME_OBJECT_MISSING);				\
-		cnt = BATcount(b);																	\
-		BBPreclaim(b);																		\
-	}																						\
-    bat *ret = getArgReference_bat(stk, pci, 0);											\
-    BAT *bn = COLnew(b->hseqbase, TYPE_##R, cnt, TRANSIENT);								\
-    if (bn == NULL)																			\
-		throw(MAL, "batvss." #METRIC "_distance", MAL_MALLOC_FAIL);							\
-	R *dest = (R*) Tloc(bn, 0);																\
-	memset(dest, 0, sizeof(R) * cnt);														\
-	R *v2 = NULL;																			\
-	R sum_q2 = 0;																			\
-    if (strcmp(#METRIC, "cos") == 0) {														\
-		v2 = ma_alloc(ta, sizeof(R) * cnt);													\
-		if (v2 == NULL)																		\
-			throw(MAL, "batvss." #METRIC "_distance", MAL_MALLOC_FAIL);						\
-	}																						\
-	for (size_t i = 0; i < dims; i++) {														\
-		BAT *b = BATdescriptor(*getArgReference_bat(stk, pci, (bat_idx + i)));				\
-		if (!b) {																			\
-			if (bn) BBPunfix(bn->batCacheid);												\
-			ma_close(&ta_state);															\
-			throw(MAL, "batvss." #METRIC "_distance", RUNTIME_OBJECT_MISSING);				\
-		}																					\
-		const R qv = (R) *getArgReference_##T(stk, pci, (qry_idx + i));						\
-		sum_q2 += qv *qv;																	\
-		const T *b_vals = (const T*) Tloc(b, 0);											\
-		PATIAL_##METRIC(dest, v2, b_vals, qv, cnt, R);										\
-		BBPreclaim(b);																		\
-	}																						\
-	/* Final transformation for IP */														\
-    if (strcmp(#METRIC, "ip") == 0) {														\
-        for (BUN p = 0; p < cnt; p++) {														\
-            dest[p] = (R)1.0 - dest[p];														\
-        }																					\
-    }																						\
-    /* Final transformation for Cosine Distance */											\
-    if (strcmp(#METRIC, "cos") == 0) {														\
-		R q_norm = SELECT_SQRT(R, sum_q2);													\
-		for (BUN p = 0; p < cnt; p++) {														\
-			R v_norm = SELECT_SQRT(R, v2[p]);												\
-			R result_if_zero[2][2];															\
-			R similarity = dest[p] / (v_norm * q_norm);										\
-			if (similarity > 1.0)															\
-				similarity = 1.0;															\
-			else if (similarity < -1.0)														\
-				similarity = -1.0;															\
-			result_if_zero[0][0] = (R)1.0 - similarity;										\
-			result_if_zero[0][1] = (R)1.0;													\
-			result_if_zero[1][0] = (R)1.0;													\
-			result_if_zero[1][1] = (R)0.0;													\
-			dest[p] = result_if_zero[v_norm == 0][q_norm == 0];								\
-		}																					\
-	}																						\
-    /* Finalize BAT metadata */																\
-    BATsetcount(bn, cnt);																	\
-    bn->tnonil = true;																		\
-    bn->tkey = false;																		\
-    bn->tsorted = false;																	\
-    bn->trevsorted = false;																	\
-    *ret = bn->batCacheid;																	\
-    BBPkeepref(bn);																			\
-	ma_close(&ta_state);																	\
-    return MAL_SUCCEED;																		\
+#define DEFINE_BAT_HANDLER(METRIC, TNAME, T, R)															\
+static char*																							\
+BAT##METRIC##_distance_##TNAME(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)       			\
+{																										\
+	(void) ctx;																							\
+	(void) mb;																							\
+    size_t ncols = (size_t) (pci->argc - pci->retc);													\
+    /*check for even input*/																			\
+    if ((ncols & 1) != 0)																				\
+        throw(MAL, "batvss." #METRIC "_distance", SQLSTATE(HY097) DIMENSION_MISMATCH_ERR);				\
+    size_t dims = ncols / 2;																			\
+	/*what is the order (qry, bat) or (bat, qry) or (bat, bat)*/										\
+    size_t cnt = 0, qry_idx = 0, bat_idx = 0, lt_idx = 1, rt_idx = 1 + dims;							\
+	oid hseq = 0;																						\
+	int arg_tpe_lt = getArgType(mb, pci, lt_idx);														\
+	int arg_tpe_rt = getArgType(mb, pci, rt_idx);														\
+	BAT *b = NULL;																						\
+	if (isaBatType(arg_tpe_lt)) {																		\
+		bat_idx = lt_idx;																				\
+		qry_idx = rt_idx;																				\
+	} else {																							\
+		bat_idx = rt_idx;																				\
+		qry_idx = lt_idx;																				\
+	}																									\
+	b = BATdescriptor(*getArgReference_bat(stk, pci, bat_idx));											\
+	if (!b)																								\
+		throw(MAL, "batvss." #METRIC "_distance", RUNTIME_OBJECT_MISSING);								\
+	hseq = b->hseqbase;																					\
+	cnt = BATcount(b);																					\
+	BBPreclaim(b);																						\
+    bat *ret = getArgReference_bat(stk, pci, 0);														\
+    BAT *bn = COLnew(hseq, TYPE_##R, cnt, TRANSIENT);													\
+    if (bn == NULL)																						\
+		throw(MAL, "batvss." #METRIC "_distance", MAL_MALLOC_FAIL);										\
+	R *dest = (R*) Tloc(bn, 0);																			\
+	memset(dest, 0, sizeof(R) * cnt);																	\
+	R *v2 = NULL;																						\
+	R *v3 = NULL;																						\
+	R sum_q2 = 0;																						\
+	allocator *ta = MT_thread_getallocator();															\
+	allocator_state ta_state = ma_open(ta);																\
+    if (strcmp(#METRIC, "cos") == 0) {																	\
+		v2 = ma_zalloc(ta, sizeof(R) * cnt);															\
+		if (v2 == NULL) {																				\
+			if(bn) BBPreclaim(bn);																		\
+			ma_close(&ta_state);																		\
+			throw(MAL, "batvss." #METRIC "_distance", MAL_MALLOC_FAIL);									\
+		}																								\
+		/*If it is a BAT-vs-BAT Cosine operation, allocate v3*/											\
+        if (isaBatType(arg_tpe_lt) && isaBatType(arg_tpe_rt)) {											\
+            v3 = ma_zalloc(ta, sizeof(R) * cnt);														\
+            if (v3 == NULL) {																			\
+				if(bn) BBPreclaim(bn);																	\
+                ma_close(&ta_state);																	\
+                throw(MAL, "batvss." #METRIC "_distance", MAL_MALLOC_FAIL);								\
+            }																							\
+        }																								\
+	}																									\
+	for (size_t i = 0; i < dims; i++) {																	\
+		if (isaBatType(arg_tpe_lt) && isaBatType(arg_tpe_rt)) {											\
+			BAT *bl = BATdescriptor(*getArgReference_bat(stk, pci, lt_idx + i));						\
+			BAT *br = BATdescriptor(*getArgReference_bat(stk, pci, rt_idx + i));						\
+			if (strcmp(#METRIC, "cos") == 0) {															\
+                PARTIAL_cos_bats(dest, v2, v3, R, T, bl, br, cnt);										\
+            } else {																					\
+                PARTIAL_##METRIC##_bats(dest, v2, v3, R, T, bl, br, cnt);								\
+            }																							\
+			BBPreclaim(bl);																				\
+			BBPreclaim(br);																				\
+		} else {																						\
+			BAT *b = BATdescriptor(*getArgReference_bat(stk, pci, (bat_idx + i)));						\
+			if(!b) {																					\
+				if(bn) BBPreclaim(bn);																	\
+				ma_close(&ta_state);																	\
+				throw(MAL, "batvss." #METRIC "_distance", RUNTIME_OBJECT_MISSING);						\
+			}																							\
+			const R qv = (R) *getArgReference_##T(stk, pci, (qry_idx + i));								\
+			sum_q2 += qv *qv;																			\
+			const T *b_vals = (const T*) Tloc(b, 0);													\
+			PATIAL_##METRIC##_scalar(dest, v2, b_vals, qv, cnt, R);										\
+			BBPreclaim(b);																				\
+		}																								\
+	}																									\
+	/* Final transformation for IP */																	\
+    if (strcmp(#METRIC, "ip") == 0) {																	\
+        for (BUN p = 0; p < cnt; p++) {																	\
+            dest[p] = (R)1.0 - dest[p];																	\
+        }																								\
+    }																									\
+    /* Final transformation for Cosine Distance */														\
+    if (strcmp(#METRIC, "cos") == 0) {																	\
+		for (BUN p = 0; p < cnt; p++) {																	\
+			R v2_norm = SELECT_SQRT(R, v2[p]);															\
+			R similarity;																				\
+			if (isaBatType(arg_tpe_lt) && isaBatType(arg_tpe_rt)) {										\
+				R v3_norm = SELECT_SQRT(R, v3[p]);														\
+				similarity = (v2_norm == 0 || v3_norm ==0) ? 0 : dest[p] / (v2_norm * v3_norm);			\
+			} else {																					\
+				R q_norm = SELECT_SQRT(R, sum_q2);														\
+				similarity = (v2_norm == 0 || q_norm ==0) ? 0 : dest[p] / (v2_norm * q_norm);			\
+			}																							\
+			if (similarity > 1.0)																		\
+				similarity = 1.0;																		\
+			else if (similarity < -1.0)																	\
+				similarity = -1.0;																		\
+			dest[p] = (R)1.0 - similarity;																\
+		}																								\
+	}																									\
+    /* Finalize BAT metadata */																			\
+    BATsetcount(bn, cnt);																				\
+    bn->tnonil = true;																					\
+    bn->tkey = false;																					\
+    bn->tsorted = false;																				\
+    bn->trevsorted = false;																				\
+    *ret = bn->batCacheid;																				\
+    BBPkeepref(bn);																						\
+	ma_close(&ta_state);																				\
+    return MAL_SUCCEED;																					\
 }
 
 DEFINE_BAT_HANDLER(l2sq, f32, flt, dbl)
