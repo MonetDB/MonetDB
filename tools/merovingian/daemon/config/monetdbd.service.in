@@ -8,8 +8,9 @@ Type=forking
 User=monetdb
 Group=monetdb
 UMask=0007
-# DBFARM is configurable by creating an override file in
-# /etc/systemd/system/monetdbd.service.d (to be created) with content
+# DBFARM is configurable using `systemctl edit monetdbd`
+# This command will create the file `override.conf` in /etc/systemd/system/monetdbd.service.d
+# Add the following content:
 # [Service]
 # Environment=DBFARM=/some/other/directory
 Environment=DBFARM=@CMAKE_INSTALL_FULL_LOCALSTATEDIR@/monetdb5/dbfarm

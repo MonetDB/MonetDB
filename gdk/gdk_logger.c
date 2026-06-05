@@ -87,6 +87,7 @@ typedef struct trans {
 	logaction *changes;
 
 	struct trans *tr;
+	allocator_state ta_state;
 } trans;
 
 typedef struct logformat_t {
@@ -1052,22 +1053,25 @@ log_write_new_types(logger *lg, FILE *fp)
 #define TR_SIZE		1024
 
 static trans *
-tr_create(trans *tr, int tid)
+tr_create(allocator *ta, trans *tr, int tid)
 {
-	trans *ntr = GDKmalloc(sizeof(trans));
+	if (tr)
+		tr->ta_state = ma_open(ta);
+	trans *ntr = ma_alloc(ta, sizeof(trans));
 
-	if (ntr == NULL)
-		return NULL;
-	ntr->tid = tid;
-	ntr->sz = TR_SIZE;
-	ntr->nr = 0;
-	ntr->changes = GDKmalloc(sizeof(logaction) * TR_SIZE);
-	if (ntr->changes == NULL) {
-		GDKfree(ntr);
-		return NULL;
+	if (ntr != NULL) {
+		ntr->tid = tid;
+		ntr->sz = TR_SIZE;
+		ntr->nr = 0;
+		ntr->changes = ma_alloc(ta, sizeof(logaction) * TR_SIZE);
+		if (ntr->changes != NULL) {
+			ntr->tr = tr;
+			return ntr;
+		}
 	}
-	ntr->tr = tr;
-	return ntr;
+	if (tr)
+		ma_close(&tr->ta_state);
+	return NULL;
 }
 
 static gdk_return
@@ -1108,8 +1112,12 @@ tr_grow(trans *tr)
 {
 	if (tr->nr == tr->sz) {
 		logaction *changes;
+		int sz = tr->sz;
 		tr->sz <<= 1;
-		changes = GDKrealloc(tr->changes, tr->sz * sizeof(logaction));
+		changes = ma_realloc(MT_thread_getallocator(),
+				     tr->changes,
+				     tr->sz * sizeof(logaction),
+				     sz * sizeof(logaction));
 		if (changes == NULL)
 			return GDK_FAIL;
 		tr->changes = changes;
@@ -1123,9 +1131,8 @@ static trans *
 tr_destroy(trans *tr)
 {
 	trans *r = tr->tr;
-
-	GDKfree(tr->changes);
-	GDKfree(tr);
+	if (r)
+		ma_close(&r->ta_state);
 	return r;
 }
 
@@ -1411,6 +1418,8 @@ log_read_transaction(logger *lg, BAT *ids_to_omit, uint32_t *updated, BUN maxupd
 	ATOMIC_BASE_TYPE dbg = ATOMIC_GET(&GDKdebug);
 	time_t t0 = 0;
 	int64_t fs = 0;
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
 
 	(void) maxupdated;	/* only used inside assert() */
 
@@ -1519,7 +1528,7 @@ log_read_transaction(logger *lg, BAT *ids_to_omit, uint32_t *updated, BUN maxupd
 			assert(!lg->flushing || l.id <= lg->tid);
 			if (!lg->flushing && l.id > lg->tid)
 				lg->tid = l.id;	/* should only happen during initialization */
-			if ((tr = tr_create(tr, l.id)) == NULL) {
+			if ((tr = tr_create(ta, tr, l.id)) == NULL) {
 				TRC_CRITICAL(GDK, "memory allocation failed\n");
 				err = LOG_ERR;
 				break;
@@ -1597,6 +1606,7 @@ log_read_transaction(logger *lg, BAT *ids_to_omit, uint32_t *updated, BUN maxupd
 		TRC_WARNING(GDK, "aborting transaction\n");
 		tr = tr_abort(lg, tr);
 	}
+	ma_close(&ta_state);
 	if (!lg->flushing)
 		ATOMIC_SET(&GDKdebug, dbg);
 
@@ -2045,7 +2055,7 @@ bm_subcommit(logger *lg, logged_range *pending, uint32_t *updated, BUN maxupdate
 				return GDK_FAIL;
 			}
 		}
-		if (updated && p < maxupdated && (updated[p / 32] & (1U << (p % 32))) == 0) {
+		if (updated && (p >= maxupdated || (updated[p / 32] & (1U << (p % 32))) == 0)) {
 			continue;
 		}
 		bat col = bids[p];
@@ -2941,6 +2951,8 @@ log_flush(logger *lg, ulng ts)
 	log_return res = LOG_OK;
 	ulng cid = olid;
 	assert(lid <= lgid);
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
 	uint32_t *updated = NULL;
 	BUN nupdated = 0;
 	size_t allocated = 0;
@@ -2949,23 +2961,23 @@ log_flush(logger *lg, ulng ts)
 			char filename[MAXPATH];
 			char id[32];
 			if (snprintf(id, sizeof(id), ULLFMT, cid + 1) >= (int) sizeof(id)) {
-				GDKfree(updated);
+				ma_close(&ta_state);
 				TRC_CRITICAL(GDK, "log_id filename is too large\n");
 				return GDK_FAIL;
 			}
 			if (GDKfilepath(filename, sizeof(filename), BBPselectfarm(PERSISTENT, 0, offheap), lg->dir, LOGFILE, id) != GDK_SUCCEED) {
-				GDKfree(updated);
+				ma_close(&ta_state);
 				return GDK_FAIL;
 			}
 			if (strlen(filename) >= FILENAME_MAX) {
-				GDKfree(updated);
+				ma_close(&ta_state);
 				TRC_CRITICAL(GDK, "Logger filename path is too large\n");
 				return GDK_FAIL;
 			}
 
 			bool filemissing = false;
 			if (log_open_input(lg, filename, &filemissing) != GDK_SUCCEED) {
-				GDKfree(updated);
+				ma_close(&ta_state);
 				return GDK_FAIL;
 			}
 		}
@@ -2976,23 +2988,23 @@ log_flush(logger *lg, ulng ts)
 			allocated = ((nupdated + 31) & ~31) / 8;
 			if (allocated == 0)
 				allocated = 4;
-			updated = GDKzalloc(allocated);
+			updated = ma_zalloc(ta, allocated);
 			if (updated == NULL) {
 				log_unlock(lg);
+				ma_close(&ta_state);
 				return GDK_FAIL;
 			}
 		} else if (nupdated < BATcount(lg->catalog_id)) {
 			BUN n = BATcount(lg->catalog_id);
 			size_t a = ((n + 31) & ~31) / 8;
 			if (a > allocated) {
-				uint32_t *p = GDKrealloc(updated, a);
-				if (p == NULL) {
-					GDKfree(updated);
+				updated = ma_realloc(ta, updated, a, allocated);
+				if (updated == NULL) {
+					ma_close(&ta_state);
 					log_unlock(lg);
 					return GDK_FAIL;
 				}
-				updated = p;
-				memset(updated + allocated / 4, 0, a - allocated);
+				memset((char *) updated + allocated, 0, a - allocated);
 				allocated = a;
 			}
 			nupdated = n;
@@ -3028,7 +3040,7 @@ log_flush(logger *lg, ulng ts)
 		if (res == LOG_OK)
 			log_cleanup_range(lg, lg->saved_id);
 	}
-	GDKfree(updated);
+	ma_close(&ta_state);
 	return res == LOG_ERR ? GDK_FAIL : GDK_SUCCEED;
 }
 
@@ -3106,6 +3118,36 @@ log_constant_bulk(logger *lg, int type, const void *val, log_id id, lng offset, 
 	return ok;
 }
 
+static gdk_return
+lg_updated_set_bit(logger *lg, log_id id, BUN p)
+{
+	assert(p != BUN_NONE);
+	if (lg->updated != NULL) {
+		if (id > 0) {
+			p = log_find(lg->catalog_id, lg->dcatalog, id);
+			if (p == BUN_NONE) {
+				GDKerror("%d not found in catalog_id BAT", id);
+				return GDK_FAIL;
+			}
+		}
+		if (p >= lg->maxupdated) {
+			BUN cnt = BATcount(lg->catalog_id);
+			assert(p < cnt);
+			size_t allocated = ((cnt + 31) & ~31) / 8;
+			assert(allocated > 0);
+			uint32_t *u = GDKrealloc(lg->updated, allocated);
+			if (u == NULL)
+				return GDK_FAIL;
+			memset((char *) u + lg->maxupdated / 8, 0,
+			       allocated - lg->maxupdated / 8);
+			lg->maxupdated = allocated * 8;
+			lg->updated = u;
+		}
+		lg->updated[p / 32] |= 1U << (p % 32);
+	}
+	return GDK_SUCCEED;
+}
+
 gdk_return
 log_constant(logger *lg, int type, const void *val, log_id id, lng offset, lng cnt, lng total_cnt)
 {
@@ -3114,15 +3156,8 @@ log_constant(logger *lg, int type, const void *val, log_id id, lng offset, lng c
 
 	if (LOG_DISABLED(lg) || !nr) {
 		/* logging is switched off */
-		if (lg->updated != NULL) {
-			BUN p = log_find(lg->catalog_id, lg->dcatalog, id);
-			if (p == BUN_NONE) {
-				GDKerror("%d not found in catalog_id BAT", id);
-				return GDK_FAIL;
-			}
-			if (p < lg->maxupdated)
-				lg->updated[p / 32] |= 1U << (p % 32);
-		}
+		if (lg_updated_set_bit(lg, id, 0) != GDK_SUCCEED)
+			return GDK_FAIL;
 		if (nr) {
 			log_lock(lg);
 			ok = la_bat_update_count(lg, id, offset + cnt, lg->tid);
@@ -3179,7 +3214,7 @@ string_writer(logger *lg, BAT *b, lng offset, lng nr)
 		return GDK_FAIL;
 	BATiter bi = bat_iterator(b);
 	BUN p = (BUN) offset;
-	for (; p < end;) {
+	while (p < end) {
 		size_t sz = 0;
 		if (resize) {
 			if ((buf = GDKrealloc(lg->wbuf, resize)) == NULL) {
@@ -3229,15 +3264,8 @@ internal_log_bat(logger *lg, BAT *b, log_id id, lng offset, lng cnt, int sliced,
 
 	if (LOG_DISABLED(lg) || !nr) {
 		/* logging is switched off */
-		if (lg->updated != NULL) {
-			BUN p = log_find(lg->catalog_id, lg->dcatalog, id);
-			if (p == BUN_NONE) {
-				GDKerror("%d not found in catalog_id BAT", id);
-				return GDK_FAIL;
-			}
-			if (p < lg->maxupdated)
-				lg->updated[p / 32] |= 1U << (p % 32);
-		}
+		if (lg_updated_set_bit(lg, id, 0) != GDK_SUCCEED)
+			return GDK_FAIL;
 		if (nr)
 			return la_bat_update_count(lg, id, offset + cnt, lg->tid);
 		return GDK_SUCCEED;
@@ -3462,15 +3490,8 @@ log_delta(logger *lg, BAT *uid, BAT *uval, log_id id)
 
 	if (LOG_DISABLED(lg)) {
 		/* logging is switched off */
-		if (lg->updated != NULL) {
-			BUN p = log_find(lg->catalog_id, lg->dcatalog, id);
-			if (p == BUN_NONE) {
-				GDKerror("%d not found in catalog_id BAT", id);
-				return GDK_FAIL;
-			}
-			if (p < lg->maxupdated)
-				lg->updated[p / 32] |= 1U << (p % 32);
-		}
+		if (lg_updated_set_bit(lg, id, 0) != GDK_SUCCEED)
+			return GDK_FAIL;
 		log_unlock(lg);
 		return GDK_SUCCEED;
 	}
@@ -3807,8 +3828,8 @@ log_del_bat(logger *lg, log_bid bid)
 	}
 
 	assert(lg->catalog_lid->hseqbase == 0);
-	if (lg->updated != NULL && p < lg->maxupdated)
-		lg->updated[p / 32] |= 1U << (p % 32);
+	if (lg_updated_set_bit(lg, 0, p) != GDK_SUCCEED)
+		return GDK_FAIL;
 	return BUNreplace(lg->catalog_lid, p, &lid, false);
 }
 

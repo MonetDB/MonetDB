@@ -1066,6 +1066,7 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 			if (bi.maxpos != BUN_NONE)
 				maxvalp = BUNtvar(&bi, bi.maxpos);
 			const void *vbase = b->tvheap->base;
+			Heap *oldheap = b->theap;
 			for (BUN i = 0; i < count; i++) {
 				t = ((void **) values)[i];
 				bool isnil = atomeq(t, atomnil);
@@ -1097,12 +1098,11 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 						VALclear(&maxprop);
 					return rc;
 				}
-				if (vbase != b->tvheap->base) {
-					/* tvheap changed location, so
+				if (vbase != b->tvheap->base ||
+				    oldheap != b->theap) {
+					/* a heap changed location, so
 					 * pointers may need to be
-					 * updated (not if they were
-					 * initialized from t below, but
-					 * we don't know) */
+					 * updated */
 					BUN minpos = bi.minpos;
 					BUN maxpos = bi.maxpos;
 					MT_lock_set(&b->theaplock);
@@ -1111,6 +1111,7 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 					bi.minpos = minpos;
 					bi.maxpos = maxpos;
 					vbase = b->tvheap->base;
+					oldheap = b->theap;
 					if (bi.minpos != BUN_NONE)
 						minvalp = BUNtvar(&bi, bi.minpos);
 					if (bi.maxpos != BUN_NONE)
@@ -1144,10 +1145,11 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 			if (maxbound)
 				VALclear(&maxprop);
 			if (b->thash) {
+				bi.vh = b->tvheap;
 				p -= count;
 				for (BUN i = 0; i < count; i++) {
 					t = ((void **) values)[i];
-					HASHappend_locked(b, p, t);
+					HASHappend_locked(&bi, p, t);
 					p++;
 				}
 				nunique = b->thash ? b->thash->nunique : 0;
@@ -1174,7 +1176,7 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 					return rc;
 				}
 				if (b->thash) {
-					HASHappend_locked(b, p, t);
+					HASHappend_locked(&bi, p, t);
 				}
 				if (!atomeq(t, atomnil)) {
 					if (atomcmp != NULL) {
@@ -1210,7 +1212,8 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 				return rc;
 			}
 			if (b->thash) {
-				HASHappend_locked(b, p, t);
+				bi.vh = b->tvheap;
+				HASHappend_locked(&bi, p, t);
 			}
 			p++;
 		}
