@@ -127,6 +127,7 @@ extern list* exps_label(mvc *sql, list *exps);
 extern sql_exp * exp_copy( mvc *sql, sql_exp *e);
 extern list * exps_copy( mvc *sql, list *exps);
 extern list * exps_alias( mvc *sql, list *exps);
+extern list * exps_refs( mvc *sql, list *exps); /* create new list of references to the exps */
 
 extern void exp_swap( sql_exp *e );
 

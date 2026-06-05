@@ -1234,11 +1234,11 @@ resolve_func(mvc *sql, const char *sname, const char *name, dlist *typelist, sql
 						arg_list = tpe;
 					}
 				}
+				if (!if_exists)
+					e = sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "%s %s: no such %s '%s' (%s)", op, F, fn, name, arg_list);
 				ma_close(&ta_state);
 				list_destroy(list_func);
 				list_destroy(type_list);
-				if (!if_exists)
-					e = sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "%s %s: no such %s '%s' (%s)", op, F, fn, name, arg_list);
 				return e;
 			}
 			list_destroy(list_func);

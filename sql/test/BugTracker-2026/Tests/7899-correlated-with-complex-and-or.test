@@ -18,18 +18,6 @@ CREATE TABLE users (
 )
 
 statement ok
-CREATE TABLE posts (
-    id          INT,
-    user_id     INT,
-    title       VARCHAR(255),
-    content     VARCHAR(1000),
-    views       INT,
-    likes       INT,
-    created_at  TIMESTAMP,
-    rating      DOUBLE
-)
-
-statement ok
 CREATE TABLE comments (
     id          INT,
     post_id     INT,
@@ -55,14 +43,6 @@ INSERT INTO users VALUES
 (3, 'carol', NULL,             NULL, 'banned','2022-01-03 12:00:00', NULL),
 (4, 'dave',  'dave@test.com',  45, 'active',  '2022-01-04 13:00:00', 65.2),
 (5, NULL,    'null@test.com',  18, 'inactive','2022-01-05 14:00:00', 70.0)
-
-statement ok rowcount 5
-INSERT INTO posts VALUES
-(1, 1, 'Hello World', 'First post', 100, 10, '2022-01-10 10:00:00', 4.5),
-(2, 1, 'Another Post', NULL,        150, 20, '2022-01-11 11:00:00', 3.0),
-(3, 2, 'Bob Post',     'Content',   NULL,  5, '2022-01-12 12:00:00', NULL),
-(4, 3, NULL,           'Empty',     50,   2, '2022-01-13 13:00:00', 5.0),
-(5, 4, 'Last Post',    'Last',      300,  30,'2022-01-14 14:00:00', 4.9)
 
 statement ok rowcount 4
 INSERT INTO comments VALUES
@@ -119,3 +99,18 @@ from
   users as ref_0
 ----
 5
+
+statement ok
+DROP TABLE users
+
+statement ok
+DROP TABLE comments
+
+statement ok
+DROP TABLE orders
+
+statement ok
+SET SCHEMA sys
+
+statement ok
+DROP SCHEMA s7899

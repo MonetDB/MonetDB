@@ -1,0 +1,96 @@
+statement ok
+CREATE TABLE rt2(ts TIMESTAMP)
+
+statement ok
+INSERT INTO rt2 VALUES (TIMESTAMP '2024-01-01 00:00:00')
+
+statement ok
+INSERT INTO rt2 VALUES (NULL)
+
+statement ok
+CREATE TABLE rt3_o(id INT)
+
+statement ok
+INSERT INTO rt3_o VALUES (1)
+
+statement ok
+CREATE TABLE rt3_m(id INT)
+
+statement ok
+INSERT INTO rt3_m VALUES (2)
+
+query II nosort
+SELECT
+  (SELECT COUNT(*) FROM rt3_o) AS orig_remain,
+  (SELECT COUNT(*) FROM rt3_m) AS mut_remain
+----
+1
+1
+
+query I nosort
+SELECT COUNT(*) FROM rt3_o
+WHERE EXISTS (
+  (SELECT rt2.ts AS k, rt2.ts AS k2 FROM rt2)
+  EXCEPT
+  (SELECT rt2.ts AS k, rt2.ts AS k2
+   FROM rt2
+   GROUP BY rt2.ts
+   HAVING rt2.ts IS NULL)
+)
+----
+1
+
+-- ORIGINAL
+statement ok rowcount 1
+DELETE FROM rt3_o
+WHERE EXISTS (
+  (SELECT rt2.ts AS k, rt2.ts AS k2 FROM rt2)
+  EXCEPT
+  (SELECT rt2.ts AS k, rt2.ts AS k2
+   FROM rt2
+   GROUP BY rt2.ts
+   HAVING rt2.ts IS NULL)
+)
+
+query I nosort
+SELECT COUNT(*) FROM rt3_m
+WHERE EXISTS (
+  (SELECT rt2.ts AS k, rt2.ts AS k2 FROM rt2)
+  EXCEPT
+  (SELECT rt2.ts AS k, rt2.ts AS k2
+   FROM rt2
+   GROUP BY rt2.ts
+   HAVING 1 = 0)
+)
+----
+1
+
+-- MUTATED
+statement ok rowcount 1
+DELETE FROM rt3_m
+WHERE EXISTS (
+  (SELECT rt2.ts AS k, rt2.ts AS k2 FROM rt2)
+  EXCEPT
+  (SELECT rt2.ts AS k, rt2.ts AS k2
+   FROM rt2
+   GROUP BY rt2.ts
+   HAVING 1 = 0)
+)
+
+query II nosort
+SELECT
+  (SELECT COUNT(*) FROM rt3_o) AS orig_remain,
+  (SELECT COUNT(*) FROM rt3_m) AS mut_remain
+----
+0
+0
+
+statement ok
+DROP TABLE rt3_o
+
+statement ok
+DROP TABLE rt3_m
+
+statement ok
+DROP TABLE rt2
+

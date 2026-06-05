@@ -1,0 +1,31 @@
+statement ok
+create table idt (n int, d varchar(10))
+
+statement ok
+insert into idt values
+    (1,'2019-01-01'),
+    (2,'2020-01-01'),
+    (3,'2021-01-01'),
+    (4,'2022-01-01')
+
+query IT rowsort
+select n,
+    case when n < 2 then
+        str_to_date(d,'%Y-%m-%d')
+    else
+        str_to_date(d,'%Y-%m-%d')
+    end
+from idt
+----
+1
+2019-01-01
+2
+2020-01-01
+3
+2021-01-01
+4
+2022-01-01
+
+statement ok
+drop table idt
+

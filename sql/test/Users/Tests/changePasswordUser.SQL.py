@@ -24,7 +24,7 @@ with SQLTestCase() as tc:
             .assertDataResultMatch([("password correct april2",)])
     # april tries to change its password with an incorrect old password
     tc.execute("ALTER USER SET UNENCRYPTED PASSWORD 'april5' USING OLD PASSWORD 'april3';")\
-            .assertFailed(err_code="M0M27", err_message='42000!changeUserPassword: password mismatch')
+            .assertFailed(err_code="28000", err_message='changeUserPassword: password mismatch')
     tc.execute("ALTER USER SET UNENCRYPTED PASSWORD 'april' USING OLD PASSWORD 'april2';").assertSucceeded()
     tc.connect(username="april", password="april2")
     tc.execute("select 'password april2 (wrong!!!)';").assertFailed()

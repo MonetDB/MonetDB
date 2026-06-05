@@ -5,7 +5,7 @@ SELECT corr ( NULL , 2 ) OVER ( ) ,
        corr ( x , NULL ) OVER ( ) ,
        corr ( NULL , x ) OVER ( ) ,
        corr ( NULL , NULL ) OVER ( )
-FROM (select 1) as x(x);
+FROM (select 1) as x(x)
 ----
 NULL
 NULL
@@ -19,7 +19,7 @@ SELECT covar_pop ( 1 , 1 ) OVER ( ) ,
        corr ( 1 , 1 ) OVER ( ) ,
        covar_pop ( 1 , NULL ) OVER ( ) ,
        covar_samp ( 1 , NULL ) OVER ( ) ,
-       corr ( 1 , NULL ) OVER ( ) ;
+       corr ( 1 , NULL ) OVER ( )
 ----
 0.000
 NULL
@@ -44,7 +44,7 @@ SELECT covar_pop (
                               + COALESCE (
                                     corr ( 1 , 1 ) OVER ( ) ,
                                     covar_pop ( 1 , NULL ) OVER ( ) ,
-                                    covar_samp ( 1.900000 , 1.000000 ^ 1 ) OVER (
+                                    covar_samp ( 1.900000 , power(1.000000 , 1) ) OVER (
                                         ORDER BY 754 DESC NULLS FIRST
                                         RANGE BETWEEN CURRENT ROW
                                           AND CASE WHEN EXISTS ( SELECT NULL )

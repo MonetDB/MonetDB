@@ -11,5 +11,11 @@ statement ok
 INSERT INTO t0(c1) VALUES (-10)
 
 query I
-SELECT * FROM t1 WHERE NOT EXISTS (SELECT 1 FROM t0 WHERE ((t1.c1)!=(t0.c1)));
+SELECT * FROM t1 WHERE NOT EXISTS (SELECT 1 FROM t0 WHERE ((t1.c1)!=(t0.c1)))
 ----
+
+statement ok
+DROP TABLE t0
+
+statement ok
+DROP TABLE t1

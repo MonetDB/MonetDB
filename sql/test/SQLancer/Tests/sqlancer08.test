@@ -347,7 +347,7 @@ statement ok
 create view v2(vc0) as (select cast(('|S4 흮,8GQ') not between symmetric ('3840') and ('n') as int))
 
 statement ok
-create view v3(vc0) as (values (cast(((abs(0.11))-(((round(0.3, 3))<<(((-3)+(5)))))) as decimal))) with check option
+create view v3(vc0) as (values (cast(((abs(11))-(((3)<<(((-3)+(5)))))) as decimal))) with check option
 
 query I rowsort
 SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST(FALSE AS INT) as count FROM t2, t1, v2 FULL OUTER JOIN t0 ON "isauuid"('2A') NATURAL JOIN v1 NATURAL JOIN v3) as res

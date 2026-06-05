@@ -232,7 +232,7 @@ create or replace view v21(vc0) as (select all sql_min(case false when false the
 0.30544159200423870448304342062328942120075225830078125) where ((false)or(true)))
 
 statement ok
-create view v59(vc0) as (select all ((degrees(0.92038196))^(0.20652191739572556)) where (0.7852820956901502835734163454617373645305633544921875)
+create view v59(vc0) as (select all ((092038196)^(20652191739572556)) where (0.7852820956901502835734163454617373645305633544921875)
 not between symmetric (-1878062655) and (0.557693883106285870354668077197857201099395751953125)) with check option
 
 statement ok
@@ -538,7 +538,7 @@ statement ok
 create view v24(vc0) as (values (0.22)) with check option
 
 query II nosort
-select ((sum(all least(((((0.32)-(0.33))) -(0.43)), -(cast(3 as bigint)))))>>2), 1 from v21
+select ((sum(all least(((((32)-(33))) -(43)), -(cast(3 as bigint)))))>>2), 1 from v21
 join v18 on ((v18.vc0)>(cast(((0.33)
 -(0.222)) as double))) inner join (select distinct replace(sql_min(rtrim('便竼E*P'),
 "concat"('?X', '沈pJqd')), replace('w', '95', '580488485'), cast(((0.33827385)/(24413.0)) as string)) from v24)
@@ -546,7 +546,7 @@ as sub0 on ((least(342, v18.vc0))<>(1))
 group by least((((('RJᦈ4[[h\340\272\246')like('9804')))and(not (false))),
 "isauuid"(cast(v18.vc0 as string(979))))
 ----
--1
+-11
 1
 
 statement ok

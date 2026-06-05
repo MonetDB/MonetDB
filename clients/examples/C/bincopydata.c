@@ -60,7 +60,7 @@ gen_hugeints(FILE *f, bool byteswap, long nrecs, char *arg)
 {
 	(void)arg;
 	for (long i = 0; i < nrecs; i++) {
-		uhge v = (uhge)i;
+		uint128_t v = (uint128_t)i;
 		if (byteswap) {
 			copy_binary_convert128(&v);
 		}
@@ -350,8 +350,8 @@ gen_inet6(FILE *f, bool byteswap, long nrecs, char *arg)
 
 #ifdef HAVE_HGE
 	#define FUNCNAME gen_decimal_hugeints
-	#define STYP hge
-	#define UTYP uhge
+	#define STYP int128_t
+	#define UTYP uint128_t
 	#define CONVERT copy_binary_convert128
 	#include "bincopydecimal_impl.h"
 #endif

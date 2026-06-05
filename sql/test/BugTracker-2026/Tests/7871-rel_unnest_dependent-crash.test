@@ -1,0 +1,33 @@
+query II nosort
+SELECT * FROM ( SELECT * FROM ( SELECT ALL - ( SUM ( DISTINCT CAST( NULL AS INTEGER ) ) ) + MAX ( - 6 ) + - COUNT ( * ) / - - ( 77 ) + 37 AS x , ( 1 + 1 )
+  FROM generate_series ( 0 , 0 , 763 ) LIMIT 59 ) )
+----
+NULL
+2
+
+query II nosort
+SELECT * FROM ( SELECT * FROM ( SELECT ALL - ( SUM ( DISTINCT CAST( NULL AS INTEGER ) ) ) + MAX ( - 6 ) + - COUNT ( * ) / - - ( 77 ) + 37 AS x , ( 1 + 1 )
+  FROM generate_series ( 0 , 0 , 763 ) LIMIT 59 )
+ WHERE x IN ( SELECT STDDEV_SAMP ( x ) OVER ( PARTITION BY 523 ORDER BY x DESC , 1 , 1 RANGE BETWEEN CURRENT ROW AND UNBOUNDED FOLLOWING )
+                FROM ( SELECT covar_pop ( 433 , NULL ) OVER ( ) AS x FROM generate_series ( CAST( CAST( 1008 AS NUMERIC ) AS BIGINT ) , 40 ) AS x WHERE ( x % 7 ) = 0 ) ) )
+----
+
+statement ok
+CREATE TABLE x(x int)
+
+statement error 42000!PARTITION BY: subqueries not allowed in PARTITION BY clause
+SELECT x , SUM ( x ) OVER w1 FROM x WINDOW w1 AS ( PARTITION BY x IN ( SELECT x FROM x ) ) ORDER BY x
+
+query I nosort
+SELECT SUM ( 0 ) OVER ( ) ORDER BY SUM ( 0 ) OVER ( )
+----
+0
+
+query I nosort
+SELECT SUM ( x ) FROM x ORDER BY SUM ( x ) DESC
+----
+NULL
+
+statement ok
+DROP TABLE x
+

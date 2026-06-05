@@ -222,7 +222,7 @@ statement ok
 CREATE USER dummyuser WITH PASSWORD 'ups' NAME 'ups' SCHEMA mysch
 
 @connection(id=mdb2)
-statement error M0M27!CREATE USER: 42000!Create user failed due to conflict with another transaction
+statement error 25000!Create user failed due to conflict with another transaction
 CREATE USER dummyuser WITH PASSWORD 'ups' NAME 'ups' SCHEMA mysch
 
 statement ok

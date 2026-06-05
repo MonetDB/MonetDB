@@ -50,7 +50,7 @@ statement error 42000!syntax error, unexpected '(' in: " select json_objectagg (
  SELECT JSON_OBJECTAGG ( -1 ) , MAX ( 12 ) , BIT_OR ( 127 ) FROM STDDEV VALUES ( ( SELECT 9 FROM v10 WHERE ( v12 = 67 AND v12 = 127 ) OR ( 'x' - 'x' >= v12 AND v11 = -128 ) ) , 'x' )
 
 statement ok rowcount 2
- INSERT INTO v10 VALUES ( -128 , 52486128.000000 ) , ( 91 , NULL ) ;
+ INSERT INTO v10 VALUES ( -128 , 52486128.000000 ) , ( 91 , NULL )
 
 statement error 42S22!SELECT: no such column 'v8.v9'
  SELECT NTH_VALUE ( DISTINCT v5 . v19 ) FROM v0 t1 JOIN v10 t2 ON v8 . v9 = v18 . v7 WHERE v18 . v6 IS NOT NULL 
@@ -60,3 +60,21 @@ statement error
 
 statement error 42000!SELECT: no such operator 'lag'(tinyint, tinyint)
  SELECT JSON_OBJECTAGG ( DISTINCT 87 + v17 % -1 ) FROM ( SELECT LAG ( 41 , 0 ) AS v22 ) AS v21
+
+statement ok
+DROP TABLE v18
+
+statement ok
+DROP TABLE v15
+
+statement ok
+DROP TABLE v10
+
+statement ok
+DROP TABLE v8
+
+statement ok
+DROP TABLE v5
+
+statement ok
+DROP TABLE v0

@@ -57,6 +57,7 @@ static gdk_return
 CMDgen_group(BAT **result, BAT *gids, BAT *cnts)
 {
 	BUN j;
+	BUN n = 0;
 	BATiter gi = bat_iterator(gids);
 	BAT *r = COLnew(0, TYPE_oid, gi.count * 2, TRANSIENT);
 
@@ -65,38 +66,45 @@ CMDgen_group(BAT **result, BAT *gids, BAT *cnts)
 		return GDK_FAIL;
 	}
 	BATiter ci = bat_iterator(cnts);
+	oid *rp = (oid *) Tloc(r, 0);
 	if (gi.type == TYPE_void) {
 		oid id = gi.tseq;
 		lng *cnt = (lng *) ci.base;
 		for (j = 0; j < gi.count; j++) {
-			lng i, sz = cnt[j];
-			for (i = 0; i < sz; i++) {
-				if (BUNappend(r, &id, false) != GDK_SUCCEED) {
-					BBPreclaim(r);
-					bat_iterator_end(&ci);
-					bat_iterator_end(&gi);
-					return GDK_FAIL;
+			for (lng sz = cnt[j], i = 0; i < sz; i++) {
+				if (n >= BATcapacity(r)) {
+					r->theap->free = n * sizeof(oid);
+					BUN sz = BATgrows(r);
+					if (BATextend(r, sz) != GDK_SUCCEED) {
+						BBPreclaim(r);
+						return GDK_FAIL;
+					}
+					rp = (oid *) Tloc(r, 0);
 				}
+				rp[n++] = id;
 			}
-			id ++;
+			id++;
 		}
 	} else {
-		oid *id = (oid *) gi.base;
+		oid *idp = (oid *) gi.base;
 		lng *cnt = (lng *) ci.base;
 		for (j = 0; j < gi.count; j++) {
-			lng i, sz = cnt[j];
-			for (i = 0; i < sz; i++) {
-				if (BUNappend(r, id, false) != GDK_SUCCEED) {
-					BBPreclaim(r);
-					bat_iterator_end(&ci);
-					bat_iterator_end(&gi);
-					return GDK_FAIL;
+			for (lng sz = cnt[j], i = 0; i < sz; i++) {
+				if (n >= BATcapacity(r)) {
+					r->theap->free = n * sizeof(oid);
+					BUN sz = BATgrows(r);
+					if (BATextend(r, sz) != GDK_SUCCEED) {
+						BBPreclaim(r);
+						return GDK_FAIL;
+					}
+					rp = (oid *) Tloc(r, 0);
 				}
+				rp[n++] = idp[j];
 			}
-			id ++;
 		}
 	}
 	bat_iterator_end(&ci);
+	BATsetcount(r, n);
 	r->tkey = false;
 	r->tseqbase = oid_nil;
 	r->tsorted = gi.sorted;

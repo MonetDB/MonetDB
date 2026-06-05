@@ -48,7 +48,7 @@ extern str wkbFromWKB(Client ctx, wkb **w, wkb **src)
 
 /* gets a GEOSGeometry and returns the mbr of it
  * works only for 2D geometries */
-extern mbr* mbrFromGeos(const GEOSGeom geosGeometry)
+extern mbr* mbrFromGeos(allocator *ma, const GEOSGeom geosGeometry)
 	__attribute__((__visibility__("hidden")));
 
 

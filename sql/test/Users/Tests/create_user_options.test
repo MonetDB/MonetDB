@@ -13,7 +13,7 @@ create user testu03 with password e'test\tu03' name e'Test\bu03'
 statement ok
 create user testu04 with password r'test\tu04' name r'Test\bu04' schema tmp
 
-statement error M0M27!CREATE USER: 42000!A schema in the path must be within '"'
+statement error 0E000!A schema in the path must be within '"'
 create user testu05a with password r'test\tu05' name r'Test\bu05' schema PATH 'sys,tmp'
 
 statement ok

@@ -1,0 +1,64 @@
+statement ok
+CREATE TABLE users7916 (
+    id           INT,
+    username     VARCHAR(100),
+    email        VARCHAR(255),
+    age          INT,
+    status       VARCHAR(20),
+    created_at   TIMESTAMP,
+    score        DOUBLE
+)
+
+statement ok
+CREATE TABLE posts7916 (
+    id          INT,
+    user_id     INT,
+    title       VARCHAR(255),
+    content     VARCHAR(1000),
+    views       INT,
+    likes       INT,
+    created_at  TIMESTAMP,
+    rating      DOUBLE
+)
+
+statement ok
+INSERT INTO users7916 VALUES
+(1, 'alice', 'alice@test.com', 20, 'active',  '2022-01-01 10:00:00', 88.5),
+(2, 'bob',   'bob@test.com',   30, 'active',  '2022-01-02 11:00:00', 92.3),
+(3, 'carol', NULL,             NULL, 'banned','2022-01-03 12:00:00', NULL),
+(4, 'dave',  'dave@test.com',  45, 'active',  '2022-01-04 13:00:00', 65.2),
+(5, NULL,    'null@test.com',  18, 'inactive','2022-01-05 14:00:00', 70.0)
+
+statement ok
+INSERT INTO posts7916 VALUES
+(1, 1, 'Hello World', 'First post', 100, 10, '2022-01-10 10:00:00', 4.5),
+(2, 1, 'Another Post', NULL,        150, 20, '2022-01-11 11:00:00', 3.0),
+(3, 2, 'Bob Post',     'Content',   NULL,  5, '2022-01-12 12:00:00', NULL),
+(4, 3, NULL,           'Empty',     50,   2, '2022-01-13 13:00:00', 5.0),
+(5, 4, 'Last Post',    'Last',      300,  30,'2022-01-14 14:00:00', 4.9)
+
+
+-- TRIGGER SQL
+query I nosort
+SELECT count(*)
+FROM (
+    SELECT DISTINCT ref_0.rating AS c0
+    FROM posts7916 AS ref_0
+    WHERE TRUE
+) AS subq_0,
+LATERAL (
+    SELECT subq_0.c0 AS c1, subq_0.c0 AS c3
+    FROM (SELECT 1 FROM users7916 WHERE TRUE) AS subq_1
+    WHERE TRUE
+) AS subq_2
+WHERE subq_0.c0 IS NULL
+   OR EXISTS (SELECT 1 FROM users7916 WHERE FALSE)
+----
+5
+
+statement ok
+DROP TABLE users7916
+
+statement ok
+DROP TABLE posts7916
+

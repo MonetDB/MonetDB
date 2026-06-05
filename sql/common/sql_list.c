@@ -713,6 +713,10 @@ list_map(list *l, void *data, fmap map)
 list *
 list_join(list *l, list *data)
 {
+	if (!l)
+		return data;
+	if (!data)
+		return l;
 	assert(data->sa);
 	assert(data->sa == l->sa);
 	assert(!l->ht);

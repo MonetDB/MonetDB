@@ -120,22 +120,22 @@
 
 #ifdef HAVE_HGE
 #define huge_int_SWAP(h)					\
-	((hge) (((((uhge) 0xff <<   0) & (uhge) (h)) << 120) |	\
-		((((uhge) 0xff <<   8) & (uhge) (h)) << 104) |	\
-		((((uhge) 0xff <<  16) & (uhge) (h)) <<  88) |	\
-		((((uhge) 0xff <<  24) & (uhge) (h)) <<  72) |	\
-		((((uhge) 0xff <<  32) & (uhge) (h)) <<  56) |	\
-		((((uhge) 0xff <<  40) & (uhge) (h)) <<  40) |	\
-		((((uhge) 0xff <<  48) & (uhge) (h)) <<  24) |	\
-		((((uhge) 0xff <<  56) & (uhge) (h)) <<   8) |	\
-		((((uhge) 0xff <<  64) & (uhge) (h)) >>   8) |	\
-		((((uhge) 0xff <<  72) & (uhge) (h)) >>  24) |	\
-		((((uhge) 0xff <<  80) & (uhge) (h)) >>  40) |	\
-		((((uhge) 0xff <<  88) & (uhge) (h)) >>  56) |	\
-		((((uhge) 0xff <<  96) & (uhge) (h)) >>  72) |	\
-		((((uhge) 0xff << 104) & (uhge) (h)) >>  88) |	\
-		((((uhge) 0xff << 112) & (uhge) (h)) >> 104) |	\
-		((((uhge) 0xff << 120) & (uhge) (h)) >> 120)))
+	((int128_t) (((((uint128_t) 0xff <<   0) & (uint128_t) (h)) << 120) |	\
+		((((uint128_t) 0xff <<   8) & (uint128_t) (h)) << 104) |	\
+		((((uint128_t) 0xff <<  16) & (uint128_t) (h)) <<  88) |	\
+		((((uint128_t) 0xff <<  24) & (uint128_t) (h)) <<  72) |	\
+		((((uint128_t) 0xff <<  32) & (uint128_t) (h)) <<  56) |	\
+		((((uint128_t) 0xff <<  40) & (uint128_t) (h)) <<  40) |	\
+		((((uint128_t) 0xff <<  48) & (uint128_t) (h)) <<  24) |	\
+		((((uint128_t) 0xff <<  56) & (uint128_t) (h)) <<   8) |	\
+		((((uint128_t) 0xff <<  64) & (uint128_t) (h)) >>   8) |	\
+		((((uint128_t) 0xff <<  72) & (uint128_t) (h)) >>  24) |	\
+		((((uint128_t) 0xff <<  80) & (uint128_t) (h)) >>  40) |	\
+		((((uint128_t) 0xff <<  88) & (uint128_t) (h)) >>  56) |	\
+		((((uint128_t) 0xff <<  96) & (uint128_t) (h)) >>  72) |	\
+		((((uint128_t) 0xff << 104) & (uint128_t) (h)) >>  88) |	\
+		((((uint128_t) 0xff << 112) & (uint128_t) (h)) >> 104) |	\
+		((((uint128_t) 0xff << 120) & (uint128_t) (h)) >> 120)))
 #endif
 
 
