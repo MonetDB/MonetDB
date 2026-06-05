@@ -791,22 +791,21 @@ topn(oid *cands, dbl *d, oid *hcand, dbl* hd, BUN n, BUN k)
 //#if 0
 static str
 _process_block(fblock *blk, flt *query_vals,
-             size_t nrows, size_t ncols, dbl threshold,
-             oid *bc, dbl *bd, BUN *kcands)
+               size_t nrows, size_t ncols, dbl threshold,
+               oid *bc, dbl *bd, BUN *kcands)
 {
     BUN ncand = (BUN)nrows;
-	size_t TILE_SIZE = 8;
-	bool prun_ok = false;
+    size_t TILE_SIZE = 8;
+    size_t i = 0;
 
-    // Outer dimension loop in tiles of TILE_SIZE
-    for (size_t i = 0; i < ncols; i += TILE_SIZE) {
+    // Warm-up Phase
+    for (; i < ncols; i += TILE_SIZE) {
         size_t i_end = (i + TILE_SIZE > ncols) ? ncols : i + TILE_SIZE;
 
-        // Inner candidate loop in tiles of TILE_SIZE
         for (BUN j = 0; j < ncand; j += TILE_SIZE) {
             BUN j_end = (j + TILE_SIZE > ncand) ? ncand : j + TILE_SIZE;
 
-            // Process the 8x8 (or smaller) tile
+            // Compute distance across the current cache tile
             for (size_t ii = i; ii < i_end; ii++) {
                 flt qv = query_vals[ii];
                 flt *col = (flt*)blk + (ii * nrows);
@@ -820,70 +819,133 @@ _process_block(fblock *blk, flt *query_vals,
             }
         }
 
-        // Prune logic: only check threshold after completing a dimension tile
+        // Density Check at the end of the dimension tile
+        if (threshold != DBL_MAX) {
+            size_t prune_cnt = 0;
+            for (BUN read_pos = 0; read_pos < ncand; read_pos++) {
+                if (bd[read_pos] > threshold) {
+                    prune_cnt++;
+                }
+            }
+            // Trigger active pruning mode if more than 25% of candidates are dead
+            if ((prune_cnt * 4) >= ncand) {
+                i += TILE_SIZE; // Mark this complete tile block as processed
+                break;
+            }
+        }
+    }
+
+    // Prune
+    for (; i < ncols; i += TILE_SIZE) {
+        size_t i_end = (i + TILE_SIZE > ncols) ? ncols : i + TILE_SIZE;
+
+        for (BUN j = 0; j < ncand; j += TILE_SIZE) {
+            BUN j_end = (j + TILE_SIZE > ncand) ? ncand : j + TILE_SIZE;
+
+            for (size_t ii = i; ii < i_end; ii++) {
+                flt qv = query_vals[ii];
+                flt *col = (flt*)blk + (ii * nrows);
+
+                for (BUN jj = j; jj < j_end; jj++) {
+                    oid idx = bc[jj];
+                    dbl dv = col[idx];
+                    dbl diff = qv - dv;
+                    bd[jj] += diff * diff;
+                }
+            }
+        }
+
+        // In-place dynamic compaction
         if (threshold != DBL_MAX) {
             BUN write_pos = 0;
             for (BUN read_pos = 0; read_pos < ncand; read_pos++) {
                 if (bd[read_pos] <= threshold) {
-					if (prun_ok) {
-						bc[write_pos] = bc[read_pos];
-						bd[write_pos] = bd[read_pos];
-					}
-					write_pos++;
+                    bc[write_pos] = bc[read_pos];
+                    bd[write_pos] = bd[read_pos];
+                    write_pos++;
                 }
             }
-			if (prun_ok) {
-				ncand = write_pos;
-			} else {
-				prun_ok = write_pos > (0.75 * nrows);
-			}
-
+            ncand = write_pos;
         }
-		// EXIT EARLY: If no candidates left, stop processing this block
-        if (ncand == 0) break;
+
+        if (ncand == 0) break; // Early termination if block contains zero matches
     }
-	//printf("prunned %zu candidates %zu nrows %zu \n", (nrows - ncand), ncand, nrows);
 
     *kcands = ncand;
     return MAL_SUCCEED;
 }
 //#endif
 
+
 #if 0
 static str
 process_block(fblock *blk, flt *query_vals,
-	   	size_t nrows, size_t ncols, dbl threshold,
-	   	oid *bc, dbl *bd, BUN *kcands)
+              size_t nrows, size_t ncols, dbl threshold,
+              oid *bc, dbl *bd, BUN *kcands)
 {
-	BUN ncand = nrows;
+    BUN ncand = *kcands;
+    size_t prune_cnt = 0;
+    size_t j = 0;
 
-	for (size_t i = 0; i < ncols; i++) {
-		flt *col = (flt*)blk + (i * nrows);
+    // Warm-up phase
+    for (; j < ncols; j++) {
+        flt *col = (flt*)blk + (j * nrows);
+        dbl qv = query_vals[j];
 
-		for (BUN j = 0; j < ncand; j++) {
-			oid idx = bc[j];
-			dbl dv = col[idx];
-			dbl qv = query_vals[i];
-			dbl diff = qv - dv;
-			bd[j] += diff*diff;
-		}
+        GCC_Pragma("GCC ivdep")
+        for (BUN i = 0; i < ncand; i++) {
+            oid idx = bc[i];
+            dbl dv = col[idx];
+            dbl diff = qv - dv;
+            bd[i] += diff * diff;
+        }
 
-		// prune at specific intervals
-		if (threshold != DBL_MAX && (i % 4 == 3)) {
-			BUN write_pos = 0;
-			for (BUN read_pos = 0; read_pos < ncand; read_pos++) {
-				if (bd[read_pos] <= threshold) {
-					bc[write_pos] = bc[read_pos];
-					bd[write_pos] = bd[read_pos];
-					write_pos++;
-				}
-			}
-			ncand = write_pos;
-		}
-	}
+        // Evaluate current pruning density
+        if (threshold < DBL_MAX) {
+            prune_cnt = 0;
+            for (BUN i = 0; i < ncand; i++) {
+                if (bd[i] > threshold) {
+                    prune_cnt++;
+                }
+            }
+            // If more than 25% are unviable, move to the aggressive pruning phase
+            if ((prune_cnt * 4) >= ncand) {
+                j++; // Advance to mark this dimension as completed
+                break;
+            }
+        }
+    }
 
-	*kcands = ncand;
-	return MAL_SUCCEED;
+    // Prune
+    for (; j < ncols; j++) {
+        flt *col = (flt*)blk + (j * nrows);
+        dbl qv = query_vals[j];
+
+        GCC_Pragma("GCC ivdep")
+        for (BUN i = 0; i < ncand; i++) {
+            oid idx = bc[i];
+            dbl dv = col[idx];
+            dbl diff = qv - dv;
+            bd[i] += diff * diff;
+        }
+
+        // Perform in-place data compaction after completing the dimension pass
+        if (threshold != DBL_MAX) {
+            BUN write_pos = 0;
+            for (BUN read_pos = 0; read_pos < ncand; read_pos++) {
+                if (bd[read_pos] <= threshold) {
+                    bc[write_pos] = bc[read_pos];
+                    bd[write_pos] = bd[read_pos];
+                    write_pos++;
+                }
+            }
+            ncand = write_pos;
+            if (ncand == 0) break; // Early termination if all candidates are pruned
+        }
+    }
+
+    *kcands = ncand;
+    return MAL_SUCCEED;
 }
 #endif
 
