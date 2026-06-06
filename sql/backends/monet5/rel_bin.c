@@ -714,10 +714,13 @@ exp_bin_conjunctive(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp,
 			sql_subfunc *f = sql_bind_func(be->mvc, "sys", anti?"or":"and", bt, bt, F_FUNC, true, true);
 			assert(f);
 			s = stmt_binop(be, sin, s, NULL, f);
-		} else if (!reduce && !sin && sel1 && sel1->nrcols == 0) {
+		} else if (!reduce && !sin && sel1) {
 			sql_subfunc *f = sql_bind_func(be->mvc, "sys", anti?"or":"and", bt, bt, F_FUNC, true, true);
 			assert(f);
-			s = stmt_binop(be, sel1, s, sin, f);
+			if (sel1->nrcols == 0)
+				s = stmt_binop(be, sel1, s, sin, f);
+			else
+				s = stmt_binop(be, s, sel1, sin, f);
 		} else if (reduce && ((sel1 && (sel1->nrcols == 0 || s->nrcols == 0)) || c->type != e_cmp)) {
 			if (s->nrcols) {
 				if (sel1 && (sel1->nrcols == 0 || s->nrcols == 0)) {
@@ -3661,7 +3664,7 @@ rel2bin_antijoin(backend *be, sql_rel *rel, list *refs)
 				li = ls;
 
 			if (!en->next && !is_anti(e) && e->flag != cmp_notequal &&
-				(constval || stmt_has_null(ls))) {
+				(constval || stmt_has_null(ls) || stmt_has_null(rs))) {
 				join = stmt_tdiff2(be, ls, rs, NULL, is_semantics(e), is_any(e));
 				jexps = NULL;
 			} else {
