@@ -942,8 +942,10 @@ rel_reduce2one_exp(mvc *sql, sql_rel *sq)
 		if (!is_freevar(t))
 			e = t;
 	}
-	if (!e)
-		e = sq->exps->t->data;
+	if (!e) {
+		list *exps = rel_projections(sql, sq->l, NULL, 0, 1);
+		e = exps->t->data;
+	}
 	sq->exps = append(sa_list(sql->sa), e);
 	return e;
 }
