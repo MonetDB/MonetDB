@@ -57,8 +57,12 @@ select (subq_0.c0 = case when EXISTS ( select ref_15.c0 as c6 from t_amy as ref_
 statement error GDK reported error: BATsubcross: more than one match
 select (select (select 1 where subq_0.c0 = (select subq_0.c1 from t_qh)) from (select 320, 1) subq_0(c0,c1)) from (select 2) subq_0(c3)
 
-statement error GDK reported error: BATsubcross: more than one match
+query I
 select 1 from t_qh left outer join (select 2) as subq_0(c1) on EXISTS(select 1 from t_qh as ref_6 where 2 = (select 1 from t_qh where ref_6.c_f = 1 or subq_0.c1 is NULL))
+----
+1
+1
+1
 
 statement error GDK reported error: mergejoin: more than one match
 select EXISTS(select 1 from t_qh left outer join (select cast(2 as INTEGER) from t_qh) as subq_0(c1) on true <> EXISTS(select 1 from t_qh as ref_6 where 2 <
