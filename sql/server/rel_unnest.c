@@ -4119,6 +4119,7 @@ rel_unnest(mvc *sql, sql_rel *rel)
 		sql_rel *p = n->next->data;
 
 		if (!rel_is_ref(r) && p->l != r && p->r != r && (!is_munion(p->op) || !list_find(p->l, r, NULL))) {
+			/* lower dependend join moved down, ie p isn't direct parent anymore */
 			if (!p->l && op)
 				p = op;
 			sql_rel *l = p->l;
