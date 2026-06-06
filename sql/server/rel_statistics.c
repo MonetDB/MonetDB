@@ -578,6 +578,11 @@ rel_prune_predicates(visitor *v, sql_rel *rel)
 		if (is_single(l) || is_dynamic(l))
 			return rel->exps;
 	}
+	if (rel->r) {
+		sql_rel *r = rel->r;
+		if (is_single(r) || is_dynamic(r))
+			return rel->exps;
+	}
 	if (!list_empty(rel->attr))
 		return rel->exps;
 	for (node *n = rel->exps->h ; n ; n = n->next) {

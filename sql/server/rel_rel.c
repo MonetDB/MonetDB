@@ -1026,7 +1026,7 @@ rel_select_add_exp(allocator *sa, sql_rel *l, sql_exp *e)
 	return l;
 }
 
-void
+sql_rel *
 rel_join_add_exp( allocator *sa, sql_rel *rel, sql_exp *e)
 {
 	assert(is_join(rel->op) || is_semi(rel->op) || is_select(rel->op));
@@ -1036,6 +1036,7 @@ rel_join_add_exp( allocator *sa, sql_rel *rel, sql_exp *e)
 	append(rel->exps, e);
 	if (e->card > rel->card)
 		rel->card = e->card;
+	return rel;
 }
 
 sql_exp *
@@ -1548,6 +1549,8 @@ rel_select_push_exp_down(mvc *sql, sql_rel *rel, sql_exp *e)
 sql_rel *
 rel_push_select(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *e, int f)
 {
+	if (rel && rel->op == op_select)
+		return rel_select_add_exp(sql->sa, rel, e);
 	list *l = rel_bind_path(sql, rel, ls, sa_list(sql->sa));
 	node *n;
 	sql_rel *lrel = NULL, *p = NULL;
@@ -1686,7 +1689,7 @@ rel_push_join(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp *rs2, sq
 		return rel;
 	}
 
-	rel_join_add_exp( sql->sa, p, e);
+	(void) rel_join_add_exp( sql->sa, p, e);
 	return rel;
 }
 

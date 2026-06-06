@@ -109,7 +109,7 @@ extern sql_rel *rel_sample(allocator *sa, sql_rel *l, list *exps );
 extern sql_rel *rel_label( mvc *sql, sql_rel *r, int all);
 extern sql_exp *rel_project_add_exp( mvc *sql, sql_rel *rel, sql_exp *e);
 extern sql_rel *rel_select_add_exp(allocator *sa, sql_rel *l, sql_exp *e);
-extern void rel_join_add_exp(allocator *sa, sql_rel *rel, sql_exp *e);
+extern sql_rel *rel_join_add_exp(allocator *sa, sql_rel *rel, sql_exp *e);
 extern sql_exp *rel_groupby_add_aggr(mvc *sql, sql_rel *rel, sql_exp *e);
 
 extern sql_rel *rel_select(allocator *sa, sql_rel *l, sql_exp *e);
