@@ -74,7 +74,7 @@ statement error GDK reported error: BATsubcross: more than one match
 select 1 from t1, t0 where ((select 'A' from t0)) between cast(t1.c1 as clob) and 'a'
 
 statement error GDK reported error: BATsubcross: more than one match
-select 1 from t1, t0 where cast(t1.c1 as clob) between ((select 1 from t0)) and 'c'
+select 1 from t1, t0 where cast(t1.c1 as clob) between ((select '1' from t0)) and 'c'
 
 statement ok
 drop table t0

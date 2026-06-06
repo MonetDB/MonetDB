@@ -4219,6 +4219,8 @@ free_exp(allocator *sa, sql_exp *e)
 					e->f = NULL;
 				}
 			}
+			if (e->flag & PSM_REL)
+				rel_destroy(NULL, e->l);
 			break;
 		case e_column:
 			break;

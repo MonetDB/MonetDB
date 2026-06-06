@@ -2378,6 +2378,10 @@ rewrite_compare(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 			if (rsq) {
 				if (!lsq && is_simple_project(rsq->op) && !rsq->l) {
 					sql_exp *ire = rsq->exps->h->data;
+					if (!is_values(ire) && !is_values(le)) {
+						re = ire;
+						rsq = exp_rel_get_rel(v->sql->sa, re);
+					} else
 					if (is_values(ire) && list_length(ire->f) == 1 && !is_values(le)) {
 						list *exps = ire->f;
 						re = exps->h->data;
@@ -3797,6 +3801,13 @@ unnest(visitor *v, sql_rel *parent, sql_rel * rel, struct unnesting *info, list 
 
 	/* handle projection of freevar without lower relation */
 	if (is_simple_project(rel->op) && !rel->l) {
+		if (is_right(info->info->join->op)) {
+			sql_rel *d = rel_project(v->sql->sa, rel_dup(info->info->d), rel_projections(v->sql, info->info->d, NULL, 1, 1));
+			add_outers_repr(v, d, info, true);
+			sql_rel *nrel = rel_crossproduct(v->sql->sa, d, rel, is_right(info->info->join->op) ? info->info->join->op : op_join);
+			rel_update_subrel(parent, rel, nrel);
+			return;
+		}
 		sql_rel *d = rel->l = rel_project(v->sql->sa, rel_dup(info->info->d), rel_projections(v->sql, info->info->d, NULL, 1, 1));
 		add_outers_repr(v, d, info, true);
 		rel->exps = add_outers(v, rel->exps, info, false);
