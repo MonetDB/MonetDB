@@ -2113,6 +2113,14 @@ exp_is_false(sql_exp *e)
 }
 
 int
+exp_is_one(sql_exp *e)
+{
+	if (e->type == e_atom && e->l)
+		return atom_is_one(e->l);
+	return 0;
+}
+
+int
 exp_is_zero(sql_exp *e)
 {
 	if (e->type == e_atom && e->l)

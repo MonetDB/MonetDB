@@ -973,7 +973,8 @@ temporal:
 	;
 
 opt_show_properties:
-		SHOW DETAILS { m->show_details = true; }
+		SHOW DETAILS	 { m->show_details = true; }
+	|	SHOW ALL DETAILS { m->show_details = true; m->show_all_details = true; }
 	|	/* empty */
 	;
 
