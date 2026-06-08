@@ -1166,7 +1166,7 @@ rewrite_exp_rel(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 	return e;
 }
 
-/* add an dummy true projection column */
+/* add an dummy true projection column and simplify project[project[true]] */
 static inline sql_rel *
 rewrite_empty_project(visitor *v, sql_rel *rel)
 {
@@ -1176,6 +1176,17 @@ rewrite_empty_project(visitor *v, sql_rel *rel)
 		exp_label(v->sql->sa, e, ++v->sql->label);
 		list_append(rel->exps, e);
 		v->changes++;
+	}
+	sql_rel *l = rel->l;
+	if (l && !l->l && is_simple_project(rel->op) && is_simple_project(l->op) && list_length(l->exps) == 1) {
+		list *exps = l->exps;
+		sql_exp *e = exps->h->data;
+		if (!e->f && exp_is_atom(e) && exp_is_true(e) && !exps_uses_exp(rel->exps, e) && !exps_have_rel_exp(rel->exps) && exps_are_atoms(rel->exps) && !exps_have_rank(rel->exps)) {
+			//printf("cleanup \n");
+			rel_destroy(v->sql, l);
+			rel->l = NULL;
+			v->changes++;
+		}
 	}
 	if (is_left(rel->op) && rel->attr) { /* group join */
 		sql_rel *r = rel->r;
