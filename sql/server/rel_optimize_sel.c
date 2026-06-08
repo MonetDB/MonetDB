@@ -1379,9 +1379,8 @@ exps_uses_any(list *exps, list *l)
 		return false;
 	for (node *n = l->h; n && !uses_any; n = n->next) {
 		sql_exp *e = n->data;
-		uses_any |= list_exps_uses_exp(exps, exp_relname(e), exp_name(e)) != NULL;
+		uses_any |= list_exps_uses_exp(exps, e) != NULL;
 	}
-
 	return uses_any;
 }
 

@@ -704,13 +704,9 @@ rel_accessing_ad(mvc *sql, sql_rel *rel, sql_rel *ref, list *ad)
 	case op_groupby:
 	case op_project:
 		lrels = rel_accessing_ad(sql, rel->l, ref, ad);
-		if (rel->r) {
-			//if (is_groupby(rel->op) || is_simple_project(rel->op)) {
-				if (exps_accessing_ad(sql, rel->r, ad, &lrels)) {
-					lrels = access_append_accessed(sql, lrels, rel);
-					return lrels;
-				}
-			//}
+		if (rel->r && exps_accessing_ad(sql, rel->r, ad, &lrels)) {
+			lrels = access_append_accessed(sql, lrels, rel);
+			return lrels;
 		}
 		if (exps_accessing_ad(sql, rel->exps, ad, &lrels))
 			lrels = access_append_accessed(sql, lrels, rel);
@@ -2866,7 +2862,6 @@ rewrite_fix_count(visitor *v, sql_rel *rel)
 			if (!rel_changes)
 				return rel;
 
-			//if (r->exps == rexps)
 			exps = rel_projections(v->sql, r, NULL, 1, 1);
 			for(node *n = rexps->h, *m = exps->h; n && m; n=n->next, m=m->next) {
 				sql_exp *e = n->data, *ne = m->data;
@@ -3426,7 +3421,6 @@ djoin_push_up_project(visitor *v, sql_rel *prel, sql_rel *dj, sql_rel *accessor,
 					sql_subtype *tp = exp_subtype(e);
 					if (!tp)
 						continue;
-						//return sql_error(v->sql, 10, SQLSTATE(42000) "Query projection must have at least one parameter with known SQL type");
 					if (!id) {
 						if (is_select(accessor->op) || is_join(accessor->op) ||
 								is_topn(accessor->op) || is_sample(accessor->op)) {
@@ -3578,7 +3572,6 @@ unnesting_merge(struct unnesting *res, struct unnesting *lun, struct unnesting *
 		res->repr = lun->repr;
 		if (!res->repr)
 			res->repr = run->repr;
-		//res->repr = list_join(lun->repr, run->repr);
 	}
 }
 
@@ -3615,12 +3608,11 @@ rewrite_column(visitor *v, sql_exp *e, struct unnesting *info)
 	case e_column:
 		{
 			sql_exp *ne = repr_find(v, info->repr, e);
-			if (ne && ne != e && ne->alias.label < 0) {
+			if (ne && ne != e && ne->alias.label > 0) {
 				if (e->freevar && e->alias.label == e->nid)
-					e->alias.label = ne->alias.label;
+					e->alias = ne->alias;
 				e->nid = ne->alias.label;
-				if (e->freevar)
-					e->freevar = 0;
+				e->freevar = 0;
 			}
 		}
 		break;
@@ -3660,6 +3652,19 @@ rewrite_columns_for_join(visitor *v, list *exps, struct unnesting *linfo, struct
 	return rewrite_columns(v, exps, rinfo);
 }
 
+static list *
+add_outers(visitor *v, list *exps, struct unnesting *info, bool partition)
+{
+	list *outers = sa_list(v->sql->sa);
+	for (node *n = info->info->outer_refs->h; n; n = n->next) {
+		sql_exp *exp = repr_find(v, info->repr, n->data);
+		if (partition)
+			set_partitioning(exp);
+		append(outers, exp);
+	}
+	return list_join(outers, exps);
+}
+
 static void
 rewrite_columns_groupings(visitor *v, sql_rel *rel, struct unnesting *info)
 {
@@ -3669,7 +3674,9 @@ rewrite_columns_groupings(visitor *v, sql_rel *rel, struct unnesting *info)
 		list *sets = (list*) found->value.pval;
 		for(node *n = sets->h; n; n = n->next) {
 			list *l = n->data;
-			for (node *m = l->h; m; m = m ->next) {
+			list *outers = add_outers(v, sa_list(v->sql->sa), info, false);
+			l = list_prepend(l, outers);
+			for (node *m = l->h->next; m; m = m ->next) {
 				m->data = rewrite_columns(v, m->data, info);
 			}
 		}
@@ -3713,19 +3720,6 @@ accessing(visitor *v, sql_rel *rel, list *acc)
 	return res;
 }
 
-static list *
-add_outers(visitor *v, list *exps, struct unnesting *info, bool partition)
-{
-	list *outers = sa_list(v->sql->sa);
-	for (node *n = info->info->outer_refs->h; n; n = n->next) {
-		sql_exp *exp = repr_find(v, info->repr, n->data);
-		if (partition)
-			set_partitioning(exp);
-		append(outers, exp);
-	}
-	return list_join(outers, exps);
-}
-
 static void
 add_outers_repr(visitor *v, sql_rel *d, struct unnesting *info, bool relabel)
 {
@@ -3740,7 +3734,7 @@ add_outers_repr(visitor *v, sql_rel *d, struct unnesting *info, bool relabel)
 		info->repr = sa_list_append(v->sql->sa, info->repr, old);
 		info->repr = sa_list_append(v->sql->sa, info->repr, new);
 		if (relabel)
-			new->alias.label = -(v->sql->nid++);
+			exp_label(v->sql->sa, new, ++v->sql->label);
 	}
 	for (; n && m; n = n->next, m = m->next) {
 		sql_exp *new = relabel ? n->data : exp_copy(v->sql, n->data);
@@ -3748,7 +3742,7 @@ add_outers_repr(visitor *v, sql_rel *d, struct unnesting *info, bool relabel)
 		info->repr = sa_list_append(v->sql->sa, info->repr, old);
 		info->repr = sa_list_append(v->sql->sa, info->repr, new);
 		if (relabel)
-			new->alias.label = -(v->sql->nid++);
+			exp_label(v->sql->sa, new, ++v->sql->label);
 	}
 }
 
@@ -3797,7 +3791,6 @@ unnest(visitor *v, sql_rel *parent, sql_rel * rel, struct unnesting *info, list 
 		rel = rel_inplace_project(v->sql->sa, rel, NULL, exps);
 		rel->nr_outers = list_length(info->info->outer_refs);
 		rel->l = rel_crossproduct(v->sql->sa, d, rel->l,  is_right(info->info->join->op) ? info->info->join->op : op_join);
-		//rel_update_subrel(parent, rel, nrel);
 		return;
 	}
 
@@ -3909,7 +3902,7 @@ unnest(visitor *v, sql_rel *parent, sql_rel * rel, struct unnesting *info, list 
 			for (node *n = d->exps->h, *m = gexps->h, *o = info->info->outer_refs->h;
 				n && m && o; n = n->next, m = m->next, o = o->next) {
 				sql_exp *exp = n->data;
-				exp->alias.label = -(v->sql->nid++);
+				exp_label(v->sql->sa, exp, ++v->sql->label);
 				info->repr = repr_replace(v, info->repr, o->data, exp);
 				sql_exp *lexp = exp_ref(v->sql, exp);
 				sql_exp *rexp = exp_ref(v->sql, m->data);

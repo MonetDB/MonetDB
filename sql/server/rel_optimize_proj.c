@@ -1681,10 +1681,8 @@ rel_groupby_cse(visitor *v, sql_rel *rel)
 	return rel;
 }
 
-sql_exp *list_exps_uses_exp(list *exps, const char *rname, const char *name);
-
 static sql_exp*
-exp_uses_exp(sql_exp *e, const char *rname, const char *name)
+exp_uses_exp(sql_exp *e, sql_exp *used_exp)
 {
 	sql_exp *res = NULL;
 
@@ -1693,41 +1691,37 @@ exp_uses_exp(sql_exp *e, const char *rname, const char *name)
 			break;
 		case e_atom: {
 			if (e->f)
-				return list_exps_uses_exp(e->f, rname, name);
+				return list_exps_uses_exp(e->f, used_exp);
 		} break;
 		case e_convert:
-			return exp_uses_exp(e->l, rname, name);
+			return exp_uses_exp(e->l, used_exp);
 		case e_column: {
-			if (e->l && rname && strcmp(e->l, rname) == 0 &&
-				e->r && name && strcmp(e->r, name) == 0)
-				return e;
-			if (!e->l && !rname &&
-				e->r && name && strcmp(e->r, name) == 0)
+			if (e->nid == used_exp->alias.label)
 				return e;
 		} break;
 		case e_func:
 		case e_aggr: {
 			if (e->l)
-				return list_exps_uses_exp(e->l, rname, name);
+				return list_exps_uses_exp(e->l, used_exp);
 		} 	break;
 		case e_cmp: {
 			if (e->flag == cmp_con || e->flag == cmp_dis) {
-				return list_exps_uses_exp(e->l, rname, name);
+				return list_exps_uses_exp(e->l, used_exp);
 			} else if (e->flag == cmp_in || e->flag == cmp_notin) {
-				if ((res = exp_uses_exp(e->l, rname, name)))
+				if ((res = exp_uses_exp(e->l, used_exp)))
 					return res;
-				return list_exps_uses_exp(e->r, rname, name);
+				return list_exps_uses_exp(e->r, used_exp);
 			} else if (e->flag == cmp_filter) {
-				if ((res = list_exps_uses_exp(e->l, rname, name)))
+				if ((res = list_exps_uses_exp(e->l, used_exp)))
 					return res;
-				return list_exps_uses_exp(e->r, rname, name);
+				return list_exps_uses_exp(e->r, used_exp);
 			} else {
-				if ((res = exp_uses_exp(e->l, rname, name)))
+				if ((res = exp_uses_exp(e->l, used_exp)))
 					return res;
-				if ((res = exp_uses_exp(e->r, rname, name)))
+				if ((res = exp_uses_exp(e->r, used_exp)))
 					return res;
 				if (e->f)
-					return exp_uses_exp(e->f, rname, name);
+					return exp_uses_exp(e->f, used_exp);
 			}
 		} break;
 	}
@@ -1735,7 +1729,7 @@ exp_uses_exp(sql_exp *e, const char *rname, const char *name)
 }
 
 sql_exp *
-list_exps_uses_exp(list *exps, const char *rname, const char *name)
+list_exps_uses_exp(list *exps, sql_exp *used_exp)
 {
 	sql_exp *res = NULL;
 
@@ -1743,7 +1737,7 @@ list_exps_uses_exp(list *exps, const char *rname, const char *name)
 		return NULL;
 	for (node *n = exps->h; n && !res; n = n->next) {
 		sql_exp *e = n->data;
-		res = exp_uses_exp(e, rname, name);
+		res = exp_uses_exp(e, used_exp);
 	}
 	return res;
 }
@@ -1752,7 +1746,7 @@ list_exps_uses_exp(list *exps, const char *rname, const char *name)
 sql_exp *
 exps_uses_exp(list *exps, sql_exp *e)
 {
-	return list_exps_uses_exp(exps, exp_relname(e), exp_name(e));
+	return list_exps_uses_exp(exps, e);
 }
 /*
  * Rewrite aggregations over munion all.
@@ -2529,7 +2523,7 @@ rel_distinct_aggregate_on_unique_values(visitor *v, sql_rel *rel)
 					all_unique &= arg->type == e_column && is_unique(arg) && (!is_semantics(exp) || !has_nil(arg));
 				}
 				if (!all_unique && exps_card(l) > CARD_ATOM)
-					all_unique = exps_unique(v->sql, rel, l) && (!is_semantics(exp) || !have_nil(l));
+					all_unique = exps_unique(v->sql, rel, l, true) && (!is_semantics(exp) || !have_nil(l));
 				if (all_unique) {
 					set_nodistinct(exp);
 					v->changes++;
@@ -3257,7 +3251,7 @@ static inline sql_rel *
 rel_push_project_down_union(visitor *v, sql_rel *rel)
 {
 	/* first remove distinct if already unique */
-	if (rel->op == op_project && need_distinct(rel) && rel->exps && exps_unique(v->sql, rel, rel->exps) && !have_nil(rel->exps)) {
+	if (rel->op == op_project && need_distinct(rel) && rel->exps && exps_unique(v->sql, rel, rel->exps, true) && !have_nil(rel->exps)) {
 		set_nodistinct(rel);
 		if (exps_card(rel->exps) <= CARD_ATOM && rel->card > CARD_ATOM) { /* if the projection just contains constants, then no topN is needed */
 			sql_rel *nl = rel->l = rel_topn(v->sql->sa, rel->l, append(sa_list(v->sql->sa), exp_atom_lng(v->sql->sa, 1)));
@@ -3296,7 +3290,7 @@ rel_push_project_down_union(visitor *v, sql_rel *rel)
 						rel_projections(v->sql, r, NULL, 1, 1));
 			/* check if we need distinct */
 			need_distinct &=
-				(!exps_unique(v->sql, r, r->exps) || have_nil(r->exps));
+				(!exps_unique(v->sql, r, r->exps, true) || have_nil(r->exps));
 			rel_rename_exps(v->sql, u->exps, r->exps);
 
 			rel_destroy(v->sql, n->data);
@@ -3665,7 +3659,7 @@ rel_distinct_project2groupby_(visitor *v, sql_rel *rel)
 	/* rewrite distinct project [ pk ] ( select ( table ) [ e op val ])
 	 * into project [ pk ] ( select/semijoin ( table )  */
 	if (rel->op == op_project && rel->l && !rel->r /* no order by */ && need_distinct(rel) &&
-	    (l->op == op_select || l->op == op_semi) && exps_unique(v->sql, rel, rel->exps) &&
+	    (l->op == op_select || l->op == op_semi) && exps_unique(v->sql, rel, rel->exps, true) &&
 		(!have_semantics(l->exps) || !have_nil(rel->exps))) {
 		set_nodistinct(rel);
 		v->changes++;

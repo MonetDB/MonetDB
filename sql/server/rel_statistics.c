@@ -1417,7 +1417,7 @@ rel_groupby_order(visitor *v, sql_rel *rel)
 	sql_exp **exps = NULL;
 
 	if (v->parent && !is_topn(v->parent->op) && !is_sample(v->parent->op) &&
-			is_groupby(rel->op) && exps_unique(v->sql, rel, rel->r)) {
+			is_groupby(rel->op) && exps_unique(v->sql, rel, rel->r, false)) {
 		bool found = false;
 		for(node *n = rel->exps->h; n && !found; n = n->next) {
 			sql_exp *e = n->data;
