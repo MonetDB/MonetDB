@@ -4,7 +4,7 @@ SELECT * FROM ( SELECT * FROM ( SELECT 10 ) AS x
 ----
 10
 
-statement error GDK reported error: hashjoin: more than one match
+statement error /more than one match/
 SELECT * FROM ( SELECT * FROM ( SELECT 10 AS x ) )
  UNION SELECT * FROM ( SELECT * FROM ( SELECT 11 AS x )
     JOIN ( SELECT * FROM ( SELECT * FROM ( SELECT 1 AS x  UNION SELECT 0 AS x  UNION SELECT 86400.000000 AS x GROUP BY CUBE ( x , x ) ) )
