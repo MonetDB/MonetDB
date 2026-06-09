@@ -94,20 +94,36 @@ MATHunary##NAME##TYPE(Client ctx, TYPE *res, const TYPE *a)			\
 		errno = 0;													\
 		feclearexcept(FE_ALL_EXCEPT);								\
 		*res = FUNC(*a);											\
-		if ((e = errno) != 0 ||										\
-			(ex = fetestexcept(FE_INVALID | FE_DIVBYZERO |			\
-							   FE_OVERFLOW)) != 0) {				\
+		e = errno;													\
+		ex = fetestexcept(FE_INVALID | FE_DIVBYZERO | FE_OVERFLOW);	\
+		if (e != 0 || ex != 0) {									\
 			const char *err;										\
+			const char *sqlstate;									\
 			char buf[128];											\
-			if (e) {												\
-				err = GDKstrerror(e, buf, 128);						\
-			} else if (ex & FE_DIVBYZERO)							\
+			if (ex & FE_DIVBYZERO) {								\
 				err = "Divide by zero";								\
-			else if (ex & FE_OVERFLOW)								\
+				sqlstate = SQLSTATE(22012);							\
+			} else if (ex & FE_OVERFLOW ||							\
+					   (e == ERANGE && isinf(*res))) {				\
 				err = "Overflow";									\
-			else													\
+				sqlstate = SQLSTATE(22003);							\
+			} else if (e == EDOM) {									\
+				err = "Invalid argumewnt";							\
+				if (strncmp(#FUNC, "log", 3) == 0)					\
+					sqlstate = SQLSTATE(2201E);						\
+				else if (strcmp(#FUNC, "pow") == 0)					\
+					sqlstate = SQLSTATE(2201F);						\
+				else												\
+					sqlstate = SQLSTATE(22003);						\
+			} else if (e) {											\
+				err = GDKstrerror(e, buf, 128);						\
+				sqlstate = "";										\
+			} else {												\
 				err = "Invalid result";								\
-			throw(MAL, "mmath." #FUNC, "Math exception: %s", err);	\
+				sqlstate = SQLSTATE(22023);							\
+			}														\
+			throw(MAL, "mmath." #FUNC, "%sMath exception: %s",		\
+				  sqlstate, err);									\
 		}															\
 	}																\
 	return MAL_SUCCEED;												\
@@ -129,20 +145,36 @@ MATHbinary##NAME##TYPE(Client ctx, TYPE *res, const TYPE *a, const TYPE *b)	\
 		errno = 0;													\
 		feclearexcept(FE_ALL_EXCEPT);								\
 		*res = FUNC(*a, *b);										\
-		if ((e = errno) != 0 ||										\
-			(ex = fetestexcept(FE_INVALID | FE_DIVBYZERO |			\
-							   FE_OVERFLOW)) != 0) {				\
+		e = errno;													\
+		ex = fetestexcept(FE_INVALID | FE_DIVBYZERO | FE_OVERFLOW);	\
+		if (e != 0 || ex != 0) {									\
 			const char *err;										\
+			const char *sqlstate;									\
 			char buf[128];											\
-			if (e) {												\
-				err = GDKstrerror(e, buf, 128);						\
-			} else if (ex & FE_DIVBYZERO)							\
+			if (ex & FE_DIVBYZERO) {								\
 				err = "Divide by zero";								\
-			else if (ex & FE_OVERFLOW)								\
+				sqlstate = SQLSTATE(22012);							\
+			} else if (ex & FE_OVERFLOW ||							\
+					   (e == ERANGE && isinf(*res))) {				\
 				err = "Overflow";									\
-			else													\
+				sqlstate = SQLSTATE(22003);							\
+			} else if (e == EDOM) {									\
+				err = "Invalid argumewnt";							\
+				if (strncmp(#FUNC, "log", 3) == 0)					\
+					sqlstate = SQLSTATE(2201E);						\
+				else if (strcmp(#FUNC, "pow") == 0)					\
+					sqlstate = SQLSTATE(2201F);						\
+				else												\
+					sqlstate = SQLSTATE(22003);						\
+			} else if (e) {											\
+				err = GDKstrerror(e, buf, 128);						\
+				sqlstate = "";										\
+			} else {												\
 				err = "Invalid result";								\
-			throw(MAL, "mmath." #FUNC, "Math exception: %s", err);	\
+				sqlstate = SQLSTATE(22023);							\
+			}														\
+			throw(MAL, "mmath." #FUNC, "%sMath exception: %s",		\
+				  sqlstate, err);									\
 		}															\
 	}																\
 	return MAL_SUCCEED;												\
@@ -180,29 +212,29 @@ MATHbinary_ROUND##TYPE(Client ctx, TYPE *res, const TYPE *x, const int *y) \
 
 
 unopM5(_ACOS, acos)
-		unopM5(_ASIN, asin)
-		unopM5(_ATAN, atan)
-		unopM5(_COS, cos)
-		unopM5(_SIN, sin)
-		unopM5(_TAN, tan)
-		unopM5(_COT, cot)
-		unopM5(_RADIANS, radians)
-		unopM5(_DEGREES, degrees)
-		unopM5(_COSH, cosh)
-		unopM5(_SINH, sinh)
-		unopM5(_TANH, tanh)
-		unopM5(_EXP, exp)
-		unopM5(_LOG, log)
-		unopM5(_LOG10, log10)
-		unopM5(_LOG2, log2)
-		unopM5(_SQRT, sqrt)
-		unopM5(_CBRT, cbrt)
-		unopM5(_CEIL, ceil)
-		unopM5(_FLOOR, floor)
-		binopM5(_ATAN2, atan2)
-		binopM5(_POW, pow)
-		binopM5(_LOG, logbs)
-		binopM5(_NEXTAFTER, nextafter)
+unopM5(_ASIN, asin)
+unopM5(_ATAN, atan)
+unopM5(_COS, cos)
+unopM5(_SIN, sin)
+unopM5(_TAN, tan)
+unopM5(_COT, cot)
+unopM5(_RADIANS, radians)
+unopM5(_DEGREES, degrees)
+unopM5(_COSH, cosh)
+unopM5(_SINH, sinh)
+unopM5(_TANH, tanh)
+unopM5(_EXP, exp)
+unopM5(_LOG, log)
+unopM5(_LOG10, log10)
+unopM5(_LOG2, log2)
+unopM5(_SQRT, sqrt)
+unopM5(_CBRT, cbrt)
+unopM5(_CEIL, ceil)
+unopM5(_FLOOR, floor)
+binopM5(_ATAN2, atan2)
+binopM5(_POW, pow)
+binopM5(_LOG, logbs)
+binopM5(_NEXTAFTER, nextafter)
 
 static str
 MATHunary_FABSdbl(Client ctx, dbl *res, const dbl *a)
