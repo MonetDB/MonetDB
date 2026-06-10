@@ -610,7 +610,6 @@ pqc_page_header( pqc_reader_t *r, pqc_creader_t *pr, int64_t pos)
 			pr->data_allocated = true;
 			/* for v2 add definition and repetition lengths */
 			int v2 = pr->cc->cur_page.definition_levels_byte_length + pr->cc->cur_page.repetition_levels_byte_length;
-			size_t ul = uncompressed_size - v2;
 			if (v2) {
 				memcpy(pr->data, pr->buffer+pos, v2);
 				pos += v2;
@@ -618,6 +617,7 @@ pqc_page_header( pqc_reader_t *r, pqc_creader_t *pr, int64_t pos)
 			}
 			if (pr->cc->codec == CC_SNAPPY) {
 #ifdef HAVE_SNAPPY
+				size_t ul = uncompressed_size - v2;
 				if (snappy_uncompress(pr->buffer+pos, compressed_size, pr->data + v2, &ul) != SNAPPY_OK)
 					return -10;
 				assert(uncompressed_size == ul);
@@ -628,6 +628,7 @@ pqc_page_header( pqc_reader_t *r, pqc_creader_t *pr, int64_t pos)
 #endif
 			} else if (pr->cc->codec == CC_GZIP) {
 #ifdef HAVE_LIBZ
+				size_t ul = uncompressed_size - v2;
 				if (gzip_uncompress(pr->data + v2, ul, pr->buffer+pos, compressed_size))
 					return -10;
 				pos += compressed_size;
@@ -637,6 +638,7 @@ pqc_page_header( pqc_reader_t *r, pqc_creader_t *pr, int64_t pos)
 #endif
 			} else if (pr->cc->codec == CC_ZSTD) {
 #ifdef HAVE_ZSTD
+				size_t ul = uncompressed_size - v2;
 				if (ZSTD_decompress(pr->data + v2, ul, pr->buffer+pos, compressed_size) != ul)
 					return -10;
 				pos += compressed_size;
@@ -646,6 +648,7 @@ pqc_page_header( pqc_reader_t *r, pqc_creader_t *pr, int64_t pos)
 #endif
 			} else if (pr->cc->codec == CC_LZ4_RAW) {
 #ifdef HAVE_LIBLZ4
+				size_t ul = uncompressed_size - v2;
 				int iul = (int)ul;
 				if (LZ4_decompress_safe(pr->buffer+pos, pr->data + v2, compressed_size, iul) != iul)
 					return -10;
@@ -656,6 +659,7 @@ pqc_page_header( pqc_reader_t *r, pqc_creader_t *pr, int64_t pos)
 #endif
 			} else if (pr->cc->codec == CC_BROTLI) {
 #ifdef HAVE_BROTLI
+				size_t ul = uncompressed_size - v2;
 				if (BrotliDecoderDecompress(compressed_size, (uint8_t*)pr->buffer+pos, &ul, ((uint8_t*)pr->data) + v2) != BROTLI_DECODER_RESULT_SUCCESS)
 					return -10;
 				pos += compressed_size;
@@ -688,9 +692,9 @@ pqc_page_header( pqc_reader_t *r, pqc_creader_t *pr, int64_t pos)
 				return -1;
 			pr->dict_allocated = true;
 			pr->dictsize = uncompressed_size;
-			size_t ul = uncompressed_size;
 			if (pr->cc->codec == CC_SNAPPY) {
 #ifdef HAVE_SNAPPY
+				size_t ul = uncompressed_size;
 				if (snappy_uncompress(pr->buffer+pos, compressed_size, pr->dict, &ul) != SNAPPY_OK)
 					return -10;
 				assert(uncompressed_size == ul);
@@ -701,6 +705,7 @@ pqc_page_header( pqc_reader_t *r, pqc_creader_t *pr, int64_t pos)
 #endif
 			} else if (pr->cc->codec == CC_GZIP) {
 #ifdef HAVE_LIBZ
+				size_t ul = uncompressed_size;
 				if (gzip_uncompress(pr->dict, ul, pr->buffer+pos, compressed_size))
 					return -10;
 				pos += compressed_size;
@@ -710,6 +715,7 @@ pqc_page_header( pqc_reader_t *r, pqc_creader_t *pr, int64_t pos)
 #endif
 			} else if (pr->cc->codec == CC_ZSTD) {
 #ifdef HAVE_ZSTD
+				size_t ul = uncompressed_size;
 				if (ZSTD_decompress(pr->dict, ul, pr->buffer+pos, compressed_size) != ul)
 					return -10;
 				pos += compressed_size;
@@ -719,6 +725,7 @@ pqc_page_header( pqc_reader_t *r, pqc_creader_t *pr, int64_t pos)
 #endif
 			} else if (pr->cc->codec == CC_LZ4_RAW) {
 #ifdef HAVE_LIBLZ4
+				size_t ul = uncompressed_size;
 				int iul = (int)ul;
 				if (LZ4_decompress_safe(pr->buffer+pos, pr->dict, compressed_size, iul) != iul)
 					return -10;
@@ -729,6 +736,7 @@ pqc_page_header( pqc_reader_t *r, pqc_creader_t *pr, int64_t pos)
 #endif
 			} else if (pr->cc->codec == CC_BROTLI) {
 #ifdef HAVE_BROTLI
+				size_t ul = uncompressed_size;
 				if (BrotliDecoderDecompress(compressed_size, (uint8_t*)pr->buffer+pos, &ul, (uint8_t*)pr->dict) != BROTLI_DECODER_RESULT_SUCCESS)
 					return -10;
 				pos += compressed_size;
