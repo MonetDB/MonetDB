@@ -1844,7 +1844,7 @@ HEAPorder(Client ctx, bat *rid, bat *hb, size_t offset)
 	if (offset > hp->size) {
 		BBPreclaim(hpb);
 		BBPreclaim(r);
-		throw(MAL, "heapn.order", "offset (%lu) too high\n", offset);
+		throw(MAL, "heapn.order", "offset (%zu) too high\n", offset);
 	}
 	size_t used = hp->used-1, i = 0;
 	BUN j = 0;

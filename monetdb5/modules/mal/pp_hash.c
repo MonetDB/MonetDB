@@ -468,7 +468,7 @@ OAHASHhashmark_init(Client ctx, bat *res, const bat *ht_sink, const bat *payload
 	if (hp)
 		h = (hash_table*)hp->pl_io;
 	/* assert(h && h->pl_io.type == PIPELINE_IO_HASH_TABLE); */
-	BUN sz = h?h->last:BATcount(ht); /* no hash ie outer cross product case */
+	BUN sz = h?(BUN)h->last:BATcount(ht); /* no hash ie outer cross product case */
 
 	r = COLnew(0, TYPE_bit, sz, TRANSIENT);
 	if (!r) {
@@ -536,7 +536,7 @@ UHASHext(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 		BBPreclaim(i);
 		return createException(MAL, "hash.ext", SQLSTATE(HY002) "Missing hash table");
 	}
-	BAT *r = BATdense(0, 0, h->last);
+	BAT *r = BATdense(0, 0, (BUN)h->last);
 	BBPreclaim(i);
 	if (!r) {
 		return createException(MAL, "hash.ext", SQLSTATE(HY013) MAL_MALLOC_FAIL);
