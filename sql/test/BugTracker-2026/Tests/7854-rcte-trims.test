@@ -1,5 +1,5 @@
 #query RII
-statement error /Decimal (x) doesn't have format (?.6)/
+statement error 42000!/Decimal \(x\) doesn't have format \(\d+.6\)/
 SELECT CAST(sum (x) AS NUMERIC),
        avg (x) , var_pop (x)
 FROM
