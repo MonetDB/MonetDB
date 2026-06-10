@@ -1182,7 +1182,6 @@ rewrite_empty_project(visitor *v, sql_rel *rel)
 		list *exps = l->exps;
 		sql_exp *e = exps->h->data;
 		if (!e->f && exp_is_atom(e) && exp_is_true(e) && !exps_uses_exp(rel->exps, e) && !exps_have_rel_exp(rel->exps) && exps_are_atoms(rel->exps) && !exps_have_rank(rel->exps)) {
-			//printf("cleanup \n");
 			rel_destroy(v->sql, l);
 			rel->l = NULL;
 			v->changes++;
@@ -4020,7 +4019,8 @@ rel_djoin_elim(visitor *v, sql_rel *prel, sql_rel *rel, struct unnesting *parent
 			d = rel_project(v->sql->sa, rel_dup(d), rel_projections(v->sql, d, NULL, 0, 1));
 		}
 	}
-	rel_distinct(d);
+	if (!exps_unique(v->sql, d->l, d->exps, true))
+		rel_distinct(d);
 
 	struct unnesting_info info = { .join = rel, .outer_refs = outer_refs, .d = d, .refs = refs };
 	struct unnesting unnesting = { .info = &info, .parent = parent };

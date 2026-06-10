@@ -46,7 +46,6 @@ extern int find_member_pos(list *l, sql_table *t);
 extern sql_column *name_find_column(sql_rel *rel, const char *rname, const char *name, int pnr, sql_rel **bt);
 
 extern int exp_joins_rels(sql_exp *e, list *rels);
-/* WARNING exps_unique doesn't check for duplicate NULL values */
 extern int kc_column_cmp(sql_kc *kc, sql_column *c);
 extern int exps_unique(mvc *sql, sql_rel *rel, list *exps, bool unique_nulls);
 
