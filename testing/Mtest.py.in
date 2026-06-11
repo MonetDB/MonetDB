@@ -265,6 +265,8 @@ CONDITIONALS = {
     'HAVE_LIBR'            : '@HAVE_LIBR_FALSE@',
     'HAVE_LIBXML'          : '@HAVE_LIBXML_FALSE@',
     'HAVE_LIBZ'            : '@HAVE_LIBZ_FALSE@',
+    'HAVE_SNAPPY'          : '@HAVE_SNAPPY_FALSE@',
+    'HAVE_ZSTD'            : '@HAVE_ZSTD_FALSE@',
     'HAVE_NETCDF'          : '@HAVE_NETCDF_FALSE@',
     'HAVE_ODBC'            : '@HAVE_ODBC_FALSE@',
     'HAVE_OPENSSL'         : '@HAVE_OPENSSL_FALSE@',
