@@ -116,7 +116,7 @@ MATHunary##NAME##TYPE(Client ctx, TYPE *res, const TYPE *a)			\
 				else												\
 					sqlstate = SQLSTATE(22003);						\
 			} else if (e) {											\
-				err = GDKstrerror(e, buf, 128);						\
+				err = GDKstrerror(e, buf, sizeof(buf));				\
 				sqlstate = "";										\
 			} else {												\
 				err = "Invalid result";								\
@@ -167,7 +167,7 @@ MATHbinary##NAME##TYPE(Client ctx, TYPE *res, const TYPE *a, const TYPE *b)	\
 				else												\
 					sqlstate = SQLSTATE(22003);						\
 			} else if (e) {											\
-				err = GDKstrerror(e, buf, 128);						\
+				err = GDKstrerror(e, buf, sizeof(buf));				\
 				sqlstate = "";										\
 			} else {												\
 				err = "Invalid result";								\
