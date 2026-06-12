@@ -168,7 +168,7 @@ def main():
                vcpkg.format(r'bin\lz4.dll'),
                vcpkg.format(r'bin\liblzma.dll'),
                vcpkg.format(r'bin\pcre2-8.dll'),
-               vcpkg.format(r'bin\zlib1.dll')])
+               vcpkg.format(r'bin\z.dll')])
     id = comp(debug, id, 14,
               [r'bin\mclient.pdb',
                r'bin\mserver5.pdb',
@@ -229,7 +229,7 @@ def main():
                vcpkg.format(r'lib\lz4.lib'),
                vcpkg.format(r'lib\lzma.lib'),
                vcpkg.format(r'lib\pcre2-8.lib'),
-               vcpkg.format(r'lib\zlib.lib')])
+               vcpkg.format(r'lib\z.lib')])
     print(r'            </Directory>')
     print(r'            <Directory Id="share" Name="share">')
     print(r'              <Directory Id="doc" Name="doc">')
