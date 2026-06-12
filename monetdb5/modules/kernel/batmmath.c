@@ -26,6 +26,7 @@ CMDscienceUNARY(MalStkPtr stk, InstrPtr pci,
 	BUN i;
 	BUN nils = 0;
 	int e = 0, ex = 0;
+	bool inf = false;
 	BATiter bi;
 
 	bid = *getArgReference_bat(stk, pci, 1);
@@ -67,6 +68,12 @@ CMDscienceUNARY(MalStkPtr stk, InstrPtr pci,
 				nils++;
 			} else {
 				fdst[i] = ffunc(fsrc[x]);
+				e = errno;
+				ex = fetestexcept(FE_INVALID | FE_DIVBYZERO | FE_OVERFLOW);
+				if (e != 0 || ex != 0) {
+					inf = isinf(fdst[i]);
+					break;
+				}
 			}
 		}
 		break;
@@ -81,6 +88,12 @@ CMDscienceUNARY(MalStkPtr stk, InstrPtr pci,
 				nils++;
 			} else {
 				ddst[i] = dfunc(dsrc[x]);
+				e = errno;
+				ex = fetestexcept(FE_INVALID | FE_DIVBYZERO | FE_OVERFLOW);
+				if (e != 0 || ex != 0) {
+					inf = isinf(ddst[i]);
+					break;
+				}
 			}
 		}
 		break;
@@ -89,23 +102,34 @@ CMDscienceUNARY(MalStkPtr stk, InstrPtr pci,
 		assert(0);
 	}
 	bat_iterator_end(&bi);
-	e = errno;
-	ex = fetestexcept(FE_INVALID | FE_DIVBYZERO | FE_OVERFLOW);
 	BBPunfix(b->batCacheid);
 	BBPreclaim(s);
 	if (e != 0 || ex != 0) {
 		const char *err;
+		const char *sqlstate;
 		char buf[128];
-		BBPunfix(bn->batCacheid);
-		if (e)
-			err = GDKstrerror(e, buf, 128);
-		else if (ex & FE_DIVBYZERO)
+		if (ex & FE_DIVBYZERO) {
 			err = "Divide by zero";
-		else if (ex & FE_OVERFLOW)
+			sqlstate = SQLSTATE(22012);
+		} else if (ex & FE_OVERFLOW || (e == ERANGE && inf)) {
 			err = "Overflow";
-		else
+			sqlstate = SQLSTATE(22003);
+		} else if (e == EDOM) {
+			err = "Invalid argumewnt";
+			if (strncmp(malfunc, "batmmath.log", 12) == 0)
+				sqlstate = SQLSTATE(2201E);
+			else if (strcmp(malfunc, "batmmath.pow") == 0)
+				sqlstate = SQLSTATE(2201F);
+			else
+				sqlstate = SQLSTATE(22003);
+		} else if (e) {
+			err = GDKstrerror(e, buf, sizeof(buf));
+			sqlstate = "";
+		} else {
 			err = "Invalid result";
-		throw(MAL, malfunc, "Math exception: %s", err);
+			sqlstate = SQLSTATE(22023);
+		}
+		throw(MAL, malfunc, "%sMath exception: %s", sqlstate, err);
 	}
 
 	BATsetcount(bn, ci.ncand);
@@ -133,6 +157,7 @@ CMDscienceBINARY(MalStkPtr stk, InstrPtr pci,
 	oid x1, x2, off1, off2;
 	BUN i, ncand, nils = 0;
 	int e = 0, ex = 0;
+	bool inf = false;
 	BATiter b1i, b2i;
 
 	tp1 = stk->stk[getArg(pci, 1)].vtype;
@@ -227,6 +252,12 @@ CMDscienceBINARY(MalStkPtr stk, InstrPtr pci,
 					nils++;
 				} else {
 					fdst[i] = ffunc(fsrc1[x1], fsrc2[x2]);
+					e = errno;
+					ex = fetestexcept(FE_INVALID | FE_DIVBYZERO | FE_OVERFLOW);
+					if (e != 0 || ex != 0) {
+						inf = isinf(fdst[i]);
+						break;
+					}
 				}
 			}
 		} else if (b1) {
@@ -240,6 +271,12 @@ CMDscienceBINARY(MalStkPtr stk, InstrPtr pci,
 					nils++;
 				} else {
 					fdst[i] = ffunc(fsrc1[x1], fval2);
+					e = errno;
+					ex = fetestexcept(FE_INVALID | FE_DIVBYZERO | FE_OVERFLOW);
+					if (e != 0 || ex != 0) {
+						inf = isinf(fdst[i]);
+						break;
+					}
 				}
 			}
 		} else {				/* b2 == NULL */
@@ -253,6 +290,12 @@ CMDscienceBINARY(MalStkPtr stk, InstrPtr pci,
 					nils++;
 				} else {
 					fdst[i] = ffunc(fval1, fsrc2[x2]);
+					e = errno;
+					ex = fetestexcept(FE_INVALID | FE_DIVBYZERO | FE_OVERFLOW);
+					if (e != 0 || ex != 0) {
+						inf = isinf(fdst[i]);
+						break;
+					}
 				}
 			}
 		}
@@ -270,6 +313,12 @@ CMDscienceBINARY(MalStkPtr stk, InstrPtr pci,
 					nils++;
 				} else {
 					ddst[i] = dfunc(dsrc1[x1], dsrc2[x2]);
+					e = errno;
+					ex = fetestexcept(FE_INVALID | FE_DIVBYZERO | FE_OVERFLOW);
+					if (e != 0 || ex != 0) {
+						inf = isinf(ddst[i]);
+						break;
+					}
 				}
 			}
 		} else if (b1) {
@@ -283,6 +332,12 @@ CMDscienceBINARY(MalStkPtr stk, InstrPtr pci,
 					nils++;
 				} else {
 					ddst[i] = dfunc(dsrc1[x1], dval2);
+					e = errno;
+					ex = fetestexcept(FE_INVALID | FE_DIVBYZERO | FE_OVERFLOW);
+					if (e != 0 || ex != 0) {
+						inf = isinf(ddst[i]);
+						break;
+					}
 				}
 			}
 		} else {				/* b2 == NULL */
@@ -296,6 +351,12 @@ CMDscienceBINARY(MalStkPtr stk, InstrPtr pci,
 					nils++;
 				} else {
 					ddst[i] = dfunc(dval1, dsrc2[x2]);
+					e = errno;
+					ex = fetestexcept(FE_INVALID | FE_DIVBYZERO | FE_OVERFLOW);
+					if (e != 0 || ex != 0) {
+						inf = isinf(ddst[i]);
+						break;
+					}
 				}
 			}
 		}
@@ -303,8 +364,6 @@ CMDscienceBINARY(MalStkPtr stk, InstrPtr pci,
 	default:
 		assert(0);
 	}
-	e = errno;
-	ex = fetestexcept(FE_INVALID | FE_DIVBYZERO | FE_OVERFLOW);
 	bat_iterator_end(&b1i);
 	bat_iterator_end(&b2i);
 
@@ -324,17 +383,30 @@ CMDscienceBINARY(MalStkPtr stk, InstrPtr pci,
 		throw(MAL, malfunc, GDK_EXCEPTION);
 	if (e != 0 || ex != 0) {
 		const char *err;
+		const char *sqlstate;
 		char buf[128];
-		BBPunfix(bn->batCacheid);
-		if (e)
-			err = GDKstrerror(e, buf, 128);
-		else if (ex & FE_DIVBYZERO)
+		if (ex & FE_DIVBYZERO) {
 			err = "Divide by zero";
-		else if (ex & FE_OVERFLOW)
+			sqlstate = SQLSTATE(22012);
+		} else if (ex & FE_OVERFLOW || (e == ERANGE && inf)) {
 			err = "Overflow";
-		else
+			sqlstate = SQLSTATE(22003);
+		} else if (e == EDOM) {
+			err = "Invalid argumewnt";
+			if (strncmp(malfunc, "batmmath.log", 12) == 0)
+				sqlstate = SQLSTATE(2201E);
+			else if (strcmp(malfunc, "batmmath.pow") == 0)
+				sqlstate = SQLSTATE(2201F);
+			else
+				sqlstate = SQLSTATE(22003);
+		} else if (e) {
+			err = GDKstrerror(e, buf, sizeof(buf));
+			sqlstate = "";
+		} else {
 			err = "Invalid result";
-		throw(MAL, malfunc, "Math exception: %s", err);
+			sqlstate = SQLSTATE(22023);
+		}
+		throw(MAL, malfunc, "%sMath exception: %s", sqlstate, err);
 	}
 	*getArgReference_bat(stk, pci, 0) = bn->batCacheid;
 	BBPkeepref(bn);
