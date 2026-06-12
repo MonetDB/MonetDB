@@ -108,7 +108,7 @@ MATHunary##NAME##TYPE(Client ctx, TYPE *res, const TYPE *a)			\
 				err = "Overflow";									\
 				sqlstate = SQLSTATE(22003);							\
 			} else if (e == EDOM) {									\
-				err = "Invalid argumewnt";							\
+				err = "Invalid argument";							\
 				if (strncmp(#FUNC, "log", 3) == 0)					\
 					sqlstate = SQLSTATE(2201E);						\
 				else if (strcmp(#FUNC, "pow") == 0)					\
@@ -159,7 +159,7 @@ MATHbinary##NAME##TYPE(Client ctx, TYPE *res, const TYPE *a, const TYPE *b)	\
 				err = "Overflow";									\
 				sqlstate = SQLSTATE(22003);							\
 			} else if (e == EDOM) {									\
-				err = "Invalid argumewnt";							\
+				err = "Invalid argument";							\
 				if (strncmp(#FUNC, "log", 3) == 0)					\
 					sqlstate = SQLSTATE(2201E);						\
 				else if (strcmp(#FUNC, "pow") == 0)					\

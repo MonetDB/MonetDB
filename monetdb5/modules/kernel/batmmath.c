@@ -115,7 +115,7 @@ CMDscienceUNARY(MalStkPtr stk, InstrPtr pci,
 			err = "Overflow";
 			sqlstate = SQLSTATE(22003);
 		} else if (e == EDOM) {
-			err = "Invalid argumewnt";
+			err = "Invalid argument";
 			if (strncmp(malfunc, "batmmath.log", 12) == 0)
 				sqlstate = SQLSTATE(2201E);
 			else if (strcmp(malfunc, "batmmath.pow") == 0)
@@ -392,7 +392,7 @@ CMDscienceBINARY(MalStkPtr stk, InstrPtr pci,
 			err = "Overflow";
 			sqlstate = SQLSTATE(22003);
 		} else if (e == EDOM) {
-			err = "Invalid argumewnt";
+			err = "Invalid argument";
 			if (strncmp(malfunc, "batmmath.log", 12) == 0)
 				sqlstate = SQLSTATE(2201E);
 			else if (strcmp(malfunc, "batmmath.pow") == 0)
