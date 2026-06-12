@@ -82,159 +82,474 @@ logbsf(float base, float x)
 	return logf(x) / logf(base);
 }
 
-#define unopbaseM5(NAME, FUNC, TYPE)								\
-static str															\
-MATHunary##NAME##TYPE(Client ctx, TYPE *res, const TYPE *a)			\
-{																	\
-	(void) ctx;														\
-	if (is_##TYPE##_nil(*a)) {										\
-		*res = TYPE##_nil;											\
-	} else {														\
-		int e = 0, ex = 0;											\
-		errno = 0;													\
-		feclearexcept(FE_ALL_EXCEPT);								\
-		*res = FUNC(*a);											\
-		e = errno;													\
-		ex = fetestexcept(FE_INVALID | FE_DIVBYZERO | FE_OVERFLOW);	\
-		if (e != 0 || ex != 0) {									\
-			const char *err;										\
-			const char *sqlstate;									\
-			char buf[128];											\
-			if (ex & FE_DIVBYZERO) {								\
-				err = "Divide by zero";								\
-				sqlstate = SQLSTATE(22012);							\
-			} else if (ex & FE_OVERFLOW ||							\
-					   (e == ERANGE && isinf(*res))) {				\
-				err = "Overflow";									\
-				sqlstate = SQLSTATE(22003);							\
-			} else if (e == EDOM) {									\
-				err = "Invalid argument";							\
-				if (strncmp(#FUNC, "log", 3) == 0)					\
-					sqlstate = SQLSTATE(2201E);						\
-				else if (strcmp(#FUNC, "pow") == 0)					\
-					sqlstate = SQLSTATE(2201F);						\
-				else												\
-					sqlstate = SQLSTATE(22003);						\
-			} else if (e) {											\
-				err = GDKstrerror(e, buf, sizeof(buf));				\
-				sqlstate = "";										\
-			} else {												\
-				err = "Invalid result";								\
-				sqlstate = SQLSTATE(22023);							\
-			}														\
-			throw(MAL, "mmath." #FUNC, "%sMath exception: %s",		\
-				  sqlstate, err);									\
-		}															\
-	}																\
-	return MAL_SUCCEED;												\
+static str
+MATHunary_dbl(Client ctx, dbl *res, const dbl *a, double (*func)(double),
+			  const char *funcname)
+{
+	(void) ctx;
+	if (is_dbl_nil(*a)) {
+		*res = dbl_nil;
+	} else {
+		int e = 0, ex = 0;
+		errno = 0;
+		feclearexcept(FE_ALL_EXCEPT);
+		*res = (*func)(*a);
+		e = errno;
+		ex = fetestexcept(FE_INVALID | FE_DIVBYZERO | FE_OVERFLOW);
+		if (e != 0 || ex != 0) {
+			const char *err;
+			const char *sqlstate;
+			char buf[128];
+			if (ex & FE_DIVBYZERO) {
+				err = "Divide by zero";
+				sqlstate = SQLSTATE(22012);
+			} else if (ex & FE_OVERFLOW ||
+					   (e == ERANGE && isinf(*res))) {
+				err = "Overflow";
+				sqlstate = SQLSTATE(22003);
+			} else if (e == EDOM) {
+				err = "Invalid argument";
+				if (strncmp(funcname, "mmath.log", 9) == 0)
+					sqlstate = SQLSTATE(2201E);
+				else
+					sqlstate = SQLSTATE(22003);
+			} else if (e) {
+				err = GDKstrerror(e, buf, sizeof(buf));
+				sqlstate = "";
+			} else {
+				err = "Invalid result";
+				sqlstate = SQLSTATE(22023);
+			}
+			throw(MAL, funcname, "%sMath exception: %s", sqlstate, err);
+		}
+	}
+	return MAL_SUCCEED;
 }
 
-#define unopM5(NAME, FUNC)						\
-	unopbaseM5(NAME, FUNC, dbl)					\
-	unopbaseM5(NAME, FUNC##f, flt)
-
-#define binopbaseM5(NAME, FUNC, TYPE)								\
-static str															\
-MATHbinary##NAME##TYPE(Client ctx, TYPE *res, const TYPE *a, const TYPE *b)	\
-{																	\
-	(void) ctx;														\
-	if (is_##TYPE##_nil(*a) || is_##TYPE##_nil(*b)) {				\
-		*res = TYPE##_nil;											\
-	} else {														\
-		int e = 0, ex = 0;											\
-		errno = 0;													\
-		feclearexcept(FE_ALL_EXCEPT);								\
-		*res = FUNC(*a, *b);										\
-		e = errno;													\
-		ex = fetestexcept(FE_INVALID | FE_DIVBYZERO | FE_OVERFLOW);	\
-		if (e != 0 || ex != 0) {									\
-			const char *err;										\
-			const char *sqlstate;									\
-			char buf[128];											\
-			if (ex & FE_DIVBYZERO) {								\
-				err = "Divide by zero";								\
-				sqlstate = SQLSTATE(22012);							\
-			} else if (ex & FE_OVERFLOW ||							\
-					   (e == ERANGE && isinf(*res))) {				\
-				err = "Overflow";									\
-				sqlstate = SQLSTATE(22003);							\
-			} else if (e == EDOM) {									\
-				err = "Invalid argument";							\
-				if (strncmp(#FUNC, "log", 3) == 0)					\
-					sqlstate = SQLSTATE(2201E);						\
-				else if (strcmp(#FUNC, "pow") == 0)					\
-					sqlstate = SQLSTATE(2201F);						\
-				else												\
-					sqlstate = SQLSTATE(22003);						\
-			} else if (e) {											\
-				err = GDKstrerror(e, buf, sizeof(buf));				\
-				sqlstate = "";										\
-			} else {												\
-				err = "Invalid result";								\
-				sqlstate = SQLSTATE(22023);							\
-			}														\
-			throw(MAL, "mmath." #FUNC, "%sMath exception: %s",		\
-				  sqlstate, err);									\
-		}															\
-	}																\
-	return MAL_SUCCEED;												\
+static str
+MATHunary_flt(Client ctx, flt *res, const flt *a, float (*func)(float),
+			  const char *funcname)
+{
+	(void) ctx;
+	if (is_flt_nil(*a)) {
+		*res = flt_nil;
+	} else {
+		int e = 0, ex = 0;
+		errno = 0;
+		feclearexcept(FE_ALL_EXCEPT);
+		*res = (*func)(*a);
+		e = errno;
+		ex = fetestexcept(FE_INVALID | FE_DIVBYZERO | FE_OVERFLOW);
+		if (e != 0 || ex != 0) {
+			const char *err;
+			const char *sqlstate;
+			char buf[128];
+			if (ex & FE_DIVBYZERO) {
+				err = "Divide by zero";
+				sqlstate = SQLSTATE(22012);
+			} else if (ex & FE_OVERFLOW ||
+					   (e == ERANGE && isinf(*res))) {
+				err = "Overflow";
+				sqlstate = SQLSTATE(22003);
+			} else if (e == EDOM) {
+				err = "Invalid argument";
+				if (strncmp(funcname, "mmath.log", 9) == 0)
+					sqlstate = SQLSTATE(2201E);
+				else
+					sqlstate = SQLSTATE(22003);
+			} else if (e) {
+				err = GDKstrerror(e, buf, sizeof(buf));
+				sqlstate = "";
+			} else {
+				err = "Invalid result";
+				sqlstate = SQLSTATE(22023);
+			}
+			throw(MAL, funcname, "%sMath exception: %s", sqlstate, err);
+		}
+	}
+	return MAL_SUCCEED;
 }
 
-#define binopM5(NAME, FUNC)						\
-  binopbaseM5(NAME, FUNC, dbl)					\
-  binopbaseM5(NAME, FUNC##f, flt)
-
-#define roundM5(TYPE)											\
-static str														\
-MATHbinary_ROUND##TYPE(Client ctx, TYPE *res, const TYPE *x, const int *y) \
-{																\
-	(void) ctx;													\
-	if (is_##TYPE##_nil(*x) || is_int_nil(*y)) {				\
-		*res = TYPE##_nil;										\
-	} else {													\
-		dbl factor = pow(10,*y), integral;						\
-		dbl tmp = *y > 0 ? modf(*x, &integral) : *x;			\
-																\
-		tmp *= factor;											\
-		if (tmp >= 0)											\
-			tmp = floor(tmp + 0.5);								\
-		else													\
-			tmp = ceil(tmp - 0.5);								\
-		tmp /= factor;											\
-																\
-		if (*y > 0)												\
-			tmp += integral;									\
-																\
-		*res = (TYPE) tmp;										\
-	}															\
-	return MAL_SUCCEED;											\
+static str
+MATHbinary_dbl(Client ctx, dbl *res, const dbl *a, const dbl *b,
+			   double (*func)(double, double), const char *funcname)
+{
+	(void) ctx;
+	if (is_dbl_nil(*a) || is_dbl_nil(*b)) {
+		*res = dbl_nil;
+	} else {
+		int e = 0, ex = 0;
+		errno = 0;
+		feclearexcept(FE_ALL_EXCEPT);
+		*res = (*func)(*a, *b);
+		e = errno;
+		ex = fetestexcept(FE_INVALID | FE_DIVBYZERO | FE_OVERFLOW);
+		if (e != 0 || ex != 0) {
+			const char *err;
+			const char *sqlstate;
+			char buf[128];
+			if (ex & FE_DIVBYZERO) {
+				err = "Divide by zero";
+				sqlstate = SQLSTATE(22012);
+			} else if (ex & FE_OVERFLOW ||
+					   (e == ERANGE && isinf(*res))) {
+				err = "Overflow";
+				sqlstate = SQLSTATE(22003);
+			} else if (e == EDOM) {
+				err = "Invalid argument";
+				if (strncmp(funcname, "mmath.log", 9) == 0)
+					sqlstate = SQLSTATE(2201E);
+				else if (strcmp(funcname, "mmath.pow") == 0)
+					sqlstate = SQLSTATE(2201F);
+				else
+					sqlstate = SQLSTATE(22003);
+			} else if (e) {
+				err = GDKstrerror(e, buf, sizeof(buf));
+				sqlstate = "";
+			} else {
+				err = "Invalid result";
+				sqlstate = SQLSTATE(22023);
+			}
+			throw(MAL, funcname, "%sMath exception: %s", sqlstate, err);
+		}
+	}
+	return MAL_SUCCEED;
 }
 
+static str
+MATHbinary_flt(Client ctx, flt *res, const flt *a, const flt *b,
+			   float (*func)(float, float), const char *funcname)
+{
+	(void) ctx;
+	if (is_flt_nil(*a) || is_flt_nil(*b)) {
+		*res = flt_nil;
+	} else {
+		int e = 0, ex = 0;
+		errno = 0;
+		feclearexcept(FE_ALL_EXCEPT);
+		*res = (*func)(*a, *b);
+		e = errno;
+		ex = fetestexcept(FE_INVALID | FE_DIVBYZERO | FE_OVERFLOW);
+		if (e != 0 || ex != 0) {
+			const char *err;
+			const char *sqlstate;
+			char buf[128];
+			if (ex & FE_DIVBYZERO) {
+				err = "Divide by zero";
+				sqlstate = SQLSTATE(22012);
+			} else if (ex & FE_OVERFLOW ||
+					   (e == ERANGE && isinf(*res))) {
+				err = "Overflow";
+				sqlstate = SQLSTATE(22003);
+			} else if (e == EDOM) {
+				err = "Invalid argument";
+				if (strncmp(funcname, "mmath.log", 9) == 0)
+					sqlstate = SQLSTATE(2201E);
+				else if (strcmp(funcname, "mmath.pow") == 0)
+					sqlstate = SQLSTATE(2201F);
+				else
+					sqlstate = SQLSTATE(22003);
+			} else if (e) {
+				err = GDKstrerror(e, buf, sizeof(buf));
+				sqlstate = "";
+			} else {
+				err = "Invalid result";
+				sqlstate = SQLSTATE(22023);
+			}
+			throw(MAL, funcname, "%sMath exception: %s", sqlstate, err);
+		}
+	}
+	return MAL_SUCCEED;
+}
 
-unopM5(_ACOS, acos)
-unopM5(_ASIN, asin)
-unopM5(_ATAN, atan)
-unopM5(_COS, cos)
-unopM5(_SIN, sin)
-unopM5(_TAN, tan)
-unopM5(_COT, cot)
-unopM5(_RADIANS, radians)
-unopM5(_DEGREES, degrees)
-unopM5(_COSH, cosh)
-unopM5(_SINH, sinh)
-unopM5(_TANH, tanh)
-unopM5(_EXP, exp)
-unopM5(_LOG, log)
-unopM5(_LOG10, log10)
-unopM5(_LOG2, log2)
-unopM5(_SQRT, sqrt)
-unopM5(_CBRT, cbrt)
-unopM5(_CEIL, ceil)
-unopM5(_FLOOR, floor)
-binopM5(_ATAN2, atan2)
-binopM5(_POW, pow)
-binopM5(_LOG, logbs)
-binopM5(_NEXTAFTER, nextafter)
+static str
+MATHunary_ACOSdbl(Client ctx, dbl *res, const dbl *a)
+{
+	return MATHunary_dbl(ctx, res, a, acos, "mmath.acos");
+}
+
+static str
+MATHunary_ACOSflt(Client ctx, flt *res, const flt *a)
+{
+	return MATHunary_flt(ctx, res, a, acosf, "mmath.acos");
+}
+
+static str
+MATHunary_ASINdbl(Client ctx, dbl *res, const dbl *a)
+{
+	return MATHunary_dbl(ctx, res, a, asin, "mmath.asin");
+}
+
+static str
+MATHunary_ASINflt(Client ctx, flt *res, const flt *a)
+{
+	return MATHunary_flt(ctx, res, a, asinf, "mmath.asin");
+}
+
+static str
+MATHunary_ATANdbl(Client ctx, dbl *res, const dbl *a)
+{
+	return MATHunary_dbl(ctx, res, a, atan, "mmath.atan");
+}
+
+static str
+MATHunary_ATANflt(Client ctx, flt *res, const flt *a)
+{
+	return MATHunary_flt(ctx, res, a, atanf, "mmath.atan");
+}
+
+static str
+MATHunary_COSdbl(Client ctx, dbl *res, const dbl *a)
+{
+	return MATHunary_dbl(ctx, res, a, cos, "mmath.cos");
+}
+
+static str
+MATHunary_COSflt(Client ctx, flt *res, const flt *a)
+{
+	return MATHunary_flt(ctx, res, a, cosf, "mmath.cos");
+}
+
+static str
+MATHunary_SINdbl(Client ctx, dbl *res, const dbl *a)
+{
+	return MATHunary_dbl(ctx, res, a, sin, "mmath.sin");
+}
+
+static str
+MATHunary_SINflt(Client ctx, flt *res, const flt *a)
+{
+	return MATHunary_flt(ctx, res, a, sinf, "mmath.sin");
+}
+
+static str
+MATHunary_TANdbl(Client ctx, dbl *res, const dbl *a)
+{
+	return MATHunary_dbl(ctx, res, a, tan, "mmath.tan");
+}
+
+static str
+MATHunary_TANflt(Client ctx, flt *res, const flt *a)
+{
+	return MATHunary_flt(ctx, res, a, tanf, "mmath.tan");
+}
+
+static str
+MATHunary_COTdbl(Client ctx, dbl *res, const dbl *a)
+{
+	return MATHunary_dbl(ctx, res, a, cot, "mmath.cot");
+}
+
+static str
+MATHunary_COTflt(Client ctx, flt *res, const flt *a)
+{
+	return MATHunary_flt(ctx, res, a, cotf, "mmath.cot");
+}
+
+static str
+MATHunary_RADIANSdbl(Client ctx, dbl *res, const dbl *a)
+{
+	return MATHunary_dbl(ctx, res, a, radians, "mmath.radians");
+}
+
+static str
+MATHunary_RADIANSflt(Client ctx, flt *res, const flt *a)
+{
+	return MATHunary_flt(ctx, res, a, radiansf, "mmath.radians");
+}
+
+static str
+MATHunary_DEGREESdbl(Client ctx, dbl *res, const dbl *a)
+{
+	return MATHunary_dbl(ctx, res, a, degrees, "mmath.degrees");
+}
+
+static str
+MATHunary_DEGREESflt(Client ctx, flt *res, const flt *a)
+{
+	return MATHunary_flt(ctx, res, a, degreesf, "mmath.degrees");
+}
+
+static str
+MATHunary_COSHdbl(Client ctx, dbl *res, const dbl *a)
+{
+	return MATHunary_dbl(ctx, res, a, cosh, "mmath.cosh");
+}
+
+static str
+MATHunary_COSHflt(Client ctx, flt *res, const flt *a)
+{
+	return MATHunary_flt(ctx, res, a, coshf, "mmath.cosh");
+}
+
+static str
+MATHunary_SINHdbl(Client ctx, dbl *res, const dbl *a)
+{
+	return MATHunary_dbl(ctx, res, a, sinh, "mmath.sinh");
+}
+
+static str
+MATHunary_SINHflt(Client ctx, flt *res, const flt *a)
+{
+	return MATHunary_flt(ctx, res, a, sinhf, "mmath.sinh");
+}
+
+static str
+MATHunary_TANHdbl(Client ctx, dbl *res, const dbl *a)
+{
+	return MATHunary_dbl(ctx, res, a, tanh, "mmath.tanh");
+}
+
+static str
+MATHunary_TANHflt(Client ctx, flt *res, const flt *a)
+{
+	return MATHunary_flt(ctx, res, a, tanhf, "mmath.tanh");
+}
+
+static str
+MATHunary_EXPdbl(Client ctx, dbl *res, const dbl *a)
+{
+	return MATHunary_dbl(ctx, res, a, exp, "mmath.exp");
+}
+
+static str
+MATHunary_EXPflt(Client ctx, flt *res, const flt *a)
+{
+	return MATHunary_flt(ctx, res, a, expf, "mmath.exp");
+}
+
+static str
+MATHunary_LOGdbl(Client ctx, dbl *res, const dbl *a)
+{
+	return MATHunary_dbl(ctx, res, a, log, "mmath.log");
+}
+
+static str
+MATHunary_LOGflt(Client ctx, flt *res, const flt *a)
+{
+	return MATHunary_flt(ctx, res, a, logf, "mmath.log");
+}
+
+static str
+MATHunary_LOG10dbl(Client ctx, dbl *res, const dbl *a)
+{
+	return MATHunary_dbl(ctx, res, a, log10, "mmath.log10");
+}
+
+static str
+MATHunary_LOG10flt(Client ctx, flt *res, const flt *a)
+{
+	return MATHunary_flt(ctx, res, a, log10f, "mmath.log10");
+}
+
+static str
+MATHunary_LOG2dbl(Client ctx, dbl *res, const dbl *a)
+{
+	return MATHunary_dbl(ctx, res, a, log2, "mmath.log2");
+}
+
+static str
+MATHunary_LOG2flt(Client ctx, flt *res, const flt *a)
+{
+	return MATHunary_flt(ctx, res, a, log2f, "mmath.log2");
+}
+
+static str
+MATHunary_SQRTdbl(Client ctx, dbl *res, const dbl *a)
+{
+	return MATHunary_dbl(ctx, res, a, sqrt, "mmath.sqrt");
+}
+
+static str
+MATHunary_SQRTflt(Client ctx, flt *res, const flt *a)
+{
+	return MATHunary_flt(ctx, res, a, sqrtf, "mmath.sqrt");
+}
+
+static str
+MATHunary_CBRTdbl(Client ctx, dbl *res, const dbl *a)
+{
+	return MATHunary_dbl(ctx, res, a, cbrt, "mmath.cbrt");
+}
+
+static str
+MATHunary_CBRTflt(Client ctx, flt *res, const flt *a)
+{
+	return MATHunary_flt(ctx, res, a, cbrtf, "mmath.cbrt");
+}
+
+static str
+MATHunary_CEILdbl(Client ctx, dbl *res, const dbl *a)
+{
+	return MATHunary_dbl(ctx, res, a, ceil, "mmath.ceil");
+}
+
+static str
+MATHunary_CEILflt(Client ctx, flt *res, const flt *a)
+{
+	return MATHunary_flt(ctx, res, a, ceilf, "mmath.ceil");
+}
+
+static str
+MATHunary_FLOORdbl(Client ctx, dbl *res, const dbl *a)
+{
+	return MATHunary_dbl(ctx, res, a, floor, "mmath.floor");
+}
+
+static str
+MATHunary_FLOORflt(Client ctx, flt *res, const flt *a)
+{
+	return MATHunary_flt(ctx, res, a, floorf, "mmath.floor");
+}
+
+static str
+MATHbinary_ATAN2dbl(Client ctx, dbl *res, const dbl *a, const dbl *b)
+{
+	return MATHbinary_dbl(ctx, res, a, b, atan2, "mmath.atan2");
+}
+
+static str
+MATHbinary_ATAN2flt(Client ctx, flt *res, const flt *a, const flt *b)
+{
+	return MATHbinary_flt(ctx, res, a, b, atan2f, "mmath.atan2");
+}
+
+static str
+MATHbinary_POWdbl(Client ctx, dbl *res, const dbl *a, const dbl *b)
+{
+	return MATHbinary_dbl(ctx, res, a, b, pow, "mmath.pow");
+}
+
+static str
+MATHbinary_POWflt(Client ctx, flt *res, const flt *a, const flt *b)
+{
+	return MATHbinary_flt(ctx, res, a, b, powf, "mmath.pow");
+}
+
+static str
+MATHbinary_LOGdbl(Client ctx, dbl *res, const dbl *a, const dbl *b)
+{
+	return MATHbinary_dbl(ctx, res, a, b, logbs, "mmath.logbs");
+}
+
+static str
+MATHbinary_LOGflt(Client ctx, flt *res, const flt *a, const flt *b)
+{
+	return MATHbinary_flt(ctx, res, a, b, logbsf, "mmath.logbs");
+}
+
+static str
+MATHbinary_NEXTAFTERdbl(Client ctx, dbl *res, const dbl *a, const dbl *b)
+{
+	return MATHbinary_dbl(ctx, res, a, b, nextafter, "mmath.nextafter");
+}
+
+static str
+MATHbinary_NEXTAFTERflt(Client ctx, flt *res, const flt *a, const flt *b)
+{
+	return MATHbinary_flt(ctx, res, a, b, nextafterf, "mmath.nextafter");
+}
+
 
 static str
 MATHunary_FABSdbl(Client ctx, dbl *res, const dbl *a)
@@ -244,8 +559,56 @@ MATHunary_FABSdbl(Client ctx, dbl *res, const dbl *a)
 	return MAL_SUCCEED;
 }
 
-roundM5(dbl)
-roundM5(flt)
+static str
+MATHbinary_ROUNDdbl(Client ctx, dbl *res, const dbl *x, const int *y)
+{
+	(void) ctx;
+	if (is_dbl_nil(*x) || is_int_nil(*y)) {
+		*res = dbl_nil;
+	} else {
+		dbl factor = pow(10, *y), integral;
+		dbl tmp = *y > 0 ? modf(*x, &integral) : *x;
+
+		tmp *= factor;
+		if (tmp >= 0)
+			tmp = floor(tmp + 0.5);
+		else
+			tmp = ceil(tmp - 0.5);
+		tmp /= factor;
+
+		if (*y > 0)
+			tmp += integral;
+
+		*res = (dbl) tmp;
+	}
+	return MAL_SUCCEED;
+}
+
+static str
+MATHbinary_ROUNDflt(Client ctx, flt *res, const flt *x, const int *y)
+{
+	(void) ctx;
+	if (is_flt_nil(*x) || is_int_nil(*y)) {
+		*res = flt_nil;
+	} else {
+		dbl factor = pow(10, *y), integral;
+		dbl tmp = *y > 0 ? modf(*x, &integral) : *x;
+
+		tmp *= factor;
+		if (tmp >= 0)
+			tmp = floor(tmp + 0.5);
+		else
+			tmp = ceil(tmp - 0.5);
+		tmp /= factor;
+
+		if (*y > 0)
+			tmp += integral;
+
+		*res = (flt) tmp;
+	}
+	return MAL_SUCCEED;
+}
+
 static str
 MATHunary_ISNAN(Client ctx, bit *res, const dbl *a)
 {
