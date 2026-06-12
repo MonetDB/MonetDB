@@ -3977,6 +3977,29 @@ accessing_merge(list *acc, list *nacc)
 	return acc;
 }
 
+static sql_rel *
+rel_smallest(sql_rel *r, list *outer_refs)
+{
+	if (r->op != op_join || !list_empty(r->exps))
+		return r;
+	sql_rel *rl = r->l;
+	sql_rel *rr = r->r;
+	int llen = list_length(outer_refs), rlen = llen;
+	for(node *n = outer_refs->h; n; n = n->next) {
+		sql_exp *e = n->data;
+		if (rel_find_exp(rl, e)) {
+			llen--;
+		} else {
+			rlen--;
+		}
+	}
+	if (llen && rlen)
+		return r;
+	if (llen)
+		return rel_smallest(rr, outer_refs);
+	return rel_smallest(rl, outer_refs);
+}
+
 static bool
 rel_djoin_elim(visitor *v, sql_rel *prel, sql_rel *rel, struct unnesting *parent, list *parent_accessing, list *refs)
 {
@@ -4007,7 +4030,8 @@ rel_djoin_elim(visitor *v, sql_rel *prel, sql_rel *rel, struct unnesting *parent
 	assert(p);
 	struct access_info *ai = p?p->value.pval:NULL;
 	assert(ai && ai->outer_refs);
-	sql_rel *d = rel_project(v->sql->sa, rel_dup(rel->l), exps_copy(v->sql, ai->outer_refs));
+	sql_rel *l = rel_smallest(rel->l, ai->outer_refs);
+	sql_rel *d = rel_project(v->sql->sa, rel_dup(l), exps_copy(v->sql, ai->outer_refs));
 
 	list *outer_refs = ai->outer_refs;
 	if (parent) {
