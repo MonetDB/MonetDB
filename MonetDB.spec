@@ -93,7 +93,7 @@ Group: Applications/Databases
 License: MPL-2.0
 URL: https://www.monetdb.org/
 BugURL: https://github.com/MonetDB/MonetDB/issues
-Source: https://www.monetdb.org/downloads/sources/Dec2025-SP2/MonetDB-%{version}.tar.bz2
+Source: https://www.monetdb.org/downloads/sources/Dec2025-SP3/MonetDB-%{version}.tar.bz2
 
 # We need checkpolicy and selinux-policy-devel for the SELinux policy.
 BuildRequires: systemd-rpm-macros
@@ -1088,6 +1088,112 @@ rm "${RPM_BUILD_ROOT}"%{_unitdir}/monetdbd.service
 %endif
 
 %changelog
+* Mon Jun 15 2026 Sjoerd Mullender <sjoerd@acm.org> - 11.55.7-20260615
+- Rebuilt.
+- GH#7729: MonetDB server (Mar2025-SP2-release) crashes at `tail_type`
+- GH#7871: Server crash in `rel_unnest_dependent`
+- GH#7879: MonetDB crash triggered by LATERAL subquery with window
+  function and complex expressions
+- GH#7891: Wrong result in UPDATE ... FROM with NOT BETWEEN rewrite under
+  OR constant-false timestamp predicate
+- GH#7892: Logic Bug: Incorrect evaluation of constant boolean expressions
+  leads to wrong COUNT results in subqueries
+- GH#7893: Logic Bug: Incorrect evaluation of constant boolean expressions
+  with RIGHT JOIN and LATERAL subqueries in MonetDB
+- GH#7894: Logic Bug: Incorrect evaluation of constant boolean expressions
+  with RIGHT JOIN and subquery functions in MonetDB
+- GH#7895: Logic Bug: MonetDB miscomputes COUNT with always-false AND
+  NULLIF condition
+- GH#7896: Logic Bug: MonetDB miscomputes COUNT with complex FALSE AND
+  CASE conditions
+- GH#7897: MonetDB wrong result in `DELETE ... WHERE IN (...)` with nested
+  `UNION`/`EXCEPT` and `UNION ALL` vs `INTERSECT`
+- GH#7898: Logic Bug: MonetDB produces inconsistent results between
+  COUNT(*) and SUM(EXISTS) with LATERAL subqueries
+- GH#7899: Logic Bug: MonetDB evaluates EXISTS inconsistently between
+  WHERE and CASE contexts with LATERAL subqueries
+- GH#7900: Logic Bug: MonetDB miscomputes SUM(CASE WHEN ...) vs COUNT(*)
+  with complex CASE, JOIN, and always-false predicates
+- GH#7901: MonetDB miscomputes SUM(CASE WHEN ...) vs COUNT(*) with
+  constant-false AND/OR conditions
+- GH#7902: Logic Bug: MonetDB miscomputes SUM(CASE WHEN ...) vs COUNT(*)
+  with constant ASCII comparison and INNER JOIN
+- GH#7903: MonetDB NoREC SUM query can not produce any result
+- GH#7904: Logic Bug: MonetDB produces inconsistent results between
+  COUNT(*) and SUM(CASE WHEN ...) for simple predicates
+- GH#7905: Logic Bug: MonetDB produces inconsistent results between
+  COUNT(*) and SUM(CASE WHEN ...) with CASE and COALESCE expressions
+- GH#7906: MonetDB server crash during SELECT with LATERAL subquery, mixed
+  JOIN types, and Window Functions.
+- GH#7910: Incorrect optimization of CASE WHEN and always-false predicates
+  leading to wrong results or planner error
+- GH#7911: MonetDB returns non-resultset response for a SELECT (pymonetdb
+  raises “query didn't result in a resultset”)
+- GH#7912: Incorrect result under tautological OR with correlated
+  aggregate subquery (AVG(...) ... LIMIT 1)
+- GH#7913: Incorrect DELETE behavior with EXISTS((... EXCEPT ...) UNION
+  ALL ...) due to non-resultset response in subquery branch
+- GH#7914: MonetDB wrong-result: EXISTS over GROUP BY is non-equivalent
+  for UNION ALL vs UNION (DELETE)
+- GH#7915: Wrong-result in `DELETE ... WHERE EXISTS((A) EXCEPT (B))`:
+  mutating `HAVING ... IS NULL` to `HAVING 1 = 0` deletes **fewer** rows
+  (MonetDB)
+- GH#7916: Incorrect result with LATERAL join and DISTINCT (expected 5,
+  got 25)
+- GH#7917: Wrong result for correlated `COUNT(*) ... IN (...)` predicate
+  equivalent to a `RANK()` filter
+- GH#7918: Wrong values returned for correlated `ORDER BY ...
+  LIMIT/OFFSET` form equivalent to `ROW_NUMBER() = k`
+- GH#7919: Wrong result for correlated `COUNT(DISTINCT ...)` form
+  equivalent to a `DENSE_RANK()` filter
+- GH#7920: Wrong result for correlated top-1 scalar subquery form
+  equivalent to `FIRST_VALUE()`
+- GH#7921: Wrong result for `NTILE()` predicate rewritten as a correlated
+  floor-ratio formula
+- GH#7923: Partition-only window aggregate diverges from an equivalent
+  correlated aggregate rewrite
+- GH#7927: MonetDB server crash during SELECT with nested EXISTS, LATERAL
+  subqueries, and constant-foldable predicates
+- GH#7932: MonetDB server crash during SELECT with constant-TRUE WHERE and
+  unused subqueries with foldable expressions
+- GH#7933: MonetDB can not produce any result when we test a SELECT query.
+- GH#7934: Inconsistent JOIN Semantics under Reordered INNER JOIN
+- GH#7935: monetdb get all returns `get: incomplete response from monetdbd`
+- GH#7936: Using --logging arg of mserver5 to set component levels do not
+  take effect for some components
+- GH#7937: Primary key constraint affects WHERE NOT col IN (...) behaviour
+- GH#7938: Wrong result: NOT (col = const AND col IS NOT NULL) returns
+  TRUE for non-matching rows (Dec2025)
+- GH#7940: mmath / batmmath divide-by-zero throws without SQLSTATE(22012),
+  JDBC clients see 22000
+- GH#7943: Wrong result when casting decimal to decimal omitting precision
+  and scale
+
+* Fri Jun 12 2026 Sjoerd Mullender <sjoerd@acm.org> - 11.55.7-20260615
+- MonetDB: Fixed a number of race conditions.
+- MonetDB: Improved summing of floating point values in window functions.
+  The result is now as exact as floating point allows.  This uses the
+  same algorithm that was already used in the floating sum aggregate.
+- MonetDB: Added a new tracer component MAL_INSTRUCTION to log MAL instructions
+  during execution.
+- MonetDB: Fixed calculation of integer averages when the simple summing of
+  values (before the sum is divided by the count) overflows.  When it
+  does overflow we continue with a different algorithm, but the switch
+  was done incorrectly.  Summation was done in 128 bit integers, so
+  overflow was exceedingly rare.
+- MonetDB: Fixed a race condition during server exit.
+- MonetDB: Improvements to the way execution of prepared statements are being
+  reported.
+
+* Tue May 12 2026 Lucas Pereira <lucas.pereira@monetdbsolutions.com> - 11.55.7-20260615
+- MonetDB: Fix using --logging option of mserver5 to change component levels
+  that are also used by --debug option. For overlapping components,
+  component level change via --logging was being discarded.
+
+* Thu Apr 23 2026 Sjoerd Mullender <sjoerd@acm.org> - 11.55.7-20260615
+- MonetDB: It is no longer allowed to run mserver5 or monetdbd as root.  There are
+  important security concerns when these servers are run as root.
+
 * Fri Apr 03 2026 Sjoerd Mullender <sjoerd@acm.org> - 11.55.5-20260403
 - Rebuilt.
 - GH#7728: MonetDB server (Mar2025-SP2-release) crashes at `strCmp`

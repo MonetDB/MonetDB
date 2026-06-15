@@ -1,28 +1,3 @@
 # ChangeLog file for devel
 # This file is updated with Maddlog
 
-* Fri Jun 12 2026 Sjoerd Mullender <sjoerd@acm.org>
-- Fixed a number of race conditions.
-- Improved summing of floating point values in window functions.
-  The result is now as exact as floating point allows.  This uses the
-  same algorithm that was already used in the floating sum aggregate.
-- Added a new tracer component MAL_INSTRUCTION to log MAL instructions
-  during execution.
-- Fixed calculation of integer averages when the simple summing of
-  values (before the sum is divided by the count) overflows.  When it
-  does overflow we continue with a different algorithm, but the switch
-  was done incorrectly.  Summation was done in 128 bit integers, so
-  overflow was exceedingly rare.
-- Fixed a race condition during server exit.
-- Improvements to the way execution of prepared statements are being
-  reported.
-
-* Tue May 12 2026 Lucas Pereira <lucas.pereira@monetdbsolutions.com>
-- Fix using --logging option of mserver5 to change component levels
-  that are also used by --debug option. For overlapping components,
-  component level change via --logging was being discarded.
-
-* Thu Apr 23 2026 Sjoerd Mullender <sjoerd@acm.org>
-- It is no longer allowed to run mserver5 or monetdbd as root.  There are
-  important security concerns when these servers are run as root.
-
