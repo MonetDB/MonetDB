@@ -3765,7 +3765,7 @@ stmt_claim(backend *be, sql_table *t, stmt *cnt, int sync)
 	if (!t || cnt->nr < 0)
 		goto bailout;
 	assert(t->s);				/* declared table */
-	q = newStmtArgs(mb, sqlRef, claimRef, sync?9:6);
+	q = newStmtArgs(mb, sqlRef, claimRef, sync?8:6);
 	if (q == NULL)
 		goto bailout;
 	/* returns offset or offsets */
@@ -3777,7 +3777,6 @@ stmt_claim(backend *be, sql_table *t, stmt *cnt, int sync)
 	if (sync) {
 		q = pushArgument(mb, q, sync);
 		q = pushArgument(mb, q, be->pp);
-		q = pushArgument(mb, q, be->pipeline);
 	}
 	bool enabled = ma_get_eb(be->mvc->sa)->enabled;
 	ma_get_eb(be->mvc->sa)->enabled = false;

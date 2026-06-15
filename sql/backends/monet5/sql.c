@@ -556,7 +556,7 @@ mvc_claim_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (!(b = BATdescriptor(*sid)))
 			msg = createException(SQL, "sql.claim", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		sync = b->pl_io;
-		p = (Pipeline*)*getArgReference_ptr(stk, pci, 8);
+		p = pipeline_get_thread_private_pipeline();
 		BBPreclaim(b);
 		nr = *getArgReference_int(stk, pci, 7);	/* passed counter for table/bat sources */
 		if (p->seqnr >= 0) /* seq number from file/generator inputs */
@@ -5769,7 +5769,7 @@ static mel_func sql_init_funcs[] = {
  command("sql", "getVersion", mvc_getVersion, false, "Return the database version identifier for a client.", args(1,2, arg("",lng),arg("clientid",int))),
  pattern("sql", "grow", mvc_grow_wrap, false, "Resize the tid column of a declared table.", args(1,3, batarg("res",oid),batarg("tid",oid),argany("",1))),
  pattern("sql", "claim", mvc_claim_wrap, true, "Claims slots for appending rows.", args(2,6, arg("",oid),batarg("",oid),arg("mvc",int),arg("sname",str),arg("tname",str),arg("cnt",lng))),
- pattern("sql", "claim", mvc_claim_wrap, true, "Claims slots for appending rows.", args(2,9, arg("",oid),batarg("",oid),arg("mvc",int),arg("sname",str),arg("tname",str),arg("cnt",lng),batarg("counter",bte),arg("nr", int),arg("pipeline",ptr))),
+ pattern("sql", "claim", mvc_claim_wrap, true, "Claims slots for appending rows.", args(2,8, arg("",oid),batarg("",oid),arg("mvc",int),arg("sname",str),arg("tname",str),arg("cnt",lng),batarg("counter",bte),arg("nr", int))),
  pattern("sql", "depend", mvc_add_dependency_change, true, "Set dml dependency on current transaction for a table.", args(0,3, arg("sname",str),arg("tname",str),arg("cnt",lng))),
  pattern("sql", "predicate", mvc_add_column_predicate, true, "Add predicate on current transaction for a table column.", args(0,3, arg("sname",str),arg("tname",str),arg("cname",str))),
  pattern("sql", "append", mvc_append_wrap, false, "Append to the column tname.cname (possibly optimized to replace the insert bat of tname.cname. Returns sequence number for order dependence.", args(1,8, arg("",int), arg("mvc",int),arg("sname",str),arg("tname",str),arg("cname",str),arg("offset",oid),batarg("pos",oid),argany("ins",0))),
