@@ -49565,12 +49565,12 @@ OAHASHexplode_unmatched
 Expand the count of 'unmatched' with 'frequency'.  Returns the count in a VOID BAT.
 oahash
 frequency
-pattern oahash.frequency(X_0:bat[:oid) (X_1:bat[:oid], X_2:bat[:lng])
+pattern oahash.frequency(X_0:bat[:oid]) (X_1:bat[:oid], X_2:bat[:lng])
 OAHASHadd_freq
 Add `slot_id` to the shared `frequencies` BAT. Returns the occurrence index for each `slot_id` (i.e. it is the n-th time the `slot_id` is seen so far) and the updated `frequencies`
 oahash
 frequency
-pattern oahash.frequency(X_0:bat[:oid):bat[:lng]
+pattern oahash.frequency(X_0:bat[:oid]):bat[:lng]
 OAHASHadd_freq
 Add `slot_id` to the shared `frequencies` BAT. Returns the updated `frequencies`
 oahash
@@ -50675,7 +50675,7 @@ mvc_claim_wrap
 Claims slots for appending rows.
 sql
 claim
-unsafe pattern sql.claim(X_0:int, X_1:str, X_2:str, X_3:lng, X_4:bat[:bte], X_5:int, X_6:ptr) (X_7:oid, X_8:bat[:oid])
+unsafe pattern sql.claim(X_0:int, X_1:str, X_2:str, X_3:lng, X_4:bat[:bte], X_5:int) (X_6:oid, X_7:bat[:oid])
 mvc_claim_wrap
 Claims slots for appending rows.
 sql
