@@ -23,6 +23,9 @@
 #define pipeline_lock2(r) MT_lock_set(&r->theaplock)
 #define pipeline_unlock2(r) MT_lock_unset(&r->theaplock)
 
+#define pipeline_get_thread_private_pipeline() MT_thread_getdata()
+#define pipeline_set_thread_private_pipeline(p) MT_thread_setdata(p)
+
 #define SLICE_SIZE 100000
 
 // TODO a better way to define/add/register sinks, similar to types
