@@ -511,7 +511,7 @@ stmt_oahash_hshmrk_init(backend *be, stmt *stmts_ht, bool moveup)
 }
 
 stmt *
-stmt_oahash_build_ht(backend *be, stmt *ht, stmt *key, stmt *prnt, const stmt *pp)
+stmt_oahash_build_ht(backend *be, stmt *ht, stmt *key, stmt *prnt)
 {
 	InstrPtr q = newStmt(be->mb, putName("oahash"), prnt?putName("build_combined_table"):putName("build_table"));
 	if (q == NULL) return NULL;
@@ -521,7 +521,6 @@ stmt_oahash_build_ht(backend *be, stmt *ht, stmt *key, stmt *prnt, const stmt *p
 	q = pushArgument(be->mb, q, key->nr);
 	if (prnt)
 		q = pushArgument(be->mb, q, prnt->nr);
-	q = pushArgument(be->mb, q, getArg(pp->q, 2) /* pipeline ptr*/);
 	q->inout = 1;
 	pushInstruction(be->mb, q);
 
@@ -536,7 +535,7 @@ stmt_oahash_build_ht(backend *be, stmt *ht, stmt *key, stmt *prnt, const stmt *p
 }
 
 stmt *
-stmt_oahash_frequency(backend *be, stmt *freq, stmt *prnt, bool occ_cnt, const stmt *pp)
+stmt_oahash_frequency(backend *be, stmt *freq, stmt *prnt, bool occ_cnt)
 {
 	InstrPtr q = newStmt(be->mb, putName("oahash"), putName("frequency"));
 	if (q == NULL)
@@ -551,7 +550,6 @@ stmt_oahash_frequency(backend *be, stmt *freq, stmt *prnt, bool occ_cnt, const s
 		q->inout = 0;
 	}
 	q = pushArgument(be->mb, q, prnt->nr);
-	q = pushArgument(be->mb, q, getArg(pp->q, 2) /* pipeline ptr*/);
 	pushInstruction(be->mb, q);
 
 	stmt *s = stmt_none(be);
@@ -590,7 +588,7 @@ stmt_oahash_hash(backend *be, stmt *key, stmt *prev, stmt *ht)
 }
 
 stmt *
-stmt_oahash_probe(backend *be, stmt *key, stmt *prev, stmt *rhs_ht, stmt *freq, stmt *outer, bool single, bool semantics, bool eq, bool outerjoin, bool groupedjoin, const stmt *pp)
+stmt_oahash_probe(backend *be, stmt *key, stmt *prev, stmt *rhs_ht, stmt *freq, stmt *outer, bool single, bool semantics, bool eq, bool outerjoin, bool groupedjoin)
 {
 	InstrPtr q = newStmt(be->mb, putName("oahash"), prev == NULL?
 									groupedjoin?putName("mprobe")         :outerjoin?putName("oprobe")         :eq?putName("probe"):putName("nprobe"):
@@ -613,7 +611,6 @@ stmt_oahash_probe(backend *be, stmt *key, stmt *prev, stmt *rhs_ht, stmt *freq, 
 	}
 	q = pushBit(be->mb, q, single);
 	q = pushBit(be->mb, q, semantics);
-	q = pushArgument(be->mb, q, getArg(pp->q, 2) /* pipeline ptr*/);
 	pushInstruction(be->mb, q);
 
 	stmt *s = stmt_none(be);

@@ -19,11 +19,11 @@ extern stmt * get_pipeline(backend *be);
 
 extern stmt *stmt_oahash_new(backend *be, sql_subtype *tpe, lng estimate, int parent, int nrparts);
 extern stmt *stmt_oahash_hshmrk_init(backend *be, stmt *stmts_ht, bool moveup);
-extern stmt *stmt_oahash_build_ht(backend *be, stmt *ht, stmt *key, stmt *prnt, const stmt *pp);
-extern stmt *stmt_oahash_frequency(backend *be, stmt *freq, stmt *prnt, bool occ_cnt, const stmt *pp);
+extern stmt *stmt_oahash_build_ht(backend *be, stmt *ht, stmt *key, stmt *prnt);
+extern stmt *stmt_oahash_frequency(backend *be, stmt *freq, stmt *prnt, bool occ_cnt);
 
 extern stmt *stmt_oahash_hash(backend *be, stmt *key, stmt *prev, stmt *ht);
-extern stmt *stmt_oahash_probe(backend *be, stmt *key, stmt *prev, stmt *rhs_ht, stmt *freq, stmt *outer, bool single, bool semantics, bool eq, bool outerjoin, bool groupedjoin, const stmt *pp);
+extern stmt *stmt_oahash_probe(backend *be, stmt *key, stmt *prev, stmt *rhs_ht, stmt *freq, stmt *outer, bool single, bool semantics, bool eq, bool outerjoin, bool groupedjoin);
 
 extern stmt *stmt_algebra_project(backend *be, stmt *inout, stmt *pos, stmt *val, const char *fname, const stmt *pp);
 extern stmt *stmt_oahash_project_cart(backend *be, stmt *col, stmt *repeat, bool outer, bool expand);

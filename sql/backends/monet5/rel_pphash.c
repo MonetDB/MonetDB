@@ -130,7 +130,7 @@ oahash_slicer(backend *be, stmt *sub)
 /* Generates the parallel block to probe the hash table
  */
 static stmt *
-oahash_probe(backend *be, sql_rel *rel, list *jexps, list *exps_cmp_prb, const stmt *stmts_ht, stmt *sub, const stmt *pp, bool anti, bool outer, bool groupjoin, bool has_outerselect, stmt **nulls, stmt **prb_mrk)
+oahash_probe(backend *be, sql_rel *rel, list *jexps, list *exps_cmp_prb, const stmt *stmts_ht, stmt *sub, bool anti, bool outer, bool groupjoin, bool has_outerselect, stmt **nulls, stmt **prb_mrk)
 {
 	(void) outer;
 
@@ -148,7 +148,7 @@ oahash_probe(backend *be, sql_rel *rel, list *jexps, list *exps_cmp_prb, const s
 		bool eq = (e2->flag == cmp_equal) && !anti;
 		bool grpjoin = groupjoin && is_any(e2);
 
-		prb_res = stmt_oahash_probe(be, key, prb_res, m->data, stmts_ht->op3, outerm, single, e2->semantics, eq, has_leftouter, grpjoin, pp);
+		prb_res = stmt_oahash_probe(be, key, prb_res, m->data, stmts_ht->op3, outerm, single, e2->semantics, eq, has_leftouter, grpjoin);
 		if (prb_res == NULL) return NULL;
 
 		//if (outer || grpjoin) {
@@ -333,7 +333,7 @@ rel2bin_oahash_build(backend *be, sql_rel *rel, list *refs)
 		assert(key); /* must find */
 		key = column(be, key);
 
-		prnt = stmt_oahash_build_ht(be, ht, key, prnt, pp);
+		prnt = stmt_oahash_build_ht(be, ht, key, prnt);
 		if (prnt == NULL) return NULL;
 
 		if (e->alias.label)
@@ -343,10 +343,10 @@ rel2bin_oahash_build(backend *be, sql_rel *rel, list *refs)
 	stmts_ht = stmt_list(be, l);
 
 	if (freq) {
-		stmt *s = stmt_oahash_frequency(be, freq, prnt, (hp_gid != NULL), pp);
+		stmt *s = stmt_oahash_frequency(be, freq, prnt, (hp_gid != NULL));
 
 		if (hp_gid) {
-			prnt = stmt_oahash_build_ht(be, hp_gid, s, prnt, pp);
+			prnt = stmt_oahash_build_ht(be, hp_gid, s, prnt);
 			if (prnt == NULL) return NULL;
 		}
 	}
@@ -420,8 +420,7 @@ rel2bin_oahash_equi_join(backend *be, sql_rel *rel, list *refs, list *jexps, stm
 	if (probe_sub)
 		*probe_sub = sub;
 
-	stmt *pp = get_pipeline(be);
-	stmt *prb_res = oahash_probe(be, rel, jexps, exps_cmp_prb, stmts_ht, sub, pp, false, is_outerjoin(rel->op), mark, has_outerselect, nulls, prb_mrk);
+	stmt *prb_res = oahash_probe(be, rel, jexps, exps_cmp_prb, stmts_ht, sub, false, is_outerjoin(rel->op), mark, has_outerselect, nulls, prb_mrk);
 	if (prb_res == NULL) return NULL;
 
 	/*** PROJECT RESULT PHASE ***/
@@ -1268,7 +1267,7 @@ static stmt *
 rel2bin_oahash_semi(backend *be, sql_rel *rel, list *refs)
 {
 	sql_rel *rel_hsh = rel->r, *rel_prb = rel->l;
-	stmt *probe_sub = NULL, *sub = NULL, *pp = NULL, *nulls = NULL;
+	stmt *probe_sub = NULL, *sub = NULL, *nulls = NULL;
 	stmt *probed_ids = NULL;
 
 	/* start new parallel block after join. NB get_need_pipeline has side effect! */
@@ -1299,8 +1298,7 @@ rel2bin_oahash_semi(backend *be, sql_rel *rel, list *refs)
 		probe_sub = sub = _start_pp(be, rel_prb->l, false, refs, NULL);
 		if (!sub) return NULL;
 
-		pp = get_pipeline(be);
-		stmt *prb_res = oahash_probe(be, rel, rel->exps, exps_cmp_prb, stmts_ht, sub, pp, anti, false, false, !list_empty(sexps), &nulls, NULL);
+		stmt *prb_res = oahash_probe(be, rel, rel->exps, exps_cmp_prb, stmts_ht, sub, anti, false, false, !list_empty(sexps), &nulls, NULL);
 		if (prb_res == NULL) return NULL;
 
 		/*** PROJECT RESULT PHASE ***/
