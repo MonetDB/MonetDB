@@ -79,11 +79,11 @@ copy_binary_byteswap64(uint64_t value) {
 
 #ifdef HAVE_HGE
 static inline
-uhge copy_binary_byteswap128(uhge value) {
+uint128_t copy_binary_byteswap128(uint128_t value) {
 	uint64_t lo = (uint64_t) value;
 	uint64_t hi = (uint64_t) (value >> 64);
-	uhge swapped_lo = (uhge)copy_binary_byteswap64(lo);
-	uhge swapped_hi = (uhge)copy_binary_byteswap64(hi);
+	uint128_t swapped_lo = (uint128_t)copy_binary_byteswap64(lo);
+	uint128_t swapped_hi = (uint128_t)copy_binary_byteswap64(hi);
 	return swapped_hi | (swapped_lo << 64);
 }
 #endif
@@ -150,7 +150,7 @@ copy_binary_convert64(void *p)
 static inline void
 copy_binary_convert128(void *p)
 {
-	uhge *pp = (uhge*)p;
+	uint128_t *pp = (uint128_t*)p;
 	*pp = copy_binary_byteswap128(*pp);
 }
 #endif

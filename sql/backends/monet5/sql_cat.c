@@ -1877,9 +1877,10 @@ SQLalter_user(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	char *role = SaveArgReference(stk, pci, 7);
 	lng max_memory = *getArgReference_lng(stk, pci, 8);
 	int max_workers = *getArgReference_int(stk, pci, 9);
+	char *optimizer = SaveArgReference(stk, pci, 10);
 
 	initcontext();
-	msg = sql_alter_user(sql, sname, passwd, enc, schema, schema_path, oldpasswd, role, max_memory, max_workers);
+	msg = sql_alter_user(sql, sname, passwd, enc, schema, schema_path, oldpasswd, role, max_memory, max_workers, optimizer);
 
 	return msg;
 }

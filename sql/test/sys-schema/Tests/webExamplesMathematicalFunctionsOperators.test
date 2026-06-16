@@ -21,7 +21,7 @@ project (
 ) [ "sys"."bit_xor"(tinyint(2) "2", tinyint(2) "3") NOT NULL ]
 
 query I nosort
-select 2.0 ^ 3.0
+select 2 ^ 3
 ----
 1
 
@@ -321,7 +321,7 @@ statement error
 select random()
 
 query III nosort
-select right_shift(16, 2), right_shift(8.0, 2), right_shift(8.2, 2)
+select right_shift(16, 2), right_shift(8, 2), right_shift(8, 2)
 ----
 4
 2

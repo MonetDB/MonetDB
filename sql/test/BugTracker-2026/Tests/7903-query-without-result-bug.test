@@ -1,0 +1,195 @@
+statement ok
+CREATE SCHEMA test7903
+
+statement ok
+SET SCHEMA test7903
+
+statement ok
+CREATE TABLE users (
+    id           INT,
+    username     VARCHAR(100),
+    email        VARCHAR(255),
+    age          INT,
+    status       VARCHAR(20),
+    created_at   TIMESTAMP,
+    score        DOUBLE
+)
+
+statement ok
+CREATE TABLE posts (
+    id          INT,
+    user_id     INT,
+    title       VARCHAR(255),
+    content     VARCHAR(1000),
+    views       INT,
+    likes       INT,
+    created_at  TIMESTAMP,
+    rating      DOUBLE
+)
+
+statement ok
+CREATE TABLE orders (
+    id          INT,
+    user_id     INT,
+    amount      DOUBLE,
+    status      VARCHAR(20),
+    created_at  TIMESTAMP
+)
+
+statement ok
+INSERT INTO users VALUES
+(1, 'alice', 'alice@test.com', 20, 'active',  '2022-01-01 10:00:00', 88.5),
+(2, 'bob',   'bob@test.com',   30, 'active',  '2022-01-02 11:00:00', 92.3),
+(3, 'carol', NULL,             NULL, 'banned','2022-01-03 12:00:00', NULL),
+(4, 'dave',  'dave@test.com',  45, 'active',  '2022-01-04 13:00:00', 65.2),
+(5, NULL,    'null@test.com',  18, 'inactive','2022-01-05 14:00:00', 70.0)
+
+statement ok
+INSERT INTO posts VALUES
+(1, 1, 'Hello World', 'First post', 100, 10, '2022-01-10 10:00:00', 4.5),
+(2, 1, 'Another Post', NULL,        150, 20, '2022-01-11 11:00:00', 3.0),
+(3, 2, 'Bob Post',     'Content',   NULL,  5, '2022-01-12 12:00:00', NULL),
+(4, 3, NULL,           'Empty',     50,   2, '2022-01-13 13:00:00', 5.0),
+(5, 4, 'Last Post',    'Last',      300,  30,'2022-01-14 14:00:00', 4.9)
+
+statement ok
+INSERT INTO orders VALUES
+(1, 1, 100.00, 'paid',    '2022-02-01 09:00:00'),
+(2, 1, 200.50, 'shipped', '2022-02-02 10:00:00'),
+(3, 2, NULL,   'failed',  '2022-02-03 11:00:00'),
+(4, 3, 50.00,  'paid',    '2022-02-04 12:00:00'),
+(5, 5, 999.99, 'paid',    '2022-02-05 13:00:00')
+
+query I nosort
+SELECT COUNT(*)
+FROM (
+    SELECT subq_1.c1 AS c3, subq_0.c0 AS c6, 4 AS c11
+    FROM (
+        SELECT ref_0.likes AS c0, ref_0.user_id AS c1, ref_0.likes AS c6
+        FROM posts AS ref_0
+        WHERE ref_0.id IS NULL
+    ) AS subq_0,
+    LATERAL (
+        SELECT subq_0.c1 AS c1
+        FROM users AS ref_1
+        WHERE FALSE
+    ) AS subq_1
+    WHERE subq_0.c0 IS NULL
+) AS subq_2,
+LATERAL (
+    SELECT STARTSWITH(SUBSTRING('2ndp', subq_2.c11, subq_2.c3), 'vs') AS c2
+    FROM users AS ref_2
+    INNER JOIN orders AS ref_3 ON ref_2.score = ref_3.amount
+    RIGHT JOIN orders AS ref_4 ON ref_2.score = ref_4.amount
+    WHERE subq_2.c6 <> ref_3.id
+) AS subq_3
+----
+0
+
+query I nosort
+SELECT SUM(1)
+FROM (
+    SELECT subq_1.c1 AS c3, subq_0.c0 AS c6, 4 AS c11
+    FROM (
+        SELECT ref_0.likes AS c0, ref_0.user_id AS c1, ref_0.likes AS c6
+        FROM posts AS ref_0
+        WHERE ref_0.id IS NULL
+    ) AS subq_0,
+    LATERAL (
+        SELECT subq_0.c1 AS c1
+        FROM users AS ref_1
+        WHERE FALSE
+    ) AS subq_1
+    WHERE subq_0.c0 IS NULL
+) AS subq_2,
+LATERAL (
+    SELECT STARTSWITH(SUBSTRING('2ndp', subq_2.c11, subq_2.c3), 'vs') AS c2
+    FROM users AS ref_2
+    INNER JOIN orders AS ref_3 ON ref_2.score = ref_3.amount
+    RIGHT JOIN orders AS ref_4 ON ref_2.score = ref_4.amount
+    WHERE subq_2.c6 <> ref_3.id
+) AS subq_3
+----
+NULL
+
+query I nosort
+SELECT SUM(
+    CASE
+        WHEN ((FALSE AND FALSE) OR (RTRIM('mhh2') <= '48'))
+        THEN 1 ELSE 0
+    END + 0
+)
+FROM (
+    SELECT subq_1.c1 AS c3, subq_0.c0 AS c6, 4 AS c11
+    FROM (
+        SELECT ref_0.likes AS c0, ref_0.user_id AS c1, ref_0.likes AS c6
+        FROM posts AS ref_0
+        WHERE ref_0.id IS NULL
+    ) AS subq_0,
+    LATERAL (
+        SELECT subq_0.c1 AS c1
+        FROM users AS ref_1
+        WHERE FALSE
+    ) AS subq_1
+    WHERE subq_0.c0 IS NULL
+) AS subq_2,
+LATERAL (
+    SELECT STARTSWITH(SUBSTRING('2ndp', subq_2.c11, subq_2.c3), 'vs') AS c2
+    FROM users AS ref_2
+    INNER JOIN orders AS ref_3 ON ref_2.score = ref_3.amount
+    RIGHT JOIN orders AS ref_4 ON ref_2.score = ref_4.amount
+    WHERE subq_2.c6 <> ref_3.id
+) AS subq_3
+----
+NULL
+
+-- query without results
+-- Next query fails to return a result! also no error.
+-- This query references subq_3.c2 in the CASE WHEN which seems to be a problem.
+-- We expected it to return NULL but nothing is received.
+query I nosort
+SELECT SUM(
+    CASE
+        WHEN ((subq_3.c2 AND subq_3.c2) OR (RTRIM('mhh2') <= '48'))
+        THEN 1 ELSE 0
+    END + 0
+)
+FROM (
+    SELECT subq_1.c1 AS c3, subq_0.c0 AS c6, 4 AS c11
+    FROM (
+        SELECT ref_0.likes AS c0, ref_0.user_id AS c1, ref_0.likes AS c6
+        FROM posts AS ref_0
+        WHERE ref_0.id IS NULL
+    ) AS subq_0,
+    LATERAL (
+        SELECT subq_0.c1 AS c1
+        FROM users AS ref_1
+        WHERE FALSE
+    ) AS subq_1
+    WHERE subq_0.c0 IS NULL
+) AS subq_2,
+LATERAL (
+    SELECT STARTSWITH(SUBSTRING('2ndp', subq_2.c11, subq_2.c3), 'vs') AS c2
+    FROM users AS ref_2
+    INNER JOIN orders AS ref_3 ON ref_2.score = ref_3.amount
+    RIGHT JOIN orders AS ref_4 ON ref_2.score = ref_4.amount
+    WHERE subq_2.c6 <> ref_3.id
+) AS subq_3
+----
+NULL
+
+statement ok
+DROP TABLE orders
+
+statement ok
+DROP TABLE posts
+
+statement ok
+DROP TABLE users
+
+statement ok
+SET SCHEMA sys
+
+statement ok
+DROP SCHEMA test7903
+

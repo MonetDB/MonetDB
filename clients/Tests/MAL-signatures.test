@@ -37282,12 +37282,12 @@ mmath
 log2arg
 command mmath.log2arg(X_0:dbl, X_1:dbl):dbl
 MATHbinary_LOGdbl
-The log(x) function returns the logarithm of x in the given base.
+The log(base,x) function returns the logarithm of x in the given base.
 mmath
 log2arg
 command mmath.log2arg(X_0:flt, X_1:flt):flt
 MATHbinary_LOGflt
-The log(x) function returns the logarithm of x in the given base.
+(empty)
 mmath
 nextafter
 command mmath.nextafter(X_0:dbl, X_1:dbl):dbl
@@ -40170,7 +40170,7 @@ SQLalter_table
 Catalog operation alter_table
 sqlcatalog
 alter_user
-pattern sqlcatalog.alter_user(X_0:str, X_1:str, X_2:int, X_3:str, X_4:str, X_5:str, X_6:str, X_7:lng, X_8:int):void
+pattern sqlcatalog.alter_user(X_0:str, X_1:str, X_2:int, X_3:str, X_4:str, X_5:str, X_6:str, X_7:lng, X_8:int, X_9:str):void
 SQLalter_user
 Catalog operation alter_user
 sqlcatalog

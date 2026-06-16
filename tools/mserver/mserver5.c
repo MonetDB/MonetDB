@@ -115,7 +115,7 @@ monet_hello(void)
 	static const char qc[] = " kMGTPE";
 	int qi = 0;
 
-	printf("# MonetDB 5 server v%s", GDKversion());
+	printf("# MonetDB 5 server v%s", GDKversion(false));
 	{
 #ifdef MONETDB_RELEASE
 		printf(" (%s)", MONETDB_RELEASE);
@@ -360,6 +360,10 @@ main(int argc, char **av)
 		{"process-wal-and-exit", no_argument, NULL, 0},
 		{"clean-BBP", no_argument, NULL, 0},
 
+#ifdef HAVE_GETUID
+		{"accept-the-risks-running-as-root", no_argument, NULL, 0},
+#endif
+
 		{NULL, 0, NULL, 0}
 	};
 
@@ -426,6 +430,10 @@ main(int argc, char **av)
 	if (!(setlen = mo_builtin_settings(&set)))
 		usage(prog, -1);
 
+#ifdef HAVE_GETUID
+	bool allow_root = false;
+#endif
+
 	for (;;) {
 		int option_index = 0;
 
@@ -437,6 +445,12 @@ main(int argc, char **av)
 
 		switch (c) {
 		case 0:
+#ifdef HAVE_GETUID
+			if (strcmp(long_options[option_index].name, "accept-the-risks-running-as-root") == 0) {
+				allow_root = true;
+				break;
+			}
+#endif
 			if (strcmp(long_options[option_index].name, "in-memory") == 0) {
 				inmemory = true;
 				break;
@@ -655,6 +669,17 @@ main(int argc, char **av)
 		}
 	}
 
+#ifdef HAVE_GETUID
+	if (getuid() == 0) {
+		if (allow_root) {
+			fprintf(stderr, "WARNING: running as root is not recommended\n");
+		} else {
+			fprintf(stderr, "ERROR: running as root is not allowed\n");
+			exit(1);
+		}
+	}
+#endif
+
 	if (optind < argc)
 		usage(prog, -1);
 
@@ -710,7 +735,8 @@ main(int argc, char **av)
 		GDKfree(dbtrace);
 	}
 
-	GDKsetdebug(debug | grpdebug);	/* add the algorithm tracers */
+	GDKsetdebug(GDKgetdebug() | debug | grpdebug);
+
 	if (monet_init(set, setlen, false) == 0) {
 		mo_free_options(set, setlen);
 		if (GDKerrbuf && *GDKerrbuf)
@@ -719,7 +745,7 @@ main(int argc, char **av)
 	}
 	mo_free_options(set, setlen);
 
-	if (GDKsetenv("monet_version", GDKversion()) != GDK_SUCCEED
+	if (GDKsetenv("monet_version", GDKversion(true)) != GDK_SUCCEED
 		|| GDKsetenv("monet_build_type", BUILD_TYPE) != GDK_SUCCEED
 		|| GDKsetenv("monet_extra_c_flags", EXTRA_C_FLAGS) != GDK_SUCCEED
 		|| GDKsetenv("monet_release",

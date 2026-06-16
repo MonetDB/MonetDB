@@ -47,11 +47,14 @@ exp_getcard(mvc *sql, sql_rel *rel, sql_exp *e)
 	if ((p = find_prop(e->p, PROP_NUNIQUES)))
 		est = (BUN)p->value.dval;
 
-	if (est == BUN_NONE || (ulng) est > (ulng) GDK_lng_max) {
+	if (est == BUN_NONE 
+#if SIZEOF_BUN == SIZEOF_LNG
+		|| (ulng) est > (ulng) GDK_lng_max
+#endif
+   	) 
 		cnt = 85000000;
-	} else {
-		cnt = (lng) est;
-	}
+	else
+		cnt = (BUN) est;
 	if (e->type == e_column && t && t->type->localtype == TYPE_str) {
 		sql_column *c = name_find_column(rel, e->l, e->r, -1, NULL);
 
@@ -83,11 +86,14 @@ rel_groupby_2_phases(mvc *sql, sql_rel *rel)
 	lng card = 1, cnt;
 	bool global = list_empty(rel->r);
 
-	if (est == BUN_NONE || (ulng) est > (ulng) GDK_lng_max) {
+	if (est == BUN_NONE 
+#if SIZEOF_BUN == SIZEOF_LNG
+		|| (ulng) est > (ulng) GDK_lng_max
+#endif
+	)
 		cnt = 85000000;
-	} else {
-		cnt = (lng) est;
-	}
+	else
+		cnt = (BUN) est;
 	if (!list_empty(rel->r)) {
 		list *l = rel->r;
 		for( node *n = l->h; n; n = n->next ) {
@@ -208,11 +214,14 @@ rel_groupby_prepare_pp(list **aggrresults, list **serializedresults, backend *be
 	list *shared = NULL;
 	BUN est = get_rel_count(rel->l);
 	lng estimate, card = 1;
-	if (est == BUN_NONE || (ulng) est > (ulng) GDK_lng_max) {
+	if (est == BUN_NONE 
+#if SIZEOF_BUN == SIZEOF_LNG
+		|| (ulng) est > (ulng) GDK_lng_max
+#endif
+	)
 		estimate = 85000000;
-	} else {
+	else
 		estimate = (lng) est;
-	}
 
 	shared = sa_list(be->mvc->sa); /* list of ints (variable numbers* */
 	*aggrresults = sa_list(be->mvc->sa);
@@ -381,11 +390,14 @@ rel_groupby_prepare_pp(list **aggrresults, list **serializedresults, backend *be
 							BUN est = get_rel_count(rel->l);
 							lng estimate;
 
-							if (est == BUN_NONE || (ulng) est > (ulng) GDK_lng_max) {
+							if (est == BUN_NONE
+#if SIZEOF_BUN == SIZEOF_LNG
+ 								|| (ulng) est > (ulng) GDK_lng_max
+#endif
+							) 
 								estimate = 85000000;
-							} else {
-								estimate = (lng) est;
-							}
+							else
+								estimate = (BUN) est;
 
 							stmt *s = stmt_oahash_new(be, t, estimate, grphash, 0);
 							if (s == NULL)

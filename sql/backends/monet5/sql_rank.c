@@ -1677,7 +1677,7 @@ SQLvar_pop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #define COVARIANCE_AND_CORRELATION_ONE_SIDE_UNBOUNDED_TILL_CURRENT_ROW(TPE) \
 	do {																\
 		TPE *restrict bp = (TPE*)di.base;								\
-		for (; k < i;) {												\
+		while (k < i) {													\
 			j = k;														\
 			do {														\
 				n += !is_##TPE##_nil(bp[k]);							\
@@ -2017,7 +2017,7 @@ SQLcorr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 SQLstrgroup_concat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	BAT *r = NULL, *b = NULL, *sep = NULL, *p = NULL, *o = NULL, *s = NULL, *e = NULL;
+	BAT *bn = NULL, *b = NULL, *sep = NULL, *p = NULL, *o = NULL, *s = NULL, *e = NULL;
 	int separator_offset = 0, tpe, frame_type;
 	str msg = MAL_SUCCEED, separator = NULL;
 	bat *res = NULL;
@@ -2043,10 +2043,6 @@ SQLstrgroup_concat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 		if (!(b = BATdescriptor(*getArgReference_bat(stk, pci, 1)))) {
 			msg = createException(SQL, "sql.strgroup_concat", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-			goto bailout;
-		}
-		if (!(r = COLnew(b->hseqbase, TYPE_str, BATcount(b), TRANSIENT))) {
-			msg = createException(SQL, "sql.strgroup_concat", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto bailout;
 		}
 		if (separator_offset) {
@@ -2086,7 +2082,7 @@ SQLstrgroup_concat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 
 		assert((separator && !sep) || (!separator && sep)); /* only one of them must be set */
-		if (GDKanalytical_str_group_concat(r, p, o, b, sep, s, e, separator, frame_type) != GDK_SUCCEED)
+		if ((bn = GDKanalytical_str_group_concat(b, p, o, sep, s, e, separator, frame_type)) == NULL)
 			msg = createException(SQL, "sql.strgroup_concat", GDK_EXCEPTION);
 	} else {
 		str *res = getArgReference_str(stk, pci, 0);
@@ -2114,6 +2110,6 @@ SQLstrgroup_concat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 bailout:
 	unfix_inputs(6, b, sep, p, o, s, e);
-	finalize_output(res, r, msg);
+	finalize_output(res, bn, msg);
 	return msg;
 }

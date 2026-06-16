@@ -159,11 +159,14 @@ rel_topn_prepare_pp(backend *be, sql_rel *rel, stmt *all)
 		if (grouped) { /* create hash tables */
 			BUN est = get_rel_count(l);
 			lng estimate, card = 1;
-			if (est == BUN_NONE || (ulng) est > (ulng) GDK_lng_max) {
+			if (est == BUN_NONE
+#if SIZEOF_BUN == SIZEOF_LNG
+ 				||  (ulng) est > (ulng) GDK_lng_max
+#endif
+			) 
 				estimate = 85000000;
-			} else {
-				estimate = (lng) est;
-			}
+			else
+				estimate = (BUN) est;
 			int curhash = 0;
 			for(; n; n = n->next ) {
 				sql_exp *e = n->data;

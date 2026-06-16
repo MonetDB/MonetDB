@@ -874,7 +874,7 @@ sql_create_user(mvc *sql, char *user, char *passwd, bool enc, char *fullname, ch
 		allocator *ma = MT_thread_getallocator();
 		allocator_state ma_state = ma_open(ma);
 		char *r = ma_strdup(ma, getExceptionMessageAndState(err));
-		r = createException(SQL,"sql.create_user", SQLSTATE(M0M27) "CREATE USER: %s", r);
+		r = createException(SQL,"sql.create_user", "%s", r);
 		ma_close(&ma_state);
 		return r;
 	}
@@ -1015,7 +1015,7 @@ sql_drop_user(mvc *sql, char *user)
 }
 
 char *
-sql_alter_user(mvc *sql, char *user, char *passwd, bool enc, char *schema, char *schema_path, char *oldpasswd, char *role, lng max_memory, int max_workers)
+sql_alter_user(mvc *sql, char *user, char *passwd, bool enc, char *schema, char *schema_path, char *oldpasswd, char *role, lng max_memory, int max_workers, char *optimizer)
 {
 	sql_schema *s = NULL;
 	sqlid schema_id = 0;
@@ -1048,8 +1048,8 @@ sql_alter_user(mvc *sql, char *user, char *passwd, bool enc, char *schema, char 
 		if (!isNew(s) && sql_trans_add_dependency(sql->session->tr, s->base.id, ddl) != LOG_OK)
 			throw(SQL, "sql.alter_user", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
-	if (backend_alter_user(sql, user, passwd, enc, schema_id, schema_path, oldpasswd, role_id, max_memory, max_workers) == FALSE)
-		throw(SQL,"sql.alter_user", SQLSTATE(M0M27) "%s", sql->errstr);
+	if (backend_alter_user(sql, user, passwd, enc, schema_id, schema_path, oldpasswd, role_id, max_memory, max_workers, optimizer) == FALSE)
+		throw(SQL,"sql.alter_user", "%s", sql->errstr);
 
 	/* the default role must explicitly granted to the new user */
 	if (role_id && !has_role) {

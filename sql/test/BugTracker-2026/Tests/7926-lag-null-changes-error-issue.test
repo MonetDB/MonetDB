@@ -1,0 +1,40 @@
+statement ok
+CREATE TABLE t_bug16 (
+  id INT,
+  p INT,
+  o INT,
+  dt TIMESTAMP,
+  v INT,
+  PRIMARY KEY (id)
+)
+
+statement ok rowcount 4
+INSERT INTO t_bug16 VALUES
+  (1, 21, 1000, '2031-11-10 21:18:09', 958),
+  (2, 21, 1003, '2001-01-10 18:17:37', 948),
+  (3, 21, 1006, '1974-05-04 09:09:19', 948),
+  (4, 21, 1009, '1992-04-17 17:35:41', 448)
+
+-- original query
+statement error types tinyint(1,0) and timestamp(7,0) are not equal
+SELECT v
+FROM (
+  SELECT p, v, LAG(dt, 1) OVER (PARTITION BY p ORDER BY o ASC) AS wa
+  FROM t_bug16
+) x
+WHERE wa >= 1
+ORDER BY v
+
+-- explicit NULL default
+statement error types tinyint(1,0) and timestamp(7,0) are not equal
+SELECT v
+FROM (
+  SELECT p, v, LAG(dt, 1, NULL) OVER (PARTITION BY p ORDER BY o ASC) AS wa
+  FROM t_bug16
+) x
+WHERE wa >= 1
+ORDER BY v
+
+statement ok
+DROP TABLE t_bug16
+

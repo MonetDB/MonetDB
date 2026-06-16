@@ -3655,12 +3655,13 @@ joincost(BAT *r, BUN lcount, struct canditer *rci,
 	BAT *b;
 	BUN nheads;
 	BUN cnt;
+	BATiter ri = bat_iterator(r);
 
 	(void) BATcheckhash(r);
 	MT_rwlock_rdlock(&r->thashlock);
 	rhash = r->thash != NULL;
 	nheads = r->thash ? r->thash->nheads : 0;
-	cnt = BATcount(r);
+	cnt = ri.count;
 	MT_rwlock_rdunlock(&r->thashlock);
 
 	if ((rci->tpe == cand_materialized || rci->tpe == cand_except) &&
@@ -3671,13 +3672,27 @@ joincost(BAT *r, BUN lcount, struct canditer *rci,
 		rcost += log2((double) rci->nvals);
 	}
 	rcost *= lcount;
-	if (BATtdense(r)) {
+ 	if (BATtdensebi(&ri)) {
 		/* no need for a hash, and lookup is free */
 		rhash = false;	/* don't use it, even if it's there */
 	} else {
 		if (rhash) {
 			/* average chain length */
 			rcost *= (double) cnt / nheads;
+			/* If the hash exists, but the working set
+			 * exceeds physical RAM, random-access probes
+			 * will cause massive page fault thrashing.
+			 * Multiply the probe cost by an I/O latency
+			 * factor to encourage swapping to a sequential
+			 * scan instead. */
+			if (!GDKinmemory(ri.h->farmid) &&
+			    (size_t)cnt * ATOMsize(ri.type) + ri.vhfree > GDK_mem_maxsize / 4) {
+				/* Disk random access is ~100x to 1000x
+				 * slower than RAM.  A 100x penalty
+				 * forces the optimizer to treat these
+				 * probes as highly toxic. */
+				rcost *= 100.0;
+			}
 		} else if ((parent = VIEWtparent(r)) != 0 &&
 			   (b = BATdescriptor(parent)) != NULL) {
 			if (BATcheckhash(b)) {
@@ -3692,27 +3707,30 @@ joincost(BAT *r, BUN lcount, struct canditer *rci,
 			BBPunfix(b->batCacheid);
 		}
 		if (!rhash) {
-			MT_lock_set(&r->theaplock);
-			double unique_est = r->tunique_est;
-			MT_lock_unset(&r->theaplock);
+			double unique_est = ri.unique_est;
 			if (unique_est == 0) {
-				unique_est = guess_uniques(r, &(struct canditer){.tpe=cand_dense, .ncand=BATcount(r)});
-				if (unique_est <= 0)
+				unique_est = guess_uniques(r, &(struct canditer){.tpe=cand_dense, .ncand=ri.count});
+				if (unique_est <= 0) {
+					bat_iterator_end(&ri);
 					return -1;
+				}
 			}
 			/* we have an estimate of the number of unique
 			 * values, assume some collisions */
 			rcost *= 1.1 * ((double) cnt / unique_est);
 			/* only count the cost of creating the hash for
 			 * non-persistent bats */
-			MT_lock_set(&r->theaplock);
-			if (r->batRole != PERSISTENT /* || r->theap->dirty */ || GDKinmemory(r->theap->farmid))
+			/* If the BAT is persistent but so large that
+			 * building a hash might thrash memory, consider
+			 * it very expensive, so encourage choosing a
+			 * linear scan of this side instead. */
+			if (r->batRole != PERSISTENT /* || ri.h->dirty */ || GDKinmemory(ri.h->farmid) ||
+			    (size_t)cnt * ATOMsize(ri.type) + ri.vhfree > GDK_mem_maxsize / 4)
 				rcost += cnt * 2.0;
-			MT_lock_unset(&r->theaplock);
 		}
 	}
 	if (cand) {
-		if (rci->ncand != BATcount(r) && rci->tpe != cand_mask) {
+		if (rci->ncand != ri.count && rci->tpe != cand_mask) {
 			/* instead of using the hash on r (cost in
 			 * rcost), we can build a new hash on r taking
 			 * the candidate list into account; don't do
@@ -3723,13 +3741,13 @@ joincost(BAT *r, BUN lcount, struct canditer *rci,
 			if (rhash && !prhash) {
 				rccost = (double) cnt / nheads;
 			} else {
-				MT_lock_set(&r->theaplock);
-				double unique_est = r->tunique_est;
-				MT_lock_unset(&r->theaplock);
+				double unique_est = ri.unique_est;
 				if (unique_est == 0) {
 					unique_est = guess_uniques(r, rci);
-					if (unique_est <= 0)
+					if (unique_est <= 0) {
+						bat_iterator_end(&ri);
 						return -1;
+					}
 				}
 				/* we have an estimate of the number of unique
 				 * values, assume some chains */
@@ -3746,6 +3764,7 @@ joincost(BAT *r, BUN lcount, struct canditer *rci,
 	}
 	*hash = rhash;
 	*phash = prhash;
+	bat_iterator_end(&ri);
 	return rcost;
 }
 

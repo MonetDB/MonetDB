@@ -1,0 +1,21 @@
+statement ok
+CREATE TABLE rt1(c5 DATE)
+
+statement ok
+INSERT INTO rt1 VALUES (CAST('2020-01-01' AS DATE))
+
+query T nosort
+SELECT x.k3
+FROM (
+  (SELECT r.c5 AS k, r.c5 AS k2, r.c5 AS k3
+   FROM rt1 AS r
+   GROUP BY r.c5)
+  EXCEPT
+  (SELECT CAST(NULL AS DATE) AS k, CAST(NULL AS DATE) AS k2, CAST(NULL AS DATE) AS k3 WHERE 1 = 0)
+) AS x
+----
+2020-01-01
+
+statement ok
+DROP TABLE IF EXISTS rt1
+

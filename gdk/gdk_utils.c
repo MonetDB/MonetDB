@@ -894,46 +894,46 @@ GDKgetdebug(void)
 	ATOMIC_BASE_TYPE debug = ATOMIC_GET(&GDKdebug);
 	const char *lvl;
 	lvl = GDKtracer_get_component_level("accelerator");
-	if (lvl && strcmp(lvl, "debug") == 0)
+	if (lvl && strcasecmp(lvl, "debug") == 0)
 		debug |= ACCELMASK;
 	lvl = GDKtracer_get_component_level("algo");
-	if (lvl && strcmp(lvl, "debug") == 0)
+	if (lvl && strcasecmp(lvl, "debug") == 0)
 		debug |= ALGOMASK;
 	lvl = GDKtracer_get_component_level("alloc");
-	if (lvl && strcmp(lvl, "debug") == 0)
+	if (lvl && strcasecmp(lvl, "debug") == 0)
 		debug |= ALLOCMASK;
 	lvl = GDKtracer_get_component_level("bat");
-	if (lvl && strcmp(lvl, "debug") == 0)
+	if (lvl && strcasecmp(lvl, "debug") == 0)
 		debug |= BATMASK;
 	lvl = GDKtracer_get_component_level("check");
-	if (lvl && strcmp(lvl, "debug") == 0)
+	if (lvl && strcasecmp(lvl, "debug") == 0)
 		debug |= CHECKMASK;
 	lvl = GDKtracer_get_component_level("delta");
-	if (lvl && strcmp(lvl, "debug") == 0)
+	if (lvl && strcasecmp(lvl, "debug") == 0)
 		debug |= DELTAMASK;
 	lvl = GDKtracer_get_component_level("heap");
-	if (lvl && strcmp(lvl, "debug") == 0)
+	if (lvl && strcasecmp(lvl, "debug") == 0)
 		debug |= HEAPMASK;
 	lvl = GDKtracer_get_component_level("io");
-	if (lvl && strcmp(lvl, "debug") == 0)
+	if (lvl && strcasecmp(lvl, "debug") == 0)
 		debug |= IOMASK;
 	lvl = GDKtracer_get_component_level("mal_loader");
-	if (lvl && strcmp(lvl, "debug") == 0)
+	if (lvl && strcasecmp(lvl, "debug") == 0)
 		debug |= LOADMASK;
 	lvl = GDKtracer_get_component_level("par");
-	if (lvl && strcmp(lvl, "debug") == 0)
+	if (lvl && strcasecmp(lvl, "debug") == 0)
 		debug |= PARMASK;
 	lvl = GDKtracer_get_component_level("perf");
-	if (lvl && strcmp(lvl, "debug") == 0)
+	if (lvl && strcasecmp(lvl, "debug") == 0)
 		debug |= PERFMASK;
 	lvl = GDKtracer_get_component_level("tem");
-	if (lvl && strcmp(lvl, "debug") == 0)
+	if (lvl && strcasecmp(lvl, "debug") == 0)
 		debug |= TEMMASK;
 	lvl = GDKtracer_get_component_level("thrd");
-	if (lvl && strcmp(lvl, "debug") == 0)
+	if (lvl && strcasecmp(lvl, "debug") == 0)
 		debug |= THRDMASK;
 	lvl = GDKtracer_get_component_level("tm");
-	if (lvl && strcmp(lvl, "debug") == 0)
+	if (lvl && strcasecmp(lvl, "debug") == 0)
 		debug |= TMMASK;
 	return (unsigned) debug;
 }
@@ -1645,9 +1645,18 @@ THRinit(void)
 	return 0;
 }
 
+/* stringify token */
+#define _STRINGIFY_(s) #s
+#define STRINGIFY(t) _STRINGIFY_(t)
+
 const char *
-GDKversion(void)
+GDKversion(bool full)
 {
+	(void) full;		/* in case patch != 0 */
+#if MONETDB_VERSION_PATCH == 0
+	if (!full)
+		return STRINGIFY(MONETDB_VERSION_MAJOR) "." STRINGIFY(MONETDB_VERSION_MINOR);
+#endif
 	return MONETDB_VERSION;
 }
 
@@ -2175,6 +2184,9 @@ ma_reset(allocator *sa)
 	sa->size = MA_NUM_BLOCKS;
 	sa->blks[0] = sa->first_blk;
 	sa->used = offset;
+#if !defined(NDEBUG) && !defined(SANITIZER)
+	DEADBEEFCHK memset((char *) sa->blks[0] + offset, '\xDB', MA_BLOCK_SIZE - offset);
+#endif
 #ifndef NDEBUG
 	sa->frees = 0;
 #endif
@@ -2237,6 +2249,9 @@ ma_fill_in_header(void *r, size_t sz)
 		// store canary value to help us detect double free
 		rs[1] = CANARY_VALUE;
 		r = &rs[2];
+#if !defined(NDEBUG) && !defined(SANITIZER)
+		DEADBEEFCHK memset(r, '\xBD', sz);
+#endif
 	}
 	return r;
 }

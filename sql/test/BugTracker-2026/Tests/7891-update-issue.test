@@ -71,7 +71,7 @@ statement ok rowcount 3
 INSERT INTO t2 VALUES
   (3, 4, NULL, TIMESTAMP '2002-09-11 17:01:39'),
   (8, 8, 'egculthpiak', TIMESTAMP '2002-05-04 20:51:45'),
-  (1, 6, 'tdingsooyv', TIMESTAMP '2010-04-13 15:30:07');
+  (1, 6, 'tdingsooyv', TIMESTAMP '2010-04-13 15:30:07')
 
 -- rewritten / mutated
 statement ok rowcount 2

@@ -393,10 +393,11 @@ insert_string_bat(BAT *b, BATiter *ni, struct canditer *ci, bool force, bool may
 	MT_lock_set(&b->theaplock);
 	BATsetcount(b, oldcnt + ci->ncand);
 	assert(b->batCapacity >= b->batCount);
+	BATiter bi = bat_iterator_nolock(b);
 	MT_lock_unset(&b->theaplock);
 	/* maintain hash */
 	for (r = oldcnt, cnt = BATcount(b); b->thash && r < cnt; r++) {
-		HASHappend_locked(b, r, b->tvheap->base + VarHeapVal(Tloc(b, 0), r, b->twidth));
+		HASHappend_locked(&bi, r, b->tvheap->base + VarHeapVal(Tloc(b, 0), r, b->twidth));
 	}
 	BUN nunique = b->thash ? b->thash->nunique : 0;
 	MT_rwlock_wrunlock(&b->thashlock);
@@ -471,12 +472,13 @@ append_varsized_bat(BAT *b, BATiter *ni, struct canditer *ci, bool mayshare)
 		MT_rwlock_wrlock(&b->thashlock);
 		MT_lock_set(&b->theaplock);
 		BATsetcount(b, BATcount(b) + ci->ncand);
+		BATiter bi = bat_iterator_nolock(b);
 		MT_lock_unset(&b->theaplock);
 		/* maintain hash table */
 		for (BUN i = BATcount(b) - ci->ncand;
 		     b->thash && i < BATcount(b);
 		     i++) {
-			HASHappend_locked(b, i, b->tvheap->base + *(var_t *) Tloc(b, i));
+			HASHappend_locked(&bi, i, b->tvheap->base + *(var_t *) Tloc(b, i));
 		}
 		BUN nunique = b->thash ? b->thash->nunique : 0;
 		MT_rwlock_wrunlock(&b->thashlock);
@@ -560,7 +562,7 @@ append_varsized_bat(BAT *b, BATiter *ni, struct canditer *ci, bool mayshare)
 		BATiter bi = bat_iterator_nolock(b);
 		for (BUN i = 0; i < cnt; i++) {
 			const void *t = BUNtvar(&bi, r);
-			HASHappend_locked(b, r, t);
+			HASHappend_locked(&bi, r, t);
 			r++;
 		}
 	}
@@ -1029,6 +1031,9 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 				goto bailout;
 			}
 		}
+		MT_lock_set(&b->theaplock);
+		BATiter bi = bat_iterator_nolock(b);
+		MT_lock_unset(&b->theaplock);
 		MT_rwlock_wrlock(&b->thashlock);
 		hlocked = true;
 		if (b->ttype != TYPE_void &&
@@ -1039,7 +1044,7 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 			       (const char *) ni.base + ((ci.seq - hseq) << ni.shift),
 			       ci.ncand << ni.shift);
 			for (BUN i = 0; b->thash && i < ci.ncand; i++) {
-				HASHappend_locked(b, r, Tloc(b, r));
+				HASHappend_locked(&bi, r, Tloc(b, r));
 				r++;
 			}
 		} else {
@@ -1067,8 +1072,10 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 				} else if (tfastins_nocheck(b, r, t) != GDK_SUCCEED) {
 					goto bailout;
 				}
-				if (b->thash)
-					HASHappend_locked(b, r, t);
+				if (b->thash) {
+					bi.vh = b->tvheap;
+					HASHappend_locked(&bi, r, t);
+				}
 				r++;
 			}
 			TIMEOUT_CHECK(qry_ctx, GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));

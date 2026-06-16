@@ -355,7 +355,7 @@ stmt *
 bin_find_smallest_column(backend *be, stmt *sub)
 {
 	stmt *res = sub->op4.lval->h->data;
-	int best_score = statment_score(sub->op4.lval->h->data);
+	int best_score = statment_score(res);
 
 	if (sub->op4.lval->h->next)
 		for (node *n = sub->op4.lval->h->next ; n ; n = n->next) {
@@ -2023,6 +2023,10 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 					s = exp_bin(be, n->data, right, NULL, grp, ext, cnt, NULL, depth+1, 0, push);
 					swapped = 1;
 				}
+				if (!s && right && !reduce) {
+					clean_mal_statements(be, oldstop, oldvtop);
+					s = exp_bin(be, n->data, left, right, grp, ext, cnt, NULL, depth+1, 0, push);
+				}
 				if (!s)
 					return s;
 				if (s->nrcols == 0 && first && left && left->nrcols)
@@ -3216,6 +3220,7 @@ rel2bin_groupjoin(backend *be, sql_rel *rel, list *refs)
 	if (!left || !right)
 		return NULL;
 	left = row2cols(be, left);
+	stmt *lgid = stmt_identity(be, bin_find_smallest_column(be, left));
 	right = row2cols(be, right);
 
 	list *jexps = get_simple_equi_joins_first(sql, rel, rel->exps);
@@ -3264,7 +3269,7 @@ rel2bin_groupjoin(backend *be, sql_rel *rel, list *refs)
 			if (mark && is_any(e)) {
 				join = stmt_markjoin(be, l, r, !is_any(e), 0);
 			} else
-				join = stmt_join_cand(be, column(be, l), column(be, r), left->cand, NULL/*right->cand*/, is_anti(e), (comp_type) cmp_equal/*e->flag*/, 0, is_any(e)|is_semantics(e), false, rel->op == op_left?false:true);
+				join = stmt_join_cand(be, column(be, l), column(be, r), left->cand, NULL/*right->cand*/, is_anti(e), (comp_type) cmp_equal/*e->flag*/, 0, is_any(e)|is_semantics(e), false, (rel->op == op_left || !list_empty(rel->attr))?false:true);
 			jl = stmt_result(be, join, 0);
 			jr = stmt_result(be, join, 1);
 			if (mark && is_any(e))
@@ -3296,6 +3301,8 @@ rel2bin_groupjoin(backend *be, sql_rel *rel, list *refs)
 			s = stmt_alias(be, s, c->label, rnme, nme);
 			list_append(nl, s);
 		}
+		if (lgid)
+			lgid = stmt_project(be, jl, lgid);
 		for (n = right->op4.lval->h; n; n = n->next) {
 			stmt *c = n->data;
 			assert(c->label);
@@ -3333,7 +3340,7 @@ rel2bin_groupjoin(backend *be, sql_rel *rel, list *refs)
 				p = stmt_const(be, bin_find_smallest_column(be, sub), p);
 			if (sel)
 				p = stmt_project(be, sel, column(be, p));
-			stmt *li = jl;
+			stmt *li = lgid;
 			if (sel)
 				li = stmt_project(be, sel, li);
 			osel = sel;

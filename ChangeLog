@@ -1,6 +1,21 @@
 # ChangeLog file for devel
 # This file is updated with Maddlog
 
+* Thu May  7 2026 Niels Nes <niels@cwi.nl>
+- disallow casting /coercing from decimal to integers when the functions
+  work on bits (like xor, and, or, <<, >> etc)
+
+* Thu May  7 2026 Sjoerd Mullender <sjoerd@acm.org>
+- The version number has changed from three levels where the first level
+  has always been 11 to two levels.  The 11. has been dropped.
+
+* Wed May  6 2026 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
+- Added capability to change the OPTIMIZER setting for a USER via:
+  ALTER USER user_id OPTIMIZER 'minimal_pipe';
+
+* Sat May  2 2026 Lucas Pereira <lucas.pereira@monetdbsolutions.com>
+- Set default to 'no' of monetdbd discovery property.
+
 * Thu Feb 19 2026 Sjoerd Mullender <sjoerd@acm.org>
 - Changed the BATloop macro so that it now has a BATiter pointer as
   first argument.

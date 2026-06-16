@@ -1,0 +1,195 @@
+statement ok
+CREATE TABLE t2 (c13 TIMESTAMP)
+
+statement ok
+INSERT INTO t2 VALUES (TIMESTAMP '2018-08-15 11:04:33')
+
+statement ok
+INSERT INTO t2 VALUES (TIMESTAMP '2007-10-22 09:05:03')
+
+statement ok
+INSERT INTO t2 VALUES (NULL)
+
+statement ok
+INSERT INTO t2 VALUES (TIMESTAMP '2014-11-15 02:55:16')
+
+statement ok
+INSERT INTO t2 VALUES (TIMESTAMP '2010-08-16 12:29:32')
+
+statement ok
+CREATE TABLE t3 (c1 INT, c5 TIMESTAMP)
+
+statement ok
+INSERT INTO t3 VALUES (1, TIMESTAMP '2009-04-11 18:54:10')
+
+statement ok
+INSERT INTO t3 VALUES (2, NULL)
+
+statement ok
+INSERT INTO t3 VALUES (3, TIMESTAMP '2002-10-31 10:29:26')
+
+statement ok
+INSERT INTO t3 VALUES (4, NULL)
+
+statement ok
+INSERT INTO t3 VALUES (5, NULL)
+
+query I rowsort
+SELECT c1 FROM t3 ORDER BY c1
+----
+1
+2
+3
+4
+5
+
+-- query with UNION ALL
+query I rowsort
+SELECT c1 FROM t3
+WHERE c5 IN (
+    SELECT c5 AS k
+    FROM t3
+    UNION
+    SELECT k
+    FROM (
+        SELECT c13 AS k, c13 AS k2
+        FROM t2
+        EXCEPT
+        SELECT k, TIMESTAMP '2014-04-20 20:56:07' AS k2
+        FROM (
+            SELECT c13 AS k, TIMESTAMP '2025-01-28 17:31:29' AS k2
+            FROM t2
+            UNION ALL
+            SELECT c13 AS k, c13 AS k2
+            FROM t2
+        ) s
+        WHERE k >= TIMESTAMP '2014-04-20 20:56:07'
+    ) e
+)
+----
+1
+3
+
+-- same query with INTERSECT instead of UNION ALL
+-- produces on Dec2025-SP2 v11.55.5 (hg id: 691e862e16ce+): sql/backends/monet5/rel_bin.c:1909: exp_bin: Assertion `s' failed.
+query I rowsort
+SELECT c1 FROM t3
+WHERE c5 IN (
+    SELECT c5 AS k
+    FROM t3
+    UNION
+    SELECT k
+    FROM (
+        SELECT c13 AS k, c13 AS k2
+        FROM t2
+        EXCEPT
+        SELECT k, TIMESTAMP '2014-04-20 20:56:07' AS k2
+        FROM (
+            SELECT c13 AS k, TIMESTAMP '2025-01-28 17:31:29' AS k2
+            FROM t2
+            INTERSECT
+            SELECT c13 AS k, c13 AS k2
+            FROM t2
+        ) s
+        WHERE k >= TIMESTAMP '2014-04-20 20:56:07'
+    ) e
+)
+----
+1
+3
+
+statement ok rowcount 2
+DELETE FROM t3
+WHERE c5 IN (
+    SELECT c5 AS k
+    FROM t3
+    UNION
+    SELECT k
+    FROM (
+        SELECT c13 AS k, c13 AS k2
+        FROM t2
+        EXCEPT
+        SELECT k, TIMESTAMP '2014-04-20 20:56:07' AS k2
+        FROM (
+            SELECT c13 AS k, TIMESTAMP '2025-01-28 17:31:29' AS k2
+            FROM t2
+            INTERSECT
+--            UNION ALL
+            SELECT c13 AS k, c13 AS k2
+            FROM t2
+        ) s
+        WHERE k >= TIMESTAMP '2014-04-20 20:56:07'
+    ) e
+)
+
+query I rowsort
+SELECT c1 FROM t3 ORDER BY c1
+----
+2
+4
+5
+
+statement ok
+TRUNCATE TABLE t3
+
+statement ok
+INSERT INTO t3 VALUES (1, TIMESTAMP '2009-04-11 18:54:10')
+
+statement ok
+INSERT INTO t3 VALUES (2, NULL)
+
+statement ok
+INSERT INTO t3 VALUES (3, TIMESTAMP '2002-10-31 10:29:26')
+
+statement ok
+INSERT INTO t3 VALUES (4, NULL)
+
+statement ok
+INSERT INTO t3 VALUES (5, NULL)
+
+query I rowsort
+SELECT c1 FROM t3 ORDER BY c1
+----
+1
+2
+3
+4
+5
+
+statement ok rowcount 2
+DELETE FROM t3
+WHERE c5 IN (
+    SELECT c5 AS k
+    FROM t3
+    UNION
+    SELECT k
+    FROM (
+        SELECT c13 AS k, c13 AS k2
+        FROM t2
+        EXCEPT
+        SELECT k, TIMESTAMP '2014-04-20 20:56:07' AS k2
+        FROM (
+            SELECT c13 AS k, TIMESTAMP '2025-01-28 17:31:29' AS k2
+            FROM t2
+            INTERSECT
+            SELECT c13 AS k, c13 AS k2
+            FROM t2
+        ) s
+        WHERE k >= TIMESTAMP '2014-04-20 20:56:07'
+    ) e
+)
+
+query I rowsort
+SELECT c1 FROM t3 ORDER BY c1
+----
+2
+4
+5
+
+-- cleanup
+statement ok
+DROP TABLE t3
+
+statement ok
+DROP TABLE t2
+
