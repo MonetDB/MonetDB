@@ -2137,11 +2137,6 @@ finishsum(allocator *ma, struct pergroup *pg)
 	do {							\
 		if (pg.valseen) {				\
 			double curval = finishsum(ta, &pg);	\
-			if (isinf(curval) ||			\
-			    isnan(curval) ||			\
-			    curval > GDK_##TPE2##_max ||	\
-			    curval < -GDK_##TPE2##_max)		\
-				goto calc_overflow;		\
 			computed = (TPE2) curval;		\
 		}						\
 		ma_close(&ta_state);				\
