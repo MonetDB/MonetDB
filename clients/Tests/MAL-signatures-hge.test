@@ -50035,7 +50035,7 @@ PARQUETprelude
 (empty)
 parquet
 read
-pattern parquet.read(X_0:bat[:oid], X_1:int, X_2:ptr):bat[:any_1]
+pattern parquet.read(X_0:bat[:oid], X_1:int):bat[:any_1]
 PARQUETread
 read part of parquet file
 parquet

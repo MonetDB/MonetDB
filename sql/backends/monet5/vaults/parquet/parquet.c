@@ -845,7 +845,7 @@ PARQUETread(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat *res = getArgReference_bat(stk, pci, 0);
 	bat pqb = *getArgReference_bat(stk, pci, pci->retc + 0);
 	int colno = *getArgReference_int(stk, pci, pci->retc + 1);
-	Pipeline *p = (Pipeline*)*getArgReference_ptr(stk, pci, pci->retc + 2);
+	Pipeline *p = pipeline_get_thread_private_pipeline();
 	char *msg = NULL;
 
 	BAT *b = BATdescriptor(pqb), *rb = NULL;
@@ -980,7 +980,6 @@ pqc_load(void *BE, sql_subfunc *f, char *filename, sql_exp *topn)
 		setVarType(be->mb, getArg(q, 0), newBatType(st->type->localtype));
 		q = pushArgument(be->mb, q, pf);
 		q = pushInt(be->mb, q, i);
-		q = pushArgument(be->mb, q, be->pipeline);
 		pushInstruction(be->mb, q);
 
 		s->nr = getDestVar(q);
@@ -1444,7 +1443,7 @@ static mel_func parquet_init_funcs[] = {
 	pattern("parquet", "prelude", PARQUETprelude, false, "", noargs),
 	command("parquet", "epilogue", PARQUETepilogue, false, "", noargs),
     pattern("parquet", "open", PARQUETopen, true, "Create resource for shared reading from parquet file", args(1, 3, batarg("", oid), arg("f", str), arg("nrows", lng))),
-    pattern("parquet", "read", PARQUETread, false, "read part of parquet file", args(1, 4, batargany("", 1), batarg("p", oid), arg("colno", int), arg("pipeline", ptr))),
+    pattern("parquet", "read", PARQUETread, false, "read part of parquet file", args(1, 3, batargany("", 1), batarg("p", oid), arg("colno", int))),
 	pattern("parquet", "schema", PARQUETschema, false, "Read parquet schema",
 		   	args(10,11,
 			   	batarg("name", str),
