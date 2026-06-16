@@ -13,11 +13,12 @@
 #include "mal_exception.h"
 #include "mal_pipelines.h"
 #include "group.h"
+#include "pipeline.h"
 
 static str
-LGRPsubgroup2(Client ctx, bat *ngid, bat *next, bat *nhis, const ptr *h, const bat *bid, const bat *gid)
+LGRPsubgroup2(Client ctx, bat *ngid, bat *next, bat *nhis, const bat *bid, const bat *gid)
 {
-	Pipeline *p = (Pipeline*)*h;
+	Pipeline *p = pipeline_get_thread_private_pipeline();
 	str res;
 
 	MT_lock_set(&p->p->l);
@@ -27,9 +28,9 @@ LGRPsubgroup2(Client ctx, bat *ngid, bat *next, bat *nhis, const ptr *h, const b
 }
 
 static str
-LGRPgroup3(Client ctx, bat *ngid, bat *next, const ptr *h, const bat *bid)
+LGRPgroup3(Client ctx, bat *ngid, bat *next, const bat *bid)
 {
-	Pipeline *p = (Pipeline*)*h;
+	Pipeline *p = pipeline_get_thread_private_pipeline();
 	str res;
 
 	MT_lock_set(&p->p->l);
@@ -39,9 +40,9 @@ LGRPgroup3(Client ctx, bat *ngid, bat *next, const ptr *h, const bat *bid)
 }
 
 static str
-LGRPgroup1(Client ctx, bat *ngid, bat *next, bat *nhis, const ptr *h, const bat *bid)
+LGRPgroup1(Client ctx, bat *ngid, bat *next, bat *nhis, const bat *bid)
 {
-	Pipeline *p = (Pipeline*)*h;
+	Pipeline *p = pipeline_get_thread_private_pipeline();
 	str res;
 
 	MT_lock_set(&p->p->l);
@@ -52,9 +53,9 @@ LGRPgroup1(Client ctx, bat *ngid, bat *next, bat *nhis, const ptr *h, const bat 
 
 #include "mel.h"
 mel_func pp_group_init_funcs[] = {
- command("lockedgroup", "group", LGRPgroup1, false, "", args(3,5, batarg("groups",oid),batarg("extents",oid),batarg("histo",lng),arg("pipeline", ptr),batargany("b",1))),
- command("lockedgroup", "group", LGRPgroup3, false, "", args(2,4, batarg("groups",oid),batarg("extents",oid),arg("pipeline", ptr),batargany("b",1))),
- command("lockedgroup", "subgroupdone", LGRPsubgroup2, false, "", args(3,6, batarg("groups",oid),batarg("extents",oid),batarg("histo",lng),arg("pipeline", ptr),batargany("b",1),batarg("g",oid))),
+ command("lockedgroup", "group", LGRPgroup1, false, "", args(3,4, batarg("groups",oid),batarg("extents",oid),batarg("histo",lng),batargany("b",1))),
+ command("lockedgroup", "group", LGRPgroup3, false, "", args(2,3, batarg("groups",oid),batarg("extents",oid),batargany("b",1))),
+ command("lockedgroup", "subgroupdone", LGRPsubgroup2, false, "", args(3,5, batarg("groups",oid),batarg("extents",oid),batarg("histo",lng),batargany("b",1),batarg("g",oid))),
  { .imp=NULL }
 };
 #include "mal_import.h"

@@ -36,6 +36,8 @@ target_sources(microbenchmark
   ${CMAKE_CURRENT_SOURCE_DIR}/bat5.h)
 
 target_include_directories(kernel
+  PRIVATE
+  ../mal
   PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
   $<INSTALL_INTERFACE:${INCLUDEDIR}/monetdb>)
