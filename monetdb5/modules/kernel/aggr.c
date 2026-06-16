@@ -1543,6 +1543,7 @@ static str
 AGGRcde(Client c, int *estimate, const bat *bid)
 {
 	(void) c;
+
 	BAT *b = BATdescriptor(*bid);
 	if (b == NULL)
 		throw(MAL, "AGGRcde", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
@@ -1550,13 +1551,7 @@ AGGRcde(Client c, int *estimate, const bat *bid)
 	struct canditer bci;
 	canditer_init(&bci, b, NULL);
 
-	if (VIEWtparent(b)) {
-		BAT *pb = BATdescriptor(VIEWtparent(b));
-		printf("cnt dist est prop %f\n", pb->unique_guess);
-		BBPreclaim(pb);
-	}
-
-	double est = BATsketch_estimator(b, &bi, &bci);
+	double est = bat_guess_uniques(b, &bi, &bci);
 
 	bat_iterator_end(&bi);
 	BBPreclaim(b);

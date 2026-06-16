@@ -11,14 +11,14 @@
 #include "gdk.h"
 
 #include <sys/random.h>
-/// #include "murmurhash3.h"
+// #include "murmurhash3.h"
 #define XXH_STATIC_LINKING_ONLY
 #define XXH_IMPLEMENTATION
 #include "xxhash.h"
 
-/// Helper function sigma as defined in
-/// "New cardinality estimation algorithms for HyperLogLog sketches"
-/// Otmar Ertl, arXiv:1702.01284
+// Helper function sigma as defined in
+// "New cardinality estimation algorithms for HyperLogLog sketches"
+// Otmar Ertl, arXiv:1702.01284
 static inline double
 sigma(double x)
 {
@@ -35,9 +35,9 @@ sigma(double x)
 	return z;
 }
 
-/// Helper function tau as defined in
-/// "New cardinality estimation algorithms for HyperLogLog sketches"
-/// Otmar Ertl, arXiv:1702.01284
+// Helper function tau as defined in
+// "New cardinality estimation algorithms for HyperLogLog sketches"
+// Otmar Ertl, arXiv:1702.01284
 static inline double
 tau(double x)
 {
@@ -59,11 +59,10 @@ tau(double x)
 /// Otmar Ertl, arXiv:1702.01284.
 /// Only difference is how the multiplicity array is computed
 double
-sketch_estimator(uint8_t cnt_sketch[BUCKETS][CLZ_BUCKETS])
+sketch_estimate(uint8_t cnt_sketch[BUCKETS][CLZ_BUCKETS])
 {
 	int8_t C[CLZ_BUCKETS + 1] = {0};
-	for (size_t bucket = 0; bucket < BUCKETS; bucket++)
-	{
+	for (size_t bucket = 0; bucket < BUCKETS; bucket++) {
 		int K = -1;
 		for (size_t clz = 0; clz < CLZ_BUCKETS; clz++)
 			if (cnt_sketch[bucket][clz] > 0)
@@ -73,9 +72,7 @@ sketch_estimator(uint8_t cnt_sketch[BUCKETS][CLZ_BUCKETS])
 	double t = tau(1.0 - ((double)C[CLZ_BUCKETS] / BUCKETS));
 	double z = (double)BUCKETS * t;
 	for (int k = CLZ_BUCKETS; k >= 1; k--)
-	{
 		z = 0.5 * (z + (double)C[k]);
-	}
 	double s = sigma((double)C[0] / BUCKETS);
 	z += (double)BUCKETS * s;
 	const double alpha = 0.7213475204444817;
@@ -83,13 +80,14 @@ sketch_estimator(uint8_t cnt_sketch[BUCKETS][CLZ_BUCKETS])
 }
 
 void
-sketch_populate(BAT* b, BATiter *bi, struct canditer *bci)
+sketch_populate(BAT* b, BATiter *bi, struct canditer *bci,
+		uint8_t cnting_sketch[BUCKETS][CLZ_BUCKETS])
 {
 	oid hseq = b->hseqbase;
 	/* uint64_t murmur3_out[2]; */
 	uint64_t hash;
 	uint8_t bucket;
-	/* uint8_t cnting_sketch[BUCKETS][CLZ_BUCKETS] = {0}; */
+
 	uint8_t clz;
 
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
@@ -129,45 +127,42 @@ sketch_populate(BAT* b, BATiter *bi, struct canditer *bci)
 		hash |= BITS_MASK;
 		clz = __builtin_clzll(hash);
 		assert(clz <= 58);
-		if (b->cnting_sketch[bucket][clz] <= 128) {
-			b->cnting_sketch[bucket][clz]++;
+		if (cnting_sketch[bucket][clz] <= 128) {
+			cnting_sketch[bucket][clz]++;
 		} else {
-			uint8_t k = b->cnting_sketch[bucket][clz] - 128;
+			uint8_t k = cnting_sketch[bucket][clz] - 128;
 			uint64_t rng;
 			getrandom(&rng, sizeof(rng), 0);
 			if ((rng & ((1ULL << k) - 1)) == 0)
-				b->cnting_sketch[bucket][clz]++;
+				cnting_sketch[bucket][clz]++;
 		}
 	}
 }
 
-void
-sketch_merge(BAT* b, BAT* n)
-{
-	MT_lock_set(&b->batIdxLock);
-	for (size_t i = 0; i < BUCKETS; i++)
-		for (size_t j = 0; j < CLZ_BUCKETS; j++)
-			if (n->cnting_sketch[i][j] > b->cnting_sketch[i][j])
-				b->cnting_sketch[i][j] = n->cnting_sketch[i][j];
-	b->unique_guess = sketch_estimator(b->cnting_sketch);
-	MT_lock_unset(&b->batIdxLock);
-}
+/* void */
+/* sketch_merge(BAT* b, BAT* n) */
+/* { */
+/* 	MT_lock_set(&b->batIdxLock); */
+/* 	for (size_t i = 0; i < BUCKETS; i++) */
+/* 		for (size_t j = 0; j < CLZ_BUCKETS; j++) */
+/* 			if (n->cnting_sketch[i][j] > b->cnting_sketch[i][j]) */
+/* 				b->cnting_sketch[i][j] = n->cnting_sketch[i][j]; */
+/* 	b->unique_guess = sketch_estimate(b->cnting_sketch); */
+/* 	MT_lock_unset(&b->batIdxLock); */
+/* } */
 
 double
-BATsketch_estimator(BAT *b, BATiter *bi, struct canditer *bci)
+bat_guess_uniques(BAT *b, BATiter *bi, struct canditer *bci)
 {
-	if (b->unique_guess)
-		return b->unique_guess;
-	BATiter nbi;
-	struct canditer nbci;
-	if (bi == NULL) {
-		nbi = bat_iterator(b);
-		canditer_init(&nbci, b, NULL);
-	}
-	sketch_populate(b, bi ? bi : &nbi, bci ? bci : &nbci);
-	double unique_guess = sketch_estimator(b->cnting_sketch);
-	b->unique_guess = unique_guess;
+	uint8_t cnting_sketch[BUCKETS][CLZ_BUCKETS] = {0};
+
+	BATiter nbi = bi ? *bi : bat_iterator(b);
+
+	sketch_populate(b, &nbi, bci, cnting_sketch);
+	double unique_guess = sketch_estimate(cnting_sketch);
+
 	if (bi == NULL)
 		bat_iterator_end(&nbi);
+
 	return unique_guess;
 }

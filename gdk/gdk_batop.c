@@ -1085,9 +1085,6 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 		hlocked = false;
 	}
 
-	sketch_populate(n, &ni, &ci);
-	sketch_merge(b, n);
-
   doreturn:
 	bat_iterator_end(&ni);
 	if (minbound)

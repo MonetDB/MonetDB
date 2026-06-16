@@ -177,7 +177,6 @@ BATcreatedesc(oid hseq, int tt, bool heapnames, role_t role, uint16_t width)
 		.tvheap = vh,
 		.creator_tid = MT_getpid(),
 		.qc = role == TRANSIENT ? MT_thread_get_qry_ctx() : NULL,
-		.cnting_sketch = {0},
 	};
 
 	if (bn->theap) {
