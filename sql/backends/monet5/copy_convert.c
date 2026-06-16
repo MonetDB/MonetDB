@@ -14,6 +14,7 @@
 #include "mal_exception.h"
 #include "mal_interpreter.h"
 #include "mal_pipelines.h"
+#include "pipeline.h"
 #include "str.h"
 
 #include "copy.h"
@@ -36,12 +37,12 @@ COPYparse_generic(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg = MAL_SUCCEED;
 	BAT *ret = NULL;
 	BAT *block = BATdescriptor(*getArgReference_bat(stk, pci, 1));
-	Pipeline *p = (Pipeline*)*getArgReference_ptr(stk, pci, 2);
-	BAT *indices = BATdescriptor(*getArgReference_bat(stk, pci, 3));
-	int tpe = getArgGDKType(mb, pci, 4);
-	bat rows = *getArgReference_bat(stk, pci, 5);
-	int col_no = *getArgReference_int(stk, pci, 6);
-	const char *col_name = *getArgReference_str(stk, pci, 7);
+	BAT *indices = BATdescriptor(*getArgReference_bat(stk, pci, 2));
+	int tpe = getArgGDKType(mb, pci, 3);
+	bat rows = *getArgReference_bat(stk, pci, 4);
+	int col_no = *getArgReference_int(stk, pci, 5);
+	const char *col_name = *getArgReference_str(stk, pci, 6);
+	Pipeline *p = pipeline_get_thread_private_pipeline();
 	BUN n;
 	void *buffer = NULL;
 	size_t buffer_len;
@@ -169,14 +170,14 @@ COPYparse_float(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg = MAL_SUCCEED;
 	BAT *ret = NULL;
 	BAT *block = BATdescriptor(*getArgReference_bat(stk, pci, 1));
-	Pipeline *p = (Pipeline*)*getArgReference_ptr(stk, pci, 2);
-	BAT *indices = BATdescriptor(*getArgReference_bat(stk, pci, 3));
-	int tpe = getArgGDKType(mb, pci, 4);
-	bat rows = *getArgReference_bat(stk, pci, 5);
-	int col_no = *getArgReference_int(stk, pci, 6);
-	const char *col_name = *getArgReference_str(stk, pci, 7);
-	str dec_sep = *getArgReference_str(stk, pci, 8);
-	str dec_skip = *getArgReference_str(stk, pci, 9);
+	BAT *indices = BATdescriptor(*getArgReference_bat(stk, pci, 2));
+	int tpe = getArgGDKType(mb, pci, 3);
+	bat rows = *getArgReference_bat(stk, pci, 4);
+	int col_no = *getArgReference_int(stk, pci, 5);
+	const char *col_name = *getArgReference_str(stk, pci, 6);
+	str dec_sep = *getArgReference_str(stk, pci, 7);
+	str dec_skip = *getArgReference_str(stk, pci, 8);
+	Pipeline *p = pipeline_get_thread_private_pipeline();
 	BUN n;
 	dbl localdbl;
 	void *buffer = &localdbl;
@@ -304,12 +305,12 @@ COPYparse_string(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void)mb;
 	bat *parsed_bat_id = getArgReference_bat(stk, pci, 0);
 	bat block_bat_id = *getArgReference_bat(stk, pci, 1);
-	Pipeline *p = (Pipeline*)*getArgReference_ptr(stk, pci, 2);
-	bat offsets_bat_id = *getArgReference_bat(stk, pci, 3);
-	int maxlen = *getArgReference_int(stk, pci, 4);
-	bat rows = *getArgReference_bat(stk, pci, 5);
-	int col_no = *getArgReference_int(stk, pci, 6);
-	str col_name = *getArgReference_str(stk, pci, 7);
+	bat offsets_bat_id = *getArgReference_bat(stk, pci, 2);
+	int maxlen = *getArgReference_int(stk, pci, 3);
+	bat rows = *getArgReference_bat(stk, pci, 4);
+	int col_no = *getArgReference_int(stk, pci, 5);
+	str col_name = *getArgReference_str(stk, pci, 6);
+	Pipeline *p = pipeline_get_thread_private_pipeline();
 
 	BAT *block_bat = BATdescriptor(block_bat_id);
 	BAT *offsets_bat = BATdescriptor(offsets_bat_id);

@@ -260,16 +260,17 @@ TMPL_SUFFIXED(COPYparse_decimal) (Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 	(void)mb;
 	bat *parsed_bat_id = getArgReference_bat(stk, pci, 0);
 	bat block_bat_id = *getArgReference_bat(stk, pci, 1);
-	Pipeline *p = (Pipeline*)*getArgReference_ptr(stk, pci, 2);
-	bat offsets_bat_id = *getArgReference_bat(stk, pci, 3);
-	int digits = *getArgReference_int(stk, pci, 4);
-	int scale = *getArgReference_int(stk, pci, 5);
-	// arg 6 is a dummy
-	bat rows = *getArgReference_bat(stk, pci, 7);
-	int col_no = *getArgReference_int(stk, pci, 8);
-	str col_name = *getArgReference_str(stk, pci, 9);
-	str dec_sep = *getArgReference_str(stk, pci, 10);
-	str dec_skip = *getArgReference_str(stk, pci, 11);
+	bat offsets_bat_id = *getArgReference_bat(stk, pci, 2);
+	int digits = *getArgReference_int(stk, pci, 3);
+	int scale = *getArgReference_int(stk, pci, 4);
+	// arg 5 is a dummy
+	bat rows = *getArgReference_bat(stk, pci, 6);
+	int col_no = *getArgReference_int(stk, pci, 7);
+	str col_name = *getArgReference_str(stk, pci, 8);
+	str dec_sep = *getArgReference_str(stk, pci, 9);
+	str dec_skip = *getArgReference_str(stk, pci, 10);
+
+	Pipeline *p = pipeline_get_thread_private_pipeline();
 
 	struct error_handling errors;
 	copy_init_error_handling(&errors, cntxt, 0, col_no, col_name, rows);
@@ -306,12 +307,13 @@ TMPL_SUFFIXED(COPYparse_integer) (Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 	(void)mb;
 	bat *parsed_bat_id = getArgReference_bat(stk, pci, 0);
 	bat block_bat_id = *getArgReference_bat(stk, pci, 1);
-	Pipeline *p = (Pipeline*)*getArgReference_ptr(stk, pci, 2);
-	bat offsets_bat_id = *getArgReference_bat(stk, pci, 3);
-	// TMPL_TYPE dummy = *getArgReference_TMPL_TYPE(stk, pci, 4);
-	bat rows = *getArgReference_bat(stk, pci, 5);
-	int col_no = *getArgReference_int(stk, pci, 6);
-	str col_name = *getArgReference_str(stk, pci, 7);
+	bat offsets_bat_id = *getArgReference_bat(stk, pci, 2);
+	// TMPL_TYPE dummy = *getArgReference_TMPL_TYPE(stk, pci, 3);
+	bat rows = *getArgReference_bat(stk, pci, 4);
+	int col_no = *getArgReference_int(stk, pci, 5);
+	str col_name = *getArgReference_str(stk, pci, 6);
+
+	Pipeline *p = pipeline_get_thread_private_pipeline();
 
 	struct error_handling errors;
 	errors.init = 0;

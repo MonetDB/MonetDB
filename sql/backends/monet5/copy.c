@@ -510,10 +510,10 @@ COPYsplitlines(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		.escape_pending = false,
 	};
 
-	assert(pci->argc == pci->retc + 3);
+	assert(pci->argc == pci->retc + 2);
 	bat block_bat_id = *getArgReference_bat(stk, pci, pci->retc + 0);
 	bat rows_bat_id = *getArgReference_bat(stk, pci, pci->retc + 1);
-	Pipeline *p = (Pipeline*)*getArgReference_ptr(stk, pci, pci->retc + 2);
+	Pipeline *p = pipeline_get_thread_private_pipeline();
 	reader *r = NULL;
 
 	copy_init_error_handling(&errors, cntxt, 0, -1, NULL, rows_bat_id);
@@ -813,65 +813,65 @@ static mel_func copy_init_funcs[] = {
 		batarg("", oid)
  )),
  pattern("copy", "splitlines", COPYsplitlines, false, "Find the fields of the individual columns",
-	args(1, 4,
+	args(1, 3,
 	batvararg("", int),
-	batarg("block", bte), batarg("rows", oid), arg("pipeline", ptr)
+	batarg("block", bte), batarg("rows", oid)
  )),
- pattern("copy", "parse_generic", COPYparse_generic, false, "Parse using GDK's atomFromStr", args(1, 8,
+ pattern("copy", "parse_generic", COPYparse_generic, false, "Parse using GDK's atomFromStr", args(1, 7,
 	batargany("", 1),
-	batarg("block", bte), arg("pipeline", ptr), batarg("offsets", int), argany("type", 1), batarg("rows", oid), arg("colno", int), arg("colname", str)
+	batarg("block", bte), batarg("offsets", int), argany("type", 1), batarg("rows", oid), arg("colno", int), arg("colname", str)
  )),
- pattern("copy", "parse_float", COPYparse_float, false, "Parse using GDK's atomFromStr, handle optional seperator and skip char", args(1, 10,
+ pattern("copy", "parse_float", COPYparse_float, false, "Parse using GDK's atomFromStr, handle optional seperator and skip char", args(1, 9,
 	batargany("", 1),
-	batarg("block", bte), arg("pipeline", ptr), batarg("offsets", int), argany("type", 1), batarg("rows", oid), arg("colno", int), arg("colname", str), arg("sep", str), arg("skip", str)
+	batarg("block", bte), batarg("offsets", int), argany("type", 1), batarg("rows", oid), arg("colno", int), arg("colname", str), arg("sep", str), arg("skip", str)
  )),
- pattern("copy", "parse_string", COPYparse_string, false, "Parse as a string with given max width", args(1, 8,
+ pattern("copy", "parse_string", COPYparse_string, false, "Parse as a string with given max width", args(1, 7,
 	batarg("", str),
-	batarg("block", bte), arg("pipeline", ptr), batarg("offsets", int), arg("maxlen", int), batarg("rows", oid), arg("colno", int), arg("colname", str)
+	batarg("block", bte), batarg("offsets", int), arg("maxlen", int), batarg("rows", oid), arg("colno", int), arg("colname", str)
  )),
- pattern("copy", "parse_decimal", COPYparse_decimal_bte, false, "Parse as a decimal", args(1, 12,
+ pattern("copy", "parse_decimal", COPYparse_decimal_bte, false, "Parse as a decimal", args(1, 11,
 	 batarg("", bte),
-	 batarg("block", bte), arg("pipeline", ptr), batarg("offsets", int), arg("digits", int), arg("scale", int), arg("type", bte), batarg("rows", oid), arg("colno", int), arg("colname", str), arg("dec_sep", str), arg("dec_skip", str)
+	 batarg("block", bte), batarg("offsets", int), arg("digits", int), arg("scale", int), arg("type", bte), batarg("rows", oid), arg("colno", int), arg("colname", str), arg("dec_sep", str), arg("dec_skip", str)
  )),
- pattern("copy", "parse_decimal", COPYparse_decimal_sht, false, "Parse as a decimal", args(1, 12,
+ pattern("copy", "parse_decimal", COPYparse_decimal_sht, false, "Parse as a decimal", args(1, 11,
 	 batarg("", sht),
-	 batarg("block", bte), arg("pipeline", ptr), batarg("offsets", int), arg("digits", int), arg("scale", int), arg("type", sht), batarg("rows", oid), arg("colno", int), arg("colname", str), arg("dec_sep", str), arg("dec_skip", str)
+	 batarg("block", bte), batarg("offsets", int), arg("digits", int), arg("scale", int), arg("type", sht), batarg("rows", oid), arg("colno", int), arg("colname", str), arg("dec_sep", str), arg("dec_skip", str)
  )),
- pattern("copy", "parse_decimal", COPYparse_decimal_int, false, "Parse as a decimal", args(1, 12,
+ pattern("copy", "parse_decimal", COPYparse_decimal_int, false, "Parse as a decimal", args(1, 11,
 	 batarg("", int),
-	 batarg("block", bte), arg("pipeline", ptr), batarg("offsets", int), arg("digits", int), arg("scale", int), arg("type", int), batarg("rows", oid), arg("colno", int), arg("colname", str), arg("dec_sep", str), arg("dec_skip", str)
+	 batarg("block", bte), batarg("offsets", int), arg("digits", int), arg("scale", int), arg("type", int), batarg("rows", oid), arg("colno", int), arg("colname", str), arg("dec_sep", str), arg("dec_skip", str)
  )),
- pattern("copy", "parse_decimal", COPYparse_decimal_lng, false, "Parse as a decimal", args(1, 12,
+ pattern("copy", "parse_decimal", COPYparse_decimal_lng, false, "Parse as a decimal", args(1, 11,
 	 batarg("", lng),
-	 batarg("block", bte), arg("pipeline", ptr), batarg("offsets", int), arg("digits", int), arg("scale", int), arg("type", lng), batarg("rows", oid), arg("colno", int), arg("colname", str), arg("dec_sep", str), arg("dec_skip", str)
+	 batarg("block", bte), batarg("offsets", int), arg("digits", int), arg("scale", int), arg("type", lng), batarg("rows", oid), arg("colno", int), arg("colname", str), arg("dec_sep", str), arg("dec_skip", str)
  )),
  #ifdef HAVE_HGE
- pattern("copy", "parse_decimal", COPYparse_decimal_hge, false, "Parse as a decimal", args(1, 12,
+ pattern("copy", "parse_decimal", COPYparse_decimal_hge, false, "Parse as a decimal", args(1, 11,
 	 batarg("", hge),
-	 batarg("block", bte), arg("pipeline", ptr), batarg("offsets", int), arg("digits", int), arg("scale", int), arg("type", hge), batarg("rows", oid), arg("colno", int), arg("colname", str), arg("dec_sep", str), arg("dec_skip", str)
+	 batarg("block", bte), batarg("offsets", int), arg("digits", int), arg("scale", int), arg("type", hge), batarg("rows", oid), arg("colno", int), arg("colname", str), arg("dec_sep", str), arg("dec_skip", str)
  )),
 #endif
 
- pattern("copy", "parse_integer", COPYparse_integer_bte, false, "Parse as an integer", args(1, 8,
+ pattern("copy", "parse_integer", COPYparse_integer_bte, false, "Parse as an integer", args(1, 7,
 	 batarg("", bte),
-	 batarg("block", bte), arg("pipeline", ptr), batarg("offsets", int), arg("type", bte), batarg("rows", oid), arg("colno", int), arg("colname", str)
+	 batarg("block", bte), batarg("offsets", int), arg("type", bte), batarg("rows", oid), arg("colno", int), arg("colname", str)
  )),
- pattern("copy", "parse_integer", COPYparse_integer_sht, false, "Parse as an integer", args(1, 8,
+ pattern("copy", "parse_integer", COPYparse_integer_sht, false, "Parse as an integer", args(1, 7,
 	 batarg("", sht),
-	 batarg("block", bte), arg("pipeline", ptr), batarg("offsets", int), arg("type", sht), batarg("rows", oid), arg("colno", int), arg("colname", str)
+	 batarg("block", bte), batarg("offsets", int), arg("type", sht), batarg("rows", oid), arg("colno", int), arg("colname", str)
  )),
- pattern("copy", "parse_integer", COPYparse_integer_int, false, "Parse as an integer", args(1, 8,
+ pattern("copy", "parse_integer", COPYparse_integer_int, false, "Parse as an integer", args(1, 7,
 	 batarg("", int),
-	 batarg("block", bte), arg("pipeline", ptr), batarg("offsets", int), arg("type", int), batarg("rows", oid), arg("colno", int), arg("colname", str)
+	 batarg("block", bte), batarg("offsets", int), arg("type", int), batarg("rows", oid), arg("colno", int), arg("colname", str)
  )),
- pattern("copy", "parse_integer", COPYparse_integer_lng, false, "Parse as an integer", args(1, 8,
+ pattern("copy", "parse_integer", COPYparse_integer_lng, false, "Parse as an integer", args(1, 7,
 	 batarg("", lng),
-	 batarg("block", bte), arg("pipeline", ptr), batarg("offsets", int), arg("type", lng), batarg("rows", oid), arg("colno", int), arg("colname", str)
+	 batarg("block", bte), batarg("offsets", int), arg("type", lng), batarg("rows", oid), arg("colno", int), arg("colname", str)
  )),
  #ifdef HAVE_HGE
- pattern("copy", "parse_integer", COPYparse_integer_hge, false, "Parse as an integer", args(1, 8,
+ pattern("copy", "parse_integer", COPYparse_integer_hge, false, "Parse as an integer", args(1, 7,
 	 batarg("", hge),
-	 batarg("block", bte), arg("pipeline", ptr), batarg("offsets", int), arg("type", hge), batarg("rows", oid), arg("colno", int), arg("colname", str)
+	 batarg("block", bte), batarg("offsets", int), arg("type", hge), batarg("rows", oid), arg("colno", int), arg("colname", str)
  )),
 #endif
 

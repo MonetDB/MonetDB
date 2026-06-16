@@ -45725,67 +45725,67 @@ COPYnew
 Create resource for shared reading from stream
 copy
 parse_decimal
-pattern copy.parse_decimal(X_0:bat[:bte], X_1:ptr, X_2:bat[:int], X_3:int, X_4:int, X_5:bte, X_6:bat[:oid], X_7:int, X_8:str, X_9:str, X_10:str):bat[:bte]
+pattern copy.parse_decimal(X_0:bat[:bte], X_1:bat[:int], X_2:int, X_3:int, X_4:bte, X_5:bat[:oid], X_6:int, X_7:str, X_8:str, X_9:str):bat[:bte]
 COPYparse_decimal_bte
 Parse as a decimal
 copy
 parse_decimal
-pattern copy.parse_decimal(X_0:bat[:bte], X_1:ptr, X_2:bat[:int], X_3:int, X_4:int, X_5:hge, X_6:bat[:oid], X_7:int, X_8:str, X_9:str, X_10:str):bat[:hge]
+pattern copy.parse_decimal(X_0:bat[:bte], X_1:bat[:int], X_2:int, X_3:int, X_4:hge, X_5:bat[:oid], X_6:int, X_7:str, X_8:str, X_9:str):bat[:hge]
 COPYparse_decimal_hge
 Parse as a decimal
 copy
 parse_decimal
-pattern copy.parse_decimal(X_0:bat[:bte], X_1:ptr, X_2:bat[:int], X_3:int, X_4:int, X_5:int, X_6:bat[:oid], X_7:int, X_8:str, X_9:str, X_10:str):bat[:int]
+pattern copy.parse_decimal(X_0:bat[:bte], X_1:bat[:int], X_2:int, X_3:int, X_4:int, X_5:bat[:oid], X_6:int, X_7:str, X_8:str, X_9:str):bat[:int]
 COPYparse_decimal_int
 Parse as a decimal
 copy
 parse_decimal
-pattern copy.parse_decimal(X_0:bat[:bte], X_1:ptr, X_2:bat[:int], X_3:int, X_4:int, X_5:lng, X_6:bat[:oid], X_7:int, X_8:str, X_9:str, X_10:str):bat[:lng]
+pattern copy.parse_decimal(X_0:bat[:bte], X_1:bat[:int], X_2:int, X_3:int, X_4:lng, X_5:bat[:oid], X_6:int, X_7:str, X_8:str, X_9:str):bat[:lng]
 COPYparse_decimal_lng
 Parse as a decimal
 copy
 parse_decimal
-pattern copy.parse_decimal(X_0:bat[:bte], X_1:ptr, X_2:bat[:int], X_3:int, X_4:int, X_5:sht, X_6:bat[:oid], X_7:int, X_8:str, X_9:str, X_10:str):bat[:sht]
+pattern copy.parse_decimal(X_0:bat[:bte], X_1:bat[:int], X_2:int, X_3:int, X_4:sht, X_5:bat[:oid], X_6:int, X_7:str, X_8:str, X_9:str):bat[:sht]
 COPYparse_decimal_sht
 Parse as a decimal
 copy
 parse_float
-pattern copy.parse_float(X_0:bat[:bte], X_1:ptr, X_2:bat[:int], X_3:any_1, X_4:bat[:oid], X_5:int, X_6:str, X_7:str, X_8:str):bat[:any_1]
+pattern copy.parse_float(X_0:bat[:bte], X_1:bat[:int], X_2:any_1, X_3:bat[:oid], X_4:int, X_5:str, X_6:str, X_7:str):bat[:any_1]
 COPYparse_float
 Parse using GDK's atomFromStr, handle optional seperator and skip char
 copy
 parse_generic
-pattern copy.parse_generic(X_0:bat[:bte], X_1:ptr, X_2:bat[:int], X_3:any_1, X_4:bat[:oid], X_5:int, X_6:str):bat[:any_1]
+pattern copy.parse_generic(X_0:bat[:bte], X_1:bat[:int], X_2:any_1, X_3:bat[:oid], X_4:int, X_5:str):bat[:any_1]
 COPYparse_generic
 Parse using GDK's atomFromStr
 copy
 parse_integer
-pattern copy.parse_integer(X_0:bat[:bte], X_1:ptr, X_2:bat[:int], X_3:bte, X_4:bat[:oid], X_5:int, X_6:str):bat[:bte]
+pattern copy.parse_integer(X_0:bat[:bte], X_1:bat[:int], X_2:bte, X_3:bat[:oid], X_4:int, X_5:str):bat[:bte]
 COPYparse_integer_bte
 Parse as an integer
 copy
 parse_integer
-pattern copy.parse_integer(X_0:bat[:bte], X_1:ptr, X_2:bat[:int], X_3:hge, X_4:bat[:oid], X_5:int, X_6:str):bat[:hge]
+pattern copy.parse_integer(X_0:bat[:bte], X_1:bat[:int], X_2:hge, X_3:bat[:oid], X_4:int, X_5:str):bat[:hge]
 COPYparse_integer_hge
 Parse as an integer
 copy
 parse_integer
-pattern copy.parse_integer(X_0:bat[:bte], X_1:ptr, X_2:bat[:int], X_3:int, X_4:bat[:oid], X_5:int, X_6:str):bat[:int]
+pattern copy.parse_integer(X_0:bat[:bte], X_1:bat[:int], X_2:int, X_3:bat[:oid], X_4:int, X_5:str):bat[:int]
 COPYparse_integer_int
 Parse as an integer
 copy
 parse_integer
-pattern copy.parse_integer(X_0:bat[:bte], X_1:ptr, X_2:bat[:int], X_3:lng, X_4:bat[:oid], X_5:int, X_6:str):bat[:lng]
+pattern copy.parse_integer(X_0:bat[:bte], X_1:bat[:int], X_2:lng, X_3:bat[:oid], X_4:int, X_5:str):bat[:lng]
 COPYparse_integer_lng
 Parse as an integer
 copy
 parse_integer
-pattern copy.parse_integer(X_0:bat[:bte], X_1:ptr, X_2:bat[:int], X_3:sht, X_4:bat[:oid], X_5:int, X_6:str):bat[:sht]
+pattern copy.parse_integer(X_0:bat[:bte], X_1:bat[:int], X_2:sht, X_3:bat[:oid], X_4:int, X_5:str):bat[:sht]
 COPYparse_integer_sht
 Parse as an integer
 copy
 parse_string
-pattern copy.parse_string(X_0:bat[:bte], X_1:ptr, X_2:bat[:int], X_3:int, X_4:bat[:oid], X_5:int, X_6:str):bat[:str]
+pattern copy.parse_string(X_0:bat[:bte], X_1:bat[:int], X_2:int, X_3:bat[:oid], X_4:int, X_5:str):bat[:str]
 COPYparse_string
 Parse as a string with given max width
 copy
@@ -45830,7 +45830,7 @@ COPYset_blocksize
 set the COPY block size
 copy
 splitlines
-pattern copy.splitlines(X_0:bat[:bte], X_1:bat[:oid], X_2:ptr):bat[:int]...
+pattern copy.splitlines(X_0:bat[:bte], X_1:bat[:oid]):bat[:int]...
 COPYsplitlines
 Find the fields of the individual columns
 csv

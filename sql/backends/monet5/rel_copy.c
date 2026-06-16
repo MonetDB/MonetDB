@@ -204,7 +204,6 @@ exp2bin_copyparpipe(backend *be, sql_exp *copyfrom)
 	}
 	q = pushArgument(mb, q, our_block);
 	q = pushArgument(mb, q, rows);
-	q = pushArgument(mb, q, be->pipeline);
 	pushInstruction(mb, q);
 
 	InstrPtr splitlines_instr = q;
@@ -226,7 +225,6 @@ exp2bin_copyparpipe(backend *be, sql_exp *copyfrom)
 		if (type->eclass == EC_MONTH || type->eclass == EC_NUM) {
 				q = newStmtArgs(mb, "copy", "parse_integer", 12);
 				q = pushArgument(mb, q, our_block);
-				q = pushArgument(mb, q, be->pipeline);
 				q = pushArgument(mb, q, var_indices);
 				q = pushNil(mb, q, localtype);
 				q = pushArgument(mb, q, rows);
@@ -240,7 +238,6 @@ exp2bin_copyparpipe(backend *be, sql_exp *copyfrom)
 					digits = 18;
 				q = newStmt(mb, "copy", "parse_decimal");
 				q = pushArgument(mb, q, our_block);
-				q = pushArgument(mb, q, be->pipeline);
 				q = pushArgument(mb, q, var_indices);
 				q = pushInt(mb, q, digits);
 				q = pushInt(mb, q, scale);
@@ -265,7 +262,6 @@ exp2bin_copyparpipe(backend *be, sql_exp *copyfrom)
 		} else if (type->eclass == EC_FLT) {
 				q = newStmt(mb, "copy", "parse_float");
 				q = pushArgument(mb, q, our_block);
-				q = pushArgument(mb, q, be->pipeline);
 				q = pushArgument(mb, q, var_indices);
 				q = pushNil(mb, q, localtype);
 				q = pushArgument(mb, q, rows);
@@ -278,7 +274,6 @@ exp2bin_copyparpipe(backend *be, sql_exp *copyfrom)
 		} else if (type->eclass == EC_STRING) {
 				q = newStmt(mb, "copy", "parse_string");
 				q = pushArgument(mb, q, our_block);
-				q = pushArgument(mb, q, be->pipeline);
 				q = pushArgument(mb, q, var_indices);
 				q = pushInt(mb, q, digits);
 				q = pushArgument(mb, q, rows);
@@ -288,7 +283,6 @@ exp2bin_copyparpipe(backend *be, sql_exp *copyfrom)
 		} else {
 				q = newStmt(mb, "copy", "parse_generic");
 				q = pushArgument(mb, q, our_block);
-				q = pushArgument(mb, q, be->pipeline);
 				q = pushArgument(mb, q, var_indices);
 				q = pushNil(mb, q, localtype);
 				q = pushArgument(mb, q, rows);
