@@ -367,6 +367,13 @@ typedef struct pipeline_io {
 
 #define ORDERIDXOFF		3
 
+#define HLL_BITS 6
+#define BITS_MASK   ((1ULL << HLL_BITS) - 1)
+#define MAX_CLZ     (64 - HLL_BITS)
+#define BUCKETS     (1U << HLL_BITS)
+#define CLZ_BUCKETS (MAX_CLZ + 1)
+#define HLLSEED     0xadc83b19ULL
+
 /* assert that atom width is power of 2, i.e., width == 1<<shift */
 #define assert_shift_width(shift,width) assert(((shift) == 0 && (width) == 0) || ((unsigned)1<<(shift)) == (unsigned)(width))
 
@@ -1426,6 +1433,11 @@ gdk_export BAT *STRMPfilter(BAT *b, BAT *s, const char *q, const bool keep_nils)
 gdk_export void STRMPdestroy(BAT *b);
 gdk_export bool BAThasstrimps(BAT *b);
 gdk_export gdk_return BATsetstrimps(BAT *b);
+
+gdk_export void sketch_populate(BAT* n, BATiter *ni, struct canditer *nci, uint8_t cnting_sketch[BUCKETS][CLZ_BUCKETS]);
+/* gdk_export void sketch_merge(BAT* b, BAT* n); */
+gdk_export double sketch_estimate(uint8_t cnt_sketch[BUCKETS][CLZ_BUCKETS]);
+gdk_export double bat_guess_uniques(BAT *b, BATiter *bi, struct canditer *bci);
 
 /* Rtree structure functions */
 #ifdef HAVE_RTREE

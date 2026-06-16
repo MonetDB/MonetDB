@@ -91,6 +91,9 @@ target_sources(bat
   gdk_tracer.c gdk_tracer.h
   gdk_rtree.c
   gdk_strimps.c
+  murmurhash3.h
+  xxhash.h
+  gdk_sketch.c
   PUBLIC
   ${gdk_public_headers})
 
