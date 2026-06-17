@@ -3635,8 +3635,7 @@ BATguess_uniques(BAT *b, struct canditer *ci)
 		canditer_init(&lci, b, NULL);
 		ci = &lci;
 	}
-	/* double uniques = guess_uniques(b, ci); */
-	double uniques = bat_guess_uniques(b, NULL, ci);
+	double uniques = guess_uniques(b, ci);
 	return uniques < 0 ? 0 : (BUN) uniques;
 }
 

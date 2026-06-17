@@ -203,8 +203,8 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						BBPunfix(unq->batCacheid);
 
 					/* Guess number of uniques if not entirely unique */
-					unique_est = (double)BATguess_uniques(b, NULL);
-
+					/* unique_est = (double)BATguess_uniques(b, NULL); */
+					unique_est = (double)bat_guess_uniques(b, NULL, NULL);
 
 					/* Collect min and max values */
 					mn = BATmin(b, NULL);

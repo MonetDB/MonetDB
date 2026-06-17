@@ -132,7 +132,7 @@ sketch_populate(BAT* b, BATiter *bi, struct canditer *bci,
 		} else {
 			uint8_t k = cnting_sketch[bucket][clz] - 128;
 			uint64_t rng;
-			getrandom(&rng, sizeof(rng), 0);
+			getentropy(&rng, sizeof(rng));
 			if ((rng & ((1ULL << k) - 1)) == 0)
 				cnting_sketch[bucket][clz]++;
 		}
@@ -157,8 +157,11 @@ bat_guess_uniques(BAT *b, BATiter *bi, struct canditer *bci)
 	uint8_t cnting_sketch[BUCKETS][CLZ_BUCKETS] = {0};
 
 	BATiter nbi = bi ? *bi : bat_iterator(b);
+	struct canditer nbci;
+	if (bci == NULL)
+		canditer_init(&nbci, b, NULL);
 
-	sketch_populate(b, &nbi, bci, cnting_sketch);
+	sketch_populate(b, &nbi, &nbci, cnting_sketch);
 	double unique_guess = sketch_estimate(cnting_sketch);
 
 	if (bi == NULL)
