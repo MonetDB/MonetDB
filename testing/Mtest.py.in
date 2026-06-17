@@ -65,6 +65,7 @@ tbre = re.compile(r'^(?P<bats>\d+) bats total')
 
 # collect errors if not verbose
 errors = []
+warnings = []
 
 
 # default is no color (these three functions may get redefined)
@@ -484,12 +485,16 @@ def ErrXit(TEXT):
 
 
 def Warn(TEXT):
+    msg = f'{THISFILE}  Warning:  {TEXT}'
+    if not verbose:
+        warnings.append(msg)
+        return
     try:
         print(end='', flush=True)
     except IOError:
         pass
     try:
-        print('\n%s  Warning:  %s\n' % (THISFILE, TEXT), file=sys.stderr, flush=True)
+        print(f'\n{msg}\n', file=sys.stderr, flush=True)
     except IOError:
         pass
 
@@ -1196,8 +1201,11 @@ def PerformDir(env, testdir, testlist, total_tests):
                     # restart server
                     inmem = single_in_memory
                     opts = []
+                    hasloadmod = False
                     for o in options:
-                        if o.startswith('embedded'):
+                        if o.startswith('--loadmodule'):
+                            hasloadmod = True
+                        elif o.startswith('embedded'):
                             inmem = False
                         if o == 'odbc_loader':
                             orig_odbcsysini = environ.pop('ODBCSYSINI', None)
@@ -1234,6 +1242,9 @@ def PerformDir(env, testdir, testlist, total_tests):
                                         dbg=env.get('DBG'))
                     pSrvr.LaunchIt(cwd=TSTTRGDIR, env=environ)
                     if pSrvr.port is None:
+                        if hasloadmod and 'LoaderException' in openutf8(os.path.join(TSTTRGDIR, 'SingleServer.err'), 'r').read():
+                            Warn(f"Missing module in '{TSTSRCDIR}`; skipping directory!")
+                            return TSTDIR, elem, max(FdOut, FdErr), interrupted
                         print('\nFailed to start server.\n')
                         FdOut = FdErr = F_FAIL
                         break
@@ -1572,6 +1583,12 @@ def GetBitsAndModsAndThreads(env):
     cmd.append(f'--dbpath={dbpath}')
     os.environ['TSTDB'] = TSTPREF
     cmd.extend(mserver5_opts)
+    if CONDITIONALS['HAVE_LIBPY3']:
+        cmd.extend(['--set', 'embedded_py=3'])
+    if CONDITIONALS['HAVE_LIBR']:
+        cmd.extend(['--set', 'embedded_r=true'])
+    if CONDITIONALS['HAVE_CUDF']:
+        cmd.extend(['--set', 'embedded_c=true'])
     if procdebug:
         print('GetBitsAndModsAndThreads: starting process "%s" (inpipe, outpipe, errpipe)\n' % '" "'.join(cmd))
     with process.Popen(cmd, stdin=process.PIPE, stdout=process.PIPE,
@@ -4304,6 +4321,15 @@ def main(argv):
 
         CONDITIONALS['ARCH_BITS32'] = (env['TST_BITS'] == '32bit')
 
+        if CONDITIONALS['HAVE_GEOM'] and 'geom' not in env['TST_MODS']:
+            CONDITIONALS['HAVE_GEOM'] = False
+        if CONDITIONALS['HAVE_LIBPY3'] and 'pyapi3' not in env['TST_MODS']:
+            CONDITIONALS['HAVE_LIBPY3'] = False
+        if CONDITIONALS['HAVE_LIBR'] and 'rapi' not in env['TST_MODS']:
+            CONDITIONALS['HAVE_LIBR'] = False
+        if CONDITIONALS['HAVE_CUDF'] and 'capi' not in env['TST_MODS']:
+            CONDITIONALS['HAVE_CUDF'] = False
+
         if procdebug:
             for k in sorted(os.environ):
                 print(f'{k}={os.environ[k]}')
@@ -4382,6 +4408,8 @@ def main(argv):
                         tp = None
             if not verbose:
                 print()
+                for msg in warnings:
+                    print(msg)
                 for (err, msg) in errors:
                     if err in ('ERROR', 'MISSING'):
                         prred(err)
