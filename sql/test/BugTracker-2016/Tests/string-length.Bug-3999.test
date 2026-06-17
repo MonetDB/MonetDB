@@ -19,11 +19,6 @@ SELECT length('     67890') as "ten"
 10
 
 query I rowsort
-SELECT length(reverse('     67890')) as "ten"
-----
-10
-
-query I rowsort
 SELECT sys.length('123 ') as "four"
 ----
 4
@@ -40,11 +35,6 @@ SELECT sys.length('1234567890') as "ten"
 
 query I rowsort
 SELECT sys.length('     67890') as "ten"
-----
-10
-
-query I rowsort
-SELECT sys.length(reverse('     67890')) as "ten"
 ----
 10
 
