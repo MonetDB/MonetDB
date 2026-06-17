@@ -249,6 +249,11 @@ command aggr.cardinality(X_0:bat[:any_2]):lng
 ALGcard
 Return the cardinality of the BAT tail values.
 aggr
+cde
+command aggr.cde(X_0:bat[:any_1]):int
+AGGRcde
+(empty)
+aggr
 cnull
 command aggr.cnull(X_0:bat[:oid], X_1:bat[:bit], X_2:ptr, X_3:bat[:oid]):bat[:bit]
 LALGcnull

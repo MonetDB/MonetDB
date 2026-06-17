@@ -2584,23 +2584,26 @@ rel_remove_const_aggr(visitor *v, sql_rel *rel)
 				if (list_empty(se))
 					continue;
 
-				int sum = strcmp(j->base.name, "sum") == 0,
-					prd = strcmp(j->base.name, "prod") == 0,
-					cnt = strcmp(j->base.name, "count") == 0;
-
-				//for (node *m = se->h; m; m = m->next) {
+				for (node *m = se->h; m; m = m->next) {
 					sql_exp *w = se->h->data;
+					if (w->type != e_atom || w->card != CARD_ATOM)
+						continue;
+				}
+				sql_exp *w = se->h->data;
 
-					if (w->type == e_atom && w->card == CARD_ATOM) {
-						atom *wa = w->l;
+				if (w->type == e_atom && w->card == CARD_ATOM) {
+					int sum = strcmp(j->base.name, "sum") == 0,
+						prd = strcmp(j->base.name, "prod") == 0,
+						cnt = strcmp(j->base.name, "count") == 0;
 
-						if ((sum && !(wa->isnull || atom_is_zero(wa))) ||
+					atom *wa = w->l;
+
+					if ((sum && !(wa->isnull || atom_is_zero(wa))) ||
 							(prd && !(wa->isnull || atom_is_one(wa))) ||
 							(cnt && !wa->isnull))
-							continue;
-						needed = true;
-					}
-				//}
+						continue;
+					needed = true;
+				}
 			}
 		}
 		if (!needed)
