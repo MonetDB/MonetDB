@@ -2487,8 +2487,9 @@ rel_reduce_groupby_exps(visitor *v, sql_rel *rel)
 			}
 			rel->r = ngbe;
 			if (!list_empty(dgbe)) {
-				/* use atom's directly in the aggr expr list */
-
+				list *nexps = new_exp_list(v->sql->sa);
+				list *naggrs = new_exp_list(v->sql->sa);
+				/* use atom's directly in the projection list */
 				for (n = rel->exps->h; n; n = n->next) {
 					sql_exp *e = n->data, *ne = NULL;
 
@@ -2498,12 +2499,18 @@ rel_reduce_groupby_exps(visitor *v, sql_rel *rel)
 						if (ne) {
 							ne = exp_copy(v->sql, ne);
 							exp_prop_alias(v->sql->sa, ne, e);
-							e = ne;
+							append(nexps, ne);
+						} else {
+							append(naggrs, e);
+							append(nexps, exp_ref(v->sql, e));
 						}
+					} else {
+						append(naggrs, e);
+						append(nexps, exp_ref(v->sql, e));
 					}
-					n->data = e;
 				}
-				list_hash_clear(rel->exps);
+				rel->exps = naggrs;
+				rel = rel_project(v->sql->sa, rel, nexps);
 				v->changes++;
 			}
 		}
@@ -2557,10 +2564,54 @@ rel_remove_const_aggr(visitor *v, sql_rel *rel)
 		 *   aggr(const) -> cast(const as restype)
 		 */
 
+		bool needed = false;
+		for(node *n = exps->h; n && !needed; n = n->next) {
+			sql_exp *e = n->data;
+
+			if(e->type != e_aggr)
+				continue;
+			sql_func *j = ((sql_subfunc *)e->f)->func;
+
+			/* some aggregates with const values can only be eliminated
+			 * under certain circumstances e.g.
+			 *   sum(NULL)   -> NULL, sum(0)  -> 0
+			 *   prod(NULL)  -> NULL, prod(1) -> 1
+			 *   count(NULL) -> 0
+			 */
+			if (!j->s && j->system == 1) {
+				list *se = e->l;
+
+				if (list_empty(se))
+					continue;
+
+				int sum = strcmp(j->base.name, "sum") == 0,
+					prd = strcmp(j->base.name, "prod") == 0,
+					cnt = strcmp(j->base.name, "count") == 0;
+
+				//for (node *m = se->h; m; m = m->next) {
+					sql_exp *w = se->h->data;
+
+					if (w->type == e_atom && w->card == CARD_ATOM) {
+						atom *wa = w->l;
+
+						if ((sum && !(wa->isnull || atom_is_zero(wa))) ||
+							(prd && !(wa->isnull || atom_is_one(wa))) ||
+							(cnt && !wa->isnull))
+							continue;
+						needed = true;
+					}
+				//}
+			}
+		}
+		if (!needed)
+			return rel;
+		list *nexps = sa_list(v->sql->sa), *naggrs = sa_list(v->sql->sa);
 		for(node *n = exps->h; n; n = n->next) {
 			sql_exp *e = n->data;
 
 			if(e->type != e_aggr) {
+				append(naggrs, e);
+				append(nexps, exp_ref(v->sql, e));
 				continue;
 			}
 
@@ -2572,50 +2623,62 @@ rel_remove_const_aggr(visitor *v, sql_rel *rel)
 			 *   prod(NULL)  -> NULL, prod(1) -> 1
 			 *   count(NULL) -> 0
 			 */
-			int sum = strcmp(j->base.name, "sum") == 0,
-				prd = strcmp(j->base.name, "prod") == 0,
-				cnt = strcmp(j->base.name, "count") == 0;
-
 			if (!j->s && j->system == 1) {
 				list *se = e->l;
 
-				if(se == NULL) {
+				if (list_empty(se)) {
+					append(naggrs, e);
+					append(nexps, exp_ref(v->sql, e));
 					continue;
 				}
 
-				for (node *m = se->h; m; m = m->next) {
-					sql_exp *w = m->data;
+				int sum = strcmp(j->base.name, "sum") == 0,
+					prd = strcmp(j->base.name, "prod") == 0,
+					cnt = strcmp(j->base.name, "count") == 0;
 
-					if (w->type == e_atom && w->card == CARD_ATOM) {
-						atom *wa = w->l;
+				bool all_const = true;
+				for (node *m = se->h; m && all_const; m = m->next) {
+					sql_exp *w = se->h->data;
+					if (w->type != e_atom || w->card != CARD_ATOM)
+						all_const = false;
+				}
+				if (!all_const) {
+					append(naggrs, e);
+					append(nexps, exp_ref(v->sql, e));
+					continue;
+				}
+				sql_exp *w = se->h->data;
 
-						if (sum && !(wa->isnull || atom_is_zero(wa)))
-							continue;
+				if (w->type == e_atom && w->card == CARD_ATOM) {
+					atom *wa = w->l;
 
-						if (prd && !(wa->isnull || atom_is_one(wa)))
-							continue;
-
-						if (cnt) {
-							if (wa->isnull) {
-								list_remove_node(se, NULL, m);
-
-								w=exp_atom_lng(v->sql->sa, 0);
-								list_append(se, w);
-							} else {
-								continue;
-							}
-						}
-
-						exp_setalias(w, e->alias.label, e->alias.rname, e->alias.name);
-						w = exp_check_type(v->sql, exp_subtype(e), NULL, w, type_equal);
-
-						n->data = w;
-						v->changes++;
-					} else {
+					if ((sum && !(wa->isnull || atom_is_zero(wa))) ||
+							(prd && !(wa->isnull || atom_is_one(wa))) ||
+							(cnt && !wa->isnull)) {
+						append(naggrs, e);
+						append(nexps, exp_ref(v->sql, e));
 						break;
 					}
+					if (cnt)
+						w=exp_atom_lng(v->sql->sa, 0);
+
+					exp_setalias(w, e->alias.label, e->alias.rname, e->alias.name);
+					w = exp_check_type(v->sql, exp_subtype(e), NULL, w, type_equal);
+
+					append(nexps, w);
+					v->changes++;
+				} else {
+					append(naggrs, e);
+					append(nexps, exp_ref(v->sql, e));
 				}
+			} else {
+				append(naggrs, e);
+				append(nexps, exp_ref(v->sql, e));
 			}
+		}
+		if (naggrs) {
+			rel->exps = naggrs;
+			rel = rel_project(v->sql->sa, rel, nexps);
 		}
 	}
 
