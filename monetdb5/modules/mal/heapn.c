@@ -963,6 +963,7 @@ heap_destroy( heapn *h)
 	if (h->grouped) {
 		BBPreclaim(h->grpb);
 		BBPreclaim(h->usedb);
+		BBPreclaim(h->fullb);
 	}
 	GDKfree(h);
 }
@@ -1811,7 +1812,7 @@ HEAPtopn(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr pci)
 			for(i = 0; i<offset; i++)			\
 				(void) gheap_del_##T(hp, g);	\
 			j += hp->useda[g];					\
-			for(; hp->useda[g]; i++) {			\
+			for(i = 0; hp->useda[g]; i++) {			\
 				rp[j-(i+1)] = pos[0];			\
 				(void) gheap_del_##T(hp, g);	\
 			}									\
