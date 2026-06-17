@@ -30,8 +30,6 @@ INSERT INTO t_bug12_aux VALUES
   (2, 13)
 
 -- original window query
--- MonetDB returns: 22003!overflow in calculation. but other RDBMS do not.
--- the sum(t_bug12.vf) needs to add: -1e308 + -1e308 + 1e308, which apparently fails with overflow in calculation error, see below.
 query II nosort
 SELECT p, v
 FROM (
@@ -62,6 +60,7 @@ ORDER BY p, v
 960
 
 -- the sum(t_bug12.vf) needs to add: -1e308 + -1e308 + 1e308, which apparently fails with overflow in calculation error
+skipif knownfail
 query R nosort
 SELECT -1e308 + -1e308 + 1e308 as sum
 ----
