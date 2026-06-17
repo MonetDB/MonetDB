@@ -1545,6 +1545,17 @@ error:
 		Type *ky = Tloc(k, 0); \
 		Type *vals = ht->vals; \
 		\
+		if (!match) { \
+			gid k = (gid)_hash_##Type(Type##_nil)&ht->mask; \
+			gid slot = ht->gids[k]; \
+			while (slot && !is_##Type##_nil(vals[slot])) { \
+				k++; \
+				k &= ht->mask; \
+				slot = ht->gids[k]; \
+			} \
+			if (slot) \
+				break; \
+		} \
 		TIMEOUT_LOOP_IDX_DECL(i, keycnt, qry_ctx) { \
 			if (!(*semantics) && is_##Type##_nil(ky[i])) { \
 				if (!match && empty) { \
