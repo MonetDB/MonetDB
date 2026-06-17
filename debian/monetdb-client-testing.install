@@ -17,5 +17,6 @@ debian/tmp/usr/bin/smack00 usr/bin
 debian/tmp/usr/bin/smack01 usr/bin
 debian/tmp/usr/bin/sqlsample.php usr/bin
 debian/tmp/usr/bin/sqlsample.pl usr/bin
+debian/tmp/usr/bin/sqlsample.py usr/bin
 debian/tmp/usr/bin/streamcat usr/bin
 debian/tmp/usr/bin/testcondvar usr/bin
