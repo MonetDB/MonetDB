@@ -13,11 +13,12 @@
 #include "mal_exception.h"
 #include "mal_pipelines.h"
 #include "aggr.h"
+#include "pipeline.h"
 
 static str
-LAGGRsum3_lng(Client ctx, bat *retval, const ptr *h, const bat *bid, const bat *gid, const bat *eid)
+LAGGRsum3_lng(Client ctx, bat *retval, const bat *bid, const bat *gid, const bat *eid)
 {
-	Pipeline *p = (Pipeline*)*h;
+	Pipeline *p = pipeline_get_thread_private_pipeline();
 	str res;
 
 	MT_lock_set(&p->p->l);
@@ -28,9 +29,9 @@ LAGGRsum3_lng(Client ctx, bat *retval, const ptr *h, const bat *bid, const bat *
 
 #ifdef HAVE_HGE
 static str
-LAGGRsum3_hge(Client ctx, bat *retval, const ptr *h, const bat *bid, const bat *gid, const bat *eid)
+LAGGRsum3_hge(Client ctx, bat *retval, const bat *bid, const bat *gid, const bat *eid)
 {
-	Pipeline *p = (Pipeline*)*h;
+	Pipeline *p = pipeline_get_thread_private_pipeline();
 	str res;
 
 	MT_lock_set(&p->p->l);
@@ -42,9 +43,9 @@ LAGGRsum3_hge(Client ctx, bat *retval, const ptr *h, const bat *bid, const bat *
 
 #include "mel.h"
 mel_func pp_aggr_init_funcs[] = {
- command("lockedaggr", "sum", LAGGRsum3_lng, false, "Grouped tail sum on lng", args(1,5, batarg("",lng),arg("pipeline", ptr),batarg("b",lng),batarg("g",oid),batargany("e",1))),
+ command("lockedaggr", "sum", LAGGRsum3_lng, false, "Grouped tail sum on lng", args(1,4, batarg("",lng),batarg("b",lng),batarg("g",oid),batargany("e",1))),
 #ifdef HAVE_HGE
- command("lockedaggr", "sum", LAGGRsum3_hge, false, "Grouped tail sum on hge", args(1,5, batarg("",hge),arg("pipeline", ptr),batarg("b",hge),batarg("g",oid),batargany("e",1))),
+ command("lockedaggr", "sum", LAGGRsum3_hge, false, "Grouped tail sum on hge", args(1,4, batarg("",hge),batarg("b",hge),batarg("g",oid),batargany("e",1))),
 #endif
  { .imp=NULL }
 };

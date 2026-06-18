@@ -36495,57 +36495,57 @@ MALpipelines
 The current guarded block in Parallel Pipelines
 lockedaggr
 avg
-unsafe pattern lockedaggr.avg(X_0:ptr, X_1:any_1, X_2:lng) (X_3:bat[:any_1], X_4:bat[:lng])
+unsafe pattern lockedaggr.avg(X_0:any_1, X_1:lng) (X_2:bat[:any_1], X_3:bat[:lng])
 LOCKEDAGGRavg
 avg values into bat (bat has value, update), using the bat lock
 lockedaggr
 avg
-unsafe pattern lockedaggr.avg(X_0:ptr, X_1:any_1, X_2:lng, X_3:lng) (X_4:bat[:any_1], X_5:bat[:lng], X_6:bat[:lng])
+unsafe pattern lockedaggr.avg(X_0:any_1, X_1:lng, X_2:lng) (X_3:bat[:any_1], X_4:bat[:lng], X_5:bat[:lng])
 LOCKEDAGGRavg
 avg values into bat (bat has value, update), using the bat lock
 lockedaggr
 avg
-unsafe pattern lockedaggr.avg(X_0:ptr, X_1:dbl, X_2:dbl, X_3:lng) (X_4:bat[:dbl], X_5:bat[:dbl], X_6:bat[:lng])
+unsafe pattern lockedaggr.avg(X_0:dbl, X_1:dbl, X_2:lng) (X_3:bat[:dbl], X_4:bat[:dbl], X_5:bat[:lng])
 LOCKEDAGGRavg
 Kahan/neumaier summation, using the bat lock
 lockedaggr
 max
-unsafe pattern lockedaggr.max(X_0:ptr, X_1:any_1):bat[:any_1]
+unsafe pattern lockedaggr.max(X_0:any_1):bat[:any_1]
 LOCKEDAGGRmax
 max values into bat (bat has value, update), using the bat lock
 lockedaggr
 min
-unsafe pattern lockedaggr.min(X_0:ptr, X_1:any_1):bat[:any_1]
+unsafe pattern lockedaggr.min(X_0:any_1):bat[:any_1]
 LOCKEDAGGRmin
 min values into bat (bat has value, update), using the bat lock
 lockedaggr
 null
-unsafe command lockedaggr.null(X_0:ptr, X_1:bit):bat[:bit]
+unsafe command lockedaggr.null(X_0:bit):bat[:bit]
 LOCKEDAGGRnull
 Returns true or false if the input contains a NULL or not, nil if the input is empty..
 lockedaggr
 prod
-unsafe pattern lockedaggr.prod(X_0:ptr, X_1:any_2):bat[:any_1]
+unsafe pattern lockedaggr.prod(X_0:any_2):bat[:any_1]
 LOCKEDAGGRprod
 product of all values, using the bat lock
 lockedaggr
 sum
-command lockedaggr.sum(X_0:ptr, X_1:bat[:lng], X_2:bat[:oid], X_3:bat[:any_1]):bat[:lng]
+command lockedaggr.sum(X_0:bat[:lng], X_1:bat[:oid], X_2:bat[:any_1]):bat[:lng]
 LAGGRsum3_lng
 Grouped tail sum on lng
 lockedaggr
 sum
-unsafe pattern lockedaggr.sum(X_0:ptr, X_1:dbl, X_2:dbl, X_3:lng) (X_4:bat[:dbl], X_5:bat[:dbl], X_6:bat[:lng])
+unsafe pattern lockedaggr.sum(X_0:dbl, X_1:dbl, X_2:lng) (X_3:bat[:dbl], X_4:bat[:dbl], X_5:bat[:lng])
 LOCKEDAGGRsum
 Kahan/neumaier summation, using the bat lock
 lockedaggr
 sum
-unsafe pattern lockedaggr.sum(X_0:ptr, X_1:flt, X_2:flt, X_3:lng) (X_4:bat[:flt], X_5:bat[:flt], X_6:bat[:lng])
+unsafe pattern lockedaggr.sum(X_0:flt, X_1:flt, X_2:lng) (X_3:bat[:flt], X_4:bat[:flt], X_5:bat[:lng])
 LOCKEDAGGRsum
 Kahan/neumaier summation, using the bat lock
 lockedaggr
 sum
-unsafe pattern lockedaggr.sum(X_0:ptr, X_1:any_1):bat[:any_1]
+unsafe pattern lockedaggr.sum(X_0:any_1):bat[:any_1]
 LOCKEDAGGRsum1
 sum values into bat (bat has value, update), using the bat lock
 lockedalgebra

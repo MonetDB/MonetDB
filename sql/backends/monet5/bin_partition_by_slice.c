@@ -542,7 +542,6 @@ rel_groupby_combine_pp(backend *be, sql_rel *rel, list *gbstmts, stmt *grp, stmt
 				q = pushReturn(be->mb, q, *(int*)m->data);
 				q->inout = 0;
 			}
-			q = pushArgument(be->mb, q, getArg(pp->q, 2));
 			q = pushArgument(be->mb, q, i->nr);
 			if (avg || sum) { /* remainder (or compensation) and count */
 				q = pushArgument(be->mb, q, getArg(i->q, 1));
