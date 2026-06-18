@@ -367,7 +367,7 @@ stmt_limit_partitioned(backend *be, stmt *col, stmt *piv, stmt *gid, stmt *offse
 	len = getDestVar(q);
 	pushInstruction(mb, q);
 
-	q = newStmtArgs(mb, algebraRef, subsliceRef, 8);
+	q = newStmtArgs(mb, algebraRef, subsliceRef, 6);
 	/* returns gid, rid, hid */
 	q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any)); /* rid */
 	q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any)); /* hid for topn/heap sink */
@@ -375,7 +375,6 @@ stmt_limit_partitioned(backend *be, stmt *col, stmt *piv, stmt *gid, stmt *offse
 	q = pushArgument(mb, q, c);
 	q = pushArgument(mb, q, offset->nr);
 	q = pushArgument(mb, q, len);
-	q = pushArgument(mb, q, be->pipeline);
 	if (q == NULL)
 		return NULL;
 	l = getDestVar(q);

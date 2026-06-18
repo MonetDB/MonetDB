@@ -43,11 +43,11 @@ topn_create(void)
 }
 
 static str
-LALGsubslice(Client ctx, bat *gid, bat *rid, bat *tid, bat *bid, /*bat *sid,*/ lng *start, lng *end, const ptr *H)
+LALGsubslice(Client ctx, bat *gid, bat *rid, bat *tid, bat *bid, /*bat *sid,*/ lng *start, lng *end)
 {
 	(void)ctx;
 	str msg = MAL_SUCCEED;
-	Pipeline *p = (Pipeline*)*H;
+	Pipeline *p = pipeline_get_thread_private_pipeline();
 	BAT *g = NULL, *r = NULL, *t = NULL, *b = NULL;
  	BUN s = *start, e = *end;
 	int fb = 1, locked = 0;
@@ -216,7 +216,7 @@ SLICERno_slices(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 #include "mel.h"
 static mel_func pp_slicer_init_funcs[] = {
- command("algebra", "subslice", LALGsubslice, false, "Returns the slice of a pipelined result", args(3,7, batarg("gid", oid), batarg("rid", oid), batarg("tid", oid), batargany("b", 1), arg("start", lng), arg("end", lng), arg("pipeline", ptr))),
+ command("algebra", "subslice", LALGsubslice, false, "Returns the slice of a pipelined result", args(3,6, batarg("gid", oid), batarg("rid", oid), batarg("tid", oid), batargany("b", 1), arg("start", lng), arg("end", lng))),
  pattern("slicer", "nth_slice", SLICERnth_slice, false, "Return the n-th slice, of SLICE_SIZE rrows, from the input BAT", args(1,3, batargany("slice",1), batargany("b",1), arg("nr",int))),
  pattern("slicer", "no_slices", SLICERno_slices, false, "Returns the number of slices into which the input BAT is to be sliced", args(1,2, arg("slices", int), batargany("b",1))),
  { .imp=NULL }

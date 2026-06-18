@@ -3885,7 +3885,7 @@ ALGsubslice_lng
 Return the oids of the slice with the BUNs at position x till y.
 algebra
 subslice
-command algebra.subslice(X_0:bat[:any_1], X_1:lng, X_2:lng, X_3:ptr) (X_4:bat[:oid], X_5:bat[:oid], X_6:bat[:oid])
+command algebra.subslice(X_0:bat[:any_1], X_1:lng, X_2:lng) (X_3:bat[:oid], X_4:bat[:oid], X_5:bat[:oid])
 LALGsubslice
 Returns the slice of a pipelined result
 algebra
