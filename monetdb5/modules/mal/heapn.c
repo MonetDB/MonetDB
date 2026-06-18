@@ -1975,16 +1975,6 @@ static mel_func heapn_init_funcs[] = {
 				arg("pipeline", ptr)
 				)
 			),
-	pattern("heapn", "topn", HEAPtopn, false, "Return table with heap based topn, and positions and candidate for any projections (without order by, with groups)", args(3,6,
-				batarg("pos", oid),
-				batarg("sel", oid),
-				/*sharedbatarg("rgrp", oid),*/
-				sharedbatarg("heap", oid),
-				arg("n",lng),
-				arg("pipeline", ptr),
-				batarg("grp", oid)
-				)
-			),
 	pattern("heapn", "topn", HEAPtopn, false, "Return table with heap based topn, and positions and candidate for any projections", args(3,6,
 				batarg("pos", oid),
 				batarg("sel", oid),
@@ -1992,20 +1982,6 @@ static mel_func heapn_init_funcs[] = {
 				//sharedbatarg("heap", oid),
 				arg("n",lng),
 				arg("pipeline", ptr),
-				vararg("in", any)/*,
-				vararg("min", bit),
-				vararg("nulls_last", bit)
-				*/
-				)
-			),
-	pattern("heapn", "topn", HEAPtopn, false, "Return table with heap based topn, and positions and candidate for any projections", args(3,6,
-				batarg("pos", oid),
-				batarg("sel", oid),
-				sharedbatvararg("res", any),
-				//sharedbatarg("heap", oid),
-				arg("n",lng),
-				arg("pipeline", ptr),
-				//batarg("grp", oid),
 				vararg("in", any)/*,
 				vararg("min", bit),
 				vararg("nulls_last", bit)
