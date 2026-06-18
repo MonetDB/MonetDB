@@ -415,7 +415,8 @@ rel_exps_mark_used(allocator *sa, sql_rel *rel, sql_rel *subrel)
 			sql_exp *e = n->data;
 
 			e->used = 1;
-			exp_mark_used(rel->l, e, -1);
+			if (!exp_mark_used(rel->l, e, -1))
+				exp_mark_used(rel, e, -1);
 		}
 	}
 	if (rel->attr) {

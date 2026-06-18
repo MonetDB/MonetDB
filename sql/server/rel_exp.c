@@ -813,6 +813,8 @@ exp_ref_by_label(allocator *sa, sql_exp *o)
 		*/
 	if (is_intern(o))
 		set_intern(e);
+	if (is_freevar(o) && o->alias.label == o->nid /* only original IU */)
+		set_freevar(e, is_freevar(o)-1);
 	return exp_propagate(sa, e, o);
 }
 
@@ -1912,8 +1914,9 @@ rel_find_exp_and_corresponding_rel(sql_rel *rel, sql_exp *e, bool subexp, sql_re
 		case op_basetable:
 			break;
 		case op_munion:
-			for (node* n = ((list*)rel->l)->h; n && !ne; n = n->next)
-				ne = rel_find_exp_and_corresponding_rel(n->data, e, subexp, res, under_join);
+			if (!is_project(rel->op) && rel->l)
+				for (node* n = ((list*)rel->l)->h; n && !ne; n = n->next)
+					ne = rel_find_exp_and_corresponding_rel(n->data, e, subexp, res, under_join);
 			break;
 		default:
 			if (!is_project(rel->op) && rel->l)
@@ -2106,6 +2109,14 @@ exp_is_false(sql_exp *e)
 		return atom_is_false(e->l);
 	else if (e->type == e_cmp)
 		return exp_cmp_exp_is_false(e);
+	return 0;
+}
+
+int
+exp_is_one(sql_exp *e)
+{
+	if (e->type == e_atom && e->l)
+		return atom_is_one(e->l);
 	return 0;
 }
 
@@ -4216,6 +4227,8 @@ free_exp(allocator *sa, sql_exp *e)
 					e->f = NULL;
 				}
 			}
+			if (e->flag & PSM_REL)
+				rel_destroy(NULL, e->l);
 			break;
 		case e_column:
 			break;

@@ -120,10 +120,53 @@ bind_split_select(visitor *v, global_props *gp)
  * join (L, Distinct Project(join(L,P) [ p.key == l.lkey]) [p.key]) [ p.key == l.lkey]
  * =>
  * join(L, P) [p.key==l.lkey]
+ *
+ * join(project(Ref 1 distinc) [ x as xx ], groupby( join( project(Ref 1 distinct) [ x as yy ], ZZ ) ) [ yy ] [ yy , ...]) [ xx == yy ]
+ * =>
+ * project(groupby( join( project(Ref 1 distinct) [ x as yy ], ZZ ) ) [ yy ] [ yy, .. ] ) [ yy as xx, .. ]
  */
 static sql_rel *
 rel_remove_redundant_join_(visitor *v, sql_rel *rel)
 {
+	if (rel->op == op_join && !list_empty(rel->exps)) {
+		sql_rel *l = rel->l, *gb = rel->r;
+		if (l->l && is_project(l->op) && is_groupby(gb->op)) {
+			sql_rel *inner = l->l;
+			sql_rel *gbj = gb->l;
+			if (rel_is_ref(inner) && is_project(inner->op) && (need_distinct(inner) || is_groupby(inner->op)) &&
+			    gbj->op == op_join && list_length(inner->r) == list_length(rel->exps)) {
+				sql_rel *gbjl = gbj->l, *gbjr = gbj->r;
+				if ((gbjl->l && is_project(gbjl->op) && inner == gbjl->l) ||
+					(gbjr->l && is_project(gbjr->op) && inner == gbjr->l)) {
+					sql_rel *nrel = rel_project(v->sql->sa, rel_dup(gb), rel_projections(v->sql, gb, NULL, 0, 1));
+					/* sofar expect aligned gbe and je */
+					bool found = true;
+					for (node *n = nrel->exps->h, *m = rel->exps->h; n && m && found; n = n->next, m = m->next) {
+						sql_exp *gbe = n->data;
+						sql_exp *je = m->data;
+						if (!is_compare(je->type) || !is_semantics(je) || je->flag != cmp_equal) {
+							found = false;
+							break;
+						}
+						sql_exp *lje = je->l, *rje = je->r;
+						if (lje->nid == gbe->alias.label) {
+							gbe->alias = rje->alias;
+						} else if (rje->nid == gbe->alias.label) {
+							gbe->alias = lje->alias;
+						} else {
+							found = false;
+						}
+					}
+					if (found) {
+						rel_destroy(v->sql, rel);
+						return nrel;
+					} else {
+						rel_destroy(v->sql, nrel);
+					}
+				}
+			}
+		}
+	}
 	if ((is_join(rel->op) || is_semi(rel->op)) && !list_empty(rel->exps)) {
 		sql_rel *l = rel->l, *r = rel->r, *b, *p = NULL, *j;
 
@@ -176,7 +219,7 @@ run_optimizer
 bind_remove_redundant_join(visitor *v, global_props *gp)
 {
 	int flag = v->sql->sql_optimizer;
-	return gp->opt_cycle == 0 && gp->opt_level == 1 && (gp->cnt[op_left] || gp->cnt[op_right]
+	return gp->opt_cycle <= 1 && gp->opt_level == 1 && (gp->cnt[op_left] || gp->cnt[op_right]
 		   || gp->cnt[op_full] || gp->cnt[op_join] || gp->cnt[op_semi] || gp->cnt[op_anti]) &&
 		   (flag & remove_redundant_join) ? rel_remove_redundant_join : NULL;
 }
@@ -1327,8 +1370,174 @@ out2inner(visitor *v, sql_rel* sel, sql_rel* join, sql_rel* inner_join_side, ope
 	return sel;
 }
 
-static inline sql_rel *
-rel_out2inner(visitor *v, sql_rel *rel) {
+static bool
+exps_uses_any(list *exps, list *l)
+{
+	bool uses_any = false;
+
+	if (list_empty(exps) || list_empty(l))
+		return false;
+	for (node *n = l->h; n && !uses_any; n = n->next) {
+		sql_exp *e = n->data;
+		uses_any |= list_exps_uses_exp(exps, e) != NULL;
+	}
+	return uses_any;
+}
+
+static bool has_semantics(sql_exp *e);
+
+static bool
+exps_semantics(list *l)
+{
+	if (list_empty(l))
+		return false;
+	for(node *n = l->h; n; n = n->next) {
+		sql_exp *e = n->data;
+		if (has_semantics(e))
+			return true;
+	}
+	return false;
+}
+
+static bool
+all_semantics(list *l) /* or const */
+{
+	if (list_empty(l))
+		return false;
+	for(node *n = l->h; n; n = n->next) {
+		sql_exp *e = n->data;
+		if (!exp_is_atom(e) && !has_semantics(e))
+			return false;
+	}
+	return true;
+}
+
+static bool
+any_semantics(list *l) /* or const */
+{
+	if (list_empty(l))
+		return false;
+	for(node *n = l->h; n; n = n->next) {
+		sql_exp *e = n->data;
+		if (exp_is_atom(e) || has_semantics(e))
+			return true;
+	}
+	return false;
+}
+
+static bool
+has_semantics(sql_exp *e)
+{
+	if (is_semantics(e))
+		return true;
+	switch(e->type) {
+	case e_cmp:
+		if (e->flag == cmp_con) {
+			return all_semantics(e->l);
+		} else if (e->flag == cmp_dis) {
+			return any_semantics(e->l);
+		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
+			return has_semantics(e->l) || any_semantics(e->r);
+		} else if (e->flag == cmp_filter) {
+			return any_semantics(e->l) || any_semantics(e->r);
+		} else {
+			bool semantics = has_semantics(e->l) || has_semantics(e->r);
+		   	if (e->f)
+				return true;
+				//semantics |= has_semantics(e->f);
+			return semantics;
+		}
+	case e_atom:
+		return false;
+	case e_column:
+		return false;
+	case e_aggr:
+	case e_func:
+		if (e->type == e_func) {
+			sql_subfunc *f = e->f;
+			if (f->func->semantics)
+				return true;
+			if (!f->func->s && (
+						strcmp(f->func->base.name, "nullif") == 0 ||
+						strcmp(f->func->base.name, "coalesce") == 0 ||
+						strcmp(f->func->base.name, "casewhen") == 0 ||
+						strcmp(f->func->base.name, "case") == 0 ||
+						strcmp(f->func->base.name, "ifthenelse") == 0))
+					return true;
+			return exps_semantics(e->l);
+		}
+		return e->semantics;
+	case e_convert:
+		return has_semantics(e->l);
+	case e_psm:
+		return false;
+	}
+	return false;
+}
+
+static sql_rel *
+rel_outer2inner(visitor *v, list *exps, sql_rel *rel)
+{
+	if (!rel || rel_is_ref(rel))
+		return rel;
+	if (rel->op == op_join /*is_join(rel->op) later nested outers as well */ || is_select(rel->op)) {
+		rel->l = rel_outer2inner(v, exps, rel->l);
+		if (is_join(rel->op))
+			rel->r = rel_outer2inner(v, exps, rel->r);
+	} else if (is_simple_project(rel->op)) { /* handle projection expressions */
+		/* merge/collect all exps which don't have 'is' semantics */
+		list *nexps = sa_list(v->sql->sa);
+		for(node *n = rel->exps->h; n; n = n->next) {
+			sql_exp *e = n->data;
+			if (!has_semantics(e) && list_exps_uses_exp(exps, e))
+				append(nexps, e);
+		}
+		rel->l = rel_outer2inner(v, nexps, rel->l);
+	} else if (is_left(rel->op)) { /* first just left outers */
+		list *rexps = rel_projections(v->sql, rel->r, NULL, 0, 1);
+		/* exps from right hand */
+		if (exps_uses_any(exps, rexps)) {
+			rel->op = op_join;
+			v->changes++;
+		}
+	}
+	return rel;
+}
+
+static bool
+rel_has_leftouter(sql_rel *rel)
+{
+	if (!rel || rel_is_ref(rel))
+		return false;
+	if (rel->op == op_join)
+		return rel_has_leftouter(rel->l) || rel_has_leftouter(rel->r);
+	if (is_simple_project(rel->op) || is_select(rel->op))
+		return rel_has_leftouter(rel->l);
+	if (is_left(rel->op))
+		return true;
+	return false;
+}
+
+/*
+ * Rewrite outer joins into inner joins, when results of the outer join are later used in
+ * predicates filtering the none matching rows of the outer join.
+ *
+ * select/join(.. project(..  outer_join () )[ use exps of none-matching-side] ) [ exp using (possibly indirect)
+ * attribute of none-matching sided
+ */
+static sql_rel *
+rel_out2inner(visitor *v, sql_rel *rel)
+{
+	if (rel && (is_select(rel->op) || rel->op == op_join) && !list_empty(rel->exps) && rel_has_leftouter(rel)) {
+		/* collect all exps which don't have 'is' semantics */
+		list *exps = sa_list(v->sql->sa);
+		for (node *n = rel->exps->h; n; n = n->next) {
+			sql_exp *e = n->data;
+			if (!has_semantics(e))
+				append(exps, e);
+		}
+		rel = rel_outer2inner(v, exps, rel);
+	}
 
 	if (!is_non_trivial_select_applied_to_outer_join(rel)) {
 		// Nothing to do here.
@@ -1368,21 +1577,6 @@ rel_out2inner(visitor *v, sql_rel *rel) {
 		inner_join_side = join->l;
 		return out2inner(v, rel, join, inner_join_side, is_right(join->op)? op_join: op_left);
 	}
-}
-
-static bool
-exps_uses_any(list *exps, list *l)
-{
-	bool uses_any = false;
-
-	if (list_empty(exps) || list_empty(l))
-		return false;
-	for (node *n = l->h; n && !uses_any; n = n->next) {
-		sql_exp *e = n->data;
-		uses_any |= list_exps_uses_exp(exps, exp_relname(e), exp_name(e)) != NULL;
-	}
-
-	return uses_any;
 }
 
 /* TODO At the moment I have to disable the new join2semi because the join order optimizer doesn't take semi-joins into account,

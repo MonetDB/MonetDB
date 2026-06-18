@@ -231,7 +231,7 @@ NULL
 NULL
 NULL
 
-query RRIIIII rowsort
+query RDIIIII rowsort
 select avg(10), avg(NULL),
        patindex('o', 'foo'), patindex(NULL, 'foo'), patindex('o', NULL), patindex('o', NULL), patindex(NULL, NULL)
 ----
@@ -678,9 +678,7 @@ explain show details select x as z, 2 from (select 1) as x(x) group by z, z
 ----
 project (
 | group by (
-| | project (
-| | |  [ boolean(1) "true" as "%1"."%1" ]
-| | ) [ tinyint(1) "1" as "x"."x" ]
+| |  [ tinyint(1) "1" as "x"."x" ]
 | ) [ "x"."x" NOT NULL as "z" ] [ "z" NOT NULL UNIQUE ]
 ) [ "z" NOT NULL UNIQUE, tinyint(2) "2" ]
 
@@ -690,11 +688,11 @@ select x as z, y as z from (select 1, 2) as x(x,y) group by z
 statement error
 select x as z, y as z from (select 1, 2) as x(x,y) order by z
 
-query II rowsort
+query IT rowsort
 select 1, null except select 1, null
 ----
 
-query II rowsort
+query IT rowsort
 select 1, null intersect select 1, null
 ----
 1

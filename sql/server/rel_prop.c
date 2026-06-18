@@ -114,6 +114,7 @@ propkind2string( prop *p)
 		PT(GROUPINGS);
 		PT(MIN);
 		PT(MAX);
+		PT(UNNESTING);
 	}
 	return "UNKNOWN";
 }
