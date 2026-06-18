@@ -35888,16 +35888,6 @@ topn
 pattern heapn.topn(X_0:lng, X_1:ptr, X_2:any...) (X_3:bat[:oid], X_4:bat[:oid], X_5:bat[:any]...)
 HEAPtopn
 Return table with heap based topn, and positions and candidate for any projections
-heapn
-topn
-pattern heapn.topn(X_0:lng, X_1:ptr, X_2:any...) (X_3:bat[:oid], X_4:bat[:oid], X_5:bat[:any]...)
-HEAPtopn
-Return table with heap based topn, and positions and candidate for any projections
-heapn
-topn
-pattern heapn.topn(X_0:lng, X_1:ptr, X_2:bat[:oid]) (X_3:bat[:oid], X_4:bat[:oid], X_5:bat[:oid])
-HEAPtopn
-Return table with heap based topn, and positions and candidate for any projections (without order by, with groups)
 iaggr
 count
 command iaggr.count(X_0:bat[:any], X_1:bat[:oid]):lng
