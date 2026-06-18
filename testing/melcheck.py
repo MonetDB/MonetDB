@@ -14,7 +14,7 @@ except ImportError:
     from MonetDBtesting import exportutils
 
 # MEL pattern
-argreg = r'\s*,\s*(?P<bat>(?:opt)?bat)?(?P<var>var)?arg(?P<any>any)?\s*\(\s*(?P<argname>"[^"]*")\s*,\s*(?P<argval>\w*)\s*\)'
+argreg = r'\s*,\s*(?P<bat>(?:opt|shared)?bat)?(?P<var>var)?arg(?P<any>any)?\s*\(\s*(?P<argname>"[^"]*")\s*,\s*(?P<argval>\w*)\s*\)'
 patreg = r'^\s*(?P<cmdpat>pattern|command)\s*\(\s*"(?P<mod>[^"]*)"\s*,\s*"(?P<fcn>[^"]*)"\s*,\s*(?P<imp>\w+)\s*,[^,]*,\s*"[^\"]*(?:\\.[^\"]*)*"\s*,\s*args\s*\(\s*(?P<retc>\d+)\s*,\s*(?P<argc>\d+)(?P<args>(?:'+argreg+r')*)\s*\)\s*\)'
 
 argre = re.compile(argreg)
@@ -61,7 +61,7 @@ def malcheck(imp, mod, fcn, retc, argc, args):
         maldefs[malfunc] = []
     for mf in maldefs[malfunc]:
         if mf[0] == retc and mf[1] == argc and mf[2] == returns and mf[3] == arguments:
-            print(f'duplicate MAL definition for {mod}.{fcn} with implementations {mf[4]} and {imp}')
+            print(f'duplicate MAL definition for {mod}.{fcn} with implementations {mf[4]} and {imp} with {retc} returns and {argc} args')
             return
     maldefs[malfunc].append((retc, argc, returns, arguments, imp))
 
