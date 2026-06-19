@@ -1,3 +1,10 @@
+==========================
+All relational operators:
+
+* MUST return the resulting columns in the order specified by the SQL standard:
+  * single operant: rel->exps
+  * multi-operants: rel->l, rel->r[, rel->attr]
+==========================
 
 BASETABLE
 	(card MULTI)
