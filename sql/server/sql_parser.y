@@ -2653,9 +2653,7 @@ func_def:
 			dlist *f = L();
 			char l = *$9;
 
-			if (l == 'R' || l == 'r')
-				lang = FUNC_LANG_R;
-			else if (l == 'P' || l == 'p') {
+			if (l == 'P' || l == 'p') {
 				if (strcasecmp($9, "PYTHON3") == 0) {
 					lang = FUNC_LANG_PY3;
 				} else {

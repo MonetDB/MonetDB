@@ -42,7 +42,7 @@ with process.server(args=['--clean-BBP'],
                         stdout=process.PIPE,
                         stderr=process.PIPE,
                         server=srv) as clt:
-        cltout, clterr = clt.communicate('drop all function testsschema.capi00 if exists;\n')
+        cltout, clterr = clt.communicate('drop all function testsschema.capi00 if exists;\ndrop all function testsschema.rapi01 if exists;\ndrop all function testsschema.rapi02 if exists;\n')
     srvout, srverr = srv.communicate()
 
 srvout = [line for line in srvout.splitlines(keepends=True) if not line.startswith('#')]

@@ -67,11 +67,6 @@
 # operators.  Otherwise the POSIX regex functions are used.
 %bcond_without pcre
 
-%if %{fedpkgs}
-# By default, create the MonetDB-R package.
-%bcond_without rintegration
-%endif
-
 # By default, include Python 3 integration.
 %bcond_without py3integration
 
@@ -130,9 +125,6 @@ BuildRequires: pkgconfig(liblz4) >= 1.8
 %if %{with py3integration}
 BuildRequires: pkgconfig(python3) >= 3.5
 BuildRequires: python3dist(numpy)
-%endif
-%if %{with rintegration}
-BuildRequires: pkgconfig(libR)
 %endif
 # optional packages:
 # BuildRequires: pkgconfig(cmocka)      # -DWITH_CMOCKA=ON
@@ -479,31 +471,6 @@ extensions for %{name}-server.
 %files geom
 %defattr(-,root,root)
 %{_libdir}/monetdb5*/lib_geom.so
-%endif
-
-%if %{with rintegration}
-%package R
-Summary: Integration of MonetDB and R, allowing use of R from within SQL
-Group: Applications/Databases
-Requires: %{name}-server%{?_isa} = %{version}-%{release}
-
-%description R
-MonetDB is a database management system that is developed from a
-main-memory perspective with use of a fully decomposed storage model,
-automatic index management, extensibility of data types and search
-accelerators.  It also has an SQL front end.
-
-This package contains the interface to use the R language from within
-SQL queries.
-
-NOTE: INSTALLING THIS PACKAGE OPENS UP SECURITY ISSUES.  If you don't
-know how this package affects the security of your system, do not
-install it.
-
-%files R
-%defattr(-,root,root)
-%{_libdir}/monetdb5*/rapi.R
-%{_libdir}/monetdb5*/lib_rapi.so
 %endif
 
 %if %{with py3integration}
@@ -952,7 +919,6 @@ fi
         -DNETCDF=OFF \
         -DODBC=ON \
         -DPY3INTEGRATION=%{?with_py3integration:ON}%{!?with_py3integration:OFF} \
-        -DRINTEGRATION=%{?with_rintegration:ON}%{!?with_rintegration:OFF} \
         -DSANITIZER=OFF \
         -DSHP=OFF \
         -DSTRICT=OFF \

@@ -38,7 +38,6 @@
 	FUNC(batmmath); \
 	FUNC(batmtime); \
 	FUNC(batpyapi3); \
-	FUNC(batrapi); \
 	FUNC(batsql); \
 	FUNC(batstr); \
 	FUNC(bbp); \
@@ -198,7 +197,6 @@
 	FUNC(raise); \
 	FUNC(rangejoin); \
 	FUNC(rank); \
-	FUNC(rapi); \
 	FUNC(reconnect); \
 	FUNC(register); \
 	FUNC(register_supervisor); \

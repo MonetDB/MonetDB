@@ -34148,26 +34148,6 @@ subeval_aggr
 unsafe pattern batpyapi3.subeval_aggr(X_0:ptr, X_1:str, X_2:any...):any...
 PYAPI3PyAPIevalAggr
 grouped aggregates through Python
-batrapi
-eval
-pattern batrapi.eval(X_0:lng, X_1:ptr, X_2:str):any...
-RAPIevalStd
-Execute a simple R script value
-batrapi
-eval
-pattern batrapi.eval(X_0:ptr, X_1:str, X_2:any...):any...
-RAPIevalStd
-Execute a simple R script value
-batrapi
-eval_aggr
-pattern batrapi.eval_aggr(X_0:ptr, X_1:str, X_2:any...):any...
-RAPIevalAggr
-grouped aggregates through R
-batrapi
-subeval_aggr
-pattern batrapi.subeval_aggr(X_0:ptr, X_1:str, X_2:any...):any...
-RAPIevalAggr
-grouped aggregates through R
 batsql
 all
 pattern batsql.all(X_0:bat[:bit], X_1:bat[:bit], X_2:bat[:bit]):bat[:bit]
@@ -49268,26 +49248,6 @@ isset
 command querylog.isset():int
 QLOGissetFcn
 Return status of query logger
-rapi
-eval
-pattern rapi.eval(X_0:ptr, X_1:str):any
-RAPIevalStd
-Execute a simple R script returning a single value
-rapi
-eval
-pattern rapi.eval(X_0:ptr, X_1:str, X_2:any...):any...
-RAPIevalStd
-Execute a simple R script value
-rapi
-eval_aggr
-pattern rapi.eval_aggr(X_0:ptr, X_1:str, X_2:any...):any...
-RAPIevalAggr
-grouped aggregates through R
-rapi
-subeval_aggr
-pattern rapi.subeval_aggr(X_0:ptr, X_1:str, X_2:any...):any...
-RAPIevalAggr
-grouped aggregates through R
 remote
 batbincopy
 pattern remote.batbincopy():bat[:any]

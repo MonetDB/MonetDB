@@ -382,7 +382,6 @@ INSERT INTO sys.function_languages (language_id, language_name, language_keyword
   (0, 'Internal C', NULL),
   (1, 'MAL', NULL),
   (2, 'SQL', NULL),
-  (3, 'R', 'R'),
 --  (5, 'J', 'J'), -- Javascript? not yet available for use
   (6, 'Python', 'PYTHON'),
   (10, 'Python3', 'PYTHON3');

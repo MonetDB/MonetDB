@@ -2447,6 +2447,9 @@ dump_function(Mapi mid, stream *sqlf, const char *fid, bool hashge)
 			/* backward compatibility: dump language types for removed
 			 * implementations */
 			switch (flang) {
+			case 3:
+				mnstr_printf(sqlf, " LANGUAGE R");
+				break;
 			case 4:
 				mnstr_printf(sqlf, " LANGUAGE C");
 				break;

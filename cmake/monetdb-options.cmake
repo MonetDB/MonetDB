@@ -35,10 +35,6 @@ option(PY3INTEGRATION
   "Enable support for Python 3 integration into MonetDB (default=ON)"
   ON)
 
-option(RINTEGRATION
-  "Enable support for R integration into MonetDB (default=ON)"
-  ON)
-
 option(FITS
   "Enable support for FITS (default=ON)"
   ON)

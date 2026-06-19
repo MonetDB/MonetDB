@@ -65,7 +65,6 @@ Available options are:
 Option              Explanation
 =================   ===============================================================================================
 ASSERT              Enable asserts (default=ON for development sources, OFF for tarball installation)
-CINTEGRATION        Enable support for C UDFs (default=ON except on Windows)
 CMAKE_SUMMARY       Show a summary of the cmake configuration (for debug purposes, default=OFF)
 CMAKE_UNITTESTS     Build and run the unittest for the build system (default=OFF)
 FITS                Enable support for FITS
@@ -74,7 +73,6 @@ INT128              Enable support for 128-bit integers (if compiler supports th
 NETCDF              Enable support for netcdf
 ODBC                Compile the MonetDB ODBC driver
 PY3INTEGRATION      Enable support for Python 3 integration into MonetDB
-RINTEGRATION        Enable support for R integration into MonetDB
 SANITIZER           Enable support for the GCC address sanitizer (default=OFF)
 SHP                 Enable support for ESRI Shapefiles
 STRICT              Enable strict compiler flags (default=ON for development sources, OFF for tarball installation)

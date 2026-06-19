@@ -2,6 +2,13 @@
 # This file is updated with Maddlog
 
 * Fri Jun 19 2026 Sjoerd Mullender <sjoerd@acm.org>
+- Removed embedded R support.  It is no longer possible to use
+  user-defined functions which are written in R (i.e. using `CREATE
+  FUNCTION ... LANGUAGE R ...`).  Upgrading to this version will succeed
+  if such functions are defined, but they cannot be used anymore.
+  Use this query to find all affected functions: `SELECT s.name, f.name
+  FROM sys.functions f JOIN sys.schemas s ON s.id = f.schema_id WHERE
+  f.language = 3;`.  These functions can then be dropped manually.
 - Removed embedded C support.  It is no longer possible to use user-defined
   functions which are written in C or C++ (i.e. using `CREATE FUNCTION
   ... LANGUAGE C ...`).  Upgrading to this version will succeed if such
