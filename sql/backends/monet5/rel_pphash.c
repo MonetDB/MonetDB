@@ -274,7 +274,7 @@ rel2bin_oahash_build(backend *be, sql_rel *rel, list *refs)
 	list *exps_cmp_hsh = rel->attr;
 	list *exps_prj_hsh = rel->exps;
 
-	if (list_empty(exps_cmp_hsh)) { /* dummy case for cartisian product */
+	if (list_empty(exps_cmp_hsh)) { /* dummy case for cartesian product */
 		sql_rel *l = rel->l;
 		if (is_topn(l->op))
 			l = rel_project(be->mvc->sa, l, rel_projections(be->mvc, l, NULL, 1, 1));
