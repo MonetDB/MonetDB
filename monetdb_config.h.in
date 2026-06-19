@@ -195,8 +195,6 @@
 #cmakedefine HAVE_LIBLZMA 1
 #cmakedefine HAVE_LIBPCRE 1
 #cmakedefine HAVE_LIBPY3 1
-#cmakedefine HAVE_LIBR 1
-#cmakedefine RHOME "@RHOME@"
 #cmakedefine HAVE_LIBXML 1
 #cmakedefine HAVE_LIBZ 1
 #cmakedefine HAVE_NETCDF 1

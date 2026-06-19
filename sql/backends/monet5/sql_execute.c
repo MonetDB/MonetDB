@@ -139,7 +139,7 @@ str
 SQLstatementIntern(Client c, const char *expr, const char *nme, bit execute, bit output, res_table **result)
 {
 	allocator_state ta_state = ma_open(MT_thread_getallocator());
-	int status = 0, err = 0, oldvtop, oldstop = 1, inited = 0, ac, sizeframes, topframes;
+	int status = 0, err = 0, oldvtop, oldstop = 1, ac, sizeframes, topframes;
 	unsigned int label;
 	mvc *o = NULL, *m = NULL;
 	sql_frame **frames;
@@ -153,11 +153,8 @@ SQLstatementIntern(Client c, const char *expr, const char *nme, bit execute, bit
 	Symbol backup = NULL;
 	size_t len = strlen(expr);
 
-	if (!sql) {
-		inited = 1;
-		msg = SQLinitClient(c, NULL, NULL, NULL);
-		sql = (backend *) c->sqlcontext;
-	}
+	if (!sql)
+		throw(SQL, "sql.statement", SQLSTATE(HY002) "No sql context available");
 	if (msg){
 		ma_close(&ta_state);
 		throw(SQL, "sql.statement", SQLSTATE(HY002) "Catalogue not available");
@@ -167,9 +164,6 @@ SQLstatementIntern(Client c, const char *expr, const char *nme, bit execute, bit
 	ac = m->session->auto_commit;
 	o = MNEW(mvc);
 	if (!o) {
-		if (inited) {
-			msg = SQLresetClient(c);
-		}
 		ma_close(&ta_state);
 		throw(SQL, "sql.statement", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
@@ -391,9 +385,6 @@ endofcompile:
 	m->frames = frames;
 	m->session->status = status;
 	m->session->auto_commit = ac;
-	if (inited) {
-		(void) SQLresetClient(c);
-	}
 	ma_close(&ta_state);
 	return msg;
 }

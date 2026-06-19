@@ -145,8 +145,6 @@ macro(monetdb_macro_variables)
   set(HAVE_NETCDF ${NETCDF_FOUND})
   set(HAVE_READLINE ${READLINE_FOUND})
   set(HAVE_ODBCINST ${ODBCinst_FOUND})
-  set(HAVE_LIBR ${LIBR_FOUND})
-  set(RHOME "${LIBR_HOME}")
   set(HAVE_GEOM ${GEOS_FOUND})
   set(HAVE_SHP ${GDAL_FOUND})
   set(SANITIZER ${SANITIZER})
@@ -202,11 +200,6 @@ macro(monetdb_macro_variables)
   if(WIN_GETADDRINFO)
     set(HAVE_GETADDRINFO 1)
   endif()
-  set(HAVE_CUDF
-    ${CINTEGRATION}
-    CACHE
-    INTERNAL
-    "C udfs extension is available")
   # compiler options, profiling (google perf tools), valgrind
   # Check that posix regex is available when pcre is not found
   # "monetdb5/module/mal/pcre.c" assumes the regex library is available

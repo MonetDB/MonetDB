@@ -1016,22 +1016,6 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 	if (body && LANG_EXT(lang)) {
 		const char *lang_body = body->h->data.sval, *mod = "unknown", *slang = "Unknown", *imp = "Unknown";
 		switch (lang) {
-		case FUNC_LANG_R:
-			mod = "rapi";
-			slang = "R";
-			break;
-		case FUNC_LANG_C:
-			mod = "capi";
-			slang = "C";
-			break;
-		case FUNC_LANG_CPP:
-			mod = "capi";
-			slang = "CPP";
-			break;
-		case FUNC_LANG_J:
-			mod = "japi";
-			slang = "Javascript";
-			break;
 		case FUNC_LANG_PY:
 		case FUNC_LANG_PY3:
 			mod = "pyapi3";

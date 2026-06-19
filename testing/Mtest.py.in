@@ -252,7 +252,6 @@ CONDITIONALS = {
     # from configure.ag:
     # These should cover all AM_CONDITIONALS defined in configure.ag, i.e.,
     # `grep AM_CONDITIONAL configure.ag | sed 's|^AM_CONDITIONAL(\([^,]*\),.*$|\1|' | sort -u`
-    'HAVE_CUDF'            : '@HAVE_CUDF_FALSE@',
     'HAVE_CURL'            : '@HAVE_CURL_FALSE@',
     'HAVE_FITS'            : '@HAVE_FITS_FALSE@',
     'HAVE_GEOM'            : '@HAVE_GEOM_FALSE@',
@@ -263,7 +262,6 @@ CONDITIONALS = {
     'HAVE_LIBLZMA'         : '@HAVE_LIBLZMA_FALSE@',
     'HAVE_LIBPCRE'         : '@HAVE_LIBPCRE_FALSE@',
     'HAVE_LIBPY3'          : '@HAVE_LIBPY3_FALSE@',
-    'HAVE_LIBR'            : '@HAVE_LIBR_FALSE@',
     'HAVE_LIBXML'          : '@HAVE_LIBXML_FALSE@',
     'HAVE_LIBZ'            : '@HAVE_LIBZ_FALSE@',
     'HAVE_SNAPPY'          : '@HAVE_SNAPPY_FALSE@',
@@ -1588,10 +1586,6 @@ def GetBitsAndModsAndThreads(env):
     cmd.extend(mserver5_opts)
     if CONDITIONALS['HAVE_LIBPY3']:
         cmd.extend(['--set', 'embedded_py=3'])
-    if CONDITIONALS['HAVE_LIBR']:
-        cmd.extend(['--set', 'embedded_r=true'])
-    if CONDITIONALS['HAVE_CUDF']:
-        cmd.extend(['--set', 'embedded_c=true'])
     if procdebug:
         print('GetBitsAndModsAndThreads: starting process "%s" (inpipe, outpipe, errpipe)\n' % '" "'.join(cmd))
     with process.Popen(cmd, stdin=process.PIPE, stdout=process.PIPE,
@@ -3750,32 +3744,6 @@ def main(argv):
     opts = parser.parse_args()
     args = opts.tests
 
-    if CONDITIONALS['HAVE_LIBR']:
-        if CheckExec('R'):
-            with process.Popen(['R', '--version'],
-                               stdout=process.PIPE, stderr=process.PIPE,
-                               text=True) as proc:
-                r_out, r_err = proc.communicate()
-            res = re.search(r'R version (?P<major>\d+)\.', r_out)
-            if res is not None and int(res.group('major')) < 4:
-                r_noecho = '--slave'
-            else:
-                r_noecho = '--no-echo'
-            with process.Popen(['R', r_noecho, '--no-save', '--no-restore',
-                                '-e', 'print(Sys.getenv("R_LIBS_USER"))'],
-                               stdout=process.PIPE, stderr=process.PIPE,
-                               text=True) as proc:
-                r_out, r_err = proc.communicate()
-            res = re.search(r'\[\d+\] "(?P<dir>.*)"', r_out)
-            if res is not None:
-                rdir = os.path.expanduser(res.group('dir'))
-                os.makedirs(rdir, exist_ok=True)
-            r_noecho = r_out = r_err = None  # clean junk
-        else:
-            # couldn't find R
-            print('Compiled with R support but cannot find R binary')
-            CONDITIONALS['HAVE_LIBR'] = False
-
     CONDITIONALS['HAVE_SQLITE3ODBC'] = os.path.exists('/usr/lib64/libsqlite3odbc.so')
 
     #par = {}
@@ -4332,10 +4300,6 @@ def main(argv):
             CONDITIONALS['HAVE_GEOM'] = False
         if CONDITIONALS['HAVE_LIBPY3'] and 'pyapi3' not in env['TST_MODS']:
             CONDITIONALS['HAVE_LIBPY3'] = False
-        if CONDITIONALS['HAVE_LIBR'] and 'rapi' not in env['TST_MODS']:
-            CONDITIONALS['HAVE_LIBR'] = False
-        if CONDITIONALS['HAVE_CUDF'] and 'capi' not in env['TST_MODS']:
-            CONDITIONALS['HAVE_CUDF'] = False
 
         if procdebug:
             for k in sorted(os.environ):
