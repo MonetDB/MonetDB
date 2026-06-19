@@ -47,11 +47,11 @@ exp_getcard(mvc *sql, sql_rel *rel, sql_exp *e)
 	if ((p = find_prop(e->p, PROP_NUNIQUES)))
 		est = (BUN)p->value.dval;
 
-	if (est == BUN_NONE 
+	if (est == BUN_NONE
 #if SIZEOF_BUN == SIZEOF_LNG
 		|| (ulng) est > (ulng) GDK_lng_max
 #endif
-   	) 
+   	)
 		cnt = 85000000;
 	else
 		cnt = (BUN) est;
@@ -86,7 +86,7 @@ rel_groupby_2_phases(mvc *sql, sql_rel *rel)
 	lng card = 1, cnt;
 	bool global = list_empty(rel->r);
 
-	if (est == BUN_NONE 
+	if (est == BUN_NONE
 #if SIZEOF_BUN == SIZEOF_LNG
 		|| (ulng) est > (ulng) GDK_lng_max
 #endif
@@ -214,7 +214,7 @@ rel_groupby_prepare_pp(list **aggrresults, list **serializedresults, backend *be
 	list *shared = NULL;
 	BUN est = get_rel_count(rel->l);
 	lng estimate, card = 1;
-	if (est == BUN_NONE 
+	if (est == BUN_NONE
 #if SIZEOF_BUN == SIZEOF_LNG
 		|| (ulng) est > (ulng) GDK_lng_max
 #endif
@@ -394,7 +394,7 @@ rel_groupby_prepare_pp(list **aggrresults, list **serializedresults, backend *be
 #if SIZEOF_BUN == SIZEOF_LNG
  								|| (ulng) est > (ulng) GDK_lng_max
 #endif
-							) 
+							)
 								estimate = 85000000;
 							else
 								estimate = (BUN) est;
@@ -1284,16 +1284,8 @@ rel2bin_groupby_pp(backend *be, sql_rel *rel, list *refs)
 					restype = newBatType(restype);
 					setVarType(be->mb, getArg(q, 0), restype);
 				}
-				if (af->func->lang == FUNC_LANG_R ||
-					af->func->lang >= FUNC_LANG_PY ||
-					af->func->lang == FUNC_LANG_C ||
-					af->func->lang == FUNC_LANG_CPP) {
+				if (af->func->lang == FUNC_LANG_PY) {
 					setVarType(be->mb, getArg(q, 0), restype);
-					if (af->func->lang == FUNC_LANG_C) {
-						q = pushBit(be->mb, q, 0);
-					} else if (af->func->lang == FUNC_LANG_CPP) {
-						q = pushBit(be->mb, q, 1);
-					}
 					q = pushStr(be->mb, q, af->func->query);
 				}
 

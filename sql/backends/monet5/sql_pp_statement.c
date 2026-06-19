@@ -112,8 +112,7 @@ stmt_pp_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int 
 		+ 2 * avg
 		+ 2 * sum
 		+ (LANG_EXT(op->func->lang) != 0)
-		+ 2 * (op->func->lang == FUNC_LANG_C || op->func->lang == FUNC_LANG_CPP)
-		+ (op->func->lang == FUNC_LANG_PY || op->func->lang == FUNC_LANG_R)
+		+ (op->func->lang == FUNC_LANG_PY)
 		+ (op1->type != st_list ? 1 : list_length(op1->op4.lval))
 		+ (grp ? 4 : avg + 1);
 
@@ -145,17 +144,9 @@ stmt_pp_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int 
 
 	if (LANG_EXT(op->func->lang))
 		q = pushPtr(mb, q, op->func);
-	if (op->func->lang == FUNC_LANG_R ||
-		op->func->lang >= FUNC_LANG_PY ||
-		op->func->lang == FUNC_LANG_C ||
-		op->func->lang == FUNC_LANG_CPP) {
+	if (op->func->lang == FUNC_LANG_PY) {
 		if (!grp) {
 			setVarType(mb, getArg(q, 0), restype);
-		}
-		if (op->func->lang == FUNC_LANG_C) {
-			q = pushBit(mb, q, 0);
-		} else if (op->func->lang == FUNC_LANG_CPP) {
-			q = pushBit(mb, q, 1);
 		}
 		q = pushStr(mb, q, op->func->query);
 	}

@@ -428,7 +428,7 @@ rel_groupby_partition_safe(sql_rel *rel)
 
 			if (is_aggr(e->type)) {
 				sql_subfunc *sf = e->f;
-				if (sf->func->lang == FUNC_LANG_R || sf->func->lang == FUNC_LANG_PY)
+				if (sf->func->lang == FUNC_LANG_PY)
 					return false;
 			}
 		}
