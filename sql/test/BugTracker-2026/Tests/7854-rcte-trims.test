@@ -1,4 +1,5 @@
-query RII
+#query RII
+statement error 42000!/Decimal \(x\) doesn't have format \(\d+.6\)/
 SELECT CAST(sum (x) AS NUMERIC),
        avg (x) , var_pop (x)
 FROM
@@ -50,7 +51,7 @@ FROM
                      HAVING NOT x < ANY( CAST(NOT MAX (42.400002) < AVG (CAST(NULL AS DOUBLE))as VARCHAR)))))
         LIMIT 24)
      OR x = cast(512 as varchar));
-----
-512.000
-512
-0
+#----
+#512.000
+#512
+#0

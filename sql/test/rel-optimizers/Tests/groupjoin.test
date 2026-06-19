@@ -12,9 +12,7 @@ explain show details select i, i in (select i from integers where i = i1.i) or i
 project (
 | left outer group join (
 | | table("sys"."integers") [ "integers"."i" as "i1"."i" ],
-| | project (
-| | | table("sys"."integers") [ "integers"."i" ]
-| | ) [ "integers"."i" as "%1"."%1" ]
-| ) [ ("i1"."i") + = ("%1"."%1"), ("i1"."i") = ("%1"."%1") ] [ boolean(1) "true" as "%4"."%4" ]
+| | table("sys"."integers") [ "integers"."i" ]
+| ) [ ("i1"."i") + = ("integers"."i"), ("i1"."i") = ("integers"."i") ] [ boolean(1) "true" as "%4"."%4" ]
 ) [ "i1"."i", ("%4"."%4") or (("i1"."i") * = (int(2) NULL)) ]
 

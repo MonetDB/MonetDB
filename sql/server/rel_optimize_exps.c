@@ -13,6 +13,7 @@
 #include "rel_select.h"
 #include "rel_exp.h"
 #include "rel_rewriter.h"
+#include "sql_decimal.h"
 
 static inline int
 str_ends_with(const char *s, const char *suffix)
@@ -21,6 +22,471 @@ str_ends_with(const char *s, const char *suffix)
 	if (suflen > slen)
 		return 1;
 	return strncmp(s + slen - suflen, suffix, suflen);
+}
+
+static sql_exp * exp_simplify_math( mvc *sql, sql_exp *e, int *changes);
+
+/* Simplify addition: a-0 = a, a - a = 0, constant folding */
+static sql_exp *
+simplify_sub(mvc *sql, sql_exp *e, sql_subfunc *f, list *l, int *changes)
+{
+	(void)f;  /* unused parameter */
+	sql_exp *le = l->h->data;
+	sql_exp *re = l->h->next->data;
+
+	/* a - 0 = a */
+	if (exp_is_atom(re) && exp_is_zero(re) && !has_nil(le)) {
+		if (subtype_cmp(exp_subtype(e), exp_subtype(le)) != 0)
+			le = exp_convert(sql, le, exp_subtype(le), exp_subtype(e));
+		(*changes)++;
+		if (exp_name(e))
+			exp_prop_alias(sql->sa, le, e);
+		return le;
+	}
+	/* a - a = 0 */
+	if (!has_nil(le) && !has_nil(re) && exp_equal(le,re) == 0) {
+		atom *a;
+		sql_exp *ne;
+
+		if (exp_subtype(le)->type->eclass == EC_NUM) {
+			a = atom_int(sql->sa, exp_subtype(le), 0);
+		} else if (exp_subtype(le)->type->eclass == EC_FLT) {
+			a = atom_float(sql->sa, exp_subtype(le), 0);
+		} else {
+			return e;
+		}
+		ne = exp_atom(sql->sa, a);
+		if (subtype_cmp(exp_subtype(e), exp_subtype(ne)) != 0)
+			ne = exp_convert(sql, ne, exp_subtype(ne), exp_subtype(e));
+		(*changes)++;
+		if (exp_name(e))
+			exp_prop_alias(sql->sa, ne, e);
+		return ne;
+	}
+	/* constant folding */
+	if (exp_is_atom(le) && exp_is_atom(re)) {
+		atom *la = exp_flatten(sql, true, le);
+		atom *ra = exp_flatten(sql, true, re);
+
+		if (la && ra) {
+			atom *a = atom_sub(sql->sa, la, ra);
+
+			if (a) {
+				sql_exp *ne = exp_atom(sql->sa, a);
+				if (subtype_cmp(exp_subtype(e), exp_subtype(ne)) != 0)
+					ne = exp_convert(sql, ne, exp_subtype(ne), exp_subtype(e));
+				(*changes)++;
+				if (exp_name(e))
+					exp_prop_alias(sql->sa, ne, e);
+				return ne;
+			}
+		}
+	}
+	/* bring out the constants */
+	if (is_func(le->type)) {
+		list *ll = le->l;
+		sql_subfunc *f = le->f;
+		if (!f->func->s && !strcmp(f->func->base.name, "sql_add") && list_length(ll) == 2) {
+			sql_exp *lle = ll->h->data;
+			sql_exp *lre = ll->h->next->data;
+			if (exp_equal(re, lre) == 0) {
+				/* (x+a)-a = x*/
+				if (subtype_cmp(exp_subtype(e), exp_subtype(lle)) != 0)
+					lle = exp_convert(sql, lle, exp_subtype(lle), exp_subtype(e));
+				if (exp_name(e))
+					exp_prop_alias(sql->sa, lle, e);
+				(*changes)++;
+				return lle;
+			}
+			if (exp_is_atom(lle) && exp_is_atom(lre))
+				return e;
+			if (!exp_is_atom(re) && exp_is_atom(lre)) {
+				/* (x+c1)-y -> (x-y) + c1 */
+				ll->h->next->data = re;
+				l->h->next->data = lre;
+				le->f = e->f;
+				e->f = f;
+				if (!(l->h->data = exp_simplify_math(sql, le, changes)))
+					return NULL;
+				(*changes)++;
+				return e;
+			}
+			if (exp_is_atom(re) && exp_is_atom(lre)) {
+				/* (x+c1)-c2 -> (c1-c2) + x */
+				ll->h->data = lre;
+				ll->h->next->data = re;
+				l->h->next->data = lle;
+				le->f = e->f;
+				e->f = f;
+				if (!(l->h->data = exp_simplify_math(sql, le, changes)))
+					return NULL;
+				(*changes)++;
+				return e;
+			}
+		}
+	}
+	return e;
+}
+
+/* Simplify addition: 0+a = a, a+0 = a, constant folding */
+static sql_exp *
+simplify_add(mvc *sql, sql_exp *e, sql_subfunc *f, list *l, int *changes)
+{
+	(void)f;  /* unused parameter */
+	sql_exp *le = l->h->data;
+	sql_exp *re = l->h->next->data;
+
+	/* 0 + a = a */
+	if (exp_is_atom(le) && exp_is_zero(le)) {
+		if (subtype_cmp(exp_subtype(e), exp_subtype(re)) != 0)
+			re = exp_convert(sql, re, exp_subtype(re), exp_subtype(e));
+		(*changes)++;
+		if (exp_name(e))
+			exp_prop_alias(sql->sa, re, e);
+		return re;
+	}
+	/* a + 0 = a */
+	if (exp_is_atom(re) && exp_is_zero(re)) {
+		if (subtype_cmp(exp_subtype(e), exp_subtype(le)) != 0)
+			le = exp_convert(sql, le, exp_subtype(le), exp_subtype(e));
+		(*changes)++;
+		if (exp_name(e))
+			exp_prop_alias(sql->sa, le, e);
+		return le;
+	}
+	/* constant folding */
+	if (exp_is_atom(le) && exp_is_atom(re)) {
+		atom *la = exp_flatten(sql, true, le);
+		atom *ra = exp_flatten(sql, true, re);
+
+		if (la && ra) {
+			atom *a = atom_add(sql->sa, la, ra);
+
+			if (a) {
+				sql_exp *ne = exp_atom(sql->sa, a);
+				if (subtype_cmp(exp_subtype(e), exp_subtype(ne)) != 0)
+					ne = exp_convert(sql, ne, exp_subtype(ne), exp_subtype(e));
+				(*changes)++;
+				if (exp_name(e))
+					exp_prop_alias(sql->sa, ne, e);
+				return ne;
+			}
+		}
+	}
+	/* bring out the constants */
+	if (is_func(le->type)) {
+		list *ll = le->l;
+		sql_subfunc *f = le->f;
+		if (!f->func->s && !strcmp(f->func->base.name, "sql_add") && list_length(ll) == 2) {
+			sql_exp *lle = ll->h->data;
+			sql_exp *lre = ll->h->next->data;
+
+			if (exp_is_atom(lle) && exp_is_atom(lre))
+				return e;
+			if (!exp_is_atom(re) && exp_is_atom(lre)) {
+				/* (x+c1)+y -> (x+y) + c1 */
+				ll->h->next->data = re;
+				l->h->next->data = lre;
+				if (!(l->h->data = exp_simplify_math(sql, le, changes)))
+					return NULL;
+				(*changes)++;
+				return e;
+			}
+			if (exp_is_atom(re) && exp_is_atom(lre)) {
+				/* (x+c1)+c2 -> (c2+c1) + x */
+				ll->h->data = re;
+				l->h->next->data = lle;
+				if (!(l->h->data = exp_simplify_math(sql, le, changes)))
+					return NULL;
+				(*changes)++;
+				return e;
+			}
+		}
+	}
+	return e;
+}
+
+/* Simplify multiplication: a*1 = a, 0*a = 0, a*a and a*(pow(a,n)) ->pow(a,n+1)constant folding */
+static sql_exp *
+simplify_mul(mvc *sql, sql_exp *e, sql_subfunc *f, list *l, int *changes)
+{
+	(void)f;  /* unused parameter */
+	sql_exp *le = l->h->data;
+	sql_exp *re = l->h->next->data;
+	sql_subtype *et = exp_subtype(e);
+
+	/* 0*a = 0 */
+	if (exp_is_atom(le) && exp_is_zero(le) && /*exp_is_atom(re) &&*/ !has_nil(re)) {
+		(*changes)++;
+		le = exp_zero(sql->sa, et);
+		if (subtype_cmp(exp_subtype(e), exp_subtype(le)) != 0)
+			le = exp_convert(sql, le, exp_subtype(le), exp_subtype(e));
+		if (exp_name(e))
+			exp_prop_alias(sql->sa, le, e);
+		return le;
+	}
+	/* a*0 = 0 */
+	if (exp_is_atom(re) && exp_is_zero(re) && /*exp_is_atom(le) &&*/ !has_nil(le)) {
+		(*changes)++;
+		re = exp_zero(sql->sa, et);
+		if (subtype_cmp(exp_subtype(e), exp_subtype(re)) != 0)
+			re = exp_convert(sql, re, exp_subtype(re), exp_subtype(e));
+		if (exp_name(e))
+			exp_prop_alias(sql->sa, re, e);
+		return re;
+	}
+	/* a*1 = a */
+	if (exp_is_atom(re) && exp_is_one(re) && !has_nil(le)) {
+		if (subtype_cmp(exp_subtype(e), exp_subtype(le)) != 0)
+			le = exp_convert(sql, le, exp_subtype(le), exp_subtype(e));
+		(*changes)++;
+		if (exp_name(e))
+			exp_prop_alias(sql->sa, le, e);
+		return le;
+	}
+	/* 1*a = a */
+	if (exp_is_atom(le) && exp_is_one(le) && !has_nil(re)) {
+		if (subtype_cmp(exp_subtype(e), exp_subtype(re)) != 0)
+			re = exp_convert(sql, re, exp_subtype(re), exp_subtype(e));
+		(*changes)++;
+		if (exp_name(e))
+			exp_prop_alias(sql->sa, re, e);
+		return re;
+	}
+	/* Constant folding: c1 * c2 */
+	if (exp_is_atom(le) && exp_is_atom(re)) {
+		atom *la = exp_flatten(sql, true, le);
+		atom *ra = exp_flatten(sql, true, re);
+
+		if (la && ra && subtype_cmp(atom_type(la), atom_type(ra)) == 0 && subtype_cmp(atom_type(la), exp_subtype(e)) == 0) {
+			atom *a = atom_mul(sql->sa, la, ra);
+
+			if (a && (a = atom_cast(sql->sa, a, exp_subtype(e)))) {
+				sql_exp *ne = exp_atom(sql->sa, a);
+				if (subtype_cmp(exp_subtype(e), exp_subtype(ne)) != 0)
+					ne = exp_convert(sql, ne, exp_subtype(ne), exp_subtype(e));
+				(*changes)++;
+				if (exp_name(e))
+					exp_prop_alias(sql->sa, ne, e);
+				return ne;
+			}
+		}
+	}
+	/* change a*pow(a,n) or pow(a,n)*a into pow(a,n+1) */
+	if (is_func(le->type)) {
+		list *l = le->l;
+		sql_subfunc *f = le->f;
+
+		if (!f->func->s && !strcmp(f->func->base.name, "power") && list_length(l) == 2) {
+			sql_exp *lle = l->h->data;
+			sql_exp *lre = l->h->next->data;
+			if (exp_equal(re, lle)==0) {
+				atom *a = exp_value(sql, lre);
+				if (a && (a = atom_inc(sql->sa, a))) {
+					lre->l = a;
+					lre->r = NULL;
+					if (subtype_cmp(exp_subtype(e), exp_subtype(le)) != 0)
+						le = exp_convert(sql, le, exp_subtype(le), exp_subtype(e));
+					(*changes)++;
+					if (exp_name(e))
+						exp_prop_alias(sql->sa, le, e);
+					return le;
+				}
+			}
+		}
+		if (!f->func->s && !strcmp(f->func->base.name, "sql_mul") && list_length(l) == 2) {
+			sql_exp *lle = l->h->data;
+			sql_exp *lre = l->h->next->data;
+			if (!exp_is_atom(lle) && exp_is_atom(lre) && exp_is_atom(re)) {
+				/* (x*c1)*c2 -> x * (c1*c2) */
+				sql_exp *ne = NULL;
+
+				if (!(le = rel_binop_(sql, NULL, lre, re, "sys", "sql_mul", card_value, true))) {
+					sql->session->status = 0;
+					sql->errstr[0] = '\0';
+					return e; /* error, fallback to original expression */
+				}
+				if (!(ne = rel_binop_(sql, NULL, lle, le, "sys", "sql_mul", card_value, true))) {
+					sql->session->status = 0;
+					sql->errstr[0] = '\0';
+					return e; /* error, fallback to original expression */
+				}
+				if (subtype_cmp(exp_subtype(e), exp_subtype(ne)) != 0)
+					ne = exp_convert(sql, ne, exp_subtype(ne), exp_subtype(e));
+				(*changes)++;
+				if (exp_name(e))
+					exp_prop_alias(sql->sa, ne, e);
+				return ne;
+			}
+		}
+	}
+	return e;
+}
+
+/* Simplify division: a/1 = a, 0/a = 0 (a!=0), a/a = 1 (a!=0), constant folding */
+static sql_exp *
+simplify_div(mvc *sql, sql_exp *e, sql_subfunc *f, list *l, int *changes)
+{
+	(void)f;  /* unused parameter */
+	sql_exp *le = l->h->data;
+	sql_exp *re = l->h->next->data;
+
+	/* a/1 = a */
+	if (exp_is_one(re) && !has_nil(le)) {
+		sql_exp *ne = le;
+		if (subtype_cmp(exp_subtype(e), exp_subtype(ne)) != 0)
+			ne = exp_convert(sql, ne, exp_subtype(ne), exp_subtype(e));
+		(*changes)++;
+		if (exp_name(e))
+			exp_prop_alias(sql->sa, ne, e);
+		return ne;
+	}
+	/* 0/a = 0 (if a != 0) */
+	if (exp_is_atom(le) && exp_is_zero(le) && !has_nil(re) && !exp_is_zero(re)) {
+		sql_exp *ne = exp_zero(sql->sa, exp_subtype(e));
+		if (subtype_cmp(exp_subtype(e), exp_subtype(ne)) != 0)
+			ne = exp_convert(sql, ne, exp_subtype(ne), exp_subtype(e));
+		(*changes)++;
+		if (exp_name(e))
+			exp_prop_alias(sql->sa, ne, e);
+		return ne;
+	}
+	/* a/a = 1 (if a != 0) */
+	if (!has_nil(le) && !has_nil(re) && exp_equal(le, re) == 0 && !exp_is_zero(le)) {
+		/* Create 1 with proper type */
+		sql_subtype *tpe = exp_subtype(e);
+		atom *one = NULL;
+		if (tpe->type->eclass == EC_NUM) {
+			one = atom_int(sql->sa, tpe, 1);
+		} else if (tpe->type->eclass == EC_FLT) {
+			one = atom_float(sql->sa, tpe, 1.0);
+		} else if (tpe->type->eclass == EC_DEC) {
+			one = atom_dec(sql->sa, tpe, scale2value(tpe->scale));
+		}
+		if (one) {
+			sql_exp *ne = exp_atom(sql->sa, one);
+			if (subtype_cmp(exp_subtype(e), exp_subtype(ne)) != 0)
+				ne = exp_convert(sql, ne, exp_subtype(ne), exp_subtype(e));
+			(*changes)++;
+			if (exp_name(e))
+				exp_prop_alias(sql->sa, ne, e);
+			return ne;
+		}
+	}
+	/* Constant folding: c1 / c2 */
+	if (exp_is_atom(le) && exp_is_atom(re) && exp_subtype(le)->type->eclass != EC_DEC /* decimal needs scale handling */) {
+		atom *la = exp_flatten(sql, true, le);
+		atom *ra = exp_flatten(sql, true, re);
+		if (la && ra && !atom_is_zero(ra)) {
+			atom *res = atom_cast(sql->sa, atom_div(sql->sa, la, ra), exp_subtype(e));
+			if (res) {
+				sql_exp *ne = exp_atom(sql->sa, res);
+				(*changes)++;
+				if (exp_name(e))
+					exp_prop_alias(sql->sa, ne, e);
+				return ne;
+			}
+		}
+	}
+	return e;
+}
+
+/* Simplify power: a^0 = 1, a^1 = a, 1^a = 1, constant folding */
+static sql_exp *
+simplify_power(mvc *sql, sql_exp *e, sql_subfunc *f, list *l, int *changes)
+{
+	(void)f;  /* unused parameter */
+	sql_exp *le = l->h->data;
+	sql_exp *re = l->h->next->data;
+
+	/* a^0 = 1 */
+	if (exp_is_atom(re) && exp_is_zero(re) && !has_nil(le)) {
+		sql_subtype *tpe = exp_subtype(e);
+		atom *one = NULL;
+		if (tpe->type->eclass == EC_NUM) {
+			one = atom_int(sql->sa, tpe, 1);
+		} else if (tpe->type->eclass == EC_FLT || tpe->type->eclass == EC_DEC) {
+			one = atom_float(sql->sa, tpe, 1.0);
+		}
+		if (one) {
+			sql_exp *ne = exp_atom(sql->sa, one);
+			if (subtype_cmp(exp_subtype(e), exp_subtype(ne)) != 0)
+				ne = exp_convert(sql, ne, exp_subtype(ne), exp_subtype(e));
+			(*changes)++;
+			if (exp_name(e))
+				exp_prop_alias(sql->sa, ne, e);
+			return ne;
+		}
+	}
+	/* a^1 = a */
+	if (exp_is_one(re) && !has_nil(le)) {
+		sql_exp *ne = le;
+		if (subtype_cmp(exp_subtype(e), exp_subtype(ne)) != 0)
+			ne = exp_convert(sql, ne, exp_subtype(ne), exp_subtype(e));
+		(*changes)++;
+		if (exp_name(e))
+			exp_prop_alias(sql->sa, ne, e);
+		return ne;
+	}
+	/* 1^a = 1 (if a >0) */
+	if (exp_is_one(le) && !has_nil(re)) {
+		sql_subtype *tpe = exp_subtype(e);
+		atom *one = NULL;
+		if (tpe->type->eclass == EC_NUM) {
+			one = atom_int(sql->sa, tpe, 1);
+		} else if (tpe->type->eclass == EC_FLT || tpe->type->eclass == EC_DEC) {
+			one = atom_float(sql->sa, tpe, 1.0);
+		}
+		if (one) {
+			sql_exp *ne = exp_atom(sql->sa, one);
+			if (subtype_cmp(exp_subtype(e), exp_subtype(ne)) != 0)
+				ne = exp_convert(sql, ne, exp_subtype(ne), exp_subtype(e));
+			(*changes)++;
+			if (exp_name(e))
+				exp_prop_alias(sql->sa, ne, e);
+			return ne;
+		}
+	}
+	/* Constant folding: c1 ^ c2 - skip for now (no atom_pow function) */
+	return e;
+}
+
+/* Simplify negation: -(-a) = a and -0 = 0 */
+static sql_exp *
+simplify_neg(mvc *sql, sql_exp *e, sql_subfunc *f, list *l, int *changes)
+{
+	(void)f;  /* unused parameter */
+	sql_exp *le = l->h->data;
+
+	/* -0 = 0 */
+	if (exp_is_atom(le) && exp_is_zero(le)) {
+		sql_exp *ne = exp_zero(sql->sa, exp_subtype(e));
+		if (subtype_cmp(exp_subtype(e), exp_subtype(ne)) != 0)
+			ne = exp_convert(sql, ne, exp_subtype(ne), exp_subtype(e));
+		(*changes)++;
+		if (exp_name(e))
+			exp_prop_alias(sql->sa, ne, e);
+		return ne;
+	}
+	/* -(-a) = a */
+	if (is_func(le->type)) {
+		sql_subfunc *lf = le->f;
+		if (!lf->func->s && !strcmp(lf->func->base.name, "sql_neg") && list_length(le->l) == 1) {
+			list *ll = (list *)le->l;
+			node *n = ll->h;
+			if (n) {
+				sql_exp *inner = (sql_exp *)n->data;
+				sql_exp *ne = inner;
+				if (subtype_cmp(exp_subtype(e), exp_subtype(ne)) != 0)
+					ne = exp_convert(sql, ne, exp_subtype(ne), exp_subtype(e));
+				(*changes)++;
+				if (exp_name(e))
+					exp_prop_alias(sql->sa, ne, e);
+				return ne;
+			}
+		}
+	}
+	return e;
 }
 
 static sql_exp *
@@ -34,6 +500,11 @@ exp_simplify_math( mvc *sql, sql_exp *e, int *changes)
 
 		if (list_length(l) < 1)
 			return e;
+
+		if (l)
+			for (n = l->h; n; n = n->next)
+				if (!(n->data = exp_simplify_math(sql, n->data, changes)))
+					return NULL;
 
 		/* if the function has no null semantics we can return NULL if one of the arguments is NULL */
 		if (!f->func->semantics && f->func->type != F_PROC) {
@@ -76,253 +547,24 @@ exp_simplify_math( mvc *sql, sql_exp *e, int *changes)
 		if (!EC_COMPUTE(exp_subtype(le)->type->eclass) && exp_subtype(le)->type->eclass != EC_DEC)
 			return e;
 
-		if (!f->func->s && !strcmp(f->func->base.name, "sql_mul") && list_length(l) == 2) {
-			sql_exp *le = l->h->data;
-			sql_exp *re = l->h->next->data;
-			sql_subtype *et = exp_subtype(e);
-
-			/* 0*a = 0 */
-			if (exp_is_atom(le) && exp_is_zero(le) && exp_is_atom(re) && !has_nil(re)) {
-				(*changes)++;
-				le = exp_zero(sql->sa, et);
-				if (subtype_cmp(exp_subtype(e), exp_subtype(le)) != 0)
-					le = exp_convert(sql, le, exp_subtype(le), exp_subtype(e));
-				if (exp_name(e))
-					exp_prop_alias(sql->sa, le, e);
-				return le;
-			}
-			/* a*0 = 0 */
-			if (exp_is_atom(re) && exp_is_zero(re) && exp_is_atom(le) && !has_nil(le)) {
-				(*changes)++;
-				re = exp_zero(sql->sa, et);
-				if (subtype_cmp(exp_subtype(e), exp_subtype(re)) != 0)
-					re = exp_convert(sql, re, exp_subtype(re), exp_subtype(e));
-				if (exp_name(e))
-					exp_prop_alias(sql->sa, re, e);
-				return re;
-			}
-			if (exp_is_atom(le) && exp_is_atom(re)) {
-				atom *la = exp_flatten(sql, true, le);
-				atom *ra = exp_flatten(sql, true, re);
-
-				if (la && ra && subtype_cmp(atom_type(la), atom_type(ra)) == 0 && subtype_cmp(atom_type(la), exp_subtype(e)) == 0) {
-					atom *a = atom_mul(sql->sa, la, ra);
-
-					if (a && (a = atom_cast(sql->sa, a, exp_subtype(e)))) {
-						sql_exp *ne = exp_atom(sql->sa, a);
-						if (subtype_cmp(exp_subtype(e), exp_subtype(ne)) != 0)
-							ne = exp_convert(sql, ne, exp_subtype(ne), exp_subtype(e));
-						(*changes)++;
-						if (exp_name(e))
-							exp_prop_alias(sql->sa, ne, e);
-						return ne;
-					}
-				}
-			}
-			/* change a*pow(a,n) or pow(a,n)*a into pow(a,n+1) */
-			if (is_func(le->type)) {
-				list *l = le->l;
-				sql_subfunc *f = le->f;
-
-				if (!f->func->s && !strcmp(f->func->base.name, "power") && list_length(l) == 2) {
-					sql_exp *lle = l->h->data;
-					sql_exp *lre = l->h->next->data;
-					if (exp_equal(re, lle)==0) {
-						atom *a = exp_value(sql, lre);
-						if (a && (a = atom_inc(sql->sa, a))) {
-							lre->l = a;
-							lre->r = NULL;
-							if (subtype_cmp(exp_subtype(e), exp_subtype(le)) != 0)
-								le = exp_convert(sql, le, exp_subtype(le), exp_subtype(e));
-							(*changes)++;
-							if (exp_name(e))
-								exp_prop_alias(sql->sa, le, e);
-							return le;
-						}
-					}
-				}
-				if (!f->func->s && !strcmp(f->func->base.name, "sql_mul") && list_length(l) == 2) {
-					sql_exp *lle = l->h->data;
-					sql_exp *lre = l->h->next->data;
-					if (!exp_is_atom(lle) && exp_is_atom(lre) && exp_is_atom(re)) {
-						/* (x*c1)*c2 -> x * (c1*c2) */
-						sql_exp *ne = NULL;
-
-						if (!(le = rel_binop_(sql, NULL, lre, re, "sys", "sql_mul", card_value, true))) {
-							sql->session->status = 0;
-							sql->errstr[0] = '\0';
-							return e; /* error, fallback to original expression */
-						}
-						if (!(ne = rel_binop_(sql, NULL, lle, le, "sys", "sql_mul", card_value, true))) {
-							sql->session->status = 0;
-							sql->errstr[0] = '\0';
-							return e; /* error, fallback to original expression */
-						}
-						if (subtype_cmp(exp_subtype(e), exp_subtype(ne)) != 0)
-							ne = exp_convert(sql, ne, exp_subtype(ne), exp_subtype(e));
-						(*changes)++;
-						if (exp_name(e))
-							exp_prop_alias(sql->sa, ne, e);
-						return ne;
-					}
-				}
-			}
+		if (!f->func->s && !strcmp(f->func->base.name, "sql_sub") && list_length(l) == 2) {
+			return simplify_sub(sql, e, f, l, changes);
 		}
 		if (!f->func->s && !strcmp(f->func->base.name, "sql_add") && list_length(l) == 2) {
-			sql_exp *le = l->h->data;
-			sql_exp *re = l->h->next->data;
-			if (exp_is_atom(le) && exp_is_zero(le)) {
-				if (subtype_cmp(exp_subtype(e), exp_subtype(re)) != 0)
-					re = exp_convert(sql, re, exp_subtype(re), exp_subtype(e));
-				(*changes)++;
-				if (exp_name(e))
-					exp_prop_alias(sql->sa, re, e);
-				return re;
-			}
-			if (exp_is_atom(re) && exp_is_zero(re)) {
-				if (subtype_cmp(exp_subtype(e), exp_subtype(le)) != 0)
-					le = exp_convert(sql, le, exp_subtype(le), exp_subtype(e));
-				(*changes)++;
-				if (exp_name(e))
-					exp_prop_alias(sql->sa, le, e);
-				return le;
-			}
-			if (exp_is_atom(le) && exp_is_atom(re)) {
-				atom *la = exp_flatten(sql, true, le);
-				atom *ra = exp_flatten(sql, true, re);
-
-				if (la && ra) {
-					atom *a = atom_add(sql->sa, la, ra);
-
-					if (a) {
-						sql_exp *ne = exp_atom(sql->sa, a);
-						if (subtype_cmp(exp_subtype(e), exp_subtype(ne)) != 0)
-							ne = exp_convert(sql, ne, exp_subtype(ne), exp_subtype(e));
-						(*changes)++;
-						if (exp_name(e))
-							exp_prop_alias(sql->sa, ne, e);
-						return ne;
-					}
-				}
-			}
-			if (is_func(le->type)) {
-				list *ll = le->l;
-				sql_subfunc *f = le->f;
-				if (!f->func->s && !strcmp(f->func->base.name, "sql_add") && list_length(ll) == 2) {
-					sql_exp *lle = ll->h->data;
-					sql_exp *lre = ll->h->next->data;
-
-					if (exp_is_atom(lle) && exp_is_atom(lre))
-						return e;
-					if (!exp_is_atom(re) && exp_is_atom(lre)) {
-						/* (x+c1)+y -> (x+y) + c1 */
-						ll->h->next->data = re;
-						l->h->next->data = lre;
-						if (!(l->h->data = exp_simplify_math(sql, le, changes)))
-							return NULL;
-						(*changes)++;
-						return e;
-					}
-					if (exp_is_atom(re) && exp_is_atom(lre)) {
-						/* (x+c1)+c2 -> (c2+c1) + x */
-						ll->h->data = re;
-						l->h->next->data = lle;
-						if (!(l->h->data = exp_simplify_math(sql, le, changes)))
-							return NULL;
-						(*changes)++;
-						return e;
-					}
-				}
-			}
+			return simplify_add(sql, e, f, l, changes);
 		}
-		if (!f->func->s && !strcmp(f->func->base.name, "sql_sub") && list_length(l) == 2) {
-			sql_exp *le = l->h->data;
-			sql_exp *re = l->h->next->data;
-
-			if (exp_is_atom(le) && exp_is_atom(re)) {
-				atom *la = exp_flatten(sql, true, le);
-				atom *ra = exp_flatten(sql, true, re);
-
-				if (la && ra) {
-					atom *a = atom_sub(sql->sa, la, ra);
-
-					if (a) {
-						sql_exp *ne = exp_atom(sql->sa, a);
-						if (subtype_cmp(exp_subtype(e), exp_subtype(ne)) != 0)
-							ne = exp_convert(sql, ne, exp_subtype(ne), exp_subtype(e));
-						(*changes)++;
-						if (exp_name(e))
-							exp_prop_alias(sql->sa, ne, e);
-						return ne;
-					}
-				}
-			}
-			if (!has_nil(le) && !has_nil(re) && exp_equal(le,re) == 0) { /* a - a = 0 */
-				atom *a;
-				sql_exp *ne;
-
-				if (exp_subtype(le)->type->eclass == EC_NUM) {
-					a = atom_int(sql->sa, exp_subtype(le), 0);
-				} else if (exp_subtype(le)->type->eclass == EC_FLT) {
-					a = atom_float(sql->sa, exp_subtype(le), 0);
-				} else {
-					return e;
-				}
-				ne = exp_atom(sql->sa, a);
-				if (subtype_cmp(exp_subtype(e), exp_subtype(ne)) != 0)
-					ne = exp_convert(sql, ne, exp_subtype(ne), exp_subtype(e));
-				(*changes)++;
-				if (exp_name(e))
-					exp_prop_alias(sql->sa, ne, e);
-				return ne;
-			}
-			if (is_func(le->type)) {
-				list *ll = le->l;
-				sql_subfunc *f = le->f;
-				if (!f->func->s && !strcmp(f->func->base.name, "sql_add") && list_length(ll) == 2) {
-					sql_exp *lle = ll->h->data;
-					sql_exp *lre = ll->h->next->data;
-					if (exp_equal(re, lre) == 0) {
-						/* (x+a)-a = x*/
-						if (subtype_cmp(exp_subtype(e), exp_subtype(lle)) != 0)
-							lle = exp_convert(sql, lle, exp_subtype(lle), exp_subtype(e));
-						if (exp_name(e))
-							exp_prop_alias(sql->sa, lle, e);
-						(*changes)++;
-						return lle;
-					}
-					if (exp_is_atom(lle) && exp_is_atom(lre))
-						return e;
-					if (!exp_is_atom(re) && exp_is_atom(lre)) {
-						/* (x+c1)-y -> (x-y) + c1 */
-						ll->h->next->data = re;
-						l->h->next->data = lre;
-						le->f = e->f;
-						e->f = f;
-						if (!(l->h->data = exp_simplify_math(sql, le, changes)))
-							return NULL;
-						(*changes)++;
-						return e;
-					}
-					if (exp_is_atom(re) && exp_is_atom(lre)) {
-						/* (x+c1)-c2 -> (c1-c2) + x */
-						ll->h->data = lre;
-						ll->h->next->data = re;
-						l->h->next->data = lle;
-						le->f = e->f;
-						e->f = f;
-						if (!(l->h->data = exp_simplify_math(sql, le, changes)))
-							return NULL;
-						(*changes)++;
-						return e;
-					}
-				}
-			}
+		if (!f->func->s && !strcmp(f->func->base.name, "sql_mul") && list_length(l) == 2) {
+			return simplify_mul(sql, e, f, l, changes);
 		}
-		if (l)
-			for (n = l->h; n; n = n->next)
-				if (!(n->data = exp_simplify_math(sql, n->data, changes)))
-					return NULL;
+		if (!f->func->s && !strcmp(f->func->base.name, "sql_div") && list_length(l) == 2) {
+			return simplify_div(sql, e, f, l, changes);
+		}
+		if (!f->func->s && !strcmp(f->func->base.name, "power") && list_length(l) == 2) {
+			return simplify_power(sql, e, f, l, changes);
+		}
+		if (!f->func->s && !strcmp(f->func->base.name, "sql_neg") && list_length(l) == 1) {
+			return simplify_neg(sql, e, f, l, changes);
+		}
 	}
 	if (e->type == e_convert)
 		if (!(e->l = exp_simplify_math(sql, e->l, changes)))

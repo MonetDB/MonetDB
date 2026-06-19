@@ -1042,7 +1042,7 @@ rel_select_add_exp(allocator *sa, sql_rel *l, sql_exp *e)
 	return l;
 }
 
-void
+sql_rel *
 rel_join_add_exp( allocator *sa, sql_rel *rel, sql_exp *e)
 {
 	assert(is_join(rel->op) || is_semi(rel->op) || is_select(rel->op));
@@ -1052,6 +1052,7 @@ rel_join_add_exp( allocator *sa, sql_rel *rel, sql_exp *e)
 	append(rel->exps, e);
 	if (e->card > rel->card)
 		rel->card = e->card;
+	return rel;
 }
 
 sql_exp *
@@ -1158,6 +1159,8 @@ rel_groupby(mvc *sql, sql_rel *l, list *groupbyexps )
 				exp_label(sql->sa, e, ++sql->label);
 			ne = exp_ref(sql, e);
 			ne = exp_propagate(sql->sa, ne, e);
+			if (is_freevar(e))
+				set_freevar(ne, is_freevar(e)-1);
 			append(aggrs, ne);
 		}
 	}
@@ -1289,7 +1292,8 @@ exps_reset_props(list *exps, bool setnil)
  * refer to the tname relation, anywhere in the relational tree
  */
 list *
-_rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int intern, int basecol /* basecol only */ )
+_rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int intern, int basecol /* basecol only */,
+		bool bound )
 {
 	list *lexps, *rexps = NULL, *exps = NULL, *rels;
 
@@ -1307,10 +1311,10 @@ _rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int in
 	case op_left:
 	case op_right:
 	case op_full:
-		lexps = _rel_projections(sql, rel->l, tname, settname, intern, basecol);
+		lexps = _rel_projections(sql, rel->l, tname, settname, intern, basecol, bound);
 		exps_reset_props(lexps, is_right(rel->op) || is_full(rel->op));
 		if (!rel->attr)
-			rexps = _rel_projections(sql, rel->r, tname, settname, intern, basecol);
+			rexps = _rel_projections(sql, rel->r, tname, settname, intern, basecol, bound);
 		exps_reset_props(rexps, is_left(rel->op) || is_full(rel->op));
 		if (rexps)
 			lexps = list_join(lexps, rexps);
@@ -1325,6 +1329,8 @@ _rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int in
 			for (node *en = r->h; en; en = en->next) {
 				sql_exp *e = en->data;
 
+				if (is_freevar(e) && e->alias.label == e->nid && bound)
+					continue;
 				if (basecol && !is_basecol(e))
 					continue;
 				if (intern || !is_intern(e)) {
@@ -1359,6 +1365,8 @@ _rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int in
 			for (node *en = rel->exps->h; en; en = en->next) {
 				sql_exp *e = en->data;
 
+				if (is_freevar(e) && e->alias.label == e->nid && bound)
+					continue;
 				if (basecol && !is_basecol(e))
 					continue;
 				if (intern || !is_intern(e)) {
@@ -1383,7 +1391,7 @@ _rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int in
 			if (rels->h)
 				r = rels->h->data;
 			if (r)
-				exps = _rel_projections(sql, r, tname, settname, intern, basecol);
+				exps = _rel_projections(sql, r, tname, settname, intern, basecol, bound);
 			/* it's a multi-union (expressions have to be the same in all the operands)
 			 * so we are ok only with the expressions of the first operand
 			 */
@@ -1391,6 +1399,8 @@ _rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int in
 				for (node *en = exps->h; en; en = en->next) {
 					sql_exp *e = en->data;
 
+					if (is_freevar(e) && e->alias.label == e->nid && bound)
+						continue;
 					e->card = rel->card;
 					if (!settname) /* noname use alias */
 						exp_setname(sql, e, exp_relname(e), exp_name(e));
@@ -1402,14 +1412,16 @@ _rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int in
 		}
 		/* I only expect set relations to hit here */
 		assert(is_set(rel->op));
-		lexps = _rel_projections(sql, rel->l, tname, settname, intern, basecol);
-		rexps = _rel_projections(sql, rel->r, tname, settname, intern, basecol);
+		lexps = _rel_projections(sql, rel->l, tname, settname, intern, basecol, bound);
+		rexps = _rel_projections(sql, rel->r, tname, settname, intern, basecol, bound);
 		if (lexps && rexps) {
 
 			assert(list_length(lexps) == list_length(rexps));
 			for (node *en = lexps->h; en; en = en->next) {
 				sql_exp *e = en->data;
 
+				if (is_freevar(e) && e->alias.label == e->nid && bound)
+					continue;
 				e->card = rel->card;
 				if (!settname) /* noname use alias */
 					exp_setname(sql, e, exp_relname(e), exp_name(e));
@@ -1426,7 +1438,7 @@ _rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int in
 	case op_select:
 	case op_topn:
 	case op_sample:
-		return _rel_projections(sql, rel->l, tname, settname, intern, basecol);
+		return _rel_projections(sql, rel->l, tname, settname, intern, basecol, bound);
 	default:
 		return NULL;
 	}
@@ -1436,7 +1448,13 @@ list *
 rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int intern)
 {
 	assert(tname == NULL);
-	return _rel_projections(sql, rel, tname, settname, intern, 0);
+	return _rel_projections(sql, rel, tname, settname, intern, 0, false);
+}
+
+list *
+rel_boundvar(mvc *sql, sql_rel *rel)
+{
+	return _rel_projections(sql, rel, NULL, 0, 0, 0, true);
 }
 
 /* find the path to the relation containing the base of the expression
@@ -1557,6 +1575,8 @@ rel_select_push_exp_down(mvc *sql, sql_rel *rel, sql_exp *e)
 sql_rel *
 rel_push_select(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *e, int f)
 {
+	if (rel && rel->op == op_select)
+		return rel_select_add_exp(sql->sa, rel, e);
 	list *l = rel_bind_path(sql, rel, ls, sa_list(sql->sa));
 	node *n;
 	sql_rel *lrel = NULL, *p = NULL;
@@ -1695,7 +1715,7 @@ rel_push_join(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp *rs2, sq
 		return rel;
 	}
 
-	rel_join_add_exp( sql->sa, p, e);
+	(void) rel_join_add_exp( sql->sa, p, e);
 	return rel;
 }
 

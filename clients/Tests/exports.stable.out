@@ -1650,6 +1650,7 @@ cq *qc_find(qc *cache, int id);
 cq *qc_insert(qc *cache, allocator *sa, sql_rel *r, symbol *s, list *params, mapi_query_t type, char *codedstr, int no_mitosis);
 void rel_base_use_all(mvc *sql, sql_rel *rel);
 sql_rel *rel_basetable(mvc *sql, sql_table *t, const char *tname);
+list *rel_boundvar(mvc *sql, sql_rel *rel);
 sql_rel *rel_project(allocator *sa, sql_rel *l, list *e);
 list *rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int intern);
 void res_tables_destroy(res_table *results);

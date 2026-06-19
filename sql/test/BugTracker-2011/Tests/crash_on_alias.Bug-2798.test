@@ -17,9 +17,7 @@ project (
 | | group by (
 | | | table("sys"."dbg") [ "dbg"."a" NOT NULL UNIQUE, "dbg"."b" NOT NULL UNIQUE ]
 | | ) [ "dbg"."a" NOT NULL UNIQUE as "d" ] [ "d" NOT NULL UNIQUE, "sys"."min" no nil ("dbg"."b" NOT NULL UNIQUE) NOT NULL as "%1"."%1" ],
-| | project (
-| | |  [ boolean(1) "true" as "%2"."%2" ]
-| | ) [ tinyint(2) "2" as "%3"."%3" ]
+| |  [ tinyint(2) "2" as "%3"."%3" ]
 | ) [  ]
 ) [ "d" NOT NULL, "%1"."%1" NOT NULL, "sys"."sql_mul"(tinyint(2) "2", "sys"."sql_div"("%1"."%1" NOT NULL, "%3"."%3")) as "f" ]
 
@@ -58,9 +56,7 @@ project (
 | | group by (
 | | | table("sys"."dbg") [ "dbg"."a" NOT NULL UNIQUE, "dbg"."b" NOT NULL UNIQUE ]
 | | ) [ "dbg"."a" NOT NULL UNIQUE as "d" ] [ "d" NOT NULL UNIQUE, "sys"."min" no nil ("dbg"."b" NOT NULL UNIQUE) NOT NULL as "%1"."%1" ],
-| | project (
-| | |  [ boolean(1) "true" as "%2"."%2" ]
-| | ) [ tinyint(2) "2" as "%3"."%3" ]
+| |  [ tinyint(2) "2" as "%3"."%3" ]
 | ) [  ]
 ) [ "d" NOT NULL, "%1"."%1" NOT NULL as "e", "sys"."sql_mul"(tinyint(2) "2", "sys"."sql_div"("%1"."%1" NOT NULL, "%3"."%3")) as "f" ]
 

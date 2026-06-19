@@ -172,6 +172,7 @@ typedef struct mvc {
 	int rewriter_stop_idx;      /* index of pre_sql_optimizers/post_sql_optimizers */
 	int rewriter_stop_cycle;    /* rel_optimizer_one stop cycle */
 	bool show_details;          /* show details in explain */
+	bool show_all_details;      /* show details in explain (during testing) */
 	bool trace;                 /* trace query execution */
 	sql_session *session;
 	sql_store store;

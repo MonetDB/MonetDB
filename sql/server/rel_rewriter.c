@@ -507,7 +507,7 @@ kc_column_cmp(sql_kc *kc, sql_column *c)
 
 /* WARNING exps_unique doesn't check for duplicate NULL values */
 int
-exps_unique(mvc *sql, sql_rel *rel, list *exps)
+exps_unique(mvc *sql, sql_rel *rel, list *exps, bool unique_nulls)
 {
 	int nr = 0, need_check = 0;
 	sql_ukey *k = NULL;
@@ -523,6 +523,8 @@ exps_unique(mvc *sql, sql_rel *rel, list *exps)
 			if (!k && (p = find_prop(e->p, PROP_HASHCOL))) /* at the moment, use only one k */
 				k = p->value.pval;
 		}
+		if (unique_nulls && has_nil(e))
+			return 0;
 	}
 	if (!need_check) /* all have unique property return */
 		return 1;

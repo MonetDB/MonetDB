@@ -456,6 +456,7 @@ developer.
 %{_bindir}/smack01
 %{_bindir}/sqlsample.php
 %{_bindir}/sqlsample.pl
+%{_bindir}/sqlsample.py
 %{_bindir}/streamcat
 %{_bindir}/testcondvar
 %endif
@@ -1069,6 +1070,7 @@ rm "${RPM_BUILD_ROOT}"%{_bindir}/smack01
 rm "${RPM_BUILD_ROOT}"%{_bindir}/sqllogictest.py
 rm "${RPM_BUILD_ROOT}"%{_bindir}/sqlsample.php
 rm "${RPM_BUILD_ROOT}"%{_bindir}/sqlsample.pl
+rm "${RPM_BUILD_ROOT}"%{_bindir}/sqlsample.py
 rm "${RPM_BUILD_ROOT}"%{_bindir}/streamcat
 rm "${RPM_BUILD_ROOT}"%{_bindir}/testcondvar
 rm -r "${RPM_BUILD_ROOT}"%{_datadir}/doc/MonetDB*

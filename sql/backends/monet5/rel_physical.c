@@ -203,7 +203,9 @@ has_groupby(sql_rel *rel)
 		case op_buildhash:
 		case op_probehash:
 		case op_partition:
-			return has_groupby(rel->l);
+			if (rel->l)
+				return has_groupby(rel->l);
+			return 0;
 		case op_insert:
 		case op_update:
 		case op_delete:
@@ -237,10 +239,13 @@ has_groupby(sql_rel *rel)
 #define EPB 3
 
 static sql_rel *
-rel_partition(mvc *sql, sql_rel *rel)
+rel_partition(visitor *v, mvc *sql, sql_rel *rel)
 {
 	if (mvc_highwater(sql))
 		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
+
+	if (v->opt >= 0 && rel->opt >= v->opt) /* only once */
+        return 0;
 
 	switch (rel->op) {
 	case op_basetable:
@@ -252,7 +257,7 @@ rel_partition(mvc *sql, sql_rel *rel)
 	case op_groupby:
 	case op_topn:
 		if (rel->l)
-			rel_partition(sql, rel->l);
+			rel_partition(v, sql, rel->l);
 		break;
 	case op_semi:
 	case op_anti:
@@ -260,20 +265,20 @@ rel_partition(mvc *sql, sql_rel *rel)
 	case op_inter:
 	case op_except:
 		if (rel->l)
-			rel_partition(sql, rel->l);
+			rel_partition(v, sql, rel->l);
 		if (rel->r)
-			rel_partition(sql, rel->r);
+			rel_partition(v, sql, rel->r);
 		break;
 	case op_munion:
 		for (node *n = ((list*)rel->l)->h; n; n = n->next)
-			rel_partition(sql, n->data);
+			rel_partition(v, sql, n->data);
 		break;
 	case op_insert:
 	case op_update:
 	case op_delete:
 	case op_truncate:
 		if (rel->r /*&& rel->card <= CARD_AGGR*/)
-			rel_partition(sql, rel->r);
+			rel_partition(v, sql, rel->r);
 		break;
 	case op_join:
 	case op_left:
@@ -281,9 +286,9 @@ rel_partition(mvc *sql, sql_rel *rel)
 	case op_full:
 		if (has_groupby(rel->l) || has_groupby(rel->r)) {
 			if (rel->l)
-				rel_partition(sql, rel->l);
+				rel_partition(v, sql, rel->l);
 			if (rel->r)
-				rel_partition(sql, rel->r);
+				rel_partition(v, sql, rel->r);
 		} else {
 			_rel_partition(sql, rel);
 		}
@@ -291,17 +296,17 @@ rel_partition(mvc *sql, sql_rel *rel)
 	case op_ddl:
 		if (rel->flag == ddl_output || rel->flag == ddl_create_seq || rel->flag == ddl_alter_seq || rel->flag == ddl_alter_table || rel->flag == ddl_create_table || rel->flag == ddl_create_view) {
 			if (rel->l)
-				rel_partition(sql, rel->l);
+				rel_partition(v, sql, rel->l);
 		} else if (rel->flag == ddl_list || rel->flag == ddl_exception) {
 			if (rel->l)
-				rel_partition(sql, rel->l);
+				rel_partition(v, sql, rel->l);
 			if (rel->r)
-				rel_partition(sql, rel->r);
+				rel_partition(v, sql, rel->r);
 		}
 		break;
 	case op_table:
 		if ((IS_TABLE_PROD_FUNC(rel->flag) || rel->flag == TABLE_FROM_RELATION) && rel->l)
-			rel_partition(sql, rel->l);
+			rel_partition(v, sql, rel->l);
 		sql_exp *op = rel->r;
         if (rel->flag != TRIGGER_WRAPPER && op) {
             sql_subfunc *f = op->f;
@@ -317,6 +322,8 @@ rel_partition(mvc *sql, sql_rel *rel)
 		assert(0);
 		break;
 	}
+	if (rel && v->opt >= 0)
+        rel->opt = v->opt;
 	return rel;
 }
 
@@ -1556,7 +1563,9 @@ rel_physical(mvc *sql, sql_rel *rel)
 	if (!sql->recursive) {
 		ATOMIC_TYPE oahash_enabled = (1U<<19);
 		if (!SQLrunning || !(GDKdebug & oahash_enabled) || gp.complex_modify || gp.cnt[op_except] || gp.cnt[op_inter]) {
-			(void)rel_partition(sql, rel);
+			if (v.opt >= 0)
+				v.opt = rel->opt+1;
+			(void)rel_partition(&v, sql, rel);
 		} else {
 			rel = rel_dce(&v, NULL, rel);
 			if (v.opt >= 0)

@@ -1,4 +1,4 @@
-#[[
+
 # SPDX-License-Identifier: MPL-2.0
 #
 # This Source Code Form is subject to the terms of the Mozilla Public
@@ -8,7 +8,8 @@
 # For copyright information, see the file debian/copyright.
 #]]
 
-add_subdirectory(C)
-add_subdirectory(perl)
-add_subdirectory(php)
-add_subdirectory(python)
+install(FILES
+  sqlsample.py
+  PERMISSIONS ${PROGRAM_PERMISSIONS_DEFAULT}
+  DESTINATION ${CMAKE_INSTALL_BINDIR}
+  COMPONENT clienttest)
