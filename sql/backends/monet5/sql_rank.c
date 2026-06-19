@@ -1789,7 +1789,7 @@ SQLvar_pop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			msg = createException(SQL, op, GDK_EXCEPTION);				\
 			goto bailout;												\
 		}																\
-		populate_segment_tree(lng, ncount, INIT_AGGREGATE_COUNT, COMPUTE_LEVEL0_COUNT_FIXED, COMPUTE_LEVELN_COUNT, TPE, NOTHING, NOTHING); \
+		populate_segment_tree(lng, ncount, INIT_AGGREGATE_COUNT, COMPUTE_LEVEL0_COUNT_FIXED, COMPUTE_LEVELN_COUNT, NOTHING_ARGS, TPE, NOTHING, NOTHING); \
 		for (; k < i; k++)												\
 			compute_on_segment_tree(lng, start[k] > j ? start[k] - j : 0, end[k] > j ? end[k] - j : 0, INIT_AGGREGATE_COUNT, COMPUTE_LEVELN_COUNT, FINALIZE_AGGREGATE_COUNT, TPE, NOTHING, NOTHING); \
 		j = k;															\

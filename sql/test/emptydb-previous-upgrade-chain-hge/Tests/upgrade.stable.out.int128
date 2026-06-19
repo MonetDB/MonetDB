@@ -240,6 +240,7 @@ update sys.functions set system = true where not system and schema_id = 2000 and
 Running database upgrade commands:
 ALTER TABLE sys.keywords SET READ WRITE;
 DELETE FROM sys.keywords WHERE keyword = 'PLAN';
+COMMIT;
 
 Running database upgrade commands:
 ALTER TABLE sys.keywords SET READ ONLY;
@@ -374,4 +375,11 @@ COMMIT;
 INSERT INTO sys.function_types VALUES (8, 'Group filter function', 'GROUP FILTER FUNCTION');
 COMMIT;
 ALTER TABLE sys.function_types SET READ ONLY;
+
+Running database upgrade commands:
+ALTER TABLE sys.function_languages SET READ WRITE;
+COMMIT;
+DELETE FROM sys.function_languages WHERE language_name IN ('R', 'C', 'C++');
+COMMIT;
+ALTER TABLE sys.function_languages SET READ ONLY;
 

@@ -183,7 +183,6 @@
 
 // optional code: libraries that may or may not be available,
 // optional extensions
-#cmakedefine HAVE_CUDF 1
 #cmakedefine HAVE_CURL 1
 #cmakedefine HAVE_FITS 1
 #cmakedefine HAVE_GEOM 1
@@ -193,8 +192,6 @@
 #cmakedefine HAVE_LIBLZMA 1
 #cmakedefine HAVE_LIBPCRE 1
 #cmakedefine HAVE_LIBPY3 1
-#cmakedefine HAVE_LIBR 1
-#cmakedefine RHOME "@RHOME@"
 #cmakedefine HAVE_LIBXML 1
 #cmakedefine HAVE_LIBZ 1
 #cmakedefine HAVE_NETCDF 1

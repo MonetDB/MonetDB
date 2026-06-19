@@ -148,7 +148,7 @@ SQLhelp sqlhelp1[] = {
 	 "See also https://www.monetdb.org/documentation/user-guide/sql-manual/data-loading/loader-functions/"},
 	{"CREATE AGGREGATE",
 	 "Create a user-defined aggregate function. The body of the aggregate function\n"
-	 "can also be defined in other programming languages such as Python, R, C or CPP.",
+	 "can also be defined in other programming languages such as Python.",
 	 "CREATE [ OR REPLACE ] AGGREGATE [ FUNCTION ] qname '(' { '*' | [ param [',' ...]] } ')'\n"
 	 "    RETURNS function_return_data_type\n"
 	 "    EXTERNAL NAME ident '.' ident\n"
@@ -166,7 +166,7 @@ SQLhelp sqlhelp1[] = {
 	 "See also https://www.monetdb.org/documentation/user-guide/sql-programming/function-definitions/"},
 	{"CREATE FUNCTION",
 	 "Create a user-defined function (UDF). The body of the function can be defined in\n"
-	 " PL/SQL or programming languages such as Python, R, C or CPP when embedded on the server.",
+	 " PL/SQL or programming languages such as Python when embedded on the server.",
 	 "CREATE [ OR REPLACE ] FUNCTION qname '(' { '*' | [ param [',' ...]] } ')'\n"
 	 "    RETURNS function_return_data_type\n"
 	 "    BEGIN [ ATOMIC ] statement [ ';' ...] END\n"
@@ -784,7 +784,7 @@ SQLhelp sqlhelp2[] = {
 	 NULL},
 	{"language_keyword",
 	 NULL,
-	 "C | CPP | R | PYTHON | PYTHON3",
+	 "PYTHON | PYTHON3",
 	 NULL,
 	 NULL},
 	{"limit_clause",

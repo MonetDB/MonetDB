@@ -99,7 +99,7 @@ def main():
                vcpkg.format(r'bin\libssl-3{}.dll'.format(libcrypto)),
                vcpkg.format(r'bin\lz4.dll'),
                vcpkg.format(r'bin\liblzma.dll'),
-               vcpkg.format(r'bin\zlib1.dll')])
+               vcpkg.format(r'bin\z.dll')])
     print(r'            </Directory>')
     id = comp(features, id, 12,
               [r'share\license.rtf'])

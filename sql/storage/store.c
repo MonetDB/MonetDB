@@ -1056,12 +1056,6 @@ load_func(sql_trans *tr, sql_schema *s, sqlid fid, subrids *rs)
 		t->query = t->imp;
 		t->imp = NULL;
 	}
-	/* convert old PYTHON2 and PYTHON2_MAP to PYTHON and PYTHON_MAP
-	 * see also function sql_update_jun2020() in sql_upgrades.c */
-	if ((int) t->lang == 7 || (int) t->lang == 8)		/* MAP_PY old FUNC_LANG_PY2 */
-		t->lang = FUNC_LANG_PY;
-	else if ((int) t->lang == 9 || (int) t->lang == 11)	/* old FUNC_LANG_MAP_PY2 or MAP_PY3 */
-		t->lang = FUNC_LANG_PY;
 	if (LANG_EXT(t->lang)) { /* instantiate functions other than sql and mal */
 		switch(t->type) {
 		case F_AGGR:

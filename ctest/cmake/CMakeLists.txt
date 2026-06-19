@@ -28,7 +28,6 @@ include(${CMAKE_CURRENT_SOURCE_DIR}/detect-lz4.cmake)
 include(${CMAKE_CURRENT_SOURCE_DIR}/detect-proj.cmake)
 include(${CMAKE_CURRENT_SOURCE_DIR}/detect-netcdf.cmake)
 include(${CMAKE_CURRENT_SOURCE_DIR}/detect-readline.cmake)
-include(${CMAKE_CURRENT_SOURCE_DIR}/detect-libr.cmake)
 include(${CMAKE_CURRENT_SOURCE_DIR}/detect-fits.cmake)
 include(${CMAKE_CURRENT_SOURCE_DIR}/detect-valgrind.cmake)
 include(${CMAKE_CURRENT_SOURCE_DIR}/detect-geos.cmake)
@@ -42,7 +41,6 @@ include(${CMAKE_CURRENT_SOURCE_DIR}/detect-pthreadkill.cmake)
 include(${CMAKE_CURRENT_SOURCE_DIR}/detect-pthreadsig.cmake)
 
 include(${CMAKE_CURRENT_SOURCE_DIR}/set-dir-vars.cmake)
-include(${CMAKE_CURRENT_SOURCE_DIR}/set-cmake-vars.cmake)
 
 assert_legacy_variable_exists(
   legacy_variablename HAVE_FITS

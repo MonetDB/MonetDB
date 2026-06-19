@@ -175,7 +175,7 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 	allocator *ta = MT_thread_getallocator();
 	allocator_state ta_state = ma_open(ta);
 	/*mnstr_printf(fout, "%p ", e);*/
-	if (mvc_debug_on(sql, 4) && e->alias.label < 0)
+	if (mvc_debug_on(sql, 4) && e->alias.label != 0)
 	//if (sql->show_details && e->alias.label < 0)
 		mnstr_printf(fout, "%d: ", e->alias.label);
 	switch(e->type) {
@@ -783,7 +783,7 @@ rel_print_rel(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int 
 	}
 	if (sql->show_details && decorate && rel->p) {
 		for (prop *p = rel->p; p; p = p->p) {
-			if ((p->kind != PROP_COUNT && p->kind != PROP_UKEY) || (ATOMIC_GET(&GDKdebug) & TESTINGMASK) == 0) {
+			if ((p->kind != PROP_COUNT && p->kind != PROP_UKEY && p->kind != PROP_UNNESTING) || (ATOMIC_GET(&GDKdebug) & TESTINGMASK) == 0) {
 				char *pv = propvalue2string(ta, p);
 				mnstr_printf(fout, " %s %s", propkind2string(p), pv);
 			}

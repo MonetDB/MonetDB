@@ -41,6 +41,7 @@ sql_export list *sa_list(allocator *sa);
 extern list *list_new(allocator *sa, fdestroy destroy);
 
 extern list *sa_list_append( allocator *sa, list *l, void *data);
+extern list *sa_list_prepend( allocator *sa, list *l, void *data);
 extern list *list_add( list *l, void *data);
 
 extern void list_destroy(list *l);

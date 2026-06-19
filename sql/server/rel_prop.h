@@ -24,7 +24,8 @@ typedef enum rel_prop {
 	PROP_USED,      /* number of times exp is used */
 	PROP_GROUPINGS, /* used by ROLLUP/CUBE/GROUPING SETS, value contains the list of sets */
 	PROP_NESTED,     /* used by basetable too pass the nested table name */
-	PROP_UNNEST     /* used by UNNEST function, value contains the unnest expression */
+	PROP_UNNEST,    /* used by UNNEST function, value contains the unnest expression */
+	PROP_UNNESTING	/* used by unnesting rewriter */
 } rel_prop;
 
 typedef struct prop {

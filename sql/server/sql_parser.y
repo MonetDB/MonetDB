@@ -990,7 +990,8 @@ temporal:
 	;
 
 opt_show_properties:
-		SHOW DETAILS { m->show_details = true; }
+		SHOW DETAILS	 { m->show_details = true; }
+	|	SHOW ALL DETAILS { m->show_details = true; m->show_all_details = true; }
 	|	/* empty */
 	;
 
@@ -2682,25 +2683,14 @@ func_def:
 			dlist *f = L();
 			char l = *$9;
 
-			if (l == 'R' || l == 'r')
-				lang = FUNC_LANG_R;
-			else if (l == 'P' || l == 'p') {
+			if (l == 'P' || l == 'p') {
 				if (strcasecmp($9, "PYTHON3") == 0) {
 					lang = FUNC_LANG_PY3;
 				} else {
 					lang = FUNC_LANG_PY;
 				}
-			} else if (l == 'C' || l == 'c') {
-				if (strcasecmp($9, "CPP") == 0) {
-					lang = FUNC_LANG_CPP;
-				} else {
-					lang = FUNC_LANG_C;
-				}
-			}
-			else if (l == 'J' || l == 'j')
-				lang = FUNC_LANG_J;	/* Javascript */
-			else {
-				sqlformaterror(m, "Language name C, CPP, PYTHON, PYTHON3, R or J(avascript) expected, received '%s'", $9);
+			} else {
+				sqlformaterror(m, "Language name PYTHON or PYTHON3 expected, received '%s'", $9);
 			}
 
 			append_list(f, $3);

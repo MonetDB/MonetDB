@@ -65,6 +65,7 @@ tbre = re.compile(r'^(?P<bats>\d+) bats total')
 
 # collect errors if not verbose
 errors = []
+warnings = []
 
 
 # default is no color (these three functions may get redefined)
@@ -251,7 +252,6 @@ CONDITIONALS = {
     # from configure.ag:
     # These should cover all AM_CONDITIONALS defined in configure.ag, i.e.,
     # `grep AM_CONDITIONAL configure.ag | sed 's|^AM_CONDITIONAL(\([^,]*\),.*$|\1|' | sort -u`
-    'HAVE_CUDF'            : '@HAVE_CUDF_FALSE@',
     'HAVE_CURL'            : '@HAVE_CURL_FALSE@',
     'HAVE_FITS'            : '@HAVE_FITS_FALSE@',
     'HAVE_GEOM'            : '@HAVE_GEOM_FALSE@',
@@ -262,7 +262,6 @@ CONDITIONALS = {
     'HAVE_LIBLZMA'         : '@HAVE_LIBLZMA_FALSE@',
     'HAVE_LIBPCRE'         : '@HAVE_LIBPCRE_FALSE@',
     'HAVE_LIBPY3'          : '@HAVE_LIBPY3_FALSE@',
-    'HAVE_LIBR'            : '@HAVE_LIBR_FALSE@',
     'HAVE_LIBXML'          : '@HAVE_LIBXML_FALSE@',
     'HAVE_LIBZ'            : '@HAVE_LIBZ_FALSE@',
     'HAVE_NETCDF'          : '@HAVE_NETCDF_FALSE@',
@@ -484,12 +483,16 @@ def ErrXit(TEXT):
 
 
 def Warn(TEXT):
+    msg = f'{THISFILE}  Warning:  {TEXT}'
+    if not verbose:
+        warnings.append(msg)
+        return
     try:
         print(end='', flush=True)
     except IOError:
         pass
     try:
-        print('\n%s  Warning:  %s\n' % (THISFILE, TEXT), file=sys.stderr, flush=True)
+        print(f'\n{msg}\n', file=sys.stderr, flush=True)
     except IOError:
         pass
 
@@ -1196,8 +1199,11 @@ def PerformDir(env, testdir, testlist, total_tests):
                     # restart server
                     inmem = single_in_memory
                     opts = []
+                    hasloadmod = False
                     for o in options:
-                        if o.startswith('embedded'):
+                        if o.startswith('--loadmodule'):
+                            hasloadmod = True
+                        elif o.startswith('embedded'):
                             inmem = False
                         if o == 'odbc_loader':
                             orig_odbcsysini = environ.pop('ODBCSYSINI', None)
@@ -1234,6 +1240,9 @@ def PerformDir(env, testdir, testlist, total_tests):
                                         dbg=env.get('DBG'))
                     pSrvr.LaunchIt(cwd=TSTTRGDIR, env=environ)
                     if pSrvr.port is None:
+                        if hasloadmod and 'LoaderException' in openutf8(os.path.join(TSTTRGDIR, 'SingleServer.err'), 'r').read():
+                            Warn(f"Missing module in '{TSTSRCDIR}`; skipping directory!")
+                            return TSTDIR, elem, max(FdOut, FdErr), interrupted
                         print('\nFailed to start server.\n')
                         FdOut = FdErr = F_FAIL
                         break
@@ -1572,6 +1581,8 @@ def GetBitsAndModsAndThreads(env):
     cmd.append(f'--dbpath={dbpath}')
     os.environ['TSTDB'] = TSTPREF
     cmd.extend(mserver5_opts)
+    if CONDITIONALS['HAVE_LIBPY3']:
+        cmd.extend(['--set', 'embedded_py=3'])
     if procdebug:
         print('GetBitsAndModsAndThreads: starting process "%s" (inpipe, outpipe, errpipe)\n' % '" "'.join(cmd))
     with process.Popen(cmd, stdin=process.PIPE, stdout=process.PIPE,
@@ -3729,32 +3740,6 @@ def main(argv):
     opts = parser.parse_args()
     args = opts.tests
 
-    if CONDITIONALS['HAVE_LIBR']:
-        if CheckExec('R'):
-            with process.Popen(['R', '--version'],
-                               stdout=process.PIPE, stderr=process.PIPE,
-                               text=True) as proc:
-                r_out, r_err = proc.communicate()
-            res = re.search(r'R version (?P<major>\d+)\.', r_out)
-            if res is not None and int(res.group('major')) < 4:
-                r_noecho = '--slave'
-            else:
-                r_noecho = '--no-echo'
-            with process.Popen(['R', r_noecho, '--no-save', '--no-restore',
-                                '-e', 'print(Sys.getenv("R_LIBS_USER"))'],
-                               stdout=process.PIPE, stderr=process.PIPE,
-                               text=True) as proc:
-                r_out, r_err = proc.communicate()
-            res = re.search(r'\[\d+\] "(?P<dir>.*)"', r_out)
-            if res is not None:
-                rdir = os.path.expanduser(res.group('dir'))
-                os.makedirs(rdir, exist_ok=True)
-            r_noecho = r_out = r_err = None  # clean junk
-        else:
-            # couldn't find R
-            print('Compiled with R support but cannot find R binary')
-            CONDITIONALS['HAVE_LIBR'] = False
-
     CONDITIONALS['HAVE_SQLITE3ODBC'] = os.path.exists('/usr/lib64/libsqlite3odbc.so')
 
     #par = {}
@@ -4304,6 +4289,11 @@ def main(argv):
 
         CONDITIONALS['ARCH_BITS32'] = (env['TST_BITS'] == '32bit')
 
+        if CONDITIONALS['HAVE_GEOM'] and 'geom' not in env['TST_MODS']:
+            CONDITIONALS['HAVE_GEOM'] = False
+        if CONDITIONALS['HAVE_LIBPY3'] and 'pyapi3' not in env['TST_MODS']:
+            CONDITIONALS['HAVE_LIBPY3'] = False
+
         if procdebug:
             for k in sorted(os.environ):
                 print(f'{k}={os.environ[k]}')
@@ -4382,6 +4372,8 @@ def main(argv):
                         tp = None
             if not verbose:
                 print()
+                for msg in warnings:
+                    print(msg)
                 for (err, msg) in errors:
                     if err in ('ERROR', 'MISSING'):
                         prred(err)

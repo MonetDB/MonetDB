@@ -118,10 +118,6 @@ WHERE EXISTS (
 )
 ----
 1
-1
-1
-1
-1
 
 statement ok
 DROP TABLE orders

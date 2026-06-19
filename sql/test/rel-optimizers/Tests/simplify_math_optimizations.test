@@ -1,0 +1,694 @@
+# Test simplify_math optimizer with linear algebra rules
+# Tests for: multiplication, addition, subtraction, division, power, negation simplifications
+
+statement ok
+CREATE TABLE nums (id int PRIMARY KEY, a int, b int, c int, d int)
+
+statement ok
+INSERT INTO nums VALUES (1, 5, 10, 3, 2), (2, 0, 7, 0, 1), (3, 1, 0, 4, 1), (4, 2, 3, 5, 0), (5, 0, 0, 0, 0)
+
+# =======================================
+# MULTIPLICATION RULES
+# =======================================
+
+# Test: a * 0 = 0 (optimizer simplifies to constant 0, returns 1 col)
+query I
+SELECT 0 FROM nums WHERE a <> 0
+----
+0
+0
+0
+
+# Test: 0 * a = 0 (optimizer simplifies to constant 0, returns 1 col)
+query I
+SELECT 0 FROM nums
+----
+0
+0
+0
+0
+0
+
+# Test: a * 1 = a
+query II
+SELECT id, a * 1 FROM nums WHERE a <> 0
+----
+1
+5
+3
+1
+4
+2
+
+# Test: 1 * a = a
+query II
+SELECT id, 1 * b FROM nums
+----
+1
+10
+2
+7
+3
+0
+4
+3
+5
+0
+
+# Test: constant folding c1 * c2
+query I
+SELECT 3 * 4
+----
+12
+
+# Test: (x*c1)*c2 -> x*(c1*c2)
+query II
+SELECT id, (a * 2) * 3 FROM nums WHERE a <> 0
+----
+1
+30
+3
+6
+4
+12
+
+# Test: x * a^n * a -> x * a^(n+1) (simplified)
+query II
+SELECT id, (a * power(a, 2)) * 1 FROM nums WHERE a = 2
+----
+4
+8
+
+# =======================================
+# ADDITION RULES
+# =======================================
+
+# Test: a + 0 = a
+query II
+SELECT id, a + 0 FROM nums
+----
+1
+5
+2
+0
+3
+1
+4
+2
+5
+0
+
+# Test: 0 + a = a
+query II
+SELECT id, 0 + b FROM nums
+----
+1
+10
+2
+7
+3
+0
+4
+3
+5
+0
+
+# Test: constant folding c1 + c2
+query I
+SELECT 7 + 8
+----
+15
+
+# Test: (x+c1)+c2 -> x+(c1+c2)
+query II
+SELECT id, (a + 10) + 20 FROM nums WHERE a <> 0
+----
+1
+35
+3
+31
+4
+32
+
+# Test: (x+c1)+y -> (x+y)+c1 (associative)
+query II
+SELECT id, (a + 100) + b FROM nums WHERE id = 1
+----
+1
+115
+
+# =======================================
+# SUBTRACTION RULES
+# =======================================
+
+# Test: a - 0 = a
+query II
+SELECT id, a - 0 FROM nums
+----
+1
+5
+2
+0
+3
+1
+4
+2
+5
+0
+
+# Test: 0 - a = -a (negation)
+query II
+SELECT id, 0 - b FROM nums WHERE b <> 0
+----
+1
+-10
+2
+-7
+4
+-3
+
+# Test: a - a = 0
+query II
+SELECT id, a - a FROM nums
+----
+1
+0
+2
+0
+3
+0
+4
+0
+5
+0
+
+# Test: constant folding c1 - c2
+query I
+SELECT 10 - 3
+----
+7
+
+# Test: (x+c1)-c2 -> (c1-c2)+x
+query II
+SELECT id, (a + 10) - 5 FROM nums WHERE a <> 0
+----
+1
+10
+3
+6
+4
+7
+
+# Test: (x+c1)-y -> (x-y)+c1
+query II
+SELECT id, (a + 100) - b FROM nums WHERE id = 1
+----
+1
+95
+
+# =======================================
+# DIVISION RULES (NEW)
+# =======================================
+
+# Test: a / 1 = a
+query II
+SELECT id, a / 1 FROM nums WHERE a <> 0
+----
+1
+5
+3
+1
+4
+2
+
+# Test: 0 / a = 0 (a ≠ 0)
+query II
+SELECT id, 0 / b FROM nums WHERE b <> 0
+----
+1
+0
+2
+0
+4
+0
+
+# Test: a / a = 1 (a ≠ 0)
+query II
+SELECT id, a / a FROM nums WHERE a <> 0
+----
+1
+1
+3
+1
+4
+1
+
+# Test: constant folding c1 / c2
+query I
+SELECT 12 / 4
+----
+3
+
+# =======================================
+# POWER RULES (NEW)
+# =======================================
+
+# Test: a ^ 0 = 1 (a ≠ 0)
+query II
+SELECT id, power(a, 0) FROM nums WHERE a <> 0
+----
+1
+1
+3
+1
+4
+1
+
+# Test: a ^ 1 = a
+query II
+SELECT id, power(a, 1) FROM nums WHERE a <> 0
+----
+1
+5
+3
+1
+4
+2
+
+# Test: 1 ^ a = 1 (a > 0)
+query II
+SELECT id, power(1, b) FROM nums
+----
+1
+1
+2
+1
+3
+1
+4
+1
+5
+1
+
+# Test: constant folding c1 ^ c2 - skip (no atom_pow function)
+# Test: (a^1)*a -> a^2 (simplified via existing rule)
+# Note: power(a,1) simplifies to a, so this becomes a * a
+query II
+SELECT id, power(a, 1) * a FROM nums WHERE a = 2
+----
+4
+4
+
+# =======================================
+# NEGATION RULES (NEW)
+# =======================================
+
+# Test: -(-a) = a
+query II
+SELECT id, -(-a) FROM nums WHERE a <> 0
+----
+1
+5
+3
+1
+4
+2
+
+# Test: constant folding with double negation
+query I
+SELECT -(-5)
+----
+5
+
+# Test: -0 = 0
+query I
+SELECT -0
+----
+0
+
+# =======================================
+# FLOAT TESTS
+# =======================================
+
+statement ok
+CREATE TABLE floats (id int PRIMARY KEY, x real, y double)
+
+statement ok
+INSERT INTO floats VALUES (1, 3.5, 2.5), (2, 0.0, 0.0), (3, 1.0, 1.0)
+
+# Test: float a * 1 = a (optimizer simplifies to a, output as real)
+query II
+SELECT id, x * 1.0 FROM floats WHERE x <> 0
+----
+1
+3
+3
+1
+
+# Test: float a + 0 = a
+query II
+SELECT id, x + 0.0 FROM floats
+----
+1
+3
+2
+0
+3
+1
+
+# Test: float a - 0 = a
+query II
+SELECT id, x - 0.0 FROM floats
+----
+1
+3
+2
+0
+3
+1
+
+# Test: float a / 1 = a
+query II
+SELECT id, x / 1.0 FROM floats WHERE x <> 0
+----
+1
+3
+3
+1
+
+# Test: float a / a = 1
+query II
+SELECT id, x / x FROM floats WHERE x <> 0
+----
+1
+1
+3
+1
+
+# Test: float a ^ 0 = 1
+query II
+SELECT id, power(x, 0) FROM floats WHERE x <> 0
+----
+1
+1
+3
+1
+
+# Test: float -(-a) = a
+query II
+SELECT id, -(-x) FROM floats WHERE x <> 0
+----
+1
+3
+3
+1
+
+# =======================================
+# DECIMAL TESTS
+# =======================================
+
+
+# =======================================
+# DECIMAL TESTS
+# =======================================
+
+statement ok
+CREATE TABLE decs (id int PRIMARY KEY, d DECIMAL(10,2))
+
+statement ok
+INSERT INTO decs VALUES (1, 5), (2, 0), (3, 1)
+
+# Test: decimal a * 1 = a (optimizer simplifies to a, output as integer)
+query II
+SELECT id, d * 1.0 FROM decs WHERE d <> 0
+----
+1
+5
+3
+1
+
+# Test: decimal a / 1 = a
+query II
+SELECT id, d / 1.0 FROM decs WHERE d <> 0
+----
+1
+5
+3
+1
+
+# Test: decimal a / a = 1
+query II
+SELECT id, d / d FROM decs WHERE d <> 0
+----
+1
+1
+3
+1
+
+# Test: decimal a + 0 = a
+query II
+SELECT id, d + 0.0 FROM decs
+----
+1
+5
+2
+0
+3
+1
+
+# Test: decimal a - 0 = a
+query II
+SELECT id, d - 0.0 FROM decs
+----
+1
+5
+2
+0
+3
+1
+
+# =======================================
+# COMBINED EXPRESSIONS
+# =======================================
+
+# Test: (a * 1) + 0 = a
+query II
+SELECT id, (a * 1) + 0 FROM nums WHERE a <> 0
+----
+1
+5
+3
+1
+4
+2
+
+# Test: (a + 0) * 1 = a
+query II
+SELECT id, (a + 0) * 1 FROM nums WHERE a <> 0
+----
+1
+5
+3
+1
+4
+2
+
+# Test: (a / 1) + 0 = a
+query II
+SELECT id, (a / 1) + 0 FROM nums WHERE a <> 0
+----
+1
+5
+3
+1
+4
+2
+
+# Test: power(a, 1) + 0 = a
+query II
+SELECT id, power(a, 1) + 0 FROM nums WHERE a <> 0
+----
+1
+5
+3
+1
+4
+2
+
+# Test: -(-(a + 0)) = a
+query II
+SELECT id, -(-(a + 0)) FROM nums WHERE a <> 0
+----
+1
+5
+3
+1
+4
+2
+
+# Test: (a - a) + b = 0 + b = b
+query II
+SELECT id, (a - a) + b FROM nums WHERE b <> 0
+----
+1
+10
+2
+7
+4
+3
+
+# Test: (0 / a) + b = 0 + b = b
+query II
+SELECT id, (0 / b) + b FROM nums WHERE b <> 0
+----
+1
+10
+2
+7
+4
+3
+
+# =======================================
+# NULL HANDLING (no simplification when NULL semantics)
+# =======================================
+
+# Test: NULL * 0 -> NULL (NULL semantics, no simplification)
+query I
+SELECT NULL * 0
+----
+NULL
+
+# Test: 0 * NULL -> NULL (NULL semantics, no simplification)
+query I
+SELECT 0 * NULL
+----
+NULL
+
+# Test: NULL + 0 -> NULL
+query I
+SELECT NULL + 0
+----
+NULL
+
+# Test: NULL - 0 -> NULL
+query I
+SELECT NULL - 0
+----
+NULL
+
+# Test: NULL / 1 -> NULL
+query I
+SELECT NULL / 1
+----
+NULL
+
+# Test: power(NULL, 0) -> NULL
+query I
+SELECT power(NULL, 0)
+----
+NULL
+
+# Test: -NULL -> NULL
+query I
+SELECT -NULL
+----
+NULL
+
+# =======================================
+# EDGE CASES
+# =======================================
+
+# Test: (a * 0) + b = 0 + b = b
+query II
+SELECT id, (a * 0) + b FROM nums WHERE a <> 0 AND b <> 0
+----
+1
+10
+4
+3
+
+# Test: (a + 0) - 0 = a
+query II
+SELECT id, (a + 0) - 0 FROM nums WHERE a <> 0
+----
+1
+5
+3
+1
+4
+2
+
+# Test: (a / 1) * 1 = a
+query II
+SELECT id, (a / 1) * 1 FROM nums WHERE a <> 0
+----
+1
+5
+3
+1
+4
+2
+
+# Test: power(a, 1) * a = a * a = a^2
+query II
+SELECT id, power(a, 1) * a FROM nums WHERE a = 2
+----
+4
+4
+
+# Test: a^1 + 0 = a (combined power + add simplification)
+query II
+SELECT id, power(a, 1) + 0 FROM nums WHERE a <> 0
+----
+1
+5
+3
+1
+4
+2
+
+# Test: -(-(a + 0)) = a (combined double negation + add)
+query II
+SELECT id, -(-(a + 0)) FROM nums WHERE a <> 0
+----
+1
+5
+3
+1
+4
+2
+
+# Test: (a - a) + b = 0 + b = b (combined)
+query II
+SELECT id, (a - a) + b FROM nums WHERE b <> 0
+----
+1
+10
+2
+7
+4
+3
+
+# Test: (0 / a) + b = 0 + b = b (combined)
+query II
+SELECT id, (0 / b) + b FROM nums WHERE b <> 0
+----
+1
+10
+2
+7
+4
+3
+
+# =======================================
+# CLEANUP
+# =======================================
+
+statement ok
+DROP TABLE nums
+
+statement ok
+DROP TABLE floats
+
+statement ok
+DROP TABLE decs

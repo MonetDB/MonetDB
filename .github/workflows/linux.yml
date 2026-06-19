@@ -46,7 +46,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           ref: ${{ github.ref }}
 
@@ -75,7 +75,6 @@ jobs:
           cmake ..  \
             -DCMAKE_INSTALL_PREFIX=$HOME/MDB \
             -DPY3INTEGRATION=OFF \
-            -DRINTEGRATION=OFF \
             -DCMAKE_BUILD_TYPE=Release \
             -DASSERT=OFF \
             -DCMAKE_C_COMPILER=${{ matrix.c_compiler }} \
@@ -94,7 +93,6 @@ jobs:
           cmake .. \
             -DCMAKE_INSTALL_PREFIX=$HOME/MDB \
             -DPY3INTEGRATION=OFF \
-            -DRINTEGRATION=OFF  \
             -DCMAKE_BUILD_TYPE=Release \
             -DASSERT=OFF \
             -DCMAKE_C_COMPILER=${{ matrix.c_compiler }} \
@@ -110,7 +108,6 @@ jobs:
           cmake .. \
             -DCMAKE_INSTALL_PREFIX=$HOME/MDB \
             -DPY3INTEGRATION=OFF \
-            -DRINTEGRATION=OFF  \
             -DCMAKE_BUILD_TYPE=Release \
             -DASSERT=OFF \
             -DCMAKE_C_COMPILER=${{ matrix.c_compiler }} \
@@ -130,7 +127,7 @@ jobs:
         run: |
           mkdir build
           cd build 
-          cmake ..  -DCMAKE_INSTALL_PREFIX=C:\MDB -DCMAKE_TOOLCHAIN_FILE=C:\vcpkg\scripts\buildsystems\vcpkg.cmake -DPY3INTEGRATION=OFF -DRINTEGRATION=OFF  -DCMAKE_BUILD_TYPE=Release -DASSERT=OFF -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}  -DCMAKE_SUMMARY=ON
+          cmake ..  -DCMAKE_INSTALL_PREFIX=C:\MDB -DCMAKE_TOOLCHAIN_FILE=C:\vcpkg\scripts\buildsystems\vcpkg.cmake -DPY3INTEGRATION=OFF  -DCMAKE_BUILD_TYPE=Release -DASSERT=OFF -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}  -DCMAKE_SUMMARY=ON
           cmake --build . --target install
         if: runner.os == 'Windows'
 
@@ -163,7 +160,7 @@ jobs:
       - name: Tar files
         run: tar -cvf mtests.tar mTests
       - name: Publish mtest results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: mtest-${{ github.sha }}-${{ matrix.os }}-${{ matrix.c_compiler }}
           path: mtests.tar

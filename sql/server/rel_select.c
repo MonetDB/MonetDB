@@ -41,7 +41,7 @@ rel_table_projections( mvc *sql, sql_rel *rel, char *tname, int level )
 		return NULL;
 
 	if (!tname)
-		return _rel_projections(sql, rel, NULL, 1, 0, 1);
+		return _rel_projections(sql, rel, NULL, 1, 0, 1, false);
 
 	switch(rel->op) {
 	case op_join:
@@ -2208,11 +2208,9 @@ push_select_exp(mvc *sql, sql_rel *rel, sql_exp *e, sql_exp *ls, int f)
 {
 	if (is_outerjoin(rel->op)) {
 		if ((is_left(rel->op) || is_full(rel->op)) && rel_find_exp(rel->l, ls)) {
-			rel_join_add_exp(sql->sa, rel, e);
-			return rel;
+			return rel_join_add_exp(sql->sa, rel, e);
 		} else if ((is_right(rel->op) || is_full(rel->op)) && rel_find_exp(rel->r, ls)) {
-			rel_join_add_exp(sql->sa, rel, e);
-			return rel;
+			return rel_join_add_exp(sql->sa, rel, e);
 		}
 		if (is_left(rel->op) && rel_find_exp(rel->r, ls)) {
 			rel->r = rel_push_select(sql, rel->r, ls, e, f);
@@ -2231,14 +2229,12 @@ push_join_exp(mvc *sql, sql_rel *rel, sql_exp *e, sql_exp *L, sql_exp *R, sql_ex
 {
 	sql_rel *r;
 	if (/*is_semi(rel->op) ||*/ (is_outerjoin(rel->op) && !is_processed((rel)))) {
-		rel_join_add_exp(sql->sa, rel, e);
-		return rel;
+		return rel_join_add_exp(sql->sa, rel, e);
 	}
 	/* push join into the given relation */
 	if ((r = rel_push_join(sql, rel, L, R, R2, e, f)) != NULL)
 		return r;
-	rel_join_add_exp(sql->sa, rel, e);
-	return rel;
+	return rel_join_add_exp(sql->sa, rel, e);
 }
 
 static sql_rel *
@@ -2382,6 +2378,8 @@ rel_compare_exp_(sql_query *query, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_e
 				return NULL;
 			e = exp_compare_func(sql, ls, rs, compare_func((comp_type)type, anti), quantifier);
 		}
+		if (is_innerjoin(rel->op))
+			return rel_join_add_exp(sql->sa, rel, e);
 		return rel_select(sql->sa, rel, e);
 	} else if (!rs2) {
 		assert(!symmetric);
@@ -4304,6 +4302,7 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, char *sname, char *anam
 			return e;
 		if (all_freevar) {
 			rel_bind_vars(sql, groupby->l, exps);
+			rel_bind_vars(sql, groupby, exps); /* for self refs */
 			assert(!is_simple_project(res->op));
 			e->card = CARD_ATOM;
 			set_freevar(e, all_freevar-1);
@@ -4543,8 +4542,13 @@ rel_cast(sql_query *query, sql_rel **rel, symbol *se, int f)
 		sql_subtype *et = exp_subtype(e);
 		if (e->type == e_atom && !tpe->digits) {
 			if (e->l && (et->type->eclass == EC_NUM || et->type->eclass == EC_DEC)) {
-				tpe->digits = atom_num_digits(e->l) + 1;
-				tpe->scale = 1;
+				if (et->digits && et->scale) {
+					tpe->digits = et->digits;
+					tpe->scale = et->scale;
+				} else {
+					tpe->digits = atom_num_digits(e->l) + 1;
+					tpe->scale = 1;
+				}
 				tpe = sql_bind_subtype(sql->sa, "decimal", tpe->digits, tpe->scale);
 			} else if (EC_VARCHAR(et->type->eclass)) {
 				char *s = E_ATOM_STRING(e);

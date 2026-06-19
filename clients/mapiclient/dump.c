@@ -2515,6 +2515,22 @@ dump_function(Mapi mid, stream *sqlf, const char *fid, bool hashge)
 		if (flkey) {
 			mnstr_printf(sqlf, " LANGUAGE %s", flkey);
 			free(flkey);
+		} else {
+			/* backward compatibility: dump language types for removed
+			 * implementations */
+			switch (flang) {
+			case 3:
+				mnstr_printf(sqlf, " LANGUAGE R");
+				break;
+			case 4:
+				mnstr_printf(sqlf, " LANGUAGE C");
+				break;
+			case 12:
+				mnstr_printf(sqlf, " LANGUAGE CPP");
+				break;
+			default:
+				break;
+			}
 		}
 		mnstr_printf(sqlf, "\n%s\n", ffunc);
 	}
