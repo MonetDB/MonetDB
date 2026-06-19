@@ -2659,11 +2659,8 @@ func_def:
 				} else {
 					lang = FUNC_LANG_PY;
 				}
-			}
-			else if (l == 'J' || l == 'j')
-				lang = FUNC_LANG_J;	/* Javascript */
-			else {
-				sqlformaterror(m, "Language name PYTHON, PYTHON3 or J(avascript) expected, received '%s'", $9);
+			} else {
+				sqlformaterror(m, "Language name PYTHON or PYTHON3 expected, received '%s'", $9);
 			}
 
 			append_list(f, $3);
