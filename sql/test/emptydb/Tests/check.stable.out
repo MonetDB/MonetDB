@@ -5576,11 +5576,8 @@ select 'null in fkeys.delete_action', delete_action, * from sys.fkeys where dele
 [ "sys.function_languages",	"Internal C",	NULL	]
 [ "sys.function_languages",	"MAL",	NULL	]
 [ "sys.function_languages",	"SQL",	NULL	]
-[ "sys.function_languages",	"C",	"C"	]
-[ "sys.function_languages",	"C++",	"CPP"	]
 [ "sys.function_languages",	"Python",	"PYTHON"	]
 [ "sys.function_languages",	"Python3",	"PYTHON3"	]
-[ "sys.function_languages",	"R",	"R"	]
 % .%1,	.key_types # table_name
 % %1,	key_type_name # name
 % varchar,	varchar # type
