@@ -458,7 +458,7 @@ do_oahash_join(sql_rel *rel)
 }
 
 static void
-find_payload_exps(mvc *sql, list **exps_hsh, list **exps_prb, sql_rel *p, sql_rel *rel_hsh, sql_rel *rel_prb, const list *attr)
+find_payload_exps(mvc *sql, list **exps_hsh, list **exps_prb, sql_rel *p, sql_rel *rel_hsh, sql_rel *rel_prb)
 {
 	/* Find out if an expression of the exps belong to rel_hsh or
 	 * rel_prb or is a constant. */
@@ -787,7 +787,7 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 		list *exps_hsh = NULL, *exps_prb = rel_prb->exps = sa_list(v->sql->sa);
 		if (needs_payload)
 			exps_hsh = sa_list(v->sql->sa);
-		find_payload_exps(v->sql, &exps_hsh, &exps_prb, p, rel_hsh, rel_prb, rel->attr);
+		find_payload_exps(v->sql, &exps_hsh, &exps_prb, p, rel_hsh, rel_prb);
 
 		if (need_all && !is_base(rel_hsh->op))
 			rel_hsh->exps = !rel_hsh->exps?rel_hsh->attr:list_distinct(list_merge(rel_hsh->exps, rel_hsh->attr, NULL), (fcmp) exp_equal, NULL);
@@ -950,7 +950,7 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 			}
 
 			list *exps_hsh = sa_list(v->sql->sa), *exps_prb = sa_list(v->sql->sa);
-			find_payload_exps(v->sql, &exps_hsh, &exps_prb, p, rel_hsh, rel_prb, rel->attr);
+			find_payload_exps(v->sql, &exps_hsh, &exps_prb, p, rel_hsh, rel_prb);
 
 			if (found_exps_prj_hsh) {
 				printf("# todo need to check prj\n");
