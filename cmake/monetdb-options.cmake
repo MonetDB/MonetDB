@@ -23,12 +23,6 @@ option(TESTING
   "Enable support for testing"
   ON)
 
-cmake_dependent_option(CINTEGRATION
-  "Enable support for C UDFs (default=ON)"
-  ON
-  "NOT WIN32"
-  OFF)
-
 option(WITH_SQLPARSE
   "Compile and install the sqlparse utility (default=ON)"
   ON)

@@ -20,7 +20,6 @@ override_dh_auto_configure:
 	-DCMAKE_INSTALL_RUNSTATEDIR=/run \
 	-DRELEASE_VERSION=ON \
 	-DASSERT=OFF \
-	-DCINTEGRATION=ON \
 	-DFITS=ON \
 	-DGEOM=ON \
 	-DINT128=ON \
