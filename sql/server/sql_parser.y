@@ -2663,7 +2663,7 @@ func_def:
 			else if (l == 'J' || l == 'j')
 				lang = FUNC_LANG_J;	/* Javascript */
 			else {
-				sqlformaterror(m, "Language name PYTHON, PYTHON3, R or J(avascript) expected, received '%s'", $9);
+				sqlformaterror(m, "Language name PYTHON, PYTHON3 or J(avascript) expected, received '%s'", $9);
 			}
 
 			append_list(f, $3);
