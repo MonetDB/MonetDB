@@ -384,9 +384,6 @@ main(int argc, char **av)
 	/* TODO check for used */
 	modules[mods++] = "pyapi3";
 #endif
-#ifdef HAVE_CUDF
-	modules[mods++] = "capi";
-#endif
 #ifdef HAVE_FITS
 	modules[mods++] = "fits";
 #endif

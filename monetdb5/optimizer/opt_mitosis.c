@@ -100,8 +100,7 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 		}
 
 		if (p->argc > 2
-			&& (getModuleId(p) == capiRef || getModuleId(p) == rapiRef
-				|| getModuleId(p) == pyapi3Ref)
+			&& (getModuleId(p) == rapiRef || getModuleId(p) == pyapi3Ref)
 			&& getFunctionId(p) == subeval_aggrRef) {
 			pieces = 0;
 			goto bailout;

@@ -35,7 +35,6 @@ static const confkeyval _internal_prop_keys[PROPLENGTH] = {
 	{"readonly",    NULL, 0, BOOLEAN},
 	{"embedr",      NULL, 0, BOOLEAN},
 	{"embedpy3",    NULL, 0, BOOLEAN},
-	{"embedc",      NULL, 0, BOOLEAN},
 	{"listenaddr",  NULL, 0, LADDR},
 	{"nclients",    NULL, 0, INT},
 	{"mfunnel",     NULL, 0, STR},

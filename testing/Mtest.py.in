@@ -252,7 +252,6 @@ CONDITIONALS = {
     # from configure.ag:
     # These should cover all AM_CONDITIONALS defined in configure.ag, i.e.,
     # `grep AM_CONDITIONAL configure.ag | sed 's|^AM_CONDITIONAL(\([^,]*\),.*$|\1|' | sort -u`
-    'HAVE_CUDF'            : '@HAVE_CUDF_FALSE@',
     'HAVE_CURL'            : '@HAVE_CURL_FALSE@',
     'HAVE_FITS'            : '@HAVE_FITS_FALSE@',
     'HAVE_GEOM'            : '@HAVE_GEOM_FALSE@',
@@ -1587,8 +1586,6 @@ def GetBitsAndModsAndThreads(env):
         cmd.extend(['--set', 'embedded_py=3'])
     if CONDITIONALS['HAVE_LIBR']:
         cmd.extend(['--set', 'embedded_r=true'])
-    if CONDITIONALS['HAVE_CUDF']:
-        cmd.extend(['--set', 'embedded_c=true'])
     if procdebug:
         print('GetBitsAndModsAndThreads: starting process "%s" (inpipe, outpipe, errpipe)\n' % '" "'.join(cmd))
     with process.Popen(cmd, stdin=process.PIPE, stdout=process.PIPE,
@@ -4327,8 +4324,6 @@ def main(argv):
             CONDITIONALS['HAVE_LIBPY3'] = False
         if CONDITIONALS['HAVE_LIBR'] and 'rapi' not in env['TST_MODS']:
             CONDITIONALS['HAVE_LIBR'] = False
-        if CONDITIONALS['HAVE_CUDF'] and 'capi' not in env['TST_MODS']:
-            CONDITIONALS['HAVE_CUDF'] = False
 
         if procdebug:
             for k in sorted(os.environ):

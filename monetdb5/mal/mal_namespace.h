@@ -33,7 +33,6 @@
 	FUNC(bat); \
 	FUNC(batalgebra); \
 	FUNC(batcalc); \
-	FUNC(batcapi); \
 	FUNC(batmal); \
 	FUNC(batmkey); \
 	FUNC(batmmath); \
@@ -50,7 +49,6 @@
 	FUNC(block); \
 	FUNC(bstream); \
 	FUNC(calc); \
-	FUNC(capi); \
 	FUNC(claim); \
 	FUNC(clear_table); \
 	FUNC(columnBind); \

@@ -67,9 +67,6 @@
 # operators.  Otherwise the POSIX regex functions are used.
 %bcond_without pcre
 
-# By default, include C integration
-%bcond_without cintegration
-
 %if %{fedpkgs}
 # By default, create the MonetDB-R package.
 %bcond_without rintegration
@@ -579,9 +576,6 @@ embedded library (%{name}-embedded).
 %{_libdir}/libmonetdb5*.so.*
 %{_libdir}/libmonetdbsql*.so*
 %dir %{_libdir}/monetdb5-%{version}
-%if %{with cintegration}
-%{_libdir}/monetdb5*/lib_capi.so
-%endif
 %{_libdir}/monetdb5*/lib_csv.so
 %{_libdir}/monetdb5*/lib_generator.so
 %{_libdir}/monetdb5*/lib_monetdb_loader.so
@@ -952,7 +946,6 @@ fi
         -DCMAKE_INSTALL_RUNSTATEDIR=/run \
         -DRELEASE_VERSION=ON \
         -DASSERT=OFF \
-        -DCINTEGRATION=%{?with_cintegration:ON}%{!?with_cintegration:OFF} \
         -DFITS=%{?with_fits:ON}%{!?with_fits:OFF} \
         -DGEOM=%{?with_geos:ON}%{!?with_geos:OFF} \
         -DINT128=%{?with_hugeint:ON}%{!?with_hugeint:OFF} \

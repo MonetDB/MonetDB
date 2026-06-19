@@ -2661,17 +2661,11 @@ func_def:
 				} else {
 					lang = FUNC_LANG_PY;
 				}
-			} else if (l == 'C' || l == 'c') {
-				if (strcasecmp($9, "CPP") == 0) {
-					lang = FUNC_LANG_CPP;
-				} else {
-					lang = FUNC_LANG_C;
-				}
 			}
 			else if (l == 'J' || l == 'j')
 				lang = FUNC_LANG_J;	/* Javascript */
 			else {
-				sqlformaterror(m, "Language name C, CPP, PYTHON, PYTHON3, R or J(avascript) expected, received '%s'", $9);
+				sqlformaterror(m, "Language name PYTHON, PYTHON3, R or J(avascript) expected, received '%s'", $9);
 			}
 
 			append_list(f, $3);

@@ -4310,13 +4310,7 @@ stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *f, stmt* rows)
 			else
 				q = pushPtr(mb, q, f->func);
 		}
-		if (f->func->lang == FUNC_LANG_C) {
-			q = pushBit(mb, q, 0);
-		} else if (f->func->lang == FUNC_LANG_CPP) {
-			q = pushBit(mb, q, 1);
-		}
-		if (f->func->lang == FUNC_LANG_R || f->func->lang >= FUNC_LANG_PY ||
-			f->func->lang == FUNC_LANG_C || f->func->lang == FUNC_LANG_CPP) {
+		if (f->func->lang == FUNC_LANG_R || f->func->lang >= FUNC_LANG_PY) {
 			q = pushStr(mb, q, f->func->query);
 		}
 		/* first dynamic output of copy* functions */
@@ -4517,7 +4511,6 @@ stmt_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int red
 	int argc = 1
 		+ 2 * avg
 		+ (LANG_EXT(op->func->lang) != 0)
-		+ 2 * (op->func->lang == FUNC_LANG_C || op->func->lang == FUNC_LANG_CPP)
 		+ (op->func->lang == FUNC_LANG_PY || op->func->lang == FUNC_LANG_R)
 		+ (op1->type != st_list ? 1 : list_length(op1->op4.lval))
 		+ (grp ? 4 : avg + 1);
@@ -4555,16 +4548,9 @@ stmt_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int red
 	if (LANG_EXT(op->func->lang))
 		q = pushPtr(mb, q, op->func);
 	if (op->func->lang == FUNC_LANG_R ||
-		op->func->lang >= FUNC_LANG_PY ||
-		op->func->lang == FUNC_LANG_C ||
-		op->func->lang == FUNC_LANG_CPP) {
+		op->func->lang >= FUNC_LANG_PY) {
 		if (!grp) {
 			setVarType(mb, getArg(q, 0), restype);
-		}
-		if (op->func->lang == FUNC_LANG_C) {
-			q = pushBit(mb, q, 0);
-		} else if (op->func->lang == FUNC_LANG_CPP) {
-			q = pushBit(mb, q, 1);
 		}
  		q = pushStr(mb, q, op->func->query);
 	}

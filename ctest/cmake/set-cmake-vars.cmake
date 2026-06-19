@@ -11,8 +11,6 @@
 # Test for the existence of these cmake variables, the source code assumes
 # that they are set by the buildsystem.
 
-assert_variable_exists(HAVE_CUDF)
-
 if(HAVE_LIBR)
   assert_variable_exists(RHOME)
 endif()

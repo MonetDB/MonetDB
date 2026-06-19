@@ -1020,14 +1020,6 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 			mod = "rapi";
 			slang = "R";
 			break;
-		case FUNC_LANG_C:
-			mod = "capi";
-			slang = "C";
-			break;
-		case FUNC_LANG_CPP:
-			mod = "capi";
-			slang = "CPP";
-			break;
 		case FUNC_LANG_J:
 			mod = "japi";
 			slang = "Javascript";

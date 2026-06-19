@@ -42,7 +42,7 @@ with process.server(args=['--clean-BBP', '--set', 'allow_hge_upgrade=yes'],
                         stdout=process.PIPE,
                         stderr=process.PIPE,
                         server=srv) as clt:
-        cltout, clterr = clt.communicate('select count(*) from testschema.smallstring;\n')
+        cltout, clterr = clt.communicate('drop all function testsschema.capi00 if exists;\n')
     srvout, srverr = srv.communicate()
 
 srvout = [line for line in srvout.splitlines(keepends=True) if not line.startswith('#')]

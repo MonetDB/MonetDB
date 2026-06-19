@@ -504,15 +504,6 @@ that by enabling embedded R, users of the server are allowed to
 execute arbitrary R code, and are therefore able to read and modify
 all data that the server process has access to.
 .TP
-.B embedded_c=true
-Enable embedded C.  This means C code can be called from SQL.  The C
-code will first be compiled and then executed.  This means a C
-compiler must be available.  Note also that by enabling embedded C,
-users of the server are allowed to execute arbitrary C code, and are
-therefore able to read and modify all data that the server process has
-access to.  In addition, if the C code causes a crash, all bets are
-off.
-.TP
 \fBidle_timeout=\fP\fIseconds\fP
 Set the idle timeout.
 If there is an active transaction, and the client has not provided any

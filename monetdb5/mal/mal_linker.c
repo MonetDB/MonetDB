@@ -287,9 +287,6 @@ loadLibrary(const char *filename, int flag)
 
 	if (handle == NULL) {
 		static const char *const optional[] = {
-#ifdef HAVE_CUDF
-			"capi",
-#endif
 #ifdef HAVE_FITS
 			"fits",
 #endif
@@ -459,10 +456,6 @@ malLibraryEnabled(const char *name)
 		const char *val = GDKgetenv("embedded_r");
 		return val && (strcasecmp(val, "true") == 0 ||
 					   strcasecmp(val, "yes") == 0);
-	} else if (strcmp(name, "capi") == 0) {
-		const char *val = GDKgetenv("embedded_c");
-		return val && (strcasecmp(val, "true") == 0 ||
-					   strcasecmp(val, "yes") == 0);
 	}
 	return true;
 }
@@ -484,8 +477,6 @@ malLibraryHowToEnable(const char *name)
 		HOW_TO_ENABLE_ERROR("Python 3", "embedded_py=3");
 	} else if (strcmp(name, "rapi") == 0) {
 		HOW_TO_ENABLE_ERROR("R", "embedded_r=true");
-	} else if (strcmp(name, "capi") == 0) {
-		HOW_TO_ENABLE_ERROR("C/C++", "embedded_c=true");
 	}
 	return "";
 }
