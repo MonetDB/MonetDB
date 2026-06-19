@@ -458,29 +458,41 @@ do_oahash_join(sql_rel *rel)
 }
 
 static void
-find_payload_exps(mvc *sql, list **exps_hsh, list **exps_prb, const list *exps, sql_rel *rel_hsh, sql_rel *rel_prb, const list *attr)
+find_payload_exps(mvc *sql, list **exps_hsh, list **exps_prb, sql_rel *p, sql_rel *rel_hsh, sql_rel *rel_prb, const list *attr)
 {
-	assert(exps);
-
 	/* Find out if an expression of the exps belong to rel_hsh or
 	 * rel_prb or is a constant. */
-	for (node *n = exps->h; n; n = n->next) { /* TODO handle consts seperate */
-		sql_exp *e = n->data, *ne = NULL;
+	list *exps = p->exps;
+	if ((p->op == op_buildhash || p->op == op_probehash) && p->attr) {
+		if (!exps)
+			exps = p->attr;
+		else
+			exps = list_merge(list_dup(exps, NULL), p->attr, NULL);
+	}
+	if (is_select(p->op) || is_join(p->op))
+		exps = NULL;
+	if (exps_hsh) {
+		sql_rel *rel = rel_hsh->op == op_buildhash ? rel_hsh->l : rel_hsh;
+		list *iexps = rel->exps;
+		if (!is_project(rel->op))
+			iexps = rel_projections(sql, rel, NULL, 0, 1);
 
-		if (list_find_exp(attr, e))
-			continue;
-		if (exp_is_atom(e))
-			continue;
-		if ((ne = rel_find_exp(rel_prb->l, e)) != NULL) {
-			if (exp_is_atom(ne))
-				ne = e;
-			append(*exps_prb, exp_ref(sql, ne));
-		} else if (exps_hsh) {
-			ne = rel_find_exp(rel_hsh, e);
-			if (exp_is_atom(ne))
-				ne = e;
-			assert(ne);
-			append(*exps_hsh, exp_ref(sql, ne));
+		for (node *n = iexps->h; n; n = n->next) {
+			sql_exp *e = n->data;
+			if (!exps || exps_uses_exp(exps, e))
+				append(*exps_hsh, exp_ref(sql, e));
+		}
+	}
+	if (exps_prb) {
+		sql_rel *rel = rel_prb->l;
+		list *iexps = rel->exps;
+		if (!is_project(rel->op))
+			iexps = rel_projections(sql, rel, NULL, 0, 1);
+
+		for (node *n = iexps->h; n; n = n->next) {
+			sql_exp *e = n->data;
+			if (!exps || exps_uses_exp(exps, e))
+				append(*exps_prb, exp_ref(sql, e));
 		}
 	}
 }
@@ -775,7 +787,7 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 		list *exps_hsh = NULL, *exps_prb = rel_prb->exps = sa_list(v->sql->sa);
 		if (needs_payload)
 			exps_hsh = sa_list(v->sql->sa);
-		find_payload_exps(v->sql, &exps_hsh, &exps_prb, p->exps, rel_hsh, rel_prb, rel->attr);
+		find_payload_exps(v->sql, &exps_hsh, &exps_prb, p, rel_hsh, rel_prb, rel->attr);
 
 		if (need_all && !is_base(rel_hsh->op))
 			rel_hsh->exps = !rel_hsh->exps?rel_hsh->attr:list_distinct(list_merge(rel_hsh->exps, rel_hsh->attr, NULL), (fcmp) exp_equal, NULL);
@@ -938,7 +950,7 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 			}
 
 			list *exps_hsh = sa_list(v->sql->sa), *exps_prb = sa_list(v->sql->sa);
-			find_payload_exps(v->sql, &exps_hsh, &exps_prb, p->exps, rel_hsh, rel_prb, rel->attr);
+			find_payload_exps(v->sql, &exps_hsh, &exps_prb, p, rel_hsh, rel_prb, rel->attr);
 
 			if (found_exps_prj_hsh) {
 				printf("# todo need to check prj\n");

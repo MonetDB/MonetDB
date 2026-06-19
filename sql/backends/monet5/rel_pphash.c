@@ -144,7 +144,7 @@ oahash_probe(backend *be, sql_rel *rel, list *jexps, list *exps_cmp_prb, const s
 		stmt *key = exp_bin(be, e, sub, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
 		assert(key); /* must find */
 		key = column(be, key);
-		bool single = ((rel->single == 1) && (n->next == NULL) && !has_outerselect);
+		bool single = ((rel->single == 1 && rel->op != op_semi) && (n->next == NULL) && !has_outerselect);
 		bool eq = (e2->flag == cmp_equal) && !anti;
 		bool grpjoin = groupjoin && is_any(e2);
 
