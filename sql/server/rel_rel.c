@@ -1345,11 +1345,14 @@ _rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int in
 			return exps;
 		}
 		/* fall through */
+	case op_buildhash:
+	case op_probehash:
+		if (list_empty(rel->exps))
+			return _rel_projections(sql, rel->l, tname, settname, intern, basecol, bound);
+		/* fall through */
 	case op_delete:
 	case op_insert:
 
-	case op_buildhash:
-	case op_probehash:
 	case op_partition:
 	case op_project:
 	case op_basetable:
