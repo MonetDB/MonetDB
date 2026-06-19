@@ -242,6 +242,7 @@ update sys.functions set system = true where not system and schema_id = 2000 and
 Running database upgrade commands:
 ALTER TABLE sys.keywords SET READ WRITE;
 DELETE FROM sys.keywords WHERE keyword = 'PLAN';
+COMMIT;
 
 Running database upgrade commands:
 ALTER TABLE sys.keywords SET READ ONLY;

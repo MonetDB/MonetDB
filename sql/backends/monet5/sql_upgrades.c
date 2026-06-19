@@ -19,6 +19,7 @@
 #include "gdk_time.h"
 #include <unistd.h>
 #include "sql_upgrades.h"
+#include "sql_scenario.h"
 #include "rel_rel.h"
 #include "rel_semantic.h"
 
@@ -2201,12 +2202,13 @@ sql_update_sep2022(Client c, mvc *sql, sql_schema *s)
 	if ((b = BBPquickdesc(output->cols[0].b)) && BATcount(b) > 0) {
 		pos = snprintf(buf, bufsize,
 			"ALTER TABLE sys.keywords SET READ WRITE;\n"
-			"DELETE FROM sys.keywords WHERE keyword IN ('LOCKED');\n");
+			"DELETE FROM sys.keywords WHERE keyword IN ('LOCKED');\n"
+			"COMMIT;\n");
 		assert(pos < bufsize);
 		printf("Running database upgrade commands:\n%s\n", buf);
 		fflush(stdout);
 		err = SQLstatementIntern(c, buf, "update", true, false, NULL);
-		if (err == MAL_SUCCEED) {
+		if (err == MAL_SUCCEED && (err = SQLtrans(sql)) == MAL_SUCCEED) {
 			pos = snprintf(buf, bufsize, "ALTER TABLE sys.keywords SET READ ONLY;\n");
 			assert(pos < bufsize);
 			printf("Running database upgrade commands:\n%s\n", buf);
@@ -2230,12 +2232,13 @@ sql_update_sep2022(Client c, mvc *sql, sql_schema *s)
 	if ((b = BBPquickdesc(output->cols[0].b)) && BATcount(b) == 0) {
 		pos = snprintf(buf, bufsize,
 				"ALTER TABLE sys.table_types SET READ WRITE;\n"
-				"INSERT INTO sys.table_types VALUES (7, 'UNLOGGED TABLE');\n");
+				"INSERT INTO sys.table_types VALUES (7, 'UNLOGGED TABLE');\n"
+				"COMMIT;\n");
 		assert(pos < bufsize);
 		printf("Running database upgrade commands:\n%s\n", buf);
 		fflush(stdout);
 		err = SQLstatementIntern(c, buf, "update", true, false, NULL);
-		if (err == MAL_SUCCEED) {
+		if (err == MAL_SUCCEED && (err = SQLtrans(sql)) == MAL_SUCCEED) {
 			pos = snprintf(buf, bufsize, "ALTER TABLE sys.table_types SET READ ONLY;\n");
 			assert(pos < bufsize);
 			printf("Running database upgrade commands:\n%s\n", buf);
@@ -3072,7 +3075,7 @@ sql_update_dec2023(Client c, mvc *sql, sql_schema *s)
 		printf("Running database upgrade commands:\n%s\n", query);
 		fflush(stdout);
 		err = SQLstatementIntern(c, query, "update", true, false, NULL);
-		if (err == MAL_SUCCEED) {
+		if (err == MAL_SUCCEED && (err = SQLtrans(sql)) == MAL_SUCCEED) {
 			static const char query2[] = "alter table sys.function_languages set read only;\n";
 			printf("Running database upgrade commands:\n%s\n", query2);
 			fflush(stdout);
@@ -3744,7 +3747,7 @@ sql_update_dec2023_sp4(Client c, mvc *sql, sql_schema *s)
 			printf("Running database upgrade commands:\n%s\n", query);
 			fflush(stdout);
 			err = SQLstatementIntern(c, query, "update", true, false, NULL);
-			if (err == MAL_SUCCEED) {
+			if (err == MAL_SUCCEED && (err = SQLtrans(sql)) == MAL_SUCCEED) {
 				static const char query2[] =
 					"create temporary table d as (select distinct * from sys.dependencies);\n"
 					"delete from sys.dependencies;\n"
@@ -4274,7 +4277,8 @@ sql_update_aug2024(Client c, mvc *sql, sql_schema *s)
 					" ('ClientRemark', 'remark');\n"
 					"grant select on sys.clientinfo_properties to public;\n"
 					"update sys.functions set system = true where schema_id = 2000 and name in ('setclientinfo', 'sessions');\n"
-					"update sys._tables set system = true where schema_id = 2000 and name in ('clientinfo_properties', 'sessions');\n";
+					"update sys._tables set system = true where schema_id = 2000 and name in ('clientinfo_properties', 'sessions');\n"
+					"commit;\n";
 
 				t = mvc_bind_table(sql, s, "sessions");
 				t->system = 0; /* make it non-system else the drop view will fail */
@@ -4282,7 +4286,7 @@ sql_update_aug2024(Client c, mvc *sql, sql_schema *s)
 				fflush(stdout);
 				err = SQLstatementIntern(c, query, "update", true, false, NULL);
 			}
-			if (err == MAL_SUCCEED) {
+			if (err == MAL_SUCCEED && (err = SQLtrans(sql)) == MAL_SUCCEED) {
 				static const char query[] = "alter table sys.clientinfo_properties SET READ ONLY;\n";
 				printf("Running database upgrade commands:\n%s\n", query);
 				fflush(stdout);
@@ -4301,14 +4305,15 @@ sql_update_aug2024(Client c, mvc *sql, sql_schema *s)
 					"(3, 'Unique Key With Nulls Not Distinct'),\n"
 					"(4, 'Check Constraint');\n"
 					"GRANT SELECT ON sys.key_types TO PUBLIC;\n"
-					"UPDATE sys._tables SET system = true WHERE schema_id = 2000 AND name = 'key_types';\n";
+					"UPDATE sys._tables SET system = true WHERE schema_id = 2000 AND name = 'key_types';\n"
+					"COMMIT;\n";
 				if ((t = mvc_bind_table(sql, s, "key_types")) != NULL)
 					t->system = 0;
 				printf("Running database upgrade commands:\n%s\n", query);
 				fflush(stdout);
 				err = SQLstatementIntern(c, query, "update", true, false, NULL);
 			}
-			if (err == MAL_SUCCEED) {
+			if (err == MAL_SUCCEED && (err = SQLtrans(sql)) == MAL_SUCCEED) {
 				static const char query[] = "ALTER TABLE sys.key_types SET READ ONLY;\n";
 				printf("Running database upgrade commands:\n%s\n", query);
 				fflush(stdout);
@@ -4814,14 +4819,14 @@ sql_update_mar2025_sp1(Client c, mvc *sql)
 		printf("Running database upgrade commands:\n%s\n", stmt2a);
 		fflush(stdout);
 		err = SQLstatementIntern(c, stmt2a, "update", true, false, NULL);
-		if (err == MAL_SUCCEED) {
+		if (err == MAL_SUCCEED && (err = SQLtrans(sql)) == MAL_SUCCEED) {
 			static const char stmt2b[] =
 				"INSERT INTO sys.table_types VALUES (31, 'LOCAL TEMPORARY VIEW');\n"
 				"COMMIT;\n";
 			printf("Running database upgrade commands:\n%s\n", stmt2b);
 			fflush(stdout);
 			err = SQLstatementIntern(c, stmt2b, "update", true, false, NULL);
-			if (err == MAL_SUCCEED) {
+			if (err == MAL_SUCCEED && (err = SQLtrans(sql)) == MAL_SUCCEED) {
 				static const char stmt3[] = "ALTER TABLE sys.table_types SET READ ONLY;\n";
 				printf("Running database upgrade commands:\n%s\n", stmt3);
 				fflush(stdout);
@@ -5250,11 +5255,12 @@ sql_update_dec2025(Client c, mvc *sql, sql_schema *s)
 	if ((b = BBPquickdesc(output->cols[0].b)) && BATcount(b) > 0) {
 		const char query[] =
 			"ALTER TABLE sys.keywords SET READ WRITE;\n"
-			"DELETE FROM sys.keywords WHERE keyword = 'PLAN';\n";
+			"DELETE FROM sys.keywords WHERE keyword = 'PLAN';\n"
+			"COMMIT;\n";
 		printf("Running database upgrade commands:\n%s\n", query);
 		fflush(stdout);
 		err = SQLstatementIntern(c, query, "update", true, false, NULL);
-		if (err == MAL_SUCCEED) {
+		if (err == MAL_SUCCEED && (err = SQLtrans(sql)) == MAL_SUCCEED) {
 			static const char query2[] = "ALTER TABLE sys.keywords SET READ ONLY;\n";
 			printf("Running database upgrade commands:\n%s\n", query2);
 			fflush(stdout);
