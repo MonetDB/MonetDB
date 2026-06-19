@@ -1193,7 +1193,7 @@ stmt_merge(backend *be, stmt *lobc, stmt *robc, bool asc, bool nlast, stmt *zl, 
 }
 
 stmt *
-stmt_mproject(backend *be, stmt *zl, stmt *lc, stmt *rc, int pipeline)
+stmt_mproject(backend *be, stmt *zl, stmt *lc, stmt *rc)
 {
 	if (zl == NULL || lc == NULL || rc == NULL)
 		return NULL;
@@ -1202,8 +1202,6 @@ stmt_mproject(backend *be, stmt *zl, stmt *lc, stmt *rc, int pipeline)
 	pushArgument(be->mb, q, zl->nr);
 	pushArgument(be->mb, q, lc->nr);
 	pushArgument(be->mb, q, rc->nr);
-	if (pipeline)
-		pushArgument(be->mb, q, pipeline);
 	pushInstruction(be->mb, q);
 	if (q) {
 		stmt *s = stmt_create(be->mvc->sa, st_join);

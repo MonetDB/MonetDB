@@ -864,8 +864,6 @@ static mel_func pp_sort_init_funcs[] = {
 			arg("desc", bit), arg("nlast", bit))),
  pattern("sort", "mproject", PPmproject, false, "", args(1,4,
 			 batargany("r", 1), batarg("zzl", int), batargany("lc", 1), batargany("rc", 1))),
- pattern("sort", "mproject", PPmproject, false, "", args(1,5,
-			 batargany("r", 1), batarg("zzl", int), batargany("lc", 1), batargany("rc", 1), arg("pipeline", ptr))),
  pattern("sop", "new", SOPnew, false, "Create set of (ordered) parts", args(1,2, batarg("sop", oid), arg("nrworkers", int))),
  pattern("sop", "add", SOPadd, false, "add set of bats to the set of (ordered) parts", args(1,3, batarg("sop", oid), batarg("sop", oid), batvarargany("b",0))),
  pattern("sop", "fetch", SOPfetch, false, "fetch a set of bats", args(1,3, batvarargany("res",0), batarg("tree", oid), arg("pipeline", ptr))),

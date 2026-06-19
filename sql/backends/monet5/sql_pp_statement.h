@@ -58,7 +58,7 @@ extern int stmt_pp_end(backend *ba, stmt *pp);    /* exit: label ; */
 sql_export void pp_cleanup(backend *ba, int var);    /* register to be cleanup variables at end of pipeline block */
 
 extern stmt *stmt_merge(backend *be, stmt *lobc, stmt *robc, bool asc, bool nlast, stmt *zl, stmt *zb, stmt *za);
-extern stmt *stmt_mproject(backend *be, stmt *zl, stmt *lc, stmt *rc, int pipeline);
+extern stmt *stmt_mproject(backend *be, stmt *zl, stmt *lc, stmt *rc);
 
 extern stmt *stmt_pp_alias(backend *be, InstrPtr q, sql_exp *e, int colnr);
 

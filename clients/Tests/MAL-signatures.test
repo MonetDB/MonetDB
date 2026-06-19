@@ -38828,11 +38828,6 @@ mproject
 pattern sort.mproject(X_0:bat[:int], X_1:bat[:any_1], X_2:bat[:any_1]):bat[:any_1]
 PPmproject
 (empty)
-sort
-mproject
-pattern sort.mproject(X_0:bat[:int], X_1:bat[:any_1], X_2:bat[:any_1], X_3:ptr):bat[:any_1]
-PPmproject
-(empty)
 sql
 affectedRows
 unsafe pattern sql.affectedRows(X_0:int, X_1:lng):int
