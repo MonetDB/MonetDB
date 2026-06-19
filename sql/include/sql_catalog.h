@@ -480,13 +480,12 @@ typedef enum sql_flang {
 	FUNC_LANG_MAL = 1, /* create sql external mod.func */
 	FUNC_LANG_SQL = 2, /* create ... sql function/procedure */
 	/* this should probably be done in a better way */
-	FUNC_LANG_PY = 6,       /* create .. language PYTHON */
 	/* values 8 and 9 were for Python 2 */
-	FUNC_LANG_PY3 = 10,     /* create .. language PYTHON3 */
 	/* values 7 and 11 were old map python code */
 	/* values 4 and 12 were C language code */
 	/* value 3 was R language code */
 	/* value 5 was Javascript language code (never implemented) */
+	/* values 6 and 10 were Python language codes */
 } sql_flang;
 
 #define LANG_EXT(l)  ((l)>FUNC_LANG_SQL)

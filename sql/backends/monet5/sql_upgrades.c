@@ -5534,14 +5534,14 @@ sql_update_default(Client c, mvc *sql, sql_schema *s)
 	if (err != MAL_SUCCEED)
 		return err;
 
-	if ((err = SQLstatementIntern(c, "select language_id from sys.function_languages where language_name = 'R';\n", "update", true, false, &output)))
+	if ((err = SQLstatementIntern(c, "select language_id from sys.function_languages where language_name = 'Python';\n", "update", true, false, &output)))
 		return err;
 	if ((b = BBPquickdesc(output->cols[0].b)) && BATcount(b) > 0) {
 		static const char query1[] =
 			"ALTER TABLE sys.function_languages SET READ WRITE;\n"
 			"COMMIT;\n";
 		static const char query2[] =
-			"DELETE FROM sys.function_languages WHERE language_name IN ('R', 'C', 'C++');\n"
+			"DELETE FROM sys.function_languages WHERE language_name IN ('Python', 'Python3', 'R', 'C', 'C++');\n"
 			"COMMIT;\n";
 		static const char query3[] = "ALTER TABLE sys.function_languages SET READ ONLY;\n";
 		printf("Running database upgrade commands:\n%s%s%s\n", query1, query2, query3);

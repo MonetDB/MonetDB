@@ -381,10 +381,7 @@ CREATE TABLE sys.function_languages (
 INSERT INTO sys.function_languages (language_id, language_name, language_keyword) VALUES
   (0, 'Internal C', NULL),
   (1, 'MAL', NULL),
-  (2, 'SQL', NULL),
---  (5, 'J', 'J'), -- Javascript? not yet available for use
-  (6, 'Python', 'PYTHON'),
-  (10, 'Python3', 'PYTHON3');
+  (2, 'SQL', NULL);
 
 ALTER TABLE sys.function_languages SET READ ONLY;
 GRANT SELECT ON sys.function_languages TO PUBLIC;

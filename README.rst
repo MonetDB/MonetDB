@@ -72,7 +72,6 @@ GEOM                Enable support for geom module (using libgeos library)
 INT128              Enable support for 128-bit integers (if compiler supports them)
 NETCDF              Enable support for netcdf
 ODBC                Compile the MonetDB ODBC driver
-PY3INTEGRATION      Enable support for Python 3 integration into MonetDB
 SANITIZER           Enable support for the GCC address sanitizer (default=OFF)
 SHP                 Enable support for ESRI Shapefiles
 STRICT              Enable strict compiler flags (default=ON for development sources, OFF for tarball installation)

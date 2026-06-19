@@ -34118,36 +34118,6 @@ replace_first
 command batpcre.replace_first(X_0:bat[:str], X_1:str, X_2:str, X_3:str):bat[:str]
 PCREreplacefirst_bat_wrap
 (empty)
-batpyapi3
-eval
-unsafe pattern batpyapi3.eval(X_0:lng, X_1:ptr, X_2:str):bat[:any_1]
-PYAPI3PyAPIevalStd
-Execute a simple Python script value
-batpyapi3
-eval
-unsafe pattern batpyapi3.eval(X_0:ptr, X_1:str, X_2:any...):bat[:any]...
-PYAPI3PyAPIevalStd
-Execute a simple Python script value
-batpyapi3
-eval_aggr
-unsafe pattern batpyapi3.eval_aggr(X_0:ptr, X_1:str, X_2:any...):any...
-PYAPI3PyAPIevalAggr
-grouped aggregates through Python
-batpyapi3
-eval_loader
-unsafe pattern batpyapi3.eval_loader(X_0:ptr, X_1:str):any...
-PYAPI3PyAPIevalLoader
-loader functions through Python
-batpyapi3
-eval_loader
-unsafe pattern batpyapi3.eval_loader(X_0:ptr, X_1:str, X_2:any...):any...
-PYAPI3PyAPIevalLoader
-loader functions through Python
-batpyapi3
-subeval_aggr
-unsafe pattern batpyapi3.subeval_aggr(X_0:ptr, X_1:str, X_2:any...):any...
-PYAPI3PyAPIevalAggr
-grouped aggregates through Python
 batsql
 all
 pattern batsql.all(X_0:bat[:bit], X_1:bat[:bit], X_2:bat[:bit]):bat[:bit]
@@ -49163,46 +49133,6 @@ cpustats
 command profiler.cpustats() (X_0:lng, X_1:lng, X_2:lng, X_3:lng, X_4:lng)
 CMDcpustats
 Extract cpu statistics from the kernel
-pyapi3
-epilogue
-command pyapi3.epilogue():void
-PyAPI3epilogue
-(empty)
-pyapi3
-eval
-unsafe pattern pyapi3.eval(X_0:ptr, X_1:str):any_1
-PYAPI3PyAPIevalStd
-Execute a simple Python script returning a single value
-pyapi3
-eval
-unsafe pattern pyapi3.eval(X_0:ptr, X_1:str, X_2:any...):any...
-PYAPI3PyAPIevalStd
-Execute a simple Python script value
-pyapi3
-eval_aggr
-unsafe pattern pyapi3.eval_aggr(X_0:ptr, X_1:str, X_2:any...):any...
-PYAPI3PyAPIevalAggr
-grouped aggregates through Python
-pyapi3
-eval_loader
-unsafe pattern pyapi3.eval_loader(X_0:ptr, X_1:str):any...
-PYAPI3PyAPIevalLoader
-loader functions through Python
-pyapi3
-eval_loader
-unsafe pattern pyapi3.eval_loader(X_0:ptr, X_1:str, X_2:any...):any...
-PYAPI3PyAPIevalLoader
-loader functions through Python
-pyapi3
-prelude
-pattern pyapi3.prelude():void
-PyAPI3prelude
-(empty)
-pyapi3
-subeval_aggr
-unsafe pattern pyapi3.subeval_aggr(X_0:ptr, X_1:str, X_2:any...):any...
-PYAPI3PyAPIevalAggr
-grouped aggregates through Python
 querylog
 append
 pattern querylog.append(X_0:str, X_1:str, X_2:str, X_3:timestamp):void

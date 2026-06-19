@@ -378,7 +378,6 @@ int yydebug=1;
 	column
 	variable
 	forest_element_name
-	function_body
 	grantee
 	column_label
 	column_id
@@ -609,7 +608,6 @@ int yydebug=1;
 	tz
 
 %right <sval> STRING XSTRING
-%right <sval> X_BODY
 
 /* sql prefixes to avoid name clashes on various architectures */
 %token <sval>
@@ -671,7 +669,7 @@ SQLCODE SQLERROR UNDER WHENEVER
 %token<sval> ASC DESC AUTHORIZATION
 %token CHECK CONSTRAINT CREATE COMMENT NULLS FIRST LAST
 %token TYPE PROCEDURE FUNCTION sqlLOADER AGGREGATE RETURNS EXTERNAL sqlNAME DECLARE
-%token CALL LANGUAGE
+%token CALL
 %token ANALYZE SQL_EXPLAIN SQL_TRACE PREP PREPARE EXEC EXECUTE DEALLOCATE
 %token LOGICAL PHYSICAL SHOW DETAILS
 %token UNNEST REWRITE
@@ -696,7 +694,6 @@ SQLCODE SQLERROR UNDER WHENEVER
 %token <sval> AS TRIGGER OF BEFORE AFTER ROW STATEMENT sqlNEW OLD EACH REFERENCING
 %token <sval> OVER PARTITION CURRENT EXCLUDE FOLLOWING PRECEDING OTHERS TIES RANGE UNBOUNDED GROUPS WINDOW QUALIFY
 
-%token X_BODY
 %token MAX_MEMORY MAX_WORKERS OPTIMIZER
 /* odbc tokens */
 %token DAYNAME MONTHNAME TIMESTAMPADD TIMESTAMPDIFF ODBC_TIMESTAMPADD ODBC_TIMESTAMPDIFF
@@ -2554,11 +2551,6 @@ external_function_name:
 		column_id '.' type_function_name { $$ = append_string(append_string(L(), $1), $3); }
 	;
 
-function_body:
-		X_BODY
-	|	string
-	;
-
 func_def_type_no_proc:
 		FUNCTION           { $$ = F_FUNC; }
 	|	AGGREGATE          { $$ = F_AGGR; }
@@ -2643,33 +2635,6 @@ func_def:
 			append_list(f, $7);
 			append_int(f, F_PROC);
 			append_int(f, FUNC_LANG_SQL);
-			append_int(f, $1);
-			append_int(f, 0);
-			$$ = _symbol_create_list( SQL_CREATE_FUNC, f );
-		}
-	|	create_or_replace func_def_type_no_proc qfunc '(' opt_paramlist ')' func_def_opt_returns LANGUAGE IDENT function_body
-		{
-			int lang = 0;
-			dlist *f = L();
-			char l = *$9;
-
-			if (l == 'P' || l == 'p') {
-				if (strcasecmp($9, "PYTHON3") == 0) {
-					lang = FUNC_LANG_PY3;
-				} else {
-					lang = FUNC_LANG_PY;
-				}
-			} else {
-				sqlformaterror(m, "Language name PYTHON or PYTHON3 expected, received '%s'", $9);
-			}
-
-			append_list(f, $3);
-			append_list(f, $5);
-			append_symbol(f, $7);
-			append_list(f, NULL);
-			append_list(f, append_string(L(), $10));
-			append_int(f, $2);
-			append_int(f, lang);
 			append_int(f, $1);
 			append_int(f, 0);
 			$$ = _symbol_create_list( SQL_CREATE_FUNC, f );
@@ -6761,7 +6726,6 @@ non_reserved_keyword:
 	|	sqlDATE       { $$ = "date"; }          /* sloppy: officially reserved */
 	|	DEALLOCATE    { $$ = "deallocate"; }    /* sloppy: officially reserved */
 	|	FILTER        { $$ = "filter"; }        /* sloppy: officially reserved */
-	|	LANGUAGE      { $$ = "language"; }      /* sloppy: officially reserved */
 	|	LARGE         { $$ = "large"; }         /* sloppy: officially reserved */
 	|	MATCH         { $$ = "match"; }         /* sloppy: officially reserved */
 	|	NO            { $$ = "no"; }            /* sloppy: officially reserved */

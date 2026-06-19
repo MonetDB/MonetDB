@@ -147,15 +147,11 @@ SQLhelp sqlhelp1[] = {
 	 "qname,scalar_expression",
 	 "See also https://www.monetdb.org/documentation/user-guide/sql-manual/data-loading/loader-functions/"},
 	{"CREATE AGGREGATE",
-	 "Create a user-defined aggregate function. The body of the aggregate function\n"
-	 "can also be defined in other programming languages such as Python.",
+	 "Create a user-defined aggregate function.",
 	 "CREATE [ OR REPLACE ] AGGREGATE [ FUNCTION ] qname '(' { '*' | [ param [',' ...]] } ')'\n"
 	 "    RETURNS function_return_data_type\n"
-	 "    EXTERNAL NAME ident '.' ident\n"
-	 "CREATE [ OR REPLACE ] AGGREGATE [ FUNCTION ] qname '(' { '*' | [ param [',' ...]] } ')'\n"
-	 "    RETURNS function_return_data_type\n"
-	 "    LANGUAGE language_keyword external_code",
-	 "qname,param,function_return_data_type,ident,language_keyword,external_code",
+	 "    EXTERNAL NAME ident '.' ident\n",
+	 "qname,param,function_return_data_type,ident,external_code",
 	 "See also https://www.monetdb.org/documentation/user-guide/sql-programming/function-definitions/"},
 	{"CREATE FILTER FUNCTION",
 	 "Create a user-defined filter function. Currently only MAL definitions\n"
@@ -166,29 +162,20 @@ SQLhelp sqlhelp1[] = {
 	 "See also https://www.monetdb.org/documentation/user-guide/sql-programming/function-definitions/"},
 	{"CREATE FUNCTION",
 	 "Create a user-defined function (UDF). The body of the function can be defined in\n"
-	 " PL/SQL or programming languages such as Python when embedded on the server.",
+	 " PL/SQL.",
 	 "CREATE [ OR REPLACE ] FUNCTION qname '(' { '*' | [ param [',' ...]] } ')'\n"
 	 "    RETURNS function_return_data_type\n"
 	 "    BEGIN [ ATOMIC ] statement [ ';' ...] END\n"
 	 "CREATE [ OR REPLACE ] FUNCTION qname '(' { '*' | [ param [',' ...]] } ')'\n"
 	 "    RETURNS function_return_data_type\n"
-	 "    EXTERNAL NAME ident '.' ident\n"
-	 "CREATE [ OR REPLACE ] FUNCTION qname '(' { '*' | [ param [',' ...]] } ')'\n"
-	 "    RETURNS function_return_data_type\n"
-	 "    LANGUAGE language_keyword external_code",
-	 "qname,param,function_return_data_type,statement,ident,language_keyword,external_code",
+	 "    EXTERNAL NAME ident '.' ident\n",
+	 "qname,param,function_return_data_type,statement,ident,external_code",
 	 "See also https://www.monetdb.org/documentation/user-guide/sql-programming/function-definitions/"},
 	{"CREATE INDEX",
 	 "Create a hint for a secondary index on a column or set of columns of a table",
 	 "CREATE [ UNIQUE | ORDERED | IMPRINTS ] INDEX [ IF NOT EXISTS ] ident ON qname '(' ident_list ')'",
 	 NULL,
 	 "See also https://www.monetdb.org/documentation/user-guide/sql-manual/data-definition/index-definitions/"},
-	{"CREATE LOADER",
-	 "Create a custom (external) data loader function. The body is defined in Python language",
-	 "CREATE [ OR REPLACE ] LOADER [ FUNCTION ] qname '(' [ param [',' ...]] ')'\n"
-	 "    LANGUAGE PYTHON external_code",
-	 "qname,param,external_code",
-	 "See also https://www.monetdb.org/documentation/user-guide/blog-archive/python-loader/"},
 	{"CREATE MERGE TABLE",
 	 "",
 	 "CREATE MERGE TABLE [ IF NOT EXISTS ] qname table_source [ partition_by ]",
@@ -780,11 +767,6 @@ SQLhelp sqlhelp2[] = {
 	{"join_type",
 	 NULL,
 	 "INNER | { { LEFT | RIGHT | FULL } [ OUTER ] }",
-	 NULL,
-	 NULL},
-	{"language_keyword",
-	 NULL,
-	 "PYTHON | PYTHON3",
 	 NULL,
 	 NULL},
 	{"limit_clause",

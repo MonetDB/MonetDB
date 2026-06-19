@@ -67,9 +67,6 @@
 # operators.  Otherwise the POSIX regex functions are used.
 %bcond_without pcre
 
-# By default, include Python 3 integration.
-%bcond_without py3integration
-
 %if %{fedpkgs}
 # By default, create the MonetDB-cfitsio package.
 %bcond_without fits
@@ -122,10 +119,6 @@ BuildRequires: pkgconfig(libpcre2-8)
 %endif
 BuildRequires: pkgconfig(zlib)
 BuildRequires: pkgconfig(liblz4) >= 1.8
-%if %{with py3integration}
-BuildRequires: pkgconfig(python3) >= 3.5
-BuildRequires: python3dist(numpy)
-%endif
 # optional packages:
 # BuildRequires: pkgconfig(cmocka)      # -DWITH_CMOCKA=ON
 # BuildRequires: pkgconfig(gdal)        # -DSHP=ON
@@ -471,31 +464,6 @@ extensions for %{name}-server.
 %files geom
 %defattr(-,root,root)
 %{_libdir}/monetdb5*/lib_geom.so
-%endif
-
-%if %{with py3integration}
-%package python3
-Summary: Integration of MonetDB and Python, allowing use of Python from within SQL
-Group: Applications/Databases
-Requires: %{name}-server%{?_isa} = %{version}-%{release}
-Requires: python3-numpy
-
-%description python3
-MonetDB is a database management system that is developed from a
-main-memory perspective with use of a fully decomposed storage model,
-automatic index management, extensibility of data types and search
-accelerators.  It also has an SQL front end.
-
-This package contains the interface to use the Python language from
-within SQL queries.  This package is for Python 3.
-
-NOTE: INSTALLING THIS PACKAGE OPENS UP SECURITY ISSUES.  If you don't
-know how this package affects the security of your system, do not
-install it.
-
-%files python3
-%defattr(-,root,root)
-%{_libdir}/monetdb5*/lib_pyapi3.so
 %endif
 
 %if %{with fits}
@@ -918,7 +886,6 @@ fi
         -DINT128=%{?with_hugeint:ON}%{!?with_hugeint:OFF} \
         -DNETCDF=OFF \
         -DODBC=ON \
-        -DPY3INTEGRATION=%{?with_py3integration:ON}%{!?with_py3integration:OFF} \
         -DSANITIZER=OFF \
         -DSHP=OFF \
         -DSTRICT=OFF \

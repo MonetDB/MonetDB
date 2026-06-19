@@ -296,9 +296,6 @@ loadLibrary(const char *filename, int flag)
 #ifdef HAVE_NETCDF
 			"netcdf",
 #endif
-#ifdef HAVE_LIBPY3
-			"pyapi3",
-#endif
 #ifdef HAVE_SHP
 			"shp",
 #endif
@@ -439,35 +436,4 @@ MSP_locate_sqlscript(allocator *ma, const char *filename)
 {
 	/* no directory semantics (yet) */
 	return locate_file(ma, filename, SQL_EXT);
-}
-
-int
-malLibraryEnabled(const char *name)
-{
-	if (strcmp(name, "pyapi3") == 0) {
-		const char *val = GDKgetenv("embedded_py");
-		return val && (strcmp(val, "3") == 0 ||
-					   strcasecmp(val, "true") == 0 ||
-					   strcasecmp(val, "yes") == 0);
-	}
-	return true;
-}
-
-#define HOW_TO_ENABLE_ERROR(LANGUAGE, OPTION)						\
-	do {															\
-		if (malLibraryEnabled(name))								\
-			return "Embedded " LANGUAGE " has not been installed. "	\
-				"Please install it first, then start server with "	\
-				"--set " OPTION;									\
-		return "Embedded " LANGUAGE " has not been enabled. "		\
-			"Start server with --set " OPTION;						\
-	} while (0)
-
-char *
-malLibraryHowToEnable(const char *name)
-{
-	if (strcmp(name, "pyapi3") == 0) {
-		HOW_TO_ENABLE_ERROR("Python 3", "embedded_py=3");
-	}
-	return "";
 }

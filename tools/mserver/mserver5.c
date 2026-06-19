@@ -376,10 +376,6 @@ main(int argc, char **av)
 #ifdef HAVE_GEOM
 	modules[mods++] = "geom";
 #endif
-#ifdef HAVE_LIBPY3
-	/* TODO check for used */
-	modules[mods++] = "pyapi3";
-#endif
 #ifdef HAVE_FITS
 	modules[mods++] = "fits";
 #endif

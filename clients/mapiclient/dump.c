@@ -2456,6 +2456,12 @@ dump_function(Mapi mid, stream *sqlf, const char *fid, bool hashge)
 			case 12:
 				mnstr_printf(sqlf, " LANGUAGE CPP");
 				break;
+			case 6:
+				mnstr_printf(sqlf, " LANGUAGE PYTHON");
+				break;
+			case 10:
+				mnstr_printf(sqlf, " LANGUAGE PYTHON3");
+				break;
 			default:
 				break;
 			}

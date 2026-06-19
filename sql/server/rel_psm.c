@@ -1016,11 +1016,6 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 	if (body && LANG_EXT(lang)) {
 		const char *lang_body = body->h->data.sval, *mod = "unknown", *slang = "Unknown", *imp = "Unknown";
 		switch (lang) {
-		case FUNC_LANG_PY:
-		case FUNC_LANG_PY3:
-			mod = "pyapi3";
-			slang = "Python";
-			break;
 		default:
 			return sql_error(sql, 01, SQLSTATE(42000) "Function language without a MAL backend");
 		}
@@ -1035,8 +1030,8 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 			imp = "eval";
 		}
 
-		if (type == F_LOADER && !(lang == FUNC_LANG_PY || lang == FUNC_LANG_PY3))
-			return sql_error(sql, 01, SQLSTATE(42000) "CREATE %s: Language name \"Python[3]\" expected", F);
+		if (type == F_LOADER)
+			return sql_error(sql, 01, SQLSTATE(42000) "CREATE %s: No longer supported", F);
 
 		sql->params = NULL;
 		if (create) {
