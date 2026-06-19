@@ -38799,15 +38799,15 @@ pattern sop.add(X_0:bat[:oid], X_1:bat[:any]...):bat[:oid]
 SOPadd
 add set of bats to the set of (ordered) parts
 sop
-fetch
-pattern sop.fetch(X_0:bat[:oid]):bat[:any]...
-SOPfetch
-fetch a set of bats
+fetch_global
+pattern sop.fetch_global(X_0:bat[:oid]):bat[:any]...
+SOPfetch_global
+fetch a set of global bats
 sop
-fetch
-pattern sop.fetch(X_0:bat[:oid], X_1:ptr):bat[:any]...
-SOPfetch
-fetch a set of bats
+fetch_local
+pattern sop.fetch_local(X_0:bat[:oid]):bat[:any]...
+SOPfetch_local
+fetch a set of thread's local bats
 sop
 new
 pattern sop.new(X_0:int):bat[:oid]

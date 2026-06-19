@@ -44,8 +44,10 @@ querylog.define
 1
 sop.add
 2
-sop.fetch
-3
+sop.fetch_global
+1
+sop.fetch_local
+2
 sop.new
 1
 sort.merge

@@ -800,18 +800,12 @@ SOPadd(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 }
 
 static str
-SOPfetch(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+SOPfetch_(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int wid)
 {
 	(void)cntxt;
-	(void)mb;
+
 	int nr = p->retc;
 	bat *qbat = getArgReference_bat(stk, p, p->retc);
-	Pipeline *pp = NULL;
-	int wid = 0;
-	if (p->argc - p->retc == 2) {
-		pp = (Pipeline *) *getArgReference_ptr(stk, p, p->retc + 1);
-		wid = pp->wid;
-	}
 
 	BAT *qb = BATdescriptor(*qbat);
 	if (!qb)
@@ -851,6 +845,20 @@ SOPfetch(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	return MAL_SUCCEED;
 }
 
+static str
+SOPfetch_local(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+{
+	Pipeline *pp = pipeline_get_thread_private_pipeline();
+
+	return SOPfetch_(cntxt, mb, stk, p, pp->wid);
+}
+
+static str
+SOPfetch_global(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+{
+	return SOPfetch_(cntxt, mb, stk, p, 0);
+}
+
 #include "mel.h"
 static mel_func pp_sort_init_funcs[] = {
  pattern("sort", "merge", PPmerge, false, "", args(3,7,
@@ -866,8 +874,8 @@ static mel_func pp_sort_init_funcs[] = {
 			 batargany("r", 1), batarg("zzl", int), batargany("lc", 1), batargany("rc", 1))),
  pattern("sop", "new", SOPnew, false, "Create set of (ordered) parts", args(1,2, batarg("sop", oid), arg("nrworkers", int))),
  pattern("sop", "add", SOPadd, false, "add set of bats to the set of (ordered) parts", args(1,3, batarg("sop", oid), batarg("sop", oid), batvarargany("b",0))),
- pattern("sop", "fetch", SOPfetch, false, "fetch a set of bats", args(1,3, batvarargany("res",0), batarg("tree", oid), arg("pipeline", ptr))),
- pattern("sop", "fetch", SOPfetch, false, "fetch a set of bats", args(1,2, batvarargany("res",0), batarg("tree", oid))),
+ pattern("sop", "fetch_local", SOPfetch_local, false, "fetch a set of thread's local bats", args(1,2, batvarargany("res",0), batarg("tree", oid))),
+ pattern("sop", "fetch_global", SOPfetch_global, false, "fetch a set of global bats", args(1,2, batvarargany("res",0), batarg("tree", oid))),
  { .imp=NULL }
 };
 #include "mal_import.h"

@@ -105,7 +105,7 @@ fetch(backend *be, InstrPtr sop, sql_rel *rel, list *oexps, bool skip_oexps )
 {
 	list *l = sa_list(be->mvc->sa);
 	int nr = list_length(rel->exps) + list_length(oexps), i = 0;
-	InstrPtr q = newStmtArgs(be->mb, "sop", "fetch", nr + 2);
+	InstrPtr q = newStmtArgs(be->mb, "sop", be->pipeline?"fetch_local":"fetch_global", nr + 1);
 
 	for(node *n = oexps->h; n; n = n->next, i++) {
 		sql_exp *e = n->data;
@@ -129,8 +129,6 @@ fetch(backend *be, InstrPtr sop, sql_rel *rel, list *oexps, bool skip_oexps )
 		append(l, stmt_pp_alias(be, q, e, i));
 	}
 	pushArgument(be->mb, q, getArg(sop, 0));
-	if (be->pipeline)
-		pushArgument(be->mb, q, be->pipeline);
 	pushInstruction(be->mb, q);
 	return stmt_list(be, l);
 }
