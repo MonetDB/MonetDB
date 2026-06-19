@@ -1841,7 +1841,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 			if (r) { /* check new ordered aggregation */
 				list *obe = r->h->data;
 				if (obe && obe->h) {
-					stmt *orderby = NULL, *orderby_ids, *orderby_grp;
+					stmt *orderby = NULL, *orderby_ids = NULL, *orderby_grp = NULL;
 					/* order by */
 					if (grp) {
 						orderby = stmt_order(be, grp, true, true);
