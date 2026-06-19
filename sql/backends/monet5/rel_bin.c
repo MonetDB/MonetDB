@@ -8101,7 +8101,7 @@ rel2bin_materialize(backend *be, sql_rel *rel, list *refs, bool top)
 	list *shared = NULL;
 	sql_rel *sharedproject = NULL;
 	if (r &&
-			((r->l && (is_simple_project(r->op) || is_munion(r->op) || (rel_is_ref(rel) && !is_groupby(r->op))))
+			((r->l && (is_simple_project(r->op) || is_munion(r->op) || is_join(r->op) || is_select(r->op) || (rel_is_ref(rel) && !is_groupby(r->op))))
 					  || r->op == op_table) &&
 			(!top || be->mvc->type != Q_UPDATE)) {
 		sharedproject = r;
