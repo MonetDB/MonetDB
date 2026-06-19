@@ -378,3 +378,10 @@ INSERT INTO sys.function_types VALUES (8, 'Group filter function', 'GROUP FILTER
 COMMIT;
 ALTER TABLE sys.function_types SET READ ONLY;
 
+Running database upgrade commands:
+ALTER TABLE sys.function_languages SET READ WRITE;
+COMMIT;
+DELETE FROM sys.function_languages WHERE language_name IN ('R', 'C', 'C++');
+COMMIT;
+ALTER TABLE sys.function_languages SET READ ONLY;
+
