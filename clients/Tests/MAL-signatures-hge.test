@@ -50458,11 +50458,6 @@ mproject
 pattern sort.mproject(X_0:bat[:int], X_1:bat[:any_1], X_2:bat[:any_1]):bat[:any_1]
 PPmproject
 (empty)
-sort
-mproject
-pattern sort.mproject(X_0:bat[:int], X_1:bat[:any_1], X_2:bat[:any_1], X_3:ptr):bat[:any_1]
-PPmproject
-(empty)
 source
 next
 pattern source.next(X_0:bat[:any_2]):bat[:any_1]

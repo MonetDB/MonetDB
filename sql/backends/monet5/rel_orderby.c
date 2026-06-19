@@ -254,7 +254,7 @@ rel2bin_orderby(backend *be, sql_rel *rel, list *refs)
 	for (node *en = oexps->h; en; en = en->next, ln = ln->next, rn = rn->next) {
 		stmt *lc = ln->data;
 		stmt *rc = rn->data;
-		stmt *mcol = stmt_mproject(be, zzl, lc, rc, 0);
+		stmt *mcol = stmt_mproject(be, zzl, lc, rc);
 		append(ostmts, mcol);
 	}
 
@@ -264,7 +264,7 @@ rel2bin_orderby(backend *be, sql_rel *rel, list *refs)
 		//sql_exp *ce = en->data;
 		stmt *lc = ln->data; //exp_bin(be, ce, l, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
 		stmt *rc = rn->data; //exp_bin(be, ce, r, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
-		stmt *mcol = stmt_mproject(be, zzl, lc, rc, 0);
+		stmt *mcol = stmt_mproject(be, zzl, lc, rc);
 		append(nsub, mcol);
 	}
 	sub = stmt_list(be, nsub);
