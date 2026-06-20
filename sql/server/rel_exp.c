@@ -3445,9 +3445,10 @@ exp_copy(mvc *sql, sql_exp * e)
 		else if (e->r) {
 			sql_var_name *vname = (sql_var_name*) e->r;
 			ne = exp_param_or_declared(sql->sa, vname->sname, vname->name, &e->tpe, e->flag);
-		} else if (e->f)
+		} else if (e->f) {
 			ne = exp_values(sql->sa, exps_copy(sql, e->f));
-		else
+			ne->tpe = e->tpe;
+		} else
 			ne = exp_atom_ref(sql->sa, e->flag, &e->tpe);
 		break;
 	case e_psm:

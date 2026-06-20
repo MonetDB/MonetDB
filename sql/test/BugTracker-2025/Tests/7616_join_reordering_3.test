@@ -13,7 +13,7 @@ project (
 | | | table("sys"."y") [ "y"."a1" NOT NULL UNIQUE, "y"."p" NOT NULL UNIQUE ],
 | | | select (
 | | | | table("sys"."x") [ "x"."a1" NOT NULL UNIQUE, "x"."a3" NOT NULL UNIQUE, "x"."p" NOT NULL UNIQUE ]
-| | | ) [ ("x"."a3" NOT NULL UNIQUE) FILTER "sys"."contains"(varchar[ [ varchar(3) "bar" ]] NOT NULL, boolean(1) "true") ]
+| | | ) [ ("x"."a3" NOT NULL UNIQUE) FILTER "sys"."contains"( [ varchar(3) "bar" ], boolean(1) "true") ]
 | | ) [ ("y"."a1" NOT NULL UNIQUE) = ("x"."a1" NOT NULL UNIQUE) ]
 | ) [ "y"."a1" NOT NULL UNIQUE as "foo_x4"."a1", "sys"."sql_mul"("y"."p" NOT NULL, "x"."p" NOT NULL) NOT NULL as "foo_x4"."p" ]
 ) [ "foo_x4"."a1" NOT NULL UNIQUE, "foo_x4"."p" NOT NULL ]
