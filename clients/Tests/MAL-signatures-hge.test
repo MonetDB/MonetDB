@@ -35864,14 +35864,44 @@ pattern batuuid.new(X_0:lng):bat[:uuid]
 UUIDgenerateUuidInt_bulk
 Generate a new uuid (dummy version for side effect free multiplex loop)
 batvss
-l2sq_distance
-pattern batvss.l2sq_distance(X_0:bat?[:dbl]...):bat[:dbl]
-BATl2sq_distance
-Euclidean distanse L2
+cos_distance
+pattern batvss.cos_distance(X_0:bat?[:flt]...):bat[:dbl]
+BATcos_distance_f32
+Cosine (Angular) distance
+batvss
+cos_distance
+pattern batvss.cos_distance(X_0:bat?[:dbl]...):bat[:dbl]
+BATcos_distance_f64
+Cosine (Angular) distance
+batvss
+ip_distance
+pattern batvss.ip_distance(X_0:bat?[:flt]...):bat[:dbl]
+BATip_distance_f32
+Inner (Dot) Product distance
+batvss
+ip_distance
+pattern batvss.ip_distance(X_0:bat?[:dbl]...):bat[:dbl]
+BATip_distance_f64
+Inner (Dot) Product distance
+batvss
+l1_distance
+pattern batvss.l1_distance(X_0:bat?[:flt]...):bat[:dbl]
+BATl1_distance_f32
+L1(Manhattan) distance
+batvss
+l1_distance
+pattern batvss.l1_distance(X_0:bat?[:dbl]...):bat[:dbl]
+BATl1_distance_f64
+L1(Manhattan) distance
 batvss
 l2sq_distance
 pattern batvss.l2sq_distance(X_0:bat?[:flt]...):bat[:dbl]
-BATl2sq_distance
+BATl2sq_distance_f32
+Euclidean distanse L2
+batvss
+l2sq_distance
+pattern batvss.l2sq_distance(X_0:bat?[:dbl]...):bat[:dbl]
+BATl2sq_distance_f64
 Euclidean distanse L2
 batvss
 pdx
