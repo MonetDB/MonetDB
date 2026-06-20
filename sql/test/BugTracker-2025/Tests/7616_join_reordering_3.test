@@ -10,14 +10,11 @@ EXPLAIN SHOW DETAILS SELECT a1, p FROM (SELECT y.a1 AS a1, foo_x3.a1 AS a2, y.p 
 project (
 | project (
 | | join (
-| | | join (
-| | | | project (
-| | | | | table("sys"."x") [ "x"."a1" NOT NULL UNIQUE, "x"."a3" NOT NULL UNIQUE, "x"."p" NOT NULL UNIQUE ]
-| | | | ) [ "x"."a1" NOT NULL UNIQUE as "foo_x0"."a1", "x"."a3" NOT NULL UNIQUE as "foo_x0"."a2", "x"."p" NOT NULL UNIQUE as "foo_x0"."p" ],
-| | | |  [  [ varchar(3) "bar" ] as "foo_x1"."a1" ]
-| | | ) [ ("foo_x0"."a2" NOT NULL UNIQUE) FILTER "sys"."contains"("foo_x1"."a1" NOT NULL, boolean(1) "true") ],
-| | | table("sys"."y") [ "y"."a1" NOT NULL UNIQUE, "y"."p" NOT NULL UNIQUE ]
-| | ) [ ("y"."a1" NOT NULL UNIQUE) = ("foo_x0"."a1" NOT NULL) ]
-| ) [ "y"."a1" NOT NULL as "foo_x4"."a1", "sys"."sql_mul"("y"."p" NOT NULL, "foo_x0"."p" NOT NULL) NOT NULL as "foo_x4"."p" ]
-) [ "foo_x4"."a1" NOT NULL, "foo_x4"."p" NOT NULL ]
+| | | table("sys"."y") [ "y"."a1" NOT NULL UNIQUE, "y"."p" NOT NULL UNIQUE ],
+| | | select (
+| | | | table("sys"."x") [ "x"."a1" NOT NULL UNIQUE, "x"."a3" NOT NULL UNIQUE, "x"."p" NOT NULL UNIQUE ]
+| | | ) [ ("x"."a3" NOT NULL UNIQUE) FILTER "sys"."contains"(varchar[ [ varchar(3) "bar" ]] NOT NULL, boolean(1) "true") ]
+| | ) [ ("y"."a1" NOT NULL UNIQUE) = ("x"."a1" NOT NULL UNIQUE) ]
+| ) [ "y"."a1" NOT NULL UNIQUE as "foo_x4"."a1", "sys"."sql_mul"("y"."p" NOT NULL, "x"."p" NOT NULL) NOT NULL as "foo_x4"."p" ]
+) [ "foo_x4"."a1" NOT NULL UNIQUE, "foo_x4"."p" NOT NULL ]
 

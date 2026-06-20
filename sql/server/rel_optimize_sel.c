@@ -159,7 +159,7 @@ rel_remove_redundant_join_(visitor *v, sql_rel *rel)
 					}
 					if (found) {
 						rel_destroy(v->sql, rel);
-						return nrel;
+						rel = nrel;
 					} else {
 						rel_destroy(v->sql, nrel);
 					}
@@ -204,6 +204,16 @@ rel_remove_redundant_join_(visitor *v, sql_rel *rel)
 				return rel;
 			}
 		}
+	}
+	if (is_join(rel->op) && !is_full(rel->op) && !is_right(rel->op) && list_empty(rel->exps) && list_empty(rel->attr)) {
+		/* inner or left */
+		sql_rel *l = rel->l, *r = rel->r;
+		if (is_simple_project(r->op) && !r->l && !r->r && exps_card(r->exps) <= CARD_AGGR && !rel_is_ref(l) && !is_dynamic(r)) {
+			sql_rel *nrel = rel_project(v->sql->sa, rel_dup(l), list_merge(rel_projections(v->sql, l, NULL, 0, 1), exps_copy(v->sql, r->exps), NULL));
+			rel_destroy(v->sql, rel);
+			rel = nrel;
+		}
+		return rel;
 	}
 	return rel;
 }
