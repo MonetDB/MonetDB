@@ -132,8 +132,8 @@ sketch_populate(BAT* b, BATiter *bi, struct canditer *bci,
 		} else {
 			uint8_t k = cnting_sketch[bucket][clz] - 128;
 			uint64_t rng;
-			getentropy(&rng, sizeof(rng));
-			if ((rng & ((1ULL << k) - 1)) == 0)
+			if (getentropy(&rng, sizeof(rng)) == 0 &&
+			   (rng & ((1ULL << k) - 1)) == 0)
 				cnting_sketch[bucket][clz]++;
 		}
 	}
