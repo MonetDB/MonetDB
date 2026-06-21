@@ -316,7 +316,7 @@ main(int argc, char **av)
 #endif
 	char *prog = *av;
 	opt *set = NULL;
-	unsigned grpdebug = 0, debug = 0;
+	unsigned grpdebug = 0, debug = (1<<19);
 	int setlen = 0;
 	str err = MAL_SUCCEED;
 	char prmodpath[FILENAME_MAX];
