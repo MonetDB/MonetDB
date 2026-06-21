@@ -443,10 +443,6 @@ do_oahash_join(sql_rel *rel)
 	if (!(GDKdebug & oahash_enabled))
 		return 0;
 
-	// TODO full outer join
-	//if (rel->op == op_full)
-	//	return 0;
-
 	// TODO groupjoin other then mark/exist
     if (list_length(rel->attr) == 1) {
         sql_exp *e = rel->attr->h->data;
@@ -1544,9 +1540,9 @@ rel_rewrite_physical(visitor *v, sql_rel *rel)
 	if (rel)
 		rel = rel_push_down_topn(v, rel);
 	if (rel) { /* split equi-join/select */
-		rel = rel_count_gt_zero(v, rel);
 		ATOMIC_TYPE oahash_enabled = (1U<<19);
 		if (SQLrunning && (GDKdebug & oahash_enabled)) {
+			rel = rel_count_gt_zero(v, rel);
 			if (rel)	/* Add a projection after each join, needed for limited number of columns in hash tables */
 				rel = rel_add_project(v, rel);
 		}
