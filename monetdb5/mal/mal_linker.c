@@ -287,9 +287,6 @@ loadLibrary(const char *filename, int flag)
 
 	if (handle == NULL) {
 		static const char *const optional[] = {
-#ifdef HAVE_CUDF
-			"capi",
-#endif
 #ifdef HAVE_FITS
 			"fits",
 #endif
@@ -298,12 +295,6 @@ loadLibrary(const char *filename, int flag)
 #endif
 #ifdef HAVE_NETCDF
 			"netcdf",
-#endif
-#ifdef HAVE_LIBPY3
-			"pyapi3",
-#endif
-#ifdef HAVE_LIBR
-			"rapi",
 #endif
 #ifdef HAVE_SHP
 			"shp",
@@ -445,47 +436,4 @@ MSP_locate_sqlscript(allocator *ma, const char *filename)
 {
 	/* no directory semantics (yet) */
 	return locate_file(ma, filename, SQL_EXT);
-}
-
-int
-malLibraryEnabled(const char *name)
-{
-	if (strcmp(name, "pyapi3") == 0) {
-		const char *val = GDKgetenv("embedded_py");
-		return val && (strcmp(val, "3") == 0 ||
-					   strcasecmp(val, "true") == 0 ||
-					   strcasecmp(val, "yes") == 0);
-	} else if (strcmp(name, "rapi") == 0) {
-		const char *val = GDKgetenv("embedded_r");
-		return val && (strcasecmp(val, "true") == 0 ||
-					   strcasecmp(val, "yes") == 0);
-	} else if (strcmp(name, "capi") == 0) {
-		const char *val = GDKgetenv("embedded_c");
-		return val && (strcasecmp(val, "true") == 0 ||
-					   strcasecmp(val, "yes") == 0);
-	}
-	return true;
-}
-
-#define HOW_TO_ENABLE_ERROR(LANGUAGE, OPTION)						\
-	do {															\
-		if (malLibraryEnabled(name))								\
-			return "Embedded " LANGUAGE " has not been installed. "	\
-				"Please install it first, then start server with "	\
-				"--set " OPTION;									\
-		return "Embedded " LANGUAGE " has not been enabled. "		\
-			"Start server with --set " OPTION;						\
-	} while (0)
-
-char *
-malLibraryHowToEnable(const char *name)
-{
-	if (strcmp(name, "pyapi3") == 0) {
-		HOW_TO_ENABLE_ERROR("Python 3", "embedded_py=3");
-	} else if (strcmp(name, "rapi") == 0) {
-		HOW_TO_ENABLE_ERROR("R", "embedded_r=true");
-	} else if (strcmp(name, "capi") == 0) {
-		HOW_TO_ENABLE_ERROR("C/C++", "embedded_c=true");
-	}
-	return "";
 }

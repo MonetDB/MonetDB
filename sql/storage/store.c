@@ -1006,11 +1006,7 @@ load_func(sql_trans *tr, sql_schema *s, sqlid fid, subrids *rs)
 	} else {
 		v = store->table_api.column_find_string_start(tr, find_sql_column(funcs, "mod"), rid, &cbat);
 	}
-	if (strcmp(v, "pyapi") == 0 ||	 /* pyapi module no longer used */
-		strcmp(v, "pyapi3map") == 0) /* pyapi3map module no longer used */
-		t->mod =_STRDUP("pypapi3");
-	else
-		t->mod =_STRDUP(v);
+	t->mod =_STRDUP(v);
 	if (!update_env)
 		store->table_api.column_find_string_end(cbat);
 	t->lang = (sql_flang) store->table_api.column_find_int(tr, find_sql_column(funcs, "language"), rid);
@@ -1034,12 +1030,6 @@ load_func(sql_trans *tr, sql_schema *s, sqlid fid, subrids *rs)
 		t->query = t->imp;
 		t->imp = NULL;
 	}
-	/* convert old PYTHON2 and PYTHON2_MAP to PYTHON and PYTHON_MAP
-	 * see also function sql_update_jun2020() in sql_upgrades.c */
-	if ((int) t->lang == 7 || (int) t->lang == 8)		/* MAP_PY old FUNC_LANG_PY2 */
-		t->lang = FUNC_LANG_PY;
-	else if ((int) t->lang == 9 || (int) t->lang == 11)	/* old FUNC_LANG_MAP_PY2 or MAP_PY3 */
-		t->lang = FUNC_LANG_PY;
 	if (LANG_EXT(t->lang)) { /* instantiate functions other than sql and mal */
 		switch(t->type) {
 		case F_AGGR:
@@ -2049,7 +2039,7 @@ store_load(sqlstore *store, allocator *pa)
 		bootstrap_create_column(tr, t, "func", 2019, "varchar", 8196) == NULL ||
 		bootstrap_create_column(tr, t, "mod", 2020, "varchar", 8196) == NULL ||
 
-		/* language asm=0, sql=1, R=2, C=3, J=4 */
+		/* language internal C=0, mal=1, sql=2 */
 		bootstrap_create_column(tr, t, "language", 2021, "int", 31) == NULL ||
 
 		/* func, proc, aggr or filter */

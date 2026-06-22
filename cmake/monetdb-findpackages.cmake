@@ -98,10 +98,6 @@ if(ODBC)
   find_package(ODBCinst)
 endif()
 
-if(RINTEGRATION)
-  find_package(LibR)
-endif()
-
 if(WITH_MALLOC)
   find_package(PkgConfig QUIET)
   if(${WITH_MALLOC} STREQUAL "mimalloc")

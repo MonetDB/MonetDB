@@ -146,10 +146,6 @@ License: permissive
  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  POSSIBILITY OF SUCH DAMAGE.
 
-Files: cmake/Modules/FindLibR.cmake
-Copyright: 2009-19 by RStudio, Inc.
-License: AGPL-3.0-only
-
 Files: cmake/Modules/FindNumPy.cmake
 Copyright: 2012 Continuum Analytics, Inc.
 License: MIT

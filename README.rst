@@ -65,7 +65,6 @@ Available options are:
 Option              Explanation
 =================   ===============================================================================================
 ASSERT              Enable asserts (default=ON for development sources, OFF for tarball installation)
-CINTEGRATION        Enable support for C UDFs (default=ON except on Windows)
 CMAKE_SUMMARY       Show a summary of the cmake configuration (for debug purposes, default=OFF)
 CMAKE_UNITTESTS     Build and run the unittest for the build system (default=OFF)
 FITS                Enable support for FITS
@@ -73,8 +72,6 @@ GEOM                Enable support for geom module (using libgeos library)
 INT128              Enable support for 128-bit integers (if compiler supports them)
 NETCDF              Enable support for netcdf
 ODBC                Compile the MonetDB ODBC driver
-PY3INTEGRATION      Enable support for Python 3 integration into MonetDB
-RINTEGRATION        Enable support for R integration into MonetDB
 SANITIZER           Enable support for the GCC address sanitizer (default=OFF)
 SHP                 Enable support for ESRI Shapefiles
 STRICT              Enable strict compiler flags (default=ON for development sources, OFF for tarball installation)
@@ -107,7 +104,7 @@ The following packages are optional:
 ``cfitsio-devel``, ``gdal-devel``, ``geos-devel``, ``libasan``,
 ``libcmocka-devel``, ``libcurl-devel``, ``libxml2-devel``,
 ``netcdf-devel``, ``proj-devel``, ``python3-devel``, ``python3-numpy``,
-``R-core-devel``, ``unixODBC-devel``, ``valgrind-devel``.
+``unixODBC-devel``, ``valgrind-devel``.
 
 On Ubuntu and Debian the following packages are required:
 ``bison``, ``cmake``, ``gcc``, ``pkg-config``, ``python3``.
@@ -120,7 +117,7 @@ The following packages are optional:
 ``libasan5``, ``libcfitsio-dev``, ``libcmocka-dev``,
 ``libcurl4-gnutls-dev``, ``libgdal-dev``, ``libgeos-dev``,
 ``libnetcdf-dev``, ``libproj-dev``, ``libxml2-dev``, ``python3-dev``,
-``python3-numpy``, ``r-base-dev``, ``unixodbc-dev``, ``valgrind``.
+``python3-numpy``, ``unixodbc-dev``, ``valgrind``.
 
 ``cmake`` must be at least version 3.12, ``python`` must be at least
 version 3.5.

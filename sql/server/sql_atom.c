@@ -1139,6 +1139,8 @@ atom_is_zero(atom *a)
 int
 atom_is_one(atom *a)
 {
+	if (a->tpe.type->eclass == EC_DEC && a->tpe.scale != 0)
+		return 0;
 	if (a->isnull || !ATOMlinear(a->tpe.type->localtype))
 		return 0;
 	switch (ATOMstorage(a->tpe.type->localtype)) {

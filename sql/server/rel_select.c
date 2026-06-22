@@ -41,7 +41,7 @@ rel_table_projections( mvc *sql, sql_rel *rel, char *tname, int level )
 		return NULL;
 
 	if (!tname)
-		return _rel_projections(sql, rel, NULL, 1, 0, 1);
+		return _rel_projections(sql, rel, NULL, 1, 0, 1, false);
 
 	switch(rel->op) {
 	case op_join:
@@ -1895,11 +1895,9 @@ push_select_exp(mvc *sql, sql_rel *rel, sql_exp *e, sql_exp *ls, int f)
 {
 	if (is_outerjoin(rel->op)) {
 		if ((is_left(rel->op) || is_full(rel->op)) && rel_find_exp(rel->l, ls)) {
-			rel_join_add_exp(sql->sa, rel, e);
-			return rel;
+			return rel_join_add_exp(sql->sa, rel, e);
 		} else if ((is_right(rel->op) || is_full(rel->op)) && rel_find_exp(rel->r, ls)) {
-			rel_join_add_exp(sql->sa, rel, e);
-			return rel;
+			return rel_join_add_exp(sql->sa, rel, e);
 		}
 		if (is_left(rel->op) && rel_find_exp(rel->r, ls)) {
 			rel->r = rel_push_select(sql, rel->r, ls, e, f);
@@ -1918,14 +1916,12 @@ push_join_exp(mvc *sql, sql_rel *rel, sql_exp *e, sql_exp *L, sql_exp *R, sql_ex
 {
 	sql_rel *r;
 	if (/*is_semi(rel->op) ||*/ (is_outerjoin(rel->op) && !is_processed((rel)))) {
-		rel_join_add_exp(sql->sa, rel, e);
-		return rel;
+		return rel_join_add_exp(sql->sa, rel, e);
 	}
 	/* push join into the given relation */
 	if ((r = rel_push_join(sql, rel, L, R, R2, e, f)) != NULL)
 		return r;
-	rel_join_add_exp(sql->sa, rel, e);
-	return rel;
+	return rel_join_add_exp(sql->sa, rel, e);
 }
 
 static sql_rel *
@@ -2069,6 +2065,8 @@ rel_compare_exp_(sql_query *query, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_e
 				return NULL;
 			e = exp_compare_func(sql, ls, rs, compare_func((comp_type)type, anti), quantifier);
 		}
+		if (is_innerjoin(rel->op))
+			return rel_join_add_exp(sql->sa, rel, e);
 		return rel_select(sql->sa, rel, e);
 	} else if (!rs2) {
 		assert(!symmetric);
@@ -3991,6 +3989,7 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, char *sname, char *anam
 			return e;
 		if (all_freevar) {
 			rel_bind_vars(sql, groupby->l, exps);
+			rel_bind_vars(sql, groupby, exps); /* for self refs */
 			assert(!is_simple_project(res->op));
 			e->card = CARD_ATOM;
 			set_freevar(e, all_freevar-1);
@@ -6588,82 +6587,4 @@ schema_selects(sql_query *query, sql_schema *schema, symbol *s)
 	res = rel_selects(query, s);
 	sql->session->schema = os;
 	return res;
-}
-
-sql_rel *
-rel_loader_function(sql_query *query, symbol* fcall, list *fexps, sql_subfunc **loader_function)
-{
-	mvc *sql = query->sql;
-	sql_rel *sq = NULL;
-	dnode *l = fcall->data.lval->h;
-	char *sname = qname_schema(l->data.lval);
-	char *fname = qname_schema_object(l->data.lval);
-
-	list *tl = sa_list(sql->sa);
-	list *exps = sa_list(sql->sa);
-	if (l->next)
-		l = l->next; /* skip distinct */
-	if (l->next) { /* table call with subquery */
-		if (l->next->type == type_symbol || l->next->type == type_list) {
-			int count = 0;
-			symbol *subquery = NULL;
-			dnode *n = NULL;
-
-			if (l->next->type == type_symbol)
-				n = l->next;
-			else
-				n = l->next->data.lval?l->next->data.lval->h:NULL;
-
-			for (dnode *m = n; m; m = m->next) {
-				if (m->type == type_symbol && m->data.sym->token == SQL_SELECT)
-					subquery = m->data.sym;
-				count++;
-			}
-			if (subquery && count > 1)
-				return sql_error(sql, 02, SQLSTATE(42000) "SELECT: The input for the loader function '%s' must be either a single sub query, or a list of values", fname);
-
-			if (subquery) {
-				exp_kind ek = { type_value, card_relation, TRUE };
-				if (!(sq = rel_subquery(query, subquery, ek)))
-					return NULL;
-			} else {
-				exp_kind ek = { type_value, card_column, TRUE };
-				list *exps = sa_list(sql->sa);
-				for ( ; n; n = n->next) {
-					sql_exp *e = rel_value_exp(query, NULL, n->data.sym, sql_sel | sql_from, ek);
-
-					if (!e)
-						return NULL;
-					append(exps, e);
-				}
-				sq = rel_project(sql->sa, NULL, exps);
-			}
-		}
-		if (!sq)
-			return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "SELECT: no such loader function %s%s%s'%s'", sname ? "'":"", sname ? sname : "", sname ? "'.":"", fname);
-		for (node *en = sq->exps->h; en; en = en->next) {
-			sql_exp *e = en->data;
-
-			append(exps, e = exp_ref(sql, e));
-			append(tl, exp_subtype(e));
-		}
-	}
-
-	sql_exp *e = NULL;
-	if (!(e = find_table_function(sql, sname, fname, exps, tl, F_LOADER)))
-		return NULL;
-	sql_subfunc *sf = e->f;
-	if (sq) {
-		for (node *n = sq->exps->h, *m = sf->func->ops->h ; n && m ; n = n->next, m = m->next) {
-			sql_exp *e = (sql_exp*) n->data;
-			sql_arg *a = (sql_arg*) m->data;
-			if (!exp_subtype(e) && rel_set_type_param(sql, &(a->type), sq, e, 0) < 0)
-				return NULL;
-		}
-	}
-
-	if (loader_function)
-		*loader_function = sf;
-
-	return rel_table_func(sql->sa, sq, e, fexps, (sq)?TABLE_FROM_RELATION:TABLE_PROD_FUNC);
 }

@@ -115,11 +115,9 @@ CMDscienceUNARY(MalStkPtr stk, InstrPtr pci,
 			err = "Overflow";
 			sqlstate = SQLSTATE(22003);
 		} else if (e == EDOM) {
-			err = "Invalid argumewnt";
+			err = "Invalid argument";
 			if (strncmp(malfunc, "batmmath.log", 12) == 0)
 				sqlstate = SQLSTATE(2201E);
-			else if (strcmp(malfunc, "batmmath.pow") == 0)
-				sqlstate = SQLSTATE(2201F);
 			else
 				sqlstate = SQLSTATE(22003);
 		} else if (e) {
@@ -392,7 +390,7 @@ CMDscienceBINARY(MalStkPtr stk, InstrPtr pci,
 			err = "Overflow";
 			sqlstate = SQLSTATE(22003);
 		} else if (e == EDOM) {
-			err = "Invalid argumewnt";
+			err = "Invalid argument";
 			if (strncmp(malfunc, "batmmath.log", 12) == 0)
 				sqlstate = SQLSTATE(2201E);
 			else if (strcmp(malfunc, "batmmath.pow") == 0)
@@ -420,26 +418,6 @@ CMDscienceBINARY(MalStkPtr stk, InstrPtr pci,
 */
 	BBPreclaim(s2);
 	throw(MAL, malfunc, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-}
-
-#define scienceImpl(FUNC)												\
-static str																\
-CMDscience_bat_##FUNC(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) \
-{																		\
-	(void) cntxt;														\
-	(void) mb;															\
-																		\
-	return CMDscienceUNARY(stk, pci, FUNC##f, FUNC, "batmmath." #FUNC);	\
-}
-
-#define scienceBinaryImpl(FUNC)											\
-static str																\
-CMDscience_bat_##FUNC(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) \
-{																		\
-	(void) cntxt;														\
-	(void) mb;															\
-																		\
-	return CMDscienceBINARY(stk, pci, FUNC##f, FUNC, "batmmath." #FUNC); \
 }
 
 static str
@@ -495,30 +473,221 @@ CMDscience_bat_randintarg(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	return MAL_SUCCEED;
 }
 
-scienceImpl(acos)
-scienceImpl(asin)
-scienceImpl(atan)
-scienceImpl(cos)
-scienceImpl(sin)
-scienceImpl(tan)
-scienceImpl(cot)
-scienceImpl(cosh)
-scienceImpl(sinh)
-scienceImpl(tanh)
-scienceImpl(radians)
-scienceImpl(degrees)
-scienceImpl(exp)
-scienceImpl(log)
-scienceImpl(log10)
-scienceImpl(log2)
-scienceImpl(sqrt)
-scienceImpl(cbrt)
-scienceImpl(ceil)
-scienceImpl(fabs)
-scienceImpl(floor)
-scienceBinaryImpl(atan2)
-scienceBinaryImpl(pow)
-scienceBinaryImpl(logbs)
+static str
+CMDscience_bat_acos(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) cntxt;
+	(void) mb;
+
+	return CMDscienceUNARY(stk, pci, acosf, acos, "batmmath.acos");
+}
+
+static str
+CMDscience_bat_asin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) cntxt;
+	(void) mb;
+
+	return CMDscienceUNARY(stk, pci, asinf, asin, "batmmath.asin");
+}
+
+static str
+CMDscience_bat_atan(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) cntxt;
+	(void) mb;
+
+	return CMDscienceUNARY(stk, pci, atanf, atan, "batmmath.atan");
+}
+
+static str
+CMDscience_bat_cos(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) cntxt;
+	(void) mb;
+
+	return CMDscienceUNARY(stk, pci, cosf, cos, "batmmath.cos");
+}
+
+static str
+CMDscience_bat_sin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) cntxt;
+	(void) mb;
+
+	return CMDscienceUNARY(stk, pci, sinf, sin, "batmmath.sin");
+}
+
+static str
+CMDscience_bat_tan(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) cntxt;
+	(void) mb;
+
+	return CMDscienceUNARY(stk, pci, tanf, tan, "batmmath.tan");
+}
+
+static str
+CMDscience_bat_cot(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) cntxt;
+	(void) mb;
+
+	return CMDscienceUNARY(stk, pci, cotf, cot, "batmmath.cot");
+}
+
+static str
+CMDscience_bat_cosh(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) cntxt;
+	(void) mb;
+
+	return CMDscienceUNARY(stk, pci, coshf, cosh, "batmmath.cosh");
+}
+
+static str
+CMDscience_bat_sinh(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) cntxt;
+	(void) mb;
+
+	return CMDscienceUNARY(stk, pci, sinhf, sinh, "batmmath.sinh");
+}
+
+static str
+CMDscience_bat_tanh(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) cntxt;
+	(void) mb;
+
+	return CMDscienceUNARY(stk, pci, tanhf, tanh, "batmmath.tanh");
+}
+
+static str
+CMDscience_bat_radians(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) cntxt;
+	(void) mb;
+
+	return CMDscienceUNARY(stk, pci, radiansf, radians, "batmmath.radians");
+}
+
+static str
+CMDscience_bat_degrees(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) cntxt;
+	(void) mb;
+
+	return CMDscienceUNARY(stk, pci, degreesf, degrees, "batmmath.degrees");
+}
+
+static str
+CMDscience_bat_exp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) cntxt;
+	(void) mb;
+
+	return CMDscienceUNARY(stk, pci, expf, exp, "batmmath.exp");
+}
+
+static str
+CMDscience_bat_log(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) cntxt;
+	(void) mb;
+
+	return CMDscienceUNARY(stk, pci, logf, log, "batmmath.log");
+}
+
+static str
+CMDscience_bat_log10(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) cntxt;
+	(void) mb;
+
+	return CMDscienceUNARY(stk, pci, log10f, log10, "batmmath.log10");
+}
+
+static str
+CMDscience_bat_log2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) cntxt;
+	(void) mb;
+
+	return CMDscienceUNARY(stk, pci, log2f, log2, "batmmath.log2");
+}
+
+static str
+CMDscience_bat_sqrt(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) cntxt;
+	(void) mb;
+
+	return CMDscienceUNARY(stk, pci, sqrtf, sqrt, "batmmath.sqrt");
+}
+
+static str
+CMDscience_bat_cbrt(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) cntxt;
+	(void) mb;
+
+	return CMDscienceUNARY(stk, pci, cbrtf, cbrt, "batmmath.cbrt");
+}
+
+static str
+CMDscience_bat_ceil(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) cntxt;
+	(void) mb;
+
+	return CMDscienceUNARY(stk, pci, ceilf, ceil, "batmmath.ceil");
+}
+
+static str
+CMDscience_bat_fabs(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) cntxt;
+	(void) mb;
+
+	return CMDscienceUNARY(stk, pci, fabsf, fabs, "batmmath.fabs");
+}
+
+static str
+CMDscience_bat_floor(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) cntxt;
+	(void) mb;
+
+	return CMDscienceUNARY(stk, pci, floorf, floor, "batmmath.floor");
+}
+
+static str
+CMDscience_bat_atan2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) cntxt;
+	(void) mb;
+
+	return CMDscienceBINARY(stk, pci, atan2f, atan2, "batmmath.atan2");
+}
+
+static str
+CMDscience_bat_pow(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) cntxt;
+	(void) mb;
+
+	return CMDscienceBINARY(stk, pci, powf, pow, "batmmath.pow");
+}
+
+static str
+CMDscience_bat_logbs(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) cntxt;
+	(void) mb;
+
+	return CMDscienceBINARY(stk, pci, logbsf, logbs, "batmmath.logbs");
+}
 
 #include "mel.h"
 static mel_func batmmath_init_funcs[] = {

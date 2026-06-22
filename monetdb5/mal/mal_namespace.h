@@ -33,13 +33,10 @@
 	FUNC(bat); \
 	FUNC(batalgebra); \
 	FUNC(batcalc); \
-	FUNC(batcapi); \
 	FUNC(batmal); \
 	FUNC(batmkey); \
 	FUNC(batmmath); \
 	FUNC(batmtime); \
-	FUNC(batpyapi3); \
-	FUNC(batrapi); \
 	FUNC(batsql); \
 	FUNC(batstr); \
 	FUNC(bbp); \
@@ -50,7 +47,6 @@
 	FUNC(block); \
 	FUNC(bstream); \
 	FUNC(calc); \
-	FUNC(capi); \
 	FUNC(claim); \
 	FUNC(clear_table); \
 	FUNC(columnBind); \
@@ -197,12 +193,10 @@
 	FUNC(projection); \
 	FUNC(projectionpath); \
 	FUNC(put); \
-	FUNC(pyapi3); \
 	FUNC(querylog); \
 	FUNC(raise); \
 	FUNC(rangejoin); \
 	FUNC(rank); \
-	FUNC(rapi); \
 	FUNC(reconnect); \
 	FUNC(register); \
 	FUNC(register_supervisor); \

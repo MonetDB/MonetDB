@@ -4652,7 +4652,7 @@ BATcalcifthenelse_intern(BATiter *bi,
 					if (src[i] && !is_bit_nil(src[i])) {
 						((oid *) dst)[i] = col1 ? ((oid *) col1)[k] : seq1;
 					} else {
-						((oid *) dst)[i] = col2 ? ((oid *) col2)[k] : seq2;
+						((oid *) dst)[i] = col2 ? ((oid *) col2)[l] : seq2;
 					}
 					k += incr1;
 					l += incr2;
