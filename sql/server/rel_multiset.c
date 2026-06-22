@@ -18,7 +18,7 @@ has_multiset(list *exps)
 		sql_exp *e = n->data;
 		sql_subtype *t = exp_subtype(e);
 
-		needed = (t && t->multiset);
+		needed = (t && t->multiset && (t->multiset != MS_VECTOR));
 		if (!needed && t && t->type->composite && is_nested(e))
 			needed = has_multiset(e->f);
 	}
