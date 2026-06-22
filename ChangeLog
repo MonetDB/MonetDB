@@ -1,6 +1,16 @@
 # ChangeLog file for devel
 # This file is updated with Maddlog
 
+* Mon Jun 22 2026 Sjoerd Mullender <sjoerd@acm.org>
+- Removed support for LOADER FUNCTION.  Since Python UDFs are not
+  supported anymore, the loader functions can also not be supported
+  anymore.  It is no longer possible to create LOADER functions, nor is
+  it possible to use them.  Upgrading to this version will succeed if
+  such functions exist.  Use this query to find all affected functions:
+  `SELECT s.name, f.name FROM sys.functions f JOIN sys.schemas s ON s.id
+  = f.schema_id WHERE f.type = 7;`.  These functions can then be dropped
+  manually using `DROP LOADER FUNCTION ...;`.
+
 * Fri Jun 19 2026 Sjoerd Mullender <sjoerd@acm.org>
 - Removed embedded Python support.  It is no longer possible to use
   user-defined functions which are written in Python (i.e. using `CREATE

@@ -1529,34 +1529,6 @@ drop_trigger(mvc *sql, dlist *qname, int if_exists)
 	return rel_drop_trigger(sql, tr->t?tr->t->s->base.name:NULL, tname, if_exists);
 }
 
-static sql_rel*
-create_table_from_loader(sql_query *query, dlist *qname, symbol *fcall)
-{
-	mvc *sql = query->sql;
-	sql_schema *s = cur_schema(sql);
-	char *sname = qname_schema(qname);
-	char *tname = qname_schema_object(qname);
-	sql_subfunc *loader = NULL;
-	sql_rel *rel = NULL;
-	sql_table *t = NULL;
-
-	if (sname && !(s = mvc_bind_schema(sql, sname)))
-		return sql_error(sql, ERR_NOTFOUND, SQLSTATE(3F000) "CREATE TABLE FROM LOADER: no such schema '%s'", sname);
-	if ((t = mvc_bind_table(sql, s, tname)))
-		return sql_error(sql, 02, SQLSTATE(42S01) "CREATE TABLE FROM LOADER: name '%s' already in use", tname);
-	if (!mvc_schema_privs(sql, s))
-		return sql_error(sql, 02, SQLSTATE(42000) "CREATE TABLE FROM LOADER: insufficient privileges for user '%s' in schema '%s'", get_string_global_var(sql, "current_user"), s->base.name);
-
-	rel = rel_loader_function(query, fcall, new_exp_list(sql->sa), &loader);
-	if (!rel || !loader)
-		return NULL;
-
-	loader->sname = s ? ma_strdup(sql->sa, s->base.name) : NULL;
-	loader->tname = tname ? ma_strdup(sql->sa, tname) : NULL;
-
-	return rel;
-}
-
 static list *
 rel_paramlist( sql_query *query, symbol *nop)
 {
@@ -1637,18 +1609,6 @@ rel_psm(sql_query *query, symbol *s)
 		} else
 			ret = rel_psm_stmt(sql->sa, rel_psm_call(query, s->data.sym));
 		break;
-	case SQL_CREATE_TABLE_LOADER:
-	{
-		dlist *l = s->data.lval;
-		dlist *qname = l->h->data.lval;
-		symbol *sym = l->h->next->data.sym;
-
-		ret = create_table_from_loader(query, qname, sym);
-		if (ret == NULL)
-			return NULL;
-		ret = rel_psm_stmt(sql->sa, exp_rel(sql, ret));
-		sql->type = Q_SCHEMA;
-	}	break;
 	case SQL_CREATE_TRIGGER:
 	{
 		dlist *l = s->data.lval;

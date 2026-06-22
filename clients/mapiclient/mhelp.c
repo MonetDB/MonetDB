@@ -141,11 +141,6 @@ SQLhelp sqlhelp1[] = {
 	 " [NULL [AS] string] [BEST EFFORT]\n",
 	 "nrofrecords,qname,column_list,headerlist,separators",
 	 "See also https://www.monetdb.org/documentation/user-guide/sql-manual/data-loading/copy-from/"},
-	{"COPY LOADER",
-	 "Copy into using a user supplied parsing function",
-	 "COPY LOADER INTO qname FROM qname '(' [ scalar_expression ... ] ')'",
-	 "qname,scalar_expression",
-	 "See also https://www.monetdb.org/documentation/user-guide/sql-manual/data-loading/loader-functions/"},
 	{"CREATE AGGREGATE",
 	 "Create a user-defined aggregate function.",
 	 "CREATE [ OR REPLACE ] AGGREGATE [ FUNCTION ] qname '(' { '*' | [ param [',' ...]] } ')'\n"
@@ -224,7 +219,6 @@ SQLhelp sqlhelp1[] = {
 	{"CREATE TABLE",
 	 "Create a new table",
 	 "CREATE TABLE [ IF NOT EXISTS ] qname table_source [STORAGE ident string]\n"
-	 "CREATE TABLE [ IF NOT EXISTS ] qname FROM LOADER function_ref\n"
 	 "CREATE [ LOCAL | GLOBAL ] { TEMPORARY | TEMP } TABLE [ IF NOT EXISTS ] qname table_source [on_commit]",
 	 "table_source,on_commit,function_ref",
 	 "See also https://www.monetdb.org/documentation/user-guide/sql-manual/data-definition/table-definition/"},
@@ -243,7 +237,6 @@ SQLhelp sqlhelp1[] = {
 	{"CREATE UNLOGGED TABLE",
 	 "Create a new unlogged table",
 	 "CREATE UNLOGGED TABLE [ IF NOT EXISTS ] qname table_source [STORAGE ident string]\n"
-	 "CREATE UNLOGGED TABLE [ IF NOT EXISTS ] qname FROM LOADER function_ref\n"
 	 "CREATE UNLOGGED TABLE [ IF NOT EXISTS ] qname table_source [on_commit]",
 	 "table_source,on_commit,function_ref",
 	 "See also https://www.monetdb.org/documentation/user-guide/sql-manual/data-definition/table-definition/"},
@@ -688,7 +681,7 @@ SQLhelp sqlhelp2[] = {
 	 NULL},
 	{"function_type",
 	 NULL,
-	 "{ FUNCTION | PROCEDURE | { { AGGREGATE | FILTER | LOADER | WINDOW } [ FUNCTION ] } }",
+	 "{ FUNCTION | PROCEDURE | { { AGGREGATE | FILTER | WINDOW } [ FUNCTION ] } }",
 	 NULL,
 	 NULL},
 	{"generated_column",
