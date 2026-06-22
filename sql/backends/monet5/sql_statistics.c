@@ -213,7 +213,8 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					GDKfree(mx);
 					BBPunfix(b->batCacheid);
 
-					store->storage_api.set_stats_col(tr, c, &unique_est, NULL, NULL);
+					if (unique_est > 0)
+						store->storage_api.set_stats_col(tr, c, &unique_est, NULL, NULL);
 				}
 			}
 		}
