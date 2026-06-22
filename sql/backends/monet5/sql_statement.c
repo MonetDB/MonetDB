@@ -1773,10 +1773,6 @@ stmt_genselect(backend *be, stmt *lops, stmt *rops, sql_subfunc *f, stmt *sub, i
 		// allows getting argument names for example
 		if (LANG_EXT(f->func->lang))
 			q = pushPtr(mb, q, f->func); // nothing to see here, please move along
-		// f->query contains the R code to be run
-		if (f->func->lang >= FUNC_LANG_PY)
-			q = pushStr(mb, q, f->func->query);
-
 		for (n = lops->op4.lval->h; n; n = n->next) {
 			stmt *op = n->data;
 
@@ -4442,9 +4438,6 @@ stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *f, stmt* rows)
 			else
 				q = pushPtr(mb, q, f->func);
 		}
-		if (f->func->lang >= FUNC_LANG_PY) {
-			q = pushStr(mb, q, f->func->query);
-		}
 		/* first dynamic output of copy* functions */
 		if (f->func->type == F_UNION || (f->func->type == F_LOADER && f->res != NULL))
 			q = table_func_create_result(mb, q, f->func, f->res);
@@ -4651,7 +4644,6 @@ stmt_aggr_(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int re
 	int argc = 1
 		+ 2 * avg
 		+ (LANG_EXT(op->func->lang) != 0)
-		+ (op->func->lang == FUNC_LANG_PY)
 		+ (op1->type != st_list ? 1 : list_length(op1->op4.lval))
 		+ (grp ? 4 : avg + 1);
 
@@ -4694,12 +4686,6 @@ stmt_aggr_(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int re
 
 	if (LANG_EXT(op->func->lang))
 		q = pushPtr(mb, q, op->func);
-	if (op->func->lang >= FUNC_LANG_PY) {
-		if (!grp) {
-			setVarType(mb, getArg(q, 0), restype);
-		}
- 		q = pushStr(mb, q, op->func->query);
-	}
 
 	if (op1->type != st_list) {
 		q = pushArgument(mb, q, op1->nr);

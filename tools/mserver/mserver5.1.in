@@ -486,18 +486,6 @@ It is use mainly to make some tests work deterministically, i.e., avoid
 ambiguous output, by avoiding parallelism.
 .RE
 .TP
-.B embedded_py
-Enable embedded Python.  This means Python code can be called from
-SQL.
-The value is
-.B true
-or
-.B 3
-for embedded Python 3.  Note that by enabling embedded Python, users
-of the server are allowed to execute arbitrary Python code, and are
-therefore able to read and modify all data that the server process has
-access to.
-.TP
 \fBidle_timeout=\fP\fIseconds\fP
 Set the idle timeout.
 If there is an active transaction, and the client has not provided any

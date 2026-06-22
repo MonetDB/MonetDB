@@ -169,8 +169,6 @@ rel_semantic(sql_query *query, symbol *s)
 	case SQL_CALL:
 	case SQL_SET:
 
-	case SQL_CREATE_TABLE_LOADER:
-
 	case SQL_CREATE_TRIGGER:
 	case SQL_DROP_TRIGGER:
 
@@ -186,7 +184,6 @@ rel_semantic(sql_query *query, symbol *s)
 	case SQL_COPYINTO:
 	case SQL_BINCOPYFROM:
 	case SQL_BINCOPYINTO:
-	case SQL_COPYLOADER:
 		return rel_updates(query, s);
 
 	case SQL_WITH:

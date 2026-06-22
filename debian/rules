@@ -25,7 +25,6 @@ override_dh_auto_configure:
 	-DINT128=ON \
 	-DNETCDF=OFF \
 	-DODBC=ON \
-	-DPY3INTEGRATION=ON \
 	-DSANITIZER=OFF \
 	-DSHP=OFF \
 	-DSTRICT=OFF \

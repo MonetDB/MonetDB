@@ -9,4 +9,3 @@
 #]]
 
 add_subdirectory(udf)
-add_subdirectory(pyapi3)

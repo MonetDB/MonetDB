@@ -285,9 +285,6 @@ hasSideEffects(MalBlkPtr mb, InstrPtr p, int strict)
 		getModuleId(p) == alarmRef)
 		return TRUE;
 
-	if( getModuleId(p) == pyapi3Ref)
-		return TRUE;
-
 	if (getModuleId(p) == sqlcatalogRef)
 		return TRUE;
 	if (getModuleId(p) == sqlRef) {
@@ -431,8 +428,7 @@ isMapOp(InstrPtr p)
 				|| (getModuleId(p) == batcalcRef)
 				|| (getModuleId(p) != batcalcRef && getModuleId(p) != batRef
 					&& strncmp(getModuleId(p), "bat", 3) == 0)
-				|| (getModuleId(p) == batmkeyRef)) && !isOrderDepenent(p)
-			&& getModuleId(p) != batpyapi3Ref;
+				|| (getModuleId(p) == batmkeyRef)) && !isOrderDepenent(p);
 }
 
 inline int
@@ -446,8 +442,7 @@ isMap2Op(InstrPtr p)
 				|| (getModuleId(p) == batcalcRef)
 				|| (getModuleId(p) != batcalcRef && getModuleId(p) != batRef
 					&& strncmp(getModuleId(p), "bat", 3) == 0)
-				|| (getModuleId(p) == batmkeyRef)) && !isOrderDepenent(p)
-			&& getModuleId(p) != batpyapi3Ref;
+				|| (getModuleId(p) == batmkeyRef)) && !isOrderDepenent(p);
 }
 
 inline int

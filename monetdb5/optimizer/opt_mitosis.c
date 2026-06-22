@@ -99,13 +99,6 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 			goto bailout;
 		}
 
-		if (p->argc > 2
-			&& getModuleId(p) == pyapi3Ref
-			&& getFunctionId(p) == subeval_aggrRef) {
-			pieces = 0;
-			goto bailout;
-		}
-
 		/* Mergetable cannot handle intersect/except's for now */
 		if (getModuleId(p) == algebraRef && getFunctionId(p) == groupbyRef) {
 			pieces = 0;

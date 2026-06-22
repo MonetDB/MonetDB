@@ -194,7 +194,6 @@
 #cmakedefine HAVE_LIBLZ4 1
 #cmakedefine HAVE_LIBLZMA 1
 #cmakedefine HAVE_LIBPCRE 1
-#cmakedefine HAVE_LIBPY3 1
 #cmakedefine HAVE_LIBXML 1
 #cmakedefine HAVE_LIBZ 1
 #cmakedefine HAVE_NETCDF 1
