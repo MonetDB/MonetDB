@@ -1989,7 +1989,7 @@ store_load(sqlstore *store, allocator *pa)
 		bootstrap_create_column(tr, t, "func", 2019, "varchar", 8196) == NULL ||
 		bootstrap_create_column(tr, t, "mod", 2020, "varchar", 8196) == NULL ||
 
-		/* language asm=0, sql=1, R=2, C=3, J=4 */
+		/* language internal C=0, mal=1, sql=2 */
 		bootstrap_create_column(tr, t, "language", 2021, "int", 31) == NULL ||
 
 		/* func, proc, aggr or filter */

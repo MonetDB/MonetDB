@@ -5353,7 +5353,6 @@ select 'null in fkeys.delete_action', delete_action, * from sys.fkeys where dele
 [ "sys.keywords",	"ISOLATION"	]
 [ "sys.keywords",	"JOIN"	]
 [ "sys.keywords",	"KEY"	]
-[ "sys.keywords",	"LANGUAGE"	]
 [ "sys.keywords",	"LARGE"	]
 [ "sys.keywords",	"LAST"	]
 [ "sys.keywords",	"LATERAL"	]

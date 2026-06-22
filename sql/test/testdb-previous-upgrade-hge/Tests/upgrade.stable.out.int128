@@ -380,8 +380,11 @@ ALTER TABLE sys.function_types SET READ ONLY;
 
 Running database upgrade commands:
 ALTER TABLE sys.function_languages SET READ WRITE;
+ALTER TABLE sys.keywords SET READ WRITE;
 COMMIT;
 DELETE FROM sys.function_languages WHERE language_name IN ('Python', 'Python3', 'R', 'C', 'C++');
+DELETE FROM sys.keywords WHERE keyword = 'LANGUAGE';
 COMMIT;
 ALTER TABLE sys.function_languages SET READ ONLY;
+ALTER TABLE sys.keywords SET READ ONLY;
 

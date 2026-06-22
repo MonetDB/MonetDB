@@ -147,7 +147,6 @@ INSERT INTO sys.keywords (keyword) VALUES
   ('ISOLATION'),
   ('JOIN'),
   ('KEY'),
-  ('LANGUAGE'),
   ('LARGE'),
   ('LAST'),
   ('LATERAL'),

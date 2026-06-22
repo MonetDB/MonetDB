@@ -1200,8 +1200,6 @@ int scanner_symbol(mvc * c, int cur)
 	case '"':
 		return scanner_string(c, cur, false);
 	case '{':
-		// if previous tokens like LANGUAGE IDENT
-		// TODO checking on IDENT only may not be enough
 		lc->started = 1;
 		return scanner_token(lc, cur);
 	case '}':

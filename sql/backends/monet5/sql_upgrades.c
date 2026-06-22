@@ -5539,11 +5539,14 @@ sql_update_default(Client c, mvc *sql, sql_schema *s)
 	if ((b = BBPquickdesc(output->cols[0].b)) && BATcount(b) > 0) {
 		static const char query1[] =
 			"ALTER TABLE sys.function_languages SET READ WRITE;\n"
+			"ALTER TABLE sys.keywords SET READ WRITE;\n"
 			"COMMIT;\n";
 		static const char query2[] =
 			"DELETE FROM sys.function_languages WHERE language_name IN ('Python', 'Python3', 'R', 'C', 'C++');\n"
+			"DELETE FROM sys.keywords WHERE keyword = 'LANGUAGE';\n"
 			"COMMIT;\n";
-		static const char query3[] = "ALTER TABLE sys.function_languages SET READ ONLY;\n";
+		static const char query3[] = "ALTER TABLE sys.function_languages SET READ ONLY;\n"
+			"ALTER TABLE sys.keywords SET READ ONLY;\n";
 		printf("Running database upgrade commands:\n%s%s%s\n", query1, query2, query3);
 		fflush(stdout);
 		err = SQLstatementIntern(c, query1, "update", true, false, NULL);
