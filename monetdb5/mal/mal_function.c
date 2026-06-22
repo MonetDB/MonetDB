@@ -530,9 +530,11 @@ setVariableScope(MalBlkPtr mb)
 				if (dflow != -1)
 					addMalException(mb,
 									"setLifeSpan nested dataflow blocks not allowed");
-				pp = pc;
 				dflow = depth;
-				jump = p->jump;
+				if (getFunctionId(p) == pipelinesRef) {
+					pp = pc;
+					jump = p->jump;
+				}
 			} else
 				depth++;
 		}
