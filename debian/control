@@ -34,7 +34,8 @@ Package: libmonetdb-dev
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends},
  libmonetdb31 (= ${source:Version}),
- libmonetdb-stream-dev (= ${source:Version})
+ libmonetdb-stream-dev (= ${source:Version}),
+ libmonetdb-client-dev (= ${source:Version})
 Description: MonetDB development files
  MonetDB is a database management system that is developed from a
  main-memory perspective with use of a fully decomposed storage model,
