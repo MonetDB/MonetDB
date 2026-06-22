@@ -1284,10 +1284,6 @@ rel2bin_groupby_pp(backend *be, sql_rel *rel, list *refs)
 					restype = newBatType(restype);
 					setVarType(be->mb, getArg(q, 0), restype);
 				}
-				if (af->func->lang == FUNC_LANG_PY) {
-					setVarType(be->mb, getArg(q, 0), restype);
-					q = pushStr(be->mb, q, af->func->query);
-				}
 
 				node *osn = sn;
 				if (r) { /* check new ordered aggregation */
