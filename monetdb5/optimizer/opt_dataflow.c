@@ -139,9 +139,9 @@ dataflowBreakpoint(Client ctx, MalBlkPtr mb, InstrPtr p, States states)
 		 * explicitly mentioned as arguments (and certainly not as the
 		 * first argument), but that can still be available to the MAL
 		 * program (see bugs.monetdb.org/6641) */
-//		if (getModuleId(p) == sqlRef)
+		if (getModuleId(p) == sqlRef)
 			return 1;
-//		return getState(states, p, p->retc) & (VARREAD | VARBLOCK);
+		return getState(states, p, p->retc) & (VARREAD | VARBLOCK);
 	}
 
 	for (j = p->retc; j < p->argc; j++) {
