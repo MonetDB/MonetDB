@@ -2295,7 +2295,7 @@ dump_function(Mapi mid, stream *sqlf, const char *fid, bool hashge)
 	int query_len;
 	char *query;
 	const char *sep;
-	char *ffunc = NULL, *flkey = NULL, *remark = NULL;
+	char *ffunc = NULL, *remark = NULL;
 	char *sname, *fname, *ftkey;
 	int flang, ftype;
 
@@ -2311,12 +2311,10 @@ dump_function(Mapi mid, stream *sqlf, const char *fid, bool hashge)
 					 "s.name, "
 					 "f.name, "
 					 "ft.function_type_keyword, "
-					 "fl.language_keyword, "
 		             "c.remark "
 		      "FROM sys.functions f "
 			   "JOIN sys.schemas s ON f.schema_id = s.id "
 			   "JOIN sys.function_types ft ON f.type = ft.function_type_id "
-			   "LEFT OUTER JOIN sys.function_languages fl ON f.language = fl.language_id "
 			   "LEFT OUTER JOIN sys.comments c ON f.id = c.id "
 		      "WHERE f.id = %s",
 		      fid);
@@ -2338,8 +2336,7 @@ dump_function(Mapi mid, stream *sqlf, const char *fid, bool hashge)
 	sname = mapi_fetch_field(hdl, 4);
 	fname = mapi_fetch_field(hdl, 5);
 	ftkey = mapi_fetch_field(hdl, 6);
-	flkey = mapi_fetch_field(hdl, 7);
-	remark = mapi_fetch_field(hdl, 8);
+	remark = mapi_fetch_field(hdl, 7);
 	if (remark) {
 		remark = strdup(remark);
 		sname = strdup(sname);
@@ -2381,18 +2378,6 @@ dump_function(Mapi mid, stream *sqlf, const char *fid, bool hashge)
 		dquoted_print(sqlf, sname, ".");
 		dquoted_print(sqlf, fname, "(");
 	}
-	/* strdup these two because they are needed after another query */
-	if (flkey) {
-		if ((flkey = strdup(flkey)) == NULL) {
-			if (remark) {
-				free(remark);
-				free(sname);
-				free(fname);
-				free(ftkey);
-			}
-			goto bailout;
-		}
-	}
 	ffunc = strdup(ffunc);
 	query_len = snprintf(query, query_size,
 			     "SELECT a.name, a.type, a.type_digits, "
@@ -2405,7 +2390,6 @@ dump_function(Mapi mid, stream *sqlf, const char *fid, bool hashge)
 	assert(query_len < (int) query_size);
 	if (!ffunc || query_len < 0 || query_len >= (int) query_size) {
 		free(ffunc);
-		free(flkey);
 		if (remark) {
 			free(remark);
 			free(sname);
@@ -2420,7 +2404,6 @@ dump_function(Mapi mid, stream *sqlf, const char *fid, bool hashge)
 	free(query);
 	if (hdl == NULL || mapi_error(mid)) {
 		free(ffunc);
-		free(flkey);
 		if (remark) {
 			free(remark);
 			free(sname);
@@ -2452,7 +2435,6 @@ dump_function(Mapi mid, stream *sqlf, const char *fid, bool hashge)
 				free(adigs);
 				free(ascal);
 				free(ffunc);
-				free(flkey);
 				if (remark) {
 					free(remark);
 					free(sname);
@@ -2487,7 +2469,6 @@ dump_function(Mapi mid, stream *sqlf, const char *fid, bool hashge)
 					free(adigs);
 					free(ascal);
 					free(ffunc);
-					free(flkey);
 					if (remark) {
 						free(remark);
 						free(sname);
@@ -2512,25 +2493,26 @@ dump_function(Mapi mid, stream *sqlf, const char *fid, bool hashge)
 			if (ftype == 5)
 				mnstr_printf(sqlf, ")");
 		}
-		if (flkey) {
-			mnstr_printf(sqlf, " LANGUAGE %s", flkey);
-			free(flkey);
-		} else {
-			/* backward compatibility: dump language types for removed
-			 * implementations */
-			switch (flang) {
-			case 3:
-				mnstr_printf(sqlf, " LANGUAGE R");
-				break;
-			case 4:
-				mnstr_printf(sqlf, " LANGUAGE C");
-				break;
-			case 12:
-				mnstr_printf(sqlf, " LANGUAGE CPP");
-				break;
-			default:
-				break;
-			}
+		/* backward compatibility: dump language types for removed
+		 * implementations */
+		switch (flang) {
+		case 3:
+			mnstr_printf(sqlf, " LANGUAGE R");
+			break;
+		case 4:
+			mnstr_printf(sqlf, " LANGUAGE C");
+			break;
+		case 12:
+			mnstr_printf(sqlf, " LANGUAGE CPP");
+			break;
+		case 6:
+			mnstr_printf(sqlf, " LANGUAGE PYTHON");
+			break;
+		case 10:
+			mnstr_printf(sqlf, " LANGUAGE PYTHON3");
+			break;
+		default:
+			break;
 		}
 		mnstr_printf(sqlf, "\n%s\n", ffunc);
 	}

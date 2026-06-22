@@ -467,7 +467,6 @@ scanner_init_keywords(void)
 	failed += keywords_insert("NAME", sqlNAME);
 	failed += keywords_insert("RETURN", RETURN);
 	failed += keywords_insert("CALL", CALL);
-	failed += keywords_insert("LANGUAGE", LANGUAGE);
 
 	failed += keywords_insert("ANALYZE", ANALYZE);
 	failed += keywords_insert("EXPLAIN", SQL_EXPLAIN);
@@ -933,53 +932,6 @@ scanner_string(mvc *c, int quote, bool escapes)
 	return EOF;
 }
 
-/* scan a structure {blah} into a string. We only count the matching {}
- * unless escaped. We do not consider embeddings in string literals yet
- */
-
-static int
-scanner_body(mvc *c)
-{
-	struct scanner *lc = &c->scanner;
-	bstream *rs = lc->rs;
-	int cur = (int) 'x';
-	int blk = 1;
-	bool escape = false;
-
-	lc->started = 1;
-	assert(rs->buf[rs->pos + lc->yycur-1] == '{');
-	while (cur != EOF) {
-		size_t pos = rs->pos + lc->yycur;
-
-		while ((((cur = rs->buf[pos++]) & 0x80) == 0) && cur && (blk || escape)) {
-			if (cur != '\\')
-				escape = false;
-			else
-				escape = !escape;
-			blk += cur =='{';
-			blk -= cur =='}';
-		}
-		lc->yycur = pos - rs->pos;
-		assert(pos <= rs->len + 1);
-		if (blk == 0 && !escape){
-			lc->yycur--;	/* go back to current (possibly invalid) char */
-			return scanner_token(lc, X_BODY);
-		}
-		lc->yycur--;	/* go back to current (possibly invalid) char */
-		if (!cur) {
-			if (lc->rs->len >= lc->rs->pos + lc->yycur + 1) {
-				(void) sql_error(c, 2, SQLSTATE(42000) "NULL byte in string");
-				return LEX_ERROR;
-			}
-			cur = scanner_read_more(c, 1);
-		} else {
-			cur = scanner_getc(c);
-		}
-	}
-	(void) sql_error(c, 2, SQLSTATE(42000) "Unexpected end of input");
-	return EOF;
-}
-
 static int
 keyword_or_ident(mvc * c, int cur)
 {
@@ -1253,10 +1205,6 @@ int scanner_symbol(mvc * c, int cur)
 	case '"':
 		return scanner_string(c, cur, false);
 	case '{':
-		// if previous tokens like LANGUAGE IDENT
-		// TODO checking on IDENT only may not be enough
-		if (lc->yylast == IDENT)
-			return scanner_body(c);
 		lc->started = 1;
 		return scanner_token(lc, cur);
 	case '}':

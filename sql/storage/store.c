@@ -1028,11 +1028,7 @@ load_func(sql_trans *tr, sql_schema *s, sqlid fid, subrids *rs)
 	} else {
 		v = store->table_api.column_find_string_start(tr, find_sql_column(funcs, "mod"), rid, &cbat);
 	}
-	if (strcmp(v, "pyapi") == 0 ||	 /* pyapi module no longer used */
-		strcmp(v, "pyapi3map") == 0) /* pyapi3map module no longer used */
-		t->mod =_STRDUP("pypapi3");
-	else
-		t->mod =_STRDUP(v);
+	t->mod =_STRDUP(v);
 	if (!update_env)
 		store->table_api.column_find_string_end(cbat);
 	t->lang = (sql_flang) store->table_api.column_find_int(tr, find_sql_column(funcs, "language"), rid);
@@ -2080,7 +2076,7 @@ store_load(sqlstore *store, allocator *pa)
 		bootstrap_create_column(tr, t, "func", 2019, "varchar", 8196) == NULL ||
 		bootstrap_create_column(tr, t, "mod", 2020, "varchar", 8196) == NULL ||
 
-		/* language asm=0, sql=1, R=2, C=3, J=4 */
+		/* language internal C=0, mal=1, sql=2 */
 		bootstrap_create_column(tr, t, "language", 2021, "int", 31) == NULL ||
 
 		/* func, proc, aggr or filter */

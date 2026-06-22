@@ -100,13 +100,6 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 			goto bailout;
 		}
 
-		if (p->argc > 2
-			&& getModuleId(p) == pyapi3Ref
-			&& getFunctionId(p) == subeval_aggrRef) {
-			pieces = 0;
-			goto bailout;
-		}
-
 		/* Mergetable cannot handle intersect/except's for now */
 		if (getModuleId(p) == algebraRef && getFunctionId(p) == groupbyRef) {
 			pieces = 0;
@@ -123,6 +116,8 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 		if (p->argc > 5 && getVarConstant(mb, getArg(p, 5)).val.ival == 1)
 			continue;
 		if (p->argc > 6)
+			continue;			/* already partitioned */
+		if (getFunctionId(p) == tidRef && p->argc > 4)
 			continue;			/* already partitioned */
 		/*
 		 * The SQL optimizer already collects the counts of the base

@@ -37,7 +37,6 @@
 	FUNC(batmkey); \
 	FUNC(batmmath); \
 	FUNC(batmtime); \
-	FUNC(batpyapi3); \
 	FUNC(batsql); \
 	FUNC(batstr); \
 	FUNC(bbp); \
@@ -192,7 +191,6 @@
 	FUNC(projection); \
 	FUNC(projectionpath); \
 	FUNC(put); \
-	FUNC(pyapi3); \
 	FUNC(querylog); \
 	FUNC(raise); \
 	FUNC(rangejoin); \

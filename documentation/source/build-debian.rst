@@ -30,8 +30,6 @@ libgeos-dev		# optional: required for geom module
 liblzma-dev		# optional: read and write .xz compressed files
 libpcre2-dev		# optional: use PCRE2 library, enable some functions
 libreadline-dev		# optional, enable editing in mclient
-python3-dev		# optional, needed for Python 3 integration
-python3-numpy		# optional, needed for Python 3 integration
 unixodbc-dev		# optional, needed for ODBC driver
 zlib1g-dev		# optional: read and write .gz compressed files
 

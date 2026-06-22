@@ -31,10 +31,6 @@ option(WITH_RTREE
   "Enable support for rtrees (librtree; default=ON)"
   ON)
 
-option(PY3INTEGRATION
-  "Enable support for Python 3 integration into MonetDB (default=ON)"
-  ON)
-
 option(FITS
   "Enable support for FITS (default=ON)"
   ON)
