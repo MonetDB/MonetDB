@@ -422,17 +422,6 @@ rel_groupby_partition_safe(sql_rel *rel)
 			}
 		}
 	}
-	if (!list_empty(rel->r)) {
-		for(node *n = rel->exps->h; n; n = n->next ) {
-			sql_exp *e = n->data;
-
-			if (is_aggr(e->type)) {
-				sql_subfunc *sf = e->f;
-				if (sf->func->lang == FUNC_LANG_PY)
-					return false;
-			}
-		}
-	}
 	return true;
 }
 

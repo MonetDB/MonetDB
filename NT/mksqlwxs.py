@@ -71,7 +71,6 @@ def main():
     extend = []
     debug = []
     geom = []
-    pyapi3 = []
     print(r'<?xml version="1.0"?>')
     print(r'<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">')
     print(r'  <Product Id="*" Language="1033" Manufacturer="MonetDB" Name="MonetDB" UpgradeCode="{}" Version="{}">'.format(upgradecode[arch], version))
@@ -107,11 +106,6 @@ def main():
     print(r'    <Property Id="GEOMLIBEXISTS">')
     print(r'      <DirectorySearch Id="CheckFileDir4" Path="[INSTALLDIR]\lib\monetdb5" Depth="0">')
     print(r'        <FileSearch Id="CheckFile4" Name="_geom.dll"/>')
-    print(r'      </DirectorySearch>')
-    print(r'    </Property>')
-    print(r'    <Property Id="PYAPI3EXISTS">')
-    print(r'      <DirectorySearch Id="CheckFileDir5" Path="[INSTALLDIR]" Depth="0">')
-    print(r'        <FileSearch Id="CheckFile5" Name="pyapi_locatepython3.bat"/>')
     print(r'      </DirectorySearch>')
     print(r'    </Property>')
     # up to and including 11.29.3, the geom module can not be
@@ -205,13 +199,11 @@ def main():
     print(r'            <Directory Id="lib" Name="lib">')
     print(r'              <Directory Id="monetdb5" Name="monetdb5">')
     id = comp(features, id, 16,
-              [rf'lib\monetdb5-{version}\{x}' for x in sorted(filter(lambda x: x.startswith('_') and x.endswith('.dll') and ('geom' not in x) and ('pyapi' not in x) and ('microbenchmark' not in x) and ('udf' not in x), os.listdir(os.path.join(sys.argv[3], 'lib', f'monetdb5-{version}'))))])
+              [rf'lib\monetdb5-{version}\{x}' for x in sorted(filter(lambda x: x.startswith('_') and x.endswith('.dll') and ('geom' not in x) and ('microbenchmark' not in x) and ('udf' not in x), os.listdir(os.path.join(sys.argv[3], 'lib', f'monetdb5-{version}'))))])
     id = comp(debug, id, 16,
               [rf'lib\monetdb5-{version}\{x}' for x in sorted(filter(lambda x: x.startswith('_') and x.endswith('.pdb') and ('geom' not in x) and ('microbenchmark' not in x) and ('udf' not in x), os.listdir(os.path.join(sys.argv[3], 'lib', f'monetdb5-{version}'))))])
     id = comp(geom, id, 16,
               [rf'lib\monetdb5-{version}\{x}' for x in sorted(filter(lambda x: x.startswith('_') and (x.endswith('.dll') or x.endswith('.pdb')) and ('geom' in x), os.listdir(os.path.join(sys.argv[3], 'lib', f'monetdb5-{version}'))))])
-    id = comp(pyapi3, id, 16,
-              [rf'lib\monetdb5-{version}\_pyapi3.dll'])
     print(r'              </Directory>')
     id = comp(extend, id, 14,
               [rf'lib\bat-{version}.lib',
@@ -249,8 +241,6 @@ def main():
               [r'share\license.rtf',
                r'M5server.bat',
                r'msqldump.bat'])
-    id = comp(pyapi3, id, 12,
-              [r'pyapi_locatepython3.bat'])
     id = comp(features, id, 12,
               [r'mclient.bat'],
               name = 'MonetDB SQL Client',
@@ -278,11 +268,6 @@ def main():
     for f in features:
         print(r'        <ComponentRef Id="{}"/>'.format(f))
     print(r'        <MergeRef Id="VCRedist"/>')
-    print(r'      </Feature>')
-    print(r'      <Feature Id="PyAPI3" Level="1000" AllowAdvertise="no" Absent="allow" Title="Include embedded Python 3" Description="Files required for using embedded Python 3.">')
-    for f in pyapi3:
-        print(r'        <ComponentRef Id="{}"/>'.format(f))
-    print(r'        <Condition Level="1">PYAPI3EXISTS</Condition>')
     print(r'      </Feature>')
     print(r'      <Feature Id="Extend" Level="1000" AllowAdvertise="no" Absent="allow" Title="Extend MonetDB/SQL" Description="Files required for extending MonetDB (include files and .lib files).">')
     for f in extend:

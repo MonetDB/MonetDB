@@ -512,7 +512,7 @@ scan_fields(
 		if (field_is_null) {
 			field_offset = int_nil;
 			sep = state->pos[null_repr_len];
-			state->pos += null_repr_len + 1;
+			state->pos += null_repr_len + ((col == ncols-1) ? state->line_sep_len : 1);
 			ok = true;
 		} else {
 			field_offset = (int) (state->pos - state->start);
@@ -594,7 +594,7 @@ scan_fields1(
 		if (field_is_null) {
 			field_offset = int_nil;
 			sep = state->pos[null_repr_len];
-			state->pos += null_repr_len + 1;
+			state->pos += null_repr_len + ((col == ncols-1) ? state->line_sep_len : 1);
 		} else {
 			field_offset = (int) (state->pos - state->start);
 
@@ -678,7 +678,7 @@ scan_fieldsN( /* ie use col_sep_str */
 		if (field_is_null) {
 			field_offset = int_nil;
 			sep = state->pos[null_repr_len];
-			state->pos += null_repr_len + 1;
+			state->pos += null_repr_len + ((col == ncols-1) ? state->line_sep_len : state->col_sep_len);
 			ok = true;
 		} else {
 			field_offset = (int) (state->pos - state->start);

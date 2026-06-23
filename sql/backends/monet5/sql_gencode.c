@@ -1664,8 +1664,6 @@ backend_create_func(backend *be, sql_subfunc *sf, list *restypes, list *ops)
 {
 	switch(sf->func->lang) {
 	case FUNC_LANG_INT:
-	case FUNC_LANG_PY:
-	case FUNC_LANG_PY3:
 		return 0; /* these languages don't require internal instantiation */
 	case FUNC_LANG_MAL:
 		return backend_create_mal_func(be->mvc, sf);

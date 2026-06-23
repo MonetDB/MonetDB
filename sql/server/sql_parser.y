@@ -203,7 +203,6 @@ int yydebug=1;
 	comment_on_statement
 	control_statement
 	import_stmt
-	load_stmt
 	copyfrom_stmt
 	copybinfrom_stmt
 	copyto_stmt
@@ -378,7 +377,6 @@ int yydebug=1;
 	column
 	variable
 	forest_element_name
-	function_body
 	grantee
 	column_label
 	column_id
@@ -528,6 +526,7 @@ int yydebug=1;
 	drop_action
 	extract_datetime_field
 	func_def_type
+	func_def_type_loader
 	func_def_opt_order_spec
 	func_def_type_no_proc
 	global_privilege
@@ -609,7 +608,6 @@ int yydebug=1;
 	tz
 
 %right <sval> STRING XSTRING
-%right <sval> X_BODY
 
 /* sql prefixes to avoid name clashes on various architectures */
 %token <sval>
@@ -671,7 +669,7 @@ SQLCODE SQLERROR UNDER WHENEVER
 %token<sval> ASC DESC AUTHORIZATION
 %token CHECK CONSTRAINT CREATE COMMENT NULLS FIRST LAST
 %token TYPE PROCEDURE FUNCTION sqlLOADER AGGREGATE RETURNS EXTERNAL sqlNAME DECLARE
-%token CALL LANGUAGE
+%token CALL
 %token ANALYZE SQL_EXPLAIN SQL_TRACE PREP PREPARE EXEC EXECUTE DEALLOCATE
 %token LOGICAL PHYSICAL SHOW DETAILS
 %token UNNEST REWRITE
@@ -696,7 +694,6 @@ SQLCODE SQLERROR UNDER WHENEVER
 %token <sval> AS TRIGGER OF BEFORE AFTER ROW STATEMENT sqlNEW OLD EACH REFERENCING
 %token <sval> OVER PARTITION CURRENT EXCLUDE FOLLOWING PRECEDING OTHERS TIES RANGE UNBOUNDED GROUPS WINDOW QUALIFY
 
-%token X_BODY
 %token MAX_MEMORY MAX_WORKERS OPTIMIZER
 /* odbc tokens */
 %token DAYNAME MONTHNAME TIMESTAMPADD TIMESTAMPDIFF ODBC_TIMESTAMPADD ODBC_TIMESTAMPDIFF
@@ -1912,13 +1909,6 @@ table_def:
 			append_symbol(l, NULL); /* only used for merge table */
 			$$ = _symbol_create_list( SQL_CREATE_TABLE, l );
 		}
-	|	table_if_not_exists qname FROM sqlLOADER func_ref
-		{
-			dlist *l = L();
-			append_list(l, $2);
-			append_symbol(l, $5);
-			$$ = _symbol_create_list( SQL_CREATE_TABLE_LOADER, l);
-		}
 	|	MERGE table_if_not_exists qname table_content_source opt_partition_by
 		{
 			int commit_action = CA_COMMIT, tpe = SQL_MERGE_TABLE;
@@ -2558,11 +2548,6 @@ external_function_name:
 		column_id '.' type_function_name { $$ = append_string(append_string(L(), $1), $3); }
 	;
 
-function_body:
-		X_BODY
-	|	string
-	;
-
 func_def_type_no_proc:
 		FUNCTION           { $$ = F_FUNC; }
 	|	AGGREGATE          { $$ = F_AGGR; }
@@ -2573,8 +2558,12 @@ func_def_type_no_proc:
 	|	sqlGROUP FILTER FUNCTION    { $$ = F_GROUPFILT; }
 	|	WINDOW             { $$ = F_ANALYTIC; }
 	|	WINDOW FUNCTION    { $$ = F_ANALYTIC; }
-	|	sqlLOADER          { $$ = F_LOADER; }
-	|	sqlLOADER FUNCTION { $$ = F_LOADER; }
+	;
+
+/* temporary: remove when DROP LOADER FUNCTION ... not needed anymore */
+func_def_type_loader:
+		sqlLOADER			{ $$ = F_LOADER; }
+	|	sqlLOADER FUNCTION	{ $$ = F_LOADER; }
 	;
 
 func_def_type:
@@ -2647,33 +2636,6 @@ func_def:
 			append_list(f, $7);
 			append_int(f, F_PROC);
 			append_int(f, FUNC_LANG_SQL);
-			append_int(f, $1);
-			append_int(f, 0);
-			$$ = _symbol_create_list( SQL_CREATE_FUNC, f );
-		}
-	|	create_or_replace func_def_type_no_proc qfunc '(' opt_paramlist ')' func_def_opt_returns LANGUAGE IDENT function_body
-		{
-			int lang = 0;
-			dlist *f = L();
-			char l = *$9;
-
-			if (l == 'P' || l == 'p') {
-				if (strcasecmp($9, "PYTHON3") == 0) {
-					lang = FUNC_LANG_PY3;
-				} else {
-					lang = FUNC_LANG_PY;
-				}
-			} else {
-				sqlformaterror(m, "Language name PYTHON or PYTHON3 expected, received '%s'", $9);
-			}
-
-			append_list(f, $3);
-			append_list(f, $5);
-			append_symbol(f, $7);
-			append_list(f, NULL);
-			append_list(f, append_string(L(), $10));
-			append_int(f, $2);
-			append_int(f, lang);
 			append_int(f, $1);
 			append_int(f, 0);
 			$$ = _symbol_create_list( SQL_CREATE_FUNC, f );
@@ -3089,6 +3051,28 @@ drop_statement:
 			append_int(l, $5 );
 			$$ = _symbol_create_list( SQL_DROP_FUNC, l );
 		}
+	|	drop func_def_type_loader if_exists qname opt_typelist drop_action
+		{
+			dlist *l = L();
+			append_list(l, $4 );
+			append_list(l, $5 );
+			append_int(l, $2 );
+			append_int(l, $3 );
+			append_int(l, 0 ); /* not all */
+			append_int(l, $6 );
+			$$ = _symbol_create_list( SQL_DROP_FUNC, l );
+		}
+	|	drop ALL func_def_type_loader qname drop_action
+		{
+			dlist *l = L();
+			append_list(l, $4 );
+			append_list(l, NULL );
+			append_int(l, $3 );
+			append_int(l, FALSE );
+			append_int(l, 1 ); /* all */
+			append_int(l, $5 );
+			$$ = _symbol_create_list( SQL_DROP_FUNC, l );
+		}
 	|	drop VIEW if_exists qname drop_action
 		{
 			dlist *l = L();
@@ -3252,7 +3236,6 @@ opt_on_location:
 import_stmt:
 		copyfrom_stmt    { $$ = $1; }
 	|	copybinfrom_stmt { $$ = $1; }
-	|	load_stmt        { $$ = $1; }
 	;
 
 copyfrom_stmt:
@@ -3346,17 +3329,6 @@ copyfrom_stmt:
 			}
 			copy->fwf_widths = $4;
 			$$ = $1;
-		}
-	;
-
-load_stmt:
-		/* 1 2         3    4     5    6 */
-		COPY sqlLOADER INTO qname FROM func_ref
-		{
-			dlist *l = L();
-			append_list(l, $4);
-			append_symbol(l, $6);
-			$$ = _symbol_create_list( SQL_COPYLOADER, l );
 		}
 	;
 
@@ -4212,19 +4184,6 @@ table_ref:
 			append_int(l, 0);
 			append_symbol(l, $2);
 			$$ = _symbol_create_list(SQL_NAME, l);
-		}
-	|	sqlLOADER '(' assignment_commalist ')' opt_table_name
-		{
-			dlist *f = L();
-			append_list(f, append_string(L(), "loader"));
-			append_int(f, FALSE); /* ignore distinct */
-			append_list(f, $3);
-
-			dlist *l = L();
-			append_symbol(l, _symbol_create_list( SQL_NOP, f));
-			append_int(l, 0);
-			append_symbol(l, $5);
-			$$ = _symbol_create_list(SQL_TABLE, l);
 		}
 	|	string opt_assignment_commalist opt_table_name
 		{
@@ -6765,7 +6724,6 @@ non_reserved_keyword:
 	|	sqlDATE       { $$ = "date"; }          /* sloppy: officially reserved */
 	|	DEALLOCATE    { $$ = "deallocate"; }    /* sloppy: officially reserved */
 	|	FILTER        { $$ = "filter"; }        /* sloppy: officially reserved */
-	|	LANGUAGE      { $$ = "language"; }      /* sloppy: officially reserved */
 	|	LARGE         { $$ = "large"; }         /* sloppy: officially reserved */
 	|	MATCH         { $$ = "match"; }         /* sloppy: officially reserved */
 	|	NO            { $$ = "no"; }            /* sloppy: officially reserved */
@@ -8001,7 +7959,7 @@ int find_subgeometry_type(mvc *m, char* geoSubType) {
 char *token2string(tokens token)
 {
 	switch (token) {
-	/* Please keep this list sorted for easy of maintenance */
+	/* Please keep this list sorted for ease of maintenance */
 #define SQL(TYPE) case SQL_##TYPE : return #TYPE
 	SQL(AGGR);
 	SQL(ALTER_SEQ);
@@ -8028,7 +7986,6 @@ char *token2string(tokens token)
 	SQL(COMPARE);
 	SQL(CONSTRAINT);
 	SQL(COPYFROM);
-	SQL(COPYLOADER);
 	SQL(COPYINTO);
 	SQL(CREATE_FUNC);
 	SQL(CREATE_INDEX);
@@ -8036,7 +7993,6 @@ char *token2string(tokens token)
 	SQL(CREATE_SCHEMA);
 	SQL(CREATE_SEQ);
 	SQL(CREATE_TABLE);
-	SQL(CREATE_TABLE_LOADER);
 	SQL(CREATE_TRIGGER);
 	SQL(CREATE_TYPE);
 	SQL(CREATE_USER);

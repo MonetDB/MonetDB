@@ -606,11 +606,6 @@ forkMserver(const char *database, sabdb** stats, bool force)
 		argv[c++] = vmmaxsize;
 	}
 
-	kv = findConfKey(ckv, "embedpy3");
-	if (kv->val != NULL && strcmp(kv->val, "no") != 0) {
-		argv[c++] = "--set=embedded_py=3";
-	}
-
 	kv = findConfKey(ckv, "readonly");
 	if (kv->val != NULL && strcmp(kv->val, "no") != 0)
 		argv[c++] = "--readonly";

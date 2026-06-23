@@ -1284,10 +1284,6 @@ rel2bin_groupby_pp(backend *be, sql_rel *rel, list *refs)
 					restype = newBatType(restype);
 					setVarType(be->mb, getArg(q, 0), restype);
 				}
-				if (af->func->lang == FUNC_LANG_PY) {
-					setVarType(be->mb, getArg(q, 0), restype);
-					q = pushStr(be->mb, q, af->func->query);
-				}
 
 				node *osn = sn;
 				if (r) { /* check new ordered aggregation */
@@ -1299,7 +1295,7 @@ rel2bin_groupby_pp(backend *be, sql_rel *rel, list *refs)
 					}
 					list *obe = r->h->data;
 					if (obe && obe->h) {
-						stmt *orderby = NULL, *orderby_ids, *orderby_grp;
+						stmt *orderby = NULL, *orderby_ids = NULL, *orderby_grp;
 						/* order by */
 						if (grp) {
 							orderby = stmt_order(be, ogrp, true, true);

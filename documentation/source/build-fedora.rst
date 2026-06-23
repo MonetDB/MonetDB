@@ -29,8 +29,6 @@ the command make rpm.
 | geos-devel		# optional: required for geom module
 | libcurl-devel		# optional: read remote files with sys.getcontent(url)
 | pcre2-devel		# optional: use PCRE2 library, enable some functions
-| python3-devel		# optional, needed for Python 3 integration
-| python3-numpy		# optional, needed for Python 3 integration
 | readline-devel	# optional, enable editing in mclient
 | rpm-build		# optional, required to create RPMs (make rpm)
 | selinux-policy-devel	# optional, required to create RPMs (make rpm)

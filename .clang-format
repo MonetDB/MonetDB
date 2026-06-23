@@ -91,7 +91,6 @@ StatementAttributeLikeMacros:
   - mvc_export
   - netcdf_export
   - orderidx_export
-  - pyapi_export
   - shp_export
   - sql5_export
   - sql_export

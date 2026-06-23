@@ -398,8 +398,6 @@ malPrelude(Client c, int listing, int *sql, int *mapi)
 		const char *name = putName(mel_module[i].name);
 		if (name == NULL)
 			throw(LOADER, __func__, MAL_MALLOC_FAIL);
-		if (!malLibraryEnabled(name))
-			continue;
 		if (mel_module[i].funcs) {
 			msg = addFunctions(mel_module[i].funcs);
 			if (!msg && mel_module[i].code) /* some modules may also have some function definitions */
@@ -444,8 +442,6 @@ malIncludeModules(Client c, char *modules[], int listing, bool no_mapi_server,
 
 	for (int i = 0; modules[i]; i++) {
 		/* load library */
-		if (!malLibraryEnabled(modules[i]))
-			continue;
 		if ((msg = loadLibrary(modules[i], listing)) != NULL)
 			return msg;
 	}

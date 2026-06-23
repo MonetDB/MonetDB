@@ -261,7 +261,6 @@ CONDITIONALS = {
     'HAVE_LIBLZ4'          : '@HAVE_LIBLZ4_FALSE@',
     'HAVE_LIBLZMA'         : '@HAVE_LIBLZMA_FALSE@',
     'HAVE_LIBPCRE'         : '@HAVE_LIBPCRE_FALSE@',
-    'HAVE_LIBPY3'          : '@HAVE_LIBPY3_FALSE@',
     'HAVE_LIBXML'          : '@HAVE_LIBXML_FALSE@',
     'HAVE_LIBZ'            : '@HAVE_LIBZ_FALSE@',
     'HAVE_SNAPPY'          : '@HAVE_SNAPPY_FALSE@',
@@ -1584,8 +1583,6 @@ def GetBitsAndModsAndThreads(env):
     cmd.append(f'--dbpath={dbpath}')
     os.environ['TSTDB'] = TSTPREF
     cmd.extend(mserver5_opts)
-    if CONDITIONALS['HAVE_LIBPY3']:
-        cmd.extend(['--set', 'embedded_py=3'])
     if procdebug:
         print('GetBitsAndModsAndThreads: starting process "%s" (inpipe, outpipe, errpipe)\n' % '" "'.join(cmd))
     with process.Popen(cmd, stdin=process.PIPE, stdout=process.PIPE,
@@ -4298,8 +4295,6 @@ def main(argv):
 
         if CONDITIONALS['HAVE_GEOM'] and 'geom' not in env['TST_MODS']:
             CONDITIONALS['HAVE_GEOM'] = False
-        if CONDITIONALS['HAVE_LIBPY3'] and 'pyapi3' not in env['TST_MODS']:
-            CONDITIONALS['HAVE_LIBPY3'] = False
 
         if procdebug:
             for k in sorted(os.environ):
