@@ -738,12 +738,12 @@ static mel_func mkey_init_funcs[] = {
  pattern("batmkey", "hash", MKEYbathash, false, "calculate a hash value", args(1,2, batarg("",lng),batargany("b",0))),
  pattern("batmkey", "hash", MKEYbathash, false, "calculate a hash value, with a candidate list", args(1,3, batarg("",lng),batargany("b",0),batarg("s",oid))),
  pattern("mkey", "rotate_xor_hash", MKEYrotate_xor_hash, false, "post: [:xor=]([:rotate=](h, nbits), [hash](b))", args(1,4, arg("",lng),arg("h",lng),arg("nbits",int),argany("v",0))),
- pattern("batmkey", "rotate_xor_hash", MKEYbulkconst_rotate_xor_hash, false, "pre: h and b should be synced on head\npost: [:xor=]([:rotate=](h, nbits), [hash](b))", args(1,4, batarg("",lng),batarg("h",lng),arg("nbits",int),argany("v",0))),
- pattern("batmkey", "rotate_xor_hash", MKEYbulkconst_rotate_xor_hash, false, "pre: h and b should be synced on head\npost: [:xor=]([:rotate=](h, nbits), [hash](b)), with a candidate list", args(1,5, batarg("",lng),batarg("h",lng),arg("nbits",int),argany("v",0),batarg("s",oid))),
- pattern("batmkey", "rotate_xor_hash", MKEYconstbulk_rotate_xor_hash, false, "pre: h and b should be synced on head\npost: [:xor=]([:rotate=](h, nbits), [hash](b))", args(1,4, batarg("",lng),arg("h",lng),arg("nbits",int),batargany("b",0))),
- pattern("batmkey", "rotate_xor_hash", MKEYconstbulk_rotate_xor_hash, false, "pre: h and b should be synced on head\npost: [:xor=]([:rotate=](h, nbits), [hash](b)), with a candidate list", args(1,5, batarg("",lng),arg("h",lng),arg("nbits",int),batargany("b",0),batarg("s",oid))),
- pattern("batmkey", "rotate_xor_hash", MKEYbulk_rotate_xor_hash, false, "pre: h and b should be synced on head\npost: [:xor=]([:rotate=](h, nbits), [hash](b))", args(1,4, batarg("",lng),batarg("h",lng),arg("nbits",int),batargany("b",0))),
- pattern("batmkey", "rotate_xor_hash", MKEYbulk_rotate_xor_hash, false, "pre: h and b should be synced on head\npost: [:xor=]([:rotate=](h, nbits), [hash](b)), with candidate lists", args(1,6, batarg("",lng),batarg("h",lng),arg("nbits",int),batargany("b",0),batarg("s1",oid),batarg("s2",oid))),
+ pattern("batmkey", "rotate_xor_hash", MKEYbulkconst_rotate_xor_hash, false, "pre: h and b should be synced on head post: [:xor=]([:rotate=](h, nbits), [hash](b))", args(1,4, batarg("",lng),batarg("h",lng),arg("nbits",int),argany("v",0))),
+ pattern("batmkey", "rotate_xor_hash", MKEYbulkconst_rotate_xor_hash, false, "pre: h and b should be synced on head post: [:xor=]([:rotate=](h, nbits), [hash](b)), with a candidate list", args(1,5, batarg("",lng),batarg("h",lng),arg("nbits",int),argany("v",0),batarg("s",oid))),
+ pattern("batmkey", "rotate_xor_hash", MKEYconstbulk_rotate_xor_hash, false, "pre: h and b should be synced on head post: [:xor=]([:rotate=](h, nbits), [hash](b))", args(1,4, batarg("",lng),arg("h",lng),arg("nbits",int),batargany("b",0))),
+ pattern("batmkey", "rotate_xor_hash", MKEYconstbulk_rotate_xor_hash, false, "pre: h and b should be synced on head post: [:xor=]([:rotate=](h, nbits), [hash](b)), with a candidate list", args(1,5, batarg("",lng),arg("h",lng),arg("nbits",int),batargany("b",0),batarg("s",oid))),
+ pattern("batmkey", "rotate_xor_hash", MKEYbulk_rotate_xor_hash, false, "pre: h and b should be synced on head post: [:xor=]([:rotate=](h, nbits), [hash](b))", args(1,4, batarg("",lng),batarg("h",lng),arg("nbits",int),batargany("b",0))),
+ pattern("batmkey", "rotate_xor_hash", MKEYbulk_rotate_xor_hash, false, "pre: h and b should be synced on head post: [:xor=]([:rotate=](h, nbits), [hash](b)), with candidate lists", args(1,6, batarg("",lng),batarg("h",lng),arg("nbits",int),batargany("b",0),batarg("s1",oid),batarg("s2",oid))),
  { .imp=NULL }
 };
 #include "mal_import.h"

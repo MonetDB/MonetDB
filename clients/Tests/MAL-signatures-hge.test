@@ -287,7 +287,7 @@ aggr
 count
 command aggr.count(X_0:bat[:any], X_1:bat[:oid], X_2:bit):lng
 ALGcountCND_nil
-Return the number of elements currently in a BAT ignores@BUNs with nil-tail iff ignore_nils==TRUE.
+Return the number of elements currently in a BAT ignores BUNs with nil-tail iff ignore_nils==TRUE.
 aggr
 count
 command aggr.count(X_0:bat[:any]):lng
@@ -297,7 +297,7 @@ aggr
 count
 command aggr.count(X_0:bat[:any], X_1:bit):lng
 ALGcount_nil
-Return the number of elements currently in a BAT ignores@BUNs with nil-tail iff ignore_nils==TRUE.
+Return the number of elements currently in a BAT ignores BUNs with nil-tail iff ignore_nils==TRUE.
 aggr
 count_no_nil
 command aggr.count_no_nil(X_0:bat[:any_1], X_1:bat[:oid], X_2:bat[:any_2]):bat[:lng]
@@ -307,12 +307,12 @@ aggr
 count_no_nil
 command aggr.count_no_nil(X_0:bat[:any_2], X_1:bat[:oid]):lng
 ALGcountCND_no_nil
-Return the number of elements currently@in a BAT ignoring BUNs with nil-tail
+Return the number of elements currently in a BAT ignoring BUNs with nil-tail
 aggr
 count_no_nil
 command aggr.count_no_nil(X_0:bat[:any_2]):lng
 ALGcount_no_nil
-Return the number of elements currently@in a BAT ignoring BUNs with nil-tail
+Return the number of elements currently in a BAT ignoring BUNs with nil-tail
 aggr
 covariance
 command aggr.covariance(X_0:bat[:bte], X_1:bat[:bte], X_2:bat[:oid], X_3:bat[:any_1]):bat[:dbl]
@@ -3422,7 +3422,7 @@ algebra
 crossproduct
 command algebra.crossproduct(X_0:bat[:any_1], X_1:bat[:any_2], X_2:bit) (X_3:bat[:oid], X_4:bat[:oid])
 ALGcrossproduct2
-Returns 2 columns with all BUNs, consisting of the head-oids@from 'left' and 'right' for which there are BUNs in 'left'@and 'right' with equal tails
+Returns 2 columns with all BUNs, consisting of the head-oids from 'left' and 'right' for which there are BUNs in 'left' and 'right' with equal tails
 algebra
 crossproduct
 command algebra.crossproduct(X_0:bat[:any_1], X_1:bat[:any_2], X_2:bat[:oid], X_3:bat[:oid], X_4:bit) (X_5:bat[:oid], X_6:bat[:oid])
@@ -3522,7 +3522,7 @@ algebra
 likejoin
 command algebra.likejoin(X_0:bat[:str], X_1:bat[:str], X_2:bat[:str], X_3:bat[:bit], X_4:bat[:oid], X_5:bat[:oid], X_6:bit, X_7:lng, X_8:bit) (X_9:bat[:oid], X_10:bat[:oid])
 LIKEjoin
-Join the string bat L with the pattern bat R@with optional candidate lists SL and SR using pattern escape string ESC@and doing a case sensitive match.@The result is two aligned bats with oids of matching rows.
+Join the string bat L with the pattern bat R with optional candidate lists SL and SR using pattern escape string ESC and doing a case sensitive match. The result is two aligned bats with oids of matching rows.
 algebra
 likejoin
 command algebra.likejoin(X_0:bat[:str], X_1:bat[:str], X_2:bat[:str], X_3:bat[:bit], X_4:bat[:oid], X_5:bat[:oid], X_6:bit, X_7:lng, X_8:bit):bat[:oid]
@@ -3532,7 +3532,7 @@ algebra
 likeselect
 command algebra.likeselect(X_0:bat[:str], X_1:bat[:oid], X_2:str, X_3:str, X_4:bit, X_5:bit):bat[:oid]
 PCRElikeselect
-Select all head values of the first input BAT for which the@tail value is "like" the given (SQL-style) pattern and for@which the head value occurs in the tail of the second input@BAT.@Input is a dense-headed BAT, output is a dense-headed BAT with in@the tail the head value of the input BAT for which the@relationship holds.  The output BAT is sorted on the tail value.
+Select all head values of the first input BAT for which the tail value is "like" the given (SQL-style) pattern and for which the head value occurs in the tail of the second input BAT. Input is a dense-headed BAT, output is a dense-headed BAT with in the tail the head value of the input BAT for which the relationship holds.  The output BAT is sorted on the tail value.
 algebra
 markjoin
 command algebra.markjoin(X_0:bat[:any_1], X_1:bat[:any_1], X_2:bat[:oid], X_3:bat[:oid], X_4:bit, X_5:lng) (X_6:bat[:oid], X_7:bat[:bit])
@@ -3612,12 +3612,12 @@ algebra
 reuse
 command algebra.reuse(X_0:bat[:any_1]):bat[:any_1]
 ALGreuse
-Reuse a temporary BAT if you can. Otherwise,@allocate enough storage to accept result of an@operation (not involving the heap)
+Reuse a temporary BAT if you can. Otherwise, allocate enough storage to accept result of an operation (not involving the heap)
 algebra
 select
 command algebra.select(X_0:bat[:any_1], X_1:any_1, X_2:any_1, X_3:bit, X_4:bit, X_5:bit):bat[:oid]
 ALGselect1
-Select all head values for which the tail value is in range.@Input is a dense-headed BAT, output is a dense-headed BAT with in@the tail the head value of the input BAT for which the tail value@is between the values low and high (inclusive if li respectively@hi is set).  The output BAT is sorted on the tail value.  If low@or high is nil, the boundary is not considered (effectively - and@+ infinity).  If anti is set, the result is the complement.  Nil@values in the tail are never matched, unless low=nil, high=nil,@li=1, hi=1, anti=0.  All non-nil values are returned if low=nil,@high=nil, and li, hi are not both 1, or anti=1.@Note that the output is suitable as second input for the other@version of this function.
+Select all head values for which the tail value is in range. Input is a dense-headed BAT, output is a dense-headed BAT with in the tail the head value of the input BAT for which the tail value is between the values low and high (inclusive if li respectively hi is set).  The output BAT is sorted on the tail value.  If low or high is nil, the boundary is not considered (effectively - and + infinity).  If anti is set, the result is the complement.  Nil values in the tail are never matched, unless low=nil, high=nil, li=1, hi=1, anti=0.  All non-nil values are returned if low=nil, high=nil, and li, hi are not both 1, or anti=1. Note that the output is suitable as second input for the other version of this function.
 algebra
 select
 command algebra.select(X_0:bat[:any_1], X_1:any_1, X_2:any_1, X_3:bit, X_4:bit, X_5:bit, X_6:bit):bat[:oid]
@@ -3627,7 +3627,7 @@ algebra
 select
 command algebra.select(X_0:bat[:any_1], X_1:bat[:oid], X_2:any_1, X_3:any_1, X_4:bit, X_5:bit, X_6:bit):bat[:oid]
 ALGselect2
-Select all head values of the first input BAT for which the tail value@is in range and for which the head value occurs in the tail of the@second input BAT.@The first input is a dense-headed BAT, the second input is a@dense-headed BAT with sorted tail, output is a dense-headed BAT@with in the tail the head value of the input BAT for which the@tail value is between the values low and high (inclusive if li@respectively hi is set).  The output BAT is sorted on the tail@value.  If low or high is nil, the boundary is not considered@(effectively - and + infinity).  If anti is set, the result is the@complement.  Nil values in the tail are never matched, unless@low=nil, high=nil, li=1, hi=1, anti=0.  All non-nil values are@returned if low=nil, high=nil, and li, hi are not both 1, or anti=1.@Note that the output is suitable as second input for this@function.
+Select all head values of the first input BAT for which the tail value is in range and for which the head value occurs in the tail of the second input BAT. The first input is a dense-headed BAT, the second input is a dense-headed BAT with sorted tail, output is a dense-headed BAT with in the tail the head value of the input BAT for which the tail value is between the values low and high (inclusive if li respectively hi is set).  The output BAT is sorted on the tail value.  If low or high is nil, the boundary is not considered (effectively - and + infinity).  If anti is set, the result is the complement.  Nil values in the tail are never matched, unless low=nil, high=nil, li=1, hi=1, anti=0.  All non-nil values are returned if low=nil, high=nil, and li, hi are not both 1, or anti=1. Note that the output is suitable as second input for this function.
 algebra
 select
 command algebra.select(X_0:bat[:any_1], X_1:bat[:oid], X_2:any_1, X_3:any_1, X_4:bit, X_5:bit, X_6:bit, X_7:bit):bat[:oid]
@@ -3662,47 +3662,47 @@ algebra
 sort
 command algebra.sort(X_0:bat[:any_1], X_1:bit, X_2:bit, X_3:bit):bat[:any_1]
 ALGsort11
-Returns a copy of the BAT sorted on tail values.@The order is descending if the reverse bit is set.@This is a stable sort if the stable bit is set.
+Returns a copy of the BAT sorted on tail values. The order is descending if the reverse bit is set. This is a stable sort if the stable bit is set.
 algebra
 sort
 command algebra.sort(X_0:bat[:any_1], X_1:bit, X_2:bit, X_3:bit) (X_4:bat[:any_1], X_5:bat[:oid])
 ALGsort12
-Returns a copy of the BAT sorted on tail values and a BAT that@specifies how the input was reordered.@The order is descending if the reverse bit is set.@This is a stable sort if the stable bit is set.
+Returns a copy of the BAT sorted on tail values and a BAT that specifies how the input was reordered. The order is descending if the reverse bit is set. This is a stable sort if the stable bit is set.
 algebra
 sort
 command algebra.sort(X_0:bat[:any_1], X_1:bit, X_2:bit, X_3:bit) (X_4:bat[:any_1], X_5:bat[:oid], X_6:bat[:oid])
 ALGsort13
-Returns a copy of the BAT sorted on tail values, a BAT that specifies@how the input was reordered, and a BAT with group information.@The order is descending if the reverse bit is set.@This is a stable sort if the stable bit is set.
+Returns a copy of the BAT sorted on tail values, a BAT that specifies how the input was reordered, and a BAT with group information. The order is descending if the reverse bit is set. This is a stable sort if the stable bit is set.
 algebra
 sort
 command algebra.sort(X_0:bat[:any_1], X_1:bat[:oid], X_2:bit, X_3:bit, X_4:bit):bat[:any_1]
 ALGsort21
-Returns a copy of the BAT sorted on tail values.@The order is descending if the reverse bit is set.@This is a stable sort if the stable bit is set.
+Returns a copy of the BAT sorted on tail values. The order is descending if the reverse bit is set. This is a stable sort if the stable bit is set.
 algebra
 sort
 command algebra.sort(X_0:bat[:any_1], X_1:bat[:oid], X_2:bit, X_3:bit, X_4:bit) (X_5:bat[:any_1], X_6:bat[:oid])
 ALGsort22
-Returns a copy of the BAT sorted on tail values and a BAT that@specifies how the input was reordered.@The order is descending if the reverse bit is set.@This is a stable sort if the stable bit is set.
+Returns a copy of the BAT sorted on tail values and a BAT that specifies how the input was reordered. The order is descending if the reverse bit is set. This is a stable sort if the stable bit is set.
 algebra
 sort
 command algebra.sort(X_0:bat[:any_1], X_1:bat[:oid], X_2:bit, X_3:bit, X_4:bit) (X_5:bat[:any_1], X_6:bat[:oid], X_7:bat[:oid])
 ALGsort23
-Returns a copy of the BAT sorted on tail values, a BAT that specifies@how the input was reordered, and a BAT with group information.@The order is descending if the reverse bit is set.@This is a stable sort if the stable bit is set.
+Returns a copy of the BAT sorted on tail values, a BAT that specifies how the input was reordered, and a BAT with group information. The order is descending if the reverse bit is set. This is a stable sort if the stable bit is set.
 algebra
 sort
 command algebra.sort(X_0:bat[:any_1], X_1:bat[:oid], X_2:bat[:oid], X_3:bit, X_4:bit, X_5:bit):bat[:any_1]
 ALGsort31
-Returns a copy of the BAT sorted on tail values.@The order is descending if the reverse bit is set.@This is a stable sort if the stable bit is set.
+Returns a copy of the BAT sorted on tail values. The order is descending if the reverse bit is set. This is a stable sort if the stable bit is set.
 algebra
 sort
 command algebra.sort(X_0:bat[:any_1], X_1:bat[:oid], X_2:bat[:oid], X_3:bit, X_4:bit, X_5:bit) (X_6:bat[:any_1], X_7:bat[:oid])
 ALGsort32
-Returns a copy of the BAT sorted on tail values and a BAT that@specifies how the input was reordered.@The order is descending if the reverse bit is set.@This is a stable sort if the stable bit is set.
+Returns a copy of the BAT sorted on tail values and a BAT that specifies how the input was reordered. The order is descending if the reverse bit is set. This is a stable sort if the stable bit is set.
 algebra
 sort
 command algebra.sort(X_0:bat[:any_1], X_1:bat[:oid], X_2:bat[:oid], X_3:bit, X_4:bit, X_5:bit) (X_6:bat[:any_1], X_7:bat[:oid], X_8:bat[:oid])
 ALGsort33
-Returns a copy of the BAT sorted on tail values, a BAT that specifies@how the input was reordered, and a BAT with group information.@The order is descending if the reverse bit is set.@This is a stable sort if the stable bit is set.
+Returns a copy of the BAT sorted on tail values, a BAT that specifies how the input was reordered, and a BAT with group information. The order is descending if the reverse bit is set. This is a stable sort if the stable bit is set.
 algebra
 subslice
 command algebra.subslice(X_0:bat[:any_1], X_1:lng, X_2:lng):bat[:oid]
@@ -3722,12 +3722,12 @@ algebra
 thetaselect
 command algebra.thetaselect(X_0:bat[:any_1], X_1:bat[:oid], X_2:any_1, X_3:str):bat[:oid]
 ALGthetaselect2
-Select all head values of the first input BAT for which the tail value@obeys the relation value OP VAL and for which the head value occurs in@the tail of the second input BAT.@Input is a dense-headed BAT, output is a dense-headed BAT with in@the tail the head value of the input BAT for which the@relationship holds.  The output BAT is sorted on the tail value.
+Select all head values of the first input BAT for which the tail value obeys the relation value OP VAL and for which the head value occurs in the tail of the second input BAT. Input is a dense-headed BAT, output is a dense-headed BAT with in the tail the head value of the input BAT for which the relationship holds.  The output BAT is sorted on the tail value.
 algebra
 unique
 command algebra.unique(X_0:bat[:any_1], X_1:bat[:oid]):bat[:oid]
 ALGunique
-Select all unique values from the tail of the first input.@Input is a dense-headed BAT, the second input is a@dense-headed BAT with sorted tail, output is a dense-headed@BAT with in the tail the head value of the input BAT that was@selected.  The output BAT is sorted on the tail value.  The@second input BAT is a list of candidates.
+Select all unique values from the tail of the first input. Input is a dense-headed BAT, the second input is a dense-headed BAT with sorted tail, output is a dense-headed BAT with in the tail the head value of the input BAT that was selected.  The output BAT is sorted on the tail value.  The second input BAT is a list of candidates.
 bat
 append
 command bat.append(X_0:bat[:any_1], X_1:bat[:any_1], X_2:bat[:oid], X_3:bit):bat[:any_1]
@@ -3822,7 +3822,7 @@ bat
 getSize
 command bat.getSize(X_0:bat[:any_1]):lng
 BKCgetSize
-Calculate the actual size of the BAT descriptor, heaps, hashes in bytes@rounded to the memory page size (see bbp.getPageSize()).
+Calculate the actual size of the BAT descriptor, heaps, hashes in bytes rounded to the memory page size (see bbp.getPageSize()).
 bat
 getVHeapSize
 command bat.getVHeapSize(X_0:bat[:any_1]):lng
@@ -3842,7 +3842,7 @@ bat
 info
 command bat.info(X_0:bat[:any_1]) (X_1:bat[:str], X_2:bat[:str])
 BKCinfo
-Produce a table containing information about a BAT in [attribute,value] format. @It contains all properties of the BAT record. 
+Produce a table containing information about a BAT in [attribute,value] format. It contains all properties of the BAT record.
 bat
 intersectcand
 command bat.intersectcand(X_0:bat[:oid], X_1:bat[:oid]):bat[:oid]
@@ -3867,7 +3867,7 @@ bat
 isSynced
 command bat.isSynced(X_0:bat[:any_1], X_1:bat[:any_2]):bit
 BKCisSynced
-Tests whether two BATs are synced or not. 
+Tests whether two BATs are synced or not.
 bat
 isTransient
 command bat.isTransient(X_0:bat[:any_1]):bit
@@ -3972,7 +3972,7 @@ bat
 save
 command bat.save(X_0:str):bit
 BKCsave
-Save a BAT to storage, if it was loaded and dirty.  @Returns whether IO was necessary.  Please realize that @calling this function violates the atomic commit protocol!!
+Save a BAT to storage, if it was loaded and dirty. Returns whether IO was necessary.  Please realize that calling this function violates the atomic commit protocol!!
 bat
 save
 command bat.save(X_0:bat[:any_1]):void
@@ -3982,7 +3982,7 @@ bat
 setAccess
 command bat.setAccess(X_0:bat[:any_1], X_1:str):bat[:any_1]
 BKCsetAccess
-Try to change the update access privileges @to this BAT. Mode:@r[ead-only]      - allow only read access.@a[append-only]   - allow reads and update.@w[riteable]      - allow all operations.@BATs are updatable by default. On making a BAT read-only, @all subsequent updates fail with an error message.@Returns the BAT itself.
+Try to change the update access privileges to this BAT. Mode: r[ead-only]      - allow only read access. a[append-only]   - allow reads and update. w[riteable]      - allow all operations. BATs are updatable by default. On making a BAT read-only, all subsequent updates fail with an error message. Returns the BAT itself.
 bat
 setHash
 command bat.setHash(X_0:bat[:any_1]):bit
@@ -3992,7 +3992,7 @@ bat
 setName
 command bat.setName(X_0:bat[:any_1], X_1:str):void
 BKCsetName
-Give a logical name to a BAT. 
+Give a logical name to a BAT.
 bat
 setPersistent
 command bat.setPersistent(X_0:bat[:any_1]):void
@@ -4002,7 +4002,7 @@ bat
 setTransient
 command bat.setTransient(X_0:bat[:any_1]):void
 BKCsetTransient
-Make the BAT transient.  Returns @boolean which indicates if the@BAT administration has indeed changed.
+Make the BAT transient.  Returns boolean which indicates if the BAT administration has indeed changed.
 bat
 single
 pattern bat.single(X_0:any_1):bat[:any_1]
@@ -31657,32 +31657,32 @@ batmkey
 rotate_xor_hash
 pattern batmkey.rotate_xor_hash(X_0:bat[:lng], X_1:int, X_2:bat[:any]):bat[:lng]
 MKEYbulk_rotate_xor_hash
-pre: h and b should be synced on head@post: [:xor=]([:rotate=](h, nbits), [hash](b))
+pre: h and b should be synced on head post: [:xor=]([:rotate=](h, nbits), [hash](b))
 batmkey
 rotate_xor_hash
 pattern batmkey.rotate_xor_hash(X_0:bat[:lng], X_1:int, X_2:bat[:any], X_3:bat[:oid], X_4:bat[:oid]):bat[:lng]
 MKEYbulk_rotate_xor_hash
-pre: h and b should be synced on head@post: [:xor=]([:rotate=](h, nbits), [hash](b)), with candidate lists
+pre: h and b should be synced on head post: [:xor=]([:rotate=](h, nbits), [hash](b)), with candidate lists
 batmkey
 rotate_xor_hash
 pattern batmkey.rotate_xor_hash(X_0:bat[:lng], X_1:int, X_2:any):bat[:lng]
 MKEYbulkconst_rotate_xor_hash
-pre: h and b should be synced on head@post: [:xor=]([:rotate=](h, nbits), [hash](b))
+pre: h and b should be synced on head post: [:xor=]([:rotate=](h, nbits), [hash](b))
 batmkey
 rotate_xor_hash
 pattern batmkey.rotate_xor_hash(X_0:bat[:lng], X_1:int, X_2:any, X_3:bat[:oid]):bat[:lng]
 MKEYbulkconst_rotate_xor_hash
-pre: h and b should be synced on head@post: [:xor=]([:rotate=](h, nbits), [hash](b)), with a candidate list
+pre: h and b should be synced on head post: [:xor=]([:rotate=](h, nbits), [hash](b)), with a candidate list
 batmkey
 rotate_xor_hash
 pattern batmkey.rotate_xor_hash(X_0:lng, X_1:int, X_2:bat[:any]):bat[:lng]
 MKEYconstbulk_rotate_xor_hash
-pre: h and b should be synced on head@post: [:xor=]([:rotate=](h, nbits), [hash](b))
+pre: h and b should be synced on head post: [:xor=]([:rotate=](h, nbits), [hash](b))
 batmkey
 rotate_xor_hash
 pattern batmkey.rotate_xor_hash(X_0:lng, X_1:int, X_2:bat[:any], X_3:bat[:oid]):bat[:lng]
 MKEYconstbulk_rotate_xor_hash
-pre: h and b should be synced on head@post: [:xor=]([:rotate=](h, nbits), [hash](b)), with a candidate list
+pre: h and b should be synced on head post: [:xor=]([:rotate=](h, nbits), [hash](b)), with a candidate list
 batmmath
 acos
 pattern batmmath.acos(X_0:bat[:dbl]):bat[:dbl]
@@ -45292,7 +45292,7 @@ clients
 quit
 unsafe pattern clients.quit(X_0:int):void
 CLTquit
-Terminate the session for a single client using a soft error.@It is the privilege of the console user.
+Terminate the session for a single client using a soft error. It is the privilege of the console user.
 clients
 ripemd160sum
 command clients.ripemd160sum(X_0:str):str
@@ -45302,7 +45302,7 @@ clients
 setListing
 unsafe pattern clients.setListing(X_0:int):int
 CLTsetListing
-Turn on/off echo of MAL instructions:@1 - echo input,@2 - show mal instruction,@4 - show details of type resolutoin, @8 - show binding information.
+Turn on/off echo of MAL instructions: 1 - echo input, 2 - show mal instruction, 4 - show details of type resolutoin, 8 - show binding information.
 clients
 setQryTimeoutMicro
 unsafe pattern clients.setQryTimeoutMicro(X_0:lng):void
@@ -45392,7 +45392,7 @@ clients
 shutdown
 unsafe pattern clients.shutdown(X_0:bte, X_1:bit):str
 CLTshutdown
-Close all other client connections. Return if it succeeds.@If forced is set then always stop the system the hard way
+Close all other client connections. Return if it succeeds. If forced is set then always stop the system the hard way
 clients
 stop
 unsafe pattern clients.stop(X_0:int):void
@@ -45407,7 +45407,7 @@ clients
 suspend
 unsafe pattern clients.suspend(X_0:int):void
 CLTsuspend
-Put a client process to sleep for some time.@It will simple sleep for a second at a time, until@the awake bit has been set in its descriptor
+Put a client process to sleep for some time. It will simple sleep for a second at a time, until the awake bit has been set in its descriptor
 clients
 wakeup
 unsafe pattern clients.wakeup(X_0:int):void
@@ -47247,27 +47247,27 @@ io
 print
 pattern io.print(X_0:bat[:any]...):void
 IOtable
-BATs are printed with '#' for legend @lines, and the BUNs on separate lines @between brackets, containing each to @comma separated values (head and tail). @If multiple BATs are passed for printing, @print() performs an implicit natural @join on the void head, producing a multi attribute table.
+BATs are printed with '#' for legend lines, and the BUNs on separate lines between brackets, containing each to comma separated values (head and tail). If multiple BATs are passed for printing, print() performs an implicit natural join on the void head, producing a multi attribute table.
 io
 printf
 pattern io.printf(X_0:str):void
 IOprintf
-Select default format 
+Select default format
 io
 printf
 pattern io.printf(X_0:str, X_1:any...):void
 IOprintf
-Select default format 
+Select default format
 io
 printf
 pattern io.printf(X_0:streams, X_1:str):void
 IOprintfStream
-Select default format 
+Select default format
 io
 printf
 pattern io.printf(X_0:streams, X_1:str, X_2:any...):void
 IOprintfStream
-Select default format 
+Select default format
 io
 stdin
 pattern io.stdin():bstream
@@ -47297,7 +47297,7 @@ json
 filter
 command json.filter(X_0:json, X_1:str):json
 JSONfilter
-Filter all members of an object by a path expression, returning an array.@Non-matching elements are skipped.
+Filter all members of an object by a path expression, returning an array. Non-matching elements are skipped.
 json
 filter
 command json.filter(X_0:json, X_1:bte, X_2:str):json
@@ -47462,7 +47462,7 @@ language
 dataflow
 pattern language.dataflow():bit
 MALstartDataflow
-The current guarded block is executed using dataflow control. 
+The current guarded block is executed using dataflow control.
 language
 pass
 pattern language.pass(X_0:any_1):void
@@ -47472,7 +47472,7 @@ logging
 compinfo
 pattern logging.compinfo() (X_0:bat[:int], X_1:bat[:str], X_2:bat[:str])
 TRACERcomp_info
-Returns in the form of a SQL result-set all the components along with their ID@and the their current logging level being set
+Returns in the form of a SQL result-set all the components along with their ID and the their current logging level being set
 logging
 flush
 unsafe command logging.flush():void
@@ -47817,7 +47817,7 @@ mat
 new
 pattern mat.new(X_0:bat[:any_1]...):bat[:any_1]
 MATpack
-Define a Merge Association Table (MAT). Fall back to the pack operation@when this is called 
+Define a Merge Association Table (MAT). Fall back to the pack operation when this is called
 mat
 pack
 pattern mat.pack(X_0:bat[:any_1]...):bat[:any_1]
@@ -47862,7 +47862,7 @@ mdb
 getDebug
 pattern mdb.getDebug():int
 MDBgetDebug
-Get the kernel debugging bit-set.@See the MonetDB configuration file for details
+Get the kernel debugging bit-set. See the MonetDB configuration file for details
 mdb
 getDebugFlags
 pattern mdb.getDebugFlags() (X_0:bat[:str], X_1:bat[:bit])
@@ -47872,7 +47872,7 @@ mdb
 getDefinition
 pattern mdb.getDefinition():bat[:str]
 MDBgetDefinition
-Returns a string representation of the current function @with typing information attached
+Returns a string representation of the current function with typing information attached
 mdb
 getException
 command mdb.getException(X_0:str):str
@@ -47937,7 +47937,7 @@ mdb
 setDebug
 pattern mdb.setDebug(X_0:str):int
 MDBsetDebugStr
-Set the kernel debugging bit-set and return its previous value.@The recognized options are: threads, memory, properties,@io, transactions, modules, algorithms, estimates.
+Set the kernel debugging bit-set and return its previous value. The recognized options are: threads, memory, properties, io, transactions, modules, algorithms, estimates.
 mdb
 setVMsize
 pattern mdb.setVMsize(X_0:lng):lng
@@ -47967,7 +47967,7 @@ mmath
 acos
 command mmath.acos(X_0:dbl):dbl
 MATHunary_ACOSdbl
-The acos(x) function calculates the arc cosine of x, that is the @value whose cosine is x. The value is returned in radians and is @mathematically defined to be between 0 and PI (inclusive).
+The acos(x) function calculates the arc cosine of x, that is the value whose cosine is x. The value is returned in radians and is mathematically defined to be between 0 and PI (inclusive).
 mmath
 acos
 command mmath.acos(X_0:flt):flt
@@ -47977,7 +47977,7 @@ mmath
 asin
 command mmath.asin(X_0:dbl):dbl
 MATHunary_ASINdbl
-The asin(x) function calculates the arc sine of x, that is the value @whose sine is x. The value is returned in radians and is mathematically @defined to be between -PI/20 and -PI/2 (inclusive).
+The asin(x) function calculates the arc sine of x, that is the value whose sine is x. The value is returned in radians and is mathematically defined to be between -PI/20 and -PI/2 (inclusive).
 mmath
 asin
 command mmath.asin(X_0:flt):flt
@@ -47987,7 +47987,7 @@ mmath
 atan
 command mmath.atan(X_0:dbl):dbl
 MATHunary_ATANdbl
-The atan(x) function calculates the arc tangent of x, that is the value @whose tangent is x. The value is returned in radians and is mathematically @defined to be between -PI/2 and PI/2 (inclusive).
+The atan(x) function calculates the arc tangent of x, that is the value whose tangent is x. The value is returned in radians and is mathematically defined to be between -PI/2 and PI/2 (inclusive).
 mmath
 atan
 command mmath.atan(X_0:flt):flt
@@ -47997,7 +47997,7 @@ mmath
 atan2
 command mmath.atan2(X_0:dbl, X_1:dbl):dbl
 MATHbinary_ATAN2dbl
-The atan2(x,y) function calculates the arc tangent of the two @variables x and y. It is similar to calculating the arc@tangent of y / x, except that the signs of both arguments are @used to determine the quadrant of the result. The value is @returned in radians and is mathematically defined to be between @-PI/2 and PI/2 (inclusive).
+The atan2(x,y) function calculates the arc tangent of the two variables x and y. It is similar to calculating the arc tangent of y / x, except that the signs of both arguments are used to determine the quadrant of the result. The value is returned in radians and is mathematically defined to be between -PI/2 and PI/2 (inclusive).
 mmath
 atan2
 command mmath.atan2(X_0:flt, X_1:flt):flt
@@ -48027,7 +48027,7 @@ mmath
 cos
 command mmath.cos(X_0:dbl):dbl
 MATHunary_COSdbl
-The cos(x) function returns the cosine of x, where x is given in @radians. The return value is between -1 and 1.
+The cos(x) function returns the cosine of x, where x is given in radians. The return value is between -1 and 1.
 mmath
 cos
 command mmath.cos(X_0:flt):flt
@@ -48037,7 +48037,7 @@ mmath
 cosh
 command mmath.cosh(X_0:dbl):dbl
 MATHunary_COSHdbl
-The cosh() function returns the hyperbolic cosine of x, which is @defined mathematically as (exp(x) + exp(-x)) / 2.
+The cosh() function returns the hyperbolic cosine of x, which is defined mathematically as (exp(x) + exp(-x)) / 2.
 mmath
 cosh
 command mmath.cosh(X_0:flt):flt
@@ -48047,7 +48047,7 @@ mmath
 cot
 command mmath.cot(X_0:dbl):dbl
 MATHunary_COTdbl
-The cot(x) function returns the Cotangent of x,@where x is given in radians
+The cot(x) function returns the Cotangent of x, where x is given in radians
 mmath
 cot
 command mmath.cot(X_0:flt):flt
@@ -48067,7 +48067,7 @@ mmath
 exp
 command mmath.exp(X_0:dbl):dbl
 MATHunary_EXPdbl
-The exp(x) function returns the value of e (the base of @natural logarithms) raised to the power of x.
+The exp(x) function returns the value of e (the base of natural logarithms) raised to the power of x.
 mmath
 exp
 command mmath.exp(X_0:flt):flt
@@ -48082,7 +48082,7 @@ mmath
 finite
 command mmath.finite(X_0:dbl):bit
 MATHunary_FINITE
-The finite(x) function returns true if x is neither infinite @nor a 'not-a-number' (NaN) value, and false otherwise.
+The finite(x) function returns true if x is neither infinite nor a 'not-a-number' (NaN) value, and false otherwise.
 mmath
 floor
 command mmath.floor(X_0:dbl):dbl
@@ -48097,7 +48097,7 @@ mmath
 fmod
 pattern mmath.fmod(X_0:dbl, X_1:dbl):dbl
 CMDvarMOD
-The fmod(x,y) function computes the remainder of dividing x by y.@The return value is x - n * y, where n is the quotient of x / y,@rounded towards zero to an integer.
+The fmod(x,y) function computes the remainder of dividing x by y. The return value is x - n * y, where n is the quotient of x / y, rounded towards zero to an integer.
 mmath
 fmod
 pattern mmath.fmod(X_0:flt, X_1:flt):flt
@@ -48107,12 +48107,12 @@ mmath
 isinf
 command mmath.isinf(X_0:dbl):int
 MATHunary_ISINF
-The isinf(x) function returns -1 if x represents negative @infinity, 1 if x represents positive infinity, and 0 otherwise.
+The isinf(x) function returns -1 if x represents negative infinity, 1 if x represents positive infinity, and 0 otherwise.
 mmath
 isnan
 command mmath.isnan(X_0:dbl):bit
 MATHunary_ISNAN
-The isnan(x) function returns true if x is 'not-a-number' @(NaN), and false otherwise.
+The isnan(x) function returns true if x is 'not-a-number' (NaN), and false otherwise.
 mmath
 log
 command mmath.log(X_0:dbl):dbl
@@ -48202,7 +48202,7 @@ mmath
 round
 command mmath.round(X_0:dbl, X_1:int):dbl
 MATHbinary_ROUNDdbl
-The round(n, m) returns n rounded to m places to the right @of the decimal point; if m is omitted, to 0 places. m can be @negative to round off digits left of the decimal point. @m must be an integer.
+The round(n, m) returns n rounded to m places to the right of the decimal point; if m is omitted, to 0 places. m can be negative to round off digits left of the decimal point. m must be an integer.
 mmath
 round
 command mmath.round(X_0:flt, X_1:int):flt
@@ -48212,7 +48212,7 @@ mmath
 sin
 command mmath.sin(X_0:dbl):dbl
 MATHunary_SINdbl
-The sin(x) function returns the cosine of x, where x is given in @radians. The return value is between -1 and 1.
+The sin(x) function returns the cosine of x, where x is given in radians. The return value is between -1 and 1.
 mmath
 sin
 command mmath.sin(X_0:flt):flt
@@ -48222,7 +48222,7 @@ mmath
 sinh
 command mmath.sinh(X_0:dbl):dbl
 MATHunary_SINHdbl
-The sinh() function returns the hyperbolic sine of x, which is @defined mathematically as (exp(x) - exp(-x)) / 2.
+The sinh() function returns the hyperbolic sine of x, which is defined mathematically as (exp(x) - exp(-x)) / 2.
 mmath
 sinh
 command mmath.sinh(X_0:flt):flt
@@ -48252,7 +48252,7 @@ mmath
 tan
 command mmath.tan(X_0:dbl):dbl
 MATHunary_TANdbl
-The tan(x) function returns the tangent of x,@where x is given in radians
+The tan(x) function returns the tangent of x, where x is given in radians
 mmath
 tan
 command mmath.tan(X_0:flt):flt
@@ -48262,7 +48262,7 @@ mmath
 tanh
 command mmath.tanh(X_0:dbl):dbl
 MATHunary_TANHdbl
-The tanh() function returns the hyperbolic tangent of x, which is @defined mathematically as sinh(x) / cosh(x).
+The tanh() function returns the hyperbolic tangent of x, which is defined mathematically as sinh(x) / cosh(x).
 mmath
 tanh
 command mmath.tanh(X_0:flt):flt
@@ -48282,7 +48282,7 @@ mtime
 addmonths
 command mtime.addmonths(X_0:date, X_1:int):date
 MTIMEdate_addmonths
-returns the date after a number of@months (possibly negative).
+returns the date after a number of months (possibly negative).
 mtime
 century
 command mtime.century(X_0:date):int
@@ -48332,7 +48332,7 @@ mtime
 day
 command mtime.day(X_0:date):bte
 MTIMEdate_extract_day
-extracts day from date 
+extracts day from date
 mtime
 day
 command mtime.day(X_0:lng):lng
@@ -48347,12 +48347,12 @@ mtime
 dayofweek
 command mtime.dayofweek(X_0:date):bte
 MTIMEdate_extract_dayofweek
-Returns the current day of the week@where 1=monday, .., 7=sunday
+Returns the current day of the week where 1=monday, .., 7=sunday
 mtime
 dayofyear
 command mtime.dayofyear(X_0:date):sht
 MTIMEdate_extract_dayofyear
-Returns N where d is the Nth day@of the year (january 1 returns 1)
+Returns N where d is the Nth day of the year (january 1 returns 1)
 mtime
 decade
 command mtime.decade(X_0:date):int
@@ -48367,7 +48367,7 @@ mtime
 diff
 command mtime.diff(X_0:date, X_1:date):lng
 MTIMEdate_diff
-returns the number of days@between 'val1' and 'val2'.
+returns the number of days between 'val1' and 'val2'.
 mtime
 diff
 command mtime.diff(X_0:daytime, X_1:daytime):lng
@@ -48377,7 +48377,7 @@ mtime
 diff
 command mtime.diff(X_0:timestamp, X_1:timestamp):lng
 MTIMEtimestamp_diff_msec
-returns the number of milliseconds@between 'val1' and 'val2'.
+returns the number of milliseconds between 'val1' and 'val2'.
 mtime
 epoch
 command mtime.epoch(X_0:timestamp):int
@@ -49112,12 +49112,12 @@ pcre
 replace
 command pcre.replace(X_0:str, X_1:str, X_2:str, X_3:str):str
 PCREreplace_wrap
-Replace _all_ matches of "pattern" in "origin_str" with "replacement".@Parameter "flags" accept these flags: 'i', 'm', 's', and 'x'.@'e': if present, an empty string is considered to be a valid match@'i': if present, the match operates in case-insensitive mode.@Otherwise, in case-sensitive mode.@'m': if present, the match operates in multi-line mode.@'s': if present, the match operates in "dot-all"@The specifications of the flags can be found in "man pcreapi"@The flag letters may be repeated.@No other letters than 'e', 'i', 'm', 's' and 'x' are allowed in "flags".@Returns the replaced string, or if no matches found, the original string.
+Replace _all_ matches of "pattern" in "origin_str" with "replacement". Parameter "flags" accept these flags: 'i', 'm', 's', and 'x'. 'e': if present, an empty string is considered to be a valid match 'i': if present, the match operates in case-insensitive mode. Otherwise, in case-sensitive mode. 'm': if present, the match operates in multi-line mode. 's': if present, the match operates in "dot-all" The specifications of the flags can be found in "man pcreapi" The flag letters may be repeated. No other letters than 'e', 'i', 'm', 's' and 'x' are allowed in "flags". Returns the replaced string, or if no matches found, the original string.
 pcre
 replace_first
 command pcre.replace_first(X_0:str, X_1:str, X_2:str, X_3:str):str
 PCREreplacefirst_wrap
-Replace _the first_ match of "pattern" in "origin_str" with "replacement".@Parameter "flags" accept these flags: 'i', 'm', 's', and 'x'.@'e': if present, an empty string is considered to be a valid match@'i': if present, the match operates in case-insensitive mode.@Otherwise, in case-sensitive mode.@'m': if present, the match operates in multi-line mode.@'s': if present, the match operates in "dot-all"@The specifications of the flags can be found in "man pcreapi"@The flag letters may be repeated.@No other letters than 'e', 'i', 'm', 's' and 'x' are allowed in "flags".@Returns the replaced string, or if no matches found, the original string.
+Replace _the first_ match of "pattern" in "origin_str" with "replacement". Parameter "flags" accept these flags: 'i', 'm', 's', and 'x'. 'e': if present, an empty string is considered to be a valid match 'i': if present, the match operates in case-insensitive mode. Otherwise, in case-sensitive mode. 'm': if present, the match operates in multi-line mode. 's': if present, the match operates in "dot-all" The specifications of the flags can be found in "man pcreapi" The flag letters may be repeated. No other letters than 'e', 'i', 'm', 's' and 'x' are allowed in "flags". Returns the replaced string, or if no matches found, the original string.
 pcre
 sql2pcre
 command pcre.sql2pcre(X_0:str, X_1:str):str
@@ -49462,42 +49462,42 @@ sql
 bind
 pattern sql.bind(X_0:int, X_1:str, X_2:str, X_3:str, X_4:int) (X_5:bat[:oid], X_6:bat[:any_1])
 mvc_bind_wrap
-Bind the 'schema.table.column' BAT with access kind:@0 - base table@1 - inserts@2 - updates
+Bind the 'schema.table.column' BAT with access kind: 0 - base table 1 - inserts 2 - updates
 sql
 bind
 pattern sql.bind(X_0:int, X_1:str, X_2:str, X_3:str, X_4:int):bat[:any_1]
 mvc_bind_wrap
-Bind the 'schema.table.column' BAT with access kind:@0 - base table@1 - inserts@2 - updates
+Bind the 'schema.table.column' BAT with access kind: 0 - base table 1 - inserts 2 - updates
 sql
 bind
 pattern sql.bind(X_0:int, X_1:str, X_2:str, X_3:str, X_4:int, X_5:int, X_6:int) (X_7:bat[:oid], X_8:bat[:any_1])
 mvc_bind_wrap
-Bind the 'schema.table.column' BAT with access kind:@0 - base table@1 - inserts@2 - updates
+Bind the 'schema.table.column' BAT with access kind: 0 - base table 1 - inserts 2 - updates
 sql
 bind
 pattern sql.bind(X_0:int, X_1:str, X_2:str, X_3:str, X_4:int, X_5:int, X_6:int):bat[:any_1]
 mvc_bind_wrap
-Bind the 'schema.table.column' BAT partition with access kind:@0 - base table@1 - inserts@2 - updates
+Bind the 'schema.table.column' BAT partition with access kind: 0 - base table 1 - inserts 2 - updates
 sql
 bind_idxbat
 pattern sql.bind_idxbat(X_0:int, X_1:str, X_2:str, X_3:str, X_4:int) (X_5:bat[:oid], X_6:bat[:any_1])
 mvc_bind_idxbat_wrap
-Bind the 'schema.table.index' BAT with access kind:@0 - base table@1 - inserts@2 - updates
+Bind the 'schema.table.index' BAT with access kind: 0 - base table 1 - inserts 2 - updates
 sql
 bind_idxbat
 pattern sql.bind_idxbat(X_0:int, X_1:str, X_2:str, X_3:str, X_4:int):bat[:any_1]
 mvc_bind_idxbat_wrap
-Bind the 'schema.table.index' BAT with access kind:@0 - base table@1 - inserts@2 - updates
+Bind the 'schema.table.index' BAT with access kind: 0 - base table 1 - inserts 2 - updates
 sql
 bind_idxbat
 pattern sql.bind_idxbat(X_0:int, X_1:str, X_2:str, X_3:str, X_4:int, X_5:int, X_6:int) (X_7:bat[:oid], X_8:bat[:any_1])
 mvc_bind_idxbat_wrap
-Bind the 'schema.table.index' BAT with access kind:@0 - base table@1 - inserts@2 - updates
+Bind the 'schema.table.index' BAT with access kind: 0 - base table 1 - inserts 2 - updates
 sql
 bind_idxbat
 pattern sql.bind_idxbat(X_0:int, X_1:str, X_2:str, X_3:str, X_4:int, X_5:int, X_6:int):bat[:any_1]
 mvc_bind_idxbat_wrap
-Bind the 'schema.table.index' BAT with access kind:@0 - base table@1 - inserts@2 - updates
+Bind the 'schema.table.index' BAT with access kind: 0 - base table 1 - inserts 2 - updates
 sql
 check
 pattern sql.check(X_0:str, X_1:str):str
@@ -49517,7 +49517,7 @@ sql
 copy_from
 unsafe pattern sql.copy_from(X_0:ptr, X_1:str, X_2:str, X_3:str, X_4:str, X_5:str, X_6:lng, X_7:lng, X_8:int, X_9:str, X_10:int, X_11:int, X_12:str, X_13:str):bat[:any]...
 mvc_import_table_wrap
-Import a table from bstream s with the @given tuple and separators (sep/rsep)
+Import a table from bstream s with the given tuple and separators (sep/rsep)
 sql
 copy_rejects
 pattern sql.copy_rejects() (X_0:bat[:lng], X_1:bat[:int], X_2:bat[:str], X_3:bat[:str])
@@ -49987,7 +49987,7 @@ sql
 mvc
 pattern sql.mvc():int
 SQLmvc
-Get the multiversion catalog context. @Needed for correct statement dependencies@(ie sql.update, should be after sql.bind in concurrent execution)
+Get the multiversion catalog context. Needed for correct statement dependencies (ie sql.update, should be after sql.bind in concurrent execution)
 sql
 next_value
 unsafe pattern sql.next_value(X_0:str, X_1:str):lng
@@ -50372,12 +50372,12 @@ sql
 storage
 pattern sql.storage() (X_0:bat[:str], X_1:bat[:str], X_2:bat[:str], X_3:bat[:str], X_4:bat[:str], X_5:bat[:str], X_6:bat[:lng], X_7:bat[:int], X_8:bat[:lng], X_9:bat[:lng], X_10:bat[:lng], X_11:bat[:bit], X_12:bat[:lng], X_13:bat[:bit], X_14:bat[:bit], X_15:bat[:bit], X_16:bat[:lng])
 sql_storage
-return a table with storage information 
+return a table with storage information
 sql
 storage
 pattern sql.storage(X_0:str) (X_1:bat[:str], X_2:bat[:str], X_3:bat[:str], X_4:bat[:str], X_5:bat[:str], X_6:bat[:str], X_7:bat[:lng], X_8:bat[:int], X_9:bat[:lng], X_10:bat[:lng], X_11:bat[:lng], X_12:bat[:bit], X_13:bat[:lng], X_14:bat[:bit], X_15:bat[:bit], X_16:bat[:bit], X_17:bat[:lng])
 sql_storage
-return a table with storage information for a particular schema 
+return a table with storage information for a particular schema
 sql
 storage
 pattern sql.storage(X_0:str, X_1:str) (X_2:bat[:str], X_3:bat[:str], X_4:bat[:str], X_5:bat[:str], X_6:bat[:str], X_7:bat[:str], X_8:bat[:lng], X_9:bat[:int], X_10:bat[:lng], X_11:bat[:lng], X_12:bat[:lng], X_13:bat[:bit], X_14:bat[:lng], X_15:bat[:bit], X_16:bat[:bit], X_17:bat[:bit], X_18:bat[:lng])
@@ -51592,7 +51592,7 @@ xml
 comment
 command xml.comment(X_0:str):xml
 XMLcomment
-Construct an comment struction 
+Construct an comment struction
 xml
 concat
 command xml.concat(X_0:xml, X_1:xml):xml
@@ -51637,7 +51637,7 @@ xml
 parse
 command xml.parse(X_0:str, X_1:str, X_2:str):xml
 XMLparse
-Parse the XML document or element string values 
+Parse the XML document or element string values
 xml
 pi
 command xml.pi(X_0:str, X_1:str):xml
