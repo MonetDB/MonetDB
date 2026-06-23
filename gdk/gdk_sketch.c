@@ -79,7 +79,7 @@ sketch_estimate(uint8_t cnt_sketch[BUCKETS][CLZ_BUCKETS])
 	return alpha * (double)BUCKETS * BUCKETS / z;
 }
 
-void
+int
 sketch_populate(BAT* b, BATiter *bi, struct canditer *bci,
 		uint8_t cnting_sketch[BUCKETS][CLZ_BUCKETS])
 {
@@ -121,7 +121,9 @@ sketch_populate(BAT* b, BATiter *bi, struct canditer *bci,
 				hash = XXH64(ptr, strlen(ptr), HLLSEED);
 			break;
 		default:
-			return;
+			/* TRC_ERROR(ACCELERATOR, "Type not supported for counting sketches." */
+			/* 	  "Aborting count distinct estimation."); */
+			return -1;
 		}
 		bucket = hash & BITS_MASK;
 		hash |= BITS_MASK;
@@ -132,11 +134,16 @@ sketch_populate(BAT* b, BATiter *bi, struct canditer *bci,
 		} else {
 			uint8_t k = cnting_sketch[bucket][clz] - 128;
 			uint64_t rng;
-			if (getentropy(&rng, sizeof(rng)) == 0 &&
-			   (rng & ((1ULL << k) - 1)) == 0)
+			if (getentropy(&rng, sizeof(rng)) != 0) {
+				/* TRC_ERROR(ACCELERATOR, "Failed to generate sketch seed." */
+				/* 	  "Aborting count distinct estimation."); */
+				return -1;
+			}
+			if ((rng & ((1ULL << k) - 1)) == 0)
 				cnting_sketch[bucket][clz]++;
 		}
 	}
+	return 0;
 }
 
 /* void */
@@ -155,14 +162,15 @@ double
 bat_guess_uniques(BAT *b, BATiter *bi, struct canditer *bci)
 {
 	uint8_t cnting_sketch[BUCKETS][CLZ_BUCKETS] = {0};
+	double unique_guess = 0;
 
 	BATiter nbi = bi ? *bi : bat_iterator(b);
 	struct canditer nbci;
 	if (bci == NULL)
 		canditer_init(&nbci, b, NULL);
 
-	sketch_populate(b, &nbi, &nbci, cnting_sketch);
-	double unique_guess = sketch_estimate(cnting_sketch);
+	if (sketch_populate(b, &nbi, &nbci, cnting_sketch) == 0)
+		unique_guess = sketch_estimate(cnting_sketch);
 
 	if (bi == NULL)
 		bat_iterator_end(&nbi);

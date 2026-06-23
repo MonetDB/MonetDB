@@ -522,9 +522,22 @@ PPclaim(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	BAT *b = BATdescriptor(rb);
 	if (b) {
+		bool sync = false;
+		Pipeline *p = MT_thread_getdata();
+		int nr = -1;
+		if (p) {
+			nr = p->seqnr;
+			if (nr >= 0) {
+				bool done = 0;
+				pipeline_get_token(p, 7, nr, &done);
+				sync = true;
+			}
+		}
 		struct pipeline_resultset *rs = (struct pipeline_resultset*)b->pl_io;
 		*res = ATOMIC_ADD(&rs->claimed, cnt);
 		BBPreclaim(b);
+		if (sync)
+			pipeline_pass_token(p, 7, nr);
 	}
 	return MAL_SUCCEED;
 }
