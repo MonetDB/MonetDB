@@ -205,6 +205,9 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					/* Guess number of uniques if not entirely unique */
 					/* unique_est = (double)BATguess_uniques(b, NULL); */
 					unique_est = (double)bat_guess_uniques(b, NULL, NULL);
+					MT_lock_set(&b->theaplock);
+					b->tunique_est = unique_est;
+					MT_lock_unset(&b->theaplock);
 
 					/* Collect min and max values */
 					mn = BATmin(b, NULL);
@@ -213,8 +216,8 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					GDKfree(mx);
 					BBPunfix(b->batCacheid);
 
-					if (unique_est > 0)
-						store->storage_api.set_stats_col(tr, c, &unique_est, NULL, NULL);
+					/* if (unique_est > 0) */
+					/* 	store->storage_api.set_stats_col(tr, c, &unique_est, NULL, NULL); */
 				}
 			}
 		}

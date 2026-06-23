@@ -162,7 +162,7 @@ double
 bat_guess_uniques(BAT *b, BATiter *bi, struct canditer *bci)
 {
 	uint8_t cnting_sketch[BUCKETS][CLZ_BUCKETS] = {0};
-	double unique_guess = -1;
+	double unique_guess = 0;
 
 	BATiter nbi = bi ? *bi : bat_iterator(b);
 	struct canditer nbci;
