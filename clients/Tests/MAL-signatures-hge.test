@@ -49649,11 +49649,6 @@ unsafe pattern sql.createorderindex(X_0:str, X_1:str, X_2:str):void
 sql_createorderindex
 Instantiate the order index on a column
 sql
-createstrimps
-unsafe pattern sql.createstrimps(X_0:str, X_1:str, X_2:str):void
-sql_createstrimps
-Instantiate the strimps index on a column
-sql
 cume_dist
 pattern sql.cume_dist(X_0:any_1, X_1:bit, X_2:bit):dbl
 SQLcume_dist
