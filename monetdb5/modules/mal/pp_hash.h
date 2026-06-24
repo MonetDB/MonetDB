@@ -11,8 +11,6 @@
 #ifndef _PP_HASH_H_
 #define _PP_HASH_H_
 
-//#include "pp_mem.h"
-
 #define GIDBITS 63
 
 //#define HT_MIN_SIZE 1024*64*8
@@ -32,7 +30,6 @@
 
 #define nextk linear_probing
 //#define nextk quadratic_probing
-
 
 #define hash_rehash(ht, p, err)		\
 	{ 								\
@@ -73,38 +70,18 @@
 
 #define _hash_date(X) _hash_int(X)
 #define _hash_inet4(X) _hash_int((*(int*)&X))
-//#define _hash_lng(X)  ((((ulng)X)>>7)^(((ulng)X)>>13)^(((ulng)X)>>21)^(((ulng)X)>>31)^(((ulng)X)>>38)^(((ulng)X)>>46)^(((ulng)X)>>56)^((ulng)X))
-#define _hash_oid(X)  _hash_lng((X*98317))
+#define _hash_oid(X)  _hash_lng(X)
 #define _hash_daytime(X) _hash_lng(X)
 #define _hash_timestamp(X) _hash_lng(X)
 
 #ifdef HAVE_HGE
 #define _hash_uuid(X) _hash_hge(X)
-
-#define _mix_hge(X)      (((hge) (X) >> 7) ^     \
-                         ((hge) (X) >> 13) ^    \
-                         ((hge) (X) >> 21) ^    \
-                         ((hge) (X) >> 31) ^    \
-                         ((hge) (X) >> 38) ^    \
-                         ((hge) (X) >> 46) ^    \
-                         ((hge) (X) >> 56) ^    \
-                         ((hge) (X) >> 65) ^    \
-                         ((hge) (X) >> 70) ^    \
-                         ((hge) (X) >> 78) ^    \
-                         ((hge) (X) >> 85) ^    \
-                         ((hge) (X) >> 90) ^    \
-                         ((hge) (X) >> 98) ^    \
-                         ((hge) (X) >> 107) ^   \
-                         ((hge) (X) >> 116) ^   \
-                         (hge) (X))
 #define _hash_hge(X)  (_hash_lng(((lng)X) ^ _hash_lng((lng)(X>>64))))
-//#define hash_hge(X)  ((lng)_mix_hge(X))
 #endif
 
 #define _hash_flt(X)  (_hash_int(X))
 #define _hash_dbl(X)  (_hash_lng(X))
 #define _hash_gid(X)  (_hash_lng(X))
-#define ROT64(x, y)  ((x << y) | (x >> (64 - y)))
 //#define combine(X,Y)  (_hash_lng((X*5671432987))^(ulng)Y)
 //#define combine(X,Y)  (_hash_lng((X*(hash_prime_nr[h->bits-5])))^(ulng)Y)
 #define combine(X,Y,pr)  (_hash_lng((X*(pr)))^(ulng)Y)
