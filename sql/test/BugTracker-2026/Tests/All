@@ -133,3 +133,4 @@ KNOWNFAIL?7931-rel2bin_select-assertion-failure
 KNOWNFAIL?7945-GDKanalyticalnthvalue-crash
 KNOWNFAIL?7946-GDKanalyticalnthvalue-crash
 KNOWNFAIL?7947-exp_bin-crash
+KNOWNFAIL?7948-exp_bin-first_value-crash
