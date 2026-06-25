@@ -130,6 +130,6 @@ KNOWNFAIL?7931-rel2bin_select-assertion-failure
 7934-ALGouterselect-assertion-failure
 7937-where-not-in-values-null-bug
 7938-not-x-is-const-and-x-is-not-null-bug
-KNOWNFAIL?7945_GDKanalyticalnthvalue_crash
-KNOWNFAIL?7946_GDKanalyticalnthvalue_crash
+KNOWNFAIL?7945-GDKanalyticalnthvalue-crash
+KNOWNFAIL?7946-GDKanalyticalnthvalue-crash
 KNOWNFAIL?7947-exp_bin-crash
