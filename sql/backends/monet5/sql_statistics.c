@@ -220,6 +220,52 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					/* 	store->storage_api.set_stats_col(tr, c, &unique_est, NULL, NULL); */
 				}
 			}
+			if (!col && isTable(t) && ol_first_node(t->idxs)) {
+				bool allowed = table_privs(m, t, PRIV_SELECT);
+				for (node *nidx = ol_first_node((t)->idxs); nidx; nidx = nidx->next) {
+					sql_idx *idx = (sql_idx *) nidx->data;
+					if (!allowed /*&& !column_privs(m, idx, PRIV_SELECT)*/)
+						continue;
+					BAT *b, *unq;
+					ptr mn, mx;
+					double unique_est;
+
+					if (!(b = store->storage_api.bind_idx(tr, idx, RDONLY)))
+						continue; /* At the moment we ignore the error, but maybe we can change this */
+					if (VIEWtparent(b)) { /* If it is a view get the parent BAT */
+						BAT *nb = BATdescriptor(VIEWtparent(b));
+						BBPunfix(b->batCacheid);
+						b = nb;
+						if (b == NULL)
+							continue;
+					}
+
+					/* Collect new sorted and revsorted properties */
+					(void) BATordered(b);
+					(void) BATordered_rev(b);
+
+					/* Check for nils existence */
+					(void) BATcount_no_nil(b, NULL);
+
+					/* Test if column is unique */
+					if ((unq = BATunique(b, NULL)))
+						BBPunfix(unq->batCacheid);
+
+					/* Guess number of uniques if not entirely unique */
+					//(void) BATguess_uniques(b, NULL);
+					unique_est = (double)bat_guess_uniques(b, NULL, NULL);
+					MT_lock_set(&b->theaplock);
+					b->tunique_est = unique_est;
+					MT_lock_unset(&b->theaplock);
+
+					/* Collect min and max values */
+					mn = BATmin(b, NULL);
+					GDKfree(mn);
+					mx = BATmax(b, NULL);
+					GDKfree(mx);
+					BBPunfix(b->batCacheid);
+				}
+			}
 		}
 	}
 	return MAL_SUCCEED;
