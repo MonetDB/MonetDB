@@ -137,3 +137,4 @@ KNOWNFAIL?7948-exp_bin-first_value-crash
 KNOWNFAIL?7949-exp_match-crash
 KNOWNFAIL?7950-exp_set_type-crash
 KNOWNFAIL?7951-exp_visitor-crash
+KNOWNFAIL?7952-rel_find_exp_and_corresponding_rel_-assert-failure
