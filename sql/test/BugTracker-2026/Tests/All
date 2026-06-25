@@ -141,3 +141,4 @@ KNOWNFAIL?7952-rel_find_exp_and_corresponding_rel_-assert-failure
 KNOWNFAIL?7953-list_append_node-crash
 KNOWNFAIL?7954-exp_visitor-crash
 KNOWNFAIL?7955-rel_setop_get_statistics-crash
+KNOWNFAIL?7956-rel_remove_const_aggr-crash
