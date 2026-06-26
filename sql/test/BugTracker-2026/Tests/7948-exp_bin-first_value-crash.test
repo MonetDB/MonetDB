@@ -1,0 +1,8 @@
+query I nosort
+SELECT MIN ( x )
+  FROM ( WITH RECURSIVE x ( x ) AS ( SELECT RANK ( ) OVER ( ORDER BY x , x ) AS x FROM ( SELECT 1 AS x ) WHERE x IN ( SELECT ( row_number ( ) OVER ( ) ) FROM ( SELECT CAST( NULL AS INT ) AS x , 'v1' AS x , 1 AS x , 2 AS x UNION SELECT NULL , 'v1' , 1 , 2 ) AS x ) )
+         SELECT x * ( not_like ( 'abc' , '_C_' , NULLIF ( ( SELECT sum ( x ) OVER ( ROWS BETWEEN CURRENT ROW AND CURRENT ROW ) AS x UNION SELECT 2 AS x UNION SELECT 3 AS x ) , 1 ) NOT IN ( 2 , 3 , FIRST_VALUE ( 999 ) OVER ( ) ) , TRUE ) + x ) AS x
+           FROM x ) AS x
+----
+1
+

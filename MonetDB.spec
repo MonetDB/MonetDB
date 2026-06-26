@@ -155,6 +155,7 @@ Summary: MonetDB development files
 Group: Applications/Databases
 Requires: %{name}%{?_isa} = %{version}-%{release}
 Requires: %{name}-stream-devel%{?_isa} = %{version}-%{release}
+Requires: %{name}-client-devel%{?_isa} = %{version}-%{release}
 
 %description devel
 MonetDB is a database management system that is developed from a
