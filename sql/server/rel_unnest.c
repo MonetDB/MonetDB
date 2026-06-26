@@ -3980,7 +3980,7 @@ accessing_merge(list *acc, list *nacc)
 static sql_rel *
 rel_smallest(sql_rel *r, list *outer_refs)
 {
-	if (r->op != op_join || !list_empty(r->exps))
+	if (r->op != op_join /*|| !list_empty(r->exps)*/)
 		return r;
 	sql_rel *rl = r->l;
 	sql_rel *rr = r->r;
