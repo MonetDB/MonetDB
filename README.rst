@@ -103,7 +103,7 @@ The following packages are optional but recommended:
 The following packages are optional:
 ``cfitsio-devel``, ``gdal-devel``, ``geos-devel``, ``libasan``,
 ``libcmocka-devel``, ``libcurl-devel``, ``libxml2-devel``,
-``netcdf-devel``, ``proj-devel``, ``python3-devel``, ``unixODBC-devel``,
+``netcdf-devel``, ``proj-devel``, ``unixODBC-devel``,
 ``valgrind-devel``.
 
 On Ubuntu and Debian the following packages are required:
@@ -116,8 +116,8 @@ The following packages are optional but recommended:
 The following packages are optional:
 ``libasan5``, ``libcfitsio-dev``, ``libcmocka-dev``,
 ``libcurl4-gnutls-dev``, ``libgdal-dev``, ``libgeos-dev``,
-``libnetcdf-dev``, ``libproj-dev``, ``libxml2-dev``, ``python3-dev``,
-``unixodbc-dev``, ``valgrind``.
+``libnetcdf-dev``, ``libproj-dev``, ``libxml2-dev``, ``unixodbc-dev``,
+``valgrind``.
 
 ``cmake`` must be at least version 3.12, ``python`` must be at least
 version 3.5.
