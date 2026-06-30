@@ -46,7 +46,6 @@ stmt_heapn_projection(backend *be, int pos, int sel, stmt *c)
 	q = pushArgument(be->mb, q, pos);
 	q = pushArgument(be->mb, q, sel);
 	q = pushArgument(be->mb, q, c->nr);
-	q = pushArgument(be->mb, q, be->pipeline);
 	pushInstruction(be->mb, q);
 
 	if (q) {
@@ -381,7 +380,6 @@ rel2bin_ordered_topn(backend *be, sql_rel *rel, list *refs, sql_rel *topn, stmt 
 		q = pushReturn(be->mb, q, heap = newTmpVariable(be->mb, oidbat)); /* heapn bat */
 		q->inout = 2;
 		q = pushArgument(be->mb, q, all->nr);
-		q = pushArgument(be->mb, q, getArg(pp->q, 2));
 
 		if (grouped)
 			q = pushArgument(be->mb, q, gids);
@@ -459,7 +457,6 @@ rel2bin_ordered_topn(backend *be, sql_rel *rel, list *refs, sql_rel *topn, stmt 
 	q = pushReturn(be->mb, q, heap);
 	q->inout = 2;
 	q = pushArgument(be->mb, q, all->nr);
-	q = pushArgument(be->mb, q, getArg(pp->q, 2));
 	n = osl->h;
 	if (grouped) {
 		stmt *s = n->data;

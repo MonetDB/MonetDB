@@ -1300,10 +1300,10 @@ extern void BATswap_heaps(BAT *u, BAT *b, Pipeline *p);
 	}
 
 static str
-HEAPproject(Client ctx, bat *rid, bat *pos, bat *sel, bat *in, const ptr *H)
+HEAPproject(Client ctx, bat *rid, bat *pos, bat *sel, bat *in)
 {
 	(void)ctx;
-	Pipeline *p = (Pipeline*)*H; /* last arg should move to first argument .. */
+	Pipeline *p = pipeline_get_thread_private_pipeline(); /* last arg should move to first argument .. */
 	BAT *r = NULL, *P = BATdescriptor(*pos), *S = BATdescriptor(*sel), *b = BATdescriptor(*in);
 	int err = 0;
     char *errmsg = NULL;
@@ -1468,10 +1468,10 @@ HEAPtopn(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr pci)
 {
 	(void)cntxt; (void)m;
 
-	bool grouped = ((pci->argc - 5)%4);
+	bool grouped = ((pci->argc - 4)%4);
 	int retc = 0;
-	int nr_cols = (pci->argc - (grouped?2:0) - 5)/4;
-	assert((nr_cols * 4 + (grouped?2:0) + 5) == pci->argc);
+	int nr_cols = (pci->argc - (grouped?2:0) - 4)/4;
+	assert((nr_cols * 4 + (grouped?2:0) + 4) == pci->argc);
 	bat *pos = getArgReference_bat(s, pci, retc++);
 	bat *sel = getArgReference_bat(s, pci, retc++);
 	bat *rgrp = (grouped)?getArgReference_bat(s, pci, retc++):NULL;
@@ -1481,8 +1481,8 @@ HEAPtopn(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr pci)
 
 	assert(retc + nr_cols + 1 == pci->retc);
 	lng n = *getArgReference_lng(s, pci, pci->retc + 0);
-	Pipeline *pp = *(Pipeline**)getArgReference_ptr(s, pci, pci->retc + 1);
-	int args = pci->retc + 2 + (grouped?1:0);
+	Pipeline *pp = pipeline_get_thread_private_pipeline();
+	int args = pci->retc + 1 + (grouped?1:0);
 	bat *in = nr_cols?getArgReference_bat(s, pci, args++) : NULL;
 	BAT *hps, *b = nr_cols?BATdescriptor(*in):NULL;
 	BAT *gps = NULL;
@@ -1490,7 +1490,7 @@ HEAPtopn(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr pci)
 	if (nr_cols && !b)
 		return createException(SQL, "heapn.topn",  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	if (grouped) {
-		bat *in = getArgReference_bat(s, pci, pci->retc + 2);
+		bat *in = getArgReference_bat(s, pci, pci->retc + 1);
 		gps = BATdescriptor(*in);
 		if (!gps) {
 			BBPreclaim(b);
@@ -1608,7 +1608,7 @@ HEAPtopn(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr pci)
 	oid *p = Tloc(P, 0);
 	oid *sl = Tloc(S, 0);
 	subheap *nsh = NULL;
-	int cur = pci->retc+2+ (hp->grouped?1:0) + 3, err = 0;
+	int cur = pci->retc+1+ (hp->grouped?1:0) + 3, err = 0;
 	if (sh) {
 		for(nsh = sh->sub; cur < pci->argc; nsh = nsh->sub, cur += 3) {
 			bat *in = getArgReference_bat(s, pci, cur);
@@ -1966,34 +1966,31 @@ static mel_func heapn_init_funcs[] = {
 				*/
 				)
 		   ),
-	pattern("heapn", "topn", HEAPtopn, false, "Return table with heap based topn, and positions and candidate for any projections (without order by, with groups)", args(3,5,
+	pattern("heapn", "topn", HEAPtopn, false, "Return table with heap based topn, and positions and candidate for any projections (without order by, with groups)", args(3,4,
 				batarg("pos", oid),
 				batarg("sel", oid),
 				/*sharedbatarg("rgrp", oid),*/
 				sharedbatarg("heap", oid),
-				arg("n",lng),
-				arg("pipeline", ptr)
+				arg("n",lng)
 				)
 			),
-	pattern("heapn", "topn", HEAPtopn, false, "Return table with heap based topn, and positions and candidate for any projections", args(3,6,
+	pattern("heapn", "topn", HEAPtopn, false, "Return table with heap based topn, and positions and candidate for any projections", args(3,5,
 				batarg("pos", oid),
 				batarg("sel", oid),
 				sharedbatvararg("res", any),
 				//sharedbatarg("heap", oid),
 				arg("n",lng),
-				arg("pipeline", ptr),
 				vararg("in", any)/*,
 				vararg("min", bit),
 				vararg("nulls_last", bit)
 				*/
 				)
 			),
-	command("heapn", "projection", HEAPproject, false, "Project.", args(1,5,
+	command("heapn", "projection", HEAPproject, false, "Project.", args(1,4,
 				batargany("",1),
 				batarg("pos", oid),
 				batarg("sel", oid),
-				batargany("b",1),
-				arg("pipeline", ptr)
+				batargany("b",1)
 				)
 			),
 	command("heapn", "order", HEAPorder1, false, "Order.", args(1,2,
