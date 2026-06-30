@@ -591,6 +591,7 @@ rel_buildhash(visitor *v, sql_rel *rel, sql_rel **iprj, bool crossproduct)
 		r->op = op_buildhash;
 		r->l = rel;
 	}
+	r->parallel = true;
 	r = rel_dup(r);
 	return r;
 }
