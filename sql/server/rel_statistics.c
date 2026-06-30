@@ -1022,6 +1022,7 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 				set_count_prop(v->sql->sa, rel, (is_left(rel->op) || is_full(rel->op)) ? lv : 0);
 			} else if (lu != 0 && ru != 0) {
 				lv = lv/lu;
+				rv = rv/ru;
 				set_count_prop(v->sql->sa, rel, (rv > (BUN_MAX / lv)) ? BUN_MAX : (lv * rv)); /* overflow check */
 			} else if (lv != BUN_NONE && rv != BUN_NONE) {
 				set_count_prop(v->sql->sa, rel, (rv > (BUN_MAX / lv)) ? BUN_MAX : (lv * rv)); /* overflow check */
@@ -1305,7 +1306,7 @@ sql_class_base_score(visitor *v, sql_column *c, sql_subtype *t, bool equality_ba
 	case TYPE_dbl:
 		return 75 - 53;
 	default:
-		if (equality_based && c && v->storage_based_opt && (de = mvc_is_duplicate_eliminated(v->sql, c)) < 1200/* && de*/)
+		if (equality_based && c && v->storage_based_opt && (de = mvc_is_duplicate_eliminated(v->sql, c)))
 			return 150 - (de / 8);
 		/* strings and blobs not duplicate eliminated don't get any points here */
 		return 0;
@@ -1406,9 +1407,6 @@ score_gbe(visitor *v, sql_rel *rel, sql_exp *e)
 
 	/* prefer the shorter var types over the longer ones */
 	res += sql_class_base_score(v, c, t, true); /* smaller the type, better */
-	prop *p = find_prop(e->p, PROP_NUNIQUES);
-	if (p && res)
-		res += (int)p->value.dval;
 	return res;
 }
 
