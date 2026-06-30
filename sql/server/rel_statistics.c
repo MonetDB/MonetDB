@@ -1322,7 +1322,7 @@ score_se_base(visitor *v, sql_rel *rel, sql_exp *e)
 	if (e->type == e_convert) /* keep unsafes at the end (TODO improve) */
 		return -1000;
 	/* can we find out if the underlying table is sorted */
-	if ((c = exp_find_column(rel, e, -2)) && v->storage_based_opt && mvc_is_sorted(v->sql, c))
+	if ((c = exp_find_column(rel, e, -2)) && v->storage_based_opt && mvc_is_sorted_col(v->sql, c))
 		res += 600;
 
 	/* prefer the shorter var types over the longer ones */
@@ -1399,7 +1399,7 @@ score_gbe(visitor *v, sql_rel *rel, sql_exp *e)
 	/* can we find out if the underlying table is sorted */
 	if (is_unique(e) || find_prop(e->p, PROP_HASHCOL) || (c && v->storage_based_opt && mvc_is_unique(v->sql, c))) /* distinct columns */
 		res += 700;
-	if (c && v->storage_based_opt && mvc_is_sorted(v->sql, c))
+	if (c && v->storage_based_opt && mvc_is_sorted_col(v->sql, c))
 		res += 500;
 	if (find_prop(e->p, PROP_HASHIDX)) /* has hash index */
 		res += 200;

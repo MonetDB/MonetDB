@@ -6853,10 +6853,19 @@ sql_trans_alter_type(sql_trans *tr, sql_column *col, sql_subtype *t)
 }
 
 int
-sql_trans_is_sorted( sql_trans *tr, sql_column *col )
+sql_trans_is_sorted_col( sql_trans *tr, sql_column *col )
 {
 	sqlstore *store = tr->store;
 	if (col && isTable(col->t) && store->storage_api.sorted_col && store->storage_api.sorted_col(tr, col))
+		return 1;
+	return 0;
+}
+
+int
+sql_trans_is_sorted_idx( sql_trans *tr, sql_idx *idx )
+{
+	sqlstore *store = tr->store;
+	if (idx && isTable(idx->t) && store->storage_api.sorted_idx && store->storage_api.sorted_idx(tr, idx))
 		return 1;
 	return 0;
 }
