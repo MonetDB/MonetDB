@@ -2464,6 +2464,7 @@ store_manager(sqlstore *store)
 
 	// In the main loop we always hold the lock except when sleeping or doing cleanups
 	MT_lock_set(&store->flush);
+	store->debug |= 1024;		/* first time, activate log */
 
 	for (;;) {
 		const int idle = ATOMIC_GET(&GDKdebug) & TESTINGMASK ? 5000 : IDLE_TIME * 1000000;
