@@ -1234,6 +1234,46 @@ rel_merge_select_rse(visitor *v, sql_rel *rel)
 					append(nexps, exps->h->data);
 				else
 					append(nexps, e);
+
+				if (!changed && list_length(exps) <= 4) {
+					node *n = exps->h;
+					sql_exp *e1 = n->data;
+
+					if (e1->type == e_cmp && e1->flag == cmp_con && !is_semantics(e1) && !is_anti(e1)) {
+						list *e1l = e1->l, *enl = NULL;
+						for (node *m = n->next; m; m = m->next) {
+							sql_exp *e2 = m->data;
+							if (e2->type == e_cmp && e2->flag == cmp_con && !is_semantics(e2) && !is_anti(e2)) {
+								/* for each compare with equal columns make an new expression with dis */
+								list *e2l = e2->l;
+								for (node *e1n = e1l->h; e1n; e1n = e1n->next) {
+									sql_exp *e1e = e1n->data;
+									if (!is_semantics(e1e) && !is_anti(e1e)) {
+										for (node *e2n = e2l->h; e2n; e2n = e2n->next) {
+											sql_exp *e2e = e2n->data, *fnd = NULL;
+											/* TODO also handle ranges again !! */
+											if (!is_semantics(e2e) && !is_anti(e2e) && exps_match_col_exps(e1e, e2e) && (fnd = exp_or2in(v->sql, e1e, e2e)) != NULL) {
+												if (!enl)
+													enl = sa_list(v->sql->sa);
+												append(enl, fnd);
+												break;
+											}
+										}
+									}
+								}
+								if (list_empty(enl))
+									break;
+								e1l = enl;
+								if (m->next)
+									enl = NULL;
+							} else {
+								break;
+							}
+						}
+						if (!list_empty(enl))
+							append(nexps, exp_conjunctive(v->sql->sa, enl));
+					}
+				}
 			} else {
 				append(nexps, e);
 			}

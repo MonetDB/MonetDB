@@ -456,10 +456,10 @@ rel_merge_table_rewrite_(visitor *v, sql_rel *rel)
 	if (is_groupby(rel->op)) {
 		sql_rel *l = rel->l;
 		if (is_modify(l->op))
-			return rel_propagate(v, rel);
+			return rel_propagate_updates(v, rel);
 	}
 	if (is_modify(rel->op)) {
-		return rel_propagate(v, rel);
+		return rel_propagate_updates(v, rel);
 	} else {
 		sql_rel *bt = rel, *sel = NULL, *nrel = NULL;
 
@@ -586,9 +586,9 @@ const sql_optimizer pre_sql_optimizers[] = {
 	{11, "optimize_unions_topdown", bind_optimize_unions_topdown},
 	{12, "optimize_projections", bind_optimize_projections},
 	{13, "optimize_joins", bind_optimize_joins},
-	{14, "join_order", bind_join_order},
-	{15, "optimize_semi_and_anti", bind_optimize_semi_and_anti},
-	{16, "optimize_select_and_joins_topdown", bind_optimize_select_and_joins_topdown},
+	{14, "optimize_semi_and_anti", bind_optimize_semi_and_anti},
+	{15, "optimize_select_and_joins_topdown", bind_optimize_select_and_joins_topdown},
+	{16, "join_order", bind_join_order},
 	{17, "dce", bind_dce},
 	{18, "push_func_and_select_down", bind_push_func_and_select_down},
 	{19, "push_topn_and_sample_down", bind_push_topn_and_sample_down},

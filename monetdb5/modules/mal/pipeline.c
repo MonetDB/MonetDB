@@ -183,8 +183,7 @@ PPcounter_get(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void)mb;
 	int *cur = getArgReference_int(stk, pci, 0);
 	bat cb = *getArgReference_bat(stk, pci, 1);
-	Pipeline *p = (Pipeline*)*getArgReference_ptr(stk, pci, 2);
-	//	Pipeline *p = MT_thread_getdata();
+	Pipeline *p = pipeline_get_thread_private_pipeline();
 
 	BAT *b = BATdescriptor(cb);
 	if (!b)
@@ -296,7 +295,7 @@ PPdone(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bit *res = getArgReference_bit(stk, pci, 0);
 	bat B = *getArgReference_bat(stk, pci, 1);
 	bit redo = *getArgReference_bit(stk, pci, 2);
-	Pipeline *p = (Pipeline*)*getArgReference_ptr(stk, pci, 3);
+	Pipeline *p = pipeline_get_thread_private_pipeline();
 
 	(void)cntxt; (void)mb;
 	BAT *b = BATdescriptor(B);
@@ -400,7 +399,7 @@ PPconcat_block(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat cb = *getArgReference_bat(stk, pci, 1);
 	int blockid = *getArgReference_int(stk, pci, 2);
 	bit prefcnd = *getArgReference_bit(stk, pci, 3);
-	Pipeline *p = (Pipeline*)*getArgReference_ptr(stk, pci, 4);
+	Pipeline *p = pipeline_get_thread_private_pipeline();
 
 	if (prefcnd) {
 		*r = false;
@@ -680,16 +679,14 @@ static mel_func pipeline_init_funcs[] = {
 	 batargany("col", 1), /* BAT to be sliced into nparts for the counter */
 	 arg("sync", bool)	/* sync (ie all workers need to call this counter once, before any can continue) */
  )),
- pattern("pipeline", "counter_get", PPcounter_get, true, "return current number from the counter", args(1,3,
+ pattern("pipeline", "counter_get", PPcounter_get, true, "return current number from the counter", args(1,2,
 	 arg("", int),
-	 batarg("sink", bte),
-	 arg("pipeline", ptr)
+	 batarg("sink", bte)
  )),
- pattern("pipeline", "done", PPdone, true, "return counter based on source, != 0 means done", args(1,4,
+ pattern("pipeline", "done", PPdone, true, "return counter based on source, != 0 means done", args(1,3,
 	 arg("res", bit),
 	 batargany("b", 1),
-	 arg("redo", bit),
-	 arg("pipeline", ptr)
+	 arg("redo", bit)
  )),
  pattern("pipeline", "concat", PPconcat, false, "This source iterates sequentialy through the input sources", args(1,2,
 	 batarg("sink", bte),
@@ -700,12 +697,11 @@ static mel_func pipeline_init_funcs[] = {
 	 batarg("concat", bte),
 	 batargany("input", 1)
  )),
- pattern("pipeline", "concat_block", PPconcat_block, false, "Add source to concat", args(1,5,
+ pattern("pipeline", "concat_block", PPconcat_block, false, "Add source to concat", args(1,4,
 	 arg("res", bit),
 	 batarg("concat", bte),
 	 arg("blockid", int),
-	 arg("prefcond", bit),
-	 arg("pipeline", ptr)
+	 arg("prefcond", bit)
  )),
  pattern("pipeline", "resultset", PPresultset, false, "return sink for synchronizing appends into resultset", args(1,1,
 	 batarg("sink", bte)

@@ -957,7 +957,6 @@ pipeline_leave(backend *be, stmt *pp)
 			return NULL;
 		r = pushArgument(be->mb, r, be->source /* source/sink bat */);
 		r = pushBit(be->mb, r, false);
-		r = pushArgument(be->mb, r, getArg(pp->q, 2) /* pipeline */);
 		//int arg = getDestVar(r);
 		pushInstruction(be->mb, r);
 		/*
@@ -1054,7 +1053,6 @@ stmt_pp_jump(backend *be, stmt *label, int nrparts)
 		//getArg(r, 0) = getArg(label->q, 1); /* counter variable */
 		r = pushArgument(be->mb, r, be->source /* source/sink bat */);
 		r = pushBit(be->mb, r, true);
-		r = pushArgument(be->mb, r, getArg(label->q, 2) /* pipeline */);
 		arg = getDestVar(r);
 	}
 	pushInstruction(be->mb, r);
@@ -1259,7 +1257,6 @@ stmt_concat_barrier(backend *be, int concat, int blockid, int prefcond)
 	} else {
 		q = pushBit(be->mb, q, FALSE);
 	}
-	q = pushArgument(be->mb, q, be->pipeline);
 	q->barrier = BARRIERsymbol;
 	pushInstruction(be->mb, q);
 	return getArg(q, 0);
@@ -1336,7 +1333,6 @@ pp_counter_get(backend *be, int counter)
 	InstrPtr q = newStmt(be->mb, "pipeline", "counter_get");
 	q->argv[0] = be->pp;
 	q = pushArgument(be->mb, q, counter);
-	q = pushArgument(be->mb, q, be->pipeline);
 	pushInstruction(be->mb, q);
 	return getArg(q, 0);
 }

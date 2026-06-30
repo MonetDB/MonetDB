@@ -1800,7 +1800,7 @@ generator_free(generator *g)
 	GDKfree(g);
 }
 
-static bool
+static int
 generator_done(generator *g, int wid, int nr_workers, int redo)
 {
 	assert(g->pl_io.type == GENERATOR_SOURCE);

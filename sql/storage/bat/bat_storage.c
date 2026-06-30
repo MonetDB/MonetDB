@@ -2936,6 +2936,24 @@ sorted_col(sql_trans *tr, sql_column *col)
 }
 
 static int
+sorted_idx(sql_trans *tr, sql_idx *idx)
+{
+	int sorted = 0;
+
+	assert(tr->active);
+	if (!isTable(idx->t) || !idx->t->s)
+		return 0;
+
+	if (idx && ATOMIC_PTR_GET(&idx->data)) {
+		BAT *b = bind_idx(tr, idx, QUICK);
+
+		if (b)
+			sorted = b->tsorted || b->trevsorted;
+	}
+	return sorted;
+}
+
+static int
 unique_col(sql_trans *tr, sql_column *col)
 {
 	int distinct = 0;
@@ -5303,6 +5321,7 @@ bat_storage_init( store_functions *sf)
 	sf->min_max_col = &min_max_col;
 	sf->set_stats_col = &set_stats_col;
 	sf->sorted_col = &sorted_col;
+	sf->sorted_idx = &sorted_idx;
 	sf->unique_col = &unique_col;
 	sf->double_elim_col = &double_elim_col;
 	sf->col_stats = &col_stats;

@@ -1523,10 +1523,17 @@ mvc_access(mvc *m, sql_table *t, sht access)
 }
 
 int
-mvc_is_sorted(mvc *m, sql_column *col)
+mvc_is_sorted_col(mvc *m, sql_column *col)
 {
 	TRC_DEBUG(SQL_TRANS, "Is sorted: %s\n", col->base.name);
-	return sql_trans_is_sorted(m->session->tr, col);
+	return sql_trans_is_sorted_col(m->session->tr, col);
+}
+
+int
+mvc_is_sorted_idx(mvc *m, sql_idx *idx)
+{
+	TRC_DEBUG(SQL_TRANS, "Is sorted: %s\n", idx->base.name);
+	return sql_trans_is_sorted_idx(m->session->tr, idx);
 }
 
 int
