@@ -50030,7 +50030,7 @@ PPconcat_add
 Add source to concat
 pipeline
 concat_block
-pattern pipeline.concat_block(X_0:bat[:bte], X_1:int, X_2:bit, X_3:ptr):bit
+pattern pipeline.concat_block(X_0:bat[:bte], X_1:int, X_2:bit):bit
 PPconcat_block
 Add source to concat
 pipeline
@@ -50055,12 +50055,12 @@ PPcounter
 return counter source
 pipeline
 counter_get
-unsafe pattern pipeline.counter_get(X_0:bat[:bte], X_1:ptr):int
+unsafe pattern pipeline.counter_get(X_0:bat[:bte]):int
 PPcounter_get
 return current number from the counter
 pipeline
 done
-unsafe pattern pipeline.done(X_0:bat[:any_1], X_1:bit, X_2:ptr):bit
+unsafe pattern pipeline.done(X_0:bat[:any_1], X_1:bit):bit
 PPdone
 return counter based on source, != 0 means done
 pipeline
