@@ -456,10 +456,10 @@ rel_merge_table_rewrite_(visitor *v, sql_rel *rel)
 	if (is_groupby(rel->op)) {
 		sql_rel *l = rel->l;
 		if (is_modify(l->op))
-			return rel_propagate(v, rel);
+			return rel_propagate_updates(v, rel);
 	}
 	if (is_modify(rel->op)) {
-		return rel_propagate(v, rel);
+		return rel_propagate_updates(v, rel);
 	} else {
 		sql_rel *bt = rel, *sel = NULL, *nrel = NULL;
 

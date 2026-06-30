@@ -1090,7 +1090,7 @@ rel_find_propagate( sql_rel *rel)
 }
 
 sql_rel *
-rel_propagate(visitor *v, sql_rel *rel)
+rel_propagate_updates(visitor *v, sql_rel *rel)
 {
 	mvc *sql = v->sql;
 	bool isSubtable = false;
