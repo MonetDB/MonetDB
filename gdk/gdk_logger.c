@@ -2888,8 +2888,9 @@ log_activate(logger *lg)
 	    !lg->current->next &&
 	    current_file_size > 2 &&
 	    (ATOMIC_GET(&lg->current->drops) > (ulng)lg->max_dropped ||
-		    current_file_size > lg->max_file_size ||
-		    (GDKusec() - lg->file_age) > lg->max_file_age) &&
+	     current_file_size > lg->max_file_size ||
+	     (GDKusec() - lg->file_age) > lg->max_file_age ||
+	     lg->saved_id == 0 /* first time only */) &&
 	    (ulng) ATOMIC_GET(&lg->current->last_ts) > 0 &&
 	    lg->saved_id + 1 == lg->id &&
 	    ATOMIC_GET(&lg->current->refcount) == 1 /* no pending work on this file */ ) {

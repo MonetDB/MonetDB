@@ -92,7 +92,7 @@ BuildRequires: hardlink
 BuildRequires: cmake >= 3.12
 BuildRequires: gcc
 BuildRequires: bison
-BuildRequires: python3-devel
+BuildRequires: python3-rpm-macros
 %if %{?rhel:1}%{!?rhel:0}
 # RH 7 (and for readline also 8)
 BuildRequires: bzip2-devel
@@ -155,6 +155,7 @@ Summary: MonetDB development files
 Group: Applications/Databases
 Requires: %{name}%{?_isa} = %{version}-%{release}
 Requires: %{name}-stream-devel%{?_isa} = %{version}-%{release}
+Requires: %{name}-client-devel%{?_isa} = %{version}-%{release}
 
 %description devel
 MonetDB is a database management system that is developed from a
@@ -405,7 +406,6 @@ Recommends: perl-DBD-monetdb >= 1.0
 Recommends: php-monetdb >= 1.0
 Requires: %{name}-server%{?_isa} = %{version}-%{release}
 Recommends: python3dist(lz4)
-Recommends: python3dist(scipy)
 
 %description client-tests
 MonetDB is a database management system that is developed from a

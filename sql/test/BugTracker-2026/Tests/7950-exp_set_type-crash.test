@@ -1,0 +1,32 @@
+-- query without the complex 'ORDER BY x IN ( SELECT ... ) ASC' part doesn't crash
+query TR rowsort
+SELECT nth_value ( ( EXISTS ( SELECT 1 WHERE x > 0.100000 + 0.100000 + 0.100000 + 0.100000 + 0.100000 + 0.100000 + 0.100000 + 0.100000 + 0.100000 + 0.100000 + 0.100000 + 0.100000 + 0.100000 + 0.100000 + 0.100000 + 0.100000 + 0.100000 + 0.100000 + 0.100000 + 0.100000 * 0.100000 + 0.100000 AND ( x IS NULL OR x IS NULL )
+                            )
+                   ) IN ( ( SELECT FALSE
+                          )
+                        ) , 1 ) OVER ( )
+ , LOG ( DISTINCT x )
+  FROM ( SELECT CAST( NULL AS VARCHAR ) AS x
+          UNION
+         SELECT CAST( NULL AS VARCHAR ) AS x )
+----
+True
+NULL
+
+-- the orginal reported query
+-- it crashes in exp_set_type (v=0x7fba7ce35790, rel=0x7fba4821cca0, e=0x7fba481be3f0, depth=0) at sql/server/rel_unnest.c:2786
+query TR rowsort
+SELECT nth_value ( ( EXISTS ( SELECT 1 WHERE x > 0.100000 + 0.100000 + 0.100000 + 0.100000 + 0.100000 + 0.100000 + 0.100000 + 0.100000 + 0.100000 + 0.100000 + 0.100000 + 0.100000 + 0.100000 + 0.100000 + 0.100000 + 0.100000 + 0.100000 + 0.100000 + 0.100000 + 0.100000 * 0.100000 + 0.100000 AND ( x IS NULL OR x IS NULL )
+                            )
+                   ) IN ( ( SELECT FALSE
+                             ORDER BY x IN ( SELECT x WHERE x = x OR ( x = 1 AND x = 1 ) GROUP BY cube ( x , x , x ) HAVING CASE WHEN NOT - 10 IS NULL AND NULL IS NULL THEN NULL WHEN - - 39 * - 89 NOT IN ( - 51 * - - 12 * - 27 * CASE WHEN NOT '_b_' IN ( - 69 , ( VAR_POP ( DISTINCT CAST( NULL AS INTEGER ) ) ) + MAX ( - 6 ) + - COUNT ( * ) / - - ( 77 ) + 37 , 44 , - - 0 * 23 , - - 86 , '_b%' , 'abc' , ( SELECT 10 ) , FALSE ) THEN 41 WHEN NOT - 21 / - 95 IS NOT NULL THEN 63 END , COUNT ( * ) / 67 ) THEN COUNT ( 54 ) END > 1 ) ASC
+                          )
+                        ) , 1 ) OVER ( )
+ , LOG ( DISTINCT x )
+  FROM ( SELECT CAST( NULL AS VARCHAR ) AS x
+          UNION
+         SELECT CAST( NULL AS VARCHAR ) AS x )
+----
+True
+NULL
+

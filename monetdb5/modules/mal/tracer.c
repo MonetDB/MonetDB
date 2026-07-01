@@ -175,7 +175,7 @@ static mel_func tracer_init_funcs[] = {
  command("logging", "resetflushlevel", TRACERreset_flush_level, true, "Resets the flush level back to the default", args(1,1, arg("",void))),
  command("logging", "setadapter", TRACERset_adapter, true, "Sets the adapter", args(1,2, arg("",void),arg("adapter",str))),
  command("logging", "resetadapter", TRACERreset_adapter, true, "Resets the adapter back to the default", args(1,1, arg("",void))),
- pattern("logging", "compinfo", TRACERcomp_info, false, "Returns in the form of a SQL result-set all the components along with their ID\nand the their current logging level being set", args(3,3, batarg("id",int),batarg("component",str),batarg("log_level",str))),
+ pattern("logging", "compinfo", TRACERcomp_info, false, "Returns in the form of a SQL result-set all the components along with their ID and the their current logging level being set", args(3,3, batarg("id",int),batarg("component",str),batarg("log_level",str))),
  { .imp=NULL }
 };
 #include "mal_import.h"
