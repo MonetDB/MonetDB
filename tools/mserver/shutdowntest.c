@@ -254,7 +254,7 @@ static str monetdb_initialize(void) {
 		assert(MT_thread_getallocator() != NULL);
 	}
 
-	char *modules[2];
+	const char *modules[2];
 	modules[0] = "sql";
 	modules[1] = 0;
 	if (mal_init(modules, true, NULL, NULL) != 0) { // mal_init() does not return meaningful codes on failure
