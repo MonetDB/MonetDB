@@ -31,7 +31,7 @@
  * The startup script is run as user Admin.
  */
 str
-malBootstrap(char *modules[], bool embedded, const char *initpasswd)
+malBootstrap(const char *modules[const], bool embedded, const char *initpasswd)
 {
 	Client c;
 

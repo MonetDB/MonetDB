@@ -994,8 +994,8 @@ monetdbe_load_extension(monetdbe_database dbhdl, const char *file)
 	if ((mdbe->msg = validate_database_handle(mdbe, "embedded.monetdbe_dump_database")) != MAL_SUCCEED) {
 		return mdbe->msg;
 	}
-	char *modules[2];
-	modules[0] = (char*)file;
+	const char *modules[2];
+	modules[0] = file;
 	modules[1] = NULL;
 	char *msg = loadLibrary(file, -1);
 	if (msg)
