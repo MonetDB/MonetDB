@@ -1210,6 +1210,7 @@ rel2bin_groupby_pp(backend *be, sql_rel *rel, list *refs)
 						n = pushArgument(be->mb, n, getArg(mp, 0));
 						n = pushArgument(be->mb, n, getArg(rem, 0));
 						pushInstruction(be->mb, n);
+						m = m->next; /* skip count */
 						mp = n;
 					} else if (strcmp(sf->func->base.name, "avg") == 0 && EC_APPNUM(tpe->type->eclass)) {
 						m = m->next;
