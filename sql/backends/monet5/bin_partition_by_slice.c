@@ -187,20 +187,20 @@ typedef struct pp_aggr_t {
 	bte eclass; // any or all
 	char *name;
 	bte nr;
-	int intermediate_types[3]; /* 0-255 -> type, 256 type of result, 257 first arg type */
+	char intermediate_types[3]; /* 0-128 -> type, -1 type of result, -2 first arg type */
 	bool finalize;
 } pp_aggr_t;
 
 pp_aggr_t aggrs[10] =
 {
-	{EC_FLT, "avg", 3, {257, 257, TYPE_lng}, true}, //decimals needs compansation in same integer type
-	{EC_ANY, "avg", 3, {257, TYPE_lng, TYPE_lng}, true},
-	{EC_FLT, "sum", 3, {256, 256, TYPE_lng}, false}, //floats kahan/neumair need rsum, rcom and rcnt
-	{EC_ANY, "sum", 1, {256}, false},
+	{EC_FLT, "avg", 3, {-2, -2, TYPE_lng}, true}, //decimals needs compansation in same integer type
+	{EC_ANY, "avg", 3, {-2, TYPE_lng, TYPE_lng}, true},
+	{EC_FLT, "sum", 3, {-2, -2, TYPE_lng}, false}, //floats kahan/neumair need rsum, rcom and rcnt
+	{EC_ANY, "sum", 1, {-2}, false},
 	{EC_ANY, "count", 1, {TYPE_lng}, false},
-	{EC_ANY, "min", 1, {256}, false},
-	{EC_ANY, "max", 1, {256}, false},
-	{EC_ANY, "prod", 1, {256}, false},
+	{EC_ANY, "min", 1, {-1}, false},
+	{EC_ANY, "max", 1, {-1}, false},
+	{EC_ANY, "prod", 1, {-1}, false},
 	{EC_ANY, "null", 1, {TYPE_bit}, false},
 };
 
@@ -1184,15 +1184,56 @@ rel2bin_groupby_pp(backend *be, sql_rel *rel, list *refs)
 			}
 			cursub = stmt_list(be, nl);
 			cursub->partition = 1;
-		} else
-		if (!neededpp) {
+		} else if (!neededpp) {
 			list *nl = sa_list(be->mvc->sa);
-			for(node *n = l->h; n && m; n = n->next, m = m->next ) {
+			for(node *n = l->h, *o = rel->exps->h; n && m && o; n = n->next, m = m->next, o = o->next ) {
 				stmt *aggrstmt = n->data;
 
 				InstrPtr mp = newStmt(be->mb, "mat", "pack");
 				mp = pushArgument(be->mb, mp, *(int*)m->data);
 				pushInstruction(be->mb, mp);
+
+				sql_exp *e = o->data;
+				if (is_aggr(e->type)) {
+					sql_subfunc *sf = e->f;
+					sql_subtype *tpe = exp_subtype(e);
+					if (strcmp(sf->func->base.name, "sum") == 0 && EC_APPNUM(tpe->type->eclass)) {
+						m = m->next;
+						InstrPtr rem = newStmt(be->mb, "mat", "pack");
+						rem = pushArgument(be->mb, rem, *(int*)m->data);
+						pushInstruction(be->mb, rem);
+
+						InstrPtr n = newAssignment(be->mb);
+						/* outputs */
+						setVarType(be->mb, getArg(n, 0), newBatType(tpe->type->localtype));
+						n = pushReturn(be->mb, n, newTmpVariable(be->mb, TYPE_any));
+						n = pushArgument(be->mb, n, getArg(mp, 0));
+						n = pushArgument(be->mb, n, getArg(rem, 0));
+						pushInstruction(be->mb, n);
+						mp = n;
+					} else if (strcmp(sf->func->base.name, "avg") == 0 && EC_APPNUM(tpe->type->eclass)) {
+						m = m->next;
+						InstrPtr rem = newStmt(be->mb, "mat", "pack");
+						rem = pushArgument(be->mb, rem, *(int*)m->data);
+						pushInstruction(be->mb, rem);
+
+						m = m->next;
+						InstrPtr cnt = newStmt(be->mb, "mat", "pack");
+						cnt = pushArgument(be->mb, cnt, *(int*)m->data);
+						pushInstruction(be->mb, cnt);
+
+						InstrPtr n = newAssignment(be->mb);
+						/* outputs */
+						setVarType(be->mb, getArg(n, 0), newBatType(tpe->type->localtype));
+						n = pushReturn(be->mb, n, newTmpVariable(be->mb, TYPE_any));
+						n = pushReturn(be->mb, n, newTmpVariable(be->mb, TYPE_any));
+						n = pushArgument(be->mb, n, getArg(mp, 0));
+						n = pushArgument(be->mb, n, getArg(rem, 0));
+						n = pushArgument(be->mb, n, getArg(cnt, 0));
+						pushInstruction(be->mb, n);
+						mp = n;
+					}
+				}
 				/* keep names from aggrstmt */
 				aggrstmt = stmt_instruction(be, mp, aggrstmt);
 
