@@ -143,3 +143,4 @@ KNOWNFAIL?7954-exp_visitor-crash
 KNOWNFAIL?7955-rel_setop_get_statistics-crash
 KNOWNFAIL?7956-rel_remove_const_aggr-crash
 KNOWNFAIL?7957-tail_type-crash
+7959-double-function-destroy

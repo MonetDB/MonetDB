@@ -53,32 +53,13 @@ statement ok
 CREATE TABLE "sys"."t0" ("c0" BOOLEAN,"c1" DECIMAL(14,3))
 
 statement ok rowcount 7
-COPY 7 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"'
-<COPY_INTO_DATA>
-false	0.458
-true	4.112
-false	0.201
-false	0.347
-true	0.420
-false	0.127
-false	0.502
+insert into t0 values(false, 0.458), (true, 4.112), (false, 0.201), (false, 0.347), (true, 0.420), (false, 0.127), (false, 0.502)
 
 statement ok
 CREATE TABLE "sys"."t1" ("c0" BOOLEAN,"c1" DECIMAL(14,3))
 
 statement ok rowcount 10
-COPY 10 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"'
-<COPY_INTO_DATA>
-NULL	0.000
-false	0.187
-false	0.000
-false	NULL
-false	NULL
-true	NULL
-NULL	0.325
-NULL	0.374
-true	NULL
-true	NULL
+insert into t1 values(NULL, 0.000), (false, 0.187), (false, 0.000), (false, NULL), (false, NULL), (true, NULL), (NULL, 0.325), (NULL, 0.374), (true, NULL), (true, NULL)
 
 statement error GDK reported error: BATsubcross: more than one match
 select 1 from t1, t0 where cast(t1.c1 as clob) not like ((select 'A' from t0, t1) except all (select 'B' from t0))

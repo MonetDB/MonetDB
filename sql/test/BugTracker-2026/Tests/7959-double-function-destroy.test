@@ -1,0 +1,18 @@
+statement ok
+PREPARE SELECT 1
+
+statement error
+SELECT * FROM non_existent_table
+
+query I
+SELECT 1
+----
+1
+
+statement error
+SELECT * FROM another_non_existent_table;
+
+query I
+SELECT 1
+----
+1
