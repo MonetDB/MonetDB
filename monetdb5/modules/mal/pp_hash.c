@@ -970,7 +970,7 @@ OAHASHbuild_tbl(Client ctx, bat *slot_id, bat *ht_sink, const bat *key)
 	BATsetcount(g, cnt);
 	BATnegateprops(g);
 	gid last = ATOMIC_GET(&h->last);
-	g->tmaxval = last;
+	g->tmaxval = (oid) last;
 	g->tkey = FALSE;
 	*slot_id = g->batCacheid;
 	//skip propcheck
