@@ -2464,11 +2464,12 @@ distinct_join_exps(list *aje, list *lrels, list *rrels)
 	return res;
 }
 
-static list *
+static void
 find_fk( mvc *sql, list *rels, list *exps)
 {
 	node *djn;
-	list *sdje, *aje, *dje;
+	//list *sdje, *aje, *dje;
+	list *aje, *dje;
 	list *lrels, *rrels;
 
 	/* first find the distinct join expressions */
@@ -2573,8 +2574,8 @@ find_fk( mvc *sql, list *rels, list *exps)
 	}
 
 	/* sort expressions on weighted number of reducing operators */
-	sdje = order_join_expressions(sql, dje, rels);
-	return sdje;
+	//sdje = order_join_expressions(sql, dje, rels);
+	//return sdje;
 }
 
 static int
@@ -2807,7 +2808,18 @@ order_joins(visitor *v, list *rels, list *exps)
 	int direct = 1;
 
 	/* find foreign keys and reorder the expressions on reducing quality */
-	sdje = find_fk(v->sql, rels, exps);
+	//sdje = find_fk(v->sql, rels, exps);
+
+	/* first find the distinct join expressions */
+	list *aje = list_select(exps, rels, (fcmp) &exp_is_join, (fdup)NULL);
+	/* add left/right relation */
+	list *lrels, *rrels, *dje;
+	if (find_join_rels(&lrels, &rrels, aje, rels) < 0)
+		dje = aje;
+	else
+		dje = distinct_join_exps(aje, lrels, rrels);
+	/* sort expressions on weighted number of reducing operators */
+	sdje = order_join_expressions(v->sql, dje, rels);
 
 	for(djn = sdje->h; djn; djn = djn->next ) {
 		sql_exp *e = djn->data;
@@ -3254,7 +3266,7 @@ reorder_join(visitor *v, sql_rel *rel)
 			/* try to use an join index also for outer joins */
 			get_inner_relations(v->sql, rel, rels);
 			int cnt = list_length(exps);
-			rel->exps = find_fk(v->sql, rels, exps);
+			rel->exps = exps;//find_fk(v->sql, rels, exps);
 			if (list_length(rel->exps) != cnt)
 				rel->exps = order_join_expressions(v->sql, exps, rels);
 		}
@@ -3723,14 +3735,14 @@ bind_optimize_semi_and_anti(visitor *v, global_props *gp)
 static sql_rel *
 rel_semijoin_use_fk(visitor *v, sql_rel *rel)
 {
-	if (is_semi(rel->op) && rel->exps) {
+	if ((is_semi(rel->op) || is_join(rel->op)) && rel->exps) {
 		list *exps = rel->exps;
 		list *rels = sa_list(v->sql->sa);
 
 		rel->exps = NULL;
 		append(rels, rel->l);
 		append(rels, rel->r);
-		(void) find_fk( v->sql, rels, exps);
+		find_fk( v->sql, rels, exps);
 
 		rel->exps = exps;
 	}
@@ -4634,7 +4646,7 @@ rel_optimize_select_and_joins_topdown_(visitor *v, sql_rel *rel)
 	/* push_join_down introduces semijoins */
 	uint8_t cycle = *(uint8_t*) v->data;
 	if (cycle <= 0) {
-		rel = rel_semijoin_use_fk(v, rel);
+		rel = rel_semijoin_use_fk(v, rel); // also for inners
 		rel = rel_push_join_down(v, rel);
 	}
 
