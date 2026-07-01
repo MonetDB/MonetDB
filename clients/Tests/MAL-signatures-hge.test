@@ -50472,12 +50472,12 @@ sql
 bind
 pattern sql.bind(X_0:int, X_1:str, X_2:str, X_3:str, X_4:int, X_5:int) (X_6:bat[:oid], X_7:bat[:any_1])
 mvc_bind_wrap
-Bind the 'schema.table.column' BAT with access kind:@0 - base table@1 - inserts@2 - updates
+Bind the 'schema.table.column' BAT with access kind: 0 - base table 1 - inserts 2 - updates
 sql
 bind
 pattern sql.bind(X_0:int, X_1:str, X_2:str, X_3:str, X_4:int, X_5:int):bat[:any_1]
 mvc_bind_wrap
-Bind the 'schema.table.column' BAT partition with access kind:@0 - base table@1 - inserts@2 - updates
+Bind the 'schema.table.column' BAT partition with access kind: 0 - base table 1 - inserts 2 - updates
 sql
 bind
 pattern sql.bind(X_0:int, X_1:str, X_2:str, X_3:str, X_4:int, X_5:int, X_6:int) (X_7:bat[:oid], X_8:bat[:any_1])
@@ -50502,12 +50502,12 @@ sql
 bind_idxbat
 pattern sql.bind_idxbat(X_0:int, X_1:str, X_2:str, X_3:str, X_4:int, X_5:int) (X_6:bat[:oid], X_7:bat[:any_1])
 mvc_bind_idxbat_wrap
-Bind the 'schema.table.index' BAT with access kind:@0 - base table@1 - inserts@2 - updates
+Bind the 'schema.table.index' BAT with access kind: 0 - base table 1 - inserts 2 - updates
 sql
 bind_idxbat
 pattern sql.bind_idxbat(X_0:int, X_1:str, X_2:str, X_3:str, X_4:int, X_5:int):bat[:any_1]
 mvc_bind_idxbat_wrap
-Bind the 'schema.table.index' BAT with access kind:@0 - base table@1 - inserts@2 - updates
+Bind the 'schema.table.index' BAT with access kind: 0 - base table 1 - inserts 2 - updates
 sql
 bind_idxbat
 pattern sql.bind_idxbat(X_0:int, X_1:str, X_2:str, X_3:str, X_4:int, X_5:int, X_6:int) (X_7:bat[:oid], X_8:bat[:any_1])
@@ -51037,7 +51037,7 @@ sql
 mvc
 unsafe pattern sql.mvc(X_0:int):int
 SQLmvc
-Get the multiversion catalog context. @Needed for correct statement dependencies@(ie sql.update, should be after sql.bind in concurrent execution)
+Get the multiversion catalog context. Needed for correct statement dependencies (ie sql.update, should be after sql.bind in concurrent execution)
 sql
 next_value
 unsafe pattern sql.next_value(X_0:str, X_1:str):lng
