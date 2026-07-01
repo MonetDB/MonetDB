@@ -2146,7 +2146,7 @@ static mel_func calc_init_funcs[] = {
  pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",dbl),arg("v1",dbl),arg("v2",flt))),
  pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",dbl),arg("v1",dbl),arg("v2",dbl))),
  pattern("mmath", "fmod", CMDvarMOD, false, "", args(1,3, arg("",flt),arg("y",flt),arg("x",flt))),
- pattern("mmath", "fmod", CMDvarMOD, false, "The fmod(x,y) function computes the remainder of dividing x by y.\nThe return value is x - n * y, where n is the quotient of x / y,\nrounded towards zero to an integer.", args(1,3, arg("",dbl),arg("y",dbl),arg("x",dbl))),
+ pattern("mmath", "fmod", CMDvarMOD, false, "The fmod(x,y) function computes the remainder of dividing x by y. The return value is x - n * y, where n is the quotient of x / y, rounded towards zero to an integer.", args(1,3, arg("",dbl),arg("y",dbl),arg("x",dbl))),
  pattern("calc", "and", CMDvarAND, false, "Return V1 AND V2", args(1,3, arg("",bit),arg("v1",bit),arg("v2",bit))),
  pattern("calc", "and", CMDvarAND, false, "Return V1 AND V2", args(1,3, arg("",bte),arg("v1",bte),arg("v2",bte))),
  pattern("calc", "and", CMDvarAND, false, "Return V1 AND V2", args(1,3, arg("",sht),arg("v1",sht),arg("v2",sht))),

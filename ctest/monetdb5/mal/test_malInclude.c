@@ -29,7 +29,7 @@ main(void)
 		fprintf(stderr, "GDKinit() failed\n");
 		return 1;
     }
-    char *modules[2];
+    const char *modules[2];
     modules[0] = "sql";
     modules[1] = 0;
     mal_init(modules, true, NULL, NULL);

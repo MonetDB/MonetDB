@@ -5485,7 +5485,6 @@ SQLstr_stop_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #include "sql_assert.h"
 #include "sql_execute.h"
 #include "sql_orderidx.h"
-#include "sql_strimps.h"
 #include "sql_subquery.h"
 #include "sql_statistics.h"
 #include "sql_transaction.h"
@@ -5698,8 +5697,8 @@ static mel_func sql_init_funcs[] = {
  pattern("sql", "shutdown", SQLshutdown_wrap, true, "", args(1,2, arg("",str),arg("delay",sht))),
  pattern("sql", "shutdown", SQLshutdown_wrap, true, "", args(1,2, arg("",str),arg("delay",int))),
  pattern("sql", "set_protocol", SQLset_protocol, true, "Configures the result set protocol", args(1,2, arg("",int), arg("protocol",int))),
- pattern("sql", "mvc", SQLmvc, false, "Get the multiversion catalog context. \nNeeded for correct statement dependencies\n(ie sql.update, should be after sql.bind in concurrent execution)", args(1,1, arg("",int))),
- pattern("sql", "mvc", SQLmvc, true, "Get the multiversion catalog context. \nNeeded for correct statement dependencies\n(ie sql.update, should be after sql.bind in concurrent execution)", args(1,2, arg("",int), arg("in",int))),
+ pattern("sql", "mvc", SQLmvc, false, "Get the multiversion catalog context. Needed for correct statement dependencies (ie sql.update, should be after sql.bind in concurrent execution)", args(1,1, arg("",int))),
+ pattern("sql", "mvc", SQLmvc, true, "Get the multiversion catalog context. Needed for correct statement dependencies (ie sql.update, should be after sql.bind in concurrent execution)", args(1,2, arg("",int), arg("in",int))),
  pattern("sql", "eval", SQLstatement, true, "Compile and execute a single sql statement", args(1,2, arg("",void),arg("cmd",str))),
  pattern("sql", "eval", SQLstatement, true, "Compile and execute a single sql statement (and optionally set the output to columnar format)", args(1,3, arg("",void),arg("cmd",str),arg("columnar",bit))),
  pattern("sql", "include", SQLinclude, true, "Compile and execute a sql statements on the file", args(1,2, arg("",void),arg("fname",str))),
@@ -5731,40 +5730,38 @@ static mel_func sql_init_funcs[] = {
  pattern("sql", "deltas", mvc_delta_values, false, "Return the delta values sizes of a column, plus the current transaction level", args(7,10, batarg("ids",int),batarg("segments",lng),batarg("all",lng),batarg("inserted",lng),batarg("updated",lng),batarg("deleted",lng),batarg("tr_level",int),arg("schema",str),arg("table",str),arg("column",str))),
 
  pattern("sql", "emptybindidx", mvc_bind_idxbat_wrap, false, "", args(1,6, batargany("",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("index",str),arg("access",int))),
- pattern("sql", "bind_idxbat", mvc_bind_idxbat_wrap, false, "Bind the 'schema.table.index' BAT with access kind:\n0 - base table\n1 - inserts\n2 - updates", args(1,6, batargany("",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("index",str),arg("access",int))),
-
+ pattern("sql", "bind_idxbat", mvc_bind_idxbat_wrap, false, "Bind the 'schema.table.index' BAT with access kind: 0 - base table 1 - inserts 2 - updates", args(1,6, batargany("",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("index",str),arg("access",int))),
  pattern("sql", "emptybindidx", mvc_bind_idxbat_wrap, false, "", args(2,7, batarg("uid",oid),batargany("uval",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("index",str),arg("access",int))),
- pattern("sql", "bind_idxbat", mvc_bind_idxbat_wrap, false, "Bind the 'schema.table.index' BAT with access kind:\n0 - base table\n1 - inserts\n2 - updates", args(2,7, batarg("uid",oid),batargany("uval",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("index",str),arg("access",int))),
-
+ pattern("sql", "bind_idxbat", mvc_bind_idxbat_wrap, false, "Bind the 'schema.table.index' BAT with access kind: 0 - base table 1 - inserts 2 - updates", args(2,7, batarg("uid",oid),batargany("uval",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("index",str),arg("access",int))),
  pattern("sql", "emptybindidx", mvc_bind_idxbat_wrap, false, "", args(1,8, batargany("",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("index",str),arg("access",int),arg("part_nr",int),arg("nr_parts",int))),
- pattern("sql", "bind_idxbat", mvc_bind_idxbat_wrap, false, "Bind the 'schema.table.index' BAT with access kind:\n0 - base table\n1 - inserts\n2 - updates", args(1,8, batargany("",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("index",str),arg("access",int),arg("part_nr",int),arg("nr_parts",int))),
+ pattern("sql", "bind_idxbat", mvc_bind_idxbat_wrap, false, "Bind the 'schema.table.index' BAT with access kind: 0 - base table 1 - inserts 2 - updates", args(1,8, batargany("",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("index",str),arg("access",int),arg("part_nr",int),arg("nr_parts",int))),
 
  pattern("sql", "emptybindidx", mvc_bind_idxbat_wrap, false, "", args(1,7, batargany("",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("index",str),arg("access",int),arg("part_nr",int))),
- pattern("sql", "bind_idxbat", mvc_bind_idxbat_wrap, false, "Bind the 'schema.table.index' BAT with access kind:\n0 - base table\n1 - inserts\n2 - updates", args(1,7, batargany("",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("index",str),arg("access",int),arg("part_nr",int))),
+ pattern("sql", "bind_idxbat", mvc_bind_idxbat_wrap, false, "Bind the 'schema.table.index' BAT with access kind: 0 - base table 1 - inserts 2 - updates", args(1,7, batargany("",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("index",str),arg("access",int),arg("part_nr",int))),
 
  pattern("sql", "emptybindidx", mvc_bind_idxbat_wrap, false, "", args(2,9, batarg("uid",oid),batargany("uval",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("index",str),arg("access",int),arg("part_nr",int),arg("nr_parts",int))),
- pattern("sql", "bind_idxbat", mvc_bind_idxbat_wrap, false, "Bind the 'schema.table.index' BAT with access kind:\n0 - base table\n1 - inserts\n2 - updates", args(2,9, batarg("uid",oid),batargany("uval",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("index",str),arg("access",int),arg("part_nr",int),arg("nr_parts",int))),
+ pattern("sql", "bind_idxbat", mvc_bind_idxbat_wrap, false, "Bind the 'schema.table.index' BAT with access kind: 0 - base table 1 - inserts 2 - updates", args(2,9, batarg("uid",oid),batargany("uval",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("index",str),arg("access",int),arg("part_nr",int),arg("nr_parts",int))),
 
  pattern("sql", "emptybindidx", mvc_bind_idxbat_wrap, false, "", args(2,8, batarg("uid",oid),batargany("uval",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("index",str),arg("access",int),arg("part_nr",int))),
- pattern("sql", "bind_idxbat", mvc_bind_idxbat_wrap, false, "Bind the 'schema.table.index' BAT with access kind:\n0 - base table\n1 - inserts\n2 - updates", args(2,8, batarg("uid",oid),batargany("uval",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("index",str),arg("access",int),arg("part_nr",int))),
+ pattern("sql", "bind_idxbat", mvc_bind_idxbat_wrap, false, "Bind the 'schema.table.index' BAT with access kind: 0 - base table 1 - inserts 2 - updates", args(2,8, batarg("uid",oid),batargany("uval",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("index",str),arg("access",int),arg("part_nr",int))),
 
  pattern("sql", "emptybind", mvc_bind_wrap, false, "", args(1,6, batargany("",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("column",str),arg("access",int))),
- pattern("sql", "bind", mvc_bind_wrap, false, "Bind the 'schema.table.column' BAT with access kind:\n0 - base table\n1 - inserts\n2 - updates", args(1,6, batargany("",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("column",str),arg("access",int))),
+ pattern("sql", "bind", mvc_bind_wrap, false, "Bind the 'schema.table.column' BAT with access kind: 0 - base table 1 - inserts 2 - updates", args(1,6, batargany("",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("column",str),arg("access",int))),
 
  pattern("sql", "emptybind", mvc_bind_wrap, false, "", args(2,7, batarg("uid",oid),batargany("uval",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("column",str),arg("access",int))),
- pattern("sql", "bind", mvc_bind_wrap, false, "Bind the 'schema.table.column' BAT with access kind:\n0 - base table\n1 - inserts\n2 - updates", args(2,7, batarg("uid",oid),batargany("uval",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("column",str),arg("access",int))),
+ pattern("sql", "bind", mvc_bind_wrap, false, "Bind the 'schema.table.column' BAT with access kind: 0 - base table 1 - inserts 2 - updates", args(2,7, batarg("uid",oid),batargany("uval",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("column",str),arg("access",int))),
 
  pattern("sql", "emptybind", mvc_bind_wrap, false, "", args(1,8, batargany("",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("column",str),arg("access",int),arg("part_nr",int),arg("nr_parts",int))),
- pattern("sql", "bind", mvc_bind_wrap, false, "Bind the 'schema.table.column' BAT partition with access kind:\n0 - base table\n1 - inserts\n2 - updates", args(1,8, batargany("",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("column",str),arg("access",int),arg("part_nr",int),arg("nr_parts",int))),
+ pattern("sql", "bind", mvc_bind_wrap, false, "Bind the 'schema.table.column' BAT partition with access kind: 0 - base table 1 - inserts 2 - updates", args(1,8, batargany("",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("column",str),arg("access",int),arg("part_nr",int),arg("nr_parts",int))),
 
  pattern("sql", "emptybind", mvc_bind_wrap, false, "", args(1,7, batargany("",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("column",str),arg("access",int),arg("part_nr",int))),
- pattern("sql", "bind", mvc_bind_wrap, false, "Bind the 'schema.table.column' BAT partition with access kind:\n0 - base table\n1 - inserts\n2 - updates", args(1,7, batargany("",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("column",str),arg("access",int),arg("part_nr",int))),
+ pattern("sql", "bind", mvc_bind_wrap, false, "Bind the 'schema.table.column' BAT partition with access kind: 0 - base table 1 - inserts 2 - updates", args(1,7, batargany("",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("column",str),arg("access",int),arg("part_nr",int))),
 
  pattern("sql", "emptybind", mvc_bind_wrap, false, "", args(2,9, batarg("uid",oid),batargany("uval",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("column",str),arg("access",int),arg("part_nr",int),arg("nr_parts",int))),
- pattern("sql", "bind", mvc_bind_wrap, false, "Bind the 'schema.table.column' BAT with access kind:\n0 - base table\n1 - inserts\n2 - updates", args(2,9, batarg("uid",oid),batargany("uval",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("column",str),arg("access",int),arg("part_nr",int),arg("nr_parts",int))),
+ pattern("sql", "bind", mvc_bind_wrap, false, "Bind the 'schema.table.column' BAT with access kind: 0 - base table 1 - inserts 2 - updates", args(2,9, batarg("uid",oid),batargany("uval",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("column",str),arg("access",int),arg("part_nr",int),arg("nr_parts",int))),
 
  pattern("sql", "emptybind", mvc_bind_wrap, false, "", args(2,8, batarg("uid",oid),batargany("uval",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("column",str),arg("access",int),arg("part_nr",int))),
- pattern("sql", "bind", mvc_bind_wrap, false, "Bind the 'schema.table.column' BAT with access kind:\n0 - base table\n1 - inserts\n2 - updates", args(2,8, batarg("uid",oid),batargany("uval",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("column",str),arg("access",int),arg("part_nr",int))),
+ pattern("sql", "bind", mvc_bind_wrap, false, "Bind the 'schema.table.column' BAT with access kind: 0 - base table 1 - inserts 2 - updates", args(2,8, batarg("uid",oid),batargany("uval",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("column",str),arg("access",int),arg("part_nr",int))),
 
  command("sql", "delta", DELTAbat, false, "Return column bat with delta's applied.", args(1,4, batargany("",1),batargany("col",1),batarg("uid",oid),batargany("uval",1))),
  command("sql", "projectdelta", DELTAproject, false, "Return column bat with delta's applied.", args(1,5, batargany("",1),batarg("select",oid),batargany("col",1),batarg("uid",oid),batargany("uval",1))),
@@ -5796,7 +5793,7 @@ static mel_func sql_init_funcs[] = {
  pattern("sql", "export_bin_column", mvc_bin_export_column_wrap, true, "export column as binary", args(1, 5, arg("", lng), batargany("col", 1), arg("byteswap", bit), arg("filename", str), arg("onclient", int))),
  pattern("sql", "export_bin_column", mvc_bin_export_column_wrap, true, "export column as binary", args(1, 5, arg("", lng), argany("val", 1), arg("byteswap", bit), arg("filename", str), arg("onclient", int))),
  pattern("sql", "affectedRows", mvc_affected_rows_wrap, true, "export the number of affected rows by the current query", args(1,3, arg("",int),arg("mvc",int),arg("nr",lng))),
- pattern("sql", "copy_from", mvc_import_table_wrap, true, "Import a table from bstream s with the \ngiven tuple and separators (sep/rsep)", args(1,15, batvarargany("",0),arg("t",ptr),arg("sep",str),arg("rsep",str),arg("ssep",str),arg("ns",str),arg("fname",str),arg("nr",lng),arg("offset",lng),arg("best",int),arg("fwf",str),arg("onclient",int),arg("escape",int),arg("decsep",str),arg("decskip",str))),
+ pattern("sql", "copy_from", mvc_import_table_wrap, true, "Import a table from bstream s with the given tuple and separators (sep/rsep)", args(1,15, batvarargany("",0),arg("t",ptr),arg("sep",str),arg("rsep",str),arg("ssep",str),arg("ns",str),arg("fname",str),arg("nr",lng),arg("offset",lng),arg("best",int),arg("fwf",str),arg("onclient",int),arg("escape",int),arg("decsep",str),arg("decskip",str))),
  //we use bat.single now
  //pattern("sql", "single", CMDBATsingle, false, "", args(1,2, batargany("",2),argany("x",2))),
 
@@ -5827,13 +5824,12 @@ static mel_func sql_init_funcs[] = {
  pattern("sql", "statistics", sql_statistics, false, "return a table with statistics information for a particular schema", args(13,14, batarg("columnid",int),batarg("schema",str),batarg("table",str),batarg("column",str),batarg("type",str),batarg("with",int),batarg("count",lng),batarg("unique",bit),batarg("nils",bit),batarg("minval",str),batarg("maxval",str),batarg("sorted",bit),batarg("revsorted",bit),arg("sname",str))),
  pattern("sql", "statistics", sql_statistics, false, "return a table with statistics information for a particular table", args(13,15, batarg("columnid",int),batarg("schema",str),batarg("table",str),batarg("column",str),batarg("type",str),batarg("with",int),batarg("count",lng),batarg("unique",bit),batarg("nils",bit),batarg("minval",str),batarg("maxval",str),batarg("sorted",bit),batarg("revsorted",bit),arg("sname",str),arg("tname",str))),
  pattern("sql", "statistics", sql_statistics, false, "return a table with statistics information for a particular column", args(13,16, batarg("columnid",int),batarg("schema",str),batarg("table",str),batarg("column",str),batarg("type",str),batarg("with",int),batarg("count",lng),batarg("unique",bit),batarg("nils",bit),batarg("minval",str),batarg("maxval",str),batarg("sorted",bit),batarg("revsorted",bit),arg("sname",str),arg("tname",str),arg("cname",str))),
- pattern("sql", "storage", sql_storage, false, "return a table with storage information ", args(17,17, batarg("schema",str),batarg("table",str),batarg("column",str),batarg("type",str),batarg("mode",str),batarg("location",str),batarg("count",lng),batarg("atomwidth",int),batarg("columnsize",lng),batarg("heap",lng),batarg("hashes",lng),batarg("phash",bit),batarg("imprints",lng),batarg("sorted",bit),batarg("revsorted",bit),batarg("key",bit),batarg("orderidx",lng))),
- pattern("sql", "storage", sql_storage, false, "return a table with storage information for a particular schema ", args(17,18, batarg("schema",str),batarg("table",str),batarg("column",str),batarg("type",str),batarg("mode",str),batarg("location",str),batarg("count",lng),batarg("atomwidth",int),batarg("columnsize",lng),batarg("heap",lng),batarg("hashes",lng),batarg("phash",bit),batarg("imprints",lng),batarg("sorted",bit),batarg("revsorted",bit),batarg("key",bit),batarg("orderidx",lng),arg("sname",str))),
+ pattern("sql", "storage", sql_storage, false, "return a table with storage information", args(17,17, batarg("schema",str),batarg("table",str),batarg("column",str),batarg("type",str),batarg("mode",str),batarg("location",str),batarg("count",lng),batarg("atomwidth",int),batarg("columnsize",lng),batarg("heap",lng),batarg("hashes",lng),batarg("phash",bit),batarg("imprints",lng),batarg("sorted",bit),batarg("revsorted",bit),batarg("key",bit),batarg("orderidx",lng))),
+ pattern("sql", "storage", sql_storage, false, "return a table with storage information for a particular schema", args(17,18, batarg("schema",str),batarg("table",str),batarg("column",str),batarg("type",str),batarg("mode",str),batarg("location",str),batarg("count",lng),batarg("atomwidth",int),batarg("columnsize",lng),batarg("heap",lng),batarg("hashes",lng),batarg("phash",bit),batarg("imprints",lng),batarg("sorted",bit),batarg("revsorted",bit),batarg("key",bit),batarg("orderidx",lng),arg("sname",str))),
  pattern("sql", "storage", sql_storage, false, "return a table with storage information for a particular table", args(17,19, batarg("schema",str),batarg("table",str),batarg("column",str),batarg("type",str),batarg("mode",str),batarg("location",str),batarg("count",lng),batarg("atomwidth",int),batarg("columnsize",lng),batarg("heap",lng),batarg("hashes",lng),batarg("phash",bit),batarg("imprints",lng),batarg("sorted",bit),batarg("revsorted",bit),batarg("key",bit),batarg("orderidx",lng),arg("sname",str),arg("tname",str))),
  pattern("sql", "storage", sql_storage, false, "return a table with storage information for a particular column", args(17,20, batarg("schema",str),batarg("table",str),batarg("column",str),batarg("type",str),batarg("mode",str),batarg("location",str),batarg("count",lng),batarg("atomwidth",int),batarg("columnsize",lng),batarg("heap",lng),batarg("hashes",lng),batarg("phash",bit),batarg("imprints",lng),batarg("sorted",bit),batarg("revsorted",bit),batarg("key",bit),batarg("orderidx",lng),arg("sname",str),arg("tname",str),arg("cname",str))),
  pattern("sql", "createorderindex", sql_createorderindex, true, "Instantiate the order index on a column", args(0,3, arg("sch",str),arg("tbl",str),arg("col",str))),
  pattern("sql", "droporderindex", sql_droporderindex, true, "Drop the order index on a column", args(0,3, arg("sch",str),arg("tbl",str),arg("col",str))),
- pattern("sql", "createstrimps", sql_createstrimps, true, "Instantiate the strimps index on a column", args(0,3, arg("sch",str),arg("tbl",str),arg("col",str))),
  command("calc", "identity", SQLidentity, false, "Returns a unique row identitfier.", args(1,2, arg("",oid),argany("",0))),
  command("batcalc", "identity", BATSQLidentity, false, "Returns the unique row identitfiers.", args(1,2, batarg("",oid),batargany("b",0))),
  pattern("batcalc", "identity", PBATSQLidentity, false, "Returns the unique row identitfiers.", args(2,4, batarg("resb",oid),arg("ns",oid),batargany("b",0),arg("s",oid))),

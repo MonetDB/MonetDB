@@ -368,7 +368,7 @@ main(int argc, char **av)
 	};
 
 #define MAX_MODULES 32
-	char *modules[MAX_MODULES + 1];
+	const char *modules[MAX_MODULES + 1];
 	int mods = 0;
 
 	modules[mods++] = "sql";

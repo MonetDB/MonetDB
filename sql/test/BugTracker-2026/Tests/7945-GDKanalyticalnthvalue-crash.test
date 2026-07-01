@@ -1,0 +1,43 @@
+query RTR rowsort
+SELECT x
+ , nth_value ( 'bug' , 1 ) OVER ( RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW )
+ , max ( x ) OVER ( ORDER BY x DESC RANGE BETWEEN CURRENT ROW AND 1 FOLLOWING )
+  FROM ( SELECT sql_div ( 3.400000 , locate ( '5.6' , '0.1.2.3.5.4.5.6.8.5.6.8' , 7 ) ) AS x
+       )
+----
+0.262
+bug
+0.262
+
+query RR rowsort
+SELECT x
+-- , nth_value ( 'bug' , 1 ) OVER ( RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW )
+ , max ( x ) OVER ( ORDER BY x DESC RANGE BETWEEN CURRENT ROW AND 1 FOLLOWING )
+  FROM ( SELECT sql_div ( 3.400000 , locate ( '5.6' , '0.1.2.3.5.4.5.6.8.5.6.8' , 7 ) ) AS x
+         EXCEPT SELECT 11 AS x UNION SELECT 12 AS x UNION SELECT 13 AS x )
+----
+0.262
+0.262
+12.000
+12.000
+13.000
+13.000
+
+-- next reported query crashes in GDKanalyticalnthvalue (b=0x7f8d537a2cd8 <BBP0+209048>, s=0x0, e=0x0, t=0x0, nth=0, tpe=18) at gdk/gdk_analytic_func.c:561
+query RTR rowsort
+SELECT x
+ , nth_value ( 'bug' , 1 ) OVER ( RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW )
+ , max ( x ) OVER ( ORDER BY x DESC RANGE BETWEEN CURRENT ROW AND 1 FOLLOWING )
+  FROM ( SELECT sql_div ( 3.400000 , locate ( '5.6' , '0.1.2.3.5.4.5.6.8.5.6.8' , 7 ) ) AS x
+         EXCEPT SELECT 11 AS x UNION SELECT 12 AS x UNION SELECT 13 AS x )
+----
+0.262
+bug
+0.262
+12.000
+bug
+12.000
+13.000
+bug
+13.000
+

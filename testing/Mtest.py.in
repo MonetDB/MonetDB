@@ -2896,7 +2896,7 @@ class ServerClass:
                 if os.path.exists(self.pollfile):
                     break
                 # wait at most 30 seconds for the server to start
-                if time.time() > starttime + 30:
+                if self.timeout and time.time() > starttime + 30:
                     if procdebug:
                         print('timeout starting server')
                     if os.name == 'nt':
@@ -2930,7 +2930,7 @@ class ServerClass:
                 curtime = time.time()
                 if curtime >= endtime:
                     break
-                line = proc.stdout.readline(timeout=endtime - curtime)
+                line = proc.stdout.readline(timeout=endtime - curtime if self.timeout else None)
                 if not line:
                     break
                 self.outfile.write(line)

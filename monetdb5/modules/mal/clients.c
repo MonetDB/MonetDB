@@ -795,16 +795,16 @@ CLTsetClientInfo(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 #include "mel.h"
 static mel_func clients_init_funcs[] = {
- pattern("clients", "setListing", CLTsetListing, true, "Turn on/off echo of MAL instructions:\n1 - echo input,\n2 - show mal instruction,\n4 - show details of type resolutoin, \n8 - show binding information.", args(1,2, arg("",int),arg("flag",int))),
+ pattern("clients", "setListing", CLTsetListing, true, "Turn on/off echo of MAL instructions: 1 - echo input, 2 - show mal instruction, 4 - show details of type resolutoin, 8 - show binding information.", args(1,2, arg("",int),arg("flag",int))),
  pattern("clients", "getId", CLTgetClientId, false, "Return a number that uniquely represents the current client.", args(1,1, arg("",int))),
  pattern("clients", "getInfo", CLTInfo, false, "Pseudo bat with client attributes.", args(2,2, batarg("",str),batarg("",str))),
  pattern("clients", "getScenario", CLTgetScenario, false, "Retrieve current scenario name.", args(1,1, arg("",str))),
  pattern("clients", "setScenario", CLTsetScenario, true, "Switch to other scenario handler, return previous one.", args(1,2, arg("",str),arg("msg",str))),
  pattern("clients", "quit", CLTquit, true, "Terminate the client session.", args(1,1, arg("",void))),
- pattern("clients", "quit", CLTquit, true, "Terminate the session for a single client using a soft error.\nIt is the privilege of the console user.", args(1,2, arg("",void),arg("idx",int))),
+ pattern("clients", "quit", CLTquit, true, "Terminate the session for a single client using a soft error. It is the privilege of the console user.", args(1,2, arg("",void),arg("idx",int))),
  command("clients", "getLogins", CLTLogin, false, "Pseudo bat of client id and login time.", args(2,2, batarg("user",oid),batarg("start",str))),
  pattern("clients", "stop", CLTstop, true, "Stop the query execution at the next eligible statement.", args(0,1, arg("id",int))),
- pattern("clients", "suspend", CLTsuspend, true, "Put a client process to sleep for some time.\nIt will simple sleep for a second at a time, until\nthe awake bit has been set in its descriptor", args(1,2, arg("",void),arg("id",int))),
+ pattern("clients", "suspend", CLTsuspend, true, "Put a client process to sleep for some time. It will simple sleep for a second at a time, until the awake bit has been set in its descriptor", args(1,2, arg("",void),arg("id",int))),
  pattern("clients", "wakeup", CLTwakeup, true, "Wakeup a client process", args(1,2, arg("",void),arg("id",int))),
  pattern("clients", "getprofile", CLTgetProfile, false, "Retrieve the profile settings for a client", args(5,5, arg("opt",str),arg("q",int),arg("s",int),arg("w",int),arg("m",int))),
  pattern("clients", "setQryTimeoutMicro", CLTqueryTimeoutMicro, true, "", args(1,2, arg("",void),arg("n",lng))),
@@ -821,7 +821,7 @@ static mel_func clients_init_funcs[] = {
  pattern("clients", "stopsession", CLTstopSession, true, "Stop a particular session", args(1,2, arg("",void),arg("sid",int))),
  command("clients", "setprinttimeout", CLTsetPrintTimeout, true, "Print running query every so many seconds.", args(1,2, arg("",void),arg("n",int))),
  pattern("clients", "shutdown", CLTshutdown, true, "", args(1,2, arg("",str),arg("delay",bte))),
- pattern("clients", "shutdown", CLTshutdown, true, "Close all other client connections. Return if it succeeds.\nIf forced is set then always stop the system the hard way", args(1,3, arg("",str),arg("delay",bte),arg("forced",bit))),
+ pattern("clients", "shutdown", CLTshutdown, true, "Close all other client connections. Return if it succeeds. If forced is set then always stop the system the hard way", args(1,3, arg("",str),arg("delay",bte),arg("forced",bit))),
  command("clients", "md5sum", CLTmd5sum, false, "Return hex string representation of the MD5 hash of the given string", args(1,2, arg("",str),arg("pw",str))),
  command("clients", "sha1sum", CLTsha1sum, false, "Return hex string representation of the SHA-1 hash of the given string", args(1,2, arg("",str),arg("pw",str))),
  command("clients", "sha2sum", CLTsha2sum, false, "Return hex string representation of the SHA-2 hash with bits of the given string", args(1,3, arg("",str),arg("pw",str),arg("bits",int))),

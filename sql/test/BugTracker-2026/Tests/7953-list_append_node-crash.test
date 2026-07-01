@@ -1,0 +1,48 @@
+-- with the 'WHERE ( SELECT group_concat ( '' ) ....' part disabled it generates an error
+statement error 22018!conversion of string to type dbl failed.
+SELECT MIN ( x )
+ FROM ( WITH RECURSIVE x ( x ) AS
+         ( WITH RECURSIVE x ( x ) AS (
+            SELECT REPEAT ( 'MonetDb' , 1000 )
+            UNION
+            SELECT 33 * - 49 * CASE 50 WHEN - 21 + 0 + - COUNT ( * ) THEN NULL WHEN 99 * - 43 + - - 35 THEN - 75 ELSE NULL END * - - 51 * 0
+              FROM x
+             WHERE x < 20 )
+          SELECT 1
+          UNION
+          SELECT x + 1
+            FROM x
+--           WHERE ( SELECT group_concat ( '' ) OVER ( ORDER BY 1 , 1 GROUPS BETWEEN 5 PRECEDING AND 0 FOLLOWING )
+--                    WHERE levenshtein ( '\xf4\x8f\xbf\xbf' , 2 , 1 , 1 ) NOT IN ( SELECT right_shift ( 8 , 2 ) GROUP BY x HAVING avg ( DISTINCT x ) < 3 EXCEPT SELECT 2 AS x UNION SELECT 3 AS x GROUP BY CUBE ( x , x , x ) HAVING NOT - - ( EXISTS ( SELECT 1 ) ) = ANY ( NOT MAX ( x ) < AVG ( x ) ) )
+--                   ORDER BY x IS NULL
+--                 ) < ( x IN ( SELECT 'a.b.c.d.e' LIKE 'a.%' FROM x ) )
+         )
+   SELECT x * ( 10 - x ) AS x
+     FROM x
+      ) AS x
+
+
+-- original query crashes in list_append_node (l=0x7fc5b41e5800, n=0x7fc5b4170f80) at /home/dinther/dev/dev/MonetDB/sql/common/sql_list.c:154
+query T nosort
+SELECT MIN ( x )
+ FROM ( WITH RECURSIVE x ( x ) AS
+         ( WITH RECURSIVE x ( x ) AS (
+            SELECT REPEAT ( 'MonetDb' , 1000 )
+            UNION
+            SELECT 33 * - 49 * CASE 50 WHEN - 21 + 0 + - COUNT ( * ) THEN NULL WHEN 99 * - 43 + - - 35 THEN - 75 ELSE NULL END * - - 51 * 0
+              FROM x
+             WHERE x < 20 )
+          SELECT 1
+          UNION
+          SELECT x + 1
+            FROM x
+           WHERE ( SELECT group_concat ( '' ) OVER ( ORDER BY 1 , 1 GROUPS BETWEEN 5 PRECEDING AND 0 FOLLOWING )
+                    WHERE levenshtein ( '\xf4\x8f\xbf\xbf' , 2 , 1 , 1 ) NOT IN ( SELECT right_shift ( 8 , 2 ) GROUP BY x HAVING avg ( DISTINCT x ) < 3 EXCEPT SELECT 2 AS x UNION SELECT 3 AS x GROUP BY CUBE ( x , x , x ) HAVING NOT - - ( EXISTS ( SELECT 1 ) ) = ANY ( NOT MAX ( x ) < AVG ( x ) ) )
+                   ORDER BY x IS NULL
+                 ) < ( x IN ( SELECT 'a.b.c.d.e' LIKE 'a.%' FROM x ) )
+         )
+   SELECT x * ( 10 - x ) AS x
+     FROM x
+      ) AS x
+----
+

@@ -1,0 +1,47 @@
+-- query with the 'HAVING NOT - - ( EXISTS ( SELECT 1 ) ) = ANY (...)' part disabled, doesn't crash
+query T rowsort
+SELECT COUNT ( * ) = 0 AS x
+ FROM ( SELECT CAST( 55 AS NUMERIC ) AS x
+          FROM ( SELECT 1 AS x ) AS x
+        UNION
+        SELECT 0 AS x GROUP BY ROLLUP ( x )
+        UNION SELECT 3 AS x )
+ WHERE levenshtein ( '\xf4\x8f\xbf\xbf' , 2 , 1 , 1 ) NOT
+  IN (
+      SELECT right_shift ( 8 , 2 )
+       GROUP BY x
+       HAVING avg ( DISTINCT x ) < ROUND ( x , - COUNT ( * ) )
+      EXCEPT
+      SELECT 2 AS x
+      UNION
+      SELECT 3 AS x
+       GROUP BY CUBE ( x , x , x )
+--     HAVING NOT - - ( EXISTS ( SELECT 1 ) ) = ANY ( NOT MAX ( x ) < AVG ( 'to' ) )
+     )
+----
+False
+
+-- the orginal reported query
+-- it crashes in  exp_visitor (v=0x7fc2be593790, rel=0x7fc2881bf230, e=0xdbdbdbdbdbdbdbdb, depth=0, exp_rewriter=0x7fc30f5e03c4 <exp_reset_card_and_freevar_set_physical_type>, topdown=false, relations_topdown=false, visit_relations_once=false, changed=0x7fc2be5932af) at sql/server/rel_rel.c:2209
+query T rowsort
+SELECT COUNT ( * ) = 0 AS x
+ FROM ( SELECT CAST( 55 AS NUMERIC ) AS x
+          FROM ( SELECT 1 AS x ) AS x
+        UNION
+        SELECT 0 AS x GROUP BY ROLLUP ( x )
+        UNION SELECT 3 AS x )
+ WHERE levenshtein ( '\xf4\x8f\xbf\xbf' , 2 , 1 , 1 ) NOT
+  IN (
+      SELECT right_shift ( 8 , 2 )
+       GROUP BY x
+       HAVING avg ( DISTINCT x ) < ROUND ( x , - COUNT ( * ) )
+      EXCEPT
+      SELECT 2 AS x
+      UNION
+      SELECT 3 AS x
+       GROUP BY CUBE ( x , x , x )
+       HAVING NOT - - ( EXISTS ( SELECT 1 ) ) = ANY ( NOT MAX ( x ) < AVG ( 'to' ) )
+     )
+----
+False
+
