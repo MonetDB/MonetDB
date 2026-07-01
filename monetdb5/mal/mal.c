@@ -53,7 +53,7 @@ mal_version(void)
  */
 
 int
-mal_init(const char *modules[const], bool embedded, const char *initpasswd,
+mal_init(const char *const *modules, bool embedded, const char *initpasswd,
 		 const char *caller_revision)
 {
 /* Any error encountered here terminates the process

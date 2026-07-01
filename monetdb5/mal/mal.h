@@ -68,7 +68,7 @@ mal_export char monet_cwd[FILENAME_MAX];
 
 mal_export MT_Lock mal_contextLock;
 
-mal_export int mal_init(const char *modules[const], bool embedded,
+mal_export int mal_init(const char *const *modules, bool embedded,
 						const char *initpasswd, const char *caller_revision);
 mal_export _Noreturn void mal_exit(int status);
 mal_export void mal_reset(void);

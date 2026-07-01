@@ -434,7 +434,7 @@ malPrelude(Client c, int listing, int *sql, int *mapi)
 }
 
 str
-malIncludeModules(Client c, const char *modules[const], int listing,
+malIncludeModules(Client c, const char *const *modules, int listing,
 				  bool no_mapi_server, const char *initpasswd)
 {
 	str msg;

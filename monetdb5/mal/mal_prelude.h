@@ -24,7 +24,7 @@ mal_export void mal_module2(const char *name, mel_atom * atoms,
 							mel_func * funcs, mel_init initfunc,
 							const char *code);
 
-mal_export str malIncludeModules(Client c, const char *modules[const],
+mal_export str malIncludeModules(Client c, const char *const *modules,
 								 int listing, bool embedded,
 								 const char *initpasswd);
 
