@@ -294,12 +294,12 @@ insert_string_bat(BAT *b, BATiter *ni, struct canditer *ci, bool force, bool may
 			assert((size_t) v < b->tvheap->free);
 			switch (b->twidth) {
 			case 1:
-				assert(v - GDK_VAROFFSET < ((var_t) 1 << 8));
-				((uint8_t *) b->theap->base)[r++] = (uint8_t) (v - GDK_VAROFFSET);
+				assert(!v || v - GDK_VAROFFSET < ((var_t) 1 << 8));
+				((uint8_t *) b->theap->base)[r++] = v?(uint8_t) (v - GDK_VAROFFSET):0;
 				break;
 			case 2:
-				assert(v - GDK_VAROFFSET < ((var_t) 1 << 16));
-				((uint16_t *) b->theap->base)[r++] = (uint16_t) (v - GDK_VAROFFSET);
+				assert(!v || v - GDK_VAROFFSET < ((var_t) 1 << 16));
+				((uint16_t *) b->theap->base)[r++] = v?(uint16_t) (v - GDK_VAROFFSET):0;
 				break;
 			case 4:
 #if SIZEOF_VAR_T == 8
