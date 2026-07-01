@@ -598,43 +598,36 @@ static ssize_t
 fleximatch(const char *s, const char *pat, size_t min)
 {
 	size_t hit;
-	bool spacy = false;
 
 	if (min == 0) {
-		min = (int) strlen(pat);	/* default minimum required hits */
+		min = strlen(pat);	/* default minimum required hits */
 	}
 	for (hit = 0; *pat; hit++) {
 		if (tolower((unsigned char) s[hit]) != (unsigned char) *pat) {
-			if (GDKisspace(s[hit]) && spacy) {
-				min++;
-				continue;		/* extra spaces */
-			}
 			break;
 		}
-		spacy = GDKisspace(*pat);
 		pat++;
 	}
 	return (hit >= min) ? hit : 0;
 }
 
 static ssize_t
-parse_substr(int *ret, const char *s, size_t min, const char *list[], int size)
+parse_substr(int *ret, const char *s, size_t min, const char *const list[], int size)
 {
-	ssize_t j = 0;
-	int i = 0;
+	for (int i = 0; i < size; i++) {
+		ssize_t j = 0;
 
-	*ret = int_nil;
-	while (++i <= size) {
 		if ((j = fleximatch(s, list[i], min)) > 0) {
-			*ret = i;
-			break;
+			*ret = i + 1;
+			return j;
 		}
 	}
-	return j;
+	*ret = int_nil;
+	return 0;
 }
 
-static const char *MONTHS[13] = {
-	NULL, "january", "february", "march", "april", "may", "june",
+static const char *const months[12] = {
+	"january", "february", "march", "april", "may", "june",
 	"july", "august", "september", "october", "november", "december"
 };
 
@@ -681,7 +674,7 @@ parse_date(const char *buf, date *d, bool external)
 			month = (buf[pos++] - '0') + month * 10;
 		}
 	} else {
-		pos += parse_substr(&month, buf + pos, 3, MONTHS, 12);
+		pos += parse_substr(&month, buf + pos, 3, months, 12);
 	}
 	if (is_int_nil(month) || (sep && buf[pos++] != sep)) {
 		GDKerror("Syntax error in date.\n");
@@ -912,7 +905,7 @@ daytime_tz_fromstr_internal(allocator *ma, const char *buf, size_t *len, daytime
 	while (GDKisspace(*s))
 		s++;
 	/* for GMT we need to add the time zone */
-	if (fleximatch(s, "gmt", 0) == 3) {
+	if (strcasecmp(s, "gmt") == 0) {
 		s += 3;
 	}
 	if ((s[0] == '-' || s[0] == '+') &&
@@ -1071,7 +1064,7 @@ timestamp_fromstr_internal(allocator *ma, const char *buf, size_t *len, timestam
 			while (GDKisspace(*s))
 				s++;
 			/* in case of gmt we need to add the time zone */
-			if (fleximatch(s, "gmt", 0) == 3) {
+			if (strcasecmp(s, "gmt") == 0) {
 				s += 3;
 			}
 			if ((s[0] == '-' || s[0] == '+') &&
@@ -1113,7 +1106,7 @@ timestamp_tz_fromstr_internal(allocator *ma, const char *buf, size_t *len, times
 	while (GDKisspace(*s))
 		s++;
 	/* in case of gmt we need to add the time zone */
-	if (fleximatch(s, "gmt", 0) == 3) {
+	if (strcasecmp(s, "gmt") == 0) {
 		s += 3;
 	}
 	if ((s[0] == '-' || s[0] == '+') &&
