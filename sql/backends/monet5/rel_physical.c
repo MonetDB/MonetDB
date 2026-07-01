@@ -1511,9 +1511,6 @@ rel_add_project(visitor *v, sql_rel *rel)
 	return rel;
 }
 
-#define rewrite_physical_used      (1 << 6)
-#define is_physical_done(X)        ((X & rewrite_physical_used) == rewrite_physical_used)
-
 static sql_rel *
 rel_rewrite_physical(visitor *v, sql_rel *rel)
 {

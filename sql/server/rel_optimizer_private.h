@@ -46,6 +46,7 @@ typedef struct sql_optimizer {
 #define rel_remote_func_used      (1 << 4)
 #define rewrite_gt_zero_used      (1 << 5)
 #define unnest_used				  (1 << 6)
+#define rewrite_physical_used     (1 << 7)
 
 #define is_rewrite_fix_count_used(X)    ((X & rewrite_fix_count_used) == rewrite_fix_count_used)
 #define is_rewrite_values_used(X)       ((X & rewrite_values_used) == rewrite_values_used)
@@ -54,6 +55,7 @@ typedef struct sql_optimizer {
 #define is_rel_remote_func_used(X)      ((X & rel_remote_func_used) == rel_remote_func_used)
 #define is_rewrite_gt_zero_used(X)      ((X & rewrite_gt_zero_used) == rewrite_gt_zero_used)
 #define is_unnest_used(X)			    ((X & unnest_used) == unnest_used)
+#define is_physical_done(X)				((X & rewrite_physical_used) == rewrite_physical_used)
 
 /* At the moment the following optimizers 'packs' can be disabled,
    later we could disable individual optimizers from the 'pack' */
