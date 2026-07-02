@@ -463,7 +463,6 @@ rel_groupby_prepare_pp(list **aggrresults, list **serializedresults, backend *be
 				if ((BUN)estimate > est)
 					estimate = est;
 
-				assert(!nrparts);
 				stmt *s = stmt_oahash_new(be, t, nrparts?PARTITION_NRPARTS:estimate, curhash, nrparts);
 				if (s == NULL)
 					return NULL;
@@ -1103,6 +1102,13 @@ rel2bin_groupby_pp(backend *be, sql_rel *rel, list *refs)
 				if (list_length(gbexps) == 1)
 					aggrstmt->key = 1;
 			}
+		}
+		if (aggrexp->shared && nrparts) { /* make sure we have fetched the output for group unique */
+				InstrPtr mp = newStmt(be->mb, "mat", "fetch");
+				mp = pushArgument(be->mb, mp, aggrexp->shared);
+				mp = pushArgument(be->mb, mp, be->pp);
+				pushInstruction(be->mb, mp);
+				aggrexp->shared = getArg(mp, 0);
 		}
 
 		if (!aggrstmt)
