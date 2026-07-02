@@ -10,7 +10,9 @@
 
 #include "gdk.h"
 
+#if defined(HAVE_GETENTROPY) && defined(HAVE_SYS_RANDOM_H)
 #include <sys/random.h>
+#endif
 // #include "murmurhash3.h"
 #define XXH_STATIC_LINKING_ONLY
 #define XXH_IMPLEMENTATION
@@ -66,7 +68,7 @@ sketch_estimate(uint8_t cnt_sketch[BUCKETS][CLZ_BUCKETS])
 	int8_t C[CLZ_BUCKETS + 1] = {0};
 	for (size_t bucket = 0; bucket < BUCKETS; bucket++) {
 		int K = -1;
-		for (size_t clz = 0; clz < CLZ_BUCKETS; clz++)
+		for (int clz = 0; clz < CLZ_BUCKETS; clz++)
 			if (cnt_sketch[bucket][clz] > 0)
 				K = clz;
 		K == -1 ? C[0]++ : C[K + 1]++;
@@ -93,11 +95,39 @@ sketch_estimate(uint8_t cnt_sketch[BUCKETS][CLZ_BUCKETS])
 /* #define my_get_val_lng(ptr, i) ptr[i] */
 /* #define my_get_val_str(ptr, i) */
 
+#if !defined(HAVE_GETENTROPY) && defined(HAVE_RAND_S)
+static int
+getentropy(void *buffer, size_t length)
+{
+	uint8_t *b = buffer;
+	for (size_t i = 0; i < length; i += sizeof(unsigned int)) {
+		unsigned int r;
+		if (rand_s(&r) != 0)
+			return -1;
+		for (size_t j = 0; j < sizeof(unsigned int); j++) {
+			if (i + j == length)
+				return 0;
+			b[i + j] = (uint8_t) (r >> (j * 8));
+		}
+	}
+	return 0;
+}
+static int
+leading_zeroes(uint64_t x)
+{
+	unsigned long i;
+	BitScanReverse64(&i, x);
+	return (int) (63 - i);
+}
+#else
+#define leading_zeroes(x)	__builtin_clzll(x)
+#endif
+
 #define SKETCH_UPDATE(CNTING_SKETCH, HASH)				\
 	do {								\
 		bucket = hash & BITS_MASK;				\
 		hash |= BITS_MASK;					\
-		clz = __builtin_clzll(hash);				\
+		clz = leading_zeroes(hash);				\
 		assert(clz <= 58);					\
 		if (CNTING_SKETCH[bucket][clz] <= 128) {		\
 			CNTING_SKETCH[bucket][clz]++;			\

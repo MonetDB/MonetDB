@@ -216,11 +216,11 @@ rel_remove_redundant_join_(visitor *v, sql_rel *rel)
 					if (le != re)
 						return rel;
 					uint32_t nr = list_position(cols, le);
-					if (used & (1<<nr)) { /* double used ?? */
+					if (used & (UINT64_C(1)<<nr)) { /* double used ?? */
 						assert(0);
 						return rel;
 					}
-					used |= 1<<nr;
+					used |= UINT64_C(1)<<nr;
 				}
 				if (used == (uint64_t)((1<<nrcols)-1)) {
 					l = rel->l;

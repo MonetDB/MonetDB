@@ -1611,8 +1611,8 @@ LALGgroup_unique(Client ctx, bat *rid, bat *uid, const ptr *H, bat *bid, bat *si
 #define afgroup() \
 	    assert(h->hsh && h->cmp); \
 		int w = b->twidth; \
-		group_(char *, \
-			char *, \
+		group_(char, \
+			char, \
 			, \
 			char *ivals = Tloc(b, 0), \
 			, \
