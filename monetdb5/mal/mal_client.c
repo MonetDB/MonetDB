@@ -274,6 +274,8 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 	char name[MT_NAME_LEN];
 	snprintf(name, sizeof(name), "Client%d->s", (int) (c - mal_clients));
 	MT_sema_init(&c->s, 0, name);
+	snprintf(name, sizeof(name), "Client%d-errlock", (int) (c - mal_clients));
+	MT_lock_init(&c->error_lock, name);
 	return c;
 }
 
@@ -407,6 +409,7 @@ MCcloseClient(Client c)
 	MT_thread_set_qry_ctx(NULL);
 	//assert(strcmp(MT_thread_getname(), "main-thread") == 0 || c->qryctx.datasize == 0);
 	MT_sema_destroy(&c->s);
+	MT_lock_destroy(&c->error_lock);
 	MT_lock_set(&mal_contextLock);
 	c->idle = c->login = c->lastcmd = 0;
 	ma_destroy(c->qryctx.errorallocator);
