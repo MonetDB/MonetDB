@@ -3,7 +3,8 @@
 import decimal
 from decimal import Decimal
 import sys
-
+import os
+sys.path.append(os.getenv('TSTSRCDIR'))
 from parsetest_support import setup_suite, TestCase
 
 suite = setup_suite()
