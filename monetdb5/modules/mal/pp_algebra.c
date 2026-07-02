@@ -4981,8 +4981,6 @@ static mel_func pp_algebra_init_funcs[] = {
  command("aggr", "avg", ALGfsum, false, "Return the Kahan/Neumaier summation.", args(3,4, arg("rsum", dbl), arg("rcom", dbl), arg("rcnt", lng), batarg("b", dbl))),
  command("aggr", "avg", ALGfsum_skipnil, false, "Return the Kahan/Neumaier summation or nil.", args(3,5, arg("rsum", dbl), arg("rcom", dbl), arg("rcnt", lng), batarg("b", dbl), arg("skipnil",bit))),
  command("aggr", "ord_quantile", LALGquantile, false, "Return the p-th's quantile per group, where p is between 0 and 100", args(1,4, batargany("quantile", 1), batarg("gid", oid), batargany("i", 1), arg("p", bte))),
- //command("aggr", "quantile", LALGquantile, false, "Return the p-th's quantile per group, where p is between 0 and 100", args(1,5, batargany("quantile", 1), batarg("gid", oid), batargany("i", 1), arg("pipeline", ptr), batarg("pid", oid))),
- /* in combine we return the pth row (or avg) */
  { .imp=NULL }
 };
 #include "mal_import.h"
