@@ -289,24 +289,26 @@ runMALpipelines(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, int maxpart
 	if (!s)
 		throw(MAL, "pipelines", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	bool profiler = cntxt->sqlprofiler;
-	s->mb = mb;
-	s->cntxt = cntxt;
-	s->start = startpc;
-	s->stop = stoppc;
-	s->stk = stk;
-	s->maxparts = maxparts;
-	s->sink = sink;
-	s->master_counter = 0;
-	s->nr_workers = GDKnr_threads;
-	s->status = 0;
+	*s = (Pipelines) {
+		.mb = mb,
+		.cntxt = cntxt,
+		.start = startpc,
+		.stop = stoppc,
+		.stk = stk,
+		.maxparts = maxparts,
+		.sink = sink,
+		.master_counter = 0,
+		.nr_workers = GDKnr_threads,
+		.status = 0,
+		.error = NULL,
+		.errbuf = GDKgetbuf(),
+	};
 	if (maxparts > 0)
 		s->nr_workers = MIN(maxparts, GDKnr_threads);
 	if (s->nr_workers > 1)
 		cntxt->sqlprofiler = false;
 	/* initialize with direct increment of all threads at once */
 	ATOMIC_INIT(&s->workers, -1);
-	s->error = NULL;
-	s->errbuf = GDKgetbuf();
 
 	char name[MT_NAME_LEN];
 	snprintf(name, sizeof(name), "PIPELINE%d", cntxt->idx);
