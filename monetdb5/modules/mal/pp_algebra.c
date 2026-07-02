@@ -2530,9 +2530,9 @@ LALGproject(Client ctx, bat *rid, bat *gid, bat *bid, const ptr *H)
 				aproject_(str)
 			} else {
 				aproject(str,1,uint8_t)
-					aproject(str,2,uint16_t)
-					aproject(str,4,uint32_t)
-					aproject(str,8,var_t)
+				aproject(str,2,uint16_t)
+				aproject(str,4,uint32_t)
+				aproject(str,8,var_t)
 			}
 		TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "pp algebra.projection", RUNTIME_QRY_TIMEOUT));
 	}
