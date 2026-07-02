@@ -249,11 +249,6 @@ command aggr.cardinality(X_0:bat[:any_2]):lng
 ALGcard
 Return the cardinality of the BAT tail values.
 aggr
-cde
-command aggr.cde(X_0:bat[:any_1]):int
-AGGRcde
-(empty)
-aggr
 cnull
 command aggr.cnull(X_0:bat[:oid], X_1:bat[:bit], X_2:ptr, X_3:bat[:oid]):bat[:bit]
 LALGcnull
@@ -2873,6 +2868,11 @@ sum
 pattern aggr.sum(X_0:bat[:oid], X_1:bat[:flt], X_2:ptr, X_3:bat[:oid]) (X_4:bat[:flt], X_5:bat[:flt], X_6:bat[:lng])
 LALGsum_float
 Kahan/Neumaier summation per group.
+aggr
+uniques_guess
+command aggr.uniques_guess(X_0:bat[:any_1]):lng
+uniques_guess
+(empty)
 aggr
 variance
 command aggr.variance(X_0:bat[:bte], X_1:bat[:oid], X_2:bat[:any_1]):bat[:dbl]
