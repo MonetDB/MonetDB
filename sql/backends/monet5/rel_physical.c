@@ -1448,7 +1448,7 @@ rel_push_down_topn(visitor *v, sql_rel *rel)
 
 				assert(obe->type == e_column);
 				sql_exp *ne = exps_bind_nid(oexps, obe->nid);
-				if (ne && ne->type == e_func)
+				if (ne && (ne->type == e_func || ne->type == e_cmp ||  ne->type == e_convert))
 					return rel;
 			}
 			orderby->exps = pexps;

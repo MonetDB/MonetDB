@@ -3619,8 +3619,11 @@ rewrite_column(visitor *v, sql_exp *e, struct unnesting *info)
 		{
 			sql_exp *ne = repr_find(v, info->repr, e);
 			if (ne && ne != e && ne->alias.label > 0) {
-				if (e->freevar && e->alias.label == e->nid)
+				if (e->freevar && e->alias.label == e->nid) {
 					e->alias = ne->alias;
+					e->l = ne->l;
+					e->r = ne->r;
+				}
 				e->nid = ne->alias.label;
 				e->freevar = 0;
 			}
