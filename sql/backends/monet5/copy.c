@@ -591,7 +591,7 @@ COPYsplitlines(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		msg = COPYfixlines(&line_count, &e, r, p->wid, &errors);
 		if (msg) {
 			r->error = true;
-			return msg;
+			goto end;
 		}
 		if (r->can_jump)
 			(void)pipeline_get_token(p, 1, p->wid, &r->done);
