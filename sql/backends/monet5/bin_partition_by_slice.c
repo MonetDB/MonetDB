@@ -1088,9 +1088,7 @@ rel2bin_groupby_pp(backend *be, sql_rel *rel, list *refs)
 			grp = pgrp;
 			continue;
 		}
-		/* first look in the current aggr list (l) and group by column list */
-		if (l && !aggrstmt && aggrexp->type == e_column)
-			aggrstmt = list_find_column_nid(be, l, aggrexp->nid);
+		/* first try to look up in the group by column list */
 		if (gbexps && !aggrstmt && aggrexp->type == e_column) {
 			aggrstmt = list_find_column_nid(be, gbexps, aggrexp->nid);
 			if ((!be->pipeline || !_2phases) && aggrstmt && groupby) {
