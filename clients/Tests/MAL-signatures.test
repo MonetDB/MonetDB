@@ -36463,11 +36463,6 @@ sum
 unsafe pattern lockedaggr.sum(X_0:any_1):bat[:any_1]
 LOCKEDAGGRsum1
 sum values into bat (bat has value, update), using the bat lock
-lockedalgebra
-projection
-command lockedalgebra.projection(X_0:ptr, X_1:bat[:oid], X_2:bat[:any_1]):bat[:any_1]
-LALGprojection
-Project left input onto right input.
 lockedgroup
 group
 command lockedgroup.group(X_0:bat[:any_1]) (X_1:bat[:oid], X_2:bat[:oid], X_3:bat[:lng])

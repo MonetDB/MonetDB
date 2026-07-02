@@ -918,18 +918,6 @@ LOCKEDAGGRnull(Client ctx, bat *result, const bit *hadnull)
 	return err;
 }
 
-static str
-LALGprojection(Client ctx, bat *result, const ptr *h, const bat *lid, const bat *rid)
-{
-	Pipeline *p = (Pipeline*)*h;
-	str res;
-
-	pipeline_lock(p);
-	res = ALGprojection(ctx, result, lid, rid);
-	pipeline_unlock(p);
-	return res;
-}
-
 #define unique_(Type, BaseType, INIT_ALLOCATOR, INIT_ITER, NEW_VAL, HASH_VAL, VAL_NOT_EQUAL, VAL_ASSIGN, ITER_NEXT, NEXTK) \
 	if (tt == TYPE_##Type) { \
 		int slots = 0; \
@@ -4934,7 +4922,6 @@ static mel_func pp_algebra_init_funcs[] = {
  pattern("lockedaggr", "min", LOCKEDAGGRmin, true, "min values into bat (bat has value, update), using the bat lock", args(1,2, sharedbatargany("", 1), argany("val", 1))),
  pattern("lockedaggr", "max", LOCKEDAGGRmax, true, "max values into bat (bat has value, update), using the bat lock", args(1,2, sharedbatargany("", 1), argany("val", 1))),
  command("lockedaggr", "null", LOCKEDAGGRnull, true, "Returns true or false if the input contains a NULL or not, nil if the input is empty..", args(1,2, sharedbatarg("",bit),arg("hadnull",bit))),
- command("lockedalgebra", "projection", LALGprojection, false, "Project left input onto right input.", args(1,4, batargany("",1), arg("pipeline", ptr), batarg("left",oid),batargany("right",1))),
 
  command("algebra", "unique", LALGunique, false, "Unique rows.", args(2,5, batarg("gid", oid), batargany("",1), arg("pipeline", ptr), batargany("b",1), batarg("s",oid))),
  command("algebra", "unique", LALGgroup_unique, false, "Unique per group rows.", args(2,6, batarg("ngid", oid), batargany("",1), arg("pipeline", ptr), batargany("b",1), batarg("s",oid), batarg("gid",oid))),
