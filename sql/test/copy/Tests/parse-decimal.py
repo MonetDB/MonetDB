@@ -3,7 +3,8 @@
 import decimal
 from decimal import Decimal
 import sys
-
+import os
+sys.path.append(os.getenv('TSTSRCDIR'))
 from parsetest_support import setup_suite, TestCase
 
 suite = setup_suite()
@@ -102,7 +103,7 @@ run_test(testcase.replace(3, '41|43x').expect_error("Row 4 column 2 'd3':"))
 
 
 # Decimal overflow
-max_digits = 38 if suite.have_hge else 19
+max_digits = 38 if suite.have_hge else 18
 decprec = decimal.getcontext().prec
 decimal.getcontext().prec = max_digits + 2
 for d in range(1, max_digits + 1):

@@ -275,7 +275,7 @@ class TestSuite:
         cursor = conn.cursor()
         try:
             cursor.execute('SELECT CAST(1 AS HUGEINT)')
-        except pymonetdb.OperationError:
+        except pymonetdb.OperationalError:
             self.have_hge = False
             self.conn.rollback()
         finally:
