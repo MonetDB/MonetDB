@@ -42,7 +42,7 @@ with process.server(args=['--clean-BBP', '--set', 'allow_hge_upgrade=yes'],
                         stdout=process.PIPE,
                         stderr=process.PIPE,
                         server=srv) as clt:
-        cltout, clterr = clt.communicate('drop all function testsschema.capi00 if exists;\ndrop all function testsschema.rapi01 if exists;\ndrop all function testsschema.rapi02 if exists;\n')
+        cltout, clterr = clt.communicate('drop function if exists testsschema.capi00;\ndrop function if exists testsschema.rapi01;\ndrop function if exists testsschema.rapi02;\n')
     srvout, srverr = srv.communicate()
 
 srvout = [line for line in srvout.splitlines(keepends=True) if not line.startswith('#')]
