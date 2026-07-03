@@ -41,6 +41,7 @@ with process.server(mapiport='0',
                         stdout=process.PIPE,
                         stderr=process.PIPE,
                         server=srv) as clt:
+        # don't drop foreign language functions since we want to test dump
         cltout, clterr = clt.communicate('select count(*) from testschema.smallstring;\n')
     srvout, srverr = srv.communicate()
 
