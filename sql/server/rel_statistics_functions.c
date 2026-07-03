@@ -287,6 +287,7 @@ static void
 sql_ifthenelse_propagate_statistics(mvc *sql, sql_exp *e)
 {
 	list *l = e->l;
+	int len = list_length(l);
 	sql_exp *first = l->h->next->data;
 	atom *curmin = NULL, *curmax = NULL, *lval;
 	unsigned int i = 0;
@@ -317,41 +318,52 @@ sql_ifthenelse_propagate_statistics(mvc *sql, sql_exp *e)
 		set_minmax_property(sql, e, PROP_MAX, curmax);
 		set_minmax_property(sql, e, PROP_MIN, curmin);
 	}
+	if (!find_prop(e->p, PROP_NUNIQUES)) { /* TODO change into sum of nuniques of the cases */
+		prop *p = e->p = prop_create(sql->sa, PROP_NUNIQUES, e->p);
+		p->value.dval = len-1;
+	}
 }
 
 static void
 sql_casewhen_propagate_statistics(mvc *sql, sql_exp *e)
 {
 	list *l = e->l;
-	sql_exp *first = l->h->next->next->data;
+	int len = list_length(l);
+	sql_exp *first = (len>=3) ? l->h->next->next->data : NULL;
 	atom *curmin = NULL, *curmax = NULL, *lval;
 	unsigned int i = 0;
 
 	assert(list_length(l) >= 3);
-	if ((lval = find_prop_and_get(first->p, PROP_MAX)))
+	if (first && (lval = find_prop_and_get(first->p, PROP_MAX)))
 		curmax = lval;
-	if ((lval = find_prop_and_get(first->p, PROP_MIN)))
+	if (first && (lval = find_prop_and_get(first->p, PROP_MIN)))
 		curmin = lval;
-	for (node *n = l->h->next->next->next ; n && curmin && curmax ; n = n->next) {
-		if ((i & 1) || n == l->t) { /* the last expression, ie the result, must be included */
-			sql_exp *next = n->data;
-			if ((lval = find_prop_and_get(next->p, PROP_MAX))) {
-				curmax = atom_cmp(lval, curmax) > 0 ? lval : curmax;
-			} else {
-				curmax = NULL;
+	if (len >= 3) {
+		for (node *n = l->h->next->next->next ; n && curmin && curmax ; n = n->next) {
+			if ((i & 1) || n == l->t) { /* the last expression, ie the result, must be included */
+				sql_exp *next = n->data;
+				if ((lval = find_prop_and_get(next->p, PROP_MAX))) {
+					curmax = atom_cmp(lval, curmax) > 0 ? lval : curmax;
+				} else {
+					curmax = NULL;
+				}
+				if ((lval = find_prop_and_get(next->p, PROP_MIN))) {
+					curmin = atom_cmp(lval, curmin) > 0 ? curmin : lval;
+				} else {
+					curmin = NULL;
+				}
 			}
-			if ((lval = find_prop_and_get(next->p, PROP_MIN))) {
-				curmin = atom_cmp(lval, curmin) > 0 ? curmin : lval;
-			} else {
-				curmin = NULL;
-			}
+			i++;
 		}
-		i++;
 	}
 
 	if (curmin && curmax) {
 		set_minmax_property(sql, e, PROP_MAX, curmax);
 		set_minmax_property(sql, e, PROP_MIN, curmin);
+	}
+	if (!find_prop(e->p, PROP_NUNIQUES)) { /* TODO change into sum of nuniques of the cases */
+		prop *p = e->p = prop_create(sql->sa, PROP_NUNIQUES, e->p);
+		p->value.dval = len-1;
 	}
 }
 
@@ -773,7 +785,7 @@ sql_zero_or_one_propagate_statistics(mvc *sql, sql_exp *e)
 	}
 }
 
-static struct function_properties functions_list[35] = {
+static struct function_properties functions_list[36] = {
 	/* arithmetic functions */
 	{"sql_add", &sql_add_propagate_statistics},
 	{"sql_sub", &sql_sub_propagate_statistics},
@@ -792,6 +804,7 @@ static struct function_properties functions_list[35] = {
 	{"nullif", &sql_nullif_propagate_statistics},
 	{"coalesce", &sql_coalesce_propagate_statistics},
 	{"casewhen", &sql_casewhen_propagate_statistics},
+	{"case", &sql_casewhen_propagate_statistics},
 
 	/* time functions */
 	{"century", &sql_century_propagate_statistics},
