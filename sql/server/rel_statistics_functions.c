@@ -368,6 +368,50 @@ sql_casewhen_propagate_statistics(mvc *sql, sql_exp *e)
 }
 
 static void
+sql_case_propagate_statistics(mvc *sql, sql_exp *e)
+{
+	list *l = e->l;
+	int len = list_length(l);
+	sql_exp *first = (len>=2) ? l->h->next->data : NULL;
+	atom *curmin = NULL, *curmax = NULL, *lval;
+
+	assert(list_length(l) >= 3);
+	if (first && (lval = find_prop_and_get(first->p, PROP_MAX)))
+		curmax = lval;
+	if (first && (lval = find_prop_and_get(first->p, PROP_MIN)))
+		curmin = lval;
+
+	prop *p = first ? find_prop(first->p, PROP_NUNIQUES) : NULL;
+	dbl nuniques = p ? p->value.dval : 1;
+	if (len >= 2) {
+		for (node *n = l->h->next->next ; n && curmin && curmax ; n = n->next) {
+			sql_exp *next = n->data;
+			if ((lval = find_prop_and_get(next->p, PROP_MAX))) {
+				curmax = atom_cmp(lval, curmax) > 0 ? lval : curmax;
+			} else {
+				curmax = NULL;
+			}
+			if ((lval = find_prop_and_get(next->p, PROP_MIN))) {
+				curmin = atom_cmp(lval, curmin) > 0 ? curmin : lval;
+			} else {
+				curmin = NULL;
+			}
+			prop *p = next ? find_prop(next->p, PROP_NUNIQUES) : NULL;
+			nuniques *= p ? p->value.dval : 1;
+		}
+	}
+
+	if (curmin && curmax) {
+		set_minmax_property(sql, e, PROP_MAX, curmax);
+		set_minmax_property(sql, e, PROP_MIN, curmin);
+	}
+	if (!find_prop(e->p, PROP_NUNIQUES)) {
+		prop *p = e->p = prop_create(sql->sa, PROP_NUNIQUES, e->p);
+		p->value.dval = nuniques;
+	}
+}
+
+static void
 sql_nullif_propagate_statistics(mvc *sql, sql_exp *e)
 {
 	list *l = e->l;
@@ -804,7 +848,7 @@ static struct function_properties functions_list[36] = {
 	{"nullif", &sql_nullif_propagate_statistics},
 	{"coalesce", &sql_coalesce_propagate_statistics},
 	{"casewhen", &sql_casewhen_propagate_statistics},
-	{"case", &sql_casewhen_propagate_statistics},
+	{"case", &sql_case_propagate_statistics},
 
 	/* time functions */
 	{"century", &sql_century_propagate_statistics},

@@ -828,7 +828,7 @@ rel_groupby_partition(mvc *sql, sql_rel *rel)
 	if (list_empty(rel->r))
 		return false;
 	/* check size */
-	BUN est = get_rel_count(rel);
+	BUN est = get_rel_count(rel->l);
 
 	lng estimate, card = 1;
 	if (est == BUN_NONE
