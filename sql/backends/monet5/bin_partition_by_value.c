@@ -159,38 +159,6 @@ rel2bin_slicer_pp(backend *be, stmt *sub)
 	}
 }
 
-bool
-rel_groupby_partition(sql_rel *rel)
-{
-	bool partition = true;
-
-	for(node *n = rel->exps->h; n && partition; n = n->next ) {
-		sql_exp *e = n->data;
-
-		if (is_aggr(e->type)) {
-			sql_subfunc *sf = e->f;
-
-			/* for now only on complex aggregation */
-			if (!(strcmp(sf->func->base.name, "min") == 0 || strcmp(sf->func->base.name, "max") == 0 ||
-			    strcmp(sf->func->base.name, "avg") == 0 || strcmp(sf->func->base.name, "count") == 0 ||
-			    strcmp(sf->func->base.name, "sum") == 0 || strcmp(sf->func->base.name, "prod") == 0)) {
-				partition = false;
-			}
-		}
-	}
-	if (!partition)
-		return false;
-	if (list_empty(rel->r))
-		return false;
-	/* check size */
-	BUN est = get_rel_count(rel);
-	if (est == BUN_NONE)
-		return false;
-	if (est >= GDKL3_size)
-		return true;
-	return false;
-}
-
 /* part := part.new(nr_parts);
  * mat := mat.new(type:nil, nr_parts);
  */

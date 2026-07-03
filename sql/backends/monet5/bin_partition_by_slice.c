@@ -44,7 +44,9 @@ exp_getcard(mvc *sql, sql_rel *rel, sql_exp *e)
 	sql_subtype *t = exp_subtype(e);
 	prop *p;
 
-	if ((p = find_prop(e->p, PROP_NUNIQUES)))
+	if (e->nuniques)
+		est = e->nuniques;
+	else if ((p = find_prop(e->p, PROP_NUNIQUES)))
 		est = (BUN)p->value.dval;
 
 	if (est == BUN_NONE
@@ -802,6 +804,60 @@ piggy_back(backend *be, sql_rel *rel, stmt *cursub, list *aggrs)
 	}
 }
 
+bool
+rel_groupby_partition(mvc *sql, sql_rel *rel)
+{
+	bool partition = true;
+
+	for(node *n = rel->exps->h; n && partition; n = n->next ) {
+		sql_exp *e = n->data;
+
+		if (is_aggr(e->type)) {
+			sql_subfunc *sf = e->f;
+
+			/* for now only on complex aggregation */
+			if (!(strcmp(sf->func->base.name, "min") == 0 || strcmp(sf->func->base.name, "max") == 0 ||
+			    strcmp(sf->func->base.name, "avg") == 0 || strcmp(sf->func->base.name, "count") == 0 ||
+			    strcmp(sf->func->base.name, "sum") == 0 || strcmp(sf->func->base.name, "prod") == 0)) {
+				partition = false;
+			}
+		}
+	}
+	if (!partition)
+		return false;
+	if (list_empty(rel->r))
+		return false;
+	/* check size */
+	BUN est = get_rel_count(rel);
+
+	lng estimate, card = 1;
+	if (est == BUN_NONE
+#if SIZEOF_BUN == SIZEOF_LNG
+		|| (ulng) est > (ulng) GDK_lng_max
+#endif
+	)
+		estimate = 85000000;
+	else
+		estimate = (lng) est;
+	if (!list_empty(rel->r)) {
+		list *l = rel->r;
+		for( node *n = l->h; n; n = n->next ) {
+			sql_exp *e = n->data;
+			lng ncard = exp_getcard(sql, rel, e);
+			card *= ncard; /* TODO check for overflow */
+			if (card > estimate || ncard >= estimate) {
+				card = estimate;
+				break;
+			}
+		}
+	}
+	if (card < estimate)
+		estimate = card;
+	if ((BUN)estimate >= 4*GDKL3_size)
+		return true;
+	return false;
+}
+
 stmt *
 rel2bin_groupby_pp(backend *be, sql_rel *rel, list *refs)
 {
@@ -812,7 +868,7 @@ rel2bin_groupby_pp(backend *be, sql_rel *rel, list *refs)
 	stmt *sub = NULL, *cursub;
 	stmt *groupby = NULL, *grp = NULL, *ext = NULL, *cnt_aggr = NULL;
 	bool _2phases = rel_groupby_2_phases(be->mvc, rel);
-	bool value_partition = SQLrunning && rel->parallel && !_2phases && rel_groupby_partition(rel);
+	bool value_partition = SQLrunning && rel->parallel && !_2phases && rel_groupby_partition(be->mvc, rel);
 	int neededpp = rel->partition && get_need_pipeline(be);
 	int need_serialize = rel_groupby_serialize(rel); /* return if some of the aggregates require serialization (or fallback implementation) */
 	sql_rel *inner = rel->l;
