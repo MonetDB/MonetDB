@@ -3046,7 +3046,10 @@ col_stats(sql_trans *tr, sql_column *c, bool *nonil, bool *unique, double *uniqu
 					*unique = bi.key;
 					*unique_est = bi.unique_est;
 					if (*unique_est == 0) {
-						*unique_est = (double)BATguess_uniques(b,NULL);
+						if (BATcount(b) > GDKL3_size)
+							*unique_est = bat_guess_uniques(b, NULL, NULL);
+						else
+							*unique_est = (double)BATguess_uniques(b,NULL);
 						//printf("estimates %s %s %f\n", c->base.name, c->type.type->base.name, *unique_est);
 					}
 				} else if (d->cs.st == ST_DICT && (off = bind_col_no_view(tr, c, QUICK))) {

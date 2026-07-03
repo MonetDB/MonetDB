@@ -73,6 +73,7 @@ typedef struct expression {
 	int shared;		/* shared variable */
 	void *p;	/* properties for the optimizer */
 	str comment;
+	ulng nuniques;
 } sql_exp;
 
 #define TABLE_PROD_FUNC		1

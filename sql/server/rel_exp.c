@@ -176,6 +176,8 @@ exp_compare(allocator *sa, sql_exp *l, sql_exp *r, int cmptype)
 	e->l = l;
 	e->r = r;
 	e->flag = cmptype;
+	if (cmptype == cmp_equal)
+		e->nuniques = 1;
 	if (!has_nil(l) && !has_nil(r))
 		set_has_no_nil(e);
 	return e;
@@ -193,6 +195,8 @@ exp_compare2(allocator *sa, sql_exp *l, sql_exp *r, sql_exp *f, int cmptype, int
 	e->r = r;
 	e->f = f;
 	e->flag = cmptype;
+	if (cmptype == cmp_equal)
+		e->nuniques = 1;
 	if (symmetric)
 		set_symmetric(e);
 	if (!has_nil(l) && !has_nil(r) && !has_nil(f))
@@ -247,6 +251,8 @@ exp_in(allocator *sa, sql_exp *l, list *r, int cmptype)
 	e->card = MAX(l->card, exps_card);
 	e->l = l;
 	e->r = r;
+	if (cmptype == cmp_in)
+		e->nuniques = list_length(r);
 	assert( cmptype == cmp_in || cmptype == cmp_notin);
 	e->flag = cmptype;
 	if (!has_nil(l) && !have_nil(r))
@@ -1809,6 +1815,33 @@ exps_find_prop(list *exps, rel_prop kind)
 
 		if (find_prop(e->p, kind))
 			return e;
+	}
+	return NULL;
+}
+
+sql_exp *
+predicates_find_nid(const list *exps, int nid)
+{
+	if (list_empty(exps))
+		return NULL;
+	for (node *n = exps->h ; n ; n = n->next) {
+		sql_exp *e = n->data;
+
+		if (e->type == e_cmp) {
+			if (e->flag == cmp_filter) {
+				;
+			} else if (e->flag == cmp_con || e->flag == cmp_dis) {
+				;
+			} else if (e->flag == cmp_in || e->flag == cmp_notin) {
+				sql_exp *l = e->l;
+				if (l->nid == nid)
+					return e;
+			} else {
+				sql_exp *l = e->l;
+				if (l->nid == nid)
+					return e;
+			}
+		}
 	}
 	return NULL;
 }

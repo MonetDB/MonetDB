@@ -15,6 +15,7 @@
 #include "mal_backend.h"
 
 extern lng exp_getcard(mvc *sql, sql_rel *rel, sql_exp *e);
+extern bool rel_groupby_partition(mvc *sql, sql_rel *rel);
 extern stmt *rel2bin_groupby_pp(backend *be, sql_rel *rel, list *refs);
 
 #endif /*_BIN_SLICE_PARTITION_H_*/

@@ -254,7 +254,7 @@ PARTpartition(Client ctx, bat *pos, const bat *part, const bat *glen )
 }
 
 #define mat_project(T)										\
-	{														\
+	do {													\
 		T **cp = (T**)GDKzalloc(mt->nr * sizeof(T*));		\
 		if (cp) {											\
 			bool extend = false;							\
@@ -294,14 +294,13 @@ PARTpartition(Client ctx, bat *pos, const bat *part, const bat *glen )
 				}											\
 			}												\
 			GDKfree(cp);									\
-		} else {										\
+		} else {											\
 			err = createException(MAL, "mat.project", SQLSTATE(HY013) MAL_MALLOC_FAIL);	\
-		}												\
-	}													\
-	break
+		}													\
+	} while (0)												\
 
 #define mat_project_() \
-	{	\
+	do {	\
 		for(int i = 0; i<mt->nr; i++) {										\
 			if (BATcapacity(mt->bat[i]) < (BUN)(curpos[i]+lp[i])) {						\
 				if (BATextend(mt->bat[i], curpos[i]+lp[i]) != GDK_SUCCEED) {				\
@@ -331,7 +330,7 @@ PARTpartition(Client ctx, bat *pos, const bat *part, const bat *glen )
 		for(int i = 0; i<mt->nr; i++) {	  \
 			mt->bat[i]->ttype = TYPE_str; \
 		}								  \
-	}
+	} while (0)
 
 /*
  * ToDo concurrent insert of var-types. Use a single atomic operation for claiming space in the heap.
@@ -407,15 +406,20 @@ MATproject(Client ctx, bat *mat, const bat *pos, const bat *lid, const bat *gid,
 			switch(d->twidth) {
 			case 1:
 				mat_project(bte);
+				break;
 			case 2:
 				mat_project(sht);
+				break;
 			case 4:
 				mat_project(int);
+				break;
 			case 8:
 				mat_project(lng);
+				break;
 #ifdef HAVE_HGE
 			case 16:
 				mat_project(hge);
+				break;
 #endif
 			default:
 				err = createException(MAL, "mat.project", SQLSTATE(HY002) "invalid BAT width");

@@ -60,6 +60,10 @@ rel_propagate_column_ref_statistics(mvc *sql, sql_rel *rel, sql_exp *e)
 				found_left = true;
 			if (!found_left && is_join(rel->op) && rel_propagate_column_ref_statistics(sql, rel->r, e))
 				found_right = true;
+			sql_exp *ne;
+			if ((ne = predicates_find_nid(rel->exps, e->nid)) != NULL) {
+				e->nuniques = ne->nuniques;
+			}
 
 			if (!found_left && !found_right)
 				return NULL;
@@ -180,6 +184,8 @@ rel_propagate_column_ref_statistics(mvc *sql, sql_rel *rel, sql_exp *e)
 			atom *fval;
 			prop *est;
 			if ((found = rel_find_exp(rel, e))) {
+				if (found != e && !e->nuniques)
+					e->nuniques = found->nuniques;
 				if (found /*rel->op != op_table*/) { /* At the moment don't propagate statistics for table relations */
 					if ((fval = find_prop_and_get(found->p, PROP_MAX)))
 						set_minmax_property(sql, e, PROP_MAX, fval);

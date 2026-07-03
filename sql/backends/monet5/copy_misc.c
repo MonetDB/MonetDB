@@ -19,13 +19,13 @@ static void
 dump_char(int c)
 {
 	if (c == '\n')
-		fprintf(stderr, "⏎");
+		fprintf(stderr, "\342\217\216"); /* return symbol */
 	else if (isspace(c))
-		fprintf(stderr, "·");
+		fprintf(stderr, "\302\267"); /* middle dot */
 	else if (isprint(c)) {
 		fprintf(stderr, "%c", c);
 	} else {
-		fprintf(stderr, "░");
+		fprintf(stderr, "\342\226\221"); /* light shade */
 	}
 }
 

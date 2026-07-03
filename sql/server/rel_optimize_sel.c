@@ -3764,7 +3764,8 @@ rel_semijoin_use_fk(visitor *v, sql_rel *rel)
 static inline sql_rel *
 rel_push_join_down(visitor *v, sql_rel *rel)
 {
-	if (!rel_is_ref(rel) && ((is_left(rel->op) || rel->op == op_join || is_semi(rel->op)) && rel->l && rel->exps)) {
+	/* needs work, currently causes crossproducts in tpcds 65 */
+	if (0 && !rel_is_ref(rel) && ((is_left(rel->op) || rel->op == op_join || is_semi(rel->op)) && rel->l && rel->exps)) {
 		sql_rel *gb = rel->r, *ogb = gb, *l = NULL, *rell = rel->l;
 
 		if (is_simple_project(gb->op) && !rel_is_ref(gb))
@@ -3782,6 +3783,7 @@ rel_push_join_down(visitor *v, sql_rel *rel)
 				int fnd = 0;
 				const char *rname = NULL, *name = NULL;
 
+				/* TODO use nids! */
 				/* project in between, ie find alias */
 				/* first find expression in expression list */
 				gbe = exps_uses_exp( gb->exps, gbe);

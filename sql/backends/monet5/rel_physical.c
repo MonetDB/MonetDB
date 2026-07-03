@@ -17,7 +17,7 @@
 #include "sql_storage.h"
 #include "sql_scenario.h"
 #include "rel_bin.h"
-#include "bin_partition_by_value.h"
+#include "bin_partition_by_slice.h"
 
 #define IS_ORDER_BASED_AGGR(fname, argc) (\
 				(argc == 2 && (strcmp((fname), "quantile") == 0 || strcmp((fname), "quantile_avg") == 0)) || \
@@ -646,7 +646,7 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 		}
 	} else if (is_groupby(rel->op)) {
 		bool safe = rel_groupby_partition_safe(rel);
-		if (safe && rel_groupby_partition(rel)) {
+		if (safe && rel_groupby_partition(v->sql, rel)) {
 			sql_rel *p = rel->l = rel_build_partition(v, rel->l);
 			p->attr = exps_copy(v->sql, rel->r);
 		}
