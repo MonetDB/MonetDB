@@ -75,8 +75,22 @@ def prgreen(str):
     print(str, end='')
 def prpurple(str):
     print(str, end='')
+use_esc = False
 if isatty:
-    if os.name != 'nt':
+    if os.name == 'nt':
+        try:
+            import ctypes
+            kernel32 = ctypes.windll.kernel32
+            origmode = ctypes.c_long()
+            handle = kernel32.GetStdHandle(-11) # STD_OUTPUT_HANDLE
+            if kernel32.GetConsoleMode(handle, ctypes.byref(origmode)):
+                if kernel32.SetConsoleMode(handle, origmode.value | 0x0004):
+                    use_esc = True
+        except (ImportError, AttributeError):
+            pass
+    else:
+        use_esc = True
+    if use_esc:
         # color output a little
         RED = '\033[1;31m'
         GREEN = '\033[0;32m'
@@ -3039,10 +3053,7 @@ down = '\033[B'
 
 def progress(count, errors, total, test, spaces=' '*(ttywidth or 100)):
     errs = ''
-    if os.name == 'nt':
-        nl = ''
-        line = 0
-    else:
+    if use_esc:
         tid = threading.get_ident()
         nl = ''
         if tid not in threadids:
@@ -3051,6 +3062,9 @@ def progress(count, errors, total, test, spaces=' '*(ttywidth or 100)):
         line = len(threadids) - threadids[tid]
         if errors:
             errs = f'\r{errors} errors'
+    else:
+        nl = ''
+        line = 0
     perc = int(count*100/total) if total and count else 0
     width = len(str(total))
     s = f'[{count:{width}}/{total}] ({perc:2}%)    {test}'
