@@ -32,7 +32,7 @@ qc_create(allocator *sa, int clientid, int seqnr)
 static void
 cq_delete(int clientid, cq *q)
 {
-	if (q->name)
+	if (q->name && q->f && q->f->instantiated)
 		backend_freecode(NULL, clientid, q->name);
 	/* q, params and name are allocated using sa, ie need to be delete last */
 	if (q->sa)
@@ -42,7 +42,7 @@ cq_delete(int clientid, cq *q)
 static void
 cq_restart(int clientid, cq *q)
 {
-	if (q->f->imp)
+	if (q->f && q->f->imp && q->f->instantiated)
 		backend_freecode(NULL, clientid, q->f->imp);
 	q->f->instantiated = false;
 }

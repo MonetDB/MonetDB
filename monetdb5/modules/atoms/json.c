@@ -3174,7 +3174,7 @@ static mel_func json_init_funcs[] = {
  command("json", "number", JSONjson2number, false, "Convert simple JSON values to a double, return nil upon error.", args(1,2, arg("",dbl),arg("j",json))),
  command("json", "integer", JSONjson2integer, false, "Convert simple JSON values to an integer, return nil upon error.", args(1,2, arg("",lng),arg("j",json))),
  pattern("json", "dump", JSONdump, false, "", args(1,2, batarg("",str),arg("j",json))),
- command("json", "filter", JSONfilter, false, "Filter all members of an object by a path expression, returning an array.\nNon-matching elements are skipped.", args(1,3, arg("",json),arg("name",json),arg("pathexpr",str))),
+ command("json", "filter", JSONfilter, false, "Filter all members of an object by a path expression, returning an array. Non-matching elements are skipped.", args(1,3, arg("",json),arg("name",json),arg("pathexpr",str))),
  command("json", "filter", JSONfilterArray_bte, false, "", args(1,3, arg("",json),arg("name",json),arg("idx",bte))),
  command("json", "filter", JSONfilterArrayDefault_bte, false, "", args(1,4, arg("",json),arg("name",json),arg("idx",bte),arg("other",str))),
  command("json", "filter", JSONfilterArray_sht, false, "", args(1,3, arg("",json),arg("name",json),arg("idx",sht))),

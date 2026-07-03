@@ -1,0 +1,37 @@
+-- query without the complex 'IN ( SELECT ....' part
+query R rowsort
+SELECT 1 AS x
+UNION
+SELECT 2.200000
+ ORDER BY x
+----
+1.000
+2.200
+
+-- the orginal reported query
+-- it crashes in in tail_type (st=0x0) at sql/backends/monet5/sql_statement.c:4676
+query R rowsort
+SELECT 1 AS x
+UNION
+SELECT 2.200000
+ ORDER BY x IN ( SELECT - 82 * - 12 * - 27 *
+                   CASE WHEN NOT NULL IN ( covar_samp ( 1 , 1 ) OVER ( )
+                                         , corr ( 1 , 1 ) OVER ( )
+                                         , covar_pop ( 1 , NULL ) OVER ( )
+                                         , covar_samp ( 1 , NULL ) OVER ( ORDER BY 2 , 3 , 4 )
+                                         , corr ( 1 , NULL ) OVER ( ) ) THEN 41
+                        WHEN NOT - 21 / - 95 IS NOT NULL THEN 1.500000
+                    END
+                   FROM generate_series ( 0 , 10 , 2 )
+                  WHERE x NOT IN ( SELECT x * 2.030000
+                                     FROM generate_series ( 0 , 10 , 2 ) AS x
+                                    WHERE x = 'sys' AND x NOT LIKE ( 1 )
+                                   UNION
+                                   SELECT 2 AS x
+                                   UNION
+                                   SELECT 3 AS x )
+               ) ASC
+----
+1.000
+2.200
+

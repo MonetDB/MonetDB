@@ -14,7 +14,7 @@
 #include "mal_client.h"
 #include "mal_resolve.h"
 
-mal_export str malBootstrap(char *modules[], bool embedded,
+mal_export str malBootstrap(const char *const *modules, bool embedded,
 							const char *initpasswd);
 mal_export str MSinitClientPrg(Client cntxt, const char *mod, const char *nme);
 

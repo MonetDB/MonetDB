@@ -116,6 +116,8 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 			continue;
 		if (p->argc > 6)
 			continue;			/* already partitioned */
+		if (getFunctionId(p) == tidRef && p->argc > 4)
+			continue;			/* already partitioned */
 		/*
 		 * The SQL optimizer already collects the counts of the base
 		 * table and passes them on as a row property.  All pieces for a

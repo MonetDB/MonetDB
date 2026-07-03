@@ -99,11 +99,11 @@ gdk_export void *GDKzalloc(size_t size)
 gdk_export void *GDKrealloc(void *pold, size_t size)
 	__attribute__((__alloc_size__(2)))
 	__attribute__((__warn_unused_result__));
-gdk_export str GDKstrdup(const char *s)
+gdk_export char *GDKstrdup(const char *s)
 	__attribute__((__malloc__))
 	__attribute__((__malloc__(GDKfree, 1)))
 	__attribute__((__warn_unused_result__));
-gdk_export str GDKstrndup(const char *s, size_t n)
+gdk_export char *GDKstrndup(const char *s, size_t n)
 	__attribute__((__malloc__))
 	__attribute__((__malloc__(GDKfree, 1)))
 	__attribute__((__warn_unused_result__));
@@ -132,8 +132,8 @@ gdk_export const char *GDKlibversion(void)
 
 // these are used in embedded mode to jump out of GDKfatal
 gdk_export jmp_buf GDKfataljump;
-gdk_export str GDKfatalmsg;
-gdk_export bit GDKfataljumpenable;
+gdk_export char *GDKfatalmsg;
+gdk_export bool GDKfataljumpenable;
 
 /* Timers
  * The following relative timers are available for inspection.

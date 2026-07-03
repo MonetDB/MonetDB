@@ -1075,7 +1075,8 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 														   (pci), name));
 					 }
 			}
-			stkpc++;
+			if (stkpc != stoppc)
+				stkpc++;
 			break;
 		case LEAVEsymbol:
 		case REDOsymbol:
