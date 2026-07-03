@@ -216,7 +216,7 @@ sketch_populate(BAT *b, BATiter *bi, struct canditer *bci,
 		canditer_reset(&n_bci);
 	}
 
-	switch (n_bi.type) {
+	switch (ATOMstorage(n_bi.type)) {
 	case TYPE_int:
 		SKETCH_POPULATE(int);
 		break;
@@ -259,5 +259,6 @@ bat_guess_uniques(BAT *b, BATiter *bi, struct canditer *bci)
 	if (sketch_populate(b, bi, bci, cnting_sketch) == GDK_SUCCEED)
 		unique_guess = sketch_estimate(cnting_sketch);
 
+	b->tunique_est = unique_guess;
 	return unique_guess;
 }
