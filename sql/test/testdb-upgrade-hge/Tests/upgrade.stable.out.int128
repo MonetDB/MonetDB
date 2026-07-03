@@ -1,3 +1,5 @@
+Running database upgrade commands to update system tables.
+
 Running database upgrade commands:
 drop function sys.dump_database;
 drop view sys.dump_tables;
