@@ -3047,31 +3047,31 @@ def mapi_ping(port, host='localhost', tries=3):
 
 
 threadids = {}
-up = '\033[A'
-down = '\033[B'
 
 
 def progress(count, errors, total, test, spaces=' '*(ttywidth or 100)):
-    errs = ''
+    errs = '\r'
     if use_esc:
         tid = threading.get_ident()
-        nl = ''
         if tid not in threadids:
             threadids[tid] = len(threadids)
             nl = '\n'
+        else:
+            nl = ''
         line = len(threadids) - threadids[tid]
         if errors:
-            errs = f'\r{errors} errors'
+            errs = f'\r{errors} error{"" if errors == 1 else "s"}'
+        up = f'\033[{line}A' if line > 1 else '\033[A'
+        down = f'\033[{line}B' if line > 1 else '\033[B'
     else:
-        nl = ''
-        line = 0
+        nl = up = down = ''
     perc = int(count*100/total) if total and count else 0
     width = len(str(total))
     s = f'[{count:{width}}/{total}] ({perc:2}%)    {test}'
     if len(s) > ttywidth:
         test = test[len(s)-ttywidth:]
         s = f'[{count:{width}}/{total}] ({perc:2}%)    {test}'
-    sys.stdout.write(nl + '\r' + up*line + spaces + '\r' + s + down*line + errs)
+    sys.stdout.write(nl + '\r' + up + spaces + '\r' + s + down + errs)
 
 
 def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, length, nomito, threads, user, passwd, COND, PSRVR, total_tests, options, TSTDB, TSTDIR, TSTTRGDIR, TSTSRCDIR, environ):
