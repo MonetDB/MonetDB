@@ -771,8 +771,9 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 	case op_basetable: {
 		sql_table *t = (sql_table *) rel->l;
 		sqlstore *store = v->sql->session->tr->store;
+		sql_rel *p = v->parent;
 
-		if (!list_empty(rel->exps)) {
+		if (!list_empty(rel->exps) && (!p || !is_modify(p->op))) {
 			for (node *n = rel->exps->h ; n ; n = n->next)
 				rel_basetable_column_get_statistics(v->sql, rel, n->data);
 		}
