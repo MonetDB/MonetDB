@@ -62,7 +62,11 @@ rel_propagate_column_ref_statistics(mvc *sql, sql_rel *rel, sql_exp *e)
 				found_right = true;
 			sql_exp *ne;
 			if ((ne = predicates_find_nid(rel->exps, e->nid)) != NULL) {
-				e->nuniques = ne->nuniques;
+				prop *p = find_prop(ne->p, PROP_NUNIQUES);
+				if (p && !find_prop(e->p, PROP_NUNIQUES)) {
+					prop *np = e->p = prop_create(sql->sa, PROP_NUNIQUES, (prop *) e->p);
+					np->value.dval = p->value.dval;
+				}
 			}
 
 			if (!found_left && !found_right)
@@ -184,8 +188,13 @@ rel_propagate_column_ref_statistics(mvc *sql, sql_rel *rel, sql_exp *e)
 			atom *fval;
 			prop *est;
 			if ((found = rel_find_exp(rel, e))) {
-				if (found != e && !e->nuniques)
-					e->nuniques = found->nuniques;
+				if (found != e && !find_prop(e->p, PROP_NUNIQUES)) {
+					prop *pp = find_prop(found->p, PROP_NUNIQUES);
+					if (pp) {
+						prop *np = e->p = prop_create(sql->sa, PROP_NUNIQUES, (prop *) e->p);
+						np->value.dval = pp->value.dval;
+					}
+				}
 				if (found /*rel->op != op_table*/) { /* At the moment don't propagate statistics for table relations */
 					if ((fval = find_prop_and_get(found->p, PROP_MAX)))
 						set_minmax_property(sql, e, PROP_MAX, fval);
@@ -771,8 +780,9 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 	case op_basetable: {
 		sql_table *t = (sql_table *) rel->l;
 		sqlstore *store = v->sql->session->tr->store;
+		sql_rel *p = v->parent;
 
-		if (!list_empty(rel->exps)) {
+		if (!list_empty(rel->exps) && (!p || !is_modify(p->op))) {
 			for (node *n = rel->exps->h ; n ; n = n->next)
 				rel_basetable_column_get_statistics(v->sql, rel, n->data);
 		}
@@ -1160,6 +1170,8 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 				set_count_prop(v->sql->sa, rel, 1000 /* TODO get size of querylog */);
 			} else if (f->func->lang == FUNC_LANG_MAL && strncmp(f->func->base.name, "generate_series", 15) == 0) {
 				set_count_prop(v->sql->sa, rel, 1000 /* TODO get size of (limit - start + 1) */);
+			} else if (f->func->lang == FUNC_LANG_INT && strncmp(f->func->base.name, "file_loader", 11) == 0) {
+				set_count_prop(v->sql->sa, rel, 1000) /* get size from file loader */;
 			} else if (f->func->lang == FUNC_LANG_MAL &&
 					   (strcmp(f->func->base.name, "env") == 0 ||
 						strcmp(f->func->base.name, "keywords") == 0 ||

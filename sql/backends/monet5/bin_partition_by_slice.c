@@ -39,15 +39,15 @@
 lng
 exp_getcard(mvc *sql, sql_rel *rel, sql_exp *e)
 {
-	BUN est = get_rel_count(rel);
+	BUN est = BUN_NONE;
 	lng cnt;
 	sql_subtype *t = exp_subtype(e);
 	prop *p;
 
-	if (e->nuniques)
-		est = e->nuniques;
-	else if ((p = find_prop(e->p, PROP_NUNIQUES)))
+	if ((p = find_prop(e->p, PROP_NUNIQUES)) != NULL)
 		est = (BUN)p->value.dval;
+	else
+		est = get_rel_count(rel);
 
 	if (est == BUN_NONE
 #if SIZEOF_BUN == SIZEOF_LNG
@@ -828,7 +828,7 @@ rel_groupby_partition(mvc *sql, sql_rel *rel)
 	if (list_empty(rel->r))
 		return false;
 	/* check size */
-	BUN est = get_rel_count(rel);
+	BUN est = get_rel_count(rel->l);
 
 	lng estimate, card = 1;
 	if (est == BUN_NONE

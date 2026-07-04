@@ -176,8 +176,10 @@ exp_compare(allocator *sa, sql_exp *l, sql_exp *r, int cmptype)
 	e->l = l;
 	e->r = r;
 	e->flag = cmptype;
-	if (cmptype == cmp_equal)
-		e->nuniques = 1;
+	if (cmptype == cmp_equal) {
+		prop *p = e->p = prop_create(sa, PROP_NUNIQUES, (prop *) e->p);
+		p->value.dval = 1;
+	}
 	if (!has_nil(l) && !has_nil(r))
 		set_has_no_nil(e);
 	return e;
@@ -195,8 +197,10 @@ exp_compare2(allocator *sa, sql_exp *l, sql_exp *r, sql_exp *f, int cmptype, int
 	e->r = r;
 	e->f = f;
 	e->flag = cmptype;
-	if (cmptype == cmp_equal)
-		e->nuniques = 1;
+	if (cmptype == cmp_equal) {
+		prop *p = e->p = prop_create(sa, PROP_NUNIQUES, (prop *) e->p);
+		p->value.dval = 1;
+	}
 	if (symmetric)
 		set_symmetric(e);
 	if (!has_nil(l) && !has_nil(r) && !has_nil(f))
@@ -251,8 +255,10 @@ exp_in(allocator *sa, sql_exp *l, list *r, int cmptype)
 	e->card = MAX(l->card, exps_card);
 	e->l = l;
 	e->r = r;
-	if (cmptype == cmp_in)
-		e->nuniques = list_length(r);
+	if (cmptype == cmp_in) {
+		prop *p = e->p = prop_create(sa, PROP_NUNIQUES, (prop *) e->p);
+		p->value.dval = (dbl) list_length(r);
+	}
 	assert( cmptype == cmp_in || cmptype == cmp_notin);
 	e->flag = cmptype;
 	if (!has_nil(l) && !have_nil(r))
