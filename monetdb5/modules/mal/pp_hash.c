@@ -3340,17 +3340,19 @@ OAHASHnth_slice(Client ctx, bat *slice, bat *ht_sink, int *slice_nr)
 	return MAL_SUCCEED;
 }
 
-#define hashloop(T) { \
-	T *v = Tloc(i, 0); \
-	for (BUN j = 0; j<cnt; j++) \
-		h[j] = _hash_##T((T)v[j]); \
-} break;
+#define hashloop(T) \
+	do { \
+		T *v = Tloc(i, 0); \
+		for (BUN j = 0; j<cnt; j++) \
+			h[j] = _hash_##T((T)v[j]); \
+	} while (0)
 
-#define hashloopf(T, BT) { \
-	T *v = Tloc(i, 0); \
-	for (BUN j = 0; j<cnt; j++) \
-		h[j] = _hash_##T(*(BT*)(v+j)); \
-} break;
+#define hashloopf(T, BT) \
+	do { \
+		T *v = Tloc(i, 0); \
+		for (BUN j = 0; j<cnt; j++) \
+			h[j] = _hash_##T(*(BT*)(v+j)); \
+	} while (0)
 
 static str
 OAHASHhash(Client cntxt, MalBlkPtr m, MalStkPtr stk, InstrPtr p)
@@ -3379,26 +3381,33 @@ OAHASHhash(Client cntxt, MalBlkPtr m, MalStkPtr stk, InstrPtr p)
 	case TYPE_bit:
 	case TYPE_bte:
 		hashloop(bte);
+		break;
 	case TYPE_sht:
 		hashloop(sht);
+		break;
 	case TYPE_int:
 	case TYPE_date:
 	case TYPE_inet4:
 		hashloop(int);
+		break;
 	case TYPE_oid:
 	case TYPE_lng:
 	case TYPE_daytime:
 	case TYPE_timestamp:
 		hashloop(lng);
+		break;
 #ifdef HAVE_HGE
 	case TYPE_hge:
 	case TYPE_uuid:
 		hashloop(hge);
+		break;
 #endif
 	case TYPE_flt:
 		hashloopf(flt, int);
+		break;
 	case TYPE_dbl:
 		hashloopf(dbl, lng);
+		break;
 	default:
 		printf("todo\n");
 	}

@@ -756,10 +756,9 @@ gheap_ins_##T( heapn *hp, size_t pos, int *err)	\
 	subheap *sh = hp->sub;				\
 	if (sh) {							\
 		T *ivals = sh->ivals;			\
-		T val = ivals[pos];				\
 		T *vals = sh->vals;				\
 										\
-		vals[vpos] = val;				\
+		vals[vpos] = ivals[pos];		\
 		if (sh->sub)					\
 			*err = subheap_ins( sh->sub, pos, vpos);	\
 	}									\
@@ -833,14 +832,14 @@ topn_##T( size_t n, oid *pos, oid *sl, heapn *hp, int *err)			\
 }							\
 							\
 static size_t				\
-topn_grouped_##T( size_t n, oid *pos, oid *sl, heapn *hp, int *err)			\
+topn_grouped_##T( size_t cnt, oid *pos, oid *sl, heapn *hp, int *err)			\
 {							\
 	size_t i = 0, j = 0;	\
 							\
 	subheap *sh = hp->sub;	\
 	if (!sh) {				\
 		if (hp->used < hp->size) {	\
-			for(i=0; i<n; i++) {	\
+			for(i=0; i<cnt; i++) {	\
 				if (hp->useda[hp->gi[i]] < hp->size) { \
 					pos[i] = gheap_ins_##T(hp, i, err);	\
 					sl[i] = i;		\
@@ -855,8 +854,8 @@ topn_grouped_##T( size_t n, oid *pos, oid *sl, heapn *hp, int *err)			\
 	\
 	if (sh->nlarge) {		\
 		if (sh->min) {		\
-			for(; i<n; i++) {						\
-				if (hp->useda[hp->gi[i]] < hp->size) { \
+			for(; i<cnt; i++) {						\
+				if (!hp->fulla[hp->gi[i]]) { \
 					pos[j] = gheap_ins_##T(hp, i, err);		\
 					sl[j] = i;	\
 					j++;	\
@@ -872,8 +871,8 @@ topn_grouped_##T( size_t n, oid *pos, oid *sl, heapn *hp, int *err)			\
 				}			\
 			}				\
 		} else {			\
-			for(; i<n; i++) {						\
-				if (hp->useda[hp->gi[i]] < hp->size) { \
+			for(; i<cnt; i++) {						\
+				if (!hp->fulla[hp->gi[i]]) { \
 					pos[j] = gheap_ins_##T(hp, i, err);		\
 					sl[j] = i;	\
 					j++;	\
@@ -890,8 +889,8 @@ topn_grouped_##T( size_t n, oid *pos, oid *sl, heapn *hp, int *err)			\
 			}				\
 		}					\
 	} else if (sh->min) {	\
-		for(; i<n; i++) {	\
-			if (hp->useda[hp->gi[i]] < hp->size) { \
+		for(; i<cnt; i++) {	\
+			if (!hp->fulla[hp->gi[i]]) { \
 				pos[j] = gheap_ins_##T(hp, i, err);		\
 				sl[j] = i;	\
 				j++;		\
@@ -907,8 +906,8 @@ topn_grouped_##T( size_t n, oid *pos, oid *sl, heapn *hp, int *err)			\
 			}				\
 		}					\
 	} else {				\
-		for(; i<n; i++) {	\
-			if (hp->useda[hp->gi[i]] < hp->size) { \
+		for(; i<cnt; i++) {	\
+			if (!hp->fulla[hp->gi[i]]) { \
 				pos[j] = gheap_ins_##T(hp, i, err);		\
 				sl[j] = i;	\
 				j++;		\
@@ -1807,13 +1806,11 @@ HEAPtopn(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr pci)
 	if (hp->grouped) { \
 		for(size_t g = 0; g < hp->gsize; g++) { \
 			oid *pos = hp->pos + g * hp->size;  \
+			used = hp->useda[g]-1 + j;				\
 			if (offset >= hp->useda[g])			\
 				continue;						\
-			for(i = 0; i<offset; i++)			\
-				(void) gheap_del_##T(hp, g);	\
-			j += hp->useda[g];					\
-			for(i = 0; hp->useda[g]; i++) {			\
-				rp[j-(i+1)] = pos[0];			\
+			for(i = 0; hp->useda[g]-offset; i++, j++) {		\
+				rp[used-offset-i] = pos[0];		\
 				(void) gheap_del_##T(hp, g);	\
 			}									\
 		}										\
@@ -1847,8 +1844,10 @@ HEAPorder(Client ctx, bat *rid, bat *hb, size_t offset)
 		BBPreclaim(r);
 		throw(MAL, "heapn.order", "offset (%zu) too high\n", offset);
 	}
-	size_t used = hp->used-1, i = 0;
+	size_t used = hp-> used-1, i = 0;
 	BUN j = 0;
+	if (!hp->shared)
+		offset = 0;
 	if (!hp->sub || (!hp->shared && hp->grouped)) {
 		for(size_t g = 0; g < hp->gsize; g++) {
 			oid *pos = hp->pos + g * hp->size;
@@ -1856,6 +1855,7 @@ HEAPorder(Client ctx, bat *rid, bat *hb, size_t offset)
 				continue;
 			for (i = 0; i < hp->useda[g]-offset; i++)
 				rp[j++] = pos[offset+i];
+
 		}
 	} else if (!hp->sub->vb->ttype) {
 		order(lng);
@@ -1883,16 +1883,13 @@ HEAPorder(Client ctx, bat *rid, bat *hb, size_t offset)
 		order(dbl);
 	} else {
 		if (hp->grouped) {
-			BUN j = 0;
 			for(size_t g = 0; g < hp->gsize; g++) {
 				oid *pos = hp->pos + g * hp->size;
 				if (offset >= hp->useda[g])
 					continue;
-				for(i = 0; i<offset; i++)
-					(void) gheap_del_any(hp, g);
-				j += hp->useda[g];
-				for(; hp->useda[g]; i++) {
-					rp[j-(i+1)] = pos[0];
+				used = hp->useda[g]-1 + j;
+				for(i=0; hp->useda[g]-offset; i++, j++) {
+					rp[used-offset-i] = pos[0];
 					(void) gheap_del_any(hp, g);
 				}
 			}

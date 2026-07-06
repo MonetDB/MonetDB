@@ -446,69 +446,72 @@ PPmerge(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 }
 
-#define zzl_vvproject(T, res, zzl, lcol, rcol) { \
-	oid *o = (oid*)Tloc(res, 0); \
-	oid l = lcol->tseqbase; \
-	oid r = rcol->tseqbase; \
-	oid v = side?r:l; \
-	BUN p = side?rp:lp; \
-	for (BUN k = 0; k<sz; k++) { \
-		int nr = z[k]; \
-		for (int j = 0; j<nr; j++, p++, op++) \
-			o[op] = v+p; \
-		if (side) { \
-			rp = p; \
-			p = lp; \
-		} else { \
-			lp = p; \
-			p = rp; \
+#define zzl_vvproject(T, res, zzl, lcol, rcol) \
+	do { \
+		oid *o = (oid*)Tloc(res, 0); \
+		oid l = lcol->tseqbase; \
+		oid r = rcol->tseqbase; \
+		oid v = side?r:l; \
+		BUN p = side?rp:lp; \
+		for (BUN k = 0; k<sz; k++) { \
+			int nr = z[k]; \
+			for (int j = 0; j<nr; j++, p++, op++) \
+				o[op] = v+p; \
+			if (side) { \
+				rp = p; \
+				p = lp; \
+			} else { \
+				lp = p; \
+				p = rp; \
+			} \
+			side = !side; \
+			v = side?r:l; \
 		} \
-		side = !side; \
-		v = side?r:l; \
-	} \
-}
+	} while (0)
 
-#define zzl_vproject(T, res, zzl, lcol, rcol) { \
-	oid *o = (oid*)Tloc(res, 0); \
-	oid l = lcol->tseqbase; \
-	oid *r = Tloc(rcol, 0); \
-	BUN p = side?rp:lp; \
-	for (BUN k = 0; k<sz; k++) { \
-		int nr = z[k]; \
-		for (int j = 0; j<nr; j++, p++, op++) \
-			o[op] = side?r[p]:l+p; \
-		if (side) { \
-			rp = p; \
-			p = lp; \
-		} else { \
-			lp = p; \
-			p = rp; \
+#define zzl_vproject(T, res, zzl, lcol, rcol) \
+	do { \
+		oid *o = (oid*)Tloc(res, 0); \
+		oid l = lcol->tseqbase; \
+		oid *r = Tloc(rcol, 0); \
+		BUN p = side?rp:lp; \
+		for (BUN k = 0; k<sz; k++) { \
+			int nr = z[k]; \
+			for (int j = 0; j<nr; j++, p++, op++) \
+				o[op] = side?r[p]:l+p; \
+			if (side) { \
+				rp = p; \
+				p = lp; \
+			} else { \
+				lp = p; \
+				p = rp; \
+			} \
+			side = !side; \
 		} \
-		side = !side; \
-	} \
-}
+	} while (0)
 
-#define zzl_project(T, res, zzl, lcol, rcol) { \
-	T *o = Tloc(res, 0); \
-	T *l = Tloc(lcol, 0); \
-	T *r = Tloc(rcol, 0); \
-	T *v = side?r:l; \
-	BUN p = side?rp:lp; \
-	for (BUN k = 0; k<sz; k++) { \
-		int nr = z[k]; \
-		for (int j = 0; j<nr; j++, p++, op++) \
-			o[op] = v[p]; \
-		if (side) { \
-			rp = p; \
-			p = lp; \
-		} else { \
-			lp = p; \
-			p = rp; \
+#define zzl_project(T, res, zzl, lcol, rcol) \
+	do { \
+		T *o = Tloc(res, 0); \
+		T *l = Tloc(lcol, 0); \
+		T *r = Tloc(rcol, 0); \
+		T *v = side?r:l; \
+		BUN p = side?rp:lp; \
+		for (BUN k = 0; k<sz; k++) { \
+			int nr = z[k]; \
+			for (int j = 0; j<nr; j++, p++, op++) \
+				o[op] = v[p]; \
+			if (side) { \
+				rp = p; \
+				p = lp; \
+			} else { \
+				lp = p; \
+				p = rp; \
+			} \
+			side = !side; \
+			v = side?r:l; \
 		} \
-		side = !side; \
-		v = side?r:l; \
-	} \
-}
+	} while (0)
 
 
 /*later optimize by starting at end, moving tuples */
