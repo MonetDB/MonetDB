@@ -3345,14 +3345,14 @@ OAHASHnth_slice(Client ctx, bat *slice, bat *ht_sink, int *slice_nr)
 		T *v = Tloc(i, 0); \
 		for (BUN j = 0; j<cnt; j++) \
 			h[j] = _hash_##T((T)v[j]); \
-	} while (0);
+	} while (0)
 
 #define hashloopf(T, BT) \
 	do { \
 		T *v = Tloc(i, 0); \
 		for (BUN j = 0; j<cnt; j++) \
 			h[j] = _hash_##T(*(BT*)(v+j)); \
-	} while (0);
+	} while (0)
 
 static str
 OAHASHhash(Client cntxt, MalBlkPtr m, MalStkPtr stk, InstrPtr p)
