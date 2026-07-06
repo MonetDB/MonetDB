@@ -22,7 +22,6 @@ import signal
 import fnmatch
 import http
 import http.server
-import glob
 import datetime
 import pymonetdb  # check for pymonetdb early: it is essential for our work
 import concurrent.futures
