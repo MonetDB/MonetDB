@@ -573,8 +573,7 @@ heapinit(BAT *b, const char *buf,
 	b->tnosorted = (BUN) nosorted;
 	b->tnorevsorted = (BUN) norevsorted;
 	b->tunique_est = 0.0;
-	/* (properties & 0x0200) is the old tdense flag */
-	b->tseqbase = (properties & 0x0200) == 0 || base >= (uint64_t) oid_nil ? oid_nil : (oid) base;
+	b->tseqbase = base >= (uint64_t) oid_nil ? oid_nil : (oid) base;
 	b->theap->free = (size_t) free;
 	b->theap->hasfile = free > 0;
 	/* set heap size to match capacity */
@@ -2125,7 +2124,6 @@ heap_entry(FILE *fp, BATiter *bi, BUN size)
 		       (((uint16_t) bi->sorted << 0) |
 			((uint16_t) bi->revsorted << 7) |
 			((uint16_t) bi->key << 8) |
-			((uint16_t) BATtdensebi(bi) << 9) |
 			((uint16_t) bi->nonil << 10) |
 			((uint16_t) bi->nil << 11) |
 			((uint16_t) bi->ascii << 12) |
