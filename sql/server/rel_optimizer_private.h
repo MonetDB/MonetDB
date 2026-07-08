@@ -44,6 +44,7 @@ typedef struct sql_optimizer {
 #define statistics_gathered       (1 << 3)
 #define rel_remote_func_used      (1 << 4)
 #define rewrite_gt_zero_used      (1 << 5)
+#define unnest_used				  (1 << 6)
 
 #define is_rewrite_fix_count_used(X)    ((X & rewrite_fix_count_used) == rewrite_fix_count_used)
 #define is_rewrite_values_used(X)       ((X & rewrite_values_used) == rewrite_values_used)
@@ -51,6 +52,7 @@ typedef struct sql_optimizer {
 #define are_statistics_gathered(X)      ((X & statistics_gathered) == statistics_gathered)
 #define is_rel_remote_func_used(X)      ((X & rel_remote_func_used) == rel_remote_func_used)
 #define is_rewrite_gt_zero_used(X)      ((X & rewrite_gt_zero_used) == rewrite_gt_zero_used)
+#define is_unnest_used(X)			    ((X & unnest_used) == unnest_used)
 
 /* At the moment the following optimizers 'packs' can be disabled,
    later we could disable individual optimizers from the 'pack' */
@@ -120,6 +122,6 @@ extern atom *exp_flatten(mvc *sql, bool value_based_opt, sql_exp *e) __attribute
 extern atom *reduce_scale(mvc *sql, atom *a) __attribute__((__visibility__("hidden")));
 extern int exp_range_overlap(atom *min, atom *max, atom *emin, atom *emax, bool min_exclusive, bool max_exclusive) __attribute__((__visibility__("hidden")));
 extern int is_numeric_upcast(sql_exp *e) __attribute__((__visibility__("hidden")));
-extern sql_exp *list_exps_uses_exp(list *exps, sql_alias *rname, const char *name) __attribute__((__visibility__("hidden")));
+extern sql_exp *list_exps_uses_exp(list *exps, sql_exp *e) __attribute__((__visibility__("hidden")));
 extern sql_exp *exps_uses_exp(list *exps, sql_exp *e) __attribute__((__visibility__("hidden")));
 extern int exp_keyvalue(sql_exp *e) __attribute__((__visibility__("hidden")));

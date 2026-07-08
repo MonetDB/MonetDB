@@ -101417,55 +101417,6 @@ begin
  return select count(*) from selfref where parentid is not null;
 end
 ;
-CREATE FUNCTION "testschema"."pyapi01"("i" INTEGER) RETURNS TABLE ("i" INTEGER, "d" DOUBLE) LANGUAGE PYTHON
-{
-        x = range(1, i + 1)
-        y = [42.0] * i
-        return([x,y])
-}
-;
-CREATE FUNCTION "testschema"."pyapi02"("i" INTEGER, "j" INTEGER, "z" INTEGER) RETURNS INTEGER LANGUAGE PYTHON3
-{
-    x = i * sum(j) * z
-    return x
-}
-;
-CREATE FUNCTION "testschema"."rapi01"("i" INTEGER) RETURNS TABLE ("i" INTEGER, "d" DOUBLE) LANGUAGE R
-{
-        return(data.frame(i=seq(1,i),d=42.0));
-}
-;
-CREATE FUNCTION "testschema"."rapi02"("i" INTEGER, "j" INTEGER, "z" INTEGER) RETURNS INTEGER LANGUAGE R
-{
-        return(i*sum(j)*z);
-}
-;
-CREATE FUNCTION "testschema"."capi00"("inp" INTEGER) RETURNS INTEGER LANGUAGE C
-{
-    size_t i;
-    result->initialize(result, inp.count);
-    for(i = 0; i < inp.count; i++) {
-        result->data[i] = inp.data[i] * 2;
-    }
-}
-;
-CREATE AGGREGATE "testschema"."aggrmedian"("val" INTEGER) RETURNS INTEGER LANGUAGE PYTHON
-{
-        if 'aggr_group' in locals():
-                unique = numpy.unique(aggr_group)
-                x = numpy.zeros(shape=(unique.size))
-                for i in range(0,unique.size):
-                        x[i] = numpy.median(val[numpy.where(aggr_group==unique[i])])
-                return(x)
-        else:
-                return(numpy.median(val))
-}
-;
-CREATE FUNCTION "testschema"."pyapi10_mult"("i" INTEGER, "j" INTEGER) RETURNS INTEGER LANGUAGE PYTHON
-{
-    return(i*j)
-}
-;
 ALTER TABLE "testschema"."test" ALTER COLUMN "i" SET DEFAULT next value for "testschema"."test_seq";
 ALTER TABLE "testschema"."selfref" ALTER COLUMN "id" SET DEFAULT next value for "testschema"."selfref_seq";
 ALTER TABLE "testschema"."t1" ALTER COLUMN "z" SET DEFAULT 0;

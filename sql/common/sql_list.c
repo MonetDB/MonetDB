@@ -59,6 +59,14 @@ sa_list_append(allocator *sa, list *l, void *data)
 }
 
 list *
+sa_list_prepend(allocator *sa, list *l, void *data)
+{
+	if (!l)
+		l = SA_LIST(sa, NULL);
+	return list_prepend(l, data);
+}
+
+list *
 list_add(list *l, void *data)
 {
 	if (!l)

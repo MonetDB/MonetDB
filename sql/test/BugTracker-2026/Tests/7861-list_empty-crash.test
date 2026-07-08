@@ -11,7 +11,7 @@ SELECT * FROM ( SELECT * FROM ( SELECT 1 AS x ) WHERE x IN
                   ) )
     WHERE ( x % 7 ) = 0 ) ) )
 
-statement error GDK reported error: hashjoin: more than one match
+statement error /more than one match/
 SELECT * FROM ( SELECT * FROM ( SELECT 1 AS x ) WHERE x IN
  ( SELECT ALL sql_min ( NULL , NULL ) FROM (
     SELECT * FROM (

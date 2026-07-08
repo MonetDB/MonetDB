@@ -19,14 +19,6 @@ ALTER TABLE ratings ADD TABLE subt2 AS PARTITION FROM 1925 TO 1950
 statement ok rowcount 1347
 COPY 1347 RECORDS INTO ratings FROM E'$QTSTDATAPATH/netflix_data/movies.csv' USING DELIMITERS ',',E'\n','"'
 
-statement ok
-CREATE LOADER tryaloader() LANGUAGE PYTHON {
-    _emit.emit({'movie_id': 1, 'release_year': 1926, 'title': 'A horror movie'});
-}
-
-statement error
-COPY LOADER INTO ratings FROM tryaloader()
-
 query I rowsort
 SELECT COUNT(*) FROM ratings
 ----
@@ -56,7 +48,4 @@ DROP TABLE subt2
 
 statement ok
 DROP TABLE ratings
-
-statement ok
-DROP LOADER tryaloader
 

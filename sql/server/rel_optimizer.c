@@ -662,7 +662,8 @@ rel_optimizer_one(mvc *sql, sql_rel *rel, int profile, int instantiate, int valu
 		.data = &gp
 	};
 
-	sql->runs = !(ATOMIC_GET(&GDKdebug) & TESTINGMASK) && profile ?
+	//sql->runs = !(ATOMIC_GET(&GDKdebug) & TESTINGMASK) && profile ?
+	sql->runs = (sql->show_all_details || (!(ATOMIC_GET(&GDKdebug) & TESTINGMASK) && profile)) ?
 		ma_zalloc(sql->sa, NSQLREWRITERS * sizeof(sql_optimizer_run)) :
 		NULL;
 

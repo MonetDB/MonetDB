@@ -305,7 +305,7 @@ OPTpushselectImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 				int var = getArg(p, 1);
 				InstrPtr q = mb->stmt[vars[var]];	/* BEWARE: the optimizer may not add or remove statements ! */
 
-				if (isLikeOp(q) && !isaBatType(getArgType(mb, q, 2)) && isVarConstant(mb, getArg(q, 2)) &&	/* pattern is a value */
+				if (q && isLikeOp(q) && !isaBatType(getArgType(mb, q, 2)) && isVarConstant(mb, getArg(q, 2)) &&	/* pattern is a value */
 					isVarConstant(mb, getArg(q, 3)) &&	/* escape is a value */
 					isVarConstant(mb, getArg(q, 4)) &&	/* isensitive flag is a value */
 					getArg(q, 0) == getArg(p,
@@ -430,10 +430,8 @@ OPTpushselectImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 	slices = (int *) ma_zalloc(ta, sizeof(int) * mb->vtop);
 	rslices = (bool *) ma_zalloc(ta, sizeof(bool) * mb->vtop);
 	oclean = (bool *) ma_zalloc(ta, sizeof(bool) * mb->vtop);
-	if (!nvars || !slices || !rslices || !oclean
-		|| newMalBlkStmt(mb,
-						 mb->stop + (5 * push_down_delta) + (2 * nr_topn)) <
-		0) {
+	if (!nvars || !slices || !rslices || !oclean ||
+		newMalBlkStmt(mb, mb->stop + (5 * push_down_delta) + (2 * nr_topn)) < 0) {
 		mb->stmt = old;
 		goto wrapup;
 	}

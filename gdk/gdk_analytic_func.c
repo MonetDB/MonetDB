@@ -1080,7 +1080,7 @@ GDKanalyticallead(BAT *b, BAT *p, BUN lead, const void *restrict default_value, 
 		oid ncount = i - k;					\
 		if ((res = GDKrebuild_segment_tree(ncount, sizeof(TPE), st, &segment_tree, &levels_offset, &nlevels)) != GDK_SUCCEED) \
 			goto cleanup;					\
-		populate_segment_tree(TPE, ncount, INIT_AGGREGATE_MIN_MAX_FIXED, COMPUTE_LEVEL0_MIN_MAX_FIXED, COMPUTE_LEVELN_MIN_MAX_FIXED, TPE, MIN_MAX, NOTHING); \
+		populate_segment_tree(TPE, ncount, INIT_AGGREGATE_MIN_MAX_FIXED, COMPUTE_LEVEL0_MIN_MAX_FIXED, COMPUTE_LEVELN_MIN_MAX_FIXED, NOTHING_ARGS, TPE, MIN_MAX, NOTHING); \
 		for (; k < i; k++)					\
 			if (start[k] >= j)				\
 				compute_on_segment_tree(TPE, start[k] - j, end[k] - j, INIT_AGGREGATE_MIN_MAX_FIXED, COMPUTE_LEVELN_MIN_MAX_FIXED, FINALIZE_AGGREGATE_MIN_MAX_FIXED, TPE, MIN_MAX, NOTHING); \
@@ -1269,7 +1269,7 @@ GDKanalyticallead(BAT *b, BAT *p, BUN lead, const void *restrict default_value, 
 		oid ncount = i - k;					\
 		if ((res = GDKrebuild_segment_tree(ncount, sizeof(void*), st, &segment_tree, &levels_offset, &nlevels)) != GDK_SUCCEED) \
 			goto cleanup;					\
-		populate_segment_tree(const void*, ncount, INIT_AGGREGATE_MIN_MAX_OTHERS, COMPUTE_LEVEL0_MIN_MAX_OTHERS, COMPUTE_LEVELN_MIN_MAX_OTHERS, GT_LT, NOTHING, NOTHING); \
+		populate_segment_tree(const void*, ncount, INIT_AGGREGATE_MIN_MAX_OTHERS, COMPUTE_LEVEL0_MIN_MAX_OTHERS, COMPUTE_LEVELN_MIN_MAX_OTHERS, NOTHING_ARGS, GT_LT, NOTHING, NOTHING); \
 		for (; k < i; k++)					\
 			if (start[k] >= j)				\
 				compute_on_segment_tree(void*, start[k] - j, end[k] - j, INIT_AGGREGATE_MIN_MAX_OTHERS, COMPUTE_LEVELN_MIN_MAX_OTHERS, FINALIZE_AGGREGATE_MIN_MAX_OTHERS, GT_LT, NOTHING, NOTHING); \
@@ -1550,7 +1550,7 @@ ANALYTICAL_MIN_MAX(max, MAX, <)
 			oid ncount = i - k;				\
 			if ((res = GDKrebuild_segment_tree(ncount, sizeof(lng), st, &segment_tree, &levels_offset, &nlevels)) != GDK_SUCCEED) \
 				goto cleanup;				\
-			populate_segment_tree(lng, ncount, INIT_AGGREGATE_COUNT, COMPUTE_LEVEL0_COUNT_FIXED, COMPUTE_LEVELN_COUNT, TPE, NOTHING, NOTHING); \
+			populate_segment_tree(lng, ncount, INIT_AGGREGATE_COUNT, COMPUTE_LEVEL0_COUNT_FIXED, COMPUTE_LEVELN_COUNT, NOTHING_ARGS, TPE, NOTHING, NOTHING); \
 			for (; k < i; k++)				\
 				if (start[k] >= j)			\
 					compute_on_segment_tree(lng, start[k] - j, end[k] - j, INIT_AGGREGATE_COUNT, COMPUTE_LEVELN_COUNT, FINALIZE_AGGREGATE_COUNT, TPE, NOTHING, NOTHING); \
@@ -1658,7 +1658,7 @@ ANALYTICAL_MIN_MAX(max, MAX, <)
 			oid ncount = i - k;				\
 			if ((res = GDKrebuild_segment_tree(ncount, sizeof(lng), st, &segment_tree, &levels_offset, &nlevels)) != GDK_SUCCEED) \
 				goto cleanup;				\
-			populate_segment_tree(lng, ncount, INIT_AGGREGATE_COUNT, COMPUTE_LEVEL0_COUNT_OTHERS, COMPUTE_LEVELN_COUNT, NOTHING, NOTHING, NOTHING); \
+			populate_segment_tree(lng, ncount, INIT_AGGREGATE_COUNT, COMPUTE_LEVEL0_COUNT_OTHERS, COMPUTE_LEVELN_COUNT, NOTHING_ARGS, NOTHING, NOTHING, NOTHING); \
 			for (; k < i; k++)				\
 				if (start[k] >= j)			\
 					compute_on_segment_tree(lng, start[k] - j, end[k] - j, INIT_AGGREGATE_COUNT, COMPUTE_LEVELN_COUNT, FINALIZE_AGGREGATE_COUNT, NOTHING, NOTHING, NOTHING); \
@@ -1921,7 +1921,7 @@ cleanup:
 		oid ncount = i - k;					\
 		if ((res = GDKrebuild_segment_tree(ncount, sizeof(TPE2), st, &segment_tree, &levels_offset, &nlevels)) != GDK_SUCCEED) \
 			goto cleanup;					\
-		populate_segment_tree(TPE2, ncount, INIT_AGGREGATE_SUM, COMPUTE_LEVEL0_SUM, COMPUTE_LEVELN_SUM_NUM, TPE1, TPE2, NOTHING); \
+		populate_segment_tree(TPE2, ncount, INIT_AGGREGATE_SUM, COMPUTE_LEVEL0_SUM, COMPUTE_LEVELN_SUM_NUM, NOTHING_ARGS, TPE1, TPE2, NOTHING); \
 		for (; k < i; k++)					\
 			if (start[k] >= j)				\
 				compute_on_segment_tree(TPE2, start[k] - j, end[k] - j, INIT_AGGREGATE_SUM, COMPUTE_LEVELN_SUM_NUM, FINALIZE_AGGREGATE_SUM, TPE1, TPE2, NOTHING); \
@@ -1929,9 +1929,252 @@ cleanup:
 	} while (0)
 
 /* sum on floating-points */
+#if FLT_RADIX == 2 && DBL_MAX_EXP == 1024
+const double twopow = 8.98846567431158e+307; /* 2 ** 1023 */
+#endif
+
+static inline bool
+samesign(double x, double y)
+{
+	return (x >= 0) == (y >= 0);
+}
+
+/* Add two values, producing the sum and the remainder due to limited
+ * range of floating point arithmetic.  This function depends on the
+ * fact that the sum returns INFINITY in *hi of the correct sign
+ * (i.e. isinf() returns TRUE) in case of overflow. */
+static inline void
+twosum(volatile double *hi, volatile double *lo, double x, double y)
+{
+	volatile double yr;
+
+	assert(fabs(x) >= fabs(y));
+
+	*hi = x + y;
+	yr = *hi - x;
+	*lo = y - yr;
+}
+
+static inline void
+exchange(double *x, double *y)
+{
+	double t = *x;
+	*x = *y;
+	*y = t;
+}
+
+struct pergroup {
+	int npartials;
+	int maxpartials;
+	bool valseen;
+	double *partials;
+};
+
+static double
+crsum(struct pergroup *pg)
+{
+	double *partials = pg->partials + 1;
+	int npartials = pg->npartials - 1;
+
+	if (npartials == 0)
+		return 0.0;
+
+	double total_so_far = partials[--npartials];
+	double lo;
+	while (npartials > 0) {
+		twosum(&total_so_far, &lo, total_so_far, partials[--npartials]);
+		if (lo != 0) {
+			partials[npartials++] = lo;
+			break;
+		}
+	}
+	if (npartials >= 2 &&
+	    samesign(partials[npartials - 1], partials[npartials - 2]) &&
+	    (lo = total_so_far + 2*partials[npartials - 1]) - total_so_far == 2*partials[npartials - 1]) {
+		total_so_far = lo;
+		partials[npartials - 1] = -partials[npartials - 1];
+	}
+	pg->npartials = npartials + 1;
+	return total_so_far;
+}
+
+static void
+initsum(allocator *ma, struct pergroup *pg)
+{
+	*pg = (struct pergroup) {
+		.partials = ma_alloc(ma, sizeof(double) * 2),
+		.maxpartials = 2,
+		.npartials = 1,
+		.valseen = false,
+	};
+	pg->partials[0] = 0;
+}
+
+static bool
+itersum(allocator *ma, struct pergroup *pg, double x)
+{
+	if (pg->partials == NULL)
+		return false;
+	if (isnan(x))
+		return false;
+	if (isinf(x)) {
+		pg->partials[0] += x;
+		return true;
+	}
+	int i = 1;
+	pg->valseen = true;
+	for (int j = 1; j < pg->npartials; j++) {
+		double y = pg->partials[j];
+		if (fabs(x) < fabs(y))
+			exchange(&x, &y);
+		double hi, lo;
+		twosum(&hi, &lo, x, y);
+		if (isinf(hi)) {
+			int sign = hi > 0 ? 1 : -1;
+			hi = x - twopow*sign;
+			x = hi - twopow*sign;
+			pg->partials[0] += sign;
+			if (fabs(x) < fabs(y))
+				exchange(&x, &y);
+			twosum(&hi, &lo, x, y);
+		}
+		if (lo) {
+			pg->partials[i++] = lo;
+		}
+		x = hi;
+	}
+	if (x != 0) {
+		if (i == pg->maxpartials) {
+			size_t osz = pg->maxpartials * sizeof(double);
+			pg->maxpartials += 4;
+			pg->partials = ma_realloc(
+				ma,
+				pg->partials,
+				pg->maxpartials * sizeof(double),
+				osz);
+			if (pg->partials == NULL)
+				return false;
+		}
+		pg->partials[i++] = x;
+	}
+	pg->npartials = i;
+	return true;
+}
+
+static double
+finishsum(allocator *ma, struct pergroup *pg)
+{
+	if (isinf(pg->partials[0]))
+		return pg->partials[0];
+	if (isnan(pg->partials[0]))
+		return pg->partials[0]; /* infs of both signs in summands */
+	if (fabs(pg->partials[0]) == 1.0 &&
+	    pg->npartials > 1 &&
+	    !samesign(pg->partials[pg->npartials - 1], pg->partials[0])) {
+		double hi, lo;
+		twosum(&hi, &lo, pg->partials[0]*twopow,
+		       pg->partials[pg->npartials - 1]/2);
+		if (isinf(2 * hi)) {
+			/* overflow, except in edge case... */
+			double x = hi + 2*lo;
+			if (x - hi == 2 * lo &&
+			    pg->npartials > 2 &&
+			    samesign(lo, pg->partials[pg->npartials - 2]))
+				return 2 * (hi + 2 * lo);
+		} else {
+			pg->npartials--;
+			if (lo != 0) {
+				pg->partials[pg->npartials++] = 2 * lo;
+				if (pg->npartials == pg->maxpartials) {
+					size_t osz = pg->maxpartials * sizeof(double);
+					pg->maxpartials += 4;
+					pg->partials = ma_realloc(
+						ma,
+						pg->partials,
+						pg->maxpartials * sizeof(double),
+						osz);
+					if (pg->partials == NULL)
+						return NAN;
+				}
+			}
+			pg->partials[pg->npartials++] = 2 * hi;
+			pg->partials[0] = 0;
+		}
+	}
+	if (pg->partials[0] == 0) {
+		double s = crsum(pg);
+		pg->partials[pg->npartials++] = s;
+		return s;
+	}
+	return INFINITY;
+}
+
 /* TODO go through a version of dofsum which returns the current partials for all the cases */
-#define ANALYTICAL_SUM_IMP_FP_UNBOUNDED_TILL_CURRENT_ROW(TPE1, TPE2) ANALYTICAL_SUM_IMP_NUM_UNBOUNDED_TILL_CURRENT_ROW(TPE1, TPE2)
-#define ANALYTICAL_SUM_IMP_FP_CURRENT_ROW_TILL_UNBOUNDED(TPE1, TPE2) ANALYTICAL_SUM_IMP_NUM_CURRENT_ROW_TILL_UNBOUNDED(TPE1, TPE2)
+#define ANALYTICAL_SUM_IMP_FP_UNBOUNDED_TILL_CURRENT_ROW(TPE1, TPE2)	\
+	do {								\
+		allocator *ta = MT_thread_getallocator();		\
+		allocator_state ta_state = ma_open(ta);			\
+		struct pergroup pg;					\
+		initsum(ta, &pg);					\
+		double curval = TPE2##_nil;				\
+		while (k < i) {						\
+			j = k;						\
+			do {						\
+				if (!is_##TPE1##_nil(bp[k])) {		\
+					itersum(ta, &pg, bp[k]);	\
+				}					\
+				k++;					\
+			} while (k < i && !op[k]);			\
+			if (pg.valseen) {				\
+				curval = finishsum(ta, &pg);		\
+				if (isinf(curval) ||			\
+				    isnan(curval) ||			\
+				    curval > GDK_##TPE2##_max ||	\
+				    curval < -GDK_##TPE2##_max)		\
+					goto calc_overflow;		\
+			}						\
+			for (; j < k; j++)				\
+				rb[j] = (TPE2) curval;			\
+			has_nils |= is_dbl_nil(curval);			\
+		}							\
+		ma_close(&ta_state);					\
+	} while (0)
+
+#define ANALYTICAL_SUM_IMP_FP_CURRENT_ROW_TILL_UNBOUNDED(TPE1, TPE2)	\
+	do {								\
+		allocator *ta = MT_thread_getallocator();		\
+		allocator_state ta_state = ma_open(ta);			\
+		struct pergroup pg;					\
+		initsum(ta, &pg);					\
+		double curval = TPE2##_nil;				\
+		l = i - 1;						\
+		for (j = l; ; j--) {					\
+			if (!is_##TPE1##_nil(bp[j])) {			\
+				itersum(ta, &pg, bp[j]);		\
+			}						\
+			if (op[j] || j == k) {				\
+				if (pg.valseen) {			\
+					curval = finishsum(ta, &pg);	\
+					if (isinf(curval) ||		\
+					    isnan(curval) ||		\
+					    curval > GDK_##TPE2##_max || \
+					    curval < -GDK_##TPE2##_max)	\
+						goto calc_overflow;	\
+				}					\
+				for (; ; l--) {				\
+					rb[l] = (TPE2) curval;		\
+					if (l == j)			\
+						break;			\
+				}					\
+				has_nils |= is_dbl_nil(curval);		\
+				if (j == k)				\
+					break;				\
+				l = j - 1;				\
+			}						\
+		}							\
+		k = i;							\
+		ma_close(&ta_state);					\
+	} while (0)
 
 #define ANALYTICAL_SUM_IMP_FP_ALL_ROWS(TPE1, TPE2)			\
 	do {								\
@@ -1939,7 +2182,10 @@ cleanup:
 		BUN parcel = i - k;					\
 		TPE2 curval = TPE2##_nil;				\
 		if (dofsum(bs, 0,					\
-			   &(struct canditer){.tpe = cand_dense, .ncand = parcel,}, \
+			   &(struct canditer) {				\
+				   .tpe = cand_dense,			\
+				   .ncand = parcel,			\
+			   },						\
 			   &curval, 1, TYPE_##TPE1,			\
 			   TYPE_##TPE2, NULL, 0, 0, true,		\
 			   true) == BUN_NONE) {				\
@@ -1950,8 +2196,81 @@ cleanup:
 		has_nils |= is_##TPE2##_nil(curval);			\
 	} while (0)
 
-#define ANALYTICAL_SUM_IMP_FP_CURRENT_ROW(TPE1, TPE2) ANALYTICAL_SUM_IMP_NUM_CURRENT_ROW(TPE1, TPE2)
-#define ANALYTICAL_SUM_IMP_FP_OTHERS(TPE1, TPE2) ANALYTICAL_SUM_IMP_NUM_OTHERS(TPE1, TPE2)
+#define ANALYTICAL_SUM_IMP_FP_CURRENT_ROW(TPE1, TPE2)	\
+	do {						\
+		for (; k < i; k++) {			\
+			TPE1 v = bp[k];			\
+			if (is_##TPE1##_nil(v)) {	\
+				rb[k] = TPE2##_nil;	\
+				has_nils = true;	\
+			} else	{			\
+				rb[k] = (TPE2) v;	\
+			}				\
+		}					\
+	} while (0)
+
+#define INIT_AGGR_FP_SUM(TPE1, TPE2, NOTHING2)	\
+	do {					\
+		ta_state = ma_open(ta);		\
+		computed = TPE2##_nil;		\
+		initsum(ta, &pg);		\
+	} while (0)
+#define COMPUTE_LEVELN_FP_SUM(VAL, TPE1, TPE2, NOTHING2)	\
+	do {							\
+		if (!is_##TPE2##_nil(VAL))			\
+			itersum(ta, &pg, VAL);			\
+	} while (0)
+#define COMPUTE_LEVELN_FP_SUM_FINISH(TPE1, TPE2, NOTHING2)	\
+	do {							\
+		if (pg.valseen) {				\
+			double curval = finishsum(ta, &pg);	\
+			computed = (TPE2) curval;		\
+		}						\
+		ma_close(&ta_state);				\
+	} while (0)
+#define FINALIZE_AGGR_FP_SUM(TPE1, TPE2, NOTHING2)		\
+	do {							\
+		if (pg.valseen) {				\
+			double curval = finishsum(ta, &pg);	\
+			if (isinf(curval) ||			\
+			    isnan(curval) ||			\
+			    curval > GDK_##TPE2##_max ||	\
+			    curval < -GDK_##TPE2##_max)		\
+				goto calc_overflow;		\
+			computed = (TPE2) curval;		\
+		}						\
+		rb[k] = computed;				\
+		has_nils |= is_##TPE2##_nil(computed);		\
+		ma_close(&ta_state);				\
+	} while (0)
+
+#define ANALYTICAL_SUM_IMP_FP_OTHERS(TPE1, TPE2)			\
+	do {								\
+		allocator *ta = MT_thread_getallocator();		\
+		allocator_state ta_state;				\
+		struct pergroup pg;					\
+		oid ncount = i - k;					\
+		if ((res = GDKrebuild_segment_tree(ncount, sizeof(TPE2), \
+						   st, &segment_tree,	\
+						   &levels_offset,	\
+						   &nlevels)) != GDK_SUCCEED) \
+			goto cleanup;					\
+		populate_segment_tree(TPE2, ncount, INIT_AGGR_FP_SUM,	\
+				      COMPUTE_LEVEL0_SUM,		\
+				      COMPUTE_LEVELN_FP_SUM,		\
+				      COMPUTE_LEVELN_FP_SUM_FINISH,	\
+				      TPE1, TPE2,			\
+				      NOTHING);				\
+		for (; k < i; k++)					\
+			if (start[k] >= j)				\
+				compute_on_segment_tree(		\
+					TPE2, start[k] - j, end[k] - j, \
+					INIT_AGGR_FP_SUM,		\
+					COMPUTE_LEVELN_FP_SUM,		\
+					FINALIZE_AGGR_FP_SUM,		\
+					TPE1, TPE2, NOTHING);		\
+		j = k;							\
+	} while (0)
 
 #define ANALYTICAL_SUM_CALC(TPE1, TPE2, IMP)			\
 	do {							\
@@ -2279,7 +2598,7 @@ calc_overflow:
 		oid ncount = i - k;					\
 		if ((res = GDKrebuild_segment_tree(ncount, sizeof(TPE2), st, &segment_tree, &levels_offset, &nlevels)) != GDK_SUCCEED) \
 			goto cleanup;					\
-		populate_segment_tree(TPE2, ncount, INIT_AGGREGATE_PROD, COMPUTE_LEVEL0_PROD, COMPUTE_LEVELN_PROD_NUM, TPE1, TPE2, TPE3); \
+		populate_segment_tree(TPE2, ncount, INIT_AGGREGATE_PROD, COMPUTE_LEVEL0_PROD, COMPUTE_LEVELN_PROD_NUM, NOTHING_ARGS, TPE1, TPE2, TPE3); \
 		for (; k < i; k++)					\
 			if (start[k] >= j)				\
 				compute_on_segment_tree(TPE2, start[k] - j, end[k] - j, INIT_AGGREGATE_PROD, COMPUTE_LEVELN_PROD_NUM, FINALIZE_AGGREGATE_PROD, TPE1, TPE2, TPE3); \
@@ -2372,7 +2691,7 @@ calc_overflow:
 		oid ncount = i - k;					\
 		if ((res = GDKrebuild_segment_tree(ncount, sizeof(TPE2), st, &segment_tree, &levels_offset, &nlevels)) != GDK_SUCCEED) \
 			goto cleanup;					\
-		populate_segment_tree(TPE2, ncount, INIT_AGGREGATE_PROD, COMPUTE_LEVEL0_PROD, COMPUTE_LEVELN_PROD_NUM_LIMIT, TPE1, TPE2, REAL_IMP); \
+		populate_segment_tree(TPE2, ncount, INIT_AGGREGATE_PROD, COMPUTE_LEVEL0_PROD, COMPUTE_LEVELN_PROD_NUM_LIMIT, NOTHING_ARGS, TPE1, TPE2, REAL_IMP); \
 		for (; k < i; k++)					\
 			if (start[k] >= j)				\
 				compute_on_segment_tree(TPE2, start[k] - j, end[k] - j, INIT_AGGREGATE_PROD, COMPUTE_LEVELN_PROD_NUM_LIMIT, FINALIZE_AGGREGATE_PROD, TPE1, TPE2, REAL_IMP); \
@@ -2471,7 +2790,7 @@ calc_overflow:
 		oid ncount = i - k;					\
 		if ((res = GDKrebuild_segment_tree(ncount, sizeof(TPE2), st, &segment_tree, &levels_offset, &nlevels)) != GDK_SUCCEED) \
 			goto cleanup;					\
-		populate_segment_tree(TPE2, ncount, INIT_AGGREGATE_PROD, COMPUTE_LEVEL0_PROD, COMPUTE_LEVELN_PROD_FP, TPE1, TPE2, ARG3); \
+		populate_segment_tree(TPE2, ncount, INIT_AGGREGATE_PROD, COMPUTE_LEVEL0_PROD, COMPUTE_LEVELN_PROD_FP, NOTHING_ARGS, TPE1, TPE2, ARG3); \
 		for (; k < i; k++)					\
 			if (start[k] >= j)				\
 				compute_on_segment_tree(TPE2, start[k] - j, end[k] - j, INIT_AGGREGATE_PROD, COMPUTE_LEVELN_PROD_FP, FINALIZE_AGGREGATE_PROD, TPE1, TPE2, ARG3); \

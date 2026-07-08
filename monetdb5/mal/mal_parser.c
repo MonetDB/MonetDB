@@ -1207,10 +1207,6 @@ parseInclude(Client ctx)
 	}
 	skipToEnd(ctx);
 
-	if (!malLibraryEnabled(modnme)) {
-		return 0;
-	}
-
 	if (getModule(modnme) == NULL) {
 		s = loadLibrary(modnme, FALSE);
 		if (s) {

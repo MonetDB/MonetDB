@@ -9,6 +9,3 @@
 #]]
 
 add_subdirectory(udf)
-add_subdirectory(capi)
-add_subdirectory(pyapi3)
-add_subdirectory(rapi)

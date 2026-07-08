@@ -1,12 +1,3 @@
 # ChangeLog file for devel
 # This file is updated with Maddlog
 
-* Tue May 12 2026 Lucas Pereira <lucas.pereira@monetdbsolutions.com>
-- Fix using --logging option of mserver5 to change component levels
-  that are also used by --debug option. For overlapping components,
-  component level change via --logging was being discarded.
-
-* Thu Apr 23 2026 Sjoerd Mullender <sjoerd@acm.org>
-- It is no longer allowed to run mserver5 or monetdbd as root.  There are
-  important security concerns when these servers are run as root.
-

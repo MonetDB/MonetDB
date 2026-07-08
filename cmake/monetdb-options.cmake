@@ -23,26 +23,12 @@ option(TESTING
   "Enable support for testing"
   ON)
 
-cmake_dependent_option(CINTEGRATION
-  "Enable support for C UDFs (default=ON)"
-  ON
-  "NOT WIN32"
-  OFF)
-
 option(WITH_SQLPARSE
   "Compile and install the sqlparse utility (default=ON)"
   ON)
 
 option(WITH_RTREE
   "Enable support for rtrees (librtree; default=ON)"
-  ON)
-
-option(PY3INTEGRATION
-  "Enable support for Python 3 integration into MonetDB (default=ON)"
-  ON)
-
-option(RINTEGRATION
-  "Enable support for R integration into MonetDB (default=ON)"
   ON)
 
 option(FITS

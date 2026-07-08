@@ -768,10 +768,13 @@ exp_bin_conjunctive(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp,
 			sql_subfunc *f = sql_bind_func(be->mvc, "sys", anti?"or":"and", bt, bt, F_FUNC, true, true);
 			assert(f);
 			s = stmt_binop(be, sin, s, NULL, f);
-		} else if (!reduce && !sin && sel1 && sel1->nrcols == 0) {
+		} else if (!reduce && !sin && sel1) {
 			sql_subfunc *f = sql_bind_func(be->mvc, "sys", anti?"or":"and", bt, bt, F_FUNC, true, true);
 			assert(f);
-			s = stmt_binop(be, sel1, s, sin, f);
+			if (sel1->nrcols == 0)
+				s = stmt_binop(be, sel1, s, sin, f);
+			else
+				s = stmt_binop(be, s, sel1, sin, f);
 		} else if (reduce && ((sel1 && (sel1->nrcols == 0 || s->nrcols == 0)) || c->type != e_cmp)) {
 			if (s->nrcols) {
 				if (sel1 && (sel1->nrcols == 0 || s->nrcols == 0)) {
@@ -2031,7 +2034,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 			if (r) { /* check new ordered aggregation */
 				list *obe = r->h->data;
 				if (obe && obe->h) {
-					stmt *orderby = NULL, *orderby_ids, *orderby_grp;
+					stmt *orderby = NULL, *orderby_ids = NULL, *orderby_grp = NULL;
 					/* order by */
 					if (grp) {
 						orderby = stmt_order(be, grp, true, true);
@@ -2053,6 +2056,8 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 						orderby_ids = stmt_result(be, orderby, 1);
 						orderby_grp = stmt_result(be, orderby, 2);
 					}
+					if (!orderby_ids)
+						return NULL;
 					/* depending on type of aggr project input or ordered column */
 					for (node *n = l->h; n; n = n->next)
 						n->data = stmt_project(be, orderby_ids, n->data);
@@ -2906,7 +2911,6 @@ rel2bin_table(backend *be, sql_rel *rel, list *refs)
 		sql_subfunc *f = op->f;
 		stmt *psub = NULL;
 		list *ops = NULL;
-		stmt *ids = NULL;
 
 		if (rel->l) { /* first construct the sub relation */
 			sql_rel *l = rel->l;
@@ -2924,22 +2928,31 @@ rel2bin_table(backend *be, sql_rel *rel, list *refs)
 		}
 
 		assert(f);
-		if (f->func->res && list_length(f->func->res) + 1 == list_length(rel->exps) && !f->func->varres) {
+		list *outers = NULL;
+		if (f->func->res && rel->nr_outers && list_length(f->func->res) + rel->nr_outers == list_length(rel->exps) && !f->func->varres) {
 			/* add inputs in correct order ie loop through args of f and pass column */
 			list *exps = op->l;
+			outers = sa_list(be->mvc->sa);
 			ops = sa_list(be->mvc->sa);
 			if (exps) {
-				for (node *en = exps->h; en; en = en->next) {
+				node *en = exps->h;
+				for (int c = 0; en && c < rel->nr_outers; en = en->next, c++) {
 					sql_exp *e = en->data;
 
 					/* find column */
 					stmt *s = exp_bin(be, e, sub, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
 					if (!s)
 						return NULL;
-					if (en->next)
-						append(ops, s);
-					else /* last added exp is the ids (todo use name base lookup !!) */
-						ids = s;
+					append(outers, s);
+				}
+				for (; en; en = en->next) {
+					sql_exp *e = en->data;
+
+					/* find column */
+					stmt *s = exp_bin(be, e, sub, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
+					if (!s)
+						return NULL;
+					append(ops, s);
 				}
 			}
 		} else {
@@ -2966,18 +2979,21 @@ rel2bin_table(backend *be, sql_rel *rel, list *refs)
 				int i = 0;
 
 				/* correlated table returning function */
-				if (list_length(f->func->res) + 1 == list_length(rel->exps)) {
+				if (rel->nr_outers && (list_length(f->func->res) + rel->nr_outers) == list_length(rel->exps)) {
 					/* use a simple nested loop solution for this case, ie
-					 * output a table of (input) row-ids, the output of the table producing function
+					 * output a table of (input) row, the output of the table producing function
 					 */
 					/* make sure the input for sql.unionfunc are bats */
-					if (ids)
-						ids = column(be, ids);
+					if (outers)
+						for(node *n = outers->h; n; n = n->next)
+							n->data = column(be, n->data);
 					if (ops)
 						for (node *en = ops->h; en; en = en->next)
 							en->data = column(be, (stmt *) en->data);
 
-					int narg = 3 + list_length(rel->exps);
+					int narg = 2 + list_length(rel->exps);
+					if (outers)
+						narg += list_length(outers);
 					if (ops)
 						narg += list_length(ops);
 					InstrPtr q = newStmtArgs(be->mb, sqlRef, "unionfunc", narg);
@@ -3005,14 +3021,18 @@ rel2bin_table(backend *be, sql_rel *rel, list *refs)
 					str fcn = backend_function_imp(be, f->func);
 					q = pushStr(be->mb, q, mod);
 					q = pushStr(be->mb, q, fcn);
+					q = pushInt(be->mb, q, rel->nr_outers);
 					psub = stmt_direct_func(be, q);
 					if (psub == NULL) {
 						freeInstruction(be->mb, q);
 						return NULL;
 					}
 
-					if (ids) /* push input rowids column */
-						q = pushArgument(be->mb, q, ids->nr);
+					if (outers) /* push input row column */
+						for (node *n = outers->h; n; n = n->next) {
+							stmt *outer = n->data;
+							q = pushArgument(be->mb, q, outer->nr);
+						}
 
 					/* add inputs in correct order ie loop through args of f and pass column */
 					if (ops) {
@@ -3025,9 +3045,8 @@ rel2bin_table(backend *be, sql_rel *rel, list *refs)
 					pushInstruction(be->mb, q);
 
 					/* name output of dependent columns, output of function is handled the same as without correlation */
-					int len = list_length(rel->exps)-list_length(f->func->res);
-					assert(len== 1);
-					for (i=0, m=rel->exps->h; m && i<len; m = m->next, i++) {
+					//int len = list_length(rel->exps)-list_length(f->func->res);
+					for (i=0, m=rel->exps->h; m; m = m->next, i++) {
 						sql_exp *exp = m->data;
 						stmt *s = stmt_rs_column(be, psub, i, exp_subtype(exp));
 
@@ -3962,7 +3981,7 @@ rel2bin_antijoin(backend *be, sql_rel *rel, list *refs)
 				li = ls;
 
 			if (!en->next && !is_anti(e) && e->flag != cmp_notequal &&
-				(constval || stmt_has_null(ls))) {
+				(constval || stmt_has_null(ls) || stmt_has_null(rs))) {
 				join = stmt_tdiff2(be, ls, rs, NULL, is_semantics(e), is_any(e));
 				jexps = NULL;
 			} else {

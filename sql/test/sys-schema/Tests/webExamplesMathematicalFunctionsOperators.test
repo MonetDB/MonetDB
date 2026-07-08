@@ -16,9 +16,7 @@ select 2 ^ 3
 query T nosort
 explain show details select 2 ^ 3
 ----
-project (
-|  [ boolean(1) "true" as "%1"."%1" ]
-) [ "sys"."bit_xor"(tinyint(2) "2", tinyint(2) "3") NOT NULL ]
+ [ "sys"."bit_xor"(tinyint(2) "2", tinyint(2) "3") NOT NULL ]
 
 query I nosort
 select 2 ^ 3
@@ -63,9 +61,7 @@ select 17 ^ 5
 query T nosort
 explain show details select 17 ^ 5
 ----
-project (
-|  [ boolean(1) "true" as "%1"."%1" ]
-) [ "sys"."bit_xor"(tinyint(5) "17", tinyint(3) "5") NOT NULL ]
+ [ "sys"."bit_xor"(tinyint(5) "17", tinyint(3) "5") NOT NULL ]
 
 query I nosort
 select 2 ^ 3
@@ -75,9 +71,7 @@ select 2 ^ 3
 query T nosort
 explain show details select 2 ^ 3
 ----
-project (
-|  [ boolean(1) "true" as "%1"."%1" ]
-) [ "sys"."bit_xor"(tinyint(2) "2", tinyint(2) "3") NOT NULL ]
+ [ "sys"."bit_xor"(tinyint(2) "2", tinyint(2) "3") NOT NULL ]
 
 query I nosort
 select ~1
@@ -87,9 +81,7 @@ select ~1
 query T nosort
 explain show details select ~1
 ----
-project (
-|  [ boolean(1) "true" as "%1"."%1" ]
-) [ "sys"."bit_not"(tinyint(1) "1") NOT NULL ]
+ [ "sys"."bit_not"(tinyint(1) "1") NOT NULL ]
 
 query I nosort
 select 1 << 4
@@ -99,9 +91,7 @@ select 1 << 4
 query T nosort
 explain show details select 1 << 4
 ----
-project (
-|  [ boolean(1) "true" as "%1"."%1" ]
-) [ "sys"."left_shift"(tinyint(1) "1", int(3) "4") NOT NULL ]
+ [ "sys"."left_shift"(tinyint(1) "1", int(3) "4") NOT NULL ]
 
 query I nosort
 select left_shift(1, 4)
@@ -116,9 +106,7 @@ select 8 >> 2
 query T nosort
 explain show details select 8 >> 2
 ----
-project (
-|  [ boolean(1) "true" as "%1"."%1" ]
-) [ "sys"."right_shift"(tinyint(4) "8", int(2) "2") NOT NULL ]
+ [ "sys"."right_shift"(tinyint(4) "8", int(2) "2") NOT NULL ]
 
 query I nosort
 select right_shift(16, 2)
@@ -308,9 +296,7 @@ select 2144156907 / 2147483648
 query T nosort
 explain show details select CAST(RAND() as float) / 2147483648
 ----
-project (
-|  [ boolean(1) "true" as "%1"."%1" ]
-) [ "sys"."sql_div"(double(53)["sys"."rand"()], double(53) "2147483648") ]
+ [ "sys"."sql_div"(double(53)["sys"."rand"()], double(53) "2147483648") ]
 
 query I nosort
 select rand(-5) >= 0

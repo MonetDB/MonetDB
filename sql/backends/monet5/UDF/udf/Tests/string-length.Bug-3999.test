@@ -1,0 +1,10 @@
+query I rowsort
+SELECT length(reverse('     67890')) as "ten"
+----
+10
+
+query I rowsort
+SELECT sys.length(reverse('     67890')) as "ten"
+----
+10
+

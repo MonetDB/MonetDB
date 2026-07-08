@@ -1680,20 +1680,6 @@ table_column_types(allocator *sa, sql_table *t)
 	return types;
 }
 
-static list *
-table_column_names_and_defaults(allocator *sa, sql_table *t)
-{
-	node *n;
-	list *types = sa_list(sa);
-
-	if (ol_first_node(t->columns)) for (n = ol_first_node(t->columns); n; n = n->next) {
-		sql_column *c = n->data;
-		append(types, &c->base.name);
-		append(types, c->def);
-	}
-	return types;
-}
-
 static sql_rel *
 rel_import(mvc *sql, sql_table *t, const char *tsep, const char *rsep, const char *ssep, const char *ns, const char *filename, lng nr, lng offset, int best_effort, dlist *fwf_widths, int onclient, int escape, const char* decsep, const char *decskip)
 {
@@ -2071,47 +2057,6 @@ bincopyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, int on
 }
 
 static sql_rel *
-copyfromloader(sql_query *query, dlist *qname, symbol *fcall)
-{
-	mvc *sql = query->sql;
-	char *sname = qname_schema(qname);
-	char *tname = qname_schema_object(qname);
-	sql_subfunc *loader = NULL;
-	sql_rel *rel = NULL;
-	sql_table *t;
-	list *mts;
-
-	if (!copy_allowed(sql, 1))
-		return sql_error(sql, 02, SQLSTATE(42000) "COPY LOADER INTO: insufficient privileges: "
-				"COPY LOADER INTO requires database administrator rights");
-	t = find_table_or_view_on_scope(sql, NULL, sname, tname, "COPY INTO", false);
-	//TODO the COPY LOADER INTO should return an insert relation (instead of ddl) to handle partitioned tables properly
-	if (insert_allowed(sql, t, tname, "COPY LOADER INTO", "copy loader into") == NULL)
-		return NULL;
-	if (isPartitionedByColumnTable(t) || isPartitionedByExpressionTable(t))
-		return sql_error(sql, 02, SQLSTATE(42000) "COPY LOADER INTO: not possible for partitioned tables at the moment");
-	if ((mts = partition_find_mergetables(sql, t))) {
-		for (node *n = mts->h ; n ; n = n->next) {
-			sql_part *pt = n->data;
-
-			if ((isPartitionedByColumnTable(pt->t) || isPartitionedByExpressionTable(pt->t)))
-				return sql_error(sql, 02, SQLSTATE(42000) "COPY LOADER INTO: not possible for tables child of partitioned tables at the moment");
-		}
-	}
-
-	rel = rel_loader_function(query, fcall, new_exp_list(sql->sa), &loader);
-	if (!rel || !loader)
-		return NULL;
-
-	loader->sname = t->s ? ma_strdup(sql->sa, t->s->base.name) : NULL;
-	loader->tname = tname ? ma_strdup(sql->sa, tname) : NULL;
-	loader->coltypes = table_column_types(sql->sa, t);
-	loader->colnames = table_column_names_and_defaults(sql->sa, t);
-
-	return rel;
-}
-
-static sql_rel *
 copyto(sql_query *query, symbol *sq, const char *filename, dlist *seps, const char *null_string, int onclient)
 {
 	mvc *sql = query->sql;
@@ -2344,18 +2289,6 @@ rel_updates(sql_query *query, symbol *s)
 
 		ret = bincopyfrom(query, l->h->data.lval, l->h->next->data.lval, l->h->next->next->data.lval, l->h->next->next->next->data.i_val, (endianness) l->h->next->next->next->next->data.i_val);
 		sql->type = Q_UPDATE;
-	}
-		break;
-	case SQL_COPYLOADER:
-	{
-		dlist *l = s->data.lval;
-		dlist *qname = l->h->data.lval;
-		symbol *sym = l->h->next->data.sym;
-		sql_rel *rel = copyfromloader(query, qname, sym);
-
-		if (rel)
-			ret = rel_psm_stmt(sql->sa, exp_rel(sql, rel));
-		sql->type = Q_SCHEMA;
 	}
 		break;
 	case SQL_COPYINTO:

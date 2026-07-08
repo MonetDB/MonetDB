@@ -1,4 +1,4 @@
-#[[
+
 # SPDX-License-Identifier: MPL-2.0
 #
 # This Source Code Form is subject to the terms of the Mozilla Public
@@ -8,11 +8,8 @@
 # For copyright information, see the file debian/copyright.
 #]]
 
-# Test for the existence of these cmake variables, the source code assumes
-# that they are set by the buildsystem.
-
-assert_variable_exists(HAVE_CUDF)
-
-if(HAVE_LIBR)
-  assert_variable_exists(RHOME)
-endif()
+install(FILES
+  sqlsample.py
+  PERMISSIONS ${PROGRAM_PERMISSIONS_DEFAULT}
+  DESTINATION ${CMAKE_INSTALL_BINDIR}
+  COMPONENT clienttest)

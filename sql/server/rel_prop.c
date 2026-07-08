@@ -118,6 +118,7 @@ propkind2string( prop *p)
 		PT(MAX);
 		PT(NESTED);
 		PT(UNNEST);
+		PT(UNNESTING);
 	}
 	return "UNKNOWN";
 }

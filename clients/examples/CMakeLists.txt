@@ -11,3 +11,4 @@
 add_subdirectory(C)
 add_subdirectory(perl)
 add_subdirectory(php)
+add_subdirectory(python)

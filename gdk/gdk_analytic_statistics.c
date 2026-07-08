@@ -192,7 +192,7 @@ avg_num_deltas(lng)
 		oid ncount = i - k;					\
 		if ((res = GDKrebuild_segment_tree(ncount, sizeof(avg_num_deltas##TPE), st, &segment_tree, &levels_offset, &nlevels)) != GDK_SUCCEED) \
 			goto cleanup;					\
-		populate_segment_tree(avg_num_deltas##TPE, ncount, INIT_AGGREGATE_AVG_NUM, COMPUTE_LEVEL0_AVG_NUM, COMPUTE_LEVELN_AVG_NUM, TPE, NOTHING, NOTHING); \
+		populate_segment_tree(avg_num_deltas##TPE, ncount, INIT_AGGREGATE_AVG_NUM, COMPUTE_LEVEL0_AVG_NUM, COMPUTE_LEVELN_AVG_NUM, NOTHING_ARGS, TPE, NOTHING, NOTHING); \
 		for (; k < i; k++)					\
 			if (start[k] >= j)				\
 				compute_on_segment_tree(avg_num_deltas##TPE, start[k] - j, end[k] - j, INIT_AGGREGATE_AVG_NUM, COMPUTE_LEVELN_AVG_NUM, FINALIZE_AGGREGATE_AVG_NUM, TPE, NOTHING, NOTHING); \
@@ -297,7 +297,7 @@ avg_fp_deltas(dbl)
 		oid ncount = i - k;					\
 		if ((res = GDKrebuild_segment_tree(ncount, sizeof(avg_fp_deltas_##TPE), st, &segment_tree, &levels_offset, &nlevels)) != GDK_SUCCEED) \
 			goto cleanup;					\
-		populate_segment_tree(avg_fp_deltas_##TPE, ncount, INIT_AGGREGATE_AVG_FP, COMPUTE_LEVEL0_AVG_FP, COMPUTE_LEVELN_AVG_FP, TPE, NOTHING, NOTHING); \
+		populate_segment_tree(avg_fp_deltas_##TPE, ncount, INIT_AGGREGATE_AVG_FP, COMPUTE_LEVEL0_AVG_FP, COMPUTE_LEVELN_AVG_FP, NOTHING_ARGS, TPE, NOTHING, NOTHING); \
 		for (; k < i; k++)					\
 			if (start[k] >= j)				\
 				compute_on_segment_tree(avg_fp_deltas_##TPE, start[k] - j, end[k] - j, INIT_AGGREGATE_AVG_FP, COMPUTE_LEVELN_AVG_FP, FINALIZE_AGGREGATE_AVG_FP, TPE, NOTHING, NOTHING); \
@@ -579,7 +579,7 @@ avg_int_deltas(lng)
 		oid ncount = i - k;					\
 		if ((res = GDKrebuild_segment_tree(ncount, sizeof(avg_int_deltas_##TPE), st, &segment_tree, &levels_offset, &nlevels)) != GDK_SUCCEED) \
 			goto cleanup;					\
-		populate_segment_tree(avg_int_deltas_##TPE, ncount, INIT_AGGREGATE_AVG_INT, COMPUTE_LEVEL0_AVG_INT, COMPUTE_LEVELN_AVG_INT, TPE, NOTHING, NOTHING); \
+		populate_segment_tree(avg_int_deltas_##TPE, ncount, INIT_AGGREGATE_AVG_INT, COMPUTE_LEVEL0_AVG_INT, COMPUTE_LEVELN_AVG_INT, NOTHING_ARGS, TPE, NOTHING, NOTHING); \
 		for (; k < i; k++)					\
 			if (start[k] >= j)				\
 				compute_on_segment_tree(avg_int_deltas_##TPE, start[k] - j, end[k] - j, INIT_AGGREGATE_AVG_INT, COMPUTE_LEVELN_AVG_INT, FINALIZE_AGGREGATE_AVG_INT, TPE, NOTHING, NOTHING); \
@@ -851,7 +851,7 @@ typedef struct stdev_var_deltas {
 		oid ncount = i - k;					\
 		if ((res = GDKrebuild_segment_tree(ncount, sizeof(stdev_var_deltas), st, &segment_tree, &levels_offset, &nlevels)) != GDK_SUCCEED) \
 			goto cleanup;					\
-		populate_segment_tree(stdev_var_deltas, ncount, INIT_AGGREGATE_STDEV_VARIANCE, COMPUTE_LEVEL0_STDEV_VARIANCE, COMPUTE_LEVELN_STDEV_VARIANCE, TPE, SAMPLE, OP); \
+		populate_segment_tree(stdev_var_deltas, ncount, INIT_AGGREGATE_STDEV_VARIANCE, COMPUTE_LEVEL0_STDEV_VARIANCE, COMPUTE_LEVELN_STDEV_VARIANCE, NOTHING_ARGS, TPE, SAMPLE, OP); \
 		for (; k < i; k++)					\
 			if (start[k] >= j)				\
 				compute_on_segment_tree(stdev_var_deltas, start[k] - j, end[k] - j, INIT_AGGREGATE_STDEV_VARIANCE, COMPUTE_LEVELN_STDEV_VARIANCE, FINALIZE_AGGREGATE_STDEV_VARIANCE, TPE, SAMPLE, OP); \
@@ -1138,7 +1138,7 @@ typedef struct covariance_deltas {
 		oid ncount = i - k;					\
 		if ((res = GDKrebuild_segment_tree(ncount, sizeof(covariance_deltas), st, &segment_tree, &levels_offset, &nlevels)) != GDK_SUCCEED) \
 			goto cleanup;					\
-		populate_segment_tree(covariance_deltas, ncount, INIT_AGGREGATE_COVARIANCE, COMPUTE_LEVEL0_COVARIANCE, COMPUTE_LEVELN_COVARIANCE, TPE, SAMPLE, OP); \
+		populate_segment_tree(covariance_deltas, ncount, INIT_AGGREGATE_COVARIANCE, COMPUTE_LEVEL0_COVARIANCE, COMPUTE_LEVELN_COVARIANCE, NOTHING_ARGS, TPE, SAMPLE, OP); \
 		for (; k < i; k++)					\
 			if (start[k] >= j)				\
 				compute_on_segment_tree(covariance_deltas, start[k] - j, end[k] - j, INIT_AGGREGATE_COVARIANCE, COMPUTE_LEVELN_COVARIANCE, FINALIZE_AGGREGATE_COVARIANCE, TPE, SAMPLE, OP); \
@@ -1405,7 +1405,7 @@ typedef struct correlation_deltas {
 		oid ncount = i - k;					\
 		if ((res = GDKrebuild_segment_tree(ncount, sizeof(correlation_deltas), st, &segment_tree, &levels_offset, &nlevels)) != GDK_SUCCEED) \
 			goto cleanup;					\
-		populate_segment_tree(correlation_deltas, ncount, INIT_AGGREGATE_CORRELATION, COMPUTE_LEVEL0_CORRELATION, COMPUTE_LEVELN_CORRELATION, TPE, SAMPLE, OP); \
+		populate_segment_tree(correlation_deltas, ncount, INIT_AGGREGATE_CORRELATION, COMPUTE_LEVEL0_CORRELATION, COMPUTE_LEVELN_CORRELATION, NOTHING_ARGS, TPE, SAMPLE, OP); \
 		for (; k < i; k++)					\
 			if (start[k] >= j)				\
 				compute_on_segment_tree(correlation_deltas, start[k] - j, end[k] - j, INIT_AGGREGATE_CORRELATION, COMPUTE_LEVELN_CORRELATION, FINALIZE_AGGREGATE_CORRELATION, TPE, SAMPLE, OP); \

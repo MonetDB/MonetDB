@@ -1,5 +1,3 @@
-alastair_udf_mergetable_bug
-
 fsum
 THREADS=1?fsum1 # this requires adding '--set gdk_nrthreads=1' in SingleServer
 

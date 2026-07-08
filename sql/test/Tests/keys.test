@@ -18,6 +18,7 @@ CREATE INDEX allnewtriples_object_idx ON allnewtriples ("object")
 query TITI nosort
 SELECT idxs.name, idxs."type", keys.name, keys."type"
 FROM sys.idxs LEFT JOIN sys.keys on idxs.name = keys.name
+WHERE idxs.name NOT LIKE '%srid%' -- skip geom keys
 ORDER BY idxs.name, keys.name
 ----
 allnewtriples_object_idx
@@ -92,10 +93,6 @@ privilege_codes_privilege_code_name_unique
 0
 privilege_codes_privilege_code_name_unique
 1
-spatial_ref_sys_srid_pkey
-0
-spatial_ref_sys_srid_pkey
-0
 table_types_table_type_id_pkey
 0
 table_types_table_type_id_pkey
@@ -112,6 +109,7 @@ unique_key
 query TITI nosort
 SELECT idxs.name, idxs."type", keys.name, keys."type"
 FROM sys.idxs JOIN sys.keys on idxs.name = keys.name
+WHERE idxs.name NOT LIKE '%srid%' -- skip geom keys
 ORDER BY idxs.name, keys.name
 ----
 comments_id_pkey
@@ -174,10 +172,6 @@ privilege_codes_privilege_code_name_unique
 0
 privilege_codes_privilege_code_name_unique
 1
-spatial_ref_sys_srid_pkey
-0
-spatial_ref_sys_srid_pkey
-0
 table_types_table_type_id_pkey
 0
 table_types_table_type_id_pkey

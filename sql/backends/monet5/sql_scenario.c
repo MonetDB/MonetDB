@@ -1052,6 +1052,8 @@ SQLstatement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (pci->argc == 3 && *getArgReference_bit(stk, pci, 2))
 		cntxt->protocol = PROTOCOL_COLUMNAR;
 
+	if (!cntxt->sqlcontext)
+		throw(SQL, "SQLstatement", SQLSTATE(42000) "No sql context available");
 	str msg = SQLstatementIntern(cntxt, expr, "SQLstatement", TRUE, TRUE, NULL);
 
 	cntxt->protocol = backup;

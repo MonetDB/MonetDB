@@ -49,3 +49,33 @@ def function_with_more_than_one_result_bat(tab):
     for key,val in histo.items():
         nhisto.append((key, str(val)))
     return sorted(nhisto)
+
+# Parse optimizer run statistics from EXPLAIN SHOW DETAILS output
+# Returns a list of dicts with keys: index, name, changes, time_usec
+def optimizer_run_stats(tab):
+    runs = []
+    pat = re.compile(r'^.*?#\s+(\d+)\s+(\S+)\s+(\d+)\s+actions\s+(\d+)\s+usec')
+    for row in tab:
+        m = pat.match(row[0])
+        if m:
+            runs.append({
+                'index': int(m.group(1)),
+                'name': m.group(2),
+                'changes': int(m.group(3)),
+                'time_usec': int(m.group(4))
+            })
+    return runs
+
+# Filter EXPLAIN SHOW DETAILS output to show optimizer names and action counts.
+# Returns a sorted list of (optimizer_name, count_str) tuples for all optimizers that ran.
+# Suitable for use in sqllogic test files:
+#
+#   query T python .explain.optimizer_actions
+#   EXPLAIN SHOW DETAILS SELECT ... ;
+#   ----
+#   simplify_math 6
+#   dce 3
+#
+def optimizer_actions(tab):
+    runs = optimizer_run_stats(tab)
+    return [[f"{r['name']} {r['changes']}"] for r in sorted(runs, key=lambda x: x['index']) if r['changes'] > 0]
