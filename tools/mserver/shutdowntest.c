@@ -97,7 +97,7 @@ static str monetdb_initialize(void) {
 		goto cleanup;
 	}
 
-	GDKfataljumpenable = 1;
+	GDKfataljumpenable = true;
 	if(setjmp(GDKfataljump) != 0) {
 		retval = GDKfatalmsg;
 		// we will get here if GDKfatal was called.
@@ -254,14 +254,14 @@ static str monetdb_initialize(void) {
 		assert(MT_thread_getallocator() != NULL);
 	}
 
-	char *modules[2];
+	const char *modules[2];
 	modules[0] = "sql";
 	modules[1] = 0;
 	if (mal_init(modules, true, NULL, NULL) != 0) { // mal_init() does not return meaningful codes on failure
 		retval = GDKstrdup("mal_init() failed");
 		goto cleanup;
 	}
-	GDKfataljumpenable = 0;
+	GDKfataljumpenable = false;
 
 	if (retval != MAL_SUCCEED) {
 		printf("Failed to load SQL function: %s\n", retval);

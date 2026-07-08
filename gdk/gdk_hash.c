@@ -343,7 +343,10 @@ HASHgrowbucket(BAT *b)
 	    HASHupgradehashheap(b) != GDK_SUCCEED)
 		return GDK_FAIL;
 
-	while (h->nunique >= (nbucket = h->nbucket) * 7 / 8) {
+	if (h->nunique < (nbucket = h->nbucket) * 7 / 8)
+		return GDK_SUCCEED;
+	BATiter bi = bat_iterator(b);
+	do {
 		BUN new = h->nbucket;
 		BUN old = new & h->mask1;
 		BUN mask = h->mask1 + 1; /* == h->mask2 - h->mask1 */
@@ -353,6 +356,7 @@ HASHgrowbucket(BAT *b)
 			if (HEAPextend(&h->heapbckt,
 				       h->heapbckt.size + GDK_mmap_pagesize,
 				       true) != GDK_SUCCEED) {
+				bat_iterator_end(&bi);
 				return GDK_FAIL;
 			}
 			h->Bckt = h->heapbckt.base + HASH_HEADER_SIZE * SIZEOF_SIZE_T;
@@ -364,15 +368,16 @@ HASHgrowbucket(BAT *b)
 			if (h->width < SIZEOF_BUN &&
 			    h->mask2 == ((BUN) 1 << (h->width * 8)) - 1) {
 				/* time to widen the hash table */
-				if (HASHupgradehashheap(b) != GDK_SUCCEED)
+				if (HASHupgradehashheap(b) != GDK_SUCCEED) {
+					bat_iterator_end(&bi);
 					return GDK_FAIL;
+				}
 			}
 		}
 		h->nbucket++;
 		h->heapbckt.free += h->width;
 		BUN lold, lnew, hb;
 		lold = lnew = BUN_NONE;
-		BATiter bi = bat_iterator(b);
 		if ((hb = HASHget(h, old)) != BUN_NONE) {
 			h->nheads--;
 			do {
@@ -399,7 +404,6 @@ HASHgrowbucket(BAT *b)
 				hb = HASHgetlink(h, hb);
 			} while (hb != BUN_NONE);
 		}
-		bat_iterator_end(&bi);
 		if (lnew == BUN_NONE)
 			HASHput(h, new, BUN_NONE);
 		else
@@ -408,9 +412,8 @@ HASHgrowbucket(BAT *b)
 			HASHput(h, old, BUN_NONE);
 		else
 			HASHputlink(h, lold, BUN_NONE);
-	}
-	h->heapbckt.dirty = true;
-	h->heaplink.dirty = true;
+	} while (h->nunique >= (nbucket = h->nbucket) * 7 / 8);
+	bat_iterator_end(&bi);
 	TRC_DEBUG_IF(ACCELERATOR) if (h->nbucket > onbucket) {
 		TRC_DEBUG_ENDIF(ACCELERATOR, ALGOBATFMT " " BUNFMT
 			" -> " BUNFMT " buckets (" LLFMT " usec)\n",

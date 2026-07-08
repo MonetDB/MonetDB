@@ -1,0 +1,181 @@
+-- query with disabled  'ORDER BY , 71 + - AVG ( 0.100000 ) + 12 / - - COUNT ( * )'  part works
+query IRI rowsort
+SELECT a , b , c
+  FROM ( SELECT 1 AS a , 2 AS b , 3 AS c
+         UNION ALL
+         SELECT 4 AS a , NULL AS b , 6 AS c
+         UNION ALL
+         SELECT 7 AS a , 1.770000 AS b , 9 AS c ) AS t
+ GROUP BY ROLLUP ( a , b ) , ROLLUP ( a , c )
+ ORDER BY a
+--      , 71 + - AVG ( 0.100000 ) + 12 / - - COUNT ( * )
+        , c
+ LIMIT 99
+----
+1
+2.000
+3
+1
+2.000
+NULL
+1
+2.000
+NULL
+1
+NULL
+3
+1
+NULL
+3
+1
+NULL
+NULL
+1
+NULL
+NULL
+1
+NULL
+NULL
+4
+NULL
+6
+4
+NULL
+6
+4
+NULL
+6
+4
+NULL
+NULL
+4
+NULL
+NULL
+4
+NULL
+NULL
+4
+NULL
+NULL
+4
+NULL
+NULL
+7
+1.770
+9
+7
+1.770
+NULL
+7
+1.770
+NULL
+7
+NULL
+9
+7
+NULL
+9
+7
+NULL
+NULL
+7
+NULL
+NULL
+7
+NULL
+NULL
+NULL
+NULL
+NULL
+
+-- the orginal reported query
+-- it crashes in rel_remove_const_aggr (v=0x7f551bffe6b0, rel=0x7f550c1b2f30) at sql/server/rel_optimize_proj.c:2725
+query IRI rowsort
+SELECT a , b , c
+  FROM ( SELECT 1 AS a , 2 AS b , 3 AS c
+         UNION ALL
+         SELECT 4 AS a , NULL AS b , 6 AS c
+         UNION ALL
+         SELECT 7 AS a , 1.770000 AS b , 9 AS c ) AS t
+ GROUP BY ROLLUP ( a , b ) , ROLLUP ( a , c )
+ ORDER BY a
+        , 71 + - AVG ( 0.100000 ) + 12 / - - COUNT ( * )
+        , c
+ LIMIT 99
+----
+1
+2.000
+3
+1
+2.000
+NULL
+1
+2.000
+NULL
+1
+NULL
+3
+1
+NULL
+3
+1
+NULL
+NULL
+1
+NULL
+NULL
+1
+NULL
+NULL
+4
+NULL
+6
+4
+NULL
+6
+4
+NULL
+6
+4
+NULL
+NULL
+4
+NULL
+NULL
+4
+NULL
+NULL
+4
+NULL
+NULL
+4
+NULL
+NULL
+7
+1.770
+9
+7
+1.770
+NULL
+7
+1.770
+NULL
+7
+NULL
+9
+7
+NULL
+9
+7
+NULL
+NULL
+7
+NULL
+NULL
+7
+NULL
+NULL
+NULL
+NULL
+NULL
+

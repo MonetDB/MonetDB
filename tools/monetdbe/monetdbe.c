@@ -613,7 +613,7 @@ monetdbe_startup(monetdbe_database_internal *mdbe, const char* dbdir, monetdbe_o
 	int workers, memory;
 	gdk_return gdk_res;
 
-	GDKfataljumpenable = 1;
+	GDKfataljumpenable = true;
 
 	if(setjmp(GDKfataljump) != 0) {
 		assert(0);
@@ -628,7 +628,7 @@ monetdbe_startup(monetdbe_database_internal *mdbe, const char* dbdir, monetdbe_o
 
 	if (monetdbe_embedded_initialized) {
 		set_error(mdbe, createException(MAL, "monetdbe.monetdbe_startup", "MonetDBe is already initialized"));
-		GDKfataljumpenable = 0;
+		GDKfataljumpenable = false;
 		return;
 	}
 
@@ -761,7 +761,7 @@ monetdbe_startup(monetdbe_database_internal *mdbe, const char* dbdir, monetdbe_o
 	if (dbdir && !monetdbe_embedded_url)
 		set_error(mdbe, createException(MAL, "monetdbe.monetdbe_startup", MAL_MALLOC_FAIL));
 cleanup:
-	GDKfataljumpenable = 0;
+	GDKfataljumpenable = false;
 	if (mdbe->msg)
 		monetdbe_shutdown_internal();
 }
@@ -994,8 +994,8 @@ monetdbe_load_extension(monetdbe_database dbhdl, const char *file)
 	if ((mdbe->msg = validate_database_handle(mdbe, "embedded.monetdbe_dump_database")) != MAL_SUCCEED) {
 		return mdbe->msg;
 	}
-	char *modules[2];
-	modules[0] = (char*)file;
+	const char *modules[2];
+	modules[0] = file;
 	modules[1] = NULL;
 	char *msg = loadLibrary(file, -1);
 	if (msg)

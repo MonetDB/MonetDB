@@ -75,8 +75,22 @@ def prgreen(str):
     print(str, end='')
 def prpurple(str):
     print(str, end='')
+use_esc = False
 if isatty:
-    if os.name != 'nt':
+    if os.name == 'nt':
+        try:
+            import ctypes
+            kernel32 = ctypes.windll.kernel32
+            origmode = ctypes.c_long()
+            handle = kernel32.GetStdHandle(-11) # STD_OUTPUT_HANDLE
+            if kernel32.GetConsoleMode(handle, ctypes.byref(origmode)):
+                if kernel32.SetConsoleMode(handle, origmode.value | 0x0004):
+                    use_esc = True
+        except (ImportError, AttributeError):
+            pass
+    else:
+        use_esc = True
+    if use_esc:
         # color output a little
         RED = '\033[1;31m'
         GREEN = '\033[0;32m'
@@ -2893,7 +2907,7 @@ class ServerClass:
                 if os.path.exists(self.pollfile):
                     break
                 # wait at most 30 seconds for the server to start
-                if time.time() > starttime + 30:
+                if self.timeout and time.time() > starttime + 30:
                     if procdebug:
                         print('timeout starting server')
                     if os.name == 'nt':
@@ -2927,7 +2941,7 @@ class ServerClass:
                 curtime = time.time()
                 if curtime >= endtime:
                     break
-                line = proc.stdout.readline(timeout=endtime - curtime)
+                line = proc.stdout.readline(timeout=endtime - curtime if self.timeout else None)
                 if not line:
                     break
                 self.outfile.write(line)
@@ -3024,33 +3038,31 @@ def mapi_ping(port, host='localhost', tries=3):
 
 
 threadids = {}
-up = '\033[A'
-down = '\033[B'
 
 
 def progress(count, errors, total, test, spaces=' '*(ttywidth or 100)):
     errs = '\r'
-    if os.name == 'nt':
-        nl = ''
-        line = 0
-    else:
+    if use_esc:
         tid = threading.get_ident()
-        nl = ''
         if tid not in threadids:
             threadids[tid] = len(threadids)
             nl = '\n'
+        else:
+            nl = ''
         line = len(threadids) - threadids[tid]
-        if errors == 1:
-            errs = f'\r{errors} error'
-        elif errors > 1:
-            errs = f'\r{errors} errors'
+        if errors:
+            errs = f'\r{errors} error{"" if errors == 1 else "s"}'
+        up = f'\033[{line}A' if line > 1 else '\033[A'
+        down = f'\033[{line}B' if line > 1 else '\033[B'
+    else:
+        nl = up = down = ''
     perc = int(count*100/total) if total and count else 0
     width = len(str(total))
     s = f'[{count:{width}}/{total}] ({perc:2}%)    {test}'
     if len(s) > ttywidth:
         test = test[len(s)-ttywidth:]
         s = f'[{count:{width}}/{total}] ({perc:2}%)    {test}'
-    sys.stdout.write(nl + '\r' + up*line + spaces + '\r' + s + down*line + errs)
+    sys.stdout.write(nl + '\r' + up + spaces + '\r' + s + down + errs)
 
 
 def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, length, nomito, threads, user, passwd, COND, PSRVR, total_tests, options, TSTDB, TSTDIR, TSTTRGDIR, TSTSRCDIR, environ):

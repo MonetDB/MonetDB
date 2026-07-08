@@ -1,0 +1,26 @@
+-- adapted query without the last 'WHERE x NOT IN ( WITH RECURSIVE ...)' part works.
+query T nosort
+SELECT COUNT ( * ) = 0 AS x
+  FROM ( SELECT 1 AS x
+         UNION
+         SELECT 0 AS x
+         UNION
+         SELECT 3 AS x )
+----
+False
+
+-- the orginal reported query
+-- it crashes in rel_setop_get_statistics (sql=0x7feb0c184180, rel=0x7feb0c1b0e90, lexps=0x7feb0c1b09e0, rexps=0x7feb0c1b0fc0, e=0x7feb0c1b11d0, i=1) at sql/server/rel_statistics.c:300
+query T nosort
+SELECT COUNT ( * ) = 0 AS x
+  FROM ( SELECT 1 AS x
+         UNION
+         SELECT 0 AS x
+         UNION
+         SELECT 3 AS x )
+ WHERE x NOT IN ( WITH RECURSIVE x AS ( SELECT 1 UNION SELECT x + 1 FROM x WHERE x < 20 )
+                  SELECT * FROM x WHERE x >= 1
+                )
+----
+False
+

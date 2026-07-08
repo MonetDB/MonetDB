@@ -1503,8 +1503,8 @@ GDKclrerr(void)
 }
 
 jmp_buf GDKfataljump;
-str GDKfatalmsg;
-bit GDKfataljumpenable = 0;
+char *GDKfatalmsg;
+bool GDKfataljumpenable = false;
 
 /* coverity[+kill] */
 void

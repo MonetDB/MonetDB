@@ -1,0 +1,55 @@
+-- query without the 'ORDER BY count ( ( SELECT ... GROUP BY cube ( x , x , x ) ) ) OVER ( ORDER BY 1 NULLS LAST ) DESC, 4' part, doesn't crash
+query IT rowsort
+SELECT 0 , NULL
+  FROM ( SELECT 1 AS x , 2 AS x , 3 AS x
+         UNION
+         SELECT 4 AS x , NULL AS x , 6 AS x
+         UNION
+         SELECT 7 AS x , 8 AS x , 9 AS x ) AS x
+ GROUP BY ROLLUP ( x , x ) , ROLLUP ( x , x )
+ ORDER BY ROUND ( x , x )
+--        , count ( ( SELECT CASE WHEN EXISTS ( SELECT NULL ) THEN 1 ELSE - 82 * 26 - 12 * - 27 * CASE WHEN NOT NULL IN ( - 69 , ( SUM ( DISTINCT CAST( NULL AS INTEGER ) ) ) + MAX ( - 6 ) + - COUNT ( * ) / greatest ( NULL , NULL ) + MAX ( - 6 ) + - COUNT ( * ) / - - ( 77 ) + 37 , 44 , - - 0 * 23 , - - 86 , 3 , 12 ) THEN 41 WHEN NOT - 21 / - 95 IS NOT NULL THEN 63 END END
+--                     GROUP BY cube ( x , x , x )
+--                  )
+--                ) OVER ( ORDER BY 1 NULLS LAST ) DESC
+        , 1
+        , 3
+--      , 4  -- the order by column number (4) is not in the number of projections range (3)
+ LIMIT 3
+----
+0
+NULL
+0
+NULL
+0
+NULL
+
+-- the orginal reported query but with disabled 'ORDER BY 4' part as it generates an error
+-- it fails at an assert in rel_find_exp_and_corresponding_rel_ (rel=0x7f3d00143df0, e=0x7f3d001b6530, subexp=false, res=0x7f3d35833d98) at sql/server/rel_exp.c:1786  assert(e->nid);
+query IT rowsort
+SELECT 0 , NULL
+  FROM ( SELECT 1 AS x , 2 AS x , 3 AS x
+         UNION
+         SELECT 4 AS x , NULL AS x , 6 AS x
+         UNION
+         SELECT 7 AS x , 8 AS x , 9 AS x ) AS x
+ GROUP BY ROLLUP ( x , x ) , ROLLUP ( x , x )
+ ORDER BY ROUND ( x , x )
+        , count ( ( SELECT CASE WHEN EXISTS ( SELECT NULL ) THEN 1 ELSE - 82 * 26 - 12 * - 27 * CASE WHEN NOT NULL IN ( - 69 , ( SUM ( DISTINCT CAST( NULL AS INTEGER ) ) ) + MAX ( - 6 ) + - COUNT ( * ) / greatest ( NULL , NULL ) + MAX ( - 6 ) + - COUNT ( * ) / - - ( 77 ) + 37 , 44 , - - 0 * 23 , - - 86 , 3 , 12 ) THEN 41 WHEN NOT - 21 / - 95 IS NOT NULL THEN 63 END END
+                     GROUP BY cube ( x , x , x )
+                  )
+                ) OVER ( ORDER BY 1 NULLS LAST ) DESC
+        , 1
+        , 3
+--      , 4  -- the order by column number (4) is not in the number of projections range (3)
+ LIMIT 4
+----
+0
+NULL
+0
+NULL
+0
+NULL
+0
+NULL
+
