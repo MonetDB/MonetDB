@@ -3127,7 +3127,10 @@ parse_header_line(MapiHdl hdl, char *line, struct MapiResultSet *result)
 
 		if (result->fieldcnt > result->maxfields) {
 			REALLOC(result->fields, result->fieldcnt);
-			memset(result->fields + result->maxfields, 0, (result->fieldcnt - result->maxfields) * sizeof(*result->fields));
+			for (int i = result->maxfields; i < result->fieldcnt; i++)
+				result->fields[i] = (struct MapiColumn) {
+					.columnlength = -1,
+				};
 			result->maxfields = result->fieldcnt;
 		}
 
@@ -3162,7 +3165,10 @@ parse_header_line(MapiHdl hdl, char *line, struct MapiResultSet *result)
 		result->fieldcnt = n;
 		if (n > result->maxfields) {
 			REALLOC(result->fields, n);
-			memset(result->fields + result->maxfields, 0, (n - result->maxfields) * sizeof(*result->fields));
+			for (int i = result->maxfields; i < n; i++)
+				result->fields[i] = (struct MapiColumn) {
+					.columnlength = -1,
+				};
 			result->maxfields = n;
 		}
 	}
@@ -4339,25 +4345,23 @@ mapi_slice_row(struct MapiResultSet *result, int cr)
 		free(p);
 	}
 	if (i != result->fieldcnt) {
-		int j;
-		for (j = 0; j < result->fieldcnt; j++) {
-			if (result->fields[j].columnname)
-				free(result->fields[j].columnname);
-			result->fields[j].columnname = NULL;
-			if (result->fields[j].columntype)
-				free(result->fields[j].columntype);
-			result->fields[j].columntype = NULL;
-			if (result->fields[j].tablename)
-				free(result->fields[j].tablename);
-			result->fields[j].tablename = NULL;
-			result->fields[j].columnlength = 0;
+		for (int j = 0; j < result->fieldcnt; j++) {
+			free(result->fields[j].columnname);
+			free(result->fields[j].columntype);
+			free(result->fields[j].tablename);
+			result->fields[j] = (struct MapiColumn) {
+				.columnlength = -1,
+			};
 		}
 	}
 	if (i > result->fieldcnt) {
 		result->fieldcnt = i;
 		if (i > result->maxfields) {
 			REALLOC(result->fields, i);
-			memset(result->fields + result->maxfields, 0, (i - result->maxfields) * sizeof(*result->fields));
+			for (int j = result->maxfields; j < i; j++)
+				result->fields[j] = (struct MapiColumn) {
+					.columnlength = -1,
+				};
 			result->maxfields = i;
 		}
 	}
@@ -4571,14 +4575,65 @@ mapi_get_table(MapiHdl hdl, int fnr)
 	return 0;
 }
 
+#include "mutf8.h"
+
+static size_t
+strwidth(const char *s)
+{
+	if (s == NULL)
+		return 0;
+	size_t len = 0;
+
+	for (uint32_t state = 0, codepoint = 0; *s; s++) {
+		switch (decode(&state, &codepoint, (uint8_t) *s)) {
+		case UTF8_ACCEPT: {
+			int n = charwidth(codepoint);
+			if (n >= 0)
+				len += n;
+			else
+				len++;			/* assume width 1 if unprintable */
+			if (len >= (unsigned) INT_MAX)
+				return INT_MAX;
+			break;
+		}
+		default:
+			break;
+		case UTF8_REJECT:
+			assert(0);
+		}
+	}
+	return len;
+}
+
 int
 mapi_get_len(MapiHdl hdl, int fnr)
 {
 	struct MapiResultSet *result;
 
 	mapi_hdl_check0(hdl);
-	if ((result = hdl->result) != 0 && fnr >= 0 && fnr < result->fieldcnt)
+	if ((result = hdl->result) != 0 && fnr >= 0 && fnr < result->fieldcnt) {
+		if (result->fields[fnr].columnlength < 0) {
+			size_t maxlen = 0;
+			Mapi mid = hdl->mid;
+			if (mid->active && read_into_cache(mid->active, 0) != MOK)
+				return 0;
+			for (int i = 0; i < result->cache.writer; i++) {
+				if (result->cache.line[i].rows == NULL ||
+				    result->cache.line[i].rows[0] != '[')
+					continue;
+				mapi_slice_row(result, i);
+				size_t len = strwidth(result->cache.line[i].anchors[fnr]);
+				if (len > maxlen)
+					maxlen = len;
+				if (maxlen > (size_t) INT_MAX) {
+					maxlen = (size_t) INT_MAX;
+					break;
+				}
+			}
+			result->fields[fnr].columnlength = (int) maxlen;
+		}
 		return result->fields[fnr].columnlength > INT_MAX ? INT_MAX : (int) result->fields[fnr].columnlength;
+	}
 	mapi_setError(hdl->mid, "Illegal field number", __func__, MERROR);
 	return 0;
 }
@@ -4589,8 +4644,9 @@ mapi_get_digits(MapiHdl hdl, int fnr)
 	struct MapiResultSet *result;
 
 	mapi_hdl_check0(hdl);
-	if ((result = hdl->result) != 0 && fnr >= 0 && fnr < result->fieldcnt)
+	if ((result = hdl->result) != 0 && fnr >= 0 && fnr < result->fieldcnt) {
 		return result->fields[fnr].digits;
+	}
 	mapi_setError(hdl->mid, "Illegal field number", __func__, MERROR);
 	return 0;
 }

@@ -3015,7 +3015,7 @@ mvc_export_head_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ((msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
 	b = cntxt->sqlcontext;
-	ok = mvc_export_head(b, *s, res_id, FALSE, TRUE, cntxt->qryctx.starttime, mb->optimize);
+	ok = mvc_export_head(b, *s, res_id, false, cntxt->qryctx.starttime, mb->optimize);
 	cntxt->qryctx.starttime = 0;
 	cntxt->qryctx.endtime = 0;
 	mb->optimize = 0;

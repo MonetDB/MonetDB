@@ -521,13 +521,13 @@ MNDBExecute(ODBCStmt *stmt)
 	if (stmt->next == NULL && stmt->Dbc->FirstStmt == stmt &&
 	    stmt->cursorType == SQL_CURSOR_FORWARD_ONLY) {
 		/* we're the only Stmt handle, and we're only going forward */
-		if (stmt->Dbc->cachelimit != 10000)
-			mapi_cache_limit(stmt->Dbc->mid, 10000);
-		stmt->Dbc->cachelimit = 10000;
+		if (stmt->Dbc->cachelimit != LARGE_CACHE_LIMIT)
+			mapi_cache_limit(stmt->Dbc->mid, LARGE_CACHE_LIMIT);
+		stmt->Dbc->cachelimit = LARGE_CACHE_LIMIT;
 	} else {
-		if (stmt->Dbc->cachelimit != 100)
-			mapi_cache_limit(stmt->Dbc->mid, 100);
-		stmt->Dbc->cachelimit = 100;
+		if (stmt->Dbc->cachelimit != SMALL_CACHE_LIMIT)
+			mapi_cache_limit(stmt->Dbc->mid, SMALL_CACHE_LIMIT);
+		stmt->Dbc->cachelimit = SMALL_CACHE_LIMIT;
 	}
 	msg = mapi_query_handle(hdl, query);
 	free(query);

@@ -80,12 +80,21 @@ hashge = False                  # may get updated at start of testing
 
 skipidx = re.compile(r'create index .* \b(asc|desc)\b', re.I)
 
+
 class UnsafeDirectoryHandler(pymonetdb.SafeDirectoryHandler):
+    def __init__(self, srcdir, data_dir:Optional[Path]=None, **kwargs):
+        self.data_dir = data_dir
+        super().__init__(srcdir, **kwargs)
+
     def secure_resolve(self, filename: str) -> Optional[Path]:
+        if self.data_dir is not None and (self.data_dir / filename).exists():
+            return (self.data_dir / filename).resolve()
         return (self.dir / filename).resolve()
+
 
 class SQLLogicSyntaxError(Exception):
     pass
+
 
 class SQLLogicConnection(object):
     def __init__(self, conn_id, dbh, crs=None, language='sql'):
@@ -106,6 +115,7 @@ class SQLLogicConnection(object):
 def is_copyfrom_stmt(stmt:[str]=[]):
     return '<COPY_INTO_DATA>' in stmt
 
+
 def prepare_copyfrom_stmt(stmt:[str]=[]):
     index = stmt.index('<COPY_INTO_DATA>')
     head = stmt[:index]
@@ -124,8 +134,10 @@ def prepare_copyfrom_stmt(stmt:[str]=[]):
     tail='\n'.join(tail)
     return head + '\n' + tail, head, stmt
 
+
 def dq(s):
     return s.replace('"', '""')
+
 
 class SQLLogic:
     def __init__(self, srcdir='.', report=None, out=sys.stdout):
@@ -163,7 +175,8 @@ class SQLLogic:
 
     def connect(self, username='monetdb', password='monetdb',
                 hostname='localhost', port=None, database=None, usock=None,
-                language='sql', timeout: Optional[int]=0, alltests=False,
+                language='sql', data_dir: Optional[Path]=None,
+                timeout: Optional[int]=0, alltests=False,
                 server=None):
         self.starttime = time.time()
         self.language = language
@@ -180,7 +193,8 @@ class SQLLogic:
         self.timeout = timeout
         self.alltests = alltests
         if language == 'sql':
-            transfer_handler = UnsafeDirectoryHandler(self.srcdir)
+            transfer_handler = UnsafeDirectoryHandler(self.srcdir,
+                                                      data_dir=data_dir)
             dbh = pymonetdb.connect(username=username,
                                     password=password,
                                     hostname=hostname,
@@ -392,7 +406,7 @@ class SQLLogic:
             return ['statement', 'crash'] # should never be approved
         except KeyboardInterrupt:
             raise
-        except:
+        except Exception:
             type, value, traceback = sys.exc_info()
             self.query_error(statement, 'unexpected error from pymonetdb', str(value))
             return ['statement', 'error']
@@ -494,7 +508,8 @@ class SQLLogic:
             print("query text:", file=self.out)
             print(query, file=self.out)
 
-    def exec_query(self, query, columns, sorting, pyscript, hashlabel, nresult, hash, expected, conn=None, verbose=False) -> bool:
+    def exec_query(self, query, columns, sorting, pyscript, hashlabel, nresult,
+                   hash, expected, conn=None, verbose=False) -> bool:
         err = False
         crs = conn.cursor() if conn else self.crs
         if '<LAST_PREPARE_ID>' in query:
@@ -513,13 +528,15 @@ class SQLLogic:
             raise
         except TimeoutError as e:
             self.query_error(query, 'Timeout', str(e))
-            return ['statement', 'crash'] # should never be approved
+            return ['statement', 'crash']  # should never be approved
         except ConnectionError as e:
-            self.query_error(query, 'Timeout or server may have crashed', str(e))
-            return ['statement', 'crash'] # should never be approved
-        except:
+            self.query_error(query, 'Timeout or server may have crashed',
+                             str(e))
+            return ['statement', 'crash']  # should never be approved
+        except Exception:
             tpe, value, traceback = sys.exc_info()
-            self.query_error(query, 'unexpected error from pymonetdb', str(value))
+            self.query_error(query, 'unexpected error from pymonetdb',
+                             str(value))
             return ['statement', 'error'], []
         if crs.description is None:
             # it's not a query, it's a statement
@@ -529,9 +546,10 @@ class SQLLogic:
             data = crs.fetchall()
         except KeyboardInterrupt:
             raise
-        except:
+        except Exception:
             tpe, value, traceback = sys.exc_info()
-            self.query_error(query, 'unexpected error from pymonetdb', str(value))
+            self.query_error(query, 'unexpected error from pymonetdb',
+                             str(value))
             return ['statement', 'error'], []
         if crs.lastrowid is not None:
             # it was a PREPARE query
@@ -667,13 +685,13 @@ class SQLLogic:
             if not err:
                 try:
                     ndata = pyfnc(data)
-                except:
+                except Exception:
                     self.query_error(query, 'filter function failed')
                     err = True
                 if resdata is not None:
                     try:
                         resdata = pyfnc(resdata)
-                    except:
+                    except Exception:
                         resdata = None
             ncols = 1
             if (len(ndata)):
@@ -868,13 +886,13 @@ class SQLLogic:
                 assert k in ['conn_id', 'username', 'password']
                 assert res.get(k) is None
                 res[k] = v
-            except (ValueError, AssertionError) as e:
+            except (ValueError, AssertionError):
                 self.raise_error('invalid connection parameters definition!')
         if len(res.keys()) > 1:
             try:
                 assert res.get('username')
                 assert res.get('password')
-            except AssertionError as e:
+            except AssertionError:
                 self.raise_error('invalid connection parameters definition, username or password missing!')
         return res
 
@@ -1078,7 +1096,8 @@ class SQLLogic:
         if approve:
             approve.flush()
 
-if __name__ == '__main__':
+
+def main():
     import argparse
     parser = argparse.ArgumentParser(description='Run a Sqllogictest')
     parser.add_argument('--host', action='store', default='localhost',
@@ -1093,10 +1112,15 @@ if __name__ == '__main__':
                         help='password to use to login to the database with')
     parser.add_argument('--language', action='store', default='sql',
                         help='language to use for testing')
+    parser.add_argument('--data-dir', action='store',
+                        type=Path,
+                        help='directory for relative paths in ON CLIENT'
+                        ' processing (default: directory of test script)')
     parser.add_argument('--nodrop', action='store_true',
                         help='do not drop tables at start of test')
     parser.add_argument('--timeout', action='store', type=int, default=0,
-                        help='timeout in seconds (<= 0 is no timeout) after which test is terminated')
+                        help='timeout in seconds (<= 0 is no timeout) after'
+                        ' which test is terminated')
     parser.add_argument('--verbose', action='store_true',
                         help='be a bit more verbose')
     parser.add_argument('--results', action='store',
@@ -1112,7 +1136,7 @@ if __name__ == '__main__':
                         help='define substitution for $var as var=replacement'
                         ' (can be repeated)')
     parser.add_argument('--alltests', action='store_true',
-                        help='also executed "knownfail" tests')
+                        help='also execute "knownfail" tests')
     parser.add_argument('--run-until', action='store', type=int,
                         help='run tests until specified line')
     parser.add_argument('tests', nargs='*', help='tests to be run')
@@ -1126,7 +1150,8 @@ if __name__ == '__main__':
     sql.res = opts.results
     sql.connect(hostname=opts.host, port=opts.port, database=opts.database,
                 language=opts.language, username=opts.user,
-                password=opts.password, alltests=opts.alltests,
+                password=opts.password, data_dir=opts.data_dir,
+                alltests=opts.alltests,
                 timeout=opts.timeout if opts.timeout > 0 else 0)
     for test in args:
         try:
@@ -1146,3 +1171,12 @@ if __name__ == '__main__':
         sys.exit(2)
     if sql.timedout:
         sys.exit(1)
+
+
+if __name__ == '__main__':
+    if sys.argv[1] == '--pdb':
+        del sys.argv[1]
+        import pdb
+        pdb.run('main()')
+    else:
+        main()

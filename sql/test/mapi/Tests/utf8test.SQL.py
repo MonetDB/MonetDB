@@ -28,7 +28,7 @@ text2s = 'funny characters: %s' % funnys
 expectraw = f'''% sys.utf8test # table_name
 % s # name
 % varchar # type
-% 32 # length
+% -1 # length
 % 50 0 # typesizes
 [ "{text1}"\t]
 [ "{text2p}"\t]
