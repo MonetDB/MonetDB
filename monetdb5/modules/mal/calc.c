@@ -9,9 +9,9 @@
  */
 
 #include "monetdb_config.h"
-#include "gdk.h"
 #include "mal_exception.h"
 #include "mal_interpreter.h"
+#include "calc.h"
 
 static str
 mythrow(enum malexception type, const char *fcn, const char *msg)
@@ -781,26 +781,26 @@ CMDBATsumprod(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 }
 
 
-static str
+str
 CMDBATsum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) cntxt;
 
-	return CMDBATsumprod(mb, stk, pci, BATsum, "aggr.sum");
+	return CMDBATsumprod(mb, stk, pci, BATsum, pci->inout>=0?"iaggr.sum":"aggr.sum");
 }
 
 
-static str
+str
 CMDBATprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) cntxt;
 
-	return CMDBATsumprod(mb, stk, pci, BATprod, "aggr.prod");
+	return CMDBATsumprod(mb, stk, pci, BATprod, pci->inout>=0?"iaggr.prod":"aggr.prod");
 }
 
 #define arg_type(stk, pci, k) ((stk)->stk[pci->argv[k]].vtype)
 
-static str
+str
 CMDBATavg3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	ValPtr ret = &stk->stk[getArg(pci, 0)];
@@ -809,6 +809,7 @@ CMDBATavg3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bit *skip_nils;
 	BAT *b = NULL, *s = NULL, *avgs, *cnts, *rems;
 	bool inout = pci->inout >= 0;
+	char *func = inout?"iaggr.avg":"aggr.avg";
 
 	(void) cntxt;
 	(void) mb;
@@ -825,7 +826,7 @@ CMDBATavg3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	s = sid != NULL && !is_bat_nil(*sid) ? BATdescriptor(*sid) : NULL;
 	if (b == NULL || (sid != NULL && !is_bat_nil(*sid) && s == NULL)) {
 		BBPreclaim(b);
-		throw(MAL, "aggr.avg", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		throw(MAL, func, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	inout &= !is_lng_nil((*cnt));
 	if (inout) {
@@ -836,11 +837,11 @@ CMDBATavg3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			BBPreclaim(avgs);
 			BBPreclaim(rems);
 			BBPreclaim(cnts);
-			throw(MAL, "aggr.avg", GDK_EXCEPTION);
+			throw(MAL, func, GDK_EXCEPTION);
 		}
 	}
 	if (BATgroupavg3(&avgs, &rems, &cnts, b, NULL, NULL, s, *skip_nils, inout) != GDK_SUCCEED)
-		return mythrow(MAL, "aggr.avg", GDK_EXCEPTION);
+		return mythrow(MAL, func, GDK_EXCEPTION);
 	if (avgs && BATcount(avgs) == 1) {
 		/* only type bte, sht, int, lng and hge */
 		ptr res = VALget(ret);

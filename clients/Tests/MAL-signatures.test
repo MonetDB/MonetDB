@@ -155,26 +155,6 @@ AGGRavg24_dbl
 Grouped tail average on sht, also returns count
 aggr
 avg
-command aggr.avg(X_0:bat[:dbl]) (X_1:dbl, X_2:dbl, X_3:lng)
-ALGfsum
-Return the Kahan/Neumaier summation.
-aggr
-avg
-command aggr.avg(X_0:bat[:flt]) (X_1:dbl, X_2:dbl, X_3:lng)
-ALGfsum
-Return the Kahan/Neumaier summation.
-aggr
-avg
-command aggr.avg(X_0:bat[:dbl], X_1:bit) (X_2:dbl, X_3:dbl, X_4:lng)
-ALGfsum_skipnil
-Return the Kahan/Neumaier summation or nil.
-aggr
-avg
-command aggr.avg(X_0:bat[:flt], X_1:bit) (X_2:dbl, X_3:dbl, X_4:lng)
-ALGfsum_skipnil
-Return the Kahan/Neumaier summation or nil.
-aggr
-avg
 pattern aggr.avg(X_0:bat[:bte], X_1:bat[:oid], X_2:bit) (X_3:bte, X_4:lng, X_5:lng)
 CMDBATavg3
 Calculate aggregate average of B.
@@ -232,12 +212,12 @@ aggr
 avg
 pattern aggr.avg(X_0:bat[:oid], X_1:bat[:any_1], X_2:bat[:lng], X_3:bat[:lng], X_4:ptr, X_5:bat[:oid]) (X_6:bat[:any_1], X_7:bat[:lng], X_8:bat[:lng])
 LALGavg
-avg per group.
+avg of integers/decimals per group.
 aggr
 avg
 pattern aggr.avg(X_0:bat[:oid], X_1:bat[:any_1], X_2:ptr, X_3:bat[:oid]) (X_4:bat[:any_1], X_5:bat[:lng], X_6:bat[:lng])
 LALGavg
-avg per group.
+avg of integers/decimals per group.
 aggr
 avg
 pattern aggr.avg(X_0:bat[:oid], X_1:bat[:any_1], X_2:ptr, X_3:bat[:oid]) (X_4:bat[:dbl], X_5:bat[:dbl], X_6:bat[:lng])
@@ -528,11 +508,6 @@ null
 command aggr.null(X_0:bat[:any_1]):bit
 SQLnil
 if b has a nil return true, else false
-aggr
-ord_quantile
-command aggr.ord_quantile(X_0:bat[:oid], X_1:bat[:any_1], X_2:bte):bat[:any_1]
-LALGquantile
-Return the p-th's quantile per group, where p is between 0 and 100
 aggr
 prod
 command aggr.prod(X_0:bat[:bte], X_1:bat[:oid], X_2:bat[:any_1]):bat[:bte]
@@ -2375,36 +2350,6 @@ AGGRsum3_sht
 Grouped tail sum on sht
 aggr
 sum
-command aggr.sum(X_0:bat[:dbl]) (X_1:dbl, X_2:dbl, X_3:lng)
-ALGfsum
-Return the Kahan/Neumaier summation.
-aggr
-sum
-command aggr.sum(X_0:bat[:flt]) (X_1:dbl, X_2:dbl, X_3:lng)
-ALGfsum
-Return the Kahan/Neumaier summation.
-aggr
-sum
-command aggr.sum(X_0:bat[:flt]) (X_1:flt, X_2:flt, X_3:lng)
-ALGfsum_flt
-Return the Kahan/Neumaier summation.
-aggr
-sum
-command aggr.sum(X_0:bat[:dbl], X_1:bit) (X_2:dbl, X_3:dbl, X_4:lng)
-ALGfsum_skipnil
-Return the Kahan/Neumaier summation or nil.
-aggr
-sum
-command aggr.sum(X_0:bat[:flt], X_1:bit) (X_2:dbl, X_3:dbl, X_4:lng)
-ALGfsum_skipnil
-Return the Kahan/Neumaier summation or nil.
-aggr
-sum
-command aggr.sum(X_0:bat[:flt], X_1:bit) (X_2:flt, X_3:flt, X_4:lng)
-ALGfsum_skipnil_flt
-Return the Kahan/Neumaier summation or nil.
-aggr
-sum
 pattern aggr.sum(X_0:bat[:bte]):bte
 CMDBATsum
 Calculate aggregate sum of B.
@@ -3347,7 +3292,7 @@ algebra
 unique
 command algebra.unique(X_0:ptr, X_1:bat[:any_1], X_2:bat[:oid], X_3:bat[:oid]) (X_4:bat[:oid], X_5:bat[:any_1])
 LALGgroup_unique
-Unique per group rows.
+Unique rows per group.
 algebra
 unique
 command algebra.unique(X_0:ptr, X_1:bat[:any_1], X_2:bat[:oid]) (X_3:bat[:oid], X_4:bat[:any_1])
@@ -34414,6 +34359,81 @@ pattern generator.join(X_0:bat[:sht], X_1:bat[:sht]) (X_2:bat[:oid], X_3:bat[:oi
 VLTgenerator_join
 (empty)
 generator
+new
+pattern generator.new(X_0:bte, X_1:bte):bat[:bte]
+VLTgenerator_new
+(empty)
+generator
+new
+pattern generator.new(X_0:bte, X_1:bte, X_2:bte):bat[:bte]
+VLTgenerator_new
+(empty)
+generator
+new
+pattern generator.new(X_0:date, X_1:date, X_2:int):bat[:bte]
+VLTgenerator_new
+date generator with step size in months
+generator
+new
+pattern generator.new(X_0:date, X_1:date, X_2:lng):bat[:bte]
+VLTgenerator_new
+date generator with step size in days
+generator
+new
+pattern generator.new(X_0:dbl, X_1:dbl):bat[:bte]
+VLTgenerator_new
+(empty)
+generator
+new
+pattern generator.new(X_0:dbl, X_1:dbl, X_2:dbl):bat[:bte]
+VLTgenerator_new
+Create and materialize a generator table
+generator
+new
+pattern generator.new(X_0:flt, X_1:flt):bat[:bte]
+VLTgenerator_new
+(empty)
+generator
+new
+pattern generator.new(X_0:flt, X_1:flt, X_2:flt):bat[:bte]
+VLTgenerator_new
+(empty)
+generator
+new
+pattern generator.new(X_0:int, X_1:int):bat[:bte]
+VLTgenerator_new
+(empty)
+generator
+new
+pattern generator.new(X_0:int, X_1:int, X_2:int):bat[:bte]
+VLTgenerator_new
+(empty)
+generator
+new
+pattern generator.new(X_0:lng, X_1:lng):bat[:bte]
+VLTgenerator_new
+(empty)
+generator
+new
+pattern generator.new(X_0:lng, X_1:lng, X_2:lng):bat[:bte]
+VLTgenerator_new
+(empty)
+generator
+new
+pattern generator.new(X_0:sht, X_1:sht):bat[:bte]
+VLTgenerator_new
+(empty)
+generator
+new
+pattern generator.new(X_0:sht, X_1:sht, X_2:sht):bat[:bte]
+VLTgenerator_new
+(empty)
+generator
+new
+pattern generator.new(X_0:timestamp, X_1:timestamp, X_2:lng):bat[:bte]
+VLTgenerator_new
+(empty)
+generator
 parameters
 pattern generator.parameters(X_0:bte, X_1:bte):bat[:bte]
 VLTgenerator_noop
@@ -35814,60 +35834,915 @@ pattern heapn.topn(X_0:lng, X_1:any...) (X_2:bat[:oid], X_3:bat[:oid], X_4:bat[:
 HEAPtopn
 Return table with heap based topn, and positions and candidate for any projections
 iaggr
+avg
+pattern iaggr.avg(X_0:bat[:bte], X_1:bat[:oid], X_2:bit) (X_3:bte, X_4:lng, X_5:lng)
+CMDBATavg3
+Calculate aggregate average of B.
+iaggr
+avg
+pattern iaggr.avg(X_0:bat[:int], X_1:bat[:oid], X_2:bit) (X_3:int, X_4:lng, X_5:lng)
+CMDBATavg3
+Calculate aggregate average of B.
+iaggr
+avg
+pattern iaggr.avg(X_0:bat[:lng], X_1:bat[:oid], X_2:bit) (X_3:lng, X_4:lng, X_5:lng)
+CMDBATavg3
+Calculate aggregate average of B.
+iaggr
+avg
+pattern iaggr.avg(X_0:bat[:sht], X_1:bat[:oid], X_2:bit) (X_3:sht, X_4:lng, X_5:lng)
+CMDBATavg3
+Calculate aggregate average of B.
+iaggr
+avg
+command iaggr.avg(X_0:bat[:dbl]) (X_1:dbl, X_2:dbl, X_3:lng)
+IALGfsum
+Return the Kahan/Neumaier summation.
+iaggr
+avg
+command iaggr.avg(X_0:bat[:flt]) (X_1:dbl, X_2:dbl, X_3:lng)
+IALGfsum
+Return the Kahan/Neumaier summation.
+iaggr
+avg
+command iaggr.avg(X_0:bat[:dbl], X_1:bit) (X_2:dbl, X_3:dbl, X_4:lng)
+IALGfsum_skipnil
+Return the Kahan/Neumaier summation or nil.
+iaggr
+avg
+command iaggr.avg(X_0:bat[:flt], X_1:bit) (X_2:dbl, X_3:dbl, X_4:lng)
+IALGfsum_skipnil
+Return the Kahan/Neumaier summation or nil.
+iaggr
 count
 command iaggr.count(X_0:bat[:any], X_1:bat[:oid]):lng
-ALGcountCND_bat
-Return the current size (in number of elements) in a BAT.
+IALGcountCND_bat
+Return the number of elements currently in a BAT.
 iaggr
 count
 command iaggr.count(X_0:bat[:any], X_1:bat[:oid], X_2:bit):lng
-ALGcountCND_nil
-Return the number of elements currently in a BAT ignores@BUNs with nil-tail iff ignore_nils==TRUE.
+IALGcountCND_nil
+Return the number of elements currently in a BAT, ignore BUNs with nil-tail iff ignore_nils==TRUE.
 iaggr
 count
 command iaggr.count(X_0:bat[:any]):lng
-ALGcount_bat
-Return the current size (in number of elements) in a BAT.
+IALGcount_bat
+Return the number of elements currently in a BAT.
 iaggr
 count
 command iaggr.count(X_0:bat[:any], X_1:bit):lng
-ALGcount_nil
-Return the number of elements currently in a BAT ignores@BUNs with nil-tail iff ignore_nils==TRUE.
+IALGcount_nil
+Return the number of elements currently in a BAT, ignore BUNs with nil-tail iff ignore_nils==TRUE.
 iaggr
 count_no_nil
 command iaggr.count_no_nil(X_0:bat[:any_2], X_1:bat[:oid]):lng
-ALGcountCND_no_nil
-Return the number of elements currently@in a BAT ignoring BUNs with nil-tail
+IALGcountCND_no_nil
+Return the number of elements currently in a BAT, ignore BUNs with nil-tail
 iaggr
 count_no_nil
 command iaggr.count_no_nil(X_0:bat[:any_2]):lng
-ALGcount_no_nil
-Return the number of elements currently@in a BAT ignoring BUNs with nil-tail
+IALGcount_no_nil
+Return the number of elements currently in a BAT, ignore BUNs with nil-tail
 iaggr
 max
 command iaggr.max(X_0:bat[:any_2]):any_2
-ALGmaxany
+IALGmaxany
 Return the highest tail value or nil.
 iaggr
 max
 command iaggr.max(X_0:bat[:any_2], X_1:bit):any_2
-ALGmaxany_skipnil
+IALGmaxany_skipnil
 Return the highest tail value or nil.
 iaggr
 min
 command iaggr.min(X_0:bat[:any_2]):any_2
-ALGminany
+IALGminany
 Return the lowest tail value or nil.
 iaggr
 min
 command iaggr.min(X_0:bat[:any_2], X_1:bit):any_2
-ALGminany_skipnil
+IALGminany_skipnil
 Return the lowest tail value or nil.
 iaggr
 null
 command iaggr.null(X_0:bat[:any_1]):bit
-ALGnull
+IALGnull
 Returns true or false if the input contains a NULL or not, nil if the input is empty..
+iaggr
+ord_quantile
+command iaggr.ord_quantile(X_0:bat[:oid], X_1:bat[:any_1], X_2:bte):bat[:any_1]
+IALGquantile
+Return the p-th's quantile per group, where p is between 0 and 100
+iaggr
+prod
+pattern iaggr.prod(X_0:bat[:bte]):bte
+CMDBATprod
+Calculate aggregate product of B.
+iaggr
+prod
+pattern iaggr.prod(X_0:bat[:bte]):dbl
+CMDBATprod
+Calculate aggregate product of B.
+iaggr
+prod
+pattern iaggr.prod(X_0:bat[:bte]):int
+CMDBATprod
+Calculate aggregate product of B.
+iaggr
+prod
+pattern iaggr.prod(X_0:bat[:bte]):lng
+CMDBATprod
+Calculate aggregate product of B.
+iaggr
+prod
+pattern iaggr.prod(X_0:bat[:bte]):sht
+CMDBATprod
+Calculate aggregate product of B.
+iaggr
+prod
+pattern iaggr.prod(X_0:bat[:bte], X_1:bat[:oid]):bte
+CMDBATprod
+Calculate aggregate product of B with candidate list.
+iaggr
+prod
+pattern iaggr.prod(X_0:bat[:bte], X_1:bat[:oid]):dbl
+CMDBATprod
+Calculate aggregate product of B with candidate list.
+iaggr
+prod
+pattern iaggr.prod(X_0:bat[:bte], X_1:bat[:oid]):int
+CMDBATprod
+Calculate aggregate product of B with candidate list.
+iaggr
+prod
+pattern iaggr.prod(X_0:bat[:bte], X_1:bat[:oid]):lng
+CMDBATprod
+Calculate aggregate product of B with candidate list.
+iaggr
+prod
+pattern iaggr.prod(X_0:bat[:bte], X_1:bat[:oid]):sht
+CMDBATprod
+Calculate aggregate product of B with candidate list.
+iaggr
+prod
+pattern iaggr.prod(X_0:bat[:bte], X_1:bat[:oid], X_2:bit):bte
+CMDBATprod
+Calculate aggregate product of B with candidate list.
+iaggr
+prod
+pattern iaggr.prod(X_0:bat[:bte], X_1:bat[:oid], X_2:bit):dbl
+CMDBATprod
+Calculate aggregate product of B with candidate list.
+iaggr
+prod
+pattern iaggr.prod(X_0:bat[:bte], X_1:bat[:oid], X_2:bit):int
+CMDBATprod
+Calculate aggregate product of B with candidate list.
+iaggr
+prod
+pattern iaggr.prod(X_0:bat[:bte], X_1:bat[:oid], X_2:bit):lng
+CMDBATprod
+Calculate aggregate product of B with candidate list.
+iaggr
+prod
+pattern iaggr.prod(X_0:bat[:bte], X_1:bat[:oid], X_2:bit):sht
+CMDBATprod
+Calculate aggregate product of B with candidate list.
+iaggr
+prod
+pattern iaggr.prod(X_0:bat[:bte], X_1:bit):bte
+CMDBATprod
+Calculate aggregate product of B.
+iaggr
+prod
+pattern iaggr.prod(X_0:bat[:bte], X_1:bit):dbl
+CMDBATprod
+Calculate aggregate product of B.
+iaggr
+prod
+pattern iaggr.prod(X_0:bat[:bte], X_1:bit):int
+CMDBATprod
+Calculate aggregate product of B.
+iaggr
+prod
+pattern iaggr.prod(X_0:bat[:bte], X_1:bit):lng
+CMDBATprod
+Calculate aggregate product of B.
+iaggr
+prod
+pattern iaggr.prod(X_0:bat[:bte], X_1:bit):sht
+CMDBATprod
+Calculate aggregate product of B.
+iaggr
+prod
+pattern iaggr.prod(X_0:bat[:dbl]):dbl
+CMDBATprod
+Calculate aggregate product of B.
+iaggr
+prod
+pattern iaggr.prod(X_0:bat[:dbl], X_1:bat[:oid]):dbl
+CMDBATprod
+Calculate aggregate product of B with candidate list.
+iaggr
+prod
+pattern iaggr.prod(X_0:bat[:dbl], X_1:bat[:oid], X_2:bit):dbl
+CMDBATprod
+Calculate aggregate product of B with candidate list.
+iaggr
+prod
+pattern iaggr.prod(X_0:bat[:dbl], X_1:bit):dbl
+CMDBATprod
+Calculate aggregate product of B.
+iaggr
+prod
+pattern iaggr.prod(X_0:bat[:flt]):dbl
+CMDBATprod
+Calculate aggregate product of B.
+iaggr
+prod
+pattern iaggr.prod(X_0:bat[:flt]):flt
+CMDBATprod
+Calculate aggregate product of B.
+iaggr
+prod
+pattern iaggr.prod(X_0:bat[:flt], X_1:bat[:oid]):dbl
+CMDBATprod
+Calculate aggregate product of B with candidate list.
+iaggr
+prod
+pattern iaggr.prod(X_0:bat[:flt], X_1:bat[:oid]):flt
+CMDBATprod
+Calculate aggregate product of B with candidate list.
+iaggr
+prod
+pattern iaggr.prod(X_0:bat[:flt], X_1:bat[:oid], X_2:bit):dbl
+CMDBATprod
+Calculate aggregate product of B with candidate list.
+iaggr
+prod
+pattern iaggr.prod(X_0:bat[:flt], X_1:bat[:oid], X_2:bit):flt
+CMDBATprod
+Calculate aggregate product of B with candidate list.
+iaggr
+prod
+pattern iaggr.prod(X_0:bat[:flt], X_1:bit):dbl
+CMDBATprod
+Calculate aggregate product of B.
+iaggr
+prod
+pattern iaggr.prod(X_0:bat[:flt], X_1:bit):flt
+CMDBATprod
+Calculate aggregate product of B.
+iaggr
+prod
+pattern iaggr.prod(X_0:bat[:int]):dbl
+CMDBATprod
+Calculate aggregate product of B.
+iaggr
+prod
+pattern iaggr.prod(X_0:bat[:int]):int
+CMDBATprod
+Calculate aggregate product of B.
+iaggr
+prod
+pattern iaggr.prod(X_0:bat[:int]):lng
+CMDBATprod
+Calculate aggregate product of B.
+iaggr
+prod
+pattern iaggr.prod(X_0:bat[:int], X_1:bat[:oid]):dbl
+CMDBATprod
+Calculate aggregate product of B with candidate list.
+iaggr
+prod
+pattern iaggr.prod(X_0:bat[:int], X_1:bat[:oid]):int
+CMDBATprod
+Calculate aggregate product of B with candidate list.
+iaggr
+prod
+pattern iaggr.prod(X_0:bat[:int], X_1:bat[:oid]):lng
+CMDBATprod
+Calculate aggregate product of B with candidate list.
+iaggr
+prod
+pattern iaggr.prod(X_0:bat[:int], X_1:bat[:oid], X_2:bit):dbl
+CMDBATprod
+Calculate aggregate product of B with candidate list.
+iaggr
+prod
+pattern iaggr.prod(X_0:bat[:int], X_1:bat[:oid], X_2:bit):int
+CMDBATprod
+Calculate aggregate product of B with candidate list.
+iaggr
+prod
+pattern iaggr.prod(X_0:bat[:int], X_1:bat[:oid], X_2:bit):lng
+CMDBATprod
+Calculate aggregate product of B with candidate list.
+iaggr
+prod
+pattern iaggr.prod(X_0:bat[:int], X_1:bit):dbl
+CMDBATprod
+Calculate aggregate product of B.
+iaggr
+prod
+pattern iaggr.prod(X_0:bat[:int], X_1:bit):int
+CMDBATprod
+Calculate aggregate product of B.
+iaggr
+prod
+pattern iaggr.prod(X_0:bat[:int], X_1:bit):lng
+CMDBATprod
+Calculate aggregate product of B.
+iaggr
+prod
+pattern iaggr.prod(X_0:bat[:lng]):dbl
+CMDBATprod
+Calculate aggregate product of B.
+iaggr
+prod
+pattern iaggr.prod(X_0:bat[:lng]):lng
+CMDBATprod
+Calculate aggregate product of B.
+iaggr
+prod
+pattern iaggr.prod(X_0:bat[:lng], X_1:bat[:oid]):dbl
+CMDBATprod
+Calculate aggregate product of B with candidate list.
+iaggr
+prod
+pattern iaggr.prod(X_0:bat[:lng], X_1:bat[:oid]):lng
+CMDBATprod
+Calculate aggregate product of B with candidate list.
+iaggr
+prod
+pattern iaggr.prod(X_0:bat[:lng], X_1:bat[:oid], X_2:bit):dbl
+CMDBATprod
+Calculate aggregate product of B with candidate list.
+iaggr
+prod
+pattern iaggr.prod(X_0:bat[:lng], X_1:bat[:oid], X_2:bit):lng
+CMDBATprod
+Calculate aggregate product of B with candidate list.
+iaggr
+prod
+pattern iaggr.prod(X_0:bat[:lng], X_1:bit):dbl
+CMDBATprod
+Calculate aggregate product of B.
+iaggr
+prod
+pattern iaggr.prod(X_0:bat[:lng], X_1:bit):lng
+CMDBATprod
+Calculate aggregate product of B.
+iaggr
+prod
+pattern iaggr.prod(X_0:bat[:sht]):dbl
+CMDBATprod
+Calculate aggregate product of B.
+iaggr
+prod
+pattern iaggr.prod(X_0:bat[:sht]):int
+CMDBATprod
+Calculate aggregate product of B.
+iaggr
+prod
+pattern iaggr.prod(X_0:bat[:sht]):lng
+CMDBATprod
+Calculate aggregate product of B.
+iaggr
+prod
+pattern iaggr.prod(X_0:bat[:sht]):sht
+CMDBATprod
+Calculate aggregate product of B.
+iaggr
+prod
+pattern iaggr.prod(X_0:bat[:sht], X_1:bat[:oid]):dbl
+CMDBATprod
+Calculate aggregate product of B with candidate list.
+iaggr
+prod
+pattern iaggr.prod(X_0:bat[:sht], X_1:bat[:oid]):int
+CMDBATprod
+Calculate aggregate product of B with candidate list.
+iaggr
+prod
+pattern iaggr.prod(X_0:bat[:sht], X_1:bat[:oid]):lng
+CMDBATprod
+Calculate aggregate product of B with candidate list.
+iaggr
+prod
+pattern iaggr.prod(X_0:bat[:sht], X_1:bat[:oid]):sht
+CMDBATprod
+Calculate aggregate product of B with candidate list.
+iaggr
+prod
+pattern iaggr.prod(X_0:bat[:sht], X_1:bat[:oid], X_2:bit):dbl
+CMDBATprod
+Calculate aggregate product of B with candidate list.
+iaggr
+prod
+pattern iaggr.prod(X_0:bat[:sht], X_1:bat[:oid], X_2:bit):int
+CMDBATprod
+Calculate aggregate product of B with candidate list.
+iaggr
+prod
+pattern iaggr.prod(X_0:bat[:sht], X_1:bat[:oid], X_2:bit):lng
+CMDBATprod
+Calculate aggregate product of B with candidate list.
+iaggr
+prod
+pattern iaggr.prod(X_0:bat[:sht], X_1:bat[:oid], X_2:bit):sht
+CMDBATprod
+Calculate aggregate product of B with candidate list.
+iaggr
+prod
+pattern iaggr.prod(X_0:bat[:sht], X_1:bit):dbl
+CMDBATprod
+Calculate aggregate product of B.
+iaggr
+prod
+pattern iaggr.prod(X_0:bat[:sht], X_1:bit):int
+CMDBATprod
+Calculate aggregate product of B.
+iaggr
+prod
+pattern iaggr.prod(X_0:bat[:sht], X_1:bit):lng
+CMDBATprod
+Calculate aggregate product of B.
+iaggr
+prod
+pattern iaggr.prod(X_0:bat[:sht], X_1:bit):sht
+CMDBATprod
+Calculate aggregate product of B.
+iaggr
+sum
+pattern iaggr.sum(X_0:bat[:bte]):bte
+CMDBATsum
+Calculate aggregate sum of B.
+iaggr
+sum
+pattern iaggr.sum(X_0:bat[:bte]):dbl
+CMDBATsum
+Calculate aggregate sum of B.
+iaggr
+sum
+pattern iaggr.sum(X_0:bat[:bte]):int
+CMDBATsum
+Calculate aggregate sum of B.
+iaggr
+sum
+pattern iaggr.sum(X_0:bat[:bte]):lng
+CMDBATsum
+Calculate aggregate sum of B.
+iaggr
+sum
+pattern iaggr.sum(X_0:bat[:bte]):sht
+CMDBATsum
+Calculate aggregate sum of B.
+iaggr
+sum
+pattern iaggr.sum(X_0:bat[:bte], X_1:bat[:oid]):bte
+CMDBATsum
+Calculate aggregate sum of B with candidate list.
+iaggr
+sum
+pattern iaggr.sum(X_0:bat[:bte], X_1:bat[:oid]):dbl
+CMDBATsum
+Calculate aggregate sum of B with candidate list.
+iaggr
+sum
+pattern iaggr.sum(X_0:bat[:bte], X_1:bat[:oid]):int
+CMDBATsum
+Calculate aggregate sum of B with candidate list.
+iaggr
+sum
+pattern iaggr.sum(X_0:bat[:bte], X_1:bat[:oid]):lng
+CMDBATsum
+Calculate aggregate sum of B with candidate list.
+iaggr
+sum
+pattern iaggr.sum(X_0:bat[:bte], X_1:bat[:oid]):sht
+CMDBATsum
+Calculate aggregate sum of B with candidate list.
+iaggr
+sum
+pattern iaggr.sum(X_0:bat[:bte], X_1:bat[:oid], X_2:bit):bte
+CMDBATsum
+Calculate aggregate sum of B with candidate list.
+iaggr
+sum
+pattern iaggr.sum(X_0:bat[:bte], X_1:bat[:oid], X_2:bit):dbl
+CMDBATsum
+Calculate aggregate sum of B with candidate list.
+iaggr
+sum
+pattern iaggr.sum(X_0:bat[:bte], X_1:bat[:oid], X_2:bit):int
+CMDBATsum
+Calculate aggregate sum of B with candidate list.
+iaggr
+sum
+pattern iaggr.sum(X_0:bat[:bte], X_1:bat[:oid], X_2:bit):lng
+CMDBATsum
+Calculate aggregate sum of B with candidate list.
+iaggr
+sum
+pattern iaggr.sum(X_0:bat[:bte], X_1:bat[:oid], X_2:bit):sht
+CMDBATsum
+Calculate aggregate sum of B with candidate list.
+iaggr
+sum
+pattern iaggr.sum(X_0:bat[:bte], X_1:bit):bte
+CMDBATsum
+Calculate aggregate sum of B.
+iaggr
+sum
+pattern iaggr.sum(X_0:bat[:bte], X_1:bit):dbl
+CMDBATsum
+Calculate aggregate sum of B.
+iaggr
+sum
+pattern iaggr.sum(X_0:bat[:bte], X_1:bit):int
+CMDBATsum
+Calculate aggregate sum of B.
+iaggr
+sum
+pattern iaggr.sum(X_0:bat[:bte], X_1:bit):lng
+CMDBATsum
+Calculate aggregate sum of B.
+iaggr
+sum
+pattern iaggr.sum(X_0:bat[:bte], X_1:bit):sht
+CMDBATsum
+Calculate aggregate sum of B.
+iaggr
+sum
+pattern iaggr.sum(X_0:bat[:dbl]):dbl
+CMDBATsum
+Calculate aggregate sum of B.
+iaggr
+sum
+pattern iaggr.sum(X_0:bat[:dbl], X_1:bat[:oid]):dbl
+CMDBATsum
+Calculate aggregate sum of B with candidate list.
+iaggr
+sum
+pattern iaggr.sum(X_0:bat[:dbl], X_1:bat[:oid], X_2:bit):dbl
+CMDBATsum
+Calculate aggregate sum of B with candidate list.
+iaggr
+sum
+pattern iaggr.sum(X_0:bat[:dbl], X_1:bit):dbl
+CMDBATsum
+Calculate aggregate sum of B.
+iaggr
+sum
+pattern iaggr.sum(X_0:bat[:flt]):dbl
+CMDBATsum
+Calculate aggregate sum of B.
+iaggr
+sum
+pattern iaggr.sum(X_0:bat[:flt]):flt
+CMDBATsum
+Calculate aggregate sum of B.
+iaggr
+sum
+pattern iaggr.sum(X_0:bat[:flt], X_1:bat[:oid]):dbl
+CMDBATsum
+Calculate aggregate sum of B with candidate list.
+iaggr
+sum
+pattern iaggr.sum(X_0:bat[:flt], X_1:bat[:oid]):flt
+CMDBATsum
+Calculate aggregate sum of B with candidate list.
+iaggr
+sum
+pattern iaggr.sum(X_0:bat[:flt], X_1:bat[:oid], X_2:bit):dbl
+CMDBATsum
+Calculate aggregate sum of B with candidate list.
+iaggr
+sum
+pattern iaggr.sum(X_0:bat[:flt], X_1:bat[:oid], X_2:bit):flt
+CMDBATsum
+Calculate aggregate sum of B with candidate list.
+iaggr
+sum
+pattern iaggr.sum(X_0:bat[:flt], X_1:bit):dbl
+CMDBATsum
+Calculate aggregate sum of B.
+iaggr
+sum
+pattern iaggr.sum(X_0:bat[:flt], X_1:bit):flt
+CMDBATsum
+Calculate aggregate sum of B.
+iaggr
+sum
+pattern iaggr.sum(X_0:bat[:int]):dbl
+CMDBATsum
+Calculate aggregate sum of B.
+iaggr
+sum
+pattern iaggr.sum(X_0:bat[:int]):int
+CMDBATsum
+Calculate aggregate sum of B.
+iaggr
+sum
+pattern iaggr.sum(X_0:bat[:int]):lng
+CMDBATsum
+Calculate aggregate sum of B.
+iaggr
+sum
+pattern iaggr.sum(X_0:bat[:int], X_1:bat[:oid]):dbl
+CMDBATsum
+Calculate aggregate sum of B with candidate list.
+iaggr
+sum
+pattern iaggr.sum(X_0:bat[:int], X_1:bat[:oid]):int
+CMDBATsum
+Calculate aggregate sum of B with candidate list.
+iaggr
+sum
+pattern iaggr.sum(X_0:bat[:int], X_1:bat[:oid]):lng
+CMDBATsum
+Calculate aggregate sum of B with candidate list.
+iaggr
+sum
+pattern iaggr.sum(X_0:bat[:int], X_1:bat[:oid], X_2:bit):dbl
+CMDBATsum
+Calculate aggregate sum of B with candidate list.
+iaggr
+sum
+pattern iaggr.sum(X_0:bat[:int], X_1:bat[:oid], X_2:bit):int
+CMDBATsum
+Calculate aggregate sum of B with candidate list.
+iaggr
+sum
+pattern iaggr.sum(X_0:bat[:int], X_1:bat[:oid], X_2:bit):lng
+CMDBATsum
+Calculate aggregate sum of B with candidate list.
+iaggr
+sum
+pattern iaggr.sum(X_0:bat[:int], X_1:bit):dbl
+CMDBATsum
+Calculate aggregate sum of B.
+iaggr
+sum
+pattern iaggr.sum(X_0:bat[:int], X_1:bit):int
+CMDBATsum
+Calculate aggregate sum of B.
+iaggr
+sum
+pattern iaggr.sum(X_0:bat[:int], X_1:bit):lng
+CMDBATsum
+Calculate aggregate sum of B.
+iaggr
+sum
+pattern iaggr.sum(X_0:bat[:lng]):dbl
+CMDBATsum
+Calculate aggregate sum of B.
+iaggr
+sum
+pattern iaggr.sum(X_0:bat[:lng]):lng
+CMDBATsum
+Calculate aggregate sum of B.
+iaggr
+sum
+pattern iaggr.sum(X_0:bat[:lng], X_1:bat[:oid]):dbl
+CMDBATsum
+Calculate aggregate sum of B with candidate list.
+iaggr
+sum
+pattern iaggr.sum(X_0:bat[:lng], X_1:bat[:oid]):lng
+CMDBATsum
+Calculate aggregate sum of B with candidate list.
+iaggr
+sum
+pattern iaggr.sum(X_0:bat[:lng], X_1:bat[:oid], X_2:bit):dbl
+CMDBATsum
+Calculate aggregate sum of B with candidate list.
+iaggr
+sum
+pattern iaggr.sum(X_0:bat[:lng], X_1:bat[:oid], X_2:bit):lng
+CMDBATsum
+Calculate aggregate sum of B with candidate list.
+iaggr
+sum
+pattern iaggr.sum(X_0:bat[:lng], X_1:bit):dbl
+CMDBATsum
+Calculate aggregate sum of B.
+iaggr
+sum
+pattern iaggr.sum(X_0:bat[:lng], X_1:bit):lng
+CMDBATsum
+Calculate aggregate sum of B.
+iaggr
+sum
+pattern iaggr.sum(X_0:bat[:msk]):bte
+CMDBATsum
+Calculate aggregate sum of B.
+iaggr
+sum
+pattern iaggr.sum(X_0:bat[:msk]):dbl
+CMDBATsum
+Calculate aggregate sum of B.
+iaggr
+sum
+pattern iaggr.sum(X_0:bat[:msk]):int
+CMDBATsum
+Calculate aggregate sum of B.
+iaggr
+sum
+pattern iaggr.sum(X_0:bat[:msk]):lng
+CMDBATsum
+Calculate aggregate sum of B.
+iaggr
+sum
+pattern iaggr.sum(X_0:bat[:msk]):sht
+CMDBATsum
+Calculate aggregate sum of B.
+iaggr
+sum
+pattern iaggr.sum(X_0:bat[:msk], X_1:bat[:oid]):bte
+CMDBATsum
+Calculate aggregate sum of B with candidate list.
+iaggr
+sum
+pattern iaggr.sum(X_0:bat[:msk], X_1:bat[:oid]):dbl
+CMDBATsum
+Calculate aggregate sum of B with candidate list.
+iaggr
+sum
+pattern iaggr.sum(X_0:bat[:msk], X_1:bat[:oid]):int
+CMDBATsum
+Calculate aggregate sum of B with candidate list.
+iaggr
+sum
+pattern iaggr.sum(X_0:bat[:msk], X_1:bat[:oid]):lng
+CMDBATsum
+Calculate aggregate sum of B with candidate list.
+iaggr
+sum
+pattern iaggr.sum(X_0:bat[:msk], X_1:bat[:oid]):sht
+CMDBATsum
+Calculate aggregate sum of B with candidate list.
+iaggr
+sum
+pattern iaggr.sum(X_0:bat[:msk], X_1:bat[:oid], X_2:bit):bte
+CMDBATsum
+Calculate aggregate sum of B with candidate list.
+iaggr
+sum
+pattern iaggr.sum(X_0:bat[:msk], X_1:bat[:oid], X_2:bit):dbl
+CMDBATsum
+Calculate aggregate sum of B with candidate list.
+iaggr
+sum
+pattern iaggr.sum(X_0:bat[:msk], X_1:bat[:oid], X_2:bit):int
+CMDBATsum
+Calculate aggregate sum of B with candidate list.
+iaggr
+sum
+pattern iaggr.sum(X_0:bat[:msk], X_1:bat[:oid], X_2:bit):lng
+CMDBATsum
+Calculate aggregate sum of B with candidate list.
+iaggr
+sum
+pattern iaggr.sum(X_0:bat[:msk], X_1:bat[:oid], X_2:bit):sht
+CMDBATsum
+Calculate aggregate sum of B with candidate list.
+iaggr
+sum
+pattern iaggr.sum(X_0:bat[:msk], X_1:bit):bte
+CMDBATsum
+Calculate aggregate sum of B.
+iaggr
+sum
+pattern iaggr.sum(X_0:bat[:msk], X_1:bit):dbl
+CMDBATsum
+Calculate aggregate sum of B.
+iaggr
+sum
+pattern iaggr.sum(X_0:bat[:msk], X_1:bit):int
+CMDBATsum
+Calculate aggregate sum of B.
+iaggr
+sum
+pattern iaggr.sum(X_0:bat[:msk], X_1:bit):lng
+CMDBATsum
+Calculate aggregate sum of B.
+iaggr
+sum
+pattern iaggr.sum(X_0:bat[:msk], X_1:bit):sht
+CMDBATsum
+Calculate aggregate sum of B.
+iaggr
+sum
+pattern iaggr.sum(X_0:bat[:sht]):dbl
+CMDBATsum
+Calculate aggregate sum of B.
+iaggr
+sum
+pattern iaggr.sum(X_0:bat[:sht]):int
+CMDBATsum
+Calculate aggregate sum of B.
+iaggr
+sum
+pattern iaggr.sum(X_0:bat[:sht]):lng
+CMDBATsum
+Calculate aggregate sum of B.
+iaggr
+sum
+pattern iaggr.sum(X_0:bat[:sht]):sht
+CMDBATsum
+Calculate aggregate sum of B.
+iaggr
+sum
+pattern iaggr.sum(X_0:bat[:sht], X_1:bat[:oid]):dbl
+CMDBATsum
+Calculate aggregate sum of B with candidate list.
+iaggr
+sum
+pattern iaggr.sum(X_0:bat[:sht], X_1:bat[:oid]):int
+CMDBATsum
+Calculate aggregate sum of B with candidate list.
+iaggr
+sum
+pattern iaggr.sum(X_0:bat[:sht], X_1:bat[:oid]):lng
+CMDBATsum
+Calculate aggregate sum of B with candidate list.
+iaggr
+sum
+pattern iaggr.sum(X_0:bat[:sht], X_1:bat[:oid]):sht
+CMDBATsum
+Calculate aggregate sum of B with candidate list.
+iaggr
+sum
+pattern iaggr.sum(X_0:bat[:sht], X_1:bat[:oid], X_2:bit):dbl
+CMDBATsum
+Calculate aggregate sum of B with candidate list.
+iaggr
+sum
+pattern iaggr.sum(X_0:bat[:sht], X_1:bat[:oid], X_2:bit):int
+CMDBATsum
+Calculate aggregate sum of B with candidate list.
+iaggr
+sum
+pattern iaggr.sum(X_0:bat[:sht], X_1:bat[:oid], X_2:bit):lng
+CMDBATsum
+Calculate aggregate sum of B with candidate list.
+iaggr
+sum
+pattern iaggr.sum(X_0:bat[:sht], X_1:bat[:oid], X_2:bit):sht
+CMDBATsum
+Calculate aggregate sum of B with candidate list.
+iaggr
+sum
+pattern iaggr.sum(X_0:bat[:sht], X_1:bit):dbl
+CMDBATsum
+Calculate aggregate sum of B.
+iaggr
+sum
+pattern iaggr.sum(X_0:bat[:sht], X_1:bit):int
+CMDBATsum
+Calculate aggregate sum of B.
+iaggr
+sum
+pattern iaggr.sum(X_0:bat[:sht], X_1:bit):lng
+CMDBATsum
+Calculate aggregate sum of B.
+iaggr
+sum
+pattern iaggr.sum(X_0:bat[:sht], X_1:bit):sht
+CMDBATsum
+Calculate aggregate sum of B.
+iaggr
+sum
+command iaggr.sum(X_0:bat[:dbl]) (X_1:dbl, X_2:dbl, X_3:lng)
+IALGfsum
+Return the Kahan/Neumaier summation.
+iaggr
+sum
+command iaggr.sum(X_0:bat[:flt]) (X_1:dbl, X_2:dbl, X_3:lng)
+IALGfsum
+Return the Kahan/Neumaier summation.
+iaggr
+sum
+command iaggr.sum(X_0:bat[:flt]) (X_1:flt, X_2:flt, X_3:lng)
+IALGfsum_flt
+Return the Kahan/Neumaier summation.
+iaggr
+sum
+command iaggr.sum(X_0:bat[:dbl], X_1:bit) (X_2:dbl, X_3:dbl, X_4:lng)
+IALGfsum_skipnil
+Return the Kahan/Neumaier summation or nil.
+iaggr
+sum
+command iaggr.sum(X_0:bat[:flt], X_1:bit) (X_2:dbl, X_3:dbl, X_4:lng)
+IALGfsum_skipnil
+Return the Kahan/Neumaier summation or nil.
+iaggr
+sum
+command iaggr.sum(X_0:bat[:flt], X_1:bit) (X_2:flt, X_3:flt, X_4:lng)
+IALGfsum_skipnil_flt
+Return the Kahan/Neumaier summation or nil.
 inet
 !=
 command inet.!=(X_0:inet, X_1:inet):bit
@@ -36437,7 +37312,7 @@ lockedaggr
 null
 unsafe command lockedaggr.null(X_0:bit):bat[:bit]
 LOCKEDAGGRnull
-Returns true or false if the input contains a NULL or not, nil if the input is empty..
+Returns true or false if the input contains a NULL or not, nil if the input is empty.
 lockedaggr
 prod
 unsafe pattern lockedaggr.prod(X_0:any_2):bat[:any_1]
@@ -36462,6 +37337,11 @@ lockedaggr
 sum
 unsafe pattern lockedaggr.sum(X_0:any_1):bat[:any_1]
 LOCKEDAGGRsum1
+sum values into bat (bat has value, update), using the bat lock
+lockedaggr
+sum_no_nil
+unsafe pattern lockedaggr.sum_no_nil(X_0:any_1):bat[:any_1]
+LOCKEDAGGRsum_no_nil1
 sum values into bat (bat has value, update), using the bat lock
 lockedgroup
 group
@@ -36845,12 +37725,12 @@ MATnew
 Create mat for partitioning
 mat
 new
-pattern mat.new(X_0:any_1, X_1:int, X_2:int):bat[:any_1]
+pattern mat.new(X_0:any_1, X_1:int, X_2:lng):bat[:any_1]
 MATnew
 Create mat for partitioning
 mat
 new
-pattern mat.new(X_0:any_1, X_1:int, X_2:int, X_3:bat[:any_2]):bat[:any_1]
+pattern mat.new(X_0:any_1, X_1:int, X_2:lng, X_3:bat[:any_2]):bat[:any_1]
 MATnew
 Create mat for partitioning
 mat
@@ -38688,6 +39568,11 @@ mproject
 pattern sort.mproject(X_0:bat[:int], X_1:bat[:any_1], X_2:bat[:any_1]):bat[:any_1]
 PPmproject
 (empty)
+source
+next
+pattern source.next(X_0:bat[:any_2]):bat[:any_1]
+source_next
+return next part
 sql
 affectedRows
 unsafe pattern sql.affectedRows(X_0:int, X_1:lng):int
@@ -38820,6 +39705,16 @@ mvc_bind_wrap
 Bind the 'schema.table.column' BAT with access kind: 0 - base table 1 - inserts 2 - updates
 sql
 bind
+pattern sql.bind(X_0:int, X_1:str, X_2:str, X_3:str, X_4:int, X_5:int) (X_6:bat[:oid], X_7:bat[:any_1])
+mvc_bind_wrap
+Bind the 'schema.table.column' BAT with access kind: 0 - base table 1 - inserts 2 - updates
+sql
+bind
+pattern sql.bind(X_0:int, X_1:str, X_2:str, X_3:str, X_4:int, X_5:int):bat[:any_1]
+mvc_bind_wrap
+Bind the 'schema.table.column' BAT partition with access kind: 0 - base table 1 - inserts 2 - updates
+sql
+bind
 pattern sql.bind(X_0:int, X_1:str, X_2:str, X_3:str, X_4:int, X_5:int, X_6:int) (X_7:bat[:oid], X_8:bat[:any_1])
 mvc_bind_wrap
 Bind the 'schema.table.column' BAT with access kind: 0 - base table 1 - inserts 2 - updates
@@ -38836,6 +39731,16 @@ Bind the 'schema.table.index' BAT with access kind: 0 - base table 1 - inserts 2
 sql
 bind_idxbat
 pattern sql.bind_idxbat(X_0:int, X_1:str, X_2:str, X_3:str, X_4:int):bat[:any_1]
+mvc_bind_idxbat_wrap
+Bind the 'schema.table.index' BAT with access kind: 0 - base table 1 - inserts 2 - updates
+sql
+bind_idxbat
+pattern sql.bind_idxbat(X_0:int, X_1:str, X_2:str, X_3:str, X_4:int, X_5:int) (X_6:bat[:oid], X_7:bat[:any_1])
+mvc_bind_idxbat_wrap
+Bind the 'schema.table.index' BAT with access kind: 0 - base table 1 - inserts 2 - updates
+sql
+bind_idxbat
+pattern sql.bind_idxbat(X_0:int, X_1:str, X_2:str, X_3:str, X_4:int, X_5:int):bat[:any_1]
 mvc_bind_idxbat_wrap
 Bind the 'schema.table.index' BAT with access kind: 0 - base table 1 - inserts 2 - updates
 sql
@@ -39105,6 +40010,16 @@ mvc_bind_wrap
 (empty)
 sql
 emptybind
+pattern sql.emptybind(X_0:int, X_1:str, X_2:str, X_3:str, X_4:int, X_5:int) (X_6:bat[:oid], X_7:bat[:any_1])
+mvc_bind_wrap
+(empty)
+sql
+emptybind
+pattern sql.emptybind(X_0:int, X_1:str, X_2:str, X_3:str, X_4:int, X_5:int):bat[:any_1]
+mvc_bind_wrap
+(empty)
+sql
+emptybind
 pattern sql.emptybind(X_0:int, X_1:str, X_2:str, X_3:str, X_4:int, X_5:int, X_6:int) (X_7:bat[:oid], X_8:bat[:any_1])
 mvc_bind_wrap
 (empty)
@@ -39121,6 +40036,16 @@ mvc_bind_idxbat_wrap
 sql
 emptybindidx
 pattern sql.emptybindidx(X_0:int, X_1:str, X_2:str, X_3:str, X_4:int):bat[:any_1]
+mvc_bind_idxbat_wrap
+(empty)
+sql
+emptybindidx
+pattern sql.emptybindidx(X_0:int, X_1:str, X_2:str, X_3:str, X_4:int, X_5:int) (X_6:bat[:oid], X_7:bat[:any_1])
+mvc_bind_idxbat_wrap
+(empty)
+sql
+emptybindidx
+pattern sql.emptybindidx(X_0:int, X_1:str, X_2:str, X_3:str, X_4:int, X_5:int):bat[:any_1]
 mvc_bind_idxbat_wrap
 (empty)
 sql
@@ -39332,12 +40257,17 @@ sql
 mvc
 unsafe pattern sql.mvc(X_0:int):int
 SQLmvc
-Get the multiversion catalog context. @Needed for correct statement dependencies@(ie sql.update, should be after sql.bind in concurrent execution)
+Get the multiversion catalog context. Needed for correct statement dependencies (ie sql.update, should be after sql.bind in concurrent execution)
 sql
 next_value
 unsafe pattern sql.next_value(X_0:str, X_1:str):lng
 mvc_next_value
 return the next value of the sequence
+sql
+no_slices
+command sql.no_slices(X_0:str, X_1:str):int
+SQLno_slices
+Return number of slices of table
 sql
 normalize_monetdb_url
 pattern sql.normalize_monetdb_url(X_0:str):str
@@ -39763,6 +40693,11 @@ tid
 pattern sql.tid(X_0:int, X_1:str, X_2:str):bat[:oid]
 SQLtid
 Return a column with the valid tuple identifiers associated with the table sname.tname.
+sql
+tid
+pattern sql.tid(X_0:int, X_1:str, X_2:str, X_3:int):bat[:oid]
+SQLtid
+Return a slice of the tables tid column, based on fixed partition sizes.
 sql
 tid
 pattern sql.tid(X_0:int, X_1:str, X_2:str, X_3:int, X_4:int):bat[:oid]

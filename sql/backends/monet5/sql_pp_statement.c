@@ -88,6 +88,9 @@ stmt_pp_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int 
 		if (!grp && (strcmp(aggrfunc, "count") == 0 ||
 			     strcmp(aggrfunc, "min") == 0 ||
 			     strcmp(aggrfunc, "max") == 0 ||
+			     strcmp(aggrfunc, "avg") == 0 ||
+			     strcmp(aggrfunc, "sum") == 0 ||
+			     strcmp(aggrfunc, "prod") == 0 ||
 				 strcmp(aggrfunc, "null") == 0 )) /* incremental versions TODO do for other aggr functions */
 			mod = putName("iaggr");
 

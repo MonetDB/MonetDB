@@ -15,6 +15,7 @@
 #include "pp_hash.h"
 #include "pipeline.h"
 #include "algebra.h"
+#include "calc.h"
 
 #define sum(a,b) a+b
 #define prod(a,b) a*b
@@ -4465,8 +4466,10 @@ LALGcnull(Client ctx, bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 			} \
 	}
 
+/* TODO this implementation is unfinisehd, therefore its corresponding MAL 
+ * function iaggr.ord_quantile is never called. */
 static str
-LALGquantile(Client ctx, bat *rid, bat *gid, bat *bid, bte *perc)
+IALGquantile(Client ctx, bat *rid, bat *gid, bat *bid, bte *perc)
 {
 	(void)ctx;
 	BAT *g = NULL, *b = NULL, *r = NULL;
@@ -4555,7 +4558,7 @@ LALGquantile(Client ctx, bat *rid, bat *gid, bat *bid, bte *perc)
 }
 
 static str
-ALGcountCND_nil(Client ctx, lng *result, const bat *bid, const bat *cnd, const bit *ignore_nils)
+IALGcountCND_nil(Client ctx, lng *result, const bat *bid, const bat *cnd, const bit *ignore_nils)
 {
 	(void)ctx;
 	BAT *b = NULL, *s = NULL;
@@ -4588,37 +4591,37 @@ ALGcountCND_nil(Client ctx, lng *result, const bat *bid, const bat *cnd, const b
 }
 
 static str
-ALGcount_nil(Client ctx, lng *result, const bat *bid, const bit *ignore_nils)
+IALGcount_nil(Client ctx, lng *result, const bat *bid, const bit *ignore_nils)
 {
-	return ALGcountCND_nil(ctx, result, bid, NULL, ignore_nils);
+	return IALGcountCND_nil(ctx, result, bid, NULL, ignore_nils);
 }
 
 static str
-ALGcountCND_bat(Client ctx, lng *result, const bat *bid, const bat *cnd)
+IALGcountCND_bat(Client ctx, lng *result, const bat *bid, const bat *cnd)
 {
-	return ALGcountCND_nil(ctx, result, bid, cnd, &(bit){0});
+	return IALGcountCND_nil(ctx, result, bid, cnd, &(bit){0});
 }
 
 static str
-ALGcount_bat(Client ctx, lng *result, const bat *bid)
+IALGcount_bat(Client ctx, lng *result, const bat *bid)
 {
-	return ALGcountCND_nil(ctx, result, bid, NULL, &(bit){0});
+	return IALGcountCND_nil(ctx, result, bid, NULL, &(bit){0});
 }
 
 static str
-ALGcountCND_no_nil(Client ctx, lng *result, const bat *bid, const bat *cnd)
+IALGcountCND_no_nil(Client ctx, lng *result, const bat *bid, const bat *cnd)
 {
-	return ALGcountCND_nil(ctx, result, bid, cnd, &(bit){1});
+	return IALGcountCND_nil(ctx, result, bid, cnd, &(bit){1});
 }
 
 static str
-ALGcount_no_nil(Client ctx, lng *result, const bat *bid)
+IALGcount_no_nil(Client ctx, lng *result, const bat *bid)
 {
-	return ALGcountCND_nil(ctx, result, bid, NULL, &(bit){1});
+	return IALGcountCND_nil(ctx, result, bid, NULL, &(bit){1});
 }
 
 static str
-ALGminany_skipnil(Client ctx, ptr result, const bat *bid, const bit *skipnil)
+IALGminany_skipnil(Client ctx, ptr result, const bat *bid, const bit *skipnil)
 {
 	BAT *b;
 	ptr p;
@@ -4651,14 +4654,14 @@ ALGminany_skipnil(Client ctx, ptr result, const bat *bid, const bit *skipnil)
 }
 
 static str
-ALGminany(Client ctx, ptr result, const bat *bid)
+IALGminany(Client ctx, ptr result, const bat *bid)
 {
 	bit skipnil = TRUE;
-	return ALGminany_skipnil(ctx, result, bid, &skipnil);
+	return IALGminany_skipnil(ctx, result, bid, &skipnil);
 }
 
 static str
-ALGmaxany_skipnil(Client ctx, ptr result, const bat *bid, const bit *skipnil)
+IALGmaxany_skipnil(Client ctx, ptr result, const bat *bid, const bit *skipnil)
 {
 	BAT *b;
 	ptr p;
@@ -4691,10 +4694,10 @@ ALGmaxany_skipnil(Client ctx, ptr result, const bat *bid, const bit *skipnil)
 }
 
 static str
-ALGmaxany(Client ctx, ptr result, const bat *bid)
+IALGmaxany(Client ctx, ptr result, const bat *bid)
 {
 	bit skipnil = TRUE;
-	return ALGmaxany_skipnil(ctx, result, bid, &skipnil);
+	return IALGmaxany_skipnil(ctx, result, bid, &skipnil);
 }
 
 #define ALGnull_impl(TPE) \
@@ -4709,7 +4712,7 @@ ALGmaxany(Client ctx, ptr result, const bat *bid)
 	} while (0)
 
 static str
-ALGnull(Client ctx, bit *result, const bat *bid)
+IALGnull(Client ctx, bit *result, const bat *bid)
 {
 	(void)ctx;
 	BAT *b = NULL;
@@ -4777,7 +4780,7 @@ ALGnull(Client ctx, bit *result, const bat *bid)
 }
 
 static str
-ALGfsum_skipnil_flt(Client ctx, flt *result, flt *rcom, lng *rcnt, const bat *bid, const bit *skipnil)
+IALGfsum_skipnil_flt(Client ctx, flt *result, flt *rcom, lng *rcnt, const bat *bid, const bit *skipnil)
 {
 	(void)ctx;
 	BAT *b;
@@ -4819,20 +4822,20 @@ ALGfsum_skipnil_flt(Client ctx, flt *result, flt *rcom, lng *rcnt, const bat *bi
 		*rcom = c;
 		*rcnt = cc;
 	}
-	TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "pp aggr.sum", RUNTIME_QRY_TIMEOUT));
+	TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "iaggr.sum", RUNTIME_QRY_TIMEOUT));
 	BBPunfix(b->batCacheid);
 	return err;
 }
 
 static str
-ALGfsum_flt(Client ctx, flt *result, flt *com, lng *cnt, const bat *bid)
+IALGfsum_flt(Client ctx, flt *result, flt *com, lng *cnt, const bat *bid)
 {
 	bit skipnil = TRUE;
-	return ALGfsum_skipnil_flt(ctx, result, com, cnt, bid, &skipnil);
+	return IALGfsum_skipnil_flt(ctx, result, com, cnt, bid, &skipnil);
 }
 
 static str
-ALGfsum_skipnil(Client ctx, dbl *result, dbl *rcom, lng *rcnt, const bat *bid, const bit *skipnil)
+IALGfsum_skipnil(Client ctx, dbl *result, dbl *rcom, lng *rcnt, const bat *bid, const bit *skipnil)
 {
 	(void)ctx;
 	BAT *b;
@@ -4897,41 +4900,40 @@ ALGfsum_skipnil(Client ctx, dbl *result, dbl *rcom, lng *rcnt, const bat *bid, c
 		*rcom = c;
 		*rcnt = cc;
 	}
-	TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "pp aggr.sum", RUNTIME_QRY_TIMEOUT));
+	TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "iaggr.sum", RUNTIME_QRY_TIMEOUT));
 	BBPunfix(b->batCacheid);
 	return err;
 }
 
 static str
-ALGfsum(Client ctx, dbl *result, dbl *com, lng *cnt, const bat *bid)
+IALGfsum(Client ctx, dbl *result, dbl *com, lng *cnt, const bat *bid)
 {
 	bit skipnil = TRUE;
-	return ALGfsum_skipnil(ctx, result, com, cnt, bid, &skipnil);
+	return IALGfsum_skipnil(ctx, result, com, cnt, bid, &skipnil);
 }
 
 #include "mel.h"
 static mel_func pp_algebra_init_funcs[] = {
- pattern("lockedaggr", "sum", LOCKEDAGGRsum1, true, "sum values into bat (bat has value, update), using the bat lock", args(1,2, sharedbatargany("", 1), argany("val", 1))),
- pattern("lockedaggr", "sum_no_nil", LOCKEDAGGRsum_no_nil1, true, "sum values into bat (bat has value, update), using the bat lock", args(1,2, sharedbatargany("", 1), argany("val", 1))),
- pattern("lockedaggr", "prod", LOCKEDAGGRprod, true, "product of all values, using the bat lock", args(1,2, sharedbatargany("", 1), argany("val", 2))),
- pattern("lockedaggr", "avg", LOCKEDAGGRavg, true, "avg values into bat (bat has value, update), using the bat lock", args(2,4, sharedbatargany("", 1), sharedbatarg("rcnt", lng), argany("val", 1), arg("cnt", lng))),
- pattern("lockedaggr", "avg", LOCKEDAGGRavg, true, "avg values into bat (bat has value, update), using the bat lock", args(3,6, sharedbatargany("", 1), sharedbatarg("rremainder", lng), sharedbatarg("rcnt", lng), argany("val", 1), arg("remainder", lng), arg("cnt", lng))),
- pattern("lockedaggr", "sum", LOCKEDAGGRsum, true, "Kahan/neumaier summation, using the bat lock", args(3,6, sharedbatarg("rsum", flt), sharedbatarg("rcom", flt), sharedbatarg("rcnt", lng), arg("sum", flt), arg("com", flt), arg("cnt", lng))),
- pattern("lockedaggr", "sum", LOCKEDAGGRsum, true, "Kahan/neumaier summation, using the bat lock", args(3,6, sharedbatarg("rsum", dbl), sharedbatarg("rcom", dbl), sharedbatarg("rcnt", lng), arg("sum", dbl), arg("com", dbl), arg("cnt", lng))),
- pattern("lockedaggr", "avg", LOCKEDAGGRavg, true, "Kahan/neumaier summation, using the bat lock", args(3,6, sharedbatarg("ravg", dbl), sharedbatarg("rcem", dbl), sharedbatarg("rcnt", lng), arg("val", dbl), arg("com", dbl), arg("cnt", lng))),
- pattern("lockedaggr", "min", LOCKEDAGGRmin, true, "min values into bat (bat has value, update), using the bat lock", args(1,2, sharedbatargany("", 1), argany("val", 1))),
- pattern("lockedaggr", "max", LOCKEDAGGRmax, true, "max values into bat (bat has value, update), using the bat lock", args(1,2, sharedbatargany("", 1), argany("val", 1))),
- command("lockedaggr", "null", LOCKEDAGGRnull, true, "Returns true or false if the input contains a NULL or not, nil if the input is empty..", args(1,2, sharedbatarg("",bit),arg("hadnull",bit))),
-
- command("algebra", "unique", LALGunique, false, "Unique rows.", args(2,5, batarg("gid", oid), batargany("",1), arg("pipeline", ptr), batargany("b",1), batarg("s",oid))),
- command("algebra", "unique", LALGgroup_unique, false, "Unique per group rows.", args(2,6, batarg("ngid", oid), batargany("",1), arg("pipeline", ptr), batargany("b",1), batarg("s",oid), batarg("gid",oid))),
- command("group", "group", LALGgroup, false, "Group input.", args(2,4, batarg("gid", oid), batargany("sink",1), arg("pipeline", ptr), batargany("b",1))),
+ command("group", "group", LALGgroup,  false, "Group input.",     args(2,4, batarg("gid", oid), batargany("sink",1), arg("pipeline", ptr), batargany("b",1))),
  command("group", "group", LALGderive, false, "Sub Group input.", args(2,6, batarg("gid", oid), batargany("sink",1), arg("pipeline", ptr), batarg("pgid", oid), batargany("phash", 2), batargany("b",1))),
- pattern("algebra", "project", LALGconstant, false, "Project a single value", args(1,4, batargany("",1), batarg("gid", oid), argany("val",1), arg("pipeline", ptr))),
- command("algebra", "projection", LALGproject, false, "Project.", args(1,4, batargany("",1), batarg("gid", oid), batargany("b",1), arg("pipeline", ptr))),
- command("aggr", "count", LALGcount, false, "Count per group.", args(1,6, batarg("",lng), batarg("gid", oid), batargany("", 1), arg("nonil", bit), arg("pipeline", ptr), batarg("pid", oid))),
- command("aggr", "count", LALGcountstar, false, "count per group.", args(1,4, batarg("",lng), batarg("gid", oid), arg("pipeline", ptr), batarg("pid", oid))),
- pattern("aggr", "sum", LALGsum, false, "sum per group.", args(1,5, batargany("",1), batarg("gid", oid), batargany("", 2), arg("pipeline", ptr), batarg("pid", oid))),
+
+ pattern("algebra", "project",    LALGconstant, false, "Project a single value", args(1,4, batargany("",1), batarg("gid", oid), argany("val",1), arg("pipeline", ptr))),
+ command("algebra", "projection", LALGproject,  false, "Project.",               args(1,4, batargany("",1), batarg("gid", oid), batargany("b",1), arg("pipeline", ptr))),
+
+ /* COUNT DISTINCT: globle / grouped */
+ command("algebra", "unique", LALGunique,       false, "Unique rows.",           args(2,5, batarg("gid", oid),  batargany("",1), arg("pipeline", ptr), batargany("b",1), batarg("s",oid))),
+ command("algebra", "unique", LALGgroup_unique, false, "Unique rows per group.", args(2,6, batarg("ngid", oid), batargany("",1), arg("pipeline", ptr), batargany("b",1), batarg("s",oid), batarg("gid",oid))),
+
+ /********** Grouped aggregates **********/
+ command("aggr", "min",   LALGmin,       false, "Min per group.",                             args(1,5, batargany("",1), batarg("gid", oid), batargany("", 1), arg("pipeline", ptr), batarg("pid", oid))),
+ command("aggr", "max",   LALGmax,       false, "Max per group.",                             args(1,5, batargany("",1), batarg("gid", oid), batargany("", 1), arg("pipeline", ptr), batarg("pid", oid))),
+ pattern("aggr", "prod",  LALGprod,      false, "product per group.",                         args(1,5, batargany("",1), batarg("gid", oid), batargany("", 2), arg("pipeline", ptr), batarg("pid", oid))),
+ command("aggr", "null",  LALGnull,      false, "has-null per group per partition.",          args(1,5, batarg("",bit),  batarg("gid", oid), batargany("", 1), arg("pipeline", ptr), batarg("pid", oid))),
+ command("aggr", "cnull", LALGcnull,     false, "has-null per group all partition combined.", args(1,5, batarg("",bit),  batarg("gid", oid), batarg("", bit),  arg("pipeline", ptr), batarg("pid", oid))),
+ command("aggr", "count", LALGcount,     false, "Count per group.",                           args(1,6, batarg("",lng),  batarg("gid", oid), batargany("", 1), arg("nonil", bit), arg("pipeline", ptr), batarg("pid", oid))),
+ command("aggr", "count", LALGcountstar, false, "count per group.",                           args(1,4, batarg("",lng),  batarg("gid", oid),                                      arg("pipeline", ptr), batarg("pid", oid))),
+
+ pattern("aggr", "sum", LALGsum,       false, "sum per group.",                      args(1,5, batargany("",1), batarg("gid", oid), batargany("", 2),                    arg("pipeline", ptr), batarg("pid", oid))),
  /* sum core */
  pattern("aggr", "sum", LALGsum_float, false, "Kahan/Neumaier summation per group.", args(3,7, batarg("rsum", flt), batarg("rcom", flt), batarg("rcnt", lng), batarg("gid", oid), batarg("val", flt), arg("pipeline", ptr), batarg("pid", oid))),
  pattern("aggr", "sum", LALGsum_float, false, "Kahan/Neumaier summation per group.", args(3,7, batarg("rsum", dbl), batarg("rcom", dbl), batarg("rcnt", lng), batarg("gid", oid), batarg("val", dbl), arg("pipeline", ptr), batarg("pid", oid))),
@@ -4941,46 +4943,285 @@ static mel_func pp_algebra_init_funcs[] = {
  /* sum finish */
  pattern("aggr", "compute_sum", compute_sum, false, "compute Kahan/Neumaier summation.", args(1,3, batarg("rsum",flt), batarg("sum", flt), batarg("com", flt))),
  pattern("aggr", "compute_sum", compute_sum, false, "compute Kahan/Neumaier summation.", args(1,3, batarg("rsum",dbl), batarg("sum", dbl), batarg("com", dbl))),
- pattern("aggr", "prod", LALGprod, false, "product per group.", args(1,5, batargany("",1), batarg("gid", oid), batargany("", 2), arg("pipeline", ptr), batarg("pid", oid))),
- /* avg core */
- pattern("aggr", "avg", LALGavg, false, "avg per group.", args(3,7, batarg("ravg", dbl), batarg("rerror", dbl), batarg("rcnt", lng), batarg("gid", oid), batargany("", 1), arg("pipeline", ptr), batarg("pid", oid))),
- /* avg combine */
- pattern("aggr", "avg", LALGavg, false, "avg per group.", args(3,9, batarg("ravg", dbl), batarg("rerror", dbl), batarg("rcnt", lng), batarg("gid", oid), batargany("", 1), batarg("error", dbl), batarg("cnt", lng), arg("pipeline", ptr), batarg("pid", oid))),
- /* avg integers/decimals core */
- pattern("aggr", "avg", LALGavg, false, "avg per group.", args(3,7, batargany("ravg",1), batarg("rremainder", lng), batarg("rcnt", lng), batarg("gid", oid), batargany("", 1), arg("pipeline", ptr), batarg("pid", oid))),
- /* avg integers/decimals combine */
- pattern("aggr", "avg", LALGavg, false, "avg per group.", args(3,9, batargany("ravg",1), batarg("rremainder", lng), batarg("rcnt", lng), batarg("gid", oid), batargany("", 1), batarg("remainder", lng), batarg("cnt", lng), arg("pipeline", ptr), batarg("pid", oid))),
- /* avg integer and doubles finish */
- pattern("aggr", "compute_avg", compute_avg, false, "compute avg from integer avg + rest/count.", args(1,4, batarg("ravg",dbl), batargany("avg", 1), batarg("remainder", lng), batarg("cnt", lng))),
- pattern("aggr", "compute_avg", compute_avg, false, "compute avg from floating point (sum + error)/count.", args(1,4, batarg("ravg",dbl), batarg("avg", dbl), batarg("error", dbl), batarg("cnt", lng))),
- command("aggr", "min", LALGmin, false, "Min per group.", args(1,5, batargany("",1), batarg("gid", oid), batargany("", 1), arg("pipeline", ptr), batarg("pid", oid))),
- command("aggr", "max", LALGmax, false, "Max per group.", args(1,5, batargany("",1), batarg("gid", oid), batargany("", 1), arg("pipeline", ptr), batarg("pid", oid))),
- command("aggr", "null", LALGnull, false, "has-null per group per partition.", args(1,5, batarg("",bit), batarg("gid", oid), batargany("", 1), arg("pipeline", ptr), batarg("pid", oid))),
- command("aggr", "cnull", LALGcnull, false, "has-null per group all partition combined.", args(1,5, batarg("",bit), batarg("gid", oid), batarg("", bit), arg("pipeline", ptr), batarg("pid", oid))),
 
- /* Incremental aggregates */
- command("iaggr", "count", ALGcount_bat, false, "Return the current size (in number of elements) in a BAT.", args(1,2, arg("",lng), batargany("b",0))),
- command("iaggr", "count", ALGcount_nil, false, "Return the number of elements currently in a BAT ignores\nBUNs with nil-tail iff ignore_nils==TRUE.", args(1,3, arg("",lng), batargany("b",0),arg("ignore_nils",bit))),
- command("iaggr", "count_no_nil", ALGcount_no_nil, false, "Return the number of elements currently\nin a BAT ignoring BUNs with nil-tail", args(1,2, arg("",lng), batargany("b",2))),
- command("iaggr", "count", ALGcountCND_bat, false, "Return the current size (in number of elements) in a BAT.", args(1,3, arg("",lng), batargany("b",0),batarg("cnd",oid))),
- command("iaggr", "count", ALGcountCND_nil, false, "Return the number of elements currently in a BAT ignores\nBUNs with nil-tail iff ignore_nils==TRUE.", args(1,4, arg("",lng), batargany("b",0),batarg("cnd",oid),arg("ignore_nils",bit))),
- command("iaggr", "count_no_nil", ALGcountCND_no_nil, false, "Return the number of elements currently\nin a BAT ignoring BUNs with nil-tail", args(1,3, arg("",lng), batargany("b",2),batarg("cnd",oid))),
- command("iaggr", "min", ALGminany, false, "Return the lowest tail value or nil.", args(1,2, argany("",2), batargany("b",2))),
- command("iaggr", "min", ALGminany_skipnil, false, "Return the lowest tail value or nil.", args(1,3, argany("",2), batargany("b",2),arg("skipnil",bit))),
- command("iaggr", "max", ALGmaxany, false, "Return the highest tail value or nil.", args(1,2, argany("",2), batargany("b",2))),
- command("iaggr", "max", ALGmaxany_skipnil, false, "Return the highest tail value or nil.", args(1,3, argany("",2), batargany("b",2),arg("skipnil",bit))),
- command("iaggr", "null", ALGnull, false, "Returns true or false if the input contains a NULL or not, nil if the input is empty..", args(1,2, arg("",bit), batargany("b",1))),
- command("aggr", "sum", ALGfsum_flt, false, "Return the Kahan/Neumaier summation.", args(3,4, arg("rsum", flt), arg("rcom", flt), arg("rcnt", lng), batarg("b", flt))),
- command("aggr", "sum", ALGfsum_skipnil_flt, false, "Return the Kahan/Neumaier summation or nil.", args(3,5, arg("rsum", flt), arg("rcom", flt), arg("rcnt", lng), batarg("b", flt), arg("skipnil",bit))),
- command("aggr", "sum", ALGfsum, false, "Return the Kahan/Neumaier summation.", args(3,4, arg("rsum", dbl), arg("rcom", dbl), arg("rcnt", lng), batarg("b", flt))),
- command("aggr", "sum", ALGfsum_skipnil, false, "Return the Kahan/Neumaier summation or nil.", args(3,5, arg("rsum", dbl), arg("rcom", dbl), arg("rcnt", lng), batarg("b", flt), arg("skipnil",bit))),
- command("aggr", "sum", ALGfsum, false, "Return the Kahan/Neumaier summation.", args(3,4, arg("rsum", dbl), arg("rcom", dbl), arg("rcnt", lng), batarg("b", dbl))),
- command("aggr", "sum", ALGfsum_skipnil, false, "Return the Kahan/Neumaier summation or nil.", args(3,5, arg("rsum", dbl), arg("rcom", dbl), arg("rcnt", lng), batarg("b", dbl), arg("skipnil",bit))),
- command("aggr", "avg", ALGfsum, false, "Return the Kahan/Neumaier summation.", args(3,4, arg("rsum", dbl), arg("rcom", dbl), arg("rcnt", lng), batarg("b", flt))),
- command("aggr", "avg", ALGfsum_skipnil, false, "Return the Kahan/Neumaier summation or nil.", args(3,5, arg("rsum", dbl), arg("rcom", dbl), arg("rcnt", lng), batarg("b", flt), arg("skipnil",bit))),
- command("aggr", "avg", ALGfsum, false, "Return the Kahan/Neumaier summation.", args(3,4, arg("rsum", dbl), arg("rcom", dbl), arg("rcnt", lng), batarg("b", dbl))),
- command("aggr", "avg", ALGfsum_skipnil, false, "Return the Kahan/Neumaier summation or nil.", args(3,5, arg("rsum", dbl), arg("rcom", dbl), arg("rcnt", lng), batarg("b", dbl), arg("skipnil",bit))),
- command("aggr", "ord_quantile", LALGquantile, false, "Return the p-th's quantile per group, where p is between 0 and 100", args(1,4, batargany("quantile", 1), batarg("gid", oid), batargany("i", 1), arg("p", bte))),
+ /* avg core */
+ pattern("aggr", "avg", LALGavg, false, "avg per group.",                      args(3,7, batarg("ravg", dbl), batarg("rerror", dbl),     batarg("rcnt", lng), batarg("gid", oid), batargany("", 1), arg("pipeline", ptr), batarg("pid", oid))),
+ pattern("aggr", "avg", LALGavg, false, "avg of integers/decimals per group.", args(3,7, batargany("ravg",1), batarg("rremainder", lng), batarg("rcnt", lng), batarg("gid", oid), batargany("", 1), arg("pipeline", ptr), batarg("pid", oid))),
+ /* avg combine */
+ pattern("aggr", "avg", LALGavg, false, "avg per group.",                      args(3,9, batarg("ravg", dbl), batarg("rerror", dbl),     batarg("rcnt", lng), batarg("gid", oid), batargany("", 1), batarg("error", dbl),     batarg("cnt", lng), arg("pipeline", ptr), batarg("pid", oid))),
+ pattern("aggr", "avg", LALGavg, false, "avg of integers/decimals per group.", args(3,9, batargany("ravg",1), batarg("rremainder", lng), batarg("rcnt", lng), batarg("gid", oid), batargany("", 1), batarg("remainder", lng), batarg("cnt", lng), arg("pipeline", ptr), batarg("pid", oid))),
+ /* avg integer and doubles finish */
+ pattern("aggr", "compute_avg", compute_avg, false, "compute avg from integer avg + rest/count.",           args(1,4, batarg("ravg",dbl), batargany("avg", 1), batarg("remainder", lng), batarg("cnt", lng))),
+ pattern("aggr", "compute_avg", compute_avg, false, "compute avg from floating point (sum + error)/count.", args(1,4, batarg("ravg",dbl), batarg("avg", dbl),  batarg("error", dbl),     batarg("cnt", lng))),
+
+ /********** Global aggregates (i.e. without a GROUP BY) **********/
+ /* core phase: incrementally aggregate each input data slice into the local in/out result var. */
+ command("iaggr", "min",  IALGminany,         false, "Return the lowest tail value or nil.",  args(1,2, argany("",2), batargany("b",2))),
+ command("iaggr", "min",  IALGminany_skipnil, false, "Return the lowest tail value or nil.",  args(1,3, argany("",2), batargany("b",2),arg("skipnil",bit))),
+ command("iaggr", "max",  IALGmaxany,         false, "Return the highest tail value or nil.", args(1,2, argany("",2), batargany("b",2))),
+ command("iaggr", "max",  IALGmaxany_skipnil, false, "Return the highest tail value or nil.", args(1,3, argany("",2), batargany("b",2),arg("skipnil",bit))),
+ command("iaggr", "null", IALGnull, false, "Returns true or false if the input contains a NULL or not, nil if the input is empty..", args(1,2, arg("",bit), batargany("b",1))),
+
+ pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,2, arg("",bte),batarg("b",bte))),
+ pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,3, arg("",bte),batarg("b",bte),arg("nil_if_empty",bit))),
+ pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,3, arg("",bte),batarg("b",bte),batarg("s",oid))),
+ pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,4, arg("",bte),batarg("b",bte),batarg("s",oid),arg("nil_if_empty",bit))),
+ pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,2, arg("",sht),batarg("b",bte))),
+ pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,3, arg("",sht),batarg("b",bte),arg("nil_if_empty",bit))),
+ pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,3, arg("",sht),batarg("b",bte),batarg("s",oid))),
+ pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,4, arg("",sht),batarg("b",bte),batarg("s",oid),arg("nil_if_empty",bit))),
+ pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,2, arg("",int),batarg("b",bte))),
+ pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,3, arg("",int),batarg("b",bte),arg("nil_if_empty",bit))),
+ pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,3, arg("",int),batarg("b",bte),batarg("s",oid))),
+ pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,4, arg("",int),batarg("b",bte),batarg("s",oid),arg("nil_if_empty",bit))),
+ pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,2, arg("",lng),batarg("b",bte))),
+ pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,3, arg("",lng),batarg("b",bte),arg("nil_if_empty",bit))),
+ pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,3, arg("",lng),batarg("b",bte),batarg("s",oid))),
+ pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,4, arg("",lng),batarg("b",bte),batarg("s",oid),arg("nil_if_empty",bit))),
+ pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,2, arg("",dbl),batarg("b",bte))),
+ pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,3, arg("",dbl),batarg("b",bte),arg("nil_if_empty",bit))),
+ pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,3, arg("",dbl),batarg("b",bte),batarg("s",oid))),
+ pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,4, arg("",dbl),batarg("b",bte),batarg("s",oid),arg("nil_if_empty",bit))),
+ pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,2, arg("",sht),batarg("b",sht))),
+ pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,3, arg("",sht),batarg("b",sht),arg("nil_if_empty",bit))),
+ pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,3, arg("",sht),batarg("b",sht),batarg("s",oid))),
+ pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,4, arg("",sht),batarg("b",sht),batarg("s",oid),arg("nil_if_empty",bit))),
+ pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,2, arg("",int),batarg("b",sht))),
+ pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,3, arg("",int),batarg("b",sht),arg("nil_if_empty",bit))),
+ pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,3, arg("",int),batarg("b",sht),batarg("s",oid))),
+ pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,4, arg("",int),batarg("b",sht),batarg("s",oid),arg("nil_if_empty",bit))),
+ pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,2, arg("",lng),batarg("b",sht))),
+ pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,3, arg("",lng),batarg("b",sht),arg("nil_if_empty",bit))),
+ pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,3, arg("",lng),batarg("b",sht),batarg("s",oid))),
+ pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,4, arg("",lng),batarg("b",sht),batarg("s",oid),arg("nil_if_empty",bit))),
+ pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,2, arg("",dbl),batarg("b",sht))),
+ pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,3, arg("",dbl),batarg("b",sht),arg("nil_if_empty",bit))),
+ pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,3, arg("",dbl),batarg("b",sht),batarg("s",oid))),
+ pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,4, arg("",dbl),batarg("b",sht),batarg("s",oid),arg("nil_if_empty",bit))),
+ pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,2, arg("",int),batarg("b",int))),
+ pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,3, arg("",int),batarg("b",int),arg("nil_if_empty",bit))),
+ pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,3, arg("",int),batarg("b",int),batarg("s",oid))),
+ pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,4, arg("",int),batarg("b",int),batarg("s",oid),arg("nil_if_empty",bit))),
+ pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,2, arg("",lng),batarg("b",int))),
+ pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,3, arg("",lng),batarg("b",int),arg("nil_if_empty",bit))),
+ pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,3, arg("",lng),batarg("b",int),batarg("s",oid))),
+ pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,4, arg("",lng),batarg("b",int),batarg("s",oid),arg("nil_if_empty",bit))),
+ pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,2, arg("",dbl),batarg("b",int))),
+ pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,3, arg("",dbl),batarg("b",int),arg("nil_if_empty",bit))),
+ pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,3, arg("",dbl),batarg("b",int),batarg("s",oid))),
+ pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,4, arg("",dbl),batarg("b",int),batarg("s",oid),arg("nil_if_empty",bit))),
+ pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,2, arg("",lng),batarg("b",lng))),
+ pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,3, arg("",lng),batarg("b",lng),arg("nil_if_empty",bit))),
+ pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,3, arg("",lng),batarg("b",lng),batarg("s",oid))),
+ pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,4, arg("",lng),batarg("b",lng),batarg("s",oid),arg("nil_if_empty",bit))),
+ pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,2, arg("",dbl),batarg("b",lng))),
+ pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,3, arg("",dbl),batarg("b",lng),arg("nil_if_empty",bit))),
+ pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,3, arg("",dbl),batarg("b",lng),batarg("s",oid))),
+ pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,4, arg("",dbl),batarg("b",lng),batarg("s",oid),arg("nil_if_empty",bit))),
+ pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,2, arg("",flt),batarg("b",flt))),
+ pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,3, arg("",flt),batarg("b",flt),arg("nil_if_empty",bit))),
+ pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,3, arg("",flt),batarg("b",flt),batarg("s",oid))),
+ pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,4, arg("",flt),batarg("b",flt),batarg("s",oid),arg("nil_if_empty",bit))),
+ pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,2, arg("",dbl),batarg("b",flt))),
+ pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,3, arg("",dbl),batarg("b",flt),arg("nil_if_empty",bit))),
+ pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,3, arg("",dbl),batarg("b",flt),batarg("s",oid))),
+ pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,4, arg("",dbl),batarg("b",flt),batarg("s",oid),arg("nil_if_empty",bit))),
+ pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,2, arg("",dbl),batarg("b",dbl))),
+ pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,3, arg("",dbl),batarg("b",dbl),arg("nil_if_empty",bit))),
+ pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,3, arg("",dbl),batarg("b",dbl),batarg("s",oid))),
+ pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,4, arg("",dbl),batarg("b",dbl),batarg("s",oid),arg("nil_if_empty",bit))),
+#ifdef HAVE_HGE
+ pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,2, arg("",hge),batarg("b",bte))),
+ pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,3, arg("",hge),batarg("b",bte),arg("nil_if_empty",bit))),
+ pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,3, arg("",hge),batarg("b",bte),batarg("s",oid))),
+ pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,4, arg("",hge),batarg("b",bte),batarg("s",oid),arg("nil_if_empty",bit))),
+ pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,2, arg("",hge),batarg("b",sht))),
+ pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,3, arg("",hge),batarg("b",sht),arg("nil_if_empty",bit))),
+ pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,3, arg("",hge),batarg("b",sht),batarg("s",oid))),
+ pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,4, arg("",hge),batarg("b",sht),batarg("s",oid),arg("nil_if_empty",bit))),
+ pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,2, arg("",hge),batarg("b",int))),
+ pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,3, arg("",hge),batarg("b",int),arg("nil_if_empty",bit))),
+ pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,3, arg("",hge),batarg("b",int),batarg("s",oid))),
+ pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,4, arg("",hge),batarg("b",int),batarg("s",oid),arg("nil_if_empty",bit))),
+ pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,2, arg("",hge),batarg("b",lng))),
+ pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,3, arg("",hge),batarg("b",lng),arg("nil_if_empty",bit))),
+ pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,3, arg("",hge),batarg("b",lng),batarg("s",oid))),
+ pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,4, arg("",hge),batarg("b",lng),batarg("s",oid),arg("nil_if_empty",bit))),
+ pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,2, arg("",hge),batarg("b",hge))),
+ pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,3, arg("",hge),batarg("b",hge),arg("nil_if_empty",bit))),
+ pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,3, arg("",hge),batarg("b",hge),batarg("s",oid))),
+ pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,4, arg("",hge),batarg("b",hge),batarg("s",oid),arg("nil_if_empty",bit))),
+ pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,2, arg("",dbl),batarg("b",hge))),
+ pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,3, arg("",dbl),batarg("b",hge),arg("nil_if_empty",bit))),
+ pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,3, arg("",dbl),batarg("b",hge),batarg("s",oid))),
+ pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,4, arg("",dbl),batarg("b",hge),batarg("s",oid),arg("nil_if_empty",bit))),
+#endif
+
+ command("iaggr", "count",        IALGcount_bat,       false, "Return the number of elements currently in a BAT.",                                                  args(1,2, arg("",lng), batargany("b",0))),
+ command("iaggr", "count",        IALGcount_nil,       false, "Return the number of elements currently in a BAT, ignore BUNs with nil-tail iff ignore_nils==TRUE.", args(1,3, arg("",lng), batargany("b",0),arg("ignore_nils",bit))),
+ command("iaggr", "count_no_nil", IALGcount_no_nil,    false, "Return the number of elements currently in a BAT, ignore BUNs with nil-tail",                        args(1,2, arg("",lng), batargany("b",2))),
+ command("iaggr", "count",        IALGcountCND_bat,    false, "Return the number of elements currently in a BAT.",                                                  args(1,3, arg("",lng), batargany("b",0),batarg("cnd",oid))),
+ command("iaggr", "count",        IALGcountCND_nil,    false, "Return the number of elements currently in a BAT, ignore BUNs with nil-tail iff ignore_nils==TRUE.", args(1,4, arg("",lng), batargany("b",0),batarg("cnd",oid),arg("ignore_nils",bit))),
+ command("iaggr", "count_no_nil", IALGcountCND_no_nil, false, "Return the number of elements currently in a BAT, ignore BUNs with nil-tail",                        args(1,3, arg("",lng), batargany("b",2),batarg("cnd",oid))),
+
+ pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",bte),batarg("b",msk))),
+ pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",bte),batarg("b",msk),arg("nil_if_empty",bit))),
+ pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",bte),batarg("b",msk),batarg("s",oid))),
+ pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",bte),batarg("b",msk),batarg("s",oid),arg("nil_if_empty",bit))),
+ pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",sht),batarg("b",msk))),
+ pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",sht),batarg("b",msk),arg("nil_if_empty",bit))),
+ pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",sht),batarg("b",msk),batarg("s",oid))),
+ pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",sht),batarg("b",msk),batarg("s",oid),arg("nil_if_empty",bit))),
+ pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",int),batarg("b",msk))),
+ pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",int),batarg("b",msk),arg("nil_if_empty",bit))),
+ pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",int),batarg("b",msk),batarg("s",oid))),
+ pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",int),batarg("b",msk),batarg("s",oid),arg("nil_if_empty",bit))),
+ pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",lng),batarg("b",msk))),
+ pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",lng),batarg("b",msk),arg("nil_if_empty",bit))),
+ pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",lng),batarg("b",msk),batarg("s",oid))),
+ pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",lng),batarg("b",msk),batarg("s",oid),arg("nil_if_empty",bit))),
+ pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",dbl),batarg("b",msk))),
+ pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",dbl),batarg("b",msk),arg("nil_if_empty",bit))),
+ pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",dbl),batarg("b",msk),batarg("s",oid))),
+ pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",dbl),batarg("b",msk),batarg("s",oid),arg("nil_if_empty",bit))),
+ pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",bte),batarg("b",bte))),
+ pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",bte),batarg("b",bte),arg("nil_if_empty",bit))),
+ pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",bte),batarg("b",bte),batarg("s",oid))),
+ pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",bte),batarg("b",bte),batarg("s",oid),arg("nil_if_empty",bit))),
+ pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",sht),batarg("b",bte))),
+ pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",sht),batarg("b",bte),arg("nil_if_empty",bit))),
+ pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",sht),batarg("b",bte),batarg("s",oid))),
+ pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",sht),batarg("b",bte),batarg("s",oid),arg("nil_if_empty",bit))),
+ pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",int),batarg("b",bte))),
+ pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",int),batarg("b",bte),arg("nil_if_empty",bit))),
+ pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",int),batarg("b",bte),batarg("s",oid))),
+ pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",int),batarg("b",bte),batarg("s",oid),arg("nil_if_empty",bit))),
+ pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",lng),batarg("b",bte))),
+ pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",lng),batarg("b",bte),arg("nil_if_empty",bit))),
+ pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",lng),batarg("b",bte),batarg("s",oid))),
+ pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",lng),batarg("b",bte),batarg("s",oid),arg("nil_if_empty",bit))),
+ pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",dbl),batarg("b",bte))),
+ pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",dbl),batarg("b",bte),arg("nil_if_empty",bit))),
+ pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",dbl),batarg("b",bte),batarg("s",oid))),
+ pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",dbl),batarg("b",bte),batarg("s",oid),arg("nil_if_empty",bit))),
+ pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",sht),batarg("b",sht))),
+ pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",sht),batarg("b",sht),arg("nil_if_empty",bit))),
+ pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",sht),batarg("b",sht),batarg("s",oid))),
+ pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",sht),batarg("b",sht),batarg("s",oid),arg("nil_if_empty",bit))),
+ pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",int),batarg("b",sht))),
+ pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",int),batarg("b",sht),arg("nil_if_empty",bit))),
+ pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",int),batarg("b",sht),batarg("s",oid))),
+ pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",int),batarg("b",sht),batarg("s",oid),arg("nil_if_empty",bit))),
+ pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",lng),batarg("b",sht))),
+ pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",lng),batarg("b",sht),arg("nil_if_empty",bit))),
+ pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",lng),batarg("b",sht),batarg("s",oid))),
+ pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",lng),batarg("b",sht),batarg("s",oid),arg("nil_if_empty",bit))),
+ pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",dbl),batarg("b",sht))),
+ pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",dbl),batarg("b",sht),arg("nil_if_empty",bit))),
+ pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",dbl),batarg("b",sht),batarg("s",oid))),
+ pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",dbl),batarg("b",sht),batarg("s",oid),arg("nil_if_empty",bit))),
+ pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",int),batarg("b",int))),
+ pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",int),batarg("b",int),arg("nil_if_empty",bit))),
+ pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",int),batarg("b",int),batarg("s",oid))),
+ pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",int),batarg("b",int),batarg("s",oid),arg("nil_if_empty",bit))),
+ pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",lng),batarg("b",int))),
+ pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",lng),batarg("b",int),arg("nil_if_empty",bit))),
+ pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",lng),batarg("b",int),batarg("s",oid))),
+ pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",lng),batarg("b",int),batarg("s",oid),arg("nil_if_empty",bit))),
+ pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",dbl),batarg("b",int))),
+ pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",dbl),batarg("b",int),arg("nil_if_empty",bit))),
+ pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",dbl),batarg("b",int),batarg("s",oid))),
+ pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",dbl),batarg("b",int),batarg("s",oid),arg("nil_if_empty",bit))),
+ pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",lng),batarg("b",lng))),
+ pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",lng),batarg("b",lng),arg("nil_if_empty",bit))),
+ pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",lng),batarg("b",lng),batarg("s",oid))),
+ pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",lng),batarg("b",lng),batarg("s",oid),arg("nil_if_empty",bit))),
+ pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",dbl),batarg("b",lng))),
+ pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",dbl),batarg("b",lng),arg("nil_if_empty",bit))),
+ pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",dbl),batarg("b",lng),batarg("s",oid))),
+ pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",dbl),batarg("b",lng),batarg("s",oid),arg("nil_if_empty",bit))),
+ pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",flt),batarg("b",flt))),
+ pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",flt),batarg("b",flt),arg("nil_if_empty",bit))),
+ pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",flt),batarg("b",flt),batarg("s",oid))),
+ pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",flt),batarg("b",flt),batarg("s",oid),arg("nil_if_empty",bit))),
+ pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",dbl),batarg("b",flt))),
+ pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",dbl),batarg("b",flt),arg("nil_if_empty",bit))),
+ pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",dbl),batarg("b",flt),batarg("s",oid))),
+ pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",dbl),batarg("b",flt),batarg("s",oid),arg("nil_if_empty",bit))),
+ pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",dbl),batarg("b",dbl))),
+ pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",dbl),batarg("b",dbl),arg("nil_if_empty",bit))),
+ pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",dbl),batarg("b",dbl),batarg("s",oid))),
+ pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",dbl),batarg("b",dbl),batarg("s",oid),arg("nil_if_empty",bit))),
+#ifdef HAVE_HGE
+ pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",hge),batarg("b",msk))),
+ pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",hge),batarg("b",msk),arg("nil_if_empty",bit))),
+ pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",hge),batarg("b",msk),batarg("s",oid))),
+ pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",hge),batarg("b",msk),batarg("s",oid),arg("nil_if_empty",bit))),
+ pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",hge),batarg("b",bte))),
+ pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",hge),batarg("b",bte),arg("nil_if_empty",bit))),
+ pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",hge),batarg("b",bte),batarg("s",oid))),
+ pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",hge),batarg("b",bte),batarg("s",oid),arg("nil_if_empty",bit))),
+ pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",hge),batarg("b",sht))),
+ pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",hge),batarg("b",sht),arg("nil_if_empty",bit))),
+ pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",hge),batarg("b",sht),batarg("s",oid))),
+ pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",hge),batarg("b",sht),batarg("s",oid),arg("nil_if_empty",bit))),
+ pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",hge),batarg("b",int))),
+ pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",hge),batarg("b",int),arg("nil_if_empty",bit))),
+ pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",hge),batarg("b",int),batarg("s",oid))),
+ pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",hge),batarg("b",int),batarg("s",oid),arg("nil_if_empty",bit))),
+ pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",hge),batarg("b",lng))),
+ pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",hge),batarg("b",lng),arg("nil_if_empty",bit))),
+ pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",hge),batarg("b",lng),batarg("s",oid))),
+ pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",hge),batarg("b",lng),batarg("s",oid),arg("nil_if_empty",bit))),
+ pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",hge),batarg("b",hge))),
+ pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",hge),batarg("b",hge),arg("nil_if_empty",bit))),
+ pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",hge),batarg("b",hge),batarg("s",oid))),
+ pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",hge),batarg("b",hge),batarg("s",oid),arg("nil_if_empty",bit))),
+ pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",dbl),batarg("b",hge))),
+ pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",dbl),batarg("b",hge),arg("nil_if_empty",bit))),
+ pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",dbl),batarg("b",hge),batarg("s",oid))),
+ pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",dbl),batarg("b",hge),batarg("s",oid),arg("nil_if_empty",bit))),
+#endif
+ command("iaggr", "sum", IALGfsum_flt,         false, "Return the Kahan/Neumaier summation.",        args(3,4, arg("rsum", flt), arg("rcom", flt), arg("rcnt", lng), batarg("b", flt))),
+ command("iaggr", "sum", IALGfsum_skipnil_flt, false, "Return the Kahan/Neumaier summation or nil.", args(3,5, arg("rsum", flt), arg("rcom", flt), arg("rcnt", lng), batarg("b", flt), arg("skipnil",bit))),
+ command("iaggr", "sum", IALGfsum,             false, "Return the Kahan/Neumaier summation.",        args(3,4, arg("rsum", dbl), arg("rcom", dbl), arg("rcnt", lng), batarg("b", flt))),
+ command("iaggr", "sum", IALGfsum_skipnil,     false, "Return the Kahan/Neumaier summation or nil.", args(3,5, arg("rsum", dbl), arg("rcom", dbl), arg("rcnt", lng), batarg("b", flt), arg("skipnil",bit))),
+ command("iaggr", "sum", IALGfsum,             false, "Return the Kahan/Neumaier summation.",        args(3,4, arg("rsum", dbl), arg("rcom", dbl), arg("rcnt", lng), batarg("b", dbl))),
+ command("iaggr", "sum", IALGfsum_skipnil,     false, "Return the Kahan/Neumaier summation or nil.", args(3,5, arg("rsum", dbl), arg("rcom", dbl), arg("rcnt", lng), batarg("b", dbl), arg("skipnil",bit))),
+
+ pattern("iaggr", "avg", CMDBATavg3, false, "Calculate aggregate average of B.", args(3,6, arg("",bte),arg("",lng),arg("",lng),batarg("b",bte),batarg("s",oid),arg("skip_nils",bit))),
+ pattern("iaggr", "avg", CMDBATavg3, false, "Calculate aggregate average of B.", args(3,6, arg("",sht),arg("",lng),arg("",lng),batarg("b",sht),batarg("s",oid),arg("skip_nils",bit))),
+ pattern("iaggr", "avg", CMDBATavg3, false, "Calculate aggregate average of B.", args(3,6, arg("",int),arg("",lng),arg("",lng),batarg("b",int),batarg("s",oid),arg("skip_nils",bit))),
+ pattern("iaggr", "avg", CMDBATavg3, false, "Calculate aggregate average of B.", args(3,6, arg("",lng),arg("",lng),arg("",lng),batarg("b",lng),batarg("s",oid),arg("skip_nils",bit))),
+#ifdef HAVE_HGE
+ pattern("iaggr", "avg", CMDBATavg3, false, "Calculate aggregate average of B.", args(3,6, arg("",hge),arg("",lng),arg("",lng),batarg("b",hge),batarg("s",oid),arg("skip_nils",bit))),
+#endif
+ command("iaggr", "avg", IALGfsum,             false, "Return the Kahan/Neumaier summation.",        args(3,4, arg("rsum", dbl), arg("rcom", dbl), arg("rcnt", lng), batarg("b", flt))),
+ command("iaggr", "avg", IALGfsum_skipnil,     false, "Return the Kahan/Neumaier summation or nil.", args(3,5, arg("rsum", dbl), arg("rcom", dbl), arg("rcnt", lng), batarg("b", flt), arg("skipnil",bit))),
+ command("iaggr", "avg", IALGfsum,             false, "Return the Kahan/Neumaier summation.",        args(3,4, arg("rsum", dbl), arg("rcom", dbl), arg("rcnt", lng), batarg("b", dbl))),
+ command("iaggr", "avg", IALGfsum_skipnil,     false, "Return the Kahan/Neumaier summation or nil.", args(3,5, arg("rsum", dbl), arg("rcom", dbl), arg("rcnt", lng), batarg("b", dbl), arg("skipnil",bit))),
+
+ command("iaggr", "ord_quantile", IALGquantile, false, "Return the p-th's quantile per group, where p is between 0 and 100", args(1,4, batargany("quantile", 1), batarg("gid", oid), batargany("i", 1), arg("p", bte))),
+
+ /* combine phase: merge the local aggregation result into the shared bat */
+ pattern("lockedaggr", "min",        LOCKEDAGGRmin,         true, "min values into bat (bat has value, update), using the bat lock",                       args(1,2, sharedbatargany("", 1),                                                                argany("val", 1))),
+ pattern("lockedaggr", "max",        LOCKEDAGGRmax,         true, "max values into bat (bat has value, update), using the bat lock",                       args(1,2, sharedbatargany("", 1),                                                                argany("val", 1))),
+ pattern("lockedaggr", "prod",       LOCKEDAGGRprod,        true, "product of all values, using the bat lock",                                             args(1,2, sharedbatargany("", 1),                                                                argany("val", 2))),
+ command("lockedaggr", "null",       LOCKEDAGGRnull,        true, "Returns true or false if the input contains a NULL or not, nil if the input is empty.", args(1,2, sharedbatarg("",bit),                                                                  arg("hadnull",bit))),
+
+ pattern("lockedaggr", "sum",        LOCKEDAGGRsum1,        true, "sum values into bat (bat has value, update), using the bat lock",                       args(1,2, sharedbatargany("", 1),                                                                argany("val", 1))),
+ pattern("lockedaggr", "sum_no_nil", LOCKEDAGGRsum_no_nil1, true, "sum values into bat (bat has value, update), using the bat lock",                       args(1,2, sharedbatargany("", 1),                                                                argany("val", 1))),
+ pattern("lockedaggr", "sum",        LOCKEDAGGRsum,         true, "Kahan/neumaier summation, using the bat lock",                                          args(3,6, sharedbatarg("rsum", flt), sharedbatarg("rcom", flt),       sharedbatarg("rcnt", lng), arg("sum", flt),  arg("com", flt),       arg("cnt", lng))),
+ pattern("lockedaggr", "sum",        LOCKEDAGGRsum,         true, "Kahan/neumaier summation, using the bat lock",                                          args(3,6, sharedbatarg("rsum", dbl), sharedbatarg("rcom", dbl),       sharedbatarg("rcnt", lng), arg("sum", dbl),  arg("com", dbl),       arg("cnt", lng))),
+
+ pattern("lockedaggr", "avg",        LOCKEDAGGRavg,         true, "avg values into bat (bat has value, update), using the bat lock",                       args(2,4, sharedbatargany("", 1),    sharedbatarg("rcnt", lng),                                  argany("val", 1), arg("cnt", lng))),
+ pattern("lockedaggr", "avg",        LOCKEDAGGRavg,         true, "avg values into bat (bat has value, update), using the bat lock",                       args(3,6, sharedbatargany("", 1),    sharedbatarg("rremainder", lng), sharedbatarg("rcnt", lng), argany("val", 1), arg("remainder", lng), arg("cnt", lng))),
+ pattern("lockedaggr", "avg",        LOCKEDAGGRavg,         true, "Kahan/neumaier summation, using the bat lock",                                          args(3,6, sharedbatarg("ravg", dbl), sharedbatarg("rcem", dbl),       sharedbatarg("rcnt", lng), arg("val", dbl),  arg("com", dbl),       arg("cnt", lng))),
+
+ /* finish phase:
+  *   if SUM(flt/dbl): `batcalc.+`
+  *   if AVG: `aggr.compute_avg` (see above)
+  * DONE: the global aggregate is the first value of the result bat of the locakedaggr functions. */
  { .imp=NULL }
 };
 #include "mal_import.h"
