@@ -364,7 +364,7 @@ utf8strlenmax(char *s, char *e, size_t max, char **t)
 			} else if (codepoint <= 0x1F || codepoint == 0177) {
 				len += 4;		/* control, rendered as "\\%03o" */
 			} else if (0x80 <= codepoint && codepoint <= 0x9F) {
-				len += 6;		/* control, rendered as "u\\%04x" */
+				len += 6;		/* control, rendered as "\\u%04x" */
 			} else {
 				/* charwidth() returning -1 is caught by the above */
 				len += charwidth(codepoint);
