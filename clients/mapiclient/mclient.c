@@ -320,37 +320,6 @@ static char *encoding;
 #include "iconv-stream.h"
 #endif
 
-/* The Mapi library eats away the comment lines, which we need to
- * detect end of debugging. We overload the routine to our liking. */
-
-static char *
-fetch_line(MapiHdl hdl)
-{
-	char *reply;
-
-	if ((reply = mapi_fetch_line(hdl)) == NULL)
-		return NULL;
-	if (strncmp(reply, "mdb>#", 5) == 0) {
-		if (strncmp(reply, "mdb>#EOD", 8) == 0)
-			setPrompt();
-		else
-			snprintf(promptbuf, sizeof(promptbuf), "mdb>");
-	}
-	return reply;
-}
-
-static int
-fetch_row(MapiHdl hdl)
-{
-	char *reply;
-
-	do {
-		if ((reply = fetch_line(hdl)) == NULL)
-			return 0;
-	} while (*reply != '[' && *reply != '=');
-	return mapi_split_line(hdl);
-}
-
 static void
 SQLsetSpecial(const char *command)
 {
@@ -738,7 +707,7 @@ XMLrenderer(MapiHdl hdl)
 	if (name != NULL && *name != 0)
 		XMLprattr("name", name);
 	mnstr_printf(toConsole, ">\n");
-	while (mnstr_errnr(toConsole) == MNSTR_NO__ERROR && (fields = fetch_row(hdl)) != 0) {
+	while (mnstr_errnr(toConsole) == MNSTR_NO__ERROR && (fields = mapi_fetch_row(hdl)) != 0) {
 		mnstr_printf(toConsole, "<row>");
 		for (i = 0; i < fields; i++) {
 			char *data = mapi_fetch_field(hdl, i);
@@ -775,7 +744,7 @@ EXPANDEDrenderer(MapiHdl hdl)
 		if (w > fieldw)
 			fieldw = w;
 	}
-	while (mnstr_errnr(toConsole) == MNSTR_NO__ERROR && (fields = fetch_row(hdl)) != 0) {
+	while (mnstr_errnr(toConsole) == MNSTR_NO__ERROR && (fields = mapi_fetch_row(hdl)) != 0) {
 		int valuew = 0, len;
 		++rec;
 		for (i = 0; i < fields; i++) {
@@ -836,7 +805,7 @@ CSVrenderer(MapiHdl hdl)
 		}
 		mnstr_printf(toConsole, "\n");
 	}
-	while (mnstr_errnr(toConsole) == MNSTR_NO__ERROR && (fields = fetch_row(hdl)) != 0) {
+	while (mnstr_errnr(toConsole) == MNSTR_NO__ERROR && (fields = mapi_fetch_row(hdl)) != 0) {
 		for (i = 0; i < fields; i++) {
 			s = mapi_fetch_field(hdl, i);
 			if (!noquote && s != NULL && s[strcspn(s, specials)] != '\0') {
@@ -1070,7 +1039,7 @@ TESTrenderer(MapiHdl hdl)
 	char *sep;
 	int i;
 
-	while (mnstr_errnr(toConsole) == MNSTR_NO__ERROR && (reply = fetch_line(hdl)) != 0) {
+	while (mnstr_errnr(toConsole) == MNSTR_NO__ERROR && (reply = mapi_fetch_line(hdl)) != 0) {
 		if (*reply != '[') {
 			if (*reply == '=')
 				reply++;
@@ -1221,7 +1190,7 @@ RAWrenderer(MapiHdl hdl)
 {
 	char *line;
 
-	while ((line = fetch_line(hdl)) != 0) {
+	while ((line = mapi_fetch_line(hdl)) != 0) {
 		if (*line == '=')
 			line++;
 		mnstr_printf(toConsole, "%s\n", line);
@@ -1264,12 +1233,12 @@ SQLdebugRendering(MapiHdl hdl)
 	int cnt = 0;
 
 	snprintf(promptbuf, sizeof(promptbuf), "mdb>");
-	while ((reply = fetch_line(hdl))) {
+	while ((reply = mapi_fetch_line(hdl))) {
 		cnt++;
 		mnstr_printf(toConsole, "%s\n", reply);
 		if (strncmp(reply, "mdb>#EOD", 8) == 0) {
 			cnt = 0;
-			while ((reply = fetch_line(hdl)))
+			while ((reply = mapi_fetch_line(hdl)))
 				mnstr_printf(toConsole, "%s\n", reply);
 			break;
 		}
@@ -1515,7 +1484,7 @@ SQLrenderer(MapiHdl hdl)
 	lines = SQLheader(hdl, len, printfields, fields != printfields);
 
 	int64_t nrows = 0;			/* count number of rows printed */
-	while ((rfields = fetch_row(hdl)) != 0) {
+	while ((rfields = mapi_fetch_row(hdl)) != 0) {
 		if (mnstr_errnr(toConsole) != MNSTR_NO__ERROR)
 			continue;
 		if (rfields != fields) {
@@ -1858,9 +1827,9 @@ format_result(Mapi mid, MapiHdl hdl, bool singleinstr)
 				mnstr_printf(stderr_stream,
 					     "invalid/unknown response from server, "
 					     "ignoring output\n");
-				for (i = 0; i < 5 && (reply = fetch_line(hdl)) != 0; i++)
+				for (i = 0; i < 5 && (reply = mapi_fetch_line(hdl)) != 0; i++)
 					mnstr_printf(stderr_stream, "? %s\n", reply);
-				if (i == 5 && fetch_line(hdl) != 0) {
+				if (i == 5 && mapi_fetch_line(hdl) != 0) {
 					mnstr_printf(stderr_stream,
 						     "(remaining output omitted, "
 						     "use \\fraw to examine in detail)\n");
@@ -1872,7 +1841,7 @@ format_result(Mapi mid, MapiHdl hdl, bool singleinstr)
 					 * logic there doesn't expect
 					 * random unread garbage
 					 * somehow */
-					while (fetch_line(hdl) != 0)
+					while (mapi_fetch_line(hdl) != 0)
 						;
 				}
 				continue;
@@ -2579,7 +2548,7 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, bool save_histor
 						size_t tquerylen = 0;
 						hdl = mapi_query(mid, "select value from sys.env() where name = 'monet_version'");
 						CHECK_RESULT(mid, hdl, buf, fp);
-						if (fetch_row(hdl) > 0) {
+						if (mapi_fetch_row(hdl) > 0) {
 							const char *version = mapi_fetch_field(hdl, 0);
 							int major, minor, patch;
 							if (version &&
@@ -2626,7 +2595,7 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, bool save_histor
 						free(query);
 						CHECK_RESULT(mid, hdl, buf, fp);
 						char *prevs1name = NULL, *prevt1name = NULL;
-						while (fetch_row(hdl) > 0) {
+						while (mapi_fetch_row(hdl) > 0) {
 							const char *s1name = mapi_fetch_field(hdl, 0);
 							const char *t1name = mapi_fetch_field(hdl, 1);
 							const char *c1name = mapi_fetch_field(hdl, 2);
@@ -2829,7 +2798,7 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, bool save_histor
 						hdl = mapi_query(mid, query);
 						free(query);
 						CHECK_RESULT(mid, hdl, buf, fp);
-						while (fetch_row(hdl) == 3) {
+						while (mapi_fetch_row(hdl) == 3) {
 							const char *type = mapi_fetch_field(hdl, 0);
 							const char *name = mapi_fetch_field(hdl, 1);
 							const char *remark = mapi_fetch_field(hdl, 2);
