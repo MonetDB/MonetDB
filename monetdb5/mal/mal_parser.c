@@ -1300,7 +1300,7 @@ argument(Client ctx, mel_func *curFunc, mel_arg *curArg)
 			return -1;
 		int tt = getBatType(type);
 		if (tt != TYPE_any)
-            strcpy(curArg->type, BATatoms[tt].name);
+			snprintf(curArg->type, sizeof(curArg->type), "%s", BATatoms[tt].name);
 		if (isaBatType(type))
 			curArg->isbat = true;
 		if (isPolymorphic(type)) {
@@ -1313,7 +1313,7 @@ argument(Client ctx, mel_func *curFunc, mel_arg *curArg)
 		type = typeElm(ctx, TYPE_any);
 		int tt = getBatType(type);
 		if (tt != TYPE_any)
-            strcpy(curArg->type, BATatoms[tt].name);
+			snprintf(curArg->type, sizeof(curArg->type), "%s", BATatoms[tt].name);
 		if (isaBatType(type))
 			curArg->isbat = true;
 		if (isPolymorphic(type)) {
