@@ -3893,7 +3893,11 @@ main(int argc, char **argv)
 		exit(2);
 	}
 
+#if SIZEOF_VOID_P == 4
 	mapi_cache_limit(mid, 1000);
+#else
+	mapi_cache_limit(mid, 5000);
+#endif
 	mapi_setAutocommit(mid, autocommit);
 	if (mode == SQL && !settz)
 		mapi_set_time_zone(mid, 0);
