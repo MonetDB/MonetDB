@@ -81,12 +81,21 @@ hashge = False                  # may get updated at start of testing
 
 skipidx = re.compile(r'create index .* \b(asc|desc)\b', re.I)
 
+
 class UnsafeDirectoryHandler(pymonetdb.SafeDirectoryHandler):
+    def __init__(self, srcdir, data_dir:Optional[Path]=None, **kwargs):
+        self.data_dir = data_dir
+        super().__init__(srcdir, **kwargs)
+
     def secure_resolve(self, filename: str) -> Optional[Path]:
+        if self.data_dir is not None and (self.data_dir / filename).exists():
+            return (self.data_dir / filename).resolve()
         return (self.dir / filename).resolve()
+
 
 class SQLLogicSyntaxError(Exception):
     pass
+
 
 class SQLLogicConnection(object):
     def __init__(self, conn_id, dbh, crs=None, language='sql'):
@@ -164,7 +173,8 @@ class SQLLogic:
 
     def connect(self, username='monetdb', password='monetdb',
                 hostname='localhost', port=None, database=None, usock=None,
-                language='sql', timeout: Optional[int]=0, alltests=False,
+                language='sql', data_dir: Optional[Path]=None,
+                timeout: Optional[int]=0, alltests=False,
                 server=None):
         self.starttime = time.time()
         self.language = language
@@ -181,7 +191,8 @@ class SQLLogic:
         self.timeout = timeout
         self.alltests = alltests
         if language == 'sql':
-            transfer_handler = UnsafeDirectoryHandler(self.srcdir)
+            transfer_handler = UnsafeDirectoryHandler(self.srcdir,
+                                                      data_dir=data_dir)
             dbh = pymonetdb.connect(username=username,
                                     password=password,
                                     hostname=hostname,
@@ -1107,6 +1118,9 @@ if __name__ == '__main__':
                         help='password to use to login to the database with')
     parser.add_argument('--language', action='store', default='sql',
                         help='language to use for testing')
+    parser.add_argument('--data-dir', action='store',
+                        type=Path,
+                        help='directory for relative paths in ON CLIENT processing (default: directory of test script)')
     parser.add_argument('--nodrop', action='store_true',
                         help='do not drop tables at start of test')
     parser.add_argument('--timeout', action='store', type=int, default=0,
@@ -1126,7 +1140,7 @@ if __name__ == '__main__':
                         help='define substitution for $var as var=replacement'
                         ' (can be repeated)')
     parser.add_argument('--alltests', action='store_true',
-                        help='also executed "knownfail" tests')
+                        help='also execute "knownfail" tests')
     parser.add_argument('--run-until', action='store', type=int,
                         help='run tests until specified line')
     parser.add_argument('tests', nargs='*', help='tests to be run')
@@ -1140,7 +1154,8 @@ if __name__ == '__main__':
     sql.res = opts.results
     sql.connect(hostname=opts.host, port=opts.port, database=opts.database,
                 language=opts.language, username=opts.user,
-                password=opts.password, alltests=opts.alltests,
+                password=opts.password, data_dir=opts.data_dir,
+                alltests=opts.alltests,
                 timeout=opts.timeout if opts.timeout > 0 else 0)
     for test in args:
         try:
