@@ -809,8 +809,7 @@ COLcopy2(BAT *b, int tt, bool writable, bool mayshare, role_t role)
 		goto bunins_failed;
 	}
 	if (b->ustr &&
-	    mayshare &&
-	    role == PERSISTENT) {
+	    mayshare) {
 		BAT *bu = BATdescriptor(b->ustr);
 		gdk_return rc = BATconvert2ustr(bn, bu);
 		BBPreclaim(bu);

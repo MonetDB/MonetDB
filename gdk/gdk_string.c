@@ -181,7 +181,6 @@ ustrPut(BAT *b, var_t *dst, const char *v)
 	}
 
 	BAT *ustrbat = BBP_desc(b->ustr);
-	assert(ustrbat->tvkey);
 
 	/* this function is the ONLY place where ustrbat may be changed
 	 * (inserted into), and we're holding the ustrbat->theaplock, so we are
@@ -189,6 +188,7 @@ ustrPut(BAT *b, var_t *dst, const char *v)
 	(void) BATcheckhash(ustrbat); /* load hash table */
 	MT_rwlock_wrlock(&ustrbat->thashlock);
 	MT_lock_set(&ustrbat->theaplock);
+	assert(ustrbat->tvkey);
 	BUN p = BUN_NONE;
 	if (ustrbat->batCount != 0) {
 		BATiter ui = bat_iterator_nolock(ustrbat);
@@ -283,11 +283,6 @@ BATconvert2ustr(BAT *b, BAT *bu)
 		GDKerror("BAT must be a string BAT to convert to ustr\n");
 		return GDK_FAIL;
 	}
-	if (b->batRole != PERSISTENT) {
-		MT_lock_unset(&b->theaplock);
-		GDKerror("BAT must be in persistent farm to convert to ustr\n");
-		return GDK_FAIL;
-	}
 	MT_lock_set(&bu->theaplock);
 	if (!bu->tvkey) {
 		MT_lock_unset(&b->theaplock);
@@ -301,14 +296,15 @@ BATconvert2ustr(BAT *b, BAT *bu)
 		GDKerror("USTR BAT must not itself be ustr\n");
 		return GDK_FAIL;
 	}
-	BBPfix(bu->batCacheid);
+	assert(bu->tvheap->parentid == bu->batCacheid);
 	b->ustr = bu->batCacheid;
 	Heap *vh = b->tvheap;
 	b->tvheap = bu->tvheap;
 	HEAPincref(b->tvheap);
-	BBPretain(b->tvheap->parentid);
 	MT_lock_unset(&bu->theaplock);
 	MT_lock_unset(&b->theaplock);
+	BBPfix(bu->batCacheid);
+	BBPretain(bu->batCacheid);
 	if (vh)
 		HEAPdecref(vh, true);
 	return GDK_SUCCEED;
