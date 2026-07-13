@@ -46,8 +46,10 @@ mappings = {
     'bstream': 'Bstream',
 }
 
+check_potentials = False
 
-def malcheck(imp, mod, fcn, retc, argc, args):
+
+def malcheck(imp, mod, fcn, retc, argc, args, patcom, filename):
     malfunc = f'{mod}.{fcn}'
     if retc == 0:
         retc = 1
@@ -59,7 +61,7 @@ def malcheck(imp, mod, fcn, retc, argc, args):
     for i in range(argc):
         res = argre.match(args, pos)
         if res is None:
-            print(f'not enough arguments in command {mod}.{fcn} with'
+            print(f'not enough arguments in command {malfunc} with'
                   f' implementation {imp}')
             return
         normarg = res.group('bat', 'any', 'argval')
@@ -70,14 +72,41 @@ def malcheck(imp, mod, fcn, retc, argc, args):
         pos = res.end(0)
     if malfunc not in maldefs:
         maldefs[malfunc] = []
-    for mf in maldefs[malfunc]:
-        if mf[0] != retc or mf[1] != argc:
-            continue
-        if mf[2] == returns and mf[3] == arguments:
-            print(f'duplicate MAL definition for {mod}.{fcn} with'
-                  f' implementations {mf[4]} and {imp}')
-            return
-    maldefs[malfunc].append((retc, argc, returns, arguments, imp))
+    if check_potentials:
+        potentials = []
+        patcom = patcom.strip()
+        for mf in maldefs[malfunc]:
+            if mf[0] != retc or mf[1] != argc:
+                continue
+            if mf[2] == returns and mf[3] == arguments:
+                print(f'duplicate MAL definition for {malfunc} with'
+                      f' implementations {mf[4]} and {imp}')
+                return
+            for i in range(len(returns)):
+                if returns[i][1] == 'any' and mf[2][i][1] != 'any' and \
+                   returns[i][0] == mf[2][i][0]:
+                    potentials.append('potential duplicate MAL definition for'
+                                      f' return {i} in {malfunc} with'
+                                      f' implementations {mf[4]} and {imp}'
+                                      f' ({mf[6]}: {mf[5]} vs.'
+                                      f' {filename}: {patcom}')
+                elif returns[i] != mf[2][i]:
+                    break
+            else:
+                for i in range(len(arguments)):
+                    if arguments[i][1] == 'any' and mf[3][i][1] != 'any' and \
+                       arguments[i][0] == mf[3][i][0]:
+                        potentials.append('potential duplicate MAL definition '
+                                          f'for argument {i} in {malfunc} with'
+                                          f' implementations {mf[4]} and {imp}'
+                                          f' ({mf[6]}: {mf[5]} vs.'
+                                          f' {filename}: {patcom}')
+                    elif arguments[i] != mf[3][i]:
+                        break
+                else:
+                    for p in potentials:
+                        print(p)
+    maldefs[malfunc].append((retc, argc, returns, arguments, imp, patcom, filename))
 
 
 def checkcommand(imp, mod, fcn, decl, retc, argc, args):
@@ -171,7 +200,7 @@ def process1(f):
             else:
                 checkcommand(imp, mod, fcn, cmds.get(imp, gcmds.get(imp)),
                              int(retc), int(argc), args)
-        malcheck(imp, mod, fcn, int(retc), int(argc), args)
+        malcheck(imp, mod, fcn, int(retc), int(argc), args, res.group(0), f)
         res = patre.search(data, pos=res.end(0))
 
 
@@ -197,6 +226,10 @@ def process2():
                 checkcommand(imp, mod, fcn, gcmds[imp],
                              int(retc), int(argc), args)
 
+
+if len(sys.argv) > 1 and sys.argv[1] == '--match-any':
+    del sys.argv[1]
+    check_potentials = True
 
 if len(sys.argv) > 1:
     files = sys.argv[1:]
