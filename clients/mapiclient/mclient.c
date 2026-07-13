@@ -165,6 +165,12 @@ static char *nullstring = default_nullstring;
 #include "mhelp.h"
 #include "mutf8.h"
 
+#if SIZEOF_VOID_P == 4
+#define CACHELIMIT 1000
+#else
+#define CACHELIMIT 5000
+#endif
+
 static timertype
 gettime(void)
 {
@@ -3018,9 +3024,13 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, bool save_histor
 							break;
 						}
 					} else {
+						bool istrash = formatter == TRASHformatter;
 						setFormatter(line);
 						if (mode == SQL)
 							mapi_set_size_header(mid, strcmp(line, "raw") == 0);
+						if (istrash != (formatter == TRASHformatter)) {
+							mapi_cache_limit(mid, formatter == TRASHformatter ? 100 : CACHELIMIT);
+						}
 					}
 					continue;
 				case 't':
@@ -3893,11 +3903,6 @@ main(int argc, char **argv)
 		exit(2);
 	}
 
-#if SIZEOF_VOID_P == 4
-	mapi_cache_limit(mid, 1000);
-#else
-	mapi_cache_limit(mid, 5000);
-#endif
 	mapi_setAutocommit(mid, autocommit);
 	if (mode == SQL && !settz)
 		mapi_set_time_zone(mid, 0);
@@ -3905,6 +3910,7 @@ main(int argc, char **argv)
 		setFormatter(output);
 		if (mode == SQL)
 			mapi_set_size_header(mid, strcmp(output, "raw") == 0);
+		mapi_cache_limit(mid, formatter == TRASHformatter ? 100 : CACHELIMIT);
 	} else {
 		if (mode == SQL) {
 			setFormatter("sql");
@@ -3912,6 +3918,7 @@ main(int argc, char **argv)
 		} else {
 			setFormatter("raw");
 		}
+		mapi_cache_limit(mid, CACHELIMIT);
 	}
 
 	if (logfile)
