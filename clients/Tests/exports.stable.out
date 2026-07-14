@@ -1027,6 +1027,7 @@ int hasSideEffects(MalBlkPtr mb, InstrPtr p, int strict);
 const char hgeRef[];
 const char identityRef[];
 const char ifthenelseRef[];
+const char igroupRef[];
 const char importColumnRef[];
 const char importNulTerminatedRef[];
 const char importRawRef[];

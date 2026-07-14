@@ -193,7 +193,7 @@ stmt_pp_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int 
 }
 
 stmt *
-stmt_group_locked(backend *be, stmt *s, stmt *grp, stmt *ext, stmt *cnt, stmt *pp)
+stmt_group_locked(backend *be, stmt *s, stmt *grp, stmt *ext, stmt *cnt)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
@@ -209,7 +209,6 @@ stmt_group_locked(backend *be, stmt *s, stmt *grp, stmt *ext, stmt *cnt, stmt *p
 
 	/* output variables extent */
 	q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-	q = pushArgument(mb, q, getArg(pp->q, 2));
 	if (grp)
 		q = pushArgument(mb, q, grp->nr);
 	q = pushArgument(mb, q, s->nr);
@@ -249,13 +248,12 @@ stmt_group_partitioned(backend *be, stmt *s, stmt *grp, stmt *ext, stmt *cnt)
 	if (grp && (grp->nr < 0 || ext->nr < 0 || (cnt && cnt->nr < 0)))
 		return NULL;
 
-	q = newStmt(mb, groupRef, groupRef);
+	q = newStmt(mb, igroupRef, groupRef);
 	if(!q)
 		return NULL;
 
 	/* output variables extent and hist */
 	q = pushReturn(mb, q, newTmpVariable(mb, newBatType(tt)));
-	q = pushArgument(mb, q, be->pipeline);
 	if (grp) {
 		q = pushArgument(mb, q, grp->nr);
 		q = pushArgument(mb, q, ext->nr); /* needed for parent hash pointer */

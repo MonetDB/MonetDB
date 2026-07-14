@@ -1613,10 +1613,10 @@ LALGgroup_unique(Client ctx, bat *rid, bat *uid, const ptr *H, bat *bid, bat *si
 		) \
 
 static str
-LALGgroup(Client ctx, bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
+LALGgroup(Client ctx, bat *rid, bat *uid, bat *bid/*, bat *sid*/)
 {
 	(void)ctx;
-	Pipeline *p = (Pipeline*)*H;
+	Pipeline *p = pipeline_get_thread_private_pipeline();
 	/* private or not */
 	bool private = (!*uid || is_bat_nil(*uid)), local_storage = false;
 	str err = NULL;
@@ -1898,10 +1898,10 @@ LALGgroup(Client ctx, bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 
 
 static str
-LALGderive(Client ctx, bat *rid, bat *uid, const ptr *H, bat *Gid, bat *Ph, bat *bid /*, bat *sid*/)
+LALGderive(Client ctx, bat *rid, bat *uid, bat *Gid, bat *Ph, bat *bid /*, bat *sid*/)
 {
 	(void)ctx;
-	Pipeline *p = (Pipeline*)*H;
+	Pipeline *p = pipeline_get_thread_private_pipeline();
 	bool private = (!*uid || is_bat_nil(*uid)), local_storage = false;
 	str err = NULL;
 	BAT *u = NULL;
@@ -4914,8 +4914,8 @@ IALGfsum(Client ctx, dbl *result, dbl *com, lng *cnt, const bat *bid)
 
 #include "mel.h"
 static mel_func pp_algebra_init_funcs[] = {
- command("group", "group", LALGgroup,  false, "Group input.",     args(2,4, batarg("gid", oid), batargany("sink",1), arg("pipeline", ptr), batargany("b",1))),
- command("group", "group", LALGderive, false, "Sub Group input.", args(2,6, batarg("gid", oid), batargany("sink",1), arg("pipeline", ptr), batarg("pgid", oid), batargany("phash", 2), batargany("b",1))),
+ command("igroup", "group", LALGgroup,  false, "Group input.",     args(2,3, batarg("gid", oid), batargany("sink",1), batargany("b",1))),
+ command("igroup", "group", LALGderive, false, "Sub Group input.", args(2,5, batarg("gid", oid), batargany("sink",1), batarg("pgid", oid), batargany("phash", 2), batargany("b",1))),
 
  pattern("algebra", "project",    LALGconstant, false, "Project a single value", args(1,4, batargany("",1), batarg("gid", oid), argany("val",1), arg("pipeline", ptr))),
  command("algebra", "projection", LALGproject,  false, "Project.",               args(1,4, batargany("",1), batarg("gid", oid), batargany("b",1), arg("pipeline", ptr))),
