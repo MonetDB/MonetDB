@@ -35624,16 +35624,6 @@ command group.group(X_0:bat[:any_1], X_1:bat[:oid]) (X_2:bat[:oid], X_3:bat[:oid
 GRPgroup4
 (empty)
 group
-group
-command group.group(X_0:ptr, X_1:bat[:oid], X_2:bat[:any_2], X_3:bat[:any_1]) (X_4:bat[:oid], X_5:bat[:any_1])
-LALGderive
-Sub Group input.
-group
-group
-command group.group(X_0:ptr, X_1:bat[:any_1]) (X_2:bat[:oid], X_3:bat[:any_1])
-LALGgroup
-Group input.
-group
 groupdone
 command group.groupdone(X_0:bat[:any_1]) (X_1:bat[:oid], X_2:bat[:oid], X_3:bat[:lng])
 GRPgroup1
@@ -36743,6 +36733,16 @@ sum
 command iaggr.sum(X_0:bat[:flt], X_1:bit) (X_2:flt, X_3:flt, X_4:lng)
 IALGfsum_skipnil_flt
 Return the Kahan/Neumaier summation or nil.
+igroup
+group
+command igroup.group(X_0:bat[:oid], X_1:bat[:any_2], X_2:bat[:any_1]) (X_3:bat[:oid], X_4:bat[:any_1])
+LALGderive
+Sub Group input.
+igroup
+group
+command igroup.group(X_0:bat[:any_1]) (X_1:bat[:oid], X_2:bat[:any_1])
+LALGgroup
+Group input.
 inet
 !=
 command inet.!=(X_0:inet, X_1:inet):bit

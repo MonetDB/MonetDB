@@ -375,26 +375,6 @@ isSideEffectFree(MalBlkPtr mb)
 }
 
 /*
- * Breaking up a MAL program into pieces for distributed processing requires
- * identification of (partial) blocking instructions. A conservative
- * definition can be used.
- */
-inline int
-isBlocking(InstrPtr p)
-{
-	if (blockStart(p) || blockExit(p) || blockCntrl(p))
-		return TRUE;
-
-	if (getFunctionId(p) == sortRef)
-		return TRUE;
-
-	if (getModuleId(p) == aggrRef || getModuleId(p) == groupRef
-		|| getModuleId(p) == sqlcatalogRef)
-		return TRUE;
-	return FALSE;
-}
-
-/*
  * Used in the merge table optimizer. It is built incrementally
  * and should be conservative.
  */

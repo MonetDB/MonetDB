@@ -67,20 +67,21 @@ typedef struct sql_optimizer {
 #define remove_redundant_join               (1 << 5)
 #define simplify_math                       (1 << 6)
 #define optimize_exps                       (1 << 7)
-#define optimize_select_and_joins_bottomup  (1 << 8)
-#define project_reduce_casts                (1 << 9)
-#define optimize_unions_bottomup           (1 << 10)
-#define optimize_projections               (1 << 11)
-#define optimize_joins                     (1 << 12)
-#define join_order                         (1 << 13)
-#define optimize_semi_and_anti             (1 << 14)
-#define optimize_select_and_joins_topdown  (1 << 15)
-#define optimize_unions_topdown            (1 << 16)
-#define dce                                (1 << 17)
-#define push_func_and_select_down          (1 << 18)
-#define push_topn_and_sample_down          (1 << 19)
-#define distinct_project2groupby           (1 << 20)
-#define push_select_up                     (1 << 21)
+#define optimize_joins_topdown              (1 << 8)
+#define optimize_select_and_joins_bottomup  (1 << 9)
+#define project_reduce_casts               (1 << 10)
+#define optimize_unions_bottomup           (1 << 11)
+#define optimize_projections               (1 << 12)
+#define optimize_joins                     (1 << 13)
+#define join_order                         (1 << 14)
+#define optimize_semi_and_anti             (1 << 15)
+#define optimize_select_and_joins_topdown  (1 << 16)
+#define optimize_unions_topdown            (1 << 17)
+#define dce                                (1 << 18)
+#define push_func_and_select_down          (1 << 19)
+#define push_topn_and_sample_down          (1 << 20)
+#define distinct_project2groupby           (1 << 21)
+#define push_select_up                     (1 << 22)
 
 extern sql_rel *rel_merge_project(mvc *sql, sql_rel *rel);
 extern sql_rel *rel_push_topn_down(mvc *sql, sql_rel *rel);
@@ -92,6 +93,7 @@ extern run_optimizer bind_split_project(visitor *v, global_props *gp) __attribut
 extern run_optimizer bind_remove_redundant_join(visitor *v, global_props *gp) __attribute__((__visibility__("hidden")));
 extern run_optimizer bind_simplify_math(visitor *v, global_props *gp) __attribute__((__visibility__("hidden")));
 extern run_optimizer bind_optimize_exps(visitor *v, global_props *gp) __attribute__((__visibility__("hidden")));
+extern run_optimizer bind_optimize_joins_topdown(visitor *v, global_props *gp) __attribute__((__visibility__("hidden")));
 extern run_optimizer bind_optimize_select_and_joins_bottomup(visitor *v, global_props *gp) __attribute__((__visibility__("hidden")));
 extern run_optimizer bind_project_reduce_casts(visitor *v, global_props *gp) __attribute__((__visibility__("hidden")));
 extern run_optimizer bind_optimize_unions_bottomup(visitor *v, global_props *gp) __attribute__((__visibility__("hidden")));
@@ -130,3 +132,5 @@ extern sql_exp *exps_uses_exp(list *exps, sql_exp *e) __attribute__((__visibilit
 extern int exp_keyvalue(sql_exp *e) __attribute__((__visibility__("hidden")));
 extern sql_rel *rel_dce(visitor *v, global_props *gp, sql_rel *rel);
 extern sql_rel *rel_properties(visitor *v, sql_rel *rel);
+//extern sql_rel *rel_join_order(visitor *v, global_props *gp, sql_rel *rel) __attribute__((__visibility__("hidden")));
+extern sql_rel * reorder_join(visitor *v, sql_rel *rel);

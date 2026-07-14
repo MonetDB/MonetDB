@@ -1299,8 +1299,10 @@ argument(Client ctx, mel_func *curFunc, mel_arg *curArg)
 		if (type < 0)
 			return -1;
 		int tt = getBatType(type);
-		if (tt != TYPE_any)
+		if (tt != TYPE_any) {
+			assert(strlen(BATatoms[tt].name) < 14);
             strcpy(curArg->type, BATatoms[tt].name);
+		}
 		if (isaBatType(type))
 			curArg->isbat = true;
 		if (isPolymorphic(type)) {
@@ -1312,8 +1314,10 @@ argument(Client ctx, mel_func *curFunc, mel_arg *curArg)
 	} else if (currChar(ctx) == ':') {
 		type = typeElm(ctx, TYPE_any);
 		int tt = getBatType(type);
-		if (tt != TYPE_any)
+		if (tt != TYPE_any) {
+			assert(strlen(BATatoms[tt].name) < 14);
             strcpy(curArg->type, BATatoms[tt].name);
+		}
 		if (isaBatType(type))
 			curArg->isbat = true;
 		if (isPolymorphic(type)) {

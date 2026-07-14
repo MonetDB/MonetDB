@@ -82,6 +82,13 @@ SQLRETURN MNDBEndTran(SQLSMALLINT nHandleType, SQLHANDLE nHandle, SQLSMALLINT nC
 SQLRETURN MNDBFreeHandle(SQLSMALLINT handleType, SQLHANDLE handle);
 SQLRETURN MNDBGetDiagRec(SQLSMALLINT handleType, SQLHANDLE handle, SQLSMALLINT recNumber, SQLCHAR *sqlState, SQLINTEGER *nativeErrorPtr, SQLCHAR *messageText, SQLSMALLINT bufferLength, SQLSMALLINT *textLengthPtr);
 
+#if SIZEOF_VOID_P == 4
+#define SMALL_CACHE_LIMIT	100
+#else
+#define SMALL_CACHE_LIMIT	1000
+#endif
+#define LARGE_CACHE_LIMIT	10000
+
 #ifdef ODBCDEBUG
 #ifdef NATIVE_WIN32
 extern const wchar_t *ODBCdebug;

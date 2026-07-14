@@ -3531,6 +3531,7 @@ rel_simple_djoin_elim(visitor *v, sql_rel *prel, sql_rel *rel, sql_rel **changed
 		n = nxt;
 	}
 	if (list_empty(ai->accessed_by)) {
+		rel->p = prop_remove(v->sql->sa, rel->p, p); /* remove property */
 		reset_dependent(rel);
 		return true;
 	}
@@ -4068,6 +4069,7 @@ rel_djoin_elim(visitor *v, sql_rel *prel, sql_rel *rel, struct unnesting *parent
 	}
 	unnest(v, rel, rel->r, &unnesting, acc);
 	add_outer_join_exps(v, rel, parent, &unnesting);
+	rel->p = prop_remove(v->sql->sa, rel->p, p); /* remove property */
 	reset_dependent(rel);
 	node *n = list_find(refs, rel, NULL);
 	if (!n && rel_is_ref(prel))

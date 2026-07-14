@@ -44,8 +44,6 @@ extern int mayhaveSideEffects(Client cntxt, MalBlkPtr mb, InstrPtr p,
 	__attribute__((__visibility__("hidden")));
 extern int isSideEffectFree(MalBlkPtr mb)
 	__attribute__((__visibility__("hidden")));
-extern int isBlocking(InstrPtr p)
-	__attribute__((__visibility__("hidden")));
 extern int isFragmentGroup(InstrPtr q)
 	__attribute__((__visibility__("hidden")));
 extern int isFragmentGroup2(InstrPtr q)

@@ -153,6 +153,7 @@ extern int exp_match( sql_exp *e1, sql_exp *e2);
 extern sql_exp* exps_find_exp( list *l, sql_exp *e);
 extern int exp_match_exp( sql_exp *e1, sql_exp *e2);
 extern int exp_match_exp_semantics( sql_exp *e1, sql_exp *e2, bool semantics);
+extern int exp_match_exp_cmp( sql_exp *e1, sql_exp *e2 ); /* return 0 on match else !0 */
 extern sql_exp* exps_any_match(list *l, sql_exp *e);
 /* match just the column (cmp equality) expressions */
 extern int exp_match_col_exps( sql_exp *e, list *l);
@@ -211,6 +212,7 @@ extern sql_exp *exps_bind_column2(list *exps, const char *rname, const char *cna
 extern sql_exp * list_find_exp(const list *exps, sql_exp *e);
 extern sql_exp *predicates_find_nid(const list *exps, int nid);
 
+extern dbl exp_estimate_selectivity(mvc *sql, sql_exp *e);
 extern unsigned int exps_card( list *l );
 extern void exps_fix_card( list *exps, unsigned int card);
 extern void exps_setcard( list *exps, unsigned int card);

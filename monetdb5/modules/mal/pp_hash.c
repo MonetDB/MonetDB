@@ -1144,7 +1144,7 @@ error:
 					if (slots == 0) { \
 						slots = ht_preclaim(private); \
 						slot = ATOMIC_ADD(&h->last, slots); \
-						if (((slot*100)/100) >= (gid)h->size) { \
+						if (((slot*100)/70) >= (gid)h->size) { \
 							hash_rehash(h, p, err); \
 							vals = h->vals; \
 							pgids = h->pgids; \
@@ -1192,7 +1192,7 @@ error:
 						if (slots == 0) { \
 							slots = ht_preclaim(private); \
 							slot = ATOMIC_ADD(&h->last, slots); \
-							if (((slot*100)/100) >= (gid)h->size) { \
+							if (((slot*100)/70) >= (gid)h->size) { \
 								hash_rehash(h, p, err); \
 								vals = h->vals; \
 								pgids = h->pgids; \

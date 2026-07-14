@@ -122,6 +122,7 @@
 	FUNC(hge); \
 	FUNC(identity); \
 	FUNC(ifthenelse); \
+	FUNC(igroup); \
 	FUNC(importColumn); \
 	FUNC(importNulTerminated); \
 	FUNC(importRaw); \

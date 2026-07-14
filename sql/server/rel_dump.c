@@ -386,7 +386,7 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 		/* don't show properties on value lists */
 		if (decorate && e->p && e->type != e_atom && !exp_is_atom(e)) {
 			for (prop *p = e->p; p; p = p->p) {
-				if (p->kind != PROP_MIN && p->kind != PROP_MAX && p->kind != PROP_NUNIQUES) {
+				if (p->kind != PROP_MIN && p->kind != PROP_MAX && p->kind != PROP_NUNIQUES && p->kind != PROP_SELECTIVITY) {
 					char *pv = propvalue2string(ta, p);
 					mnstr_printf(fout, " %s %s", propkind2string(p), pv);
 				}
@@ -776,7 +776,7 @@ rel_print_rel(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int 
 		if ((ATOMIC_GET(&GDKdebug) & TESTINGMASK) == 0 && rel->partition)
 				mnstr_printf(fout, " %c PARTITION", rel->partition==1?'L':rel->partition == 2?'R':' ');
 		for (prop *p = rel->p; p; p = p->p) {
-			if ((p->kind != PROP_COUNT && p->kind != PROP_UKEY && p->kind != PROP_UNNESTING) || (ATOMIC_GET(&GDKdebug) & TESTINGMASK) == 0) {
+			if ((p->kind != PROP_COUNT && p->kind != PROP_UKEY && p->kind != PROP_UNNESTING && p->kind != PROP_SELECTIVITY) || (ATOMIC_GET(&GDKdebug) & TESTINGMASK) == 0) {
 				char *pv = propvalue2string(ta, p);
 				mnstr_printf(fout, " %s %s", propkind2string(p), pv);
 			}
