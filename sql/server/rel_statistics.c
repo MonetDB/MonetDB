@@ -1651,6 +1651,8 @@ rel_join_order2_(visitor *v, sql_rel *rel, int skip)
 			rel = rel_get_statistics_(v, rel);
 		}
 	} else {
+		if (is_join(rel->op) || is_semi(rel->op))
+			rel->used = 0;
 		rel = rel_get_statistics_(v, rel);
 	}
 	if (rel && v->opt >= 0)
