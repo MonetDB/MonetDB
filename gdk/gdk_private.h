@@ -59,7 +59,7 @@ void BATfree(BAT *b)
 gdk_return BATgroup_internal(BAT **groups, BAT **extents, BAT **histo, BAT *b, BAT *s, BAT *g, BAT *e, BAT *h, bool subsorted)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
-Hash *BAThash_impl(BATiter *restrict bi, struct canditer *restrict ci, bool offsets, const char *restrict ext)
+Hash *BAThash_impl(BATiter *restrict bi, struct canditer *restrict ci, bool offsets, const char *restrict ext, uint8_t width)
 	__attribute__((__visibility__("hidden")));
 void BAThashsave(BAT *b, bool dosync)
 	__attribute__((__visibility__("hidden")));
@@ -171,6 +171,8 @@ lng getBBPlogno(void)
 BUN HASHappend(BAT *b, BUN i, const void *v)
 	__attribute__((__visibility__("hidden")));
 void HASHappend_locked(BATiter *bi, BUN i, const void *v)
+	__attribute__((__visibility__("hidden")));
+void HASHappend_locked_hashval(BATiter *bi, BUN i, const void *v, BUN hsh)
 	__attribute__((__visibility__("hidden")));
 void HASHfree(BAT *b)
 	__attribute__((__visibility__("hidden")));

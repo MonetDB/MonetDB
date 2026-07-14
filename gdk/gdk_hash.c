@@ -732,7 +732,7 @@ BAThashsave(BAT *b, bool dosync)
  * values in the tvheap that they point to. */
 Hash *
 BAThash_impl(BATiter *restrict bi, struct canditer *restrict ci,
-	     bool offsets, const char *restrict ext)
+	     bool offsets, const char *restrict ext, uint8_t width)
 {
 	BAT *b = bi->b;
 	lng t0 = 0;
@@ -752,6 +752,7 @@ BAThash_impl(BATiter *restrict bi, struct canditer *restrict ci,
 	assert(strcmp(ext, "thash") != 0 || !hascand);
 	assert(bi->type != TYPE_msk);
 	assert(bi->type != TYPE_void);
+	assert((width & (width - 1)) == 0 && (size_t) width <= sizeof(var_t));
 
 	MT_thread_setalgorithm(hascand ? "create hash with candidates" : "create hash");
 	TRC_DEBUG_IF(ACCELERATOR) t0 = GDKusec();
@@ -764,7 +765,7 @@ BAThash_impl(BATiter *restrict bi, struct canditer *restrict ci,
 		GDKfree(h);
 		return NULL;
 	}
-	h->width = HASHwidth(BATcapacity(b));
+	h->width = width <= 1 ? HASHwidth(BATcapacity(b)) : width;
 	h->offsets = offsets;
 	h->heaplink.dirty = true;
 	h->heapbckt.dirty = true;
@@ -1099,7 +1100,7 @@ BAThash(BAT *b)
 		struct canditer ci;
 		BATiter bi = bat_iterator(b);;
 		canditer_init(&ci, b, NULL);
-		b->thash = BAThash_impl(&bi, &ci, b->ustr != 0, "thash");
+		b->thash = BAThash_impl(&bi, &ci, b->ustr != 0, "thash", 0);
 		bat_iterator_end(&bi);
 		if (b->thash == NULL) {
 			MT_rwlock_wrunlock(&b->thashlock);
@@ -1155,7 +1156,7 @@ HASHprobe(const Hash *h, const void *v)
 }
 
 void
-HASHappend_locked(BATiter *bi, BUN i, const void *v)
+HASHappend_locked_hashval(BATiter *bi, BUN i, const void *v, BUN hsh)
 {
 	BAT *b = bi->b;
 	Hash *h = b->thash;
@@ -1200,32 +1201,54 @@ HASHappend_locked(BATiter *bi, BUN i, const void *v)
 		return;
 	}
 	h->Link = h->heaplink.base;
-	BUN c = HASHprobe(h, v);
+	BUN c = HASHbucket(h, hsh);
 	h->heaplink.free += h->width;
 	BUN hb = HASHget(h, c);
-	BUN hb2;
-	if (h->offsets) {
-		for (hb2 = hb;
-		     hb2 != BUN_NONE;
-		     hb2 = HASHgetlink(h, hb2)) {
-			if (*(var_t *) v == VarHeapVal(bi->base, hb2, bi->width))
-				break;
+	if (!b->tvkey) {
+		BUN hb2;
+		if (h->offsets) {
+			for (hb2 = hb;
+			     hb2 != BUN_NONE;
+			     hb2 = HASHgetlink(h, hb2)) {
+				if (*(var_t *) v == VarHeapVal(bi->base, hb2, bi->width))
+					break;
+			}
+		} else {
+			bool (*atomeq)(const void *, const void *) = ATOMequal(h->type);
+			for (hb2 = hb;
+			     hb2 != BUN_NONE;
+			     hb2 = HASHgetlink(h, hb2)) {
+				if (atomeq(v, BUNtail(bi, hb2)))
+					break;
+			}
 		}
+		h->nunique += hb2 == BUN_NONE;
 	} else {
-		bool (*atomeq)(const void *, const void *) = ATOMequal(h->type);
-		for (hb2 = hb;
-		     hb2 != BUN_NONE;
-		     hb2 = HASHgetlink(h, hb2)) {
-			if (atomeq(v, BUNtail(bi, hb2)))
-				break;
-		}
+		h->nunique++;
 	}
 	h->nheads += hb == BUN_NONE;
-	h->nunique += hb2 == BUN_NONE;
 	HASHputlink(h, i, hb);
 	HASHput(h, c, i);
 	h->heapbckt.dirty = true;
 	h->heaplink.dirty = true;
+}
+
+void
+HASHappend_locked(BATiter *bi, BUN i, const void *v)
+{
+	BAT *b = bi->b;
+	Hash *h = b->thash;
+	if (h == NULL) {
+		return;
+	}
+	if (h == (Hash *) 1) {
+		b->thash = NULL;
+		doHASHdestroy(b, h);
+		GDKclrerr();
+		return;
+	}
+	BUN hsh = ATOMhash(h->type, v);
+	HASHappend_locked_hashval(bi, i, v, hsh);
 }
 
 BUN

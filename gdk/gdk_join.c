@@ -2818,7 +2818,7 @@ vkeyjoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 			     (unsigned) MT_getpid()) >= (int) sizeof(ext))
 			return GDK_FAIL;
 		BATiter ri = bat_iterator(r);
-		hsh = BAThash_impl(&ri, rci, true, ext);
+		hsh = BAThash_impl(&ri, rci, true, ext, 0);
 		bat_iterator_end(&ri);
 		if (hsh == NULL)
 			return GDK_FAIL;
@@ -3252,7 +3252,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 			     (unsigned) MT_getpid()) >= (int) sizeof(ext))
 			goto bailout;
 		BATiter ri = bat_iterator(r);
-		hsh = BAThash_impl(&ri, rci, false, ext);
+		hsh = BAThash_impl(&ri, rci, false, ext, 0);
 		bat_iterator_end(&ri);
 		if (hsh == NULL)
 			goto bailout;

@@ -189,7 +189,10 @@ ustrPut(BAT *b, var_t *dst, const char *v)
 	MT_rwlock_wrlock(&ustrbat->thashlock);
 	MT_lock_set(&ustrbat->theaplock);
 	assert(ustrbat->tvkey);
+
+	Heap *h = ustrbat->tvheap;
 	BUN p = BUN_NONE;
+	BUN hsh = strHash(v);
 	if (ustrbat->batCount != 0) {
 		BATiter ui = bat_iterator_nolock(ustrbat);
 		if (ustrbat->thash == NULL) {
@@ -201,15 +204,45 @@ ustrPut(BAT *b, var_t *dst, const char *v)
 				.hseq = ustrbat->hseqbase,
 				.ncand = ustrbat->batCount,
 			};
-			if ((ustrbat->thash = BAThash_impl(&ui, &cui, false, "thash")) == NULL) {
+			if ((ustrbat->thash = BAThash_impl(
+				     &ui, &cui, false, "thash",
+				     sizeof(var_t))) == NULL) {
 				MT_lock_unset(&ustrbat->theaplock);
 				MT_rwlock_wrunlock(&ustrbat->thashlock);
 				return (var_t) -1;
 			}
 		}
-		HASHloop_str(&ui, ustrbat->thash, p, v)
-			break;
+		for (p = HASHget(ustrbat->thash,
+				 HASHbucket(ustrbat->thash, hsh));
+		     p != BUN_NONE;
+		     p = HASHgetlink(ustrbat->thash, p))
+			if (strcmp(v,
+				   ui.vh->base + ((var_t *) ui.base)[p]) == 0)
+				break;
+#if SIZEOF_VAR_T == 8
+       } else if (GDKupgradevarheap(ustrbat, (var_t) 1 << 33,
+				    ustrbat->batCapacity, 0) != GDK_SUCCEED) {
+               MT_lock_unset(&ustrbat->theaplock);
+               MT_rwlock_wrunlock(&ustrbat->thashlock);
+               return (var_t) -1;
+#endif
+	} else {
+		if (h->size < GDK_STRHASHSIZE + BATTINY * GDK_VARALIGN) {
+			if (HEAPgrow(&b->tvheap, GDK_STRHASHSIZE + BATTINY * GDK_VARALIGN, true) != GDK_SUCCEED) {
+				return (var_t) -1;
+			}
+			h = b->tvheap;
+		}
+		h->free = GDK_STRHASHSIZE;
+#ifdef NDEBUG
+		memset(h->base, 0, h->free);
+#else
+		/* fill should solve initialization problems within valgrind */
+		memset(h->base, 0, h->size);
+#endif
+		h->dirty = true;
 	}
+
 	if (p == BUN_NONE) {
 		/* string does not yet occur in ustrbat */
 		p = ustrbat->batCount;
@@ -221,34 +254,107 @@ ustrPut(BAT *b, var_t *dst, const char *v)
 			}
 			ustrbat->batCapacity = (BUN) (ustrbat->theap->size >> ustrbat->tshift);
 		}
-		if (tfastins_nochecknolockVAR(ustrbat, p, v) != GDK_SUCCEED) {
-			MT_lock_unset(&ustrbat->theaplock);
-			MT_rwlock_wrunlock(&ustrbat->thashlock);
+
+#ifndef NDEBUG
+		if (!checkUTF8(v)) {
+			GDKerror("incorrectly encoded UTF-8\n");
 			return (var_t) -1;
 		}
+#endif
+
+		size_t pad;
+		size_t len = strlen(v) + 1;
+
+		if (GDK_ELIMBASE(h->free) != 0) {
+			/* no extra padding needed when no hash links needed
+			 * (but only when padding doesn't cross duplicate
+			 * elimination boundary) */
+			pad = 0;
+		} else {
+			pad = GDK_VARALIGN - (h->free & (GDK_VARALIGN - 1));
+			if (GDK_ELIMBASE(h->free + pad) == 0) {
+				/* i.e. h->free+pad < GDK_ELIMLIMIT */
+				if (pad < sizeof(stridx_t)) {
+					/* make room for hash link */
+					pad += GDK_VARALIGN;
+				}
+			}
+		}
+
+		/* check heap for space */
+		if (h->free + pad + len >= h->size) {
+			size_t newsize = MAX(h->size, 4096);
+
+			/* double the heap size until we have enough space */
+			do {
+				if (newsize < 4 * 1024 * 1024)
+					newsize <<= 1;
+				else
+					newsize += 4 * 1024 * 1024;
+			} while (newsize <= h->free + pad + len);
+
+			assert(newsize);
+
+			if (h->free + pad + len >= (size_t) VAR_MAX) {
+				GDKerror("string heap gets larger than %zuGiB.",
+					 (size_t) VAR_MAX >> 30);
+				return (var_t) -1;
+			}
+			TRC_DEBUG(HEAP, "HEAPextend in strPut %s %zu %zu\n",
+				  h->filename, h->size, newsize);
+			if (HEAPgrow(&ustrbat->tvheap, newsize, true) != GDK_SUCCEED)
+				return (var_t) -1;
+			h = ustrbat->tvheap;
+		}
+
+		/* insert string */
+		size_t pos = h->free + pad;
+		if (pad > 0)
+			memset(h->base + h->free, 0, pad);
+		memcpy(h->base + pos, v, len);
+		h->free += pad + len;
+		h->dirty = true;
+		if (ustrbat->tascii) {
+			for (const uint8_t *s = (const uint8_t *) v; *s; s++) {
+				if (*s & 0x80) {
+					ustrbat->tascii = false;
+					b->tascii = false;
+					break;
+				}
+			}
+		}
+
+		((var_t *) ustrbat->theap->base)[p] = (var_t) pos;
 		if (ustrbat->thash) {
 			BATiter ui = bat_iterator_nolock(ustrbat);
-			HASHappend_locked(&ui, p, v);
+			HASHappend_locked_hashval(&ui, p, v, hsh);
 		}
+		stridx_t *bucket = ((stridx_t *) h->base) + (hsh & GDK_STRHASHMASK);
+		if (GDK_ELIMBASE(pos) == 0) {
+			pos -= sizeof(stridx_t);
+			*(stridx_t *) (h->base + pos) = *bucket;
+		}
+		*bucket = (stridx_t) pos;
 		ustrbat->tsorted = ustrbat->trevsorted = false;
 		ustrbat->batCount++;
 		ustrbat->theap->dirty = true;
 		ustrbat->theap->free = ustrbat->batCount << ustrbat->tshift;
 		ustrbat->tunique_est = (double) ustrbat->batCount;
-		ustrbat->tkey = true;
-		ustrbat->tvkey = true;
 	}
+
 	MT_rwlock_wrunlock(&ustrbat->thashlock);
-	var_t d = VarHeapVal(ustrbat->theap->base, p, ustrbat->twidth);
+
+	var_t d = ((var_t *) ustrbat->theap->base)[p];
 	Heap *vh = NULL;
+
 	if (b->tvheap != ustrbat->tvheap) {
 		vh = b->tvheap;
 		b->tvheap = ustrbat->tvheap;
 		HEAPincref(b->tvheap);
 	}
-	if (b->tascii && !ustrbat->tascii && !strNil(v)) {
-		for (const uint8_t *p = (const uint8_t *) v; *p; p++) {
-			if (*p & 0x80) {
+	if (b->tascii && !ustrbat->tascii) {
+		for (const uint8_t *s = (const uint8_t *) v; *s; s++) {
+			if (*s & 0x80) {
 				b->tascii = false;
 				break;
 			}
@@ -323,9 +429,9 @@ strLocate(Heap *h, const char *v)
 
 	/* search hash-table, if double-elimination is still in place */
 	BUN off;
-	if (h->free == 0) {
+	if (h->free <= GDK_STRHASHSIZE) {
 		/* empty, so there are no strings */
-		return (var_t) -2;
+		return strNil(v) ? 0 : (var_t) -2;
 	}
 
 	off = strHash(v);
