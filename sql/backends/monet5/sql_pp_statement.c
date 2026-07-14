@@ -193,50 +193,6 @@ stmt_pp_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int 
 }
 
 stmt *
-stmt_group_locked(backend *be, stmt *s, stmt *grp, stmt *ext, stmt *cnt)
-{
-	MalBlkPtr mb = be->mb;
-	InstrPtr q = NULL;
-
-	if (s->nr < 0)
-		return NULL;
-	if (grp && (grp->nr < 0 || ext->nr < 0 || (cnt && cnt->nr < 0)))
-		return NULL;
-
-	q = newStmt(mb, groupRef, groupRef);
-	if(!q)
-		return NULL;
-
-	/* output variables extent */
-	q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-	if (grp)
-		q = pushArgument(mb, q, grp->nr);
-	q = pushArgument(mb, q, s->nr);
-	pushInstruction(mb, q);
-	if (q) {
-		stmt *ns = stmt_create(be->mvc->sa, st_group);
-		if (ns == NULL) {
-			freeInstruction(mb, q);
-			return NULL;
-		}
-
-		ns->op1 = s;
-
-		if (grp) {
-			ns->op2 = grp;
-			ns->op3 = ext;
-			ns->op4.stval = cnt;
-		}
-		ns->nrcols = s->nrcols;
-		ns->key = 0;
-		ns->q = q;
-		ns->nr = getDestVar(q);
-		return ns;
-	}
-	return NULL;
-}
-
-stmt *
 stmt_group_partitioned(backend *be, stmt *s, stmt *grp, stmt *ext, stmt *cnt)
 {
 	MalBlkPtr mb = be->mb;
