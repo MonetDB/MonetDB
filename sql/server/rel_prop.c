@@ -115,6 +115,7 @@ propkind2string( prop *p)
 		PT(MIN);
 		PT(MAX);
 		PT(UNNESTING);
+		PT(SELECTIVITY);
 	}
 	return "UNKNOWN";
 }
@@ -168,6 +169,10 @@ propvalue2string(allocator *sa, prop *p)
 			return ma_strdup(sa, buf);
 		}
 	} break;
+	case PROP_SELECTIVITY: {
+		snprintf(buf, sizeof(buf), "%f", p->value.dval);
+		return ma_strdup(sa, buf);
+	}
 	case PROP_MIN:
 	case PROP_MAX: {
 		atom *a = p->value.pval;

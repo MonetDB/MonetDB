@@ -580,20 +580,21 @@ const sql_optimizer pre_sql_optimizers[] = {
 	{ 5, "remove_redundant_join", bind_remove_redundant_join},
 	{ 6, "simplify_math", bind_simplify_math},
 	{ 7, "optimize_exps", bind_optimize_exps},
-	{ 8, "optimize_select_and_joins_bottomup", bind_optimize_select_and_joins_bottomup},
-	{ 9, "project_reduce_casts", bind_project_reduce_casts},
-	{10, "optimize_unions_bottomup", bind_optimize_unions_bottomup},
-	{11, "optimize_unions_topdown", bind_optimize_unions_topdown},
-	{12, "optimize_projections", bind_optimize_projections},
-	{13, "optimize_joins", bind_optimize_joins},
-	{14, "optimize_semi_and_anti", bind_optimize_semi_and_anti},
-	{15, "optimize_select_and_joins_topdown", bind_optimize_select_and_joins_topdown},
-	{16, "join_order", bind_join_order},
-	{17, "dce", bind_dce},
-	{18, "push_func_and_select_down", bind_push_func_and_select_down},
-	{19, "push_topn_and_sample_down", bind_push_topn_and_sample_down},
-	{20, "distinct_project2groupby", bind_distinct_project2groupby},
-	{21, "merge_table_rewrite", bind_merge_table_rewrite},
+	{ 8, "optimize_joins_topdown", bind_optimize_joins_topdown},
+	{ 9, "optimize_select_and_joins_bottomup", bind_optimize_select_and_joins_bottomup},
+	{10, "project_reduce_casts", bind_project_reduce_casts},
+	{11, "optimize_unions_bottomup", bind_optimize_unions_bottomup},
+	{12, "optimize_unions_topdown", bind_optimize_unions_topdown},
+	{13, "optimize_projections", bind_optimize_projections},
+	{14, "optimize_joins", bind_optimize_joins},
+	{15, "optimize_semi_and_anti", bind_optimize_semi_and_anti},
+	{16, "optimize_select_and_joins_topdown", bind_optimize_select_and_joins_topdown},
+	{17, "join_order", bind_join_order},
+	{18, "dce", bind_dce},
+	{19, "push_func_and_select_down", bind_push_func_and_select_down},
+	{20, "push_topn_and_sample_down", bind_push_topn_and_sample_down},
+	{21, "distinct_project2groupby", bind_distinct_project2groupby},
+	{22, "merge_table_rewrite", bind_merge_table_rewrite},
 	{ 0, NULL, NULL}
 };
 
@@ -601,12 +602,12 @@ const sql_optimizer pre_sql_optimizers[] = {
 const sql_optimizer post_sql_optimizers[] = {
 	/* Merge table rewrites may introduce remote or replica tables */
 	/* At the moment, make sure the remote table rewriters always run after the merge table one */
-	{23, "rewrite_remote", bind_rewrite_remote},
-	{24, "rewrite_replica", bind_rewrite_replica},
-	{25, "remote_func", bind_remote_func},
-	{26, "get_statistics", bind_get_statistics}, /* gather statistics */
-	{27, "join_order2", bind_join_order2}, /* run join order one more time with statistics */
-	{28, "final_optimization_loop", bind_final_optimization_loop}, /* run select and group by order with statistics gathered  */
+	{24, "rewrite_remote", bind_rewrite_remote},
+	{25, "rewrite_replica", bind_rewrite_replica},
+	{26, "remote_func", bind_remote_func},
+	{27, "get_statistics", bind_get_statistics}, /* gather statistics */
+	{28, "join_order2", bind_join_order2}, /* run join order one more time with statistics */
+	{29, "final_optimization_loop", bind_final_optimization_loop}, /* run select and group by order with statistics gathered  */
 	{ 0, NULL, NULL}
 	/* If an optimizer is going to be added, don't forget to update NSQLREWRITERS macro */
 };

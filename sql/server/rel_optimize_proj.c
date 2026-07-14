@@ -428,14 +428,6 @@ exp_rename(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 	return e;
 }
 
-static int
-exp_match_exp_cmp( sql_exp *e1, sql_exp *e2)
-{
-	if (exp_match_exp(e1,e2))
-		return 0;
-	return -1;
-}
-
 /* Pushing projects up the tree. Done very early in the optimizer.
  * Makes later steps easier.
  */
@@ -3693,16 +3685,19 @@ rel_push_join_down_munion(visitor *v, sql_rel *rel)
 static sql_rel *
 rel_optimize_unions_topdown_(visitor *v, sql_rel *rel)
 {
+	uint8_t cycle = *(uint8_t*) v->data;
+
 	rel = rel_push_project_down_union(v, rel);
 	rel = rel_merge_unions(v, rel);
-	rel = rel_push_join_down_munion(v, rel);
+	if (cycle > 0)
+		rel = rel_push_join_down_munion(v, rel);
 	return rel;
 }
 
 static sql_rel *
 rel_optimize_unions_topdown(visitor *v, global_props *gp, sql_rel *rel)
 {
-	(void) gp;
+	v->data = &gp->opt_cycle;
 	return rel_visitor_topdown(v, rel, &rel_optimize_unions_topdown_);
 }
 

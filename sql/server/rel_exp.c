@@ -1473,7 +1473,11 @@ exp_match_exp_semantics( sql_exp *e1, sql_exp *e2, bool semantics)
 	if (e1->type == e2->type) {
 		switch(e1->type) {
 		case e_cmp:
-			if (e1->flag == e2->flag && !is_complex_exp(e1->flag) &&
+			if (e1->flag == e2->flag && e1->flag == cmp_equal && !is_anti(e1) && !is_anti(e2) &&
+			    ((exp_match_exp(e1->l, e2->l) && exp_match_exp(e1->r, e2->r)) ||
+			    (exp_match_exp(e1->l, e2->r) && exp_match_exp(e1->r, e2->l))))
+				return 1;
+			else if (e1->flag == e2->flag && !is_complex_exp(e1->flag) &&
 			    exp_match_exp(e1->l, e2->l) && exp_match_exp(e1->r, e2->r) &&
 			    ((!e1->f && !e2->f) || (e1->f && e2->f && exp_match_exp(e1->f, e2->f))))
 				return 1;
@@ -1537,6 +1541,12 @@ int
 exp_match_exp( sql_exp *e1, sql_exp *e2)
 {
 	return exp_match_exp_semantics( e1, e2, true);
+}
+
+int
+exp_match_exp_cmp( sql_exp *e1, sql_exp *e2)
+{
+	return !exp_match_exp_semantics( e1, e2, true);
 }
 
 sql_exp *
@@ -4322,6 +4332,137 @@ free_exp(allocator *sa, sql_exp *e)
 			break;
 	}
 	_free_exp_internal(sa, e);
+}
+
+dbl
+exp_estimate_selectivity(mvc *sql, sql_exp *e)
+{
+	dbl sel = 0.1;
+	(void)sql;
+	if (!e)
+		return 1.0;
+	switch (e->type) {
+	case e_atom:
+		if (exp_is_true(e))
+			return 1.0;
+		if (exp_is_false(e))
+			return 0.0;
+		return 0.5;
+	case e_column:
+		return 0.1;
+	case e_convert:
+		return exp_estimate_selectivity(sql, (sql_exp *) e->l);
+	case e_func:
+		return 0.1;
+	case e_aggr:
+		return 0.1;
+	case e_cmp: {
+		sql_exp *l = (sql_exp *) e->l, *r = (sql_exp *) e->r;
+		if (e->flag <= cmp_lte && e->f) {
+			sel = 0.50;
+		} else {
+			switch (e->flag) {
+			case cmp_equal:
+				if (exp_is_atom(r) && !exp_is_atom(l)) {
+					prop *p = find_prop(l->p, PROP_NUNIQUES);
+					if (p && p->value.dval > 1)
+						sel = 1.0 / p->value.dval;
+					else
+						sel = 0.1;
+				} else if (exp_is_atom(l) && !exp_is_atom(r)) {
+					prop *p = find_prop(r->p, PROP_NUNIQUES);
+					if (p && p->value.dval > 1)
+						sel = 1.0 / p->value.dval;
+					else
+						sel = 0.1;
+				} else if (!exp_is_atom(l) && !exp_is_atom(r)) {
+					prop *pl = find_prop(l->p, PROP_NUNIQUES), *pr = find_prop(r->p, PROP_NUNIQUES);
+					if (pl && pr && pl->value.dval > 0 && pr->value.dval > 0)
+						sel = 1.0 / MAX(pl->value.dval, pr->value.dval);
+					else if (pl && pl->value.dval > 0)
+						sel = 1.0 / pl->value.dval;
+					else if (pr && pr->value.dval > 0)
+						sel = 1.0 / pr->value.dval;
+					else
+						sel = 0.1;
+				} else {
+					sel = 0.5;
+				}
+				break;
+			case cmp_notequal:
+				if (exp_is_atom(r) && !exp_is_atom(l)) {
+					prop *p = find_prop(l->p, PROP_NUNIQUES);
+					if (p && p->value.dval > 1)
+						sel = 1.0 - 1.0 / p->value.dval;
+					else
+						sel = 0.9;
+				} else if (exp_is_atom(l) && !exp_is_atom(r)) {
+					prop *p = find_prop(r->p, PROP_NUNIQUES);
+					if (p && p->value.dval > 1)
+						sel = 1.0 - 1.0 / p->value.dval;
+					else
+						sel = 0.9;
+				} else {
+					sel = 0.9;
+				}
+				break;
+			case cmp_gt:
+			case cmp_gte:
+			case cmp_lt:
+			case cmp_lte:
+				sel = 0.50;
+				break;
+			case cmp_in:
+			case cmp_notin: {
+				list *vals = (list *) e->r;
+				int nvals = list_length(vals);
+				prop *p = find_prop(l->p, PROP_NUNIQUES);
+				if (p && p->value.dval > 0) {
+					sel = (dbl) nvals / p->value.dval;
+				} else {
+					sel = (dbl) nvals * 0.05;
+				}
+				if (sel > 0.5)
+					sel = 0.5;
+				if (e->flag == cmp_notin)
+					sel = 1.0 - sel;
+				break;
+			}
+			case cmp_con: {
+				  list *lst = (list *) e->l;
+				  sel = 1.0;
+				  for (node *n = lst->h; n; n = n->next)
+					  sel *= exp_estimate_selectivity(sql, (sql_exp *) n->data);
+				  break;
+			}
+			case cmp_dis: {
+				  list *lst = (list *) e->l;
+				  sel = 0.0;
+				  for (node *n = lst->h; n; n = n->next)
+				  sel += exp_estimate_selectivity(sql, (sql_exp *) n->data);
+				  if (sel > 1.0)
+					  sel = 1.0;
+				  break;
+			}
+			case cmp_filter:
+				  sel = 0.01;
+				  break;
+			default:
+				  sel = 0.1;
+				  break;
+			}
+		}
+		break;
+	}
+	case e_psm:
+		sel = 0.5;
+		break;
+	}
+	if (sel < 0.0)
+		sel = 0.0;
+	if (sel > 1.0)
+		sel = 1.0;
+	return sel;
 }
 
 bool
