@@ -3135,6 +3135,7 @@ order_joins_bushy( visitor *v, list *rels, list *exps)
 		if (VERBOSE)
 			_exps_print(v->sql, pairs[min_pos].exps);
 
+		list_remove_data(exps, NULL, cje);
 		if (cje->type == e_cmp) {
 			l = rels_a[r1[cje->tmp]];
 			r = rels_a[r2[cje->tmp]];
