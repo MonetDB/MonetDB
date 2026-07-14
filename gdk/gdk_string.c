@@ -70,7 +70,7 @@ strHeap(Heap *d, size_t cap)
 	size_t size;
 
 	cap = MAX(cap, BATTINY);
-	size = GDK_STRHASHTABLE * sizeof(stridx_t) + MIN(GDK_ELIMLIMIT, cap * GDK_VARALIGN);
+	size = GDK_STRHASHSIZE + MIN(GDK_ELIMLIMIT, cap * GDK_VARALIGN);
 	return HEAPalloc(d, size, 1);
 }
 
@@ -86,8 +86,8 @@ strCleanHash(Heap *h, bool rebuild)
 	(void) rebuild;
 	if (!h->cleanhash)
 		return;
-	if (h->size < GDK_STRHASHTABLE * sizeof(stridx_t) &&
-	    HEAPextend(h, GDK_STRHASHTABLE * sizeof(stridx_t) + BATTINY * GDK_VARALIGN, true) != GDK_SUCCEED) {
+	if (h->size < GDK_STRHASHSIZE &&
+	    HEAPextend(h, GDK_STRHASHSIZE + BATTINY * GDK_VARALIGN, true) != GDK_SUCCEED) {
 		GDKclrerr();
 		if (h->size > 0)
 			memset(h->base, 0, h->size);
@@ -213,13 +213,13 @@ strPut(BAT *b, var_t *dst, const void *V)
 	BUN off;
 
 	if (h->free == 0) {
-		if (h->size < GDK_STRHASHTABLE * sizeof(stridx_t) + BATTINY * GDK_VARALIGN) {
-			if (HEAPgrow(&b->tvheap, GDK_STRHASHTABLE * sizeof(stridx_t) + BATTINY * GDK_VARALIGN, true) != GDK_SUCCEED) {
+		if (h->size < GDK_STRHASHSIZE + BATTINY * GDK_VARALIGN) {
+			if (HEAPgrow(&b->tvheap, GDK_STRHASHSIZE + BATTINY * GDK_VARALIGN, true) != GDK_SUCCEED) {
 				return (var_t) -1;
 			}
 			h = b->tvheap;
 		}
-		h->free = GDK_STRHASHTABLE * sizeof(stridx_t);
+		h->free = GDK_STRHASHSIZE;
 #ifdef NDEBUG
 		memset(h->base, 0, h->free);
 #else
