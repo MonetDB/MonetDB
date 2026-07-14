@@ -1743,7 +1743,7 @@ mvc_export_head(backend *b, stream *s, int res_id, bool only_header, lng startti
 	if (mnstr_write(s, " # type\n", 8, 1) != 1)
 		return -4;
 	if (b->client->client_library) {
-		char *p = strstr(b->client->client_library, "libmapi ");
+		const char *p = strstr(b->client->client_library, "libmapi ");
 		if (p != NULL) {
 			p += 8;				/* position after "libmapi " */
 			if (isdigit((unsigned char) *p))

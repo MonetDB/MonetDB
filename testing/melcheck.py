@@ -14,14 +14,23 @@ except ImportError:
     from MonetDBtesting import exportutils
 
 # MEL pattern
-argreg = r'\s*,\s*(?P<bat>(?:opt)?bat)?(?P<var>var)?arg(?P<any>any)?\s*\(\s*(?P<argname>"[^"]*")\s*,\s*(?P<argval>\w*)\s*\)'
-patreg = r'^\s*(?P<cmdpat>pattern|command)\s*\(\s*"(?P<mod>[^"]*)"\s*,\s*"(?P<fcn>[^"]*)"\s*,\s*(?P<imp>\w+)\s*,[^,]*,\s*"[^\"]*(?:\\.[^\"]*)*"\s*,\s*args\s*\(\s*(?P<retc>\d+)\s*,\s*(?P<argc>\d+)(?P<args>(?:'+argreg+r')*)\s*\)\s*\)'
+argreg = r'\s*,\s*(?P<bat>(?:opt)?bat)?(?P<var>var)?arg(?P<any>any)?' \
+    r'\s*\(\s*(?P<argname>"[^"]*")\s*,\s*(?P<argval>\w*)\s*\)'
+patreg = r'^\s*(?P<cmdpat>pattern|command)\s*' \
+    r'\(\s*"(?P<mod>[^"]*)"\s*,\s*"(?P<fcn>[^"]*)"\s*,' \
+    r'\s*(?P<imp>\w+)\s*,[^,]*,\s*"[^\"]*(?:\\.[^\"]*)*"\s*,'\
+    r'\s*args\s*\(\s*(?P<retc>\d+)\s*,\s*(?P<argc>\d+)' \
+    r'(?P<args>(?:'+argreg+r')*)\s*\)\s*\)'
 
 argre = re.compile(argreg)
 patre = re.compile(patreg, re.MULTILINE)
 
-fcnargreg = r'\s*,\s*(?:const\s+)?(?:(?P<type>\w+)\s*\*(?:\s*(?:const\s*)?\*)*(?:\s*restrict\s)?|ptr\s)\s*(?P<argname>\w+)'
-fcnreg = r'(?:static\s+)?(?:str|char\s*\*)\s+(?P<name>\w+)\s*\(\s*(?:(?P<pattern>Client\s+\w+\s*,\s*MalBlkPtr\s+\w+\s*,\s*MalStkPtr\s+\w+\s*,\s*InstrPtr\s+\w+)|(?P<command>Client\s+\w+(?:'+ fcnargreg + r')+))\s*\)\s*{'
+fcnargreg = r'\s*,\s*(?:const\s+)?(?:(?P<type>\w+)\s*' \
+    r'\*(?:\s*(?:const\s*)?\*)*(?:\s*restrict\s)?|ptr\s)\s*(?P<argname>\w+)'
+fcnreg = r'(?:static\s+)?(?:str|char\s*\*)\s+(?P<name>\w+)\s*' \
+    r'\(\s*(?:(?P<pattern>Client\s+\w+\s*,\s*MalBlkPtr\s+\w+\s*,' \
+    r'\s*MalStkPtr\s+\w+\s*,\s*InstrPtr\s+\w+)|' \
+    fr'(?P<command>Client\s+\w+(?:{fcnargreg})+))\s*\)\s*{{'
 
 fcnre = re.compile(fcnreg)
 fcnargre = re.compile(fcnargreg)
@@ -37,7 +46,10 @@ mappings = {
     'bstream': 'Bstream',
 }
 
-def malcheck(imp, mod, fcn, retc, argc, args):
+check_potentials = False
+
+
+def malcheck(imp, mod, fcn, retc, argc, args, patcom, filename):
     malfunc = f'{mod}.{fcn}'
     if retc == 0:
         retc = 1
@@ -49,9 +61,10 @@ def malcheck(imp, mod, fcn, retc, argc, args):
     for i in range(argc):
         res = argre.match(args, pos)
         if res is None:
-            print(f'not enough arguments in command {mod}.{fcn} with implementation {imp}')
+            print(f'not enough arguments in command {malfunc} with'
+                  f' implementation {imp}')
             return
-        normarg = res.group('bat','any','argval')
+        normarg = res.group('bat', 'any', 'argval')
         if i < retc:
             returns.append(normarg)
         else:
@@ -59,17 +72,49 @@ def malcheck(imp, mod, fcn, retc, argc, args):
         pos = res.end(0)
     if malfunc not in maldefs:
         maldefs[malfunc] = []
-    for mf in maldefs[malfunc]:
-        if mf[0] == retc and mf[1] == argc and mf[2] == returns and mf[3] == arguments:
-            print(f'duplicate MAL definition for {mod}.{fcn} with implementations {mf[4]} and {imp}')
-            return
-    maldefs[malfunc].append((retc, argc, returns, arguments, imp))
+    if check_potentials:
+        potentials = []
+        patcom = patcom.strip()
+        for mf in maldefs[malfunc]:
+            if mf[0] != retc or mf[1] != argc:
+                continue
+            if mf[2] == returns and mf[3] == arguments:
+                print(f'duplicate MAL definition for {malfunc} with'
+                      f' implementations {mf[4]} and {imp}')
+                return
+            for i in range(len(returns)):
+                if returns[i][1] == 'any' and mf[2][i][1] != 'any' and \
+                   returns[i][0] == mf[2][i][0]:
+                    potentials.append('potential duplicate MAL definition for'
+                                      f' return {i} in {malfunc} with'
+                                      f' implementations {mf[4]} and {imp}'
+                                      f' ({mf[6]}: {mf[5]} vs.'
+                                      f' {filename}: {patcom}')
+                elif returns[i] != mf[2][i]:
+                    break
+            else:
+                for i in range(len(arguments)):
+                    if arguments[i][1] == 'any' and mf[3][i][1] != 'any' and \
+                       arguments[i][0] == mf[3][i][0]:
+                        potentials.append('potential duplicate MAL definition '
+                                          f'for argument {i} in {malfunc} with'
+                                          f' implementations {mf[4]} and {imp}'
+                                          f' ({mf[6]}: {mf[5]} vs.'
+                                          f' {filename}: {patcom}')
+                    elif arguments[i] != mf[3][i]:
+                        break
+                else:
+                    for p in potentials:
+                        print(p)
+    maldefs[malfunc].append((retc, argc, returns, arguments, imp, patcom, filename))
+
 
 def checkcommand(imp, mod, fcn, decl, retc, argc, args):
     if argc < retc:
-        print('bad argc < retc for command {}.{} with implementation {}'.format(mod, fcn, imp))
+        print(f'bad argc < retc for command {mod}.{fcn} with'
+              f' implementation {imp}')
         return
-    decl = decl[decl.index(','):] # skip over Client arg
+    decl = decl[decl.index(','):]  # skip over Client arg
     pos = 0
     cpos = 0
     if retc == 0:
@@ -79,10 +124,12 @@ def checkcommand(imp, mod, fcn, decl, retc, argc, args):
     for i in range(argc):
         res = argre.match(args, pos)
         if res is None:
-            print('not enough arguments in command {}.{} with implementation {}'.format(mod, fcn, imp))
+            print(f'not enough arguments in command {mod}.{fcn} with'
+                  f' implementation {imp}')
             return
         if res.group('var'):
-            print('cannot have variable number of arguments in command {}.{} with implementation {}'.format(mod, fcn, imp))
+            print('cannot have variable number of arguments in command'
+                  f' {mod}.{fcn} with implementation {imp}')
             return
         if res.group('bat'):
             cmaltype = 'bat'
@@ -93,18 +140,24 @@ def checkcommand(imp, mod, fcn, decl, retc, argc, args):
             cmaltype = mappings.get(cmaltype, cmaltype)
         cres = fcnargre.match(decl, cpos)
         if cres is None:
-            print('not enough arguments in implementation {} for command {}.{}'.format(imp, mod, fcn))
+            print(f'not enough arguments in implementation {imp} for'
+                  f' command {mod}.{fcn}')
             return
         ctype = cres.group('type')
         if not ctype:
             ctype = 'void'      # declared as "ptr val", so type is void *
         if i < retc and 'const' in cres.group(0):
-            print('const return pointer in implementation {} for command {}.{} (arg {})'.format(imp, mod, fcn, i))
+            print(f'const return pointer in implementation {imp} for'
+                  f' command {mod}.{fcn} (arg {i})')
         if ctype != cmaltype:
-            if cmaltype != 'str' or ctype != 'char' or cres.group(0).count('*') != 2:
-                print('type mismatch for arg {} in implementation {} for command {}.{}'.format(i, imp, mod, fcn))
+            if cmaltype != 'str' or \
+               ctype != 'char' or \
+                   cres.group(0).count('*') != 2:
+                print(f'type mismatch for arg {i} in'
+                      f' implementation {imp} for command {mod}.{fcn}')
         pos = res.end(0)
         cpos = cres.end(0)
+
 
 def process1(f):
     data = exportutils.preprocess(f, include=True)
@@ -133,36 +186,50 @@ def process1(f):
         if res.group('cmdpat') == 'pattern':
             if imp not in pats and imp not in gpats:
                 if imp in cmds or imp in gcmds:
-                    print('command implementation {} for pattern {}.{}'.format(imp, mod, fcn))
+                    print(f'command implementation {imp} for'
+                          f' pattern {mod}.{fcn}')
                 else:
                     mel.append(('pattern', imp, mod, fcn, retc, argc, args))
         else:
             if imp not in cmds and imp not in gcmds:
                 if imp in pats or imp in gpats:
-                    print('pattern implementation {} for command {}.{}'.format(imp, mod, fcn))
+                    print(f'pattern implementation {imp} for'
+                          f' command {mod}.{fcn}')
                 else:
                     mel.append(('command', imp, mod, fcn, retc, argc, args))
             else:
-                checkcommand(imp, mod, fcn, cmds.get(imp, gcmds.get(imp)), int(retc), int(argc), args)
-        malcheck(imp, mod, fcn, int(retc), int(argc), args)
+                checkcommand(imp, mod, fcn, cmds.get(imp, gcmds.get(imp)),
+                             int(retc), int(argc), args)
+        malcheck(imp, mod, fcn, int(retc), int(argc), args, res.group(0), f)
         res = patre.search(data, pos=res.end(0))
+
 
 def process2():
     for (cmdpat, imp, mod, fcn, retc, argc, args) in mel:
         if cmdpat == 'pattern':
             if imp not in gpats:
                 if imp in gcmds:
-                    print('command implementation {} for pattern {}.{}'.format(imp, mod, fcn))
+                    print(f'command implementation {imp} for'
+                          f' pattern {mod}.{fcn}')
                 else:
-                    print('pattern implementation {} for {}.{} is missing'.format(imp, mod, fcn))
+                    print(f'pattern implementation {imp} for'
+                          f' {mod}.{fcn} is missing')
         else:
             if imp not in gcmds:
                 if imp in gpats:
-                    print('pattern implementation {} for command {}.{}'.format(imp, mod, fcn))
+                    print(f'pattern implementation {imp} for'
+                          f' command {mod}.{fcn}')
                 else:
-                    print('command implementation {} for {}.{} is missing'.format(imp, mod, fcn))
+                    print(f'command implementation {imp} for'
+                          f' {mod}.{fcn} is missing')
             else:
-                checkcommand(imp, mod, fcn, gcmds[imp], int(retc), int(argc), args)
+                checkcommand(imp, mod, fcn, gcmds[imp],
+                             int(retc), int(argc), args)
+
+
+if len(sys.argv) > 1 and sys.argv[1] == '--match-any':
+    del sys.argv[1]
+    check_potentials = True
 
 if len(sys.argv) > 1:
     files = sys.argv[1:]

@@ -433,8 +433,8 @@ vheapinit(BAT *b, const char *buf, unsigned bbpversion, const char *filename, in
 		free = 0;
 	if (b->ttype >= 0 &&
 	    ATOMstorage(b->ttype) == TYPE_str &&
-	    free < GDK_STRHASHTABLE * sizeof(stridx_t) + BATTINY * GDK_VARALIGN)
-		size = GDK_STRHASHTABLE * sizeof(stridx_t) + BATTINY * GDK_VARALIGN;
+	    free < GDK_STRHASHSIZE + BATTINY * GDK_VARALIGN)
+		size = GDK_STRHASHSIZE + BATTINY * GDK_VARALIGN;
 	else if (free < 512)
 		size = 512;
 	else
