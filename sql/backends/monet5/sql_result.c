@@ -1386,14 +1386,15 @@ mvc_export(mvc *m, stream *s, res_table *t, BUN nr)
 	b.results = t;
 	b.reloptimizer = 0;
 	t->nr_rows = nr;
-	if (mvc_export_head(&b, s, t->id, TRUE, TRUE, 0/*starttime*/, 0/*maloptimizer*/) < 0)
+	if (mvc_export_head(&b, s, t->id, true, 0/*starttime*/, 0/*maloptimizer*/) < 0)
 		return -1;
 	return mvc_export_table_(m->sa, m, OFMT_CSV, s, t, 0, nr, "[ ", ",\t", "\t]\n", "\"", "NULL");
 }
 
 
 static lng
-get_print_width(int mtype, sql_class eclass, int digits, int scale, int tz, bat bid, ptr p)
+get_print_width(int mtype, sql_class eclass, int digits, int scale, int tz,
+				bat bid, ptr p, bool compute_lengths)
 {
 	size_t count = 0, incr = 0;
 
@@ -1405,6 +1406,8 @@ get_print_width(int mtype, sql_class eclass, int digits, int scale, int tz, bat 
 	if (mtype == TYPE_str) {
 		if (eclass == EC_CHAR && digits) {
 			return digits;
+		} else if (!compute_lengths) {
+			return -1;
 		} else {
 			int l = 0;
 			if (bid) {
@@ -1433,6 +1436,8 @@ get_print_width(int mtype, sql_class eclass, int digits, int scale, int tz, bat 
 	} else if (eclass == EC_NUM || eclass == EC_POS || eclass == EC_MONTH || eclass == EC_SEC) {
 		count = 0;
 		if (bid) {
+			if (!compute_lengths)
+				return -1;
 			BAT *b = BATdescriptor(bid);
 
 			if (b) {
@@ -1545,10 +1550,10 @@ get_print_width(int mtype, sql_class eclass, int digits, int scale, int tz, bat 
 }
 
 static int
-export_length(stream *s, int mtype, sql_class eclass, int digits, int scale, int tz, bat bid, ptr p)
+export_length(stream *s, int mtype, sql_class eclass, int digits, int scale, int tz, bat bid, ptr p, bool compute_lengths)
 {
-	lng length = get_print_width(mtype, eclass, digits, scale, tz, bid, p);
-	if (length < 0)
+	lng length = get_print_width(mtype, eclass, digits, scale, tz, bid, p, compute_lengths);
+	if (length < -1)
 		return -2;
 	if (mvc_send_lng(s, length) != 1)
 		return -4;
@@ -1623,12 +1628,13 @@ mvc_export_affrows(backend *b, stream *s, lng val, str w, oid query_id, lng star
 }
 
 int
-mvc_export_head(backend *b, stream *s, int res_id, int only_header, int compute_lengths, lng starttime, lng maloptimizer)
+mvc_export_head(backend *b, stream *s, int res_id, bool only_header, lng starttime, lng maloptimizer)
 {
 	mvc *m = b->mvc;
 	int i, res = 0;
 	BUN count = 0;
 	res_table *t = res_tables_find(b->results, res_id);
+	bool compute_lengths = true;
 
 	if (!s || !t)
 		return 0;
@@ -1734,22 +1740,38 @@ mvc_export_head(backend *b, stream *s, int res_id, int only_header, int compute_
 		if (i + 1 < t->nr_cols && mnstr_write(s, ",\t", 2, 1) != 1)
 			return -4;
 	}
-	if (mnstr_write(s, " # type\n% ", 10, 1) != 1)
+	if (mnstr_write(s, " # type\n", 8, 1) != 1)
 		return -4;
-	if (compute_lengths) {
-		for (i = 0; i < t->nr_cols; i++) {
-			res_col *c = t->cols + i;
-			int mtype = c->type.type->localtype;
-			sql_class eclass = c->type.type->eclass;
-
-			if ((res = export_length(s, mtype, eclass, c->type.digits, c->type.scale, type_has_tz(&c->type), c->b, c->p)) < 0)
-				return res;
-			if (i + 1 < t->nr_cols && mnstr_write(s, ",\t", 2, 1) != 1)
-				return -4;
+	if (b->client->client_library) {
+		const char *p = strstr(b->client->client_library, "libmapi ");
+		if (p != NULL) {
+			p += 8;				/* position after "libmapi " */
+			if (isdigit((unsigned char) *p))
+				if (atoi(p) > 11) {
+					/* new enough C mapi library computes on demand */
+					compute_lengths = false;
+				}
+		} else if (strstr(b->client->client_library, "pymonetdb") != NULL) {
+			/* pymonetdb ignores length, so don't bother calculating it */
+			compute_lengths = false;
 		}
-		if (mnstr_write(s, " # length\n", 10, 1) != 1)
+	}
+	if (mnstr_write(s, "% ", 2, 1) != 1)
+		return -4;
+	for (i = 0; i < t->nr_cols; i++) {
+		res_col *c = t->cols + i;
+		int mtype = c->type.type->localtype;
+		sql_class eclass = c->type.type->eclass;
+
+		if ((res = export_length(s, mtype, eclass, c->type.digits,
+								 c->type.scale, type_has_tz(&c->type),
+								 c->b, c->p, compute_lengths)) < 0)
+			return res;
+		if (i + 1 < t->nr_cols && mnstr_write(s, ",\t", 2, 1) != 1)
 			return -4;
 	}
+	if (mnstr_write(s, " # length\n", 10, 1) != 1)
+		return -4;
 	if (b->sizeheader) {
 		if (mnstr_write(s, "% ", 2, 1) != 1)
 			return -4;
@@ -1803,12 +1825,12 @@ mvc_export_result(backend *b, stream *s, int res_id, bool header, lng starttime,
 	assert(t->query_type == Q_TABLE || t->query_type == Q_PREPARE);
 	if (t->tsep) {
 		/* need header */
-		if (header && (res = mvc_export_head(b, s, res_id, TRUE, TRUE, starttime, maloptimizer)) < 0)
+		if (header && (res = mvc_export_head(b, s, res_id, true, starttime, maloptimizer)) < 0)
 			return res;
 		return mvc_export_file(b, s, t);
 	}
 
-	if (!json && (res = mvc_export_head(b, s, res_id, TRUE, TRUE, starttime, maloptimizer)) < 0)
+	if (!json && (res = mvc_export_head(b, s, res_id, true, starttime, maloptimizer)) < 0)
 		return res;
 
 	assert(t->cols[0].b);
