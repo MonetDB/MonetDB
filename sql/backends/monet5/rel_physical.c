@@ -62,10 +62,10 @@ rel_getcount(mvc *sql, sql_rel *rel)
 		}
 		return 1;
 	default:
+		if (rel->p && find_prop(rel->p, PROP_COUNT))
+			return get_rel_count(rel);
 		if (rel->l)
 			return rel_getcount(sql, rel->l);
-		if (rel->p)
-			return get_rel_count(rel);
 		return 0;
 	}
 }
