@@ -145,3 +145,4 @@ KNOWNFAIL?7956-rel_remove_const_aggr-crash
 KNOWNFAIL?7957-tail_type-crash
 7959-double-function-destroy
 KNOWNFAIL?7960-isLikeOp-crash
+KNOWNFAIL?7961-list_empty-crash
