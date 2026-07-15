@@ -416,7 +416,8 @@ HASHgrowbucket(BAT *b)
 			HASHput(h, old, BUN_NONE);
 		else
 			HASHputlink(h, lold, BUN_NONE);
-	} while (h->nunique >= (nbucket = h->nbucket) * 7 / 8);
+		nbucket = h->nbucket;
+	} while (h->nunique >= nbucket * 3 / 4);
 	TRC_DEBUG_IF(ACCELERATOR) if (h->nbucket > onbucket) {
 		TRC_DEBUG_ENDIF(ACCELERATOR, ALGOBATFMT " " BUNFMT
 			" -> " BUNFMT " buckets (" LLFMT " usec)\n",
@@ -436,7 +437,7 @@ HASHgrowbucket(BAT *b)
  * maintained here, in the HASHdestroy and HASHfree functions, and in
  * BBPdiskscan during initialization. */
 bool
-BATcheckhash(BAT *b)
+BATcheckhash_locked(BAT *b)
 {
 	if (b->ttype == TYPE_void)
 		return false;
@@ -444,13 +445,10 @@ BATcheckhash(BAT *b)
 	lng t = 0;
 	Hash *h;
 
-	MT_rwlock_rdlock(&b->thashlock);
 	h = b->thash;
-	MT_rwlock_rdunlock(&b->thashlock);
 	if (h == (Hash *) 1) {
 		/* but when we want to change it, we need the lock */
 		TRC_DEBUG_IF(ACCELERATOR) t = GDKusec();
-		MT_rwlock_wrlock(&b->thashlock);
 		TRC_DEBUG_IF(ACCELERATOR) t = GDKusec() - t;
 		/* if still 1 now that we have the lock, we can update */
 		if (b->thash == (Hash *) 1) {
@@ -522,7 +520,6 @@ BATcheckhash(BAT *b)
 								h->heaplink.hasfile = true;
 								TRC_DEBUG(ACCELERATOR,
 									  ALGOBATFMT ": reusing persisted hash\n", ALGOBATPAR(b));
-								MT_rwlock_wrunlock(&b->thashlock);
 								return true;
 							}
 							/* if h->nbucket
@@ -561,12 +558,30 @@ BATcheckhash(BAT *b)
 			GDKclrerr();	/* we're not currently interested in errors */
 		}
 		h = b->thash;
-		MT_rwlock_wrunlock(&b->thashlock);
 	}
 	if (h != NULL) {
 		TRC_DEBUG(ACCELERATOR, ALGOBATFMT ": already has hash, waited " LLFMT " usec\n", ALGOBATPAR(b), t);
 	}
 	return h != NULL;
+}
+
+bool
+BATcheckhash(BAT *b)
+{
+	if (b->ttype == TYPE_void)
+		return false;
+
+	MT_rwlock_rdlock(&b->thashlock);
+	Hash *h = b->thash;
+	MT_rwlock_rdunlock(&b->thashlock);
+	if (h == NULL)
+		return false;
+	if (h != (Hash *) 1)
+		return true;
+	MT_rwlock_wrlock(&b->thashlock);
+	bool ret = BATcheckhash_locked(b);
+	MT_rwlock_wrunlock(&b->thashlock);
+	return ret;
 }
 
 /* figure out size of the hash (sum of the sizes of the two hash files)
@@ -1182,12 +1197,14 @@ HASHappend_locked_hashval(BATiter *bi, BUN i, const void *v, BUN hsh)
 		GDKclrerr();
 		return;
 	}
-	if (HASHwidth(i + 1) > h->width &&
-	     HASHupgradehashheap(b) != GDK_SUCCEED) {
+	if (h->width < SIZEOF_BUN &&
+	    HASHwidth(i + 1) > h->width &&
+	    HASHupgradehashheap(b) != GDK_SUCCEED) {
 		GDKclrerr();
 		return;
 	}
 	if ((ATOMsize(b->ttype) > 2 &&
+	     h->nunique >= h->nbucket * 7 / 8 &&
 	     HASHgrowbucket(b) != GDK_SUCCEED) ||
 	    ((i + 1) * h->width > h->heaplink.size &&
 	     HEAPextend(&h->heaplink,

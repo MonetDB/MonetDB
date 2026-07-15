@@ -45,6 +45,8 @@ void ATOMunknown_clean(void)
 	__attribute__((__visibility__("hidden")));
 bool BATcheckhash(BAT *b)
 	__attribute__((__visibility__("hidden")));
+bool BATcheckhash_locked(BAT *b)
+	__attribute__((__visibility__("hidden")));
 gdk_return BATcheckmodes(BAT *b, bool persistent)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
