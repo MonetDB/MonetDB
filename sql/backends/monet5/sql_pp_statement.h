@@ -25,7 +25,7 @@ extern stmt *stmt_oahash_frequency(backend *be, stmt *freq, stmt *prnt, bool occ
 extern stmt *stmt_oahash_hash(backend *be, stmt *key, stmt *prev, stmt *ht);
 extern stmt *stmt_oahash_probe(backend *be, stmt *key, stmt *prev, stmt *rhs_ht, stmt *freq, stmt *outer, bool single, bool semantics, bool eq, bool outerjoin, bool groupedjoin);
 
-extern stmt *stmt_algebra_project(backend *be, stmt *inout, stmt *pos, stmt *val, const char *fname, const stmt *pp);
+extern stmt *stmt_algebra_project(backend *be, stmt *inout, stmt *pos, stmt *val, const char *fname);
 extern stmt *stmt_oahash_project_cart(backend *be, stmt *col, stmt *repeat, bool outer, bool expand);
 
 extern stmt *stmt_oahash_expand(backend *be, const stmt *prb_res, const stmt *freq, bit outer);

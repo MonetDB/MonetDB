@@ -11,6 +11,7 @@
 #include "monetdb_config.h"
 
 #include "rel_bin.h"
+#include "mal_namespace.h"
 #include "rel_copy.h"
 #include "rel_pphash.h"
 #include "rel_pptopn.h"
@@ -1986,9 +1987,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 		if (s && grp && !be->pipeline)
 			s = stmt_project(be, ext, s);
 		else if (s && grp && be->pipeline) {
-			s = stmt_project(be, grp, s);
-			s->q = pushArgument(be->mb, s->q, be->pipeline);
-			s->q->inout = 1;
+			s = stmt_algebra_project(be, NULL, grp, s, projectionRef);
 		}
 		if (!s && right) {
 			TRC_CRITICAL(SQL_EXECUTION, "Could not find %s.%s\n", (char*)e->l, (char*)e->r);
@@ -5467,9 +5466,7 @@ rel2bin_topn(backend *be, sql_rel *rel, list *refs)
 			sc = column(be, sc);
 			sc = stmt_project(be, limit, sc);
 			if (glimit) {
-				sc = stmt_project(be, glimit, sc);
-				sc->q->inout = 0;
-				sc->q = pushArgument(be->mb, sc->q, be->pipeline);
+				sc = stmt_algebra_project(be, NULL, glimit, sc, projectionRef);
 			}
 			list_append(newl, stmt_alias(be, sc, label, tname, cname));
 		}

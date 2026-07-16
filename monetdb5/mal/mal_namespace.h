@@ -120,6 +120,7 @@
 	FUNC(groupedfirstn); \
 	FUNC(grow); \
 	FUNC(hge); \
+	FUNC(ialgebra); \
 	FUNC(identity); \
 	FUNC(ifthenelse); \
 	FUNC(igroup); \

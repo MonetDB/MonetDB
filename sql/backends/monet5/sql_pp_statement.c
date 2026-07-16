@@ -551,15 +551,15 @@ stmt_oahash_probe(backend *be, stmt *key, stmt *prev, stmt *rhs_ht, stmt *freq, 
 }
 
 stmt *
-stmt_algebra_project(backend *be, stmt *inout, stmt *pos, stmt *val, const char *fname, const stmt *pp)
+stmt_algebra_project(backend *be, stmt *inout, stmt *pos, stmt *val, const char *fname)
 {
-	InstrPtr q = newStmt(be->mb, getName("algebra"), fname);
+	InstrPtr q = newStmt(be->mb, ialgebraRef, fname);
 	if (q == NULL) return NULL;
-	getArg(q, 0) = inout->nr;
+	if (inout)
+		getArg(q, 0) = inout->nr;
 	q->inout = 0;
 	q = pushArgument(be->mb, q, pos->nr);
 	q = pushArgument(be->mb, q, val->nr);
-	q = pushArgument(be->mb, q, getArg(pp->q, 2));
 	pushInstruction(be->mb, q);
 
 	stmt *s = stmt_none(be);
@@ -568,6 +568,13 @@ stmt_algebra_project(backend *be, stmt *inout, stmt *pos, stmt *val, const char 
 	s->nr = getArg(q, 0);
 	s->nrcols = 1;
 	s->q = q;
+	s->op1 = pos;
+	s->op2 = val;
+	s->flag = cmp_project;
+	s->key = 0;
+	s->tname = val->tname;
+	s->cname = val->cname;
+	s->label = val->label;
 	return s;
 }
 
