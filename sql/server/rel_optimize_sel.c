@@ -1748,7 +1748,10 @@ rel_join_use_fk(visitor *v, sql_rel *rel)
 static sql_rel *
 rel_optimize_joins_topdown_(visitor *v, sql_rel *rel)
 {
-	rel = transitivity_rule(v, rel);
+	ATOMIC_TYPE oahash_mask = (1U<<19);
+	bool oahash_enabled = (GDKdebug & oahash_mask);
+	if (oahash_enabled)
+		rel = transitivity_rule(v, rel);
 	rel = rel_join_use_fk(v, rel);
 	return rel;
 }
