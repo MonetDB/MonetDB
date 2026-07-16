@@ -1537,7 +1537,6 @@ static void
 find_fk( mvc *sql, list *rels, list *exps)
 {
 	node *djn;
-	//list *sdje, *aje, *dje;
 	list *aje, *dje;
 	list *lrels, *rrels;
 
@@ -1676,8 +1675,6 @@ remove_blocking_selects( mvc *sql, sql_rel *p, sql_rel *rel)
 	}
 }
 
-static sql_rel *rel_join_order_(visitor *v, sql_rel *rel);
-
 static void
 get_relations(visitor *v, sql_rel *rel, list *rels)
 {
@@ -1691,7 +1688,6 @@ get_relations(visitor *v, sql_rel *rel, list *rels)
 		rel->r = NULL;
 		rel_destroy(v->sql, rel);
 	} else {
-		rel = rel_join_order_(v, rel);
 		append(rels, rel);
 	}
 }
@@ -2750,9 +2746,11 @@ exp_selectivity(visitor *v, sql_exp *e, sql_rel *l, sql_rel *r, prop *p)
 		}
 	}
 	if (jip) {
-		join_idx_estimate = lv>rv?lv:rv;
+		join_idx_estimate = lv>rv ? lv : rv;
 
-		dbl s = ((dbl)join_idx_estimate/(lv*rv));
+		prop *rp = lv>rv ? find_prop(r->p, PROP_SELECTIVITY) : find_prop(l->p, PROP_SELECTIVITY);
+		dbl sel = rp ? rp->value.dval : 1;
+		dbl s = ((dbl)join_idx_estimate/(lv*rv)) * sel;
 		if (!p)
 			p = prop_create(v->sql->sa, PROP_SELECTIVITY, (prop *) e->p);
 		p->value.dval = s;
@@ -2822,7 +2820,8 @@ exp_cost(visitor *v, sql_exp *e, ulng max, sql_rel *l, sql_rel *r)
 			if (rcard == BUN_NONE)
 				rcard = max;
 		}
-		cost = ( (dbl)lcard + (dbl)rcard + (lcard*rcard * sel) );
+		BUN n = l->nrcols + r->nrcols; /* not correct includes join exps */
+		cost = ( (dbl)lcard + (dbl)rcard + (lcard*rcard * sel * n * 8) );
 		if (VERBOSE) {
 			printf("%F %F ", cost, sel);
 			_exp_print(v->sql, e);
@@ -3643,6 +3642,8 @@ push_in_join_down(mvc *sql, list *rels, list *exps)
 	}
 	return rels;
 }
+
+static sql_rel *rel_join_order_(visitor *v, sql_rel *rel);
 
 sql_rel *
 reorder_join(visitor *v, sql_rel *rel)
@@ -5268,7 +5269,7 @@ rel_push_func_down(visitor *v, sql_rel *rel)
 		if (v->changes > changes) /* once we get a better join order, we can try to remove this projection */
 			return rel_project(v->sql->sa, rel, rel_projections(v->sql, rel, NULL, 1, 1));
 	}
-	if (is_simple_project(rel->op) && rel->l && rel->exps) {
+	if (is_simple_project(rel->op) && rel->l && rel->exps && !rel->r) {
 		sql_rel *pl = rel->l;
 
 		if (is_joinop(pl->op) && exps_can_push_func(rel->exps, rel)) {
