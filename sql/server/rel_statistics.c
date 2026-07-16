@@ -999,8 +999,8 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 
 					if (find_prop(e->p, PROP_JOINIDX)) {
 						prop *lsp = find_prop(l->p, PROP_SELECTIVITY), *rsp = find_prop(r->p, PROP_SELECTIVITY);
-						dbl ls = lsp ? lsp->value.dval : 1.0;
-						dbl rs = rsp ? rsp->value.dval : 1.0;
+						dbl ls = lsp && is_join(l->op) ? lsp->value.dval : 1.0;
+						dbl rs = rsp && is_join(r->op) ? rsp->value.dval : 1.0;
 						join_idx_estimate = lv>rv?lv:rv;
 						join_idx_estimate *= ls * rs;
 						if (join_idx_estimate < 1)

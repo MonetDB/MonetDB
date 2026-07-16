@@ -25,7 +25,7 @@ extern stmt *stmt_oahash_frequency(backend *be, stmt *freq, stmt *prnt, bool occ
 extern stmt *stmt_oahash_hash(backend *be, stmt *key, stmt *prev, stmt *ht);
 extern stmt *stmt_oahash_probe(backend *be, stmt *key, stmt *prev, stmt *rhs_ht, stmt *freq, stmt *outer, bool single, bool semantics, bool eq, bool outerjoin, bool groupedjoin);
 
-extern stmt *stmt_algebra_project(backend *be, stmt *inout, stmt *pos, stmt *val, const char *fname, const stmt *pp);
+extern stmt *stmt_algebra_project(backend *be, stmt *inout, stmt *pos, stmt *val, const char *fname);
 extern stmt *stmt_oahash_project_cart(backend *be, stmt *col, stmt *repeat, bool outer, bool expand);
 
 extern stmt *stmt_oahash_expand(backend *be, const stmt *prb_res, const stmt *freq, bit outer);
@@ -42,7 +42,7 @@ extern stmt *stmt_pp_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subf
 extern stmt *stmt_group_partitioned(backend *be, stmt *op1, stmt *grp, stmt *ext, stmt *cnt);
 
 extern stmt *stmt_limit_partitioned(backend *sa, stmt *c, stmt *piv, stmt *gid, stmt *offset, stmt *limit);
-extern stmt *stmt_unique_sharedout(backend *be, stmt *op1, int output);
+extern stmt *stmt_ialgebra_unique(backend *be, stmt *op1, int output);
 
 extern stmt *stmt_slice(backend *be, stmt *col, stmt *limit);
 extern stmt *stmt_nth_slice(backend *be, stmt *col, bool hash);

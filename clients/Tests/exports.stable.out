@@ -1025,6 +1025,7 @@ const char groupedfirstnRef[];
 const char growRef[];
 int hasSideEffects(MalBlkPtr mb, InstrPtr p, int strict);
 const char hgeRef[];
+const char ialgebraRef[];
 const char identityRef[];
 const char ifthenelseRef[];
 const char igroupRef[];

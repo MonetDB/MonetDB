@@ -260,9 +260,7 @@ rel_pp_topn(backend *be, list *projectresults, stmt *sub, stmt *pp, stmt *o, stm
 
 		sc = column(be, sc);
 		sc = stmt_project(be, limit, sc);
-		sc = stmt_project(be, glimit, sc);
-		sc->q->inout = 0;
-		sc->q = pushArgument(be->mb, sc->q, be->pipeline);
+		sc = stmt_algebra_project(be, NULL, glimit, sc, projectionRef);
 		sc->nr = sc->q->argv[0] = resid; /* use shared result */
 		list_append(newl, stmt_alias(be, sc, label, tname, cname));
 	}

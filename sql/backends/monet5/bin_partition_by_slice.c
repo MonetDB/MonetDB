@@ -17,6 +17,7 @@
 
 #include "bin_partition_by_slice.h"
 #include "bin_partition.h"
+#include "mal_namespace.h"
 #include "rel_bin.h"
 #include "rel_exp.h"
 #include "rel_rewriter.h"
@@ -637,10 +638,9 @@ rel_groupby_combine_pp(backend *be, sql_rel *rel, list *gbstmts, stmt *grp, stmt
 				q = pushArgument(be->mb, q, getArg(pp->q, 2));
 				q = pushArgument(be->mb, q, grp->nr);
 			} else {
-				q = newStmt(be->mb, getName("algebra"), projectionRef);
+				q = newStmt(be->mb, ialgebraRef, projectionRef);
 				q = pushArgument(be->mb, q, grp->nr);
 				q = pushArgument(be->mb, q, i->nr);
-				q = pushArgument(be->mb, q, getArg(pp->q, 2));
 			}
 			getArg(q, 0) = *v;
 			q->inout = 0;
@@ -973,9 +973,7 @@ rel2bin_groupby_pp(backend *be, sql_rel *rel, list *refs)
 			for( en = gbexps->h; en; en = en->next ) {
 				stmt *gbcol = en->data;
 				if (gbcol && groupby) {
-					gbcol = stmt_project(be, grp /*ext*/, gbcol);
-					gbcol->q = pushArgument(be->mb, gbcol->q, be->pipeline);
-					gbcol->q->inout = 1;
+					gbcol = stmt_algebra_project(be, NULL, grp /*ext*/, gbcol, projectionRef);
 					if (list_length(gbexps) == 1)
 						gbcol->key = 1;
 				}
@@ -1068,7 +1066,7 @@ rel2bin_groupby_pp(backend *be, sql_rel *rel, list *refs)
 				}
 				if (prev) {
 					assert(m);
-					stmt *u = stmt_unique_sharedout(be, m->data, prev->shared);
+					stmt *u = stmt_ialgebra_unique(be, m->data, prev->shared);
 					if (u == NULL)
 						return NULL;
 					if (pgrp)
@@ -1148,10 +1146,10 @@ rel2bin_groupby_pp(backend *be, sql_rel *rel, list *refs)
 		if (gbexps && !aggrstmt && aggrexp->type == e_column) {
 			aggrstmt = list_find_column_nid(be, gbexps, aggrexp->nid);
 			if ((!be->pipeline || !_2phases) && aggrstmt && groupby) {
-				aggrstmt = stmt_project(be, be->pipeline?grp:ext, aggrstmt);
 				if (be->pipeline) {
-					aggrstmt->q = pushArgument(be->mb, aggrstmt->q, be->pipeline);
-					aggrstmt->q->inout = 1;
+					aggrstmt = stmt_algebra_project(be, NULL, grp, aggrstmt, projectionRef);
+				} else {
+					aggrstmt = stmt_project(be, ext, aggrstmt);
 				}
 				if (list_length(gbexps) == 1)
 					aggrstmt->key = 1;

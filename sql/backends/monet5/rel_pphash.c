@@ -357,7 +357,7 @@ rel2bin_oahash_build(backend *be, sql_rel *rel, list *refs)
 			stmt *payload = exp_bin(be, e, sub, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
 			assert(payload); /* must find */
 			payload = column(be, payload);
-			stmt *s = stmt_algebra_project(be, res, prnt, payload, projectionRef, pp);
+			stmt *s = stmt_algebra_project(be, res, prnt, payload, projectionRef);
 			if (e->alias.label)
 				s = stmt_alias(be, s, e->alias.label, exp_find_rel_name(e), exp_name(e));
 			append(ll, s);
@@ -1001,7 +1001,7 @@ rel2bin_oahash_rightouterjoin(backend *be, sql_rel *rel, list *refs)
 	}
 
 	if (!hsh_mrk) return NULL;
-	hp_mrk = stmt_algebra_project(be, hp_mrk, hsh_mrk, stmt_bool(be,1), projectRef, get_pipeline(be));
+	hp_mrk = stmt_algebra_project(be, hp_mrk, hsh_mrk, stmt_bool(be,1), projectRef);
 	// END existing code
 
 	/* skip useless hash side cols on empty payload */
@@ -1212,7 +1212,7 @@ rel2bin_oahash_fullouterjoin(backend *be, sql_rel *rel, list *refs)
 		hsh_mrk = stmt_project(be, sel, hsh_mrk);
 	}
 	if (!hsh_mrk) return NULL;
-	hp_mrk = stmt_algebra_project(be, hp_mrk, hsh_mrk, stmt_bool(be,1), projectRef, get_pipeline(be));
+	hp_mrk = stmt_algebra_project(be, hp_mrk, hsh_mrk, stmt_bool(be,1), projectRef);
 	// END existing code
 
 	/* skip useless hash side cols on empty payload */
