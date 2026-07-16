@@ -121,7 +121,7 @@ static sql_rel *
 rel_push_project_down(visitor *v, global_props *gp, sql_rel *rel)
 {
 	(void) gp;
-	return rel_visitor_bottomup(v, rel, &rel_push_project_down_);
+	return rel_visitor_topdown(v, rel, &rel_push_project_down_);
 }
 
 run_optimizer
