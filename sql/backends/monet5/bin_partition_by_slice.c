@@ -1066,7 +1066,7 @@ rel2bin_groupby_pp(backend *be, sql_rel *rel, list *refs)
 				}
 				if (prev) {
 					assert(m);
-					stmt *u = stmt_unique_sharedout(be, m->data, prev->shared);
+					stmt *u = stmt_ialgebra_unique(be, m->data, prev->shared);
 					if (u == NULL)
 						return NULL;
 					if (pgrp)

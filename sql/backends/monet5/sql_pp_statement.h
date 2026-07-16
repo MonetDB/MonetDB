@@ -42,7 +42,7 @@ extern stmt *stmt_pp_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subf
 extern stmt *stmt_group_partitioned(backend *be, stmt *op1, stmt *grp, stmt *ext, stmt *cnt);
 
 extern stmt *stmt_limit_partitioned(backend *sa, stmt *c, stmt *piv, stmt *gid, stmt *offset, stmt *limit);
-extern stmt *stmt_unique_sharedout(backend *be, stmt *op1, int output);
+extern stmt *stmt_ialgebra_unique(backend *be, stmt *op1, int output);
 
 extern stmt *stmt_slice(backend *be, stmt *col, stmt *limit);
 extern stmt *stmt_nth_slice(backend *be, stmt *col, bool hash);

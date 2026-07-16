@@ -339,7 +339,7 @@ stmt_limit_partitioned(backend *be, stmt *col, stmt *piv, stmt *gid, stmt *offse
 
 /* output: shared bat var id, must always be a positive number */
 stmt *
-stmt_unique_sharedout(backend *be, stmt *s, int output)
+stmt_ialgebra_unique(backend *be, stmt *s, int output)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
@@ -347,14 +347,13 @@ stmt_unique_sharedout(backend *be, stmt *s, int output)
 	if (s->nr < 0)
 		return NULL;
 
-	q = newStmt(mb, algebraRef, uniqueRef);
+	q = newStmt(mb, ialgebraRef, uniqueRef);
 	if(!q)
 		return NULL;
 
 	assert(output > 0);
 	q = pushReturn(mb, q, output);
 	q->inout = 1;
-	q = pushArgument(mb, q, be->pipeline);
 	q = pushArgument(mb, q, s->nr);
 	q = pushNilBat(mb, q); /* candidate list */
 	pushInstruction(mb, q);

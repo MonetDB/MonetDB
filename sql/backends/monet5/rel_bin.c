@@ -1903,7 +1903,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 				stmt *a = l->h->data;
 				stmt *u;
 				if (e->shared) {
-					u = stmt_unique_sharedout(be, a, e->shared);
+					u = stmt_ialgebra_unique(be, a, e->shared);
 					if (u == NULL)
 						return NULL;
 					if (grp)

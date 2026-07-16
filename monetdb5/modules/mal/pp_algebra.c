@@ -1032,10 +1032,10 @@ LOCKEDAGGRnull(Client ctx, bat *result, const bit *hadnull)
 		)
 
 static str
-LALGunique(Client ctx, bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid)
+LALGunique(Client ctx, bat *rid, bat *uid, bat *bid, bat *sid)
 {
 	(void)ctx;
-	Pipeline *p = (Pipeline*)*H;
+	Pipeline *p = pipeline_get_thread_private_pipeline();
 	assert(!is_bat_nil(*uid));
 	str err = NULL;
 	assert(is_bat_nil(*sid)); /* no cands jet */
@@ -1045,7 +1045,7 @@ LALGunique(Client ctx, bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid)
 	BAT *u = BATdescriptor(*uid);
 	BAT *b = BATdescriptor(*bid);
 	if (u == NULL || b == NULL) {
-		err = createException(MAL, "pp algebra.unique", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		err = createException(MAL, "ialgebra.unique", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto error;
 	}
 
@@ -1062,7 +1062,7 @@ LALGunique(Client ctx, bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid)
 			h->allocators = (allocator**)GDKzalloc(p->p->nr_workers*sizeof(allocator*));
 			if (!h->allocators) {
 				pipeline_unlock(p);
-				err = createException(MAL, "pp algebra.(group )unique", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				err = createException(MAL, "ialgebra.(group_)unique", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto error;
 			} else
 				h->nr_allocators = p->p->nr_workers;
@@ -1074,7 +1074,7 @@ LALGunique(Client ctx, bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid)
 			snprintf(name, sizeof(name), "pp%d", p->wid);
 			h->allocators[p->wid] = create_allocator(name, false);
 			if (!h->allocators[p->wid]) {
-				err = createException(MAL, "pp algebra.(group )unique", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				err = createException(MAL, "ialgebra.(group_)unique", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto error;
 			}
 		}
@@ -1108,7 +1108,7 @@ LALGunique(Client ctx, bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid)
 
 		BAT *g = COLnew(0, TYPE_oid, cnt, TRANSIENT);
 		if (g == NULL) {
-			err = createException(MAL, "pp algebra.unique", MAL_MALLOC_FAIL);
+			err = createException(MAL, "ialgebra.unique", MAL_MALLOC_FAIL);
 			goto error;
 		}
 		if (cnt && !err) {
@@ -1143,7 +1143,7 @@ LALGunique(Client ctx, bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid)
 			}
 			h->processed += cnt;
 			ht_deactivate(h);
-			TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "pp algebra.unique", RUNTIME_QRY_TIMEOUT));
+			TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "ialgebra.unique", RUNTIME_QRY_TIMEOUT));
 		}
 		if (err) {
 			BBPunfix(g->batCacheid);
@@ -1283,10 +1283,10 @@ LALGunique(Client ctx, bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid)
 		)
 
 static str
-LALGgroup_unique(Client ctx, bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid, bat *Gid)
+LALGgroup_unique(Client ctx, bat *rid, bat *uid, bat *bid, bat *sid, bat *Gid)
 {
 	(void)ctx;
-	Pipeline *p = (Pipeline*)*H;
+	Pipeline *p = pipeline_get_thread_private_pipeline();
 	assert(!is_bat_nil(*uid));
 	str err = NULL;
 	assert(is_bat_nil(*sid)); /* no cands jet */
@@ -1297,7 +1297,7 @@ LALGgroup_unique(Client ctx, bat *rid, bat *uid, const ptr *H, bat *bid, bat *si
 	BAT *G = BATdescriptor(*Gid);
 	BAT *b = BATdescriptor(*bid);
 	if (u == NULL || G == NULL || b == NULL) {
-		err = createException(MAL, "pp algebra.(group_)unique", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		err = createException(MAL, "ialgebra.(group_)unique", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto error;
 	}
 
@@ -1314,7 +1314,7 @@ LALGgroup_unique(Client ctx, bat *rid, bat *uid, const ptr *H, bat *bid, bat *si
 			h->allocators = (allocator**)GDKzalloc(p->p->nr_workers*sizeof(allocator*));
 			if (!h->allocators) {
 				pipeline_unlock(p);
-				err = createException(MAL, "pp algebra.(group )unique", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				err = createException(MAL, "ialgebra.(group_)unique", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto error;
 			} else
 				h->nr_allocators = p->p->nr_workers;
@@ -1326,7 +1326,7 @@ LALGgroup_unique(Client ctx, bat *rid, bat *uid, const ptr *H, bat *bid, bat *si
 			snprintf(name, sizeof(name), "pp%d", p->wid);
 			h->allocators[p->wid] = create_allocator(name, false);
 			if (!h->allocators[p->wid]) {
-				err = createException(MAL, "pp algebra.(group )unique", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				err = createException(MAL, "ialgebra.(group_)unique", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto error;
 			}
 		}
@@ -1359,7 +1359,7 @@ LALGgroup_unique(Client ctx, bat *rid, bat *uid, const ptr *H, bat *bid, bat *si
 
 		BAT *ng = COLnew(0, TYPE_oid, cnt, TRANSIENT);
 		if (ng == NULL) {
-			err = createException(MAL, "pp algebra.(group_)unique", MAL_MALLOC_FAIL);
+			err = createException(MAL, "ialgebra.(group_)unique", MAL_MALLOC_FAIL);
 			goto error;
 		}
 		if (cnt && !err) {
@@ -1397,7 +1397,7 @@ LALGgroup_unique(Client ctx, bat *rid, bat *uid, const ptr *H, bat *bid, bat *si
 				gaunique(str,const char *)
 			}
 			ht_deactivate(h);
-			TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "pp algebra.(group_)unique", RUNTIME_QRY_TIMEOUT));
+			TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "ialgebra.(group_)unique", RUNTIME_QRY_TIMEOUT));
 		}
 		if (err) {
 			BBPunfix(ng->batCacheid);
@@ -4914,8 +4914,8 @@ static mel_func pp_algebra_init_funcs[] = {
  command("ialgebra", "projection", LALGproject,  false, "Project.",               args(1,3, batargany("",1), batarg("gid", oid), batargany("b",1))),
 
  /* COUNT DISTINCT: globle / grouped */
- command("algebra", "unique", LALGunique,       false, "Unique rows.",           args(2,5, batarg("gid", oid),  batargany("",1), arg("pipeline", ptr), batargany("b",1), batarg("s",oid))),
- command("algebra", "unique", LALGgroup_unique, false, "Unique rows per group.", args(2,6, batarg("ngid", oid), batargany("",1), arg("pipeline", ptr), batargany("b",1), batarg("s",oid), batarg("gid",oid))),
+ command("ialgebra", "unique", LALGunique,       false, "Unique rows.",           args(2,4, batarg("gid", oid),  batargany("",1), batargany("b",1), batarg("s",oid))),
+ command("ialgebra", "unique", LALGgroup_unique, false, "Unique rows per group.", args(2,5, batarg("ngid", oid), batargany("",1), batargany("b",1), batarg("s",oid), batarg("gid",oid))),
 
  /********** Grouped aggregates **********/
  command("aggr", "min",   LALGmin,       false, "Min per group.",                             args(1,5, batargany("",1), batarg("gid", oid), batargany("", 1), arg("pipeline", ptr), batarg("pid", oid))),
