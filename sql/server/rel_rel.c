@@ -318,6 +318,14 @@ rel_bind_column( mvc *sql, sql_rel *rel, const char *cname, int f, int no_tname)
 
 	if (is_insert(rel->op) && !is_processed(rel))
 		rel = rel->r;
+	if (is_physical(rel->op)) {
+		sql_exp *e = exps_bind_column(rel->exps, cname, &ambiguous, &multi, no_tname);
+		if (e)
+			return exp_ref(sql, e);
+		e = exps_bind_column(rel->attr, cname, &ambiguous, &multi, no_tname);
+		if (e)
+			return exp_ref(sql, e);
+	}
 	if ((is_project(rel->op) || is_base(rel->op) || is_modify(rel->op))) {
 		sql_exp *e = NULL;
 		list *exps = rel->exps;
@@ -408,6 +416,14 @@ rel_bind_column2( mvc *sql, sql_rel *rel, const char *tname, const char *cname, 
 	if (mvc_highwater(sql))
 		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 
+	if (is_physical(rel->op)) {
+		sql_exp *e = exps_bind_column2(rel->exps, tname, cname, &multi);
+		if (e)
+			return exp_ref(sql, e);
+		e = exps_bind_column2(rel->attr, tname, cname, &multi);
+		if (e)
+			return exp_ref(sql, e);
+	}
 	if ((is_project(rel->op) || is_base(rel->op) || is_modify(rel->op))) {
 		sql_exp *e = NULL;
 		list *exps = rel->exps;
