@@ -621,7 +621,6 @@ rel_groupby_combine_pp(backend *be, sql_rel *rel, list *gbstmts, stmt *grp, stmt
 					it = first_arg_subtype(e);
 				if (avg && EC_APPNUM(tpe->type->eclass) && it && !EC_APPNUM(it->type->eclass))
 					tpe = it;
-				//q = newStmt(be->mb, getName("aggr"), getName(name));
 				q = newStmt(be->mb, ilockedaggrRef, getName(name));
 				if (avg || sum) { /* remainder (or compensation) and count */
 					m = m->next;
@@ -636,7 +635,6 @@ rel_groupby_combine_pp(backend *be, sql_rel *rel, list *gbstmts, stmt *grp, stmt
 					q = pushArgument(be->mb, q, getArg(i->q, 1));
 					q = pushArgument(be->mb, q, getArg(i->q, 2));
 				}
-				//q = pushArgument(be->mb, q, getArg(pp->q, 2));
 				q = pushArgument(be->mb, q, grp->nr);
 			} else {
 				q = newStmt(be->mb, ialgebraRef, projectionRef);
