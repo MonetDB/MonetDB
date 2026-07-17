@@ -35689,11 +35689,6 @@ command inspect.getAtomSizes():bat[:int]
 INSPECTatom_sizes
 Collect a BAT with the atom sizes.
 inspect
-getAtomSuper
-command inspect.getAtomSuper():bat[:str]
-INSPECTatom_sup_names
-Collect a BAT with the atom names.
-inspect
 getComment
 pattern inspect.getComment(X_0:str, X_1:str):bat[:str]
 INSPECTgetComment

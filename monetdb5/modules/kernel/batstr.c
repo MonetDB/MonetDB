@@ -82,9 +82,9 @@ do_batstr_int(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	bool nils = false;
 	struct canditer ci1 = { 0 };
 	oid off1;
-	bat *res = getArgReference_bat(stk, pci, 0),
-		bid = *getArgReference_bat(stk, pci, 1),
-		*sid1 = pci->argc == 3 ? getArgReference_bat(stk, pci, 2) : NULL;
+	bat *res = getArgReference_bat(stk, pci, 0);
+	bat bid = *getArgReference_bat(stk, pci, 1);
+	bat sid = pci->argc == 3 ? *getArgReference_bat(stk, pci, 2) : 0;
 
 	(void) cntxt;
 	(void) mb;
@@ -93,7 +93,7 @@ do_batstr_int(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	if (sid1 && !is_bat_nil(*sid1) && !(bs = BATdescriptor(*sid1))) {
+	if (!is_bat_nil(sid) && !(bs = BATdescriptor(sid))) {
 		msg = createException(MAL, name,
 							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
