@@ -1002,7 +1002,7 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 						dbl ls = lsp && is_join(l->op) ? lsp->value.dval : 1.0;
 						dbl rs = rsp && is_join(r->op) ? rsp->value.dval : 1.0;
 						join_idx_estimate = lv>rv?lv:rv;
-						join_idx_estimate *= ls * rs;
+						join_idx_estimate = (BUN)(join_idx_estimate * ls * rs);
 						if (join_idx_estimate < 1)
 							join_idx_estimate = 1;
 						dbl s = ((dbl)join_idx_estimate/(lv*rv));
@@ -1037,7 +1037,7 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 								sp->value.dval = s;
 								e->p = sp;
 							} else {
-								dbl u = MAX(lu, ru);
+								dbl u = (dbl)MAX(lu, ru);
 								//dbl s = u/(lv*rv);
 								dbl s = 1/u;
 								prop *sp = prop_create(v->sql->sa, PROP_SELECTIVITY, (prop *) e->p);
