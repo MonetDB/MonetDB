@@ -30,9 +30,9 @@
 #define inet4_min(a,b) ((cmp((void*)&a,(void*)&b)<0)?a:b)
 #define inet4_max(a,b) ((cmp((void*)&a,(void*)&b)>0)?a:b)
 
-#define getArgReference_date(stk, pci, nr)      (date*)getArgReference(stk, pci, nr)
-#define getArgReference_inet4(stk, pci, nr)      (inet4*)getArgReference(stk, pci, nr)
-#define getArgReference_daytime(stk, pci, nr)   (daytime*)getArgReference(stk, pci, nr)
+#define getArgReference_date(stk, pci, nr) (date*)getArgReference(stk, pci, nr)
+#define getArgReference_inet4(stk, pci, nr) (inet4*)getArgReference(stk, pci, nr)
+#define getArgReference_daytime(stk, pci, nr) (daytime*)getArgReference(stk, pci, nr)
 #define getArgReference_timestamp(stk, pci, nr) (timestamp*)getArgReference(stk, pci, nr)
 
 #define aggr(T,f)												\
@@ -249,7 +249,7 @@ LOCKEDAGGRprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				t[0] = val;												\
 				tcnt[0] = cnt;											\
 			} else {													\
-			    dbl tt = (dbl) (tcnt[0] + cnt);							\
+				dbl tt = (dbl) (tcnt[0] + cnt);							\
 				t[0] = (T) ((t[0]*((dbl)tcnt[0]/tt)) + (val*((dbl)cnt/tt))); \
 				tcnt[0] += cnt;											\
 			}															\
@@ -523,7 +523,7 @@ mulmod(lng a, lng b, lng c)
 			overflow += (is_##T##_nil(a1)?(int)n1:0);			\
 			n2 = n1;							\
 		} else if (!is_##T##_nil(a1)) {						\
-		    	T t = a2 + a1;							\
+			T t = a2 + a1;							\
 			if (fabs(a2) >= fabs(a1))					\
 				e2 += (a2 - t) + a1;					\
 			else								\
@@ -967,10 +967,10 @@ LOCKEDAGGRnull(Client ctx, bat *result, const bit *hadnull)
 	}
 
 #define unique(Type) \
-	unique_(Type,  \
+	unique_(Type, \
 			Type, \
 			, \
-		    Type *bp = Tloc(b, 0), \
+			Type *bp = Tloc(b, 0), \
 			, \
 			(gid)_hash_##Type(bp[i]), \
 			vals[g] != bp[i], \
@@ -983,7 +983,7 @@ LOCKEDAGGRnull(Client ctx, bat *result, const bit *hadnull)
 	unique_(Type, \
 			BaseType, \
 			, \
-		    Type *bp = Tloc(b, 0), \
+			Type *bp = Tloc(b, 0), \
 			, \
 			(gid)_hash_##Type(*(((BaseType*)bp)+i)), \
 			(!(is_##Type##_nil(bp[i]) && is_##Type##_nil(vals[g])) && vals[g] != bp[i]), \
@@ -996,7 +996,7 @@ LOCKEDAGGRnull(Client ctx, bat *result, const bit *hadnull)
 	unique_(Type, \
 			BaseType, \
 			, \
-		    Type *bp = Tloc(b, 0), \
+			Type *bp = Tloc(b, 0), \
 			, \
 			(gid)_hash_##Type(*(((BaseType*)bp)+i)), \
 			(!(is_##Type##_nil(bp[i]) && is_##Type##_nil(vals[g])) && h->cmp(vals+g, bp+i) != 0), \
@@ -1218,10 +1218,10 @@ LALGunique(Client ctx, bat *rid, bat *uid, bat *bid, bat *sid)
 	}
 
 #define gunique(Type) \
-	gunique_(Type,  \
+	gunique_(Type, \
 			Type, \
 			, \
-		    Type *bp = Tloc(b, 0), \
+			Type *bp = Tloc(b, 0), \
 			, \
 			(gid)_hash_##Type(bp[i]), \
 			vals[g] != bp[i], \
@@ -1234,7 +1234,7 @@ LALGunique(Client ctx, bat *rid, bat *uid, bat *bid, bat *sid)
 	gunique_(Type, \
 			BaseType, \
 			, \
-		    Type *bp = Tloc(b, 0), \
+			Type *bp = Tloc(b, 0), \
 			, \
 			(gid)_hash_##Type(*(((BaseType*)bp)+i)), \
 			(!(is_##Type##_nil(bp[i]) && is_##Type##_nil(vals[g])) && vals[g] != bp[i]), \
@@ -1247,7 +1247,7 @@ LALGunique(Client ctx, bat *rid, bat *uid, bat *bid, bat *sid)
 	gunique_(Type, \
 			BaseType, \
 			, \
-		    Type *bp = Tloc(b, 0), \
+			Type *bp = Tloc(b, 0), \
 			, \
 			(gid)_hash_##Type(*(((BaseType*)bp)+i)), \
 			(!(is_##Type##_nil(bp[i]) && is_##Type##_nil(vals[g])) && h->cmp(vals+g, bp+i) != 0), \
@@ -1471,7 +1471,7 @@ LALGgroup_unique(Client ctx, bat *rid, bat *uid, bat *bid, bat *sid, bat *Gid)
 		group_(Type, \
 			Type, \
 			, \
-		    Type *bp = Tloc(b, 0), \
+			Type *bp = Tloc(b, 0), \
 			, \
 			(gid)_hash_##Type(bp[i]), \
 			vals[g] != bp[i], \
@@ -1545,7 +1545,7 @@ LALGgroup_unique(Client ctx, bat *rid, bat *uid, bat *bid, bat *sid, bat *Gid)
 		group_(Type, \
 			BaseType, \
 			, \
-		    Type *bp = Tloc(b, 0), \
+			Type *bp = Tloc(b, 0), \
 			, \
 			(gid)_hash_##Type(*(((BaseType*)bp)+i)), \
 			(!(is_##Type##_nil(bp[i]) && is_##Type##_nil(vals[g])) && vals[g] != bp[i]), \
@@ -1598,7 +1598,7 @@ LALGgroup_unique(Client ctx, bat *rid, bat *uid, bat *bid, bat *sid, bat *Gid)
 	}
 
 #define afgroup() \
-	    assert(h->hsh && h->cmp); \
+		assert(h->hsh && h->cmp); \
 		int w = b->twidth; \
 		group_(char, \
 			char, \
@@ -1810,7 +1810,7 @@ LALGgroup(Client ctx, bat *rid, bat *uid, bat *bid)
 		derive_(Type, \
 			Type, \
 			, \
-		    Type *bp = Tloc(b, 0), \
+			Type *bp = Tloc(b, 0), \
 			, \
 			(gid)_hash_##Type(bp[i]), \
 			vals[g] != bp[i], \
@@ -1841,7 +1841,7 @@ LALGgroup(Client ctx, bat *rid, bat *uid, bat *bid)
 		derive_(Type, \
 			BaseType, \
 			, \
-		    Type *bp = Tloc(b, 0), \
+			Type *bp = Tloc(b, 0), \
 			, \
 			(gid)_hash_##Type(*(((BaseType*)bp)+i)), \
 			(!(is_##Type##_nil(bp[i]) && is_##Type##_nil(vals[g])) && vals[g] != bp[i]), \
@@ -2147,7 +2147,7 @@ LALGderive(Client ctx, bat *rid, bat *uid, bat *Gid, bat *Ph, bat *bid)
 		} \
 	} while(0)
 
-/* inout := algebra.project(groupid, val)  */
+/* inout := algebra.project(groupid, val) */
 /* this (possibly) overwrites the values, therefor for expensive (var) types we
  * only write offsets (ie use the heap from the parent) */
 static str
@@ -2362,7 +2362,7 @@ LALGconstant(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		bat_iterator_end(&bi); \
 	}
 
-/* result := ialgebra.projection(groupid, input)  */
+/* result := ialgebra.projection(groupid, input) */
 /* this (possibly) overwrites the values, therefor for expensive (var) types we
  * only write offsets (ie use the heap from the parent) */
 static str
@@ -2648,7 +2648,7 @@ LALGcountstar(Client ctx, bat *rid, bat *gid, bat *pid)
 #define gfcount(Type) \
 	if (tt == TYPE_##Type) { \
 			Type *in = Tloc(b, 0); \
-		    int (*cmp)(const void *v1,const void *v2) = ATOMcompare(tt); \
+			int (*cmp)(const void *v1,const void *v2) = ATOMcompare(tt); \
 			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) \
 				o[v[i]]+= cmp(in+i, &Type##_nil) != 0; \
 	}
@@ -2657,7 +2657,7 @@ LALGcountstar(Client ctx, bat *rid, bat *gid, bat *pid)
 	if (tt == TYPE_##Type) { \
 			BATiter bi = bat_iterator(b); \
 			const void *nil = ATOMnilptr(tt); \
-		    int (*cmp)(const void *v1,const void *v2) = ATOMcompare(tt); \
+			int (*cmp)(const void *v1,const void *v2) = ATOMcompare(tt); \
 			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
 				o[v[i]]+= cmp(BUNtvar(&bi, i), nil)!=0; \
 			} \
@@ -2678,13 +2678,13 @@ LALGcount(Client ctx, bat *rid, bat *gid, bat *bid, bit *nonil, bat *pid)
 	g = BATdescriptor(*gid);
 	b = BATdescriptor(*bid);
 	if (g == NULL || b == NULL) {
-		err =  createException(MAL, "ilockedaggr.count", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		err = createException(MAL, "ilockedaggr.count", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto error;
 	}
 
 	if (!is_bat_nil(*rid)) {
 		if ((r = BATdescriptor(*rid)) == NULL) {
-			err =  createException(MAL, "ilockedaggr.count", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+			err = createException(MAL, "ilockedaggr.count", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			goto error;
 		}
 	}
@@ -2809,12 +2809,12 @@ LALGsum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	g = BATdescriptor(*gid);
 	b = BATdescriptor(*bid);
 	if (g == NULL || b == NULL) {
-		err =  createException(MAL, "ilockedaggr.sum", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		err = createException(MAL, "ilockedaggr.sum", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto error;
 	}
 	if (!is_bat_nil(*rid)) {
 		if ((r = BATdescriptor(*rid)) == NULL) {
-			err =  createException(MAL, "ilockedaggr.sum", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+			err = createException(MAL, "ilockedaggr.sum", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			goto error;
 		}
 	}
@@ -3070,12 +3070,12 @@ LALGavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	if (b == NULL ||
-	    g == NULL ||
-	    (cid && c == NULL) ||
-	    (rem && r == NULL) ||
-	    ((*rid && !is_bat_nil(*rid)) && bn == NULL) ||
-	    (bn && cn == NULL) ||
-	    ((bn && rrem) && rn == NULL)) {
+		g == NULL ||
+		(cid && c == NULL) ||
+		(rem && r == NULL) ||
+		((*rid && !is_bat_nil(*rid)) && bn == NULL) ||
+		(bn && cn == NULL) ||
+		((bn && rrem) && rn == NULL)) {
 		err = createException(MAL, "ilockedaggr.avg", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto error;
 	}
@@ -3480,12 +3480,12 @@ LALGsum_float(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	if (b == NULL ||
-	    g == NULL ||
-	    (cid && c == NULL) ||
-	    (rem && r == NULL) ||
-	    ((*rid && !is_bat_nil(*rid)) && bn == NULL) ||
-	    (bn && cn == NULL) ||
-	    ((bn && rrem) && rn == NULL)) {
+		g == NULL ||
+		(cid && c == NULL) ||
+		(rem && r == NULL) ||
+		((*rid && !is_bat_nil(*rid)) && bn == NULL) ||
+		(bn && cn == NULL) ||
+		((bn && rrem) && rn == NULL)) {
 		err = createException(MAL, "ilockedaggr.sum", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto error;
 	}
@@ -3789,7 +3789,7 @@ bail:
 			BATiter ri = bat_iterator(r); \
 			char *bp = bi.vh->base; \
 			char *op = ri.vh->base; \
-		    int (*cmp)(const void *v1,const void *v2) = ATOMcompare(tt); \
+			int (*cmp)(const void *v1,const void *v2) = ATOMcompare(tt); \
 			const char *nil = ATOMnilptr(r->ttype); \
 			if (b->twidth == 1) { \
 				bp += GDK_VAROFFSET; \
@@ -3863,7 +3863,7 @@ getoffset(const void *b, BUN p, int w)
 			BATiter bi = bat_iterator(b); \
 			BATiter ri = bat_iterator(r); \
 			char *bp = bi.vh->base; \
-		    int (*cmp)(const void *v1,const void *v2) = ATOMcompare(tt); \
+			int (*cmp)(const void *v1,const void *v2) = ATOMcompare(tt); \
 			const char *nil = ATOMnilptr(r->ttype); \
 			if (b->twidth == 1) { \
 				bp += GDK_VAROFFSET; \
@@ -4437,8 +4437,8 @@ LALGcnull(Client ctx, bat *rid, bat *gid, bat *bid, bat *pid)
 	if (tt == TYPE_##Type) { \
 			Type *in = Tloc(b, 0); \
 			Type *o = Tloc(r, 0); \
-		    BUN s = 0; \
-		    oid cur = grp[0]; \
+			BUN s = 0; \
+			oid cur = grp[0]; \
 			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
 				if (grp[i] != cur) { \
 					BUN pos = ((i-s-1)*p/100); \
@@ -4900,26 +4900,26 @@ IALGfsum(Client ctx, dbl *result, dbl *com, lng *cnt, const bat *bid)
 
 #include "mel.h"
 static mel_func pp_algebra_init_funcs[] = {
- command("igroup", "group", LALGgroup,  false, "Group input.",     args(2,3, batarg("gid", oid), batargany("sink",1), batargany("b",1))),
+ command("igroup", "group", LALGgroup, false, "Group input.", args(2,3, batarg("gid", oid), batargany("sink",1), batargany("b",1))),
  command("igroup", "group", LALGderive, false, "Sub Group input.", args(2,5, batarg("gid", oid), batargany("sink",1), batarg("pgid", oid), batargany("phash", 2), batargany("b",1))),
 
- pattern("ialgebra", "project",    LALGconstant, false, "Project a single value", args(1,3, batargany("",1), batarg("gid", oid), argany("val",1))),
- command("ialgebra", "projection", LALGprojection,  false, "Project.",               args(1,3, batargany("",1), batarg("gid", oid), batargany("b",1))),
+ pattern("ialgebra", "project", LALGconstant, false, "Project a single value", args(1,3, batargany("",1), batarg("gid", oid), argany("val",1))),
+ command("ialgebra", "projection", LALGprojection, false, "Project.", args(1,3, batargany("",1), batarg("gid", oid), batargany("b",1))),
 
  /* COUNT DISTINCT: globle / grouped */
- command("ialgebra", "unique", LALGunique,       false, "Unique rows.",           args(2,4, batarg("gid", oid),  batargany("",1), batargany("b",1), batarg("s",oid))),
+ command("ialgebra", "unique", LALGunique, false, "Unique rows.", args(2,4, batarg("gid", oid), batargany("",1), batargany("b",1), batarg("s",oid))),
  command("ialgebra", "unique", LALGgroup_unique, false, "Unique rows per group.", args(2,5, batarg("ngid", oid), batargany("",1), batargany("b",1), batarg("s",oid), batarg("gid",oid))),
 
  /********** Grouped aggregates **********/
- command("ilockedaggr", "min",   LALGmin,       false, "Min per group.",                             args(1,4, batargany("",1), batarg("gid", oid), batargany("", 1), batarg("pid", oid))),
- command("ilockedaggr", "max",   LALGmax,       false, "Max per group.",                             args(1,4, batargany("",1), batarg("gid", oid), batargany("", 1), batarg("pid", oid))),
- pattern("ilockedaggr", "prod",  LALGprod,      false, "product per group.",                         args(1,4, batargany("",1), batarg("gid", oid), batargany("", 2), batarg("pid", oid))),
- command("ilockedaggr", "null",  LALGnull,      false, "has-null per group per partition.",          args(1,4, batarg("",bit),  batarg("gid", oid), batargany("", 1), batarg("pid", oid))),
- command("ilockedaggr", "cnull", LALGcnull,     false, "has-null per group all partition combined.", args(1,4, batarg("",bit),  batarg("gid", oid), batarg("", bit),  batarg("pid", oid))),
- command("ilockedaggr", "count", LALGcount,     false, "Count per group.",                           args(1,5, batarg("",lng),  batarg("gid", oid), batargany("", 1), arg("nonil", bit), batarg("pid", oid))),
- command("ilockedaggr", "count", LALGcountstar, false, "count per group.",                           args(1,3, batarg("",lng),  batarg("gid", oid),                                      batarg("pid", oid))),
+ command("ilockedaggr", "min", LALGmin, false, "Min per group.", args(1,4, batargany("",1), batarg("gid", oid), batargany("", 1), batarg("pid", oid))),
+ command("ilockedaggr", "max", LALGmax, false, "Max per group.", args(1,4, batargany("",1), batarg("gid", oid), batargany("", 1), batarg("pid", oid))),
+ pattern("ilockedaggr", "prod", LALGprod, false, "product per group.", args(1,4, batargany("",1), batarg("gid", oid), batargany("", 2), batarg("pid", oid))),
+ command("ilockedaggr", "null", LALGnull, false, "has-null per group per partition.", args(1,4, batarg("",bit), batarg("gid", oid), batargany("", 1), batarg("pid", oid))),
+ command("ilockedaggr", "cnull", LALGcnull, false, "has-null per group all partition combined.", args(1,4, batarg("",bit), batarg("gid", oid), batarg("", bit), batarg("pid", oid))),
+ command("ilockedaggr", "count", LALGcount, false, "Count per group.", args(1,5, batarg("",lng), batarg("gid", oid), batargany("", 1), arg("nonil", bit), batarg("pid", oid))),
+ command("ilockedaggr", "count", LALGcountstar, false, "count per group.", args(1,3, batarg("",lng), batarg("gid", oid), batarg("pid", oid))),
 
- pattern("ilockedaggr", "sum", LALGsum,       false, "sum per group.",                      args(1,4, batargany("",1),                                               batarg("gid", oid), batargany("", 2),   batarg("pid", oid))),
+ pattern("ilockedaggr", "sum", LALGsum, false, "sum per group.", args(1,4, batargany("",1), batarg("gid", oid), batargany("", 2), batarg("pid", oid))),
  /* sum core */
  pattern("ilockedaggr", "sum", LALGsum_float, false, "Kahan/Neumaier summation per group.", args(3,6, batarg("rsum", flt), batarg("rcom", flt), batarg("rcnt", lng), batarg("gid", oid), batarg("val", flt), batarg("pid", oid))),
  pattern("ilockedaggr", "sum", LALGsum_float, false, "Kahan/Neumaier summation per group.", args(3,6, batarg("rsum", dbl), batarg("rcom", dbl), batarg("rcnt", lng), batarg("gid", oid), batarg("val", dbl), batarg("pid", oid))),
@@ -4931,21 +4931,21 @@ static mel_func pp_algebra_init_funcs[] = {
  pattern("ilockedaggr", "compute_sum", compute_sum, false, "compute Kahan/Neumaier summation.", args(1,3, batarg("rsum",dbl), batarg("sum", dbl), batarg("com", dbl))),
 
  /* avg core */
- pattern("ilockedaggr", "avg", LALGavg, false, "avg per group.",                      args(3,6, batarg("ravg", dbl), batarg("rerror", dbl),     batarg("rcnt", lng), batarg("gid", oid), batargany("", 1), batarg("pid", oid))),
+ pattern("ilockedaggr", "avg", LALGavg, false, "avg per group.", args(3,6, batarg("ravg", dbl), batarg("rerror", dbl), batarg("rcnt", lng), batarg("gid", oid), batargany("", 1), batarg("pid", oid))),
  pattern("ilockedaggr", "avg", LALGavg, false, "avg of integers/decimals per group.", args(3,6, batargany("ravg",1), batarg("rremainder", lng), batarg("rcnt", lng), batarg("gid", oid), batargany("", 1), batarg("pid", oid))),
  /* avg combine */
- pattern("ilockedaggr", "avg", LALGavg, false, "avg per group.",                      args(3,8, batarg("ravg", dbl), batarg("rerror", dbl),     batarg("rcnt", lng), batarg("gid", oid), batargany("", 1), batarg("error", dbl),     batarg("cnt", lng), batarg("pid", oid))),
+ pattern("ilockedaggr", "avg", LALGavg, false, "avg per group.", args(3,8, batarg("ravg", dbl), batarg("rerror", dbl), batarg("rcnt", lng), batarg("gid", oid), batargany("", 1), batarg("error", dbl), batarg("cnt", lng), batarg("pid", oid))),
  pattern("ilockedaggr", "avg", LALGavg, false, "avg of integers/decimals per group.", args(3,8, batargany("ravg",1), batarg("rremainder", lng), batarg("rcnt", lng), batarg("gid", oid), batargany("", 1), batarg("remainder", lng), batarg("cnt", lng), batarg("pid", oid))),
  /* avg integer and doubles finish */
- pattern("ilockedaggr", "compute_avg", compute_avg, false, "compute avg from integer avg + rest/count.",           args(1,4, batarg("ravg",dbl), batargany("avg", 1), batarg("remainder", lng), batarg("cnt", lng))),
- pattern("ilockedaggr", "compute_avg", compute_avg, false, "compute avg from floating point (sum + error)/count.", args(1,4, batarg("ravg",dbl), batarg("avg", dbl),  batarg("error", dbl),     batarg("cnt", lng))),
+ pattern("ilockedaggr", "compute_avg", compute_avg, false, "compute avg from integer avg + rest/count.", args(1,4, batarg("ravg",dbl), batargany("avg", 1), batarg("remainder", lng), batarg("cnt", lng))),
+ pattern("ilockedaggr", "compute_avg", compute_avg, false, "compute avg from floating point (sum + error)/count.", args(1,4, batarg("ravg",dbl), batarg("avg", dbl), batarg("error", dbl), batarg("cnt", lng))),
 
  /********** Global aggregates (i.e. without a GROUP BY) **********/
  /* core phase: incrementally aggregate each input data slice into the local in/out result var. */
- command("iaggr", "min",  IALGminany,         false, "Return the lowest tail value or nil.",  args(1,2, argany("",2), batargany("b",2))),
- command("iaggr", "min",  IALGminany_skipnil, false, "Return the lowest tail value or nil.",  args(1,3, argany("",2), batargany("b",2),arg("skipnil",bit))),
- command("iaggr", "max",  IALGmaxany,         false, "Return the highest tail value or nil.", args(1,2, argany("",2), batargany("b",2))),
- command("iaggr", "max",  IALGmaxany_skipnil, false, "Return the highest tail value or nil.", args(1,3, argany("",2), batargany("b",2),arg("skipnil",bit))),
+ command("iaggr", "min", IALGminany, false, "Return the lowest tail value or nil.", args(1,2, argany("",2), batargany("b",2))),
+ command("iaggr", "min", IALGminany_skipnil, false, "Return the lowest tail value or nil.", args(1,3, argany("",2), batargany("b",2),arg("skipnil",bit))),
+ command("iaggr", "max", IALGmaxany, false, "Return the highest tail value or nil.", args(1,2, argany("",2), batargany("b",2))),
+ command("iaggr", "max", IALGmaxany_skipnil, false, "Return the highest tail value or nil.", args(1,3, argany("",2), batargany("b",2),arg("skipnil",bit))),
  command("iaggr", "null", IALGnull, false, "Returns true or false if the input contains a NULL or not, nil if the input is empty..", args(1,2, arg("",bit), batargany("b",1))),
 
  pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,2, arg("",bte),batarg("b",bte))),
@@ -5043,12 +5043,12 @@ static mel_func pp_algebra_init_funcs[] = {
  pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,4, arg("",dbl),batarg("b",hge),batarg("s",oid),arg("nil_if_empty",bit))),
 #endif
 
- command("iaggr", "count",        IALGcount_bat,       false, "Return the number of elements currently in a BAT.",                                                  args(1,2, arg("",lng), batargany("b",0))),
- command("iaggr", "count",        IALGcount_nil,       false, "Return the number of elements currently in a BAT, ignore BUNs with nil-tail iff ignore_nils==TRUE.", args(1,3, arg("",lng), batargany("b",0),arg("ignore_nils",bit))),
- command("iaggr", "count_no_nil", IALGcount_no_nil,    false, "Return the number of elements currently in a BAT, ignore BUNs with nil-tail",                        args(1,2, arg("",lng), batargany("b",2))),
- command("iaggr", "count",        IALGcountCND_bat,    false, "Return the number of elements currently in a BAT.",                                                  args(1,3, arg("",lng), batargany("b",0),batarg("cnd",oid))),
- command("iaggr", "count",        IALGcountCND_nil,    false, "Return the number of elements currently in a BAT, ignore BUNs with nil-tail iff ignore_nils==TRUE.", args(1,4, arg("",lng), batargany("b",0),batarg("cnd",oid),arg("ignore_nils",bit))),
- command("iaggr", "count_no_nil", IALGcountCND_no_nil, false, "Return the number of elements currently in a BAT, ignore BUNs with nil-tail",                        args(1,3, arg("",lng), batargany("b",2),batarg("cnd",oid))),
+ command("iaggr", "count", IALGcount_bat, false, "Return the number of elements currently in a BAT.", args(1,2, arg("",lng), batargany("b",0))),
+ command("iaggr", "count", IALGcount_nil, false, "Return the number of elements currently in a BAT, ignore BUNs with nil-tail iff ignore_nils==TRUE.", args(1,3, arg("",lng), batargany("b",0),arg("ignore_nils",bit))),
+ command("iaggr", "count_no_nil", IALGcount_no_nil, false, "Return the number of elements currently in a BAT, ignore BUNs with nil-tail", args(1,2, arg("",lng), batargany("b",2))),
+ command("iaggr", "count", IALGcountCND_bat, false, "Return the number of elements currently in a BAT.", args(1,3, arg("",lng), batargany("b",0),batarg("cnd",oid))),
+ command("iaggr", "count", IALGcountCND_nil, false, "Return the number of elements currently in a BAT, ignore BUNs with nil-tail iff ignore_nils==TRUE.", args(1,4, arg("",lng), batargany("b",0),batarg("cnd",oid),arg("ignore_nils",bit))),
+ command("iaggr", "count_no_nil", IALGcountCND_no_nil, false, "Return the number of elements currently in a BAT, ignore BUNs with nil-tail", args(1,3, arg("",lng), batargany("b",2),batarg("cnd",oid))),
 
  pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",bte),batarg("b",msk))),
  pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",bte),batarg("b",msk),arg("nil_if_empty",bit))),
@@ -5168,12 +5168,12 @@ static mel_func pp_algebra_init_funcs[] = {
  pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",dbl),batarg("b",hge),batarg("s",oid))),
  pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",dbl),batarg("b",hge),batarg("s",oid),arg("nil_if_empty",bit))),
 #endif
- command("iaggr", "sum", IALGfsum_flt,         false, "Return the Kahan/Neumaier summation.",        args(3,4, arg("rsum", flt), arg("rcom", flt), arg("rcnt", lng), batarg("b", flt))),
+ command("iaggr", "sum", IALGfsum_flt, false, "Return the Kahan/Neumaier summation.", args(3,4, arg("rsum", flt), arg("rcom", flt), arg("rcnt", lng), batarg("b", flt))),
  command("iaggr", "sum", IALGfsum_skipnil_flt, false, "Return the Kahan/Neumaier summation or nil.", args(3,5, arg("rsum", flt), arg("rcom", flt), arg("rcnt", lng), batarg("b", flt), arg("skipnil",bit))),
- command("iaggr", "sum", IALGfsum,             false, "Return the Kahan/Neumaier summation.",        args(3,4, arg("rsum", dbl), arg("rcom", dbl), arg("rcnt", lng), batarg("b", flt))),
- command("iaggr", "sum", IALGfsum_skipnil,     false, "Return the Kahan/Neumaier summation or nil.", args(3,5, arg("rsum", dbl), arg("rcom", dbl), arg("rcnt", lng), batarg("b", flt), arg("skipnil",bit))),
- command("iaggr", "sum", IALGfsum,             false, "Return the Kahan/Neumaier summation.",        args(3,4, arg("rsum", dbl), arg("rcom", dbl), arg("rcnt", lng), batarg("b", dbl))),
- command("iaggr", "sum", IALGfsum_skipnil,     false, "Return the Kahan/Neumaier summation or nil.", args(3,5, arg("rsum", dbl), arg("rcom", dbl), arg("rcnt", lng), batarg("b", dbl), arg("skipnil",bit))),
+ command("iaggr", "sum", IALGfsum, false, "Return the Kahan/Neumaier summation.", args(3,4, arg("rsum", dbl), arg("rcom", dbl), arg("rcnt", lng), batarg("b", flt))),
+ command("iaggr", "sum", IALGfsum_skipnil, false, "Return the Kahan/Neumaier summation or nil.", args(3,5, arg("rsum", dbl), arg("rcom", dbl), arg("rcnt", lng), batarg("b", flt), arg("skipnil",bit))),
+ command("iaggr", "sum", IALGfsum, false, "Return the Kahan/Neumaier summation.", args(3,4, arg("rsum", dbl), arg("rcom", dbl), arg("rcnt", lng), batarg("b", dbl))),
+ command("iaggr", "sum", IALGfsum_skipnil, false, "Return the Kahan/Neumaier summation or nil.", args(3,5, arg("rsum", dbl), arg("rcom", dbl), arg("rcnt", lng), batarg("b", dbl), arg("skipnil",bit))),
 
  pattern("iaggr", "avg", CMDBATavg3, false, "Calculate aggregate average of B.", args(3,6, arg("",bte),arg("",lng),arg("",lng),batarg("b",bte),batarg("s",oid),arg("skip_nils",bit))),
  pattern("iaggr", "avg", CMDBATavg3, false, "Calculate aggregate average of B.", args(3,6, arg("",sht),arg("",lng),arg("",lng),batarg("b",sht),batarg("s",oid),arg("skip_nils",bit))),
@@ -5182,27 +5182,27 @@ static mel_func pp_algebra_init_funcs[] = {
 #ifdef HAVE_HGE
  pattern("iaggr", "avg", CMDBATavg3, false, "Calculate aggregate average of B.", args(3,6, arg("",hge),arg("",lng),arg("",lng),batarg("b",hge),batarg("s",oid),arg("skip_nils",bit))),
 #endif
- command("iaggr", "avg", IALGfsum,             false, "Return the Kahan/Neumaier summation.",        args(3,4, arg("rsum", dbl), arg("rcom", dbl), arg("rcnt", lng), batarg("b", flt))),
- command("iaggr", "avg", IALGfsum_skipnil,     false, "Return the Kahan/Neumaier summation or nil.", args(3,5, arg("rsum", dbl), arg("rcom", dbl), arg("rcnt", lng), batarg("b", flt), arg("skipnil",bit))),
- command("iaggr", "avg", IALGfsum,             false, "Return the Kahan/Neumaier summation.",        args(3,4, arg("rsum", dbl), arg("rcom", dbl), arg("rcnt", lng), batarg("b", dbl))),
- command("iaggr", "avg", IALGfsum_skipnil,     false, "Return the Kahan/Neumaier summation or nil.", args(3,5, arg("rsum", dbl), arg("rcom", dbl), arg("rcnt", lng), batarg("b", dbl), arg("skipnil",bit))),
+ command("iaggr", "avg", IALGfsum, false, "Return the Kahan/Neumaier summation.", args(3,4, arg("rsum", dbl), arg("rcom", dbl), arg("rcnt", lng), batarg("b", flt))),
+ command("iaggr", "avg", IALGfsum_skipnil, false, "Return the Kahan/Neumaier summation or nil.", args(3,5, arg("rsum", dbl), arg("rcom", dbl), arg("rcnt", lng), batarg("b", flt), arg("skipnil",bit))),
+ command("iaggr", "avg", IALGfsum, false, "Return the Kahan/Neumaier summation.", args(3,4, arg("rsum", dbl), arg("rcom", dbl), arg("rcnt", lng), batarg("b", dbl))),
+ command("iaggr", "avg", IALGfsum_skipnil, false, "Return the Kahan/Neumaier summation or nil.", args(3,5, arg("rsum", dbl), arg("rcom", dbl), arg("rcnt", lng), batarg("b", dbl), arg("skipnil",bit))),
 
  command("iaggr", "ord_quantile", IALGquantile, false, "Return the p-th's quantile per group, where p is between 0 and 100", args(1,4, batargany("quantile", 1), batarg("gid", oid), batargany("i", 1), arg("p", bte))),
 
  /* combine phase: merge the local aggregation result into the shared bat */
- pattern("lockedaggr", "min",        LOCKEDAGGRmin,         true, "min values into bat (bat has value, update), using the bat lock",                       args(1,2, sharedbatargany("", 1),                                                                argany("val", 1))),
- pattern("lockedaggr", "max",        LOCKEDAGGRmax,         true, "max values into bat (bat has value, update), using the bat lock",                       args(1,2, sharedbatargany("", 1),                                                                argany("val", 1))),
- pattern("lockedaggr", "prod",       LOCKEDAGGRprod,        true, "product of all values, using the bat lock",                                             args(1,2, sharedbatargany("", 1),                                                                argany("val", 2))),
- command("lockedaggr", "null",       LOCKEDAGGRnull,        true, "Returns true or false if the input contains a NULL or not, nil if the input is empty.", args(1,2, sharedbatarg("",bit),                                                                  arg("hadnull",bit))),
+ pattern("lockedaggr", "min", LOCKEDAGGRmin, true, "min values into bat (bat has value, update), using the bat lock", args(1,2, sharedbatargany("", 1), argany("val", 1))),
+ pattern("lockedaggr", "max", LOCKEDAGGRmax, true, "max values into bat (bat has value, update), using the bat lock", args(1,2, sharedbatargany("", 1), argany("val", 1))),
+ pattern("lockedaggr", "prod", LOCKEDAGGRprod, true, "product of all values, using the bat lock", args(1,2, sharedbatargany("", 1), argany("val", 2))),
+ command("lockedaggr", "null", LOCKEDAGGRnull, true, "Returns true or false if the input contains a NULL or not, nil if the input is empty.", args(1,2, sharedbatarg("",bit), arg("hadnull",bit))),
 
- pattern("lockedaggr", "sum",        LOCKEDAGGRsum1,        true, "sum values into bat (bat has value, update), using the bat lock",                       args(1,2, sharedbatargany("", 1),                                                                argany("val", 1))),
- pattern("lockedaggr", "sum_no_nil", LOCKEDAGGRsum_no_nil1, true, "sum values into bat (bat has value, update), using the bat lock",                       args(1,2, sharedbatargany("", 1),                                                                argany("val", 1))),
- pattern("lockedaggr", "sum",        LOCKEDAGGRsum,         true, "Kahan/neumaier summation, using the bat lock",                                          args(3,6, sharedbatarg("rsum", flt), sharedbatarg("rcom", flt),       sharedbatarg("rcnt", lng), arg("sum", flt),  arg("com", flt),       arg("cnt", lng))),
- pattern("lockedaggr", "sum",        LOCKEDAGGRsum,         true, "Kahan/neumaier summation, using the bat lock",                                          args(3,6, sharedbatarg("rsum", dbl), sharedbatarg("rcom", dbl),       sharedbatarg("rcnt", lng), arg("sum", dbl),  arg("com", dbl),       arg("cnt", lng))),
+ pattern("lockedaggr", "sum", LOCKEDAGGRsum1, true, "sum values into bat (bat has value, update), using the bat lock", args(1,2, sharedbatargany("", 1), argany("val", 1))),
+ pattern("lockedaggr", "sum_no_nil", LOCKEDAGGRsum_no_nil1, true, "sum values into bat (bat has value, update), using the bat lock", args(1,2, sharedbatargany("", 1), argany("val", 1))),
+ pattern("lockedaggr", "sum", LOCKEDAGGRsum, true, "Kahan/neumaier summation, using the bat lock", args(3,6, sharedbatarg("rsum", flt), sharedbatarg("rcom", flt), sharedbatarg("rcnt", lng), arg("sum", flt), arg("com", flt), arg("cnt", lng))),
+ pattern("lockedaggr", "sum", LOCKEDAGGRsum, true, "Kahan/neumaier summation, using the bat lock", args(3,6, sharedbatarg("rsum", dbl), sharedbatarg("rcom", dbl), sharedbatarg("rcnt", lng), arg("sum", dbl), arg("com", dbl), arg("cnt", lng))),
 
- pattern("lockedaggr", "avg",        LOCKEDAGGRavg,         true, "avg values into bat (bat has value, update), using the bat lock",                       args(2,4, sharedbatargany("", 1),    sharedbatarg("rcnt", lng),                                  argany("val", 1), arg("cnt", lng))),
- pattern("lockedaggr", "avg",        LOCKEDAGGRavg,         true, "avg values into bat (bat has value, update), using the bat lock",                       args(3,6, sharedbatargany("", 1),    sharedbatarg("rremainder", lng), sharedbatarg("rcnt", lng), argany("val", 1), arg("remainder", lng), arg("cnt", lng))),
- pattern("lockedaggr", "avg",        LOCKEDAGGRavg,         true, "Kahan/neumaier summation, using the bat lock",                                          args(3,6, sharedbatarg("ravg", dbl), sharedbatarg("rcem", dbl),       sharedbatarg("rcnt", lng), arg("val", dbl),  arg("com", dbl),       arg("cnt", lng))),
+ pattern("lockedaggr", "avg", LOCKEDAGGRavg, true, "avg values into bat (bat has value, update), using the bat lock", args(2,4, sharedbatargany("", 1), sharedbatarg("rcnt", lng), argany("val", 1), arg("cnt", lng))),
+ pattern("lockedaggr", "avg", LOCKEDAGGRavg, true, "avg values into bat (bat has value, update), using the bat lock", args(3,6, sharedbatargany("", 1), sharedbatarg("rremainder", lng), sharedbatarg("rcnt", lng), argany("val", 1), arg("remainder", lng), arg("cnt", lng))),
+ pattern("lockedaggr", "avg", LOCKEDAGGRavg, true, "Kahan/neumaier summation, using the bat lock", args(3,6, sharedbatarg("ravg", dbl), sharedbatarg("rcem", dbl), sharedbatarg("rcnt", lng), arg("val", dbl), arg("com", dbl), arg("cnt", lng))),
 
  /* finish phase:
   *   if SUM(flt/dbl): `batcalc.+`
