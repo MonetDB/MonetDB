@@ -740,12 +740,12 @@ LOCKEDAGGRavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			CT t = BUNtvar(&bi, 0);										\
 			if (cmp(t,nil) == 0) {										\
 				if (BUNreplace(b, 0, val, true) != GDK_SUCCEED)			\
-					err = createException(MAL, "2 lockedaggr." #f,		\
+					err = createException(MAL, "lockedaggr." #f,		\
 						SQLSTATE(HY013) MAL_MALLOC_FAIL);				\
 			} else														\
 				if (f(t, val) == val)									\
 					if (BUNreplace(b, 0, val, true) != GDK_SUCCEED)		\
-						err = createException(MAL, "1 lockedaggr." #f,	\
+						err = createException(MAL, "lockedaggr." #f,	\
 							SQLSTATE(HY013) MAL_MALLOC_FAIL);			\
 			MT_lock_set(&b->theaplock);									\
 			b->tnil = false;											\
@@ -753,7 +753,7 @@ LOCKEDAGGRavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			MT_lock_unset(&b->theaplock);								\
 		} else if (BATcount(b) == 0) {									\
 			if (BUNappend(b, val, true) != GDK_SUCCEED)					\
-				err = createException(MAL, "3 lockedaggr." #f,			\
+				err = createException(MAL, "lockedaggr." #f,			\
 					SQLSTATE(HY013) MAL_MALLOC_FAIL);					\
 		}																\
 		bat_iterator_end(&bi);											\
@@ -1062,7 +1062,7 @@ LALGunique(Client ctx, bat *rid, bat *uid, bat *bid, bat *sid)
 			h->allocators = (allocator**)GDKzalloc(p->p->nr_workers*sizeof(allocator*));
 			if (!h->allocators) {
 				pipeline_unlock(p);
-				err = createException(MAL, "ialgebra.(group_)unique", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				err = createException(MAL, "ialgebra.unique", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto error;
 			} else
 				h->nr_allocators = p->p->nr_workers;
@@ -1074,7 +1074,7 @@ LALGunique(Client ctx, bat *rid, bat *uid, bat *bid, bat *sid)
 			snprintf(name, sizeof(name), "pp%d", p->wid);
 			h->allocators[p->wid] = create_allocator(name, false);
 			if (!h->allocators[p->wid]) {
-				err = createException(MAL, "ialgebra.(group_)unique", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				err = createException(MAL, "ialgebra.unique", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto error;
 			}
 		}
@@ -1297,7 +1297,7 @@ LALGgroup_unique(Client ctx, bat *rid, bat *uid, bat *bid, bat *sid, bat *Gid)
 	BAT *G = BATdescriptor(*Gid);
 	BAT *b = BATdescriptor(*bid);
 	if (u == NULL || G == NULL || b == NULL) {
-		err = createException(MAL, "ialgebra.(group_)unique", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		err = createException(MAL, "ialgebra.unique", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto error;
 	}
 
@@ -1314,7 +1314,7 @@ LALGgroup_unique(Client ctx, bat *rid, bat *uid, bat *bid, bat *sid, bat *Gid)
 			h->allocators = (allocator**)GDKzalloc(p->p->nr_workers*sizeof(allocator*));
 			if (!h->allocators) {
 				pipeline_unlock(p);
-				err = createException(MAL, "ialgebra.(group_)unique", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				err = createException(MAL, "ialgebra.unique", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto error;
 			} else
 				h->nr_allocators = p->p->nr_workers;
@@ -1326,7 +1326,7 @@ LALGgroup_unique(Client ctx, bat *rid, bat *uid, bat *bid, bat *sid, bat *Gid)
 			snprintf(name, sizeof(name), "pp%d", p->wid);
 			h->allocators[p->wid] = create_allocator(name, false);
 			if (!h->allocators[p->wid]) {
-				err = createException(MAL, "ialgebra.(group_)unique", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				err = createException(MAL, "ialgebra.unique", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto error;
 			}
 		}
@@ -1359,7 +1359,7 @@ LALGgroup_unique(Client ctx, bat *rid, bat *uid, bat *bid, bat *sid, bat *Gid)
 
 		BAT *ng = COLnew(0, TYPE_oid, cnt, TRANSIENT);
 		if (ng == NULL) {
-			err = createException(MAL, "ialgebra.(group_)unique", MAL_MALLOC_FAIL);
+			err = createException(MAL, "ialgebra.unique", MAL_MALLOC_FAIL);
 			goto error;
 		}
 		if (cnt && !err) {
@@ -1397,7 +1397,7 @@ LALGgroup_unique(Client ctx, bat *rid, bat *uid, bat *bid, bat *sid, bat *Gid)
 				gaunique(str,const char *)
 			}
 			ht_deactivate(h);
-			TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "ialgebra.(group_)unique", RUNTIME_QRY_TIMEOUT));
+			TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "ialgebra.unique", RUNTIME_QRY_TIMEOUT));
 		}
 		if (err) {
 			BBPunfix(ng->batCacheid);
@@ -1613,7 +1613,7 @@ LALGgroup_unique(Client ctx, bat *rid, bat *uid, bat *bid, bat *sid, bat *Gid)
 		) \
 
 static str
-LALGgroup(Client ctx, bat *rid, bat *uid, bat *bid/*, bat *sid*/)
+LALGgroup(Client ctx, bat *rid, bat *uid, bat *bid)
 {
 	(void)ctx;
 	Pipeline *p = pipeline_get_thread_private_pipeline();
@@ -1895,7 +1895,7 @@ LALGgroup(Client ctx, bat *rid, bat *uid, bat *bid/*, bat *sid*/)
 
 
 static str
-LALGderive(Client ctx, bat *rid, bat *uid, bat *Gid, bat *Ph, bat *bid /*, bat *sid*/)
+LALGderive(Client ctx, bat *rid, bat *uid, bat *Gid, bat *Ph, bat *bid)
 {
 	(void)ctx;
 	Pipeline *p = pipeline_get_thread_private_pipeline();
@@ -1906,26 +1906,26 @@ LALGderive(Client ctx, bat *rid, bat *uid, bat *Gid, bat *Ph, bat *bid /*, bat *
 	BAT *b = BATdescriptor(*bid);
 	BAT *G = BATdescriptor(*Gid);
 	if (b == NULL || G == NULL) {
-		err = createException(MAL, "igroup.group(derive)", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		err = createException(MAL, "igroup.group", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto error;
 	}
 	if (private) { /* TODO ... create but how big ??? */
 		BAT *H = BATdescriptor(*Ph);
 		if (!H) {
-			err = createException(MAL, "igroup.group(derive)", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+			err = createException(MAL, "igroup.group", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			goto error;
 		}
 		u = COLnew(b->hseqbase, b->ttype?b->ttype:TYPE_oid, 0, TRANSIENT);
 		if (!u) {
 			BBPunfix(H->batCacheid);
-			err = createException(MAL, "igroup.group(derive)", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			err = createException(MAL, "igroup.group", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto error;
 		}
 		/* Lookup parent hash */
 		u->pl_io = (struct pipeline_io*)ht_create(b->ttype?b->ttype:TYPE_oid, 1, (hash_table*)H->pl_io);
 		if (u->pl_io == NULL) {
 			BBPunfix(H->batCacheid);
-			err = createException(MAL, "igroup.group(derive)", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			err = createException(MAL, "igroup.group", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto error;
 		}
 		u->tprivate_bat = 1;
@@ -1933,7 +1933,7 @@ LALGderive(Client ctx, bat *rid, bat *uid, bat *Gid, bat *Ph, bat *bid /*, bat *
 	} else {
 		u = BATdescriptor(*uid);
 		if (!u) {
-			err = createException(MAL, "igroup.group(derive)", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+			err = createException(MAL, "igroup.group", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			goto error;
 		}
 	}
@@ -1966,7 +1966,7 @@ LALGderive(Client ctx, bat *rid, bat *uid, bat *Gid, bat *Ph, bat *bid /*, bat *
 			snprintf(name, sizeof(name), "pp%d", p->wid);
 			h->allocators[p->wid] = create_allocator(name, false);
 			if (!h->allocators[p->wid]) {
-				err = createException(MAL, "igroup.group(derive)", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				err = createException(MAL, "igroup.group", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto error;
 			}
 		}
@@ -1985,7 +1985,7 @@ LALGderive(Client ctx, bat *rid, bat *uid, bat *Gid, bat *Ph, bat *bid /*, bat *
 		ATOMIC_BASE_TYPE expected = 0;
 		BAT *g = COLnew(b->hseqbase, TYPE_oid, cnt, TRANSIENT);
 		if (g == NULL) {
-			err = createException(MAL, "igroup.group(derive)", MAL_MALLOC_FAIL);
+			err = createException(MAL, "igroup.group", MAL_MALLOC_FAIL);
 			goto error;
 		}
 		if (cnt && !err) {
@@ -2020,10 +2020,10 @@ LALGderive(Client ctx, bat *rid, bat *uid, bat *Gid, bat *Ph, bat *bid /*, bat *
 					aderive(str)
 				}
 			} else {
-				err = createException(MAL, "igroup.group(derive)", "Type (%s) not handled yet\n", ATOMname(tt));
+				err = createException(MAL, "igroup.group", "Type (%s) not handled yet\n", ATOMname(tt));
 			}
 			ht_deactivate(h);
-			TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "igroup.group(derive)", RUNTIME_QRY_TIMEOUT));
+			TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "igroup.group", RUNTIME_QRY_TIMEOUT));
 		}
 		if (err || p->p->status) {
 			BBPunfix(g->batCacheid);
@@ -2031,7 +2031,7 @@ LALGderive(Client ctx, bat *rid, bat *uid, bat *Gid, bat *Ph, bat *bid /*, bat *
 			 * p->p->status doesn't carry much info. yet.
 			 */
 			if (!err)
-				err = createException(MAL, "igroup.group(derive)", "pipeline execution error");
+				err = createException(MAL, "igroup.group", "pipeline execution error");
 			goto error;
 		}
 		BATsetcount(g, cnt);
@@ -2113,7 +2113,7 @@ LALGderive(Client ctx, bat *rid, bat *uid, bat *Gid, bat *Ph, bat *bid /*, bat *
 						ins = (o[gi + i] == 0); \
 					} \
 					if (ins && tfastins_nocheckVAR( r, gi + i, BUNtvar(&bi, i)) != GDK_SUCCEED) { \
-						err = createException(MAL, "ialgebra.projection", MAL_MALLOC_FAIL);\
+						err = createException(MAL, "ialgebra.project", MAL_MALLOC_FAIL);\
 						goto error; \
 					} \
 					if (err) \
@@ -2136,7 +2136,7 @@ LALGderive(Client ctx, bat *rid, bat *uid, bat *Gid, bat *Ph, bat *bid /*, bat *
 						ins = (o[gp[i]] == 0); \
 					} \
 					if (ins && tfastins_nocheckVAR( r, gp[i], BUNtvar(&bi, i)) != GDK_SUCCEED) { \
-						err = createException(MAL, "ialgebra.projection", MAL_MALLOC_FAIL);\
+						err = createException(MAL, "ialgebra.project", MAL_MALLOC_FAIL);\
 						goto error; \
 					} \
 					if (err) \
@@ -2190,7 +2190,7 @@ LALGconstant(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (!r) {
 		r = COLnew(0, tt, max, TRANSIENT);
 		if (r == NULL) {
-			err = createException(MAL, "pp algebra.project", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			err = createException(MAL, "ilgebra.project", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto error;
 		}
 		assert(private);
@@ -2366,7 +2366,7 @@ LALGconstant(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 /* this (possibly) overwrites the values, therefor for expensive (var) types we
  * only write offsets (ie use the heap from the parent) */
 static str
-LALGproject(Client ctx, bat *rid, bat *gid, bat *bid)
+LALGprojection(Client ctx, bat *rid, bat *gid, bat *bid)
 {
 	(void)ctx;
 	Pipeline *p = pipeline_get_thread_private_pipeline();
@@ -2547,22 +2547,20 @@ LALGproject(Client ctx, bat *rid, bat *gid, bat *bid)
 }
 
 static str
-LALGcountstar(Client ctx, bat *rid, bat *gid, const ptr *H, bat *pid)
+LALGcountstar(Client ctx, bat *rid, bat *gid, bat *pid)
 {
 	(void)ctx;
-	//Pipeline *p = (Pipeline*)*H; /* last arg should move to first argument .. */
-	(void)H;
 	BAT *r = NULL, *g = NULL;
 	str err = NULL;
 	bool private = true, locked = false;
 
 	if ((g = BATdescriptor(*gid)) == NULL) {
-		err = createException(MAL, "pp aggr.count(star)", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		err = createException(MAL, "ilockedaggr.count", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto error;
 	}
 	if (!is_bat_nil(*rid)) {
 		if ((r = BATdescriptor(*rid)) == NULL) {
-			err = createException(MAL, "pp aggr.count(star)", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+			err = createException(MAL, "ilockedaggr.count", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			goto error;
 		}
 	}
@@ -2575,7 +2573,7 @@ LALGcountstar(Client ctx, bat *rid, bat *gid, const ptr *H, bat *pid)
 
 	BAT *pg = BATdescriptor(*pid);
 	if (pg == NULL) {
-		err = createException(MAL, "pp aggr.count(star)", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		err = createException(MAL, "ilockedaggr.count", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto error;
 	}
 	oid max = BATcount(pg)?pg->tmaxval:0;
@@ -2584,7 +2582,7 @@ LALGcountstar(Client ctx, bat *rid, bat *gid, const ptr *H, bat *pid)
 	if (!r) {
 		r = COLnew(0, TYPE_lng, max, TRANSIENT);
 		if (r == NULL) {
-			err = createException(MAL, "pp aggr.count(star)", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			err = createException(MAL, "ilockedaggr.count", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto error;
 		}
 		r->tprivate_bat = 1;
@@ -2593,7 +2591,7 @@ LALGcountstar(Client ctx, bat *rid, bat *gid, const ptr *H, bat *pid)
 	if (BATcapacity(r) < max) {
 		BUN sz = max*2;
 		if (BATextend(r, sz) != GDK_SUCCEED) {
-			err = createException(MAL, "pp aggr.count(star)", MAL_MALLOC_FAIL);
+			err = createException(MAL, "ilockedaggr.count", MAL_MALLOC_FAIL);
 			goto error;
 		}
 	}
@@ -2614,7 +2612,7 @@ LALGcountstar(Client ctx, bat *rid, bat *gid, const ptr *H, bat *pid)
 		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx)
 			o[b+i]++;
 	}
-	TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "pp aggr.count(star)", RUNTIME_QRY_TIMEOUT));
+	TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "ilockedaggr.count", RUNTIME_QRY_TIMEOUT));
 	if (err) {
 		goto error;
 	}
@@ -2667,11 +2665,10 @@ LALGcountstar(Client ctx, bat *rid, bat *gid, const ptr *H, bat *pid)
 	}
 
 static str
-LALGcount(Client ctx, bat *rid, bat *gid, bat *bid, bit *nonil, const ptr *H, bat *pid)
+LALGcount(Client ctx, bat *rid, bat *gid, bat *bid, bit *nonil, bat *pid)
 {
-	//Pipeline *p = (Pipeline*)*H; /* last arg should move to first argument .. */
 	if (!(*nonil))
-		return LALGcountstar(ctx, rid, gid, H, pid);
+		return LALGcountstar(ctx, rid, gid, pid);
 
 	/* use bid to check for null values */
 	BAT *g = NULL, *b = NULL, *r = NULL;
@@ -2681,13 +2678,13 @@ LALGcount(Client ctx, bat *rid, bat *gid, bat *bid, bit *nonil, const ptr *H, ba
 	g = BATdescriptor(*gid);
 	b = BATdescriptor(*bid);
 	if (g == NULL || b == NULL) {
-		err =  createException(MAL, "pp aggr.count", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		err =  createException(MAL, "ilockedaggr.count", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto error;
 	}
 
 	if (!is_bat_nil(*rid)) {
 		if ((r = BATdescriptor(*rid)) == NULL) {
-			err =  createException(MAL, "pp aggr.count", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+			err =  createException(MAL, "ilockedaggr.count", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			goto error;
 		}
 	}
@@ -2700,7 +2697,7 @@ LALGcount(Client ctx, bat *rid, bat *gid, bat *bid, bit *nonil, const ptr *H, ba
 
 	BAT *pg = BATdescriptor(*pid);
 	if (pg == NULL) {
-		err = createException(MAL, "pp aggr.count", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		err = createException(MAL, "ilockedaggr.count", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto error;
 	}
 	oid max = BATcount(pg)?pg->tmaxval:0;
@@ -2709,7 +2706,7 @@ LALGcount(Client ctx, bat *rid, bat *gid, bat *bid, bit *nonil, const ptr *H, ba
 	if (!r) {
 		r = COLnew(0, TYPE_lng, max, TRANSIENT);
 		if (r == NULL) {
-			err = createException(MAL, "pp aggr.count", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			err = createException(MAL, "ilockedaggr.count", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto error;
 		}
 		r->tprivate_bat = 1;
@@ -2718,7 +2715,7 @@ LALGcount(Client ctx, bat *rid, bat *gid, bat *bid, bit *nonil, const ptr *H, ba
 	if (BATcapacity(r) < max) {
 		BUN sz = max*2;
 		if (BATextend(r, sz) != GDK_SUCCEED) {
-			err = createException(MAL, "pp aggr.count", MAL_MALLOC_FAIL);
+			err = createException(MAL, "ilockedaggr.count", MAL_MALLOC_FAIL);
 			goto error;
 		}
 	}
@@ -2754,7 +2751,7 @@ LALGcount(Client ctx, bat *rid, bat *gid, bat *bid, bit *nonil, const ptr *H, ba
 		gcount(dbl);
 		gacount(str);
 	}
-	TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "pp aggr.count", RUNTIME_QRY_TIMEOUT));
+	TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "ilockedaggr.count", RUNTIME_QRY_TIMEOUT));
 	if (err) {
 		goto error;
 	}
@@ -2797,15 +2794,14 @@ LALGcount(Client ctx, bat *rid, bat *gid, bat *bid, bit *nonil, const ptr *H, ba
 	}
 
 static str
-//LALGsum(bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
+//LALGsum(bat *rid, bat *gid, bat *bid, bat *pid)
 LALGsum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void)cntxt;
 	bat *rid = getArgReference_bat(stk, pci, 0);
 	bat *gid = getArgReference_bat(stk, pci, 1);
 	bat *bid = getArgReference_bat(stk, pci, 2);
-	//Pipeline *p = (Pipeline*)*getArgReference_ptr(stk, pci, 3); /* last arg should move to first argument .. */
-	bat *pid = getArgReference_bat(stk, pci, 4);
+	bat *pid = getArgReference_bat(stk, pci, 3);
 	BAT *b = NULL, *g = NULL, *r = NULL;
 	str err = NULL;
 	bool private = true, locked = false;
@@ -2813,12 +2809,12 @@ LALGsum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	g = BATdescriptor(*gid);
 	b = BATdescriptor(*bid);
 	if (g == NULL || b == NULL) {
-		err =  createException(MAL, "pp aggr.sum", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		err =  createException(MAL, "ilockedaggr.sum", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto error;
 	}
 	if (!is_bat_nil(*rid)) {
 		if ((r = BATdescriptor(*rid)) == NULL) {
-			err =  createException(MAL, "pp aggr.sum", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+			err =  createException(MAL, "ilockedaggr.sum", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			goto error;
 		}
 	}
@@ -2831,7 +2827,7 @@ LALGsum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	BAT *pg = BATdescriptor(*pid);
 	if (pg == NULL) {
-		err = createException(MAL, "pp aggr.sum", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		err = createException(MAL, "ilockedaggr.sum", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto error;
 	}
 	oid max = BATcount(pg)?pg->tmaxval:0;
@@ -2841,7 +2837,7 @@ LALGsum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		int tt = getBatType(getArgType(mb, pci, 0));
 		r = COLnew(b->hseqbase, tt, max+1, TRANSIENT);
 		if (r == NULL) {
-			err = createException(MAL, "pp aggr.sum", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			err = createException(MAL, "ilockedaggr.sum", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto error;
 		}
 		r->tprivate_bat = 1;
@@ -2850,7 +2846,7 @@ LALGsum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (BATcapacity(r) < max) {
 		BUN sz = max*2;
 		if (BATextend(r, sz) != GDK_SUCCEED) {
-			err = createException(MAL, "pp aggr.sum", MAL_MALLOC_FAIL);
+			err = createException(MAL, "ilockedaggr.sum", MAL_MALLOC_FAIL);
 			goto error;
 		}
 	}
@@ -2888,7 +2884,7 @@ LALGsum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	gsum(flt,flt);
 	gsum(dbl,flt);
 	gsum(dbl,dbl);
-	TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "pp aggr.sum", RUNTIME_QRY_TIMEOUT));
+	TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "ilockedaggr.sum", RUNTIME_QRY_TIMEOUT));
 	if (err) {
 		goto error;
 	}
@@ -2929,15 +2925,14 @@ LALGsum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 static str
-//LALGprod(bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
+//LALGprod(bat *rid, bat *gid, bat *bid, bat *pid)
 LALGprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void)cntxt;
 	bat *rid = getArgReference_bat(stk, pci, 0);
 	bat *gid = getArgReference_bat(stk, pci, 1);
 	bat *bid = getArgReference_bat(stk, pci, 2);
-	//Pipeline *p = (Pipeline*)*getArgReference_ptr(stk, pci, 3); /* last arg should move to first argument .. */
-	bat *pid = getArgReference_bat(stk, pci, 4);
+	bat *pid = getArgReference_bat(stk, pci, 3);
 	BAT *b = NULL, *g = NULL, *r = NULL;
 	str err = NULL;
 	bool private = true, locked = false;
@@ -2945,12 +2940,12 @@ LALGprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	g = BATdescriptor(*gid);
 	b = BATdescriptor(*bid);
 	if (g == NULL || b == NULL) {
-		err = createException(MAL, "pp aggr.prod", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		err = createException(MAL, "ilockedaggr.prod", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto error;
 	}
 	if (!is_bat_nil(*rid)) {
 		if ((r = BATdescriptor(*rid)) == NULL) {
-			err = createException(MAL, "pp aggr.prod", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+			err = createException(MAL, "ilockedaggr.prod", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			goto error;
 		}
 	}
@@ -2963,7 +2958,7 @@ LALGprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	BAT *pg = BATdescriptor(*pid);
 	if (pg == NULL) {
-		err = createException(MAL, "pp aggr.prod", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		err = createException(MAL, "ilockedaggr.prod", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto error;
 	}
 	oid max = BATcount(pg)?pg->tmaxval:0;
@@ -2973,7 +2968,7 @@ LALGprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		int tt = getBatType(getArgType(mb, pci, 0));
 		r = COLnew(b->hseqbase, tt, max, TRANSIENT);
 		if (r == NULL) {
-			err = createException(MAL, "pp aggr.prod", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			err = createException(MAL, "ilockedaggr.prod", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto error;
 		}
 		r->tprivate_bat = 1;
@@ -2982,7 +2977,7 @@ LALGprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (BATcapacity(r) < max) {
 		BUN sz = max*2;
 		if (BATextend(r, sz) != GDK_SUCCEED) {
-			err = createException(MAL, "pp aggr.prod", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			err = createException(MAL, "ilockedaggr.prod", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto error;
 		}
 	}
@@ -3013,7 +3008,7 @@ LALGprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #endif
 	gprod(flt,flt);
 	gprod(dbl,dbl);
-	TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "pp aggr.prod", RUNTIME_QRY_TIMEOUT));
+	TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "ilockedaggr.prod", RUNTIME_QRY_TIMEOUT));
 	if (err) {
 		goto error;
 	}
@@ -3043,11 +3038,11 @@ LALGprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 static str
 // for ints
-//avg_core(bat *rid, bat *rrem, bat *rcnt, bat *gid, bat *bid, ptr *H, bat *pid)
-//avg_combine(bat *rid, bat *rrem, bat *rcnt, bat *gid, bat *bid, bat *rem, bat *cnt, ptr *H, bat *pid)
+//avg_core(bat *rid, bat *rrem, bat *rcnt, bat *gid, bat *bid, bat *pid)
+//avg_combine(bat *rid, bat *rrem, bat *rcnt, bat *gid, bat *bid, bat *rem, bat *cnt, bat *pid)
 // for floats
-//fsum_core(bat *rsum, bat *rcom, bat *rcnt, bat *gid, bat *val, ptr *H, bat *pid);
-//fsum_combine(bat *rsum, bat *rcom, bat *rcnt, bat *gid, bat *sum, bat *com, bat *cnt, ptr *H, bat *pid);
+//fsum_core(bat *rsum, bat *rcom, bat *rcnt, bat *gid, bat *val, bat *pid);
+//fsum_combine(bat *rsum, bat *rcom, bat *rcnt, bat *gid, bat *sum, bat *com, bat *cnt, bat *pid);
 LALGavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bat *rid = getArgReference_bat(stk, pci, 0);
@@ -3055,10 +3050,10 @@ LALGavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat *rcid = getArgReference_bat(stk, pci, 2);
 	bat *gid = getArgReference_bat(stk, pci, 3);
 	bat *bid = getArgReference_bat(stk, pci, 4);
-	bat *rem = pci->argc == 9 ? getArgReference_bat(stk, pci, 5) : NULL;
-	bat *cid = pci->argc == 9 ? getArgReference_bat(stk, pci, 6) : NULL;
-	Pipeline *p = (Pipeline *) *getArgReference_ptr(stk, pci, pci->argc - 2);
+	bat *rem = pci->argc == 8 ? getArgReference_bat(stk, pci, 5) : NULL;
+	bat *cid = pci->argc == 8 ? getArgReference_bat(stk, pci, 6) : NULL;
 	bat *pgid = getArgReference_bat(stk, pci, pci->argc - 1);
+	Pipeline *p = pipeline_get_thread_private_pipeline();
 	BAT *b = BATdescriptor(*bid);
 	BAT *g = BATdescriptor(*gid);
 	BAT *c = cid ? BATdescriptor(*cid) : NULL;
@@ -3081,26 +3076,26 @@ LALGavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	    ((*rid && !is_bat_nil(*rid)) && bn == NULL) ||
 	    (bn && cn == NULL) ||
 	    ((bn && rrem) && rn == NULL)) {
-		err = createException(MAL, "pp aggr.avg", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		err = createException(MAL, "ilockedaggr.avg", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto error;
 	}
 
 	BAT *pg = BATdescriptor(*pgid);
 	if (pg == NULL) {
-		err = createException(MAL, "pp aggr.avg", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		err = createException(MAL, "ilockedaggr.avg", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto error;
 	}
 	oid max = BATcount(pg) ? pg->tmaxval : 0;
 	BBPunfix(pg->batCacheid);
 
-	if ((b->ttype == TYPE_flt || b->ttype == TYPE_dbl) && pci->argc == 7) {
+	if ((b->ttype == TYPE_flt || b->ttype == TYPE_dbl) && pci->argc == 6) {
 		/* float avg core */
 		if (!bn) {
 			bn = COLnew(0, TYPE_dbl, max, TRANSIENT);
 			rn = COLnew(0, TYPE_dbl, max, TRANSIENT);
 			cn = COLnew(0, TYPE_lng, max, TRANSIENT);
 			if (bn == NULL || cn == NULL || rn == NULL) {
-				err = createException(MAL, "pp aggr.avg", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				err = createException(MAL, "ilockedaggr.avg", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto error;
 			}
 			bn->tprivate_bat = 1;
@@ -3111,7 +3106,7 @@ LALGavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			(BATextend(bn, max) != GDK_SUCCEED ||
 			 BATextend(cn, max) != GDK_SUCCEED ||
 			 BATextend(rn, max) != GDK_SUCCEED)) {
-			err = createException(MAL, "pp aggr.avg", GDK_EXCEPTION);
+			err = createException(MAL, "ilockedaggr.avg", GDK_EXCEPTION);
 			goto error;
 		}
 		dbl *rvals = Tloc(bn, 0);
@@ -3148,9 +3143,9 @@ LALGavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				break;
 			}
 		}
-		TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "pp aggr.avg", RUNTIME_QRY_TIMEOUT));
+		TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "ilockedaggr.avg", RUNTIME_QRY_TIMEOUT));
 		if (overflow)
-			err = createException(SQL, "pp aggr.avg", "Overflow in avg()");
+			err = createException(SQL, "ilockedaggr.avg", "Overflow in avg()");
 		if (err) goto error;
 
 		pipeline_lock2(bn);
@@ -3167,13 +3162,13 @@ LALGavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			BATsetcount(rn, max);
 			BATsetcount(cn, max);
 		}
-	} else if ((b->ttype == TYPE_flt || b->ttype == TYPE_dbl) && pci->argc == 9) {
+	} else if ((b->ttype == TYPE_flt || b->ttype == TYPE_dbl) && pci->argc == 8) {
 		/* float avg combine */
 		if (bn->batCount < max &&
 			(BATextend(bn, max) != GDK_SUCCEED ||
 			 BATextend(cn, max) != GDK_SUCCEED ||
 			 BATextend(rn, max) != GDK_SUCCEED)) {
-			err = createException(MAL, "pp aggr.avg", GDK_EXCEPTION);
+			err = createException(MAL, "ilockedaggr.avg", GDK_EXCEPTION);
 			goto error;
 		}
 		dbl *vals = Tloc(b, 0);
@@ -3197,8 +3192,8 @@ LALGavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			avg_aggr_float_comb(dbl, vals[i], errs[i], cnts[i], rvals[grps[i]], rerrs[grps[i]], rcnts[grps[i]]);
 		}
 		if (overflow)
-			err = createException(SQL, "pp aggr.avg", "Overflow in avg()");
-		TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "pp aggr.avg", RUNTIME_QRY_TIMEOUT));
+			err = createException(SQL, "ilockedaggr.avg", "Overflow in avg()");
+		TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "ilockedaggr.avg", RUNTIME_QRY_TIMEOUT));
 		if (err) goto error;
 
 		pipeline_lock2(bn);
@@ -3215,9 +3210,9 @@ LALGavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			BATsetcount(rn, max);
 			BATsetcount(cn, max);
 		}
-	} else if (pci->retc == 3 && pci->argc == 7) {
+	} else if (pci->retc == 3 && pci->argc == 6) {
 		if (BATgroupavg3(&bn, &rn, &cn, b, g, NULL, NULL, true, bn != NULL) != GDK_SUCCEED) {
-			err = createException(MAL, "pp aggr.avg", GDK_EXCEPTION);
+			err = createException(MAL, "ilockedaggr.avg", GDK_EXCEPTION);
 			goto error;
 		}
 		pipeline_lock2(bn);
@@ -3229,12 +3224,12 @@ LALGavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		pipeline_lock2(cn);
 		BATnegateprops(cn);
 		pipeline_unlock2(cn);
-	} else if (pci->retc == 3 && pci->argc == 9) {
+	} else if (pci->retc == 3 && pci->argc == 8) {
 		if (bn->batCount < max &&
 			(BATextend(bn, max) != GDK_SUCCEED ||
 			 BATextend(cn, max) != GDK_SUCCEED ||
 			 BATextend(rn, max) != GDK_SUCCEED)) {
-			err = createException(MAL, "pp aggr.avg", GDK_EXCEPTION);
+			err = createException(MAL, "ilockedaggr.avg", GDK_EXCEPTION);
 			goto error;
 		}
 		lng *cnts = Tloc(c, 0);
@@ -3318,7 +3313,7 @@ LALGavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 #endif
 		}
-		TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "pp aggr.avg", RUNTIME_QRY_TIMEOUT));
+		TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "ilockedaggr.avg", RUNTIME_QRY_TIMEOUT));
 		if (err) goto error;
 
 		pipeline_lock2(bn);
@@ -3395,7 +3390,7 @@ compute_avg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT *c = BATdescriptor(*cnt);
 
 	if (!a || !r || !c)
-		err = createException(MAL, "pp aggr.avg", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		err = createException(MAL, "ilockedaggr.compute_avg", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
 	if (!err) {
 		BUN n = BATcount(a);
@@ -3403,7 +3398,7 @@ compute_avg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BAT *res = COLnew(0, TYPE_dbl, n, TRANSIENT);
 
 		if (!res) {
-			err = createException(MAL, "pp aggr.avg", MAL_MALLOC_FAIL);
+			err = createException(MAL, "ilockedaggr.compute_avg", MAL_MALLOC_FAIL);
 			goto bail;
 		}
 
@@ -3441,7 +3436,7 @@ compute_avg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				cres[i] = cc[i] ? (ca[i] + ce[i])/cc[i] : dbl_nil;
 		}
 		else {
-			err = createException(MAL, "pp aggr.avg", "Only supports numerical input types");
+			err = createException(MAL, "ilockedaggr.compute_avg", "Only supports numerical input types");
 			BBPreclaim(res);
 			goto bail;
 		}
@@ -3465,10 +3460,10 @@ LALGsum_float(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat *rcid = getArgReference_bat(stk, pci, 2);
 	bat *gid = getArgReference_bat(stk, pci, 3);
 	bat *bid = getArgReference_bat(stk, pci, 4);
-	bat *rem = pci->argc == 9 ? getArgReference_bat(stk, pci, 5) : NULL;
-	bat *cid = pci->argc == 9 ? getArgReference_bat(stk, pci, 6) : NULL;
-	Pipeline *p = (Pipeline *) *getArgReference_ptr(stk, pci, pci->argc - 2);
+	bat *rem = pci->argc == 8 ? getArgReference_bat(stk, pci, 5) : NULL;
+	bat *cid = pci->argc == 8 ? getArgReference_bat(stk, pci, 6) : NULL;
 	bat *pgid = getArgReference_bat(stk, pci, pci->argc - 1);
+	Pipeline *p = pipeline_get_thread_private_pipeline();
 	BAT *b = BATdescriptor(*bid);
 	BAT *g = BATdescriptor(*gid);
 	BAT *c = cid ? BATdescriptor(*cid) : NULL;
@@ -3491,26 +3486,26 @@ LALGsum_float(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	    ((*rid && !is_bat_nil(*rid)) && bn == NULL) ||
 	    (bn && cn == NULL) ||
 	    ((bn && rrem) && rn == NULL)) {
-		err = createException(MAL, "pp aggr.sum", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		err = createException(MAL, "ilockedaggr.sum", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto error;
 	}
 
 	BAT *pg = BATdescriptor(*pgid);
 	if (pg == NULL) {
-		err = createException(MAL, "pp aggr.sum", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		err = createException(MAL, "ilockedaggr.sum", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto error;
 	}
 	oid max = BATcount(pg) ? pg->tmaxval : 0;
 	BBPunfix(pg->batCacheid);
 
-	if ((b->ttype == TYPE_flt || b->ttype == TYPE_dbl) && pci->argc == 7) {
+	if ((b->ttype == TYPE_flt || b->ttype == TYPE_dbl) && pci->argc == 6) {
 		/* float sum core */
 		if (!bn) {
 			bn = COLnew(0, b->ttype, max, TRANSIENT);
 			cn = COLnew(0, TYPE_lng, max, TRANSIENT);
 			rn = COLnew(0, b->ttype, max, TRANSIENT);
 			if (bn == NULL || cn == NULL || rn == NULL) {
-				err = createException(MAL, "pp aggr.sum", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				err = createException(MAL, "ilockedaggr.sum", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto error;
 			}
 			bn->tprivate_bat = 1;
@@ -3521,7 +3516,7 @@ LALGsum_float(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			(BATextend(bn, max) != GDK_SUCCEED ||
 			 BATextend(cn, max) != GDK_SUCCEED ||
 			 BATextend(rn, max) != GDK_SUCCEED)) {
-			err = createException(MAL, "pp aggr.sum", GDK_EXCEPTION);
+			err = createException(MAL, "ilockedaggr.sum", GDK_EXCEPTION);
 			goto error;
 		}
 		lng *rcnts = Tloc(cn, 0);
@@ -3555,9 +3550,9 @@ LALGsum_float(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				avg_aggr_float(dbl, dbl, vals[i], rvals[grps[i]], rerrs[grps[i]], rcnts[grps[i]]);
 			}
 		}
-		TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "pp aggr.sum", RUNTIME_QRY_TIMEOUT));
+		TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "ilockedaggr.sum", RUNTIME_QRY_TIMEOUT));
 		if (overflow)
-			err = createException(SQL, "pp aggr.sum", "Overflow in sum()");
+			err = createException(SQL, "ilockedaggr.sum", "Overflow in sum()");
 		if (err) goto error;
 
 		pipeline_lock2(bn);
@@ -3574,13 +3569,13 @@ LALGsum_float(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			BATsetcount(rn, max);
 			BATsetcount(cn, max);
 		}
-	} else if ((b->ttype == TYPE_flt || b->ttype == TYPE_dbl) && pci->argc == 9) {
+	} else if ((b->ttype == TYPE_flt || b->ttype == TYPE_dbl) && pci->argc == 8) {
 		/* float avg combine */
 		if (bn->batCount < max &&
 			(BATextend(bn, max) != GDK_SUCCEED ||
 			 BATextend(cn, max) != GDK_SUCCEED ||
 			 BATextend(rn, max) != GDK_SUCCEED)) {
-			err = createException(MAL, "pp aggr.avg", GDK_EXCEPTION);
+			err = createException(MAL, "ilockedaggr.avg", GDK_EXCEPTION);
 			goto error;
 		}
 		lng *cnts = Tloc(c, 0);
@@ -3617,9 +3612,9 @@ LALGsum_float(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				avg_aggr_float_comb(dbl, vals[i], errs[i], cnts[i], rvals[grps[i]], rerrs[grps[i]], rcnts[grps[i]]);
 			}
 		}
-		TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "pp aggr.avg", RUNTIME_QRY_TIMEOUT));
+		TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "ilockedaggr.avg", RUNTIME_QRY_TIMEOUT));
 		if (overflow)
-			err = createException(SQL, "pp aggr.sum", "Overflow in sum()");
+			err = createException(SQL, "ilockedaggr.sum", "Overflow in sum()");
 		if (err) goto error;
 
 		pipeline_lock2(bn);
@@ -3696,7 +3691,7 @@ compute_sum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT *c = BATdescriptor(*cnt);
 
 	if (!a || !r || !c)
-		err = createException(MAL, "pp aggr.sum", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		err = createException(MAL, "ilockedaggr.compute_sum", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
 	if (!err) {
 		BUN n = BATcount(a);
@@ -3704,7 +3699,7 @@ compute_sum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BAT *res = COLnew(0, TYPE_dbl, n, TRANSIENT);
 
 		if (!res) {
-			err = createException(MAL, "pp aggr.sum", MAL_MALLOC_FAIL);
+			err = createException(MAL, "ilockedaggr.compute_sum", MAL_MALLOC_FAIL);
 			goto bail;
 		}
 
@@ -3717,7 +3712,7 @@ compute_sum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			for(BUN i = 0; i<n; i++)
 				cres[i] = cc[i] ? (ca[i] + ce[i]) : dbl_nil;
 		} else {
-			err = createException(MAL, "pp aggr.sum", "Only supports decimal input types");
+			err = createException(MAL, "ilockedaggr.compute_sum", "Only supports decimal input types");
 			BBPreclaim(res);
 			goto bail;
 		}
@@ -3832,7 +3827,7 @@ bail:
 			 cmp(r->tvheap->base+VarHeapVal(r->theap->base, opos, r->twidth), nil) != 0 && \
 			 cmp(r->tvheap->base+VarHeapVal(r->theap->base, opos, r->twidth), bp+in[i]) > 0)) \
 		if (tfastins_nocheckVAR( r, opos, bp+in[i]) != GDK_SUCCEED) { \
-			err = createException(MAL, "pp aggr.min", MAL_MALLOC_FAIL);\
+			err = createException(MAL, "ilockedaggr.min", MAL_MALLOC_FAIL);\
 			goto error; \
 		}
 
@@ -3842,7 +3837,7 @@ bail:
 			 cmp(r->tvheap->base+VarHeapVal(r->theap->base, opos, r->twidth), nil) != 0 && \
 			 cmp(r->tvheap->base+VarHeapVal(r->theap->base, opos, r->twidth), bp+in[i]) < 0)) \
 		if (tfastins_nocheckVAR( r, opos, bp+in[i]) != GDK_SUCCEED) { \
-			err = createException(MAL, "pp aggr.max", MAL_MALLOC_FAIL);\
+			err = createException(MAL, "ilockedaggr.max", MAL_MALLOC_FAIL);\
 			goto error; \
 		}
 
@@ -3894,10 +3889,10 @@ getoffset(const void *b, BUN p, int w)
 	}
 
 static str
-LALGmin(Client ctx, bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
+LALGmin(Client ctx, bat *rid, bat *gid, bat *bid, bat *pid)
 {
 	(void)ctx;
-	Pipeline *p = (Pipeline*)*H; /* last arg should move to first argument .. */
+	Pipeline *p = pipeline_get_thread_private_pipeline();
 	BAT *g = NULL, *b = NULL, *r = NULL;
 	str err = NULL;
 	bool private = true, local_storage = false, locked = false;
@@ -3905,12 +3900,12 @@ LALGmin(Client ctx, bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 	g = BATdescriptor(*gid);
 	b = BATdescriptor(*bid);
 	if (g == NULL || b == NULL) {
-		err = createException(MAL, "pp aggr.min", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		err = createException(MAL, "ilockedaggr.min", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto error;
 	}
 	if (!is_bat_nil(*rid)) {
 		if ((r = BATdescriptor(*rid)) == NULL) {
-			err = createException(MAL, "pp aggr.min", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+			err = createException(MAL, "ilockedaggr.min", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			goto error;
 		}
 	}
@@ -3924,7 +3919,7 @@ LALGmin(Client ctx, bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 
 	BAT *pg = BATdescriptor(*pid);
 	if (pg == NULL) {
-		err = createException(MAL, "pp aggr.min", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		err = createException(MAL, "ilockedaggr.min", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto error;
 	}
 	oid max = BATcount(pg)?pg->tmaxval:0;
@@ -3936,7 +3931,7 @@ LALGmin(Client ctx, bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 		if (ATOMvarsized(r->ttype) && BATcount(r) == 0 && r->tvheap->parentid == r->batCacheid && r->twidth < b->twidth && BATupgrade(r, b, true)) {
 			MT_lock_unset(&b->theaplock);
 			MT_lock_unset(&r->theaplock);
-			err = createException(MAL, "pp aggr.min", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			err = createException(MAL, "ilockedaggr.min", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto error;
 		} else if (ATOMvarsized(r->ttype) && ((BATcount(r) && r->tvheap->parentid == r->batCacheid) ||
 				(!VIEWvtparent(b) || BBP_desc(VIEWvtparent(b))->batRestricted != BAT_READ))) {
@@ -3958,7 +3953,7 @@ LALGmin(Client ctx, bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 			MT_lock_unset(&b->theaplock);
 			r = COLnew2(0, b->ttype, max, TRANSIENT, width);
 			if (r == NULL) {
-				err = createException(MAL, "pp aggr.min", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				err = createException(MAL, "ilockedaggr.min", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto error;
 			}
 			BATswap_heaps(r, b, p);
@@ -3967,12 +3962,12 @@ LALGmin(Client ctx, bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 			MT_lock_unset(&b->theaplock);
 			r = COLnew2(0, tt, max, TRANSIENT, b->twidth);
 			if (r == NULL) {
-				err = createException(MAL, "pp aggr.min", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				err = createException(MAL, "ilockedaggr.min", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto error;
 			}
 			if (r->tvheap && r->tvheap->base == NULL &&
 				ATOMheap(r->ttype, r->tvheap, r->batCapacity) != GDK_SUCCEED) {
-				err = createException(MAL, "pp aggr.min", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				err = createException(MAL, "ilockedaggr.min", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto error;
 			}
 		}
@@ -3982,7 +3977,7 @@ LALGmin(Client ctx, bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 	if (BATcapacity(r) < max) {
 		BUN sz = max*2;
 		if (BATextend(r, sz) != GDK_SUCCEED) {
-			err = createException(MAL, "pp aggr.min", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			err = createException(MAL, "ilockedaggr.min", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto error;
 		}
 	}
@@ -4025,7 +4020,7 @@ LALGmin(Client ctx, bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 	} else {
 		gafunc(vamin);
 	}
-	TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "pp aggr.min", RUNTIME_QRY_TIMEOUT));
+	TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "ilockedaggr.min", RUNTIME_QRY_TIMEOUT));
 	if (err) {
 		goto error;
 	}
@@ -4054,10 +4049,10 @@ LALGmin(Client ctx, bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 }
 
 static str
-LALGmax(Client ctx, bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
+LALGmax(Client ctx, bat *rid, bat *gid, bat *bid, bat *pid)
 {
 	(void)ctx;
-	Pipeline *p = (Pipeline*)*H; /* last arg should move to first argument .. */
+	Pipeline *p = pipeline_get_thread_private_pipeline();
 	BAT *g = NULL, *b = NULL, *r = NULL;
 	str err = NULL;
 	bool private = true, local_storage = false, locked = false;
@@ -4065,12 +4060,12 @@ LALGmax(Client ctx, bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 	g = BATdescriptor(*gid);
 	b = BATdescriptor(*bid);
 	if (g == NULL || b == NULL) {
-		err = createException(MAL, "pp aggr.max", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		err = createException(MAL, "ilockedaggr.max", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto error;
 	}
 	if (!is_bat_nil(*rid)) {
 		if ((r = BATdescriptor(*rid)) == NULL) {
-			err = createException(MAL, "pp aggr.max", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+			err = createException(MAL, "ilockedaggr.max", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			goto error;
 		}
 	}
@@ -4084,7 +4079,7 @@ LALGmax(Client ctx, bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 
 	BAT *pg = BATdescriptor(*pid);
 	if (pg == NULL) {
-		err = createException(MAL, "pp aggr.max", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		err = createException(MAL, "ilockedaggr.max", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto error;
 	}
 	oid max = BATcount(pg)?pg->tmaxval:0;
@@ -4096,7 +4091,7 @@ LALGmax(Client ctx, bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 		if (ATOMvarsized(r->ttype) && BATcount(r) == 0 && r->tvheap->parentid == r->batCacheid && r->twidth < b->twidth && BATupgrade(r, b, true)) {
 			MT_lock_unset(&b->theaplock);
 			MT_lock_unset(&r->theaplock);
-			err = createException(MAL, "pp aggr.max", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			err = createException(MAL, "ilockedaggr.max", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto error;
 		} else if (ATOMvarsized(r->ttype) && ((BATcount(r) && r->tvheap->parentid == r->batCacheid) ||
 				(!VIEWvtparent(b) || BBP_desc(VIEWvtparent(b))->batRestricted != BAT_READ))) {
@@ -4118,7 +4113,7 @@ LALGmax(Client ctx, bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 			MT_lock_unset(&b->theaplock);
 			r = COLnew2(0, b->ttype, max, TRANSIENT, width);
 			if (r == NULL) {
-				err = createException(MAL, "pp aggr.max", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				err = createException(MAL, "ilockedaggr.max", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto error;
 			}
 			BATswap_heaps(r, b, p);
@@ -4127,7 +4122,7 @@ LALGmax(Client ctx, bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 			local_storage = true;
 			r = COLnew2(0, tt, max, TRANSIENT, b->twidth);
 			if (r == NULL) {
-				err = createException(MAL, "pp aggr.max", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				err = createException(MAL, "ilockedaggr.max", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto error;
 			}
 			if (r->tvheap && r->tvheap->base == NULL &&
@@ -4140,7 +4135,7 @@ LALGmax(Client ctx, bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 	if (BATcapacity(r) < max) {
 		BUN sz = max*2;
 		if (BATextend(r, sz) != GDK_SUCCEED) {
-			err = createException(MAL, "pp aggr.max", MAL_MALLOC_FAIL);
+			err = createException(MAL, "ilockedaggr.max", MAL_MALLOC_FAIL);
 			goto error;
 		}
 	}
@@ -4182,7 +4177,7 @@ LALGmax(Client ctx, bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 	} else {
 		gafunc(vamax);
 	}
-	TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "pp aggr.max", RUNTIME_QRY_TIMEOUT));
+	TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "ilockedaggr.max", RUNTIME_QRY_TIMEOUT));
 	if (err) {
 		goto error;
 	}
@@ -4218,10 +4213,9 @@ LALGmax(Client ctx, bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 		} \
 	} while (0)
 static str
-LALGnull(Client ctx, bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
+LALGnull(Client ctx, bat *rid, bat *gid, bat *bid, bat *pid)
 {
 	(void)ctx;
-	(void) H; /* last arg should move to first argument .. */
 	BAT *g = NULL, *b = NULL, *r = NULL;
 	str err = NULL;
 	bool private = true, locked = false;
@@ -4229,12 +4223,12 @@ LALGnull(Client ctx, bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 	g = BATdescriptor(*gid);
 	b = BATdescriptor(*bid);
 	if (g == NULL || b == NULL) {
-		err = createException(MAL, "pp aggr.null", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		err = createException(MAL, "ilockedaggr.null", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto error;
 	}
 	if (!is_bat_nil(*rid)) {
 		if ((r = BATdescriptor(*rid)) == NULL) {
-			err = createException(MAL, "pp aggr.null", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+			err = createException(MAL, "ilockedaggr.null", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			goto error;
 		}
 	}
@@ -4247,7 +4241,7 @@ LALGnull(Client ctx, bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 
 	BAT *pg = BATdescriptor(*pid);
 	if (pg == NULL) {
-		err = createException(MAL, "pp aggr.null", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		err = createException(MAL, "ilockedaggr.null", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto error;
 	}
 	oid max = BATcount(pg)?pg->tmaxval:0;
@@ -4256,7 +4250,7 @@ LALGnull(Client ctx, bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 	if (!r) {
 		r = COLnew2(0, TYPE_bit, max, TRANSIENT, b->twidth);
 		if (r == NULL) {
-			err = createException(MAL, "pp aggr.null", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			err = createException(MAL, "ilockedaggr.null", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto error;
 		}
 		r->tprivate_bat = 1;
@@ -4265,7 +4259,7 @@ LALGnull(Client ctx, bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 	if (BATcapacity(r) < max) {
 		BUN sz = max*2;
 		if (BATextend(r, sz) != GDK_SUCCEED) {
-			err = createException(MAL, "pp aggr.null", MAL_MALLOC_FAIL);
+			err = createException(MAL, "ilockedaggr.null", MAL_MALLOC_FAIL);
 			goto error;
 		}
 	}
@@ -4321,7 +4315,7 @@ LALGnull(Client ctx, bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 	}
 	bat_iterator_end(&bi);
 
-	TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "pp aggr.null", RUNTIME_QRY_TIMEOUT));
+	TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "ilockedaggr.null", RUNTIME_QRY_TIMEOUT));
 	if (err) {
 		goto error;
 	}
@@ -4350,10 +4344,9 @@ LALGnull(Client ctx, bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 }
 
 static str
-LALGcnull(Client ctx, bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
+LALGcnull(Client ctx, bat *rid, bat *gid, bat *bid, bat *pid)
 {
 	(void)ctx;
-	(void) H; /* last arg should move to first argument .. */
 	BAT *g = NULL, *b = NULL, *r = NULL;
 	str err = NULL;
 	bool locked = false;
@@ -4361,12 +4354,12 @@ LALGcnull(Client ctx, bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 	g = BATdescriptor(*gid);
 	b = BATdescriptor(*bid);
 	if (g == NULL || b == NULL) {
-		err = createException(MAL, "pp aggr.cnull", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		err = createException(MAL, "ilockedaggr.cnull", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto error;
 	}
 
 	if (is_bat_nil(*rid) || (r = BATdescriptor(*rid)) == NULL) {
-		err = createException(MAL, "pp aggr.cnull", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		err = createException(MAL, "ilockedaggr.cnull", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto error;
 	}
 
@@ -4375,7 +4368,7 @@ LALGcnull(Client ctx, bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 
 	BAT *pg = BATdescriptor(*pid);
 	if (pg == NULL) {
-		err = createException(MAL, "pp aggr.cnull", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		err = createException(MAL, "ilockedaggr.cnull", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto error;
 	}
 	oid max = BATcount(pg)?pg->tmaxval:0;
@@ -4385,7 +4378,7 @@ LALGcnull(Client ctx, bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 	if (BATcapacity(r) < max) {
 		BUN sz = max*2;
 		if (BATextend(r, sz) != GDK_SUCCEED) {
-			err = createException(MAL, "pp aggr.cnull", MAL_MALLOC_FAIL);
+			err = createException(MAL, "ilockedaggr.cnull", MAL_MALLOC_FAIL);
 			goto error;
 		}
 	}
@@ -4412,7 +4405,7 @@ LALGcnull(Client ctx, bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 		}
 	}
 	bat_iterator_end(&bi);
-	TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "pp aggr.cnull", RUNTIME_QRY_TIMEOUT));
+	TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "ilockedaggr.cnull", RUNTIME_QRY_TIMEOUT));
 	if (err) {
 		goto error;
 	}
@@ -4470,14 +4463,14 @@ IALGquantile(Client ctx, bat *rid, bat *gid, bat *bid, bte *perc)
 	bte p = *perc;
 
 	if (p < 0 || p > 100) {
-		err = createException(MAL, "pp aggr.quantile", SQLSTATE(HY002) "percentage out of range %d", p);
+		err = createException(MAL, "iaggr.quantile", SQLSTATE(HY002) "percentage out of range %d", p);
 		goto error;
 	}
 
 	g = BATdescriptor(*gid);
 	b = BATdescriptor(*bid);
 	if (g == NULL || b == NULL) {
-		err = createException(MAL, "pp aggr.quantile", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		err = createException(MAL, "iaggr.quantile", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto error;
 	}
 	int tt = b->ttype;
@@ -4486,13 +4479,13 @@ IALGquantile(Client ctx, bat *rid, bat *gid, bat *bid, bte *perc)
 		tt != TYPE_hge &&
 #endif
 		tt != TYPE_flt && tt != TYPE_dbl) {
-		err = createException(MAL, "pp aggr.quantile", SQLSTATE(HY002) "incompatible type");
+		err = createException(MAL, "iaggr.quantile", SQLSTATE(HY002) "incompatible type");
 		goto error;
 	}
 
 	if (!is_bat_nil(*rid)) {
 		if ((r = BATdescriptor(*rid)) == NULL) {
-			err = createException(MAL, "pp aggr.quantile", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+			err = createException(MAL, "iaggr.quantile", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			goto error;
 		}
 	}
@@ -4503,13 +4496,13 @@ IALGquantile(Client ctx, bat *rid, bat *gid, bat *bid, bte *perc)
 	if (!r) {
 		r = COLnew(0, tt, max, TRANSIENT);
 		if (r == NULL) {
-			err = createException(MAL, "pp aggr.max", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			err = createException(MAL, "iaggr.quantile", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto error;
 		}
 	}
 	if (BATcapacity(r) < max) {
 		if (BATextend(r, max) != GDK_SUCCEED) {
-			err = createException(MAL, "pp aggr.max", MAL_MALLOC_FAIL);
+			err = createException(MAL, "iaggr.quantile", MAL_MALLOC_FAIL);
 			goto error;
 		}
 	}
@@ -4529,7 +4522,7 @@ IALGquantile(Client ctx, bat *rid, bat *gid, bat *bid, bte *perc)
 #endif
 	qfunc(flt,p,max);
 	qfunc(dbl,p,max);
-	TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "pp aggr.quantile", RUNTIME_QRY_TIMEOUT));
+	TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "iaggr.quantile", RUNTIME_QRY_TIMEOUT));
 	if (err) {
 		goto error;
 	}
@@ -4621,7 +4614,7 @@ IALGminany_skipnil(Client ctx, ptr result, const bat *bid, const bit *skipnil)
 	str msg = MAL_SUCCEED;
 
 	if (result == NULL || (b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "algebra.min", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		throw(MAL, "iaggr.min", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
 	if (!ATOMlinear(b->ttype)) {
 		msg = createException(MAL, "iaggr.min", "atom '%s' cannot be ordered linearly", ATOMname(b->ttype));
@@ -4764,7 +4757,7 @@ IALGnull(Client ctx, bit *result, const bat *bid)
 			bat_iterator_end(&bi);
 			*result = hasnull;
 
-			TIMEOUT_CHECK(qry_ctx, msg = createException(SQL, "pp aggr.null", RUNTIME_QRY_TIMEOUT));
+			TIMEOUT_CHECK(qry_ctx, msg = createException(SQL, "iaggr.null", RUNTIME_QRY_TIMEOUT));
 		}
 	} /* else: (*result == null): we've found a NULL before, nothing to do */
 
@@ -4911,41 +4904,41 @@ static mel_func pp_algebra_init_funcs[] = {
  command("igroup", "group", LALGderive, false, "Sub Group input.", args(2,5, batarg("gid", oid), batargany("sink",1), batarg("pgid", oid), batargany("phash", 2), batargany("b",1))),
 
  pattern("ialgebra", "project",    LALGconstant, false, "Project a single value", args(1,3, batargany("",1), batarg("gid", oid), argany("val",1))),
- command("ialgebra", "projection", LALGproject,  false, "Project.",               args(1,3, batargany("",1), batarg("gid", oid), batargany("b",1))),
+ command("ialgebra", "projection", LALGprojection,  false, "Project.",               args(1,3, batargany("",1), batarg("gid", oid), batargany("b",1))),
 
  /* COUNT DISTINCT: globle / grouped */
  command("ialgebra", "unique", LALGunique,       false, "Unique rows.",           args(2,4, batarg("gid", oid),  batargany("",1), batargany("b",1), batarg("s",oid))),
  command("ialgebra", "unique", LALGgroup_unique, false, "Unique rows per group.", args(2,5, batarg("ngid", oid), batargany("",1), batargany("b",1), batarg("s",oid), batarg("gid",oid))),
 
  /********** Grouped aggregates **********/
- command("aggr", "min",   LALGmin,       false, "Min per group.",                             args(1,5, batargany("",1), batarg("gid", oid), batargany("", 1), arg("pipeline", ptr), batarg("pid", oid))),
- command("aggr", "max",   LALGmax,       false, "Max per group.",                             args(1,5, batargany("",1), batarg("gid", oid), batargany("", 1), arg("pipeline", ptr), batarg("pid", oid))),
- pattern("aggr", "prod",  LALGprod,      false, "product per group.",                         args(1,5, batargany("",1), batarg("gid", oid), batargany("", 2), arg("pipeline", ptr), batarg("pid", oid))),
- command("aggr", "null",  LALGnull,      false, "has-null per group per partition.",          args(1,5, batarg("",bit),  batarg("gid", oid), batargany("", 1), arg("pipeline", ptr), batarg("pid", oid))),
- command("aggr", "cnull", LALGcnull,     false, "has-null per group all partition combined.", args(1,5, batarg("",bit),  batarg("gid", oid), batarg("", bit),  arg("pipeline", ptr), batarg("pid", oid))),
- command("aggr", "count", LALGcount,     false, "Count per group.",                           args(1,6, batarg("",lng),  batarg("gid", oid), batargany("", 1), arg("nonil", bit), arg("pipeline", ptr), batarg("pid", oid))),
- command("aggr", "count", LALGcountstar, false, "count per group.",                           args(1,4, batarg("",lng),  batarg("gid", oid),                                      arg("pipeline", ptr), batarg("pid", oid))),
+ command("ilockedaggr", "min",   LALGmin,       false, "Min per group.",                             args(1,4, batargany("",1), batarg("gid", oid), batargany("", 1), batarg("pid", oid))),
+ command("ilockedaggr", "max",   LALGmax,       false, "Max per group.",                             args(1,4, batargany("",1), batarg("gid", oid), batargany("", 1), batarg("pid", oid))),
+ pattern("ilockedaggr", "prod",  LALGprod,      false, "product per group.",                         args(1,4, batargany("",1), batarg("gid", oid), batargany("", 2), batarg("pid", oid))),
+ command("ilockedaggr", "null",  LALGnull,      false, "has-null per group per partition.",          args(1,4, batarg("",bit),  batarg("gid", oid), batargany("", 1), batarg("pid", oid))),
+ command("ilockedaggr", "cnull", LALGcnull,     false, "has-null per group all partition combined.", args(1,4, batarg("",bit),  batarg("gid", oid), batarg("", bit),  batarg("pid", oid))),
+ command("ilockedaggr", "count", LALGcount,     false, "Count per group.",                           args(1,5, batarg("",lng),  batarg("gid", oid), batargany("", 1), arg("nonil", bit), batarg("pid", oid))),
+ command("ilockedaggr", "count", LALGcountstar, false, "count per group.",                           args(1,3, batarg("",lng),  batarg("gid", oid),                                      batarg("pid", oid))),
 
- pattern("aggr", "sum", LALGsum,       false, "sum per group.",                      args(1,5, batargany("",1), batarg("gid", oid), batargany("", 2),                    arg("pipeline", ptr), batarg("pid", oid))),
+ pattern("ilockedaggr", "sum", LALGsum,       false, "sum per group.",                      args(1,4, batargany("",1),                                               batarg("gid", oid), batargany("", 2),   batarg("pid", oid))),
  /* sum core */
- pattern("aggr", "sum", LALGsum_float, false, "Kahan/Neumaier summation per group.", args(3,7, batarg("rsum", flt), batarg("rcom", flt), batarg("rcnt", lng), batarg("gid", oid), batarg("val", flt), arg("pipeline", ptr), batarg("pid", oid))),
- pattern("aggr", "sum", LALGsum_float, false, "Kahan/Neumaier summation per group.", args(3,7, batarg("rsum", dbl), batarg("rcom", dbl), batarg("rcnt", lng), batarg("gid", oid), batarg("val", dbl), arg("pipeline", ptr), batarg("pid", oid))),
+ pattern("ilockedaggr", "sum", LALGsum_float, false, "Kahan/Neumaier summation per group.", args(3,6, batarg("rsum", flt), batarg("rcom", flt), batarg("rcnt", lng), batarg("gid", oid), batarg("val", flt), batarg("pid", oid))),
+ pattern("ilockedaggr", "sum", LALGsum_float, false, "Kahan/Neumaier summation per group.", args(3,6, batarg("rsum", dbl), batarg("rcom", dbl), batarg("rcnt", lng), batarg("gid", oid), batarg("val", dbl), batarg("pid", oid))),
  /* sum combine */
- pattern("aggr", "sum", LALGsum_float, false, "Kahan/Neumaier summation per group.", args(3,9, batarg("rsum", flt), batarg("rcom", flt), batarg("rcnt", lng), batarg("gid", oid), batarg("sum", flt), batarg("com", flt), batarg("cnt", lng), arg("pipeline", ptr), batarg("pid", oid))),
- pattern("aggr", "sum", LALGsum_float, false, "Kahan/Neumaier summation per group.", args(3,9, batarg("rsum", dbl), batarg("rcom", dbl), batarg("rcnt", lng), batarg("gid", oid), batarg("sum", dbl), batarg("com", dbl), batarg("cnt", lng), arg("pipeline", ptr), batarg("pid", oid))),
+ pattern("ilockedaggr", "sum", LALGsum_float, false, "Kahan/Neumaier summation per group.", args(3,8, batarg("rsum", flt), batarg("rcom", flt), batarg("rcnt", lng), batarg("gid", oid), batarg("sum", flt), batarg("com", flt), batarg("cnt", lng), batarg("pid", oid))),
+ pattern("ilockedaggr", "sum", LALGsum_float, false, "Kahan/Neumaier summation per group.", args(3,8, batarg("rsum", dbl), batarg("rcom", dbl), batarg("rcnt", lng), batarg("gid", oid), batarg("sum", dbl), batarg("com", dbl), batarg("cnt", lng), batarg("pid", oid))),
  /* sum finish */
- pattern("aggr", "compute_sum", compute_sum, false, "compute Kahan/Neumaier summation.", args(1,3, batarg("rsum",flt), batarg("sum", flt), batarg("com", flt))),
- pattern("aggr", "compute_sum", compute_sum, false, "compute Kahan/Neumaier summation.", args(1,3, batarg("rsum",dbl), batarg("sum", dbl), batarg("com", dbl))),
+ pattern("ilockedaggr", "compute_sum", compute_sum, false, "compute Kahan/Neumaier summation.", args(1,3, batarg("rsum",flt), batarg("sum", flt), batarg("com", flt))),
+ pattern("ilockedaggr", "compute_sum", compute_sum, false, "compute Kahan/Neumaier summation.", args(1,3, batarg("rsum",dbl), batarg("sum", dbl), batarg("com", dbl))),
 
  /* avg core */
- pattern("aggr", "avg", LALGavg, false, "avg per group.",                      args(3,7, batarg("ravg", dbl), batarg("rerror", dbl),     batarg("rcnt", lng), batarg("gid", oid), batargany("", 1), arg("pipeline", ptr), batarg("pid", oid))),
- pattern("aggr", "avg", LALGavg, false, "avg of integers/decimals per group.", args(3,7, batargany("ravg",1), batarg("rremainder", lng), batarg("rcnt", lng), batarg("gid", oid), batargany("", 1), arg("pipeline", ptr), batarg("pid", oid))),
+ pattern("ilockedaggr", "avg", LALGavg, false, "avg per group.",                      args(3,6, batarg("ravg", dbl), batarg("rerror", dbl),     batarg("rcnt", lng), batarg("gid", oid), batargany("", 1), batarg("pid", oid))),
+ pattern("ilockedaggr", "avg", LALGavg, false, "avg of integers/decimals per group.", args(3,6, batargany("ravg",1), batarg("rremainder", lng), batarg("rcnt", lng), batarg("gid", oid), batargany("", 1), batarg("pid", oid))),
  /* avg combine */
- pattern("aggr", "avg", LALGavg, false, "avg per group.",                      args(3,9, batarg("ravg", dbl), batarg("rerror", dbl),     batarg("rcnt", lng), batarg("gid", oid), batargany("", 1), batarg("error", dbl),     batarg("cnt", lng), arg("pipeline", ptr), batarg("pid", oid))),
- pattern("aggr", "avg", LALGavg, false, "avg of integers/decimals per group.", args(3,9, batargany("ravg",1), batarg("rremainder", lng), batarg("rcnt", lng), batarg("gid", oid), batargany("", 1), batarg("remainder", lng), batarg("cnt", lng), arg("pipeline", ptr), batarg("pid", oid))),
+ pattern("ilockedaggr", "avg", LALGavg, false, "avg per group.",                      args(3,8, batarg("ravg", dbl), batarg("rerror", dbl),     batarg("rcnt", lng), batarg("gid", oid), batargany("", 1), batarg("error", dbl),     batarg("cnt", lng), batarg("pid", oid))),
+ pattern("ilockedaggr", "avg", LALGavg, false, "avg of integers/decimals per group.", args(3,8, batargany("ravg",1), batarg("rremainder", lng), batarg("rcnt", lng), batarg("gid", oid), batargany("", 1), batarg("remainder", lng), batarg("cnt", lng), batarg("pid", oid))),
  /* avg integer and doubles finish */
- pattern("aggr", "compute_avg", compute_avg, false, "compute avg from integer avg + rest/count.",           args(1,4, batarg("ravg",dbl), batargany("avg", 1), batarg("remainder", lng), batarg("cnt", lng))),
- pattern("aggr", "compute_avg", compute_avg, false, "compute avg from floating point (sum + error)/count.", args(1,4, batarg("ravg",dbl), batarg("avg", dbl),  batarg("error", dbl),     batarg("cnt", lng))),
+ pattern("ilockedaggr", "compute_avg", compute_avg, false, "compute avg from integer avg + rest/count.",           args(1,4, batarg("ravg",dbl), batargany("avg", 1), batarg("remainder", lng), batarg("cnt", lng))),
+ pattern("ilockedaggr", "compute_avg", compute_avg, false, "compute avg from floating point (sum + error)/count.", args(1,4, batarg("ravg",dbl), batarg("avg", dbl),  batarg("error", dbl),     batarg("cnt", lng))),
 
  /********** Global aggregates (i.e. without a GROUP BY) **********/
  /* core phase: incrementally aggregate each input data slice into the local in/out result var. */

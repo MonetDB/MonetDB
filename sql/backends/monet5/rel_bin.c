@@ -1971,7 +1971,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 		}
 		s = stmt_aggr(be, as, grp, ext, a, 1, need_no_nil(e) /* ignore nil*/, !zero_if_empty(e));
 		if (pipeline) { /* pipeline grouping with groups */
-				s->q = pushArgument(be->mb, s->q, pipeline);
+				//s->q = pushArgument(be->mb, s->q, pipeline);
 				s->q = pushArgument(be->mb, s->q, ogrp);
 				s->q->inout = 0;
 				s->nrcols = 1;

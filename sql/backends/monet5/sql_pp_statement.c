@@ -109,7 +109,7 @@ stmt_pp_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int 
 	if (grp) {
 		if ((grp && grp->nr < 0) || (ext && ext->nr < 0))
 			return NULL;
-
+		mod = putName("ilockedaggr");
 		q = newStmtArgs(mb, mod, aggrfunc, argc);
 		if (q == NULL)
 			return NULL;
