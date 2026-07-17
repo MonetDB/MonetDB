@@ -570,7 +570,7 @@ CALCmin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (t != getArgType(mb, pci, 2))
 		return mythrow(MAL, "calc.min", SEMANTIC_TYPE_MISMATCH);
 	nil = ATOMnilptr(t);
-	if (t >= TYPE_str && ATOMstorage(t) >= TYPE_str) {
+	if (ATOMstorage(t) >= TYPE_str) {
 		p1 = *(ptr *) p1;
 		p2 = *(ptr *) p2;
 	}
@@ -596,7 +596,7 @@ CALCmin_no_nil(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (t != getArgType(mb, pci, 2))
 		return mythrow(MAL, "calc.min", SEMANTIC_TYPE_MISMATCH);
 	nil = ATOMnilptr(t);
-	if (t >= TYPE_str && ATOMstorage(t) >= TYPE_str) {
+	if (ATOMstorage(t) >= TYPE_str) {
 		p1 = *(ptr *) p1;
 		p2 = *(ptr *) p2;
 	}
@@ -608,7 +608,7 @@ CALCmin_no_nil(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			if (t != getArgType(mb, pci, i))
 				return mythrow(MAL, "calc.min", SEMANTIC_TYPE_MISMATCH);
 			ptr p2 = getArgReference(stk, pci, i);
-			if (t >= TYPE_str && ATOMstorage(t) >= TYPE_str)
+			if (ATOMstorage(t) >= TYPE_str)
 				p2 = *(ptr *) p2;
 			if (ATOMeq(t, p1, nil) ||
 				(!ATOMeq(t, p2, nil) && ATOMcmp(t, p1, p2) > 0))
@@ -633,7 +633,7 @@ CALCmax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (t != getArgType(mb, pci, 2))
 		return mythrow(MAL, "calc.max", SEMANTIC_TYPE_MISMATCH);
 	nil = ATOMnilptr(t);
-	if (t >= TYPE_str && ATOMstorage(t) >= TYPE_str) {
+	if (ATOMstorage(t) >= TYPE_str) {
 		p1 = *(ptr *) p1;
 		p2 = *(ptr *) p2;
 	}
@@ -692,7 +692,7 @@ CALCmax_no_nil(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (t != getArgType(mb, pci, 2))
 		return mythrow(MAL, "calc.max", SEMANTIC_TYPE_MISMATCH);
 	nil = ATOMnilptr(t);
-	if (t >= TYPE_str && ATOMstorage(t) >= TYPE_str) {
+	if (ATOMstorage(t) >= TYPE_str) {
 		p1 = *(ptr *) p1;
 		p2 = *(ptr *) p2;
 	}
@@ -704,7 +704,7 @@ CALCmax_no_nil(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			if (t != getArgType(mb, pci, i))
 				return mythrow(MAL, "calc.max", SEMANTIC_TYPE_MISMATCH);
 			ptr p2 = getArgReference(stk, pci, i);
-			if (t >= TYPE_str && ATOMstorage(t) >= TYPE_str)
+			if (ATOMstorage(t) >= TYPE_str)
 				p2 = *(ptr *) p2;
 			if (ATOMeq(t, p1, nil) ||
 				(!ATOMeq(t, p2, nil) && ATOMcmp(t, p1, p2) < 0))
