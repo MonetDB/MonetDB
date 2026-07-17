@@ -478,7 +478,7 @@ rel_groupby_prepare_pp(list **aggrresults, list **serializedresults, backend *be
 }
 
 static stmt *
-rel_groupby_combine_pp(backend *be, sql_rel *rel, list *gbstmts, stmt *grp, stmt *ext, stmt *cnt, stmt *cursub, stmt *pp, list *sub, stmt **cnt_aggr)
+rel_groupby_combine_pp(backend *be, sql_rel *rel, list *gbstmts, stmt *grp, stmt *ext, stmt *cnt, stmt *cursub, list *sub, stmt **cnt_aggr)
 {
 	node *o = sub->h;
 	(void)grp; (void)ext; (void)cnt;
@@ -536,7 +536,7 @@ rel_groupby_combine_pp(backend *be, sql_rel *rel, list *gbstmts, stmt *grp, stmt
 				it = first_arg_subtype(e);
 			if (avg && EC_APPNUM(tpe->type->eclass) && it && !EC_APPNUM(it->type->eclass))
 				tpe = it;
-			InstrPtr q = newStmt(be->mb, getName("lockedaggr"), getName(name));
+			InstrPtr q = newStmt(be->mb, lockedaggrRef, getName(name));
 			if (avg || sum) { /* remainder (or compensation) and count */
 				m = m->next;
 				q = pushReturn(be->mb, q, *(int*)m->data);
@@ -621,7 +621,7 @@ rel_groupby_combine_pp(backend *be, sql_rel *rel, list *gbstmts, stmt *grp, stmt
 					it = first_arg_subtype(e);
 				if (avg && EC_APPNUM(tpe->type->eclass) && it && !EC_APPNUM(it->type->eclass))
 					tpe = it;
-				q = newStmt(be->mb, getName("aggr"), getName(name));
+				q = newStmt(be->mb, ilockedaggrRef, getName(name));
 				if (avg || sum) { /* remainder (or compensation) and count */
 					m = m->next;
 					q = pushReturn(be->mb, q, *(int*)m->data);
@@ -635,7 +635,6 @@ rel_groupby_combine_pp(backend *be, sql_rel *rel, list *gbstmts, stmt *grp, stmt
 					q = pushArgument(be->mb, q, getArg(i->q, 1));
 					q = pushArgument(be->mb, q, getArg(i->q, 2));
 				}
-				q = pushArgument(be->mb, q, getArg(pp->q, 2));
 				q = pushArgument(be->mb, q, grp->nr);
 			} else {
 				q = newStmt(be->mb, ialgebraRef, projectionRef);
@@ -698,7 +697,7 @@ rel_groupby_finish_pp(backend *be, sql_rel *rel, stmt *cursub, bool _2phases)
 					InstrPtr q = s->q;
 					int avg = getArg(q, 0), rem = getArg(q, 1), cnt = getArg(q, 2);
 
-					q = newStmtArgs(be->mb, aggrRef, "compute_avg", 4);
+					q = newStmtArgs(be->mb, ilockedaggrRef, "compute_avg", 4);
 					setVarType(be->mb, getArg(q, 0), newBatType(TYPE_dbl));
 					pushArgument(be->mb, q, avg);
 					pushArgument(be->mb, q, rem);
@@ -1216,7 +1215,7 @@ rel2bin_groupby_pp(backend *be, sql_rel *rel, list *refs)
 
 	(void)stmt_pp_jump(be, pp, be->nrparts);
 	if (_2phases)
-		cursub = rel_groupby_combine_pp(be, rel, gbexps, grp, ext, NULL, cursub, pp, shared, &cnt_aggr);
+		cursub = rel_groupby_combine_pp(be, rel, gbexps, grp, ext, NULL, cursub, shared, &cnt_aggr);
 	(void)cnt_aggr;
 	(void)stmt_pp_end(be, pp);
 

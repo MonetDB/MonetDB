@@ -438,22 +438,28 @@ RAstatement(Client c, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		else
 			msg = createException(SQL, "RAstatement", SQLSTATE(42000) "%s", m->errstr);
 	} else {
+		Symbol backup = NULL;
+		if (c->curprg) {
+			backup = c->curprg;
+			c->curprg = NULL;
+		}
 		if ((msg = MSinitClientPrg(c, sql_private_module_name, "test")) != MAL_SUCCEED)
 			return RAcommit_statement(be, msg);
 
 		/* generate MAL code, ignoring any code generation error */
+		m->type = Q_TABLE;
 		setVarType(c->curprg->def, 0, 0);
-		if (backend_dumpstmt(be, c->curprg->def, rel, 0, 1, NULL) < 0) {
+		if (backend_dumpstmt(be, c->curprg->def, rel, 1, 1, NULL) < 0) {
 			msg = createException(SQL,"RAstatement","Program contains errors"); // TODO: use macro definition.
 		} else {
 			msg = SQLoptimizeFunction(c, c->curprg->def);
 			if (msg == MAL_SUCCEED)
 				msg = SQLrun(c, be);
-			if (msg == MAL_SUCCEED)
-				msg = resetMalBlk(&c->curprg->def);
 		}
+		c->curprg = backup;
 		rel_destroy(m, rel);
 	}
+	sqlcleanup(be, 0);
 	return RAcommit_statement(be, msg);
 }
 

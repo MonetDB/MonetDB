@@ -92,7 +92,7 @@ stmt_pp_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int 
 			     strcmp(aggrfunc, "sum") == 0 ||
 			     strcmp(aggrfunc, "prod") == 0 ||
 				 strcmp(aggrfunc, "null") == 0 )) /* incremental versions TODO do for other aggr functions */
-			mod = putName("iaggr");
+			mod = iaggrRef;
 
 		if (avg || strcmp(aggrfunc, "sum") == 0 || strcmp(aggrfunc, "prod") == 0
 			|| strcmp(aggrfunc, "str_group_concat") == 0)
@@ -109,7 +109,7 @@ stmt_pp_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int 
 	if (grp) {
 		if ((grp && grp->nr < 0) || (ext && ext->nr < 0))
 			return NULL;
-
+		mod = ilockedaggrRef;
 		q = newStmtArgs(mb, mod, aggrfunc, argc);
 		if (q == NULL)
 			return NULL;
@@ -854,7 +854,6 @@ pipeline_start(backend *be, int nrparts, int input, int sink)
 	q = pushReturn(be->mb, q, newTmpVariable(be->mb, TYPE_int));
 	q = pushReturn(be->mb, q, newTmpVariable(be->mb, TYPE_ptr));
 	if (sink > 0) { /* TODO handle case for both a sink and input/nrparts */
-	//	assert(0);
 		q = pushArgument(be->mb, q, sink);
 	} else if (input >= 0 && nrparts == 0) {
 		assert(0);

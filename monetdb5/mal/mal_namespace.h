@@ -120,6 +120,7 @@
 	FUNC(groupedfirstn); \
 	FUNC(grow); \
 	FUNC(hge); \
+	FUNC(iaggr); \
 	FUNC(ialgebra); \
 	FUNC(identity); \
 	FUNC(ifthenelse); \
@@ -127,6 +128,7 @@
 	FUNC(importColumn); \
 	FUNC(importNulTerminated); \
 	FUNC(importRaw); \
+	FUNC(ilockedaggr); \
 	FUNC(int); \
 	FUNC(intersect); \
 	FUNC(intersectcand); \
@@ -145,6 +147,7 @@
 	FUNC(likeuselect); \
 	FUNC(lng); \
 	FUNC(lock); \
+	FUNC(lockedaggr); \
 	FUNC(lookup); \
 	FUNC(main); \
 	FUNC(mal); \

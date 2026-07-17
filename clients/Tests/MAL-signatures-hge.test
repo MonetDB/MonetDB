@@ -224,55 +224,10 @@ pattern aggr.avg(X_0:bat[:any_1], X_1:int):dbl
 CMDcalcavg
 Gives the avg of all tail values
 aggr
-avg
-pattern aggr.avg(X_0:bat[:oid], X_1:bat[:any_1], X_2:bat[:dbl], X_3:bat[:lng], X_4:ptr, X_5:bat[:oid]) (X_6:bat[:dbl], X_7:bat[:dbl], X_8:bat[:lng])
-LALGavg
-avg per group.
-aggr
-avg
-pattern aggr.avg(X_0:bat[:oid], X_1:bat[:any_1], X_2:bat[:lng], X_3:bat[:lng], X_4:ptr, X_5:bat[:oid]) (X_6:bat[:any_1], X_7:bat[:lng], X_8:bat[:lng])
-LALGavg
-avg of integers/decimals per group.
-aggr
-avg
-pattern aggr.avg(X_0:bat[:oid], X_1:bat[:any_1], X_2:ptr, X_3:bat[:oid]) (X_4:bat[:any_1], X_5:bat[:lng], X_6:bat[:lng])
-LALGavg
-avg of integers/decimals per group.
-aggr
-avg
-pattern aggr.avg(X_0:bat[:oid], X_1:bat[:any_1], X_2:ptr, X_3:bat[:oid]) (X_4:bat[:dbl], X_5:bat[:dbl], X_6:bat[:lng])
-LALGavg
-avg per group.
-aggr
 cardinality
 command aggr.cardinality(X_0:bat[:any_2]):lng
 ALGcard
 Return the cardinality of the BAT tail values.
-aggr
-cnull
-command aggr.cnull(X_0:bat[:oid], X_1:bat[:bit], X_2:ptr, X_3:bat[:oid]):bat[:bit]
-LALGcnull
-has-null per group all partition combined.
-aggr
-compute_avg
-pattern aggr.compute_avg(X_0:bat[:any_1], X_1:bat[:lng], X_2:bat[:lng]):bat[:dbl]
-compute_avg
-compute avg from integer avg + rest/count.
-aggr
-compute_avg
-pattern aggr.compute_avg(X_0:bat[:dbl], X_1:bat[:dbl], X_2:bat[:lng]):bat[:dbl]
-compute_avg
-compute avg from floating point (sum + error)/count.
-aggr
-compute_sum
-pattern aggr.compute_sum(X_0:bat[:dbl], X_1:bat[:dbl]):bat[:dbl]
-compute_sum
-compute Kahan/Neumaier summation.
-aggr
-compute_sum
-pattern aggr.compute_sum(X_0:bat[:flt], X_1:bat[:flt]):bat[:flt]
-compute_sum
-compute Kahan/Neumaier summation.
 aggr
 corr
 command aggr.corr(X_0:bat[:bte], X_1:bat[:bte], X_2:bat[:oid], X_3:bat[:any_1]):bat[:dbl]
@@ -343,16 +298,6 @@ count
 command aggr.count(X_0:bat[:any], X_1:bit):lng
 ALGcount_nil
 Return the number of elements currently in a BAT ignores BUNs with nil-tail iff ignore_nils==TRUE.
-aggr
-count
-command aggr.count(X_0:bat[:oid], X_1:bat[:any_1], X_2:bit, X_3:ptr, X_4:bat[:oid]):bat[:lng]
-LALGcount
-Count per group.
-aggr
-count
-command aggr.count(X_0:bat[:oid], X_1:ptr, X_2:bat[:oid]):bat[:lng]
-LALGcountstar
-count per group.
 aggr
 count_no_nil
 command aggr.count_no_nil(X_0:bat[:any_1], X_1:bat[:oid], X_2:bat[:any_2]):bat[:lng]
@@ -484,11 +429,6 @@ command aggr.max(X_0:bat[:any_2], X_1:bit):any_2
 ALGmaxany_skipnil
 Return the highest tail value or nil.
 aggr
-max
-command aggr.max(X_0:bat[:oid], X_1:bat[:any_1], X_2:ptr, X_3:bat[:oid]):bat[:any_1]
-LALGmax
-Max per group.
-aggr
 median
 command aggr.median(X_0:bat[:any_1]):any_1
 AGGRmedian
@@ -514,11 +454,6 @@ command aggr.min(X_0:bat[:any_2], X_1:bit):any_2
 ALGminany_skipnil
 Return the lowest tail value or nil.
 aggr
-min
-command aggr.min(X_0:bat[:oid], X_1:bat[:any_1], X_2:ptr, X_3:bat[:oid]):bat[:any_1]
-LALGmin
-Min per group.
-aggr
 not_anyequal
 pattern aggr.not_anyequal(X_0:any_1, X_1:any_1):bit
 CMDvarNE
@@ -533,11 +468,6 @@ not_unique
 command aggr.not_unique(X_0:bat[:oid]):bit
 not_unique
 check if the tail sorted bat b doesn't have unique tail values
-aggr
-null
-command aggr.null(X_0:bat[:oid], X_1:bat[:any_1], X_2:ptr, X_3:bat[:oid]):bat[:bit]
-LALGnull
-has-null per group per partition.
 aggr
 null
 command aggr.null(X_0:bat[:any_1]):bit
@@ -1093,11 +1023,6 @@ prod
 pattern aggr.prod(X_0:bat[:sht], X_1:bit):sht
 CMDBATprod
 Calculate aggregate product of B.
-aggr
-prod
-pattern aggr.prod(X_0:bat[:oid], X_1:bat[:any_2], X_2:ptr, X_3:bat[:oid]):bat[:any_1]
-LALGprod
-product per group.
 aggr
 quantile
 command aggr.quantile(X_0:bat[:any_1], X_1:bat[:dbl]):any_1
@@ -3343,31 +3268,6 @@ sum
 pattern aggr.sum(X_0:bat[:sht], X_1:bit):sht
 CMDBATsum
 Calculate aggregate sum of B.
-aggr
-sum
-pattern aggr.sum(X_0:bat[:oid], X_1:bat[:any_2], X_2:ptr, X_3:bat[:oid]):bat[:any_1]
-LALGsum
-sum per group.
-aggr
-sum
-pattern aggr.sum(X_0:bat[:oid], X_1:bat[:dbl], X_2:bat[:dbl], X_3:bat[:lng], X_4:ptr, X_5:bat[:oid]) (X_6:bat[:dbl], X_7:bat[:dbl], X_8:bat[:lng])
-LALGsum_float
-Kahan/Neumaier summation per group.
-aggr
-sum
-pattern aggr.sum(X_0:bat[:oid], X_1:bat[:dbl], X_2:ptr, X_3:bat[:oid]) (X_4:bat[:dbl], X_5:bat[:dbl], X_6:bat[:lng])
-LALGsum_float
-Kahan/Neumaier summation per group.
-aggr
-sum
-pattern aggr.sum(X_0:bat[:oid], X_1:bat[:flt], X_2:bat[:flt], X_3:bat[:lng], X_4:ptr, X_5:bat[:oid]) (X_6:bat[:flt], X_7:bat[:flt], X_8:bat[:lng])
-LALGsum_float
-Kahan/Neumaier summation per group.
-aggr
-sum
-pattern aggr.sum(X_0:bat[:oid], X_1:bat[:flt], X_2:ptr, X_3:bat[:oid]) (X_4:bat[:flt], X_5:bat[:flt], X_6:bat[:lng])
-LALGsum_float
-Kahan/Neumaier summation per group.
 aggr
 uniques_guess
 command aggr.uniques_guess(X_0:bat[:any_1]):lng
@@ -48481,7 +48381,7 @@ Project a single value
 ialgebra
 projection
 command ialgebra.projection(X_0:bat[:oid], X_1:bat[:any_1]):bat[:any_1]
-LALGproject
+LALGprojection
 Project.
 ialgebra
 unique
@@ -48503,6 +48403,106 @@ group
 command igroup.group(X_0:bat[:any_1]) (X_1:bat[:oid], X_2:bat[:any_1])
 LALGgroup
 Group input.
+ilockedaggr
+avg
+pattern ilockedaggr.avg(X_0:bat[:oid], X_1:bat[:any_1], X_2:bat[:dbl], X_3:bat[:lng], X_4:bat[:oid]) (X_5:bat[:dbl], X_6:bat[:dbl], X_7:bat[:lng])
+LALGavg
+avg per group.
+ilockedaggr
+avg
+pattern ilockedaggr.avg(X_0:bat[:oid], X_1:bat[:any_1], X_2:bat[:lng], X_3:bat[:lng], X_4:bat[:oid]) (X_5:bat[:any_1], X_6:bat[:lng], X_7:bat[:lng])
+LALGavg
+avg of integers/decimals per group.
+ilockedaggr
+avg
+pattern ilockedaggr.avg(X_0:bat[:oid], X_1:bat[:any_1], X_2:bat[:oid]) (X_3:bat[:any_1], X_4:bat[:lng], X_5:bat[:lng])
+LALGavg
+avg of integers/decimals per group.
+ilockedaggr
+avg
+pattern ilockedaggr.avg(X_0:bat[:oid], X_1:bat[:any_1], X_2:bat[:oid]) (X_3:bat[:dbl], X_4:bat[:dbl], X_5:bat[:lng])
+LALGavg
+avg per group.
+ilockedaggr
+cnull
+command ilockedaggr.cnull(X_0:bat[:oid], X_1:bat[:bit], X_2:bat[:oid]):bat[:bit]
+LALGcnull
+has-null per group all partition combined.
+ilockedaggr
+compute_avg
+pattern ilockedaggr.compute_avg(X_0:bat[:any_1], X_1:bat[:lng], X_2:bat[:lng]):bat[:dbl]
+compute_avg
+compute avg from integer avg + rest/count.
+ilockedaggr
+compute_avg
+pattern ilockedaggr.compute_avg(X_0:bat[:dbl], X_1:bat[:dbl], X_2:bat[:lng]):bat[:dbl]
+compute_avg
+compute avg from floating point (sum + error)/count.
+ilockedaggr
+compute_sum
+pattern ilockedaggr.compute_sum(X_0:bat[:dbl], X_1:bat[:dbl]):bat[:dbl]
+compute_sum
+compute Kahan/Neumaier summation.
+ilockedaggr
+compute_sum
+pattern ilockedaggr.compute_sum(X_0:bat[:flt], X_1:bat[:flt]):bat[:flt]
+compute_sum
+compute Kahan/Neumaier summation.
+ilockedaggr
+count
+command ilockedaggr.count(X_0:bat[:oid], X_1:bat[:any_1], X_2:bit, X_3:bat[:oid]):bat[:lng]
+LALGcount
+Count per group.
+ilockedaggr
+count
+command ilockedaggr.count(X_0:bat[:oid], X_1:bat[:oid]):bat[:lng]
+LALGcountstar
+count per group.
+ilockedaggr
+max
+command ilockedaggr.max(X_0:bat[:oid], X_1:bat[:any_1], X_2:bat[:oid]):bat[:any_1]
+LALGmax
+Max per group.
+ilockedaggr
+min
+command ilockedaggr.min(X_0:bat[:oid], X_1:bat[:any_1], X_2:bat[:oid]):bat[:any_1]
+LALGmin
+Min per group.
+ilockedaggr
+null
+command ilockedaggr.null(X_0:bat[:oid], X_1:bat[:any_1], X_2:bat[:oid]):bat[:bit]
+LALGnull
+has-null per group per partition.
+ilockedaggr
+prod
+pattern ilockedaggr.prod(X_0:bat[:oid], X_1:bat[:any_2], X_2:bat[:oid]):bat[:any_1]
+LALGprod
+product per group.
+ilockedaggr
+sum
+pattern ilockedaggr.sum(X_0:bat[:oid], X_1:bat[:any_2], X_2:bat[:oid]):bat[:any_1]
+LALGsum
+sum per group.
+ilockedaggr
+sum
+pattern ilockedaggr.sum(X_0:bat[:oid], X_1:bat[:dbl], X_2:bat[:dbl], X_3:bat[:lng], X_4:bat[:oid]) (X_5:bat[:dbl], X_6:bat[:dbl], X_7:bat[:lng])
+LALGsum_float
+Kahan/Neumaier summation per group.
+ilockedaggr
+sum
+pattern ilockedaggr.sum(X_0:bat[:oid], X_1:bat[:dbl], X_2:bat[:oid]) (X_3:bat[:dbl], X_4:bat[:dbl], X_5:bat[:lng])
+LALGsum_float
+Kahan/Neumaier summation per group.
+ilockedaggr
+sum
+pattern ilockedaggr.sum(X_0:bat[:oid], X_1:bat[:flt], X_2:bat[:flt], X_3:bat[:lng], X_4:bat[:oid]) (X_5:bat[:flt], X_6:bat[:flt], X_7:bat[:lng])
+LALGsum_float
+Kahan/Neumaier summation per group.
+ilockedaggr
+sum
+pattern ilockedaggr.sum(X_0:bat[:oid], X_1:bat[:flt], X_2:bat[:oid]) (X_3:bat[:flt], X_4:bat[:flt], X_5:bat[:lng])
+LALGsum_float
+Kahan/Neumaier summation per group.
 inet
 !=
 command inet.!=(X_0:inet, X_1:inet):bit

@@ -23,8 +23,6 @@
 				(argc == 2 && (strcmp((fname), "quantile") == 0 || strcmp((fname), "quantile_avg") == 0)) || \
 				(argc == 1 && (strcmp((fname), "median") == 0 || strcmp((fname), "median_avg") == 0)))
 
-static int do_oahash_join(sql_rel *rel);
-
 /* Returns the row count of a base table or any count info we can get fom the
  * PROP_COUNT of this 'rel' (i.e.  get_rel_count()). */
 static lng
@@ -426,12 +424,35 @@ rel_groupby_partition_safe(sql_rel *rel)
 }
 
 static int
-do_oahash_join(sql_rel *rel)
+do_oahash_join(visitor *v, sql_rel *rel, int *side)
 {
 	ATOMIC_TYPE oahash_enabled = (1U<<19);
 	if (!(GDKdebug & oahash_enabled))
 		return 0;
 
+	/* fetch join */
+	if (is_innerjoin(rel->op) && list_length(rel->exps) == 1 /* single JOINIDX */) {
+		sql_rel *l = rel->l;
+		sql_rel *r = rel->r;
+		list *exps = rel->exps;
+		sql_exp *je = exps->h->data;
+		prop *p = find_prop(je->p, PROP_JOINIDX);
+		if (p && (is_basetable(l->op) || is_basetable(r->op))) { /* only use join idx on direct basetable access */
+			sql_idx *idx = p->value.pval;
+			sql_table *lt = l->l, *rt = r->l;
+			sql_trans *tr = v->sql->session->tr;
+			sql_key *rk = (sql_key*)os_find_id(tr->cat->objects, tr, ((sql_fkey*)idx->key)->rkey);
+			if (rk && is_basetable(l->op) && lt == rk->t) {
+				*side = 2; /* primary left, ie continue with right hand side */
+				return 0;
+			}
+
+			if (rk && is_basetable(r->op) && rt == rk->t) {
+				*side = 1; /* primary right, ie continue with left hand side */
+				return 0;
+			}
+		}
+	}
 	// TODO groupjoin other then mark/exist
     if (list_length(rel->attr) == 1) {
         sql_exp *e = rel->attr->h->data;
@@ -858,7 +879,8 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 		if (is_delete(rel->op) && !rel->r && pb)
 			rel_dup(rel);
 	} else if (is_join(rel->op)) {
-		if (do_oahash_join(rel)) {
+		int side = 0;
+		if (do_oahash_join(v, rel, &side)) {
 			list *eq_exps = sa_list(v->sql->sa);
 			list *other = sa_list(v->sql->sa);
 			if (!list_empty(rel->attr))
@@ -984,29 +1006,11 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 			if (pb)
 				rel->spb = 1;
 			res = SPB;
-		} else {
-			if (pb && is_outerjoin(rel->op))
-				res = 0;
-			/* For now we only try to partition in case of a equi-join.
-			 * The other joins are too complex to handle. */
-			else if (pb) { /* and rel->op == op_join */
-				if (!rel->partition)
-					res = _rel_partition(v->sql, rel);
-				if (res) {
-					int lres = rel_pipeline(v, rel->l, false, (rel->partition==1 && rel->spb)?pb:0);
-					if (lres == EPB && pb)
-						rel_dup(rel->l);
-					int rres = rel_pipeline(v, rel->r, false, (rel->partition==2 && rel->spb)?pb:0);
-					if (rres == EPB && pb)
-						rel_dup(rel->r);
-					if (pb)
-						res = 0;
-				}
-				if (!res) {
-					rel->spb = 1;
-					res = SPB;
-				}
-			}
+		} else if (pb && side) { /* handle fetch join */
+			if (side == 1)
+				res = rel_pipeline(v, rel->l, false, pb);
+			else
+				res = rel_pipeline(v, rel->r, false, pb);
 		}
 	} else if (is_ddl(rel->op)) {
 		if (rel->flag == ddl_output || rel->flag == ddl_create_seq || rel->flag == ddl_alter_seq || rel->flag == ddl_alter_table || rel->flag == ddl_create_table || rel->flag == ddl_create_view) {
