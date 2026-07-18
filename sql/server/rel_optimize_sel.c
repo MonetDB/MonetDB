@@ -150,8 +150,9 @@ rel_remove_redundant_join_(visitor *v, sql_rel *rel)
 		if (l->l && is_project(l->op) && is_groupby(gb->op)) {
 			sql_rel *inner = l->l;
 			sql_rel *gbj = gb->l;
-			if (rel_is_ref(inner) && is_project(inner->op) && (need_distinct(inner) || is_groupby(inner->op)) &&
-			    gbj->op == op_join && list_length(inner->r) == list_length(rel->exps)) {
+			bool ue = false;
+			if (rel_is_ref(inner) && is_project(inner->op) && (need_distinct(inner) || (ue = exps_unique(v->sql, inner->l, inner->exps, true)) || is_groupby(inner->op)) &&
+			    gbj->op == op_join && ((!ue && list_length(inner->r) == list_length(rel->exps)) || (ue && list_length(l->exps) == list_length(rel->exps)))) {
 				sql_rel *gbjl = gbj->l, *gbjr = gbj->r;
 				if ((gbjl->l && is_project(gbjl->op) && inner == gbjl->l) ||
 					(gbjr->l && is_project(gbjr->op) && inner == gbjr->l)) {
@@ -3679,8 +3680,6 @@ reorder_join(visitor *v, sql_rel *rel)
 			int cnt = list_length(exps);
 			rel->exps = exps;
 			if (list_length(rel->exps) != cnt) {
-				ATOMIC_TYPE oahash_mask = (1U<<19);
-				bool oahash_enabled = (GDKdebug & oahash_mask);
 				if (oahash_enabled)
 					rel->exps = order_join_expressions_pp(v->sql, exps, rels);
 				else

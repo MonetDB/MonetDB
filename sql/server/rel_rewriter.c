@@ -489,6 +489,8 @@ rel_is_unique(sql_rel *rel)
 	case op_except:
 	case op_topn:
 	case op_sample:
+	case op_select:
+	case op_project:
 		return rel_is_unique(rel->l);
 	case op_table:
 	case op_basetable:
