@@ -3434,13 +3434,13 @@ internal_log_bat(logger *lg, BAT *b, log_id id, lng offset, lng cnt, int sliced,
 				}
 			}
 		}
-	} else if (b->ttype < TYPE_str && bi.h->parentid == b->batCacheid) {
-		const void *t = BUNtail(&bi, (BUN) offset);
-
-		ok = wt(t, lg->current->output_log, (size_t) nr);
 	} else if (b->ttype == TYPE_str) {
 		/* efficient string writes */
 		ok = string_writer(lg, b, offset, nr);
+	} else if (!ATOMvarsized(b->ttype) && bi.h->parentid == b->batCacheid) {
+		const void *t = BUNtail(&bi, (BUN) offset);
+
+		ok = wt(t, lg->current->output_log, (size_t) nr);
 	} else {
 		BUN end = (BUN) (offset + nr);
 		for (p = (BUN) offset; p < end && ok == GDK_SUCCEED; p++) {
@@ -3646,13 +3646,13 @@ log_delta(logger *lg, BAT *uid, BAT *uval, log_id id)
 		if (!mnstr_writeIntArray(lg->current->output_log, vi.base,
 					 (BATcount(uval) + 31) / 32))
 			ok = GDK_FAIL;
-	} else if (uval->ttype < TYPE_str && !isVIEW(uval)) {
-		const void *t = BUNtail(&vi, 0);
-
-		ok = wt(t, lg->current->output_log, (size_t) nr);
 	} else if (uval->ttype == TYPE_str) {
 		/* efficient string writes */
 		ok = string_writer(lg, uval, 0, nr);
+	} else if (!ATOMvarsized(uval->ttype) && !isVIEW(uval)) {
+		const void *t = BUNtail(&vi, 0);
+
+		ok = wt(t, lg->current->output_log, (size_t) nr);
 	} else {
 		for (p = 0; p < BATcount(uid) && ok == GDK_SUCCEED; p++) {
 			const void *val = BUNtail(&vi, p);
