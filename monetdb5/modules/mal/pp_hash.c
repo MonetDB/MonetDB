@@ -2371,8 +2371,8 @@ OAHASHprobe_cmbd_single(Client ctx, bat *PRB_oid, bat *HSH_slotid, const bat *PR
 		oid *sltd = Tloc(s, 0);
 		oid *oid_mtd = Tloc(res_o, 0);
 		oid *slt = Tloc(res_s, 0);
-		lng *gi = Tloc(p, 0);
-		lng *pgids = ht->pgids;
+		gid *gi = Tloc(p, 0);
+		gid *pgids = ht->pgids;
 
 		BUN off = k->hseqbase;
 		switch(tt) {
@@ -2743,8 +2743,8 @@ OAHASHomprobe_cmbd(Client ctx, bat *PRB_oid, bat *HSH_slotid, bat *PRB_mark, con
 		oid *sltd = Tloc(s, 0);
 		oid *oid_mtd = Tloc(res_o, 0);
 		oid *slt = Tloc(res_s, 0);
-		lng *gi = Tloc(p, 0);
-		lng *pgids = ht->pgids;
+		gid *gi = Tloc(p, 0);
+		gid *pgids = ht->pgids;
 		bit *mark = Tloc(res_m, 0);
 		BUN off = k->hseqbase;
 		switch(tt) {
@@ -2899,7 +2899,7 @@ OAHASHexpand(Client ctx, bat *expanded, const bat *selected, const bat *slotid, 
 	if (selcnt) {
 		if (freq) {
 			TIMEOUT_LOOP_IDX_DECL(i, selcnt, qry_ctx) {
-				if (sid[i] != lng_nil && freq[sid[i]])
+				if (sid[i] != oid_nil && freq[sid[i]])
 					xpdcnt += freq[sid[i]];
 				else
 					xpdcnt++;

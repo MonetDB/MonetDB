@@ -115,7 +115,7 @@ hash_prime_nr[32] = {
 	1610612741 };
 
 
-typedef lng gid;
+typedef oid gid;
 typedef ATOMIC_TYPE hash_key_t;
 
 typedef int (*fcmp)(const void *v1, const void *v2);
