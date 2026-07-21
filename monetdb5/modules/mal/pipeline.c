@@ -560,7 +560,7 @@ PPidentity(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	b = BATdescriptor(rb);
 	if (b) {
 		struct pipeline_resultset *rs = (struct pipeline_resultset*)b->pl_io;
-		offset = ATOMIC_ADD(&rs->claimed, cnt);
+		offset = (BUN) ATOMIC_ADD(&rs->claimed, cnt);
 		BBPreclaim(b);
 
 		if (!(bn = BATdense(seq, offset, cnt)))

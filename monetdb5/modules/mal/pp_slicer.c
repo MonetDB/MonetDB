@@ -18,8 +18,8 @@
 
 typedef struct topn_t {
 	struct pipeline_io pl_io;
-	lng start;
-	lng end;
+	oid start;
+	oid end;
 } topn_t;
 
 static void
@@ -49,7 +49,7 @@ LALGsubslice(Client ctx, bat *gid, bat *rid, bat *tid, bat *bid, /*bat *sid,*/ l
 	str msg = MAL_SUCCEED;
 	Pipeline *p = pipeline_get_thread_private_pipeline();
 	BAT *g = NULL, *r = NULL, *t = NULL, *b = NULL;
- 	BUN s = *start, e = *end;
+ 	BUN s = *(BUN*)start, e = *(BUN*)end;
 	int fb = 1, locked = 0;
 	bool private = (!tid || is_bat_nil(*tid));
 	topn_t *n = NULL;

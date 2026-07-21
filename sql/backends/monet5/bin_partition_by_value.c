@@ -235,7 +235,7 @@ partition_groupby_part(backend *be, sql_rel *rel, InstrPtr part, list *mats, stm
 	stmt *g = stmt_binop(be, h, stmt_atom_lng(be, PARTITION_NRPARTS-1), NULL, hf);
 	InstrPtr l = newStmt(be->mb, "part", "prefixsum");
 	l = pushArgument(be->mb, l, g->nr);
-	l = pushLng(be->mb, l, PARTITION_NRPARTS);
+	l = pushOid(be->mb, l, PARTITION_NRPARTS);
 	pushInstruction(be->mb, l);
 	InstrPtr p = newStmt(be->mb, "part", "partition");
 	p = pushArgument(be->mb, p, getArg(part, 0));

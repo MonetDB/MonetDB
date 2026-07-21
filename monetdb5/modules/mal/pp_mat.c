@@ -25,7 +25,7 @@
 typedef struct part_t {
 	struct pipeline_io pl_io;
 	int nr;
-	lng *curpos;
+	oid *curpos;
 	MT_Lock l;
 } part_t;
 
@@ -161,7 +161,7 @@ PARTnew(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	if (!part)
 		throw(MAL, "part.new", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	part->nr = nr;
-	part->curpos = (lng*)GDKzalloc(nr * sizeof(lng));
+	part->curpos = (oid*)GDKzalloc(nr * sizeof(oid));
 	if (!part->curpos) {
 		GDKfree(part);
 		throw(MAL, "part.new", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -184,7 +184,7 @@ PARTnew(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 }
 
 static str
-PARTprefixsum(Client ctx, bat *pos, const bat *gid, lng *max )
+PARTprefixsum(Client ctx, bat *pos, const bat *gid, oid *max )
 {
 	(void)ctx;
 	BAT *g = BATdescriptor(*gid);
@@ -194,7 +194,7 @@ PARTprefixsum(Client ctx, bat *pos, const bat *gid, lng *max )
 	BUN n = 0, i;
 
 	n = *max;
-	BAT *p = COLnew(0, TYPE_lng, n, TRANSIENT);
+	BAT *p = COLnew(0, TYPE_oid, n, TRANSIENT);
 	if (!p) {
 		BBPunfix(g->batCacheid);
 		throw(MAL, "part.prefixsum", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -229,14 +229,14 @@ PARTpartition(Client ctx, bat *pos, const bat *part, const bat *glen )
 	part_t *pt = (part_t*)p->pl_io;
 	assert(pt->pl_io.type == PIPELINE_IO_PART);
 	assert(pt->nr == (int)BATcount(g));
-	BAT *posb = COLnew(0, TYPE_lng, pt->nr, TRANSIENT);
+	BAT *posb = COLnew(0, TYPE_oid, pt->nr, TRANSIENT);
 	if (!posb) {
 		BBPunfix(p->batCacheid);
 		BBPunfix(g->batCacheid);
 		throw(MAL, "part.partition", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
-	lng *pp = (lng*)Tloc(posb, 0);
-	lng *gp = (lng*)Tloc(g, 0);
+	oid *pp = (oid*)Tloc(posb, 0);
+	oid *gp = (oid*)Tloc(g, 0);
 	MT_lock_set(&pt->l);
 	for(int i = 0; i < pt->nr; i++) {
 		pp[i] = pt->curpos[i];
@@ -259,14 +259,14 @@ PARTpartition(Client ctx, bat *pos, const bat *part, const bat *glen )
 		if (cp) {											\
 			bool extend = false;							\
 			for(int i = 0; i<mt->nr && !extend; i++) {					\
-				if (BATcapacity(mt->bat[i]) < (BUN)(curpos[i]+lp[i]))	\
+				if (BATcapacity(mt->bat[i]) < (curpos[i]+lp[i]))	\
 					extend = true;										\
 			}												\
 			if (extend) {									\
 				mat_deactivate(mt);							\
 				MT_rwlock_wrlock(&mt->rwlock);				\
 				for(int i = 0; i<mt->nr; i++) {				\
-					if (BATcapacity(mt->bat[i]) < (BUN)(curpos[i]+lp[i])) {		\
+					if (BATcapacity(mt->bat[i]) < (curpos[i]+lp[i])) {		\
 						if (BATextend(mt->bat[i], curpos[i]+lp[i]) != GDK_SUCCEED) {	\
 							err = createException(MAL, "mat.project", SQLSTATE(HY013) MAL_MALLOC_FAIL);	\
 							break;							\
@@ -279,7 +279,7 @@ PARTpartition(Client ctx, bat *pos, const bat *part, const bat *glen )
 			if (!ATOMvarsized(d->ttype))					\
 				MT_lock_set(&m->theaplock);					\
 			for(int i = 0; i<mt->nr; i++) {					\
-				if (BATcount(mt->bat[i]) < (BUN)(curpos[i]+lp[i]))		\
+				if (BATcount(mt->bat[i]) < (curpos[i]+lp[i]))		\
 					BATsetcount(mt->bat[i], curpos[i]+lp[i]);		\
 				cp[i] = (T*)Tloc(mt->bat[i], 0);			\
 			}												\
@@ -288,7 +288,7 @@ PARTpartition(Client ctx, bat *pos, const bat *part, const bat *glen )
 			if (err == NULL) {								\
 				T *dp = (T*)Tloc(d, 0);						\
 				for(BUN i = 0; i<BATcount(d); i++) {		\
-					lng g = grp[i];							\
+					oid g = (oid) grp[i];							\
 					cp[g][curpos[g]] = dp[i];				\
 					curpos[g]++;							\
 				}											\
@@ -302,13 +302,13 @@ PARTpartition(Client ctx, bat *pos, const bat *part, const bat *glen )
 #define mat_project_() \
 	do {	\
 		for(int i = 0; i<mt->nr; i++) {										\
-			if (BATcapacity(mt->bat[i]) < (BUN)(curpos[i]+lp[i])) {						\
+			if (BATcapacity(mt->bat[i]) < (curpos[i]+lp[i])) {						\
 				if (BATextend(mt->bat[i], curpos[i]+lp[i]) != GDK_SUCCEED) {				\
 					err = createException(MAL, "mat.project", SQLSTATE(HY013) MAL_MALLOC_FAIL);	\
 					break;										\
 				}											\
 			}												\
-			if (BATcount(mt->bat[i]) < (BUN)(curpos[i]+lp[i]))						\
+			if (BATcount(mt->bat[i]) < (curpos[i]+lp[i]))						\
 				BATsetcount(mt->bat[i], curpos[i]+lp[i]);						\
 			/*mt->bat[i]->ttype = TYPE_fstr;*/ \
 		}													\
@@ -316,7 +316,7 @@ PARTpartition(Client ctx, bat *pos, const bat *part, const bat *glen )
 			BATiter di = bat_iterator(d); \
 			BUN cnt = BATcount(d); \
 			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
-				lng g = grp[i];						\
+				oid g = grp[i];						\
 				if (tfastins_nocheckVAR( mt->bat[g], curpos[g], BUNtvar(&di, i)) != GDK_SUCCEED) { \
 					err = createException(MAL, "pp algebra.projection", MAL_MALLOC_FAIL); \
 					goto error; \
@@ -347,15 +347,15 @@ MATproject(Client ctx, bat *mat, const bat *pos, const bat *lid, const bat *gid,
 	BAT *l = BATdescriptor(*lid);
 	BAT *g = BATdescriptor(*gid);
 	BAT *d = BATdescriptor(*data);
-	lng *curpos = NULL;
+	oid *curpos = NULL;
 	if (!m || !p || !l || !g || !d) {
 		err = createException(MAL, "mat.project", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto error;
 	}
-	curpos = GDKmalloc(sizeof(lng) * BATcount(p));
+	curpos = GDKmalloc(sizeof(oid) * BATcount(p));
 	for (BUN i = 0; i < BATcount(p); i++)
-		curpos[i] = *(lng*)Tloc(p, i);
-	lng *lp = (lng*)Tloc(l, 0);
+		curpos[i] = *(oid*)Tloc(p, i);
+	oid *lp = (oid*)Tloc(l, 0);
 	lng *grp = (lng*)Tloc(g, 0);
 	mat_t *mt = (mat_t*)m->pl_io;
 	assert(mt->pl_io.type == PIPELINE_IO_MAT);
@@ -577,9 +577,9 @@ mel_func pp_mat_init_funcs[] = {
  pattern("mat", "new", MATnew, false, "Create mat for partitioning", args(1,4, batargany("mat",1),argany("tt",1),arg("nr",int), arg("hashsize", lng))),
  pattern("mat", "new", MATnew, false, "Create mat for partitioning", args(1,5, batargany("mat",1),argany("tt",1),arg("nr",int), arg("hashsize", lng), batargany("parent",2))),
  pattern("part", "new", PARTnew, false, "Create part for partitioning", args(1,2, batarg("mat",oid),arg("nr",int))),
- command("part", "prefixsum", PARTprefixsum, false, "Count per group id", args(1,3, batarg("pos",lng),batarg("gid",lng),arg("max",lng))),
- command("part", "partition", PARTpartition, false, "Claim result positions for the given group lengths, returns first pos of each group", args(1,3, batarg("pos",lng),batarg("part",oid),batarg("grouplen",lng))),
- command("mat", "project", MATproject, false, "project over the partitions", args(1,5, batargany("mat",1),batarg("pos",lng), batarg("lid", lng), batarg("gid", lng), batargany("data",1))),
+ command("part", "prefixsum", PARTprefixsum, false, "Count per group id", args(1,3, batarg("pos",oid),batarg("gid",lng),arg("max",oid))),
+ command("part", "partition", PARTpartition, false, "Claim result positions for the given group lengths, returns first pos of each group", args(1,3, batarg("pos",oid),batarg("part",oid),batarg("grouplen",oid))),
+ command("mat", "project", MATproject, false, "project over the partitions", args(1,5, batargany("mat",1),batarg("pos",oid), batarg("lid", oid), batarg("gid", lng), batargany("data",1))),
  command("mat", "fetch", MATfetch, false, "return i-th bat from mat", args(1,3, batargany("res",1),batargany("mat",1), arg("i", int))),
  command("mat", "fetch", MATfetch_slices, false, "return i-th bat from mat", args(1,4, batargany("res",1),batargany("mat",1), arg("i", int), arg("slice_id", int))),
  command("mat", "add", MATadd, false, "add i-th bat to mat", args(1,3, batargany("mat",1),batargany("b",1), arg("i", int))),
