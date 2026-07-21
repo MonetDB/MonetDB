@@ -82,6 +82,7 @@ target_link_libraries(mal
   stream
   mapi
   bat
+  ${XXHASH_LIBRARIES}
   $<$<BOOL:${MALLOC_FOUND}>:Malloc::Malloc>)
 
 set_target_properties(mal

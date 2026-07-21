@@ -116,6 +116,11 @@ strCleanHash(Heap *h, bool rebuild)
 		s = h->base + pos;
 		strhash = strHash(s);
 		off = strhash & GDK_STRHASHMASK;
+		var_t *p = (var_t *) (h->base + pos - sizeof(var_t));
+		if (*p != newhash[off]) {
+			*p = newhash[off];
+			h->dirty = true;
+		}
 		newhash[off] = (var_t) (pos - sizeof(var_t));
 		pos += strlen(s) + 1;
 	}

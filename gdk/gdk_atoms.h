@@ -468,21 +468,4 @@ VarHeapVal(const void *b, BUN p, int w)
 	}
 }
 
-__attribute__((__pure__))
-static inline BUN
-strHash(const char *key)
-{
-	BUN y = 0;
-
-	for (BUN i = 0; key[i]; i++) {
-		y += key[i];
-		y += (y << 10);
-		y ^= (y >> 6);
-	}
-	y += (y << 3);
-	y ^= (y >> 11);
-	y += (y << 15);
-	return y;
-}
-
 #endif /* _GDK_ATOMS_H_ */

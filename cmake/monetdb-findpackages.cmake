@@ -12,6 +12,13 @@
 find_package(BISON 3.0 REQUIRED)
 find_package(Iconv)
 find_package(Threads)
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(PC_XXHASH REQUIRED libxxhash)
+find_library(XXHASH_LIBRARIES NAMES xxhash
+  HINTS
+  ${PC_XXHASH_LIBDIR}
+  ${PC_XXHASH_LIBRARY_DIRS}
+)
 
 if(${CMAKE_VERSION} VERSION_LESS "3.14.0")
   find_package(Python3 COMPONENTS Interpreter Development)

@@ -113,6 +113,7 @@ target_link_libraries(bat
   monetdb_config_header
   moptions
   mutils
+  ${XXHASH_LIBRARIES}
   $<$<BOOL:${OPENSSL_FOUND}>:OpenSSL::SSL>
   $<$<BOOL:${RTREE_FOUND}>:rtree::rtree>
   $<$<NOT:$<PLATFORM_ID:Windows>>:m>
