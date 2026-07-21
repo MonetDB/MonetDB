@@ -37765,7 +37765,7 @@ MATpackIncrement
 Prepare incremental mat pack
 mat
 project
-command mat.project(X_0:bat[:lng], X_1:bat[:lng], X_2:bat[:lng], X_3:bat[:any_1]):bat[:any_1]
+command mat.project(X_0:bat[:oid], X_1:bat[:oid], X_2:bat[:lng], X_3:bat[:any_1]):bat[:any_1]
 MATproject
 project over the partitions
 mdb
@@ -39215,12 +39215,12 @@ PARTnew
 Create part for partitioning
 part
 partition
-command part.partition(X_0:bat[:oid], X_1:bat[:lng]):bat[:lng]
+command part.partition(X_0:bat[:oid], X_1:bat[:oid]):bat[:oid]
 PARTpartition
 Claim result positions for the given group lengths, returns first pos of each group
 part
 prefixsum
-command part.prefixsum(X_0:bat[:lng], X_1:lng):bat[:lng]
+command part.prefixsum(X_0:bat[:lng], X_1:oid):bat[:oid]
 PARTprefixsum
 Count per group id
 pcre
