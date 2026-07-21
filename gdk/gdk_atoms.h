@@ -382,7 +382,7 @@ ATOMreplaceVAR(BAT *b, var_t *dst, const void *src)
  */
 #define GDK_STRHASHTABLE	(1<<10)	/* 1024 */
 #define GDK_STRHASHMASK		(GDK_STRHASHTABLE-1)
-#define GDK_STRHASHSIZE		(GDK_STRHASHTABLE * sizeof(stridx_t))
+#define GDK_STRHASHSIZE		(GDK_STRHASHTABLE * sizeof(var_t))
 #define GDK_ELIMPOWER		16	/* 64KiB is the threshold */
 #define GDK_ELIMDOUBLES(h)	((h)->free < GDK_ELIMLIMIT)
 #define GDK_ELIMLIMIT		(1<<GDK_ELIMPOWER)	/* equivalently: ELIMBASE == 0 */
