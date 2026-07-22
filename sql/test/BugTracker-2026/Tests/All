@@ -146,3 +146,4 @@ KNOWNFAIL?7957-tail_type-crash
 7959-double-function-destroy
 7960-isLikeOp-crash
 KNOWNFAIL?7961-list_empty-crash
+KNOWNFAIL?7963-having-sum-or-exists-or-sum-bug
