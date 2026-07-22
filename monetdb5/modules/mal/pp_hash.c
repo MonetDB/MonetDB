@@ -153,10 +153,10 @@ ht_deactivate(hash_table *ht)
 #define REHASH(Type) \
 		for(size_t i = 0; i < oldsize; i++) {		\
 			Type *vals = ht->vals;					\
-			gid og = ogids[i];						\
+			hash_key_t og = ogids[i];				\
 			if (og) {								\
 				gid hv = (gid)_hash_##Type(vals[og])&ht->mask, k = hv; \
-				gid g = ngids[k];					\
+				hash_key_t g = ngids[k];			\
 				for (gid l=1; g; l++) {				\
 					nextk;							\
 					k &= ht->mask;					\
@@ -170,10 +170,10 @@ ht_deactivate(hash_table *ht)
 #define REHASH_f(Type,Type2) \
 		for(size_t i = 0; i < oldsize; i++) {		\
 			Type *vals = ht->vals;					\
-			gid og = ogids[i];						\
+			hash_key_t og = ogids[i];				\
 			if (og) {								\
 				gid hv = (gid)_hash_##Type(*(Type2*)(vals+og))&ht->mask, k = hv; \
-				gid g = ngids[k];					\
+				hash_key_t g = ngids[k];			\
 				for (gid l=1; g; l++) {				\
 					nextk;							\
 					k &= ht->mask;					\
@@ -187,10 +187,10 @@ ht_deactivate(hash_table *ht)
 #define REHASH_a() \
 		for(size_t i = 0; i < oldsize; i++) {		\
 			char **vals = ht->vals;					\
-			gid og = ogids[i];						\
+			hash_key_t og = ogids[i];				\
 			if (og) {								\
 				gid hv = (gid)ht->hsh(vals[og])&ht->mask, k = hv; \
-				gid g = ngids[k];			\
+				hash_key_t g = ngids[k];			\
 				for (gid l=1; g; l++) {				\
 					nextk;							\
 					k &= ht->mask;					\
@@ -204,10 +204,10 @@ ht_deactivate(hash_table *ht)
 #define CREHASH(Type) \
 		for(size_t i = 0; i < oldsize; i++) {		\
 			Type *vals = ht->vals;					\
-			gid og = ogids[i];						\
+			hash_key_t og = ogids[i];				\
 			if (og) {								\
 				gid hv = (gid)combine(pgids[og], _hash_##Type(vals[og]), prime)&ht->mask, k = hv; \
-				gid g = ngids[k];			\
+				hash_key_t g = ngids[k];			\
 				for (gid l=1; g; l++) {				\
 					nextk;							\
 					k &= ht->mask;					\
@@ -221,10 +221,10 @@ ht_deactivate(hash_table *ht)
 #define CREHASH_f(Type, Type2) \
 		for(size_t i = 0; i < oldsize; i++) {		\
 			Type *vals = ht->vals;					\
-			gid og = ogids[i];						\
+			hash_key_t og = ogids[i];				\
 			if (og) {								\
 				gid hv = (gid)combine(pgids[og], _hash_##Type(*(Type2*)(vals+og)), prime)&ht->mask, k = hv; \
-				gid g = ngids[k];			\
+				hash_key_t g = ngids[k];			\
 				for (gid l=1; g; l++) {				\
 					nextk;							\
 					k &= ht->mask;					\
@@ -238,10 +238,10 @@ ht_deactivate(hash_table *ht)
 #define CREHASH_a() \
 		for(size_t i = 0; i < oldsize; i++) {		\
 			char **vals = ht->vals;					\
-			gid og = ogids[i];						\
+			hash_key_t og = ogids[i];				\
 			if (og) {								\
 				gid hv = (gid)combine(pgids[og], ht->hsh(vals[og]), prime)&ht->mask, k = hv; \
-				gid g = ngids[k];			\
+				hash_key_t g = ngids[k];			\
 				for (gid l=1; g; l++) {				\
 					nextk;							\
 					k &= ht->mask;					\
@@ -490,7 +490,7 @@ OAHASHhashmark_init(Client ctx, bat *res, const bat *ht_sink, const bat *payload
 			mrk[i] = bit_nil;
 		}
 		TIMEOUT_LOOP_IDX_DECL(i, h->size, qry_ctx) {
-			g = ATOMIC_GET(h->gids+i);
+			g = ATOMIC_GET_GID(h->gids+i);
 			if(g) {
 				mrk[g-1] = false;
 			}
@@ -612,12 +612,12 @@ UHASHext(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 			gid g = 0; \
 			while (!fnd) { \
 				gid k = (gid)_hash_##Type(bp[i])&h->mask; \
-				g = ATOMIC_GET(h->gids+k); \
+				g = ATOMIC_GET_GID(h->gids+k); \
 				assert(g<(gid)h->size); \
 				while (g && vals[g] != bp[i]) { \
 					k++; \
 					k &= h->mask; \
-					g = ATOMIC_GET(h->gids+k); \
+					g = ATOMIC_GET_GID(h->gids+k); \
 				} \
 				if (!g) { \
 					if (slots == 0) { \
@@ -658,11 +658,11 @@ UHASHext(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 			gid g = 0; \
 			while (!fnd) { \
 				gid k = (gid)_hash_oid(bpi)&h->mask; \
-				g = ATOMIC_GET(h->gids+k); \
+				g = ATOMIC_GET_GID(h->gids+k); \
 				while (g && vals[g] != bpi) { \
 					k++; \
 					k &= h->mask; \
-					g = ATOMIC_GET(h->gids+k); \
+					g = ATOMIC_GET_GID(h->gids+k); \
 				} \
 				if (!g) { \
 					if (slots == 0) { \
@@ -699,12 +699,12 @@ UHASHext(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 			gid g = 0; \
 			while (!fnd) { \
 				gid k = (gid)_hash_##Type(*(((BaseType*)bp)+i))&h->mask; \
-				g = ATOMIC_GET(h->gids+k); \
+				g = ATOMIC_GET_GID(h->gids+k); \
 				while (g && (!(is_##Type##_nil(bp[i]) && is_##Type##_nil(vals[g])) && \
 						vals[g] != bp[i])) { \
 					k++; \
 					k &= h->mask; \
-					g = ATOMIC_GET(h->gids+k); \
+					g = ATOMIC_GET_GID(h->gids+k); \
 				} \
 				if (!g) { \
 					if (slots == 0) { \
@@ -742,11 +742,11 @@ UHASHext(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 			gid g = 0; \
 			while (!fnd) { \
 				gid k = (gid)h->hsh(bpi)&h->mask; \
-				g = ATOMIC_GET(h->gids+k); \
+				g = ATOMIC_GET_GID(h->gids+k); \
 				while (g && (vals[g] && h->cmp(vals[g], bpi) != 0)) { \
 					k++; \
 					k &= h->mask; \
-					g = ATOMIC_GET(h->gids+k); \
+					g = ATOMIC_GET_GID(h->gids+k); \
 				} \
 				if (!g) { \
 					if (slots == 0) { \
@@ -787,11 +787,11 @@ UHASHext(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 				gid g = 0; \
 				while (!fnd) { \
 					gid k = (gid)str_hsh(bpi)&h->mask; \
-					g = ATOMIC_GET(h->gids+k); \
+					g = ATOMIC_GET_GID(h->gids+k); \
 					while (g && (vals[g] && h->cmp(vals[g], bpi) != 0)) { \
 						k++; \
 						k &= h->mask; \
-						g = ATOMIC_GET(h->gids+k); \
+						g = ATOMIC_GET_GID(h->gids+k); \
 					} \
 					if (!g) { \
 						if (slots == 0) { \
@@ -824,11 +824,11 @@ UHASHext(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 				gid g = 0; \
 				while (!fnd) { \
 					gid k = (gid)h->hsh(bpi)&h->mask; \
-					g = ATOMIC_GET(h->gids+k); \
+					g = ATOMIC_GET_GID(h->gids+k); \
 					while (g && (vals[g] && atomcmp(vals[g], bpi) != 0)) { \
 						k++; \
 						k &= h->mask; \
-						g = ATOMIC_GET(h->gids+k); \
+						g = ATOMIC_GET_GID(h->gids+k); \
 					} \
 					if (!g) { \
 						if (slots == 0) { \
@@ -969,7 +969,7 @@ OAHASHbuild_tbl(Client ctx, bat *slot_id, bat *ht_sink, const bat *key)
 	BBPunfix(b->batCacheid);
 	BATsetcount(g, cnt);
 	BATnegateprops(g);
-	gid last = ATOMIC_GET(&h->last);
+	gid last = ATOMIC_GET_GID(&h->last);
 	g->tmaxval = (oid) last;
 	g->tkey = FALSE;
 	*slot_id = g->batCacheid;
@@ -997,11 +997,11 @@ error:
 			gid g = 0; \
 			while (!fnd) { \
 				gid k = (gid)combine(gi[i], _hash_##Type(bp[i]), prime)&h->mask; \
-				g = ATOMIC_GET(h->gids+k); \
+				g = ATOMIC_GET_GID(h->gids+k); \
 				while (g && (pgids[g] != gi[i] || vals[g] != bp[i])) { \
 					k++; \
 					k &= h->mask; \
-					g = ATOMIC_GET(h->gids+k); \
+					g = ATOMIC_GET_GID(h->gids+k); \
 				} \
 				if (!g) { \
 					if (slots == 0) { \
@@ -1045,11 +1045,11 @@ error:
 			gid g = 0; \
 			while (!fnd) { \
 				gid k = (gid)combine(gi[i], _hash_oid(bpi), prime)&h->mask; \
-				g = ATOMIC_GET(h->gids+k); \
+				g = ATOMIC_GET_GID(h->gids+k); \
 				while (g && (pgids[g] != gi[i] || vals[g] != bpi)) { \
 					k++; \
 					k &= h->mask; \
-					g = ATOMIC_GET(h->gids+k); \
+					g = ATOMIC_GET_GID(h->gids+k); \
 				} \
 				if (!g) { \
 					if (slots == 0) { \
@@ -1089,11 +1089,11 @@ error:
 			gid g = 0; \
 			while (!fnd) { \
 				gid k = (gid)combine(gi[i], _hash_##Type(*(((BaseType*)bp)+i)), prime)&h->mask; \
-				g = ATOMIC_GET(h->gids+k); \
+				g = ATOMIC_GET_GID(h->gids+k); \
 				while (g && (pgids[g] != gi[i] || (!(is_##Type##_nil(bp[i]) && is_##Type##_nil(vals[g])) && vals[g] != bp[i]))) { \
 					k++; \
 					k &= h->mask; \
-					g = ATOMIC_GET(h->gids+k); \
+					g = ATOMIC_GET_GID(h->gids+k); \
 				} \
 				if (!g) { \
 					if (slots == 0) { \
@@ -1134,11 +1134,11 @@ error:
 			gid g = 0; \
 			while (!fnd) { \
 				gid k = (gid)combine(gi[i], h->hsh(bpi), prime)&h->mask; \
-				g = ATOMIC_GET(h->gids+k); \
+				g = ATOMIC_GET_GID(h->gids+k); \
 				while (g && (pgids[g] != gi[i] || (vals[g] && h->cmp(vals[g], bpi) != 0))) { \
 					k++; \
 					k &= h->mask; \
-					g = ATOMIC_GET(h->gids+k); \
+					g = ATOMIC_GET_GID(h->gids+k); \
 				} \
 				if (!g) { \
 					if (slots == 0) { \
@@ -1182,11 +1182,11 @@ error:
 				gid g = 0; \
 				while (!fnd) { \
 					gid k = (gid)combine(gi[i], str_hsh(bpi), prime)&h->mask; \
-					g = ATOMIC_GET(h->gids+k); \
+					g = ATOMIC_GET_GID(h->gids+k); \
 					while (g && (pgids[g] != gi[i] || (vals[g] && h->cmp(vals[g], bpi) != 0))) { \
 						k++; \
 						k &= h->mask; \
-						g = ATOMIC_GET(h->gids+k); \
+						g = ATOMIC_GET_GID(h->gids+k); \
 					} \
 					if (!g) { \
 						if (slots == 0) { \
@@ -1223,11 +1223,11 @@ error:
 				gid g = 0; \
 				while (!fnd) { \
 					gid k = (gid)combine(gi[i], h->hsh(bpi), prime)&h->mask; \
-					g = ATOMIC_GET(h->gids+k); \
+					g = ATOMIC_GET_GID(h->gids+k); \
 					while (g && (pgids[g] != gi[i] || (vals[g] && atomcmp(vals[g], bpi) != 0))) { \
 						k++; \
 						k &= h->mask; \
-						g = ATOMIC_GET(h->gids+k); \
+						g = ATOMIC_GET_GID(h->gids+k); \
 					} \
 					if (!g) { \
 						if (slots == 0) { \
@@ -1374,7 +1374,7 @@ OAHASHbuild_tbl_cmbd(Client ctx, bat *slot_id, bat *ht_sink, const bat *key, con
 	pipeline_lock2(g);
 	BATnegateprops(g);
 	pipeline_unlock2(g);
-	gid last = ATOMIC_GET(&h->last);
+	gid last = ATOMIC_GET_GID(&h->last);
 	g->tmaxval = last;
 	g->tkey = FALSE;
 	*slot_id = g->batCacheid;
@@ -1522,7 +1522,7 @@ error:
 				continue; \
 			} \
 			gid k = (gid)_hash_oid(ky)&ht->mask; \
-			gid slot = ht->gids[k]; \
+			hash_key_t slot = ht->gids[k]; \
 			while (slot && vals[slot] != ky) { \
 				k++; \
 				k &= ht->mask; \
@@ -1547,7 +1547,7 @@ error:
 		\
 		if (!match) { \
 			gid k = (gid)_hash_##Type(Type##_nil)&ht->mask; \
-			gid slot = ht->gids[k]; \
+			hash_key_t slot = ht->gids[k]; \
 			while (slot && !is_##Type##_nil(vals[slot])) { \
 				k++; \
 				k &= ht->mask; \
@@ -1566,7 +1566,7 @@ error:
 				continue; \
 			} \
 			gid k = (gid)_hash_##Type(ky[i])&ht->mask; \
-			gid slot = ht->gids[k]; \
+			hash_key_t slot = ht->gids[k]; \
 			while (slot && (!(is_##Type##_nil(ky[i]) && is_##Type##_nil(vals[slot])) && (ne))) { \
 				k++; \
 				k &= ht->mask; \
@@ -1605,7 +1605,7 @@ error:
 				continue; \
 			} \
 			gid k = (gid)_hash_##Type(*(((BaseType*)ky)+i))&ht->mask; \
-			gid slot = ht->gids[k]; \
+			hash_key_t slot = ht->gids[k]; \
 			while (slot && (!(is_##Type##_nil(ky[i]) && is_##Type##_nil(vals[slot])) && vals[slot] != ky[i])) { \
 				k++; \
 				k &= ht->mask; \
@@ -1641,7 +1641,7 @@ error:
 				continue; \
 			} \
 			gid k = (gid)str_hsh(val)&ht->mask; \
-			gid slot = ht->gids[k]; \
+			hash_key_t slot = ht->gids[k]; \
 			while (slot && atomcmp(vals[slot], val) != 0) { \
 				k++; \
 				k &= ht->mask; \
@@ -1829,7 +1829,7 @@ OAHASHnprobe(Client ctx, bat *PRB_oid, bat *HSH_slotid, const bat *PRB_key, cons
 		\
 		if (any) { \
 			gid k = (gid)_hash_oid(oid_nil)&ht->mask; \
-			gid slot = ht->gids[k]; \
+			hash_key_t slot = ht->gids[k]; \
 			while (slot && vals[slot] != oid_nil) { \
 				k++; \
 				k &= ht->mask; \
@@ -1849,7 +1849,7 @@ OAHASHnprobe(Client ctx, bat *PRB_oid, bat *HSH_slotid, const bat *PRB_key, cons
 				continue; \
 			} \
 			gid k = (gid)_hash_oid(ky)&ht->mask; \
-			gid slot = ht->gids[k]; \
+			hash_key_t slot = ht->gids[k]; \
 			while (slot && vals[slot] != ky) { \
 				k++; \
 				k &= ht->mask; \
@@ -1878,7 +1878,7 @@ OAHASHnprobe(Client ctx, bat *PRB_oid, bat *HSH_slotid, const bat *PRB_key, cons
 		\
 		if (any) { \
 			gid k = (gid)_hash_##Type(Type##_nil)&ht->mask; \
-			gid slot = ht->gids[k]; \
+			hash_key_t slot = ht->gids[k]; \
 			while (slot && !is_##Type##_nil(vals[slot])) { \
 				k++; \
 				k &= ht->mask; \
@@ -1896,7 +1896,7 @@ OAHASHnprobe(Client ctx, bat *PRB_oid, bat *HSH_slotid, const bat *PRB_key, cons
 				continue; \
 			} \
 			gid k = (gid)_hash_##Type(ky[i])&ht->mask; \
-			gid slot = ht->gids[k]; \
+			hash_key_t slot = ht->gids[k]; \
 			while (slot && (!(is_##Type##_nil(ky[i]) && is_##Type##_nil(vals[slot])) && (ne))) { \
 				k++; \
 				k &= ht->mask; \
@@ -1931,7 +1931,7 @@ OAHASHnprobe(Client ctx, bat *PRB_oid, bat *HSH_slotid, const bat *PRB_key, cons
 		\
 		if (any) { \
 			gid k = (gid)_hash_##Type((BaseType)Type##_nil)&ht->mask; \
-			gid slot = ht->gids[k]; \
+			hash_key_t slot = ht->gids[k]; \
 			while (slot && !is_##Type##_nil(vals[slot])) { \
 				k++; \
 				k &= ht->mask; \
@@ -1949,7 +1949,7 @@ OAHASHnprobe(Client ctx, bat *PRB_oid, bat *HSH_slotid, const bat *PRB_key, cons
 				continue; \
 			} \
 			gid k = (gid)_hash_##Type(*(((BaseType*)ky)+i))&ht->mask; \
-			gid slot = ht->gids[k]; \
+			hash_key_t slot = ht->gids[k]; \
 			while (slot && (!(is_##Type##_nil(ky[i]) && is_##Type##_nil(vals[slot])) && vals[slot] != ky[i])) { \
 				k++; \
 				k &= ht->mask; \
@@ -1980,7 +1980,7 @@ OAHASHnprobe(Client ctx, bat *PRB_oid, bat *HSH_slotid, const bat *PRB_key, cons
 		\
 		if (any) { \
 			gid k = (gid)ht->hsh((void*)nil)&ht->mask; \
-			gid slot = ht->gids[k]; \
+			hash_key_t slot = ht->gids[k]; \
 			while (slot && atomcmp(vals[slot], nil) != 0) { \
 				k++; \
 				k &= ht->mask; \
@@ -1999,7 +1999,7 @@ OAHASHnprobe(Client ctx, bat *PRB_oid, bat *HSH_slotid, const bat *PRB_key, cons
 				continue; \
 			} \
 			gid k = (gid)str_hsh(val)&ht->mask; \
-			gid slot = ht->gids[k]; \
+			hash_key_t slot = ht->gids[k]; \
 			while (slot && atomcmp(vals[slot], val) != 0) { \
 				k++; \
 				k &= ht->mask; \
@@ -2202,11 +2202,11 @@ OAHASHmprobe(Client ctx, bat *PRB_oid, bat *HSH_slotid, bat *PRB_mark, const bat
 				continue; \
 			\
 			gid hsh = (gid)combine(gi[i], _hash_oid(ky), prime)&ht->mask; \
-			gid slot = ATOMIC_GET(ht->gids+hsh); \
+			gid slot = ATOMIC_GET_GID(ht->gids+hsh); \
 			while (slot && (pgids[slot] != gi[i] || vals[slot] != ky)) { \
 				hsh++; \
 				hsh &= ht->mask; \
-				slot = ATOMIC_GET(ht->gids+hsh); \
+				slot = ATOMIC_GET_GID(ht->gids+hsh); \
 			} \
 			if (slot) { \
 				oid_mtd[mtdcnt2] = sltd[i]; \
@@ -2231,11 +2231,11 @@ OAHASHmprobe(Client ctx, bat *PRB_oid, bat *HSH_slotid, bat *PRB_mark, const bat
 				continue; \
 			\
 			gid hsh = (gid)combine(gi[i], _hash_##Type(val), prime)&ht->mask; \
-			gid slot = ATOMIC_GET(ht->gids+hsh); \
+			gid slot = ATOMIC_GET_GID(ht->gids+hsh); \
 			while (slot && (pgids[slot] != gi[i] || (is_##Type##_nil(vals[slot]) != is_##Type##_nil(val)) || (ne))) { \
 				hsh++; \
 				hsh &= ht->mask; \
-				slot = ATOMIC_GET(ht->gids+hsh); \
+				slot = ATOMIC_GET_GID(ht->gids+hsh); \
 			} \
 			if (slot) { \
 				oid_mtd[mtdcnt2] = sltd[i]; \
@@ -2266,13 +2266,13 @@ OAHASHmprobe(Client ctx, bat *PRB_oid, bat *HSH_slotid, bat *PRB_mark, const bat
 				continue; \
 			\
 			gid hsh = (gid)combine(gi[i], _hash_##Type(*(((BaseType*)ky)+sltd[i]-off)), prime)&ht->mask; \
-			gid slot = ATOMIC_GET(ht->gids+hsh); \
+			gid slot = ATOMIC_GET_GID(ht->gids+hsh); \
 			while (slot && (pgids[slot] != gi[i] || \
 						((*semantics) && is_##Type##_nil(val) && !is_##Type##_nil(vals[slot])) || \
 						(!is_##Type##_nil(val) && vals[slot] != val))) { \
 				hsh++; \
 				hsh &= ht->mask; \
-				slot = ATOMIC_GET(ht->gids+hsh); \
+				slot = ATOMIC_GET_GID(ht->gids+hsh); \
 			} \
 			if (slot) { \
 				oid_mtd[mtdcnt2] = sltd[i]; \
@@ -2299,11 +2299,11 @@ OAHASHmprobe(Client ctx, bat *PRB_oid, bat *HSH_slotid, bat *PRB_mark, const bat
 				continue; \
 			\
 			gid hsh = (gid)combine(gi[i], str_hsh(val), prime)&ht->mask; \
-			gid slot = ATOMIC_GET(ht->gids+hsh); \
+			gid slot = ATOMIC_GET_GID(ht->gids+hsh); \
 			while (slot && (pgids[slot] != gi[i] || atomcmp(vals[slot], val) != 0)) { \
 				hsh++; \
 				hsh &= ht->mask; \
-				slot = ATOMIC_GET(ht->gids+hsh); \
+				slot = ATOMIC_GET_GID(ht->gids+hsh); \
 			} \
 			if (slot) { \
 				oid_mtd[mtdcnt2] = sltd[i]; \
@@ -2489,11 +2489,11 @@ OAHASHprobe_cmbd(Client ctx, bat *PRB_oid, bat *HSH_slotid, const bat *PRB_key, 
 				continue; \
 			} \
 			gid hsh = (gid)combine(gi[i], _hash_oid(ky), prime)&ht->mask; \
-			gid slot = ATOMIC_GET(ht->gids+hsh); \
+			gid slot = ATOMIC_GET_GID(ht->gids+hsh); \
 			while (slot && (pgids[slot] != gi[i] || vals[slot] != ky)) { \
 				hsh++; \
 				hsh &= ht->mask; \
-				slot = ATOMIC_GET(ht->gids+hsh); \
+				slot = ATOMIC_GET_GID(ht->gids+hsh); \
 			} \
 			if (slot) { \
 				oid_mtd[mtdcnt2] = sltd[i]; \
@@ -2510,11 +2510,11 @@ OAHASHprobe_cmbd(Client ctx, bat *PRB_oid, bat *HSH_slotid, const bat *PRB_key, 
 				bit has_nil = false; \
 				if (any) { \
 					gid hsh = (gid)combine(gi[i], _hash_oid(oid_nil), prime)&ht->mask; \
-					slot = ATOMIC_GET(ht->gids+hsh); \
+					slot = ATOMIC_GET_GID(ht->gids+hsh); \
 					while (slot && (pgids[slot] != gi[i] || vals[slot] != oid_nil)) { \
 						hsh++; \
 						hsh &= ht->mask; \
-						slot = ATOMIC_GET(ht->gids+hsh); \
+						slot = ATOMIC_GET_GID(ht->gids+hsh); \
 					} \
 					if (slot) \
 						has_nil = bit_nil; \
@@ -2540,11 +2540,11 @@ OAHASHprobe_cmbd(Client ctx, bat *PRB_oid, bat *HSH_slotid, const bat *PRB_key, 
 				continue; \
 			} \
 			gid hsh = (gid)combine(gi[i], _hash_##Type(val), prime)&ht->mask; \
-			gid slot = ATOMIC_GET(ht->gids+hsh); \
+			gid slot = ATOMIC_GET_GID(ht->gids+hsh); \
 			while (slot && (pgids[slot] != gi[i] || (is_##Type##_nil(vals[slot]) != is_##Type##_nil(val)) || (ne))) { \
 				hsh++; \
 				hsh &= ht->mask; \
-				slot = ATOMIC_GET(ht->gids+hsh); \
+				slot = ATOMIC_GET_GID(ht->gids+hsh); \
 			} \
 			if (slot) { \
 				oid_mtd[mtdcnt2] = sltd[i]; \
@@ -2561,11 +2561,11 @@ OAHASHprobe_cmbd(Client ctx, bat *PRB_oid, bat *HSH_slotid, const bat *PRB_key, 
 				bit has_nil = false; \
 				if (any) { \
 					gid hsh = (gid)combine(gi[i], _hash_##Type(Type##_nil), prime)&ht->mask; \
-					slot = ATOMIC_GET(ht->gids+hsh); \
+					slot = ATOMIC_GET_GID(ht->gids+hsh); \
 					while (slot && (pgids[slot] != gi[i] || !is_##Type##_nil(vals[slot]))) { \
 						hsh++; \
 						hsh &= ht->mask; \
-						slot = ATOMIC_GET(ht->gids+hsh); \
+						slot = ATOMIC_GET_GID(ht->gids+hsh); \
 					} \
 					if (slot) \
 						has_nil = bit_nil; \
@@ -2597,13 +2597,13 @@ OAHASHprobe_cmbd(Client ctx, bat *PRB_oid, bat *HSH_slotid, const bat *PRB_key, 
 				continue; \
 			} \
 			gid hsh = (gid)combine(gi[i], _hash_##Type(*(((BaseType*)ky)+sltd[i]-off)), prime)&ht->mask; \
-			gid slot = ATOMIC_GET(ht->gids+hsh); \
+			gid slot = ATOMIC_GET_GID(ht->gids+hsh); \
 			while (slot && (pgids[slot] != gi[i] || \
 						((*semantics) && is_##Type##_nil(val) && !is_##Type##_nil(vals[slot])) || \
 						(!is_##Type##_nil(val) && vals[slot] != val))) { \
 				hsh++; \
 				hsh &= ht->mask; \
-				slot = ATOMIC_GET(ht->gids+hsh); \
+				slot = ATOMIC_GET_GID(ht->gids+hsh); \
 			} \
 			if (slot) { \
 				oid_mtd[mtdcnt2] = sltd[i]; \
@@ -2620,11 +2620,11 @@ OAHASHprobe_cmbd(Client ctx, bat *PRB_oid, bat *HSH_slotid, const bat *PRB_key, 
 				bit has_nil = false; \
 				if (any) { \
 					gid hsh = (gid)combine(gi[i], _hash_##Type((BaseType)Type##_nil), prime)&ht->mask; \
-					slot = ATOMIC_GET(ht->gids+hsh); \
+					slot = ATOMIC_GET_GID(ht->gids+hsh); \
 					while (slot && (pgids[slot] != gi[i] || !is_##Type##_nil(vals[slot]))) { \
 						hsh++; \
 						hsh &= ht->mask; \
-						slot = ATOMIC_GET(ht->gids+hsh); \
+						slot = ATOMIC_GET_GID(ht->gids+hsh); \
 					} \
 					if (slot) \
 						has_nil = bit_nil; \
@@ -2652,11 +2652,11 @@ OAHASHprobe_cmbd(Client ctx, bat *PRB_oid, bat *HSH_slotid, const bat *PRB_key, 
 				continue; \
 			} \
 			gid hsh = (gid)combine(gi[i], str_hsh(val), prime)&ht->mask; \
-			gid slot = ATOMIC_GET(ht->gids+hsh); \
+			gid slot = ATOMIC_GET_GID(ht->gids+hsh); \
 			while (slot && (pgids[slot] != gi[i] || atomcmp(vals[slot], val) != 0)) { \
 				hsh++; \
 				hsh &= ht->mask; \
-				slot = ATOMIC_GET(ht->gids+hsh); \
+				slot = ATOMIC_GET_GID(ht->gids+hsh); \
 			} \
 			if (slot) { \
 				oid_mtd[mtdcnt2] = sltd[i]; \
@@ -2674,11 +2674,11 @@ OAHASHprobe_cmbd(Client ctx, bat *PRB_oid, bat *HSH_slotid, const bat *PRB_key, 
 				bit has_nil = false; \
 				if (any) { \
 					gid hsh = (gid)combine(gi[i], ht->hsh((void*)nil), prime)&ht->mask; \
-					slot = ATOMIC_GET(ht->gids+hsh); \
+					slot = ATOMIC_GET_GID(ht->gids+hsh); \
 					while (slot && (pgids[slot] != gi[i] || atomcmp(vals[slot], nil) != 0)) { \
 						hsh++; \
 						hsh &= ht->mask; \
-						slot = ATOMIC_GET(ht->gids+hsh); \
+						slot = ATOMIC_GET_GID(ht->gids+hsh); \
 					} \
 					if (slot) \
 						has_nil = bit_nil; \
@@ -3092,7 +3092,7 @@ OAHASHexplode(Client ctx, bat *fetched, const bat *slotid, const bat *frequency,
 					gid frq = (gid)freq[s];
 					TIMEOUT_LOOP_IDX_DECL(j, frq, qry_ctx) {
 						oid k = (gid)combine(s, _hash_oid(j), prime)&ht->mask;
-						oid g = ht->gids[k];
+						hash_key_t g = ht->gids[k];
 						while (g && (pgids[g] != s || vals[g] != j)) {
 							k++;
 							k &= ht->mask;
@@ -3111,7 +3111,7 @@ OAHASHexplode(Client ctx, bat *fetched, const bat *slotid, const bat *frequency,
 				gid frq = (gid)freq[s];
 				TIMEOUT_LOOP_IDX_DECL(j, frq, qry_ctx) {
 					oid k = (gid)combine(s, _hash_oid(j), prime)&ht->mask;
-					oid g = ht->gids[k];
+					hash_key_t g = ht->gids[k];
 					while (g && (pgids[g] != s || vals[g] != j)) {
 						k++;
 						k &= ht->mask;

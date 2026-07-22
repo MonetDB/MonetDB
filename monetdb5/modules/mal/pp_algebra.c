@@ -931,11 +931,11 @@ LOCKEDAGGRnull(Client ctx, bat *result, const bit *hadnull)
 			for(; !fnd; ) { \
 				NEW_VAL; \
 				gid hv = HASH_VAL&h->mask, k = hv; \
-				gid g = ATOMIC_GET(h->gids+k); \
+				gid g = ATOMIC_GET_GID(h->gids+k); \
 				for(gid l=1;g && VAL_NOT_EQUAL; l++) { \
 					NEXTK; \
 					k &= h->mask; \
-					g = ATOMIC_GET(h->gids+k); \
+					g = ATOMIC_GET_GID(h->gids+k); \
 				} \
 				if (!g) { \
 					if (slots == 0) { \
@@ -1179,11 +1179,11 @@ LALGunique(Client ctx, bat *rid, bat *uid, bat *bid, bat *sid)
 			for(; !fnd;) { \
 				NEW_VAL; \
 				gid hv = (gid)combine(gi[i], HASH_VAL, prime)&h->mask, k = hv; \
-				gid g = ATOMIC_GET(h->gids+k); \
+				gid g = ATOMIC_GET_GID(h->gids+k); \
 				for(gid l=1; g && (pgids[g] != gi[i] || VAL_NOT_EQUAL); l++) { \
 					NEXTK; \
 					k &= h->mask; \
-					g = ATOMIC_GET(h->gids+k); \
+					g = ATOMIC_GET_GID(h->gids+k); \
 				} \
 				if (!g) { \
 					if (slots == 0) { \
@@ -1435,11 +1435,11 @@ LALGgroup_unique(Client ctx, bat *rid, bat *uid, bat *bid, bat *sid, bat *Gid)
 			for(; !fnd; ) { \
 				NEW_VAL; \
 				gid hv = HASH_VAL&h->mask, k = hv; \
-				g = ATOMIC_GET(h->gids+k); \
+				g = ATOMIC_GET_GID(h->gids+k); \
 				for(gid l=1; g && VAL_NOT_EQUAL; l++) { \
 					NEXTK; \
 					k &= h->mask; \
-					g = ATOMIC_GET(h->gids+k); \
+					g = ATOMIC_GET_GID(h->gids+k); \
 				} \
 				if (!g) { \
 					if (slots == 0) { \
@@ -1494,11 +1494,11 @@ LALGgroup_unique(Client ctx, bat *rid, bat *uid, bat *bid, bat *sid, bat *Gid)
 			gid g = 0; \
 			for(; !fnd; ) { \
 				gid k = (gid)_hash_oid(oid_nil)&h->mask; \
-				g = ATOMIC_GET(h->gids+k); \
+				g = ATOMIC_GET_GID(h->gids+k); \
 				for(;g && vals[g] != bpi;) { \
 					k++; \
 					k &= h->mask; \
-					g = ATOMIC_GET(h->gids+k); \
+					g = ATOMIC_GET_GID(h->gids+k); \
 				} \
 				if (!g) { \
 					if (slots == 0) { \
@@ -1742,7 +1742,7 @@ LALGgroup(Client ctx, bat *rid, bat *uid, bat *bid)
 		pipeline_lock2(g);
 		BATnegateprops(g);
 		/* props */
-		gid last = ATOMIC_GET(&h->last);
+		gid last = ATOMIC_GET_GID(&h->last);
 		/* pass max id */
 		g->tmaxval = last;
 		pipeline_unlock2(g);
@@ -1771,11 +1771,11 @@ LALGgroup(Client ctx, bat *rid, bat *uid, bat *bid)
 			for(; !fnd; ) { \
 				NEW_VAL; \
 				gid hv = (gid)combine(gi[i], HASH_VAL, prime)&h->mask, k = hv; \
-				g = ATOMIC_GET(h->gids+k); \
+				g = ATOMIC_GET_GID(h->gids+k); \
 				for(gid l=1; g && (pgids[g] != gi[i] || VAL_NOT_EQUAL); l++) { \
 					NEXTK; \
 					k &= h->mask; \
-					g = ATOMIC_GET(h->gids+k); \
+					g = ATOMIC_GET_GID(h->gids+k); \
 				} \
 				if (!g) { \
 					if (slots == 0) { \
@@ -2038,7 +2038,7 @@ LALGderive(Client ctx, bat *rid, bat *uid, bat *Gid, bat *Ph, bat *bid)
 		pipeline_lock2(g);
 		BATnegateprops(g);
 		/* props */
-		gid last = ATOMIC_GET(&h->last);
+		gid last = ATOMIC_GET_GID(&h->last);
 		/* pass max id */
 		g->tmaxval = last;
 		pipeline_unlock2(g);
@@ -4452,7 +4452,7 @@ LALGcnull(Client ctx, bat *rid, bat *gid, bat *bid, bat *pid)
 			} \
 	}
 
-/* TODO this implementation is unfinisehd, therefore its corresponding MAL 
+/* TODO this implementation is unfinisehd, therefore its corresponding MAL
  * function iaggr.ord_quantile is never called. */
 static str
 IALGquantile(Client ctx, bat *rid, bat *gid, bat *bid, bte *perc)
