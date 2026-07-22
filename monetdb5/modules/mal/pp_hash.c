@@ -622,7 +622,7 @@ UHASHext(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 				if (!g) { \
 					if (slots == 0) { \
 						slots = ht_preclaim(private); \
-						slot = ATOMIC_ADD(&h->last, slots); \
+						slot = ATOMIC_ADD_GID(&h->last, slots); \
 						if (((slot*100)/70) >= (gid)h->size) { \
 							hash_rehash(h, p, err); \
 							vals = h->vals; \
@@ -667,7 +667,7 @@ UHASHext(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 				if (!g) { \
 					if (slots == 0) { \
 						slots = ht_preclaim(private); \
-						slot = ATOMIC_ADD(&h->last, slots); \
+						slot = ATOMIC_ADD_GID(&h->last, slots); \
 						if (((slot*100)/70) >= (gid)h->size) { \
 							hash_rehash(h, p, err); \
 							vals = h->vals; \
@@ -709,7 +709,7 @@ UHASHext(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 				if (!g) { \
 					if (slots == 0) { \
 						slots = ht_preclaim(private); \
-						slot = ATOMIC_ADD(&h->last, slots); \
+						slot = ATOMIC_ADD_GID(&h->last, slots); \
 						if (((slot*100)/70) >= (gid)h->size) { \
 							hash_rehash(h, p, err); \
 							vals = h->vals; \
@@ -751,7 +751,7 @@ UHASHext(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 				if (!g) { \
 					if (slots == 0) { \
 						slots = ht_preclaim(private); \
-						slot = ATOMIC_ADD(&h->last, slots); \
+						slot = ATOMIC_ADD_GID(&h->last, slots); \
 						if (((slot*100)/70) >= (gid)h->size) { \
 							hash_rehash(h, p, err); \
 							vals = h->vals; \
@@ -796,7 +796,7 @@ UHASHext(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 					if (!g) { \
 						if (slots == 0) { \
 							slots = ht_preclaim(private); \
-							slot = ATOMIC_ADD(&h->last, slots); \
+							slot = ATOMIC_ADD_GID(&h->last, slots); \
 							if (((slot*100)/70) >= (gid)h->size) { \
 								hash_rehash(h, p, err); \
 								vals = h->vals; \
@@ -833,7 +833,7 @@ UHASHext(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 					if (!g) { \
 						if (slots == 0) { \
 							slots = ht_preclaim(private); \
-							slot = ATOMIC_ADD(&h->last, slots); \
+							slot = ATOMIC_ADD_GID(&h->last, slots); \
 							if (((slot*100)/70) >= (gid)h->size) { \
 								hash_rehash(h, p, err); \
 								vals = h->vals; \
@@ -1006,7 +1006,7 @@ error:
 				if (!g) { \
 					if (slots == 0) { \
 						slots = ht_preclaim(private); \
-						slot = ATOMIC_ADD(&h->last, slots); \
+						slot = ATOMIC_ADD_GID(&h->last, slots); \
 						if (((slot*100)/70) >= (gid)h->size) { \
 							hash_rehash(h, p, err); \
 							vals = h->vals; \
@@ -1054,7 +1054,7 @@ error:
 				if (!g) { \
 					if (slots == 0) { \
 						slots = ht_preclaim(private); \
-						slot = ATOMIC_ADD(&h->last, slots); \
+						slot = ATOMIC_ADD_GID(&h->last, slots); \
 						if (((slot*100)/70) >= (gid)h->size) { \
 							hash_rehash(h, p, err); \
 							vals = h->vals; \
@@ -1098,7 +1098,7 @@ error:
 				if (!g) { \
 					if (slots == 0) { \
 						slots = ht_preclaim(private); \
-						slot = ATOMIC_ADD(&h->last, slots); \
+						slot = ATOMIC_ADD_GID(&h->last, slots); \
 						if (((slot*100)/70) >= (gid)h->size) { \
 							hash_rehash(h, p, err); \
 							vals = h->vals; \
@@ -1143,7 +1143,7 @@ error:
 				if (!g) { \
 					if (slots == 0) { \
 						slots = ht_preclaim(private); \
-						slot = ATOMIC_ADD(&h->last, slots); \
+						slot = ATOMIC_ADD_GID(&h->last, slots); \
 						if (((slot*100)/70) >= (gid)h->size) { \
 							hash_rehash(h, p, err); \
 							vals = h->vals; \
@@ -1191,7 +1191,7 @@ error:
 					if (!g) { \
 						if (slots == 0) { \
 							slots = ht_preclaim(private); \
-							slot = ATOMIC_ADD(&h->last, slots); \
+							slot = ATOMIC_ADD_GID(&h->last, slots); \
 							if (((slot*100)/70) >= (gid)h->size) { \
 								hash_rehash(h, p, err); \
 								vals = h->vals; \
@@ -1232,7 +1232,7 @@ error:
 					if (!g) { \
 						if (slots == 0) { \
 							slots = ht_preclaim(private); \
-							slot = ATOMIC_ADD(&h->last, slots); \
+							slot = ATOMIC_ADD_GID(&h->last, slots); \
 							if (((slot*100)/70) >= (gid)h->size) \
 								hash_rehash(h, p, err); \
 								vals = h->vals; \
@@ -1464,7 +1464,7 @@ OAHASHadd_freq(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (occrrence_idx) {
 			gid *occIdx = Tloc(res, 0);
 			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) {
-				occIdx[i] = freqs[sltid[i]];
+				occIdx[i] = (oid)freqs[sltid[i]];
 				freqs[sltid[i]]++;
 			}
 		} else {
@@ -1530,7 +1530,7 @@ error:
 			} \
 			if ((slot?1:0) == match) { \
 				oid_mtd[mtdcnt] = off+i; \
-				slt[mtdcnt] = slot - 1; \
+				slt[mtdcnt] = (oid)(slot - 1); \
 				mtdcnt++; \
 				if (match && *single && freq[slot - 1] > 1) { \
 					err = createException(SQL, "oahash.probe", "more than one match"); \
@@ -1857,7 +1857,7 @@ OAHASHnprobe(Client ctx, bat *PRB_oid, bat *HSH_slotid, const bat *PRB_key, cons
 			} \
 			oid_mtd[mtdcnt] = off+i; \
 			if (slot) { \
-				slt[mtdcnt] = slot - 1; \
+				slt[mtdcnt] = (oid)(slot - 1); \
 				mark[i] = true; \
 				if (*single && freq[slot - 1] > 1) { \
 					err = createException(SQL, "oahash.probe", "more than one match"); \
@@ -2900,7 +2900,7 @@ OAHASHexpand(Client ctx, bat *expanded, const bat *selected, const bat *slotid, 
 		if (freq) {
 			TIMEOUT_LOOP_IDX_DECL(i, selcnt, qry_ctx) {
 				if (sid[i] != oid_nil && freq[sid[i]])
-					xpdcnt += freq[sid[i]];
+					xpdcnt += (oid)freq[sid[i]];
 				else
 					xpdcnt++;
 			}
@@ -3059,13 +3059,13 @@ OAHASHexplode(Client ctx, bat *fetched, const bat *slotid, const bat *frequency,
 		if (*left_outer) {
 			TIMEOUT_LOOP_IDX_DECL(i, selcnt, qry_ctx) {
 				if (sid[i] != oid_nil)
-					fchcnt += freq[sid[i]];
+					fchcnt += (oid)freq[sid[i]];
 				else
 					fchcnt++;
 			}
 		} else {
 			TIMEOUT_LOOP_IDX_DECL(i, selcnt, qry_ctx)
-				fchcnt += freq[sid[i]];
+				fchcnt += (oid)freq[sid[i]];
 		}
 		TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "oahash.explode", RUNTIME_QRY_TIMEOUT));
 		if (err)
@@ -3099,7 +3099,7 @@ OAHASHexplode(Client ctx, bat *fetched, const bat *slotid, const bat *frequency,
 							g = ht->gids[k];
 						}
 						assert(g>0);
-						res[idx++] = g-1;
+						res[idx++] = (oid)(g-1);
 					}
 				} else {
 					res[idx++] = oid_nil;
@@ -3118,7 +3118,7 @@ OAHASHexplode(Client ctx, bat *fetched, const bat *slotid, const bat *frequency,
 						g = ht->gids[k];
 					}
 					assert(g>0);
-					res[idx++] = g-1;
+					res[idx++] = (oid)(g-1);
 				}
 			}
 		}
@@ -3245,11 +3245,11 @@ OAHASHexplode_unmatched(Client ctx, bat *res, const bat *ht_sink, const bat *unm
 	// FIXME: replace this hacky solution with proper BATiter!!!
 	if (umrk)
 			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) {
-					ttlcnt += freq[umrk[i]];
+					ttlcnt += (oid)freq[umrk[i]];
 			}
 	else /* !umrk: u has dense tail */
 			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) {
-					ttlcnt += freq[u->hseqbase+i];
+					ttlcnt += (oid)freq[u->hseqbase+i];
 			}
 	TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "oahash.explode_unmatched", RUNTIME_QRY_TIMEOUT));
 	if (err)
@@ -3328,7 +3328,7 @@ OAHASHnth_slice(Client ctx, bat *slice, bat *ht_sink, int *slice_nr)
 	BUN j = 0;
 	for (BUN i = s; i<e; i++) {
 		if (h->gids[i])
-			o[j++] = h->gids[i]-1;
+			o[j++] = (oid)(h->gids[i]-1);
 	}
 	BATsetcount(r, j);
 	BATnegateprops(r);

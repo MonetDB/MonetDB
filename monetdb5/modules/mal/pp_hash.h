@@ -118,6 +118,7 @@ hash_prime_nr[32] = {
 typedef oid gid;
 typedef ATOMIC_TYPE hash_key_t;
 #define ATOMIC_GET_GID(a) ((gid)ATOMIC_GET(a))
+#define ATOMIC_ADD_GID(a,i) ((gid)ATOMIC_ADD(a,i))
 
 typedef int (*fcmp)(const void *v1, const void *v2);
 typedef lng (*fhsh)(const void *v);
