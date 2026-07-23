@@ -59,7 +59,7 @@ jobs:
         if: runner.os == 'macOS'
 
       - name: install packages
-        run: sudo apt-get install -y bison libbz2-dev libpcre2-dev liblzma-dev liblz4-dev libxml2-dev pkg-config libxxash-dev unixodbc-dev zlib1g-dev libssl-dev
+        run: sudo apt-get install -y bison libbz2-dev libpcre2-dev liblzma-dev liblz4-dev libxml2-dev pkg-config libxxhash-dev unixodbc-dev zlib1g-dev libssl-dev
         if: runner.os == 'Linux'
 
       - name: Patch /etc/hosts on Unix
