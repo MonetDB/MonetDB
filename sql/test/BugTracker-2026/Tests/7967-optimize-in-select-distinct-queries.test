@@ -1,0 +1,93 @@
+statement ok
+CREATE TABLE digits(d INTEGER PRIMARY KEY)
+
+statement ok
+INSERT INTO digits VALUES(0),(1),(2),(3),(4),(5),(6),(7),(8),(9)
+
+statement ok
+CREATE TABLE lhs(id INTEGER PRIMARY KEY,v INTEGER)
+
+statement ok
+CREATE TABLE rhs(id INTEGER PRIMARY KEY,v INTEGER)
+
+statement ok
+CREATE TABLE probe(id INTEGER PRIMARY KEY,v INTEGER)
+
+statement ok
+INSERT INTO lhs SELECT n,CASE WHEN MOD(n,97)=0 THEN NULL ELSE MOD(n,1000) END FROM
+ (SELECT a.d+b.d*10+c.d*100+d.d*1000+e.d*10000+1 n
+  FROM digits a,digits b,digits c,digits d,digits e) x
+
+statement ok
+INSERT INTO rhs SELECT n,CASE WHEN MOD(n,89)=0 THEN NULL ELSE MOD(n,700)+300 END FROM
+ (SELECT a.d+b.d*10+c.d*100+d.d*1000+e.d*10000+1 n
+  FROM digits a,digits b,digits c,digits d,digits e) x
+
+statement ok
+INSERT INTO probe SELECT n,CASE WHEN MOD(n,101)=0 THEN NULL ELSE MOD(n,1200) END FROM
+ (SELECT a.d+b.d*10+c.d*100+d.d*1000+e.d*10000+1 n
+  FROM digits a,digits b,digits c,digits d,digits e) x
+
+statement ok
+ANALYZE sys.lhs
+
+statement ok
+ANALYZE sys.rhs
+
+statement ok
+ANALYZE sys.probe
+
+query T nosort
+EXPLAIN
+SELECT COUNT(*) FROM probe p WHERE p.v IN (SELECT DISTINCT r.v FROM rhs r)
+----
+project (
+| group by (
+| | semijoin (
+| | | table("sys"."probe") [ "probe"."v" as "p"."v" ],
+| | | group by (
+| | | | project (
+| | | | | table("sys"."rhs") [ "rhs"."v" as "r"."v" ]
+| | | | ) [ "r"."v" as "%1"."%1" ]
+| | | ) [ "%1"."%1" ] [ "%1"."%1" ]
+| | ) [ ("p"."v") + = ("%1"."%1") ]
+| ) [  ] [ "sys"."count"() as "%3"."%3" ]
+) [ "%3"."%3" ]
+
+query T nosort
+EXPLAIN
+SELECT COUNT(*) FROM probe p WHERE p.v IN (SELECT r.v FROM rhs r)
+----
+project (
+| group by (
+| | semijoin (
+| | | table("sys"."probe") [ "probe"."v" as "p"."v" ],
+| | | project (
+| | | | table("sys"."rhs") [ "rhs"."v" as "r"."v" ]
+| | | ) [ "r"."v" as "%1"."%1" ]
+| | ) [ ("p"."v") + = ("%1"."%1") ]
+| ) [  ] [ "sys"."count"() as "%3"."%3" ]
+) [ "%3"."%3" ]
+
+query I nosort
+SELECT COUNT(*) FROM probe p WHERE p.v IN (SELECT DISTINCT r.v FROM rhs r)
+----
+57625
+
+query I nosort
+SELECT COUNT(*) FROM probe p WHERE p.v IN (SELECT r.v FROM rhs r)
+----
+57625
+
+statement ok
+DROP TABLE IF EXISTS probe
+
+statement ok
+DROP TABLE IF EXISTS rhs
+
+statement ok
+DROP TABLE IF EXISTS lhs
+
+statement ok
+DROP TABLE IF EXISTS digits
+
