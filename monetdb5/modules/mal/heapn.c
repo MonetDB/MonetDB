@@ -25,7 +25,7 @@
 typedef int (*fcmp)(const void *v1, const void *v2, const void *hp);
 typedef int (*fcmp2)(const void *v1, const void *v2);
 typedef void *(*fnil)();
-typedef lng gid;
+typedef oid gid;
 
 typedef struct subheap {
 	fcmp cmp;		/* cmp function for complex types */
@@ -985,7 +985,10 @@ HEAPnew_topn( MalStkPtr s, InstrPtr p, int args, heapn *hp, lng n, BAT *b, bit m
 		BBPunfix(b->batCacheid);
 	}
 	heapn_done(hp);
-	b = COLnew(0, TYPE_oid, hp->grouped?n*256:n, TRANSIENT);
+	if (n < 0 || (BUN) n > BUN_MAX)
+		return NULL;
+	BUN nr = (BUN)n;
+	b = COLnew(0, TYPE_oid, hp->grouped?nr*256:nr, TRANSIENT);
 	if (b)
 		b->pl_io = (struct pipeline_io*)hp;
 	else
@@ -1225,7 +1228,10 @@ HEAPnew_new( MalBlkPtr m, MalStkPtr s, InstrPtr p, heapn *hp, lng n, int tt,  bi
 		heap_destroy(hp);
 		return NULL;
 	}
-	BAT *b = COLnew(0, TYPE_oid, hp->grouped?(n*256):n, TRANSIENT);
+	if (n < 0 || (BUN) n > BUN_MAX)
+		return NULL;
+	BUN nr = (BUN)n;
+	BAT *b = COLnew(0, TYPE_oid, hp->grouped?(nr*256):nr, TRANSIENT);
 	if (b)
 		b->pl_io = (struct pipeline_io*)hp;
 	else
