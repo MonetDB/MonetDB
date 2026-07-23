@@ -58,6 +58,9 @@ jobs:
         run: pip3 install --user --break-system-packages --upgrade pymonetdb cryptography
         if: runner.os == 'macOS'
 
+      - name: install packages
+        run: sudo apt-get install -y bison libbz2-dev libpcre2-dev liblzma-dev liblz4-dev libxml2-dev pkg-config libxxash-dev unixodbc-dev zlib1g-dev libssl-dev
+        if: runner.os == 'Linux'
 
       - name: Patch /etc/hosts on Unix
         run: echo '127.0.0.1	altlocalhost' | sudo tee -a /etc/hosts
