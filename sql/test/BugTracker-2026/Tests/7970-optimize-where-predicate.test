@@ -86,7 +86,7 @@ project (
 | ) [ (date[varchar(19) "2023-01-01 00:00:00"]) <= ("b"."d") <= (date[varchar(19) "2023-12-31 23:59:59"]) ]
 ) [ "c"."x" ]
 
--- next query takes 0.014 secs, so 28 times faster than above query
+-- next query takes 0.014 secs, so 28 times faster than above first query
 query I nosort
 SELECT c.x
 FROM mre_a AS a
@@ -96,6 +96,38 @@ JOIN mre_b AS b
 LEFT JOIN mre_c AS c ON TRUE
 WHERE b.d BETWEEN '2023-01-01 00:00:00'
               AND '2023-12-31 23:59:59'
+----
+
+-- make it even faster by removing the predicate from the WHERE clause (as it was added to the ON clause)
+query T nosort
+EXPLAIN
+SELECT c.x
+FROM mre_a AS a
+JOIN mre_b AS b
+  ON b.d BETWEEN '2023-01-01 00:00:00'
+             AND '2023-12-31 23:59:59'
+LEFT JOIN mre_c AS c ON TRUE
+----
+project (
+| left outer join (
+| | select (
+| | | crossproduct (
+| | | | table("sys"."mre_a") [ "mre_a"."%TID%" as "a"."%TID%" ],
+| | | | table("sys"."mre_b") [ "mre_b"."d" as "b"."d" ]
+| | | ) [  ]
+| | ) [ (date[varchar(19) "2023-01-01 00:00:00"]) <= ("b"."d") <= (date[varchar(19) "2023-12-31 23:59:59"]) ],
+| | table("sys"."mre_c") [ "mre_c"."x" as "c"."x" ]
+| ) [  ]
+) [ "c"."x" ]
+
+-- next query takes 0.007 secs, so 56 times faster than above first query
+query I nosort
+SELECT c.x
+FROM mre_a AS a
+JOIN mre_b AS b
+  ON b.d BETWEEN '2023-01-01 00:00:00'
+             AND '2023-12-31 23:59:59'
+LEFT JOIN mre_c AS c ON TRUE
 ----
 
 statement ok
