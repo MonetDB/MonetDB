@@ -43,15 +43,13 @@ HAVING SUM(x) < 81 OR EXISTS(SELECT 1 FROM rift_min_b)
 30
 1
 
--- Control query 3: succeeds but returns 1 row less
+-- Control query 3: succeeds.
 query II rowsort
 SELECT SUM(x) AS s, g
 FROM rift_min_a
 GROUP BY g
 HAVING SUM(x) < 81 OR SUM(x) < 81
 ----
-100
-2
 30
 1
 
