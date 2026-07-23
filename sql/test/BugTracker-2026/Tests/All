@@ -152,3 +152,4 @@ KNOWNFAIL?7965-select-1-limit-0-bug
 7966-optimize-select-distinct-from-union-queries
 7967-optimize-in-select-distinct-queries
 7968-optimize-distinct-from-q1-except-q2
+7969-optimize-distinct-from-q1-intersect-q2
