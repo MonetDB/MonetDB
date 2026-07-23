@@ -103,7 +103,8 @@ target_include_directories(bat
   $<$<BOOL:${VALGRIND_FOUND}>:${VALGRIND_INCLUDE_DIR}>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb>
-  $<$<BOOL:${OPENSSL_FOUND}>:${OPENSSL_INCLUDE_DIR}>)
+  $<$<BOOL:${OPENSSL_FOUND}>:${OPENSSL_INCLUDE_DIR}>
+  ${XXHASH_INCLUDE_DIR})
 
 target_link_libraries(bat
   PRIVATE
@@ -113,6 +114,7 @@ target_link_libraries(bat
   monetdb_config_header
   moptions
   mutils
+  ${XXHASH_LIBRARIES}
   $<$<BOOL:${OPENSSL_FOUND}>:OpenSSL::SSL>
   $<$<BOOL:${RTREE_FOUND}>:rtree::rtree>
   $<$<NOT:$<PLATFORM_ID:Windows>>:m>

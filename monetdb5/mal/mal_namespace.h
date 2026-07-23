@@ -240,7 +240,6 @@
 	FUNC(subcount); \
 	FUNC(subdelta); \
 	FUNC(subdiff); \
-	FUNC(subeval_aggr); \
 	FUNC(subgroup); \
 	FUNC(subgroupdone); \
 	FUNC(submax); \

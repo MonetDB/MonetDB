@@ -145,62 +145,6 @@ hgeEq(const hge *l, const hge *r)
 #endif
 
 /*
- * @- inline hash routines
- * Return some positive integer derived from one atom value.
- */
-static BUN
-bteHash(const bte *v)
-{
-	return (BUN) mix_bte(*(const unsigned char *) v);
-}
-
-static BUN
-shtHash(const sht *v)
-{
-	return (BUN) mix_sht(*(const unsigned short *) v);
-}
-
-static BUN
-intHash(const int *v)
-{
-	return (BUN) mix_int(*(const unsigned int *) v);
-}
-
-static BUN
-lngHash(const lng *v)
-{
-	return (BUN) mix_lng(*(const ulng *) v);
-}
-
-#ifdef HAVE_HGE
-static BUN
-hgeHash(const hge *v)
-{
-	return (BUN) mix_hge(*(const uhge *) v);
-}
-#endif
-
-static BUN
-fltHash(const flt *v)
-{
-	if (is_flt_nil(*v))
-		return (BUN) mix_int(GDK_int_min);
-	if (*v == 0)
-		return (BUN) mix_int(0);
-	return (BUN) mix_int(*(const unsigned int *) v);
-}
-
-static BUN
-dblHash(const dbl *v)
-{
-	if (is_dbl_nil(*v))
-		return (BUN) mix_lng(GDK_lng_min);
-	if (*v == 0)
-		return (BUN) mix_lng(0);
-	return (BUN) mix_lng(*(const ulng *) v);
-}
-
-/*
  * @+ Standard Atoms
  */
 
@@ -1341,12 +1285,6 @@ UUIDfromString(allocator *ma, const char *svalue, size_t *len, void **RETVAL, bo
 	return -1;
 }
 
-static BUN
-UUIDhash(const void *v)
-{
-	return mix_uuid((const uuid *) v);
-}
-
 static void *
 UUIDread(allocator *ma, void *U, size_t *dstlen, stream *s, size_t cnt)
 {
@@ -1492,12 +1430,6 @@ INET4fromString(allocator *ma, const char *svalue, size_t *len, void **RETVAL, b
   bailout:
 	**retval = inet4_nil;
 	return -1;
-}
-
-static BUN
-INET4hash(const void *v)
-{
-	return intHash(v);
 }
 
 static void *
@@ -1817,12 +1749,6 @@ INET6fromString(allocator *ma, const char *svalue, size_t *len, void **retval, b
 	return svalue_len;
 }
 
-static BUN
-INET6hash(const void *v)
-{
-	return mix_inet6(v);
-}
-
 static void *
 INET6read(allocator *ma, void *U, size_t *dstlen, stream *s, size_t cnt)
 {
@@ -1998,13 +1924,6 @@ BLOBdel(Heap *h, var_t *idx)
 {
 	if (*idx != 0)
 		HEAP_free(h, *idx);
-}
-
-static BUN
-BLOBhash(const void *B)
-{
-	const blob *b = B;
-	return (BUN) b->nitems;
 }
 
 static void *
@@ -2460,7 +2379,7 @@ atomDesc BATatoms[MAXATOMS] = {
 		.atomWrite = UUIDwrite,
 		.atomCmp = UUIDcompare,
 		.atomEqual = UUIDequal,
-		.atomHash = UUIDhash,
+		.atomHash = uuidHash,
 	},
 	[TYPE_inet4] = {
 		.name = "inet4",
@@ -2474,7 +2393,7 @@ atomDesc BATatoms[MAXATOMS] = {
 		.atomWrite = INET4write,
 		.atomCmp = INET4compare,
 		.atomEqual = INET4equal,
-		.atomHash = INET4hash,
+		.atomHash = inet4Hash,
 	},
 	[TYPE_inet6] = {
 		.name = "inet6",
@@ -2488,7 +2407,7 @@ atomDesc BATatoms[MAXATOMS] = {
 		.atomWrite = INET6write,
 		.atomCmp = INET6compare,
 		.atomEqual = INET6equal,
-		.atomHash = INET6hash,
+		.atomHash = inet6Hash,
 	},
 	[TYPE_str] = {
 		.name = "str",
@@ -2519,7 +2438,7 @@ atomDesc BATatoms[MAXATOMS] = {
 		.atomWrite = BLOBwrite,
 		.atomCmp = BLOBcmp,
 		.atomEqual = BLOBeq,
-		.atomHash = BLOBhash,
+		.atomHash = blobHash,
 		.atomPut = BLOBput,
 		.atomDel = BLOBdel,
 		.atomLen = BLOBlength,

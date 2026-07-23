@@ -11,6 +11,8 @@
 #ifndef _GDK_SEARCH_H_
 #define _GDK_SEARCH_H_
 
+#include <xxhash.h>
+
 struct Hash {
 	int type;		/* type of index entity */
 	uint8_t width;		/* width of hash entries */
@@ -157,104 +159,130 @@ HASHgetlink(const Hash *h, BUN i)
 	}
 }
 
-/* mix_bte(0x80) == 0x80 */
-#define mix_bte(X)	((unsigned int) (uint8_t) (X))
-/* mix_sht(0x8000) == 0x8000 */
-#define mix_sht(X)	((unsigned int) (uint16_t) (X))
-/* mix_int(0x81060038) == 0x80000000 */
-#define mix_int(X)	(((unsigned int) (X) >> 7) ^	\
-			 ((unsigned int) (X) >> 13) ^	\
-			 ((unsigned int) (X) >> 21) ^	\
-			 (unsigned int) (X))
-/* mix_lng(0x810600394347424F) == 0x8000000000000000 */
-#define mix_lng(X)	(((ulng) (X) >> 7) ^	\
-			 ((ulng) (X) >> 13) ^	\
-			 ((ulng) (X) >> 21) ^	\
-			 ((ulng) (X) >> 31) ^	\
-			 ((ulng) (X) >> 38) ^	\
-			 ((ulng) (X) >> 46) ^	\
-			 ((ulng) (X) >> 56) ^	\
-			 (ulng) (X))
-#ifdef HAVE_HGE
-/* mix_hge(0x810600394347424F90AC1429D6BFCC57) ==
- * 0x80000000000000000000000000000000 */
-#define mix_hge(X)	(((uhge) (X) >> 7) ^	\
-			 ((uhge) (X) >> 13) ^	\
-			 ((uhge) (X) >> 21) ^	\
-			 ((uhge) (X) >> 31) ^	\
-			 ((uhge) (X) >> 38) ^	\
-			 ((uhge) (X) >> 46) ^	\
-			 ((uhge) (X) >> 56) ^	\
-			 ((uhge) (X) >> 65) ^	\
-			 ((uhge) (X) >> 70) ^	\
-			 ((uhge) (X) >> 78) ^	\
-			 ((uhge) (X) >> 85) ^	\
-			 ((uhge) (X) >> 90) ^	\
-			 ((uhge) (X) >> 98) ^	\
-			 ((uhge) (X) >> 107) ^	\
-			 ((uhge) (X) >> 116) ^	\
-			 (uhge) (X))
+#if SIZEOF_BUN == 4
+#define XXHASHFUNC	XXH32
+#else
+#define XXHASHFUNC	XXH64
 #endif
-#define mix_inet4(X)	mix_int((X).align)
+
+__attribute__((__pure__))
+static inline BUN
+bteHash(const void *x)
+{
+	return (BUN) *(uint8_t *) x;
+}
+
+__attribute__((__pure__))
+static inline BUN
+shtHash(const void *x)
+{
+	return (BUN) *(uint16_t *) x;
+}
+
+__attribute__((__pure__))
+static inline BUN
+intHash(const void *x)
+{
+	return (BUN) XXH32(x, sizeof(int), 0);
+}
+
+__attribute__((__pure__))
+static inline BUN
+lngHash(const void *x)
+{
+	return (BUN) XXHASHFUNC(x, sizeof(lng), 0);
+}
+
+#ifdef HAVE_HGE
+__attribute__((__pure__))
+static inline BUN
+hgeHash(const void *x)
+{
+	return (BUN) XXHASHFUNC(x, sizeof(hge), 0);
+}
+#endif
+
+__attribute__((__pure__))
+static inline BUN
+fltHash(const void *x)
+{
+	if (is_flt_nil(*(const flt *)x)) /* any NaN */
+		return intHash(&(uint32_t){UINT32_C(0x7FC00000)});
+	if (*(const flt *)x == 0) /* +0 or -0 */
+		return (BUN) intHash(&(uint32_t){0});
+	return intHash(x);
+}
+
+__attribute__((__pure__))
+static inline BUN
+dblHash(const void *x)
+{
+	if (is_dbl_nil(*(const dbl *)x)) /* any NaN */
+		return lngHash(&(uint64_t){UINT64_C(0x7FF8000000000000)});
+	if (*(const dbl *)x == 0) /* +0 or -0 */
+		return lngHash(&(uint64_t){0});
+	return lngHash(x);
+}
+
+__attribute__((__pure__))
+static inline BUN
+strHash(const void *x)
+{
+	return (BUN) XXHASHFUNC(x, strlen(x), 0);
+}
+
+__attribute__((__pure__))
+static inline BUN
+uuidHash(const void *x)
+{
+	return (BUN) XXHASHFUNC(x, sizeof(uuid), 0);
+}
+
+__attribute__((__pure__))
+static inline BUN
+inet4Hash(const void *x)
+{
+	return (BUN) XXH32(x, sizeof(inet4), 0);
+}
+
+__attribute__((__pure__))
+static inline BUN
+inet6Hash(const void *x)
+{
+	return (BUN) XXHASHFUNC(x, sizeof(inet6), 0);
+}
+
+__attribute__((__pure__))
+static inline BUN
+blobHash(const void *x)
+{
+	return (BUN) XXHASHFUNC(x, blobsize(((const blob *) x)->nitems), 0);
+}
+
 #define hash_loc(H,V)	hash_any(H,V)
 #define hash_var(H,V)	hash_any(H,V)
 #define hash_any(H,V)	HASHbucket(H, ATOMhash((H)->type, (V)))
-#define hash_bte(H,V)	(assert((H)->nbucket >= 256), (BUN) mix_bte(*(const unsigned char*) (V)))
-#define hash_sht(H,V)	(assert((H)->nbucket >= 65536), (BUN) mix_sht(*(const unsigned short*) (V)))
-#define hash_int(H,V)	HASHbucket(H, (BUN) mix_int(*(const unsigned int *) (V)))
+#define hash_bte(H,V)	(assert((H)->nbucket >= 256), bteHash(V))
+#define hash_sht(H,V)	(assert((H)->nbucket >= 65536), shtHash(V))
+#define hash_int(H,V)	HASHbucket(H, intHash(V))
 /* XXX return size_t-sized value for 8-byte oid? */
-#define hash_lng(H,V)	HASHbucket(H, (BUN) mix_lng(*(const ulng *) (V)))
+#define hash_lng(H,V)	HASHbucket(H, lngHash(V))
 #ifdef HAVE_HGE
-#define hash_hge(H,V)	HASHbucket(H, (BUN) mix_hge(*(const uhge *) (V)))
+#define hash_hge(H,V)	HASHbucket(H, hgeHash(V))
 #endif
 #if SIZEOF_OID == SIZEOF_INT
-#define mix_oid(V)	mix_int(V)
 #define hash_oid(H,V)	hash_int(H,V)
 #else
-#define mix_oid(V)	mix_lng(V)
 #define hash_oid(H,V)	hash_lng(H,V)
 #endif
-#define hash_inet4(H,V)	HASHbucket(H, (BUN) mix_inet4(*(const inet4 *) (V)))
+#define hash_inet4(H,V)	HASHbucket(H, inet4Hash(V))
 
 #define hash_flt(H,V)	HASHbucket(H, ATOMhash(TYPE_flt, (V)))
 #define hash_dbl(H,V)	HASHbucket(H, ATOMhash(TYPE_dbl, (V)))
 
-__attribute__((__pure__))
-static inline BUN
-mix_uuid(const uuid *u)
-{
-	ulng u1, u2;
+#define hash_uuid(H,V)	HASHbucket(H, uuidHash(V))
 
-	u1 = (ulng) (uint8_t) u->u[0] << 56 |
-		(ulng) (uint8_t) u->u[1] << 48 |
-		(ulng) (uint8_t) u->u[2] << 40 |
-		(ulng) (uint8_t) u->u[3] << 32 |
-		(ulng) (uint8_t) u->u[4] << 24 |
-		(ulng) (uint8_t) u->u[5] << 16 |
-		(ulng) (uint8_t) u->u[6] << 8 |
-		(ulng) (uint8_t) u->u[7];
-	u2 = (ulng) (uint8_t) u->u[8] << 56 |
-		(ulng) (uint8_t) u->u[9] << 48 |
-		(ulng) (uint8_t) u->u[10] << 40 |
-		(ulng) (uint8_t) u->u[11] << 32 |
-		(ulng) (uint8_t) u->u[12] << 24 |
-		(ulng) (uint8_t) u->u[13] << 16 |
-		(ulng) (uint8_t) u->u[14] << 8 |
-		(ulng) (uint8_t) u->u[15];
-	/* we're not using mix_hge since this way we get the same result
-	 * on systems with and without 128 bit integer support */
-	return (BUN) (mix_lng(u1) ^ mix_lng(u2));
-}
-#define hash_uuid(H,V)	HASHbucket(H, mix_uuid((const uuid *) (V)))
-
-__attribute__((__pure__))
-static inline BUN
-mix_inet6(const inet6 *u)
-{
-	/* like uuid, inet6 is an array of 16 uint8_t values */
-	return mix_uuid((const uuid *) u);
-}
-#define hash_inet6(H,V)	HASHbucket(H, mix_inet6((const inet6 *) (V)))
+#define hash_inet6(H,V)	HASHbucket(H, inet6Hash(V))
 
 /*
  * @- hash-table supported loop over BUNs The first parameter `bi' is

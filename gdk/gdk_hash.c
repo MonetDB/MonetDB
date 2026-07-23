@@ -80,7 +80,7 @@ HASHclear(Hash *h)
 	memset(h->Bckt, 0xFF, h->nbucket * h->width);
 }
 
-#define HASH_VERSION		6
+#define HASH_VERSION		7
 #define HASH_HEADER_SIZE	7	/* nr of size_t fields in header */
 
 void
@@ -154,29 +154,32 @@ HASHnew(Hash *h, int tpe, BUN size, BUN mask, BUN count, bool bcktonly)
 static void
 HASHcollisions(BAT *b, Hash *h, const char *func)
 {
-	lng cnt, entries = 0, max = 0;
-	double total = 0;
-	BUN p, i, j;
+	BUN entries = 0, max = 0;
 
 	if (b == 0 || h == 0)
 		return;
-	for (i = 0, j = h->nbucket; i < j; i++)
-		if ((p = HASHget(h, i)) != BUN_NONE) {
+	for (BUN i = 0, j = h->nbucket; i < j; i++) {
+		BUN p = HASHget(h, i);
+		if (p != BUN_NONE) {
 			entries++;
-			cnt = 0;
-			for (; p != BUN_NONE; p = HASHgetlink(h, p))
+			BUN cnt = 0;
+			while (p != BUN_NONE) {
 				cnt++;
+				p = HASHgetlink(h, p);
+			}
 			if (cnt > max)
 				max = cnt;
-			total += cnt;
 		}
+	}
 	TRC_DEBUG_ENDIF(ACCELERATOR,
-			"%s(" ALGOBATFMT "): statistics " BUNFMT ", "
-			"entries " LLFMT ", nunique " BUNFMT ", "
-			"nbucket " BUNFMT ", max " LLFMT ", avg %2.6f;\n",
-			func, ALGOBATPAR(b), BATcount(b), entries,
-			h->nunique, h->nbucket, max,
-			entries == 0 ? 0 : total / entries);
+			"%s(" ALGOBATFMT "): count " BUNFMT ", "
+			"nunique " BUNFMT ", nbucket " BUNFMT ", "
+			"entries " BUNFMT ", max " BUNFMT ", avg %2.6f, "
+			"coll %2.6f\n",
+			func, ALGOBATPAR(b), BATcount(b), h->nunique,
+			h->nbucket, entries, max,
+			entries == 0 ? 0 : (double) BATcount(b) / entries,
+			entries == 0 ? 0 : (double) h->nunique / entries);
 }
 
 static gdk_return
@@ -812,9 +815,13 @@ BAThash_impl(BATiter *restrict bi, struct canditer *restrict ci,
 	} else if (ATOMsize(tpe) == 2) {
 		/* perfect hash for two-byte sized atoms */
 		mask = (1 << 16);
-	} else if (bi->key || ci->ncand <= 4096) {
-		/* if key, or if small, don't bother dynamically
-		 * adjusting the hash mask */
+	} else if (ci->ncand <= 8192*7/8) {
+		/* if small, don't bother dynamically adjusting the hash
+		 * mask */
+		mask = HASHmask(8192*7/8); /* comes out as 8192 */
+	} else if (bi->key) {
+		/* if key, don't bother dynamically adjusting the hash
+		 * mask */
 		mask = HASHmask(ci->ncand);
 	} else if (!hascand && bi->unique_est != 0) {
 		maxmask = HASHmask(ci->ncand);
@@ -897,7 +904,7 @@ BAThash_impl(BATiter *restrict bi, struct canditer *restrict ci,
 			if (offsets) {
 				TIMEOUT_LOOP_IDX(p, cnt1, qry_ctx) {
 					var_t off = VarHeapVal(bi->base, o - b->hseqbase, bi->width);
-					c = HASHbucket(h, (BUN) mix_oid(off));
+					c = hash_oid(h, &off);
 					hget = HASHget(h, c);
 					if (hget == BUN_NONE) {
 						if (h->nheads == maxslots)
@@ -1008,7 +1015,7 @@ BAThash_impl(BATiter *restrict bi, struct canditer *restrict ci,
 		if (offsets) {
 			TIMEOUT_LOOP(ci->ncand - p, qry_ctx) {
 				var_t off = VarHeapVal(bi->base, o - b->hseqbase, bi->width);
-				c = HASHbucket(h, (BUN) mix_oid(off));
+				c = hash_oid(h, &off);
 				hget = HASHget(h, c);
 				h->nheads += hget == BUN_NONE;
 				if (!hascand) {

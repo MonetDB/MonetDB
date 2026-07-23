@@ -152,16 +152,17 @@ def main():
                rf'bin\monetdbsql-{version}.dll',
                rf'bin\stream-{version}.dll',
                rf'bin\mutils-{version}.dll',
-               vcpkg.format(r'bin\iconv-2.dll'),
                vcpkg.format(r'bin\bz2.dll'),
                vcpkg.format(r'bin\charset-1.dll'), # for iconv-2.dll
                vcpkg.format(r'bin\getopt.dll'),
+               vcpkg.format(r'bin\iconv-2.dll'),
                vcpkg.format(r'bin\libcrypto-3{}.dll'.format(libcrypto)),
+               vcpkg.format(r'bin\liblzma.dll'),
                vcpkg.format(r'bin\libssl-3{}.dll'.format(libcrypto)),
                vcpkg.format(r'bin\libxml2.dll'),
                vcpkg.format(r'bin\lz4.dll'),
-               vcpkg.format(r'bin\liblzma.dll'),
                vcpkg.format(r'bin\pcre2-8.dll'),
+               vcpkg.format(r'bin\xxhash.dll'),
                vcpkg.format(r'bin\z.dll')])
     id = comp(debug, id, 14,
               [r'bin\mclient.pdb',
@@ -213,14 +214,15 @@ def main():
                rf'lib\monetdbsql-{version}.lib',
                rf'lib\stream-{version}.lib',
                rf'lib\mutils-{version}.lib',
-               vcpkg.format(r'lib\iconv.lib'),
                vcpkg.format(r'lib\bz2.lib'),
                vcpkg.format(r'lib\charset.lib'),
                vcpkg.format(r'lib\getopt.lib'),
+               vcpkg.format(r'lib\iconv.lib'),
                vcpkg.format(r'lib\libxml2.lib'),
                vcpkg.format(r'lib\lz4.lib'),
                vcpkg.format(r'lib\lzma.lib'),
                vcpkg.format(r'lib\pcre2-8.lib'),
+               vcpkg.format(r'lib\xxhash.lib'),
                vcpkg.format(r'lib\z.lib')])
     print(r'            </Directory>')
     print(r'            <Directory Id="share" Name="share">')

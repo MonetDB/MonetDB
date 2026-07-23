@@ -1031,16 +1031,7 @@ load_func(sql_trans *tr, sql_schema *s, sqlid fid, subrids *rs)
 		t->imp = NULL;
 	}
 	if (LANG_EXT(t->lang)) { /* instantiate functions other than sql and mal */
-		switch(t->type) {
-		case F_AGGR:
-			t->imp =_STRDUP("eval_aggr");
-			break;
-		case F_LOADER:
-			t->imp =_STRDUP("eval_loader");
-			break;
-		default: /* for every other function type at the moment */
-			t->imp =_STRDUP("eval");
-		}
+		t->imp =_STRDUP("eval");
 	}
 	if (order_spec == 2)
 		t->order_required = true;

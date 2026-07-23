@@ -563,9 +563,7 @@ gdk_export void BBPtmunlock(void);
 
 gdk_export BAT *BBPquickdesc(bat b);
 
-typedef var_t stridx_t;
-#define SIZEOF_STRIDX_T SIZEOF_VAR_T
-#define GDK_VARALIGN SIZEOF_STRIDX_T
+#define GDK_VARALIGN SIZEOF_VAR_T
 
 #include "gdk_atoms.h"
 

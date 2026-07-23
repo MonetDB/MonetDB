@@ -191,7 +191,8 @@ target_link_libraries(sql
   monetdb5
   mapi
   bat
-  mutils)
+  mutils
+  ${XXHASH_LIBRARIES})
 
 set_target_properties(sql
   PROPERTIES
