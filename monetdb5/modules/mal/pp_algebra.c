@@ -940,7 +940,7 @@ LOCKEDAGGRnull(Client ctx, bat *result, const bit *hadnull)
 				if (!g) { \
 					if (slots == 0) { \
 						slots = HT_PRE_CLAIM; \
-						slot = ATOMIC_ADD(&h->last, slots); \
+						slot = ATOMIC_ADD_GID(&h->last, slots); \
 						if (((slot*100)/70) >= (gid)h->size) { \
 							hash_rehash(h, p, err); \
 							vals = h->vals; \
@@ -1188,7 +1188,7 @@ LALGunique(Client ctx, bat *rid, bat *uid, bat *bid, bat *sid)
 				if (!g) { \
 					if (slots == 0) { \
 						slots = HT_PRE_CLAIM; \
-						slot = ATOMIC_ADD(&h->last, slots); \
+						slot = ATOMIC_ADD_GID(&h->last, slots); \
 						if (((slot*100)/70) >= (gid)h->size) { \
 							hash_rehash(h, p, err); \
 							vals = h->vals; \
@@ -1444,7 +1444,7 @@ LALGgroup_unique(Client ctx, bat *rid, bat *uid, bat *bid, bat *sid, bat *Gid)
 				if (!g) { \
 					if (slots == 0) { \
 						slots = ht_preclaim(private); \
-						slot = ATOMIC_ADD(&h->last, slots); \
+						slot = ATOMIC_ADD_GID(&h->last, slots); \
 						if (((slot*100)/70) >= (gid)h->size) { \
 							hash_rehash(h, p, err); \
 							vals = h->vals; \
@@ -1503,7 +1503,7 @@ LALGgroup_unique(Client ctx, bat *rid, bat *uid, bat *bid, bat *sid, bat *Gid)
 				if (!g) { \
 					if (slots == 0) { \
 						slots = ht_preclaim(private); \
-						slot = ATOMIC_ADD(&h->last, slots); \
+						slot = ATOMIC_ADD_GID(&h->last, slots); \
 						if (((slot*100)/70) >= (gid)h->size) { \
 							hash_rehash(h, p, err); \
 							vals = h->vals; \
@@ -1780,7 +1780,7 @@ LALGgroup(Client ctx, bat *rid, bat *uid, bat *bid)
 				if (!g) { \
 					if (slots == 0) { \
 						slots = ht_preclaim(private); \
-						slot = ATOMIC_ADD(&h->last, slots); \
+						slot = ATOMIC_ADD_GID(&h->last, slots); \
 						if (((slot*100)/70) >= (gid)h->size) \
 							hash_rehash(h, p, err); { \
 							vals = h->vals; \

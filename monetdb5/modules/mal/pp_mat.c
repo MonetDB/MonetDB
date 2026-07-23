@@ -316,7 +316,7 @@ PARTpartition(Client ctx, bat *pos, const bat *part, const bat *glen )
 			BATiter di = bat_iterator(d); \
 			BUN cnt = BATcount(d); \
 			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
-				oid g = grp[i];						\
+				oid g = (oid) grp[i];						\
 				if (tfastins_nocheckVAR( mt->bat[g], curpos[g], BUNtvar(&di, i)) != GDK_SUCCEED) { \
 					err = createException(MAL, "pp algebra.projection", MAL_MALLOC_FAIL); \
 					goto error; \

@@ -2817,12 +2817,12 @@ exp_cost(visitor *v, sql_exp *e, ulng max, sql_rel *l, sql_rel *r)
 		if (l) {
 			lcard = get_rel_count(l);
 			if (lcard == BUN_NONE)
-				lcard = max;
+				lcard = (BUN)max;
 		}
 		if (r) {
 			rcard = get_rel_count(r);
 			if (rcard == BUN_NONE)
-				rcard = max;
+				rcard = (BUN)max;
 		}
 		BUN n = l->nrcols + r->nrcols; /* not correct includes join exps */
 		cost = ( (dbl)lcard + (dbl)rcard + (lcard*rcard * sel * n * 8) );
@@ -2879,12 +2879,12 @@ order_join_expressions_pp(mvc *sql, list *dje, list *rels)
 			if (l) {
 				lcard = get_rel_count(l);
 				if (lcard == BUN_NONE)
-					lcard = max;
+					lcard = (BUN)max;
 			}
 			if (r) {
 				rcard = get_rel_count(r);
 				if (rcard == BUN_NONE)
-					rcard = max;
+					rcard = (BUN)max;
 			}
 			keys[i] =  ( (dbl)lcard + (dbl)rcard + (lcard*rcard * sel) );
 			if (VERBOSE) {
