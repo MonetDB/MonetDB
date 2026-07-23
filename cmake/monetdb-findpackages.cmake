@@ -19,6 +19,11 @@ find_library(XXHASH_LIBRARIES NAMES xxhash
   ${PC_XXHASH_LIBDIR}
   ${PC_XXHASH_LIBRARY_DIRS}
 )
+find_path(XXHASH_INCLUDE_DIR NAMES xxhash.h
+  HINTS
+  ${PC_XXHASH_INCLUDEDIR}
+  ${PC_XXHASH_INCLUDE_DIRS}
+)
 
 if(${CMAKE_VERSION} VERSION_LESS "3.14.0")
   find_package(Python3 COMPONENTS Interpreter Development)
