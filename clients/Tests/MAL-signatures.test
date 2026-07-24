@@ -2824,11 +2824,6 @@ unsafe pattern alarm.sleep(X_0:any_1):any_1
 ALARMsleep
 Sleep a few milliseconds and return the slept value
 alarm
-sleep
-unsafe pattern alarm.sleep(X_0:any_1):void
-ALARMsleep
-Sleep a few milliseconds
-alarm
 time
 unsafe command alarm.time():int
 ALARMtime
@@ -22120,16 +22115,6 @@ CMDconvertsignal_str
 (empty)
 batcalc
 str
-command batcalc.str(X_0:bat[:inet4], X_1:bat[:oid]):bat[:str]
-INETinet42str_bulk
-Coerce an inet4 to a string type
-batcalc
-str
-command batcalc.str(X_0:bat[:inet6], X_1:bat[:oid]):bat[:str]
-INETinet62str_bulk
-Coerce an inet6 to a string type
-batcalc
-str
 pattern batcalc.str(X_0:int, X_1:int, X_2:int, X_3:int, X_4:bat[:any_1], X_5:bat[:oid], X_6:int):bat[:str]
 SQLbatstr_cast
 cast to string and check for overflow
@@ -22138,11 +22123,6 @@ str
 pattern batcalc.str(X_0:int, X_1:int, X_2:int, X_3:int, X_4:bat[:any_1], X_5:int):bat[:str]
 SQLbatstr_cast
 cast to string and check for overflow, no candidate list
-batcalc
-str
-command batcalc.str(X_0:bat[:uuid], X_1:bat[:oid]):bat[:str]
-UUIDuuid2str_bulk
-Coerce a uuid to a string type
 batcalc
 timestamp
 pattern batcalc.timestamp(X_0:bat[:date], X_1:bat[:oid]):bat[:timestamp]
@@ -33610,24 +33590,9 @@ CMDvarCONVERT
 Cast VALUE to str
 calc
 str
-command calc.str(X_0:inet4):str
-INETinet42str
-Coerce an inet4 to a string type
-calc
-str
-command calc.str(X_0:inet6):str
-INETinet62str
-Coerce an inet6 to a string type
-calc
-str
 pattern calc.str(X_0:int, X_1:int, X_2:int, X_3:int, X_4:any_1, X_5:int):str
 SQLstr_cast
 cast to string and check for overflow
-calc
-str
-command calc.str(X_0:uuid):str
-UUIDuuid2str
-Coerce a uuid to a string type
 calc
 timestamp
 command calc.timestamp(X_0:date):timestamp
@@ -36963,11 +36928,6 @@ getAtomSizes
 command inspect.getAtomSizes():bat[:int]
 INSPECTatom_sizes
 Collect a BAT with the atom sizes.
-inspect
-getAtomSuper
-command inspect.getAtomSuper():bat[:str]
-INSPECTatom_sup_names
-Collect a BAT with the atom names.
 inspect
 getComment
 pattern inspect.getComment(X_0:str, X_1:str):bat[:str]

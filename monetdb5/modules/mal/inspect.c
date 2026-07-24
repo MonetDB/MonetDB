@@ -525,31 +525,6 @@ INSPECTgetDatabaseName(Client ctx, str *ret)
 }
 
 static str
-INSPECTatom_sup_names(Client ctx, bat *ret)
-{
-	(void) ctx;
-	int i, k;
-	BAT *b = COLnew(0, TYPE_str, 256, TRANSIENT);
-
-	if (b == 0)
-		throw(MAL, "inspect.getAtomSuper", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-
-	for (i = 0; i < GDKatomcnt; i++) {
-		for (k = ATOMstorage(i); k > TYPE_str; k = ATOMstorage(k)) ;
-		if (BUNappend(b, ATOMname(k), false) != GDK_SUCCEED)
-			goto bailout;
-	}
-
-	*ret = b->batCacheid;
-	BBPkeepref(b);
-
-	return MAL_SUCCEED;
-  bailout:
-	BBPreclaim(b);
-	throw(MAL, "inspect.getAtomSuper", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-}
-
-static str
 INSPECTatom_sizes(Client ctx, bat *ret)
 {
 	(void) ctx;
@@ -671,7 +646,6 @@ static mel_func inspect_init_funcs[] = {
  pattern("inspect", "getType", INSPECTtypeName, false, "Return the concrete type of a variable (expression).", args(1,2, arg("",str),argany("v",1))),
  pattern("inspect", "equalType", INSPECTequalType, false, "Return true if both operands are of the same type", args(1,3, arg("",bit),argany("l",0),argany("r",0))),
  command("inspect", "getAtomNames", INSPECTatom_names, false, "Collect a BAT with the atom names.", args(1,1, batarg("",str))),
- command("inspect", "getAtomSuper", INSPECTatom_sup_names, false, "Collect a BAT with the atom names.", args(1,1, batarg("",str))),
  command("inspect", "getAtomSizes", INSPECTatom_sizes, false, "Collect a BAT with the atom sizes.", args(1,1, batarg("",int))),
  command("inspect", "getEnvironment", INSPECTgetEnvironment, false, "Collect the environment variables.", args(2,2, batarg("k",str),batarg("v",str))),
  command("inspect", "getEnvironment", INSPECTgetEnvironmentKey, false, "Get the value of an environment variable", args(1,2, arg("",str),arg("k",str))),

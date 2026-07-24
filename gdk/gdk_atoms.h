@@ -382,7 +382,7 @@ ATOMreplaceVAR(BAT *b, var_t *dst, const void *src)
  */
 #define GDK_STRHASHTABLE	(1<<10)	/* 1024 */
 #define GDK_STRHASHMASK		(GDK_STRHASHTABLE-1)
-#define GDK_STRHASHSIZE		(GDK_STRHASHTABLE * sizeof(stridx_t))
+#define GDK_STRHASHSIZE		(GDK_STRHASHTABLE * sizeof(var_t))
 #define GDK_ELIMPOWER		16	/* 64KiB is the threshold */
 #define GDK_ELIMDOUBLES(h)	((h)->free < GDK_ELIMLIMIT)
 #define GDK_ELIMLIMIT		(1<<GDK_ELIMPOWER)	/* equivalently: ELIMBASE == 0 */
@@ -466,23 +466,6 @@ VarHeapVal(const void *b, BUN p, int w)
 	default:
 		MT_UNREACHABLE();
 	}
-}
-
-__attribute__((__pure__))
-static inline BUN
-strHash(const char *key)
-{
-	BUN y = 0;
-
-	for (BUN i = 0; key[i]; i++) {
-		y += key[i];
-		y += (y << 10);
-		y ^= (y >> 6);
-	}
-	y += (y << 3);
-	y ^= (y >> 11);
-	y += (y << 15);
-	return y;
 }
 
 #endif /* _GDK_ATOMS_H_ */

@@ -865,9 +865,7 @@ gdk_export BUN ORDERfndlast(BAT *b, Heap *oidxh, const void *v);
 
 gdk_export BUN BUNfnd(BAT *b, const void *right);
 
-typedef var_t stridx_t;
-#define SIZEOF_STRIDX_T SIZEOF_VAR_T
-#define GDK_VARALIGN SIZEOF_STRIDX_T
+#define GDK_VARALIGN SIZEOF_VAR_T
 
 #include "gdk_atoms.h"
 #include "gdk_cand.h"

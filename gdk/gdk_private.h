@@ -8,6 +8,9 @@
  * For copyright information, see the file debian/copyright.
  */
 
+#ifndef _GDK_PRIVATE_H_
+#define _GDK_PRIVATE_H_
+
 /* This file should not be included in any file outside of this directory */
 
 #ifndef LIBGDK
@@ -486,3 +489,5 @@ GDKmremap_debug(const char *path, int mode, void *old_address, size_t old_size, 
 
 #endif
 #endif
+
+#endif	/* _GDK_PRIVATE_H_ */

@@ -58,6 +58,9 @@ jobs:
         run: pip3 install --user --break-system-packages --upgrade pymonetdb cryptography
         if: runner.os == 'macOS'
 
+      - name: install packages
+        run: sudo apt-get install -y bison libbz2-dev libpcre2-dev liblzma-dev liblz4-dev libxml2-dev pkg-config libxxhash-dev unixodbc-dev zlib1g-dev libssl-dev
+        if: runner.os == 'Linux'
 
       - name: Patch /etc/hosts on Unix
         run: echo '127.0.0.1	altlocalhost' | sudo tee -a /etc/hosts
@@ -82,7 +85,7 @@ jobs:
         if: runner.os == 'Linux'
 
       - name: brew packages
-        run: brew install bison
+        run: brew install bison pkgconf xxhash
         if: runner.os == 'macOS'
 
       - name: make MonetDB on macos
@@ -116,7 +119,7 @@ jobs:
       - name: choco packages
         run: |
           choco install winflexbison3
-          vcpkg install libiconv bzip2 libxml2 pcre2 zlib getopt
+          vcpkg install libiconv bzip2 libxml2 pcre2 zlib getopt pkgconf xxhash
         if: runner.os == 'Windows'
 
       - name: make MonetDB on Windows

@@ -114,21 +114,22 @@ monet_hello(void)
 	double sz_mem_h;
 	static const char qc[] = " kMGTPE";
 	int qi = 0;
+	char buf[64] = "";
 
-	printf("# MonetDB 5 server v%s", GDKversion(false));
 	{
 #ifdef MONETDB_RELEASE
-		printf(" (%s)", MONETDB_RELEASE);
+		snprintf(buf, sizeof(buf), " (%s)", MONETDB_RELEASE);
 #else
 		const char *rev = mercurial_revision();
 		if (strcmp(rev, "Unknown") != 0)
-			printf(" (hg id: %s)", rev);
+			snprintf(buf, sizeof(buf), " (hg id: %s)", rev);
 #endif
 	}
+	printf("# MonetDB 5 server v%s%s\n", GDKversion(false), buf);
 #ifndef MONETDB_RELEASE
-	printf("\n# This is an unreleased version");
+	printf("# This is an unreleased version\n");
 #endif
-	printf("\n# Serving database '%s', using %d thread%s\n",
+	printf("# Serving database '%s', using %d thread%s\n",
 		   GDKgetenv("gdk_dbname"), GDKnr_threads,
 		   (GDKnr_threads != 1) ? "s" : "");
 	printf("# Compiled for %s/%zubit%s\n", HOST, sizeof(ptr) * 8,
@@ -143,14 +144,15 @@ monet_hello(void)
 		sz_mem_h /= 1024.0;
 		qi++;
 	}
-	printf("# Found %.3f %ciB available main-memory", sz_mem_h, qc[qi]);
+	snprintf(buf, sizeof(buf),
+			 "# Found %.3f %ciB available main-memory", sz_mem_h, qc[qi]);
 	sz_mem_h = (double) GDK_mem_maxsize;
 	qi = 0;
 	while (sz_mem_h >= 1000.0 && qi < 6) {
 		sz_mem_h /= 1024.0;
 		qi++;
 	}
-	printf(" of which we use %.3f %ciB\n", sz_mem_h, qc[qi]);
+	printf("%s of which we use %.3f %ciB\n", buf, sz_mem_h, qc[qi]);
 	if (GDK_vm_maxsize < GDK_VM_MAXSIZE) {
 		sz_mem_h = (double) GDK_vm_maxsize;
 		qi = 0;

@@ -1265,7 +1265,6 @@ const char subavgRef[];
 const char subcountRef[];
 const char subdeltaRef[];
 const char subdiffRef[];
-const char subeval_aggrRef[];
 const char subgroupRef[];
 const char subgroupdoneRef[];
 const char submaxRef[];
