@@ -660,7 +660,7 @@ PARQUETread_large(BAT **R, pqc_creader *r, int colno, Pipeline *p, int wnr)
 			throw(SQL, "parquet.read",  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		Heap *h = rb->tvheap;
-		unsigned int varoff = is_string?GDK_STRHASHTABLE * sizeof(stridx_t):0;
+		unsigned int varoff = is_string?GDK_STRHASHTABLE * sizeof(var_t):0;
 		BUN size = varoff + ssize/* * GDK_VARALIGN*/ + 8;
 		if (h->storage == STORE_INVALID) {
 			if (h->size < size && HEAPalloc(h, size, 1) != GDK_SUCCEED) {

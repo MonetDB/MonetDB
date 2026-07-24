@@ -9871,13 +9871,13 @@ fstrPut(BAT *b, var_t *dst, const void *V)
 	size_t pos, len = strlen(v) + 1;
 
 	if (h->free == 0) {
-		if (h->size < GDK_STRHASHTABLE * sizeof(stridx_t) + BATTINY * GDK_VARALIGN) {
-			if (HEAPgrow(&b->tvheap, GDK_STRHASHTABLE * sizeof(stridx_t) + BATTINY * GDK_VARALIGN, true) != GDK_SUCCEED) {
+		if (h->size < GDK_STRHASHTABLE * sizeof(var_t) + BATTINY * GDK_VARALIGN) {
+			if (HEAPgrow(&b->tvheap, GDK_STRHASHTABLE * sizeof(var_t) + BATTINY * GDK_VARALIGN, true) != GDK_SUCCEED) {
 				return (var_t) -1;
 			}
 			h = b->tvheap;
 		}
-		h->free = GDK_STRHASHTABLE * sizeof(stridx_t);
+		h->free = GDK_STRHASHTABLE * sizeof(var_t);
 		memset(h->base, 0, h->free);
 		h->dirty = true;
 		b->tascii = true;
