@@ -11,6 +11,8 @@
 #ifndef _MSTRING_H_
 #define _MSTRING_H_
 
+#include "monetdb_config.h"
+
 #include <string.h>
 
 #if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ > 4))
@@ -18,30 +20,6 @@
 #define GCC_Pragma(pragma)	_Pragma(pragma)
 #else
 #define GCC_Pragma(pragma)
-#endif
-
-/* if __has_attribute is not known to the preprocessor, we ignore
- * attributes completely (see monetdb_config.h); if it is known, use it
- * to find out whether specific attributes that we use are known */
-#if defined(__has_attribute)
-#if !__has_attribute(__access__)
-#define __access__(...)
-#endif
-#if !__has_attribute(__format__)
-#define __format__(...)
-#endif
-#if !__has_attribute(__nonnull__)
-#define __nonnull__(...)
-#endif
-#if !__has_attribute(__nonnull_if_nonzero__)
-#define __nonnull_if_nonzero__(...)
-#endif
-#if !__has_attribute(__pure__)
-#define __pure__
-#endif
-#if !__has_attribute(__sentinel__)
-#define __sentinel__
-#endif
 #endif
 
 #ifndef mutils_export

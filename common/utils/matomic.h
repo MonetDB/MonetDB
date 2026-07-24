@@ -53,6 +53,8 @@
 #ifndef _MATOMIC_H_
 #define _MATOMIC_H_
 
+#include "monetdb_config.h"
+
 /* the atomic type we export is always a 64 bit unsigned integer */
 
 /* ignore __STDC_NO_ATOMICS__ if compiling using Intel compiler on
