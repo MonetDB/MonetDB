@@ -25,12 +25,7 @@ find_path(XXHASH_INCLUDE_DIR NAMES xxhash.h
   ${PC_XXHASH_INCLUDE_DIRS}
 )
 
-if(${CMAKE_VERSION} VERSION_LESS "3.14.0")
-  find_package(Python3 COMPONENTS Interpreter Development)
-  find_package(NumPy)
-else()
-  find_package(Python3 COMPONENTS Interpreter Development NumPy)
-endif()
+find_package(Python3 COMPONENTS Interpreter Development)
 
 if(WITH_RTREE)
   find_package(RTree)
