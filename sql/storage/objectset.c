@@ -12,7 +12,7 @@
 #include "sql_catalog.h"
 #include "sql_storage.h"
 
-#include "gdk_atoms.h"
+#include "gdk.h"
 
 struct versionhead ;
 
