@@ -1536,6 +1536,32 @@ HEAPtopn(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr pci)
 		BBPreclaim(gps);
 		return createException(SQL, "heapn.topn",  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
+	if (!hp->size) {
+		for(subheap *nsh = hp->sub; nsh; nsh = nsh->sub) {
+			bat *res = getArgReference_bat(s, pci, retc++);
+			*res = nsh->vb->batCacheid;
+			BBPretain(*res);
+		}
+		if (rgrp) {
+			*rgrp = hp->grpb->batCacheid;
+			BBPretain(*rgrp);
+		}
+		BBPreclaim(b);
+		BBPreclaim(gps);
+		BAT *P = COLnew(0, TYPE_oid, 0, TRANSIENT);
+		BAT *S = COLnew(0, TYPE_oid, 0, TRANSIENT);
+		if (!P || !S) {
+			BBPreclaim(P);
+			BBPreclaim(S);
+			return createException(SQL, "heapn.topn",  SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		}
+		*pos = P->batCacheid;
+		BBPkeepref(P);
+		*sel = S->batCacheid;
+		BBPkeepref(S);
+		BBPkeepref(hps);
+		return MAL_SUCCEED;
+	}
 
 	subheap *sh = hp->sub;
 	int nxt = (int)ATOMIC_INC(&hp->counter);
