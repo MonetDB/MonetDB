@@ -20,18 +20,24 @@ SELECT a
 FROM outer_distinct_union_t
 WHERE a >= 200
 ----
-distinct munion (
-| project (
-| | select (
-| | | table("sys"."outer_distinct_union_t") [ "outer_distinct_union_t"."a" ]
-| | ) [ ("outer_distinct_union_t"."a") <= (int(31) "800") ]
-| ) [ "outer_distinct_union_t"."a" ],
-| project (
-| | select (
-| | | table("sys"."outer_distinct_union_t") [ "outer_distinct_union_t"."a" ]
-| | ) [ ("outer_distinct_union_t"."a") >= (int(31) "200") ]
+group by (
+| munion (
+| | project (
+| | | project (
+| | | | select (
+| | | | | table("sys"."outer_distinct_union_t") [ "outer_distinct_union_t"."a" ]
+| | | | ) [ ("outer_distinct_union_t"."a") <= (int(31) "800") ]
+| | | ) [ "outer_distinct_union_t"."a" ]
+| | ) [ "outer_distinct_union_t"."a", "outer_distinct_union_t"."a" ],
+| | project (
+| | | project (
+| | | | select (
+| | | | | table("sys"."outer_distinct_union_t") [ "outer_distinct_union_t"."a" ]
+| | | | ) [ ("outer_distinct_union_t"."a") >= (int(31) "200") ]
+| | | ) [ "outer_distinct_union_t"."a" ]
+| | ) [ "outer_distinct_union_t"."a", "outer_distinct_union_t"."a" ]
 | ) [ "outer_distinct_union_t"."a" ]
-) [ "outer_distinct_union_t"."a" ]
+) [ "outer_distinct_union_t"."a" ] [ "outer_distinct_union_t"."a" ]
 
 -- Mutated query.
 -- The outer DISTINCT is redundant.
@@ -49,18 +55,24 @@ FROM (
 ) AS u
 ----
 group by (
-| distinct munion (
-| | project (
-| | | select (
-| | | | table("sys"."outer_distinct_union_t") [ "outer_distinct_union_t"."a" ]
-| | | ) [ ("outer_distinct_union_t"."a") <= (int(31) "800") ]
-| | ) [ "outer_distinct_union_t"."a" ],
-| | project (
-| | | select (
-| | | | table("sys"."outer_distinct_union_t") [ "outer_distinct_union_t"."a" ]
-| | | ) [ ("outer_distinct_union_t"."a") >= (int(31) "200") ]
-| | ) [ "outer_distinct_union_t"."a" ]
-| ) [ "outer_distinct_union_t"."a" as "u"."a" ]
+| group by (
+| | munion (
+| | | project (
+| | | | project (
+| | | | | select (
+| | | | | | table("sys"."outer_distinct_union_t") [ "outer_distinct_union_t"."a" ]
+| | | | | ) [ ("outer_distinct_union_t"."a") <= (int(31) "800") ]
+| | | | ) [ "outer_distinct_union_t"."a" as "u"."a" ]
+| | | ) [ "u"."a", "u"."a" ],
+| | | project (
+| | | | project (
+| | | | | select (
+| | | | | | table("sys"."outer_distinct_union_t") [ "outer_distinct_union_t"."a" ]
+| | | | | ) [ ("outer_distinct_union_t"."a") >= (int(31) "200") ]
+| | | | ) [ "outer_distinct_union_t"."a" as "u"."a" ]
+| | | ) [ "u"."a", "u"."a" ]
+| | ) [ "u"."a" ]
+| ) [ "u"."a" ] [ "u"."a" ]
 ) [ "u"."a" ] [ "u"."a" ]
 
 statement ok

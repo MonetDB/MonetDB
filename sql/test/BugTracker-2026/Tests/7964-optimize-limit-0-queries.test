@@ -83,30 +83,25 @@ LIMIT 0
 ----
 top N (
 | project (
-| | project (
-| | | select (
-| | | | left outer group join (
-| | | | | project (
-| | | | | | join (
-| | | | | | | select (
-| | | | | | | | table("sys"."rift_perf_a") [ "rift_perf_a"."id" as "a"."id", "rift_perf_a"."k" as "a"."k", "rift_perf_a"."payload" as "a"."payload" ]
-| | | | | | | ) [ ("a"."id") < (int(17) "1000") ],
-| | | | | | | select (
-| | | | | | | | table("sys"."rift_perf_b") [ "rift_perf_b"."id" as "b"."id", "rift_perf_b"."k" as "b"."k" ]
-| | | | | | | ) [ ("b"."id") < (int(17) "1000") ]
-| | | | | | ) [ ("a"."k") != ("b"."k") ]
-| | | | | ) [ "a"."id", "a"."k", "a"."payload", "b"."id" ],
-| | | | | project (
+| | select (
+| | | left outer group join (
+| | | | project (
+| | | | | join (
 | | | | | | select (
-| | | | | | | table("sys"."rift_digit") [ "rift_digit"."d" ]
-| | | | | | ) [ ("rift_digit"."d") = (int(4) "1") ]
-| | | | | ) [ tinyint(1) "1" as "%1"."%1" ]
-| | | | ) [  ] [ boolean(1) "true" as "%2"."%2" ]
-| | | ) [ (("a"."k") >= (int(4) "0")) or ("%2"."%2") ]
-| | ) [ "a"."id" as "aid", "b"."id" as "bid", "a"."payload" as "p" ]
-| ) [ "aid", "bid", "p" ] [ "p", "bid" ]
+| | | | | | | table("sys"."rift_perf_a") [ "rift_perf_a"."id" as "a"."id", "rift_perf_a"."k" as "a"."k", "rift_perf_a"."payload" as "a"."payload" ]
+| | | | | | ) [ ("a"."id") < (int(17) "1000") ],
+| | | | | | select (
+| | | | | | | table("sys"."rift_perf_b") [ "rift_perf_b"."id" as "b"."id", "rift_perf_b"."k" as "b"."k" ]
+| | | | | | ) [ ("b"."id") < (int(17) "1000") ]
+| | | | | ) [ ("a"."k") != ("b"."k") ]
+| | | | ) [ "a"."id", "a"."k", "a"."payload", "b"."id" ],
+| | | | select (
+| | | | | table("sys"."rift_digit") [ "rift_digit"."d" ]
+| | | | ) [ ("rift_digit"."d") = (int(4) "1") ]
+| | | ) [  ] [ boolean(1) "true" as "%2"."%2" ]
+| | ) [ (("a"."k") >= (int(4) "0")) or ("%2"."%2") ]
+| ) [ "a"."id" as "aid", "b"."id" as "bid", "a"."payload" as "p" ] [ "p", "bid" ]
 ) [ bigint(63) "0" ]
-
 
 -- Equivalent query: also returns zero rows.
 -- This version is optimized to a constant empty input.
@@ -151,12 +146,13 @@ LIMIT 0
 ----
 top N (
 | project (
-| | project (
+| | join (
 | | | select (
-| | | |  [ int(17) NULL as "a"."id", varchar(7) NULL as "a"."payload", int(17) NULL as "b"."id" ]
-| | | ) [ boolean(1) "false" ]
-| | ) [ "a"."id" as "aid", "b"."id" as "bid", "a"."payload" as "p" ]
-| ) [ "aid", "bid", "p" ] [ "p", "bid" ]
+| | | | table("sys"."rift_perf_a") [ "rift_perf_a"."id" as "a"."id", "rift_perf_a"."k" as "a"."k", "rift_perf_a"."payload" as "a"."payload" ]
+| | | ) [ boolean(1) "false" ],
+| | | table("sys"."rift_perf_b") [ "rift_perf_b"."id" as "b"."id", "rift_perf_b"."k" as "b"."k" ]
+| | ) [ ("a"."k") != ("b"."k") ]
+| ) [ "a"."id" as "aid", "b"."id" as "bid", "a"."payload" as "p" ] [ "p", "bid" ]
 ) [ bigint(63) "0" ]
 
 statement ok
