@@ -575,7 +575,7 @@ COPYsplitlines(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/* TODO: handle skipping with jumping */
 	if (!r->error && !r->done && r->offset) {
 		lng skipped = COPYskiplines(r, p->wid);
-		r->offset -= skipped;
+		r->offset -= (BUN)skipped;
 		//r->linecount += skipped; ??
 	}
 
@@ -598,7 +598,7 @@ COPYsplitlines(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		r->linecount += line_count;
 		state.end = state.start + e;
 		r->bs->pos[p->wid] = e;
-		r->maxcount -= line_count;
+		r->maxcount -= (BUN)line_count;
 		if (r->maxcount == 0)
 			r->done = 1;
 	}
@@ -611,7 +611,7 @@ COPYsplitlines(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (r->best_effort) {
 		errors.rows = BATdescriptor(errors.rows_batid);
 		errors.rows->tseqbase = 0;
-		BATsetcount(errors.rows, line_count);
+		BATsetcount(errors.rows, (BUN)line_count);
 	}
 
 	if (r->bs->eof)
@@ -628,7 +628,7 @@ COPYsplitlines(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		bailout("copy.splitlines",  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	for (int i = 0; i < ncols; i++) {
-		BAT *b = COLnew(0, TYPE_int, line_count, TRANSIENT);
+		BAT *b = COLnew(0, TYPE_int, (BUN)line_count, TRANSIENT);
 		if (b == NULL)
 			bailout("copy.splitlines", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return_bats[i] = b;
@@ -652,7 +652,7 @@ end:
 				BAT *b = return_bats[i];
 				bat id = b->batCacheid;
 				if (msg == MAL_SUCCEED) {
-					BATsetcount(b, line_count);
+					BATsetcount(b, (BUN)line_count);
 					b->tkey = false;
 					b->tnil = false;
 					b->tnonil = false;
@@ -698,9 +698,9 @@ COPYnew(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg = MAL_SUCCEED;
 	bat *res = getArgReference_bat(stk, pci, 0);
 	stream *s = *(stream**)getArgReference(stk, pci, pci->retc);
-	BUN offset = *getArgReference_lng(stk, pci, pci->retc + 1);
-	BUN maxcount = *getArgReference_lng(stk, pci, pci->retc + 2);
-	BUN sz = *getArgReference_lng(stk, pci, pci->retc + 3);
+	BUN offset = (BUN)*getArgReference_lng(stk, pci, pci->retc + 1); /* why pass lng, if used as BUN ? */
+	BUN maxcount = (BUN)*getArgReference_lng(stk, pci, pci->retc + 2);
+	BUN sz = (BUN)*getArgReference_lng(stk, pci, pci->retc + 3);
 	str col_sep_str = *getArgReference_str(stk, pci, pci->retc + 4);
 	str line_sep_str = *getArgReference_str(stk, pci, pci->retc + 5);
 	str quote_str = *getArgReference_str(stk, pci, pci->retc + 6);

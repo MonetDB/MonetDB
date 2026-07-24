@@ -2053,7 +2053,7 @@ pqc_read_page_chunk( pqc_reader_t *r, pqc_creader_t *cr, void *output /*fixed si
 							*d++ = (ulng)nanoseconds + julian_day * 86400 * LL_CONSTANT(1000000);
 						}
 					} else {
-						memcpy(output, ((char*)cr->data)+pos, nrows*(r->pse->size/8));
+						memcpy(output, ((char*)cr->data)+pos, (size_t)(nrows*(r->pse->size/8)));
 						pos += (r->pse->size/8)*nrows;
 #ifdef WORDS_BIGENDIAN
 						if (nrows && (r->pse->type == inttype || r->pse->type == floattype)) {
@@ -2144,7 +2144,7 @@ pqc_read_chunk( pqc_reader_t *r, int wnr, void *output /*fixed sized atom storag
 			if (cr->bufsize < cr->cc->total_compressed_size) {
 				if (cr->bufsize)
 					_DELETE(cr->buffer);
-				cr->bufsize = cr->cc->total_compressed_size;
+				cr->bufsize = (size_t)cr->cc->total_compressed_size;
 				cr->buffer = NEW_ARRAY(char, cr->bufsize);
 			}
 
@@ -2152,14 +2152,14 @@ pqc_read_chunk( pqc_reader_t *r, int wnr, void *output /*fixed sized atom storag
 			assert (cr->cc->index_page_offset == 0); /* we currently don't handle parquet indices */
 			int64_t offset = 0;
 			if (cr->cc->dictionary_page_offset) { /* load dictionary */
-				if ((offset = pqc_read(cr->pq, cr->cc->dictionary_page_offset, cr->buffer, cr->cc->total_compressed_size)) < 0)
+				if ((offset = pqc_read(cr->pq, cr->cc->dictionary_page_offset, cr->buffer, (size_t)cr->cc->total_compressed_size)) < 0)
 					return -3;
 
 				assert(offset == (int64_t)cr->cc->dictionary_page_offset);
 				if ((pos = (int)pqc_read_dict(r, cr)) < 0)
 					return -4;
 			} else { /* read data page */
-				if ((offset = pqc_read(cr->pq, cr->cc->data_page_offset, cr->buffer, cr->cc->total_compressed_size)) < 0)
+				if ((offset = pqc_read(cr->pq, cr->cc->data_page_offset, cr->buffer, (size_t)cr->cc->total_compressed_size)) < 0)
 					return -3;
 				assert(offset == (int64_t)cr->cc->data_page_offset);
 			}

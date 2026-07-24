@@ -603,9 +603,9 @@ pqcmc_create(glob_t *glob, lng nrows)
 static str
 PARQUETread_large(BAT **R, pqc_creader *r, int colno, Pipeline *p, int wnr)
 {
-	ssize_t sz = FILE_READER_VECTORSIZE;
+	uint64_t sz = FILE_READER_VECTORSIZE;
 
-	if (r->nrows < sz)
+	if (r->nrows < (int64_t)sz)
 		sz = r->nrows;
 
 	if (!r->c) {
@@ -655,7 +655,7 @@ PARQUETread_large(BAT **R, pqc_creader *r, int colno, Pipeline *p, int wnr)
 			dict = 8;
 		}
 		/* prepare heap */
-		rb = COLnew2(0, localtype, sz, TRANSIENT, dict);
+		rb = COLnew2(0, localtype, (BUN)sz, TRANSIENT, dict);
 		if (!rb) {
 			throw(SQL, "parquet.read",  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
@@ -681,7 +681,7 @@ PARQUETread_large(BAT **R, pqc_creader *r, int colno, Pipeline *p, int wnr)
 		size_t offset = 0;
 		if (dict >= 4 && is_string)
 			offset = h->free;
-		ssize_t rsz = 0, tsz = 0;
+		uint64_t rsz = 0, tsz = 0;
 		if ((rsz = pqc_read_chunk(r->c[pse->ccnr], wnr, rb->theap->base, ((char*)h->base)+h->free, sz, &offset, &dict)) < 0) {
 			BBPreclaim(rb);
 			const char *err = pqc_get_error(r->c[pse->ccnr]);
@@ -708,7 +708,7 @@ PARQUETread_large(BAT **R, pqc_creader *r, int colno, Pipeline *p, int wnr)
 				if (rb->twidth < SIZEOF_VAR_T &&
 						(rb->twidth <= 2 ? _d - GDK_VAROFFSET : _d) >= ((size_t) 1 << (8 << rb->tshift))) {
 					/* doesn't fit in current heap, upgrade it */
-					if (GDKupgradevarheap(rb, _d, 0, tsz) != GDK_SUCCEED) {
+					if (GDKupgradevarheap(rb, _d, 0, (BUN)tsz) != GDK_SUCCEED) {
 						BBPreclaim(rb);
 						throw(SQL, "parquet.read",  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					}
@@ -738,11 +738,11 @@ PARQUETread_large(BAT **R, pqc_creader *r, int colno, Pipeline *p, int wnr)
 		}
 		sz = tsz;
 	} else { /* fixed sized */
-		rb = COLnew(0, localtype, sz, TRANSIENT);
+		rb = COLnew(0, localtype, (BUN)sz, TRANSIENT);
 		if (!rb) {
 			throw(SQL, "parquet.read",  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
-		ssize_t rsz = 0, tsz = 0;
+		uint64_t rsz = 0, tsz = 0;
 		if ((rsz = pqc_read_chunk(r->c[pse->ccnr], wnr, rb->theap->base, NULL, sz, NULL, NULL)) < 0) {
 			BBPreclaim(rb);
 			const char *err = pqc_get_error(r->c[pse->ccnr]);
@@ -768,7 +768,7 @@ PARQUETread_large(BAT **R, pqc_creader *r, int colno, Pipeline *p, int wnr)
 		sz = tsz;
 	}
 	if (sz) {
-		BATsetcount(rb, sz);
+		BATsetcount(rb, (BUN)sz);
 		BATnegateprops(rb);
 	}
 	if (!sz && r->firstcol == colno)

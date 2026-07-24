@@ -49,11 +49,11 @@ rel_getcount(mvc *sql, sql_rel *rel)
 		return 1; /* Global GROUP BY always returns 1 row. */
 	case op_munion:
 		if (rel->l) {
-			BUN cnt = 0;
+			lng cnt = 0;
 			list *l = rel->l;
 			for (node *n = l->h; n; n = n->next) {
-				BUN ncnt = rel_getcount(sql, n->data);
-				if (ncnt != BUN_NONE)
+				lng ncnt = rel_getcount(sql, n->data);
+				if ((BUN)ncnt != BUN_NONE)
 					cnt += ncnt;
 			}
 			return cnt;

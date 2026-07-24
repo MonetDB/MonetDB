@@ -248,7 +248,7 @@ pqc_open( pqc_file **PQ, char *fn)
 		pqc_destroy(pq);
 		return -1;
 	}
-	pq->sz = stb.st_size;
+	pq->sz = (size_t)stb.st_size;
 	pq->buffer = NULL;
 	pq->bsz = 0;
 
