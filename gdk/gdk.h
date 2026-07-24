@@ -23,6 +23,23 @@
 
 #include "monetdb_config.h"
 
+/* standard C-99 include files */
+#include <assert.h>
+#include <ctype.h>
+#include <errno.h>
+#include <float.h>
+#include <inttypes.h>
+#include <limits.h>
+#include <setjmp.h>
+#include <stdarg.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
+
 /* standard includes upon which all configure tests depend */
 #ifdef HAVE_SYS_STAT_H
 # include <sys/stat.h>
@@ -39,6 +56,10 @@
 # include <dirent.h>
 #endif
 
+#include "stream.h"
+#include "mstring.h"
+#include "matomic.h"
+
 #ifndef PATH_MAX
 #define PATH_MAX	1024
 #endif
@@ -51,6 +72,20 @@
 #endif
 #else
 #define gdk_export extern
+#endif
+
+/* unreachable code */
+#ifdef __has_builtin
+#if __has_builtin(__builtin_unreachable)
+#define MT_UNREACHABLE()	do { assert(0); __builtin_unreachable(); } while (0)
+#endif
+#endif
+#ifndef MT_UNREACHABLE
+#if defined(_MSC_VER)
+#define MT_UNREACHABLE()	do { assert(0); __assume(0); } while (0)
+#else
+#define MT_UNREACHABLE()	do { assert(0); GDKfatal("Unreachable C code path reached"); } while (0)
+#endif
 #endif
 
 /* Only ever compare with GDK_SUCCEED, never with GDK_FAIL, and do not
@@ -81,10 +116,9 @@ typedef struct allocator_state {
 	allocator *ma;
 } allocator_state;
 
+#include "gdk_tracer.h"
 #include "gdk_system.h"
 #include "gdk_posix.h"
-#include "stream.h"
-#include "mstring.h"
 
 gdk_export _Noreturn void GDKfatal(_In_z_ _Printf_format_string_ const char *format, ...)
 	__attribute__((__format__(__printf__, 1, 2)));
@@ -234,6 +268,14 @@ gdk_export size_t blobsize(size_t nitems) __attribute__((__const__));
 /* constants, printf format, scanf format: not supported for 128 bit
  * integers */
 #endif
+
+/* The types `oid`, `BUN` and `var_t` are all defined as `size_t`, but
+ * they serve different purposes.  `oid` is the *logical* row number of
+ * a BAT; `BUN` is the *physical* row number of a BAT and is therefore
+ * also used for the total number of rows and the potential capacity of
+ * a BAT; `var_t` is an *offset* into the var-size heap (vheap).  The
+ * difference between the *logical* and *physical* row number is the
+ * value of the head sequence base (`hseqbase`) of the BAT. */
 
 typedef oid var_t;		/* type used for heap index of var-sized BAT */
 #define SIZEOF_VAR_T	SIZEOF_OID
@@ -1225,10 +1267,6 @@ BATnegateprops(BAT *b)
 #define GDKMAXERRLEN	5120
 #define GDKERROR	"!ERROR: "
 #define GDKFATAL	"!FATAL: "
-
-/* Data Distilleries uses ICU for internationalization of some MonetDB error messages */
-
-#include "gdk_tracer.h"
 
 gdk_export gdk_return GDKtracer_fill_comp_info(BAT *id, BAT *component, BAT *log_level);
 
