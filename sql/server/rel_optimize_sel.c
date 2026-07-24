@@ -2503,6 +2503,24 @@ rel_join2semijoin(visitor *v, sql_rel *rel)
 			}
 		}
 	}
+	/* simplify group join returning only columns of left into semijoin */
+	if (is_innerjoin(rel->op) && !list_empty(rel->attr)) {
+		int nr = 0;
+		for(node *n = rel->attr->h; n; n = n->next) {
+			sql_exp *e = n->data;
+
+			if (is_aggr(e->type))
+				break;
+			if (exp_is_atom(e))
+				break;
+			if (e->type == e_column && rel_find_nid(rel->l, e->nid))
+				nr++;
+		}
+		if (nr == list_length(rel->attr)) {
+			rel->op = op_semi;
+			rel->attr = NULL;
+		}
+	}
 	return rel;
 }
 
@@ -2585,7 +2603,7 @@ rel_optimize_joins_(visitor *v, sql_rel *rel)
 	uint8_t cycle = *(uint8_t*) v->data;
 	rel = rel_push_join_exps_down(v, rel);
 	rel = rel_out2inner(v, rel);
-	rel = rel_join2semijoin(v, rel);
+
 	if (cycle > 0)
 		rel = rel_push_join_down_outer(v, rel);
 	return rel;
@@ -2607,6 +2625,30 @@ bind_optimize_joins(visitor *v, global_props *gp)
 	return gp->opt_level == 1 && (gp->cnt[op_join] || gp->cnt[op_left] || gp->cnt[op_right]
 		   || gp->cnt[op_full] || gp->cnt[op_semi] || gp->cnt[op_anti]) && (flag & optimize_joins) ? rel_optimize_joins : NULL;
 }
+
+static sql_rel *
+rel_joins_(visitor *v, sql_rel *rel)
+{
+	rel = rel_join2semijoin(v, rel);
+	return rel;
+}
+
+static sql_rel *
+rel_joins(visitor *v, global_props *gp, sql_rel *rel)
+{
+	v->data = &gp->opt_cycle;
+	rel = rel_visitor_topdown(v, rel, &rel_joins_);
+	v->data = gp;
+	return rel;
+}
+
+run_optimizer
+bind_joins(visitor *v, global_props *gp)
+{
+	(void)v;
+	return (gp->cnt[op_join] || gp->cnt[op_left] || gp->cnt[op_right] || gp->cnt[op_full] || gp->cnt[op_semi] || gp->cnt[op_anti]) ? rel_joins : NULL;
+}
+
 
 
 static void
@@ -3050,6 +3092,13 @@ order_joins_bushy( visitor *v, list *rels, list *exps)
 {
 	unsigned int rsingle;
 
+	/* split joins into n_m joins and filters (ie others with 1 side unique's (pkey/ukey etc) */
+	//for (node *n = exps->h; n; n = n->next) {
+		//sql_exp *je = n->data;
+		//if (find_prop(je->p, PROP_JOINIDX)) {
+			//printf("join\n");
+		//}
+	//}
 	/* loop of finding join pairs */
 	allocator *ta = MT_thread_getallocator();
 	int nr_exps = list_length(exps), nr_rels = list_length(rels), ci = 1;

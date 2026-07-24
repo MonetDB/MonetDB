@@ -1014,40 +1014,7 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 	if (lang > FUNC_LANG_SQL && has_generic_decimal_result(restype))
 		return sql_error(sql, 02, SQLSTATE(42000) "CREATE %s: the function '%s' returns a generic DECIMAL type, UDFs require precision and scale", F, fname);
 	if (body && LANG_EXT(lang)) {
-		const char *lang_body = body->h->data.sval, *mod = "unknown", *slang = "Unknown", *imp = "Unknown";
-		switch (lang) {
-		default:
-			return sql_error(sql, 01, SQLSTATE(42000) "Function language without a MAL backend");
-		}
-		switch(type) {
-		case F_AGGR:
-			imp = "eval_aggr";
-			break;
-		case F_LOADER:
-			imp = "eval_loader";
-			break;
-		default: /* for every other function type at the moment */
-			imp = "eval";
-		}
-
-		if (type == F_LOADER)
-			return sql_error(sql, 01, SQLSTATE(42000) "CREATE %s: No longer supported", F);
-
-		sql->params = NULL;
-		if (create) {
-			bit side_effect = (list_empty(restype) || (!vararg && list_empty(l))); /* TODO make this more precise? */
-			switch (mvc_create_func(&f, sql, sql->sa, s, fname, l, restype, type, lang, mod, imp, lang_body, (type == F_LOADER)?TRUE:FALSE, vararg, FALSE, side_effect, order_required, opt_order)) {
-				case -1:
-					return sql_error(sql, 01, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-				case -2:
-				case -3:
-					return sql_error(sql, 01, SQLSTATE(42000) "CREATE %s: transaction conflict detected", F);
-				default:
-					break;
-			}
-		} else if (!sf) {
-			return sql_error(sql, 01, SQLSTATE(42000) "CREATE %s: %s function %s.%s not bound", F, slang, s->base.name, fname);
-		}
+		return sql_error(sql, 01, SQLSTATE(42000) "Function language without a MAL backend");
 	} else if (body) { /* SQL implementation */
 		sql_arg *ra = (restype && type != F_UNION)?restype->h->data:NULL;
 		list *b = NULL;

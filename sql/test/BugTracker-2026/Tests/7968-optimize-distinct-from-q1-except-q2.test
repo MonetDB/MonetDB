@@ -1,0 +1,102 @@
+statement ok
+CREATE TABLE digits(d INTEGER PRIMARY KEY)
+
+statement ok
+INSERT INTO digits VALUES(0),(1),(2),(3),(4),(5),(6),(7),(8),(9)
+
+statement ok
+CREATE TABLE lhs(id INTEGER PRIMARY KEY,v INTEGER)
+
+statement ok
+CREATE TABLE rhs(id INTEGER PRIMARY KEY,v INTEGER)
+
+statement ok
+INSERT INTO lhs SELECT n,CASE WHEN MOD(n,97)=0 THEN NULL ELSE MOD(n,1000) END FROM
+ (SELECT a.d+b.d*10+c.d*100+d.d*1000+e.d*10000+1 n
+  FROM digits a,digits b,digits c,digits d,digits e) x
+
+statement ok
+INSERT INTO rhs SELECT n,CASE WHEN MOD(n,89)=0 THEN NULL ELSE MOD(n,700)+300 END FROM
+ (SELECT a.d+b.d*10+c.d*100+d.d*1000+e.d*10000+1 n
+  FROM digits a,digits b,digits c,digits d,digits e) x
+
+statement ok
+ANALYZE sys.lhs
+
+statement ok
+ANALYZE sys.rhs
+
+query I nosort
+SELECT COUNT(*) as c FROM lhs
+----
+100000
+
+query I nosort
+SELECT COUNT(*) as c FROM rhs
+----
+100000
+
+query I nosort
+SELECT COUNT(*) as c FROM lhs
+ WHERE lhs.v NOT IN (SELECT rhs.v FROM rhs)
+----
+0
+
+query I nosort
+SELECT COUNT(*) as c FROM rhs
+ WHERE rhs.v NOT IN (SELECT lhs.v FROM lhs)
+----
+0
+
+query T nosort
+EXPLAIN SELECT DISTINCT s.v FROM ((SELECT v FROM lhs) EXCEPT (SELECT v FROM rhs)) s
+----
+group by (
+| distinct except (
+| | project (
+| | | table("sys"."lhs") [ "lhs"."v" ]
+| | ) [ "lhs"."v" ],
+| | project (
+| | | table("sys"."rhs") [ "rhs"."v" ]
+| | ) [ "rhs"."v" ]
+| ) [ "lhs"."v" as "s"."v" ]
+) [ "s"."v" ] [ "s"."v" ]
+
+query T nosort
+EXPLAIN SELECT          s.v FROM ((SELECT v FROM lhs) EXCEPT (SELECT v FROM rhs)) s
+----
+project (
+| distinct except (
+| | project (
+| | | table("sys"."lhs") [ "lhs"."v" ]
+| | ) [ "lhs"."v" ],
+| | project (
+| | | table("sys"."rhs") [ "rhs"."v" ]
+| | ) [ "rhs"."v" ]
+| ) [ "lhs"."v" as "s"."v" ]
+) [ "s"."v" ]
+
+query I rowsort
+SELECT DISTINCT s.v FROM ((SELECT v FROM lhs) EXCEPT (SELECT v FROM rhs)) s
+----
+300 values hashing to ccdb38b1d52093ec2ce15a6e201f10ff
+
+query I rowsort
+SELECT          s.v FROM ((SELECT v FROM lhs) EXCEPT (SELECT v FROM rhs)) s
+----
+300 values hashing to ccdb38b1d52093ec2ce15a6e201f10ff
+
+query I rowsort
+((SELECT v FROM lhs) EXCEPT (SELECT v FROM rhs))
+----
+300 values hashing to ccdb38b1d52093ec2ce15a6e201f10ff
+
+statement ok
+DROP TABLE IF EXISTS rhs
+
+statement ok
+DROP TABLE IF EXISTS lhs
+
+statement ok
+DROP TABLE IF EXISTS digits
+

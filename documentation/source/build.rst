@@ -114,7 +114,7 @@ Start cmd.exe in "Run as administrator" mode and run commands::
   vcpkg integrate install
   # needed for 64 bits (with the available python being 64 bit this is needed)
   set VCPKG_DEFAULT_TRIPLET=x64-windows
-  vcpkg install libiconv bzip2 geos libxml2 pcre2 zlib getopt openssl
+  vcpkg install libiconv bzip2 geos libxml2 pcre2 zlib getopt openssl pkgconf xxhash
 
 To compile MonetDB (as normal user)::
 

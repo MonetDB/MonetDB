@@ -119,6 +119,7 @@ BuildRequires: pkgconfig(libpcre2-8)
 %endif
 BuildRequires: pkgconfig(zlib)
 BuildRequires: pkgconfig(liblz4) >= 1.8
+BuildRequires: pkgconfig(libxxhash)
 # optional packages:
 # BuildRequires: pkgconfig(cmocka)      # -DWITH_CMOCKA=ON
 # BuildRequires: pkgconfig(gdal)        # -DSHP=ON

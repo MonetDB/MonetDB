@@ -70,7 +70,7 @@ strHeap(Heap *d, size_t cap)
 	size_t size;
 
 	cap = MAX(cap, BATTINY);
-	size = GDK_STRHASHTABLE * sizeof(stridx_t) + MIN(GDK_ELIMLIMIT, cap * GDK_VARALIGN);
+	size = GDK_STRHASHSIZE + MIN(GDK_ELIMLIMIT, cap * GDK_VARALIGN);
 	return HEAPalloc(d, size, 1);
 }
 
@@ -78,7 +78,7 @@ strHeap(Heap *d, size_t cap)
 void
 strCleanHash(Heap *h, bool rebuild)
 {
-	stridx_t newhash[GDK_STRHASHTABLE];
+	var_t newhash[GDK_STRHASHTABLE];
 	size_t pad, pos;
 	BUN off, strhash;
 	const char *s;
@@ -86,8 +86,8 @@ strCleanHash(Heap *h, bool rebuild)
 	(void) rebuild;
 	if (!h->cleanhash)
 		return;
-	if (h->size < GDK_STRHASHTABLE * sizeof(stridx_t) &&
-	    HEAPextend(h, GDK_STRHASHTABLE * sizeof(stridx_t) + BATTINY * GDK_VARALIGN, true) != GDK_SUCCEED) {
+	if (h->size < GDK_STRHASHSIZE &&
+	    HEAPextend(h, GDK_STRHASHSIZE + BATTINY * GDK_VARALIGN, true) != GDK_SUCCEED) {
 		GDKclrerr();
 		if (h->size > 0)
 			memset(h->base, 0, h->size);
@@ -108,7 +108,7 @@ strCleanHash(Heap *h, bool rebuild)
 	pos = GDK_STRHASHSIZE;
 	while (pos < h->free) {
 		pad = GDK_VARALIGN - (pos & (GDK_VARALIGN - 1));
-		if (pad < sizeof(stridx_t))
+		if (pad < sizeof(var_t))
 			pad += GDK_VARALIGN;
 		pos += pad;
 		if (pos >= GDK_ELIMLIMIT)
@@ -116,7 +116,12 @@ strCleanHash(Heap *h, bool rebuild)
 		s = h->base + pos;
 		strhash = strHash(s);
 		off = strhash & GDK_STRHASHMASK;
-		newhash[off] = (stridx_t) (pos - sizeof(stridx_t));
+		var_t *p = (var_t *) (h->base + pos - sizeof(var_t));
+		if (*p != newhash[off]) {
+			*p = newhash[off];
+			h->dirty = true;
+		}
+		newhash[off] = (var_t) (pos - sizeof(var_t));
 		pos += strlen(s) + 1;
 	}
 	/* only set dirty flag if the hash table actually changed */
@@ -133,7 +138,7 @@ strCleanHash(Heap *h, bool rebuild)
 		pos = GDK_STRHASHSIZE;
 		while (pos < h->free) {
 			pad = GDK_VARALIGN - (pos & (GDK_VARALIGN - 1));
-			if (pad < sizeof(stridx_t))
+			if (pad < sizeof(var_t))
 				pad += GDK_VARALIGN;
 			pos += pad;
 			s = h->base + pos;
@@ -157,7 +162,7 @@ countStrings(const Heap *h)
 	while (pos < h->free) {
 		pad = GDK_VARALIGN - (pos & (GDK_VARALIGN - 1));
 		if (pos + pad < GDK_ELIMLIMIT) {
-			if (pad < sizeof(stridx_t))
+			if (pad < sizeof(var_t))
 				pad += GDK_VARALIGN;
 		} else if (pos >= GDK_ELIMLIMIT)
 			pad = 0;
@@ -178,7 +183,7 @@ countStrings(const Heap *h)
 var_t
 strLocate(Heap *h, const char *v)
 {
-	stridx_t *ref, *next;
+	var_t *ref, *next;
 
 	/* search hash-table, if double-elimination is still in place */
 	BUN off;
@@ -194,10 +199,10 @@ strLocate(Heap *h, const char *v)
 	assert(GDK_ELIMBASE(h->free) == 0);
 
 	/* search the linked list */
-	for (ref = ((stridx_t *) h->base) + off; *ref; ref = next) {
-		next = (stridx_t *) (h->base + *ref);
+	for (ref = ((var_t *) h->base) + off; *ref; ref = next) {
+		next = (var_t *) (h->base + *ref);
 		if (strcmp(v, (char *) (next + 1)) == 0)
-			return (var_t) ((sizeof(stridx_t) + *ref));	/* found */
+			return (var_t) ((sizeof(var_t) + *ref));	/* found */
 	}
 	return (var_t) -2;
 }
@@ -209,17 +214,17 @@ strPut(BAT *b, var_t *dst, const void *V)
 	Heap *h = b->tvheap;
 	size_t pad;
 	size_t pos, len = strlen(v) + 1;
-	stridx_t *bucket;
+	var_t *bucket;
 	BUN off;
 
 	if (h->free == 0) {
-		if (h->size < GDK_STRHASHTABLE * sizeof(stridx_t) + BATTINY * GDK_VARALIGN) {
-			if (HEAPgrow(&b->tvheap, GDK_STRHASHTABLE * sizeof(stridx_t) + BATTINY * GDK_VARALIGN, true) != GDK_SUCCEED) {
+		if (h->size < GDK_STRHASHSIZE + BATTINY * GDK_VARALIGN) {
+			if (HEAPgrow(&b->tvheap, GDK_STRHASHSIZE + BATTINY * GDK_VARALIGN, true) != GDK_SUCCEED) {
 				return (var_t) -1;
 			}
 			h = b->tvheap;
 		}
-		h->free = GDK_STRHASHTABLE * sizeof(stridx_t);
+		h->free = GDK_STRHASHSIZE;
 #ifdef NDEBUG
 		memset(h->base, 0, h->free);
 #else
@@ -232,7 +237,7 @@ strPut(BAT *b, var_t *dst, const void *V)
 
 	off = strHash(v);
 	off &= GDK_STRHASHMASK;
-	bucket = ((stridx_t *) h->base) + off;
+	bucket = ((var_t *) h->base) + off;
 
 	if (*bucket) {
 		assert(*bucket < h->free);
@@ -240,16 +245,16 @@ strPut(BAT *b, var_t *dst, const void *V)
 		if (*bucket < GDK_ELIMLIMIT) {
 			/* small string heap (<64KiB) -- fully double
 			 * eliminated: search the linked list */
-			const stridx_t *ref = bucket;
+			const var_t *ref = bucket;
 
 			do {
-				pos = *ref + sizeof(stridx_t);
+				pos = *ref + sizeof(var_t);
 				assert(pos < h->free);
 				if (strcmp(v, h->base + pos) == 0) {
 					/* found */
 					return *dst = (var_t) pos;
 				}
-				ref = (stridx_t *) (h->base + *ref);
+				ref = (var_t *) (h->base + *ref);
 			} while (*ref);
 		} else {
 			/* large string heap (>=64KiB) -- there is no
@@ -276,7 +281,7 @@ strPut(BAT *b, var_t *dst, const void *V)
 
 	pad = GDK_VARALIGN - (h->free & (GDK_VARALIGN - 1));
 	if (GDK_ELIMBASE(h->free + pad) == 0) {	/* i.e. h->free+pad < GDK_ELIMLIMIT */
-		if (pad < sizeof(stridx_t)) {
+		if (pad < sizeof(var_t)) {
 			/* make room for hash link */
 			pad += GDK_VARALIGN;
 		}
@@ -313,7 +318,7 @@ strPut(BAT *b, var_t *dst, const void *V)
 		h = b->tvheap;
 
 		/* make bucket point into the new heap */
-		bucket = ((stridx_t *) h->base) + off;
+		bucket = ((var_t *) h->base) + off;
 	}
 
 	/* insert string */
@@ -326,12 +331,12 @@ strPut(BAT *b, var_t *dst, const void *V)
 
 	/* maintain hash table */
 	if (GDK_ELIMBASE(pos) == 0) {	/* small string heap: link the next pointer */
-		/* the stridx_t next pointer directly precedes the
+		/* the var_t next pointer directly precedes the
 		 * string */
-		pos -= sizeof(stridx_t);
-		*(stridx_t *) (h->base + pos) = *bucket;
+		pos -= sizeof(var_t);
+		*(var_t *) (h->base + pos) = *bucket;
 	}
-	*bucket = (stridx_t) pos;	/* set bucket to the new string */
+	*bucket = (var_t) pos;	/* set bucket to the new string */
 	h->dirty = true;
 
 	if (b->tascii && !strNil(v)) {
@@ -9866,13 +9871,13 @@ fstrPut(BAT *b, var_t *dst, const void *V)
 	size_t pos, len = strlen(v) + 1;
 
 	if (h->free == 0) {
-		if (h->size < GDK_STRHASHTABLE * sizeof(stridx_t) + BATTINY * GDK_VARALIGN) {
-			if (HEAPgrow(&b->tvheap, GDK_STRHASHTABLE * sizeof(stridx_t) + BATTINY * GDK_VARALIGN, true) != GDK_SUCCEED) {
+		if (h->size < GDK_STRHASHTABLE * sizeof(var_t) + BATTINY * GDK_VARALIGN) {
+			if (HEAPgrow(&b->tvheap, GDK_STRHASHTABLE * sizeof(var_t) + BATTINY * GDK_VARALIGN, true) != GDK_SUCCEED) {
 				return (var_t) -1;
 			}
 			h = b->tvheap;
 		}
-		h->free = GDK_STRHASHTABLE * sizeof(stridx_t);
+		h->free = GDK_STRHASHTABLE * sizeof(var_t);
 		memset(h->base, 0, h->free);
 		h->dirty = true;
 		b->tascii = true;

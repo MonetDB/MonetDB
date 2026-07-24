@@ -65,7 +65,7 @@ renderTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx, int flg, char *buf,
 	char *bufend = buf;
 	int nameused = 0;
 	str tpe;
-	int showtype = 0, closequote = 0;
+	bool showtype = false, closequote = false;
 	int varid = getArg(p, idx);
 
 	// show the name when required or is used
@@ -105,7 +105,7 @@ renderTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx, int flg, char *buf,
 			if (!isaBatType(getVarType(mb, varid))
 				&& getBatType(getVarType(mb, varid)) >= TYPE_date
 				&& getBatType(getVarType(mb, varid)) != TYPE_str) {
-				closequote = 1;
+				closequote = true;
 				bufend = stpcpy(bufend, "\"");
 			}
 			size_t cv_len = strlen(cv);
@@ -123,7 +123,7 @@ renderTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx, int flg, char *buf,
 			if (closequote) {
 				bufend = stpcpy(bufend, "\"");
 			}
-			showtype = showtype || closequote > TYPE_str ||
+			showtype = showtype ||
 				((isVarTypedef(mb, varid) ||
 				  (flg & (LIST_MAL_REMOTE | LIST_MAL_TYPE))) && isVarConstant(mb, varid)) ||
 				(isaBatType(getVarType(mb, varid)) && idx < p->retc);

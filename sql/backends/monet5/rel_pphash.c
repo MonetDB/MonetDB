@@ -319,6 +319,7 @@ rel2bin_oahash_build(backend *be, sql_rel *rel, list *refs)
 	if (!sub) return NULL;
 
 	stmt *pp = get_pipeline(be);
+	assert(pp);
 	/* BUILD HT */
 	list *l = sa_list(be->mvc->sa);
 	stmt *prnt = NULL;
