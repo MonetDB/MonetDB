@@ -1915,22 +1915,26 @@ def RunTest(env, TST, COND, oktests, length, pSrvr, total_tests, options, enviro
                     break
             elif cond.startswith('THREADS<='):
                 if (int(env['TST_THREADS']) <= int(cond[9:])) == negate:
-                    reason = 'as number of threads is wrong'
+                    reason = 'as number of threads is too' \
+                        f' {"small" if negate else "large"}'
                     elem = SkipTest(env, TST, EXT, reason, length, TSTDIR, TSTTRGDIR, TSTSRCDIR)
                     break
             elif cond.startswith('THREADS>='):
                 if (int(env['TST_THREADS']) >= int(cond[9:])) == negate:
-                    reason = 'as number of threads is wrong'
+                    reason = 'as number of threads is too' \
+                        f' {"large" if negate else "small"}'
                     elem = SkipTest(env, TST, EXT, reason, length, TSTDIR, TSTTRGDIR, TSTSRCDIR)
                     break
             elif cond.startswith('VMSIZE>='):
                 if (int(env['TST_VMSIZE']) >= int(cond[8:])) == negate:
-                    reason = 'as virtual memory size is wrong'
+                    reason = 'as virtual memory size is too' \
+                        f' {"large" if negate else "small"}'
                     elem = SkipTest(env, TST, EXT, reason, length, TSTDIR, TSTTRGDIR, TSTSRCDIR)
                     break
             elif cond.startswith('VMSIZE<='):
                 if (int(env['TST_VMSIZE']) <= int(cond[8:])) == negate:
-                    reason = 'as virtual memory size is wrong'
+                    reason = 'as virtual memory size is too' \
+                        f' {"small" if negate else "large"}'
                     elem = SkipTest(env, TST, EXT, reason, length, TSTDIR, TSTTRGDIR, TSTSRCDIR)
                     break
             elif cond.startswith('USER='):

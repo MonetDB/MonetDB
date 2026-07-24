@@ -1,0 +1,68 @@
+statement ok
+CREATE TABLE outer_distinct_union_t (
+  a INT
+)
+
+statement ok
+INSERT INTO outer_distinct_union_t
+SELECT i
+FROM generate_series(1, 1000) AS g(i)
+
+-- Original query.
+-- UNION already removes duplicates.
+query T nosort
+EXPLAIN
+SELECT a
+FROM outer_distinct_union_t
+WHERE a <= 800
+UNION
+SELECT a
+FROM outer_distinct_union_t
+WHERE a >= 200
+----
+distinct munion (
+| project (
+| | select (
+| | | table("sys"."outer_distinct_union_t") [ "outer_distinct_union_t"."a" ]
+| | ) [ ("outer_distinct_union_t"."a") <= (int(31) "800") ]
+| ) [ "outer_distinct_union_t"."a" ],
+| project (
+| | select (
+| | | table("sys"."outer_distinct_union_t") [ "outer_distinct_union_t"."a" ]
+| | ) [ ("outer_distinct_union_t"."a") >= (int(31) "200") ]
+| ) [ "outer_distinct_union_t"."a" ]
+) [ "outer_distinct_union_t"."a" ]
+
+-- Mutated query.
+-- The outer DISTINCT is redundant.
+query T nosort
+EXPLAIN
+SELECT DISTINCT *
+FROM (
+  SELECT a
+  FROM outer_distinct_union_t
+  WHERE a <= 800
+  UNION
+  SELECT a
+  FROM outer_distinct_union_t
+  WHERE a >= 200
+) AS u
+----
+group by (
+| distinct munion (
+| | project (
+| | | select (
+| | | | table("sys"."outer_distinct_union_t") [ "outer_distinct_union_t"."a" ]
+| | | ) [ ("outer_distinct_union_t"."a") <= (int(31) "800") ]
+| | ) [ "outer_distinct_union_t"."a" ],
+| | project (
+| | | select (
+| | | | table("sys"."outer_distinct_union_t") [ "outer_distinct_union_t"."a" ]
+| | | ) [ ("outer_distinct_union_t"."a") >= (int(31) "200") ]
+| | ) [ "outer_distinct_union_t"."a" ]
+| ) [ "outer_distinct_union_t"."a" as "u"."a" ]
+) [ "u"."a" ] [ "u"."a" ]
+
+statement ok
+DROP TABLE IF EXISTS outer_distinct_union_t
+
