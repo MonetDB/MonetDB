@@ -607,7 +607,8 @@ const sql_optimizer post_sql_optimizers[] = {
 	{26, "remote_func", bind_remote_func},
 	{27, "get_statistics", bind_get_statistics}, /* gather statistics */
 	{28, "join_order2", bind_join_order2}, /* run join order one more time with statistics */
-	{29, "final_optimization_loop", bind_final_optimization_loop}, /* run select and group by order with statistics gathered  */
+	{29, "joins", bind_joins},	/* run joins optimizer (rewriting joins into semi's etc after ordering joins */
+	{23, "final_optimization_loop", bind_final_optimization_loop}, /* run select and group by order with statistics gathered  */
 	{ 0, NULL, NULL}
 	/* If an optimizer is going to be added, don't forget to update NSQLREWRITERS macro */
 };

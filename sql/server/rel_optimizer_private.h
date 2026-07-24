@@ -114,6 +114,7 @@ extern run_optimizer bind_final_optimization_loop(visitor *v, global_props *gp) 
 extern run_optimizer bind_rewrite_remote(visitor *v, global_props *gp) __attribute__((__visibility__("hidden")));
 extern run_optimizer bind_rewrite_replica(visitor *v, global_props *gp) __attribute__((__visibility__("hidden")));
 extern run_optimizer bind_remote_func(visitor *v, global_props *gp) __attribute__((__visibility__("hidden")));
+extern run_optimizer bind_joins(visitor *v, global_props *gp) __attribute__((__visibility__("hidden")));
 
 /* these rewriters are shared by multiple optimizers */
 extern sql_rel *rel_split_project_(visitor *v, sql_rel *rel, int top) __attribute__((__visibility__("hidden")));
