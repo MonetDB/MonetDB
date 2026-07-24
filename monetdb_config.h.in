@@ -19,7 +19,8 @@
 #error Versions below Visual Studio 2015 are no longer supported
 #endif
 
-/* Prevent pollution through excessive inclusion of include files by Windows.h. */
+/* Prevent pollution through excessive inclusion of include files by
+ * Windows.h. */
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN 1
 #endif
