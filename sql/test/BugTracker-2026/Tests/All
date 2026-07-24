@@ -147,3 +147,11 @@ KNOWNFAIL?7957-tail_type-crash
 7959-double-function-destroy
 7960-isLikeOp-crash
 KNOWNFAIL?7961-list_empty-crash
+KNOWNFAIL?7963-having-sum-or-exists-or-sum-bug
+7964-optimize-limit-0-queries
+KNOWNFAIL?7965-select-1-limit-0-bug
+7966-optimize-select-distinct-from-union-queries
+7967-optimize-in-select-distinct-queries
+7968-optimize-distinct-from-q1-except-q2
+7969-optimize-distinct-from-q1-intersect-q2
+7970-optimize-where-predicate

@@ -1,0 +1,166 @@
+statement ok
+CREATE TABLE rift_digit (
+  d INT
+)
+
+statement ok
+INSERT INTO rift_digit VALUES
+  (0), (1), (2), (3), (4),
+  (5), (6), (7), (8), (9)
+
+statement ok
+CREATE TABLE rift_perf_a AS
+SELECT
+  d1.d * 1000 + d2.d * 100 + d3.d * 10 + d4.d AS id,
+  d1.d AS k,
+  'payload' AS payload
+FROM rift_digit AS d1,
+     rift_digit AS d2,
+     rift_digit AS d3,
+     rift_digit AS d4
+WITH DATA
+
+statement ok
+CREATE TABLE rift_perf_b AS
+SELECT
+  d1.d * 1000 + d2.d * 100 + d3.d * 10 + d4.d AS id,
+  d4.d AS k,
+  'payload' AS payload
+FROM rift_digit AS d1,
+     rift_digit AS d2,
+     rift_digit AS d3,
+     rift_digit AS d4
+WITH DATA
+
+query I nosort
+SELECT COUNT(*) FROM rift_perf_a
+----
+10000
+
+query I nosort
+SELECT COUNT(*) FROM rift_perf_b
+----
+10000
+
+-- Original query: returns zero rows because of LIMIT 0.
+-- In my test this query still kept a join plan.
+query IIT nosort
+SELECT
+  a.id AS aid,
+  b.id AS bid,
+  a.payload AS p
+FROM rift_perf_a AS a
+JOIN rift_perf_b AS b
+  ON a.k <> b.k
+WHERE a.id < 1000
+  AND b.id < 1000
+  AND (
+    a.k >= 0
+    OR EXISTS(SELECT 1 FROM rift_digit WHERE d = 1)
+  )
+ORDER BY a.payload, b.id
+LIMIT 0
+----
+
+-- show explain plan
+query T nosort
+EXPLAIN
+SELECT
+  a.id AS aid,
+  b.id AS bid,
+  a.payload AS p
+FROM rift_perf_a AS a
+JOIN rift_perf_b AS b
+  ON a.k <> b.k
+WHERE a.id < 1000
+  AND b.id < 1000
+  AND (
+    a.k >= 0
+    OR EXISTS(SELECT 1 FROM rift_digit WHERE d = 1)
+  )
+ORDER BY a.payload, b.id
+LIMIT 0
+----
+top N (
+| project (
+| | select (
+| | | left outer group join (
+| | | | project (
+| | | | | join (
+| | | | | | select (
+| | | | | | | table("sys"."rift_perf_a") [ "rift_perf_a"."id" as "a"."id", "rift_perf_a"."k" as "a"."k", "rift_perf_a"."payload" as "a"."payload" ]
+| | | | | | ) [ ("a"."id") < (int(17) "1000") ],
+| | | | | | select (
+| | | | | | | table("sys"."rift_perf_b") [ "rift_perf_b"."id" as "b"."id", "rift_perf_b"."k" as "b"."k" ]
+| | | | | | ) [ ("b"."id") < (int(17) "1000") ]
+| | | | | ) [ ("a"."k") != ("b"."k") ]
+| | | | ) [ "a"."id", "a"."k", "a"."payload", "b"."id" ],
+| | | | select (
+| | | | | table("sys"."rift_digit") [ "rift_digit"."d" ]
+| | | | ) [ ("rift_digit"."d") = (int(4) "1") ]
+| | | ) [  ] [ boolean(1) "true" as "%2"."%2" ]
+| | ) [ (("a"."k") >= (int(4) "0")) or ("%2"."%2") ]
+| ) [ "a"."id" as "aid", "b"."id" as "bid", "a"."payload" as "p" ] [ "p", "bid" ]
+) [ bigint(63) "0" ]
+
+-- Equivalent query: also returns zero rows.
+-- This version is optimized to a constant empty input.
+query IIT nosort
+SELECT
+  a.id AS aid,
+  b.id AS bid,
+  a.payload AS p
+FROM rift_perf_a AS a
+JOIN rift_perf_b AS b
+  ON a.k <> b.k
+WHERE a.id < 1000
+  AND b.id < 1000
+  AND (
+    a.k >= 0
+    OR EXISTS(SELECT 1 FROM rift_digit WHERE d = 1)
+  )
+  AND FALSE
+ORDER BY a.payload, b.id
+LIMIT 0
+----
+
+-- show explain plan
+query T nosort
+EXPLAIN
+SELECT
+  a.id AS aid,
+  b.id AS bid,
+  a.payload AS p
+FROM rift_perf_a AS a
+JOIN rift_perf_b AS b
+  ON a.k <> b.k
+WHERE a.id < 1000
+  AND b.id < 1000
+  AND (
+    a.k >= 0
+    OR EXISTS(SELECT 1 FROM rift_digit WHERE d = 1)
+  )
+  AND FALSE
+ORDER BY a.payload, b.id
+LIMIT 0
+----
+top N (
+| project (
+| | join (
+| | | select (
+| | | | table("sys"."rift_perf_a") [ "rift_perf_a"."id" as "a"."id", "rift_perf_a"."k" as "a"."k", "rift_perf_a"."payload" as "a"."payload" ]
+| | | ) [ boolean(1) "false" ],
+| | | table("sys"."rift_perf_b") [ "rift_perf_b"."id" as "b"."id", "rift_perf_b"."k" as "b"."k" ]
+| | ) [ ("a"."k") != ("b"."k") ]
+| ) [ "a"."id" as "aid", "b"."id" as "bid", "a"."payload" as "p" ] [ "p", "bid" ]
+) [ bigint(63) "0" ]
+
+statement ok
+DROP TABLE IF EXISTS rift_perf_b
+
+statement ok
+DROP TABLE IF EXISTS rift_perf_a
+
+statement ok
+DROP TABLE IF EXISTS rift_digit
+

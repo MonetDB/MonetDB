@@ -154,11 +154,6 @@ Unspecified
 ``Legacy``
 ==========
 
-Numpy detection
-===============
-
-Since the Python3::Numpy target is not available before version 3.14, we need an alternative. We use a NumPy detection function from a github project: https://raw.githubusercontent.com/fperazzi/davis-2017/master/cmake/FindNumPy.cmake This is MIT licensed, so we can include this in MonetDB. We change the python detection to detect python3, instead of python2.
-
 shp.h define conflicts
 ======================
 
