@@ -1095,6 +1095,16 @@ la_bat_create_ustr(logger *lg, logaction *la, int tid)
 		 * tvkey property was lost */
 		u->tvkey = true;
 	}
+	/* in case the distinct string column is newly created when
+	 * processing the WAL, but already contains data, we widen it to
+	 * the full width */
+	if (u->twidth < SIZEOF_VAR_T &&
+	    GDKupgradevarheap(u, (var_t) 1 << (4 * SIZEOF_VAR_T + 1),
+			      BATcapacity(u), BATcount(u)) != GDK_SUCCEED) {
+		logbat_destroy(b);
+		BBPreclaim(u);
+		return GDK_FAIL;
+	}
 
 	if (BATconvert2ustr(b, u) != GDK_SUCCEED) {
 		BBPreclaim(u);
