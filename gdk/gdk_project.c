@@ -32,7 +32,7 @@ project1_##TYPE(BAT *restrict bn, BATiter *restrict li,			\
 	TYPE *restrict bt;						\
 	oid r1seq, r1end;						\
 									\
-	MT_thread_setalgorithm(__func__);				\
+	MT_thread_setalgorithm(__func__, NULL);				\
 	r1t = (const TYPE *) r1i->base;					\
 	bt = (TYPE *) Tloc(bn, 0);					\
 	r1seq = r1i->b->hseqbase;					\
@@ -92,7 +92,7 @@ project_##TYPE(BAT *restrict bn, BATiter *restrict li,			\
 	    (ci == NULL || (ci->tpe == cand_dense && BATtdensebi(li))) && \
 	    li->nonil && r1i->type && !BATtdensebi(r1i))		\
 		return project1_##TYPE(bn, li, r1i, qry_ctx);		\
-	MT_thread_setalgorithm(__func__);				\
+	MT_thread_setalgorithm(__func__, NULL);				\
 	r1t = (const TYPE *) r1i->base;					\
 	bt = (TYPE *) Tloc(bn, 0);					\
 	r1seq = r1i->b->hseqbase;					\
@@ -184,7 +184,7 @@ project_oid(BAT *restrict bn, BATiter *restrict li,
 		else
 			return project1_int(bn, li, r1i, qry_ctx);
 	}
-	MT_thread_setalgorithm(__func__);
+	MT_thread_setalgorithm(__func__, NULL);
 	if (complex_cand(r1i->b))
 		canditer_init(&r1ci, NULL, r1i->b);
 	else if (!BATtdensebi(r1i))
@@ -292,7 +292,7 @@ project_any(BAT *restrict bn, BATiter *restrict li,
 	oid r1seq, r1end;
 	oid r2seq, r2end;
 
-	MT_thread_setalgorithm(__func__);
+	MT_thread_setalgorithm(__func__, NULL);
 	r1seq = r1i->b->hseqbase;
 	r1end = r1seq + r1i->count;
 	if (r2i) {

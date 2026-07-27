@@ -690,7 +690,7 @@ typedef struct {
 gdk_export void MT_thread_setlockwait(MT_Lock *lock);
 gdk_export void MT_thread_setsemawait(MT_Sema *sema);
 gdk_export void MT_thread_setworking(const char *work);
-gdk_export void MT_thread_setalgorithm(const char *algo);
+gdk_export void MT_thread_setalgorithm(const char *algo, const char *func);
 gdk_export const char *MT_thread_getalgorithm(void);
 #ifdef LOCK_OWNER
 #define hide_exp(a,b) a ## b	/* hide export from exports test */

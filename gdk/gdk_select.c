@@ -231,7 +231,7 @@ hashselect(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 #define scanloop(NAME,canditer_next,TEST)				\
 	do {								\
 		BUN ncand = ci->ncand;					\
-		*algo = "select: " #NAME " " #TEST " (" #canditer_next ")"; \
+		*algo = #NAME " " #TEST " (" #canditer_next ")"; \
 		if (BATcapacity(bn) < maximum) {			\
 			TIMEOUT_LOOP_IDX(p, ncand, qry_ctx) {		\
 				o = canditer_next(ci);			\
@@ -385,7 +385,7 @@ NAME##_##TYPE(BATiter *bi, struct canditer *restrict ci, BAT *bn,	\
 			if (!li) {					\
 				/* open range on left */		\
 				if (vl == MAXVALUE##TYPE) {		\
-					*algo = "select: empty range";	\
+					*algo = "empty range";	\
 					return 0;			\
 				}					\
 				/* vl < x === vl+1 <= x */		\
@@ -403,7 +403,7 @@ NAME##_##TYPE(BATiter *bi, struct canditer *restrict ci, BAT *bn,	\
 			if (!hi) {					\
 				/* open range on right */		\
 				if (vh == MINVALUE##TYPE) {		\
-					*algo = "select: empty range";	\
+					*algo = "empty range";	\
 					return 0;			\
 				}					\
 				/* x < vh === x <= vh-1 */		\
@@ -417,7 +417,7 @@ NAME##_##TYPE(BATiter *bi, struct canditer *restrict ci, BAT *bn,	\
 			hval = true;					\
 		}							\
 		if (vl > vh) {						\
-			*algo = "select: empty range";			\
+			*algo = "empty range";			\
 			return 0;					\
 		}							\
 	}								\
@@ -477,7 +477,7 @@ fullscan_any(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 
 	if (equi) {
-		*algo = "select: fullscan equi";
+		*algo = "fullscan equi";
 		if (ci->tpe == cand_dense) {
 			TIMEOUT_LOOP_IDX(p, ncand, qry_ctx) {
 				o = canditer_next_dense(ci);
@@ -512,7 +512,7 @@ fullscan_any(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 			}
 		}
 	} else if (anti) {
-		*algo = "select: fullscan anti";
+		*algo = "fullscan anti";
 		if (ci->tpe == cand_dense) {
 			TIMEOUT_LOOP_IDX(p, ncand, qry_ctx) {
 				o = canditer_next_dense(ci);
@@ -563,7 +563,7 @@ fullscan_any(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 			}
 		}
 	} else {
-		*algo = "select: fullscan range";
+		*algo = "fullscan range";
 		if (ci->tpe == cand_dense) {
 			TIMEOUT_LOOP_IDX(p, ncand, qry_ctx) {
 				o = canditer_next_dense(ci);
@@ -661,7 +661,7 @@ fullscan_str(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 		if (anti) {
 			if (nilpos == (var_t) -2) {
 				/* no nils: return the whole shebang */
-				*algo = "select: fullscan anti-equi strelim (all)";
+				*algo = "fullscan anti-equi strelim (all)";
 				if (BATextend(bn, ncand) != GDK_SUCCEED) {
 					BBPreclaim(bn);
 					return BUN_NONE;
@@ -680,13 +680,13 @@ fullscan_str(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 				nilpos = (var_t) -2;
 			}
 		} else {
-			*algo = "select: fullscan equi strelim (nomatch)";
+			*algo = "fullscan equi strelim (nomatch)";
 			return 0;
 		}
 	}
 	*algo = anti
-		? "select: fullscan anti-equi strelim"
-		: "select: fullscan equi strelim";
+		? "fullscan anti-equi strelim"
+		: "fullscan equi strelim";
 	assert(pos == 0 || pos >= GDK_VAROFFSET);
 	switch (bi->width) {
 	case 1: {
@@ -1428,7 +1428,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 	canditer_init(&ci, b, s);
 	if (ci.ncand == 0) {
 		/* trivially empty result */
-		MT_thread_setalgorithm("select: trivially empty");
+		MT_thread_setalgorithm("trivially empty", __func__);
 		bn = BATdense(0, 0, 0);
 		TRC_DEBUG(ALGO, "b=" ALGOBATFMT
 			  ",s=" ALGOOPTBATFMT ",anti=%d -> " ALGOOPTBATFMT
@@ -1467,7 +1467,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			 * upper is NULL) and we want an interval that's
 			 * open on at least one side (v <= x < v or v <
 			 * x <= v or v < x < v all result in nothing) */
-			MT_thread_setalgorithm("select: empty interval");
+			MT_thread_setalgorithm("empty interval", __func__);
 			bn = BATdense(0, 0, 0);
 			TRC_DEBUG(ALGO, "b=" ALGOBATFMT
 				  ",s=" ALGOOPTBATFMT ",li=%d,hi=%d,anti=%d -> "
@@ -1517,7 +1517,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			/* antiselect for nil-nil range: all non-nil
 			 * values are in range; we must return all
 			 * other non-nil values, i.e. nothing */
-			MT_thread_setalgorithm("select: anti: nil-nil range, nonil");
+			MT_thread_setalgorithm("anti: nil-nil range, nonil", __func__);
 			bn = BATdense(0, 0, 0);
 			TRC_DEBUG(ALGO, "b=" ALGOBATFMT
 				  ",s=" ALGOOPTBATFMT ",anti=%d -> "
@@ -1573,7 +1573,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 
 	if (hval && (equi ? !li || !hi : ATOMcmp(t, tl, th) > 0)) {
 		/* empty range */
-		MT_thread_setalgorithm("select: empty range");
+		MT_thread_setalgorithm("empty range", __func__);
 		bn = BATdense(0, 0, 0);
 		TRC_DEBUG(ALGO, "b=" ALGOBATFMT
 			  ",s=" ALGOOPTBATFMT ",anti=%d -> " ALGOOPTBATFMT
@@ -1586,7 +1586,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 	}
 	if (equi && lnil && (notnull || bi.nonil)) {
 		/* return all nils, but there aren't any */
-		MT_thread_setalgorithm("select: equi-nil, nonil");
+		MT_thread_setalgorithm("equi-nil, nonil", __func__);
 		bn = BATdense(0, 0, 0);
 		TRC_DEBUG(ALGO, "b=" ALGOBATFMT
 			  ",s=" ALGOOPTBATFMT ",anti=%d -> " ALGOOPTBATFMT
@@ -1601,7 +1601,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 	if (!equi && !lval && !hval && lnil && (notnull || bi.nonil)) {
 		/* return all non-nils from a BAT that doesn't have
 		 * any: i.e. return everything */
-		MT_thread_setalgorithm("select: everything, nonil");
+		MT_thread_setalgorithm("everything, nonil", __func__);
 		bn = canditer_slice(&ci, 0, ci.ncand);
 		TRC_DEBUG(ALGO, "b=" ALGOBATFMT
 			  ",s=" ALGOOPTBATFMT ",anti=%d -> " ALGOOPTBATFMT
@@ -1622,7 +1622,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			/* MIN..MAX range of values in BAT fully inside
 			 * tl..th range, so nothing left over for
 			 * anti */
-			MT_thread_setalgorithm("select: nothing, out of range");
+			MT_thread_setalgorithm("nothing, out of range", __func__);
 			bn = BATdense(0, 0, 0);
 			TRC_DEBUG(ALGO, "b=" ALGOBATFMT
 				  ",s=" ALGOOPTBATFMT ",anti=%d -> " ALGOOPTBATFMT
@@ -1638,7 +1638,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 				 * BAT range, and there are no nils (or
 				 * we want to include nils), so we can
 				 * return everything */
-				MT_thread_setalgorithm("select: everything, anti, nonil");
+				MT_thread_setalgorithm("everything, anti, nonil", __func__);
 				bn = canditer_slice(&ci, 0, ci.ncand);
 				TRC_DEBUG(ALGO, "b=" ALGOBATFMT
 					  ",s=" ALGOOPTBATFMT ",anti=%d -> " ALGOOPTBATFMT
@@ -1660,7 +1660,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			/* range we're looking for either completely
 			 * before or complete after the range of values
 			 * in the BAT */
-			MT_thread_setalgorithm("select: nothing, out of range");
+			MT_thread_setalgorithm("nothing, out of range", __func__);
 			bn = BATdense(0, 0, 0);
 			TRC_DEBUG(ALGO, "b="
 				  ALGOBATFMT ",s="
@@ -1677,7 +1677,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 				/* search range contains BAT range, and
 				 * there are no nils, so we can return
 				 * everything */
-				MT_thread_setalgorithm("select: everything, nonil");
+				MT_thread_setalgorithm("everything, nonil", __func__);
 				bn = canditer_slice(&ci, 0, ci.ncand);
 				TRC_DEBUG(ALGO, "b=" ALGOBATFMT
 					  ",s=" ALGOOPTBATFMT ",anti=%d -> " ALGOOPTBATFMT
@@ -1820,7 +1820,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			assert(bi.nonil);
 			assert(bi.sorted);
 			assert(oidxh == NULL);
-			algo = "select: dense";
+			algo = "dense";
 			if (hval) {
 				oid h = * (oid *) th + hi;
 				if (h > bi.tseq)
@@ -1844,7 +1844,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			}
 		} else if (bi.sorted) {
 			assert(oidxh == NULL);
-			algo = "select: sorted";
+			algo = "sorted";
 			if (lval) {
 				if (li)
 					low = SORTfndfirst(b, tl);
@@ -1862,7 +1862,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			}
 		} else if (bi.revsorted) {
 			assert(oidxh == NULL);
-			algo = "select: reverse sorted";
+			algo = "reverse sorted";
 			if (lval) {
 				if (li)
 					high = SORTfndlast(b, tl);
@@ -1880,7 +1880,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			}
 		} else {
 			assert(oidxh != NULL);
-			algo = poidx ? "select: parent orderidx" : "select: orderidx";
+			algo = poidx ? "parent orderidx" : "orderidx";
 			if (lval) {
 				if (li)
 					low = ORDERfndfirst(b, oidxh, tl);
@@ -1969,7 +1969,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		}
 
 		bn = virtualize(bn);
-		MT_thread_setalgorithm(algo);
+		MT_thread_setalgorithm(algo, __func__);
 		TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",anti=%s -> "
 			  ALGOOPTBATFMT " %s (" LLFMT " usec)\n",
 			  ALGOBATPAR(b), anti ? "true" : "false",
@@ -2122,7 +2122,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 	BBPreclaim(pb);
 
 	bn = virtualize(bn);
-	MT_thread_setalgorithm(algo);
+	MT_thread_setalgorithm(algo, __func__);
 	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT",anti=%s -> " ALGOOPTBATFMT
 		  " %s (" LLFMT " usec)\n",
 		  ALGOBATPAR(b), ALGOOPTBATPAR(s),

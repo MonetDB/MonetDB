@@ -957,7 +957,7 @@ BATgroupsum(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils)
 	}
 
 	if (algo)
-		MT_thread_setalgorithm(algo);
+		MT_thread_setalgorithm(algo, __func__);
 	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",g=" ALGOOPTBATFMT ","
 		  "e=" ALGOOPTBATFMT ",s=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT
 		  "; start " OIDFMT ", count " BUNFMT " (%s -- " LLFMT " usec)\n",
@@ -1168,7 +1168,7 @@ BATsum(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool nil_if_empty)
 			 skip_nils, nil_if_empty, __func__, &algo);
 	bat_iterator_end(&bi);
 	if (algo)
-		MT_thread_setalgorithm(algo);
+		MT_thread_setalgorithm(algo, __func__);
 	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT "; "
 		  "start " OIDFMT ", count " BUNFMT " (%s -- " LLFMT " usec)\n",
 		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
@@ -3686,7 +3686,7 @@ BATmin_skipnil(allocator *ma, BAT *b, void *aggr, bit skipnil)
 				const oid *ords = (const oid *) oidxh->base + ORDERIDXOFF;
 				BUN r;
 				if (skipnil && !bi.nonil) {
-					MT_thread_setalgorithm(usepoidx ? "binsearch on parent oidx" : "binsearch on oidx");
+					MT_thread_setalgorithm(usepoidx ? "binsearch on parent oidx" : "binsearch on oidx", __func__);
 					r = binsearch(ords, bi.type, bi.base,
 						      bi.vh ? bi.vh->base : NULL,
 						      bi.width, 0, bi.count,
@@ -3706,7 +3706,7 @@ BATmin_skipnil(allocator *ma, BAT *b, void *aggr, bit skipnil)
 					/* no non-nil values */
 					pos = oid_nil;
 				} else {
-					MT_thread_setalgorithm(usepoidx ? "using parent oidx" : "using oidx");
+					MT_thread_setalgorithm(usepoidx ? "using parent oidx" : "using oidx", __func__);
 					pos = ords[r];
 				}
 				HEAPdecref(oidxh, false);
@@ -3828,7 +3828,7 @@ BATmax_skipnil(allocator *ma, BAT *b, void *aggr, bit skipnil)
 			if (oidxh != NULL) {
 				const oid *ords = (const oid *) oidxh->base + ORDERIDXOFF;
 
-				MT_thread_setalgorithm(usepoidx ? "using parent oidx" : "using oids");
+				MT_thread_setalgorithm(usepoidx ? "using parent oidx" : "using oids", __func__);
 				pos = ords[bi.count - 1];
 				/* nils are first, ie !skipnil, check for nils */
 				if (!skipnil) {
@@ -4162,7 +4162,7 @@ doBATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 			BBPunfix(pb->batCacheid);
 		}
 		if (oidxh != NULL) {
-			MT_thread_setalgorithm(pb ? "using parent oidx" : "using oids");
+			MT_thread_setalgorithm(pb ? "using parent oidx" : "using oids", __func__);
 			ords = (const oid *) oidxh->base + ORDERIDXOFF;
 		} else {
 			if (BATsort(NULL, &t1, NULL, b, NULL, g, false, false, false) != GDK_SUCCEED)

@@ -190,7 +190,7 @@ BATorderidx(BAT *b, bool stable)
 		return GDK_SUCCEED;
 	if (!BATtdense(b)) {
 		BAT *on;
-		MT_thread_setalgorithm("create order index");
+		MT_thread_setalgorithm("create order index", __func__);
 		TRC_DEBUG(ACCELERATOR, "BATorderidx(" ALGOBATFMT ",%d) create index\n", ALGOBATPAR(b), stable);
 		if (BATsort(NULL, &on, NULL, b, NULL, NULL, false, false, stable) != GDK_SUCCEED)
 			return GDK_FAIL;

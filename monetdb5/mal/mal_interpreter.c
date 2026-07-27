@@ -556,7 +556,7 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 
 	while (stkpc < mb->stop && stkpc != stoppc) {
 		// incomplete block being executed, requires at least signature and end statement
-		MT_thread_setalgorithm(NULL);
+		MT_thread_setalgorithm(NULL, NULL);
 		pci = getInstrPtr(mb, stkpc);
 		if (cntxt->mode == FINISHCLIENT) {
 			stkpc = stoppc;

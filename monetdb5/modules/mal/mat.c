@@ -144,7 +144,7 @@ MATpackIncrement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			throw(MAL, "mat.pack", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		if (tt == TYPE_str && b->ustr) {
-			MT_thread_setalgorithm("convert to ustr");
+			MT_thread_setalgorithm("convert to ustr", __func__);
 			BAT *bu = BATdescriptor(b->ustr);
 			gdk_return rc = BATconvert2ustr(bn, bu);
 			BBPreclaim(bu);

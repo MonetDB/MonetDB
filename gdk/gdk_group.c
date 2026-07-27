@@ -102,7 +102,7 @@
 		INIT_0;							\
 		if (ci.tpe == cand_dense) {				\
 			if (grps) {					\
-				MT_thread_setalgorithm("GRP_compare_consecutive_values, dense, groups"); \
+				MT_thread_setalgorithm("GRP_compare_consecutive_values, dense, groups", __func__); \
 				TIMEOUT_LOOP_IDX(r, ci.ncand, qry_ctx) { \
 					p = canditer_next_dense(&ci) - hseqb; \
 					INIT_1;				\
@@ -119,7 +119,7 @@
 				TIMEOUT_CHECK(qry_ctx,			\
 					      GOTO_LABEL_TIMEOUT_HANDLER(error, qry_ctx)); \
 			} else {					\
-				MT_thread_setalgorithm("GRP_compare_consecutive_values, dense, !groups"); \
+				MT_thread_setalgorithm("GRP_compare_consecutive_values, dense, !groups", __func__); \
 				TIMEOUT_LOOP_IDX(r, ci.ncand, qry_ctx) { \
 					p = canditer_next_dense(&ci) - hseqb; \
 					INIT_1;				\
@@ -137,7 +137,7 @@
 			}						\
 		} else {						\
 			if (grps) {					\
-				MT_thread_setalgorithm("GRP_compare_consecutive_values, !dense, groups"); \
+				MT_thread_setalgorithm("GRP_compare_consecutive_values, !dense, groups", __func__); \
 				TIMEOUT_LOOP_IDX(r, ci.ncand, qry_ctx) { \
 					p = canditer_next(&ci) - hseqb;	\
 					INIT_1;				\
@@ -154,7 +154,7 @@
 				TIMEOUT_CHECK(qry_ctx,			\
 					      GOTO_LABEL_TIMEOUT_HANDLER(error, qry_ctx)); \
 			} else {					\
-				MT_thread_setalgorithm("GRP_compare_consecutive_values, !dense, !groups"); \
+				MT_thread_setalgorithm("GRP_compare_consecutive_values, !dense, !groups", __func__); \
 				TIMEOUT_LOOP_IDX(r, ci.ncand, qry_ctx) { \
 					p = canditer_next(&ci) - hseqb;	\
 					INIT_1;				\
@@ -205,7 +205,7 @@
 		pgrp[grps[0]] = 0;					\
 		j = 0;							\
 		if (ci.tpe == cand_dense) {				\
-			MT_thread_setalgorithm("GRP_subscan_old_groups, dense"); \
+			MT_thread_setalgorithm("GRP_subscan_old_groups, dense", __func__); \
 			TIMEOUT_LOOP_IDX(r, ci.ncand, qry_ctx) {	\
 				p = canditer_next_dense(&ci) - hseqb;	\
 				INIT_1;					\
@@ -247,7 +247,7 @@
 			TIMEOUT_CHECK(qry_ctx,				\
 				      GOTO_LABEL_TIMEOUT_HANDLER(error, qry_ctx)); \
 		} else {						\
-			MT_thread_setalgorithm("GRP_subscan_old_groups, !dense"); \
+			MT_thread_setalgorithm("GRP_subscan_old_groups, !dense", __func__); \
 			TIMEOUT_LOOP_IDX(r, ci.ncand, qry_ctx) {	\
 				p = canditer_next(&ci) - hseqb;		\
 				INIT_1;					\
@@ -341,7 +341,7 @@
 		INIT_0;							\
 		assert(grps == NULL);					\
 		if (ci.tpe == cand_dense) {				\
-			MT_thread_setalgorithm(phash ? "GRP_use_existing_hash_table, dense, parent hash" : "GRP_use_existing_hash_table, dense"); \
+			MT_thread_setalgorithm(phash ? "GRP_use_existing_hash_table, dense, parent hash" : "GRP_use_existing_hash_table, dense", __func__); \
 			TIMEOUT_LOOP_IDX(r, ci.ncand, qry_ctx) {	\
 				oid o = canditer_next_dense(&ci);	\
 				p = o - hseqb + lo;			\
@@ -377,7 +377,7 @@
 			TIMEOUT_CHECK(qry_ctx,				\
 				      GOTO_LABEL_TIMEOUT_HANDLER(error, qry_ctx)); \
 		} else {						\
-			MT_thread_setalgorithm(phash ? "GRP_use_existing_hash_table, !dense, parent hash" : "GRP_use_existing_hash_table, !dense"); \
+			MT_thread_setalgorithm(phash ? "GRP_use_existing_hash_table, !dense, parent hash" : "GRP_use_existing_hash_table, !dense", __func__); \
 			TIMEOUT_LOOP_IDX(r, ci.ncand, qry_ctx) {	\
 				oid o = canditer_next(&ci);		\
 				p = o - hseqb + lo;			\
@@ -500,7 +500,7 @@ ctz(oid x)
 #define GRP_create_partial_hash_table_core(INIT_1,HASH,EQUAL,ASSERT,GRPTST) \
 	do {								\
 		if (ci.tpe == cand_dense) {				\
-			MT_thread_setalgorithm("GRP_create_partial_hash_table, dense"); \
+			MT_thread_setalgorithm("GRP_create_partial_hash_table, dense", __func__); \
 			TIMEOUT_LOOP_IDX(r, ci.ncand, qry_ctx) {	\
 				p = canditer_next_dense(&ci) - hseqb;	\
 				INIT_1;					\
@@ -534,7 +534,7 @@ ctz(oid x)
 			TIMEOUT_CHECK(qry_ctx,				\
 				      GOTO_LABEL_TIMEOUT_HANDLER(error, qry_ctx)); \
 		} else {						\
-			MT_thread_setalgorithm("GRP_create_partial_hash_table, !dense"); \
+			MT_thread_setalgorithm("GRP_create_partial_hash_table, !dense", __func__); \
 			TIMEOUT_LOOP_IDX(r, ci.ncand, qry_ctx) {	\
 				p = canditer_next(&ci) - hseqb;		\
 				INIT_1;					\

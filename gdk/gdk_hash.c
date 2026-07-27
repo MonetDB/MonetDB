@@ -772,7 +772,7 @@ BAThash_impl(BATiter *restrict bi, struct canditer *restrict ci,
 	assert(bi->type != TYPE_void);
 	assert((width & (width - 1)) == 0 && (size_t) width <= sizeof(var_t));
 
-	MT_thread_setalgorithm(hascand ? "create hash with candidates" : "create hash");
+	MT_thread_setalgorithm(hascand ? "create hash with candidates" : "create hash", __func__);
 	TRC_DEBUG_IF(ACCELERATOR) t0 = GDKusec();
 	TRC_DEBUG(ACCELERATOR,
 		  ALGOBATFMT ": create hash;\n", ALGOBATPAR(b));
