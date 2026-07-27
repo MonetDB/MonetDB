@@ -1335,7 +1335,7 @@ HEAPproject(Client ctx, bat *rid, bat *pos, bat *sel, bat *in)
 	}
 
 	BUN size = P->tmaxval;
-	if (!err && r && BATcount(b)) {
+	if (size && !err && r && BATcount(b)) {
 		MT_lock_set(&r->theaplock);
 		MT_lock_set(&b->theaplock);
 		if (ATOMvarsized(r->ttype) && BATcount(r) == 0 && r->tvheap->parentid == r->batCacheid && r->twidth < b->twidth && BATupgrade(r, b, true)) {
@@ -1398,10 +1398,7 @@ HEAPproject(Client ctx, bat *rid, bat *pos, bat *sel, bat *in)
         }
 	}
 
-	//if (!private)
-		//pipeline_lock1(r);
-
-	if (!err) {
+	if (size && !err) {
 		oid *pi = Tloc(P, 0);
 		oid *si = Tloc(S, 0);
 		size_t i = 0;
@@ -1453,8 +1450,6 @@ HEAPproject(Client ctx, bat *rid, bat *pos, bat *sel, bat *in)
 	}
 
 error:
-	//if (!private)
-		//pipeline_unlock1(r);
 	BBPunfix(P->batCacheid);
 	BBPunfix(b->batCacheid);
 	if (errmsg)
@@ -1536,7 +1531,19 @@ HEAPtopn(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr pci)
 		BBPreclaim(gps);
 		return createException(SQL, "heapn.topn",  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
+
+	subheap *sh = hp->sub;
+	int nxt = (int)ATOMIC_INC(&hp->counter);
+
+	if (!private) {
+		while(hps->unused != nxt && !ATOMIC_PTR_GET(&pp->p->error)) MT_sleep_ms(10);
+	}
+
+	if (!private)
+		pipeline_lock1(hps);
+
 	if (!hp->size) {
+
 		for(subheap *nsh = hp->sub; nsh; nsh = nsh->sub) {
 			bat *res = getArgReference_bat(s, pci, retc++);
 			*res = nsh->vb->batCacheid;
@@ -1553,25 +1560,24 @@ HEAPtopn(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr pci)
 		if (!P || !S) {
 			BBPreclaim(P);
 			BBPreclaim(S);
+			if (!private) {
+				hps->unused++;
+				pipeline_unlock1(hps);
+			}
 			return createException(SQL, "heapn.topn",  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
+		P->unused = hps->unused;
 		*pos = P->batCacheid;
 		BBPkeepref(P);
 		*sel = S->batCacheid;
 		BBPkeepref(S);
 		BBPkeepref(hps);
+		if (!private) {
+			hps->unused++;
+			pipeline_unlock1(hps);
+		}
 		return MAL_SUCCEED;
 	}
-
-	subheap *sh = hp->sub;
-	int nxt = (int)ATOMIC_INC(&hp->counter);
-
-	if (!private) {
-		while(hps->unused != nxt && !ATOMIC_PTR_GET(&pp->p->error)) MT_sleep_ms(10);
-	}
-
-	if (!private)
-		pipeline_lock1(hps);
 
 	hp->pos = Tloc(hps, 0);
 	if (sh) {
