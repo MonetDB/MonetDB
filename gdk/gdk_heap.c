@@ -489,7 +489,7 @@ GDKupgradevarheap(BAT *b, var_t v, BUN cap, BUN ncopy)
 
 	n = MIN(ncopy, old->size >> b->tshift);
 
-	MT_thread_setalgorithm(n ? "widen offset heap" : "widen empty offset heap");
+	MT_thread_setalgorithm(n ? "widen offset heap" : "widen empty offset heap", __func__);
 
 	new = GDKmalloc(sizeof(Heap));
 	if (new == NULL)

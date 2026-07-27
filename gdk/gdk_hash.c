@@ -745,7 +745,7 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 	assert(strcmp(ext, "thash") != 0 || !hascand);
 	assert(bi.type != TYPE_msk);
 
-	MT_thread_setalgorithm(hascand ? "create hash with candidates" : "create hash");
+	MT_thread_setalgorithm(hascand ? "create hash with candidates" : "create hash", __func__);
 	TRC_DEBUG_IF(ACCELERATOR) t0 = GDKusec();
 	TRC_DEBUG(ACCELERATOR,
 		  ALGOBATFMT ": create hash;\n", ALGOBATPAR(b));

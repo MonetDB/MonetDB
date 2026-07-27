@@ -303,7 +303,7 @@ nomatch(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 {
 	BAT *r1, *r2 = NULL, *r3 = NULL;
 
-	MT_thread_setalgorithm(__func__);
+	MT_thread_setalgorithm(__func__, func);
 	if (lci->ncand == 0 || !(nil_on_miss | only_misses)) {
 		/* return empty BATs */
 		if ((r1 = BATdense(0, 0, 0)) == NULL)
@@ -376,7 +376,7 @@ selectjoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 	size_t counter = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 
-	MT_thread_setalgorithm(__func__);
+	MT_thread_setalgorithm(__func__, NULL);
 	oid o = canditer_next(lci);
 	v = BUNtail(&li, o - l->hseqbase);
 
@@ -590,7 +590,7 @@ mergejoin_void(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 
-	MT_thread_setalgorithm(__func__);
+	MT_thread_setalgorithm(__func__, NULL);
 	/* figure out range [lo..hi) of values in r that we need to match */
 	lo = r->tseqbase;
 	hi = lo + BATcount(r);
@@ -1038,7 +1038,7 @@ mergejoin_int(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	assert(ATOMtype(li.type) == ATOMtype(ri.type));
 	assert(ri.sorted || ri.revsorted);
 
-	MT_thread_setalgorithm(__func__);
+	MT_thread_setalgorithm(__func__, NULL);
 	lstart = rstart = 0;
 	lend = BATcount(l);
 	lcnt = lend - lstart;
@@ -1352,7 +1352,7 @@ mergejoin_lng(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	assert(ATOMtype(li.type) == ATOMtype(ri.type));
 	assert(ri.sorted || ri.revsorted);
 
-	MT_thread_setalgorithm(__func__);
+	MT_thread_setalgorithm(__func__, NULL);
 	lstart = rstart = 0;
 	lend = BATcount(l);
 	lcnt = lend - lstart;
@@ -1667,7 +1667,7 @@ mergejoin_cand(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 
 	assert(ATOMtype(li.type) == ATOMtype(ri.type));
 
-	MT_thread_setalgorithm(__func__);
+	MT_thread_setalgorithm(__func__, NULL);
 	lstart = 0;
 	lend = BATcount(l);
 	lcnt = lend - lstart;
@@ -1999,7 +1999,7 @@ mergejoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 
 	BATiter li = bat_iterator(l);
 	BATiter ri = bat_iterator(r);
-	MT_thread_setalgorithm(__func__);
+	MT_thread_setalgorithm(__func__, NULL);
 	if (BATtvoid(l)) {
 		/* l->ttype == TYPE_void && is_oid_nil(l->tseqbase) is
 		 * handled by selectjoin */
@@ -2958,7 +2958,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 		 * candidate list */
 		char ext[32];
 		assert(rci->s);
-		MT_thread_setalgorithm(swapped ? "hashjoin using candidate hash (swapped)" : "hashjoin using candidate hash");
+		MT_thread_setalgorithm(swapped ? "hashjoin using candidate hash (swapped)" : "hashjoin using candidate hash", __func__);
 		TRC_DEBUG(ALGO, ALGOBATFMT ": creating "
 			  "hash for candidate list " ALGOBATFMT "%s%s\n",
 			  ALGOBATPAR(r), ALGOBATPAR(rci->s),
@@ -2972,7 +2972,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 		}
 	} else if (phash) {
 		/* there is a hash on the parent which we should use */
-		MT_thread_setalgorithm(swapped ? "hashjoin using parent hash (swapped)" : "hashjoin using parent hash");
+		MT_thread_setalgorithm(swapped ? "hashjoin using parent hash (swapped)" : "hashjoin using parent hash", __func__);
 		b = BATdescriptor(VIEWtparent(r));
 		if (b == NULL)
 			goto bailout;
@@ -2991,7 +2991,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 		locked = true;
 	} else if (hash) {
 		/* there is a hash on r which we should use */
-		MT_thread_setalgorithm(swapped ? "hashjoin using existing hash (swapped)" : "hashjoin using existing hash");
+		MT_thread_setalgorithm(swapped ? "hashjoin using existing hash (swapped)" : "hashjoin using existing hash", __func__);
 		MT_rwlock_rdlock(&r->thashlock);
 		hsh = r->thash;
 		locked = true;
@@ -3001,10 +3001,10 @@ hashjoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 			  swapped ? " (swapped)" : "");
 	} else if (BATtdensebi(&ri)) {
 		/* no hash, just dense lookup */
-		MT_thread_setalgorithm(swapped ? "hashjoin on dense (swapped)" : "hashjoin on dense");
+		MT_thread_setalgorithm(swapped ? "hashjoin on dense (swapped)" : "hashjoin on dense", __func__);
 	} else {
 		/* we need to create a hash on r */
-		MT_thread_setalgorithm(swapped ? "hashjoin using new hash (swapped)" : "hashjoin using new hash");
+		MT_thread_setalgorithm(swapped ? "hashjoin using new hash (swapped)" : "hashjoin using new hash", __func__);
 		TRC_DEBUG(ALGO, ALGOBATFMT ": creating hash%s\n",
 			  ALGOBATPAR(r),
 			  swapped ? " (swapped)" : "");
@@ -3978,7 +3978,7 @@ fetchjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	BUN b, e, p;
 	BAT *r1, *r2 = NULL;
 
-	MT_thread_setalgorithm(__func__);
+	MT_thread_setalgorithm(__func__, NULL);
 	if (r->tsorted) {
 		b = SORTfndfirst(r, &lo);
 		e = SORTfndfirst(r, &hi);
@@ -4044,7 +4044,7 @@ bitmaskjoin(BAT *l, BAT *r,
 	allocator_state ta_state = ma_open(ta);
 	uint32_t *mask = ma_zalloc(ta, nmsk * sizeof(uint32_t));
 
-	MT_thread_setalgorithm(__func__);
+	MT_thread_setalgorithm(__func__, NULL);
 	if (mask == NULL) {
 		ma_close(&ta_state);
 		return NULL;
@@ -4144,7 +4144,7 @@ leftjoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	BAT *lp = NULL;
 	BAT *rp = NULL;
 
-	MT_thread_setalgorithm(__func__);
+	MT_thread_setalgorithm(__func__, NULL);
 	/* only_misses implies left output only */
 	assert(!only_misses || r2p == NULL);
 	/* if nil_on_miss is set, we really need a right output */
@@ -4729,7 +4729,7 @@ BATbandjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 
 
-	MT_thread_setalgorithm(__func__);
+	MT_thread_setalgorithm(__func__, NULL);
 	*r1p = NULL;
 	if (r2p) {
 		*r2p = NULL;

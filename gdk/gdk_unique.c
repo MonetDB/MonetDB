@@ -110,7 +110,8 @@ BATunique(BAT *b, BAT *s)
 	     GDK_ELIMDOUBLES(bi.vh))) {
 		uint8_t val;
 
-		algomsg = "unique: byte-sized atoms";
+		algomsg = "byte-sized atoms";
+		MT_thread_setalgorithm(algomsg, __func__);
 		uint32_t seen[256 >> 5];
 		memset(seen, 0, sizeof(seen));
 		TIMEOUT_LOOP(ci.ncand, qry_ctx) {
@@ -136,7 +137,8 @@ BATunique(BAT *b, BAT *s)
 		    GDK_ELIMDOUBLES(bi.vh))) {
 		uint16_t val;
 
-		algomsg = "unique: short-sized atoms";
+		algomsg = "short-sized atoms";
+		MT_thread_setalgorithm(algomsg, __func__);
 		uint32_t seen[65536 >> 5];
 		memset(seen, 0, sizeof(seen));
 		TIMEOUT_LOOP(ci.ncand, qry_ctx) {
@@ -158,7 +160,8 @@ BATunique(BAT *b, BAT *s)
 			      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed, qry_ctx));
 	} else if (bi.sorted || bi.revsorted) {
 		const void *prev = NULL;
-		algomsg = "unique: sorted";
+		algomsg = "sorted";
+		MT_thread_setalgorithm(algomsg, __func__);
 		TIMEOUT_LOOP(ci.ncand, qry_ctx) {
 			o = canditer_next(&ci);
 			v = VALUE(o - hseq);
@@ -177,7 +180,8 @@ BATunique(BAT *b, BAT *s)
 		    BAThash(b) == GDK_SUCCEED)) {
 		/* we already have a hash table on b, or b is
 		 * persistent and we could create a hash table */
-		algomsg = "unique: existing hash";
+		algomsg = "existing hash";
+		MT_thread_setalgorithm(algomsg, __func__);
 		MT_rwlock_rdlock(&b->thashlock);
 		Hash *hs = b->thash;
 		if (hs == NULL) {
@@ -218,7 +222,8 @@ BATunique(BAT *b, BAT *s)
 
 	  lost_hash:
 		GDKclrerr();	/* not interested in BAThash errors */
-		algomsg = "unique: new partial hash";
+		algomsg = "new partial hash";
+		MT_thread_setalgorithm(algomsg, __func__);
 		nme = BBP_physical(b->batCacheid);
 		if (ATOMbasetype(bi.type) == TYPE_bte) {
 			mask = (BUN) 1 << 8;
@@ -298,7 +303,6 @@ BATunique(BAT *b, BAT *s)
 	bn->tnil = false;
 	bn->tnonil = true;
 	bn = virtualize(bn);
-	MT_thread_setalgorithm(algomsg);
 	TRC_DEBUG(ALGO, "b=" ALGOBATFMT
 		  ",s=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT
 		  " (%s -- " LLFMT "usec)\n",

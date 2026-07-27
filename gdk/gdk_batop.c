@@ -46,7 +46,7 @@ unshare_varsized_heap(BAT *b)
 		MT_lock_set(&GDKswapLock(b->batCacheid));
 		if (BBP_refs(b->batCacheid) == 1 &&
 		    BATcount(BBP_desc(b->tvheap->parentid)) > 2 * BATcount(b)) {
-			MT_thread_setalgorithm("unshare vheap reinsert strings");
+			MT_thread_setalgorithm("unshare vheap reinsert strings", __func__);
 			MT_lock_set(&b->theaplock);
 			BATatoms[b->ttype].atomHeap(h, b->batCapacity);
 			Heap *oh = b->tvheap;
@@ -103,7 +103,7 @@ unshare_varsized_heap(BAT *b)
 			return GDK_FAIL;
 		}
 		MT_lock_unset(&GDKswapLock(b->batCacheid));
-		MT_thread_setalgorithm("unshare vheap by copying");
+		MT_thread_setalgorithm("unshare vheap by copying", __func__);
 		if (HEAPcopy(h, b->tvheap, 0) != GDK_SUCCEED) {
 			HEAPfree(h, true);
 			GDKfree(h);
@@ -148,7 +148,7 @@ insert_string_bat(BAT *b, BATiter *ni, struct canditer *ci, bool force, bool may
 		/* vheaps are already shared, continue doing so: we just
 		 * need to append the offsets */
 		toff = 0;
-		MT_thread_setalgorithm("shared vheap");
+		MT_thread_setalgorithm("shared vheap", __func__);
 	} else if (mayshare && b->batRole == TRANSIENT && oldcnt == 0) {
 		/* we can share the vheaps, so we then only need to
 		 * append the offsets */
@@ -163,7 +163,7 @@ insert_string_bat(BAT *b, BATiter *ni, struct canditer *ci, bool force, bool may
 		if (bid != b->batCacheid)
 			BBPrelease(bid);
 		toff = 0;
-		MT_thread_setalgorithm("share vheap");
+		MT_thread_setalgorithm("share vheap", __func__);
 	} else {
 		/* no heap sharing, so also make sure the heap isn't
 		 * shared currently (we're not allowed to write in
@@ -204,10 +204,10 @@ insert_string_bat(BAT *b, BATiter *ni, struct canditer *ci, bool force, bool may
 				/* we copy the string heap, perhaps appending */
 				if (oldcnt == 0) {
 					toff = 0;
-					MT_thread_setalgorithm("copy vheap");
+					MT_thread_setalgorithm("copy vheap", __func__);
 				} else {
 					toff = (b->tvheap->free + GDK_VARALIGN - 1) & ~(GDK_VARALIGN - 1);
-					MT_thread_setalgorithm("append vheap");
+					MT_thread_setalgorithm("append vheap", __func__);
 				}
 
 				MT_lock_set(&b->theaplock);
@@ -242,7 +242,7 @@ insert_string_bat(BAT *b, BATiter *ni, struct canditer *ci, bool force, bool may
 	if (toff == 0 && ni->width == b->twidth && ci->tpe == cand_dense) {
 		/* we don't need to do any translation of offset
 		 * values, so we can use fast memcpy */
-		MT_thread_setalgorithm("memcpy offsets");
+		MT_thread_setalgorithm("memcpy offsets", __func__);
 		memcpy(Tloc(b, BATcount(b)), (const char *) ni->base + ((ci->seq - ni->b->hseqbase) << ni->shift), cnt << ni->shift);
 	} else if (toff != ~(size_t) 0) {
 		/* we don't need to insert any actual strings since we
@@ -262,7 +262,7 @@ insert_string_bat(BAT *b, BATiter *ni, struct canditer *ci, bool force, bool may
 		const uint64_t *restrict tlp = (const uint64_t *) ni->base;
 #endif
 
-		MT_thread_setalgorithm("copy offset values");
+		MT_thread_setalgorithm("copy offset values", __func__);
 		r = b->batCount;
 		TIMEOUT_LOOP(cnt, qry_ctx) {
 			p = canditer_next(ci) - ni->b->hseqbase;
@@ -320,7 +320,7 @@ insert_string_bat(BAT *b, BATiter *ni, struct canditer *ci, bool force, bool may
 		 * to use the double elimination mechanism */
 		r = b->batCount;
 		oid hseq = ni->b->hseqbase;
-		MT_thread_setalgorithm("insert string values");
+		MT_thread_setalgorithm("insert string values", __func__);
 		TIMEOUT_LOOP(cnt, qry_ctx) {
 			p = canditer_next(ci) - hseq;
 			tp = BUNtvar(ni, p);
@@ -337,7 +337,7 @@ insert_string_bat(BAT *b, BATiter *ni, struct canditer *ci, bool force, bool may
 		 * n's).  If this is the case, we just copy the
 		 * offset, otherwise we insert normally.  */
 		r = b->batCount;
-		MT_thread_setalgorithm("insert string values with check");
+		MT_thread_setalgorithm("insert string values with check", __func__);
 		TIMEOUT_LOOP(cnt, qry_ctx) {
 			p = canditer_next(ci) - ni->b->hseqbase;
 			off = VarHeapVal(ni->base, p, ni->width); /* the offset */
@@ -432,6 +432,7 @@ append_varsized_bat(BAT *b, BATiter *ni, struct canditer *ci, bool mayshare)
 		    b->batRole == TRANSIENT &&
 		    ni->restricted == BAT_READ &&
 		    b->tvheap != ni->vh) {
+			MT_thread_setalgorithm("share vheap", __func__);
 			/* if b is still empty, in the transient farm,
 			 * and n is read-only, we replace b's vheap with
 			 * a reference to n's */
@@ -449,12 +450,14 @@ append_varsized_bat(BAT *b, BATiter *ni, struct canditer *ci, bool mayshare)
 		/* if b and n use the same vheap, we only need to copy
 		 * the offsets from n to b */
 		if (ci->tpe == cand_dense) {
+			MT_thread_setalgorithm("memcpy tail", __func__);
 			/* fast memcpy since we copy a consecutive
 			 * chunk of memory */
 			memcpy(Tloc(b, BATcount(b)),
 			       (const var_t *) ni->base + (ci->seq - hseq),
 			       cnt << b->tshift);
 		} else {
+			MT_thread_setalgorithm("copy tail", __func__);
 			var_t *restrict dst = (var_t *) Tloc(b, BATcount(b));
 			const var_t *restrict src = (const var_t *) ni->base;
 			while (cnt > 0) {
@@ -512,6 +515,7 @@ append_varsized_bat(BAT *b, BATiter *ni, struct canditer *ci, bool mayshare)
 	if (BATcount(b) == 0 &&
 	    ci->tpe == cand_dense && ci->ncand == ni->count) {
 		/* just copy the heaps */
+		MT_thread_setalgorithm("memcpy tail and vheap", __func__);
 		MT_lock_set(&b->theaplock);
 		if (HEAPgrow(&b->tvheap, ni->vhfree, false) != GDK_SUCCEED) {
 			MT_lock_unset(&b->theaplock);
@@ -540,6 +544,7 @@ append_varsized_bat(BAT *b, BATiter *ni, struct canditer *ci, bool mayshare)
 		return GDK_SUCCEED;
 	}
 	/* copy data from n to b */
+	MT_thread_setalgorithm("insert values", __func__);
 	r = BATcount(b);
 	for (BUN i = 0; i < cnt; i++) {
 		BUN p = canditer_next(ci) - hseq;
@@ -577,6 +582,7 @@ append_msk_bat(BAT *b, BATiter *ni, struct canditer *ci)
 	if (BATextend(b, BATcount(b) + ci->ncand) != GDK_SUCCEED)
 		return GDK_FAIL;
 
+	MT_thread_setalgorithm("append msk bat", __func__);
 	MT_lock_set(&b->theaplock);
 
 	uint32_t boff = b->batCount % 32;
@@ -1031,15 +1037,19 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 		if (b->ttype != TYPE_void &&
 		    ni.type != TYPE_void &&
 		    ci.tpe == cand_dense) {
+			MT_thread_setalgorithm("memcpy tail", __func__);
 			/* use fast memcpy if we can */
 			memcpy(Tloc(b, BATcount(b)),
 			       (const char *) ni.base + ((ci.seq - hseq) << ni.shift),
 			       ci.ncand << ni.shift);
+			if (b->thash)
+				MT_thread_setalgorithm("hash maintenance", __func__);
 			for (BUN i = 0; b->thash && i < ci.ncand; i++) {
 				HASHappend_locked(&bi, r, Tloc(b, r));
 				r++;
 			}
 		} else {
+			MT_thread_setalgorithm("insert values", __func__);
 			const void *atomnil = ATOMnilptr(b->ttype);
 			TIMEOUT_LOOP(ci.ncand, qry_ctx) {
 				BUN p = canditer_next(&ci) - hseq;
