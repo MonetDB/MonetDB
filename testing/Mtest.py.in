@@ -1858,29 +1858,6 @@ def RunTest(env, TST, COND, oktests, length, pSrvr, total_tests, options, enviro
                 CALL = cll
                 SERVER = srv
                 break
-        else:
-            if os.name == 'nt':
-                reason = "test missing: '"+os.path.join(TSTSRCDIR,TST)+".(exe|com|bat|cmd|py|sql)`"
-            else:
-                reason = "test missing: '"+os.path.join(TSTSRCDIR,TST)+"[.py|.sql|.rb]`"
-            if verbose:
-                if ttywidth > 0 and length + 10 + 21 >= ttywidth:
-                    # 10 - length of prompt()
-                    # 21 - length of time plus result
-                    l = ttywidth - 10 - 21 - 1
-                    if len(TST) <= l:
-                        s = '%-*s ' % (l, TST)
-                    else:
-                        s = '%s...%s ' % (TST[:l//2 - 2], TST[l//2+1-l:])
-                else:
-                    s = '%-*s ' % (length, TST)
-                print('%s%s' % (prompt(), s), end='')
-                prred('TEST MISSING')
-                print()
-            else:
-                errors.append(('MISSING', os.path.join(TSTDIR, TSTSUFF, TST + EXT)))
-
-            return TX,Failed,Failed,elem,reason,links
 
     MissingMods = CheckMods(env, os.path.join(TSTSRCDIR, TST))
     MissingTests = CheckTests(env, os.path.join(TSTSRCDIR, TST), oktests)
@@ -2043,6 +2020,30 @@ def RunTest(env, TST, COND, oktests, length, pSrvr, total_tests, options, enviro
                 break
             elif cond in ('HAVE_ODBC', 'HAVE_PYODBC'):
                 odbc = True
+    if elem is None and not CALL:
+        if os.name == 'nt':
+            reason = "test missing: '"+os.path.join(TSTSRCDIR,TST)+".(exe|com|bat|cmd|py|sql)`"
+        else:
+            reason = "test missing: '"+os.path.join(TSTSRCDIR,TST)+"[.py|.sql|.rb]`"
+        if verbose:
+            if ttywidth > 0 and length + 10 + 21 >= ttywidth:
+                # 10 - length of prompt()
+                # 21 - length of time plus result
+                l = ttywidth - 10 - 21 - 1
+                if len(TST) <= l:
+                    s = '%-*s ' % (l, TST)
+                else:
+                    s = '%s...%s ' % (TST[:l//2 - 2], TST[l//2+1-l:])
+            else:
+                s = '%-*s ' % (length, TST)
+            print('%s%s' % (prompt(), s), end='')
+            prred('TEST MISSING')
+            print()
+        else:
+            errors.append(('MISSING', os.path.join(TSTDIR, TSTSUFF, TST + EXT)))
+
+        return TX,Failed,Failed,elem,reason,links
+
     if reason:
         pass
     elif MissingTests:
