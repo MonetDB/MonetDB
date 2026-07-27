@@ -2504,7 +2504,7 @@ rel_join2semijoin(visitor *v, sql_rel *rel)
 		}
 	}
 	/* simplify group join returning only columns of left into semijoin */
-	if (is_innerjoin(rel->op) && !list_empty(rel->attr)) {
+	if (0 && is_innerjoin(rel->op) && !list_empty(rel->attr)) { /* TODO test if those attr's are distinct ! */
 		int nr = 0;
 		for(node *n = rel->attr->h; n; n = n->next) {
 			sql_exp *e = n->data;
