@@ -11,6 +11,7 @@
 #ifndef _GDK_SEARCH_H_
 #define _GDK_SEARCH_H_
 
+#define XXH_INLINE_ALL
 #include <xxhash.h>
 
 struct Hash {
