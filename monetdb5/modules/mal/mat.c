@@ -143,6 +143,15 @@ MATpackIncrement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			BBPunfix(b->batCacheid);
 			throw(MAL, "mat.pack", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
+		if (tt == TYPE_str && b->ustr) {
+			MT_thread_setalgorithm("convert to ustr", __func__);
+			BAT *bu = BATdescriptor(b->ustr);
+			gdk_return rc = BATconvert2ustr(bn, bu);
+			BBPreclaim(bu);
+			if (rc != GDK_SUCCEED)
+				TRC_WARNING(GDK, "convert to ustr failed");
+		}
+
 		/* allocate enough space for the vheap, but not for strings,
 		 * since BATappend does clever things for strings, and not for
 		 * vheap views since they may well get shared */

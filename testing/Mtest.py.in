@@ -3149,6 +3149,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, len
                 pSrvr = ServerClass(Srvr, SrvrOut, SrvrErr, TIMEOUT, os.path.join(dbpath, '.started'), TSTDB, dbg=env.get('DBG'))
                 pSrvr.LaunchIt(cwd=TSTTRGDIR, env=environ)
                 if pSrvr.port is None:
+                    print('\nFailed to start server.\n', file=pSrvr.errfile)
                     print('\nFailed to start server.\n')
                     return 'serverfail'
                 environ['MAPIPORT'] = pSrvr.port

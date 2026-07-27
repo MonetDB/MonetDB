@@ -1468,7 +1468,9 @@ mvc_default(mvc *m, sql_column *col, char *val)
 {
 	TRC_DEBUG(SQL_TRANS, "Default: %s %s\n", col->base.name, val);
 	if (col->t->persistence == SQL_DECLARED_TABLE) {
-		col->def = val?ma_strdup(m->sa, val):NULL;
+		if (val && (val = ma_strdup(m->sa, val)) == NULL)
+			return -1;
+		col->def = val;
 		return 0;
 	} else {
 		return sql_trans_alter_default(m->session->tr, col, val);
@@ -1492,13 +1494,43 @@ mvc_storage(mvc *m, sql_column *col, char *storage)
 {
 	TRC_DEBUG(SQL_TRANS, "Storage: %s %s\n", col->base.name, storage);
 	if (col->t->persistence == SQL_DECLARED_TABLE) {
-		col->storage_type = storage?ma_strdup(m->sa, storage):NULL;
+		if (storage && (storage = ma_strdup(m->sa, storage)) == NULL)
+			return -1;
+		col->storage_type = storage;
 		return 0;
 	} else {
 		return sql_trans_alter_storage(m->session->tr, col, storage);
 	}
 }
 
+int
+mvc_ustr(mvc *m, sql_schema *s, sql_column *col, dlist *l)
+{
+	const char *sname = qname_schema(l);
+	const char *uname = qname_schema_object(l);
+	if (sname != NULL && (s = mvc_bind_schema(m, sname)) == NULL)
+		return -4;
+	TRC_DEBUG(SQL_TRANS, "Ustr: %s %s.%s\n", col->base.name, s->base.name, uname);
+	if (!EC_VARCHAR(col->type.type->eclass))
+		return -5;
+	sql_ustr *u = find_sql_ustr(m->session->tr, s, uname);
+	if (u == NULL)
+		return -6;
+	char buf[32];	   /* max 2 times 10 digits, 2 spaces, "USTR", \0 */
+	int len = snprintf(buf, sizeof(buf), "USTR %d %d", s->base.id, u->base.id);
+	assert(len < (int) sizeof(buf) && len > 5);
+	(void) len;					/* no need to check: correct args, it fits */
+	char *storage = ma_strdup(m->sa, buf);
+	if (storage == NULL)
+		return -1;
+	if (isDeclaredTable(col->t)) {
+		col->storage_type = storage;
+		return 0;
+	} else {
+		assert(0);
+		return sql_trans_alter_storage(m->session->tr, col, storage);
+	}
+}
 int
 mvc_subtype(mvc *m, sql_column *col, sql_subtype *t)
 {

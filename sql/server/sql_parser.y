@@ -304,6 +304,7 @@ int yydebug=1;
 	sql
 	SelectStmt
 	sqlstmt
+	storage_type
 	string_funcs
 	table_constraint
 	table_constraint_type
@@ -321,6 +322,8 @@ int yydebug=1;
 	type_def
 	update_statement
 	update_stmt
+	ustr_def
+	ustr_column
 	value_exp
 	view_def
 	when_statement
@@ -614,7 +617,7 @@ int yydebug=1;
 	IDENT aTYPE RANK MARGFUNC sqlINT OIDNUM HEXADECIMALNUM OCTALNUM BINARYNUM INTNUM APPROXNUM
 	USING
 	GLOBAL CAST CONVERT
-	CHARACTER VARYING LARGE OBJECT VARCHAR CLOB sqlTEXT BINARY sqlBLOB
+	CHARACTER VARYING LARGE OBJECT VARCHAR CLOB sqlTEXT BINARY sqlBLOB sqlSTRING
 	sqlDECIMAL sqlFLOAT
 	TINYINT SMALLINT BIGINT HUGEINT sqlINTEGER
 	sqlDOUBLE sqlREAL PRECISION PARTIAL SIMPLE ACTION CASCADE RESTRICT
@@ -1169,9 +1172,10 @@ schema:
 			append_list(l, $4);
 			append_symbol(l, $5);
 			append_symbol(l, $6);
-			append_list(l, $7);
 			append_int(l, $3);
 			$$ = _symbol_create_list( SQL_CREATE_SCHEMA, l);
+			if ($7 && dlist_length($7))
+				$$ = _symbol_create_list(SQL_CREATE_SCHEMA_WITH_ELEMENTS, dlist_prepend(SA, $7, $$));
 		}
 	|	drop SCHEMA if_exists qname drop_action
 		{
@@ -1658,6 +1662,7 @@ create_statement:
 	|	index_def
 	|	seq_def
 	|	trigger_def
+	|	ustr_def
 	;
 
 create_statement_in_schema:
@@ -1666,6 +1671,7 @@ create_statement_in_schema:
 	|	index_def
 	|	seq_def
 	|	trigger_def
+	|	ustr_def
 	;
 
 /*=== BEGIN SEQUENCES ===*/
@@ -2259,6 +2265,8 @@ column_option:
 		default
 	|	column_constraint
 	|	generated_column
+	|	storage_type
+	|	ustr_column
 	;
 
 default:
@@ -2267,6 +2275,21 @@ default:
 
 default_value:
 		scalar_exp_no_and { $$ = $1; }
+	;
+
+storage_type:
+		STORAGE string { $$ = _symbol_create(SQL_STORAGE, $2); }
+	;
+
+ustr_column:
+		DISTINCT sqlSTRING COLUMN qname
+		{
+			$$ = _symbol_create_list(SQL_USTR, $4);
+		}
+	|	USING qname
+		{
+			$$ = _symbol_create_list(SQL_USTR, $2);
+		}
 	;
 
 column_constraint:
@@ -3005,6 +3028,16 @@ triggered_statement:
 	|	BEGIN ATOMIC trigger_procedure_statement_list END { $$ = $3; }
 	;
 
+ustr_def:
+		CREATE DISTINCT sqlSTRING COLUMN if_not_exists qname
+		{
+			dlist *l = L();
+			append_list(l, $6);
+			append_int(l, $5);
+			$$ = _symbol_create_list( SQL_CREATE_USTR, l );
+		}
+	;
+
 routine_designator:
 		func_def_type qname opt_typelist
 		{
@@ -3112,6 +3145,14 @@ drop_statement:
 			append_list(l, $4 );
 			append_int(l, $3 );
 			$$ = _symbol_create_list( SQL_DROP_TRIGGER, l );
+		}
+	|	drop DISTINCT sqlSTRING COLUMN if_exists qname drop_action
+		{
+			dlist *l = L();
+			append_list(l, $6);
+			append_int(l, $5);
+			append_int(l, $7);
+			$$ = _symbol_create_list(SQL_DROP_USTR, l);
 		}
 	;
 
@@ -6654,6 +6695,7 @@ varchar:
 
 clob:
 		CLOB                   { $$ = $1; }
+	|	sqlSTRING              { $$ = $1; }
 	|	sqlTEXT                { $$ = $1; }
 	|	CHARACTER LARGE OBJECT { $$ = $1; }
 	;
@@ -7987,11 +8029,13 @@ char *token2string(tokens token)
 	SQL(CREATE_INDEX);
 	SQL(CREATE_ROLE);
 	SQL(CREATE_SCHEMA);
+	SQL(CREATE_SCHEMA_WITH_ELEMENTS);
 	SQL(CREATE_SEQ);
 	SQL(CREATE_TABLE);
 	SQL(CREATE_TRIGGER);
 	SQL(CREATE_TYPE);
 	SQL(CREATE_USER);
+	SQL(CREATE_USTR);
 	SQL(CREATE_VIEW);
 	SQL(CUBE);
 	SQL(CURRENT_ROW);
@@ -8012,6 +8056,7 @@ char *token2string(tokens token)
 	SQL(DROP_TRIGGER);
 	SQL(DROP_TYPE);
 	SQL(DROP_USER);
+	SQL(DROP_USTR);
 	SQL(DROP_VIEW);
 	SQL(ELSE);
 	SQL(ESCAPE);
@@ -8097,6 +8142,7 @@ char *token2string(tokens token)
 	SQL(UNIQUE_NULLS_NOT_DISTINCT);
 	SQL(UPDATE);
 	SQL(USING);
+	SQL(USTR);
 	SQL(VALUES);
 	SQL(VIEW);
 	SQL(WHEN);

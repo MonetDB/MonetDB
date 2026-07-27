@@ -17,6 +17,7 @@
 struct Hash {
 	int type;		/* type of index entity */
 	uint8_t width;		/* width of hash entries */
+	bool offsets;		/* hash on offsets */
 	BUN mask1;		/* .mask1 < .nbucket <= .mask2 */
 	BUN mask2;		/* ... both are power-of-two minus one */
 	BUN nbucket;		/* number of valid hash buckets */
@@ -295,12 +296,19 @@ blobHash(const void *x)
 	for (hb = HASHget(h, HASHprobe(h, v));			\
 	     hb != BUN_NONE;					\
 	     hb = HASHgetlink(h, hb))				\
-		if (ATOMeq(h->type, v, BUNtail(bi, hb)))
+		if ((h)->offsets ?					\
+		    *(var_t*)(v) == VarHeapVal((bi)->base, hb, (bi)->width) : \
+		    ATOMeq(h->type, v, BUNtail(bi, hb)))
 #define HASHloop_str(bi, h, hb, v)				\
 	for (hb = HASHget(h, HASHbucket(h, strHash(v)));	\
 	     hb != BUN_NONE;					\
 	     hb = HASHgetlink(h, hb))				\
 		if (strEQ(v, BUNtvar(bi, hb)))
+#define HASHloop_var_t(bi, h, hb, v)				\
+	for (hb = HASHget(h, HASHprobe(h, v));			\
+	     hb != BUN_NONE;					\
+	     hb = HASHgetlink(h, hb))				\
+		if (*(var_t*)(v) == VarHeapVal((bi)->base, hb, (bi)->width))
 
 #define HASHlooploc(bi, h, hb, v)				\
 	for (hb = HASHget(h, HASHprobe(h, v));			\

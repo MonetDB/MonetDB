@@ -21,6 +21,7 @@
 #define CATALOG_AUG2024 52303	/* first in Aug2024 */
 #define CATALOG_MAR2025 52304	/* first in Mar2025 */
 #define CATALOG_DEC2025 52305	/* first in Dec2025 */
+#define CATALOG_DEC2025_1 52306	/* first in Dec2025-SP1 */
 
 /* Note, CATALOG version 52300 is the first one where the basic system
  * tables (the ones created in store.c) have fixed and unchangeable
@@ -117,6 +118,14 @@ bl_preversion(sqlstore *store, int oldversion, int newversion)
 
 #ifdef CATALOG_DEC2025
 	if (oldversion == CATALOG_DEC2025) {
+		/* upgrade to default releases */
+		store->catalog_version = oldversion;
+		return GDK_SUCCEED;
+	}
+#endif
+
+#ifdef CATALOG_DEC2025_1
+	if (oldversion == CATALOG_DEC2025_1) {
 		/* upgrade to default releases */
 		store->catalog_version = oldversion;
 		return GDK_SUCCEED;
@@ -1073,6 +1082,8 @@ bl_postversion(void *Store, logger *lg)
 	}
 #endif
 
+	/* no special handling for CATALOG_DEC2025_1 */
+
 	return GDK_SUCCEED;
 }
 
@@ -1469,7 +1480,7 @@ snapshot_bats(stream *plan, BAT *bats_to_omit, const char *db_dir)
 		}
 
 		// Include the heaps in the plan
-		if (ATOMvarsized(b.ttype)) {
+		if (ATOMvarsized(b.ttype) && !b.ustr) {
 			r = snapshot_heap(plan, db_dir, b.batCacheid, filename, "theap", b.tvheap->free);
 			if (r != GDK_SUCCEED)
 				goto end;

@@ -143,7 +143,9 @@ typedef enum ddl_statement {
 	ddl_comment_on,
 	ddl_rename_schema,
 	ddl_rename_table,
-	ddl_rename_column
+	ddl_rename_column,
+	ddl_create_ustr,
+	ddl_drop_ustr,
 } ddl_statement;
 
 typedef enum operator_type {
