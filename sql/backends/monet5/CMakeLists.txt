@@ -192,7 +192,7 @@ target_link_libraries(sql
   mapi
   bat
   mutils
-  ${XXHASH_LIBRARIES})
+  ${XXHASH_LDFLAGS})
 
 set_target_properties(sql
   PROPERTIES

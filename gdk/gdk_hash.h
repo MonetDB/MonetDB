@@ -11,8 +11,26 @@
 #ifndef _GDK_SEARCH_H_
 #define _GDK_SEARCH_H_
 
+#ifdef __APPLE__
+/* the compiler on the Mac can't deal with including xxhash.h twice
+ * because of identical redefinitions of types and we happen to know
+ * that the xxhash version is high enough, so just define the magic
+ * inline token and include the file only once */
+#define XXH_INLINE_ALL
+#endif
+
+#include <xxhash.h>
+
+#ifndef __APPLE__
+#if XXH_VERSION_NUMBER >= 0*100*100 + 8*100 + 0   /* at least 0.8.0 */
+/* in newer versions, we can define XXH_INLINE_ALL to inline all hash
+ * functions before including xxhash.h again (we didn't need the first
+ * include, except we need the version number to make the
+ * distinction) */
 #define XXH_INLINE_ALL
 #include <xxhash.h>
+#endif
+#endif
 
 struct Hash {
 	int type;		/* type of index entity */

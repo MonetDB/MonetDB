@@ -13,17 +13,12 @@ find_package(BISON 3.0 REQUIRED)
 find_package(Iconv)
 find_package(Threads)
 find_package(PkgConfig REQUIRED)
-pkg_check_modules(PC_XXHASH REQUIRED libxxhash)
-find_library(XXHASH_LIBRARIES NAMES xxhash
-  HINTS
-  ${PC_XXHASH_LIBDIR}
-  ${PC_XXHASH_LIBRARY_DIRS}
-)
-find_path(XXHASH_INCLUDE_DIR NAMES xxhash.h
-  HINTS
-  ${PC_XXHASH_INCLUDEDIR}
-  ${PC_XXHASH_INCLUDE_DIRS}
-)
+pkg_check_modules(XXHASH REQUIRED libxxhash)
+if(${XXHASH_VERSION} VERSION_GREATER_EQUAL "0.8.0")
+  # with version at least 0.8.0 we inline all xxhash functions so we
+  # don't need the library
+  set(XXHASH_LDFLAGS "")
+endif()
 
 find_package(Python3 COMPONENTS Interpreter Development)
 
