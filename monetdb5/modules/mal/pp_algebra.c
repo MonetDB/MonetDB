@@ -17,47 +17,47 @@
 #include "algebra.h"
 #include "calc.h"
 
-#define sum(a,b) a+b
-#define prod(a,b) a*b
+#define sum(a, b) (a + b)
+#define prod(a, b) (a * b)
 #ifndef min
-#define min(a,b) a<b?a:b
-#define max(a,b) a>b?a:b
+#define min(a,b) (a < b ? a : b)
+#define max(a,b) (a > b ? a : b)
 #endif
 
-#define uuid_min(a,b) ((cmp((void*)&a,(void*)&b)<0)?a:b)
-#define uuid_max(a,b) ((cmp((void*)&a,(void*)&b)>0)?a:b)
+#define uuid_min(a,b) ((cmp((void*)&a, (void*)&b) < 0) ? a : b)
+#define uuid_max(a,b) ((cmp((void*)&a, (void*)&b) > 0) ? a : b)
 
-#define inet4_min(a,b) ((cmp((void*)&a,(void*)&b)<0)?a:b)
-#define inet4_max(a,b) ((cmp((void*)&a,(void*)&b)>0)?a:b)
+#define inet4_min(a,b) ((cmp((void*)&a, (void*)&b) < 0) ? a : b)
+#define inet4_max(a,b) ((cmp((void*)&a, (void*)&b) > 0) ? a : b)
 
 #define getArgReference_date(stk, pci, nr) (date*)getArgReference(stk, pci, nr)
 #define getArgReference_inet4(stk, pci, nr) (inet4*)getArgReference(stk, pci, nr)
 #define getArgReference_daytime(stk, pci, nr) (daytime*)getArgReference(stk, pci, nr)
 #define getArgReference_timestamp(stk, pci, nr) (timestamp*)getArgReference(stk, pci, nr)
 
-#define aggr(T,f)												\
-	if (type == TYPE_##T) {										\
-		T val = *getArgReference_##T(stk, pci, 1);				\
-		if (!is_##T##_nil(val) && BATcount(b)) {				\
-			T *t = Tloc(b, 0);									\
-			if (is_##T##_nil(t[0])) {							\
-				t[0] = val;										\
-			} else												\
-				t[0] = f(t[0], val);							\
-			MT_lock_set(&b->theaplock);							\
-			b->tnil = false;									\
-			b->tnonil = true;									\
-			MT_lock_unset(&b->theaplock);						\
-		} else if (BATcount(b) == 0) {							\
-			if (no_nil)											\
-				val = 0;										\
-			if (BUNappend(b, &val, true) != GDK_SUCCEED)		\
-				err = createException(MAL, "lockedaggr." #f,	\
-					SQLSTATE(HY013) MAL_MALLOC_FAIL);			\
-		}														\
+#define aggr(T, f)														\
+	if (type == TYPE_##T) {												\
+		T val = *getArgReference_##T(stk, pci, 1);						\
+		if (!is_##T##_nil(val) && BATcount(b)) {						\
+			T *t = Tloc(b, 0);											\
+			if (is_##T##_nil(t[0])) {									\
+				t[0] = val;												\
+			} else														\
+				t[0] = f(t[0], val);									\
+			MT_lock_set(&b->theaplock);									\
+			b->tnil = false;											\
+			b->tnonil = true;											\
+			MT_lock_unset(&b->theaplock);								\
+		} else if (BATcount(b) == 0) {									\
+			if (no_nil)													\
+				val = 0;												\
+			if (BUNappend(b, &val, true) != GDK_SUCCEED)				\
+				err = createException(MAL, "lockedaggr." #f,			\
+									  SQLSTATE(HY013) MAL_MALLOC_FAIL);	\
+		}																\
 	}
 
-#define faggr(T,f)														\
+#define faggr(T, f)														\
 	if (type == TYPE_##T) {												\
 		T val = *getArgReference_TYPE(stk, pci, 1, T);					\
 		int (*cmp)(const void *v1,const void *v2) = ATOMcompare(type);	\
@@ -76,7 +76,7 @@
 				val = 0;												\
 			if (BUNappend(b, &val, true) != GDK_SUCCEED)				\
 				err = createException(MAL, "lockedaggr." #f,			\
-					SQLSTATE(HY013) MAL_MALLOC_FAIL);					\
+									  SQLSTATE(HY013) MAL_MALLOC_FAIL);	\
 		}																\
 	}
 
@@ -90,11 +90,11 @@ LOCKEDAGGRsum1_(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool no
 
 	if (
 #ifdef HAVE_HGE
-			type != TYPE_hge &&
+		type != TYPE_hge &&
 #endif
-			type != TYPE_lng && type != TYPE_int && type != TYPE_sht && type != TYPE_bte &&
-			type != TYPE_flt && type != TYPE_dbl)
-			return createException(SQL, "lockedaggr.sum", "Wrong input type (%d)", type);
+		type != TYPE_lng && type != TYPE_int && type != TYPE_sht && type != TYPE_bte &&
+		type != TYPE_flt && type != TYPE_dbl)
+		return createException(SQL, "lockedaggr.sum", "Wrong input type (%d)", type);
 
 	pipeline_lock(p);
 
@@ -121,24 +121,24 @@ LOCKEDAGGRsum1_(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool no
 				BBPunfix(b->batCacheid);
 		}
 	} else {
-			ptr p = (ptr)ATOMnilptr(type);
+		ptr p = (ptr)ATOMnilptr(type);
 #ifdef HAVE_HGE
-			hge val = 0;
+		hge val = 0;
 #else
-			lng val = 0;
+		lng val = 0;
 #endif
-			if (no_nil)
-				p = &val;
-			BAT *b = COLnew(0, type, 1, TRANSIENT);
-			if (!b || BUNappend(b, p, true) != GDK_SUCCEED)
-				err = createException(MAL, "lockedaggr.sum", "Result is not initialized");
-			if (!err) {
-				*res = b->batCacheid;
-				BATnegateprops(b);
-				BBPkeepref(b);
-			} else if (b) {
-				BBPunfix(b->batCacheid);
-			}
+		if (no_nil)
+			p = &val;
+		BAT *b = COLnew(0, type, 1, TRANSIENT);
+		if (!b || BUNappend(b, p, true) != GDK_SUCCEED)
+			err = createException(MAL, "lockedaggr.sum", "Result is not initialized");
+		if (!err) {
+			*res = b->batCacheid;
+			BATnegateprops(b);
+			BBPkeepref(b);
+		} else if (b) {
+			BBPunfix(b->batCacheid);
+		}
 	}
 	pipeline_unlock(p);
 	if (err)
@@ -159,25 +159,25 @@ LOCKEDAGGRsum_no_nil1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return LOCKEDAGGRsum1_(cntxt, mb, stk, pci, true);
 }
 
-#define paggr(T,OT,f)											\
-	if (type == TYPE_##T && b->ttype == TYPE_##OT) {			\
-		T val = *getArgReference_##T(stk, pci, 1);				\
-		if (!is_##T##_nil(val) && BATcount(b)) {				\
-			OT *t = Tloc(b, 0);									\
-			if (is_##OT##_nil(t[0])) {							\
-				t[0] = val;										\
-			} else												\
-				t[0] = f(t[0], val);							\
-			MT_lock_set(&b->theaplock);							\
-			b->tnil = false;									\
-			b->tnonil = true;									\
-			MT_lock_unset(&b->theaplock);						\
-		} else if (BATcount(b) == 0) {							\
-			OT ov = val;										\
-			if (BUNappend(b, &ov, true) != GDK_SUCCEED)			\
-				err = createException(MAL, "lockedaggr." #f,	\
-					SQLSTATE(HY013) MAL_MALLOC_FAIL);			\
-		}														\
+#define paggr(T, OT, f)													\
+	if (type == TYPE_##T && b->ttype == TYPE_##OT) {					\
+		T val = *getArgReference_##T(stk, pci, 1);						\
+		if (!is_##T##_nil(val) && BATcount(b)) {						\
+			OT *t = Tloc(b, 0);											\
+			if (is_##OT##_nil(t[0])) {									\
+				t[0] = val;												\
+			} else														\
+				t[0] = f(t[0], val);									\
+			MT_lock_set(&b->theaplock);									\
+			b->tnil = false;											\
+			b->tnonil = true;											\
+			MT_lock_unset(&b->theaplock);								\
+		} else if (BATcount(b) == 0) {									\
+			OT ov = val;												\
+			if (BUNappend(b, &ov, true) != GDK_SUCCEED)					\
+				err = createException(MAL, "lockedaggr." #f,			\
+									  SQLSTATE(HY013) MAL_MALLOC_FAIL);	\
+		}																\
 	}
 
 static str
@@ -190,11 +190,11 @@ LOCKEDAGGRprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if (
 #ifdef HAVE_HGE
-			type != TYPE_hge &&
+		type != TYPE_hge &&
 #endif
-			type != TYPE_lng && type != TYPE_int && type != TYPE_sht && type != TYPE_bte &&
-			type != TYPE_flt && type != TYPE_dbl)
-			return createException(SQL, "lockedaggr.prod", "Wrong input type (%d)", type);
+		type != TYPE_lng && type != TYPE_int && type != TYPE_sht && type != TYPE_bte &&
+		type != TYPE_flt && type != TYPE_dbl)
+		return createException(SQL, "lockedaggr.prod", "Wrong input type (%d)", type);
 
 	pipeline_lock(p);
 	if (!is_bat_nil(*res)) {
@@ -229,7 +229,7 @@ LOCKEDAGGRprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				BBPunfix(b->batCacheid);
 		}
 	} else {
-			err = createException(SQL, "lockedaggr.prod", "Result is not initialized");
+		err = createException(SQL, "lockedaggr.prod", "Result is not initialized");
 	}
 	pipeline_unlock(p);
 	if (err)
@@ -240,7 +240,7 @@ LOCKEDAGGRprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 #define avg_aggr(T)														\
 	if (type == TYPE_##T) {												\
-		T val = *getArgReference_##T(stk, pci, pci->retc);			\
+		T val = *getArgReference_##T(stk, pci, pci->retc);				\
 		lng cnt = *getArgReference_lng(stk, pci, pci->retc + 1);		\
 		if (cnt > 0 && !is_##T##_nil(val) && BATcount(b)) {				\
 			T *t = Tloc(b, 0);											\
@@ -250,7 +250,7 @@ LOCKEDAGGRprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				tcnt[0] = cnt;											\
 			} else {													\
 				dbl tt = (dbl) (tcnt[0] + cnt);							\
-				t[0] = (T) ((t[0]*((dbl)tcnt[0]/tt)) + (val*((dbl)cnt/tt))); \
+				t[0] = (T) ((t[0]*((dbl)tcnt[0] / tt)) + (val * ((dbl)cnt / tt))); \
 				tcnt[0] += cnt;											\
 			}															\
 			MT_lock_set(&b->theaplock);									\
@@ -260,7 +260,7 @@ LOCKEDAGGRprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		} else if (cnt > 0 && BATcount(b) == 0) {						\
 			if (BUNappend(b, &val, true) != GDK_SUCCEED) {				\
 				err = createException(MAL, "lockedaggr.avg",			\
-					SQLSTATE(HY013) MAL_MALLOC_FAIL);					\
+									  SQLSTATE(HY013) MAL_MALLOC_FAIL);	\
 				goto error;												\
 			}															\
 		}																\
@@ -298,12 +298,12 @@ mulmod(lng a, lng b, lng c)
 #endif
 
 #ifdef TRUNCATE_NUMBERS
-#define fix_avg(T, a, r, n)								\
-	do {												\
-		if (!is_##T##_nil(a) && r > 0 && a < 0) {		\
-			a++;										\
-			r -= n;										\
-		}												\
+#define fix_avg(T, a, r, n)							\
+	do {											\
+		if (!is_##T##_nil(a) && r > 0 && a < 0) {	\
+			a++;									\
+			r -= n;									\
+		}											\
 	} while (0)
 #else
 #define fix_avg(T, a, r, n)										\
@@ -347,192 +347,192 @@ mulmod(lng a, lng b, lng c)
  * -1 and 1), so (a*b)%c is the remainder.
  */
 #ifdef HAVE___INT128
-#define avg_aggr_comb(T, a1, r1, n1, a2, r2, n2)								\
-	do {																		\
-		if (is_##T##_nil(a2)) {													\
-			if (!is_lng_nil(r2)) {												\
-				a2 = a1;														\
-				r2 = r1;														\
-				n2 = n1;														\
-			}																	\
-		} else if (!is_##T##_nil(a1)) {											\
-			lng N1 = is_lng_nil(n1) ? 0 : n1;									\
-			lng N2 = is_lng_nil(n2) ? 0 : n2;									\
-			lng n = N1 + N2;													\
-			T a;																\
-			lng r;																\
-			if (n == 0) {														\
-				a = 0;															\
-				r = 0;															\
-			} else {															\
-				a = (T) ((a1 / n) * N1 + ((a1 % n) * (__int128) N1) / n + 		\
-						 (a2 / n) * N2 + ((a2 % n) * (__int128) N2) / n +		\
-						 (r1 + r2) / n);										\
-				r = mulmod(a1, N1, n) + mulmod(a2, N2, n) + (r1 + r2) % n; 		\
-				while (r >= n) {												\
-					r -= n;														\
-					a++;														\
-				}																\
-				while (r < 0) {													\
-					r += n;														\
-					a--;														\
-				}																\
-				fix_avg(T, a, r, n);											\
-			}																	\
-			a2 = a;																\
-			r2 = r;																\
-			n2 = n;																\
-		}																		\
+#define avg_aggr_comb(T, a1, r1, n1, a2, r2, n2)						\
+	do {																\
+		if (is_##T##_nil(a2)) {											\
+			if (!is_lng_nil(r2)) {										\
+				a2 = a1;												\
+				r2 = r1;												\
+				n2 = n1;												\
+			}															\
+		} else if (!is_##T##_nil(a1)) {									\
+			lng N1 = is_lng_nil(n1) ? 0 : n1;							\
+			lng N2 = is_lng_nil(n2) ? 0 : n2;							\
+			lng n = N1 + N2;											\
+			T a;														\
+			lng r;														\
+			if (n == 0) {												\
+				a = 0;													\
+				r = 0;													\
+			} else {													\
+				a = (T) ((a1 / n) * N1 + ((a1 % n) * (__int128) N1) / n + \
+						 (a2 / n) * N2 + ((a2 % n) * (__int128) N2) / n + \
+						 (r1 + r2) / n);								\
+				r = mulmod(a1, N1, n) + mulmod(a2, N2, n) + (r1 + r2) % n; \
+				while (r >= n) {										\
+					r -= n;												\
+					a++;												\
+				}														\
+				while (r < 0) {											\
+					r += n;												\
+					a--;												\
+				}														\
+				fix_avg(T, a, r, n);									\
+			}															\
+			a2 = a;														\
+			r2 = r;														\
+			n2 = n;														\
+		}																\
 	} while (0)
 #elif defined(_MSC_VER) && _MSC_VER >= 1920 && defined(_M_AMD64) && !defined(__INTEL_COMPILER)
 #include <intrin.h>
 #include <immintrin.h>
 #pragma intrinsic(_mul128)
 #pragma intrinsic(_div128)
-#define avg_aggr_comb(T, a1, r1, n1, a2, r2, n2)			\
-	do {								\
-		if (is_##T##_nil(a2)) {					\
-			a2 = a1;					\
-			r2 = r1;					\
-			n2 = n1;					\
-		} else if (!is_##T##_nil(a1)) {				\
-			lng N1 = is_lng_nil(n1) ? 0 : n1;		\
-			lng N2 = is_lng_nil(n2) ? 0 : n2;		\
-			lng n = N1 + N2;				\
-			T a;						\
-			lng r;						\
-			if (n == 0) {					\
-				a = 0;					\
-				r = 0;					\
-			} else {					\
-				a = (T) ((a1 / n) * N1 +  (a2 / n) * N2 + (r1 + r2) / n); 	\
-				__int64 xlo, xhi, rem;										\
+#define avg_aggr_comb(T, a1, r1, n1, a2, r2, n2)						\
+	do {																\
+		if (is_##T##_nil(a2)) {											\
+			a2 = a1;													\
+			r2 = r1;													\
+			n2 = n1;													\
+		} else if (!is_##T##_nil(a1)) {									\
+			lng N1 = is_lng_nil(n1) ? 0 : n1;							\
+			lng N2 = is_lng_nil(n2) ? 0 : n2;							\
+			lng n = N1 + N2;											\
+			T a;														\
+			lng r;														\
+			if (n == 0) {												\
+				a = 0;													\
+				r = 0;													\
+			} else {													\
+				a = (T) ((a1 / n) * N1 +  (a2 / n) * N2 + (r1 + r2) / n); \
+				__int64 xlo, xhi, rem;									\
 				xlo = _mul128((__int64) (a1 % n), N1, &xhi);			\
 				a += (T) _div128(xhi, xlo, (__int64) n, &rem);			\
 				xlo = _mul128((__int64) (a2 % n), N2, &xhi);			\
 				a += (T) _div128(xhi, xlo, (__int64) n, &rem);			\
-				r = (r1 + r2) % n;						\
-				xlo = _mul128(a1, N1, &xhi);					\
-				xhi = _div128(xhi, xlo, n, &xlo); /* xlo is remainder */ 	\
-				r += xlo;							\
-				xlo = _mul128(a2, N2, &xhi);					\
-				xhi = _div128(xhi, xlo, n, &xlo); /* xlo is remainder */ 	\
-				r += xlo;							\
-				while (r >= n) {						\
-					r -= n;							\
-					a++;							\
-				}								\
-				while (r < 0) {							\
-					r += n;							\
-					a--;							\
-				}								\
-				fix_avg(T, a, r, n);						\
-			}									\
-			a2 = a;									\
-			r2 = r;									\
-			n2 = n;									\
-		}										\
+				r = (r1 + r2) % n;										\
+				xlo = _mul128(a1, N1, &xhi);							\
+				xhi = _div128(xhi, xlo, n, &xlo); /* xlo is remainder */ \
+				r += xlo;												\
+				xlo = _mul128(a2, N2, &xhi);							\
+				xhi = _div128(xhi, xlo, n, &xlo); /* xlo is remainder */ \
+				r += xlo;												\
+				while (r >= n) {										\
+					r -= n;												\
+					a++;												\
+				}														\
+				while (r < 0) {											\
+					r += n;												\
+					a--;												\
+				}														\
+				fix_avg(T, a, r, n);									\
+			}															\
+			a2 = a;														\
+			r2 = r;														\
+			n2 = n;														\
+		}																\
 	} while (0)
 #else
-#define avg_aggr_comb(T, a1, r1, n1, a2, r2, n2)			\
-	do {								\
-		if (is_##T##_nil(a2)) {					\
-			a2 = a1;					\
-			r2 = r1;					\
-			n2 = n1;					\
-		} else if (!is_##T##_nil(a1)) {				\
-			lng N1 = is_lng_nil(n1) ? 0 : n1;		\
-			lng N2 = is_lng_nil(n2) ? 0 : n2;		\
-			lng n = N1 + N2;				\
-			T a;						\
-			lng r;						\
-			if (n == 0) {					\
-				a = 0;					\
-				r = 0;					\
-			} else {					\
-				lng x1 = a1 % n;			\
-				lng x2 = a2 % n;			\
-				if ((N1 != 0 &&				\
-					 (x1 > GDK_lng_max / N1 || x1 < -GDK_lng_max / N1)) || 	\
-					(N2 != 0 &&					        \
-					 (x2 > GDK_lng_max / N2 || x2 < -GDK_lng_max / N2))) { 	\
-					err = createException(SQL, "lockedaggr.avg",			\
-						  SQLSTATE(22003) "overflow in calculation");	\
-					goto error;						\
-				}								\
-				a = (T) ((a1 / n) * N1 + (x1 * N1) / n +			\
-						 (a2 / n) * N2 + (x2 * N2) / n +		\
-						 (r1 + r2) / n);				\
-				r = mulmod(a1, N1, n) + mulmod(a2, N2, n) + (r1 + r2) % n; 	\
-				while (r >= n) {						\
-					r -= n;							\
-					a++;							\
-				}								\
-				while (r < 0) {							\
-					r += n;							\
-					a--;							\
-				}								\
-				fix_avg(T, a, r, n);						\
-			}									\
-			a2 = a;									\
-			r2 = r;									\
-			n2 = n;									\
-		}										\
+#define avg_aggr_comb(T, a1, r1, n1, a2, r2, n2)						\
+	do {																\
+		if (is_##T##_nil(a2)) {											\
+			a2 = a1;													\
+			r2 = r1;													\
+			n2 = n1;													\
+		} else if (!is_##T##_nil(a1)) {									\
+			lng N1 = is_lng_nil(n1) ? 0 : n1;							\
+			lng N2 = is_lng_nil(n2) ? 0 : n2;							\
+			lng n = N1 + N2;											\
+			T a;														\
+			lng r;														\
+			if (n == 0) {												\
+				a = 0;													\
+				r = 0;													\
+			} else {													\
+				lng x1 = a1 % n;										\
+				lng x2 = a2 % n;										\
+				if ((N1 != 0 &&											\
+					 (x1 > GDK_lng_max / N1 || x1 < -GDK_lng_max / N1)) || \
+					(N2 != 0 &&											\
+					 (x2 > GDK_lng_max / N2 || x2 < -GDK_lng_max / N2))) { \
+					err = createException(SQL, "lockedaggr.avg",		\
+										  SQLSTATE(22003) "overflow in calculation"); \
+					goto error;											\
+				}														\
+				a = (T) ((a1 / n) * N1 + (x1 * N1) / n +				\
+						 (a2 / n) * N2 + (x2 * N2) / n +				\
+						 (r1 + r2) / n);								\
+				r = mulmod(a1, N1, n) + mulmod(a2, N2, n) + (r1 + r2) % n; \
+				while (r >= n) {										\
+					r -= n;												\
+					a++;												\
+				}														\
+				while (r < 0) {											\
+					r += n;												\
+					a--;												\
+				}														\
+				fix_avg(T, a, r, n);									\
+			}															\
+			a2 = a;														\
+			r2 = r;														\
+			n2 = n;														\
+		}																\
 	} while (0)
 #endif
 
-#define avg_aggr_acc(T)														\
-	do {																	\
-		T a1 = *getArgReference_##T(stk, pci, pci->retc);				\
-		lng r1 = *getArgReference_lng(stk, pci, pci->retc + 1);				\
-		lng n1 = *getArgReference_lng(stk, pci, pci->retc + 2);				\
-		T a2 = *(T*)Tloc(b, 0);								\
-		lng r2 = *(lng*)Tloc(r, 0);							\
-		lng n2 = *(lng*)Tloc(c, 0);							\
-		avg_aggr_comb(T, a1, r1, n1, a2, r2, n2);					\
-		*(T*)Tloc(b, 0) = a2;								\
-		*(lng*)Tloc(r, 0) = r2;								\
-		*(lng*)Tloc(c, 0) = n2;								\
+#define avg_aggr_acc(T)											\
+	do {														\
+		T a1 = *getArgReference_##T(stk, pci, pci->retc);		\
+		lng r1 = *getArgReference_lng(stk, pci, pci->retc + 1);	\
+		lng n1 = *getArgReference_lng(stk, pci, pci->retc + 2);	\
+		T a2 = *(T*)Tloc(b, 0);									\
+		lng r2 = *(lng*)Tloc(r, 0);								\
+		lng n2 = *(lng*)Tloc(c, 0);								\
+		avg_aggr_comb(T, a1, r1, n1, a2, r2, n2);				\
+		*(T*)Tloc(b, 0) = a2;									\
+		*(lng*)Tloc(r, 0) = r2;									\
+		*(lng*)Tloc(c, 0) = n2;									\
 	} while (0)
 
-#define avg_aggr_float(T1, T2, a1, a2, e2, n2)						\
+#define avg_aggr_float(T1, T2, a1, a2, e2, n2)	\
 	do {										\
-		if (is_##T2##_nil(a2)) {						\
+		if (is_##T2##_nil(a2)) {				\
 			a2 = a1;							\
 			e2 = 0;								\
-			overflow += (int)n2;						\
-			n2 = !(is_##T1##_nil(a1));					\
-		} else if (!is_##T1##_nil(a1)) {					\
-			T2 t = a2 + a1;							\
-			if (fabs(a2) >= fabs(a1))					\
-				e2 += (a2 - t) + a1;					\
+			overflow += (int)n2;				\
+			n2 = !(is_##T1##_nil(a1));			\
+		} else if (!is_##T1##_nil(a1)) {		\
+			T2 t = a2 + a1;						\
+			if (fabs(a2) >= fabs(a1))			\
+				e2 += (a2 - t) + a1;			\
 			else								\
-				e2 += (a1 - t) + a2;					\
+				e2 += (a1 - t) + a2;			\
 			a2 = t;								\
-			overflow += (isinf(t) || isnan(t));				\
+			overflow += (isinf(t) || isnan(t));	\
 			n2++;								\
-		}									\
+		}										\
 	} while(0)
 
-#define avg_aggr_float_comb(T, a1, e1, n1, a2, e2, n2)					\
-	do {										\
-		if (is_##T##_nil(a2)) {							\
-			a2 = a1;							\
-			e2 = e1;							\
-			overflow += (int)n2;						\
-			overflow += (is_##T##_nil(a1)?(int)n1:0);			\
-			n2 = n1;							\
+#define avg_aggr_float_comb(T, a1, e1, n1, a2, e2, n2)		\
+	do {													\
+		if (is_##T##_nil(a2)) {								\
+			a2 = a1;										\
+			e2 = e1;										\
+			overflow += (int)n2;							\
+			overflow += (is_##T##_nil(a1) ? (int)n1 : 0);	\
+			n2 = n1;										\
 		} else if (!is_##T##_nil(a1)) {						\
-			T t = a2 + a1;							\
-			if (fabs(a2) >= fabs(a1))					\
-				e2 += (a2 - t) + a1;					\
-			else								\
-				e2 += (a1 - t) + a2;					\
-			a2 = t;								\
+			T t = a2 + a1;									\
+			if (fabs(a2) >= fabs(a1))						\
+				e2 += (a2 - t) + a1;						\
+			else											\
+				e2 += (a1 - t) + a2;						\
+			a2 = t;											\
 			overflow += (isinf(t) || isnan(t));				\
-			e2 += e1;							\
-			n2 += n1;							\
-		}									\
+			e2 += e1;										\
+			n2 += n1;										\
+		}													\
 	} while(0)
 
 static str
@@ -550,11 +550,11 @@ LOCKEDAGGRsum_avg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool 
 
 	if (
 #ifdef HAVE_HGE
-			type != TYPE_hge &&
+		type != TYPE_hge &&
 #endif
-			type != TYPE_lng && type != TYPE_int && type != TYPE_sht && type != TYPE_bte &&
-			type != TYPE_flt && type != TYPE_dbl)
-			return createException(SQL, fcn, "Wrong input type (%d)", type);
+		type != TYPE_lng && type != TYPE_int && type != TYPE_sht && type != TYPE_bte &&
+		type != TYPE_flt && type != TYPE_dbl)
+		return createException(SQL, fcn, "Wrong input type (%d)", type);
 
 	pipeline_lock(p);
 	if (is_bat_nil(*res)) {
@@ -574,59 +574,59 @@ LOCKEDAGGRsum_avg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool 
 			goto error;
 		}
 		switch (b->ttype) {
-			case TYPE_bte:
-				avg_aggr_acc(bte);
-				break;
-			case TYPE_sht:
-				avg_aggr_acc(sht);
-				break;
-			case TYPE_int:
-				avg_aggr_acc(int);
-				break;
-			case TYPE_lng:
-				avg_aggr_acc(lng);
-				break;
+		case TYPE_bte:
+			avg_aggr_acc(bte);
+			break;
+		case TYPE_sht:
+			avg_aggr_acc(sht);
+			break;
+		case TYPE_int:
+			avg_aggr_acc(int);
+			break;
+		case TYPE_lng:
+			avg_aggr_acc(lng);
+			break;
 #ifdef HAVE_HGE
-			case TYPE_hge:
-				avg_aggr_acc(hge);
-				break;
+		case TYPE_hge:
+			avg_aggr_acc(hge);
+			break;
 #endif
-			case TYPE_flt: {
-				int overflow = 0;
-				flt a1 = *getArgReference_flt(stk, pci, pci->retc);
-				flt r1 = *getArgReference_flt(stk, pci, pci->retc + 1);
-				lng n1 = *getArgReference_lng(stk, pci, pci->retc + 2);
-				flt a2 = *(flt*)Tloc(b, 0);
-				flt r2 = *(flt*)Tloc(r, 0);
-				lng n2 = *(lng*)Tloc(c, 0);
-				avg_aggr_float_comb(flt, a1, r1, n1, a2, r2, n2);
-				if (overflow || isinf(a1) || (!n1 && isnan(a1))) {
-					err = createException(SQL, "lockedaggr.avg", "Overflow in avg()");
-					goto error;
-				}
-				*(flt*)Tloc(b, 0) = a2;
-				*(flt*)Tloc(r, 0) = r2;
-				*(lng*)Tloc(c, 0) = n2;
-				break;
+		case TYPE_flt: {
+			int overflow = 0;
+			flt a1 = *getArgReference_flt(stk, pci, pci->retc);
+			flt r1 = *getArgReference_flt(stk, pci, pci->retc + 1);
+			lng n1 = *getArgReference_lng(stk, pci, pci->retc + 2);
+			flt a2 = *(flt*)Tloc(b, 0);
+			flt r2 = *(flt*)Tloc(r, 0);
+			lng n2 = *(lng*)Tloc(c, 0);
+			avg_aggr_float_comb(flt, a1, r1, n1, a2, r2, n2);
+			if (overflow || isinf(a1) || (!n1 && isnan(a1))) {
+				err = createException(SQL, "lockedaggr.avg", "Overflow in avg()");
+				goto error;
 			}
-			case TYPE_dbl: {
-				int overflow = 0;
-				dbl a1 = *getArgReference_dbl(stk, pci, pci->retc);
-				dbl r1 = *getArgReference_dbl(stk, pci, pci->retc + 1);
-				lng n1 = *getArgReference_lng(stk, pci, pci->retc + 2);
-				dbl a2 = *(dbl*)Tloc(b, 0);
-				dbl r2 = *(dbl*)Tloc(r, 0);
-				lng n2 = *(lng*)Tloc(c, 0);
-				avg_aggr_float_comb(dbl, a1, r1, n1, a2, r2, n2);
-				if (overflow || isinf(a1) || (!n1 && isnan(a1))) {
-					err = createException(SQL, "lockedaggr.avg", "Overflow in avg()");
-					goto error;
-				}
-				*(dbl*)Tloc(b, 0) = a2;
-				*(dbl*)Tloc(r, 0) = r2;
-				*(lng*)Tloc(c, 0) = n2;
-				break;
+			*(flt*)Tloc(b, 0) = a2;
+			*(flt*)Tloc(r, 0) = r2;
+			*(lng*)Tloc(c, 0) = n2;
+			break;
+		}
+		case TYPE_dbl: {
+			int overflow = 0;
+			dbl a1 = *getArgReference_dbl(stk, pci, pci->retc);
+			dbl r1 = *getArgReference_dbl(stk, pci, pci->retc + 1);
+			lng n1 = *getArgReference_lng(stk, pci, pci->retc + 2);
+			dbl a2 = *(dbl*)Tloc(b, 0);
+			dbl r2 = *(dbl*)Tloc(r, 0);
+			lng n2 = *(lng*)Tloc(c, 0);
+			avg_aggr_float_comb(dbl, a1, r1, n1, a2, r2, n2);
+			if (overflow || isinf(a1) || (!n1 && isnan(a1))) {
+				err = createException(SQL, "lockedaggr.avg", "Overflow in avg()");
+				goto error;
 			}
+			*(dbl*)Tloc(b, 0) = a2;
+			*(dbl*)Tloc(r, 0) = r2;
+			*(lng*)Tloc(c, 0) = n2;
+			break;
+		}
 		}
 		pipeline_lock2(b);
 		BATnegateprops(b);
@@ -663,7 +663,7 @@ LOCKEDAGGRsum_avg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool 
 	}
 	pipeline_unlock(p);
 	return MAL_SUCCEED;
-  error:
+error:
 	pipeline_unlock(p);
 	if(b) BBPunfix(b->batCacheid);
 	if(c) BBPunfix(c->batCacheid);
@@ -682,34 +682,34 @@ LOCKEDAGGRavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	return LOCKEDAGGRsum_avg(cntxt, mb, stk, pci, false);
 }
-#define vmin(a,b) ((cmp(a,b) < 0)?a:b)
-#define vmax(a,b) ((cmp(a,b) > 0)?a:b)
+#define vmin(a,b) ((cmp(a,b) < 0) ? a : b)
+#define vmax(a,b) ((cmp(a,b) > 0) ? a : b)
 
 #undef aggr
 #undef faggr
 #undef vaggr
 
-#define aggr(T,f)												\
-	if (type == TYPE_##T) {										\
-		T val = *getArgReference_##T(stk, pci, 1);				\
-		if (!is_##T##_nil(val) && BATcount(b)) {				\
-			T *t = Tloc(b, 0);									\
-			if (is_##T##_nil(t[0])) {							\
-				t[0] = val;										\
-			} else												\
-				t[0] = f(t[0], val);							\
-			MT_lock_set(&b->theaplock);							\
-			b->tnil = false;									\
-			b->tnonil = true;									\
-			MT_lock_unset(&b->theaplock);						\
-		} else if (BATcount(b) == 0) {							\
-			if (BUNappend(b, &val, true) != GDK_SUCCEED)		\
-				err = createException(MAL, "lockedaggr." #f,	\
-					SQLSTATE(HY013) MAL_MALLOC_FAIL);			\
-		}														\
+#define aggr(T, f)														\
+	if (type == TYPE_##T) {												\
+		T val = *getArgReference_##T(stk, pci, 1);						\
+		if (!is_##T##_nil(val) && BATcount(b)) {						\
+			T *t = Tloc(b, 0);											\
+			if (is_##T##_nil(t[0])) {									\
+				t[0] = val;												\
+			} else														\
+				t[0] = f(t[0], val);									\
+			MT_lock_set(&b->theaplock);									\
+			b->tnil = false;											\
+			b->tnonil = true;											\
+			MT_lock_unset(&b->theaplock);								\
+		} else if (BATcount(b) == 0) {									\
+			if (BUNappend(b, &val, true) != GDK_SUCCEED)				\
+				err = createException(MAL, "lockedaggr." #f,			\
+									  SQLSTATE(HY013) MAL_MALLOC_FAIL);	\
+		}																\
 	}
 
-#define faggr(T,f)														\
+#define faggr(T, f)														\
 	if (type == TYPE_##T) {												\
 		T val = *getArgReference_TYPE(stk, pci, 1, T);					\
 		int (*cmp)(const void *v1,const void *v2) = ATOMcompare(type);	\
@@ -726,11 +726,11 @@ LOCKEDAGGRavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		} else if (BATcount(b) == 0) {									\
 			if (BUNappend(b, &val, true) != GDK_SUCCEED)				\
 				err = createException(MAL, "lockedaggr." #f,			\
-					SQLSTATE(HY013) MAL_MALLOC_FAIL);					\
+									  SQLSTATE(HY013) MAL_MALLOC_FAIL);	\
 		}																\
 	}
 
-#define vaggr(T,CT,f)													\
+#define vaggr(T, CT, f)													\
 	if (type == TYPE_##T) {												\
 		BATiter bi = bat_iterator(b);									\
 		T val = *getArgReference_##T(stk, pci, 1);						\
@@ -741,12 +741,12 @@ LOCKEDAGGRavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			if (cmp(t,nil) == 0) {										\
 				if (BUNreplace(b, 0, val, true) != GDK_SUCCEED)			\
 					err = createException(MAL, "lockedaggr." #f,		\
-						SQLSTATE(HY013) MAL_MALLOC_FAIL);				\
+										  SQLSTATE(HY013) MAL_MALLOC_FAIL);	\
 			} else														\
 				if (f(t, val) == val)									\
 					if (BUNreplace(b, 0, val, true) != GDK_SUCCEED)		\
 						err = createException(MAL, "lockedaggr." #f,	\
-							SQLSTATE(HY013) MAL_MALLOC_FAIL);			\
+											  SQLSTATE(HY013) MAL_MALLOC_FAIL);	\
 			MT_lock_set(&b->theaplock);									\
 			b->tnil = false;											\
 			b->tnonil = true;											\
@@ -754,7 +754,7 @@ LOCKEDAGGRavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		} else if (BATcount(b) == 0) {									\
 			if (BUNappend(b, val, true) != GDK_SUCCEED)					\
 				err = createException(MAL, "lockedaggr." #f,			\
-					SQLSTATE(HY013) MAL_MALLOC_FAIL);					\
+									  SQLSTATE(HY013) MAL_MALLOC_FAIL);	\
 		}																\
 		bat_iterator_end(&bi);											\
 	}
@@ -769,13 +769,13 @@ LOCKEDAGGRmin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if (
 #ifdef HAVE_HGE
-			type != TYPE_hge &&
+		type != TYPE_hge &&
 #endif
 		type != TYPE_lng && type != TYPE_int && type != TYPE_sht && type != TYPE_bte && type != TYPE_bit &&
 		type != TYPE_flt && type != TYPE_dbl && type != TYPE_oid &&
 		type != TYPE_date && type != TYPE_daytime && type != TYPE_timestamp && type != TYPE_uuid && type != TYPE_str &&
 		type != TYPE_inet4)
-			return createException(SQL, "lockedaggr.min", "Wrong input type (%d)", type);
+		return createException(SQL, "lockedaggr.min", "Wrong input type (%d)", type);
 
 	pipeline_lock(p);
 	if (!is_bat_nil(*res)) {
@@ -812,7 +812,7 @@ LOCKEDAGGRmin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				BBPunfix(b->batCacheid);
 		}
 	} else {
-			err = createException(SQL, "lockedaggr.min", "Result is not initialized");
+		err = createException(SQL, "lockedaggr.min", "Result is not initialized");
 	}
 	pipeline_unlock(p);
 	if (err)
@@ -831,13 +831,13 @@ LOCKEDAGGRmax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if (
 #ifdef HAVE_HGE
-			type != TYPE_hge &&
+		type != TYPE_hge &&
 #endif
 		type != TYPE_lng && type != TYPE_int && type != TYPE_sht && type != TYPE_bte && type != TYPE_bit &&
 		type != TYPE_flt && type != TYPE_dbl && type != TYPE_oid &&
 		type != TYPE_date && type != TYPE_daytime && type != TYPE_timestamp && type != TYPE_uuid && type != TYPE_str &&
 		type != TYPE_inet4)
-			return createException(SQL, "lockedaggr.max", "Wrong input type (%d)", type);
+		return createException(SQL, "lockedaggr.max", "Wrong input type (%d)", type);
 
 	pipeline_lock(p);
 	if (!is_bat_nil(*res)) {
@@ -874,7 +874,7 @@ LOCKEDAGGRmax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				BBPunfix(b->batCacheid);
 		}
 	} else {
-			err = createException(SQL, "lockedaggr.max", "Result is not initialized");
+		err = createException(SQL, "lockedaggr.max", "Result is not initialized");
 	}
 	pipeline_unlock(p);
 	if (err)
@@ -920,115 +920,115 @@ LOCKEDAGGRnull(Client ctx, bat *result, const bit *hadnull)
 }
 
 #define unique_(Type, BaseType, INIT_ALLOCATOR, INIT_ITER, NEW_VAL, HASH_VAL, VAL_NOT_EQUAL, VAL_ASSIGN, ITER_NEXT, NEXTK) \
-	if (tt == TYPE_##Type) { \
-		int slots = 0; \
-		gid slot = 0; \
-		INIT_ITER; \
-		Type *vals = h->vals; \
-		INIT_ALLOCATOR; \
-		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
-			bool new = 0, fnd = 0; \
-			for(; !fnd; ) { \
-				NEW_VAL; \
-				gid hv = HASH_VAL&h->mask, k = hv; \
-				gid g = ATOMIC_GET_GID(h->gids+k); \
-				for(gid l=1;g && VAL_NOT_EQUAL; l++) { \
-					NEXTK; \
-					k &= h->mask; \
-					g = ATOMIC_GET_GID(h->gids+k); \
-				} \
-				if (!g) { \
-					if (slots == 0) { \
-						slots = HT_PRE_CLAIM; \
-						slot = ATOMIC_ADD_GID(&h->last, slots); \
-						if (((slot*100)/70) >= (gid)h->size) { \
-							hash_rehash(h, p, err); \
-							vals = h->vals; \
-							continue; \
-						} \
-					} \
-					slots--; \
-					g = ++slot; \
-					VAL_ASSIGN; \
-					new = 1; \
-					if (!ATOMIC_CAS(h->gids+k, &expected, g)) { \
-						slot--; \
-						slots++; \
-						new = 0; \
-						continue; \
-					} \
-				} \
-				fnd = 1; \
-			} \
-			if (new) \
-				gp[r++] = b->hseqbase + i; \
-		} \
-		ITER_NEXT; \
+	if (tt == TYPE_##Type) {											\
+		int slots = 0;													\
+		gid slot = 0;													\
+		INIT_ITER;														\
+		Type *vals = h->vals;											\
+		INIT_ALLOCATOR;													\
+		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) {						\
+			bool new = 0, fnd = 0;										\
+			for(; !fnd; ) {												\
+				NEW_VAL;												\
+				gid hv = HASH_VAL&h->mask, k = hv;						\
+				gid g = ATOMIC_GET_GID(h->gids+k);						\
+				for(gid l=1;g && VAL_NOT_EQUAL; l++) {					\
+					NEXTK;												\
+					k &= h->mask;										\
+					g = ATOMIC_GET_GID(h->gids+k);						\
+				}														\
+				if (!g) {												\
+					if (slots == 0) {									\
+						slots = HT_PRE_CLAIM;							\
+						slot = ATOMIC_ADD_GID(&h->last, slots);			\
+						if (((slot*100)/70) >= (gid)h->size) {			\
+							hash_rehash(h, p, err);						\
+							vals = h->vals;								\
+							continue;									\
+						}												\
+					}													\
+					slots--;											\
+					g = ++slot;											\
+					VAL_ASSIGN;											\
+					new = 1;											\
+					if (!ATOMIC_CAS(h->gids+k, &expected, g)) {			\
+						slot--;											\
+						slots++;										\
+						new = 0;										\
+						continue;										\
+					}													\
+				}														\
+				fnd = 1;												\
+			}															\
+			if (new)													\
+				gp[r++] = b->hseqbase + i;								\
+		}																\
+		ITER_NEXT;														\
 	}
 
-#define unique(Type) \
-	unique_(Type, \
-			Type, \
-			, \
-			Type *bp = Tloc(b, 0), \
-			, \
-			(gid)_hash_##Type(bp[i]), \
-			vals[g] != bp[i], \
-			vals[g] = bp[i], \
-			, \
-			nextk \
+#define unique(Type)							\
+	unique_(Type,								\
+			Type,								\
+			,									\
+			Type *bp = Tloc(b, 0),				\
+			,									\
+			(gid)_hash_##Type(bp[i]),			\
+			vals[g] != bp[i],					\
+			vals[g] = bp[i],					\
+			,									\
+			nextk								\
 		)
 
-#define funique(Type, BaseType) \
-	unique_(Type, \
-			BaseType, \
-			, \
-			Type *bp = Tloc(b, 0), \
-			, \
-			(gid)_hash_##Type(*(((BaseType*)bp)+i)), \
+#define funique(Type, BaseType)											\
+	unique_(Type,														\
+			BaseType,													\
+			,															\
+			Type *bp = Tloc(b, 0),										\
+			,															\
+			(gid)_hash_##Type(*(((BaseType*)bp)+i)),					\
 			(!(is_##Type##_nil(bp[i]) && is_##Type##_nil(vals[g])) && vals[g] != bp[i]), \
-			vals[g] = bp[i], \
-			, \
-			nextk \
+			vals[g] = bp[i],											\
+			,															\
+			nextk														\
 		)
 
-#define cunique(Type, BaseType) \
-	unique_(Type, \
-			BaseType, \
-			, \
-			Type *bp = Tloc(b, 0), \
-			, \
-			(gid)_hash_##Type(*(((BaseType*)bp)+i)), \
+#define cunique(Type, BaseType)											\
+	unique_(Type,														\
+			BaseType,													\
+			,															\
+			Type *bp = Tloc(b, 0),										\
+			,															\
+			(gid)_hash_##Type(*(((BaseType*)bp)+i)),					\
 			(!(is_##Type##_nil(bp[i]) && is_##Type##_nil(vals[g])) && h->cmp(vals+g, bp+i) != 0), \
-			vals[g] = bp[i], \
-			, \
-			nextk \
+			vals[g] = bp[i],											\
+			,															\
+			nextk														\
 		)
 
-#define aunique_(Type,CType) \
-	unique_(Type, \
-			Type, \
-			allocator *ma = h->allocators[p->wid], \
-			BATiter bi = bat_iterator(b), \
-			CType bpi = BUNtvar(&bi, i), \
-			(gid)h->hsh(bpi), \
-			(h->cmp(vals[g], bpi) != 0), \
-			vals[g] = ma_strdup(ma, bpi), \
-			bat_iterator_end(&bi), \
-			nextk \
+#define aunique_(Type,CType)						\
+	unique_(Type,									\
+			Type,									\
+			allocator *ma = h->allocators[p->wid],	\
+			BATiter bi = bat_iterator(b),			\
+			CType bpi = BUNtvar(&bi, i),			\
+			(gid)h->hsh(bpi),						\
+			(h->cmp(vals[g], bpi) != 0),			\
+			vals[g] = ma_strdup(ma, bpi),			\
+			bat_iterator_end(&bi),					\
+			nextk									\
 		)
 
-#define aunique(Type,CType) \
-	unique_(Type, \
-			Type, \
-			, \
-			BATiter bi = bat_iterator(b), \
-			CType bpi = BUNtvar(&bi, i), \
-			(gid)h->hsh(bpi), \
-			(h->cmp(vals[g], bpi) != 0), \
-			vals[g] = (Type)bpi, \
-			bat_iterator_end(&bi), \
-			nextk \
+#define aunique(Type,CType)						\
+	unique_(Type,								\
+			Type,								\
+			,									\
+			BATiter bi = bat_iterator(b),		\
+			CType bpi = BUNtvar(&bi, i),		\
+			(gid)h->hsh(bpi),					\
+			(h->cmp(vals[g], bpi) != 0),		\
+			vals[g] = (Type)bpi,				\
+			bat_iterator_end(&bi),				\
+			nextk								\
 		)
 
 static str
@@ -1119,27 +1119,27 @@ LALGunique(Client ctx, bat *rid, bat *uid, bat *bid, bat *sid)
 
 			QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 			qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
-			unique(bit)
-			unique(bte)
-			unique(sht)
-			unique(int)
-			unique(date)
-			cunique(inet4, int)
-			unique(lng)
-			unique(daytime)
-			unique(timestamp)
+			unique(bit);
+			unique(bte);
+			unique(sht);
+			unique(int);
+			unique(date);
+			cunique(inet4, int);
+			unique(lng);
+			unique(daytime);
+			unique(timestamp);
 #ifdef HAVE_HGE
-			unique(hge)
+			unique(hge);
 #endif
-			funique(flt, int)
-			funique(dbl, lng)
+			funique(flt, int);
+			funique(dbl, lng);
 #ifdef HAVE_HGE
-			cunique(uuid, hge)
+			cunique(uuid, hge);
 #endif
 			if (local_storage) {
-				aunique_(str,const char *)
+				aunique_(str,const char *);
 			} else {
-				aunique(str,const char *)
+				aunique(str,const char *);
 			}
 			h->processed += cnt;
 			ht_deactivate(h);
@@ -1161,125 +1161,125 @@ LALGunique(Client ctx, bat *rid, bat *uid, bat *bid, bat *sid)
 	}
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
-  error:
+error:
 	if (u) BBPunfix(u->batCacheid);
 	if (b) BBPunfix(b->batCacheid);
 	return err;
 }
 
 #define gunique_(Type, BaseType, INIT_ALLOCATOR, INIT_ITER, NEW_VAL, HASH_VAL, VAL_NOT_EQUAL, VAL_ASSIGN, ITER_NEXT, NEXTK) \
-	if (tt == TYPE_##Type) { \
-		int slots = 0; \
-		gid slot = 0; \
-		INIT_ITER; \
-		Type *vals = h->vals; \
-		INIT_ALLOCATOR; \
-		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
-			bool new = 0, fnd = 0; \
-			for(; !fnd;) { \
-				NEW_VAL; \
+	if (tt == TYPE_##Type) {											\
+		int slots = 0;													\
+		gid slot = 0;													\
+		INIT_ITER;														\
+		Type *vals = h->vals;											\
+		INIT_ALLOCATOR;													\
+		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) {						\
+			bool new = 0, fnd = 0;										\
+			for(; !fnd;) {												\
+				NEW_VAL;												\
 				gid hv = (gid)combine(gi[i], HASH_VAL, prime)&h->mask, k = hv; \
-				gid g = ATOMIC_GET_GID(h->gids+k); \
+				gid g = ATOMIC_GET_GID(h->gids+k);						\
 				for(gid l=1; g && (pgids[g] != gi[i] || VAL_NOT_EQUAL); l++) { \
-					NEXTK; \
-					k &= h->mask; \
-					g = ATOMIC_GET_GID(h->gids+k); \
-				} \
-				if (!g) { \
-					if (slots == 0) { \
-						slots = HT_PRE_CLAIM; \
-						slot = ATOMIC_ADD_GID(&h->last, slots); \
-						if (((slot*100)/70) >= (gid)h->size) { \
-							hash_rehash(h, p, err); \
-							vals = h->vals; \
-							pgids = h->pgids; \
-							prime = hash_prime_nr[h->bits-5]; \
-							continue; \
-						} \
-					} \
-					slots--; \
-					g = ++slot; \
-					VAL_ASSIGN; \
-					pgids[g] = gi[i]; \
-					new = 1; \
-					if (!ATOMIC_CAS(h->gids+k, &expected, g)) { \
-						slot--; \
-						slots++; \
-						new = 0; \
-						continue; \
-					} \
-				} \
-				fnd = 1; \
-			} \
-			if (new) \
-				gp[r++] = b->hseqbase + i; \
-		} \
-		ITER_NEXT; \
+					NEXTK;												\
+					k &= h->mask;										\
+					g = ATOMIC_GET_GID(h->gids+k);						\
+				}														\
+				if (!g) {												\
+					if (slots == 0) {									\
+						slots = HT_PRE_CLAIM;							\
+						slot = ATOMIC_ADD_GID(&h->last, slots);			\
+						if (((slot*100)/70) >= (gid)h->size) {			\
+							hash_rehash(h, p, err);						\
+							vals = h->vals;								\
+							pgids = h->pgids;							\
+							prime = hash_prime_nr[h->bits-5];			\
+							continue;									\
+						}												\
+					}													\
+					slots--;											\
+					g = ++slot;											\
+					VAL_ASSIGN;											\
+					pgids[g] = gi[i];									\
+					new = 1;											\
+					if (!ATOMIC_CAS(h->gids+k, &expected, g)) {			\
+						slot--;											\
+						slots++;										\
+						new = 0;										\
+						continue;										\
+					}													\
+				}														\
+				fnd = 1;												\
+			}															\
+			if (new)													\
+				gp[r++] = b->hseqbase + i;								\
+		}																\
+		ITER_NEXT;														\
 	}
 
-#define gunique(Type) \
-	gunique_(Type, \
-			Type, \
-			, \
-			Type *bp = Tloc(b, 0), \
-			, \
-			(gid)_hash_##Type(bp[i]), \
-			vals[g] != bp[i], \
-			vals[g] = bp[i], \
-			, \
-			nextk \
+#define gunique(Type)							\
+	gunique_(Type,								\
+			 Type,								\
+			 ,									\
+			 Type *bp = Tloc(b, 0),				\
+			 ,									\
+			 (gid)_hash_##Type(bp[i]),			\
+			 vals[g] != bp[i],					\
+			 vals[g] = bp[i],					\
+			 ,									\
+			 nextk								\
 		)
 
-#define gfunique(Type, BaseType) \
-	gunique_(Type, \
-			BaseType, \
-			, \
-			Type *bp = Tloc(b, 0), \
-			, \
-			(gid)_hash_##Type(*(((BaseType*)bp)+i)), \
-			(!(is_##Type##_nil(bp[i]) && is_##Type##_nil(vals[g])) && vals[g] != bp[i]), \
-			vals[g] = bp[i], \
-			, \
-			nextk \
+#define gfunique(Type, BaseType)										\
+	gunique_(Type,														\
+			 BaseType,													\
+			 ,															\
+			 Type *bp = Tloc(b, 0),										\
+			 ,															\
+			 (gid)_hash_##Type(*(((BaseType*)bp)+i)),					\
+			 (!(is_##Type##_nil(bp[i]) && is_##Type##_nil(vals[g])) && vals[g] != bp[i]), \
+			 vals[g] = bp[i],											\
+			 ,															\
+			 nextk														\
 		)
 
-#define gcunique(Type, BaseType) \
-	gunique_(Type, \
-			BaseType, \
-			, \
-			Type *bp = Tloc(b, 0), \
-			, \
-			(gid)_hash_##Type(*(((BaseType*)bp)+i)), \
-			(!(is_##Type##_nil(bp[i]) && is_##Type##_nil(vals[g])) && h->cmp(vals+g, bp+i) != 0), \
-			vals[g] = bp[i], \
-			, \
-			nextk \
+#define gcunique(Type, BaseType)										\
+	gunique_(Type,														\
+			 BaseType,													\
+			 ,															\
+			 Type *bp = Tloc(b, 0),										\
+			 ,															\
+			 (gid)_hash_##Type(*(((BaseType*)bp)+i)),					\
+			 (!(is_##Type##_nil(bp[i]) && is_##Type##_nil(vals[g])) && h->cmp(vals+g, bp+i) != 0), \
+			 vals[g] = bp[i],											\
+			 ,															\
+			 nextk														\
 		)
 
-#define gaunique_(Type,CType) \
-	gunique_(Type, \
-			Type, \
-			allocator *ma = h->allocators[p->wid], \
-			BATiter bi = bat_iterator(b), \
-			CType bpi = BUNtvar(&bi, i), \
-			(gid)h->hsh(bpi), \
-			(h->cmp(vals[g], bpi) != 0), \
-			vals[g] = ma_strdup(ma, bpi), \
-			bat_iterator_end(&bi), \
-			nextk \
+#define gaunique_(Type,CType)						\
+	gunique_(Type,									\
+			 Type,									\
+			 allocator *ma = h->allocators[p->wid], \
+			 BATiter bi = bat_iterator(b),			\
+			 CType bpi = BUNtvar(&bi, i),			\
+			 (gid)h->hsh(bpi),						\
+			 (h->cmp(vals[g], bpi) != 0),			\
+			 vals[g] = ma_strdup(ma, bpi),			\
+			 bat_iterator_end(&bi),					\
+			 nextk									\
 		)
 
-#define gaunique(Type,CType) \
-	gunique_(Type, \
-			Type, \
-			, \
-			BATiter bi = bat_iterator(b), \
-			CType bpi = BUNtvar(&bi, i), \
-			(gid)h->hsh(bpi), \
-			(h->cmp(vals[g], bpi) != 0), \
-			vals[g] = (Type)bpi, \
-			bat_iterator_end(&bi), \
-			nextk \
+#define gaunique(Type,CType)					\
+	gunique_(Type,								\
+			 Type,								\
+			 ,									\
+			 BATiter bi = bat_iterator(b),		\
+			 CType bpi = BUNtvar(&bi, i),		\
+			 (gid)h->hsh(bpi),					\
+			 (h->cmp(vals[g], bpi) != 0),		\
+			 vals[g] = (Type)bpi,				\
+			 bat_iterator_end(&bi),				\
+			 nextk								\
 		)
 
 static str
@@ -1374,27 +1374,27 @@ LALGgroup_unique(Client ctx, bat *rid, bat *uid, bat *bid, bat *sid, bat *Gid)
 
 			QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 			qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
-			gunique(bit)
-			gunique(bte)
-			gunique(sht)
-			gunique(int)
-			gunique(date)
-			gcunique(inet4, int)
-			gunique(lng)
-			gunique(daytime)
-			gunique(timestamp)
+			gunique(bit);
+			gunique(bte);
+			gunique(sht);
+			gunique(int);
+			gunique(date);
+			gcunique(inet4, int);
+			gunique(lng);
+			gunique(daytime);
+			gunique(timestamp);
 #ifdef HAVE_HGE
-			gunique(hge)
+			gunique(hge);
 #endif
-			gfunique(flt, int)
-			gfunique(dbl, lng)
+			gfunique(flt, int);
+			gfunique(dbl, lng);
 #ifdef HAVE_HGE
-			gcunique(uuid, hge)
+			gcunique(uuid, hge);
 #endif
 			if (local_storage) {
-				gaunique_(str,const char *)
+				gaunique_(str,const char *);
 			} else {
-				gaunique(str,const char *)
+				gaunique(str,const char *);
 			}
 			ht_deactivate(h);
 			TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "ialgebra.unique", RUNTIME_QRY_TIMEOUT));
@@ -1416,7 +1416,7 @@ LALGgroup_unique(Client ctx, bat *rid, bat *uid, bat *bid, bat *sid, bat *Gid)
 	BBPunfix(G->batCacheid);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
-  error:
+error:
 	if (u) BBPunfix(u->batCacheid);
 	if (G) BBPunfix(G->batCacheid);
 	if (b) BBPunfix(b->batCacheid);
@@ -1424,193 +1424,193 @@ LALGgroup_unique(Client ctx, bat *rid, bat *uid, bat *bid, bat *sid, bat *Gid)
 }
 
 #define group_(Type, BaseType, INIT_ALLOCATOR, INIT_ITER, NEW_VAL, HASH_VAL, VAL_NOT_EQUAL, VAL_ASSIGN, ITER_NEXT, NEXTK) \
-		int slots = 0; \
-		gid slot = 0; \
-		INIT_ITER; \
-		Type *vals = h->vals; \
-		INIT_ALLOCATOR; \
-		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
-			bool fnd = 0; \
-			gid g = 0; \
-			for(; !fnd; ) { \
-				NEW_VAL; \
-				gid hv = HASH_VAL&h->mask, k = hv; \
-				g = ATOMIC_GET_GID(h->gids+k); \
-				for(gid l=1; g && VAL_NOT_EQUAL; l++) { \
-					NEXTK; \
-					k &= h->mask; \
-					g = ATOMIC_GET_GID(h->gids+k); \
-				} \
-				if (!g) { \
-					if (slots == 0) { \
-						slots = ht_preclaim(private); \
+	int slots = 0;														\
+	gid slot = 0;														\
+	INIT_ITER;															\
+	Type *vals = h->vals;												\
+	INIT_ALLOCATOR;														\
+	TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) {							\
+		bool fnd = 0;													\
+		gid g = 0;														\
+		for(; !fnd; ) {													\
+			NEW_VAL;													\
+			gid hv = HASH_VAL&h->mask, k = hv;							\
+			g = ATOMIC_GET_GID(h->gids+k);								\
+			for(gid l=1; g && VAL_NOT_EQUAL; l++) {						\
+				NEXTK;													\
+				k &= h->mask;											\
+				g = ATOMIC_GET_GID(h->gids+k);							\
+			}															\
+			if (!g) {													\
+				if (slots == 0) {										\
+					slots = ht_preclaim(private);						\
+					slot = ATOMIC_ADD_GID(&h->last, slots);				\
+					if (((slot*100)/70) >= (gid)h->size) {				\
+						hash_rehash(h, p, err);							\
+						vals = h->vals;									\
+						continue;										\
+					}													\
+				}														\
+				slots--;												\
+				g = ++slot;												\
+				VAL_ASSIGN;												\
+				if (!ATOMIC_CAS(h->gids+k, &expected, g)) {				\
+					slot--;												\
+					slots++;											\
+					continue;											\
+				}														\
+			}															\
+			fnd = 1;													\
+		}																\
+		gp[i] = g-1;													\
+	}																	\
+	ITER_NEXT;
+
+#define group(Type)								\
+	if (tt == TYPE_##Type) {					\
+		group_(Type,							\
+			   Type,							\
+			   ,								\
+			   Type *bp = Tloc(b, 0),			\
+			   ,								\
+			   (gid)_hash_##Type(bp[i]),		\
+			   vals[g] != bp[i],				\
+			   vals[g] = bp[i],					\
+			   ,								\
+			   nextk							\
+			)									\
+			}
+
+#define vgroup()												\
+	if (tt == TYPE_void) {										\
+		if (!BATtdense(b)) {									\
+			assert(cnt);										\
+			int slots = 0;										\
+			gid slot = 0;										\
+			oid bpi = b->tseqbase;								\
+			oid *vals = h->vals;								\
+																\
+			bool fnd = 0;										\
+			gid g = 0;											\
+			for(; !fnd; ) {										\
+				gid k = (gid)_hash_oid(oid_nil)&h->mask;		\
+				g = ATOMIC_GET_GID(h->gids+k);					\
+				for(;g && vals[g] != bpi;) {					\
+					k++;										\
+					k &= h->mask;								\
+					g = ATOMIC_GET_GID(h->gids+k);				\
+				}												\
+				if (!g) {										\
+					if (slots == 0) {							\
+						slots = ht_preclaim(private);			\
 						slot = ATOMIC_ADD_GID(&h->last, slots); \
-						if (((slot*100)/70) >= (gid)h->size) { \
-							hash_rehash(h, p, err); \
-							vals = h->vals; \
-							continue; \
-						} \
-					} \
-					slots--; \
-					g = ++slot; \
-					VAL_ASSIGN; \
+						if (((slot*100)/70) >= (gid)h->size) {	\
+							hash_rehash(h, p, err);				\
+							vals = h->vals;						\
+							continue;							\
+						}										\
+					}											\
+					slots--;									\
+					g = ++slot;									\
+					vals[g] = bpi;								\
 					if (!ATOMIC_CAS(h->gids+k, &expected, g)) { \
-						slot--; \
-						slots++; \
-						continue; \
-					} \
-				} \
-				fnd = 1; \
-			} \
-			gp[i] = g-1; \
-		} \
-		ITER_NEXT;
-
-#define group(Type) \
-	if (tt == TYPE_##Type) { \
-		group_(Type, \
-			Type, \
-			, \
-			Type *bp = Tloc(b, 0), \
-			, \
-			(gid)_hash_##Type(bp[i]), \
-			vals[g] != bp[i], \
-			vals[g] = bp[i], \
-			, \
-			nextk \
-		) \
+						slot--;									\
+						slots++;								\
+						continue;								\
+					}											\
+				}												\
+				fnd = 1;										\
+			}													\
+			for(BUN i = 0; i<cnt; i++) {						\
+				gp[i] = g-1;									\
+			}													\
+		} else {												\
+			assert(BATtdense(b));								\
+			group_(oid,											\
+				   oid,											\
+				   ,											\
+				   oid bp = b->tseqbase,						\
+				   oid bpi = bp+i,								\
+				   (gid)_hash_oid(bpi),							\
+				   vals[g] != bpi,								\
+				   vals[g] = bpi,								\
+				   ,											\
+				   nextk										\
+				)												\
+				}												\
 	}
 
-#define vgroup() \
-	if (tt == TYPE_void) { \
-		if (!BATtdense(b)) { \
-			assert(cnt); \
-			int slots = 0; \
-			gid slot = 0; \
-			oid bpi = b->tseqbase; \
-			oid *vals = h->vals; \
-			\
-			bool fnd = 0; \
-			gid g = 0; \
-			for(; !fnd; ) { \
-				gid k = (gid)_hash_oid(oid_nil)&h->mask; \
-				g = ATOMIC_GET_GID(h->gids+k); \
-				for(;g && vals[g] != bpi;) { \
-					k++; \
-					k &= h->mask; \
-					g = ATOMIC_GET_GID(h->gids+k); \
-				} \
-				if (!g) { \
-					if (slots == 0) { \
-						slots = ht_preclaim(private); \
-						slot = ATOMIC_ADD_GID(&h->last, slots); \
-						if (((slot*100)/70) >= (gid)h->size) { \
-							hash_rehash(h, p, err); \
-							vals = h->vals; \
-							continue; \
-						} \
-					} \
-					slots--; \
-					g = ++slot; \
-					vals[g] = bpi; \
-					if (!ATOMIC_CAS(h->gids+k, &expected, g)) { \
-						slot--; \
-						slots++; \
-						continue; \
-					} \
-				} \
-				fnd = 1; \
-			} \
-			for(BUN i = 0; i<cnt; i++) { \
-				gp[i] = g-1; \
-			} \
-		} else { \
-			assert(BATtdense(b)); \
-			group_(oid, \
-				oid, \
-				, \
-				oid bp = b->tseqbase, \
-				oid bpi = bp+i, \
-				(gid)_hash_oid(bpi), \
-				vals[g] != bpi, \
-				vals[g] = bpi, \
-				, \
-				nextk \
-			) \
-		} \
-	}
+#define fgroup(Type, BaseType)											\
+	if (tt == TYPE_##Type) {											\
+		group_(Type,													\
+			   BaseType,												\
+			   ,														\
+			   Type *bp = Tloc(b, 0),									\
+			   ,														\
+			   (gid)_hash_##Type(*(((BaseType*)bp)+i)),					\
+			   (!(is_##Type##_nil(bp[i]) && is_##Type##_nil(vals[g])) && vals[g] != bp[i]), \
+			   vals[g] = bp[i],											\
+			   ,														\
+			   nextk													\
+			)															\
+			}
 
-#define fgroup(Type, BaseType) \
-	if (tt == TYPE_##Type) { \
-		group_(Type, \
-			BaseType, \
-			, \
-			Type *bp = Tloc(b, 0), \
-			, \
-			(gid)_hash_##Type(*(((BaseType*)bp)+i)), \
-			(!(is_##Type##_nil(bp[i]) && is_##Type##_nil(vals[g])) && vals[g] != bp[i]), \
-			vals[g] = bp[i], \
-			, \
-			nextk \
-		) \
-	}
+#define agroup_(Type,P)													\
+	if (ATOMstorage(tt) == TYPE_str) {									\
+		group_(Type,													\
+			   Type,													\
+			   allocator *ma = h->allocators[p->wid],					\
+			   BATiter bi = bat_iterator(b),							\
+			   Type bpi = (void *) ((bi).vh->base+VarHeapVal(bi.base,i,bi.width)), \
+			   (gid)str_hsh(bpi),										\
+			   (h->cmp(vals[g], bpi) != 0),								\
+			   vals[g] = ma_strdup(ma, bpi),							\
+			   bat_iterator_end(&bi),									\
+			   nextk													\
+			)															\
+			} else {													\
+		group_(Type,													\
+			   Type,													\
+			   allocator *ma = h->allocators[p->wid],					\
+			   BATiter bi = bat_iterator(b),							\
+			   void *bpi = (void *) ((bi).vh->base+VarHeapVal(bi.base,i,bi.width)), \
+			   (gid)h->hsh(bpi),										\
+			   (h->cmp(vals[g], bpi) != 0),								\
+			   vals[g] = ma_copy(ma, bpi, h->len(bpi)),					\
+			   bat_iterator_end(&bi),									\
+			   nextk													\
+			)															\
+			}															\
 
-#define agroup_(Type,P) \
-	if (ATOMstorage(tt) == TYPE_str) { \
-		group_(Type, \
-			Type, \
-			allocator *ma = h->allocators[p->wid], \
-			BATiter bi = bat_iterator(b), \
-			Type bpi = (void *) ((bi).vh->base+VarHeapVal(bi.base,i,bi.width)), \
-			(gid)str_hsh(bpi), \
-			(h->cmp(vals[g], bpi) != 0), \
-			vals[g] = ma_strdup(ma, bpi), \
-			bat_iterator_end(&bi), \
-			nextk \
-		) \
-	} else { \
-		group_(Type, \
-			Type, \
-			allocator *ma = h->allocators[p->wid], \
-			BATiter bi = bat_iterator(b), \
-			void *bpi = (void *) ((bi).vh->base+VarHeapVal(bi.base,i,bi.width)), \
-			(gid)h->hsh(bpi), \
-			(h->cmp(vals[g], bpi) != 0), \
-			vals[g] = ma_copy(ma, bpi, h->len(bpi)), \
-			bat_iterator_end(&bi), \
-			nextk \
-		) \
-	} \
+#define agroup(Type)													\
+	if (ATOMvarsized(tt)) {												\
+		group_(Type,													\
+			   Type,													\
+			   ,														\
+			   BATiter bi = bat_iterator(b),							\
+			   Type bpi = (void *) ((bi).vh->base+VarHeapVal(bi.base,i,bi.width)), \
+			   (gid)h->hsh(bpi),										\
+			   (h->cmp(vals[g], bpi) != 0),								\
+			   vals[g] = bpi,											\
+			   bat_iterator_end(&bi),									\
+			   nextk													\
+			)															\
+			}
 
-#define agroup(Type) \
-	if (ATOMvarsized(tt)) { \
-		group_(Type, \
-			Type, \
-			, \
-			BATiter bi = bat_iterator(b), \
-			Type bpi = (void *) ((bi).vh->base+VarHeapVal(bi.base,i,bi.width)), \
-			(gid)h->hsh(bpi), \
-			(h->cmp(vals[g], bpi) != 0), \
-			vals[g] = bpi, \
-			bat_iterator_end(&bi), \
-			nextk \
-		) \
-	}
-
-#define afgroup() \
-		assert(h->hsh && h->cmp); \
-		int w = b->twidth; \
-		group_(char, \
-			char, \
-			, \
-			char *ivals = Tloc(b, 0), \
-			, \
-			(gid)h->hsh(ivals+(i*w)), \
-			(h->cmp(vals+(g*w), ivals+(i*w)) != 0), \
-			memcpy(vals+(g*w), ivals+(i*w), w), \
-			, \
-			nextk \
-		) \
+#define afgroup()									\
+	assert(h->hsh && h->cmp);						\
+	int w = b->twidth;								\
+	group_(char,									\
+		   char,									\
+		   ,										\
+		   char *ivals = Tloc(b, 0),				\
+		   ,										\
+		   (gid)h->hsh(ivals+(i*w)),				\
+		   (h->cmp(vals+(g*w), ivals+(i*w)) != 0),	\
+		   memcpy(vals+(g*w), ivals+(i*w), w),		\
+		   ,										\
+		   nextk									\
+		)											\
 
 static str
 LALGgroup(Client ctx, bat *rid, bat *uid, bat *bid)
@@ -1753,144 +1753,144 @@ LALGgroup(Client ctx, bat *rid, bat *uid, bat *bid)
 	}
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
-  error:
+error:
 	BBPreclaim(b);
 	BBPreclaim(u);
 	return err;
 }
 
 #define derive_(Type, BaseType, INIT_ALLOCATOR, INIT_ITER, NEW_VAL, HASH_VAL, VAL_NOT_EQUAL, VAL_ASSIGN, ITER_NEXT, NEXTK) \
-		int slots = 0; \
-		gid slot = 0; \
-		INIT_ITER; \
-		Type *vals = h->vals; \
-		INIT_ALLOCATOR; \
-		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
-			bool fnd = 0; \
-			gid g = 0; \
-			for(; !fnd; ) { \
-				NEW_VAL; \
-				gid hv = (gid)combine(gi[i], HASH_VAL, prime)&h->mask, k = hv; \
-				g = ATOMIC_GET_GID(h->gids+k); \
-				for(gid l=1; g && (pgids[g] != gi[i] || VAL_NOT_EQUAL); l++) { \
-					NEXTK; \
-					k &= h->mask; \
-					g = ATOMIC_GET_GID(h->gids+k); \
-				} \
-				if (!g) { \
-					if (slots == 0) { \
-						slots = ht_preclaim(private); \
-						slot = ATOMIC_ADD_GID(&h->last, slots); \
-						if (((slot*100)/70) >= (gid)h->size) \
-							hash_rehash(h, p, err); { \
-							vals = h->vals; \
-							pgids = h->pgids; \
-							prime = hash_prime_nr[h->bits-5]; \
-							continue; \
-						} \
-					} \
-					slots--; \
-					g = ++slot; \
-					VAL_ASSIGN; \
-					pgids[g] = gi[i]; \
-					if (!ATOMIC_CAS(h->gids+k, &expected, g)) { \
-						slot--; \
-						slots++; \
-						continue; \
-					} \
-				} \
-				fnd = 1; \
-			} \
-			gp[i] = g-1; \
-		} \
-		ITER_NEXT;
+	int slots = 0;														\
+	gid slot = 0;														\
+	INIT_ITER;															\
+	Type *vals = h->vals;												\
+	INIT_ALLOCATOR;														\
+	TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) {							\
+		bool fnd = 0;													\
+		gid g = 0;														\
+		for(; !fnd; ) {													\
+			NEW_VAL;													\
+			gid hv = (gid)combine(gi[i], HASH_VAL, prime)&h->mask, k = hv; \
+			g = ATOMIC_GET_GID(h->gids+k);								\
+			for(gid l=1; g && (pgids[g] != gi[i] || VAL_NOT_EQUAL); l++) { \
+				NEXTK;													\
+				k &= h->mask;											\
+				g = ATOMIC_GET_GID(h->gids+k);							\
+			}															\
+			if (!g) {													\
+				if (slots == 0) {										\
+					slots = ht_preclaim(private);						\
+					slot = ATOMIC_ADD_GID(&h->last, slots);				\
+					if (((slot*100)/70) >= (gid)h->size)				\
+						hash_rehash(h, p, err); {						\
+						vals = h->vals;									\
+						pgids = h->pgids;								\
+						prime = hash_prime_nr[h->bits-5];				\
+						continue;										\
+					}													\
+				}														\
+				slots--;												\
+				g = ++slot;												\
+				VAL_ASSIGN;												\
+				pgids[g] = gi[i];										\
+				if (!ATOMIC_CAS(h->gids+k, &expected, g)) {				\
+					slot--;												\
+					slots++;											\
+					continue;											\
+				}														\
+			}															\
+			fnd = 1;													\
+		}																\
+		gp[i] = g-1;													\
+	}																	\
+	ITER_NEXT;
 
-#define derive(Type) \
-	if (tt == TYPE_##Type) { \
-		derive_(Type, \
-			Type, \
-			, \
-			Type *bp = Tloc(b, 0), \
-			, \
-			(gid)_hash_##Type(bp[i]), \
-			vals[g] != bp[i], \
-			vals[g] = bp[i], \
-			, \
-			nextk \
-		) \
-	}
+#define derive(Type)							\
+	if (tt == TYPE_##Type) {					\
+		derive_(Type,							\
+				Type,							\
+				,								\
+				Type *bp = Tloc(b, 0),			\
+				,								\
+				(gid)_hash_##Type(bp[i]),		\
+				vals[g] != bp[i],				\
+				vals[g] = bp[i],				\
+				,								\
+				nextk							\
+			)									\
+			}
 
-#define vderive() \
-	if (tt == TYPE_void) { \
-		assert(BATtdense(b)); \
-		derive_(oid, \
-			oid, \
-			, \
-			oid bp = b->tseqbase, \
-			oid bpi = bp+i, \
-			(gid)_hash_oid(bpi), \
-			vals[g] != bpi, \
-			vals[g] = bpi, \
-			, \
-			nextk \
-		) \
-	}
+#define vderive()								\
+	if (tt == TYPE_void) {						\
+		assert(BATtdense(b));					\
+		derive_(oid,							\
+				oid,							\
+				,								\
+				oid bp = b->tseqbase,			\
+				oid bpi = bp+i,					\
+				(gid)_hash_oid(bpi),			\
+				vals[g] != bpi,					\
+				vals[g] = bpi,					\
+				,								\
+				nextk							\
+			)									\
+			}
 
-#define fderive(Type, BaseType) \
-	if (tt == TYPE_##Type) { \
-		derive_(Type, \
-			BaseType, \
-			, \
-			Type *bp = Tloc(b, 0), \
-			, \
-			(gid)_hash_##Type(*(((BaseType*)bp)+i)), \
-			(!(is_##Type##_nil(bp[i]) && is_##Type##_nil(vals[g])) && vals[g] != bp[i]), \
-			vals[g] = bp[i], \
-			, \
-			nextk \
-		) \
-	}
+#define fderive(Type, BaseType)											\
+	if (tt == TYPE_##Type) {											\
+		derive_(Type,													\
+				BaseType,												\
+				,														\
+				Type *bp = Tloc(b, 0),									\
+				,														\
+				(gid)_hash_##Type(*(((BaseType*)bp)+i)),				\
+				(!(is_##Type##_nil(bp[i]) && is_##Type##_nil(vals[g])) && vals[g] != bp[i]), \
+				vals[g] = bp[i],										\
+				,														\
+				nextk													\
+			)															\
+			}
 
-#define aderive_(Type, P) \
-	if (ATOMstorage(tt) == TYPE_str) { \
-		derive_(Type, \
-			Type, \
-			allocator *ma = h->allocators[P->wid], \
-			BATiter bi = bat_iterator(b), \
-			Type bpi = (void *) ((bi).vh->base+VarHeapVal(bi.base,i,bi.width)), \
-			(gid)str_hsh(bpi), \
-			(vals[g] && h->cmp(vals[g], bpi) != 0), \
-			vals[g] = ma_strdup(ma, bpi), \
-			bat_iterator_end(&bi), \
-			nextk \
-		) \
-	} else { \
-		derive_(Type, \
-			Type, \
-			allocator *ma = h->allocators[P->wid], \
-			BATiter bi = bat_iterator(b), \
-			void *bpi = (void *) ((bi).vh->base+VarHeapVal(bi.base,i,bi.width)), \
-			(gid)h->hsh(bpi), \
-			(vals[g] && h->cmp(vals[g], bpi) != 0), \
-			vals[g] = ma_copy(ma, bpi, h->len(bpi)), \
-			bat_iterator_end(&bi), \
-			nextk \
-		) \
-	} \
+#define aderive_(Type, P)												\
+	if (ATOMstorage(tt) == TYPE_str) {									\
+		derive_(Type,													\
+				Type,													\
+				allocator *ma = h->allocators[P->wid],					\
+				BATiter bi = bat_iterator(b),							\
+				Type bpi = (void *) ((bi).vh->base+VarHeapVal(bi.base,i,bi.width)), \
+				(gid)str_hsh(bpi),										\
+				(vals[g] && h->cmp(vals[g], bpi) != 0),					\
+				vals[g] = ma_strdup(ma, bpi),							\
+				bat_iterator_end(&bi),									\
+				nextk													\
+			)															\
+			} else {													\
+		derive_(Type,													\
+				Type,													\
+				allocator *ma = h->allocators[P->wid],					\
+				BATiter bi = bat_iterator(b),							\
+				void *bpi = (void *) ((bi).vh->base+VarHeapVal(bi.base,i,bi.width)), \
+				(gid)h->hsh(bpi),										\
+				(vals[g] && h->cmp(vals[g], bpi) != 0),					\
+				vals[g] = ma_copy(ma, bpi, h->len(bpi)),				\
+				bat_iterator_end(&bi),									\
+				nextk													\
+			)															\
+			}															\
 
-#define aderive(Type) \
-	if (ATOMvarsized(tt)) { \
-		derive_(Type, \
-			Type, \
-			, \
-			BATiter bi = bat_iterator(b), \
-			Type bpi = (void *) ((bi).vh->base+VarHeapVal(bi.base,i,bi.width)), \
-			(gid)h->hsh(bpi), \
-			(vals[g] && h->cmp(vals[g], bpi) != 0), \
-			vals[g] = bpi, \
-			bat_iterator_end(&bi), \
-			nextk \
-		) \
+#define aderive(Type)													\
+	if (ATOMvarsized(tt)) {												\
+		derive_(Type,													\
+				Type,													\
+				,														\
+				BATiter bi = bat_iterator(b),							\
+				Type bpi = (void *) ((bi).vh->base+VarHeapVal(bi.base,i,bi.width)), \
+				(gid)h->hsh(bpi),										\
+				(vals[g] && h->cmp(vals[g], bpi) != 0),					\
+				vals[g] = bpi,											\
+				bat_iterator_end(&bi),									\
+				nextk													\
+			)															\
 	}
 
 
@@ -2050,101 +2050,101 @@ LALGderive(Client ctx, bat *rid, bat *uid, bat *Gid, bat *Ph, bat *bid)
 	BBPunfix(b->batCacheid);
 	BBPunfix(G->batCacheid);
 	return MAL_SUCCEED;
-  error:
+error:
 	BBPreclaim(u);
 	BBPreclaim(b);
 	BBPreclaim(G);
 	return err;
 }
 
-#define projectconst(Type) \
-	do { \
-		Type v = *getArgReference_##Type(stk, pci, r); \
-		Type *o = Tloc(r, 0); \
-		if (g->ttype == TYPE_void) { \
-			oid gi = g->tseqbase; \
-			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
-				o[gi + i] = v; \
-			} \
-		} else { \
-			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
-				o[gp[i]] = v; \
-			} \
-		} \
+#define projectconst(Type)								\
+	do {												\
+		Type v = *getArgReference_##Type(stk, pci, r);	\
+		Type *o = Tloc(r, 0);							\
+		if (g->ttype == TYPE_void) {					\
+			oid gi = g->tseqbase;						\
+			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) {	\
+				o[gi + i] = v;							\
+			}											\
+		} else {										\
+			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) {	\
+				o[gp[i]] = v;							\
+			}											\
+		}												\
 	} while(0)
 
-#define aprojectconst(Type,w,Toff) \
-	do { \
+#define aprojectconst(Type,w,Toff)										\
+	do {																\
 		if ((ATOMvarsized(tt) || ATOMstorage(tt) == TYPE_##Type) && r->twidth == w) { \
-			Toff v = *getArgReference_##Type(stk, pci, r); \
-			Toff *o = Tloc(r, 0); \
-			if (g->ttype == TYPE_void) { \
-				oid gi = g->tseqbase; \
-				TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) \
-				o[gi + i] = v; \
-			} else { \
-				TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) \
-				o[gp[i]] = v; \
-			} \
-		} \
+			Toff v = *getArgReference_##Type(stk, pci, r);				\
+			Toff *o = Tloc(r, 0);										\
+			if (g->ttype == TYPE_void) {								\
+				oid gi = g->tseqbase;									\
+				TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx)					\
+					o[gi + i] = v;										\
+			} else {													\
+				TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx)					\
+					o[gp[i]] = v;										\
+			}															\
+		}																\
 	} while(0)
 
 /* runs locked ie resizes should work */
-#define aprojectconst_(Type) \
-	do { \
-		if ((ATOMvarsized(tt) || ATOMstorage(tt) == TYPE_##Type)) { \
-			BATiter bi = bat_iterator(b); \
-			int ins = 0; \
-			if (g->ttype == TYPE_void) { \
-				oid gi = g->tseqbase; \
-				TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
-					int w = r->twidth; \
-					if(w == 1) { \
-						uint8_t *o = Tloc(r, 0); \
-						ins = (o[gi + i] == 0); \
-					} else if (w == 2) { \
-						uint16_t *o = Tloc(r, 0); \
-						ins = (o[gi + i] == 0); \
-					} else if (w == 4) { \
-						uint32_t *o = Tloc(r, 0); \
-						ins = (o[gi + i] == 0); \
-					} else { \
-						var_t *o = Tloc(r, 0); \
-						ins = (o[gi + i] == 0); \
-					} \
+#define aprojectconst_(Type)											\
+	do {																\
+		if ((ATOMvarsized(tt) || ATOMstorage(tt) == TYPE_##Type)) {		\
+			BATiter bi = bat_iterator(b);								\
+			int ins = 0;												\
+			if (g->ttype == TYPE_void) {								\
+				oid gi = g->tseqbase;									\
+				TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) {				\
+					int w = r->twidth;									\
+					if(w == 1) {										\
+						uint8_t *o = Tloc(r, 0);						\
+						ins = (o[gi + i] == 0);							\
+					} else if (w == 2) {								\
+						uint16_t *o = Tloc(r, 0);						\
+						ins = (o[gi + i] == 0);							\
+					} else if (w == 4) {								\
+						uint32_t *o = Tloc(r, 0);						\
+						ins = (o[gi + i] == 0);							\
+					} else {											\
+						var_t *o = Tloc(r, 0);							\
+						ins = (o[gi + i] == 0);							\
+					}													\
 					if (ins && tfastins_nocheckVAR( r, gi + i, BUNtvar(&bi, i)) != GDK_SUCCEED) { \
-						err = createException(MAL, "ialgebra.project", MAL_MALLOC_FAIL);\
-						goto error; \
-					} \
-					if (err) \
-					TIMEOUT_LOOP_BREAK; \
-				} \
-			} else { \
-				TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
-					int w = r->twidth; \
-					if(w == 1) { \
-						uint8_t *o = Tloc(r, 0); \
-						ins = (o[gp[i]] == 0); \
-					} else if (w == 2) { \
-						uint16_t *o = Tloc(r, 0); \
-						ins = (o[gp[i]] == 0); \
-					} else if (w == 4) { \
-						uint32_t *o = Tloc(r, 0); \
-						ins = (o[gp[i]] == 0); \
-					} else { \
-						var_t *o = Tloc(r, 0); \
-						ins = (o[gp[i]] == 0); \
-					} \
+						err = createException(MAL, "ialgebra.project", MAL_MALLOC_FAIL); \
+						goto error;										\
+					}													\
+					if (err)											\
+						TIMEOUT_LOOP_BREAK;								\
+				}														\
+			} else {													\
+				TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) {				\
+					int w = r->twidth;									\
+					if(w == 1) {										\
+						uint8_t *o = Tloc(r, 0);						\
+						ins = (o[gp[i]] == 0);							\
+					} else if (w == 2) {								\
+						uint16_t *o = Tloc(r, 0);						\
+						ins = (o[gp[i]] == 0);							\
+					} else if (w == 4) {								\
+						uint32_t *o = Tloc(r, 0);						\
+						ins = (o[gp[i]] == 0);							\
+					} else {											\
+						var_t *o = Tloc(r, 0);							\
+						ins = (o[gp[i]] == 0);							\
+					}													\
 					if (ins && tfastins_nocheckVAR( r, gp[i], BUNtvar(&bi, i)) != GDK_SUCCEED) { \
-						err = createException(MAL, "ialgebra.project", MAL_MALLOC_FAIL);\
-						goto error; \
-					} \
-					if (err) \
-					TIMEOUT_LOOP_BREAK; \
-				} \
-			} \
-			bat_iterator_end(&bi); \
-		} \
+						err = createException(MAL, "ialgebra.project", MAL_MALLOC_FAIL); \
+						goto error;										\
+					}													\
+					if (err)											\
+						TIMEOUT_LOOP_BREAK;								\
+				}														\
+			}															\
+			bat_iterator_end(&bi);										\
+		}																\
 	} while(0)
 
 /* inout := algebra.project(groupid, val) */
@@ -2255,7 +2255,7 @@ LALGconstant(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	BBPunfix(g->batCacheid);
 	return MAL_SUCCEED;
-  error:
+error:
 	if (locked)
 		pipeline_unlock1(r);
 	if (g) BBPunfix(g->batCacheid);
@@ -2263,103 +2263,103 @@ LALGconstant(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return err;
 }
 
-#define project(Type) \
-	if (ATOMstorage(tt) == TYPE_##Type) { \
-		Type *v = Tloc(b, 0); \
-		Type *o = Tloc(r, 0); \
-		if (g->ttype == TYPE_void) { \
-			oid gi = g->tseqbase; \
-			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) \
-				o[gi + i] = v[i]; \
-		} else { \
-			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) \
-				o[gp[i]] = v[i]; \
-		} \
+#define project(Type)								\
+	if (ATOMstorage(tt) == TYPE_##Type) {			\
+		Type *v = Tloc(b, 0);						\
+		Type *o = Tloc(r, 0);						\
+		if (g->ttype == TYPE_void) {				\
+			oid gi = g->tseqbase;					\
+			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx)	\
+				o[gi + i] = v[i];					\
+		} else {									\
+			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx)	\
+				o[gp[i]] = v[i];					\
+		}											\
 	}
 
-#define vproject() \
-	if (tt == TYPE_void) { \
-		oid vi = b->tseqbase; \
-		oid *o = Tloc(r, 0); \
-		if (g->ttype == TYPE_void) { \
-			oid gi = g->tseqbase; \
-			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) \
-				o[gi + i] = vi + i; \
-		} else { \
-			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) \
-				o[gp[i]] = vi + i; \
-		} \
+#define vproject()									\
+	if (tt == TYPE_void) {							\
+		oid vi = b->tseqbase;						\
+		oid *o = Tloc(r, 0);						\
+		if (g->ttype == TYPE_void) {				\
+			oid gi = g->tseqbase;					\
+			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx)	\
+				o[gi + i] = vi + i;					\
+		} else {									\
+			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx)	\
+				o[gp[i]] = vi + i;					\
+		}											\
 	}
 
-#define aproject(Type,w,Toff) \
+#define aproject(Type,w,Toff)											\
 	if ((ATOMvarsized(tt) || ATOMstorage(tt) == TYPE_##Type) && b->twidth == w) { \
-		assert(b->twidth == r->twidth);\
-		Toff *v = Tloc(b, 0); \
-		Toff *o = Tloc(r, 0); \
-		if (g->ttype == TYPE_void) { \
-			oid gi = g->tseqbase; \
-			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) \
-				o[gi + i] = v[i]; \
-		} else { \
-			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) \
-				o[gp[i]] = v[i]; \
-		} \
+		assert(b->twidth == r->twidth);									\
+		Toff *v = Tloc(b, 0);											\
+		Toff *o = Tloc(r, 0);											\
+		if (g->ttype == TYPE_void) {									\
+			oid gi = g->tseqbase;										\
+			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx)						\
+				o[gi + i] = v[i];										\
+		} else {														\
+			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx)						\
+				o[gp[i]] = v[i];										\
+		}																\
 	}
 
 /* runs locked ie resizes should work */
-#define aproject_(Type) \
-	if ((ATOMvarsized(tt) || ATOMstorage(tt) == TYPE_##Type)) { \
-		BATiter bi = bat_iterator(b); \
-		int ins = 0; \
-		if (g->ttype == TYPE_void) { \
-			oid gi = g->tseqbase; \
-			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
-				int w = r->twidth; \
-				if(w == 1) { \
-					uint8_t *o = Tloc(r, 0); \
-					ins = (o[gi + i] == 0); \
-				} else if (w == 2) { \
-					uint16_t *o = Tloc(r, 0); \
-					ins = (o[gi + i] == 0); \
-				} else if (w == 4) { \
-					uint32_t *o = Tloc(r, 0); \
-					ins = (o[gi + i] == 0); \
-				} else { \
-					var_t *o = Tloc(r, 0); \
-					ins = (o[gi + i] == 0); \
-				} \
+#define aproject_(Type)													\
+	if ((ATOMvarsized(tt) || ATOMstorage(tt) == TYPE_##Type)) {			\
+		BATiter bi = bat_iterator(b);									\
+		int ins = 0;													\
+		if (g->ttype == TYPE_void) {									\
+			oid gi = g->tseqbase;										\
+			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) {					\
+				int w = r->twidth;										\
+				if(w == 1) {											\
+					uint8_t *o = Tloc(r, 0);							\
+					ins = (o[gi + i] == 0);								\
+				} else if (w == 2) {									\
+					uint16_t *o = Tloc(r, 0);							\
+					ins = (o[gi + i] == 0);								\
+				} else if (w == 4) {									\
+					uint32_t *o = Tloc(r, 0);							\
+					ins = (o[gi + i] == 0);								\
+				} else {												\
+					var_t *o = Tloc(r, 0);								\
+					ins = (o[gi + i] == 0);								\
+				}														\
 				if (ins && tfastins_nocheckVAR( r, gi + i, BUNtvar(&bi, i)) != GDK_SUCCEED) { \
-					err = createException(MAL, "ialgebra.projection", MAL_MALLOC_FAIL);\
-					goto error; \
-				} \
-				if (err) \
-					TIMEOUT_LOOP_BREAK; \
-			} \
-		} else { \
-			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
-				int w = r->twidth; \
-				if(w == 1) { \
-					uint8_t *o = Tloc(r, 0); \
-					ins = (o[gp[i]] == 0); \
-				} else if (w == 2) { \
-					uint16_t *o = Tloc(r, 0); \
-					ins = (o[gp[i]] == 0); \
-				} else if (w == 4) { \
-					uint32_t *o = Tloc(r, 0); \
-					ins = (o[gp[i]] == 0); \
-				} else { \
-					var_t *o = Tloc(r, 0); \
-					ins = (o[gp[i]] == 0); \
-				} \
+					err = createException(MAL, "ialgebra.projection", MAL_MALLOC_FAIL);	\
+					goto error;											\
+				}														\
+				if (err)												\
+					TIMEOUT_LOOP_BREAK;									\
+			}															\
+		} else {														\
+			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) {					\
+				int w = r->twidth;										\
+				if(w == 1) {											\
+					uint8_t *o = Tloc(r, 0);							\
+					ins = (o[gp[i]] == 0);								\
+				} else if (w == 2) {									\
+					uint16_t *o = Tloc(r, 0);							\
+					ins = (o[gp[i]] == 0);								\
+				} else if (w == 4) {									\
+					uint32_t *o = Tloc(r, 0);							\
+					ins = (o[gp[i]] == 0);								\
+				} else {												\
+					var_t *o = Tloc(r, 0);								\
+					ins = (o[gp[i]] == 0);								\
+				}														\
 				if (ins && tfastins_nocheckVAR( r, gp[i], BUNtvar(&bi, i)) != GDK_SUCCEED) { \
-					err = createException(MAL, "ialgebra.projection", MAL_MALLOC_FAIL);\
-					goto error; \
-				} \
-				if (err) \
-					TIMEOUT_LOOP_BREAK; \
-			} \
-		} \
-		bat_iterator_end(&bi); \
+					err = createException(MAL, "ialgebra.projection", MAL_MALLOC_FAIL);	\
+					goto error;											\
+				}														\
+				if (err)												\
+					TIMEOUT_LOOP_BREAK;									\
+			}															\
+		}																\
+		bat_iterator_end(&bi);											\
 	}
 
 /* result := ialgebra.projection(groupid, input) */
@@ -2420,12 +2420,12 @@ LALGprojection(Client ctx, bat *rid, bat *gid, bat *bid)
 			err = createException(MAL, "ialgebra.projection", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto error;
 		} else if (ATOMvarsized(r->ttype) && r->tvheap->parentid == r->batCacheid && (BATcount(r) ||
-				(!VIEWvtparent(b) || BBP_desc(VIEWvtparent(b))->batRestricted != BAT_READ))) {
+																					  (!VIEWvtparent(b) || BBP_desc(VIEWvtparent(b))->batRestricted != BAT_READ))) {
 			MT_lock_unset(&b->theaplock);
 			MT_lock_unset(&r->theaplock);
 			local_storage = true;
 		} else if (ATOMvarsized(r->ttype) && r->tvheap->parentid != r->batCacheid &&
-				r->tvheap->parentid != b->tvheap->parentid) {
+				   r->tvheap->parentid != b->tvheap->parentid) {
 			MT_lock_unset(&b->theaplock);
 			MT_lock_unset(&r->theaplock);
 			if (unshare_varsized_heap(r) != GDK_SUCCEED) {
@@ -2491,31 +2491,31 @@ LALGprojection(Client ctx, bat *rid, bat *gid, bat *bid)
 		QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 		qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 		vproject()
-			project(bte)
-			project(sht)
-			project(int)
-			project(inet4)
-			project(lng)
+		project(bte)
+		project(sht)
+		project(int)
+		project(inet4)
+		project(lng)
 #ifdef HAVE_HGE
-			project(hge)
+		project(hge)
 #endif
-			project(inet6)
-			project(flt)
-			project(dbl)
-			if (local_storage) {
-				if (!private)
-					pipeline_lock2(r);
-				if (BATcount(r) < max)
-					BATsetcount(r, max);
-				if (!private)
-					pipeline_unlock2(r);
-				aproject_(str)
-			} else {
-				aproject(str,1,uint8_t)
-				aproject(str,2,uint16_t)
-				aproject(str,4,uint32_t)
-				aproject(str,8,var_t)
-			}
+		project(inet6)
+		project(flt)
+		project(dbl)
+		if (local_storage) {
+			if (!private)
+				pipeline_lock2(r);
+			if (BATcount(r) < max)
+				BATsetcount(r, max);
+			if (!private)
+				pipeline_unlock2(r);
+			aproject_(str)
+		} else {
+			aproject(str,1,uint8_t)
+			aproject(str,2,uint16_t)
+			aproject(str,4,uint32_t)
+			aproject(str,8,var_t)
+		}
 		TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "ialgebra.projection", RUNTIME_QRY_TIMEOUT));
 	}
 	if (err)
@@ -2537,7 +2537,7 @@ LALGprojection(Client ctx, bat *rid, bat *gid, bat *bid)
 	BBPunfix(b->batCacheid);
 	BBPunfix(g->batCacheid);
 	return MAL_SUCCEED;
-  error:
+error:
 	if (locked)
 		pipeline_unlock1(r);
 	if (g) BBPunfix(g->batCacheid);
@@ -2631,37 +2631,37 @@ LALGcountstar(Client ctx, bat *rid, bat *gid, bat *pid)
 	if (!private)
 		pipeline_unlock1(r);
 	return MAL_SUCCEED;
-  error:
+error:
 	if (locked) pipeline_unlock1(r);
 	if (g) BBPunfix(g->batCacheid);
 	if (r) BBPunfix(r->batCacheid);
 	return err;
 }
 
-#define gcount(Type) \
-	if (tt == TYPE_##Type) { \
-			Type *in = Tloc(b, 0); \
-			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) \
-				o[v[i]]+= (!is_##Type##_nil(in[i])); \
+#define gcount(Type)								\
+	if (tt == TYPE_##Type) {						\
+		Type *in = Tloc(b, 0);						\
+		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx)		\
+			o[v[i]]+= (!is_##Type##_nil(in[i]));	\
 	}
 
-#define gfcount(Type) \
-	if (tt == TYPE_##Type) { \
-			Type *in = Tloc(b, 0); \
-			int (*cmp)(const void *v1,const void *v2) = ATOMcompare(tt); \
-			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) \
-				o[v[i]]+= cmp(in+i, &Type##_nil) != 0; \
+#define gfcount(Type)													\
+	if (tt == TYPE_##Type) {											\
+		Type *in = Tloc(b, 0);											\
+		int (*cmp)(const void *v1,const void *v2) = ATOMcompare(tt);	\
+		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx)							\
+			o[v[i]]+= cmp(in+i, &Type##_nil) != 0;						\
 	}
 
-#define gacount(Type) \
-	if (tt == TYPE_##Type) { \
-			BATiter bi = bat_iterator(b); \
-			const void *nil = ATOMnilptr(tt); \
-			int (*cmp)(const void *v1,const void *v2) = ATOMcompare(tt); \
-			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
-				o[v[i]]+= cmp(BUNtvar(&bi, i), nil)!=0; \
-			} \
-			bat_iterator_end(&bi); \
+#define gacount(Type)													\
+	if (tt == TYPE_##Type) {											\
+		BATiter bi = bat_iterator(b);									\
+		const void *nil = ATOMnilptr(tt);								\
+		int (*cmp)(const void *v1,const void *v2) = ATOMcompare(tt);	\
+		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) {						\
+			o[v[i]]+= cmp(BUNtvar(&bi, i), nil)!=0;						\
+		}																\
+		bat_iterator_end(&bi);											\
 	}
 
 static str
@@ -2771,7 +2771,7 @@ LALGcount(Client ctx, bat *rid, bat *gid, bat *bid, bit *nonil, bat *pid)
 	if (!private)
 		pipeline_unlock1(r);
 	return MAL_SUCCEED;
-  error:
+error:
 	if (locked) pipeline_unlock1(r);
 	if (g) BBPunfix(g->batCacheid);
 	if (b) BBPunfix(b->batCacheid);
@@ -2780,17 +2780,17 @@ LALGcount(Client ctx, bat *rid, bat *gid, bat *bid, bit *nonil, bat *pid)
 }
 
 /* TODO do we need to split out the nil check, ie for when we know there are no nils */
-#define gsum(OutType, InType) \
-	if (tt == TYPE_##InType && ot == TYPE_##OutType) { \
-			InType *in = Tloc(b, 0); \
-			OutType *o = Tloc(r, 0); \
-			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) \
-				if (!is_##InType##_nil(in[i])) { \
-					if (is_##OutType##_nil(o[grp[i]])) \
-						o[grp[i]] = in[i]; \
-					else \
-						o[grp[i]] += in[i]; \
-				} \
+#define gsum(OutType, InType)							\
+	if (tt == TYPE_##InType && ot == TYPE_##OutType) {	\
+		InType *in = Tloc(b, 0);						\
+		OutType *o = Tloc(r, 0);						\
+		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx)			\
+			if (!is_##InType##_nil(in[i])) {			\
+				if (is_##OutType##_nil(o[grp[i]]))		\
+					o[grp[i]] = in[i];					\
+				else									\
+					o[grp[i]] += in[i];					\
+			}											\
 	}
 
 static str
@@ -2903,7 +2903,7 @@ LALGsum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (!private)
 		pipeline_unlock1(r);
 	return MAL_SUCCEED;
-  error:
+error:
 	if (locked) pipeline_unlock1(r);
 	if (g) BBPunfix(g->batCacheid);
 	if (b) BBPunfix(b->batCacheid);
@@ -2911,17 +2911,17 @@ LALGsum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return err;
 }
 
-#define gprod(OutType, InType) \
-	if (tt == TYPE_##InType && ot == TYPE_##OutType) { \
-			InType *in = Tloc(b, 0); \
-			OutType *o = Tloc(r, 0); \
-			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) \
-				if (!is_##InType##_nil(in[i])) { \
-					if (is_##OutType##_nil(o[grp[i]])) \
-						o[grp[i]] = in[i]; \
-					else \
-						o[grp[i]] *= in[i]; \
-				} \
+#define gprod(OutType, InType)							\
+	if (tt == TYPE_##InType && ot == TYPE_##OutType) {	\
+		InType *in = Tloc(b, 0);						\
+		OutType *o = Tloc(r, 0);						\
+		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx)			\
+			if (!is_##InType##_nil(in[i])) {			\
+				if (is_##OutType##_nil(o[grp[i]]))		\
+					o[grp[i]] = in[i];					\
+				else									\
+					o[grp[i]] *= in[i];					\
+			}											\
 	}
 
 static str
@@ -3028,7 +3028,7 @@ LALGprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (!private)
 		pipeline_unlock1(r);
 	return MAL_SUCCEED;
-  error:
+error:
 	if (locked) pipeline_unlock1(r);
 	if (g) BBPunfix(g->batCacheid);
 	if (b) BBPunfix(b->batCacheid);
@@ -3118,30 +3118,30 @@ LALGavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 		int overflow = 0;
 		switch (ATOMbasetype(b->ttype)) {
-			case TYPE_flt: {
-				flt *vals = Tloc(b, 0);
-				for (oid i = bn->batCount; i < max; i++) {
-					rvals[i] = dbl_nil;
-					rcnts[i] = 0;
-					rerrs[i] = 0;
-				}
-				TIMEOUT_LOOP_IDX_DECL(i, b->batCount, qry_ctx) {
-					avg_aggr_float(flt, dbl, vals[i], rvals[grps[i]], rerrs[grps[i]], rcnts[grps[i]]);
-				}
-				break;
+		case TYPE_flt: {
+			flt *vals = Tloc(b, 0);
+			for (oid i = bn->batCount; i < max; i++) {
+				rvals[i] = dbl_nil;
+				rcnts[i] = 0;
+				rerrs[i] = 0;
 			}
-			case TYPE_dbl: {
-				dbl *vals = Tloc(b, 0);
-				for (oid i = bn->batCount; i < max; i++) {
-					rvals[i] = dbl_nil;
-					rcnts[i] = 0;
-					rerrs[i] = 0;
-				}
-				TIMEOUT_LOOP_IDX_DECL(i, b->batCount, qry_ctx) {
-					avg_aggr_float(dbl, dbl, vals[i], rvals[grps[i]], rerrs[grps[i]], rcnts[grps[i]]);
-				}
-				break;
+			TIMEOUT_LOOP_IDX_DECL(i, b->batCount, qry_ctx) {
+				avg_aggr_float(flt, dbl, vals[i], rvals[grps[i]], rerrs[grps[i]], rcnts[grps[i]]);
 			}
+			break;
+		}
+		case TYPE_dbl: {
+			dbl *vals = Tloc(b, 0);
+			for (oid i = bn->batCount; i < max; i++) {
+				rvals[i] = dbl_nil;
+				rcnts[i] = 0;
+				rerrs[i] = 0;
+			}
+			TIMEOUT_LOOP_IDX_DECL(i, b->batCount, qry_ctx) {
+				avg_aggr_float(dbl, dbl, vals[i], rvals[grps[i]], rerrs[grps[i]], rcnts[grps[i]]);
+			}
+			break;
+		}
 		}
 		TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "ilockedaggr.avg", RUNTIME_QRY_TIMEOUT));
 		if (overflow)
@@ -3361,7 +3361,7 @@ LALGavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void)cntxt;
 	(void)mb;
 	return MAL_SUCCEED;
-  error:
+error:
 	if (locked) pipeline_unlock1(bn);
 	if (b) BBPunfix(b->batCacheid);
 	if (g) BBPunfix(g->batCacheid);
@@ -3662,7 +3662,7 @@ LALGsum_float(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void)cntxt;
 	(void)mb;
 	return MAL_SUCCEED;
-  error:
+error:
 	if (locked) pipeline_unlock1(bn);
 	if (b) BBPunfix(b->batCacheid);
 	if (g) BBPunfix(g->batCacheid);
@@ -3730,162 +3730,162 @@ bail:
 
 
 /* TODO handle nil based on argument 'skipnil' */
-#define gfunc(Type, f) \
-	if (tt == TYPE_##Type) { \
-		Type *in = Tloc(b, 0); \
-		Type *o = Tloc(r, 0); \
-		if (g->ttype == TYPE_void) { \
-			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) \
-				if (is_##Type##_nil(o[i])) \
-					o[i] = in[i]; \
-				else if (!is_##Type##_nil(in[i])) \
-					o[i] = f(o[i], in[i]); \
-		} else { \
-			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) \
-				if (is_##Type##_nil(o[grp[i]])) \
-					o[grp[i]] = in[i]; \
-				else if (!is_##Type##_nil(in[i])) \
-					o[grp[i]] = f(o[grp[i]], in[i]); \
-		} \
+#define gfunc(Type, f)									\
+	if (tt == TYPE_##Type) {							\
+		Type *in = Tloc(b, 0);							\
+		Type *o = Tloc(r, 0);							\
+		if (g->ttype == TYPE_void) {					\
+			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx)		\
+				if (is_##Type##_nil(o[i]))				\
+					o[i] = in[i];						\
+				else if (!is_##Type##_nil(in[i]))		\
+					o[i] = f(o[i], in[i]);				\
+		} else {										\
+			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx)		\
+				if (is_##Type##_nil(o[grp[i]]))			\
+					o[grp[i]] = in[i];					\
+				else if (!is_##Type##_nil(in[i]))		\
+					o[grp[i]] = f(o[grp[i]], in[i]);	\
+		}												\
 	}
 
-#define gfunc2(Type, f) \
-	if (tt == TYPE_##Type) { \
-		int (*cmp)(const void *v1,const void *v2) = ATOMcompare(tt); \
-		Type *in = Tloc(b, 0); \
-		Type *o = Tloc(r, 0); \
-		if (g->ttype == TYPE_void) { \
-			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) \
-				if (is_##Type##_nil(o[i])) \
-					o[i] = in[i]; \
-				else if (!is_##Type##_nil(in[i])) \
-					o[i] = f(o[i], in[i]); \
-		} else { \
-			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) \
-				if (is_##Type##_nil(o[grp[i]])) \
-					o[grp[i]] = in[i]; \
-				else if (!is_##Type##_nil(in[i])) \
-					o[grp[i]] = f(o[grp[i]], in[i]); \
-		} \
+#define gfunc2(Type, f)													\
+	if (tt == TYPE_##Type) {											\
+		int (*cmp)(const void *v1,const void *v2) = ATOMcompare(tt);	\
+		Type *in = Tloc(b, 0);											\
+		Type *o = Tloc(r, 0);											\
+		if (g->ttype == TYPE_void) {									\
+			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx)						\
+				if (is_##Type##_nil(o[i]))								\
+					o[i] = in[i];										\
+				else if (!is_##Type##_nil(in[i]))						\
+					o[i] = f(o[i], in[i]);								\
+		} else {														\
+			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx)						\
+				if (is_##Type##_nil(o[grp[i]]))							\
+					o[grp[i]] = in[i];									\
+				else if (!is_##Type##_nil(in[i]))						\
+					o[grp[i]] = f(o[grp[i]], in[i]);					\
+		}																\
 	}
 
 /* from now on assume shared heap */
 #define vamin(cmp, o, opos, op, in, i, bp, nil) \
-	if (!o[opos] || \
-		(cmp(bp+in[i], nil) != 0 && \
-		 cmp(op+o[opos], nil) != 0 && \
-		 cmp(op+o[opos], bp+in[i]) > 0)) \
+	if (!o[opos] ||								\
+		(cmp(bp+in[i], nil) != 0 &&				\
+		 cmp(op+o[opos], nil) != 0 &&			\
+		 cmp(op+o[opos], bp+in[i]) > 0))		\
 		o[opos] = in[i];
 #define vamax(cmp, o, opos, op, in, i, bp, nil) \
-	if (!o[opos] || \
-		(cmp(bp+in[i], nil) != 0 && \
-		 cmp(op+o[opos], nil) != 0 && \
-		 cmp(op+o[opos], bp+in[i]) < 0) ) \
+	if (!o[opos] ||								\
+		(cmp(bp+in[i], nil) != 0 &&				\
+		 cmp(op+o[opos], nil) != 0 &&			\
+		 cmp(op+o[opos], bp+in[i]) < 0) )		\
 		o[opos] = in[i];
 
-#define gafunc(f) \
-	if (ATOMextern(tt) && ATOMvarsized(tt)) { \
-			BATiter bi = bat_iterator(b); \
-			BATiter ri = bat_iterator(r); \
-			char *bp = bi.vh->base; \
-			char *op = ri.vh->base; \
-			int (*cmp)(const void *v1,const void *v2) = ATOMcompare(tt); \
-			const char *nil = ATOMnilptr(r->ttype); \
-			if (b->twidth == 1) { \
-				bp += GDK_VAROFFSET; \
-				op += GDK_VAROFFSET; \
-				uint8_t *in = Tloc(b, 0); \
-				uint8_t *o = Tloc(r, 0); \
-				TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) \
-					f(cmp, o, grp[i], op, in, i, bp, nil); \
-			} else if (b->twidth == 2) { \
-				bp += GDK_VAROFFSET; \
-				op += GDK_VAROFFSET; \
-				uint16_t *in = Tloc(b, 0); \
-				uint16_t *o = Tloc(r, 0); \
-				TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) \
-					f(cmp, o, grp[i], op, in, i, bp, nil); \
-			} else if (b->twidth == 4) { \
-				uint32_t *in = Tloc(b, 0); \
-				uint32_t *o = Tloc(r, 0); \
-				TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) \
-					f(cmp, o, grp[i], op, in, i, bp, nil); \
-			} else if (b->twidth == 8) { \
-				var_t *in = Tloc(b, 0); \
-				var_t *o = Tloc(r, 0); \
-				TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) \
-					f(cmp, o, grp[i], op, in, i, bp, nil); \
-			} \
-			bat_iterator_end(&bi); \
-			bat_iterator_end(&ri); \
+#define gafunc(f)														\
+	if (ATOMextern(tt) && ATOMvarsized(tt)) {							\
+		BATiter bi = bat_iterator(b);									\
+		BATiter ri = bat_iterator(r);									\
+		char *bp = bi.vh->base;											\
+		char *op = ri.vh->base;											\
+		int (*cmp)(const void *v1,const void *v2) = ATOMcompare(tt);	\
+		const char *nil = ATOMnilptr(r->ttype);							\
+		if (b->twidth == 1) {											\
+			bp += GDK_VAROFFSET;										\
+			op += GDK_VAROFFSET;										\
+			uint8_t *in = Tloc(b, 0);									\
+			uint8_t *o = Tloc(r, 0);									\
+			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx)						\
+				f(cmp, o, grp[i], op, in, i, bp, nil);					\
+		} else if (b->twidth == 2) {									\
+			bp += GDK_VAROFFSET;										\
+			op += GDK_VAROFFSET;										\
+			uint16_t *in = Tloc(b, 0);									\
+			uint16_t *o = Tloc(r, 0);									\
+			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx)						\
+				f(cmp, o, grp[i], op, in, i, bp, nil);					\
+		} else if (b->twidth == 4) {									\
+			uint32_t *in = Tloc(b, 0);									\
+			uint32_t *o = Tloc(r, 0);									\
+			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx)						\
+				f(cmp, o, grp[i], op, in, i, bp, nil);					\
+		} else if (b->twidth == 8) {									\
+			var_t *in = Tloc(b, 0);										\
+			var_t *o = Tloc(r, 0);										\
+			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx)						\
+				f(cmp, o, grp[i], op, in, i, bp, nil);					\
+		}																\
+		bat_iterator_end(&bi);											\
+		bat_iterator_end(&ri);											\
 	}
 
 /* private (changing) heap */
-#define vamin_(cmp, opos, in, i, bp, nil) \
-	if (!getoffset(r->theap->base, opos, r->twidth) || \
-			(cmp(bp+in[i], nil) != 0 && \
-			 cmp(r->tvheap->base+VarHeapVal(r->theap->base, opos, r->twidth), nil) != 0 && \
-			 cmp(r->tvheap->base+VarHeapVal(r->theap->base, opos, r->twidth), bp+in[i]) > 0)) \
-		if (tfastins_nocheckVAR( r, opos, bp+in[i]) != GDK_SUCCEED) { \
-			err = createException(MAL, "ilockedaggr.min", MAL_MALLOC_FAIL);\
-			goto error; \
+#define vamin_(cmp, opos, in, i, bp, nil)								\
+	if (!getoffset(r->theap->base, opos, r->twidth) ||					\
+		(cmp(bp+in[i], nil) != 0 &&										\
+		 cmp(r->tvheap->base+VarHeapVal(r->theap->base, opos, r->twidth), nil) != 0 && \
+		 cmp(r->tvheap->base+VarHeapVal(r->theap->base, opos, r->twidth), bp+in[i]) > 0)) \
+		if (tfastins_nocheckVAR( r, opos, bp+in[i]) != GDK_SUCCEED) {	\
+			err = createException(MAL, "ilockedaggr.min", MAL_MALLOC_FAIL);	\
+			goto error;													\
 		}
 
-#define vamax_(cmp, opos, in, i, bp, nil) \
-	if (!getoffset(r->theap->base, opos, r->twidth) || \
-			(cmp(bp+in[i], nil) != 0 && \
-			 cmp(r->tvheap->base+VarHeapVal(r->theap->base, opos, r->twidth), nil) != 0 && \
-			 cmp(r->tvheap->base+VarHeapVal(r->theap->base, opos, r->twidth), bp+in[i]) < 0)) \
-		if (tfastins_nocheckVAR( r, opos, bp+in[i]) != GDK_SUCCEED) { \
-			err = createException(MAL, "ilockedaggr.max", MAL_MALLOC_FAIL);\
-			goto error; \
+#define vamax_(cmp, opos, in, i, bp, nil)								\
+	if (!getoffset(r->theap->base, opos, r->twidth) ||					\
+		(cmp(bp+in[i], nil) != 0 &&										\
+		 cmp(r->tvheap->base+VarHeapVal(r->theap->base, opos, r->twidth), nil) != 0 && \
+		 cmp(r->tvheap->base+VarHeapVal(r->theap->base, opos, r->twidth), bp+in[i]) < 0)) \
+		if (tfastins_nocheckVAR( r, opos, bp+in[i]) != GDK_SUCCEED) {	\
+			err = createException(MAL, "ilockedaggr.max", MAL_MALLOC_FAIL);	\
+			goto error;													\
 		}
 
 static inline size_t
 getoffset(const void *b, BUN p, int w)
 {
 	switch (w) {
-		case 1:
-			return (size_t) ((const uint8_t *) b)[p];
-		case 2:
-			return (size_t) ((const uint16_t *) b)[p];
+	case 1:
+		return (size_t) ((const uint8_t *) b)[p];
+	case 2:
+		return (size_t) ((const uint16_t *) b)[p];
 #if SIZEOF_VAR_T == 8
-		case 4:
-			return (size_t) ((const uint32_t *) b)[p];
+	case 4:
+		return (size_t) ((const uint32_t *) b)[p];
 #endif
-		default:
-			return (size_t) ((const var_t *) b)[p];
+	default:
+		return (size_t) ((const var_t *) b)[p];
 	}
 }
 
-#define gafunc_(f) \
-	if (ATOMextern(tt) && ATOMvarsized(tt)) { \
-			BATiter bi = bat_iterator(b); \
-			BATiter ri = bat_iterator(r); \
-			char *bp = bi.vh->base; \
-			int (*cmp)(const void *v1,const void *v2) = ATOMcompare(tt); \
-			const char *nil = ATOMnilptr(r->ttype); \
-			if (b->twidth == 1) { \
-				bp += GDK_VAROFFSET; \
-				uint8_t *in = Tloc(b, 0); \
-				TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) \
-					f##_(cmp, grp[i], in, i, bp, nil); \
-			} else if (b->twidth == 2) { \
-				bp += GDK_VAROFFSET; \
-				uint16_t *in = Tloc(b, 0); \
-				TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) \
-					f##_(cmp, grp[i], in, i, bp, nil); \
-			} else if (b->twidth == 4) { \
-				uint32_t *in = Tloc(b, 0); \
-				TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) \
-					f##_(cmp, grp[i], in, i, bp, nil); \
-			} else if (b->twidth == 8) { \
-				var_t *in = Tloc(b, 0); \
-				TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) \
-					f##_(cmp, grp[i], in, i, bp, nil); \
-			} \
-			bat_iterator_end(&bi); \
-			bat_iterator_end(&ri); \
+#define gafunc_(f)														\
+	if (ATOMextern(tt) && ATOMvarsized(tt)) {							\
+		BATiter bi = bat_iterator(b);									\
+		BATiter ri = bat_iterator(r);									\
+		char *bp = bi.vh->base;											\
+		int (*cmp)(const void *v1,const void *v2) = ATOMcompare(tt);	\
+		const char *nil = ATOMnilptr(r->ttype);							\
+		if (b->twidth == 1) {											\
+			bp += GDK_VAROFFSET;										\
+			uint8_t *in = Tloc(b, 0);									\
+			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx)						\
+				f##_(cmp, grp[i], in, i, bp, nil);						\
+		} else if (b->twidth == 2) {									\
+			bp += GDK_VAROFFSET;										\
+			uint16_t *in = Tloc(b, 0);									\
+			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx)						\
+				f##_(cmp, grp[i], in, i, bp, nil);						\
+		} else if (b->twidth == 4) {									\
+			uint32_t *in = Tloc(b, 0);									\
+			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx)						\
+				f##_(cmp, grp[i], in, i, bp, nil);						\
+		} else if (b->twidth == 8) {									\
+			var_t *in = Tloc(b, 0);										\
+			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx)						\
+				f##_(cmp, grp[i], in, i, bp, nil);						\
+		}																\
+		bat_iterator_end(&bi);											\
+		bat_iterator_end(&ri);											\
 	}
 
 static str
@@ -3934,7 +3934,7 @@ LALGmin(Client ctx, bat *rid, bat *gid, bat *bid, bat *pid)
 			err = createException(MAL, "ilockedaggr.min", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto error;
 		} else if (ATOMvarsized(r->ttype) && ((BATcount(r) && r->tvheap->parentid == r->batCacheid) ||
-				(!VIEWvtparent(b) || BBP_desc(VIEWvtparent(b))->batRestricted != BAT_READ))) {
+											  (!VIEWvtparent(b) || BBP_desc(VIEWvtparent(b))->batRestricted != BAT_READ))) {
 			MT_lock_unset(&b->theaplock);
 			MT_lock_unset(&r->theaplock);
 			local_storage = true;
@@ -4040,7 +4040,7 @@ LALGmin(Client ctx, bat *rid, bat *gid, bat *bid, bat *pid)
 	if (!private)
 		pipeline_unlock1(r);
 	return MAL_SUCCEED;
-  error:
+error:
 	if (locked) pipeline_unlock1(r);
 	if (g) BBPunfix(g->batCacheid);
 	if (b) BBPunfix(b->batCacheid);
@@ -4094,7 +4094,7 @@ LALGmax(Client ctx, bat *rid, bat *gid, bat *bid, bat *pid)
 			err = createException(MAL, "ilockedaggr.max", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto error;
 		} else if (ATOMvarsized(r->ttype) && ((BATcount(r) && r->tvheap->parentid == r->batCacheid) ||
-				(!VIEWvtparent(b) || BBP_desc(VIEWvtparent(b))->batRestricted != BAT_READ))) {
+											  (!VIEWvtparent(b) || BBP_desc(VIEWvtparent(b))->batRestricted != BAT_READ))) {
 			MT_lock_unset(&b->theaplock);
 			MT_lock_unset(&r->theaplock);
 			local_storage = true;
@@ -4197,7 +4197,7 @@ LALGmax(Client ctx, bat *rid, bat *gid, bat *bid, bat *pid)
 	if (!private)
 		pipeline_unlock1(r);
 	return MAL_SUCCEED;
-  error:
+error:
 	if (locked) pipeline_unlock1(r);
 	if (g) BBPunfix(g->batCacheid);
 	if (b) BBPunfix(b->batCacheid);
@@ -4205,12 +4205,12 @@ LALGmax(Client ctx, bat *rid, bat *gid, bat *bid, bat *pid)
 	return err;
 }
 
-#define gNull(Type) \
-	do { \
-		Type *restrict in = (Type *)bi.base; \
-		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
-			o[grp[i]] = o[grp[i]] == true? o[grp[i]] : is_##Type##_nil(in[i]);\
-		} \
+#define gNull(Type)														\
+	do {																\
+		Type *restrict in = (Type *)bi.base;							\
+		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) {						\
+			o[grp[i]] = o[grp[i]] == true? o[grp[i]] : is_##Type##_nil(in[i]); \
+		}																\
 	} while (0)
 static str
 LALGnull(Client ctx, bat *rid, bat *gid, bat *bid, bat *pid)
@@ -4278,40 +4278,40 @@ LALGnull(Client ctx, bat *rid, bat *gid, bat *bid, bat *pid)
 	oid *grp = Tloc(g, 0);
 	bit *o = Tloc(r, 0);
 	switch(ATOMbasetype(bi.type)){
-		case TYPE_bte:
-			gNull(bte);
-			break;
-		case TYPE_sht:
-			gNull(sht);
-			break;
-		case TYPE_int:
-			gNull(int);
-			break;
-		case TYPE_lng:
-			gNull(lng);
-			break;
+	case TYPE_bte:
+		gNull(bte);
+		break;
+	case TYPE_sht:
+		gNull(sht);
+		break;
+	case TYPE_int:
+		gNull(int);
+		break;
+	case TYPE_lng:
+		gNull(lng);
+		break;
 #ifdef HAVE_HGE
-		case TYPE_hge:
-			gNull(hge);
-			break;
+	case TYPE_hge:
+		gNull(hge);
+		break;
 #endif
-		case TYPE_flt:
-			gNull(flt);
-			break;
-		case TYPE_dbl:
-			gNull(dbl);
-			break;
-		default: {
-			 int (*ocmp) (const void *, const void *) = ATOMcompare(bi.type);
-			 const void *restrict nilp = ATOMnilptr(bi.type);
+	case TYPE_flt:
+		gNull(flt);
+		break;
+	case TYPE_dbl:
+		gNull(dbl);
+		break;
+	default: {
+		int (*ocmp) (const void *, const void *) = ATOMcompare(bi.type);
+		const void *restrict nilp = ATOMnilptr(bi.type);
 
-			 TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) {
-				 if (o[grp[i]] != true) {
-					 const void *restrict c = BUNtail(&bi, i);
-					 o[grp[i]] = (ocmp(nilp, c) == 0);
-				 }
-			 }
+		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) {
+			if (o[grp[i]] != true) {
+				const void *restrict c = BUNtail(&bi, i);
+				o[grp[i]] = (ocmp(nilp, c) == 0);
+			}
 		}
+	}
 	}
 	bat_iterator_end(&bi);
 
@@ -4335,7 +4335,7 @@ LALGnull(Client ctx, bat *rid, bat *gid, bat *bid, bat *pid)
 	if (!private)
 		pipeline_unlock1(r);
 	return MAL_SUCCEED;
-  error:
+error:
 	if (locked) pipeline_unlock1(r);
 	if (g) BBPunfix(g->batCacheid);
 	if (b) BBPunfix(b->batCacheid);
@@ -4424,7 +4424,7 @@ LALGcnull(Client ctx, bat *rid, bat *gid, bat *bid, bat *pid)
 
 	pipeline_unlock1(r);
 	return MAL_SUCCEED;
-  error:
+error:
 	if (locked) pipeline_unlock1(r);
 	BBPreclaim(g);
 	BBPreclaim(b);
@@ -4433,23 +4433,23 @@ LALGcnull(Client ctx, bat *rid, bat *gid, bat *bid, bat *pid)
 }
 
 /* return value position groupcount*p/100 */
-#define qfunc(Type, p, f) \
-	if (tt == TYPE_##Type) { \
-			Type *in = Tloc(b, 0); \
-			Type *o = Tloc(r, 0); \
-			BUN s = 0; \
-			oid cur = grp[0]; \
-			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
-				if (grp[i] != cur) { \
-					BUN pos = ((i-s-1)*p/100); \
-					o[grp[s]] = in[pos]; \
-					s = i; \
-				} \
-			} \
-			if (s != cnt) { \
-				BUN pos = ((cnt-s-1)*p/100); \
-				o[grp[s]] = in[pos]; \
-			} \
+#define qfunc(Type, p, f)							\
+	if (tt == TYPE_##Type) {						\
+		Type *in = Tloc(b, 0);						\
+		Type *o = Tloc(r, 0);						\
+		BUN s = 0;									\
+		oid cur = grp[0];							\
+		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) {	\
+			if (grp[i] != cur) {					\
+				BUN pos = ((i-s-1)*p/100);			\
+				o[grp[s]] = in[pos];				\
+				s = i;								\
+			}										\
+		}											\
+		if (s != cnt) {								\
+			BUN pos = ((cnt-s-1)*p/100);			\
+			o[grp[s]] = in[pos];					\
+		}											\
 	}
 
 /* TODO this implementation is unfinisehd, therefore its corresponding MAL
@@ -4536,7 +4536,7 @@ IALGquantile(Client ctx, bat *rid, bat *gid, bat *bid, bte *perc)
 	BBPkeepref(r);
 
 	return MAL_SUCCEED;
-  error:
+error:
 	if (g) BBPunfix(g->batCacheid);
 	if (b) BBPunfix(b->batCacheid);
 	if (r) BBPunfix(r->batCacheid);
@@ -4686,15 +4686,15 @@ IALGmaxany(Client ctx, ptr result, const bat *bid)
 	return IALGmaxany_skipnil(ctx, result, bid, &skipnil);
 }
 
-#define ALGnull_impl(TPE) \
-	do {		\
-		TPE *restrict bp = (TPE*)bi.base;	\
-		TIMEOUT_LOOP_IDX_DECL(q, o, qry_ctx) { \
-			if (is_##TPE##_nil(bp[q])) { \
-				hasnull = TRUE; \
-				break; \
-			} \
-		} \
+#define ALGnull_impl(TPE)						\
+	do {										\
+		TPE *restrict bp = (TPE*)bi.base;		\
+		TIMEOUT_LOOP_IDX_DECL(q, o, qry_ctx) {	\
+			if (is_##TPE##_nil(bp[q])) {		\
+				hasnull = TRUE;					\
+				break;							\
+			}									\
+		}										\
 	} while (0)
 
 static str
@@ -4718,41 +4718,41 @@ IALGnull(Client ctx, bit *result, const bat *bid)
 			BUN o = BATcount(b);
 			BATiter bi = bat_iterator(b);
 			switch (ATOMbasetype(bi.type)) {
-				case TYPE_bte:
-					ALGnull_impl(bte);
-					break;
-				case TYPE_sht:
-					ALGnull_impl(sht);
-					break;
-				case TYPE_int:
-					ALGnull_impl(int);
-					break;
-				case TYPE_lng:
-					ALGnull_impl(lng);
-					break;
+			case TYPE_bte:
+				ALGnull_impl(bte);
+				break;
+			case TYPE_sht:
+				ALGnull_impl(sht);
+				break;
+			case TYPE_int:
+				ALGnull_impl(int);
+				break;
+			case TYPE_lng:
+				ALGnull_impl(lng);
+				break;
 #ifdef HAVE_HGE
-				case TYPE_hge:
-					ALGnull_impl(hge);
-					break;
+			case TYPE_hge:
+				ALGnull_impl(hge);
+				break;
 #endif
-				case TYPE_flt:
-					ALGnull_impl(flt);
-					break;
-				case TYPE_dbl:
-					ALGnull_impl(dbl);
-					break;
-				default: {
-					 int (*ocmp) (const void *, const void *) = ATOMcompare(bi.type);
-					 const void *restrict nilp = ATOMnilptr(bi.type);
+			case TYPE_flt:
+				ALGnull_impl(flt);
+				break;
+			case TYPE_dbl:
+				ALGnull_impl(dbl);
+				break;
+			default: {
+				int (*ocmp) (const void *, const void *) = ATOMcompare(bi.type);
+				const void *restrict nilp = ATOMnilptr(bi.type);
 
-					 TIMEOUT_LOOP_IDX_DECL(q, o, qry_ctx) {
-						 const void *restrict c = BUNtail(&bi, q);
-						 if (ocmp(nilp, c) == 0) {
-							 hasnull = true;
-							 break;
-						 }
-					 }
+				TIMEOUT_LOOP_IDX_DECL(q, o, qry_ctx) {
+					const void *restrict c = BUNtail(&bi, q);
+					if (ocmp(nilp, c) == 0) {
+						hasnull = true;
+						break;
+					}
 				}
+			}
 			}
 			bat_iterator_end(&bi);
 			*result = hasnull;
@@ -4900,315 +4900,315 @@ IALGfsum(Client ctx, dbl *result, dbl *com, lng *cnt, const bat *bid)
 
 #include "mel.h"
 static mel_func pp_algebra_init_funcs[] = {
- command("igroup", "group", LALGgroup, false, "Group input.", args(2,3, batarg("gid", oid), batargany("sink",1), batargany("b",1))),
- command("igroup", "group", LALGderive, false, "Sub Group input.", args(2,5, batarg("gid", oid), batargany("sink",1), batarg("pgid", oid), batargany("phash", 2), batargany("b",1))),
+	command("igroup", "group", LALGgroup, false, "Group input.", args(2,3, batarg("gid", oid), batargany("sink",1), batargany("b",1))),
+	command("igroup", "group", LALGderive, false, "Sub Group input.", args(2,5, batarg("gid", oid), batargany("sink",1), batarg("pgid", oid), batargany("phash", 2), batargany("b",1))),
 
- pattern("ialgebra", "project", LALGconstant, false, "Project a single value", args(1,3, batargany("",1), batarg("gid", oid), argany("val",1))),
- command("ialgebra", "projection", LALGprojection, false, "Project.", args(1,3, batargany("",1), batarg("gid", oid), batargany("b",1))),
+	pattern("ialgebra", "project", LALGconstant, false, "Project a single value", args(1,3, batargany("",1), batarg("gid", oid), argany("val",1))),
+	command("ialgebra", "projection", LALGprojection, false, "Project.", args(1,3, batargany("",1), batarg("gid", oid), batargany("b",1))),
 
- /* COUNT DISTINCT: globle / grouped */
- command("ialgebra", "unique", LALGunique, false, "Unique rows.", args(2,4, batarg("gid", oid), batargany("",1), batargany("b",1), batarg("s",oid))),
- command("ialgebra", "unique", LALGgroup_unique, false, "Unique rows per group.", args(2,5, batarg("ngid", oid), batargany("",1), batargany("b",1), batarg("s",oid), batarg("gid",oid))),
+	/* COUNT DISTINCT: globle / grouped */
+	command("ialgebra", "unique", LALGunique, false, "Unique rows.", args(2,4, batarg("gid", oid), batargany("",1), batargany("b",1), batarg("s",oid))),
+	command("ialgebra", "unique", LALGgroup_unique, false, "Unique rows per group.", args(2,5, batarg("ngid", oid), batargany("",1), batargany("b",1), batarg("s",oid), batarg("gid",oid))),
 
- /********** Grouped aggregates **********/
- command("ilockedaggr", "min", LALGmin, false, "Min per group.", args(1,4, batargany("",1), batarg("gid", oid), batargany("", 1), batarg("pid", oid))),
- command("ilockedaggr", "max", LALGmax, false, "Max per group.", args(1,4, batargany("",1), batarg("gid", oid), batargany("", 1), batarg("pid", oid))),
- pattern("ilockedaggr", "prod", LALGprod, false, "product per group.", args(1,4, batargany("",1), batarg("gid", oid), batargany("", 2), batarg("pid", oid))),
- command("ilockedaggr", "null", LALGnull, false, "has-null per group per partition.", args(1,4, batarg("",bit), batarg("gid", oid), batargany("", 1), batarg("pid", oid))),
- command("ilockedaggr", "cnull", LALGcnull, false, "has-null per group all partition combined.", args(1,4, batarg("",bit), batarg("gid", oid), batarg("", bit), batarg("pid", oid))),
- command("ilockedaggr", "count", LALGcount, false, "Count per group.", args(1,5, batarg("",lng), batarg("gid", oid), batargany("", 1), arg("nonil", bit), batarg("pid", oid))),
- command("ilockedaggr", "count", LALGcountstar, false, "count per group.", args(1,3, batarg("",lng), batarg("gid", oid), batarg("pid", oid))),
+	/********** Grouped aggregates **********/
+	command("ilockedaggr", "min", LALGmin, false, "Min per group.", args(1,4, batargany("",1), batarg("gid", oid), batargany("", 1), batarg("pid", oid))),
+	command("ilockedaggr", "max", LALGmax, false, "Max per group.", args(1,4, batargany("",1), batarg("gid", oid), batargany("", 1), batarg("pid", oid))),
+	pattern("ilockedaggr", "prod", LALGprod, false, "product per group.", args(1,4, batargany("",1), batarg("gid", oid), batargany("", 2), batarg("pid", oid))),
+	command("ilockedaggr", "null", LALGnull, false, "has-null per group per partition.", args(1,4, batarg("",bit), batarg("gid", oid), batargany("", 1), batarg("pid", oid))),
+	command("ilockedaggr", "cnull", LALGcnull, false, "has-null per group all partition combined.", args(1,4, batarg("",bit), batarg("gid", oid), batarg("", bit), batarg("pid", oid))),
+	command("ilockedaggr", "count", LALGcount, false, "Count per group.", args(1,5, batarg("",lng), batarg("gid", oid), batargany("", 1), arg("nonil", bit), batarg("pid", oid))),
+	command("ilockedaggr", "count", LALGcountstar, false, "count per group.", args(1,3, batarg("",lng), batarg("gid", oid), batarg("pid", oid))),
 
- pattern("ilockedaggr", "sum", LALGsum, false, "sum per group.", args(1,4, batargany("",1), batarg("gid", oid), batargany("", 2), batarg("pid", oid))),
- /* sum core */
- pattern("ilockedaggr", "sum", LALGsum_float, false, "Kahan/Neumaier summation per group.", args(3,6, batarg("rsum", flt), batarg("rcom", flt), batarg("rcnt", lng), batarg("gid", oid), batarg("val", flt), batarg("pid", oid))),
- pattern("ilockedaggr", "sum", LALGsum_float, false, "Kahan/Neumaier summation per group.", args(3,6, batarg("rsum", dbl), batarg("rcom", dbl), batarg("rcnt", lng), batarg("gid", oid), batarg("val", dbl), batarg("pid", oid))),
- /* sum combine */
- pattern("ilockedaggr", "sum", LALGsum_float, false, "Kahan/Neumaier summation per group.", args(3,8, batarg("rsum", flt), batarg("rcom", flt), batarg("rcnt", lng), batarg("gid", oid), batarg("sum", flt), batarg("com", flt), batarg("cnt", lng), batarg("pid", oid))),
- pattern("ilockedaggr", "sum", LALGsum_float, false, "Kahan/Neumaier summation per group.", args(3,8, batarg("rsum", dbl), batarg("rcom", dbl), batarg("rcnt", lng), batarg("gid", oid), batarg("sum", dbl), batarg("com", dbl), batarg("cnt", lng), batarg("pid", oid))),
- /* sum finish */
- pattern("ilockedaggr", "compute_sum", compute_sum, false, "compute Kahan/Neumaier summation.", args(1,3, batarg("rsum",flt), batarg("sum", flt), batarg("com", flt))),
- pattern("ilockedaggr", "compute_sum", compute_sum, false, "compute Kahan/Neumaier summation.", args(1,3, batarg("rsum",dbl), batarg("sum", dbl), batarg("com", dbl))),
+	pattern("ilockedaggr", "sum", LALGsum, false, "sum per group.", args(1,4, batargany("",1), batarg("gid", oid), batargany("", 2), batarg("pid", oid))),
+	/* sum core */
+	pattern("ilockedaggr", "sum", LALGsum_float, false, "Kahan/Neumaier summation per group.", args(3,6, batarg("rsum", flt), batarg("rcom", flt), batarg("rcnt", lng), batarg("gid", oid), batarg("val", flt), batarg("pid", oid))),
+	pattern("ilockedaggr", "sum", LALGsum_float, false, "Kahan/Neumaier summation per group.", args(3,6, batarg("rsum", dbl), batarg("rcom", dbl), batarg("rcnt", lng), batarg("gid", oid), batarg("val", dbl), batarg("pid", oid))),
+	/* sum combine */
+	pattern("ilockedaggr", "sum", LALGsum_float, false, "Kahan/Neumaier summation per group.", args(3,8, batarg("rsum", flt), batarg("rcom", flt), batarg("rcnt", lng), batarg("gid", oid), batarg("sum", flt), batarg("com", flt), batarg("cnt", lng), batarg("pid", oid))),
+	pattern("ilockedaggr", "sum", LALGsum_float, false, "Kahan/Neumaier summation per group.", args(3,8, batarg("rsum", dbl), batarg("rcom", dbl), batarg("rcnt", lng), batarg("gid", oid), batarg("sum", dbl), batarg("com", dbl), batarg("cnt", lng), batarg("pid", oid))),
+	/* sum finish */
+	pattern("ilockedaggr", "compute_sum", compute_sum, false, "compute Kahan/Neumaier summation.", args(1,3, batarg("rsum",flt), batarg("sum", flt), batarg("com", flt))),
+	pattern("ilockedaggr", "compute_sum", compute_sum, false, "compute Kahan/Neumaier summation.", args(1,3, batarg("rsum",dbl), batarg("sum", dbl), batarg("com", dbl))),
 
- /* avg core */
- pattern("ilockedaggr", "avg", LALGavg, false, "avg per group.", args(3,6, batarg("ravg", dbl), batarg("rerror", dbl), batarg("rcnt", lng), batarg("gid", oid), batargany("", 1), batarg("pid", oid))),
- pattern("ilockedaggr", "avg", LALGavg, false, "avg of integers/decimals per group.", args(3,6, batargany("ravg",1), batarg("rremainder", lng), batarg("rcnt", lng), batarg("gid", oid), batargany("", 1), batarg("pid", oid))),
- /* avg combine */
- pattern("ilockedaggr", "avg", LALGavg, false, "avg per group.", args(3,8, batarg("ravg", dbl), batarg("rerror", dbl), batarg("rcnt", lng), batarg("gid", oid), batargany("", 1), batarg("error", dbl), batarg("cnt", lng), batarg("pid", oid))),
- pattern("ilockedaggr", "avg", LALGavg, false, "avg of integers/decimals per group.", args(3,8, batargany("ravg",1), batarg("rremainder", lng), batarg("rcnt", lng), batarg("gid", oid), batargany("", 1), batarg("remainder", lng), batarg("cnt", lng), batarg("pid", oid))),
- /* avg integer and doubles finish */
- pattern("ilockedaggr", "compute_avg", compute_avg, false, "compute avg from integer avg + rest/count.", args(1,4, batarg("ravg",dbl), batargany("avg", 1), batarg("remainder", lng), batarg("cnt", lng))),
- pattern("ilockedaggr", "compute_avg", compute_avg, false, "compute avg from floating point (sum + error)/count.", args(1,4, batarg("ravg",dbl), batarg("avg", dbl), batarg("error", dbl), batarg("cnt", lng))),
+	/* avg core */
+	pattern("ilockedaggr", "avg", LALGavg, false, "avg per group.", args(3,6, batarg("ravg", dbl), batarg("rerror", dbl), batarg("rcnt", lng), batarg("gid", oid), batargany("", 1), batarg("pid", oid))),
+	pattern("ilockedaggr", "avg", LALGavg, false, "avg of integers/decimals per group.", args(3,6, batargany("ravg",1), batarg("rremainder", lng), batarg("rcnt", lng), batarg("gid", oid), batargany("", 1), batarg("pid", oid))),
+	/* avg combine */
+	pattern("ilockedaggr", "avg", LALGavg, false, "avg per group.", args(3,8, batarg("ravg", dbl), batarg("rerror", dbl), batarg("rcnt", lng), batarg("gid", oid), batargany("", 1), batarg("error", dbl), batarg("cnt", lng), batarg("pid", oid))),
+	pattern("ilockedaggr", "avg", LALGavg, false, "avg of integers/decimals per group.", args(3,8, batargany("ravg",1), batarg("rremainder", lng), batarg("rcnt", lng), batarg("gid", oid), batargany("", 1), batarg("remainder", lng), batarg("cnt", lng), batarg("pid", oid))),
+	/* avg integer and doubles finish */
+	pattern("ilockedaggr", "compute_avg", compute_avg, false, "compute avg from integer avg + rest/count.", args(1,4, batarg("ravg",dbl), batargany("avg", 1), batarg("remainder", lng), batarg("cnt", lng))),
+	pattern("ilockedaggr", "compute_avg", compute_avg, false, "compute avg from floating point (sum + error)/count.", args(1,4, batarg("ravg",dbl), batarg("avg", dbl), batarg("error", dbl), batarg("cnt", lng))),
 
- /********** Global aggregates (i.e. without a GROUP BY) **********/
- /* core phase: incrementally aggregate each input data slice into the local in/out result var. */
- command("iaggr", "min", IALGminany, false, "Return the lowest tail value or nil.", args(1,2, argany("",2), batargany("b",2))),
- command("iaggr", "min", IALGminany_skipnil, false, "Return the lowest tail value or nil.", args(1,3, argany("",2), batargany("b",2),arg("skipnil",bit))),
- command("iaggr", "max", IALGmaxany, false, "Return the highest tail value or nil.", args(1,2, argany("",2), batargany("b",2))),
- command("iaggr", "max", IALGmaxany_skipnil, false, "Return the highest tail value or nil.", args(1,3, argany("",2), batargany("b",2),arg("skipnil",bit))),
- command("iaggr", "null", IALGnull, false, "Returns true or false if the input contains a NULL or not, nil if the input is empty..", args(1,2, arg("",bit), batargany("b",1))),
+	/********** Global aggregates (i.e. without a GROUP BY) **********/
+	/* core phase: incrementally aggregate each input data slice into the local in/out result var. */
+	command("iaggr", "min", IALGminany, false, "Return the lowest tail value or nil.", args(1,2, argany("",2), batargany("b",2))),
+	command("iaggr", "min", IALGminany_skipnil, false, "Return the lowest tail value or nil.", args(1,3, argany("",2), batargany("b",2),arg("skipnil",bit))),
+	command("iaggr", "max", IALGmaxany, false, "Return the highest tail value or nil.", args(1,2, argany("",2), batargany("b",2))),
+	command("iaggr", "max", IALGmaxany_skipnil, false, "Return the highest tail value or nil.", args(1,3, argany("",2), batargany("b",2),arg("skipnil",bit))),
+	command("iaggr", "null", IALGnull, false, "Returns true or false if the input contains a NULL or not, nil if the input is empty..", args(1,2, arg("",bit), batargany("b",1))),
 
- pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,2, arg("",bte),batarg("b",bte))),
- pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,3, arg("",bte),batarg("b",bte),arg("nil_if_empty",bit))),
- pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,3, arg("",bte),batarg("b",bte),batarg("s",oid))),
- pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,4, arg("",bte),batarg("b",bte),batarg("s",oid),arg("nil_if_empty",bit))),
- pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,2, arg("",sht),batarg("b",bte))),
- pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,3, arg("",sht),batarg("b",bte),arg("nil_if_empty",bit))),
- pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,3, arg("",sht),batarg("b",bte),batarg("s",oid))),
- pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,4, arg("",sht),batarg("b",bte),batarg("s",oid),arg("nil_if_empty",bit))),
- pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,2, arg("",int),batarg("b",bte))),
- pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,3, arg("",int),batarg("b",bte),arg("nil_if_empty",bit))),
- pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,3, arg("",int),batarg("b",bte),batarg("s",oid))),
- pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,4, arg("",int),batarg("b",bte),batarg("s",oid),arg("nil_if_empty",bit))),
- pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,2, arg("",lng),batarg("b",bte))),
- pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,3, arg("",lng),batarg("b",bte),arg("nil_if_empty",bit))),
- pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,3, arg("",lng),batarg("b",bte),batarg("s",oid))),
- pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,4, arg("",lng),batarg("b",bte),batarg("s",oid),arg("nil_if_empty",bit))),
- pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,2, arg("",dbl),batarg("b",bte))),
- pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,3, arg("",dbl),batarg("b",bte),arg("nil_if_empty",bit))),
- pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,3, arg("",dbl),batarg("b",bte),batarg("s",oid))),
- pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,4, arg("",dbl),batarg("b",bte),batarg("s",oid),arg("nil_if_empty",bit))),
- pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,2, arg("",sht),batarg("b",sht))),
- pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,3, arg("",sht),batarg("b",sht),arg("nil_if_empty",bit))),
- pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,3, arg("",sht),batarg("b",sht),batarg("s",oid))),
- pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,4, arg("",sht),batarg("b",sht),batarg("s",oid),arg("nil_if_empty",bit))),
- pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,2, arg("",int),batarg("b",sht))),
- pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,3, arg("",int),batarg("b",sht),arg("nil_if_empty",bit))),
- pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,3, arg("",int),batarg("b",sht),batarg("s",oid))),
- pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,4, arg("",int),batarg("b",sht),batarg("s",oid),arg("nil_if_empty",bit))),
- pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,2, arg("",lng),batarg("b",sht))),
- pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,3, arg("",lng),batarg("b",sht),arg("nil_if_empty",bit))),
- pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,3, arg("",lng),batarg("b",sht),batarg("s",oid))),
- pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,4, arg("",lng),batarg("b",sht),batarg("s",oid),arg("nil_if_empty",bit))),
- pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,2, arg("",dbl),batarg("b",sht))),
- pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,3, arg("",dbl),batarg("b",sht),arg("nil_if_empty",bit))),
- pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,3, arg("",dbl),batarg("b",sht),batarg("s",oid))),
- pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,4, arg("",dbl),batarg("b",sht),batarg("s",oid),arg("nil_if_empty",bit))),
- pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,2, arg("",int),batarg("b",int))),
- pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,3, arg("",int),batarg("b",int),arg("nil_if_empty",bit))),
- pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,3, arg("",int),batarg("b",int),batarg("s",oid))),
- pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,4, arg("",int),batarg("b",int),batarg("s",oid),arg("nil_if_empty",bit))),
- pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,2, arg("",lng),batarg("b",int))),
- pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,3, arg("",lng),batarg("b",int),arg("nil_if_empty",bit))),
- pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,3, arg("",lng),batarg("b",int),batarg("s",oid))),
- pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,4, arg("",lng),batarg("b",int),batarg("s",oid),arg("nil_if_empty",bit))),
- pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,2, arg("",dbl),batarg("b",int))),
- pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,3, arg("",dbl),batarg("b",int),arg("nil_if_empty",bit))),
- pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,3, arg("",dbl),batarg("b",int),batarg("s",oid))),
- pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,4, arg("",dbl),batarg("b",int),batarg("s",oid),arg("nil_if_empty",bit))),
- pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,2, arg("",lng),batarg("b",lng))),
- pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,3, arg("",lng),batarg("b",lng),arg("nil_if_empty",bit))),
- pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,3, arg("",lng),batarg("b",lng),batarg("s",oid))),
- pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,4, arg("",lng),batarg("b",lng),batarg("s",oid),arg("nil_if_empty",bit))),
- pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,2, arg("",dbl),batarg("b",lng))),
- pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,3, arg("",dbl),batarg("b",lng),arg("nil_if_empty",bit))),
- pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,3, arg("",dbl),batarg("b",lng),batarg("s",oid))),
- pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,4, arg("",dbl),batarg("b",lng),batarg("s",oid),arg("nil_if_empty",bit))),
- pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,2, arg("",flt),batarg("b",flt))),
- pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,3, arg("",flt),batarg("b",flt),arg("nil_if_empty",bit))),
- pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,3, arg("",flt),batarg("b",flt),batarg("s",oid))),
- pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,4, arg("",flt),batarg("b",flt),batarg("s",oid),arg("nil_if_empty",bit))),
- pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,2, arg("",dbl),batarg("b",flt))),
- pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,3, arg("",dbl),batarg("b",flt),arg("nil_if_empty",bit))),
- pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,3, arg("",dbl),batarg("b",flt),batarg("s",oid))),
- pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,4, arg("",dbl),batarg("b",flt),batarg("s",oid),arg("nil_if_empty",bit))),
- pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,2, arg("",dbl),batarg("b",dbl))),
- pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,3, arg("",dbl),batarg("b",dbl),arg("nil_if_empty",bit))),
- pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,3, arg("",dbl),batarg("b",dbl),batarg("s",oid))),
- pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,4, arg("",dbl),batarg("b",dbl),batarg("s",oid),arg("nil_if_empty",bit))),
+	pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,2, arg("",bte),batarg("b",bte))),
+	pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,3, arg("",bte),batarg("b",bte),arg("nil_if_empty",bit))),
+	pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,3, arg("",bte),batarg("b",bte),batarg("s",oid))),
+	pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,4, arg("",bte),batarg("b",bte),batarg("s",oid),arg("nil_if_empty",bit))),
+	pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,2, arg("",sht),batarg("b",bte))),
+	pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,3, arg("",sht),batarg("b",bte),arg("nil_if_empty",bit))),
+	pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,3, arg("",sht),batarg("b",bte),batarg("s",oid))),
+	pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,4, arg("",sht),batarg("b",bte),batarg("s",oid),arg("nil_if_empty",bit))),
+	pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,2, arg("",int),batarg("b",bte))),
+	pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,3, arg("",int),batarg("b",bte),arg("nil_if_empty",bit))),
+	pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,3, arg("",int),batarg("b",bte),batarg("s",oid))),
+	pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,4, arg("",int),batarg("b",bte),batarg("s",oid),arg("nil_if_empty",bit))),
+	pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,2, arg("",lng),batarg("b",bte))),
+	pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,3, arg("",lng),batarg("b",bte),arg("nil_if_empty",bit))),
+	pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,3, arg("",lng),batarg("b",bte),batarg("s",oid))),
+	pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,4, arg("",lng),batarg("b",bte),batarg("s",oid),arg("nil_if_empty",bit))),
+	pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,2, arg("",dbl),batarg("b",bte))),
+	pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,3, arg("",dbl),batarg("b",bte),arg("nil_if_empty",bit))),
+	pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,3, arg("",dbl),batarg("b",bte),batarg("s",oid))),
+	pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,4, arg("",dbl),batarg("b",bte),batarg("s",oid),arg("nil_if_empty",bit))),
+	pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,2, arg("",sht),batarg("b",sht))),
+	pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,3, arg("",sht),batarg("b",sht),arg("nil_if_empty",bit))),
+	pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,3, arg("",sht),batarg("b",sht),batarg("s",oid))),
+	pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,4, arg("",sht),batarg("b",sht),batarg("s",oid),arg("nil_if_empty",bit))),
+	pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,2, arg("",int),batarg("b",sht))),
+	pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,3, arg("",int),batarg("b",sht),arg("nil_if_empty",bit))),
+	pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,3, arg("",int),batarg("b",sht),batarg("s",oid))),
+	pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,4, arg("",int),batarg("b",sht),batarg("s",oid),arg("nil_if_empty",bit))),
+	pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,2, arg("",lng),batarg("b",sht))),
+	pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,3, arg("",lng),batarg("b",sht),arg("nil_if_empty",bit))),
+	pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,3, arg("",lng),batarg("b",sht),batarg("s",oid))),
+	pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,4, arg("",lng),batarg("b",sht),batarg("s",oid),arg("nil_if_empty",bit))),
+	pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,2, arg("",dbl),batarg("b",sht))),
+	pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,3, arg("",dbl),batarg("b",sht),arg("nil_if_empty",bit))),
+	pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,3, arg("",dbl),batarg("b",sht),batarg("s",oid))),
+	pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,4, arg("",dbl),batarg("b",sht),batarg("s",oid),arg("nil_if_empty",bit))),
+	pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,2, arg("",int),batarg("b",int))),
+	pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,3, arg("",int),batarg("b",int),arg("nil_if_empty",bit))),
+	pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,3, arg("",int),batarg("b",int),batarg("s",oid))),
+	pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,4, arg("",int),batarg("b",int),batarg("s",oid),arg("nil_if_empty",bit))),
+	pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,2, arg("",lng),batarg("b",int))),
+	pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,3, arg("",lng),batarg("b",int),arg("nil_if_empty",bit))),
+	pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,3, arg("",lng),batarg("b",int),batarg("s",oid))),
+	pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,4, arg("",lng),batarg("b",int),batarg("s",oid),arg("nil_if_empty",bit))),
+	pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,2, arg("",dbl),batarg("b",int))),
+	pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,3, arg("",dbl),batarg("b",int),arg("nil_if_empty",bit))),
+	pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,3, arg("",dbl),batarg("b",int),batarg("s",oid))),
+	pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,4, arg("",dbl),batarg("b",int),batarg("s",oid),arg("nil_if_empty",bit))),
+	pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,2, arg("",lng),batarg("b",lng))),
+	pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,3, arg("",lng),batarg("b",lng),arg("nil_if_empty",bit))),
+	pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,3, arg("",lng),batarg("b",lng),batarg("s",oid))),
+	pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,4, arg("",lng),batarg("b",lng),batarg("s",oid),arg("nil_if_empty",bit))),
+	pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,2, arg("",dbl),batarg("b",lng))),
+	pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,3, arg("",dbl),batarg("b",lng),arg("nil_if_empty",bit))),
+	pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,3, arg("",dbl),batarg("b",lng),batarg("s",oid))),
+	pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,4, arg("",dbl),batarg("b",lng),batarg("s",oid),arg("nil_if_empty",bit))),
+	pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,2, arg("",flt),batarg("b",flt))),
+	pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,3, arg("",flt),batarg("b",flt),arg("nil_if_empty",bit))),
+	pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,3, arg("",flt),batarg("b",flt),batarg("s",oid))),
+	pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,4, arg("",flt),batarg("b",flt),batarg("s",oid),arg("nil_if_empty",bit))),
+	pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,2, arg("",dbl),batarg("b",flt))),
+	pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,3, arg("",dbl),batarg("b",flt),arg("nil_if_empty",bit))),
+	pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,3, arg("",dbl),batarg("b",flt),batarg("s",oid))),
+	pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,4, arg("",dbl),batarg("b",flt),batarg("s",oid),arg("nil_if_empty",bit))),
+	pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,2, arg("",dbl),batarg("b",dbl))),
+	pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,3, arg("",dbl),batarg("b",dbl),arg("nil_if_empty",bit))),
+	pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,3, arg("",dbl),batarg("b",dbl),batarg("s",oid))),
+	pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,4, arg("",dbl),batarg("b",dbl),batarg("s",oid),arg("nil_if_empty",bit))),
 #ifdef HAVE_HGE
- pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,2, arg("",hge),batarg("b",bte))),
- pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,3, arg("",hge),batarg("b",bte),arg("nil_if_empty",bit))),
- pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,3, arg("",hge),batarg("b",bte),batarg("s",oid))),
- pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,4, arg("",hge),batarg("b",bte),batarg("s",oid),arg("nil_if_empty",bit))),
- pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,2, arg("",hge),batarg("b",sht))),
- pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,3, arg("",hge),batarg("b",sht),arg("nil_if_empty",bit))),
- pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,3, arg("",hge),batarg("b",sht),batarg("s",oid))),
- pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,4, arg("",hge),batarg("b",sht),batarg("s",oid),arg("nil_if_empty",bit))),
- pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,2, arg("",hge),batarg("b",int))),
- pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,3, arg("",hge),batarg("b",int),arg("nil_if_empty",bit))),
- pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,3, arg("",hge),batarg("b",int),batarg("s",oid))),
- pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,4, arg("",hge),batarg("b",int),batarg("s",oid),arg("nil_if_empty",bit))),
- pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,2, arg("",hge),batarg("b",lng))),
- pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,3, arg("",hge),batarg("b",lng),arg("nil_if_empty",bit))),
- pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,3, arg("",hge),batarg("b",lng),batarg("s",oid))),
- pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,4, arg("",hge),batarg("b",lng),batarg("s",oid),arg("nil_if_empty",bit))),
- pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,2, arg("",hge),batarg("b",hge))),
- pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,3, arg("",hge),batarg("b",hge),arg("nil_if_empty",bit))),
- pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,3, arg("",hge),batarg("b",hge),batarg("s",oid))),
- pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,4, arg("",hge),batarg("b",hge),batarg("s",oid),arg("nil_if_empty",bit))),
- pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,2, arg("",dbl),batarg("b",hge))),
- pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,3, arg("",dbl),batarg("b",hge),arg("nil_if_empty",bit))),
- pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,3, arg("",dbl),batarg("b",hge),batarg("s",oid))),
- pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,4, arg("",dbl),batarg("b",hge),batarg("s",oid),arg("nil_if_empty",bit))),
+	pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,2, arg("",hge),batarg("b",bte))),
+	pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,3, arg("",hge),batarg("b",bte),arg("nil_if_empty",bit))),
+	pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,3, arg("",hge),batarg("b",bte),batarg("s",oid))),
+	pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,4, arg("",hge),batarg("b",bte),batarg("s",oid),arg("nil_if_empty",bit))),
+	pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,2, arg("",hge),batarg("b",sht))),
+	pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,3, arg("",hge),batarg("b",sht),arg("nil_if_empty",bit))),
+	pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,3, arg("",hge),batarg("b",sht),batarg("s",oid))),
+	pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,4, arg("",hge),batarg("b",sht),batarg("s",oid),arg("nil_if_empty",bit))),
+	pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,2, arg("",hge),batarg("b",int))),
+	pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,3, arg("",hge),batarg("b",int),arg("nil_if_empty",bit))),
+	pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,3, arg("",hge),batarg("b",int),batarg("s",oid))),
+	pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,4, arg("",hge),batarg("b",int),batarg("s",oid),arg("nil_if_empty",bit))),
+	pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,2, arg("",hge),batarg("b",lng))),
+	pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,3, arg("",hge),batarg("b",lng),arg("nil_if_empty",bit))),
+	pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,3, arg("",hge),batarg("b",lng),batarg("s",oid))),
+	pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,4, arg("",hge),batarg("b",lng),batarg("s",oid),arg("nil_if_empty",bit))),
+	pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,2, arg("",hge),batarg("b",hge))),
+	pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,3, arg("",hge),batarg("b",hge),arg("nil_if_empty",bit))),
+	pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,3, arg("",hge),batarg("b",hge),batarg("s",oid))),
+	pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,4, arg("",hge),batarg("b",hge),batarg("s",oid),arg("nil_if_empty",bit))),
+	pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,2, arg("",dbl),batarg("b",hge))),
+	pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,3, arg("",dbl),batarg("b",hge),arg("nil_if_empty",bit))),
+	pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,3, arg("",dbl),batarg("b",hge),batarg("s",oid))),
+	pattern("iaggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,4, arg("",dbl),batarg("b",hge),batarg("s",oid),arg("nil_if_empty",bit))),
 #endif
 
- command("iaggr", "count", IALGcount_bat, false, "Return the number of elements currently in a BAT.", args(1,2, arg("",lng), batargany("b",0))),
- command("iaggr", "count", IALGcount_nil, false, "Return the number of elements currently in a BAT, ignore BUNs with nil-tail iff ignore_nils==TRUE.", args(1,3, arg("",lng), batargany("b",0),arg("ignore_nils",bit))),
- command("iaggr", "count_no_nil", IALGcount_no_nil, false, "Return the number of elements currently in a BAT, ignore BUNs with nil-tail", args(1,2, arg("",lng), batargany("b",2))),
- command("iaggr", "count", IALGcountCND_bat, false, "Return the number of elements currently in a BAT.", args(1,3, arg("",lng), batargany("b",0),batarg("cnd",oid))),
- command("iaggr", "count", IALGcountCND_nil, false, "Return the number of elements currently in a BAT, ignore BUNs with nil-tail iff ignore_nils==TRUE.", args(1,4, arg("",lng), batargany("b",0),batarg("cnd",oid),arg("ignore_nils",bit))),
- command("iaggr", "count_no_nil", IALGcountCND_no_nil, false, "Return the number of elements currently in a BAT, ignore BUNs with nil-tail", args(1,3, arg("",lng), batargany("b",2),batarg("cnd",oid))),
+	command("iaggr", "count", IALGcount_bat, false, "Return the number of elements currently in a BAT.", args(1,2, arg("",lng), batargany("b",0))),
+	command("iaggr", "count", IALGcount_nil, false, "Return the number of elements currently in a BAT, ignore BUNs with nil-tail iff ignore_nils==TRUE.", args(1,3, arg("",lng), batargany("b",0),arg("ignore_nils",bit))),
+	command("iaggr", "count_no_nil", IALGcount_no_nil, false, "Return the number of elements currently in a BAT, ignore BUNs with nil-tail", args(1,2, arg("",lng), batargany("b",2))),
+	command("iaggr", "count", IALGcountCND_bat, false, "Return the number of elements currently in a BAT.", args(1,3, arg("",lng), batargany("b",0),batarg("cnd",oid))),
+	command("iaggr", "count", IALGcountCND_nil, false, "Return the number of elements currently in a BAT, ignore BUNs with nil-tail iff ignore_nils==TRUE.", args(1,4, arg("",lng), batargany("b",0),batarg("cnd",oid),arg("ignore_nils",bit))),
+	command("iaggr", "count_no_nil", IALGcountCND_no_nil, false, "Return the number of elements currently in a BAT, ignore BUNs with nil-tail", args(1,3, arg("",lng), batargany("b",2),batarg("cnd",oid))),
 
- pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",bte),batarg("b",msk))),
- pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",bte),batarg("b",msk),arg("nil_if_empty",bit))),
- pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",bte),batarg("b",msk),batarg("s",oid))),
- pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",bte),batarg("b",msk),batarg("s",oid),arg("nil_if_empty",bit))),
- pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",sht),batarg("b",msk))),
- pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",sht),batarg("b",msk),arg("nil_if_empty",bit))),
- pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",sht),batarg("b",msk),batarg("s",oid))),
- pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",sht),batarg("b",msk),batarg("s",oid),arg("nil_if_empty",bit))),
- pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",int),batarg("b",msk))),
- pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",int),batarg("b",msk),arg("nil_if_empty",bit))),
- pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",int),batarg("b",msk),batarg("s",oid))),
- pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",int),batarg("b",msk),batarg("s",oid),arg("nil_if_empty",bit))),
- pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",lng),batarg("b",msk))),
- pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",lng),batarg("b",msk),arg("nil_if_empty",bit))),
- pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",lng),batarg("b",msk),batarg("s",oid))),
- pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",lng),batarg("b",msk),batarg("s",oid),arg("nil_if_empty",bit))),
- pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",dbl),batarg("b",msk))),
- pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",dbl),batarg("b",msk),arg("nil_if_empty",bit))),
- pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",dbl),batarg("b",msk),batarg("s",oid))),
- pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",dbl),batarg("b",msk),batarg("s",oid),arg("nil_if_empty",bit))),
- pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",bte),batarg("b",bte))),
- pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",bte),batarg("b",bte),arg("nil_if_empty",bit))),
- pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",bte),batarg("b",bte),batarg("s",oid))),
- pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",bte),batarg("b",bte),batarg("s",oid),arg("nil_if_empty",bit))),
- pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",sht),batarg("b",bte))),
- pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",sht),batarg("b",bte),arg("nil_if_empty",bit))),
- pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",sht),batarg("b",bte),batarg("s",oid))),
- pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",sht),batarg("b",bte),batarg("s",oid),arg("nil_if_empty",bit))),
- pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",int),batarg("b",bte))),
- pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",int),batarg("b",bte),arg("nil_if_empty",bit))),
- pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",int),batarg("b",bte),batarg("s",oid))),
- pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",int),batarg("b",bte),batarg("s",oid),arg("nil_if_empty",bit))),
- pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",lng),batarg("b",bte))),
- pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",lng),batarg("b",bte),arg("nil_if_empty",bit))),
- pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",lng),batarg("b",bte),batarg("s",oid))),
- pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",lng),batarg("b",bte),batarg("s",oid),arg("nil_if_empty",bit))),
- pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",dbl),batarg("b",bte))),
- pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",dbl),batarg("b",bte),arg("nil_if_empty",bit))),
- pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",dbl),batarg("b",bte),batarg("s",oid))),
- pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",dbl),batarg("b",bte),batarg("s",oid),arg("nil_if_empty",bit))),
- pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",sht),batarg("b",sht))),
- pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",sht),batarg("b",sht),arg("nil_if_empty",bit))),
- pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",sht),batarg("b",sht),batarg("s",oid))),
- pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",sht),batarg("b",sht),batarg("s",oid),arg("nil_if_empty",bit))),
- pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",int),batarg("b",sht))),
- pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",int),batarg("b",sht),arg("nil_if_empty",bit))),
- pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",int),batarg("b",sht),batarg("s",oid))),
- pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",int),batarg("b",sht),batarg("s",oid),arg("nil_if_empty",bit))),
- pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",lng),batarg("b",sht))),
- pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",lng),batarg("b",sht),arg("nil_if_empty",bit))),
- pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",lng),batarg("b",sht),batarg("s",oid))),
- pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",lng),batarg("b",sht),batarg("s",oid),arg("nil_if_empty",bit))),
- pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",dbl),batarg("b",sht))),
- pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",dbl),batarg("b",sht),arg("nil_if_empty",bit))),
- pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",dbl),batarg("b",sht),batarg("s",oid))),
- pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",dbl),batarg("b",sht),batarg("s",oid),arg("nil_if_empty",bit))),
- pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",int),batarg("b",int))),
- pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",int),batarg("b",int),arg("nil_if_empty",bit))),
- pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",int),batarg("b",int),batarg("s",oid))),
- pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",int),batarg("b",int),batarg("s",oid),arg("nil_if_empty",bit))),
- pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",lng),batarg("b",int))),
- pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",lng),batarg("b",int),arg("nil_if_empty",bit))),
- pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",lng),batarg("b",int),batarg("s",oid))),
- pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",lng),batarg("b",int),batarg("s",oid),arg("nil_if_empty",bit))),
- pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",dbl),batarg("b",int))),
- pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",dbl),batarg("b",int),arg("nil_if_empty",bit))),
- pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",dbl),batarg("b",int),batarg("s",oid))),
- pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",dbl),batarg("b",int),batarg("s",oid),arg("nil_if_empty",bit))),
- pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",lng),batarg("b",lng))),
- pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",lng),batarg("b",lng),arg("nil_if_empty",bit))),
- pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",lng),batarg("b",lng),batarg("s",oid))),
- pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",lng),batarg("b",lng),batarg("s",oid),arg("nil_if_empty",bit))),
- pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",dbl),batarg("b",lng))),
- pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",dbl),batarg("b",lng),arg("nil_if_empty",bit))),
- pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",dbl),batarg("b",lng),batarg("s",oid))),
- pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",dbl),batarg("b",lng),batarg("s",oid),arg("nil_if_empty",bit))),
- pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",flt),batarg("b",flt))),
- pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",flt),batarg("b",flt),arg("nil_if_empty",bit))),
- pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",flt),batarg("b",flt),batarg("s",oid))),
- pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",flt),batarg("b",flt),batarg("s",oid),arg("nil_if_empty",bit))),
- pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",dbl),batarg("b",flt))),
- pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",dbl),batarg("b",flt),arg("nil_if_empty",bit))),
- pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",dbl),batarg("b",flt),batarg("s",oid))),
- pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",dbl),batarg("b",flt),batarg("s",oid),arg("nil_if_empty",bit))),
- pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",dbl),batarg("b",dbl))),
- pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",dbl),batarg("b",dbl),arg("nil_if_empty",bit))),
- pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",dbl),batarg("b",dbl),batarg("s",oid))),
- pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",dbl),batarg("b",dbl),batarg("s",oid),arg("nil_if_empty",bit))),
+	pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",bte),batarg("b",msk))),
+	pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",bte),batarg("b",msk),arg("nil_if_empty",bit))),
+	pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",bte),batarg("b",msk),batarg("s",oid))),
+	pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",bte),batarg("b",msk),batarg("s",oid),arg("nil_if_empty",bit))),
+	pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",sht),batarg("b",msk))),
+	pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",sht),batarg("b",msk),arg("nil_if_empty",bit))),
+	pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",sht),batarg("b",msk),batarg("s",oid))),
+	pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",sht),batarg("b",msk),batarg("s",oid),arg("nil_if_empty",bit))),
+	pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",int),batarg("b",msk))),
+	pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",int),batarg("b",msk),arg("nil_if_empty",bit))),
+	pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",int),batarg("b",msk),batarg("s",oid))),
+	pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",int),batarg("b",msk),batarg("s",oid),arg("nil_if_empty",bit))),
+	pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",lng),batarg("b",msk))),
+	pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",lng),batarg("b",msk),arg("nil_if_empty",bit))),
+	pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",lng),batarg("b",msk),batarg("s",oid))),
+	pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",lng),batarg("b",msk),batarg("s",oid),arg("nil_if_empty",bit))),
+	pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",dbl),batarg("b",msk))),
+	pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",dbl),batarg("b",msk),arg("nil_if_empty",bit))),
+	pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",dbl),batarg("b",msk),batarg("s",oid))),
+	pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",dbl),batarg("b",msk),batarg("s",oid),arg("nil_if_empty",bit))),
+	pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",bte),batarg("b",bte))),
+	pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",bte),batarg("b",bte),arg("nil_if_empty",bit))),
+	pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",bte),batarg("b",bte),batarg("s",oid))),
+	pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",bte),batarg("b",bte),batarg("s",oid),arg("nil_if_empty",bit))),
+	pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",sht),batarg("b",bte))),
+	pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",sht),batarg("b",bte),arg("nil_if_empty",bit))),
+	pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",sht),batarg("b",bte),batarg("s",oid))),
+	pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",sht),batarg("b",bte),batarg("s",oid),arg("nil_if_empty",bit))),
+	pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",int),batarg("b",bte))),
+	pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",int),batarg("b",bte),arg("nil_if_empty",bit))),
+	pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",int),batarg("b",bte),batarg("s",oid))),
+	pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",int),batarg("b",bte),batarg("s",oid),arg("nil_if_empty",bit))),
+	pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",lng),batarg("b",bte))),
+	pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",lng),batarg("b",bte),arg("nil_if_empty",bit))),
+	pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",lng),batarg("b",bte),batarg("s",oid))),
+	pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",lng),batarg("b",bte),batarg("s",oid),arg("nil_if_empty",bit))),
+	pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",dbl),batarg("b",bte))),
+	pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",dbl),batarg("b",bte),arg("nil_if_empty",bit))),
+	pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",dbl),batarg("b",bte),batarg("s",oid))),
+	pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",dbl),batarg("b",bte),batarg("s",oid),arg("nil_if_empty",bit))),
+	pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",sht),batarg("b",sht))),
+	pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",sht),batarg("b",sht),arg("nil_if_empty",bit))),
+	pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",sht),batarg("b",sht),batarg("s",oid))),
+	pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",sht),batarg("b",sht),batarg("s",oid),arg("nil_if_empty",bit))),
+	pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",int),batarg("b",sht))),
+	pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",int),batarg("b",sht),arg("nil_if_empty",bit))),
+	pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",int),batarg("b",sht),batarg("s",oid))),
+	pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",int),batarg("b",sht),batarg("s",oid),arg("nil_if_empty",bit))),
+	pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",lng),batarg("b",sht))),
+	pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",lng),batarg("b",sht),arg("nil_if_empty",bit))),
+	pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",lng),batarg("b",sht),batarg("s",oid))),
+	pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",lng),batarg("b",sht),batarg("s",oid),arg("nil_if_empty",bit))),
+	pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",dbl),batarg("b",sht))),
+	pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",dbl),batarg("b",sht),arg("nil_if_empty",bit))),
+	pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",dbl),batarg("b",sht),batarg("s",oid))),
+	pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",dbl),batarg("b",sht),batarg("s",oid),arg("nil_if_empty",bit))),
+	pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",int),batarg("b",int))),
+	pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",int),batarg("b",int),arg("nil_if_empty",bit))),
+	pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",int),batarg("b",int),batarg("s",oid))),
+	pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",int),batarg("b",int),batarg("s",oid),arg("nil_if_empty",bit))),
+	pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",lng),batarg("b",int))),
+	pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",lng),batarg("b",int),arg("nil_if_empty",bit))),
+	pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",lng),batarg("b",int),batarg("s",oid))),
+	pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",lng),batarg("b",int),batarg("s",oid),arg("nil_if_empty",bit))),
+	pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",dbl),batarg("b",int))),
+	pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",dbl),batarg("b",int),arg("nil_if_empty",bit))),
+	pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",dbl),batarg("b",int),batarg("s",oid))),
+	pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",dbl),batarg("b",int),batarg("s",oid),arg("nil_if_empty",bit))),
+	pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",lng),batarg("b",lng))),
+	pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",lng),batarg("b",lng),arg("nil_if_empty",bit))),
+	pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",lng),batarg("b",lng),batarg("s",oid))),
+	pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",lng),batarg("b",lng),batarg("s",oid),arg("nil_if_empty",bit))),
+	pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",dbl),batarg("b",lng))),
+	pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",dbl),batarg("b",lng),arg("nil_if_empty",bit))),
+	pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",dbl),batarg("b",lng),batarg("s",oid))),
+	pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",dbl),batarg("b",lng),batarg("s",oid),arg("nil_if_empty",bit))),
+	pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",flt),batarg("b",flt))),
+	pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",flt),batarg("b",flt),arg("nil_if_empty",bit))),
+	pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",flt),batarg("b",flt),batarg("s",oid))),
+	pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",flt),batarg("b",flt),batarg("s",oid),arg("nil_if_empty",bit))),
+	pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",dbl),batarg("b",flt))),
+	pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",dbl),batarg("b",flt),arg("nil_if_empty",bit))),
+	pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",dbl),batarg("b",flt),batarg("s",oid))),
+	pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",dbl),batarg("b",flt),batarg("s",oid),arg("nil_if_empty",bit))),
+	pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",dbl),batarg("b",dbl))),
+	pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",dbl),batarg("b",dbl),arg("nil_if_empty",bit))),
+	pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",dbl),batarg("b",dbl),batarg("s",oid))),
+	pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",dbl),batarg("b",dbl),batarg("s",oid),arg("nil_if_empty",bit))),
 #ifdef HAVE_HGE
- pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",hge),batarg("b",msk))),
- pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",hge),batarg("b",msk),arg("nil_if_empty",bit))),
- pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",hge),batarg("b",msk),batarg("s",oid))),
- pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",hge),batarg("b",msk),batarg("s",oid),arg("nil_if_empty",bit))),
- pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",hge),batarg("b",bte))),
- pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",hge),batarg("b",bte),arg("nil_if_empty",bit))),
- pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",hge),batarg("b",bte),batarg("s",oid))),
- pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",hge),batarg("b",bte),batarg("s",oid),arg("nil_if_empty",bit))),
- pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",hge),batarg("b",sht))),
- pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",hge),batarg("b",sht),arg("nil_if_empty",bit))),
- pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",hge),batarg("b",sht),batarg("s",oid))),
- pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",hge),batarg("b",sht),batarg("s",oid),arg("nil_if_empty",bit))),
- pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",hge),batarg("b",int))),
- pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",hge),batarg("b",int),arg("nil_if_empty",bit))),
- pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",hge),batarg("b",int),batarg("s",oid))),
- pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",hge),batarg("b",int),batarg("s",oid),arg("nil_if_empty",bit))),
- pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",hge),batarg("b",lng))),
- pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",hge),batarg("b",lng),arg("nil_if_empty",bit))),
- pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",hge),batarg("b",lng),batarg("s",oid))),
- pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",hge),batarg("b",lng),batarg("s",oid),arg("nil_if_empty",bit))),
- pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",hge),batarg("b",hge))),
- pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",hge),batarg("b",hge),arg("nil_if_empty",bit))),
- pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",hge),batarg("b",hge),batarg("s",oid))),
- pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",hge),batarg("b",hge),batarg("s",oid),arg("nil_if_empty",bit))),
- pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",dbl),batarg("b",hge))),
- pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",dbl),batarg("b",hge),arg("nil_if_empty",bit))),
- pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",dbl),batarg("b",hge),batarg("s",oid))),
- pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",dbl),batarg("b",hge),batarg("s",oid),arg("nil_if_empty",bit))),
+	pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",hge),batarg("b",msk))),
+	pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",hge),batarg("b",msk),arg("nil_if_empty",bit))),
+	pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",hge),batarg("b",msk),batarg("s",oid))),
+	pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",hge),batarg("b",msk),batarg("s",oid),arg("nil_if_empty",bit))),
+	pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",hge),batarg("b",bte))),
+	pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",hge),batarg("b",bte),arg("nil_if_empty",bit))),
+	pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",hge),batarg("b",bte),batarg("s",oid))),
+	pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",hge),batarg("b",bte),batarg("s",oid),arg("nil_if_empty",bit))),
+	pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",hge),batarg("b",sht))),
+	pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",hge),batarg("b",sht),arg("nil_if_empty",bit))),
+	pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",hge),batarg("b",sht),batarg("s",oid))),
+	pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",hge),batarg("b",sht),batarg("s",oid),arg("nil_if_empty",bit))),
+	pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",hge),batarg("b",int))),
+	pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",hge),batarg("b",int),arg("nil_if_empty",bit))),
+	pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",hge),batarg("b",int),batarg("s",oid))),
+	pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",hge),batarg("b",int),batarg("s",oid),arg("nil_if_empty",bit))),
+	pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",hge),batarg("b",lng))),
+	pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",hge),batarg("b",lng),arg("nil_if_empty",bit))),
+	pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",hge),batarg("b",lng),batarg("s",oid))),
+	pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",hge),batarg("b",lng),batarg("s",oid),arg("nil_if_empty",bit))),
+	pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",hge),batarg("b",hge))),
+	pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",hge),batarg("b",hge),arg("nil_if_empty",bit))),
+	pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",hge),batarg("b",hge),batarg("s",oid))),
+	pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",hge),batarg("b",hge),batarg("s",oid),arg("nil_if_empty",bit))),
+	pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",dbl),batarg("b",hge))),
+	pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",dbl),batarg("b",hge),arg("nil_if_empty",bit))),
+	pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",dbl),batarg("b",hge),batarg("s",oid))),
+	pattern("iaggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,4, arg("",dbl),batarg("b",hge),batarg("s",oid),arg("nil_if_empty",bit))),
 #endif
- command("iaggr", "sum", IALGfsum_flt, false, "Return the Kahan/Neumaier summation.", args(3,4, arg("rsum", flt), arg("rcom", flt), arg("rcnt", lng), batarg("b", flt))),
- command("iaggr", "sum", IALGfsum_skipnil_flt, false, "Return the Kahan/Neumaier summation or nil.", args(3,5, arg("rsum", flt), arg("rcom", flt), arg("rcnt", lng), batarg("b", flt), arg("skipnil",bit))),
- command("iaggr", "sum", IALGfsum, false, "Return the Kahan/Neumaier summation.", args(3,4, arg("rsum", dbl), arg("rcom", dbl), arg("rcnt", lng), batarg("b", flt))),
- command("iaggr", "sum", IALGfsum_skipnil, false, "Return the Kahan/Neumaier summation or nil.", args(3,5, arg("rsum", dbl), arg("rcom", dbl), arg("rcnt", lng), batarg("b", flt), arg("skipnil",bit))),
- command("iaggr", "sum", IALGfsum, false, "Return the Kahan/Neumaier summation.", args(3,4, arg("rsum", dbl), arg("rcom", dbl), arg("rcnt", lng), batarg("b", dbl))),
- command("iaggr", "sum", IALGfsum_skipnil, false, "Return the Kahan/Neumaier summation or nil.", args(3,5, arg("rsum", dbl), arg("rcom", dbl), arg("rcnt", lng), batarg("b", dbl), arg("skipnil",bit))),
+	command("iaggr", "sum", IALGfsum_flt, false, "Return the Kahan/Neumaier summation.", args(3,4, arg("rsum", flt), arg("rcom", flt), arg("rcnt", lng), batarg("b", flt))),
+	command("iaggr", "sum", IALGfsum_skipnil_flt, false, "Return the Kahan/Neumaier summation or nil.", args(3,5, arg("rsum", flt), arg("rcom", flt), arg("rcnt", lng), batarg("b", flt), arg("skipnil",bit))),
+	command("iaggr", "sum", IALGfsum, false, "Return the Kahan/Neumaier summation.", args(3,4, arg("rsum", dbl), arg("rcom", dbl), arg("rcnt", lng), batarg("b", flt))),
+	command("iaggr", "sum", IALGfsum_skipnil, false, "Return the Kahan/Neumaier summation or nil.", args(3,5, arg("rsum", dbl), arg("rcom", dbl), arg("rcnt", lng), batarg("b", flt), arg("skipnil",bit))),
+	command("iaggr", "sum", IALGfsum, false, "Return the Kahan/Neumaier summation.", args(3,4, arg("rsum", dbl), arg("rcom", dbl), arg("rcnt", lng), batarg("b", dbl))),
+	command("iaggr", "sum", IALGfsum_skipnil, false, "Return the Kahan/Neumaier summation or nil.", args(3,5, arg("rsum", dbl), arg("rcom", dbl), arg("rcnt", lng), batarg("b", dbl), arg("skipnil",bit))),
 
- pattern("iaggr", "avg", CMDBATavg3, false, "Calculate aggregate average of B.", args(3,6, arg("",bte),arg("",lng),arg("",lng),batarg("b",bte),batarg("s",oid),arg("skip_nils",bit))),
- pattern("iaggr", "avg", CMDBATavg3, false, "Calculate aggregate average of B.", args(3,6, arg("",sht),arg("",lng),arg("",lng),batarg("b",sht),batarg("s",oid),arg("skip_nils",bit))),
- pattern("iaggr", "avg", CMDBATavg3, false, "Calculate aggregate average of B.", args(3,6, arg("",int),arg("",lng),arg("",lng),batarg("b",int),batarg("s",oid),arg("skip_nils",bit))),
- pattern("iaggr", "avg", CMDBATavg3, false, "Calculate aggregate average of B.", args(3,6, arg("",lng),arg("",lng),arg("",lng),batarg("b",lng),batarg("s",oid),arg("skip_nils",bit))),
+	pattern("iaggr", "avg", CMDBATavg3, false, "Calculate aggregate average of B.", args(3,6, arg("",bte),arg("",lng),arg("",lng),batarg("b",bte),batarg("s",oid),arg("skip_nils",bit))),
+	pattern("iaggr", "avg", CMDBATavg3, false, "Calculate aggregate average of B.", args(3,6, arg("",sht),arg("",lng),arg("",lng),batarg("b",sht),batarg("s",oid),arg("skip_nils",bit))),
+	pattern("iaggr", "avg", CMDBATavg3, false, "Calculate aggregate average of B.", args(3,6, arg("",int),arg("",lng),arg("",lng),batarg("b",int),batarg("s",oid),arg("skip_nils",bit))),
+	pattern("iaggr", "avg", CMDBATavg3, false, "Calculate aggregate average of B.", args(3,6, arg("",lng),arg("",lng),arg("",lng),batarg("b",lng),batarg("s",oid),arg("skip_nils",bit))),
 #ifdef HAVE_HGE
- pattern("iaggr", "avg", CMDBATavg3, false, "Calculate aggregate average of B.", args(3,6, arg("",hge),arg("",lng),arg("",lng),batarg("b",hge),batarg("s",oid),arg("skip_nils",bit))),
+	pattern("iaggr", "avg", CMDBATavg3, false, "Calculate aggregate average of B.", args(3,6, arg("",hge),arg("",lng),arg("",lng),batarg("b",hge),batarg("s",oid),arg("skip_nils",bit))),
 #endif
- command("iaggr", "avg", IALGfsum, false, "Return the Kahan/Neumaier summation.", args(3,4, arg("rsum", dbl), arg("rcom", dbl), arg("rcnt", lng), batarg("b", flt))),
- command("iaggr", "avg", IALGfsum_skipnil, false, "Return the Kahan/Neumaier summation or nil.", args(3,5, arg("rsum", dbl), arg("rcom", dbl), arg("rcnt", lng), batarg("b", flt), arg("skipnil",bit))),
- command("iaggr", "avg", IALGfsum, false, "Return the Kahan/Neumaier summation.", args(3,4, arg("rsum", dbl), arg("rcom", dbl), arg("rcnt", lng), batarg("b", dbl))),
- command("iaggr", "avg", IALGfsum_skipnil, false, "Return the Kahan/Neumaier summation or nil.", args(3,5, arg("rsum", dbl), arg("rcom", dbl), arg("rcnt", lng), batarg("b", dbl), arg("skipnil",bit))),
+	command("iaggr", "avg", IALGfsum, false, "Return the Kahan/Neumaier summation.", args(3,4, arg("rsum", dbl), arg("rcom", dbl), arg("rcnt", lng), batarg("b", flt))),
+	command("iaggr", "avg", IALGfsum_skipnil, false, "Return the Kahan/Neumaier summation or nil.", args(3,5, arg("rsum", dbl), arg("rcom", dbl), arg("rcnt", lng), batarg("b", flt), arg("skipnil",bit))),
+	command("iaggr", "avg", IALGfsum, false, "Return the Kahan/Neumaier summation.", args(3,4, arg("rsum", dbl), arg("rcom", dbl), arg("rcnt", lng), batarg("b", dbl))),
+	command("iaggr", "avg", IALGfsum_skipnil, false, "Return the Kahan/Neumaier summation or nil.", args(3,5, arg("rsum", dbl), arg("rcom", dbl), arg("rcnt", lng), batarg("b", dbl), arg("skipnil",bit))),
 
- command("iaggr", "ord_quantile", IALGquantile, false, "Return the p-th's quantile per group, where p is between 0 and 100", args(1,4, batargany("quantile", 1), batarg("gid", oid), batargany("i", 1), arg("p", bte))),
+	command("iaggr", "ord_quantile", IALGquantile, false, "Return the p-th's quantile per group, where p is between 0 and 100", args(1,4, batargany("quantile", 1), batarg("gid", oid), batargany("i", 1), arg("p", bte))),
 
- /* combine phase: merge the local aggregation result into the shared bat */
- pattern("lockedaggr", "min", LOCKEDAGGRmin, true, "min values into bat (bat has value, update), using the bat lock", args(1,2, sharedbatargany("", 1), argany("val", 1))),
- pattern("lockedaggr", "max", LOCKEDAGGRmax, true, "max values into bat (bat has value, update), using the bat lock", args(1,2, sharedbatargany("", 1), argany("val", 1))),
- pattern("lockedaggr", "prod", LOCKEDAGGRprod, true, "product of all values, using the bat lock", args(1,2, sharedbatargany("", 1), argany("val", 2))),
- command("lockedaggr", "null", LOCKEDAGGRnull, true, "Returns true or false if the input contains a NULL or not, nil if the input is empty.", args(1,2, sharedbatarg("",bit), arg("hadnull",bit))),
+	/* combine phase: merge the local aggregation result into the shared bat */
+	pattern("lockedaggr", "min", LOCKEDAGGRmin, true, "min values into bat (bat has value, update), using the bat lock", args(1,2, sharedbatargany("", 1), argany("val", 1))),
+	pattern("lockedaggr", "max", LOCKEDAGGRmax, true, "max values into bat (bat has value, update), using the bat lock", args(1,2, sharedbatargany("", 1), argany("val", 1))),
+	pattern("lockedaggr", "prod", LOCKEDAGGRprod, true, "product of all values, using the bat lock", args(1,2, sharedbatargany("", 1), argany("val", 2))),
+	command("lockedaggr", "null", LOCKEDAGGRnull, true, "Returns true or false if the input contains a NULL or not, nil if the input is empty.", args(1,2, sharedbatarg("",bit), arg("hadnull",bit))),
 
- pattern("lockedaggr", "sum", LOCKEDAGGRsum1, true, "sum values into bat (bat has value, update), using the bat lock", args(1,2, sharedbatargany("", 1), argany("val", 1))),
- pattern("lockedaggr", "sum_no_nil", LOCKEDAGGRsum_no_nil1, true, "sum values into bat (bat has value, update), using the bat lock", args(1,2, sharedbatargany("", 1), argany("val", 1))),
- pattern("lockedaggr", "sum", LOCKEDAGGRsum, true, "Kahan/neumaier summation, using the bat lock", args(3,6, sharedbatarg("rsum", flt), sharedbatarg("rcom", flt), sharedbatarg("rcnt", lng), arg("sum", flt), arg("com", flt), arg("cnt", lng))),
- pattern("lockedaggr", "sum", LOCKEDAGGRsum, true, "Kahan/neumaier summation, using the bat lock", args(3,6, sharedbatarg("rsum", dbl), sharedbatarg("rcom", dbl), sharedbatarg("rcnt", lng), arg("sum", dbl), arg("com", dbl), arg("cnt", lng))),
+	pattern("lockedaggr", "sum", LOCKEDAGGRsum1, true, "sum values into bat (bat has value, update), using the bat lock", args(1,2, sharedbatargany("", 1), argany("val", 1))),
+	pattern("lockedaggr", "sum_no_nil", LOCKEDAGGRsum_no_nil1, true, "sum values into bat (bat has value, update), using the bat lock", args(1,2, sharedbatargany("", 1), argany("val", 1))),
+	pattern("lockedaggr", "sum", LOCKEDAGGRsum, true, "Kahan/neumaier summation, using the bat lock", args(3,6, sharedbatarg("rsum", flt), sharedbatarg("rcom", flt), sharedbatarg("rcnt", lng), arg("sum", flt), arg("com", flt), arg("cnt", lng))),
+	pattern("lockedaggr", "sum", LOCKEDAGGRsum, true, "Kahan/neumaier summation, using the bat lock", args(3,6, sharedbatarg("rsum", dbl), sharedbatarg("rcom", dbl), sharedbatarg("rcnt", lng), arg("sum", dbl), arg("com", dbl), arg("cnt", lng))),
 
- pattern("lockedaggr", "avg", LOCKEDAGGRavg, true, "avg values into bat (bat has value, update), using the bat lock", args(2,4, sharedbatargany("", 1), sharedbatarg("rcnt", lng), argany("val", 1), arg("cnt", lng))),
- pattern("lockedaggr", "avg", LOCKEDAGGRavg, true, "avg values into bat (bat has value, update), using the bat lock", args(3,6, sharedbatargany("", 1), sharedbatarg("rremainder", lng), sharedbatarg("rcnt", lng), argany("val", 1), arg("remainder", lng), arg("cnt", lng))),
- pattern("lockedaggr", "avg", LOCKEDAGGRavg, true, "Kahan/neumaier summation, using the bat lock", args(3,6, sharedbatarg("ravg", dbl), sharedbatarg("rcem", dbl), sharedbatarg("rcnt", lng), arg("val", dbl), arg("com", dbl), arg("cnt", lng))),
+	pattern("lockedaggr", "avg", LOCKEDAGGRavg, true, "avg values into bat (bat has value, update), using the bat lock", args(2,4, sharedbatargany("", 1), sharedbatarg("rcnt", lng), argany("val", 1), arg("cnt", lng))),
+	pattern("lockedaggr", "avg", LOCKEDAGGRavg, true, "avg values into bat (bat has value, update), using the bat lock", args(3,6, sharedbatargany("", 1), sharedbatarg("rremainder", lng), sharedbatarg("rcnt", lng), argany("val", 1), arg("remainder", lng), arg("cnt", lng))),
+	pattern("lockedaggr", "avg", LOCKEDAGGRavg, true, "Kahan/neumaier summation, using the bat lock", args(3,6, sharedbatarg("ravg", dbl), sharedbatarg("rcem", dbl), sharedbatarg("rcnt", lng), arg("val", dbl), arg("com", dbl), arg("cnt", lng))),
 
- /* finish phase:
-  *   if SUM(flt/dbl): `batcalc.+`
-  *   if AVG: `aggr.compute_avg` (see above)
-  * DONE: the global aggregate is the first value of the result bat of the locakedaggr functions. */
- { .imp=NULL }
+	/* finish phase:
+	 *   if SUM(flt/dbl): `batcalc.+`
+	 *   if AVG: `aggr.compute_avg` (see above)
+	 * DONE: the global aggregate is the first value of the result bat of the locakedaggr functions. */
+	{ .imp=NULL }
 };
 #include "mal_import.h"
 #ifdef _MSC_VER

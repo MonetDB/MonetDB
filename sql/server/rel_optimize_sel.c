@@ -2504,8 +2504,9 @@ rel_join2semijoin(visitor *v, sql_rel *rel)
 		}
 	}
 	/* simplify group join returning only columns of left into semijoin */
-	if (0 && is_innerjoin(rel->op) && !list_empty(rel->attr)) { /* TODO test if those attr's are distinct ! */
+	if (is_innerjoin(rel->op) && !list_empty(rel->attr)) { /* if those attr's are distinct ! */
 		int nr = 0;
+		int unique = 0;
 		for(node *n = rel->attr->h; n; n = n->next) {
 			sql_exp *e = n->data;
 
@@ -2515,9 +2516,25 @@ rel_join2semijoin(visitor *v, sql_rel *rel)
 				break;
 			if (e->type == e_column && rel_find_nid(rel->l, e->nid))
 				nr++;
+			unique += is_unique(e);
 		}
-		if (nr == list_length(rel->attr)) {
+		if (nr == list_length(rel->attr) && nr == unique) {
 			rel->op = op_semi;
+			rel->attr = NULL;
+		}
+		if (nr == list_length(rel->attr)) { /* join should be on same attributes */
+			for (node *n = rel->exps->h; n; n = n->next) {
+				sql_exp *je = n->data;
+				if (je->type != e_cmp || je->flag != cmp_equal)
+					return rel;
+				sql_exp *el = je->l, *er = je->r;
+				if (!exps_bind_nid(rel->attr, el->nid) && !exps_bind_nid(rel->attr, er->nid))
+					return rel;
+			}
+			rel->op = op_semi;
+			sql_rel *nr = rel_groupby(v->sql, rel->l, rel->attr);
+			nr->r = rel->attr;
+			rel->l = nr;
 			rel->attr = NULL;
 		}
 	}
