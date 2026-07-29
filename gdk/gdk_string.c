@@ -193,7 +193,7 @@ ustrPut(BAT *b, var_t *dst, const char *v)
 	MT_rwlock_wrlock(&ustrbat->thashlock);
 	MT_lock_set(&ustrbat->theaplock);
 	assert(ustrbat->tvkey);
-	if (b->thash == (Hash *) 1)
+	if (ustrbat->thash == (Hash *) 1)
 		(void) BATcheckhash_locked(ustrbat); /* load hash table */
 
 	Heap *h = ustrbat->tvheap;
