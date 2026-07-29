@@ -482,6 +482,7 @@ SYSMONstop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					|| (owner = strcmp(QRYqueue[i].username, cntxt->username)) == 0) {
 					QRYqueue[i].stk->status = 'q';
 					QRYqueue[i].status = "stopping";
+					QRYqueue[i].cntxt->qryctx.endtime = 1; /* stop client now */
 					paused = true;
 				}
 				/* tag found, but either not admin or user cannot
