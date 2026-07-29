@@ -81,41 +81,43 @@ bufferstream_read( bufferstream *bs, int cur)
 	}
 	if (!bs->buf[cur]) {
 		bs->sz[cur] = bs->sz[0];
-		bs->buf[cur] = (unsigned char*)GDKmalloc(bs->sz[0] + 2 + 2);
-		bs->buf[cur][0] = 0;
-		bs->len[cur] = 0;
-		/* add nil add end */
-		bs->buf[cur][bs->sz[0]+2] = '\200';
-		bs->buf[cur][bs->sz[0]+3] = 0;
+		bs->buf[cur] = (unsigned char*)GDKmalloc(bs->sz[0] + 2);
+		/* add nil add begin */
+		bs->buf[cur][0] = '\200'; /* value not realy needed, just here to never use offset 0 in varheap */
+		bs->buf[cur][1] = 0;
+		bs->len[cur] = bs->pos[cur] = 2;
 	}
+	assert(bs->sz[cur]);
 	bs->cur_buf = cur;
 
-	if (bs->pos[cur] && bs->pos[cur] == bs->len[cur])
-		bs->pos[cur] = bs->len[cur] = bs->jmp[cur] = 0;
+	if (bs->pos[cur] > 2 && bs->pos[cur] == bs->len[cur]) {
+		bs->pos[cur] = bs->len[cur] = 2;
+		bs->jmp[cur] = 0;
+	}
 	if ((bs->pos[ocur] < bs->len[ocur]) || bs->jmp[ocur]) {
 		BUN p = bs->jmp[ocur] ? bs->jmp[ocur] : bs->pos[ocur];
-		memcpy(bs->buf[cur], bs->buf[ocur]+p, bs->len[ocur] - p + 1);
-		bs->len[cur] = bs->len[ocur] - p;
+		assert(p >= 2);
+		memcpy(bs->buf[cur] + 2, bs->buf[ocur]+p, bs->len[ocur] - p + 1);
+		bs->len[cur] = 2 + bs->len[ocur] - p;
 		if (ocur != cur)
 			bs->len[ocur] = bs->pos[ocur];
 	}
-	bs->pos[cur] = bs->jmp[cur] = 0;
+	bs->pos[cur] = 2;
+	bs->jmp[cur] = 0;
 
 	/* out of space ? */
-	if (!bs->pos[cur] && bs->len[cur] == bs->sz[cur]) {
-		bs->sz[cur] *= 2;
-		//bs->sz[cur] += 2;
-		bs->buf[cur] = (unsigned char*)GDKrealloc(bs->buf[cur], bs->sz[cur] + 2 + 2);
-		/* add nil add end */
-		bs->buf[cur][bs->sz[0]+2] = '\200';
-		bs->buf[cur][bs->sz[0]+3] = 0;
+	if (bs->pos[cur] == 2 && bs->len[cur] == bs->sz[cur]) {
+		bs->sz[cur] = (bs->sz[cur]*2) + 2;
+		bs->buf[cur] = (unsigned char*)GDKrealloc(bs->buf[cur], bs->sz[cur] + 2);
 	}
+	assert(bs->sz[cur]);
 
 	/* read new */
 	ssize_t rd = 0;
 	ssize_t sz = 0;
 	if (!mnstr_eof(bs->s)) {
 		sz = bs->sz[cur] - bs->len[cur];
+		assert(bs->len[cur] >= 2);
 		rd = mnstr_read( bs->s, bs->buf[cur]+bs->len[cur], 1, sz);
 	}
 	if (rd < 0)
@@ -127,7 +129,7 @@ bufferstream_read( bufferstream *bs, int cur)
 	bs->len[cur] += rd;
 	/* extra EOS */
 	bs->buf[cur][bs->len[cur]] = 0;
-	assert(bs->len[cur] - bs->pos[cur] <= bs->sz[cur]);
+	assert(!bs->len[cur] || bs->len[cur] - bs->pos[cur] <= bs->sz[cur]);
 	return rd;
 }
 
@@ -247,6 +249,7 @@ COPYskiplines(reader *r, int wid)
 
 	if (pos > start)
 		r->bs->pos[wid] = pos - start;
+	assert(r->bs->pos[wid]);
 	return nr;
 }
 
@@ -597,7 +600,8 @@ COPYsplitlines(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			(void)pipeline_get_token(p, 1, p->wid, &r->done);
 		r->linecount += line_count;
 		state.end = state.start + e;
-		r->bs->pos[p->wid] = e;
+		if (e)
+			r->bs->pos[p->wid] = e;
 		r->maxcount -= (BUN)line_count;
 		if (r->maxcount == 0)
 			r->done = 1;

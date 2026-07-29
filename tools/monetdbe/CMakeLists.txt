@@ -75,7 +75,7 @@ set(MONETDBE_LINK_LIBS
   monetdb5
   sql
   mutils
-  ${XXHASH_LIBRARIES}
+  ${XXHASH_LDFLAGS}
   $<$<NOT:$<PLATFORM_ID:Windows>>:m>
   $<$<PLATFORM_ID:Windows>:${GETOPT_LIB}>
   Threads::Threads)

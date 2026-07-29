@@ -1561,7 +1561,8 @@ error:
 			   Type,													\
 			   allocator *ma = h->allocators[p->wid],					\
 			   BATiter bi = bat_iterator(b),							\
-			   Type bpi = (void *) ((bi).vh->base+VarHeapVal(bi.base,i,bi.width)), \
+			   var_t off = VarHeapVal(bi.base,i,bi.width);				\
+			   Type bpi = off == 0 ? (Type)ATOMnilptr((bi).type) : (Type) ((bi).vh->base + off), \
 			   (gid)str_hsh(bpi),										\
 			   (h->cmp(vals[g], bpi) != 0),								\
 			   vals[g] = ma_strdup(ma, bpi),							\
@@ -1573,7 +1574,8 @@ error:
 			   Type,													\
 			   allocator *ma = h->allocators[p->wid],					\
 			   BATiter bi = bat_iterator(b),							\
-			   void *bpi = (void *) ((bi).vh->base+VarHeapVal(bi.base,i,bi.width)), \
+			   var_t off = VarHeapVal(bi.base,i,bi.width);				\
+			   Type bpi = off == 0 ? (Type)ATOMnilptr((bi).type) : (Type) ((bi).vh->base + off), \
 			   (gid)h->hsh(bpi),										\
 			   (h->cmp(vals[g], bpi) != 0),								\
 			   vals[g] = ma_copy(ma, bpi, h->len(bpi)),					\
@@ -1588,7 +1590,8 @@ error:
 			   Type,													\
 			   ,														\
 			   BATiter bi = bat_iterator(b),							\
-			   Type bpi = (void *) ((bi).vh->base+VarHeapVal(bi.base,i,bi.width)), \
+			   var_t off = VarHeapVal(bi.base,i,bi.width);				\
+			   Type bpi = off == 0 ? (Type)ATOMnilptr((bi).type) : (Type) ((bi).vh->base + off), \
 			   (gid)h->hsh(bpi),										\
 			   (h->cmp(vals[g], bpi) != 0),								\
 			   vals[g] = bpi,											\
@@ -1857,7 +1860,8 @@ error:
 				Type,													\
 				allocator *ma = h->allocators[P->wid],					\
 				BATiter bi = bat_iterator(b),							\
-				Type bpi = (void *) ((bi).vh->base+VarHeapVal(bi.base,i,bi.width)), \
+				var_t off = VarHeapVal(bi.base,i,bi.width);				\
+				Type bpi = off == 0 ? (Type)ATOMnilptr((bi).type) : (Type) ((bi).vh->base + off), \
 				(gid)str_hsh(bpi),										\
 				(vals[g] && h->cmp(vals[g], bpi) != 0),					\
 				vals[g] = ma_strdup(ma, bpi),							\
@@ -1869,7 +1873,8 @@ error:
 				Type,													\
 				allocator *ma = h->allocators[P->wid],					\
 				BATiter bi = bat_iterator(b),							\
-				void *bpi = (void *) ((bi).vh->base+VarHeapVal(bi.base,i,bi.width)), \
+				var_t off = VarHeapVal(bi.base,i,bi.width);				\
+				Type bpi = off == 0 ? (Type)ATOMnilptr((bi).type) : (Type) ((bi).vh->base + off), \
 				(gid)h->hsh(bpi),										\
 				(vals[g] && h->cmp(vals[g], bpi) != 0),					\
 				vals[g] = ma_copy(ma, bpi, h->len(bpi)),				\
@@ -1884,7 +1889,8 @@ error:
 				Type,													\
 				,														\
 				BATiter bi = bat_iterator(b),							\
-				Type bpi = (void *) ((bi).vh->base+VarHeapVal(bi.base,i,bi.width)), \
+				var_t off = VarHeapVal(bi.base,i,bi.width);				\
+				Type bpi = off == 0 ? (Type)ATOMnilptr((bi).type) : (Type) ((bi).vh->base + off), \
 				(gid)h->hsh(bpi),										\
 				(vals[g] && h->cmp(vals[g], bpi) != 0),					\
 				vals[g] = bpi,											\
@@ -3770,17 +3776,11 @@ bail:
 	}
 
 /* from now on assume shared heap */
-#define vamin(cmp, o, opos, op, in, i, bp, nil) \
-	if (!o[opos] ||								\
-		(cmp(bp+in[i], nil) != 0 &&				\
-		 cmp(op+o[opos], nil) != 0 &&			\
-		 cmp(op+o[opos], bp+in[i]) > 0))		\
+#define vamin(cmp, o, opos, op, in, i, bp)  \
+	if (!o[opos] || (in[i] != 0 && cmp(op+o[opos], bp+in[i]) > 0))		\
 		o[opos] = in[i];
-#define vamax(cmp, o, opos, op, in, i, bp, nil) \
-	if (!o[opos] ||								\
-		(cmp(bp+in[i], nil) != 0 &&				\
-		 cmp(op+o[opos], nil) != 0 &&			\
-		 cmp(op+o[opos], bp+in[i]) < 0) )		\
+#define vamax(cmp, o, opos, op, in, i, bp)  \
+	if (!o[opos] || (in[i] != 0 && cmp(op+o[opos], bp+in[i]) < 0))		\
 		o[opos] = in[i];
 
 #define gafunc(f)														\
@@ -3790,72 +3790,54 @@ bail:
 		char *bp = bi.vh->base;											\
 		char *op = ri.vh->base;											\
 		int (*cmp)(const void *v1,const void *v2) = ATOMcompare(tt);	\
-		const char *nil = ATOMnilptr(r->ttype);							\
 		if (b->twidth == 1) {											\
 			bp += GDK_VAROFFSET;										\
 			op += GDK_VAROFFSET;										\
 			uint8_t *in = Tloc(b, 0);									\
 			uint8_t *o = Tloc(r, 0);									\
 			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx)						\
-				f(cmp, o, grp[i], op, in, i, bp, nil);					\
+				f(cmp, o, grp[i], op, in, i, bp);						\
 		} else if (b->twidth == 2) {									\
 			bp += GDK_VAROFFSET;										\
 			op += GDK_VAROFFSET;										\
 			uint16_t *in = Tloc(b, 0);									\
 			uint16_t *o = Tloc(r, 0);									\
 			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx)						\
-				f(cmp, o, grp[i], op, in, i, bp, nil);					\
+				f(cmp, o, grp[i], op, in, i, bp);						\
 		} else if (b->twidth == 4) {									\
 			uint32_t *in = Tloc(b, 0);									\
 			uint32_t *o = Tloc(r, 0);									\
 			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx)						\
-				f(cmp, o, grp[i], op, in, i, bp, nil);					\
+				f(cmp, o, grp[i], op, in, i, bp);						\
 		} else if (b->twidth == 8) {									\
 			var_t *in = Tloc(b, 0);										\
 			var_t *o = Tloc(r, 0);										\
 			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx)						\
-				f(cmp, o, grp[i], op, in, i, bp, nil);					\
+				f(cmp, o, grp[i], op, in, i, bp);						\
 		}																\
 		bat_iterator_end(&bi);											\
 		bat_iterator_end(&ri);											\
 	}
 
 /* private (changing) heap */
-#define vamin_(cmp, opos, in, i, bp, nil)								\
-	if (!getoffset(r->theap->base, opos, r->twidth) ||					\
-		(cmp(bp+in[i], nil) != 0 &&										\
-		 cmp(r->tvheap->base+VarHeapVal(r->theap->base, opos, r->twidth), nil) != 0 && \
-		 cmp(r->tvheap->base+VarHeapVal(r->theap->base, opos, r->twidth), bp+in[i]) > 0)) \
+#define vamin_(cmp, opos, in, i, bp)									\
+{																		\
+	var_t off = VarHeapVal(r->theap->base, opos, r->twidth);			\
+	if (!off || (in[i] != 0 && cmp(r->tvheap->base+off, bp+in[i]) > 0)) \
 		if (tfastins_nocheckVAR( r, opos, bp+in[i]) != GDK_SUCCEED) {	\
 			err = createException(MAL, "ilockedaggr.min", MAL_MALLOC_FAIL);	\
 			goto error;													\
-		}
+		}																\
+}
 
-#define vamax_(cmp, opos, in, i, bp, nil)								\
-	if (!getoffset(r->theap->base, opos, r->twidth) ||					\
-		(cmp(bp+in[i], nil) != 0 &&										\
-		 cmp(r->tvheap->base+VarHeapVal(r->theap->base, opos, r->twidth), nil) != 0 && \
-		 cmp(r->tvheap->base+VarHeapVal(r->theap->base, opos, r->twidth), bp+in[i]) < 0)) \
+#define vamax_(cmp, opos, in, i, bp)									\
+{																		\
+	var_t off = VarHeapVal(r->theap->base, opos, r->twidth);			\
+	if (!off || (in[i] != 0 && cmp(r->tvheap->base+off, bp+in[i]) < 0)) \
 		if (tfastins_nocheckVAR( r, opos, bp+in[i]) != GDK_SUCCEED) {	\
 			err = createException(MAL, "ilockedaggr.max", MAL_MALLOC_FAIL);	\
 			goto error;													\
-		}
-
-static inline size_t
-getoffset(const void *b, BUN p, int w)
-{
-	switch (w) {
-	case 1:
-		return (size_t) ((const uint8_t *) b)[p];
-	case 2:
-		return (size_t) ((const uint16_t *) b)[p];
-#if SIZEOF_VAR_T == 8
-	case 4:
-		return (size_t) ((const uint32_t *) b)[p];
-#endif
-	default:
-		return (size_t) ((const var_t *) b)[p];
-	}
+		}																\
 }
 
 #define gafunc_(f)														\
@@ -3864,25 +3846,24 @@ getoffset(const void *b, BUN p, int w)
 		BATiter ri = bat_iterator(r);									\
 		char *bp = bi.vh->base;											\
 		int (*cmp)(const void *v1,const void *v2) = ATOMcompare(tt);	\
-		const char *nil = ATOMnilptr(r->ttype);							\
 		if (b->twidth == 1) {											\
 			bp += GDK_VAROFFSET;										\
 			uint8_t *in = Tloc(b, 0);									\
 			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx)						\
-				f##_(cmp, grp[i], in, i, bp, nil);						\
+				f##_(cmp, grp[i], in, i, bp);							\
 		} else if (b->twidth == 2) {									\
 			bp += GDK_VAROFFSET;										\
 			uint16_t *in = Tloc(b, 0);									\
 			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx)						\
-				f##_(cmp, grp[i], in, i, bp, nil);						\
+				f##_(cmp, grp[i], in, i, bp);							\
 		} else if (b->twidth == 4) {									\
 			uint32_t *in = Tloc(b, 0);									\
 			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx)						\
-				f##_(cmp, grp[i], in, i, bp, nil);						\
+				f##_(cmp, grp[i], in, i, bp);							\
 		} else if (b->twidth == 8) {									\
 			var_t *in = Tloc(b, 0);										\
 			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx)						\
-				f##_(cmp, grp[i], in, i, bp, nil);						\
+				f##_(cmp, grp[i], in, i, bp);							\
 		}																\
 		bat_iterator_end(&bi);											\
 		bat_iterator_end(&ri);											\

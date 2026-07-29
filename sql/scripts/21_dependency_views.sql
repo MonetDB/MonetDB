@@ -27,7 +27,8 @@ SELECT f.id, f.name, f.schema_id, cast(null as int) as table_id, cast(null as va
 SELECT a.id, a.name, f.schema_id, a.func_id as table_id, f.name as table_name, cast(ifthenelse(f.system, 'system ', '') || lower(ft.function_type_keyword) || ' arg' as varchar(44)), 'sys.args', f.system FROM sys.args a JOIN sys.functions f ON a.func_id = f.id left outer join sys.function_types ft on f.type = ft.function_type_id UNION ALL
 SELECT id, name, schema_id, cast(null as int) as table_id, cast(null as varchar(124)) as table_name, 'sequence', 'sys.sequences', false FROM sys.sequences UNION ALL
 SELECT o.id, o.name, pt.schema_id, pt.id, pt.name, 'partition of merge table', 'sys.objects', false FROM sys.objects o JOIN sys._tables pt ON o.sub = pt.id JOIN sys._tables mt ON o.nr = mt.id WHERE mt.type = 3 UNION ALL
-SELECT id, sqlname, schema_id, cast(null as int) as table_id, cast(null as varchar(124)) as table_name, 'type', 'sys.types', (sqlname in ('inet','json','url','uuid','inet4','inet6')) FROM sys.types
+SELECT id, sqlname, schema_id, cast(null as int) as table_id, cast(null as varchar(124)) as table_name, 'type', 'sys.types', (sqlname in ('inet','json','url','uuid','inet4','inet6')) FROM sys.types UNION ALL
+SELECT o.id, o.name, s.id, cast(null as int), cast(null as varchar(124)), 'distinct string column', 'sys.objects', false FROM sys.objects o, sys.schemas s WHERE o.nr = s.id
  ORDER BY id;
 /* do not include: SELECT id, 'object', name FROM sys.objects; as it has duplicates with keys, columns, etc */
 /* do not include: SELECT id, 'object', name FROM tmp.objects; as it has duplicates with keys, columns, etc */
@@ -39,7 +40,7 @@ CREATE TABLE sys.dependency_types (
     dependency_type_id   SMALLINT NOT NULL PRIMARY KEY,
     dependency_type_name VARCHAR(15) NOT NULL UNIQUE);
 
--- Values taken from sql/include/sql_catalog.h  see: #define SCHEMA_DEPENDENCY 1, TABLE_DEPENDENCY 2, ..., TYPE_DEPENDENCY 15.
+-- Values taken from sql/include/sql_catalog.h  see: #define SCHEMA_DEPENDENCY 1, TABLE_DEPENDENCY 2, ..., USTR_DEPENDENCY 16.
 INSERT INTO sys.dependency_types (dependency_type_id, dependency_type_name) VALUES
   (1, 'SCHEMA'),
   (2, 'TABLE'),
@@ -55,7 +56,8 @@ INSERT INTO sys.dependency_types (dependency_type_id, dependency_type_name) VALU
   (12, 'SEQUENCE'),
   (13, 'PROCEDURE'),
   (14, 'BE_DROPPED'),
-  (15, 'TYPE');
+  (15, 'TYPE'),
+  (16, 'USTR');
 
 ALTER TABLE sys.dependency_types SET READ ONLY;
 GRANT SELECT ON sys.dependency_types TO PUBLIC;

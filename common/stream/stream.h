@@ -23,6 +23,8 @@
  * required for proper conversion on different byte order platforms.
  */
 
+#include "monetdb_config.h"
+
 #include <unistd.h>
 #include <ctype.h>
 #include <stdio.h>
@@ -45,21 +47,6 @@
 # endif
 #else
 # define stream_export extern
-#endif
-
-/* Does your compiler support `__attribute__' extension? */
-#if !defined(__has_attribute)
-#ifndef __attribute__
-#define __attribute__(...)
-#endif
-#endif
-
-/* Defines to help the compiler check printf-style format arguments.
- * These defines are also in our config.h, but we repeat them here so
- * that we don't need that for this file.*/
-#if !defined(_MSC_VER) && !defined(_In_z_)
-# define _In_z_
-# define _Printf_format_string_
 #endif
 
 #define EOT 4

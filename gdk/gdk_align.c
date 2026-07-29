@@ -170,6 +170,7 @@ VIEWcreate(oid seq, BAT *b, BUN l, BUN h)
 	 * accelerator data. We need copies because in case of a mark,
 	 * we are going to override a column with a void. */
 	bn->tkey = bi.key;
+	bn->tvkey = bi.vkey;
 	bn->tseqbase = bi.tseq;
 	bn->tsorted = bi.sorted;
 	bn->trevsorted = bi.revsorted;
@@ -178,6 +179,7 @@ VIEWcreate(oid seq, BAT *b, BUN l, BUN h)
 	bn->tnonil = bi.nonil;
 	bn->tnil = bi.nil;
 	bn->tascii = bi.ascii;
+	bn->ustr = bi.ustr;
 	bn->tnokey[0] = bi.nokey[0];
 	bn->tnokey[1] = bi.nokey[1];
 	bn->tnosorted = bi.nosorted;
@@ -204,6 +206,8 @@ VIEWcreate(oid seq, BAT *b, BUN l, BUN h)
 	BBPretain(bn->theap->parentid);
 	if (bn->tvheap)
 		BBPretain(bn->tvheap->parentid);
+	if (bn->ustr)
+		BBPfix(bn->ustr);
 	TRC_DEBUG(ALGO, ALGOBATFMT " " BUNFMT "," BUNFMT " -> " ALGOBATFMT "\n",
 		  ALGOBATPAR(b), l, h, ALGOBATPAR(bn));
 	return bn;

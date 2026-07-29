@@ -328,7 +328,7 @@ COPYparse_string(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	errors.r = r;
 
 	const char *start = (char*)r->bs->buf[p->wid];
-	size_t nil_offset = r->bs->sz[p->wid]+2;
+	size_t nil_offset = 0;//r->bs->sz[p->wid]+2;
 	/*
 	parsed_bat = COLnew(0, TYPE_str, BATcount(offsets_bat), TRANSIENT);
 		*/
@@ -401,7 +401,6 @@ end:
 	if (offsets_bat)
 		BBPunfix(offsets_bat->batCacheid);
 	return msg;
-
 }
 
 str

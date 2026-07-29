@@ -175,6 +175,254 @@ countStrings(const Heap *h)
 }
 
 
+static var_t
+ustrPut(BAT *b, var_t *dst, const char *v)
+{
+	assert(b->ustr);
+
+	if (strNil(v)) {
+		*dst = 0;
+		return 0;
+	}
+
+	BAT *ustrbat = BBP_desc(b->ustr);
+
+	/* this function is the ONLY place where ustrbat may be changed
+	 * (inserted into), and we're holding the ustrbat->theaplock, so we are
+	 * totally save looking at the heaps */
+	MT_rwlock_wrlock(&ustrbat->thashlock);
+	MT_lock_set(&ustrbat->theaplock);
+	assert(ustrbat->tvkey);
+	if (b->thash == (Hash *) 1)
+		(void) BATcheckhash_locked(ustrbat); /* load hash table */
+
+	Heap *h = ustrbat->tvheap;
+	BUN p = BUN_NONE;
+	BUN hsh = strHash(v);
+	if (ustrbat->batCount != 0) {
+		BATiter ui = bat_iterator_nolock(ustrbat);
+		if (ustrbat->thash == NULL) {
+			/* don't use canditer_init since it tries to
+			 * acquire theaplock (deadlock) */
+			struct canditer cui = {
+				.tpe = cand_dense,
+				.seq = ustrbat->hseqbase,
+				.hseq = ustrbat->hseqbase,
+				.ncand = ustrbat->batCount,
+			};
+			if ((ustrbat->thash = BAThash_impl(
+				     &ui, &cui, false, "thash",
+				     sizeof(var_t))) == NULL) {
+				MT_lock_unset(&ustrbat->theaplock);
+				MT_rwlock_wrunlock(&ustrbat->thashlock);
+				return (var_t) -1;
+			}
+		}
+		for (p = HASHget(ustrbat->thash,
+				 HASHbucket(ustrbat->thash, hsh));
+		     p != BUN_NONE;
+		     p = HASHgetlink(ustrbat->thash, p))
+			if (strcmp(v,
+				   ui.vh->base + ((var_t *) ui.base)[p]) == 0)
+				break;
+#if SIZEOF_VAR_T == 8
+       } else if (GDKupgradevarheap(ustrbat, (var_t) 1 << 33,
+				    ustrbat->batCapacity, 0) != GDK_SUCCEED) {
+               MT_lock_unset(&ustrbat->theaplock);
+               MT_rwlock_wrunlock(&ustrbat->thashlock);
+               return (var_t) -1;
+#endif
+	} else {
+		if (h->size < GDK_STRHASHSIZE + BATTINY * GDK_VARALIGN) {
+			if (HEAPgrow(&b->tvheap, GDK_STRHASHSIZE + BATTINY * GDK_VARALIGN, true) != GDK_SUCCEED) {
+				return (var_t) -1;
+			}
+			h = b->tvheap;
+		}
+		h->free = GDK_STRHASHSIZE;
+#ifdef NDEBUG
+		memset(h->base, 0, h->free);
+#else
+		/* fill should solve initialization problems within valgrind */
+		memset(h->base, 0, h->size);
+#endif
+		h->dirty = true;
+	}
+
+	if (p == BUN_NONE) {
+		/* string does not yet occur in ustrbat */
+		p = ustrbat->batCount;
+		if (p >= BATcapacity(ustrbat)) {
+			if (HEAPgrow(&ustrbat->theap, (size_t) BATgrows(ustrbat) << ustrbat->tshift, true) != GDK_SUCCEED) {
+				MT_lock_unset(&ustrbat->theaplock);
+				MT_rwlock_wrunlock(&ustrbat->thashlock);
+				return (var_t) -1;
+			}
+			ustrbat->batCapacity = (BUN) (ustrbat->theap->size >> ustrbat->tshift);
+		}
+
+#ifndef NDEBUG
+		if (!checkUTF8(v, NULL)) {
+			GDKerror("incorrectly encoded UTF-8\n");
+			return (var_t) -1;
+		}
+#endif
+
+		size_t pad;
+		size_t len = strlen(v) + 1;
+
+		if (GDK_ELIMBASE(h->free) != 0) {
+			/* no extra padding needed when no hash links needed
+			 * (but only when padding doesn't cross duplicate
+			 * elimination boundary) */
+			pad = 0;
+		} else {
+			pad = GDK_VARALIGN - (h->free & (GDK_VARALIGN - 1));
+			if (GDK_ELIMBASE(h->free + pad) == 0) {
+				/* i.e. h->free+pad < GDK_ELIMLIMIT */
+				if (pad < sizeof(var_t)) {
+					/* make room for hash link */
+					pad += GDK_VARALIGN;
+				}
+			}
+		}
+
+		/* check heap for space */
+		if (h->free + pad + len >= h->size) {
+			size_t newsize = MAX(h->size, 4096);
+
+			/* double the heap size until we have enough space */
+			do {
+				if (newsize < 4 * 1024 * 1024)
+					newsize <<= 1;
+				else
+					newsize += 4 * 1024 * 1024;
+			} while (newsize <= h->free + pad + len);
+
+			assert(newsize);
+
+			if (h->free + pad + len >= (size_t) VAR_MAX) {
+				GDKerror("string heap gets larger than %zuGiB.",
+					 (size_t) VAR_MAX >> 30);
+				return (var_t) -1;
+			}
+			TRC_DEBUG(HEAP, "HEAPextend in strPut %s %zu %zu\n",
+				  h->filename, h->size, newsize);
+			if (HEAPgrow(&ustrbat->tvheap, newsize, true) != GDK_SUCCEED)
+				return (var_t) -1;
+			h = ustrbat->tvheap;
+		}
+
+		/* insert string */
+		size_t pos = h->free + pad;
+		if (pad > 0)
+			memset(h->base + h->free, 0, pad);
+		memcpy(h->base + pos, v, len);
+		h->free += pad + len;
+		h->dirty = true;
+		if (ustrbat->tascii) {
+			for (const uint8_t *s = (const uint8_t *) v; *s; s++) {
+				if (*s & 0x80) {
+					ustrbat->tascii = false;
+					b->tascii = false;
+					break;
+				}
+			}
+		}
+
+		((var_t *) ustrbat->theap->base)[p] = (var_t) pos;
+		if (ustrbat->thash) {
+			BATiter ui = bat_iterator_nolock(ustrbat);
+			HASHappend_locked_hashval(&ui, p, v, hsh);
+		}
+		var_t *bucket = ((var_t *) h->base) + (hsh & GDK_STRHASHMASK);
+		if (GDK_ELIMBASE(pos) == 0) {
+			pos -= sizeof(var_t);
+			*(var_t *) (h->base + pos) = *bucket;
+		}
+		*bucket = (var_t) pos;
+		ustrbat->tsorted = ustrbat->trevsorted = false;
+		ustrbat->batCount++;
+		ustrbat->theap->dirty = true;
+		ustrbat->theap->free = ustrbat->batCount << ustrbat->tshift;
+		ustrbat->tunique_est = (double) ustrbat->batCount;
+	}
+
+	MT_rwlock_wrunlock(&ustrbat->thashlock);
+
+	var_t d = ((var_t *) ustrbat->theap->base)[p];
+	Heap *vh = NULL;
+
+	if (b->tvheap != ustrbat->tvheap) {
+		vh = b->tvheap;
+		b->tvheap = ustrbat->tvheap;
+		HEAPincref(b->tvheap);
+	}
+	if (b->tascii && !ustrbat->tascii) {
+		for (const uint8_t *s = (const uint8_t *) v; *s; s++) {
+			if (*s & 0x80) {
+				b->tascii = false;
+				break;
+			}
+		}
+	}
+
+	MT_lock_unset(&ustrbat->theaplock);
+	if (vh)
+		HEAPdecref(vh, false);
+	*dst = d;
+	return d;
+}
+
+gdk_return
+BATconvert2ustr(BAT *b, BAT *bu)
+{
+	TRC_DEBUG(ALGO, ALGOBATFMT ", " ALGOBATFMT "\n",
+		  ALGOBATPAR(b), ALGOBATPAR(bu));
+	MT_lock_set(&b->theaplock);
+	if (b->ustr) {
+		MT_lock_unset(&b->theaplock);
+		GDKerror("BAT is already ustr\n");
+		return GDK_FAIL;
+	}
+	if (b->batCount != 0) {
+		MT_lock_unset(&b->theaplock);
+		GDKerror("BAT must be empty to convert to ustr\n");
+		return GDK_FAIL;
+	}
+	if (b->ttype != TYPE_str) {
+		MT_lock_unset(&b->theaplock);
+		GDKerror("BAT must be a string BAT to convert to ustr\n");
+		return GDK_FAIL;
+	}
+	MT_lock_set(&bu->theaplock);
+	if (!bu->tvkey) {
+		MT_lock_unset(&b->theaplock);
+		MT_lock_unset(&bu->theaplock);
+		GDKerror("USTR BAT must have tvkey property\n");
+		return GDK_FAIL;
+	}
+	if (bu->ustr) {
+		MT_lock_unset(&b->theaplock);
+		MT_lock_unset(&bu->theaplock);
+		GDKerror("USTR BAT must not itself be ustr\n");
+		return GDK_FAIL;
+	}
+	assert(bu->tvheap->parentid == bu->batCacheid);
+	b->ustr = bu->batCacheid;
+	Heap *vh = b->tvheap;
+	b->tvheap = bu->tvheap;
+	HEAPincref(b->tvheap);
+	MT_lock_unset(&bu->theaplock);
+	MT_lock_unset(&b->theaplock);
+	BBPfix(bu->batCacheid);
+	BBPretain(bu->batCacheid);
+	if (vh)
+		HEAPdecref(vh, true);
+	return GDK_SUCCEED;
+}
+
+
 /*
  * The strPut routine. The routine strLocate can be used to identify
  * the location of a string in the heap if it exists. Otherwise it
@@ -187,9 +435,9 @@ strLocate(Heap *h, const char *v)
 
 	/* search hash-table, if double-elimination is still in place */
 	BUN off;
-	if (h->free == 0) {
+	if (h->free <= GDK_STRHASHSIZE) {
 		/* empty, so there are no strings */
-		return (var_t) -2;
+		return strNil(v) ? 0 : (var_t) -2;
 	}
 
 	off = strHash(v);
@@ -204,12 +452,17 @@ strLocate(Heap *h, const char *v)
 		if (strcmp(v, (char *) (next + 1)) == 0)
 			return (var_t) ((sizeof(var_t) + *ref));	/* found */
 	}
+	if (strNil(v))
+		return 0;
 	return (var_t) -2;
 }
 
 var_t
 strPut(BAT *b, var_t *dst, const void *V)
 {
+	if (b->ustr)
+		return ustrPut(b, dst, V);
+
 	const char *v = V;
 	Heap *h = b->tvheap;
 	size_t pad;
@@ -233,6 +486,7 @@ strPut(BAT *b, var_t *dst, const void *V)
 #endif
 		h->dirty = true;
 		b->tascii = true;
+		b->tvkey = true;
 	}
 
 	off = strHash(v);
@@ -268,6 +522,13 @@ strPut(BAT *b, var_t *dst, const void *V)
 		}
 	}
 	/* the string was not found in the heap, we need to enter it */
+
+	/* when entering nil, just return offset 0
+	 * note that we checked first whether nil already occurs and
+	 * returned that if we found it -- this we way we stay fully
+	 * double eliminated in older string bats */
+	if (strNil(v))
+		return *dst = 0;
 
 	/* check that string is correctly encoded UTF-8; there was no
 	 * need to do this earlier: if the string was found above, it
@@ -335,6 +596,8 @@ strPut(BAT *b, var_t *dst, const void *V)
 		 * string */
 		pos -= sizeof(var_t);
 		*(var_t *) (h->base + pos) = *bucket;
+	} else {
+		b->tvkey = false;	/* we no longer know for sure */
 	}
 	*bucket = (var_t) pos;	/* set bucket to the new string */
 	h->dirty = true;

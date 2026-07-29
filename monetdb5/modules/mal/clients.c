@@ -27,7 +27,6 @@
 #include "mal_authorize.h"
 #include "mal_internal.h"
 #include "opt_pipes.h"
-#include "gdk_time.h"
 
 static str
 CLTsetListing(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)

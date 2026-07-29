@@ -19,7 +19,8 @@
 #error Versions below Visual Studio 2015 are no longer supported
 #endif
 
-/* Prevent pollution through excessive inclusion of include files by Windows.h. */
+/* Prevent pollution through excessive inclusion of include files by
+ * Windows.h. */
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN 1
 #endif
@@ -368,10 +369,77 @@ typedef __uint128_t uint128_t;
 
 /* Does your compiler support `__attribute__' extension? */
 #if !defined(__has_attribute)
+/* if __has_attribute is not known to the preprocessor, we ignore
+ * attributes completely */
 #ifndef __attribute__
 #define __attribute__(...)
 #endif
+#else
+/* if it is known, use it to find out whether specific attributes that
+ * we use are known */
+#if !__has_attribute(__access__)
+#define __access__(...)
 #endif
+#if !__has_attribute(__aligned__)
+#define __aligned__(...)
+#endif
+#if !__has_attribute(__alloc_size__)
+#define __alloc_size__(...)
+#endif
+#if !__has_attribute(__cold__)
+#define __cold__
+#endif
+#if !__has_attribute(__const__)
+#define __const__
+#endif
+#if !__has_attribute(__constructor__)
+#define __constructor__
+#endif
+#if !__has_attribute(__counted_by__)
+#define __counted_by__(...)
+#endif
+#if !__has_attribute(__designated_init__)
+#define __designated_init__
+#endif
+#if !__has_attribute(__format__)
+#define __format__(...)
+#endif
+#if !__has_attribute(__malloc__)
+#define __malloc__
+#define __malloc__(...)
+#elif !defined(__GNUC__) || __GNUC__ < 13
+/* attribute malloc with argument seems to have been introduced in gcc 13 */
+#define __malloc__(...)
+#endif
+#if !__has_attribute(__noinline__)
+#define __noinline__
+#endif
+#if !__has_attribute(__nonnull__)
+#define __nonnull__(...)
+#endif
+#if !__has_attribute(__nonnull_if_nonzero__)
+#define __nonnull_if_nonzero__(...)
+#endif
+#if !__has_attribute(__nonstring__)
+#define __nonstring__
+#endif
+#if !__has_attribute(__pure__)
+#define __pure__
+#endif
+#if !__has_attribute(__returns_nonnull__)
+#define __returns_nonnull__
+#endif
+#if !__has_attribute(__sentinel__)
+#define __sentinel__
+#endif
+#if !__has_attribute(__visibility__)
+#define __visibility__(...)
+#endif
+#if !__has_attribute(__warn_unused_result__)
+#define __warn_unused_result__
+#endif
+#endif
+
 
 #if !defined(__cplusplus) || __cplusplus < 201103L
 #ifndef static_assert

@@ -2613,8 +2613,11 @@ GDKprintinfo(void)
 {
 	size_t allocated = (size_t) ATOMIC_GET(&GDK_mallocedbytes_estimate);
 	size_t vmallocated = (size_t) ATOMIC_GET(&GDK_vm_cursize);
+	char timestamp[20];
 
-	printf("SIGUSR1 info start\n");
+	strftime(timestamp, sizeof(timestamp), "%Y-%m-%d %H:%M:%S",
+		 localtime_r(&(time_t){time(NULL)}, &(struct tm){0}));
+	printf("SIGUSR1 info start @ %s\n", timestamp);
 	printf("Virtual memory allocated: %zu%s, of which %zu%s with malloc\n",
 	       vmallocated + allocated, humansize(vmallocated + allocated, (char[24]){0}, 24), allocated, humansize(allocated, (char[24]){0}, 24));
 #ifdef WITH_MALLOC
