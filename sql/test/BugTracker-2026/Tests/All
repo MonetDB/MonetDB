@@ -155,3 +155,4 @@ PIPELINE?7966-optimize-select-distinct-from-union-queries
 7968-optimize-distinct-from-q1-except-q2
 7969-optimize-distinct-from-q1-intersect-q2
 7970-optimize-where-predicate
+7971-prepare-decimal-parameter-crash

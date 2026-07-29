@@ -317,8 +317,15 @@ SQLColAttribute(SQLHSTMT StatementHandle,
 
 SQLRETURN SQL_API
 SQLColAttributeA(SQLHSTMT StatementHandle,
+#ifdef _IODBCUNIX_H
+		 /* iODBC, at least on Cygwin, uses SQLUSMALLINT */
+		 SQLUSMALLINT ColumnNumber,
+		 SQLUSMALLINT FieldIdentifier,
+#else
+		 /* UNIXodbc and Windows ODBC use SQLSMALLINT */
 		 SQLSMALLINT ColumnNumber,
 		 SQLSMALLINT FieldIdentifier,
+#endif
 		 SQLPOINTER CharacterAttributePtr,
 		 SQLSMALLINT BufferLength,
 		 SQLSMALLINT *StringLengthPtr,

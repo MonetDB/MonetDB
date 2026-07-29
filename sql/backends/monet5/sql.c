@@ -16,7 +16,7 @@
  * from the Version 4 code base.
  */
 #include "monetdb_config.h"
-#include "sql.h"
+#include "sql_monet_backend.h"
 #include "mapi_prompt.h"
 #include "sql_result.h"
 #include "sql_query.h"

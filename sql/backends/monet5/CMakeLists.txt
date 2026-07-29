@@ -134,7 +134,7 @@ create_include_object(
 
 target_sources(sql
   PRIVATE
-  sql.c sql.h
+  sql.c sql_monet_backend.h
   mal_backend.c
   sql_user.c sql_user.h
   sql_scenario.c sql_scenario.h

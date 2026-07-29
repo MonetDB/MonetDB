@@ -11,7 +11,7 @@
 #ifndef _DICT_H
 #define _DICT_H
 
-#include "sql.h"
+#include "sql_monet_backend.h"
 
 extern str FORcompress_col(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 extern str FORdecompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);

@@ -11,7 +11,7 @@
 #include "monetdb_config.h"
 #include <netcdf.h>
 #include "sql_mvc.h"
-#include "sql.h"
+#include "sql_monet_backend.h"
 #include "sql_execute.h"
 #include "sql_scenario.h"
 #include "mal_exception.h"
