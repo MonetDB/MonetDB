@@ -4227,7 +4227,7 @@ rel_cast(sql_query *query, sql_rel **rel, symbol *se, int f)
 	if (tpe->type->eclass == EC_DEC) {
 		sql_subtype *et = exp_subtype(e);
 		if (e->type == e_atom && !tpe->digits) {
-			if (e->l && (et->type->eclass == EC_NUM || et->type->eclass == EC_DEC)) {
+			if (e->l && et && (et->type->eclass == EC_NUM || et->type->eclass == EC_DEC)) {
 				if (et->digits && et->scale) {
 					tpe->digits = et->digits;
 					tpe->scale = et->scale;
@@ -4236,7 +4236,7 @@ rel_cast(sql_query *query, sql_rel **rel, symbol *se, int f)
 					tpe->scale = 1;
 				}
 				tpe = sql_bind_subtype(sql->sa, "decimal", tpe->digits, tpe->scale);
-			} else if (EC_VARCHAR(et->type->eclass)) {
+			} else if (et && EC_VARCHAR(et->type->eclass)) {
 				char *s = E_ATOM_STRING(e);
 				unsigned int min_precision = 0, min_scale = 0;
 				bool dot_seen = false;
@@ -4254,7 +4254,7 @@ rel_cast(sql_query *query, sql_rel **rel, symbol *se, int f)
 				tpe = sql_bind_subtype(sql->sa, "decimal", 18, 3);
 			}
 		} else if (!tpe->digits && !tpe->scale) {
-			if (et->type->eclass == EC_NUM)
+			if (et && et->type->eclass == EC_NUM)
 				tpe = sql_bind_subtype(sql->sa, "decimal", et->digits, 0);
 			else /* fallback */
 				tpe = sql_bind_subtype(sql->sa, "decimal", 18, 3);
