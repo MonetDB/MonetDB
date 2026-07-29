@@ -192,7 +192,7 @@ CLTquit(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/* A user can only quit a session under the same id */
 	MT_lock_set(&mal_contextLock);
 	if (mal_clients[idx].mode == FREECLIENT)
-		msg = createException(MAL, "clients.stop",
+		msg = createException(MAL, "clients.quit",
 							  "Session not active anymore");
 	else
 		mal_clients[idx].mode = FINISHCLIENT;
