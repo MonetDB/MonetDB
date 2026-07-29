@@ -130,7 +130,7 @@ target_link_libraries(MonetODBC
   monetdb_config_header
   mapi
   mutils
-  ${ODBCINST_LIBRARIES})
+  $<$<BOOL:${ODBCinst_FOUND}>:${ODBCINST_LIBRARIES}>)
 
 install(TARGETS
   MonetODBC

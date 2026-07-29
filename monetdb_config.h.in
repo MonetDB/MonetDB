@@ -35,8 +35,8 @@
 
 #endif
 
-#if !defined(_XOPEN_SOURCE) && defined(__CYGWIN__)
-#define _XOPEN_SOURCE 700
+#if !defined(_GNU_SOURCE) && defined(__CYGWIN__)
+#define _GNU_SOURCE 1
 #endif
 
 #include <stdlib.h>
@@ -118,10 +118,6 @@
 #define NATIVE_WIN32 1
 
 #endif /* _MSC_VER */
-
-#if !defined(WIN32) && defined(__CYGWIN__)
-#define WIN32 1
-#endif
 
 // functions that may or may not be available
 #cmakedefine HAVE_ACCEPT4 1
@@ -429,6 +425,8 @@ typedef __uint128_t uint128_t;
 #endif
 #if !__has_attribute(__visibility__)
 #define __visibility__(...)
+#elif defined(__CYGWIN__)
+#define __visibility__(...)
 #endif
 #if !__has_attribute(__warn_unused_result__)
 #define __warn_unused_result__
@@ -458,7 +456,7 @@ typedef __uint128_t uint128_t;
  * version, so that won't fly.  Instead we look at __USE_GNU which only
  * the GNU library defines (if _GNU_SOURCE is defined) and is the one
  * actually used in the GNU header file to make the distinction. */
-#if defined(__USE_GNU) && defined(HAVE_STRERROR_R)
+#if (defined(__USE_GNU) || defined(__GNU_VISIBLE)) && defined(HAVE_STRERROR_R)
 #define STRERROR_R_CHARP 1
 #endif
 

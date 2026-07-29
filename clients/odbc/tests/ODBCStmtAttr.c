@@ -21,6 +21,15 @@
 #include <sql.h>
 #include <sqlext.h>
 
+#ifndef SIZEOF_LONG_INT
+#include <limits.h>
+#if LONG_MAX > INT_MAX
+#define SIZEOF_LONG_INT 8
+#else
+#define SIZEOF_LONG_INT 4
+#endif
+#endif
+
 static void
 prerr(SQLSMALLINT tpe, SQLHANDLE hnd, const char *func, const char *pref)
 {

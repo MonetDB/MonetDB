@@ -12,7 +12,7 @@
 #ifndef _SQL_ORDERIDX_DEF
 #define _SQL_ORDERIDX_DEF
 
-#include "sql.h"
+#include "sql_monet_backend.h"
 
 extern str sql_createorderindex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 extern str sql_droporderindex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);

@@ -12,7 +12,7 @@
 #ifndef _SQL_STATISTICS_DEF
 #define _SQL_STATISTICS_DEF
 
-#include "sql.h"
+#include "sql_monet_backend.h"
 
 extern str sql_set_count_distinct(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 extern str sql_set_min(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);

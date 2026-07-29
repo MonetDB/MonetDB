@@ -15,7 +15,7 @@
 #include "monetdb_config.h"
 #include "mapi_prompt.h"
 #include "gdk.h"
-#include "sql.h"
+#include "sql_monet_backend.h"
 #include "mal_backend.h"
 #include "mal_interpreter.h"
 #include "sql_bincopyconvert.h"

@@ -14,7 +14,7 @@
 #ifndef _SQL_CATALOG_H
 #define _SQL_CATALOG_H
 
-#include "sql.h"
+#include "sql_monet_backend.h"
 #include "mal_backend.h"
 #include "sql_atom.h"
 #include "sql_statement.h"

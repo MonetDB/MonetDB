@@ -10,7 +10,7 @@
 
 #ifndef _SQL_SCENARIO_H_
 #define _SQL_SCENARIO_H_
-#include "sql.h"
+#include "sql_monet_backend.h"
 
 extern int SQLdebug;
 extern str SQLprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)

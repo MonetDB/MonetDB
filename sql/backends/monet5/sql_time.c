@@ -9,7 +9,7 @@
  */
 
 #include "monetdb_config.h"
-#include "sql.h"
+#include "sql_monet_backend.h"
 #include "sql_datetime.h"
 #include "mal_instruction.h"
 

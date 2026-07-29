@@ -13,7 +13,7 @@
 #include "copybinary.h"
 #include "copybinary_support.h"
 #include "sql_bincopyconvert.h"
-#include "sql.h"
+#include "sql_monet_backend.h"
 #include "gdk.h"
 #include "mal_backend.h"
 #include "mal_interpreter.h"

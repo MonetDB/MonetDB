@@ -10,7 +10,7 @@
 
 #ifndef _SQL_UPGRADES_H_
 #define _SQL_UPGRADES_H_
-#include "sql.h"
+#include "sql_monet_backend.h"
 
 extern int SQLupgrades(Client c, mvc *m);
 
