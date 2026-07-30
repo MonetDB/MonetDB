@@ -1029,7 +1029,7 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 									ncount = MAX(lv, rv);
 								uniques_estimate = MIN(uniques_estimate, ncount);
 							}
-							if (uniques_estimate != BUN_MAX) {
+							if (uniques_estimate < BUN_MAX) {
 								if (uniques_estimate < r_uniques_estimate)
 									r_uniques_estimate = uniques_estimate;
 								dbl s = ((dbl)uniques_estimate/(lv*rv));
@@ -1050,9 +1050,9 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 			}
 			if (is_single(rel)) {
 				set_count_prop(v->sql->sa, rel, lv);
-			} else if (join_idx_estimate != BUN_MAX) {
+			} else if (join_idx_estimate < BUN_MAX) {
 				set_count_prop(v->sql->sa, rel, join_idx_estimate);
-			} else if (r_uniques_estimate != BUN_MAX) {
+			} else if (r_uniques_estimate < BUN_MAX) {
 				set_count_prop(v->sql->sa, rel, r_uniques_estimate);
 			} else if (list_length(rel->exps) == 1 && (exp_is_false(rel->exps->h->data) || exp_is_null(rel->exps->h->data))) {
 				/* corner cases for outer joins */
@@ -1174,16 +1174,33 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 		BUN lv = get_rel_count(rel->l);
 
 		if (lv != BUN_NONE) {
-			sql_exp *le = rel->exps->h->data, *oe = list_length(rel->exps) > 1 ? rel->exps->h->next->data : NULL;
-			if (oe && oe->l && exp_is_not_null(oe)) { /* no parameters */
-				BUN offset = (BUN) ((atom*)oe->l)->data.val.lval;
-				lv = offset >= lv ? 0 : lv - offset;
-			}
+			sql_exp *le = rel->exps->h->data;
 			if (le->l && exp_is_not_null(le)) {
 				BUN limit = (BUN) ((atom*)le->l)->data.val.lval;
 				lv = MIN(lv, limit);
 			}
 			set_count_prop(v->sql->sa, rel, lv);
+			if (lv == 0 && can_be_pruned) {
+				list *exps = rel_projections(v->sql, rel->l, NULL, 1, 1);
+				for (node *n = exps->h ; n ; n = n->next) {
+					sql_exp *e = n->data, *a = exp_atom(v->sql->sa, atom_general(v->sql->sa, exp_subtype(e), NULL, 0));
+					exp_prop_alias(v->sql->sa, a, e);
+					n->data = a;
+				}
+				list_hash_clear(exps);
+				rel_destroy(v->sql, rel->l);
+				rel->l = NULL;
+				sql_rel *l = rel_project(v->sql->sa, NULL, exps);
+				set_count_prop(v->sql->sa, l, 1);
+				l = rel_select(v->sql->sa, l, exp_atom_bool(v->sql->sa, 0));
+				set_count_prop(v->sql->sa, l, 0);
+				rel->op = op_project;
+				rel->l = l;
+				rel->exps = rel_projections(v->sql, l, NULL, 1, 1);
+				set_count_prop(v->sql->sa, rel, 0);
+				set_nodistinct(rel); /* set relations may have distinct flag set */
+				v->changes++;
+			}
 		}
 		break;
 	}
