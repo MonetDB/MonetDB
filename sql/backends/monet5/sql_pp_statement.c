@@ -245,7 +245,7 @@ stmt_limit_partitioned(backend *be, stmt *col, stmt *piv, stmt *gid, stmt *offse
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
-	int l, c, len;
+	int l, c;
 
 	if (col->nr < 0 || offset->nr < 0 || limit->nr < 0)
 		return NULL;
@@ -277,33 +277,14 @@ stmt_limit_partitioned(backend *be, stmt *col, stmt *piv, stmt *gid, stmt *offse
 		c = k;
 	}
 
-	q = newStmt(mb, calcRef, plusRef);
-	q = pushArgument(mb, q, offset->nr);
-	q = pushArgument(mb, q, limit->nr);
-	if (q == NULL)
-		return NULL;
-	len = getDestVar(q);
-	pushInstruction(mb, q);
-
-	/* since both arguments of algebra.subslice are
-	   inclusive correct the LIMIT value by
-	   subtracting 1 */
-	q = newStmt(mb, calcRef, minusRef);
-	q = pushArgument(mb, q, len);
-	q = pushInt(mb, q, 1);
-	if (q == NULL)
-		return NULL;
-	len = getDestVar(q);
-	pushInstruction(mb, q);
-
 	q = newStmtArgs(mb, algebraRef, subsliceRef, 6);
 	/* returns gid, rid, hid */
 	q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any)); /* rid */
 	q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any)); /* hid for topn/heap sink */
 	q->inout = 2;
 	q = pushArgument(mb, q, c);
+	q = pushArgument(mb, q, limit->nr);
 	q = pushArgument(mb, q, offset->nr);
-	q = pushArgument(mb, q, len);
 	if (q == NULL)
 		return NULL;
 	l = getDestVar(q);
