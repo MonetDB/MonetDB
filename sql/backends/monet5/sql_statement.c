@@ -1407,33 +1407,20 @@ stmt_limit(backend *be, stmt *col, stmt *piv, stmt *gid, stmt *offset, stmt *lim
 			}
 		}
 	} else {
-		int len;
-
-		q = newStmt(mb, calcRef, plusRef);
-		if (q == NULL)
-			goto bailout;
-		q = pushArgument(mb, q, offset->nr);
-		q = pushArgument(mb, q, limit->nr);
-		len = getDestVar(q);
-		pushInstruction(mb, q);
-
-		/* since both arguments of algebra.subslice are
-		   inclusive correct the LIMIT value by
-		   subtracting 1 */
-		q = newStmt(mb, calcRef, minusRef);
-		if (q == NULL)
-			goto bailout;
-		q = pushArgument(mb, q, len);
-		q = pushInt(mb, q, 1);
-		len = getDestVar(q);
-		pushInstruction(mb, q);
-
-		q = newStmt(mb, algebraRef, subsliceRef);
+		q = newStmtArgs(mb, algebraRef, firstnRef, 9);
 		if (q == NULL)
 			goto bailout;
 		q = pushArgument(mb, q, c);
+		q = pushNilBat(mb, q);
+		q = pushNilBat(mb, q);
+		q = pushArgument(mb, q, limit->nr);
 		q = pushArgument(mb, q, offset->nr);
-		q = pushArgument(mb, q, len);
+		q = pushBit(mb, q, false); /* return skipped */
+		q = pushBit(mb, q, bit_nil); /* no direction */
+		q = pushBit(mb, q, bit_nil); /* nulls not handled specialy */
+		q = pushBit(mb, q, false); /* no info on distinct */
+
+		l = getArg(q, 0);
 		l = getDestVar(q);
 		pushInstruction(mb, q);
 	}
