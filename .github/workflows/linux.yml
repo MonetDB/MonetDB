@@ -19,7 +19,7 @@ jobs:
     strategy:
       fail-fast: false  # don't stop other jobs
       matrix:
-        os: [ ubuntu-latest, ubuntu-24.04-arm, macos-latest ]
+        os: [ ubuntu-latest, ubuntu-24.04-arm ]
         c_compiler: [ gcc, clang ]
         include:
           - os: windows-latest
@@ -30,13 +30,6 @@ jobs:
             c_compiler: clang
           - os: macos-latest
             c_compiler: gcc-14
-          - os: ubuntu-latest
-            c_compiler: gcc
-          - os: ubuntu-latest
-            c_compiler: clang
-        exclude:
-          - os: macos-latest
-            c_compiler: gcc
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
