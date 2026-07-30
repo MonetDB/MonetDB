@@ -1052,7 +1052,7 @@ ALGfirstn(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 		if (o > (lng) BATcount(b))
 			o = (lng) BATcount(b);
-		if (o + n > (lng) BATcount(b))
+		if ((BUN) o + (BUN) n > BATcount(b))
 			n = (lng) BATcount(b) - o;
 		bn = BATdense(0, b->hseqbase + o, n);
 		if (bn == NULL)
