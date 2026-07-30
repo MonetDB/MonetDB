@@ -9,14 +9,10 @@
  */
 
 #include "gdk.h"
-
+#include "xxhash.h"
 #if defined(HAVE_GETENTROPY) && defined(HAVE_SYS_RANDOM_H)
 #include <sys/random.h>
 #endif
-// #include "murmurhash3.h"
-#define XXH_STATIC_LINKING_ONLY
-#define XXH_IMPLEMENTATION
-#include "xxhash.h"
 
 // Helper function sigma as defined in
 // "New cardinality estimation algorithms for HyperLogLog sketches"
@@ -58,10 +54,10 @@ tau(double x)
 	return z / 3;
 }
 
-/// Estimator as defined in
-/// "New cardinality estimation algorithms for HyperLogLog sketches"
-/// Otmar Ertl, arXiv:1702.01284.
-/// Only difference is how the multiplicity array is computed
+// Estimator as defined in
+// "New cardinality estimation algorithms for HyperLogLog sketches"
+// Otmar Ertl, arXiv:1702.01284.
+// Only difference is how the multiplicity array is computed
 double
 sketch_estimate(uint8_t cnt_sketch[BUCKETS][CLZ_BUCKETS])
 {
@@ -149,7 +145,6 @@ leading_zeroes(uint64_t x)
 #define SKETCH_POPULATE(TYPE)						\
 	do {								\
 		oid hseq = b->hseqbase;					\
-		/* uint64_t murmur3_out[2]; */				\
 		uint64_t hash;						\
 		uint8_t bucket;						\
 		uint8_t clz;						\
