@@ -155,3 +155,4 @@ KNOWNFAIL?7965-select-1-limit-0-bug
 7969-optimize-distinct-from-q1-intersect-q2
 7970-optimize-where-predicate
 7971-prepare-decimal-parameter-crash
+7972-orderby-limit-subquery-bug
