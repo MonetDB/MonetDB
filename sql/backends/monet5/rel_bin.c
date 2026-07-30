@@ -4786,6 +4786,8 @@ sub_topn(backend *be, stmt *sub, stmt **Psub, sql_rel *topn, list *oexps, stmt *
 		*Psub = stmt_list(be, npl);
 	}
 
+	if (!sub)
+		return sub;
 	/* also rebuild sub as multiple orderby expressions may use the sub table (ie aren't part of the result columns) */
 	pl = sub->op4.lval;
 	npl = sa_list(be->mvc->sa);
