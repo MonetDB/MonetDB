@@ -1,0 +1,135 @@
+statement ok
+CREATE TABLE br_rollup_t (id INT PRIMARY KEY, c0 INT)
+
+statement ok
+INSERT INTO br_rollup_t VALUES (1,10),(2,20)        -- note: no NULL in c0
+
+-- (1) bare ROLLUP: the super-aggregate row's c0 is projected as NULL -- correct
+-- observed: (10,1) (20,1) (NULL,2)                                    correct
+query II rowsort
+SELECT c0, COUNT(*) AS n FROM br_rollup_t GROUP BY ROLLUP(c0)
+----
+10
+1
+20
+1
+
+-- (2) the same row, four ways of asking "is c0 null?" -- they disagree
+-- observed: (10,10,0,'IS NULL -> FALSE',1)
+--           (20,20,0,'IS NULL -> FALSE',1)
+--           (NULL,-1,1,'IS NULL -> FALSE',2)   <-- WRONG: value is NULL, GROUPING says 1,
+--                                                  COALESCE says NULL, IS NULL says FALSE
+query IIITI rowsort
+SELECT c0, COALESCE(c0,-1) AS coalesced, GROUPING(c0) AS grp,
+       CASE WHEN c0 IS NULL THEN 'IS NULL -> TRUE' ELSE 'IS NULL -> FALSE' END AS pred,
+       COUNT(*) AS n
+FROM br_rollup_t GROUP BY ROLLUP(c0)
+----
+10
+10
+0
+IS NULL -> FALSE
+1
+20
+20
+0
+IS NULL -> FALSE
+1
+NULL
+-1
+1
+IS NULL -> TRUE
+2
+
+-- (3) filter the super-aggregate row out: it is not removed
+-- observed: (10,1) (20,1) (NULL,2)   <-- WRONG      expected: (10,1) (20,1)
+query II rowsort
+SELECT c0, n FROM (SELECT c0, COUNT(*) AS n FROM br_rollup_t GROUP BY ROLLUP(c0)) x
+WHERE x.c0 IS NOT NULL
+----
+10
+1
+20
+1
+
+-- (4) dual form: select only the super-aggregate row -- nothing comes back
+-- observed: <empty>                  <-- WRONG      expected: (NULL,2)
+query II rowsort
+SELECT c0, n FROM (SELECT c0, COUNT(*) AS n FROM br_rollup_t GROUP BY ROLLUP(c0)) x
+WHERE x.c0 IS NULL
+----
+NULL
+2
+
+-- (5) HAVING form
+-- observed: (10,1) (20,1) (NULL,2)   <-- WRONG      expected: (10,1) (20,1)
+query II rowsort
+SELECT c0, COUNT(*) AS n FROM br_rollup_t GROUP BY ROLLUP(c0) HAVING c0 IS NOT NULL
+----
+10
+1
+20
+1
+
+-- (6) GROUPING() consistency criterion: a row with GROUPING(c0)=1 must have c0 NULL,
+--     so this count must be 0 in every conforming implementation
+-- observed: 1                        <-- WRONG      expected: 0
+query I rowsort
+SELECT COUNT(*) AS should_be_zero
+FROM (SELECT c0 AS k, GROUPING(c0) AS g, COUNT(*) AS n FROM br_rollup_t GROUP BY ROLLUP(c0)) x
+WHERE x.g = 1 AND x.k IS NOT NULL
+----
+0
+
+-- (7) CONTROL: same query, one NULL added to c0 -- everything becomes correct
+statement ok
+CREATE TABLE br_rollup_n (id INT PRIMARY KEY, c0 INT)
+
+statement ok
+INSERT INTO br_rollup_n VALUES (1,10),(2,20),(3,NULL)
+
+-- observed: (10,1) (20,1)            correct
+query II rowsort
+SELECT c0, n FROM (SELECT c0, COUNT(*) AS n FROM br_rollup_n GROUP BY ROLLUP(c0)) x
+WHERE x.c0 IS NOT NULL
+----
+10
+1
+20
+1
+
+-- observed: 0                        correct
+query I rowsort
+SELECT COUNT(*) AS should_be_zero
+FROM (SELECT c0 AS k, GROUPING(c0) AS g, COUNT(*) AS n FROM br_rollup_n GROUP BY ROLLUP(c0)) x
+WHERE x.g = 1 AND x.k IS NOT NULL
+----
+0
+
+-- (8) CUBE and GROUPING SETS are affected identically
+-- observed: (10,1) (20,1) (NULL,2)   <-- WRONG      expected: (10,1) (20,1)
+query II rowsort
+SELECT c0, n FROM (SELECT c0, COUNT(*) AS n FROM br_rollup_t GROUP BY CUBE(c0)) x
+WHERE x.c0 IS NOT NULL
+----
+10
+1
+20
+1
+
+-- observed: (10,1) (20,1) (NULL,2)   <-- WRONG      expected: (10,1) (20,1)
+query II rowsort
+SELECT c0, n FROM (SELECT c0, COUNT(*) AS n FROM br_rollup_t GROUP BY GROUPING SETS ((c0),())) x
+WHERE x.c0 IS NOT NULL
+----
+10
+1
+20
+1
+
+statement ok
+DROP TABLE IF EXISTS br_rollup_n
+
+statement ok
+DROP TABLE IF EXISTS br_rollup_t
+
