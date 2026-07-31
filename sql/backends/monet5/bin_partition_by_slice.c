@@ -63,8 +63,8 @@ exp_getcard(mvc *sql, sql_rel *rel, sql_exp *e)
 
 		if (c) {
 			int de = mvc_is_duplicate_eliminated(sql, c);
-			if (de && (1<<(de*8)) < cnt)
-				cnt = (1<<(de*8));
+			if (de && (((lng)1)<<(de*8)) < cnt)
+				cnt = (((lng)1)<<(de*8));
 		}
 	}
 	/* for now only based on type info, later use propagated cardinality estimation */
