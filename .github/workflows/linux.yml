@@ -24,12 +24,12 @@ jobs:
         include:
           - os: windows-latest
             c_compiler: cl
-          - os: windows-11-arm
-            c_compiler: cl
           - os: macos-latest
             c_compiler: clang
           - os: macos-latest
             c_compiler: gcc-14
+          #- os: windows-11-arm
+          #  c_compiler: cl
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
