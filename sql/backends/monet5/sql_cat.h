@@ -14,7 +14,7 @@
 #ifndef _SQL_CATALOG_H
 #define _SQL_CATALOG_H
 
-#include "sql.h"
+#include "sql_monet_backend.h"
 #include "mal_backend.h"
 #include "sql_atom.h"
 #include "sql_statement.h"
@@ -64,6 +64,7 @@ extern str SQLcomment_on(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 extern str SQLrename_schema(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 extern str SQLrename_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 extern str SQLrename_column(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+extern str SQLcreate_ustr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+extern str SQLdrop_ustr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 #endif /* _SQL_CATALOG_H */
-

@@ -16,7 +16,7 @@
 #include "mel.h"
 #include "pipeline.h"
 
-#include "sql.h"
+#include "sql_monet_backend.h"
 #include "mapi_prompt.h"
 #include "copy.h"
 #include "rel_copy.h"

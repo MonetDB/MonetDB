@@ -9,7 +9,7 @@
  */
 
 #include "monetdb_config.h"
-#include "sql.h"
+#include "sql_monet_backend.h"
 #include "mal_instruction.h"
 
 #define do_date_trunc(val, DIVISOR)					\

@@ -20,7 +20,7 @@ typedef struct column_storage {
 	int ebid;		/* extra bid */
 	int uibid;		/* bat with positions of updates */
 	int uvbid;		/* bat with values of updates */
-	storage_type st; /* ST_DEFAULT, ST_DICT, ST_FOR */
+	storage_type st; /* ST_DEFAULT, ST_DICT, ST_FOR, ST_USTR */
 	bool cleared;
 	bool merged;	/* only merge changes once */
 	size_t ucnt;	/* number of updates */

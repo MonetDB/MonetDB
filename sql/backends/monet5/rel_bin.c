@@ -4965,6 +4965,8 @@ sub_topn(backend *be, stmt *sub, stmt **Psub, sql_rel *topn, list *oexps, stmt *
 		*Psub = stmt_list(be, npl);
 	}
 
+	if (!sub)
+		return sub;
 	/* also rebuild sub as multiple orderby expressions may use the sub table (ie aren't part of the result columns) */
 	pl = sub->op4.lval;
 	npl = sa_list(be->mvc->sa);
@@ -8059,6 +8061,8 @@ rel2bin_ddl(backend *be, sql_rel *rel, list *refs)
 		case ddl_rename_schema:
 		case ddl_rename_table:
 		case ddl_rename_column:
+		case ddl_create_ustr:
+		case ddl_drop_ustr:
 			s = rel2bin_catalog2(be, rel, refs);
 			sql->type = Q_SCHEMA;
 			break;

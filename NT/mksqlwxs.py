@@ -162,7 +162,6 @@ def main():
                vcpkg.format(r'bin\libxml2.dll'),
                vcpkg.format(r'bin\lz4.dll'),
                vcpkg.format(r'bin\pcre2-8.dll'),
-               vcpkg.format(r'bin\xxhash.dll'),
                vcpkg.format(r'bin\z.dll')])
     id = comp(debug, id, 14,
               [r'bin\mclient.pdb',
@@ -222,7 +221,6 @@ def main():
                vcpkg.format(r'lib\lz4.lib'),
                vcpkg.format(r'lib\lzma.lib'),
                vcpkg.format(r'lib\pcre2-8.lib'),
-               vcpkg.format(r'lib\xxhash.lib'),
                vcpkg.format(r'lib\z.lib')])
     print(r'            </Directory>')
     print(r'            <Directory Id="share" Name="share">')

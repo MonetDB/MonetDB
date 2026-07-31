@@ -66,6 +66,7 @@
 	FUNC(create_trigger); \
 	FUNC(create_type); \
 	FUNC(create_user); \
+	FUNC(create_ustr); \
 	FUNC(create_view); \
 	FUNC(crossproduct); \
 	FUNC(cume_dist); \
@@ -94,6 +95,7 @@
 	FUNC(drop_trigger); \
 	FUNC(drop_type); \
 	FUNC(drop_user); \
+	FUNC(drop_ustr); \
 	FUNC(drop_view); \
 	FUNC(emptybind); \
 	FUNC(emptybindidx); \

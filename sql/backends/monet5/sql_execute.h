@@ -10,7 +10,7 @@
 
 #ifndef _SQL_EXECUTE_H_
 #define _SQL_EXECUTE_H_
-#include "sql.h"
+#include "sql_monet_backend.h"
 
 sql5_export str SQLstatementIntern(Client c, const char *expr, const char *nme, bit execute, bit output, res_table **result);
 sql5_export str RAstatement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);

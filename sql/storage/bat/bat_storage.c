@@ -2437,7 +2437,7 @@ append_col(sql_trans *tr, sql_column *c, BUN offset, BAT *offsets, void *data, B
 	if ((delta = bind_col_data(tr, c, NULL, NULL)) == NULL)
 		return LOG_ERR;
 
-	assert(delta->cs.st == ST_DEFAULT || delta->cs.st == ST_DICT || delta->cs.st == ST_FOR);
+	assert(delta->cs.st == ST_DEFAULT || delta->cs.st == ST_DICT || delta->cs.st == ST_FOR || delta->cs.st == ST_USTR);
 
 	if ((res = append_col_execute(tr, &delta, c, offset, offsets, data, cnt, isbat, tpe, c->storage_type)) != LOG_OK)
 		return res;
@@ -2812,7 +2812,7 @@ set_stats_col(sql_trans *tr, sql_column *c, double *unique_est, char *min, char 
 	lock_column(tr->store, c);
 	if (unique_est) {
 		sql_delta *d;
-		if ((d = ATOMIC_PTR_GET(&c->data)) && d->cs.st == ST_DEFAULT) {
+		if ((d = ATOMIC_PTR_GET(&c->data)) && (d->cs.st == ST_DEFAULT || d->cs.st == ST_USTR)) {
 			BAT *b;
 			if ((b = bind_col_no_view(tr, c, RDONLY))) {
 				MT_lock_set(&b->theaplock);
@@ -2985,21 +2985,23 @@ double_elim_col(sql_trans *tr, sql_column *col)
 		if (d->cs.st == ST_DICT) {
 			BAT *b = bind_col(tr, col, QUICK);
 			if (b && b->ttype == TYPE_bte)
-				de = 255;
+				de = 1;
 			else if (b && b->ttype == TYPE_sht)
-				de = 65535;
+				de = 2;
+		} else if (d->cs.st == ST_USTR) {
+			BAT *b = bind_col(tr, col, QUICK);
+			de = b->twidth;
 		}
 	} else if (col && ATOMstorage(col->type.type->localtype) == TYPE_str && ATOMIC_PTR_GET(&col->data)) {
 		BAT *b = bind_col(tr, col, QUICK);
 
-		if (b && ATOMstorage(b->ttype) == TYPE_str) { /* check double elimination */
+		if (b && ATOMstorage(b->ttype) == TYPE_str && !b->ustr) { /* check double elimination */
 			de = GDK_ELIMDOUBLES(b->tvheap);
-			if (de) {
-				BUN bytes = (b->tvheap->free >= GDK_VAROFFSET)? b->tvheap->free - GDK_VAROFFSET : 0;
-				if (bytes > 0)
-					de = (int)(bytes/b->twidth);
-			}
+			if (de)
+				//de = (int) ceil(b->tvheap->free / (double) GDK_VAROFFSET);
+				de = b->twidth;
 		}
+		assert(de >= 0 && de <= 8);
 	}
 	return de;
 }
@@ -3042,7 +3044,7 @@ col_stats(sql_trans *tr, sql_column *c, bool *nonil, bool *unique, double *uniqu
 					ok |= 2;
 			}
 			if (d->cs.ucnt == 0) {
-				if (d->cs.st == ST_DEFAULT) {
+				if (d->cs.st == ST_DEFAULT || d->cs.st == ST_USTR) {
 					*unique = bi.key;
 					*unique_est = bi.unique_est;
 					if (*unique_est == 0) {
@@ -3301,6 +3303,8 @@ create_col(sql_trans *tr, sql_column *c)
 				bat->cs.st = ST_DICT;
 			} else if (strncmp(c->storage_type, "FOR", 3) == 0) {
 				bat->cs.st = ST_FOR;
+			} else if (strncmp(c->storage_type, "USTR", 4) == 0) {
+				bat->cs.st = ST_USTR;
 			}
 		}
 		return ok;
@@ -3339,6 +3343,25 @@ create_col(sql_trans *tr, sql_column *c)
 			BAT *b = bat_new(type, c->t->sz, PERSISTENT);
 			if (!b) {
 				ok = LOG_ERR;
+			} else if (c->storage_type &&
+					   strncmp(c->storage_type, "USTR ", 5) == 0) {
+				int sid, uid;
+				sscanf(c->storage_type, "USTR %d %d", &sid, &uid);
+				sql_schema *s = find_sql_schema_id(tr, sid);
+				sql_ustr *u = find_sql_ustr_id(tr, s, uid);
+				BAT *bu = temp_descriptor(u->batid);
+				if (BATconvert2ustr(b, bu) != GDK_SUCCEED) {
+					ok = LOG_ERR;
+				} else {
+					bat->cs.st = ST_USTR;
+					create_delta(ATOMIC_PTR_GET(&c->data), b);
+				}
+				bat_destroy(b);
+				bat_destroy(bu);
+				if (ok == LOG_OK)
+					ok = sql_trans_create_dependency(tr, u->base.id, c->base.id,
+													 USTR_DEPENDENCY,
+													 c->t->persistence);
 			} else {
 				create_delta(ATOMIC_PTR_GET(&c->data), b);
 				bat_destroy(b);
@@ -3918,7 +3941,7 @@ clear_cs(sql_trans *tr, column_storage *cs, bool renew, bool temp)
 	BUN sz = 0;
 
 	(void)tr;
-	assert(cs->st == ST_DEFAULT || cs->st == ST_DICT || cs->st == ST_FOR);
+	assert(cs->st == ST_DEFAULT || cs->st == ST_DICT || cs->st == ST_FOR || cs->st == ST_USTR);
 	if (cs->bid && renew) {
 		b = quick_descriptor(cs->bid);
 		if (b) {
@@ -5296,6 +5319,107 @@ col_compress(sql_trans *tr, sql_column *col, storage_type st, BAT *o, BAT *u)
 	return LOG_OK;
 }
 
+static int
+tc_gc_ustr(sql_store Store, sql_change *change, ulng oldest)
+{
+	sqlstore *store = Store;
+	sql_ustr *u = (sql_ustr *) change->obj;
+
+	if (u == NULL) {
+		/* cleaned earlier */
+		return 1;
+	}
+
+	if (change->handled || isDeleted(u)) {
+		ustr_destroy(store, u);
+		return 1;
+	}
+	if (oldest && oldest >= TRANSACTION_ID_BASE) /* cannot cleanup older stuff on savepoint commits */
+		return 0;
+
+	ustr_destroy(store, u);
+	return 1;
+}
+
+#if 0
+static int
+commit_create_ustr(sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldest)
+{
+	sql_ustr *u = (sql_ustr *) change->obj;
+	(void) u;
+	(void) tr;
+	(void) commit_ts;
+	(void) oldest;
+	return 0;
+}
+#endif
+
+static int
+log_create_ustr(sql_trans *tr, sql_change *c)
+{
+	sqlstore *store = tr->store;
+	sql_ustr *u = (sql_ustr *) c->obj;
+	BAT *b = temp_descriptor(u->batid);
+
+	if (b == NULL)
+		return LOG_ERR;
+	gdk_return rc = log_bat_persists(store->logger, b, u->base.id);
+	bat_destroy(b);
+	return rc == GDK_SUCCEED ? LOG_OK : LOG_ERR;
+}
+
+static int
+create_ustr(sql_trans *tr, sql_ustr *u)
+{
+	sqlstore* store = tr->store;
+
+	if (!isNew(u)) {
+		int bid = log_find_bat(store->logger, u->base.id);
+		if (bid <= 0)
+			return LOG_ERR;
+		u->batid = temp_dup(bid);
+	} else if (u->batid == 0) {
+		BAT *b = bat_new(TYPE_str, 0, PERSISTENT);
+		if (b == NULL)
+			return LOG_ERR;
+		bat_set_access(b, BAT_READ);
+		BBPkeepref(b);
+		u->batid = b->batCacheid;
+		trans_add_obj(tr, &u->base, NULL, tc_gc_ustr, NULL/*commit_create_ustr*/,
+					  log_create_ustr);
+	}
+	return LOG_OK;
+}
+
+static int
+log_destroy_ustr(sql_trans *tr, sql_change *c)
+{
+	sqlstore *store = tr->store;
+	sql_ustr *u = (sql_ustr *) c->obj;
+	gdk_return rc = GDK_SUCCEED;
+	if (!GDKinmemory(0) && !tr->parent && u->batid != 0)
+		rc = log_bat_transient(store->logger, u->base.id);
+	temp_destroy(u->batid);
+	u->batid = 0;
+	return rc == GDK_SUCCEED ? LOG_OK : LOG_ERR;
+}
+
+static int
+drop_ustr(sql_trans *tr, sql_ustr *u)
+{
+	if (!isNew(u))
+		trans_add_obj(tr, &u->base, NULL, tc_gc_ustr, NULL, log_destroy_ustr);
+	return LOG_OK;
+}
+
+static int
+destroy_ustr(sqlstore *store, sql_ustr *u)
+{
+	(void) store;
+	temp_destroy(u->batid);
+	return LOG_OK;
+}
+
 void
 bat_storage_init( store_functions *sf)
 {
@@ -5353,4 +5477,8 @@ bat_storage_init( store_functions *sf)
 	sf->vacuum_col = &vacuum_col;
 	sf->vacuum_tab = &vacuum_tab;
 	sf->col_compress = &col_compress;
+
+	sf->create_ustr = &create_ustr;
+	sf->drop_ustr = &drop_ustr;
+	sf->destroy_ustr = &destroy_ustr;
 }

@@ -10,7 +10,7 @@
 
 /* monetdb_config.h must be the first include in each .c file */
 #include "monetdb_config.h"
-#include "sql.h"
+#include "sql_monet_backend.h"
 #include "str.h"
 #include <string.h>
 

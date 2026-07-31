@@ -14,8 +14,8 @@
  * This module contains the wrappers around the SQL
  * multi-version-catalog and support routines.
  */
-#ifndef _SQL_H
-#define _SQL_H
+#ifndef _sql_h_INCLUDED
+#define _sql_h_INCLUDED
 
 #include "sql_mem.h"
 
@@ -31,7 +31,7 @@
 
 #include "mal_backend.h"
 #include "sql_mvc.h"
-#include "sql_backend.h"
+#include "sql_monet_backend.h"
 #include "mal_session.h"
 
 #include "mal_function.h"
@@ -491,4 +491,4 @@ sql5_export str getBackendContext(Client cntxt, backend **be);
 #define SCHEMA_TABLE_NAME "schemas"
 #define USER_PASSWORD_COLUMN "password"
 
-#endif /* _SQL_H */
+#endif /* _sql_h_INCLUDED */

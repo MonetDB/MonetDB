@@ -11,11 +11,31 @@
 #ifndef _GDK_SEARCH_H_
 #define _GDK_SEARCH_H_
 
+#ifdef __APPLE__
+/* the compiler on the Mac can't deal with including xxhash.h twice
+ * because of identical redefinitions of types and we happen to know
+ * that the xxhash version is high enough, so just define the magic
+ * inline token and include the file only once */
+#define XXH_INLINE_ALL
+#endif
+
 #include <xxhash.h>
+
+#ifndef __APPLE__
+#if XXH_VERSION_NUMBER >= 0*100*100 + 8*100 + 0   /* at least 0.8.0 */
+/* in newer versions, we can define XXH_INLINE_ALL to inline all hash
+ * functions before including xxhash.h again (we didn't need the first
+ * include, except we need the version number to make the
+ * distinction) */
+#define XXH_INLINE_ALL
+#include <xxhash.h>
+#endif
+#endif
 
 struct Hash {
 	int type;		/* type of index entity */
 	uint8_t width;		/* width of hash entries */
+	bool offsets;		/* hash on offsets */
 	BUN mask1;		/* .mask1 < .nbucket <= .mask2 */
 	BUN mask2;		/* ... both are power-of-two minus one */
 	BUN nbucket;		/* number of valid hash buckets */
@@ -294,12 +314,19 @@ blobHash(const void *x)
 	for (hb = HASHget(h, HASHprobe(h, v));			\
 	     hb != BUN_NONE;					\
 	     hb = HASHgetlink(h, hb))				\
-		if (ATOMeq(h->type, v, BUNtail(bi, hb)))
+		if ((h)->offsets ?					\
+		    *(var_t*)(v) == VarHeapVal((bi)->base, hb, (bi)->width) : \
+		    ATOMeq(h->type, v, BUNtail(bi, hb)))
 #define HASHloop_str(bi, h, hb, v)				\
 	for (hb = HASHget(h, HASHbucket(h, strHash(v)));	\
 	     hb != BUN_NONE;					\
 	     hb = HASHgetlink(h, hb))				\
 		if (strEQ(v, BUNtvar(bi, hb)))
+#define HASHloop_var_t(bi, h, hb, v)				\
+	for (hb = HASHget(h, HASHprobe(h, v));			\
+	     hb != BUN_NONE;					\
+	     hb = HASHgetlink(h, hb))				\
+		if (*(var_t*)(v) == VarHeapVal((bi)->base, hb, (bi)->width))
 
 #define HASHlooploc(bi, h, hb, v)				\
 	for (hb = HASHget(h, HASHprobe(h, v));			\

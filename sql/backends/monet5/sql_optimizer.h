@@ -10,7 +10,7 @@
 
 #ifndef _SQL_OPTIMIZER_H_
 #define _SQL_OPTIMIZER_H_
-#include "sql.h"
+#include "sql_monet_backend.h"
 
 //#define _SQL_OPTIMIZER_DEBUG
 extern str SQLoptimizeQuery(Client c, MalBlkPtr mb);

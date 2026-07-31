@@ -136,7 +136,7 @@ MATnew(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			break;
 		BATnegateprops(b);
 		if (hashsize)
-			b->pl_io = (struct pipeline_io*)ht_create(tt, (size_t)(hashsize), pmat?(hash_table*)pmat->bat[i]->pl_io:NULL);
+			b->pl_io = (struct pipeline_io*)ht_create(tt, (size_t)(hashsize), pmat?(hash_table*)pmat->bat[i]->pl_io:NULL, 0);
 	}
 	if (i < mat->nr) {
 		mat_destroy(mat);

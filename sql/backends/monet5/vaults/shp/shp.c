@@ -17,7 +17,7 @@
 #include "monetdb_config.h"
 #include <string.h>
 #include "sql_mvc.h"
-#include "sql.h"
+#include "sql_monet_backend.h"
 #ifndef __clang_major__		/* stupid include file gdal/cpl_port.h */
 #define __clang_major__ 0
 #endif

@@ -63,8 +63,8 @@ exp_getcard(mvc *sql, sql_rel *rel, sql_exp *e)
 
 		if (c) {
 			int de = mvc_is_duplicate_eliminated(sql, c);
-			if (de && de < cnt)
-				cnt = de;
+			if (de && (((lng)1)<<(de*8)) < cnt)
+				cnt = (((lng)1)<<(de*8));
 		}
 	}
 	/* for now only based on type info, later use propagated cardinality estimation */
@@ -261,7 +261,7 @@ rel_groupby_prepare_pp(list **aggrresults, list **serializedresults, backend *be
 								estimate = 85000000;
 							}
 
-							stmt *s = stmt_oahash_new(be, t, estimate, curhash, 0); /* pushed already */
+							stmt *s = stmt_oahash_new(be, t, estimate, curhash, 0, 0); /* pushed already */
 							if (s == NULL)
 								return NULL;
 							assert(!e->shared);
@@ -320,8 +320,13 @@ rel_groupby_prepare_pp(list **aggrresults, list **serializedresults, backend *be
 					assert(0);
 					estimate = 85000000;
 				}
+				int vkey = 0;
+				if (a) {
+					sql_column *c = exp_find_column(rel, a, -1);
+				 	vkey = c ? mvc_is_duplicate_eliminated(be->mvc, c) : 0;
+				}
 
-				stmt *s = stmt_oahash_new(be, t, estimate, 0, 0); /* pushed already */
+				stmt *s = stmt_oahash_new(be, t, estimate, 0, 0, vkey); /* pushed already */
 				if (s == NULL)
 					return NULL;
 				assert(!e->shared);
@@ -351,7 +356,7 @@ rel_groupby_prepare_pp(list **aggrresults, list **serializedresults, backend *be
 			if (card > INT_MAX)
 				card = INT_MAX;
 
-			stmt *s = stmt_oahash_new(be, t, nrparts?PARTITION_NRPARTS:card, curhash, nrparts);
+			stmt *s = stmt_oahash_new(be, t, nrparts?PARTITION_NRPARTS:card, curhash, nrparts, 0);
 			if (s == NULL)
 				return NULL;
 			curhash = s->nr;
@@ -402,7 +407,7 @@ rel_groupby_prepare_pp(list **aggrresults, list **serializedresults, backend *be
 							else
 								estimate = (BUN) est;
 
-							stmt *s = stmt_oahash_new(be, t, estimate, grphash, 0);
+							stmt *s = stmt_oahash_new(be, t, estimate, grphash, 0, 0);
 							if (s == NULL)
 								return NULL;
 							assert(!e->shared);
@@ -466,7 +471,7 @@ rel_groupby_prepare_pp(list **aggrresults, list **serializedresults, backend *be
 				if ((BUN)estimate > est)
 					estimate = est;
 
-				stmt *s = stmt_oahash_new(be, t, nrparts?PARTITION_NRPARTS:estimate, curhash, nrparts);
+				stmt *s = stmt_oahash_new(be, t, nrparts?PARTITION_NRPARTS:estimate, curhash, nrparts, 0);
 				if (s == NULL)
 					return NULL;
 				assert(!e->shared);

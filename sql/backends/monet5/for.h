@@ -11,7 +11,7 @@
 #ifndef _FOR_H
 #define _FOR_H
 
-#include "sql.h"
+#include "sql_monet_backend.h"
 
 //extern BAT *FORdecompress_(BAT *o, lng minval, int type, role_t role);
 extern str FORcompress_col(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);

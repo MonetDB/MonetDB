@@ -989,10 +989,11 @@ PCRElike_imp(bit *ret, const char *const *s, const char *const *pat,
 								*pat, *esc)) != MAL_SUCCEED)
 		return res;
 
-	MT_thread_setalgorithm(empty ? "pcrelike: trivially empty" : use_strcmp ?
-						   "pcrelike: pattern matching using strcmp" : use_re ?
-						   "pcrelike: pattern matching using RE" :
-						   "pcrelike: pattern matching using pcre");
+	MT_thread_setalgorithm(empty ? "trivially empty" : use_strcmp ?
+						   "pattern matching using strcmp" : use_re ?
+						   "pattern matching using RE" :
+						   "pattern matching using pcre",
+						   __func__);
 
 	if (strNil(*s) || empty) {
 		*ret = bit_nil;
@@ -1182,10 +1183,11 @@ BATPCRElike_imp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 			goto bailout;
 
 		bi = bat_iterator(b);
-		MT_thread_setalgorithm(empty ? "pcrelike: trivially empty" : use_strcmp
-							   ? "pcrelike: pattern matching using strcmp" :
-							   use_re ? "pcrelike: pattern matching using RE" :
-							   "pcrelike: pattern matching using pcre");
+		MT_thread_setalgorithm(empty ? "trivially empty" : use_strcmp
+							   ? "pattern matching using strcmp" :
+							   use_re ? "pattern matching using RE" :
+							   "pattern matching using pcre",
+							   __func__);
 
 		if (empty) {
 			for (BUN p = 0; p < q; p++)
@@ -1400,21 +1402,21 @@ PCRElikeselect(Client ctx, bat *ret, const bat *bid, const bat *sid, const char 
 
 	MT_thread_setalgorithm(use_strcmp
 						   ? (with_strimps ?
-							  "pcrelike: pattern matching using strcmp with strimps"
+							  "pattern matching using strcmp with strimps"
 							  : (with_strimps_anti ?
-								 "pcrelike: pattern matching using strcmp with strimps anti"
-								 : "pcrelike: pattern matching using strcmp")) :
+								 "pattern matching using strcmp with strimps anti"
+								 : "pattern matching using strcmp")) :
 						   use_re ? (with_strimps ?
-									 "pcrelike: pattern matching using RE with strimps"
+									 "pattern matching using RE with strimps"
 									 : (with_strimps_anti ?
-										"pcrelike: patterm matching using RE with strimps anti"
-										:
-										"pcrelike: pattern matching using RE"))
+										"patterm matching using RE with strimps anti"
+										: "pattern matching using RE"))
 						   : (with_strimps ?
-							  "pcrelike: pattern matching using pcre with strimps"
+							  "pattern matching using pcre with strimps"
 							  : (with_strimps_anti ?
-								 "pcrelike: pattermatching using pcre with strimps anti"
-								 : "pcrelike: pattern matching using pcre")));
+								 "pattermatching using pcre with strimps anti"
+								 : "pattern matching using pcre")),
+						   __func__);
 
 	canditer_init(&ci, b, s);
 	if (!(bn = COLnew(0, TYPE_oid, ci.ncand, TRANSIENT))) {
@@ -1488,7 +1490,7 @@ PCRElikeselect(Client ctx, bat *ret, const bat *bid, const bat *sid, const char 
 }
 
 #define APPEND(b, o)	(((oid *) b->theap->base)[b->batCount++] = (o))
-#define VALUE(s, x)		(s##vars + VarHeapVal(s##vals, (x), s##i.width))
+#define VALUE(s, x)		((off = VarHeapVal(s##vals, (x), s##i.width)) == 0 ? str_nil : s##vars + off)
 
 /* nested loop implementation for PCRE join */
 #define pcre_join_loop(STRCMP, MNRE_MATCH)								\
@@ -1578,6 +1580,7 @@ pcrejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, const char *esc,
 {
 	struct canditer lci, rci;
 	const char *lvals, *rvals, *lvars, *rvars, *vl, *vr;
+	var_t off;
 	int rskipped = 0;			/* whether we skipped values in r */
 	oid lbase, rbase, lo, ro, lastl = 0;	/* last value inserted into r1 */
 	BUN nl, newcap;

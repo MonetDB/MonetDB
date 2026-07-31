@@ -11,7 +11,7 @@
 #ifndef _SQL_RANK_H
 #define _SQL_RANK_H
 
-#include "sql.h"
+#include "sql_monet_backend.h"
 
 extern str SQLdiff(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 extern str SQLwindow_bound(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);

@@ -31,7 +31,7 @@
 #include "mapi.h"
 #include "monetdbe_mapi.h"
 #include "remote.h"
-#include "sql.h"
+#include "sql_monet_backend.h"
 #include "sql_result.h"
 #include "mutils.h"
 

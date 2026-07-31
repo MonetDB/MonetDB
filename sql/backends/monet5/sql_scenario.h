@@ -10,7 +10,7 @@
 
 #ifndef _SQL_SCENARIO_H_
 #define _SQL_SCENARIO_H_
-#include "sql.h"
+#include "sql_monet_backend.h"
 
 extern int SQLrunning; // dev. debug var, 2 remove once the code is ~stable
 extern int SQLdebug;

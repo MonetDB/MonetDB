@@ -132,6 +132,7 @@ typedef struct hash_table {
 	fhsh hsh;
 	flen len;
 	bool empty;
+	int vkey;	/* vheap is unique, ie hashing on offsets */
 
 	void *vals;			/* hash(ed) values */
 	hash_key_t *gids;   /* chain of gids (k, ie mark used/-k mark used and value filled) */
@@ -165,7 +166,7 @@ str_hsh( str v )
     return h;
 }
 
-extern hash_table *ht_create(int type, size_t size, hash_table *p);
+extern hash_table *ht_create(int type, size_t size, hash_table *p, int vkey);
 extern int ht_rehash(hash_table *ht);
 
 extern void ht_activate(hash_table *ht);

@@ -10,7 +10,7 @@
 
 #ifndef _SQL_ASSERT_H_
 #define _SQL_ASSERT_H_
-#include "sql.h"
+#include "sql_monet_backend.h"
 
 extern str SQLassert(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 extern str SQLassertInt(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);

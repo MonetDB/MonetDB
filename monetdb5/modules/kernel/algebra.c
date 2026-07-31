@@ -1006,6 +1006,10 @@ ALGintersect(Client ctx, bat *r1, const bat *lid, const bat *rid, const bat *sli
  *                nilslast:bit,
  *                distinct:bit)
  * returns :bat[:oid] [ , :bat[:oid] ]
+ *
+ * if asc is nil, there is no sorting and a second return value is not
+ * allowed; the result is a dense sequence starting at offset (default
+ * 0) + hseqbase of length n.
  */
 static str
 ALGfirstn(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -1046,7 +1050,9 @@ ALGfirstn(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	n = *getArgReference_lng(stk, pci, pci->retc + 3);
-	if (n < 0) {
+	if (is_lng_nil(n)) {
+		n = BUN_MAX;
+	} else if (n < 0) {
 		BBPreclaim(b);
 		BBPreclaim(s);
 		BBPreclaim(g);
@@ -1077,7 +1083,21 @@ ALGfirstn(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	nilslast = *getArgReference_bit(stk, pci, pci->argc - 2);
 	distinct = *getArgReference_bit(stk, pci, pci->argc - 1);
 
-	if (o > 0) {
+	if (is_bit_nil(asc)) {
+		if (ret2) {
+			BBPreclaim(b);
+			BBPreclaim(s);
+			BBPreclaim(g);
+			throw(MAL, "algebra.firstn", ILLEGAL_ARGUMENT);
+		}
+		if (o > (lng) BATcount(b))
+			o = (lng) BATcount(b);
+		if ((BUN) o + (BUN) n > BATcount(b))
+			n = (lng) BATcount(b) - o;
+		bn = BATdense(0, b->hseqbase + o, n);
+		if (bn == NULL)
+			rc = GDK_FAIL;
+	} else if (o > 0) {
 		bn = BATfirstn_offset(b, s, g, (BUN) n, (BUN) o, asc, nilslast,
 							  distinct);
 		if (bn == NULL)

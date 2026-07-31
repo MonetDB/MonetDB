@@ -29,7 +29,7 @@
 #include "sql_mvc.h"
 #include "sql_scenario.h"
 #include "sql_execute.h"
-#include "sql.h"
+#include "sql_monet_backend.h"
 #include "mal_exception.h"
 
 #define FITS_INS_COL "INSERT INTO sys.fits_columns(id, name, type, units, number, table_id) \

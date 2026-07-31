@@ -421,7 +421,7 @@ BATcheckstrimps(BAT *b)
 		const char *nme = BBP_physical(b->batCacheid);
 		int fd;
 
-		MT_thread_setalgorithm("read strimp index from disk");
+		MT_thread_setalgorithm("read strimp index from disk", __func__);
 
 		b->tstrimps = NULL;
 		if ((hp = GDKzalloc(sizeof(Strimps))) != NULL &&
@@ -951,7 +951,7 @@ STRMPcreate(BAT *b, BAT *s)
 
 	/* At this point pb->tstrimps should be a valid strimp heap. */
 	assert(pb->tstrimps);
-	MT_thread_setalgorithm("create strimp index");
+	MT_thread_setalgorithm("create strimp index", __func__);
 	r = pb->tstrimps;
 	STRMPincref(r);
 	if (pb != b) {

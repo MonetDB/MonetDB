@@ -26,7 +26,6 @@
 #include "mal_client.h"
 #include "mal_interpreter.h"
 #include "bat5.h"
-#include "gdk_time.h"
 #include "mal_instruction.h"
 #include "mal_exception.h"
 

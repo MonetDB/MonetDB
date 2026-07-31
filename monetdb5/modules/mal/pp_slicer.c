@@ -43,18 +43,18 @@ topn_create(void)
 }
 
 static str
-LALGsubslice(Client ctx, bat *gid, bat *rid, bat *tid, bat *bid, /*bat *sid,*/ lng *start, lng *end)
+LALGsubslice(Client ctx, bat *gid, bat *rid, bat *tid, bat *bid, /*bat *sid,*/ lng *limit, lng *offset)
 {
 	(void)ctx;
 	str msg = MAL_SUCCEED;
 	Pipeline *p = pipeline_get_thread_private_pipeline();
 	BAT *g = NULL, *r = NULL, *t = NULL, *b = NULL;
- 	BUN s = *(BUN*)start, e = *(BUN*)end;
+ 	BUN l = *(BUN*)limit, o = *(BUN*)offset;
 	int fb = 1, locked = 0;
 	bool private = (!tid || is_bat_nil(*tid));
 	topn_t *n = NULL;
 
-	if (*start < 0 || (*end < 0 && !is_lng_nil(*end)))
+	if (*offset < 0 || (*limit < 0 && !is_lng_nil(*limit)))
 		throw(MAL, "algebra.subslice", ILLEGAL_ARGUMENT);
 	if ((b = BATdescriptor(*bid)) == NULL)
 		return createException(SQL, "algebra.subslice",	SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
@@ -92,11 +92,13 @@ LALGsubslice(Client ctx, bat *gid, bat *rid, bat *tid, bat *bid, /*bat *sid,*/ l
 	(void)p;
 	BUN cnt = BATcount(b);
 
+	BUN s = o, e = s;
+	e += l;
 	BUN rs = 0, re = 0;
 	rs = n->start;
 	re = n->end;
 	BUN off = b->hseqbase;
-	e += 1; /* make range exclusive */
+	//e += 1; /* make range exclusive */
 	if (re < e) {
 		BUN ls = 0, lnr = cnt;
 		if (rs < s) {
@@ -216,7 +218,7 @@ SLICERno_slices(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 #include "mel.h"
 static mel_func pp_slicer_init_funcs[] = {
- command("algebra", "subslice", LALGsubslice, false, "Returns the slice of a pipelined result", args(3,6, batarg("gid", oid), batarg("rid", oid), batarg("tid", oid), batargany("b", 1), arg("start", lng), arg("end", lng))),
+ command("algebra", "subslice", LALGsubslice, false, "Returns the slice of a pipelined result", args(3,6, batarg("gid", oid), batarg("rid", oid), batarg("tid", oid), batargany("b", 1), arg("limit", lng), arg("offset", lng))),
  pattern("slicer", "nth_slice", SLICERnth_slice, false, "Return the n-th slice, of SLICE_SIZE rrows, from the input BAT", args(1,3, batargany("slice",1), batargany("b",1), arg("nr",int))),
  pattern("slicer", "no_slices", SLICERno_slices, false, "Returns the number of slices into which the input BAT is to be sliced", args(1,2, arg("slices", int), batargany("b",1))),
  { .imp=NULL }

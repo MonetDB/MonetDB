@@ -101151,6 +101151,19 @@ COPY 100001 RECORDS INTO "testschema"."bigstring" FROM stdin USING DELIMITERS E'
 "a3062016757282831719336781180126660209592607"	"b3062016757282831719336781180126660209592607"	"c3062016757282831719336781180126660209592607"
 
 statement ok
+CREATE DISTINCT STRING COLUMN testschema.unique_strings
+
+statement ok
+CREATE TABLE testschema.mediumstring_unique (
+	string1 VARCHAR(20) USING testschema.unique_strings,
+	string2 CHAR(20) USING testschema.unique_strings,
+	string3 CHARACTER LARGE OBJECT USING testschema.unique_strings
+)
+
+statement ok
+INSERT INTO testschema.mediumstring_unique SELECT * FROM testschema.mediumstring
+
+statement ok
 CREATE TABLE "testschema"."test" (
 	"id" INTEGER,
 	"i"  SMALLINT      DEFAULT next value for "testschema"."test_seq"

@@ -728,8 +728,14 @@ MT_thread_setworking(const char *work)
 }
 
 void
-MT_thread_setalgorithm(const char *algo)
+MT_thread_setalgorithm(const char *algo, const char *func)
 {
+	if (algo) {
+		if (func)
+			TRC_DEBUG(ALGO, "%s: %s\n", func, algo);
+		else
+			TRC_DEBUG(ALGO, "%s\n", algo);
+	}
 	if (!thread_initialized)
 		return;
 	struct mtthread *self = thread_self();
