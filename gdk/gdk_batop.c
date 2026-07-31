@@ -160,11 +160,26 @@ insert_string_bat(BAT *b, BATiter *ni, struct canditer *ci, bool force, bool may
 		toff = 0;
 		b->tvkey |= ni->vkey;
 		MT_thread_setalgorithm("shared vheap", __func__);
+	} else if (ni->vhfree <= GDK_STRHASHSIZE &&
+		   (!GDK_ELIMDOUBLES(b->tvheap) ||
+		    strLocate(b->tvheap, str_nil) == 0)) {
+		/* the incoming bat's vheap is empty, meaning the bat
+		 * contains only nil values, if the destination bat's
+		 * nil is also at offset 0, we can just copy zeros */
+		toff = 0;
+		MT_thread_setalgorithm("empty source vheap (just nils)",
+				       __func__);
 	} else if (b->ustr) {
 		MT_thread_setalgorithm("individual inserts into ustr", __func__);
-	} else if (mayshare && b->batRole == TRANSIENT && oldcnt == 0 && ni->b->tvheap->storage != STORE_NOWN) {
+	} else if (mayshare && b->batRole == TRANSIENT &&
+		   ni->vh->storage != STORE_NOWN &&
+		   (oldcnt == 0 || (b->tvheap->free <= GDK_STRHASHSIZE &&
+				    (!GDK_ELIMDOUBLES(ni->vh) ||
+				     strLocate(ni->vh, str_nil) == 0)))) {
 		/* we can share the vheaps, so we then only need to
-		 * append the offsets */
+		 * append the offsets; the condition is: b is empty, or
+		 * its vheap is empty (i.e. there are only nils) and the
+		 * incoming heap also stores them with offset 0 */
 		MT_lock_set(&b->theaplock);
 		bat bid = b->tvheap->parentid;
 		HEAPdecref(b->tvheap, bid == b->batCacheid);
