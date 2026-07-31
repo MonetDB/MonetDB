@@ -396,6 +396,7 @@ BATproject2(BAT *restrict l, BAT *restrict r1, BAT *restrict r2)
 		lo = l->tseqbase;
 		hi = l->tseqbase + lcount;
 		if (lo >= r1->hseqbase && hi <= r1->hseqbase + r1i.count) {
+			MT_thread_setalgorithm("using slice", __func__);
 			bn = BATslice(r1, lo - r1->hseqbase, hi - r1->hseqbase);
 			BAThseqbase(bn, l->hseqbase);
 			msg = " (slice)";
@@ -409,6 +410,7 @@ BATproject2(BAT *restrict l, BAT *restrict r1, BAT *restrict r2)
 			return NULL;
 		}
 		if (lo >= r2->hseqbase) {
+			MT_thread_setalgorithm("using slice", __func__);
 			bn = BATslice(r2, lo - r2->hseqbase, hi - r2->hseqbase);
 			BAThseqbase(bn, l->hseqbase);
 			msg = " (slice2)";
@@ -439,6 +441,7 @@ BATproject2(BAT *restrict l, BAT *restrict r1, BAT *restrict r2)
 		/* trivial: all values are nil (includes no entries at all) */
 		const void *nil = r1i.type == TYPE_msk ? &oid_nil : ATOMnilptr(r1i.type);
 
+		MT_thread_setalgorithm("constant result", __func__);
 		bn = BATconstant(l->hseqbase, r1i.type == TYPE_oid || r1i.type == TYPE_msk ? TYPE_void : r1i.type,
 				 nil, lcount, TRANSIENT);
 		if (bn != NULL &&
@@ -459,6 +462,7 @@ BATproject2(BAT *restrict l, BAT *restrict r1, BAT *restrict r2)
 			 * heaps */
 			tpe = r1i.width == 1 ? TYPE_bte : (r1i.width == 2 ? TYPE_sht : (r1i.width == 4 ? TYPE_int : TYPE_lng));
 			vheaptrick = true;
+			MT_thread_setalgorithm("using vheaptrick", __func__);
 		}
 	} else if (tpe == TYPE_msk || mask_cand(r1)) {
 		r1 = BATunmask(r1);
