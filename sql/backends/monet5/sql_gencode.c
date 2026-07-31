@@ -1131,6 +1131,7 @@ backend_dumpproc_body(backend *be, Client c, sql_rel *r)
 		c->curprg->def->errors = SQLoptimizeFunction(c,c->curprg->def);
 	if (c->curprg->def->errors) {
 		sql_error(m, 10, SQLSTATE(42000) "Internal error while compiling statement: %s", c->curprg->def->errors);
+		res = -1;
 	} else {
 		res = 0;				/* success */
 	}
