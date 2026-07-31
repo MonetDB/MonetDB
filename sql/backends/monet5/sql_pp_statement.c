@@ -356,7 +356,7 @@ stmt_ialgebra_unique(backend *be, stmt *s, int output)
 }
 
 stmt *
-stmt_oahash_new(backend *be, sql_subtype *tpe, lng estimate, int parent, int nrparts)
+stmt_oahash_new(backend *be, sql_subtype *tpe, lng estimate, int parent, int nrparts, int vkey_type)
 {
 	InstrPtr q = newStmt(be->mb, nrparts?putName("mat"):putName("oahash"), newRef);
 	if (q == NULL)
@@ -372,6 +372,8 @@ stmt_oahash_new(backend *be, sql_subtype *tpe, lng estimate, int parent, int nrp
 	q = pushLng(be->mb, q, estimate);
 	if (parent)
 		q = pushArgument(be->mb, q, parent);
+	if (vkey_type)
+		q = pushInt(be->mb, q, vkey_type);
 	pushInstruction(be->mb, q);
 
 	stmt *s = stmt_none(be);

@@ -1394,7 +1394,7 @@ sql_class_base_score(visitor *v, sql_column *c, sql_subtype *t, bool equality_ba
 		return 75 - 53;
 	default:
 		if (equality_based && c && v->storage_based_opt && (de = mvc_is_duplicate_eliminated(v->sql, c)))
-			return 150 - (de / 8);
+			return 150 - de * 8;
 		/* strings and blobs not duplicate eliminated don't get any points here */
 		return 0;
 	}

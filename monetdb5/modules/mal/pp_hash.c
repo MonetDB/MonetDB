@@ -86,7 +86,7 @@ ht_destroy(hash_table *ht)
 }
 
 static hash_table *
-_ht_create( int type, size_t size, hash_table *p)
+_ht_create( int type, size_t size, hash_table *p, int vkey)
 {
 	hash_table *h = (hash_table*)GDKzalloc(sizeof(hash_table));
 	if (!h)
@@ -109,13 +109,17 @@ _ht_create( int type, size_t size, hash_table *p)
 	h->p = p;
 	h->pinned = NULL;
 	h->pinned_nr = 0; /* no more than 1024 */
-	if (type == TYPE_str) {
+	h->vkey = vkey;
+	if (type == TYPE_str && !h->vkey) {
 		h->cmp = (fcmp)str_cmp;
 		h->hsh = (fhsh)str_hsh;
 	} else {
+		type = !vkey ? type : vkey == 1 ? TYPE_bte : vkey == 2 ? TYPE_sht : vkey == 4 ? TYPE_int : TYPE_lng; 
 		h->cmp = (fcmp)ATOMcompare(type);
 		h->hsh = (fhsh)BATatoms[type].atomHash;
 		h->len = (flen)BATatoms[type].atomLen;
+		if (vkey)
+			h->type = type;
 	}
 	h->processed = 0;
 	MT_rwlock_init(&h->rwlock, "ht_create");
@@ -129,13 +133,13 @@ _ht_create( int type, size_t size, hash_table *p)
 }
 
 hash_table *
-ht_create(int type, size_t size, hash_table *p)
+ht_create(int type, size_t size, hash_table *p, int vkey)
 {
 	if (size < HT_MIN_SIZE)
 		size = HT_MIN_SIZE;
 	if (size > HT_MAX_SIZE)
 		size = HT_MAX_SIZE;
-	return _ht_create(type, size, p);
+	return _ht_create(type, size, p, vkey);
 }
 
 void
@@ -405,6 +409,7 @@ OAHASHnew(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 	lng size = 0;
 	hash_table *parent = NULL;
 	BAT *pht = NULL;
+	int vkey = 0;
 
 	if (tt2 == TYPE_int) {
 		assert(0);
@@ -416,11 +421,17 @@ OAHASHnew(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 	/* multiply with the magic estimation while avoiding overflow */
 	size = size > ((dbl)INT64_MAX / 1.2 / 2.1)? INT64_MAX : (lng)(size * 1.2 * 2.1);
 
-	if (p->argc == 4) {
-		bat pid = *getArgReference_bat(s, p, 3);
-		if ((pht = BATdescriptor(pid)) == NULL)
-			return createException(MAL, "oahash.new", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-		parent = (hash_table*)pht->pl_io;
+	if (p->argc >= 4) {
+		int tt4 = getArgType(m, p, 3);
+		int tt5 = (p->argc == 5) ? getArgType(m, p, 4) : 0;
+
+		if (tt5 || tt4 != TYPE_int) {
+			bat pid = *getArgReference_bat(s, p, 3);
+			if ((pht = BATdescriptor(pid)) == NULL)
+				return createException(MAL, "oahash.new", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+			parent = (hash_table*)pht->pl_io;
+		}
+		vkey = (tt5 || tt4 == TYPE_int) ? *getArgReference_int(s, p, tt4 == TYPE_int ? 3 : 4) : false;
 	}
 
 	BAT *b = COLnew(0, tt, 0, TRANSIENT);
@@ -428,7 +439,7 @@ OAHASHnew(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 		BBPreclaim(pht);
 		return createException(MAL, "oahash.new", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
-	b->pl_io = (struct pipeline_io*)ht_create(tt, (size_t)size, parent);
+	b->pl_io = (struct pipeline_io*)ht_create(tt, (size_t)size, parent, vkey);
 	BBPreclaim(pht);
 	if (b->pl_io == NULL) {
 		BBPunfix(b->batCacheid);
@@ -3433,8 +3444,12 @@ OAHASHhash(Client cntxt, MalBlkPtr m, MalStkPtr stk, InstrPtr p)
 static mel_func oa_hash_init_funcs[] = {
  pattern("oahash", "new", OAHASHnew, false, "", args(1,3, batargany("ht_sink",1),argany("tt",1),arg("size",int))),
  pattern("oahash", "new", OAHASHnew, false, "", args(1,4, batargany("ht_sink",1),argany("tt",1),arg("size",int),batargany("p",2))),
+ pattern("oahash", "new", OAHASHnew, false, "", args(1,4, batargany("ht_sink",1),argany("tt",1),arg("size",int), arg("vkey", int))),
+ pattern("oahash", "new", OAHASHnew, false, "", args(1,5, batargany("ht_sink",1),argany("tt",1),arg("size",int),batargany("p",2), arg("vkey", int))),
  pattern("oahash", "new", OAHASHnew, false, "", args(1,3, batargany("ht_sink",1),argany("tt",1),arg("size",lng))),
  pattern("oahash", "new", OAHASHnew, false, "", args(1,4, batargany("ht_sink",1),argany("tt",1),arg("size",lng),batargany("p",2))),
+ pattern("oahash", "new", OAHASHnew, false, "", args(1,4, batargany("ht_sink",1),argany("tt",1),arg("size",lng), arg("vkey", int))),
+ pattern("oahash", "new", OAHASHnew, false, "", args(1,5, batargany("ht_sink",1),argany("tt",1),arg("size",lng),batargany("p",2), arg("vkey", int))),
 
  command("oahash", "hashmark_init", OAHASHhashmark_init, false, "", args(1,3, batarg("hashmark",bit),batargany("ht_sink",1),batargany("payload",2))),
  pattern("hash", "ext", UHASHext, false, "", args(1,2, batarg("ext",oid),batargany("in",1))),

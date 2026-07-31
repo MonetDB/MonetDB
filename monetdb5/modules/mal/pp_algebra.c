@@ -1049,11 +1049,12 @@ LALGunique(Client ctx, bat *rid, bat *uid, bat *bid, bat *sid)
 		goto error;
 	}
 
+	BUN cnt = BATcount(b);
 	hash_table *h = (hash_table*)u->pl_io;
 	assert(h && h->pl_io.type == PIPELINE_IO_HASH_TABLE);
 	MT_lock_set(&u->theaplock);
 	MT_lock_set(&b->theaplock);
-	if (ATOMvarsized(u->ttype) /*&& !VIEWvtparent(b)*/) {
+	if (ATOMvarsized(u->ttype) && /*!VIEWvtparent(b)*/ !h->vkey) {
 		local_storage = true;
 		MT_lock_unset(&b->theaplock);
 		MT_lock_unset(&u->theaplock);
@@ -1078,11 +1079,11 @@ LALGunique(Client ctx, bat *rid, bat *uid, bat *bid, bat *sid)
 				goto error;
 			}
 		}
-	} else if (ATOMvarsized(u->ttype) && BATcount(b) && BATcount(u) == 0 && u->tvheap->parentid == u->batCacheid) {
+	} else if (ATOMvarsized(u->ttype) && cnt && BATcount(u) == 0 && u->tvheap->parentid == u->batCacheid) {
 		MT_lock_unset(&b->theaplock);
 		MT_lock_unset(&u->theaplock);
 		BATswap_heaps(u, b, p);
-	} else if (ATOMvarsized(u->ttype) && u->tvheap->parentid != b->tvheap->parentid) {
+	} else if (ATOMvarsized(u->ttype) && cnt && u->tvheap->parentid != b->tvheap->parentid) {
 		int i = 0;
 		for(i = 0; i < h->pinned_nr; i++) {
 			if (h->pinned[i] == b->tvheap)
@@ -1101,8 +1102,6 @@ LALGunique(Client ctx, bat *rid, bat *uid, bat *bid, bat *sid)
 		MT_lock_unset(&u->theaplock);
 	}
 	if (h) {
-		BUN cnt = BATcount(b);
-
 		ATOMIC_BASE_TYPE expected = 0;
 		BUN r = 0;
 
@@ -1115,6 +1114,8 @@ LALGunique(Client ctx, bat *rid, bat *uid, bat *bid, bat *sid)
 			ht_activate(h);
 			/* probably need bat resize and create hash */
 			int tt = b->ttype;
+			if (h->vkey)
+				tt = h->type;
 			oid *gp = Tloc(g, 0);
 
 			QryCtx *qry_ctx = MT_thread_get_qry_ctx();
@@ -1635,7 +1636,7 @@ LALGgroup(Client ctx, bat *rid, bat *uid, bat *bid)
 			err = createException(MAL, "igroup.group", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto error;
 		}
-		u->pl_io = (struct pipeline_io*)ht_create(b->ttype?b->ttype:TYPE_oid, 1, NULL);
+		u->pl_io = (struct pipeline_io*)ht_create(b->ttype?b->ttype:TYPE_oid, 1, NULL, 0);
 		if (u->pl_io == NULL) {
 			err = createException(MAL, "igroup.group", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto error;
@@ -1928,7 +1929,7 @@ LALGderive(Client ctx, bat *rid, bat *uid, bat *Gid, bat *Ph, bat *bid)
 			goto error;
 		}
 		/* Lookup parent hash */
-		u->pl_io = (struct pipeline_io*)ht_create(b->ttype?b->ttype:TYPE_oid, 1, (hash_table*)H->pl_io);
+		u->pl_io = (struct pipeline_io*)ht_create(b->ttype?b->ttype:TYPE_oid, 1, (hash_table*)H->pl_io, 0);
 		if (u->pl_io == NULL) {
 			BBPunfix(H->batCacheid);
 			err = createException(MAL, "igroup.group", SQLSTATE(HY013) MAL_MALLOC_FAIL);

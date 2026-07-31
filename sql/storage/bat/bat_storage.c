@@ -2985,9 +2985,9 @@ double_elim_col(sql_trans *tr, sql_column *col)
 		if (d->cs.st == ST_DICT) {
 			BAT *b = bind_col(tr, col, QUICK);
 			if (b && b->ttype == TYPE_bte)
-				de = 255;
+				de = 1;
 			else if (b && b->ttype == TYPE_sht)
-				de = 65535;
+				de = 2;
 		} else if (d->cs.st == ST_USTR) {
 			BAT *b = bind_col(tr, col, QUICK);
 			de = b->twidth;
@@ -2997,12 +2997,11 @@ double_elim_col(sql_trans *tr, sql_column *col)
 
 		if (b && ATOMstorage(b->ttype) == TYPE_str && !b->ustr) { /* check double elimination */
 			de = GDK_ELIMDOUBLES(b->tvheap);
-			if (de) {
-				BUN bytes = (b->tvheap->free >= GDK_VAROFFSET)? b->tvheap->free - GDK_VAROFFSET : 0;
-				if (bytes > 0)
-					de = (int)(bytes/b->twidth);
-			}
+			if (de)
+				//de = (int) ceil(b->tvheap->free / (double) GDK_VAROFFSET);
+				de = b->twidth;
 		}
+		assert(de >= 0 && de <= 8);
 	}
 	return de;
 }
