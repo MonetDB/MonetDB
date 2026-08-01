@@ -34550,6 +34550,11 @@ SQLrank
 return the ranked groups
 batsql
 row_number
+pattern batsql.row_number(X_0:bat[:any], X_1:oid) (X_2:bat[:int], X_3:oid)
+PBATSQLrow_number
+Returns the unique row number.
+batsql
+row_number
 pattern batsql.row_number(X_0:bat[:any_1], X_1:bat?[:bit], X_2:bat?[:bit]):bat[:int]
 SQLrow_number
 return the row_numer-ed groups

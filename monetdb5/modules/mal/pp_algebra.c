@@ -919,7 +919,7 @@ LOCKEDAGGRnull(Client ctx, bat *result, const bit *hadnull)
 	return err;
 }
 
-#define unique_(Type, BaseType, INIT_ALLOCATOR, INIT_ITER, NEW_VAL, HASH_VAL, VAL_NOT_EQUAL, VAL_ASSIGN, ITER_NEXT, NEXTK) \
+#define unique_(Type, BaseType, INIT_ALLOCATOR, INIT_ITER, IS_NIL, NEW_VAL, HASH_VAL, VAL_NOT_EQUAL, VAL_ASSIGN, ITER_DONE, NEXTK) \
 	if (tt == TYPE_##Type) {											\
 		int slots = 0;													\
 		gid slot = 0;													\
@@ -928,6 +928,8 @@ LOCKEDAGGRnull(Client ctx, bat *result, const bit *hadnull)
 		INIT_ALLOCATOR;													\
 		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) {						\
 			bool new = 0, fnd = 0;										\
+			if(IS_NIL)													\
+				continue;												\
 			for(; !fnd; ) {												\
 				NEW_VAL;												\
 				gid hv = HASH_VAL&h->mask, k = hv;						\
@@ -963,7 +965,7 @@ LOCKEDAGGRnull(Client ctx, bat *result, const bit *hadnull)
 			if (new)													\
 				gp[r++] = b->hseqbase + i;								\
 		}																\
-		ITER_NEXT;														\
+		ITER_DONE;														\
 	}
 
 #define unique(Type)							\
@@ -971,6 +973,7 @@ LOCKEDAGGRnull(Client ctx, bat *result, const bit *hadnull)
 			Type,								\
 			,									\
 			Type *bp = Tloc(b, 0),				\
+			is_##Type##_nil(bp[i]),				\
 			,									\
 			(gid)_hash_##Type(bp[i]),			\
 			vals[g] != bp[i],					\
@@ -984,6 +987,7 @@ LOCKEDAGGRnull(Client ctx, bat *result, const bit *hadnull)
 			BaseType,													\
 			,															\
 			Type *bp = Tloc(b, 0),										\
+			is_##Type##_nil(bp[i]),										\
 			,															\
 			(gid)_hash_##Type(*(((BaseType*)bp)+i)),					\
 			(!(is_##Type##_nil(bp[i]) && is_##Type##_nil(vals[g])) && vals[g] != bp[i]), \
@@ -997,6 +1001,7 @@ LOCKEDAGGRnull(Client ctx, bat *result, const bit *hadnull)
 			BaseType,													\
 			,															\
 			Type *bp = Tloc(b, 0),										\
+			is_##Type##_nil(bp[i]),										\
 			,															\
 			(gid)_hash_##Type(*(((BaseType*)bp)+i)),					\
 			(!(is_##Type##_nil(bp[i]) && is_##Type##_nil(vals[g])) && h->cmp(vals+g, bp+i) != 0), \
@@ -1010,6 +1015,7 @@ LOCKEDAGGRnull(Client ctx, bat *result, const bit *hadnull)
 			Type,									\
 			allocator *ma = h->allocators[p->wid],	\
 			BATiter bi = bat_iterator(b),			\
+			VarHeapVal(bi.base,i,bi.width) == 0,	\
 			CType bpi = BUNtvar(&bi, i),			\
 			(gid)h->hsh(bpi),						\
 			(h->cmp(vals[g], bpi) != 0),			\
@@ -1023,6 +1029,7 @@ LOCKEDAGGRnull(Client ctx, bat *result, const bit *hadnull)
 			Type,								\
 			,									\
 			BATiter bi = bat_iterator(b),		\
+			VarHeapVal(bi.base,i,bi.width) == 0,\
 			CType bpi = BUNtvar(&bi, i),		\
 			(gid)h->hsh(bpi),					\
 			(h->cmp(vals[g], bpi) != 0),		\
@@ -1034,6 +1041,7 @@ LOCKEDAGGRnull(Client ctx, bat *result, const bit *hadnull)
 static str
 LALGunique(Client ctx, bat *rid, bat *uid, bat *bid, bat *sid)
 {
+	/* TODO add skip nil (or not) */
 	(void)ctx;
 	Pipeline *p = pipeline_get_thread_private_pipeline();
 	assert(!is_bat_nil(*uid));
@@ -1168,7 +1176,7 @@ error:
 	return err;
 }
 
-#define gunique_(Type, BaseType, INIT_ALLOCATOR, INIT_ITER, NEW_VAL, HASH_VAL, VAL_NOT_EQUAL, VAL_ASSIGN, ITER_NEXT, NEXTK) \
+#define gunique_(Type, BaseType, INIT_ALLOCATOR, INIT_ITER, IS_NIL, NEW_VAL, HASH_VAL, VAL_NOT_EQUAL, VAL_ASSIGN, ITER_DONE, NEXTK) \
 	if (tt == TYPE_##Type) {											\
 		int slots = 0;													\
 		gid slot = 0;													\
@@ -1177,6 +1185,8 @@ error:
 		INIT_ALLOCATOR;													\
 		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) {						\
 			bool new = 0, fnd = 0;										\
+			if(IS_NIL)													\
+				continue;												\
 			for(; !fnd;) {												\
 				NEW_VAL;												\
 				gid hv = (gid)combine(gi[i], HASH_VAL, prime)&h->mask, k = hv; \
@@ -1215,7 +1225,7 @@ error:
 			if (new)													\
 				gp[r++] = b->hseqbase + i;								\
 		}																\
-		ITER_NEXT;														\
+		ITER_DONE;														\
 	}
 
 #define gunique(Type)							\
@@ -1223,6 +1233,7 @@ error:
 			 Type,								\
 			 ,									\
 			 Type *bp = Tloc(b, 0),				\
+			is_##Type##_nil(bp[i]),				\
 			 ,									\
 			 (gid)_hash_##Type(bp[i]),			\
 			 vals[g] != bp[i],					\
@@ -1236,6 +1247,7 @@ error:
 			 BaseType,													\
 			 ,															\
 			 Type *bp = Tloc(b, 0),										\
+			is_##Type##_nil(bp[i]),										\
 			 ,															\
 			 (gid)_hash_##Type(*(((BaseType*)bp)+i)),					\
 			 (!(is_##Type##_nil(bp[i]) && is_##Type##_nil(vals[g])) && vals[g] != bp[i]), \
@@ -1249,6 +1261,7 @@ error:
 			 BaseType,													\
 			 ,															\
 			 Type *bp = Tloc(b, 0),										\
+			 is_##Type##_nil(bp[i]),									\
 			 ,															\
 			 (gid)_hash_##Type(*(((BaseType*)bp)+i)),					\
 			 (!(is_##Type##_nil(bp[i]) && is_##Type##_nil(vals[g])) && h->cmp(vals+g, bp+i) != 0), \
@@ -1262,6 +1275,7 @@ error:
 			 Type,									\
 			 allocator *ma = h->allocators[p->wid], \
 			 BATiter bi = bat_iterator(b),			\
+			 VarHeapVal(bi.base,i,bi.width) == 0,	\
 			 CType bpi = BUNtvar(&bi, i),			\
 			 (gid)h->hsh(bpi),						\
 			 (h->cmp(vals[g], bpi) != 0),			\
@@ -1270,17 +1284,18 @@ error:
 			 nextk									\
 		)
 
-#define gaunique(Type,CType)					\
-	gunique_(Type,								\
-			 Type,								\
-			 ,									\
-			 BATiter bi = bat_iterator(b),		\
-			 CType bpi = BUNtvar(&bi, i),		\
-			 (gid)h->hsh(bpi),					\
-			 (h->cmp(vals[g], bpi) != 0),		\
-			 vals[g] = (Type)bpi,				\
-			 bat_iterator_end(&bi),				\
-			 nextk								\
+#define gaunique(Type,CType)						\
+	gunique_(Type,									\
+			 Type,									\
+			 ,										\
+			 BATiter bi = bat_iterator(b),			\
+			 VarHeapVal(bi.base,i,bi.width) == 0,	\
+			 CType bpi = BUNtvar(&bi, i),			\
+			 (gid)h->hsh(bpi),						\
+			 (h->cmp(vals[g], bpi) != 0),			\
+			 vals[g] = (Type)bpi,					\
+			 bat_iterator_end(&bi),					\
+			 nextk									\
 		)
 
 static str
@@ -2748,6 +2763,7 @@ LALGcount(Client ctx, bat *rid, bat *gid, bat *bid, bit *nonil, bat *pid)
 		gcount(date);
 		gfcount(inet4);
 		gcount(lng);
+		gcount(oid);
 		gcount(daytime);
 		gcount(timestamp);
 #ifdef HAVE_HGE
