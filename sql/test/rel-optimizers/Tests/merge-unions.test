@@ -212,7 +212,7 @@ munion (
 | project (
 | | select (
 | | | table("sys"."f1") [ "f1"."n" NOT NULL UNIQUE as "f_merge_rec"."n" ]
-| | ) [ (int(31) "1") < ("f_merge_rec"."n" NOT NULL UNIQUE) < (int(31) "5"), (int(31) "1") < ("f_merge_rec"."n" NOT NULL UNIQUE) < (int(31) "5") ]
+| | ) [ (int(31) "1") < ("f_merge_rec"."n" NOT NULL UNIQUE) < (int(31) "5") ]
 | ) [ "f_merge_rec"."n" NOT NULL UNIQUE ],
 | project (
 | | table("sys"."f2") [ "f2"."n" NOT NULL UNIQUE as "f_merge_rec"."n" ]
@@ -223,7 +223,7 @@ munion (
 | project (
 | | select (
 | | | table("sys"."f4") [ "f4"."n" NOT NULL UNIQUE as "f_merge_rec"."n" ]
-| | ) [ (int(31) "1") < ("f_merge_rec"."n" NOT NULL UNIQUE) < (int(31) "5"), (int(31) "1") < ("f_merge_rec"."n" NOT NULL UNIQUE) < (int(31) "5") ]
+| | ) [ (int(31) "1") < ("f_merge_rec"."n" NOT NULL UNIQUE) < (int(31) "5") ]
 | ) [ "f_merge_rec"."n" NOT NULL UNIQUE ]
 ) [ "f_merge_rec"."n" NOT NULL ]
 
