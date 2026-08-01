@@ -3363,6 +3363,31 @@ PBATSQLidentity(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
+static str
+PBATSQLrow_number(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	bat *res = getArgReference_bat(stk, pci, 0);
+	oid *ns = getArgReference_oid(stk, pci, 1);
+	bat bid = *getArgReference_bat(stk, pci, 2);
+	oid s = *getArgReference_oid(stk, pci, 3);
+	BAT *b, *bn = NULL;
+
+	(void) cntxt;
+	(void) mb;
+	if (!(b = BBPquickdesc(bid)))
+		throw(MAL, "batcalc.identity", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	if (!(bn = BATdense(b->hseqbase, s, BATcount(b))))
+		throw(MAL, "batcalc.identity", GDK_EXCEPTION);
+
+	BAT *bnn = BATconvert(bn, NULL, TYPE_int, 0, 0, 0);
+	BBPreclaim(bn);
+	*ns = s + BATcount(b);
+	*res = bnn->batCacheid;
+	BBPkeepref(bnn);
+	return MAL_SUCCEED;
+}
+
+
 /*
  * The core modules of Monet provide just a limited set of
  * mathematical operators. The extensions required to support
@@ -5833,6 +5858,7 @@ static mel_func sql_init_funcs[] = {
  command("calc", "identity", SQLidentity, false, "Returns a unique row identitfier.", args(1,2, arg("",oid),argany("",0))),
  command("batcalc", "identity", BATSQLidentity, false, "Returns the unique row identitfiers.", args(1,2, batarg("",oid),batargany("b",0))),
  pattern("batcalc", "identity", PBATSQLidentity, false, "Returns the unique row identitfiers.", args(2,4, batarg("resb",oid),arg("ns",oid),batargany("b",0),arg("s",oid))),
+ pattern("batsql", "row_number", PBATSQLrow_number, false, "Returns the unique row number.", args(2,4, batarg("resb",int),arg("ns",oid),batargany("b",0),arg("s",oid))),
  pattern("sql", "querylog_catalog", sql_querylog_catalog, false, "Obtain the query log catalog", args(8,8, batarg("id",oid),batarg("user",str),batarg("defined",timestamp),batarg("query",str),batarg("pipe",str),batarg("plan",str),batarg("mal",int),batarg("optimize",lng))),
  pattern("sql", "querylog_calls", sql_querylog_calls, false, "Obtain the query log calls", args(9,9, batarg("id",oid),batarg("start",timestamp),batarg("stop",timestamp),batarg("arguments",str),batarg("tuples",lng),batarg("exec",lng),batarg("result",lng),batarg("cpuload",int),batarg("iowait",int))),
  pattern("sql", "querylog_empty", sql_querylog_empty, true, "", noargs),

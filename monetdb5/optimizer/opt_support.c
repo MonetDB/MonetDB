@@ -385,7 +385,7 @@ isOrderDepenent(InstrPtr p)
 	if (getModuleId(p) != batsqlRef)
 		return 0;
 	if (getFunctionId(p) == diffRef || getFunctionId(p) == window_boundRef
-		|| getFunctionId(p) == row_numberRef || getFunctionId(p) == rankRef
+		/*|| getFunctionId(p) == row_numberRef*/ || getFunctionId(p) == rankRef
 		|| getFunctionId(p) == dense_rankRef
 		|| getFunctionId(p) == percent_rankRef
 		|| getFunctionId(p) == cume_distRef || getFunctionId(p) == ntileRef
@@ -419,6 +419,7 @@ isMap2Op(InstrPtr p)
 	return getModuleId(p)
 			&& ((getModuleId(p) == malRef && getFunctionId(p) == multiplexRef)
 				|| (getModuleId(p) == malRef && getFunctionId(p) == manifoldRef)
+				|| (getModuleId(p) == batsqlRef && getFunctionId(p) == row_numberRef)
 				|| (getModuleId(p) == batcalcRef)
 				|| (getModuleId(p) != batcalcRef && getModuleId(p) != batRef
 					&& strncmp(getModuleId(p), "bat", 3) == 0)

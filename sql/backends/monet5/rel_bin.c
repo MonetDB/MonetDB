@@ -1865,7 +1865,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 
 				if (as && as->nrcols <= 0 && left && (!is_const_func(a, attr) || grp))
 					as = stmt_const(be, bin_find_smallest_column(be, left), as);
-				if (en == attr->h && !en->next && exp_aggr_is_count(e) && 0)
+				if (en == attr->h && !en->next && exp_aggr_is_count(e) && !need_distinct(e) && 0)
 					as = exp_count_no_nil_arg(e, ext, at, as);
 				/* insert single value into a column */
 				if (as && as->nrcols <= 0 && !left)
@@ -1918,7 +1918,10 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 					return NULL;
 				if (be->pipeline && grp)
 					grp = stmt_project(be, u, grp);
-				append(l, stmt_project(be, u, a));
+				if (be->pipeline && exp_aggr_is_count(e))
+					append(l, u);
+				else
+					append(l, stmt_project(be, u, a));
 			}
 			if (r) { /* check new ordered aggregation */
 				list *obe = r->h->data;

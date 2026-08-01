@@ -350,6 +350,7 @@ stmt_ialgebra_unique(backend *be, stmt *s, int output)
 		ns->key = 1;
 		ns->q = q;
 		ns->nr = getDestVar(q);
+		ns->op4.typeval = *sql_fetch_localtype(TYPE_oid);
 		return ns;
 	}
 	return NULL;
