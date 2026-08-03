@@ -1463,12 +1463,18 @@ backend_create_sql_func_body(backend *be, sql_func *f, list *restypes, list *ops
 	sql_func *pf = NULL;
 	sql_rel *r;
 
+	allocator *sa = m->sa;
+	assert(!prepare || f->sa);
+	if (f->sa)
+		m->sa = f->sa;
 	r = rel_parse(m, f->s, f->query, prepare?m_prepare:m_instantiate);
 	if (r) {
 		r = sql_processrelation(m, r, 0, 1, 1, 0);
 		r = rel_physical(m, r);
 	}
 	if (!r) {
+		if (f->sa)
+			m->sa = sa;
 		goto cleanup;
 	}
 
@@ -1480,6 +1486,8 @@ backend_create_sql_func_body(backend *be, sql_func *f, list *restypes, list *ops
 			curInstr = table_func_create_result(curBlk, curInstr, f, restypes);
 			if( curInstr == NULL) {
 				sql_error(m, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				if (f->sa)
+					m->sa = sa;
 				goto cleanup;
 			}
 		} else {
@@ -1501,6 +1509,8 @@ backend_create_sql_func_body(backend *be, sql_func *f, list *restypes, list *ops
 			(void) snprintf(buf, sizeof(buf), "A%d", argc);
 			if ((varid = newVariable(curBlk, buf, strlen(buf), type)) < 0) {
 				sql_error(m, 10, SQLSTATE(42000) "Internal error while compiling statement: variable id too long");
+				if (f->sa)
+					m->sa = sa;
 				goto cleanup;
 			}
 			curInstr = pushArgument(curBlk, curInstr, varid);
@@ -1526,10 +1536,14 @@ backend_create_sql_func_body(backend *be, sql_func *f, list *restypes, list *ops
 			}
 			if (!buf) {
 				sql_error(m, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				if (f->sa)
+					m->sa = sa;
 				goto cleanup;
 			}
 			if ((varid = newVariable(curBlk, buf, strlen(buf), type)) < 0) {
 				sql_error(m, 10, SQLSTATE(42000) "Internal error while compiling statement: variable id too long");
+				if (f->sa)
+					m->sa = sa;
 				goto cleanup;
 			}
 			curInstr = pushArgument(curBlk, curInstr, varid);
@@ -1538,10 +1552,13 @@ backend_create_sql_func_body(backend *be, sql_func *f, list *restypes, list *ops
 	}
 	/* for recursive functions, avoid infinite loops */
 	pf = m->forward;
-	m->forward = f;
+	if (!prepare)
+		m->forward = f;
 	be->fimp = fimp; /* for recursive functions keep the generated name */
 	res = backend_dumpstmt(be, curBlk, r, prepare, 1, NULL);
 	m->forward = pf;
+	if (f->sa)
+		m->sa = sa;
 	if (res < 0)
 		goto cleanup;
 	/* selectively make functions available for inlineing */
