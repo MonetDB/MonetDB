@@ -156,3 +156,9 @@ PIPELINE?7966-optimize-select-distinct-from-union-queries
 7969-optimize-distinct-from-q1-intersect-q2
 7970-optimize-where-predicate
 7971-prepare-decimal-parameter-crash
+7972-orderby-limit-subquery-bug
+KNOWNFAIL?7973-groupby-list-null-row-bug
+KNOWNFAIL?7974-muli-column-not-in-subquery-bug
+7975-cleanup-join-exps
+7977-prepare-optimize
+7978-name-leak-prepare-error-recompile

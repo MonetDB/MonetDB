@@ -26517,22 +26517,22 @@ batstr
 splitpart
 pattern batstr.splitpart(X_0:bat[:str], X_1:bat[:str], X_2:bat[:int]):bat[:str]
 STRbatsplitpart
-Split string on delimiter. Returns@given field (counting from one.)
+Split string on delimiter. Returns given field (counting from one.)
 batstr
 splitpart
 pattern batstr.splitpart(X_0:bat[:str], X_1:bat[:str], X_2:int):bat[:str]
 STRbatsplitpart_fieldcst
-Split string on delimiter. Returns@given field (counting from one.)
+Split string on delimiter. Returns given field (counting from one.)
 batstr
 splitpart
 pattern batstr.splitpart(X_0:bat[:str], X_1:str, X_2:bat[:int]):bat[:str]
 STRbatsplitpart_needlecst
-Split string on delimiter. Returns@given field (counting from one.)
+Split string on delimiter. Returns given field (counting from one.)
 batstr
 splitpart
 pattern batstr.splitpart(X_0:bat[:str], X_1:str, X_2:int):bat[:str]
 STRbatsplitpartcst
-Split string on delimiter. Returns@given field (counting from one.)
+Split string on delimiter. Returns given field (counting from one.)
 batstr
 startswith
 pattern batstr.startswith(X_0:bat[:str], X_1:bat[:str]):bat[:bit]
@@ -26687,12 +26687,12 @@ batstr
 substitute
 pattern batstr.substitute(X_0:bat[:str], X_1:bat[:str], X_2:bat[:str], X_3:bat[:bit]):bat[:str]
 STRbatSubstitute
-Substitute first occurrence of 'src' by@'dst'. Iff repeated = true this is@repeated while 'src' can be found in the@result string. In order to prevent@recursion and result strings of unlimited@size, repeating is only done iff src is@not a substring of dst.
+Substitute first occurrence of 'src' by 'dst'. Iff repeated = true this is repeated while 'src' can be found in the result string. In order to prevent recursion and result strings of unlimited size, repeating is only done iff src is not a substring of dst.
 batstr
 substitute
 pattern batstr.substitute(X_0:bat[:str], X_1:str, X_2:str, X_3:bit):bat[:str]
 STRbatSubstitutecst
-Substitute first occurrence of 'src' by@'dst'. Iff repeated = true this is@repeated while 'src' can be found in the@result string. In order to prevent@recursion and result strings of unlimited@size, repeating is only done iff src is@not a substring of dst.
+Substitute first occurrence of 'src' by 'dst'. Iff repeated = true this is repeated while 'src' can be found in the result string. In order to prevent recursion and result strings of unlimited size, repeating is only done iff src is not a substring of dst.
 batstr
 substring
 pattern batstr.substring(X_0:bat[:str], X_1:bat[:int]):bat[:str]
@@ -41127,7 +41127,7 @@ str
 containsjoin
 pattern str.containsjoin(X_0:bat[:str], X_1:bat[:str], X_2:bat[:bit], X_3:bat[:oid], X_4:bat[:oid], X_5:bit, X_6:lng, X_7:bit) (X_8:bat[:oid], X_9:bat[:oid])
 STRcontainsjoin
-Join the string bat L with the bat R if L contains the string of R@with optional candidate lists SL and SR@The result is two aligned bats with oids of matching rows + icase.
+Join the string bat L with the bat R if L contains the string of R with optional candidate lists SL and SR The result is two aligned bats with oids of matching rows + icase.
 str
 containsjoin
 pattern str.containsjoin(X_0:bat[:str], X_1:bat[:str], X_2:bat[:bit], X_3:bat[:oid], X_4:bat[:oid], X_5:bit, X_6:lng, X_7:bit):bat[:oid]
@@ -41137,7 +41137,7 @@ str
 containsjoin
 pattern str.containsjoin(X_0:bat[:str], X_1:bat[:str], X_2:bat[:oid], X_3:bat[:oid], X_4:bit, X_5:lng, X_6:bit) (X_7:bat[:oid], X_8:bat[:oid])
 STRcontainsjoin
-Join the string bat L with the bat R if L contains the string of R@with optional candidate lists SL and SR@The result is two aligned bats with oids of matching rows.
+Join the string bat L with the bat R if L contains the string of R with optional candidate lists SL and SR The result is two aligned bats with oids of matching rows.
 str
 containsjoin
 pattern str.containsjoin(X_0:bat[:str], X_1:bat[:str], X_2:bat[:oid], X_3:bat[:oid], X_4:bit, X_5:lng, X_6:bit):bat[:oid]
@@ -41147,12 +41147,12 @@ str
 containsselect
 pattern str.containsselect(X_0:bat[:str], X_1:bat[:oid], X_2:str, X_3:bit):bat[:oid]
 STRcontainsselect
-Select all head values of the first input BAT for which the@tail value contains the given needle.
+Select all head values of the first input BAT for which the tail value contains the given needle.
 str
 containsselect
 pattern str.containsselect(X_0:bat[:str], X_1:bat[:oid], X_2:str, X_3:bit, X_4:bit):bat[:oid]
 STRcontainsselect
-Select all head values of the first input BAT for which the@tail value contains the given needle + icase.
+Select all head values of the first input BAT for which the tail value contains the given needle + icase.
 str
 endswith
 pattern str.endswith(X_0:str, X_1:str):bit
@@ -41167,7 +41167,7 @@ str
 endswithjoin
 pattern str.endswithjoin(X_0:bat[:str], X_1:bat[:str], X_2:bat[:bit], X_3:bat[:oid], X_4:bat[:oid], X_5:bit, X_6:lng, X_7:bit) (X_8:bat[:oid], X_9:bat[:oid])
 STRendswithjoin
-Join the string bat L with the suffix bat R@with optional candidate lists SL and SR@The result is two aligned bats with oids of matching rows + icase.
+Join the string bat L with the suffix bat R with optional candidate lists SL and SR The result is two aligned bats with oids of matching rows + icase.
 str
 endswithjoin
 pattern str.endswithjoin(X_0:bat[:str], X_1:bat[:str], X_2:bat[:bit], X_3:bat[:oid], X_4:bat[:oid], X_5:bit, X_6:lng, X_7:bit):bat[:oid]
@@ -41177,7 +41177,7 @@ str
 endswithjoin
 pattern str.endswithjoin(X_0:bat[:str], X_1:bat[:str], X_2:bat[:oid], X_3:bat[:oid], X_4:bit, X_5:lng, X_6:bit) (X_7:bat[:oid], X_8:bat[:oid])
 STRendswithjoin
-Join the string bat L with the suffix bat R@with optional candidate lists SL and SR@The result is two aligned bats with oids of matching rows.
+Join the string bat L with the suffix bat R with optional candidate lists SL and SR The result is two aligned bats with oids of matching rows.
 str
 endswithjoin
 pattern str.endswithjoin(X_0:bat[:str], X_1:bat[:str], X_2:bat[:oid], X_3:bat[:oid], X_4:bit, X_5:lng, X_6:bit):bat[:oid]
@@ -41187,12 +41187,12 @@ str
 endswithselect
 pattern str.endswithselect(X_0:bat[:str], X_1:bat[:oid], X_2:str, X_3:bit):bat[:oid]
 STRendswithselect
-Select all head values of the first input BAT for which the@tail value end with the given suffix.
+Select all head values of the first input BAT for which the tail value end with the given suffix.
 str
 endswithselect
 pattern str.endswithselect(X_0:bat[:str], X_1:bat[:oid], X_2:str, X_3:bit, X_4:bit):bat[:oid]
 STRendswithselect
-Select all head values of the first input BAT for which the@tail value end with the given suffix + icase.
+Select all head values of the first input BAT for which the tail value end with the given suffix + icase.
 str
 insert
 command str.insert(X_0:str, X_1:int, X_2:int, X_3:str):str
@@ -41257,12 +41257,12 @@ str
 r_search
 pattern str.r_search(X_0:str, X_1:str):int
 STRrevstr_search
-Reverse search for a substring. Returns@position, -1 if not found.
+Reverse search for a substring. Returns position, -1 if not found.
 str
 r_search
 pattern str.r_search(X_0:str, X_1:str, X_2:bit):int
 STRrevstr_search
-Reverse search for a substring, icase flag. Returns@position, -1 if not found.
+Reverse search for a substring, icase flag. Returns position, -1 if not found.
 str
 repeat
 command str.repeat(X_0:str, X_1:int):str
@@ -41302,12 +41302,12 @@ str
 search
 pattern str.search(X_0:str, X_1:str):int
 STRstr_search
-Search for a substring. Returns@position, -1 if not found.
+Search for a substring. Returns position, -1 if not found.
 str
 search
 pattern str.search(X_0:str, X_1:str, X_2:bit):int
 STRstr_search
-Search for a substring, icase flag. Returns@position, -1 if not found.
+Search for a substring, icase flag. Returns position, -1 if not found.
 str
 space
 command str.space(X_0:int):str
@@ -41317,7 +41317,7 @@ str
 splitpart
 command str.splitpart(X_0:str, X_1:str, X_2:int):str
 STRsplitpart
-Split string on delimiter. Returns@given field (counting from one.)
+Split string on delimiter. Returns given field (counting from one.)
 str
 startswith
 pattern str.startswith(X_0:str, X_1:str):bit
@@ -41332,7 +41332,7 @@ str
 startswithjoin
 pattern str.startswithjoin(X_0:bat[:str], X_1:bat[:str], X_2:bat[:bit], X_3:bat[:oid], X_4:bat[:oid], X_5:bit, X_6:lng, X_7:bit) (X_8:bat[:oid], X_9:bat[:oid])
 STRstartswithjoin
-Join the string bat L with the prefix bat R@with optional candidate lists SL and SR@The result is two aligned bats with oids of matching rows + icase.
+Join the string bat L with the prefix bat R with optional candidate lists SL and SR The result is two aligned bats with oids of matching rows + icase.
 str
 startswithjoin
 pattern str.startswithjoin(X_0:bat[:str], X_1:bat[:str], X_2:bat[:bit], X_3:bat[:oid], X_4:bat[:oid], X_5:bit, X_6:lng, X_7:bit):bat[:oid]
@@ -41342,7 +41342,7 @@ str
 startswithjoin
 pattern str.startswithjoin(X_0:bat[:str], X_1:bat[:str], X_2:bat[:oid], X_3:bat[:oid], X_4:bit, X_5:lng, X_6:bit) (X_7:bat[:oid], X_8:bat[:oid])
 STRstartswithjoin
-Join the string bat L with the prefix bat R@with optional candidate lists SL and SR@The result is two aligned bats with oids of matching rows.
+Join the string bat L with the prefix bat R with optional candidate lists SL and SR The result is two aligned bats with oids of matching rows.
 str
 startswithjoin
 pattern str.startswithjoin(X_0:bat[:str], X_1:bat[:str], X_2:bat[:oid], X_3:bat[:oid], X_4:bit, X_5:lng, X_6:bit):bat[:oid]
@@ -41352,12 +41352,12 @@ str
 startswithselect
 pattern str.startswithselect(X_0:bat[:str], X_1:bat[:oid], X_2:str, X_3:bit):bat[:oid]
 STRstartswithselect
-Select all head values of the first input BAT for which the@tail value starts with the given prefix.
+Select all head values of the first input BAT for which the tail value starts with the given prefix.
 str
 startswithselect
 pattern str.startswithselect(X_0:bat[:str], X_1:bat[:oid], X_2:str, X_3:bit, X_4:bit):bat[:oid]
 STRstartswithselect
-Select all head values of the first input BAT for which the@tail value starts with the given prefix + icase.
+Select all head values of the first input BAT for which the tail value starts with the given prefix + icase.
 str
 str
 command str.str(X_0:str):str
@@ -41367,7 +41367,7 @@ str
 string
 command str.string(X_0:str, X_1:int):str
 STRTail
-Return the tail s[offset..n]@of a string s[0..n].
+Return the tail s[offset..n] of a string s[0..n].
 str
 string3
 command str.string3(X_0:str, X_1:int, X_2:int):str
@@ -41387,7 +41387,7 @@ str
 substitute
 command str.substitute(X_0:str, X_1:str, X_2:str, X_3:bit):str
 STRSubstitute
-Substitute first occurrence of 'src' by@'dst'.  Iff repeated = true this is@repeated while 'src' can be found in the@result string. In order to prevent@recursion and result strings of unlimited@size, repeating is only done iff src is@not a substring of dst.
+Substitute first occurrence of 'src' by 'dst'.  Iff repeated = true this is repeated while 'src' can be found in the result string. In order to prevent recursion and result strings of unlimited size, repeating is only done iff src is not a substring of dst.
 str
 substring
 command str.substring(X_0:str, X_1:int):str
@@ -41432,7 +41432,7 @@ str
 unicodeAt
 command str.unicodeAt(X_0:str, X_1:int):int
 STRWChrAt
-get a unicode character@(as an int) from a string position.
+get a unicode character (as an int) from a string position.
 streams
 blocked
 unsafe command streams.blocked(X_0:streams):streams

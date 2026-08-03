@@ -243,11 +243,19 @@ dblHash(const void *x)
 	return lngHash(x);
 }
 
+/* if you happen to already know the string length, pass it along */
+__attribute__((__pure__))
+static inline BUN
+strHashLen(const void *x, size_t len)
+{
+	return (BUN) XXHASHFUNC(x, len, 0);
+}
+
 __attribute__((__pure__))
 static inline BUN
 strHash(const void *x)
 {
-	return (BUN) XXHASHFUNC(x, strlen(x), 0);
+	return strHashLen(x, strlen(x));
 }
 
 __attribute__((__pure__))
