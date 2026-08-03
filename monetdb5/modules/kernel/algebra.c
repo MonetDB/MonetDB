@@ -1054,7 +1054,7 @@ ALGfirstn(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			o = (lng) BATcount(b);
 		if ((BUN) o + (BUN) n > BATcount(b))
 			n = (lng) BATcount(b) - o;
-		bn = BATdense(0, b->hseqbase + o, n);
+		bn = BATdense(0, b->hseqbase + (oid) o, (BUN) n);
 		if (bn == NULL)
 			rc = GDK_FAIL;
 	} else if (o > 0) {
