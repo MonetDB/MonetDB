@@ -1073,15 +1073,26 @@ cleanup_equal_exps(mvc *sql, sql_rel *rel, list *exps, int *changes)
 		}
 	}
 	if (needed) {
+		allocator *ta = MT_thread_getallocator();
+		int cnt = list_length(exps), i=0, j = 0;
+		char *used = SA_ZNEW_ARRAY(ta, char, cnt);
 		list *nexps = sa_list(sql->sa);
 
-		for(node *n = exps->h; n; n = n->next) {
+		for(node *n = exps->h; n; n = n->next, i++) {
+			if (used[i])
+				continue;
 			bool done = false;
-			for (node *m = exps->h; m && !done; m = m->next) {
+			j = 0;
+			for (node *m = exps->h; m && !done; m = m->next, j++) {
+				if (used[j])
+					continue;
 				if (n != m && exp_match_exp_semantics(n->data, m->data, false)) {
 					sql_exp *e1 = n->data, *e2 = m->data;
 					if ((is_any(e1) || is_semantics(e1)) || (!is_any(e2) && !is_semantics(e2))) {
 						append(nexps, e1);
+						used[i] = 1;
+						used[j] = 1;
+						(*changes)++;
 						if ((!is_any(e2) && !is_semantics(e2)) && is_left(rel->op) && list_length(rel->attr) == 1) {
 							/* nil is false */
 							sql_exp *m = rel->attr->h->data;
@@ -1092,8 +1103,10 @@ cleanup_equal_exps(mvc *sql, sql_rel *rel, list *exps, int *changes)
 					done = true;
 				}
 			}
-			if (!done)
+			if (!done) {
+				used[i] = 1;
 				append(nexps, n->data);
+			}
 		}
 		return nexps;
 	}

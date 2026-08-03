@@ -1,0 +1,11 @@
+# this wrapper uses string arguments for a function that expects doubles
+
+statement ok
+CREATE FUNCTION f_broken(x STRING, y STRING) RETURNS STRING EXTERNAL NAME sql.alpha
+
+# This prepare should fail, but res = -1 not set, so it doesn't
+statement error
+PREPARE SELECT f_broken(?, ?)
+
+statement error
+EXEC 0('a','b')

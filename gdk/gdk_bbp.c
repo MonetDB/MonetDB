@@ -2074,8 +2074,10 @@ BBPexit(void)
 					if (b->oldtail) {
 						Heap *h = b->oldtail;
 						b->oldtail = NULL;
-						ATOMIC_AND(&h->refs, ~DELAYEDREMOVE);
-						HEAPdecref(h, false);
+						if (h != (Heap *) 1) {
+							ATOMIC_AND(&h->refs, ~DELAYEDREMOVE);
+							HEAPdecref(h, false);
+						}
 					}
 					PROPdestroy_nolock(b);
 					MT_lock_unset(&b->theaplock);
