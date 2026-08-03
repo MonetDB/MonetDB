@@ -1,0 +1,137 @@
+statement ok
+CREATE TABLE br_o_null     (id INT, a INT, b INT)
+
+statement ok
+CREATE TABLE br_o_nonull   (id INT, a INT, b INT)
+
+statement ok
+CREATE TABLE br_o_bothcols (id INT, a INT, b INT)
+
+statement ok
+CREATE TABLE br_i_nonull   (a INT, b INT)
+
+statement ok
+CREATE TABLE br_i_null     (a INT, b INT)
+
+statement ok
+INSERT INTO br_o_null     VALUES (1,10,100),(2,NULL,400),(3,20,200)
+
+statement ok
+INSERT INTO br_o_nonull   VALUES (1,10,100),(2,30,400),(3,20,200)
+
+statement ok
+INSERT INTO br_o_bothcols VALUES (1,10,NULL),(2,NULL,400)
+
+statement ok
+INSERT INTO br_i_nonull   VALUES (10,1000),(20,200)
+
+statement ok
+INSERT INTO br_i_null     VALUES (10,1000),(NULL,200)
+
+-- CASE 1: outer tuple has a NULL, inner has none -- row 2 is dropped
+-- observed: 1                       <-- WRONG      expected: 1, 2
+query I rowsort
+SELECT id FROM br_o_null WHERE (a,b) NOT IN (SELECT a,b FROM br_i_nonull) ORDER BY id
+----
+1
+2
+
+-- CASE 1d: the same predicate written as a faithful 3VL NOT EXISTS -- correct
+-- observed: 1, 2                    correct
+query I rowsort
+SELECT id FROM br_o_null o WHERE NOT EXISTS (
+  SELECT 1 FROM br_i_nonull y
+  WHERE (y.a = o.a OR y.a IS NULL OR o.a IS NULL)
+    AND (y.b = o.b OR y.b IS NULL OR o.b IS NULL)) ORDER BY id
+----
+1
+2
+
+-- CASE 2: literal row list, same data -- also wrong
+-- observed: 1                       <-- WRONG      expected: 1, 2
+query I rowsort
+SELECT id FROM br_o_null WHERE (a,b) NOT IN ((10,1000),(20,200)) ORDER BY id
+----
+1
+2
+
+-- CASE 3: outer has a NULL and inner has a NULL -- row 2 dropped AND row 3 wrongly added
+-- observed: 1, 3                    <-- WRONG      expected: 1, 2
+query I rowsort
+SELECT id FROM br_o_null WHERE (a,b) NOT IN (SELECT a,b FROM br_i_null) ORDER BY id
+----
+1
+2
+
+-- observed: 1, 2                    correct
+query I rowsort
+SELECT id FROM br_o_null o WHERE NOT EXISTS (
+  SELECT 1 FROM br_i_null y
+  WHERE (y.a = o.a OR y.a IS NULL OR o.a IS NULL)
+    AND (y.b = o.b OR y.b IS NULL OR o.b IS NULL)) ORDER BY id
+----
+1
+2
+
+-- CASE 4: outer has NO NULL at all, only the inner does -- row 3 wrongly returned
+--         (row 3 = (20,200) vs inner (NULL,200): UNKNOWN, must not be returned)
+-- observed: 1, 2, 3                 <-- WRONG      expected: 1, 2
+query I rowsort
+SELECT id FROM br_o_nonull WHERE (a,b) NOT IN (SELECT a,b FROM br_i_null) ORDER BY id
+----
+1
+2
+
+-- observed: 1, 2                    correct
+query I rowsort
+SELECT id FROM br_o_nonull o WHERE NOT EXISTS (
+  SELECT 1 FROM br_i_null y
+  WHERE (y.a = o.a OR y.a IS NULL OR o.a IS NULL)
+    AND (y.b = o.b OR y.b IS NULL OR o.b IS NULL)) ORDER BY id
+----
+1
+2
+
+-- CASE 5: NULL in either column of the outer tuple -- everything is dropped
+-- observed: <empty>                 <-- WRONG      expected: 2
+query I rowsort
+SELECT id FROM br_o_bothcols WHERE (a,b) NOT IN (SELECT a,b FROM br_i_nonull) ORDER BY id
+----
+2
+
+-- CASE 6 CONTROL: no NULL anywhere -- correct
+-- observed: 1, 2                    correct
+query I rowsort
+SELECT id FROM br_o_nonull WHERE (a,b) NOT IN (SELECT a,b FROM br_i_nonull) ORDER BY id
+----
+1
+2
+
+-- CASE 7 CONTROL: single-column NOT IN with a NULL outer value -- correct
+-- observed: <empty>                 correct
+query I rowsort
+SELECT id FROM br_o_null WHERE a NOT IN (SELECT a FROM br_i_nonull) ORDER BY id
+----
+
+-- CASE 8 CONTROL: the IN side of the same comparison -- correct
+-- observed: 3                       correct
+query I rowsort
+SELECT id FROM br_o_null WHERE (a,b) IN (SELECT a,b FROM br_i_nonull) ORDER BY id
+----
+3
+
+statement ok
+DROP TABLE IF EXISTS br_o_null
+
+statement ok
+DROP TABLE IF EXISTS br_o_nonull
+
+statement ok
+DROP TABLE IF EXISTS br_o_bothcols
+
+statement ok
+DROP TABLE IF EXISTS br_i_nonull
+
+statement ok
+DROP TABLE IF EXISTS br_i_null
+

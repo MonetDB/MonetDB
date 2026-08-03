@@ -1,0 +1,65 @@
+statement ok
+CREATE TABLE r0 (id INT PRIMARY KEY, c0 INT)
+
+statement ok
+INSERT INTO r0 VALUES (1,10)
+
+statement ok
+CREATE TABLE r1 (id INT PRIMARY KEY, c0 INT, c1 INT)
+
+statement ok
+INSERT INTO r1 VALUES (1,10,111),(2,10,222)
+
+statement ok
+CREATE TABLE r2 (id INT PRIMARY KEY, c0 INT, c1 INT)
+
+statement ok
+INSERT INTO r2 VALUES (1,10,999),(2,10,111)
+
+-- (A) Direction ignored: expect 222, get 111
+-- observed: 111 (WRONG — same as ASC)
+query I rowsort
+SELECT (SELECT r1.c1 FROM r1 WHERE r1.c0 = r0.c0 ORDER BY r1.id DESC LIMIT 1) AS sq FROM r0
+----
+222
+
+query I rowsort
+SELECT (SELECT r1.c1 FROM r1 WHERE r1.c0 = r0.c0 ORDER BY r1.id ASC LIMIT 1) AS sq FROM r0
+----
+111
+
+-- (B) Non-correlated control: correct
+-- observed: 222 (correct)
+query I rowsort
+SELECT (SELECT r1.c1 FROM r1 WHERE r1.c0 = 10 ORDER BY r1.id DESC LIMIT 1) FROM r0
+----
+222
+
+-- (C) Column ignored: expect 111 (smallest c1), get 999 (insertion-first row)
+-- observed: 999 (WRONG)
+query I rowsort
+SELECT (SELECT r2.c1 FROM r2 WHERE r2.c0 = r0.c0 ORDER BY r2.c1 LIMIT 1) AS sq FROM r0
+----
+111
+
+query I rowsort
+SELECT (SELECT r2.c1 FROM r2 WHERE r2.c0 = r0.c0 ORDER BY r2.c1 DESC LIMIT 1) AS sq FROM r0
+----
+999
+
+-- (D) Non-correlated control: correct
+-- observed: 111 (correct)
+query I rowsort
+SELECT (SELECT r2.c1 FROM r2 WHERE r2.c0 = 10 ORDER BY r2.c1 LIMIT 1) FROM r0
+----
+111
+
+statement ok
+DROP TABLE IF EXISTS r0
+
+statement ok
+DROP TABLE IF EXISTS r1
+
+statement ok
+DROP TABLE IF EXISTS r2
+
