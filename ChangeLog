@@ -1,6 +1,10 @@
 # ChangeLog file for devel
 # This file is updated with Maddlog
 
+* Mon Aug  3 2026 Sjoerd Mullender <sjoerd@acm.org>
+- The hash function used for all internal hash tables has been changed
+  to xxhash which is therefore now a build requirement.
+
 * Mon Jun 22 2026 Sjoerd Mullender <sjoerd@acm.org>
 - Removed support for LOADER FUNCTION.  Since Python UDFs are not
   supported anymore, the loader functions can also not be supported
