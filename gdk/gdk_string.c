@@ -114,7 +114,8 @@ strCleanHash(Heap *h, bool rebuild)
 		if (pos >= GDK_ELIMLIMIT)
 			break;
 		s = h->base + pos;
-		strhash = strHash(s);
+		size_t slen = strlen(s);
+		strhash = strHashLen(s, slen);
 		off = strhash & GDK_STRHASHMASK;
 		var_t *p = (var_t *) (h->base + pos - sizeof(var_t));
 		if (*p != newhash[off]) {
@@ -122,7 +123,7 @@ strCleanHash(Heap *h, bool rebuild)
 			h->dirty = true;
 		}
 		newhash[off] = (var_t) (pos - sizeof(var_t));
-		pos += strlen(s) + 1;
+		pos += slen + 1;
 	}
 	/* only set dirty flag if the hash table actually changed */
 	if (memcmp(newhash, h->base, sizeof(newhash)) != 0) {
@@ -198,7 +199,8 @@ ustrPut(BAT *b, var_t *dst, const char *v)
 
 	Heap *h = ustrbat->tvheap;
 	BUN p = BUN_NONE;
-	BUN hsh = strHash(v);
+	size_t slen = strlen(v);
+	BUN hsh = strHashLen(v, slen);
 	if (ustrbat->batCount != 0) {
 		BATiter ui = bat_iterator_nolock(ustrbat);
 		if (ustrbat->thash == NULL) {
@@ -269,7 +271,7 @@ ustrPut(BAT *b, var_t *dst, const char *v)
 #endif
 
 		size_t pad;
-		size_t len = strlen(v) + 1;
+		size_t len = slen + 1;
 
 		if (GDK_ELIMBASE(h->free) != 0) {
 			/* no extra padding needed when no hash links needed
@@ -466,7 +468,8 @@ strPut(BAT *b, var_t *dst, const void *V)
 	const char *v = V;
 	Heap *h = b->tvheap;
 	size_t pad;
-	size_t pos, len = strlen(v) + 1;
+	size_t pos;
+	size_t slen = strlen(v);
 	var_t *bucket;
 	BUN off;
 
@@ -489,7 +492,7 @@ strPut(BAT *b, var_t *dst, const void *V)
 		b->tvkey = true;
 	}
 
-	off = strHash(v);
+	off = strHashLen(v, slen);
 	off &= GDK_STRHASHMASK;
 	bucket = ((var_t *) h->base) + off;
 
@@ -553,6 +556,7 @@ strPut(BAT *b, var_t *dst, const void *V)
 		pad = 0;
 	}
 
+	size_t len = slen + 1;
 	/* check heap for space (limited to a certain maximum after
 	 * which nils are inserted) */
 	if (h->free + pad + len >= h->size) {
