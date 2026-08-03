@@ -1,0 +1,58 @@
+statement ok
+CREATE TABLE rift_join_pred_a (
+    id  INTEGER PRIMARY KEY,
+    k   INTEGER,
+    pad VARCHAR(32)
+)
+
+statement ok
+CREATE TABLE rift_join_pred_b (
+    id  INTEGER PRIMARY KEY,
+    k   INTEGER,
+    pad VARCHAR(32)
+)
+
+statement ok 
+INSERT INTO rift_join_pred_a
+SELECT
+    i,
+    MOD(i, 10000),
+    REPEAT('a', 32)
+FROM generate_series(1, 1000001) AS g(i)
+
+statement ok 
+INSERT INTO rift_join_pred_b
+SELECT
+    i,
+    MOD(i, 10000),
+    REPEAT('b', 32)
+FROM generate_series(1, 1000001) AS g(i)
+
+query T python .explain.optimizer_actions
+EXPLAIN SHOW ALL DETAILS
+SELECT COUNT(*)
+FROM rift_join_pred_a AS a
+JOIN rift_join_pred_b AS b ON a.id = b.id
+WHERE a.id = b.id
+  AND a.k BETWEEN 4000 AND 4999
+----
+push_project_down 1
+push_project_up 1
+optimize_select_and_joins_bottomup 4
+optimize_joins 1
+
+query I
+SELECT COUNT(*)
+FROM rift_join_pred_a AS a
+JOIN rift_join_pred_b AS b ON a.id = b.id
+WHERE a.id = b.id
+  AND a.k BETWEEN 4000 AND 4999
+----
+100000
+
+statement ok
+DROP TABLE IF EXISTS rift_join_pred_b
+
+statement ok
+DROP TABLE IF EXISTS rift_join_pred_a
+
