@@ -416,7 +416,8 @@ rel2bin_oahash_equi_join(backend *be, sql_rel *rel, list *refs, list *jexps, stm
 	if (probe_sub)
 		*probe_sub = sub;
 
-	stmt *prb_res = oahash_probe(be, rel, jexps, exps_cmp_prb, stmts_ht, sub, false, is_outerjoin(rel->op), mark, has_outerselect, nulls, prb_mrk);
+	bit outer = is_outerjoin(rel->op);
+	stmt *prb_res = oahash_probe(be, rel, jexps, exps_cmp_prb, stmts_ht, sub, false, outer, mark, has_outerselect, nulls, prb_mrk);
 	if (prb_res == NULL) return NULL;
 
 	/*** PROJECT RESULT PHASE ***/
@@ -424,7 +425,6 @@ rel2bin_oahash_equi_join(backend *be, sql_rel *rel, list *refs, list *jexps, stm
 	list *lp = oahash_project_prb(be, exps_prj_prb, prb_res, stmts_ht->op3, leftouter, sub, probed_rowids);
 	list *lh = oahash_project_hsh(be, exps_prj_hsh, stmts_ht, prb_res, leftouter, hsh_mrk);
 
-	bit outer = is_outerjoin(rel->op);
 	/* !exps_prj_hsh => !shared_hp => mark the last hash-column instead of a payload column */
 	if (outer && hsh_mrk && !*hsh_mrk) {
 		assert(list_empty(exps_prj_hsh));
