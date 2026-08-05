@@ -2092,7 +2092,10 @@ OAHASHomprobe(Client ctx, bat *PRB_oid, bat *HSH_slotid, bat *PRB_mark, const ba
 		oid *oid_mtd = Tloc(o, 0);
 		oid *slt = Tloc(s, 0);
 		bit *mark = Tloc(m, 0);
-		bit has_nil = false, empty = ht->empty?false:bit_nil;
+		/* if the hash table contains a NULL, has_nil will actually carry the bit_nil */
+		bit has_nil = false;
+		/* probing an empty hash table always yields FALSE; otherwise, bit_nil for unknown */
+		bit empty = ht->empty?false:bit_nil;
 
 		BUN off = k->hseqbase;
 		switch(tt) {

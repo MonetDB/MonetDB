@@ -1340,7 +1340,6 @@ push_up_join_exps( mvc *sql, sql_rel *rel)
 	}
 }
 
-/* simple transitivity rule: a = b and b = c -> a = c */
 static sql_rel *
 transitivity_rule(visitor *v, sql_rel *rel)
 {
@@ -1666,7 +1665,7 @@ remove_blocking_selects( mvc *sql, sql_rel *p, sql_rel *rel)
 	case op_select:
 		if (p) {
 			sql_rel *l = rel->l;
-			if (is_single(rel) || !is_join(l->op))
+			if (is_single(rel) || l->op != op_join)
 				return rel;
 			if (!list_empty(rel->exps)) {
 				p->exps = list_join(p->exps, rel->exps);
@@ -4642,6 +4641,49 @@ filter_column_in_partition_by_columns(sql_exp *column, list *keyColumns)
 	return false;
 }
 
+/* transitivity rule on a = b and a = 'constant' => b = 'constant' */
+static void
+try_duplicate_select(visitor *v, sql_rel *r, sql_exp *e, bool leftside)
+{
+	if (!e || !r || e->type != e_cmp || e->flag != cmp_equal || is_anti(e) || list_empty(r->exps) || rel_is_ref(r))
+		return;
+	sql_exp *el = e->l, *er = e->r;
+	if (!exp_is_atom(er))
+		return;
+	for (node *n = r->exps->h; n; n = n->next) {
+		sql_exp *je = n->data;
+
+		if (je->type == e_cmp && je->flag == cmp_equal && !is_anti(je)) {
+			sql_exp *jel = je->l, *jer = je->r, *ne = NULL;
+			if (jel->nid == el->nid) {
+				if (!leftside && rel_rebind_exp(v->sql, r->r, jer)) /* check that jer is from right side */
+					ne = jer;
+				if (leftside && rel_rebind_exp(v->sql, r->l, jer)) /* check that jer is from right side */
+					ne = jer;
+			}
+			if (jer->nid == el->nid) {
+				if (!leftside && rel_rebind_exp(v->sql, r->r, jel)) /* check that jer is from right side */
+					ne = jel;
+				if (leftside && rel_rebind_exp(v->sql, r->l, jel)) /* check that jer is from right side */
+					ne = jel;
+			}
+			if (ne) {
+				ne = exp_compare(v->sql->sa, ne, er, cmp_equal);
+				sql_rel *s = leftside ? r->l : r->r;
+				if (!is_select(s->op)) {
+					if (leftside)
+						r->l = rel_select(v->sql->sa, s, ne);
+					else
+						r->r = rel_select(v->sql->sa, s, ne);
+				} else {
+					rel_select_add_exp(v->sql->sa, s, ne);
+				}
+				break;
+			}
+		}
+	}
+}
+
 /*
  * Push select down, pushes the selects through (simple) projections. Also
  * it cleans up the projections which become useless.
@@ -4732,16 +4774,19 @@ rel_push_select_down(visitor *v, sql_rel *rel)
 			sql_exp *e = n->data;
 
 			if (!exp_unsafe(e, false, true)) {
+				/* here we should also check if we need to duplicate the select expression the other side ! */
 				if (left && rel_rebind_exp(v->sql, jl, e)) {
 					if (!is_select(jl->op) || rel_is_ref(jl))
 						r->l = jl = rel_select(v->sql->sa, jl, NULL);
 					rel_select_add_exp(v->sql->sa, jl, e);
+					try_duplicate_select(v, r, e, false);
 					list_remove_node(exps, NULL, n);
 					v->changes++;
 				} else if (right && rel_rebind_exp(v->sql, jr, e)) {
 					if (!is_select(jr->op) || rel_is_ref(jr))
 						r->r = jr = rel_select(v->sql->sa, jr, NULL);
 					rel_select_add_exp(v->sql->sa, jr, e);
+					try_duplicate_select(v, r, e, true);
 					list_remove_node(exps, NULL, n);
 					v->changes++;
 				}
