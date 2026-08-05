@@ -767,10 +767,11 @@ rel2bin_oahash_groupjoin(backend *be, sql_rel *rel, list *refs)
 
 	if (list_length(rel->attr) == 1) {
         sql_exp *e = rel->attr->h->data;
-        if (exp_is_atom(e))
+        if (exp_is_atom(e)) {
             mark = true;
-        if (exp_is_atom(e) && exp_is_false(e))
-            exist = false;
+        	if (exp_is_false(e))
+            	exist = false;
+		}
     }
 
 	int neededpp = (rel->spb || rel->partition) && get_need_pipeline(be);
@@ -833,7 +834,7 @@ rel2bin_oahash_groupjoin(backend *be, sql_rel *rel, list *refs)
 			stmt *s = stmt_alias(be, prb_mrk, e->alias.label, rnme, nme);
 			append(sub->op4.lval, s);
 		} else {
-			assert(0);
+			assert(0 && "general groupjoin not implemented yet");
 		}
 	}
 	return sub;
