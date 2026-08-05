@@ -1670,8 +1670,16 @@ backend_create_sql_func(backend *be, sql_subfunc *sf, list *restypes, list *ops)
 	*ma_get_eb(m->sa) = ebsave;
 	return 0;
   bailout:
-	if (!prepare)
+	if (!prepare) {
+		/* We need to #undef GDKfree in case the compiler optimizes and
+		 * asserts are enabled (more specifically, NDEBUG is not defined
+		 * but __GNUC__ is).  In these specific circumstances, the
+		 * assignment inside the GDKfree debug macro triggers a compiler
+		 * warning about a variable that may get clobbered by
+		 * longjmp. */
+#undef GDKfree
 		_DELETE(fimp);
+	}
 	*be = bebackup;
 	c->curprg = symbackup;
 	*ma_get_eb(m->sa) = ebsave;
