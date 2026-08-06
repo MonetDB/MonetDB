@@ -1,0 +1,108 @@
+statement ok
+CREATE SCHEMA demo
+
+statement ok
+SET SCHEMA demo
+
+statement ok
+CREATE TABLE parent (
+    a INT NOT NULL,
+    b INT NOT NULL,
+    CONSTRAINT parent_ab UNIQUE (a, b)
+)
+
+statement ok
+CREATE TABLE child (
+    a INT NOT NULL,
+    b INT NOT NULL,
+    CONSTRAINT child_fk
+        FOREIGN KEY (a, b) REFERENCES parent (a, b)
+)
+
+query IT rowsort
+SELECT o.nr, o.name
+FROM sys.objects o
+JOIN sys.keys k ON o.id = k.id
+JOIN sys._tables t ON k.table_id = t.id
+JOIN sys.schemas s ON t.schema_id = s.id
+WHERE s.name = 'demo'
+  AND t.name = 'parent'
+  AND k.type = 1
+ORDER BY o.nr
+----
+0
+a
+1
+b
+
+query T nosort
+SELECT stmt
+FROM sys.dump_table_constraint_type
+WHERE schema_name = 'demo'
+  AND table_name = 'parent'
+----
+ALTER TABLE "demo"."parent" ADD CONSTRAINT "parent_ab" UNIQUE ("a", "b");
+
+statement ok
+CREATE SCHEMA noise
+
+statement ok
+CREATE TABLE noise.unrelated (
+    a INT NOT NULL,
+    b INT NOT NULL,
+    UNIQUE (a, b)
+)
+
+-- The catalogue query still returns 0, a and 1, b
+query IT rowsort
+SELECT o.nr, o.name
+FROM sys.objects o
+JOIN sys.keys k ON o.id = k.id
+JOIN sys._tables t ON k.table_id = t.id
+JOIN sys.schemas s ON t.schema_id = s.id
+WHERE s.name = 'demo'
+  AND t.name = 'parent'
+  AND k.type = 1
+ORDER BY o.nr
+----
+0
+a
+1
+b
+
+-- but the dump query now returns: ALTER TABLE "demo"."parent" ADD CONSTRAINT "parent_ab" UNIQUE ("b", "a"); -- key columns are reversed
+query T nosort
+SELECT stmt
+FROM sys.dump_table_constraint_type
+WHERE schema_name = 'demo'
+  AND table_name = 'parent'
+----
+ALTER TABLE "demo"."parent" ADD CONSTRAINT "parent_ab" UNIQUE ("a", "b");
+
+query T nosort
+SELECT stmt
+FROM sys.dump_database(TRUE)
+WHERE stmt LIKE 'ALTER TABLE "demo".%'
+ORDER BY o
+----
+ALTER TABLE "demo"."parent" ADD CONSTRAINT "parent_ab" UNIQUE ("a", "b");
+ALTER TABLE "demo"."child" ADD CONSTRAINT "child_fk" FOREIGN KEY("a","b") REFERENCES "demo"."parent"("a","b") ON DELETE RESTRICT ON UPDATE RESTRICT;
+
+statement ok
+DROP SCHEMA noise CASCADE
+
+-- the dump query now returns: ALTER TABLE "demo"."parent" ADD CONSTRAINT "parent_ab" UNIQUE ("a", "b");
+query T nosort
+SELECT stmt
+FROM sys.dump_table_constraint_type
+WHERE schema_name = 'demo'
+  AND table_name = 'parent'
+----
+ALTER TABLE "demo"."parent" ADD CONSTRAINT "parent_ab" UNIQUE ("a", "b");
+
+statement ok
+SET SCHEMA sys
+
+statement ok
+DROP SCHEMA demo CASCADE
+

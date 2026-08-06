@@ -158,6 +158,7 @@ KNOWNFAIL?7965-select-1-limit-0-bug
 7972-orderby-limit-subquery-bug
 KNOWNFAIL?7973-groupby-list-null-row-bug
 KNOWNFAIL?7974-muli-column-not-in-subquery-bug
+KNOWNFAIL?7976-dump_database-composite-key-order-bug
 7977-prepare-optimize
 7978-name-leak-prepare-error-recompile
 7979-prepare-error-exec-113
