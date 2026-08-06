@@ -504,8 +504,7 @@ BATcheckhash(BAT *b)
 							h->nunique = hdata[5];
 							h->nheads = hdata[6];
 							h->type = ATOMtype(b->ttype);
-							if (h->width < SIZEOF_BUN &&
-							    ((BUN) 1 << (8 * h->width)) - 1 > h->nbucket) {
+							if ((~(BUN) 0 >> ((SIZEOF_BUN - h->width) * 8)) > h->nbucket) {
 								close(fd);
 								h->Link = h->heaplink.base;
 								h->Bckt = h->heapbckt.base + HASH_HEADER_SIZE * SIZEOF_SIZE_T;
