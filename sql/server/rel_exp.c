@@ -3287,13 +3287,13 @@ compare_func( comp_type t, int anti )
 	case cmp_equal:
 		return anti?"<>":"=";
 	case cmp_lt:
-		return anti?">":"<";
+		return anti?">=":"<";
 	case cmp_lte:
-		return anti?">=":"<=";
+		return anti?">":"<=";
 	case cmp_gte:
-		return anti?"<=":">=";
+		return anti?"<":">=";
 	case cmp_gt:
-		return anti?"<":">";
+		return anti?"<=":">";
 	case cmp_notequal:
 		return anti?"=":"<>";
 	default:
