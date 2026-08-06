@@ -31,6 +31,11 @@
 
 #define GT(a, b)	((bit) ((a) > (b)))
 
+#if !defined(__clang__) || __clang_major__ >= 21
+/* compiling with clang on Ubuntu 24.04 fails when using
+ * __builtin_mul_overflow, so we avoid using it when using the version
+ * of clang that is installed on said system (clang on Ubuntu 26.04 does
+ * work) */
 #ifdef __has_builtin
 #if __has_builtin(__builtin_add_overflow)
 #define OP_WITH_CHECK(lft, rgt, TYPE3, dst, op, max, on_overflow)	\
@@ -42,6 +47,7 @@
 			on_overflow;					\
 		}							\
 	} while (0)
+#endif
 #endif
 #endif
 

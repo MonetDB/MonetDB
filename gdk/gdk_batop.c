@@ -1892,6 +1892,31 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 				    BUNappendmulti(b, NULL, (BUN) (updid - BATcount(b)), force) != GDK_SUCCEED) {
 					goto bailout;
 				}
+				if (i < ni.count - 1) {
+					BUN j = 1;
+					if (positions) {
+						for (j = 1; j < ni.count - i; j++) {
+							if (positions[j - 1] != updid + j)
+								break;
+						}
+					} else {
+						for (j = 1; j < ni.count - i; j++) {
+							if (BUNtoid(p, i + j) != updid + j)
+								break;
+						}
+					}
+					if (j > 1) {
+						BAT *s = BATdense(0, i + n->hseqbase, j);
+						rc = BATappend2(b, n, s, force, true);
+						BBPreclaim(s);
+						if (rc != GDK_SUCCEED) {
+							bat_iterator_end(&ni);
+							return rc;
+						}
+						i += j - 1;
+						continue;
+					}
+				}
 				if (BUNappend(b, new, force) != GDK_SUCCEED) {
 					bat_iterator_end(&ni);
 					return GDK_FAIL;
