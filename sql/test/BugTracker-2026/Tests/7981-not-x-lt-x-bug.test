@@ -1,0 +1,34 @@
+query T rowsort
+SELECT NOT (2 < 2)
+----
+True
+
+statement ok
+CREATE TABLE t7981(x INT)
+
+statement ok
+INSERT INTO t7981 VALUES (2)
+
+query ITT rowsort
+SELECT x,
+  NOT (x < x) AS actual_not_x_lt_x,
+  TRUE AS expected
+FROM t7981
+----
+2
+True
+True
+
+query ITT rowsort
+SELECT x,
+  NOT (x < x) AS actual_not_x_lt_x,
+      (x < x) AS actual_x_lt_x
+FROM t7981
+----
+2
+True
+False
+
+statement ok
+DROP TABLE IF EXISTS t7981
+

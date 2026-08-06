@@ -1347,11 +1347,13 @@ BATdel(BAT *b, BAT *d)
  */
 static gdk_return
 BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
-		    bool mayappend, bool autoincr, bool force)
+		    bool mayappend, bool autoincr, bool force,
+		    const char *func)
 {
 	lng t0 = GDKusec();
 	oid pos = oid_nil;
 	BUN nunique = 0;
+	gdk_return rc = GDK_SUCCEED;
 
 	if (b == NULL || b->ttype == TYPE_void || n == NULL) {
 		return GDK_SUCCEED;
@@ -1467,6 +1469,34 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 					bat_iterator_end(&ni);
 					return GDK_FAIL;
 				}
+				if (i < ni.count - 1) {
+					BUN j = 1;
+					if (positions) {
+						if (autoincr) {
+							j = ni.count - i;
+						} else {
+							for (j = 1; j < ni.count - i; j++)
+								if (positions[j] != updid + j)
+									break;
+						}
+					} else {
+						for (j = 1; j < ni.count - i; j++)
+							if (BUNtoid(p, i + j) != updid + j)
+								break;
+					}
+					if (j > 1) {
+						BAT *s = BATdense(0, i + n->hseqbase, j);
+						rc = BATappend2(b, n, s, force, true);
+						BBPreclaim(s);
+						if (rc != GDK_SUCCEED) {
+							bat_iterator_end(&ni);
+							return rc;
+						}
+						i += j - 1;
+						continue;
+					}
+				}
+
 				if (BUNappend(b, new, force) != GDK_SUCCEED) {
 					bat_iterator_end(&ni);
 					return GDK_FAIL;
@@ -1585,7 +1615,6 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 				MT_UNREACHABLE();
 			}
 			MT_lock_set(&b->theaplock);
-			gdk_return rc = GDK_SUCCEED;
 			bool skip = false;
 			if (new == prevnew && !hasdel) {
 				d = prevoff;
@@ -1966,8 +1995,8 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 	b->theap->dirty = true;
 	MT_lock_unset(&b->theaplock);
 	TRC_DEBUG(ALGO,
-		  "BATreplace(" ALGOBATFMT "," ALGOOPTBATFMT "," ALGOBATFMT ") " LLFMT " usec\n",
-		  ALGOBATPAR(b), ALGOOPTBATPAR(p), ALGOBATPAR(n),
+		  "%s(" ALGOBATFMT "," ALGOOPTBATFMT "," ALGOBATFMT ") " LLFMT " usec\n",
+		  func, ALGOBATPAR(b), ALGOOPTBATPAR(p), ALGOBATPAR(n),
 		  GDKusec() - t0);
 	return GDK_SUCCEED;
 
@@ -1986,14 +2015,16 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 gdk_return
 BATreplace(BAT *b, BAT *p, BAT *n, bool force)
 {
-	return BATappend_or_update(b, p, NULL, n, false, false, force);
+	return BATappend_or_update(b, p, NULL, n, false, false,
+				   force, __func__);
 }
 
 /* like BATreplace, but p may specify locations beyond the end of b */
 gdk_return
 BATupdate(BAT *b, BAT *p, BAT *n, bool force)
 {
-	return BATappend_or_update(b, p, NULL, n, true, false, force);
+	return BATappend_or_update(b, p, NULL, n, true, false,
+				   force, __func__);
 }
 
 #if 0				/* not used */
@@ -2001,7 +2032,8 @@ BATupdate(BAT *b, BAT *p, BAT *n, bool force)
 gdk_return
 BATreplacepos(BAT *b, const oid *positions, BAT *n, bool autoincr, bool force)
 {
-	return BATappend_or_update(b, NULL, positions, n, false, autoincr, force);
+	return BATappend_or_update(b, NULL, positions, n, false, autoincr,
+				   force, __func__);
 }
 #endif
 
@@ -2010,7 +2042,8 @@ BATreplacepos(BAT *b, const oid *positions, BAT *n, bool autoincr, bool force)
 gdk_return
 BATupdatepos(BAT *b, const oid *positions, BAT *n, bool autoincr, bool force)
 {
-	return BATappend_or_update(b, NULL, positions, n, true, autoincr, force);
+	return BATappend_or_update(b, NULL, positions, n, true, autoincr,
+				   force, __func__);
 }
 
 /*
