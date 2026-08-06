@@ -1,0 +1,1931 @@
+statement ok
+create table info ( attribute int )
+
+query TIITTT
+PREPARE WITH x as (SELECT 1) SELECT 1 as n, row_number() over() as rn FROM (SELECT * FROM x, info where 0 = info.attribute) as z
+----
+tinyint
+1
+0
+(empty)
+(empty)
+n
+int
+31
+0
+(empty)
+(empty)
+rn
+
+query TIITTT
+PREPARE WITH x as (SELECT 1) SELECT 1 as n, row_number() over() as rn FROM (SELECT * FROM x, info where 0 = info.attribute) as z
+----
+tinyint
+1
+0
+(empty)
+(empty)
+n
+int
+31
+0
+(empty)
+(empty)
+rn
+
+query TIITTT
+PREPARE WITH x as (SELECT 1) SELECT 1 as n, row_number() over() as rn FROM (SELECT * FROM x, info where 0 = info.attribute) as z
+----
+tinyint
+1
+0
+(empty)
+(empty)
+n
+int
+31
+0
+(empty)
+(empty)
+rn
+
+query TIITTT
+PREPARE WITH x as (SELECT 1) SELECT 1 as n, row_number() over() as rn FROM (SELECT * FROM x, info where 0 = info.attribute) as z
+----
+tinyint
+1
+0
+(empty)
+(empty)
+n
+int
+31
+0
+(empty)
+(empty)
+rn
+
+query TIITTT
+PREPARE WITH x as (SELECT 1) SELECT 1 as n, row_number() over() as rn FROM (SELECT * FROM x, info where 0 = info.attribute) as z
+----
+tinyint
+1
+0
+(empty)
+(empty)
+n
+int
+31
+0
+(empty)
+(empty)
+rn
+
+query TIITTT
+PREPARE WITH x as (SELECT 1) SELECT 1 as n, row_number() over() as rn FROM (SELECT * FROM x, info where 0 = info.attribute) as z
+----
+tinyint
+1
+0
+(empty)
+(empty)
+n
+int
+31
+0
+(empty)
+(empty)
+rn
+
+query TIITTT
+PREPARE WITH x as (SELECT 1) SELECT 1 as n, row_number() over() as rn FROM (SELECT * FROM x, info where 0 = info.attribute) as z
+----
+tinyint
+1
+0
+(empty)
+(empty)
+n
+int
+31
+0
+(empty)
+(empty)
+rn
+
+query TIITTT
+PREPARE WITH x as (SELECT 1) SELECT 1 as n, row_number() over() as rn FROM (SELECT * FROM x, info where 0 = info.attribute) as z
+----
+tinyint
+1
+0
+(empty)
+(empty)
+n
+int
+31
+0
+(empty)
+(empty)
+rn
+
+query TIITTT
+PREPARE WITH x as (SELECT 1) SELECT 1 as n, row_number() over() as rn FROM (SELECT * FROM x, info where 0 = info.attribute) as z
+----
+tinyint
+1
+0
+(empty)
+(empty)
+n
+int
+31
+0
+(empty)
+(empty)
+rn
+
+query TIITTT
+PREPARE WITH x as (SELECT 1) SELECT 1 as n, row_number() over() as rn FROM (SELECT * FROM x, info where 0 = info.attribute) as z
+----
+tinyint
+1
+0
+(empty)
+(empty)
+n
+int
+31
+0
+(empty)
+(empty)
+rn
+
+query TIITTT
+PREPARE WITH x as (SELECT 1) SELECT 1 as n, row_number() over() as rn FROM (SELECT * FROM x, info where 0 = info.attribute) as z
+----
+tinyint
+1
+0
+(empty)
+(empty)
+n
+int
+31
+0
+(empty)
+(empty)
+rn
+
+query TIITTT
+PREPARE WITH x as (SELECT 1) SELECT 1 as n, row_number() over() as rn FROM (SELECT * FROM x, info where 0 = info.attribute) as z
+----
+tinyint
+1
+0
+(empty)
+(empty)
+n
+int
+31
+0
+(empty)
+(empty)
+rn
+
+query TIITTT
+PREPARE WITH x as (SELECT 1) SELECT 1 as n, row_number() over() as rn FROM (SELECT * FROM x, info where 0 = info.attribute) as z
+----
+tinyint
+1
+0
+(empty)
+(empty)
+n
+int
+31
+0
+(empty)
+(empty)
+rn
+
+query TIITTT
+PREPARE WITH x as (SELECT 1) SELECT 1 as n, row_number() over() as rn FROM (SELECT * FROM x, info where 0 = info.attribute) as z
+----
+tinyint
+1
+0
+(empty)
+(empty)
+n
+int
+31
+0
+(empty)
+(empty)
+rn
+
+query TIITTT
+PREPARE WITH x as (SELECT 1) SELECT 1 as n, row_number() over() as rn FROM (SELECT * FROM x, info where 0 = info.attribute) as z
+----
+tinyint
+1
+0
+(empty)
+(empty)
+n
+int
+31
+0
+(empty)
+(empty)
+rn
+
+query TIITTT
+PREPARE WITH x as (SELECT 1) SELECT 1 as n, row_number() over() as rn FROM (SELECT * FROM x, info where 0 = info.attribute) as z
+----
+tinyint
+1
+0
+(empty)
+(empty)
+n
+int
+31
+0
+(empty)
+(empty)
+rn
+
+query TIITTT
+PREPARE WITH x as (SELECT 1) SELECT 1 as n, row_number() over() as rn FROM (SELECT * FROM x, info where 0 = info.attribute) as z
+----
+tinyint
+1
+0
+(empty)
+(empty)
+n
+int
+31
+0
+(empty)
+(empty)
+rn
+
+query TIITTT
+PREPARE WITH x as (SELECT 1) SELECT 1 as n, row_number() over() as rn FROM (SELECT * FROM x, info where 0 = info.attribute) as z
+----
+tinyint
+1
+0
+(empty)
+(empty)
+n
+int
+31
+0
+(empty)
+(empty)
+rn
+
+query TIITTT
+PREPARE WITH x as (SELECT 1) SELECT 1 as n, row_number() over() as rn FROM (SELECT * FROM x, info where 0 = info.attribute) as z
+----
+tinyint
+1
+0
+(empty)
+(empty)
+n
+int
+31
+0
+(empty)
+(empty)
+rn
+
+query TIITTT
+PREPARE WITH x as (SELECT 1) SELECT 1 as n, row_number() over() as rn FROM (SELECT * FROM x, info where 0 = info.attribute) as z
+----
+tinyint
+1
+0
+(empty)
+(empty)
+n
+int
+31
+0
+(empty)
+(empty)
+rn
+
+query TIITTT
+PREPARE WITH x as (SELECT 1) SELECT 1 as n, row_number() over() as rn FROM (SELECT * FROM x, info where 0 = info.attribute) as z
+----
+tinyint
+1
+0
+(empty)
+(empty)
+n
+int
+31
+0
+(empty)
+(empty)
+rn
+
+query TIITTT
+PREPARE WITH x as (SELECT 1) SELECT 1 as n, row_number() over() as rn FROM (SELECT * FROM x, info where 0 = info.attribute) as z
+----
+tinyint
+1
+0
+(empty)
+(empty)
+n
+int
+31
+0
+(empty)
+(empty)
+rn
+
+query TIITTT
+PREPARE WITH x as (SELECT 1) SELECT 1 as n, row_number() over() as rn FROM (SELECT * FROM x, info where 0 = info.attribute) as z
+----
+tinyint
+1
+0
+(empty)
+(empty)
+n
+int
+31
+0
+(empty)
+(empty)
+rn
+
+query TIITTT
+PREPARE WITH x as (SELECT 1) SELECT 1 as n, row_number() over() as rn FROM (SELECT * FROM x, info where 0 = info.attribute) as z
+----
+tinyint
+1
+0
+(empty)
+(empty)
+n
+int
+31
+0
+(empty)
+(empty)
+rn
+
+query TIITTT
+PREPARE WITH x as (SELECT 1) SELECT 1 as n, row_number() over() as rn FROM (SELECT * FROM x, info where 0 = info.attribute) as z
+----
+tinyint
+1
+0
+(empty)
+(empty)
+n
+int
+31
+0
+(empty)
+(empty)
+rn
+
+query TIITTT
+PREPARE WITH x as (SELECT 1) SELECT 1 as n, row_number() over() as rn FROM (SELECT * FROM x, info where 0 = info.attribute) as z
+----
+tinyint
+1
+0
+(empty)
+(empty)
+n
+int
+31
+0
+(empty)
+(empty)
+rn
+
+query TIITTT
+PREPARE WITH x as (SELECT 1) SELECT 1 as n, row_number() over() as rn FROM (SELECT * FROM x, info where 0 = info.attribute) as z
+----
+tinyint
+1
+0
+(empty)
+(empty)
+n
+int
+31
+0
+(empty)
+(empty)
+rn
+
+query TIITTT
+PREPARE WITH x as (SELECT 1) SELECT 1 as n, row_number() over() as rn FROM (SELECT * FROM x, info where 0 = info.attribute) as z
+----
+tinyint
+1
+0
+(empty)
+(empty)
+n
+int
+31
+0
+(empty)
+(empty)
+rn
+
+query TIITTT
+PREPARE WITH x as (SELECT 1) SELECT 1 as n, row_number() over() as rn FROM (SELECT * FROM x, info where 0 = info.attribute) as z
+----
+tinyint
+1
+0
+(empty)
+(empty)
+n
+int
+31
+0
+(empty)
+(empty)
+rn
+
+query TIITTT
+PREPARE WITH x as (SELECT 1) SELECT 1 as n, row_number() over() as rn FROM (SELECT * FROM x, info where 0 = info.attribute) as z
+----
+tinyint
+1
+0
+(empty)
+(empty)
+n
+int
+31
+0
+(empty)
+(empty)
+rn
+
+query TIITTT
+PREPARE WITH x as (SELECT 1) SELECT 1 as n, row_number() over() as rn FROM (SELECT * FROM x, info where 0 = info.attribute) as z
+----
+tinyint
+1
+0
+(empty)
+(empty)
+n
+int
+31
+0
+(empty)
+(empty)
+rn
+
+query TIITTT
+PREPARE WITH x as (SELECT 1) SELECT 1 as n, row_number() over() as rn FROM (SELECT * FROM x, info where 0 = info.attribute) as z
+----
+tinyint
+1
+0
+(empty)
+(empty)
+n
+int
+31
+0
+(empty)
+(empty)
+rn
+
+query TIITTT
+PREPARE WITH x as (SELECT 1) SELECT 1 as n, row_number() over() as rn FROM (SELECT * FROM x, info where 0 = info.attribute) as z
+----
+tinyint
+1
+0
+(empty)
+(empty)
+n
+int
+31
+0
+(empty)
+(empty)
+rn
+
+query TIITTT
+PREPARE WITH x as (SELECT 1) SELECT 1 as n, row_number() over() as rn FROM (SELECT * FROM x, info where 0 = info.attribute) as z
+----
+tinyint
+1
+0
+(empty)
+(empty)
+n
+int
+31
+0
+(empty)
+(empty)
+rn
+
+query TIITTT
+PREPARE WITH x as (SELECT 1) SELECT 1 as n, row_number() over() as rn FROM (SELECT * FROM x, info where 0 = info.attribute) as z
+----
+tinyint
+1
+0
+(empty)
+(empty)
+n
+int
+31
+0
+(empty)
+(empty)
+rn
+
+query TIITTT
+PREPARE WITH x as (SELECT 1) SELECT 1 as n, row_number() over() as rn FROM (SELECT * FROM x, info where 0 = info.attribute) as z
+----
+tinyint
+1
+0
+(empty)
+(empty)
+n
+int
+31
+0
+(empty)
+(empty)
+rn
+
+query TIITTT
+PREPARE WITH x as (SELECT 1) SELECT 1 as n, row_number() over() as rn FROM (SELECT * FROM x, info where 0 = info.attribute) as z
+----
+tinyint
+1
+0
+(empty)
+(empty)
+n
+int
+31
+0
+(empty)
+(empty)
+rn
+
+query TIITTT
+PREPARE WITH x as (SELECT 1) SELECT 1 as n, row_number() over() as rn FROM (SELECT * FROM x, info where 0 = info.attribute) as z
+----
+tinyint
+1
+0
+(empty)
+(empty)
+n
+int
+31
+0
+(empty)
+(empty)
+rn
+
+query TIITTT
+PREPARE WITH x as (SELECT 1) SELECT 1 as n, row_number() over() as rn FROM (SELECT * FROM x, info where 0 = info.attribute) as z
+----
+tinyint
+1
+0
+(empty)
+(empty)
+n
+int
+31
+0
+(empty)
+(empty)
+rn
+
+query TIITTT
+PREPARE WITH x as (SELECT 1) SELECT 1 as n, row_number() over() as rn FROM (SELECT * FROM x, info where 0 = info.attribute) as z
+----
+tinyint
+1
+0
+(empty)
+(empty)
+n
+int
+31
+0
+(empty)
+(empty)
+rn
+
+query TIITTT
+PREPARE WITH x as (SELECT 1) SELECT 1 as n, row_number() over() as rn FROM (SELECT * FROM x, info where 0 = info.attribute) as z
+----
+tinyint
+1
+0
+(empty)
+(empty)
+n
+int
+31
+0
+(empty)
+(empty)
+rn
+
+query TIITTT
+PREPARE WITH x as (SELECT 1) SELECT 1 as n, row_number() over() as rn FROM (SELECT * FROM x, info where 0 = info.attribute) as z
+----
+tinyint
+1
+0
+(empty)
+(empty)
+n
+int
+31
+0
+(empty)
+(empty)
+rn
+
+query TIITTT
+PREPARE WITH x as (SELECT 1) SELECT 1 as n, row_number() over() as rn FROM (SELECT * FROM x, info where 0 = info.attribute) as z
+----
+tinyint
+1
+0
+(empty)
+(empty)
+n
+int
+31
+0
+(empty)
+(empty)
+rn
+
+query TIITTT
+PREPARE WITH x as (SELECT 1) SELECT 1 as n, row_number() over() as rn FROM (SELECT * FROM x, info where 0 = info.attribute) as z
+----
+tinyint
+1
+0
+(empty)
+(empty)
+n
+int
+31
+0
+(empty)
+(empty)
+rn
+
+query TIITTT
+PREPARE WITH x as (SELECT 1) SELECT 1 as n, row_number() over() as rn FROM (SELECT * FROM x, info where 0 = info.attribute) as z
+----
+tinyint
+1
+0
+(empty)
+(empty)
+n
+int
+31
+0
+(empty)
+(empty)
+rn
+
+query TIITTT
+PREPARE WITH x as (SELECT 1) SELECT 1 as n, row_number() over() as rn FROM (SELECT * FROM x, info where 0 = info.attribute) as z
+----
+tinyint
+1
+0
+(empty)
+(empty)
+n
+int
+31
+0
+(empty)
+(empty)
+rn
+
+query TIITTT
+PREPARE WITH x as (SELECT 1) SELECT 1 as n, row_number() over() as rn FROM (SELECT * FROM x, info where 0 = info.attribute) as z
+----
+tinyint
+1
+0
+(empty)
+(empty)
+n
+int
+31
+0
+(empty)
+(empty)
+rn
+
+query TIITTT
+PREPARE WITH x as (SELECT 1) SELECT 1 as n, row_number() over() as rn FROM (SELECT * FROM x, info where 0 = info.attribute) as z
+----
+tinyint
+1
+0
+(empty)
+(empty)
+n
+int
+31
+0
+(empty)
+(empty)
+rn
+
+query TIITTT
+PREPARE WITH x as (SELECT 1) SELECT 1 as n, row_number() over() as rn FROM (SELECT * FROM x, info where 0 = info.attribute) as z
+----
+tinyint
+1
+0
+(empty)
+(empty)
+n
+int
+31
+0
+(empty)
+(empty)
+rn
+
+query TIITTT
+PREPARE WITH x as (SELECT 1) SELECT 1 as n, row_number() over() as rn FROM (SELECT * FROM x, info where 0 = info.attribute) as z
+----
+tinyint
+1
+0
+(empty)
+(empty)
+n
+int
+31
+0
+(empty)
+(empty)
+rn
+
+query TIITTT
+PREPARE WITH x as (SELECT 1) SELECT 1 as n, row_number() over() as rn FROM (SELECT * FROM x, info where 0 = info.attribute) as z
+----
+tinyint
+1
+0
+(empty)
+(empty)
+n
+int
+31
+0
+(empty)
+(empty)
+rn
+
+query TIITTT
+PREPARE WITH x as (SELECT 1) SELECT 1 as n, row_number() over() as rn FROM (SELECT * FROM x, info where 0 = info.attribute) as z
+----
+tinyint
+1
+0
+(empty)
+(empty)
+n
+int
+31
+0
+(empty)
+(empty)
+rn
+
+query TIITTT
+PREPARE WITH x as (SELECT 1) SELECT 1 as n, row_number() over() as rn FROM (SELECT * FROM x, info where 0 = info.attribute) as z
+----
+tinyint
+1
+0
+(empty)
+(empty)
+n
+int
+31
+0
+(empty)
+(empty)
+rn
+
+query TIITTT
+PREPARE WITH x as (SELECT 1) SELECT 1 as n, row_number() over() as rn FROM (SELECT * FROM x, info where 0 = info.attribute) as z
+----
+tinyint
+1
+0
+(empty)
+(empty)
+n
+int
+31
+0
+(empty)
+(empty)
+rn
+
+query TIITTT
+PREPARE WITH x as (SELECT 1) SELECT 1 as n, row_number() over() as rn FROM (SELECT * FROM x, info where 0 = info.attribute) as z
+----
+tinyint
+1
+0
+(empty)
+(empty)
+n
+int
+31
+0
+(empty)
+(empty)
+rn
+
+query TIITTT
+PREPARE WITH x as (SELECT 1) SELECT 1 as n, row_number() over() as rn FROM (SELECT * FROM x, info where 0 = info.attribute) as z
+----
+tinyint
+1
+0
+(empty)
+(empty)
+n
+int
+31
+0
+(empty)
+(empty)
+rn
+
+query TIITTT
+PREPARE WITH x as (SELECT 1) SELECT 1 as n, row_number() over() as rn FROM (SELECT * FROM x, info where 0 = info.attribute) as z
+----
+tinyint
+1
+0
+(empty)
+(empty)
+n
+int
+31
+0
+(empty)
+(empty)
+rn
+
+query TIITTT
+PREPARE WITH x as (SELECT 1) SELECT 1 as n, row_number() over() as rn FROM (SELECT * FROM x, info where 0 = info.attribute) as z
+----
+tinyint
+1
+0
+(empty)
+(empty)
+n
+int
+31
+0
+(empty)
+(empty)
+rn
+
+query TIITTT
+PREPARE WITH x as (SELECT 1) SELECT 1 as n, row_number() over() as rn FROM (SELECT * FROM x, info where 0 = info.attribute) as z
+----
+tinyint
+1
+0
+(empty)
+(empty)
+n
+int
+31
+0
+(empty)
+(empty)
+rn
+
+query TIITTT
+PREPARE WITH x as (SELECT 1) SELECT 1 as n, row_number() over() as rn FROM (SELECT * FROM x, info where 0 = info.attribute) as z
+----
+tinyint
+1
+0
+(empty)
+(empty)
+n
+int
+31
+0
+(empty)
+(empty)
+rn
+
+
+query TIITTT
+PREPARE WITH x as (SELECT 1) SELECT 1 as n, row_number() over() as rn FROM (SELECT * FROM x, info where 0 = info.attribute) as z
+----
+tinyint
+1
+0
+(empty)
+(empty)
+n
+int
+31
+0
+(empty)
+(empty)
+rn
+
+query TIITTT
+PREPARE WITH x as (SELECT 1) SELECT 1 as n, row_number() over() as rn FROM (SELECT * FROM x, info where 0 = info.attribute) as z
+----
+tinyint
+1
+0
+(empty)
+(empty)
+n
+int
+31
+0
+(empty)
+(empty)
+rn
+
+query TIITTT
+PREPARE WITH x as (SELECT 1) SELECT 1 as n, row_number() over() as rn FROM (SELECT * FROM x, info where 0 = info.attribute) as z
+----
+tinyint
+1
+0
+(empty)
+(empty)
+n
+int
+31
+0
+(empty)
+(empty)
+rn
+
+query TIITTT
+PREPARE WITH x as (SELECT 1) SELECT 1 as n, row_number() over() as rn FROM (SELECT * FROM x, info where 0 = info.attribute) as z
+----
+tinyint
+1
+0
+(empty)
+(empty)
+n
+int
+31
+0
+(empty)
+(empty)
+rn
+
+query TIITTT
+PREPARE WITH x as (SELECT 1) SELECT 1 as n, row_number() over() as rn FROM (SELECT * FROM x, info where 0 = info.attribute) as z
+----
+tinyint
+1
+0
+(empty)
+(empty)
+n
+int
+31
+0
+(empty)
+(empty)
+rn
+
+query TIITTT
+PREPARE WITH x as (SELECT 1) SELECT 1 as n, row_number() over() as rn FROM (SELECT * FROM x, info where 0 = info.attribute) as z
+----
+tinyint
+1
+0
+(empty)
+(empty)
+n
+int
+31
+0
+(empty)
+(empty)
+rn
+
+query TIITTT
+PREPARE WITH x as (SELECT 1) SELECT 1 as n, row_number() over() as rn FROM (SELECT * FROM x, info where 0 = info.attribute) as z
+----
+tinyint
+1
+0
+(empty)
+(empty)
+n
+int
+31
+0
+(empty)
+(empty)
+rn
+
+query TIITTT
+PREPARE WITH x as (SELECT 1) SELECT 1 as n, row_number() over() as rn FROM (SELECT * FROM x, info where 0 = info.attribute) as z
+----
+tinyint
+1
+0
+(empty)
+(empty)
+n
+int
+31
+0
+(empty)
+(empty)
+rn
+
+query TIITTT
+PREPARE WITH x as (SELECT 1) SELECT 1 as n, row_number() over() as rn FROM (SELECT * FROM x, info where 0 = info.attribute) as z
+----
+tinyint
+1
+0
+(empty)
+(empty)
+n
+int
+31
+0
+(empty)
+(empty)
+rn
+
+query TIITTT
+PREPARE WITH x as (SELECT 1) SELECT 1 as n, row_number() over() as rn FROM (SELECT * FROM x, info where 0 = info.attribute) as z
+----
+tinyint
+1
+0
+(empty)
+(empty)
+n
+int
+31
+0
+(empty)
+(empty)
+rn
+
+query TIITTT
+PREPARE WITH x as (SELECT 1) SELECT 1 as n, row_number() over() as rn FROM (SELECT * FROM x, info where 0 = info.attribute) as z
+----
+tinyint
+1
+0
+(empty)
+(empty)
+n
+int
+31
+0
+(empty)
+(empty)
+rn
+
+query TIITTT
+PREPARE WITH x as (SELECT 1) SELECT 1 as n, row_number() over() as rn FROM (SELECT * FROM x, info where 0 = info.attribute) as z
+----
+tinyint
+1
+0
+(empty)
+(empty)
+n
+int
+31
+0
+(empty)
+(empty)
+rn
+
+query TIITTT
+PREPARE WITH x as (SELECT 1) SELECT 1 as n, row_number() over() as rn FROM (SELECT * FROM x, info where 0 = info.attribute) as z
+----
+tinyint
+1
+0
+(empty)
+(empty)
+n
+int
+31
+0
+(empty)
+(empty)
+rn
+
+query TIITTT
+PREPARE WITH x as (SELECT 1) SELECT 1 as n, row_number() over() as rn FROM (SELECT * FROM x, info where 0 = info.attribute) as z
+----
+tinyint
+1
+0
+(empty)
+(empty)
+n
+int
+31
+0
+(empty)
+(empty)
+rn
+
+query TIITTT
+PREPARE WITH x as (SELECT 1) SELECT 1 as n, row_number() over() as rn FROM (SELECT * FROM x, info where 0 = info.attribute) as z
+----
+tinyint
+1
+0
+(empty)
+(empty)
+n
+int
+31
+0
+(empty)
+(empty)
+rn
+
+query TIITTT
+PREPARE WITH x as (SELECT 1) SELECT 1 as n, row_number() over() as rn FROM (SELECT * FROM x, info where 0 = info.attribute) as z
+----
+tinyint
+1
+0
+(empty)
+(empty)
+n
+int
+31
+0
+(empty)
+(empty)
+rn
+
+query TIITTT
+PREPARE WITH x as (SELECT 1) SELECT 1 as n, row_number() over() as rn FROM (SELECT * FROM x, info where 0 = info.attribute) as z
+----
+tinyint
+1
+0
+(empty)
+(empty)
+n
+int
+31
+0
+(empty)
+(empty)
+rn
+
+query TIITTT
+PREPARE WITH x as (SELECT 1) SELECT 1 as n, row_number() over() as rn FROM (SELECT * FROM x, info where 0 = info.attribute) as z
+----
+tinyint
+1
+0
+(empty)
+(empty)
+n
+int
+31
+0
+(empty)
+(empty)
+rn
+
+query TIITTT
+PREPARE WITH x as (SELECT 1) SELECT 1 as n, row_number() over() as rn FROM (SELECT * FROM x, info where 0 = info.attribute) as z
+----
+tinyint
+1
+0
+(empty)
+(empty)
+n
+int
+31
+0
+(empty)
+(empty)
+rn
+
+query TIITTT
+PREPARE WITH x as (SELECT 1) SELECT 1 as n, row_number() over() as rn FROM (SELECT * FROM x, info where 0 = info.attribute) as z
+----
+tinyint
+1
+0
+(empty)
+(empty)
+n
+int
+31
+0
+(empty)
+(empty)
+rn
+
+query TIITTT
+PREPARE WITH x as (SELECT 1) SELECT 1 as n, row_number() over() as rn FROM (SELECT * FROM x, info where 0 = info.attribute) as z
+----
+tinyint
+1
+0
+(empty)
+(empty)
+n
+int
+31
+0
+(empty)
+(empty)
+rn
+
+query TIITTT
+PREPARE WITH x as (SELECT 1) SELECT 1 as n, row_number() over() as rn FROM (SELECT * FROM x, info where 0 = info.attribute) as z
+----
+tinyint
+1
+0
+(empty)
+(empty)
+n
+int
+31
+0
+(empty)
+(empty)
+rn
+
+query TIITTT
+PREPARE WITH x as (SELECT 1) SELECT 1 as n, row_number() over() as rn FROM (SELECT * FROM x, info where 0 = info.attribute) as z
+----
+tinyint
+1
+0
+(empty)
+(empty)
+n
+int
+31
+0
+(empty)
+(empty)
+rn
+
+query TIITTT
+PREPARE WITH x as (SELECT 1) SELECT 1 as n, row_number() over() as rn FROM (SELECT * FROM x, info where 0 = info.attribute) as z
+----
+tinyint
+1
+0
+(empty)
+(empty)
+n
+int
+31
+0
+(empty)
+(empty)
+rn
+
+query TIITTT
+PREPARE WITH x as (SELECT 1) SELECT 1 as n, row_number() over() as rn FROM (SELECT * FROM x, info where 0 = info.attribute) as z
+----
+tinyint
+1
+0
+(empty)
+(empty)
+n
+int
+31
+0
+(empty)
+(empty)
+rn
+
+query TIITTT
+PREPARE WITH x as (SELECT 1) SELECT 1 as n, row_number() over() as rn FROM (SELECT * FROM x, info where 0 = info.attribute) as z
+----
+tinyint
+1
+0
+(empty)
+(empty)
+n
+int
+31
+0
+(empty)
+(empty)
+rn
+
+query TIITTT
+PREPARE WITH x as (SELECT 1) SELECT 1 as n, row_number() over() as rn FROM (SELECT * FROM x, info where 0 = info.attribute) as z
+----
+tinyint
+1
+0
+(empty)
+(empty)
+n
+int
+31
+0
+(empty)
+(empty)
+rn
+
+query TIITTT
+PREPARE WITH x as (SELECT 1) SELECT 1 as n, row_number() over() as rn FROM (SELECT * FROM x, info where 0 = info.attribute) as z
+----
+tinyint
+1
+0
+(empty)
+(empty)
+n
+int
+31
+0
+(empty)
+(empty)
+rn
+
+query TIITTT
+PREPARE WITH x as (SELECT 1) SELECT 1 as n, row_number() over() as rn FROM (SELECT * FROM x, info where 0 = info.attribute) as z
+----
+tinyint
+1
+0
+(empty)
+(empty)
+n
+int
+31
+0
+(empty)
+(empty)
+rn
+
+query TIITTT
+PREPARE WITH x as (SELECT 1) SELECT 1 as n, row_number() over() as rn FROM (SELECT * FROM x, info where 0 = info.attribute) as z
+----
+tinyint
+1
+0
+(empty)
+(empty)
+n
+int
+31
+0
+(empty)
+(empty)
+rn
+
+query TIITTT
+PREPARE WITH x as (SELECT 1) SELECT 1 as n, row_number() over() as rn FROM (SELECT * FROM x, info where 0 = info.attribute) as z
+----
+tinyint
+1
+0
+(empty)
+(empty)
+n
+int
+31
+0
+(empty)
+(empty)
+rn
+
+query TIITTT
+PREPARE WITH x as (SELECT 1) SELECT 1 as n, row_number() over() as rn FROM (SELECT * FROM x, info where 0 = info.attribute) as z
+----
+tinyint
+1
+0
+(empty)
+(empty)
+n
+int
+31
+0
+(empty)
+(empty)
+rn
+
+query TIITTT
+PREPARE WITH x as (SELECT 1) SELECT 1 as n, row_number() over() as rn FROM (SELECT * FROM x, info where 0 = info.attribute) as z
+----
+tinyint
+1
+0
+(empty)
+(empty)
+n
+int
+31
+0
+(empty)
+(empty)
+rn
+
+query TIITTT
+PREPARE WITH x as (SELECT 1) SELECT 1 as n, row_number() over() as rn FROM (SELECT * FROM x, info where 0 = info.attribute) as z
+----
+tinyint
+1
+0
+(empty)
+(empty)
+n
+int
+31
+0
+(empty)
+(empty)
+rn
+
+query TIITTT
+PREPARE WITH x as (SELECT 1) SELECT 1 as n, row_number() over() as rn FROM (SELECT * FROM x, info where 0 = info.attribute) as z
+----
+tinyint
+1
+0
+(empty)
+(empty)
+n
+int
+31
+0
+(empty)
+(empty)
+rn
+
+query TIITTT
+PREPARE WITH x as (SELECT 1) SELECT 1 as n, row_number() over() as rn FROM (SELECT * FROM x, info where 0 = info.attribute) as z
+----
+tinyint
+1
+0
+(empty)
+(empty)
+n
+int
+31
+0
+(empty)
+(empty)
+rn
+
+query TIITTT
+PREPARE WITH x as (SELECT 1) SELECT 1 as n, row_number() over() as rn FROM (SELECT * FROM x, info where 0 = info.attribute) as z
+----
+tinyint
+1
+0
+(empty)
+(empty)
+n
+int
+31
+0
+(empty)
+(empty)
+rn
+
+query TIITTT
+PREPARE WITH x as (SELECT 1) SELECT 1 as n, row_number() over() as rn FROM (SELECT * FROM x, info where 0 = info.attribute) as z
+----
+tinyint
+1
+0
+(empty)
+(empty)
+n
+int
+31
+0
+(empty)
+(empty)
+rn
+
+query TIITTT
+PREPARE WITH x as (SELECT 1) SELECT 1 as n, row_number() over() as rn FROM (SELECT * FROM x, info where 0 = info.attribute) as z
+----
+tinyint
+1
+0
+(empty)
+(empty)
+n
+int
+31
+0
+(empty)
+(empty)
+rn
+
+query TIITTT
+PREPARE WITH x as (SELECT 1) SELECT 1 as n, row_number() over() as rn FROM (SELECT * FROM x, info where 0 = info.attribute) as z
+----
+tinyint
+1
+0
+(empty)
+(empty)
+n
+int
+31
+0
+(empty)
+(empty)
+rn
+
+query TIITTT
+PREPARE WITH x as (SELECT 1) SELECT 1 as n, row_number() over() as rn FROM (SELECT * FROM x, info where 0 = info.attribute) as z
+----
+tinyint
+1
+0
+(empty)
+(empty)
+n
+int
+31
+0
+(empty)
+(empty)
+rn
+
+query TIITTT
+PREPARE WITH x as (SELECT 1) SELECT 1 as n, row_number() over() as rn FROM (SELECT * FROM x, info where 0 = info.attribute) as z
+----
+tinyint
+1
+0
+(empty)
+(empty)
+n
+int
+31
+0
+(empty)
+(empty)
+rn
+
+query TIITTT
+PREPARE WITH x as (SELECT 1) SELECT 1 as n, row_number() over() as rn FROM (SELECT * FROM x, info where 0 = info.attribute) as z
+----
+tinyint
+1
+0
+(empty)
+(empty)
+n
+int
+31
+0
+(empty)
+(empty)
+rn
+
+query TIITTT
+PREPARE WITH x as (SELECT 1) SELECT 1 as n, row_number() over() as rn FROM (SELECT * FROM x, info where 0 = info.attribute) as z
+----
+tinyint
+1
+0
+(empty)
+(empty)
+n
+int
+31
+0
+(empty)
+(empty)
+rn
+
+query TIITTT
+PREPARE WITH x as (SELECT 1) SELECT 1 as n, row_number() over() as rn FROM (SELECT * FROM x, info where 0 = info.attribute) as z
+----
+tinyint
+1
+0
+(empty)
+(empty)
+n
+int
+31
+0
+(empty)
+(empty)
+rn
+
+query TIITTT
+PREPARE WITH x as (SELECT 1) SELECT 1 as n, row_number() over() as rn FROM (SELECT * FROM x, info where 0 = info.attribute) as z
+----
+tinyint
+1
+0
+(empty)
+(empty)
+n
+int
+31
+0
+(empty)
+(empty)
+rn
+
+query TIITTT
+PREPARE WITH x as (SELECT 1) SELECT 1 as n, row_number() over() as rn FROM (SELECT * FROM x, info where 0 = info.attribute) as z
+----
+tinyint
+1
+0
+(empty)
+(empty)
+n
+int
+31
+0
+(empty)
+(empty)
+rn
+
+query TIITTT
+PREPARE WITH x as (SELECT 1) SELECT 1 as n, row_number() over() as rn FROM (SELECT * FROM x, info where 0 = info.attribute) as z
+----
+tinyint
+1
+0
+(empty)
+(empty)
+n
+int
+31
+0
+(empty)
+(empty)
+rn
+
+query TIITTT
+PREPARE WITH x as (SELECT 1) SELECT 1 as n, row_number() over() as rn FROM (SELECT * FROM x, info where 0 = info.attribute) as z
+----
+tinyint
+1
+0
+(empty)
+(empty)
+n
+int
+31
+0
+(empty)
+(empty)
+rn
+
+query TIITTT
+PREPARE WITH x as (SELECT 1) SELECT 1 as n, row_number() over() as rn FROM (SELECT * FROM x, info where 0 = info.attribute) as z
+----
+tinyint
+1
+0
+(empty)
+(empty)
+n
+int
+31
+0
+(empty)
+(empty)
+rn
+
+query TIITTT
+PREPARE WITH x as (SELECT 1) SELECT 1 as n, row_number() over() as rn FROM (SELECT * FROM x, info where 0 = info.attribute) as z
+----
+tinyint
+1
+0
+(empty)
+(empty)
+n
+int
+31
+0
+(empty)
+(empty)
+rn
+
+query TIITTT
+PREPARE WITH x as (SELECT 1) SELECT 1 as n, row_number() over() as rn FROM (SELECT * FROM x, info where 0 = info.attribute) as z
+----
+tinyint
+1
+0
+(empty)
+(empty)
+n
+int
+31
+0
+(empty)
+(empty)
+rn
+
+query TIITTT
+PREPARE WITH x as (SELECT 1) SELECT 1 as n, row_number() over() as rn FROM (SELECT * FROM x, info where 0 = info.attribute) as z
+----
+tinyint
+1
+0
+(empty)
+(empty)
+n
+int
+31
+0
+(empty)
+(empty)
+rn
+
+query TIITTT
+PREPARE WITH x as (SELECT 1) SELECT 1 as n, row_number() over() as rn FROM (SELECT * FROM x, info where 0 = info.attribute) as z
+----
+tinyint
+1
+0
+(empty)
+(empty)
+n
+int
+31
+0
+(empty)
+(empty)
+rn
+
+query TIITTT
+PREPARE WITH x as (SELECT 1) SELECT 1 as n, row_number() over() as rn FROM (SELECT * FROM x, info where 0 = info.attribute) as z
+----
+tinyint
+1
+0
+(empty)
+(empty)
+n
+int
+31
+0
+(empty)
+(empty)
+rn
+
+query TIITTT
+PREPARE WITH x as (SELECT 1) SELECT 1 as n, row_number() over() as rn FROM (SELECT * FROM x, info where 0 = info.attribute) as z
+----
+tinyint
+1
+0
+(empty)
+(empty)
+n
+int
+31
+0
+(empty)
+(empty)
+rn
+
+query TIITTT
+PREPARE WITH x as (SELECT 1) SELECT 1 as n, row_number() over() as rn FROM (SELECT * FROM x, info where 0 = info.attribute) as z
+----
+tinyint
+1
+0
+(empty)
+(empty)
+n
+int
+31
+0
+(empty)
+(empty)
+rn
+
+query TIITTT
+PREPARE WITH x as (SELECT 1) SELECT 1 as n, row_number() over() as rn FROM (SELECT * FROM x, info where 0 = info.attribute) as z
+----
+tinyint
+1
+0
+(empty)
+(empty)
+n
+int
+31
+0
+(empty)
+(empty)
+rn
+
+query TIITTT
+PREPARE WITH x as (SELECT 1) SELECT 1 as n, row_number() over() as rn FROM (SELECT * FROM x, info where 0 = info.attribute) as z
+----
+tinyint
+1
+0
+(empty)
+(empty)
+n
+int
+31
+0
+(empty)
+(empty)
+rn
+
+query TIITTT
+PREPARE WITH x as (SELECT 1) SELECT 1 as n, row_number() over() as rn FROM (SELECT * FROM x, info where 0 = info.attribute) as z
+----
+tinyint
+1
+0
+(empty)
+(empty)
+n
+int
+31
+0
+(empty)
+(empty)
+rn
+
+statement error
+SELECT 1/0
+
+
+query II
+EXEC 113()
+----

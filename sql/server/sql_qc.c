@@ -178,6 +178,7 @@ qc_insert(qc *cache, allocator *sa, sql_rel *r, symbol *s, list *params, mapi_qu
 		.query = cmd,
 		.ops = params,
 		.res = res,
+		.sa = sa,
 	};
 	base_init(sa, &f->base, 0, true, NULL);
 	f->base.new = 1;

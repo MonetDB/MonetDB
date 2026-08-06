@@ -1468,12 +1468,18 @@ backend_create_sql_func_body(backend *be, sql_func *f, list *restypes, list *ops
 	sql_func *pf = NULL;
 	sql_rel *r;
 
+	allocator *sa = m->sa;
+	assert(!prepare || f->sa);
+	if (f->sa)
+		m->sa = f->sa;
 	r = rel_parse(m, f->s, f->query, prepare?m_prepare:m_instantiate);
 	if (r) {
 		r = sql_processrelation(m, r, 0, 1, 1, 0);
 		r = rel_physical(m, r);
 	}
 	if (!r) {
+		if (f->sa)
+			m->sa = sa;
 		goto cleanup;
 	}
 
@@ -1485,6 +1491,8 @@ backend_create_sql_func_body(backend *be, sql_func *f, list *restypes, list *ops
 			curInstr = table_func_create_result(curBlk, curInstr, f, restypes);
 			if( curInstr == NULL) {
 				sql_error(m, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				if (f->sa)
+					m->sa = sa;
 				goto cleanup;
 			}
 		} else {
@@ -1506,6 +1514,8 @@ backend_create_sql_func_body(backend *be, sql_func *f, list *restypes, list *ops
 			(void) snprintf(buf, sizeof(buf), "A%d", argc);
 			if ((varid = newVariable(curBlk, buf, strlen(buf), type)) < 0) {
 				sql_error(m, 10, SQLSTATE(42000) "Internal error while compiling statement: variable id too long");
+				if (f->sa)
+					m->sa = sa;
 				goto cleanup;
 			}
 			curInstr = pushArgument(curBlk, curInstr, varid);
@@ -1531,10 +1541,14 @@ backend_create_sql_func_body(backend *be, sql_func *f, list *restypes, list *ops
 			}
 			if (!buf) {
 				sql_error(m, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				if (f->sa)
+					m->sa = sa;
 				goto cleanup;
 			}
 			if ((varid = newVariable(curBlk, buf, strlen(buf), type)) < 0) {
 				sql_error(m, 10, SQLSTATE(42000) "Internal error while compiling statement: variable id too long");
+				if (f->sa)
+					m->sa = sa;
 				goto cleanup;
 			}
 			curInstr = pushArgument(curBlk, curInstr, varid);
@@ -1543,10 +1557,13 @@ backend_create_sql_func_body(backend *be, sql_func *f, list *restypes, list *ops
 	}
 	/* for recursive functions, avoid infinite loops */
 	pf = m->forward;
-	m->forward = f;
+	if (!prepare)
+		m->forward = f;
 	be->fimp = fimp; /* for recursive functions keep the generated name */
 	res = backend_dumpstmt(be, curBlk, r, prepare, 1, NULL);
 	m->forward = pf;
+	if (f->sa)
+		m->sa = sa;
 	if (res < 0)
 		goto cleanup;
 	/* selectively make functions available for inlineing */
@@ -1658,8 +1675,16 @@ backend_create_sql_func(backend *be, sql_subfunc *sf, list *restypes, list *ops)
 	*ma_get_eb(m->sa) = ebsave;
 	return 0;
   bailout:
-	if (!prepare)
+	if (!prepare) {
+		/* We need to #undef GDKfree in case the compiler optimizes and
+		 * asserts are enabled (more specifically, NDEBUG is not defined
+		 * but __GNUC__ is).  In these specific circumstances, the
+		 * assignment inside the GDKfree debug macro triggers a compiler
+		 * warning about a variable that may get clobbered by
+		 * longjmp. */
+#undef GDKfree
 		_DELETE(fimp);
+	}
 	*be = bebackup;
 	c->curprg = symbackup;
 	*ma_get_eb(m->sa) = ebsave;
