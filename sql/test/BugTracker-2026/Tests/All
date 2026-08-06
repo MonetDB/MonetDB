@@ -166,3 +166,4 @@ KNOWNFAIL?7980-lag-offset-ignored-bug
 KNOWNFAIL?7982-range-current-row-bug
 KNOWNFAIL?7984-exists-select-count-bug
 KNOWNFAIL?7985-qualify-row_number-over-bug
+KNOWNFAIL?7986-right-function-bug
