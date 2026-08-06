@@ -1,0 +1,44 @@
+statement ok
+CREATE TABLE ea(x INT)
+
+statement ok
+INSERT INTO ea VALUES (1),(2)
+
+statement ok
+CREATE TABLE eb(y INT)
+
+statement ok
+INSERT INTO eb VALUES (1)
+
+query ITI rowsort
+SELECT ea.x,
+       EXISTS (SELECT COUNT(*) FROM eb WHERE eb.y = ea.x) AS e,  -- did the subquery produce a row?
+       (SELECT COUNT(*) FROM eb WHERE eb.y = ea.x)        AS v   -- the value of that same subquery
+FROM ea ORDER BY ea.x
+----
+1
+True
+1
+2
+True
+0
+
+-- MonetDB: {1}      expected: {1, 2}      one row silently dropped
+query I rowsort
+SELECT ea.x FROM ea WHERE     EXISTS (SELECT COUNT(*) FROM eb WHERE eb.y = ea.x) ORDER BY ea.x
+----
+1
+2
+
+-- MonetDB: {2}      expected: {}          one row silently invented
+query I rowsort
+SELECT ea.x FROM ea WHERE NOT EXISTS (SELECT COUNT(*) FROM eb WHERE eb.y = ea.x) ORDER BY ea.x
+----
+
+
+statement ok
+DROP TABLE IF EXISTS ea
+
+statement ok
+DROP TABLE IF EXISTS eb
+
