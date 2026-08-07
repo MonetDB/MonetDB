@@ -39584,6 +39584,11 @@ pattern sql.append(X_0:int, X_1:str, X_2:str, X_3:str, X_4:oid, X_5:bat[:oid], X
 mvc_append_wrap
 Append to the column tname.cname (possibly optimized to replace the insert bat of tname.cname. Returns sequence number for order dependence.
 sql
+append
+pattern sql.append(X_0:int, X_1:str, X_2:str, X_3:str, X_4:oid, X_5:bat[:oid], X_6:any, X_7:int):int
+mvc_append_wrap
+Append to the column tname.cname (possibly optimized to replace the insert bat of tname.cname. Returns sequence number for order dependence.
+sql
 argRecord
 pattern sql.argRecord():str
 SQLargRecord
