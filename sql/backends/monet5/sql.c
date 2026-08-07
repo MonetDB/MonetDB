@@ -1770,6 +1770,14 @@ mvc_append_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat Pos = *getArgReference_bat(stk, pci, 6);
 	ptr ins = getArgReference(stk, pci, 7);
 	int tpe = getArgType(mb, pci, 7), log_res = LOG_OK;
+	int sync_nr = -1;
+	Pipeline *p = NULL;
+	if (pci->argc == 9) {
+		p = pipeline_get_thread_private_pipeline();
+		sync_nr = *getArgReference_int(stk, pci, 8);
+		if (p->seqnr >= 0) /* seq number from file/generator inputs */
+                	sync_nr = p->seqnr;
+	}
 	bool isbat = false;
 	sql_schema *s;
 	sql_table *t;
@@ -1826,15 +1834,23 @@ mvc_append_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (b)
 		cnt = BATcount(b);
 	sqlstore *store = m->session->tr->store;
+	if (sync_nr >= 0) {
+		bool done = 0;
+		pipeline_get_token(p, 6, sync_nr, &done);
+	}
 	if (cname[0] != '%' && (c = mvc_bind_column(m, t, cname)) != NULL) {
 		log_res = store->storage_api.append_col(m->session->tr, c, offset, pos, ins, cnt, isbat, tpe);
 	} else if (cname[0] == '%' && (i = mvc_bind_idx(m, s, cname + 1)) != NULL) {
 		log_res = store->storage_api.append_idx(m->session->tr, i, offset, pos, ins, cnt, isbat, tpe);
 	} else {
+		if (sync_nr >= 0)
+			pipeline_pass_token(p, 6, sync_nr);
 		bat_destroy(pos);
 		bat_destroy(b);
 		throw(SQL, "sql.append", SQLSTATE(38000) "Unable to find column or index %s.%s.%s",sname,tname,cname);
 	}
+	if (sync_nr >= 0)
+		pipeline_pass_token(p, 6, sync_nr);
 	bat_destroy(pos);
 	bat_destroy(b);
 	if (log_res != LOG_OK) /* the conflict case should never happen, but leave it here */
@@ -5799,6 +5815,8 @@ static mel_func sql_init_funcs[] = {
  pattern("sql", "depend", mvc_add_dependency_change, true, "Set dml dependency on current transaction for a table.", args(0,3, arg("sname",str),arg("tname",str),arg("cnt",lng))),
  pattern("sql", "predicate", mvc_add_column_predicate, true, "Add predicate on current transaction for a table column.", args(0,3, arg("sname",str),arg("tname",str),arg("cname",str))),
  pattern("sql", "append", mvc_append_wrap, false, "Append to the column tname.cname (possibly optimized to replace the insert bat of tname.cname. Returns sequence number for order dependence.", args(1,8, arg("",int), arg("mvc",int),arg("sname",str),arg("tname",str),arg("cname",str),arg("offset",oid),batarg("pos",oid),argany("ins",0))),
+ pattern("sql", "append", mvc_append_wrap, false, "Append to the column tname.cname (possibly optimized to replace the insert bat of tname.cname. Returns sequence number for order dependence.", args(1,9, arg("",int), arg("mvc",int),arg("sname",str),arg("tname",str),arg("cname",str),arg("offset",oid),batarg("pos",oid),argany("ins",0),arg("sync_nr", int))),
+
  pattern("sql", "update", mvc_update_wrap, false, "Update the values of the column tname.cname. Returns sequence number for order dependence)", args(1,7, arg("",int), arg("mvc",int),arg("sname",str),arg("tname",str),arg("cname",str),argany("rids",0),argany("upd",0))),
  pattern("sql", "clear_table", mvc_clear_table_wrap, true, "Clear the table sname.tname.", args(1,4, arg("",lng),arg("sname",str),arg("tname",str),arg("restart_sequences",int))),
  pattern("sql", "tid", SQLtid, false, "Return a column with the valid tuple identifiers associated with the table sname.tname.", args(1,4, batarg("",oid),arg("mvc",int),arg("sname",str),arg("tname",str))),

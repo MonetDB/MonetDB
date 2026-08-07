@@ -393,11 +393,14 @@ positional_exps_mark_used( sql_rel *rel, sql_rel *subrel )
 		subrel = subrel->l;
 	/* everything is used within the set operation */
 	if (rel->exps && subrel->exps) {
-		node *m;
-		for (m=subrel->exps->h; m; m = m->next) {
-			sql_exp *se = m->data;
+		for (node *n = rel->exps->h, *m=subrel->exps->h; n && m; n = n->next, m = m->next) {
+			sql_exp *se = n->data;
+			sql_exp *ie = m->data;
 
-			se->used = 1;
+			if (is_recursive(rel) || is_set(rel->op))
+				ie->used =  1;
+			else
+				ie->used = se->used;
 		}
 	}
 }
@@ -584,8 +587,7 @@ rel_mark_used(mvc *sql, sql_rel *rel, int proj)
 	case op_topn:
 	case op_sample:
 		if (proj) {
-			rel = rel ->l;
-			rel_mark_used(sql, rel, proj);
+			rel_mark_used(sql, rel->l, proj);
 			break;
 		}
 		/* fall through */
@@ -657,20 +659,20 @@ rel_mark_used(mvc *sql, sql_rel *rel, int proj)
 				rel_used(rel->l);
 				rel_used(rel->r);
 			}
-			rel_mark_used(sql, rel->l, 0);
-			rel_mark_used(sql, rel->r, 0);
+			rel_mark_used(sql, rel->l, proj);
+			rel_mark_used(sql, rel->r, proj);
 		} else if (proj && !need_distinct(rel)) {
 			sql_rel *l = rel->l;
 
 			positional_exps_mark_used(rel, l);
 			rel_exps_mark_used(sql->sa, rel, l);
-			rel_mark_used(sql, rel->l, 0);
-			/* based on child check set expression list */
-			if (is_project(l->op) && need_distinct(l))
+			rel_mark_used(sql, rel->l, proj);
+			/* based on child check set expression list (which could have back refs with its exps list */
+			if (is_project(l->op) /*&& need_distinct(l)*/)
 				positional_exps_mark_used(l, rel);
 			positional_exps_mark_used(rel, rel->r);
 			rel_exps_mark_used(sql->sa, rel, rel->r);
-			rel_mark_used(sql, rel->r, 0);
+			rel_mark_used(sql, rel->r, proj);
 		}
 		break;
 
@@ -681,7 +683,7 @@ rel_mark_used(mvc *sql, sql_rel *rel, int proj)
 			if (!rel->exps) {
 				for (node *n = ((list*)rel->l)->h; n; n = n->next) {
 					rel_used(n->data);
-					rel_mark_used(sql, n->data, 0);
+					rel_mark_used(sql, n->data, proj);
 				}
 			}
 		} else if (proj && !need_distinct(rel)) {
@@ -691,9 +693,9 @@ rel_mark_used(mvc *sql, sql_rel *rel, int proj)
 
 				positional_exps_mark_used(rel, l);
 				rel_exps_mark_used(sql->sa, rel, l);
-				rel_mark_used(sql, l, 0);
-				/* based on child check set expression list */
-				if (first && is_project(l->op) && need_distinct(l))
+				rel_mark_used(sql, l, proj);
+				/* based on child check set expression list (which could have back refs with its exps list */
+				if (first && is_project(l->op) /*&& need_distinct(l)*/)
 					positional_exps_mark_used(l, rel);
 				first = false;
 			}
@@ -767,6 +769,11 @@ rel_remove_unused(mvc *sql, sql_rel *rel)
 	case op_project:
 	case op_groupby:
 
+	case op_munion:
+
+		if (is_recursive(rel))
+			return rel;
+
 		if (/*rel->l &&*/ rel->exps) {
 			for(node *n=rel->exps->h; n && !needed; n = n->next) {
 				sql_exp *e = n->data;
@@ -818,7 +825,6 @@ rel_remove_unused(mvc *sql, sql_rel *rel)
 
 	case op_inter:
 	case op_except:
-	case op_munion:
 
 	case op_insert:
 	case op_update:
@@ -1151,16 +1157,6 @@ rel_dce_(visitor *v, sql_rel *rel, bool partial)
 	if (v->opt >= 0 && rel)
 		v->opt = rel->opt+1;
 	rel_dce_refs(v->sql, rel, refs);
-	if (refs && !partial) {
-		for(node *n = refs->h; n; n = n->next) {
-			sql_rel *i = n->data;
-
-			while (!rel_is_ref(i) && i->l && !is_base(i->op))
-				i = i->l;
-			if (i)
-				rel_used(i);
-		}
-	}
 	rel = rel_add_projects(v, rel);
 	if (v->opt >= 0 && rel)
 		v->opt = rel->opt+1;

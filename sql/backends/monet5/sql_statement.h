@@ -167,7 +167,7 @@ extern stmt *stmt_tid(backend *be, sql_table *t, int partition);
 extern stmt *stmt_claim(backend *be, sql_table *t, stmt *cnt, int sync);
 extern void stmt_add_dependency_change(backend *be, sql_table *t, stmt *cnt);
 extern void stmt_add_column_predicate(backend *be, sql_column *c);
-extern stmt *stmt_append_col(backend *be, sql_column *c, stmt *offset, stmt *b, int *mvc_var_update, int locked);
+extern stmt *stmt_append_col(backend *be, sql_column *c, stmt *offset, stmt *b, int *mvc_var_update, int locked, bool first);
 extern stmt *stmt_append_idx(backend *be, sql_idx *i, stmt *offset, stmt *b);
 extern stmt *stmt_update_col(backend *be, sql_column *c, stmt *tids, stmt *upd);
 extern stmt *stmt_update_idx(backend *be, sql_idx *i, stmt *tids, stmt *upd);

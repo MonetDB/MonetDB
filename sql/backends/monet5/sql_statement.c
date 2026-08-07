@@ -868,7 +868,7 @@ stmt_idxbat(backend *be, sql_idx *i, int access, int partition)
 }
 
 stmt *
-stmt_append_col(backend *be, sql_column *c, stmt *offset, stmt *b, int *mvc_var_update, int fake)
+stmt_append_col(backend *be, sql_column *c, stmt *offset, stmt *b, int *mvc_var_update, int fake, bool first)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
@@ -916,6 +916,8 @@ stmt_append_col(backend *be, sql_column *c, stmt *offset, stmt *b, int *mvc_var_
 		q = pushArgument(mb, q, b->nr);
 		if (mvc_var_update != NULL)
 			*mvc_var_update = getDestVar(q);
+		if (be->pp && first && offset && offset->q && offset->q->argc == 8)
+			q = pushArgument(mb, q, getArg(offset->q, 7));
 	} else {
 		return b;
 	}
