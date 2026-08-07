@@ -1157,16 +1157,6 @@ rel_dce_(visitor *v, sql_rel *rel, bool partial)
 	if (v->opt >= 0 && rel)
 		v->opt = rel->opt+1;
 	rel_dce_refs(v->sql, rel, refs);
-	if (refs && !partial) {
-		for(node *n = refs->h; n; n = n->next) {
-			sql_rel *i = n->data;
-
-			while (!rel_is_ref(i) && i->l && !is_base(i->op))
-				i = i->l;
-			if (i)
-				rel_used(i);
-		}
-	}
 	rel = rel_add_projects(v, rel);
 	if (v->opt >= 0 && rel)
 		v->opt = rel->opt+1;
