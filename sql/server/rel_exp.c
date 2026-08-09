@@ -1822,7 +1822,7 @@ exp_is_eqjoin(sql_exp *e, void *dummy)
 }
 
 sql_exp *
-exps_find_prop(list *exps, rel_prop kind)
+exps_find_prop(list *exps, prop_kind kind)
 {
 	if (list_empty(exps))
 		return NULL;

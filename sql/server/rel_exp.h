@@ -193,7 +193,7 @@ extern bool exp_is_fallible(sql_exp *e); /* exp could result in an error, ie pus
 extern bool exps_have_fallible(list *l);
 extern bool exps_have_selfref(list *l);
 
-extern sql_exp *exps_find_prop(list *exps, rel_prop kind);
+extern sql_exp *exps_find_prop(list *exps, prop_kind kind);
 
 /* returns 0 when the relation contain the passed expression (or sub expressions if subexp is set) else < 0 */
 extern int rel_has_exp(sql_rel *rel, sql_exp *e, bool subexp);
