@@ -1641,7 +1641,7 @@ int pqc_read_filemetadata(pqc_file *pq);
 int pqc_read_schema(pqc_file *pq);
 pqc_reader_t *pqc_reader(pqc_reader_t *p, pqc_file *pq, int nr_workers, pqc_filemetadata *fmd, int colnr, int64_t nrows, const void *nil);
 void pqc_reader_destroy(pqc_reader_t *r);
-prop *prop_create(allocator *sa, rel_prop kind, prop *pre);
+prop *prop_create(allocator *sa, prop_kind kind, prop *pre);
 InstrPtr pushPtr(MalBlkPtr mb, InstrPtr q, ptr val);
 void qc_delete(qc *cache, cq *q);
 cq *qc_find(qc *cache, int id);

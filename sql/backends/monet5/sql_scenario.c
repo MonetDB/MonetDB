@@ -1782,7 +1782,17 @@ SQLengine_(Client c)
 		sqlcleanup(be, 0);
 		c->query = NULL;
 	} else {
+		bool pre_autocommit = be->mvc->session->auto_commit;
 		msg = SQLparser(c, be);
+		bool post_autocommit = be->mvc->session->auto_commit;
+		if (pre_autocommit != post_autocommit && be->out != NULL) {
+			/* Notify client of change in auto commit mode */
+			char autocommit_flag = post_autocommit ? 't' : 'f';
+			char error_message_follows_flag = (msg != NULL) ? 't' : 'f';
+			int n = mnstr_printf(be->out, "&4 %c %c\n", autocommit_flag, error_message_follows_flag);
+			if (n < 0 && msg == NULL)
+				msg = createException(SQL, "SQLparser", SQLSTATE(HY002) "Error while sending autocommit notification: %s\n", mnstr_peek_error(be->out));
+		}
 		if (msg == MAL_SUCCEED && (be->mvc->emode == m_deallocate || be->mvc->emode == m_prepare))
 			return msg;
 	}

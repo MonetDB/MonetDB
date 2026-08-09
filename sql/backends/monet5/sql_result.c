@@ -1572,13 +1572,10 @@ mvc_export_operation(backend *b, stream *s, str w, lng starttime, lng mal_optimi
 		if (mnstr_printf(s, "&3 " LLFMT " " LLFMT "\n", starttime > 0 ? GDKusec() - starttime : 0, mal_optimizer) < 0)
 			return -4;
 	} else {
-		if (m->session->auto_commit) {
-			if (mnstr_write(s, "&4 t\n", 5, 1) != 1)
-				return -4;
-		} else {
-			if (mnstr_write(s, "&4 f\n", 5, 1) != 1)
-				return -4;
-		}
+		/* We used to send notifications of auto commit mode changes here but
+		 * that has been pulled up to the Scenario level because this function
+		 * doesn't get executed when an error happens before the end of a
+		 * transaction. */
 	}
 
 	if (mvc_export_warning(s, w) != 1)

@@ -13,6 +13,40 @@
 
 #include "sql_catalog.h"
 
+typedef enum prop_kind {
+	PROP_COUNT,     /* Number of expect rows for the relation */
+	PROP_NUNIQUES,  /* Estimated number of distinct rows for the expression */
+	PROP_MIN,       /* min value if available */
+	PROP_MAX,       /* max value if available */
+	PROP_JOINIDX,   /* could use join idx */
+	PROP_HASHIDX,   /* is hash idx */
+	PROP_HASHCOL,   /* could use hash idx */
+	PROP_UKEY,		/* p = list of exps */
+	PROP_REMOTE,    /* uri for remote execution */
+	PROP_USED,      /* number of times exp is used */
+	PROP_GROUPINGS, /* used by ROLLUP/CUBE/GROUPING SETS, value contains the list of sets */
+	PROP_UNNESTING,	/* used by unnesting rewriter */
+	PROP_SELECTIVITY	/* selectivity estimate for predicates (dbl, 0.0-1.0) */
+} prop_kind;
+
+typedef struct prop {
+	prop_kind kind;  /* kind of property */
+	sqlid id;		/* optional id of object involved */
+	union {
+		BUN lval; /* property with simple counts */
+		dbl dval; /* property with estimate */
+		void *pval; /* property value */
+	} value;
+	struct prop *p; /* some relations may have many properties, which are kept in a chain list */
+} prop;
+
+/* for REMOTE prop we need to keep a list with tids and uris for the remote tables */
+typedef struct tid_uri {
+	sqlid id;
+	const char* uri;
+} tid_uri;
+
+
 typedef enum expression_type {
 	e_atom,
 	e_column,
@@ -71,7 +105,7 @@ typedef struct expression {
 	 symmetric:1; /* compare between symmetric */
 	sql_subtype	tpe;
 	int shared;		/* shared variable */
-	void *p;	/* properties for the optimizer */
+	prop *p;	/* properties for the optimizer */
 	str comment;
 } sql_exp;
 
@@ -335,7 +369,7 @@ typedef struct relation {
 	uint16_t used;
 	uint16_t nr_outers;
 	int opt;
-	void *p;	/* properties for the optimizer, distribution */
+	prop *p;	/* properties for the optimizer, distribution */
 } sql_rel;
 
 #endif /* SQL_RELATION_H */
