@@ -1593,7 +1593,7 @@ str number2name(str s, int len, int i);
 sql_part *partition_find_part(sql_trans *tr, sql_table *pt, sql_part *pp);
 int pl_register(const char *name, pl_add_types_fptr add_types, pl_load_fptr pl_load);
 void pl_unregister(const char *name);
-prop *prop_create(allocator *sa, rel_prop kind, prop *pre);
+prop *prop_create(allocator *sa, prop_kind kind, prop *pre);
 InstrPtr pushPtr(MalBlkPtr mb, InstrPtr q, ptr val);
 void qc_delete(qc *cache, cq *q);
 cq *qc_find(qc *cache, int id);

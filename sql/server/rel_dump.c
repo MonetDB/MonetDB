@@ -1079,7 +1079,7 @@ read_exps(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *
 }
 
 static sql_exp*
-exp_read_min_or_max(mvc *sql, sql_exp *exp, char *r, int *pos, const char *prop_str, rel_prop kind)
+exp_read_min_or_max(mvc *sql, sql_exp *exp, char *r, int *pos, const char *prop_str, prop_kind kind)
 {
 	atom *a;
 	sql_subtype *tpe = exp_subtype(exp);

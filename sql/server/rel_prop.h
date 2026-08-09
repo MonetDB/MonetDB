@@ -11,43 +11,11 @@
 #ifndef _REL_PROP_H_
 #define _REL_PROP_H_
 
-typedef enum rel_prop {
-	PROP_COUNT,     /* Number of expect rows for the relation */
-	PROP_NUNIQUES,  /* Estimated number of distinct rows for the expression */
-	PROP_MIN,       /* min value if available */
-	PROP_MAX,       /* max value if available */
-	PROP_JOINIDX,   /* could use join idx */
-	PROP_HASHIDX,   /* is hash idx */
-	PROP_HASHCOL,   /* could use hash idx */
-	PROP_UKEY,		/* p = list of exps */
-	PROP_REMOTE,    /* uri for remote execution */
-	PROP_USED,      /* number of times exp is used */
-	PROP_GROUPINGS,  /* used by ROLLUP/CUBE/GROUPING SETS, value contains the list of sets */
-	PROP_UNNESTING	/* used by unnesting rewriter */
-} rel_prop;
-
-typedef struct prop {
-	rel_prop kind;  /* kind of property */
-	sqlid id;		/* optional id of object involved */
-	union {
-		BUN lval; /* property with simple counts */
-		dbl dval; /* property with estimate */
-		void *pval; /* property value */
-	} value;
-	struct prop *p; /* some relations may have many properties, which are kept in a chain list */
-} prop;
-
-/* for REMOTE prop we need to keep a list with tids and uris for the remote tables */
-typedef struct tid_uri {
-	sqlid id;
-	const char* uri;
-} tid_uri;
-
-sql_export prop * prop_create( allocator *sa, rel_prop kind, prop *pre );
+sql_export prop * prop_create( allocator *sa, prop_kind kind, prop *pre );
 extern prop * prop_copy( allocator *sa, prop *p);
 extern prop * prop_remove(allocator *sa, prop *plist, prop *p);
-extern prop * find_prop( prop *p, rel_prop kind);
-extern void * find_prop_and_get(prop *p, rel_prop kind);
+extern prop * find_prop( prop *p, prop_kind kind);
+extern void * find_prop_and_get(prop *p, prop_kind kind);
 extern const char * propkind2string( prop *p);
 extern char * propvalue2string(allocator *sa, prop *p);
 extern void free_props(allocator *sa, prop *p);
