@@ -1,0 +1,13 @@
+-- bug: RIGHT('ä', 1) should not return an empty string but 'ä'
+query TITI nosort
+SELECT
+  RIGHT('ä', 1) AS actual,
+  CHAR_LENGTH(RIGHT('ä', 1)) AS actual_chars,
+  SUBSTRING('ä', 1, 1) AS expected,
+  CHAR_LENGTH(SUBSTRING('ä', 1, 1)) AS expected_chars
+----
+ä
+1
+ä
+1
+
