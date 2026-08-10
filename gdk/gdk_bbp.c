@@ -1655,6 +1655,7 @@ static bool file_exists(int farmid, const char *dir, const char *name, const cha
 static gdk_return
 fixstrnilbat(BAT *b)
 {
+	lng t0 = GDKusec();
 	const char *nme = BBP_physical(b->batCacheid);
 	char srcdir[MAXPATH];
 	var_t niloff = 0;
@@ -1676,6 +1677,7 @@ fixstrnilbat(BAT *b)
 
 	if (file_exists(0, BAKDIR, bnme, t)) {
 		/* already done by another upgrade */
+		TRC_DEBUG(ALGO, ALGOBATFMT " already done\n", ALGOBATPAR(b));
 		return GDK_SUCCEED;
 	}
 
@@ -1693,6 +1695,8 @@ fixstrnilbat(BAT *b)
 			/* fully double eliminated, and str_nil does not
 			 * occur: nothing to do */
 			HEAPfree(b->tvheap, false);
+			TRC_DEBUG(ALGO, ALGOBATFMT " elimdoubles, no nils\n",
+				  ALGOBATPAR(b));
 			return GDK_SUCCEED;
 		}
 	}
@@ -1813,12 +1817,16 @@ fixstrnilbat(BAT *b)
 	b->theap = h2;
 	HEAPfree(h2, false);
 
+	TRC_DEBUG(ALGO, ALGOBATFMT " " LLFMT " usec\n", ALGOBATPAR(b),
+		  GDKusec() - t0);
+
 	return GDK_SUCCEED;
 }
 
 static gdk_return
 fixblobnilbat(BAT *b)
 {
+	lng t0 = GDKusec();
 	const char *nme = BBP_physical(b->batCacheid);
 	char srcdir[MAXPATH];
 
@@ -1838,6 +1846,7 @@ fixblobnilbat(BAT *b)
 
 	if (file_exists(0, BAKDIR, bnme, "tail")) {
 		/* already done by another upgrade */
+		TRC_DEBUG(ALGO, ALGOBATFMT " already done\n", ALGOBATPAR(b));
 		return GDK_SUCCEED;
 	}
 
@@ -1912,15 +1921,19 @@ fixblobnilbat(BAT *b)
 	b->theap = h2;
 	HEAPfree(h2, false);
 
+	TRC_DEBUG(ALGO, ALGOBATFMT " " LLFMT " usec\n", ALGOBATPAR(b),
+		  GDKusec() - t0);
+
 	return GDK_SUCCEED;
 }
 
 static gdk_return
 BBPvarnil_upgrade(void)
 {
+	lng t0 = GDKusec();
 	for (bat bid = 1, nbat = getBBPsize(); bid < nbat; bid++) {
 		BAT *b = BBP_desc(bid);
-		if (b->batCount == 0)
+		if (b->batCount == 0 || b->tnonil)
 			continue;
 		if (ATOMstorage(b->ttype) == TYPE_str) {
 			if (fixstrnilbat(b) != GDK_SUCCEED)
@@ -1930,6 +1943,7 @@ BBPvarnil_upgrade(void)
 				return GDK_FAIL;
 		}
 	}
+	TRC_DEBUG(ALGO, "total time: " LLFMT " usec\n", GDKusec() - t0);
 	return GDK_SUCCEED;
 }
 #endif
