@@ -8553,30 +8553,32 @@ output_rel_bin(backend *be, sql_rel *rel, int top)
 						 * op1 == stmt_list of hash stmts (attrs of buildhash),
 						 * op2 == hp_gid,
 						 * op3 == freq  */
-						list *nl = sa_list(be->mvc->sa);
-						for(node *n = s->op4.lval->h, *m = rel->attr?rel->attr->h:rel->exps->h; n && m; n = n->next, m = m->next ){
-							stmt *ps = n->data;
-							sql_exp *pe = m->data;
-							stmt *nps = stmt_alias(be, ps, pe->alias.label, ps->tname, ps->cname);
-							append(nl, nps);
-						}
-						stmt *ns = stmt_list(be, nl);
-						if (s->op1) {
+						if (rel->attr || rel->exps) {
 							list *nl = sa_list(be->mvc->sa);
-							for(node *n = s->op1->op4.lval->h, *m = rel->exps->h; n && m; n = n->next, m = m->next) {
-								stmt *hs = n->data;
-								sql_exp *he = m->data;
-								stmt *nhs = stmt_alias(be, hs, he->alias.label, hs->tname, hs->cname);
-								append(nl, nhs);
+							for(node *n = s->op4.lval->h, *m = rel->attr?rel->attr->h:rel->exps->h; n && m; n = n->next, m = m->next ){
+								stmt *ps = n->data;
+								sql_exp *pe = m->data;
+								stmt *nps = stmt_alias(be, ps, pe->alias.label, ps->tname, ps->cname);
+								append(nl, nps);
 							}
-							stmt *hs = stmt_list(be, nl);
-							ns->op1 = hs;
+							stmt *ns = stmt_list(be, nl);
+							if (s->op1) {
+								list *nl = sa_list(be->mvc->sa);
+								for(node *n = s->op1->op4.lval->h, *m = rel->exps->h; n && m; n = n->next, m = m->next) {
+									stmt *hs = n->data;
+									sql_exp *he = m->data;
+									stmt *nhs = stmt_alias(be, hs, he->alias.label, hs->tname, hs->cname);
+									append(nl, nhs);
+								}
+								stmt *hs = stmt_list(be, nl);
+								ns->op1 = hs;
+							}
+							ns->op2 = s->op2;
+							ns->op3 = s->op3;
+							s = ns;
 						}
-						ns->op2 = s->op2;
-						ns->op3 = s->op3;
-						s = ns;
 						append(nrefs, rel);
-						append(nrefs, ns);
+						append(nrefs, s);
 					}
 				}
 				assert(s);
