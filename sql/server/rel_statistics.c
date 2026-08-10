@@ -992,7 +992,7 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 			BUN lv = get_rel_count(l), rv = get_rel_count(r), r_uniques_estimate = BUN_MAX, join_idx_estimate = BUN_MAX;
 
 			//assert (lv < 1000000000 && rv < 1000000000);
-			if (!list_empty(rel->exps) && !is_single(rel)) {
+			if (!list_empty(rel->exps) && !is_single(rel) && rel->op == op_join) {
 				for (node *n = rel->exps->h ; n ; n = n->next) {
 					sql_exp *e = n->data, *el = e->l, *er = e->r;
 					BUN uniques_estimate = BUN_MAX;
@@ -1048,8 +1048,12 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 					}
 				}
 			}
-			if (is_single(rel)) {
+			if (is_single(rel) || is_left(rel->op)) {
 				set_count_prop(v->sql->sa, rel, lv);
+			} else if (is_right(rel->op)) {
+				set_count_prop(v->sql->sa, rel, rv);
+			} else if (is_full(rel->op)) {
+				set_count_prop(v->sql->sa, rel, MAX(lv,rv));
 			} else if (join_idx_estimate < BUN_MAX) {
 				set_count_prop(v->sql->sa, rel, join_idx_estimate);
 			} else if (r_uniques_estimate < BUN_MAX) {

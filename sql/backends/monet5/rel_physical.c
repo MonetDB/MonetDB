@@ -640,6 +640,122 @@ clean_exp_list(list *exps, list *nl, sql_rel *inner)
 	return nl;
 }
 
+
+static BUN
+subfunc_hash(sql_subfunc *sf)
+{
+	return (BUN)hash_key(sf->func->base.name);
+}
+
+static BUN exps_hash(list *exps);
+
+static BUN
+exp_hash(sql_exp *e)
+{
+	BUN h = e->type + 1;
+	switch(e->type) {
+		case e_convert:
+			/* hash type changes */
+			return h * exp_hash(e->l);
+		case e_column:
+			return h * hash_key(e->alias.name);
+		case e_cmp:
+			h *= (e->flag+1);
+			if (e->flag == cmp_con || e->flag == cmp_dis)
+				return h * exps_hash(e->l);
+			else if (e->flag == cmp_in || e->flag == cmp_notin)
+				return h * exp_hash(e->l) * exps_hash(e->r);
+			else if (e->flag == cmp_filter)
+				return h * exps_hash(e->l) * exps_hash(e->r);
+			else
+				return h * exp_hash(e->l) * exp_hash(e->r) * (e->f? exp_hash(e->f) : 1);
+			break;
+		case e_atom:
+			return 1;
+		case e_aggr:
+		case e_func:
+			return h * subfunc_hash(e->f) * exps_hash(e->l);
+		case e_psm:
+			return 0;
+	}
+	return 1;
+}
+
+static BUN
+exps_hash(list *exps)
+{
+	if (!exps)
+		return 1;
+	BUN h = 1;
+	for(node *n = exps->h; n; n = n->next)
+		h *= exp_hash(n->data);
+	return h;
+}
+
+static BUN
+rel_hash(sql_rel *r)
+{
+	sql_table *t = NULL;
+	list *rels = NULL;
+	if (!r)
+		return 0;
+	prop *hashp = find_prop(r->p, PROP_HASH);
+	if (hashp)
+		return hashp->value.lval;
+	BUN h = (r->op + 1);
+	switch(r->op) {
+		case op_basetable:
+			/* hash table */
+			t = r->l;
+			return h * hash_key(t->base.name);
+		case op_select:
+			/* hash select exps */
+			return h * rel_hash(r->l) * exps_hash(r->exps);
+		case op_sample:
+		case op_topn:
+		case op_project:
+			/* hash projection list exps */
+			if (r->l)
+				h *= rel_hash(r->l);
+			return h * exps_hash(r->exps) * (r->r ? exps_hash(r->r) : 1);
+		case op_groupby:
+			/* hash gbe, aggr exps */
+			h *= rel_hash(r->l);
+			return h * exps_hash(r->exps) * (r->r ? exps_hash(r->r) : 1);
+		case op_probehash:
+		case op_buildhash:
+		case op_partition:
+			h *= rel_hash(r->l);
+			return h * exps_hash(r->exps) * (r->attr ? exps_hash(r->attr) : 1);
+		case op_anti:
+		case op_semi:
+		case op_join:
+		case op_left:
+		case op_right:
+		case op_full:
+		case op_inter:
+		case op_except:
+			h *= rel_hash(r->l);
+			h *= rel_hash(r->r);
+			return h * exps_hash(r->exps) * (r->attr ? exps_hash(r->attr) : 1);
+		case op_munion:
+			rels = r->l;
+			for (node *n = rels->h; n; n = n->next)
+				h *= rel_hash(n->data);
+			return h * exps_hash(r->exps) * (r->attr ? exps_hash(r->attr) : 1);
+
+		case op_truncate:
+		case op_insert:
+		case op_update:
+		case op_delete:
+		case op_ddl:
+		case op_table:
+		default:
+			return 0;
+	}
+	return 0;
+}
+
 static int
 rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 {
@@ -1049,6 +1165,11 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 	v->parent = p;
 	if (rel && v->opt >= 0)
         rel->opt = v->opt;
+
+	BUN hash = rel_hash(rel);
+	prop *hashp = rel->p = prop_create(v->sql->sa, PROP_HASH, rel->p);
+	hashp->value.lval = hash;
+
 	if (rel_is_ref(rel))
 		return 0;
 	return res;

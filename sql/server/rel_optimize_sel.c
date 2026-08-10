@@ -5436,10 +5436,83 @@ rel_push_func_and_select_down_(visitor *v, sql_rel *rel)
 }
 
 static sql_rel *
+rel_collect_ref_parents(visitor *v, sql_rel *rel)
+{
+	/* currently munion, update and physical ops aren't handled */
+	if (rel && (is_select(rel->op)| is_simple_project(rel->op) || is_groupby(rel->op) || is_join(rel->op) || is_set(rel->op))) {
+		sql_rel *l = rel->l;
+		if (l && rel_is_ref(l))
+			if (!rel_pair_find(v->data, rel))
+				rel_pair_add(v->data, l, rel);
+	}
+	if (rel && (is_join(rel->op) || is_set(rel->op))) {
+		sql_rel *l = rel->r;
+		if (l && rel_is_ref(l))
+			if (!rel_pair_find(v->data, rel))
+				rel_pair_add(v->data, l, rel);
+	}
+	return rel;
+}
+
+extern void _rel_print(mvc *sql, sql_rel *rel);
+extern void _exps_print(mvc *sql, list *exps);
+
+static sql_rel *
 rel_push_func_and_select_down(visitor *v, global_props *gp, sql_rel *rel)
 {
 	(void) gp;
-	return rel_visitor_topdown(v, rel, &rel_push_func_and_select_down_);
+	rel = rel_visitor_topdown(v, rel, &rel_push_func_and_select_down_);
+	if (gp->opt_cycle == 0) {
+		void *data = v->data;
+		/* switch too ta */
+		v->data = sa_list(v->sql->sa);
+		v->opt++;
+		rel = rel_visitor_bottomup(v, rel, &rel_collect_ref_parents);
+		list *refs = v->data;
+		if (!list_empty(refs)) {
+			list *urefs = sa_list(v->sql->sa);
+			for(node *n = refs->h; n; n = n->next->next) {
+				//sql_rel *r = n->data;
+				sql_rel *ref = n->next->data;
+				if (!list_find(urefs, ref, NULL))
+					append(urefs, ref);
+			}
+			for (node *m = urefs->h; m; m = m->next) {
+				sql_rel *cref = m->data;
+				list *users = sa_list(v->sql->sa);
+				for(node *n = refs->h; n; n = n->next->next) {
+					if (n->next->data == cref)
+						append(users, n->data);
+				}
+				if (cref->ref.refcnt == list_length(users)) {
+					/* if all users are a set of selects and referenced is a union, try to split the union over the
+					 * selects, based on the select expressions
+					 * similar too merge table push down?
+					 *
+					 * or handle like or expression lists, and run the rse
+					 */
+					/* if all users are a set of projects/groupby's, try to reduced the result columns (or improve the
+					 * dce)
+					 */
+					/* if all are groupby ?? */
+					/* all found */
+					sql_rel *b = cref;
+					while (is_simple_project(b->op) && b->l)
+						b = b->l;
+					(void)b;
+					/*
+					printf ("all found %d\n", (int)b->op);
+					for(node *n = users->h; n; n = n->next) {
+						printf ("exps\n");
+						_exps_print(v->sql, ((sql_rel*)n->data)->exps);
+					}
+					*/
+				}
+			}
+		}
+		v->data = data;
+	}
+	return rel;
 }
 
 run_optimizer

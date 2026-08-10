@@ -928,7 +928,7 @@ LOCKEDAGGRnull(Client ctx, bat *result, const bit *hadnull)
 		INIT_ALLOCATOR;													\
 		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) {						\
 			bool new = 0, fnd = 0;										\
-			if(IS_NIL)													\
+			if (skip_nil && IS_NIL)										\
 				continue;												\
 			for(; !fnd; ) {												\
 				NEW_VAL;												\
@@ -1039,7 +1039,7 @@ LOCKEDAGGRnull(Client ctx, bat *result, const bit *hadnull)
 		)
 
 static str
-LALGunique(Client ctx, bat *rid, bat *uid, bat *bid, bat *sid)
+LALGunique(Client ctx, bat *rid, bat *uid, bat *bid, bat *sid, bit *Skip_nil)
 {
 	/* TODO add skip nil (or not) */
 	(void)ctx;
@@ -1049,6 +1049,7 @@ LALGunique(Client ctx, bat *rid, bat *uid, bat *bid, bat *sid)
 	assert(is_bat_nil(*sid)); /* no cands jet */
 	(void)sid;
 	bool local_storage = false;
+	bit skip_nil = *Skip_nil;
 
 	BAT *u = BATdescriptor(*uid);
 	BAT *b = BATdescriptor(*bid);
@@ -1176,6 +1177,13 @@ error:
 	return err;
 }
 
+static str
+LALGunique_keepnil(Client ctx, bat *rid, bat *uid, bat *bid, bat *sid)
+{
+	bit f = false;
+	return LALGunique(ctx, rid, uid, bid, sid, &f);
+}
+
 #define gunique_(Type, BaseType, INIT_ALLOCATOR, INIT_ITER, IS_NIL, NEW_VAL, HASH_VAL, VAL_NOT_EQUAL, VAL_ASSIGN, ITER_DONE, NEXTK) \
 	if (tt == TYPE_##Type) {											\
 		int slots = 0;													\
@@ -1185,7 +1193,7 @@ error:
 		INIT_ALLOCATOR;													\
 		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) {						\
 			bool new = 0, fnd = 0;										\
-			if(IS_NIL)													\
+			if (skip_nil && IS_NIL)										\
 				continue;												\
 			for(; !fnd;) {												\
 				NEW_VAL;												\
@@ -1299,7 +1307,7 @@ error:
 		)
 
 static str
-LALGgroup_unique(Client ctx, bat *rid, bat *uid, bat *bid, bat *sid, bat *Gid)
+LALGgroup_unique(Client ctx, bat *rid, bat *uid, bat *bid, bat *sid, bat *Gid, bit *Skip_nil)
 {
 	(void)ctx;
 	Pipeline *p = pipeline_get_thread_private_pipeline();
@@ -1308,6 +1316,7 @@ LALGgroup_unique(Client ctx, bat *rid, bat *uid, bat *bid, bat *sid, bat *Gid)
 	assert(is_bat_nil(*sid)); /* no cands jet */
 	(void)sid;
 	bool local_storage = false;
+	bit skip_nil = *Skip_nil;
 
 	BAT *u = BATdescriptor(*uid);
 	BAT *G = BATdescriptor(*Gid);
@@ -1437,6 +1446,13 @@ error:
 	if (G) BBPunfix(G->batCacheid);
 	if (b) BBPunfix(b->batCacheid);
 	return err;
+}
+
+static str
+LALGgroup_unique_keepnil(Client ctx, bat *rid, bat *uid, bat *bid, bat *sid, bat *Gid)
+{
+	bit f = false;
+	return LALGgroup_unique(ctx, rid, uid, bid, sid, Gid, &f);
 }
 
 #define group_(Type, BaseType, INIT_ALLOCATOR, INIT_ITER, NEW_VAL, HASH_VAL, VAL_NOT_EQUAL, VAL_ASSIGN, ITER_NEXT, NEXTK) \
@@ -4905,8 +4921,10 @@ static mel_func pp_algebra_init_funcs[] = {
 	command("ialgebra", "projection", LALGprojection, false, "Project.", args(1,3, batargany("",1), batarg("gid", oid), batargany("b",1))),
 
 	/* COUNT DISTINCT: globle / grouped */
-	command("ialgebra", "unique", LALGunique, false, "Unique rows.", args(2,4, batarg("gid", oid), batargany("",1), batargany("b",1), batarg("s",oid))),
-	command("ialgebra", "unique", LALGgroup_unique, false, "Unique rows per group.", args(2,5, batarg("ngid", oid), batargany("",1), batargany("b",1), batarg("s",oid), batarg("gid",oid))),
+	command("ialgebra", "unique", LALGunique_keepnil, false, "Unique rows.", args(2,4, batarg("gid", oid), batargany("",1), batargany("b",1), batarg("s",oid))),
+	command("ialgebra", "unique", LALGgroup_unique_keepnil, false, "Unique rows per group.", args(2,5, batarg("ngid", oid), batargany("",1), batargany("b",1), batarg("s",oid), batarg("gid",oid))),
+	command("ialgebra", "unique", LALGunique, false, "Unique rows.", args(2,5, batarg("gid", oid), batargany("",1), batargany("b",1), batarg("s",oid), arg("skip_nil",bit))),
+	command("ialgebra", "unique", LALGgroup_unique, false, "Unique rows per group.", args(2,6, batarg("ngid", oid), batargany("",1), batargany("b",1), batarg("s",oid), batarg("gid",oid), arg("skip_nil",bit))),
 
 	/********** Grouped aggregates **********/
 	command("ilockedaggr", "min", LALGmin, false, "Min per group.", args(1,4, batargany("",1), batarg("gid", oid), batargany("", 1), batarg("pid", oid))),

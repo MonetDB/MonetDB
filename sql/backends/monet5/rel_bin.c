@@ -1918,9 +1918,10 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 					return NULL;
 				if (be->pipeline && grp)
 					grp = stmt_project(be, u, grp);
-				if (be->pipeline && exp_aggr_is_count(e))
+				if (be->pipeline && exp_aggr_is_count(e)) {
 					append(l, u);
-				else
+					u->q = pushBit(be->mb, u->q, true); /* skip nils */
+				} else
 					append(l, stmt_project(be, u, a));
 			}
 			if (r) { /* check new ordered aggregation */
@@ -8368,6 +8369,155 @@ rel_find_refs(mvc *sql, list *refs, sql_rel *rel)
 	return refs;
 }
 
+/* todo change into simple nid1 -> nid2 */
+static bool
+exp_pair_match(list *exps, int nid1, int nid2)
+{
+	if (list_empty(exps))
+		return false;
+	for(node *n = exps->h; n; n = n->next->next) {
+		sql_exp *e = n->data;
+		if (e->alias.label == nid1) {
+			sql_exp *e2 = n->next->data;
+			if (e2->alias.label == nid2)
+				return true;
+		}
+	}
+	return false;
+}
+
+static int exps_remap(list *lexps, list *rexps, list *remapped);
+static int
+exp_remap(sql_exp *le, sql_exp *re, list *remapped)
+{
+	list *ll, *rl;
+	if (!le || !re || le->type != re->type)
+		return -1;
+	switch(le->type) {
+	case e_column:
+		if (exp_pair_match(remapped, le->nid, re->nid))
+			return 0;
+		break;
+	case e_convert:
+		ll = le->r;
+		rl = re->r;
+		return (subtype_cmp(ll->h->data, rl->h->data) == 0 &&
+			    subtype_cmp(ll->h->next->data, rl->h->next->data) == 0 &&
+				exp_remap(le->l , re->l, remapped) == 0)?0:-1;
+	case e_cmp:
+		if (le->flag != re->flag)
+			return -1;
+		if (le->flag <= cmp_notequal) {
+			return (exp_remap(le->l, re->l, remapped) == 0 &&
+				exp_remap(le->r, re->r, remapped) == 0 &&
+			   ((!le->f && !re->f) || exp_remap(le->f, re->f, remapped) == 0))?0:-1;
+		} else if (le->flag == cmp_in || le->flag == cmp_notin) {
+			return (exp_remap(le->l, re->l, remapped) == 0 &&
+				    exps_remap(le->r, re->r, remapped) == 0)?0:-1;
+		}
+		return -1;
+	case e_atom:
+		if (le->l && re->l)
+			return atom_cmp(le->l, re->l);
+		return -1;
+	default:
+		return -1;
+	}
+	(void)remapped;
+	return 0;
+}
+
+static int
+exps_remap(list *lexps, list *rexps, list *remapped)
+{
+	if (list_length(lexps) != list_length(rexps))
+		return -1;
+	if (list_empty(lexps))
+		return 0;
+	for(node *n = lexps->h, *m = rexps->h; n && m; n = n->next, m = m->next) {
+		sql_exp *le = n->data, *re = m->data;
+		if (exp_remap(le, re, remapped) != 0)
+			return -1;
+	}
+	return 0;
+}
+
+static int
+rel_remap(mvc *sql, allocator *ta, sql_rel *l, sql_rel *r, list *remapped)
+{
+	if (!l || !r || l->op != r->op)
+		return -1;
+	switch(l->op) {
+	case op_project:
+	case op_select:
+	case op_buildhash:
+		if (l->op == op_project && (l->r || r->r)) /* don't match orderings */
+			return -1;
+		if (rel_remap(sql, ta, l->l, r->l, remapped) == 0)
+			return (exps_remap(l->attr, r->attr, remapped) == 0 &&
+					exps_remap(l->exps, r->exps, remapped) == 0)?0:-1;
+		break;
+	case op_basetable:
+		if (l->l == r->l) {
+			if (list_length(l->exps) == list_length(r->exps)) {
+				list *lexps = l->exps, *rexps = r->exps;
+				for(node *n = lexps->h, *m = rexps->h; n && m; n = n->next, m = m->next) {
+					sql_exp *le = n->data, *re = m->data;
+					assert(le->type == e_column && re->type == e_column);
+					if (strcmp(le->r, re->r) == 0) {
+						append(remapped, le);
+						append(remapped, re);
+					} else {
+						return -1;
+					}
+				}
+				return 0;
+			}
+		}
+		break;
+	case op_groupby:
+		if (rel_remap(sql, ta, l->l, r->l, remapped) == 0)
+			return (exps_remap(l->r, r->r, remapped) == 0 &&
+					exps_remap(l->exps, r->exps, remapped) == 0)?0:-1;
+		break;
+	default:
+		return 1;
+	}
+	return -1;
+}
+
+
+static list *
+deduplicate_refs(mvc *sql, allocator *ta, list *refs, sql_rel *rel)
+{
+	(void)sql;
+	(void)rel; /* for now just deduplicate refs, later find duplicates with relational graph */
+
+	list *prefs = sa_list(ta);
+	for(node *n = refs->h; n; n = n->next) {
+		sql_rel *or = n->data, *nr = or;
+		prop *op = find_prop(or->p, PROP_HASH);
+		if (or->op == op_buildhash &&
+				op && op->value.lval) {
+			BUN h = op->value.lval;
+			for(node *m = prefs->h; m; m = m->next->next) {
+				sql_rel *ir = m->data;
+				prop *ip = find_prop(ir->p, PROP_HASH);
+				bool needs_project = false;
+				if (ip && h == ip->value.lval && rel_remap(sql, ta, or, ir, sa_list(ta)) == 0) {
+					/* todo match subtrees */
+					printf("#found %d\n", (int)needs_project);
+					nr = ir;
+					break;
+				}
+			}
+		}
+		append(prefs, or);
+		append(prefs, nr);
+	}
+	return prefs;
+}
+
 stmt *
 output_rel_bin(backend *be, sql_rel *rel, int top)
 {
@@ -8387,10 +8537,49 @@ output_rel_bin(backend *be, sql_rel *rel, int top)
 	if (!sql->recursive) {
 		refs = rel_find_refs(sql, refs, rel);
 		if (!list_empty(refs)) {
+			list *pairedrefs = deduplicate_refs(be->mvc, ta, refs, rel); /* ref + its replica */
 			list *nrefs = sa_list(sql->sa);
-			for (node *n = refs->h; n; n = n->next) {
+			for (node *n = pairedrefs->h; n; n = n->next->next) {
 				sql_rel *rel = n->data;
-				stmt *s = rel2bin_materialize(be, rel, nrefs, false);
+				sql_rel *drel = n->next->data;
+				stmt *s = NULL;
+				if (rel == drel)
+					s = rel2bin_materialize(be, rel, nrefs, false);
+				else {
+					s = refs_find_rel(nrefs, drel);
+					/* re-map */
+					if (drel->op == op_buildhash) { /* later more */
+						/* s is stmt_list of payload exps,
+						 * op1 == stmt_list of hash stmts (attrs of buildhash),
+						 * op2 == hp_gid,
+						 * op3 == freq  */
+						list *nl = sa_list(be->mvc->sa);
+						for(node *n = s->op4.lval->h, *m = rel->attr?rel->attr->h:rel->exps->h; n && m; n = n->next, m = m->next ){
+							stmt *ps = n->data;
+							sql_exp *pe = m->data;
+							stmt *nps = stmt_alias(be, ps, pe->alias.label, ps->tname, ps->cname);
+							append(nl, nps);
+						}
+						stmt *ns = stmt_list(be, nl);
+						if (s->op1) {
+							list *nl = sa_list(be->mvc->sa);
+							for(node *n = s->op1->op4.lval->h, *m = rel->exps->h; n && m; n = n->next, m = m->next) {
+								stmt *hs = n->data;
+								sql_exp *he = m->data;
+								stmt *nhs = stmt_alias(be, hs, he->alias.label, hs->tname, hs->cname);
+								append(nl, nhs);
+							}
+							stmt *hs = stmt_list(be, nl);
+							ns->op1 = hs;
+						}
+						ns->op2 = s->op2;
+						ns->op3 = s->op3;
+						s = ns;
+						append(nrefs, rel);
+						append(nrefs, ns);
+					}
+				}
+				assert(s);
 				refs_update_stmt(nrefs, rel, s);
 			}
 			refs = nrefs;

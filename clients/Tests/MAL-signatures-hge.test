@@ -48390,13 +48390,23 @@ LALGprojection
 Project.
 ialgebra
 unique
-command ialgebra.unique(X_0:bat[:any_1], X_1:bat[:oid], X_2:bat[:oid]) (X_3:bat[:oid], X_4:bat[:any_1])
+command ialgebra.unique(X_0:bat[:any_1], X_1:bat[:oid], X_2:bat[:oid], X_3:bit) (X_4:bat[:oid], X_5:bat[:any_1])
 LALGgroup_unique
 Unique rows per group.
 ialgebra
 unique
-command ialgebra.unique(X_0:bat[:any_1], X_1:bat[:oid]) (X_2:bat[:oid], X_3:bat[:any_1])
+command ialgebra.unique(X_0:bat[:any_1], X_1:bat[:oid], X_2:bat[:oid]) (X_3:bat[:oid], X_4:bat[:any_1])
+LALGgroup_unique_keepnil
+Unique rows per group.
+ialgebra
+unique
+command ialgebra.unique(X_0:bat[:any_1], X_1:bat[:oid], X_2:bit) (X_3:bat[:oid], X_4:bat[:any_1])
 LALGunique
+Unique rows.
+ialgebra
+unique
+command ialgebra.unique(X_0:bat[:any_1], X_1:bat[:oid]) (X_2:bat[:oid], X_3:bat[:any_1])
+LALGunique_keepnil
 Unique rows.
 igroup
 group

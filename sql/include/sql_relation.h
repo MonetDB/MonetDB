@@ -26,7 +26,8 @@ typedef enum prop_kind {
 	PROP_USED,      /* number of times exp is used */
 	PROP_GROUPINGS, /* used by ROLLUP/CUBE/GROUPING SETS, value contains the list of sets */
 	PROP_UNNESTING,	/* used by unnesting rewriter */
-	PROP_SELECTIVITY	/* selectivity estimate for predicates (dbl, 0.0-1.0) */
+	PROP_SELECTIVITY,	/* selectivity estimate for predicates (dbl, 0.0-1.0) */
+	PROP_HASH,		/* an hash for the relational sub graph */
 } prop_kind;
 
 typedef struct prop {
