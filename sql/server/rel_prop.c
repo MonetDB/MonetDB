@@ -116,6 +116,7 @@ propkind2string( prop *p)
 		PT(MAX);
 		PT(UNNESTING);
 		PT(SELECTIVITY);
+		PT(HASH);
 	}
 	return "UNKNOWN";
 }
@@ -126,6 +127,7 @@ propvalue2string(allocator *sa, prop *p)
 	char buf [BUFSIZ];
 
 	switch(p->kind) {
+	case PROP_HASH:
 	case PROP_COUNT: {
 		snprintf(buf, sizeof(buf), BUNFMT, p->value.lval);
 		return ma_strdup(sa, buf);

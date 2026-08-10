@@ -244,22 +244,37 @@ sql_div_propagate_statistics(mvc *sql, sql_exp *e)
 	list *l = e->l;
 	sql_exp *first = l->h->data, *second = l->h->next->data;
 	atom *lmax, *rmax, *lmin, *rmin;
-
+	bool isint = false;
 	if ((lmax = find_prop_and_get(first->p, PROP_MAX)) && (rmax = find_prop_and_get(second->p, PROP_MAX)) &&
 		(lmin = find_prop_and_get(first->p, PROP_MIN)) && (rmin = find_prop_and_get(second->p, PROP_MIN))) {
 		atom *res1 = atom_div(sql->sa, atom_copy(sql->sa, lmax), atom_copy(sql->sa, rmin));
 		atom *res2 = atom_div(sql->sa, atom_copy(sql->sa, lmin), atom_copy(sql->sa, rmax));
 
 		if (res1 && res2) { /* on div by zero don't propagate */
+			isint = lmax->tpe.type->eclass == EC_NUM;
 			atom *zero1 = atom_zero_value(sql->sa, &(lmax->tpe)), *zero2 = atom_zero_value(sql->sa, &(rmax->tpe));
 			int cmp1 = atom_cmp(lmax, zero1), cmp2 = atom_cmp(lmin, zero1), cmp3 = atom_cmp(rmin, zero2), cmp4 = atom_cmp(rmax, zero2);
 
 			if (cmp1 >= 0 && cmp2 >= 0 && cmp3 >= 0 && cmp4 >= 0) { /* if all positive then propagate */
 				set_minmax_property(sql, e, PROP_MAX, res1);
 				set_minmax_property(sql, e, PROP_MIN, res2);
+				if (isint && !find_prop(e->p, PROP_NUNIQUES)) {
+					prop *np = e->p = prop_create(sql->sa, PROP_NUNIQUES, e->p);
+					atom *nuniques = atom_sub(sql->sa, res1, res2);
+					np->value.dval = (dbl) atom_get_int(nuniques);
+					if (np->value.dval <= 1.0)
+						np->value.dval = 1;
+				}
 			} else if (cmp1 < 0 && cmp2 < 0 && cmp3 < 0 && cmp4 < 0) { /* if all negative propagate by swapping min and max */
 				set_minmax_property(sql, e, PROP_MAX, res2);
 				set_minmax_property(sql, e, PROP_MIN, res1);
+				if (isint && !find_prop(e->p, PROP_NUNIQUES)) {
+					prop *np = e->p = prop_create(sql->sa, PROP_NUNIQUES, e->p);
+					atom *nuniques = atom_sub(sql->sa, res1, res2);
+					np->value.dval = (dbl) atom_get_int(nuniques);
+					if (np->value.dval <= 1.0)
+						np->value.dval = 1;
+				}
 			}
 		}
 	}
@@ -281,6 +296,27 @@ sql_least_greatest_propagate_statistics(mvc *sql, sql_exp *e)
 {
 	list *l = e->l;
 	sql_extend_min_max(sql, e, l->h->data, l->h->next->data);
+}
+
+static void
+sql_propagate_statistics(mvc *sql, sql_exp *e)
+{
+	/* for now just single inputs */
+	list *l = e->l;
+	if (list_empty(l) || list_length(l) > 1)
+		return ;
+	sql_exp *ie = l->h->data;
+	prop *p = find_prop(ie->p, PROP_NUNIQUES);
+	if (p && !find_prop(e->p, PROP_NUNIQUES)) {
+		prop *np = e->p = prop_create(sql->sa, PROP_NUNIQUES, e->p);
+		np->value.dval = p->value.dval;
+	}
+	p = find_prop(ie->p, PROP_MIN);
+	if (p && !find_prop(e->p, PROP_MIN))
+		set_minmax_property(sql, e, PROP_MIN, p->value.pval);
+	p = find_prop(ie->p, PROP_MAX);
+	if (p && !find_prop(e->p, PROP_MAX))
+		set_minmax_property(sql, e, PROP_MAX, p->value.pval);
 }
 
 static void
@@ -511,6 +547,28 @@ sql_abs_propagate_statistics(mvc *sql, sql_exp *e)
 				set_minmax_property(sql, e, PROP_MAX, atom_cmp(res1, omax) > 0 ? res1 : omax);
 				set_minmax_property(sql, e, PROP_MIN, zero);
 			}
+		}
+	}
+}
+
+static void
+sql_mod_propagate_statistics(mvc *sql, sql_exp *e)
+{
+	list *l = e->l;
+	if (list_length(l) != 2)
+		return;
+	sql_exp *d = l->t->data;
+
+	if (exp_is_atom(d) && d->type != e_func) {
+		atom *zero = atom_zero_value(sql->sa, &(d->tpe));
+		while (d && d->type == e_convert)
+			d = d->l;
+		atom *a = d ? (atom*)d->l : NULL;
+		if (a && a->tpe.type->eclass == EC_NUM) {
+			prop *p = e->p = prop_create(sql->sa, PROP_NUNIQUES, e->p);
+			p->value.dval = (dbl)atom_get_int(a);
+			set_minmax_property(sql, e, PROP_MAX, a);
+			set_minmax_property(sql, e, PROP_MIN, zero);
 		}
 	}
 }
@@ -829,7 +887,7 @@ sql_zero_or_one_propagate_statistics(mvc *sql, sql_exp *e)
 	}
 }
 
-static struct function_properties functions_list[36] = {
+static struct function_properties functions_list[38] = {
 	/* arithmetic functions */
 	{"sql_add", &sql_add_propagate_statistics},
 	{"sql_sub", &sql_sub_propagate_statistics},
@@ -838,6 +896,8 @@ static struct function_properties functions_list[36] = {
 	{"sql_neg", &sql_neg_propagate_statistics},
 	{"sign", &sql_sign_propagate_statistics},
 	{"abs", &sql_abs_propagate_statistics},
+	{"mod", &sql_mod_propagate_statistics},
+	{"floor", &sql_propagate_statistics}, /* keep same as outer expression */
 
 	/* sql comparison functions */
 	{"sql_min", &sql_least_greatest_propagate_statistics},

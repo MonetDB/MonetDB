@@ -15,7 +15,7 @@
 
 /* relations counts */
 typedef struct global_props {
-	int cnt[op_truncate + 1];
+	int cnt[op_partition + 1];
 	uint8_t
 		instantiate:1,
 		needs_mergetable_rewrite:1,
@@ -135,3 +135,6 @@ extern sql_rel *rel_dce(visitor *v, global_props *gp, sql_rel *rel);
 extern sql_rel *rel_properties(visitor *v, sql_rel *rel);
 //extern sql_rel *rel_join_order(visitor *v, global_props *gp, sql_rel *rel) __attribute__((__visibility__("hidden")));
 extern sql_rel * reorder_join(visitor *v, sql_rel *rel);
+
+extern bool rel_pair_find(list *refs, sql_rel *rel);
+extern void rel_pair_add(list *refs, sql_rel *parent, sql_rel *rel);
