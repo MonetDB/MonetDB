@@ -1,0 +1,31 @@
+statement ok
+CREATE TABLE t_mdb_val_005(id INT)
+
+statement ok
+INSERT INTO t_mdb_val_005 VALUES (1)
+
+query T nosort
+SELECT (NOT ((NULL IN (1)) AND (NULL IN (1)))) OR (NOT (1 IN (1)))
+----
+NULL
+
+-- bug: WHERE NULL should result in 0 rows returned
+query TI rowsort
+SELECT 'where' AS query, id
+FROM t_mdb_val_005
+WHERE (NOT ((NULL IN (1)) AND (NULL IN (1)))) OR (NOT (1 IN (1)))
+----
+
+query TIT rowsort
+SELECT 'projection' AS query, id,
+       (NOT ((NULL IN (1)) AND (NULL IN (1)))) OR (NOT (1 IN (1)))
+         AS predicate_value
+FROM t_mdb_val_005
+----
+projection
+1
+NULL
+
+statement ok
+DROP TABLE IF EXISTS t_mdb_val_005
+

@@ -1650,6 +1650,305 @@ BBPjson_upgrade(json_storage_conversion fixJSONStorage)
 }
 #endif
 
+#ifdef GDKLIBRARY_USTR
+static bool file_exists(int farmid, const char *dir, const char *name, const char *ext);
+
+static gdk_return
+fixstrnilbat(BAT *b)
+{
+	lng t0 = GDKusec();
+	const char *nme = BBP_physical(b->batCacheid);
+	char srcdir[MAXPATH];
+	var_t niloff = 0;
+
+	if (GDKfilepath(srcdir, sizeof(srcdir), NOFARM, BATDIR, nme, NULL) != GDK_SUCCEED) {
+		return GDK_FAIL;
+	}
+	char *s;
+	if ((s = strrchr(srcdir, DIR_SEP)) != NULL)
+		*s = 0;
+	const char *bnme;
+	if ((bnme = strrchr(nme, DIR_SEP)) != NULL)
+		bnme++;
+	else
+		bnme = nme;
+	long_str filename;
+	strtconcat(filename, sizeof(filename), "BACKUP", DIR_SEP_STR, bnme, NULL);
+	const char *t = BATtailname(b);
+
+	if (file_exists(0, BAKDIR, bnme, t)) {
+		/* already done by another upgrade */
+		TRC_DEBUG(ALGO, ALGOBATFMT " already done\n", ALGOBATPAR(b));
+		return GDK_SUCCEED;
+	}
+
+	if (HEAPload(b->tvheap, nme, "theap", false) != GDK_SUCCEED) {
+		TRC_CRITICAL(GDK, "loading string heap "
+			     "for BAT %d failed\n", b->batCacheid);
+		return GDK_FAIL;
+	}
+	strCleanHash(b->tvheap, false);
+	b->tvheap->cleanhash = true;
+	b->tvheap->dirty = false;
+	if (GDK_ELIMDOUBLES(b->tvheap)) {
+		niloff = oldstrnilLocate(b->tvheap);
+		if (niloff == (var_t) -2) {
+			/* fully double eliminated, and str_nil does not
+			 * occur: nothing to do */
+			HEAPfree(b->tvheap, false);
+			TRC_DEBUG(ALGO, ALGOBATFMT " elimdoubles, no nils\n",
+				  ALGOBATPAR(b));
+			return GDK_SUCCEED;
+		}
+	}
+
+	if (GDKmove(b->theap->farmid, srcdir, bnme, t,
+		    BAKDIR, bnme, t, false) != GDK_SUCCEED) {
+		HEAPfree(b->tvheap, false);
+		TRC_CRITICAL(GDK, "cannot make backup of %s.%s\n", nme, t);
+		return GDK_FAIL;
+	}
+
+	Heap h1 = *b->theap;	/* old heap */
+	h1.base = NULL;
+	h1.dirty = false;
+	strtconcat(h1.filename, sizeof(h1.filename), filename, ".", t, NULL);
+	if (HEAPload(&h1, filename, t, false) != GDK_SUCCEED) {
+		HEAPfree(b->tvheap, false);
+		TRC_CRITICAL(GDK, "loading old tail heap "
+			     "for BAT %d failed\n", b->batCacheid);
+		return GDK_FAIL;
+	}
+
+	/* create new heap */
+	Heap *h2 = GDKmalloc(sizeof(Heap));
+	if (h2 == NULL) {
+		HEAPfree(&h1, false);
+		HEAPfree(b->tvheap, false);
+		TRC_CRITICAL(GDK, "allocating new heaps "
+			     "for BAT %d failed\n", b->batCacheid);
+		return GDK_FAIL;
+	}
+	*h2 = *b->theap;
+	h2->base = NULL;
+	if (HEAPalloc(h2, b->batCapacity, b->twidth) != GDK_SUCCEED) {
+		GDKfree(h2);
+		HEAPfree(&h1, false);
+		HEAPfree(b->tvheap, false);
+		TRC_CRITICAL(GDK, "allocating new tail heap "
+			     "for BAT %d failed\n", b->batCacheid);
+		return GDK_FAIL;
+	}
+	h2->dirty = true;
+	h2->free = h1.free;
+	ATOMIC_INIT(&h2->refs, 1);
+
+	const char *vbase = b->tvheap->base;
+	size_t vfree = b->tvheap->free;
+	switch (b->twidth) {
+	case 1: {
+		const uint8_t *p1 = (const uint8_t *) h1.base;
+		uint8_t *p2 = (uint8_t *) h2->base;
+		vfree -= 8192;
+		niloff -= 8192;
+		for (BUN i = 0; i < b->batCount; i++) {
+			uint8_t v = p1[i];
+			if (v == niloff)
+				p2[i] = 0;
+			else if (v >= vfree || vbase[v + 8192] == '\200')
+				p2[i] = 0;
+			else
+				p2[i] = v;
+		}
+		break;
+	}
+	case 2: {
+		const uint16_t *p1 = (const uint16_t *) h1.base;
+		uint16_t *p2 = (uint16_t *) h2->base;
+		vfree -= 8192;
+		niloff -= 8192;
+		for (BUN i = 0; i < b->batCount; i++) {
+			uint16_t v = p1[i];
+			if (v == niloff)
+				p2[i] = 0;
+			else if (v >= vfree || vbase[v + 8192] == '\200')
+				p2[i] = 0;
+			else
+				p2[i] = v;
+		}
+		break;
+	}
+	case 4: {
+		const uint32_t *p1 = (const uint32_t *) h1.base;
+		uint32_t *p2 = (uint32_t *) h2->base;
+		for (BUN i = 0; i < b->batCount; i++) {
+			uint32_t v = p1[i];
+			if (v >= vfree || vbase[v] == '\200')
+				p2[i] = 0;
+			else
+				p2[i] = v;
+		}
+		break;
+	}
+#if SIZEOF_VAR_T == 8
+	case 8: {
+		const uint64_t *p1 = (const uint64_t *) h1.base;
+		uint64_t *p2 = (uint64_t *) h2->base;
+		for (BUN i = 0; i < b->batCount; i++) {
+			uint64_t v = p1[i];
+			if (v >= vfree || vbase[v] == '\200')
+				p2[i] = 0;
+			else
+				p2[i] = v;
+		}
+		break;
+	}
+#endif
+	default:
+		MT_UNREACHABLE();
+	}
+	HEAPfree(&h1, false);
+	HEAPfree(b->tvheap, false);
+	if (HEAPsave(h2, nme, t, true, h2->free, NULL) != GDK_SUCCEED) {
+		HEAPdecref(h2, true);
+		TRC_CRITICAL(GDK, "saving heap failed\n");
+		return GDK_FAIL;
+	}
+	HEAPdecref(b->theap, false);
+	b->theap = h2;
+	HEAPfree(h2, false);
+
+	TRC_DEBUG(ALGO, ALGOBATFMT " " LLFMT " usec\n", ALGOBATPAR(b),
+		  GDKusec() - t0);
+
+	return GDK_SUCCEED;
+}
+
+static gdk_return
+fixblobnilbat(BAT *b)
+{
+	lng t0 = GDKusec();
+	const char *nme = BBP_physical(b->batCacheid);
+	char srcdir[MAXPATH];
+
+	if (GDKfilepath(srcdir, sizeof(srcdir), NOFARM, BATDIR, nme, NULL) != GDK_SUCCEED) {
+		return GDK_FAIL;
+	}
+	char *s;
+	if ((s = strrchr(srcdir, DIR_SEP)) != NULL)
+		*s = 0;
+	const char *bnme;
+	if ((bnme = strrchr(nme, DIR_SEP)) != NULL)
+		bnme++;
+	else
+		bnme = nme;
+	long_str filename;
+	strtconcat(filename, sizeof(filename), "BACKUP", DIR_SEP_STR, bnme, NULL);
+
+	if (file_exists(0, BAKDIR, bnme, "tail")) {
+		/* already done by another upgrade */
+		TRC_DEBUG(ALGO, ALGOBATFMT " already done\n", ALGOBATPAR(b));
+		return GDK_SUCCEED;
+	}
+
+	if (HEAPload(b->tvheap, nme, "theap", false) != GDK_SUCCEED) {
+		TRC_CRITICAL(GDK, "loading string heap "
+			     "for BAT %d failed\n", b->batCacheid);
+		return GDK_FAIL;
+	}
+
+	if (GDKmove(b->theap->farmid, srcdir, bnme, "tail",
+		    BAKDIR, bnme, "tail", false) != GDK_SUCCEED) {
+		HEAPfree(b->tvheap, false);
+		TRC_CRITICAL(GDK, "cannot make backup of %s.tail\n", nme);
+		return GDK_FAIL;
+	}
+
+	Heap h1 = *b->theap;	/* old heap */
+	h1.base = NULL;
+	h1.dirty = false;
+	strtconcat(h1.filename, sizeof(h1.filename), filename, ".tail", NULL);
+	if (HEAPload(&h1, filename, "tail", false) != GDK_SUCCEED) {
+		HEAPfree(b->tvheap, false);
+		TRC_CRITICAL(GDK, "loading old tail heap "
+			     "for BAT %d failed\n", b->batCacheid);
+		return GDK_FAIL;
+	}
+
+	/* create new heap */
+	Heap *h2 = GDKmalloc(sizeof(Heap));
+	if (h2 == NULL) {
+		HEAPfree(&h1, false);
+		HEAPfree(b->tvheap, false);
+		TRC_CRITICAL(GDK, "allocating new heaps "
+			     "for BAT %d failed\n", b->batCacheid);
+		return GDK_FAIL;
+	}
+	*h2 = *b->theap;
+	h2->base = NULL;
+	if (HEAPalloc(h2, b->batCapacity, b->twidth) != GDK_SUCCEED) {
+		GDKfree(h2);
+		HEAPfree(&h1, false);
+		HEAPfree(b->tvheap, false);
+		TRC_CRITICAL(GDK, "allocating new tail heap "
+			     "for BAT %d failed\n", b->batCacheid);
+		return GDK_FAIL;
+	}
+	h2->dirty = true;
+	h2->free = h1.free;
+	ATOMIC_INIT(&h2->refs, 1);
+	bool (*atomeq) (const void *, const void *) = ATOMequal(b->ttype);
+	const void *nil = ATOMnilptr(b->ttype);
+
+	const char *vbase = b->tvheap->base;
+	size_t vfree = b->tvheap->free;
+	const var_t *p1 = (const var_t *) h1.base;
+	var_t *p2 = (var_t *) h2->base;
+	for (BUN i = 0; i < b->batCount; i++) {
+		var_t v = p1[i];
+		if (v >= vfree || atomeq(vbase + v, nil))
+			p2[i] = 0;
+		else
+			p2[i] = v;
+	}
+	HEAPfree(&h1, false);
+	HEAPfree(b->tvheap, false);
+	if (HEAPsave(h2, nme, "tail", true, h2->free, NULL) != GDK_SUCCEED) {
+		HEAPdecref(h2, true);
+		TRC_CRITICAL(GDK, "saving heap failed\n");
+		return GDK_FAIL;
+	}
+	HEAPdecref(b->theap, false);
+	b->theap = h2;
+	HEAPfree(h2, false);
+
+	TRC_DEBUG(ALGO, ALGOBATFMT " " LLFMT " usec\n", ALGOBATPAR(b),
+		  GDKusec() - t0);
+
+	return GDK_SUCCEED;
+}
+
+static gdk_return
+BBPvarnil_upgrade(void)
+{
+	lng t0 = GDKusec();
+	for (bat bid = 1, nbat = getBBPsize(); bid < nbat; bid++) {
+		BAT *b = BBP_desc(bid);
+		if (b->batCount == 0 || b->tnonil)
+			continue;
+		if (ATOMstorage(b->ttype) == TYPE_str) {
+			if (fixstrnilbat(b) != GDK_SUCCEED)
+				return GDK_FAIL;
+		} else if (ATOMstorage(b->ttype) == TYPE_blob) {
+			if (fixblobnilbat(b) != GDK_SUCCEED)
+				return GDK_FAIL;
+		}
+	}
+	TRC_DEBUG(ALGO, "total time: " LLFMT " usec\n", GDKusec() - t0);
+	return GDK_SUCCEED;
+}
+#endif
+
 static bool
 BBPtrim(bool aggressive, bat nbat)
 {
@@ -1979,6 +2278,11 @@ BBPinit(bool allow_hge_upgrade, bool no_manager)
 
 		close(fd);
 	}
+#endif
+
+#ifdef GDKLIBRARY_USTR
+	if (bbpversion <= GDKLIBRARY_USTR && BBPvarnil_upgrade() != GDK_SUCCEED)
+		return GDK_FAIL;
 #endif
 
 	if (bbpversion < GDKLIBRARY && TMcommit() != GDK_SUCCEED) {

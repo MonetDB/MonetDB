@@ -235,6 +235,10 @@ int MT_munmap(void *p, size_t len)
 	__attribute__((__visibility__("hidden")));
 void OIDXfree(BAT *b)
 	__attribute__((__visibility__("hidden")));
+#ifdef GDKLIBRARY_USTR
+var_t oldstrnilLocate(Heap *h)
+	__attribute__((__visibility__("hidden")));
+#endif
 void persistOIDX(BAT *b)
 	__attribute__((__visibility__("hidden")));
 void PROPdestroy(BAT *b)

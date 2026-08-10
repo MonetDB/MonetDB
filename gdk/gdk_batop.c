@@ -160,12 +160,9 @@ insert_string_bat(BAT *b, BATiter *ni, struct canditer *ci, bool force, bool may
 		toff = 0;
 		b->tvkey |= ni->vkey;
 		MT_thread_setalgorithm("shared vheap", __func__);
-	} else if (ni->vhfree <= GDK_STRHASHSIZE &&
-		   (!GDK_ELIMDOUBLES(b->tvheap) ||
-		    strLocate(b->tvheap, str_nil) == 0)) {
+	} else if (ni->vhfree <= GDK_STRHASHSIZE) {
 		/* the incoming bat's vheap is empty, meaning the bat
-		 * contains only nil values, if the destination bat's
-		 * nil is also at offset 0, we can just copy zeros */
+		 * contains only nil values: we can just copy zeros */
 		toff = 0;
 		MT_thread_setalgorithm("empty source vheap (just nils)",
 				       __func__);
@@ -173,13 +170,10 @@ insert_string_bat(BAT *b, BATiter *ni, struct canditer *ci, bool force, bool may
 		MT_thread_setalgorithm("individual inserts into ustr", __func__);
 	} else if (mayshare && b->batRole == TRANSIENT &&
 		   ni->vh->storage != STORE_NOWN &&
-		   (oldcnt == 0 || (b->tvheap->free <= GDK_STRHASHSIZE &&
-				    (!GDK_ELIMDOUBLES(ni->vh) ||
-				     strLocate(ni->vh, str_nil) == 0)))) {
+		   (oldcnt == 0 || b->tvheap->free <= GDK_STRHASHSIZE)) {
 		/* we can share the vheaps, so we then only need to
 		 * append the offsets; the condition is: b is empty, or
-		 * its vheap is empty (i.e. there are only nils) and the
-		 * incoming heap also stores them with offset 0 */
+		 * its vheap is empty (i.e. there are only nils) */
 		MT_lock_set(&b->theaplock);
 		bat bid = b->tvheap->parentid;
 		HEAPdecref(b->tvheap, bid == b->batCacheid);
@@ -3460,70 +3454,23 @@ BATcount_no_nil(BAT *b, BAT *s)
 			cnt += !is_inet6_nil(((const inet6 *) p)[canditer_next(&ci) - hseq]);
 		break;
 	case TYPE_str:
-		if (bi.vkey) {
-			if (GDK_ELIMDOUBLES(bi.vh)) {
-				off = strLocate(bi.vh, str_nil);
-				if (off == (var_t) -2) {
-					cnt = ci.ncand;
-					break;
-				}
-			} else {
-				off = 0;
-			}
-			switch (bi.width) {
-			case 1:
-				if (off != 0)
-					off -= GDK_VAROFFSET;
-				CAND_LOOP(&ci)
-					cnt += (var_t) ((const uint8_t *) p)[canditer_next(&ci) - hseq] != off;
-				break;
-			case 2:
-				if (off != 0)
-					off -= GDK_VAROFFSET;
-				CAND_LOOP(&ci)
-					cnt += (var_t) ((const uint16_t *) p)[canditer_next(&ci) - hseq] != off;
-				break;
-			case 4:
-				CAND_LOOP(&ci)
-					cnt += (var_t) ((const uint32_t *) p)[canditer_next(&ci) - hseq] != off;
-				break;
-#if SIZEOF_VAR_T == 8
-			case 8:
-				CAND_LOOP(&ci)
-					cnt += (var_t) ((const uint64_t *) p)[canditer_next(&ci) - hseq] != off;
-				break;
-#endif
-			default:
-				MT_UNREACHABLE();
-			}
-			break;
-		}
-		base = bi.vh->base;
 		switch (bi.width) {
 		case 1:
-			CAND_LOOP(&ci) {
-				off = (var_t) ((const uint8_t *) p)[canditer_next(&ci) - hseq];
-				cnt += off != 0 && base[off + GDK_VAROFFSET] != '\200';
-			}
+			CAND_LOOP(&ci)
+				cnt += (var_t) ((const uint8_t *) p)[canditer_next(&ci) - hseq] != 0;
 			break;
 		case 2:
-			CAND_LOOP(&ci) {
-				off = (var_t) ((const uint16_t *) p)[canditer_next(&ci) - hseq];
-				cnt += off != 0 && base[off + GDK_VAROFFSET] != '\200';
-			}
+			CAND_LOOP(&ci)
+				cnt += (var_t) ((const uint16_t *) p)[canditer_next(&ci) - hseq] != 0;
 			break;
 		case 4:
-			CAND_LOOP(&ci) {
-				off = (var_t) ((const uint32_t *) p)[canditer_next(&ci) - hseq];
-				cnt += off != 0 && base[off] != '\200';
-			}
+			CAND_LOOP(&ci)
+				cnt += (var_t) ((const uint32_t *) p)[canditer_next(&ci) - hseq] != 0;
 			break;
 #if SIZEOF_VAR_T == 8
 		case 8:
-			CAND_LOOP(&ci) {
-				off = (var_t) ((const uint64_t *) p)[canditer_next(&ci) - hseq];
-				cnt += off != 0 && base[off] != '\200';
-			}
+			CAND_LOOP(&ci)
+				cnt += (var_t) ((const uint64_t *) p)[canditer_next(&ci) - hseq] != 0;
 			break;
 #endif
 		default:
