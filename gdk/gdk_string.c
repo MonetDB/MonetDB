@@ -143,7 +143,8 @@ strCleanHash(Heap *h, bool rebuild)
 				pad += GDK_VARALIGN;
 			pos += pad;
 			s = h->base + pos;
-			assert(strLocate(h, s) != 0);
+			if (!strNil(s))
+				assert(strLocate(h, s) != 0);
 			pos += strlen(s) + 1;
 		}
 	}
@@ -430,8 +431,9 @@ BATconvert2ustr(BAT *b, BAT *bu)
  * the location of a string in the heap if it exists. Otherwise it
  * returns (var_t) -2 (-1 is reserved for error).
  */
+#ifdef GDKLIBRARY_USTR
 var_t
-strLocate(Heap *h, const char *v)
+oldstrnilLocate(Heap *h)
 {
 	var_t *ref, *next;
 
@@ -439,7 +441,39 @@ strLocate(Heap *h, const char *v)
 	BUN off;
 	if (h->free <= GDK_STRHASHSIZE) {
 		/* empty, so there are no strings */
-		return strNil(v) ? 0 : (var_t) -2;
+		return (var_t) -2;
+	}
+
+	off = strHash(str_nil);
+	off &= GDK_STRHASHMASK;
+
+	/* should only use strLocate iff fully double eliminated */
+	assert(GDK_ELIMBASE(h->free) == 0);
+
+	/* search the linked list */
+	for (ref = ((var_t *) h->base) + off; *ref; ref = next) {
+		next = (var_t *) (h->base + *ref);
+		if (strcmp(str_nil, (char *) (next + 1)) == 0)
+			return (var_t) ((sizeof(var_t) + *ref));	/* found */
+	}
+	return (var_t) -2;
+}
+#endif
+
+var_t
+strLocate(Heap *h, const char *v)
+{
+	var_t *ref, *next;
+
+	/* search hash-table, if double-elimination is still in place */
+	BUN off;
+
+	if (strNil(v))
+		return 0;
+
+	if (h->free <= GDK_STRHASHSIZE) {
+		/* empty, so there are no strings */
+		return (var_t) -2;
 	}
 
 	off = strHash(v);
@@ -454,8 +488,6 @@ strLocate(Heap *h, const char *v)
 		if (strcmp(v, (char *) (next + 1)) == 0)
 			return (var_t) ((sizeof(var_t) + *ref));	/* found */
 	}
-	if (strNil(v))
-		return 0;
 	return (var_t) -2;
 }
 
@@ -472,6 +504,10 @@ strPut(BAT *b, var_t *dst, const void *V)
 	size_t slen = strlen(v);
 	var_t *bucket;
 	BUN off;
+
+	/* when entering nil, just return offset 0 */
+	if (strNil(v))
+		return *dst = 0;
 
 	if (h->free == 0) {
 		if (h->size < GDK_STRHASHSIZE + BATTINY * GDK_VARALIGN) {
@@ -525,13 +561,6 @@ strPut(BAT *b, var_t *dst, const void *V)
 		}
 	}
 	/* the string was not found in the heap, we need to enter it */
-
-	/* when entering nil, just return offset 0
-	 * note that we checked first whether nil already occurs and
-	 * returned that if we found it -- this we way we stay fully
-	 * double eliminated in older string bats */
-	if (strNil(v))
-		return *dst = 0;
 
 	/* check that string is correctly encoded UTF-8; there was no
 	 * need to do this earlier: if the string was found above, it

@@ -2827,14 +2827,10 @@ vkeyjoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 	BATiter li = bat_iterator(l);
 	BATiter ri = bat_iterator(r);
 
-	var_t niloff = (ATOMstorage(li.type) == TYPE_str &&
-			GDK_ELIMDOUBLES(li.vh)) ? strLocate(li.vh, str_nil) : 0;
-	assert(niloff != (var_t) -2);
-
 	bit defmark = 0;
 	if ((not_in || r3p) && !ri.nonil) {
 		BUN rb;
-		HASHloop_var_t(&ri, hsh, rb, &niloff) {
+		HASHloop_var_t(&ri, hsh, rb, &(var_t){0}) {
 			if (r3p) {
 				defmark = bit_nil;
 				break;
@@ -2899,7 +2895,7 @@ vkeyjoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 		var_t v = VarHeapVal(li.base, lo - l->hseqbase, li.width);
 		BUN nr = 0;
 		bit mark = defmark;
-		if ((!nil_matches || not_in) && v == niloff) {
+		if ((!nil_matches || not_in) && v == 0) {
 			/* no match */
 			if (not_in) {
 				lskipped = BATcount(r1) > 0;
