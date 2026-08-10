@@ -1,6 +1,21 @@
 from os import environ
-import sys
+import re, sys
+
+# import these before importing tpymonetdb as pymonetdb
+from pymonetdb import __version__ as pymonetdb_version
+from pymonetdb import __file__ as pymonetdb_location
+
 from MonetDBtesting import tpymonetdb as pymonetdb
+
+# Only recent pymonetdb's track autocommit status
+print(f'# pymonetdb version: {pymonetdb_version} {pymonetdb_location}', file=sys.stderr)
+pymonetdb_version_components = [
+    (int(component) if all(ch.isdigit() for ch in component) else component)
+    for component in re.findall(r'\d+|[a-zA-Z]+\d*',pymonetdb_version)
+]
+if pymonetdb_version_components < [1, 9, 1]:
+    print(f"# -> old version of pymonetdb which doesn't track autocommit", file=sys.stderr)
+    sys.exit(0)
 
 
 conn = pymonetdb.connect(database=environ['TSTDB'], port=environ['MAPIPORT'], autocommit=True)
@@ -34,6 +49,7 @@ execute("SELECT 42", True)
 execute("START TRANSACTION", False)
 execute("COMMIT", True)
 
+# test auto commit mode is tracked correctly
 execute("START TRANSACTION", False)
 execute("SELECT SELECT FROM SELECT WHERE SELECT = SELECT", False, expected_exception='syntax error')
 execute("COMMIT", True, expected_exception='will ROLLBACK')
