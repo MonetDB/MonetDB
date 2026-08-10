@@ -827,6 +827,7 @@ concat_strings(allocator *ma, BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 	assert((bnp == NULL) != (pt == NULL));
 	/* if pt not NULL, only a single group allowed */
 	assert(pt == NULL || ngrp == 1);
+	assert(separator == NULL || !strNil(separator));
 
 	if (bnp) {
 		if ((bn = COLnew(min, TYPE_str, ngrp, TRANSIENT)) == NULL) {
@@ -875,15 +876,8 @@ concat_strings(allocator *ma, BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 					}
 				} else {
 					single_length += strlen(s);
-					if (!empty) {
-						if (strNil(sl)) {
-							if (!skip_nils) {
-								nils = 1;
-								break;
-							}
-						} else
-							single_length += strlen(sl);
-					}
+					if (!empty && !strNil(sl))
+						single_length += strlen(sl);
 					empty = false;
 				}
 			}
@@ -1013,13 +1007,11 @@ concat_strings(allocator *ma, BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 					if (lengths[gid] == (size_t) -1)
 						continue;
 					const char *s = BUNtvar(bi, i);
-					const char *sl = BUNtvar(bis, i);
 					if (!strNil(s)) {
+						const char *sl = BUNtvar(bis, i);
 						lengths[gid] += strlen(s);
-						if (!strNil(sl)) {
-							next_length = strlen(sl);
-							lengths[gid] += next_length;
-						}
+						next_length = strNil(sl) ? 0 : strlen(sl);
+						lengths[gid] += next_length;
 						astrings[gid] = NULL;
 					} else if (!skip_nils) {
 						nils++;
@@ -1085,13 +1077,15 @@ concat_strings(allocator *ma, BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 					gid = gids[i] - min;
 					if (astrings[gid]) {
 						const char *s = BUNtvar(bi, i);
-						const char *sl = BUNtvar(bis, i);
 						if (strNil(s))
 							continue;
-						if (astrings[gid][lengths[gid]] && !strNil(sl)) {
-							next_length = strlen(sl);
-							memcpy(astrings[gid] + lengths[gid], sl, next_length);
-							lengths[gid] += next_length;
+						if (astrings[gid][lengths[gid]]) {
+							const char *sl = BUNtvar(bis, i);
+							if (!strNil(sl)) {
+								next_length = strlen(sl);
+								memcpy(astrings[gid] + lengths[gid], sl, next_length);
+								lengths[gid] += next_length;
+							}
 						}
 						next_length = strlen(s);
 						memcpy(astrings[gid] + lengths[gid], s, next_length);
@@ -1141,20 +1135,21 @@ BATstr_group_concat(allocator *ma, ValPtr res, BAT *b, BAT *s, BAT *sep, bool sk
 {
 	struct canditer ci;
 	gdk_return r = GDK_SUCCEED;
-	const char *nseparator = separator;
 
-	assert((nseparator && !sep) || (!nseparator && sep)); /* only one of them must be set */
+	assert((separator && !sep) || (!separator && sep)); /* only one of them must be set */
 	*res = (ValRecord) {.vtype = TYPE_str};
 
 	canditer_init(&ci, b, s);
 
 	BATiter bi = bat_iterator(sep);
 	if (sep && BATcount(sep) == 1) { /* Only one element in sep */
-		nseparator = BUNtvar(bi, 0);
+		separator = BUNtvar(bi, 0);
 		sep = NULL;
 	}
+	if (separator && strNil(separator))
+		separator = "";
 
-	if (ci.ncand == 0 || (nseparator && strNil(nseparator))) {
+	if (ci.ncand == 0) {
 		if (VALinit(ma, res, TYPE_str, nil_if_empty ? str_nil : "") == NULL)
 			r = GDK_FAIL;
 		bat_iterator_end(&bi);
@@ -1162,7 +1157,7 @@ BATstr_group_concat(allocator *ma, ValPtr res, BAT *b, BAT *s, BAT *sep, bool sk
 	}
 
 	r = concat_strings(ma, NULL, res, b, b->hseqbase, 1, &ci, NULL, 0, 0,
-			      skip_nils, sep, nseparator, NULL);
+			      skip_nils, sep, separator, NULL);
 	bat_iterator_end(&bi);
 	return r;
 }
@@ -1177,9 +1172,8 @@ BATgroupstr_group_concat(BAT *b, BAT *g, BAT *e, BAT *s, BAT *sep, bool skip_nil
 	struct canditer ci;
 	const char *err;
 	gdk_return res;
-	const char *nseparator = separator;
 
-	assert((nseparator && !sep) || (!nseparator && sep)); /* only one of them must be set */
+	assert((separator && !sep) || (!separator && sep)); /* only one of them must be set */
 	(void) skip_nils;
 
 	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp,
@@ -1194,11 +1188,13 @@ BATgroupstr_group_concat(BAT *b, BAT *g, BAT *e, BAT *s, BAT *sep, bool skip_nil
 
 	BATiter bi = bat_iterator(sep);
 	if (sep && BATcount(sep) == 1) { /* Only one element in sep */
-		nseparator = BUNtvar(bi, 0);
+		separator = BUNtvar(bi, 0);
 		sep = NULL;
 	}
+	if (separator && strNil(separator))
+		separator = "";
 
-	if (ci.ncand == 0 || ngrp == 0 || (nseparator && strNil(nseparator))) {
+	if (ci.ncand == 0 || ngrp == 0) {
 		/* trivial: no strings to concat, so return bat
 		 * aligned with g with nil in the tail */
 		bn = BATconstant(ngrp == 0 ? 0 : min, TYPE_str, str_nil, ngrp, TRANSIENT);
@@ -1216,7 +1212,7 @@ BATgroupstr_group_concat(BAT *b, BAT *g, BAT *e, BAT *s, BAT *sep, bool skip_nil
 
 	res = concat_strings(NULL, &bn, NULL, b, b->hseqbase, ngrp, &ci,
 			     (const oid *) Tloc(g, 0), min, max, skip_nils, sep,
-			     nseparator, &nils);
+			     separator, &nils);
 	if (res != GDK_SUCCEED)
 		bn = NULL;
 
@@ -1241,6 +1237,7 @@ compute_next_single_str(size_t *mglp, char **ssp, bool *hnp,
 	size_t next_length = 0;
 	size_t offset = 0;
 	bool empty = true;
+	assert(separator == NULL || !strNil(separator));
 
 	for (oid m = start; m < end; m++) {
 		const char *sb = BUNtvar(*bi, m);
@@ -1350,9 +1347,11 @@ GDKanalytical_str_group_concat(BAT *r, BAT *p, BAT *o, BAT *b, BAT *sep, BAT *s,
 		separator = BUNtvar(sepi, 0);
 		sep = NULL;
 	}
-
-	if (sep == NULL)
+	if (separator) {
+		if (strNil(separator))
+			separator = "";
 		separator_length = strlen(separator);
+	}
 
 	if (bi.count > 0) {
 		switch (frame_type) {
