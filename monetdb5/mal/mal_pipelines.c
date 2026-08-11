@@ -17,8 +17,7 @@
 #include "mal_resource.h"
 #include "mal_function.h"
 
-#include "gdk_system.h"
-#include "gdk_posix.h"
+#include "gdk.h"
 
 typedef struct queue {
 	int size;	/* size of queue */

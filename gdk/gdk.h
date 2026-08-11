@@ -30,6 +30,7 @@
 #include <float.h>
 #include <inttypes.h>
 #include <limits.h>
+#include <math.h>
 #include <setjmp.h>
 #include <stdarg.h>
 #include <stdbool.h>
@@ -54,6 +55,81 @@
 
 #ifdef HAVE_DIRENT_H
 # include <dirent.h>
+#endif
+
+#ifdef HAVE_PTHREAD_H
+/* don't re-include config.h; on Windows, don't redefine pid_t in an
+ * incompatible way */
+#undef HAVE_CONFIG_H
+#ifdef pid_t
+#undef pid_t
+#endif
+#include <sched.h>
+#include <pthread.h>
+#endif
+
+#ifdef HAVE_SEMAPHORE_H
+# include <semaphore.h>
+#endif
+
+#ifdef HAVE_DISPATCH_DISPATCH_H
+#include <dispatch/dispatch.h>
+#endif
+
+#ifdef HAVE_SYS_PARAM_H
+# include <sys/param.h>	   /* prerequisite of sys/sysctl on OpenBSD */
+#endif
+#ifdef BSD /* BSD macro is defined in sys/param.h */
+# include <sys/sysctl.h>
+#endif
+
+#include <sys/types.h>
+
+#ifdef HAVE_FTIME
+#include <sys/timeb.h>		/* ftime */
+#endif
+#ifdef HAVE_SYS_TIME_H
+#include <sys/time.h>		/* gettimeofday */
+#endif
+
+#ifndef HAVE_SYS_SOCKET_H
+#ifdef HAVE_WINSOCK_H
+#include <winsock.h>		/* for timeval */
+#endif
+#endif
+
+#ifdef NATIVE_WIN32
+#include <io.h>
+#include <direct.h>
+#endif
+
+/* make sure POSIX_MADV_* and posix_madvise() are defined somehow */
+#ifdef HAVE_SYS_MMAN_H
+# ifndef __USE_BSD
+#  define __USE_BSD
+# endif
+# include <sys/mman.h>
+#endif
+
+#ifdef __APPLE__
+/* the compiler on the Mac can't deal with including xxhash.h twice
+ * because of identical redefinitions of types and we happen to know
+ * that the xxhash version is high enough, so just define the magic
+ * inline token and include the file only once */
+#define XXH_INLINE_ALL
+#endif
+
+#include <xxhash.h>
+
+#ifndef __APPLE__
+#if XXH_VERSION_NUMBER >= 0*100*100 + 8*100 + 0   /* at least 0.8.0 */
+/* in newer versions, we can define XXH_INLINE_ALL to inline all hash
+ * functions before including xxhash.h again (we didn't need the first
+ * include, except we need the version number to make the
+ * distinction) */
+#define XXH_INLINE_ALL
+#include <xxhash.h>
+#endif
 #endif
 
 #include "stream.h"
@@ -116,9 +192,1027 @@ typedef struct allocator_state {
 	allocator *ma;
 } allocator_state;
 
-#include "gdk_tracer.h"
-#include "gdk_system.h"
-#include "gdk_posix.h"
+/* // TODO: Complete it when documentation is accepted
+ *
+ * Tracer is the general logging system for the MonetDB stack modelled
+ * after the well-known logging schemes (e.g: Python). It provides a
+ * number of logging levels and options to increase or reduce the
+ * verbosity either of individual code parts or of the codebase as a
+ * whole. It allows users to focus on logging messages related to
+ * certain steps of execution, which can be proved handy when it comes
+ * to debugging. The behavior of Tracer can be controlled at runtime
+ * using the SQL API described later on. Certain calls require an "id"
+ * to operate which can be found on the list of each section below.
+ *
+ * Internally, the logger uses a buffer to capture log messages before
+ * they are forwarded to the specific adapter.
+ *
+ * - Sets the minimum flush level that an event will trigger the
+ *   logger to flush the buffer
+ * - Produces messages to the output stream. It is also used as a
+ *   fallback mechanism in case GDKtracer fails to log for whatever
+ *   reason.
+ * - Struct buffer with allocated space etc.
+ * - Flush buffer sends the messages to the selected adapter
+ * - Write about the log structure (e.g: MT_thread_get_name + datetime
+ *   + blah blah)
+ */
+
+#define TRC_NAME(TOKEN)		TRC_##TOKEN
+
+#define TRC_GENERATE_ENUM(ENUM) TRC_NAME(ENUM),
+
+
+// ADAPTERS
+#define TRC_FOREACH_ADPTR(ADPTR)		\
+	ADPTR( BASIC )				\
+	ADPTR( PROFILER )			\
+	ADPTR( MBEDDED )			\
+						\
+	ADPTR( ADAPTERS_COUNT )
+
+typedef enum {
+	TRC_FOREACH_ADPTR(TRC_GENERATE_ENUM)
+} adapter_t;
+
+
+
+// LOG LEVELS
+#define TRC_FOREACH_LEVEL(LEVEL)		\
+	LEVEL( M_CRITICAL )			\
+	LEVEL( M_ERROR )			\
+	LEVEL( M_WARNING )			\
+	LEVEL( M_INFO )				\
+	LEVEL( M_DEBUG )			\
+						\
+	LEVEL( LOG_LEVELS_COUNT )
+
+typedef enum {
+	TRC_FOREACH_LEVEL(TRC_GENERATE_ENUM)
+} log_level_t;
+
+
+// LAYERS
+#define TRC_FOREACH_LAYER(LAYER)		\
+	LAYER( MDB_ALL )			\
+	LAYER( SQL_ALL )			\
+	LAYER( MAL_ALL )			\
+	LAYER( GDK_ALL )			\
+						\
+	LAYER( LAYERS_COUNT )
+
+typedef enum {
+	TRC_FOREACH_LAYER(TRC_GENERATE_ENUM)
+} layer_t;
+
+
+
+
+// COMPONENTS
+#define TRC_FOREACH_COMP(COMP)			\
+	COMP( ACCELERATOR )			\
+	COMP( ALGO )				\
+	COMP( ALLOC )				\
+	COMP( BAT )				\
+	COMP( CHECK )				\
+	COMP( DELTA )				\
+	COMP( HEAP )				\
+	COMP( IO )				\
+	COMP( WAL )				\
+	COMP( PAR )				\
+	COMP( PERF )				\
+	COMP( TEM )				\
+	COMP( THRD )				\
+	COMP( TM )				\
+						\
+	COMP( GEOM )				\
+	COMP( FITS )				\
+	COMP( SHP )				\
+	COMP( PARQUET )				\
+						\
+	COMP( LOADER )				\
+						\
+	COMP( SQL_PARSER )			\
+	COMP( SQL_TRANS )			\
+	COMP( SQL_REWRITER )			\
+	COMP( SQL_EXECUTION )			\
+	COMP( SQL_STORE )			\
+						\
+	COMP( MAL_REMOTE )			\
+	COMP( MAL_MAPI )			\
+	COMP( MAL_SERVER )			\
+	COMP( MAL_LOADER )			\
+	COMP( MAL_INSTRUCTION )			\
+						\
+	COMP( MAL_OPTIMIZER )			\
+						\
+	COMP( GDK )				\
+						\
+	COMP( COMPONENTS_COUNT )
+
+typedef enum {
+	TRC_FOREACH_COMP(TRC_GENERATE_ENUM)
+} component_t;
+
+#undef TRC_GENERATE_ENUM
+
+
+/*
+ * Logging macros
+ */
+gdk_export ATOMIC_TYPE lvl_per_component[];
+
+// If the LOG_LEVEL of the message is one of the following: CRITICAL,
+// ERROR or WARNING it is logged no matter the component. In any other
+// case the component is taken into account
+#define GDK_TRACER_TEST(LOG_LEVEL, COMP)				\
+	(TRC_NAME(LOG_LEVEL) <= TRC_NAME(M_WARNING)  ||			\
+	 (log_level_t) ATOMIC_GET(&lvl_per_component[TRC_NAME(COMP)]) >= TRC_NAME(LOG_LEVEL))
+
+
+#define GDK_TRACER_LOG_BODY(LOG_LEVEL, COMP, ...)			\
+	GDKtracer_log(__FILE__, __func__, __LINE__,			\
+		      TRC_NAME(LOG_LEVEL), TRC_NAME(COMP), NULL, __VA_ARGS__)
+
+#ifdef __COVERITY__
+/* hide this for static code analysis: too many false positives */
+#define GDK_TRACER_LOG(LOG_LEVEL, COMP, MSG, ...)	((void) 0)
+#else
+#define GDK_TRACER_LOG(LOG_LEVEL, COMP, ...)				\
+	do {								\
+		if (GDK_TRACER_TEST(LOG_LEVEL, COMP)) {			\
+			GDK_TRACER_LOG_BODY(LOG_LEVEL, COMP,		\
+					    __VA_ARGS__);		\
+		}							\
+	} while (0)
+#endif
+
+
+#define TRC_CRITICAL(COMP, ...)					\
+	GDK_TRACER_LOG_BODY(M_CRITICAL, COMP, __VA_ARGS__)
+
+#define TRC_ERROR(COMP, ...)					\
+	GDK_TRACER_LOG_BODY(M_ERROR, COMP, __VA_ARGS__)
+
+#define TRC_WARNING(COMP, ...)					\
+	GDK_TRACER_LOG_BODY(M_WARNING, COMP, __VA_ARGS__)
+
+#define TRC_INFO(COMP, ...)					\
+	GDK_TRACER_LOG(M_INFO, COMP, __VA_ARGS__)
+
+#define TRC_DEBUG(COMP, ...)					\
+	GDK_TRACER_LOG(M_DEBUG, COMP, __VA_ARGS__)
+
+
+
+// Conditional logging - Example usage
+// NOTE: When using the macro with *_IF always use the macro with
+// *_ENDIF for logging. Not doing that will result in checking
+// the LOG_LEVEL of the the COMPONENT twice. Also NEVER use the
+// *_ENDIF macro without before performing a check with *_IF
+// macro. Such an action will have as a consequence logging everything
+// without taking into account the LOG_LEVEL of the COMPONENT.
+/*
+    TRC_INFO_IF(SQL_STORE)
+    {
+	TRC_INFO_ENDIF(SQL_STORE, "Test\n")
+    }
+*/
+#define TRC_CRITICAL_IF(COMP)			\
+	/* if (GDK_TRACER_TEST(M_CRITICAL, COMP)) */
+
+#define TRC_ERROR_IF(COMP)			\
+	/* if (GDK_TRACER_TEST(M_ERROR, COMP)) */
+
+#define TRC_WARNING_IF(COMP)			\
+	/* if (GDK_TRACER_TEST(M_WARNING, COMP)) */
+
+#define TRC_INFO_IF(COMP)			\
+	if (GDK_TRACER_TEST(M_INFO, COMP))
+
+#define TRC_DEBUG_IF(COMP)			\
+	if (GDK_TRACER_TEST(M_DEBUG, COMP))
+
+
+#define TRC_CRITICAL_ENDIF(COMP, ...)				\
+	GDK_TRACER_LOG_BODY(M_CRITICAL, COMP, __VA_ARGS__)
+
+#define TRC_ERROR_ENDIF(COMP, ...)				\
+	GDK_TRACER_LOG_BODY(M_ERROR, COMP, __VA_ARGS__)
+
+#define TRC_WARNING_ENDIF(COMP, ...)				\
+	GDK_TRACER_LOG_BODY(M_WARNING, COMP, __VA_ARGS__)
+
+#define TRC_INFO_ENDIF(COMP, ...)				\
+	GDK_TRACER_LOG_BODY(M_INFO, COMP, __VA_ARGS__)
+
+#define TRC_DEBUG_ENDIF(COMP, ...)				\
+	GDK_TRACER_LOG_BODY(M_DEBUG, COMP, __VA_ARGS__)
+
+
+
+/*
+ * GDKtracer API
+ * For the allowed log_levels, components and layers see the
+ * LOG_LEVEL, COMPONENT and LAYER enum respectively.
+ */
+// Used for logrotate
+gdk_export void GDKtracer_reinit_basic(int sig);
+
+gdk_export gdk_return GDKtracer_set_tracefile(const char *tracefile);
+
+gdk_export gdk_return GDKtracer_stop(void);
+
+gdk_export gdk_return GDKtracer_set_component_level(const char *comp, const char *lvl);
+gdk_export const char *GDKtracer_get_component_level(const char *comp);
+gdk_export gdk_return GDKtracer_reset_component_level(const char *comp);
+
+gdk_export gdk_return GDKtracer_set_layer_level(const char *layer, const char *lvl);
+gdk_export gdk_return GDKtracer_reset_layer_level(const char *layer);
+
+gdk_export gdk_return GDKtracer_set_flush_level(const char *lvl);
+gdk_export gdk_return GDKtracer_reset_flush_level(void);
+
+gdk_export gdk_return GDKtracer_set_adapter(const char *adapter);
+gdk_export gdk_return GDKtracer_reset_adapter(void);
+
+gdk_export void GDKtracer_log(const char *file, const char *func,
+			      int lineno, log_level_t lvl,
+			      component_t comp,
+			      const char *syserr,
+			      _In_z_ _Printf_format_string_ const char *format,
+			      ...)
+	__attribute__((__format__(__printf__, 7, 8)));
+
+gdk_export gdk_return GDKtracer_flush_buffer(void);
+
+/* debug and errno integers */
+gdk_export ATOMIC_TYPE GDKdebug;
+gdk_export void GDKsetdebug(unsigned debug);
+gdk_export unsigned GDKgetdebug(void);
+
+gdk_export int GDKnr_threads;
+
+/* API */
+
+gdk_export void MT_sleep_ms(unsigned int ms);
+
+/*
+ * @- MT Thread Api
+ */
+typedef size_t MT_Id;		/* thread number. will not be zero */
+
+enum MT_thr_detach { MT_THR_JOINABLE, MT_THR_DETACHED };
+
+#define MT_NAME_LEN	32	/* length of thread/semaphore/etc. names */
+
+#define UNKNOWN_THREAD "unknown thread"
+
+typedef struct QryCtx {
+	lng starttime;
+	lng endtime;
+	struct bstream *bs;
+	ATOMIC_TYPE datasize;
+	ATOMIC_BASE_TYPE maxmem;
+	allocator *errorallocator;
+	bool oahash_enabled;
+} QryCtx;
+
+gdk_export bool THRhighwater(void);
+gdk_export bool MT_thread_init(void);
+gdk_export int MT_create_thread(MT_Id *t, void (*function) (void *),
+				void *arg, enum MT_thr_detach d,
+				const char *threadname);
+gdk_export gdk_return MT_thread_init_add_callback(void (*init)(void *), void (*destroy)(void *), void *data);
+gdk_export bool MT_thread_register(void);
+gdk_export void MT_thread_deregister(void);
+gdk_export const char *MT_thread_getname(void);
+gdk_export allocator *MT_thread_getallocator(void);
+gdk_export void MT_thread_setallocator(allocator *ma);
+gdk_export void *MT_thread_getdata(void);
+gdk_export void MT_thread_setdata(void *data);
+gdk_export void MT_exiting_thread(void);
+gdk_export MT_Id MT_getpid(void);
+gdk_export int MT_join_thread(MT_Id t);
+gdk_export QryCtx *MT_thread_get_qry_ctx(void);
+gdk_export void MT_thread_set_qry_ctx(QryCtx *ctx);
+gdk_export char *GDKgetbuf(void);
+
+#if SIZEOF_VOID_P == 4
+/* "limited" stack size on 32-bit systems */
+/* to avoid address space fragmentation   */
+#define THREAD_STACK_SIZE	((size_t)1024*1024)
+#else
+/* "increased" stack size on 64-bit systems    */
+/* since some compilers seem to require this   */
+/* for burg-generated code in pathfinder       */
+/* and address space fragmentation is no issue */
+#define THREAD_STACK_SIZE	((size_t)2*1024*1024)
+#endif
+
+
+/*
+ * @- MT Lock API
+ */
+
+/* define this to keep lock statistics (can be expensive) */
+/* #define LOCK_STATS 1 */
+
+/* define this to keep track of which locks a thread has acquired */
+#ifndef NDEBUG			/* normally only in debug builds */
+#ifndef __COVERITY__
+#define LOCK_OWNER 1
+#endif
+#endif
+
+#ifndef LOCK_OWNER
+#define MT_thread_add_mylock(l) ((void) 0)
+#define MT_thread_del_mylock(l) ((void) 0)
+#endif
+
+#ifdef LOCK_STATS
+
+#define _DBG_LOCK_COUNT_0(l)					\
+	do {							\
+		ATOMIC_INC(&GDKlockcnt);			\
+		TRC_DEBUG(TEM, "Locking %s...\n", (l)->name);	\
+	} while (0)
+
+#define _DBG_LOCK_LOCKER(l)				\
+	(						\
+		(l)->locker = __func__,			\
+		(l)->thread = MT_thread_getname(),	\
+		MT_thread_add_mylock(l)			\
+	)
+
+#define _DBG_LOCK_UNLOCKER(l)					\
+	do {							\
+		MT_thread_del_mylock(l);			\
+		(l)->locker = __func__;				\
+		(l)->thread = NULL;				\
+		TRC_DEBUG(TEM, "Unlocking %s\n", (l)->name);	\
+	} while (0)
+
+#define _DBG_LOCK_CONTENTION(l)						\
+	do {								\
+		TRC_DEBUG(TEM, "Lock %s contention\n", (l)->name);	\
+		ATOMIC_INC(&GDKlockcontentioncnt);			\
+		ATOMIC_INC(&(l)->contention);				\
+	} while (0)
+
+#define _DBG_LOCK_SLEEP(l)	(ATOMIC_INC(&(l)->sleep))
+
+#define _DBG_LOCK_COUNT_2(l)						\
+	do {								\
+		(l)->count++;						\
+		if ((l)->next == (struct MT_Lock *) -1) {		\
+			while (ATOMIC_TAS(&GDKlocklistlock) != 0)	\
+				;					\
+			(l)->next = GDKlocklist;			\
+			(l)->prev = NULL;				\
+			if (GDKlocklist)				\
+				GDKlocklist->prev = (l);		\
+			GDKlocklist = (l);				\
+			ATOMIC_CLEAR(&GDKlocklistlock);			\
+		}							\
+		TRC_DEBUG(TEM, "Locking %s complete\n", (l)->name);	\
+	} while (0)
+
+#define _DBG_LOCK_INIT(l)					\
+	do {							\
+		(l)->count = 0;					\
+		ATOMIC_INIT(&(l)->contention, 0);		\
+		ATOMIC_INIT(&(l)->sleep, 0);			\
+		(l)->locker = NULL;				\
+		(l)->thread = NULL;				\
+		while (ATOMIC_TAS(&GDKlocklistlock) != 0)	\
+			;					\
+		if (GDKlocklist)				\
+			GDKlocklist->prev = (l);		\
+		(l)->next = GDKlocklist;			\
+		(l)->prev = NULL;				\
+		GDKlocklist = (l);				\
+		ATOMIC_CLEAR(&GDKlocklistlock);			\
+	} while (0)
+
+#define _DBG_LOCK_DESTROY(l)					\
+	do {							\
+		while (ATOMIC_TAS(&GDKlocklistlock) != 0)	\
+			;					\
+		if ((l)->next)					\
+			(l)->next->prev = (l)->prev;		\
+		if ((l)->prev)					\
+			(l)->prev->next = (l)->next;		\
+		else if (GDKlocklist == (l))			\
+			GDKlocklist = (l)->next;		\
+		ATOMIC_CLEAR(&GDKlocklistlock);			\
+	} while (0)
+
+#else
+
+#ifdef LOCK_OWNER
+#define _DBG_LOCK_LOCKER(l)				\
+	(						\
+		(l)->locker = __func__,			\
+		(l)->thread = MT_thread_getname(),	\
+		MT_thread_add_mylock(l)			\
+	)
+
+#define _DBG_LOCK_UNLOCKER(l)					\
+	do {							\
+		MT_thread_del_mylock(l);			\
+		(l)->locker = __func__;				\
+		(l)->thread = NULL;				\
+	} while (0)
+#else
+#define _DBG_LOCK_LOCKER(l)		((void) 0)
+#define _DBG_LOCK_UNLOCKER(l)		((void) 0)
+#endif
+
+#define _DBG_LOCK_COUNT_0(l)		((void) 0)
+#define _DBG_LOCK_CONTENTION(l)		((void) 0)
+#define _DBG_LOCK_SLEEP(l)		((void) 0)
+#define _DBG_LOCK_COUNT_2(l)		((void) 0)
+#define _DBG_LOCK_INIT(l)		((void) 0)
+#define _DBG_LOCK_DESTROY(l)		((void) 0)
+
+#endif
+
+#if !defined(HAVE_PTHREAD_H) && defined(WIN32)
+typedef struct MT_Lock {
+	CRITICAL_SECTION lock;
+	char name[MT_NAME_LEN];
+#ifdef LOCK_STATS
+	size_t count;
+	ATOMIC_TYPE contention;
+	ATOMIC_TYPE sleep;
+	struct MT_Lock *volatile next;
+	struct MT_Lock *volatile prev;
+#endif
+#if defined(LOCK_STATS) || defined(LOCK_OWNER)
+	const char *locker;
+	const char *thread;
+#endif
+#ifdef LOCK_OWNER
+	struct MT_Lock *nxt;
+#endif
+} MT_Lock;
+
+/* Windows defines read as _read and adds a deprecation warning to read
+ * if you were to still use that.  We need the token "read" here.  We
+ * cannot simply #undef read, since that messes up the deprecation
+ * stuff.  So we define _read as read to change the token back to "read"
+ * where replacement stops (recursive definitions are allowed in C and
+ * are handled well).  After our use, we remove the definition of _read
+ * so everything reverts back to the way it was.  Bonus: this also works
+ * if "read" was not defined. */
+#define _read read
+#pragma section(".CRT$XCU", read)
+#undef _read
+#ifdef _WIN64
+#define _LOCK_PREF_ ""
+#else
+#define _LOCK_PREF_ "_"
+#endif
+#define MT_LOCK_INITIALIZER(n) { 0 };					\
+static void wininit_##n(void)						\
+{									\
+	MT_lock_init(&n, #n);						\
+}									\
+__declspec(allocate(".CRT$XCU")) void (*wininit_##n##_)(void) = wininit_##n; \
+__pragma(comment(linker, "/include:" _LOCK_PREF_ "wininit_" #n "_"))
+
+#define MT_lock_init(l, n)					\
+	do {							\
+		InitializeCriticalSection(&(l)->lock);		\
+		strtcpy((l)->name, (n), sizeof((l)->name));	\
+		_DBG_LOCK_INIT(l);				\
+	} while (0)
+
+#define MT_lock_try(l)	(TryEnterCriticalSection(&(l)->lock) && (_DBG_LOCK_LOCKER(l), true))
+
+#define MT_lock_set(l)						\
+	do {							\
+		_DBG_LOCK_COUNT_0(l);				\
+		if (!TryEnterCriticalSection(&(l)->lock)) {	\
+			_DBG_LOCK_CONTENTION(l);		\
+			MT_thread_setlockwait(l);		\
+			EnterCriticalSection(&(l)->lock);	\
+			MT_thread_setlockwait(NULL);		\
+		}						\
+		_DBG_LOCK_LOCKER(l);				\
+		_DBG_LOCK_COUNT_2(l);				\
+	} while (0)
+
+#define MT_lock_unset(l)				\
+	do {						\
+		_DBG_LOCK_UNLOCKER(l);			\
+		LeaveCriticalSection(&(l)->lock);	\
+	} while (0)
+
+#define MT_lock_destroy(l)				\
+	do {						\
+		_DBG_LOCK_DESTROY(l);			\
+		DeleteCriticalSection(&(l)->lock);	\
+	} while (0)
+
+typedef struct MT_RWLock {
+	SRWLOCK lock;
+	char name[MT_NAME_LEN];
+} MT_RWLock;
+
+#define MT_RWLOCK_INITIALIZER(n)	{ .lock = SRWLOCK_INIT, .name = #n, }
+
+#define MT_rwlock_init(l, n)					\
+	do {							\
+		InitializeSRWLock(&(l)->lock);			\
+		strtcpy((l)->name, (n), sizeof((l)->name));	\
+	 } while (0)
+
+#define MT_rwlock_destroy(l)	((void) 0)
+
+#define MT_rwlock_rdlock(l)	AcquireSRWLockShared(&(l)->lock)
+#define MT_rwlock_rdtry(l)	TryAcquireSRWLockShared(&(l)->lock)
+
+#define MT_rwlock_rdunlock(l)	ReleaseSRWLockShared(&(l)->lock)
+
+#define MT_rwlock_wrlock(l)	AcquireSRWLockExclusive(&(l)->lock)
+#define MT_rwlock_wrtry(l)	TryAcquireSRWLockExclusive(&(l)->lock)
+
+#define MT_rwlock_wrunlock(l)	ReleaseSRWLockExclusive(&(l)->lock)
+
+typedef DWORD MT_TLS_t;
+
+#else
+
+typedef struct MT_Lock {
+	pthread_mutex_t lock;
+	char name[MT_NAME_LEN];
+#ifdef LOCK_STATS
+	size_t count;
+	ATOMIC_TYPE contention;
+	ATOMIC_TYPE sleep;
+	struct MT_Lock *volatile next;
+	struct MT_Lock *volatile prev;
+#endif
+#if defined(LOCK_STATS) || defined(LOCK_OWNER)
+	const char *locker;
+	const char *thread;
+#endif
+#ifdef LOCK_OWNER
+	struct MT_Lock *nxt;
+#endif
+} MT_Lock;
+
+#ifdef LOCK_STATS
+#define MT_LOCK_INITIALIZER(n)	{ .lock = PTHREAD_MUTEX_INITIALIZER, .name = #n, .next = (struct MT_Lock *) -1, }
+#else
+#define MT_LOCK_INITIALIZER(n)	{ .lock = PTHREAD_MUTEX_INITIALIZER, .name = #n, }
+#endif
+
+#define MT_lock_init(l, n)					\
+	do {							\
+		pthread_mutex_init(&(l)->lock, 0);		\
+		strtcpy((l)->name, (n), sizeof((l)->name));	\
+		_DBG_LOCK_INIT(l);				\
+	} while (0)
+
+#define MT_lock_try(l)		(pthread_mutex_trylock(&(l)->lock) == 0 && (_DBG_LOCK_LOCKER(l), true))
+
+#if defined(__GNUC__) && defined(HAVE_PTHREAD_MUTEX_TIMEDLOCK) && defined(HAVE_CLOCK_GETTIME)
+#define MT_lock_trytime(l, ms)						\
+	({								\
+		struct timespec ts;					\
+		clock_gettime(CLOCK_REALTIME, &ts);			\
+		ts.tv_nsec += (ms % 1000) * 1000000;			\
+		if (ts.tv_nsec >= 1000000000) {				\
+			ts.tv_nsec -= 1000000000;			\
+			ts.tv_sec++;					\
+		}							\
+		ts.tv_sec += (ms / 1000);				\
+		int ret = pthread_mutex_timedlock(&(l)->lock, &ts);	\
+		if (ret == 0)						\
+			_DBG_LOCK_LOCKER(l);				\
+		ret == 0;						\
+	})
+#endif
+
+#define MT_lock_set(l)						\
+	do {							\
+		_DBG_LOCK_COUNT_0(l);				\
+		if (pthread_mutex_trylock(&(l)->lock)) {	\
+			_DBG_LOCK_CONTENTION(l);		\
+			MT_thread_setlockwait(l);		\
+			pthread_mutex_lock(&(l)->lock);		\
+			MT_thread_setlockwait(NULL);		\
+		}						\
+		_DBG_LOCK_LOCKER(l);				\
+		_DBG_LOCK_COUNT_2(l);				\
+	} while (0)
+
+#define MT_lock_unset(l)				\
+	do {						\
+		_DBG_LOCK_UNLOCKER(l);			\
+		pthread_mutex_unlock(&(l)->lock);	\
+	} while (0)
+
+#define MT_lock_destroy(l)				\
+	do {						\
+		_DBG_LOCK_DESTROY(l);			\
+		pthread_mutex_destroy(&(l)->lock);	\
+	} while (0)
+
+#if !defined(__GLIBC__) || __GLIBC__ > 2 || (__GLIBC__ == 2 && defined(__GLIBC_MINOR__) && __GLIBC_MINOR__ >= 30)
+/* this is the normal implementation of our pthreads-based read-write lock */
+typedef struct MT_RWLock {
+	pthread_rwlock_t lock;
+	char name[MT_NAME_LEN];
+} MT_RWLock;
+
+#define MT_RWLOCK_INITIALIZER(n)				\
+	{ .lock = PTHREAD_RWLOCK_INITIALIZER, .name = #n, }
+
+#define MT_rwlock_init(l, n)					\
+	do {							\
+		pthread_rwlock_init(&(l)->lock, NULL);		\
+		strtcpy((l)->name, (n), sizeof((l)->name));	\
+	 } while (0)
+
+#define MT_rwlock_destroy(l)	pthread_rwlock_destroy(&(l)->lock)
+
+#define MT_rwlock_rdlock(l)	pthread_rwlock_rdlock(&(l)->lock)
+#define MT_rwlock_rdtry(l)	(pthread_rwlock_tryrdlock(&(l)->lock) == 0)
+
+#define MT_rwlock_rdunlock(l)	pthread_rwlock_unlock(&(l)->lock)
+
+#define MT_rwlock_wrlock(l)	pthread_rwlock_wrlock(&(l)->lock)
+#define MT_rwlock_wrtry(l)	(pthread_rwlock_trywrlock(&(l)->lock) == 0)
+
+#define MT_rwlock_wrunlock(l)	pthread_rwlock_unlock(&(l)->lock)
+
+#else
+/* in glibc before 2.30, there was a deadlock condition in the tryrdlock
+ * and trywrlock functions, we work around that by not using the
+ * implementation at all
+ * see https://sourceware.org/bugzilla/show_bug.cgi?id=23844 for a
+ * discussion and comment 14 for the analysis */
+typedef struct MT_RWLock {
+	pthread_mutex_t lock;
+	ATOMIC_TYPE readers;
+	char name[MT_NAME_LEN];
+} MT_RWLock;
+
+#define MT_RWLOCK_INITIALIZER(n)					\
+	{ .lock = PTHREAD_MUTEX_INITIALIZER, .readers = ATOMIC_VAR_INIT(0), .name = #n, }
+
+#define MT_rwlock_init(l, n)					\
+	do {							\
+		pthread_mutex_init(&(l)->lock, 0);		\
+		ATOMIC_INIT(&(l)->readers, 0);			\
+		strtcpy((l)->name, (n), sizeof((l)->name));	\
+	} while (0)
+
+#define MT_rwlock_destroy(l)				\
+	do {						\
+		pthread_mutex_destroy(&(l)->lock);	\
+	} while (0)
+
+#define MT_rwlock_rdlock(l)				\
+	do {						\
+		pthread_mutex_lock(&(l)->lock);		\
+		ATOMIC_INC(&(l)->readers);		\
+		pthread_mutex_unlock(&(l)->lock);	\
+	} while (0)
+
+static inline bool
+MT_rwlock_rdtry(MT_RWLock *l)
+{
+	if (pthread_mutex_trylock(&l->lock) != 0)
+		return false;
+	ATOMIC_INC(&(l)->readers);
+	pthread_mutex_unlock(&l->lock);
+	return true;
+}
+
+#define MT_rwlock_rdunlock(l)			\
+	do {					\
+		ATOMIC_DEC(&(l)->readers);	\
+	} while (0)
+
+#define MT_rwlock_wrlock(l)				\
+	do {						\
+		pthread_mutex_lock(&(l)->lock);		\
+		while (ATOMIC_GET(&(l)->readers) > 0)	\
+			MT_sleep_ms(1);			\
+	} while (0)
+
+static inline bool
+MT_rwlock_wrtry(MT_RWLock *l)
+{
+	if (pthread_mutex_trylock(&l->lock) != 0)
+		return false;
+	if (ATOMIC_GET(&l->readers) > 0) {
+		pthread_mutex_unlock(&l->lock);
+		return false;
+	}
+	return true;
+}
+
+#define MT_rwlock_wrunlock(l)  pthread_mutex_unlock(&(l)->lock);
+
+#endif
+
+typedef pthread_key_t MT_TLS_t;
+
+#endif
+
+#ifndef MT_lock_trytime
+/* simplistic way to try lock with timeout: just sleep */
+#define MT_lock_trytime(l, ms) (MT_lock_try(l) || (MT_sleep_ms(ms), MT_lock_try(l)))
+#endif
+
+gdk_export gdk_return MT_alloc_tls(MT_TLS_t *newkey);
+gdk_export void MT_tls_set(MT_TLS_t key, void *val);
+gdk_export void *MT_tls_get(MT_TLS_t key);
+
+#ifdef LOCK_STATS
+gdk_export void GDKlockstatistics(int);
+gdk_export MT_Lock * volatile GDKlocklist;
+gdk_export ATOMIC_FLAG GDKlocklistlock;
+gdk_export ATOMIC_TYPE GDKlockcnt;
+gdk_export ATOMIC_TYPE GDKlockcontentioncnt;
+gdk_export ATOMIC_TYPE GDKlocksleepcnt;
+#endif
+
+/*
+ * @- MT Semaphore API
+ */
+#if !defined(HAVE_PTHREAD_H) && defined(WIN32)
+
+typedef struct {
+	HANDLE sema;
+	char name[MT_NAME_LEN];
+} MT_Sema;
+
+#define MT_sema_init(s, nr, n)						\
+	do {								\
+		assert((s)->sema == NULL);				\
+		strtcpy((s)->name, (n), sizeof((s)->name));		\
+		(s)->sema = CreateSemaphore(NULL, nr, 0x7fffffff, NULL); \
+	} while (0)
+
+#define MT_sema_destroy(s)			\
+	do {					\
+		assert((s)->sema != NULL);	\
+		CloseHandle((s)->sema);		\
+		(s)->sema = NULL;		\
+	} while (0)
+
+#define MT_sema_up(s)		ReleaseSemaphore((s)->sema, 1, NULL)
+
+#define MT_sema_down(s)							\
+	do {								\
+		TRC_DEBUG(TEM, "Sema %s down...\n", (s)->name);		\
+		if (WaitForSingleObject((s)->sema, 0) != WAIT_OBJECT_0) { \
+			MT_thread_setsemawait(s);			\
+			while (WaitForSingleObject((s)->sema, INFINITE) != WAIT_OBJECT_0) \
+				;					\
+			MT_thread_setsemawait(NULL);			\
+		}							\
+		TRC_DEBUG(TEM, "Sema %s down complete\n", (s)->name);	\
+	} while (0)
+
+#elif defined(HAVE_DISPATCH_SEMAPHORE_CREATE)
+
+/* MacOS X */
+typedef struct {
+	dispatch_semaphore_t sema;
+	char name[MT_NAME_LEN];
+} MT_Sema;
+
+#define MT_sema_init(s, nr, n)						\
+	do {								\
+		strtcpy((s)->name, (n), sizeof((s)->name));		\
+		(s)->sema = dispatch_semaphore_create((long) (nr));	\
+	} while (0)
+
+#define MT_sema_destroy(s)	dispatch_release((s)->sema)
+#define MT_sema_up(s)		dispatch_semaphore_signal((s)->sema)
+#define MT_sema_down(s)		dispatch_semaphore_wait((s)->sema, DISPATCH_TIME_FOREVER)
+
+#elif defined(_AIX) || defined(__MACH__)
+
+/* simulate semaphores using mutex and condition variable */
+
+typedef struct {
+	int cnt, wakeups;
+	pthread_mutex_t mutex;
+	pthread_cond_t cond;
+	char name[MT_NAME_LEN];
+} MT_Sema;
+
+#define MT_sema_init(s, nr, n)					\
+	do {							\
+		strtcpy((s)->name, (n), sizeof((s)->name));	\
+		(s)->cnt = (nr);				\
+		(s)->wakeups = 0;				\
+		pthread_mutex_init(&(s)->mutex, 0);		\
+		pthread_cond_init(&(s)->cond, 0);		\
+	} while (0)
+
+#define MT_sema_destroy(s)				\
+	do {						\
+		pthread_mutex_destroy(&(s)->mutex);	\
+		pthread_cond_destroy(&(s)->cond);	\
+	} while (0)
+
+#define MT_sema_up(s)						\
+	do {							\
+		pthread_mutex_lock(&(s)->mutex);		\
+		if (++(s)->cnt <= 0) {				\
+			(s)->wakeups++;				\
+			pthread_cond_signal(&(s)->cond);	\
+		}						\
+		pthread_mutex_unlock(&(s)->mutex);		\
+	} while (0)
+
+#define MT_sema_down(s)							\
+	do {								\
+		TRC_DEBUG(TEM, "Sema %s down...\n", (s)->name);		\
+		pthread_mutex_lock(&(s)->mutex);			\
+		if (--(s)->cnt < 0) {					\
+			MT_thread_setsemawait(s);			\
+			do {						\
+				pthread_cond_wait(&(s)->cond,		\
+						  &(s)->mutex);		\
+			} while ((s)->wakeups < 1);			\
+			MT_thread_setsemawait(NULL);			\
+			(s)->wakeups--;					\
+			pthread_mutex_unlock(&(s)->mutex);		\
+		}							\
+		TRC_DEBUG(TEM, "Sema %s down complete\n", (s)->name);	\
+	} while (0)
+
+#else
+
+typedef struct {
+	sem_t sema;
+	char name[MT_NAME_LEN];
+} MT_Sema;
+
+#define MT_sema_init(s, nr, n)					\
+	do {							\
+		strtcpy((s)->name, (n), sizeof((s)->name));	\
+		sem_init(&(s)->sema, 0, nr);			\
+	} while (0)
+
+#define MT_sema_destroy(s)	sem_destroy(&(s)->sema)
+
+#define MT_sema_up(s)						\
+	do {							\
+		TRC_DEBUG(TEM, "Sema %s up\n", (s)->name);	\
+		sem_post(&(s)->sema);				\
+	} while (0)
+
+#define MT_sema_down(s)							\
+	do {								\
+		TRC_DEBUG(TEM, "Sema %s down...\n", (s)->name);		\
+		if (sem_trywait(&(s)->sema) != 0) {			\
+			MT_thread_setsemawait(s);			\
+			while (sem_wait(&(s)->sema) != 0)		\
+				;					\
+			MT_thread_setsemawait(NULL);			\
+		}							\
+		TRC_DEBUG(TEM, "Sema %s down complete\n", (s)->name);	\
+	} while (0)
+
+#endif
+
+gdk_export void MT_thread_setlockwait(MT_Lock *lock);
+gdk_export void MT_thread_setsemawait(MT_Sema *sema);
+gdk_export void MT_thread_setworking(const char *work);
+gdk_export void MT_thread_setalgorithm(const char *algo, const char *func);
+gdk_export const char *MT_thread_getalgorithm(void);
+#ifdef LOCK_OWNER
+#define hide_exp(a,b) a ## b	/* hide export from exports test */
+hide_exp(gdk_ex,port) void MT_thread_add_mylock(MT_Lock *lock);
+hide_exp(gdk_ex,port) void MT_thread_del_mylock(MT_Lock *lock);
+#undef hide_exp
+#endif
+
+gdk_export int MT_check_nr_cores(void);
+
+/*
+ * @ Condition Variable API
+ */
+
+typedef struct MT_Cond {
+#if !defined(HAVE_PTHREAD_H) && defined(WIN32)
+	CONDITION_VARIABLE cv;
+#else
+	pthread_cond_t cv;
+#endif
+	char name[MT_NAME_LEN];
+} MT_Cond;
+
+#if !defined(HAVE_PTHREAD_H) && defined(WIN32)
+#  define MT_COND_INITIALIZER(N) { .cv = CONDITION_VARIABLE_INIT, .name = #N }
+#else
+#  define MT_COND_INITIALIZER(N) { .cv = PTHREAD_COND_INITIALIZER, .name = #N }
+#endif
+
+gdk_export void MT_cond_init(MT_Cond *cond, const char *name);
+gdk_export void MT_cond_destroy(MT_Cond *cond);
+gdk_export void MT_cond_wait(MT_Cond *cond, MT_Lock *lock);
+gdk_export void MT_cond_signal(MT_Cond *cond);
+gdk_export void MT_cond_broadcast(MT_Cond *cond);
+
+#define MMAP_READ		1024	/* region is readable (default if omitted) */
+#define MMAP_WRITE		2048	/* region may be written into */
+#define MMAP_COPY		4096	/* writable, but changes never reach file */
+
+/* in order to be sure of madvise and msync modes, pass them to mmap()
+ * call as well */
+
+gdk_export size_t MT_getrss(void);
+
+gdk_export bool MT_path_absolute(const char *path);
+
+
+/*
+ * @+ Posix under WIN32
+ * WIN32 actually supports many Posix functions directly.  Some it
+ * does not, though.  For some functionality we move in Monet from
+ * Posix calls to MT_*() calls, which translate easier to WIN32.
+ * Examples are MT_mmap() , MT_sleep_ms() and MT_path_absolute(). Why?
+ * In the case of mmap() it is much easier for WIN32 to get a filename
+ * parameter rather than a file-descriptor.  That is the reason in the
+ * case of mmap() to go for a MT_mmap() solution.
+ *
+ * For some other functionality, we do not need to abandon the Posix
+ * interface, though. Two cases can be distinguished.  Missing
+ * functions in WIN32 are directly implemented
+ * (e.g. dlopen()/dlsym()/dlclose()).  Posix functions in WIN32 whose
+ * functionality should be changed a bit. Examples are
+ * stat()/rename()/mkdir()/rmdir() who under WIN32 do not work if the
+ * path ends with a directory separator, but should work according to
+ * Posix. We remap such functions using a define to an equivalent
+ * win_*() function (which in its implementation calls through to the
+ * WIN32 function).
+ */
+gdk_export void *mdlopen(const char *library, int mode);
+
+
+#ifdef NATIVE_WIN32
+
+#define RTLD_LAZY	1
+#define RTLD_NOW	2
+#define RTLD_GLOBAL	4
+
+gdk_export void *dlopen(const char *file, int mode);
+gdk_export int dlclose(void *handle);
+gdk_export void *dlsym(void *handle, const char *name);
+gdk_export char *dlerror(void);
+
+#ifndef HAVE_GETTIMEOFDAY
+gdk_export int gettimeofday(struct timeval *tv, int *ignore_zone);
+#endif
+
+#endif	/* NATIVE_WIN32 */
+
+#ifndef HAVE_LOCALTIME_R
+gdk_export struct tm *localtime_r(const time_t *restrict, struct tm *restrict);
+#endif
+#ifndef HAVE_GMTIME_R
+gdk_export struct tm *gmtime_r(const time_t *restrict, struct tm *restrict);
+#endif
+#ifndef HAVE_ASCTIME_R
+gdk_export char *asctime_r(const struct tm *restrict, char *restrict);
+#endif
+#ifndef HAVE_CTIME_R
+gdk_export char *ctime_r(const time_t *restrict, char *restrict);
+#endif
+#if !defined(HAVE_STRERROR_R) && !defined(HAVE_STRERROR_S)
+gdk_export int strerror_r(int errnum, char *buf, size_t buflen);
+#endif
+
+static inline const char *
+GDKstrerror(int errnum, char *buf, size_t buflen)
+{
+#ifdef HAVE_STRERROR_S
+	if (strerror_s(buf, buflen, errnum) == 0)
+		return buf;
+	snprintf(buf, buflen, "Unknown error %d", errnum);
+	return buf;
+#elif defined(STRERROR_R_CHARP)
+	return strerror_r(errnum, buf, buflen);
+#else
+	if (strerror_r(errnum, buf, buflen) == 0)
+		return buf;
+	snprintf(buf, buflen, "Unknown error %d", errnum);
+	return buf;
+#endif
+}
 
 gdk_export _Noreturn void GDKfatal(_In_z_ _Printf_format_string_ const char *format, ...)
 	__attribute__((__format__(__printf__, 1, 2)));
@@ -638,7 +1732,462 @@ gdk_export BAT *BBPquickdesc(bat b);
 
 #define GDK_VARALIGN SIZEOF_VAR_T
 
-#include "gdk_atoms.h"
+/* atomFromStr returns the number of bytes of the input string that
+ * were processed.  atomToStr returns the length of the string
+ * produced.  Both functions return -1 on (any kind of) failure.  If
+ * *dst is not NULL, *len specifies the available space.  If there is
+ * not enough space, or if *dst is NULL, *dst will be freed (if not
+ * NULL) and a new buffer will be allocated and returned in *dst.
+ * *len will be set to reflect the actual size allocated.  If
+ * allocation fails, *dst will be NULL on return and *len is
+ * undefined.  In any case, if the function returns, *buf is either
+ * NULL or a valid pointer and then *len is the size of the area *buf
+ * points to.
+ *
+ * atomCmp returns a value less than zero/equal to zero/greater than
+ * zero if the first argument points to a values which is deemed
+ * smaller/equal to/larger than the value pointed to by the second
+ * argument.
+ *
+ * atomHash calculates a hash function for the value pointed to by the
+ * argument.
+ *
+ * atomRead reads cnt values from stream s and returns them in dst.  The
+ * available space in dst is given in *dstlen.  If dst is too small (or
+ * NULL), a new buffer is allocated and *dstlen is filled in with the
+ * allocated size.  atomRread returns a pointer to the buffer where the
+ * data was written.  On any kind of failure (usually either allocation
+ * or reading), the function returns NULL and dst and *dstlen are
+ * unaffected (i.e. similar to realloc).
+ */
+
+#define IDLENGTH	64	/* maximum BAT id length */
+
+typedef struct {
+	/* simple attributes */
+	char name[IDLENGTH];
+	uint8_t storage;	/* stored as another type? */
+	bool linear;		/* atom can be ordered linearly */
+	uint16_t size;		/* fixed size of atom */
+
+	/* automatically generated fields */
+	const void *atomNull;	/* global nil value */
+
+	/* generic (fixed + varsized atom) ADT functions */
+	ssize_t (*atomFromStr) (allocator *ma, const char *src, size_t *len, void **dst, bool external);
+	ssize_t (*atomToStr) (allocator *ma, char **dst, size_t *len, const void *src, bool external);
+	void *(*atomRead) (allocator *ma, void *dst, size_t *dstlen, stream *s, size_t cnt);
+	gdk_return (*atomWrite) (const void *src, stream *s, size_t cnt);
+	int (*atomCmp) (const void *v1, const void *v2);
+	bool (*atomEqual) (const void *v1, const void *v2);
+	BUN (*atomHash) (const void *v);
+
+	/* varsized atom-only ADT functions */
+	var_t (*atomPut) (BAT *, var_t *off, const void *src);
+	void (*atomDel) (Heap *, var_t *atom);
+	size_t (*atomLen) (const void *atom);
+	gdk_return (*atomHeap) (Heap *, size_t);
+} atomDesc;
+
+#define MAXATOMS	128
+
+gdk_export atomDesc BATatoms[MAXATOMS];
+gdk_export int GDKatomcnt;
+
+gdk_export int ATOMallocate(const char *nme);
+gdk_export int ATOMindex(const char *nme);
+
+gdk_export const char *ATOMname(int id);
+gdk_export size_t ATOMlen(int id, const void *v);
+gdk_export int ATOMprint(int id, const void *val, stream *fd);
+gdk_export char *ATOMformat(allocator *ma, int id, const void *val)
+	__attribute__((__warn_unused_result__));
+
+/*
+ * @- maximum atomic string lengths
+ */
+#define bitStrlen	8
+#define bteStrlen	8
+#define shtStrlen	12
+#define intStrlen	24
+#if SIZEOF_OID == SIZEOF_INT
+#define oidStrlen	24
+#else
+#define oidStrlen	48
+#endif
+#if SIZEOF_PTR == SIZEOF_INT
+#define ptrStrlen	24
+#else
+#define ptrStrlen	48
+#endif
+#define lngStrlen	48
+#ifdef HAVE_HGE
+#define hgeStrlen	96
+#endif
+#define fltStrlen	48
+#define dblStrlen	96
+
+/*
+ * The system comes with the traditional atomic types: int (4 bytes),
+ * bool(1 byte) and str (variable). In addition, we support the notion
+ * of an OID type, which ensures uniqueness of its members.  This
+ * leads to the following type descriptor table.
+ */
+
+#ifdef HAVE_HGE
+gdk_export ssize_t hgeFromStr(allocator *ma, const char *src, size_t *len, hge **dst, bool external);
+gdk_export ssize_t hgeToStr(allocator *ma, str *dst, size_t *len, const hge *src, bool external);
+#endif
+gdk_export ssize_t lngFromStr(allocator *ma, const char *src, size_t *len, lng **dst, bool external);
+gdk_export ssize_t lngToStr(allocator *ma, str *dst, size_t *len, const lng *src, bool external);
+gdk_export ssize_t intFromStr(allocator *ma, const char *src, size_t *len, int **dst, bool external);
+gdk_export ssize_t intToStr(allocator *ma, str *dst, size_t *len, const int *src, bool external);
+gdk_export ssize_t ptrFromStr(allocator *ma, const char *src, size_t *len, ptr **dst, bool external);
+gdk_export ssize_t ptrToStr(allocator *ma, str *dst, size_t *len, const ptr *src, bool external);
+gdk_export ssize_t bitFromStr(allocator *ma, const char *src, size_t *len, bit **dst, bool external);
+gdk_export ssize_t bitToStr(allocator *ma, str *dst, size_t *len, const bit *src, bool external);
+gdk_export ssize_t OIDfromStr(allocator *ma, const char *src, size_t *len, oid **dst, bool external);
+gdk_export ssize_t OIDtoStr(allocator *ma, str *dst, size_t *len, const oid *src, bool external);
+gdk_export ssize_t shtFromStr(allocator *ma, const char *src, size_t *len, sht **dst, bool external);
+gdk_export ssize_t shtToStr(allocator *ma, str *dst, size_t *len, const sht *src, bool external);
+gdk_export ssize_t bteFromStr(allocator *ma, const char *src, size_t *len, bte **dst, bool external);
+gdk_export ssize_t bteToStr(allocator *ma, str *dst, size_t *len, const bte *src, bool external);
+gdk_export ssize_t fltFromStr(allocator *ma, const char *src, size_t *len, flt **dst, bool external);
+gdk_export ssize_t fltToStr(allocator *ma, str *dst, size_t *len, const flt *src, bool external);
+gdk_export ssize_t dblFromStr(allocator *ma, const char *src, size_t *len, dbl **dst, bool external);
+gdk_export ssize_t dblToStr(allocator *ma, str *dst, size_t *len, const dbl *src, bool external);
+gdk_export ssize_t GDKstrFromStr(unsigned char *restrict dst, const unsigned char *restrict src, ssize_t len, char quote);
+gdk_export ssize_t strFromStr(allocator *ma, const char *restrict src, size_t *restrict len, str *restrict dst, bool external);
+gdk_export size_t escapedStrlen(const char *restrict src, const char *sep1, const char *sep2, int quote);
+gdk_export size_t escapedStr(char *restrict dst, const char *restrict src, size_t dstlen, const char *sep1, const char *sep2, int quote);
+/*
+ * @- nil values
+ * All types have a single value designated as a NIL value. It
+ * designates a missing value and it is ignored (forbidden) in several
+ * primitives.  The current policy is to use the smallest value in any
+ * ordered domain.  The routine atomnil returns a pointer to the nil
+ * value representation.
+ */
+#define GDK_bit_max ((bit) 1)
+#define GDK_bit_min ((bit) 0)
+#define GDK_bte_max ((bte) INT8_MAX)
+#define GDK_bte_min ((bte) INT8_MIN+1)
+#define GDK_sht_max ((sht) INT16_MAX)
+#define GDK_sht_min ((sht) INT16_MIN+1)
+#define GDK_int_max ((int) INT32_MAX)
+#define GDK_int_min ((int) INT32_MIN+1)
+#define GDK_lng_max ((lng) INT64_MAX)
+#define GDK_lng_min ((lng) INT64_MIN+1)
+#ifdef HAVE_HGE
+#define GDK_hge_max ((((hge) 1) << 126) - 1 + (((hge) 1) << 126))
+#define GDK_hge_min (-GDK_hge_max)
+#endif
+#define GDK_flt_max ((flt) FLT_MAX)
+#define GDK_flt_min ((flt) -FLT_MAX)
+#define GDK_dbl_max ((dbl) DBL_MAX)
+#define GDK_dbl_min ((dbl) -DBL_MAX)
+#define GDK_oid_max (((oid) 1 << ((8 * SIZEOF_OID) - 1)) - 1)
+#define GDK_oid_min ((oid) 0)
+/* representation of the nil */
+gdk_export const bte bte_nil;
+gdk_export const sht sht_nil;
+gdk_export const int int_nil;
+#ifdef NAN_CANNOT_BE_USED_AS_INITIALIZER
+/* Definition of NAN is seriously broken on Intel compiler (at least
+ * in some versions), so we work around it. */
+union _flt_nil_t {
+	uint32_t l;
+	flt f;
+};
+gdk_export const union _flt_nil_t _flt_nil_;
+#define flt_nil (_flt_nil_.f)
+union _dbl_nil_t {
+	uint64_t l;
+	dbl d;
+};
+gdk_export const union _dbl_nil_t _dbl_nil_;
+#define dbl_nil (_dbl_nil_.d)
+#else
+gdk_export const flt flt_nil;
+gdk_export const dbl dbl_nil;
+#endif
+gdk_export const lng lng_nil;
+#ifdef HAVE_HGE
+gdk_export const hge hge_nil;
+#endif
+gdk_export const oid oid_nil;
+gdk_export const char str_nil[2];
+gdk_export const ptr ptr_nil;
+gdk_export const uuid uuid_nil;
+gdk_export const inet4 inet4_nil;
+gdk_export const inet6 inet6_nil;
+
+/* derived NIL values - OIDDEPEND */
+#define bit_nil	((bit) bte_nil)
+#define bat_nil	((bat) int_nil)
+
+#define void_nil	oid_nil
+
+#define is_bit_nil(v)	((v) == GDK_bte_min-1)
+#define is_bte_nil(v)	((v) == GDK_bte_min-1)
+#define is_sht_nil(v)	((v) == GDK_sht_min-1)
+#define is_int_nil(v)	((v) == GDK_int_min-1)
+#define is_lng_nil(v)	((v) == GDK_lng_min-1)
+#ifdef HAVE_HGE
+#define is_hge_nil(v)	((v) == GDK_hge_min-1)
+#endif
+#define is_oid_nil(v)	((v) == ((oid) 1 << ((8 * SIZEOF_OID) - 1)))
+#define is_flt_nil(v)	isnan(v)
+#define is_dbl_nil(v)	isnan(v)
+#define is_bat_nil(v)	(((v) & 0x7FFFFFFF) == 0) /* v == bat_nil || v == 0 */
+
+#if defined(_MSC_VER) && !defined(__INTEL_COMPILER) && _MSC_VER < 1800
+#define isnan(x)	_isnan(x)
+#define isinf(x)	(_fpclass(x) & (_FPCLASS_NINF | _FPCLASS_PINF))
+#define isfinite(x)	_finite(x)
+#endif
+
+#ifdef HAVE_HGE
+#define is_uuid_nil(x)	((x).h == 0)
+#define is_inet6_nil(x)	((x).align == 0)
+#else
+#define is_uuid_nil(x)	(memcmp((x).u, uuid_nil.u, UUID_SIZE) == 0)
+#define is_inet6_nil(x)	(memcmp((x).hex, inet6_nil.hex, 16) == 0)
+#endif
+#define is_inet4_nil(x)	((x).align == 0)
+
+#define is_blob_nil(x)	((x)->nitems == ~(size_t)0)
+
+/*
+ * @- Derived types
+ * In all algorithms across GDK, you will find switches on the types
+ * (bte, sht, int, flt, dbl, lng, hge, str). They respectively
+ * represent an octet, a 16-bit int, a 32-bit int, a 32-bit float, a
+ * 64-bit double, a 64-bit int, a 128-bit int, and a pointer-sized location
+ * of a char-buffer (ended by a zero char).
+ *
+ * In contrast, the types (bit, ptr, bat, oid) are derived types. They
+ * do not occur in the switches. The ATOMstorage macro maps them
+ * respectively onto a @code{ bte}, @code{ int} (pointers are 32-bit),
+ * @code{ int}, and @code{ int}. OIDs are 32-bit.
+ *
+ * This approach makes it tractable to switch to 64-bits OIDs, or to a
+ * fully 64-bits OS easily. One only has to map the @code{ oid} and
+ * @code{ ptr} types to @code{ lng} instead of @code{ int}.
+ *
+ * Derived types mimic their fathers in many ways. They inherit the
+ * @code{ size}, @code{ linear}, and @code{ null}
+ * properties of their father.  The same goes for the
+ * ADT functions HASH, CMP, PUT, NULL, DEL, LEN, and HEAP. So, a
+ * derived type differs in only two ways from its father:
+ * @table @code
+ * @item [string representation]
+ * the only two ADT operations specific for a derived type are FROMSTR
+ * and TOSTR.
+ * @item [identity]
+ * (a @code{ bit} is really of a different type than @code{ bte}). The
+ * set of operations on derived type values or BATs of such types may
+ * differ from the sets of operations on the father type.
+ * @end table
+ */
+/* use "do ... while(0)" so that lhs can safely be used in if statements */
+#define ATOMstorage(t)		BATatoms[t].storage
+#define ATOMsize(t)		BATatoms[t].size
+#define ATOMfromstr(ma,t,s,l,src,ext)	BATatoms[t].atomFromStr(ma,src,l,s,ext)
+#define ATOMnilptr(t)		BATatoms[t].atomNull
+#define ATOMcompare(t)		BATatoms[t].atomCmp
+#define ATOMcmp(t,l,r)		((*ATOMcompare(t))(l, r))
+#define ATOMequal(t)		BATatoms[t].atomEqual
+#define ATOMeq(t,l,r)		(*ATOMequal(t))(l, r)
+#define ATOMhash(t,src)		BATatoms[t].atomHash(src)
+#define ATOMdel(t,hp,src)	do if (BATatoms[t].atomDel) BATatoms[t].atomDel(hp,src); while (0)
+#define ATOMvarsized(t)		(BATatoms[t].atomPut != NULL)
+#define ATOMlinear(t)		BATatoms[t].linear
+#define ATOMtype(t)		((t) == TYPE_void ? TYPE_oid : (t))
+#define ATOMextern(t)		(ATOMstorage(t) >= TYPE_str)
+
+/* The base type is the storage type if the comparison function, the
+ * hash function, and the nil value are the same as those of the
+ * storage type; otherwise it is the type itself. */
+#define ATOMbasetype(t)	((t) != ATOMstorage(t) &&			\
+			 ATOMnilptr(t) == ATOMnilptr(ATOMstorage(t)) && \
+			 ATOMcompare(t) == ATOMcompare(ATOMstorage(t)) && \
+			 BATatoms[t].atomHash == BATatoms[ATOMstorage(t)].atomHash ? \
+			 ATOMstorage(t) : (t))
+
+/*
+ * In case that atoms are added to a bat, their logical reference
+ * count should be incremented (and decremented if deleted). Notice
+ * that BATs with atomic types that have logical references (e.g. BATs
+ * of BATs but also BATs of ODMG odSet) can never be persistent, as
+ * this would make the commit tremendously complicated.
+ */
+
+__attribute__((__warn_unused_result__))
+static inline gdk_return
+ATOMputVAR(BAT *b, var_t *dst, const void *src)
+{
+	assert(BATatoms[b->ttype].atomPut != NULL);
+	if ((*BATatoms[b->ttype].atomPut)(b, dst, src) == (var_t) -1)
+		return GDK_FAIL;
+	return GDK_SUCCEED;
+}
+
+
+__attribute__((__warn_unused_result__))
+static inline gdk_return
+ATOMputFIX(int type, void *dst, const void *src)
+{
+	assert(BATatoms[type].atomPut == NULL);
+	switch (ATOMsize(type)) {
+	case 0:		/* void */
+		break;
+	case 1:
+		* (bte *) dst = * (bte *) src;
+		break;
+	case 2:
+		* (sht *) dst = * (sht *) src;
+		break;
+	case 4:
+		* (int *) dst = * (int *) src;
+		break;
+	case 8:
+		* (lng *) dst = * (lng *) src;
+		break;
+	case 16:
+		/* any 16 byte atom will do here */
+#ifdef HAVE_HGE
+		* (hge *) dst = * (hge *) src;
+#else
+		* (uuid *) dst = * (uuid *) src;
+#endif
+		break;
+	default:
+		memcpy(dst, src, ATOMsize(type));
+		break;
+	}
+	return GDK_SUCCEED;
+}
+
+__attribute__((__warn_unused_result__))
+static inline gdk_return
+ATOMreplaceVAR(BAT *b, var_t *dst, const void *src)
+{
+	var_t loc = *dst;
+	int type = b->ttype;
+
+	assert(BATatoms[type].atomPut != NULL);
+	if ((*BATatoms[type].atomPut)(b, &loc, src) == (var_t) -1)
+		return GDK_FAIL;
+	ATOMdel(type, b->tvheap, dst);
+	*dst = loc;
+	return GDK_SUCCEED;
+}
+
+/* string heaps:
+ * - strings are 8 byte aligned
+ * - start with a 1024 bucket hash table
+ * - heaps < 64KiB are fully duplicate eliminated with this hash tables
+ * - heaps >= 64KiB are opportunistically (imperfect) duplicate
+ *   eliminated as only the last 128KiB chunk is considered and there
+ *   is no linked list
+ * - buckets and next pointers are unsigned short "indices"
+ * - indices should be multiplied by 8 and takes from ELIMBASE to get
+ *   an offset
+ * Note that a 64KiB chunk of the heap contains at most 8K 8-byte
+ * aligned strings. The 1K bucket list means that in worst load, the
+ * list length is 8 (OK).
+ */
+#define GDK_STRHASHTABLE	(1<<10)	/* 1024 */
+#define GDK_STRHASHMASK		(GDK_STRHASHTABLE-1)
+#define GDK_STRHASHSIZE		(GDK_STRHASHTABLE * sizeof(var_t))
+#define GDK_ELIMPOWER		16	/* 64KiB is the threshold */
+#define GDK_ELIMLIMIT		(1<<GDK_ELIMPOWER)	/* equivalently: ELIMBASE == 0 */
+#define GDK_ELIMDOUBLES(h)	((h)->free < GDK_ELIMLIMIT)
+#define GDK_ELIMBASE(x)		(((x) >> GDK_ELIMPOWER) << GDK_ELIMPOWER)
+#define GDK_VAROFFSET		((var_t) GDK_STRHASHSIZE)
+
+/*
+ * @- String Comparison, NILs and UTF-8
+ *
+ * Using the char* type for strings is handy as this is the type of
+ * any constant strings in a C/C++ program. Therefore, MonetDB uses
+ * this definition for str.  However, different compilers and
+ * platforms use either signed or unsigned characters for the char
+ * type.  It is required that string ordering in MonetDB is consistent
+ * over platforms though.
+ *
+ * As for the choice how strings should be ordered, our support for
+ * UTF-8 actually imposes that it should follow 'unsigned char'
+ * doctrine (like in the AIX native compiler). In this semantics,
+ * though we have to take corrective action to ensure that str(nil) is
+ * the smallest value of the domain.
+ */
+__attribute__((__pure__))
+static inline bool
+strEQ(const char *l, const char *r)
+{
+	return strcmp(l, r) == 0;
+}
+
+__attribute__((__pure__))
+static inline bool
+strNil(const char *s)
+{
+	return s == NULL || (s[0] == '\200' && s[1] == '\0');
+}
+
+__attribute__((__pure__))
+static inline size_t
+strLen(const char *s)
+{
+	return strNil(s) ? 2 : strlen(s) + 1;
+}
+
+__attribute__((__pure__))
+static inline int
+strCmp(const char *l, const char *r)
+{
+	return l == r
+		? 0
+		: strNil(r)
+		? !strNil(l)
+		: strNil(l) ? -1 : strcmp(l, r);
+}
+
+__attribute__((__pure__))
+static inline bool
+strEq(const char *l, const char *r)
+{
+	return l == r
+		? true
+		: strNil(r)
+		? strNil(l)
+		: strNil(l) ? false : strcmp(l, r) == 0;
+}
+
+__attribute__((__pure__))
+static inline var_t
+VarHeapVal(const void *b, BUN p, int w)
+{
+	size_t off;
+	switch (w) {
+	case 1:
+		off = (size_t) ((const uint8_t *) b)[p];
+		return off == 0 ? 0 : off + GDK_VAROFFSET;
+	case 2:
+		off = (size_t) ((const uint16_t *) b)[p];
+		return off == 0 ? 0 : off + GDK_VAROFFSET;
+	case 4:
+		return (size_t) ((const uint32_t *) b)[p];
+#if SIZEOF_VAR_T == 8
+	case 8:
+		return (size_t) ((const uint64_t *) b)[p];
+#endif
+	default:
+		MT_UNREACHABLE();
+	}
+}
 
 /* BAT iterator, also protects use of BAT heaps with reference counts.
  *
@@ -924,7 +2473,252 @@ gdk_export BUN ORDERfndlast(BAT *b, Heap *oidxh, const void *v);
 
 gdk_export BUN BUNfnd(BAT *b, const void *right);
 
-#include "gdk_cand.h"
+/* candidates by design are ordered oid lists, besides native oid bats
+ * there are
+ *	void bats for dense oid lists,
+ *	negative oid lists
+ *	masked oid lists
+ */
+
+#define CAND_NEGOID 0
+#define CAND_MSK 1
+
+typedef struct {
+	uint64_t
+		type:1,
+//		mask:1,
+		firstbit:48;
+} ccand_t;
+
+#define CCAND(b)	((ccand_t *) (b)->tvheap->base)
+#define complex_cand(b)	((b)->ttype == TYPE_void && (b)->tvheap != NULL)
+#define negoid_cand(b)	(complex_cand(b) && CCAND(b)->type == CAND_NEGOID)
+#define mask_cand(b)	(complex_cand(b) && CCAND(b)->type == CAND_MSK)
+#define ccand_first(b)	((b)->tvheap->base + sizeof(ccand_t))
+#define ccand_free(b)	((b)->tvheap->free - sizeof(ccand_t))
+
+enum cand_type {
+	cand_dense,	/* simple dense BAT, i.e. no look ups */
+	cand_materialized, /* simple materialized OID list */
+	cand_except,	/* list of exceptions in vheap */
+	cand_mask,	/* bitmask (TYPE_msk) bat as candidate list */
+};
+
+struct canditer {
+	BAT *s;			/* candidate BAT the iterator is based on */
+	union {
+		struct {	/* for all except cand_mask */
+			const oid *oids; /* candidate or exceptions for non-dense */
+			BUN offset;	/* how much of candidate list BAT we skipped */
+			oid add;	/* value to add because of exceptions seen */
+		};
+		struct {	/* only for cand_mask */
+			const uint32_t *mask; /* bitmask */
+			BUN nextmsk;
+			oid mskoff;
+			uint8_t nextbit;
+			uint8_t firstbit;
+			uint8_t lastbit;
+		};
+	};
+	oid seq;		/* first candidate */
+	oid hseq;		/* hseqbase from s/b for first candidate */
+	BUN nvals;		/* number of values in .oids/.mask */
+	BUN ncand;		/* number of candidates */
+	BUN next;		/* next BUN to return value for */
+	enum cand_type tpe;
+};
+
+/* iterate CI->ncand times using an anonymous index variable, and
+ * evaluating the loop count only once */
+#define CAND_LOOP(CI)	for (BUN CCTR = 0, CREPS = (CI)->ncand; CCTR < CREPS; CCTR++)
+/* iterate CI->ncand times using the given index variable, and
+ * evaluating the loop count only once */
+#define CAND_LOOP_IDX(CI, IDX)	for (BUN CREPS = (IDX = 0, (CI)->ncand); IDX < CREPS; IDX++)
+
+/* returns the position of the lowest order bit in x, i.e. the
+ * smallest n such that (x & (1<<n)) != 0; must not be called with 0 */
+__attribute__((__const__))
+static inline int
+candmask_lobit(uint32_t x)
+{
+	assert(x != 0);
+#ifdef __has_builtin
+#if __has_builtin(__builtin_ctz)
+	return __builtin_ctz(x) /* ffs(x) - 1 */;
+#define BUILTIN_USED
+#endif
+#endif
+#ifndef BUILTIN_USED
+#if defined(_MSC_VER)
+	unsigned long idx;
+	if (_BitScanForward(&idx, x))
+		return (int) idx;
+	return -1;
+#else
+	/* use binary search for the lowest set bit */
+	int n = 1;
+	if ((x & 0x0000FFFF) == 0) { n += 16; x >>= 16; }
+	if ((x & 0x000000FF) == 0) { n +=  8; x >>=  8; }
+	if ((x & 0x0000000F) == 0) { n +=  4; x >>=  4; }
+	if ((x & 0x00000003) == 0) { n +=  2; x >>=  2; }
+	return n - (x & 1);
+#endif
+#endif
+#undef BUILTIN_USED
+}
+
+/* population count: count number of 1 bits in a value */
+__attribute__((__const__))
+static inline uint32_t
+candmask_pop(uint32_t x)
+{
+#ifdef __has_builtin
+#if __has_builtin(__builtin_popcount)
+	return (uint32_t) __builtin_popcount(x);
+#define BUILTIN_USED
+#endif
+#endif
+#ifndef BUILTIN_USED
+#if defined(_MSC_VER)
+	return (uint32_t) __popcnt((unsigned int) (x));
+#else
+	/* divide and conquer implementation (the two versions are
+	 * essentially equivalent, but the first version is written a
+	 * bit smarter) */
+#if 1
+	x -= (x >> 1) & ~0U/3 /* 0x55555555 */; /* 3-1=2; 2-1=1; 1-0=1; 0-0=0 */
+	x = (x & ~0U/5) + ((x >> 2) & ~0U/5) /* 0x33333333 */;
+	x = (x + (x >> 4)) & ~0UL/0x11 /* 0x0F0F0F0F */;
+	x = (x + (x >> 8)) & ~0UL/0x101 /* 0x00FF00FF */;
+	x = (x + (x >> 16)) & 0xFFFF /* ~0UL/0x10001 */;
+#else
+	x = (x & 0x55555555) + ((x >>  1) & 0x55555555);
+	x = (x & 0x33333333) + ((x >>  2) & 0x33333333);
+	x = (x & 0x0F0F0F0F) + ((x >>  4) & 0x0F0F0F0F);
+	x = (x & 0x00FF00FF) + ((x >>  8) & 0x00FF00FF);
+	x = (x & 0x0000FFFF) + ((x >> 16) & 0x0000FFFF);
+#endif
+	return x;
+#endif
+#endif
+#undef BUILTIN_USED
+}
+
+static inline oid
+canditer_next_dense(struct canditer *ci)
+{
+	return ci->seq + ci->next++;
+}
+
+static inline oid
+canditer_next(struct canditer *ci)
+{
+	oid o;
+	if (ci->next == ci->ncand)
+		return oid_nil;
+	switch (ci->tpe) {
+	case cand_dense:
+		return canditer_next_dense(ci);
+	case cand_materialized:
+		assert(ci->next < ci->nvals);
+		return ci->oids[ci->next++];
+	case cand_except:
+		o = ci->seq + ci->add + ci->next++;
+		while (ci->add < ci->nvals && o == ci->oids[ci->add]) {
+			ci->add++;
+			o++;
+		}
+		return o;
+	case cand_mask:
+		while ((ci->mask[ci->nextmsk] >> ci->nextbit) == 0) {
+			ci->nextmsk++;
+			ci->nextbit = 0;
+		}
+		ci->nextbit += candmask_lobit(ci->mask[ci->nextmsk] >> ci->nextbit);
+		o = ci->mskoff + ci->nextmsk * 32 + ci->nextbit;
+		if (++ci->nextbit == 32) {
+			ci->nextbit = 0;
+			ci->nextmsk++;
+		}
+		ci->next++;
+		return o;
+	default:
+		MT_UNREACHABLE();
+	}
+}
+
+gdk_export void canditer_init(struct canditer *ci, BAT *b, BAT *s)
+	__attribute__((__access__(write_only, 1)));
+gdk_export oid canditer_peek(const struct canditer *ci)
+	__attribute__((__pure__));
+gdk_export oid canditer_last(const struct canditer *ci)
+	__attribute__((__pure__));
+gdk_export oid canditer_prev(struct canditer *ci);
+gdk_export oid canditer_peekprev(const struct canditer *ci)
+	__attribute__((__pure__));
+gdk_export oid canditer_idx(const struct canditer *ci, BUN p)
+	__attribute__((__pure__));
+
+__attribute__((__pure__))
+static inline oid
+canditer_idx_dense(const struct canditer *ci, BUN p)
+{
+	return p >= ci->ncand ? oid_nil : ci->seq + p;
+}
+
+gdk_export void canditer_setidx(struct canditer *ci, BUN p);
+gdk_export void canditer_reset(struct canditer *ci);
+
+__attribute__((__pure__))
+static inline BUN
+canditer_search_dense(const struct canditer *ci, oid o, bool next)
+{
+	if (o < ci->seq)
+		return next ? 0 : BUN_NONE;
+	else if (o >= ci->seq + ci->ncand)
+		return next ? ci->ncand : BUN_NONE;
+	else
+		return o - ci->seq;
+}
+
+gdk_export BUN canditer_search(const struct canditer *ci, oid o, bool next)
+	__attribute__((__pure__));
+
+__attribute__((__pure__))
+static inline bool
+canditer_contains(const struct canditer *ci, oid o)
+{
+	if (ci->tpe == cand_mask) {
+		if (o < ci->mskoff)
+			return false;
+		o -= ci->mskoff;
+		BUN p = o / 32;
+		if (p >= ci->nvals)
+			return false;
+		o %= 32;
+		if (p == ci->nvals - 1 && o >= ci->lastbit)
+			return false;
+		return ci->mask[p] & (1U << o);
+	}
+	return canditer_search(ci, o, false) != BUN_NONE;
+}
+
+gdk_export oid canditer_mask_next(const struct canditer *ci, oid o, bool next)
+	__attribute__((__pure__));
+
+gdk_export BAT *canditer_slice(const struct canditer *ci, BUN lo, BUN hi);
+gdk_export BAT *canditer_sliceval(const struct canditer *ci, oid lo, oid hi);
+gdk_export BAT *canditer_slice2(const struct canditer *ci, BUN lo1, BUN hi1, BUN lo2, BUN hi2);
+gdk_export BAT *canditer_slice2val(const struct canditer *ci, oid lo1, oid hi1, oid lo2, oid hi2);
+
+gdk_export BAT *BATnegcands(oid tseq, BUN nr, BAT *odels);
+gdk_export BAT *BATmaskedcands(oid hseq, BUN nr, BAT *masked, bool selected);
+gdk_export BAT *BATunmask(BAT *b);
+
+gdk_export BAT *BATmergecand(BAT *a, BAT *b);
+gdk_export BAT *BATintersectcand(BAT *a, BAT *b);
+gdk_export BAT *BATdiffcand(BAT *a, BAT *b);
 
 __attribute__((__pure__))
 static inline BUN
@@ -1539,9 +3333,825 @@ gdk_export bool BATcheckorderidx(BAT *b);
 
 #define DELTAdirty(b)	((b)->batInserted < BATcount(b))
 
-#include "gdk_hash.h"
-#include "gdk_bbp.h"
-#include "gdk_utils.h"
+struct Hash {
+	int type;		/* type of index entity */
+	uint8_t width;		/* width of hash entries */
+	bool offsets;		/* hash on offsets */
+	BUN mask1;		/* .mask1 < .nbucket <= .mask2 */
+	BUN mask2;		/* ... both are power-of-two minus one */
+	BUN nbucket;		/* number of valid hash buckets */
+	BUN nunique;		/* number of unique values */
+	BUN nheads;		/* number of chain heads */
+	void *Bckt;		/* hash buckets, points into .heapbckt */
+	void *Link;		/* collision list, points into .heaplink */
+	Heap heaplink;		/* heap where the hash links are stored */
+	Heap heapbckt;		/* heap where the hash buckets are stored */
+};
+
+static inline BUN
+HASHbucket(const Hash *h, BUN v)
+{
+	return (v &= h->mask2) < h->nbucket ? v : v & h->mask1;
+}
+
+gdk_export gdk_return BAThash(BAT *b);
+gdk_export void HASHdestroy(BAT *b);
+gdk_export BUN HASHprobe(const Hash *h, const void *v);
+gdk_export BUN HASHlist(Hash *h, BUN i);
+gdk_export size_t HASHsize(BAT *b);
+
+#define BUN2 2
+#define BUN4 4
+#if SIZEOF_BUN == 8
+#define BUN8 8
+#endif
+#ifdef BUN2
+typedef uint16_t BUN2type;
+#endif
+typedef uint32_t BUN4type;
+#if SIZEOF_BUN > 4
+typedef uint64_t BUN8type;
+#endif
+#ifdef BUN2
+#define BUN2_NONE ((BUN2type) UINT16_C(0xFFFF))
+#endif
+#define BUN4_NONE ((BUN4type) UINT32_C(0xFFFFFFFF))
+#ifdef BUN8
+#define BUN8_NONE ((BUN8type) UINT64_C(0xFFFFFFFFFFFFFFFF))
+#endif
+
+/* play around with h->Bckt[i] and h->Link[j] */
+
+static inline void
+HASHput(Hash *h, BUN i, BUN v)
+{
+	/* if v == BUN_NONE, assigning the value to a BUN2type
+	 * etc. automatically converts to BUN2_NONE etc. */
+	switch (h->width) {
+#ifdef BUN2
+	case BUN2:
+		((BUN2type *) h->Bckt)[i] = (BUN2type) v;
+		break;
+#endif
+	case BUN4:
+		((BUN4type *) h->Bckt)[i] = (BUN4type) v;
+		break;
+#ifdef BUN8
+	case BUN8:
+		((BUN8type *) h->Bckt)[i] = (BUN8type) v;
+		break;
+#endif
+	default:
+		MT_UNREACHABLE();
+	}
+}
+
+static inline void
+HASHputlink(Hash *h, BUN i, BUN v)
+{
+	/* if v == BUN_NONE, assigning the value to a BUN2type
+	 * etc. automatically converts to BUN2_NONE etc. */
+	switch (h->width) {
+#ifdef BUN2
+	case BUN2:
+		assert(v == BUN_NONE || v == BUN2_NONE || v < i);
+		((BUN2type *) h->Link)[i] = (BUN2type) v;
+		break;
+#endif
+	case BUN4:
+		assert(v == BUN_NONE || v == BUN4_NONE || v < i);
+		((BUN4type *) h->Link)[i] = (BUN4type) v;
+		break;
+#ifdef BUN8
+	case BUN8:
+		assert(v == BUN_NONE || v == BUN8_NONE || v < i);
+		((BUN8type *) h->Link)[i] = (BUN8type) v;
+		break;
+#endif
+	default:
+		MT_UNREACHABLE();
+	}
+}
+
+__attribute__((__pure__))
+static inline BUN
+HASHget(const Hash *h, BUN i)
+{
+	switch (h->width) {
+#ifdef BUN2
+	case BUN2:
+		i = (BUN) ((BUN2type *) h->Bckt)[i];
+		return i == BUN2_NONE ? BUN_NONE : i;
+#endif
+	case BUN4:
+		i = (BUN) ((BUN4type *) h->Bckt)[i];
+		return i == BUN4_NONE ? BUN_NONE : i;
+#ifdef BUN8
+	case BUN8:
+		i = (BUN) ((BUN8type *) h->Bckt)[i];
+		return i == BUN8_NONE ? BUN_NONE : i;
+#endif
+	default:
+		MT_UNREACHABLE();
+	}
+}
+
+__attribute__((__pure__))
+static inline BUN
+HASHgetlink(const Hash *h, BUN i)
+{
+	switch (h->width) {
+#ifdef BUN2
+	case BUN2:
+		i = (BUN) ((BUN2type *) h->Link)[i];
+		return i == BUN2_NONE ? BUN_NONE : i;
+#endif
+	case BUN4:
+		i = (BUN) ((BUN4type *) h->Link)[i];
+		return i == BUN4_NONE ? BUN_NONE : i;
+#ifdef BUN8
+	case BUN8:
+		i = (BUN) ((BUN8type *) h->Link)[i];
+		return i == BUN8_NONE ? BUN_NONE : i;
+#endif
+	default:
+		MT_UNREACHABLE();
+	}
+}
+
+#if SIZEOF_BUN == 4
+#define XXHASHFUNC	XXH32
+#else
+#define XXHASHFUNC	XXH64
+#endif
+
+__attribute__((__pure__))
+static inline BUN
+bteHash(const void *x)
+{
+	return (BUN) *(uint8_t *) x;
+}
+
+__attribute__((__pure__))
+static inline BUN
+shtHash(const void *x)
+{
+	return (BUN) *(uint16_t *) x;
+}
+
+__attribute__((__pure__))
+static inline BUN
+intHash(const void *x)
+{
+	return (BUN) XXH32(x, sizeof(int), 0);
+}
+
+__attribute__((__pure__))
+static inline BUN
+lngHash(const void *x)
+{
+	return (BUN) XXHASHFUNC(x, sizeof(lng), 0);
+}
+
+#ifdef HAVE_HGE
+__attribute__((__pure__))
+static inline BUN
+hgeHash(const void *x)
+{
+	return (BUN) XXHASHFUNC(x, sizeof(hge), 0);
+}
+#endif
+
+__attribute__((__pure__))
+static inline BUN
+fltHash(const void *x)
+{
+	if (is_flt_nil(*(const flt *)x)) /* any NaN */
+		return intHash(&(uint32_t){UINT32_C(0x7FC00000)});
+	if (*(const flt *)x == 0) /* +0 or -0 */
+		return (BUN) intHash(&(uint32_t){0});
+	return intHash(x);
+}
+
+__attribute__((__pure__))
+static inline BUN
+dblHash(const void *x)
+{
+	if (is_dbl_nil(*(const dbl *)x)) /* any NaN */
+		return lngHash(&(uint64_t){UINT64_C(0x7FF8000000000000)});
+	if (*(const dbl *)x == 0) /* +0 or -0 */
+		return lngHash(&(uint64_t){0});
+	return lngHash(x);
+}
+
+/* if you happen to already know the string length, pass it along */
+__attribute__((__pure__))
+static inline BUN
+strHashLen(const void *x, size_t len)
+{
+	return (BUN) XXHASHFUNC(x, len, 0);
+}
+
+__attribute__((__pure__))
+static inline BUN
+strHash(const void *x)
+{
+	return strHashLen(x, strlen(x));
+}
+
+__attribute__((__pure__))
+static inline BUN
+uuidHash(const void *x)
+{
+	return (BUN) XXHASHFUNC(x, sizeof(uuid), 0);
+}
+
+__attribute__((__pure__))
+static inline BUN
+inet4Hash(const void *x)
+{
+	return (BUN) XXH32(x, sizeof(inet4), 0);
+}
+
+__attribute__((__pure__))
+static inline BUN
+inet6Hash(const void *x)
+{
+	return (BUN) XXHASHFUNC(x, sizeof(inet6), 0);
+}
+
+__attribute__((__pure__))
+static inline BUN
+blobHash(const void *x)
+{
+	return (BUN) XXHASHFUNC(x, blobsize(((const blob *) x)->nitems), 0);
+}
+
+#define hash_loc(H,V)	hash_any(H,V)
+#define hash_var(H,V)	hash_any(H,V)
+#define hash_any(H,V)	HASHbucket(H, ATOMhash((H)->type, (V)))
+#define hash_bte(H,V)	(assert((H)->nbucket >= 256), bteHash(V))
+#define hash_sht(H,V)	(assert((H)->nbucket >= 65536), shtHash(V))
+#define hash_int(H,V)	HASHbucket(H, intHash(V))
+/* XXX return size_t-sized value for 8-byte oid? */
+#define hash_lng(H,V)	HASHbucket(H, lngHash(V))
+#ifdef HAVE_HGE
+#define hash_hge(H,V)	HASHbucket(H, hgeHash(V))
+#endif
+#if SIZEOF_OID == SIZEOF_INT
+#define hash_oid(H,V)	hash_int(H,V)
+#else
+#define hash_oid(H,V)	hash_lng(H,V)
+#endif
+#define hash_inet4(H,V)	HASHbucket(H, inet4Hash(V))
+
+#define hash_flt(H,V)	HASHbucket(H, ATOMhash(TYPE_flt, (V)))
+#define hash_dbl(H,V)	HASHbucket(H, ATOMhash(TYPE_dbl, (V)))
+
+#define hash_uuid(H,V)	HASHbucket(H, uuidHash(V))
+
+#define hash_inet6(H,V)	HASHbucket(H, inet6Hash(V))
+
+/*
+ * @- hash-table supported loop over BUNs The first parameter `bi' is
+ * a BAT iterator, the second (`h') should point to the Hash
+ * structure, and `v' a pointer to an atomic value (corresponding to
+ * the head column of `b'). The 'hb' is an BUN index, pointing out the
+ * `hb'-th BUN.
+ */
+#define HASHloop(bi, h, hb, v)					\
+	for (hb = HASHget(h, HASHprobe(h, v));			\
+	     hb != BUN_NONE;					\
+	     hb = HASHgetlink(h, hb))				\
+		if ((h)->offsets ?					\
+		    *(var_t*)(v) == VarHeapVal((bi)->base, hb, (bi)->width) : \
+		    ATOMeq(h->type, v, BUNtail(bi, hb)))
+#define HASHloop_str(bi, h, hb, v)				\
+	for (hb = HASHget(h, HASHbucket(h, strHash(v)));	\
+	     hb != BUN_NONE;					\
+	     hb = HASHgetlink(h, hb))				\
+		if (strEQ(v, BUNtvar(bi, hb)))
+#define HASHloop_var_t(bi, h, hb, v)				\
+	for (hb = HASHget(h, HASHprobe(h, v));			\
+	     hb != BUN_NONE;					\
+	     hb = HASHgetlink(h, hb))				\
+		if (*(var_t*)(v) == VarHeapVal((bi)->base, hb, (bi)->width))
+
+#define HASHlooploc(bi, h, hb, v)				\
+	for (hb = HASHget(h, HASHprobe(h, v));			\
+	     hb != BUN_NONE;					\
+	     hb = HASHgetlink(h, hb))				\
+		if (ATOMeq(h->type, v, BUNtloc(bi, hb)))
+#define HASHloopvar(bi, h, hb, v)				\
+	for (hb = HASHget(h, HASHprobe(h, v));			\
+	     hb != BUN_NONE;					\
+	     hb = HASHgetlink(h, hb))				\
+		if (ATOMeq(h->type, v, BUNtvar(bi, hb)))
+
+#define HASHloop_TYPE(bi, h, hb, v, TYPE)				\
+	for (hb = HASHget(h, hash_##TYPE(h, v));			\
+	     hb != BUN_NONE;						\
+	     hb = HASHgetlink(h,hb))					\
+		if (* (const TYPE *) (v) == * (const TYPE *) BUNtloc(bi, hb))
+
+/* need to take special care comparing nil floating point values */
+#define HASHloop_fTYPE(bi, h, hb, v, TYPE)				\
+	for (hb = HASHget(h, hash_##TYPE(h, v));			\
+	     hb != BUN_NONE;						\
+	     hb = HASHgetlink(h,hb))					\
+		if (is_##TYPE##_nil(* (const TYPE *) (v))		\
+		    ? is_##TYPE##_nil(* (const TYPE *) BUNtloc(bi, hb)) \
+		    : * (const TYPE *) (v) == * (const TYPE *) BUNtloc(bi, hb))
+
+#define HASHloop_bte(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, bte)
+#define HASHloop_sht(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, sht)
+#define HASHloop_int(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, int)
+#define HASHloop_lng(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, lng)
+#ifdef HAVE_HGE
+#define HASHloop_hge(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, hge)
+#endif
+#define HASHloop_flt(bi, h, hb, v)	HASHloop_fTYPE(bi, h, hb, v, flt)
+#define HASHloop_dbl(bi, h, hb, v)	HASHloop_fTYPE(bi, h, hb, v, dbl)
+#define HASHloop_inet4(bi, hsh, hb, v)					\
+	for (hb = HASHget(hsh, hash_inet4(hsh, v));			\
+	     hb != BUN_NONE;						\
+	     hb = HASHgetlink(hsh,hb))					\
+		if (((const inet4 *) (v))->align == ((const inet4 *) BUNtloc(bi, hb))->align)
+#ifdef HAVE_HGE
+#define HASHloop_uuid(bi, hsh, hb, v)					\
+	for (hb = HASHget(hsh, hash_uuid(hsh, v));			\
+	     hb != BUN_NONE;						\
+	     hb = HASHgetlink(hsh,hb))					\
+		if (((const uuid *) (v))->h == ((const uuid *) BUNtloc(bi, hb))->h)
+#define HASHloop_inet6(bi, hsh, hb, v)					\
+	for (hb = HASHget(hsh, hash_inet6(hsh, v));			\
+	     hb != BUN_NONE;						\
+	     hb = HASHgetlink(hsh,hb))					\
+		if (((const inet6 *) (v))->align == ((const inet6 *) BUNtloc(bi, hb))->align)
+#else
+#define HASHloop_uuid(bi, h, hb, v)					\
+	for (hb = HASHget(h, hash_uuid(h, v));				\
+	     hb != BUN_NONE;						\
+	     hb = HASHgetlink(h,hb))					\
+		if (memcmp((const uuid *) (v), (const uuid *) BUNtloc(bi, hb), 16) == 0)
+//		if (((const uuid *) (v))->l[0] == ((const uuid *) BUNtloc(bi, hb))->l[0] && ((const uuid *) (v))->l[1] == ((const uuid *) BUNtloc(bi, hb))->l[1])
+#define HASHloop_inet6(bi, h, hb, v)					\
+	for (hb = HASHget(h, hash_inet6(h, v));				\
+	     hb != BUN_NONE;						\
+	     hb = HASHgetlink(h,hb))					\
+		if (memcmp((const inet6 *) (v), (const inet6 *) BUNtloc(bi, hb), 16) == 0)
+//		if (((const inet6 *) (v))->align[0] == ((const inet6 *) BUNtloc(bi, hb))->align[0] && ((const inet6 *) (v))->align[1] == ((const inet6 *) BUNtloc(bi, hb))->align[1])
+#endif
+
+#define BBPLOADED	1	/* set if bat in memory */
+#define BBPSWAPPED	2	/* set if dirty bat is not in memory */
+#define BBPTMP		4	/* set if non-persistent bat has image on disk */
+
+/* These 4 symbols indicate what the persistence state is of a bat.
+ * - If the bat was persistent at the last commit (or at startup
+ *   before the first commit), BBPEXISTING or BBPDELETED is set.
+ * - If the bat is to be persistent after the next commit, BBPEXISTING
+ *   or BBPNEW is set (i.e. (status&BBPPERSISTENT) != 0).
+ * - If the bat was transient at the last commit (or didn't exist),
+ *   BBPNEW is set, or none of these flag values is set.
+ * - If the bat is to be transient at the next commit, BBPDELETED is
+ *   set, or none of these flag values is set.
+ * BATmode() switches between BBPDELETED and BBPEXISTING (bat was
+ * persistent at last commit), or between BBPNEW and 0 (bat was
+ * transient or didn't exist at last commit).
+ * Committing a bat switches from BBPNEW to BBPEXISTING, or turns off
+ * BBPDELETED.
+ * In any case, only at most one of BBPDELETED, BBPEXISTING, and
+ * BBPNEW may be set at any one time.
+ *
+ * In short,
+ * BBPEXISTING -- bat was and should remain persistent;
+ * BBPDELETED -- bat was persistent at last commit and should be transient;
+ * BBPNEW -- bat was transient at last commit and should be persistent;
+ * none of the above -- bat was and should remain transient.
+ */
+#define BBPDELETED	16	/* set if bat persistent at last commit is now transient */
+#define BBPEXISTING	32	/* set if bat was already persistent at end of last commit */
+#define BBPNEW		64	/* set if bat has become persistent since last commit */
+#define BBPPERSISTENT	(BBPEXISTING|BBPNEW)	/* mask for currently persistent bats */
+
+#define BBPSTATUS	127
+
+#define BBPUNLOADING	128	/* set while we are unloading */
+#define BBPLOADING	256	/* set while we are loading */
+#define BBPSAVING       512	/* set while we are saving */
+#define BBPRENAMED	1024	/* set when bat is renamed in this transaction */
+#define BBPDELETING	2048	/* set while we are deleting (special case in module unload) */
+#define BBPHOT		4096	/* bat is "hot", i.e. is still in active use */
+#define BBPSYNCING	8192	/* bat between creating backup and saving */
+
+#define BBPUNSTABLE	(BBPUNLOADING|BBPDELETING)	/* set while we are unloading */
+#define BBPWAITING      (BBPUNLOADING|BBPLOADING|BBPSAVING|BBPDELETING|BBPSYNCING)
+
+gdk_export bat getBBPsize(void); /* current occupied size of BBP array */
+gdk_export unsigned BBPheader(FILE *fp, int *lineno, bat *bbpsize, lng *logno, bool allow_hge_upgrade);
+gdk_export int BBPreadBBPline(FILE *fp, unsigned bbpversion, int *lineno, BAT *bn,
+#ifdef GDKLIBRARY_HASHASH
+			      int *hashash,
+#endif
+			      char *batname, char *filename, char **options);
+
+/* global calls */
+gdk_export gdk_return BBPaddfarm(const char *dirname, uint32_t rolemask, bool logerror);
+
+/* update interface */
+gdk_export gdk_return BBPsave(BAT *b);
+gdk_export int BBPrename(BAT *b, const char *nme);
+
+/* query interface */
+gdk_export bat BBPindex(const char *nme);
+
+/* swapping interface */
+gdk_export int BBPfix(bat b);
+gdk_export int BBPunfix(bat b);
+static inline void
+BBPreclaim(BAT *b)
+{
+	if (b != NULL)
+		BBPunfix(b->batCacheid);
+}
+gdk_export int BBPretain(bat b);
+gdk_export int BBPrelease(bat b);
+gdk_export void BBPkeepref(BAT *b)
+	__attribute__((__nonnull__(1)));
+gdk_export void BBPcold(bat i);
+gdk_export void BBPrelinquishbats(void);
+#ifdef GDKLIBRARY_JSON
+typedef gdk_return ((*json_storage_conversion)(char **, const char **));
+gdk_export gdk_return BBPjson_upgrade(json_storage_conversion);
+#endif
+#define BBP_status_set(bid, mode)			\
+	ATOMIC_SET(&BBP_record(bid).status, mode)
+
+#define BBP_status_on(bid, flags)			\
+	ATOMIC_OR(&BBP_record(bid).status, flags)
+
+#define BBP_status_off(bid, flags)			\
+	ATOMIC_AND(&BBP_record(bid).status, ~(flags))
+
+#define BBPswappable(b) ((b) && (b)->batCacheid && BBP_refs((b)->batCacheid) == 0)
+#define BBPtrimmable(b) (BBPswappable(b) && isVIEW(b) == 0 && (BBP_status((b)->batCacheid)&BBPWAITING) == 0)
+
+/* low level support for patching BBP.dir */
+gdk_export gdk_return BBPdir_first(bool subcommit, lng logno, FILE **obbpfp, FILE **nbbpfp);
+gdk_export bat BBPdir_step(bat bid, BUN size, int n, char *buf, size_t bufsize, FILE **obbpfp, FILE *nbbpf, BATiter *bi, int *nbatp);
+gdk_export gdk_return BBPdir_last(int n, char *buf, size_t bufsize, FILE *obbpf, FILE *nbbpf);
+
+gdk_export BUN GDKL3_size;
+
+gdk_export void GDKprintinforegister(void (*func)(void));
+gdk_export void GDKprintinfo(void);
+
+gdk_export const char *GDKgetenv(const char *name);
+
+gdk_export bool GDKgetenv_istext(const char *name, const char* text);
+gdk_export bool GDKgetenv_isyes(const char *name);
+gdk_export bool GDKgetenv_istrue(const char *name);
+
+gdk_export int GDKgetenv_int(const char *name, int def);
+
+gdk_export gdk_return GDKsetenv(const char *name, const char *value);
+gdk_export gdk_return GDKcopyenv(BAT **key, BAT **val, bool writable);
+
+/*
+ * @+ Memory management
+ * Memory management in GDK mostly relies on the facilities offered by
+ * the underlying OS.  The below routines monitor the available memory
+ * resources which consist of physical swap space and logical vm
+ * space.  There are three kinds of memory, that affect these two
+ * resources in different ways:
+ *
+ * - memory mapping
+ *   which ask for a logical region of virtual memory space.  In
+ *   principle, no physical memory is needed to keep the system afloat
+ *   here, as the memory mapped file is swapped onto a disk object
+ *   that already exists.
+ *
+ *   Actually, there are two kings of memory mapping used in GDK,
+ *   namely read-only direct mapped and writable copy-on write. For
+ *   the dirty pages, the latter actually also consumes physical
+ *   memory resources, but that is ignored here for simplicity.
+ *
+ * - anonymous virtual memory
+ *   This is virtual memory that is mapped on the swap file. Hence,
+ *   this consumes both logical VM space resources and physical memory
+ *   space.
+ *
+ * - malloced memory
+ *   comes from the heap and directly consumes physical memory
+ *   resources.
+ *
+ * The malloc routine checks the memory consumption every 1000 calls,
+ * or for calls larger that 50000 bytes. Consequently, at least every
+ * 50MB increase, alloc memory is checked. The VM calls always check
+ * the memory consumption.
+ */
+/* default setting to administer everything */
+#define GDK_MEM_NULLALLOWED
+
+#if SIZEOF_VOID_P==8
+#define GDK_VM_MAXSIZE	LL_CONSTANT(4398046511104)	/* :-) a 64-bit OS: 4TB */
+#else
+#define GDK_VM_MAXSIZE	LL_CONSTANT(1610612736)	/* :-| a 32-bit OS: 1.5GB */
+#endif
+/* virtual memory defines */
+gdk_export size_t _MT_npages;
+gdk_export size_t _MT_pagesize;
+
+#define MT_pagesize()	_MT_pagesize
+#define MT_npages()	_MT_npages
+
+gdk_export size_t GDK_mem_maxsize;	/* max allowed size of committed memory */
+gdk_export size_t GDK_vm_maxsize;	/* max allowed size of reserved vm */
+
+gdk_export void *GDKmmap(const char *path, int mode, size_t len)
+	__attribute__((__warn_unused_result__));
+gdk_export gdk_return GDKmunmap(void *addr, int mode, size_t len);
+
+gdk_export size_t GDKmem_cursize(void);	/* RAM/swapmem that MonetDB has claimed from OS */
+gdk_export size_t GDKvm_cursize(void);	/* current MonetDB VM address space usage */
+
+gdk_export void GDKfree(void *blk);
+gdk_export void *GDKmalloc(size_t size)
+	__attribute__((__malloc__))
+	__attribute__((__malloc__(GDKfree, 1)))
+	__attribute__((__alloc_size__(1)))
+	__attribute__((__warn_unused_result__));
+gdk_export void *GDKzalloc(size_t size)
+	__attribute__((__malloc__))
+	__attribute__((__malloc__(GDKfree, 1)))
+	__attribute__((__alloc_size__(1)))
+	__attribute__((__warn_unused_result__));
+gdk_export void *GDKrealloc(void *pold, size_t size)
+	__attribute__((__alloc_size__(2)))
+	__attribute__((__warn_unused_result__));
+gdk_export char *GDKstrdup(const char *s)
+	__attribute__((__malloc__))
+	__attribute__((__malloc__(GDKfree, 1)))
+	__attribute__((__warn_unused_result__));
+gdk_export char *GDKstrndup(const char *s, size_t n)
+	__attribute__((__malloc__))
+	__attribute__((__malloc__(GDKfree, 1)))
+	__attribute__((__warn_unused_result__));
+gdk_export char *humansize(size_t val, char *buf, size_t buflen)
+	__attribute__((__access__(write_only, 2, 3)));
+
+gdk_export void MT_init(void);	/*  init the package. */
+struct opt;
+gdk_export gdk_return GDKinit(struct opt *set, int setlen, bool embedded, const char *caller_revision);
+
+/*
+ * Upon closing the session, all persistent BATs should be saved and
+ * the transient BATs should be removed.  The buffer pool manager
+ * takes care of this.
+ */
+gdk_export bool GDKexiting(void);
+
+gdk_export void GDKprepareExit(void);
+gdk_export void GDKreset(int status);
+/* global version number */
+gdk_export const char *GDKversion(bool full)
+	__attribute__((__const__));
+/* ABI version of GDK library */
+gdk_export const char *GDKlibversion(void)
+	__attribute__((__const__));
+
+// these are used in embedded mode to jump out of GDKfatal
+gdk_export jmp_buf GDKfataljump;
+gdk_export char *GDKfatalmsg;
+gdk_export bool GDKfataljumpenable;
+
+/* Timers
+ * The following relative timers are available for inspection.
+ * Note that they may consume recognizable overhead.
+ *
+ */
+gdk_export lng GDKusec(void);
+gdk_export int GDKms(void);
+
+
+#if !defined(NDEBUG) && !defined(__COVERITY__) && !defined(_CLANGD)
+/* In debugging mode, replace GDKmalloc and other functions with a
+ * version that optionally prints calling information.
+ *
+ * We have two versions of this code: one using a GNU C extension, and
+ * one using traditional C.  The GNU C version also prints the name of
+ * the calling function.
+ */
+#ifdef __GNUC__
+#define GDKmalloc(s)						\
+	({							\
+		size_t _size = (s);				\
+		void *_res = GDKmalloc(_size);			\
+		TRC_DEBUG(ALLOC, "GDKmalloc(%zu) -> %p\n",	\
+			  _size, _res);				\
+		_res;						\
+	})
+#define GDKzalloc(s)						\
+	({							\
+		size_t _size = (s);				\
+		void *_res = GDKzalloc(_size);			\
+		TRC_DEBUG(ALLOC, "GDKzalloc(%zu) -> %p\n",	\
+			  _size, _res);				\
+		_res;						\
+	})
+#define GDKrealloc(p, s)					\
+	({							\
+		void *_ptr = (p);				\
+		size_t _size = (s);				\
+		char _buf[2*sizeof(void*)+3];			\
+		snprintf(_buf, sizeof(_buf), "%p", _ptr);	\
+		void *_res = GDKrealloc(_ptr, _size);		\
+		TRC_DEBUG(ALLOC, "GDKrealloc(%s,%zu) -> %p\n",	\
+			  _buf, _size, _res);			\
+		_res;						\
+	 })
+#define GDKfree(p)							\
+	({								\
+		void *_ptr = (p);					\
+		if (_ptr)						\
+			TRC_DEBUG(ALLOC, "GDKfree(%p)\n", _ptr);	\
+		GDKfree(_ptr);						\
+	})
+#define GDKstrdup(s)						\
+	({							\
+		const char *_str = (s);				\
+		void *_res = GDKstrdup(_str);			\
+		TRC_DEBUG(ALLOC, "GDKstrdup(len=%zu) -> %p\n",	\
+			  _str ? strlen(_str) : 0, _res);	\
+		_res;						\
+	})
+#define GDKstrndup(s, n)					\
+	({							\
+		const char *_str = (s);				\
+		size_t _n = (n);				\
+		void *_res = GDKstrndup(_str, _n);		\
+		TRC_DEBUG(ALLOC, "GDKstrndup(len=%zu) -> %p\n", \
+			  _n,	_res);				\
+		_res;						\
+	})
+#define GDKmmap(p, m, l)						\
+	({								\
+		const char *_path = (p);				\
+		int _mode = (m);					\
+		size_t _len = (l);					\
+		void *_res = GDKmmap(_path, _mode, _len);		\
+		TRC_DEBUG(ALLOC, "GDKmmap(%s,0x%x,%zu) -> %p\n",	\
+			  _path ? _path : "NULL",			\
+			  (unsigned) _mode, _len,			\
+			  _res);					\
+		_res;							\
+	 })
+#define GDKmunmap(p, m, l)					\
+	({							\
+		void *_ptr = (p);				\
+		int _mode = (m);				\
+		size_t _len = (l);				\
+		gdk_return _res = GDKmunmap(_ptr, _mode, _len);	\
+		TRC_DEBUG(ALLOC,				\
+			  "GDKmunmap(%p,0x%x,%zu) -> %u\n",	\
+			  _ptr, (unsigned) _mode, _len, _res);	\
+		_res;						\
+	})
+#define malloc(s)					\
+	({						\
+		size_t _size = (s);			\
+		void *_res = malloc(_size);		\
+		TRC_DEBUG(ALLOC, "malloc(%zu) -> %p\n", \
+			  _size, _res);			\
+		_res;					\
+	})
+#define calloc(n, s)						\
+	({							\
+		size_t _nmemb = (n);				\
+		size_t _size = (s);				\
+		void *_res = calloc(_nmemb,_size);		\
+		TRC_DEBUG(ALLOC, "calloc(%zu,%zu) -> %p\n",	\
+			  _nmemb, _size, _res);			\
+		_res;						\
+	})
+#define realloc(p, s)						\
+	({							\
+		void *_ptr = (p);				\
+		size_t _size = (s);				\
+		char _buf[12];					\
+		snprintf(_buf, sizeof(_buf), "%p", _ptr);	\
+		void *_res = realloc(_ptr, _size);		\
+		TRC_DEBUG(ALLOC, "realloc(%s,%zu) -> %p\n",	\
+			  _buf, _size, _res);			\
+		_res;						\
+	 })
+#define free(p)						\
+	({						\
+		void *_ptr = (p);			\
+		TRC_DEBUG(ALLOC, "free(%p)\n", _ptr);	\
+		free(_ptr);				\
+	})
+#else
+static inline void *
+GDKmalloc_debug(size_t size)
+{
+	void *res = GDKmalloc(size);
+	TRC_DEBUG(ALLOC, "GDKmalloc(%zu) -> %p\n", size, res);
+	return res;
+}
+#define GDKmalloc(s)	GDKmalloc_debug((s))
+static inline void *
+GDKzalloc_debug(size_t size)
+{
+	void *res = GDKzalloc(size);
+	TRC_DEBUG(ALLOC, "GDKzalloc(%zu) -> %p\n", size, res);
+	return res;
+}
+#define GDKzalloc(s)	GDKzalloc_debug((s))
+static inline void *
+GDKrealloc_debug(void *ptr, size_t size)
+{
+	void *res = GDKrealloc(ptr, size);
+	TRC_DEBUG(ALLOC, "GDKrealloc(%p,%zu) -> %p\n", ptr, size, res);
+	return res;
+}
+#define GDKrealloc(p, s)	GDKrealloc_debug((p), (s))
+static inline void
+GDKfree_debug(void *ptr)
+{
+	TRC_DEBUG(ALLOC, "GDKfree(%p)\n", ptr);
+	GDKfree(ptr);
+}
+#define GDKfree(p)	GDKfree_debug((p))
+static inline char *
+GDKstrdup_debug(const char *str)
+{
+	void *res = GDKstrdup(str);
+	TRC_DEBUG(ALLOC, "GDKstrdup(len=%zu) -> %p\n",
+		  str ? strlen(str) : 0, res);
+	return res;
+}
+#define GDKstrdup(s)	GDKstrdup_debug((s))
+static inline char *
+GDKstrndup_debug(const char *str, size_t n)
+{
+	void *res = GDKstrndup(str, n);
+	TRC_DEBUG(ALLOC, "GDKstrndup(len=%zu) -> %p\n", n, res);
+	return res;
+}
+#define GDKstrndup(s, n)	GDKstrndup_debug((s), (n))
+static inline void *
+GDKmmap_debug(const char *path, int mode, size_t len)
+{
+	void *res = GDKmmap(path, mode, len);
+	TRC_DEBUG(ALLOC, "GDKmmap(%s,0x%x,%zu) -> %p\n",
+		  path ? path : "NULL", (unsigned) mode, len, res);
+	return res;
+}
+#define GDKmmap(p, m, l)	GDKmmap_debug((p), (m), (l))
+static inline gdk_return
+GDKmunmap_debug(void *ptr, int mode, size_t len)
+{
+	gdk_return res = GDKmunmap(ptr, mode, len);
+	TRC_DEBUG(ALLOC, "GDKmunmap(%p,0x%x%zu) -> %d\n",
+		  ptr, mode, len, (int) res);
+	return res;
+}
+#define GDKmunmap(p, m, l)	GDKmunmap_debug((p), (m), (l))
+static inline void *
+malloc_debug(size_t size)
+{
+	void *res = malloc(size);
+	TRC_DEBUG(ALLOC, "malloc(%zu) -> %p\n", size, res);
+	return res;
+}
+#define malloc(s)	malloc_debug((s))
+static inline void *
+calloc_debug(size_t nmemb, size_t size)
+{
+	void *res = calloc(nmemb, size);
+	TRC_DEBUG(ALLOC, "calloc(%zu,%zu) -> %p\n", nmemb, size, res);
+	return res;
+}
+#define calloc(n, s)	calloc_debug((n), (s))
+static inline void *
+realloc_debug(void *ptr, size_t size)
+{
+	void *res = realloc(ptr, size);
+	TRC_DEBUG(ALLOC, "realloc(%p,%zu) -> %p \n", ptr, size, res);
+	return res;
+}
+#define realloc(p, s)	realloc_debug((p), (s))
+static inline void
+free_debug(void *ptr)
+{
+	TRC_DEBUG(ALLOC, "free(%p)\n", ptr);
+	free(ptr);
+}
+#define free(p)	free_debug((p))
+#endif
+#endif
 
 /* functions defined in gdk_bat.c */
 gdk_export gdk_return void_inplace(BAT *b, oid id, const void *val, bool force)
@@ -1937,8 +4547,164 @@ gdk_export exception_buffer *eb_init(exception_buffer *eb)
 #endif
 gdk_export _Noreturn void eb_error(exception_buffer *eb, const char *msg, int val);
 
+gdk_export BAT *BATcalcnegate(BAT *b, BAT *s);
+gdk_export BAT *BATcalcabsolute(BAT *b, BAT *s);
+gdk_export BAT *BATcalcincr(BAT *b, BAT *s);
+gdk_export BAT *BATcalcdecr(BAT *b, BAT *s);
+gdk_export BAT *BATcalciszero(BAT *b, BAT *s);
+gdk_export BAT *BATcalcsign(BAT *b, BAT *s);
+gdk_export BAT *BATcalcisnil(BAT *b, BAT *s);
+gdk_export BAT *BATcalcisnotnil(BAT *b, BAT *s);
+gdk_export BAT *BATcalcnot(BAT *b, BAT *s);
+gdk_export BAT *BATcalcmin(BAT *b1, BAT *b2, BAT *s1, BAT *s2);
+gdk_export BAT *BATcalcmin_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2);
+gdk_export BAT *BATcalcmincst(BAT *b, const ValRecord *v, BAT *s);
+gdk_export BAT *BATcalcmincst_no_nil(BAT *b, const ValRecord *v, BAT *s);
+gdk_export BAT *BATcalccstmin(const ValRecord *v, BAT *b, BAT *s);
+gdk_export BAT *BATcalccstmin_no_nil(const ValRecord *v, BAT *b, BAT *s);
+gdk_export BAT *BATcalcmax(BAT *b1, BAT *b2, BAT *s1, BAT *s2);
+gdk_export BAT *BATcalcmax_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2);
+gdk_export BAT *BATcalcmaxcst(BAT *b, const ValRecord *v, BAT *s);
+gdk_export BAT *BATcalcmaxcst_no_nil(BAT *b, const ValRecord *v, BAT *s);
+gdk_export BAT *BATcalccstmax(const ValRecord *v, BAT *b, BAT *s);
+gdk_export BAT *BATcalccstmax_no_nil(const ValRecord *v, BAT *b, BAT *s);
+gdk_export BAT *BATcalcadd(BAT *b1, BAT *b2, BAT *s1, BAT *s2, int tp);
+gdk_export BAT *BATcalcaddcst(BAT *b, const ValRecord *v, BAT *s, int tp);
+gdk_export BAT *BATcalccstadd(const ValRecord *v, BAT *b, BAT *s, int tp);
+gdk_export BAT *BATcalcsub(BAT *b1, BAT *b2, BAT *s1, BAT *s2, int tp);
+gdk_export BAT *BATcalcsubcst(BAT *b, const ValRecord *v, BAT *s, int tp);
+gdk_export BAT *BATcalccstsub(const ValRecord *v, BAT *b, BAT *s, int tp);
+gdk_export BAT *BATcalcmul(BAT *b1, BAT *b2, BAT *s1, BAT *s2, int tp);
+gdk_export BAT *BATcalcmulcst(BAT *b, const ValRecord *v, BAT *s, int tp);
+gdk_export BAT *BATcalccstmul(const ValRecord *v, BAT *b, BAT *s, int tp);
+gdk_export BAT *BATcalcdiv(BAT *b1, BAT *b2, BAT *s1, BAT *s2, int tp);
+gdk_export BAT *BATcalcdivcst(BAT *b, const ValRecord *v, BAT *s, int tp);
+gdk_export BAT *BATcalccstdiv(const ValRecord *v, BAT *b, BAT *s, int tp);
+gdk_export BAT *BATcalcmod(BAT *b1, BAT *b2, BAT *s1, BAT *s2, int tp);
+gdk_export BAT *BATcalcmodcst(BAT *b, const ValRecord *v, BAT *s, int tp);
+gdk_export BAT *BATcalccstmod(const ValRecord *v, BAT *b, BAT *s, int tp);
+gdk_export BAT *BATcalcxor(BAT *b1, BAT *b2, BAT *s1, BAT *s2);
+gdk_export BAT *BATcalcxorcst(BAT *b, const ValRecord *v, BAT *s);
+gdk_export BAT *BATcalccstxor(const ValRecord *v, BAT *b, BAT *s);
+gdk_export BAT *BATcalcor(BAT *b1, BAT *b2, BAT *s1, BAT *s2);
+gdk_export BAT *BATcalcorcst(BAT *b, const ValRecord *v, BAT *s);
+gdk_export BAT *BATcalccstor(const ValRecord *v, BAT *b, BAT *s);
+gdk_export BAT *BATcalcand(BAT *b1, BAT *b2, BAT *s1, BAT *s2);
+gdk_export BAT *BATcalcandcst(BAT *b, const ValRecord *v, BAT *s);
+gdk_export BAT *BATcalccstand(const ValRecord *v, BAT *b, BAT *s);
+gdk_export BAT *BATcalclsh(BAT *b1, BAT *b2, BAT *s1, BAT *s2);
+gdk_export BAT *BATcalclshcst(BAT *b, const ValRecord *v, BAT *s);
+gdk_export BAT *BATcalccstlsh(const ValRecord *v, BAT *b, BAT *s);
+gdk_export BAT *BATcalcrsh(BAT *b1, BAT *b2, BAT *s1, BAT *s2);
+gdk_export BAT *BATcalcrshcst(BAT *b, const ValRecord *v, BAT *s);
+gdk_export BAT *BATcalccstrsh(const ValRecord *v, BAT *b, BAT *s);
+gdk_export BAT *BATcalclt(BAT *b1, BAT *b2, BAT *s1, BAT *s2);
+gdk_export BAT *BATcalcltcst(BAT *b, const ValRecord *v, BAT *s);
+gdk_export BAT *BATcalccstlt(const ValRecord *v, BAT *b, BAT *s);
+gdk_export BAT *BATcalcle(BAT *b1, BAT *b2, BAT *s1, BAT *s2);
+gdk_export BAT *BATcalclecst(BAT *b, const ValRecord *v, BAT *s);
+gdk_export BAT *BATcalccstle(const ValRecord *v, BAT *b, BAT *s);
+gdk_export BAT *BATcalcgt(BAT *b1, BAT *b2, BAT *s1, BAT *s2);
+gdk_export BAT *BATcalcgtcst(BAT *b, const ValRecord *v, BAT *s);
+gdk_export BAT *BATcalccstgt(const ValRecord *v, BAT *b, BAT *s);
+gdk_export BAT *BATcalcge(BAT *b1, BAT *b2, BAT *s1, BAT *s2);
+gdk_export BAT *BATcalcgecst(BAT *b, const ValRecord *v, BAT *s);
+gdk_export BAT *BATcalccstge(const ValRecord *v, BAT *b, BAT *s);
+gdk_export BAT *BATcalceq(BAT *b1, BAT *b2, BAT *s1, BAT *s2, bool nil_matches);
+gdk_export BAT *BATcalceqcst(BAT *b, const ValRecord *v, BAT *s, bool nil_matches);
+gdk_export BAT *BATcalccsteq(const ValRecord *v, BAT *b, BAT *s, bool nil_matches);
+gdk_export BAT *BATcalcne(BAT *b1, BAT *b2, BAT *s1, BAT *s2, bool nil_matches);
+gdk_export BAT *BATcalcnecst(BAT *b, const ValRecord *v, BAT *s, bool nil_matches);
+gdk_export BAT *BATcalccstne(const ValRecord *v, BAT *b, BAT *s, bool nil_matches);
+gdk_export BAT *BATcalccmp(BAT *b1, BAT *b2, BAT *s1, BAT *s2);
+gdk_export BAT *BATcalccmpcst(BAT *b, const ValRecord *v, BAT *s);
+gdk_export BAT *BATcalccstcmp(const ValRecord *v, BAT *b, BAT *s);
+gdk_export BAT *BATcalcbetween(BAT *b, BAT *lo, BAT *hi, BAT *s, BAT *slo, BAT *shi, bool symmetric, bool linc, bool hinc, bool nils_false, bool anti);
+gdk_export BAT *BATcalcbetweencstcst(BAT *b, const ValRecord *lo, const ValRecord *hi, BAT *s, bool symmetric, bool linc, bool hinc, bool nils_false, bool anti);
+gdk_export BAT *BATcalcbetweenbatcst(BAT *b, BAT *lo, const ValRecord *hi, BAT *s, BAT *slo, bool symmetric, bool linc, bool hinc, bool nils_false, bool anti);
+gdk_export BAT *BATcalcbetweencstbat(BAT *b, const ValRecord *lo, BAT *hi, BAT *s, BAT *shi, bool symmetric, bool linc, bool hinc, bool nils_false, bool anti);
+gdk_export gdk_return VARcalcbetween(ValPtr ret, const ValRecord *v, const ValRecord *lo, const ValRecord *hi, bool symmetric, bool linc, bool hinc, bool nils_false, bool anti);
+gdk_export BAT *BATcalcifthenelse(BAT *b, BAT *b1, BAT *b2);
+gdk_export BAT *BATcalcifthenelsecst(BAT *b, BAT *b1, const ValRecord *c2);
+gdk_export BAT *BATcalcifthencstelse(BAT *b, const ValRecord *c1, BAT *b2);
+gdk_export BAT *BATcalcifthencstelsecst(BAT *b, const ValRecord *c1, const ValRecord *c2);
 
-#include "gdk_calc.h"
+gdk_export gdk_return VARcalcnot(ValPtr ret, const ValRecord *v);
+gdk_export gdk_return VARcalcnegate(ValPtr ret, const ValRecord *v);
+gdk_export gdk_return VARcalcabsolute(ValPtr ret, const ValRecord *v);
+gdk_export gdk_return VARcalcincr(ValPtr ret, const ValRecord *v);
+gdk_export gdk_return VARcalcdecr(ValPtr ret, const ValRecord *v);
+gdk_export gdk_return VARcalciszero(ValPtr ret, const ValRecord *v);
+gdk_export gdk_return VARcalcsign(ValPtr ret, const ValRecord *v);
+gdk_export gdk_return VARcalcisnil(ValPtr ret, const ValRecord *v);
+gdk_export gdk_return VARcalcisnotnil(ValPtr ret, const ValRecord *v);
+gdk_export gdk_return VARcalcadd(ValPtr ret, const ValRecord *lft, const ValRecord *rgt);
+gdk_export gdk_return VARcalcsub(ValPtr ret, const ValRecord *lft, const ValRecord *rgt);
+gdk_export gdk_return VARcalcmul(ValPtr ret, const ValRecord *lft, const ValRecord *rgt);
+gdk_export gdk_return VARcalcdiv(ValPtr ret, const ValRecord *lft, const ValRecord *rgt);
+gdk_export gdk_return VARcalcmod(ValPtr ret, const ValRecord *lft, const ValRecord *rgt);
+gdk_export gdk_return VARcalcxor(ValPtr ret, const ValRecord *lft, const ValRecord *rgt);
+gdk_export gdk_return VARcalcor(ValPtr ret, const ValRecord *lft, const ValRecord *rgt);
+gdk_export gdk_return VARcalcand(ValPtr ret, const ValRecord *lft, const ValRecord *rgt);
+gdk_export gdk_return VARcalclsh(ValPtr ret, const ValRecord *lft, const ValRecord *rgt);
+gdk_export gdk_return VARcalcrsh(ValPtr ret, const ValRecord *lft, const ValRecord *rgt);
+gdk_export gdk_return VARcalclt(ValPtr ret, const ValRecord *lft, const ValRecord *rgt);
+gdk_export gdk_return VARcalcgt(ValPtr ret, const ValRecord *lft, const ValRecord *rgt);
+gdk_export gdk_return VARcalcle(ValPtr ret, const ValRecord *lft, const ValRecord *rgt);
+gdk_export gdk_return VARcalcge(ValPtr ret, const ValRecord *lft, const ValRecord *rgt);
+gdk_export gdk_return VARcalceq(ValPtr ret, const ValRecord *lft, const ValRecord *rgt, bool nil_matches);
+gdk_export gdk_return VARcalcne(ValPtr ret, const ValRecord *lft, const ValRecord *rgt, bool nil_matches);
+gdk_export gdk_return VARcalccmp(ValPtr ret, const ValRecord *lft, const ValRecord *rgt);
+gdk_export BAT *BATconvert(BAT *b, BAT *s, int tp, uint8_t scale1, uint8_t scale2, uint8_t precision);
+gdk_export gdk_return VARconvert(allocator *ma, ValPtr ret, const ValRecord *v, uint8_t scale1, uint8_t scale2, uint8_t precision);
+gdk_export gdk_return BATcalcavg(BAT *b, BAT *s, dbl *avg, BUN *vals, int scale, bool inout);
+
+gdk_export BAT *BATgroupsum(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils);
+gdk_export BAT *BATgroupprod(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils);
+gdk_export gdk_return BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, int scale);
+gdk_export gdk_return BATgroupavg2(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, BUN ngrp, bool skip_nils, int scale);
+gdk_export gdk_return BATgroupavg3(BAT **avgp, BAT **remp, BAT **cntp, BAT *b, BAT *g, BAT *e, BAT *s, bool skip_nils, bool inout);
+gdk_export BAT *BATgroupavg3combine(BAT *avg, BAT *rem, BAT *cnt, BAT *g, BAT *e, bool skip_nils);
+gdk_export BAT *BATgroupcount(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils);
+gdk_export BAT *BATgroupmin(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils);
+gdk_export BAT *BATgroupmax(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils);
+gdk_export BAT *BATgroupmedian(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils);
+gdk_export BAT *BATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile, bool skip_nils);
+gdk_export BAT *BATgroupmedian_avg(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils);
+gdk_export BAT *BATgroupquantile_avg(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile, bool skip_nils);
+
+/* helper function for grouped aggregates */
+gdk_export const char *BATgroupaggrinit(
+	BAT *b, BAT *g, BAT *e, BAT *s,
+	/* outputs: */
+	oid *minp, oid *maxp, BUN *ngrpp,
+	struct canditer *ci);
+
+gdk_export gdk_return BATsum(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool nil_if_empty, bool inout);
+gdk_export gdk_return BATprod(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool nil_if_empty, bool inout);
+gdk_export void *BATmax(BAT *b, void *aggr);
+gdk_export void *BATmin(BAT *b, void *aggr);
+gdk_export void *BATmax_skipnil(allocator *alloc, BAT *b, void *aggr, bit skipnil, bool inout);
+gdk_export void *BATmin_skipnil(allocator *alloc, BAT *b, void *aggr, bit skipnil, bool inout);
+
+gdk_export dbl BATcalcstdev_population(dbl *avgp, BAT *b);
+gdk_export dbl BATcalcstdev_sample(dbl *avgp, BAT *b);
+gdk_export BAT *BATgroupstdev_sample(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils);
+gdk_export BAT *BATgroupstdev_population(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils);
+gdk_export dbl BATcalcvariance_population(dbl *avgp, BAT *b);
+gdk_export dbl BATcalcvariance_sample(dbl *avgp, BAT *b);
+gdk_export BAT *BATgroupvariance_sample(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils);
+gdk_export BAT *BATgroupvariance_population(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils);
+gdk_export dbl BATcalccovariance_sample(BAT *b1, BAT *b2);
+gdk_export dbl BATcalccovariance_population(BAT *b1, BAT *b2);
+gdk_export dbl BATcalccorrelation(BAT *b1, BAT *b2);
+gdk_export BAT *BATgroupcovariance_sample(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils);
+gdk_export BAT *BATgroupcovariance_population(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils);
+gdk_export BAT *BATgroupcorrelation(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils);
+
+gdk_export BAT *BATgroupstr_group_concat(BAT *b, BAT *g, BAT *e, BAT *s, BAT *sep, bool skip_nils, const char *restrict separator);
+gdk_export gdk_return BATstr_group_concat(allocator *ma, ValPtr res, BAT *b, BAT *s, BAT *sep, bool skip_nils, bool nil_if_empty, const char *restrict separator);
+gdk_export BAT *GDKanalytical_str_group_concat(BAT *b, BAT *p, BAT *o, BAT *sep, BAT *s, BAT *e, const char *restrict separator, int frame_type);
 
 gdk_export ValPtr VALcopy(allocator *va, ValPtr dst, const ValRecord *src)
 	__attribute__((__access__(write_only, 2)));

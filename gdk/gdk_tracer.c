@@ -37,23 +37,23 @@ static bool write_to_tracer = false;
 
 #define GENERATE_LOG_LEVEL(COMP) ATOMIC_VAR_INIT((ATOMIC_BASE_TYPE) DEFAULT_LOG_LEVEL),
 ATOMIC_TYPE lvl_per_component[] = {
-	FOREACH_COMP(GENERATE_LOG_LEVEL)
+	TRC_FOREACH_COMP(GENERATE_LOG_LEVEL)
 };
 
 static const char *adapter_str[] = {
-	FOREACH_ADPTR(GENERATE_STRING)
+	TRC_FOREACH_ADPTR(GENERATE_STRING)
 };
 
 static const char *layer_str[] = {
-	FOREACH_LAYER(GENERATE_STRING)
+	TRC_FOREACH_LAYER(GENERATE_STRING)
 };
 
 static const char *component_str[] = {
-	FOREACH_COMP(GENERATE_STRING)
+	TRC_FOREACH_COMP(GENERATE_STRING)
 };
 
 static const char *level_str[] = {
-	FOREACH_LEVEL(GENERATE_STRING)
+	TRC_FOREACH_LEVEL(GENERATE_STRING)
 };
 
 
