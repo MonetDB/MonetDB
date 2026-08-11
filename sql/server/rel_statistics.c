@@ -1302,8 +1302,8 @@ rel_get_statistics(visitor *v, global_props *gp, sql_rel *rel)
 run_optimizer
 bind_get_statistics(visitor *v, global_props *gp)
 {
-	ATOMIC_TYPE oahash_mask = (1U<<19);
-	bool oahash_enabled = (GDKdebug & oahash_mask);
+	const ATOMIC_BASE_TYPE oahash_mask = (1U<<19);
+	bool oahash_enabled = (ATOMIC_GET(&GDKdebug) & oahash_mask);
 	(void) v;
 	return (!oahash_enabled && gp->opt_level == 1 /*&& !gp->cnt[op_insert]*/) ? rel_get_statistics : NULL;
 }
