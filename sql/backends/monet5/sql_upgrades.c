@@ -5637,6 +5637,32 @@ sql_update_default(Client c, mvc *sql, sql_schema *s)
 		BBPreclaim(b);
 	}
 	res_table_destroy(output);
+	if (err)
+		return err;
+
+	if (!sql_bind_func(sql, s->base.name, "copy_blocksize", NULL, NULL, F_FUNC, true, true)) {
+		sql->session->status = 0; /* if the function was not found clean the error */
+		sql->errstr[0] = '\0';
+		static const char query[] =
+			"create function sys.copy_blocksize()\n"
+			"returns int\n"
+			"external name \"copy\".get_blocksize;\n"
+			"create procedure sys.copy_blocksize(size int)\n"
+			"external name \"copy\".set_blocksize;\n"
+			"create aggregate uniques_guess(c integer)\n"
+			"returns bigint external name aggr.uniques_guess;\n"
+			"grant execute on aggregate uniques_guess(integer) to public;\n"
+			"create aggregate uniques_guess(c bigint)\n"
+			"returns bigint external name aggr.uniques_guess;\n"
+			"grant execute on aggregate uniques_guess(bigint) to public;\n"
+			"create aggregate uniques_guess(c varchar)\n"
+			"returns bigint external name aggr.uniques_guess;\n"
+			"grant execute on aggregate uniques_guess(varchar) to public;\n"
+			"update sys.functions set system = true where system <> true and schema_id = 2000 and name in ('copy_blocksize', 'uniques_guess');\n";
+		printf("Running database upgrade commands:\n%s\n", query);
+		fflush(stdout);
+		err = SQLstatementIntern(c, query, "update", true, false, NULL);
+	}
 
 	return err;
 }
