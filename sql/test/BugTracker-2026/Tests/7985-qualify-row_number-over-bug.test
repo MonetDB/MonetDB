@@ -1,0 +1,36 @@
+statement ok
+CREATE TABLE t_mdb_val_006(id INT, x INT)
+
+statement ok
+INSERT INTO t_mdb_val_006 VALUES (1, 30), (2, 10), (3, 20)
+
+-- expected 2 output columns.  received 3 output columns !
+-- expected id values 2 and 3. received id values 1 and 2 !
+query TI rowsort
+SELECT 'actual' AS src, id
+FROM t_mdb_val_006
+QUALIFY ROW_NUMBER() OVER (ORDER BY x) <= 2
+ORDER BY id
+----
+actual
+2
+actual
+3
+
+query TI rowsort
+SELECT 'expected' AS src, id
+FROM (
+  SELECT id, ROW_NUMBER() OVER (ORDER BY x) AS rn
+  FROM t_mdb_val_006
+) s
+WHERE rn <= 2
+ORDER BY id
+----
+expected
+2
+expected
+3
+
+statement ok
+DROP TABLE IF EXISTS t_mdb_val_006
+

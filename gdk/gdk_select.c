@@ -625,7 +625,6 @@ fullscan_str(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 	     oid *restrict dst, BUN maximum, const char **algo)
 {
 	var_t pos = 0;
-	var_t nilpos = 0;
 	BUN p = 0;
 	BUN ncand = ci->ncand;
 	BAT *pb = BBP_desc(bi->vh->parentid);
@@ -639,16 +638,10 @@ fullscan_str(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 				    dst, maximum, algo);
 	}
 
-	if (GDK_ELIMDOUBLES(bi->vh)) {
-		pos = strLocate(bi->vh, tl);
-		if (pos == (var_t) -1) {
-			*algo = NULL;
-			BBPreclaim(bn);
-			return BUN_NONE;
-		}
-		nilpos = strLocate(bi->vh, str_nil);
-	} else if (strNil(tl)) {
+	if (strNil(tl)) {
 		pos = 0;
+	} else if (GDK_ELIMDOUBLES(bi->vh)) {
+		pos = strLocate(bi->vh, tl);
 	} else if ((p = BUNfnd(pb, tl)) == BUN_NONE) {
 		pos = (var_t) -2;
 	} else {
@@ -657,9 +650,9 @@ fullscan_str(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 		MT_lock_unset(&pb->theaplock);
 	}
 	if (pos == (var_t) -2) {
-		/* searched for value does not occur */
+		/* searched for value that does not occur */
 		if (anti) {
-			if (nilpos == (var_t) -2) {
+			if (bi->nonil) {
 				/* no nils: return the whole shebang */
 				*algo = "fullscan anti-equi strelim (all)";
 				if (BATextend(bn, ncand) != GDK_SUCCEED) {
@@ -676,8 +669,7 @@ fullscan_str(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 				/* anti-equi for value that does not
 				 * occur: return everything except nil,
 				 * so turn into anti-equi for nil */
-				pos = nilpos;
-				nilpos = (var_t) -2;
+				pos = 0;
 			}
 		} else {
 			*algo = "fullscan equi strelim (nomatch)";
@@ -693,14 +685,12 @@ fullscan_str(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 		const uint8_t *ptr = (const uint8_t *) bi->base;
 		if (pos != 0)
 			pos -= GDK_VAROFFSET;
-		if (nilpos != 0 && nilpos != (var_t) -2)
-			nilpos -= GDK_VAROFFSET;
 		if (ci->tpe == cand_dense) {
 			if (anti) {
 				TIMEOUT_LOOP_IDX(p, ncand, qry_ctx) {
 					o = canditer_next_dense(ci);
 					if (ptr[o - hseq] != pos &&
-					    ptr[o - hseq] != nilpos) {
+					    (pos == 0 || ptr[o - hseq] != 0)) {
 						dst = buninsfix(bn, dst, cnt, o,
 								(BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
 								       * (dbl) (ncand-p) * 1.1 + 1024),
@@ -733,7 +723,7 @@ fullscan_str(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 				TIMEOUT_LOOP_IDX(p, ncand, qry_ctx) {
 					o = canditer_next(ci);
 					if (ptr[o - hseq] != pos &&
-					    ptr[o - hseq] != nilpos) {
+					    (pos == 0 || ptr[o - hseq] != 0)) {
 						dst = buninsfix(bn, dst, cnt, o,
 								(BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
 								       * (dbl) (ncand-p) * 1.1 + 1024),
@@ -768,14 +758,12 @@ fullscan_str(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 		const uint16_t *ptr = (const uint16_t *) bi->base;
 		if (pos != 0)
 			pos -= GDK_VAROFFSET;
-		if (nilpos != 0 && nilpos != (var_t) -2)
-			nilpos -= GDK_VAROFFSET;
 		if (ci->tpe == cand_dense) {
 			if (anti) {
 				TIMEOUT_LOOP_IDX(p, ncand, qry_ctx) {
 					o = canditer_next_dense(ci);
 					if (ptr[o - hseq] != pos &&
-					    ptr[o - hseq] != nilpos) {
+					    (pos == 0 || ptr[o - hseq] != 0)) {
 						dst = buninsfix(bn, dst, cnt, o,
 								(BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
 								       * (dbl) (ncand-p) * 1.1 + 1024),
@@ -808,7 +796,7 @@ fullscan_str(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 				TIMEOUT_LOOP_IDX(p, ncand, qry_ctx) {
 					o = canditer_next(ci);
 					if (ptr[o - hseq] != pos &&
-					    ptr[o - hseq] != nilpos) {
+					    (pos == 0 || ptr[o - hseq] != 0)) {
 						dst = buninsfix(bn, dst, cnt, o,
 								(BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
 								       * (dbl) (ncand-p) * 1.1 + 1024),
@@ -846,7 +834,7 @@ fullscan_str(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 				TIMEOUT_LOOP_IDX(p, ncand, qry_ctx) {
 					o = canditer_next_dense(ci);
 					if (ptr[o - hseq] != pos &&
-					    ptr[o - hseq] != nilpos) {
+					    (pos == 0 || ptr[o - hseq] != 0)) {
 						dst = buninsfix(bn, dst, cnt, o,
 								(BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
 								       * (dbl) (ncand-p) * 1.1 + 1024),
@@ -879,7 +867,7 @@ fullscan_str(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 				TIMEOUT_LOOP_IDX(p, ncand, qry_ctx) {
 					o = canditer_next(ci);
 					if (ptr[o - hseq] != pos &&
-					    ptr[o - hseq] != nilpos) {
+					    (pos == 0 || ptr[o - hseq] != 0)) {
 						dst = buninsfix(bn, dst, cnt, o,
 								(BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
 								       * (dbl) (ncand-p) * 1.1 + 1024),
@@ -918,7 +906,7 @@ fullscan_str(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 				TIMEOUT_LOOP_IDX(p, ncand, qry_ctx) {
 					o = canditer_next_dense(ci);
 					if (ptr[o - hseq] != pos &&
-					    ptr[o - hseq] != nilpos) {
+					    (pos == 0 || ptr[o - hseq] != 0)) {
 						dst = buninsfix(bn, dst, cnt, o,
 								(BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
 								       * (dbl) (ncand-p) * 1.1 + 1024),
@@ -951,7 +939,7 @@ fullscan_str(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 				TIMEOUT_LOOP_IDX(p, ncand, qry_ctx) {
 					o = canditer_next(ci);
 					if (ptr[o - hseq] != pos &&
-					    ptr[o - hseq] != nilpos) {
+					    (pos == 0 || ptr[o - hseq] != 0)) {
 						dst = buninsfix(bn, dst, cnt, o,
 								(BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
 								       * (dbl) (ncand-p) * 1.1 + 1024),

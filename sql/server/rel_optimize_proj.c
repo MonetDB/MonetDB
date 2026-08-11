@@ -3339,8 +3339,7 @@ rel_project_select_exp(visitor *v, sql_rel *rel)
 static sql_rel *
 rel_optimize_projections_(visitor *v, sql_rel *rel)
 {
-	ATOMIC_TYPE oahash_mask = (1U<<19);
-	bool oahash_enabled = (GDKdebug & oahash_mask);
+	bool oahash_enabled = MT_thread_get_qry_ctx()->oahash_enabled;
 	rel = rel_project_cse(v, rel);
 	rel = rel_project_select_exp(v, rel);
 	rel = rel_use_equality_exps(v, rel);
@@ -3516,8 +3515,7 @@ rel_merge_unions(visitor *v, sql_rel *rel)
 static inline sql_rel *
 rel_push_join_down_munion(visitor *v, sql_rel *rel)
 {
-	ATOMIC_TYPE oahash_mask = (1U<<19);
-	bool oahash_enabled = (GDKdebug & oahash_mask);
+	bool oahash_enabled = MT_thread_get_qry_ctx()->oahash_enabled;
 	if (!oahash_enabled && ((is_join(rel->op) && !is_outerjoin(rel->op) && !is_single(rel)) || is_semi(rel->op))) {
 		sql_rel *l = rel->l, *r = rel->r, *ol = l, *or = r;
 		list *exps = rel->exps, *attr = rel->attr;

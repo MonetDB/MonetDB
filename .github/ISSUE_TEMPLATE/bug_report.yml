@@ -74,6 +74,12 @@ body:
       placeholder: e.g., FooBar Corp
     validations:
       required: true
+  - type: checkboxes
+    attributes:
+      label: Please indicate if any LLM tools were used in preparing this report.
+      options:
+        - label: Yes, fully LLM generated
+        - label: Yes, LLM assisted
   - type: markdown
     attributes:
       value: |

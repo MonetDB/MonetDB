@@ -1761,8 +1761,7 @@ rel_join_use_fk(visitor *v, sql_rel *rel)
 static sql_rel *
 rel_optimize_joins_topdown_(visitor *v, sql_rel *rel)
 {
-	ATOMIC_TYPE oahash_mask = (1U<<19);
-	bool oahash_enabled = (GDKdebug & oahash_mask);
+	bool oahash_enabled = MT_thread_get_qry_ctx()->oahash_enabled;
 	if (oahash_enabled)
 		rel = transitivity_rule(v, rel);
 	rel = rel_join_use_fk(v, rel);
@@ -3361,8 +3360,7 @@ order_joins_bushy( visitor *v, list *rels, list *exps)
 static sql_rel *
 order_joins(visitor *v, list *rels, list *exps)
 {
-	ATOMIC_TYPE oahash_mask = (1U<<19);
-	bool oahash_enabled = (GDKdebug & oahash_mask);
+	bool oahash_enabled = MT_thread_get_qry_ctx()->oahash_enabled;
 	sql_rel *top = NULL, *l = NULL, *r = NULL, *f = NULL;
 	sql_exp *cje;
 	node *djn;
@@ -3730,8 +3728,7 @@ static sql_rel *rel_join_order_(visitor *v, sql_rel *rel);
 sql_rel *
 reorder_join(visitor *v, sql_rel *rel)
 {
-	ATOMIC_TYPE oahash_mask = (1U<<19);
-	bool oahash_enabled = (GDKdebug & oahash_mask);
+	bool oahash_enabled = MT_thread_get_qry_ctx()->oahash_enabled;
 
 	list *exps, *rels;
 	allocator *ta = MT_thread_getallocator();
@@ -3868,8 +3865,7 @@ rel_join_order(visitor *v, global_props *gp, sql_rel *rel)
 run_optimizer
 bind_join_order(visitor *v, global_props *gp)
 {
-	ATOMIC_TYPE oahash_mask = (1U<<19);
-	bool oahash_enabled = (GDKdebug & oahash_mask);
+	bool oahash_enabled = MT_thread_get_qry_ctx()->oahash_enabled;
 	int flag = v->sql->sql_optimizer;
 	return !oahash_enabled && gp->opt_level == 1 && gp->opt_cycle < 10 && !gp->cnt[op_update] && (gp->cnt[op_join] || gp->cnt[op_left] ||
 		gp->cnt[op_right] || gp->cnt[op_full]) && (flag & join_order) ? rel_join_order : NULL;

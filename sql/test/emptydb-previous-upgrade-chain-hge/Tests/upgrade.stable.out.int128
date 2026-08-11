@@ -430,3 +430,20 @@ SELECT d.id, i1.obj_type, i1.name,
 GRANT SELECT ON sys.dependencies_vw TO PUBLIC;
 update sys._tables set system = true where not system and schema_id = 2000 and name in ('dependencies_vw', 'ids');
 
+Running database upgrade commands:
+create function sys.copy_blocksize()
+returns int
+external name "copy".get_blocksize;
+create procedure sys.copy_blocksize(size int)
+external name "copy".set_blocksize;
+create aggregate uniques_guess(c integer)
+returns bigint external name aggr.uniques_guess;
+grant execute on aggregate uniques_guess(integer) to public;
+create aggregate uniques_guess(c bigint)
+returns bigint external name aggr.uniques_guess;
+grant execute on aggregate uniques_guess(bigint) to public;
+create aggregate uniques_guess(c varchar)
+returns bigint external name aggr.uniques_guess;
+grant execute on aggregate uniques_guess(varchar) to public;
+update sys.functions set system = true where system <> true and schema_id = 2000 and name in ('copy_blocksize', 'uniques_guess');
+

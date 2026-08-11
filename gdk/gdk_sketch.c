@@ -9,7 +9,6 @@
  */
 
 #include "gdk.h"
-#include "xxhash.h"
 #if defined(HAVE_GETENTROPY) && defined(HAVE_SYS_RANDOM_H)
 #include <sys/random.h>
 #endif
