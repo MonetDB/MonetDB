@@ -881,6 +881,7 @@ BATdelete(BAT *b)
 	PROPdestroy_nolock(b);
 	STRMPdestroy(b);
 	RTREEdestroy(b);
+	TSKdestroy(b);
 	if (b->theap) {
 		HEAPfree(b->theap, true);
 	}

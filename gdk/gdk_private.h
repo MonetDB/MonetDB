@@ -200,9 +200,6 @@ HASHmask(BUN cnt)
 }
 gdk_return HASHnew(Hash *h, int tpe, BUN size, BUN mask, BUN count, bool bcktonly)
 	__attribute__((__visibility__("hidden")));
-gdk_return HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
-	__attribute__((__warn_unused_result__))
-	__attribute__((__visibility__("hidden")));
 gdk_return HEAPcopy(Heap *dst, Heap *src, size_t offset)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
@@ -258,6 +255,8 @@ var_t strLocate(Heap *h, const char *v)
 	__attribute__((__visibility__("hidden")));
 var_t strPut(BAT *b, var_t *dst, const void *v)
 	__attribute__((__visibility__("hidden")));
+var_t fstrPut(BAT *b, var_t *dst, const void *v)
+	__attribute__((__visibility__("hidden")));
 char *strRead(allocator *, str a, size_t *dstlen, stream *s, size_t cnt)
 	__attribute__((__visibility__("hidden")));
 ssize_t strToStr(allocator *, char **restrict dst, size_t *restrict len, const char *restrict src, bool external)
@@ -265,9 +264,6 @@ ssize_t strToStr(allocator *, char **restrict dst, size_t *restrict len, const c
 gdk_return strWrite(const char *a, stream *s, size_t cnt)
 	__attribute__((__visibility__("hidden")));
 gdk_return TMcommit(void)
-	__attribute__((__visibility__("hidden")));
-gdk_return unshare_varsized_heap(BAT *b)
-	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
 BAT *virtualize(BAT *bn)
 	__attribute__((__visibility__("hidden")));

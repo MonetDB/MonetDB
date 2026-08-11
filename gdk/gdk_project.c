@@ -454,7 +454,7 @@ BATproject2(BAT *restrict l, BAT *restrict r1, BAT *restrict r2)
 	}
 
 	if (ATOMvarsized(tpe)) {
-		if (li.nonil && (r2 == NULL || r1i.vh == r2i.vh)) {
+		if (li.nonil && r1i.b->tvheap->storage != STORE_NOWN && (r2 == NULL || r1i.vh == r2i.vh)) {
 			/* insert strings as ints, we need to share the
 			 * string heap; we can't do this if there are
 			 * nils in the left column or if there are two

@@ -39,7 +39,6 @@ WHERE a.id = b.id
 push_project_down 1
 push_project_up 1
 optimize_select_and_joins_bottomup 4
-optimize_joins 1
 
 query I
 SELECT COUNT(*)

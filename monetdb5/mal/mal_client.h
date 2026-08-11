@@ -170,6 +170,7 @@ typedef struct CLIENT {
 	/*
 	 *  Errors during copy into are collected in a user specific column set
 	 */
+	MT_Lock error_lock;
 	BAT *error_row;
 	BAT *error_fld;
 	BAT *error_msg;

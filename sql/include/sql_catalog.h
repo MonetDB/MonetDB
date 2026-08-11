@@ -323,6 +323,7 @@ typedef struct sql_trans {
 
 	ulng ts;			/* transaction start timestamp */
 	ulng tid;			/* transaction id */
+	ulng cnr;			/* counter, changes with a lower number are visible, equal and up are newer */
 
 	sql_store store;	/* keep link into the global store */
 	MT_Lock lock;		/* lock protecting concurrent writes to the changes list */
@@ -517,8 +518,9 @@ typedef struct sql_func {
 	instantiated:1,	/* if the function is instantiated */
 	private:1,	/* certain functions cannot be bound from user queries */
 	order_required:1,	/* some aggregate functions require an order */
-	opt_order:1,
-	group:1;	/* some filter functions behave like group join */
+	opt_order:1,	/* some aggregate functions could have the inputs sorted */
+	group:1,		/* some filter functions behave like group join */
+	pipeline:1;		/* table returning function can be pipelined */
 
 	short fix_scale;
 			/*
@@ -538,6 +540,8 @@ typedef struct sql_func {
 
 typedef struct sql_subfunc {
 	sql_func *func;
+	unsigned int
+		pipeline:1;	/* run with pipeline */
 	list *res;
 	list *coltypes; /* we need this for copy into from loader */
 	list *colnames; /* we need this for copy into from loader */

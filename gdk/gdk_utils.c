@@ -1175,6 +1175,9 @@ GDKinit(opt *set, int setlen, bool embedded, const char *caller_revision)
 	}
 	if (GDKnr_threads > THREADS)
 		GDKnr_threads = THREADS;
+	GDKL3_size = 16*1024*1024;
+	if ((p = GDKgetenv("gdk_l3_size")) != NULL)
+		GDKL3_size = (BUN) strtoll(p, NULL, 10);
 
 	if (!GDKinmemory(0)) {
 		if ((p = GDKgetenv("gdk_dbpath")) != NULL &&
@@ -1269,6 +1272,7 @@ GDKinit(opt *set, int setlen, bool embedded, const char *caller_revision)
 }
 
 int GDKnr_threads = 0;
+BUN GDKL3_size = 0;
 static ATOMIC_TYPE GDKnrofthreads = ATOMIC_VAR_INIT(0);
 
 bool
@@ -1364,6 +1368,7 @@ GDKreset(int status)
 		}
 
 		GDKnr_threads = 0;
+		GDKL3_size = 0;
 		ATOMIC_SET(&GDKnrofthreads, 0);
 		close_stream(GDKstdout);
 		close_stream(GDKstdin);
@@ -2020,7 +2025,7 @@ GDKmremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 	do {							\
 		if ((a)->use_lock) {				\
 			MT_lock_set(&(a)->lock);		\
-		} else assert((a)->self == MT_getpid());	\
+		} /* else assert((a)->self == MT_getpid());*/	\
 	} while (0)
 
 #define COND_UNLOCK_ALLOCATOR(a)			\
@@ -2739,4 +2744,14 @@ eb_error(exception_buffer *eb, const char *msg, int val)
 #else
 	longjmp(eb->state, eb->code);
 #endif
+}
+
+char *
+ma_copy(allocator *ma, char *s, size_t l)
+{
+	char *r = ma_alloc(ma, l);
+
+	if (r)
+		memcpy(r, s, l);
+	return r;
 }

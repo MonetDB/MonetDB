@@ -35,7 +35,7 @@ NULL
 3
 2
 
-query I nosort
+query I rowsort
 SELECT t0.c1 FROM t0 JOIN LATERAL (SELECT CASE WHEN 0.7 <> ALL(SELECT t0.c1 FROM t0 AS sub1) THEN 2 ELSE 1 END FROM t0 AS sub2) AS subQuery(col_1) ON NOT (( EXISTS (SELECT 1)) AND 0)
 ----
 1

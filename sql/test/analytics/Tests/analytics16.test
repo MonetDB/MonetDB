@@ -7,7 +7,7 @@ create table analytics (aa int, bb int)
 statement ok
 insert into analytics values (15, 3), (3, 1), (2, 1), (5, 3), (NULL, 2), (3, 2), (4, 1), (6, 3), (8, 2), (NULL, 4)
 
-query RRRR rowsort
+query RRRR nosort
 select covar_samp(aa, aa),
        covar_samp(bb, bb),
        covar_samp(aa, bb),
@@ -18,7 +18,7 @@ select covar_samp(aa, aa),
 2.429
 2.429
 
-query RRRR rowsort
+query RRRR nosort
 select covar_pop(aa, aa),
        covar_pop(bb, bb),
        covar_pop(aa, bb),
@@ -29,7 +29,7 @@ select covar_pop(aa, aa),
 2.125
 2.125
 
-query RRRR rowsort
+query RRRR nosort
 select corr(aa, aa),
        corr(bb, bb),
        corr(aa, bb),
@@ -226,7 +226,7 @@ NULL
 NULL
 NULL
 
-query RRRR rowsort
+query RRRR nosort
 select covar_samp(aa, aa),
        covar_samp(bb, bb),
        covar_samp(aa, bb),
@@ -320,7 +320,7 @@ NULL
 NULL
 NULL
 
-query RRRR rowsort
+query RRRR nosort
 select corr(aa, aa),
        corr(bb, bb),
        corr(aa, bb),
@@ -619,7 +619,7 @@ NULL
 0.000
 NULL
 
-query RRR rowsort
+query RRR nosort
 select covar_samp(NULL, aa),
        covar_pop(NULL, aa),
        corr(NULL, aa) from analytics group by aa
@@ -649,7 +649,7 @@ NULL
 NULL
 NULL
 
-query RRR rowsort
+query RRR nosort
 select covar_samp(NULL, aa),
        covar_pop(NULL, aa),
        corr(NULL, aa) from analytics group by bb
@@ -667,7 +667,7 @@ NULL
 NULL
 NULL
 
-query RRR rowsort
+query RRR nosort
 select covar_samp(NULL, aa),
        covar_pop(NULL, aa),
        corr(NULL, aa) from analytics group by aa, bb
@@ -703,7 +703,7 @@ NULL
 NULL
 NULL
 
-query RRR rowsort
+query RRR nosort
 select covar_samp(aa, NULL),
        covar_pop(aa, NULL),
        corr(aa, NULL) from analytics group by aa
@@ -733,7 +733,7 @@ NULL
 NULL
 NULL
 
-query RRR rowsort
+query RRR nosort
 select covar_samp(aa, NULL),
        covar_pop(aa, NULL),
        corr(aa, NULL) from analytics group by bb
@@ -751,7 +751,7 @@ NULL
 NULL
 NULL
 
-query RRR rowsort
+query RRR nosort
 select covar_samp(aa, NULL),
        covar_pop(aa, NULL),
        corr(aa, NULL) from analytics group by aa, bb
@@ -787,7 +787,7 @@ NULL
 NULL
 NULL
 
-query RRR rowsort
+query RRR nosort
 select covar_samp(NULL, NULL),
        covar_pop(NULL, NULL),
        corr(NULL, NULL) from analytics group by aa
@@ -817,7 +817,7 @@ NULL
 NULL
 NULL
 
-query RRR rowsort
+query RRR nosort
 select covar_samp(NULL, NULL),
        covar_pop(NULL, NULL),
        corr(NULL, NULL) from analytics group by bb
@@ -835,7 +835,7 @@ NULL
 NULL
 NULL
 
-query RRR rowsort
+query RRR nosort
 select covar_samp(NULL, NULL),
        covar_pop(NULL, NULL),
        corr(NULL, NULL) from analytics group by aa, bb
@@ -871,7 +871,7 @@ NULL
 NULL
 NULL
 
-query R rowsort
+query R nosort
 select (select corr(a1.aa, a2.aa) + corr(a2.aa, a1.aa) from analytics a2) from analytics a1
 ----
 NULL
@@ -899,27 +899,27 @@ select (select corr(a1.aa + a2.aa, a1.aa + a2.aa) from analytics a2) from analyt
 NULL
 NULL
 
-query R rowsort
+query R nosort
 select corr(a1.aa, a1.bb) from analytics a1 where a1.bb > (select corr(a1.aa, a2.aa) + corr(a2.aa, a1.aa) from analytics a2)
 ----
 NULL
 
-query R rowsort
+query R nosort
 select corr(a1.aa, a1.bb) from analytics a1 where a1.bb > (select corr(a1.aa + a2.aa, a1.aa + a2.aa) from analytics a2)
 ----
 0.376
 
-query R rowsort
+query R nosort
 select corr(a1.aa, a1.bb) from analytics a1 where a1.bb > (select corr(a1.aa, a2.aa) + corr(a2.aa, a1.aa) from analytics a2) group by bb
 ----
 
-query R rowsort
+query R nosort
 select corr(a1.aa, a1.bb) from analytics a1 where a1.bb > (select corr(a1.aa + a2.aa, a1.aa + a2.aa) from analytics a2) group by bb
 ----
 NULL
 NULL
 
-query R rowsort
+query R nosort
 select corr(a1.aa, a1.bb) from analytics a1 group by bb having a1.bb > (select corr(MAX(a1.aa) + a2.aa, MIN(a1.aa) + a2.aa) from analytics a2)
 ----
 NULL
@@ -946,19 +946,19 @@ SELECT COVAR_POP(c0,c0) FROM t0
 statement error
 SELECT CORR(c0,c0) FROM t0
 
-query R rowsort
+query R nosort
 SELECT VAR_POP(c0) FROM t0 GROUP BY c0
 ----
 0.000
 0.000
 
-query R rowsort
+query R nosort
 SELECT STDDEV_POP(c0) FROM t0 GROUP BY c0
 ----
 0.000
 0.000
 
-query R rowsort
+query R nosort
 SELECT CORR(c0,c0) FROM t0 GROUP BY c0
 ----
 NULL

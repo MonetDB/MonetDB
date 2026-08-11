@@ -10,6 +10,7 @@
 
 #include "monetdb_config.h"
 #include "mal_backend.h"
+#include "sql_storage.h"
 
 backend *
 backend_reset(backend *b)
@@ -24,6 +25,7 @@ backend_reset(backend *b)
 		.rowcnt = -1,
 		.last_id = -1,
 		.subbackend = b->subbackend,
+		.part_size = DEFAULT_PARTSIZE,
 	};
 	return b;
 }

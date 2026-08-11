@@ -59,11 +59,12 @@
  *
  * In case of error, returns an error message.
  */
-const char *
-BATgroupaggrinit(BAT *b, BAT *g, BAT *e, BAT *s,
-		 /* outputs: */
-		 oid *minp, oid *maxp, BUN *ngrpp,
-		 struct canditer *ci)
+static const char *
+BATgroupaggrinit2(bool pipeline,
+		  BAT *b, BAT *g, BAT *e, BAT *s,
+		  /* outputs: */
+		  oid *minp, oid *maxp, BUN *ngrpp,
+		  struct canditer *ci)
 {
 	oid min, max;
 	BUN i, ngrp;
@@ -73,7 +74,7 @@ BATgroupaggrinit(BAT *b, BAT *g, BAT *e, BAT *s,
 		return "b must exist";
 	canditer_init(ci, b, s);
 	if (g) {
-		if (ci->ncand != BATcount(g) ||
+		if ((pipeline ? ci->ncand > BATcount(g) : ci->ncand != BATcount(g)) ||
 		    (ci->ncand != 0 && ci->seq != g->hseqbase))
 			return "b with s and g must be aligned";
 		assert(BATttype(g) == TYPE_oid);
@@ -141,6 +142,15 @@ BATgroupaggrinit(BAT *b, BAT *g, BAT *e, BAT *s,
 	*ngrpp = ngrp;
 
 	return NULL;
+}
+
+const char *
+BATgroupaggrinit(BAT *b, BAT *g, BAT *e, BAT *s,
+		/* outputs: */
+		oid *minp, oid *maxp, BUN *ngrpp,
+		struct canditer *ci)
+{
+	return BATgroupaggrinit2(false, b, g, e, s, minp, maxp, ngrpp, ci);
 }
 
 /* ---------------------------------------------------------------------- */
@@ -1009,7 +1019,7 @@ mskCountOnes(BAT *b, struct canditer *ci)
 }
 
 gdk_return
-BATsum(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool nil_if_empty)
+BATsum(void *resout, int tp, BAT *b, BAT *s, bool skip_nils, bool nil_if_empty, bool inout)
 {
 	oid min, max;
 	BUN ngrp;
@@ -1017,7 +1027,15 @@ BATsum(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool nil_if_empty)
 	const char *err;
 	const char *algo = NULL;
 	lng t0 = 0;
+#ifdef HAVE_HGE
+	hge result = 0;
+#else
+	lng result = 0;
+#endif
+	void *res = &result;
 
+	if (!inout)
+		res = resout;
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	if ((err = BATgroupaggrinit(b, NULL, NULL, s, &min, &max, &ngrp, &ci)) != NULL) {
@@ -1115,7 +1133,7 @@ BATsum(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool nil_if_empty)
 			dbl avg;
 			BUN cnt;
 
-			if (BATcalcavg(b, s, &avg, &cnt, 0) != GDK_SUCCEED)
+			if (BATcalcavg(b, s, &avg, &cnt, 0, false) != GDK_SUCCEED)
 				return GDK_FAIL;
 			if (cnt == 0) {
 				avg = nil_if_empty ? dbl_nil : 0;
@@ -1167,6 +1185,54 @@ BATsum(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool nil_if_empty)
 			 res, true, bi.type, tp, &min, min, max,
 			 skip_nils, nil_if_empty, __func__, &algo);
 	bat_iterator_end(&bi);
+	if (inout) {
+		switch (tp) {
+			case TYPE_bte:
+				if (is_bte_nil(*(bte*)resout))
+					* (bte *) resout = *(bte*) res;
+				else if (!is_bte_nil(*(bte*)res))
+					* (bte *) resout += *(bte*) res;
+				break;
+			case TYPE_sht:
+				if (is_sht_nil(*(sht*)resout))
+					* (sht *) resout = *(sht*) res;
+				else if (!is_sht_nil(*(sht*)res))
+					* (sht *) resout += *(sht*) res;
+				break;
+			case TYPE_int:
+				if (is_int_nil(*(int*)resout))
+					* (int *) resout = *(int*) res;
+				else if (!is_int_nil(*(int*)res))
+					* (int *) resout += *(int*) res;
+				break;
+			case TYPE_flt:
+				if (is_flt_nil(*(flt*)resout))
+					* (flt *) resout = *(flt*) res;
+				else if (!is_flt_nil(*(flt*)res))
+					* (flt *) resout += *(flt*) res;
+				break;
+			case TYPE_lng:
+				if (is_lng_nil(*(lng*)resout))
+					* (lng *) resout = *(lng*) res;
+				else if (!is_lng_nil(*(lng*)res))
+					* (lng *) resout += *(lng*) res;
+				break;
+			case TYPE_dbl:
+				if (is_dbl_nil(*(dbl*)resout))
+					* (dbl *) resout = *(dbl*) res;
+				else if (!is_dbl_nil(*(dbl*)res))
+					* (dbl *) resout += *(dbl*) res;
+				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				if (is_hge_nil(*(hge*)resout))
+					* (hge *) resout = *(hge*) res;
+				else if (!is_hge_nil(*(hge*)res))
+					* (hge *) resout += *(hge*) res;
+				break;
+#endif
+		}
+	}
 	if (algo)
 		MT_thread_setalgorithm(algo, __func__);
 	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT "; "
@@ -1645,7 +1711,7 @@ BATgroupprod(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils)
 }
 
 gdk_return
-BATprod(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool nil_if_empty)
+BATprod(void *resout, int tp, BAT *b, BAT *s, bool skip_nils, bool nil_if_empty, bool inout)
 {
 	oid min, max;
 	BUN ngrp;
@@ -1653,7 +1719,15 @@ BATprod(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool nil_if_empty)
 	struct canditer ci;
 	const char *err;
 	lng t0 = 0;
+#ifdef HAVE_HGE
+	hge result = 0;
+#else
+	lng result = 0;
+#endif
+	void *res = &result;
 
+	if (!inout)
+		res = resout;
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	if ((err = BATgroupaggrinit(b, NULL, NULL, s, &min, &max, &ngrp, &ci)) != NULL) {
@@ -1696,6 +1770,54 @@ BATprod(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool nil_if_empty)
 		      bi.type, tp, &min, false, min, max,
 		      skip_nils, nil_if_empty, __func__);
 	bat_iterator_end(&bi);
+	if (inout) {
+		switch (tp) {
+			case TYPE_bte:
+				if (is_bte_nil(*(bte*)resout))
+					* (bte *) resout = *(bte*) res;
+				else if (!is_bte_nil(*(bte*)res))
+					* (bte *) resout *= *(bte*) res;
+				break;
+			case TYPE_sht:
+				if (is_sht_nil(*(sht*)resout))
+					* (sht *) resout = *(sht*) res;
+				else if (!is_sht_nil(*(sht*)res))
+					* (sht *) resout *= *(sht*) res;
+				break;
+			case TYPE_int:
+				if (is_int_nil(*(int*)resout))
+					* (int *) resout = *(int*) res;
+				else if (!is_int_nil(*(int*)res))
+					* (int *) resout *= *(int*) res;
+				break;
+			case TYPE_flt:
+				if (is_flt_nil(*(flt*)resout))
+					* (flt *) resout = *(flt*) res;
+				else if (!is_flt_nil(*(flt*)res))
+					* (flt *) resout *= *(flt*) res;
+				break;
+			case TYPE_lng:
+				if (is_lng_nil(*(lng*)resout))
+					* (lng *) resout = *(lng*) res;
+				else if (!is_lng_nil(*(lng*)res))
+					* (lng *) resout *= *(lng*) res;
+				break;
+			case TYPE_dbl:
+				if (is_dbl_nil(*(dbl*)resout))
+					* (dbl *) resout = *(dbl*) res;
+				else if (!is_dbl_nil(*(dbl*)res))
+					* (dbl *) resout *= *(dbl*) res;
+				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				if (is_hge_nil(*(hge*)resout))
+					* (hge *) resout = *(hge*) res;
+				else if (!is_hge_nil(*(hge*)res))
+					* (hge *) resout *= *(hge*) res;
+				break;
+#endif
+		}
+	}
 	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT "; "
 		  "start " OIDFMT ", count " BUNFMT " (" LLFMT " usec)\n",
 		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
@@ -1714,9 +1836,19 @@ BATprod(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool nil_if_empty)
 #define AGGR_AVG(TYPE)							\
 	do {								\
 		const TYPE *restrict vals = (const TYPE *) bi.base;	\
-		TYPE *restrict avgs = ma_zalloc(ma, ngrp * sizeof(TYPE));	\
+		TYPE *restrict avgs = ma_alloc(ma, ngrp * sizeof(TYPE));	\
 		if (avgs == NULL)					\
 			goto bailout;					\
+		for (i = 0; i < bn->batCount && i < ngrp; i++) {	\
+			double frac, ipart;				\
+			frac = modf(dbls[i], &ipart);			\
+			avgs[i] = (TYPE) ipart;				\
+			rems[i] = (lng) (frac * cnts[i] + .5);		\
+		}							\
+		for (i = bn->batCount; i < ngrp; i++) {			\
+			avgs[i] = 0;					\
+			rems[i] = 0;					\
+		}							\
 		TIMEOUT_LOOP(ci.ncand, qry_ctx) {			\
 			i = canditer_next(&ci) - b->hseqbase;		\
 			if (gids == NULL ||				\
@@ -1724,7 +1856,7 @@ BATprod(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool nil_if_empty)
 				if (gids)				\
 					gid = gids[i] - min;		\
 				else					\
-					gid = (oid) i;			\
+					gid = (oid) i + g->tseqbase;	\
 				if (is_##TYPE##_nil(vals[i])) {		\
 					if (!skip_nils)			\
 						cnts[gid] = lng_nil;	\
@@ -1752,7 +1884,8 @@ BATprod(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool nil_if_empty)
 	do {								\
 		const TYPE *restrict vals = (const TYPE *) bi.base;	\
 		for (i = 0; i < ngrp; i++)				\
-			dbls[i] = 0;					\
+		if (cnts[i] == 0)				\
+		dbls[i] = 0;				\
 		TIMEOUT_LOOP(ci.ncand, qry_ctx) {			\
 			i = canditer_next(&ci) - b->hseqbase;		\
 			if (gids == NULL ||				\
@@ -1760,7 +1893,7 @@ BATprod(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool nil_if_empty)
 				if (gids)				\
 					gid = gids[i] - min;		\
 				else					\
-					gid = (oid) i;			\
+					gid = (oid) i + g->tseqbase;	\
 				if (is_##TYPE##_nil(vals[i])) {		\
 					if (!skip_nils)			\
 						cnts[gid] = lng_nil;	\
@@ -1782,11 +1915,11 @@ BATprod(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool nil_if_empty)
 		}							\
 	} while (0)
 
-/* There are three functions that are used for calculating averages.
- * The first one (BATgroupavg) returns averages as a floating point
- * value, the other two (BATgroupavg3 and BATgroupavg3combine) work
- * together to return averages in the domain type (which should be an
- * integer type). */
+/* There are four functions that are used for calculating averages.  The
+ * first two (BATgroupavg, BATgroupavg2) return averages as a floating
+ * point value, the other two (BATgroupavg3 and BATgroupavg3combine)
+ * work together to return averages in the domain type (which should be
+ * an integer type). */
 
 /* Calculate group averages with optional candidates list.  The average
  * that is calculated is returned in a dbl, independent of the type of
@@ -1794,17 +1927,17 @@ BATprod(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool nil_if_empty)
  * point which could potentially losse bits during processing
  * (e.g. average of 2**62 and a billion 1's). */
 gdk_return
-BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, int scale)
+BATgroupavg2(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, BUN ngrp, bool skip_nils, int scale)
 {
 	const oid *restrict gids;
 	oid gid;
 	oid min, max;
-	BUN i, ngrp;
+	BUN i;
 	BUN nils = 0;
 	lng *restrict rems = NULL;
 	lng *restrict cnts = NULL;
 	dbl *restrict dbls;
-	BAT *bn = NULL, *cn = NULL;
+	BAT *bn = *bnp, *cn = cntsp ? *cntsp : NULL;
 	struct canditer ci;
 	const char *err;
 	lng t0 = 0;
@@ -1821,11 +1954,14 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool
 	(void) tp;		/* compatibility (with other BATgroup*
 				 * functions) argument */
 
-	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp, &ci)) != NULL) {
+	if ((err = BATgroupaggrinit2(true, b, g, e, s, &min, &max, &i, &ci)) != NULL) {
 		GDKerror("%s\n", err);
 		ma_close(&ma_state);
 		return GDK_FAIL;
 	}
+	min = 0;
+	if (ngrp == BUN_NONE || ngrp < i)
+		ngrp = i;
 	if (g == NULL) {
 		GDKerror("b and g must be aligned\n");
 		ma_close(&ma_state);
@@ -1835,12 +1971,15 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool
 	if (ci.ncand == 0 || ngrp == 0) {
 		/* trivial: no averages, so return bat aligned with g
 		 * with nil in the tail */
-		bn = BATconstant(ngrp == 0 ? 0 : min, TYPE_dbl, &dbl_nil, ngrp, TRANSIENT);
 		if (bn == NULL) {
-			ma_close(&ma_state);
-			return GDK_FAIL;
+			bn = BATconstant(ngrp == 0 ? 0 : min, TYPE_dbl, &dbl_nil, ngrp, TRANSIENT);
+			if (bn == NULL) {
+				ma_close(&ma_state);
+				return GDK_FAIL;
+			}
+			*bnp = bn;
 		}
-		if (cntsp) {
+		if (cntsp && cn == NULL) {
 			lng zero = 0;
 			if ((cn = BATconstant(ngrp == 0 ? 0 : min, TYPE_lng, &zero, ngrp, TRANSIENT)) == NULL) {
 				BBPreclaim(bn);
@@ -1854,7 +1993,8 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool
 		return GDK_SUCCEED;
 	}
 
-	if ((!skip_nils || cntsp == NULL || b->tnonil) &&
+	if (bn == NULL &&
+	    (!skip_nils || cntsp == NULL || b->tnonil) &&
 	    (e == NULL ||
 	     (BATcount(e) == ci.ncand && e->hseqbase == b->hseqbase)) &&
 	    (BATtdense(g) || (g->tkey && g->tnonil))) {
@@ -1887,7 +2027,7 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool
 #ifdef HAVE_HGE
 	case TYPE_hge:
 #endif
-		rems = ma_zalloc(ma, ngrp * sizeof(lng));
+		rems = ma_alloc(ma, ngrp * sizeof(lng));
 		if (rems == NULL)
 			goto bailout1;
 		break;
@@ -1895,18 +2035,30 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool
 		break;
 	}
 	if (cntsp) {
-		if ((cn = COLnew(min, TYPE_lng, ngrp, TRANSIENT)) == NULL)
-			goto bailout1;
-		cnts = (lng *) Tloc(cn, 0);
-		memset(cnts, 0, ngrp * sizeof(lng));
+		if (cn == NULL) {
+			if ((cn = BATconstant(min, TYPE_lng, &(lng){0}, ngrp, TRANSIENT)) == NULL)
+				goto bailout1;
+			cnts = (lng *) Tloc(cn, 0);
+		} else {
+			assert(bn != NULL);
+			assert(bn->batCount == cn->batCount);
+			if (BATcapacity(cn) < ngrp &&
+			    BATextend(cn, ngrp) != GDK_SUCCEED)
+				goto bailout1;
+			cnts = (lng *) Tloc(cn, 0);
+			if (cn->batCount <  ngrp)
+				memset(cnts + cn->batCount, 0, (ngrp - cn->batCount) * sizeof(lng));
+		}
 	} else {
 		cnts = ma_zalloc(ma, ngrp * sizeof(lng));
 		if (cnts == NULL)
 			goto bailout1;
 	}
 
-	bn = COLnew(min, TYPE_dbl, ngrp, TRANSIENT);
-	if (bn == NULL)
+	if (bn == NULL) {
+		if ((bn = COLnew(min, TYPE_dbl, ngrp, TRANSIENT)) == NULL)
+			goto bailout1;
+	} else if (BATcapacity(bn) < ngrp && BATextend(bn, ngrp) != GDK_SUCCEED)
 		goto bailout1;
 	dbls = (dbl *) Tloc(bn, 0);
 
@@ -1961,7 +2113,8 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool
 				dbls[i] /= fac;
 		}
 	}
-	BATsetcount(bn, ngrp);
+	if (BATcount(bn) < ngrp)
+		BATsetcount(bn, ngrp);
 	bn->tkey = BATcount(bn) <= 1;
 	bn->tsorted = BATcount(bn) <= 1;
 	bn->trevsorted = BATcount(bn) <= 1;
@@ -1988,6 +2141,12 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool
 	return GDK_FAIL;
 }
 
+gdk_return
+BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, int scale)
+{
+	return BATgroupavg2(bnp, cntsp, b, g, e, s, tp, BUN_NONE, skip_nils, scale);
+}
+
 /* An exact numeric average of a bunch of values consists of three
  * parts: the average rounded down (towards minus infinity), the number
  * of values that participated in the calculation, and the remainder.
@@ -1997,7 +2156,7 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool
  * this way to correct averages by rounding or truncating towards zero
  * (depending on the symbol TRUNCATE_NUMBERS). */
 gdk_return
-BATgroupavg3(BAT **avgp, BAT **remp, BAT **cntp, BAT *b, BAT *g, BAT *e, BAT *s, bool skip_nils)
+BATgroupavg3(BAT **avgp, BAT **remp, BAT **cntp, BAT *b, BAT *g, BAT *e, BAT *s, bool skip_nils, bool inout)
 {
 	const char *err;
 	oid min, max;
@@ -2006,22 +2165,175 @@ BATgroupavg3(BAT **avgp, BAT **remp, BAT **cntp, BAT *b, BAT *g, BAT *e, BAT *s,
 	BAT *bn, *rn, *cn;
 	BUN i;
 	oid o;
+	lng *rems;
+	lng *cnts;
 	lng t0 = 0;
 
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
-	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp, &ci)) != NULL) {
+	if ((err = BATgroupaggrinit2(true, b, g, e, s, &min, &max, &ngrp, &ci)) != NULL) {
 		GDKerror("%s\n", err);
 		return GDK_FAIL;
 	}
 	if (ci.ncand == 0 || ngrp == 0) {
-		if (ngrp == 0)
-			min = 0;
-		bn = BATconstant(min, b->ttype, ATOMnilptr(b->ttype),
-				 ngrp, TRANSIENT);
-		rn = BATconstant(min, TYPE_lng, &lng_nil, ngrp, TRANSIENT);
+		if (!inout) {
+			if (ngrp == 0)
+				min = 0;
+			bn = BATconstant(min, b->ttype, ATOMnilptr(b->ttype),
+					 ngrp, TRANSIENT);
+			rn = BATconstant(min, TYPE_lng, &(lng){0}, ngrp, TRANSIENT);
+			cn = BATconstant(min, TYPE_lng, &(lng){0}, ngrp, TRANSIENT);
+			if (bn == NULL || rn == NULL || cn == NULL) {
+				BBPreclaim(bn);
+				BBPreclaim(rn);
+				BBPreclaim(cn);
+				return GDK_FAIL;
+			}
+			*avgp = bn;
+			*remp = rn;
+			*cntp = cn;
+		}
+		return GDK_SUCCEED;
+	}
+	if (inout) {
+		bn = *avgp;
+		rn = *remp;
+		cn = *cntp;
+		ngrp += min;
+		min = 0;
+		if (bn->batCount < ngrp) {
+			if (BATextend(bn, ngrp) != GDK_SUCCEED ||
+			    BATextend(rn, ngrp) != GDK_SUCCEED ||
+			    BATextend(cn, ngrp) != GDK_SUCCEED)
+				return GDK_FAIL;
+			/* bn will be initialized below, based on
+			 * this */
+			cnts = Tloc(cn, 0);
+			rems = Tloc(rn, 0);
+			for (i = bn->batCount; i < ngrp; i++) {
+				cnts[i] = lng_nil;
+				rems[i] = 0;
+			}
+		} else if (ngrp < bn->batCount)
+			ngrp = bn->batCount;
+		rems = Tloc(rn, 0);
+		cnts = Tloc(cn, 0);
+		cn->tnil = false;
+		cn->tnonil = true;
+		rn->tnil = false;
+		rn->tnonil = true;
+		bn->tnil = false;
+		bn->tnonil = true;
+		switch (ATOMbasetype(b->ttype)) {
+		case TYPE_bte: {
+			bte *avgs = (bte *) Tloc(bn, 0);
+			for (i = 0; i < ngrp; i++) {
+				if (is_lng_nil(cnts[i])) {
+					if (!is_lng_nil(rems[i])) {
+						rems[i] = 0;
+						avgs[i] = 0;
+						cnts[i] = 0;
+					}
+				} else if (is_lng_nil(rems[i])) {
+					bn->tnil = true;
+					rn->tnil = true;
+				} else if (rems[i] < 0) {
+					rems[i] += cnts[i];
+					avgs[i]--;
+				}
+			}
+			break;
+		}
+		case TYPE_sht: {
+			sht *avgs = (sht *) Tloc(bn, 0);
+			for (i = 0; i < ngrp; i++) {
+				if (is_lng_nil(cnts[i])) {
+					if (!is_lng_nil(rems[i])) {
+						rems[i] = 0;
+						avgs[i] = 0;
+						cnts[i] = 0;
+					}
+				} else if (is_lng_nil(rems[i])) {
+					bn->tnil = true;
+					rn->tnil = true;
+				} else if (rems[i] < 0) {
+					rems[i] += cnts[i];
+					avgs[i]--;
+				}
+			}
+			break;
+		}
+		case TYPE_int: {
+			int *avgs = (int *) Tloc(bn, 0);
+			for (i = 0; i < ngrp; i++) {
+				if (is_lng_nil(cnts[i])) {
+					if (!is_lng_nil(rems[i])) {
+						rems[i] = 0;
+						avgs[i] = 0;
+						cnts[i] = 0;
+					}
+				} else if (is_lng_nil(rems[i])) {
+					bn->tnil = true;
+					rn->tnil = true;
+				} else if (rems[i] < 0) {
+					rems[i] += cnts[i];
+					avgs[i]--;
+				}
+			}
+			break;
+		}
+		case TYPE_lng: {
+			lng *avgs = (lng *) Tloc(bn, 0);
+			for (i = 0; i < ngrp; i++) {
+				if (is_lng_nil(cnts[i])) {
+					if (!is_lng_nil(rems[i])) {
+						rems[i] = 0;
+						avgs[i] = 0;
+						cnts[i] = 0;
+					}
+				} else if (is_lng_nil(rems[i])) {
+					bn->tnil = true;
+					rn->tnil = true;
+				} else if (rems[i] < 0) {
+					rems[i] += cnts[i];
+					avgs[i]--;
+				}
+			}
+			break;
+		}
+#ifdef HAVE_HGE
+		case TYPE_hge: {
+			hge *avgs = (hge *) Tloc(bn, 0);
+			for (i = 0; i < ngrp; i++) {
+				if (is_lng_nil(cnts[i])) {
+					if (!is_lng_nil(rems[i])) {
+						rems[i] = 0;
+						avgs[i] = 0;
+						cnts[i] = 0;
+					}
+				} else if (is_lng_nil(rems[i])) {
+					bn->tnil = true;
+					rn->tnil = true;
+				} else if (rems[i] < 0) {
+					rems[i] += cnts[i];
+					avgs[i]--;
+				}
+			}
+			break;
+		}
+#endif
+		}
+	} else {
+		ValRecord zero;
+		allocator *ma = MT_thread_getallocator();
+		allocator_state ma_state = ma_open(ma);
+		(void) VALinit(ma, &zero, TYPE_bte, &(bte){0});
+		bn = BATconstant(min, b->ttype, VALconvert(ma, b->ttype, &zero),
+				ngrp, TRANSIENT);
+		ma_close(&ma_state);
+		rn = BATconstant(min, TYPE_lng, &(lng){0}, ngrp, TRANSIENT);
 		cn = BATconstant(min, TYPE_lng, &(lng){0}, ngrp, TRANSIENT);
 		if (bn == NULL || rn == NULL || cn == NULL) {
 			BBPreclaim(bn);
@@ -2029,30 +2341,11 @@ BATgroupavg3(BAT **avgp, BAT **remp, BAT **cntp, BAT *b, BAT *g, BAT *e, BAT *s,
 			BBPreclaim(cn);
 			return GDK_FAIL;
 		}
-		*avgp = bn;
-		*remp = rn;
-		*cntp = cn;
-		return GDK_SUCCEED;
+		rems = Tloc(rn, 0);
+		cnts = Tloc(cn, 0);
 	}
-	ValRecord zero;
-	allocator *ma = MT_thread_getallocator();
-	allocator_state ma_state = ma_open(ma);
-	(void) VALinit(ma, &zero, TYPE_bte, &(bte){0});
-	bn = BATconstant(min, b->ttype, VALconvert(ma, b->ttype, &zero),
-			 ngrp, TRANSIENT);
-	ma_close(&ma_state);
-	rn = BATconstant(min, TYPE_lng, &(lng){0}, ngrp, TRANSIENT);
-	cn = BATconstant(min, TYPE_lng, &(lng){0}, ngrp, TRANSIENT);
-	if (bn == NULL || rn == NULL || cn == NULL) {
-		BBPreclaim(bn);
-		BBPreclaim(rn);
-		BBPreclaim(cn);
-		return GDK_FAIL;
-	}
-	lng *rems = Tloc(rn, 0);
-	lng *cnts = Tloc(cn, 0);
 	const oid *gids = g && !BATtdense(g) ? Tloc(g, 0) : NULL;
-	oid gid = ngrp == 1 && gids ? gids[0] - min : 0;
+	oid gid = ngrp == 1 && gids ? gids[0] - min : g ? g->tseqbase - min : 0;
 
 	BATiter bi = bat_iterator(b);
 
@@ -2063,7 +2356,7 @@ BATgroupavg3(BAT **avgp, BAT **remp, BAT **cntp, BAT *b, BAT *g, BAT *e, BAT *s,
 		TIMEOUT_LOOP(ci.ncand, qry_ctx) {
 			o = canditer_next(&ci) - b->hseqbase;
 			if (ngrp > 1)
-				gid = gids ? gids[o] - min : o;
+				gid = (gids ? gids[o] : g->tseqbase + o) - min;
 			if (is_bte_nil(vals[o])) {
 				if (!skip_nils) {
 					avgs[gid] = bte_nil;
@@ -2111,7 +2404,7 @@ BATgroupavg3(BAT **avgp, BAT **remp, BAT **cntp, BAT *b, BAT *g, BAT *e, BAT *s,
 		TIMEOUT_LOOP(ci.ncand, qry_ctx) {
 			o = canditer_next(&ci) - b->hseqbase;
 			if (ngrp > 1)
-				gid = gids ? gids[o] - min : o;
+				gid = (gids ? gids[o] : g->tseqbase + o) - min;
 			if (is_sht_nil(vals[o])) {
 				if (!skip_nils) {
 					avgs[gid] = sht_nil;
@@ -2159,7 +2452,7 @@ BATgroupavg3(BAT **avgp, BAT **remp, BAT **cntp, BAT *b, BAT *g, BAT *e, BAT *s,
 		TIMEOUT_LOOP(ci.ncand, qry_ctx) {
 			o = canditer_next(&ci) - b->hseqbase;
 			if (ngrp > 1)
-				gid = gids ? gids[o] - min : o;
+				gid = (gids ? gids[o] : g->tseqbase + o) - min;
 			if (is_int_nil(vals[o])) {
 				if (!skip_nils) {
 					avgs[gid] = int_nil;
@@ -2207,7 +2500,7 @@ BATgroupavg3(BAT **avgp, BAT **remp, BAT **cntp, BAT *b, BAT *g, BAT *e, BAT *s,
 		TIMEOUT_LOOP(ci.ncand, qry_ctx) {
 			o = canditer_next(&ci) - b->hseqbase;
 			if (ngrp > 1)
-				gid = gids ? gids[o] - min : o;
+				gid = (gids ? gids[o] : g->tseqbase + o) - min;
 			if (is_lng_nil(vals[o])) {
 				if (!skip_nils) {
 					avgs[gid] = lng_nil;
@@ -2256,7 +2549,7 @@ BATgroupavg3(BAT **avgp, BAT **remp, BAT **cntp, BAT *b, BAT *g, BAT *e, BAT *s,
 		TIMEOUT_LOOP(ci.ncand, qry_ctx) {
 			o = canditer_next(&ci) - b->hseqbase;
 			if (ngrp > 1)
-				gid = gids ? gids[o] - min : o;
+				gid = (gids ? gids[o] : g->tseqbase + o) - min;
 			if (is_hge_nil(vals[o])) {
 				if (!skip_nils) {
 					avgs[gid] = hge_nil;
@@ -2302,9 +2595,11 @@ BATgroupavg3(BAT **avgp, BAT **remp, BAT **cntp, BAT *b, BAT *g, BAT *e, BAT *s,
 	}
 	bat_iterator_end(&bi);
 	TIMEOUT_CHECK(qry_ctx, GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
-	BATsetcount(bn, ngrp);
-	BATsetcount(rn, ngrp);
-	BATsetcount(cn, ngrp);
+	if (BATcount(bn) < ngrp) {
+		BATsetcount(bn, ngrp);
+		BATsetcount(rn, ngrp);
+		BATsetcount(cn, ngrp);
+	}
 	bn->tnonil = !bn->tnil;
 	rn->tnonil = !rn->tnil;
 	cn->tnonil = !cn->tnil;
@@ -2933,23 +3228,26 @@ BATgroupavg3combine(BAT *avg, BAT *rem, BAT *cnt, BAT *g, BAT *e, bool skip_nils
 	do {								\
 		TYPE x, a;						\
 									\
-		/* first try to calculate the sum of all values into a */ \
-		/* lng/hge */						\
-		TIMEOUT_LOOP_IDX(idx, ci.ncand, qry_ctx) {		\
-			i = canditer_next(&ci) - b->hseqbase;		\
-			x = ((const TYPE *) src)[i];			\
-			if (is_##TYPE##_nil(x))				\
-				continue;				\
-			ADDI_WITH_CHECK(x, sum,				\
-				       lng_hge, sum,			\
-				       GDK_##lng_hge##_max,		\
-				       goto overflow##TYPE);		\
-			/* don't count value until after overflow check */ \
-			n++;						\
-		}							\
-		/* the sum fit, so now we can calculate the average */	\
-		*avg = n > 0 ? (dbl) sum / n : dbl_nil;			\
-		if (0) {						\
+		if (!inout) {						\
+			/* first try to calculate the sum of all */	\
+			/* values into a lng/hge */			\
+			TIMEOUT_LOOP_IDX(idx, ci.ncand, qry_ctx) {	\
+				i = canditer_next(&ci) - b->hseqbase;	\
+				x = ((const TYPE *) src)[i];		\
+				if (is_##TYPE##_nil(x))			\
+					continue;			\
+				ADDI_WITH_CHECK(x, sum,			\
+					       lng_hge, sum,		\
+					       GDK_##lng_hge##_max,	\
+					       goto overflow##TYPE);	\
+				/* don't count value until after */	\
+				/* overflow check */			\
+				n++;					\
+			}						\
+			/* the sum fits, so now we can calculate the */	\
+			/* average */					\
+			*avg = n > 0 ? (dbl) sum / n : dbl_nil;		\
+		} else {						\
 		  overflow##TYPE:					\
 			/* we get here if sum(x[0],...,x[i]) doesn't */	\
 			/* fit in a lng/hge but sum(x[0],...,x[i-1]) did */ \
@@ -2960,20 +3258,25 @@ BATgroupavg3combine(BAT *avg, BAT *rem, BAT *cnt, BAT *g, BAT *e, bool skip_nils
 			/* note that n necessarily is > 0 (else no */	\
 			/* overflow possible) */			\
 			assert(n > 0);					\
-			/* we have to redo the last candidate */	\
-			(void) canditer_prev(&ci);			\
-			if (sum >= 0) {					\
-				a = (TYPE) (sum / n); /* this fits */	\
-				r = (lng) (sum % n);			\
-			} else {					\
-				sum = -sum;				\
-				a = - (TYPE) (sum / n); /* this fits */ \
-				r = (lng) (sum % n);			\
-				if (r) {				\
-					a--;				\
-					r = n - r;			\
+			if (!inout) {					\
+				if (sum >= 0) {				\
+					a = (TYPE) (sum / n); /* this fits */ \
+					r = (lng) (sum % n);		\
+				} else {				\
+					sum = -sum;			\
+					a = - (TYPE) (sum / n); /* this fits */ \
+					r = (lng) (sum % n);		\
+					if (r) {			\
+						a--;			\
+						r = n - r;		\
+					}				\
 				}					\
+			} else {					\
+				a = (TYPE) sum;				\
 			}						\
+			/* we have to redo the last candidate */	\
+			if (idx)					\
+				(void) canditer_prev(&ci);		\
 			/* idx is how many we've already done successfully */ \
 			TIMEOUT_LOOP(ci.ncand - idx, qry_ctx) {		\
 				/* loop invariant: */			\
@@ -2999,7 +3302,6 @@ BATgroupavg3combine(BAT *avg, BAT *rem, BAT *cnt, BAT *g, BAT *e, bool skip_nils
 
 #define AVERAGE_FLOATTYPE(TYPE)						\
 	do {								\
-		double a = 0;						\
 		TYPE x;							\
 		TIMEOUT_LOOP(ci.ncand, qry_ctx) {			\
 			i = canditer_next(&ci) - b->hseqbase;		\
@@ -3014,11 +3316,12 @@ BATgroupavg3combine(BAT *avg, BAT *rem, BAT *cnt, BAT *g, BAT *e, bool skip_nils
 	} while (0)
 
 gdk_return
-BATcalcavg(BAT *b, BAT *s, dbl *avg, BUN *vals, int scale)
+BATcalcavg(BAT *b, BAT *s, dbl *avg, BUN *vals, int scale, bool inout)
 {
 	lng n = 0, r = 0;
 	BUN i = 0;
-	BUN idx;
+	double a = 0;
+	BUN idx = 0;
 #ifdef HAVE_HGE
 	hge sum = 0;
 #else
@@ -3028,9 +3331,53 @@ BATcalcavg(BAT *b, BAT *s, dbl *avg, BUN *vals, int scale)
 	const void *restrict src;
 	lng t0 = 0;
 
-	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
+
+	if (inout) {
+		double iprt, fprt; /* integer and fraction parts */
+		n = (lng) *vals;
+		if (n > 0) {
+			a = *avg;
+			assert(!is_dbl_nil(a));
+			if (scale != 0)
+				a *= pow(10.0, (double) scale);
+			if (a < 0) {
+				fprt = modf(-a, &iprt);
+				if (fprt > 0) {
+					iprt = -iprt - 1;
+					fprt = 1.0 - fprt;
+				} else {
+					iprt = -iprt;
+				}
+			} else {
+				fprt = modf(a, &iprt);
+			}
+			/* in case fprt * n is just a fraction less than
+			 * a whole integer, we need to do proper
+			 * rounding */
+			r = (lng) (fprt * n + 0.5);
+#ifdef HAVE_HGE
+			sum = (hge) iprt;
+			if (sum < 0) {
+				if ((GDK_hge_max - r) / n > -sum) {
+					sum = sum * n + r;
+					inout = false;
+				}
+			} else {
+				if ((GDK_hge_max - r) / n > sum) {
+					sum = sum * n + r;
+					inout = false;
+				}
+			}
+#else
+			sum = (lng) iprt;
+#endif
+		} else {
+			inout = false;
+		}
+	}
+
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 
 	canditer_init(&ci, b, s);
 
@@ -3607,7 +3954,7 @@ BATgroupmin(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils)
 /* return pointer to smallest non-nil value in b, or pointer to nil if
  * there is no such value (no values at all, or only nil) */
 void *
-BATmin_skipnil(allocator *ma, BAT *b, void *aggr, bit skipnil)
+BATmin_skipnil(allocator *ma, BAT *b, void *aggr, bit skipnil, bool inout)
 {
 	const void *res = NULL;
 	size_t s;
@@ -3742,8 +4089,13 @@ BATmin_skipnil(allocator *ma, BAT *b, void *aggr, bit skipnil)
 	} else {
 		s = ATOMsize(ATOMtype(bi.type));
 	}
-	if (aggr != NULL)	/* else: malloc error */
-		memcpy(aggr, res, s);
+	if (aggr != NULL) {	/* else: malloc error */
+		if (!inout ||
+		    ATOMcmp(b->ttype, aggr, ATOMnilptr(b->ttype)) == 0 ||
+		    (ATOMcmp(b->ttype, res, ATOMnilptr(b->ttype)) != 0 &&
+		    ATOMcmp(b->ttype, res, aggr) < 0))
+			memcpy(aggr, res, s);
+	}
 	bat_iterator_end(&bi);
 	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",skipnil=%d; (" LLFMT " usec)\n",
 		  ALGOBATPAR(b), skipnil, GDKusec() - t0);
@@ -3753,7 +4105,7 @@ BATmin_skipnil(allocator *ma, BAT *b, void *aggr, bit skipnil)
 void *
 BATmin(BAT *b, void *aggr)
 {
-	return BATmin_skipnil(NULL, b, aggr, 1);
+	return BATmin_skipnil(NULL, b, aggr, 1, false);
 }
 
 BAT *
@@ -3764,7 +4116,7 @@ BATgroupmax(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils)
 }
 
 void *
-BATmax_skipnil(allocator *ma, BAT *b, void *aggr, bit skipnil)
+BATmax_skipnil(allocator *ma, BAT *b, void *aggr, bit skipnil, bool inout)
 {
 	const void *res = NULL;
 	size_t s;
@@ -3872,8 +4224,13 @@ BATmax_skipnil(allocator *ma, BAT *b, void *aggr, bit skipnil)
 	} else {
 		s = ATOMsize(ATOMtype(bi.type));
 	}
-	if (aggr != NULL)	/* else: malloc error */
-		memcpy(aggr, res, s);
+	if (aggr != NULL) {	/* else: malloc error */
+		if (!inout ||
+		    ATOMcmp(b->ttype, aggr, ATOMnilptr(b->ttype)) == 0 ||
+		    (ATOMcmp(b->ttype, res, ATOMnilptr(b->ttype)) != 0 &&
+		    ATOMcmp(b->ttype, res, aggr) > 0))
+			memcpy(aggr, res, s);
+	}
 	bat_iterator_end(&bi);
 	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",skipnil=%d; (" LLFMT " usec)\n",
 		  ALGOBATPAR(b), skipnil, GDKusec() - t0);
@@ -3883,7 +4240,7 @@ BATmax_skipnil(allocator *ma, BAT *b, void *aggr, bit skipnil)
 void *
 BATmax(BAT *b, void *aggr)
 {
-	return BATmax_skipnil(NULL, b, aggr, 1);
+	return BATmax_skipnil(NULL, b, aggr, 1, false);
 }
 
 
@@ -4621,9 +4978,9 @@ BATcalccorrelation(BAT *b1, BAT *b2)
 						cnts[gid] = BUN_NONE;	\
 				} else if (cnts[gid] != BUN_NONE) {	\
 					cnts[gid]++;			\
-					delta[gid] = (dbl) vals[i] - mean[gid]; \
-					mean[gid] += delta[gid] / cnts[gid]; \
-					m2[gid] += delta[gid] * ((dbl) vals[i] - mean[gid]); \
+					delta = (dbl) vals[i] - mean[gid]; \
+					mean[gid] += delta / cnts[gid]; \
+					m2[gid] += delta * ((dbl) vals[i] - mean[gid]); \
 				}					\
 			}						\
 		}							\
@@ -4665,7 +5022,7 @@ dogroupstdev(BAT **avgb, BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 	BUN i, ngrp;
 	BUN nils = 0, nils2 = 0;
 	BUN *restrict cnts = NULL;
-	dbl *restrict dbls, *restrict mean, *restrict delta, *restrict m2;
+	dbl *restrict dbls, *restrict mean, *restrict m2, delta;
 	BAT *bn = NULL, *an = NULL;
 	struct canditer ci;
 	const char *err;
@@ -4712,7 +5069,6 @@ dogroupstdev(BAT **avgb, BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 		goto doreturn;
 	}
 
-	delta = ma_alloc(ma, ngrp * sizeof(dbl));
 	m2 = ma_alloc(ma, ngrp * sizeof(dbl));
 	cnts = ma_zalloc(ma, ngrp * sizeof(BUN));
 	if (avgb) {
@@ -4726,7 +5082,7 @@ dogroupstdev(BAT **avgb, BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 	} else {
 		mean = ma_alloc(ma, ngrp * sizeof(dbl));
 	}
-	if (mean == NULL || delta == NULL || m2 == NULL || cnts == NULL)
+	if (mean == NULL || m2 == NULL || cnts == NULL)
 		goto alloc_fail;
 
 	bn = COLnew(min, TYPE_dbl, ngrp, TRANSIENT);
@@ -4736,7 +5092,6 @@ dogroupstdev(BAT **avgb, BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 
 	TIMEOUT_LOOP_IDX(i, ngrp, qry_ctx) {
 		mean[i] = 0;
-		delta[i] = 0;
 		m2[i] = 0;
 	}
 

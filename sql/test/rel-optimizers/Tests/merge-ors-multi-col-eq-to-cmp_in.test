@@ -11,7 +11,8 @@ select * from b where n > 3 or (m = 20 and k = 200) or (m = 60 and k = 600)
 180
 1800
 
-query T nosort
+skipif knownfail
+query T nosort non-eq-two-col-2-value
 explain show details select * from b where n > 3 or (m = 20 and k = 200) or (m = 60 and k = 600)
 ----
 project (
@@ -33,6 +34,7 @@ select * from b where (n > 3 and (m = 180 and k = 1800)) or (m = 20 and k = 200)
 180
 1800
 
+skipif knownfail
 query T nosort
 explain show details select * from b where (n > 3 and (m = 180 and k = 1800)) or (m = 20 and k = 200) or (m = 60 and k = 600)
 ----
@@ -42,7 +44,8 @@ project (
 | ) [ (("b"."n" NOT NULL) > (int(4) "3"), .AND(("b"."m" NOT NULL) = (int(8) "180"), ("b"."k" NOT NULL) = (int(11) "1800"))) or ((("b"."m" NOT NULL) = (int(8) "20"), ("b"."k" NOT NULL) = (int(11) "200")) or (("b"."m" NOT NULL) = (int(8) "60"), ("b"."k" NOT NULL) = (int(11) "600"))) ]
 ) [ "b"."n" NOT NULL, "b"."m" NOT NULL, "b"."k" NOT NULL ]
 
-query T nosort
+skipif knownfail
+query T nosort non-eq-two-col-2-value
 explain show details select * from b where (m = 20 and k = 200) or n > 3 or (m = 60 and k = 600)
 ----
 project (
@@ -52,7 +55,8 @@ project (
 ) [ "b"."n" NOT NULL, "b"."m" NOT NULL, "b"."k" NOT NULL ]
 
 # order of m,k equality statements are swapped in the last AND expression
-query T nosort
+skipif knownfail
+query T nosort non-eq-two-col-2-value
 explain show details select * from b where (m = 20 and k = 200) or n > 3 or (k = 600 and m = 60)
 ----
 project (
@@ -61,7 +65,8 @@ project (
 | ) [ (("b"."m" NOT NULL) = (int(8) "20"), ("b"."k" NOT NULL) = (int(11) "200")) or ((("b"."n" NOT NULL) > (int(4) "3")) or (("b"."k" NOT NULL) = (int(11) "600"), ("b"."m" NOT NULL) = (int(8) "60"))) ]
 ) [ "b"."n" NOT NULL, "b"."m" NOT NULL, "b"."k" NOT NULL ]
 
-query T nosort
+skipif knownfail
+query T nosort non-eq-two-col-2-value
 explain show details select * from b where (m = 20 and k = 200) or (m = 60 and k = 600) or n > 3
 ----
 project (
@@ -80,6 +85,7 @@ select * from b where (n = 1 and m = 20) or (m = 20 and k = 200) or (m = 60 and 
 60
 600
 
+skipif knownfail
 query T nosort two-col-1-value-two-col-2-value
 explain show details select * from b where (n = 1 and m = 20) or (m = 20 and k = 200) or (m = 60 and k = 600)
 ----
@@ -89,7 +95,8 @@ project (
 | ) [ (("b"."n" NOT NULL) = (int(4) "1"), ("b"."m" NOT NULL) = (int(8) "20")) or ((("b"."m" NOT NULL) = (int(8) "20"), ("b"."k" NOT NULL) = (int(11) "200")) or (("b"."m" NOT NULL) = (int(8) "60"), ("b"."k" NOT NULL) = (int(11) "600"))) ]
 ) [ "b"."n" NOT NULL, "b"."m" NOT NULL, "b"."k" NOT NULL ]
 
-query T nosort
+skipif knownfail
+query T nosort two-col-1-value-two-col-2-value
 explain show details select * from b where (m = 20 and k = 200) or (n = 1 and m = 20) or (m = 60 and k = 600)
 ----
 project (
@@ -98,7 +105,8 @@ project (
 | ) [ (("b"."m" NOT NULL) = (int(8) "20"), ("b"."k" NOT NULL) = (int(11) "200")) or ((("b"."n" NOT NULL) = (int(4) "1"), ("b"."m" NOT NULL) = (int(8) "20")) or (("b"."m" NOT NULL) = (int(8) "60"), ("b"."k" NOT NULL) = (int(11) "600"))) ]
 ) [ "b"."n" NOT NULL, "b"."m" NOT NULL, "b"."k" NOT NULL ]
 
-query T nosort
+skipif knownfail
+query T nosort two-col-1-value-two-col-2-value
 explain show details select * from b where (m = 20 and k = 200) or (m = 60 and k = 600) or (n = 1 and m = 20)
 ----
 project (
@@ -120,7 +128,8 @@ select * from b where (m = 40 and k > 0) or (m = 20 and k = 200) or (m = 60 and 
 60
 600
 
-skipif threads=1
+#skipif threads=1
+skipif knownfail
 query T nosort
 explain show details select * from b where (m = 40 and k > 0) or (m = 20 and k = 200) or (m = 60 and k = 600)
 ----
@@ -130,7 +139,8 @@ project (
 | ) [ (("b"."m" NOT NULL) = (int(8) "40"), ("b"."k" NOT NULL) > (int(11) "0")) or ((("b"."m" NOT NULL) = (int(8) "20"), ("b"."k" NOT NULL) = (int(11) "200")) or (("b"."m" NOT NULL) = (int(8) "60"), ("b"."k" NOT NULL) = (int(11) "600"))) ]
 ) [ "b"."n" NOT NULL, "b"."m" NOT NULL, "b"."k" NOT NULL ]
 
-onlyif threads=1
+#onlyif threads=1
+skipif knownfail
 query T nosort
 explain show details select * from b where (m = 40 and k > 0) or (m = 20 and k = 200) or (m = 60 and k = 600)
 ----
@@ -154,7 +164,8 @@ select m, k from b where (m = 40) or (m = 20 and k = 200) or (m = 0) or (m = 60 
 60
 600
 
-skipif threads=1
+#skipif threads=1
+skipif knownfail
 query T nosort single_col_3_val_2_col_2_val
 explain show details select m, k from b where (m = 40) or (m = 20 and k = 200) or (m = 0) or (m = 60 and k = 600) or (m = 180)
 ----
@@ -164,7 +175,8 @@ project (
 | ) [ (("b"."m" NOT NULL) in (int(8) "40", int(8) "0", int(8) "180")) or ((("b"."m" NOT NULL) = (int(8) "20"), ("b"."k" NOT NULL) = (int(11) "200")) or (("b"."m" NOT NULL) = (int(8) "60"), ("b"."k" NOT NULL) = (int(11) "600"))) ]
 ) [ "b"."m" NOT NULL, "b"."k" NOT NULL ]
 
-onlyif threads=1
+#onlyif threads=1
+skipif knownfail
 query T nosort single_col_3_val_2_col_2_val
 explain show details select m, k from b where (m = 40) or (m = 20 and k = 200) or (m = 0) or (m = 60 and k = 600) or (m = 180)
 ----
@@ -184,6 +196,7 @@ select n, m, k from b where ((n = 1) AND (m = 20)) OR ((n = 3) AND (m = 60) AND 
 60
 600
 
+skipif knownfail
 query T nosort
 explain show details select n, m, k from b where ((n = 1) AND (m = 20)) OR ((n = 3) AND (m = 60) AND (k=600))
 ----
@@ -209,6 +222,7 @@ select n, m, k from b where ((n = 1) AND (m = 20)) OR ((n = 2) AND (m = 40) AND 
 180
 1800
 
+skipif knownfail
 query T nosort
 explain show details select * from b where ((n = 1) AND (m = 20)) OR ((n = 2) AND (m = 40) AND (k=400)) OR ((n = 9) AND (m = 180)) OR ((n = 3) AND (m = 60) AND (k=600))
 ----

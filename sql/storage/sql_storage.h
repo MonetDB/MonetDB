@@ -20,6 +20,9 @@
 #define LOG_ERR		(-1)
 #define LOG_CONFLICT	(-2)
 
+#define DEFAULT_PARTSIZE 100000
+#define MED_PARTSIZE 1000
+#define MIN_PARTSIZE 1
 
 struct sqlstore;
 
@@ -121,8 +124,8 @@ typedef struct table_functions {
 -- binds for column,idx (rdonly, inserts, updates) and deletes
 */
 typedef void *(*bind_col_fptr) (sql_trans *tr, sql_column *c, int access);
-typedef int (*bind_updates_fptr) (sql_trans *tr, sql_column *c, BAT **ui, BAT **uv);
-typedef int (*bind_updates_idx_fptr) (sql_trans *tr, sql_idx *c, BAT **ui, BAT **uv);
+typedef int (*bind_updates_fptr) (sql_trans *tr, sql_column *c, BUN l, BUN h, BAT **ui, BAT **uv);
+typedef int (*bind_updates_idx_fptr) (sql_trans *tr, sql_idx *c, BUN l, BUN h, BAT **ui, BAT **uv);
 typedef void *(*bind_idx_fptr) (sql_trans *tr, sql_idx *i, int access);
 typedef void *(*bind_cands_fptr) (sql_trans *tr, sql_table *t, int nr_of_parts, int part_nr);
 
@@ -147,6 +150,7 @@ typedef size_t (*dcount_col_fptr) (sql_trans *tr, sql_column *c);
 typedef int (*min_max_col_fptr) (sql_trans *tr, sql_column *c);
 typedef int (*set_stats_col_fptr) (sql_trans *tr, sql_column *c, double *unique_est, char *min, char *max);
 typedef int (*prop_col_fptr) (sql_trans *tr, sql_column *c);
+typedef int (*prop_idx_fptr) (sql_trans *tr, sql_idx *i);
 typedef int (*proprec_col_fptr) (sql_trans *tr, sql_column *c, bool *nonil, bool *unique, double *unique_est, ValPtr min, ValPtr max);
 typedef int (*col_set_range_fptr) (sql_trans *tr, sql_column *c, sql_part *pt, bool add_range);
 typedef int (*col_not_null_fptr) (sql_trans *tr, sql_column *c, bool not_null);
@@ -241,6 +245,7 @@ typedef struct store_functions {
 	min_max_col_fptr min_max_col;
 	set_stats_col_fptr set_stats_col;
 	prop_col_fptr sorted_col;
+	prop_idx_fptr sorted_idx;
 	prop_col_fptr unique_col;
 	prop_col_fptr double_elim_col; /* varsize col with double elimination */
 	proprec_col_fptr col_stats;
@@ -411,7 +416,8 @@ extern int sql_trans_alter_default(sql_trans *tr, sql_column *col, char *val);
 extern int sql_trans_alter_storage(sql_trans *tr, sql_column *col, char *storage);
 extern int sql_trans_alter_type(sql_trans *tr, sql_column *col, sql_subtype *t);
 extern int sql_trans_alter_check(sql_trans *tr, sql_column *col, char *check);
-extern int sql_trans_is_sorted(sql_trans *tr, sql_column *col);
+extern int sql_trans_is_sorted_col(sql_trans *tr, sql_column *col);
+extern int sql_trans_is_sorted_idx(sql_trans *tr, sql_idx *idx);
 extern int sql_trans_is_unique(sql_trans *tr, sql_column *col);
 extern int sql_trans_is_duplicate_eliminated(sql_trans *tr, sql_column *col);
 extern int sql_trans_col_stats(sql_trans *tr, sql_column *col, bool *nonil, bool *unique, double *unique_est, ValPtr min, ValPtr max);
@@ -552,7 +558,7 @@ typedef struct sql_change {
 } sql_change;
 
 extern sql_base *dup_base(sql_base *b);
-extern void trans_add(sql_trans *tr, sql_base *b, void *data, tc_cleanup_fptr cleanup, tc_commit_fptr commit, tc_log_fptr log);
+extern void trans_add(sql_trans *tr, sql_base *b, void *data, tc_cleanup_fptr cleanup, tc_commit_fptr commit, tc_log_fptr log, bool locked);
 extern void trans_del(sql_trans *tr, sql_base *b);
 extern int tr_version_of_parent(sql_trans *tr, ulng ts);
 

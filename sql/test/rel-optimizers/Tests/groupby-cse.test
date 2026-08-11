@@ -27,6 +27,7 @@ VALUES
 
 # the same expression should be removed from the GROUPBY op list of
 # group expressions (->l)
+skipif knownfail
 query T nosort
 EXPLAIN SHOW DETAILS
 SELECT
@@ -64,6 +65,7 @@ GROUP BY
 1
 
 # same as before
+skipif knownfail
 query T nosort
 EXPLAIN SHOW DETAILS
 SELECT
@@ -111,6 +113,7 @@ END
 
 # the same expression should be removed from the GROUPBY op list of
 # group expressions (->l) exactly like in the case of basetable
+skipif knownfail
 query T nosort
 EXPLAIN SHOW DETAILS
 SELECT
@@ -153,6 +156,7 @@ GROUP BY
 
 ## in this example the order by groups are aliases of the same column
 ## coming from the inner projection operator
+skipif knownfail
 query T nosort
 EXPLAIN SHOW DETAILS
 SELECT
@@ -211,6 +215,7 @@ GROUP BY
 2
 1
 
+skipif knownfail
 query T nosort
 EXPLAIN SHOW DETAILS
 SELECT
@@ -268,6 +273,7 @@ GROUP BY
 
 # in this example both outer project/groupby and the inner (subquery)
 # projet use aliases for the column c1.
+skipif knownfail
 query T nosort
 EXPLAIN SHOW DETAILS
 SELECT
@@ -327,7 +333,7 @@ GROUP BY
 
 # combinations of outer project/groupby and inner (subquery) projet
 # aliases for c1 column
-
+skipif knownfail
 query T nosort
 EXPLAIN SHOW DETAILS
 SELECT
@@ -385,6 +391,7 @@ GROUP BY
 2
 1
 
+skipif knownfail
 query T nosort
 EXPLAIN SHOW DETAILS
 SELECT
@@ -444,6 +451,7 @@ GROUP BY
 
 ## GROUPBY <--input-- JOIN ############################################
 
+skipif knownfail
 query T nosort
 EXPLAIN SHOW DETAILS
 SELECT

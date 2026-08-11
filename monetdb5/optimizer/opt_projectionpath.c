@@ -114,16 +114,17 @@ OPTprojectionpathImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 					r = 0;
 
 				/* inject the complete sub-path */
-				if (r && getModuleId(r) == algebraRef
-						&& (getFunctionId(r) == projectionRef
+				if (getFunctionId(p) == projectionRef) {
+					if (r && getModuleId(r) == algebraRef
+						&& ((getFunctionId(r) == projectionRef && r->argc == 3)
 							|| getFunctionId(r) == projectionpathRef)) {
-					for (k = r->retc; k < r->argc; k++)
+						for (k = r->retc; k < r->argc; k++)
 							q = pushArgument(mb, q, getArg(r, k));
-				} else
-					q = pushArgument(mb, q, getArg(p, j));
+					} else
+						q = pushArgument(mb, q, getArg(p, j));
+				}
 			}
 			if (q->argc <= p->argc) {
-				assert(0);
 				/* no change */
 				freeInstruction(mb, q);
 				goto wrapup;

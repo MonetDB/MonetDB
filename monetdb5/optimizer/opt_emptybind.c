@@ -110,6 +110,13 @@ OPTemptybindImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 			empty[getArg(p, 0)] = i;
 			continue;
 		}
+
+		if (p && p->inout >= 0) {
+			for (int i = p->inout; i < p->retc; i++)
+				empty[getArg(p, i)] = 0;
+			continue;
+		}
+
 		// any of these instructions leave a non-empty BAT behind
 		if (getModuleId(p) == sqlRef && isUpdateInstruction(p)) {
 			if (etop == esize) {
@@ -228,7 +235,7 @@ OPTemptybindImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 			continue;
 		}
 		if (getModuleId(p) == algebraRef && getFunctionId(p) == projectionRef) {
-			if (empty[getArg(p, 1)] || empty[getArg(p, 2)]) {
+			if (empty[getArg(p, 1)] /*|| empty[getArg(p, 2)]*/) {
 				actions++;
 				emptyresult(0);
 			}
@@ -274,6 +281,8 @@ OPTemptybindImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 			}
 		}
 		if (getModuleId(p) == batRef && isUpdateInstruction(p)) {
+			if (p->argc >= 4)
+				empty[getArg(p, 1)] = 0;
 			if (empty[getArg(p, 1)] && empty[getArg(p, 2)]) {
 				emptyresult(0);
 			} else if (empty[getArg(p, 2)]) {

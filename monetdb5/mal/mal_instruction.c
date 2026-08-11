@@ -349,6 +349,7 @@ newInstructionArgs(MalBlkPtr mb, const char *modnme, const char *fcnnme,
 		.fcnname = fcnnme,
 		.argc = 1,
 		.retc = 1,
+		.inout = -1,
 		/* Flow of control instructions are always marked as an assignment
 		 * with modifier */
 		.token = ASSIGNsymbol,
@@ -412,6 +413,22 @@ freeInstruction(MalBlkPtr mb, InstrPtr p)
 	ma_free(mb->instr_allocator, p);
 }
 
+void
+moveInstruction(MalBlkPtr mb, int pc, int target)
+{
+	int i;
+	InstrPtr p = getInstrPtr(mb, pc);
+
+	if (pc > target) {
+		for (i = pc; i > target; i--)
+			mb->stmt[i] = mb->stmt[i - 1];
+		mb->stmt[i] = p;
+	} else {
+		for (i = target; i > pc; i--)
+			mb->stmt[i] = mb->stmt[i - 1];
+		mb->stmt[i] = p;
+	}
+}
 
 /* Beware that the first argument of a signature is reserved for the
  * function return type , which should be equal to the destination

@@ -11,14 +11,14 @@ query I rowsort
 select y from x group by y having count(z) > 1 and count(x) > 1
 ----
 
-query I nosort
+query I rowsort
 select y from x group by y order by count(z) > 1 and count(x) > 1
 ----
 1
 2
 3
 
-query I nosort
+query I rowsort
 select y from x group by y order by count(z), count(x)
 ----
 1

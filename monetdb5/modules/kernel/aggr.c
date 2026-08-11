@@ -756,7 +756,7 @@ AGGRavg3(Client ctx, bat *retval1, bat *retval2, bat *retval3, const bat *bid,
 		throw(MAL, "aggr.subavg", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 
-	rc = BATgroupavg3(&avgs, &rems, &cnts, b, g, e, s, *skip_nils);
+	rc = BATgroupavg3(&avgs, &rems, &cnts, b, g, e, s, *skip_nils, false);
 
 	BBPunfix(b->batCacheid);
 	BBPreclaim(g);
@@ -1539,6 +1539,27 @@ AGGRsubcorrcand(Client ctx, bat *retval, const bat *b1, const bat *b2, const bat
 						BATgroupcorrelation, "aggr.subcorr");
 }
 
+static str
+uniques_guess(Client c, lng *guess, const bat *bid)
+{
+	(void) c;
+
+	BAT *b = BATdescriptor(*bid);
+	if (b == NULL)
+		throw(MAL, "AGGRcde", RUNTIME_OBJECT_MISSING);
+
+	BATiter bi = bat_iterator(b);
+	struct canditer bci;
+	canditer_init(&bci, b, NULL);
+
+	*guess = llroundl(bat_guess_uniques(b, &bi, &bci));
+
+	bat_iterator_end(&bi);
+	BBPreclaim(b);
+
+	return MAL_SUCCEED;
+}
+
 #include "mel.h"
 static mel_func aggr_init_funcs[] = {
  command("aggr", "sum", AGGRsum3_dbl, false, "Grouped tail sum on bte", args(1,4, batarg("",dbl),batarg("b",bte),batarg("g",oid),batargany("e",1))),
@@ -1941,6 +1962,9 @@ static mel_func aggr_init_funcs[] = {
  command("aggr", "subsha512", AGGRsha512grouped, false, "Grouped SHA512", args(1,5, batarg("",str),batarg("b",str),batarg("g",oid),batargany("e",1),arg("skip_nils",bit))),
  command("aggr", "ripemd160", AGGRripemd160, false, "Ungrouped RIPEMD160", args(1,2, arg("",str),batarg("b",str))),
  command("aggr", "subripemd160", AGGRripemd160grouped, false, "Grouped RIPEMD160", args(1,5, batarg("",str),batarg("b",str),batarg("g",oid),batargany("e",1),arg("skip_nils",bit))),
+
+ command("aggr", "uniques_guess", uniques_guess, false, "", args(1, 2, arg("guess", lng), batargany("b", 1))),
+
  { .imp=NULL }
 };
 #include "mal_import.h"

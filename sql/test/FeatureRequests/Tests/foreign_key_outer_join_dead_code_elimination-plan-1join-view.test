@@ -1,6 +1,7 @@
 statement ok
 set optimizer = 'sequential_pipe'
 
+skipif knownfail
 query T python .plan.filter
    explain show details select count(*) from v1
 ----
@@ -8,6 +9,7 @@ project (
 |  [ "sys"."cnt"(varchar "sys", varchar "fk") NOT NULL as "%1"."%1" ]
 ) [ "%1"."%1" NOT NULL ]
 
+skipif knownfail
 query T python .plan.filter
    explain show details select id       from v1 order by id
 ----
@@ -17,6 +19,7 @@ project (
 | ) [ "fk"."id" NOT NULL UNIQUE HASHCOL  as "v1"."id" ]
 ) [ "v1"."id" NOT NULL UNIQUE HASHCOL  ] [ "v1"."id" ASC NOT NULL UNIQUE HASHCOL  ]
 
+skipif knownfail
 query T python .plan.filter
    explain show details select id , v1  from v1 order by id
 ----

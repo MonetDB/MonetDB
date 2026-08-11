@@ -449,7 +449,9 @@ mat_apply1(allocator *ma, MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int va
 	int tpe, k, is_select = isSelect(p),
 		is_mirror = (getFunctionId(p) == mirrorRef);
 	int is_identity = (getFunctionId(p) == identityRef
-					   && getModuleId(p) == batcalcRef);
+					   && getModuleId(p) == batcalcRef) ||
+		           (getFunctionId(p) == row_numberRef
+					   && getModuleId(p) == batsqlRef);
 	int ident_var = 0, is_assign = (getFunctionId(p) == NULL), n = 0;
 	InstrPtr r = NULL, q;
 	mat_t *mat = ml->v;
@@ -478,7 +480,10 @@ mat_apply1(allocator *ma, MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int va
 		getArg(q, 0) = newTmpVariable(mb, TYPE_oid);
 		q->retc = 1;
 		q->argc = 1;
-		q = pushOid(mb, q, 0);
+		oid init = 0;
+		if (getFunctionId(p) == row_numberRef && getModuleId(p) == batsqlRef)
+			init = 1;
+		q = pushOid(mb, q, init);
 		ident_var = getArg(q, 0);
 		pushInstruction(mb, q);
 		if (mb->errors) {
@@ -546,6 +551,7 @@ mat_apply(allocator *ma, MalBlkPtr mb, InstrPtr p, matlist_t *ml, int nrmats)
 
 	if (nrmats == 1
 		&& ((getModuleId(p) == batcalcRef && getFunctionId(p) == identityRef)
+			|| (getModuleId(p) == batsqlRef && getFunctionId(p) == row_numberRef)
 			|| (getModuleId(p) == batRef && getFunctionId(p) == mirrorRef)))
 		return mat_apply1(ma, mb, p, ml, is_a_mat(getArg(p, 1), ml), 1);
 	assert(nrmats <= 8);

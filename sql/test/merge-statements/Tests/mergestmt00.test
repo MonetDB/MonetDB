@@ -23,7 +23,7 @@ statement ok rowcount 3
 merge into predata using (select aa, bb from merging) sub on predata.bb = sub.bb when matched then update set bb = 1
 
 query II nosort
-select aa, bb from predata order by bb
+select aa, bb from predata order by bb, aa
 ----
 NULL
 1
@@ -31,11 +31,11 @@ NULL
 1
 8
 1
-15
-3
 5
 3
 6
+3
+15
 3
 NULL
 4
@@ -44,7 +44,7 @@ statement ok rowcount 1
 merge into predata using (select aa, bb from merging) sub on predata.bb = sub.bb when not matched then insert values (5, 5)
 
 query II nosort
-select aa, bb from predata order by bb
+select aa, bb from predata order by bb, aa
 ----
 NULL
 1
@@ -52,11 +52,11 @@ NULL
 1
 8
 1
-15
-3
 5
 3
 6
+3
+15
 3
 NULL
 4

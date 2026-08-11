@@ -106,11 +106,14 @@ rel_destroy_(mvc *sql, sql_rel *rel)
 	case op_anti:
 	case op_inter:
 	case op_except:
+		if (rel->l)
+			rel_destroy(sql, rel->l);
+		if (rel->r)
+			rel_destroy(sql, rel->r);
+		break;
 	case op_insert:
 	case op_update:
 	case op_delete:
-		if (rel->l)
-			rel_destroy(sql, rel->l);
 		if (rel->r)
 			rel_destroy(sql, rel->r);
 		break;
@@ -126,6 +129,9 @@ rel_destroy_(mvc *sql, sql_rel *rel)
 	case op_topn:
 	case op_sample:
 	case op_truncate:
+	case op_buildhash:
+	case op_probehash:
+	case op_partition:
 		if (rel->l)
 			rel_destroy(sql, rel->l);
 		break;
@@ -232,6 +238,9 @@ rel_copy(mvc *sql, sql_rel *i, int deep)
 	case op_topn:
 	case op_sample:
 	case op_truncate:
+	case op_buildhash:
+	case op_probehash:
+	case op_partition:
 		if (i->l)
 			rel->l = rel_copy(sql, i->l, deep);
 		break;
@@ -309,6 +318,14 @@ rel_bind_column( mvc *sql, sql_rel *rel, const char *cname, int f, int no_tname)
 
 	if (is_insert(rel->op) && !is_processed(rel))
 		rel = rel->r;
+	if (is_physical(rel->op)) {
+		sql_exp *e = exps_bind_column(rel->exps, cname, &ambiguous, &multi, no_tname);
+		if (e)
+			return exp_ref(sql, e);
+		e = exps_bind_column(rel->attr, cname, &ambiguous, &multi, no_tname);
+		if (e)
+			return exp_ref(sql, e);
+	}
 	if ((is_project(rel->op) || is_base(rel->op) || is_modify(rel->op))) {
 		sql_exp *e = NULL;
 		list *exps = rel->exps;
@@ -399,14 +416,26 @@ rel_bind_column2( mvc *sql, sql_rel *rel, const char *tname, const char *cname, 
 	if (mvc_highwater(sql))
 		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 
-	if ((is_project(rel->op) || is_base(rel->op))) {
+	if (is_physical(rel->op)) {
+		sql_exp *e = exps_bind_column2(rel->exps, tname, cname, &multi);
+		if (e)
+			return exp_ref(sql, e);
+		e = exps_bind_column2(rel->attr, tname, cname, &multi);
+		if (e)
+			return exp_ref(sql, e);
+	}
+	if ((is_project(rel->op) || is_base(rel->op) || is_modify(rel->op))) {
 		sql_exp *e = NULL;
+		list *exps = rel->exps;
+
+		if (rel->op == op_update)
+			exps = rel->attr;
 
 		if (is_basetable(rel->op) && !rel->exps)
 			return rel_base_bind_column2(sql, rel, tname, cname);
 		/* in case of orderby we should also lookup the column in group by list (and use existing references) */
-		if (!list_empty(rel->exps)) {
-			e = exps_bind_column2(rel->exps, tname, cname, &multi);
+		if (!list_empty(exps)) {
+			e = exps_bind_column2(exps, tname, cname, &multi);
 			if (multi)
 				return sql_error(sql, ERR_AMBIGUOUS, SQLSTATE(42000) "SELECT: identifier '%s.%s' ambiguous",
 								 tname, cname);
@@ -687,6 +716,9 @@ rel_dup_copy(allocator *sa, sql_rel *rel)
 	case op_topn:
 	case op_sample:
 	case op_truncate:
+	case op_buildhash:
+	case op_probehash:
+	case op_partition:
 		if (nrel->l)
 			rel_dup(nrel->l);
 		break;
@@ -1176,6 +1208,7 @@ rel_project(allocator *sa, sql_rel *l, list *e)
 		else
 			rel->nrcols = l->nrcols;
 		rel->single = is_single(l);
+		rel->oahash = l->oahash;
 		rel->opt = l->opt;
 	}
 	if (e && !list_empty(e)) {
@@ -1328,6 +1361,15 @@ _rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int in
 			return exps;
 		}
 		/* fall through */
+	case op_buildhash:
+	case op_probehash:
+		if (list_empty(rel->exps))
+			return _rel_projections(sql, rel->l, tname, settname, intern, basecol, bound);
+		/* fall through */
+	case op_delete:
+	case op_insert:
+
+	case op_partition:
 	case op_project:
 	case op_basetable:
 	case op_table:
@@ -1468,6 +1510,9 @@ rel_bind_path_(mvc *sql, sql_rel *rel, sql_exp *e, list *path )
 	case op_select:
 	case op_topn:
 	case op_sample:
+	case op_buildhash:
+	case op_probehash:
+	case op_partition:
 		found = rel_bind_path_(sql, rel->l, e, path);
 		break;
 	case op_basetable:
@@ -2154,6 +2199,9 @@ rel_deps(mvc *sql, sql_rel *r, list *refs, list *l)
 	case op_topn:
 	case op_sample:
 	case op_truncate:
+	case op_buildhash:
+	case op_probehash:
+	case op_partition:
 		if (rel_deps(sql, r->l, refs, l) != 0)
 			return -1;
 		break;
@@ -2391,6 +2439,9 @@ rel_exp_visitor(visitor *v, sql_rel *rel, exp_rewrite_fptr exp_rewriter, bool to
 	case op_project:
 	case op_groupby:
 	case op_truncate:
+	case op_buildhash:
+	case op_probehash:
+	case op_partition:
 		if (rel->l)
 			if ((rel->l = rel_exp_visitor(v, rel->l, exp_rewriter, topdown, relations_topdown)) == NULL)
 				return NULL;
@@ -2642,6 +2693,9 @@ rel_visitor(visitor *v, sql_rel *rel, rel_rewrite_fptr rel_rewriter, bool topdow
 	case op_project:
 	case op_groupby:
 	case op_truncate:
+	case op_buildhash:
+	case op_probehash:
+	case op_partition:
 		if (rel->l)
 			if ((rel->l = func(v, rel->l, rel_rewriter)) == NULL)
 				return NULL;

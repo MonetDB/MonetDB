@@ -121,7 +121,7 @@ static sql_rel *
 rel_push_project_down(visitor *v, global_props *gp, sql_rel *rel)
 {
 	(void) gp;
-	return rel_visitor_bottomup(v, rel, &rel_push_project_down_);
+	return rel_visitor_topdown(v, rel, &rel_push_project_down_);
 }
 
 run_optimizer
@@ -426,14 +426,6 @@ exp_rename(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 		break;
 	}
 	return e;
-}
-
-static int
-exp_match_exp_cmp( sql_exp *e1, sql_exp *e2)
-{
-	if (exp_match_exp(e1,e2))
-		return 0;
-	return -1;
 }
 
 /* Pushing projects up the tree. Done very early in the optimizer.
@@ -2481,8 +2473,9 @@ rel_reduce_groupby_exps(visitor *v, sql_rel *rel)
 			}
 			rel->r = ngbe;
 			if (!list_empty(dgbe)) {
-				/* use atom's directly in the aggr expr list */
-
+				list *nexps = new_exp_list(v->sql->sa);
+				list *naggrs = new_exp_list(v->sql->sa);
+				/* use atom's directly in the projection list */
 				for (n = rel->exps->h; n; n = n->next) {
 					sql_exp *e = n->data, *ne = NULL;
 
@@ -2492,12 +2485,18 @@ rel_reduce_groupby_exps(visitor *v, sql_rel *rel)
 						if (ne) {
 							ne = exp_copy(v->sql, ne);
 							exp_prop_alias(v->sql->sa, ne, e);
-							e = ne;
+							append(nexps, ne);
+						} else {
+							append(naggrs, e);
+							append(nexps, exp_ref(v->sql, e));
 						}
+					} else {
+						append(naggrs, e);
+						append(nexps, exp_ref(v->sql, e));
 					}
-					n->data = e;
 				}
-				list_hash_clear(rel->exps);
+				rel->exps = naggrs;
+				rel = rel_project(v->sql->sa, rel, nexps);
 				v->changes++;
 			}
 		}
@@ -2551,10 +2550,57 @@ rel_remove_const_aggr(visitor *v, sql_rel *rel)
 		 *   aggr(const) -> cast(const as restype)
 		 */
 
+		bool needed = false;
+		for(node *n = exps->h; n && !needed; n = n->next) {
+			sql_exp *e = n->data;
+
+			if(e->type != e_aggr)
+				continue;
+			sql_func *j = ((sql_subfunc *)e->f)->func;
+
+			/* some aggregates with const values can only be eliminated
+			 * under certain circumstances e.g.
+			 *   sum(NULL)   -> NULL, sum(0)  -> 0
+			 *   prod(NULL)  -> NULL, prod(1) -> 1
+			 *   count(NULL) -> 0
+			 */
+			if (!j->s && j->system == 1) {
+				list *se = e->l;
+
+				if (list_empty(se))
+					continue;
+
+				for (node *m = se->h; m; m = m->next) {
+					sql_exp *w = se->h->data;
+					if (w->type != e_atom || w->card != CARD_ATOM)
+						continue;
+				}
+				sql_exp *w = se->h->data;
+
+				if (w->type == e_atom && w->card == CARD_ATOM) {
+					int sum = strcmp(j->base.name, "sum") == 0,
+						prd = strcmp(j->base.name, "prod") == 0,
+						cnt = strcmp(j->base.name, "count") == 0;
+
+					atom *wa = w->l;
+
+					if ((sum && !(wa->isnull || atom_is_zero(wa))) ||
+							(prd && !(wa->isnull || atom_is_one(wa))) ||
+							(cnt && !wa->isnull))
+						continue;
+					needed = true;
+				}
+			}
+		}
+		if (!needed)
+			return rel;
+		list *nexps = sa_list(v->sql->sa), *naggrs = sa_list(v->sql->sa);
 		for(node *n = exps->h; n; n = n->next) {
 			sql_exp *e = n->data;
 
 			if(e->type != e_aggr) {
+				append(naggrs, e);
+				append(nexps, exp_ref(v->sql, e));
 				continue;
 			}
 
@@ -2566,50 +2612,62 @@ rel_remove_const_aggr(visitor *v, sql_rel *rel)
 			 *   prod(NULL)  -> NULL, prod(1) -> 1
 			 *   count(NULL) -> 0
 			 */
-			int sum = strcmp(j->base.name, "sum") == 0,
-				prd = strcmp(j->base.name, "prod") == 0,
-				cnt = strcmp(j->base.name, "count") == 0;
-
 			if (!j->s && j->system == 1) {
 				list *se = e->l;
 
-				if(se == NULL) {
+				if (list_empty(se)) {
+					append(naggrs, e);
+					append(nexps, exp_ref(v->sql, e));
 					continue;
 				}
 
-				for (node *m = se->h; m; m = m->next) {
-					sql_exp *w = m->data;
+				int sum = strcmp(j->base.name, "sum") == 0,
+					prd = strcmp(j->base.name, "prod") == 0,
+					cnt = strcmp(j->base.name, "count") == 0;
 
-					if (w->type == e_atom && w->card == CARD_ATOM) {
-						atom *wa = w->l;
+				bool all_const = true;
+				for (node *m = se->h; m && all_const; m = m->next) {
+					sql_exp *w = se->h->data;
+					if (w->type != e_atom || w->card != CARD_ATOM)
+						all_const = false;
+				}
+				if (!all_const) {
+					append(naggrs, e);
+					append(nexps, exp_ref(v->sql, e));
+					continue;
+				}
+				sql_exp *w = se->h->data;
 
-						if (sum && !(wa->isnull || atom_is_zero(wa)))
-							continue;
+				if (w->type == e_atom && w->card == CARD_ATOM) {
+					atom *wa = w->l;
 
-						if (prd && !(wa->isnull || atom_is_one(wa)))
-							continue;
-
-						if (cnt) {
-							if (wa->isnull) {
-								list_remove_node(se, NULL, m);
-
-								w=exp_atom_lng(v->sql->sa, 0);
-								list_append(se, w);
-							} else {
-								continue;
-							}
-						}
-
-						exp_setalias(w, e->alias.label, e->alias.rname, e->alias.name);
-						w = exp_check_type(v->sql, exp_subtype(e), NULL, w, type_equal);
-
-						n->data = w;
-						v->changes++;
-					} else {
+					if ((sum && !(wa->isnull || atom_is_zero(wa))) ||
+							(prd && !(wa->isnull || atom_is_one(wa))) ||
+							(cnt && !wa->isnull)) {
+						append(naggrs, e);
+						append(nexps, exp_ref(v->sql, e));
 						break;
 					}
+					if (cnt)
+						w=exp_atom_lng(v->sql->sa, 0);
+
+					exp_setalias(w, e->alias.label, e->alias.rname, e->alias.name);
+					w = exp_check_type(v->sql, exp_subtype(e), NULL, w, type_equal);
+
+					append(nexps, w);
+					v->changes++;
+				} else {
+					append(naggrs, e);
+					append(nexps, exp_ref(v->sql, e));
 				}
+			} else {
+				append(naggrs, e);
+				append(nexps, exp_ref(v->sql, e));
 			}
+		}
+		if (naggrs) {
+			rel->exps = naggrs;
+			rel = rel_project(v->sql->sa, rel, nexps);
 		}
 	}
 
@@ -2704,6 +2762,85 @@ rel_remove_const_aggr(visitor *v, sql_rel *rel)
 		}
 	}
 
+	return rel;
+}
+
+static sql_rel *
+rel_use_equality_exps(visitor *v, sql_rel *rel)
+{
+	bool gb = false;
+	if (!rel || rel_is_ref(rel) ||
+	   !((gb = (is_groupby(rel->op) && rel->r)) || (is_project(rel->op) && need_distinct(rel))))
+		return rel;
+	sql_rel *j = rel->l;
+	if (!j || rel_is_ref(j) || j->op != op_join || list_empty(j->exps))
+		return rel;
+	/* rewrite group by expressions to the one side of the join,
+	   if all exps come from one side we should be able to simplify the join later.
+	 */
+	list *gbe = gb?rel->r:rel->exps;
+	int lscnt = 0, rscnt = 0, lcnt = 0, rcnt = 0;
+	for(node *n = gbe->h; n; n = n->next) {
+		sql_exp *e = n->data;
+
+		if (e->type == e_column) {
+			int l = rel_find_exp(j->l, e) != NULL;
+			int r = rel_find_exp(j->r, e) != NULL;
+			lcnt += l;
+			rcnt += r;
+			for(node *m = j->exps->h; m; m = m->next) {
+				sql_exp *je = m->data;
+				if (je->type == e_cmp && je->flag == cmp_equal && !is_anti(je)) {
+					/* this assumes a true join expression ! */
+					int eq = exp_equal(e, je->l) == 0 || exp_equal(e, je->r) == 0;
+					if (eq) {
+						lscnt += l;
+						rscnt += r;
+					}
+				}
+			}
+		}
+	}
+	if ((lcnt+rcnt) != list_length(gbe) || !(lscnt+rscnt) || !lcnt || !rcnt)
+		return rel;
+	if (lscnt == lcnt || rscnt == rcnt) {
+		int lside = (lscnt == lcnt);
+		int scnt = lside?lscnt:rscnt;
+		sql_rel *js = (lside)?j->l:j->r;
+		list *ngbe = sa_list(v->sql->sa);
+		for(node *n = gbe->h; n; n = n->next) {
+			sql_exp *e = n->data;
+
+			if (e->type == e_column && scnt) {
+				if (rel_find_exp(js, e) != NULL) {
+					for(node *m = j->exps->h; m; m = m->next) {
+						sql_exp *je = m->data;
+						if (je->type == e_cmp && je->flag == cmp_equal && !is_anti(je)) {
+							int le = exp_equal(e, je->l) == 0;
+							int re = exp_equal(e, je->r) == 0;
+							if (le || re) {
+								scnt--;
+								sql_exp *ne = NULL;
+								if (le)
+									ne = exp_ref(v->sql, je->r);
+								else
+									ne = exp_ref(v->sql, je->l);
+								exp_prop_alias(v->sql->sa, ne, e);
+								e = ne;
+								break;
+							}
+						}
+					}
+				}
+			}
+			append(ngbe, e);
+		}
+		v->changes++;
+		if (gb)
+			rel->r = ngbe;
+		else
+			rel->exps = ngbe;
+	}
 	return rel;
 }
 
@@ -3202,8 +3339,11 @@ rel_project_select_exp(visitor *v, sql_rel *rel)
 static sql_rel *
 rel_optimize_projections_(visitor *v, sql_rel *rel)
 {
+	ATOMIC_TYPE oahash_mask = (1U<<19);
+	bool oahash_enabled = (GDKdebug & oahash_mask);
 	rel = rel_project_cse(v, rel);
 	rel = rel_project_select_exp(v, rel);
+	rel = rel_use_equality_exps(v, rel);
 
 	if (!rel || !is_groupby(rel->op))
 		return rel;
@@ -3215,11 +3355,11 @@ rel_optimize_projections_(visitor *v, sql_rel *rel)
 		rel = rel_simplify_groupby_columns(v, rel);
 	}
 	rel = rel_groupby_cse(v, rel);
-	rel = rel_push_aggr_down(v, rel);
+	if (!oahash_enabled) rel = rel_push_aggr_down(v, rel);
 	rel = rel_push_groupby_down(v, rel);
 	rel = rel_reduce_groupby_exps(v, rel);
 	rel = rel_distinct_aggregate_on_unique_values(v, rel);
-	rel = rel_groupby_distinct(v, rel);
+	if (!oahash_enabled) rel = rel_groupby_distinct(v, rel);
 	rel = rel_push_count_down(v, rel);
 
 	/* only when value_based_opt is on, ie not for dependency resolution */
@@ -3376,7 +3516,9 @@ rel_merge_unions(visitor *v, sql_rel *rel)
 static inline sql_rel *
 rel_push_join_down_munion(visitor *v, sql_rel *rel)
 {
-	if ((is_join(rel->op) && !is_outerjoin(rel->op) && !is_single(rel)) || is_semi(rel->op)) {
+	ATOMIC_TYPE oahash_mask = (1U<<19);
+	bool oahash_enabled = (GDKdebug & oahash_mask);
+	if (!oahash_enabled && ((is_join(rel->op) && !is_outerjoin(rel->op) && !is_single(rel)) || is_semi(rel->op))) {
 		sql_rel *l = rel->l, *r = rel->r, *ol = l, *or = r;
 		list *exps = rel->exps, *attr = rel->attr;
 		sql_exp *je = NULL;
@@ -3543,16 +3685,19 @@ rel_push_join_down_munion(visitor *v, sql_rel *rel)
 static sql_rel *
 rel_optimize_unions_topdown_(visitor *v, sql_rel *rel)
 {
+	uint8_t cycle = *(uint8_t*) v->data;
+
 	rel = rel_push_project_down_union(v, rel);
 	rel = rel_merge_unions(v, rel);
-	rel = rel_push_join_down_munion(v, rel);
+	if (cycle > 0)
+		rel = rel_push_join_down_munion(v, rel);
 	return rel;
 }
 
 static sql_rel *
 rel_optimize_unions_topdown(visitor *v, global_props *gp, sql_rel *rel)
 {
-	(void) gp;
+	v->data = &gp->opt_cycle;
 	return rel_visitor_topdown(v, rel, &rel_optimize_unions_topdown_);
 }
 
@@ -3629,6 +3774,9 @@ has_no_selectivity(mvc *sql, sql_rel *rel)
 	case op_except:
 	case op_munion:
 	case op_select:
+	case op_buildhash:
+	case op_probehash:
+	case op_partition:
 		return false;
 	}
 	return true;
@@ -3658,13 +3806,19 @@ rel_distinct_project2groupby_(visitor *v, sql_rel *rel)
 
 	/* rewrite distinct project [ pk ] ( select ( table ) [ e op val ])
 	 * into project [ pk ] ( select/semijoin ( table )  */
+	sql_rel *orel = rel;
+	if (rel->op == op_project && rel->l && !rel->r /* no order by */ && need_distinct(rel) &&
+	    (l->op == op_project && l->l && !l->r) && list_check_prop_all(rel->exps, (prop_check_func)&exp_is_useless_rename))
+		rel = l;
+
 	if (rel->op == op_project && rel->l && !rel->r /* no order by */ && need_distinct(rel) &&
 	    (l->op == op_select || l->op == op_semi) && exps_unique(v->sql, rel, rel->exps, true) &&
 		(!have_semantics(l->exps) || !have_nil(rel->exps))) {
-		set_nodistinct(rel);
+		set_nodistinct(orel);
 		v->changes++;
 	}
 
+	rel = orel;
 	/* rewrite distinct project ( join(p,f) [ p.pk = f.fk ] ) [ p.pk ]
 	 * 	into project( (semi)join(p,f) [ p.pk = f.fk ] ) [ p.pk ] */
 	if (rel->op == op_project && rel->l && !rel->r /* no order by */ && need_distinct(rel) &&

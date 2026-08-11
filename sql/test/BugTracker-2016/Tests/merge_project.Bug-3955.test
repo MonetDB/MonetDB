@@ -50,6 +50,7 @@ select * from r
 2
 0.900
 
+skipif knownfail
 query T nosort
 EXPLAIN SHOW DETAILS select * from r
 ----

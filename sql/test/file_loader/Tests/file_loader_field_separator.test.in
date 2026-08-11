@@ -134,7 +134,7 @@ Lightyear
 
 # tests to load incomplete cars (4 columns, 5 rows) data files with missing field separators or empty lines
 
-statement error 42000!Failed to import table 'cars', line 5: column 3 name_2: Column value missing
+statement error 42000!Row 5: too few fields, expected 4 but found 2
 select * from file_loader(r'$TSTSRCDIR/cars_missing_separators.csv') as cars(id, brand, model, "year")
 
 statement error

@@ -65,22 +65,22 @@ DBDBDBDBDBDB
 
 # This is the one that seems to crash
 
-query TIT nosort
+query TIT rowsort
 SELECT 'nulls', COUNT(*), NULL FROM foo WHERE (b IS NULL) <> (id % 3 = 2)
 UNION
 SELECT 'lengths', COUNT(*), NULL FROM foo WHERE b IS NOT NULL AND id % 1000 <> length(b)
 UNION
 SELECT 'blob6', NULL, b FROM foo WHERE id = 6
 ----
-nulls
-0
-NULL
-lengths
-0
-NULL
 blob6
 NULL
 DBDBDBDBDBDB
+lengths
+0
+NULL
+nulls
+0
+NULL
 
 statement ok
 ROLLBACK

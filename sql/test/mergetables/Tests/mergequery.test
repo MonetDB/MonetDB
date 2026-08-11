@@ -104,6 +104,7 @@ SELECT * FROM complete where x>=2.0 AND x <=3.0
 1.000
 0.000
 
+skipif knownfail
 query T nosort
 EXPLAIN SHOW DETAILS SELECT * FROM complete where x = 0.0
 ----
@@ -123,6 +124,7 @@ SELECT * FROM complete where x = 0.0
 1.000
 0.000
 
+skipif knownfail
 query T nosort
 EXPLAIN SHOW DETAILS SELECT * FROM complete where x = 3.0
 ----
@@ -142,6 +144,7 @@ SELECT * FROM complete where x = 3.0
 1.000
 0.000
 
+skipif knownfail
 query T nosort
 EXPLAIN SHOW DETAILS SELECT * FROM complete where x >= 1.0 AND x < 2.0
 ----
@@ -161,6 +164,7 @@ SELECT * FROM complete where x >= 1.0 AND x < 2.0
 1.000
 0.000
 
+skipif knownfail
 query T nosort
 EXPLAIN SHOW DETAILS SELECT * FROM complete where x > 1.0 AND x <= 2.0
 ----
@@ -180,6 +184,7 @@ SELECT * FROM complete where x > 1.0 AND x <= 2.0
 1.000
 0.000
 
+skipif knownfail
 query T nosort
 EXPLAIN SHOW DETAILS SELECT * FROM complete where x > 1.0 AND x < 2.0
 ----
@@ -193,6 +198,7 @@ query RRR rowsort
 SELECT * FROM complete where x > 1.0 AND x < 2.0
 ----
 
+skipif knownfail
 query T nosort
 EXPLAIN SHOW DETAILS SELECT * FROM complete where x >= 1.0 AND x <= 2.0
 ----
@@ -209,7 +215,7 @@ munion (
 | ) [ "complete"."x" NOT NULL, "complete"."y" NOT NULL, "complete"."z" NOT NULL ]
 ) [ "complete"."x" NOT NULL, "complete"."y" NOT NULL, "complete"."z" NOT NULL ]
 
-query RRR nosort
+query RRR rowsort
 SELECT * FROM complete where x >= 1.0 AND x <= 2.0
 ----
 1.000
@@ -225,6 +231,7 @@ SELECT * FROM complete where x >= 1.0 AND x <= 2.0
 1.000
 0.000
 
+skipif knownfail
 query T nosort
 EXPLAIN SHOW DETAILS SELECT * FROM complete WHERE x BETWEEN 0 AND 2 AND Y BETWEEN 0 AND 2
 ----

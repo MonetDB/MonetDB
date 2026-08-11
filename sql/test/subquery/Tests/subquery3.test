@@ -812,7 +812,7 @@ SELECT
 	(SELECT i2.i FROM (VALUES (i1.i, i1.i), (i1.i, i1.i)) as i2(i,j))
 FROM integers i1
 
-query I nosort
+query I rowsort
 SELECT i FROM integers ORDER BY (SELECT true)
 ----
 1

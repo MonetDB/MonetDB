@@ -1,13 +1,13 @@
 statement ok
-create table t_int(i int)
+create table t_int(_ int, i int)
 
 statement ok
 copy 1 records into t_int from stdin USING DELIMITERS ',',E'\n','"' NULL AS ''
 <COPY_INTO_DATA>
-""
+0,
 
 query I rowsort
-select * from t_int
+select i from t_int
 ----
 NULL
 
@@ -17,11 +17,11 @@ delete from t_int
 statement ok
 copy 2 records into t_int from stdin USING DELIMITERS ',',E'\n','"' NULL AS ''
 <COPY_INTO_DATA>
-3.00
--4.0000
+0,3.00
+0,-4.0000
 
 query I rowsort
-select * from t_int
+select i from t_int
 ----
 -4
 3
@@ -32,12 +32,12 @@ delete from t_int
 statement error
 copy 3 records into t_int from stdin USING DELIMITERS ',',E'\n','"' NULL AS ''
 <COPY_INTO_DATA>
-0
-5.1
-9
+0,0
+0,5.1
+0,9
 
 query I rowsort
-select * from t_int
+select i from t_int
 ----
 
 statement ok
@@ -46,14 +46,14 @@ delete from t_int
 statement error
 copy 5 records into t_int from stdin DELIMITERS ',',E'\n','"' NULL as ''
 <COPY_INTO_DATA>
-1
-nil
-""
-null
-abc
+0,1
+0,nil
+0,
+0,null
+0,abc
 
 query I rowsort
-select * from t_int
+select i from t_int
 ----
 
 statement ok

@@ -122,11 +122,15 @@
 	FUNC(groupedfirstn); \
 	FUNC(grow); \
 	FUNC(hge); \
+	FUNC(iaggr); \
+	FUNC(ialgebra); \
 	FUNC(identity); \
 	FUNC(ifthenelse); \
+	FUNC(igroup); \
 	FUNC(importColumn); \
 	FUNC(importNulTerminated); \
 	FUNC(importRaw); \
+	FUNC(ilockedaggr); \
 	FUNC(int); \
 	FUNC(intersect); \
 	FUNC(intersectcand); \
@@ -145,6 +149,7 @@
 	FUNC(likeuselect); \
 	FUNC(lng); \
 	FUNC(lock); \
+	FUNC(lockedaggr); \
 	FUNC(lookup); \
 	FUNC(main); \
 	FUNC(mal); \
@@ -170,9 +175,11 @@
 	FUNC(mvc); \
 	FUNC(new); \
 	FUNC(next); \
+	FUNC(no_slices); \
 	FUNC(not); \
 	FUNC(not_like); \
 	FUNC(not_unique); \
+	FUNC(nth_slice); \
 	FUNC(nth_value); \
 	FUNC(ntile); \
 	FUNC(optimizer); \
@@ -184,6 +191,7 @@
 	FUNC(parameters); \
 	FUNC(pass); \
 	FUNC(percent_rank); \
+	FUNC(pipelines); \
 	FUNC(predicate); \
 	FUNC(print); \
 	FUNC(prod); \
@@ -227,6 +235,7 @@
 	FUNC(setVariable); \
 	FUNC(single); \
 	FUNC(slice); \
+	FUNC(slicer); \
 	FUNC(sort); \
 	FUNC(sortReverse); \
 	FUNC(sql); \

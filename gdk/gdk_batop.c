@@ -169,6 +169,7 @@ insert_string_bat(BAT *b, BATiter *ni, struct canditer *ci, bool force, bool may
 	} else if (b->ustr) {
 		MT_thread_setalgorithm("individual inserts into ustr", __func__);
 	} else if (mayshare && b->batRole == TRANSIENT &&
+		   ni->vh->storage != STORE_NOWN &&
 		   (oldcnt == 0 || b->tvheap->free <= GDK_STRHASHSIZE)) {
 		/* we can share the vheaps, so we then only need to
 		 * append the offsets; the condition is: b is empty, or
@@ -194,8 +195,9 @@ insert_string_bat(BAT *b, BATiter *ni, struct canditer *ci, bool force, bool may
 		    unshare_varsized_heap(b) != GDK_SUCCEED) {
 			return GDK_FAIL;
 		}
-		if (oldcnt == 0 || (!GDK_ELIMDOUBLES(b->tvheap) &&
-				    !GDK_ELIMDOUBLES(ni->vh))) {
+		if ((oldcnt == 0 || (!GDK_ELIMDOUBLES(b->tvheap) &&
+				    !GDK_ELIMDOUBLES(ni->vh))) &&
+				    ni->b->tvheap->storage != STORE_NOWN) {
 			/* we'll consider copying the string heap completely
 			 *
 			 * we first estimate how much space the string heap
@@ -377,7 +379,9 @@ insert_string_bat(BAT *b, BATiter *ni, struct canditer *ci, bool force, bool may
 			p = canditer_next(ci) - ni->b->hseqbase;
 			off = VarHeapVal(ni->base, p, ni->width); /* the offset */
 			tp = off == 0 ? nil : ni->vh->base + off; /* the string */
-			if (off != 0 &&
+			if (ni->b->tvheap->storage != STORE_NOWN &&
+			    b->twidth == ni->b->twidth &&
+			    off != 0 &&
 			    off < b->tvheap->free &&
 			    strcmp(b->tvheap->base + off, tp) == 0) {
 				/* we found the string at the same
@@ -563,7 +567,7 @@ append_varsized_bat(BAT *b, BATiter *ni, struct canditer *ci, bool mayshare)
 			BBPrelease(oh->parentid);
 		HEAPdecref(oh, false);
 	}
-	if (BATcount(b) == 0 &&
+	if (BATcount(b) == 0 && b->tvheap->free == 0 &&
 	    ci->tpe == cand_dense && ci->ncand == ni->count) {
 		/* just copy the heaps */
 		MT_thread_setalgorithm("memcpy tail and vheap", __func__);
@@ -862,6 +866,7 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 	OIDXdestroy(b);
 	STRMPdestroy(b);	/* TODO: use STRMPappendBitString */
 	RTREEdestroy(b);
+	TSKdestroy(b);
 
 	MT_lock_set(&b->theaplock);
 	const bool notnull = BATgetprop_nolock(b, GDK_NOT_NULL) != NULL;
@@ -1194,6 +1199,7 @@ BATdel(BAT *b, BAT *d)
 	PROPdestroy(b);
 	STRMPdestroy(b);
 	RTREEdestroy(b);
+	TSKdestroy(b);
 	if (BATtdense(d)) {
 		oid o = d->tseqbase;
 		BUN c = BATcount(d);
@@ -1386,6 +1392,7 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 	OIDXdestroy(b);
 	STRMPdestroy(b);
 	RTREEdestroy(b);
+	TSKdestroy(b);
 	/* load hash so that we can maintain it */
 	(void) BATcheckhash(b);
 

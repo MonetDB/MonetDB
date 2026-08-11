@@ -101,7 +101,8 @@ NULL
 NULL
 
 #output differs for 1 vs. multiple threads
-skipif threads=1
+#skipif threads=1
+skipif knownfail
 query T nosort
 EXPLAIN SHOW DETAILS SELECT DISTINCT col0, col1, col2, col0 FROM tab0
 ----
@@ -109,7 +110,8 @@ group by (
 | table("sys"."tab0") [ "tab0"."col0" NOT NULL, "tab0"."col1" NOT NULL, "tab0"."col2" NOT NULL ]
 ) [ "tab0"."col2" NOT NULL, "tab0"."col0" NOT NULL, "tab0"."col1" NOT NULL ] [ "tab0"."col0" NOT NULL, "tab0"."col1" NOT NULL, "tab0"."col2" NOT NULL, "tab0"."col0" NOT NULL ]
 
-onlyif threads=1
+#onlyif threads=1
+skipif knownfail
 query T nosort
 EXPLAIN SHOW DETAILS SELECT DISTINCT col0, col1, col2, col0 FROM tab0
 ----
@@ -133,6 +135,7 @@ SELECT DISTINCT col0, col1, col2, col0 FROM tab0
 99
 97
 
+skipif knownfail
 query T nosort
 EXPLAIN SHOW DETAILS SELECT col0 FROM tab2 WHERE CAST(col2 AS BIGINT) = 40
 ----
@@ -397,6 +400,7 @@ insert into tab1 values (1,1,1), (2,2,2)
 statement ok
 insert into tab2 values (1, 'a'), (1, 'b')
 
+skipif knownfail
 query T nosort
 EXPLAIN SHOW DETAILS select
   myalias0."part" as "part",

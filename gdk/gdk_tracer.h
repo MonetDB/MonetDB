@@ -107,6 +107,7 @@ typedef enum {
 	COMP( GEOM )				\
 	COMP( FITS )				\
 	COMP( SHP )				\
+	COMP( PARQUET )				\
 						\
 	COMP( LOADER )				\
 						\

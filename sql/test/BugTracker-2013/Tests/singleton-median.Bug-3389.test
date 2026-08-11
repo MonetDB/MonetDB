@@ -31,18 +31,18 @@ insert into table3389 values (8,null)
 statement ok
 insert into table3389 values (9,null)
 
-query I rowsort
-select median(b) from table3389 group by k
+query I nosort
+select median(b) m from table3389 group by k order by m
 ----
+NULL
+NULL
+NULL
+NULL
 2
 2
-21
 3
+21
 65
-NULL
-NULL
-NULL
-NULL
 
 statement ok
 rollback

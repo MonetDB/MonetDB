@@ -12,6 +12,7 @@ add_subdirectory(fits)
 add_subdirectory(netcdf)
 add_subdirectory(shp)
 add_subdirectory(csv)
+add_subdirectory(parquet)
 add_subdirectory(monetdb)
 add_subdirectory(odbc)
 

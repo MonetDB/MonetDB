@@ -377,6 +377,7 @@ runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 {
 	lng ticks = GDKusec();
 
+	pci->ticks += ticks - prof->ticks;
 	TRC_DEBUG_IF(MAL_INSTRUCTION) {
 		TRC_DEBUG_ENDIF(MAL_INSTRUCTION, "%s ("LLFMT" usec)",
 						instruction2str(mb, stk, pci, LIST_MAL_ALL | LIST_MAL_ALGO),

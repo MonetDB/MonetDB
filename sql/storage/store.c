@@ -366,14 +366,19 @@ sql_trans_add_dependency(sql_trans* tr, sqlid id, sql_dependency_change_type tp)
 		.objid = id,
 		.type = tp
 	};
+	sqlstore *store = tr->store;
+	store_lock(store);
 	if (!tr->dependencies && !(tr->dependencies = list_create((fdestroy) &dep_destroy))) {
+		store_unlock(store);
 		_DELETE(dep);
 		return LOG_ERR;
 	}
 	if (!list_append(tr->dependencies, dep)) {
+		store_unlock(store);
 		_DELETE(dep);
 		return LOG_ERR;
 	}
+	store_unlock(store);
 	return LOG_OK;
 }
 
@@ -388,14 +393,19 @@ sql_trans_add_dependency_change(sql_trans *tr, sqlid id, sql_dependency_change_t
 		.objid = id,
 		.type = tp
 	};
+	sqlstore *store = tr->store;
+	store_lock(store);
 	if (!tr->depchanges && !(tr->depchanges = list_create((fdestroy) &dep_destroy))) {
+		store_unlock(store);
 		_DELETE(dep);
 		return LOG_ERR;
 	}
 	if (!list_append(tr->depchanges, dep)) {
+		store_unlock(store);
 		_DELETE(dep);
 		return LOG_ERR;
 	}
+	store_unlock(store);
 	return LOG_OK;
 }
 
@@ -1037,6 +1047,10 @@ load_func(sql_trans *tr, sql_schema *s, sqlid fid, subrids *rs)
 		t->order_required = true;
 	if (order_spec == 1)
 		t->opt_order = true;
+	t->pipeline = 0;
+	if (t->system && t->type == F_UNION && t->lang == FUNC_LANG_MAL &&
+			 strcmp(t->base.name, "generate_series") == 0)
+		t->pipeline = 1;
 
 	TRC_DEBUG(SQL_STORE, "Load function: %s\n", t->base.name);
 
@@ -2241,6 +2255,7 @@ store_load(sqlstore *store, allocator *pa)
 
 	/* load remaining schemas, tables, columns etc */
 	tr->active = 1;
+	tr->cnr = 0;
 	if (!store->first && !load_trans(tr)) {
 		TRC_CRITICAL(SQL_STORE, "Cannot load catalog tables\n");
 		sql_trans_destroy(tr);
@@ -4386,6 +4401,7 @@ sql_trans_commit(sql_trans *tr)
 	int ok = LOG_OK;
 	sqlstore *store = tr->store;
 
+	tr->cnr++;
 	if (!list_empty(tr->changes)) {
 		struct os_iter oi;
 		os_iterator(&oi, tr->localtmps, tr, NULL);
@@ -5524,6 +5540,10 @@ sql_trans_create_func(sql_func **fres, sql_trans *tr, sql_schema *s, const char 
 	}
 	t->query = (query)?_STRDUP(query):NULL;
 	t->s = s;
+	t->pipeline = 0;
+	if (t->type == F_UNION && t->lang == FUNC_LANG_MAL &&
+			 strcmp(t->base.name, "generate_series") == 0)
+		t->pipeline = 1;
 
 	if ((res = os_add(s->funcs, tr, t->base.name, &t->base)))
 		return res;
@@ -6943,10 +6963,19 @@ sql_trans_alter_type(sql_trans *tr, sql_column *col, sql_subtype *t)
 }
 
 int
-sql_trans_is_sorted( sql_trans *tr, sql_column *col )
+sql_trans_is_sorted_col( sql_trans *tr, sql_column *col )
 {
 	sqlstore *store = tr->store;
 	if (col && isTable(col->t) && store->storage_api.sorted_col && store->storage_api.sorted_col(tr, col))
+		return 1;
+	return 0;
+}
+
+int
+sql_trans_is_sorted_idx( sql_trans *tr, sql_idx *idx )
+{
+	sqlstore *store = tr->store;
+	if (idx && isTable(idx->t) && store->storage_api.sorted_idx && store->storage_api.sorted_idx(tr, idx))
 		return 1;
 	return 0;
 }
@@ -7833,6 +7862,7 @@ sql_trans_begin(sql_session *s)
 		return -3;
 	}
 	tr->active = 1;
+	tr->cnr = 0;
 
 	int res = ATOMIC_GET(&s->schema_version) ?
 		ATOMIC_GET(&s->schema_version) != ATOMIC_GET(&tr->cat->schema_version) : 0;

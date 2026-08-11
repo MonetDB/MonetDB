@@ -461,7 +461,7 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int flg)
 		if (p->barrier == LEAVEsymbol ||
 			p->barrier == REDOsymbol ||
 			p->barrier == RETURNsymbol || p->barrier == RAISEsymbol) {
-			if (!copystring(&t, "    ", &len))
+			if (!copystring(&t, "  ", &len))
 				return base;
 		}
 		if (!copystring(&t, operatorName(p->barrier), &len) || !copystring(&t, " ", &len))
@@ -496,6 +496,8 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int flg)
 
 		for (i = 0; i < p->retc; i++) {
 			char arg[256];
+			if (p->inout > -1 && i >= p->inout && !copystring(&t, "!", &len))
+				return base;
 			renderTerm(mb, stk, p, i, flg, arg, sizeof(arg));
 			if (!copystring(&t, arg, &len))
 				return base;

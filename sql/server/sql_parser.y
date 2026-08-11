@@ -960,6 +960,10 @@ logical_step:
 				YYERROR;
 			}
 		}
+	|	LOGICAL PHYSICAL
+		{
+			m->step = S_LOGICAL_PHYSICAL;
+		}
 	;
 
 physical_step:

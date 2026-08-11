@@ -1223,6 +1223,7 @@ fixhashashbat(BAT *b)
 	PROPdestroy(b);
 	STRMPdestroy(b);
 	RTREEdestroy(b);
+	TSKdestroy(b);
 
 	/* make backup of heaps */
 	const char *t;

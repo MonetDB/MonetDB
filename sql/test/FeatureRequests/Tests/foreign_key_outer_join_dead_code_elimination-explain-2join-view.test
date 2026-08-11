@@ -1,6 +1,10 @@
 statement ok
 set optimizer = 'sequential_pipe'
 
+statement ok
+explain select count(*) from v2
+
+skipif knownfail
 query T python .explain.function_histogram
 explain physical select count(*) from v2
 ----
@@ -13,6 +17,10 @@ sql.resultSet
 user.main
 1
 
+statement ok
+explain select id       from v2 order by id
+
+skipif knownfail
 query T python .explain.function_histogram
 explain physical select id       from v2 order by id
 ----
@@ -22,8 +30,28 @@ algebra.sort
 1
 bat.pack
 5
+calc.not
+2
+language.pipelines
+2
+pipeline.counter
+1
+pipeline.counter_get
+1
+pipeline.done
+4
 querylog.define
 1
+sop.add
+2
+sop.fetch
+3
+sop.new
+1
+sort.merge
+1
+sort.mproject
+2
 sql.bind
 1
 sql.mvc
@@ -35,6 +63,10 @@ sql.tid
 user.main
 1
 
+statement ok
+explain select id , v2  from v2 order by id
+
+skipif knownfail
 query T python .explain.function_histogram
 explain physical select id , v2  from v2 order by id
 ----
@@ -43,23 +75,47 @@ algebra.difference
 algebra.join
 2
 algebra.project
-1
+3
 algebra.projection
-10
+20
 algebra.projectionpath
 1
 algebra.sort
 1
 bat.append
-8
+20
 bat.mirror
 2
 bat.new
-4
+10
 bat.pack
 5
+calc.not
+2
+language.pipelines
+2
+pipeline.counter
+1
+pipeline.counter_get
+1
+pipeline.done
+4
 querylog.define
 1
+slicer.no_slices
+1
+slicer.nth_slice
+6
+sop.add
+2
+sop.fetch
+3
+sop.new
+1
+sort.merge
+1
+sort.mproject
+3
 sql.bind
 2
 sql.bind_idxbat

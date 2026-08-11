@@ -531,6 +531,7 @@ csv_load(void *BE, sql_subfunc *f, char *filename, sql_exp *topn)
 	/* lookup copy_from */
 	sql_subfunc *cf = sql_find_func(sql, "sys", "copyfrom", 14, F_UNION, true, NULL);
 	cf->res = f->res;
+	cf->pipeline = f->pipeline;
 
 	sql_subtype tpe;
 	sql_find_subtype(&tpe, "varchar", 0, 0);

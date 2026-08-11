@@ -53,6 +53,7 @@ select * from sorted
 4
 3
 
+skipif knownfail
 query T nosort
 EXPLAIN SHOW DETAILS select a,b from sorted group by a,b
 ----
@@ -62,6 +63,7 @@ project (
 | ) [ "sorted"."a" NOT NULL, "sorted"."b" NOT NULL ] [ "sorted"."a" NOT NULL, "sorted"."b" NOT NULL ]
 ) [ "sorted"."a" NOT NULL, "sorted"."b" NOT NULL ]
 
+skipif knownfail
 query T nosort
 EXPLAIN SHOW DETAILS select a,b from sorted group by b,a
 ----

@@ -4,12 +4,12 @@ CREATE TABLE tbl_ProductSales (ColID int, Product_Category  varchar(64), Product
 statement ok
 INSERT INTO tbl_ProductSales VALUES (1,'Game','Mobo Game',200),(2,'Game','PKO Game',400),(3,'Fashion','Shirt',500),(4,'Fashion','Shorts',100)
 
-query I rowsort
+query I nosort
 SELECT CAST(SUM(TotalSales) as BIGINT) AS TotalSales FROM tbl_ProductSales
 ----
 1200
 
-query I rowsort
+query I nosort
 SELECT
     CAST(SUM(TotalSales) as BIGINT) AS TotalSales
 FROM tbl_ProductSales
@@ -17,7 +17,7 @@ GROUP BY ()
 ----
 1200
 
-query I rowsort
+query I nosort
 SELECT
     CAST(SUM(TotalSales) as BIGINT) AS TotalSales
 FROM tbl_ProductSales
@@ -31,7 +31,7 @@ SELECT
 FROM tbl_ProductSales
 GROUP BY ()
 
-query I rowsort
+query I nosort
 SELECT
     CAST(SUM(TotalSales) as BIGINT) AS TotalSales
 FROM tbl_ProductSales
@@ -40,7 +40,7 @@ GROUP BY Product_Category
 600
 600
 
-query I rowsort
+query I nosort
 SELECT
     CAST(SUM(TotalSales) as BIGINT) AS TotalSales
 FROM tbl_ProductSales
@@ -746,7 +746,7 @@ SELECT
 FROM tbl_ProductSales
 GROUP BY GROUPING SETS()
 
-query I rowsort
+query I nosort
 SELECT
     CAST(SUM(TotalSales) as BIGINT) AS TotalSales
 FROM tbl_ProductSales
@@ -754,7 +754,7 @@ GROUP BY GROUPING SETS(())
 ----
 1200
 
-query I rowsort
+query I nosort
 SELECT
     CAST(SUM(TotalSales) as BIGINT) AS TotalSales
 FROM tbl_ProductSales
@@ -788,7 +788,7 @@ GROUP BY GROUPING SETS((Product_Category), ())
 600
 600
 
-query I rowsort
+query I nosort
 SELECT
     CAST(SUM(TotalSales) as BIGINT) AS TotalSales
 FROM tbl_ProductSales
@@ -925,7 +925,7 @@ GROUP BY GROUPING SETS (ROLLUP(ColID), (), GROUPING SETS ((Product_Category, Pro
 500
 500
 
-query I rowsort
+query I nosort
 SELECT
     CAST(SUM(TotalSales) as BIGINT) AS TotalSales
 FROM tbl_ProductSales
@@ -947,7 +947,7 @@ ORDER BY SUM(TotalSales)
 600
 1200
 
-query I rowsort
+query I nosort
 SELECT
     CAST(SUM(TotalSales) as BIGINT) AS TotalSales
 FROM tbl_ProductSales GROUP BY ROLLUP (Product_Category, ColID)

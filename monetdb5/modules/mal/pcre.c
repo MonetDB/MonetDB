@@ -489,7 +489,7 @@ pcre_replace_bat(BAT **res, BAT *origin_strs, const char *pattern,
 		throw(MAL, "regexp.rematch", MAL_MALLOC_FAIL);
 	}
 
-	tmpbat = COLnew(origin_strs->hseqbase, TYPE_str, BATcount(origin_strs),
+	tmpbat = COLnew(origin_strs->hseqbase, TYPE_fstr, BATcount(origin_strs),
 					TRANSIENT);
 
 	/* the buffer for all destination strings is allocated only once,
@@ -507,11 +507,17 @@ pcre_replace_bat(BAT **res, BAT *origin_strs, const char *pattern,
 	BATiter origin_strsi = bat_iterator(origin_strs);
 	BATloop(&origin_strsi, p, q) {
 		origin_str = BUNtvar(&origin_strsi, p);
-		tmpres = single_replace(ta, pcre_code, match_data, origin_str,
-								(PCRE2_SIZE) strlen((char *) origin_str), exec_options,
-								(PCRE2_SPTR) replacement, len_replacement,
-								tmpres, &max_dest_size, errbuf, sizeof(errbuf));
-		if (tmpres == NULL || BUNappend(tmpbat, tmpres, false) != GDK_SUCCEED) {
+		if (strNil((const char *) origin_str)) {
+			strtcpy((char *) tmpres, str_nil, max_dest_size);
+			tmpbat->tnonil = false;
+			tmpbat->tnil = true;
+		} else {
+			tmpres = single_replace(ta, pcre_code, match_data, origin_str,
+									(PCRE2_SIZE) strlen((char *) origin_str), exec_options,
+									(PCRE2_SPTR) replacement, len_replacement,
+									tmpres, &max_dest_size, errbuf, sizeof(errbuf));
+		}
+		if (tmpres == NULL || tfastins_nocheckVAR(tmpbat, p, tmpres) != GDK_SUCCEED) {
 			bat_iterator_end(&origin_strsi);
 			pcre2_match_data_free(match_data);
 			pcre2_code_free(pcre_code);
@@ -532,6 +538,11 @@ pcre_replace_bat(BAT **res, BAT *origin_strs, const char *pattern,
 		else /* buffer is enlarged */
 			init_size = max_dest_size;
 	}
+	tmpbat->ttype = TYPE_str;
+	tmpbat->tsorted = tmpbat->trevsorted = false;
+	tmpbat->tkey = false;
+	tmpbat->tascii = false;
+	BATsetcount(tmpbat, BATcount(origin_strs));
 	bat_iterator_end(&origin_strsi);
 	pcre2_match_data_free(match_data);
 	pcre2_code_free(pcre_code);

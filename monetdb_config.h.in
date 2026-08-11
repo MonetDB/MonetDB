@@ -70,6 +70,7 @@
 #cmakedefine HAVE_DLFCN_H 1
 #cmakedefine HAVE_FCNTL_H 1
 #cmakedefine HAVE_GETOPT_H 1
+#cmakedefine HAVE_GLOB_H 1
 #cmakedefine HAVE_KVM_H 1
 #cmakedefine HAVE_MACH_MACH_INIT_H 1
 #cmakedefine HAVE_MACH_O_DYLD_H 1
@@ -180,6 +181,8 @@
 
 // optional code: libraries that may or may not be available,
 // optional extensions
+#cmakedefine HAVE_BROTLI 1
+#cmakedefine HAVE_CUDF 1
 #cmakedefine HAVE_CURL 1
 #cmakedefine HAVE_FITS 1
 #cmakedefine HAVE_GEOM 1
@@ -196,7 +199,9 @@
 #cmakedefine HAVE_READLINE 1
 #cmakedefine HAVE_RTREE 1
 #cmakedefine HAVE_SHP 1
+#cmakedefine HAVE_SNAPPY 1
 #cmakedefine HAVE_VALGRIND 1
+#cmakedefine HAVE_ZSTD 1
 
 // which malloc implementation to use (default: libc malloc)
 #cmakedefine WITH_JEMALLOC 1

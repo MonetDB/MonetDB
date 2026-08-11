@@ -101,6 +101,7 @@ set(include_sql_files
   25_debug
   26_sysmon
   27_rejects
+  28_copy
   39_analytics
   40_json
   42_md5sum
@@ -141,11 +142,19 @@ target_sources(sql
   sql_assert.c sql_assert.h
   sql_upgrades.c sql_upgrades.h
   rel_bin.c rel_bin.h
+  rel_copy.c rel_copy.h
+  rel_pphash.c rel_pphash.h
+  rel_pptopn.c rel_pptopn.h
   rel_physical.c rel_physical.h
   rel_predicates.c rel_predicates.h
+  bin_partition.c bin_partition.h
+  bin_partition_by_slice.c bin_partition_by_slice.h
+  bin_partition_by_value.c bin_partition_by_value.h
+  rel_orderby.c rel_orderby.h
   sql_cat.c sql_cat.h
   sql_transaction.c sql_transaction.h
   sql_statement.c
+  sql_pp_statement.c sql_pp_statement.h
   sql_statistics.c sql_statistics.h
   sql_gencode.c sql_gencode.h
   sql_optimizer.c sql_optimizer.h
@@ -164,6 +173,8 @@ target_sources(sql
   opt_backend.h
   for.c for.h
   dict.c dict.h
+  copy.c copy_misc.c copy_io.c copy_scan.c copy.h
+  copy_convert.c copy_convert_num.h
   ${MONETDB_CURRENT_SQL_SOURCES}
   PUBLIC
   ${sql_public_headers})

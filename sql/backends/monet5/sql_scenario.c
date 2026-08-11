@@ -76,6 +76,7 @@ sql_register(const char *name, const unsigned char *code)
 	sql_modules++;
 }
 
+int SQLrunning = 0;
 static sql_store SQLstore = NULL;
 int SQLdebug = 0;
 static const char *sqlinit = NULL;
@@ -855,6 +856,7 @@ SQLinit(Client c, const char *initpasswd)
 		return msg;
 	}
 
+	SQLrunning = 1;
 	if (MT_create_thread(&sqllogthread, mvc_logmanager, SQLstore, MT_THR_DETACHED, "logmanager") < 0) {
 		mvc_exit(SQLstore);
 		SQLstore = NULL;
@@ -945,6 +947,8 @@ SQLtrans(mvc *m)
 				throw(SQL, "sql.trans", SQLSTATE(42000) "The session's schema was not found, this session is going to terminate");
 			}
 		}
+	} else {
+		m->session->tr->cnr++;
 	}
 	return MAL_SUCCEED;
 }
@@ -1611,8 +1615,6 @@ SQLparser_body(Client c, backend *be)
 	m->rewriter_stop_cycle = -1;
 	m->trace = false;
 	c->query = NULL;
-	c->qryctx.starttime = GDKusec();
-	c->qryctx.endtime = c->querytimeout ? c->qryctx.starttime + c->querytimeout : 0;
 
 	allocator_state ta_state = ma_open(MT_thread_getallocator());
 	if ((err = sqlparse(m)) ||
@@ -1724,6 +1726,9 @@ SQLparser(Client c, backend *be)
 
 	assert (be->language != 'X');
 
+	c->qryctx.starttime = GDKusec();
+	c->qryctx.endtime = c->querytimeout ? c->qryctx.starttime + c->querytimeout : 0;
+
 	if ((msg = SQLtrans(m)) != MAL_SUCCEED) {
 		c->mode = FINISHCLIENT;
 		return msg;
@@ -1819,6 +1824,9 @@ SQLengine(Client c)
 str
 SYSupdate_tables(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	int *res = getArgReference_int(stk, pci, 0);
+	int d = *getArgReference_int(stk, pci, 1);
+	*res = d;
 	mvc *m = ((backend *) cntxt->sqlcontext)->mvc;
 
 	(void) mb;
@@ -1832,6 +1840,9 @@ SYSupdate_tables(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 SYSupdate_schemas(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	int *res = getArgReference_int(stk, pci, 0);
+	int d = *getArgReference_int(stk, pci, 1);
+	*res = d;
 	mvc *m = ((backend *) cntxt->sqlcontext)->mvc;
 
 	(void) mb;

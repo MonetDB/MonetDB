@@ -724,7 +724,7 @@ rel_accessing(mvc *sql, sql_rel *l, sql_rel *r)
 
 	if (rel_has_freevar(sql, r)){
 		list *boundvar = rel_boundvar(sql, l);
-		res = rel_accessing_ad(sql, r, l, boundvar);
+		res = rel_accessing_ad(sql, r, l, boundvar /* expressions accessing any common ancestor dependent join */);
 	}
 	return res;
 }
@@ -3322,21 +3322,32 @@ rel_simplify_exp_and_rank(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 	return e;
 }
 
+bool
+rel_pair_find(list *refs, sql_rel *rel)
+{
+	if (!list_empty(refs)) {
+		for(node *n = refs->h; n; n = n->next->next) {
+			if (n->data == rel)
+				return true;
+		}
+	}
+	return false;
+}
+
+void
+rel_pair_add(list *refs, sql_rel *common, sql_rel *urel)
+{
+	list_prepend(refs, common);
+	list_prepend(refs, urel);
+}
+
 static sql_rel *
 rel_collect_non_trivial_dependent_joins(visitor *v, sql_rel *rel)
 {
 	/* also keep lists of outer refs */
 	list *refs = v->data;
 	assert(!is_dependent(rel) || is_join(rel->op) || is_semi(rel->op));
-	bool found = false;
-	if (!list_empty(refs)) {
-		for(node *n = refs->h; n; n = n->next->next) {
-			if (n->data == rel) {
-				found = true;
-				break;
-			}
-		}
-	}
+	bool found = rel_pair_find(refs, rel);
 	if (!found && is_dependent(rel) && (is_join(rel->op) || is_semi(rel->op))) {
 
 		sql_rel *l = rel->l;
@@ -3352,10 +3363,9 @@ rel_collect_non_trivial_dependent_joins(visitor *v, sql_rel *rel)
 			}
 		}
 		if (accessing) {
-			list_prepend(refs, v->parent);
 			prop *ap = rel->p = prop_create(v->sql->sa, PROP_UNNESTING, rel->p);
 			ap->value.pval = accessing;
-			list_prepend(refs, rel);
+			rel_pair_add(refs, v->parent, rel);
 			sql_rel *p = v->parent;
 			if (p && is_project(p->op) && p->l != rel)
 				assert(0);
@@ -3531,6 +3541,7 @@ rel_simple_djoin_elim(visitor *v, sql_rel *prel, sql_rel *rel, sql_rel **changed
 		n = nxt;
 	}
 	if (list_empty(ai->accessed_by)) {
+		rel->p = prop_remove(v->sql->sa, rel->p, p); /* remove property */
 		reset_dependent(rel);
 		return true;
 	}
@@ -3619,8 +3630,11 @@ rewrite_column(visitor *v, sql_exp *e, struct unnesting *info)
 		{
 			sql_exp *ne = repr_find(v, info->repr, e);
 			if (ne && ne != e && ne->alias.label > 0) {
-				if (e->freevar && e->alias.label == e->nid)
+				if (e->freevar && e->alias.label == e->nid) {
 					e->alias = ne->alias;
+					e->l = ne->l;
+					e->r = ne->r;
+				}
 				e->nid = ne->alias.label;
 				e->freevar = 0;
 			}
@@ -3988,7 +4002,7 @@ accessing_merge(list *acc, list *nacc)
 static sql_rel *
 rel_smallest(sql_rel *r, list *outer_refs)
 {
-	if (r->op != op_join || !list_empty(r->exps))
+	if (r->op != op_join /*|| !list_empty(r->exps)*/)
 		return r;
 	sql_rel *rl = r->l;
 	sql_rel *rr = r->r;
@@ -4065,6 +4079,7 @@ rel_djoin_elim(visitor *v, sql_rel *prel, sql_rel *rel, struct unnesting *parent
 	}
 	unnest(v, rel, rel->r, &unnesting, acc);
 	add_outer_join_exps(v, rel, parent, &unnesting);
+	rel->p = prop_remove(v->sql->sa, rel->p, p); /* remove property */
 	reset_dependent(rel);
 	node *n = list_find(refs, rel, NULL);
 	if (!n && rel_is_ref(prel))

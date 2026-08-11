@@ -107,6 +107,7 @@ HEAPgrow(Heap **hp, size_t size, bool mayshare)
 		};
 		memcpy(new->filename, old->filename, sizeof(new->filename));
 		if (HEAPalloc(new, size, 1) == GDK_SUCCEED) {
+			assert(old->free < size);
 			new->free = old->free;
 			new->cleanhash = old->cleanhash;
 			if (old->free > 0 &&

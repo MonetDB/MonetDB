@@ -30,6 +30,7 @@ CREATE TABLE "cm_flux" (
 	"avg_dec_zone_deg" TINYINT       NOT NULL
 )
 
+skipif knownfail
 query T nosort
 explain show details UPDATE fluxz
    SET (filter

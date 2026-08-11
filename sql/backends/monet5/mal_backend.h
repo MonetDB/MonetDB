@@ -54,9 +54,22 @@ typedef struct backend {
 
 	bool sizeheader:1,	/* print size header in result set */
 		 no_mitosis:1,	/* run query without mitosis */
+		 need_pipeline:1,	/* flag to indicate we need to start a pipeline */
 		 console:1,
 		 silent:1; /* on some occasions we don't want to output the result set or the number of affected rows */
 	cq 	*q;		/* pointer to the cached query */
+
+	int pp;			/* pipeline counter of the language.pipeline barrier */
+	int nrparts;	/* nrparts of the .. */
+	int pipeline;	/* pipeline ptr argument of the language.pipeline barrier */
+	int pp_pc;		/* pc of pipeline statement, any pp prepare statements need to go before this one */
+	int concatcnt;	/* number of concat blocks with sources */
+	int source;		/* use source.done instead of pipeline.counter */
+	int part_size;
+	int sink;		/* if set sink.error will be used to keep the errors within this pipeline */
+	int cleanup;	/* variable which needs cleanup at end of block */
+	void *ppstmt;
+	bool updates;
 
 	int result_id;
 	res_table *results;

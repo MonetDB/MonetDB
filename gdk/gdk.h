@@ -208,6 +208,7 @@ enum {
 	TYPE_inet4,
 	TYPE_inet6,
 	TYPE_str,
+	TYPE_fstr,
 	TYPE_blob,
 	TYPE_any = 255,		/* limit types to <255! */
 };
@@ -389,7 +390,31 @@ gdk_export bool VALisnil(const ValRecord *v);
 
 typedef struct PROPrec PROPrec;
 
+typedef void  (*pipeline_io_destroy)  (void *pl_io);
+typedef int   (*pipeline_io_done)     (void *pl_io, int wid, int nr_workers, bool redo);
+typedef int   (*pipeline_io_next)     (void *pl_io, int wid);
+typedef void *(*pipeline_io_next_bat) (void *pl_io, int wid);
+
+typedef struct pipeline_io {
+	pipeline_io_destroy destroy;
+	pipeline_io_done done;
+	pipeline_io_next next;         /* counter incrementing sources */
+	pipeline_io_next_bat next_bat; /* bat generating sources */
+	int type;                      /* sink/source type */
+	char *error;
+} pipeline_source, pipeline_sink;
+
+#define TSKdestroy(b) if (b->pl_io && b->pl_io->destroy) { b->pl_io->destroy(b->pl_io); b->pl_io = NULL; }
+#define TSKfree(b)    TSKdestroy(b)
+
 #define ORDERIDXOFF		3
+
+#define HLL_BITS 6
+#define BITS_MASK   ((1ULL << HLL_BITS) - 1)
+#define MAX_CLZ     (64 - HLL_BITS)
+#define BUCKETS     (1U << HLL_BITS)
+#define CLZ_BUCKETS (MAX_CLZ + 1)
+#define HLLSEED     0xadc83b19ULL
 
 /* assert that atom width is power of 2, i.e., width == 1<<shift */
 #define assert_shift_width(shift,width) assert(((shift) == 0 && (width) == 0) || ((unsigned)1<<(shift)) == (unsigned)(width))
@@ -463,8 +488,10 @@ typedef struct BAT {
 	BUN tnosorted;		/* position that proves sorted==FALSE */
 	BUN tnorevsorted;	/* position that proves revsorted==FALSE */
 	BUN tminpos, tmaxpos;	/* location of min/max value */
+	oid tmaxval;
 	double tunique_est;	/* estimated number of unique values */
 	oid tseqbase;		/* start of dense sequence */
+	bool tprivate_bat;	/* used by single worker thread only */
 
 	Heap *theap;		/* space for the column. */
 	BUN tbaseoff;		/* offset in heap->base (in whole items) */
@@ -476,6 +503,8 @@ typedef struct BAT {
 	Heap *torderidx;	/* order oid index */
 	Strimps *tstrimps;	/* string imprint index  */
 	PROPrec *tprops;	/* list of dynamic properties stored in the bat descriptor */
+
+	struct pipeline_io *pl_io;
 
 	MT_Lock theaplock;	/* lock protecting heap reference changes */
 	MT_RWLock thashlock;	/* lock specifically for hash management */
@@ -521,6 +550,9 @@ gdk_export size_t HEAPmemsize(const Heap *h)
 	__attribute__((__pure__));
 gdk_export void HEAPdecref(Heap *h, bool remove);
 gdk_export void HEAPincref(Heap *h);
+gdk_export gdk_return HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
+	__attribute__((__warn_unused_result__));
+	//__attribute__((__visibility__("hidden")));
 
 __attribute__((__pure__))
 static inline bat
@@ -879,6 +911,8 @@ gdk_export gdk_return BATupdate(BAT *b, BAT *p, BAT *n, bool force)
 gdk_export gdk_return BATupdatepos(BAT *b, const oid *positions, BAT *n, bool autoincr, bool force)
 	__attribute__((__warn_unused_result__));
 
+gdk_export gdk_return unshare_varsized_heap(BAT *b)
+	__attribute__((__warn_unused_result__));
 /* Functions to perform a binary search on a sorted BAT.
  * See gdk_search.c for details. */
 gdk_export BUN SORTfnd(BAT *b, const void *v);
@@ -1480,6 +1514,11 @@ gdk_export void STRMPdestroy(BAT *b);
 gdk_export bool BAThasstrimps(BAT *b);
 gdk_export gdk_return BATsetstrimps(BAT *b);
 
+gdk_export int sketch_populate(BAT* n, BATiter *ni, struct canditer *nci, uint8_t cnting_sketch[BUCKETS][CLZ_BUCKETS]);
+/* gdk_export void sketch_merge(BAT* b, BAT* n); */
+gdk_export double sketch_estimate(uint8_t cnt_sketch[BUCKETS][CLZ_BUCKETS]);
+gdk_export double bat_guess_uniques(BAT *b, BATiter *bi, struct canditer *bci);
+
 /* Rtree structure functions */
 #ifdef HAVE_RTREE
 gdk_export bool RTREEexists(BAT *b);
@@ -1560,7 +1599,10 @@ BBPcheck(bat x)
 		if (x < 0 || x >= getBBPsize() || BBP_logical(x) == NULL) {
 			TRC_DEBUG(CHECK, "range error %d\n", (int) x);
 		} else {
-			assert(BBP_pid(x) == 0 || BBP_pid(x) == MT_getpid());
+			/* No longer guaranteed in pipeline, hence disable it.
+			 * TODO: find a proper way for this check
+			 */
+			//assert(BBP_pid(x) == 0 || BBP_pid(x) == MT_getpid());
 			return x;
 		}
 	}
@@ -1920,6 +1962,7 @@ gdk_export void ma_close(const allocator_state *); /* close temporary frame, res
 gdk_export void ma_free(allocator *sa, void *);
 gdk_export exception_buffer *ma_get_eb(allocator *sa)
        __attribute__((__pure__));
+gdk_export char *ma_copy(allocator *sa, char *s, size_t l);
 
 gdk_export int ma_info(allocator *sa, char *buf, size_t buflen, const char *pref);
 

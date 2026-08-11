@@ -23,8 +23,7 @@ select  i_item_id,
        c_current_addr_sk = ca_address_sk and
        c_birth_month in (1,6,8,9,12,2) and
        d_year = 1998 and
-       ca_state in ('MS','IN','ND'
-                   ,'OK','NM','VA','MS')
+       ca_state in ('MS','IN','ND','OK','NM','VA','MS')
  group by rollup (i_item_id, ca_country, ca_state, ca_county)
  order by ca_country,
         ca_state,

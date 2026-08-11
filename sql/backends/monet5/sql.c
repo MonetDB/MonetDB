@@ -45,6 +45,8 @@
 #include "mal_instruction.h"
 #include "mal_resource.h"
 #include "mal_authorize.h"
+#include "mal_pipelines.h"
+#include "pipeline.h"
 
 static inline void
 BBPnreclaim(int nargs, ...)
@@ -148,7 +150,8 @@ sql_symbol2relation(backend *be, symbol *sym)
 			rel = sql_processrelation(be->mvc, rel, profile, 1, value_based_opt, storage_based_opt);
 		if (rel && (rel_no_mitosis(be->mvc, rel) || rel_need_distinct_query(rel)))
 			be->no_mitosis = 1;
-		if (rel)
+		if (rel && (be->mvc->emode != m_explain || AFTER_LOGICAL_PHYSICAL(be->mvc) ||
+					BEFORE_PHYSICAL(be->mvc) || AFTER_PHYSICAL(be->mvc)))
 			rel = rel_physical(be->mvc, rel);
 	}
 	be->reloptimizer = GDKusec() - t_begin;
@@ -178,6 +181,10 @@ sqlcleanup(backend *be, int err)
 	be->mvc->label = 0;
 	be->mvc->nid = 1;
 	be->no_mitosis = 0;
+	be->need_pipeline = 0;
+	be->pipeline = be->pp = be->nrparts = be->pp_pc = be->concatcnt = be->source = be->sink = be->cleanup = 0;
+	be->ppstmt = NULL;
+	be->part_size = DEFAULT_PARTSIZE;
 	mvc_query_processed(be->mvc);
 	return err;
 }
@@ -242,6 +249,7 @@ SQLmvc(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	if ((msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
+	sql->session->tr->cnr++;
 	*res = 0;
 	return MAL_SUCCEED;
 }
@@ -524,6 +532,9 @@ mvc_claim_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT *pos = NULL;
 	sql_schema *s;
 	sql_table *t;
+	struct pipeline_io *sync = NULL;
+	int nr = -1;
+	Pipeline *p = NULL;
 
 	*res = 0;
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
@@ -539,14 +550,37 @@ mvc_claim_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL, "sql.claim", SQLSTATE(42S02) "Table missing %s.%s", sname, tname);
 	if (!isTable(t))
 		throw(SQL, "sql.claim", SQLSTATE(42000) "%s '%s' is not persistent", TABLE_TYPE_DESCRIPTION(t->type, t->properties), t->base.name);
+	if (pci->argc > 6) {
+		bat *sid = getArgReference_bat(stk, pci, 6);
+		BAT *b;
+		if (!(b = BATdescriptor(*sid)))
+			msg = createException(SQL, "sql.claim", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		sync = b->pl_io;
+		p = pipeline_get_thread_private_pipeline();
+		BBPreclaim(b);
+		nr = *getArgReference_int(stk, pci, 7);	/* passed counter for table/bat sources */
+		if (p->seqnr >= 0) /* seq number from file/generator inputs */
+			nr = p->seqnr;
+		else if (!cnt && p->seqnr == -2)
+			nr = -1;
+		if (nr >= 0) {
+			bool done = 0;
+			pipeline_get_token(p, 7, nr, &done);
+		} else
+			sync = NULL;
+	}
 	if (mvc_claim_slots(m->session->tr, t, (size_t)cnt, offset, &pos) == LOG_OK) {
 		*res = bat_nil;
 		if (pos) {
 			*res = pos->batCacheid;
 			BBPkeepref(pos);
 		}
+		if (sync)
+			pipeline_pass_token(p, 7, nr);
 		return MAL_SUCCEED;
 	}
+	if (sync)
+			pipeline_pass_token(p, 7, nr);
 	throw(SQL, "sql.claim", SQLSTATE(3F000) "Could not claim slots");
 }
 
@@ -1235,17 +1269,17 @@ mvc_bind_idxbat(mvc *m, const char *sname, const char *tname, const char *iname,
 str
 mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int upd = (pci->argc == 7 || pci->argc == 9);
+	int upd = (pci->retc == 2);
 	BAT *b = NULL;
 	bat *bid = getArgReference_bat(stk, pci, 0);
 	mvc *m = NULL;
 	str msg;
-	const char *sname	= *getArgReference_str(stk, pci, 2 + upd);
-	const char *tname	= *getArgReference_str(stk, pci, 3 + upd);
-	const char *cname	= *getArgReference_str(stk, pci, 4 + upd);
-	const int	access	= *getArgReference_int(stk, pci, 5 + upd);
+	const char *sname = *getArgReference_str(stk, pci, 2 + upd);
+	const char *tname = *getArgReference_str(stk, pci, 3 + upd);
+	const char *cname = *getArgReference_str(stk, pci, 4 + upd);
+	const int access = *getArgReference_int(stk, pci, 5 + upd);
 
-	const bool partitioned_access = pci->argc == (8 + upd) && getArgType(mb, pci, 6 + upd) == TYPE_int;
+	const bool partitioned_access = pci->argc > (6 + upd) && getArgType(mb, pci, 6 + upd) == TYPE_int;
 
 	/* This doesn't work with quick access for now... */
 	assert(access != QUICK);
@@ -1256,7 +1290,8 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sqlstore *store = m->store;
 	sql_schema *s = mvc_bind_schema(m, sname);
 	sql_table *t = mvc_bind_table(m, s, tname);
-	if (t && !isTable(t))
+	bool is_merge = t && isMergeTable(t);
+	if (t && !isTable(t) && !is_merge)
 		throw(SQL, "sql.bind", SQLSTATE(42000) "%s '%s' is not persistent",
 			  TABLE_TYPE_DESCRIPTION(t->type, t->properties), t->base.name);
 	sql_column *c = mvc_bind_column(m, t, cname);
@@ -1264,10 +1299,33 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (partitioned_access) {
 		/* partitioned access */
 		int part_nr = *getArgReference_int(stk, pci, 6 + upd);
-		int nr_parts = *getArgReference_int(stk, pci, 7 + upd);
-		BUN cnt = store->storage_api.count_col(m->session->tr, c, 0), psz;
+		int nr_parts = 0;
+		if (pci->argc == 8 + upd)
+			nr_parts = *getArgReference_int(stk, pci, 7 + upd);
+		if (is_merge) {
+			assert(nr_parts);
+			int nr_members = list_length(t->members);
+			/* remap into SQLtid in partition */
+			int parts_per_member = (nr_parts/nr_members);
+			int member = part_nr/parts_per_member;
+			int p_nr = part_nr % parts_per_member;
+			sql_part *pd = list_fetch(t->members, member);
+			sql_table *pt = find_sql_table_id(m->session->tr, s, pd->member);
+
+			c = mvc_bind_column(m, pt, cname);
+
+			t = pt;
+			part_nr = p_nr;
+			nr_parts = parts_per_member;
+		}
+		BUN cnt = store->storage_api.count_col(m->session->tr, c, 0), psz = DEFAULT_PARTSIZE;
 		oid l, h;
-		psz = cnt ? (cnt / nr_parts) : 0;
+		if (nr_parts) {
+			psz = cnt ? (cnt / nr_parts) : 0;
+		} else {
+        		FORCEMITODEBUG
+			psz = MED_PARTSIZE;
+		}
 		l = part_nr * psz;
 		if (l > cnt)
 			l = cnt;
@@ -1277,63 +1335,15 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 		if (upd) {
 			BAT *ui = NULL, *uv = NULL;
-			if (store->storage_api.bind_updates(m->session->tr, c, &ui, &uv) == LOG_ERR)
+			if (store->storage_api.bind_updates(m->session->tr, c, l, h, &ui, &uv) == LOG_ERR)
 				throw(SQL,"sql.bind",SQLSTATE(HY005) "Cannot access the update columns");
-
-			h--;
-			BAT* bn = BATselect(ui, NULL, &l, &h, true, true, false, false);
-			if(bn == NULL) {
-				BBPunfix(ui->batCacheid);
-				BBPunfix(uv->batCacheid);
-				throw(SQL, "sql.bind", GDK_EXCEPTION);
-			}
-
 			bat *uvl = getArgReference_bat(stk, pci, 1);
 
-			if (BATcount(bn)) {
-				BAT *id;
-				BAT *vl;
-				if (ui == NULL || uv == NULL) {
-					bat_destroy(uv);
-					bat_destroy(ui);
-					BBPunfix(bn->batCacheid);
-					throw(SQL,"sql.bind",SQLSTATE(HY005) "Cannot access the insert column %s.%s.%s",
-						sname, tname, cname);
-				}
-				assert(uv->batCount == ui->batCount);
-				id = BATproject(bn, ui);
-				vl = BATproject(bn, uv);
-				bat_destroy(ui);
-				bat_destroy(uv);
-				if (id == NULL || vl == NULL) {
-					BBPunfix(bn->batCacheid);
-					bat_destroy(id);
-					bat_destroy(vl);
-					throw(SQL, "sql.bind", GDK_EXCEPTION);
-				}
-				if ( BATcount(id) != BATcount(vl)){
-					BBPunfix(bn->batCacheid);
-					bat_destroy(id);
-					bat_destroy(vl);
-					throw(SQL, "sql.bind", SQLSTATE(0000) "Inconsistent BAT count");
-				}
-				BBPkeepref(id);
-				BBPkeepref(vl);
-				*bid = id->batCacheid;
-				*uvl = vl->batCacheid;
-			} else {
-				BBPunfix(bn->batCacheid);
-				*bid = e_bat(TYPE_oid);
-				*uvl = e_bat(c->type.type->localtype);
-				if (*bid == BID_NIL || *uvl == BID_NIL) {
-					if (*bid)
-						BBPunfix(*bid);
-					if (*uvl)
-						BBPunfix(*uvl);
-					BBPunfix(b->batCacheid);
-					throw(SQL, "sql.bind", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-				}
-			}
+			BBPkeepref(ui);
+			BBPkeepref(uv);
+			*bid = ui->batCacheid;
+			*uvl = uv->batCacheid;
+			return MAL_SUCCEED;
 		} else {
 			int coltype = getBatType(getArgType(mb, pci, 0));
 			b = store->storage_api.bind_col(m->session->tr, c, access);
@@ -1357,7 +1367,7 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 	} else if (upd) { /*unpartitioned access to update bats*/
 		BAT *ui = NULL, *uv = NULL;
-		if (store->storage_api.bind_updates(m->session->tr, c, &ui, &uv) == LOG_ERR)
+		if (store->storage_api.bind_updates(m->session->tr, c, 0, BUN_NONE, &ui, &uv) == LOG_ERR)
 			throw(SQL,"sql.bind",SQLSTATE(HY005) "Cannot access the update columns");
 
 		bat *uvl = getArgReference_bat(stk, pci, 1);
@@ -1588,17 +1598,17 @@ cleanup:
 str
 mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int upd = (pci->argc == 7 || pci->argc == 9);
+	int upd = (pci->retc == 2);
 	BAT *b = NULL;
 	bat *bid = getArgReference_bat(stk, pci, 0);
 	mvc *m = NULL;
 	str msg;
-	const char *sname	= *getArgReference_str(stk, pci, 2 + upd);
-	const char *tname	= *getArgReference_str(stk, pci, 3 + upd);
-	const char *iname	= *getArgReference_str(stk, pci, 4 + upd);
-	const int	access	= *getArgReference_int(stk, pci, 5 + upd);
+	const char *sname = *getArgReference_str(stk, pci, 2 + upd);
+	const char *tname = *getArgReference_str(stk, pci, 3 + upd);
+	const char *iname = *getArgReference_str(stk, pci, 4 + upd);
+	const int access = *getArgReference_int(stk, pci, 5 + upd);
 
-	const bool partitioned_access = pci->argc == (8 + upd) && getArgType(mb, pci, 6 + upd) == TYPE_int;
+	const bool partitioned_access = pci->argc > (6 + upd) && getArgType(mb, pci, 6 + upd) == TYPE_int;
 
 	/* This doesn't work with quick access for now... */
 	assert(access != QUICK);
@@ -1617,10 +1627,17 @@ mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (partitioned_access) {
 		/* partitioned access */
 		int part_nr = *getArgReference_int(stk, pci, 6 + upd);
-		int nr_parts = *getArgReference_int(stk, pci, 7 + upd);
-		BUN cnt = store->storage_api.count_idx(m->session->tr, i, 0), psz;
+		int nr_parts = 0;
+		if (pci->argc == 8 + upd)
+			nr_parts = *getArgReference_int(stk, pci, 7 + upd);
+		BUN cnt = store->storage_api.count_idx(m->session->tr, i, 0), psz = DEFAULT_PARTSIZE;
 		oid l, h;
-		psz = cnt ? (cnt / nr_parts) : 0;
+		if (nr_parts) {
+			psz = cnt ? (cnt / nr_parts) : 0;
+		} else {
+        		FORCEMITODEBUG
+			psz = MED_PARTSIZE;
+		}
 		l = part_nr * psz;
 		if (l > cnt)
 			l = cnt;
@@ -1630,62 +1647,16 @@ mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 		if (upd) {
 			BAT *ui = NULL, *uv = NULL;
-			if (store->storage_api.bind_updates_idx(m->session->tr, i, &ui, &uv) == LOG_ERR)
+			if (store->storage_api.bind_updates_idx(m->session->tr, i, l, h, &ui, &uv) == LOG_ERR)
 				throw(SQL,"sql.bindidx",SQLSTATE(HY005) "Cannot access the update columns");
-
-			h--;
-			BAT* bn = BATselect(ui, NULL, &l, &h, true, true, false, false);
-			if(bn == NULL) {
-				BBPunfix(ui->batCacheid);
-				BBPunfix(uv->batCacheid);
-				throw(SQL, "sql.bindidx", GDK_EXCEPTION);
-			}
 
 			bat *uvl = getArgReference_bat(stk, pci, 1);
 
-			if (BATcount(bn)) {
-				BAT *id;
-				BAT *vl;
-				if (ui == NULL || uv == NULL) {
-					bat_destroy(uv);
-					bat_destroy(ui);
-					BBPunfix(bn->batCacheid);
-					throw(SQL,"sql.bindidx",SQLSTATE(42000) "Cannot access index column %s.%s.%s",sname,tname,iname);
-				}
-				assert(uv->batCount == ui->batCount);
-				id = BATproject(bn, ui);
-				vl = BATproject(bn, uv);
-				bat_destroy(ui);
-				bat_destroy(uv);
-				if (id == NULL || vl == NULL) {
-					BBPunfix(bn->batCacheid);
-					bat_destroy(id);
-					bat_destroy(vl);
-					throw(SQL, "sql.bindidx", GDK_EXCEPTION);
-				}
-				if ( BATcount(id) != BATcount(vl)){
-					BBPunfix(bn->batCacheid);
-					bat_destroy(id);
-					bat_destroy(vl);
-					throw(SQL, "sql.bindidx", SQLSTATE(0000) "Inconsistent BAT count");
-				}
-				BBPkeepref(id);
-				BBPkeepref(vl);
-				*bid = id->batCacheid;
-				*uvl = vl->batCacheid;
-			} else {
-				BBPunfix(bn->batCacheid);
-				*bid = e_bat(TYPE_oid);
-				*uvl = e_bat((i->type==join_idx)?TYPE_oid:TYPE_lng);
-				if (*bid == BID_NIL || *uvl == BID_NIL) {
-					if (*bid)
-						BBPunfix(*bid);
-					if (*uvl)
-						BBPunfix(*uvl);
-					BBPunfix(b->batCacheid);
-					throw(SQL, "sql.bindidx", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-				}
-			}
+			BBPkeepref(ui);
+			BBPkeepref(uv);
+			*bid = ui->batCacheid;
+			*uvl = uv->batCacheid;
+			return MAL_SUCCEED;
 		} else {
 			int idxtype = getBatType(getArgType(mb, pci, 0));
 			b = store->storage_api.bind_idx(m->session->tr, i, access);
@@ -1708,7 +1679,7 @@ mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	else if (upd) { /*unpartitioned access to update bats*/
 		BAT *ui = NULL, *uv = NULL;
-		if (store->storage_api.bind_updates_idx(m->session->tr, i, &ui, &uv) == LOG_ERR)
+		if (store->storage_api.bind_updates_idx(m->session->tr, i, 0, BUN_NONE, &ui, &uv) == LOG_ERR)
 			throw(SQL,"sql.bindidx",SQLSTATE(HY005) "Cannot access the update columns");
 
 		bat *uvl = getArgReference_bat(stk, pci, 1);
@@ -1747,7 +1718,7 @@ mvc_append_column(sql_trans *t, sql_column *c, BUN offset, BAT *pos, BAT *ins)
 str
 mvc_grow_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int *res = getArgReference_int(stk, pci, 0);
+	bat *res = getArgReference_bat(stk, pci, 0);
 	bat Tid = *getArgReference_bat(stk, pci, 1);
 	ptr Ins = getArgReference(stk, pci, 2);
 	int tpe = getArgType(mb, pci, 2);
@@ -1775,12 +1746,13 @@ mvc_grow_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		v++;
 	}
 	for(;cnt>0; cnt--, v++) {
-		if (BUNappend(tid, &v, false) != GDK_SUCCEED) {
+		if (BUNappend(tid, &v, true) != GDK_SUCCEED) {
 			BBPunfix(Tid);
 			throw(SQL, "sql.grow", GDK_EXCEPTION);
 		}
 	}
-	BBPunfix(Tid);
+	*res = Tid;
+	BBPkeepref(tid);
 	return MAL_SUCCEED;
 }
 
@@ -1798,6 +1770,14 @@ mvc_append_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat Pos = *getArgReference_bat(stk, pci, 6);
 	ptr ins = getArgReference(stk, pci, 7);
 	int tpe = getArgType(mb, pci, 7), log_res = LOG_OK;
+	int sync_nr = -1;
+	Pipeline *p = NULL;
+	if (pci->argc == 9) {
+		p = pipeline_get_thread_private_pipeline();
+		sync_nr = *getArgReference_int(stk, pci, 8);
+		if (p->seqnr >= 0) /* seq number from file/generator inputs */
+                	sync_nr = p->seqnr;
+	}
 	bool isbat = false;
 	sql_schema *s;
 	sql_table *t;
@@ -1854,15 +1834,23 @@ mvc_append_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (b)
 		cnt = BATcount(b);
 	sqlstore *store = m->session->tr->store;
+	if (sync_nr >= 0) {
+		bool done = 0;
+		pipeline_get_token(p, 6, sync_nr, &done);
+	}
 	if (cname[0] != '%' && (c = mvc_bind_column(m, t, cname)) != NULL) {
 		log_res = store->storage_api.append_col(m->session->tr, c, offset, pos, ins, cnt, isbat, tpe);
 	} else if (cname[0] == '%' && (i = mvc_bind_idx(m, s, cname + 1)) != NULL) {
 		log_res = store->storage_api.append_idx(m->session->tr, i, offset, pos, ins, cnt, isbat, tpe);
 	} else {
+		if (sync_nr >= 0)
+			pipeline_pass_token(p, 6, sync_nr);
 		bat_destroy(pos);
 		bat_destroy(b);
 		throw(SQL, "sql.append", SQLSTATE(38000) "Unable to find column or index %s.%s.%s",sname,tname,cname);
 	}
+	if (sync_nr >= 0)
+		pipeline_pass_token(p, 6, sync_nr);
 	bat_destroy(pos);
 	bat_destroy(b);
 	if (log_res != LOG_OK) /* the conflict case should never happen, but leave it here */
@@ -2389,6 +2377,30 @@ BATleftproject(Client ctx, bat *Res, const bat *Col, const bat *L, const bat *R)
 	return MAL_SUCCEED;
 }
 
+static str
+SQLno_slices(Client cntxt, int *nrslices, str *sname, str *tname)
+{
+	backend *be = (backend *) cntxt->sqlcontext;
+	sql_schema *s = mvc_bind_schema(be->mvc, *sname);
+	if (s == NULL)
+		throw(SQL, "sql.no_slices", SQLSTATE(3F000) "Schema missing %s", *sname);
+	sql_table *t = mvc_bind_table(be->mvc, s, *tname);
+	if (t == NULL)
+		throw(SQL, "sql.no_slices", SQLSTATE(42S02) "Table missing %s.%s", *sname, *tname);
+	sqlstore *store = be->mvc->store;
+	if (!ol_first_node(t->columns))
+		throw(SQL, "sql.no_slices", SQLSTATE(42S22) "Column missing %s.%s", *sname, *tname);
+	sql_column *c = ol_first_node(t->columns)->data;
+	BUN cnt = store->storage_api.count_col(be->mvc->session->tr, c, 0);
+	BUN psz = DEFAULT_PARTSIZE;
+        FORCEMITODEBUG
+	  	psz = MED_PARTSIZE;
+	*nrslices = (int)((cnt+psz-1)/psz);
+	if (*nrslices == 0)
+		*nrslices = 1;
+	return MAL_SUCCEED;
+}
+
 /* str SQLtid(bat *result, mvc *m, str *sname, str *tname) */
 str
 SQLtid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -2414,7 +2426,8 @@ SQLtid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	t = mvc_bind_table(m, s, tname);
 	if (t == NULL)
 		throw(SQL, "sql.tid", SQLSTATE(42S02) "Table missing %s.%s",sname,tname);
-	if (!isTable(t))
+	bool is_merge = isMergeTable(t);
+	if (!isTable(t) && !is_merge)
 		throw(SQL, "sql.tid", SQLSTATE(42000) "%s '%s' is not persistent",
 			  TABLE_TYPE_DESCRIPTION(t->type, t->properties), t->base.name);
 
@@ -2422,11 +2435,26 @@ SQLtid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/* we have full table count, nr of deleted (unused rows) */
 	int part_nr = 0;
 	int nr_parts = 1;
-	if (pci->argc == 6) {	/* partitioned version */
+	if (pci->argc == 5) {	/* fixed size partitioned version */
+		part_nr = *getArgReference_int(stk, pci, 4);
+		nr_parts = 0;
+	} else if (pci->argc == 6) {	/* partitioned version */
 		part_nr = *getArgReference_int(stk, pci, 4);
 		nr_parts = *getArgReference_int(stk, pci, 5);
 	}
-	BAT *b = store->storage_api.bind_cands(tr, t, nr_parts, part_nr);
+	BAT *b = NULL;
+	if (is_merge) {
+		int nr_members = list_length(t->members);
+		/* remap into SQLtid in partition */
+		int parts_per_member = (nr_parts/nr_members);
+		int member = part_nr/parts_per_member;
+		int p_nr = part_nr % parts_per_member;
+		sql_part *pd = list_fetch(t->members, member);
+		sql_table *pt = find_sql_table_id(m->session->tr, s, pd->member);
+		b = store->storage_api.bind_cands(tr, pt, parts_per_member, p_nr);
+	} else {
+		b = store->storage_api.bind_cands(tr, t, nr_parts, part_nr);
+	}
 	if (b) {
 		*res = b->batCacheid;
 		BBPkeepref(b);
@@ -3350,6 +3378,31 @@ PBATSQLidentity(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BBPkeepref(bn);
 	return MAL_SUCCEED;
 }
+
+static str
+PBATSQLrow_number(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	bat *res = getArgReference_bat(stk, pci, 0);
+	oid *ns = getArgReference_oid(stk, pci, 1);
+	bat bid = *getArgReference_bat(stk, pci, 2);
+	oid s = *getArgReference_oid(stk, pci, 3);
+	BAT *b, *bn = NULL;
+
+	(void) cntxt;
+	(void) mb;
+	if (!(b = BBPquickdesc(bid)))
+		throw(MAL, "batcalc.identity", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	if (!(bn = BATdense(b->hseqbase, s, BATcount(b))))
+		throw(MAL, "batcalc.identity", GDK_EXCEPTION);
+
+	BAT *bnn = BATconvert(bn, NULL, TYPE_int, 0, 0, 0);
+	BBPreclaim(bn);
+	*ns = s + BATcount(b);
+	*res = bnn->batCacheid;
+	BBPkeepref(bnn);
+	return MAL_SUCCEED;
+}
+
 
 /*
  * The core modules of Monet provide just a limited set of
@@ -5677,8 +5730,6 @@ SQLnormalize_monetdb_url(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 }
 
 
-
-
 static mel_func sql_init_funcs[] = {
  pattern("sql", "shutdown", SQLshutdown_wrap, true, "", args(1,3, arg("",str),arg("delay",bte),arg("force",bit))),
  pattern("sql", "shutdown", SQLshutdown_wrap, true, "", args(1,3, arg("",str),arg("delay",sht),arg("force",bit))),
@@ -5688,6 +5739,7 @@ static mel_func sql_init_funcs[] = {
  pattern("sql", "shutdown", SQLshutdown_wrap, true, "", args(1,2, arg("",str),arg("delay",int))),
  pattern("sql", "set_protocol", SQLset_protocol, true, "Configures the result set protocol", args(1,2, arg("",int), arg("protocol",int))),
  pattern("sql", "mvc", SQLmvc, false, "Get the multiversion catalog context. Needed for correct statement dependencies (ie sql.update, should be after sql.bind in concurrent execution)", args(1,1, arg("",int))),
+ pattern("sql", "mvc", SQLmvc, true, "Get the multiversion catalog context. Needed for correct statement dependencies (ie sql.update, should be after sql.bind in concurrent execution)", args(1,2, arg("",int), arg("in",int))),
  pattern("sql", "eval", SQLstatement, true, "Compile and execute a single sql statement", args(1,2, arg("",void),arg("cmd",str))),
  pattern("sql", "eval", SQLstatement, true, "Compile and execute a single sql statement (and optionally set the output to columnar format)", args(1,3, arg("",void),arg("cmd",str),arg("columnar",bit))),
  pattern("sql", "include", SQLinclude, true, "Compile and execute a sql statements on the file", args(1,2, arg("",void),arg("fname",str))),
@@ -5717,35 +5769,58 @@ static mel_func sql_init_funcs[] = {
  pattern("sql", "deltas", mvc_delta_values, false, "Return the delta values sizes of all columns of the schema's tables, plus the current transaction level", args(7,8, batarg("ids",int),batarg("segments",lng),batarg("all",lng),batarg("inserted",lng),batarg("updated",lng),batarg("deleted",lng),batarg("tr_level",int),arg("schema",str))),
  pattern("sql", "deltas", mvc_delta_values, false, "Return the delta values sizes from the table's columns, plus the current transaction level", args(7,9, batarg("ids",int),batarg("segments",lng),batarg("all",lng),batarg("inserted",lng),batarg("updated",lng),batarg("deleted",lng),batarg("tr_level",int),arg("schema",str),arg("table",str))),
  pattern("sql", "deltas", mvc_delta_values, false, "Return the delta values sizes of a column, plus the current transaction level", args(7,10, batarg("ids",int),batarg("segments",lng),batarg("all",lng),batarg("inserted",lng),batarg("updated",lng),batarg("deleted",lng),batarg("tr_level",int),arg("schema",str),arg("table",str),arg("column",str))),
+
  pattern("sql", "emptybindidx", mvc_bind_idxbat_wrap, false, "", args(1,6, batargany("",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("index",str),arg("access",int))),
  pattern("sql", "bind_idxbat", mvc_bind_idxbat_wrap, false, "Bind the 'schema.table.index' BAT with access kind: 0 - base table 1 - inserts 2 - updates", args(1,6, batargany("",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("index",str),arg("access",int))),
  pattern("sql", "emptybindidx", mvc_bind_idxbat_wrap, false, "", args(2,7, batarg("uid",oid),batargany("uval",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("index",str),arg("access",int))),
  pattern("sql", "bind_idxbat", mvc_bind_idxbat_wrap, false, "Bind the 'schema.table.index' BAT with access kind: 0 - base table 1 - inserts 2 - updates", args(2,7, batarg("uid",oid),batargany("uval",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("index",str),arg("access",int))),
  pattern("sql", "emptybindidx", mvc_bind_idxbat_wrap, false, "", args(1,8, batargany("",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("index",str),arg("access",int),arg("part_nr",int),arg("nr_parts",int))),
  pattern("sql", "bind_idxbat", mvc_bind_idxbat_wrap, false, "Bind the 'schema.table.index' BAT with access kind: 0 - base table 1 - inserts 2 - updates", args(1,8, batargany("",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("index",str),arg("access",int),arg("part_nr",int),arg("nr_parts",int))),
+
+ pattern("sql", "emptybindidx", mvc_bind_idxbat_wrap, false, "", args(1,7, batargany("",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("index",str),arg("access",int),arg("part_nr",int))),
+ pattern("sql", "bind_idxbat", mvc_bind_idxbat_wrap, false, "Bind the 'schema.table.index' BAT with access kind: 0 - base table 1 - inserts 2 - updates", args(1,7, batargany("",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("index",str),arg("access",int),arg("part_nr",int))),
+
  pattern("sql", "emptybindidx", mvc_bind_idxbat_wrap, false, "", args(2,9, batarg("uid",oid),batargany("uval",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("index",str),arg("access",int),arg("part_nr",int),arg("nr_parts",int))),
  pattern("sql", "bind_idxbat", mvc_bind_idxbat_wrap, false, "Bind the 'schema.table.index' BAT with access kind: 0 - base table 1 - inserts 2 - updates", args(2,9, batarg("uid",oid),batargany("uval",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("index",str),arg("access",int),arg("part_nr",int),arg("nr_parts",int))),
+
+ pattern("sql", "emptybindidx", mvc_bind_idxbat_wrap, false, "", args(2,8, batarg("uid",oid),batargany("uval",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("index",str),arg("access",int),arg("part_nr",int))),
+ pattern("sql", "bind_idxbat", mvc_bind_idxbat_wrap, false, "Bind the 'schema.table.index' BAT with access kind: 0 - base table 1 - inserts 2 - updates", args(2,8, batarg("uid",oid),batargany("uval",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("index",str),arg("access",int),arg("part_nr",int))),
+
  pattern("sql", "emptybind", mvc_bind_wrap, false, "", args(1,6, batargany("",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("column",str),arg("access",int))),
  pattern("sql", "bind", mvc_bind_wrap, false, "Bind the 'schema.table.column' BAT with access kind: 0 - base table 1 - inserts 2 - updates", args(1,6, batargany("",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("column",str),arg("access",int))),
+
  pattern("sql", "emptybind", mvc_bind_wrap, false, "", args(2,7, batarg("uid",oid),batargany("uval",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("column",str),arg("access",int))),
  pattern("sql", "bind", mvc_bind_wrap, false, "Bind the 'schema.table.column' BAT with access kind: 0 - base table 1 - inserts 2 - updates", args(2,7, batarg("uid",oid),batargany("uval",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("column",str),arg("access",int))),
+
  pattern("sql", "emptybind", mvc_bind_wrap, false, "", args(1,8, batargany("",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("column",str),arg("access",int),arg("part_nr",int),arg("nr_parts",int))),
  pattern("sql", "bind", mvc_bind_wrap, false, "Bind the 'schema.table.column' BAT partition with access kind: 0 - base table 1 - inserts 2 - updates", args(1,8, batargany("",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("column",str),arg("access",int),arg("part_nr",int),arg("nr_parts",int))),
+
+ pattern("sql", "emptybind", mvc_bind_wrap, false, "", args(1,7, batargany("",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("column",str),arg("access",int),arg("part_nr",int))),
+ pattern("sql", "bind", mvc_bind_wrap, false, "Bind the 'schema.table.column' BAT partition with access kind: 0 - base table 1 - inserts 2 - updates", args(1,7, batargany("",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("column",str),arg("access",int),arg("part_nr",int))),
+
  pattern("sql", "emptybind", mvc_bind_wrap, false, "", args(2,9, batarg("uid",oid),batargany("uval",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("column",str),arg("access",int),arg("part_nr",int),arg("nr_parts",int))),
  pattern("sql", "bind", mvc_bind_wrap, false, "Bind the 'schema.table.column' BAT with access kind: 0 - base table 1 - inserts 2 - updates", args(2,9, batarg("uid",oid),batargany("uval",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("column",str),arg("access",int),arg("part_nr",int),arg("nr_parts",int))),
+
+ pattern("sql", "emptybind", mvc_bind_wrap, false, "", args(2,8, batarg("uid",oid),batargany("uval",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("column",str),arg("access",int),arg("part_nr",int))),
+ pattern("sql", "bind", mvc_bind_wrap, false, "Bind the 'schema.table.column' BAT with access kind: 0 - base table 1 - inserts 2 - updates", args(2,8, batarg("uid",oid),batargany("uval",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("column",str),arg("access",int),arg("part_nr",int))),
+
  command("sql", "delta", DELTAbat, false, "Return column bat with delta's applied.", args(1,4, batargany("",1),batargany("col",1),batarg("uid",oid),batargany("uval",1))),
  command("sql", "projectdelta", DELTAproject, false, "Return column bat with delta's applied.", args(1,5, batargany("",1),batarg("select",oid),batargany("col",1),batarg("uid",oid),batargany("uval",1))),
  command("sql", "subdelta", DELTAsub, false, "Return a single bat of selected delta.", args(1,5, batarg("",oid),batarg("col",oid),batarg("cand",oid),batarg("uid",oid),batarg("uval",oid))),
  command("sql", "project", BATleftproject, false, "Last step of a left outer join, ie project the inner join (l,r) over the left input side (col)", args(1,4, batarg("",oid),batarg("col",oid),batarg("l",oid),batarg("r",oid))),
  command("sql", "getVersion", mvc_getVersion, false, "Return the database version identifier for a client.", args(1,2, arg("",lng),arg("clientid",int))),
- pattern("sql", "grow", mvc_grow_wrap, false, "Resize the tid column of a declared table.", args(1,3, arg("",int),batarg("tid",oid),argany("",1))),
+ pattern("sql", "grow", mvc_grow_wrap, false, "Resize the tid column of a declared table.", args(1,3, batarg("res",oid),batarg("tid",oid),argany("",1))),
  pattern("sql", "claim", mvc_claim_wrap, true, "Claims slots for appending rows.", args(2,6, arg("",oid),batarg("",oid),arg("mvc",int),arg("sname",str),arg("tname",str),arg("cnt",lng))),
+ pattern("sql", "claim", mvc_claim_wrap, true, "Claims slots for appending rows.", args(2,8, arg("",oid),batarg("",oid),arg("mvc",int),arg("sname",str),arg("tname",str),arg("cnt",lng),batarg("counter",bte),arg("nr", int))),
  pattern("sql", "depend", mvc_add_dependency_change, true, "Set dml dependency on current transaction for a table.", args(0,3, arg("sname",str),arg("tname",str),arg("cnt",lng))),
  pattern("sql", "predicate", mvc_add_column_predicate, true, "Add predicate on current transaction for a table column.", args(0,3, arg("sname",str),arg("tname",str),arg("cname",str))),
  pattern("sql", "append", mvc_append_wrap, false, "Append to the column tname.cname (possibly optimized to replace the insert bat of tname.cname. Returns sequence number for order dependence.", args(1,8, arg("",int), arg("mvc",int),arg("sname",str),arg("tname",str),arg("cname",str),arg("offset",oid),batarg("pos",oid),argany("ins",0))),
+ pattern("sql", "append", mvc_append_wrap, false, "Append to the column tname.cname (possibly optimized to replace the insert bat of tname.cname. Returns sequence number for order dependence.", args(1,9, arg("",int), arg("mvc",int),arg("sname",str),arg("tname",str),arg("cname",str),arg("offset",oid),batarg("pos",oid),argany("ins",0),arg("sync_nr", int))),
+
  pattern("sql", "update", mvc_update_wrap, false, "Update the values of the column tname.cname. Returns sequence number for order dependence)", args(1,7, arg("",int), arg("mvc",int),arg("sname",str),arg("tname",str),arg("cname",str),argany("rids",0),argany("upd",0))),
  pattern("sql", "clear_table", mvc_clear_table_wrap, true, "Clear the table sname.tname.", args(1,4, arg("",lng),arg("sname",str),arg("tname",str),arg("restart_sequences",int))),
  pattern("sql", "tid", SQLtid, false, "Return a column with the valid tuple identifiers associated with the table sname.tname.", args(1,4, batarg("",oid),arg("mvc",int),arg("sname",str),arg("tname",str))),
+ pattern("sql", "tid", SQLtid, false, "Return a slice of the tables tid column, based on fixed partition sizes.", args(1,5, batarg("",oid),arg("mvc",int),arg("sname",str),arg("tname",str),arg("part_nr",int))),
  pattern("sql", "tid", SQLtid, false, "Return the tables tid column.", args(1,6, batarg("",oid),arg("mvc",int),arg("sname",str),arg("tname",str),arg("part_nr",int),arg("nr_parts",int))),
  pattern("sql", "delete", mvc_delete_wrap, true, "Delete a row from a table. Returns sequence number for order dependence.", args(1,5, arg("",int),arg("mvc",int),arg("sname",str),arg("tname",str),argany("b",0))),
  pattern("sql", "resultSet", mvc_scalar_value_wrap, true, "Prepare a table result set for the client front-end.", args(1,8, arg("",int),arg("tbl",str),arg("attr",str),arg("tpe",str),arg("len",int),arg("scale",int),arg("eclass",int),argany("val",0))),
@@ -5801,6 +5876,7 @@ static mel_func sql_init_funcs[] = {
  command("calc", "identity", SQLidentity, false, "Returns a unique row identitfier.", args(1,2, arg("",oid),argany("",0))),
  command("batcalc", "identity", BATSQLidentity, false, "Returns the unique row identitfiers.", args(1,2, batarg("",oid),batargany("b",0))),
  pattern("batcalc", "identity", PBATSQLidentity, false, "Returns the unique row identitfiers.", args(2,4, batarg("resb",oid),arg("ns",oid),batargany("b",0),arg("s",oid))),
+ pattern("batsql", "row_number", PBATSQLrow_number, false, "Returns the unique row number.", args(2,4, batarg("resb",int),arg("ns",oid),batargany("b",0),arg("s",oid))),
  pattern("sql", "querylog_catalog", sql_querylog_catalog, false, "Obtain the query log catalog", args(8,8, batarg("id",oid),batarg("user",str),batarg("defined",timestamp),batarg("query",str),batarg("pipe",str),batarg("plan",str),batarg("mal",int),batarg("optimize",lng))),
  pattern("sql", "querylog_calls", sql_querylog_calls, false, "Obtain the query log calls", args(9,9, batarg("id",oid),batarg("start",timestamp),batarg("stop",timestamp),batarg("arguments",str),batarg("tuples",lng),batarg("exec",lng),batarg("result",lng),batarg("cpuload",int),batarg("iowait",int))),
  pattern("sql", "querylog_empty", sql_querylog_empty, true, "", noargs),
@@ -5991,8 +6067,8 @@ static mel_func sql_init_funcs[] = {
  pattern("batcalc", "daytime", timestamp_2_daytime, false, "cast timestamp to a daytime and check for overflow", args(1,4, batarg("",daytime),batarg("v",timestamp),batarg("s",oid),arg("d",int))),
  pattern("calc", "timestamp", date_2_timestamp, false, "cast date to a timestamp and check for overflow", args(1,3, arg("",timestamp),arg("v",date),arg("d",int))),
  pattern("batcalc", "timestamp", date_2_timestamp, false, "cast date to a timestamp and check for overflow", args(1,4, batarg("",timestamp),batarg("v",date),batarg("s",oid),arg("d",int))),
- pattern("sql", "update_tables", SYSupdate_tables, true, "Procedure triggered on update of the sys._tables table", args(1,1, arg("",void))),
- pattern("sql", "update_schemas", SYSupdate_schemas, true, "Procedure triggered on update of the sys.schemas table", args(1,1, arg("",void))),
+ pattern("sql", "update_tables", SYSupdate_tables, true, "Procedure triggered on update of the sys._tables table", args(1,2, arg("",int),arg("d",int))),
+ pattern("sql", "update_schemas", SYSupdate_schemas, true, "Procedure triggered on update of the sys.schemas table", args(1,2, arg("",int),arg("d",int))),
  pattern("sql", "unionfunc", SQLunionfunc, false, "", args(1,4, varargany("",0),arg("mod",str),arg("fcn",str),varargany("",0))),
  /* decimals */
  command("calc", "bte", flt_num2dec_bte, false, "cast number to decimal(bte) and check for overflow", args(1,4, arg("",bte),arg("v",flt),arg("digits",int),arg("scale",int))),
@@ -6619,6 +6695,7 @@ static mel_func sql_init_funcs[] = {
  pattern("sql", "check", SQLcheck, false, "Return sql string of check constraint.", args(1,3, arg("sql",str), arg("sname", str), arg("name", str))),
  pattern("sql", "read_dump_rel", SQLread_dump_rel, false, "Reads sql_rel string into sql_rel object and then writes it to the return value", args(1,2, arg("sql",str), arg("sql_rel", str))),
  pattern("sql", "normalize_monetdb_url", SQLnormalize_monetdb_url, false, "Normalize mapi:monetdb://, monetdb:// or monetdbs:// URL", args(1,2, arg("",str),arg("u",str))),
+ command("sql", "no_slices", SQLno_slices, false, "Return number of slices of table", args(1,3, arg("", int), arg("schema",str), arg("table",str))),
  { .imp=NULL }
 };
 #include "mal_import.h"

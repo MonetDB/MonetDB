@@ -54,8 +54,20 @@ OPTcommonTermsImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 	InstrPtr *old = NULL;
 	allocator *ta = MT_thread_getallocator();
 
+	old = mb->stmt;
+	limit = mb->stop;
+	slimit = mb->ssize;
+	for (i = 0; i < limit; i++) {
+		p = old[i];
+		if (isUpdateInstruction(p)) {
+			old = NULL;
+			goto wrapup1;
+		}
+	}
+
 	/* catch simple insert operations */
 	if (isSimpleSQL(mb) || MB_LARGE(mb)) {
+		old = NULL;
 		goto wrapup1;
 	}
 	for (i = 0; i < mb->stop; i++) {
@@ -75,9 +87,6 @@ OPTcommonTermsImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 		goto wrapup;
 	}
 
-	old = mb->stmt;
-	limit = mb->stop;
-	slimit = mb->ssize;
 	if (newMalBlkStmt(mb, mb->ssize) < 0) {
 		msg = createException(MAL, "optimizer.commonTerms",
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);

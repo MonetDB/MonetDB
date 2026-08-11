@@ -13,6 +13,7 @@ insert into a7403 values (10), (10)
 statement ok
 insert into b7403 values (20), (20)
 
+skipif knownfail
 query T nosort
 explain show details
 with

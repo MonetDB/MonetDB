@@ -33,7 +33,7 @@ try:
 
         if retcode == 0:
             raise SystemExit("Expected nonzero return code")
-        if not err or b'input not properly encoded UTF-8' not in err:
+        if not err or (b'input not properly encoded UTF-8' not in err and b'incorrectly encoded UTF-8' not in err):
             raise SystemExit("Expected stderr to contain 'input not properly encoded UTF-8'")
 
 except BaseException as e:

@@ -1292,7 +1292,10 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		en->tnonil = true;
 		en->tnil = false;
 		en->tunique_est = (double)ngrp;
-		*extents = virtualize(en);
+		/* don't virtulize `en` probably because we don't want the heap
+		 * to disappear
+		 */
+		*extents = en;
 	}
 	if (histo) {
 		BATsetcount(hn, (BUN) ngrp);

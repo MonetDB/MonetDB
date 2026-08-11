@@ -33,6 +33,7 @@
 #include "mal_client.h"
 #include "mal_interpreter.h"
 #include "mal_dataflow.h"
+#include "mal_pipelines.h"
 
 static str
 MALstartDataflow(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -56,11 +57,35 @@ MALpass(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
+static str
+MALpipelines( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	int pc = getPC(mb, pci);
+	bit *res = getArgReference_bit(stk, pci, 0);
+	int *curpart = getArgReference_int(stk, pci, 1);
+	/* result 3 will hold the pointer to the counter */
+	int tt = getArgType(mb, pci, 3);
+	int maxparts = -1;
+	bat sink = 0;
+	if (tt == TYPE_int)
+		maxparts = *getArgReference_int(stk, pci, 3);
+	else
+		sink = *getArgReference_bat(stk, pci, 3);
+
+	if (pc < 0 || pc > pci->jump)
+		throw(MAL, "language.pipelines", "Illegal statement range");
+	*res = maxparts > 0;
+	*curpart = maxparts;
+	return runMALpipelines(cntxt, mb, pc, pci->jump, maxparts, sink, stk);
+}
+
 #include "mel.h"
 static mel_func language_init_funcs[] = {
  pattern("language", "dataflow", MALstartDataflow, false, "The current guarded block is executed using dataflow control.", args(1,1, arg("",bit))),
  pattern("language", "pass", MALpass, false, "Cheap instruction to discard storage while retaining the dataflow dependency", args(0,1, argany("v",1))),
  pattern("language", "block", deblockdataflow, false, "Block on availability of all variables w, and then pass on v", args(1,3, arg("",int),arg("v",int),varargany("w",0))),
+ pattern("language", "pipelines", MALpipelines, false, "The current guarded block in Parallel Pipelines", args(3,4, arg("",bit), arg("counter", int), arg("handle", ptr), arg("maxparts", int))),
+ pattern("language", "pipelines", MALpipelines, false, "The current guarded block in Parallel Pipelines", args(3,4, arg("",bit), arg("counter", int), arg("handle", ptr), batargany("sink", 1))),
  { .imp=NULL }
 };
 #include "mal_import.h"

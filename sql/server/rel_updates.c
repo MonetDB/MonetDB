@@ -1296,11 +1296,12 @@ delete_table(sql_query *query, dlist *qname, str alias, symbol *opt_where, dlist
 		if (opt_returning) {
 			query_processed(query);
 			if (ol_first_node(t->columns)) {
+				list *exps = r->exps;
 				for (node *n = ol_first_node(t->columns); n; n = n->next) {
 					sql_column *c = n->data;
 					sql_exp *ne = NULL;
 
-					append(r->exps, ne = exp_column(sql->sa, t->base.name, c->base.name, &c->type, CARD_MULTI, c->null, is_column_unique(c), 0));
+					append(exps, ne = exp_column(sql->sa, t->base.name, c->base.name, &c->type, CARD_MULTI, c->null, is_column_unique(c), 0));
 					rel_base_use(sql, bt, c->colnr);
 					ne->nid = rel_base_nid(bt, c);
 					ne->alias.label = ne->nid;
@@ -1474,7 +1475,7 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 				if (opt_search && !(sel_rel = rel_logical_exp(query, sel_rel, opt_search, sql_where | sql_merge)))
 					return NULL;
 				extra_project = rel_project(sql->sa, sel_rel, rel_projections(sql, join_rel, NULL, 1, 1));
-				upd_del = update_generate_assignments(query, t, extra_project, rel_dup(bt), sts->h->data.lval, "MERGE");
+				upd_del = update_generate_assignments(query, t, extra_project, rel_dup(bt) /*rel_basetable(sql, t, bt_name)*/, sts->h->data.lval, "MERGE");
 			} else if (uptdel == SQL_DELETE) {
 				if (!update_allowed(sql, t, tname, "MERGE", "delete", 1))
 					return NULL;
@@ -1640,7 +1641,7 @@ copyfrom(sql_query *query, CopyFromNode *copy)
 	const char *tsep = copy->tsep;
 	char *rsep = copy->rsep; /* not const, might need adjusting */
 	const char *ssep = copy->ssep;
-	const char *ns = copy->null_string ? copy->null_string : "null";
+	const char *ns = copy->null_string ? copy->null_string : "NULL";
 	lng nr = copy->nrows;
 	lng offset = copy->offset;
 	list *collist;

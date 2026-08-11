@@ -100,12 +100,17 @@ chkFlow(MalBlkPtr mb)
 		return mb->errors;
 	sig = getInstrPtr(mb, 0);
 	lastInstruction = mb->stop - 1;
+	InstrPtr pp = NULL;
 	for (i = 0; i < mb->stop; i++) {
 		p = getInstrPtr(mb, i);
 		/* we have to keep track on the maximal arguments/block
 		   because it is needed by the interpreter */
 		switch (p->barrier) {
 		case BARRIERsymbol:
+			if (getModuleId(p) == languageRef && getFunctionId(p) == pipelinesRef) {
+				pp = p;
+			}
+			/* fall through */
 		case CATCHsymbol:
 			if (btop == DEPTH)
 				throw(MAL, "chkFlow", "%s.%s Too many nested MAL blocks",
@@ -151,8 +156,11 @@ chkFlow(MalBlkPtr mb)
 				InstrPtr p1 = getInstrPtr(mb, k);
 				if (getDestVar(p1) == v) {
 					/* handle assignments with leave/redo option */
-					if (p1->barrier == LEAVEsymbol)
+					if (p1->barrier == LEAVEsymbol) {
 						p1->jump = i;
+						if (pp)
+							pc[btop] = k; /* pipeline redo should jump back after the leave */
+					}
 					if (p1->barrier == REDOsymbol)
 						p1->jump = pc[btop] + 1;
 				}
@@ -198,6 +206,7 @@ chkFlow(MalBlkPtr mb)
 			break;
 		case ENDsymbol:
 			endseen = 1;
+			pp = NULL;
 			break;
 		default:
 			if (isaSignature(p)) {
@@ -496,7 +505,7 @@ printFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg)
 void
 setVariableScope(MalBlkPtr mb)
 {
-	int pc, k, depth = 0, dflow = -1;
+	int pc, k, depth = 0, dflow = -1, jump = 0, pp = -1;
 	InstrPtr p;
 
 	/* reset the scope admin */
@@ -517,12 +526,15 @@ setVariableScope(MalBlkPtr mb)
 		p = getInstrPtr(mb, pc);
 
 		if (blockStart(p)) {
-			if (getModuleId(p) == languageRef
-				&& getFunctionId(p) == dataflowRef) {
+			if (getModuleId(p) == languageRef && (getFunctionId(p) == dataflowRef || getFunctionId(p) == pipelinesRef)) {
 				if (dflow != -1)
 					addMalException(mb,
 									"setLifeSpan nested dataflow blocks not allowed");
 				dflow = depth;
+				if (getFunctionId(p) == pipelinesRef) {
+					pp = pc;
+					jump = p->jump;
+				}
 			} else
 				depth++;
 		}
@@ -532,14 +544,16 @@ setVariableScope(MalBlkPtr mb)
 			if (isVarConstant(mb, v) && getVarUpdated(mb, v) == 0)
 				setVarUpdated(mb, v, pc);
 
-			if (getVarDeclared(mb, v) == 0) {
+			if (getVarDeclared(mb, v) == 0 && (pp < 0 || k < p->retc)) {
 				setVarDeclared(mb, v, pc);
 				setVarScope(mb, v, depth);
 			}
 			if (k < p->retc)
 				setVarUpdated(mb, v, pc);
-			if (getVarScope(mb, v) == depth)
+			if (pp < 0 && getVarScope(mb, v) == depth)
 				setVarEolife(mb, v, pc);
+			if (pp >= 0 && getVarEolife(mb, v) < pc && (k < p->retc || getVarScope(mb, v) == depth))
+				setVarEolife(mb, v, (((k >= p->retc && getVarDeclared(mb, v) < pp) || (k >= p->inout && k < p->retc)) && jump > 0) ? jump : pc);
 
 			if (k >= p->retc && getVarScope(mb, v) < depth)
 				setVarEolife(mb, v, -1);
@@ -556,9 +570,11 @@ setVariableScope(MalBlkPtr mb)
 				else if (getVarEolife(mb, k) == -1)
 					setVarEolife(mb, k, pc);
 
-			if (dflow == depth)
+			if (dflow == depth) {
 				dflow = -1;
-			else
+				jump = -1;
+				pp = -1;
+			} else
 				depth--;
 		}
 		if (blockReturn(p)) {
@@ -754,8 +770,7 @@ chkDeclarations(MalBlkPtr mb)
 						  "%s.%s too deeply nested  MAL program",
 						  getModuleId(sig), getFunctionId(sig));
 				blkId++;
-				if (getModuleId(p) == languageRef
-					&& getFunctionId(p) == dataflowRef) {
+				if (getModuleId(p) == languageRef && (getFunctionId(p) == dataflowRef || getFunctionId(p) == pipelinesRef)) {
 					if (dflow != -1)
 						throw(MAL, "chkFlow",
 							  "%s.%s setLifeSpan nested dataflow blocks not allowed",

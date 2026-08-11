@@ -114,10 +114,14 @@ MDBsetDebug(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	return MAL_SUCCEED;
 }
 
-#define addFlag(NME, FLG, DSET) \
-	state =  (DSET & FLG)  > 0;\
-	if (BUNappend(flg, (void*) NME, false) != GDK_SUCCEED) goto bailout;\
-	if (BUNappend(val, &state, false) != GDK_SUCCEED) goto bailout;
+#define addFlag(NME, FLG, DSET)									\
+	do {														\
+		state = (DSET & (FLG)) != 0;							\
+		if (BUNappend(flg, (void*) NME, false) != GDK_SUCCEED)	\
+			goto bailout;										\
+		if (BUNappend(val, &state, false) != GDK_SUCCEED)		\
+			goto bailout;										\
+	} while (0)
 
 static str
 MDBgetDebugFlags(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
@@ -149,6 +153,7 @@ MDBgetDebugFlags(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	addFlag("algorithms", GRPalgorithms, dbg);
 	addFlag("performance", GRPperformance, dbg);
 	addFlag("forcemito", GRPforcemito, dbg);
+	addFlag("pipeline", 1<<19, dbg);
 
 	*f = flg->batCacheid;
 	BBPkeepref(flg);
