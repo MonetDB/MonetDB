@@ -1700,6 +1700,7 @@ fixstrnilbat(BAT *b)
 				  ALGOBATPAR(b));
 			return GDK_SUCCEED;
 		}
+		assert(niloff >= 8192);
 	}
 
 	if (GDKmove(b->theap->farmid, srcdir, bnme, t,
@@ -1783,7 +1784,9 @@ fixstrnilbat(BAT *b)
 		uint32_t *p2 = (uint32_t *) h2->base;
 		for (BUN i = 0; i < b->batCount; i++) {
 			uint32_t v = p1[i];
-			if (v >= vfree || vbase[v] == '\200')
+			if (v == niloff)
+				p2[i] = 0;
+			else if (v >= vfree || vbase[v] == '\200')
 				p2[i] = 0;
 			else
 				p2[i] = v;
@@ -1796,7 +1799,9 @@ fixstrnilbat(BAT *b)
 		uint64_t *p2 = (uint64_t *) h2->base;
 		for (BUN i = 0; i < b->batCount; i++) {
 			uint64_t v = p1[i];
-			if (v >= vfree || vbase[v] == '\200')
+			if (v == niloff)
+				p2[i] = 0;
+			else if (v >= vfree || vbase[v] == '\200')
 				p2[i] = 0;
 			else
 				p2[i] = v;
@@ -1934,9 +1939,15 @@ BBPvarnil_upgrade(void)
 	lng t0 = GDKusec();
 	for (bat bid = 1, nbat = getBBPsize(); bid < nbat; bid++) {
 		BAT *b = BBP_desc(bid);
-		if (b->ttype < 0 || b->batCount == 0 || b->tnonil)
+		if (b->batCount == 0 || b->tnonil)
 			continue;
-		if (ATOMstorage(b->ttype) == TYPE_str) {
+		if (b->ttype < 0) {
+			if ((strcmp(ATOMunknown_name(b->ttype), "xml") == 0 ||
+			     strcmp(ATOMunknown_name(b->ttype), "url") == 0 ||
+			     strcmp(ATOMunknown_name(b->ttype), "json") == 0) &&
+			    fixstrnilbat(b) != GDK_SUCCEED)
+				return GDK_FAIL;
+		} else if (ATOMstorage(b->ttype) == TYPE_str) {
 			if (fixstrnilbat(b) != GDK_SUCCEED)
 				return GDK_FAIL;
 		} else if (ATOMstorage(b->ttype) == TYPE_blob) {
