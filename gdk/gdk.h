@@ -208,7 +208,6 @@ enum {
 	TYPE_inet4,
 	TYPE_inet6,
 	TYPE_str,
-	TYPE_fstr,
 	TYPE_blob,
 	TYPE_any = 255,		/* limit types to <255! */
 };

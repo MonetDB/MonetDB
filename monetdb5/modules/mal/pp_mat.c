@@ -310,7 +310,6 @@ PARTpartition(Client ctx, bat *pos, const bat *part, const bat *glen )
 			}												\
 			if (BATcount(mt->bat[i]) < (curpos[i]+lp[i]))						\
 				BATsetcount(mt->bat[i], curpos[i]+lp[i]);						\
-			/*mt->bat[i]->ttype = TYPE_fstr;*/ \
 		}													\
 		if (err == NULL) {											\
 			BATiter di = bat_iterator(d); \

@@ -489,7 +489,7 @@ pcre_replace_bat(BAT **res, BAT *origin_strs, const char *pattern,
 		throw(MAL, "regexp.rematch", MAL_MALLOC_FAIL);
 	}
 
-	tmpbat = COLnew(origin_strs->hseqbase, TYPE_fstr, BATcount(origin_strs),
+	tmpbat = COLnew(origin_strs->hseqbase, TYPE_str, BATcount(origin_strs),
 					TRANSIENT);
 
 	/* the buffer for all destination strings is allocated only once,
@@ -538,7 +538,6 @@ pcre_replace_bat(BAT **res, BAT *origin_strs, const char *pattern,
 		else /* buffer is enlarged */
 			init_size = max_dest_size;
 	}
-	tmpbat->ttype = TYPE_str;
 	tmpbat->tsorted = tmpbat->trevsorted = false;
 	tmpbat->tkey = false;
 	tmpbat->tascii = false;
