@@ -185,6 +185,7 @@ typedef struct CLIENT {
 
 mal_export int MAL_MAXCLIENTS;
 mal_export ClientRec *mal_clients;
+mal_export bool default_oahash_enabled;
 
 mal_export Client MCgetClient(int id);
 mal_export Client MCinitClient(oid user, bstream *fin, stream *fout);

@@ -426,8 +426,7 @@ rel_groupby_partition_safe(sql_rel *rel)
 static int
 do_oahash_join(visitor *v, sql_rel *rel, int *side)
 {
-	const ATOMIC_BASE_TYPE oahash_enabled = (1U<<19);
-	if (!(ATOMIC_GET(&GDKdebug) & oahash_enabled))
+	if (!MT_thread_get_qry_ctx()->oahash_enabled)
 		return 0;
 
 	/* fetch join */
@@ -1652,8 +1651,7 @@ rel_rewrite_physical(visitor *v, sql_rel *rel)
 	if (rel)
 		rel = rel_push_down_topn(v, rel);
 	if (rel) { /* split equi-join/select */
-		const ATOMIC_BASE_TYPE oahash_enabled = (1U<<19);
-		if (SQLrunning && (ATOMIC_GET(&GDKdebug) & oahash_enabled)) {
+		if (SQLrunning && MT_thread_get_qry_ctx()->oahash_enabled) {
 			rel = rel_count_gt_zero(v, rel);
 			if (rel)	/* Add a projection after each join, needed for limited number of columns in hash tables */
 				rel = rel_add_project(v, rel);
@@ -1681,8 +1679,7 @@ rel_physical(mvc *sql, sql_rel *rel)
 	v.data = NULL;
 
 	if (!sql->recursive) {
-		const ATOMIC_BASE_TYPE oahash_enabled = (1U<<19);
-		if (!SQLrunning || !(ATOMIC_GET(&GDKdebug) & oahash_enabled) || gp.complex_modify || gp.cnt[op_except] || gp.cnt[op_inter]) {
+		if (!SQLrunning || !MT_thread_get_qry_ctx()->oahash_enabled || gp.complex_modify || gp.cnt[op_except] || gp.cnt[op_inter]) {
 			if (v.opt >= 0)
 				v.opt = rel->opt+1;
 			(void)rel_partition(&v, sql, rel);

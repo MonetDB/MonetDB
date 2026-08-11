@@ -357,6 +357,7 @@ main(int argc, char **av)
 
 		{"loadmodule", required_argument, NULL, 0},
 		{"without-geom", no_argument, NULL, 0},
+		{"pipeline", no_argument, NULL, 0},
 
 		{"read-password-initialize-and-exit", no_argument, NULL, 0},
 		{"process-wal-and-exit", no_argument, NULL, 0},
@@ -535,6 +536,10 @@ main(int argc, char **av)
 				break;
 			}
 			/* debugging options */
+			if (strcmp(long_options[option_index].name, "pipeline") == 0) {
+				default_oahash_enabled = true;
+				break;
+			}
 			if (strcmp(long_options[option_index].name, "algorithms") == 0) {
 				grpdebug |= GRPalgorithms;
 				break;
@@ -676,6 +681,11 @@ main(int argc, char **av)
 
 	if (!(setlen = mo_system_config(&set, setlen)))
 		usage(prog, -1);
+
+	if (debug & (1U << 19)) {
+		debug &= ~(1U << 19);
+		default_oahash_enabled = true;
+	}
 
 	if (debug)
 		mo_print_options(set, setlen);

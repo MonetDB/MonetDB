@@ -136,8 +136,7 @@ addOptimizers(Client c, MalBlkPtr mb, const char *pipe, int prepare)
 
 	be = (backend *) c->sqlcontext;
 	c->no_mitosis = be->no_mitosis;
-	const ATOMIC_BASE_TYPE oahash_enabled = (1U<<19);
-	if ((ATOMIC_GET(&GDKdebug) & oahash_enabled))
+	if (c->qryctx.oahash_enabled)
 		c->no_mitosis = 1;
 	assert(be && be->mvc);	/* SQL clients should always have their state set */
 

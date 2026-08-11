@@ -54,6 +54,7 @@
 
 int MAL_MAXCLIENTS = 0;
 ClientRec *mal_clients = NULL;
+bool default_oahash_enabled = false;
 
 void
 mal_client_reset(void)
@@ -256,6 +257,7 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 	ATOMIC_SET(&c->qryctx.datasize, 0);
 	c->qryctx.maxmem = 0;
 	c->maxmem = 0;
+	c->qryctx.oahash_enabled = default_oahash_enabled;
 
 	c->prompt = PROMPT1;
 	c->promptlength = strlen(c->prompt);
