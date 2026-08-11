@@ -1933,7 +1933,7 @@ BBPvarnil_upgrade(void)
 	lng t0 = GDKusec();
 	for (bat bid = 1, nbat = getBBPsize(); bid < nbat; bid++) {
 		BAT *b = BBP_desc(bid);
-		if (b->batCount == 0 || b->tnonil)
+		if (b->ttype < 0 || b->batCount == 0 || b->tnonil)
 			continue;
 		if (ATOMstorage(b->ttype) == TYPE_str) {
 			if (fixstrnilbat(b) != GDK_SUCCEED)
