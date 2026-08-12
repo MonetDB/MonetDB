@@ -171,4 +171,4 @@ KNOWNFAIL?7986-right-function-bug
 KNOWNFAIL?7987-where-null-bug
 KNOWNFAIL?7989-window-avg-bug
 KNOWNFAIL?7990-rank-filter-bug
-KNOWNFAIL?7991-window-date-range-interval-bug
+KNOWNFAIL?7992-window-date-range-interval-bug
