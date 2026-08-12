@@ -1,0 +1,76 @@
+-- Mode A: deletes rows it must keep (data loss)
+statement ok
+CREATE TABLE ta(id INT, k INT)
+
+statement ok rowcount 2
+INSERT INTO ta VALUES (1,10),(2,99)
+
+statement ok
+CREATE TABLE ua(k INT)
+
+statement ok rowcount 1
+INSERT INTO ua VALUES (10)
+
+-- id=2 (k=99) has no match in u
+statement ok  rowcount 0
+DELETE FROM ta WHERE NOT EXISTS(SELECT COUNT(*) FROM ua WHERE ua.k = ta.k)
+
+-- MonetDB: {1}        WRONG (deleted id=2)      PostgreSQL: {1,2}
+query I rowsort
+SELECT id FROM ta ORDER BY id
+----
+1
+2
+
+statement ok
+DROP TABLE IF EXISTS ta
+
+statement ok
+DROP TABLE IF EXISTS ua
+
+
+-- Mode B: ROLLUP variant deletes all rows
+statement ok
+CREATE TABLE tb(id INT, k INT)
+
+statement ok rowcount 3
+INSERT INTO tb VALUES (1,10),(2,20),(3,40)
+
+statement ok
+CREATE TABLE ub(k INT)
+
+statement ok rowcount 2
+INSERT INTO ub VALUES (10),(20)
+
+statement ok  rowcount 0
+DELETE FROM tb WHERE NOT EXISTS(SELECT COUNT(*) FROM ub WHERE ub.k = tb.k GROUP BY ROLLUP(ub.k))
+
+-- MonetDB: (empty)    WRONG (deleted all 3)     PostgreSQL: {1,2,3}
+query I rowsort
+SELECT id FROM tb ORDER BY id
+----
+1
+2
+3
+
+-- Mode C (mirror): keeps rows it must delete (stale data)
+statement ok
+DELETE FROM tb
+
+statement ok rowcount 3
+INSERT INTO tb VALUES (1,10),(2,20),(3,40)
+
+-- MonetDB keeps the no-match row that should have been deleted.
+statement ok  rowcount 3
+DELETE FROM tb WHERE EXISTS(SELECT COUNT(*) FROM ub WHERE ub.k = tb.k)
+
+query I rowsort
+SELECT id FROM tb ORDER BY id
+----
+
+statement ok
+DROP TABLE IF EXISTS tb
+
+statement ok
+DROP TABLE IF EXISTS ub
+
