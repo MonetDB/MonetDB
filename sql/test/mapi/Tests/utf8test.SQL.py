@@ -5,11 +5,13 @@ try:
 except ImportError:
     import process
 
+
 def client(args, encoding=None, format=None):
     with process.client('sql', args=args, echo=False,
                         stdout=process.PIPE, stderr=process.PIPE,
                         encoding=encoding, format=format) as clt:
         return clt.communicate()
+
 
 def printit(file, string):
     string = string.replace('\r', '')
@@ -17,15 +19,17 @@ def printit(file, string):
     if not string.endswith('\n'):
         file.write('\n')
 
+
 funny = (0x00e0, 0x00e1, 0x00e2, 0x00e3, 0x00e4, 0x00e5)
 funnyp = ''.join([chr(x) for x in funny])
 funnys = ''.join([fr'\{x:04x}' for x in funny])
 
 text1 = 'value without special characters'
-text2p = 'funny characters: %s' % funnyp
-text2s = 'funny characters: %s' % funnys
+text2p = f'funny characters: {funnyp}'
+text2s = f'funny characters: {funnys}'
 
-expectraw = f'''% sys.utf8test # table_name
+expectraw = f'''\
+% sys.utf8test # table_name
 % s # name
 % varchar # type
 % -1 # length
@@ -33,7 +37,8 @@ expectraw = f'''% sys.utf8test # table_name
 [ "{text1}"\t]
 [ "{text2p}"\t]
 '''
-expectsql = f'''+----------------------------------+
+expectsql = f'''\
++----------------------------------+
 | s                                |
 +==================================+
 | {text1} |
@@ -45,33 +50,54 @@ expecterr = 'invalid multibyte sequence\n'
 
 out, err = client(['-s', 'create table utf8test (s varchar(50))'])
 out, err = client(['-s', f"insert into utf8test values ('{text1}')"])
-out, err = client(['-s', f"insert into utf8test values (u&'{text2s}')"], encoding=locale.getpreferredencoding())
-out, err = client(['-s', 'select * from utf8test'], encoding='utf-8', format='raw')
+out, err = client(['-s', f"insert into utf8test values (u&'{text2s}')"],
+                  encoding=locale.getpreferredencoding())
+out, err = client(['-s', 'select * from utf8test'], encoding='utf-8',
+                  format='raw')
 if out != expectraw:
     sys.stdout.write('utf-8, raw:\n')
+    sys.stdout.write('received:\n')
     sys.stdout.write(out)
-out, err = client(['-s', 'select * from utf8test'], encoding='utf-8', format='sql')
+    sys.stdout.write('expected:\n')
+    sys.stdout.write(expectraw)
+out, err = client(['-s', 'select * from utf8test'], encoding='utf-8',
+                  format='sql')
 if out != expectsql:
     sys.stdout.write('utf-8, sql:\n')
+    sys.stdout.write('received:\n')
     sys.stdout.write(out)
+    sys.stdout.write('expected:\n')
+    sys.stdout.write(expectsql)
 out, err = client(['-s', 'select * from utf8test'],
                   encoding='iso-8859-1', format='raw')
 if out != expectraw:
     sys.stdout.write('iso-8859-1, raw:\n')
+    sys.stdout.write('received:\n')
     sys.stdout.write(out)
+    sys.stdout.write('expected:\n')
+    sys.stdout.write(expectraw)
 out, err = client(['-s', 'select * from utf8test'],
                   encoding='iso-8859-1', format='sql')
 if out != expectsql:
     sys.stdout.write('iso-8859-1, sql:\n')
+    sys.stdout.write('received:\n')
     sys.stdout.write(out)
+    sys.stdout.write('expected:\n')
+    sys.stdout.write(expectsql)
 out, err = client(['-s', 'select * from utf8test'],
                   encoding='us-ascii', format='raw')
 if err != expecterr:
     sys.stdout.write('us-ascii, raw:\n')
+    sys.stdout.write('received:\n')
     sys.stdout.write(err)
+    sys.stdout.write('expected:\n')
+    sys.stdout.write(expecterr)
 out, err = client(['-s', 'select * from utf8test'],
                   encoding='us-ascii', format='sql')
 if err != expecterr:
     sys.stdout.write('us-ascii, sql:\n')
+    sys.stdout.write('received:\n')
     sys.stdout.write(err)
+    sys.stdout.write('expected:\n')
+    sys.stdout.write(expecterr)
 out, err = client(['-s', 'drop table utf8test'])
