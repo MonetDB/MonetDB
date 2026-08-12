@@ -133,7 +133,6 @@ typedef struct stmt {
 	const char *tname;
 	const char *cname;
 	InstrPtr q;
-	list *extra;	/* used for merge statements, this will be cleaned out on the pushcands branch :) */
 } stmt;
 
 /* which MAL modules can push candidates */
