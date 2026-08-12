@@ -8,6 +8,8 @@
  * For copyright information, see the file debian/copyright.
  */
 
+#include <stdbool.h>
+
 typedef struct DotMonetdb {
 	char *user;
 	char *passwd;

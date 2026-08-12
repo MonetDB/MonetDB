@@ -8,6 +8,9 @@
  * For copyright information, see the file debian/copyright.
  */
 
+#include "mapi.h"
+#include "stream.h"
+
 extern int describe_sequence(Mapi mid, const char *schema, const char *sname, stream *toConsole);
 extern int describe_schema(Mapi mid, const char *sname, stream *toConsole);
 extern int dump_table(Mapi mid, const char *schema, const char *tname, stream *sqlf, const char *ddir, const char *ext, bool describe, bool foreign, bool useInserts, bool databaseDump, bool noescape, bool percent);
