@@ -18,9 +18,9 @@
 #include <string.h> // memcpy
 #include <unistd.h> // read
 #include <assert.h>
-#include <gdk.h>
-#include <gdk_time.h>
-#include <sql_mem.h>
+#include "gdk.h"
+#include "gdk_time.h"
+#include "sql_mem.h"
 
 #ifdef HAVE_SNAPPY
 #include <snappy-c.h>

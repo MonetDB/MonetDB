@@ -8,11 +8,16 @@
  * For copyright information, see the file debian/copyright.
  */
 
+#ifndef _GDK_SYSTEM_PRIVATE_H_
+#define _GDK_SYSTEM_PRIVATE_H_
+
 /* This file should not be included in any file outside of this directory */
 
 #ifndef LIBGDK
 #error this file should not be included outside its source directory
 #endif
+
+#include "gdk.h"
 
 void dump_threads(void)
 	__attribute__((__visibility__("hidden")));
@@ -68,3 +73,5 @@ struct allocator {
 #endif
 	char name[MT_NAME_LEN]; /* Name (only for display!) */
 };
+
+#endif	/* _GDK_SYSTEM_PRIVATE_H_ */

@@ -11,7 +11,7 @@
 #ifndef _GDK_TIME_H_
 #define _GDK_TIME_H_
 
-#include <time.h>			/* for time_t */
+#include "gdk.h"		/* we need gdk_export and time.h */
 
 typedef int date;			/* we use 26 bits out of 32 */
 #define date_nil			((date) {int_nil})

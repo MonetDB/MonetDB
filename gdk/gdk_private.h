@@ -17,6 +17,7 @@
 #error this file should not be included outside its source directory
 #endif
 
+#include "gdk.h"
 #include "gdk_system_private.h"
 
 enum heaptype {
@@ -254,8 +255,6 @@ gdk_return strHeap(Heap *d, size_t cap)
 var_t strLocate(Heap *h, const char *v)
 	__attribute__((__visibility__("hidden")));
 var_t strPut(BAT *b, var_t *dst, const void *v)
-	__attribute__((__visibility__("hidden")));
-var_t fstrPut(BAT *b, var_t *dst, const void *v)
 	__attribute__((__visibility__("hidden")));
 char *strRead(allocator *, str a, size_t *dstlen, stream *s, size_t cnt)
 	__attribute__((__visibility__("hidden")));

@@ -10,26 +10,8 @@
 
 set(gdk_public_headers
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/gdk.h>
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/gdk_system.h>
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/gdk_posix.h>
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/gdk_atoms.h>
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/gdk_tracer.h>
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/gdk_hash.h>
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/gdk_bbp.h>
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/gdk_utils.h>
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/gdk_cand.h>
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/gdk_calc.h>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/gdk_time.h>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb/gdk.h>
-  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb/gdk_system.h>
-  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb/gdk_posix.h>
-  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb/gdk_atoms.h>
-  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb/gdk_tracer.h>
-  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb/gdk_hash.h>
-  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb/gdk_bbp.h>
-  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb/gdk_utils.h>
-  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb/gdk_calc.h>
-  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb/gdk_cand.h>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb/gdk_time.h>)
 
 if(MONETDB_STATIC)
@@ -46,19 +28,19 @@ target_sources(bat
   gdk_calc_compare_lt.c gdk_calc_compare_gt.c
   gdk_calc_compare_le.c gdk_calc_compare_ge.c
   gdk_calc_compare_generic.c
-  gdk_calc.c gdk_calc.h
+  gdk_calc.c
   gdk_ssort.c gdk_ssort_impl.h
   gdk_aggr.c
   gdk_batop.c
-  gdk_cand.h gdk_cand.c
+  gdk_cand.c
   gdk_search.c
-  gdk_hash.c gdk_hash.h
+  gdk_hash.c
   gdk_tm.c
   gdk_orderidx.c
   gdk_align.c
-  gdk_bbp.c gdk_bbp.h
+  gdk_bbp.c
   gdk_heap.c
-  gdk_utils.c gdk_utils.h
+  gdk_utils.c
   gdk_atoms.c
   gdk_string.c
   gdk_qsort.c
@@ -87,7 +69,7 @@ target_sources(bat
   gdk_analytic_statistics.c
   gdk_analytic_func.c
   gdk_analytic.h
-  gdk_tracer.c gdk_tracer.h
+  gdk_tracer.c
   gdk_rtree.c
   gdk_strimps.c
   gdk_sketch.c
