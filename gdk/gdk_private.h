@@ -17,6 +17,7 @@
 #error this file should not be included outside its source directory
 #endif
 
+#include "gdk.h"
 #include "gdk_system_private.h"
 
 enum heaptype {

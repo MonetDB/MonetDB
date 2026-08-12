@@ -16,6 +16,8 @@
 #ifndef _GDK_SUBQUERY_H_
 #define _GDK_SUBQUERY_H_
 
+#include "gdk.h"
+
 gdk_export BAT *BATall_grp(BAT *l, BAT *g, BAT *e, BAT *s);
 gdk_export BAT *BATnil_grp(BAT *l, BAT *g, BAT *e, BAT *s);
 
