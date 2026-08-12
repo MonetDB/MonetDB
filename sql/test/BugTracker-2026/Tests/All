@@ -178,3 +178,4 @@ KNOWNFAIL?7994-exists-groupby-rollup-bug
 KNOWNFAIL?7995-left-join-lateral-subquery-bug
 KNOWNFAIL?7996-delete-not-exists-correlated-query-bug
 KNOWNFAIL?7997-recursive-cte-number-overflow-issue
+KNOWNFAIL?7998-scalar-subquery-error-msg-improvement
