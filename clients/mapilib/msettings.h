@@ -12,6 +12,7 @@
 #define _MSETTINGS_H 1
 
 #include "mapi.h"
+#include <assert.h>
 #include <stdbool.h>
 
 #define MP__BOOL_START (100)

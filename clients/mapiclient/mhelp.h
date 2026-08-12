@@ -8,4 +8,6 @@
  * For copyright information, see the file debian/copyright.
  */
 
+#include "stream.h"
+
 extern void sql_help(const char *pattern, stream *toConsole, int pagewidth);

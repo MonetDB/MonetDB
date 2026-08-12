@@ -1,0 +1,84 @@
+statement ok
+CREATE TABLE n3a(c0 INT, c1 INT)
+
+statement ok
+INSERT INTO n3a VALUES (10,1),(20,2)
+
+statement ok
+CREATE TABLE n3b(c0 INT)
+
+statement ok
+INSERT INTO n3b VALUES (10)
+
+query T nosort
+EXPLAIN
+SELECT COUNT(*) FROM n3a
+ WHERE n3a.c0 = 999999
+   AND EXISTS (SELECT 1 FROM n3b WHERE n3b.c0 = n3a.c0)
+ GROUP BY ROLLUP(n3a.c1)
+----
+REF 1 (2)
+semijoin (
+| select (
+| |  [  ]
+| ) [ boolean(1) "false" ],
+| project (
+| | table("sys"."n3b") [ "n3b"."c0", "n3b"."%TID%" ]
+| ) [ tinyint(1) "1" as "%3"."%3", "n3b"."c0" ]
+) [ ("n3b"."c0") = ("n3a"."c0") ]
+project (
+| project (
+| | group by (
+| | | & REF 1 
+| | ) [  ] [ "sys"."count"() as "%2"."%2" ]
+| ) [ "%2"."%2" ]
+) [ "%2"."%2" ]
+
+-- HANGS (never returns; EXPLAIN above returns instantly):
+query I nosort
+SELECT COUNT(*) FROM n3a
+ WHERE n3a.c0 = 999999
+   AND EXISTS (SELECT 1 FROM n3b WHERE n3b.c0 = n3a.c0)
+ GROUP BY ROLLUP(n3a.c1)
+----
+0
+
+-- The IN form hangs identically (semi-join, not EXISTS-specific):
+query I nosort
+SELECT COUNT(*) FROM n3a
+ WHERE n3a.c0 = 999999
+   AND n3a.c0 IN (SELECT n3b.c0 FROM n3b)
+ GROUP BY ROLLUP(n3a.c1)
+----
+0
+
+-- remove the provably-empty selection (c0 = 10 instead of 999999):
+query I nosort
+SELECT COUNT(*) FROM n3a WHERE n3a.c0 = 10
+   AND EXISTS (SELECT 1 FROM n3b WHERE n3b.c0 = n3a.c0)
+ GROUP BY ROLLUP(n3a.c1)                                   -- returns 1, 1
+----
+1
+1
+
+-- remove the EXISTS subquery:
+query I nosort
+SELECT COUNT(*) FROM n3a WHERE n3a.c0 = 999999
+ GROUP BY ROLLUP(n3a.c1)                                   -- returns 0
+----
+0
+
+-- remove the ROLLUP (plain GROUP BY):
+query I nosort
+SELECT COUNT(*) FROM n3a WHERE n3a.c0 = 999999
+   AND EXISTS (SELECT 1 FROM n3b WHERE n3b.c0 = n3a.c0)
+ GROUP BY n3a.c1                                           -- returns empty
+----
+
+
+statement ok
+DROP TABLE IF EXISTS n3a
+
+statement ok
+DROP TABLE IF EXISTS n3b
+
