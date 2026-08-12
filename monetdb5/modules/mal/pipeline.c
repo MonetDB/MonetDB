@@ -10,8 +10,6 @@
 
 #include "monetdb_config.h"
 #include "gdk.h"
-#include "gdk_atoms.h"
-#include "gdk_time.h"
 #include "mal_exception.h"
 #include "mal_interpreter.h"
 #include "mal_pipelines.h"

@@ -9,7 +9,6 @@
  */
 
 #include "gdk.h"
-#include "gdk_system.h"
 #include "mal_arguments.h"
 #include "monetdb_config.h"
 #include "sql_mem.h"

@@ -922,6 +922,7 @@ const char dblRef[];
 void debugFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg, int first, int size);
 const char decompressRef[];
 int defConstant(MalBlkPtr mb, int type, ValPtr cst);
+bool default_oahash_enabled;
 const char defaultpipeRef[];
 const char defineRef[];
 void delArgument(InstrPtr p, int varid);

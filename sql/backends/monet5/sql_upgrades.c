@@ -16,7 +16,6 @@
 #include "mal_backend.h"
 #include "sql_execute.h"
 #include "sql_mvc.h"
-#include "gdk_time.h"
 #include <unistd.h>
 #include "sql_upgrades.h"
 #include "sql_scenario.h"

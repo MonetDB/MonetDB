@@ -1965,7 +1965,6 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 			if (strcmp(fname, "-1") == 0) /* map arguments to A0 .. An */
 				return exp2bin_named_placeholders(be, e);
 		}
-		const ATOMIC_BASE_TYPE oahash_enabled = (1U<<19);
 		if (f->pipeline && f->func->mod && f->func->imp && strcmp(f->func->mod, "sql") == 0 && strcmp(f->func->imp, "copy_from") == 0)
 			return exp2bin_copyparpipe(be, e);
 		if (!list_empty(exps)) {
@@ -1995,7 +1994,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 				list_append(l, es);
 			}
 		}
-		if (SQLrunning && (ATOMIC_GET(&GDKdebug) & oahash_enabled) && f->pipeline && f->func->mod && f->func->imp && strcmp(f->func->mod, "generator") == 0 && strcmp(f->func->imp, "series") == 0)
+		if (SQLrunning && be->client->qryctx.oahash_enabled && f->pipeline && f->func->mod && f->func->imp && strcmp(f->func->mod, "generator") == 0 && strcmp(f->func->imp, "series") == 0)
 			return exp2bin_generator(be, e, l);
 		if (!(s = stmt_Nop(be, stmt_list(be, l), sel, f, rows)))
 			return NULL;

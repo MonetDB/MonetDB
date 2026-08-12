@@ -19,10 +19,10 @@
 #include <fcntl.h>  // open
 #include <assert.h>
 
-#include <mutils.h>
-#include <gdk.h>
-#include <gdk_time.h>
-#include <sql_mem.h>
+#include "mutils.h"
+#include "gdk.h"
+#include "gdk_time.h"
+#include "sql_mem.h"
 
 #define PQC_SMALL 64*1024
 
