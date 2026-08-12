@@ -16,6 +16,8 @@
 #ifndef _GDK_ANALYTIC_H_
 #define _GDK_ANALYTIC_H_
 
+#include "gdk.h"
+
 gdk_export BAT *GDKanalyticaldiff(BAT *b, BAT *p, const bit *restrict npbit, int tpe)
 	__attribute__((__warn_unused_result__));
 

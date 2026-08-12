@@ -8,11 +8,16 @@
  * For copyright information, see the file debian/copyright.
  */
 
+#ifndef _GDK_CALC_PRIVATE_H_
+#define _GDK_CALC_PRIVATE_H_
+
 /* This file contains shared definitions for gdk_calc.c and gdk_aggr.c */
 
 #ifndef LIBGDK
 #error this file should not be included outside its source directory
 #endif
+
+#include "gdk.h"
 
 /* signed version of BUN */
 #if SIZEOF_BUN == SIZEOF_INT
@@ -658,3 +663,5 @@ BATcalcmuldivmod(BAT *b1, BAT *b2, BAT *s1, BAT *s2, int tp,
 				       struct canditer *restrict,
 				       oid, oid, const char *),
 		 const char *func);
+
+#endif	/* _GDK_CALC_PRIVATE_H_ */

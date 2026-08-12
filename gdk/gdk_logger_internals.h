@@ -11,6 +11,8 @@
 #ifndef _LOGGER_INTERNALS_H_
 #define _LOGGER_INTERNALS_H_
 
+#include "gdk.h"
+
 #define FLUSH_QUEUE_SIZE 2048 /* maximum size of the flush queue, i.e. maximum number of transactions committing simultaneously */
 
 typedef struct logged_range_t {

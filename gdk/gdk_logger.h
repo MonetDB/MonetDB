@@ -11,6 +11,8 @@
 #ifndef _LOGGER_H_
 #define _LOGGER_H_
 
+#include "gdk.h"
+
 #define LOGFILE "log"
 
 typedef gdk_return (*preversionfix_fptr)(void *data, int oldversion, int newversion);

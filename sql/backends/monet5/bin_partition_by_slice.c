@@ -51,7 +51,7 @@ exp_getcard(mvc *sql, sql_rel *rel, sql_exp *e)
 			(min = find_prop(e->p, PROP_MIN)) != NULL &&
 			(max = find_prop(e->p, PROP_MAX)) != NULL) {
 		atom *uniques = atom_sub(sql->sa, max->value.pval, min->value.pval);
-		est = atom_get_int(uniques);
+		est = (BUN) atom_get_int(uniques);
 	} else
 		est = get_rel_count(rel);
 
@@ -1477,4 +1477,3 @@ rel2bin_groupby_pp(backend *be, sql_rel *rel, list *refs)
 	}
 	return cursub;
 }
-
