@@ -60,7 +60,7 @@ DELETE FROM tb
 statement ok rowcount 3
 INSERT INTO tb VALUES (1,10),(2,20),(3,40)
 
--- MonetDB keeps the no-match row that should have been deleted.
+-- MonetDB keeps the no-match row (3, 40) that should have been deleted.
 statement ok  rowcount 3
 DELETE FROM tb WHERE EXISTS(SELECT COUNT(*) FROM ub WHERE ub.k = tb.k)
 
