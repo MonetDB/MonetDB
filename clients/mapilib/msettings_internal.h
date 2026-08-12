@@ -11,6 +11,7 @@
 #ifndef MSETTINGS_INTERNAL
 #define MSETTINGS_INTERNAL
 
+#include "monetdb_config.h"
 #include "msettings.h"
 
 extern const char MALLOC_FAILED[];
@@ -138,9 +139,7 @@ msettings_strdup(const msettings *mp, const char *string)
 }
 
 
-static inline char* msettings_allocprintf(const msettings *mp, _In_z_ _Printf_format_string_ const char *fmt, ...)
-	__attribute__((__format__(__printf__, 2, 3)));
-
+__attribute__((__format__(__printf__, 2, 3)))
 static inline char*
 msettings_allocprintf(const msettings *mp, const char *fmt, ...)
 {

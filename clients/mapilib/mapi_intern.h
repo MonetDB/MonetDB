@@ -8,7 +8,7 @@
  * For copyright information, see the file debian/copyright.
  */
 
-#include "msettings.h"
+#include "monetdb_config.h"
 
 #ifdef HAVE_UNISTD_H
 # include <unistd.h>
@@ -48,6 +48,8 @@
 #include <openssl/ssl.h>
 #endif
 
+#include "msettings.h"
+#include "stream.h"
 
 /* Copied from gdk_posix, but without taking a lock because we don't have access to
  * MT_lock_set/unset here. We just have to hope for the best
