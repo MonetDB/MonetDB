@@ -43,7 +43,7 @@ rel_properties(visitor *v, sql_rel *rel)
 			t = pbt->l;
 		else
 			t = rel_ddl_table_get(pbt);
-		gp->complex_modify |= ol_length(t->triggers) ||
+		gp->complex_modify |= ol_length(t->triggers) || t->composite || t->multiset || t->vector ||
 			(rel->op != op_insert && ol_length(t->keys)) ||
 			(rel->op == op_delete && !rel->r);
 	}

@@ -6470,6 +6470,10 @@ rel2bin_insert_ms(backend *be, sql_rel *rel, list *refs)
 	node *n, *m, *idx_m = NULL;
 	sql_rel *tr = rel->l;
 	sql_table *t = NULL;
+	int sync = 0;
+
+	if (be->need_pipeline)
+		sync = pp_counter(be, -1, -1, false);
 
 	if (is_physical(tr->op))
 		tr = tr->l;
@@ -6563,7 +6567,7 @@ rel2bin_insert_ms(backend *be, sql_rel *rel, list *refs)
 	}
 
 	if (t->s) /* only not declared tables, need this */
-		pos = stmt_claim(be, t, cnt, 0);
+		pos = stmt_claim(be, t, cnt, sync);
 
 	if (t->idxs) {
 		for (n = ol_first_node(t->idxs), m = idx_m; n && m; n = n->next, m = m->next) {
