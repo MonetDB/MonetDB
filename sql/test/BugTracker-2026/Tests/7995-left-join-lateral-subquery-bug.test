@@ -1,0 +1,54 @@
+statement ok
+CREATE TABLE n5a(id INT, c0 INT)
+
+statement ok
+INSERT INTO n5a VALUES (1,10),(2,NULL),(3,40)
+
+statement ok
+CREATE TABLE n5b(c0 INT)
+
+statement ok
+INSERT INTO n5b VALUES (10),(20),(NULL)
+
+-- (A) Correct row listing: (1,1),(2,0),(3,0) — three rows
+-- observed: (1,1), (2,0), (3,0)   correct
+query II rowsort
+SELECT r0.id, l.n
+FROM n5a r0
+LEFT JOIN LATERAL (SELECT COUNT(*) AS n FROM n5b r1 WHERE r1.c0 = r0.c0) l ON TRUE
+ORDER BY r0.id
+----
+1
+1
+2
+0
+3
+0
+
+-- (B) COUNT(*) over the SAME join: expected 3, get 4
+-- observed: 4   WRONG (11.55.5 returns 3)
+query I rowsort
+SELECT COUNT(*)
+FROM n5a r0
+LEFT JOIN LATERAL (SELECT COUNT(*) AS n FROM n5b r1 WHERE r1.c0 = r0.c0) l ON TRUE
+----
+3
+
+-- (C) Projecting id alone: the NULL-correlated outer row (id=2) is duplicated
+-- observed: 1, 2, 2, 3   WRONG (11.55.5 returns 1, 2, 3)
+query I rowsort
+SELECT r0.id
+FROM n5a r0
+LEFT JOIN LATERAL (SELECT COUNT(*) AS n FROM n5b r1 WHERE r1.c0 = r0.c0) l ON TRUE
+ORDER BY r0.id
+----
+1
+2
+3
+
+statement ok
+DROP TABLE IF EXISTS n5a
+
+statement ok
+DROP TABLE IF EXISTS n5b
+
